@@ -69,9 +69,9 @@ theorem decompressStart_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Dec
         InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x1 + 1 + BitVec.ofNat 64 e) 8 := by
       intro e he
       rw [BitVec.add_assoc, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
-      exact ⟨_, hp.pk, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hp.pk, Offset.contains_base _ (by omega_using [he]) (by omega_arith)⟩
     have hd : Region.Disjoint ⟨s₀.gpr .x1 + 1, c.C.len⟩ ⟨s₀.gpr .x2, size⟩ :=
-      hp.disjoint.sub_left (Offset.sub_base _ (d := 1) (by omega))
+      hp.disjoint.sub_left (Offset.sub_base _ (d := 1) (by omega_using []))
     exact ⟨by rw [k₁.wr, r8]; exact hp.ws,
       by rw [rcx, rw₁]; exact hin, by rw [rsi, rw₁]; exact hin,
       by rw [rdx, rw₁]; exact hin, by rw [rsi, r8]; exact hd,
@@ -159,7 +159,7 @@ theorem rhs_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   rw [first]
   refine WP.seq (WP.mono (slMulP_ok hc hs hM (o := QXM) (a := E) (b := R2P)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega)))
+    (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])))
     fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have hM₁ := hM.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
@@ -186,10 +186,10 @@ theorem rhs_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
       · exact lt₁
       · show sv c base s₁ AP < _
         rw [a₁]
-        exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [lt₁])
       · show sv c base s₁ BP < _
         rw [b₁]
-        exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [lt₁])
   refine WP.mono (fprogB_ok hL hAl hpR _ I (fun op hop x hx => ?_)
     (by
       intro op hop
@@ -282,8 +282,8 @@ theorem DecompressFront.frame {c : Cfg} (hc : BaseCfgOk c) {s₀ s t : State}
       sv c (s₀.gpr .x2) t i = sv c (s₀.gpr .x2) s i := sv_unch U h7 hn hi (ha i hm)
   have ew {i : Nat} (hi : i < 45) (hm : i ∈ [E, D, R2P, W2, FLAG]) :
       word t.mem (s₀.gpr .x2) (c.sl i) = word s.mem (s₀.gpr .x2) (c.sl i) :=
-    U.word (fun w hw => by have := ha i hm w hw; omega)
-      (by have := sl_le c h7 hi; omega)
+    U.word (fun w hw => by have := ha i hm w hw; omega_using [h0, this])
+      (by have := sl_le c h7 hi; omega_using [hn, h0, this])
   refine ⟨F.scr.of_keepRegs K (x0_not_powClob _), F.fixed.unch h7 hn hW U, F.original,
     (K.gpr _ (x20_not_powClob _)).trans F.out,
     (e (by decide) (by simp)).trans F.x, (ew (by decide) (by simp)).trans F.tag,
@@ -312,8 +312,8 @@ theorem decompressFront_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Dec
   have x₁ : sv c (s₀.gpr .x2) s₁ E = keyX c s₀ :=
     (sv_unch U₁ h7 hn (by decide) (apart_slW (by decide))).trans S.x
   have lead : s.mem (s₀.gpr .x1) = s₀.mem (s₀.gpr .x1) := by
-    have e := keep_of_disjoint' S.outside hp.disjoint (by omega) (i := 0) (by omega)
-      (by have := hc.len_hi; omega)
+    have e := keep_of_disjoint' S.outside hp.disjoint (by omega_using [hn]) (i := 0) (by omega_using [])
+      (by have := hc.len_hi; omega_using [h7, this])
     simpa only [BitVec.add_zero] using e
   rw [lead, S.x] at flag₁
   rw [lead] at tag₁
@@ -329,7 +329,7 @@ theorem decompressFront_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Dec
   · exact (R.unch.word (fun w hw => by
       have := (apart_slW (c := c) (by decide : D ∉ [QXM, W1, W2, W3, TMP])) w hw
       have := hc.n0
-      omega) (by have := sl_le c h7 (i := D) (by decide); omega)).trans tag₁
+      omega_arith) (by have := sl_le c h7 (i := D) (by decide); omega_using [h0, hn, this])).trans tag₁
   · simpa only [x₁] using R.val
   · rw [flag_unch R.unch h7 hc.n0 hn (by decide), flag₁]
   · rw [R.rd, k₁.rd, S.rd]
@@ -404,7 +404,7 @@ theorem decompressMiddle_ok {c : Cfg} (hc : BaseCfgOk c)
       exact apart_slW (h i hi) (by
         have H : ∀ i ∈ [E, D, R2P, W2, FLAG], i < 45 := by decide
         have := H i hi
-        omega) (by decide))
+        omega_using [this]) (by decide))
   have y₂ : Fin.ofNat c.C.p (sv c (s₀.gpr .x2) s₂ QY) = keyRoot c root s₀ := by
     rw [S.val, root₁, F₁.tag]
     simp only [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (show

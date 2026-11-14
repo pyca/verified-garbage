@@ -52,7 +52,7 @@ theorem Context.divisor_frame {g : Geometry} {s : State} {m : Mem} (h : Context 
     · exact h.separate 2 3 (by decide)
   · have := h.fits 2
     have := h.workspace.nowrap
-    omega
+    omega_arith
 
 theorem quotientShift_frame {g : Geometry} {m m' : Mem}
     (frame : Outs g.base [(g.offsets 0, 4 * g.n), (g.offsets 3, 4 * g.n)] m m') :
@@ -62,5 +62,5 @@ theorem quotientShift_frame {g : Geometry} {m m' : Mem}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, by simp [Geometry.ranges], Nat.le_refl _, Nat.le_refl _⟩
-  · exact ⟨(g.offsets 3, 4 * (g.n + 1)), by simp [Geometry.ranges], Nat.le_refl _, by omega⟩
+  · exact ⟨(g.offsets 3, 4 * (g.n + 1)), by simp [Geometry.ranges], Nat.le_refl _, by omega_using []⟩
 end VG.Proof.Rsa.X86.Div

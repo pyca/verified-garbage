@@ -37,13 +37,13 @@ theorem gcdFrom_ok {s : State} {B : Addr} {Z n k : Nat}
       num t.mem B n aDen = (if slot s.mem B kFlag = 0 then 1 else
         Nat.gcd (num s.mem B n aU) (num s.mem B n aDen)) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  have small : k ≤ n := by omega
+  have small : k ≤ n := by omega_using [width]
   have hk := inverse_workspace h.old positive small
   have layout := inverse_array_layout h.old small (a := aU) (b := aDen)
     (by decide) (by decide) (by decide) (by decide)
   have U := VG.Proof.RsaKeyGen.WordBounds32.low_eq small boundU
   have M := VG.Proof.RsaKeyGen.WordBounds32.low_eq small boundM
-  have divWidth : n / 2 = k := by omega
+  have divWidth : n / 2 = k := by omega_using [width]
   unfold gcdFrom seqs
   have layout' : InverseLayout Z (Width.prime.words n)
       ((VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aU).offset n)
@@ -61,14 +61,14 @@ theorem gcdFrom_ok {s : State} {B : Addr} {Z n k : Nat}
   have sourceBound : arr k 1 + 4 * k ≤ Z := by
     have F := hk.arr_fit (j := 1) (by decide)
     unfold S at F
-    omega
+    omega_using [F]
   have before : arr k 1 + 4 * k ≤ arr n aDen := by
     have F := arr_end (w := k) (show 1 < 15 by decide)
     have E := inverse_end_le small (j := aDen) (by decide)
     unfold S at F
-    omega
+    omega_using [F, E]
   have widenProof := widen_ok hu .prime (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen)
-    (.array .prime 1) (by change n / 2 ≤ n; omega)
+    (.array .prime 1) (by change n / 2 ≤ n; omega_using [])
     (by exact h.arr_fit (by decide))
     (by simpa only [offset_array, Width.words, divWidth] using sourceBound)
     (Or.inl (by simpa only [VG.Impl.RsaKeyGen.X86.KeyRuntime.arr, offset_array, Width.words, divWidth] using before))
@@ -78,11 +78,11 @@ theorem gcdFrom_ok {s : State} {B : Addr} {Z n k : Nat}
   have denV : num v.mem B n aDen = Nat.gcd (num s.mem B n aU) (num s.mem B n aDen) := widened.trans gcd
   have oneV : num v.mem B n aOne = 1 := by
     change val32 v.mem B (arr n aOne) n = 1
-    rw [Ov.val32 (d := arr n aOne) (k := n) (by unfold arr S aOne aDen; omega) (by have := h.fit64 (j := aOne) (by decide); unfold S at this; omega)]
+    rw [Ov.val32 (d := arr n aOne) (k := n) (by unfold arr S aOne aDen; omega_using []) (by have := h.fit64 (j := aOne) (by decide); unfold S at this; omega_using [this])]
     exact oneU
   have flagV : slot v.mem B kFlag = slot s.mem B kFlag := by
     change w32 v.mem B kFlag = w32 s.mem B kFlag
-    rw [Ov.w32 (d := kFlag) (by unfold arr aDen kFlag hdr; omega) (by decide)]
+    rw [Ov.w32 (d := kFlag) (by unfold arr aDen kFlag hdr; omega_using []) (by decide)]
     exact flagU
   refine WP.mono (sel_ok hv (by decide) (by decide) (by decide) (by decide)
     (by rw [flagV]; exact bit) (by decide)) fun t ⟨ht, Ot, selected, Kt⟩ => ?_

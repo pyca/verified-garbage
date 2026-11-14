@@ -47,7 +47,7 @@ theorem ready_of {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) {i : Nat}
     s1 := by rw [hI.keep.get .s1, hb.s1]
     t1 := by rw [hI.keep.get .t1, hb.t1]
     t2 := hI.t2
-    buf := by rw [hI.mem, ← hf]; exact Proof.RsaPkcs1Sig.bytesAt_writeBytes _ _ _ (by omega)
+    buf := by rw [hI.mem, ← hf]; exact Proof.RsaPkcs1Sig.bytesAt_writeBytes _ _ _ (by omega_using [hf, hl])
     len := hf }
   have : r ∉ [Reg.t6, .t2, .t0, .t5] := by
     simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -102,7 +102,7 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
     (by rw [hI.mem]; exact Proof.RsaPkcs1Sig.frame_writeBytes _ _ _)
     (fun r hr => by
       rw [List.mem_singleton.mp hr, hcd]
-      exact wok_frame s (by decide) (by unfold oEM1 frameBytes; omega))
+      exact wok_frame s (by decide) (by unfold oEM1 frameBytes; omega_using [hP, hc]))
   have g : ∀ r ∈ argRegs, u.gpr r = s.gpr r := fun r hr => by
     have : r ∉ [Reg.t6, .t2, .t0, .t5] := by
       simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -119,20 +119,20 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
     wp_li (imm := 0) (by decide) fun u₄ o₄ e₄ => wp_nil ?_))
   have O₄ : Only [.t3, .a1, .t5, .t0] u u₄ := o₁.trans (o₂.trans (o₃.trans o₄))
   have hF₄ : InF s u₄ := hF.only O₄
-  refine WP.mono (fill_ok (p := s.gpr .a0) (n := (s.gpr .a4).toNat) (b := 0) (by omega) (by omega)
+  refine WP.mono (fill_ok (p := s.gpr .a0) (n := (s.gpr .a4).toNat) (b := 0) (by omega_using [hk1]) (by omega_using [])
     (by rw [o₄.get .a1, o₃.get .a1, e₂, o₁.get .a0, g .a0 (by decide)])
     (by rw [o₄.get .t5, e₃, o₂.get .a4, o₁.get .a4, g .a4 (by decide), ofNat_toNat])
     (by rw [e₄]; rfl)
     (fun j hj => by
       rw [hF₄.wr, hp.hwr]
-      exact ⟨oR s, by simp, Offset.contains_base _ (by rw [hp.ok]; omega) (by omega)⟩)) fun w ⟨kw, mw⟩ => ?_
+      exact ⟨oR s, by simp, Offset.contains_base _ (by rw [hp.ok]; omega_using [hj]) (by omega_using [hj])⟩)) fun w ⟨kw, mw⟩ => ?_
   have hl : (List.replicate (s.gpr .a4).toNat (0 : Byte)).length = (s.gpr .a4).toNat := List.length_replicate ..
   have hFw : InF s w := hF₄.step kw (R := [⟨s.gpr .a0, (List.replicate (s.gpr .a4).toNat (0 : Byte)).length⟩])
     (by rw [mw]; exact Proof.RsaPkcs1Sig.frame_writeBytes _ _ _)
     (fun r hr => by rw [List.mem_singleton.mp hr, hl]; exact hoW)
   have outw : Spec.Rsa.bytesAt w.mem (s.gpr .a0) (s.gpr .a4).toNat = List.replicate (s.gpr .a4).toNat 0 := by
     have := Proof.RsaPkcs1Sig.bytesAt_writeBytes u₄.mem (s.gpr .a0) (List.replicate (s.gpr .a4).toNat 0)
-      (by rw [hl]; omega)
+      (by rw [hl]; omega_using [])
     rw [hl] at this; rw [mw]; exact this
   have Kw : Kept ([Reg.t3, .a1, .t5, .t0] ++ [.a1, .t5]) u w := O₄.keep.trans kw
   have t3w : w.gpr .t3 = BitVec.ofNat 64 c := by rw [kw.get .t3, o₄.get .t3, o₃.get .t3, o₂.get .t3, e₁, t5u]
@@ -146,7 +146,7 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
     refine WP.mono (budget_ok hp hFy a2y t4y s1y t3y hc hcl) fun x ⟨habi, frx, hex, hen⟩ => ⟨habi, ?_⟩
     have outZ : Spec.Rsa.bytesAt x.mem (s.gpr .a0) (s.gpr .a4).toNat = List.replicate (s.gpr .a4).toNat 0 := by
       rw [Proof.RsaPkcs1Sig.bytes_apart (R := oR' s) frx (o'_dis hp hp.ot)
-        (by have := hp.wo; rw [hp.ok] at this; show (s.gpr .a4).toNat ≤ 2 ^ 64; omega)]
+        (by have := hp.wo; rw [hp.ok] at this; show (s.gpr .a4).toNat ≤ 2 ^ 64; omega_using [])]
       exact outy
     have hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all, hcd]; exact hc
     show (∃ req, _ ∧ _ ∧ _) ∧ _
@@ -156,21 +156,21 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
       obtain ⟨h0, h1, hr⟩ := hex hge
       rw [ho, hu, randB_length]
       exact ⟨⟨0, by rw [h0, ofNat_toNat], h1, rfl⟩, hr, outZ⟩
-    · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega)
-      obtain ⟨h0, h1, hr⟩ := hen (by omega)
+    · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega_using [hge])
+      obtain ⟨h0, h1, hr⟩ := hen (by omega_using [hge])
       rw [ho, hu]
       refine ⟨⟨_, h0, h1, ?_⟩, hr, outZ⟩
       rw [randB_length]
       unfold Spec.RsaPkcs1Enc.padEntropy at *
       constructor
-      · simp only [Nat.lt_min]; constructor <;> omega
+      · simp only [Nat.lt_min]; constructor <;> omega_arith
       · exact Nat.min_le_left _ _
   have a2w : w.gpr .a2 = s.gpr .a2 := by rw [Kw.get .a2, g .a2 (by decide)]
   have t4w : w.gpr .t4 = stackArg s 2 := by rw [Kw.get .t4, t4u]
   have s1w : w.gpr .s1 = BitVec.ofNat 64 (psLen s) := by rw [Kw.get .s1, s1u]
   unfold wipeDrawn
   have hev : isa.eval (.nonzero .t3) w = some (decide (c ≠ 0)) := by
-    have := sub_ne_zero (a := c) (b := 0) (by omega) (by decide)
+    have := sub_ne_zero (a := c) (b := 0) (by omega_using [hcl]) (by decide)
     rw [BitVec.sub_zero] at this
     rw [eval_nonzero, t3w, this]
   by_cases hc0 : c = 0
@@ -182,22 +182,22 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
       wp_li (imm := 0) (by decide) fun v₄ p₄ f₄ => wp_nil ?_)
     have P₄ : Only [.t0, .a1, .t5, .t0] w v₄ := p₁.trans (p₂.trans (p₃.trans p₄))
     have hF₄' : InF s v₄ := hFw.only P₄
-    refine WP.mono (fill_ok (p := psA s) (n := c) (b := 0) (by omega) (by omega)
+    refine WP.mono (fill_ok (p := psA s) (n := c) (b := 0) (by omega_using [hc0]) (by omega_using [hcl])
       (by rw [p₄.get .a1, p₃.get .a1, f₂, f₁, hFw.sp, BitVec.add_zero]; rfl)
       (by rw [p₄.get .t5, f₃, p₂.get .t3, p₁.get .t3, t3w]) (by rw [f₄]; rfl)
-      (fun j hj => by rw [hF₄'.wr]; exact in_ps hp _ (by omega) hj)) fun y ⟨ky, my⟩ => ?_
+      (fun j hj => by rw [hF₄'.wr]; exact in_ps hp _ (by omega_using [hc]) hj)) fun y ⟨ky, my⟩ => ?_
     have hly : (List.replicate c (0 : Byte)).length = c := List.length_replicate ..
     have hFy : InF s y := hF₄'.step ky (R := [⟨psA s, (List.replicate c (0 : Byte)).length⟩])
       (by rw [my]; exact Proof.RsaPkcs1Sig.frame_writeBytes _ _ _)
       (fun r hr => by
         rw [List.mem_singleton.mp hr, hly]
-        exact wok_frame s (by decide) (by unfold oEM1 frameBytes; omega))
+        exact wok_frame s (by decide) (by unfold oEM1 frameBytes; omega_using [hP, hc]))
     have Ky : Kept ([Reg.t0, .a1, .t5, .t0] ++ [.a1, .t5]) w y := P₄.keep.trans ky
     refine rest y hFy (by rw [Ky.get .a2, a2w]) (by rw [Ky.get .t4, t4w]) (by rw [Ky.get .s1, s1w])
       (by rw [Ky.get .t3, t3w]) ?_
     rw [my, P₄.mem, bytes_wb (R := oR' s) (by
-        rw [hly]; exact (o'_dis hp (ps_dis hp hp.ko).symm).sub_right (Region.sub_prefix (by omega)))
-      (by have := hp.wo; rw [hp.ok] at this; show (s.gpr .a4).toNat ≤ 2 ^ 64; omega)]
+        rw [hly]; exact (o'_dis hp (ps_dis hp hp.ko).symm).sub_right (Region.sub_prefix (by omega_using [hc])))
+      (by have := hp.wo; rw [hp.ok] at this; show (s.gpr .a4).toNat ≤ 2 ^ 64; omega_using [])]
     exact outw
 
 theorem body_ok {s : State} (hp : RPre s) :
@@ -207,12 +207,12 @@ theorem body_ok {s : State} (hp : RPre s) :
   have hP := psLen_le hp
   have hev : isa.eval (.eq .t5 .s1) u = some (decide ((kept s i).length = psLen s)) := by
     show some (u.gpr .t5 == u.gpr .s1) = _
-    rw [hI.t5, hI.keep.get .s1, hb.s1, beq_ofNat (by have := hI.hc; omega) (by omega)]
+    rw [hI.t5, hI.keep.get .s1, hb.s1, beq_ofNat (by have := hI.hc; omega_using [hP, this]) (by omega_using [hP])]
   rcases hres with ⟨hf, hpre⟩ | ⟨hi, hc⟩
   · exact WP.ite true (by rw [hev, decide_eq_true hf]) (fun _ => accept_ok hp hb hI hf hpre)
       (fun h => absurd h (by decide))
   · subst hi
-    exact WP.ite false (by rw [hev, decide_eq_false (by omega)]) (fun h => absurd h (by decide))
+    exact WP.ite false (by rw [hev, decide_eq_false (by omega_using [hc])]) (fun h => absurd h (by decide))
       fun _ => reject_ok hp hb hI hc
 
 theorem post_freed {s x : State} (n : Nat) (h : post s x) : post s (freed n x) := by
@@ -418,8 +418,8 @@ theorem loop_ct (n : Nat) :
     of_decide_eq_false (hd ▸ decide_eq_false hstop)
   have hp₁ := A₁.hc; have hp₂ := A₂.hc
   have ha : (stackArg s₁ 2).toNat = (stackArg a 2).toNat := by rw [e₁.2.args 2 (by decide)]
-  refine ⟨(stackArg a 2).toNat - (i₁ + 1), by omega, a, ⟨s₁, t₁, i₁ + 1, e₁, b₁, rfl, by omega, by omega, A₁⟩,
-    ⟨s₂, t₂, i₁ + 1, e₂, b₂, rfl, by omega, by omega, A₂⟩⟩
+  refine ⟨(stackArg a 2).toNat - (i₁ + 1), by omega_using [n₁, j₁, ha], a, ⟨s₁, t₁, i₁ + 1, e₁, b₁, rfl, by omega_using [j₁, hstop], by omega_using [hstop, hp₁], A₁⟩,
+    ⟨s₂, t₂, i₁ + 1, e₂, b₂, rfl, by omega_using [j₂, hstop₂], by omega_using [hstop₂, hp₂], A₂⟩⟩
 
 /-- Before the scan. -/
 def ScanΦ (a t : State) : Prop := ∃ s, E a s ∧ Before s t ∧ t.gpr .t2 = 0 ∧ t.gpr .t5 = 0
@@ -443,7 +443,7 @@ theorem scan_ct : RelCT isa (Two ScanΦ) scan fun _ _ => True := by
       · have : stackArg s 2 = 0 := BitVec.eq_of_toNat_eq (by rw [h]; rfl)
         rw [this] at ht; exact absurd ht (by decide)
       · exact h
-    exact ⟨s, t, 0, e, b, rfl, hl, by rw [kept_zero]; simp; omega, at_zero h2 h5⟩
+    exact ⟨s, t, 0, e, b, rfl, hl, by rw [kept_zero]; simp; omega_using [hP], at_zero h2 h5⟩
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨a, ⟨h₁, c₁⟩, ⟨h₂, c₂⟩⟩ x₁ x₂
   exact loop_ct ((stackArg a 2).toNat - 0) _ _ _ _ _ _ ⟨a, conv h₁ c₁, conv h₂ c₂⟩ x₁ x₂
 
@@ -473,11 +473,11 @@ theorem encPub {a s₁ s₂ w₁ w₂ : State} (h₁ : E a s₁) (h₂ : E a s�
   have nE : ∀ {s w : State} {i : Nat} {ps : List Byte}, RPre s → Args s w i ps →
       Spec.Rsa.bytesAt w.mem (s.gpr .a3) (s.gpr .a4).toNat = nB s := fun {s} {_} {_} {_} hp hw =>
     bytes_mem (R := nR s) hw.fr (k_dis hp.kn) hp.tn hp.on hp.ns.symm (low_dis hp.kn)
-      (by have := hp.wn; show (s.gpr .a4).toNat ≤ 2 ^ 64; omega)
+      (by have := hp.wn; show (s.gpr .a4).toNat ≤ 2 ^ 64; omega_using [])
   have eE : ∀ {s w : State} {i : Nat} {ps : List Byte}, RPre s → Args s w i ps →
       Spec.Rsa.bytesAt w.mem (s.gpr .a5) (s.gpr .a6).toNat = eB s := fun {s} {_} {_} {_} hp hw =>
     bytes_mem (R := eR s) hw.fr (k_dis hp.ke) hp.te hp.oe hp.es.symm (low_dis hp.ke)
-      (by have := hp.we; show (s.gpr .a6).toNat ≤ 2 ^ 64; omega)
+      (by have := hp.we; show (s.gpr .a6).toNat ≤ 2 ^ 64; omega_using [])
   have qE : ∀ {s w : State} {i : Nat} {ps : List Byte}, RPre s → Args s w i ps →
       Spec.Rsa.wordsAt w.mem (stackArg s 5) (stackArg s 6).toNat = preW s := fun {s} {_} {_} {_} hp hw =>
     words_mem hw.fr (k_dis hp.kp) hp.tp hp.op hp.sp (low_dis hp.kp) hp.wp
@@ -580,7 +580,7 @@ theorem tail_ct : RelCT isa (Two DoneΦ) (.ite (.eq .t5 .s1) accept reject) fun 
       isa.eval (.eq .t5 .s1) u = some (decide ((kept s i).length = psLen s)) := fun {s} {t₀} {u} {i} hp b I => by
     have := I.hc; have := psLen_le hp
     show some (u.gpr .t5 == u.gpr .s1) = _
-    rw [I.t5, I.keep.get .s1, b.s1, beq_ofNat (by omega) (by omega)]
+    rw [I.t5, I.keep.get .s1, b.s1, beq_ofNat (by omega_arith) (by omega_using [this])]
   refine two_ite (fun a u₁ u₂ ⟨s₁, t₁, e₁, b₁, i₁, I₁, d₁⟩ ⟨s₂, t₂, e₂, b₂, i₂, I₂, d₂⟩ => ?_)
     (accept_ct.mono (fun u₁ u₂ ⟨a, ⟨⟨s₁, t₁, e₁, b₁, i₁, I₁, d₁⟩, c₁⟩, ⟨⟨s₂, t₂, e₂, b₂, i₂, I₂, d₂⟩, c₂⟩⟩ => ?_)
       fun _ _ h => h)
@@ -591,8 +591,8 @@ theorem tail_ct : RelCT isa (Two DoneΦ) (.ite (.eq .t5 .s1) accept reject) fun 
   · rw [hev e₁.1 b₁ I₁] at c₁; rw [hev e₂.1 b₂ I₂] at c₂
     have f₁ : (kept s₁ i₁).length = psLen s₁ := of_decide_eq_true (Option.some.inj c₁)
     have f₂ : (kept s₂ i₂).length = psLen s₂ := of_decide_eq_true (Option.some.inj c₂)
-    have p₁ := d₁.resolve_right fun ⟨_, h⟩ => by omega
-    have p₂ := d₂.resolve_right fun ⟨_, h⟩ => by omega
+    have p₁ := d₁.resolve_right fun ⟨_, h⟩ => by omega_arith
+    have p₂ := d₂.resolve_right fun ⟨_, h⟩ => by omega_arith
     exact ⟨a, ⟨s₁, t₁, i₁, e₁, b₁, I₁, f₁, p₁.2⟩, ⟨s₂, t₂, i₂, e₂, b₂, I₂, f₂, p₂.2⟩⟩
   · rw [hev e₁.1 b₁ I₁] at c₁; rw [hev e₂.1 b₂ I₂] at c₂
     have f₁ : ¬(kept s₁ i₁).length = psLen s₁ := of_decide_eq_false (Option.some.inj c₁)

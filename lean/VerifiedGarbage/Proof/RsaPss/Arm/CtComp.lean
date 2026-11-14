@@ -77,14 +77,14 @@ theorem comp_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : BitVec 
   have a0 : State.addr (scr + BitVec.ofNat 32 oCW) = sa scr oCW := hg.addr (by decide)
   have d1 : (sR scr oSt h.N).Disjoint (sR scr oCW h.H.md.so) := Geo.sep (by pomega) (by pomega) (by pomega)
   have d2 : (sR scr o h.B).Disjoint (sR scr oSt h.N) := Geo.sep (o := o) (n := h.B) (e := oSt) (k := h.N)
-    (by left; unfold oSt; omega) (by unfold oRsa; omega) (by unfold oSt oRsa at *; omega)
+    (by left; unfold oSt; omega_using [ho3]) (by unfold oRsa; omega_using [ho3]) (by unfold oSt oRsa at *; omega_using [hN])
   have d3 : (sR scr o h.B).Disjoint (sR scr oCW h.H.md.so) := Geo.sep (o := o) (n := h.B) (e := oCW) (k := h.H.md.so)
-    (by left; unfold oCW; omega) (by unfold oRsa; omega) (by unfold oCW oRsa at *; omega)
+    (by left; unfold oCW; omega_using [ho3]) (by unfold oRsa; omega_using [ho3]) (by unfold oCW oRsa at *; omega_using [hso])
   have f0 : (scr + BitVec.ofNat 32 oSt).toNat + h.N ≤ 2 ^ 32 := by rw [hg.scr_lt (by decide)]; pomega
   have f1 : (scr + BitVec.ofNat 32 o).toNat + h.B ≤ 2 ^ 32 := by rw [hg.scr_lt (by pomega)]; pomega
   have f3 : (scr + BitVec.ofNat 32 oCW).toNat + h.H.md.so ≤ 2 ^ 32 := by rw [hg.scr_lt (by decide)]; pomega
   have rO : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr o) h.B :=
-    fun σ s hc => hg.rd hc.st (o := o) (n := h.B) (by unfold oRsa; omega)
+    fun σ s hc => hg.rd hc.st (o := o) (n := h.B) (by unfold oRsa; omega_using [ho3])
   have rSt : ∀ σ s, Ctx L scr σ s → InRegions s.wr (sa scr oSt) h.N := fun σ s hc => hg.wr hc.st (by pomega)
   have rCW : ∀ σ s, Ctx L scr σ s → InRegions s.wr (sa scr oCW) h.H.md.so := fun σ s hc => hg.wr hc.st (by pomega)
   have rStR : ∀ σ s, Ctx L scr σ s → InRegions (s.rd ++ s.wr) (sa scr oSt) h.N := fun σ s hc => hg.rd hc.st (by pomega)

@@ -100,7 +100,7 @@ theorem sealGather_ct (w : Width) (F : SealSplitFn) :
       eM σ₁ (Src σ₁ + BitVec.ofNat 64 j) = eM σ₂ (Src σ₁ + BitVec.ofNat 64 j) := by
     intro j hj
     have hx : (dsR σ₁).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ hj (by omega)
+      Offset.contains_base _ hj (by omega_using [ods₁, hj])
     have hx₂ : (dsR σ₂).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 := by
       simp only [dsR, Src, Cnt, ← q8, ← q9]; exact hx
     rw [h₁.keepE bds₁.symm hx, h₂.keepE bds₂.symm hx₂]
@@ -113,13 +113,13 @@ theorem sealGather_ct (w : Width) (F : SealSplitFn) :
     split
     · rfl
     · rename_i h0
-      rw [hS]; exact (sl_agree hdE (by omega)).symm
+      rw [hS]; exact (sl_agree hdE (by omega_using [h0])).symm
   have hS0 : S0 σ₂ = S0 σ₁ := by
     simp only [S0, hC]
     split
     · exact hS
     · rename_i h0
-      rw [hS]; exact (sb_agree hdE (by omega)).symm
+      rw [hS]; exact (sb_agree hdE (by omega_using [h0])).symm
   refine rel_frame qsp ?_
   -- The entry.
   refine rel_seq (rel_regs [.rsp, .r8] (by
@@ -140,11 +140,11 @@ theorem sealGather_ct (w : Width) (F : SealSplitFn) :
   have hd : ∀ j < Rc σ₁ * 16,
       f₁.mem (Rs σ₁ + BitVec.ofNat 64 j) = f₂.mem (Rs σ₁ + BitVec.ofNat 64 j) := by
     intro j hj
-    have hk1 : k1 σ₁ ≤ Cnt σ₁ := by simp only [k1]; split <;> omega
+    have hk1 : k1 σ₁ ≤ Cnt σ₁ := by simp only [k1]; split <;> omega_arith
     have e : Rs σ₁ + BitVec.ofNat 64 j = Src σ₁ + BitVec.ofNat 64 (16 * k1 σ₁ + j) := by
       simp only [Rs, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     rw [hf₁.mem, hf₂.mem, e]
-    exact hdE _ (by simp only [Rc] at hj; rw [Nat.sub_mul] at hj; omega)
+    exact hdE _ (by simp only [Rc] at hj; rw [Nat.sub_mul] at hj; omega_using [hj])
   refine rel_seq (gather_rel w hd gp₁ gp₂) (gathered_wp w h₁ hf₁) (gathered_wp w h₂ hf₂)
     fun g₁ g₂ hg₁ hg₂ => ?_
   -- The call's arguments.

@@ -25,8 +25,8 @@ private theorem masked_head (qBytes : List Byte) (b : Byte)
     have hz : (VG.Proof.Dsa.significant qBytes).2.toNat ≠ 0 := by
       intro he
       have := hn.mpr (BitVec.eq_of_toNat_eq he)
-      omega
-    omega
+      omega_using [hpos, this]
+    omega_using [hz]
   rw [randomMaskValue_eq _ hb (VG.Proof.Dsa.significant qBytes).2.isLt, BitVec.setWidth_and,
     BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
   rw [BitVec.setWidth_ofNat_of_le (by decide)]
@@ -53,7 +53,7 @@ theorem random_copy_candidate_ok {s : State} {B R src dst : Addr} {l used : Nat}
       Spec.Dsa.decodeBE copied = Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE qBytes) (b :: tail) ∧
       (∀ x, (∀ i < tail.length + 1, x ≠ dst + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧
       Keep [.x0, .x4, .x12, .x2, .x9] s t := by
-  refine WP.mono (random_copy_ok hs hsp hR hu hn hl hm hsrc hdst (by omega) hbound hr hw hsep)
+  refine WP.mono (random_copy_ok hs hsp hR hu hn hl hm hsrc hdst (by omega_using []) hbound hr hw hsep)
     fun t ⟨htv, htf, htk⟩ => ?_
   let head := b &&& BitVec.ofNat 8 (2 ^ ((VG.Proof.Dsa.significant qBytes).2.toNat.log2 + 1) - 1)
   refine ⟨head :: tail, rfl, ?_, (VG.Proof.Dsa.random_candidate_mask qBytes b tail hwidth).symm,
@@ -67,7 +67,7 @@ theorem random_copy_candidate_ok {s : State} {B R src dst : Addr} {l used : Nat}
       change s.mem (src + 0#64) = b at h
       simpa only [BitVec.add_zero] using h
     simp only [ite_true, hb, List.getElem_cons_zero]
-    exact masked_head qBytes b (by omega)
+    exact masked_head qBytes b (by omega_using [hwidth])
   | succ i =>
     rw [ite_eq_right (Nat.succ_ne_zero i), hv (i + 1) hi]
     rfl

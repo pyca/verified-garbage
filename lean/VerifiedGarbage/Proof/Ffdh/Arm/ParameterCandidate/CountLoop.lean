@@ -62,13 +62,13 @@ theorem halfCountLoop_ok {s : State} {base : BitVec 32} {capacity w original : N
     rintro t ⟨readyT, dataT, valueT, savedT, zeroT, arraysT, headerT, frameT, restT⟩
     rw [h.number] at valueT zeroT
     have smaller : m / 2 < m := Nat.div_lt_self h.positive (by decide)
-    have positiveT : 0 < m / 2 := by have := h.even; have := h.positive; omega
-    have split := VG.Proof.Rsa.splitTwos_even (by have := h.positive; omega) h.even
+    have positiveT : 0 < m / 2 := by have := h.even; have := h.positive; omega_arith
+    have split := VG.Proof.Rsa.splitTwos_even (by have := h.positive; omega_using [smaller]) h.even
     have factors : count + 1 + (splitTwos (m / 2)).1 = (splitTwos original).1 := by
       have := h.factors
       rw [split] at this
       dsimp only at this
-      omega
+      omega_using [this]
     have oddPart : (splitTwos (m / 2)).2 = (splitTwos original).2 := by
       have := h.oddPart
       rw [split] at this
@@ -89,7 +89,7 @@ theorem halfCountLoop_ok {s : State} {base : BitVec 32} {capacity w original : N
         · rw [restT.sp]; exact h.stack.congr restT.wr
         · rw [restT.sp]; exact h.separate
     · left
-      have oddT : m / 2 % 2 = 1 := by omega
+      have oddT : m / 2 % 2 = 1 := by omega_using [evenT]
       rw [VG.Proof.Rsa.splitTwos_odd oddT] at factors oddPart
       have countDone : count + 1 = (splitTwos original).1 := by simpa using factors
       refine ⟨?_, readyT, dataT, valueT.trans oddPart, ?_, arrays, header, frame, rest⟩

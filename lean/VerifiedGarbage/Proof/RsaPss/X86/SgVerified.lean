@@ -210,7 +210,7 @@ theorem spec_sp {s : State} (hs : (sspec vs gs).pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
   sign_pre at hs
   obtain ⟨hsp, hsa, -⟩ := hs
-  exact ⟨hsp, by omega⟩
+  exact ⟨hsp, by omega_using [hsa]⟩
 
 theorem fne_of {w : MVar} (hw : w ∈ vs) {wg : TVar} (hwg : wg ∈ gs) :
     ((Proof.MdHashTable.X86.fnsOf vs).init ≠ [] ∧ (Proof.MdHashTable.X86.fnsOf vs).comp ≠ [] ∧
@@ -257,7 +257,7 @@ theorem entered_state (hok : OK vs gs) {s s' : State} (hs : (sspec vs gs).pre s)
   have hpwH := hpw.sublist (List.sublist_append_left _ _)
   have hpwG := (hpw.sublist (List.sublist_append_right _ _)).sublist (List.sublist_append_left _ _)
   obtain ⟨hsp0, -⟩ := spec_sp hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   have hD := dlen_of hs hhH
   let e0 := ep s 0 0 0 (fun _ => True) 0 0 0 fun _ => True
   have ok := (in_of_pre (hai := 0) (hac := 0) (had := 0) (TH := fun _ => True) (ai := 0) (au := 0) (af := 0)
@@ -291,7 +291,7 @@ theorem code_ok (hok : OK vs gs) (v : CrtImpl) {s : State} (hs : (sspec vs gs).p
   have he := entered_state hok hs hw hwg hhH hh (s' := s) fun _ _ => rfl
   have hin := he.1.1
   obtain ⟨hsp0, hfit4⟩ := spec_sp hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   obtain ⟨fneH, fne⟩ := fne_of hw hwg
   have hb := (body_vp w.h (epw vs gs s s w wg) (hok.2.1 w hw).1 (hok.2.1 w hw).2 (fun _ x => x) fneH wg.g
     (fun _ x => x) fne v).wp _ _ he

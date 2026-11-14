@@ -41,7 +41,7 @@ theorem zero_ok {s : State} {p : Addr} {n : Nat} {b : Byte} (hn : 0 < n) (hn' : 
   have hK' : Keep [.r4, .r5] t s₃ := (m₁.keep.trans (o₂.keep.trans o₃.keep)).mono
   refine ⟨⟨(hK.trans hK').mono, ?_, ?_⟩, ?_⟩
   · rw [o₃.mem, o₂.mem, m₁.mem, hK.get .r6, h6, h4', BitVec.add_zero, hm, List.replicate_succ',
-      writeBytes_snoc _ _ _ _ (by simp; omega)]
+      writeBytes_snoc _ _ _ _ (by simp; omega_using [hn', hi])]
     simp
   · rw [o₃.get .r4, e₂, m₁.gpr, h4', ofNat_succ']
   · rw [e₃, o₂.get .r5, m₁.gpr]
@@ -65,7 +65,7 @@ theorem copy_ok {s : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 6
       rw [h4', hK.rd, hK.wr, BitVec.add_zero]; exact hr _ hi
     have hv : t.mem (q + BitVec.ofNat 64 i) = s.mem (q + BitVec.ofNat 64 i) := by
       rw [hm, writeBytes_out _ _ _ _ n (fun i' hi' => hd i hi i' hi')
-        (by simp only [List.length_take, bytesAt_length]; omega)]
+        (by simp only [List.length_take, bytesAt_length]; omega_using [])]
     refine wp_lbz rfl hR fun s₁ o₁ e₁ => ?_
     have hA : InRegions s₁.wr (s₁.gpr .r5 + BitVec.ofNat 64 0) 1 := by
       rw [o₁.wr, o₁.get .r5, h5', hK.wr, BitVec.add_zero]; exact hw _ hi
@@ -76,12 +76,12 @@ theorem copy_ok {s : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 6
     have hK' : Keep [.r7, .r4, .r5, .r6] t s₅ :=
       (o₁.keep.trans (m₂.keep.trans (o₃.keep.trans (o₄.keep.trans o₅.keep)))).mono
     have hlt : ((Spec.Rsa.bytesAt s.mem q n).take i).length = i := by
-      simp [bytesAt_length]; omega
+      simp [bytesAt_length]; omega_using [hi]
     refine ⟨⟨(hK.trans hK').mono, ?_, ?_, ?_⟩, ?_⟩
     · rw [o₅.mem, o₄.mem, o₃.mem, m₂.mem, e₁, o₁.mem, h4']
       simp only [BitVec.add_zero]
       rw [hv, byte_setWidth64, o₁.get .r5, h5', hm, bytesAt_take_succ _ _ hi,
-        writeBytes_snoc _ _ _ _ (by omega), hlt]
+        writeBytes_snoc _ _ _ _ (by omega_using [hn', hi, hlt]), hlt]
     · rw [o₅.get .r5, e₄, o₃.get .r5, m₂.gpr, o₁.get .r5, h5', ofNat_succ']
     · rw [o₅.get .r4, o₄.get .r4, e₃, m₂.gpr, o₁.get .r4, h4', ofNat_succ']
     · rw [e₅, o₄.get .r6, o₃.get .r6, m₂.gpr, o₁.get .r6]

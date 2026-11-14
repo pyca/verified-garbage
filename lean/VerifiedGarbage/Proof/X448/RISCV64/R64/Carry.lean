@@ -53,11 +53,11 @@ theorem borrow (a b : BitVec 64) :
   · have hlt : a < b := BitVec.lt_def.mpr h
     simp only [hlt, ↓reduceIte]
     show _ = _ + 2 ^ 64 * 1
-    omega
+    omega_using [h]
   · have hlt : ¬ a < b := fun h' => h (BitVec.lt_def.mp h')
     simp only [hlt, ↓reduceIte]
     show _ = _ + 2 ^ 64 * 0
-    omega
+    omega_using [h]
 
 set_option linter.unusedSimpArgs false in
 /-- `r - v`, its borrow into `o`. -/
@@ -94,7 +94,7 @@ theorem shl32_ok {d a : Reg} :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_shift_d (show 32 < 64 by decide),
     RegUpd.gpr_write, ite_true, Option.some.injEq, exists_eq_left']
-  refine ⟨fun h => by rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega, fun x hx => ?_, rfl, rfl,
+  refine ⟨fun h => by rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega_using [h], fun x hx => ?_, rfl, rfl,
     rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
   simp only [RegUpd.gpr_write, hx, ite_false]
@@ -188,9 +188,9 @@ theorem foldR_ok :
     have := hb s7 .t0; have := hb s8 .t0; have := hb s9 .t0; have := hb s10 .a5
     have := hb s (w 0); have := hb s (w 1); have := hb s (w 2); have := hb s (w 3)
     have := hb s (w 4); have := hb s (w 5); have := hb s (w 6)
-    have e7 := e7 (by omega)
+    have e7 := e7 (by omega_using [e4, e6])
     simp only [rw7, val7, l1, l2, l3, l4, l5, l6]
-    omega
+    omega_arith
   · exact (((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans
       k9).trans k10).mono (by decide)
 
@@ -268,9 +268,9 @@ theorem unfoldR_ok :
     have := hb s7 .a7; have := hb s8 .t0; have := hb s9 .a7; have := hb s10 .a5; have := hb s5 .t0
     have := hb s (w 0); have := hb s (w 1); have := hb s (w 2); have := hb s (w 3)
     have := hb s (w 4); have := hb s (w 5); have := hb s (w 6)
-    have e7 := e7 (by omega)
+    have e7 := e7 (by omega_using [e4, e6])
     simp only [rw7, val7, l1, l2, l3, l4, l5, l6]
-    omega
+    omega_arith
   · exact (((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans
       k9).trans k10).mono (by decide)
 

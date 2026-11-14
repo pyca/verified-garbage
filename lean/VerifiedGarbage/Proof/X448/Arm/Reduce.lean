@@ -60,10 +60,10 @@ theorem colOffsets_bound {k : Nat} (hk : k < 28) : ∀ d ∈ colOffsets k, d + 4
   intro d hd
   simp only [colOffsets, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hd
   rcases hd with rfl | hd
-  · simp only [ACC]; omega
+  · simp only [ACC]; omega_using [hk]
   · split at hd <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-    · subst d; simp only [ACC]; omega
-    · rcases hd with rfl | rfl <;> simp only [ACC] <;> omega
+    · subst d; simp only [ACC]; omega_using [hk]
+    · rcases hd with rfl | rfl <;> simp only [ACC] <;> omega_using [hk]
 
 theorem reduceCol_code (k : Nat) : reduceCol k =
     [ld .r3 (ACC + 4 * k)] ++ addWords (colOffsets k) ++ [st .r3 (TMP + 4 * k)] := by
@@ -77,23 +77,23 @@ theorem reduceCol_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk :
       t.mem = s.mem.writeW (off base (TMP + 4 * k)) (BitVec.ofNat 32 (reduced f k)) ∧
       Keeps [.r3, .r2] s t := by
   rw [reduceCol_code, List.append_assoc]
-  refine load_ok hs (by simp only [ACC]; omega) fun t ht => ?_
+  refine load_ok hs (by simp only [ACC]; omega_using [hk]) fun t ht => ?_
   change WP isa (.block (addWords (colOffsets k) ++ ([st .r3 (TMP + 4 * k)] : List Instr))) t _
   rw [WP.block_append_iff]
   refine WP.mono (addWords_ok (hs.of_upd ht (by decide) (by decide)) (colOffsets_bound hk))
     fun u ⟨uv, um, uk⟩ => ?_
   have us := (hs.of_upd ht (by decide) (by decide)).of_keeps uk (by decide)
-  refine store_ok us (by simp only [TMP]; omega) fun v hv => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok us (by simp only [TMP]; omega_using [hk]) fun v hv => WP.block_nil ⟨?_, ?_⟩
   · rw [hv.mem, um, ht.mem, uv, ht.gpr, ht.mem]
     apply congrArg (s.mem.writeW _)
     apply BitVec.eq_of_toNat_eq
-    have f0 := hf k (by omega)
-    have f1 := hf (k + 28) (by omega)
-    have b0 := hb k (by omega)
-    have b1 := hb (k + 28) (by omega)
+    have f0 := hf k (by omega_using [hk])
+    have f1 := hf (k + 28) (by omega_using [hk])
+    have b0 := hb k (by omega_using [hk])
+    have b1 := hb (k + 28) (by omega_using [hk])
     by_cases h : k < 14
-    · have f2 := hf (k + 42) (by omega)
-      have b2 := hb (k + 42) (by omega)
+    · have f2 := hf (k + 42) (by omega_using [h])
+      have b2 := hb (k + 42) (by omega_using [h])
       simp only [colOffsets, h, ite_true, List.cons_append, List.nil_append,
         List.map_cons, List.map_nil, List.sum_cons, List.sum_nil]
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat, reduced, h, ite_true]
@@ -101,9 +101,9 @@ theorem reduceCol_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk :
         (limbs s.mem base ACC (k + 42)) % 2 ^ 32) % 2 ^ 32) % 2 ^ 32 = _
       rw [f0, f1, f2]
       simp only [radix] at b0 b1 b2
-      omega
-    · have f2 := hf (k + 14) (by omega)
-      have b2 := hb (k + 14) (by omega)
+      omega_using []
+    · have f2 := hf (k + 14) (by omega_using [hk])
+      have b2 := hb (k + 14) (by omega_using [hk])
       simp only [colOffsets, h, ite_false, List.cons_append, List.nil_append,
         List.map_cons, List.map_nil, List.sum_cons, List.sum_nil]
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat, reduced, h, ite_false]
@@ -111,7 +111,7 @@ theorem reduceCol_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk :
         (limbs s.mem base ACC (k + 14) + (limbs s.mem base ACC (k + 28)) % 2 ^ 32) % 2 ^ 32) % 2 ^ 32) % 2 ^ 32 = _
       rw [f0, f1, f2]
       simp only [radix] at b0 b1 b2
-      omega
+      omega_using []
   · exact (rest_keeps (ht.rest (by decide))).trans (uk.trans (rest_keeps (hv.rest _)))
 
 /-- Fold all fifty-six product limbs into twenty-eight, ready for carries. -/
@@ -128,19 +128,19 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat → Nat}
     have ft : ∀ i < 56, limbs t.mem base ACC i = f i := by
       intro i hi
       change (word t.mem base (ACC + 4 * i)).toNat = _
-      rw [tm.word (Or.inl (by simp only [ACC, TMP]; omega)) (by simp only [ACC]; omega)]
+      rw [tm.word (Or.inl (by simp only [ACC, TMP]; omega_using [hi])) (by simp only [ACC]; omega_using [hi])]
       exact hf i hi
     refine WP.mono (reduceCol_ok (hs.of_keeps tk (by decide)) hn ft hb) fun u ⟨um, uk⟩ => ?_
     have out : Outside base (TMP + 4 * n) 4 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by simp only [TMP]; omega)
-    refine ⟨?_, tm.trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by simp only [TMP]; omega_using [hn])
+    refine ⟨?_, tm.trans (out.mono (by omega_using []) (by omega_using [hn])), tk.trans uk⟩
     intro i hi
     change (word u.mem base (TMP + 4 * i)).toNat = _
-    rw [um, word_write t.mem base (by simp only [TMP]; omega) (by simp only [TMP]; omega)]
+    rw [um, word_write t.mem base (by simp only [TMP]; omega_using [hn]) (by simp only [TMP]; omega_using [hn, hi])]
     by_cases h : i = n
     · rw [ite_eq_left h, h, BitVec.toNat_ofNat,
         Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (reduced_bound hb n hn) (by decide))]
-    · rw [ite_eq_right h]; exact tf i (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
   exact wp_range_flatMap (M := isa) (N := 28) inv step 28 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

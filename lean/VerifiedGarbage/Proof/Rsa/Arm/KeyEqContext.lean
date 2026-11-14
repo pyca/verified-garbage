@@ -18,18 +18,18 @@ theorem Ws.compareAddress {s : State} {B : BitVec 32} {Z w N j i : Nat}
     State.addr ((B + BitVec.ofNat 32 (arr w j)) + BitVec.ofNat 32 (4 * i)) =
       off (State.addr B) (arr w j + 4 * i) := by
   rw [Offset.add_add]
-  exact h.addr (by have := h.arr_fit hj; simp only [S] at this; omega)
+  exact h.addr (by have := h.arr_fit hj; simp only [S] at this; omega_using [hi, this])
 
 theorem Ws.compareCtx {s : State} {B : BitVec 32} {Z w N a b : Nat}
     (h : Ws s B Z w N) (ha : a < N) (hb : b < N) :
     WordCompareCtx s (B + BitVec.ofNat 32 (arr w a)) (B + BitVec.ofNat 32 (arr w b)) w := by
-  refine ⟨by have := h.wle; omega, ?_, ?_⟩
+  refine ⟨by have := h.wle; omega_using [this], ?_, ?_⟩
   · intro i hi
     rw [h.compareAddress ha hi]
-    exact h.read (by have := h.arr_fit ha; simp only [S] at this; omega)
+    exact h.read (by have := h.arr_fit ha; simp only [S] at this; omega_using [hi, this])
   · intro i hi
     rw [h.compareAddress hb hi]
-    exact h.read (by have := h.arr_fit hb; simp only [S] at this; omega)
+    exact h.read (by have := h.arr_fit hb; simp only [S] at this; omega_using [hi, this])
 
 theorem Ws.compareEqual {s : State} {B : BitVec 32} {Z w N a b : Nat} {m : Mem}
     (h : Ws s B Z w N) (ha : a < N) (hb : b < N) :

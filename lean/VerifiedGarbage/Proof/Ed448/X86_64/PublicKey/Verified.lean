@@ -77,7 +77,7 @@ theorem body_ok (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok) {t : State} (hc : Ct
     refine List.map_congr_left fun i hi => ?_
     exact Frame.bytes (R := L.OUT) hf₅ (by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
-      exact (hL.stk_OUT (d := 16) (n := 64) (by omega)).symm) (by show (57 : Nat) ≤ 2 ^ 64; decide)
+      exact (hL.stk_OUT (d := 16) (n := 64) (by omega_using [])).symm) (by show (57 : Nat) ≤ 2 ^ 64; decide)
       (List.mem_range.mp hi)
   rw [e, ho₄]
   rfl
@@ -90,7 +90,7 @@ theorem publicKey_ok (hb : Proof.Ed448.BaseLadderOk) {s : State} (h : pkLocal.pr
     WP isa (publicKeyFor v) s fun s' => abiPreserved s s' ∧ pkLocal.post s s' := by
   have hL := lay_ok h
   have hc := push_ctx h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 11 ≤ _; have := h.1; omega)
+  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 11 ≤ _; have := h.1; omega_using [this])
     (WP.mono (body_ok hb hL hc) fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, show pushRs.length = 11 from rfl, pop_rsp, lay_ret]
@@ -106,7 +106,7 @@ theorem publicKey_ok (hb : Proof.Ed448.BaseLadderOk) {s : State} (h : pkLocal.pr
         rcases hr with rfl | rfl | rfl
         · exact hL.ro
         · exact hL.rc
-        · exact Offset.disjoint_base _ (by omega) (by omega)
+        · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
   · show Spec.Ed448.bytesAt (popped .rax pushRs.length u).mem (lay s).out 57 = _
     rw [popped_mem, ho]
     rfl
@@ -227,7 +227,7 @@ theorem body_ct (hb : Proof.Ed448.BaseLadderOk) : RelCT isa (Two fun _ _ => True
   have z₂ : RelCT isa (Two fun L t => t.gpr .rdi = L.scr ∧ t.gpr .rax = 0) (.block pkZeroStores)
       (Two fun _ _ => True) :=
     two_wp (two_block [.rsp, .rdi] (rspAnd .rdi Lay.scr fun _ _ h => h.1) (by taint_decide))
-      fun _ _ _ _ t hL hc hf => WP.mono (zstores_ok hL 25 (by omega) t hc hf.1 hf.2) fun _ h => ⟨h.1, trivial⟩
+      fun _ _ _ _ t hL hc hf => WP.mono (zstores_ok hL 25 (by omega_using []) t hc hf.1 hf.2) fun _ h => ⟨h.1, trivial⟩
   -- `absorb`
   have a₁ : RelCT isa (Two fun _ _ => True) (.block pkAbsorbArgs) (Two AbsArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>

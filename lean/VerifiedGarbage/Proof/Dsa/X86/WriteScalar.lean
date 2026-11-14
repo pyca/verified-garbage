@@ -33,25 +33,25 @@ theorem writeScalar_ok {s : State} {base : Addr} {size qLen input n : Nat} {out 
           else List.replicate qLen 0) ∧
       Keeps powerClob s t ∧
       (∀ a, contextBytes n ≤ ofs base a → qLen ≤ ofs (out.setWidth 64) a → t.mem a = s.mem a) := by
-  have N : n ≤ 48 := by omega
+  have N : n ≤ 48 := by omega_using [hn, hmax]
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have B := slot_bound (n := n) (i := 5) (by decide)
   simp only [stride] at B
-  have hslot : slot n 5 + 8 * n ≤ size := by omega
+  have hslot : slot n 5 + 8 * n ≤ size := by omega_using [hc, B]
   have hb : Layout.field .mask + 4 ≤ size := by
     have H : 8256 ≤ size := hz
     change 8248 ≤ size
-    omega
+    omega_using [H]
   unfold SignVerify.writeScalar
   dsimp only
   rw [← hn]
-  refine WP.seq (WP.mono (coreLoad_ok hs hz hslot h4 (by omega) hw4 Ri.toReadableComponent
+  refine WP.seq (WP.mono (coreLoad_ok hs hz hslot h4 (by omega_using [hn]) hw4 Ri.toReadableComponent
     (Ri.slot (by decide))) fun u ⟨Vu, Ku, Ou⟩ => ?_)
   have OW := slotOutside_whole Ou (by decide)
   have Pu : pointerValue base u (.input .out) = pointerValue base s (.input .out) :=
-    pointerValue_keep Ku (by decide) OW (by omega) _
+    pointerValue_keep Ku (by decide) OW (by omega_using [C]) _
   have Fu : flagW base (Layout.field .mask) u = flagW base (Layout.field .mask) s :=
-    pointerValue_keep Ku (by decide) OW (by omega) (.input .mask)
+    pointerValue_keep Ku (by decide) OW (by omega_using [C]) (.input .mask)
   refine WP.seq (WP.block_append (WP.mono (outputPointer_ok (hs.of_keeps Ku (by decide)) hz second)
     fun v ⟨Pv, Kv, Ov⟩ => ?_))
   have P : v.gpr .esi = out := by rw [Pv, Pu, hp]
@@ -63,7 +63,7 @@ theorem writeScalar_ok {s : State} {base : Addr} {size qLen input n : Nat} {out 
     rw [vw.gpr]
     change flagW base (Layout.field .mask) v = _
     simpa only [flagW, Ov] using Fu.trans hm
-  refine WP.mono (storeComponent_ok (hs.of_keeps Ksw (by decide)) accepted Fw hslot h4 (by omega) hw4
+  refine WP.mono (storeComponent_ok (hs.of_keeps Ksw (by decide)) accepted Fw hslot h4 (by omega_using [hn]) hw4
     (by rw [Pw]; exact hf) (by intro e k hek; rw [Pw, Ksw.2.2]; exact hw e k hek)
     (by rw [Pw]; exact hd)) fun t ⟨Vt, Kt, Ot⟩ => ?_
   refine ⟨?_, Ksw.trans (Kt.mono (by decide)), ?_⟩

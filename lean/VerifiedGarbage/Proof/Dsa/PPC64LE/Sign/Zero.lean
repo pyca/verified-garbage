@@ -37,7 +37,7 @@ theorem zeroLoop_ok {s : State} {out : Addr} {N : Nat} (hN : 0 < N) (hN' : N < 2
   refine WP.mono (wp_countdown (body := .block ([.stb .r0 .r16 0, .addi .r16 .r16 1] ++
       ([.subi .r17 .r17 1] : List Instr)))
     (cnt := .r17) (N := N) hN' hN Inv (fun i hi t ⟨t0, t16, tout, tz, tk⟩ hc => ?_)
-    ⟨h0, h16, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), Keep.refl _ _⟩ h17)
+    ⟨h0, h16, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []), Keep.refl _ _⟩ h17)
     fun t ⟨_, _, tout, tz, tk⟩ => ⟨⟨?_, tout⟩, tk⟩
   · have hst : WP isa (.block [.stb .r0 .r16 0, .addi .r16 .r16 1, .subi .r17 .r17 1]) t fun t' =>
         t' = (({ t with mem := t.mem.write (off out i) 1 ((0 : BitVec 64).setWidth 8) } :
@@ -82,7 +82,7 @@ theorem zeroOut_ok {s : State} {L : Lay} {key sig dig out : Addr} (hL : L.Ok) (h
       simp only [off, BitVec.add_zero, BitVec.ofNat_add_ofNat, Nat.two_mul, and_self]
       exact ⟨rfl, trivial⟩) (by decide)) fun s₃ ⟨⟨b0, b16, b17, m3⟩, k3⟩ => ?_
   have k13 := (k1.trans k2).trans k3
-  refine WP.seq (WP.mono (zeroLoop_ok (N := 2 * L.ql) (by omega) (by omega) (ho.congr k13.wr) b0 b16 b17)
+  refine WP.seq (WP.mono (zeroLoop_ok (N := 2 * L.ql) (by omega_using [hql]) (by omega_using [hql]) (ho.congr k13.wr) b0 b16 b17)
     fun t ⟨⟨tz, tout⟩, tk⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = 0 ∧ u.mem = t.mem) (by prun []; rfl) (by decide))
     fun u ⟨⟨u3, mu⟩, ku⟩ => ⟨⟨by rw [mu]; exact tz, by rw [mu, ← m3]; exact tout, u3⟩,

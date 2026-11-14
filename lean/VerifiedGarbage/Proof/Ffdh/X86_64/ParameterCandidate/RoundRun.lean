@@ -30,12 +30,12 @@ def runIndex (p : WitnessParams) (i : Nat) : Option Nat → Nat
 theorem runStatus_bound (p : WitnessParams) (i checks : Nat) (sample : Option Nat) :
     runStatus p i checks sample ≤ 4 := by
   cases sample with
-  | none => change 0 ≤ 4; omega
+  | none => change 0 ≤ 4; omega_using []
   | some a =>
     change (if Spec.Ffdh.mrRound p.N a then (if i + 1 < checks then 4 else 1) else 2) ≤ 4
     split
-    · split <;> omega
-    · omega
+    · split <;> omega_using []
+    · omega_using []
 
 theorem roundRun_ok (M : Mont) (K : Kernel)
     {p : WitnessParams} {rp : Addr} {used i checks : Nat} {sample : Option Nat} {bs : List Byte} {s : State}

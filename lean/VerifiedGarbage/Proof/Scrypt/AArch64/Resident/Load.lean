@@ -28,11 +28,11 @@ theorem load_step {s₀ s : State} {i : Nat} (hi : i < 16)
     rw [h.rd,h.wr,hx]; exact hin i hi
   apply WP.of_runBlock
   simp only [VG.Impl.Scrypt.AArch64.Resident.loadWord,runBlock_cons,runStep_some,runBlock_nil,
-    exec_ldr_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega) ir,isa,Option.some.injEq,exists_eq_left']
+    exec_ldr_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega_using [hi]) ir,isa,Option.some.injEq,exists_eq_left']
   refine ⟨?_,h.mem,h.rd,h.wr,h.sp,?_⟩
   · intro j hj hji
     rcases Nat.lt_succ_iff_lt_or_eq.mp hji with hji | rfl
-    · have ne : wreg j ≠ wreg i := fun e => (by omega : j ≠ i) (wreg_inj hj hi e)
+    · have ne : wreg j ≠ wreg i := fun e => (by omega_using [hji] : j ≠ i) (wreg_inj hj hi e)
       simp only [State.write,ne,ite_false]
       exact h.holds j hj hji
     · simp only [State.write,ite_true,Size.bits,h.mem,hx,words_get _ _ hi,addr]
@@ -49,5 +49,5 @@ theorem load_ok (s₀ : State)
     decide +kernel
   rw [eq]
   exact wp_range_flatMap (M := isa) (LI s₀) (fun i s hi h => load_step hi hin h)
-    16 (by omega) s₀ ⟨fun _ _ h => by omega,rfl,rfl,rfl,rfl,fun _ _ => rfl⟩
+    16 (by omega_using []) s₀ ⟨fun _ _ h => by omega,rfl,rfl,rfl,rfl,fun _ _ => rfl⟩
 end VG.Proof.Scrypt.AArch64.Resident

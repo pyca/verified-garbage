@@ -67,10 +67,10 @@ theorem priv_facts {u₁ u₂ : State} (A₁ : AtPriv pc e.s₁ u₁) (A₂ : At
     · rw [A₁.r10, A₂.r10, e.r]
   · rw [m, m, callE_gpr _ _ (r := .r5), callE_gpr _ _ (r := .r6), callE_gpr _ _ (r := .r5),
       callE_gpr _ _ (r := .r6), A₁.r5, A₁.r6, A₂.r5, A₂.r6,
-      bytes_priv A₁ e.h₁.kn.symm (by have := e.h₁.wn; omega), bytes_priv A₂ e.h₂.kn.symm (by have := e.h₂.wn; omega), e.S.n]
+      bytes_priv A₁ e.h₁.kn.symm (by have := e.h₁.wn; omega_using []), bytes_priv A₂ e.h₂.kn.symm (by have := e.h₂.wn; omega_using []), e.S.n]
   · rw [m, m, callE_gpr _ _ (r := .r7), callE_gpr _ _ (r := .r8), callE_gpr _ _ (r := .r7),
       callE_gpr _ _ (r := .r8), A₁.r7, A₁.r8, A₂.r7, A₂.r8,
-      bytes_priv A₁ e.h₁.ke.symm (by have := e.h₁.we; omega), bytes_priv A₂ e.h₂.ke.symm (by have := e.h₂.we; omega), e.S.e]
+      bytes_priv A₁ e.h₁.ke.symm (by have := e.h₁.we; omega_using []), bytes_priv A₂ e.h₂.ke.symm (by have := e.h₂.we; omega_using []), e.S.e]
 
 omit e in
 /-- With `pc`, what the call may leak of `pre`, as on entry. -/
@@ -79,14 +79,14 @@ theorem pre_leak {s u : State} (X : PreX s) (A : AtPriv true s u) :
         ((callE true s u).gpr .r6).toNat =
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 15) (s.gpr .r7).toNat := by
   have pwl : Spec.Rsa.precomputedWords (s.gpr .r7).toNat ≤ (stackArg s 16).toNat := by
-    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide),
     callE_gpr (pc := true) s u (r := .r6), A.r6]
   congr 1
   have subPre : Region.Sub ⟨stackArg s 15, 8 * Spec.Rsa.precomputedWords (s.gpr .r7).toNat⟩ (preR s) :=
-    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega_using [pwl, this])
 
 theorem priv_ct : RelCT isa (Rel e (AtPriv pc)) (privCall pc) (Rel e AtD) := by
   refine rel_postX ?_ fun s u h X A => call_ok h X A fun v hv => hv

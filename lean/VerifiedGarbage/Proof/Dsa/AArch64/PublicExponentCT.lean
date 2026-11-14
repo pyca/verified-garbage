@@ -51,7 +51,7 @@ theorem pubWins_ct (M : Mont) :
   · apply two_map (fun q : (XPub × Nat) × Nat => (q.1.1, q.1.2 * 16 ^ q.2)) ?_ (window_ct M)
     intro q s ⟨hj, t₀, minv, X, Xc, E, hI, hw, hw', hR, _, hv⟩
     have hp : 16 ^ q.2 ≤ 16 := by
-      rcases (show q.2 = 0 ∨ q.2 = 1 by omega) with h | h <;> rw [h] <;> decide
+      rcases (show q.2 = 0 ∨ q.2 = 1 by omega_using [hj]) with h | h <;> rw [h] <;> decide
     exact ⟨minv, X, Xc, hI.ctx, hI.tab, hI.ylt, hI.v,
       by have := Nat.mul_le_mul_left q.1.2 hp; omega, hw, hw', hR⟩
   · intro p j s hj ⟨t₀, minv, X, Xc, E, hI, hw, hw', hR, hXN, hv⟩
@@ -90,7 +90,7 @@ theorem pubByteAddr_ok {q : (BPub × List Byte) × Nat} {s : State}
     WP isa (.block byteAddr) s (PHeadMid q) := by
   obtain ⟨hi, t₀, minv, X, Xc, hI, hw, hw', hR, hXN, hL, -, he, hout⟩ := h
   have hc := hI.ctx
-  have hi' : q.2 < q.1.2.length := by omega
+  have hi' : q.2 < q.1.2.length := by omega_using [hi, hL]
   have hw₁ := WP.block_append_iff.mp (crtByteHead_eq ▸ crtByteHead_ok rfl hi' he.rd he.val hout hI)
   refine WP.mono (wp_and hw₁ (byteAddr_run hc hI.e hI.idx)) fun t ⟨h₂, h3, k⟩ =>
       ⟨(k.gpr .x0 (by decide)).trans hc.good.x0, h3, WP.mono h₂ fun t' ⟨_, _, hB⟩ =>
@@ -169,21 +169,21 @@ theorem pubExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.AArch64.Ta
     have hBn := hc.scr.nowrap
     have hi := hc.hi
     have hlo := hc.lo
-    have h256 : 256 ≤ slot a.1.x.wx 8 := by unfold slot hdrBytes; omega
+    have h256 : 256 ≤ slot a.1.x.wx 8 := by unfold slot hdrBytes; omega_using []
     have hout : ∀ i < a.2.length, slot a.1.x.wx 8 + tabBytes a.1.x.wx ≤
         ofs (off a.1.x.B a.1.x.o) (a.1.ptr + BitVec.ofNat 64 i) := fun i hi' => by
       have := he.out i hi'
-      rcases ofs_rebase a.1.x.B (a.1.ptr + BitVec.ofNat 64 i) (o := a.1.x.o) (by omega) with ⟨_, h2⟩ | ⟨h1, _⟩
-      · omega
-      · omega
+      rcases ofs_rebase a.1.x.B (a.1.ptr + BitVec.ofNat 64 i) (o := a.1.x.o) (by omega_using [hBn, hi, h256]) with ⟨_, h2⟩ | ⟨h1, _⟩
+      · omega_using [hi, this, h2]
+      · omega_using [hi, this, h1]
     exact WP.mono (crtExpHead_ok M (Q := False) (x := 0) hc hw2 hwx hw30 hn hinv hodd hxl False.elim hyl
-      False.elim hsp hsl hep hel) fun t hI => ⟨by omega, s, minv, X, _, hI, hw2, by omega,
-        VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega, he, hout⟩
+      False.elim hsp hsl hep hel) fun t hI => ⟨by omega, s, minv, X, _, hI, hw2, by omega_using [hwx, hw30],
+        VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega_using [hL2], he, hout⟩
   simp only [seqs, pubBytes]
   refine (two_loop (Φ := PBytesInv) (Ψ := fun _ _ => True) (fun a => a.1.len) (pubByte_ct M) ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   rintro a i s hi ⟨t₀, minv, X, Xc, hI, hw, hw', hR, hXN, hL, hL', he, hout⟩
-  exact WP.mono (pubByte_ok M hw hw' hR rfl hL' (by omega) he.rd he.val hout hI)
+  exact WP.mono (pubByte_ok M hw hw' hR rfl hL' (by omega_using [hi, hL]) he.rd he.val hout hI)
     fun s' ⟨hI', hz⟩ => ⟨eval_nz_count hi (by rw [← hL]; exact hz), fun _ => ⟨t₀, minv, X, Xc, hI', hw, hw', hR,
       hXN, hL, hL', he, hout⟩, fun _ => trivial⟩
 

@@ -43,7 +43,7 @@ theorem power_ok {n e m g : Nat} {base : Addr} {s : State}
     exact decoded
   · have ot : Outs base (powerRanges n e) v.mem t.mem := Kt.mem.mono (by
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl|rfl <;> simp [powerRanges,contextMod,accLen,words] <;> omega)
+      rcases hr with rfl|rfl|rfl <;> simp [powerRanges,contextMod,accLen,words] <;> omega_using [])
     exact O.trans ot
 
 end VG.Proof.Dsa.X86.Comb

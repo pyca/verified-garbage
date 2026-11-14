@@ -25,7 +25,7 @@ def ctrGprs : List Reg := [.r0, .r8, .r6, .r7, .r9, .r10, .r11, .r12]
 
 theorem read_write_self16 (m : Mem) (a : Addr) (v : BitVec 128) : (m.write a 16 v).read a 16 = v :=
   Mem.read_eq_of_bytes fun i hi => by
-    simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi, ite_true]
+    simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega_using [hi]), hi, ite_true]
 
 /-- `ctr32`: the `n = r7` blocks at `r6` XORed with the keystream, in place,
 and the counter block advanced by `n`. -/
@@ -70,12 +70,12 @@ theorem ctr32_wp (s : State) (hK : (⟨s.gpr .r3, 240⟩ : Region) ∈ s.rd ++ s
         simp only [nr, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       · intro j hj
         rw [e.keep.2.1, e.keep.2.2, e.keep.gpr (by decide)]
-        exact ⟨_, hK, Offset.contains_base _ (d := 16*j) (n := 16) (k := 240) (by omega) (by omega)⟩
+        exact ⟨_, hK, Offset.contains_base _ (d := 16*j) (n := 16) (k := 240) (by omega_using [hnrlt, hj]) (by omega_using [hnrlt, hj])⟩
       · rw [e.keep.2.2]; exact hw
       · rw [e.keep.gpr (by decide)]; exact hsep
       · rw [e.keep.2.1, e.keep.2.2]; exact hr
     have hi : LoopInv false true base nr n D E icb 0 base := by
-      refine ⟨by omega, Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hb.mask,
+      refine ⟨by omega_using [], Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hb.mask,
         fun _ => hb.control, ?_⟩
       · rw [e.keep.gpr (by decide)]
         simp only [Nat.mul_zero, BitVec.add_zero]; rfl
@@ -109,6 +109,6 @@ theorem ctr32_ok (s : State) (hs : Proof.Aes.ctr32PPC64LE.pre s) :
     WP isa Impl.Aes.PPC64LE.Crypto.ctr32 s fun t => Keep ctrGprs s t ∧ Proof.Aes.ctr32PPC64LE.post s t := by
   obtain ⟨hrd, hwr, _, hsep, _, hcd, _, _, hbound, hnr⟩ := hs
   exact ctr32_wp s (by rw [hrd]; simp) (by rw [hwr]; simp) (by rw [hwr]; simp)
-    (by rw [hrd, hwr]; simp) hsep hcd (by omega) hnr
+    (by rw [hrd, hwr]; simp) hsep hcd (by omega_using [hbound]) hnr
 
 end VG.Proof.Aes.PPC64LE.Crypto

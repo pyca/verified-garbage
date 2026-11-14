@@ -87,7 +87,7 @@ theorem write1_apply (m : Mem) (a x : Addr) (v : BitVec 8) :
   simp only [Mem.writeW, Mem.write]
   split
   · rename_i h
-    rw [show (x - a).toNat = 0 by omega]
+    rw [show (x - a).toNat = 0 by omega_using [h]]
     simp
   · rfl
 
@@ -151,7 +151,7 @@ def WordAl (o : Op) : Prop :=
 
 theorem al4 {p : Addr} (hp : p.toNat % 4 = 0) {d : Nat} (hd : d % 4 = 0) :
     (p + BitVec.ofNat 64 d).toNat % 4 = 0 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hp, hd]
 
 /-- A word of area `l`, as `Core.loadW` loads it. -/
 theorem wp_loadW (c : Core) {w : Bool} {l : Loc} {s : State} {d tmp : Reg} {off : Nat} {a : Addr}
@@ -165,7 +165,7 @@ theorem wp_loadW (c : Core) {w : Bool} {l : Loc} {s : State} {d tmp : Reg} {off 
   unfold Core.loadW
   split
   · rename_i hw
-    exact wp_lwu (by omega) ha (hal hw) hin fun s' u => k s' u.gpr (fun r h _ => u.other r h) u.mem u.rd u.wr
+    exact wp_lwu (by omega_using [ho]) ha (hal hw) hin fun s' u => k s' u.gpr (fun r h _ => u.other r h) u.mem u.rd u.wr
   · exact wp_loadLE32 hdn htn hdt ho ha hin k
 
 /-- A word of area `l`, as `Core.storeW` stores it. -/
@@ -180,7 +180,7 @@ theorem wp_storeW (c : Core) {w : Bool} {l : Loc} {s : State} {v tmp : Reg} {off
   unfold Core.storeW
   split
   · rename_i hw
-    exact wp_sw (by omega) ha (hal hw) hout fun s' u => k s' u.mem (fun r _ => by rw [u.gpr]) u.rd u.wr
+    exact wp_sw (by omega_using [ho]) ha (hal hw) hout fun s' u => k s' u.mem (fun r _ => by rw [u.gpr]) u.rd u.wr
   · exact wp_storeLE32 htv htn ho ha hout k
 
 theorem copyBlk_wordAl (bw : Nat) (dst src : Loc) : ∀ o ∈ copyBlk bw dst src, WordAl o := by

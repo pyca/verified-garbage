@@ -76,7 +76,7 @@ theorem callEntry_block (s : State) (p : Addr)
   apply Vector.ext
   intro i hi
   have read := frame.readW (r := ⟨p, 1024⟩) (a := off p (8 * i)) (w := 64)
-    (Offset.contains_base p (d := 8 * i) (n := 8) (k := 1024) (by omega) (by omega))
+    (Offset.contains_base p (d := 8 * i) (n := 8) (k := 1024) (by omega_using [hi]) (by omega_using [hi]))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.symm) (by decide)
   rw [← blockAt_get s.callEntry.mem p ⟨i, hi⟩, ← blockAt_get s.mem p ⟨i, hi⟩] at read
   exact read

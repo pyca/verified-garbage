@@ -215,7 +215,7 @@ theorem array_framed_trace {workspace p : BitVec 32} {size w c d exponent : Nat}
         (Space workspace p size w z ∧ Mod64.exponentValue z.mem (workspace.setWidth 64) 128 = exponent)) := by
   intro s t tr ur u z ⟨S, T⟩ E G
   have v := S.context.1
-  have positive : 0 < exponent := by have := S.eOdd; omega
+  have positive : 0 < exponent := by have := S.eOdd; omega_using [this]
   have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block arrayInit) (fun _ _ => True) :=
     (erased_relCT _ _ (.block []) rfl rfl rfl (by decide +kernel) :
       RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) _ (VG.X86.Taint.Agree (τr [.esp, .edi]))).mono
@@ -239,14 +239,14 @@ theorem array_framed_trace {workspace p : BitVec 32} {size w c d exponent : Nat}
        exact ⟨⟨Sx, (Kx.1 .esp (by decide)).trans S.framed.space.stack, S.framed.space.width,
          S.framed.space.widthBound, S.framed.space.space,
          (Fx.readW (r := ⟨workspace.setWidth 64, size⟩)
-           (Offset.contains_base _ (by have := slot5_lo w; have := S.framed.space.space; omega)
-             (by have := S.framed.space.scratch.nowrap; omega))
+           (Offset.contains_base _ (by have := slot5_lo w; have := S.framed.space.space; omega_arith)
+             (by have := S.framed.space.scratch.nowrap; omega_using []))
            (by
              intro r mem; obtain rfl := List.mem_singleton.mp mem
-             exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by have := S.framed.fit; rw [S.framed.space.stack]; omega)
+             exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by have := S.framed.fit; rw [S.framed.space.stack]; omega_using [this])
                S.framed.space.scratch.nowrap (by
                  rw [S.framed.space.stack]
-                 rcases S.framed.separate with h | h; exact Or.inl h; exact Or.inr (by omega)))
+                 rcases S.framed.separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h])))
            (by decide)).trans S.framed.space.len⟩, eA⟩)
     | (obtain ⟨Sx, -, -, eA, Fx, Kx⟩ := wp_result (framed_ok T.framed.space.scratch T.framed.space.width
           T.framed.space.widthBound T.framed.space.space T.framed.space.len rfl T.eValue positive
@@ -254,14 +254,14 @@ theorem array_framed_trace {workspace p : BitVec 32} {size w c d exponent : Nat}
        exact ⟨⟨Sx, (Kx.1 .esp (by decide)).trans T.framed.space.stack, T.framed.space.width,
          T.framed.space.widthBound, T.framed.space.space,
          (Fx.readW (r := ⟨workspace.setWidth 64, size⟩)
-           (Offset.contains_base _ (by have := slot5_lo w; have := T.framed.space.space; omega)
-             (by have := T.framed.space.scratch.nowrap; omega))
+           (Offset.contains_base _ (by have := slot5_lo w; have := T.framed.space.space; omega_arith)
+             (by have := T.framed.space.scratch.nowrap; omega_using []))
            (by
              intro r mem; obtain rfl := List.mem_singleton.mp mem
-             exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by have := T.framed.fit; rw [T.framed.space.stack]; omega)
+             exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by have := T.framed.fit; rw [T.framed.space.stack]; omega_using [this])
                T.framed.space.scratch.nowrap (by
                  rw [T.framed.space.stack]
-                 rcases T.framed.separate with h | h; exact Or.inl h; exact Or.inr (by omega)))
+                 rcases T.framed.separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h])))
            (by decide)).trans T.framed.space.len⟩, eA⟩)
 
 theorem gcd_trace {workspace p : BitVec 32} {size w exponent : Nat} (odd : exponent % 2 = 1) :
@@ -297,7 +297,7 @@ theorem restore_trace {workspace p : BitVec 32} {size w : Nat} :
     setupRaw (fun s S => ?_)
   rotate_left
   · have header := S.header
-    refine WP.mono (restoreSetup_ok S.scratch S.widthBound (by omega) S.len) fun d ⟨K, M, ebx, ebp, esi, ecx⟩ => ?_
+    refine WP.mono (restoreSetup_ok S.scratch S.widthBound (by omega_using [header]) S.len) fun d ⟨K, M, ebx, ebp, esi, ecx⟩ => ?_
     have Sd : Space workspace p size w d := S.keep K (by decide) (by decide) (by rw [M])
     have regs : ∀ r ∈ [Reg.esp, .edi, .ebp, .ebx, .esi, .ecx], d.gpr r = copyRegs workspace p w (slot w 5) 256 r := by
       intro r mem
@@ -308,11 +308,11 @@ theorem restore_trace {workspace p : BitVec 32} {size w : Nat} :
       · rw [ebp, S.workspace]; rfl
       · rw [ebx, S.workspace]; rfl
       · apply BitVec.eq_of_toNat_eq; rw [esi]; change 2 * w = (BitVec.ofNat 32 (2 * w)).toNat
-        rw [BitVec.toNat_ofNat]; have := S.widthBound; omega
+        rw [BitVec.toNat_ofNat]; have := S.widthBound; omega_using [esi]
       · exact ecx
     exact ⟨⟨Sd, regs⟩, regs⟩
   have loop := copy_trace (workspace := workspace) (p := p) (size := size) (w := w) (src := slot w 5) (dst := 256)
-    fun h => by have := slot5_ge w; exact ⟨h, by omega, Or.inl (by omega), by omega⟩
+    fun h => by have := slot5_ge w; exact ⟨h, by omega_using [h, this], Or.inl (by omega_using [this]), by omega_using []⟩
   have inc : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))
       (.block (VG.Impl.RsaKeyGen.X86.LowWord.increment 256)) (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
     erased_relCT _ _ (.block []) rfl rfl rfl (by decide +kernel)

@@ -85,7 +85,7 @@ theorem hashD_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
       fun a b h => by
         obtain ⟨hL, _, ⟨_, _, ha⟩, ⟨_, _, hb⟩, xa, xb⟩ := h
         exact ⟨xa, xb, initA hL ha, initA hL hb, ha.ctx.sp.trans hb.ctx.sp.symm⟩)
-    fun g vv m₀ R EM t hL hP hc hx => WP.mono (initW (v := v) hL (by omega) hc hx) fun u hu => ⟨hu.1, trivial⟩).seq ?_
+    fun g vv m₀ R EM t hL hP hc hx => WP.mono (initW (v := v) hL (by omega_using [hS, hP]) hc hx) fun u hu => ⟨hu.1, trivial⟩).seq ?_
   refine (pw_blk (X' := XU e.L) [] (by taint_decide) (fun _ _ _ _ _ h => absurd h List.not_mem_nil)
     fun g vv m₀ R EM t hL _ hc _ => WP.mono (shaUpdArgs_ok hc.ctx.sp hc.slots) fun u ⟨hs, x0, x1, x2, x3, x4⟩ =>
       ⟨⟨R, EM, hc.same hs⟩, by simp only [x0, hc.ctx.kept.scr], x1, by simp only [x2, hc.ctx.kept.scr],
@@ -94,16 +94,16 @@ theorem hashD_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
   have upA : ∀ (hL : e.L.Ok) (hP : 16 ≤ e.L.P) {g vv m₀ R EM} {t : State}, Post e.L g vv m₀ R EM t → XU e.L t →
       Proof.Pbkdf2.Md.AArch64.Calls.UpdArgs (OK v).stream t (scA e.L sSt) (scA e.L sD) (scA e.L sWork) e.L.k.toNat :=
     fun hL hP {_ _ _ _ _ _} hc ⟨x0, _, x2, x3, x4⟩ => updA hL hP hc x0 x2 (by rw [x3]) x4
-      (Covers.right (scCov hL hc.ctx (by have := hL.k1024; unfold sD scrBytes; omega)))
-      (fun a l hal => scD hL (.inr (by unfold sD; omega)) (by have := hL.k1024; unfold sD scrBytes; omega)
-        (by unfold scrBytes; omega))
-      (stkD hL hP (by have := hL.k1024; unfold sD scrBytes; omega))
+      (Covers.right (scCov hL hc.ctx (by have := hL.k1024; unfold sD scrBytes; omega_using [this])))
+      (fun a l hal => scD hL (.inr (by unfold sD; omega_using [hal])) (by have := hL.k1024; unfold sD scrBytes; omega_using [this])
+        (by unfold scrBytes; omega_using [hal]))
+      (stkD hL hP (by have := hL.k1024; unfold sD scrBytes; omega_using [this]))
   refine (pw_wp (X' := fun _ => True)
     (Proof.Pbkdf2.Md.AArch64.Calls.upd_rel (OK v).stream fun a b h => by
       obtain ⟨hL, hP, ⟨_, _, ha⟩, ⟨_, _, hb⟩, xa, xb⟩ := h
-      exact ⟨upA hL (by omega) ha xa, upA hL (by omega) hb xb, xa.2.1.trans xb.2.1.symm,
+      exact ⟨upA hL (by omega_using [hS, hP]) ha xa, upA hL (by omega_using [hS, hP]) hb xb, xa.2.1.trans xb.2.1.symm,
         ha.ctx.sp.trans hb.ctx.sp.symm⟩)
-    fun g vv m₀ R EM t hL hP hc hx => WP.mono (updW (v := v) hL (by omega) hc (upA hL (by omega) hc hx))
+    fun g vv m₀ R EM t hL hP hc hx => WP.mono (updW (v := v) hL (by omega_using [hS, hP]) hc (upA hL (by omega_using [hS, hP]) hc hx))
       fun u hu => ⟨hu.1, trivial⟩).seq ?_
   refine (pw_blk (X' := XF e.L) [] (by taint_decide) (fun _ _ _ _ _ h => absurd h List.not_mem_nil)
     fun g vv m₀ R EM t hL _ hc _ => WP.mono (shaFinArgs_ok hc.ctx.sp hc.slots) fun u ⟨hs, x0, x1, x2, x3⟩ =>
@@ -111,8 +111,8 @@ theorem hashD_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
         by simp only [x2, hc.ctx.kept.scr], by simp only [x3, hc.ctx.kept.scr]⟩).seq ?_
   exact Proof.Pbkdf2.Md.AArch64.Calls.fin_rel (OK v).stream fun a b h => by
     obtain ⟨hL, hP, ⟨_, _, ha⟩, ⟨_, _, hb⟩, ⟨a0, a1, a2, a3⟩, ⟨b0, b1, b2, b3⟩⟩ := h
-    exact ⟨finA (o := sDH) hL (by omega) ha (by decide) (by decide) a0 a2 a3,
-      finA (o := sDH) hL (by omega) hb (by decide) (by decide) b0 b2 b3, a1.trans b1.symm,
+    exact ⟨finA (o := sDH) hL (by omega_using [hS, hP]) ha (by decide) (by decide) a0 a2 a3,
+      finA (o := sDH) hL (by omega_using [hS, hP]) hb (by decide) (by decide) b0 b2 b3, a1.trans b1.symm,
       ha.ctx.sp.trans hb.ctx.sp.symm⟩
 
 /-! ## HMAC's pieces
@@ -145,10 +145,10 @@ theorem hinit_pw {S : Nat} (hS : 15 ≤ S) {e : Env} {G : State → Prop} (hG : 
     RelCT isa (PW S e fun t => G t ∧ XI key e.L t) (.call (HH v).hmacInitN (HH v).hmacInit) (PW S e G) :=
   pw_wp (Proof.Pbkdf2.Md.AArch64.Pbk.hinit_rel (OK v) (hI v) fun a b h => by
       obtain ⟨hL, hP, ⟨_, _, ha⟩, ⟨_, _, hb⟩, ⟨_, a0, a1, a2, a3, a4⟩, ⟨_, b0, b1, b2, b3, b4⟩⟩ := h
-      exact ⟨hinitA hL (by omega) ha hk1 hk2 a0 a1 a2 a3 a4, hinitA hL (by omega) hb hk1 hk2 b0 b1 b2 b3 b4,
+      exact ⟨hinitA hL (by omega_using [hS, hP]) ha hk1 hk2 a0 a1 a2 a3 a4, hinitA hL (by omega_using [hS, hP]) hb hk1 hk2 b0 b1 b2 b3 b4,
         ha.ctx.sp.trans hb.ctx.sp.symm⟩)
     fun g vv m₀ R EM t hL hP hc ⟨hx, x0, x1, x2, x3, x4⟩ =>
-      WP.mono (hinitW (v := v) hL (by omega) hc (hinitA hL (by omega) hc hk1 hk2 x0 x1 x2 x3 x4)) fun u hu =>
+      WP.mono (hinitW (v := v) hL (by omega_using [hS, hP]) hc (hinitA hL (by omega_using [hS, hP]) hc hk1 hk2 x0 x1 x2 x3 x4)) fun u hu =>
         ⟨hu.1, hG t u hx hu.2⟩
 
 /-- The registers before `update` of `n` bytes at `d`. -/
@@ -163,11 +163,11 @@ theorem upd_pw {S : Nat} (hS : 15 ≤ S) {e : Env} {G : State → Prop} (hG : Sl
     RelCT isa (PW S e fun t => G t ∧ XUp d n e.L t) (.call (HH v).updN (HH v).updC) (PW S e G) :=
   pw_wp (Proof.Pbkdf2.Md.AArch64.Calls.upd_rel (OK v).stream fun a b h => by
       obtain ⟨hL, hP, ⟨_, _, ha⟩, ⟨_, _, hb⟩, ⟨_, a0, a1, a2, a3, a4⟩, ⟨_, b0, b1, b2, b3, b4⟩⟩ := h
-      exact ⟨updA hL (by omega) ha a0 a2 a3 a4 (hcd hL _ _ _ _ _ _ ha) (hds hL) (hdk hL hP),
-        updA hL (by omega) hb b0 b2 b3 b4 (hcd hL _ _ _ _ _ _ hb) (hds hL) (hdk hL hP), a1.trans b1.symm,
+      exact ⟨updA hL (by omega_using [hS, hP]) ha a0 a2 a3 a4 (hcd hL _ _ _ _ _ _ ha) (hds hL) (hdk hL hP),
+        updA hL (by omega_using [hS, hP]) hb b0 b2 b3 b4 (hcd hL _ _ _ _ _ _ hb) (hds hL) (hdk hL hP), a1.trans b1.symm,
         ha.ctx.sp.trans hb.ctx.sp.symm⟩)
     fun g vv m₀ R EM t hL hP hc ⟨hx, x0, _, x2, x3, x4⟩ =>
-      WP.mono (updW (v := v) hL (by omega) hc (updA hL (by omega) hc x0 x2 x3 x4 (hcd hL _ _ _ _ _ _ hc) (hds hL)
+      WP.mono (updW (v := v) hL (by omega_using [hS, hP]) hc (updA hL (by omega_using [hS, hP]) hc x0 x2 x3 x4 (hcd hL _ _ _ _ _ _ hc) (hds hL)
         (hdk hL hP))) fun u hu => ⟨hu.1, hG t u hx hu.2⟩
 
 /-- The registers before HMAC's `finalize` to `scratch + o` with the count `cnt`. -/
@@ -180,10 +180,10 @@ theorem hfin_pw {S : Nat} (hS : 15 ≤ S) {e : Env} {G : State → Prop} (hG : S
     RelCT isa (PW S e fun t => G t ∧ XHF o cnt e.L t) (.call (HH v).hmacFinN (HH v).hmacFin) (PW S e G) :=
   pw_wp (Proof.Pbkdf2.Md.AArch64.Pbk.hfin_rel (OK v) (hF v) (cnt := cnt) fun a b h => by
       obtain ⟨hL, hP, ⟨_, _, ha⟩, ⟨_, _, hb⟩, ⟨_, a0, a1, a2, a3, a4⟩, ⟨_, b0, b1, b2, b3, b4⟩⟩ := h
-      exact ⟨a2 ▸ hfinA hL (by omega) ha ho1 ho2 a0 a1 a3 a4, b2 ▸ hfinA hL (by omega) hb ho1 ho2 b0 b1 b3 b4,
+      exact ⟨a2 ▸ hfinA hL (by omega_using [hS, hP]) ha ho1 ho2 a0 a1 a3 a4, b2 ▸ hfinA hL (by omega_using [hS, hP]) hb ho1 ho2 b0 b1 b3 b4,
         ha.ctx.sp.trans hb.ctx.sp.symm⟩)
     fun g vv m₀ R EM t hL hP hc ⟨hx, x0, x1, _, x3, x4⟩ =>
-      WP.mono (hfinW (v := v) hL (by omega) hc ho2 (hfinA hL (by omega) hc ho1 ho2 x0 x1 x3 x4)) fun u hu =>
+      WP.mono (hfinW (v := v) hL (by omega_using [hS, hP]) hc ho2 (hfinA hL (by omega_using [hS, hP]) hc ho1 ho2 x0 x1 x3 x4)) fun u hu =>
         ⟨hu.1, hG t u hx hu.2⟩
 
 /-! ## `KDK` -/
@@ -203,9 +203,9 @@ theorem kdkMac_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
   refine ((upd_pw (v := v) hS hG
     (fun _ _ _ _ _ _ _ hc => Covers.left (Covers.of_mem fun r hr => by
       rw [List.mem_singleton.mp hr, hc.ctx.rd]; simp))
-    (fun hL a l hal => (hL.sR _ (ro_INP e.L)).symm.sub_right (sub_trans (scSub (by unfold scrBytes; omega))
+    (fun hL a l hal => (hL.sR _ (ro_INP e.L)).symm.sub_right (sub_trans (scSub (by unfold scrBytes; omega_using [hal]))
       hL.sc_sub))
-    (fun hL hP => (hL.kR _ (ro_INP e.L)).sub_left (below_low hL (by omega)))).seq ?_)
+    (fun hL hP => (hL.kR _ (ro_INP e.L)).sub_left (below_low hL (by omega_using [hS, hP])))).seq ?_)
   refine ((pw_blk (X' := fun t => True ∧ XHF sKDK (e.L.k + BitVec.ofNat 64 64) e.L t) [] (by taint_decide)
     (fun _ _ _ _ _ h => absurd h List.not_mem_nil) fun g vv m₀ R EM t _ _ hc _ =>
       WP.mono (kdkFinArgs_ok hc.ctx.sp hc.slots) fun u ⟨hs, x0, x1, x2, x3, x4⟩ =>
@@ -221,13 +221,13 @@ theorem hashD_ct {S : Nat} (hS : 15 ≤ S) :
       (Two S fun L g vv m₀ t => ∃ R EM, HD L g vv m₀ R EM t) :=
   two_wp (fun e => (hashD_tr hS e).mono (fun _ _ ⟨hL, hP, _, ⟨_, _, f₁⟩, ⟨_, _, f₂⟩⟩ =>
       ⟨hL, hP, ⟨_, _, f₁.post⟩, ⟨_, _, f₂.post⟩, trivial, trivial⟩) fun _ _ h => h)
-    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (hashD_ok hL (by omega) h) fun _ h' => ⟨_, _, h'⟩
+    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (hashD_ok hL (by omega_using [hS, hP]) h) fun _ h' => ⟨_, _, h'⟩
 
 theorem kdkMac_ct {S : Nat} (hS : 15 ≤ S) :
     RelCT isa (Two S fun L g vv m₀ t => ∃ R EM, HD L g vv m₀ R EM t) (kdkMac (HH v))
       (Two S fun L g vv m₀ t => ∃ R EM, KD L g vv m₀ R EM t) :=
   two_wp (fun e => (kdkMac_tr hS e).mono (fun _ _ ⟨hL, hP, _, ⟨_, _, f₁⟩, ⟨_, _, f₂⟩⟩ =>
       ⟨hL, hP, ⟨_, _, f₁.post⟩, ⟨_, _, f₂.post⟩, trivial, trivial⟩) fun _ _ h => h)
-    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (kdkMac_ok hL (by omega) h) fun _ h' => ⟨_, _, h'⟩
+    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (kdkMac_ok hL (by omega_using [hS, hP]) h) fun _ h' => ⟨_, _, h'⟩
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

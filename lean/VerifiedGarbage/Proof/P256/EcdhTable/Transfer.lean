@@ -21,11 +21,11 @@ theorem observed_words {base : Addr} {s t : State} {observe : Nat → Prop}
     (hw : ∀ off,observe off → off%8=0 → off+8≤8192 → word t.mem base off=word s.mem base off)
     {d : Nat} (hd : d%8=0) (hb : d+32≤8192) (ho : ∀i<4,observe (d+8*i)) :
     wordsVal t.mem base d 4=wordsVal s.mem base d 4 := by
-  have h0 := hw d (by simpa using ho 0 (by decide)) hd (by omega)
-  have h1 := hw (d+8) (by simpa using ho 1 (by decide)) (by omega) (by omega)
-  have h2 := hw (d+16) (by simpa using ho 2 (by decide)) (by omega) (by omega)
-  have h3 := hw (d+24) (by simpa using ho 3 (by decide)) (by omega) (by omega)
-  simp only [wordsVal,show d+8+8=d+16 by omega,show d+8+8+8=d+24 by omega,h0,h1,h2,h3]
+  have h0 := hw d (by simpa using ho 0 (by decide)) hd (by omega_using [hb])
+  have h1 := hw (d+8) (by simpa using ho 1 (by decide)) (by omega_using [hd]) (by omega_using [hb])
+  have h2 := hw (d+16) (by simpa using ho 2 (by decide)) (by omega_using [hd]) (by omega_using [hb])
+  have h3 := hw (d+24) (by simpa using ho 3 (by decide)) (by omega_using [hd]) (by omega_using [hb])
+  simp only [wordsVal,show d+8+8=d+16 by omega_using [],show d+8+8+8=d+24 by omega_using [],h0,h1,h2,h3]
 
  theorem dblu_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     {base : Addr} {P : Point C} {k : Nat} {s : State} (hP : onCurve C P=true)

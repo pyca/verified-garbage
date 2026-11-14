@@ -51,7 +51,7 @@ theorem hbTry_length (η : Nat) (a : List Zq) (b : Nat) :
   split <;> rename_i h <;> simp [h]
 
 theorem halfByteOk_le (η b : Nat) : halfByteOk η b ≤ 1 := by
-  unfold halfByteOk; split <;> omega
+  unfold halfByteOk; split <;> omega_using []
 
 theorem rbStep_length (η : Nat) (a : List Zq) (z : Byte) :
     (rbStep η a z).length =
@@ -71,11 +71,11 @@ theorem rbStep_length_le {η : Nat} {a : List Zq} (ha : a.length ≤ n) (z : Byt
   have := halfByteOk_le η (z.toNat % 16)
   have := halfByteOk_le η (z.toNat / 16)
   split
-  · split <;> omega
+  · split <;> omega_arith
   · exact ha
 
 theorem rbStep_full {η : Nat} {a : List Zq} (ha : a.length = n) (z : Byte) : rbStep η a z = a := by
-  unfold rbStep; rw [ifF (by omega)]
+  unfold rbStep; rw [ifF (by omega_using [ha])]
 
 theorem rbFold_full {η : Nat} {a : List Zq} (ha : a.length = n) : ∀ L, rbFold η a L = a
   | z :: L => by rw [rbFold, rbStep_full ha, rbFold_full ha L]
@@ -110,7 +110,7 @@ theorem rejBoundedLoop_step (η : Nat) {a : List Int} (ha : a.length < n) (z : B
     rejBoundedLoop η a (z :: L) =
       rejBoundedLoop η (if (hbTryI η a (z.toNat % 16)).length < n then
         hbTryI η (hbTryI η a (z.toNat % 16)) (z.toNat / 16) else hbTryI η a (z.toNat % 16)) L := by
-  rw [rejBoundedLoop, ifF (by omega)]
+  rw [rejBoundedLoop, ifF (by omega_using [ha])]
   dsimp only
   congr 1
   unfold hbTryI
@@ -125,19 +125,19 @@ theorem rejBoundedLoop_map (η : Nat) {a : List Int} (ha : a.length ≤ n) :
       if (rbFold η (a.map ofInt) L).length = n then some (rbFold η (a.map ofInt) L) else none
   | z :: L => by
     by_cases h : a.length ≥ n
-    · rw [rejBoundedLoop, ifT h, rbFold, rbStep_full (by simp; omega), rbFold_full (by simp; omega),
-        ifT (by simp; omega)]
+    · rw [rejBoundedLoop, ifT h, rbFold, rbStep_full (by simp; omega_using [ha, h]), rbFold_full (by simp; omega_using [ha, h]),
+        ifT (by simp; omega_using [ha, h])]
       rfl
-    · rw [rejBoundedLoop_step η (by omega)]
+    · rw [rejBoundedLoop_step η (by omega_using [h])]
       have e1 := hbTryI_map η a (z.toNat % 16)
       have l1 : (hbTryI η a (z.toNat % 16)).length = (hbTry η (a.map ofInt) (z.toNat % 16)).length := by
         rw [← e1, List.length_map]
       have l1' : (hbTryI η a (z.toNat % 16)).length ≤ n := by
-        rw [l1, hbTry_length, List.length_map]; have := halfByteOk_le η (z.toNat % 16); omega
+        rw [l1, hbTry_length, List.length_map]; have := halfByteOk_le η (z.toNat % 16); omega_using [h, this]
       have e2 : (if (hbTryI η a (z.toNat % 16)).length < n then
             hbTryI η (hbTryI η a (z.toNat % 16)) (z.toNat / 16) else hbTryI η a (z.toNat % 16)).map ofInt =
           rbStep η (a.map ofInt) z := by
-        have hlen : (List.map ofInt a).length < n := by rw [List.length_map]; omega
+        have hlen : (List.map ofInt a).length < n := by rw [List.length_map]; omega_using [h]
         by_cases hl : (hbTryI η a (z.toNat % 16)).length < n
         · have hl' : (hbTry η (a.map ofInt) (z.toNat % 16)).length < n := by rw [← l1]; exact hl
           rw [ifT hl, rbStep, ifT hlen, ifT hl', hbTryI_map, e1]
@@ -147,15 +147,15 @@ theorem rejBoundedLoop_map (η : Nat) {a : List Int} (ha : a.length ≤ n) :
             hbTryI η (hbTryI η a (z.toNat % 16)) (z.toNat / 16) else hbTryI η a (z.toNat % 16)).length ≤ n := by
         have := congrArg List.length e2
         rw [List.length_map] at this
-        rw [this]; exact rbStep_length_le (by simp; omega) z
+        rw [this]; exact rbStep_length_le (by simp; omega_using [ha]) z
       rw [rejBoundedLoop_map η l2 L, e2]
       rfl
   | [] => by
     show Option.map _ (if a.length ≥ n then some a else none) = _
     rw [rbFold, List.length_map]
     by_cases h : a.length = n
-    · rw [ifT (by omega), ifT h]; rfl
-    · rw [ifF (by omega), ifF h]; rfl
+    · rw [ifT (by omega_using [h]), ifT h]; rfl
+    · rw [ifF (by omega_using [ha, h]), ifF h]; rfl
 
 /-- `RejBoundedPoly(ρ)` as a polynomial of `R_q`, when the loop over the
 `B` bytes of output samples 256 coefficients. -/

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA key generation: what it may leak, piece by piece
@@ -40,7 +41,7 @@ theorem leakBytes_inj : ∀ {a b : List Byte}, leakBytes a = leakBytes b → a =
 theorem length_flatMap_pairs {α : Type} (f g : α → Nat) : ∀ l : List α, (l.flatMap fun z => [f z, g z]).length = 2 * l.length
   | [] => rfl
   | z :: l => by
-    rw [List.flatMap_cons, List.length_append, length_flatMap_pairs f g l, List.length_cons]; simp; omega
+    rw [List.flatMap_cons, List.length_append, length_flatMap_pairs f g l, List.length_cons]; simp; omega_using []
 
 theorem rejBoundedLeak_length (η : Nat) (ρ : List Byte) : (rejBoundedLeak η ρ).length = 2 * 1088 := by
   unfold rejBoundedLeak
@@ -55,7 +56,7 @@ theorem flatMap_range_inj {f g : Nat → List Nat} {L : Nat} (hf : ∀ r, (f r).
     have hl : ((List.range n).flatMap f).length = ((List.range n).flatMap g).length := by
       simp only [List.length_flatMap, hf, hg]
     obtain ⟨h1, h2⟩ := List.append_inj h hl
-    rcases (by omega : r < n ∨ r = n) with hr | rfl
+    rcases (by omega_using [hr] : r < n ∨ r = n) with hr | rfl
     · exact flatMap_range_inj hf hg h1 r hr
     · exact h2
 

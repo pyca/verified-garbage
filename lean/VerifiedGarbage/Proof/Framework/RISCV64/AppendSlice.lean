@@ -26,18 +26,18 @@ theorem abi_args_long (ws : List Nat) (h8 : 8 < ws.length) (h64 : ∀ w ∈ ws, 
     abi.args ws = some (stackVals ws.length) := by
   have hd : ((ws.drop argRegs.length).all fun w => decide (w ≤ 64)) = true :=
     List.all_eq_true.mpr fun w hw => decide_eq_true (h64 w (List.mem_of_mem_drop hw))
-  simp only [abi, argRegs_length, show ¬ ws.length ≤ 8 by omega, ↓reduceIte]
+  simp only [abi, argRegs_length, show ¬ ws.length ≤ 8 by omega_using [h8], ↓reduceIte]
   rw [argRegs_length] at hd
   simp only [hd, ↓reduceIte]
   rfl
 
 theorem stackVals_succ2 (n : Nat) (h : 8 ≤ n) (s : State) :
     stackVals (n + 2) s = stackVals n s ++ [stackArg s (n - 8), stackArg s (n - 8 + 1)] := by
-  simp only [stackVals, show n + 2 - 8 = n - 8 + 1 + 1 by omega, List.range_succ, List.map_append,
+  simp only [stackVals, show n + 2 - 8 = n - 8 + 1 + 1 by omega_using [h], List.range_succ, List.map_append,
     List.map_cons, List.map_nil, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem stackVals_length (n : Nat) (h : 8 ≤ n) (s : State) : (stackVals n s).length = n := by
-  simp [stackVals, argRegs_length]; omega
+  simp [stackVals, argRegs_length]; omega_using [h]
 
 theorem words_withSlice_map64 (sig : Sig) (nm : String) (e : Elem) (ln : String) :
     ((sig.withSlice nm e ln).words 64).map (·.bits 64) = (sig.words 64).map (·.bits 64) ++ [64, 64] := by
@@ -50,16 +50,16 @@ theorem abi_wf_append {ws : List Nat} {n : Nat} {s : State} (h : abi.wf (ws ++ [
   change ws.length ≤ argRegs.length ∨ s.sp.toNat + 8 * (ws.length - argRegs.length) ≤ 2 ^ 64
   simp only [List.length_append, List.length_cons, List.length_nil] at c
   rw [argRegs_length] at c ⊢
-  omega
+  omega_using [c]
 
 theorem abi_area_append {ws : List Nat} (h8 : 8 < ws.length) (s : State) :
     List.Forall₂ RegionBelow (abi.argArea ws s) (abi.argArea (ws ++ [64, 64]) s) := by
   simp only [abi, List.length_append, List.length_cons, List.length_nil, argRegs_length,
-    show ws.length - 8 ≠ 0 by omega, show ws.length + (0 + 1 + 1) - 8 ≠ 0 by omega, ↓reduceIte]
+    show ws.length - 8 ≠ 0 by omega_using [h8], show ws.length + (0 + 1 + 1) - 8 ≠ 0 by omega_using [h8], ↓reduceIte]
   refine List.forall₂_cons.mpr ⟨?_, .nil⟩
   refine ⟨⟨rfl, ?_⟩, rfl⟩
   show 8 * (ws.length - 8) ≤ 8 * (ws.length + (0 + 1 + 1) - 8)
-  omega
+  omega_using []
 
 /-- `Verified.withSlice` on RISC-V, for a signature of more than eight words of
 at most 64 bits. -/
@@ -91,7 +91,7 @@ theorem verified_withSlice {sig : Sig} {nm ln : String} {e : Elem}
     rw [words_withSlice_map64]; simp only [List.mem_append]
     rintro w (hw₁ | hw₁)
     · exact hw w hw₁
-    · simp at hw₁; omega
+    · simp at hw₁; omega_using [hw₁]
   have hn : (((sig.withSlice nm e ln).words 64).map (·.bits 64)).length = (sig.words 64).length + 2 := by
     rw [words_withSlice_map64]; simp
   have ha : abi.args ((sig.words 64).map (·.bits 64)) = some (stackVals (sig.words 64).length) := by
@@ -99,18 +99,18 @@ theorem verified_withSlice {sig : Sig} {nm ln : String} {e : Elem}
   have ha' : abi.args (((sig.withSlice nm e ln).words 64).map (·.bits 64)) =
       some fun s => stackVals (sig.words 64).length s ++
         [stackArg s ((sig.words 64).length - 8), stackArg s ((sig.words 64).length - 8 + 1)] := by
-    rw [abi_args_long _ (by omega) hw', hn]
-    congr 1; funext s; exact stackVals_succ2 _ (by omega) s
+    rw [abi_args_long _ (by omega_using [h8, hn]) hw', hn]
+    congr 1; funext s; exact stackVals_succ2 _ (by omega_using [h8]) s
   have hv2 : ∀ s, stackVals ((sig.words 64).length + 2) s = stackVals (sig.words 64).length s ++
       [stackArg s ((sig.words 64).length - 8), stackArg s ((sig.words 64).length - 8 + 1)] :=
-    fun s => stackVals_succ2 _ (by omega) s
+    fun s => stackVals_succ2 _ (by omega_using [h8]) s
   exact Verified.withSlice (T := target) regionModel (fun _ _ _ _ h => h) abi abi rfl (fun _ => rfl)
     (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ _ _ => rfl)
     (fun _ _ _ _ _ _ h => h) (fun _ _ _ _ => rfl) rfl
     (sig := sig) (nm := nm) (e := e) (ln := ln) (vals := stackVals (sig.words 64).length)
     (X := fun s => stackArg s ((sig.words 64).length - 8))
     (Y := fun s => stackArg s ((sig.words 64).length - 8 + 1))
-    ha ha' (fun s => stackVals_length _ (by omega) s) (fun _ _ _ => rfl)
+    ha ha' (fun s => stackVals_length _ (by omega_using [h8]) s) (fun _ _ _ => rfl)
     (fun n s r w hwf => by
       have h' : abi.wf (((sig.withSlice nm e ln).words 64).map (·.bits 64)) n s := hwf
       rw [words_withSlice_map64] at h'
@@ -174,17 +174,17 @@ theorem verified_withSlice_tables {sig : Sig} {nm ln : String} {e : Elem} {t : S
     rw [words_withSlice_map64]; simp only [List.mem_append]
     rintro w (hw₁ | hw₁)
     · exact hw w hw₁
-    · simp at hw₁; omega
+    · simp at hw₁; omega_using [hw₁]
   have hn : (((sig.withSlice nm e ln).words 64).map (·.bits 64)).length = (sig.words 64).length + 2 := by
     rw [words_withSlice_map64]; simp
   have ha : abi.args ((sig.words 64).map (·.bits 64)) = some (stackVals (sig.words 64).length) := by
     rw [abi_args_long _ (by rw [List.length_map]; exact h8) hw, List.length_map]
   have hv2 : ∀ s, stackVals ((sig.words 64).length + 2) s = stackVals (sig.words 64).length s ++
       [stackArg s ((sig.words 64).length - 8), stackArg s ((sig.words 64).length - 8 + 1)] :=
-    fun s => stackVals_succ2 _ (by omega) s
+    fun s => stackVals_succ2 _ (by omega_using [h8]) s
   have ha2 : abi.args (((sig.withSlice nm e ln).words 64).map (·.bits 64)) =
       some (stackVals ((sig.words 64).length + 2)) := by
-    rw [abi_args_long _ (by omega) hw', hn]
+    rw [abi_args_long _ (by omega_using [h8, hn]) hw', hn]
   have ha' : abi.args (((sig.withSlice nm e ln).words 64).map (·.bits 64)) =
       some fun s => stackVals (sig.words 64).length s ++
         [stackArg s ((sig.words 64).length - 8), stackArg s ((sig.words 64).length - 8 + 1)] := by
@@ -199,7 +199,7 @@ theorem verified_withSlice_tables {sig : Sig} {nm ln : String} {e : Elem} {t : S
     rw [show (sig.withSlice nm e ln).params = sig.params ++ [(nm, .slice false e ln)] from rfl,
       Sig.wordIndex_append _ _ _ _ hk, hk]
     simp only [Option.map_some, hv2]
-    rw [getD_append_lt _ _ _ (by rw [stackVals_length _ (by omega)]; exact hlt)]
+    rw [getD_append_lt _ _ _ (by rw [stackVals_length _ (by omega_using [h8])]; exact hlt)]
   exact Verified.withSlice (T := target) regionModel (fun _ _ _ _ h => h) (abi.withTables sig (t :: ts))
     (abi.withTables (sig.withSlice nm e ln) (t :: ts)) rfl (fun _ => rfl) (fun _ => rfl)
     (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ _ _ => rfl)
@@ -221,7 +221,7 @@ theorem verified_withSlice_tables {sig : Sig} {nm ln : String} {e : Elem} {t : S
     (sig := sig) (nm := nm) (e := e) (ln := ln) (vals := stackVals (sig.words 64).length)
     (X := fun s => stackArg s ((sig.words 64).length - 8))
     (Y := fun s => stackArg s ((sig.words 64).length - 8 + 1))
-    ha ha' (fun s => stackVals_length _ (by omega) s) (fun _ _ _ => rfl)
+    ha ha' (fun s => stackVals_length _ (by omega_using [h8]) s) (fun _ _ _ => rfl)
     (fun n s r w hwf => by
       simp only [Abi.withTables, show abi.ptrBits = 64 from rfl] at hwf ⊢
       rw [ha2] at hwf

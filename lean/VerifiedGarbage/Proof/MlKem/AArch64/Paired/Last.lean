@@ -79,7 +79,7 @@ theorem lastCode_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss a 
     (ctx : SingleContext p out table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table)
     (hstatus : s.gpr .x24=0 ∨ s.gpr .x24=1) :
     WP isa (lastCode sb ss a k off w16) s (LastPostW w16 (seedBytes s.mem seed a k) p out s) := by
-  have combined := WP.mono_syms (lastStart_ok (w16 := w16) (a := a) (k := k) (by omega) hsb h8 hoff hk hk256 hp hseed hout hin hsep ctx ht)
+  have combined := WP.mono_syms (lastStart_ok (w16 := w16) (a := a) (k := k) (by omega_using [hss]) hsb h8 hoff hk hk256 hp hseed hout hin hsep ctx ht)
     (R := fun u => WP isa (.seq (.ite (.zero .x .x22) (fullSampleCode sb ss off a k w16) (.block []))
       (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r,i)=>.ldr .x r .x19 (1800+8*i)))) u
       (LastPostW w16 (seedBytes s.mem seed a k) p out s))

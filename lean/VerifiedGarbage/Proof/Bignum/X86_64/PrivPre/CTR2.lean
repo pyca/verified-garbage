@@ -87,7 +87,7 @@ theorem doubles_ctW {mo acc tmp o sl : Nat} (hmo : mo < 8) (hacc : acc < 8) (htm
     (fun p s₁ s₂ ⟨m₁, h₁, _⟩ ⟨m₂, h₂, _⟩ => pins_goodW ⟨p.L.B, p.L.Z, p.L.w⟩ s₁ s₂ ⟨m₁, h₁⟩ ⟨m₂, h₂⟩) h' ?_) ?_
   · rintro p s ⟨minv, hg, hw, hw', hc1, hc', hcx, hO⟩
     exact WP.mono (dblStart_ok (acc := acc) (tmp := tmp) hg.1.scr hg.1.rdi hg.1.hdr hg.2 hmo ho hsl hsl' hcx hO)
-      fun t hI => ⟨by omega, s, _, _, minv, hI, hg.2, hw, hw', hc', Nat.lt_of_le_of_lt (Nat.zero_le _) hO⟩
+      fun t hI => ⟨by omega_using [hc1], s, _, _, minv, hI, hg.2, hw, hw', hc', Nat.lt_of_le_of_lt (Nat.zero_le _) hO⟩
   refine RelCT.mono (two_loop (Φ := DblsAtW mo acc tmp o sl) (Ψ := fun _ _ => True) (fun p => p.c) ?_ ?_)
     (fun _ _ h => h) fun _ _ _ => trivial
   · refine RelCT.seq (two_post (Ψ := fun (q : DblPubW × Nat) s => GoodW q.1.L s)
@@ -204,7 +204,7 @@ theorem chunk_ct : RelCT isa (Two RXPre) (seqs chunkWords) (Two XC3) := by
       ⟨h.step hm k (by decide), (k.gpr (by decide)).trans h1, h3, h4⟩
   · rintro p s ⟨h, h1, h2, h3⟩
     obtain ⟨_, _, _, _, _, _, ⟨hb1, hb2, hb3⟩, _⟩ := id h
-    exact WP.mono (kLoop_ok (by omega) (by omega) (by omega) h1 h2 h3) fun t ⟨hcx, hm, k⟩ =>
+    exact WP.mono (kLoop_ok (by omega_using [hb1]) (by omega_using [hb1, hb2]) (by omega_using [hb2, hb3]) h1 h2 h3) fun t ⟨hcx, hm, k⟩ =>
       ⟨h.step hm k (by decide), (k.gpr (by decide)).trans h1, hcx⟩
 
 /-! ## `fixStart` -/
@@ -222,9 +222,9 @@ theorem fs_ct : RelCT isa (Two XC3) (seqs fixStart) (Two F0) := by
     exact WP.mono (fsA_ok hc h2 h1) fun t ⟨h3, h4, hm, k⟩ => ⟨h.step hm k (by decide), h3, h4⟩
   · rintro p s ⟨h, h1, h2⟩
     obtain ⟨mx, X, hc, hv, hX1, hXo, ⟨hb1, hb2, hb3⟩, hy⟩ := h
-    obtain ⟨hK1, hK2⟩ := kBounds (w := p.w) (show 1 ≤ p.wx by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega)
-    exact WP.mono (fsB_ok hc h2 h1 (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega) hb3) fun t ⟨hm, hcf, k⟩ =>
-      ⟨⟨s, mx, X, finv_store (Pr := False) hc hv (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega) hy (fun h => h.elim) hm k (by decide) (by decide),
+    obtain ⟨hK1, hK2⟩ := kBounds (w := p.w) (show 1 ≤ p.wx by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hb1])
+    exact WP.mono (fsB_ok hc h2 h1 (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hb2, hb3, hK2]) hb3) fun t ⟨hm, hcf, k⟩ =>
+      ⟨⟨s, mx, X, finv_store (Pr := False) hc hv (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hb1]) hy (fun h => h.elim) hm k (by decide) (by decide),
         hX1, hXo, hb1, hb2, hb3⟩, hcf⟩
 
 /-! ## The extra reductions -/
@@ -255,7 +255,7 @@ theorem body_ct (M : Mont) (n : Nat) :
     obtain ⟨_, _, _, hI, -⟩ := id h
     exact WP.mono (link_ok hI.c) fun t ⟨h12, hm, k⟩ => ⟨⟨hn, hA, h.step hm k (by decide) (by decide)⟩, h12⟩
   · rintro q s ⟨⟨hn, hA, σ, mx, X, hI, hX1, hXo, ⟨hb1, hb2, hb3⟩⟩, h12⟩
-    exact WP.mono (stepFin_ok hI h12 (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega) hb3 hA) fun t ⟨hI', hcf⟩ =>
+    exact WP.mono (stepFin_ok hI h12 (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hb1]) hb3 hA) fun t ⟨hI', hcf⟩ =>
       ⟨hn, hA, ⟨σ, mx, X, hI', hX1, hXo, hb1, hb2, hb3⟩, hcf⟩
 
 theorem eval_b {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .b s = some b := by simp [eval, h]
@@ -277,18 +277,18 @@ theorem extra_ct (M : Mont) :
     refine ⟨by rw [eval_b c₁, eval_b c₂], fun hf => ?_, fun ht => ?_⟩
     · have : ¬ q.1.A (q.2 + 1) < 128 * q.1.w := by
         have := (eval_b c₁).symm.trans hf; simpa using this
-      exact ⟨(q.1, q.2 + 1), ⟨k₁, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega⟩, ⟨k₂, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega⟩⟩
+      exact ⟨(q.1, q.2 + 1), ⟨k₁, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [this], by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hA, hb3, e1]⟩, ⟨k₂, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [this], by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hA, hb3, e1]⟩⟩
     · have hlt' : q.1.A (q.2 + 1) < 128 * q.1.w := by
         have := (eval_b c₁).symm.trans ht; simpa using this
-      exact ⟨128 * q.1.w - q.1.A (q.2 + 1), by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega, (q.1, q.2 + 1), ⟨rfl, hlt', k₁⟩, ⟨rfl, hlt', k₂⟩⟩
+      exact ⟨128 * q.1.w - q.1.A (q.2 + 1), by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hn, hA, hb1, e1], (q.1, q.2 + 1), ⟨rfl, hlt', k₁⟩, ⟨rfl, hlt', k₂⟩⟩
   · refine (two_post (Ψ := fun p s => G (p, p.K) s) (two_taint [] (fun _ _ _ _ _ _ h => by simp at h)
       (by taint_decide)) fun p s ⟨⟨h, hcf⟩, he⟩ => WP.block_nil ⟨h, ?_⟩).mono (fun _ _ h => h)
       fun _ _ ⟨p, h₁, h₂⟩ => ⟨(p, p.K), h₁, h₂⟩
     have : ¬ p.A p.K < 128 * p.w := by
       have := (eval_b hcf).symm.trans he; simpa using this
     obtain ⟨hb1, hb2, hb3⟩ := h.bnd
-    obtain ⟨hK1, hK2⟩ := kBounds (w := p.w) (show 1 ≤ p.wx by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega)
-    exact ⟨by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega⟩
+    obtain ⟨hK1, hK2⟩ := kBounds (w := p.w) (show 1 ≤ p.wx by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hb1])
+    exact ⟨by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [this], by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [hb2, hb3, hK2]⟩
 
 /-! ## The doublings -/
 
@@ -307,7 +307,7 @@ theorem sub_ct : RelCT isa (Two G) (seqs fixSub) (Two G2) := by
       ⟨⟨h.step hm k (by decide) (by decide), h1, h2⟩, h3, h4⟩
   · rintro q s ⟨⟨h, h1, h2⟩, h3, h4⟩
     obtain ⟨_, _, _, hI, _, _, -, -, hb3⟩ := id h
-    exact WP.mono (subB_ok hI.c h4 h3 (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega) h1 hb3) fun t ⟨h5, h6, hm, k⟩ =>
+    exact WP.mono (subB_ok hI.c h4 h3 (by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [h2]) h1 hb3) fun t ⟨h5, h6, hm, k⟩ =>
       ⟨⟨h.step hm k (by decide) (by decide), h1, h2⟩, h5, h6⟩
 
 theorem dbl_ct : RelCT isa (Two G2) (.ite .e (.block []) (doubles aN aAcc aTmp aY sRem)) fun _ _ => True := by
@@ -320,7 +320,7 @@ theorem dbl_ct : RelCT isa (Two G2) (.ite .e (.block []) (doubles aN aAcc aTmp a
   have hne : q.1.A q.2 ≠ 128 * q.1.w := by
     have := (eval_e h4).symm.trans he; simpa using this
   obtain ⟨_, mx, _, hI, _, _, hb1, -, -⟩ := h
-  exact ⟨mx, ⟨hI.c.good, Nat.le_refl _⟩, hb1, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega, h3, by rw [hI.v.n]; exact hI.lt⟩
+  exact ⟨mx, ⟨hI.c.good, Nat.le_refl _⟩, hb1, by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [h2], by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [h1, hne], by (try simp only [RXPub.A] at *); (try simp only [RXPub.K] at *); omega_using [h2], h3, by rw [hI.v.n]; exact hI.lt⟩
 
 /-- `r2X` leaks the same in runs with the same workspaces. -/
 theorem r2X_ct (M : Mont) : RelCT isa (Two RXPre) (seqs (r2X M.mm)) fun _ _ => True := by
@@ -363,27 +363,27 @@ theorem r2At_ct (M : Mont) {sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     have hs := hg.scr
     have := hdr_lt_slot p.w 8 (show sl < 32 from hsl)
     refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off p.B p.o ∧ t.mem = s.mem)
-      (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sl) (by omega), hslv]) rfl) fun t ⟨⟨hdi, hm⟩, k⟩ =>
+      (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sl) (by omega_using [hlo, hhi, this]), hslv]) rfl) fun t ⟨⟨hdi, hm⟩, k⟩ =>
       ⟨mx, X, SubCtx.mk' (hs.congr k.2.2) (by rw [hm]; exact hg.hdr) (by rw [hm]; exact hws) hdi hlo
         (hi_of_wsTab hhi), ⟨by rw [hm]; exact hX.n, by rw [hm]; exact hX.inv, by rw [hm]; exact hX.one⟩, hX1, hXo,
         hwx2, hwxw, hw20⟩
   refine RelCT.seqs_append (by simp [redc]) (by simp [copyArr]) (RelCT.seq (two_post (Ψ := E2)
-    (two_map RXPub.xp (fun p _ ⟨mx, X, hc, hv, hX1, _, hb1, hb2, hb3⟩ => ⟨mx, X, hc, hv, hb1, hb2, show p.w < 2 ^ 30 by omega, hX1,
+    (two_map RXPub.xp (fun p _ ⟨mx, X, hc, hv, hX1, _, hb1, hb2, hb3⟩ => ⟨mx, X, hc, hv, hb1, hb2, show p.w < 2 ^ 30 by omega_using [hb3], hX1,
       by decide⟩) (redc_ct_of M (j := aR2) (by taint_decide))) ?_) ?_)
   · rintro p s ⟨mx, X, hc, hv, hX1, hXo, hb1, hb2, hb3⟩
-    exact WP.mono (redc_ok M hc hv hb1 hb2 (by omega) hX1 (j := aR2) (by decide)) fun t ⟨hc', hv', hlt, _⟩ =>
+    exact WP.mono (redc_ok M hc hv hb1 hb2 (by omega_using [hb3]) hX1 (j := aR2) (by decide)) fun t ⟨hc', hv', hlt, _⟩ =>
       ⟨mx, X, hc', hv', hX1, hXo, ⟨hb1, hb2, hb3⟩, hlt⟩
   refine RelCT.seqs_append (by simp [copyArr]) (by simp [r2X]) (RelCT.seq (two_post (Ψ := RXPre)
     (two_map RXPub.ws (fun _ _ ⟨mx, _, hc, _⟩ => ⟨mx, hc.good, Nat.le_refl _⟩)
       (copyArr_ct (o := aY) (a := aXc) (by decide) (by decide) (by taint_decide))) ?_) ?_)
   · rintro p s ⟨mx, X, hc, hv, hX1, hXo, ⟨hb1, hb2, hb3⟩, hlt⟩
     have hn := hc.good.scr.nowrap
-    exact WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega) (by omega) (o := aY) (a := aXc)
+    exact WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega_using [hb1]) (by omega_using [hb2, hb3]) (o := aY) (a := aXc)
       (by decide) (by decide) (by decide)) fun t ⟨hv₃, ho₃, k₃⟩ => by
         have f₃ : Frm (off p.B p.o) (r2Ranges p.wx) s.mem t.mem :=
-          Frm.of_outside (ho₃.mono (o' := slot p.wx aY) (n' := 8 * (p.wx + 2)) (Nat.le_refl _) (by omega))
+          Frm.of_outside (ho₃.mono (o' := slot p.wx aY) (n' := 8 * (p.wx + 2)) (Nat.le_refl _) (by omega_using []))
             (by simp [r2Ranges])
-        exact ⟨mx, X, hc.of_frm f₃ (r2Ranges_ok p.wx) k₃.2.2 (k₃.gpr (by decide)), xvals_r2 hv hn (by omega) f₃,
+        exact ⟨mx, X, hc.of_frm f₃ (r2Ranges_ok p.wx) k₃.2.2 (k₃.gpr (by decide)), xvals_r2 hv hn (by omega_using [hb1]) f₃,
           hX1, hXo, ⟨hb1, hb2, hb3⟩, by rw [hv₃]; exact hlt⟩
   refine RelCT.seqs_append (by simp [r2X]) (by simp) (RelCT.seq (two_post (Ψ := fun p t =>
     t.gpr .rdi = off p.B p.o) (r2X_ct M) ?_) (two_taint [.rdi] (pins1 (fun p => off p.B p.o) fun _ _ h => h)

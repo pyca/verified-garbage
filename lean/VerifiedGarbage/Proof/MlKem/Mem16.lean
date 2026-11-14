@@ -56,13 +56,13 @@ theorem coeffAtW_eq (h : Bool) (m : Mem) (p : Addr) (i : Nat) :
 
 theorem cAddr_contains (h : Bool) (p : Addr) {i : Nat} (hi : i < 256) :
     (cRegion h p).Contains (cAddr h p i) (cw h / 8) :=
-  Offset.contains_base p (by cases h <;> simp only [cw, Bool.false_eq_true, ↓reduceIte] <;> omega)
-    (by cases h <;> simp only [cw, Bool.false_eq_true, ↓reduceIte] <;> omega)
+  Offset.contains_base p (by cases h <;> simp only [cw, Bool.false_eq_true, ↓reduceIte] <;> omega_using [hi])
+    (by cases h <;> simp only [cw, Bool.false_eq_true, ↓reduceIte] <;> omega_using [hi])
 
 theorem cAddr_sep (h : Bool) (p : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256) (hij : i ≠ j) :
     Mem.Sep (cAddr h p i) (cw h / 8) (cAddr h p j) (cw h / 8) := by
-  cases h <;> exact Offset.sep p (by simp only [cw, Bool.false_eq_true, ↓reduceIte]; omega)
-    (by simp only [cw, Bool.false_eq_true, ↓reduceIte]; omega) (by simp only [cw, Bool.false_eq_true, ↓reduceIte]; omega)
+  cases h <;> exact Offset.sep p (by simp only [cw, Bool.false_eq_true, ↓reduceIte]; omega_using [hij])
+    (by simp only [cw, Bool.false_eq_true, ↓reduceIte]; omega_using [hi]) (by simp only [cw, Bool.false_eq_true, ↓reduceIte]; omega_using [hj])
 
 theorem readW_writeW_cw (h : Bool) (m : Mem) (a : Addr) (v : BitVec (cw h)) : (m.writeW a v).readW a (cw h) = v := by
   cases h
@@ -76,14 +76,14 @@ theorem coeffAtW_writeW (h : Bool) (m : Mem) (p : Addr) {i j : Nat} (hi : i < 25
   rw [coeffAtW_eq, coeffAtW_eq]
   split
   · subst j; exact readW_writeW_cw h m _ v
-  · exact Mem.readW_writeW_sep (cAddr_sep h p hi hj (Ne.symm ‹_›)) (by have := cw_bytes_le h; omega)
+  · exact Mem.readW_writeW_sep (cAddr_sep h p hi hj (Ne.symm ‹_›)) (by have := cw_bytes_le h; omega_using [this])
 
 /-- A polynomial stored apart from the regions of a frame. -/
 theorem polyIsW_frame (h : Bool) {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {f : Poly}
     (hd : ∀ r ∈ rs, (cRegion h p).Disjoint r) (hp : PolyIsW (cw h) m p f) : PolyIsW (cw h) m' p f := by
   have e : ∀ i < n, coeffAtW (cw h) m' p i = coeffAtW (cw h) m p i := fun i hi => by
     rw [coeffAtW_eq, coeffAtW_eq]
-    exact hf.readW (cAddr_contains h p (by rw [n_eq] at hi; exact hi)) hd (by have := cw_bytes_le h; omega)
+    exact hf.readW (cAddr_contains h p (by rw [n_eq] at hi; exact hi)) hd (by have := cw_bytes_le h; omega_using [this])
   refine ⟨fun i hi => by rw [e i hi]; exact hp.1 i hi, ?_⟩
   rw [← hp.2]
   simp only [polyAtW]

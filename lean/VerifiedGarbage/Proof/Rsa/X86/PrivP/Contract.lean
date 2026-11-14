@@ -65,7 +65,7 @@ theorem privateABIP_of {s : State}
     | (rw [‹s.wr = _›]
        exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self),
          by simp [Region.Contains]⟩)
-    | omega
+    | omega_arith
 
 section
 variable {s : State}
@@ -80,8 +80,8 @@ theorem argument_addr (A : PrivABI s) {d : Nat} :
 
 theorem argAddr_high (B : PreABI s) {j : Nat} (hj : j < 22) :
     argAddr s j = argAddr s 0 + BitVec.ofNat 64 (4 * j) := by
-  have first := byteAddr_add (by have := B.high; omega : (s.gpr .esp).toNat + 4 < 2 ^ 32)
-  have last := byteAddr_add (by have := B.high; omega : (s.gpr .esp).toNat + (4 + 4 * j) < 2 ^ 32)
+  have first := byteAddr_add (by have := B.high; omega_using [this] : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+  have last := byteAddr_add (by have := B.high; omega_using [hj, this] : (s.gpr .esp).toNat + (4 + 4 * j) < 2 ^ 32)
   change byteAddr (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * j)) =
     byteAddr (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)) + _
   rw [last, Nat.mul_zero, Nat.add_zero, first, Offset.add_add]
@@ -125,7 +125,7 @@ theorem private_contractP_pre (h : (Proof.Rsa.privateCheckedPrecomputedContract 
       s.mem.readW (argAddr s 0 + BitVec.ofNat 64 (80 + d)) 32 := by
     intro d hd
     rw [argument_addr A]
-    exact E.enteredFrame.readW (Offset.contains_base _ (by omega : 80 + d + 32 / 8 ≤ 88) (by omega))
+    exact E.enteredFrame.readW (Offset.contains_base _ (by omega_using [hd] : 80 + d + 32 / 8 ≤ 88) (by omega_using [hd]))
       (savedSep B.stackArgs) (by decide)
   have args8 : Region.Sub ⟨argAddr s 0 + BitVec.ofNat 64 80, 8⟩ ⟨argAddr s 0, 88⟩ :=
     Offset.sub_base _ (by decide)
@@ -136,7 +136,7 @@ theorem private_contractP_pre (h : (Proof.Rsa.privateCheckedPrecomputedContract 
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [privateGeometry_stackNat s A.stackLow]
     have := A.stackLow; have := B.high
-    simp only [stackBytes, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at *; omega
+    simp only [stackBytes, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at *; omega_using [this]
   · have w := word 0 (by decide)
     rw [← argAddr_high B (by decide : 20 < 22)] at w
     exact w
@@ -152,11 +152,11 @@ theorem private_contractP_pre (h : (Proof.Rsa.privateCheckedPrecomputedContract 
       (B.wsArgs.sub_right args8) r hr
   · refine entered_read ⟨_, List.mem_append_left _ B.preR, ?_⟩
     rw [pre8]; exact Region.contains_self _ _
-  · have := B.preFit; omega
+  · have := B.preFit; omega_using [this]
   · rw [← pre8]
     exact bodyWrites_apart A E B.stackPre B.outPre B.wsPre
   · rw [B.preLen]; rfl
-  · rw [VG.Proof.Rsa.wordsAt_frame E.enteredFrame (by have := B.preFit; omega)
+  · rw [VG.Proof.Rsa.wordsAt_frame E.enteredFrame (by have := B.preFit; omega_using [])
       (savedSep (by rw [← pre8]; exact B.stackPre))]
     exact B.key
 end

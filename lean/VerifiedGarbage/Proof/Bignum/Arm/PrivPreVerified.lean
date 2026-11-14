@@ -65,10 +65,10 @@ theorem pp_argsFrame_ct (s0 t0 : State) (hs : PpFnInput s0) (ht : PpFnInput t0) 
   obtain ⟨x, y, ⟨hx, hy, sp⟩, px, py⟩ := hp
   have fitX : 56 ≤ x.sp.toNat := by
     rw [hx.rest.sp]; change 56 ≤ (s0.sp - BitVec.ofNat 32 56).toNat
-    rw [FrameStack.sub_toNat' (by have := hs.stackFit; omega)]; have := hs.stackFit; omega
+    rw [FrameStack.sub_toNat' (by have := hs.stackFit; omega_using [this])]; have := hs.stackFit; omega_using [this]
   have fitY : 56 ≤ y.sp.toNat := by
     rw [hy.rest.sp]; change 56 ≤ (t0.sp - BitVec.ofNat 32 56).toNat
-    rw [FrameStack.sub_toNat' (by have := ht.stackFit; omega)]; have := ht.stackFit; omega
+    rw [FrameStack.sub_toNat' (by have := ht.stackFit; omega_using [this])]; have := ht.stackFit; omega_using [this]
   have ex : pcPushed x = a := Option.some.inj ((push_pushed
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide) fitX).symm.trans px)
   have ey : pcPushed y = b := Option.some.inj ((push_pushed
@@ -103,10 +103,10 @@ theorem ppFn_ct (s0 t0 : State) (hs : PpFnInput s0) (ht : PpFnInput t0) (sp : s0
   obtain ⟨x, y, ⟨rfl, rfl⟩, px, py⟩ := hp
   have ex : pcPushed x = a := Option.some.inj ((push_pushed
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide)
-    (by show 56 ≤ _; have := hs.stackFit; omega)).symm.trans px)
+    (by show 56 ≤ _; have := hs.stackFit; omega_using [this])).symm.trans px)
   have ey : pcPushed y = b := Option.some.inj ((push_pushed
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide)
-    (by show 56 ≤ _; have := ht.stackFit; omega)).symm.trans py)
+    (by show 56 ≤ _; have := ht.stackFit; omega_using [this])).symm.trans py)
   subst ex; subst ey
   have zaCT : RelCT isa (fun a b => a = pcPushed x ∧ b = pcPushed y ∧ a.sp = b.sp) (.block zeroArgs)
       (fun _ _ => True) := by

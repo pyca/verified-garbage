@@ -206,9 +206,9 @@ theorem stA_ok [InvLaw] {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0)
     Nat.lt_of_lt_of_le nk (Nat.pow_le_pow_right (by decide) (by rw [w_eq]; omega_arith))
   -- The halvings.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (twos_ok (N := nArr) dm.ws (by omega) f1 (by decide) (by decide) (by decide) (by decide) f2
+  refine WP.mono (twos_ok (N := nArr) dm.ws (by omega_using [hw5]) f1 (by decide) (by decide) (by decide) (by decide) f2
     (num_zero (dm.free _ (by rdc) (by rdc))) (num_zero (dm.free _ (by rdc) (by rdc)))
-    (by rw [dm.n]; omega) (by rw [dm.n]; omega)
+    (by rw [dm.n]; omega_using [three]) (by rw [dm.n]; omega_using [three])
     (K := 8 * kOf s0) (by omega_arith) (by rw [dm.n]; exact nk))
     fun t1 ⟨w1, F1, one1, st1, k1⟩ => ?_
   have c1 := dm.cb.step w1 F1 (by rdc) (by rdc) k1
@@ -225,7 +225,7 @@ theorem stA_ok [InvLaw] {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0)
     rw [← tw]; rfl
   -- The GCD.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have hw4 : 4 ≤ wOf s0 := by omega
+  have hw4 : 4 ≤ wOf s0 := by omega_using [hw5]
   refine WP.mono (gcd_ok w1 (by decide) (by decide) hw4 one1 (by rw [u1v]; exact uo))
     fun t2 ⟨w2, F2, hi2, g2, k2⟩ => ?_
   have c2 := c1.step w2 F2 (by rdc) (by rdc) k2
@@ -245,11 +245,11 @@ theorem stA_ok [InvLaw] {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0)
       (show 0 < (twosOut (nbOf s0) (wbOf s0) (Nv s0) (deOf s0)).1 by omega_arith)
     omega_arith
   -- `a`, `m` and `r`.
-  refine WP.mono (divA_ok (show Ws t2 (bOf s0) (zOf s0) (wOf s0) 63 from w2) f2 hw5 (by omega)
+  refine WP.mono (divA_ok (show Ws t2 (bOf s0) (zOf s0) (wOf s0) 63 from w2) f2 hw5 (by omega_using [hw129])
     (hiW_zero (fr2 _ (by rdc) (by rdc)) (fr2 _ (by rdc) (by rdc)))
     (num_zero (wide_zero (fr2 _ (by rdc) (by rdc)) (fr2 _ (by rdc) (by rdc))))
     (num_zero (wide_zero (fr2 _ (by rdc) (by rdc)) (fr2 _ (by rdc) (by rdc))))
-    (words_low (w := WOf s0 + 2) (v := WOf s0 + 1) (by omega) (wide_zero (fr2 _ (by rdc) (by rdc)) (fr2 _ (by rdc) (by rdc)))
+    (words_low (w := WOf s0 + 2) (v := WOf s0 + 1) (by omega_using []) (wide_zero (fr2 _ (by rdc) (by rdc)) (fr2 _ (by rdc) (by rdc)))
       (Nat.two_pow_pos _))
     (by rw [n2]; exact hnT) (by rw [n2]; exact hnl)) fun t3 ⟨w3, F3, k3, vN, vA, vR, vLt⟩ => ?_
   have c3 := c2.step w2 F3 (by rdc) (by rdc) k3
@@ -305,9 +305,9 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
   have hnl : Nv s0 < 2 ^ (64 * (wOf s0 - 1)) :=
     Nat.lt_of_lt_of_le nk (Nat.pow_le_pow_right (by decide) (by rw [w_eq]; omega_arith))
   have pn : 2 ^ (64 * (wOf s0 - 1)) ≤ 2 ^ nbOf s0 :=
-    Nat.pow_le_pow_right (by decide) (by show 64 * (wOf s0 - 1) ≤ 64 * wOf s0; omega)
+    Nat.pow_le_pow_right (by decide) (by show 64 * (wOf s0 - 1) ≤ 64 * wOf s0; omega_using [])
   have nlb : Nv s0 < 2 ^ nbOf s0 := Nat.lt_of_lt_of_le hnl pn
-  have n0 : 0 < Nv s0 := by omega
+  have n0 : 0 < Nv s0 := by omega_using [three]
   -- Where `m < n`: the model's divisor `m + 1` and dividend `n - r`.
   have hlt : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true →
       num t4.mem (bOf s0) (wOf s0) aD =
@@ -336,7 +336,7 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
     rw [← hrem]
     by_cases hl : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true
     · rw [ite_eq_left hl]; exact (hlt hl).2
-    · rw [ite_eq_right hl]; split <;> omega
+    · rw [ite_eq_right hl]; split <;> omega_arith
   have hdiv : ltOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) = true → 0 < m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) →
       num t4.mem (bOf s0) (wOf s0) aD =
         dOf (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) / m1Of (nbOf s0) (wbOf s0) (Nv s0) (deOf s0) ∧
@@ -365,7 +365,7 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
     rw [r5, sqv, fN]; rfl
   -- The square root.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (sqrt_ok w5 f1 (by omega) hw129 (num_zero (fr5 _ (by rdc) (by rdc))))
+  refine WP.mono (sqrt_ok w5 f1 (by omega_using [wpos]) hw129 (num_zero (fr5 _ (by rdc) (by rdc))))
     fun t6 ⟨w6, F6, k6, sy6, ok6⟩ => ?_
   have c6 := c5.step w4 F6 (by rdc) (by rdc) k6
   have fr6 := free_step (U' := u6) F6 (by rdc) fit (by rdc) (by rdc) fr5

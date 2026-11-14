@@ -31,7 +31,7 @@ theorem adcs_toNat (a b : BitVec 64) (c : Bool) :
   have hc1 := Bool.toNat_le c
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat + c.toNat <;> simp only [h, decide_true, decide_false,
-    Bool.toNat_true, Bool.toNat_false] <;> omega
+    Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- After `j` words of `double`'s loop from `s₀`: `D_j + 2^(64 j) c = 2 O_j`
 for the low `j` words `D_j` of the accumulator, `O_j` of `[o]`, and the
@@ -58,19 +58,19 @@ theorem dblStep_ok {s₀ : State} {B : Addr} {Z w eA eo : Nat} (hA : eA + 8 * w 
       t₁.c = decide (2 ^ 64 ≤ (word t.mem B (eo + 8 * j)).toNat + (word t.mem B (eo + 8 * j)).toNat +
         t.c.toNat) ∧
       t₁.gpr .x16 = off B (eA + 8 * j + 8) ∧ t₁.gpr .x17 = off B (eo + 8 * j + 8))
-    (by brun [hI.x16, hI.x17, hI.scr.ld (show eo + 8 * j + 8 ≤ Z by omega),
-      hI.scr.st (show eA + 8 * j + 8 ≤ Z by omega)])
+    (by brun [hI.x16, hI.x17, hI.scr.ld (show eo + 8 * j + 8 ≤ Z by omega_using [ho, hj]),
+      hI.scr.st (show eA + 8 * j + 8 ≤ Z by omega_using [hA, hj])])
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hm, hc, h16, h17⟩, k₁⟩ => ?_
   refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', hc'⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
-  have hy : word t.mem B (eo + 8 * j) = word s₀.mem B (eo + 8 * j) := hI.out.word (by omega) (by omega)
+  have hy : word t.mem B (eo + 8 * j) = word s₀.mem B (eo + 8 * j) := hI.out.word (by omega_using [hsep, hj]) (by omega_using [ho, hj, hn])
   refine ⟨hI.scr.congr (k'.wr.trans k₁.wr), (hI.keep.trans (k₁.trans k')).mono (by decide),
     by rw [k'.gpr .x16 (by decide), h16, Nat.mul_succ, Nat.add_assoc],
     by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ?_, ?_⟩
   · rw [hm', hm]
     intro x hx'
-    rw [writeW_outside t.mem B _ (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega), hc', hc]
+    rw [writeW_outside t.mem B _ (by omega_using [hA, hj, hn]) x (by omega_using [hx'])]
+    exact hI.out x (by omega_using [hx'])
+  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega_using [hA, hj, hn]), hc', hc]
     have hs := adcs_toNat (word t.mem B (eo + 8 * j)) (word t.mem B (eo + 8 * j)) t.c
     rw [hy] at hs
     have hval := hI.val

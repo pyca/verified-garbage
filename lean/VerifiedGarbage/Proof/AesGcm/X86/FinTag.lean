@@ -37,7 +37,7 @@ theorem lensBlock_mod (a t : Nat) : lensBlock (a % 2 ^ 64) t = lensBlock a t := 
   simp only [lensBlock]
   rw [← Proof.Gcm.be64_mod (8 * (a % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * a)]
   congr 2
-  omega
+  omega_using []
 
 theorem val64_eq (lo hi : BitVec 32) : val64 lo hi = (hi ++ lo).toNat := by
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt lo.isLt, Nat.shiftLeft_eq]
@@ -50,7 +50,7 @@ theorem ghashInput_mod {a c : List Byte} :
   · rw [Proof.Gcm.ghashInput_of_ne hc]
     simp only [hc, ↓reduceIte, List.length_append, Proof.Gcm.length_zeros]
     have := Proof.Gcm.length_pad_mod a.length
-    omega
+    omega_using [this]
 
 theorem or_eq_zero32 (a b : BitVec 32) : (a ||| b = 0) ↔ (a = 0 ∧ b = 0) := by
   constructor
@@ -72,16 +72,16 @@ theorem buffered_mod {al ah xl xh : BitVec 32} {a c : List Byte} (hl : ah ++ al 
   · subst hc
     have h0 : xl = 0 ∧ xh = 0 := by
       simp only [List.length_nil] at ht
-      exact ⟨BitVec.eq_of_toNat_eq (by simp; omega), BitVec.eq_of_toNat_eq (by simp; omega)⟩
+      exact ⟨BitVec.eq_of_toNat_eq (by simp; omega_using [e, ht]), BitVec.eq_of_toNat_eq (by simp; omega_using [e, ht])⟩
     obtain ⟨rfl, rfl⟩ := h0
     simp only [↓reduceIte, BitVec.or_self, beq_self_eq_true]
     exact (lo_mod16 hl).symm
   · have hne : (xl ||| xh == 0) = false := by
       simp only [beq_eq_false_iff_ne, ne_eq, or_eq_zero32]
       rintro ⟨rfl, rfl⟩
-      exact hc (List.eq_nil_of_length_eq_zero (by simp at ht; omega))
+      exact hc (List.eq_nil_of_length_eq_zero (by simp at ht; omega_using [ht]))
     simp only [hc, ↓reduceIte, hne, Bool.false_eq_true]
-    omega
+    omega_using [ht, e]
 
 /-- The kept lengths and rounds `finTag` reads. -/
 structure FinIn (Ctx St W SP : BitVec 32) (R : Nat) (al ah xl xh : BitVec 32) (s : State) : Prop where
@@ -143,7 +143,7 @@ theorem finTag_pc {R o : Nat} (ho : o = 0 ∨ o = 112) {al ah xl xh : BitVec 32}
     have sK : ∀ {q}, 128 ≤ q → q + 4 ≤ 240 → slotv (s.mem.writeW (w64 W + BitVec.ofNat 64 bO)
         (v &&& BitVec.ofNat 32 15)) W q = slotv s.mem W q := fun h₁ h₂ =>
       slot_frame fb fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by simp only [bO]; omega)) (by omega) (by decide)
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by simp only [bO]; omega_using [h₂])) (by omega_using [h₂]) (by decide)
     refine ⟨⟨he.keep (by regs []) (by regs []) (by regs []) (by mems []) (by mems []) (by
         simp only [mem_setMem, mem_setReg, mem_arithFlags]; exact sK (by decide) (by decide)),
       by simp only [mem_setMem, mem_setReg, mem_arithFlags]; rw [sK (by decide) (by decide)]; exact h.al,
@@ -177,7 +177,7 @@ theorem finTag_pc {R o : Nat} (ho : o = 0 ∨ o = 112) {al ah xl xh : BitVec 32}
         (ghashInput a c) := by
       rw [hHs]
       exact ha.congr (blockAt_frame fb (dS (by decide))) (bytesAt_frame fb (dS (d := 32)
-        (k := (ghashInput a c).length % 16) (by omega)) (by omega))
+        (k := (ghashInput a c).length % 16) (by omega_using [])) (by omega_using []))
     have hab := fo.abs _ hx ha₁
     have acc := hab.1
     rw [show ghashInput a c ++ zeros (padLen (ghashInput a c).length) = padded a c from rfl,

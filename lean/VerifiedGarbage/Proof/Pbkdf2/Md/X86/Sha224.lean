@@ -64,7 +64,7 @@ def sha224Ok (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa} (hc : CompOk P
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha256.md, Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega_using [hj])
   tail := sha224_tail
   out := outOk_of_shape Proof.Sha256.X86.Stream.shape
   comp := hc

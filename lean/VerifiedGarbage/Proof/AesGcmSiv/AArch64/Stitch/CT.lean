@@ -61,12 +61,12 @@ theorem restC_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   rw [WP.block_append_iff]
   refine WP.mono (rest_ok L E) fun t₁ ⟨x27₁, x28₁, E₁, _, _, _, _⟩ => ?_
   refine WP.run ⟨_, by grun [], rfl⟩ fun t₂ ht₂ => ?_
-  have e : 16 * (8 * (p.n / 128)) = 128 * (p.n / 128) := by omega
+  have e : 16 * (8 * (p.n / 128)) = 128 * (p.n / 128) := by omega_using []
   refine ⟨⟨by rw [← ht₂]; exact E₁.write (by decide) _, ?_, ?_⟩, ?_⟩
   · rw [← ht₂, gpr_write_of_ne _ _ _ (by decide), x27₁, e]
   · rw [← ht₂, gpr_write_of_ne _ _ _ (by decide), x28₁, e]
   · rw [← ht₂, e]
-    simp [gpr_write, State.read, x28₁, lsr_ofNat _ _ (show p.n - 128 * (p.n / 128) < 2 ^ 64 by omega)]
+    simp [gpr_write, State.read, x28₁, lsr_ofNat _ _ (show p.n - 128 * (p.n / 128) < 2 ^ 64 by omega_using [])]
 
 /-- The whole blocks of counter mode from block `b`, for their registers. -/
 theorem cryptMidFrom_ok (v : GcmImpl) {p : Prm} (L : Lay p) {b : Nat} (hb : 16 * b ≤ p.n) {t : State}
@@ -74,48 +74,48 @@ theorem cryptMidFrom_ok (v : GcmImpl) {p : Prm} (L : Lay p) {b : Nat} (hb : 16 *
     WP isa (.ite (.zero .x .x9) (.block []) (.loop (Impl.AesGcmSiv.AArch64.cryptBlock v.callees) (.nonzero .x .x9))) t
       (BL p (p.n / 16)) := by
   have hn := L.n_lt
-  refine WP.ite (decide ((p.n - 16 * b) / 16 = 0)) (eval_zero h9 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide ((p.n - 16 * b) / 16 = 0)) (eval_zero h9 (by omega_using [hn])) (fun ht => ?_) (fun hf => ?_)
   · have h0 : (p.n - 16 * b) / 16 = 0 := by simpa using ht
-    rw [show p.n / 16 = b by omega]; exact WP.block_nil B
+    rw [show p.n / 16 = b by omega_using [hb, h0]]; exact WP.block_nil B
   · have h0 : (p.n - 16 * b) / 16 ≠ 0 := by simpa using hf
     refine WP.loop (M := isa) (fun k t' => ∃ j, k = p.n / 16 - j ∧ b ≤ j ∧ j < p.n / 16 ∧ BL p j t') ?_
-      (p.n / 16 - b) t ⟨b, rfl, Nat.le_refl _, by omega, B⟩
+      (p.n / 16 - b) t ⟨b, rfl, Nat.le_refl _, by omega_using [h0], B⟩
     rintro k t' ⟨j, rfl, hbj, hj, B'⟩
-    refine WP.mono (cryptBlockL_ok v L (j := j) (by omega) B') fun t'' ⟨B'', x9⟩ => ?_
-    have ev := eval_nonzero x9 (by omega)
+    refine WP.mono (cryptBlockL_ok v L (j := j) (by omega_using [hj]) B') fun t'' ⟨B'', x9⟩ => ?_
+    have ev := eval_nonzero x9 (by omega_using [hn])
     by_cases he : j + 1 = p.n / 16
-    · left; exact ⟨ev.trans (by simp; omega), he ▸ B''⟩
+    · left; exact ⟨ev.trans (by simp; omega_using [he]), he ▸ B''⟩
     · right
-      exact ⟨ev.trans (by simp; omega), p.n / 16 - (j + 1), by omega, j + 1, rfl, by omega, by omega, B''⟩
+      exact ⟨ev.trans (by simp; omega_using [hj, he]), p.n / 16 - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hbj], by omega_using [hj, he], B''⟩
 
 /-- `cryptRest`, in two runs with the same public arguments. -/
 theorem cryptRest_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) :
     RelCT isa (Eq2 σ₁ σ₂) (cryptRest v.callees) TT := by
   have hn := L.n_lt
-  have hb : 16 * (8 * (p.n / 128)) ≤ p.n := by omega
+  have hb : 16 * (8 * (p.n / 128)) ≤ p.n := by omega_using []
   refine rel_seq (rel_env E₁ E₂ [] (by simp) restC_check) (restC_ok L E₁) (restC_ok L E₂)
     fun u₁ u₂ ⟨B₁, x9₁⟩ ⟨B₂, x9₂⟩ => ?_
   -- The whole blocks.
-  refine rel_seq (rel_ite (eval_zero x9₁ (by omega)) (eval_zero x9₂ (by omega))
+  refine rel_seq (rel_ite (eval_zero x9₁ (by omega_using [])) (eval_zero x9₂ (by omega_using []))
       (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun hf => ?_))
     (cryptMidFrom_ok v L hb B₁ x9₁) (cryptMidFrom_ok v L hb B₂ x9₂) fun w₁ w₂ C₁ C₂ => ?_
   · have h0 : (p.n - 16 * (8 * (p.n / 128))) / 16 ≠ 0 := by simpa using hf
     refine rel_loop (fun k t₁ t₂ => ∃ j, k = p.n / 16 - j ∧ 8 * (p.n / 128) ≤ j ∧ j < p.n / 16 ∧ BL p j t₁ ∧
         BL p j t₂) (fun k t₁ t₂ ⟨j, hk, hbj, hj, J₁, J₂⟩ => ?_) (p.n / 16 - 8 * (p.n / 128))
-      ⟨8 * (p.n / 128), rfl, Nat.le_refl _, by omega, B₁, B₂⟩
+      ⟨8 * (p.n / 128), rfl, Nat.le_refl _, by omega_using [h0], B₁, B₂⟩
     refine Proof.AesGcmSiv.AArch64.rel_wpQ
-      (cryptBlock_rel v L J₁.env J₂.env (j := j) (by omega) J₁.x27 J₂.x27 J₁.x28 J₂.x28)
-      (cryptBlockL_ok v L (by omega) J₁) (cryptBlockL_ok v L (by omega) J₂) fun a b ⟨K₁, x9₁⟩ ⟨K₂, x9₂⟩ => ?_
-    have ev₁ := eval_nonzero x9₁ (by omega)
-    have ev₂ := eval_nonzero x9₂ (by omega)
+      (cryptBlock_rel v L J₁.env J₂.env (j := j) (by omega_using [hj]) J₁.x27 J₂.x27 J₁.x28 J₂.x28)
+      (cryptBlockL_ok v L (by omega_using [hj]) J₁) (cryptBlockL_ok v L (by omega_using [hj]) J₂) fun a b ⟨K₁, x9₁⟩ ⟨K₂, x9₂⟩ => ?_
+    have ev₁ := eval_nonzero x9₁ (by omega_using [hn])
+    have ev₂ := eval_nonzero x9₂ (by omega_using [hn])
     refine ⟨by rw [ev₁, ev₂], fun hc => ?_⟩
     rw [ev₁] at hc
-    have he : j + 1 ≠ p.n / 16 := by simp at hc; omega
-    exact ⟨p.n / 16 - (j + 1), by omega, j + 1, rfl, by omega, by omega, K₁, K₂⟩
+    have he : j + 1 ≠ p.n / 16 := by simp at hc; omega_using [hc]
+    exact ⟨p.n / 16 - (j + 1), by omega_using [hk, hj], j + 1, rfl, by omega_using [hbj], by omega_using [hj, he], K₁, K₂⟩
   -- The last bytes.
-  have x28₁ : w₁.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₁.x28]; congr 1; omega
-  have x28₂ : w₂.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₂.x28]; congr 1; omega
-  refine rel_ite (eval_zero x28₁ (by omega)) (eval_zero x28₂ (by omega))
+  have x28₁ : w₁.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₁.x28]; congr 1; omega_using []
+  have x28₂ : w₂.gpr .x28 = BitVec.ofNat 64 (p.n % 16) := by rw [C₂.x28]; congr 1; omega_using []
+  refine rel_ite (eval_zero x28₁ (by omega_using [])) (eval_zero x28₂ (by omega_using []))
     (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun _ => ?_)
   refine rel_seq (tag_rel v L C₁.env C₂.env (o := 224) (by decide)) (tag_ok v L C₁.env (o := 224) (by decide))
     (tag_ok v L C₂.env (o := 224) (by decide)) fun z₁ z₂ T₁ T₂ => ?_
@@ -151,13 +151,13 @@ theorem restAbs_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E
   refine rel_seq (rel_env E₁ E₂ [] (by simp) rest_check) (rest_ok L E₁) (rest_ok L E₂)
     fun c₁ c₂ ⟨x27₁, x28₁, G₁, _, _, _, _⟩ ⟨x27₂, x28₂, G₂, _, _, _, _⟩ => ?_
   have dW : (⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩ : Region).Disjoint
-      ⟨p.W, 3808⟩ := L.d_w.sub_left (Offset.sub_base p.D (by omega))
+      ⟨p.W, 3808⟩ := L.d_w.sub_left (Offset.sub_base p.D (by omega_using []))
   have hc : ∀ {c : State}, Env p c →
       Covers [⟨p.D + BitVec.ofNat 64 (128 * (p.n / 128)), p.n - 128 * (p.n / 128)⟩] (c.rd ++ c.wr) := fun G =>
-    Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off G.perm.d (by omega) hn)
-  exact absorb_rel v L G₁ G₂ (by omega) (by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega)]
-      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega)
+    Proof.AesGcm.AArch64.covers_left (Proof.AesGcm.AArch64.covers_off G.perm.d (by omega_using []) hn)
+  exact absorb_rel v L G₁ G₂ (by omega_using []) (by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 128 * (p.n / 128)) (by omega_using [hn])]
+      have := L.dw; have := Nat.mod_le (p.D.toNat + 128 * (p.n / 128)) (2 ^ 64); omega_arith)
     dW (hc G₁) (hc G₂) x27₁ x27₂ x28₁ x28₂
 
 /-- `polyData`, in two runs with the same public arguments. -/
@@ -210,13 +210,13 @@ theorem ciph_cryAbs {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (cryR p.W p.D
     Spec.GcmSiv.ctxCiph m' (p.W + BitVec.ofNat 64 240) p.R = Spec.GcmSiv.ctxCiph m (p.W + BitVec.ofNat 64 240) p.R := by
   have hR := L.rounds_le
   unfold Spec.GcmSiv.ctxCiph
-  rw [Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => ?_) (by omega)]
+  rw [Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hR])]
   rcases List.mem_append.mp hr with hr | hr
   · exact (key_cryR L r hr).sub_left (Region.sub_prefix hR)
   · simp only [absR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact L.w_w (.inr (by omega_using [])) (by omega_using [hR]) (by decide)
+    · exact L.w_w (.inl (by omega_using [hR])) (by omega_using [hR]) (by decide)
 
 /-- `openData`, in two runs with the same public arguments. -/
 theorem openData_rel (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State}

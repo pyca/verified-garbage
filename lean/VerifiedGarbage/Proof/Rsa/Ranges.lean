@@ -19,9 +19,9 @@ open VG VG.Proof.Bignum
 
 theorem slot_lt {w j K : Nat} (h : j < K) : slot w j + 8 * (w + 2) ≤ slot w K := by
   unfold slot
-  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ K by omega)
+  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ K by omega_using [h])
   rw [Nat.add_mul, Nat.one_mul] at this
-  omega
+  omega_using [this]
 
 /-- The byte range of array `j`. -/
 abbrev ar (w j : Nat) : Nat × Nat := (slot w j, 8 * (w + 2))
@@ -29,16 +29,16 @@ abbrev ar (w j : Nat) : Nat × Nat := (slot w j, 8 * (w + 2))
 theorem slot_mono {w j k : Nat} (h : j ≤ k) : slot w j ≤ slot w k := by
   unfold slot
   have := Nat.mul_le_mul_right (8 * (w + 2)) h
-  omega
+  omega_using [this]
 
 theorem slot_add (w j k : Nat) : slot w (j + k) = slot w j + k * (8 * (w + 2)) := by
-  unfold slot; rw [Nat.add_mul]; omega
+  unfold slot; rw [Nat.add_mul]; omega_using []
 
 /-- The low `j` words of a number of `w ≥ j` words. -/
 theorem wv_mod (m : Mem) (B : Addr) (e : Nat) {j w : Nat} (hj : j ≤ w) :
     wv m B e w % 2 ^ (64 * j) = wv m B e j := by
   have e1 := wv_add m B e j (w - j)
-  rw [show j + (w - j) = w by omega] at e1
+  rw [show j + (w - j) = w by omega_using [hj]] at e1
   rw [e1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (wv_lt _ _ _ _)]
 
 end VG.Proof.Rsa

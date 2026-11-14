@@ -33,19 +33,19 @@ theorem val32_zero_iff (m : Mem) (W : Addr) (x N : Nat) :
   | succ N ih =>
     have split : val32 m W x (N + 1) = 0 ↔ w32 m W x = 0 ∧ val32 m W (x + 4) N = 0 := by
       simp only [val32]; constructor
-      · intro h; constructor <;> omega
+      · intro h; constructor <;> omega_using [h]
       · rintro ⟨a, b⟩; rw [a, b]
     rw [split, ih]
     constructor
     · rintro ⟨lo, hi⟩ i hiN
       cases i with
       | zero => simpa using BitVec.eq_of_toNat_eq lo
-      | succ i => simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hi i (by omega)
+      | succ i => simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hi i (by omega_using [hiN])
     · intro h
       refine ⟨?_, fun i hi => ?_⟩
-      · have := congrArg BitVec.toNat (h 0 (by omega))
+      · have := congrArg BitVec.toNat (h 0 (by omega_using []))
         simpa [w32] using this
-      · simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using h (i + 1) (by omega)
+      · simpa [Nat.mul_add, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using h (i + 1) (by omega_using [hi])
 
 /-- The loop or'ing `N` words at `ebp` into `ecx`. -/
 abbrev orLoop : Prog isa :=
@@ -62,7 +62,7 @@ theorem orLoop_ok {s : State} {W : Addr} {Z x N : Nat} (hw : Ws s W Z) (hN : 0 <
     fun u ⟨K, m, _, _, e⟩ => ⟨m, e.trans (and_congr_right fun _ => (val32_zero_iff _ _ _ _).symm), K⟩
   rintro j t hj ⟨K, m, p, n, e⟩
   have ht := hw.of_keeps K
-  refine wp_orS (readSrc_ptr ht p (d := 0) (by omega)) fun s1 U1 => wp_addS rfl fun s2 U2 _ =>
+  refine wp_orS (readSrc_ptr ht p (d := 0) (by omega_using [hx, hj])) fun s1 U1 => wp_addS rfl fun s2 U2 _ =>
     wp_subZ rfl fun s3 U3 z3 => WP.block_nil ?_
   have K3 : Keeps [.ecx, .edx, .ebp] t s3 :=
     ((U1.keeps.mono (by decide)).trans (U2.keeps.mono (by decide))).trans (U3.keeps.mono (by decide))
@@ -80,8 +80,8 @@ theorem orLoop_ok {s : State} {W : Addr} {Z x N : Nat} (hw : Ws s W Z) (hN : 0 <
     · rintro ⟨⟨c0, old⟩, last⟩; refine ⟨c0, fun i hi => ?_⟩
       by_cases eq : i = j
       · subst eq; exact last
-      · exact old i (by omega)
-    · rintro ⟨c0, all⟩; exact ⟨⟨c0, fun i hi => all i (by omega)⟩, all j (by omega)⟩
+      · exact old i (by omega_using [hi, eq])
+    · rintro ⟨c0, all⟩; exact ⟨⟨c0, fun i hi => all i (by omega_using [hi])⟩, all j (by omega_using [])⟩
   · rw [z3, U2.other _ (by decide), U1.other _ (by decide), cz]
 
 /-- `(x | -x) >> 31` is 0 if `x = 0` and 1 otherwise. -/
@@ -92,28 +92,28 @@ theorem nz_bit (x : BitVec 32) : (0 - x ||| x) >>> 31 = if x = 0 then 0 else 1 :
     have hx : x.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
     have hlt := x.isLt
     have hneg : (0 - x).toNat = 2 ^ 32 - x.toNat := by
-      rw [BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl]; omega
+      rw [BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl]; omega_using [hx]
     have h1 : 2 ^ 31 ≤ (0 - x ||| x).toNat := by
       rw [BitVec.toNat_or]
       rcases Nat.lt_or_ge x.toNat (2 ^ 31) with h2 | h2
-      · exact Nat.le_trans (by omega) (Nat.left_le_or (n := (0 - x).toNat))
+      · exact Nat.le_trans (by omega_using [hneg, h2]) (Nat.left_le_or (n := (0 - x).toNat))
       · exact Nat.le_trans h2 Nat.right_le_or
     have h2 := (0 - x ||| x).isLt
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_using [h1]
 
 /-- A number of `2 w` words is one of `w` exactly when its low `w` words are it and its high zero. -/
 theorem wide_eq_iff {m : Mem} {W : Addr} {x w n : Nat} (hn : n < 2 ^ (32 * w)) :
     val32 m W x (2 * w) = n ↔ val32 m W x w = n ∧ val32 m W (x + 4 * w) w = 0 := by
-  rw [show 2 * w = w + w by omega, val32_append]
+  rw [show 2 * w = w + w by omega_using [], val32_append]
   have hl := val32_lt m W x w
   constructor
   · intro e
     have h0 : val32 m W (x + 4 * w) w = 0 := by
       by_contra hc
       have := Nat.mul_le_mul_left (2 ^ (32 * w)) (Nat.one_le_iff_ne_zero.mpr hc)
-      omega
+      omega_using [hn, e, this]
     refine ⟨?_, h0⟩; rw [h0, Nat.mul_zero, Nat.add_zero] at e; exact e
   · rintro ⟨a, b⟩; rw [a, b, Nat.mul_zero, Nat.add_zero]
 
@@ -135,9 +135,9 @@ theorem eqWide_ok {L : Lay} {s : State} {B : Addr} {Z len N : Nat} (h : RtWs L s
   unfold VG.Impl.Rsa.X86.WordModRt.eqWide
   simp only [VG.Impl.Rsa.X86.WordModRt.seqs, List.append_assoc]
   refine WP.seq (arrPtr_ok (lenSrc h) h.lenLe h.edi (r := .ebp) (t := .edx) (j := o) (by decide) (by decide)
-    (by omega) fun s1 K1 m1 p1 _ => ?_)
+    (by omega_using [fo, nw]) fun s1 K1 m1 p1 _ => ?_)
   have h1 := h.keep K1 (by decide) (by decide) (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine arrPtr_ok (lenSrc h1) h1.lenLe h1.edi (r := .ebx) (t := .edx) (j := n) (by decide) (by decide) (by omega)
+  refine arrPtr_ok (lenSrc h1) h1.lenLe h1.edi (r := .ebx) (t := .edx) (j := n) (by decide) (by decide) (by omega_using [fn, nw])
     fun s2 K2 m2 p2 _ => ?_
   have h2 := h1.keep K2 (by decide) (by decide) (by rw [m2]; exact Outside.refl _ _ _ _)
   refine bytesB_ok (r := .edx) (lenSrc h2) h2.lenLe fun s3 K3 m3 n3 => wp_movS rfl fun s4 U4 _ => WP.block_nil ?_
@@ -146,14 +146,14 @@ theorem eqWide_ok {L : Lay} {s : State} {B : Addr} {Z len N : Nat} (h : RtWs L s
   have m4 : s4.mem = s.mem := by rw [U4.mem, m3, m2, m1]
   have h4 := h.keep K4 (by decide) (by decide) (by rw [m4]; exact Outside.refl _ _ _ _)
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.eqLoop_ok h4.rt (x := arr (kw len) o) (y := arr (kw len) n)
-    wpos (by omega) (by omega)
+    wpos (by omega_using [fo]) (by omega_using [fn])
     (by rw [PtrAt, U4.other _ (by decide), K3.1 _ (by decide), K2.1 _ (by decide)]; exact p1)
     (by rw [PtrAt, U4.other _ (by decide), K3.1 _ (by decide)]; exact p2)
     U4.gpr (by rw [U4.other _ (by decide)]; exact n3)) fun u ⟨mu, eu, Ku, pu⟩ => ?_)
   have hu := h4.keep Ku (by decide) (by decide) (by rw [mu]; exact Outside.refl _ _ _ _)
   rw [← List.append_nil (bytesB L .edx)]
   refine WP.seq (bytesB_ok (r := .edx) (lenSrc hu) hu.lenLe fun u1 Ku1 mu1 nu1 => WP.block_nil ?_)
-  refine WP.seq (WP.mono (orLoop_ok (hu.rt.of_keeps Ku1) wpos (x := arr (kw len) o + 4 * kw len) (by omega)
+  refine WP.seq (WP.mono (orLoop_ok (hu.rt.of_keeps Ku1) wpos (x := arr (kw len) o + 4 * kw len) (by omega_using [fo])
     (by rw [PtrAt, Ku1.1 _ (by decide)]; exact pu) nu1) fun v ⟨mv, ev, Kv⟩ => ?_)
   have Kv' : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s v :=
     ((K4.mono (by decide)).trans Ku).trans ((Ku1.mono (by decide)).trans (Kv.mono (by decide)))

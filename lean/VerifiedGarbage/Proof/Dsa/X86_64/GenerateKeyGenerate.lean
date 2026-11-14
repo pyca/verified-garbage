@@ -46,13 +46,13 @@ theorem KeygenState.write_status {extra : Nat} {s t u : State} {h : GenerateKeyA
   have hf : Outside (randomBase s) Random.oStatus 8 t.mem u.mem := by
     rw [hm]; exact writeW_outside _ _ _ (by decide)
   refine ht.of_frame (InScr.of_outside hf (by decide)) (fun d hd hd' => hf.word (Or.inl (by
-    change d + 8 ≤ 192; omega)) (by omega)) hk (by rw [hmx])
+    change d + 8 ≤ 192; omega_using [hd'])) (by omega_using [hd'])) hk (by rw [hmx])
 
 /-- Writes to the frame's outgoing-argument words keep the frame state. -/
 theorem KeygenState.of_outgoing {extra : Nat} {s t u : State} {h : GenerateKeyABI extra s} {used : Nat}
     (ht : KeygenState h used t) (hf : Outside (randomBase s) 0 24 t.mem u.mem)
     (hk : Keep randomVolatile t u) (hmx : u.mxcsr = t.mxcsr) : KeygenState h used u :=
-  ht.of_frame (InScr.of_outside hf (by decide)) (fun d hd _ => hf.word (Or.inr (by omega)) (by omega)) hk
+  ht.of_frame (InScr.of_outside hf (by decide)) (fun d hd _ => hf.word (Or.inr (by omega_using [hd])) (by omega_arith)) hk
     (by rw [hmx])
 
 theorem keygen_bytes_params {extra : Nat} {s t : State} {h : GenerateKeyABI extra s} {used : Nat}
@@ -87,9 +87,9 @@ theorem keygen_derive_step (v : Backend) {s t : State} {h : GenerateKeyABI v.sta
     have hq : (stackArg s 0).toNat ≤ 32 := by
       have hl := h.lengths
       unfold Spec.Dsa.lengthsValid at hl
-      omega
+      omega_using [hl]
     exact (random_outside_bytes hargs (show Random.oNonce + (stackArg s 0).toNat ≤ 2 ^ 64 by
-      unfold Random.oNonce; omega) (Or.inr (show 0 + 24 ≤ Random.oNonce by decide))).trans hnonce
+      unfold Random.oNonce; omega_using [hq]) (Or.inr (show 0 + 24 ≤ Random.oNonce by decide))).trans hnonce
   refine WP.seq (WP.mono (keygen_derive_call v h ha.sp hw hdi hsi hdx hcx h8 h9 ha.rd ha.wr (keygen_bytes_params ha) hc)
     fun b ⟨hbr, hbw, hbc, hf, hst, hout, hmxb⟩ => ?_)
   rw [keygen_bytes_params ha, hnA] at hst hout
@@ -119,7 +119,7 @@ theorem keygen_derive_step (v : Backend) {s t : State} {h : GenerateKeyABI v.sta
   · rw [hum, word_writeW_self]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), ← BitVec.toNat_setWidth, hst]
+    rw [Nat.mod_eq_of_lt (by omega_using []), ← BitVec.toNat_setWidth, hst]
     exact (Nat.mod_eq_of_lt (by unfold Spec.Dsa.signStatus; split <;> decide)).symm
   · rw [hum, random_writeW_bytes _ (hoF.sep (Region.contains_self _ _)
       (Offset.contains_base (randomBase s) (d := Random.oStatus) (n := 8) (by decide) (by decide)))

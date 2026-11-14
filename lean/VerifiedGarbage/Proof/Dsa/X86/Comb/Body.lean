@@ -34,9 +34,9 @@ theorem core_saved {n e : Nat} {base : Addr} {s t : State} {g : Reg → BitVec 3
   rw [show t.mem.readW (off base p.2) 32=s.mem.readW (off base p.2) 32 from
     Mem.readW_congr (fun i hi => O _ (by
       intro r hr
-      rw [ofs_off base (by omega)]
+      rw [ofs_off base (by omega_using [hp', hi])]
       have := apart r hr
-      omega))]
+      omega_using [hp', hi, this]))]
   exact H p hp
 
 theorem body_ok {n e m : Nat} {base : Addr} {s : State}
@@ -54,16 +54,16 @@ theorem body_ok {n e m : Nat} {base : Addr} {s : State}
   unfold body
   refine WP.seq (WP.mono (Pow.save_ok E hz24) fun u ⟨Su,Saved,Ou,Ku⟩ => ?_)
   have vals : ∀ {d k : Nat}, 24≤d → d+4*k≤2^64 → val32 u.mem base d k=val32 s.mem base d k :=
-    fun hd hk => Ou.val32 (by omega) hk
+    fun hd hk => Ou.val32 (by omega_using [hd]) hk
   have bounds : 24≤slot n 0 ∧ slot n 0+8*n≤2^64 ∧ 24≤slot n 5 ∧ slot n 5+8*n≤2^64 ∧
       24≤slot n 8 ∧ slot n 8+4*e≤2^64 ∧ 24≤context n ∧
       context n+8*Proof.Dsa.FixedBaseComb.contextWords (layout n e)≤2^64 := by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide
   have V : wordsVal u.mem base (slot n 0) n=m := by
-    rw [wordsVal_eq_val32,vals bounds.1 (by have := bounds.2.1; omega),←wordsVal_eq_val32,hv]
+    rw [wordsVal_eq_val32,vals bounds.1 (by have := bounds.2.1; omega_using [bounds]),←wordsVal_eq_val32,hv]
   have G : wordsVal u.mem base (slot n 5) n=wordsVal s.mem base (slot n 5) n := by
     rw [wordsVal_eq_val32,wordsVal_eq_val32]
-    exact vals bounds.2.2.1 (by have := bounds.2.2.2.1; omega)
+    exact vals bounds.2.2.1 (by have := bounds.2.2.2.1; omega_using [bounds])
   have X : val32 u.mem base (slot n 8) e=val32 s.mem base (slot n 8) e :=
     vals bounds.2.2.2.2.1 bounds.2.2.2.2.2.1
   have Hu : prepare=false → canonical n e m (wordsVal u.mem base (slot n 5) n) base u.mem := by

@@ -73,7 +73,7 @@ theorem mem_lens {G : Spec.Mgf1.Hash} (h : G ∈ VG.Proof.Pbkdf2.Md.AArch64.mdHa
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem mem_lens_lt {d : Nat} (h : d ∈ lens) : d < 4096 := by
-  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 theorem ofNat_sub_beq {j N : Nat} (hj : j < 2 ^ 64) (hN : N < 2 ^ 64) :
     (BitVec.ofNat 64 j - BitVec.ofNat 64 N == 0) = decide (j = N) := by
@@ -94,7 +94,7 @@ theorem cmpLen_ok {F S : Addr} {u : State} {d x : Nat} (h16 : u.gpr .x16 = BitVe
       Step F S [] u u' ∧ u'.mem = u.mem ∧ (∀ r, r ≠ .x17 → u'.gpr r = u.gpr r) := by
   oaep_run [h16, hx]
   refine ⟨?_, blk_step, trivial, fun r hr => by simp [hr]⟩
-  rw [ofNat_sub_beq (by omega) (by omega)]
+  rw [ofNat_sub_beq (by omega_using [hd]) (by omega_using [hx])]
 
 /-- The code for the digest length `d` in `x16`, from a state that differs
 only in `x17`. -/
@@ -190,11 +190,11 @@ theorem hashLabelT_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.ha
     fun u6 ⟨L6, S6, R6, hr6⟩ => ?_
   have hlb : (Spec.Rsa.bytesAt u2.mem lab labLen).length = labLen := by
     simp [Spec.Rsa.bytesAt]
-  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega) (by rw [x15, hlb])
+  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega_using [hlen]) (by rw [x15, hlb])
   have hlab : Spec.Rsa.bytesAt u2.mem lab labLen = Spec.Rsa.bytesAt u.mem lab labLen := by
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => (S1.trans S2).frame.bytes (R := ⟨lab, labLen⟩) (fun r hr => ?_)
-      (by show labLen ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+      (by show labLen ≤ 2 ^ 64; omega_using [hlen]) (List.mem_range.mp hi)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     exacts [A.dF, A.dS, A.dK.symm]
@@ -202,9 +202,9 @@ theorem hashLabelT_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.ha
   refine ⟨L6, S15.trans S6, V6, R6, fun x hx => ?_, fun i hi => ?_⟩
   · simp only [labR, inR_cons, inR_nil, or_false] at hx
     have : hG.Wb ≤ 1072 := hzW
-    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega)]
-  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega), hdig i hi, hHh, hlab]
+    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzF, hzW, hx]),
+      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzW, hx]),
+      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hx])]
+  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzDF, hi]), hdig i hi, hHh, hlab]
 
 end VG.Proof.RsaOaep.AArch64

@@ -58,7 +58,7 @@ theorem Masks.frame {s s' : State} (h : Masks s) (hsb : s'.gpr sb = s.gpr sb)
   · simp only [List.mem_singleton] at hr; subst hr
     simp only [workR, wordAddr, h.1]
     rw [Offset.add_add]
-    exact Offset.disjoint_base _ (by unfold kSlot; omega) (by unfold kSlot; omega)
+    exact Offset.disjoint_base _ (by unfold kSlot; omega_using []) (by unfold kSlot; omega_using [hlt])
 
 /-- The masks' slots. -/
 def masksR (s : State) : Region := ⟨s.gpr sb + BitVec.ofNat 64 (8 * kSlot), 8 * 13⟩
@@ -76,32 +76,32 @@ theorem Masks.frame' {s s' : State} {rs : List Region} (h : Masks s) (hsb : s'.g
   · refine (hd r hr).sub_left ?_
     simp only [masksR, Straight.wordAddr, h.1]
     rw [Offset.add_add]
-    exact Offset.sub _ (by unfold kSlot; omega) (by unfold kSlot; omega)
+    exact Offset.sub _ (by unfold kSlot; omega_using []) (by unfold kSlot; omega_using [hlt])
 
 theorem masksR_sub (s : State) : Region.Sub (masksR s) (scratchR s) :=
-  Offset.sub_base _ (by unfold kSlot scratchSlots; omega)
+  Offset.sub_base _ (by unfold kSlot scratchSlots; omega_using [])
 
 theorem room_ok_gCfg {s : State} (h : Room s) (hm : Masks s) : Ok gCfg s where
-  slotIn k hk := h.wr (Offset.contains_base _ (by simp [gCfg, scratchSlots] at hk ⊢; omega)
-    (by simp [gCfg] at hk; omega))
+  slotIn k hk := h.wr (Offset.contains_base _ (by simp [gCfg, scratchSlots] at hk ⊢; omega_using [hk])
+    (by simp [gCfg] at hk; omega_using [hk]))
   extIn j hj := by
     show InRegions (s.rd ++ s.wr) (wordAddr (s.gpr kb) j) 8
     simp only [wordAddr, hm.1]
     rw [Offset.add_add]
-    exact h.rw (Offset.contains_base _ (by simp [gCfg] at hj; unfold kSlot scratchSlots; omega)
-      (by simp [gCfg] at hj; unfold kSlot; omega))
+    exact h.rw (Offset.contains_base _ (by simp [gCfg] at hj; unfold kSlot scratchSlots; omega_using [hj])
+      (by simp [gCfg] at hj; unfold kSlot; omega_using [hj]))
   baseAl _ := h.1
   extAl _ := by
     show (s.gpr kb).toNat % 8 = 0
     rw [hm.1]
-    exact wordAddr_al h.1 kSlot (by unfold kSlot; omega)
+    exact wordAddr_al h.1 kSlot (by unfold kSlot; omega_using [])
   slots := by decide
   sep k hk j hj := by
     show Mem.Sep (wordAddr (s.gpr sb) k) 8 (wordAddr (s.gpr kb) j) 8
     simp only [wordAddr, hm.1]
     rw [Offset.add_add]
     simp [gCfg] at hk hj
-    exact Offset.sep _ (by unfold kSlot; omega) (by omega) (by unfold kSlot; omega)
+    exact Offset.sep _ (by unfold kSlot; omega_using [hk]) (by omega_using [hk]) (by unfold kSlot; omega_using [hj])
 
 /-- `g16` on the lanes: `G` of `G`'s words, the other arrays kept. -/
 theorem g16_lanes {s : State} (h : Room s) (hm : Masks s) :
@@ -130,7 +130,7 @@ theorem g16_lanes {s : State} (h : Room s) (hm : Masks s) :
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint_base (s.gpr sb) (d := 8 * k + 4 * b) (n := 4) (k := 8 * 48)
-      (by omega) (by omega)
+      (by omega_using [hk48]) (by omega_using [hb, hb'])
 
 /-! ## The round -/
 
@@ -189,7 +189,7 @@ theorem scratch_of_arrays {s s' : State} (hfr : Frame [arraysR s] s.mem s'.mem) 
     Frame [workR s] s.mem s'.mem :=
   hfr.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨workR s, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩
+    exact ⟨workR s, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [])⟩
 
 /-- The step of the key pointer. -/
 def stepW : Spec.Seed.Direction → BitVec 64

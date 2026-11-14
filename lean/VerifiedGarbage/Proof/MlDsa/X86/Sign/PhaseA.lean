@@ -102,7 +102,7 @@ theorem rej_val {x : List Byte} {r : BitVec 32} {out : Poly}
 theorem integerToBytes_one {x : Nat} : integerToBytes x 1 = [BitVec.ofNat 8 x] := by
   simp [integerToBytes]
 
-theorem skLen_ge (ps : PS p) : 32 ≤ p.skLen := by have := ps.hskLen; omega
+theorem skLen_ge (ps : PS p) : 32 ≤ p.skLen := by have := ps.hskLen; omega_using [this]
 
 theorem rhoS_eq {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') : rhoS p s₀ = rhoS p s₀' :=
   rho_of_leak (by rw [VG.Proof.MlKem.bytesAt_length]; exact skLen_ge ps)
@@ -131,7 +131,7 @@ theorem seed_bytes (ps : PS p) {s₀ : State} (hp : TPre (Y p) s₀) {m : Mem} {
     integerToBytes_one, integerToBytes_one]
 
 theorem rs_hi (ps : PS p) : oRS + 34 ≤ scrLen p := by
-  have := scr_ge ps; simp only [oP, oRS, nS] at this ⊢; omega
+  have := scr_ge ps; simp only [oP, oRS, nS] at this ⊢; omega_using [this]
 
 /-- The two bytes of the seed of entry `e`. -/
 theorem seedBlk_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e < p.k * p.ℓ) :
@@ -144,7 +144,7 @@ theorem seedBlk_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
   rw [← List.append_nil (st8 (oRS + 33) (e / p.ℓ))]
   refine wp_st8 hp c₁ w3 _ fun s₂ c₂ f₂ b₂ => WP.block_nil_iff.mpr ?_
   have fs : ∀ o, o = oRS + 32 ∨ o = oRS + 33 → ∀ c ∈ [sc o 1], c.arg = SC ∧ oRS + 32 ≤ c.off ∧ c.off + c.len ≤ oRS + 34 ∧ 0 < c.len :=
-    fun o ho c hc => by rw [List.mem_singleton] at hc; subst hc; simp only [oRS, true_and] at ho ⊢; omega
+    fun o ho c hc => by rw [List.mem_singleton] at hc; subst hc; simp only [oRS, true_and] at ho ⊢; omega_using [ho]
   have f := (frSc hp (M := 0) (Nat.le_refl _) (by decide) (by decide) (rs_hi ps) (fs _ (.inl rfl)) f₁).trans
     (frSc hp (M := 0) (Nat.le_refl _) (by decide) (by decide) (rs_hi ps) (fs _ (.inr rfl)) f₂)
   have o0 : ∀ c ∈ [sc (oRS + 32) (oRS + 34 - (oRS + 32))], Out p oOK (oOK + 4) c := by
@@ -153,10 +153,10 @@ theorem seedBlk_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
     intro c hc; rw [List.mem_singleton] at hc; subst hc; exact ⟨sc_ok' ps (by decide) (by decide), fun _ => by decide⟩
   have oF : ∀ c ∈ [sc (oRS + 32) (oRS + 34 - (oRS + 32))], Out p (oP (aBase p)) (oP (aBase p + e)) c := by
     intro c hc; rw [List.mem_singleton] at hc; subst hc
-    exact ⟨sc_ok' ps (by decide) (by decide), fun _ => .inl (by simp only [oP, oRS]; omega)⟩
+    exact ⟨sc_ok' ps (by decide) (by decide), fun _ => .inl (by simp only [oP, oRS]; omega_using [])⟩
   have hrs : bytesAt s₂.mem (Buf.addr s₀ (sc oRS 32)) 32 = rhoS p s₀ := by rw [keepB hp (by decide) f o1 o1', h.rs]
   refine ⟨⟨c₂, hrs, by rw [scw, keepW' hp (by decide) f (sc_ok' ps (by decide) (by decide)) o0]; exact h.ok,
-    fun hk => (h.fam hk).keep hp ps (by decide) f (by simp only [nS, aBase]; omega) oF, h.bad,
+    fun hk => (h.fam hk).keep hp ps (by decide) f (by simp only [nS, aBase]; omega_using [he]) oF, h.bad,
     h.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) f (by ofsd)⟩, ?_⟩
   have b₁' : bytesAt s₂.mem (Buf.addr s₀ (sc (oRS + 32) 1)) 1 = [BitVec.ofNat 8 (e % p.ℓ)] := by
     rw [keepB hp (by decide) f₂ (sc_ok' ps (by decide) (by decide)) fun c hc => by
@@ -185,10 +185,10 @@ theorem rejCall_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
       rw [h.2, h'.2]; show aSeed (rhoS p s₀) _ _ = aSeed (rhoS p s₀') _ _; rw [rhoS_eq ps hq])
     fun s₀ s s' hp ⟨h, hs⟩ c' fr heax hred hout => ?_
   rw [hs] at heax hout
-  have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega
+  have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega_using [he]
   refine ⟨⟨c', by rw [keepB hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), h.rs],
     by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok,
-    fun hk => (h.fam hk).keep hp ps (by decide) fr (by omega) (by ofsd), h.bad,
+    fun hk => (h.fam hk).keep hp ps (by decide) fr (by omega_using [hj]) (by ofsd), h.bad,
     h.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr (by ofsd)⟩, heax, fun hy => ?_, fun hn => ?_⟩
   · rw [hy] at heax; simp only [↓reduceIte] at heax
     refine ⟨hred heax, ?_⟩
@@ -203,10 +203,10 @@ theorem rejCall_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
 theorem rejAnd_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e < p.k * p.ℓ) :
     SP p (RB p F.rejF e) (IA p F.rejF (e + 1)) (.block andOK) := by
   refine blk_piece (fun _ _ _ h => h.ia.ctx) (fun s₀ s hp h => wp_andOK hp h.ia.ctx ps fun s' c' fr ok' => ?_) rfl
-  have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega
+  have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega_using [he]
   have fr' := fr0 hp (N := 80) (by decide) fr
   have hfam : okE p F.rejF s₀ e = true → Fam s₀ s'.mem (aBase p) e (aVal p s₀) := fun hk =>
-    (h.ia.fam hk).keep hp ps (by decide) fr' (by omega) (by ofsd)
+    (h.ia.fam hk).keep hp ps (by decide) fr' (by omega_using [hj]) (by ofsd)
   refine ⟨c', by rw [keepB hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), h.ia.rs], ?_, fun hk => ?_, fun hk => ?_,
     h.ia.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr' (by ofsd)⟩
   · rw [ok', h.ia.ok, h.eax, and01, okE_succ]
@@ -215,8 +215,8 @@ theorem rejAnd_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e <
   · rw [okE_succ, Bool.and_eq_false_iff] at hk
     rcases hk with hk | hk
     · obtain ⟨e', he', hn⟩ := h.ia.bad hk
-      exact ⟨e', by omega, hn⟩
-    · exact ⟨e, by omega, h.no hk⟩
+      exact ⟨e', by omega_using [he'], hn⟩
+    · exact ⟨e, by omega_using [], h.no hk⟩
 
 theorem aP_slot {e : Nat} : aP p (e / p.ℓ) (e % p.ℓ) = pS (aBase p + e) := by
   rw [aP_eq, Nat.div_add_mod]
@@ -235,7 +235,7 @@ theorem expandA_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
   unfold Impl.MlDsa.X86.Sign.expandA
   refine Piece.seq (B := IA p F.rejF 0) (copy_piece 0 0 SC oRS 8 (by decide) (by decide) (by ofsd)
     (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hb => ?_)
-    (by simpa using seqR_piece (I := IA p F.rejF) 0 (p.k * p.ℓ) fun e _ he => sampleE_piece F ps e (by omega))
+    (by simpa using seqR_piece (I := IA p F.rejF) 0 (p.k * p.ℓ) fun e _ he => sampleE_piece F ps e (by omega_using [he]))
   have fr' : Frame (FR s₀ [sc oRS 32] 80) s.mem s'.mem := fr.mono (by simp)
   refine ⟨c', ?_, ?_, fun _ j hj => absurd hj (Nat.not_lt_zero _), fun hk => absurd hk (by simp [okE]),
     h.2.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr' (by ofsd)⟩

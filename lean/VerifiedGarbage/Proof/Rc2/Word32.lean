@@ -15,7 +15,7 @@ theorem maskWord (x : BitVec 32) : x &&& 65535 = (x.setWidth 16).setWidth 32 := 
   simp only [BitVec.toNat_and, BitVec.toNat_setWidth]
   change x.toNat &&& (2 ^ 16 - 1) = x.toNat % 65536 % 4294967296
   rw [Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem maskWord_lit (x : BitVec 32) : x &&& 65535#32 = (x.setWidth 16).setWidth 32 :=
   maskWord x
@@ -29,15 +29,15 @@ theorem rotateWord (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
   intro j hj
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_rotateRight,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_rotateLeft]
-  have n32 : (32 - n) % 32 = 32 - n := Nat.mod_eq_of_lt (by omega)
+  have n32 : (32 - n) % 32 = 32 - n := Nat.mod_eq_of_lt (by omega_using [hn])
   have n16 : n % 16 = n := Nat.mod_eq_of_lt hn'
   rw [n32, n16]
-  rw [show 32 - (32 - n) = n by omega]
+  rw [show 32 - (32 - n) = n by omega_using [hn']]
   by_cases h : j < n
   · simp (disch := omega) [h, hj,
-      show j + (16 - n) < 32 by omega, BitVec.getLsbD_of_ge, Nat.add_comm]
-  · simp (disch := omega) [h, hj, show j < 32 by omega,
-      show j - n < 32 by omega, BitVec.getLsbD_of_ge]
+      show j + (16 - n) < 32 by omega_using [hj], BitVec.getLsbD_of_ge, Nat.add_comm]
+  · simp (disch := omega) [h, hj, show j < 32 by omega_using [hj],
+      show j - n < 32 by omega_using [hj], BitVec.getLsbD_of_ge]
 
 theorem mixWord (x k a b c : BitVec 16) :
     (x.setWidth 32 + k.setWidth 32 +
@@ -61,8 +61,8 @@ theorem rotateLeft_reverse (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 1
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   simp only [BitVec.getLsbD_rotateLeft, BitVec.getLsbD_rotateRight,
-    Nat.mod_eq_of_lt hn', Nat.mod_eq_of_lt (show 16 - n < 16 by omega),
-    show 16 - (16 - n) = n by omega]
+    Nat.mod_eq_of_lt hn', Nat.mod_eq_of_lt (show 16 - n < 16 by omega_using [hn]),
+    show 16 - (16 - n) = n by omega_using [hn']]
 
 theorem joinBytes_shift (lo hi : VG.Byte) :
     lo.setWidth 32 ||| hi.setWidth 32 <<< 8 =
@@ -71,7 +71,7 @@ theorem joinBytes_shift (lo hi : VG.Byte) :
   intro j hj
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_setWidth, BitVec.getLsbD_shiftLeft]
   by_cases h : j < 16
-  · simp (disch := omega) [h, hj, show j - 8 < 32 by omega, show j - 8 < 16 by omega]
+  · simp (disch := omega) [h, hj, show j - 8 < 32 by omega_using [hj], show j - 8 < 16 by omega_using [h]]
   · simp (disch := omega) [h, hj, BitVec.getLsbD_of_ge]
 
 end VG.Proof.Rc2.Word32

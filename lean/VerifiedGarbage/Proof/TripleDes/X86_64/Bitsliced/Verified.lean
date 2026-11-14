@@ -43,7 +43,7 @@ theorem ecbTaint_wf (d : Spec.TripleDes.Direction) (s : State) (hs : (contract d
   · intro _
     rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ 8 * (s.gpr .rdx).toNat; omega)
+    · exact List.Forall₂.cons (by change 0 ≤ 8 * (s.gpr .rdx).toNat; omega_using [])
         (List.Forall₂.cons (by change 1024 ≤ 1024; decide) List.Forall₂.nil)
     · exact List.Pairwise.cons
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dataSep)
@@ -51,7 +51,7 @@ theorem ecbTaint_wf (d : Spec.TripleDes.Direction) (s : State) (hs : (contract d
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · change 8 * (s.gpr .rdx).toNat ≤ 2 ^ 64; omega
+      · change 8 * (s.gpr .rdx).toNat ≤ 2 ^ 64; omega_using [fit]
       · change 1024 ≤ 2 ^ 64; decide
   · intro p hp
     simp only [ecbTaint, List.mem_singleton] at hp

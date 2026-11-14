@@ -412,7 +412,7 @@ theorem storeBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
         (if c then Spec.Weierstrass.toBytes len (wordsVal s.mem base a n) else List.replicate len 0) ∧
       Rest [.r4, .r5] s s' ∧ Outside (State.addr (s.gpr dst) + BitVec.ofNat 64 d) 0 len s.mem s'.mem := by
   have hn := hs.nowrap
-  obtain ⟨K, hK⟩ : ∃ K, 4 * K ≤ len ∧ len < 4 * K + 4 := ⟨len / 4, by omega, by omega⟩
+  obtain ⟨K, hK⟩ : ∃ K, 4 * K ≤ len ∧ len < 4 * K + 4 := ⟨len / 4, by omega_using [], by omega_using []⟩
   have hKn : K ≤ 2 * n := by omega_arith
   rw [storeBytes_eq, show 2 * n = K + (2 * n - K) by omega_arith, List.range_add, List.flatMap_append,
     flatMap_range_congr (g := stStepW len dst d a) K fun j hj => ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)),

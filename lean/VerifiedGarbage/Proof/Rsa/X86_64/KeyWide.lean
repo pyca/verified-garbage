@@ -29,19 +29,19 @@ theorem mulEWideK {s t : State} {B : Addr} {Z w N : Nat} {minv : BitVec 64}
   have hn := h.good.scr.nowrap
   have hw := h.w2
   have hZ := h.hZ
-  have es : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot hdrBytes aAcc aTmp; omega
+  have es : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot hdrBytes aAcc aTmp; omega_using []
   unfold mulEWide
   refine wsa (by simp) (by simp [mulE]) (WP.mono
-    (zeroArr_ok h.good hZ h.w1 (by omega) (show aTmp < 8 by decide)) fun t₁ ⟨hz, ho, hk⟩ => ?_)
+    (zeroArr_ok h.good hZ h.w1 (by omega_using [hw]) (show aTmp < 8 by decide)) fun t₁ ⟨hz, ho, hk⟩ => ?_)
   have ha : Arrays B w [aTmp] t.mem t₁.mem := Arrays.of_outside (by simp) ho (Nat.le_refl _) (Nat.le_refl _)
   have h₁ := h.arr ha (by decide) (by decide) (by decide) hk
   refine WP.mono (mulEK h₁) fun t₂ ⟨h₂, hv, ha₂⟩ => ⟨h₂, ?_, ?_⟩
-  · rw [show 2 * w + 4 = (w + 2) + (w + 2) by omega, wv_add, es]
+  · rw [show 2 * w + 4 = (w + 2) + (w + 2) by omega_using [], wv_add, es]
     have hz₂ : wv t₂.mem B (slot w aTmp) (w + 2) = 0 := by
       rw [ha₂.wv_eq (fun j hj => by
         simp only [List.mem_singleton] at hj
         subst j
-        exact Or.inr (Nat.le_of_eq es)) (by unfold slot hdrBytes aTmp; omega), hz]
+        exact Or.inr (Nat.le_of_eq es)) (by unfold slot hdrBytes aTmp; omega_using [hw]), hz]
     rw [hz₂, Nat.mul_zero, Nat.add_zero, hv, Arrays.wv_other ha (by decide) (by decide) hZ hn]
   · exact (ha.mono (by simp)).trans (ha₂.mono (by simp))
 
@@ -53,7 +53,7 @@ theorem topD_ok {t : State} {B : Addr} {Z w sl L : Nat} {minv : BitVec 64}
   refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.gpr .r13 = BitVec.ofNat 64 ((L + 7) / 8 + 1) ∧ t'.mem = t.mem)
     (by
       xrun [topD, State.ea, hdr, hg.rdi, hdrOff,
-        hg.scr.ld (d := 8 * sl) (by have := hdr_lt_slot w 8 hsl; omega), hL, shr3_w L hL2]
+        hg.scr.ld (d := 8 * sl) (by have := hdr_lt_slot w 8 hsl; omega_using [hZ, this]), hL, shr3_w L hL2]
       rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]) rfl)
     fun _ ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
 
@@ -61,15 +61,15 @@ theorem topD_ok {t : State} {B : Addr} {Z w sl L : Nat} {minv : BitVec 64}
 theorem fullExp_bound {e d x y L : Nat} (he : e < 2 ^ 33) (hx : 2 ≤ x)
     (hd : d < x * y) (hy : y < 2 ^ (64 * ((L + 7) / 8))) :
     e * d < 2 ^ (64 * ((L + 7) / 8 + 1)) * (x - 1) := by
-  have hx' : x ≤ 2 * (x - 1) := by omega
+  have hx' : x ≤ 2 * (x - 1) := by omega_using [hx]
   have hxy : x * y ≤ 2 * (x - 1) * y := Nat.mul_le_mul_right y hx'
-  have hed : e * d ≤ e * (2 * (x - 1) * y) := Nat.mul_le_mul_left e (by omega)
+  have hed : e * d ≤ e * (2 * (x - 1) * y) := Nat.mul_le_mul_left e (by omega_using [hd, hxy])
   have hey : e * y < 2 ^ 33 * 2 ^ (64 * ((L + 7) / 8)) := Nat.mul_lt_mul_of_lt_of_lt he hy
   have hsmall : 2 * (2 ^ 33 * 2 ^ (64 * ((L + 7) / 8))) ≤ 2 ^ (64 * ((L + 7) / 8 + 1)) := by
     rw [Nat.mul_add, Nat.mul_one, Nat.pow_add]
     simpa only [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using
       Nat.mul_le_mul_right (2 ^ (64 * ((L + 7) / 8))) (show 2 * 2 ^ 33 ≤ (2 : Nat) ^ 64 by decide)
-  have hpos : 0 < x - 1 := by omega
+  have hpos : 0 < x - 1 := by omega_using [hx]
   calc e * d ≤ (2 * (e * y)) * (x - 1) := by simpa only [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using hed
     _ < (2 * (2 ^ 33 * 2 ^ (64 * ((L + 7) / 8)))) * (x - 1) :=
       Nat.mul_lt_mul_of_pos_right (Nat.mul_lt_mul_of_pos_left hey (by decide)) hpos

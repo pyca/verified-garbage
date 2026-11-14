@@ -39,7 +39,7 @@ theorem keep (hp : TPre Y s₀) {bs : List Buf} {N : Nat} (hN : N + 16 ≤ Y.stk
     {m m' : Mem} (fr : Frame (FR s₀ bs N) m m') :
     ∀ i < b.len, m' (b.addr s₀ + BitVec.ofNat 64 i) = m (b.addr s₀ + BitVec.ofNat 64 i) := by
   simp only [Lay.apart, Bool.and_eq_true] at hs
-  exact bytes_frame fr (Buf.frD hp hs.1 hs.2 hN) (by have := Buf.fit hp hs.1; omega)
+  exact bytes_frame fr (Buf.frD hp hs.1 hs.2 hN) (by have := Buf.fit hp hs.1; omega_using [this])
 
 theorem keepPoly (hp : TPre Y s₀) {bs : List Buf} {N : Nat} (hN : N + 16 ≤ Y.stk) {a o : Nat}
     (hs : Y.apart ⟨a, o, 1024⟩ bs = true) {m m' : Mem} (fr : Frame (FR s₀ bs N) m m') {f : Poly}
@@ -95,7 +95,7 @@ theorem bytes_split (hp : TPre Y s₀) (m : Mem) {a o o' l₁ l₂ L : Nat} (ho 
 theorem topLeaf {lk : State → List Byte} {body : Prog isa} {B : State → State → Prop} (hsp : NoSp body)
     (hb : Piece (TPre Y) (TPub Y lk) (fun s₀ s => s = P0 s₀) (fun s₀ s => Ctx Y s₀ s ∧ B s₀ s) body) :
     Piece (TPre Y) (TPub Y lk) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (B s₀) s₀ s') (leaf body) :=
-  Piece.leaf (W Y) hsp (fun _ hp => ⟨hp.E0_big, by have := hp.sp'; omega⟩) (fun _ hp => hp.hW)
+  Piece.leaf (W Y) hsp (fun _ hp => ⟨hp.E0_big, by have := hp.sp'; omega_using [this]⟩) (fun _ hp => hp.hW)
     (fun _ _ _ _ hq => hq.1) (hb.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h.2⟩)
 
 end VG.Proof.MlKem.X86.Top

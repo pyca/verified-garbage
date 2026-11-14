@@ -31,15 +31,15 @@ theorem cutSetup_ok {p : GkP} {rb : List Byte} {s : State} (h : Inputs p rb s)
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     change _ = p.ld % 2 ^ 64
     have hn : p.n = p.k - p.ld := rfl
-    omega
+    omega_using [hl, hn]
   refine WP.keep _ ?_ rfl
   unfold cutSetup
   xrun [CutRegs, State.ea, hdr, h.rdi, hdrOff,
-    h.base.scr.ld (d := 8 * sRand) (by change 208 ≤ p.Z; omega),
-    h.base.scr.ld (d := 8 * sX) (by change 168 ≤ p.Z; omega),
-    h.base.scr.ld (d := 8 * sMsk) (by change 256 ≤ p.Z; omega),
-    h.base.scr.ld (d := 8 * sK) (by change 152 ≤ p.Z; omega),
-    h.base.scr.ld (d := 8 * sEl) (by change 200 ≤ p.Z; omega),
+    h.base.scr.ld (d := 8 * sRand) (by change 208 ≤ p.Z; omega_using [hZ]),
+    h.base.scr.ld (d := 8 * sX) (by change 168 ≤ p.Z; omega_using [hZ]),
+    h.base.scr.ld (d := 8 * sMsk) (by change 256 ≤ p.Z; omega_using [hZ]),
+    h.base.scr.ld (d := 8 * sK) (by change 152 ≤ p.Z; omega_using [hZ]),
+    h.base.scr.ld (d := 8 * sEl) (by change 200 ≤ p.Z; omega_using [hZ]),
     h.base.hdr (sRand, p.rp) (by simp [GkP.headers]),
     h.base.hdr (sX, p.xp) (by simp [GkP.headers]),
     h.base.hdr (sK, BitVec.ofNat 64 p.k) (by simp [GkP.headers]), hn, hm, hsub]

@@ -42,19 +42,19 @@ theorem core_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : Bit
   intro u loop
   have oldM := loop.outside.val32 (d := mod) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, fitsM])
   have oldOut := outs_word32 loop.outside (d := tmp + 24) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, tmpFits])
   have outU : u.mem.readW (off (State.addr base) (tmp + 24)) 32 = base + BitVec.ofNat 32 out := by
     apply BitVec.eq_of_toNat_eq
     exact oldOut.trans (congrArg BitVec.toNat outPtr)
-  refine WP.mono (montFinish_ok u (finish.congr loop.rest.wr) (by omega) tmpFits loop.ptr
+  refine WP.mono (montFinish_ok u (finish.congr loop.rest.wr) (by omega_using [hn]) tmpFits loop.ptr
     loop.hdr.count outU loop.hdr.accPtr loop.hdr.mPtr (by rw [oldM]; exact loop.bound)) ?_
   rintro t ⟨value, outside, keep⟩
   rw [oldM] at value
   refine ⟨?_, ?_, ?_, loop.rest.trans keep⟩
-  · rw [value]; exact Nat.mod_lt _ (by omega)
+  · rw [value]; exact Nat.mod_lt _ (by omega_using [hB])
   · rw [value, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]
     exact loop.value
   · exact (loop.outside.mono (by simp)).trans (outside.mono (by simp))

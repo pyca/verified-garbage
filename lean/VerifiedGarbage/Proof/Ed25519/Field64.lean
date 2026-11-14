@@ -24,7 +24,7 @@ theorem foldCarry_low (r0 r1 r2 r3 : Word) (c : Bool) {a v : Nat}
   | true =>
     have hb : r0.toNat + 38 < 2 ^ 64 := by
       simp only [Bool.toNat_true, Nat.mul_one] at h
-      omega
+      omega_using [ha, hv, hl, h]
     change (r0 + 38).toNat = r0.toNat + 38
     rw [BitVec.toNat_add]
     exact Nat.mod_eq_of_lt hb
@@ -37,7 +37,7 @@ theorem foldCarry_field (r0 r1 r2 r3 : Word) (c : Bool) {a v : Nat}
       val4 r0 r1 r2 r3 + 38 * c.toNat := by
     simp only [val4]
     rw [foldCarry_low r0 r1 r2 r3 c ha hv h]
-    omega
+    omega_using []
   apply toFe_congr
   rw [hn, ← h]
   exact (fold256 _ _).symm

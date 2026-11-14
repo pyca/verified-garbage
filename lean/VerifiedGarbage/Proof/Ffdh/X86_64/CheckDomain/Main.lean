@@ -118,7 +118,7 @@ theorem main_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {p : CdP} {s : State}
     refine WP.seq (WP.mono (leaveQ_ok (hw₃.mem.ctx hd₃)
       (hb₃.hdr (sDomLen, BitVec.ofNat 64 p.dl) (by simp [CdP.headers]))
       (hb₃.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]))
-      (by rcases hdl with h | h <;> omega) (by rcases hdl with h | h <;> omega))
+      (by rcases hdl with h | h <;> omega_using [h]) (by rcases hdl with h | h <;> omega_using [hk', h]))
       fun u₄ ⟨hd₄, _, hz₄, hm₄, k₄⟩ => ?_)
     have hw₄ := hw₃.keep hm₄ k₄
     have H₄ : StepPost p s (fun _ => True) u₄ := ⟨trivial,
@@ -131,7 +131,7 @@ theorem main_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {p : CdP} {s : State}
           by rw [hm']; exact H₄.2.1,
           (fun i hi => by rw [hm']; exact H₄.2.2.1 i hi), keep_trans H₄.2.2.2 (k.mono (by decide))⟩
     · have hn' := of_decide_eq_false hq
-      have hq' : p.dl = 3 * p.k := by rcases hdl with h | h <;> omega
+      have hq' : p.dl = 3 * p.k := by rcases hdl with h | h <;> omega_arith
       refine WP.mono (withQ_ok M E R hw₄ hd₄ hm hq') fun t S₅ => ?_
       have he : p.relation = p.accept := propext (by simp only [CdP.accept]; grind)
       exact ⟨⟨S₅.1.1, by simpa only [bit, he] using S₅.1.2⟩, (H₄.trans S₅).2⟩

@@ -25,8 +25,8 @@ theorem packedDigits_frame {m m' : Mem} {ptr : Addr} {n : Nat} {rs : List Region
   apply val16_congr
   intro k hk
   have hb : ∀ i < 2 * n, m' (ptr + BitVec.ofNat 64 i) = m (ptr + BitVec.ofNat 64 i) :=
-    fun i hi => hf.bytes hs (by omega : 2 * n ≤ 2 ^ 64) hi
-  simp only [packedLimb, byteN, hb (2 * k) (by omega), hb (2 * k + 1) (by omega)]
+    fun i hi => hf.bytes hs (by omega_using [hn] : 2 * n ≤ 2 ^ 64) hi
+  simp only [packedLimb, byteN, hb (2 * k) (by omega_using [hk]), hb (2 * k + 1) (by omega_using [hk])]
 
 theorem pointFromScalar_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (hp : s.gpr .r12 = ptr) (count : Nat) (hn0 : 0 < count) (hn : count ≤ 32)

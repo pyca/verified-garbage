@@ -47,18 +47,18 @@ theorem decode_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dC
   refine RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ 0 0 s) ?_ (RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ p.k 0 s)
     ?_ (RelCT.seq (R := RS p D E fun σ s => ID p D σ p.ℓ p.k p.k s) ?_ ?_))
   · refine RelCT.mono (seqR_tr (R := fun r => RS p D E fun σ s => ID p D σ r 0 0 s) p.ℓ 0 fun r _ hr =>
-      liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decS1_ok hP hc (by omega) h)
-        (dec_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.1 r (by omega)).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
+      liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decS1_ok hP hc (by omega_using [hr]) h)
+        (dec_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.1 r (by omega_using [hr])).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
           ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
             fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun x y h => by rwa [Nat.zero_add] at h
   · refine RelCT.mono (seqR_tr (R := fun i => RS p D E fun σ s => ID p D σ p.ℓ i 0 s) p.k 0 fun i _ hi =>
-      liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decS2_ok hP hc (by omega) h)
-        (dec_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.2.1 i (by omega)).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
+      liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decS2_ok hP hc (by omega_using [hi]) h)
+        (dec_tr hP hs.2.2.2.2.2.2.1 (sLen_eq p) (hs.2.1 i (by omega_using [hi])).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
           ⟨h.im, h.s1, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩)
       fun x y h => by rwa [Nat.zero_add] at h
   · refine RelCT.mono (seqR_tr (R := fun i => RS p D E fun σ s => ID p D σ p.ℓ p.k i s) p.k 0 fun i _ hi =>
-      liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decT0_ok hP hc (by omega) h)
-        (dec_tr hP (by decide) (by decide) (hs.2.2.1 i (by omega)).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
+      liftT (fun _ _ h => h.im.st) (fun _ _ _ h => decT0_ok hP hc (by omega_using [hi]) h)
+        (dec_tr hP (by decide) (by decide) (hs.2.2.1 i (by omega_using [hi])).1)) (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
           ⟨h.im, h.s1, h.s2, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun x y h => by rwa [Nat.zero_add] at h
   · exact liftT (fun _ _ h => h.im.st) (fun _ _ _ h => rpp_ok hP hc h)
       (RelCT.mono (shake_tr (sgB_bases p) hP.hD hs.2.2.2.1) (fun _ _ h => h) fun _ _ _ => trivial)

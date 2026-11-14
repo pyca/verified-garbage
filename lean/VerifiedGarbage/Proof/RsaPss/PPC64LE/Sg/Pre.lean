@@ -189,7 +189,7 @@ theorem preS_of {H : Spec.Mgf1.Hash} {hs gs : List FnTable} {s : State} (h : (si
     wp, wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, ⟨k1, k2⟩, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, hl⟩ := h
   have hl := hl H hH
   rw [hl] at hrd odg dgs kdg wdg
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps, qs, dps,
+  exact ⟨sp1, by omega_using [sp2], hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps, qs, dps,
     dqs, qis, dgs, sls, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kth, ktg, ka, wo, wn, we, wp,
     wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs⟩
 
@@ -238,21 +238,21 @@ variable {pc : Bool} {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 13).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC Ss s) (scR s) := Region.sub_prefix (scLen P)
 
 omit P in
-theorem kR_sub : Region.Sub (kR s) (kS pc s) := below_sub (by have := stackBytes_ge pc; omega)
-  (by have := stackBytes_ge pc; omega)
+theorem kR_sub : Region.Sub (kR s) (kS pc s) := below_sub (by have := stackBytes_ge pc; omega_using [this])
+  (by have := stackBytes_ge pc; omega_using [this])
 
 /-- `Fits` for any state with the entry's stack pointer, regions and stack
 arguments. -/
 theorem fits : Fits Ss s where
-  sp1 := by have := P.sp1; have := stackBytes_ge pc; omega
+  sp1 := by have := P.sp1; have := stackBytes_ge pc; omega_arith
   sc := ⟨scR s, by rw [P.hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _), rfl, scLen P⟩
   ksc := (P.ks.sub_left kR_sub).sub_right (sc_sub P)
-  wS := by show (stackArg s 12).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 12).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 

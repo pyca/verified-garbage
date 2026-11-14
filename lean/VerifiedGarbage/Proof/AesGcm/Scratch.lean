@@ -183,7 +183,7 @@ theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
 theorem bytesAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d n N : Nat} (hn : d + n ≤ N)
     (h : ∀ i < N, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n :=
-  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega_using [hn, hi])
 
 /-- The block at offset `d` into the agreeing bytes. -/
 theorem blockAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d N : Nat} (hn : d + 16 ≤ N)
@@ -197,14 +197,14 @@ theorem ctxH_congr {m₁ m₂ : Mem} {p : Addr}
     (h : ∀ i < 256, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxH m₂ p = ctxH m₁ p := by
   simp only [ctxH]
-  exact blockAt_congr_off (d := 240) (by omega) h
+  exact blockAt_congr_off (d := 240) (by omega_using []) h
 
 /-- The cipher of a key context, for at most 15 rounds, is in its 256 bytes. -/
 theorem ctxCiph_congr {m₁ m₂ : Mem} {p : Addr} {nr : Nat} (hn : nr ≤ 15)
     (h : ∀ i < 256, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxCiph m₂ p nr = ctxCiph m₁ p nr := by
   simp only [ctxCiph]
-  rw [bytesAt_congr fun i hi => h i (by omega)]
+  rw [bytesAt_congr fun i hi => h i (by omega_using [hn, hi])]
 
 /-- The streaming state represents a message by its 80 bytes alone. -/
 theorem streamRepr_congr {m₁ m₂ : Mem} {p : Addr} {ciph : Block → Block} {hk : Block}
@@ -214,16 +214,16 @@ theorem streamRepr_congr {m₁ m₂ : Mem} {p : Addr} {ciph : Block → Block} {
   obtain ⟨h0, h1, h2, h3, h4⟩ := hr
   have hp : p = p + BitVec.ofNat 64 0 := (BitVec.add_zero p).symm
   refine ⟨?_, ?_, ?_, ?_, fun hc => ?_⟩
-  · rw [hp, blockAt_congr_off (N := 80) (by omega) h, ← hp]; exact h0
-  · rw [show p + 16 = p + BitVec.ofNat 64 16 from rfl, blockAt_congr_off (N := 80) (by omega) h]
+  · rw [hp, blockAt_congr_off (N := 80) (by omega_using []) h, ← hp]; exact h0
+  · rw [show p + 16 = p + BitVec.ofNat 64 16 from rfl, blockAt_congr_off (N := 80) (by omega_using []) h]
     exact h1
   · rw [show p + 32 = p + BitVec.ofNat 64 32 from rfl,
       bytesAt_congr_off (N := 80) (by
-        have := Nat.mod_lt (ghashInput a c).length (show 16 > 0 by omega); omega) h]
+        have := Nat.mod_lt (ghashInput a c).length (show 16 > 0 by omega_using []); omega_using []) h]
     exact h2
-  · rw [show p + 48 = p + BitVec.ofNat 64 48 from rfl, blockAt_congr_off (N := 80) (by omega) h]
+  · rw [show p + 48 = p + BitVec.ofNat 64 48 from rfl, blockAt_congr_off (N := 80) (by omega_using []) h]
     exact h3
-  · rw [show p + 64 = p + BitVec.ofNat 64 64 from rfl, blockAt_congr_off (N := 80) (by omega) h]
+  · rw [show p + 64 = p + BitVec.ofNat 64 64 from rfl, blockAt_congr_off (N := 80) (by omega_using []) h]
     exact h4 hc
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
@@ -234,12 +234,12 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
-theorem le15 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 15 := by omega
+theorem le15 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 15 := by omega_using [h]
 
 variable (pb : Nat)
 
@@ -276,7 +276,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).l
   dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le kl.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem streamInitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamInitSig.words pb).length →
@@ -303,9 +303,9 @@ theorem streamInitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamInitSig
     (streamInitPost pb) _ m₂ m' r
   dsimp only [Curry.apply, streamInitPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le nl.toNat (2 ^ pb)
-  rw [ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem streamAadPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamAadSig.words pb).length →
@@ -336,11 +336,11 @@ theorem streamAadPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamAadSig.w
   dsimp only [Curry.apply, streamAadPost, ArgWord.ofRaw] at h ⊢
   intro ciph iv a hr hl
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h ciph iv a (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h ciph iv a (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl
 
 theorem streamTextPre_local : ∀ vs m₁ m₂, vs.length = (streamCryptSig.words pb).length →
     (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -387,11 +387,11 @@ theorem streamEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryp
   intro hn iv a p hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 theorem streamDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryptSig.words pb).length →
     (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -425,11 +425,11 @@ theorem streamDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryp
   intro hn iv a c hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 theorem streamFinishPre_local : ∀ vs m₁ m₂, vs.length = (streamFinishSig.words pb).length →
     (∀ b ∈ Sig.bufs streamFinishSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -470,9 +470,9 @@ theorem streamFinishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamFinis
   dsimp only [Curry.apply, streamFinishRoundsPost, ArgWord.ofRaw] at h ⊢
   intro hn iv a c hr hl ht
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 theorem streamVerifyPre_local : ∀ vs m₁ m₂, vs.length = (streamVerifySig.words pb).length →
     (∀ b ∈ Sig.bufs streamVerifySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -519,13 +519,13 @@ theorem streamVerifyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamVerif
   intro hn iv a c hr hl hc'
   have hn' := le15 hn
   have := Nat.mod_le tl.toNat (2 ^ pb)
-  have e₁ := ctxCiph_congr hn' fun i hi => hc i (by omega)
-  have e₂ := ctxH_congr fun i hi => hc i (by omega)
+  have e₁ := ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi])
+  have e₂ := ctxH_congr fun i hi => hc i (by omega_using [hi])
   have e₃ := bytesAt_congr (p := tag) (n := (tl.setWidth pb).toNat) fun i hi => ht i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])
   simp only [e₁, e₂, e₃]
   rw [e₁, e₂] at hr
-  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl hc'
+  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl hc'
 
 theorem sealPre_local : ∀ vs m₁ m₂, vs.length = (sealSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -580,13 +580,13 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   have := Nat.mod_le nl.toNat (2 ^ pb)
   have := Nat.mod_le al.toNat (2 ^ pb)
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [ctxCiph_congr hr' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hr' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
 theorem openPre_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →
@@ -627,9 +627,9 @@ theorem openResult_local {pb : Nat} {m₁ m₂ : Mem}
   have := Nat.mod_le len.toNat (2 ^ pb)
   have := Nat.mod_le tl.toNat (2 ^ pb)
   simp only [BitVec.toNat_setWidth] at hn ⊢
-  rw [ctxCiph_congr hn fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
-    bytesAt_congr fun i hi => hN i (by omega), bytesAt_congr fun i hi => hA i (by omega),
-    bytesAt_congr fun i hi => hD i (by omega), bytesAt_congr fun i hi => hT i (by omega)]
+  rw [ctxCiph_congr hn fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
+    bytesAt_congr fun i hi => hN i (by omega_arith), bytesAt_congr fun i hi => hA i (by omega_arith),
+    bytesAt_congr fun i hi => hD i (by omega_arith), bytesAt_congr fun i hi => hT i (by omega_using [this, hi])]
 
 theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -675,7 +675,7 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
   have := Nat.mod_le len.toNat (2 ^ pb)
   rw [openResult_local (pb := pb) (le15 hr) hc hN hA hD hT,
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hD i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
 theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →

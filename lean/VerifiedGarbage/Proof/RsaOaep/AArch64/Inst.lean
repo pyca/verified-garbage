@@ -141,11 +141,11 @@ theorem putWs_byte {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)}
   | _, [], _, _ => rfl
   | p, w :: ws, h, hp => by
     simp only [List.length_cons] at hp
-    have h8 := add8_toNat (p := p) (by omega)
+    have h8 := add8_toNat (p := p) (by omega_using [hp])
     simp only [putWs]
-    rw [putWs_byte (by rw [h8]; omega) (by rw [h8]; omega)]
+    rw [putWs_byte (by rw [h8]; omega_using [h]) (by rw [h8]; omega_using [hp])]
     have hne : ¬ (a - p).toNat < 64 / 8 := by
-      rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega)]; omega
+      rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [hp]
     simp only [Mem.writeW, Mem.write, hne, ↓reduceIte]
 
 theorem decPSat_key (vs : List MdHash) (w : MdHash) :
@@ -159,7 +159,7 @@ theorem decPSat_key (vs : List MdHash) (w : MdHash) :
     have h2 : (Nat.ble 0x10000 a.toNat && Nat.blt a.toNat 0x10098) = false := by
       rw [Bool.eq_false_iff]; intro h; simp only [Bool.and_eq_true, Nat.ble_eq] at h; omega
     show putWs decPMem 0x300000 (MdHashTable.AArch64.twL vs w) a = keyMem a
-    rw [putWs_byte (by show a.toNat < 0x300000; omega) (MdHashTable.AArch64.twL_room vs w)]
+    rw [putWs_byte (by show a.toNat < 0x300000; omega_using [hk]) (MdHashTable.AArch64.twL_room vs w)]
     show (bif _ then _ else _) = _
     rw [h2, Bool.cond_false, ha, Bool.cond_true]
 

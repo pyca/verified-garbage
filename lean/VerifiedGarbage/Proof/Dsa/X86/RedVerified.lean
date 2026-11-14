@@ -34,7 +34,7 @@ theorem run {n size : Nat} (hn : 0 < n) (hn48 : n ≤ 48) {s : State} (B : BodyI
     refine O x (fun r hr => ?_)
     have Bd := scratch_fits B.size r hr
     simp only [Region.Contains, ofs] at H ⊢
-    omega
+    omega_using [H, Bd]
   refine ⟨tr, t, E, ⟨R, ?_⟩, V, O⟩
   exact F.readW (by
       simpa only [BitVec.add_zero] using

@@ -51,11 +51,11 @@ theorem write1_off (m : Mem) (a : Addr) (v : BitVec 8) {i j : Nat} (hi : i < 2 ^
   have hd : ((a + BitVec.ofNat 64 i) - (a + BitVec.ofNat 64 j)).toNat = (i + 2 ^ 64 - j) % 2 ^ 64 := by
     rw [Offset.add_sub_add_left, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hj]
-    omega
+    omega_using [hj]
   simp only [Mem.write, hd]
   by_cases h : i = j
   · subst h
-    simp only [↓reduceIte, show (i + 2 ^ 64 - i) % 2 ^ 64 = 0 by omega, Nat.zero_lt_one,
+    simp only [↓reduceIte, show (i + 2 ^ 64 - i) % 2 ^ 64 = 0 by omega_using [], Nat.zero_lt_one,
       Nat.mul_zero]
     ext k hk
     simp
@@ -130,22 +130,22 @@ theorem invLoop_ok (a : Spec.Idea.Word) (t₀ : State) (c : Nat) (t : State) (hi
     apply BitVec.eq_of_toNat_eq
     have := hi.pos; have := hi.le
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have keep' : Keep [.a2, .a4, .t0, .t1] t₀ t' := (hi.keep.trans e').mono (by decide)
   have := hi.pos; have := hi.le
   by_cases hlast : c = 1
   · subst hlast
     left
     refine ⟨?_, ?_, m'.trans hi.mem, keep'⟩
-    · rw [Steps.eval_nonzero_ofNat _ _ (by omega) (a2'.trans hc)]; rfl
+    · rw [Steps.eval_nonzero_ofNat _ _ (by omega_using []) (a2'.trans hc)]; rfl
     · rw [hv, show 15 - 1 + 1 = 15 from rfl, chain_inv]
   · right
-    refine ⟨?_, c - 1, by omega, by omega, by omega, a2'.trans hc, ?_, ?_, ?_, m'.trans hi.mem, keep'⟩
-    · rw [Steps.eval_nonzero_ofNat _ _ (by omega) (a2'.trans hc)]
+    refine ⟨?_, c - 1, by omega_arith, by omega_arith, by omega_using [this], a2'.trans hc, ?_, ?_, ?_, m'.trans hi.mem, keep'⟩
+    · rw [Steps.eval_nonzero_ofNat _ _ (by omega_using [this]) (a2'.trans hc)]
       simp only [Option.some.injEq, decide_eq_true_eq]
-      omega
+      omega_arith
     · rw [e'.gpr (by decide)]; exact hi.a3
-    · rw [hv, setWidth_setWidth16, show 15 - c + 1 = 15 - (c - 1) by omega]
+    · rw [hv, setWidth_setWidth16, show 15 - c + 1 = 15 - (c - 1) by omega_arith]
     · rw [e'.gpr (by decide)]; exact hi.mask
 
 theorem invWord_ok (z : Spec.Idea.Schedule) {n : Nat} (hn : n < 52) (t : State) (hz : KeyOk z t) :
@@ -212,7 +212,7 @@ theorem join16 (x : BitVec 16) : (x.setWidth 64 >>> 8).setWidth 8 ++ (x.setWidth
   by_cases h : i < 8
   · simp only [h, ↓reduceIte, BitVec.getLsbD_setWidth, decide_true, Bool.true_and]
   · simp only [h, ↓reduceIte, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
-      show i - 8 < 8 by omega, decide_true, Bool.true_and, show 8 + (i - 8) = i by omega]
+      show i - 8 < 8 by omega_using [hi], decide_true, Bool.true_and, show 8 + (i - 8) = i by omega_using [h]]
 
 /-- Decryption subkey `n` of `z`. -/
 abbrev dk (z : Spec.Idea.Schedule) (n : Nat) : Spec.Idea.Word := (Spec.Idea.invertKey z).getD n 0
@@ -231,7 +231,7 @@ theorem storeKey_ok {r : Reg} (hr : r ≠ .a1) (k : Nat) (hk : k < 52) (s : Stat
       (by simp [writesOnly, Code.allInstrs_eq, instrs, storeKey, dstOf]) rfl)
     fun t ⟨h, hk⟩ => ⟨h, hk⟩
   unfold storeKey
-  mrun [h0, h1, hr, Ne.symm hr, show 2 * k < 2048 by omega, show 2 * k + 1 < 2048 by omega]
+  mrun [h0, h1, hr, Ne.symm hr, show 2 * k < 2048 by omega_using [hk], show 2 * k + 1 < 2048 by omega_using [hk]]
 
 /-- What `vg_idea_invert_key` needs of its state: the encryption subkeys (104
 bytes at `a0`) readable, the decryption subkeys (104 bytes at `a1`) writable,
@@ -270,25 +270,25 @@ theorem subkey_ok (s₀ : State) (hp : InvPre s₀) (h2 : s₀.gpr .t2 = 65535) 
   have ha : t₁.gpr .a1 = s₀.gpr .a1 := e.gpr (by decide)
   have hw (o : Nat) (ho : o < 104) : InRegions t₁.wr (t₁.gpr .a1 + BitVec.ofNat 64 o) 1 := by
     rw [ha, e.2.2]
-    exact ⟨_, hp.out, Offset.contains_base _ (by omega) (by omega)⟩
-  refine WP.mono (storeKey_ok (r := .t1) (by decide) n hn t₁ (hw _ (by omega)) (hw _ (by omega)))
+    exact ⟨_, hp.out, Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])⟩
+  refine WP.mono (storeKey_ok (r := .t1) (by decide) n hn t₁ (hw _ (by omega_using [hn])) (hw _ (by omega_using [hn])))
     fun t₂ ⟨m₂, e₂⟩ => hrest t₂ ?_
   rw [ha, v₁] at m₂
-  refine ⟨by omega, (e.trans e₂).mono (by decide), ?_, fun i hin => ?_⟩
+  refine ⟨by omega_using [hn], (e.trans e₂).mono (by decide), ?_, fun i hin => ?_⟩
   · rw [m₂, m₁]
     have hc (o : Nat) (ho : o < 104) : (⟨s₀.gpr .a1, 104⟩ : Region).Contains
-        (s₀.gpr .a1 + BitVec.ofNat 64 o) 1 := Offset.contains_base _ (by omega) (by omega)
-    exact (hi.frame.write (List.mem_singleton_self _) _ (hc _ (by omega))).write
-      (List.mem_singleton_self _) _ (hc _ (by omega))
-  · rw [m₂, write1_off _ _ _ (by omega) (by omega), write1_off _ _ _ (by omega) (by omega),
-      write1_off _ _ _ (by omega) (by omega), write1_off _ _ _ (by omega) (by omega), m₁]
+        (s₀.gpr .a1 + BitVec.ofNat 64 o) 1 := Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
+    exact (hi.frame.write (List.mem_singleton_self _) _ (hc _ (by omega_using [hn]))).write
+      (List.mem_singleton_self _) _ (hc _ (by omega_using [hn]))
+  · rw [m₂, write1_off _ _ _ (by omega_using [hn, hin]) (by omega_using [hn]), write1_off _ _ _ (by omega_using [hn, hin]) (by omega_using [hn]),
+      write1_off _ _ _ (by omega_using [hn, hin]) (by omega_using [hn]), write1_off _ _ _ (by omega_using [hn, hin]) (by omega_using [hn]), m₁]
     by_cases he : i = n
     · subst he
-      simp only [↓reduceIte, show ¬ (2 * i = 2 * i + 1) by omega]
+      simp only [↓reduceIte, show ¬ (2 * i = 2 * i + 1) by omega_using []]
       exact join16 _
-    · simp only [show ¬ (2 * i + 1 = 2 * n + 1) by omega, show ¬ (2 * i + 1 = 2 * n) by omega,
-        show ¬ (2 * i = 2 * n + 1) by omega, show ¬ (2 * i = 2 * n) by omega, ↓reduceIte]
-      exact hi.words i (by omega)
+    · simp only [show ¬ (2 * i + 1 = 2 * n + 1) by omega_using [he], show ¬ (2 * i + 1 = 2 * n) by omega_using [],
+        show ¬ (2 * i = 2 * n + 1) by omega_using [], show ¬ (2 * i = 2 * n) by omega_using [he], ↓reduceIte]
+      exact hi.words i (by omega_using [hin, he])
 
 /-- Decryption subkeys `n … n + k - 1`. -/
 def subs (n k : Nat) : Prog isa :=
@@ -302,7 +302,7 @@ theorem subs_ok (s₀ : State) (hp : InvPre s₀) (h2 : s₀.gpr .t2 = 65535) :
     exact WP.block_nil hi
   | k + 1, n, h, t, hi => by
     simp only [subs, List.range'_succ, List.foldr_cons]
-    exact subkey_ok s₀ hp h2 n (by omega) t hi fun t₁ h₁ => subs_ok s₀ hp h2 k (n + 1) (by omega) t₁ h₁
+    exact subkey_ok s₀ hp h2 n (by omega_using [h]) t hi fun t₁ h₁ => subs_ok s₀ hp h2 k (n + 1) (by omega_using [h]) t₁ h₁
 
 theorem invertKey_eq : invertKey = .seq (.block setMask) (subs 0 52) := rfl
 
@@ -334,7 +334,7 @@ theorem invert_wp (s : State) (hs : invertContract.pre s) :
     by rw [e₁.gpr (by decide), e₁.2.2, hwr]; simp,
     by rw [e₁.gpr (by decide), e₁.gpr (by decide)]; exact hsep⟩
   refine WP.mono (subs_ok s₁ hp h2₁ 52 0 rfl s₁ ⟨by decide, Keep.refl _ _, Frame.refl _ _,
-    fun i hi => absurd hi (by omega)⟩) fun s' hi => ?_
+    fun i hi => absurd hi (by omega_using [])⟩) fun s' hi => ?_
   show Spec.Idea.scheduleAt s'.mem (s.gpr .a1) = _
   rw [← e₁.gpr (show Reg.a1 ∉ [Reg.t2] by decide), ← e₁.gpr (show Reg.a0 ∉ [Reg.t2] by decide),
     ← m₁]

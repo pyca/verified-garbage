@@ -89,7 +89,7 @@ theorem streamText_run (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn 
   rw [hicb]
   have hd₁ : bytesAt s₁.mem D n = bytesAt s.mem D n := bytesAt_frame E.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact C.dE.sub_right (Lay.wSub (by decide)))
-    (by have := C.data.ok.lt; omega)
+    (by have := C.data.ok.lt; omega_using [hn])
   obtain ⟨qa, qc, qo⟩ := hq hy
   simp only [hc₁, hd₁] at qa qc qo
   refine ⟨?_, by rw [hm]; exact qo⟩

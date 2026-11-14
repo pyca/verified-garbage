@@ -114,7 +114,7 @@ theorem reduceF_ok {t : State} (h : SInv s t) {o : Nat} (ho : o + 57 ≤ 384) (h
   have g29 : t.gpr .r22 = s.gpr .r10 := h.regs _ (by decide)
   have g30 : t.gpr .r21 = sF s := h.regs _ (by decide)
   unfold mov
-  refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by omega) (by decide) (by decide) (by decide)
+  refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by omega_using [ho]) (by decide) (by decide) (by decide)
     (by decide) (by decide) fun u hu a3 a4 a5 => ?_)
   rw [g30] at a3 a4
   rw [g29, BitVec.add_zero] at a5
@@ -123,9 +123,9 @@ theorem reduceF_ok {t : State} (h : SInv s t) {o : Nat} (ho : o + 57 ≤ 384) (h
     intro a n ⟨r, hr, hc⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact cov_in (fF hp h) (by omega) a n ⟨_, List.mem_singleton_self _, hc⟩
+    · exact cov_in (fF hp h) (by omega_using [ho]) a n ⟨_, List.mem_singleton_self _, hc⟩
     · exact ⟨_, fC hp h, hc⟩
-  refine WP.seq (reduce_call a3 a4 a5 (Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (fsc hp (by omega))
+  refine WP.seq (reduce_call a3 a4 a5 (Offset.disjoint _ (.inr (by omega_using [ho'])) (by omega_using [ho]) (by omega_using [])) (fsc hp (by omega_using [ho]))
     (fsc hp (by decide)) (cov_app (cov_right (by rw [hu.wr]; exact cov_in (fF hp h) (by decide))) (cov_right hW)) hW
     fun t' rd' wr' sp' f' cs' r' => ?_)
   rw [hu.mem] at f' r'
@@ -133,7 +133,7 @@ theorem reduceF_ok {t : State} (h : SInv s t) {o : Nat} (ho : o + 57 ≤ 384) (h
     (fun r hr => (cs' r hr).trans (hu.pres r hr)) f' (fun r hr => ?_) fun r hr => ?_) f' r'
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨fR s, by simp, fsub (by omega)⟩
+    · exact ⟨fR s, by simp, fsub (by omega_using [ho])⟩
     · exact ⟨scR s, by simp, fun _ h => h⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -206,17 +206,17 @@ theorem nonce_ok (hl : Proof.Ed448.BaseLadder2Ok) {s t : State} (hp : SignPre s)
   -- What the steps keep.
   have kb : ∀ {d n : Nat}, d + n ≤ 464 → bytesAt t₄.mem (sF s + BitVec.ofNat 64 d) n =
       bytesAt t₃.mem (sF s + BitVec.ofNat 64 d) n := fun hdn =>
-    bytes_keep f₄ (by omega) fun r hr => by
+    bytes_keep f₄ (by omega_using [hdn]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ((hp.oF.sub_left hO57).sub_right (fsub hdn)).symm
       · exact fsc hp hdn
   have kr : ∀ {d n : Nat}, d + n ≤ 464 → (d + n ≤ 256 ∨ 313 ≤ d) →
       bytesAt t₃.mem (sF s + BitVec.ofNat 64 d) n = bytesAt t₂.mem (sF s + BitVec.ofNat 64 d) n :=
-    fun hdn hd => bytes_keep f₃ (by omega) fun r hr => by
+    fun hdn hd => bytes_keep f₃ (by omega_using [hdn]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hdn]) (by omega_using [])
       · exact fsc hp hdn
   refine ⟨h₄, ?_, ?_, ?_, by rw [b₄, r₃]⟩
   · have a := kb (d := 0) (n := 10) (by decide)

@@ -75,7 +75,7 @@ theorem is65537_ct : RelCT isa (Two DAw) Folded.is65537
     obtain ⟨xb, σ, g, _⟩ := h'
     have hs := g.1.e.congrK g.inScr g.2.2.1
     exact WP.mono (is65537Check_ok h8 h9 hs g.1.el g.1.L1
-      (by have := g.1.L2; have := g.1.k2; show q.1.len < 2^31; omega)) fun a ⟨za, ma, ka⟩ =>
+      (by have := g.1.L2; have := g.1.k2; show q.1.len < 2^31; omega_arith)) fun a ⟨za, ma, ka⟩ =>
         ⟨DAw.regs h ma ka (by decide), za⟩
 
 /-- `cmp w, n`, with a public condition `P` carried. -/
@@ -88,7 +88,7 @@ theorem cmpW_ct (n : Nat) (hn : n < 2 ^ 31) (P : DPub × BitVec 64 → Prop) (hT
   have h' := h
   obtain ⟨xb, σ, g, hg, _⟩ := h'
   have hk2 := g.1.k2
-  exact WP.mono (cmpW_ok n hg g.1.z hn (by omega)) fun t ⟨z, m, k⟩ => ⟨⟨DAw.regs h m k (by decide), hp⟩, z⟩
+  exact WP.mono (cmpW_ok n hg g.1.z hn (by omega_using [hk2])) fun t ⟨z, m, k⟩ => ⟨⟨DAw.regs h m k (by decide), hp⟩, z⟩
 
 /-- The vector code, for a layout of the modulus' size and `e = 65537`. -/
 theorem vec_ct {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : PubOk l) :
@@ -102,7 +102,7 @@ theorem vec_ct {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : PubOk l) :
   rw [hw] at hz
   refine WP.mono (exp65537_ok hl hg hN hinv hX hz hR g.1.rlt g.1.odd (by rw [← hw]; exact g.1.big) he)
     fun d ⟨gd, _, fd, kd, _⟩ => ⟨xb, σ, g.step (by rw [hw]; exact fd.mono (expAll_sub _)) kd ?_, by rw [hw]; exact gd⟩
-  exact fd.word_eq (mask_not_expAll _) (by unfold sMask sFn; have := hg.scr.nowrap; omega)
+  exact fd.word_eq (mask_not_expAll _) (by unfold sMask sFn; have := hg.scr.nowrap; omega_using [])
 
 /-- The ADX code's exponentiation, from `DAw`. -/
 theorem adx_ct (M : Mont) (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True))

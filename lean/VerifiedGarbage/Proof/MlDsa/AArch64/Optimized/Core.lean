@@ -33,7 +33,7 @@ theorem fastConsts_ok (s : State) : WP isa (.block fastConsts) s fun t =>
   refine wp_vop (d := .v20) rfl fun s₃ h₃ => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · intro e he
     rw [h₃.get .v16,hv₂,hc.q,VG.AArch64.vword_ofVWords _ _ _ _ he]
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
   · rw [h₃.mem,hm₂,hm₁]
   · exact ((hk₁.trans hk₂).trans h₃.keep).mono
 

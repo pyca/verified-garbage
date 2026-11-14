@@ -53,11 +53,11 @@ theorem PcIn.keepF (h : PcIn base bytes len args s) {regs : List Reg} (K : Keeps
   · have low := R.low
     have ea : (VG.Proof.Dsa.X86.stackAddress s i).toNat = (s.gpr .esp).toNat + (4 + 4 * i) := by
       simp only [VG.Proof.Dsa.X86.stackAddress, addr, PublicRt.setWidth_toNat, BitVec.toNat_add, BitVec.toNat_ofNat]
-      omega
+      omega_using [top, hi]
     have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
-      rw [PublicRt.setWidth_toNat, sub_toNat (by omega)]
-    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
-      (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
+      rw [PublicRt.setWidth_toNat, sub_toNat (by omega_using [low])]
+    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega_using [low]))
+      (by dsimp only; rw [eb]; omega_using []) (by dsimp only; rw [ea]; omega_using [hi])).symm
 
 /-- The callee's offsets for the square of number 4. -/
 theorem PcIn.offs (h : PcIn base bytes len args s) :
@@ -66,7 +66,7 @@ theorem PcIn.offs (h : PcIn base bytes len args s) :
   have f5 := (h.fits (j := 5) (by decide)).2
   have := h.dimensions
   refine ⟨this.1, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [numAt, numOff, wb, invOff, scratchBytes, VG.Proof.Rsa.MontMul.Apart] at * <;> omega
+    simp only [numAt, numOff, wb, invOff, scratchBytes, VG.Proof.Rsa.MontMul.Apart] at * <;> omega_arith
 
 end
 
@@ -91,13 +91,13 @@ theorem sq_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   have C := call_ok (is := mulArgs 4 4 4 5) h.scratch h.hbytes R h.offs hinv hB (mulBody_noSp 4 4 4 5) (by
     refine WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (o := 4) (a := 4) (b := 4) (wl := 5)
-      (argAt_alloc h.width) (argAt_alloc (h.stack 5 (by decide)).readSrc) h.upper (by omega) (by omega)
-      (by omega) (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega)
+      (argAt_alloc h.width) (argAt_alloc (h.stack 5 (by decide)).readSrc) h.upper (by omega_using []) (by omega_using [])
+      (by omega_using []) (by rw [fEsp, VG.X86.sub_toNat (by omega_using [low])]; omega_using [])
       (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)) fun g ⟨K, F, Rg⟩ => ⟨K, F, fun i hi => ?_⟩
     rw [Rg i hi, mulArg_eq, allocFrame_gpr _ _ (by decide)])
   refine WP.mono C fun t ⟨cs, rd, wr, F, L, V⟩ => ⟨cs, rd, wr, ?_, L, ?_⟩
-  · rwa [show scratchBytes (Spec.Rsa.modulusWords len) = 3 * wb len + 56 by simp only [scratchBytes, wb]; omega] at F
-  · rwa [show 64 * Spec.Rsa.modulusWords len = 32 * nw len by simp only [nw]; omega] at V
+  · rwa [show scratchBytes (Spec.Rsa.modulusWords len) = 3 * wb len + 56 by simp only [scratchBytes, wb]; omega_using []] at F
+  · rwa [show 64 * Spec.Rsa.modulusWords len = 32 * nw len by simp only [nw]; omega_using []] at V
 
 /-- What the squares keep: the inputs, the room below `esp`, the modulus `M` and its inverse, number 4 below
 `M` in Montgomery form `x R`, and `esi` counting down. -/
@@ -128,7 +128,7 @@ theorem squares_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   have f0 := (h.fits (j := 0) (by decide)).1
   have wbe := wb_eq len
   have cop : ∀ k, Nat.Coprime (2 ^ k) M := fun k => by
-    have hmod : (M * w32 s.mem base invOff + 1) % 2 = 0 := by omega
+    have hmod : (M * w32 s.mem base invOff + 1) % 2 = 0 := by omega_using [hinv]
     refine VG.Proof.Bignum.coprime_pow2 ?_ k
     rcases Nat.mod_two_eq_zero_or_one M with hm | hm
     · rw [Nat.add_mod, Nat.mul_mod, hm] at hmod; simp at hmod
@@ -149,7 +149,7 @@ theorem squares_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     congr 1
     simp only [x, nw, ← Nat.pow_add]
     congr 1
-    omega
+    omega_using []
   refine WP.mono (countLoop (N := 2) (by decide) (fun j t => SqInv s base bytes len args M (x j) (2 - j) t) ?_ I₀)
     fun t I => ⟨fin t I, I.frame, I.keep⟩
   rintro j t hj I
@@ -162,20 +162,20 @@ theorem squares_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   rw [sp] at F
   have Mu : val32 u.mem base numOff (nw len) = M := by
     rw [← I.mod, show numOff = numAt len 0 by simp [numAt]]
-    exact mulFrame_val32 R nw' F (.inl (by simp only [numAt]; omega)) (by simp only [numAt]; omega)
-      (by simp only [numAt] at f0 ⊢; omega) f4 f5
+    exact mulFrame_val32 R nw' F (.inl (by simp only [numAt]; omega_using [wbe])) (by simp only [numAt]; omega_using [wbe])
+      (by simp only [numAt] at f0 ⊢; omega_using [f0, wbe]) f4 f5
   have Iu : w32 u.mem base invOff = w32 t.mem base invOff := by
     unfold w32
     simp only [Mem.readW]
-    rw [mulFrame_hdr R nw' F (d := invOff) (k := 4) (by decide) (by simp only [numAt, numOff, invOff] at f0 ⊢; omega)
+    rw [mulFrame_hdr R nw' F (d := invOff) (k := 4) (by decide) (by simp only [numAt, numOff, invOff] at f0 ⊢; omega_using [f0])
       f4 f5]
   rw [I.mod] at L V
   refine wp_subZ rfl fun v e z => WP.block_nil ?_
   have Fs : Frame [⟨base, bytes⟩, below (s.gpr .esp) 96] t.mem u.mem := F.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega)⟩
-    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega)⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega_using [f4])⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega_using [f5])⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   have piu := I.pi.keepF Ku (by decide) (by decide) Rt (by rw [sp]; exact top) (by rw [sp]; exact Fs)
   obtain ⟨c₁, c₂⟩ := count1_zf (N := 2) (x := t.gpr .esi) (by rw [I.esi]) hj

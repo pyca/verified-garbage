@@ -59,7 +59,7 @@ theorem hintPacked_flag (c : Nat) (hc : c < 2^32) (b : Prop) [Decidable b] :
   apply BitVec.eq_of_toNat_eq
   by_cases hb : b <;>
     simp [hb, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-      BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] <;> omega
+      BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] <;> omega_using [hc]
 
 /-- Fold one helper result into the total count and strict acceptance flag. -/
 theorem hintFinish_semantic {S : Nat} (s : State) (total count : Nat)
@@ -80,7 +80,7 @@ theorem hintFinish_semantic {S : Nat} (s : State) (total count : Nat)
   · rw [hf]
     apply bit_and hflag
     rw [hresult]
-    exact hintPacked_flag count (by omega) b
+    exact hintPacked_flag count (by omega_using [hcount]) b
 
 end VG.Proof.MlDsa.AArch64.Sign
 

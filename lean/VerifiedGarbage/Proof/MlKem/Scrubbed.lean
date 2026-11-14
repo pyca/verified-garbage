@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Spec.MlKem.EncapsH
 public import VerifiedGarbage.Spec.Zeroize
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM leaving `scratch` scrubbed, on every target
@@ -37,7 +38,7 @@ theorem scrubbed_of_zeros {m m' : Mem} {p : Addr} {len : Nat}
     (h : Spec.Zeroize.bytesAt m' p len = Spec.Zeroize.zeros len) : Spec.Zeroize.scrubbed m m' p len := by
   intro a ha
   right
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
   have he := congrArg (·[(a - p).toNat]?) h
   simp only [Spec.Zeroize.bytesAt, Spec.Zeroize.zeros, List.getElem?_map, List.getElem?_range hi,
     List.getElem?_replicate, hi, ite_true, Option.map_some, Option.some.injEq,
@@ -51,7 +52,7 @@ theorem scrubbed_of_prefix {m m' : Mem} {p : Addr} {w len : Nat}
     (ht : ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
     Spec.Zeroize.scrubbed m m' p len := by
   intro a ha
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
   have ea : p + BitVec.ofNat 64 (a - p).toNat = a := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   by_cases hw : (a - p).toNat < w

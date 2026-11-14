@@ -53,10 +53,10 @@ theorem keygen_sampled {extra : Nat} {s t b : State} {h : GenerateKeyABI extra s
   have hql : (s.gpr .x6).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   rw [hdm]
   exact (random_outside_bytes (writeW_outside _ _ _ (by decide))
-    (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega)
+    (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega_using [hql])
     (Or.inr (by decide))).trans hn
 
 theorem keygen_generate (v : Backend) {s t : State} {h : GenerateKeyABI v.stack s}

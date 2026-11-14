@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Group identities for interleaved public two-scalar multiplication. -/
 
@@ -38,8 +39,8 @@ theorem Law.joint_double (hC : Law C) {P Q : Point C}
   rw [hf.add (hC.onCurve_add hA hB) (hC.onCurve_add hA hB), hf.add hA hB,
     hf.add (hC.onCurve_mul hP _) (hC.onCurve_mul hQ _),
     hf.mul hP, hf.mul hQ, hf.mul hP, hf.mul hQ]
-  have ha : ((2*a : Nat) : Int) = (a : Int)+(a : Int) := by omega
-  have hb : ((2*b : Nat) : Int) = (b : Int)+(b : Int) := by omega
+  have ha : ((2*a : Nat) : Int) = (a : Int)+(a : Int) := by omega_using []
+  have hb : ((2*b : Nat) : Int) = (b : Int)+(b : Int) := by omega_using []
   rw [ha,hb,Lean.Grind.IntModule.add_zsmul,Lean.Grind.IntModule.add_zsmul]
   grind
 

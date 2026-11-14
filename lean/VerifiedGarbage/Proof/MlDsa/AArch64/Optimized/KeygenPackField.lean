@@ -35,26 +35,26 @@ theorem field_ok (d j : Nat) (hd : d≤20) (hj : j<8) (s : State)
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by dsimp only [field]; (repeat' split) <;> rfl) (hv:=by dsimp only [field]; (repeat' split) <;> rfl)
   have hs : d*j%64<64 := Nat.mod_lt _ (by decide)
   have hj4 : j%4<4 := Nat.mod_lt _ (by decide)
-  have hidx : j%4*32<128 := by omega
-  have hd64 : ¬64≤d := by omega
-  have hd64' : ¬64<d := by omega
-  have hprod : d*j≤20*7 := Nat.mul_le_mul hd (by omega)
-  have ho : d*j/64*8<4096*8 := by omega
-  have ho8 : d*j/64*8%8=0 := by omega
+  have hidx : j%4*32<128 := by omega_using []
+  have hd64 : ¬64≤d := by omega_using [hd]
+  have hd64' : ¬64<d := by omega_using [hd]
+  have hprod : d*j≤20*7 := Nat.mul_le_mul hd (by omega_using [hj])
+  have ho : d*j/64*8<4096*8 := by omega_using [hprod]
+  have ho8 : d*j/64*8%8=0 := by omega_using []
   by_cases hzero : d*j%64=0
   · by_cases hfull : d*j%64+d≥64
     · omega
-    · have hnot : ¬d*j%64+d>64 := by omega
+    · have hnot : ¬d*j%64+d>64 := by omega_using [hd, hzero]
       simp only [field,hzero,↓reduceIte,List.cons_append,List.nil_append,fieldAcc,joined,fieldMem]
       arun [Option.bind_some,exec,Impl.MlKem.AArch64.mov,addr,Size.bytes,State.store,State.read,Mem.writeW,fieldValue,vword,hidx,Nat.zero_add,hd64,hd64']
   · by_cases hfull : d*j%64+d≥64
     · by_cases hcross : d*j%64+d>64
-      · have hshift : 64-d*j%64<64 := by omega
+      · have hshift : 64-d*j%64<64 := by omega_using [hd, hj, hs, hj4, hidx, hd64, hd64', hprod, ho, ho8, hzero, hfull, hcross]
         simp only [field,hzero,hfull,hcross,↓reduceIte,List.cons_append,List.nil_append,fieldAcc,joined,fieldMem]
         arun [Option.bind_some,exec,Impl.MlKem.AArch64.mov,addr,Size.bytes,State.store,State.read,Mem.writeW,fieldValue,vword,hidx,hw hfull,hs,ho,ho8,hshift]
       · simp only [field,hzero,hfull,hcross,↓reduceIte,List.cons_append,List.nil_append,fieldAcc,joined,fieldMem]
         arun [Option.bind_some,exec,Impl.MlKem.AArch64.mov,addr,Size.bytes,State.store,State.read,Mem.writeW,fieldValue,vword,hidx,hw hfull,hs,ho,ho8]
-    · have hcross : ¬d*j%64+d>64 := by omega
+    · have hcross : ¬d*j%64+d>64 := by omega_using [hfull]
       simp only [field,hzero,hfull,hcross,↓reduceIte,List.cons_append,List.nil_append,fieldAcc,joined,fieldMem]
       arun [Option.bind_some,exec,Impl.MlKem.AArch64.mov,addr,Size.bytes,State.store,State.read,Mem.writeW,fieldValue,vword,hidx,hs]
 

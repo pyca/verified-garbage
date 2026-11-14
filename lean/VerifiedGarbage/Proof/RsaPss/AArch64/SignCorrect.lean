@@ -57,11 +57,11 @@ theorem fail_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH 
     · rw [o₃.get .x13, e₂, o₁.get .x23, h23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rw [e₃]; rfl
   have hO := oR_eq hp
-  refine WP.seq (WP.mono (fill_ok (p := s.gpr .x0) (n := (s.gpr .x3).toNat) (b := 0) (by omega) (by omega) h14 h13
+  refine WP.seq (WP.mono (fill_ok (p := s.gpr .x0) (n := (s.gpr .x3).toNat) (b := 0) (by omega_using [hk1]) (by omega_using []) h14 h13
     h15 fun i hi => ?_) fun v ⟨kv, mv⟩ => ?_)
   · rw [O.wr, hm.wr]
     exact ⟨_, List.mem_cons_of_mem _ hp.hwo, by
-      rw [← hO]; exact Offset.contains_base _ (by omega) (by have := hp.wo; rw [hp.ol] at this; omega)⟩
+      rw [← hO]; exact Offset.contains_base _ (by omega_using [hi]) (by have := hp.wo; rw [hp.ol] at this; omega_using [hi])⟩
   refine wp_movz fun w o e => wp_nil ⟨⟨?_, ?_, ?_, fun r hr => ?_, ?_⟩, by rw [e]; rfl, ?_⟩
   · rw [o.sp, kv.sp, O.sp, hm.sp]
   · rw [o.rd, kv.rd, O.rd, hm.rd]
@@ -77,7 +77,7 @@ theorem fail_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH 
       (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact (hp.ko.sub_left (frame_sub K s (d := 288) (n := 16) (by decide))))
   · rw [o.mem, mv]
-    have := bytesAt_writeBytes u.mem (s.gpr .x0) (List.replicate (s.gpr .x3).toNat 0) (by simp; omega)
+    have := bytesAt_writeBytes u.mem (s.gpr .x0) (List.replicate (s.gpr .x3).toNat 0) (by simp; omega_using [])
     rwa [List.length_replicate] at this
 
 end VG.Proof.RsaPss.AArch64.Sgn

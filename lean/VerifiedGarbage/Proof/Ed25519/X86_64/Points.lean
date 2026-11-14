@@ -35,7 +35,7 @@ theorem point_ops_high (ops : List FieldOp) (hops : ∀ op ∈ ops, (fieldDest o
   intro op hop heq
   have h := hops op hop
   have := congrArg Fin.val heq
-  omega
+  omega_using [hi, h, this]
 
 theorem constPoint_eval (p : Spec.Ed25519.Point) (e : Env) :
     point (evalOps (constPointOps p) e) 0 1 2 3 = p := by cases p; rfl

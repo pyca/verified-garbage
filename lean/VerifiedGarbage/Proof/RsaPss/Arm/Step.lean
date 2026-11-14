@@ -46,7 +46,7 @@ theorem setWidth_zero16 : (0#16).setWidth 32 = (0 : BitVec 32) := rfl
 theorem movw_val {v : Nat} (h : v < 2 ^ 16) : (BitVec.ofNat 16 v).setWidth 32 = BitVec.ofNat 32 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 end VG.Proof.RsaPss.Arm
 

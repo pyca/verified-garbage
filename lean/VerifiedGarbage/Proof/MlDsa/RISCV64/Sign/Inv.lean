@@ -261,7 +261,7 @@ theorem spro_ok {p : Params} (hF : SFacts p) {STK : Nat} (hSTK : 1168 ≤ STK) {
   have g9 : s₁.gpr .a6 = σ.gpr .a6 := by rw [g₁]
   have a912 : (sScr σ + BitVec.ofNat 64 oSIG).toNat % 8 = 0 := by
     have := hp.al_c
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; simp only [oSIG]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; simp only [oSIG]; omega_using [this]
   have i912 : InRegions s₁.wr (sScr σ + BitVec.ofNat 64 oSIG) 8 := by rw [wr₁]; exact wS (by decide)
   have o912 : oSIG % 8 = 0 ∧ oSIG < 32768 := by decide
   have hmv : WP isa (.block [mov .s10 .a0, mov .s9 .a1, mov .s8 .a2, mov .s11 .a4, .store .d .a3 .s11 oSIG,

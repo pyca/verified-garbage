@@ -47,21 +47,21 @@ def StRel (s : State) (X : Nat → Nat → Spec.Sm4.Word) : Prop :=
   ∀ w < 4, W32.WordRel (planes s w) (fun b => X b w)
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
-  slots := by have := h.slots; simp [sboxCfg, layerCfg, tableSlot] at this ⊢; omega
+  slots := by have := h.slots; simp [sboxCfg, layerCfg, tableSlot] at this ⊢; omega_using [this]
   sep k _ j hj := by simp [sboxCfg] at hj
 
 /-- A frame of the first `n` slots keeps slot `k ≥ n`. -/
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨State.addr b, 4 * n⟩] m m') (hk : n ≤ k)
     (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) : m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega)
+  have e : wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega_using [hfit])
   have := b.isLt
-  have hb : (State.addr b).toNat = b.toNat := by simp [State.addr]; omega
+  have hb : (State.addr b).toNat = b.toNat := by simp [State.addr]; omega_using []
   rw [e]
   exact hf.readW (r := ⟨State.addr b + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+      exact VG.Offset.disjoint_base _ (by omega_using [hk]) (by omega_using [hfit])) (by decide)
 
 theorem stateIns_mem {x j i : Nat} (h : (j, i) ∈ stateIns x) : ∃ k < 32, j = 32 + k ∧ i = x + k := by
   simp only [stateIns, List.mem_map, List.mem_range, Prod.mk.injEq] at h

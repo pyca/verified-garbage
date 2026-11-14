@@ -40,7 +40,7 @@ theorem attempt_status {q : KeyPoint} {original s : State}
   have hlen : (keyRand original).length = q.inputs.randLen := by
     rw [← h.random]; simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
   have hhead := keyTail_statuses_head (policy := .cached) (a := q.inputs.a) (len := q.inputs.len)
-    (rand := keyRand original) (used := q.used) hk hs (by rw [hlen]; omega)
+    (rand := keyRand original) (used := q.used) hk hs (by rw [hlen]; omega_using [hr])
   rw [hst] at hhead
   simp only [KeyPoint.status, hhead, Option.getD_some]
 
@@ -64,7 +64,7 @@ private theorem first_ready (q : KeyPoint) (s : State) (h : KeyAttempted q s) :
   have h4 : q.status < 4 := by
     rw [← he]
     rcases attemptStatus_cases (policy := .cached) q.inputs.a q.inputs.len ((keyRand original).drop q.used) with
-      h | h | h <;> omega
+      h | h | h <;> omega_using [h]
   refine WP.mono (key_classify_head h hr hp) fun t ⟨ht, _, hax, hev⟩ => ?_
   exact ⟨⟨original, _, _, _, ht⟩, by rw [hax, he], by rw [hev, he], h4⟩
 
@@ -73,7 +73,7 @@ private theorem next_ready (j : Nat) (n : BitVec 32) (k : Nat)
     (h : KeyGuard j q s ∧ eval .e s = some false) :
     WP isa (.block [.alu .cmp .rax (.imm n)]) s (KeyGuard k q) := by
   obtain ⟨⟨⟨o, u, a, c, hl⟩, ha, _, h4⟩, _⟩ := h
-  refine WP.mono (rax_guard ha (by omega) n k hn hk) fun t ⟨⟨he, hm, hr⟩, kt⟩ => ?_
+  refine WP.mono (rax_guard ha (by omega_using [h4]) n k hn hk) fun t ⟨⟨he, hm, hr⟩, kt⟩ => ?_
   exact ⟨⟨o, u, a, c, hl.keep kt hm (by decide)⟩, hr.trans ha, he, h4⟩
 
 private theorem leaf {k : Nat} {b : Bool} {c : Prog isa} (hc : RelCT isa (Two KeyAny) c fun _ _ => True) :

@@ -43,8 +43,8 @@ theorem checkWith_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte}
   refine WP.seq (WP.mono (pd_call v h3 slots3 args3) ?_)
   rintro s4 ⟨h4, slots4, frame4, rest4, pd⟩
   have bound := h.valid.maxLength
-  have fit : g.length < 2 ^ 64 := by omega
-  have tempFit : oM + g.length ≤ frameBytes := by simp only [oM, frameBytes]; omega
+  have fit : g.length < 2 ^ 64 := by omega_using [bound]
+  have tempFit : oM + g.length ≤ frameBytes := by simp only [oM, frameBytes]; omega_using [bound]
   have tempPrefix : ∀ r ∈ pdPrefixWrites g, (⟨State.addr g.temporary, g.length⟩ : Region).Disjoint r := by
     rw [temporary_region h.valid]
     exact innerSlice_pdPrefix (by decide) tempFit
@@ -63,7 +63,7 @@ theorem checkWith_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte}
   have r3 : s4.mem.readW (off (State.addr g.stack) oR3) 32 = s2.gpr .r0 := by
     rw [status_frame frame4 (innerSlice_pdCall h.valid (by decide : oR3 + 4 ≤ frameBytes))]
     exact status3
-  have pre := wordsAt_frame frame3 (by simp only [Spec.Rsa.modulusWords]; omega)
+  have pre := wordsAt_frame frame3 (by simp only [Spec.Rsa.modulusWords]; omega_using [bound])
     (precomputation_pdPrefix h.valid)
   have pcBit : match Spec.Rsa.publicPrecompute (bs 0) with
       | some _ => s2.gpr .r0 = 1 | none => s2.gpr .r0 = 0 := by

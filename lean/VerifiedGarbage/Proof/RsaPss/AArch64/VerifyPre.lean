@@ -87,28 +87,28 @@ theorem kb_toNat {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH t
     (kb K s).toNat + stk K = s.sp.toNat ∧ s.sp.toNat + 64 ≤ 2 ^ 64 := by
   have := hp.sp1; have := hp.sp2
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem fb_toNat {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH tsG K s) :
     (fb s).toNat + frameBytes = s.sp.toNat := by
   have := hp.sp1
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega_using [this]
 
 /-- The stack arguments are readable. -/
 theorem arg_in {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH tsG K s) {rs : List Region}
     (hrd : Covers s.rd rs) {j : Nat} (hj : j < 8) : InRegions rs (stackArgAddr s j) 8 :=
   hrd _ _ <| hp.hrd _ _ ⟨aR s, by simp, by
-    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 /-- A stack argument, in memory changed only in the frame. -/
 theorem arg_frame {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreV tsH tsG K s) {m : Mem}
     (h : Frame [⟨fb s, frameBytes⟩] s.mem m) {j : Nat} (hj : j < 8) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
-  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega))
+  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
     (keep_of_frame hp.ka) (by decide)
 
 theorem preV_of {tsH tsG : List FnTable} {K : Nat} {s : State}
     (h : (Spec.RsaPss.verifyPrecomputedMdTableContract (verifyAbi tsH tsG) (stk K)).pre s) : PreV tsH tsG K s := by
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_using []
   rw [e] at h
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
@@ -122,6 +122,6 @@ theorem preV_of {tsH tsG : List FnTable} {K : Nat} {s : State}
   rw [← e] at sp1 kn ke kdg ksg ks kP ktH ktG ka
   exact ⟨sp1, sp2, tabH, tabG, hsy, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, hwr, ns, es, dgs, sgs, sP,
     stH, stG, sa, kn, ke, kdg, ksg, ks, kP, ktH, ktG, ka, wn, we, wdg, wsg, ws, wP, wtH, wtG, k1, k2, e1, e2, sgl,
-    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hs; omega, hl, h⟩
+    by unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords at hs; omega_using [hs], hl, h⟩
 
 end VG.Proof.RsaPss.AArch64.Vfy

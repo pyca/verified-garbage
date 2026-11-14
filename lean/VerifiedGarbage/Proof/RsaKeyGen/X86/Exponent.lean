@@ -263,37 +263,37 @@ theorem code_ok {s : State} {base : Addr} {size w minusOne src out c : Nat} (scr
       val32 t.mem base out (2 * w) = Proof.MillerRabin.Round.exponent c ∧
       word t.mem base (out + 8 * w) = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64) ∧
       Outs base (ranges w src out) s.mem t.mem ∧ Keeps clob s t := by
-  refine WP.seq (WP.mono (ExponentMarker.code_ok scratch minusFit minusValue (by omega))
+  refine WP.seq (WP.mono (ExponentMarker.code_ok scratch minusFit minusValue (by omega_using [large]))
     fun a ⟨marker, Ma, Ka⟩ => ?_)
   have Sa := scratch.of_keeps Ka (by decide)
-  have markerFit : markerOffset + 8 ≤ size := by omega
+  have markerFit : markerOffset + 8 ≤ size := by omega_using [srcFit, lo]
   refine WP.seq (WP.mono (Header.storePair_ok Sa markerFit) fun b ⟨Mb, Ob, Kb⟩ => ?_)
   have Ksb : Keeps clob s b := (Ka.mono (by unfold clob; decide)).widen Kb
   have Sb := scratch.of_keeps Ksb (by unfold clob; decide)
   have candidateB : val32 b.mem base src (2 * w) = c := by
-    rw [Ob.val32 (Or.inr lo) (by have := scratch.nowrap; omega), Ma]
+    rw [Ob.val32 (Or.inr lo) (by have := scratch.nowrap; omega_using [srcFit, this]), Ma]
     exact candidate
   have markerB : word b.mem base markerOffset = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64) := by
     rw [VG.Proof.Mont.word, Mb, Mem.readW_writeW_self64, marker]
-  refine WP.seq (WP.mono (firstPass_ok Sb (by omega) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (firstPass_ok Sb (by omega_using [positive]) (by omega_using [srcFit]) (by omega_using [outFit]) (by omega_using [sep]))
     fun d ⟨valueD, topD, Od, Kd⟩ => ?_)
   have Ksd : Keeps clob s d := Ksb.widen Kd
   have Sd := scratch.of_keeps Ksd (by unfold clob; decide)
   have markerD : word d.mem base markerOffset = BitVec.twoPow 64 ((Spec.Rsa.splitTwos (c - 1)).1 % 64) := by
     rw [Od.word (fun r mem => by
       simp only [firstRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
-      rcases mem with rfl | rfl | rfl <;> left <;> omega) (by have := scratch.nowrap; omega)]
+      rcases mem with rfl | rfl | rfl <;> left <;> omega_arith) (by have := scratch.nowrap; omega_using [srcFit, lo, this])]
     exact markerB
   have C : ExponentShift.Context base size (2 * w) markerOffset out
       ((Spec.Rsa.splitTwos (c - 1)).1 % 64) d :=
-    ⟨Sd, by omega, by omega, markerFit, by omega, Nat.mod_lt _ (by decide), markerD, topD⟩
+    ⟨Sd, by omega_using [positive], by omega_using [outFit], markerFit, by omega_using [lo, sep], Nat.mod_lt _ (by decide), markerD, topD⟩
   have valueD' : val32 d.mem base out (2 * w) = c / 2 := by rw [valueD, candidateB]
   refine WP.seq (WP.mono (ExponentShift.passes_exponent C odd valueD') fun e ⟨Ce, Oe, Ve, Ke⟩ => ?_)
-  refine WP.mono (finish_ok Ce.scratch markerFit (by omega)) fun t ⟨markerT, Ot, Kt⟩ => ?_
+  refine WP.mono (finish_ok Ce.scratch markerFit (by omega_using [outFit])) fun t ⟨markerT, Ot, Kt⟩ => ?_
   refine ⟨?_, ?_, ?_, (Ksd.widen Ke).widen Kt⟩
-  · rw [Ot.val32 (Or.inl (by omega)) (by have := scratch.nowrap; omega)]
+  · rw [Ot.val32 (Or.inl (by omega_using [])) (by have := scratch.nowrap; omega_using [outFit, this])]
     exact Ve
-  · have : out + 4 * (2 * w) = out + 8 * w := by omega
+  · have : out + 4 * (2 * w) = out + 8 * w := by omega_using []
     rw [this] at markerT
     exact markerT.trans Ce.value
   · have Fsb : Outs base (ranges w src out) s.mem b.mem := by
@@ -303,13 +303,13 @@ theorem code_ok {s : State} {base : Addr} {size w minusOne src out c : Nat} (scr
       intro r mem
       simp only [firstRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with rfl | rfl | rfl
-      · exact ⟨(src + 8 * w, 4), by simp [ranges], by omega, by omega⟩
-      · exact ⟨(out, 8 * w + 8), by simp [ranges], by omega, by omega⟩
-      · exact ⟨(out, 8 * w + 8), by simp [ranges], by omega, by omega⟩)
+      · exact ⟨(src + 8 * w, 4), by simp [ranges], by omega_using [], by omega_using []⟩
+      · exact ⟨(out, 8 * w + 8), by simp [ranges], by omega_using [], by omega_using []⟩
+      · exact ⟨(out, 8 * w + 8), by simp [ranges], by omega_using [], by omega_using []⟩)
     have Fe : Outs base (ranges w src out) d.mem e.mem :=
-      Outs.of_outside (Oe.mono (by omega) (by omega)) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+      Outs.of_outside (Oe.mono (by omega_using []) (by omega_using [])) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
     have Ft : Outs base (ranges w src out) e.mem t.mem :=
-      Outs.of_outside (Ot.mono (by omega) (by omega)) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+      Outs.of_outside (Ot.mono (by omega_using []) (by omega_using [])) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
     exact ((Fsb.trans Fd).trans Fe).trans Ft
 
 end VG.Proof.RsaKeyGen.X86.Exponent

@@ -60,6 +60,6 @@ theorem code_word_ok (s : State) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (t.gpr .r2).isLt,
     Nat.shiftLeft_eq, BitVec.toNat_twoPow_of_lt (Nat.mod_lt _ (by decide : 0 < 64))]
-  omega
+  omega_using [value]
 
 end VG.Proof.Bignum.Arm.TwoPower

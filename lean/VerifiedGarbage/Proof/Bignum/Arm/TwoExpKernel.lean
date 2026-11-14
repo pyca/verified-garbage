@@ -27,8 +27,8 @@ theorem header_of_keeps {base : BitVec 32} {len w o : Nat} {s t : State}
     (ready : ArithmeticReady base len w s) (keeps : Keeps (State.addr base) len w o s.mem t.mem) :
     HeaderKept base s t := by
   have fit : arrAt w 8 ≤ 8 * len := ready.width ▸ ready.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_using [fit]
   intro d hd
-  exact keeps_header_readW keeps size (d := d) (bits := 32) (by omega)
+  exact keeps_header_readW keeps size (d := d) (bits := 32) (by omega_using [hd])
 
 end VG.Proof.Bignum.Arm.TwoExp

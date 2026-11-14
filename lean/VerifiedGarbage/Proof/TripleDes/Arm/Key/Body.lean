@@ -44,7 +44,7 @@ theorem readKey_ok (s : State) (offset : Nat) (ho : offset + 4 < 4096)
   have h1 : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 (offset + 4))) 4 := by
     simpa only [Nat.mul_one] using hr 1 (by decide)
   refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show offset < 4096 from by omega, h0, show offset + 4 < 4096 from ho, ite_true, State.load32,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show offset < 4096 from by omega_using [ho], h0, show offset + 4 < 4096 from ho, ite_true, State.load32,
       gpr_setReg, reduceCtorEq, ite_false, rd_setReg, wr_setReg, h1,
       Option.map_some, mem_setReg, ite_true]
     rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -298,7 +298,7 @@ theorem loopBody_ok (key : BitVec 64) (base : BitVec 32) (origin : State)
   · rw [h₂.ptr, reg₁ .r8 (by decide), hs.pointer]
     change base + BitVec.ofNat 32 (8 * j) + BitVec.ofNat 32 8 = _
     rw [Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_using [])
   · intro i hi hi16
     rw [hmem, keyPrefix_succ]
     by_cases he : i = j
@@ -448,7 +448,7 @@ theorem copyPair_ok (s : State) (a b : Nat) (ha : a + 4 < 4096) (hb : b + 4 < 40
   simp only [Nat.mul_one] at hr1 hw1
   refine ⟨_, by
     simp only [copyPair, runBlock_cons, runStep_some, runBlock_nil, exec,
-      show a < 4096 from by omega, ha, show b < 4096 from by omega, hb,
+      show a < 4096 from by omega_using [ha], ha, show b < 4096 from by omega_using [hb], hb,
       ite_true, State.load32, State.store32, hr0, hr1, hw0, hw1, Option.map_some,
       gpr_setReg, reduceCtorEq, ite_true, ite_false, mem_setReg, rd_setReg, wr_setReg]
     rfl, ?_⟩
@@ -496,27 +496,27 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 16)
   | succ n ih =>
     rw [copyCode, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    apply WP.mono (ih (by omega))
+    apply WP.mono (ih (by omega_using [hn]))
     intro s₁ h₁
     have hbase : s₁.gpr .r2 = s.gpr .r2 := h₁.reg .r2 (by decide) (by decide)
     have readable : ∀ t < 2, InRegions (s₁.rd ++ s₁.wr)
         (State.addr (s₁.gpr .r2 + BitVec.ofNat 32 (8 * n + 4 * t))) 4 := by
-      rw [h₁.rd, h₁.wr, hbase]; exact hr n (by omega)
+      rw [h₁.rd, h₁.wr, hbase]; exact hr n (by omega_using [hn])
     have writable : ∀ t < 2, InRegions s₁.wr
         (State.addr (s₁.gpr .r2 + BitVec.ofNat 32 (256 + 8 * n + 4 * t))) 4 := by
-      rw [h₁.wr, hbase]; exact hw n (by omega)
+      rw [h₁.wr, hbase]; exact hw n (by omega_using [hn])
     have fit₁ : (s₁.gpr .r2).toNat + max (8 * n) (256 + 8 * n) + 8 ≤ 2 ^ 32 := by
-      rw [hbase, Nat.max_eq_right (by omega : 8 * n ≤ 256 + 8 * n)]
+      rw [hbase, Nat.max_eq_right (by omega_using [] : 8 * n ≤ 256 + 8 * n)]
       omega_using [fit, hn]
     obtain ⟨s₂, run₂, keep₂⟩ := copyPair_ok s₁ (8 * n) (256 + 8 * n)
-      (by omega) (by omega) fit₁ readable writable
+      (by omega_using [hn]) (by omega_using [hn]) fit₁ readable writable
     have source : s₁.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 (8 * n)) 64 =
         s.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 (8 * n)) 64 := by
       apply h₁.frame.readW (r := ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 (8 * n), 8⟩)
         (Region.contains_self _ _) _ (by decide)
       intro r h
       obtain rfl := List.mem_singleton.mp h
-      exact Offset.disjoint (State.addr (s.gpr .r2)) (by omega) (by omega) (by decide)
+      exact Offset.disjoint (State.addr (s.gpr .r2)) (by omega_using [hn]) (by omega_using [hn]) (by decide)
     have mem₂ : s₂.mem = s₁.mem.writeW (State.addr (s.gpr .r2) + BitVec.ofNat 64 (256 + 8 * n))
         (s.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 (8 * n)) 64) := by
       have hm := keep₂.mem
@@ -530,12 +530,12 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 16)
       rw [mem₂]
       by_cases he : i = n
       · subst i; exact Mem.readW_writeW_self64 _ _ _
-      · rw [Mem.readW_writeW_sep (Offset.sep (State.addr (s.gpr .r2)) (by omega) (by omega) (by omega)) (by decide)]
-        exact h₁.keys i (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep (State.addr (s.gpr .r2)) (by omega_using [he]) (by omega_using [hn, hi]) (by omega_using [hn])) (by decide)]
+        exact h₁.keys i (by omega_using [hi, he])
     · rw [mem₂]
       apply h₁.frame.writeW (List.mem_singleton_self _) _
       have hc := Offset.contains_base (State.addr (s.gpr .r2) + BitVec.ofNat 64 256)
-        (d := 8 * n) (n := 8) (k := 128) (by omega) (by omega)
+        (d := 8 * n) (n := 8) (k := 128) (by omega_using [hn]) (by omega_using [hn])
       rw [Offset.add_ofNat_add_ofNat] at hc
       exact hc
 
@@ -599,7 +599,7 @@ theorem componentStep_ok (origin s : State) (c : Nat) (hc : c < 3)
     rw [hs.wr, hs.reg .r2 (by decide), Offset.add_ofNat_add_ofNat,
       Offset.add_ofNat_add_ofNat, addr_add (by omega_using [hp.outputFit, hc, hj, ht])]
     exact hp.writes _ (by omega_using [hc, hj, ht])
-  apply WP.mono (component_ok s (8 * c) c hc (by omega) keyFit outputFit read write)
+  apply WP.mono (component_ok s (8 * c) c hc (by omega_using [hc]) keyFit outputFit read write)
   intro t ht
   have frame : Frame [⟨(State.addr (origin.gpr .r2)) + BitVec.ofNat 64 (128 * c), 128⟩] s.mem t.mem := by
     have hf := ht.frame

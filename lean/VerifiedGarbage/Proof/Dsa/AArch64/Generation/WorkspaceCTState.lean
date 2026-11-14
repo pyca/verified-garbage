@@ -21,12 +21,12 @@ theorem primeWorkspace_ready {p : PrimeFramePublic} {s : State}
   have hz := p.bytes.call.draw.prime.z256
   have hroom : slot p.bytes.call.draw.prime.w 16 ≤ p.bytes.call.draw.prime.Z :=
     Nat.le_trans (slot_mono _ (by decide)) p.bytes.call.draw.prime.room
-  refine WP.mono (workspace_ok hs hdi hroom (by have := p.bytes.call.draw.prime.w4; omega)
-    (by have := p.bytes.call.width; omega)) fun t ⟨hg, _, hf, hk⟩ => ?_
+  refine WP.mono (workspace_ok hs hdi hroom (by have := p.bytes.call.draw.prime.w4; omega_using [this])
+    (by have := p.bytes.call.width; omega_using [this])) fun t ⟨hg, _, hf, hk⟩ => ?_
   have hr : ∀ r ∈ workspaceRanges, r.1 + r.2 ≤ p.bytes.call.draw.prime.Z := by
     intro r hr
     simp only [workspaceRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_using [hz]
   have headers (k : Nat) (hkw : k < 34) :
       VG.Proof.Bignum.word t.mem p.F (8 * k) = VG.Proof.Bignum.word s.mem p.F (8 * k) :=
     frame_word_of_workspace hf hr (p.outside k hkw)

@@ -42,17 +42,17 @@ theorem qinvPart_ok {s : State} {B : Addr} {Z n k : Nat}
   let P := num s.mem B n aPa
   let Q := num s.mem B n aQa
   let M := safePrime P
-  have small : k ≤ n := by omega
-  have half : n / 2 = k := by omega
+  have small : k ≤ n := by omega_using [width]
+  have half : n / 2 = k := by omega_using [width]
   have mo : M % 2 = 1 := by
     unfold M safePrime
     split
     · next H => exact H.1
     · decide
-  have ml : 1 < M := by unfold M safePrime; split <;> omega
+  have ml : 1 < M := by unfold M safePrime; split <;> omega_arith
   have threeBound : 3 < 2 ^ (32 * k) := by
-    have H := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show 32 ≤ 32 * k by omega)
-    omega
+    have H := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show 32 ≤ 32 * k by omega_using [positive])
+    omega_using [H]
   have mb : M < 2 ^ (32 * k) := by
     unfold M safePrime
     split
@@ -99,13 +99,13 @@ theorem qinvPart_ok {s : State} {B : Addr} {Z n k : Nat}
   have maskW : slot w.mem B kOk = slot s.mem B kOk :=
     (Ow.slot (by decide) (by decide)).trans maskV
   refine WP.seq (WP.mono (andS_ok hw (by decide) (by decide) (by decide)
-    (by rw [maskW]; exact bit) (by rw [flag]; split <;> omega))
+    (by rw [maskW]; exact bit) (by rw [flag]; split <;> omega_using []))
     fun a ⟨ha, Oa, maskA, Ka⟩ => ?_)
   rw [maskW, flag] at maskA
   have Xa : num a.mem B k 3 = num v.mem B k 3 := by
     have F := hvSmall.fit64 (j := 3) (by decide)
     have same : val32 a.mem B (arr k 3) k = val32 w.mem B (arr k 3) k := by
-      apply Oa.val32 _ (by unfold S at F; omega)
+      apply Oa.val32 _ (by unfold S at F; omega_using [F])
       intro r hr
       change r ∈ [] ++ [(kOk, 4)] at hr
       have E : r = (kOk, 4) := by simpa only [List.nil_append, List.mem_singleton] using hr
@@ -115,14 +115,14 @@ theorem qinvPart_ok {s : State} {B : Addr} {Z n k : Nat}
   have sourceBound : arr k 3 + 4 * k ≤ Z := by
     have F := hk.arr_fit (j := 3) (by decide)
     unfold S at F
-    omega
+    omega_using [F]
   have before : arr k 3 + 4 * k ≤ arr n aQi := by
     have F := arr_end (w := k) (show 3 < 15 by decide)
     have E := inverse_end_le small (j := aQi) (by decide)
     unfold S at F
-    omega
+    omega_using [F, E]
   have widening := widen_ok ha .prime (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aQi)
-    (.array .prime 3) (by change n / 2 ≤ n; omega) (ha.arr_fit (by decide))
+    (.array .prime 3) (by change n / 2 ≤ n; omega_using []) (ha.arr_fit (by decide))
     (by simpa only [offset_array, Width.words, half] using sourceBound)
     (Or.inl (by simpa only [VG.Impl.RsaKeyGen.X86.KeyRuntime.arr, offset_array, Width.words, half] using before))
   simp only [VG.Impl.RsaKeyGen.X86.KeyRuntime.arr, offset_array, Width.words, half] at widening

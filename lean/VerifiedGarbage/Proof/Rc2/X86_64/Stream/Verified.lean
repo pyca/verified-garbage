@@ -121,17 +121,17 @@ theorem checks_ok (s : State) :
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
     refine WP.ite _ (by simp only [eval, cf₂]; rfl) (fun h => WP.block_nil ⟨keep_trans keep₁ keep₂, ?_⟩)
       (fun h => ?_)
-    · rw [rax₂, code, ite_eq_right_of_eq_false _ _ (eq_false (fun h => h hk)), ite_eq_left_of_eq_true _ _ (eq_true (by simp at h ⊢; omega))]
+    · rw [rax₂, code, ite_eq_right_of_eq_false _ _ (eq_false (fun h => h hk)), ite_eq_left_of_eq_true _ _ (eq_true (by simp at h ⊢; omega_using [h]))]
     have he : 1 ≤ (s.gpr .rdx).toNat ∧ (s.gpr .rdx).toNat ≤ 1024 := by simpa using h
     obtain ⟨s₃, run₃, rax₃, zf₃, keep₃⟩ := checkIv_ok s₂
     rw [keep₂.reg _ (by decide), keep₁.reg _ (by decide)] at zf₃
     refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
     refine WP.ite _ (by simp only [eval, zf₃]; rfl) (fun h => WP.block_nil ⟨keep_trans (keep_trans keep₁ keep₂) keep₃, ?_⟩)
       (fun h => ?_)
-    · rw [rax₃, code, ite_eq_right_of_eq_false _ _ (eq_false (fun h => h hk)), ite_eq_right_of_eq_false _ _ (eq_false (fun h => h he)), ite_eq_left_of_eq_true _ _ (eq_true (by simp at h ⊢; omega))]
+    · rw [rax₃, code, ite_eq_right_of_eq_false _ _ (eq_false (fun h => h hk)), ite_eq_right_of_eq_false _ _ (eq_false (fun h => h he)), ite_eq_left_of_eq_true _ _ (eq_true (by simp at h ⊢; omega_using [h]))]
     obtain ⟨s₄, run₄, rax₄, keep₄⟩ := zero_ok s₃
     refine WP.of_runBlock ⟨s₄, run₄, keep_trans (keep_trans (keep_trans keep₁ keep₂) keep₃) keep₄, ?_⟩
-    rw [rax₄, code, ite_eq_right_of_eq_false _ _ (eq_false (fun h => h hk)), ite_eq_right_of_eq_false _ _ (eq_false (fun h => h he)), ite_eq_right_of_eq_false _ _ (eq_false (by simp at h ⊢; omega))]
+    rw [rax₄, code, ite_eq_right_of_eq_false _ _ (eq_false (fun h => h hk)), ite_eq_right_of_eq_false _ _ (eq_false (fun h => h he)), ite_eq_right_of_eq_false _ _ (eq_false (by simp at h ⊢; omega_using [h]))]
   · rintro t ⟨keep, rax⟩
     obtain ⟨t', run, zf, keep'⟩ := test_ok t .rax rax (by have := code_le (s.gpr .rsi).toNat (s.gpr .rdx).toNat (s.gpr .r8).toNat; omega_using [this])
     refine WP.of_runBlock ⟨t', run, ⟨fun r hr => (keep'.reg r (by simp)).trans (keep.reg r hr),

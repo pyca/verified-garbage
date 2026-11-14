@@ -660,7 +660,7 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
   have hbits₅ : ∀ t < 4 * K.J, s₅.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
       have := hL.bits
-      rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_using [ht, this]) (by have := S₅.scr.nowrap; omega)]
+      rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_using [ht, this]) (by have := S₅.scr.nowrap; omega_arith)]
       exact hF.bits t ht
   refine WP.seq (WP.mono (winEntryR_ok hL hA (RepA.infinity hC) RepA.negY (P := P) hpn hone_lt hone
     S₅.scr S₅.mod (i := j - 1) (by omega_using [hjn, hJ]) hx₅ hbits₅ hz₅ S₅.tbl hS) fun s₇ E₇ => ?_)

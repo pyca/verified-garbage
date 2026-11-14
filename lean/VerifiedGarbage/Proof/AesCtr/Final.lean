@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ctr.Final
 public import VerifiedGarbage.Proof.Framework.PostMono
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: shared by the final functions' proofs of every target.
 
@@ -91,10 +92,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 /-- Memories that agree within the final function's buffers agree on the
 schedule, the block and the data. -/
@@ -112,8 +113,8 @@ private theorem final_bufs {pb : Nat} {vs : List (BitVec 64)} (hlen : vs.length 
     have hv := agree_of hb.2.1
     have hd := agree_of hb.2.2.1
     have := Nat.mod_le len.toNat (2 ^ pb)
-    exact ⟨k, rounds, iv, data, len, scr, rfl, fun n hn => bytesAt_congr fun i hi => hk i (by omega),
-      bytesAt_congr hv, bytesAt_congr fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
+    exact ⟨k, rounds, iv, data, len, scr, rfl, fun n hn => bytesAt_congr fun i hi => hk i (by omega_using [hn, hi]),
+      bytesAt_congr hv, bytesAt_congr fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])⟩
 
 end
 
@@ -140,7 +141,7 @@ theorem finalPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesFinalSig.words 
   dsimp only [Curry.apply, finalPost, ArgWord.ofRaw, Spec.Ctr.CryptFinal, ciphAt] at h ⊢
   intro hr
   obtain ⟨h1, h2⟩ := h hr
-  rw [hk _ (by rcases hr with h | h | h <;> omega), hv, hd]
+  rw [hk _ (by rcases hr with h | h | h <;> omega_using [h]), hv, hd]
   exact ⟨h1, h2⟩
 
 /-- `finalPost` reads the memory on return only within the buffers. -/

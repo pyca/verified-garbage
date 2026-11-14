@@ -47,7 +47,7 @@ theorem keygen_satisfiable (v : Backend) :
   sig_and_intros
   all_goals try simp only [sat_arg_0, sat_arg_1, sat_arg_2, sat_arg_3, sat_arg_4]
   all_goals first
-    | (change v.stack + 256 ≤ 281474976710656; omega)
+    | (change v.stack + 256 ≤ 281474976710656; omega_using [hb])
     | exact Region.disjoint_of_sep (by decide +kernel)
     | decide +kernel
     | (intro a h₁ h₂; simp only [Region.Contains, stackArgAddr, keygenSatState] at h₁ h₂; bv_omega)

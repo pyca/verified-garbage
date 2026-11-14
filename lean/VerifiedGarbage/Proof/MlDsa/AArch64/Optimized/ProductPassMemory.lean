@@ -50,7 +50,7 @@ theorem productFive_ok (u : Nat) {s : State} {v : Vector (BitVec 128) 8}
     rw [hr,hv₁ i.val i.isLt e he,hv i e he]
   refine five_ok u hb (hp.frame (hc₁.mono (by decide))) (hl.frame hc₁' (by decide)) fun s₂ hc₂ hb₂ => ?_
   rw [firstStores_eq]
-  refine storeBank_ok (regs 7) 16 .x0 (by intro i; omega) hb₂ ?_ fun t hm => ?_
+  refine storeBank_ok (regs 7) 16 .x0 (by intro i; omega_using []) hb₂ ?_ fun t hm => ?_
   · intro i
     simpa only [hc₂.wr,hc₂.gpr,hc₁.wr,hc₁.gpr] using hw i
   · refine k t ⟨s₂,(hc₁'.trans hc₂).mono (by simp),?_⟩
@@ -79,7 +79,7 @@ theorem productValues_word (m : Mem) (a b : Addr) (u : Nat) (j : Fin 8) {e : Nat
       centeredProduct (coeffAt m a (32*u+4*j.val+e)) (coeffAt m b (32*u+4*j.val+e)) := by
   simp only [productValues,Vector.getElem_ofFn]
   rw [VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
   rcases h with rfl | rfl | rfl | rfl <;> rfl
 
 def productPassMem (m : Mem) (p a b : Addr) : Nat → Mem
@@ -92,10 +92,10 @@ theorem productPass_frame {m : Mem} {p a b : Addr} {u : Nat} (hu : u≤8) :
   | zero => exact Frame.refl _ _
   | succ u ih =>
     simp only [productPassMem]
-    apply writeBank_frame _ _ _ (r := outputRegion p) (by simp) ?_ (ih (by omega))
+    apply writeBank_frame _ _ _ (r := outputRegion p) (by simp) ?_ (ih (by omega_using [hu]))
     intro i
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact Offset.contains_base p (by omega) (by omega)
+    exact Offset.contains_base p (by omega_using [hu]) (by omega_using [hu])
 
 theorem productValues_input {m : Mem} {s : State} {p a b : Addr} {u : Nat} (hu : u<8)
     (hm : Frame [outputRegion p] m s.mem)
@@ -105,7 +105,7 @@ theorem productValues_input {m : Mem} {s : State} {p a b : Addr} {u : Nat} (hu :
     (j : Fin 8) {e : Nat} (he : e<4) :
     vword (productValues m a b u)[j.val] e=productInput s (16*j.val) e := by
   rw [productValues_word _ _ _ _ _ he,productInput_offset h13 h14 he]
-  have hi : 32*u+4*j.val+e<n := by change 32*u+4*j.val+e<256; omega
+  have hi : 32*u+4*j.val+e<n := by change 32*u+4*j.val+e<256; omega_using [hu, he]
   rw [coeffAt_frame hm (by intro r hr; have h := List.mem_singleton.mp hr; subst r; exact ha) hi,
     coeffAt_frame hm (by intro r hr; have h := List.mem_singleton.mp hr; subst r; exact hb) hi]
 

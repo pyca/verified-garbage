@@ -36,7 +36,7 @@ def belowA (sp : BitVec 32) (n : Nat) : Region := ⟨State.addr sp - BitVec.ofNa
 
 theorem addr_toNat' (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 theorem belowA_sub {sp : BitVec 32} {a b : Nat} (hab : a ≤ b) :
     Region.Sub (belowA sp a) (belowA sp b) := by
@@ -74,7 +74,7 @@ theorem storeWords_frame (m : Mem) (a : BitVec 32) (vs : List (BitVec 32)) (h : 
     simp only [storeWords, List.length_cons] at h ⊢
     have f₁ : Frame [⟨State.addr a, 4 * (vs.length + 1)⟩] m (m.writeW (State.addr a) v) :=
       (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [])
     refine f₁.trans ((ih _ (a + 4) (by bv_omega)).sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     rw [List.mem_singleton] at hr; subst hr
     intro x hx
@@ -104,51 +104,51 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     simp only [stackUse] at hd ⊢
     obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
     rw [ret_eq hr]
-    have := ih (by rw [p₁]; omega)
+    have := ih (by rw [p₁]; omega_using [hd])
     rw [w₁, p₁, m₁] at this
     refine this.sub fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using [])⟩
   | icallNext _ _ _ ih =>
     simp only [stackUse] at hd ⊢
-    refine (ih (by simp only [stackUse]; omega)).sub fun r hr => ?_
+    refine (ih (by simp only [stackUse]; omega_using [hd])).sub fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-        belowA_sub (by simp only [stackUse]; omega)⟩
+        belowA_sub (by simp only [stackUse]; omega_using [])⟩
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [stackUse] at hd ⊢
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
-    have f₁ := ih₁ (by omega)
-    have f₂ := ih₂ (by rw [p₁]; omega)
+    have f₁ := ih₁ (by omega_using [hd])
+    have f₂ := ih₂ (by rw [p₁]; omega_using [hd])
     rw [w₁, p₁] at f₂
     refine (f₁.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
     · rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · rw [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using [])⟩
     · rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · rw [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using [])⟩
   | iteT _ _ ih =>
     simp only [stackUse] at hd ⊢
-    refine (ih (by omega)).sub fun r hr => ?_
+    refine (ih (by omega_using [hd])).sub fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using [])⟩
   | iteF _ _ ih =>
     simp only [stackUse] at hd ⊢
-    refine (ih (by omega)).sub fun r hr => ?_
+    refine (ih (by omega_using [hd])).sub fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega)⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using [])⟩
   | loopExit _ _ ih => exact ih hd
   | loopNext h₁ _ _ ih₁ ih₂ =>
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁

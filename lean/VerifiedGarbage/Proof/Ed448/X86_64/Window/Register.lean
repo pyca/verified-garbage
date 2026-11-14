@@ -50,7 +50,7 @@ theorem chooseMem_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat}
     WP isa (.block (chooseMem a)) s fun u =>
       rv u W = (if sw then fe s.mem base a else rv s W) ∧ Keeps W s u := by
   have hr : ∀ i < 7, InRegions (s.rd ++ s.wr) (off base (a + 8 * i)) 8 :=
-    fun i hi => hs.read (by omega)
+    fun i hi => hs.read (by omega_using [ha, hi])
   apply WP.of_runBlock
   cases sw <;>
     simp only [chooseMem, W, List.range_succ, List.range_zero, List.nil_append,

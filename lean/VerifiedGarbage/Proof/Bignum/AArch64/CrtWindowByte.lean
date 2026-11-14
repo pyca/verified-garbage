@@ -28,20 +28,20 @@ theorem groupByte_ok {s : State} {src : Addr} {i : Nat} (hi : i < 5)
         ((s.mem.read (src + BitVec.ofNat 64 i) 1).setWidth 32).setWidth 64 ∧
         t.mem = s.mem) ∧ Keep [.x4, .x5] s t := by
   refine WP.keep _ ?_ rfl rfl rfl
-  brun [VG.Impl.Rsa.AArch64.WindowFive.groupByte, h3, hld, show i < 4096 by omega]
+  brun [VG.Impl.Rsa.AArch64.WindowFive.groupByte, h3, hld, show i < 4096 by omega_using [hi]]
 
 /-- The shift-and-OR byte append is ordinary big-endian accumulation;
 the bound excludes a discarded high byte. -/
 theorem appendByte_value (v : Nat) (b : Byte) (hv : v < 2 ^ 56) :
     ((BitVec.ofNat 64 v <<< 8) ||| b.setWidth 64).toNat = 256 * v + b.toNat := by
   have hb := b.isLt
-  have hshift : v * 2 ^ 8 < 2 ^ 64 := by omega
+  have hshift : v * 2 ^ 8 < 2 ^ 64 := by omega_using [hv]
   have hor : v * 2 ^ 8 ||| b.toNat = v * 2 ^ 8 + b.toNat := by
     simpa only [Nat.shiftLeft_eq] using (Nat.shiftLeft_add_eq_or_of_lt hb v).symm
   rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega), Nat.shiftLeft_eq,
+    Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega_using [hv]), Nat.shiftLeft_eq,
     Nat.mod_eq_of_lt hshift, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega), hor]
-  omega
+    Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega_using []), hor]
+  omega_using []
 
 end VG.Proof.Bignum.AArch64.WindowFive

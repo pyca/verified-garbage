@@ -63,12 +63,12 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n :
     WP isa Impl.X448.AArch64.Fast.step s fun t => LInv base k u s₀ t n ∧ (t.gpr .x19 == 0) = decide (n = 0) := by
   have hs := hi.scr
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
-      (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS]; omega_using [])
+      (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS, ACC]; omega_using [hn])]
     exact hbits n hn
   rw [Impl.X448.AArch64.Fast.step, WP.seq_iff, WP.block_append_iff]
-  refine WP.mono (VG.Proof.X448.AArch64.Weak.stepPre_ok hs hn hi.x19 (by have := bit_le k n; omega)
-    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega); omega) bitval hi.swap)
+  refine WP.mono (VG.Proof.X448.AArch64.Weak.stepPre_ok hs hn hi.x19 (by have := bit_le k n; omega_using [this])
+    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega_using [hn]); omega_using [this]) bitval hi.swap)
     fun s₁ ⟨b₁, c₁, g₁, rd₁, wr₁, m₁⟩ => ?_
   have hs₁ : Scr s₁ base := ⟨(g₁ _ (by decide)).trans hs.x3, (g₁ _ (by decide)).trans hs.mask, wr₁ ▸ hs.wr,
     hs.nowrap⟩
@@ -76,12 +76,12 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n :
     rw [m₁]; exact writeW_outside _ _ _ (by decide)
   have l₁ : ∀ i : Index, ∀ j < 8, limbs s₁.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := by
     intro i j hj
-    exact out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega))
-      (Nat.le_trans (VG.Proof.X448.AArch64.Weak.slot_bound i) (by decide)) (by omega)
+    exact out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega_using []))
+      (Nat.le_trans (VG.Proof.X448.AArch64.Weak.slot_bound i) (by decide)) (by omega_using [hj])
   have same₁ : Same base [] s.mem s₁.mem := fun i _ j hj => l₁ i j hj
   have e₁ : EV s₁.mem base = EV s.mem base := funext fun i => same₁.env (by simp)
   refine WP.mono (bflyE hs₁ (fun i => same₁.bnd (by simp) (hi.env i))
-    (fun i hi' => same₁.bnd (by simp) (hi.red i (by simp at hi' ⊢; omega))) c₁) fun s₂ ⟨k₂, b₂, sm₂, e₂⟩ => ?_
+    (fun i hi' => same₁.bnd (by simp) (hi.red i (by simp at hi' ⊢; omega_using [hi']))) c₁) fun s₂ ⟨k₂, b₂, sm₂, e₂⟩ => ?_
   have hs₂ := k₂.scr hs₁
   have r₂ : Bnd Mb s₂.mem base (slot (0 : Index).val) :=
     sm₂.bnd (by decide) (same₁.bnd (by simp) (hi.red 0 (by decide)))
@@ -94,7 +94,7 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n :
       (EV s.mem base) := by rw [e₃, e₂, e₁]; rfl
   rw [← ladderAfter_step k u hn, ← e₄] at vals
   refine ⟨⟨core.scr hs₁, b₃, r₃, ?_, b₃', ?_, vals.1, vals.2.1, vals.2.2.1, vals.2.2.2.1, vals.2.2.2.2, ?_⟩,
-    counter_zero (by omega) b₃'⟩
+    counter_zero (by omega_using [hn]) b₃'⟩
   · refine hi.regs.trans ⟨?_, core.regs.2.1.trans rd₁, core.regs.2.2.trans wr₁⟩
     intro r hr
     have hwork : r ∉ fclob := fun h => hr (List.mem_cons_of_mem _ h)
@@ -106,8 +106,8 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} {n :
     rw [core.regs.1 r hwork, g₁ r hpre]
   · refine hi.mem.trans ?_
     intro p hp hq
-    rw [core.mem p (by omega) hq, out₁ p (by simp only [SWAP]; omega)]
-  · rw [core.mem.word (by simp only [SWAP]; omega) (by simp only [SWAP, ACC]; omega) (by decide),
+    rw [core.mem p (by omega_using [hp]) hq, out₁ p (by simp only [SWAP]; omega_using [hp])]
+  · rw [core.mem.word (by simp only [SWAP]; omega_using []) (by simp only [SWAP, ACC]; omega_using []) (by decide),
       m₁, ladderAfter_step k u hn]
     exact Mem.readW_writeW_self64 _ _ _
 

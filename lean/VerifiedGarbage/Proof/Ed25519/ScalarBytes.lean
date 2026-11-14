@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Ed25519.Contract
 
 import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The bytes of a little-endian scalar are its base-256 digits, its nibbles its base-16 ones
@@ -20,15 +21,15 @@ theorem decodeLE_byte : ∀ (bs : List Byte) (i : Nat),
   | [], i => by simp [Spec.Ed25519.decodeLE]
   | b :: bs, 0 => by
     simp only [Spec.Ed25519.decodeLE, Nat.pow_zero, Nat.div_one, List.getD_cons_zero]
-    have := b.isLt; omega
+    have := b.isLt; omega_using []
   | b :: bs, i + 1 => by
     rw [List.getD_cons_succ, ← decodeLE_byte bs i, Spec.Ed25519.decodeLE, Nat.pow_succ,
       Nat.mul_comm (256 ^ i), ← Nat.div_div_eq_div_mul]
     congr 2
-    have := b.isLt; omega
+    have := b.isLt; omega_using []
 
 theorem div_split (x i : Nat) : x / 256 ^ i = 256 * (x / 256 ^ (i + 1)) + x / 256 ^ i % 256 := by
-  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega
+  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega_using []
 
 theorem high_zero {S i : Nat} (hS : S < 256 ^ 32) (hi : 32 ≤ i) : S / 256 ^ i = 0 :=
   Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hS (Nat.pow_le_pow_right (by decide) hi))
@@ -52,7 +53,7 @@ def nibbleOf (bs : List Byte) (i : Nat) : Nat :=
 
 theorem nibbleOf_lt (bs : List Byte) (i : Nat) : nibbleOf bs i < 16 := by
   have := (bs.getD (i / 2) 0).isLt
-  unfold nibbleOf; split <;> omega
+  unfold nibbleOf; split <;> omega_using []
 
 theorem pow16_eq (i : Nat) : 16 ^ i = 256 ^ (i / 2) * 16 ^ (i % 2) := by
   calc 16 ^ i = 16 ^ (2 * (i / 2) + i % 2) := by rw [Nat.div_add_mod]
@@ -66,11 +67,11 @@ theorem decodeLE_nibble (bs : List Byte) (i : Nat) :
   generalize Spec.Ed25519.decodeLE bs / 256 ^ (i / 2) = y at hb
   generalize (bs.getD (i / 2) 0).toNat = b at hb
   rcases Nat.mod_two_eq_zero_or_one i with h | h
-  · rw [h, ite_eq_right (by decide), Nat.pow_zero, Nat.div_one]; omega
-  · rw [h, ite_eq_left rfl, Nat.pow_one]; omega
+  · rw [h, ite_eq_right (by decide), Nat.pow_zero, Nat.div_one]; omega_using [hb]
+  · rw [h, ite_eq_left rfl, Nat.pow_one]; omega_using [hb]
 
 theorem nibble_split (x i : Nat) : x / 16 ^ i = 16 * (x / 16 ^ (i + 1)) + x / 16 ^ i % 16 := by
-  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega
+  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega_using []
 
 /-- Two nibbles per byte. -/
 theorem div_pow16_two_mul (x c : Nat) : x / 16 ^ (2 * c) = x / 256 ^ c := by

@@ -65,8 +65,8 @@ theorem blk_shift (m : Mem) (B : BitVec 32) (o : Nat) : blk m (B + BitVec.ofNat 
 theorem cell_blk {s₀ : State} (hp : DPre s₀) (m : Mem) {k : Nat} (hk : k < blocksN s₀) :
     blockAt m (matrixCell (memB s₀) k) = blk m (memP s₀) (k * 1024) := by
   have := hp.mem_fits
-  have : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
-  rw [← cell_addr hp hk, Proof.Argon2.Arm.blockAt_eq (by rw [add_nat (by omega)]; omega), blk_shift]
+  have : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_using [hk]
+  rw [← cell_addr hp hk, Proof.Argon2.Arm.blockAt_eq (by rw [add_nat (by omega_arith)]; omega_arith), blk_shift]
 
 /-- Word `j` of a block. -/
 theorem blk_get (m : Mem) (B : BitVec 32) (o j : Nat) (hj : j < 128) :
@@ -91,10 +91,10 @@ theorem independent_eq {s₀ : State} (hk : (kindV s₀).toNat ≤ 2) (pass slic
   have e3' : (Spec.Argon2.Variant.i == .id) = false := rfl
   have e4 : (Spec.Argon2.Variant.id == .i) = false := rfl
   have e5 : (Spec.Argon2.Variant.id == .id) = true := rfl
-  rcases (by omega : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with h | h | h
+  rcases (by omega_using [hk] : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with h | h | h
   · rw [independent, hv, ite_eq_left h, e1, e2, h]; simp
-  · rw [independent, hv, ite_eq_right (by omega), ite_eq_left h, e3, e3', h]; simp
-  · rw [independent, hv, ite_eq_right (by omega), ite_eq_right (by omega), e4, e5, h]; simp
+  · rw [independent, hv, ite_eq_right (by omega_using [h]), ite_eq_left h, e3, e3', h]; simp
+  · rw [independent, hv, ite_eq_right (by omega_using [h]), ite_eq_right (by omega_using [h]), e4, e5, h]; simp
     cases pass <;> rfl
 
 /-- `((0 - x) | x) >> 31` is whether `x` is not zero. -/
@@ -109,13 +109,13 @@ theorem nz (x : BitVec 32) : ((0 - x) ||| x) >>> 31 = if x = 0 then 0 else 1 := 
         rw [BitVec.msb_or, hm, hm, BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl]
         have := x.isLt
         simp only [Bool.or_eq_true, decide_eq_true_eq]
-        omega
+        omega_using [hn]
       rw [hm] at this; exact of_decide_eq_true this
     have hl := ((0 - x) ||| x).isLt
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     show _ = 1
-    omega
+    omega_using [hb]
 
 /-- The second test of `addressMode`: Argon2id in the first two slices of the first pass. -/
 theorem id_zero {k p sl : BitVec 32} (hk : k.toNat ≤ 2) :
@@ -126,14 +126,14 @@ theorem id_zero {k p sl : BitVec 32} (hk : k.toNat ≤ 2) :
       have := congrArg BitVec.toNat h
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at this
       rw [show (0 : BitVec 32).toNat = 0 from rfl] at this
-      omega
+      omega_using [this]
     · intro h
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
       rw [show (0 : BitVec 32).toNat = 0 from rfl]
-      omega
+      omega_using [h]
   have f : k ^^^ (2 : BitVec 32) = 0 ↔ k.toNat = 2 := by
-    rcases (by omega : k.toNat = 0 ∨ k.toNat = 1 ∨ k.toNat = 2) with h | h | h <;>
+    rcases (by omega_using [hk] : k.toNat = 0 ∨ k.toNat = 1 ∨ k.toNat = 2) with h | h | h <;>
       · rw [show k = BitVec.ofNat 32 k.toNat by simp, h]; decide
   have orz : ∀ x y : BitVec 32, x ||| y = 0 ↔ x = 0 ∧ y = 0 := fun _ _ => BitVec.or_eq_zero_iff
   rw [orz, orz, f, e, and_assoc]
@@ -185,10 +185,10 @@ theorem addressMode_ok {s : State} (h : Inv s₀ s) {pass slice lane index : Nat
       rw [u₁₆.gpr, u₁₅.gpr, v0, u₁₄.other _ (by decide), u₁₃.other _ (by decide),
         u₁₂.other _ (by decide), v12]
     have k1 : (kindV s₀ ^^^ 1 = 0) ↔ (kindV s₀).toNat = 1 := by
-      rcases (by omega : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with e | e | e <;>
+      rcases (by omega_using [hk] : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with e | e | e <;>
         · rw [show kindV s₀ = BitVec.ofNat 32 (kindV s₀).toNat by simp, e]; decide
     have ps' : (BitVec.ofNat 32 slice).toNat < 2 ↔ slice < 2 := by
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs])]
     have pp : BitVec.ofNat 32 pass = 0 ↔ pass = 0 := by
       constructor
       · intro e; have := congrArg BitVec.toNat e

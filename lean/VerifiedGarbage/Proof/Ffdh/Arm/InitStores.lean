@@ -20,12 +20,12 @@ theorem clearController_ok (s : State) {base : BitVec 32}
       t.gpr .r0 = 0 ∧ t.mem = controlMem s.mem (State.addr base) (fun _ => 0) := by
   have write (d : Nat) (hd : d ≤ 28) :
       InRegions s.wr (State.addr base + BitVec.ofNat 64 d) 4 := by
-    exact h.write (by omega)
+    exact h.write (by omega_using [hd])
   have write0 : InRegions s.wr (State.addr base) 4 := by
     simpa only [BitVec.add_zero] using write 0 (by decide)
   have addr (d : Nat) (hd : d ≤ 28) :
       State.addr (base + BitVec.ofNat 32 d) = State.addr base + BitVec.ofNat 64 d :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [hd, this])
   unfold clearController controlMem controlSlots Spill.saveMem
   ffrun [ptr, write0, write 0 (by decide), write 4 (by decide), write 8 (by decide), write 12 (by decide),
     write 16 (by decide), write 20 (by decide), write 24 (by decide), write 28 (by decide),
@@ -42,12 +42,12 @@ theorem keyInitializeState_ok (s : State) {base : BitVec 32}
     WP isa KeyGeneration.initializeState s fun t =>
       t.gpr .r0 = 1 ∧ t.mem = controlMem s.mem (State.addr base) (keyInitValues (s.gpr .r1)) := by
   have write (d : Nat) (hd : d ≤ 28) :
-      InRegions s.wr (State.addr base + BitVec.ofNat 64 d) 4 := h.write (by omega)
+      InRegions s.wr (State.addr base + BitVec.ofNat 64 d) 4 := h.write (by omega_using [hd])
   have write0 : InRegions s.wr (State.addr base) 4 := by
     simpa only [BitVec.add_zero] using write 0 (by decide)
   have addr (d : Nat) (hd : d ≤ 28) :
       State.addr (base + BitVec.ofNat 32 d) = State.addr base + BitVec.ofNat 64 d :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [hd, this])
   unfold KeyGeneration.initializeState controlMem controlSlots Spill.saveMem
   ffrun [ptr, write0, write 4 (by decide), write 8 (by decide), write 12 (by decide),
     write 16 (by decide), write 20 (by decide), write 24 (by decide), write 28 (by decide),

@@ -500,7 +500,7 @@ theorem msg_piece {b : Nat} {full : Bool} (ht : TaintOk [.esp, .edi, .esi] ((cfg
 theorem rekeyFull_piece {Φ : Pr P} (b : Nat) (hb : b < 2) : Piece P Φ ((cfgOf P).rekeyFull b) (Tt P) := by
   have hlen : 1 + 2 * (cfgOf P).len ≤ 256 := by show 1 + 2 * P.Q ≤ 256; nums
   have ht : TaintOk [.esp, .edi, .esi] ((cfgOf P).msg b true) := by
-    obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
+    obtain rfl | rfl : b = 0 ∨ b = 1 := by omega_using [hb]
     · exact (rT P).msgF
     · exact (rT P).msgF₁
   unfold Cfg.rekeyFull
@@ -536,7 +536,7 @@ theorem candStep_trace {j : Nat} (hj : j < P.nV) :
   obtain ⟨-, hND, -⟩ := nV_facts P
   obtain ⟨-, -, -, -, hD16, hD64, -, -, -, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
   have hb : (j + 1) * P.F.H.D ≤ 136 :=
-    Nat.le_trans (Nat.mul_le_mul (show j + 1 ≤ P.nV by omega) (Nat.le_refl P.F.H.D)) (by omega)
+    Nat.le_trans (Nat.mul_le_mul (show j + 1 ≤ P.nV by omega_using [hj]) (Nat.le_refl P.F.H.D)) (by omega_using [hND, hD64, hQ66])
   have hjD : (j + 1) * P.F.H.D = j * P.F.H.D + P.F.H.D := Nat.succ_mul _ _
   refine (two_wp (Ψ := TL P j) (hmacVR_piece.rel fun _ _ _ _ => trivial) fun L g m₀ t hL hk hc hJ => ?_).seq
     ((two_wp (Ψ := KA P j) (two_blk [.esp] espOnly ⟨_, by taint_decide⟩) fun L g m₀ t hL hk hc hl =>
@@ -554,29 +554,29 @@ theorem candStep_trace {j : Nat} (hj : j < P.nV) :
     exact hf₁.readW (Region.contains_self _ _) (fun r hr => by
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact hL.stk_SCR (by omega)
-      · exact Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+      · exact hL.stk_SCR (by omega_using [hfTl])
+      · exact Offset.disjoint_base _ (by omega_using [hfTl]) (by omega_using [hfTl])) (by decide)
   · have hnb := hL.nB
     have hfV : fV = 64 := rfl
     have hfT : fT = 376 := rfl
     have hfTl : fTlen = 152 := rfl
     have eS : (L.F + BitVec.ofNat 32 fV).setWidth 64 = L.B + BitVec.ofNat 64 (76 + fV) := hL.frv (by decide)
     have eD : (L.F + BitVec.ofNat 32 (fT + j * P.F.H.D)).setWidth 64 =
-        L.B + BitVec.ofNat 64 (76 + fT + j * P.F.H.D) := by rw [hL.frv (by omega), Nat.add_assoc]
+        L.B + BitVec.ofNat 64 (76 + fT + j * P.F.H.D) := by rw [hL.frv (by omega_using [hb, hjD, hfT]), Nat.add_assoc]
     refine WP.mono (cpLoop_ok hL hc (S := L.F + BitVec.ofNat 32 fV) (D := L.F + BitVec.ofNat 32 (fT + j * P.F.H.D))
-        (n := P.F.H.D) (by omega) (by omega)
-        (by rw [hL.frN (by decide)]; have := hL.e28; have := hL.e588; omega)
-        (by rw [hL.frN (by omega)]; have := hL.e28; have := hL.e588; omega)
-        (by rw [eS]; exact ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ (by decide) (by omega) (by omega)⟩)
-        (by rw [eD]; exact hc.inFrW (by omega) (by omega) hL)
-        (by rw [eS, eD]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
-        (by rw [eD]; exact safe_high L (by omega) (by omega)) si bx cx) fun u ⟨hcu, hf, _, _⟩ => ⟨hcu, ?_⟩
+        (n := P.F.H.D) (by omega_using [hD16]) (by omega_using [hD64])
+        (by rw [hL.frN (by decide)]; have := hL.e28; have := hL.e588; omega_using [hD64, hfV])
+        (by rw [hL.frN (by omega_using [hb, hjD, hfT])]; have := hL.e28; have := hL.e588; omega_using [hb, hjD, hfT])
+        (by rw [eS]; exact ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ (by decide) (by omega_using [hD64, hfV]) (by omega_using [])⟩)
+        (by rw [eD]; exact hc.inFrW (by omega_using []) (by omega_using [hb, hjD, hfT]) hL)
+        (by rw [eS, eD]; exact Offset.disjoint _ (.inl (by omega_using [hD64, hfV, hfT])) (by omega_using [hD64, hfV]) (by omega_using [hb, hjD, hfT]))
+        (by rw [eD]; exact safe_high L (by omega_using [hfT]) (by omega_using [hb, hjD, hfT])) si bx cx) fun u ⟨hcu, hf, _, _⟩ => ⟨hcu, ?_⟩
     show tlen L u.mem = _
     rw [← hl]
     rw [eD] at hf
     exact hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by decide)
+      exact Offset.disjoint _ (.inl (by omega_using [hfT, hfTl])) (by omega_using [hfTl]) (by omega_using [hb, hjD, hfT])) (by decide)
 
 /-- The loop of the candidate's `V`s, in two runs: at the same block. -/
 theorem candLoop_ct :
@@ -587,9 +587,9 @@ theorem candLoop_ct :
     (fun n => fun s₁ s₂ => 0 < n ∧ n ≤ P.nV ∧ Two P (CJ P (P.nV - n)) s₁ s₂) (n := P.nV) (body := (cfgOf P).candStep)
     (fun n => by
       refine fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨hn0, hnN, hp⟩ e₁ e₂ => ?_
-      have hj : P.nV - n < P.nV := by omega
+      have hj : P.nV - n < P.nV := by omega_using [hN1, hn0]
       have hb : (P.nV - n + 1) * P.F.H.D ≤ 136 :=
-        Nat.le_trans (Nat.mul_le_mul (show P.nV - n + 1 ≤ P.nV by omega) (Nat.le_refl P.F.H.D)) (by omega)
+        Nat.le_trans (Nat.mul_le_mul (show P.nV - n + 1 ≤ P.nV by omega_using [hN1, hn0]) (Nat.le_refl P.F.H.D)) (by omega_using [hND, hD64, hQ66])
       obtain ⟨ht, hq⟩ := (two_wp (Ψ := fun L m₀ u => CJ P (P.nV - n + 1) L m₀ u ∧
           u.cf = some (decide ((P.nV - n + 1) * P.F.H.D < P.Q))) (candStep_trace hj)
         fun L g m₀ t hL hk hc ⟨g', t₀, K, V₀, hI⟩ => WP.mono (step_ok hL hk.2 hb hI)
@@ -604,15 +604,15 @@ theorem candLoop_ct :
           intro h'; have := f₁.2; rw [decide_eq_true h'] at this; exact absurd (this.symm.trans hf) (by decide)
         have hNn : P.nV - n + 1 = P.nV := by
           have : ¬ P.nV - n + 1 < P.nV := fun h => this ((nV_lt P _).mp h)
-          omega
+          omega_using [hN1, hn0, this]
         exact ⟨e, hL, hk, hx, c₁, c₂, hNn ▸ f₁.1, hNn ▸ f₂.1⟩
       · intro hf
         obtain ⟨e, hL, hk, hx, c₁, c₂, f₁, f₂⟩ := hq
         have h' : (P.nV - n + 1) * P.F.H.D < P.Q := by
           by_contra h'; have := f₁.2; rw [decide_eq_false h'] at this; exact absurd (this.symm.trans hf) (by decide)
         have hlt := (nV_lt P (P.nV - n)).mpr h'
-        refine ⟨n - 1, by omega, by omega, by omega, e, hL, hk, hx, c₁, c₂, ?_, ?_⟩ <;>
-          rw [show P.nV - (n - 1) = P.nV - n + 1 by omega]
+        refine ⟨n - 1, by omega_using [hn0], by omega_using [hlt], by omega_using [hnN], e, hL, hk, hx, c₁, c₂, ?_, ?_⟩ <;>
+          rw [show P.nV - (n - 1) = P.nV - n + 1 by omega_using [hn0, hnN]]
         · exact f₁.1
         · exact f₂.1)
   exact h.mono (fun s₁ s₂ hp => ⟨hN1, Nat.le_refl _, by rwa [Nat.sub_self]⟩) fun _ _ h => h
@@ -697,8 +697,8 @@ theorem tryOne_ct {i : Nat} :
   -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
   have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
       LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
-    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
-    rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega_using []), hI.lt⟩
+    rw [go_iff (by omega) (fun j hj => hI.fails j (by omega_using [hj])), ← hx', ← go_iff hE.lt hE.fails] at hgo
     rcases hE.last with h | h
     · exact h hgo.1
     · omega
@@ -711,7 +711,7 @@ theorem tryOne_ct {i : Nat} :
 /-! ## The loop -/
 
 theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
-  ⟨by omega, by omega⟩
+  ⟨by omega_using [h], by omega_using [h]⟩
 
 theorem tries_ct :
     RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
@@ -750,17 +750,17 @@ theorem xcCopy_ok {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem} (
   refine WP.seq (WP.mono (xcArgs_ok hL hT hW hc) fun u₁ ⟨hc₁, _, _, hcx₁, hbx₁, hsi₁⟩ => ?_)
   have ea : (L.F + BitVec.ofNat 32 (fXc + (P.Q - 1 - P.F.H.D))).setWidth 64 =
       L.B + BitVec.ofNat 64 (76 + fXc + (P.Q - 1 - P.F.H.D)) := by
-    rw [hL.frv (by simp only [fXc]; omega), Nat.add_assoc]
+    rw [hL.frv (by simp only [fXc]; omega_using [hQ66]), Nat.add_assoc]
   have sepD : Region.Disjoint ⟨L.a2.setWidth 64, P.F.H.D⟩
       ⟨L.B + BitVec.ofNat 64 (76 + fXc + (P.Q - 1 - P.F.H.D)), P.F.H.D⟩ :=
-    ((hL.kg.sub_left (Offset.sub_base _ (by simp only [fXc]; omega))).symm.sub_left (Region.sub_prefix hdn))
+    ((hL.kg.sub_left (Offset.sub_base _ (by simp only [fXc]; omega_using [hQ66, hQD]))).symm.sub_left (Region.sub_prefix hdn))
   exact WP.mono (cpLoop_ok hL hc₁ (S := L.a2) (D := L.F + BitVec.ofNat 32 (fXc + (P.Q - 1 - P.F.H.D)))
-      (n := P.F.H.D) (by omega) (by omega) (by have := hL.ng; omega)
-      (by rw [hL.frN (by simp only [fXc]; omega)]; have := hL.e28; have := hL.e588; simp only [fXc]; omega)
-      (by have := hc₁.inDg (o := 0) (n := P.F.H.D) (by omega) (by omega); rwa [BitVec.add_zero] at this)
-      (by rw [ea]; exact hc₁.inFrW (by omega) (by simp only [fXc]; omega) hL)
+      (n := P.F.H.D) (by omega_using [hD16]) (by omega_using [hD64]) (by have := hL.ng; omega_using [hdn, this])
+      (by rw [hL.frN (by simp only [fXc]; omega_using [hQ66])]; have := hL.e28; have := hL.e588; simp only [fXc]; omega_using [hQ66, hQD])
+      (by have := hc₁.inDg (o := 0) (n := P.F.H.D) (by omega_using [hdn]) (by omega_using []); rwa [BitVec.add_zero] at this)
+      (by rw [ea]; exact hc₁.inFrW (by omega_using []) (by simp only [fXc]; omega_using [hQ66, hQD]) hL)
       (by rw [ea]; exact sepD)
-      (by rw [ea]; exact safe_high L (by simp only [fXc]; omega) (by simp only [fXc]; omega))
+      (by rw [ea]; exact safe_high L (by simp only [fXc]; omega_using []) (by simp only [fXc]; omega_using [hQ66, hQD]))
       hsi₁ hbx₁ hcx₁) fun _ h => h.1
 
 theorem prepX_ct : RelCT isa (Two P (Tt P)) (cfgOf P).prepX (Two P (QX P)) := by

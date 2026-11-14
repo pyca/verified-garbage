@@ -93,13 +93,13 @@ theorem InvR.update {k N : Nat} {σ : Nat → Nat} {base : Addr} {m : Nat} [NeZe
     have h1 := hL.le x hxN
     have h2 := hL.apart o hoW x hxN hxo
     have hown : own k ≤ 4096 := Nat.sub_le _ _
-    refine Outs.wordsVal hk.mem (fun r hr => ?_) (by omega)
+    refine Outs.wordsVal hk.mem (fun r hr => ?_) (by omega_using [h1, hown])
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact h2
     · exact .inl h1
-    · exact .inl (show σ x + 8 * k ≤ 8192 by omega)
+    · exact .inl (show σ x + 8 * k ≤ 8192 by omega_using [h1, hown])
   refine ⟨hI.scr.keep (hk.gpr .esp (by decide)) (hk.gpr .edi (by decide)) hk.rd hk.wr hk.fr, ?_, ?_, ?_⟩
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
@@ -141,10 +141,10 @@ theorem fopB_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstra
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addCallB_ok (enc := σ) hF hI.scr (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2)
-        (by omega))
+        (by omega_using [hA, hB]))
       fun s' ⟨K, heq⟩ => ?_
     refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -155,8 +155,8 @@ theorem fopB_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstra
         hA hB)
       fun s' ⟨K, heq⟩ => ?_
     refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
 
 /-- A field program. -/
 theorem fprogB_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}

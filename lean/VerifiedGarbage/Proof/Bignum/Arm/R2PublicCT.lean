@@ -121,7 +121,7 @@ theorem bitFind_ct {v : Nat} (pos : 0 < v) :
     refine ct.mono (fun _ _ h => h) ?_
     rintro s t ⟨sp, fs, ft⟩
     refine ⟨by rw [VG.Proof.X25519.Arm.eval_eq, VG.Proof.X25519.Arm.eval_eq, fs.2.1, ft.2.1], fun _ => trivial,
-      fun e => ⟨n - 1, by omega, ⟨fs.1, fs.2.2, ?_⟩, ⟨ft.1, ft.2.2, ?_⟩, sp⟩⟩
+      fun e => ⟨n - 1, by omega_using [n1], ⟨fs.1, fs.2.2, ?_⟩, ⟨ft.1, ft.2.2, ?_⟩, sp⟩⟩
     · rw [VG.Proof.X25519.Arm.eval_eq, fs.2.1] at e; simpa using e
     · rw [VG.Proof.X25519.Arm.eval_eq, fs.2.1] at e; simpa using e
   have loop : RelCT isa (fun s t => B s ∧ B t ∧ s.sp = t.sp) (.ite .eq (.loop (.block bitStep) .eq) (.block []))
@@ -146,12 +146,12 @@ theorem topStore_ct {base : BitVec 32} {len w o : Nat} :
   have one (s : State) (h : ArithmeticReady base len w s) (r4 : s.gpr .r4 = BitVec.ofNat 32 o) :
       WP isa (.block [.ldr .r6 .r0 96]) s P := by
     have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-    have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
     have nowrap := h.workspace.nowrap
     have header := nativeHeader_of_layout s.mem base nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
-    refine wp_ldr (a := off (State.addr base) 96) (by decide) (by rw [h.ptr]; exact addr_add (by omega))
-      (h.workspace.read (by omega)) fun t a => WP.block_nil ?_
+    refine wp_ldr (a := off (State.addr base) 96) (by decide) (by rw [h.ptr]; exact addr_add (by omega_using [size, nowrap]))
+      (h.workspace.read (by omega_using [size])) fun t a => WP.block_nil ?_
     exact ⟨(a.other .r0 (by decide)).trans h.ptr, (a.other .r4 (by decide)).trans r4,
       a.gpr.trans (header.array 4 (by decide))⟩
   have first := RelCT.wp (RelCT.taint (A := taint) (c := .block [.ldr .r6 .r0 96]) (Taint.ofRegs [.r0])
@@ -182,8 +182,8 @@ theorem topV_pos {w M : Nat} (hT : topWordOf w M ≠ 0) : 0 < topV w M := by
   · rename_i h
     have := Nat.div_add_mod (topWordOf w M) (2 ^ 32)
     rw [h, Nat.mul_zero, Nat.zero_add] at this
-    omega
-  · omega
+    omega_using [hT, h]
+  · omega_arith
 
 /-- The top word's halves read: the state the choice starts from. -/
 def TopRead (base : BitVec 32) (len w M : Nat) (s : State) : Prop :=
@@ -206,7 +206,7 @@ theorem topHalf_wp (s : State) {base : BitVec 32} {len w M : Nat} (h : TopRead b
     by rw [rest.gpr .r3 (by decide)]; exact h.2.2.1, by rw [rest.gpr .r5 (by decide)]; exact h.2.2.2⟩, ?_⟩
   · rw [hu.gpr, ha.gpr, dpVal, h.2.1]
     change BitVec.ofNat 32 _ + BitVec.ofNat 32 4 = _
-    rw [← BitVec.ofNat_add, show 8 * w - 8 + 4 = 8 * w - 4 by omega]
+    rw [← BitVec.ofNat_add, show 8 * w - 8 + 4 = 8 * w - 4 by omega_using [hw]]
   · rw [zu, ha.other .r5 (by decide), cmp_zero, h.2.2.2]
 
 theorem topChoose_wp (s : State) {base : BitVec 32} {len w M : Nat}
@@ -227,14 +227,14 @@ theorem topChoose_wp (s : State) {base : BitVec 32} {len w M : Nat}
     · rw [hd.other .r4 (by decide), hc.other .r4 (by decide), hb.gpr, dpVal, h.1.2.1]
       change BitVec.ofNat 32 _ - BitVec.ofNat 32 4 = _
       simp only [topIdx, H0, ite_true]
-      rw [VG.Offset.ofNat_sub_ofNat (by omega)]
-      congr 1; omega
+      rw [VG.Offset.ofNat_sub_ofNat (by omega_using [hw])]
+      congr 1; omega_using []
     · simp only [topV, H0, ite_true]
       rw [hd.other .r5 (by decide), hc.gpr, hb.other .r3 (by decide), h.1.2.2.1]
   · refine WP.ite false (by rw [VG.Proof.X25519.Arm.eval_eq, h.2, decide_eq_false H0]) (by simp)
       (fun _ => WP.block_nil ?_)
     refine ⟨h.1.1, ?_, ?_⟩
-    · simp only [topIdx, H0, ite_false]; rw [h.1.2.1]; congr 1; omega
+    · simp only [topIdx, H0, ite_false]; rw [h.1.2.1]; congr 1; omega_using []
     · simp only [topV, H0, ite_false]; exact h.1.2.2.2
 
 theorem topFind_wp (s : State) {base : BitVec 32} {len w M : Nat} (h : TopChosen base len w M s)
@@ -343,8 +343,8 @@ theorem r2Public_ct {base : BitVec 32} {len w M : Nat} (countFits : 128 * w < 2 
   have loop : RelCT isa (fun s t => s.sp = t.sp ∧ P s ∧ P t) doubleLoop (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     have hw : 2 ≤ w := h.2.1.ready.width ▸ h.2.1.ready.layout.1
-    obtain ⟨cpos, cle⟩ := r2PublicCount_le (w := w) (M := M) (by omega)
-    exact doubleLoop_ct cpos (by omega) s t tr1 tr2 u v ⟨h.2.1.ready, h.2.2.ready, h.1⟩ e1 e2
+    obtain ⟨cpos, cle⟩ := r2PublicCount_le (w := w) (M := M) (by omega_using [hw])
+    exact doubleLoop_ct cpos (by omega_using [countFits, cle]) s t tr1 tr2 u v ⟨h.2.1.ready, h.2.2.ready, h.1⟩ e1 e2
   have post (s : State) (h : P s) : WP isa doubleLoop s fun t => ∃ m, R2Sq base len w m w t :=
     WP.mono (r2PublicLoop_ok s h countFits) (fun _ j => ⟨M, j.1⟩)
   have powered := ((relCT_keep_sp loop (fun _ _ h => h.1)).wp

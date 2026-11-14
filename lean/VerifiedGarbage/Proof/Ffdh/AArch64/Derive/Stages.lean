@@ -280,11 +280,11 @@ theorem o_z (p : DvP) (t : State) (h : V3o p t) :
   obtain ⟨hs, h0, hZ, hk1, hk2, hO, hK, hd⟩ := h
   have hn := hs.nowrap
   have eZ : (p.D []).Z = p.Z := rfl
-  refine WP.mono (VG.Proof.Rsa.AArch64.zeroOut_ok hs h0 (by omega) (by decide) (by decide) hO hK (by omega)
-    (by omega) ⟨fun i hi => (hd i hi).1, fun i hi => (hd i hi).2⟩) fun u ⟨hb, hfr, k⟩ => ?_
+  refine WP.mono (VG.Proof.Rsa.AArch64.zeroOut_ok hs h0 (by omega_using [hZ]) (by decide) (by decide) hO hK (by omega_using [hk1])
+    (by omega_using [hk2]) ⟨fun i hi => (hd i hi).1, fun i hi => (hd i hi).2⟩) fun u ⟨hb, hfr, k⟩ => ?_
   have hout := outside_of_frame (fun j hj => (hd j hj).2) hfr
   have e : ∀ i < 32, word u.mem p.B (8 * i) = word t.mem p.B (8 * i) := fun i hi =>
-    hout.word (Or.inl (by omega)) (by omega)
+    hout.word (Or.inl (by omega_using [hZ, eZ, hi])) (by omega_using [hi])
   refine ⟨⟨?_, hs.congr k.wr, (k.gpr .x0 (by decide)).trans h0, hZ, hk1, hk2, by rw [e _ (by decide)]; exact hO,
     by rw [e _ (by decide)]; exact hK, OutMask.Dst.keep hd k⟩, k.mono (by decide)⟩
   exact bytesAt_of (by simp) fun i hi => by

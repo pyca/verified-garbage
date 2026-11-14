@@ -54,11 +54,11 @@ theorem loadKey_ok (z : Spec.Idea.Schedule) (r : Reg) {k : Nat} (hk : k < 52) (t
   split
   · rename_i h
     have k₁ := hz.low k h
-    irun [k₁.1, show 2 * k < 32768 by omega, lo16, k₁.2]
+    irun [k₁.1, show 2 * k < 32768 by omega_using [hk], lo16, k₁.2]
   · rename_i h
     have k₁ := hz.low 50 (by decide)
     simp only [Nat.reduceMul] at k₁
-    have hk51 : k = 51 := by omega
+    have hk51 : k = 51 := by omega_using [hk, h]
     subst hk51
     irun [k₁.1, hi16, hz.last]
 
@@ -127,7 +127,7 @@ theorem invLoop_ok (a : Spec.Idea.Word) (t₀ : State) (c : Nat) (t : State) (hi
     apply BitVec.eq_of_toNat_eq
     have := hi.pos; have := hi.le
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have keep' : Keep [.r5, .r7, .r11, .r12] t₀ t' := (hi.keep.trans e').mono (by decide)
   by_cases hlast : c = 1
   · subst hlast
@@ -137,17 +137,17 @@ theorem invLoop_ok (a : Spec.Idea.Word) (t₀ : State) (c : Nat) (t : State) (hi
     · rw [hv, show 15 - 1 + 1 = 15 from rfl, chain_inv]
   · right
     have := hi.pos; have := hi.le
-    refine ⟨?_, c - 1, by omega, by omega, by omega, r5'.trans hc, ?_, ?_, ?_, m'.trans hi.mem, keep'⟩
+    refine ⟨?_, c - 1, by omega_arith, by omega_arith, by omega_using [this], r5'.trans hc, ?_, ?_, ?_, m'.trans hi.mem, keep'⟩
     · simp only [eval, State.read, BitVec.setWidth_eq, r5', hc, Option.some.injEq]
       have h : (BitVec.ofNat 64 (c - 1) == 0) = false := by
         simp only [beq_eq_false_iff_ne, ne_eq]
         intro h
         have := congrArg BitVec.toNat h
         simp only [BitVec.toNat_ofNat, toNat_zero] at this
-        omega
+        omega_arith
       rw [bne, h]; rfl
     · rw [e'.gpr (by decide)]; exact hi.r6
-    · rw [hv, setWidth_setWidth16, show 15 - c + 1 = 15 - (c - 1) by omega]
+    · rw [hv, setWidth_setWidth16, show 15 - c + 1 = 15 - (c - 1) by omega_arith]
     · rw [e'.gpr (by decide)]; exact hi.mask
 
 theorem invWord_ok (z : Spec.Idea.Schedule) {n : Nat} (hn : n < 52) (t : State) (hz : KeyOk z t) :
@@ -228,30 +228,30 @@ theorem invPlace_ok (z : Spec.Idea.Schedule) (q i : Nat) (hi : i < 4) (t : State
   unfold invPlace
   split
   · rename_i h
-    have hi0 : i = 0 := by omega
+    have hi0 : i = 0 := by omega_using [hi, h]
     subst hi0
     unfold mov
     irun [BitVec.or_self, hr12, Acc]
     intro p hp
     rw [BitVec.getLsbD_setWidth, decide_eq_true hp, Bool.true_and, Nat.add_zero]
     by_cases hp16 : p < 16
-    · rw [ite_eq_left (by omega), Nat.div_eq_of_lt hp16, Nat.mod_eq_of_lt hp16, Nat.add_zero]
-    · rw [ite_eq_right (by omega)]; exact BitVec.getLsbD_of_ge _ _ (by omega)
+    · rw [ite_eq_left (by omega_using [hp16]), Nat.div_eq_of_lt hp16, Nat.mod_eq_of_lt hp16, Nat.add_zero]
+    · rw [ite_eq_right (by omega_using [hp16])]; exact BitVec.getLsbD_of_ge _ _ (by omega_using [hp16])
   · rename_i h
-    have hi0 : i ≠ 0 := by omega
+    have hi0 : i ≠ 0 := by omega_using [h]
     have hacc' := hacc.resolve_left hi0
-    have hm : (4 * q + i) % 4 = i := by omega
+    have hm : (4 * q + i) % 4 = i := by omega_using [hi]
     rw [hm]
-    irun [show 16 * i < 64 by omega, hr12, Acc]
+    irun [show 16 * i < 64 by omega_using [hi], hr12, Acc]
     intro p hp
     rw [BitVec.getLsbD_or, hacc' p hp, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
     by_cases h1 : p < 16 * i
-    · simp [h1, show p < 16 * (i + 1) by omega]
+    · simp [h1, show p < 16 * (i + 1) by omega_using [h1]]
     · by_cases h2 : p < 16 * (i + 1)
-      · simp [h1, h2, hp, show p - 16 * i < 64 by omega, show 4 * q + p / 16 = 4 * q + i by omega,
-          show p % 16 = p - 16 * i by omega]
+      · simp [h1, h2, hp, show p - 16 * i < 64 by omega_using [hp], show 4 * q + p / 16 = 4 * q + i by omega_using [h1, h2],
+          show p % 16 = p - 16 * i by omega_using [h1, h2]]
       · simp only [h1, h2, ↓reduceIte, Bool.false_or]
-        rw [BitVec.getLsbD_of_ge (dk z (4 * q + i)) _ (by omega)]
+        rw [BitVec.getLsbD_of_ge (dk z (4 * q + i)) _ (by omega_using [h2])]
         simp
 
 /-- The registers computing a doubleword of decryption subkeys writes. -/
@@ -262,7 +262,7 @@ theorem quadWord_ok (z : Spec.Idea.Schedule) (q i : Nat) (hq : q < 13) (hi : i <
     (hrest : ∀ t', Acc z q (i + 1) t' → t'.mem = t.mem → Keep quadWrites t t' → WP isa rest t' Q) :
     WP isa (.seq (invWord (4 * q + i)) (.seq (.block (invPlace (4 * q + i))) rest)) t Q := by
   apply WP.seq
-  refine WP.mono (invWord_ok z (by omega) t hz) fun t₁ ⟨v₁, m₁, e₁⟩ => ?_
+  refine WP.mono (invWord_ok z (by omega_using [hq, hi]) t hz) fun t₁ ⟨v₁, m₁, e₁⟩ => ?_
   apply WP.seq
   have hacc₁ : i = 0 ∨ Acc z q i t₁ := by
     rcases hacc with h | h
@@ -294,11 +294,11 @@ theorem QInv.keyOk {s₀ t : State} {q : Nat} (hp : InvPre s₀) (h0 : s₀.gpr 
     ((hi.keep.gpr (by decide)).trans h0)
   rwa [h3, scheduleAt_congr (frame_bytes hi.frame (by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact hp.sep.sub_right (Region.sub_prefix (by omega))) (by decide))] at h
+    exact hp.sep.sub_right (Region.sub_prefix (by omega_using [hq]))) (by decide))] at h
 
 theorem invQuad_ok (s₀ : State) (hp : InvPre s₀) (h0 : s₀.gpr .r0 = 65535) (q : Nat) (hq : q < 13)
     (t : State) (hi : QInv s₀ q t) : WP isa (invQuad q) t (QInv s₀ (q + 1)) := by
-  have hz := hi.keyOk hp h0 (by omega)
+  have hz := hi.keyOk hp h0 (by omega_using [hq])
   simp only [invQuad, show List.range 4 = [0, 1, 2, 3] from rfl, List.foldr_cons, List.foldr_nil]
   refine quadWord_ok _ q 0 hq (by decide) t hz (Or.inl rfl) fun t₁ a₁ m₁ e₁ => ?_
   have hz₁ := hz.keep e₁ m₁ (by decide) (by decide)
@@ -312,22 +312,22 @@ theorem invQuad_ok (s₀ : State) (hp : InvPre s₀) (h0 : s₀.gpr .r0 = 65535)
   have hr4 : t₄.gpr .r4 = s₀.gpr .r4 := (e.gpr (by decide)).trans (hi.keep.gpr (by decide))
   have hw : InRegions t₄.wr (t₄.gpr .r4 + BitVec.ofNat 64 (8 * q)) 8 := by
     rw [hr4, e.2.2, hi.keep.2.2]
-    exact ⟨_, hp.out, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hp.out, Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩
   have hk₄ : Keep (quadWrites ++ [.r8]) s₀ t₄ := (hi.keep.trans e).mono (by decide)
-  irun [hw, show 8 * q < 32768 by omega, show (8 * q) % 4 = 0 by omega]
+  irun [hw, show 8 * q < 32768 by omega_using [hq], show (8 * q) % 4 = 0 by omega_using []]
   refine ⟨hk₄, ?_, ?_⟩
   · rw [m, hr4]
     refine (hi.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using [hq]))
     simp only [List.mem_singleton] at hr; subst hr
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · intro i hiq p hp64
     rw [m, hr4]
     by_cases he : i = q
     · subst he
-      rw [Mem.readW_writeW_self64, a₄ p hp64, ite_eq_left (by omega)]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact hi.words i (by omega) p hp64
+      rw [Mem.readW_writeW_self64, a₄ p hp64, ite_eq_left (by omega_using [hp64])]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [he]) (by omega_using [hq, hiq]) (by omega_using [hq])) (by decide)]
+      exact hi.words i (by omega_using [hiq, he]) p hp64
 
 /-- Doublewords `q … q + n - 1`. -/
 def quads (q n : Nat) : Prog isa :=
@@ -341,8 +341,8 @@ theorem quads_ok (s₀ : State) (hp : InvPre s₀) (h0 : s₀.gpr .r0 = 65535) :
   | n + 1, q, h, t, hi => by
     simp only [quads, List.range'_succ, List.foldr_cons]
     apply WP.seq
-    exact WP.mono (invQuad_ok s₀ hp h0 q (by omega) t hi) fun t₁ h₁ =>
-      quads_ok s₀ hp h0 n (q + 1) (by omega) t₁ h₁
+    exact WP.mono (invQuad_ok s₀ hp h0 q (by omega_using [h]) t hi) fun t₁ h₁ =>
+      quads_ok s₀ hp h0 n (q + 1) (by omega_using [h]) t₁ h₁
 
 theorem invertKey_eq : invertKey = .seq (.block setMask) (quads 0 13) := rfl
 
@@ -376,7 +376,7 @@ theorem invert_wp (s : State) (hs : invertContract.pre s) :
     by rw [e₁.gpr (by decide), e₁.2.2, hwr]; simp,
     by rw [e₁.gpr (by decide), e₁.gpr (by decide)]; exact hsep⟩
   refine WP.mono (quads_ok s₁ hp h0₁ 13 0 rfl s₁ ⟨Keep.refl _ _, Frame.refl _ _,
-    fun i hi => absurd hi (by omega)⟩) fun s' hi => ?_
+    fun i hi => absurd hi (by omega_using [])⟩) fun s' hi => ?_
   show Spec.Idea.scheduleAt s'.mem (s.gpr .r4) = _
   rw [← e₁.gpr (show Reg.r4 ∉ [Reg.r0] by decide), ← e₁.gpr (show Reg.r3 ∉ [Reg.r0] by decide),
     ← m₁]
@@ -385,9 +385,9 @@ theorem invert_wp (s : State) (hs : invertContract.pre s) :
   rw [← getD_lt _ 0 hn, ← getD_lt _ 0 hn]
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
-  rw [scheduleAt_getLsbD _ _ hn hb, hi.words (n / 4) (by omega) _ (by omega),
-    show 4 * (n / 4) + (16 * (n % 4) + b) / 16 = n by omega,
-    show (16 * (n % 4) + b) % 16 = b by omega]
+  rw [scheduleAt_getLsbD _ _ hn hb, hi.words (n / 4) (by omega_using [hn]) _ (by omega_using [hb]),
+    show 4 * (n / 4) + (16 * (n % 4) + b) / 16 = n by omega_using [hb],
+    show (16 * (n % 4) + b) % 16 = b by omega_using [hb]]
 
 theorem invert_correct (s : State) (hs : invertContract.pre s) :
     ∃ t s', Exec isa invertKey s t s' ∧ abiPreserved s s' ∧ invertContract.post s s' := by

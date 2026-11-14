@@ -47,27 +47,27 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
   have ⟨f4, l4, _⟩ := arrays4.fit S
   have a04 := Arrays.apart arrays0 arrays4 (w := w) (by decide)
   unfold other
-  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 20) (by omega)) fun a A _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 20) (by omega_using [head])) fun a A _ => WP.block_nil ?_)
   have Sa := S.keepMem A.keeps (by decide) (by decide) A.mem
   refine WP.seq (WP.mono (importAt_ok Sa 4 (by decide) f4 (A.gpr.trans pointer)
       sourceFit (by rw [A.keeps.2.1, A.keeps.2.2]; exact readable) separate) fun b ⟨value, Fb, Kb⟩ => ?_)
   rw [A.mem] at value Fb
-  have Ob : Outside W (slot w 4) (8 * w) s.mem b.mem := VG.Proof.RsaKeyGen.frame_outside Fb (by omega)
+  have Ob : Outside W (slot w 4) (8 * w) s.mem b.mem := VG.Proof.RsaKeyGen.frame_outside Fb (by omega_using [separateStack, sourceFit, nowrap, head, f0, l0, f2, l2, f3, l3, f4, l4, a04])
   have lenB : b.mem.readW (off W 4) 32 = a.mem.readW (off W 4) 32 := by
-    rw [A.mem]; exact BitVec.eq_of_toNat_eq (Ob.w32 (d := 4) (Or.inl (by omega)) (by omega))
+    rw [A.mem]; exact BitVec.eq_of_toNat_eq (Ob.w32 (d := 4) (Or.inl (by omega_using [l4])) (by omega_using []))
   have Sb := Sa.keep Kb (by decide) (by decide) lenB
   have Kab : Keeps [.eax, .ebx, .esi, .ecx, .edx] s b := (A.keeps.mono (by decide)).trans Kb
   have spB : b.gpr .esp = s.gpr .esp := Kab.1 .esp (by decide)
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spB]; omega) (NoSp.of_all (by rfl)) ?_
-  have St := FilterStack.allocated_context (s := b) (by rw [spB]; omega)
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spB]; omega_using [fit]) (NoSp.of_all (by rfl)) ?_
+  have St := FilterStack.allocated_context (s := b) (by rw [spB]; omega_using [fit])
   have apartQ : (⟨W, L⟩ : Region).Disjoint ⟨(b.gpr .esp - 20#32).setWidth 64, 20⟩ :=
-    FilterStack.allocated_apart (by rw [spB]; omega) nowrap (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega))
+    FilterStack.allocated_apart (by rw [spB]; omega_using [fit]) nowrap (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
   have Sc : Space W L w (allocFrame 20 b) :=
-    ⟨FilterStack.allocated_scratch Sb.scratch (by rw [spB]; omega) (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega)),
+    ⟨FilterStack.allocated_scratch Sb.scratch (by rw [spB]; omega_using [fit]) (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h])),
       Sb.width, Sb.widthBound, Sb.space, Sb.len⟩
   have ediB : b.gpr .edi = BitVec.ofNat 32 W.toNat := by
     apply BitVec.eq_of_toNat_eq
-    rw [Sb.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Sb.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [nowrap, head])]
   refine WP.seq (WP.mono (St.store 0 (by decide) .edi) fun c ⟨Mc, Oc, Kc, Stc⟩ => ?_)
   have Fc := VG.Proof.Bignum.outside_frame Oc (by decide)
   have Wc : WorkspaceFrame ⟨W, L, w⟩ [] b.mem c.mem := by
@@ -77,20 +77,20 @@ theorem other_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
       exact apartQ.sub_right (Offset.sub_base _ (by decide)))
     exact H
   have Fcx : Framed W L w (b.gpr .esp - 20#32) c := by
-    refine ⟨Sc.keep Kc (by decide) (by decide) (Wc.read32 (d := 4) (by change 4 + 4 ≤ L; omega) (fun _ mem => nomatch mem)),
+    refine ⟨Sc.keep Kc (by decide) (by decide) (Wc.read32 (d := 4) (by change 4 + 4 ≤ L; omega_using [head]) (fun _ mem => nomatch mem)),
       Stc, apartQ, ?_⟩
     rw [Mc, Mem.readW_writeW_self32, allocFrame_gpr _ _ (by decide), ediB]
   refine WP.seq (WP.mono (difference_ok Fcx) fun d ⟨D, Od, Kd, Fd⟩ => ?_)
   refine WP.mono (near_ok Fd.space) fun t ⟨result, Mt, Kt⟩ => ?_
-  rw [show 4 * (2 * w) = 8 * w by omega] at Od
+  rw [show 4 * (2 * w) = 8 * w by omega_using []] at Od
   have cand : val32 c.mem W (slot w 0) (2 * w) = val32 s.mem W (slot w 0) (2 * w) := by
-    rw [Wc.val32 (d := slot w 0) (n := 2 * w) (by change _ ≤ L; omega) (fun _ mem => nomatch mem)]
-    exact Ob.val32 (by rcases a04 with h | h; exact Or.inl h; exact Or.inr (by omega)) (by omega)
+    rw [Wc.val32 (d := slot w 0) (n := 2 * w) (by change _ ≤ L; omega_using [f0]) (fun _ mem => nomatch mem)]
+    exact Ob.val32 (by rcases a04 with h | h; exact Or.inl h; exact Or.inr (by omega_using [h])) (by omega_using [separateStack, sourceFit, nowrap, head, f0, l0, f2, l2, f3, l3, f4, l4, a04])
   have prime : val32 c.mem W (slot w 4) (2 * w) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (p.setWidth 64) (8 * w)) := by
-    rw [Wc.val32 (d := slot w 4) (n := 2 * w) (by change _ ≤ L; omega) (fun _ mem => nomatch mem)]
+    rw [Wc.val32 (d := slot w 4) (n := 2 * w) (by change _ ≤ L; omega_using [f4]) (fun _ mem => nomatch mem)]
     exact value
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [freed_gpr _ _ (by decide), result, D, cand, prime, show 32 * (2 * w) = 64 * w by omega]
+  · rw [freed_gpr _ _ (by decide), result, D, cand, prime, show 32 * (2 * w) = 64 * w by omega_using []]
     rfl
   · rw [freed_mem, Mt]
     have F1 : Frame [⟨W, L⟩, below (s.gpr .esp) 20] s.mem b.mem :=
@@ -143,7 +143,7 @@ theorem close_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s)
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have head := S.header
   unfold close
-  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 24) (by omega)) fun a A _ =>
+  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 24) (by omega_using [head])) fun a A _ =>
     wp_cmpS rfl fun b B Z => WP.block_nil ?_)
   have K : Keeps [.eax] s b := A.keeps.widen (B.keeps [])
   have M : b.mem = s.mem := B.mem.trans A.mem

@@ -94,7 +94,7 @@ theorem fast_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ : State} (hp : Pre s�
 /-- 256 coefficients after 168 iterations: 1, and `SampleNTT`. -/
 theorem done_ok {s₀ : State} (hp : Pre s₀) {u : State} (h : FastPost s₀ u)
     (hz : (u.gpr .x4).toNat = 0) : WP isa (.block sampleDone) u (Post s₀) := by
-  have hf : (LA (Bs s₀) 168).length = 256 := by have := h.x4; have := h.len; omega
+  have hf : (LA (Bs s₀) 168).length = 256 := by have := h.x4; have := h.len; omega_arith
   refine wp_movz fun u₁ h₁ e₁ => ?_
   have m₁ : MidA s₀ u₁ := MidA.keep hp h.mid h₁.keep (by rw [h₁.mem]; exact Frame.refl _ _)
   refine WP.mono (restore_ok hp m₁ (P := fun v => v.gpr .x0 = 1 ∧ v.mem = u.mem)
@@ -159,9 +159,9 @@ theorem byte_zero {m : Mem} {p : Addr} (h : ∀ i < 256, coeffAt m p i = 0) {y :
     (hy : (polyRegion p).Contains y 1) : m y = 0 := by
   simp only [Region.Contains] at hy
   have e : y = coeffAddr p ((y - p).toNat / 4) + BitVec.ofNat 64 ((y - p).toNat % 4) := by
-    rw [coeffAddr, ptr_add, show 4 * ((y - p).toNat / 4) + (y - p).toNat % 4 = (y - p).toNat by omega]
+    rw [coeffAddr, ptr_add, show 4 * ((y - p).toNat / 4) + (y - p).toNat % 4 = (y - p).toNat by omega_using []]
     bv_omega
-  rw [e, Mem.readW_byte m _ (by omega), ← coeffAt_eq, h _ (by omega)]
+  rw [e, Mem.readW_byte m _ (by omega_using []), ← coeffAt_eq, h _ (by omega_using [hy])]
   ext i hi
   simp
 
@@ -169,7 +169,7 @@ theorem byte_zero {m : Mem} {p : Addr} (h : ∀ i < 256, coeffAt m p i = 0) {y :
 theorem at_off {b y : Addr} {len : Nat} (hy : (⟨b, len⟩ : Region).Contains y 1) :
     ∃ p < len, y = b + BitVec.ofNat 64 p := by
   simp only [Region.Contains] at hy
-  exact ⟨(y - b).toNat, by omega, by bv_omega⟩
+  exact ⟨(y - b).toNat, by omega_using [hy], by bv_omega⟩
 
 /-- The loop's regions. -/
 abbrev lrd (N : Nat) (bP : Addr) : List Region := [⟨bP, 3 * N⟩]
@@ -178,7 +178,7 @@ abbrev lwr (aP : Addr) : List Region := [polyRegion aP]
 theorem LPre.narrow {N : Nat} {B : List Byte} {bP aP : Addr} {s : State} (h : LPre N B bP aP s) :
     LPre N B bP aP (s.withRegions (lrd N bP) (lwr aP)) :=
   ⟨h.buf, fun p hp => in_rd (in_regions (List.mem_singleton_self _)
-      (contains_off (by omega) (by have := h.bound; omega))),
+      (contains_off (by omega_using [hp]) (by have := h.bound; omega_using [this]))),
     fun i hi => in_regions (List.mem_singleton_self _) (coeff_contains _ (show i < n from hi)),
     h.disj, h.zero, h.x2, h.x3, h.x4, h.x5, h.x9, h.x10, h.bound⟩
 
@@ -215,7 +215,7 @@ theorem covers_loop {σ u : State} (hp : Pre σ) {N : Nat} (hN : N ≤ 280) (hrd
   rw [hrd, hwr, hp.rd, hp.wr]
   refine ⟨Covers.of_sub fun r hr => ?_, Covers.of_sub fun r hr => ?_⟩
   · rcases mem2 hr with rfl | rfl
-    · exact ⟨scR σ, by simp, 0, rfl, by show 0 + 3 * N ≤ 2048; omega⟩
+    · exact ⟨scR σ, by simp, 0, rfl, by show 0 + 3 * N ≤ 2048; omega_using [hN]⟩
     · exact ⟨aR σ, by simp, 0, (ptr_zero _).symm, Nat.le_of_ble_eq_true rfl⟩
   · rw [List.mem_singleton.mp hr]
     exact ⟨aR σ, by simp, 0, (ptr_zero _).symm, Nat.le_of_ble_eq_true rfl⟩

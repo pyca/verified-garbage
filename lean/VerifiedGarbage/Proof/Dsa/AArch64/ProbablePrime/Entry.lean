@@ -31,7 +31,7 @@ theorem entryMem_word (s : State) (F : Addr) :
   unfold entryMem usedSlot
   have o (m : Mem) {d : Nat} (v : BitVec 64) (e : Nat) (he : e + 8 ≤ d ∨ d + 8 ≤ e) (hd : d + 8 ≤ 272) (he' : e + 8 ≤ 272) :
       word (m.writeW (off F d) v) F e = word m F e :=
-    (writeW_outside m F v (by omega)).word (by omega) (by omega)
+    (writeW_outside m F v (by omega_using [hd])).word (by omega_using [he]) (by omega_using [he'])
   refine ⟨?_, ?_, ?_, ?_, word_writeW_self _ _ _ _⟩
   · rw [o _ _ 40 (by decide) (by decide) (by decide), o _ _ 40 (by decide) (by decide) (by decide),
       o _ _ 40 (by decide) (by decide) (by decide), o _ _ 40 (by decide) (by decide) (by decide),

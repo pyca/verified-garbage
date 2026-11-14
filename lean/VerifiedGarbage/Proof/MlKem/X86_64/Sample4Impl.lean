@@ -101,7 +101,7 @@ structure BatchHMOk16 (m : Nat) (b : Prog isa) : Prop where
 
 theorem sampleHM16_checks (fast : Bool) {m : Nat} (hm : m ≤ 3) :
     BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleHM fast m) = true := by
-  rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
+  rcases (by omega_using [hm] : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
 
 theorem sampleHM16_ok (fast : Bool) {m : Nat} (hm : m ≤ 3) : BatchHMOk16 m (Impl.MlKem.X86_64.Sample4.sampleHM fast m) := by
   have h := sampleHM16_checks fast hm

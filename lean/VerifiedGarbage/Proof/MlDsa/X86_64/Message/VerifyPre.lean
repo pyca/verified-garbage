@@ -138,10 +138,10 @@ theorem vlay_ok {p : Params} {prep : Bool} (hp : p ∈ params) {s : State} (h : 
     h.ctxScr.symm.sub_left hXs, h.stkScr.sub_right hXs, h.stkPk, h.stkMsg, h.stkCtx, h.nPk, h.nMsg, h.nCtx, ?_⟩
   · have := h.sp; have := (s.gpr .rsp).isLt
     simp only [vlay, BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · intro R hR
     simp only [vlay, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hR
     have := h.nScr
-    subst hR; simp only; omega
+    subst hR; simp only; omega_using [this]
 
 end VG.Proof.MlDsa.X86_64.Message

@@ -84,7 +84,7 @@ theorem head_spec (is : List Instr) (s : State) (P : State → Prop) {a b : Nat}
   have hlt : mont (a * b) * (2 ^ 64 % q) < q * 2 ^ 32 := by
     have : 2 ^ 64 % q < q := Nat.mod_lt _ (by decide)
     have := Nat.mul_lt_mul_of_lt_of_lt ht this
-    rw [q_eq] at this ⊢; omega
+    rw [q_eq] at this ⊢; omega_using [v₂]
   refine mred_spec (by decide) (by decide) _ _ P e₂ hlt fun s₃ o₃ v₃ => k s₃ ⟨fun r hr => ?_, ?_, ?_, ?_⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [o₃.gpr r (by simp [hr.1, hr.2.1, hr.2.2]), execMul_other _ _ hr.1 hr.2.1]
@@ -140,8 +140,8 @@ theorem mulAdd_core : CoreSpec mulAddCore true mulAddV := by
     (by simp only [exec, execAlu, readSrc, State.ea, at_, State.load32, hic', ite_true, Option.bind_some]; rfl) ?_
   have hlt := Nat.mod_lt (a * b) (show q > 0 by decide)
   have e : (s₁.gpr .ebx + C).toNat = a * b % q + c := by
-    rw [BitVec.toNat_add, v₁, hvc', Nat.mod_eq_of_lt (by rw [q_eq] at hlt hc' ⊢; omega)]
-  refine csubQ_spec (by decide) is _ P (by simp only [State.setReg, ite_true]; rw [e]; rw [q_eq] at hlt hc' ⊢; omega)
+    rw [BitVec.toNat_add, v₁, hvc', Nat.mod_eq_of_lt (by rw [q_eq] at hlt hc' ⊢; omega_using [hc'])]
+  refine csubQ_spec (by decide) is _ P (by simp only [State.setReg, ite_true]; rw [e]; rw [q_eq] at hlt hc' ⊢; omega_using [hc'])
     fun s' o v => k s' ((o₁.trans (show Only [.ebx, .edx] s₁ s' from ⟨fun r hr => ?_, o.mem, o.rd, o.wr⟩)).mono
       fun r hr => ?_) ?_
   · rw [o.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact hr)]
@@ -319,8 +319,8 @@ theorem mul_step {core : List Instr} {acc : Bool} {V : Nat → Nat → Nat → N
     · subst e; simp
     · rw [ite_eq_right e]
       by_cases hik : i < k
-      · rw [ite_eq_left hik, ite_eq_left (by omega)]
-      · rw [ite_eq_right hik, ite_eq_right (by omega)]
+      · rw [ite_eq_left hik, ite_eq_left (by omega_using [hik])]
+      · rw [ite_eq_right hik, ite_eq_right (by omega_using [e, hik])]
   · simp only [eval, ecx₂]
     exact cnt_ne hk (by decide)
 
@@ -348,9 +348,9 @@ theorem mulInit_piece (acc : Bool) (V : Nat → Nat → Nat → Nat) :
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_)
     (by native_taint_decide)
   · subst e
-    obtain ⟨a₀, i₀, v₀⟩ := hp.arg_P0 (i := 0) (by omega)
-    obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega)
-    obtain ⟨a₂, i₂, v₂⟩ := hp.arg_P0 (i := 2) (by omega)
+    obtain ⟨a₀, i₀, v₀⟩ := hp.arg_P0 (i := 0) (by omega_using [])
+    obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega_using [])
+    obtain ⟨a₂, i₂, v₂⟩ := hp.arg_P0 (i := 2) (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, mulInit, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -368,7 +368,7 @@ theorem mul_piece {core : List Instr} {acc : Bool} {V : Nat → Nat → Nat → 
     (ht : (VG.X86.taint.check (τr [.esp, .ebp, .esi, .edi, .ecx]) (.block (core ++ mulTail)) hh).isSome = true) :
     Piece (MulPre acc) MulPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (MulInv V s₀ 256) s₀ s')
       (leaf (.seq (.block mulInit) (.loop (.block (core ++ mulTail)) .ne))) :=
-  Piece.leaf (fun s₀ => [polyRegion (hA s₀)]) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf (fun s₀ => [polyRegion (hA s₀)]) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
@@ -391,8 +391,8 @@ def mulSatMem : Mem := fun a => if a = 0x5009 then 4 else if a = 0x500d then 8 e
 
 theorem mulSat_zero (a : Addr) (ha : a.toNat < 0x5000) : mulSatMem a = 0 := by
   simp only [mulSatMem]
-  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)]
+  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])]
 
 theorem mul_verified : Verified X86.target mul (mulContract X86.abi 16) := by
   refine Piece.verified (((mul_piece mul_core (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono

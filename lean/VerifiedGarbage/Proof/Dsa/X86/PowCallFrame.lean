@@ -56,7 +56,7 @@ theorem body_stackUse (n e : Nat) : stackUse (body n e) ≤ 96 := by
   have h₃ : stackUse (selectProduct (contextMod n) (slot n 6) (slot n 7) 4) = 0 := rfl
   have h₄ : stackUse (shiftDown e (slot n 8)) = 0 := rfl
   simp only [body, core, setup, encode, step, finish, stackUse, mul_stackUse, h₁, h₂, h₃, h₄, Nat.max_le]
-  omega
+  omega_using [this]
 
 theorem zone_ofs {sp : BitVec 32} {base : Addr} {size : Nat}
     (H : Room sp base size) (hn : base.toNat + size ≤ 2 ^ 32)
@@ -66,8 +66,8 @@ theorem zone_ofs {sp : BitVec 32} {base : Addr} {size : Nat}
   simp only [Region.Contains] at hx
   simp only [ofs]
   have e : ((sp - BitVec.ofNat 32 12).setWidth 64).toNat = sp.toNat - 12 := by
-    rw [BitVec.toNat_setWidth, VG.X86.sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, VG.X86.sub_toNat (by omega_using [h32])]
+    exact Nat.mod_eq_of_lt (by omega_using [])
   generalize ((sp - BitVec.ofNat 32 12).setWidth 64) = z at hx e
   bv_omega
 
@@ -79,8 +79,8 @@ theorem zone_ofs' {sp : BitVec 32} {base : Addr} {size k : Nat}
   simp only [Region.Contains] at hx
   simp only [ofs]
   have e : ((sp - BitVec.ofNat 32 k).setWidth 64).toNat = sp.toNat - k := by
-    rw [BitVec.toNat_setWidth, VG.X86.sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, VG.X86.sub_toNat (by omega_using [hk, h32])]
+    exact Nat.mod_eq_of_lt (by omega_using [])
   generalize ((sp - BitVec.ofNat 32 k).setWidth 64) = z at hx e
   bv_omega
 
@@ -91,8 +91,8 @@ theorem frame_val32 {sp : BitVec 32} {base : Addr} {size : Nat}
   refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => F _ fun r hr hc => ?_)
   rw [List.mem_singleton.mp hr] at hc
   have := zone_ofs H hn hc
-  rw [ofs_off base (by omega)] at this
-  omega
+  rw [ofs_off base (by omega_using [hn, hd, hj, hi])] at this
+  omega_using [hd, hj, hi, this]
 
 
 end VG.Proof.Dsa.X86.Pow

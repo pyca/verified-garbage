@@ -166,20 +166,20 @@ theorem prfLoop_ct {label : List Nat} {len count : List Instr} {dst N : Nat} (T 
     RelCT isa (Rel e (L 0)) (.loop (prfBody label len dst count) (.nonzero .t1))
       (Rel e fun s u => PostAt s u ∧ u.gpr .s9 = nbOf s) := by
   refine (RelCT.loop (Q := Rel e fun s u => PostAt s u ∧ u.gpr .s9 = nbOf s) (fun m a b => ∃ i, m = N - i ∧ i < N ∧ Rel e (L i) a b)
-    (fun m => ?_) N).mono (fun a b h => ⟨0, by omega, hN0, h⟩) fun _ _ h => h
+    (fun m => ?_) N).mono (fun a b h => ⟨0, by omega_using [], hN0, h⟩) fun _ _ h => h
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨i, hm, hiN, hp⟩ e₁ e₂
-  obtain ⟨ht, ⟨l₁, c₁⟩, ⟨l₂, c₂⟩⟩ := prfBody_ct (e := e) T (C := C) (i := i) (by omega) hd1 (by omega) hdst hn
+  obtain ⟨ht, ⟨l₁, c₁⟩, ⟨l₂, c₂⟩⟩ := prfBody_ct (e := e) T (C := C) (i := i) (by omega_using [hN, hiN]) hd1 (by omega_using [hd2, hiN]) hdst hn
     (hmsg i hiN) hcount s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   have v₁ : s₁'.gpr .t1 = BitVec.ofNat 64 (N - (i + 1)) := by rw [c₁, hCN i hiN]
   have v₂ : s₂'.gpr .t1 = BitVec.ofNat 64 (N - (i + 1)) := by rw [c₂, ← hC, hCN i hiN]
   have hz : isa.eval (.nonzero .t1) s₁' = some (decide (i + 1 ≠ N)) := by
     rw [eval_nonzero, ne_zero_iff, v₁]
-    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega)))
+    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega_using [hN])))
   have hz₂ : isa.eval (.nonzero .t1) s₂' = some (decide (i + 1 ≠ N)) := by
     rw [eval_nonzero, ne_zero_iff, v₂]
-    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega)))
+    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega_using [hN])))
   refine ⟨ht, by rw [hz, hz₂], fun hf => ⟨⟨l₁.1, l₁.2.2⟩, ⟨l₂.1, l₂.2.2⟩⟩, fun ht' => ⟨N - (i + 1), by
-    rw [hz] at ht'; simp at ht'; omega, i + 1, rfl, by rw [hz] at ht'; simp at ht'; omega, l₁, l₂⟩⟩
+    rw [hz] at ht'; simp at ht'; omega_using [hm, hiN], i + 1, rfl, by rw [hz] at ht'; simp at ht'; omega_using [hiN, ht'], l₁, l₂⟩⟩
 
 end
 

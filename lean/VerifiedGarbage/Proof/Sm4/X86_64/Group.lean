@@ -72,10 +72,10 @@ theorem groupCount_wp {s : State} {v : Nat} (hr : s.gpr .r8 = BitVec.ofNat 64 v)
   · obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ .rcx .r8
     refine WP.of_runBlock ⟨s₃, e₃, ?_, fun r hr => ?_, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
       by rw [wr₃, wr₂, wr₁]⟩
-    · rw [r₃, g₂, o₁ _ (by decide), hr, Nat.min_eq_left (by simp at h; omega)]
+    · rw [r₃, g₂, o₁ _ (by decide), hr, Nat.min_eq_left (by simp at h; omega_using [h])]
     · rw [o₃ r hr, g₂, o₁ r hr]
   · refine WP.of_runBlock ⟨s₂, rfl, ?_, fun r hr => ?_, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
-    · rw [g₂, c₁, Nat.min_eq_right (by simp at h; omega)]; rfl
+    · rw [g₂, c₁, Nat.min_eq_right (by simp at h; omega_using [h])]; rfl
     · rw [g₂, o₁ r hr]
 
 /-- `mov [sb + 8 k], r`. -/
@@ -104,7 +104,7 @@ theorem readW_slot_write {m : Mem} {b : Addr} {j k : Nat} (v : BitVec 64) (hj : 
   rw [slots_eq] at hj hk
   split
   · rename_i h; subst h; exact Mem.readW_writeW_self64 _ _ _
-  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega) (by omega) h) (by decide)
+  · rename_i h; exact Mem.readW_writeW_sep (slot_sep b (by omega_using [hj]) (by omega_using [hk]) h) (by decide)
 
 /-! ## The scratch buffer's contents -/
 
@@ -142,12 +142,12 @@ theorem ScrOk.frame {s₀ : State} {b : Addr} {E : Nat → Spec.Sm4.Word} {m m' 
   refine ⟨fun kv hkv => ?_, fun i hi => (h.keys i hi).congr fun j hj => ?_, fun i hi => ?_⟩
   · have hk := mask_range hkv
     rw [← h.masks kv hkv]
-    exact hR _ List.mem_cons_self (8 * kv.1) (VG.Offset.sub b (by omega) (by omega))
+    exact hR _ List.mem_cons_self (8 * kv.1) (VG.Offset.sub b (by omega_using [hk]) (by omega_using [hk]))
   · exact hR _ (List.mem_cons_of_mem _ List.mem_cons_self) (8 * tableSlot + 64 * i + 8 * j)
-      (VG.Offset.sub b (by omega) (by rw [tableSlot_eq]; omega))
+      (VG.Offset.sub b (by omega_using []) (by rw [tableSlot_eq]; omega_using [hi, hj]))
   · rw [← h.saved i hi]
     exact hR _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)) (8 * (savedSlot + i))
-      (VG.Offset.sub b (by omega) (by omega))
+      (VG.Offset.sub b (by omega_using []) (by omega_using [hi]))
 
 theorem ScrOk.frame2 {s₀ : State} {b : Addr} {E : Nat → Spec.Sm4.Word} {m m' : Mem}
     (h : ScrOk s₀ b E m) {rs : List Region} (hf : Frame rs m m') (hm : MasksAt m' b)
@@ -157,10 +157,10 @@ theorem ScrOk.frame2 {s₀ : State} {b : Addr} {E : Nat → Spec.Sm4.Word} {m m'
     hf.readW (Region.contains_self _ _) (fun r hr => (hd _ ht r hr).sub_left hs) (by decide)
   refine ⟨hm, fun i hi => (h.keys i hi).congr fun j hj => ?_, fun i hi => ?_⟩
   · exact hR _ List.mem_cons_self (8 * tableSlot + 64 * i + 8 * j)
-      (VG.Offset.sub b (by omega) (by rw [tableSlot_eq]; omega))
+      (VG.Offset.sub b (by omega_using []) (by rw [tableSlot_eq]; omega_using [hi, hj]))
   · rw [← h.saved i hi]
     exact hR _ (List.mem_cons_of_mem _ List.mem_cons_self) (8 * (savedSlot + i))
-      (VG.Offset.sub b (by omega) (by omega))
+      (VG.Offset.sub b (by omega_using []) (by omega_using [hi]))
 
 /-! ## The data loop -/
 

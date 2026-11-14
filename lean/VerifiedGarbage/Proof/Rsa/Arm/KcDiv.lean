@@ -55,7 +55,7 @@ theorem Stg.div_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
     · rw [upd_ne _ _ (by decide), upd_self]
     have hn := hfree j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-    rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega) (by simp) (hw.fit64 (h.live_lt j hj)),
+    rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega_using [hn]) (by simp) (hw.fit64 (h.live_lt j hj)),
       h.arrs.get hj]
   · intro j hj
     rcases List.mem_cons.mp hj with rfl | hj

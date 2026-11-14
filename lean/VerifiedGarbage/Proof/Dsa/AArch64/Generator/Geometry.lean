@@ -32,13 +32,13 @@ theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ 272) :
     Region.Sub ⟨off (frameBase s) d, n⟩ (below s.sp stack) := by
   have e : off (frameBase s) d = s.sp - BitVec.ofNat 64 (272 - d) := by
     simp only [off, frameBase]
-    rw [Offset.sub_ofNat_eq s.sp (show 272 - d ≤ 272 by omega), Nat.sub_sub_self (by omega)]
+    rw [Offset.sub_ofNat_eq s.sp (show 272 - d ≤ 272 by omega_using []), Nat.sub_sub_self (by omega_using [h])]
   rw [e]
-  exact Offset.sub_below s.sp (by unfold stack; omega) (by unfold stack; omega)
+  exact Offset.sub_below s.sp (by unfold stack; omega_using []) (by unfold stack; omega_using [h])
 
 theorem frame_sub0 (s : State) {n : Nat} (h : n ≤ 272) :
     Region.Sub ⟨frameBase s, n⟩ (below s.sp stack) := by
-  simpa only [off, BitVec.add_zero] using frame_sub s (d := 0) (n := n) (by omega)
+  simpa only [off, BitVec.add_zero] using frame_sub s (d := 0) (n := n) (by omega_using [h])
 
 theorem retR_sub (s : State) : Region.Sub (below (frameBase s) 16) (below s.sp stack) := by
   have e : frameBase s - BitVec.ofNat 64 16 = s.sp - BitVec.ofNat 64 288 := by
@@ -54,11 +54,11 @@ theorem StageABI.base_toNat (A : StageABI pLen s) : (frameBase s).toNat = s.sp.t
   have hb := s.sp.isLt
   unfold stack at hl
   simp only [frameBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using [hl]
 
 theorem StageABI.used_sub (A : StageABI pLen s) : Region.Sub ⟨s.gpr .x0, usedBytes pLen⟩ (wsRegion s) := by
   have := A.size
-  simpa only [off, BitVec.add_zero] using Offset.sub_base (s.gpr .x0) (d := 0) (n := usedBytes pLen) (by omega)
+  simpa only [off, BitVec.add_zero] using Offset.sub_base (s.gpr .x0) (d := 0) (n := usedBytes pLen) (by omega_using [this])
 
 theorem StageABI.part_sub (A : StageABI pLen s) {d n : Nat} (h : d + n ≤ usedBytes pLen) :
     Region.Sub ⟨off (s.gpr .x0) d, n⟩ (wsRegion s) := fun x hx =>
@@ -70,12 +70,12 @@ def arena (hb : Supported pLen) (A : StageABI pLen s) : Arena where
   F := frameBase s
   pLen := pLen
   width := hb
-  arenaBound := by have := A.wsBound; have := A.size; omega
-  frameArena := (A.stackWs.sub_left (frame_sub0 s (by unfold frameBytes; omega))).sub_right A.used_sub
+  arenaBound := by have := A.wsBound; have := A.size; omega_arith
+  frameArena := (A.stackWs.sub_left (frame_sub0 s (by unfold frameBytes; omega_using []))).sub_right A.used_sub
 
 theorem StageABI.geo (hb : Supported pLen) (A : StageABI pLen s) : VG.Proof.RsaOaep.AArch64.Geo (frameBase s) (hashBase s) where
-  F16 := by rw [A.base_toNat]; have := A.stackLower; unfold stack at this; omega
-  Fw := by rw [A.base_toNat]; have := s.sp.isLt; unfold frameBytes; omega
+  F16 := by rw [A.base_toNat]; have := A.stackLower; unfold stack at this; omega_using [this]
+  Fw := by rw [A.base_toNat]; have := s.sp.isLt; unfold frameBytes; omega_using []
   Sw := by
     have ha := (arena hb A).arenaBound
     have hs := (arena hb A).small (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
@@ -84,7 +84,7 @@ theorem StageABI.geo (hb : Supported pLen) (A : StageABI pLen s) : VG.Proof.RsaO
     have : VG.Impl.Dsa.Generation.Layout.hash < 2 ^ 64 := by decide
     rw [Nat.mod_eq_of_lt this]
     have := Nat.mod_le ((s.gpr .x0).toNat + VG.Impl.Dsa.Generation.Layout.hash) (2 ^ 64)
-    omega
+    omega_using [ha, hs]
   dFS := (arena hb A).frame_part ((arena hb A).small (by decide) (by decide))
   dRS := (A.stackWs.sub_left (retR_sub s)).sub_right
     (A.part_sub ((arena hb A).small (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)))

@@ -73,7 +73,7 @@ structure XPost (enc : Bool) (s : State) (W T D S : Addr) (N R : Nat) (s' : Stat
   tw : bytesAt s'.mem T 16 = Spec.Xts.next (bytesAt s.mem T 16) N
 
 theorem toNat_n {N : Nat} (h : N < 2 ^ 60) : (BitVec.ofNat 64 N).toNat = N := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h])
 
 theorem ret_sub (s : State) : Region.Sub ⟨s.callEntry.gpr .rsp, 8⟩ (stk s) := by
   rw [State.callEntry_rsp]
@@ -113,10 +113,10 @@ theorem xts_call (enc : Bool) {n : String} {c : Prog isa}
     WP isa (.call n c) s (XPost enc s W T D S N R) := by
   have hR := toNat_rounds h.rounds
   have hN := toNat_n h.n
-  refine WP.call (k := modeX86_64 (AesXts.xtsMode enc)) ok nosp (by omega)
+  refine WP.call (k := modeX86_64 (AesXts.xtsMode enc)) ok nosp (by omega_using [depth])
     (rd := [⟨W, 240⟩]) (wr := [⟨T, 16⟩, ⟨D, 16 * N⟩, ⟨S, 2176⟩]) h.mode_pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
-  have hf' := Frame.below_mono hf (b := 16) (by omega) (by decide)
+  have hf' := Frame.below_mono hf (b := 16) (by omega_using [depth]) (by decide)
   refine ⟨hrd, hwr, hcs, by simpa using hf', ?_, ?_⟩ <;>
   · simp only [modeX86_64, AesXts.xtsMode, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
@@ -131,7 +131,7 @@ theorem xts_call (enc : Bool) {n : String} {c : Prog isa}
         simp only [List.mem_singleton] at hr; subst hr
         exact ((h.stkW.sub_right (Region.sub_prefix hRb)).sub_left
           (below_sub (sp := s.gpr .rsp) (a := 8) (b := 16) (by decide) (by decide))).symm)
-      (by omega)
+      (by omega_using [hRb])
     have eT := Proof.Cmac.bytesAt_frame fE (p := T) (n := 16)
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -141,7 +141,7 @@ theorem xts_call (enc : Bool) {n : String} {c : Prog isa}
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (h.stkD.sub_left (below_sub (sp := s.gpr .rsp) (a := 8) (b := 16) (by decide) (by decide))).symm)
-      (by omega)
+      (by omega_using [hn])
     rw [← hm₂]
     first
       | rw [hpost.1, eW, eT, eD]

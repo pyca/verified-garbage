@@ -27,8 +27,8 @@ theorem GenerationMemory.search_frame {p : GenerationContext} {W : Nat → BitVe
     rfl
   rw [writes] at hf
   apply GenerationContext.frame_parts hf
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   have part (d n : Nat) (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) :
       ∃ out ∈ p.changed, Region.Sub (p.geo.part d n) out :=
     ⟨⟨p.geo.B, usedBytes p.geo.pLen⟩, by simp [GenerationContext.changed],
@@ -38,17 +38,17 @@ theorem GenerationMemory.search_frame {p : GenerationContext} {W : Nat → BitVe
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact part VG.Impl.Dsa.Generation.Layout.control 24 (by decide) (by decide)
   · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
-  · exact part shaped p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
+  · exact part shaped p.geo.pLen (by decide) (by unfold arithmeticBytes; omega_using [pn])
   · exact part hashes ((p.geo.count + 1) * p.geo.qLen) (by decide)
-      (by have := p.geo.hashSizes.2.1; unfold arithmeticBytes; omega)
-  · exact part wrappedSeed p.geo.qLen (by decide) (by unfold arithmeticBytes; omega)
+      (by have := p.geo.hashSizes.2.1; unfold arithmeticBytes; omega_using [this])
+  · exact part wrappedSeed p.geo.qLen (by decide) (by unfold arithmeticBytes; omega_using [qn])
   · exact part VG.Impl.Dsa.Generation.Layout.hash oRsa (by decide) (by decide)
   · exact ⟨below p.geo.F 272, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
   · exact part arithmetic arithmeticBytes (by decide) (by rfl)
-  · exact part VG.Impl.Dsa.Generation.Layout.p p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
-  · exact part exponent p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
+  · exact part VG.Impl.Dsa.Generation.Layout.p p.geo.pLen (by decide) (by unfold arithmeticBytes; omega_using [pn])
+  · exact part exponent p.geo.pLen (by decide) (by unfold arithmeticBytes; omega_using [pn])
   · exact part arithmetic arithmeticBytes (by decide) (by rfl)
-  · exact part witness p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
+  · exact part witness p.geo.pLen (by decide) (by unfold arithmeticBytes; omega_using [pn])
   · exact ⟨below p.geo.F 272, by simp [GenerationContext.changed], fun _ h => h⟩
   · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
 

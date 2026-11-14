@@ -113,7 +113,7 @@ theorem copyD_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) (hA : WinA K) {
     · exact td x hx y h
   · have := td x hx x hy
     have := hL.n0
-    omega
+    omega_arith
 
 /-- `D` into entry `8 - i` of the table, for `x19 = i ≤ j ≤ 6`. -/
 theorem storeEntry_ok {K : WinCfg} {size : Nat} (hL : WinLay K size) (hA : WinA K) {base : Addr} {i : Nat} :
@@ -481,7 +481,7 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
         [K.P.x, K.P.y, K.P.z] from hy) with h | h
       · exact hL.apart₂ (s1 x hx).2 (s1 y h).2 hxy
       · exact tP x hx y h)
-    (fun x hx h => by have := tP x hx x h; have := hL.n0; omega) ne1) fun s₁ ⟨a1, a2, a3, k₁, U₁⟩ => ?_
+    (fun x hx h => by have := tP x hx x h; have := hL.n0; omega_arith) ne1) fun s₁ ⟨a1, a2, a3, k₁, U₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   -- `E = P`.
   obtain ⟨-, -, -, -, exy, exz, eyz, -⟩ := hL.other_ne

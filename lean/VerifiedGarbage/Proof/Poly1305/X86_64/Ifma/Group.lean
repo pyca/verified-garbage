@@ -57,7 +57,7 @@ theorem LaneInv.of_vk {R X : Nat} {s s' : State} (h : LaneInv R X s) (hk : VKeep
 theorem hval_add {a b c : Nat → Nat} (h : ∀ i < 3, a i = b i + c i) :
     Limbs44.val a = Limbs44.val b + Limbs44.val c := by
   simp only [Limbs44.val, h 0 (by decide), h 1 (by decide), h 2 (by decide)]
-  omega
+  omega_using []
 
 /-- `addGroup`, then `mul` by `Y`: quadword `k` becomes `(V_k + m_(π k)) · Y`. -/
 theorem addMul_ok {s : State} (hc : Ctx s) (hm : Consts s) (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 44)

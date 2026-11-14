@@ -23,12 +23,12 @@ theorem TableAt.frame {m m' : Mem} {base : Addr} {rs : List Region} (h : TableAt
     (hf : Frame rs m m') (hd : ∀r∈rs,(⟨base,1024⟩ : Region).Disjoint r) : TableAt m' base := by
   intro mask hm
   constructor
-  · rw [hf.read (Offset.contains_base base (by omega : 64*mask+16≤1024) (by omega)) hd (by decide)]
+  · rw [hf.read (Offset.contains_base base (by omega_using [hm] : 64*mask+16≤1024) (by omega_using [hm])) hd (by decide)]
     exact (h mask hm).1
   · have ha : base+BitVec.ofNat 64 (64*mask)+32=base+BitVec.ofNat 64 (64*mask+32) := by
       rw [BitVec.add_assoc,BitVec.ofNat_add]
       rfl
-    rw [ha,hf.readW (Offset.contains_base base (by omega : 64*mask+32+8≤1024) (by omega)) hd (by decide),←ha]
+    rw [ha,hf.readW (Offset.contains_base base (by omega_using [hm] : 64*mask+32+8≤1024) (by omega_using [hm])) hd (by decide),←ha]
     exact (h mask hm).2
 
 private theorem maskShift : ∀m<16,(BitVec.ofNat 64 m<<<6)=BitVec.ofNat 64 (64*m) := by decide

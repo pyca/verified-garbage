@@ -39,7 +39,7 @@ variable {G : Stream} (hG : StreamOK G)
 
 include hG in
 theorem sizes : G.S ≤ 256 ∧ G.F ≤ 64 ∧ hG.Wb ≤ 2048 ∧ G.D ≤ G.F ∧ 0 < G.D :=
-  ⟨hG.hSB, hG.hF, by have := hG.hWb; have := hG.hW; omega, hG.hDF, hG.hD0⟩
+  ⟨hG.hSB, hG.hF, by have := hG.hWb; have := hG.hW; omega_arith, hG.hDF, hG.hD0⟩
 
 /-- A range of our working space and the 16 bytes below the frame are
 apart. -/
@@ -50,7 +50,7 @@ theorem Lay.stk {t : State} {F S : Addr} (L : Lay t F S) {o n : Nat} (h : o + n 
 /-- Two ranges of our working space that do not overlap. -/
 theorem sdis (S : Addr) {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : a + n ≤ oRsa) (hb : b + k ≤ oRsa) :
     Region.Disjoint ⟨off S a, n⟩ ⟨off S b, k⟩ :=
-  Offset.disjoint S h (by unfold oRsa at ha; omega) (by unfold oRsa at hb; omega)
+  Offset.disjoint S h (by unfold oRsa at ha; omega_using [ha]) (by unfold oRsa at hb; omega_using [hb])
 
 /-- After a call that keeps `rsp` and the callee-saved registers. -/
 theorem keep_rsp {t t' : State} (h : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) : t'.gpr .rsp = t.gpr .rsp :=
@@ -67,7 +67,7 @@ theorem init_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W :
       Frame (regs S [(oSt, G.S)] ++ [retR F]) t.mem t'.mem ∧
       hG.SH.Repr t'.mem (off S oSt) [] := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
   refine init_call hG hdi (L.cov h1) (L.stk h1) fun t' A hr => ?_
   have hF : Frame (regs S [(oSt, G.S)] ++ [retR F]) t.mem t'.mem := by
     have := A.frame; rw [L.rsp] at this; exact this
@@ -85,11 +85,11 @@ theorem updArgs {t : State} {F S : Addr} (L : Lay t F S) {a len : Nat} (ha : a +
     (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = off S a) (hcx : t.gpr .rcx = BitVec.ofNat 64 len)
     (h8 : t.gpr .r8 = off S oCW) : UpdArgs hG t (off S oSt) (off S a) (off S oCW) len := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega
-  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega_using [hz]
+  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega_using [hz]
   exact { rdi := hdi, rdx := hdx
-          rcx := by rw [hcx, BitVec.toNat_ofNat]; unfold oRsa at ha; omega
+          rcx := by rw [hcx, BitVec.toNat_ofNat]; unfold oRsa at ha; omega_using [ha]
           r8 := h8
           cd := Covers.right (L.cov ha)
           cw := Covers.pair (L.cov h1) (L.cov h2)
@@ -112,11 +112,11 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
       (∀ m, hG.SH.Repr t.mem (off S oSt) m → t.gpr .rsi = BitVec.ofNat 64 m.length →
         hG.SH.Repr t'.mem (off S oSt) (m ++ (List.range len).map fun i => V (a + i))) := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega
-  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega_using [hz]
+  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega_using [hz]
   have args := updArgs hG L ha hda hwa hdi hdx hcx h8
-  refine upd_call hG args (by unfold oRsa at ha; omega) fun t' A hr => ?_
+  refine upd_call hG args (by unfold oRsa at ha; omega_using [ha]) fun t' A hr => ?_
   obtain ⟨L', R'⟩ := L.after_call R (rgs := [(oSt, G.S), (oCW, hG.Wb)])
     (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption)
     (by have := A.frame; rw [L.rsp] at this; exact this) (keep_rsp A.cs) A.wr
@@ -124,7 +124,7 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
   have e : Spec.Sha256.bytesAt t.mem (off S a) len = (List.range len).map fun i => V (a + i) := by
     simp only [Spec.Sha256.bytesAt]
     exact List.map_congr_left fun i hi => by
-      rw [off_plus]; exact R.scr _ (by have := List.mem_range.mp hi; omega)
+      rw [off_plus]; exact R.scr _ (by have := List.mem_range.mp hi; omega_using [ha, this])
   rw [← e]; exact hr m hm hc
 
 /-! ## `finalize` -/
@@ -135,15 +135,15 @@ theorem finArgs {t : State} {F S : Addr} (L : Lay t F S) {o : Nat} (ho : oSt + 2
     (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = off S o) (hcx : t.gpr .rcx = off S oCW) :
     FinArgs hG t (off S oSt) (off S o) (off S oCW) := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega
-  have h3 : o + G.F ≤ oRsa := by unfold oSt oCW oRsa at *; omega
-  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega_using [hz]
+  have h3 : o + G.F ≤ oRsa := by unfold oSt oCW oRsa at *; omega_using [ho, hz]
+  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega_using [hz]
   exact { rdi := hdi, rdx := hdx, rcx := hcx
           cw := Covers.cons (L.cov h1) (Covers.pair (L.cov h3) (L.cov h2))
-          st_o := sdis S (by unfold oSt oCW at *; omega) h1 h3
+          st_o := sdis S (by unfold oSt oCW at *; omega_using [ho, hz]) h1 h3
           st_sc := sdis S (Or.inr hws) h1 h2
-          o_sc := sdis S (by unfold oSt oCW at *; omega) h3 h2
+          o_sc := sdis S (by unfold oSt oCW at *; omega_using [ho, hz]) h3 h2
           stk_st := L.stk h1, stk_o := L.stk h3, stk_sc := L.stk h2 }
 
 include hG in
@@ -159,10 +159,10 @@ theorem fin_frame_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
       (∀ m, hG.SH.Repr t.mem (off S oSt) m → m.length < 2 ^ 64 → t.gpr .rsi = BitVec.ofNat 64 m.length →
         ∀ i < G.D, t'.mem (off S (o + i)) = (hG.SH.H.hash m).getD i 0) := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega
-  have h3 : o + G.F ≤ oRsa := by unfold oSt oCW oRsa at *; omega
-  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2 : oCW + hG.Wb ≤ oRsa := by unfold oCW oRsa; omega_using [hz]
+  have h3 : o + G.F ≤ oRsa := by unfold oSt oCW oRsa at *; omega_using [ho, hz]
+  have hws : oCW + hG.Wb ≤ oSt := by unfold oSt oCW; omega_using [hz]
   have args := finArgs hG L ho hdi hdx hcx
   refine fin_call hG args fun t' A hr => ?_
   obtain ⟨L', R'⟩ := L.after_call R (rgs := [(oSt, G.S), (o, G.F), (oCW, hG.Wb)])
@@ -173,7 +173,7 @@ theorem fin_frame_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
   refine ⟨L', A.rd, A.wr, A.cs, R', (by have hf := A.frame; rw [L.rsp] at hf; exact hf), fun m hm hl hc i hi => ?_⟩
   have e := hr m hm hl hc
   rw [← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
-  simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show i < G.F by omega),
+  simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show i < G.F by omega_using [hz, hi]),
     Option.map_some, Option.getD_some, off_off]
 
 include hG in
@@ -197,7 +197,7 @@ include hG in
 theorem two_init {Φ : α → State → Prop} (F S : α → Addr)
     (h : ∀ a t, Φ a t → Lay t (F a) (S a) ∧ t.gpr .rdi = off (S a) oSt) :
     RelCT isa (Two Φ) (.call G.initN G.initC) fun _ _ => True := by
-  have h1 : oSt + G.S ≤ oRsa := by have := (sizes hG).1; unfold oSt oRsa; omega
+  have h1 : oSt + G.S ≤ oRsa := by have := (sizes hG).1; unfold oSt oRsa; omega_using [this]
   refine (RelCT.exists_ (P := fun a t₁ t₂ => Φ a t₁ ∧ Φ a t₂) fun a =>
     Pbkdf2.Md.X86_64.Calls.init_rel hG (st := off (S a) oSt) fun t₁ t₂ ⟨p₁, p₂⟩ => ?_).mono
     (fun _ _ h => h) fun _ _ h => h

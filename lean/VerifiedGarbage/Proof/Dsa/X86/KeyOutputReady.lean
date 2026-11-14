@@ -44,7 +44,7 @@ theorem KeyOutputReady.writeReady {L : CallLayout} {out : BitVec 32} {s : State}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at member
   rcases member with rfl | rfl | rfl
   · exact (C.buffers _ P).keyPart (by omega) R.params
-  · exact localKeyPart C.moduli.scr (by omega) (Nat.le_trans (C.moduli.wideFit (by decide)) L.extent) A
+  · exact localKeyPart C.moduli.scr (by omega_using [W]) (Nat.le_trans (C.moduli.wideFit (by decide)) L.extent) A
   · exact (C.buffers _ X).keyPart (by omega) R.scalar
 
 end VG.Proof.Dsa.X86

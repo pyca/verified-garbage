@@ -59,7 +59,7 @@ theorem keep_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Reg
     (hd : ∀ r ∈ rs, R.Disjoint r) {n : Nat} (hn : n ≤ R.len) (hl : R.len ≤ 2 ^ 64) :
     Spec.Sha3.bytesAt m' R.base n = Spec.Sha3.bytesAt m R.base n := by
   unfold Spec.Sha3.bytesAt
-  exact List.map_congr_left fun i hi => hf.bytes hd hl (by have := List.mem_range.mp hi; omega)
+  exact List.map_congr_left fun i hi => hf.bytes hd hl (by have := List.mem_range.mp hi; omega_using [hn, this])
 
 /-- A region apart from the sponge's writes. -/
 theorem sponge_apart {R : Region} (hS : R.Disjoint (ST L.scr)) (hK : R.Disjoint (KS L.scr))

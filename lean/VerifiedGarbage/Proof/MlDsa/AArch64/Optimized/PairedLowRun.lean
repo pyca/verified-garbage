@@ -93,8 +93,8 @@ def LowPending (s : State) (v : Values) (is : List LowIndex) : Prop :=
 theorem Banks.lowPending {s : State} {v : Values} (h : Banks s v) (is : List LowIndex) : LowPending s v is := by
   intro i hi
   constructor
-  · simpa only [bankRegs,Vector.getElem_ofFn,lowRaw0,lowValue0] using h i.1 ⟨2*i.2.val,by omega⟩
-  · simpa only [bankRegs,Vector.getElem_ofFn,lowRaw1,lowValue1,Nat.add_assoc] using h i.1 ⟨2*i.2.val+1,by omega⟩
+  · simpa only [bankRegs,Vector.getElem_ofFn,lowRaw0,lowValue0] using h i.1 ⟨2*i.2.val,by omega_using []⟩
+  · simpa only [bankRegs,Vector.getElem_ofFn,lowRaw1,lowValue1,Nat.add_assoc] using h i.1 ⟨2*i.2.val+1,by omega_using []⟩
 
 theorem low_raw_keep (i j : LowIndex) (hne : i≠j) :
     lowRaw0 j∉lowPairClobs (lowRaw0 i) (lowRaw1 i) ∧
@@ -330,13 +330,13 @@ theorem lowPass_frame (g : Nat) (work out aux : Addr) (c : LowConstants)
   | succ u ih =>
     simp only [lowPassData]
     refine lowRun_frame _ _ _ _ _ _ _ (ro:=⟨out,2048⟩) (ra:=⟨aux,2048⟩)
-      (by simp) (by simp) ?_ ?_ (ih (by omega))
+      (by simp) (by simp) ?_ ?_ (ih (by omega_using [hu]))
     · intro i
       constructor <;> rw [BitVec.add_assoc,← BitVec.ofNat_add] <;>
-        exact Offset.contains_base out (by dsimp only [lowOff]; omega) (by dsimp only [lowOff]; omega)
+        exact Offset.contains_base out (by dsimp only [lowOff]; omega_using [hu]) (by dsimp only [lowOff]; omega_using [hu])
     · intro i
       constructor <;> rw [BitVec.add_assoc,← BitVec.ofNat_add] <;>
-        exact Offset.contains_base aux (by dsimp only [lowOff]; omega) (by dsimp only [lowOff]; omega)
+        exact Offset.contains_base aux (by dsimp only [lowOff]; omega_using [hu]) (by dsimp only [lowOff]; omega_using [hu])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
@@ -486,12 +486,12 @@ theorem lowAddr_sep (base : Addr) {i j : LowIndex} {h k : Fin 2}
     · exact hn he
     · exact hn hh
   simp only [lowAddr,lowOff]
-  exact Offset.sep base (by omega) (by omega) (by omega)
+  exact Offset.sep base (by omega_using [hi]) (by omega_using []) (by omega_using [])
 
 theorem lowAddr_contains (base : Addr) {u : Nat} (hu : u<8) (i : LowIndex) (h : Fin 2) :
     (⟨base,2048⟩ : Region).Contains (lowAddr (base+BitVec.ofNat 64 (16*u)) i h) 16 := by
   simp only [lowAddr,lowOff,BitVec.add_assoc,←BitVec.ofNat_add]
-  exact Offset.contains_base base (by omega) (by omega)
+  exact Offset.contains_base base (by omega_using [hu]) (by omega_using [hu])
 
 /-- Disjoint later paired checks preserve either half of either output. -/
 theorem lowRun_read_slot_other (g : Nat) (v : Values) (out aux : Addr) (c : LowConstants)
@@ -506,7 +506,7 @@ theorem lowRun_read_slot_other (g : Nat) (v : Values) (out aux : Addr) (c : LowC
   have contain (base : Addr) (i : LowIndex) (h : Fin 2) :
       (⟨base,2048⟩ : Region).Contains (lowAddr base i h) 16 := by
     simp only [lowAddr,lowOff]
-    exact Offset.contains_base base (by omega) (by omega)
+    exact Offset.contains_base base (by omega_using []) (by omega_using [])
   have ha0 := hd.sep (contain out i h) (contain aux j 0)
   have ha1 := hd.sep (contain out i h) (contain aux j 1)
   simpa only [lowAddr,Fin.val_zero,Fin.val_one,Nat.mul_zero,Nat.add_zero,Nat.mul_one] using
@@ -526,7 +526,7 @@ open VG VG.AArch64
 theorem lowAddr_contains_base (base : Addr) (i : LowIndex) (h : Fin 2) :
     (⟨base,2048⟩ : Region).Contains (lowAddr base i h) 16 := by
   simp only [lowAddr,lowOff]
-  exact Offset.contains_base base (by omega) (by omega)
+  exact Offset.contains_base base (by omega_using []) (by omega_using [])
 
 /-- Both original input vectors of a later pair survive this pair's four stores. -/
 theorem lowPair_other_input (g : Nat) (v : Values) (out aux : Addr) (c : LowConstants)
@@ -607,7 +607,7 @@ theorem lowSlice_sep (base : Addr) {u k : Nat} (hu : u<8) (hk : k<8) (hne : k≠
     Mem.Sep (lowAddr (base+BitVec.ofNat 64 (16*k)) i h) 16
       (lowAddr (base+BitVec.ofNat 64 (16*u)) j t) 16 := by
   simp only [lowAddr,lowOff,BitVec.add_assoc,←BitVec.ofNat_add]
-  exact Offset.sep base (by omega) (by omega) (by omega)
+  exact Offset.sep base (by omega_using [hu, hk, hne]) (by omega_using [hk]) (by omega_using [hu])
 
 /-- Earlier r0 iterations preserve both inputs of every later pair. -/
 theorem lowPass_read_future (g : Nat) (work out aux : Addr) (c : LowConstants)
@@ -618,12 +618,12 @@ theorem lowPass_read_future (g : Nat) (work out aux : Addr) (c : LowConstants)
   induction u with
   | zero => rfl
   | succ u ih =>
-    rw [lowPassData,lowRun_read_other _ _ _ _ _ _ _ _ ?_,ih (by omega)]
+    rw [lowPassData,lowRun_read_other _ _ _ _ _ _ _ _ ?_,ih (by omega_using [hu])]
     intro j _
-    have h0 := lowSlice_sep out (by omega : u<8) hk (by omega : k≠u) i j h 0
-    have h1 := lowSlice_sep out (by omega : u<8) hk (by omega : k≠u) i j h 1
-    have h2 := hd.sep (lowAddr_contains out hk i h) (lowAddr_contains aux (by omega : u<8) j 0)
-    have h3 := hd.sep (lowAddr_contains out hk i h) (lowAddr_contains aux (by omega : u<8) j 1)
+    have h0 := lowSlice_sep out (by omega_using [hk, hu] : u<8) hk (by omega_using [hu] : k≠u) i j h 0
+    have h1 := lowSlice_sep out (by omega_using [hk, hu] : u<8) hk (by omega_using [hu] : k≠u) i j h 1
+    have h2 := hd.sep (lowAddr_contains out hk i h) (lowAddr_contains aux (by omega_using [hk, hu] : u<8) j 0)
+    have h3 := hd.sep (lowAddr_contains out hk i h) (lowAddr_contains aux (by omega_using [hk, hu] : u<8) j 1)
     simpa only [lowAddr,Fin.val_zero,Fin.val_one,Nat.mul_zero,Nat.add_zero,Nat.mul_one] using
       And.intro h0 (And.intro h1 (And.intro h2 h3))
 

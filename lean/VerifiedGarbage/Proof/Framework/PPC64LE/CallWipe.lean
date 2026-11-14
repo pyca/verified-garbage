@@ -63,7 +63,7 @@ theorem regArgs_congr (sig : Sig) {s s' : State}
 
 theorem regArgs_getD (g : Reg → BitVec 64) {L i : Nat} (hL : L ≤ 8) (hi : i < L) :
     ((argRegs.take L).map g).getD i 0 = g (argRegs.getD i .r3) := by
-  have hi8 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega
+  have hi8 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega_using [hL, hi]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_take, hi, ite_true,
     List.getElem?_eq_getElem hi8, Option.map_some, Option.getD_some]
 
@@ -79,32 +79,32 @@ theorem Sig.bufs_mem_array {w : Bool} {e : Elem} {k : Nat} {nm : String} (ps₂ 
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 by omega, List.getD_cons_succ]
-    exact Sig.bufs_mem_array ps₂ ps vs (by omega)
+      (ps.flatMap fun p => p.2.words 64).length + 1 by omega_using [], List.getD_cons_succ]
+    exact Sig.bufs_mem_array ps₂ ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 by omega, List.getD_cons_succ]
-    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array ps₂ ps vs (by omega))
+      (ps.flatMap fun p => p.2.words 64).length + 1 by omega_using [], List.getD_cons_succ]
+    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array ps₂ ps vs (by omega_using [h]))
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 + 1 by omega, List.getD_cons_succ]
-    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array ps₂ ps vs (by omega))
+      (ps.flatMap fun p => p.2.words 64).length + 1 + 1 by omega_using [], List.getD_cons_succ]
+    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array ps₂ ps vs (by omega_using [h]))
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 + 1 by omega, List.getD_cons_succ]
-    exact Sig.bufs_mem_array ps₂ ps vs (by omega)
+      (ps.flatMap fun p => p.2.words 64).length + 1 + 1 by omega_using [], List.getD_cons_succ]
+    exact Sig.bufs_mem_array ps₂ ps vs (by omega_using [h])
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words 64).length =
-      (ps.flatMap fun p => p.2.words 64).length + 1 by omega, List.getD_cons_succ]
-    exact Sig.bufs_mem_array ps₂ ps vs (by omega)
+      (ps.flatMap fun p => p.2.words 64).length + 1 by omega_using [], List.getD_cons_succ]
+    exact Sig.bufs_mem_array ps₂ ps vs (by omega_using [h])
   | [], [], h => by simp at h
   | (_, .int ..) :: _, [], h => by simp at h
   | (_, .array ..) :: _, [], h => by simp at h
@@ -197,13 +197,13 @@ theorem li32 {n : Nat} (hn : n < 2 ^ 32) :
       (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   have key : (n / 2 ^ 16) <<< 16 ||| n % 2 ^ 16 = n := by
-    rw [← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)), Nat.shiftLeft_eq]; omega
-  have e1 : n / 2 ^ 16 % 2 ^ 16 = n / 2 ^ 16 := Nat.mod_eq_of_lt (by omega)
-  have e2 : n % 2 ^ 16 % 2 ^ 64 = n % 2 ^ 16 := Nat.mod_eq_of_lt (by omega)
-  have e3 : n / 2 ^ 16 % 2 ^ 64 = n / 2 ^ 16 := Nat.mod_eq_of_lt (by omega)
+    rw [← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)), Nat.shiftLeft_eq]; omega_using []
+  have e1 : n / 2 ^ 16 % 2 ^ 16 = n / 2 ^ 16 := Nat.mod_eq_of_lt (by omega_using [hn])
+  have e2 : n % 2 ^ 16 % 2 ^ 64 = n % 2 ^ 16 := Nat.mod_eq_of_lt (by omega_using [])
+  have e3 : n / 2 ^ 16 % 2 ^ 64 = n / 2 ^ 16 := Nat.mod_eq_of_lt (by omega_using [hn])
   have e4 : (n / 2 ^ 16) <<< 16 % 2 ^ 64 = (n / 2 ^ 16) <<< 16 := Nat.mod_eq_of_lt (by
-    rw [Nat.shiftLeft_eq]; omega)
-  have e5 : n % 2 ^ 64 = n := Nat.mod_eq_of_lt (by omega)
+    rw [Nat.shiftLeft_eq]; omega_using [hn])
+  have e5 : n % 2 ^ 64 = n := Nat.mod_eq_of_lt (by omega_using [hn])
   simp only [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
     Nat.zero_mod, Nat.zero_or, e1, e2, e3, e4, e5, key]
 
@@ -773,9 +773,9 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     show (sig.params.flatMap fun p => p.2.words 64).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
+    omega_using []
   have hiL : (ps₁.flatMap fun p => p.2.words 64).length < (sig.words abi.ptrBits).length := by
-    rw [hL]; omega
+    rw [hL]; omega_using []
   obtain ⟨hr0, hr12⟩ := argRegs_getD_ne (ps₁.flatMap fun p => p.2.words 64).length
     (by omega_using [hiL, hk])
   generalize hr' : argRegs.getD (ps₁.flatMap fun p => p.2.words 64).length .r3 = r at hr0 hr12 ⊢
@@ -785,7 +785,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
   have harr : ∀ s : State, (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s) := by
     intro s
     rw [← hget s, hps]
-    exact Sig.bufs_mem_array ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega)
+    exact Sig.bufs_mem_array ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega_using [])
   -- Its address is public.
   have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + 48) leak).pub s₁ s₂ → s₁.gpr r = s₂.gpr r := by
     intro s₁ s₂ hp

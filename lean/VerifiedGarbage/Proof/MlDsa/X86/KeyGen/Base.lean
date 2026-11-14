@@ -80,8 +80,8 @@ theorem pre_of {p : Params} {s₀ : State} (h : (Spec.MlDsa.keyGenContract p X86
     simp only [below]; rw [Taint.sub_setWidth h1]
   rw [hs] at h20 h21 h22 h23 h24
   have c4 : ∀ i, i < (YK p).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := fun i hi => by
-    rw [YK_n] at hi; omega
-  refine ⟨h1, by rw [YK_stk]; omega, by rw [YK_n]; omega, ?_, ?_, ?_, ?_, ?_,
+    rw [YK_n] at hi; omega_using [hi]
+  refine ⟨h1, by rw [YK_stk]; omega_using [], by rw [YK_n]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, h24, ?_, by rw [YK_sc, YK_n]; decide⟩
   · intro i hi hw
     rcases c4 i hi with rfl | rfl | rfl | rfl
@@ -129,7 +129,7 @@ theorem pub_of {p : Params} {s₀ s₀' : State} (h : (Spec.MlDsa.keyGenContract
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · rw [YK_n] at hi
-    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆]
   · simp only [lkK, xiOf, addr0]
     rw [e₂]

@@ -166,7 +166,7 @@ theorem callAt_ok {S : Nat} (hS : S < 2 ^ 64) {n : String} {c : Prog isa} {k : C
   refine WP.seq (WP.mono (glue_ok hok hnd s) fun s1 h1 => ?_)
   have k1 := h1.2
   refine WP.callFV C.correct (hpre s1 h1) (by rw [k1.rd, k1.wr]; exact hc) (by rw [k1.wr]; exact hw)
-    (fun s' hrd hwr hsp hf hcs hvcs hpost => ?_) (by have := C.fd; omega)
+    (fun s' hrd hwr hsp hf hcs hvcs hpost => ?_) (by have := C.fd; omega_using [hS, this])
   refine ⟨⟨hrd.trans k1.rd, hwr.trans k1.wr, hsp.trans k1.sp,
     fun r hr h30 => by rw [hcs r hr h30, k1.gpr r (argRegs_pres r hr)], ?_, fun r hr => (hvcs r hr).trans (k1.vcs r hr)⟩, s1, h1, hpost⟩
   rw [h1.1.2, k1.sp] at hf
@@ -207,17 +207,17 @@ theorem seqR_ok {f : Nat → Prog isa} {I : Nat → State → Prop} :
       ∀ s, I a s → WP isa (seqR f a n) s (I (a + n))
   | 0, a, _, s, h => by simp only [seqR, Nat.add_zero]; exact WP.block_nil h
   | n + 1, a, hf, s, h => by
-    refine WP.seq (WP.mono (hf a (Nat.le_refl _) (by omega) s h) fun s' h' => ?_)
-    have := seqR_ok n (a + 1) (fun k h₁ h₂ => hf k (by omega) (by omega)) s' h'
-    rwa [show a + 1 + n = a + (n + 1) by omega] at this
+    refine WP.seq (WP.mono (hf a (Nat.le_refl _) (by omega_using []) s h) fun s' h' => ?_)
+    have := seqR_ok n (a + 1) (fun k h₁ h₂ => hf k (by omega_using [h₁]) (by omega_using [h₂])) s' h'
+    rwa [show a + 1 + n = a + (n + 1) by omega_using []] at this
 
 theorem seqR_tr {f : Nat → Prog isa} {Q : Nat → State → State → Prop} :
     ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → RelCT isa (Q k) (f k) (Q (k + 1))) →
       RelCT isa (Q a) (seqR f a n) (Q (a + n))
   | 0, a, _ => by simp only [seqR, Nat.add_zero]; exact RelCT.block_nil (fun _ _ h => h)
   | n + 1, a, hf => by
-    have := seqR_tr n (a + 1) (fun k h₁ h₂ => hf k (by omega) (by omega))
-    rw [show a + 1 + n = a + (n + 1) by omega] at this
-    exact RelCT.seq (hf a (Nat.le_refl _) (by omega)) this
+    have := seqR_tr n (a + 1) (fun k h₁ h₂ => hf k (by omega_using [h₁]) (by omega_using [h₂]))
+    rw [show a + 1 + n = a + (n + 1) by omega_using []] at this
+    exact RelCT.seq (hf a (Nat.le_refl _) (by omega_using [])) this
 
 end VG.Proof.MlDsa.AArch64

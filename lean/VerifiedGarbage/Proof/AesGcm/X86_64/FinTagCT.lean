@@ -61,10 +61,10 @@ theorem FinS.frame (hN : 200 ≤ N) {R : Nat} {aL tL : BitVec 64} {s s' : State}
     intro d h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-    · exact L.w_w (.inr (by omega)) (by omega) L.le
-    · exact L.w_gh hg (by omega) (by omega)
-    · exact (L.stk_w (by omega)).symm
+    · exact (L.st_w (by decide) (.inr ⟨by omega_using [h₁], by omega_using [hN, h₂]⟩)).symm
+    · exact L.w_w (.inr (by omega_using [h₁])) (by omega_using [hN, h₂]) L.le
+    · exact L.w_gh hg (by omega_using [h₂]) (by omega_using [hN, h₂])
+    · exact (L.stk_w (by omega_using [hN, h₂])).symm
   refine ⟨he, rounds_frame hf (dT 176 (by decide) (by decide)) h.2.1, ?_, ?_⟩
   · rw [hf.readW (r := ⟨W + BitVec.ofNat 64 184, 8⟩) (Region.contains_self _ _) (dT 184 (by decide) (by decide))
       (by decide), h.2.2.1]
@@ -94,8 +94,8 @@ theorem finA_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP 
     (hN : 200 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
     WP isa (.block [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)),
       .alu .test .rbx (.reg .rbx)]) s (FinA Ctx St W SP R aL tL N) := by
-  have r₁ := h.1.perm.wR (show 192 + 8 ≤ N by omega) hN'
-  have r₂ := h.1.perm.wR (show 184 + 8 ≤ N by omega) hN'
+  have r₁ := h.1.perm.wR (show 192 + 8 ≤ N by omega_using [hN]) hN'
+  have r₂ := h.1.perm.wR (show 184 + 8 ≤ N by omega_using [hN]) hN'
   obtain ⟨s₁, run₁, hbx₁, hax₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)), .alu .test .rbx (.reg .rbx)] s =
         some s₁ ∧
@@ -161,8 +161,8 @@ theorem finD_ok {R : Nat} {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP 
     (hN : 200 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
     WP isa (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))]) s
       (FinD Ctx St W SP R aL tL N) := by
-  have r₃ := h.1.perm.wR (show 184 + 8 ≤ N by omega) hN'
-  have r₄ := h.1.perm.wR (show 192 + 8 ≤ N by omega) hN'
+  have r₃ := h.1.perm.wR (show 184 + 8 ≤ N by omega_using [hN]) hN'
+  have r₄ := h.1.perm.wR (show 192 + 8 ≤ N by omega_using [hN]) hN'
   obtain ⟨s₅, run₅, hbx₅, hbp₅, hg₅, hm₅, hrd₅, hwr₅⟩ : ∃ s₅, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
       .mov .rbp (.mem (at_ .r15 tlenO))] s = some s₅ ∧
       s₅.gpr .rbx = aL ∧ s₅.gpr .rbp = tL ∧ (∀ r, r ≠ .rbx → r ≠ .rbp → s₅.gpr r = s.gpr r) ∧
@@ -197,10 +197,10 @@ theorem finTag2_rel (hN : 208 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 �
       fun _ _ => True := by
   have d := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ FinS Ctx St W SP R aL tL N s₁ ∧ FinS Ctx St W SP R aL tL N s₂)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.2.1.1 h.2.2.1) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h.2) (fun s h => finD_ok h (by omega) L.nlt) (fun s h => finD_ok h (by omega) L.nlt)
+    (fun _ _ h => h.2) (fun s h => finD_ok h (by omega_using [hN]) L.nlt) (fun s h => finD_ok h (by omega_using [hN]) L.nlt)
   have t : RelCT isa (fun s₁ s₂ => True ∧ FinD Ctx St W SP R aL tL N s₁ ∧ FinD Ctx St W SP R aL tL N s₂)
       (tag v.callees o) fun _ _ => True :=
-    (tag_rel v L (by omega) T (R := R) ho).mono (fun _ _ h => ⟨⟨h.2.1.1.1, h.2.2.1.1, fun r hr => by
+    (tag_rel v L (by omega_using [hN]) T (R := R) ho).mono (fun _ _ h => ⟨⟨h.2.1.1.1, h.2.2.1.1, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [h.2.1.2.1, h.2.2.2.1]
@@ -213,11 +213,11 @@ theorem finTag_rel (hN : 208 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 �
       fun _ _ => True := by
   have a := rel_wp (rel_taint (P := fun s₁ s₂ => FinS Ctx St W SP R aL tL N s₁ ∧ FinS Ctx St W SP R aL tL N s₂)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.1 h.2.1) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) (fun s h => finA_ok h (by omega) L.nlt) (fun s h => finA_ok h (by omega) L.nlt)
+    (fun _ _ h => h) (fun s h => finA_ok h (by omega_using [hN]) L.nlt) (fun s h => finA_ok h (by omega_using [hN]) L.nlt)
   have b := rel_wp (rel_taint (P := fun s₁ s₂ => FinB Ctx St W SP R aL tL false N s₁ ∧ FinB Ctx St W SP R aL tL false N s₂)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.1.1 h.2.1.1) ⟨_, by taint_decide⟩) (fun _ _ h => h)
     (fun s h => finMod_ok h) (fun s h => finMod_ok h)
-  exact RelCT.seq a (RelCT.seq finSel_rel (RelCT.seq b (RelCT.seq ((finFlush_rel v L (by omega)).mono (fun _ _ h => h.2)
+  exact RelCT.seq a (RelCT.seq finSel_rel (RelCT.seq b (RelCT.seq ((finFlush_rel v L (by omega_using [hN])).mono (fun _ _ h => h.2)
     fun _ _ h => h) (finTag2_rel v L hN T ho))))
 
 end

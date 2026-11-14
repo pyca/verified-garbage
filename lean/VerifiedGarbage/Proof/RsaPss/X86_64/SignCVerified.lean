@@ -48,7 +48,7 @@ theorem enc_calls (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g))
     (byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs).allInstrs (fun i => !isa.writesSp i) = true ∧
       (byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs).x86_64Depth ≤ encStack + 8 :=
   byIdx_calls fun i hi => ⟨by simp only [Code.allInstrs]; exact spAll_of (hE i hi),
-    by simp only [Code.x86_64Depth]; have := hdE i hi; omega⟩
+    by simp only [Code.x86_64Depth]; have := hdE i hi; omega_using [this]⟩
 
 theorem signC_xd (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack)
     (hE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g)) (hd : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) :
@@ -67,7 +67,7 @@ theorem signCode_correct {c : Prog isa} (hsp : SpSafe c) (hd : c.x86_64Depth ≤
     (hW : WP isa c s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ (signK tsH tsG).post s s' ∧
       s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
     ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signK tsH tsG).post s s' := by
-  have hW := X86_64.WP.stackFrame hsp (by unfold signStack Rsa.X86_64.stackBytes at hd; omega) hW
+  have hW := X86_64.WP.stackFrame hsp (by unfold signStack Rsa.X86_64.stackBytes at hd; omega_using [hd]) hW
   obtain ⟨t, s', he, ⟨hcs, hpost, hmx⟩, hf⟩ := hW
   refine ⟨t, s', he, ⟨hcs, ?_, hmx⟩, hpost⟩
   -- The return address.
@@ -76,11 +76,11 @@ theorem signCode_correct {c : Prog isa} (hsp : SpSafe c) (hd : c.x86_64Depth ≤
   · rw [hp.hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hp.dRo _ (Offset.contains_base _ (by omega) (by omega)) hc
-    · exact hp.dRs _ (Offset.contains_base _ (by omega) (by omega)) hc
+    · exact hp.dRo _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
+    · exact hp.dRs _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
   · simp only [List.mem_singleton] at hr; subst hr
     have := hp.sp1; have := hp.sp2
     exact Offset.base_disjoint_below (s.gpr .rsp) (n := c.x86_64Depth)
-      (k := 8) (by unfold signStack at *; omega) _ (Offset.contains_base _ (by omega) (by omega)) hc
+      (k := 8) (by unfold signStack at *; omega_arith) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
 
 end VG.Proof.RsaPss.X86_64

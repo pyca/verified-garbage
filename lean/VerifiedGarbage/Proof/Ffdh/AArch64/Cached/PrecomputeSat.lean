@@ -41,7 +41,7 @@ private theorem precomputeMem_held (W : List (BitVec 64)) (length : W.length=221
  refine ite_eq_left ?_
  rw [BitVec.add_assoc,BitVec.ofNat_add_ofNat,Offset.add_sub_cancel_left,BitVec.toNat_ofNat]
  rw [length] at hi
- omega
+ omega_using [hi, hj]
 
 private theorem precomputeSat_domain (W : List (BitVec 64)) : Spec.Rsa.bytesAt (precomputeMem W) 0x3000 128=Sat.domain :=by
  unfold Sat.domain Spec.Rsa.bytesAt

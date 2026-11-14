@@ -89,14 +89,14 @@ theorem pinsT4 : Pins (At C (TF e) 4) [.s6, .s11, .ra, .s7, .s8, .a1] :=
     (fun _ => rfl) fun v _ h =>
     WP.of_flat (c := .seq (.block e) (.seq (.block ptrP) sigLen)) rfl (WP.seq (WP.mono (hfront _ _ h)
       fun _ h => WP.seq ((ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ =>
-        (sigLen_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega) (by have := h.1.kn; omega) (by rw [off_zero]; exact a7) a8).mono
+        (sigLen_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega_using [this]) (by have := h.1.kn; omega_using [this]) (by rw [off_zero]; exact a7) a8).mono
           fun _ ⟨⟨h', a1⟩, k⟩ => h'.1.fixB.app ⟨(k.gpr (r := .s7) (by decide)).trans a7, (k.gpr (r := .s8) (by decide)).trans a8,
             a1, trivial⟩)))
 
 theorem midT {v : VD} {s : State} (h : C v s) : WP isa (Code.seqL ((TF e).take 5)) s (MT v) :=
   WP.of_flat (c := .seq (.block e) (.seq (.block ptrP) bytesBits)) rfl (WP.seq (WP.mono (hfront _ _ h)
     fun _ h => WP.seq ((ptrP_P0 h).mono fun _ ⟨h, a7, a8⟩ =>
-      (bytesBits_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega) (by have := h.1.kn; omega) (by rw [off_zero]; exact a7) a8).mono
+      (bytesBits_P0 (o := 0) (k := v.L.pl) h (by have := h.1.pl; omega_using [this]) (by have := h.1.kn; omega_using [this]) (by rw [off_zero]; exact a7) a8).mono
         fun _ ⟨h', _⟩ => h')))
 
 theorem zeroT : ∀ v s₁ s₂, At C (TF e) 5 v s₁ → At C (TF e) 5 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
@@ -150,7 +150,7 @@ theorem pinsX1_4 : Pins (At Φ FX1 4) [.s6, .s11, .ra, .a1, .a2, .s7, .s8] :=
     WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.seq (.block ptrQ) sigLen) : Prog isa)) rfl
       (WP.seq (WP.mono (a2_P0 (hΦ _ _ h).1) fun _ ⟨⟨h', a2⟩, _⟩ => WP.seq ((ptrQ_P0 h').mono
         fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
-          (sigLen_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega) (by have := h''.1.kn; omega) a7 a8).mono fun _ ⟨⟨h₃, a1⟩, k'⟩ =>
+          (sigLen_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega_using [this]) (by have := h''.1.kn; omega_using [this]) a7 a8).mono fun _ ⟨⟨h₃, a1⟩, k'⟩ =>
             h₃.1.fixB.app ⟨a1, (k'.gpr (r := .a2) (by decide)).trans ((k.gpr (r := .a2) (by decide)).trans
               (a2.trans (hΦ _ _ h).2.1)), (k'.gpr (r := .s7) (by decide)).trans a7,
               (k'.gpr (r := .s8) (by decide)).trans a8, trivial⟩)))
@@ -159,7 +159,7 @@ theorem midX1 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FX1.take 5)
   WP.of_flat (c := (.seq (.block [.addi .a2 .a1 0]) (.seq (.block ptrQ) bytesBits) : Prog isa)) rfl
     (WP.seq (WP.mono (a2_P0 (hΦ _ _ h).1) fun _ ⟨⟨h', a2⟩, _⟩ => WP.seq ((ptrQ_P0 h').mono
       fun _ ⟨⟨h'', a7, a8⟩, k⟩ =>
-        (bytesBits_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega) (by have := h''.1.kn; omega) a7 a8).mono fun _ ⟨⟨h₃, a1, a0⟩, k'⟩ =>
+        (bytesBits_P0 (o := v.L.pl) (k := v.L.ql) h'' (by have := h''.1.ql; omega_using [this]) (by have := h''.1.kn; omega_using [this]) a7 a8).mono fun _ ⟨⟨h₃, a1, a0⟩, k'⟩ =>
           ⟨h₃, a1, (k'.gpr (r := .a2) (by decide)).trans ((k.gpr (r := .a2) (by decide)).trans (a2.trans (hΦ _ _ h).2.1)),
             (hΦ _ _ h).2.2, a0⟩)))
 
@@ -177,13 +177,13 @@ end X1
 
 theorem sP_le (v : VD) : v.sP ≤ v.L.pl := by
   have := VG.Proof.Dsa.significant_fits v.pB
-  have : v.pB.length ≤ v.L.pl := by simp only [VD.pB, VD.sl, List.length_take]; omega
-  unfold VD.sP; omega
+  have : v.pB.length ≤ v.L.pl := by simp only [VD.pB, VD.sl, List.length_take]; omega_using []
+  unfold VD.sP; omega_arith
 
 theorem sQ_le (v : VD) : v.sQ ≤ v.L.ql := by
   have := VG.Proof.Dsa.significant_fits v.qB
-  have : v.qB.length ≤ v.L.ql := by simp only [VD.qB, VD.sl, List.length_take]; omega
-  unfold VD.sQ; omega
+  have : v.qB.length ≤ v.L.ql := by simp only [VD.qB, VD.sl, List.length_take]; omega_using []
+  unfold VD.sQ; omega_arith
 
 /-- At the branch on the pair of sizes. -/
 abbrev MX2 (v : VD) (u : State) : Prop :=
@@ -210,10 +210,10 @@ theorem midX2 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FX2.take 12
   have hL := B.ok
   have hpl := B.pl; have hql := B.ql
   have hsp := sP_le v; have hsq := sQ_le v
-  have hqb : v.sQ < 2 ^ 16 := by simp only [Nat.reducePow]; omega
-  have hd : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega
+  have hqb : v.sQ < 2 ^ 16 := by simp only [Nat.reducePow]; omega_using [hql, hsq]
+  have hd : v.d < 2 ^ 16 := by show min v.dl 64 < 2 ^ 16; simp only [Nat.reducePow]; omega_using []
   obtain ⟨hin, hal⟩ := ScrL.hdr B.scr hL (d := 16) (by decide) (by decide)
-  have hst : InRegions s.wr (off v.L.S 16) 8 := B.scr.st (by have := hL.z256; omega)
+  have hst : InRegions s.wr (off v.L.S 16) 8 := B.scr.st (by have := hL.z256; omega_using [this])
   have l0' : word s.mem v.L.S 16 = pack v.L.pl v.L.ql 0 v.d := l0
   refine WP.of_flat (c := (.seq (.block [.addi .a3 .a1 0, .shift .sll .d .t3 .a1 32, .load .d .t4 .s6 hLens,
     .add .t4 .t4 .t3, .store .d .t4 .s6 hLens]) pairs : Prog isa)) rfl (WP.seq (WP.mono (WP.keep [.a3, .t3, .t4] (Q := fun t =>
@@ -222,7 +222,7 @@ theorem midX2 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FX2.take 12
       pack_add hqb]) (by decide) (by rfl)) fun t₁ ⟨⟨f3, fm⟩, k1⟩ => ?_))
   have hw := writeW_outside s.mem v.L.S (d := 16) (pack v.L.pl v.L.ql v.sQ v.d) (by have := hL.nowrap; omega_arith)
   have g2 : t₁.gpr .a2 = BitVec.ofNat 64 v.sP := (k1.gpr (by decide)).trans a2
-  refine WP.mono (pairs_ok g2 f3 (by omega) (by omega)) fun t ⟨⟨g0, gm⟩, k2⟩ => ?_
+  refine WP.mono (pairs_ok g2 f3 (by omega_using [hpl, hsp]) (by omega_using [hql, hsq])) fun t ⟨⟨g0, gm⟩, k2⟩ => ?_
   have m : t.mem = s.mem.writeW (off v.L.S 16) (pack v.L.pl v.L.ql v.sQ v.d) := by rw [gm, fm]
   have w : Lens v v.sQ t := by rw [Lens, m]; exact word_writeW_self _ _ _ _
   have k := k1.trans k2
@@ -238,7 +238,7 @@ theorem semR0 {v : VD} {u : State} (h : At Φ FX2 12 v u ∧ u.gpr .a0 = 0) : P1
   have hb : v.qb = v.sQ := by
     have := VG.Proof.Dsa.subgroup_scan_width (p := v.pB) hok
     show Spec.Dsa.bitLength v.q / 8 = _
-    rw [show v.q = Spec.Dsa.decodeBE v.qB from rfl, this]; unfold VD.sQ; omega
+    rw [show v.q = Spec.Dsa.decodeBE v.qB from rfl, this]; unfold VD.sQ; omega_using []
   exact ⟨B, by rw [hb]; exact l, hok⟩
 
 end X2

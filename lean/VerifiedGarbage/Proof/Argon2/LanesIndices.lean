@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.Lanes
 import VerifiedGarbage.Proof.Argon2.SegmentIndices
 public import VerifiedGarbage.Proof.Argon2.SegmentStart
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Recover each segment's reference log from the complete lane fold. -/
 
@@ -38,7 +39,7 @@ theorem segment_references_drop (p : Params) (pass lane slice : Nat) (state : Fi
       (if independent p pass slice then 0 else p.segmentLen - segmentStart pass slice) = state.indices
     simp only [mode, Bool.false_eq_true, ite_false]
     apply segment_indices_drop _ _ _ _ _ _ _ _ mode
-    unfold segmentStart; split <;> omega
+    unfold segmentStart; split <;> omega_arith
   · rw [segment_independent_indices p pass lane slice 0 p.segmentLen state mode]
     simp only [segmentReferences, mode, ite_true, List.drop_zero]
 

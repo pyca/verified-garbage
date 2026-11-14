@@ -1102,7 +1102,7 @@ theorem openEntry_ok {w : Nat} (hw : w = 2 ∨ w = 3) {extra extraW : List Regio
       OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
       s'.gpr .x12 = stackArg s 0 :=
-  openEntryW_ok (by omega) hs
+  openEntryW_ok (by omega_using [hw]) hs
 
 /-- What `openMain` reads, in a state after `tagIn`, as it was on entry. -/
 theorem OpenInG.vals {to : Bool} {Ctx W SP Np A D O Tg : Addr} {R nl al n tl : Nat} {s₀ t : State}
@@ -1412,8 +1412,8 @@ theorem openToLay {w : Nat} {extra extraW : List Region} {s : State} (hs : openT
     ⟨covers_mem ms, (s.gpr .x7).isLt, wsr, dsw.sub_right sub16, dsw⟩,
     ⟨⟨covers_left (covers_of_mem md), (s.gpr .x7).isLt, wds, ddw.sub_right sub16, ddw⟩, covers_of_mem md, dcd⟩,
     dsd, dnw, daw, dsw, dcw, covers_mem mt, dtw, hR⟩
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide), Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide), Nat.mod_eq_of_lt (by omega_using [ww])]
+    omega_using [ww]
   · simpa using Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 0) (k := 16) (.inr (by decide))
       (by decide) (by decide)
   · exact Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 96) (k := 2464) (.inl (by decide))
@@ -1421,7 +1421,7 @@ theorem openToLay {w : Nat} {extra extraW : List Region} {s : State} (hs : openT
   · refine ⟨args s (w + 1), List.mem_append_left _ mg, ?_⟩
     have e : stackArgAddr s 0 = s.sp := by simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
     simp only [args, e]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [wsp, hi])
 
 /-- The load of `dst`, the first stack argument, and its store at `W + dstO`. -/
 theorem dstStash_ok {s : State} {W : Addr} {V : BitVec 64} (h19 : s.gpr .x19 = W) (hw : Covers [⟨W, 2560⟩] s.wr)
@@ -1559,7 +1559,7 @@ theorem openTo_wp (v : GcmImpl) {w : Nat} (hw : w = 4 ∨ w = 5) {extra extraW :
     (hs : openToPreXW w extra s extraW) :
     WP isa (openG v.callees true w) s fun s' => GprAbi s s' ∧ openToPostOf s s' := by
   unfold openG openRestG
-  refine WP.seq (WP.mono (openEntryTo_ok (by omega) hs) fun s₂ ⟨o₂, x12₂⟩ => ?_)
+  refine WP.seq (WP.mono (openEntryTo_ok (by omega_using [hw]) hs) fun s₂ ⟨o₂, x12₂⟩ => ?_)
   refine WP.mono (openRestWithFl_wp (fl := .seq (.block [imm .x0 0]) (wipeG true))
     (m := openMainG v.callees true) (C := bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
     (F := fun m => bytesAt m (stackArg s 0) (s.gpr .x7).toNat = List.replicate (s.gpr .x7).toNat 0)

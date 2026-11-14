@@ -42,7 +42,7 @@ def MasksOk (s : State) : Prop := ∀ kv ∈ allMasks, slotW s kv.1 = kv.2
 theorem allMasks_slots : ∀ kv ∈ allMasks, 48 ≤ kv.1 ∧ kv.1 < d1Slot := by decide
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, savedSlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, savedSlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
   baseAl h0 := h.baseAl (by simp [layerCfg, savedSlot])
   extAl h0 := by simp [sboxCfg] at h0
@@ -57,16 +57,16 @@ theorem xorBits_map_rows (W : Nat → BitVec 64) (S : Nat → BitVec 64) (hS : �
   | cons i l ih =>
     have hi := hl i List.mem_cons_self
     have hc : cpos i < 8 := Camellia.cpos_lt hi
-    have ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega
+    have ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega_arith
     simp only [List.map_cons, xorBits_cons, rowBits, List.foldr_cons] at ih ⊢
-    rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
+    rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
 
 /-- The frame of the S-box (its spills) keeps the slots from 48 on. -/
 theorem slot_above {m m' : Mem} {b : Addr} {n k : Nat} (hf : Frame [⟨b, 8 * n⟩] m m') (hk : n ≤ k)
     (hk' : k < 2 ^ 58) : m'.readW (wordAddr b k) 64 = m.readW (wordAddr b k) 64 :=
   hf.readW (r := ⟨wordAddr b k, 8⟩) (by simp only [Region.Contains]; simp) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base b (by omega) (by omega)) (by decide)
+      exact VG.Offset.disjoint_base b (by omega_using [hk]) (by omega_using [hk'])) (by decide)
 
 /-- A round, with the subkey at word `off` of `kp` and the other half at slot `d`. -/
 theorem round_ok {off d : Nat}
@@ -104,7 +104,7 @@ theorem round_ok {off d : Nat}
       obtain ⟨j, hj, rfl, rfl⟩ := hji
       refine ⟨by simp [layerCfg, d1Slot, savedSlot]; omega_arith, by omega_arith, ?_⟩
       simp [W₁, show ¬ 24 + j < 8 by omega_arith, show ¬ 24 + j < 24 by omega_arith]; rfl)
-    (fun kv hkv => ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega,
+    (fun kv hkv => ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this],
         hm kv hkv⟩)
     (fun j hj => by
       simp only [layerCfg] at hj
@@ -123,7 +123,7 @@ theorem round_ok {off d : Nat}
   have hm₁ : MasksOk s₁ := fun kv hkv => by
     have hb : s₁.gpr sb = s.gpr sb := o₁ _ (by rcases hoff with rfl | rfl <;> decide +kernel)
     have := k₁ kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
-      have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega)
+      have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this])
     simp only [layerCfg] at this
     rw [slotW, hb, this]; exact hm kv hkv
   have hh₁ : ∀ j < 16, slotW s₁ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
@@ -143,7 +143,7 @@ theorem round_ok {off d : Nat}
     exact slot_above (n := 48) f₂ h1 (by simp [keySlot] at h2; omega_arith)
   have hm₂ : MasksOk s₂ := fun kv hkv => by
     rw [above₂ _ (allMasks_slots kv hkv).1
-      (by have := allMasks_slots kv hkv; simp only [keySlot, d1Slot] at this ⊢; omega)]
+      (by have := allMasks_slots kv hkv; simp only [keySlot, d1Slot] at this ⊢; omega_using [this])]
     exact hm₁ kv hkv
   have hh₂ : ∀ j < 16, slotW s₂ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
     rw [above₂ _ (by simp [d1Slot]; omega_arith) (by simp [d1Slot, keySlot]; omega_arith), hh₁ j hj]
@@ -161,7 +161,7 @@ theorem round_ok {off d : Nat}
     rw [hW _ (by omega_arith) (by omega_arith), show 8 + j - 8 = j by omega_arith]; rfl
   have masks_ok : ∀ s' : State, MasksOk s' → ∀ kv ∈ allMasks, kv.1 < layerCfg.slots ∧
       s'.mem.readW (wordAddr (s'.gpr layerCfg.base) kv.1) 64 = kv.2 := fun s' hm' kv hkv =>
-    ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega, hm' kv hkv⟩
+    ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this], hm' kv hkv⟩
   obtain ⟨s₃, h₃, y₃, -, k₃, rd₃, wr₃, sp₃, o₃, f₃, -, -⟩ := linG_ok outP_check hok₂ W₃
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri

@@ -42,7 +42,7 @@ theorem scheduleReduce_ct (M : Mont) (inputs : SchedulePublic → List (Operand 
   · intro p s ⟨hs, ba, has, hbl⟩
     refine WP.mono (readyReduce_ok M hs.1 p.qGreater p.qOdd a ha has (hbl ▸ hal p) d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_⟩
-    exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega)) p.qFits
+    exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega_using [this])) p.qFits
 
 theorem CallResult.keepReduced {L : ExecutionLayout} {side other : ModulusSide}
     {d value e : Nat} {s t : State} (h : CallResult L side d value s t) (hs : Ready L s)
@@ -81,7 +81,7 @@ theorem scheduleReduceKeep_ct (M : Mont) (inputs : SchedulePublic → List (Oper
   · intro p s ⟨⟨hs, ba, has, hbl⟩, hr⟩
     refine WP.mono (readyReduce_ok M hs.1 p.qGreater p.qOdd a ha has (hbl ▸ hal p) d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_, ?_⟩
-    · exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega)) p.qFits
+    · exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega_using [this])) p.qFits
     · exact h.keepReduced hs.1 hd (hend p) he (hee p) (hsep p) hr
 
 end VG.Proof.Dsa.X86_64

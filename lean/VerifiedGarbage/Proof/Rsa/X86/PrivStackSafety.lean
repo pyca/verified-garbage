@@ -39,8 +39,8 @@ theorem code_stack (v : CrtImpl) : stackUse (privCode v) ≤ stackBytes := by
   have bound : stackUse (body v.name v.code v.pcName v.pc v.pdName v.pd) ≤ 100 := by
     simp only [body, check, tail, compareBytes, release, releaseLoop, stackUse, Nat.max_le]
     repeat apply And.intro
-    all_goals omega
+    all_goals omega_arith
   simp only [privCode, code, stackUse, VG.X86.frameBytes, List.length_cons, List.length_nil,
     VG.Impl.Rsa.X86.PrivChecked.frameBytes, stackBytes]
-  omega
+  omega_using [bound]
 end VG.Proof.Rsa.X86.PrivChecked

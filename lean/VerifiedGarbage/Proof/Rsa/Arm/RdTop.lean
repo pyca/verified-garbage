@@ -145,11 +145,11 @@ theorem disj88 {r : Region} {a : Addr} (h1 : r.Disjoint ⟨a, 56⟩) (h2 : r.Dis
   intro x hx hc
   simp only [Region.Contains] at hc
   by_cases hlt : (x - a).toNat < 56
-  · exact h1 x hx (by simp only [Region.Contains]; omega)
+  · exact h1 x hx (by simp only [Region.Contains]; omega_using [hlt])
   · refine h2 x hx ?_
     simp only [Region.Contains]
-    have := (Offset.lt_iff x a (d := 56) (n := 32) (by decide)).mpr ⟨by omega, by omega⟩
-    omega
+    have := (Offset.lt_iff x a (d := 56) (n := 32) (by decide)).mpr ⟨by omega_using [hlt], by omega_using [hc]⟩
+    omega_using [this]
 
 section
 variable {s : State}
@@ -161,7 +161,7 @@ theorem CIn.argAddr (h : CIn s) {i : Nat} (hi : i < 8) :
     off (State.addr (s.sp - BitVec.ofNat 32 56)) (56 + 4 * i) = stackArgAddr s i := by
   have := h.spLo; have := h.spHi
   simp only [stackArgAddr, off]
-  rw [h.sp', addr_add (by omega), ← Offset.add_add, BitVec.sub_add_cancel]
+  rw [h.sp', addr_add (by omega_using [hi, this]), ← Offset.add_add, BitVec.sub_add_cancel]
 
 /-- The memory after the push and the entry. -/
 abbrev entryMem (s : State) : Mem :=
@@ -194,25 +194,25 @@ theorem head_run (h : CIn s) :
   refine wp_stackAddr (r := .r12) (d := 0) (by decide) fun u1 h1 => ?_
   have stackW : (⟨State.addr (pcPushed s).sp, 56⟩ : Region) ∈ (pcPushed s).wr := List.mem_cons_self
   refine wp_str (a := off (State.addr (s.sp - BitVec.ofNat 32 56)) 4) (by decide)
-    (by rw [h1.gpr, BitVec.add_zero, sp']; exact addr_add (by simp only [oP]; omega))
+    (by rw [h1.gpr, BitVec.add_zero, sp']; exact addr_add (by simp only [oP]; omega_using [spN]))
     ⟨_, by rw [h1.wr]; exact stackW, Offset.contains_base _ (by decide) (by decide)⟩ fun u2 m2 => ?_
   have mem2 : u2.mem = entryMem s := by rw [m2.mem, h1.mem, h1.other _ (by decide)]; rfl
   have eA : cA s = ⟨State.addr s.sp, 32⟩ := by simp [cA, stackArgAddr]
   have ei : ∀ i < 8, stackArgAddr s i = State.addr s.sp + BitVec.ofNat 64 (4 * i) := fun i hi => by
-    simp only [stackArgAddr]; exact addr_add (by omega)
+    simp only [stackArgAddr]; exact addr_add (by omega_using [spHi, hi])
   have fr := h.frameE
   have argRead : ∀ i < 8, InRegions (u2.rd ++ u2.wr) (stackArgAddr s i) 4 := fun i hi => by
     refine ⟨cA s, List.mem_append_left _ (by rw [m2.rd, h1.rd]; show cA s ∈ s.rd; rw [h.rd]; simp), ?_⟩
-    rw [eA, ei i hi]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [eA, ei i hi]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   have argVal : ∀ i < 8, u2.mem.readW (stackArgAddr s i) 32 = stackArg s i := fun i hi => by
     rw [mem2]
     refine fr.readW (r := ⟨stackArgAddr s i, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     refine h.FA.symm.sub_left ?_
-    rw [eA, ei i hi]; exact Offset.sub_base _ (by omega)
+    rw [eA, ei i hi]; exact Offset.sub_base _ (by omega_using [hi])
   have spA : ∀ i < 8, State.addr (u2.sp + BitVec.ofNat 32 (56 + 4 * i)) = stackArgAddr s i := fun i hi => by
     rw [m2.sp, h1.sp, sp', ← h.argAddr hi]
-    simp only [off]; exact addr_add (by rw [FrameStack.sub_toNat' spLo]; omega)
+    simp only [off]; exact addr_add (by rw [FrameStack.sub_toNat' spLo]; omega_using [spHi, hi])
   refine wp_loadStack (d := aoN) (a := stackArgAddr s 0) (by decide) (spA 0 (by decide)) (argRead 0 (by decide))
     fun u3 h3 => ?_
   refine wp_loadStack (d := aoK) (a := stackArgAddr s 1) (by decide) (by rw [h3.sp]; exact spA 1 (by decide))
@@ -239,7 +239,7 @@ theorem entry_run (h : CIn s) :
   rw [z, mem4]
   congr 2
   exact VG.Proof.Rsa.Arm.CrtValues.bytes_frame h.frameE (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact h.Fn.symm) (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact h.Fn.symm) (by omega_using [])
 
 end
 
@@ -255,14 +255,14 @@ theorem cA_eq (s : State) : cA s = ⟨State.addr s.sp, 32⟩ := by simp [cA, sta
 
 theorem CIn.ei (h : CIn s) {i : Nat} (hi : i < 8) : stackArgAddr s i = State.addr s.sp + BitVec.ofNat 64 (4 * i) := by
   have := h.spHi
-  simp only [stackArgAddr]; exact addr_add (by omega)
+  simp only [stackArgAddr]; exact addr_add (by omega_using [hi, this])
 
 /-- The stack arguments after the entry. -/
 theorem CIn.argVal (h : CIn s) {i : Nat} (hi : i < 8) : (entryMem s).readW (stackArgAddr s i) 32 = stackArg s i := by
   refine h.frameE.readW (r := ⟨stackArgAddr s i, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
   refine h.FA.symm.sub_left ?_
-  rw [cA_eq, h.ei hi]; exact Offset.sub_base _ (by omega)
+  rw [cA_eq, h.ei hi]; exact Offset.sub_base _ (by omega_using [hi])
 
 theorem CIn.bytes (h : CIn s) {R : Region} (hR : (cF s).Disjoint R) (hl : R.len ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt (entryMem s) R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len :=
@@ -303,7 +303,7 @@ theorem in_x (h : CIn s) {u : State} (hsp : u.sp = s.sp - BitVec.ofNat 32 56) (h
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat := h.bytes (R := cN s) h.Fn (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   have eB : Spec.Rsa.bytesAt (entryMem s) (State.addr (stackArg s 2)) (stackArg s 3).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat := h.bytes (R := cE s) h.Fe (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
-  refine ⟨by simp only [State.withRegions_sp, hsp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 88 ≤ 2 ^ 32; rw [spN]; omega, rfl,
+  refine ⟨by simp only [State.withRegions_sp, hsp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 88 ≤ 2 ^ 32; rw [spN]; omega_using [spHi], rfl,
     ⟨cN s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cE s, rdm _ (by simp), Region.contains_self _ _⟩,
     ⟨cD s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cA s, rdm _ (by simp), ?_⟩, hk.1, hk.2, h.el1, h.el2, h.dl1,
     h.dl2, h.scr, by show _ + (stackArg s 1).toNat ≤ _; rw [← h.pl]; exact h.fp,
@@ -351,9 +351,9 @@ theorem CIn.xCovers (h : CIn s) (sz : Sizes (mkP s)) : Covers (xRegs s) (pcPushe
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self, 0, by rw [BitVec.add_zero]; rfl, Nat.le_of_eq rfl⟩
   · exact ⟨cP s, by rw [pushed_wr, h.wr]; simp, 0, by rw [BitVec.add_zero]; rfl,
-      by show 0 + (stackArg s 1).toNat ≤ (s.gpr .r1).toNat; omega⟩
+      by show 0 + (stackArg s 1).toNat ≤ (s.gpr .r1).toNat; omega_using [pl]⟩
   · exact ⟨cQ s, by rw [pushed_wr, h.wr]; simp, 0, by rw [BitVec.add_zero]; rfl,
-      by show 0 + (stackArg s 1).toNat ≤ (s.gpr .r3).toNat; omega⟩
+      by show 0 + (stackArg s 1).toNat ≤ (s.gpr .r3).toNat; omega_using [ql]⟩
   · exact ⟨cS s, mS, 0, by rw [BitVec.add_zero]; rfl, Nat.le_of_eq (Nat.zero_add _)⟩
   · refine ⟨cS s, mS, (mkP s).oM, by show State.addr (mkP s).M0 = State.addr (stackArg s 6) + _; rw [M0_addr sz hf]; rfl, ?_⟩
     show (mkP s).oM + 8 * (mkP s).lenM ≤ (mkP s).Z
@@ -472,7 +472,7 @@ theorem rd_ok [InvLaw] (h : CIn s) (he : (stackArg s 3).toNat ≤ 8) :
       · exact pre.pF.symm.sub_left (Offset.sub_base _ (by decide))
       · exact pre.qF.symm.sub_left (Offset.sub_base _ (by decide)))
   have fit : (v.withRegions u.rd u.wr).sp.toNat + 56 ≤ 2 ^ 32 := by
-    show v.sp.toNat + 56 ≤ _; rw [vsp, spN]; omega
+    show v.sp.toNat + 56 ≤ _; rw [vsp, spN]; omega_using []
   have read : InRegions ((v.withRegions u.rd u.wr).rd ++ (v.withRegions u.rd u.wr).wr)
       (State.addr (v.withRegions u.rd u.wr).sp) 56 := by
     have m : (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region) ∈ (v.withRegions u.rd u.wr).wr := by
@@ -534,7 +534,7 @@ theorem rd_ct [InvLaw] : RelCT isa (fun s t => (CIn s ∧ (stackArg s 3).toNat �
   have he' : (stackArg t0 3).toNat ≤ 8 := by
     have e : (mkPD s0).el = (mkPD t0).el := by rw [hP]
     change (stackArg s0 3).toNat = (stackArg t0 3).toNat at e
-    omega
+    omega_using [he, e]
   have ps' := push_pushed
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide) hs.spLo
   have pt' := push_pushed
@@ -582,7 +582,7 @@ theorem cinD_of_pre (s : State) (h : (Spec.Rsa.recoverPrimesDetContract abi 56).
   have hk := valid
   simp only [Spec.Rsa.lenValid] at hk
   exact ⟨⟨spLo, spHi, rd, wr, pq, pn, pe, pd, pS, pA, qn, qe, qd, qS, qA, nS, eS, dS, SA, Fp, Fq, Fn, Fe, Fd, FS, FA,
-    fp, fq, fn, fe, fd, fS, valid, pl, ql, el1, by omega, dl1, dl2, scr⟩, el8⟩
+    fp, fq, fn, fe, fd, fS, valid, pl, ql, el1, by omega_using [el8, hk], dl1, dl2, scr⟩, el8⟩
 
 theorem rd_contract_correct [InvLaw] (s : State) (h : (Spec.Rsa.recoverPrimesDetContract abi 56).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Rsa.Arm.RecoverDet.code um) s tr t ∧ abiPreserved s t ∧

@@ -21,14 +21,14 @@ def acc64 (G d j : Nat) : Nat := G%2^(d*j)/2^(64*(d*j/64))
 
 theorem acc64_lt (G d j : Nat) : acc64 G d j<2^(d*j%64) := by
   have h := mod_div_lt G (d*j) (64*(d*j/64))
-  simpa only [acc64,show d*j-64*(d*j/64)=d*j%64 by omega] using h
+  simpa only [acc64,show d*j-64*(d*j/64)=d*j%64 by omega_using []] using h
 
 theorem add64 (G d j : Nat) :
     acc64 G d j+(G/2^(d*j)%2^d)*2^(d*j%64)=
       G%2^(d*(j+1))/2^(64*(d*j/64)) := by
   unfold acc64
-  rw [Nat.mul_succ,mod_two_pow_add,two_pow_split (show 64*(d*j/64)≤d*j by omega),
-    show d*j-64*(d*j/64)=d*j%64 by omega,Nat.mul_assoc,
+  rw [Nat.mul_succ,mod_two_pow_add,two_pow_split (show 64*(d*j/64)≤d*j by omega_using []),
+    show d*j-64*(d*j/64)=d*j%64 by omega_using [],Nat.mul_assoc,
     Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),Nat.mul_comm (2^(d*j%64))]
 
 theorem ofNat_shift (v sh : Nat) :
@@ -58,7 +58,7 @@ theorem joined_flush {G d j : Nat} (h : 64≤d*j%64+d) :
   rw [joined_acc]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
-  exact VG.Proof.MlKem.mod_pow_div_mod G (by rw [Nat.mul_succ]; omega)
+  exact VG.Proof.MlKem.mod_pow_div_mod G (by rw [Nat.mul_succ]; omega_using [h])
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
 
@@ -77,11 +77,11 @@ theorem digit_tail (G a d c : Nat) :
 
 theorem digit_lt64 (G d j : Nat) (hd : d≤20) : G/2^(d*j)%2^d<2^64 :=
   Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _))
-    (Nat.pow_le_pow_right (by decide) (by omega))
+    (Nat.pow_le_pow_right (by decide) (by omega_using [hd]))
 
 theorem acc64_lt64 (G d j : Nat) : acc64 G d j<2^64 :=
   Nat.lt_of_lt_of_le (acc64_lt G d j)
-    (Nat.pow_le_pow_right (by decide) (by omega))
+    (Nat.pow_le_pow_right (by decide) (by omega_using []))
 
 theorem fieldAcc_next (G d j : Nat) (hd : d≤20) (hn : d*(j+1)%64≠0) :
     fieldAcc d j (BitVec.ofNat 64 (acc64 G d j)) (BitVec.ofNat 64 (G/2^(d*j)%2^d))=
@@ -89,14 +89,14 @@ theorem fieldAcc_next (G d j : Nat) (hd : d≤20) (hn : d*(j+1)%64≠0) :
   have ha : d*(j+1)=d*j+d := Nat.mul_succ _ _
   by_cases hc : 64<d*j%64+d
   · rw [fieldAcc,ite_eq_left hc]
-    have hb : 64*(d*(j+1)/64)=d*j+(64-d*j%64) := by rw [ha]; omega
+    have hb : 64*(d*(j+1)/64)=d*j+(64-d*j%64) := by rw [ha]; omega_using [hd, hc]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (digit_lt64 G d j hd),BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (acc64_lt64 G d (j+1))]
     rw [digit_tail,acc64,hb,ha]
   · rw [fieldAcc,ite_eq_right hc,joined_acc]
-    have hb : d*(j+1)/64=d*j/64 := by rw [ha] at hn ⊢; omega
+    have hb : d*(j+1)/64=d*j/64 := by rw [ha] at hn ⊢; omega_using [hn, hc]
     rw [acc64,hb]
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
@@ -116,7 +116,7 @@ theorem word_byte (G k : Nat) {j : Nat} (hj : j<8) :
     (BitVec.ofNat 64 (G/2^(8*k))).extractLsb' (8*j) 8=byteOf G (k+j) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.extractLsb'_toNat,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow,
-    VG.Proof.MlKem.mod_pow_div_mod _ (by omega),Nat.div_div_eq_div_mul,←Nat.pow_add,←Nat.mul_add]
+    VG.Proof.MlKem.mod_pow_div_mod _ (by omega_using [hj]),Nat.div_div_eq_div_mul,←Nat.pow_add,←Nat.mul_add]
   rfl
 
 theorem joined_congr (d j : Nat) (a b v : BitVec 64) (h : d*j%64≠0 → a=b) :
@@ -139,21 +139,21 @@ theorem fields_written (G d : Nat) (hd : d≤20) (m : Mem) (out : Addr) (a : Bit
   | zero =>
     simpa only [fieldsRun,Nat.mul_zero,Nat.zero_div,Nat.zero_mod,ne_eq,not_true_eq_false,false_implies,and_true] using Written.nil m out (byteOf G)
   | succ n ih =>
-    obtain ⟨hw,ha⟩ := ih (by omega)
+    obtain ⟨hw,ha⟩ := ih (by omega_using [hn])
     let f := fieldsRun d out (fun j=>BitVec.ofNat 64 (G/2^(d*j)%2^d)) ⟨m,a⟩ n
     have hj : joined d n f.acc (BitVec.ofNat 64 (G/2^(d*n)%2^d))=
         joined d n (BitVec.ofNat 64 (acc64 G d n)) (BitVec.ofNat 64 (G/2^(d*n)%2^d)) :=
       joined_congr d n _ _ _ ha
     constructor
     · by_cases hf : 64≤d*n%64+d
-      · have hb : 8*(d*(n+1)/64)=8*(d*n/64)+8 := by rw [Nat.mul_succ]; omega
+      · have hb : 8*(d*(n+1)/64)=8*(d*n/64)+8 := by rw [Nat.mul_succ]; omega_using [hd, hf]
         change Written m (fieldMem d n f.mem out f.acc _) out _ _
         rw [fieldMem,ite_eq_left hf,hj,joined_flush hf,hb,
-          show 64*(d*n/64)=8*(8*(d*n/64)) by omega]
-        apply written_append hw ?_ (by have := Nat.mul_le_mul hd (show n≤8 by omega); omega)
+          show 64*(d*n/64)=8*(8*(d*n/64)) by omega_using []]
+        apply written_append hw ?_ (by have := Nat.mul_le_mul hd (show n≤8 by omega_using [hn]); omega_using [this])
         simpa only [Nat.mul_comm] using (written_word f.mem (out+BitVec.ofNat 64 (d*n/64*8)) 8
           (BitVec.ofNat 64 (G/2^(8*(8*(d*n/64)))))).congr (fun j hj=>word_byte G _ hj)
-      · have hb : d*(n+1)/64=d*n/64 := by rw [Nat.mul_succ]; omega
+      · have hb : d*(n+1)/64=d*n/64 := by rw [Nat.mul_succ]; omega_using [hf]
         change Written m (fieldMem d n f.mem out f.acc _) out _ _
         rw [fieldMem,ite_eq_right hf,hb]
         exact hw

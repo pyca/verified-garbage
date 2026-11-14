@@ -36,7 +36,7 @@ theorem KB.flag {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {e
     {s s' : State} (h : KB L e σ s) (hP : PPost s s' []) : KB L e σ s' := by
   have L₀ := h.a.kc.lay W hp
   exact ⟨h.a.keep W hp hP.b W.flag W.flagG W.flagS W.flagB, by rw [hP.cs .r15 (by decide)]; exact h.m.r15,
-    fun e' he' f hf => L₀.keepPoly hP.b (W.flagA e' (by omega)) (h.m.mat e' he' f hf)⟩
+    fun e' he' f hf => L₀.keepPoly hP.b (W.flagA e' (by omega_using [he, he'])) (h.m.mat e' he' f hf)⟩
 
 /-- At the end: `r15` as `allOk`, and the keys if it is 1. -/
 structure KEnd (L : Kem) (σ s : State) : Prop where
@@ -62,12 +62,12 @@ theorem rest_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (key
   unfold rest
   refine WP.seq (WP.mono (prfs_okK v W hp h) fun s₀ h₀ => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun k => KRest L k 0 0 σ) (2 * L.k) 0
-    (fun k _ hk s hs => se_ok v.arith W hp (by omega) hs) s₀ h₀) fun s₁ h₁ => ?_)
+    (fun k _ hk s hs => se_ok v.arith W hp (by omega_using [hk]) hs) s₀ h₀) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (kgm_ok v.arith W hp (by rwa [Nat.zero_add] at h₁)) fun s₁' h₁' => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun k => KRestT L k 0 σ) L.k 0
-    (fun k _ hk s hs => encT_ok v.arith W hp (by omega) hs) s₁' h₁') fun s₂ h₂ => ?_)
+    (fun k _ hk s hs => encT_ok v.arith W hp (by omega_using [hk]) hs) s₁' h₁') fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun k => KRestT L L.k k σ) L.k 0
-    (fun k _ hk s hs => encS_ok v.arith W hp (by omega) hs) s₂ (by rwa [Nat.zero_add] at h₂)) fun s₃ h₃ => ?_)
+    (fun k _ hk s hs => encS_ok v.arith W hp (by omega_using [hk]) hs) s₂ (by rwa [Nat.zero_add] at h₂)) fun s₃ h₃ => ?_)
   exact fin_ok W hp (by rw [Nat.zero_add] at h₃; exact h₃.pre)
 
 theorem body_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}
@@ -143,15 +143,15 @@ theorem rest_tr (v : Sample4Impl) :
   unfold rest
   refine RelCT.seq (relInvC (fun σ s hp hs => prfs_okK v W hp hs) (prfs_trK W v)) ?_
   refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRest L k 0 0 σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
-    (2 * L.k) 0 fun k _ hk => relInvC (fun σ s hp hs => se_ok v.arith W hp (by omega) hs)
-      (se_tr W v.arith (by omega))) ?_
+    (2 * L.k) 0 fun k _ hk => relInvC (fun σ s hp hs => se_ok v.arith W hp (by omega_using [hk]) hs)
+      (se_tr W v.arith (by omega_using [hk]))) ?_
   rw [Nat.zero_add]
   refine RelCT.seq (relInvC (fun σ s hp hs => kgm_ok v.arith W hp hs) (kgm_tr W v.arith)) ?_
   refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRestT L k 0 σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
-    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encT_ok v.arith W hp (by omega) hs) (encT_tr W v.arith (by omega))) ?_
+    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encT_ok v.arith W hp (by omega_using [hk]) hs) (encT_tr W v.arith (by omega_using [hk]))) ?_
   rw [Nat.zero_add]
   refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRestT L L.k k σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
-    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encS_ok v.arith W hp (by omega) hs) (encS_tr W v.arith (by omega))) ?_
+    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encS_ok v.arith W hp (by omega_using [hk]) hs) (encS_tr W v.arith (by omega_using [hk]))) ?_
   rw [Nat.zero_add]
   exact relInvC (fun σ s hp hs => fin_ok W hp hs.pre) (fin_tr W fun h => h.kc)
 

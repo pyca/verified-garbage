@@ -67,7 +67,7 @@ theorem G_even (s₀ : State) {k : Nat} (hk : k < 128) :
   have : ((B s₀).getD (3 * k) 0).toNat < 256 := byte_lt _
   have : ((B s₀).getD (3 * k + 1) 0).toNat < 256 := byte_lt _
   have hq : q = 3329 := rfl
-  rw [G, decode12_even _ (bytesAt_length _ _ _) hk, val_ofNat, condSub_eq (by omega), Nat.mul_comm 256]
+  rw [G, decode12_even _ (bytesAt_length _ _ _) hk, val_ofNat, condSub_eq (by omega_arith), Nat.mul_comm 256]
 
 theorem G_odd (s₀ : State) {k : Nat} (hk : k < 128) :
     G s₀ (2 * k + 1) = BitVec.ofNat 32 (condSub (byte s₀ (3 * k + 1) / 16 + byte s₀ (3 * k + 2) * 16)) := by
@@ -76,6 +76,6 @@ theorem G_odd (s₀ : State) {k : Nat} (hk : k < 128) :
   have : ((B s₀).getD (3 * k + 1) 0).toNat < 256 := byte_lt _
   have : ((B s₀).getD (3 * k + 2) 0).toNat < 256 := byte_lt _
   have hq : q = 3329 := rfl
-  rw [G, decode12_odd _ (bytesAt_length _ _ _) hk, val_ofNat, condSub_eq (by omega), Nat.mul_comm 16]
+  rw [G, decode12_odd _ (bytesAt_length _ _ _) hk, val_ofNat, condSub_eq (by omega_arith), Nat.mul_comm 16]
 
 end VG.Proof.MlKem.AArch64.Decode12

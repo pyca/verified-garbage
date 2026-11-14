@@ -46,8 +46,8 @@ theorem save_ok {s : State}
     WP isa (.block save) s (· = savedState s) := by
   simp only [save, gprSlots, vectorSlots, List.map_cons, List.map_nil, List.flatMap_cons, List.flatMap_nil,
     List.cons_append, List.nil_append, spill, VG.Impl.Dsa.Generation.Layout.control]
-  have w (d : Nat) (h₁ : 27840 ≤ d) (h₂ : d + 8 ≤ 27992) := hw d (by unfold spill VG.Impl.Dsa.Generation.Layout.control; omega)
-    (by unfold spill spillBytes VG.Impl.Dsa.Generation.Layout.control; omega)
+  have w (d : Nat) (h₁ : 27840 ≤ d) (h₂ : d + 8 ≤ 27992) := hw d (by unfold spill VG.Impl.Dsa.Generation.Layout.control; omega_using [h₁])
+    (by unfold spill spillBytes VG.Impl.Dsa.Generation.Layout.control; omega_using [h₂])
   brun [exec_str_x (off := 27840) (by decide), exec_str_x (off := 27848) (by decide),
     exec_str_x (off := 27856) (by decide), exec_str_x (off := 27864) (by decide),
     exec_str_x (off := 27872) (by decide), exec_str_x (off := 27880) (by decide),
@@ -89,8 +89,8 @@ theorem restore_ok {s t : State} {B : Addr}
     WP isa (.block restore) t (Restored s t) := by
   simp only [restore, gprSlots, vectorSlots, List.map_cons, List.map_nil, List.flatMap_cons, List.flatMap_nil,
     List.cons_append, List.nil_append, spill, VG.Impl.Dsa.Generation.Layout.control]
-  have r (d : Nat) (h₁ : 27840 ≤ d) (h₂ : d + 8 ≤ 27992) := read d (by unfold spill VG.Impl.Dsa.Generation.Layout.control; omega)
-    (by unfold spill spillBytes VG.Impl.Dsa.Generation.Layout.control; omega)
+  have r (d : Nat) (h₁ : 27840 ≤ d) (h₂ : d + 8 ≤ 27992) := read d (by unfold spill VG.Impl.Dsa.Generation.Layout.control; omega_using [h₁])
+    (by unfold spill spillBytes VG.Impl.Dsa.Generation.Layout.control; omega_using [h₂])
   simp only [Spill.Saved, gprSlots, vectorKeys, spill, VG.Impl.Dsa.Generation.Layout.control, List.mem_cons,
     List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Nat.reduceAdd] at g v
   obtain ⟨g19, g20, g21, g22, g23, g24, g25, g26, g27, g28, g30⟩ := g

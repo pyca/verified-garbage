@@ -71,7 +71,7 @@ theorem tail_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     simpa only [decide_eq_true_eq] using flag
   have valueFit : numAt w.mem (State.addr p.base) p.w 6 < 2 ^ (8 * p.k) := by
     rw [valueW, VG.Proof.Bignum.powMod_eq]
-    exact Nat.lt_trans (Nat.mod_lt _ (by omega : 0 < p.P)) p.modulusBound
+    exact Nat.lt_trans (Nat.mod_lt _ (by omega_using [odd] : 0 < p.P)) p.modulusBound
   rw [WP.seq_iff]
   refine WP.mono (exchangeFinish_ok w (sharedAccepted p (gOctets p) xb) contextW stable h4 h32 saved readyW
     ((output.after restV).after restW) workspaceSep
@@ -107,8 +107,8 @@ theorem failSave_ok (s : State) {p : Inputs} {slots : List Nat}
       intro r hr
       rw [List.mem_singleton] at hr
       subst r
-      exact Offset.disjoint _ (Or.inl hd) (by have := h.locals.space.nowrap; omega)
-        (by have := h.locals.space.nowrap; omega)) (by decide)
+      exact Offset.disjoint _ (Or.inl hd) (by have := h.locals.space.nowrap; omega_using [hd])
+        (by have := h.locals.space.nowrap; omega_using [])) (by decide)
   refine ⟨⟨h.locals.after restU, output.after restU, by rw [restU.sp]; exact stackSep, ?_, ?_, ?_⟩, ?_⟩
   · rw [restU.sp, word 4 (by decide)]; exact h.saved 4 h4
   · rw [restU.sp, word 32 (by decide)]; exact h.saved 32 h32

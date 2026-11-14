@@ -161,15 +161,15 @@ theorem subModArr_wp {L : Ws} {s : State} (h : SmPre L s) {o a b : Nat} (ho : o 
   have sp : ∀ {j k}, j ≠ k → slot L.w j + 8 * (L.w + 2) ≤ slot L.w k ∨ slot L.w k + 8 * (L.w + 2) ≤ slot L.w j :=
     fun h => slot_sep h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hs.ld (by have := hdr_lt_slot L.w 8 hi; omega)
+    hs.ld (by have := hdr_lt_slot L.w 8 hi; omega_using [hZ, this])
   have hacc : Public.aAcc < 8 := by decide
   have hmo : Public.aN < 8 := by decide
   refine WP.mono (WP.keep [.r8, .r10, .rsi, .r12, .rbp] (Q := fun t =>
       t.gpr .r8 = off L.B (slot L.w a) ∧ t.gpr .r10 = off L.B (slot L.w b) ∧
       t.gpr .rsi = off L.B (slot L.w Public.aAcc) ∧ t.gpr .r12 = BitVec.ofNat 64 L.w ∧ t.gpr .rbp = mask false ∧
       t.mem = s.mem)
-    (by xrun [smBlk1, State.ea, hdr, hg.rdi, hdrOff, hl (sArr a) (by unfold sArr; omega),
-      hl (sArr b) (by unfold sArr; omega), hl (sArr Public.aAcc) (by decide), hl sW (by decide),
+    (by xrun [smBlk1, State.ea, hdr, hg.rdi, hdrOff, hl (sArr a) (by unfold sArr; omega_using [ha]),
+      hl (sArr b) (by unfold sArr; omega_using [hb]), hl (sArr Public.aAcc) (by decide), hl sW (by decide),
       hg.hdr.harr a ha, hg.hdr.harr b hb, hg.hdr.harr Public.aAcc hacc, hg.hdr.hw]) rfl)
     fun s₁ ⟨⟨h8, h10, hsi, h12, hbp, hm₁⟩, k₁⟩ => ⟨h8, h10, hsi, h12, ?_⟩
   have hs₁ := hs.congr k₁.2.2
@@ -177,26 +177,26 @@ theorem subModArr_wp {L : Ws} {s : State} (h : SmPre L s) {o a b : Nat} (ho : o 
       SubInv s₁ L.B L.Z (slot L.w a) (slot L.w b) (slot L.w Public.aAcc) 0 t := fun t h14 hm k _ =>
     ⟨hs₁.congr k.2.2, k.mono (by decide), h14, by rw [hm]; exact Outside.refl _ _ _ _,
       ⟨false, (k.gpr (by decide)).trans hbp, by rw [hm]; rfl⟩⟩
-  refine WP.mono (wordLoop_ok (start := 0) (N := L.w) (by omega) hw'
+  refine WP.mono (wordLoop_ok (start := 0) (N := L.w) (by omega_using [hw]) hw'
     (SubInv s₁ L.B L.Z (slot L.w a) (slot L.w b) (slot L.w Public.aAcc)) h0
-    (fun j _ hj t hI => subStep_ok h8 h10 hsi h12 (by omega) (by have := sl a ha; omega)
-      (by have := sl b hb; omega) (by have := sl _ hacc; omega) (by have := sp d3; omega)
-      (by have := sp d4; omega) hj hI)) fun s₂ hI => ?_
+    (fun j _ hj t hI => subStep_ok h8 h10 hsi h12 (by omega_using [hw']) (by have := sl a ha; omega_using [this])
+      (by have := sl b hb; omega_using [this]) (by have := sl _ hacc; omega_using [this]) (by have := sp d3; omega_using [this])
+      (by have := sp d4; omega_using [this]) hj hI)) fun s₂ hI => ?_
   have k12 := k₁.trans hI.keep
   have s₂di : s₂.gpr .rdi = L.B := (k12.gpr (by decide)).trans hg.rdi
   have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hI.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega)
+    hI.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega_using [hZ, this])
   have fh : ∀ i < 32, word s₂.mem L.B (8 * i) = word s.mem L.B (8 * i) := fun i hi => by
-    rw [hI.out.word (Or.inl (by have := hdr_lt_slot L.w Public.aAcc hi; omega)) (by
-      have := hdr_lt_slot L.w 8 hi; omega), hm₁]
+    rw [hI.out.word (Or.inl (by have := hdr_lt_slot L.w Public.aAcc hi; omega_using [this])) (by
+      have := hdr_lt_slot L.w 8 hi; omega_using [hi]), hm₁]
   have h12₂ : s₂.gpr .r12 = BitVec.ofNat 64 L.w := (hI.keep.gpr (by decide)).trans h12
   refine ⟨s₂di, WP.mono (WP.keep [.r15, .rbp, .r10, .r8, .rbx] (Q := fun t =>
       t.gpr .r10 = off L.B (slot L.w Public.aN) ∧ t.gpr .r8 = off L.B (slot L.w Public.aAcc) ∧
       t.gpr .rbx = off L.B (slot L.w o))
     (by xrun [smBlk3, State.ea, hdr, s₂di, hdrOff, hl₂ (sArr Public.aN) (by decide),
-      hl₂ (sArr Public.aAcc) (by decide), hl₂ (sArr o) (by unfold sArr; omega),
+      hl₂ (sArr Public.aAcc) (by decide), hl₂ (sArr o) (by unfold sArr; omega_using [ho]),
       (fh _ (by decide)).trans (hg.hdr.harr Public.aN hmo), (fh _ (by decide)).trans (hg.hdr.harr Public.aAcc hacc),
-      (fh _ (by unfold sArr; omega)).trans (hg.hdr.harr o ho)]) rfl)
+      (fh _ (by unfold sArr; omega_using [ho])).trans (hg.hdr.harr o ho)]) rfl)
     fun t ⟨⟨h10, h8, hbx⟩, k⟩ => ⟨h10, h8, hbx, (k.gpr (by decide)).trans h12₂⟩⟩
 
 /-- `subModArr aT aY aXc`, `p`'s difference, is constant time. -/

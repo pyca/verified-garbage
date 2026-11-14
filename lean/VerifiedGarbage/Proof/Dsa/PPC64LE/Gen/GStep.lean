@@ -38,8 +38,8 @@ theorem GI.hBytes (h : GI G STK σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.witL
     Spec.Rsa.bytesAt s.mem (G.wit + BitVec.ofNat 64 i) G.pLen = hAt G i := by
   have fit := h.witFit
   have hw : Spec.Rsa.bytesAt s.mem G.wit G.witLen = G.witB := by
-    rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.wit_apart (by omega), ← h.hG]; rfl
-  obtain ⟨d, hd⟩ : ∃ d, G.witLen = i + G.pLen + d := ⟨G.witLen - i - G.pLen, by omega⟩
+    rw [VG.Proof.Dsa.Generation.frame_bytesAt h.frame h.wit_apart (by omega_using [fit]), ← h.hG]; rfl
+  obtain ⟨d, hd⟩ : ∃ d, G.witLen = i + G.pLen + d := ⟨G.witLen - i - G.pLen, by omega_using [hi]⟩
   show _ = (G.witB.drop i).take G.pLen
   rw [← hw, hd, VG.Proof.Dsa.Generation.bytesAt_append, VG.Proof.Dsa.Generation.bytesAt_append,
     List.append_assoc, List.drop_left' (by simp [Spec.Rsa.bytesAt]),
@@ -55,15 +55,15 @@ theorem GI.hSrc (h : GI G STK σ V LS s) {i : Nat} (hi : i + G.pLen ≤ G.witLen
   have sub : Region.Sub ⟨G.wit + BitVec.ofNat 64 i, G.pLen⟩ G.rWit := Offset.sub_base _ hi
   have hC := h.pre.wC; rw [h.hG] at hC
   refine ⟨Covers.left (Covers.one ⟨G.rWit, by rw [h.rd, h.pre.rd, h.hG]; simp,
-    Offset.contains_base _ hi (by omega)⟩), hC.sub_left sub, ?_, h.hBytes hi⟩
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Offset.contains_base _ hi (by omega_using [hi, hp, fit])⟩), hC.sub_left sub, ?_, h.hBytes hi⟩
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hi, hp, fit]),
+    Nat.mod_eq_of_lt (by omega_using [hi, hp, fit])]
+  omega_using [hi, fit]
 
 /-- The bytes of a covered region, one by one. -/
 theorem covers_bytes {rs : List Region} {P : Addr} {n : Nat} (hc : Covers [⟨P, n⟩] rs)
     (hfit : P.toNat + n ≤ 2 ^ 64) : ∀ i < n, InRegions rs (off P i) 1 := fun i hi =>
-  hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (show i + 1 ≤ n by omega) (by omega)⟩
+  hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (show i + 1 ≤ n by omega_using [hi]) (by omega_using [hfit, hi])⟩
 
 end
 
@@ -95,7 +95,7 @@ theorem hPtrK_vp {H : Addr} (hH : fH ∈ c.LS) (hHv : c.V fH = H) :
   refine WP.cons (s' := s.write .r6 H) ?_ (WP.cons (s' := (s.write .r6 H).write .r8 (BitVec.ofNat 64 G.pLen))
     (exec_li p15) (WP.block_nil ?_))
   · rw [show ld .r6 fH = .load .d .r6 .r28 fH from rfl, exec_load_d (by decide) ⟨by decide, by decide⟩
-      (by rw [h.gi.r28]; exact h.gi.inRdWr (by simp only [hEnd, fSave, fH] at hE ⊢; omega)), h.gi.r28,
+      (by rw [h.gi.r28]; exact h.gi.inRdWr (by simp only [hEnd, fSave, fH] at hE ⊢; omega_using [hE])), h.gi.r28,
       show s.mem.readW (G.scr + BitVec.ofNat 64 fH) 64 = H from (h.gi.slotV hH).trans hHv]
   have k : BKeep [.r6, .r8] s ((s.write .r6 H).write .r8 (BitVec.ofNat 64 G.pLen)) :=
     (VG.Proof.Bignum.PPC64LE.Keep.write s .r6 H).trans (VG.Proof.Bignum.PPC64LE.Keep.write _ .r8 _)
@@ -195,7 +195,7 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
       simp only [gOut, hr, true_and]
     rw [eq]
     generalize hgv : hv ^ ev % pv = gv
-    have glt : gv < pv := hgv ▸ Nat.mod_lt _ (by omega)
+    have glt : gv < pv := hgv ▸ Nat.mod_lt _ (by omega_using [hp2])
     -- `g`, back at the stage `c`.
     refine VP.seq ((power_vp (c := c) (X := X) (H := G.wit + BitVec.ofNat 64 i) (hb := hAt G i) cert hPc hpv hp2
       hpo hEc hev hH hHv (fun x hx => (hcl x hx).1) fun σ s h => ?_).mono
@@ -210,7 +210,7 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     · -- 1 < g: stored.
       by_cases h1 : 1 < gv
       · simp only [h1, ↓reduceIte]
-        exact (gOut_vp (c := c) (g := gv) (by omega) fun x hx => (hcl x hx).2).mono
+        exact (gOut_vp (c := c) (g := gv) (by omega_using [hplt, glt]) fun x hx => (hcl x hx).2).mono
           (fun σ s ⟨⟨h, en, v4, _⟩, _⟩ => ⟨h, en, v4⟩) fun _ _ h => h
       · refine VP.of_false fun σ s ⟨⟨_, _, _, r0⟩, z⟩ => h1 ?_
         rw [eval_zero, beq_zero_of_iff r0] at z

@@ -59,22 +59,22 @@ theorem em_input {m : Mem} {S : Addr} {V : Nat → Byte} {lo el k : Nat} {e : Li
   have c1 : oEm = 2560 := rfl
   have c3 : oEnc = 4096 := rfl
   apply List.ext_getElem
-  · simp [Spec.RsaPss.zeros, Spec.Rsa.bytesAt]; omega
+  · simp [Spec.RsaPss.zeros, Spec.Rsa.bytesAt]; omega_using [hk]
   intro i h1 h2
   simp only [List.length_map, List.length_range] at h1
   simp only [List.getElem_map, List.getElem_range]
   by_cases hi : i < lo
   · rw [ifn (fun ⟨p, hp, a, b⟩ => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only at a b <;> omega)]
-    rw [List.getElem_append_left (by simp [Spec.RsaPss.zeros]; omega)]
+      rcases hp with rfl | rfl <;> dsimp only at a b <;> omega_arith)]
+    rw [List.getElem_append_left (by simp [Spec.RsaPss.zeros]; omega_using [hi])]
     simp only [upd, Spec.RsaPss.zeros, List.getElem_replicate]
-    rw [ifp (by omega)]
-  · rw [ifp ⟨_, List.mem_cons_self .., by dsimp only; omega, by dsimp only; omega⟩]
-    rw [List.getElem_append_right (by simp [Spec.RsaPss.zeros]; omega)]
+    rw [ifp (by omega_using [hlo, hi])]
+  · rw [ifp ⟨_, List.mem_cons_self .., by dsimp only; omega_using [hi], by dsimp only; omega_using [hk, h1]⟩]
+    rw [List.getElem_append_right (by simp [Spec.RsaPss.zeros]; omega_using [hi])]
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, Spec.RsaPss.zeros, List.length_replicate,
       off_plus]
-    congr 2; omega
+    congr 2; omega_using [hi]
 
 /-- The slots after `idxSlot`. -/
 def proW1 (s : State) : Nat → BitVec 64 := upd (proW s) 47 (s.mem.readW (off (stackArg s 16) 40) 64)
@@ -106,7 +106,7 @@ theorem idxSlot_ok {s u : State} (hp : SPre tsH tsG s) (L : Lay u (fb s) (stackA
   have G' := L.geo
   have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 16) 40) 8 :=
     ⟨⟨stackArg s 16, 88⟩, hp.rdIn hrd (by simp),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   have R1 := R.wf G' (k := 47) (by decide) (s.mem.readW (off (stackArg s 16) 40) 64)
   rw [show off (fb s) (8 * 47) = off (fb s) sIdx from rfl] at R1
   refine WP.mono (WP.keep [.r11] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) sIdx)
@@ -161,7 +161,7 @@ theorem Rep.bytes_eq {m₁ m₂ : Mem} {F S : Addr} {V : Nat → Byte} {W₁ W�
   rw [bytesAt_off, bytesAt_off]
   exact List.map_congr_left fun i hi => by
     have := List.mem_range.mp hi
-    rw [R₁.scr _ (by omega), R₂.scr _ (by omega)]
+    rw [R₁.scr _ (by omega_using [h, this]), R₂.scr _ (by omega_using [h, this])]
 
 /-- The private-key operation's arguments `args` and its call, as `signC`
 needs them: from the frame after the test of `encode`'s result, they leave

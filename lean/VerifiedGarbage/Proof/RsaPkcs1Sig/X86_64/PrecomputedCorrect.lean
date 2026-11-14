@@ -58,8 +58,8 @@ theorem save_ok {s t : State} (hp : Pre s) (he : Env s t) :
     exact hf0.bytes (R := ⟨off (fb s) oEM1, (s.gpr .rsi).toNat⟩) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       simpa only [off, BitVec.add_zero] using Offset.disjoint (fb s) (d := oEM1) (e := 0)
-        (.inr (by decide : 0 + 8 ≤ oEM1)) (by have := hp.k2; unfold oEM1; omega) (by decide))
-      (by dsimp only; have := hp.k2; omega) (List.mem_range.mp hi)
+        (.inr (by decide : 0 + 8 ≤ oEM1)) (by have := hp.k2; unfold oEM1; omega_using [this]) (by decide))
+      (by dsimp only; have := hp.k2; omega_using []) (List.mem_range.mp hi)
 
 /-- Combining the padding result with the saved status uses no branch. -/
 theorem mask_ok {s t : State} (he : Env s t) :
@@ -162,7 +162,7 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (verifyPrecomputedContrac
         · rfl
         · exact g₀ r (by simpa using hr), k₀.2.1, by simp only [allocState, hsp₀, k₀.2.2]⟩
     have hfb : fb t₀ = fb s := by simp only [fb, hsp₀]
-    refine wp_alloc (s := t₀) (by rw [hsp₀]; have := hp.sp1; unfold verStack at this; unfold frameBytes; omega) ?_
+    refine wp_alloc (s := t₀) (by rw [hsp₀]; have := hp.sp1; unfold verStack at this; unfold frameBytes; omega_using [this]) ?_
     unfold Impl.RsaPkcs1Sig.X86_64.Precomputed.body
     refine WP.seq (WP.mono_mx (by decide) (args_ok hp hA hm₀)
       fun t₁ ⟨he₁, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, hcs₁⟩ hmx₁ => ?_)

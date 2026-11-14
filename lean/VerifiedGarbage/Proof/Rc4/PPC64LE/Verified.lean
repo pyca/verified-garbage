@@ -59,7 +59,7 @@ theorem init_correct (s : State) (hs : initX.pre s) :
     ⟨⟨s.gpr .r3, (s.gpr .r4).toNat⟩,
       by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _), Region.contains_self _ _⟩
   have hsep : Mem.Sep (s.gpr .r3) (s.gpr .r4).toNat (s.gpr .r5) 256 :=
-    fun x hx hy => hkc x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+    fun x hx hy => hkc x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])
   obtain ⟨tr, t, he, ⟨hpost, -⟩, hkeep⟩ :=
     WP.keep written (init_ok s hp hk hsep) (by lit_decide) (by lit_decide)
   refine ⟨tr, t, he, abiPreserved_of_keep he hkeep (by decide) (by lit_decide)
@@ -122,7 +122,7 @@ theorem apply_correct (s : State) (hs : applyX.pre s) :
     ⟨⟨s.gpr .r4, (s.gpr .r5).toNat⟩, by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self,
       Region.contains_self _ _⟩
   have hsep : Mem.Sep (s.gpr .r3) 258 (s.gpr .r4) (s.gpr .r5).toNat :=
-    fun x hx hy => hcd x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+    fun x hx hy => hcd x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])
   obtain ⟨tr, t, he, ⟨hpost, -⟩, hkeep⟩ :=
     WP.keep written (apply_ok s hp hd hsep) (by lit_decide) (by lit_decide)
   exact ⟨tr, t, he, abiPreserved_of_keep he hkeep (by decide) (by lit_decide)

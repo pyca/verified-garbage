@@ -109,7 +109,7 @@ theorem HoistedTable.mem {s : State} {z : Nat → Int} (h : HoistedTable s.mem (
     (hq : ∀ e < 4, vword (s.v .v16) e = 8380417#32) : HoistedMem s z := by
   refine ⟨h.range,hq,?_,h.roots⟩
   intro i
-  exact ⟨_,hr,Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨_,hr,Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
 
 theorem outerPass_frame {m : Mem} {p : Addr} {r : Region} {z : Nat → Int} {N : Nat}
     (hcontains : ∀ u < N, ∀ i : Fin 8, r.Contains
@@ -118,20 +118,20 @@ theorem outerPass_frame {m : Mem} {p : Addr} {r : Region} {z : Nat → Int} {N :
   induction N with
   | zero => exact Frame.refl _ _
   | succ N ih =>
-    have hframe := ih (fun u hu i => hcontains u (by omega) i)
+    have hframe := ih (fun u hu i => hcontains u (by omega_using [hu]) i)
     simp only [outerPassMem,outerMemStep]
-    exact writeBank_frame _ _ _ (by simp) (hcontains N (by omega)) hframe
+    exact writeBank_frame _ _ _ (by simp) (hcontains N (by omega_using [])) hframe
 
 def outputRegion (p : Addr) : Region := ⟨p,1024⟩
 
 theorem outer_contains (p : Addr) {u : Nat} (hu : u<8) (i : Fin 8) :
     (outputRegion p).Contains ((p+BitVec.ofNat 64 (16*u))+BitVec.ofNat 64 (128*i.val)) 16 := by
   rw [BitVec.add_assoc,←BitVec.ofNat_add]
-  exact Offset.contains_base p (by omega) (by omega)
+  exact Offset.contains_base p (by omega_using [hu]) (by omega_using [hu])
 
 theorem inner_output_contains (p : Addr) {u : Nat} (hu : u<8) (i : Fin 8) :
     (outputRegion p).Contains ((p+BitVec.ofNat 64 (128*u))+BitVec.ofNat 64 (16*i.val)) 16 := by
   rw [BitVec.add_assoc,←BitVec.ofNat_add]
-  exact Offset.contains_base p (by omega) (by omega)
+  exact Offset.contains_base p (by omega_using [hu]) (by omega_using [hu])
 
 end VG.Proof.MlDsa.AArch64.Optimized

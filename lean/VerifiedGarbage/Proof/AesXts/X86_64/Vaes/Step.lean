@@ -38,7 +38,7 @@ theorem setWidth_qword_shr120 (v : BitVec 128) : (qword (v >>> 120) 0).setWidth 
   by_cases h : i < 64
   · simp [h]
   · simp only [h, decide_false, Bool.false_and]
-    rw [BitVec.getLsbD_of_ge _ _ (by omega)]
+    rw [BitVec.getLsbD_of_ge _ _ (by omega_using [h])]
 
 theorem pclmul_step (v k : BitVec 128) (hk : qword k 0 = 0x87) :
     pclmul (v >>> 120) k 0 = P (v >>> 120) := by

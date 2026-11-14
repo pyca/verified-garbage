@@ -16,9 +16,9 @@ theorem double_offset {i : Nat} (hi : i < 2 ^ 56) :
     BitVec.ofNat 64 (64*i) <<< 1 = BitVec.ofNat 64 (128*i) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (show 64*i < 2 ^ 64 by omega), BitVec.toNat_ofNat]
+    Nat.mod_eq_of_lt (show 64*i < 2 ^ 64 by omega_using [hi]), BitVec.toNat_ofNat]
   congr 1
-  omega
+  omega_using []
 
 theorem outputPtr_ok {s : State} {B : Addr} {Z k i a : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (h0 : s.gpr .x0 = B) (hH : Hdr s.mem B (8*k) minv)
@@ -28,8 +28,8 @@ theorem outputPtr_ok {s : State} {B : Addr} {Z k i a : Nat} {minv : BitVec 64}
       (t.gpr .x16 = off B (ProductEight.productBase k + (if twice then 128*i else 64*i)) ∧
        t.gpr .x17 = off B (slot (8*k) a) ∧ t.mem = s.mem) ∧ Keep [.x13, .x16, .x17] s t := by
   have hl : ∀ j < 32, InRegions (s.rd ++ s.wr) (off B (8*j)) 8 :=
-    fun j hj => hs.ld (by have := hdr_lt_slot (8*k) 8 hj; omega)
-  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega
+    fun j hj => hs.ld (by have := hdr_lt_slot (8*k) 8 hj; omega_using [hZ, this])
+  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega_using [hj]
   cases twice
   all_goals
     refine WP.keep [.x13, .x16, .x17] ?_ rfl rfl rfl
@@ -51,12 +51,12 @@ theorem rowCount_ok {s : State} {B : Addr} {Z k i : Nat} {minv : BitVec 64}
     (h12 : s.gpr .x12 = BitVec.ofNat 64 (k-i)) :
     WP isa (.block [ldh .x15 sW, .lsr .x .x15 .x15 3, .sub .x .x15 .x15 .x12]) s fun t =>
       (t.gpr .x15 = BitVec.ofNat 64 i ∧ t.mem = s.mem) ∧ Keep [.x15] s t := by
-  have hd : 8*k/8 = k := by omega
+  have hd : 8*k/8 = k := by omega_using []
   have hsub : BitVec.ofNat 64 k - BitVec.ofNat 64 (k-i) = BitVec.ofNat 64 i :=
-    (BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)).trans
-      (congrArg (BitVec.ofNat 64) (by omega))
+    (BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hk]) (by omega_using [])).trans
+      (congrArg (BitVec.ofNat 64) (by omega_using [hi]))
   refine WP.keep [.x15] ?_ rfl rfl rfl
-  brun [h0, h12, hH.hw, Square.shr3_ofNat (show 8*k < 2 ^ 64 by omega), hd, hsub,
-    hs.ld (show 8*sW+8 ≤ Z by have := hdr_lt_slot (8*k) 8 (show sW < 32 by decide); omega)]
+  brun [h0, h12, hH.hw, Square.shr3_ofNat (show 8*k < 2 ^ 64 by omega_using [hk]), hd, hsub,
+    hs.ld (show 8*sW+8 ≤ Z by have := hdr_lt_slot (8*k) 8 (show sW < 32 by decide); omega_using [hZ, this])]
 
 end VG.Proof.Bignum.AArch64.SquareEight

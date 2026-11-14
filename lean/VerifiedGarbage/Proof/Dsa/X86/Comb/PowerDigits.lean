@@ -39,7 +39,7 @@ theorem powerDigits_ok {n e m g E : Nat} {base : Addr} {s : State}
   simp only [List.foldr_cons,List.foldr_nil]
   refine WP.seq (WP.mono (context_mul_ok C (o := 6) (a := 6) (b := 6)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [A]; exact Nat.mod_lt _ (by have := C.gt_one; omega))) fun u ⟨Cu,Ku,lu,Vu⟩ => ?_)
+    (by rw [A]; exact Nat.mod_lt _ (by have := C.gt_one; omega_using [this]))) fun u ⟨Cu,Ku,lu,Vu⟩ => ?_)
   have Au := VG.Proof.Rsa.FixedBaseComb.mont_square_encoded C.coprime lu A Vu
   have Eu := context_slot_val32 C (i := 8) (by decide) ew (by decide) (by decide) (by decide) Ku
   have Tu := T.op (table_layout h) C (by decide) Ku
@@ -49,20 +49,20 @@ theorem powerDigits_ok {n e m g E : Nat} {base : Addr} {s : State}
   have Tv := Tu.outside (table_layout h) Cu.scr Ov (by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide)
   have Av : wordsVal v.mem base (slot n 6) n = Spec.Rsa.powMod g (2*E) m * 2^(64*n)%m := by
-    rw [Ov.wordsVal (.inr (by have := slot_header n 6; omega)) (by
+    rw [Ov.wordsVal (.inr (by have := slot_header n 6; omega_using [this])) (by
       rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide),Au]
   have Ev : val32 v.mem base (slot n 8) (expWords e) = val32 s.mem base (slot n 8) (expWords e) := by
-    rw [Ov.val32 (.inr (by have := slot_header n 8; omega)) (by
+    rw [Ov.val32 (.inr (by have := slot_header n 8; omega_using [this])) (by
       rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide),Eu]
   rw [Eu] at Vv
   refine WP.seq (WP.mono (shiftOne_ok Cv.scr ep eb) fun w ⟨Ow,Vw,Kw⟩ => ?_)
   have Cw := Cv.outside_keep Kw (by decide) (by decide) Ow (by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide)
-    (by have := slot_header n 8; omega)
+    (by have := slot_header n 8; omega_using [this])
   have Tw := Tv.outside (table_layout h) Cv.scr Ow (by
     rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide)
   have Ww : w32 w.mem base 4 = partialDigit (rows e) (val32 s.mem base (slot n 8) (expWords e)) 5 := by
-    rw [Ow.w32 (.inl (by have := slot_header n 8; omega)) (by decide),Vv]
+    rw [Ow.w32 (.inl (by have := slot_header n 8; omega_using [this])) (by decide),Vv]
     rfl
   have Aw : wordsVal w.mem base (slot n 6) n = Spec.Rsa.powMod g (2*E) m * 2^(64*n)%m := by
     rw [Ow.wordsVal (by
@@ -73,7 +73,7 @@ theorem powerDigits_ok {n e m g E : Nat} {base : Addr} {s : State}
   refine WP.block_nil ⟨Cw,Tw,Aw,Vw,Ww,?_,?_⟩
   · have ou : Outs base (powerRanges n e) s.mem u.mem := Ku.mem.mono (by
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl|rfl <;> simp [powerRanges,contextMod,accLen,words] <;> omega)
+      rcases hr with rfl|rfl|rfl <;> simp [powerRanges,contextMod,accLen,words] <;> omega_using [])
     have ov := Outs.of_outside Ov (rs := powerRanges n e) (by simp [powerRanges])
     have ow := Outs.of_outside Ow (rs := powerRanges n e) (by simp [powerRanges,expWords,rows])
     exact (ou.trans ov).trans ow

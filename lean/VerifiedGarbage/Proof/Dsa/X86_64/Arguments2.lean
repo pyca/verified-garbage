@@ -33,12 +33,12 @@ theorem arguments2_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv
   rw [WP.block_append_iff]
   refine WP.mono (operand_context hg hZ a ha (by decide) (by decide) (by decide) (by decide) (by decide))
     fun u ⟨hgu, hua, hual, hfieldsu, hfu, hku⟩ => ?_
-  have hchildu := call_ready child hfu (by decide) (by decide) ho (by omega)
+  have hchildu := call_ready child hfu (by decide) (by decide) ho (by omega_using [hhi, hn])
   refine WP.mono (operand_context hgu hZ output hout (by decide) (by decide) (by decide) (by decide) (by decide))
     fun t ⟨hgt, hto, htol, hfieldst, hft, hkt⟩ => ?_
   rw [pointerValue_congr hfieldsu] at hto
   rw [hfieldsu output.length] at htol
-  refine ⟨hgt, call_ready hchildu hft (by decide) (by decide) ho (by omega), ?_,
+  refine ⟨hgt, call_ready hchildu hft (by decide) (by decide) ho (by omega_using [hhi, hn]), ?_,
     fun f => (hfieldst f).trans (hfieldsu f), ?_, (hku.trans hkt).mono (by decide)⟩
   · exact ⟨(call_word hft (by decide) (by decide) (by decide) (by decide) (by decide)).trans hua,
       (call_word hft (by decide) (by decide) (by decide) (by decide) (by decide)).trans hual, hto, htol⟩

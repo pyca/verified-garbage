@@ -34,11 +34,11 @@ theorem context_slot_val {n size m o i : Nat} {base : Addr} {s t : State}
   simp only [stride] at *
   apply OpKeep.val K
   · change slot n i + 8 * n ≤ slot n o ∨ slot n o + 8 * n ≤ slot n i
-    omega
+    omega_using [so]
   · change slot n i + 8 * n ≤ slot n 1 ∨ slot n 1 + 8 * n ≤ slot n i
-    omega
-  · rw [context_accLen]; omega
-  · omega
+    omega_using [st]
+  · rw [context_accLen]; omega_using [sa]
+  · omega_using [bi, sz, nw]
 
 theorem Context.keep {n size m o : Nat} {base : Addr} {s t : State}
     (h : Context n m base size s) (ho0 : o ≠ 0)
@@ -56,7 +56,7 @@ theorem Context.keep {n size m o : Nat} {base : Addr} {s t : State}
           have h0 := slot_header n o
           have h1 := slot_header n 1
           have h2 := slot_header n 2
-          rcases hr with rfl | rfl | rfl <;> simp only [contextMod] <;> omega
+          rcases hr with rfl | rfl | rfl <;> simp only [contextMod] <;> omega_arith
         · decide
       simpa only [val32, Nat.mul_zero, Nat.add_zero] using hv
     rw [he]; exact h.inverse
@@ -72,11 +72,11 @@ theorem Context.outs_keep {n size m : Nat} {base : Addr} {s t : State}
   refine ⟨h.scr.of_keeps K hdi hsp, h.size_le, ?_, h.gt_one, ?_⟩
   · refine ⟨h.modulus.n0, h.modulus.mo, h.modulus.tmp, h.modulus.sep, ?_⟩
     change wordsVal t.mem base (slot n 0) n = m
-    rw [wordsVal_eq_val32, O.val32 (fun r hr => by have := hm r hr; omega)
-      (by have := h.scr.nowrap; have := h.modulus.mo; change slot n 0 + 8*n ≤ size at this; omega),
+    rw [wordsVal_eq_val32, O.val32 (fun r hr => by have := hm r hr; omega_using [this])
+      (by have := h.scr.nowrap; have := h.modulus.mo; change slot n 0 + 8*n ≤ size at this; omega_arith),
       ← wordsVal_eq_val32]
     exact h.modulus.val
-  · have same := O.val32 (d := 0) (k := 1) (fun r hr => Or.inl (by have := hi r hr; omega)) (by decide)
+  · have same := O.val32 (d := 0) (k := 1) (fun r hr => Or.inl (by have := hi r hr; omega_using [this])) (by decide)
     have word : w32 t.mem base 0 = w32 s.mem base 0 := by
       simpa only [val32, Nat.mul_zero, Nat.add_zero] using same
     rw [word]; exact h.inverse
@@ -105,7 +105,7 @@ theorem context_slot_val32 {n size m o i k : Nat} {base : Addr} {s t : State}
   apply K.mem.val32
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only [contextMod, accLen, words] <;> omega
-  · omega
+    rcases hr with rfl | rfl | rfl <;> simp only [contextMod, accLen, words] <;> omega_arith
+  · omega_using [hk, bi, sz, nw]
 
 end VG.Proof.Mont.X86.Dynamic

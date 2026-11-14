@@ -56,7 +56,7 @@ theorem finish_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
   have h₁ := h.of_eq (g₁ _ (by decide)) (g₁ _ (by decide)) m₁ rd₁ wr₁
   refine WP.ite (decide (k < 16)) (eval_b cf₁) (fun ht => ?_) (fun hf => ?_)
   · exact WP.mono (finishShort_ok v L hR h₁ (of_decide_eq_true ht) hout) fun _ p => p.of_eq m₁ rd₁ wr₁
-  · exact WP.mono (finishLong_ok v L hR h₁ (by have := of_decide_eq_false hf; omega) hout)
+  · exact WP.mono (finishLong_ok v L hR h₁ (by have := of_decide_eq_false hf; omega_using [this]) hout)
       fun _ p => p.of_eq m₁ rd₁ wr₁
 
 end VG.Proof.AesSiv.X86

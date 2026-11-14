@@ -40,7 +40,7 @@ structure HeadPost (s : State) (n : Nat) (s' : State) : Prop where
 
 theorem head_wp {s : State} {B : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 : n < 2 ^ 32)
     (h : HeadPre B n s) : WP isa groupHead s (HeadPost s n) := by
-  have hg : 1 ≤ min n 8 := by omega
+  have hg : 1 ≤ min n 8 := by omega_using [hn]
   have hg8 : min n 8 ≤ 8 := Nat.min_le_right _ _
   obtain ⟨K, hH⟩ := h.table
   refine WP.seq (WP.mono (count_wp h.left hn32) fun s₁ ⟨g₁, o₁, m₁, _, wr₁, _⟩ => ?_)
@@ -53,15 +53,15 @@ theorem head_wp {s : State} {B : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 : n <
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · apply Offset.disjoint (State.addr B)
-      · right; change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 384; rw [tailSlot]; omega
+      · right; change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 384; rw [tailSlot]; omega_using []
       · decide
-      · change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 2 ^ 64; rw [tailSlot]; omega
+      · change 4 * tailSlot + 16 * 0 + 16 * min n 8 ≤ 2 ^ 64; rw [tailSlot]; omega_using []
     · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   have wc : Covers [⟨State.addr B, 4 * slots⟩] s₂.wr := by
     rw [f.wr, wr₁]
     simpa only [BitVec.add_zero] using workspace_part h.writable 0 (4 * slots)
       (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; decide)
-  refine WP.mono (BatchCalls.crypt_wp b₂ (by have := h.fit; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega) wc table₂)
+  refine WP.mono (BatchCalls.crypt_wp b₂ (by have := h.fit; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this]) wc table₂)
     fun s₃ ⟨c, _, _⟩ => ?_
   refine ⟨fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -79,7 +79,7 @@ theorem proHead_wp {s : State} (hp : Pre s) : WP isa proHead s fun s' =>
     rw [e.wr]
     simpa only [BitVec.add_zero] using workspace_part hw 0 (4 * slots) (by decide)
   refine WP.mono (BatchCalls.prepare_wp e.key e.base hp.fitK
-    (by have := hp.fitB; change (Sc s).toNat + 1456 ≤ 2 ^ 32; change (Sc s).toNat + 1512 ≤ 2 ^ 32 at this; omega)
+    (by have := hp.fitB; change (Sc s).toNat + 1456 ≤ 2 ^ 32; change (Sc s).toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this])
     (hp.ks.sub_right (Region.sub_prefix (by decide)))
     (by rw [e.rd, e.wr]; exact hp.key) wc) fun s₂ ⟨p, _⟩ => ?_
   refine ⟨(p.regs _ (by decide) (by decide)).trans e.iv, ?_, (p.regs _ (by decide) (by decide)).trans e.base⟩

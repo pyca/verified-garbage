@@ -15,16 +15,16 @@ private theorem pow2_eq (n:Nat) : pow2 n=2^n:=rfl
 theorem step (wide : Bool) (k : Nat) :
     (k : Int) = 2 * (next wide k : Int) + digit wide k := by
   cases wide <;> simp only [next, digit, half, radix, Bool.false_eq_true,
-    ↓reduceIte, Nat.reduceMul] <;> (repeat' split) <;> omega
+    ↓reduceIte, Nat.reduceMul] <;> (repeat' split) <;> omega_arith
 
 theorem digit_bounds (wide : Bool) (k : Nat) :
     -(half wide : Int) < digit wide k ∧ digit wide k < half wide := by
   cases wide <;> simp only [digit, half, radix, Bool.false_eq_true,
-    ↓reduceIte, Nat.reduceMul] <;> (repeat' split) <;> omega
+    ↓reduceIte, Nat.reduceMul] <;> (repeat' split) <;> omega_arith
 
 theorem next_bound (wide : Bool) (k : Nat) : next wide k ≤ k / 2 + half wide / 2 := by
   cases wide <;> simp only [next, half, radix, Bool.false_eq_true,
-    ↓reduceIte, Nat.reduceMul, Nat.reduceDiv] <;> (repeat' split) <;> omega
+    ↓reduceIte, Nat.reduceMul, Nat.reduceDiv] <;> (repeat' split) <;> omega_using []
 
 theorem next_small : ∀ (wide : Bool), ∀ k ≤ half wide, residual wide k 8 = 0 := by
   decide +kernel
@@ -40,11 +40,11 @@ theorem residual_add (wide : Bool) (k a b : Nat) :
 theorem residual_bound (wide : Bool) (k n : Nat) :
     residual wide k n ≤ k / 2 ^ n + half wide := by
   induction n with
-  | zero => simp only [residual, Nat.pow_zero, Nat.div_one]; omega
+  | zero => simp only [residual, Nat.pow_zero, Nat.div_one]; omega_using []
   | succ n ih =>
     have hn := next_bound wide (residual wide k n)
     rw [residual, Nat.pow_succ, ← Nat.div_div_eq_div_mul]
-    cases wide <;> simp only [half, Bool.false_eq_true, ↓reduceIte] at * <;> omega
+    cases wide <;> simp only [half, Bool.false_eq_true, ↓reduceIte] at * <;> omega_using [ih, hn]
 
 /-- Eight carry positions suffice even when the challenge is not reduced modulo L. -/
 theorem residual_end (wide : Bool) {k : Nat} (hk : k < scalarLimit) : residual wide k 464 = 0 := by
@@ -63,14 +63,14 @@ theorem tail_quotient {k i:Nat} (hk:k<scalarLimit) (hi:456≤i) : k/2^i=0:=by
 theorem digit_mod (wide : Bool) (k : Nat) : digit wide (k % radix wide) = digit wide k := by
   have h : k % radix wide % 2 = k % 2 := by
     cases wide <;> simp only [radix, half, Bool.false_eq_true,
-      ↓reduceIte, Nat.reduceMul] <;> omega
+      ↓reduceIte, Nat.reduceMul] <;> omega_using []
   simp only [digit, h, Nat.mod_mod]
 
 theorem local_digit (wide : Bool) {q h c : Nat} (hc : q + half wide = h + c) :
     localDigit wide (h % radix wide) c = digit wide q := by
   have he : (h % radix wide + c + half wide) % radix wide = q % radix wide := by
     cases wide <;> simp only [radix, half, Bool.false_eq_true,
-      ↓reduceIte, Nat.reduceMul] at * <;> omega
+      ↓reduceIte, Nat.reduceMul] at * <;> omega_using [hc]
   rw [localDigit, he, digit_mod]
 
 theorem carry_bounds (wide : Bool) {bits c : Nat} (hc : c ≤ radix wide) :
@@ -78,7 +78,7 @@ theorem carry_bounds (wide : Bool) {bits c : Nat} (hc : c ≤ radix wide) :
   have hd := digit_bounds wide ((bits + c + half wide) % radix wide)
   unfold carryNext localDigit
   cases wide <;> simp only [radix, half, Bool.false_eq_true,
-    ↓reduceIte, Nat.reduceMul] at * <;> omega
+    ↓reduceIte, Nat.reduceMul] at * <;> omega_using [hc, hd]
 
 theorem carry_step (wide : Bool) {q h c : Nat} (hc : q + half wide = h + c) :
     next wide q + half wide = h / 2 + carryNext wide (h % radix wide) c := by
@@ -86,12 +86,12 @@ theorem carry_step (wide : Bool) {q h c : Nat} (hc : q + half wide = h + c) :
   have hs := step wide q
   have he : h % radix wide % 2 = h % 2 := by
     cases wide <;> simp only [radix, half, Bool.false_eq_true,
-      ↓reduceIte, Nat.reduceMul] <;> omega
+      ↓reduceIte, Nat.reduceMul] <;> omega_using []
   unfold carryNext
   rw [local_digit wide hc, he]
-  have hn : (0 : Int) ≤ (h % 2 : Nat) + c + half wide - digit wide q := by omega
+  have hn : (0 : Int) ≤ (h % 2 : Nat) + c + half wide - digit wide q := by omega_using [hd]
   have ht := Int.toNat_of_nonneg hn
-  omega
+  omega_using [hc, hd, hs]
 
 private theorem odd_small : ∀ (wide : Bool), ∀ k<radix wide,
     digit wide k=0 ∨ (digit wide k).natAbs%2=1 := by decide +kernel

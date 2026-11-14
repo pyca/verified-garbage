@@ -135,8 +135,8 @@ theorem significant_below {p : Inputs} {l : ScalarLayout p} {s : State}
     Region.Disjoint ⟨State.addr l.start,l.width⟩ (belowA s.sp 48) := by
   have fit := h.privateFits
   have lead := l.lead_lt
-  rw [ScalarLayout.start,VG.Arm.addr_add (by omega)]
-  exact h.privateValue.sub_left (Offset.sub_base _ (by unfold ScalarLayout.width; omega))
+  rw [ScalarLayout.start,VG.Arm.addr_add (by omega_using [fit, lead])]
+  exact h.privateValue.sub_left (Offset.sub_base _ (by unfold ScalarLayout.width; omega_using [lead]))
 
 theorem correct (backend : MontBackend) (s : State) {p : Inputs} {l : ScalarLayout p}
     {slots : List Nat} {eb : List Byte}
@@ -159,7 +159,7 @@ theorem correct (backend : MontBackend) (s : State) {p : Inputs} {l : ScalarLayo
       numAt t.mem (State.addr p.base) p.w 7=1 ∧
       Frame (CombExp.writeRegions p.base s.sp p.len) s.mem t.mem ∧ Rest roundClobbers s t := by
   let K := CombExp.kernel backend p.base l.start (table p) s.sp p.len p.w p.P p.G (bits p) eb
-    widthBound (by have := l.width_bounds.2; have := p.maxLength; omega) scheduleFit widthFit scalarFit
+    widthBound (by have := l.width_bounds.2; have := p.maxLength; omega_arith) scheduleFit widthFit scalarFit
   have source : CombDigit.Source l.start eb s := ⟨exponent.fits,exponent.readable,exponent.byte⟩
   have hp : CombExp.Persistent p.base l.start (table p) s.sp p.len p.w p.P p.G (bits p) eb s := by
     refine ⟨⟨calls.stack,rfl⟩,source,cached.table,?_,tableSeparate⟩
@@ -177,7 +177,7 @@ theorem correct (backend : MontBackend) (s : State) {p : Inputs} {l : ScalarLayo
     rw [size]; exact controlsU
   refine WP.mono (CombExp.phase_ok K u readyU hpU controls
     ((arraysU 0 (by decide)).trans modulus) odd ((arraysU 4 (by decide)).trans r2)
-    positive (by omega) scalarFit) ?_
+    positive (by omega_using [scheduleFit]) scalarFit) ?_
   rintro t ⟨rd,value,m,rr,one,_,_,frameT,restT⟩
   have frame := writes.trans frameT
   have rest := restU.trans restT
@@ -221,8 +221,8 @@ theorem rows_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 count :
       (isa.eval .ne u=some true → ∃ m<k, I m u v) := by
     intro k s t tr1 tr2 u v h e1 e2
     obtain ⟨positiveK,boundK,fitsK,left,right,sp⟩ := h
-    have successor : k-1+1=k := by omega
-    have timing := relCT_keep_sp (round_ct K1 K2 ct (i:=k-1) (by omega)) (fun _ _ h => h.2.2)
+    have successor : k-1+1=k := by omega_using [positiveK]
+    have timing := relCT_keep_sp (round_ct K1 K2 ct (i:=k-1) (by omega_using [positiveK, boundK])) (fun _ _ h => h.2.2)
     have leftInput : RowInput base source table len w bytes N M g
         (VG.Proof.Rsa.FixedBaseComb.high N x1 (k-1+1)) (k-1) P1 s := by
       simpa only [successor] using (show RowInput base source table len w bytes N M g
@@ -234,9 +234,9 @@ theorem rows_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 count :
         (VG.Proof.Rsa.FixedBaseComb.high N x2 k) (k-1) P2 t from
         ⟨right.power,right.persistent,right.controls,by simpa only [successor] using right.counter⟩)
     obtain ⟨trace,sp'⟩ := timing s t tr1 tr2 u v ⟨leftInput,rightInput,sp⟩ e1 e2
-    have correct1 := round_ok K1 s (i:=k-1) (by omega) (by omega) leftInput.power leftInput.persistent
+    have correct1 := round_ok K1 s (i:=k-1) (by omega_using [positiveK, boundK]) (by omega_using [fitsK]) leftInput.power leftInput.persistent
       leftInput.controls leftInput.counter
-    have correct2 := round_ok K2 t (i:=k-1) (by omega) (by omega) rightInput.power rightInput.persistent
+    have correct2 := round_ok K2 t (i:=k-1) (by omega_using [positiveK, boundK]) (by omega_using [fitsK]) rightInput.power rightInput.persistent
       rightInput.controls rightInput.counter
     rw [←ct.same] at correct2
     obtain ⟨_,_,run1,power1,p1,controls1,counter1,zero1,_,_⟩ := correct1
@@ -251,7 +251,7 @@ theorem rows_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 count :
         intro zero
         change some (!u.z)=some true at again
         simp only [zero1,zero,decide_true,Bool.not_true,Option.some.injEq,Bool.false_eq_true] at again
-      exact ⟨k-1,by omega,by omega,by omega,by omega,
+      exact ⟨k-1,by omega_using [positiveK],by omega_using [nonzero],by omega_using [boundK],by omega_using [fitsK],
         ⟨power1,p1,controls1,counter1⟩,⟨power2,p2,controls2,counter2⟩,sp'⟩
   unfold VG.Impl.Bignum.Arm.CombExp.rows
   exact (RelCT.loop I step count).mono
@@ -620,7 +620,7 @@ theorem environmentSample_ok (env : SampleEnvironment) (layout : (p : Inputs) �
     · rw [(layout p).encode_length size]; exact outputs.privateWorkspace
     · rw [(layout p).encode_length size]; exact bytes
   have significant := scalar.slice (d := (layout p).lead) (k := (layout p).width) (layout p).width_bounds.1
-    (by rw [(layout p).encode_length size]; unfold ScalarLayout.width; have := (layout p).lead_lt; omega)
+    (by rw [(layout p).encode_length size]; unfold ScalarLayout.width; have := (layout p).lead_lt; omega_using [this])
   rw [List.take_of_length_le (by rw [List.length_drop, (layout p).encode_length size]; rfl)] at significant
   exact ⟨context, readyT.1, (readyT.2.number fits (by decide : 0 < 8)).trans modulus,
     (readyT.2.number fits (by decide : 4 < 8)).trans r2, scalar, significant, frame, rest⟩
@@ -770,7 +770,7 @@ theorem vetted_correct (backend : MontBackend) (s : State) {p : Inputs}
   have width : eb.length=(bits p+7)/8 := size.trans (CachedSample.layout_width p positive)
   have small := VG.Proof.Rsa.FixedBaseComb.rows_small bound
   exact correct backend s context cached calls stable h52 ready modulus odd r2 exponent size
-    (by omega) small.2 (by omega) (VG.Proof.Rsa.FixedBaseComb.rows_pos positive) scalarFit
+    (by omega_using [width]) small.2 (by omega_using [bound]) (VG.Proof.Rsa.FixedBaseComb.rows_pos positive) scalarFit
     (by
       intro r hr
       apply cached.tableSeparate r
@@ -906,12 +906,12 @@ theorem code_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {eb1 eb2
     have positiveBits : 0<bits p := CachedSample.bits_positive h.1.cached
     have boundBits : bits p≤8192 := CachedSample.bits_bound p
     have publicWidth : l.width=(bits p+7)/8 := CachedSample.layout_width p positiveBits
-    have widthBound : bits p≤8*l.width := by omega
-    have widthFit : bits p<2^31 := by omega
+    have widthBound : bits p≤8*l.width := by omega_using [publicWidth]
+    have widthFit : bits p<2^31 := by omega_using [boundBits]
     have bytesFit : l.width<2^32 := by
       have := l.width_bounds.2
       have := p.maxLength
-      omega
+      omega_using [boundBits, publicWidth]
     have scheduleFit := (VG.Proof.Rsa.FixedBaseComb.rows_small boundBits).2
     let K1 := CombExp.kernelAt backend p.base l.start (table p) sp0 p.len p.w l.width p.P p.G (bits p)
       eb1 size1 widthBound bytesFit scheduleFit widthFit fit1
@@ -935,7 +935,7 @@ theorem code_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {eb1 eb2
         (fun _ _ h => h))
       (fun a input => argsReady eb1 size1 a input)
       (fun a input => argsReady eb2 size2 a input)
-      (CombExp.phase_ct K1 K2 timing odd (VG.Proof.Rsa.FixedBaseComb.rows_pos positiveBits) (by omega))
+      (CombExp.phase_ct K1 K2 timing odd (VG.Proof.Rsa.FixedBaseComb.rows_pos positiveBits) (by omega_using [scheduleFit]))
     exact programCT s t tr1 tr2 u v h e1 e2
   intro s t tr1 tr2 u v h e1 e2
   exact family s.sp s t tr1 tr2 u v
@@ -1034,7 +1034,7 @@ theorem environmentCallTail_ok {env : SampleEnvironment} {layout : (p : Inputs) 
     rw [powerW, keyPower, VG.Proof.Bignum.powMod_eq]
     have large := ready.modulus
     rw [modulus] at large
-    exact Nat.lt_trans (Nat.mod_lt _ (by omega)) p.modulusBound
+    exact Nat.lt_trans (Nat.mod_lt _ (by omega_using [odd])) p.modulusBound
   rw [WP.seq_iff]
   refine WP.mono (exportResult_ok w contextW h4 h32 readyW.1
     (by rw [outputY]; exact ((outputs.publicBuffer.after restU).after restV).after restW)
@@ -1102,7 +1102,7 @@ theorem environmentCallPower_next {env : SampleEnvironment} {layout : (p : Input
   rw [value, VG.Proof.Bignum.powMod_eq]
   have large := h.1.1.ready.modulus
   rw [h.1.1.modulus] at large
-  exact Nat.lt_trans (Nat.mod_lt _ (by omega)) p.modulusBound
+  exact Nat.lt_trans (Nat.mod_lt _ (by omega_using [odd])) p.modulusBound
 
 theorem environmentCallTail_ct {env : SampleEnvironment} {layout : (p : Inputs) → ScalarLayout p}
     {power : Prog isa} (law : EnvironmentPowerLaw env layout power)
@@ -1193,7 +1193,7 @@ theorem stack_ok (backend : MontBackend) : FrameStack.armStack (code backend) �
     Nat.reduceAdd, Nat.reduceMul, Nat.max_self, Nat.max_zero, Nat.zero_max,
     prepareZero, sampleZero, chooseZero, oneZero, argsZero, importZero, rangeZero,
     publicRangeZero, exportZero, finishZero, failZero]
-  omega
+  omega_using [bound]
 
 end VG.Proof.Ffdh.Arm.CachedKeyGenerate
 end

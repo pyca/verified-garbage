@@ -62,7 +62,7 @@ theorem fixTlen_oneS {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n N : Nat} {T :
       s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
     intro d hd hd'
     rw [m]
-    exact Mem.readW_writeW_sep (Offset.sep W (by omega) (by have := L.ww; omega) (by have := L.ww; omega))
+    exact Mem.readW_writeW_sep (Offset.sep W (by omega_using [hd]) (by have := L.ww; omega_using [hd']) (by have := L.ww; omega_using []))
       (by decide)
   have fW : Frame [⟨W + BitVec.ofNat 64 192, 8⟩] s.mem s'.mem := by
     rw [m]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -95,8 +95,8 @@ theorem oneBlocks_aux (B : BlkFn M) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {
       (⟨W + BitVec.ofNat 64 216, 8⟩ : Region).Disjoint r := by
     intro r hr
     rcases List.mem_cons.mp hr with rfl | hr
-    · exact Offset.disjoint W (.inr (by decide)) (by have := L.ww; omega) (by have := L.ww; omega)
-    · exact ob_slots L hD (by have := h.dD.ok.lt; omega) t_w (by decide) (by decide) r hr
+    · exact Offset.disjoint W (.inr (by decide)) (by have := L.ww; omega_using []) (by have := L.ww; omega_using [])
+    · exact ob_slots L hD (by have := h.dD.ok.lt; omega_using []) t_w (by decide) (by decide) r hr
   rw [P.frame.readW (Region.contains_self _ _) d216 (by decide), haux]
 
 end

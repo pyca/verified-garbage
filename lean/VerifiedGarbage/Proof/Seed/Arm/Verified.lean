@@ -58,7 +58,7 @@ theorem ecbTaint_wf (dir : Spec.Seed.Direction) {s : State} (h : (ecbArm dir).pr
       List.Pairwise.nil]
     exact ⟨dDS, fun _ h => h.elim, trivial⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [toNat_addr] <;> omega
+    rintro r (rfl | rfl) <;> simp only [toNat_addr] <;> omega_arith
   · simp only [ecbTaint, List.mem_singleton] at hp; subst hp
     simp [VG.Arm.Taint.region, hwr]
 
@@ -83,15 +83,15 @@ theorem ecb_correct (dir : Spec.Seed.Direction) (s : State) (hs : (ecbArm dir).p
   refine ⟨t, s', he, ⟨fun r hr => ?_, VG.Arm.Exec.sp he⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
+  · exact h₁ 6 (by omega_using [])
+  · exact h₁ 7 (by omega_using [])
+  · exact h₁ 8 (by omega_using [])
 
 /-- A state satisfying the precondition (one block). -/
 def ecbSat : State where

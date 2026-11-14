@@ -39,7 +39,7 @@ theorem VKeep.scr {base : Addr} {s t : State} (h : VKeep base s t) (hs : Scr s b
 
 theorem Outside2.widen {base : Addr} {m m' : Mem} (h : Outside2 base 64 2816 ACC 512 m m') :
     Outside2 base 32 2848 ACC 512 m m' :=
-  fun p h1 h2 => h p (by rcases h1 with h1 | h1 <;> [exact Or.inl (by omega); exact Or.inr (by omega)]) h2
+  fun p h1 h2 => h p (by rcases h1 with h1 | h1 <;> [exact Or.inl (by omega_using [h1]); exact Or.inr (by omega_using [h1])]) h2
 
 theorem IKeep.toV {base : Addr} {s t : State} (h : IKeep base s t) : VKeep base s t :=
   ⟨h.regs.mono (fun _ hr => List.mem_cons_of_mem _ hr), Outside2.widen h.mem⟩

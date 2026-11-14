@@ -60,11 +60,11 @@ theorem result_live {F : Type _} [Lean.Grind.CommRing F] (E : Nat→F) :
   intro x hx i him
   apply ho (x+8*i) ((show ∀x∈live,∀i<4,Certificate.observe (x+8*i) by decide +kernel) x hx i him)
   · have ha := aligned.sl x (hu.sl x hx)
-    omega
+    omega_using [ha]
   · have hb := layout.le x (hu.sl x hx)
     change i<4 at him
     change x+32≤8192 at hb
-    omega
+    omega_using [him, hb]
 
  theorem double_ok
     (h129 : LinearCorrect (Impl.P256.Linear.linear129 960 928 960) 960 928 960 12 9)

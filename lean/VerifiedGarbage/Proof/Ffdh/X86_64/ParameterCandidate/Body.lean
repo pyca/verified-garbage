@@ -193,6 +193,6 @@ theorem body_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx s)
     refine WP.mono (testCandidate_ok M R K hv hdv (by omega_using [of_decide_eq_false havail]))
       fun t ⟨n, _, ht, hdt, hresult, hout, hs, _, kt⟩ => ?_
     exact ⟨p.k + n, ht, hdt, hv.base.nativeResult (by omega_using [of_decide_eq_false havail]) hresult,
-      hout, fun i hi => (hs i (by omega)).trans (hsavedv i hi), (kk.trans kt).mono (by decide)⟩
+      hout, fun i hi => (hs i (by omega_using [hi])).trans (hsavedv i hi), (kk.trans kt).mono (by decide)⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

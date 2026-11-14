@@ -57,7 +57,7 @@ theorem generator_frame_write {p : GeneratorSearchPlan} {m m' : Mem}
   have hn := ha ⟨p.core.F, frameBytes⟩ (by simp [GeneratorPlan.changed])
   change ¬ ofs p.core.F a < frameBytes at hn
   unfold frameBytes at hn
-  omega
+  omega_using [hn]
 
 theorem generator_done {p : GeneratorSearchPlan} {expected : Option Nat} {final : Nat} {initial : State}
     {used : Nat} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}

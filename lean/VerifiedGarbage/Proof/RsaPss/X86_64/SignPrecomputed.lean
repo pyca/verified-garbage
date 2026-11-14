@@ -71,7 +71,7 @@ def SJPP (H : Hash) (s t : State) : Prop :=
 
 theorem sjp_of {s t : State} (h : SJPP H s t) : SJP H s t :=
   let ⟨v, hrd, hM, ha, di, si, dx, cx, r8, r9⟩ := h
-  ⟨v, hrd, hM, fun i hi => by rw [ha i (by omega)]; simp only [pArgP, hi, ↓reduceIte], di, si, dx, cx, r8, r9⟩
+  ⟨v, hrd, hM, fun i hi => by rw [ha i (by omega_using [hi])]; simp only [pArgP, hi, ↓reduceIte], di, si, dx, cx, r8, r9⟩
 
 theorem cprivP_ct : RelCT isa (Two fun a t => SAt tsH tsG XP (CJT H) a t ∧ isa.eval .e t = some false)
     (.block privArgsP) (Two (SAt tsH tsG XP (SJPP H))) := by
@@ -104,7 +104,7 @@ theorem leak_entry {s t : State} (hq : PreP s) (hsp : t.gpr .rsp = fb s) (hM : F
     Spec.Rsa.privatePrecomputedLeak (t.callEntry.withRegions rd wr).mem (stackArg s 18) (s.gpr .rcx).toNat =
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 18) (s.gpr .rcx).toNat := by
   have hle : Spec.Rsa.precomputedWords (s.gpr .rcx).toNat ≤ (stackArg s 19).toNat := by
-    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, State.withRegions_mem]
   rw [← VG.Proof.Rsa.wordsAt_take _ _ hle, ← VG.Proof.Rsa.wordsAt_take _ _ hle,
     wordsP_of_frame hq (frame_entry hsp hM)]
@@ -121,7 +121,7 @@ theorem scallP_ct (c : CrtImpl) :
     have e : ∀ {s t : State}, SPre tsH tsG s → SS H s t [] [] (fun _ _ => True) →
         (∀ i < 16, word t.mem (fb s) (8 * i) = pArgP s i) → ∀ i, i < 16 → 14 ≤ i →
         stackArg (t.callEntry.withRegions (pRdP s) (pWr s)) i = stackArg s (i + 4) := fun hp v ha i hi hi' => by
-      rw [stackArg_call hp v.L.rsp _ _ hi, ha i hi]; simp only [pArgP]; rw [ifn (by omega)]
+      rw [stackArg_call hp v.L.rsp _ _ hi, ha i hi]; simp only [pArgP]; rw [ifn (by omega_using [hi'])]
     have kx : ∀ {s t : State}, t.gpr .rcx = s.gpr .rcx →
         (t.callEntry.withRegions (pRdP s) (pWr s)).gpr .rcx = s.gpr .rcx := fun h => by
       rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h]
@@ -139,7 +139,7 @@ theorem scallP_ct (c : CrtImpl) :
     have hp := S.ps
     obtain ⟨hc, hcw⟩ := privP_covers hp S.x.1 hrd v.wr
     have h14 : ∀ i < 14, word t.mem (fb s) (8 * i) = pArg s i := fun i hi => by
-      rw [ha i (by omega)]; simp only [pArgP, hi, ↓reduceIte]
+      rw [ha i (by omega_using [hi])]; simp only [pArgP, hi, ↓reduceIte]
     refine X86_64.WP.mono_syms (privWith_call (k := chkContractP) (fun _ _ h => h) (privCodeP_ok c)
       (SpSafe.of_all (privCodeP_spSafe c)) (privCodeP_depth c) hp v.L.rsp hM h14 di dx cx r8 r9
       (privP_pre hp S.x.1 v.L.rsp hM ha di si dx cx r8 r9) hc hcw)
@@ -311,7 +311,7 @@ theorem psign_pre_of {tsH tsG : List FnTable} {D : Nat} (hD : D ≤ 64) {s : Sta
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, signStack, stackArgs_twenty, List.append_eq, Sig.tableRegion]
   have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
-  have hD' : (BitVec.ofNat 64 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega
+  have hD' : (BitVec.ofNat 64 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * (j + 1)) := fun j => by
     simp only [stackArgAddr, hsp]
   simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),
@@ -336,8 +336,8 @@ theorem psign_pre_of {tsH tsG : List FnTable} {D : Nat} (hD : D ≤ 64) {s : Sta
     | exact hd
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (rw [hD']; rfl)
-    | (rw [hD']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
-    | (rw [hD']; simp; omega)
+    | (rw [hD']; apply Region.disjoint_of_sep; simp [Region.sep]; omega_using [hD])
+    | (rw [hD']; simp; omega_using [hD])
     | (simp; omega)
     | skip
 
@@ -352,7 +352,7 @@ theorem psign_sat_of {w : MdHash} (hw : w ∈ vs) (hl : (allNames vs).length < 2
       have hA := MdHashTable.X86_64.hashAt_tableOf
         (MdHashTable.X86_64.held_tableOf (withTabs_heldH (preState D) vs w)).2.2.2.1
       cases hH.symm.trans hA
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hlen])
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD]), hlen])
     (withTabs_key _ (preState_key D))
 
 theorem preSat (hok : OK vs) : ∃ s, (pspec (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)).pre s := by
@@ -451,8 +451,8 @@ theorem signPrecomputed_postOut (tsH tsG : List FnTable) :
     simp only [Spec.RsaPss.signPrecomputedMdTableSig, Sig.bufs, List.mem_cons, forall_eq_or_imp] at hb
     have hol : outLen.toNat = nLen.toNat := hpre.2.1
     have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
-      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
-        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
+      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega_using [hol])
+        (by have := outLen.isLt; simp only [Elem.size]; omega_using []) hb.1
     intro H G hH hG
     have h' : Spec.Rsa.writtenOutcome m₁ out nLen.toNat r _ := h H G hH hG
     show Spec.Rsa.writtenOutcome m₂ out nLen.toNat r _

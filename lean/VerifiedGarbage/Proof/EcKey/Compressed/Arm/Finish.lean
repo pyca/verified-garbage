@@ -128,30 +128,30 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have hF := sl_le c h7 (i := FLAG) (by decide)
   generalize hout64 : State.addr o32 = out at hw hd ⊢
   have hdsc : Region.Disjoint ⟨off base (c.sl E), 8 * c.n⟩ ⟨out + BitVec.ofNat 64 1, c.C.len⟩ :=
-    (hd.symm.sub_left (Offset.sub_base base hX)).sub_right (Offset.sub_base out (d := 1) (by omega))
+    (hd.symm.sub_left (Offset.sub_base base hX)).sub_right (Offset.sub_base out (d := 1) (by omega_using []))
   have hscd : Region.Disjoint ⟨base, size⟩ ⟨out + BitVec.ofNat 64 1, c.C.len⟩ :=
-    hd.symm.sub_right (Offset.sub_base out (d := 1) (by omega))
+    hd.symm.sub_right (Offset.sub_base out (d := 1) (by omega_using []))
   have h16 : ∀ rd ∈ Cfg.saved, ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 :=
     fun rd hrd w hw => by
       have := saved_lt rd hrd
       simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega_arith)
   rw [finish_eq]
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := c.sl FLAG) (n := 4) (by omega))
+  refine wp_ldr (hs.off_lt (by omega_using [hn0, hF])) (hs.ea (by omega_using [hn0, hF])) (hs.read (d := c.sl FLAG) (n := 4) (by omega_using [hn0, hF]))
     fun s₁ u₁ => ?_
   have k₁ := u₁.rest (ws := [.r10]) (by simp)
   have hs₁ := hs.of_rest k₁ (by decide)
   have hb₁ : s₁.gpr .lr = o32 := (k₁.gpr _ (by decide)).trans hlr
-  refine VG.Proof.X25519.Arm.WP.append (tag_ok hs₁ (by omega) hb₁ (by omega)
-    (by rw [k₁.wr, hout64]; exact ⟨_, hw, by simpa using Offset.contains_base out (d := 0) (n := 1) (by omega) (by decide)⟩)
+  refine VG.Proof.X25519.Arm.WP.append (tag_ok hs₁ (by omega_using [hn0, hY]) hb₁ (by omega_using [])
+    (by rw [k₁.wr, hout64]; exact ⟨_, hw, by simpa using Offset.contains_base out (d := 0) (n := 1) (by omega_using []) (by decide)⟩)
     b (by rw [u₁.gpr, ← flagW, hf]) hn0) fun s₄ ⟨L₄, O₄, k₄⟩ => ?_
   rw [hout64] at L₄ O₄
   simp only [sv, u₁.mem] at L₄
   have hs₄ := hs₁.of_rest k₄ (by decide)
-  have U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega)))
+  have U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_using [])))
   have hb₄ : s₄.gpr .lr = o32 := (k₄.gpr _ (by decide)).trans hb₁
   have hc₄ : s₄.gpr .r10 = mask32 (b = true) := by rw [k₄.gpr _ (by decide), u₁.gpr, ← flagW, hf]
   have x₄ : wordsVal s₄.mem base (c.sl E) c.n = sv c base s E := by
-    rw [U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), u₁.mem]
+    rw [U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [hX]) (by omega_using [hn, hX]), u₁.mem]
   -- `x`, from `out + 1`.
   refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₄ (dst := .lr) (d := 1) (a := c.sl E) (by decide)
     (by decide) b hc₄ hX (by omega_arith) hlhi (by rw [hb₄]; omega_arith) (by omega_arith) (fun e m he => ⟨_, by rw [k₄.wr, k₁.wr]; exact hw, by
@@ -163,7 +163,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have U₅ := O₅.unch_far hscd
   have hsv₆ : ∀ rd ∈ Cfg.saved, s₅.mem.readW (off base rd.2) 32 = g rd.1 := fun rd hrd => by
     have := saved_lt rd hrd
-    rw [Unch.readW32 U₅ (h16 rd hrd) (by omega), Unch.readW32 U₄ (h16 rd hrd) (by omega),
+    rw [Unch.readW32 U₅ (h16 rd hrd) (by omega_using [this]), Unch.readW32 U₄ (h16 rd hrd) (by omega_using [this]),
       u₁.mem, hsv rd hrd]
   -- The return value and the callee-saved registers.
   refine wp_dp (op2_imm (by decide)) fun s₇ u₇ => ?_
@@ -175,7 +175,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     (fun p hp => (saved_r12 p hp).1)) fun s' ⟨m', K', V'⟩ => ⟨?_, ?_, fun rd hrd => ?_, ?_, ?_⟩
   · have lead : Spec.Ecdsa.bytesAt s₅.mem out 1 =
         [if b then BitVec.ofNat 8 (2 + sv c base s QY % 2) else 0] := by
-      rw [bytesAt_keep O₅ (Offset.base_disjoint out (by omega) (by omega)) (by omega) (by omega)]
+      rw [bytesAt_keep O₅ (Offset.base_disjoint out (by omega_using []) (by omega_using [hofit])) (by omega_using [hofit]) (by omega_using [])]
       simpa [sv, Spec.Ecdsa.bytesAt] using congrArg (· :: []) L₄
     rw [m', u₇.mem, bytesAt_add, lead, e₅]
     cases b
@@ -187,7 +187,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   · exact (k₁.mono (by simp)).trans ((k₄.mono (by simp)).trans
       ((k₅.mono (by simp)).trans ((u₇.rest (by simp)).trans (K'.mono (by decide)))))
   · rw [m', u₇.mem, ← u₁.mem]
-    exact (O₄.mono (Nat.zero_le _) (by omega)).trans
-      ((outside_shift O₅ (by omega)).mono (Nat.zero_le _) (by omega))
+    exact (O₄.mono (Nat.zero_le _) (by omega_using [])).trans
+      ((outside_shift O₅ (by omega_using [hofit])).mono (Nat.zero_le _) (by omega_using []))
 
 end VG.Proof.EcKey.Compressed.Arm

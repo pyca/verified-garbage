@@ -61,8 +61,8 @@ theorem SS.ldK {G : GP} {STK : Nat} {σ s : State} {c : Cfg} (h : SS G STK σ c 
     WP isa (.block (ld t o :: rest)) s Q := by
   have hE := h.gi.hEnd_le
   refine WP.cons (s' := s.write t v) ?_ (k _ (h.of_upd (Upd.write _ _ _) rfl ht) (Upd.write _ _ _))
-  rw [show ld t o = .load .d t .r28 o from rfl, exec_load_d (by decide) ⟨by simp only [hEnd, fSave] at ho; omega,
-    by omega⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega)), h.gi.r28, ← hv]
+  rw [show ld t o = .load .d t .r28 o from rfl, exec_load_d (by decide) ⟨by simp only [hEnd, fSave] at ho; omega_using [ho],
+    by omega_using [h8]⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega_using [ho, hE])), h.gi.r28, ← hv]
 
 /-! ## Header words as pieces -/
 
@@ -80,8 +80,8 @@ theorem ld_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ σ 
   have hE := h.gi.hEnd_le
   refine WP.cons (s' := s.write r x) ?_ (WP.block_nil (k σ s _ hs (h.of_upd (Upd.write _ _ _) rfl hr)
     (Upd.write _ _ _)))
-  rw [show ld r o = .load .d r .r28 o from rfl, exec_load_d (by decide) ⟨by simp only [hEnd, fSave] at ho; omega,
-    by omega⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega)), h.gi.r28, ← hx σ s hs]
+  rw [show ld r o = .load .d r .r28 o from rfl, exec_load_d (by decide) ⟨by simp only [hEnd, fSave] at ho; omega_using [ho],
+    by omega_using [h8]⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega_using [ho, hE])), h.gi.r28, ← hx σ s hs]
 
 /-- A store into a variable word of the header. -/
 theorem st_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ σ s, P σ s → SS G STK σ (c σ) s)
@@ -122,7 +122,7 @@ theorem cmpF_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ �
   have hE := h.gi.hEnd_le
   refine WP.cons (s' := s.write .r3 x) ?_ ?_
   · rw [show ld .r3 o = .load .d .r3 .r28 o from rfl, exec_load_d (by decide)
-      ⟨by simp only [hEnd, fSave] at ho; omega, by omega⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega)),
+      ⟨by simp only [hEnd, fSave] at ho; omega_using [ho], by omega_using [h8]⟩ (by rw [h.gi.r28]; exact h.gi.inRdWr (by omega_using [ho, hE])),
       h.gi.r28, ← hx σ s hs]
   refine WP.wr (exec_subi (by decide) hv) fun t u sp _ => WP.block_nil ?_
   have u₀ : Upd s (s.write .r3 x) .r3 x := Upd.write _ _ _
@@ -147,8 +147,8 @@ theorem ltR_ok {s : State} {rest : List Instr} {Q : State → Prop} {x y : BitVe
     have hx := x.isLt
     have hy := y.isLt
     by_cases hl : x.toNat < y.toNat
-    · simp [show ¬(2 ^ 64 ≤ x.toNat + (2 ^ 64 - 1 - y.toNat) + 1) by omega, hl]
-    · simp [show 2 ^ 64 ≤ x.toNat + (2 ^ 64 - 1 - y.toNat) + 1 by omega, hl]
+    · simp [show ¬(2 ^ 64 ≤ x.toNat + (2 ^ 64 - 1 - y.toNat) + 1) by omega_using [hl], hl]
+    · simp [show 2 ^ 64 ≤ x.toNat + (2 ^ 64 - 1 - y.toNat) + 1 by omega_using [hl], hl]
 
 /-- `ld r3, o(r28); li r4, v; ltR`: `r0 = 0` iff the header word `o`, which
 both runs know, is below `v`. -/
@@ -169,7 +169,7 @@ theorem ltF_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ σ
   refine k σ s t hs (h₂.of_keep K m sp) ⟨fun r hr => ?_, by rw [K.2.1, u₂.rd, u₁.rd], by rw [K.2.2, u₂.wr, u₁.wr]⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [K.gpr (by simpa using hr.1), u₂.other _ hr.2.2, u₁.other _ hr.2.1]
-  · rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv])]
 
 /-- An instruction that writes one register other than `r28` keeps a stage. -/
 theorem SS.wrK {σ s : State} {c : Cfg} (h : SS G STK σ c s) {i : Instr} {d : Reg} {v : BitVec 64}
@@ -188,7 +188,7 @@ theorem shl_ok {σ s : State} {c : Cfg} (h : SS G STK σ c s) {r : Reg} (hr : r 
   rw [u₂.gpr, u₁.gpr]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega)]
+  rw [Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega_using [hv])]
 
 /-- `ld r3, o(r28); shl r4 v sh; ltR`: `r0 = 0` iff the header word `o` is
 below `v · 2^sh`. -/

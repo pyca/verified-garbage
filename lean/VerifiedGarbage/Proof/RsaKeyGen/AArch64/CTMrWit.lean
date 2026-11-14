@@ -74,10 +74,10 @@ theorem witBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {rp : Addr
           have h0₃ : s₃.gpr .x0 = B := ((k₂.trans k₃).gpr .x0 (by decide)).trans h.x0
           have hs₃ := h.scr.congr (k₂.trans k₃).wr
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_using [hi, this])
           brun [h0₃, hdr_enc (show kRand < 32 by decide), hdr_enc (show kUsed < 32 by decide),
             hdr_enc (show kLen < 32 by decide), m₃, m₂, hl₃ kRand (by decide), hl₃ kUsed (by decide),
-            hl₃ kLen (by decide), hs₃.st (d := 8 * kUsed) (by have := h.h256; simp only [kUsed, sFn]; omega),
+            hl₃ kLen (by decide), hs₃.st (d := 8 * kUsed) (by have := h.h256; simp only [kUsed, sFn]; omega_using [this]),
             hR, hU, hK])
         (by decide) (by decide) (by decide +kernel))
       fun t ⟨⟨h1, h2⟩, k₄⟩ r hr => by
@@ -102,7 +102,7 @@ theorem zeroAX_ct : RelCT isa (Two WA) (zeroA aX) (Two WA) := by
   have f : Frm p.L.B [(slot p.L.w aX, 8 * (p.L.w + 2))] s.mem t.mem := Frm.of_outside o (List.mem_singleton_self _)
   have hh : ∀ i < 32, word t.mem p.L.B (8 * i) = word s.mem p.L.B (8 * i) := fun i hi =>
     f.word_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Or.inl (hdr_lt_slot p.L.w aX hi)) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Or.inl (hdr_lt_slot p.L.w aX hi)) (by omega_using [hi])
   exact ⟨hw.congr' f (by msb_mut) k (by decide), (hh _ (by decide)).trans hR, (hh _ (by decide)).trans hU,
     (hh _ (by decide)).trans hK, bs, hsrc.congrK (InScr.of_frm f (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact sX)) k, hbl⟩

@@ -23,8 +23,8 @@ theorem cacheLoadStep_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat}
     WP isa (.block [ld (cacheReg i) (a + 8 * i)]) s fun t =>
       t.gpr (cacheReg i) = word s.mem base (a + 8 * i) ∧
       t.mem = s.mem ∧ Keeps [cacheReg i] s t := by
-  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega, by omega⟩
-  have al := hs.read (d := a + 8 * i) (n := 8) (by omega)
+  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega_using [ha8], by omega_using [ha, hi]⟩
+  have al := hs.read (d := a + 8 * i) (n := 8) (by omega_using [ha, hi])
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, and_self, State.load, hs.x3, al, ite_true, Option.map_some,
@@ -53,8 +53,8 @@ theorem loadCached_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat}
     · subst i; rw [uf, tm]
     · rw [uk.1 _ (by
         simp only [List.mem_singleton]
-        intro e; exact h ((cacheReg_inj (by omega) hn).1 e))]
-      exact tf i (by omega)
+        intro e; exact h ((cacheReg_inj (by omega_using [hn, hi]) hn).1 e))]
+      exact tf i (by omega_using [hi, h])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hi => by omega, rfl, Keeps.refl _ _⟩
 

@@ -17,8 +17,8 @@ def phaseRegions (p : WitnessParams) (sp : BitVec 32) : List Region :=
 private theorem local_sub {s : State} {d : Nat} (stack : Workspace s s.sp 72)
     (lower : 40 ≤ d) (upper : d + 4 ≤ 68) :
     (⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩ : Region).Sub ⟨State.addr (s.sp + 40#32), 28⟩ := by
-  rw [VG.Arm.addr_add (by have := stack.nowrap; omega), VG.Arm.addr_add (by have := stack.nowrap; omega)]
-  exact Offset.sub _ lower (by omega)
+  rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [upper, this]), VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
+  exact Offset.sub _ lower (by omega_using [upper])
 
 theorem phase_preparation_frame {s t : State} {p : WitnessParams} (stack : Workspace s s.sp 72)
     (changed : Frame [⟨State.addr p.base, 8 * p.capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩,

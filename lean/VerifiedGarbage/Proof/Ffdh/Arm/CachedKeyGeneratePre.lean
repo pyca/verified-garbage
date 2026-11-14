@@ -31,7 +31,7 @@ theorem cachedKeyGenerate_plain_pre (s : State)
     simpa only [VG.Proof.Mont.off,BitVec.add_zero] using Offset.sub_base (stackArgAddr s 0) (by decide : 0+28≤36)
   sig_pre [Spec.Ffdh.generateKeyContract, Spec.Ffdh.generateKeySig, abi, argRegs,
     reduceClassify, Loc.val, State.addr]
-  exact ⟨stackFit,by omega,rfl,wr,xY,xDom,xRand,xS,
+  exact ⟨stackFit,by omega_using [argFit],rfl,wr,xY,xDom,xRand,xS,
     xArgs.sub_right inner,yDom,yRand,yS,yArgs.sub_right inner,domS,randS,sArgs.sub_right inner,
     stackX,stackY,stackDom,stackRand,stackS,stackArgs.sub_right inner,
     xFit,yFit,domFit,randFit,sFit,bounds,domainLen,xLen,yLen,rLen,space⟩

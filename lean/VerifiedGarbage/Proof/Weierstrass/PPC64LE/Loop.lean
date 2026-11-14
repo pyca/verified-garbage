@@ -32,15 +32,15 @@ theorem countLoop_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State
   refine WP.loop (M := isa) (fun j s => 1 ≤ j ∧ j ≤ n ∧ Inv j s) (fun j s ⟨h1, h2, hi⟩ => ?_) n s
     ⟨hn, Nat.le_refl _, hs⟩
   refine WP.mono (hstep j s h1 h2 hi) fun s' hi' => ?_
-  have he := eval_nonzero_ofNat (hr _ _ hi') (x := j - 1) (by omega)
+  have he := eval_nonzero_ofNat (hr _ _ hi') (x := j - 1) (by omega_using [hn64, h2])
   by_cases hj : j - 1 = 0
   · exact .inl ⟨by rw [he]; simp [hj], hQ s' (by rw [hj] at hi'; exact hi')⟩
-  · exact .inr ⟨by rw [he]; simp [hj], j - 1, by omega, by omega, by omega, hi'⟩
+  · exact .inr ⟨by rw [he]; simp [hj], j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
 
 theorem ofNat_pred64 {j : Nat} (hj : 1 ≤ j) : BitVec.ofNat 64 j - BitVec.ofNat 64 1 = BitVec.ofNat 64 (j - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [hj]
 
 /-- `r31 -= 1`. -/
 theorem wp_decCounter {is : List Instr} {s : State} {Q : State → Prop} {j : Nat} (hj : 1 ≤ j)

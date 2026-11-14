@@ -50,12 +50,12 @@ abbrev scrLen (p : Params) : Nat := scratchWords p * 8
 theorem PFacts.scr {p : Params} (hF : PFacts p) : 1024 * (p.k * p.ℓ + p.ℓ + p.k + 3) + 36864 ≤ scrLen p ∧
     scrLen p < 2 ^ 31 := by
   have := hF.k; have := hF.l; have := hF.kl
-  simp only [scrLen, scratchWords]; omega
+  simp only [scrLen, scratchWords]; omega_arith
 
 theorem PFacts.lens {p : Params} (hF : PFacts p) : p.pkLen < 32768 ∧ p.skLen < 32768 ∧ oT0 p + 416 * p.k ≤ p.skLen := by
   have := hF.k; have := hF.l
-  refine ⟨by rw [hF.pk]; omega, ?_, by rw [hF.sk]⟩
-  rw [hF.sk]; rcases hF.eta with ⟨_, he⟩ | ⟨_, he⟩ <;> simp only [oT0, he] <;> omega
+  refine ⟨by rw [hF.pk]; omega_arith, ?_, by rw [hF.sk]⟩
+  rw [hF.sk]; rcases hF.eta with ⟨_, he⟩ | ⟨_, he⟩ <;> simp only [oT0, he] <;> omega_arith
 
 /-! ## The precondition -/
 
@@ -114,7 +114,7 @@ theorem lay_ok {p : Params} {STK : Nat} {σ : State} (hp : Pre p STK σ) : OkW (
   have es : (⟨σ.sp - BitVec.ofNat 64 STK, STK⟩ : Region) = below σ.sp STK := rfl
   refine ⟨fun i hi => ?_, fun i hi j hj hij _ => ?_⟩
   · simp only [lay, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_c
     · show (σ.sp - BitVec.ofNat 64 STK).toNat + STK ≤ 2 ^ 64
       have := hp.stk; have := σ.sp.isLt; bv_omega
@@ -122,8 +122,8 @@ theorem lay_ok {p : Params} {STK : Nat} {σ : State} (hp : Pre p STK σ) : OkW (
     · exact hp.f_p
     · exact hp.f_s
   · simp only [lay, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, lay, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · rw [es]; exact hp.b_c.symm

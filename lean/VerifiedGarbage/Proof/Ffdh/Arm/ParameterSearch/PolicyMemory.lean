@@ -33,11 +33,11 @@ theorem terminalMem_high (m : Mem) (base : BitVec 32) (status j : Nat) (hj : j <
     (terminalMem m base status).readW (off (State.addr base) (8 * j + 4)) 32 =
       if j = 0 ∨ j = 3 then 0 else m.readW (off (State.addr base) (8 * j + 4)) 32 := by
   unfold terminalMem
-  rw [highWord_store (i := 13) _ _ _ (by decide) (by omega),
-    highStore_high (i := 3) _ _ _ (by decide) (by omega),
-    highWord_store (i := 3) _ _ _ (by decide) (by omega),
-    highStore_high (i := 0) _ _ _ (by decide) (by omega),
-    highWord_store (i := 0) _ _ _ (by decide) (by omega)]
+  rw [highWord_store (i := 13) _ _ _ (by decide) (by omega_using [hj]),
+    highStore_high (i := 3) _ _ _ (by decide) (by omega_using [hj]),
+    highWord_store (i := 3) _ _ _ (by decide) (by omega_using [hj]),
+    highStore_high (i := 0) _ _ _ (by decide) (by omega_using [hj]),
+    highWord_store (i := 0) _ _ _ (by decide) (by omega_using [hj])]
   by_cases h0 : j = 0 <;> by_cases h3 : j = 3 <;> simp [h0, h3]
 
 theorem requestMem_low (m : Mem) (base : BitVec 32) (request j : Nat) (hj : j < 16) :
@@ -52,9 +52,9 @@ theorem requestMem_high (m : Mem) (base : BitVec 32) (request j : Nat) (hj : j <
     (requestMem m base request).readW (off (State.addr base) (8 * j + 4)) 32 =
       if j = 3 then 0 else m.readW (off (State.addr base) (8 * j + 4)) 32 := by
   unfold requestMem
-  rw [highWord_store (i := 13) _ _ _ (by decide) (by omega),
-    highStore_high (i := 3) _ _ _ (by decide) (by omega),
-    highWord_store (i := 3) _ _ _ (by decide) (by omega)]
+  rw [highWord_store (i := 13) _ _ _ (by decide) (by omega_using [hj]),
+    highStore_high (i := 3) _ _ _ (by decide) (by omega_using [hj]),
+    highWord_store (i := 3) _ _ _ (by decide) (by omega_using [hj])]
   rfl
 
 theorem requestMem_frame (m : Mem) (base : BitVec 32) (request : Nat) :
@@ -81,12 +81,12 @@ theorem terminalMem_word (m : Mem) (base : BitVec 32) (status j : Nat) (hj : j <
   by_cases zero : j = 0 ∨ j = 3
   · rw [ite_eq_left zero]
     exact VG.Proof.Ffdh.Arm.KeySearch.packedWord _ _ _ 0 (by decide)
-      (by rw [terminalMem_low _ _ _ _ (by omega)]; simp [zero, show j ≠ 13 by omega])
+      (by rw [terminalMem_low _ _ _ _ (by omega_using [hj])]; simp [zero, show j ≠ 13 by omega_using [hj]])
       (by rw [terminalMem_high _ _ _ _ hj]; simp [zero])
   · rw [ite_eq_right zero]
     apply word_eq
-    · rw [terminalMem_low _ _ _ _ (by omega)]
-      simp [zero, show j ≠ 13 by omega]
+    · rw [terminalMem_low _ _ _ _ (by omega_using [hj])]
+      simp [zero, show j ≠ 13 by omega_using [hj]]
     · rw [terminalMem_high _ _ _ _ hj, ite_eq_right zero]
 
 theorem requestMem_word (m : Mem) (base : BitVec 32) (request j : Nat) (hj : j < 4)
@@ -96,12 +96,12 @@ theorem requestMem_word (m : Mem) (base : BitVec 32) (request j : Nat) (hj : j <
   by_cases three : j = 3
   · rw [ite_eq_left three]
     exact VG.Proof.Ffdh.Arm.KeySearch.packedWord _ _ _ request fit
-      (by rw [requestMem_low _ _ _ _ (by omega)]; simp [three])
+      (by rw [requestMem_low _ _ _ _ (by omega_using [hj])]; simp [three])
       (by rw [requestMem_high _ _ _ _ hj]; simp [three])
   · rw [ite_eq_right three]
     apply word_eq
-    · rw [requestMem_low _ _ _ _ (by omega)]
-      simp [three, show j ≠ 13 by omega]
+    · rw [requestMem_low _ _ _ _ (by omega_using [hj])]
+      simp [three, show j ≠ 13 by omega_using [hj]]
     · rw [requestMem_high _ _ _ _ hj, ite_eq_right three]
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

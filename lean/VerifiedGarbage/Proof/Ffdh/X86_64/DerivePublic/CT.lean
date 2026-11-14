@@ -113,8 +113,8 @@ private theorem zero_regs (p : KpP) (s : State) (h : D0 p s) :
       t.gpr .rcx = BitVec.ofNat 64 p.k) (by
     unfold zeroLoads
     xrun [State.ea, hdr, hd, hdrOff,
-      hb.scr.ld (d := 8 * sY) (by change 160 ≤ p.Z; omega),
-      hb.scr.ld (d := 8 * sK) (by change 152 ≤ p.Z; omega),
+      hb.scr.ld (d := 8 * sY) (by change 160 ≤ p.Z; omega_using [hZ]),
+      hb.scr.ld (d := 8 * sK) (by change 152 ≤ p.Z; omega_using [hZ]),
       hb.hdr (sY, p.yp) (by simp [KpP.headers]),
       hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])]) rfl)
     fun t ⟨⟨hy, hk⟩, _⟩ r hr => ?_

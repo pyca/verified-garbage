@@ -98,7 +98,7 @@ theorem open_head {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ 
   obtain ⟨t1, t16⟩ := tagLenOk_bounds hok
   have dW : ∀ {d k : Nat}, d + k ≤ 768 → (164 ≤ d ∨ d + k ≤ 128) →
       (savedR (arg s₀ 5)).Disjoint ⟨State.addr (arg s₀ 5) + BitVec.ofNat 64 d, k⟩ :=
-    fun h₁ h₂ => Lay.w_w (by omega) (by decide) h₁
+    fun h₁ h₂ => Lay.w_w (by omega_using [h₂]) (by decide) h₁
   refine WP.seq (WP.mono (oneAad_ok h (by decide) h2) fun s₃ oa => ?_)
   obtain ⟨k7, he₃⟩ := oa.env
   refine WP.seq (WP.mono (oneTag_ok h (by decide) (o := 112) (.inr rfl) he₃ oa.args oa.hH (length_bytesAt _ _ _).symm
@@ -200,14 +200,14 @@ theorem open_head {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ 
   have sub₃ : ∀ r ∈ [savedR (arg s₀ 5)] ++ j0Frame (oSt s₀ 5) (arg s₀ 5) s₀.sp, r ∈ rs := fun r hr => by
     simp only [rs, List.mem_append] at hr ⊢; exact .inl (.inl hr)
   have hD₃ : bytesAt s₃.mem (State.addr (arg s₀ 1)) (arg s₀ 2).toNat = dat :=
-    bytesAt_frame F₃ (fun r hr => dD r (sub₃ r hr)) (by omega)
+    bytesAt_frame F₃ (fun r hr => dD r (sub₃ r hr)) (by omega_using [])
   have hT₄ : bytesAt s₄.mem (State.addr (arg s₀ 5) + BitVec.ofNat 64 112) 16 = fullTag ciph H iv aad dat := by
     rw [ot.out, hD₃, ciph_keep F₃ (fun r hr => dC r (sub₃ r hr)), oa.j, ← Proof.Gcm.fullTag_eq]
   have F₄ : Frame ([savedR (arg s₀ 5)] ++ j0Frame (oSt s₀ 5) (arg s₀ 5) s₀.sp ++ otFrame (oSt s₀ 5) (arg s₀ 5) s₀.sp 112)
       s₀.mem s₄.mem :=
     (F₃.mono fun r hr => List.mem_append_left _ hr).trans (ot.frame.mono fun r hr => List.mem_append_right _ hr)
   have hR₀ : bytesAt s₄.mem (State.addr (arg s₀ 3)) tl = tag₀ := by
-    refine bytesAt_frame F₄ (fun r hr => ?_) (by omega)
+    refine bytesAt_frame F₄ (fun r hr => ?_) (by omega_using [])
     have hst := oSt_addr h
     have z : ∀ {d k : Nat}, d + k ≤ 768 → 16 ≤ d →
         (⟨State.addr (arg s₀ 3), tl⟩ : Region).Disjoint ⟨State.addr (arg s₀ 5) + BitVec.ofNat 64 d, k⟩ :=
@@ -232,7 +232,7 @@ theorem open_head {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ 
       bytesAt s₆.mem (State.addr (arg s₀ 5) + BitVec.ofNat 64 256) 16) ↔ (fullTag ciph H iv aad dat).take tl = tag₀ := by
     rw [hb₆, k₅.mem, hR₀, bytesAt_frame hf₆ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega)) (by omega) (by decide))
-        (by omega), k₅.mem, bytesAt_take _ _ t16, hT₄, List.append_cancel_right_eq]
+        (by omega_using []), k₅.mem, bytesAt_take _ _ t16, hT₄, List.append_cancel_right_eq]
   let X : Prop := bytesAt s₆.mem (State.addr (arg s₀ 5) + BitVec.ofNat 64 112) tl ++ zeros (16 - tl) =
       bytesAt s₆.mem (State.addr (arg s₀ 5) + BitVec.ofNat 64 256) 16
   obtain ⟨s₈, run₈, h7₈, hz₈, g₈, k₈⟩ : ∃ s₈, runBlock isa [.mov .r7 (.reg .r0), .cmp .r0 (imm 0)] s₇ = some s₈ ∧
@@ -254,7 +254,7 @@ theorem open_head {s₀ s₂ : State} (ho : openPreArm s₀) (h2 : SO1 6 5 s₀ 
     ((((ot.args.of_eq k₅.mem k₅.sp k₅.rd k₅.wr).frame spf hf₆ (dA6 (by decide)) sp₆ rd₆ wr₆).frame spf hf₇
       (dA6 (by decide)) sp₇ rd₇ wr₇).of_eq k₈.mem k₈.sp k₈.rd k₈.wr)
   have F₈ : Frame rs s₀.mem s₈.mem := by rw [k₈.mem]; exact F₇
-  have hdat₈ : bytesAt s₈.mem (State.addr (arg s₀ 1)) (arg s₀ 2).toNat = dat := bytesAt_frame F₈ dD (by omega)
+  have hdat₈ : bytesAt s₈.mem (State.addr (arg s₀ 1)) (arg s₀ 2).toNat = dat := bytesAt_frame F₈ dD (by omega_using [])
   have hc₈ : ciphOf s₈.mem (State.addr (s₀.gpr .r0)) = ciph := ciph_keep F₈ dC
   have hcb₈ : blockAt s₈.mem (State.addr (oSt s₀ 5) + BitVec.ofNat 64 48) = inc32 (j0 H iv) := by
     have F₃₈ : Frame (otFrame (oSt s₀ 5) (arg s₀ 5) s₀.sp 112 ++
@@ -379,7 +379,7 @@ theorem open_wp {s₀ : State} (h : openArm.pre s₀) :
     show bytesAt s₃.mem _ _ = _
     exact bytesAt_frame h3.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact h'.2.2.2.2.2.2.2.2.1.sub_right (Lay.wSub (by decide))) (by omega)
+      exact h'.2.2.2.2.2.2.2.2.1.sub_right (Lay.wSub (by decide))) (by omega_using [])
   refine WP.seq (WP.mono mid fun s₄ hh => ?_)
   obtain ⟨⟨k7, he⟩, sv, op⟩ := hh
   refine WP.mono (restore_ok he.r11 fW (covers_left he.perm.w) sv he.sp) fun s' hh => ⟨hh.1, ?_⟩

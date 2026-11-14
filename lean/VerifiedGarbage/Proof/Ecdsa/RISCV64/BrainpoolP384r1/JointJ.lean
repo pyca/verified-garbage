@@ -195,19 +195,19 @@ theorem stepJ_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v 
   have hn := hI.ws.nowrap
   have uS : ∀ d, (d + 48 ≤ 736 ∨ 1456 ≤ d) → (d + 48 ≤ 2848 ∨ 2992 ≤ d) → (d + 48 ≤ 3712 ∨ 4096 ≤ d) → d + 48 ≤ 6400 →
       wordsVal s.mem base d 6 = wordsVal s₀.mem base d 6 := fun d h1 h2 h3 h4 =>
-    hI.unch.wordsVal (by simp; omega) (by omega)
-  have hT : JTab base s G Q := hP.tab.of_eq fun d h1 h2 => uS d (by omega) (by omega) (.inr h1) h2
+    hI.unch.wordsVal (by simp; omega_using [h1, h2, h3]) (by omega_using [h4])
+  have hT : JTab base s G Q := hP.tab.of_eq fun d h1 h2 => uS d (by omega_using [h1]) (by omega_using [h1]) (.inr h1) h2
   rw [VerifyJ.Cfg.step]
   refine WP.seq (wp_decCounter hj1 hI.ctr fun s₁ u₁ => ?_)
   have hw₁ := hI.ws.of_kc (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))
-  refine WP.mono (select_ok hw₁ (j := j - 1) (by omega) u₁.gpr (hT.of_eq fun d _ _ => by rw [u₁.mem]))
+  refine WP.mono (select_ok hw₁ (j := j - 1) (by omega_using [hj]) u₁.gpr (hT.of_eq fun d _ _ => by rw [u₁.mem]))
     fun s₂ ⟨pE, O₂, r₂⟩ => ?_
   rw [u₁.mem, uS _ (by decide) (by decide) (by decide) (by decide), uS _ (by decide) (by decide) (by decide) (by decide), hP.uu, hP.vv] at pE
   rw [u₁.mem] at O₂
   have hw₂ := hw₁.of_rest r₂
   have e₂ : ∀ d, (d + 48 ≤ 736 ∨ 1456 ≤ d) → (d + 48 ≤ 2848 ∨ 2992 ≤ d) → (d + 48 ≤ 3712 ∨ 4096 ≤ d) → d + 48 ≤ 6400 →
       wordsVal s₂.mem base d 6 = wordsVal s₀.mem base d 6 := fun d h1 h2 h3 h4 => by
-    rw [O₂.wordsVal (by omega) (by omega), uS d h1 h2 h3 h4]
+    rw [O₂.wordsVal (by omega_using [h2]) (by omega_using [h4]), uS d h1 h2 h3 h4]
   have pR₂ : PtOk base s₂ (brainpoolp384r1.pt RX RY RZ) (jp G Q u v j) :=
     hI.rep.of_eq (O₂.wordsVal (by decide) (by decide)) (O₂.wordsVal (by decide) (by decide))
       (O₂.wordsVal (by decide) (by decide))
@@ -231,7 +231,7 @@ theorem stepJ_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v 
       have := (by decide : ∀ d ∈ [brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl brainpoolp384r1.EX, brainpoolp384r1.sl brainpoolp384r1.EY,
         brainpoolp384r1.sl brainpoolp384r1.EZ], ∀ w ∈ quadW, d + 8 * 6 ≤ w.1 ∨ w.1 + w.2 ≤ d) d hd w hw
       exact this) (by have := (by decide : ∀ d ∈ [brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl brainpoolp384r1.EX,
-        brainpoolp384r1.sl brainpoolp384r1.EY, brainpoolp384r1.sl brainpoolp384r1.EZ], d < 4096) d hd; omega)
+        brainpoolp384r1.sl brainpoolp384r1.EY, brainpoolp384r1.sl brainpoolp384r1.EZ], d < 4096) d hd; omega_using [this])
   have pE₄ := pE.of_eq (k₄ _ (by decide)) (k₄ _ (by decide)) (k₄ _ (by decide))
   -- `R = T + E`.
   refine WP.mono (addPt_ok hL hw₄ ((k₄ _ (by decide)).trans ap₂) ((k₄ _ (by decide)).trans bp₂)
@@ -244,7 +244,7 @@ theorem stepJ_ok (hL : Law W) {base : Addr} {s₀ : State} {G Q : Point W} {u v 
   · exact (((hI.unch.trans (show Unch base [(2848, 144)] s.mem s₂.mem from O₂.unch)).trans U₄).trans
       U₅).cover (by decide)
   · have e := jstep hL hP.g hP.q u v (j - 1)
-    rw [show j - 1 + 1 = j by omega] at e
+    rw [show j - 1 + 1 = j by omega_using [hj1]] at e
     rw [← e]
     exact pR₅
 
@@ -287,7 +287,7 @@ theorem jointJ_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPr
       wordsVal s₅.mem base d 6 = wordsVal s.mem base d 6 := fun d hd =>
     (keepU U₅ (D := [brainpoolp384r1.sl ZERO, brainpoolp384r1.sl ONEP, brainpoolp384r1.sl AP, brainpoolp384r1.sl B3P, brainpoolp384r1.sl UU, brainpoolp384r1.sl VV]) (by decide) d hd).trans
       (e₁ d hd)
-  have T₅ : JTab base s₅ (Spec.Weierstrass.G W) Q := T₁.of_eq fun d h1 h2 => U₅.wordsVal (by simp; omega) (by omega)
+  have T₅ : JTab base s₅ (Spec.Weierstrass.G W) Q := T₁.of_eq fun d h1 h2 => U₅.wordsVal (by simp; omega_using [h1]) (by omega_using [h2])
   -- The start: `R = O`.
   generalize hu : wordsVal s.mem base (brainpoolp384r1.sl UU) 6 = u
   generalize hv : wordsVal s.mem base (brainpoolp384r1.sl VV) 6 = v

@@ -91,7 +91,7 @@ theorem ct : ConstantTime isa (hintBitPackContract RISCV64.abi).pre (hintBitPack
           exact hxy hc')]
       exact bytes_of_words (by simpa only [p3, p4] using hleak) (by simpa only [hR, pH, p3, p4] using hc)
     · -- `y`: zeros.
-      have hlt : (a - pY x).toNat < pLen x := by simp only [Region.Contains] at hc; omega
+      have hlt : (a - pY x).toNat < pLen x := by simp only [Region.Contains] at hc; omega_using [hc]
       have ea : a = pY x + BitVec.ofNat 64 (a - pY x).toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
       have h₁ := fx.zero _ hlt

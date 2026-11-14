@@ -34,7 +34,7 @@ theorem random_callEntry_key {extra : Nat} {s t : State} (h : RandomSignABI extr
       Spec.Rsa.bytesAt t.mem (s.gpr .rcx) (s.gpr .r8).toNat := by
   have hsub : Region.Sub ⟨randomBase s - 8, 8⟩ (below (s.gpr .rsp) (extra + 256)) := by
     rw [random_callBase extra s]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [])
   exact random_callEntry_bytes hsp
     (((h.stackKey.sub_left hsub).symm).sep (Region.contains_self _ _) (Region.contains_self _ _)) (s.gpr .r8).isLt
 
@@ -88,6 +88,6 @@ theorem random_signer_outcome (S : Signer) {s t : State} (h : RandomSignABI S.st
     randomCallArg, hwm, hwg .rax (by decide)] at hp
   refine ⟨hur, huw, huc, ?_, hp.1, hp.2, hmx⟩
   rw [hsp] at hf
-  exact VG.X86_64.Frame.below_mono hf (by have := S.depth; omega) (by have := S.stackBound; omega)
+  exact VG.X86_64.Frame.below_mono hf (by have := S.depth; omega_using [this]) (by have := S.stackBound; omega_using [this])
 
 end VG.Proof.Dsa.X86_64

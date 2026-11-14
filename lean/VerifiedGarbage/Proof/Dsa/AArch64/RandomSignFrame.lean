@@ -23,14 +23,14 @@ theorem randomBase_toNat {extra : Nat} {s : State} (h : RandomSignABI extra s) :
   have hl := h.stackLower
   simp only [randomBase, BitVec.toNat_sub, BitVec.toNat_ofNat, Random.frameBytes]
   have hb := (s.sp).isLt
-  omega
+  omega_using [hl]
 
 theorem random_frame_sub {extra : Nat} {s : State} (h : RandomSignABI extra s) :
     Region.Sub ⟨randomBase s, Random.frameBytes⟩ (below (s.sp) (extra + 256)) := by
-  apply below_sub (by unfold Random.frameBytes; omega)
+  apply below_sub (by unfold Random.frameBytes; omega_using [])
   have hl := h.stackLower
   have hb := (s.sp).isLt
-  omega
+  omega_using [hl]
 
 theorem random_alloc_scr {extra : Nat} {s : State} (h : RandomSignABI extra s) :
     Scr (allocated Random.frameBytes s) (randomBase s) Random.frameBytes := by
@@ -38,7 +38,7 @@ theorem random_alloc_scr {extra : Nat} {s : State} (h : RandomSignABI extra s) :
   rw [randomBase_toNat h]
   have hb := (s.sp).isLt
   unfold Random.frameBytes
-  omega
+  omega_using []
 
 theorem random_incoming_address (s : State) (j : Nat) :
     off (randomBase s) (256 + 8 * j) = stackArgAddr s j := by
@@ -60,7 +60,7 @@ theorem random_incoming_read {extra : Nat} {s : State} (h : RandomSignABI extra 
       simp only [List.mem_cons, List.not_mem_nil, or_false, or_true]
     · simp only [stackArgAddr]
       exact Offset.contains _ (d := 8 * j) (n := 8) (e := 0) (k := 40)
-        (by omega) (by omega) (by decide)
+        (by omega_using []) (by omega_using [hj]) (by decide)
   simp only [RandomSign.incomingSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl
   · exact hj 0 (by decide)
@@ -78,7 +78,7 @@ theorem random_frame_ok {extra : Nat} {s : State} (h : RandomSignABI extra s)
   have hl := h.stackLower
   have ha : isa.push (.alloc Random.frameBytes) s = some (allocated Random.frameBytes s) := by
     simp only [isa, push, allocated]
-    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega⟩
+    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
   have hf : isa.pop (.free Random.frameBytes) (allocated Random.frameBytes s) t = some (randomFreed t) := by
     simp only [isa, pop]
     exact ite_eq_left ⟨by decide, by decide, by decide, htsp, htwr, rfl⟩

@@ -140,13 +140,13 @@ theorem priv_facts {s₁ s₂ t₁ t₂ : State} {em₁ em₂ : List Byte} (h₁
         Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat := fun h A => by
     rw [callE_gpr, callE_gpr, A.r5, A.r6]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kn.symm)
-      (by have := h.wn; omega)
+      (by have := h.wn; omega_using [])
   have he : ∀ {s t : State} {em : List Byte}, SPre pc s → AtCall pc s t em →
       Spec.Rsa.bytesAt (callE pc s t).mem ((callE pc s t).gpr .r7) ((callE pc s t).gpr .r8).toNat =
         Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat := fun h A => by
     rw [callE_gpr, callE_gpr, A.r7, A.r8]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ke.symm)
-      (by have := h.we; omega)
+      (by have := h.we; omega_using [])
   refine ⟨by rw [show (callE pc s₁ t₁).sp = fb s₁ from A₁.sp, show (callE pc s₂ t₂).sp = fb s₂ from A₂.sp,
       fb_same S], fun r hr => ?_, fun i hi => ?_, by rw [hn h₁ A₁, hn h₂ A₂, S.n], by rw [he h₁ A₁, he h₂ A₂, S.e]⟩
   · rw [callE_gpr s₁ t₁ (fun h => by revert r; decide), callE_gpr s₂ t₂ (fun h => by revert r; decide)]
@@ -168,14 +168,14 @@ theorem pre_leak {s t : State} {em : List Byte} (X : PreX s) (A : AtCall true s 
         ((callE true s t).gpr .r6).toNat =
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 13) (s.gpr .r6).toNat := by
   have pwl : Spec.Rsa.precomputedWords (s.gpr .r6).toNat ≤ (stackArg s 14).toNat := by
-    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), callE_gpr (pc := true) s t (r := .r6),
     A.r6]
   congr 1
   have subPre : Region.Sub ⟨stackArg s 13, 8 * Spec.Rsa.precomputedWords (s.gpr .r6).toNat⟩ (preR s) :=
-    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega_using [pwl, this])
 
 /-! ## The chain -/
 

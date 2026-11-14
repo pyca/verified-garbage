@@ -131,7 +131,7 @@ theorem Rk_lt (m : Mem) (st : Addr) : Rk m st < 2 ^ 128 := by
   have := (m.readW (off st 24) 64 &&& M0).isLt
   have := (m.readW (off st 32) 64 &&& M1).isLt
   simp only [Rk]
-  omega
+  omega_using []
 
 /-! ## The coefficients and the accumulator on entry -/
 

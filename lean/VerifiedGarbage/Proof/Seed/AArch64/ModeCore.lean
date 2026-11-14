@@ -102,11 +102,11 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
   refine WP.mono (copyN_wp (k := 16) (t := .x6) (u := .x6) (P := schedAddr B) (Q := p)
     ⟨by rw [hB], by rw [hp]; simp, by decide, by decide, by decide, by decide, by decide, by decide,
       by decide, by decide, fun w hw => ⟨_, hs.wr, by
-        rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot, bufSlot, scratchSlots]; omega)
-          (by simp only [schedSlot, bufSlot, scratchSlots]; omega)⟩,
-      fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
-      (hsep.sub_right (Offset.sub_base B (by decide))).symm, by omega⟩) fun s' h => ?_
-  refine ⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega)],
+        rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot, bufSlot, scratchSlots]; omega_using [hw])
+          (by simp only [schedSlot, bufSlot, scratchSlots]; omega_using [hw])⟩,
+      fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_using [hw]) (by omega_using [hw])⟩,
+      (hsep.sub_right (Offset.sub_base B (by decide))).symm, by omega_using []⟩) fun s' h => ?_
+  refine ⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega_using [])],
     by rw [h.regs _ (by decide) (by decide), hB], h.regs _ (by decide) (by decide), h.regs _ (by decide) (by decide),
     ?_, h.rd, h.wr⟩
   rw [h.mem, core_eq]
@@ -224,12 +224,12 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
         State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs),
         x0₆, x1₆, x2₆, x3₆, toNat16]
       refine ⟨trivial, trivial, sched_buf B,
-        Offset.disjoint_base B (by simp only [schedSlot, bufSlot, scratchSlots]; omega)
-          (by simp only [schedSlot, bufSlot, scratchSlots]; omega),
-        Offset.disjoint_base B (by simp only [bufSlot, scratchSlots]; omega)
-          (by simp only [bufSlot, scratchSlots]; omega), ?_⟩
+        Offset.disjoint_base B (by simp only [schedSlot, bufSlot, scratchSlots]; omega_using [])
+          (by simp only [schedSlot, bufSlot, scratchSlots]; omega_using []),
+        Offset.disjoint_base B (by simp only [bufSlot, scratchSlots]; omega_using [])
+          (by simp only [bufSlot, scratchSlots]; omega_using []), ?_⟩
       rw [bufAt, Offset.toNat_add_ofNat]
-      simp only [bufSlot, scratchSlots]; omega
+      simp only [bufSlot, scratchSlots]; omega_using [hfB]
     · simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append] at hr
       rcases hr with rfl | rfl | rfl
       · exact sub (8 * schedSlot) 128 (by decide)

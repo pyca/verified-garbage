@@ -24,14 +24,14 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     (h13 : W 13 = rand.ptr) (h15 : W 15 = BitVec.ofNat 64 rand.bytes.length) : PPrimalityPlan := by
   have bound (d : Nat) (hd : d ≤ domainCheck) (n : Nat) (hn : n ≤ arithmeticBytes) :
       d + n ≤ usedBytes p.pLen := by
-    rcases p.width with h | h | h <;> rw [h] <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega
-  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega
+    rcases p.width with h | h | h <;> rw [h] <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega_using [hd, hn]
+  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
+  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
   have ha := bound arithmetic (by decide) arithmeticBytes (by rfl)
   have hh := bound VG.Impl.Dsa.Generation.Layout.hash (by decide) oRsa (by decide)
-  have hw := bound witness (by decide) p.pLen (by unfold arithmeticBytes; omega)
-  have hp := bound VG.Impl.Dsa.Generation.Layout.p (by decide) p.pLen (by unfold arithmeticBytes; omega)
-  have he := bound exponent (by decide) p.pLen (by unfold arithmeticBytes; omega)
+  have hw := bound witness (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
+  have hp := bound VG.Impl.Dsa.Generation.Layout.p (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
+  have he := bound exponent (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn])
   refine {
     construct := p.constructPlan seed seedLength W offset carry h1 h3 h4 h2 h5 h0
     rand := rand.bytes
@@ -59,12 +59,12 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     arenaStack := ?_ }
   · change (p.part arithmetic arithmeticBytes).Disjoint ⟨off (W 5) witness, p.pLen⟩
     rw [h5]
-    exact p.parts_disjoint ha hw (Or.inr (by unfold witness arithmetic; omega))
+    exact p.parts_disjoint ha hw (Or.inr (by unfold witness arithmetic; omega_using [pn]))
   · change ∀ i < p.pLen, arithmeticBytes ≤ ofs (off p.B arithmetic) (off (off (W 5) witness) i)
     rw [h5]
     intro i hi
-    exact out_scr (p.parts_disjoint hw ha (Or.inl (by unfold witness arithmetic; omega)))
-      (Offset.contains_base _ (by omega) (by omega))
+    exact out_scr (p.parts_disjoint hw ha (Or.inl (by unfold witness arithmetic; omega_using [pn])))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
   · change (⟨rand.ptr, rand.bytes.length⟩ : Region).Disjoint ⟨off (W 5) witness, p.pLen⟩
     rw [h5]
     exact rand.part hw
@@ -92,8 +92,8 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact p.parts_disjoint hp ha (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p arithmetic; omega))
-    · exact p.parts_disjoint hp hw (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p witness; omega))
+    · exact p.parts_disjoint hp ha (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p arithmetic; omega_using [pn]))
+    · exact p.parts_disjoint hp hw (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p witness; omega_using [pn]))
     · exact (p.stack_part hp).symm
     · exact (p.frame_part hp).symm
   · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192, ⟨p.F, frameBytes⟩],
@@ -102,8 +102,8 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact p.parts_disjoint he ha (Or.inl (by unfold exponent arithmetic; omega))
-    · exact p.parts_disjoint he hw (Or.inl (by unfold exponent witness; omega))
+    · exact p.parts_disjoint he ha (Or.inl (by unfold exponent arithmetic; omega_using [pn]))
+    · exact p.parts_disjoint he hw (Or.inl (by unfold exponent witness; omega_using [pn]))
     · exact (p.stack_part he).symm
     · exact (p.frame_part he).symm
   · change ∀ r ∈ (⟨off (W 5) shaped, p.pLen⟩ ::
@@ -114,22 +114,22 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     intro r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact rand.part (bound shaped (by decide) p.pLen (by unfold arithmeticBytes; omega))
+    · exact rand.part (bound shaped (by decide) p.pLen (by unfold arithmeticBytes; omega_using [pn]))
     · exact rand.part (bound hashes (by decide) ((p.count + 1) * p.qLen) (by
-        have := p.hashSizes.2.1; unfold arithmeticBytes; omega))
-    · exact rand.part (bound wrappedSeed (by decide) p.qLen (by unfold arithmeticBytes; omega))
+        have := p.hashSizes.2.1; unfold arithmeticBytes; omega_using [this]))
+    · exact rand.part (bound wrappedSeed (by decide) p.qLen (by unfold arithmeticBytes; omega_using [qn]))
     · exact rand.part hh
     · exact rand.stack.sub_right (below_sub (by decide) (by decide))
     · exact rand.part ha
     · exact rand.part hp
     · exact rand.part he
   all_goals
-    have hd : domainCheck ≤ usedBytes p.pLen := by unfold usedBytes; omega
+    have hd : domainCheck ≤ usedBytes p.pLen := by unfold usedBytes; omega_using []
     have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
       rw [h5]; exact Region.sub_prefix hd
   · change (W 5).toNat + domainCheck ≤ 2 ^ 64
     have := p.arenaBound
-    rw [h5]; omega
+    rw [h5]; omega_using [hd, this]
   · exact rand.arena.sub_right hs
   · exact (p.frameArena.sub_right hs).symm
   · exact (p.stackArena.sub_right hs).symm

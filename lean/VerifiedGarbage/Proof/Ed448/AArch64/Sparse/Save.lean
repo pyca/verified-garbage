@@ -43,15 +43,15 @@ theorem save_ok {s:State} {base:Addr} (hs:Scr s base) :
   refine wp_range_flatMap (M:=isa) (N:=8) inv (fun n t hn ⟨tv,fo,tg,tr,tw⟩ => ?_)
     8 (by decide) s ⟨fun _ h => by omega,Outside.refl _ _ _ _,rfl,rfl,rfl⟩
   have ht:Scr t base:=⟨by rw [tg];exact hs.x3,by rw [tg];exact hs.mask,tw ▸ hs.wr,hs.nowrap⟩
-  refine WP.mono (stw_ok ht (saved n) (d:=GSAVE+8*n) (by simp only [GSAVE];omega) (by simp only [GSAVE];omega))
-    fun u ⟨uw,uo,ug,ur,uwr⟩ => ⟨fun i hi => ?_,fo.trans (uo.mono (by simp only [GSAVE];omega) (by simp only [GSAVE];omega)),
+  refine WP.mono (stw_ok ht (saved n) (d:=GSAVE+8*n) (by simp only [GSAVE];omega_using []) (by simp only [GSAVE];omega_using [hn]))
+    fun u ⟨uw,uo,ug,ur,uwr⟩ => ⟨fun i hi => ?_,fo.trans (uo.mono (by simp only [GSAVE];omega_using []) (by simp only [GSAVE];omega_using [hn])),
       ug.trans tg,ur.trans tr,uwr.trans tw⟩
-  rw [uw _ (by simp only [GSAVE];omega) (by simp only [GSAVE];omega)]
+  rw [uw _ (by simp only [GSAVE];omega_using [hn, hi]) (by simp only [GSAVE];omega_using [])]
   by_cases h:i=n
   · subst i
     rw [ite_eq_left rfl,tg]
-  · rw [ite_eq_right (by simp only [GSAVE];omega)]
-    exact tv i (by omega)
+  · rw [ite_eq_right (by simp only [GSAVE];omega_using [h])]
+    exact tv i (by omega_using [hi, h])
 
 theorem restore_ok {s:State} {base:Addr} (hs:Scr s base) {g:Reg → BitVec 64}
     (hsv:Saved base g s.mem) :
@@ -70,13 +70,13 @@ theorem restore_ok {s:State} {base:Addr} (hs:Scr s base) {g:Reg → BitVec 64}
   refine wp_range_flatMap (M:=isa) (N:=8) inv (fun n t hn ⟨tv,tm,tk⟩ => ?_)
     8 (by decide) s ⟨fun _ h => by omega,rfl,Keeps.refl _ _⟩
   refine WP.mono (ld_ok (hs.of_keeps tk (by decide)) (saved n) (d:=GSAVE+8*n)
-    (by simp only [GSAVE];omega) (by simp only [GSAVE];omega)) fun u ⟨uv,um,uk⟩ => ⟨fun i hi => ?_,um.trans tm,tk.trans (uk.mono ?_)⟩
+    (by simp only [GSAVE];omega_using []) (by simp only [GSAVE];omega_using [hn])) fun u ⟨uv,um,uk⟩ => ⟨fun i hi => ?_,um.trans tm,tk.trans (uk.mono ?_)⟩
   · by_cases h:i=n
     · subst i
       rw [uv,tm]
       exact hsv n hn
-    · rw [uk.1 _ (by simp only [List.mem_singleton];exact sinj n hn i (by omega) h)]
-      exact tv i (by omega)
+    · rw [uk.1 _ (by simp only [List.mem_singleton];exact sinj n hn i (by omega_using [hn, hi]) h)]
+      exact tv i (by omega_using [hi, h])
   · intro r hr
     simp only [List.mem_singleton] at hr
     rw [hr]
@@ -90,13 +90,13 @@ theorem save_env {base:Addr} {m m':Mem} (h:Outside base GSAVE 64 m m') :
   apply congrArg VG.Proof.X448.toFe
   apply VG.Proof.X448.Wide.valN_congr
   intro j hj
-  exact h.limbs (Or.inl (by simp only [slot,GSAVE];omega)) (by simp only [slot];omega) (by omega)
+  exact h.limbs (Or.inl (by simp only [slot,GSAVE];omega_using [])) (by simp only [slot];omega_using []) (by omega_using [hj])
 
 theorem save_bounds {base:Addr} {m m':Mem} (h:Outside base GSAVE 64 m m')
     (hb:BEnv m base) : BEnv m' base := by
   intro i j hj
   have hi:=i.isLt
-  rw [h.limbs (Or.inl (by simp only [slot,GSAVE];omega)) (by simp only [slot];omega) (by omega)]
+  rw [h.limbs (Or.inl (by simp only [slot,GSAVE];omega_using [])) (by simp only [slot];omega_using []) (by omega_using [hj])]
   exact hb i j hj
 
 end VG.Proof.Ed448.AArch64.Sparse

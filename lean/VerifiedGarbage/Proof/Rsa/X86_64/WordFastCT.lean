@@ -41,7 +41,7 @@ theorem fastAtWith_ct {st : List Instr} (ck : SeedCkW st) (J : Nat → Nat)
 theorem fastAt_ct {top : Option Nat} (ck : SeedCk top) (hk : ∀ (p : Pub) k, 6 ≤ p.W → top = some k → k ≤ p.W / 2) :
     RelCT isa (Two FastPre) (.seq (.block normalize) (code top)) fun _ _ => True :=
   fastAtWith_ct ck (fun W => j0 W top) fun W hW hW' =>
-    start_startOk hW (by omega) fun k e => hk ⟨0, 0, W, 0⟩ k hW e
+    start_startOk hW (by omega_using [hW']) fun k e => hk ⟨0, 0, W, 0⟩ k hW e
 
 theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _ => True :=
   fastAt_ct seedCk_none fun _ _ _ e => nomatch e

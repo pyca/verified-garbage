@@ -121,14 +121,14 @@ theorem hS : hH.SH.stateBytes = H.N + H.B := hH.stream.hS.trans hH.sizes.S
 theorem hD : hH.SH.digestBytes = H.D := hH.stream.hD
 
 include hH in
-theorem B_le : H.B ≤ 128 := by rcases hH.sizes.B with h | h <;> omega
+theorem B_le : H.B ≤ 128 := by rcases hH.sizes.B with h | h <;> omega_using [h]
 
 include hH in
-theorem B_ge : 64 ≤ H.B := by rcases hH.sizes.B with h | h <;> omega
+theorem B_ge : 64 ≤ H.B := by rcases hH.sizes.B with h | h <;> omega_using [h]
 
 /-- The hash function of the specification is `md` from `iv`. -/
 theorem link : hH.md.Link hH.SH hH.iv H.D :=
-  ⟨hH.hB, hH.hS, hH.hD, hH.repr, hH.hash, hH.sizes.DN, by have := hH.sizes.pad; have := hH.sizes.NL; omega⟩
+  ⟨hH.hB, hH.hS, hH.hD, hH.repr, hH.hash, hH.sizes.DN, by have := hH.sizes.pad; have := hH.sizes.NL; omega_arith⟩
 
 theorem lenWords_length : (lenWords H.be H.L (H.B + H.D)).length = H.L / 4 := by simp [lenWords]
 

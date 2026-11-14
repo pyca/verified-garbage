@@ -53,23 +53,23 @@ theorem argumentsBase_ok (s : State) {p : KeyPublic sampling} {used keys scalars
       by rw [rest.sp]; exact separate,
       by rw [mem]; exact headers,
       by rw [rest.sp]; exact ptr, x, xlen, y, ylen, by rw [mem]; exact cacheSlots⟩
-  refine wp_argumentCopy (j := 7) (d := 0) context (by decide) (by have := argumentBytes_min sampling; omega)
+  refine wp_argumentCopy (j := 7) (d := 0) context (by decide) (by have := argumentBytes_min sampling; omega_using [this])
     (context.headers (7, p.dp) (by simp [KeyPublic.headers])) fun s1 c1 m1 r1 => ?_
   have sp1 := r1.sp.trans rest.sp
-  refine wp_argumentCopy (j := 8) (d := 4) c1 (by decide) (by have := argumentBytes_min sampling; omega)
+  refine wp_argumentCopy (j := 8) (d := 4) c1 (by decide) (by have := argumentBytes_min sampling; omega_using [this])
     (c1.headers (8, BitVec.ofNat 32 p.dlen) (by simp [KeyPublic.headers])) fun s2 c2 m2 r2 => ?_
   have sp2 := r2.sp.trans sp1
-  refine wp_argumentStore (d := 8) c2 (by have := argumentBytes_min sampling; omega) fun s3 c3 m3 r3 => ?_
+  refine wp_argumentStore (d := 8) c2 (by have := argumentBytes_min sampling; omega_using [this]) fun s3 c3 m3 r3 => ?_
   have sp3 := r3.sp.trans sp2
-  refine wp_argumentCopy (j := 9) (d := 12) c3 (by decide) (by have := argumentBytes_min sampling; omega)
+  refine wp_argumentCopy (j := 9) (d := 12) c3 (by decide) (by have := argumentBytes_min sampling; omega_using [this])
     (c3.headers (9, p.rp + BitVec.ofNat 32 used) (by simp [KeyPublic.headers])) fun s4 c4 m4 r4 => ?_
   have sp4 := r4.sp.trans sp3
-  refine wp_argumentStore (d := 16) c4 (by have := argumentBytes_min sampling; omega) fun s5 c5 m5 r5 => ?_
+  refine wp_argumentStore (d := 16) c4 (by have := argumentBytes_min sampling; omega_using [this]) fun s5 c5 m5 r5 => ?_
   have sp5 := r5.sp.trans sp4
-  refine wp_argumentCopy (j := 12) (d := 20) c5 (by decide) (by have := argumentBytes_min sampling; omega)
+  refine wp_argumentCopy (j := 12) (d := 20) c5 (by decide) (by have := argumentBytes_min sampling; omega_using [this])
     (c5.headers (12, p.scratch) (by simp [KeyPublic.headers])) fun s6 c6 m6 r6 => ?_
   have sp6 := r6.sp.trans sp5
-  refine wp_argumentCopy (j := 13) (d := 24) c6 (by decide) (by have := argumentBytes_min sampling; omega)
+  refine wp_argumentCopy (j := 13) (d := 24) c6 (by decide) (by have := argumentBytes_min sampling; omega_using [this])
     (c6.headers (13, BitVec.ofNat 32 p.capacity) (by simp [KeyPublic.headers])) fun s7 c7 m7 _ => ?_
   apply WP.block_nil
   refine ⟨c7, ?_⟩
@@ -126,8 +126,8 @@ theorem callMem_frame (p : KeyPublic sampling) (used : Nat) (m : Mem) (sp : BitV
   · rename_i active
     have size : sampling.argumentBytes = 40 := by simp [GenerationPolicy.argumentBytes, active]
     exact ((callMemBase_frame p used m sp).writeW (by simp) _
-      (Offset.contains_base _ (by omega : 28 + 4 ≤ sampling.argumentBytes) (by decide))).writeW
-        (by simp) _ (Offset.contains_base _ (by omega : 32 + 4 ≤ sampling.argumentBytes) (by decide))
+      (Offset.contains_base _ (by omega_using [size] : 28 + 4 ≤ sampling.argumentBytes) (by decide))).writeW
+        (by simp) _ (Offset.contains_base _ (by omega_using [size] : 32 + 4 ≤ sampling.argumentBytes) (by decide))
   · exact callMemBase_frame p used m sp
 
 end VG.Proof.Ffdh.Arm.KeySearch

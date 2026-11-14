@@ -52,7 +52,7 @@ private theorem args_nowrap {s : State} (h : s.sp.toNat + 32 + 8 * 10 ≤ 2 ^ 64
     (stackArgAddr s 0).toNat + 16 ≤ 2 ^ 64 := by
   simp only [stackArgAddr, Nat.reduceMul, Nat.reduceAdd]
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem search_implies_pre₀ (s : State) (h : (sievedParameterSearchContract abi stackUse).pre s) :
     basePre s := by
@@ -195,7 +195,7 @@ theorem satMem_held : ∀ i < Impl.RsaKeyGen.TrialTable32.packed.length,
     have h1 : (0x20000 : Addr).toNat = 131072 := rfl
     have h2 : (0x1000 : Addr).toNat = 4096 := rfl
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h1, h2]
-    omega
+    omega_using [hi, hj]
   unfold satMem
   simp only [hn, ↓reduceIte]
 
@@ -207,7 +207,7 @@ theorem satMem_small (a : Addr) (ha : (a - 0x1000).toNat + 8 ≤ 0x10000) :
     have h2 : (0x1000 : Addr).toNat = 4096 := rfl
     have := a.isLt
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h2] at ha ⊢
-    omega
+    omega_using [hj, ha]
   unfold satMem
   simp only [hn, ↓reduceIte]
 
@@ -226,7 +226,7 @@ def satState : State where
 theorem sat_arg (i : Nat) (hi : i < 2) :
     stackArg satState i = satSmall.readW (0x6000 + BitVec.ofNat 64 (32 + 8 * (8 + i))) 64 := by
   refine satMem_small _ ?_
-  have : i = 0 ∨ i = 1 := by omega
+  have : i = 0 ∨ i = 1 := by omega_using [hi]
   rcases this with rfl | rfl <;> decide
 
 theorem sat_arg0 : stackArg satState 0 = 0x420 := (sat_arg 0 (by decide)).trans (by decide)

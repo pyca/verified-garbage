@@ -43,15 +43,15 @@ theorem body_state {s₀ : State} :
   · show Frame _ s₀.mem ((((s₀.mem.write (s₀.sp - 48) 8 s₀.sp).write (s₀.sp - 48 + 32) 8 (s₀.gpr .r14)).write
       (s₀.sp - 48 - 48) 8 (s₀.sp - 48)).write (s₀.sp - 48 - 48 + 32) 8 (s₀.gpr .r15))
     have c : ∀ d : Nat, d + 8 ≤ 96 → (below s₀.sp 96).Contains (s₀.sp - 96 + BitVec.ofNat 64 d) 8 := fun d hd =>
-      Offset.contains_base _ hd (by omega)
+      Offset.contains_base _ hd (by omega_using [hd])
     have e1 : s₀.sp - 48 = s₀.sp - 96 + BitVec.ofNat 64 48 := by bv_omega
     have e2 : s₀.sp - 48 + 32 = s₀.sp - 96 + BitVec.ofNat 64 80 := by bv_omega
     have e3 : s₀.sp - 48 - 48 = s₀.sp - 96 + BitVec.ofNat 64 0 := by bv_omega
     have e4 : s₀.sp - 48 - 48 + 32 = s₀.sp - 96 + BitVec.ofNat 64 32 := by bv_omega
     rw [e4, e3, e2, e1]
-    exact ((((Frame.refl _ _).write (List.mem_singleton_self _) _ (c 48 (by omega))).write
-      (List.mem_singleton_self _) _ (c 80 (by omega))).write (List.mem_singleton_self _) _ (c 0 (by omega))).write
-      (List.mem_singleton_self _) _ (c 32 (by omega))
+    exact ((((Frame.refl _ _).write (List.mem_singleton_self _) _ (c 48 (by omega_using []))).write
+      (List.mem_singleton_self _) _ (c 80 (by omega_using []))).write (List.mem_singleton_self _) _ (c 0 (by omega_using []))).write
+      (List.mem_singleton_self _) _ (c 32 (by omega_using []))
 
 /-- `saving body`: the pops restore `r14`, `r15` and the stack pointer. -/
 theorem saving_ok {body : Prog isa} {s₀ : State} {P : Mem → Prop}
@@ -62,9 +62,9 @@ theorem saving_ok {body : Prog isa} {s₀ : State} {P : Mem → Prop}
     WP isa (saving body) s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧
       s'.lr = s₀.lr ∧ P s'.mem := by
   have hsp1 : 48 ≤ (s₀.sp - 48).toNat := by bv_omega
-  refine WP.frameRegAny (r := .r14) (by omega) (fun R hR => (hd R hR).sub_left (frame_slot_sub s₀.sp (.inl rfl)))
-    ?_ (by simp only [sdepth, Instr.frameBytes]; omega)
-  refine WP.frameRegAny (r := .r15) hsp1 (fun R hR => ?_) (WP.mono hb fun s' ⟨hk, hlr, hP⟩ => ?_) (by omega)
+  refine WP.frameRegAny (r := .r14) (by omega_using [hsp]) (fun R hR => (hd R hR).sub_left (frame_slot_sub s₀.sp (.inl rfl)))
+    ?_ (by simp only [sdepth, Instr.frameBytes]; omega_using [hn])
+  refine WP.frameRegAny (r := .r15) hsp1 (fun R hR => ?_) (WP.mono hb fun s' ⟨hk, hlr, hP⟩ => ?_) (by omega_using [hn])
   · have : (framed .r14 s₀).sp = s₀.sp - 48 := rfl
     rw [this, show s₀.sp - 48 - 48 = s₀.sp - BitVec.ofNat 64 96 by bv_omega]
     exact (hd R hR).sub_left (frame_slot_sub s₀.sp (.inr rfl))

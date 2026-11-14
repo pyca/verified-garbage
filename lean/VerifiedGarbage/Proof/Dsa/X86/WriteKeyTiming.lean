@@ -36,8 +36,8 @@ theorem keyWriteHead_ok {s : State} {base : Addr} {size : Nat}
       .mov .edx (.mem (sc (Layout.field .out)))]) s fun t =>
       t.gpr .edx = pointerValue base s (.input .out) ∧ Keeps [.ebx, .edx] s t ∧ t.mem = s.mem := by
   have bound : 8256 ≤ size := hz
-  refine wp_movS (readSrc_sc hs (by change 8248 ≤ size; omega)) fun u su _ => ?_
-  refine wp_movS (readSrc_sc (hs.of_keeps su.keeps (by decide)) (by change 8228 ≤ size; omega)) fun t ut _ => WP.block_nil ?_
+  refine wp_movS (readSrc_sc hs (by change 8248 ≤ size; omega_using [bound])) fun u su _ => ?_
+  refine wp_movS (readSrc_sc (hs.of_keeps su.keeps (by decide)) (by change 8228 ≤ size; omega_using [bound])) fun t ut _ => WP.block_nil ?_
   exact ⟨by rw [ut.gpr, su.mem]; rfl,
     (su.keeps.mono (by decide)).trans (ut.keeps.mono (by decide)), ut.mem.trans su.mem⟩
 
@@ -50,7 +50,7 @@ theorem writeKey_relCT (base : Addr) (size pLen qLen : Nat) (out : BitVec 32)
       pointerValue base s (.input .nonce) = pointerValue base t (.input .nonce))
       (Generate.writeKey pLen qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
   let parts : List (Pointer × Nat) := [(.input .p, 2 * pLen + qLen), (.local t2, pLen), (.input .nonce, qLen)]
-  have count : keyPartsSize parts = 3 * pLen + 2 * qLen := by simp [parts, keyPartsSize]; omega
+  have count : keyPartsSize parts = 3 * pLen + 2 * qLen := by simp [parts, keyPartsSize]; omega_using []
   unfold Generate.writeKey Core.sequence
   dsimp only [List.foldr]
   refine RelCT.seq (R := fun s t => KeyPartsCall base size out parts s ∧ KeyPartsCall base size out parts t ∧

@@ -67,7 +67,7 @@ theorem skOf_len (ps : PS p) (s₀ : State) : 32 ≤ (skOf p s₀).length := by
 theorem expandA_good {F : PrimsOk P} {s₀ : State} (h : Good p F s₀) :
     expandA p maxBounds (rhoV (skOf p s₀)) = some (amat p (Av (skOf p s₀))) := by
   refine expandA_some fun i hi j hj => ?_
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_using [hj]
   have he := okE_lt h (aIdx hi hj)
   have e1 : (p.ℓ * i + j) / p.ℓ = i := by
     rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
@@ -118,7 +118,7 @@ theorem run_at {F : PrimsOk P} {t : Nat} {s₀ s₀' : State} (ps : PS p) (hq : 
         (passV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) ↔ passV p (skOf p s₀') (muOf s₀') (rndOf s₀') (p.ℓ * t)) ∧
         (passV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) →
           hbitsV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) = hbitsV p (skOf p s₀') (muOf s₀') (rndOf s₀') (p.ℓ * t))) :=
-  leak_at ps.hok F.ballMax (leakV_eq ps h.1 ((good_iff ps hq).mp h.1) hq) (by show t < 1000; have := h.lt; omega) h.cont
+  leak_at ps.hok F.ballMax (leakV_eq ps h.1 ((good_iff ps hq).mp h.1) hq) (by show t < 1000; have := h.lt; omega_using [this]) h.cont
 
 /-- The full rejection leakage at an iteration both runs reach. -/
 theorem run_leak {F : PrimsOk P} {t : Nat} {x y : State} (ps : PS p) (hq : SPub p x y) (h : Run p F t x) :
@@ -135,6 +135,6 @@ theorem run_leak {F : PrimsOk P} {t : Nat} {x y : State} (ps : PS p) (hq : SPub 
   rw [hr] at e
   have e' : leakVF p (skOf p x) (muOf x) (rndOf x) = leakVF p (skOf p y) (muOf y) (rndOf y) :=
     List.append_cancel_left e
-  exact (leak_iterF ps.hok F.ballMax e' (by have := h.lt; show t < 1000; omega) h.cont).2
+  exact (leak_iterF ps.hok F.ballMax e' (by have := h.lt; show t < 1000; omega_using [this]) h.cont).2
 
 end VG.Proof.MlDsa.X86.Sign

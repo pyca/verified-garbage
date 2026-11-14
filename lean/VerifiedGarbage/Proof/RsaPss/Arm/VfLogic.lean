@@ -115,7 +115,7 @@ theorem verify_bytes₂ (G H : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid G) {n₀ :
         (((Spec.Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (Spec.RsaPss.zeros (n₀ :: rest).length)).drop lo)
         emLen (8 * emLen - emBits) sLen := by
   unfold Spec.RsaPss.verify
-  simp only [hb, he, hs, beq_self_eq_true, Bool.true_and, show (n₀ :: rest).length - emLen = lo by omega]
+  simp only [hb, he, hs, beq_self_eq_true, Bool.true_and, show (n₀ :: rest).length - emLen = lo by omega_using [hk]]
   cases hp : Spec.Rsa.publicOpChecked (n₀ :: rest) eB sB with
   | none =>
     simp only [Option.getD_none, Bool.false_eq_true, false_iff, not_and]
@@ -126,9 +126,9 @@ theorem verify_bytes₂ (G H : Spec.Mgf1.Hash) (hG : Proof.Mgf1.Valid G) {n₀ :
   | some x =>
     have hx := RsaPss.publicOpChecked_length' hp
     simp only [Option.getD_some, Bool.and_eq_true, beq_iff_eq]
-    rw [← he, RsaPss.verifyEncoding_bytes₂ G H hG hm (by rw [List.length_drop, hx]; omega) (by omega), he]
+    rw [← he, RsaPss.verifyEncoding_bytes₂ G H hG hm (by rw [List.length_drop, hx]; omega_using [he, hk]) (by omega_using [he, hfit]), he]
     refine and_congr_left fun _ => ?_
-    rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
+    rcases (show lo = 0 ∨ lo = 1 by omega_using [hlo]) with rfl | rfl
     · simp [Spec.RsaPss.zeros]
     · obtain ⟨b, xs, rfl⟩ := List.exists_cons_of_ne_nil (show x ≠ [] from fun h => by simp [h] at hx)
       simp [Spec.RsaPss.zeros]

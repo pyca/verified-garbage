@@ -26,11 +26,11 @@ theorem workspace_ok {s : State} {B : Addr} {Z w : Nat}
   have h16 : (BitVec.ofNat 16 w).setWidth 64 = BitVec.ofNat 64 w := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hw48]
   have hstride : (BitVec.ofNat 16 (8 * (w + 2))).setWidth 64 = BitVec.ofNat 64 (8 * (w + 2)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hw48]
   unfold Impl.Dsa.AArch64.Generation.workspace
   refine WP.seq (WP.mono (WP.keep [.x3, .x12] (Q := fun u =>
     u.gpr .x12 = BitVec.ofNat 64 w ∧
@@ -38,42 +38,42 @@ theorem workspace_ok {s : State} {B : Addr} {Z w : Nat}
     (by
       unfold Impl.Dsa.AArch64.Generation.workspaceHead
       brun [h0, h16, hdr_enc (show sW < 32 by decide), hdr_enc (show sMinv < 32 by decide),
-        hs.st (d := 8 * sW) (by simp only [sW]; omega), hs.st (d := 8 * sMinv) (by simp only [sMinv]; omega)]
+        hs.st (d := 8 * sW) (by simp only [sW]; omega_using [h256]), hs.st (d := 8 * sMinv) (by simp only [sMinv]; omega_using [h256])]
       rfl)
     rfl rfl rfl) fun u ⟨⟨hu12, hum⟩, ku⟩ => ?_)
   have hu0 := (ku.gpr .x0 (by decide)).trans h0
   have huS := hs.congr ku.wr
   have huW : word u.mem B (8 * sW) = BitVec.ofNat 64 w := by
-    rw [hum, (writeW_outside _ B (0#64) (d := 8 * sMinv) (by simp only [sMinv]; omega)).word
-      (by decide) (by simp only [sW]; omega), word_writeW_self]
+    rw [hum, (writeW_outside _ B (0#64) (d := 8 * sMinv) (by simp only [sMinv]; omega_using [])).word
+      (by decide) (by simp only [sW]; omega_using []), word_writeW_self]
   have huI : word u.mem B (8 * sMinv) = 0 := by rw [hum, word_writeW_self]; rfl
   have fu : Frm B workspaceRanges s.mem u.mem := by
     rw [hum]
     apply Frm.trans (m₂ := s.mem.writeW (off B (8 * sW)) (BitVec.ofNat 64 w))
-    · exact Frm.of_outside ((writeW_outside _ B _ (d := 8 * sW) (by simp only [sW]; omega)).mono
+    · exact Frm.of_outside ((writeW_outside _ B _ (d := 8 * sW) (by simp only [sW]; omega_using [])).mono
         (o' := 48) (n' := 16) (by decide) (by decide)) (by simp [workspaceRanges])
-    · exact Frm.of_outside ((writeW_outside _ B _ (d := 8 * sMinv) (by simp only [sMinv]; omega)).mono
+    · exact Frm.of_outside ((writeW_outside _ B _ (d := 8 * sMinv) (by simp only [sMinv]; omega_using [])).mono
         (o' := 48) (n' := 16) (by decide) (by decide)) (by simp [workspaceRanges])
-  refine WP.seq (WP.mono (setBases_ok huS hu0 hu12 (by simp only [sArr]; omega))
+  refine WP.seq (WP.mono (setBases_ok huS hu0 hu12 (by simp only [sArr]; omega_using [h256]))
     fun v ⟨hvArr, ov, kv⟩ => ?_)
   have hv0 := (kv.gpr .x0 (by decide)).trans hu0
   have hvS := huS.congr kv.wr
-  have hvW := (ov.word (d := 8 * sW) (by decide) (by simp only [sW]; omega)).trans huW
-  have hvI := (ov.word (d := 8 * sMinv) (by decide) (by simp only [sMinv]; omega)).trans huI
+  have hvW := (ov.word (d := 8 * sW) (by decide) (by simp only [sW]; omega_using [])).trans huW
+  have hvI := (ov.word (d := 8 * sMinv) (by decide) (by simp only [sMinv]; omega_using [])).trans huI
   refine WP.mono (WP.keep [.x3] (Q := fun t =>
     t.mem = v.mem.writeW (off B (8 * sStride)) (BitVec.ofNat 64 (8 * (w + 2))))
     (by
       unfold Impl.Dsa.AArch64.Generation.workspaceStride
       brun [hv0, hstride, hdr_enc (show sStride < 32 by decide),
-        hvS.st (d := 8 * sStride) (by simp only [sStride, sFn]; omega)]) rfl rfl rfl)
+        hvS.st (d := 8 * sStride) (by simp only [sStride, sFn]; omega_using [h256])]) rfl rfl rfl)
     fun t ⟨htm, kt⟩ => ?_
   have ot : Outside B (8 * sStride) 8 v.mem t.mem := by
-    rw [htm]; exact writeW_outside _ B _ (by simp only [sStride, sFn]; omega)
+    rw [htm]; exact writeW_outside _ B _ (by simp only [sStride, sFn]; omega_using [])
   have fixed (i : Nat) (hi : i < 16) : word t.mem B (8 * i) = word v.mem B (8 * i) :=
-    ot.word (by simp only [sStride, sFn]; omega) (by omega)
+    ot.word (by simp only [sStride, sFn]; omega_using [hi]) (by omega_using [hi])
   refine ⟨⟨hvS.congr kt.wr, (kt.gpr .x0 (by decide)).trans hv0,
     (fixed sW (by decide)).trans hvW, ?_, fun j hj =>
-      (fixed (sArr j) (by unfold sArr; omega)).trans (hvArr j hj), hZ, hw, by omega⟩,
+      (fixed (sArr j) (by unfold sArr; omega_using [hj])).trans (hvArr j hj), hZ, hw, by omega_using [hw48]⟩,
     (fixed sMinv (by decide)).trans hvI, ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
   · rw [htm, word_writeW_self]
   · exact (fu.trans (Frm.of_outside ov (by simp [workspaceRanges, sArr]))).trans

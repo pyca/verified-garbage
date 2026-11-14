@@ -20,7 +20,7 @@ theorem callMinusP_relCT (L : CallLayout) (output : Nat) (P : CallOperand L (.in
   · exact (validateMinus_relCT L.pLen 1 output .p L.base L.size L.saved).mono
       (fun _ _ H => ⟨H.1.moduli.scr, H.2.moduli.scr, H.pointer P⟩) (fun _ _ h => h)
   · intro s R
-    exact WP.mono (stageMinusP_ok R.moduli (by have := R.moduli.pLarge; omega) ho hb)
+    exact WP.mono (stageMinusP_ok R.moduli (by have := R.moduli.pLarge; omega_using [this]) ho hb)
       fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
 
 theorem callMinusQ_relCT (L : CallLayout) (output : Nat) (Q : CallOperand L (.input .q) L.qLen)
@@ -30,7 +30,7 @@ theorem callMinusQ_relCT (L : CallLayout) (output : Nat) (Q : CallOperand L (.in
   · exact (validateMinus_relCT L.qLen 2 output .q L.base L.size L.saved).mono
       (fun _ _ H => ⟨H.1.moduli.scr, H.2.moduli.scr, H.pointer Q⟩) (fun _ _ h => h)
   · intro s R
-    exact WP.mono (stageMinusQ_ok R.moduli (by have := R.moduli.qLarge; omega) ho hb)
+    exact WP.mono (stageMinusQ_ok R.moduli (by have := R.moduli.qLarge; omega_using [this]) ho hb)
       fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
 
 end VG.Proof.Dsa.X86

@@ -40,9 +40,9 @@ theorem spread_steps (s₀ : State) (idx c : Byte) (hbp : s₀.gpr .ebp = idx.se
     rw [List.range_succ, List.reverse_append, List.reverse_cons, List.reverse_nil,
       List.nil_append, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (spread_step s idx c (by omega) (hbp'.trans hbp) (hax'.trans hax) hcx)
+    refine WP.mono (spread_step s idx c (by omega_using [hn]) (hbp'.trans hbp) (hax'.trans hax) hcx)
       fun t ⟨tcx, tax, tbp, tm⟩ => ?_
-    exact ih (by omega) t tcx (tax.trans hax') (tbp.trans hbp') (tm.trans hm)
+    exact ih (by omega_using [hn]) t tcx (tax.trans hax') (tbp.trans hbp') (tm.trans hm)
 
 theorem lanesDown_eq : lanesDown = (List.range 4).reverse := rfl
 
@@ -81,14 +81,14 @@ theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 32)
   | succ n ih =>
     intro s hcx hbp' hdi hwr hm
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s hcx hbp' hdi hwr hm) fun t ⟨tm, tcx, tbp, tdi, twr⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn]) s hcx hbp' hdi hwr hm) fun t ⟨tm, tcx, tbp, tdi, twr⟩ => ?_
     have hq : InRegions t.wr (addr (t.gpr .edi) (4 * n)) 4 := by
-      rw [twr, tdi, row_addr hfit (by omega)]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) hw
-    refine WP.mono (scatter_step t idx (by omega) (tbp.trans hbp) hq)
+      rw [twr, tdi, row_addr hfit (by omega_using [hn])]
+      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) hw
+    refine WP.mono (scatter_step t idx (by omega_using [hn]) (tbp.trans hbp) hq)
       fun u ⟨um, ucx, ubp, udi, _, uwr⟩ => ?_
     refine ⟨?_, ucx.trans tcx, ubp.trans tbp, udi.trans tdi, uwr.trans twr⟩
-    rw [um, tm, tcx, tdi, row_addr hfit (by omega), scatter_succ]
+    rw [um, tm, tcx, tdi, row_addr hfit (by omega_using [hn]), scatter_succ]
 
 /-! ## The replacement -/
 
@@ -97,7 +97,7 @@ theorem idx_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) (i : Byte) :
     addr (P + i.setWidth 32) 0 = P.setWidth 64 + BitVec.ofNat 64 i.toNat := by
   unfold addr
   rw [BitVec.add_zero, byte32 i]
-  exact VG.Proof.MlKem.X86.ea_off (by have := i.isLt; omega)
+  exact VG.Proof.MlKem.X86.ea_off (by have := i.isLt; omega_using [hP])
 
 theorem loadI_ok (s : State) (ii : Byte) (hsi : s.gpr .esi = ii.setWidth 32)
     (hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32)
@@ -107,7 +107,7 @@ theorem loadI_ok (s : State) (ii : Byte) (hsi : s.gpr .esi = ii.setWidth 32)
       Keep [.edx] s t ∧ t.mem = s.mem := by
   have hi : InRegions (s.rd ++ s.wr) (addr (s.gpr .edi + ii.setWidth 32) 0) 1 := by
     rw [idx_addr hfit ii]
-    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega) (by have := ii.isLt; omega) hr
+    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) hr
   refine WP.mono (WP.keep (Q := fun t =>
       t.gpr .edx = (s.mem ((s.gpr .edi).setWidth 64 + BitVec.ofNat 64 ii.toNat)).setWidth 32 ∧
       t.mem = s.mem) [.edx] ?_ (by decide +kernel)) fun t ⟨h, hk⟩ => ⟨h.1, hk, h.2⟩
@@ -156,7 +156,7 @@ theorem replace_core (s : State) (idx ii : Byte) (hbp : s.gpr .ebp = idx.setWidt
   refine WP.mono h1 fun u ⟨uax, ucx, ubp, udi, usi, um, urd, uwr⟩ => ?_
   rw [WP.block_append_iff]
   have hsp := spread_steps u idx (b ^^^ v) (ubp.trans hbp) uax 4 (by decide) u
-    (by rw [ucx]; unfold spread; rw [ite_eq_right (by omega)]) rfl rfl rfl
+    (by rw [ucx]; unfold spread; rw [ite_eq_right (by omega_using [])]) rfl rfl rfl
   rw [← lanesDown_eq] at hsp
   refine WP.mono (WP.keep [.ecx, .edx] hsp (by decide +kernel)) fun w ⟨⟨wcx, wax, wm⟩, wk⟩ => ?_
   have wbp : w.gpr .ebp = s.gpr .ebp := (wk.gpr (by decide)).trans ubp
@@ -186,7 +186,7 @@ theorem replace_core (s : State) (idx ii : Byte) (hbp : s.gpr .ebp = idx.setWidt
   refine ⟨(yk.gpr (by decide)).trans xax, ?_⟩
   rw [ym, xcx, wcx]
   unfold scatter spread
-  rw [ite_eq_left (by omega), ite_eq_left (Nat.zero_le _), Nat.sub_zero, writeW_byte32,
+  rw [ite_eq_left (by omega_using []), ite_eq_left (Nat.zero_le _), Nat.sub_zero, writeW_byte32,
     ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 end VG.Proof.Rc4.X86

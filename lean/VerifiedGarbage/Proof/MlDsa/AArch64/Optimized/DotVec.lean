@@ -83,7 +83,7 @@ theorem dotReduce_ok {d : VReg} (hd : d≠.v31) {s : State} {rest : List Instr} 
     grind only
   · intro e he
     rw [hu.v,VG.AArch64.vword_map2 _ _ _ he,ht.get .v31 (by simp [Ne.symm hd]),hv,hq]
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
       simp only [vword_ofVWords_0,vword_ofVWords_1,vword_ofVWords_2,vword_ofVWords_3]
 
 end VG.Proof.MlDsa.AArch64.Optimized

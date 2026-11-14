@@ -121,7 +121,7 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
     · intro h2
       have hp3 : p ≠ 3 := by simpa using h3
       have hp2 : p ≠ 2 := by simpa using h2
-      exact branch t₂ 1 (by omega) rfl rfl rfl rfl rfl hg₂
+      exact branch t₂ 1 (by omega_using [hp, hp3, hp2]) rfl rfl rfl rfl rfl hg₂
 
 structure PassPost (keys : DesSchedule) (direction : Direction)
     (origin : State) (v : BitVec 32 × BitVec 32) (n : Nat) (s : State) : Prop where
@@ -170,7 +170,7 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
   have hp₃ : passesOf s₃ = BitVec.ofNat 64 p := by
     rw [passesOf, v₃, hs₂.vec, hs.vec .v1 (by decide)]
     exact hpasses
-  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega) hp.1
+  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega_using [hp]) hp.1
   refine WP.of_runBlock ⟨s₄, by simp only [runBoxes_append, run₃, Option.bind_some, run₄], ?_⟩
   refine ⟨?_, ?_, rd₄.trans (rd₃.trans (hs₂.rd.trans hs.rd)),
     wr₄.trans (wr₃.trans (hs₂.wr.trans hs.wr)), sp₄.trans (sp₃.trans (hs₂.sp.trans hs.sp)),

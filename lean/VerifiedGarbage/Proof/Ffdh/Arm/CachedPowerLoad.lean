@@ -19,7 +19,7 @@ theorem load_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List Nat}
       (t.gpr .r1=l.start ∧ t.gpr .r2=BitVec.ofNat 32 l.width ∧
         t.gpr .r4=p.cachedContext ∧ t.mem=s.mem) ∧ Rest [.r1,.r2,.r4] s t := by
   have addr (d : Nat) (hd : d≤68) : State.addr (s.sp+BitVec.ofNat 32 d)=off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have read16 := h.locals.read (by decide : 16+4≤72)
   have read20 := h.locals.read (by decide : 20+4≤72)
   have read52 := h.locals.read (by decide : 52+4≤72)

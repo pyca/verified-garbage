@@ -36,7 +36,7 @@ open VG.Proof.Dsa.X86 (Two Pins two_post two_taint two_piece two_map two_mono tw
 /-- Two entry states with the same public descriptor have the same arguments. -/
 theorem args_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) {i : Nat} (hi : i < 10) : arg o₁ i = arg o₂ i := by
   have ofn : ∀ {x y : BitVec 32}, x.toNat = y.toNat → x = y := BitVec.eq_of_toNat_eq
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact congrArg PPub.op e
   · exact ofn (congrArg PPub.len e)
@@ -52,9 +52,9 @@ theorem args_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) {i : Nat} 
 theorem callArg_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) (used j : Nat) :
     callArg o₁ used j = callArg o₂ used j := by
   unfold callArg
-  simp only [args_eq e (i := 0) (by omega), args_eq e (i := 1) (by omega), args_eq e (i := 3) (by omega),
-    args_eq e (i := 4) (by omega), args_eq e (i := 5) (by omega), args_eq e (i := 6) (by omega),
-    args_eq e (i := 7) (by omega), args_eq e (i := 8) (by omega), args_eq e (i := 9) (by omega)]
+  simp only [args_eq e (i := 0) (by omega_using []), args_eq e (i := 1) (by omega_using []), args_eq e (i := 3) (by omega_using []),
+    args_eq e (i := 4) (by omega_using []), args_eq e (i := 5) (by omega_using []), args_eq e (i := 6) (by omega_using []),
+    args_eq e (i := 7) (by omega_using []), args_eq e (i := 8) (by omega_using []), args_eq e (i := 9) (by omega_using [])]
 
 theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ f₂ : Nat → BitVec 32} {used : Nat}
     (e : ofState o₁ = ofState o₂) (h₁ : Fr o₁ ds₁ f₁ t₁) (h₂ : Fr o₂ ds₂ f₂ t₂)
@@ -63,7 +63,7 @@ theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ 
     Cand.contract.pub (t₁.callEntry.withRegions rd wr) (t₂.callEntry.withRegions rd wr) := by
   have A₁ := h₁.abi
   have A₂ := h₂.abi
-  have hu₂ : used < (arg o₂ 6).toNat := by rw [← args_eq e (i := 6) (by omega)]; exact hu
+  have hu₂ : used < (arg o₂ 6).toNat := by rw [← args_eq e (i := 6) (by omega_using [])]; exact hu
   have sp : o₁.gpr .esp = o₂.gpr .esp := congrArg PPub.sp e
   sig_pub [Cand.contract, Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
@@ -77,9 +77,9 @@ theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ 
   refine ⟨by rw [h₁.esp, h₂.esp, sp], by rw [h₁.syms, h₂.syms]; exact congrArg PPub.T e, ?_, ca 0, ca 1, ca 2,
     ca 3, ca 4, ca 5, ca 6, ca 7, ca 8⟩
   have l₁ : (BitVec.ofNat 32 ((arg o₁ 6).toNat - used)).toNat = (arg o₁ 6).toNat - used := by
-    have := (arg o₁ 6).isLt; rw [BitVec.toNat_ofNat]; omega
+    have := (arg o₁ 6).isLt; rw [BitVec.toNat_ofNat]; omega_using []
   have l₂ : (BitVec.ofNat 32 ((arg o₂ 6).toNat - used)).toNat = (arg o₂ 6).toNat - used := by
-    have := (arg o₂ 6).isLt; rw [BitVec.toNat_ofNat]; omega
+    have := (arg o₂ 6).isLt; rw [BitVec.toNat_ofNat]; omega_using []
   simp only [callArg, Nat.reduceEqDiff, ↓reduceIte, l₁, l₂]
   rw [ret_eq A₁ h₁.esp, ret_eq A₂ h₂.esp, entry_bytes h₁ hu, entry_bytes h₂ hu₂, e]
 
@@ -191,7 +191,7 @@ theorem capCmp_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s
   show t₃.cf = _
   rw [c₃, o₂ .eax (by decide), g₁, g₂]
   simp only [liveF, leftOff, capOff, ↓reduceIte, Nat.reduceEqDiff]
-  rw [toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+  rw [toNat_ofNat_lt (by omega_using [hR]), toNat_ofNat_lt (by omega_using [hc])]
 
 theorem shortage_ct : RelCT isa (Two LiveAt) shortage fun _ _ => True := by
   unfold shortage
@@ -217,7 +217,7 @@ theorem classify_ct : RelCT isa (Two ClsAt) classify fun _ _ => True := by
       rw [hlen] at h2
       show used + candUsed _ _ _ _ ≤ _
       have : (ofState o).randLen = (arg o 6).toNat := rfl
-      omega
+      omega_using [hul, h2, this]
     exact advance_ok (S.withWord hcu) hcl fun t S' hed _ => wp_cmpi fun t' F _ z => WP.block_nil
       ⟨⟨o, (S'.fupd F).live hcl L₀.n_le⟩, by rw [F.gpr, hed, he], cmp_status (candidateStatus_le _) (by decide)
         (hed.trans he) z⟩

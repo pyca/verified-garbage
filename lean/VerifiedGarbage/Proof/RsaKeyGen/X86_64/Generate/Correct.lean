@@ -52,7 +52,7 @@ theorem finish_ok {p : GenPublic} {original s : State} {final : KeySearchResult}
   have hkeep (v : BitVec 64) (d : Nat) (hd : d + 8 ≤ 160) :
       (s.mem.writeW p.up v).readW (p.F + BitVec.ofNat 64 d) 64 = s.mem.readW (p.F + BitVec.ofNat 64 d) 64 :=
     (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self (rU p)) v (Region.contains_self _ _)).readW
-      (r := p.frame) (Offset.contains_base _ hd (by omega)) (fun q hq => by
+      (r := p.frame) (Offset.contains_base _ hd (by omega_using [hd])) (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
         exact g.input.frame_disjoint_writes (r := inUsed original) (by simp [inWrites]) |>.sub_right
           (by rw [g.used_region]; exact fun _ h => h)) (by decide)
@@ -86,7 +86,7 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
   have hfr : Frame [rU p] d.mem t.mem := by
     rw [hm]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hword (j : Nat) (hj : j < 7) : word t.mem p.stp (8 * j) = word d.mem p.stp (8 * j) :=
-    hfr.readW (r := cS p) (Offset.contains_base _ (by omega) (by have := hf.nT; omega))
+    hfr.readW (r := cS p) (Offset.contains_base _ (by omega_using [hj]) (by have := hf.nT; omega_using [hj]))
       (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hf.uT.symm) (by decide)
   have hbytes {R : Region} (hR : Region.Sub R (cK p) ∨ Region.Sub R (cS p)) (hn : R.len ≤ 2 ^ 64) :
       Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt d.mem R.base R.len := by
@@ -98,9 +98,9 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exacts [(hf.kU.sub_left hR), (hf.uT.symm.sub_left hR)]
   refine ⟨?_, ?_, ?_, req, ?_, ?_, ?_⟩
   · have := keyStatus_lt (genResult s)
-    rw [hax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [hax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
   · rw [hkp, hL, ← hkey]
-    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega)
+    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
   · rw [hup]
     show [t.mem.readW (p.up + BitVec.ofNat 64 (8 * 0)) 64] = _
     rw [Nat.mul_zero, BitVec.add_zero, hm, Mem.readW_writeW_self64]
@@ -126,7 +126,7 @@ theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s)
   have hf := hp.cfacts
   unfold genCode code
   apply frame_alloc (by decide) (by decide) (by decide) (by
-    rw [← hp.sp_eq]; have : 552 ≤ (genOfState s).sp.toNat := hroom; show 160 ≤ _; omega)
+    rw [← hp.sp_eq]; have : 552 ≤ (genOfState s).sp.toNat := hroom; show 160 ≤ _; omega_using [this])
   simp only [VG.Impl.Bignum.X86_64.seqs]
   refine WP.seq (WP.mono (gen_start hp) fun u ⟨hu, hfu⟩ => ?_)
   refine WP.seq (WP.mono (clearAround_ok hu ?_) fun w ⟨hw, _⟩ => ?_)
@@ -136,8 +136,8 @@ theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s)
     · cases hpB
     · cases hpB
       obtain ⟨hL1, -, -⟩ := hf.len
-      exact bytes_kept hfu (hu.frame_key.sub_right (slot_sub _ (by omega))) (by
-        show (genOfState s).L ≤ 2 ^ 64; have := hf.nK; omega)
+      exact bytes_kept hfu (hu.frame_key.sub_right (slot_sub _ (by omega_using []))) (by
+        show (genOfState s).L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
   have hinv : GenInv (genOfState s) s (genResult s) (genMeasure (genOfState s) 0 (genProgress s)) w :=
     ⟨0, genProgress s, rfl, hw, [], by rw [consume_zero]; rfl⟩
   refine WP.seq (WP.mono (gen_loop v hinv) fun d hd => ?_)
@@ -208,20 +208,20 @@ theorem genCode_depth (v : RoundImpl) : (genCode v).x86_64Depth ≤ stackUse := 
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.x86_64Depth, Instr.frameBytes, frameBytes, hk, hc, he, hf, ha,
     Nat.zero_max, Nat.max_zero, Nat.zero_add]
   have hs' : (Search.searchCode v).x86_64Depth ≤ 336 := hs
-  exact Nat.add_le_of_le_sub (by decide) (Nat.max_le.mpr ⟨by show _ ≤ 392; omega, by decide⟩)
+  exact Nat.add_le_of_le_sub (by decide) (Nat.max_le.mpr ⟨by show _ ≤ 392; omega_using [hs'], by decide⟩)
 
 theorem gen_return_address (v : RoundImpl) {s t : State} {tr : List Leak}
     (h : genPre s) (he : Exec isa (genCode v) s tr t) :
     t.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 := by
   obtain ⟨-, -, -, hwr, -, -, -, hstk, -⟩ := h
   have hd : (genCode v).x86_64Depth ≤ 552 := genCode_depth v
-  have hf := Exec.stackFrame (SpSafe.of_all (genCode_sp v)) he (by omega)
+  have hf := Exec.stackFrame (SpSafe.of_all (genCode_sp v)) he (by omega_using [hd])
   refine hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   rcases List.mem_append.mp hr with hr | hr
   · rw [hwr] at hr
     exact (hstk r (List.mem_append_left _ hr)).1
   · obtain rfl := List.mem_singleton.mp hr
-    exact Offset.base_disjoint_below _ (by omega)
+    exact Offset.base_disjoint_below _ (by omega_using [hd])
 
 theorem gen_correct [Key.KeyProof] (v : RoundImpl) (s : State) (h : genContract.pre s) :
     ∃ tr t, Exec isa (genCode v) s tr t ∧ abiPreserved s t ∧ genContract.post s t := by

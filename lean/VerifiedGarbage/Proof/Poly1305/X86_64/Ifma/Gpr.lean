@@ -126,7 +126,7 @@ theorem loadYG_ok (s : State) (d : Nat)
     ea_at, readSrc, State.load64, State.setReg, r₀, r₁, r₂, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun i hi => ?_, ?_⟩
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> rfl
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> rfl
   · finish_gpr8
 
 /-- Quadword 0 of the limbs of `H`, stored at `rdi + d`, `d + 8`, `d + 16`. -/
@@ -276,7 +276,7 @@ theorem toWords_ok (s : State) :
     have e4 : (s₁.gpr .rbp).toNat = (h0w s 2).toNat / 2 ^ 40 := by
       rw [a5, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have e0 : (s₁.gpr .r11).toNat = (h0w s 0).toNat := by rw [a1]
-    have W := b (by rw [e0, e1, e2, e3, e4]; omega)
+    have W := b (by rw [e0, e1, e2, e3, e4]; omega_using [])
     rw [e0, e1, e2, e3, e4] at W
     -- The fold.
     have t3 : (s₃.gpr .rbp).toNat = (s₂.gpr .rbp).toNat % 4 := by
@@ -285,20 +285,20 @@ theorem toWords_ok (s : State) :
       have hl := (s₂.gpr .rbp).isLt
       rw [c2, BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ushiftRight,
         Nat.shiftRight_eq_div_pow]
-      omega
+      omega_using [W]
     have g0 := (s₂.gpr .r11).isLt
     have g1 := (s₂.gpr .rbx).isLt
-    have D := d (by rw [t2, t3, r11₃, rbx₃]; omega)
+    have D := d (by rw [t2, t3, r11₃, rbx₃]; omega_using [])
     rw [t2, t3, r11₃, rbx₃] at D
     have hP : Spec.Poly1305.P = 2 ^ 130 - 5 := rfl
     have key : VG.Proof.Poly1305.X86_64.hval s₄ + Spec.Poly1305.P * ((s₂.gpr .rbp).toNat / 4) = h0val s := by
       simp only [VG.Proof.Poly1305.X86_64.hval, h0val]
       rw [D, hP]
-      omega
+      omega_using [b, b0, b1, b2, e1, e2, e3, e4, e0, W, t3, t2, g0, g1, D]
     refine ⟨by rw [← key, Nat.add_mul_mod_self_left], ?_⟩
     have := (s₄.gpr .r11).isLt
     have := (s₄.gpr .rbx).isLt
-    omega
+    omega_using [D]
 
 set_option simprocs false in
 theorem movR9_ok (s : State) :

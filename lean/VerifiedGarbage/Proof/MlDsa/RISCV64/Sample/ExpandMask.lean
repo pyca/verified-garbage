@@ -155,12 +155,12 @@ theorem loop_ok {Bv d c nb : Nat} (hs : Shape d c nb) (hB19 : Bv ≤ 2 ^ 19) (hd
     (by unfold unpackLoop; rfl) (.inl (by unfold unpackLoop; rfl)) (fun t s' he rd' wr' hf hq => ?_)
   · show Region.Disjoint ⟨s.gpr .a7, 32 * d⟩ ⟨s.gpr .t1, 1024⟩
     rw [h.a7, h.t1]
-    exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 32 * d) (by omega))).symm
+    exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 32 * d) (by omega_using [h32]))).symm
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨P.scrR, List.mem_append_right _ (by show _ ∈ s.wr; rw [ewr]; simp), 840, h.a7,
-        by show 840 + 32 * d ≤ 2048; omega⟩
+        by show 840 + 32 * d ≤ 2048; omega_using [h32]⟩
     · exact ⟨P.aR, List.mem_append_right _ (by show _ ∈ s.wr; rw [ewr]; simp), 0,
         by rw [h.t1]; exact (BitVec.add_zero _).symm, by simp⟩
   · refine Covers.of_sub fun r hr => ?_
@@ -193,7 +193,7 @@ theorem tail_ok (hg : gam σ = 2 ^ 17 ∨ gam σ = 2 ^ 19) {s : State} (h : T P 
     refine WP.mono (loop_ok hp (Bv := 131072) (c := 4) (nb := 9) (by constructor <;> decide) (by decide)
       (by decide) (by decide) h2) fun s' ⟨he, hpo⟩ => ⟨he, ?_⟩
     rw [Out, hγ]; exact hpo
-  · have hγ : gam σ = 2 ^ 19 := by have := of_decide_eq_false e; omega
+  · have hγ : gam σ = 2 ^ 19 := by have := of_decide_eq_false e; omega_using [hg, this]
     show WP isa (.seq (.block (([.addi .a7 .s11 840, mov .t1 .s10] : List Instr) ++
       Impl.MlDsa.RISCV64.Pack.loadQ ++ loadB .a1 524288)) (unpackLoop buFin 20 2 5)) s1 _
     refine WP.seq (WP.mono (setup_ok hp (Bv := 524288) (by decide) h1) fun s2 h2 => ?_)

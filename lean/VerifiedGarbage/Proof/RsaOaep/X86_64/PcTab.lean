@@ -44,21 +44,21 @@ theorem etabJ {H : Spec.Mgf1.Hash} {s t : State} (hp : PPreT H s) (he : EnvE s t
     Tab G f (fb s) (stackArg s j) (frameBytes + 8 + 8 * j) t := by
   have hsp := hp.sp4
   have cT : ∀ d, d + 8 ≤ 88 → (⟨stackArg s j, 88⟩ : Region).Contains (off (stackArg s j) d) 8 := fun d hd =>
-    Offset.contains_base _ hd (by have := wT; omega)
+    Offset.contains_base _ hd (by have := wT; omega_using [hd])
   have cA : (argsT s).Contains (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
     rw [argAddr, stackArgAddr_j s j]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   have rT : ∀ d, d + 8 ≤ 88 → InRegions (t.rd ++ t.wr) (off (stackArg s j) d) 8 := fun d hd => by
     rw [he.rd]; exact Covers.left (Covers.one hT) _ _ ⟨_, List.mem_singleton_self _, cT d hd⟩
   have rA : InRegions (t.rd ++ t.wr) (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
     rw [he.rd]; exact Covers.left (Covers.one hp.argsT') _ _ ⟨_, List.mem_singleton_self _, cA⟩
-  refine ⟨by rw [hsy]; exact ok, fun i hi => rT _ (by omega), rT 48 (by omega), rA, fun m hf => ?_⟩
+  refine ⟨by rw [hsy]; exact ok, fun i hi => rT _ (by omega_using [hi]), rT 48 (by omega_using []), rA, fun m hf => ?_⟩
   have hF : FrE s m := FrE.step he.fr he.wr hf
   have rt : ∀ d, d + 8 ≤ 88 → m.readW (off (stackArg s j) d) 64 = s.mem.readW (off (stackArg s j) d) 64 :=
     fun d hd => FrE.readW' hF (cT d hd) dK dO dS
   rw [hsy]
-  refine ⟨⟨(rt _ (by omega)).trans hm.1, (rt _ (by omega)).trans hm.2.1, (rt _ (by omega)).trans hm.2.2⟩,
-    (rt 48 (by omega)).trans hD, ?_⟩
+  refine ⟨⟨(rt _ (by omega_using [])).trans hm.1, (rt _ (by omega_using [])).trans hm.2.1, (rt _ (by omega_using [])).trans hm.2.2⟩,
+    (rt 48 (by omega_using [])).trans hD, ?_⟩
   rw [FrE.readW' hF cA hp.argsTStack hp.argsTOut hp.argsTScr, argAddr]
   rfl
 

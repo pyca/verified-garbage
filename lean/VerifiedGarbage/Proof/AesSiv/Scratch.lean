@@ -101,23 +101,23 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
 private theorem bytesAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d n N : Nat} (hn : d + n ≤ N)
     (h : ∀ i < N, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n :=
-  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega_using [hn, hi])
 
 /-- The PRF of a key context, for at most 14 rounds, is in its 512 bytes. -/
 theorem ctxMac_congr {m₁ m₂ : Mem} {p : Addr} {nr : Nat} (hn : nr ≤ 14)
     (h : ∀ i < 512, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxMac m₂ p nr = ctxMac m₁ p nr := by
   simp only [ctxMac, schedCiph]
-  rw [bytesAt_congr fun i hi => h i (by omega),
+  rw [bytesAt_congr fun i hi => h i (by omega_using [hn, hi]),
     show p + 240 = p + BitVec.ofNat 64 240 from rfl, show p + 256 = p + BitVec.ofNat 64 256 from rfl,
-    bytesAt_congr_off (by omega) h, bytesAt_congr_off (by omega) h]
+    bytesAt_congr_off (by omega_using []) h, bytesAt_congr_off (by omega_using []) h]
 
 /-- The cipher of a key context, for at most 14 rounds, is in its 512 bytes. -/
 theorem ctxCiph_congr {m₁ m₂ : Mem} {p : Addr} {nr : Nat} (hn : nr ≤ 14)
     (h : ∀ i < 512, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxCiph m₂ p nr = ctxCiph m₁ p nr := by
   simp only [ctxCiph, schedCiph]
-  rw [show p + 272 = p + BitVec.ofNat 64 272 from rfl, bytesAt_congr_off (by omega) h]
+  rw [show p + 272 = p + BitVec.ofNat 64 272 from rfl, bytesAt_congr_off (by omega_using [hn]) h]
 
 /-- The components of associated data are in the descriptors and the slices
 they list. -/
@@ -143,7 +143,7 @@ theorem components_congr_le {pb : Nat} {m₁ m₂ : Mem} {p : Addr} {N' N : Nat}
     exact h _ (List.mem_cons_of_mem _ (List.mem_map.mpr
       ⟨i, List.mem_range.mpr (Nat.lt_of_lt_of_le (List.mem_range.mp hi) hle), rfl⟩)) a ha
 
-theorem le14 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 14 := by omega
+theorem le14 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 14 := by omega_using [h]
 
 /-- The inputs of `encryptWith` and `decryptWith` on the memory `m₂` are those
 on `m₁` where they agree on the buffers and the list of slices: the lengths
@@ -164,9 +164,9 @@ private theorem inputs_local {pb : Nat} {m₁ m₂ : Mem} {ctx ads data siv : Ad
   have := Nat.mod_le cnt.toNat (2 ^ pb)
   have := Nat.mod_le len.toNat (2 ^ pb)
   simp only [BitVec.toNat_setWidth] at hn ⊢
-  exact ⟨ctxMac_congr hn fun i hi => hc i (by omega), ctxCiph_congr hn fun i hi => hc i (by omega),
-    components_congr_le (by omega) hL, bytesAt_congr fun i hi => hD i (by omega),
-    bytesAt_congr fun i hi => hV i (by omega)⟩
+  exact ⟨ctxMac_congr hn fun i hi => hc i (by omega_using [hi]), ctxCiph_congr hn fun i hi => hc i (by omega_using [hi]),
+    components_congr_le (by omega_arith) hL, bytesAt_congr fun i hi => hD i (by omega_using [this, hi]),
+    bytesAt_congr fun i hi => hV i (by omega_using [hi])⟩
 
 variable (pb : Nat)
 
@@ -202,7 +202,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).l
   dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le kl.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem encryptPre_local : ∀ vs m₁ m₂, vs.length = (encryptSig.words pb).length →

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Every supported native width fits its shared RSA scratch allocation -/
 
@@ -14,17 +15,17 @@ theorem Environment.Valid.widths {E : Environment} (v : E.Valid) :
     16 ≤ E.n ∧ E.n ≤ 256 ∧ E.n = 2 * E.k ∧ 0 < E.k ∧ E.k % 2 = 0 ∧ E.primeLength = 2 * E.n := by
   obtain ⟨lower, upper, multiple⟩ := v.length
   unfold Environment.n Environment.k
-  omega
+  omega_using [lower, upper, multiple]
 
 theorem Environment.Valid.bankFit {E : Environment} (v : E.Valid) : arr E.n 32 ≤ E.size := by
   have cap := v.capacity
   have lower := v.length.1
   unfold Spec.Rsa.scratchWords at cap
   unfold Environment.n Environment.size arr S hdr
-  omega
+  omega_using [cap, lower]
 
 theorem Environment.outputPointer (E : Environment) {i : Nat} (hi : i < 7) : E.outputs.pointer i = E.out i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega_using [hi]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem Environment.Valid.outputLength {E : Environment} (v : E.Valid) {i : Nat} (hi : i < 7) :
@@ -32,9 +33,9 @@ theorem Environment.Valid.outputLength {E : Environment} (v : E.Valid) {i : Nat}
   have small : E.outputLength i < 2 ^ 32 := by
     have H := v.length.2.1
     unfold Environment.outputLength
-    split <;> omega
+    split <;> omega_using [H]
   have arg : E.argument (2 * i + 1) = BitVec.ofNat 32 (E.outputLength i) := by
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   change (E.argument (2 * i + 1)).toNat = _
   rw [arg, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
@@ -51,12 +52,12 @@ theorem Environment.Valid.outputs {E : Environment} (v : E.Valid) : E.outputs.Va
     rw [v.outputLength hi]
     have lower := v.length.1
     unfold Environment.outputLength
-    split <;> omega
+    split <;> omega_using [lengths]
   · intro i hi
     rw [v.outputLength hi]
     change E.outputLength i ≤ 4 * E.n
     unfold Environment.outputLength
-    split <;> omega
+    split <;> omega_using [lengths]
   · intro i hi
     rw [E.outputPointer hi, v.outputLength hi]
     exact v.outFit i hi

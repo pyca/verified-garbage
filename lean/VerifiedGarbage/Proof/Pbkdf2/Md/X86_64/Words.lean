@@ -54,17 +54,17 @@ theorem copy128_ok {src dst : Reg} (o₁ o₂ : Nat) (c : Nat) :
   | succ c ih =>
     intro rest s Q hin hout hsep hlt k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih _ s Q (fun j hj => hin j (by omega)) (fun j hj => hout j (by omega))
-      (fun x hx hy => hsep x (by omega) (by omega)) (by omega) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
+    refine ih _ s Q (fun j hj => hin j (by omega_using [hj])) (fun j hj => hout j (by omega_using [hj]))
+      (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) (by omega_using [hlt]) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
     simp only [Hash.cp128, List.cons_append, List.nil_append]
     refine OneShot.wp_movdquLoad (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (16 * c))
-      (by rw [Pbkdf2.X86_64.ea_off, g₁]) (by rw [rd₁, wr₁]; exact hin c (by omega)) ?_
+      (by rw [Pbkdf2.X86_64.ea_off, g₁]) (by rw [rd₁, wr₁]; exact hin c (by omega_using [])) ?_
     refine wp_movdquStore (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (16 * c))
-      (by rw [Pbkdf2.X86_64.ea_off, RegUpd.gpr_setXmm, g₁]) (by rw [RegUpd.wr_setXmm, wr₁]; exact hout c (by omega))
+      (by rw [Pbkdf2.X86_64.ea_off, RegUpd.gpr_setXmm, g₁]) (by rw [RegUpd.wr_setXmm, wr₁]; exact hout c (by omega_using []))
       fun s₃ g₃ m₃ rd₃ wr₃ => k s₃ (by rw [g₃, RegUpd.gpr_setXmm, g₁])
         (by rw [rd₃, RegUpd.rd_setXmm, rd₁]) (by rw [wr₃, RegUpd.wr_setXmm, wr₁]) ?_
     rw [m₃, RegUpd.xmm_setXmm_self, RegUpd.mem_setXmm, m₁, Nat.mul_succ]
-    exact copy_mem s.mem _ _ c 16 (by rwa [← Nat.mul_succ]) (by omega)
+    exact copy_mem s.mem _ _ c 16 (by rwa [← Nat.mul_succ]) (by omega_using [hlt])
 
 /-- `copyWide src so dst d n` writes the `n` bytes (a multiple of 4) at `src + so` to `dst + d`. -/
 theorem copyWide_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o₁ o₂ n : Nat) (hn : n % 4 = 0)
@@ -79,8 +79,8 @@ theorem copyWide_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o�
     WP isa (.block (Hash.copyWide src o₁ dst o₂ n ++ rest)) s Q := by
   unfold Hash.copyWide
   simp only [List.append_assoc]
-  refine copy128_ok o₁ o₂ (n / 16) _ s Q (fun j hj => hin _ _ (by omega) (by omega)) (fun j hj => hout _ _ (by omega) (by omega))
-    (fun x hx hy => hsep x (by omega) (by omega)) (by omega) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
+  refine copy128_ok o₁ o₂ (n / 16) _ s Q (fun j hj => hin _ _ (by omega_using []) (by omega_using [hj])) (fun j hj => hout _ _ (by omega_using []) (by omega_using [hj]))
+    (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) (by omega_using [hlt]) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
   -- The 8 bytes after the 16-byte words, if any.
   have step8 : ∀ (rest' : List Instr) (t : State), t.gpr = s.gpr → t.rd = s.rd → t.wr = s.wr →
       t.mem = writeBytes s.mem (s.gpr dst + BitVec.ofNat 64 o₂)
@@ -95,36 +95,36 @@ theorem copyWide_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (o�
     · rename_i h8
       simp only [List.cons_append, List.nil_append]
       refine wp_movm (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (16 * (n / 16)))
-        (by rw [Pbkdf2.X86_64.ea_off, g]) (by rw [rd, wr]; exact hin _ _ (by omega) (by omega)) fun t₁ u₁ => ?_
+        (by rw [Pbkdf2.X86_64.ea_off, g]) (by rw [rd, wr]; exact hin _ _ (by omega_using []) (by omega_using [h8])) fun t₁ u₁ => ?_
       refine wp_store (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (16 * (n / 16)))
-        (by rw [Pbkdf2.X86_64.ea_off, u₁.other _ hd, g]) (by rw [u₁.wr, wr]; exact hout _ _ (by omega) (by omega))
+        (by rw [Pbkdf2.X86_64.ea_off, u₁.other _ hd, g]) (by rw [u₁.wr, wr]; exact hout _ _ (by omega_using []) (by omega_using [h8]))
         fun t₂ g₂ m₂ rd₂ wr₂ => k' t₂ (fun r hr => by rw [g₂, u₁.other r hr, g]) (by rw [rd₂, u₁.rd, rd])
           (by rw [wr₂, u₁.wr, wr]) ?_
-      rw [m₂, u₁.gpr, u₁.mem, m, show 16 * (n / 16) = 8 * (2 * (n / 16)) by omega,
-        show n / 8 * 8 = 8 * (2 * (n / 16)) + 8 by omega]
-      exact copy_mem s.mem _ _ (2 * (n / 16)) 8 (fun x hx hy => hsep x (by omega) (by omega)) (by omega)
+      rw [m₂, u₁.gpr, u₁.mem, m, show 16 * (n / 16) = 8 * (2 * (n / 16)) by omega_using [],
+        show n / 8 * 8 = 8 * (2 * (n / 16)) + 8 by omega_using [h8]]
+      exact copy_mem s.mem _ _ (2 * (n / 16)) 8 (fun x hx hy => hsep x (by omega_using [h8, hx]) (by omega_using [h8, hy])) (by omega_using [hlt])
     · rename_i h8
-      exact k' t (fun r _ => by rw [g]) rd wr (by rw [m, show n / 8 * 8 = 16 * (n / 16) by omega])
+      exact k' t (fun r _ => by rw [g]) rd wr (by rw [m, show n / 8 * 8 = 16 * (n / 16) by omega_using [h8]])
   refine step8 _ s₁ g₁ rd₁ wr₁ m₁ fun s₂ g₂ rd₂ wr₂ m₂ => ?_
   split
   · rename_i h4
-    obtain ⟨q, rfl⟩ : ∃ q, n = 4 * q + 4 := ⟨(n - 4) / 4, by omega⟩
-    have e8 : (4 * q + 4) / 8 * 8 = 4 * q := by omega
-    have e4 : 4 * q + 4 - 4 = 4 * q := by omega
+    obtain ⟨q, rfl⟩ : ∃ q, n = 4 * q + 4 := ⟨(n - 4) / 4, by omega_using [h4]⟩
+    have e8 : (4 * q + 4) / 8 * 8 = 4 * q := by omega_using [h4]
+    have e4 : 4 * q + 4 - 4 = 4 * q := by omega_using []
     rw [e4]
     rw [e8] at m₂
     simp only [Impl.Pbkdf2.X86_64.cp32, List.cons_append, Nat.mul_zero, Nat.add_zero]
     refine wp_mov32m (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (4 * q))
-      (by rw [Pbkdf2.X86_64.ea_off, g₂ _ hs]) (by rw [rd₂, wr₂]; exact hin _ _ (by omega) (by omega)) fun s₃ u₃ => ?_
+      (by rw [Pbkdf2.X86_64.ea_off, g₂ _ hs]) (by rw [rd₂, wr₂]; exact hin _ _ (by omega_using []) (by omega_using [])) fun s₃ u₃ => ?_
     refine wp_store32 (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (4 * q))
-      (by rw [Pbkdf2.X86_64.ea_off, u₃.other _ hd, g₂ _ hd]) (by rw [u₃.wr, wr₂]; exact hout _ _ (by omega) (by omega))
+      (by rw [Pbkdf2.X86_64.ea_off, u₃.other _ hd, g₂ _ hd]) (by rw [u₃.wr, wr₂]; exact hout _ _ (by omega_using []) (by omega_using []))
       fun s₄ g₄ m₄ rd₄ wr₄ => k s₄ (fun r hr => by rw [g₄, u₃.other r hr, g₂ r hr]) (by rw [rd₄, u₃.rd, rd₂])
         (by rw [wr₄, u₃.wr, wr₂]) ?_
     rw [m₄, u₃.gpr, u₃.mem, m₂, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
     exact copy_mem s.mem _ _ q 4 hsep hlt
   · rename_i h4
     simp only [List.nil_append]
-    exact k s₂ g₂ rd₂ wr₂ (by rw [m₂, show n / 8 * 8 = n by omega])
+    exact k s₂ g₂ rd₂ wr₂ (by rw [m₂, show n / 8 * 8 = n by omega_using [hn, h4]])
 
 /-- `copyW wide src so dst d n` writes the `n` bytes (a multiple of 4) at `src + so` to `dst + d`. -/
 theorem copyW_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (wide : Bool) (o₁ o₂ n : Nat) (hn : n % 4 = 0)
@@ -140,9 +140,9 @@ theorem copyW_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (wide :
   unfold Hash.copyW
   split
   · exact copyWide_ok hs hd o₁ o₂ n hn rest s Q hin hout hsep hlt k
-  · refine Pbkdf2.X86_64.copy32_ok hs hd o₁ o₂ (n / 4) rest s Q (fun j hj => hin _ _ (by omega) (by omega))
-      (fun j hj => hout _ _ (by omega) (by omega)) (fun x hx hy => hsep x (by omega) (by omega)) (by omega)
-      fun s' g rd wr m => k s' g rd wr (by rw [m, show 4 * (n / 4) = n by omega])
+  · refine Pbkdf2.X86_64.copy32_ok hs hd o₁ o₂ (n / 4) rest s Q (fun j hj => hin _ _ (by omega_using []) (by omega_using [hj]))
+      (fun j hj => hout _ _ (by omega_using []) (by omega_using [hj])) (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) (by omega_using [hlt])
+      fun s' g rd wr m => k s' g rd wr (by rw [m, show 4 * (n / 4) = n by omega_using [hn]])
 
 /-! ## Registers and regions -/
 
@@ -156,6 +156,6 @@ theorem zx32 (x : BitVec 64) : (x.setWidth 32).setWidth 64 = BitVec.ofNat 64 (x.
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
 
 theorem contains_pre {b : Addr} {n k : Nat} (h : n ≤ k) : (⟨b, k⟩ : Region).Contains b n := by
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [h]
 
 end VG.Proof.Pbkdf2.Md.X86_64

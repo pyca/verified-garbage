@@ -62,7 +62,7 @@ theorem padCopy_ok {W : Addr} {s : State} (hw : Covers [⟨W, 2560⟩] s.wr) {S 
       Frame [⟨W + BitVec.ofNat 64 d, 16⟩] s.mem s'.mem ∧
       Proof.AesGcm.PPC64LE.LoopOut s S (W + BitVec.ofNat 64 d) tl s' := by
   have lp : LoopPre s S (W + BitVec.ofNat 64 d) tl :=
-    ⟨hr3, hr4, hr5, h1, by omega, hSr, covers_prefix (covers_off hw hd (by decide)) h16,
+    ⟨hr3, hr4, hr5, h1, by omega_using [h16], hSr, covers_prefix (covers_off hw hd (by decide)) h16,
       hSd.sub_right (Region.sub_prefix h16)⟩
   refine WP.mono (copyLoop_ok s lp) fun s' ⟨hm, lo⟩ => ⟨?_, ?_, lo⟩
   · rw [hm, pad_bytes' hz _ (by rw [length_bytesAt]; exact h16), length_bytesAt]
@@ -106,7 +106,7 @@ theorem recv_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s)
   unfold recv
   refine WP.seq (WP.mono hA fun s₂ ⟨hz, fz, a3, a4, a5, g₂, _, rd₂, wr₂, sp₂, lr₂⟩ => ?_)
   have hT₂ : bytesAt s₂.mem (V .r20) tl = bytesAt s.mem (V .r20) tl :=
-    Proof.Cmac.bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hTd') (by omega)
+    Proof.Cmac.bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hTd') (by omega_using [h16])
   refine WP.mono (padCopy_ok (W := V .r31) (d := tagO) (by rw [wr₂]; exact hw) (by decide) h1 h16
     (by rw [rd₂, wr₂]; exact hTr) hTd' hz a3 a4 a5) fun s' ⟨hb, hf, lo⟩ => ?_
   obtain ⟨rd', wr', sp', lr'⟩ := lo.keeps
@@ -161,7 +161,7 @@ theorem cmp_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s) 
       (∀ r, r ∉ xpRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hw := E.perm.w
   have hSd : (⟨V .r31 + BitVec.ofNat 64 t2O, tl⟩ : Region).Disjoint ⟨V .r31 + BitVec.ofNat 64 vO, 16⟩ :=
-    Offset.disjoint _ (.inl (by simp only [t2O, vO]; omega)) (by simp only [t2O]; omega) (by decide)
+    Offset.disjoint _ (.inl (by simp only [t2O, vO]; omega_using [h16])) (by simp only [t2O]; omega_using [h16]) (by decide)
   have hA : WP isa (.block (zero16 vO ++ [.addi .r3 .r31 t2O, .addi .r4 .r31 vO,
       Impl.AesGcm.PPC64LE.mov .r5 .r19])) s fun s₂ =>
       bytesAt s₂.mem (V .r31 + BitVec.ofNat 64 vO) 16 = zeros 16 ∧
@@ -186,7 +186,7 @@ theorem cmp_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s) 
   unfold cmp
   refine WP.seq (WP.mono hA fun s₂ ⟨hz, fz, a3, a4, a5, g₂, rd₂, wr₂, sp₂, lr₂⟩ => ?_)
   have hS₂ : bytesAt s₂.mem (V .r31 + BitVec.ofNat 64 t2O) tl = bytesAt s.mem (V .r31 + BitVec.ofNat 64 t2O) tl :=
-    Proof.Cmac.bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hSd) (by omega)
+    Proof.Cmac.bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hSd) (by omega_using [h16])
   have dTV : ∀ r ∈ [(⟨V .r31 + BitVec.ofNat 64 vO, 16⟩ : Region)],
       (⟨V .r31 + BitVec.ofNat 64 tagO, 16⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -201,7 +201,7 @@ theorem cmp_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s) 
   have E₃ := E.others g₃ (by rw [sp₃, sp₂]) (by rw [rd₃, rd₂]) (by rw [wr₃, wr₂])
   have f₃ : Frame [⟨V .r31 + BitVec.ofNat 64 vO, 16⟩] s.mem s₃.mem := fz.trans hf
   have hT₃ : bytesAt s₃.mem (V .r31 + BitVec.ofNat 64 tagO) 16 = bytesAt s.mem (V .r31 + BitVec.ofNat 64 tagO) 16 :=
-    Proof.Cmac.bytesAt_frame f₃ dTV (by omega)
+    Proof.Cmac.bytesAt_frame f₃ dTV (by omega_using [])
   refine WP.mono (cmpTail_ok E₃) fun s₄ ⟨r3₄, g₄, k₄⟩ => ⟨?_, by rw [k₄.mem]; exact f₃, fun r hr => ?_,
     by rw [k₄.sp, sp₃, sp₂], by rw [k₄.lr, lr₃, lr₂], by rw [k₄.rd, rd₃, rd₂], by rw [k₄.wr, wr₃, wr₂]⟩
   · rw [r3₄, hT₃, hb, hS₂]
@@ -220,7 +220,7 @@ theorem mask_byte (b : Byte) (c : Bool) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth]
     have := b.isLt
-    omega
+    omega_using []
 
 theorem length_mask (m : Mem) (P : Addr) (c : Bool) (j : Nat) :
     (if c then bytesAt m P j else zeros j).length = j := by
@@ -260,11 +260,11 @@ theorem mask_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s)
           by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr], by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp], by rw [u₄.lr, u₃.lr, u₂.lr, u₁.lr]⟩⟩
   unfold mask
   refine WP.seq (WP.mono hA fun s₁ ⟨r24₁, r25₁, r7₁, g₁, k₁⟩ => ?_)
-  refine WP.ite _ (eval_zero r25₁ (by omega)) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
-  · have hz : n = 0 := by have := of_decide_eq_true h0; omega
+  refine WP.ite _ (eval_zero r25₁ (by omega_using [hn])) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+  · have hz : n = 0 := by have := of_decide_eq_true h0; omega_using [this]
     subst hz
     refine ⟨by rw [k₁.mem]; cases c <;> simp [bytesAt, zeros, writeBytes_nil], g₁, k₁.sp, k₁.lr, k₁.rd, k₁.wr⟩
-  · have hpos : 0 < n := by have := of_decide_eq_false h0; omega
+  · have hpos : 0 < n := by have := of_decide_eq_false h0; omega_using [this]
     refine WP.loop (M := isa)
       (fun (k : Nat) (u : State) => ∃ j, k = n - j ∧ j < n ∧ u.gpr .r24 = D + BitVec.ofNat 64 j ∧
         u.gpr .r25 = BitVec.ofNat 64 (n - j) ∧ u.gpr .r7 = BitVec.ofNat 64 0 - (if c then 1 else 0) ∧
@@ -286,7 +286,7 @@ theorem mask_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s)
       rw [mem]; exact Proof.AesGcm.PPC64LE.dst_kept hj hn _ hl
     have m₅ : u₅.mem = writeBytes s.mem D (if c then bytesAt s.mem D (j + 1) else zeros (j + 1)) := by
       rw [v₅.mem, v₄.mem, v₃.mem, v₂.gpr, v₁.gpr, v₁.other _ (by decide), r7, byte,
-        mask_byte, v₂.mem, v₁.mem, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [hl]; omega), hl]
+        mask_byte, v₂.mem, v₁.mem, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [hl]; omega_using [hn, hj]), hl]
     have r25' : u₅.gpr .r25 = BitVec.ofNat 64 (n - (j + 1)) := by
       rw [v₅.gpr, v₄.other _ (by decide), v₃.gpr, v₂.other _ (by decide), v₁.other _ (by decide), r25,
         Proof.AesGcm.PPC64LE.dec64 hj hn]
@@ -302,12 +302,12 @@ theorem mask_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (E : Env V sp s)
     have ks : u₅.sp = s.sp ∧ u₅.lr = s.lr ∧ u₅.rd = s.rd ∧ u₅.wr = s.wr :=
       ⟨by rw [v₅.sp, v₄.sp, v₃.sp, v₂.sp, v₁.sp, sp], by rw [v₅.lr, v₄.lr, v₃.lr, v₂.lr, v₁.lr, lr],
         by rw [v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd, rd], by rw [v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr, wr]⟩
-    have ev := eval_nonzero r25' (by omega)
+    have ev := eval_nonzero r25' (by omega_using [hn])
     by_cases he : j + 1 = n
     · left
       exact ⟨ev.trans (by simp [he]), by rw [m₅, he], g', ks.1, ks.2.1, ks.2.2.1, ks.2.2.2⟩
     · right
-      exact ⟨ev.trans (by simp; omega), n - (j + 1), by omega, j + 1, rfl, by omega, r24', r25', r7', m₅, g',
+      exact ⟨ev.trans (by simp; omega_using [hj, he]), n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], r24', r25', r7', m₅, g',
         ks.1, ks.2.1, ks.2.2.1, ks.2.2.2⟩
 
 end VG.Proof.AesOcb.PPC64LE

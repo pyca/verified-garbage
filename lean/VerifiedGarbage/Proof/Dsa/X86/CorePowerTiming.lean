@@ -44,30 +44,30 @@ theorem powerHead_ok {base : Addr} {size len bl : Nat} {modulus : Field} {a b : 
     WP isa (powerHead len bl modulus a b) s fun t =>
       PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t := by
   let n := (len + 7) / 8
-  have hn : n ≤ 48 := by dsimp only [n]; omega
+  have hn : n ≤ 48 := by dsimp only [n]; omega_using [hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
   have sz : 8256 ≤ size := hz
   have nw := P.scr.nowrap
   have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by
     have H := slot_bound (n := n) hj
     simp only [stride] at H
-    omega
+    omega_using [cb, sz, H]
   unfold powerHead
-  refine WP.seq (WP.mono (coreLoad_ok P.scr hz (bounds 0 (by decide)) h4 (by omega) hw4
+  refine WP.seq (WP.mono (coreLoad_ok P.scr hz (bounds 0 (by decide)) h4 (by omega_using []) hw4
     P.modulusReady.toReadableComponent (P.modulusReady.slot (by decide))) fun u ⟨M, K, O⟩ => ?_)
   have O' := slotOutside_whole O (by decide)
   have A := P.leftReady.keep K (by decide) O' hn
   have B := P.rightReady.keep K (by decide) O' hn
   refine WP.seq (WP.mono (coreLoad_ok (P.scr.of_keeps K (by decide)) hz (bounds 5 (by decide)) h4
-    (by omega) hw4 A.toReadableComponent (A.slot (by decide))) fun v ⟨_, L, F⟩ => ?_)
+    (by omega_using []) hw4 A.toReadableComponent (A.slot (by decide))) fun v ⟨_, L, F⟩ => ?_)
   have B' := B.keep L (by decide) (slotOutside_whole F (by decide)) hn
   refine WP.mono (coreLoad_ok (P.scr.of_keeps (K.trans L) (by decide)) hz (bounds 8 (by decide)) hb4
-    (by omega) hwb B'.toReadableComponent (B'.slot (by decide))) fun t ⟨_, N, G⟩ => ?_
+    (by omega_using [hb]) hwb B'.toReadableComponent (B'.slot (by decide))) fun t ⟨_, N, G⟩ => ?_
   have allK := (K.trans L).trans N
   have mod : wordsVal t.mem base (slot n 0) n =
       Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) := by
-    rw [slotOutside_val G (by decide) (by have H := bounds 0 (by decide); dsimp only [n] at H; omega),
-      slotOutside_val F (by decide) (by have H := bounds 0 (by decide); dsimp only [n] at H; omega), M]
+    rw [slotOutside_val G (by decide) (by have H := bounds 0 (by decide); dsimp only [n] at H; omega_using [nw, H]),
+      slotOutside_val F (by decide) (by have H := bounds 0 (by decide); dsimp only [n] at H; omega_using [nw, H]), M]
   exact ⟨⟨P.scr.of_keeps allK (by decide), by rw [allK.1 _ (by decide)]; exact room,
     mod ▸ P.large, mod ▸ P.odd⟩, allK⟩
 
@@ -86,31 +86,31 @@ theorem powerHead_relCT (base : Addr) (size len bl : Nat) (modulus : Field) (a b
     RelCT isa (ArithmeticAgree base size len bl modulus a b) (powerHead len bl modulus a b)
       (VG.X86.Taint.Agree (workspaceTaint true)) := by
   intro s t tr ur sf tf ⟨P, Q, Mod, Left, Right⟩ E F
-  have hn : (len + 7) / 8 ≤ 48 := by omega
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
   have Hn := VG.Proof.Dsa.X86.Layout.context_bound hn
   have B := slot_bound (n := (len + 7) / 8) (i := 0) (by decide)
   have H : 8256 ≤ size := hz
   have fit : slot ((len + 7) / 8) 0 + 8 * ((len + 7) / 8) ≤ size := by
-    simp only [stride] at B; omega
+    simp only [stride] at B; omega_using [Hn, B, H]
   cases E with
   | seq E₀ E₁ => cases F with
     | seq F₀ F₁ =>
       have Trace₀ := (coreLoad_relCT _ len _ (.input modulus) base size hz
         _ _ _ _ _ _ ⟨P.scr, Q.scr, Mod⟩ E₀ F₀).1
-      obtain ⟨_, K₁, O₁⟩ := wp_result (coreLoad_ok P.scr hz fit h4 (by omega) hw4
+      obtain ⟨_, K₁, O₁⟩ := wp_result (coreLoad_ok P.scr hz fit h4 (by omega_using []) hw4
         P.modulusReady.toReadableComponent (P.modulusReady.slot (by decide))) E₀
-      obtain ⟨_, K₂, O₂⟩ := wp_result (coreLoad_ok Q.scr hz fit h4 (by omega) hw4
+      obtain ⟨_, K₂, O₂⟩ := wp_result (coreLoad_ok Q.scr hz fit h4 (by omega_using []) hw4
         Q.modulusReady.toReadableComponent (Q.modulusReady.slot (by decide))) F₀
       have W₁ := slotOutside_whole O₁ (by decide)
       have W₂ := slotOutside_whole O₂ (by decide)
       have A₁ := P.leftReady.keep K₁ (by decide) W₁ hn
       have A₂ := Q.leftReady.keep K₂ (by decide) W₂ hn
-      have PL := (pointerValue_keep K₁ (by decide) W₁ (by omega) a).trans
-        (Left.trans (pointerValue_keep K₂ (by decide) W₂ (by omega) a).symm)
-      have PR := (pointerValue_keep K₁ (by decide) W₁ (by omega) b).trans
-        (Right.trans (pointerValue_keep K₂ (by decide) W₂ (by omega) b).symm)
+      have PL := (pointerValue_keep K₁ (by decide) W₁ (by omega_using [Hn]) a).trans
+        (Left.trans (pointerValue_keep K₂ (by decide) W₂ (by omega_using [Hn]) a).symm)
+      have PR := (pointerValue_keep K₁ (by decide) W₁ (by omega_using [Hn]) b).trans
+        (Right.trans (pointerValue_keep K₂ (by decide) W₂ (by omega_using [Hn]) b).symm)
       obtain ⟨Trace₁, Agree⟩ := rawInputs_relCT _ len bl 5 8 a b base size hz hn (by decide)
-        h4 (by omega) hw4 _ _ _ _ _ _ ⟨P.scr.of_keeps K₁ (by decide), Q.scr.of_keeps K₂ (by decide), A₁, A₂, PL, PR⟩ E₁ F₁
+        h4 (by omega_using []) hw4 _ _ _ _ _ _ ⟨P.scr.of_keeps K₁ (by decide), Q.scr.of_keeps K₂ (by decide), A₁, A₂, PL, PR⟩ E₁ F₁
       exact ⟨by rw [Trace₀, Trace₁], Agree⟩
 
 def PowerPair (base : Addr) (size n : Nat) (s t : State) : Prop :=
@@ -142,18 +142,18 @@ theorem corePower_relCT (base : Addr) (size len expLen output : Nat) (modulus : 
     (hw4 : len % 4 = 0) (he : 8 ≤ expLen) (hel : expLen ≤ len) (hew : expLen % 4 = 0) :
     RelCT isa (PowerAgree base size len expLen modulus a b)
       (Core.power len expLen modulus a b output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
-  have hn : (len + 7) / 8 ≤ 48 := by omega
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
   have sz : 8256 ≤ size := hz
   unfold Core.power
   dsimp only
   apply RelCT.assoc
-  refine RelCT.seq ?_ (powerTail_relCT base size _ len _ output (by omega) hu (by omega) hn (by omega) (by omega))
-  have H := (powerHead_relCT base size len expLen modulus a b hz (by omega) hmax hw4).mono
+  refine RelCT.seq ?_ (powerTail_relCT base size _ len _ output (by omega_using [cb, sz]) hu (by omega_using [h4]) hn (by omega_using [he]) (by omega_using [hel]))
+  have H := (powerHead_relCT base size len expLen modulus a b hz (by omega_using [h4]) hmax hw4).mono
     (fun _ _ (P : PowerAgree base size len expLen modulus a b _ _) => P.1) (fun _ _ A => A)
   refine (H.wpDep (F := fun s t => PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t)
-    (fun s t P => ⟨powerHead_ok P.1.1 P.2.1 hz (by omega) hmax (by omega) hel hw4 hew,
-      powerHead_ok P.1.2.1 P.2.2.1 hz (by omega) hmax (by omega) hel hw4 hew⟩)).mono (fun _ _ P => P) ?_
+    (fun s t P => ⟨powerHead_ok P.1.1 P.2.1 hz (by omega_using [h4]) hmax (by omega_using [he]) hel hw4 hew,
+      powerHead_ok P.1.2.1 P.2.2.1 hz (by omega_using [h4]) hmax (by omega_using [he]) hel hw4 hew⟩)).mono (fun _ _ P => P) ?_
   rintro s t ⟨_, a, b, P, ⟨S, K⟩, ⟨T, L⟩⟩
   exact ⟨S, T, (K.1 .esp (by decide)).trans (P.2.2.2.trans (L.1 .esp (by decide)).symm)⟩
 

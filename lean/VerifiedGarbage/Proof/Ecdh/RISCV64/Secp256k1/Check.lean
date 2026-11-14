@@ -71,7 +71,7 @@ theorem masks_ok {s : State} {base : Addr} (hw : WsReg s base) :
   · rw [← m₁]; exact O₂.trans (by rw [← m₃]; exact O₄)
   · have e : ∀ i, i < 44 → sv base s₂ i = sv base s i := fun i hi => by
       show wordsVal s₂.mem _ _ _ = _
-      rw [O₂.wordsVal (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega), m₁]
+      rw [O₂.wordsVal (by rw [sl_eq, FL]; omega_using [hi]) (by rw [sl_eq]; omega_using [hi]), m₁]
     rw [f₄, m₃, g₃, f₂, m₁, g₁]
     simp only [sv] at e ⊢
     rw [show wordsVal s₂.mem base (secp256k1.sl CY) 4 = _ from e CY (by decide),
@@ -125,7 +125,7 @@ theorem curve_ok {s : State} {base : Addr} (hw : WsReg s base)
 theorem sv_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (U : Unch base W m m') (i : Nat)
     (h : ∀ w ∈ W, secp256k1.sl i + 32 ≤ w.1 ∨ w.1 + w.2 ≤ secp256k1.sl i) (hi : i < 100 := by decide) :
     wordsVal m' base (secp256k1.sl i) 4 = wordsVal m base (secp256k1.sl i) 4 :=
-  U.wordsVal h (by rw [sl_eq]; omega)
+  U.wordsVal h (by rw [sl_eq]; omega_using [hi])
 
 /-- The flag, apart from what changed. -/
 theorem fl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (U : Unch base W m m')
@@ -164,7 +164,7 @@ theorem num_eq (m : Mem) (ws : Addr) (i : Nat) (hi : i < 100 := by decide) :
     CC.num ws m (CC.slot i) = wordsVal m ws (secp256k1.sl i) 4 := by
   unfold Impl.Weierstrass.CheckPoint.Curve.num
   rw [Impl.Weierstrass.Mont.numAt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-    simp only [Impl.Weierstrass.CheckPoint.Curve.slot, CC, Impl.Weierstrass.CheckPoint.secp256k1]; omega)]
+    simp only [Impl.Weierstrass.CheckPoint.Curve.slot, CC, Impl.Weierstrass.CheckPoint.secp256k1]; omega_using [hi])]
   exact read_eq_wordsVal m ws 4 _
 
 theorem flag_eq (m : Mem) (ws : Addr) : CC.flag ws m = word m ws FL := by
@@ -182,14 +182,14 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws chkW m m') : CC.Kee
   intro i hi hown hout
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
-  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
+  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega_using [hi, h8])]
   have hw' := (by decide : ∀ w ∈ chkW, (128 ≤ w.1 ∧ w.1 + w.2 ≤ 160) ∨ (w.1 = FL ∧ w.2 = 8) ∨
     (∃ j ∈ [34, 35, 37, 38, 41, 42, 43], w.1 = 64 + 32 * j ∧ w.2 = 32) ∨ (3840 ≤ w.1 ∧ w.1 + w.2 ≤ 4096)) w hw
   simp only [FL, Impl.Weierstrass.CheckPoint.Curve.Own, Impl.Weierstrass.CheckPoint.Curve.Out,
     Impl.Weierstrass.CheckPoint.Curve.slot, Impl.Weierstrass.CheckPoint.Curve.flagAt, CC,
     Impl.Weierstrass.CheckPoint.secp256k1, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes,
     List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, not_or] at hown hout hw'
-  omega
+  omega_using [hown, hout, hw']
 
 /-- The validity the masks compute. -/
 theorem masks_valid {x y w1 xm ym : Nat} (hw1 : w1 < W.p)
@@ -306,7 +306,7 @@ theorem check_rv (s : State) (hs : checkRVc.pre s) :
     show wordsVal _ _ _ _ = _
     rw [U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> (simp only; rw [sl_eq]; omega)) (by rw [sl_eq]; omega)]
+      rcases hw with rfl | rfl <;> (simp only; rw [sl_eq]; omega_using [h2])) (by rw [sl_eq]; omega_using [hi])]
   have hpw : sv base s MP = W.p := (num_eq s.mem base MP).symm.trans hp
   rw [e₃ CX (by decide) (by decide), e₃ CY (by decide) (by decide), e₃ MP (by decide) (by decide), hpw,
     fl₃] at f₄
@@ -347,16 +347,16 @@ theorem check_rv (s : State) (hs : checkRVc.pre s) :
   -- The loads.
   have far : ∀ d ∈ [128, 136], word s₁₂.mem base d = word s₃.mem base d := fun d hd => by
     have U := ((((O₄.unch.trans U₅).trans U₆).trans U₇).trans Uend)
-    refine U.word (fun w hw => ?_) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega)
+    refine U.word (fun w hw => ?_) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd])
     have := (by decide : ∀ w ∈ (((([(FL, 8)] ++ [(secp256k1.sl CXM, 32), (own 4, 256)]) ++
         [(secp256k1.sl CYM, 32), (own 4, 256)]) ++
         (((Cfg.curveOps secp256k1).map FOp.out).map (fun w => (w, 8 * 4)) ++ [(own 4, 64 * 4)])) ++
         [(FL, 8), (secp256k1.sl CPX, 32), (secp256k1.sl CPY, 32)]), 144 ≤ w.1) w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-    omega
+    omega_using [this, hd]
   have w36 : word s₁₂.mem base 136 = s.gpr .ra := by rw [far 136 (by simp), m₃, word_writeW_self]
   have w28 : word s₁₂.mem base 128 = s.gpr .s0 := by
-    rw [far 128 (by simp), m₃, (writeW_outside (d := 136) _ base _ (by omega)).word (by omega) (by omega),
+    rw [far 128 (by simp), m₃, (writeW_outside (d := 136) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
       word_writeW_self]
   have Kp₁₂ : Kp s₃ s₁₂ := K₄.trans (C₅.kp.trans (C₆.kp.trans (K₇.kp.trans ((Kp.of_rest r₈).trans
     ((Kp.of_rest r₉).trans ((Kp.of_upd u₁₀).trans ((Kp.of_rest r₁₁).trans (Kp.of_rest r₁₂))))))))

@@ -29,7 +29,7 @@ theorem compareChooseReg_ok {s : State} (d n m a b : Reg) (ha : a≠d) (hb : b�
     congr 1
     apply propext
     have hm := (s.gpr m).isLt
-    omega
+    omega_using []
   refine WP.cons (s' := u) rfl ?_
   have htail : WP isa (.block [.cselc .x d a b .hs]) u fun t =>
       Only [d] u t ∧ t.gpr d=(if u.c then u.gpr a else u.gpr b) := by

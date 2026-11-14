@@ -93,7 +93,7 @@ theorem sub_trace {W : Addr} {L w : Nat} {q : BitVec 32} (E : BitVec 32 → Prop
       · exact ptr_value H.outPtr
       · change u.gpr .edx = BitVec.ofNat 32 (4 * (2 * w))
         apply BitVec.eq_of_toNat_eq
-        rw [H.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) subRest_raw fun u ⟨⟨s₀, H⟩, e⟩ =>
+        rw [H.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]) subRest_raw fun u ⟨⟨s₀, H⟩, e⟩ =>
       WP.mono (subRest_ok H Io Ia Ib oa ob) fun t ⟨⟨c, mask, _⟩, _, Kt, Ft⟩ =>
         ⟨Ft, by rw [Kt.1 .esi (by decide), ← H.keeps.1 .esi (by decide)]; exact e, c, mask⟩
   exact RelCT.seq setup rest
@@ -134,7 +134,7 @@ theorem difference_trace {W : Addr} {L w : Nat} {q : BitVec 32} :
       · exact ptr_value H.toPtr
       · change u.gpr .edi = BitVec.ofNat 32 (4 * (2 * w))
         apply BitVec.eq_of_toNat_eq
-        rw [H.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) selectRest_raw fun u ⟨s₀, k, H⟩ =>
+        rw [H.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]) selectRest_raw fun u ⟨s₀, k, H⟩ =>
       WP.mono (selectRest_ok H) fun _ H' => H'.2.2.2
   exact (RelCT.seq (first.mono (fun _ _ ⟨S, T⟩ => ⟨⟨S, trivial⟩, ⟨T, trivial⟩⟩) (fun _ _ h => h))
     (RelCT.seq save (RelCT.seq second (RelCT.seq selectSetup selectRest))))
@@ -156,7 +156,7 @@ structure Scanned (W : Addr) (L w : Nat) (q : BitVec 32) (u : State) : Prop wher
 theorem near_trace {W : Addr} {L w : Nat} {q : BitVec 32} (width : 4 ≤ w) (bound : w ≤ 64)
     (space : slot w 5 ≤ L) :
     RelCT isa (fun s t => Base W L w q s ∧ Base W L w q t) near (fun _ _ => True) := by
-  have fit : slot w 2 + 8 * w ≤ L := by unfold slot stride VG.Impl.Bignum.hdrBytes at space ⊢; omega
+  have fit : slot w 2 + 8 * w ≤ L := by unfold slot stride VG.Impl.Bignum.hdrBytes at space ⊢; omega_using [space]
   unfold near orScan
   have setup := seg (X := Base W L w q) (Y := Scanning W L w q)
     (c := .block ([.mov .ebx (.imm 0)] ++ lenPtr .ebp .edx 2 ++
@@ -176,8 +176,8 @@ theorem near_trace {W : Addr} {L w : Nat} {q : BitVec 32} (width : 4 ≤ w) (bou
       · exact ptr_value U.ptr
       · change u.gpr .ecx = BitVec.ofNat 32 (2 * w - 4)
         apply BitVec.eq_of_toNat_eq
-        rw [U.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) orLoop_raw fun u U =>
-      WP.mono (orLoop_ok U.ws (by omega) (by omega) U.ptr U.count U.zero) fun t ⟨_, _, P, K⟩ =>
+        rw [U.count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]) orLoop_raw fun u U =>
+      WP.mono (orLoop_ok U.ws (by omega_using [width]) (by omega_using [fit]) U.ptr U.count U.zero) fun t ⟨_, _, P, K⟩ =>
         ⟨U.ws.of_keeps K, (K.1 .esp (by decide)).trans U.sp, P⟩
   have last := seg (X := Scanned W L w q) (Y := fun _ => True) (c := .block (top ++ VG.Impl.RsaKeyGen.X86.Near.finish))
     [.esp, .ebp] (fun r => if r = .esp then q else BitVec.ofNat 32 (W.toNat + (slot w 2 + 4 * (2 * w - 4))))
@@ -187,7 +187,7 @@ theorem near_trace {W : Addr} {L w : Nat} {q : BitVec 32} (width : 4 ≤ w) (bou
       rcases mem with rfl | rfl
       · exact U.sp
       · exact ptr_value U.ptr) (rawBlock (by decide +kernel)) fun u U =>
-      WP.block_append (WP.mono (topAt_ok U.ws U.ptr (by omega)) fun b ⟨C, _⟩ =>
+      WP.block_append (WP.mono (topAt_ok U.ws U.ptr (by omega_using [width, fit])) fun b ⟨C, _⟩ =>
         WP.mono (VG.Proof.RsaKeyGen.X86.Near.finish_ok b (by rw [C]; exact VG.Proof.RsaKeyGen.X86.Near.nibble_bound _))
           fun _ _ => trivial)
   exact (RelCT.seq (RelCT.seq setup loop) last).mono (fun _ _ h => h) (fun _ _ _ => trivial)
@@ -200,16 +200,16 @@ theorem frameStore_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (B : Ba
   have spB := B.2
   have nowrap := Sb.scratch.nowrap
   have head := Sb.header
-  have St := FilterStack.allocated_context (s := s) (by rw [spB]; omega)
+  have St := FilterStack.allocated_context (s := s) (by rw [spB]; omega_using [fit])
   rw [spB] at St
   have apartQ : (⟨W, L⟩ : Region).Disjoint ⟨(q - 20#32).setWidth 64, 20⟩ := by
-    have H := FilterStack.allocated_apart (s := s) (bytes := 20) (by rw [spB]; omega) nowrap
-      (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega))
+    have H := FilterStack.allocated_apart (s := s) (bytes := 20) (by rw [spB]; omega_using [fit]) nowrap
+      (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
     rw [spB] at H
     exact H
   have Sc : Space W L w (allocFrame 20 s) :=
-    ⟨FilterStack.allocated_scratch Sb.scratch (by rw [spB]; omega)
-      (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega)),
+    ⟨FilterStack.allocated_scratch Sb.scratch (by rw [spB]; omega_using [fit])
+      (by rw [spB]; rcases separateStack with h | h; exact Or.inl h; exact Or.inr (by omega_using [h])),
       Sb.width, Sb.widthBound, Sb.space, Sb.len⟩
   refine WP.mono (St.store 0 (by decide) .edi) fun c ⟨Mc, Oc, Kc, Stc⟩ => ?_
   have Fc := VG.Proof.Bignum.outside_frame Oc (by decide)
@@ -218,7 +218,7 @@ theorem frameStore_ok {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (B : Ba
       intro r mem
       obtain rfl := List.mem_singleton.mp mem
       exact apartQ.sub_right (Offset.sub_base _ (by decide)))
-  refine ⟨Sc.keep Kc (by decide) (by decide) (Wc.read32 (d := 4) (by change 4 + 4 ≤ L; omega) (fun _ mem => nomatch mem)),
+  refine ⟨Sc.keep Kc (by decide) (by decide) (Wc.read32 (d := 4) (by change 4 + 4 ≤ L; omega_using [head]) (fun _ mem => nomatch mem)),
     Stc, apartQ, ?_⟩
   rw [Mc, Mem.readW_writeW_self32, allocFrame_gpr _ _ (by decide), Sb.edi_value]
 
@@ -230,10 +230,10 @@ theorem other_trace {W : Addr} {L w : Nat} {q p : BitVec 32} (width : 4 ≤ w) (
   have source := seg (X := OtherIn W L w q p) (Y := SourceIn W L w q p) (c := .block [.mov .esi (.mem (sc 20))])
     [.esp, .edi] (regs W q fun _ => 0) (fun s S => S.base.vals _) (rawBlock (by decide +kernel)) fun s S => by
       have head := S.base.1.header
-      refine wp_movS (readSrc_sc S.base.1.scratch (d := 20) (by omega)) fun t T _ => WP.block_nil ?_
+      refine wp_movS (readSrc_sc S.base.1.scratch (d := 20) (by omega_using [head])) fun t T _ => WP.block_nil ?_
       refine ⟨⟨S.base.1.keepMem T.keeps (by decide) (by decide) T.mem, (T.other .esp (by decide)).trans S.base.2⟩,
         T.gpr.trans S.pointer, S.sourceFit, by rw [T.keeps.2.1, T.keeps.2.2]; exact S.readable, S.separate⟩
-  have f4 : slot w 4 + 8 * w ≤ L := by unfold slot stride VG.Impl.Bignum.hdrBytes at space ⊢; omega
+  have f4 : slot w 4 + 8 * w ≤ L := by unfold slot stride VG.Impl.Bignum.hdrBytes at space ⊢; omega_using [space]
   have store := seg (X := fun a => ∃ s, Base W L w q s ∧ a = allocFrame 20 s) (Y := Framed W L w (q - 20#32))
     (c := .block [.store (at_ .esp 0) .edi]) [.esp, .edi] (regs W (q - 20#32) fun _ => 0) (fun a ⟨s, S, e⟩ => by
       subst e
@@ -244,7 +244,7 @@ theorem other_trace {W : Addr} {L w : Nat} {q p : BitVec 32} (width : 4 ≤ w) (
       · rw [allocFrame_gpr _ _ (by decide)]; exact S.1.edi_value) (rawBlock (by decide +kernel))
     fun a ⟨s, S, e⟩ => by subst e; exact frameStore_ok S fit separateStack
   refine RelCT.seq source (RelCT.seq (importAt_trace 4 (by decide) f4
-    (by unfold slot stride VG.Impl.Bignum.hdrBytes; omega) (by decide +kernel)) ?_)
+    (by unfold slot stride VG.Impl.Bignum.hdrBytes; omega_using []) (by decide +kernel)) ?_)
   refine RelCT.frameAlloc (R := fun _ _ => True) ?_
   refine (RelCT.seq store (RelCT.seq difference_trace ((near_trace width bound space).mono
     (fun _ _ ⟨U, Z⟩ => ⟨U.base, Z.base⟩) (fun _ _ h => h)))).mono ?_ (fun _ _ h => h)
@@ -261,7 +261,7 @@ theorem close_trace {W : Addr} {L w : Nat} {q p plen : BitVec 32} (width : 4 ≤
     (c := .block [.mov .eax (.mem (sc 24)), .alu .cmp .eax (.imm 0)]) [.esp, .edi] (regs W q fun _ => 0)
     (fun s S => S.base.vals _) (rawBlock (by decide +kernel)) fun s S => by
       have head := S.base.1.header
-      refine wp_movS (readSrc_sc S.base.1.scratch (d := 24) (by omega)) fun a A _ =>
+      refine wp_movS (readSrc_sc S.base.1.scratch (d := 24) (by omega_using [head])) fun a A _ =>
         wp_cmpS rfl fun b B Z => WP.block_nil ?_
       have K : Keeps [.eax] s b := A.keeps.widen (B.keeps [])
       have M : b.mem = s.mem := B.mem.trans A.mem

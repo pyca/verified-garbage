@@ -60,10 +60,10 @@ structure Env (s₀ : State) (P : Nat → Block) (s : State) : Prop where
 
 theorem Env.keys {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SPre s₀ lo) (h : Env s₀ P s) :
     VG.Proof.Aes.X86_64.AesNi.Keys (nr s₀) (sch s₀) s :=
-  ⟨by rw [h.rdi, sch_frame hp h.frame], by rcases hp.rounds with h | h | h <;> omega,
+  ⟨by rw [h.rdi, sch_frame hp h.frame], by rcases hp.rounds with h | h | h <;> omega_using [h],
     fun j hj => by
       rw [h.rd, h.wr, h.rdi]
-      exact in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+      exact in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩
 
 theorem Env.yframe {s₀ s t : State} {P : Nat → Block} {rs : List XReg}
     (h : Env s₀ P s) (f : YFrame rs s t) : Env s₀ P t := by
@@ -90,12 +90,12 @@ theorem work_read {s₀ : State} {m m' : Mem} (h : Frame [workR s₀] m m')
     m'.readW (pp s₀ + BitVec.ofNat 64 d) (8 * n) =
       m.readW (pp s₀ + BitVec.ofNat 64 d) (8 * n) := by
   apply h.readW (r := ⟨pp s₀ + BitVec.ofNat 64 d, n⟩)
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
   · intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact Offset.disjoint (pp s₀) hd (by omega) (by decide)
-  · omega
+    exact Offset.disjoint (pp s₀) hd (by omega_using [hn]) (by decide)
+  · omega_using [hn]
 
 theorem Env.buffer {s₀ s t : State} {P : Nat → Block}
     (h : Env s₀ P s) (f : BufferFrame s t) (hm : Frame [workR s₀] s.mem t.mem) :
@@ -112,13 +112,13 @@ theorem Env.buffer {s₀ s t : State} {P : Nat → Block}
     subst r
     exact ⟨pR s₀, by simp, Offset.sub_base _ (by decide)⟩
   · intro k hk
-    rw [work_read hm (128 + 16 * k) 16 (by omega) (by omega)]
+    rw [work_read hm (128 + 16 * k) 16 (by omega_using [hk]) (by omega_using [hk])]
     exact h.powers k hk
-  · exact (work_read hm 768 16 (by omega) (by omega)).trans h.mask
-  · exact (work_read hm 784 16 (by omega) (by omega)).trans h.poly
-  · exact (work_read hm 800 8 (by omega) (by omega)).trans h.rounds
-  · exact (work_read hm 808 8 (by omega) (by omega)).trans h.data
-  · exact (work_read hm 816 8 (by omega) (by omega)).trans h.saved
+  · exact (work_read hm 768 16 (by omega_using []) (by omega_using [])).trans h.mask
+  · exact (work_read hm 784 16 (by omega_using []) (by omega_using [])).trans h.poly
+  · exact (work_read hm 800 8 (by omega_using []) (by omega_using [])).trans h.rounds
+  · exact (work_read hm 808 8 (by omega_using []) (by omega_using [])).trans h.data
+  · exact (work_read hm 816 8 (by omega_using []) (by omega_using [])).trans h.saved
   · exact f.rd.trans h.rd
   · exact f.wr.trans h.wr
 
@@ -225,7 +225,7 @@ theorem setupC_ok (s : State) (h0 : s.lane .xmm0 0 = revMask)
   · rw [BitVec.ofInt_natCast, BitVec.add_zero]; exact (blockAt_eq _ _).symm
   · bv_omega
   · simp [h1, h2, h3]
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2]
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2]
 
 private theorem store64_eq (s : State) (a : Addr) (v : BitVec 64) :
     s.store64 a v = if InRegions s.wr a 8 then some (s.setMem (s.mem.writeW a v)) else none := rfl

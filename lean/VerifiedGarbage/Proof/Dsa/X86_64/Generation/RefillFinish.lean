@@ -68,8 +68,8 @@ theorem finishTail_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State
           (List.replicate (2 * p.geo.pLen + p.geo.qLen) 0) ∧
       Frame [⟨p.geo.F, frameBytes⟩, ⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩] s.mem t.mem ∧
       t.gpr .rsp = s.gpr .rsp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have pn : 0 < p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : 0 < p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   obtain ⟨V, R⟩ := h.rep
   apply WP.seq
   unfold Impl.Dsa.X86_64.Generation.finishOutput
@@ -84,7 +84,7 @@ theorem finishTail_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State
     have h7 := (mu.slots 7 (by simp [generationSlots])).trans o.lengthSlot
     unfold Impl.Dsa.X86_64.Generation.outputZero
     refine WP.seq (WP.mono (zeroArgs_ok mu.layout Ru) fun u₁ ⟨L₁, R₁, f₁, k₁⟩ => ?_)
-    refine WP.mono (zeroOut_ok L₁ R₁ (by simp [upd, h6]) (by simpa [upd] using h7) (by omega) (by omega)
+    refine WP.mono (zeroOut_ok L₁ R₁ (by simp [upd, h6]) (by simpa [upd] using h7) (by omega_using [pn]) (by omega_using [pn, qn])
       (by rw [k₁.2.2]; exact hwu) o.bound o.apart) fun u₂ ⟨L₂, k₂, R₂, _, bytes₂, f₂⟩ => ?_
     refine WP.mono (returnStatus_ok L₂ R₂) fun t ⟨rt, mt, kt⟩ => ?_
     refine ⟨by simpa [upd] using rt, ?_, ?_, ?_, ?_, ?_⟩
@@ -199,9 +199,9 @@ theorem ranOutCmp_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
   refine WP.keep [.rcx, .rdx] ?_ rfl
   xrun [Impl.Dsa.X86_64.Generation.Refill.ctl, Impl.Dsa.X86_64.Generation.Refill.frameBytes,
     Impl.Dsa.X86_64.Generation.Refill.budget, ea_sp, L.rsp, L.ld (d := 120) (by decide),
-    R.slot (d := 120) (k := 15) rfl (by decide) h15, h3r, h3, hsub, zext_ofNat (by omega : 32769 * pLen < 2 ^ 32),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : len - c < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : 32769 * pLen < 2 ^ 64)]
+    R.slot (d := 120) (k := 15) rfl (by decide) h15, h3r, h3, hsub, zext_ofNat (by omega_using [hp] : 32769 * pLen < 2 ^ 32),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl] : len - c < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [hp] : 32769 * pLen < 2 ^ 64)]
 
 theorem request_ok {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^ 31) (hp : 256 * pLen < 2 ^ 31)
     (hrcx : s.gpr .rcx = BitVec.ofNat 64 L) (hrdx : s.gpr .rdx = BitVec.ofNat 64 B) :
@@ -214,8 +214,8 @@ theorem request_ok {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^ 
   refine WP.seq (WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (256 * pLen) ∧
     t.cf = some (decide (L < 256 * pLen)) ∧ t.mem = s.mem ∧ t.gpr .rcx = BitVec.ofNat 64 L) ?_ rfl)
     fun u ⟨⟨ra, cu, mu, rcu⟩, ku⟩ => ?_)
-  · xrun [hrcx, zext_ofNat (by omega : 256 * pLen < 2 ^ 32), BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : L < 2 ^ 64), Nat.mod_eq_of_lt (by omega : 256 * pLen < 2 ^ 64)]
+  · xrun [hrcx, zext_ofNat (by omega_using [hp] : 256 * pLen < 2 ^ 32), BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega_using [hL] : L < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [hp] : 256 * pLen < 2 ^ 64)]
   have step2 : ∀ u' : State, u'.gpr .rax = BitVec.ofNat 64 (max L (256 * pLen)) → u'.mem = s.mem →
       Keep [.rax, .rcx] s u' → WP isa (.seq (.block [.alu .add .rax (.reg .rax), .alu .cmp .rax (.reg .rdx)])
         (.ite .b (.block [.mov .rdx (.reg .rax)]) (.block []))) u' fun t =>
@@ -223,32 +223,32 @@ theorem request_ok {s : State} {L B pLen : Nat} (hL : L < 2 ^ 32) (hB : B < 2 ^ 
         Keep [.rax, .rcx, .rdx] s t := by
     intro u' ra' mu' ku'
     have hrdx' : u'.gpr .rdx = BitVec.ofNat 64 B := (ku'.gpr (by decide)).trans hrdx
-    have hM : 2 * max L (256 * pLen) < 2 ^ 33 := by omega
+    have hM : 2 * max L (256 * pLen) < 2 ^ 33 := by omega_using [hL, hp]
     refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (2 * max L (256 * pLen)) ∧
       t.cf = some (decide (2 * max L (256 * pLen) < B)) ∧ t.mem = u'.mem) ?_ rfl) fun w ⟨⟨rw, cw, mw⟩, kw⟩ => ?_)
-    · xrun [ra', hrdx', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : B < 2 ^ 64)]
-      refine ⟨by rw [← BitVec.ofNat_add]; congr 1; omega, ?_⟩
-      rw [← BitVec.ofNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      congr 2; omega
+    · xrun [ra', hrdx', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hB] : B < 2 ^ 64)]
+      refine ⟨by rw [← BitVec.ofNat_add]; congr 1; omega_using [], ?_⟩
+      rw [← BitVec.ofNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hL, hp])]
+      congr 2; omega_using []
     have hrdxw : w.gpr .rdx = BitVec.ofNat 64 B := (kw.gpr (by decide)).trans hrdx'
     by_cases h2 : 2 * max L (256 * pLen) < B
     · refine WP.ite true (by simp only [eval, cw, h2, decide_true]) (fun _ => ?_) (fun hh => Bool.noConfusion hh)
       refine WP.mono (WP.keep [.rdx] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 (2 * max L (256 * pLen)) ∧
         t.mem = w.mem) (by xrun [rw]) rfl) fun t ⟨⟨rt, mt⟩, kt⟩ => ⟨?_, mt.trans (mw.trans mu'),
           ((ku'.trans kw).trans kt).mono (by decide)⟩
-      rw [rt, VG.Proof.Entropy.request, Nat.min_eq_left (by omega)]
+      rw [rt, VG.Proof.Entropy.request, Nat.min_eq_left (by omega_using [h2])]
     · refine WP.ite false (by simp only [eval, cw, h2, decide_false]) (fun hh => Bool.noConfusion hh)
         (fun _ => WP.block_nil ⟨?_, mw.trans mu', (ku'.trans kw).mono (by decide)⟩)
-      rw [hrdxw, VG.Proof.Entropy.request, Nat.min_eq_right (by omega)]
+      rw [hrdxw, VG.Proof.Entropy.request, Nat.min_eq_right (by omega_using [h2])]
   apply WP.seq
   by_cases h1 : L < 256 * pLen
   · refine WP.ite true (by simp only [eval, cu, h1, decide_true]) (fun _ => WP.block_nil ?_)
       (fun hh => Bool.noConfusion hh)
-    exact step2 u (by rw [ra, Nat.max_eq_right (by omega)]) mu ku
+    exact step2 u (by rw [ra, Nat.max_eq_right (by omega_using [h1])]) mu ku
   · refine WP.ite false (by simp only [eval, cu, h1, decide_false]) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 L ∧ t.mem = u.mem)
       (by xrun [rcu]) rfl) fun u₂ ⟨⟨r₂, m₂⟩, k₂⟩ => ?_
-    exact step2 u₂ (by rw [r₂, Nat.max_eq_left (by omega)]) (m₂.trans mu) ((ku.trans k₂).mono (by decide))
+    exact step2 u₂ (by rw [r₂, Nat.max_eq_left (by omega_using [h1])]) (m₂.trans mu) ((ku.trans k₂).mono (by decide))
 
 theorem genMem_keep {p : GenerationContext} {W : Nat → BitVec 64} {s t : State} (hm : GenerationMemory p W s)
     (hmem : t.mem = s.mem) {rs : List Reg} (hk : Keep rs s t) (hsp : Reg.rsp ∉ rs) : GenerationMemory p W t := by
@@ -271,12 +271,12 @@ theorem ranOut_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State} (h
   have mmu := genMem_keep hm mu ku (by decide)
   by_cases hL : len - c < 32769 * pLen
   · refine WP.ite true (by simp only [eval, cu, hL, decide_true]) (fun _ => ?_) (fun hh => Bool.noConfusion hh)
-    refine WP.mono (request_ok (L := len - c) (by omega) (by omega) (by omega) rcu rdu) fun t ⟨rt, mt, kt⟩ => ?_
+    refine WP.mono (request_ok (L := len - c) (by omega_using [hl]) (by omega_using [hp]) (by omega_using [hp]) rcu rdu) fun t ⟨rt, mt, kt⟩ => ?_
     have k := (ku.trans kt).mono (rs' := [.rax, .rcx, .rdx]) (by decide)
     exact ⟨k, Or.inl ⟨hL, by rw [rt]; rfl, genMem_keep hm (mt.trans mu) k (by decide), mt.trans mu⟩⟩
   · refine WP.ite false (by simp only [eval, cu, hL, decide_false]) (fun hh => Bool.noConfusion hh) (fun _ => ?_)
     refine WP.mono (VG.Proof.Dsa.X86_64.Generation.Refill.statusMem_ok mmu 2 (by decide)) fun t ⟨mt, ft, kt⟩ => ?_
-    exact ⟨(ku.trans kt).mono (by decide), Or.inr ⟨by omega, mt, mu ▸ ft⟩⟩
+    exact ⟨(ku.trans kt).mono (by decide), Or.inr ⟨by omega_using [hL], mt, mu ▸ ft⟩⟩
 
 theorem zeroTest_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : State} (hm : GenerationMemory p W s) :
     WP isa (.block [.mov .rax (.mem (sp 152)), .alu .test .rax (.reg .rax)]) s fun t =>
@@ -361,7 +361,7 @@ theorem ctl_state {k : Nat} (hk : k < 4) :
     (⟨off (refillBase s₀) (296 + 8 * k), 8⟩ : Region).Disjoint (inState s₀) :=
   (h.frame_disjoint (r := inState s₀) (by simp) _
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))).symm.sub_left
-    (Offset.sub (refillBase s₀) (e := 296) (k := 32) (by omega) (by omega))
+    (Offset.sub (refillBase s₀) (e := 296) (k := 32) (by omega_using []) (by omega_using [hk]))
 
 include h in
 theorem frame_state {d : Nat} (hd : d + 8 ≤ frameBytes) :
@@ -388,7 +388,7 @@ theorem results_ok {v t : State} (hcv : ctlRegion (refillBase s₀) ∈ v.wr) (h
     (hd : LoopDone h v t) : WP isa (Impl.Dsa.X86_64.Generation.Refill.results pBytes) t (ResultsDone h v) := by
   obtain ⟨hs, W, hin, hm, c0, c1, fv, rdv, wrv, cases⟩ := hd
   have hb := refillBase_bound h
-  have hp : pBytes ≤ 384 := by have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+  have hp : pBytes ≤ 384 := by have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
   have hframe : (⟨refillBase s₀, frameBytes⟩ : Region) ∈ v.wr := wrv ▸ hm.layout.fr
   have stv : inState s₀ ∈ v.wr := hwv _ (by rw [h.wr]; simp)
   have usv : inUsed s₀ ∈ v.wr := hwv _ (by rw [h.wr]; simp)
@@ -397,7 +397,7 @@ theorem results_ok {v t : State} (hcv : ctlRegion (refillBase s₀) ∈ v.wr) (h
     { rsp := hsp
       ctl := fun k hk => ⟨_, List.mem_append_right _ (hw ▸ hcv), ctl_contains _ hk⟩
       frame := fun d hd => ⟨_, List.mem_append_right _ (hw ▸ hframe),
-        Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
+        Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])⟩
       st0 := ⟨_, hw ▸ stv, contains_head _ (by decide)⟩
       st3 := ⟨_, hw ▸ stv, Offset.contains_base _ (d := 24) (by decide) (by decide)⟩
       us := ⟨_, hw ▸ usv, contains_head _ (by decide)⟩ }
@@ -405,7 +405,7 @@ theorem results_ok {v t : State} (hcv : ctlRegion (refillBase s₀) ∈ v.wr) (h
     have hr := h.randLength
     rw [h.width] at hr
     change (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat).length < _
-    rw [bytesAt_length]; unfold Spec.Dsa.parameterEntropy at hr; omega
+    rw [bytesAt_length]; unfold Spec.Dsa.parameterEntropy at hr; omega_using [hp, hr]
   have h15 : W 15 = BitVec.ofNat 64 (randTape h).bytes.length :=
     (hm.slots 15 (by simp [generationSlots])).trans ((refillContext h).withHs hs).randLengthSlot
   have ctlR : ∀ {x : State} {k : Nat}, k < 4 → ctlWord x.mem (refillBase s₀) k = ctlWord t.mem (refillBase s₀) k →
@@ -421,11 +421,11 @@ theorem results_ok {v t : State} (hcv : ctlRegion (refillBase s₀) ∈ v.wr) (h
     fun x d hx => by rw [ea_sp, hx]
   have packedSub : ∀ r ∈ [inState s₀, inUsed s₀],
       (⟨off (s₀.gpr .r9) packed, 2 * pBytes + Spec.Dsa.generationQLen pBytes⟩ : Region).Disjoint r := by
-    have qn : Spec.Dsa.generationQLen pBytes ≤ 32 := by unfold Spec.Dsa.generationQLen; split <;> omega
+    have qn : Spec.Dsa.generationQLen pBytes ≤ 32 := by unfold Spec.Dsa.generationQLen; split <;> omega_using []
     intro r hr
     exact ((written_regions h) r hr).2.2.2.2.symm.sub_left ((refillGeometry h).part_sub
       ((refillGeometry h).small_bound (d := packed) (n := 2 * pBytes + Spec.Dsa.generationQLen pBytes) (by decide)
-        (by unfold arithmeticBytes; omega)))
+        (by unfold arithmeticBytes; omega_using [hp, qn])))
   unfold Impl.Dsa.X86_64.Generation.Refill.results
   refine WP.seq (WP.mono (zeroTest_ok hm) fun t₁ ⟨z₁, hm₁, mem₁, k₁⟩ => ?_)
   have sp₁ : t₁.gpr .rsp = refillBase s₀ := (k₁.gpr (by decide)).trans hm.layout.rsp
@@ -473,7 +473,7 @@ theorem results_ok {v t : State} (hcv : ctlRegion (refillBase s₀) ∈ v.wr) (h
         (fun a b => (ctlR (k := 0) (by decide) (ctlM m₃) a b).trans c0)) fun t₄ ⟨mem₄, k₄⟩ => ?_
       have fw : Frame [inState s₀, inUsed s₀] t₃.mem t₄.mem := by rw [mem₄]; exact written_frame t₃.mem _ _ _ _ _
       have hL' : ¬Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
-        unfold Spec.Dsa.parameterEntropy; omega
+        unfold Spec.Dsa.parameterEntropy; omega_using [hL]
       refine ⟨hs, W, t.mem, BitVec.ofNat 64 k, t₃.gpr .rdx, BitVec.ofNat 64 c, hin,
         genMem_written h hin hm₃ fw (k₄.gpr (by decide)) k₄.2.1 k₄.2.2, fv, by rw [mem₄, m₃], ?_, ?_, ?_, ?_,
         Or.inl ⟨by rw [h19]; decide, ?_⟩, (k₄.gpr (by decide)).trans sp₃, k₄.2.1.trans (k₃.2.1.trans (k₂.2.1.trans rd₁)),
@@ -492,7 +492,7 @@ theorem results_ok {v t : State} (hcv : ctlRegion (refillBase s₀) ∈ v.wr) (h
         (fun a b => (ctlR (k := 0) (by decide) (cw (by decide)) a b).trans c0)) fun t₄ ⟨mem₄, k₄⟩ => ?_
       have fw : Frame [inState s₀, inUsed s₀] t₃.mem t₄.mem := by rw [mem₄]; exact written_frame t₃.mem _ _ _ _ _
       have hL' : Spec.Dsa.parameterEntropy pBytes ≤ (randTape h).bytes.length - c := by
-        unfold Spec.Dsa.parameterEntropy; omega
+        unfold Spec.Dsa.parameterEntropy; omega_using [hL]
       refine ⟨hs, upd W 19 2, t₂.mem, 0, 0, BitVec.ofNat 64 c, hin,
         genMem_written h hin hm₃ fw (k₄.gpr (by decide)) k₄.2.1 k₄.2.2,
         fv.trans ((mem₁ ▸ f₂).mono fun r hr => List.mem_cons_of_mem _ hr), by rw [mem₄, mem₃], ?_, ?_, ?_, ?_,
@@ -520,7 +520,7 @@ theorem results_ok {v t : State} (hcv : ctlRegion (refillBase s₀) ∈ v.wr) (h
         (k₃.2.2.trans k₂.2.2), fv, by rw [mem₃, mem₂, mem₁] <;> rfl, by rw [htot] <;> rfl, by rw [htot] <;> rfl,
       by rw [htot] <;> rfl, by rw [h19, htot] <;> rfl, Or.inr ⟨h19, a, by rw [htot] <;> rfl, ?_⟩,
       (k₃.gpr (by decide)).trans sp₂, k₃.2.1.trans (k₂.2.1.trans rd₁), k₃.2.2.trans wr₂⟩
-    rw [VG.Proof.Dsa.Generation.frame_bytesAt fw packedSub (by unfold Spec.Dsa.generationQLen; split <;> omega), mem₁]
+    rw [VG.Proof.Dsa.Generation.frame_bytesAt fw packedSub (by unfold Spec.Dsa.generationQLen; split <;> omega_using [hp]), mem₁]
     exact bytes
 
 end

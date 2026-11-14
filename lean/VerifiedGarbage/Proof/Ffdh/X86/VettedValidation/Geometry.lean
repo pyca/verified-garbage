@@ -68,7 +68,7 @@ theorem scratch_room {s : State} (h : contract.pre s) : 48 ≤ (scratch s).len :
   change Spec.Rsa.scratchWords (arg s 2).toNat ≤ (arg s 4).toNat at space
   simp only [Spec.Rsa.scratchWords] at space
   change 48 ≤ (arg s 4).toNat * 8
-  omega
+  omega_using [space]
 
 private theorem singleton_fit {name : String} {words : List (BitVec 64)} {s : State} {st : Nat}
     (h : ConstsOk [(name, words)] st s) :

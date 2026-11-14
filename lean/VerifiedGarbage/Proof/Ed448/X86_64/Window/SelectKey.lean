@@ -25,7 +25,7 @@ open VG.Impl.X448.X86_64 (slot)
 theorem coord_keep {base : Addr} {s u : State} (h : Keep base s u) {i c : Nat}
     (hi : i < 17) (hc : c < 3) : F u.mem base (tabOffset i c) = F s.mem base (tabOffset i c) := by
   unfold F
-  rw [h.mem.fe (by simp only [tabOffset, TAB]; omega) (by simp only [tabOffset, TAB]; omega)]
+  rw [h.mem.fe (by simp only [tabOffset, TAB]; omega_using []) (by simp only [tabOffset, TAB]; omega_using [hi, hc])]
 
 def KeyKeeps (e e' : Env) : Prop :=
   ∀ j : Index, j ≠ 3 → j ≠ 4 → j ≠ 5 → j ≠ 8 → j ≠ 9 → j ≠ 10 → e' j = e j

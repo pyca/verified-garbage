@@ -29,7 +29,7 @@ theorem saveResult_ok (s : State) {base : BitVec 32} {len : Nat} (locals : Local
         t.mem.readW (off (State.addr s.sp) 64) 32 = s.gpr .r11 ∧
         Frame [⟨off (State.addr s.sp) 64, 4⟩] s.mem t.mem) ∧ Rest [.r12] s t := by
   have addr : State.addr (s.sp + BitVec.ofNat 32 64) = off (State.addr s.sp) 64 :=
-    VG.Arm.addr_add (by have := locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := locals.space.nowrap; omega_using [this])
   have write := locals.space.write (off := 64) (by decide)
   refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.Exchange.saveResult VG.Impl.Ffdh.Arm.Domain.st

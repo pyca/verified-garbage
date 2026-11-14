@@ -61,9 +61,9 @@ theorem absorbLanes_ok (s₀ : State) (A : Spec.Sha3.State) (hA : Boundary.Lanes
   refine (wp_range_flatMap (M := isa) (LanesInv s₀ A) (fun i s hi hs => ?_) n (Nat.le_refl _) s₀
     ⟨XorKeep.refl _, fun j hj => ?_⟩).mono fun s hs => ⟨hs.keep, fun j hj => ?_⟩
   · have h27 : s.gpr .x27 = s₀.gpr .x27 := hs.keep.gpr .x27 (by decide) (x27_not_lane)
-    refine WP.cons (exec_ldr_x ⟨by omega, by omega⟩ ?_) (WP.cons rfl (wp_nil ?_))
+    refine WP.cons (exec_ldr_x ⟨by omega_using [], by omega_using [hn, hi]⟩ ?_) (WP.cons rfl (wp_nil ?_))
     · rw [hs.keep.rd, hs.keep.wr, h27]; exact hin i hi
-    · have hil : i < 25 := by omega
+    · have hil : i < 25 := by omega_using [hn, hi]
       refine ⟨⟨fun r a b => ?_, hs.keep.v, hs.keep.mem, hs.keep.rd, hs.keep.wr, hs.keep.sp⟩,
         fun j hj => ?_⟩
       · simp only [RegUpd.gpr_write, b i hil, a, ite_false]
@@ -78,8 +78,8 @@ theorem absorbLanes_ok (s₀ : State) (A : Spec.Sha3.State) (hA : Boundary.Lanes
           simp only [hne, ite_false, (x26_not_lane j hj).symm, hs.lanes j hj]
           congr 1
           by_cases hji : j < i
-          · simp only [hji, show j < i + 1 by omega, ite_true]
-          · simp only [hji, show ¬ j < i + 1 by omega, ite_false]
+          · simp only [hji, show j < i + 1 by omega_using [hji], ite_true]
+          · simp only [hji, show ¬ j < i + 1 by omega_using [he, hji], ite_false]
   · simp only [Nat.not_lt_zero, ite_false]
     exact (hA j hj).trans BitVec.xor_zero.symm
   · rw [hs.lanes j hj, Sha3.Vector.xorWords_get A _ _ n j hj]
@@ -95,7 +95,7 @@ theorem absorbRate_ok (s : State) (A : Spec.Sha3.State) (hA : Boundary.Lanes s A
       Boundary.Lanes s' (Spec.Sha3.xorBytes A (Spec.Sha3.bytesAt s.mem (s.gpr .x27) r)) := by
   obtain ⟨h25, h8, -⟩ := rate_words hr
   refine (absorbLanes_ok s A hA (r / 8) h25 fun i hi => ?_).mono fun s' h => ⟨h.1, ?_⟩
-  · exact hin _ _ ⟨⟨s.gpr .x27, r⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+  · exact hin _ _ ⟨⟨s.gpr .x27, r⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [h25, hi])⟩
   · simpa only [Sha3.Vector.xorWords_eq, h8] using h.2
 
 theorem select_ok (rs : List Nat) (hsmall : ∀ r ∈ rs, r < 4096 ∧ r ∈ Spec.Sha3.rates)
@@ -139,8 +139,8 @@ theorem select_ok (rs : List Nat) (hsmall : ∀ r ∈ rs, r < 4096 ∧ r ∈ Spe
           have hrb := (rate_words hr).2.2
           have hx := (hsmall x (by simp)).1
           have hh := congrArg BitVec.toNat h'
-          simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : r < 2^64),
-            Nat.mod_eq_of_lt (by omega : x < 2^64)] at hh
+          simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hrb] : r < 2^64),
+            Nat.mod_eq_of_lt (by omega_using [hx] : x < 2^64)] at hh
           exact he hh
         simpa only [eval_zero, t, RegUpd.gpr_write_self, State.read, Size.bits,
           BitVec.setWidth_eq, hv, beq_eq_false_iff_ne] using congrArg some (beq_eq_false_iff_ne.mpr hn)

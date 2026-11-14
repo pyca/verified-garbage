@@ -303,8 +303,8 @@ theorem openRunAS_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
   have hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
   have hDd : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n) + BitVec.ofNat 64 0,
       16 * ((n - Stitch.pre n - 0) / 16)⟩ ⟨D, n⟩ :=
-    fun x hx => (Offset.sub_base D (by omega) : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n), n - Stitch.pre n⟩
-      ⟨D, n⟩) x (Offset.sub_base _ (by omega) x hx)
+    fun x hx => (Offset.sub_base D (by omega_using [hpn]) : Region.Sub ⟨D + BitVec.ofNat 64 (Stitch.pre n), n - Stitch.pre n⟩
+      ⟨D, n⟩) x (Offset.sub_base _ (by omega_using []) x hx)
   refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₁
       (WP.mono (hgh₁ _ a₁.call sY sS r₁ w₁ a₁.env.sp fr₁ hDd) fun _ g => ⟨g, trivial⟩)))
@@ -316,8 +316,8 @@ theorem openRunAS_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) (gh : Gh8Ok)
   refine RelCT.seq_assoc3 (rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x26] (by rw [N₁.env.sp, N₂.env.sp])
       (by agree_tac [N₁.env.x19, N₂.env.x19, N₁.env.x20, N₂.env.x20, N₁.env.x21, N₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
-    (ctE'_ok L hMK (.inr rfl) N₁ b₁ l₁ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega]) (by omega))
-    (ctE'_ok L hMK (.inr rfl) N₂ b₂ l₂ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega]) (by omega))
+    (ctE'_ok L hMK (.inr rfl) N₁ b₁ l₁ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega_using [hpn]]) (by omega_using []))
+    (ctE'_ok L hMK (.inr rfl) N₂ b₂ l₂ (by rw [show n - (n - Stitch.pre n) = Stitch.pre n by omega_using [hpn]]) (by omega_using []))
     fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
   refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inr rfl) T₁) (tagCall_ok L v (.inr rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
@@ -359,7 +359,7 @@ theorem okCrG_ok (to : Bool) {fr : List Region} {s s₇ : State} (hR : R = 10 �
         s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧ (to = false → s₈.gpr .x26 = BitVec.ofNat 64 n) ∧ s₈.wr = s₇.wr := by
   have hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
   have subR : ∀ E : Addr, Region.Sub ⟨E + BitVec.ofNat 64 P, n - P⟩ ⟨E, n⟩ := fun E => Offset.sub_base E (by
-    have := mo.dataOk.wrap; omega)
+    have := mo.dataOk.wrap; omega_using [hPn])
   obtain ⟨s₈, run₈, x23₈, x24₈, x25₈, x26₈, r₈⟩ := okArgsG_ok to mo
   refine ⟨s₈, run₈, ⟨mo.env.of_regs r₈, ?_, by rw [r₈.others _ (by decide), mo.x22], hR, x23₈, x24₈,
     x25₈, data_of_eq ?_ r₈.rd r₈.wr, ?_⟩, r₈.others _ (by decide), ?_, r₈.wr⟩
@@ -387,7 +387,7 @@ theorem omBS_rel (v : GcmImpl) (to : Bool) (L : Lay Ctx (W + BitVec.ofNat 64 16)
     (mo₂ : MidSG to fr' Ctx W SP D O Np A R nl al n tl P C₁' C₂' s' m₂)
     (hx : m₁.gpr .x27 = m₂.gpr .x27) :
     RelCT isa (Eq2 m₁ m₂) (omBS v.callees to) TT := by
-  have hP16 : P % 16 = 0 := by rw [mo₁.hP]; omega
+  have hP16 : P % 16 = 0 := by rw [mo₁.hP]; omega_using []
   have hlt : ∀ B : Bool, (if B then 1 else 0 : Nat) < 2 ^ 64 := fun B => by cases B <;> decide
   have ite_ok : ∀ {fr : List Region} {C₁ C₂ : List Byte} {s m : State},
       MidSG to fr Ctx W SP D O Np A R nl al n tl P C₁ C₂ s m →
@@ -416,7 +416,7 @@ theorem omBS_rel (v : GcmImpl) (to : Bool) (L : Lay Ctx (W + BitVec.ofNat 64 16)
         have eO : O = D := mo.out
         subst eO
         exact WP.mono (cryptAlT_ok L v (icb := 0) hc hP16 (k26 rfl) hn
-          (tail_big (by rw [kw]; exact hdw.wr) hn rfl (by have := mo.hP; omega))) fun s₉ h₉ =>
+          (tail_big (by rw [kw]; exact hdw.wr) hn rfl (by have := mo.hP; omega_using [this]))) fun s₉ h₉ =>
           ⟨h₉.env.sp, by rw [h₉.kept .x27 (by decide), k27]⟩
       | true =>
         exact WP.mono (cryptAlG_ok L v true (icb := 0) hc hP16) fun s₉ h₉ =>

@@ -54,10 +54,10 @@ theorem gather_succ (m : Mem) (p : Addr) (n k : Nat) :
       gather m p n (k + 1) := by
   unfold gather
   by_cases h0 : n / 8 < k
-  · simp [h0, show ¬ n / 8 = k by omega, show n / 8 < k + 1 by omega]
+  · simp [h0, show ¬ n / 8 = k by omega_using [h0], show n / 8 < k + 1 by omega_using [h0]]
   · by_cases h1 : n / 8 = k
     · subst h1; simp
-    · simp [h0, h1, show ¬ n / 8 < k + 1 by omega]
+    · simp [h0, h1, show ¬ n / 8 < k + 1 by omega_using [h0, h1]]
 
 theorem flatMap_succ {α : Type} (f : Nat → List α) (n : Nat) :
     (List.range (n + 1)).flatMap f = (List.range n).flatMap f ++ f n := by
@@ -79,13 +79,13 @@ theorem scatter_succ (m : Mem) (p : Addr) (n : Nat) (d : BitVec 64) (k : Nat) :
         (if n / 8 = k then d else 0#64)) = scatter m p n d (k + 1) := by
   unfold scatter
   by_cases h0 : n / 8 < k
-  · rw [ite_eq_left h0, ite_eq_right (show ¬ n / 8 = k by omega), BitVec.xor_zero, writeW_readW,
-      ite_eq_left (show n / 8 < k + 1 by omega)]
+  · rw [ite_eq_left h0, ite_eq_right (show ¬ n / 8 = k by omega_using [h0]), BitVec.xor_zero, writeW_readW,
+      ite_eq_left (show n / 8 < k + 1 by omega_using [h0])]
   · rw [ite_eq_right h0]
     by_cases h1 : n / 8 = k
-    · rw [ite_eq_left h1, ite_eq_left (show n / 8 < k + 1 by omega), h1]
+    · rw [ite_eq_left h1, ite_eq_left (show n / 8 < k + 1 by omega_using [h1]), h1]
     · rw [ite_eq_right h1, BitVec.xor_zero, writeW_readW,
-        ite_eq_right (show ¬ n / 8 < k + 1 by omega)]
+        ite_eq_right (show ¬ n / 8 < k + 1 by omega_using [h0, h1])]
 
 theorem xor_byte (a b : Byte) : a.setWidth 64 ^^^ b.setWidth 64 = (a ^^^ b).setWidth 64 := by
   rw [BitVec.setWidth_xor]
@@ -98,21 +98,21 @@ theorem low_byte (b : Byte) : (b.setWidth 64).setWidth 8 = b := by
 theorem ofNat_low (r : Nat) : (BitVec.ofNat 64 r).setWidth 8 = BitVec.ofNat 8 r := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem low8 (x : BitVec 64) : (x <<< 56) >>> 56 = x &&& BitVec.ofNat 64 255 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_and, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
     show (255 % 2 ^ 64 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem mask255 (x : BitVec 64) : (x <<< 56) >>> 56 = (x.setWidth 8).setWidth 64 := by
   rw [low8]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [show (255 % 2 ^ 64 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem byte_add (a b : Byte) :
     ((a.setWidth 64 + b.setWidth 64) <<< 56) >>> 56 = (a + b).setWidth 64 := by
@@ -120,7 +120,7 @@ theorem byte_add (a b : Byte) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega
+  omega_using []
 
 theorem byte_add3 (j a k : Byte) :
     ((j.setWidth 64 + a.setWidth 64 + k.setWidth 64) <<< 56) >>> 56 = (j + a + k).setWidth 64 := by
@@ -128,7 +128,7 @@ theorem byte_add3 (j a k : Byte) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega
+  omega_using []
 
 theorem byte_inc (i : Byte) :
     ((i.setWidth 64 + 1#64) <<< 56) >>> 56 = (i + 1#8).setWidth 64 := by
@@ -147,24 +147,24 @@ theorem sub256_ne (j : Nat) (hj : j + 1 < 256) :
   have hh := congrArg BitVec.toNat h
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at hh
   change _ = 0 at hh
-  omega
+  omega_using [hj, hh]
 
 theorem len_ne (n : Nat) (hn : n + 1 + 1 < 2 ^ 64) :
     (BitVec.ofNat 64 (n + 1 + 1) - 1#64 == (0 : BitVec 64)) = false := by
   apply beq_eq_false_iff_ne.mpr
-  rw [Offset.ofNat_sub_ofNat (by omega)]
+  rw [Offset.ofNat_sub_ofNat (by omega_using [])]
   intro hz0
   have hh := congrArg BitVec.toNat hz0
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hh
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at hh
   change n + 1 + 1 - 1 = 0 at hh
-  omega
+  omega_using [hh]
 
 theorem valid_length (len : BitVec 64) :
     (len - 1#64) >>> 8 = (0 : BitVec 64) ↔ 1 ≤ len.toNat ∧ len.toNat ≤ 256 := by
   rw [← BitVec.toNat_inj, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   rw [show BitVec.toNat (0 : BitVec 64) = 0 from rfl]
-  omega
+  omega_using []
 
 /-! ## The key offset -/
 
@@ -177,9 +177,9 @@ theorem offNext_eq (r : Nat) (len : BitVec 64) (hl : 0 < len.toNat) (hlen : len.
     offNext (BitVec.ofNat 64 (r % len.toNat)) len = BitVec.ofNat 64 ((r + 1) % len.toNat) := by
   have hb := Nat.mod_lt r hl
   have ht : (BitVec.ofNat 64 (r % len.toNat) + 1#64).toNat = r % len.toNat + 1 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r % len.toNat < 2 ^ 64 by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r % len.toNat < 2 ^ 64 by omega_using [hb])]
     change (r % len.toNat + 1) % 2 ^ 64 = _
-    omega
+    omega_using [hb]
   have ha : (r + 1) % len.toNat = (r % len.toNat + 1) % len.toNat := by
     simp only [Nat.add_mod, Nat.mod_mod]
   unfold offNext
@@ -190,23 +190,23 @@ theorem offNext_eq (r : Nat) (len : BitVec 64) (hl : 0 < len.toNat) (hlen : len.
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hx]
       simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-      omega
+      omega_using [hlen, h]
     have h1 : (BitVec.ofNat 64 (r % len.toNat) + 1#64 - len) >>> 63 = 1#64 :=
-      hd _ (by rw [BitVec.toNat_sub, ht]; omega)
+      hd _ (by rw [BitVec.toNat_sub, ht]; omega_using [h])
     have h2 : (BitVec.ofNat 64 (r % len.toNat) + 1#64 - len - 1#64) >>> 63 = 1#64 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, BitVec.toNat_sub, ht]
       simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-      omega
+      omega_using [hlen, hb]
     rw [BitVec.ushiftRight_xor_distrib, h1, h2, show (1#64 ^^^ 1#64) - 1#64 = BitVec.allOnes 64 by
       decide, BitVec.and_allOnes]
     apply BitVec.eq_of_toNat_eq
     rw [ht, BitVec.toNat_ofNat, ha, Nat.mod_eq_of_lt h,
-      Nat.mod_eq_of_lt (show r % len.toNat + 1 < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show r % len.toNat + 1 < 2 ^ 64 by omega_using [hb])]
   · have he : BitVec.ofNat 64 (r % len.toNat) + 1#64 = len := by
       apply BitVec.eq_of_toNat_eq
-      rw [ht]; omega
-    rw [he, BitVec.sub_self, ha, show r % len.toNat + 1 = len.toNat by omega, Nat.mod_self,
+      rw [ht]; omega_using [hb, h]
+    rw [he, BitVec.sub_self, ha, show r % len.toNat + 1 = len.toNat by omega_using [hb, h], Nat.mod_self,
       show (0#64 - 1#64 ^^^ 0#64) >>> 63 - 1#64 = 0#64 by decide, BitVec.and_zero]
 
 end VG.Proof.Rc4.Scan64

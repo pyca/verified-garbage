@@ -51,13 +51,13 @@ theorem group_ok {s₀ s : State} (hp : UPre s₀) (b : VReg) (bs : List VReg)
     WP isa (.seq (.block (Impl.AesCfb.AArch64.Decrypt.inputs (b::bs)))
       (.seq (aes (b::bs))
         (.block (Impl.AesCfb.AArch64.Decrypt.finishData (b::bs) 0 ++ tail)))) s Q := by
-  have hc' : c+bs.length+1 ≤ N s₀ := by simp only [List.length_cons] at hc; omega
-  refine WP.seq (WP.mono (inputs_ok b bs s hbr.1 (by simp only [List.length_cons] at hlen; omega)
+  have hc' : c+bs.length+1 ≤ N s₀ := by simp only [List.length_cons] at hc; omega_using [hc]
+  refine WP.seq (WP.mono (inputs_ok b bs s hbr.1 (by simp only [List.length_cons] at hlen; omega_using [hlen])
     (fun k hk => by
-      rw [hI.x2, Offset.add_add_eq (Dp s₀) (show 16*c+16*k=16*(c+k) by omega)]
+      rw [hI.x2, Offset.add_add_eq (Dp s₀) (show 16*c+16*k=16*(c+k) by omega_using [])]
       exact ⟨dataR s₀, List.mem_append_right _ (by rw [hI.wr,hp.wr]; simp),
-        Offset.contains_base _ (by simp only [List.length_cons] at hc; omega)
-          (by have := hp.data_wrap; omega)⟩)) fun u ⟨hfirst,hload,fl⟩ => ?_)
+        Offset.contains_base _ (by simp only [List.length_cons] at hc; omega_using [hc, hk])
+          (by have := hp.data_wrap; omega_using [hc', hk, this])⟩)) fun u ⟨hfirst,hload,fl⟩ => ?_)
   have hku := hI.keys.of_v hbr fl.v (fl.gpr _ (by simp)) (fl.gpr _ (by simp))
   have hinput : ∀ k (hk : k < (b::bs).length), u.v (b::bs)[k] = chaining s₀ (c+k) := by
     intro k hk
@@ -66,8 +66,8 @@ theorem group_ok {s₀ s : State} (hp : UPre s₀) (b : VReg) (bs : List VReg)
     | succ k =>
       have hk' : k < bs.length := by simpa using hk
       rw [List.getElem_cons_succ,hload k (by simpa using hk),hI.x2,
-        Offset.add_add_eq (Dp s₀) (show 16*c+16*k=16*(c+k) by omega),
-        original_word hI.data (by omega) (by simp only [List.length_cons] at hc; omega)]
+        Offset.add_add_eq (Dp s₀) (show 16*c+16*k=16*(c+k) by omega_using []),
+        original_word hI.data (by omega_using []) (by simp only [List.length_cons] at hc; omega_using [hc, hk'])]
       rfl
   refine WP.seq (WP.mono (aes_ok hbr hku) fun v ⟨ha,fa⟩ => ?_)
   have hg : v.gpr = s.gpr := by funext r; rw [fa.gpr,fl.gpr r (by simp)]
@@ -76,8 +76,8 @@ theorem group_ok {s₀ s : State} (hp : UPre s₀) (b : VReg) (bs : List VReg)
   have hkv := hku.of_frame fa hbr
   rw [WP.block_append_iff]
   refine WP.mono (finishData_ok (m₀ := s₀.mem) (D := Dp s₀) (n := N s₀) (c := c)
-    (F := output s₀) (chain := chaining s₀) (by have := hp.data_wrap; omega)
-    (fun _ _ => rfl) (b::bs) 0 v hbr.1 h31 hbr.v16 (hg ▸ hI.x2) (by omega) (by simpa using hc)
+    (F := output s₀) (chain := chaining s₀) (by have := hp.data_wrap; omega_using [this])
+    (fun _ _ => rfl) (b::bs) 0 v hbr.1 h31 hbr.v16 (hg ▸ hI.x2) (by omega_using [hlen]) (by simpa using hc)
     (by rw [fa.wr,fl.wr,hI.wr,hp.wr]; simp) (by simpa only [Nat.add_zero,hm] using hI.data)
     (by simpa using hv) (fun k hk i hi => by
       have hval := congrArg (fun a : Spec.Aes.State => a.getD i 0) (ha _ (List.getElem_mem hk))

@@ -108,11 +108,11 @@ theorem movi_val (v : Nat) :
   have e1 : BitVec.ofNat 16 (v / 65536) = (BitVec.ofNat 32 v).extractLsb' 16 16 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
   have e2 : BitVec.ofNat 16 v = (BitVec.ofNat 32 v).extractLsb' 0 16 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero]
-    omega
+    omega_using []
   rw [e1, e2]; exact movw_movt _
 
 theorem regSaves_ok : ∀ a ∈ regSaves, a.2 % 4 = 0 ∧ 904 ≤ a.2 ∧ a.2 + 4 ≤ 928 := by decide
@@ -314,8 +314,8 @@ theorem leave_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 32} {t : State} (hc :
   have hx : ∀ f, f + 4 ≤ 1024 → InRegions (t.rd ++ t.wr) (L.X + BitVec.ofNat 64 f) 4 := fun f hf => by
     obtain ⟨R, hR, hc'⟩ := hL.inW (e := f) (k := 4) hf
     exact ⟨R, by rw [hc.rd, hc.wr]; exact List.mem_append_right _ hR, hc'⟩
-  refine wp_ldr (by decide) (by rw [hc.r7, hL.xo (by decide)]; exact hx 908 (by omega)) fun t1 o1 e1 => ?_
-  refine wp_ldr (by decide) (by rw [o1.get .r7, hc.r7, hL.xo (by decide), o1.rd, o1.wr]; exact hx 904 (by omega))
+  refine wp_ldr (by decide) (by rw [hc.r7, hL.xo (by decide)]; exact hx 908 (by omega_using [])) fun t1 o1 e1 => ?_
+  refine wp_ldr (by decide) (by rw [o1.get .r7, hc.r7, hL.xo (by decide), o1.rd, o1.wr]; exact hx 904 (by omega_using []))
     fun t2 o2 e2 => wp_nil ?_
   rw [hc.r7, hL.xo (by decide)] at e1
   rw [o1.get .r7, hc.r7, hL.xo (by decide), o1.mem] at e2

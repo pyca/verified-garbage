@@ -18,7 +18,7 @@ private theorem byte_add (c : Nat) (b : Byte) :
   have hb := b.isLt
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem seedAddByte_ok {s : State} {rp op : Addr} {i carry : Nat} {b : Byte}
     (hc : carry < 2 ^ 32) (hrp : s.gpr .rsi = rp) (hop : s.gpr .rdi = op)
@@ -39,11 +39,11 @@ theorem seedAddByte_ok {s : State} {rp op : Addr} {i carry : Nat} {b : Byte}
   · apply BitVec.eq_of_toNat_eq
     have hb := b.isLt
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.reducePow]
-    omega
+    omega_using [hc]
   · congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using []
 
 
 /-- One iteration of the compact seed loop, indexed by its public count. -/
@@ -74,10 +74,10 @@ theorem seedAddStep_ok {s : State} {rp op : Addr} {i carry : Nat} {b : Byte}
   · apply BitVec.eq_of_toNat_eq
     have hb := b.isLt
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.reducePow]
-    omega
+    omega_using [hc]
   · congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using []
 
 end VG.Proof.Dsa.X86_64.Generation

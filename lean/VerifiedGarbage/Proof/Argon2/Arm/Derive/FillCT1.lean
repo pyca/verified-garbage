@@ -229,7 +229,7 @@ theorem addressCache_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillSt
     (T.leafF [.r0] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.1.w, h.2.1.w⟩, by
       simp only [List.mem_singleton, forall_eq]; rw [h.1.2.1, h.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun s h => stctr_w T.hp₁ h.1.w h.2.1) (fun s h => stctr_w T.hp₂ h.1.w h.2.1) ?_
-  exact T.addressCalls_rel hpass (by omega) (by omega) (by omega)
+  exact T.addressCalls_rel hpass (by omega_using [hl, hlt]) (by omega_using [hs]) (by omega_using [hi, sl])
 
 /-- `randomSource` leaks the same trace in two runs at the same position. -/
 theorem randomSource_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillState} (hpass : pass < 2 ^ 32)

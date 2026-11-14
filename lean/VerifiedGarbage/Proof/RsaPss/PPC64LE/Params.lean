@@ -58,11 +58,11 @@ theorem cm_eq : cm s = (if (s.mem (s.gpr .r3)).toNat = 1 then (0xFF : Byte) else
   split
   · rfl
   · have h8 := Proof.RsaPss.log2_lt8 (s.mem (s.gpr .r3))
-    have hp : 2 ^ Nat.log2 (s.mem (s.gpr .r3)).toNat ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
+    have hp : 2 ^ Nat.log2 (s.mem (s.gpr .r3)).toNat ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [h8])
     have hp1 := Nat.one_le_two_pow (n := Nat.log2 (s.mem (s.gpr .r3)).toNat)
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hp]), Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hp])]
 
 end
 

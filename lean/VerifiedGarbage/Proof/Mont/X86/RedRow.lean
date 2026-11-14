@@ -33,6 +33,6 @@ theorem p256RedEnabled_ok {M : Mod} {m : Nat} (h : M.ok m = true)
   have hv := hr.1.2
   have hl := hr.1.1.2
   change (2 ^ 192 - 2 ^ 160 + 2 ^ 128 + 2 ^ 32) = (m + 1) / 2 ^ 64 at hv
-  exact ⟨he.1.1, by unfold p256Prime; omega, he.2⟩
+  exact ⟨he.1.1, by unfold p256Prime; omega_using [hl, hv], he.2⟩
 
 end VG.Proof.Mont.X86

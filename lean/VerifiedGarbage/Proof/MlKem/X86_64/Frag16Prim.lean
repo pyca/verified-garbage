@@ -127,7 +127,7 @@ theorem sampleAt16_ok {a z : Ptr} (hna : NA a) (hnz : NA z) {s : State} (h : Sam
   · rw [k3.gpr (by simpa using h15'), hcs r hr, k.gpr (argRegs_cs r hr)]
   · rw [hm3, ← hm, ← hsp]
     rw [sampleW_depth] at hf
-    exact Frame.below_mono hf (by omega) (by omega)
+    exact Frame.below_mono hf (by omega_using []) (by omega_using [])
   · rw [h15, hcs .r15 (by decide), k.gpr (by decide), hpost.1]
   · rw [hm3]; exact hpost.2
 

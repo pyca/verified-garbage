@@ -107,11 +107,11 @@ theorem Args.pre (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s : State} (hp : APre
   have hstk : below (s.gpr .rsp) 24 = stkR s₀ := by rw [h.rsp]; rfl
   have hwrap : (dp s₀ + BitVec.ofNat 64 (H s₀)).toNat + 64 * NB s₀ ≤ 2 ^ 64 := by
     have := hp.wrap_d
-    rw [BitVec.toNat_add, Proof.ChaCha20.X86_64.toNat_ofNat_lt (by omega)]
-    omega
-  exact xor_pre v h.rdi h.rsi h.rdx h.rcx (by omega)
+    rw [BitVec.toNat_add, Proof.ChaCha20.X86_64.toNat_ofNat_lt (by omega_using [hL, hH])]
+    omega_using [hHNB, this]
+  exact xor_pre v h.rdi h.rsi h.rdx h.rcx (by omega_using [hL, hHNB])
     ((hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀))
-    (Offset.disjoint _ (by omega) (by omega) (by omega))
+    (Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []))
     ((hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)) hwrap
     (by rw [hstk]; exact hp.stk_st.sub_right (cpR_sub s₀)) (by rw [hstk]; exact hp.stk_d.sub_right (blR_sub s₀))
     (by rw [hstk]; exact hp.stk_st.sub_right (wkR_sub s₀))
@@ -124,7 +124,7 @@ theorem test_ok {s₀ : State} {s : State} (h : Q2 s₀ s) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨h.rbx, h.r14, h.r15, h.keep, h.rd, h.wr, h.state, h.buf, h.saved, h.done, h.frame⟩, ?_⟩
-  rw [BitVec.and_self, h.r15, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega) (by omega)]
+  rw [BitVec.and_self, h.r15, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega_using [hT64]) (by omega_using [])]
   simp
 
 /-- The arguments of the call of the block function, and the registers the
@@ -162,7 +162,7 @@ theorem TArgs.pre {s₀ s : State} (hp : APre s₀) (h : TArgs s₀ s) :
   simp only [Proof.ChaCha20.blockX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_rsp, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
     h.rdi, h.rsi, h.rsp]
-  exact ⟨trivial, trivial, Offset.disjoint_base _ (by omega) (by omega),
+  exact ⟨trivial, trivial, Offset.disjoint_base _ (by omega_using []) (by omega_using []),
     (hp.stk_st.sub_left (below8_stk s₀)).sub_right (bufR_sub s₀)⟩
 
 theorem TArgs.covers {s₀ s : State} (h : TArgs s₀ s) :
@@ -182,9 +182,9 @@ theorem TArgs.covers {s₀ s : State} (h : TArgs s₀ s) :
 
 theorem TArgs.call {s₀ s : State} (hp : APre s₀) (h : TArgs s₀ s) :
     WP isa (.call "vg_chacha20_block" Impl.ChaCha20.X86_64.block) s (TAfter s₀) := by
-  have stS : Region.Sub ⟨st s₀, 64⟩ (stR s₀) := prefix_sub _ (by omega)
+  have stS : Region.Sub ⟨st s₀, 64⟩ (stR s₀) := prefix_sub _ (by omega_using [])
   have hb8 : below (s.gpr .rsp) 8 = below (s₀.gpr .rsp) 8 := by rw [h.rsp]
-  refine block_call h.rdi h.rsi (Offset.disjoint_base _ (by omega) (by omega))
+  refine block_call h.rdi h.rsi (Offset.disjoint_base _ (by omega_using []) (by omega_using []))
     (by rw [hb8]; exact (hp.stk_st.sub_left (below8_stk s₀)).sub_right (bufR_sub s₀))
     (by rw [hb8]; exact (hp.stk_st.sub_left (below8_stk s₀)).sub_right stS) h.covers.1 h.covers.2
     fun s' _ _ cs _ _ _ => ⟨by rw [cs .rbx (by simp [calleeSaved]), h.rbx],
@@ -292,7 +292,7 @@ theorem apply_rel (v : Proof.ChaCha20.X86_64.XorImpl) :
     (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)) ?_)
   by_cases hlt : N a < L a
   · exact RelCT.of_false fun x y ⟨⟨hx, _⟩, he⟩ => by simp [eval, hx.cf, hlt] at he
-  have hle : L a ≤ N a := by omega
+  have hle : L a ≤ N a := by omega_using [hlt]
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
     (RelCT.seq (part2_rel h v) (RelCT.seq (part3_rel h) ?_))
   exact taintRegs [.rbx, .rsp] (fun x y ⟨hx, hy⟩ r hr => by

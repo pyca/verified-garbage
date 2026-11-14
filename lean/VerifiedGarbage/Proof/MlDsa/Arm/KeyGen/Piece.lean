@@ -77,9 +77,9 @@ theorem Piece.seqR {f : Nat → Prog isa} {I : Nat → State → State → Prop}
       obtain ⟨-, rfl⟩ := e₂
       exact ⟨rfl, trivial⟩⟩
   | n + 1, a, h => by
-    have h1 := Piece.seqR (I := I) n (a + 1) fun k h₁ h₂ => h k (by omega) (by omega)
-    rw [show a + (n + 1) = a + 1 + n by omega]
-    exact (h a (Nat.le_refl _) (by omega)).seq (c₂ := VG.Impl.MlDsa.Arm.KeyGen.seqR f (a + 1) n) h1
+    have h1 := Piece.seqR (I := I) n (a + 1) fun k h₁ h₂ => h k (by omega_using [h₁]) (by omega_using [h₂])
+    rw [show a + (n + 1) = a + 1 + n by omega_using []]
+    exact (h a (Nat.le_refl _) (by omega_using [])).seq (c₂ := VG.Impl.MlDsa.Arm.KeyGen.seqR f (a + 1) n) h1
 
 /-- A piece's constant time, from a relation implied by the invariants of two runs. -/
 theorem rel_of {c : Prog isa} {Q : State → State → Prop} (htr : RelCT isa Q c fun _ _ => True)

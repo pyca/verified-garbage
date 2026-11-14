@@ -39,10 +39,10 @@ theorem draw_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used passed : N
       if decide (2 ≤ witnessValue p used ∧ witnessValue p used < p.modulus - 1) then 1 else 0 := by
     rw [range]
     by_cases valid : 2 ≤ witnessValue p used ∧ witnessValue p used < p.modulus - 1
-    · have valid' : 1 < witnessValue p used ∧ witnessValue p used < p.modulus - 1 := by omega
+    · have valid' : 1 < witnessValue p used ∧ witnessValue p used < p.modulus - 1 := by omega_using [valid]
       simp only [ite_eq_left valid', decide_eq_true valid, ite_true]
       rfl
-    · have invalid : ¬ (1 < witnessValue p used ∧ witnessValue p used < p.modulus - 1) := by omega
+    · have invalid : ¬ (1 < witnessValue p used ∧ witnessValue p used < p.modulus - 1) := by omega_using [valid]
       simp only [ite_eq_right invalid, decide_eq_false valid, Bool.false_eq_true, ite_false]
       rfl
   refine WP.seq (WP.mono (cmpWord_ok .r11 word) ?_)

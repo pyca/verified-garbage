@@ -71,7 +71,7 @@ theorem scanStep_ok {s t : State} {base : Addr} {stride v j : Nat}
     by_cases he : j = v
     · subst j
       simp only [ite_true, Nat.lt_irrefl, ite_false, Nat.lt_succ_self]
-    · have heq : v < j + 1 ↔ v < j := by omega
+    · have heq : v < j + 1 ↔ v < j := by omega_using [he]
       simp only [he, ite_false, heq]
 
 /-- Exact 32-row scan. Its final value does not depend on the prior contents

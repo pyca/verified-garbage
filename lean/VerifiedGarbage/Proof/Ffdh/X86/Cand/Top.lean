@@ -110,7 +110,7 @@ theorem wrapABI {s : State} (A : CandABI s) : WrapABI Impl.Ffdh.X86.Candidate.ar
   below := ⟨(fun _ h => by cases h; decide), by decide, by decide, by decide, (fun _ h => by cases h),
     (fun _ h => by cases h), by decide, (fun _ h => by cases h)⟩
   stackLow := A.stackLow
-  stackBound := by have := A.stackBound; omega
+  stackBound := by have := A.stackBound; omega_using [this]
   argsIn := by
     rw [A.wr]
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
@@ -121,8 +121,8 @@ theorem wrapABI {s : State} (A : CandABI s) : WrapABI Impl.Ffdh.X86.Candidate.ar
   retScratch := A.retWs
   belowScratch := A.belowWs
   scratchBound := A.wsBound
-  lower := by have := A.bitsLow; have := A.outLen; show 64 ≤ (arg s 1).toNat; omega
-  upper := by have := A.bitsHigh; have := A.outLen; show (arg s 1).toNat ≤ 1024; omega
+  lower := by have := A.bitsLow; have := A.outLen; show 64 ≤ (arg s 1).toNat; omega_arith
+  upper := by have := A.bitsHigh; have := A.outLen; show (arg s 1).toNat ≤ 1024; omega_arith
   scratchLength := A.scratchLength
 
 /-- The 40 bytes below the frame, and the frame, below the caller's stack pointer. -/
@@ -134,11 +134,11 @@ theorem frame_subs {s : State} (A : CandABI s) {sp : BitVec 32}
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
-  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
+  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
   refine ⟨?_, ?_⟩
   · simp only [below]
-    rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
+    rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
       ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
@@ -332,8 +332,8 @@ theorem frame_ok {s : State} (A : CandABI s) (f : State)
   have ef := F.esp
   have hst : ∀ x : Option (Option Nat × Spec.RsaKeyGen.Rand), Proof.Ffdh.candidateStatus x < 2 ^ 32 := by
     intro x
-    have : Proof.Ffdh.candidateStatus x ≤ 2 := by unfold Proof.Ffdh.candidateStatus; split <;> omega
-    omega
+    have : Proof.Ffdh.candidateStatus x ≤ 2 := by unfold Proof.Ffdh.candidateStatus; split <;> omega_using []
+    omega_using [this]
   refine WP.mono (body_ok I F.G F.hT F.Ox F.U F.h3 F.rb F.rg F.ru F.dws F.d40
     A.outLen A.bitsLow A.bitsHigh A.gen F.TT F.TA) fun t R => ⟨⟨?_, ?_, ?_⟩, R.frame, R.keeps⟩
   · rw [R.eax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (hst _)]

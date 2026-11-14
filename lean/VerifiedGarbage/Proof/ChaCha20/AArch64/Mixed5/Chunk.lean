@@ -73,11 +73,11 @@ structure Chunked (s₀ s : State) : Prop where
       (Offset.sub_base _ (by decide : 256 + 64 ≤ 320))
   have hin : ∀ r : Fin 4, InRegions (a.rd ++ a.wr) (a.gpr .x3 + BitVec.ofNat 64 (16 * r)) 16 := by
     intro r; rw [ha.rd,ha.wr,h.rd,h.wr,ha3]
-    obtain ⟨q,hq,hc⟩ := hp.buffer (16 * r.val) 16 (by omega)
+    obtain ⟨q,hq,hc⟩ := hp.buffer (16 * r.val) 16 (by omega_using [])
     exact ⟨q,List.mem_append_right _ hq,hc⟩
   have hout : ∀ r : Fin 4, InRegions a.wr (a.gpr .x1 + BitVec.ofNat 64 (16 * r)) 16 := by
     intro r; rw [ha.wr,h.wr,ha1,BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact hp.data _ _ (by omega)
+    exact hp.data _ _ (by omega_using [])
   apply WP.seq
   refine (xorLast_ok a (block (ctr (source s₀) 4)) hf sep hin hout).mono fun b ⟨hb,hfb,hab⟩ => ?_
   have hfb' : Frame [lastR s₀] s.mem b.mem := by simpa only [ha1,ha.mem] using hfb
@@ -109,8 +109,8 @@ structure Chunked (s₀ s : State) : Prop where
       rw [he]
       exact h.data k hk'
     · have he : a.gpr .x1 + BitVec.ofNat 64 (k - 256) = s₀.gpr .x1 + BitVec.ofNat 64 k := by
-        rw [ha1,BitVec.add_assoc, ← BitVec.ofNat_add,Nat.add_sub_cancel' (by omega)]
-      have hh := hb (k - 256) (by omega)
+        rw [ha1,BitVec.add_assoc, ← BitVec.ofNat_add,Nat.add_sub_cancel' (by omega_using [hk'])]
+      have hh := hb (k - 256) (by omega_using [hk])
       rw [he,ha.mem] at hh
       have hh₀ := h.frame.bytes (R := lastR s₀) (by
         intro r hr
@@ -120,12 +120,12 @@ structure Chunked (s₀ s : State) : Prop where
         · exact (hp.d_b.sub_left (Offset.sub_base _ (by decide : 256 + 64 ≤ 320))).sub_right
             (Region.sub_prefix (by decide : 64 ≤ 320))
         · exact (first_last_disjoint s₀).symm)
-        (by change 64 ≤ 2 ^ 64; decide) (i := k - 256) (by change k - 256 < 64; omega)
+        (by change 64 ≤ 2 ^ 64; decide) (i := k - 256) (by change k - 256 < 64; omega_using [hk])
       have he₀ : (lastR s₀).base + BitVec.ofNat 64 (k - 256) = s₀.gpr .x1 + BitVec.ofNat 64 k := by
         change s₀.gpr .x1 + BitVec.ofNat 64 256 + BitVec.ofNat 64 (k - 256) = _
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add,Nat.add_sub_cancel' (by omega)]
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add,Nat.add_sub_cancel' (by omega_using [hk'])]
       rw [he₀] at hh₀
-      rw [hh,hh₀,show k / 64 = 4 by omega,show k % 64 = k - 256 by omega]
+      rw [hh,hh₀,show k / 64 = 4 by omega_using [hk, hk'],show k % 64 = k - 256 by omega_using [hk, hk']]
   · rw [hm]
     have hf₁ : Frame [sr s₀,lowBuf s₀,dr s₀] s₀.mem s.mem := h.frame.sub (by
       intro r hr

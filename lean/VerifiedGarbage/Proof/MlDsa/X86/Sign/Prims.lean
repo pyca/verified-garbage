@@ -86,7 +86,7 @@ theorem sw32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_append, Nat.shiftLeft_eq, Nat.mul_comm,
     ← Nat.two_pow_add_eq_or_of_lt b.isLt]
-  omega
+  omega_using []
 
 /-! ## Frames -/
 
@@ -98,8 +98,8 @@ theorem fr80 {p : Params} {s₀ : State} {bs : List Buf} {N M : Nat} (hN : N ≤
     · rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · rw [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp hN (by show 80 + 16 ≤ 96; omega)⟩
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp hN (by show 80 + 16 ≤ 96; omega_using [])⟩
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp hM (by show 80 + 16 ≤ 96; omega)⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stk_sub hp hM (by show 80 + 16 ≤ 96; omega_using [])⟩
 
 end VG.Proof.MlDsa.X86.Sign

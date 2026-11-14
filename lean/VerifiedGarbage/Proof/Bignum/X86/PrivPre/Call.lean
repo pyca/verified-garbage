@@ -34,12 +34,12 @@ theorem below_frame (A : PPABI s) (B : Body s u) {m : Nat} (hm : m ≤ 100) :
     rw [← this]
     congr 1
     apply BitVec.eq_of_toNat_eq
-    rw [sub_toNat (by rw [sub_toNat (by omega)]; omega), sub_toNat (by omega), sub_toNat (by omega)]
-    omega
+    rw [sub_toNat (by rw [sub_toNat (by omega_using [l])]; omega_using [l]), sub_toNat (by omega_using [l]), sub_toNat (by omega_using [l])]
+    omega_using []
   rw [← e]
   refine below_sub hm ?_
-  rw [B.sp, sub_toNat (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega)]
-  simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega
+  rw [B.sp, sub_toNat (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega_using [l])]
+  simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega_using [l]
 
 theorem body_call {n : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
@@ -53,15 +53,15 @@ theorem body_call {n : String} {c : Prog isa} {k : Contract isa}
   have l := A.stackLow
   simp only [stackBytes] at l
   have esp : (u.gpr .esp).toNat = (s.gpr .esp).toNat - 96 := by
-    rw [B.sp, sub_toNat (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega)]; rfl
-  refine VG.X86.WP.call hv hsp (by omega) hpre hc hw fun v rdv wrv regs F _ post => ?_
+    rw [B.sp, sub_toNat (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega_using [l])]; rfl
+  refine VG.X86.WP.call hv hsp (by omega_using [hst, l, esp]) hpre hc hw fun v rdv wrv regs F _ post => ?_
   have K : Keeps [.eax, .ecx, .edx] u v :=
     ⟨fun r hr => regs r (by cases r <;> simp_all [calleeSaved]), rdv, wrv⟩
   have F' : Frame (wr ++ [⟨bot s, 100⟩]) u.mem v.mem := F.sub fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · obtain rfl := List.mem_singleton.mp hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_frame A B (by omega)⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_frame A B (by omega_using [hst])⟩
   refine ⟨B.next (K.1 _ (by decide)) rdv wrv (F'.sub fun r hr => ?_), K, F', post⟩
   rcases List.mem_append.mp hr with hr | hr
   · exact hsub r hr

@@ -211,7 +211,7 @@ theorem ballAtK_trRet {S : Nat} {P : Prims} (C : CalleeOk S P.ball (sampleInBall
     RelCT isa Q (callAt ("vg_mldsa_sample_in_ball" ++ P.suffix) P.ball (ballArgs ct len tau c ss))
       fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32 := by
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega_using [ht]
   have hc' := hc
   simp only [ballChk, Bool.and_eq_true, and_assoc] at hc'
   obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
@@ -225,7 +225,7 @@ theorem ballAtK_trRet {S : Nat} {P : Prims} (C : CalleeOk S P.ball (sampleInBall
     rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2,
       Args.r3 h2, Args.r4 h2, Args.sp h1, Args.sp h2, Args.mem h1, Args.mem h2]
     simp only [Arg.val]
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl])]
     exact ⟨e.2, by rw [hsd], e.pa hb.1, trivial, trivial, e.pa hb.2.1, e.pa hb.2.2⟩
   · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact (ball_cov Ly hc).1
   · rw [e.pa hb.2.1, e.pa hb.2.2]; exact (ball_cov Ly hc).2
@@ -259,7 +259,7 @@ theorem mask_pre {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) {s1 : State} (h1
   sig_pre [expandMaskContract, expandMaskSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.sp h1]
   simp only [Arg.val]
-  rw [imm32 (by omega)]
+  rw [imm32 (by omega_arith)]
   cpre L
   exact hγ
 
@@ -271,7 +271,7 @@ theorem mask_inline_pre {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) {s1 : Sta
   sig_pre [expandMaskContract, expandMaskSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.sp h1]
   simp only [Arg.val]
-  rw [imm32 (by omega)]
+  rw [imm32 (by omega_arith)]
   cpre L
   exact hγ
 
@@ -301,7 +301,7 @@ theorem maskAtCall_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
   sig_post [expandMaskContract, expandMaskSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.mem h1] at hq
   simp only [Arg.val] at hq
-  rw [imm32 (by omega)] at hq
+  rw [imm32 (by omega_arith)] at hq
   exact hq
 
 theorem maskAtCall_tr {S : Nat} {P : Prims} (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
@@ -343,7 +343,7 @@ theorem maskAtInline_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
   sig_post [expandMaskContract, expandMaskSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.mem h1] at hq
   simp only [Arg.val] at hq
-  rw [imm32 (by omega)] at hq
+  rw [imm32 (by omega_arith)] at hq
   exact hq
 
 theorem maskAtInline_tr {S : Nat} {P : Prims} (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
@@ -428,8 +428,8 @@ theorem hbp_pre (hb : HbpOk hlen omega len) (hn : hintOnes (hintAt s.mem (pa s h
   have l1 := hb.hlt.1; have l2 := hb.hlt.2.1; have l3 := hb.hlt.2.2
   sig_pre [hintBitPackContract, hintBitPackSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.sp h1, Args.mem h1]
-  simp only [Arg.val, imm32 l2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show hlen < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by omega)]
+  simp only [Arg.val, imm32 l2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show hlen < 2 ^ 64 by omega_using [l1]),
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by omega_using [l3])]
   cpre L
   exacts [hb.hp, hb.hle, hb.hh, hn]
 
@@ -451,7 +451,7 @@ theorem hbpAtK_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
     fun s' ⟨hP, s1, h1, hq⟩ => ⟨hP.b, hP.cs .x24 (by decide) (by decide), ?_⟩
   sig_post [hintBitPackContract, hintBitPackSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.mem h1] at hq
-  simp only [Arg.val, imm32 l2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len < 2 ^ 64 by omega)] at hq
+  simp only [Arg.val, imm32 l2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len < 2 ^ 64 by omega_using [l3])] at hq
   exact hq
 
 theorem hbpAtK_tr {S : Nat} {P : Prims} (C : CalleeOk S P.hintBitPack (hintBitPackContract AArch64.abi S))
@@ -474,7 +474,7 @@ theorem hbpAtK_tr {S : Nat} {P : Prims} (C : CalleeOk S P.hintBitPack (hintBitPa
   · sig_pub [hintBitPackContract, hintBitPackSig, AArch64.abi, VG.AArch64.argRegs]
     rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2,
       Args.r3 h2, Args.r4 h2, Args.sp h1, Args.sp h2, Args.mem h1, Args.mem h2]
-    simp only [Arg.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show hlen < 2 ^ 64 by omega)]
+    simp only [Arg.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show hlen < 2 ^ 64 by omega_using [l1])]
     exact ⟨e.2, hl, e.pa hbs.1, trivial, trivial, e.pa hbs.2, trivial⟩
   · rw [e.pa hbs.1, e.pa hbs.2]; exact (rw_cov Ly hc).1
   · rw [e.pa hbs.2]; exact (rw_cov Ly hc).2

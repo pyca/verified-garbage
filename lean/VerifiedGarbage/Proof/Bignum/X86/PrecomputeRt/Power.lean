@@ -32,12 +32,12 @@ theorem inverse_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
   have dims := h.dimensions
   have n0 : numAt len 0 = 256 := by simp [numAt, numOff]
   rw [n0] at f0
-  have b264 : 264 ≤ bytes := by have := dims.1; simp only [wb] at f0; omega
-  obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega⟩
+  have b264 : 264 ≤ bytes := by have := dims.1; simp only [wb] at f0; omega_using [f0, dims]
+  obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega_using [dims]⟩
   have hodd' : w32 s.mem base numOff % 2 = 1 := by
     rw [hk, VG.Proof.Mont.X86.Dynamic.val32_parity] at hodd; exact hodd
   refine WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok h.scratch (mo := numOff) (inv := invOff)
-    (by simp only [numOff]; omega) (by simp only [invOff]; omega) hodd') fun t ⟨I, O, K⟩ => ⟨?_, O, K⟩
+    (by simp only [numOff]; omega_using [b264]) (by simp only [invOff]; omega_using [f0]) hodd') fun t ⟨I, O, K⟩ => ⟨?_, O, K⟩
   rw [hk, val32, Nat.add_mul, Nat.mul_assoc, Nat.add_right_comm, Nat.add_mul_mod_self_left]
   exact I
 

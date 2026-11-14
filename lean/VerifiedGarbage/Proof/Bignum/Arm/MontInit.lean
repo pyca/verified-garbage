@@ -41,7 +41,7 @@ theorem montInit_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
   obtain ⟨headerU, outputU⟩ := initMeta_header s nowrap fits regs.count regs.aPtr regs.bPtr
     regs.mPtr regs.inverse regs.outPtr regs.accPtr
   rw [← memU] at headerU outputU
-  have outsideU := initMeta_outside s (base := State.addr base) (by omega : tmp + 32 ≤ 2 ^ 64)
+  have outsideU := initMeta_outside s (base := State.addr base) (by omega_using [nowrap, fits] : tmp + 32 ≤ 2 ^ 64)
   rw [← memU] at outsideU
   rw [WP.seq_iff]
   refine WP.mono (prepareZero_ok u ((restU.gpr .r7 (by decide)).trans regs.count)) ?_
@@ -51,13 +51,13 @@ theorem montInit_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
   have pv : v.gpr .r0 = base + BitVec.ofNat 32 acc :=
     ptrV.trans ((restU.gpr .r6 (by decide)).trans regs.accPtr)
   rw [WP.seq_iff]
-  refine WP.mono (zero_ok v cv (by omega) pv countV zeroV) ?_
+  refine WP.mono (zero_ok v cv (by omega_using []) pv countV zeroV) ?_
   intro w zw
   refine wp_mov (op2_reg _ _) fun t ut => WP.block_nil ?_
   have outsideW := zw.outside
   rw [memV] at outsideW
-  have headerW := headerU.of_outside outsideW (by omega) (by omega)
-  have outputW := outside_read32 outsideW (d := tmp + 24) (by omega) (by omega)
+  have headerW := headerU.of_outside outsideW (by omega_using [layout]) (by omega_using [nowrap, fits])
+  have outputW := outside_read32 outsideW (d := tmp + 24) (by omega_using [layout]) (by omega_using [nowrap, fits])
   have kept : Rest roundClobbers s t := (restU.mono (by decide)).trans
     ((restV.mono (by decide)).trans
       ((zw.rest.mono (by decide)).trans (ut.rest (by decide))))
@@ -72,16 +72,16 @@ theorem montInit_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
   have tmpB := ctx.tmpB
   have oldM := outside.val32 (d := mod) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, mFits])
   have oldB := outside.val32 (d := b) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, bFits])
   refine ⟨⟨⟨ctx.congr kept.wr, ⟨inv, ?_, ?_⟩, ?_, ?_, ?_⟩, ?_, ?_⟩, outside, kept⟩
   · rw [ut.mem]; exact headerW
   · rw [oldM]; exact hInv
   · rw [ut.gpr, zw.rest.gpr .r5 (by decide), restV.gpr .r5 (by decide), restU.gpr .r5 (by decide), regs.tmpPtr]
   · rw [oldM, ut.mem, zw.value]
-    omega
+    omega_using [hB]
   · rw [oldB, oldM]; exact hB
   · rw [ut.mem, outputW]; exact outputU
   · rw [ut.mem]; exact zw.value

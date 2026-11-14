@@ -19,16 +19,16 @@ open VG VG.AArch64 VG.Spec.MlDsa
 theorem callee65 {S : Nat} (hS : S<2^64) :
     CalleeOk S (Impl.MlDsa.AArch64.Sign.CommitTail.code 768 48)
       (commitTailContract AArch64.abi 768 48 S) :=
-  CalleeOk.of_verified hS verified65 (by omega) (by
+  CalleeOk.of_verified hS verified65 (by omega_using []) (by
     have h : (Impl.MlDsa.AArch64.Sign.CommitTail.code 768 48).aarch64Depth=0 := by decide
-    rw [h]; omega)
+    rw [h]; omega_using [])
 
 theorem callee87 {S : Nat} (hS : S<2^64) :
     CalleeOk S (Impl.MlDsa.AArch64.Sign.CommitTail.code 1024 64)
       (commitTailContract AArch64.abi 1024 64 S) :=
-  CalleeOk.of_verified hS verified87 (by omega) (by
+  CalleeOk.of_verified hS verified87 (by omega_using []) (by
     have h : (Impl.MlDsa.AArch64.Sign.CommitTail.code 1024 64).aarch64Depth=0 := by decide
-    rw [h]; omega)
+    rw [h]; omega_using [])
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -152,7 +152,7 @@ theorem hashCall_ok {p : Params} {S : Nat} (hS : S<2^64)
   have k1 := h1.2
   refine WP.callFV C.correct (hpre s1 h1) (by rw [k1.rd,k1.wr]; exact hc)
     (by rw [k1.wr]; exact hw)
-    (fun s' hrd hwr hsp hf hcs hvcs hpost => ?_) (by have := C.fd; omega)
+    (fun s' hrd hwr hsp hf hcs hvcs hpost => ?_) (by have := C.fd; omega_using [hS, this])
   refine ⟨⟨hrd.trans k1.rd,hwr.trans k1.wr,hsp.trans k1.sp,
     fun r hr h30 => by rw [hcs r hr h30,k1.gpr r (argRegs_pres r hr)],?_,
     fun r hr => (hvcs r hr).trans (k1.vcs r hr)⟩,s1,h1,hpost⟩

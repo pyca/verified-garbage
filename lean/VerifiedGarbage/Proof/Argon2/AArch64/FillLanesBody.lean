@@ -42,9 +42,9 @@ theorem body_ok (s : State) (p : Params) (pass lane slice : Nat)
   have laneBound := h.parameters.laneBound
   have lanesBound32 := h.parameters.lanesBound
   have left : (a.gpr .x24 + 1).toNat < 2 ^ 63 := by
-    rw [added, ReferenceMap.word_nat (lane + 1) (by omega)]; omega
+    rw [added, ReferenceMap.word_nat (lane + 1) (by omega_using [laneBound, lanesBound32])]; omega_using [laneBound, lanesBound32]
   have right : (a.mem.readW (off (a.gpr .x19) 184) 64).toNat < 2 ^ 63 := by
-    rw [ready.lanesWord, ReferenceMap.word_nat p.lanes (by omega)]; omega
+    rw [ready.lanesWord, ReferenceMap.word_nat p.lanes (by omega_using [lanesBound32])]; omega_using [lanesBound32]
   refine (advance_ok a (ready.layout.frameRead 184 (by simp)) left right).mono ?_
   rintro t ⟨value, flag, keeps⟩
   have bp := keeps.regs .x19 (by decide)
@@ -61,7 +61,7 @@ theorem body_ok (s : State) (p : Params) (pass lane slice : Nat)
       simp only [FillCompress.loopRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
     exact (keeps.regs r outside).trans (filled.regs r hr ix)
-  · rw [flag, added, ready.lanesWord, ReferenceMap.word_nat (lane + 1) (by omega),
+  · rw [flag, added, ready.lanesWord, ReferenceMap.word_nat (lane + 1) (by omega_using [laneBound, lanesBound32]),
       ReferenceMap.word_nat p.lanes lanesBound]
   · intro active; exact change_lane_ready ready keeps nextWord active
 

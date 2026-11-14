@@ -23,19 +23,19 @@ theorem copied_good {base s : State} {P S : Addr} {nk : Nat}
   intro j hj
   rw [← Mem.readW_byte s.mem (S + BitVec.ofNat 64 (4*i)) hj,
     ← Mem.readW_byte base.mem (P + BitVec.ofNat 64 (4*i)) hj, Offset.add_add, Offset.add_add]
-  exact h.copied _ (by omega)
+  exact h.copied _ (by omega_using [hdiv, hi, hj])
 
 theorem wordSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig base P S (4*nk))
     (h : CopyInv base P S (4*nk) ((4*nk)/8) s) (h7 : s.gpr .r7 = BitVec.ofNat 64 (4*nk)) :
     WP isa (.block Impl.Aes.PPC64LE.Crypto.wordSetup) s (WordInv base P S nk nk) := by
-  have h3 : nk = 4 ∨ nk = 6 ∨ nk = 8 := by have := hc.length; omega
-  have hn : 0 < nk ∧ nk ≤ 8 := by omega
+  have h3 : nk = 4 ∨ nk = 6 ∨ nk = 8 := by have := hc.length; omega_using [this]
+  have hn : 0 < nk ∧ nk ≤ 8 := by omega_using [h3]
   have hdiv : 8*((4*nk)/8) = 4*nk := by rcases h3 with rfl | rfl | rfl <;> decide
   have hgood := copied_good h hdiv
   have h5 : s.gpr .r5 = S + BitVec.ofNat 64 (4*nk) := by simpa only [hdiv] using h.out
   have hshift : BitVec.ofNat 64 (4*nk) >>> 2 = BitVec.ofNat 64 nk := by
     rcases h3 with rfl | rfl | rfl <;> decide
-  have hrc0 : (nk-1)/nk = 0 := Nat.div_eq_of_lt (by omega)
+  have hrc0 : (nk-1)/nk = 0 := Nat.div_eq_of_lt (by omega_using [h3])
   apply WP.of_runBlock
   simp only [Impl.Aes.PPC64LE.Crypto.wordSetup, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, ne_eq, not_false_eq_true,
@@ -43,7 +43,7 @@ theorem wordSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig ba
     show 4 ≤ 2^15 by decide, show 0 < 2^15 by decide, show 2 < 64 by decide,
     show 28 < 2^15 by decide, show 1 < 2^15 by decide, and_self,
     h7, h5, hshift, Option.some.injEq, exists_eq_left']
-  refine ⟨⟨by omega, by omega⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨by omega_using [], by omega_using []⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · refine (h.keep.trans (rs' := [.r4, .r6, .r8, .r10, .r11, .r12]) ⟨fun r hr => ?_, ?_, ?_⟩).mono (by simp [keyGprs])
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false]
@@ -53,13 +53,13 @@ theorem wordSetup_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig ba
       BitVec.add_sub_cancel, Nat.sub_self, Nat.mul_zero, BitVec.add_zero]
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
     change S + BitVec.ofNat 64 (4*nk) - BitVec.ofNat 64 4 = _
-    rw [Offset.add_ofNat_sub _ (by omega)]
-    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega)
+    rw [Offset.add_ofNat_sub _ (by omega_using [h3])]
+    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega_using [])
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, Nat.mod_self, Nat.mul_zero]
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h7]
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
     rw [← BitVec.ofNat_add, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
   · simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false,
       hrc0, Nat.zero_add, Impl.Aes.KeyWords.rc, Nat.sub_self, Nat.repeat]
     rfl

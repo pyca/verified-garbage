@@ -111,7 +111,7 @@ theorem crtCallP_pub {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     sa (by decide : 19 < 20), ta (by decide : 19 < 20),
     crtArgumentP, crtArgument, PrivGeometry.argument, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true,
     ite_false, true_and, and_true]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega : g.length < 2 ^ 32)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega_using [this] : g.length < 2 ^ 32)]
   have bytes : Spec.Rsa.bytesAt s.callEntry.mem ((g.sources 0).setWidth 64) g.length =
       Spec.Rsa.bytesAt t.callEntry.mem ((g.sources 0).setWidth 64) g.length :=
     (hs.callBytes 0).trans (nb.trans (ht.callBytes 0).symm)
@@ -195,7 +195,7 @@ theorem argumentsP {s t : State} (H : (Proof.Rsa.privateCheckedPrecomputedContra
   · intro i hi
     have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
         i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 := by
-      omega
+      omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
@@ -230,7 +230,7 @@ theorem publicGeometryP {s t : State} (H : (Proof.Rsa.privateCheckedPrecomputedC
   have sources : (fun i : Fin 8 => arg s (2 + 2 * i.val)) =
       (fun i : Fin 8 => arg t (2 + 2 * i.val)) := by
     funext i
-    exact args _ (by omega)
+    exact args _ (by omega_using [])
   simp only [privateGeometry, sp, sources, args 0 (by decide), args 18 (by decide),
     args 3 (by decide), args 5 (by decide), args 9 (by decide), args 11 (by decide), args 19 (by decide)]
 
@@ -380,8 +380,8 @@ theorem code_stackP (v : CrtImpl) (w : CrtPImpl) : stackUse (privCodeP v w) ≤ 
   have bound : stackUse (bodyP w.name w.code v.pcName v.pc v.pdName v.pd) ≤ 100 := by
     simp only [bodyP, check, tail, compareBytes, release, releaseLoop, stackUse, Nat.max_le]
     repeat apply And.intro
-    all_goals omega
+    all_goals omega_arith
   simp only [privCodeP, codeP, stackUse, VG.X86.frameBytes, List.length_cons, List.length_nil,
     VG.Impl.Rsa.X86.PrivChecked.frameBytes, stackBytes]
-  omega
+  omega_using [bound]
 end VG.Proof.Rsa.X86.PrivChecked

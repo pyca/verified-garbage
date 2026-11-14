@@ -63,8 +63,8 @@ theorem init_kc {s₀ s₁ : State} (h : initRISCV64.pre s₀) (h1 : IS1 s₀ s�
   have hC : Covers [⟨s₀.gpr .a1, 256⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hsp := h1.keeps.sp
   have hs : Region.Sub (below s₀.sp 3168) (below s₀.sp 3248) := below_le (by decide) (by decide)
-  refine ⟨h1.a0, h1.a1, dkc.sub_right (Region.sub_prefix (by decide)), fk, by omega, by rw [hsp]; exact spal,
-    by rw [hsp]; omega, by rw [hsp]; exact bK.sub_left hs,
+  refine ⟨h1.a0, h1.a1, dkc.sub_right (Region.sub_prefix (by decide)), fk, by omega_using [fc], by rw [hsp]; exact spal,
+    by rw [hsp]; omega_using [spge], by rw [hsp]; exact bK.sub_left hs,
     by rw [hsp]; exact (bC.sub_left hs).sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
   · rw [h1.keeps.rd, h1.keeps.wr, hrd]
     exact Covers.cons (Covers.left (covers_mem (by simp))) (Covers.cons
@@ -110,12 +110,12 @@ theorem init_cc {C W : Addr} {s : State} (dcs : (⟨C, 256⟩ : Region).Disjoint
       (p + BitVec.ofNat 64 d).toNat + 16 ≤ 2 ^ 64 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith),
       Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
-  refine ⟨a3, a5, a6, a7, by decide, ?_, ?_, ?_, by omega, fit W 96 2560 (by decide) fs,
+  refine ⟨a3, a5, a6, a7, by decide, ?_, ?_, ?_, by omega_using [fc], fit W 96 2560 (by decide) fs,
     fit C 240 256 (by decide) fc, spal, spge, bC.sub_right (Region.sub_prefix (by decide)),
     bS.sub_right (Offset.sub_base _ (by decide)), bC.sub_right (Offset.sub_base _ (by decide)), ?_, ?_⟩
   · exact (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
   · simpa using Offset.disjoint C (d := 0) (n := 128) (e := 240) (k := 16) (.inl (by decide))
-      (by decide) (by omega)
+      (by decide) (by omega_using [])
   · exact ((dcs.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by decide))).symm
   · exact Covers.cons (Covers.right (covers_prefix hC (by decide))) (Covers.cons
       (Covers.right (covers_off hW (by decide) (by decide))) (Covers.cons
@@ -144,7 +144,7 @@ theorem init_wp {s₀ : State} (h : initRISCV64.pre s₀) :
     fun h₁ => (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ h₁)
   have kC : (⟨s₀.gpr .a1, 128⟩ : Region).Disjoint ⟨s₀.gpr .a1 + BitVec.ofNat 64 240, 16⟩ := by
     simpa using Offset.disjoint (s₀.gpr .a1) (d := 0) (n := 128) (e := 240) (k := 16)
-      (.inl (by decide)) (by decide) (by omega)
+      (.inl (by decide)) (by decide) (by omega_using [])
   have kB : (⟨s₀.gpr .a1, 128⟩ : Region).Disjoint (below s₀.sp 3248) :=
     (bC.sub_right (Region.sub_prefix (by decide))).symm
   refine WP.seq (WP.mono (is1_wp h) fun s₁ h1 => ?_)

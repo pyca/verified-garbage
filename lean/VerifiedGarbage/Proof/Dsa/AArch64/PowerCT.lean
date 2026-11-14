@@ -60,7 +60,7 @@ structure PowerPublic where
 
 def PowerPublic.product (p : PowerPublic) : ProductPublic :=
   ⟨⟨off p.bytes.x.B p.bytes.x.o, slot p.bytes.x.wx 8, p.bytes.x.wx, p.minv⟩,
-    p.modulus, Nat.le_refl _, p.lower, by change p.bytes.x.wx < 2 ^ 31; have := p.fits; have := p.upper; omega⟩
+    p.modulus, Nat.le_refl _, p.lower, by change p.bytes.x.wx < 2 ^ 31; have := p.fits; have := p.upper; omega_arith⟩
 
 /-- Common buffer and modulus facts for the power core. -/
 def PowerInputs (p : PowerPublic) (eb : List Byte) (s : State) : Prop :=
@@ -92,15 +92,15 @@ theorem encodedPower_ct (M : Mont) : RelCT isa (Two EncodedPre)
     refine ⟨p.minv, p.modulus, x, 1, eb, hc, p.lower, p.fits, p.upper,
       hm.modulus, hm.inverse, p.odd, ?_, ?_, ?_, ?_, by decide, by decide,
       hp, hl, hlen, h1, h2, hs⟩
-    · rw [hx]; exact Nat.mod_lt _ (by have := p.greater; omega)
+    · rw [hx]; exact Nat.mod_lt _ (by have := p.greater; omega_using [this])
     · rw [hx, Nat.mod_mod]
-    · rw [hy]; exact Nat.mod_lt _ (by have := p.greater; omega)
+    · rw [hy]; exact Nat.mod_lt _ (by have := p.greater; omega_using [this])
     · rw [hy, Nat.mod_mod, Nat.one_mul]
   · intro p s ⟨x, eb, ⟨hc, hm, _, hp, hl, _, h1, h2, hs⟩, hx, hy⟩
     refine WP.mono (expLoop_ok M (x := x) hc p.lower p.fits p.upper hm.modulus hm.inverse p.odd
-      (by rw [hx]; exact Nat.mod_lt _ (by have := p.greater; omega))
+      (by rw [hx]; exact Nat.mod_lt _ (by have := p.greater; omega_using [this]))
       (by rw [hx, Nat.mod_mod])
-      (by rw [hy]; exact Nat.mod_lt _ (by have := p.greater; omega))
+      (by rw [hy]; exact Nat.mod_lt _ (by have := p.greater; omega_using [this]))
       (by rw [hy, Nat.mod_mod]) (by decide) (by decide) hp hl h1 h2 hs)
       fun t ⟨ht, _⟩ => ⟨p.minv, ht.good, Nat.le_refl _⟩
 
@@ -124,13 +124,13 @@ theorem powerCore_ct (M : Mont) : RelCT isa (Two PowerCorePre)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl
     · dsimp only [PowerPublic.product]
-      rw [hr2]; exact Nat.mod_lt _ (by have := p.greater; omega)
+      rw [hr2]; exact Nat.mod_lt _ (by have := p.greater; omega_using [this])
     · dsimp only [PowerPublic.product]
       rw [hone]; exact p.greater
   · intro p s ⟨eb, ⟨hc, hm, hone, hp, hl, hlen, h1, h2, hs⟩, hr2⟩
-    rw [show 128 * p.bytes.x.wx = 64 * p.bytes.x.wx + 64 * p.bytes.x.wx by omega, Nat.pow_add] at hr2
+    rw [show 128 * p.bytes.x.wx = 64 * p.bytes.x.wx + 64 * p.bytes.x.wx by omega_using [], Nat.pow_add] at hr2
     refine WP.mono (encodePower_ok M hm (Nat.le_refl _) p.lower
-      (by have := p.fits; have := p.upper; omega) p.greater p.odd rfl hr2 hone)
+      (by have := p.fits; have := p.upper; omega_arith) p.greater p.odd rfl hr2 hone)
       fun t ⟨hmt, hx, hy, htone, hf, hk⟩ => ?_
     have hct := arrays_context hc hf (by decide) hk
     have hfw := arrays_work hf (by decide)

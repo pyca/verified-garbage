@@ -51,7 +51,7 @@ theorem allocatedJointPair_step {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {bas
   apply RelCT.seq (jointPair_counter hw.keep hj hc)
   apply RelCT.seq (allocatedJointPair_stage hw.counter (fun s hs _ => hw.double _ s hA hs) (ht.double _ j))
   simpa only [jointPoint_step hC hP hQ (gw:=c.gw)] using
-    allocatedJointPair_digits hC hQ (hC.onCurve_add hA hA) (by omega : j<257) hw ht
+    allocatedJointPair_digits hC hQ (hC.onCurve_add hA hA) (by omega_using [hj] : j<257) hw ht
 
 theorem allocatedJointPair_run {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base : Addr}
     {size u v : Nat} {rs : List Reg} {W : List (Nat × Nat)} {Core : Point C → State → Prop} {P Q : Point C}

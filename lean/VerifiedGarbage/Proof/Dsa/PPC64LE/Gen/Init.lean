@@ -42,7 +42,7 @@ def InitWr (s : State) : Prop :=
 theorem InitWr.st {s : State} (h : InitWr s) (d : Nat) (hd : d + 8 ≤ 32) :
     InRegions s.wr (s.gpr .r3 + BitVec.ofNat 64 d) 8 := by
   rw [h.1]
-  exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ hd (by omega)⟩
+  exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ hd (by omega_using [hd])⟩
 
 theorem InitWr.st0 {s : State} (h : InitWr s) : InRegions s.wr (s.gpr .r3) 8 := by
   simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using h.st 0 (by decide)
@@ -54,11 +54,11 @@ theorem initWords_ok {s : State} (h : InitWr s) {L : Nat} (hL : s.gpr .r4 = BitV
   have hc : BitVec.ofNat 64 L <<< 15 + BitVec.ofNat 64 L = BitVec.ofNat 64 (32769 * L) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
   have hr : BitVec.ofNat 64 L <<< 9 = BitVec.ofNat 64 (512 * L) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
   unfold initWords initWritten
   crunr [hL, hc, hr, h.st0, h.st 8 (by decide), h.st 16 (by decide), h.st 24 (by decide)]
   rfl
@@ -85,7 +85,7 @@ theorem initGuard_ok (s : State) {L : Nat} (hL : s.gpr .r4 = BitVec.ofNat 64 L) 
       rw [← BitVec.sub_add_cancel (BitVec.ofNat 64 L) (BitVec.ofNat 64 c), e']; simp
     have := congrArg BitVec.toNat e''
     simp only [BitVec.toNat_ofNat] at this
-    omega
+    omega_using [hl, hc, this]
 
 def initPre (s : State) : Prop := s.rd = [] ∧ InitWr s
 
@@ -109,13 +109,13 @@ theorem initWords_post {s u : State} {rs : List Reg} (h : InitWr s) (k : Keep rs
   have h3 : u.gpr .r3 = s.gpr .r3 := k.gpr hr
   have hu : InitWr u := by rw [InitWr, k.2.2, h3]; exact h
   have hp : 0 < (s.gpr .r4).toNat := by
-    simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv; omega
+    simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv; omega_using [hv]
   refine WP.mono (initWords_ok hu (L := (s.gpr .r4).toNat) (by rw [k.gpr h4, BitVec.ofNat_toNat,
     BitVec.setWidth_eq])) fun t ⟨ht, hmt⟩ => ?_
   simp only [initPost, Spec.Dsa.parameterInit, hv, ↓reduceIte]
   refine ⟨by rw [ht]; rfl, 512 * (s.gpr .r4).toNat, ?_, ?_⟩
   · rw [hmt, hm, h3, initWritten_words]; rfl
-  · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy; omega
+  · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy; omega_using [hp]
 
 theorem initZeros_post {s u : State} {rs : List Reg} (h : InitWr s) (k : Keep rs s u) (hr : .r3 ∉ rs)
     (hm : u.mem = s.mem) (hv : Spec.Dsa.generationPLenValid (s.gpr .r4).toNat = false) :

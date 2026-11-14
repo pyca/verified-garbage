@@ -72,9 +72,9 @@ theorem Installed.input {base : Addr} {size keyArg pLenArg qLenArg : Nat}
   refine ⟨inputBuffer I.keeps ptr bound ?_ apart
       (by rw [I.keeps.1 _ (by decide)]; exact room)
       (by rw [I.keeps.1 _ (by decide)]; exact stack),
-    inputBytes_keep I.outside ptr (by omega) (by have := I.scr.nowrap; omega) apart⟩
+    inputBytes_keep I.outside ptr (by omega_using [bound]) (by have := I.scr.nowrap; omega_using [this]) apart⟩
   intro d k hd
-  exact ⟨_, read, Offset.contains_base _ hd (by omega)⟩
+  exact ⟨_, read, Offset.contains_base _ hd (by omega_using [bound, hd])⟩
 
 theorem Installed.pointers {base : Addr} {size keyArg pLenArg qLenArg : Nat}
     {args : List (Nat × Field)} {s t : State}
@@ -86,9 +86,9 @@ theorem Installed.pointers {base : Addr} {size keyArg pLenArg qLenArg : Nat}
     pointerValue base t (.input .x) = pointerValue base t (.input .p) + BitVec.ofNat 32 (3 * (arg s pLenArg).toNat + (arg s qLenArg).toNat) := by
   rw [I.arguments (keyArg, .p) keyMem, I.qPointer, I.gPointer, I.yPointer, I.xPointer]
   have two : 2 * (arg s pLenArg).toNat + (arg s qLenArg).toNat =
-      (arg s pLenArg).toNat + (arg s qLenArg).toNat + (arg s pLenArg).toNat := by omega
+      (arg s pLenArg).toNat + (arg s qLenArg).toNat + (arg s pLenArg).toNat := by omega_using []
   have three : 3 * (arg s pLenArg).toNat + (arg s qLenArg).toNat =
-      (arg s pLenArg).toNat + (arg s qLenArg).toNat + (arg s pLenArg).toNat + (arg s pLenArg).toNat := by omega
+      (arg s pLenArg).toNat + (arg s qLenArg).toNat + (arg s pLenArg).toNat + (arg s pLenArg).toNat := by omega_using []
   simp only [two, three, BitVec.ofNat_add, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_assoc, and_self]
 
 

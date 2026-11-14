@@ -137,7 +137,7 @@ theorem desc_agree {m₁ m₂ : Mem} {Src : Addr} {cnt : Nat}
   have e : Src + BitVec.ofNat 64 (a - Src).toNat = a := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   rw [← e]
-  exact hd _ (by have := Nat.mul_le_mul_right 8 hi; simp only [show 2 * (32 / 8) = 8 from rfl] at ha; omega)
+  exact hd _ (by have := Nat.mul_le_mul_right 8 hi; simp only [show 2 * (32 / 8) = 8 from rfl] at ha; omega_using [hi, ha])
 
 section
 variable {m₁ m₂ : Mem} {Src : BitVec 32} {cnt : Nat} (hdw : Src.toNat + cnt * 8 ≤ 2 ^ 32)
@@ -153,18 +153,18 @@ omit hdw in
 theorem desc_word {d : Nat} (h : d + 4 ≤ cnt * 8) :
     m₁.readW (w64 Src + BitVec.ofNat 64 d) 32 = m₂.readW (w64 Src + BitVec.ofNat 64 d) 32 :=
   Mem.readW_congr fun k hk => by
-    rw [Offset.add_ofNat_add_ofNat]; exact hd _ (by simp at hk; omega)
+    rw [Offset.add_ofNat_add_ofNat]; exact hd _ (by simp at hk; omega_using [h, hk])
 
 include hdw
 
 theorem sb_agree {i : Nat} (hi : i < cnt) : sb m₁ Src i = sb m₂ Src i := by
   simp only [sb]
   rw [← descA0 hdw hi]
-  exact desc_word hd (by omega)
+  exact desc_word hd (by omega_using [hi])
 
 theorem sl_agree {i : Nat} (hi : i < cnt) : sl m₁ Src i = sl m₂ Src i := by
   simp only [sl]
-  rw [← descA hdw hi 4 (by decide), Offset.add_ofNat_add_ofNat, desc_word hd (by omega)]
+  rw [← descA hdw hi 4 (by decide), Offset.add_ofNat_add_ofNat, desc_word hd (by omega_using [hi])]
 
 end
 
@@ -197,7 +197,7 @@ theorem body_rel {i : Nat} (hi : i < cnt) :
 theorem gatherLoop_rel (hpos : cnt ≠ 0) : RelCT isa (Eq2 t₁ t₂) gatherLoop TT := by
   refine (RelCT.loop (Q := TT) (fun n u₁ u₂ => ∃ i, n = cnt - i ∧ i < cnt ∧
       GInv t₁ u₁ Src Dst cnt i ∧ GInv t₂ u₂ Src Dst cnt i) (fun n => ?_) (cnt - 0)).mono
-    (fun a b ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by omega, GInv.init h₁, GInv.init h₂⟩) fun _ _ h => h
+    (fun a b ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by omega_using [hpos], GInv.init h₁, GInv.init h₂⟩) fun _ _ h => h
   refine RelCT.exists_ fun i => ?_
   by_cases hin : n = cnt - i ∧ i < cnt
   · obtain ⟨rfl, hi⟩ := hin
@@ -207,8 +207,8 @@ theorem gatherLoop_rel (hpos : cnt ≠ 0) : RelCT isa (Eq2 t₁ t₂) gatherLoop
     have ev₂ : isa.eval .ne u₂ = some !decide (i + 1 = cnt) := by show u₂.zf.map (!·) = _; rw [z₂]; rfl
     refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ?_⟩
     rw [ev₁] at ht
-    have : i + 1 < cnt := by simp at ht; omega
-    exact ⟨cnt - (i + 1), by omega, i + 1, rfl, this, g₁, g₂⟩
+    have : i + 1 < cnt := by simp at ht; omega_using [hi, ht]
+    exact ⟨cnt - (i + 1), by omega_using [hi], i + 1, rfl, this, g₁, g₂⟩
   · exact RelCT.of_false fun _ _ h => hin ⟨h.1, h.2.1⟩
 
 end

@@ -40,17 +40,17 @@ theorem save_ok {s : State} {base : Addr} {size : Nat} (h : Entry s base size) (
       Outside base 8 16 s.mem t.mem ∧ Keeps [.eax, .edi] s t := by
   have nw := h.nowrap
   have ha : (VG.X86.arg s 0).toNat = base.toNat := by
-    rw [← h.base_eq, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (VG.X86.arg s 0).isLt; omega)]
+    rw [← h.base_eq, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (VG.X86.arg s 0).isLt; omega_using [])]
   unfold save
   refine wp_ldm rfl h.arg fun u U => ?_
   change WP isa (.block (saveCode .eax slots ++ [.mov .edi (.reg .eax)])) u _
-  refine save_ofNat_ok slots slots_fit (by rw [U.gpr]; change (VG.X86.arg s 0).toNat + 24 ≤ _; omega) ?_ ?_
+  refine save_ofNat_ok slots slots_fit (by rw [U.gpr]; change (VG.X86.arg s 0).toNat + 24 ≤ _; omega_using [hz, nw, ha]) ?_ ?_
   · intro p hp
     rw [U.gpr]
     change InRegions u.wr (off ((VG.X86.arg s 0).setWidth 64) p.2) 4
     rw [h.base_eq, U.wr]
-    exact ⟨_, h.wr, Offset.contains_base base (by have := slots_fit.1 p hp; omega)
-      (by have := slots_fit.1 p hp; omega)⟩
+    exact ⟨_, h.wr, Offset.contains_base base (by have := slots_fit.1 p hp; omega_using [hz, this])
+      (by have := slots_fit.1 p hp; omega_using [this])⟩
   · intro v V
     refine wp_mov fun t T => WP.block_nil ?_
     have M : t.mem = saveMem s.mem (off base) s.gpr slots := by
@@ -81,11 +81,11 @@ theorem restore_ok {s : State} {base : Addr} {size : Nat} {g : Reg → BitVec 32
   refine restoreBase_ok _ (by decide) ?_ ?_ (fun _ H => WP.block_nil H)
   · intro p hp
     have hd := slots_fit.1 p hp
-    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega), hs.edi]
-    exact hs.read (by omega)
+    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega_using [hz, hd, this]), hs.edi]
+    exact hs.read (by omega_using [hz, hd])
   · intro p hp
     have hd := slots_fit.1 p hp
-    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega), hs.edi]
+    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega_using [hz, hd, this]), hs.edi]
     exact h p hp
 
 end VG.Proof.Dsa.X86.Pow

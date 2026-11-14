@@ -66,7 +66,7 @@ theorem frame_res (hc : BaseCfgOk p256vx) {W : List (Nat × Nat)} (hF : FrameLay
   have := sl_le p256vx hc.n10 (i := FLAG) (by decide)
   have := hc.n0
   have := h.scr.nowrap
-  omega
+  omega_arith
 
 section
 variable (hL : Law Spec.P256.curve)
@@ -86,11 +86,11 @@ theorem ifma_gtab {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre p256vx s�
   rw [len] at hrd
   obtain ⟨r, hr, hc⟩ := hrd
   refine ⟨⟨r, hr, ?_⟩, fun d hd => ?_⟩
-  · have := Region.contains_off hc (d := 0) (n := 16320) (by omega)
+  · have := Region.contains_off hc (d := 0) (n := 16320) (by omega_using [])
     rw [show s₀.syms p256GTab.tsym + BitVec.ofNat 64 0 = s₀.syms p256GTab.tsym from BitVec.add_zero _] at this
     exact this
-  · have := hout (d / 8) (by omega) (d % 8) (by omega)
-    rw [Offset.add_add, show 8 * (d / 8) + d % 8 = d by omega] at this
+  · have := hout (d / 8) (by omega_using [hd]) (d % 8) (by omega_using [])
+    rw [Offset.add_add, show 8 * (d / 8) + d % 8 = d by omega_using []] at this
     exact this
 
 include hL hT hI hO

@@ -32,7 +32,7 @@ theorem WP.callF {n : String} {c : Prog isa} {k : Contract isa}
   obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
   obtain ⟨hr, hwr⟩ := Exec.rdwr he
   simp only [State.withRegions_rd, State.withRegions_wr] at hr hwr
-  have hf := Exec.stackFrame hsp he (by omega)
+  have hf := Exec.stackFrame hsp he (by omega_using [hd])
   simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_rsp] at hf
   have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
@@ -61,7 +61,7 @@ theorem WP.callF {n : String} {c : Prog isa} {k : Contract isa}
   · -- The return address, then the callee.
     have f₀ : Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.mem s.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_call _ (by omega) (by omega))
+        (below_call _ (by omega_using []) (by omega_using [hd]))
     have f₁ : Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.callEntry.mem s₁.mem :=
       Frame.sub hf fun r hr => by
         rcases List.mem_append.mp hr with hr | hr
@@ -115,7 +115,7 @@ theorem x86_64Depth_noSp : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth = 8 * c.
       (fun j hj => h j (List.mem_append_left _ (List.mem_cons_of_mem _ hj)))
     have hn := x86_64Depth_noSp (c := n) (fun j hj => h j (List.mem_append_right _ hj))
     simp only [Code.x86_64Depth, Code.depth, hb, hn]
-    omega
+    omega_using []
 
 /-- What `Exec.stackFrame` adds to a weakest precondition: memory changes
 only within the writable regions and the stack below `rsp` the code uses. -/

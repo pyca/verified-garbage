@@ -154,7 +154,7 @@ theorem zstr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h15 : u.gpr .x15 
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   exact ⟨hc.keep hL hrd hwr hsp (fun r _ _ => by rw [hg]) hf (hsy := hsy)
     (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact safe_high L (d := 16 + o) (n := 8) (by omega) (by omega)),
+      rw [List.mem_singleton.mp hr]; exact safe_high L (d := 16 + o) (n := 8) (by omega_using [ho₁]) (by omega_using [ho₂])),
     hg, hf, fun k hk => by rw [hm]; exact bytesAt_writeW_zero64 _ _ hk⟩
 
 /-- `k` zero words at `sp + o`, above the frame's pointers. -/
@@ -168,16 +168,16 @@ theorem zstrs_ok (hL : L.Ok) {o : Nat} (ho₁ : 232 ≤ o) (ho₂ : o + 72 ≤ 2
     have := hL.nB
     have := L.he
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (zstrs_ok hL ho₁ ho₂ ho8 k (by omega) hc h15 h14) fun u₁ ⟨hc₁, hg₁, hf₁, hb₁⟩ => ?_
-    refine WP.mono (zstr_ok hL hc₁ (by rw [hg₁, h15]) (by rw [hg₁, h14]) (o := o + 8 * k) (by omega) (by omega)
-      (by omega)) fun u₂ ⟨hc₂, hg₂, hf₂, hb₂⟩ => ?_
+    refine WP.mono (zstrs_ok hL ho₁ ho₂ ho8 k (by omega_using [hk]) hc h15 h14) fun u₁ ⟨hc₁, hg₁, hf₁, hb₁⟩ => ?_
+    refine WP.mono (zstr_ok hL hc₁ (by rw [hg₁, h15]) (by rw [hg₁, h14]) (o := o + 8 * k) (by omega_using [ho₁]) (by omega_using [ho₂, hk])
+      (by omega_using [ho8])) fun u₂ ⟨hc₂, hg₂, hf₂, hb₂⟩ => ?_
     refine ⟨hc₂, hg₂.trans hg₁, hf₁.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _,
-      by simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega) (by omega)⟩), ?_⟩
-    rw [show 8 * (k + 1) = 8 * k + 8 by omega, Proof.Hmac.Common.bytesAt_add, Offset.add_add,
-      show 16 + o + 8 * k = 16 + (o + 8 * k) by omega, hb₂ 8 (Nat.le_refl _),
+      by simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega_using []) (by omega_using [hk])⟩), ?_⟩
+    rw [show 8 * (k + 1) = 8 * k + 8 by omega_using [], Proof.Hmac.Common.bytesAt_add, Offset.add_add,
+      show 16 + o + 8 * k = 16 + (o + 8 * k) by omega_using [], hb₂ 8 (Nat.le_refl _),
       bytesAt_frame hf₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega), hb₁, List.replicate_append_replicate]
+        exact Offset.disjoint _ (by omega_using []) (by omega_arith) (by omega_arith)) (by omega_using [hk]), hb₁, List.replicate_append_replicate]
 
 /-- Nine zero words at `sp + o`, above the frame's pointers, through `x15` and `x14`. -/
 theorem zero9_ok (hL : L.Ok) {o : Nat} (ho₁ : 232 ≤ o) (ho₂ : o + 72 ≤ 216 + 8 * L.e) (ho8 : o % 8 = 0)
@@ -230,6 +230,6 @@ theorem candTop_ok (hL : L.Ok) (hW : P.R.big = true) (hsh : P.R.sh ≠ 0) (hsh8 
   have hsc : (cfgOf P).sh = P.R.sh := rfl
   have hbc : (cfgOf P).big = true := hW
   rw [Cfg.candTop, hbc, ite_eq_left_of_eq_true _ _ (eq_self true), hsc]
-  exact conv_ok hL hW hc (o := fT) (s := P.R.sh) (by decide) (by decide) (by decide) (by omega) (by omega)
+  exact conv_ok hL hW hc (o := fT) (s := P.R.sh) (by decide) (by decide) (by decide) (by omega_using [hsh]) (by omega_using [hsh8])
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

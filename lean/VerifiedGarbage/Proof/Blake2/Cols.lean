@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A BLAKE2 round on four columns at once, for any word size
@@ -35,33 +36,33 @@ def pick4 (k : Nat) (x : BitVec w × BitVec w × BitVec w × BitVec w) : BitVec 
 with the message words `x q` and `y q`. -/
 def mixColsP (x y : Nat → BitVec w) (v : Work w) : Work w :=
   Vector.ofFn fun j => pick4 (j.val / 4)
-    (mix P (v[j.val % 4]'(by omega)) (v[4 + j.val % 4]'(by omega)) (v[8 + j.val % 4]'(by omega))
-      (v[12 + j.val % 4]'(by omega)) (x (j.val % 4)) (y (j.val % 4)))
+    (mix P (v[j.val % 4]'(by omega_using [])) (v[4 + j.val % 4]'(by omega_using [])) (v[8 + j.val % 4]'(by omega_using []))
+      (v[12 + j.val % 4]'(by omega_using [])) (x (j.val % 4)) (y (j.val % 4)))
 
 /-- Rows 0, 2 and 3 rotated left by three, one and two places. -/
 def rotInP (v : Work w) : Work w :=
-  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + j.val / 4 + 3) % 4]'(by omega)
+  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + j.val / 4 + 3) % 4]'(by omega_using [])
 
 /-- Rows 0, 2 and 3 rotated left by one, three and two places (back). -/
 def rotOutP (v : Work w) : Work w :=
-  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + 3 * (j.val / 4) + 1) % 4]'(by omega)
+  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + 3 * (j.val / 4) + 1) % 4]'(by omega_using [])
 
 theorem mixColsP_get (x y : Nat → BitVec w) (v : Work w) (j : Nat) (hj : j < 16) :
-    (mixColsP P x y v)[j] = pick4 (j / 4) (mix P (v[j % 4]'(by omega)) (v[4 + j % 4]'(by omega))
-      (v[8 + j % 4]'(by omega)) (v[12 + j % 4]'(by omega)) (x (j % 4)) (y (j % 4))) := by
+    (mixColsP P x y v)[j] = pick4 (j / 4) (mix P (v[j % 4]'(by omega_using [])) (v[4 + j % 4]'(by omega_using []))
+      (v[8 + j % 4]'(by omega_using [])) (v[12 + j % 4]'(by omega_using [])) (x (j % 4)) (y (j % 4))) := by
   simp only [mixColsP, Vector.getElem_ofFn]
 
 theorem rotInP_get (v : Work w) (j : Nat) (hj : j < 16) :
-    (rotInP v)[j] = v[4 * (j / 4) + (j % 4 + j / 4 + 3) % 4]'(by omega) := by
+    (rotInP v)[j] = v[4 * (j / 4) + (j % 4 + j / 4 + 3) % 4]'(by omega_using [hj]) := by
   simp only [rotInP, Vector.getElem_ofFn]
 
 theorem rotOutP_get (v : Work w) (j : Nat) (hj : j < 16) :
-    (rotOutP v)[j] = v[4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4]'(by omega) := by
+    (rotOutP v)[j] = v[4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4]'(by omega_using [hj]) := by
   simp only [rotOutP, Vector.getElem_ofFn]
 
 theorem cases16' {j : Nat} (hj : j < 16) : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨
     j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 := by
-  omega
+  omega_using [hj]
 
 /-- The value of a literal index. -/
 theorem val_lit16 (k : Nat) : (no_index (OfNat.ofNat k : Fin 16)).val = k % 16 := rfl

@@ -74,18 +74,18 @@ theorem found_succ (tab : Nat → BitVec 32) {d c k : Nat} (hd : d < 64) (hc : c
   unfold found
   by_cases h : d = 4 * c + k
   · subst h
-    rw [ite_eq_right (by omega), ite_eq_left rfl, ite_eq_left (by omega)]
+    rw [ite_eq_right (by omega_using []), ite_eq_left rfl, ite_eq_left (by omega_using [hk])]
     rw [show (0xFFFFFFFF : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.and_allOnes]
     exact BitVec.zero_or
   · have hn : BitVec.ofNat 32 d ≠ BitVec.ofNat 32 (4 * c + k) := fun e => h (by
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_ofNat] at this
-      omega)
+      omega_using [hd, hc, hk, this])
     rw [ite_eq_right hn, show ∀ y : BitVec 32, y &&& 0 = 0 from fun y => BitVec.eq_of_getLsbD_eq (by simp),
       show ∀ y : BitVec 32, y ||| 0 = y from fun y => BitVec.eq_of_getLsbD_eq (by simp)]
     by_cases h2 : d < 4 * c ∧ d % 4 = k
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
+    · rw [ite_eq_left h2, ite_eq_left (by omega_using [h2])]
+    · rw [ite_eq_right h2, ite_eq_right (by omega_using [h, h2])]
 
 theorem found_zero (tab : Nat → BitVec 32) (d : Nat) : L (found tab d 0) = 0 := by
   rw [show (0 : BitVec 128) = L fun _ => 0 by decide]
@@ -107,7 +107,7 @@ theorem lanes_movd (a b c d : BitVec 32) :
   have hi1 : ∀ v : BitVec 32, dword ((0 : BitVec 96) ++ v) 1 = 0 := fun v =>
     BitVec.eq_of_getLsbD_eq fun i hi => by
       simp only [dword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
-        BitVec.getLsbD_append, show ¬ 32 * 1 + i < 32 by omega, ite_false]
+        BitVec.getLsbD_append, show ¬ 32 * 1 + i < 32 by omega_using [], ite_false]
       simp
   rw [punpcklqdq_eq, punpckldq_eq, punpckldq_eq, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_0,
     dword_ofDwords_1, lo, lo, lo, lo]
@@ -142,12 +142,12 @@ theorem group_ok {s₀ s : State} {d c : Nat} (hd : d < 64) (hc : c < 16) (h : L
     refine L_congr fun k hk => ?_
     rw [show splat d k = BitVec.ofNat 32 d from rfl,
       show splat 0xFFFFFFFF k = (0xFFFFFFFF : BitVec 32) from rfl,
-      mask_eq (by simp only [BitVec.toNat_ofNat]; omega) (by omega)]
+      mask_eq (by simp only [BitVec.toNat_ofNat]; omega_using [hd]) (by omega_using [hc, hk])]
     exact found_succ _ hd hc hk
   · rw [h2, h3, paddd_L]
     refine L_congr fun k _ => ?_
     simp only [splat, ← BitVec.ofNat_add]
-    congr 1; omega
+    congr 1; omega_using []
   · exact h3
   · exact h6
   · intro r hr
@@ -166,7 +166,7 @@ theorem groups_ok {s₀ : State} {d : Nat} (hd : d < 64) :
   | succ n ih =>
     intro s h
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (ih (by omega) s h) fun t ht => group_ok hd (by omega) ht
+    exact WP.mono (ih (by omega_using [hn]) s h) fun t ht => group_ok hd (by omega_using [hn]) ht
 
 
 /-! ## The start -/
@@ -174,15 +174,15 @@ theorem groups_ok {s₀ : State} {d : Nat} (hd : d < 64) :
 theorem idx_and255 (x : BitVec 32) : x &&& 255 = BitVec.ofNat 32 (x.setWidth 8).toNat := by
   have hl : (x.setWidth 8).toNat < 256 := (x.setWidth 8).isLt
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), BitVec.toNat_setWidth]
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), BitVec.toNat_setWidth]
   exact Nat.and_two_pow_sub_one_eq_mod _ 8
 
 theorem idx_shr2 (x : BitVec 32) :
     BitVec.ofNat 32 (x.setWidth 8).toNat >>> 2 = BitVec.ofNat 32 ((x.setWidth 8).toNat / 4) := by
   have hl : (x.setWidth 8).toNat < 256 := (x.setWidth 8).isLt
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+    Nat.mod_eq_of_lt (by omega_using []), Nat.shiftRight_eq_div_pow]
 
 theorem piStartSse_ok (s : State) :
     WP isa (.block piStart) s fun t =>
@@ -234,14 +234,14 @@ theorem orLanes {d : Nat} (D : BitVec 32) :
 
 theorem found_end {d : Nat} (hd : d < 64) :
     L (found piWord d 16) = L fun k => if d % 4 = k then piWord d else 0 :=
-  L_congr fun k _ => by simp only [found, show d < 4 * 16 by omega, true_and]
+  L_congr fun k _ => by simp only [found, show d < 4 * 16 by omega_using [hd], true_and]
 
 
 theorem psrld_L' (f : Nat → BitVec 32) {n : Nat} (hn : n < 32) :
     XShiftOp.eval .psrld (L f) (BitVec.ofNat 8 n) = L fun k => f k >>> n :=
   L_ext fun k hk => by
-    rw [dword_psrld _ _ (by rw [BitVec.toNat_ofNat]; omega) hk, dword_L _ hk, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
+    rw [dword_psrld _ _ (by rw [BitVec.toNat_ofNat]; omega_using [hn]) hk, dword_L _ hk, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by omega_using [hn])]
 
 /-- `-(m & 1)`: all ones if `m` is odd. -/
 theorem mask_bit (m : Nat) (hm : m < 2 ^ 32) :
@@ -266,8 +266,8 @@ theorem sel_shift (v : BitVec 32) (n : Nat) (c : Prop) [Decidable c] :
 
 theorem idx_shr1 {i : Nat} (hi : i < 256) : BitVec.ofNat 32 i >>> 1 = BitVec.ofNat 32 (i / 2) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi]),
+    Nat.mod_eq_of_lt (by omega_using [hi]), Nat.shiftRight_eq_div_pow]
 
 set_option linter.unusedSimpArgs false in
 /-- Shift every lane of `xmm1` right by `sh` if bit `n` (0 or 1) of `EBX` is
@@ -280,10 +280,10 @@ theorem selBit_ok (s : State) {x : XReg} (hx : x = .xmm2 ∨ x = .xmm3) {n sh : 
       (∀ r, r ≠ .edx → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have hm0 : ((BitVec.ofNat 32 i &&& (1 : BitVec 32)) ^^^ (4294967295 : BitVec 32)) + (1 : BitVec 32) =
       if i / 2 ^ 0 % 2 = 1 then BitVec.allOnes 32 else 0 := by
-    rw [Nat.pow_zero, Nat.div_one]; exact mask_bit i (by omega)
+    rw [Nat.pow_zero, Nat.div_one]; exact mask_bit i (by omega_using [hi])
   have hm1 : ((BitVec.ofNat 32 i >>> 1 &&& (1 : BitVec 32)) ^^^ (4294967295 : BitVec 32)) + (1 : BitVec 32) =
       if i / 2 ^ 1 % 2 = 1 then BitVec.allOnes 32 else 0 := by
-    rw [idx_shr1 hi, Nat.pow_one]; exact mask_bit _ (by omega)
+    rw [idx_shr1 hi, Nat.pow_one]; exact mask_bit _ (by omega_using [hi])
   rcases hx with rfl | rfl <;> rcases hn with rfl | rfl <;> unfold bitMask shiftIf <;> lrun [hb] <;>
     refine ⟨?_, ?_, rfl, rfl, rfl⟩
   all_goals first
@@ -306,7 +306,7 @@ theorem writeW_restore (m : Mem) (a : Addr) (X : BitVec 128) :
   simp only [Mem.writeW, Mem.write]
   by_cases h : (x - a).toNat < 128 / 8
   · rw [ite_eq_left h]
-    have e := byte_readW m a (w := 128) (k := (x - a).toNat) (by omega)
+    have e := byte_readW m a (w := 128) (k := (x - a).toNat) (by omega_using [h])
     rw [show BitVec.setWidth (8 * (128 / 8)) (m.readW a 128) = m.readW a 128 from BitVec.setWidth_eq _, e,
       BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   · rw [ite_eq_right h, ite_eq_right h]
@@ -324,7 +324,7 @@ theorem extract_ok (s : State) (hw : InRegions s.wr (addr (s.gpr .edi) 0) 16) :
   obtain ⟨r, hr, hc⟩ := hw
   have hrd : InRegions (s.rd ++ s.wr) (addr (s.gpr .edi) 0) 16 := ⟨r, List.mem_append_right _ hr, hc⟩
   have hrd4 : InRegions (s.rd ++ s.wr) (addr (s.gpr .edi) 0) 4 :=
-    ⟨r, List.mem_append_right _ hr, by simp only [Region.Contains] at hc ⊢; omega⟩
+    ⟨r, List.mem_append_right _ hr, by simp only [Region.Contains] at hc ⊢; omega_using [hc]⟩
   have hw' : InRegions s.wr (addr (s.gpr .edi) 0) 16 := ⟨r, hr, hc⟩
   lrun [hrd, hrd4, hw']
   refine ⟨?_, ?_, ?_, rfl, rfl⟩
@@ -355,32 +355,32 @@ theorem pi_sel (i : Nat) :
       (Spec.Rc2.piTable.getD i 0).setWidth 32 := by
   rw [show (255 : BitVec 32) = BitVec.ofNat 32 (2 ^ 8 - 1) from rfl, Nat.pow_zero, Nat.pow_one, Nat.div_one]
   have hb : i % 4 < 4 := Nat.mod_lt _ (by decide)
-  have e : i = 4 * (i / 4) + i % 4 := by omega
+  have e : i = 4 * (i / 4) + i % 4 := by omega_using []
   have key : (piWord (i / 4) >>> (8 * (i % 4))) &&& BitVec.ofNat 32 (2 ^ 8 - 1) =
       ([Spec.Rc2.piTable.getD (4 * (i / 4)) 0, Spec.Rc2.piTable.getD (4 * (i / 4) + 1) 0,
         Spec.Rc2.piTable.getD (4 * (i / 4) + 2) 0, Spec.Rc2.piTable.getD (4 * (i / 4) + 3) 0].getD (i % 4) 0).setWidth 32 :=
     byte4 _ _ _ _ hb
   rcases cases4 hb with h | h | h | h
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+  · rw [ite_eq_right (by omega_using [h]), ite_eq_right (by omega_using [h])]
     rw [h] at key
     have := key
     simp only [Nat.mul_zero, BitVec.ushiftRight_zero, List.getD_cons_zero] at this
-    rw [this, show 4 * (i / 4) = i by omega]
-  · rw [ite_eq_left (by omega), ite_eq_right (by omega)]
+    rw [this, show 4 * (i / 4) = i by omega_using [h]]
+  · rw [ite_eq_left (by omega_using [h]), ite_eq_right (by omega_using [h])]
     rw [h] at key
     have := key
     simp only [Nat.mul_one, List.getD_cons_succ, List.getD_cons_zero] at this
-    rw [this, show 4 * (i / 4) + 1 = i by omega]
-  · rw [ite_eq_right (by omega), ite_eq_left (by omega)]
+    rw [this, show 4 * (i / 4) + 1 = i by omega_using [h]]
+  · rw [ite_eq_right (by omega_using [h]), ite_eq_left (by omega_using [h])]
     rw [h] at key
     have := key
     simp only [List.getD_cons_succ, List.getD_cons_zero, show 8 * 2 = 16 from rfl] at this
-    rw [this, show 4 * (i / 4) + 2 = i by omega]
-  · rw [ite_eq_left (by omega), ite_eq_left (by omega), ← BitVec.shiftRight_add]
+    rw [this, show 4 * (i / 4) + 2 = i by omega_using [h]]
+  · rw [ite_eq_left (by omega_using [h]), ite_eq_left (by omega_using [h]), ← BitVec.shiftRight_add]
     rw [h] at key
     have := key
     simp only [List.getD_cons_succ, List.getD_cons_zero, show 8 * 3 = 16 + 8 from rfl] at this
-    rw [this, show 4 * (i / 4) + 3 = i by omega]
+    rw [this, show 4 * (i / 4) + 3 = i by omega_using [h]]
 
 /-- The lanes ORed together, into every lane. -/
 theorem orStep_ok (s : State) {d : Nat} (hd : d < 64) (h1 : s.xmm .xmm1 = L (found piWord d 16)) :
@@ -402,13 +402,13 @@ theorem piLookupSse_ok (s : State) (hw : InRegions s.wr (addr (s.gpr .edi) 0) 16
   rw [piLookup, piLookupWith, List.append_assoc, WP.block_append_iff]
   refine WP.mono (piStartSse_ok s) fun t ⟨hl, hb, hg, hm, hrd, hwr⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (groups_ok (by omega) 16 (Nat.le_refl _) t hl) fun u hu => ?_
+  refine WP.mono (groups_ok (by omega_using []) 16 (Nat.le_refl _) t hl) fun u hu => ?_
   have edi : u.gpr .edi = s.gpr .edi := (hu.gpr .edi (by decide)).trans (hg .edi (by decide) (by decide) (by decide))
   unfold piEnd
   simp only [List.append_assoc]
   rw [show ([.xop (.pshufd .xmm4 .xmm1 0x4E), .xop (.bin .por .xmm1 .xmm4), .xop (.pshufd .xmm4 .xmm1 0xB1),
       .xop (.bin .por .xmm1 .xmm4)] : List Instr) ++ _ = _ ++ _ from rfl, WP.block_append_iff]
-  refine WP.mono (orStep_ok u (by omega) hu.x1) fun v ⟨v1, vg, vm, vrd, vwr⟩ => ?_
+  refine WP.mono (orStep_ok u (by omega_using []) hu.x1) fun v ⟨v1, vg, vm, vrd, vwr⟩ => ?_
   have vb : v.gpr .ebx = BitVec.ofNat 32 ((s.gpr .eax).setWidth 8).toNat := by
     rw [vg, hu.gpr .ebx (by decide)]; exact hb
   rw [← List.append_assoc, WP.block_append_iff]

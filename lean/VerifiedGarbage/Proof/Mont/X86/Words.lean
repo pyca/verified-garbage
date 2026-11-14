@@ -49,7 +49,7 @@ theorem Scr.edi_toNat {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
 theorem Scr.ea {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d < size) : s.ea (sc d) = off base d := by
   change addr (s.gpr .edi) d = _
-  rw [addr_eq (by have := hs.nowrap; have := hs.edi_toNat; omega), hs.edi]
+  rw [addr_eq (by have := hs.nowrap; have := hs.edi_toNat; omega_arith), hs.edi]
 
 /-- `[ebp + d]`, with `ebp` at `4i` bytes into the working space. -/
 theorem Scr.ea_at {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {i d : Nat}
@@ -61,7 +61,7 @@ theorem Scr.ea_at {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
 
 theorem Scr.contains {base : Addr} {size d n : Nat} (hn : base.toNat + size ≤ 2 ^ 32) (h : d + n ≤ size) :
     (⟨base, size⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by omega)
+  Offset.contains_base base h (by omega_using [hn, h])
 
 theorem Scr.read {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=

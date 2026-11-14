@@ -67,26 +67,26 @@ theorem cswap_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hy : y + 56 ≤ 2048) (hxy 
     dw_frame h.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hx, hk]) (by omega_using [hx, hk])
+      · exact Offset.disjoint _ (by omega_using [hxy, hk]) (by omega_using [hx, hk]) (by omega_using [hy, hk])
   have wy : dw s.mem b (y + 8 * k) = ew s0.mem b y k :=
     dw_frame h.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_using [hxy, hk]) (by omega_using [hy, hk]) (by omega_using [hx, hk])
+      · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hy, hk]) (by omega_using [hy, hk])
   unfold cswapStep
-  refine ld_ok hcs (d := x + 8 * k) (by omega) (by omega) fun t1 v1 => ?_
+  refine ld_ok hcs (d := x + 8 * k) (by omega_using [hx, hk]) (by omega_using [hx8]) fun t1 v1 => ?_
   refine ld_ok (hcs.of_rest (v1.rest (ws := [.a2]) (by decide)) (by decide)) (d := y + 8 * k)
-    (by omega) (by omega) fun t2 v2 => ?_
+    (by omega_using [hy, hk]) (by omega_using [hy8]) fun t2 v2 => ?_
   refine wp_xor fun t3 v3 => wp_and fun t4 v4 => ?_
   refine wp_xor fun t5 v5 => wp_xor fun t6 v6 => ?_
   have hr6 : Rest [.a2, .a4, .a5] s t6 :=
     (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
       ((v4.rest (by decide)).trans ((v5.rest (by decide)).trans (v6.rest (by decide))))))
   have hc6 : Ctx b t6 := hcs.of_rest hr6 (by decide)
-  refine sd_ok hc6 (d := x + 8 * k) (by omega) (by omega) fun t7 v7 => ?_
-  refine sd_ok (hc6.of_rest (v7.rest []) (by decide)) (d := y + 8 * k) (by omega) (by omega)
+  refine sd_ok hc6 (d := x + 8 * k) (by omega_using [hx, hk]) (by omega_using [hx8]) fun t7 v7 => ?_
+  refine sd_ok (hc6.of_rest (v7.rest []) (by decide)) (d := y + 8 * k) (by omega_using [hy, hk]) (by omega_using [hy8])
     fun t8 v8 => ?_
   refine WP.block_nil ?_
   -- The values.
@@ -117,21 +117,21 @@ theorem cswap_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hy : y + 56 ≤ 2048) (hxy 
   refine ⟨h.rest.trans (hr6.trans ((v7.rest _).trans (v8.rest _))), ?_, fun j hj => ?_, fun j hj => ?_⟩
   · rw [hm8]
     refine ((h.frame.sub fun r hr => ?_).writeW (List.mem_cons_self ..) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))).writeW
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hx, hk]))).writeW
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hy, hk]))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega)⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega)⟩
-  · rw [ew, hm8, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega_using [])⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega_using [])⟩
+  · rw [ew, hm8, dw_write_other _ _ _ (by omega_using [hxy, hk, hj]) (by omega_using [hx, hk, hj]) (by omega_using [hy, hk])]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [dw_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h.lx j hj
+    · rw [dw_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hx, hk])]; exact h.lx j hj
     · rw [dw_write_self, vx]
   · rw [ew, hm8]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [dw_write_other _ _ _ (by omega) (by omega) (by omega),
-        dw_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h.ly j hj
+    · rw [dw_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hy, hk]),
+        dw_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_using [hx, hk])]; exact h.ly j hj
     · rw [dw_write_self, vy]
 
 end
@@ -191,7 +191,7 @@ theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = tr
   have hx' := sep1_get hq1 hx
   have hy' := sep1_get hq1 hy
   have hA := ACC_eq
-  refine WP.mono (add_ok (by omega) (by omega) (by omega) (sep8_o hq) (sep8_get hq hx)
+  refine WP.mono (add_ok (by omega_using [ho, hA]) (by omega_using [hx', hA]) (by omega_using [hy', hA]) (sep8_o hq) (sep8_get hq hx)
     (sep8_get hq hy) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
@@ -209,7 +209,7 @@ theorem subS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = tr
   have hx' := sep1_get hq1 hx
   have hy' := sep1_get hq1 hy
   have hA := ACC_eq
-  refine WP.mono (sub_ok (by omega) (by omega) (by omega) (sep8_o hq) (sep8_get hq hx)
+  refine WP.mono (sub_ok (by omega_using [ho, hA]) (by omega_using [hx', hA]) (by omega_using [hy', hA]) (sep8_o hq) (sep8_get hq hx)
     (sep8_get hq hy) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
@@ -227,7 +227,7 @@ theorem mulSmallS {o x : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs =
   have hx' := sep1_get hq1 hx
   have hA := ACC_eq
   have hK : (sext32 (39081 : BitVec 32)).toNat = 39081 := by decide
-  refine WP.mono (mulSmall_ok (by rw [hK]; decide) (by rw [hK]; decide) (by omega) (by omega)
+  refine WP.mono (mulSmall_ok (by rw [hK]; decide) (by rw [hK]; decide) (by omega_using [ho, hA]) (by omega_using [hx', hA])
     (sep8_o hq) (sep8_get hq hx) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
@@ -253,12 +253,12 @@ theorem cswapS {x y : Nat} {qs : List Nat} {v : Nat → Fe}
   have hx' := sep1_get hq1 hx
   have hy' := sep1_get hq1 hy
   have hA := ACC_eq
-  refine WP.mono (cswap_ok (b := b) (by omega) (by omega) hxy (sep8_get hq hx) (sep8_get hq hy)
+  refine WP.mono (cswap_ok (b := b) (by omega_using [hx', hA]) (by omega_using [hy', hA]) hxy (sep8_get hq hx) (sep8_get hq hy)
     hc hsw h11)
     fun s' h => ⟨h.rest, ?_, ?_⟩
   · refine h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega)
+    rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega_arith)
   · intro q hq''
     have hlx : ∀ k < 7, ew s'.mem b x k = sel sw (ew s.mem b x k) (ew s.mem b y k) := h.lx
     have hly : ∀ k < 7, ew s'.mem b y k = sel sw (ew s.mem b y k) (ew s.mem b x k) := h.ly
@@ -280,8 +280,8 @@ theorem cswapS {x y : Nat} {qs : List Nat} {v : Nat → Fe}
       rw [FS, V_congr64 (m := s.mem) (m' := s'.mem) (q' := q) fun k hk => dw_frame h.frame fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-        · exact Offset.disjoint _ (by omega) (by omega) (by omega)]
+        · exact Offset.disjoint _ (by omega_using [hqx, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hx', hA])
+        · exact Offset.disjoint _ (by omega_using [hqy, h1', hk]) (by omega_using [hA, h3, hk]) (by omega_using [hy', hA])]
       exact hS q hq''
 
 end

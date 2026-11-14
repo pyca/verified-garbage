@@ -120,9 +120,9 @@ theorem entry_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (P₁ : Perm p σ�
   have spf := L.spf
   have hw : ∀ {σ : State}, σ.sp = p.SP → Perm p σ →
       σ.sp.toNat + 28 ≤ 2 ^ 32 ∧ ∀ r ∈ σ.wr, Region.Disjoint ⟨State.addr σ.sp, 28⟩ r := fun h P =>
-    ⟨by rw [h]; omega, fun r hr => by rw [h]; exact P.argw r hr⟩
+    ⟨by rw [h]; omega_using [spf], fun r hr => by rw [h]; exact P.argw r hr⟩
   refine rel_arg [.r0, .r1, .r2, .r3] 28 (fun r hr => ?_) (by rw [h₁, h₂]) (hw h₁ P₁) (hw h₂ P₂)
-    (fun k hk => argMem_of (j := 7) (by rw [h₁, h₂]) (by rw [h₁]; omega) qa k (by omega)) entry_check
+    (fun k hk => argMem_of (j := 7) (by rw [h₁, h₂]) (by rw [h₁]; omega_using [spf]) qa k (by omega_using [hk])) entry_check
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   exacts [q₀, q₁, q₂, q₃]

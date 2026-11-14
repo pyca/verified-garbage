@@ -26,7 +26,7 @@ theorem montCallArgs_trace (s : State) {base : BitVec 32} {size o a b : Nat}
     tr = [.addr (State.addr s.sp), .addr (State.addr (base + BitVec.ofNat 32 48))] := by
   have immediate : ∀ j < 8, encodable (BitVec.ofNat 32 j) = true := by decide
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 48)) 4 := by
-    rw [ptr, addr_add (by have := ws.nowrap; omega)]
+    rw [ptr, addr_add (by have := ws.nowrap; omega_using [fit, this])]
     exact ws.read fit
   rw [Exec.block_iff] at run
   simp only [MontCall.opArgs, execBlock, isa, exec, Op2.eval,
@@ -76,10 +76,10 @@ theorem montCallOp_ct (name : String) (callee : Prog isa)
       (MontCall.op name callee o a b) (fun s t => s.sp = t.sp) := by
   intro s t tr1 tr2 u v hp e1 e2
   obtain ⟨hs, ht, cs, ctStack, boundS, boundT, sp⟩ := hp
-  have fitS : 8 ≤ s.sp.toNat := by have := cs.fit; omega
-  have fitT : 8 ≤ t.sp.toNat := by have := ctStack.fit; omega
+  have fitS : 8 ≤ s.sp.toNat := by have := cs.fit; omega_using [this]
+  have fitT : 8 ≤ t.sp.toNat := by have := ctStack.fit; omega_using [this]
   have fits : VG.Proof.Rsa.Mont.arrAt w 8 ≤ 8 * len := hs.width ▸ hs.layout.2.2.1
-  have size : 52 ≤ 8 * len := by simp only [VG.Proof.Rsa.Mont.arrAt, VG.Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 52 ≤ 8 * len := by simp only [VG.Proof.Rsa.Mont.arrAt, VG.Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   unfold MontCall.op at e1 e2
   cases e1 with
   | seq f1 restore1 =>

@@ -39,7 +39,7 @@ private theorem satMem_low (W : List (BitVec 64)) {a : Addr} (h : a.toNat < 0x10
   unfold satMem
   refine ite_eq_right_iff.mpr fun hc => absurd hc ?_
   rw [BitVec.toNat_sub, show (0x200000 : Addr).toNat = 0x200000 from rfl]
-  omega
+  omega_using [h]
 
 private def satState (W : List (BitVec 64)) : State where
   gpr r := match r with
@@ -59,7 +59,7 @@ private theorem satArg (W : List (BitVec 64)) : stackArg (satState W) 0 = 1056 :
   show (satMem W).readW (0x8000 + BitVec.ofNat 64 8) 64 = 1056
   rw [Mem.readW_congr (m' := baseMem) (fun i hi => satMem_low W (by
     rw [BitVec.toNat_add, BitVec.toNat_add, show (0x8000 : Addr).toNat = 0x8000 from rfl]
-    simp only [BitVec.toNat_ofNat]; omega))]
+    simp only [BitVec.toNat_ofNat]; omega_using [hi]))]
   decide
 
 private theorem satArg' (W : List (BitVec 64)) :
@@ -78,7 +78,7 @@ private theorem satDomain (W : List (BitVec 64)) :
   intro i hi
   rw [satMem_low W (by
     rw [BitVec.toNat_add, show (0x3000 : Addr).toNat = 0x3000 from rfl]
-    simp only [BitVec.toNat_ofNat]; omega)]
+    simp only [BitVec.toNat_ofNat]; omega_using [hi])]
   have : ∀ i < 128, baseMem (0x3000 + BitVec.ofNat 64 i) = CachedSat.domainMem (0x3000 + BitVec.ofNat 64 i) := by
     decide
   exact this i hi
@@ -92,7 +92,7 @@ private theorem satHeld (W : List (BitVec 64)) (length : W.length = 2218) (i : N
   refine ite_eq_left ?_
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
   rw [length] at hi
-  omega
+  omega_using [hi, hj]
 
 private theorem satAux (W : List (BitVec 64)) (length : W.length = 2218) :
     ∃ s, (Spec.Ffdh.generationPrecomputeContract (abi.withConsts [(tableSym, W)]) 8).pre s := by

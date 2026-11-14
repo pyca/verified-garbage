@@ -78,14 +78,14 @@ theorem cfb8Enc_wp (hp : SeqPre c (Mode.cfb8Enc c.bw) s₀) (hk : cs.KeyArgs s�
       bytesAt s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) = Spec.Cfb8.encrypt (cs.cipher k) (iv0 c s₀) (bytes0 c s₀) ∧
       bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) =
         Spec.Cfb8.next (iv0 c s₀) (Spec.Cfb8.encrypt (cs.cipher k) (iv0 c s₀) (bytes0 c s₀)) := by
-  have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega
+  have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega_using [h]
   have hne : iv0 c s₀ ≠ [] := by
-    intro h; have := congrArg List.length h; simp [bytesAt] at this; omega
+    intro h; have := congrArg List.length h; simp [bytesAt] at this; omega_using [hbw, this]
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (by simp [lens]) (by simp [lens]))
     (fun o ho => ?_) (cfb8Enc_computes hbw) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · simp only [Mode.cfb8Enc, List.mem_cons] at ho
     rcases ho with rfl | ho
-    · exact xorByte_inBounds (by simp [lens, Mode.cfb8Enc]) (by simp [lens]; omega)
+    · exact xorByte_inBounds (by simp [lens, Mode.cfb8Enc]) (by simp [lens]; omega_using [hbw])
     · exact shiftIn_inBounds hbw (by simp [lens]) (by simp [lens, Mode.cfb8Enc]) o ho
   · have h2' : chunksAt 1 s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
         (run (cfb8EncF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c))).1 := h2
@@ -98,15 +98,15 @@ theorem cfb8Dec_wp (hp : SeqPre c (Mode.cfb8Dec c.bw) s₀) (hk : cs.KeyArgs s�
     WP isa (c.seq (Mode.cfb8Dec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
       bytesAt s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) = Spec.Cfb8.decrypt (cs.cipher k) (iv0 c s₀) (bytes0 c s₀) ∧
       bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) = Spec.Cfb8.next (iv0 c s₀) (bytes0 c s₀) := by
-  have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega
+  have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega_using [h]
   have hne : iv0 c s₀ ≠ [] := by
-    intro h; have := congrArg List.length h; simp [bytesAt] at this; omega
+    intro h; have := congrArg List.length h; simp [bytesAt] at this; omega_using [hbw, this]
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (by simp [lens]) (by simp [lens]))
     (fun o ho => ?_) (cfb8Dec_computes hbw) hk) fun s' ⟨h1, h2, h3⟩ => ⟨h1, ?_, ?_⟩
   · simp only [Mode.cfb8Dec, List.mem_append, List.mem_singleton] at ho
     rcases ho with ho | rfl
     · exact shiftIn_inBounds hbw (by simp [lens]) (by simp [lens, Mode.cfb8Dec]) o ho
-    · exact xorByte_inBounds (by simp [lens, Mode.cfb8Dec]) (by simp [lens]; omega)
+    · exact xorByte_inBounds (by simp [lens, Mode.cfb8Dec]) (by simp [lens]; omega_using [hbw])
   · have h2' : chunksAt 1 s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
         (run (cfb8DecF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c))).1 := h2
     rw [← bytesSteps_flatten (bytesAt s'.mem _ _), ← chunksAt_one, h2', chunksAt_one, (cfb8Dec_run _ _ _ hne).1]

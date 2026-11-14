@@ -292,7 +292,7 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
     obtain ⟨hr1, hr2⟩ := kept_rest r hr hs h1 h2 h3 h4
     rw [gx r h1 h2 h3 h4, gv r hr1, g₇ r hr2]
   · -- The block.
-    obtain rfl : j = 0 := by have : j < 1 := hj; omega
+    obtain rfl : j = 0 := by have : j < 1 := hj; omega_using [this]
     have ea : blkAddr (dirCore up n) B 0 = B + BitVec.ofNat 64 48 := by
       simp [blkAddr, slotA, dirCore, bufSlot]
     have hb : Spec.Aes.bytesAt M (B + BitVec.ofNat 64 48) 8 = Spec.Aes.bytesAt s.mem (B + BitVec.ofNat 64 48) 8 :=

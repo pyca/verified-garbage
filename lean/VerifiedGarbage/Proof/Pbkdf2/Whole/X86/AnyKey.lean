@@ -159,11 +159,11 @@ include hp hz
 
 omit hz in
 theorem dO_addr {o : Nat} (ho : o < F.L8) : (dO s₀ o).setWidth 64 = A s₀ o := by
-  have := hp.nsc; exact Pbkdf2.Stream.X86.setWidth_add (by omega)
+  have := hp.nsc; exact Pbkdf2.Stream.X86.setWidth_add (by omega_using [ho, this])
 
 omit hz in
 theorem dO_toNat {o : Nat} (ho : o < F.L8) : (dO s₀ o).toNat = (scr s₀).toNat + o := by
-  have := hp.nsc; exact Pbkdf2.Stream.X86.toNat_add_ofNat (by omega)
+  have := hp.nsc; exact Pbkdf2.Stream.X86.toNat_add_ofNat (by omega_using [ho, this])
 
 omit hp hz in
 theorem part_sub {o n : Nat} (h : o + n ≤ F.L8) : Region.Sub (sR s₀ o n) (scR F s₀) :=
@@ -172,12 +172,12 @@ theorem part_sub {o n : Nat} (h : o + n ≤ F.L8) : Region.Sub (sR s₀ o n) (sc
 omit hp in
 theorem part_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ F.L8) (hb : b + n ≤ F.L8) :
     Region.Disjoint (sR s₀ a m) (sR s₀ b n) := by
-  have := L8_le hz; exact Offset.disjoint _ h (by omega) (by omega)
+  have := L8_le hz; exact Offset.disjoint _ h (by omega_using [ha, this]) (by omega_using [hb, this])
 
 omit hp in
 theorem low_disj {k b n : Nat} (hk : k ≤ b) (hbn : b + n ≤ F.L8) :
     Region.Disjoint (lowR s₀ k) (sR s₀ b n) := by
-  have := L8_le hz; exact Offset.base_disjoint _ hk (by omega)
+  have := L8_le hz; exact Offset.base_disjoint _ hk (by omega_using [hbn, this])
 
 omit hp hz in
 theorem low_sub {k : Nat} (hk : k ≤ F.L8) : Region.Sub (lowR s₀ k) (scR F s₀) := Region.sub_prefix hk
@@ -185,20 +185,20 @@ theorem low_sub {k : Nat} (hk : k ≤ F.L8) : Region.Sub (lowR s₀ k) (scR F s�
 omit hp in
 theorem sv_sub : Region.Sub (svR F s₀) (scR F s₀) := by
   have := end_le hz; have := layout (F := F)
-  exact Offset.sub_base _ (by show 8 * F.W + 16 ≤ F.L8; omega)
+  exact Offset.sub_base _ (by show 8 * F.W + 16 ≤ F.L8; omega_arith)
 
 omit hp in
 /-- A part of `scratch` after the save area is apart from it. -/
 theorem sv_disj {o n : Nat} (ho : 8 * F.W + 16 ≤ o) (hon : o + n ≤ F.L8) : (svR F s₀).Disjoint (sR s₀ o n) := by
   have := L8_le hz
-  exact Offset.disjoint _ (Or.inl (by simp only [Fns.L]; omega)) (by simp only [Fns.L]; omega) (by omega)
+  exact Offset.disjoint _ (Or.inl (by simp only [Fns.L]; omega_using [ho])) (by simp only [Fns.L]; omega_using [ho, hon, this]) (by omega_using [hon, this])
 
 omit hp in
 /-- The working space is apart from the save area. -/
 theorem sv_low {k : Nat} (hk : k ≤ 8 * F.W) : (svR F s₀).Disjoint (lowR s₀ k) := by
   have := L8_le hz; have := end_le hz; have := layout (F := F)
-  exact (Offset.base_disjoint _ (k := k) (e := 8 * F.L.W) (n := 16) (by simp only [Fns.L]; omega)
-    (by simp only [Fns.L]; omega)).symm
+  exact (Offset.base_disjoint _ (k := k) (e := 8 * F.L.W) (n := 16) (by simp only [Fns.L]; omega_using [hk])
+    (by simp only [Fns.L]; omega_arith)).symm
 
 omit hz in
 theorem sc_mem : scR F s₀ ∈ s₀.wr := by rw [hp.wr]; simp
@@ -263,7 +263,7 @@ theorem KR.call {s₀ s s' : State} (hp : Pre F s₀) (hz : Sizes F) (h : KR F s
     · rcases hw r hr with rfl | rfl | ⟨k, rfl, hk⟩ | ⟨o, n, rfl, h₁, h₂⟩
       · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨scR F s₀, by simp, low_sub (F := F) (by omega)⟩
+      · exact ⟨scR F s₀, by simp, low_sub (F := F) (by omega_using [hL, this, hk])⟩
       · exact ⟨_, by simp, part_sub h₂⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, by simp, fun _ h => h⟩
@@ -286,7 +286,7 @@ theorem KR.argEq {s : State} (hk : KR F s₀ s) {i : Nat} (hi : i < 5) : arg s i
     · exact hp.o_a.symm
     · exact hp.s_a.symm
     · exact hp.b_a.symm
-  exact Pbkdf2.Stream.X86.arg_keep rfl hk.esp (n := 20) (by have := hp.spf; omega) hk.frame hd (by omega)
+  exact Pbkdf2.Stream.X86.arg_keep rfl hk.esp (n := 20) (by have := hp.spf; omega) hk.frame hd (by omega_using [hi])
 
 omit hp in
 theorem argW {s : State} (hs : s.gpr .esp = E s₀) (i : Nat) :
@@ -297,7 +297,7 @@ theorem argIn {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {i : Nat
     InRegions (s.rd ++ s.wr) (argAddr s₀ i) 4 := by
   rw [hrd, hwr, hp.rd, hp.wr]
   exact ⟨argR s₀, by simp, by
-    rw [argR_eq]; exact Pbkdf2.Stream.X86.arg_contains rfl (by omega) (by have := hp.spf; omega)⟩
+    rw [argR_eq]; exact Pbkdf2.Stream.X86.arg_contains rfl (by omega_using [hi]) (by have := hp.spf; omega)⟩
 
 /-- An argument, read from memory while `KR` holds. -/
 theorem KR.readArg {s : State} (hk : KR F s₀ s) {i : Nat} (hi : i < 5) :
@@ -324,7 +324,7 @@ theorem KR.ret {s : State} (hk : KR F s₀ s) :
     · exact hp.r_o
     · exact hp.r_s
     · rw [stkR, below_eq hp.sp76]
-      exact (Offset.below_disjoint _ (by omega)).symm) (by decide)
+      exact (Offset.below_disjoint _ (by omega_using [])).symm) (by decide)
 
 theorem KR.keyBytes {s : State} (hk : KR F s₀ s) :
     bytesAt s.mem ((key s₀).setWidth 64) (kln s₀) = bytesAt s₀.mem ((key s₀).setWidth 64) (kln s₀) :=
@@ -334,7 +334,7 @@ theorem KR.keyBytes {s : State} (hk : KR F s₀ s) :
     · exact hp.i_k.symm
     · exact hp.o_k.symm
     · exact hp.k_s
-    · exact hp.b_k.symm) (by have := hp.nk; omega)
+    · exact hp.b_k.symm) (by have := hp.nk; omega_using [this])
 
 end
 

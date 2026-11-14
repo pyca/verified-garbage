@@ -116,7 +116,7 @@ theorem classify_ct (p : SearchPublic) (T : List Nat) :
     · rw [ku.gpr (by decide), h0, est]
     · refine WP.mono hc fun t ⟨⟨hc', ha', hz', hm'⟩, kt, syt⟩ => ⟨⟨⟨o, L.toSearchBase.step kt (by decide) syt hm'⟩,
         (kt.gpr (by decide)).trans L.esi, L.used_le, by rw [ha', est], by rw [hc', eu], est ▸ candStatus_lt p o q.1,
-        by rw [← eu]; omega⟩, by rw [hz', est]⟩
+        by rw [← eu]; omega_using [bu, rl, lv]⟩, by rw [hz', est]⟩
   refine RelCT.seq (two_piece (Φ := HeadCT p T)
     (Ψ := fun q t => AfterHead p T q t ∧ t.zf = some (decide (pubStatus T q.2.2 = 1))) [.edx, .eax, .esp]
     (fun q s₁ s₂ ⟨d₁, ⟨_, b₁⟩, a₁, _⟩ ⟨d₂, ⟨_, b₂⟩, a₂, _⟩ r hr => by
@@ -127,7 +127,7 @@ theorem classify_ct (p : SearchPublic) (T : List Nat) :
   refine two_ite (fun q _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) accept_ct ?_
   refine RelCT.seq (two_piece (Ψ := fun q t => AfterHead p T q t ∧ t.zf = some (decide (pubStatus T q.2.2 = 0)))
     [.esp, .esi, .eax, .ecx] (fun q s₁ s₂ h₁ h₂ => afterHead_pins p T q s₁ s₂ h₁.1.1 h₂.1.1) (by taint_decide)
-    fun q t h => afterHead_cmp h.1.1 h.1.1.2.2.2.1 (by have := h.1.1.2.2.2.2.2.1; omega) (.inl rfl)) ?_
+    fun q t h => afterHead_cmp h.1.1 h.1.1.2.2.2.1 (by have := h.1.1.2.2.2.2.2.1; omega_using [this]) (.inl rfl)) ?_
   refine two_ite (fun q _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ (two_map id (fun q t h => ⟨h.1.1, h.2⟩) (reject_ct p T))
   exact two_map (fun q => q.1) (fun q t h => let ⟨⟨o, hb⟩, hi, hu, _⟩ := h.1.1; ⟨o, hb, hi, hu⟩) (short_ct p)
 
@@ -150,8 +150,8 @@ theorem stepHead_ok {p : SearchPublic} {o s : State} {used k : Nat} (hl : Search
   xrun [State.ea, at_, hb.arg_ea (i := 8) (d := 52) rfl, hb.arg_ea (i := 1) (d := 24) rfl,
     hb.arg_in (i := 8) (by decide), hb.arg_in (i := 1) (by decide), hb.arg_val (i := 8) (by decide),
     hb.arg_val (i := 1) (by decide), hi.randLen_arg, hi.len_arg, hl.esi,
-    BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega) hu,
-    toNat_small' (n := p.len) (by omega), toNat_small' (n := p.randLen - used) (by omega)]
+    BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega_using [hv, rl, hu]) hu,
+    toNat_small' (n := p.len) (by omega_using [hv]), toNat_small' (n := p.randLen - used) (by omega_using [hv, rl])]
 
 /-- A loop state with counted candidates left. -/
 def StepCT (p : SearchPublic) (T : List Nat) (q : Pt) (s : State) : Prop := LiveCT p T q s ∧ q.2.1 ≠ 0
@@ -177,12 +177,12 @@ theorem candidateStep_ct (c : Cand) (p : SearchPublic) (T : List Nat) :
         have := of_decide_eq_false e
         have := L.used_le
         show q.1 + p.len ≤ p.randLen
-        omega⟩) (candidateRun_ct c p T))
+        omega_arith⟩) (candidateRun_ct c p T))
       fun q s ⟨⟨⟨⟨o, hT, L, hf⟩, hk⟩, hc⟩, hb⟩ => ?_) (classify_ct p T)
     have e : decide (p.randLen - q.1 < p.len) = false := Option.some.inj (hc.symm.trans hb)
     have := of_decide_eq_false e
     have := L.used_le
-    have hroom : q.1 + p.len ≤ p.randLen := by omega
+    have hroom : q.1 + p.len ≤ p.randLen := by omega_arith
     exact WP.mono (candidateRun_ok c L hroom) fun t ⟨L', cp⟩ => ⟨o, hT, L', hf, cp, hk, hroom⟩
 
 theorem iteration_ct (c : Cand) (p : SearchPublic) (T : List Nat) :
@@ -192,7 +192,7 @@ theorem iteration_ct (c : Cand) (p : SearchPublic) (T : List Nat) :
     [.esp, .esi, .edi, .ebx] (live_pins p T) (by taint_decide) fun q s ⟨o, hT, L, hf⟩ => ?_)
     (RelCT.seq (Q := fun _ _ => True) (R := fun _ _ => True) ?_ ?_)
   · have rem := L.input.remaining_le
-    have hk32 : q.2.1 < 2 ^ 32 := by have := L.remaining_le; omega
+    have hk32 : q.2.1 < 2 ^ 32 := by have := L.remaining_le; omega_using [rem, this]
     exact WP.mono (cmp0_ok L.edi hk32) fun u ⟨⟨he, hr, hm⟩, ku, sy⟩ =>
       ⟨⟨o, hT, L.keep (Keep.drop1 ku hr) sy hm, hf⟩, he⟩
   · refine two_ite (fun q _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_

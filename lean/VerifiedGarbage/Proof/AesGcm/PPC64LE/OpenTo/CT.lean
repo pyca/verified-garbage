@@ -100,7 +100,7 @@ theorem openTo_ct (hv : SplitOk) (hct : ConstantTime isa splitPPC64LE.pre splitP
       · rw [g₁ .r9 (by decide), g₂ .r9 (by decide), q9]
       · rw [g₁ .r10 (by decide), g₂ .r10 (by decide), q10]
       · simp only [State.withRegions_sp, State.callEntry_sp, he₁.sp, he₂.sp, hP]
-      · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+      · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl
         · rw [a0₁, a0₂, Tg, Tg, qa 2 (by decide)]
         · rw [a1₁, a1₂, qa 3 (by decide)]
         · rw [a2₁, a2₂, fa, fa, hP]

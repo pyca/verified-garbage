@@ -45,22 +45,22 @@ abbrev done (k : Nat) : Nat := min (k * D) ol
 variable {D ol}
 
 theorem lt_nb (hD : 0 < D) {k : Nat} : k < nb D ol ↔ k * D < ol := by
-  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le hD, Nat.succ_mul]; omega
+  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le hD, Nat.succ_mul]; omega_using [hD]
 
 theorem ol_le (hD : 0 < D) : ol ≤ nb D ol * D := by
   have h1 : nb D ol * D + (ol + D - 1) % D = ol + D - 1 := by
     rw [Nat.mul_comm]; exact Nat.div_add_mod _ _
   have h2 := Nat.mod_lt (ol + D - 1) hD
-  omega
+  omega_using [h1, h2]
 
 theorem nb_lt (hD : 0 < D) (h : ol ≤ (2 ^ 32 - 1) * D) : nb D ol < 2 ^ 32 := by
-  rw [Nat.div_lt_iff_lt_mul hD]; omega
+  rw [Nat.div_lt_iff_lt_mul hD]; omega_using [hD, h]
 
 theorem nb_zero (hD : 0 < D) : nb D ol = 0 ↔ ol = 0 := by
-  have := lt_nb (D := D) (ol := ol) hD (k := 0); simp only [Nat.zero_mul] at this; omega
+  have := lt_nb (D := D) (ol := ol) hD (k := 0); simp only [Nat.zero_mul] at this; omega_using [this]
 
 theorem done_nb (hD : 0 < D) : done D ol (nb D ol) = ol := by
-  have := ol_le (D := D) (ol := ol) hD; show min _ _ = _; omega
+  have := ol_le (D := D) (ol := ol) hD; show min _ _ = _; omega_using [this]
 
 end
 
@@ -69,7 +69,7 @@ theorem pbkdf2_eq (prf : List Byte → List Byte) (salt : List Byte) {c D ol : N
     (hol : ol ≤ (2 ^ 32 - 1) * D) {out : List Byte}
     (h : out = (G prf salt c (nb D ol)).take ol) :
     Spec.Pbkdf2.pbkdf2 prf D salt c ol = some out := by
-  simp only [Spec.Pbkdf2.pbkdf2, show ¬ ((2 ^ 32 - 1) * D < ol) by omega, ↓reduceIte, h]
+  simp only [Spec.Pbkdf2.pbkdf2, show ¬ ((2 ^ 32 - 1) * D < ol) by omega_using [hol], ↓reduceIte, h]
   rfl
 
 /-! ## Memory -/
@@ -80,11 +80,11 @@ theorem len_add_le {r₁ r₂ : Region} {N : Nat} (hd : r₁.Disjoint r₂)
   by_contra hc
   rcases Nat.le_total r₁.base.toNat r₂.base.toNat with hb | hb
   · refine hd r₂.base ?_ ?_ <;> simp only [Region.Contains]
-    · rw [BitVec.toNat_sub_of_le (BitVec.le_def.2 hb)]; omega
-    · simp only [BitVec.sub_self, BitVec.toNat_zero]; omega
+    · rw [BitVec.toNat_sub_of_le (BitVec.le_def.2 hb)]; omega_using [h₂, hc]
+    · simp only [BitVec.sub_self, BitVec.toNat_zero]; omega_using [h₁, hc]
   · refine hd r₁.base ?_ ?_ <;> simp only [Region.Contains]
-    · simp only [BitVec.sub_self, BitVec.toNat_zero]; omega
-    · rw [BitVec.toNat_sub_of_le (BitVec.le_def.2 hb)]; omega
+    · simp only [BitVec.sub_self, BitVec.toNat_zero]; omega_using [h₂, hc]
+    · rw [BitVec.toNat_sub_of_le (BitVec.le_def.2 hb)]; omega_using [h₁, hc]
 
 /-- The bytes of `i`, big-endian: `INT (i)`. -/
 theorem rev_int (i : Nat) :
@@ -92,7 +92,7 @@ theorem rev_int (i : Nat) :
   rw [byteRev32_extract]
   simp only [Spec.Pbkdf2.int, List.cons.injEq, and_true]
   refine ⟨?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_toNat_eq <;>
-    simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow] <;> omega
+    simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow] <;> omega_using []
 
 /-- The four bytes at `p` of memory whose word there is the byte reversal of
 `i`: `INT (i)`. -/
@@ -111,24 +111,24 @@ theorem byteRev32_byteRev32 (x : BitVec 32) : byteRev32 (byteRev32 x) = x := by
   by_cases h1 : i < 8
   · simp only [h1, ite_true, decide_true, Bool.true_and]
     rw [getLsbD_cat4]
-    simp only [show ¬ (24 + i < 8) by omega, show ¬ (24 + i < 16) by omega, show ¬ (24 + i < 24) by omega,
-      ite_false, BitVec.getLsbD_extractLsb', show 24 + i - 24 = i by omega, h1, decide_true, Bool.true_and,
+    simp only [show ¬ (24 + i < 8) by omega_using [], show ¬ (24 + i < 16) by omega_using [], show ¬ (24 + i < 24) by omega_using [],
+      ite_false, BitVec.getLsbD_extractLsb', show 24 + i - 24 = i by omega_using [], h1, decide_true, Bool.true_and,
       Nat.zero_add]
   by_cases h2 : i < 16
-  · simp only [h1, h2, ite_true, ite_false, decide_true, Bool.true_and, show i - 8 < 8 by omega]
+  · simp only [h1, h2, ite_true, ite_false, decide_true, Bool.true_and, show i - 8 < 8 by omega_using [h2]]
     rw [getLsbD_cat4]
-    simp only [show ¬ (16 + (i - 8) < 8) by omega, show ¬ (16 + (i - 8) < 16) by omega,
-      show (16 + (i - 8) < 24) by omega, ite_false, ite_true, BitVec.getLsbD_extractLsb',
-      show 16 + (i - 8) - 16 < 8 by omega, decide_true, Bool.true_and, show 8 + (16 + (i - 8) - 16) = i by omega]
+    simp only [show ¬ (16 + (i - 8) < 8) by omega_using [], show ¬ (16 + (i - 8) < 16) by omega_using [],
+      show (16 + (i - 8) < 24) by omega_using [h2], ite_false, ite_true, BitVec.getLsbD_extractLsb',
+      show 16 + (i - 8) - 16 < 8 by omega_using [h2], decide_true, Bool.true_and, show 8 + (16 + (i - 8) - 16) = i by omega_using [h1]]
   by_cases h3 : i < 24
-  · simp only [h1, h2, h3, ite_true, ite_false, decide_true, Bool.true_and, show i - 16 < 8 by omega]
+  · simp only [h1, h2, h3, ite_true, ite_false, decide_true, Bool.true_and, show i - 16 < 8 by omega_using [h3]]
     rw [getLsbD_cat4]
-    simp only [show ¬ (8 + (i - 16) < 8) by omega, show (8 + (i - 16) < 16) by omega, ite_false, ite_true,
-      BitVec.getLsbD_extractLsb', show 8 + (i - 16) - 8 < 8 by omega, decide_true, Bool.true_and,
-      show 16 + (8 + (i - 16) - 8) = i by omega]
-  · simp only [h1, h2, h3, ite_false, decide_true, Bool.true_and, show i - 24 < 8 by omega]
+    simp only [show ¬ (8 + (i - 16) < 8) by omega_using [], show (8 + (i - 16) < 16) by omega_using [h3], ite_false, ite_true,
+      BitVec.getLsbD_extractLsb', show 8 + (i - 16) - 8 < 8 by omega_using [h3], decide_true, Bool.true_and,
+      show 16 + (8 + (i - 16) - 8) = i by omega_using [h2]]
+  · simp only [h1, h2, h3, ite_false, decide_true, Bool.true_and, show i - 24 < 8 by omega_using [hi]]
     rw [getLsbD_cat4]
-    simp only [show (0 + (i - 24) < 8) by omega, ite_true, BitVec.getLsbD_extractLsb', decide_true,
-      Bool.true_and, show 24 + (0 + (i - 24)) = i by omega]
+    simp only [show (0 + (i - 24) < 8) by omega_using [hi], ite_true, BitVec.getLsbD_extractLsb', decide_true,
+      Bool.true_and, show 24 + (0 + (i - 24)) = i by omega_using [h3]]
 
 end VG.Proof.Pbkdf2.Whole

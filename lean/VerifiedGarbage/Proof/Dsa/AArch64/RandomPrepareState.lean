@@ -27,13 +27,13 @@ theorem random_prepare_ready {C : RandomContext} {used draws : Nat} {s : State}
     WP isa Random.prepare s fun t => t.gpr .x0 = 1 ∧ RandomReady C used draws t := by
   have hfit := VG.Proof.Dsa.significant_fits C.qBytes
   refine WP.mono (random_prepare_valid hs hsp hQ hQL hQS
-    (by have := C.positive; omega) (by have := C.qlen; omega))
+    (by have := C.positive; omega_using [hfit, this]) (by have := C.qlen; omega_using [this]))
     fun t ⟨hta, htm, hkt⟩ => ?_
   have hf : Outside C.B 168 64 s.mem t.mem := by
     rw [htm]; exact random_prepare_outside _ _ _ _
   have hfs := InScr.of_outside hf (show 168 + 64 ≤ Random.frameBytes by decide)
   have hw (d : Nat) (hd : d + 8 ≤ 168) : word t.mem C.B d = word s.mem C.B d :=
-    hf.word (Or.inl hd) (by omega)
+    hf.word (Or.inl hd) (by omega_using [hd])
   refine ⟨?_, hs.congr hkt.wr, hkt.sp.trans hsp,
     (hw _ (by decide)).trans hR, (hw _ (by decide)).trans hRL,
     (hw _ (by decide)).trans hU, ?_, (hw _ (by decide)).trans hQL, ?_, ?_,
@@ -46,6 +46,6 @@ theorem random_prepare_ready {C : RandomContext} {used draws : Nat} {s : State}
   · rw [htm, random_prepare_pointer]
   · intro i hi
     rw [htm]
-    exact random_prepare_zero _ _ _ _ i (by have := C.qlen; omega)
+    exact random_prepare_zero _ _ _ _ i (by have := C.qlen; omega_using [hi, this])
 
 end VG.Proof.Dsa.AArch64

@@ -40,7 +40,7 @@ theorem layer_rel {b : Nat} (hb : b ≤ 15) {F : Poly} {f : VG.Spec.MlDsa.Poly} 
       ∀ i < 256, (i % (2 * len) < len → i + len < 256) ∧ (¬ i % (2 * len) < len → len ≤ i) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
     rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩
-    all_goals intro i hi; omega
+    all_goals intro i hi; omega_using [hi]
   intro i hi
   rw [layer, Arith.Lazy.layF_get (block_ok op) F hl.1 _ (by omega) hi,
     nttLayer_eq, Arith.layF_get nttBlk_ok f hl.1 _ (by omega) hi]
@@ -52,7 +52,7 @@ theorem layer_rel {b : Nat} (hb : b ≤ 15) {F : Poly} {f : VG.Spec.MlDsa.Poly} 
     exact ⟨(op_bound _ _ _ hb h0.1).1, by
       rw [(op_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
-    have h0 := hF (i - len) (by omega)
+    have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
     exact ⟨(op_bound _ _ _ hb h0.1).2, by
       rw [(op_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).2, h0.2, h1.2]⟩

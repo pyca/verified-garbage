@@ -23,9 +23,9 @@ theorem bytesAt_squeeze {m : Mem} {p : Addr} {rate pos len : Nat}
   · intro i hi hj
     have ilt : i<len := by simpa only [bytesAt_length] using hi
     rw [bytesAt_getElem,Proof.Sha3.squeezeFrom_getElem hr hr200 _ ilt,
-      Nat.div_eq_of_lt (by omega : pos+i<rate),Nat.mod_eq_of_lt (by omega : pos+i<rate)]
+      Nat.div_eq_of_lt (by omega_using [fit, ilt] : pos+i<rate),Nat.mod_eq_of_lt (by omega_using [fit, ilt] : pos+i<rate)]
     change m _=Proof.Sha3.byteOf (stateAt m p) (pos+i)
-    rw [Proof.Sha3.byteOf_stateAt _ _ (by omega),ptr_add]
+    rw [Proof.Sha3.byteOf_stateAt _ _ (by omega_using [hr200, fit, ilt]),ptr_add]
 
 theorem squeezePiece_ok {s : State} {sc : Reg} {st wk rate pos : Nat} {p : Piece}
     (hs : HSetup sc st wk rate s) (ho : PieceOk sc st wk s true p)
@@ -37,23 +37,23 @@ theorem squeezePiece_ok {s : State} {sc : Reg} {st wk rate pos : Nat} {p : Piece
         squeezeFrom rate (stateAt s.mem (s.gpr sc+BitVec.ofNat 64 st)) pos p.len := by
   have hr := Proof.Sha3.rate_bounds hs.hrate
   have ne : ∀r∈preserved,r≠Reg.x2 ∧ r≠Reg.x9 := by decide
-  have div : 8*(p.len/8)=p.len := by omega
+  have div : 8*(p.len/8)=p.len := by omega_using [len]
   have sub : Region.Sub ⟨s.gpr sc+BitVec.ofNat 64 (st+pos),8*(p.len/8)⟩ (STr sc st s) := by
     rw [←ptr_add,div]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [fit, hr])
   have rd : ∀i<p.len/8,InRegions (s.rd++s.wr) (s.gpr sc+BitVec.ofNat 64 (st+pos+8*i)) 8 := by
     intro i hi
     rw [Nat.add_assoc,←ptr_add]
-    exact covers_rw' hs.cov _ _ ⟨STr sc st s,by simp [STr],Offset.contains_base _ (by omega) (by omega)⟩
+    exact covers_rw' hs.cov _ _ ⟨STr sc st s,by simp [STr],Offset.contains_base _ (by omega_using [fit, hr, hi]) (by omega_using [sf, fit, hi])⟩
   have wr : ∀i<p.len/8,InRegions s.wr (s.gpr p.base+BitVec.ofNat 64 (p.off+8*i)) 8 := by
     intro i hi
     rw [←ptr_add]
-    exact ho.covW _ _ ⟨preg s p,by simp,Offset.contains_base _ (by omega) (by omega)⟩
+    exact ho.covW _ _ ⟨preg s p,by simp,Offset.contains_base _ (by omega_using [hi]) (by omega_using [df, hi])⟩
   refine WP.mono (squeezeWords_ok (N:=p.len/8) (ne _ hs.hsc.1).1 (ne _ hs.hsc.1).2
-    (ne _ ho.base.1).1 (ne _ ho.base.1).2 (by omega) (by omega) (by omega) rd wr
+    (ne _ ho.base.1).1 (ne _ ho.base.1).2 (by omega_using [sa, pa]) (by omega_using [sf, fit]) (by omega_using [df]) rd wr
     (by rw [div]; exact ho.dst.symm.sub_left (by simpa only [div] using sub))) fun t ht=>?_
   refine ⟨ht.1,by simpa only [div] using ht.2.1,?_⟩
-  rw [←bytesAt_squeeze (by omega : 0<rate) (by omega : rate≤200) fit]
+  rw [←bytesAt_squeeze (by omega_using [hr] : 0<rate) (by omega_using [hr] : rate≤200) fit]
   apply List.ext_getElem
   · simp only [bytesAt_length]
   · intro i hi hj

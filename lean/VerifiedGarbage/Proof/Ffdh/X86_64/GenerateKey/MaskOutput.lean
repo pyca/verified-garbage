@@ -122,8 +122,8 @@ theorem maskX_ok {s : State} {B xp : Addr} {Z k ld : Nat} {c : Bool}
   refine WP.seq (WP.mono (maskSetup_ok hs hdi hZ hk hld hX hL hK hax)
     fun u ⟨⟨hp, hm, hcx, hF, hf⟩, k₁⟩ => ?_)
   have hi : InScr B Z s.mem u.mem := InScr.of_frm hf (by
-    simp only [List.mem_singleton]; rintro r rfl; change 248 ≤ Z; omega)
-  refine WP.mono (mask_ok (by omega) hk hp hcx hm (fun i hi => by rw [k₁.2.2]; exact ho.wr i hi))
+    simp only [List.mem_singleton]; rintro r rfl; change 248 ≤ Z; omega_using [hZ])
+  refine WP.mono (mask_ok (by omega_using [hld]) hk hp hcx hm (fun i hi => by rw [k₁.2.2]; exact ho.wr i hi))
     fun t hc => ?_
   have hout : Outside B Z (2 ^ 64 - Z) u.mem t.mem := by
     intro a ha
@@ -132,18 +132,18 @@ theorem maskX_ok {s : State} {B xp : Addr} {Z k ld : Nat} {c : Bool}
     intro i hi he
     have hh : Z ≤ ofs B (off xp i) := ho.sep i hi
     rw [← he] at hh
-    omega
+    omega_using [hdi, hZ, hk, hld, hX, hL, hK, hax, hp, hm, hcx, hF, ha, ha64, hi, hh]
   have hh : ∀ d, d + 8 ≤ Z → word t.mem B d = word u.mem B d :=
-    fun d hd => hout.word (Or.inl hd) (by have := hs.nowrap; omega)
-  refine ⟨?_, by rw [hh _ (by change 248 ≤ Z; omega)]; exact hF,
+    fun d hd => hout.word (Or.inl hd) (by have := hs.nowrap; omega_using [hd, this])
+  refine ⟨?_, by rw [hh _ (by change 248 ≤ Z; omega_using [hZ])]; exact hF,
     ((k₁.trans hc.keep).gpr (by decide)).trans hdi, ?_, ?_, (k₁.trans hc.keep).mono (by decide)⟩
   · intro i hi'
     rw [hc.bytes i hi', hi _ (ho.sep i hi')]
   · intro a ha hne
     rw [hc.frame a hne, hi a ha]
   · intro i hi'
-    rw [hh _ (by omega), hf.word_eq (by
+    rw [hh _ (by omega_using [hZ, hi']), hf.word_eq (by
       simp only [List.mem_singleton]; rintro r rfl
-      exact Or.inl (by unfold sF sFn; omega)) (by omega)]
+      exact Or.inl (by unfold sF sFn; omega_using [hi'])) (by omega_using [hi'])]
 
 end VG.Proof.Ffdh.X86_64.GenerateKey

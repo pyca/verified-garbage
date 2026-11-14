@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableLayout
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ## From `TableConstants.lean` -/
 
@@ -37,8 +38,8 @@ theorem expanded_bar {i k : Nat} (hi : i<976) (h : layout[i]! = (k,true)) :
 theorem inner4_values {u e : Nat} (hu : u<8) (he : e<4) :
     expandedVals[120*u+e]! = zetaTab (8+u) ∧
     expandedVals[120*u+e+4]! = zetaTab (8+u)*2^31/8380417 := by
-  have hi0 : 120*u+e < 976 := by omega
-  have hi1 : 120*u+e+4 < 976 := by omega
+  have hi0 : 120*u+e < 976 := by omega_using [hu, he]
+  have hi1 : 120*u+e+4 < 976 := by omega_using [hu, he]
   have h := inner4_layout ⟨u,hu⟩ ⟨e,he⟩
   exact ⟨expanded_root (i := 120*u+e) hi0 h.1,
     expanded_bar (i := 120*u+e+4) hi1 h.2⟩
@@ -46,8 +47,8 @@ theorem inner4_values {u e : Nat} (hu : u<8) (he : e<4) :
 theorem inner2_values {u g e : Nat} (hu : u<8) (hg : g<2) (he : e<4) :
     expandedVals[120*u+8+8*g+e]! = zetaTab (16+2*u+g) ∧
     expandedVals[120*u+8+8*g+e+4]! = zetaTab (16+2*u+g)*2^31/8380417 := by
-  have hi0 : 120*u+8+8*g+e < 976 := by omega
-  have hi1 : 120*u+8+8*g+e+4 < 976 := by omega
+  have hi0 : 120*u+8+8*g+e < 976 := by omega_using [hu, hg, he]
+  have hi1 : 120*u+8+8*g+e+4 < 976 := by omega_using [hu, hg, he]
   have h := inner2_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
   exact ⟨expanded_root (i := 120*u+8+8*g+e) hi0 h.1,
     expanded_bar (i := 120*u+8+8*g+e+4) hi1 h.2⟩
@@ -55,8 +56,8 @@ theorem inner2_values {u g e : Nat} (hu : u<8) (hg : g<2) (he : e<4) :
 theorem inner1_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     expandedVals[120*u+24+8*g+e]! = zetaTab (32+4*u+g) ∧
     expandedVals[120*u+24+8*g+e+4]! = zetaTab (32+4*u+g)*2^31/8380417 := by
-  have hi0 : 120*u+24+8*g+e < 976 := by omega
-  have hi1 : 120*u+24+8*g+e+4 < 976 := by omega
+  have hi0 : 120*u+24+8*g+e < 976 := by omega_using [hu, hg, he]
+  have hi1 : 120*u+24+8*g+e+4 < 976 := by omega_using [hu, hg, he]
   have h := inner1_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
   exact ⟨expanded_root (i := 120*u+24+8*g+e) hi0 h.1,
     expanded_bar (i := 120*u+24+8*g+e+4) hi1 h.2⟩
@@ -64,8 +65,8 @@ theorem inner1_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
 theorem tail2_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     expandedVals[120*u+56+8*g+e]! = zetaTab (64+8*u+2*g+e/2) ∧
     expandedVals[120*u+56+8*g+e+4]! = zetaTab (64+8*u+2*g+e/2)*2^31/8380417 := by
-  have hi0 : 120*u+56+8*g+e < 976 := by omega
-  have hi1 : 120*u+56+8*g+e+4 < 976 := by omega
+  have hi0 : 120*u+56+8*g+e < 976 := by omega_using [hu, hg, he]
+  have hi1 : 120*u+56+8*g+e+4 < 976 := by omega_using [hu, hg, he]
   have h := tail2_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
   exact ⟨expanded_root (i := 120*u+56+8*g+e) hi0 h.1,
     expanded_bar (i := 120*u+56+8*g+e+4) hi1 h.2⟩
@@ -73,8 +74,8 @@ theorem tail2_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
 theorem tail1_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     expandedVals[120*u+88+8*g+e]! = zetaTab (128+16*u+4*g+e) ∧
     expandedVals[120*u+88+8*g+e+4]! = zetaTab (128+16*u+4*g+e)*2^31/8380417 := by
-  have hi0 : 120*u+88+8*g+e < 976 := by omega
-  have hi1 : 120*u+88+8*g+e+4 < 976 := by omega
+  have hi0 : 120*u+88+8*g+e < 976 := by omega_using [hu, hg, he]
+  have hi1 : 120*u+88+8*g+e+4 < 976 := by omega_using [hu, hg, he]
   have h := tail1_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
   exact ⟨expanded_root (i := 120*u+88+8*g+e) hi0 h.1,
     expanded_bar (i := 120*u+88+8*g+e+4) hi1 h.2⟩
@@ -82,8 +83,8 @@ theorem tail1_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
 theorem hoisted_values {i : Nat} (hi : i<8) :
     expandedVals[960+2*i]! = zetaTab (i+1) ∧
     expandedVals[960+2*i+1]! = zetaTab (i+1)*2^31/8380417 := by
-  have hi0 : 960+2*i < 976 := by omega
-  have hi1 : 960+2*i+1 < 976 := by omega
+  have hi0 : 960+2*i < 976 := by omega_using [hi]
+  have hi1 : 960+2*i+1 < 976 := by omega_using [hi]
   have h := hoisted_layout ⟨i,hi⟩
   exact ⟨expanded_root (i := 960+2*i) hi0 h.1,
     expanded_bar (i := 960+2*i+1) hi1 h.2⟩
@@ -104,7 +105,7 @@ theorem value_lt (p : Nat × Bool) : value p < 2^32 := by
   have hb : zetaTab p.1*2^31/8380417 < 2^31 := by
     apply (Nat.div_lt_iff_lt_mul (by decide)).2
     simpa only [Nat.mul_comm] using Nat.mul_lt_mul_of_pos_right hz (show 0<2^31 by decide)
-  cases h : p.2 <;> simp only [value,h,Bool.false_eq_true,ite_false,ite_true] <;> omega
+  cases h : p.2 <;> simp only [value,h,Bool.false_eq_true,ite_false,ite_true] <;> omega_using [hz]
 
 theorem expandedVals_lt {i : Nat} (hi : i<976) : expandedVals[i]! < 2^32 := by
   rw [expanded_get hi]
@@ -112,19 +113,19 @@ theorem expandedVals_lt {i : Nat} (hi : i<976) : expandedVals[i]! < 2^32 := by
 
 theorem pack_low (a b : Nat) (ha : a<2^32) (hb : b<2^32) :
     (BitVec.ofNat 64 (a+2^32*b)).extractLsb' 0 32 = BitVec.ofNat 32 a := by
-  have hab : a+2^32*b < 2^64 := by omega
+  have hab : a+2^32*b < 2^64 := by omega_using [ha, hb]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hab,
     Nat.shiftRight_zero,Nat.mod_eq_of_lt ha]
-  omega
+  omega_using [ha]
 
 theorem pack_high (a b : Nat) (ha : a<2^32) (hb : b<2^32) :
     (BitVec.ofNat 64 (a+2^32*b)).extractLsb' 32 32 = BitVec.ofNat 32 b := by
-  have hab : a+2^32*b < 2^64 := by omega
+  have hab : a+2^32*b < 2^64 := by omega_using [ha, hb]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hab,
     Nat.shiftRight_eq_div_pow,Nat.mod_eq_of_lt hb]
-  omega
+  omega_using [ha, hb]
 
 theorem staticNttWords_length : staticNttWords.length = 488 := by
   simp only [staticNttWords,List.length_map,List.length_range,expandedVals_length]
@@ -141,12 +142,12 @@ theorem staticNttWords_get {i : Nat} (hi : i<488) :
 theorem staticNttWords_low {i : Nat} (hi : i<488) :
     (staticNttWords[i]!).extractLsb' 0 32 = BitVec.ofNat 32 expandedVals[2*i]! := by
   rw [staticNttWords_get hi]
-  exact pack_low _ _ (expandedVals_lt (by omega)) (expandedVals_lt (by omega))
+  exact pack_low _ _ (expandedVals_lt (by omega_using [hi])) (expandedVals_lt (by omega_using [hi]))
 
 theorem staticNttWords_high {i : Nat} (hi : i<488) :
     (staticNttWords[i]!).extractLsb' 32 32 = BitVec.ofNat 32 expandedVals[2*i+1]! := by
   rw [staticNttWords_get hi]
-  exact pack_high _ _ (expandedVals_lt (by omega)) (expandedVals_lt (by omega))
+  exact pack_high _ _ (expandedVals_lt (by omega_using [hi])) (expandedVals_lt (by omega_using [hi]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.TableConstants
 

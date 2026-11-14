@@ -162,25 +162,25 @@ theorem openSelS_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmull
     | true =>
       simp only [↓reduceIte]
       refine WP.seq (WP.mono (shortThr_ok (n := (s.gpr .x7).toNat) s₂ (by rw [hx₂ .x7 (by simp), ofNat_toNat'])
-        (by omega)) fun s₃ ⟨x9₃, r₃⟩ => ?_)
+        (by omega_using [hnb])) fun s₃ ⟨x9₃, r₃⟩ => ?_)
       have o₃ := o₂.of_regs r₃
       have x12₃ : s₃.gpr .x12 = Tg := by rw [r₃.others _ (by decide), x12₂]
       have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
         rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
-      refine WP.ite _ (eval_zero x9₃ (by omega)) (fun hz => ?_) (fun _ => ?_)
+      refine WP.ite _ (eval_zero x9₃ (by omega_using [])) (fun hz => ?_) (fun _ => ?_)
       · refine WP.seq (WP.mono (shortMin_ok (n := (s.gpr .x7).toNat) s₃ (by rw [hx₃ .x7 (by simp), ofNat_toNat'])
-          (by omega)) fun s₄ ⟨x9₄, r₄⟩ => ?_)
+          (by omega_using [hnb])) fun s₄ ⟨x9₄, r₄⟩ => ?_)
         have o₄ := o₃.of_regs r₄
         have x12₄ : s₄.gpr .x12 = Tg := by rw [r₄.others _ (by decide), x12₃]
         have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
           rw [r₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₃ r hr]
-        refine WP.ite _ (eval_zero x9₄ (by omega)) (fun _ => fastP o₄ x12₄ hx₄) (fun _ => ?_)
+        refine WP.ite _ (eval_zero x9₄ (by omega_using [])) (fun _ => fastP o₄ x12₄ hx₄) (fun _ => ?_)
         unfold Impl.AesGcm.AArch64.Stitch.openShortFG
         refine rest o₄ x12₄ hx₄ fun o' hT hok hx => ?_
         have h96 := of_decide_eq_true hz
         rw [hc.2] at o' ⊢
         exact openShort_post gh o' (hx .x4 (by simp)) (by rw [hx .x5 (by simp), ofNat_toNat'])
-          (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 (by omega) hT hok
+          (hx .x6 (by simp)) (by rw [hx .x7 (by simp), ofNat_toNat']) hc.1 (by omega_using [h96]) hT hok
           fun u he hrd hwr hf => htb u he hrd hwr hf
       · refine WP.seq (WP.mono (Stitch.thr_ok s₃) fun s₄ ⟨_, r₄⟩ => ?_)
         have o₄ := o₃.of_regs r₄
@@ -238,7 +238,7 @@ theorem openToWithSh_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.P
     WP isa (Impl.AesGcm.AArch64.Stitch.openWithSG v.callees true w tb cl true) s fun s' =>
       GprAbi s s' ∧ openToPostOf s s' := by
   rw [openWithSG_eq]
-  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega) hs)
+  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega_using [hw]) hs)
     (by rcases hw with rfl | rfl <;> decide) (by rcases hw with rfl | rfl <;> decide))
     fun s₁ ⟨⟨o₁, x12₁⟩, hx₁⟩ => ?_)
   exact WP.mono (openSelS_wp v cl hMK gh o₁ x12₁ hx₁ hgh htb) fun _ h => h

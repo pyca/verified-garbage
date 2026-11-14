@@ -55,10 +55,10 @@ theorem below_le {sp : Addr} {a b : Nat} (h : a ≤ b) (hb : b < 2 ^ 64) : Regio
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := sp.isLt
-    rw [Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (a := b) hb, Nat.mod_eq_of_lt (a := b - a) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := a) (by omega_using [h, hb]), Nat.mod_eq_of_lt (a := b) hb, Nat.mod_eq_of_lt (a := b - a) (by omega_using [hb])]
+    omega_using [h, hb]
   show Region.Sub ⟨sp - BitVec.ofNat 64 a, a⟩ ⟨sp - BitVec.ofNat 64 b, b⟩
-  rw [e]; exact Offset.sub_base _ (by omega)
+  rw [e]; exact Offset.sub_base _ (by omega_using [h])
 
 /-- The 2048 bytes `vg_ghash`'s frame uses are within the 3248. -/
 theorem below_sub {sp : Addr} : Region.Sub (below sp 2048) (below sp 3248) :=
@@ -68,7 +68,7 @@ theorem below_sub {sp : Addr} : Region.Sub (below sp 2048) (below sp 3248) :=
 theorem stkOk3.stk {s : State} {rs : List Region} (h : stkOk3 s rs) {c st w : Addr} (hc : ⟨c, 256⟩ ∈ rs)
     (hs : ⟨st, 80⟩ ∈ rs) (hw : ⟨w, 2560⟩ ∈ rs) : StkOk c st w s.sp :=
   ⟨((stkAll3_mem h.2.2 hc).sub_left below_sub).symm, ((stkAll3_mem h.2.2 hs).sub_left below_sub).symm,
-    ((stkAll3_mem h.2.2 hw).sub_left below_sub).symm, h.1, by have := h.2.1; omega⟩
+    ((stkAll3_mem h.2.2 hw).sub_left below_sub).symm, h.1, by have := h.2.1; omega_using [this]⟩
 
 /-- `Big` from a precondition's `stkOk3`. -/
 theorem stkOk3.big {s : State} {rs : List Region} (h : stkOk3 s rs) {V : Reg → BitVec 64}

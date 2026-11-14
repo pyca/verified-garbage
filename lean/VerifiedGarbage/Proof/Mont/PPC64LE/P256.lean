@@ -41,26 +41,26 @@ theorem p256p_eq : p256p = 11579208921035624876269744694940757353008614341529031
 
 theorem carry_toNat {v : Nat} (h : v < 2 ^ 65) : (decide (2 ^ 64 ≤ v)).toNat = v / 2 ^ 64 := by
   by_cases hv : 2 ^ 64 ≤ v
-  · simp only [hv, decide_true, Bool.toNat_true]; omega
-  · simp only [hv, decide_false, Bool.toNat_false]; omega
+  · simp only [hv, decide_true, Bool.toNat_true]; omega_using [h, hv]
+  · simp only [hv, decide_false, Bool.toNat_false]; omega_using [hv]
 
 /-! ## The arithmetic of the row -/
 
 theorem rowP_L {w1 w2 w3 w4 : Nat} (h1 : w1 < 2 ^ 64) (h2 : w2 < 2 ^ 64) (h3 : w3 < 2 ^ 64)
     (h4 : w4 < 2 ^ 64) : w1 + 2 ^ 64 * w2 + 2 ^ 128 * w3 + 2 ^ 192 * w4 < 2 ^ 256 := by
-  omega
+  omega_using [h1, h2, h3, h4]
 
 theorem rowP_lt0 {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) : x + y < 2 ^ 65 := by
-  omega
+  omega_using [hx, hy]
 
 theorem rowP_lt {x y d : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) (hd : d ≤ 1) : x + y + d < 2 ^ 65 := by
-  omega
+  omega_using [hx, hy, hd]
 
 theorem rowP_not {A : Nat} (h : A < 2 ^ 64) : 2 ^ 64 - 1 - A < 2 ^ 64 := by
   omega
 
 theorem rowP_d {w d a : Nat} (h : w + 2 ^ 64 * d = a) (ha : a < 2 ^ 65) : d ≤ 1 := by
-  omega
+  omega_using [h, ha]
 
 theorem rowP_sub {x0 A B u1 v1 u2 v2 : Nat} (hx : x0 < 2 ^ 64) (hA : A + 2 ^ 64 * B = x0 * 2 ^ 32)
     (hAl : A < 2 ^ 64) (hBl : B < 2 ^ 32) (hu1 : u1 < 2 ^ 64) (hu2 : u2 < 2 ^ 64)
@@ -74,7 +74,7 @@ theorem rowP_add {x1 x2 x3 x4 A B u1 u2 w1 d1 w2 d2 w3 d3 w4 d4 : Nat}
     (e3 : w3 + 2 ^ 64 * d3 = x3 + u1 + d2) (e4 : w4 + 2 ^ 64 * d4 = x4 + u2 + d3) :
     w1 + 2 ^ 64 * w2 + 2 ^ 128 * w3 + 2 ^ 192 * w4 + 2 ^ 256 * d4 =
       x1 + A + 2 ^ 64 * (x2 + B) + 2 ^ 128 * (x3 + u1) + 2 ^ 192 * (x4 + u2) := by
-  omega
+  omega_using [e1, e2, e3, e4]
 
 theorem rowP_key {x0 x1 x2 x3 x4 c A B u1 u2 w1 w2 w3 w4 d4 : Nat} (hx : x0 < 2 ^ 64)
     (hA : A + 2 ^ 64 * B = x0 * 2 ^ 32) (hD : u1 + 2 ^ 64 * u2 = x0 + 2 ^ 64 * x0 - x0 * 2 ^ 32)
@@ -127,9 +127,9 @@ theorem rowP_arith (x0 x1 x2 x3 x4 c : Nat) (b0 : x0 < 2 ^ 64) (b1 : x1 < 2 ^ 64
                                       (decide (2 ^ 64 ≤ x1 + x0 * 2 ^ 32 % 2 ^ 64)).toNat)).toNat)).toNat)).toNat) %
             2 ^ 64)) =
     x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + 2 ^ 256 * x4 + 2 ^ 320 * c + x0 * 115792089210356248762697446949407573530086143415290314195533631308867097853951 := by
-  have hA : x0 * 2 ^ 32 % 2 ^ 64 + 2 ^ 64 * (x0 / 2 ^ 32) = x0 * 2 ^ 32 := by omega
+  have hA : x0 * 2 ^ 32 % 2 ^ 64 + 2 ^ 64 * (x0 / 2 ^ 32) = x0 * 2 ^ 32 := by omega_using []
   have hAl : x0 * 2 ^ 32 % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
-  have hBl : x0 / 2 ^ 32 < 2 ^ 32 := by omega
+  have hBl : x0 / 2 ^ 32 < 2 ^ 32 := by omega_using [b0]
   generalize x0 * 2 ^ 32 % 2 ^ 64 = A at *
   generalize x0 / 2 ^ 32 = B at *
   -- t₁ + A

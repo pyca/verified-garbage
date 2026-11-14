@@ -149,22 +149,22 @@ theorem contract_wp {g : Nat} (hg : IsG g) {s : State} (hp : (packK g).pre s) :
   · intro j hj k hk
     rw [hrd,Offset.add_add]
     exact ⟨polyRegion (s.gpr .x0),List.mem_append_left _ (List.mem_singleton_self _),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using [hj, hk]) (by omega_using [hj, hk])⟩
   · intro j hj
     rw [hwr]
     refine ⟨⟨s.gpr .x1,32*packWidth g⟩,List.mem_singleton_self _,Offset.contains_base _ ?_ ?_⟩
     · rcases hg with rfl | rfl
-      · change 8*j+8≤128; omega
-      · change 12*j+8≤192; omega
+      · change 8*j+8≤128; omega_using [hj]
+      · change 12*j+8≤192; omega_using [hj]
     · rcases hg with rfl | rfl
-      · change 8*j<2^64; omega
-      · change 12*j<2^64; omega
+      · change 8*j<2^64; omega_using [hj]
+      · change 12*j<2^64; omega_using [hj]
   · intro j hj hw
     rw [hwr,hw]
     change InRegions [⟨s.gpr .x1,192⟩]
       ((s.gpr .x1+BitVec.ofNat 64 (12*j))+BitVec.ofNat 64 8) 4
     rw [Offset.add_add]
-    exact ⟨⟨s.gpr .x1,192⟩,List.mem_singleton_self _,Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x1,192⟩,List.mem_singleton_self _,Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 /-- The measured function preserves the calling convention without stack
 saves: its complete clobber set consists of caller-saved registers. -/

@@ -1601,7 +1601,7 @@ theorem mem_interSlot {x z y : Nat × Nat × Nat} (h : y ∈ interSlot x z) :
     subst h
     simp only [Bool.and_eq_true, Nat.beq_eq, Nat.blt_eq] at hc
     dsimp only
-    exact ⟨by omega, rfl, hc.1, by omega, by omega, by omega, by omega⟩
+    exact ⟨by omega, rfl, hc.1, by omega_using [], by omega, by omega_using [], by omega⟩
 
 theorem mem_interAll {x y : Nat × Nat × Nat} : ∀ {l : List (Nat × Nat × Nat)},
     y ∈ interAll x l → ∃ z ∈ l, y ∈ interSlot x z

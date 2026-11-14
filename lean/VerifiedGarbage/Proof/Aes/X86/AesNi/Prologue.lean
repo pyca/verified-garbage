@@ -42,11 +42,11 @@ theorem arg_exec {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : Setup s�
 abbrev saveMem (s : State) : Mem := Spill.saveMem s.mem (addr (scrP s)) s.gpr savedRegs
 
 theorem saveMem_saved {to : Bool} (s : State) (hp : GPre to s) : Saved s (saveMem s) :=
-  Spill.saveMem_saved_addr _ _ (n := 16) (by decide) (by have := hp.fB; omega)
+  Spill.saveMem_saved_addr _ _ (n := 16) (by decide) (by have := hp.fB; omega_using [this])
 
 theorem saveMem_frame {to : Bool} (s : State) (hp : GPre to s) : Frame [scrR s] s.mem (saveMem s) :=
   Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h =>
-    scratch_contains hp (by have := savedRegs_bound p h; omega)
+    scratch_contains hp (by have := savedRegs_bound p h; omega_using [this])
 
 def saveHead : List Instr := [.mov .eax (.mem (argOp 5))] ++
   savedRegs.map (fun (r, d) => .store (at_ .eax d) r)
@@ -60,7 +60,7 @@ theorem saveHead_ok {to : Bool} (s₀ : State) (hp : GPre to s₀) :
   refine Wp.cons (arg_exec hp hs (i := 5) (.inl (by decide)) .eax) ?_
   have e : (s₀.setReg .eax (arg s₀ 5)).gpr .eax = scrP s₀ := gpr_setReg_self _ _ _
   refine Spill.save_ok savedRegs (fun p h => by
-    rw [e, wr_setReg]; exact scratch_in hp (by have := savedRegs_bound p h; omega)) fun s u => ?_
+    rw [e, wr_setReg]; exact scratch_in hp (by have := savedRegs_bound p h; omega_using [this])) fun s u => ?_
   have hm : s.mem = saveMem s₀ := by
     rw [u.mem, e, mem_setReg]
     exact Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p h => gpr_setReg_of_ne _ _ (by revert p h; decide)
@@ -117,7 +117,7 @@ theorem loadArgs_ok {to : Bool} {s₀ s : State} (hp : GPre to s₀) (hs : Setup
 
 theorem Saved.writePrefix {to : Bool} {s₀ : State} {m : Mem} (hp : GPre to s₀) (h : Saved s₀ m)
     (v : BitVec 128) : Saved s₀ (m.writeW (addr (scrP s₀) 16) v) :=
-  h.writeW_addr (n := 2048) hp.fB (fun p h => by have := savedRegs_bound p h; omega) (by decide) (by decide) v
+  h.writeW_addr (n := 2048) hp.fB (fun p h => by have := savedRegs_bound p h; omega_using [this]) (by decide) (by decide) v
 
 def counterSetup : List Instr :=
   [.mov .ebx (.mem (at_ .edx 12)), .bswap .ebx,

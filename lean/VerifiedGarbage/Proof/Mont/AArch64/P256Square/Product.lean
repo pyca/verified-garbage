@@ -181,7 +181,7 @@ theorem diag_value (w1 w2 w3 w4 w5 w6 w7 d0 d1 d2 d3 d4 d5 d6 d7 : BitVec 64) :
   change v6.toNat + 2^64*k6.toNat = w6.toNat + d6.toNat + k5.toNat at h6
   change v7.toNat + 2^64*k7.toNat = w7.toNat + d7.toNat + k6.toNat at h7
   simp only [val4]
-  omega
+  omega_using [h1, h2, h3, h4, h5, h6, h7]
 
 theorem diag_ok (s : State) :
     WP isa (.block diagCode) s fun t => ∃ c : Nat,

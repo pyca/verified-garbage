@@ -27,7 +27,7 @@ open VG.Proof.Bignum.PPC64LE (savR sav_contains sav_sep saved_inj saved_ne saved
 abbrev savW (S : Addr) : Addr := S + BitVec.ofNat 64 128
 
 theorem saveOff_eq (S : Addr) (i : Nat) : S + BitVec.ofNat 64 (saveOff i) = off (savW S) (8 * i) := by
-  rw [off, Offset.add_add]; simp only [saveOff, sFn]; congr 2; omega
+  rw [off, Offset.add_add]; simp only [saveOff, sFn]; congr 2; omega_using []
 
 /-- The first `n` registers are saved. -/
 structure SI (s₀ : State) (n : Nat) (s : State) : Prop where

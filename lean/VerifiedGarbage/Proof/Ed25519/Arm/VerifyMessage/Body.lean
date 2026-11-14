@@ -117,7 +117,7 @@ theorem signature_input (hL : L.Ok) : Input L L.sig 32 := by
   have sub : Region.Sub ⟨State.addr L.sig,32⟩ L.SIG := Region.sub_prefix (by decide)
   exact ⟨.inr ⟨L.SIG,by simp [Lay.inputs],0,by simp,by change 0+32≤64; decide⟩,
     (hL.sc _ (by simp [Lay.inputs])).sub_left sub,
-    (input_slots hL (by simp [Lay.inputs])).sub_left sub,by have := hL.ns; change L.sig.toNat+32≤2^32; omega⟩
+    (input_slots hL (by simp [Lay.inputs])).sub_left sub,by have := hL.ns; change L.sig.toNat+32≤2^32; omega_using [this]⟩
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -131,7 +131,7 @@ theorem shaWithin (L : Lay) : Whole.Within (Whole.SHA L.scr) L.SCR :=
 theorem workWithin (L : Lay) : Whole.Within (Whole.WORK L.scr) L.SCR :=
   ⟨192, rfl, by change 192 + 272 ≤ 8192; decide⟩
 theorem argsWithin (L : Lay) {n : Nat} (hn : n ≤ 248) :
-    Whole.Within (Whole.CALLARGS L.E n) L.FR := ⟨0, by simp, by change 0 + n ≤ 248; omega⟩
+    Whole.Within (Whole.CALLARGS L.E n) L.FR := ⟨0, by simp, by change 0 + n ≤ 248; omega_using [hn]⟩
 
 theorem init_frame {m n : Mem} (hf : Frame (Whole.initWr L.scr) m n) : Frame (hashWrites L) m n := by
   apply hash_frame hf
@@ -200,14 +200,14 @@ theorem update_pre {t : State} (hL : L.Ok) (he : t.sp = L.E)
     {count p n : BitVec 32} (ha : UpdateArgs L count p n t) (hi : Input L p n) :
     Proof.Sha512.updateArm.pre (t.callEntry.withRegions (Whole.updateRd L.E p n) (Whole.hashWr L.scr)) :=
   Whole.update_pre he ha.1 ha.2.2.2.1 ha.2.2.2.2.1 ha.2.2.2.2.2 hi.scratch
-    (hL.kc.sub_left (Region.sub_prefix (by decide))) hL.nc hi.fit (by have := hL.top; omega)
+    (hL.kc.sub_left (Region.sub_prefix (by decide))) hL.nc hi.fit (by have := hL.top; omega_using [this])
 
 theorem finalize_pre {t : State} (hL : L.Ok) (he : t.sp = L.E)
     {count : BitVec 32} (ha : FinalArgs L count t) :
     Proof.Sha512.finalizeArm.pre (t.callEntry.withRegions (Whole.finalizeRd L.E) (Whole.finalizeWr L.scr (L.E + 184))) := by
   refine Whole.finalize_pre he ha.1 ha.2.2.2.1 ha.2.2.2.2 ?_
     (hL.kc.sub_left (Region.sub_prefix (by decide))) ?_ hL.nc
-    (frame_fit hL (d := 184) (by decide)) (by have := hL.top; omega)
+    (frame_fit hL (d := 184) (by decide)) (by have := hL.top; omega_using [this])
   · rw [final_addr hL]
     exact hL.kc.sub_left (digestWithin L).sub
   · rw [final_addr hL]
@@ -219,7 +219,7 @@ theorem count_zero_high (x : BitVec 32) : (0#32) ++ x = BitVec.ofNat 64 x.toNat 
   have hx := x.isLt
   simp only [BitVec.toNat_ofNat]
   change 0 * 2 ^ 32 + x.toNat = x.toNat % 2 ^ 64
-  omega
+  omega_using []
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
 end
@@ -273,13 +273,13 @@ theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     unfold Proof.Sha512.countArm
     rw [a3,a2,count_zero_high]
     change BitVec.ofNat 64 (count % 2^32) = _
-    rw [Nat.mod_eq_of_lt (by omega),hcount]
+    rw [Nat.mod_eq_of_lt (by omega_using [hc16]),hcount]
   have huRepr := setup_repr hL hf hr
   have heq : Spec.Ed25519.bytesAt u.mem (State.addr (value L p)) (value L n).toNat =
       Spec.Ed25519.bytesAt s.mem (State.addr (value L p)) (value L n).toNat :=
     frame_bytes hf ⟨State.addr (value L p), (value L n).toNat⟩
       (by simp only [List.mem_singleton]; intro r he; subst r; exact hi.args)
-      (by have := (value L n).isLt; change (value L n).toNat ≤ 2^64; omega)
+      (by have := (value L n).isLt; change (value L n).toNat ≤ 2^64; omega_using [])
   have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
   refine WP.mono (Whole.update_call hu (update_pre hL hu.sp args hi) (update_covers hi) hw
     a0 d0 d1 ce huRepr) fun t ⟨ht, hf', hrepr⟩ => ⟨ht, (setup_frame hf).trans (update_frame hf'), ?_⟩
@@ -303,7 +303,7 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro x (rfl | rfl | rfl)
     · simp [valid]
-    · cases b <;> simp [valid] <;> omega
+    · cases b <;> simp [valid] <;> omega_using [hn]
     · simp [valid]
   refine WP.seq (WP.mono (args_ok hc hL ha (by simp) hv (by simp)
     (by simp [valid]) (by simp [preserved])) fun u ⟨hu,hf,hs,hstack⟩ => ?_)
@@ -322,7 +322,7 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     change BitVec.ofNat 64 (msg.length % 2^32) = _
     rw [Nat.mod_eq_of_lt hlen]
   refine WP.mono (Whole.finalize_call hu (finalize_pre hL hu.sp args) (finalize_covers hL)
-    (final_writes hL) a0 d0 ce (setup_repr hL hf hr) (by omega))
+    (final_writes hL) a0 d0 ce (setup_repr hL hf hr) (by omega_using [hlen]))
     fun t ⟨ht,hf',hh⟩ => ⟨ht,(setup_frame hf).trans (finalize_frame hL hf'),?_⟩
   change Spec.Ed25519.bytesAt t.mem (State.addr (L.E + 184)) 64 = _ at hh
   rw [final_addr hL] at hh
@@ -368,7 +368,7 @@ theorem update_message (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.mono (update_step hc hL ha count (.caller 1 0) (.caller 2 0) hc16
     (by simp [valid]) (by simp [valid]) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
   simp only [value, Lay.value, BitVec.add_zero] at hh
-  rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (by have := L.len.isLt; change L.len.toNat ≤ 2^64; omega)] at hh
+  rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (by have := L.len.isLt; change L.len.toNat ≤ 2^64; omega_using [])] at hh
   exact hh
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
@@ -394,7 +394,7 @@ theorem sig_prefix_same (hc : Ctx L g m₀ s) (hL : L.Ok) :
     rcases hr with rfl | rfl
     · exact hL.sc _ (by simp [Lay.inputs])
     · exact (hL.ks _ (by simp [Lay.inputs])).symm)
-    (by change 64 ≤ 2 ^ 64; decide) (by change i < 64; have := List.mem_range.mp hi; omega)
+    (by change 64 ≤ 2 ^ 64; decide) (by change i < 64; have := List.mem_range.mp hi; omega_using [this])
 
 theorem hash_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa VG.Impl.Ed25519.Arm.VerifyMessage.hash s fun t => Ctx L g m₀ t ∧
@@ -414,7 +414,7 @@ theorem hash_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
   have hlen : (hashInput L m₀).length = 64+L.len.toNat := by
     simp only [hashInput,List.length_append,bytes_length]
   refine WP.mono (finalize_step hz hL ha 64 (by decide) true (msg := hashInput L m₀)
-    (by rw [hlen]; exact hL.message_bound) (by simp only [ite_true]; rw [hlen]; omega) hmsg)
+    (by rw [hlen]; exact hL.message_bound) (by simp only [ite_true]; rw [hlen]; omega_using []) hmsg)
     fun t ⟨ht,_,hh⟩ => ⟨ht,hh⟩
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
@@ -439,16 +439,16 @@ variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem reduce_pre (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 184) (ha : ReduceArgs L d s) :
     scalarReduceLocal.pre (s.callEntry.withRegions (reduceRd L) (reduceWr L d)) := by
-  have ad := frame_addr hL (d := d) (by omega)
+  have ad := frame_addr hL (d := d) (by omega_using [hd])
   have a184 : State.addr (L.E + 184) = State.addr L.E + 184 := frame_addr hL (d := 184) (by decide)
   simp only [scalarReduceLocal, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), ha.1, ha.2.1, ha.2.2, ad, a184]
-  have sep : (field L d).Disjoint (digest L) := Offset.disjoint _ (by omega) (by omega) (by decide)
+  have sep : (field L d).Disjoint (digest L) := Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by decide)
   exact ⟨rfl, rfl, sep,
-    field_scr hL (by omega), hL.kc.sub_left (digestWithin L).sub,
-    frame_fit hL (by omega), frame_fit hL (by decide), hL.nc⟩
+    field_scr hL (by omega_using [hd]), hL.kc.sub_left (digestWithin L).sub,
+    frame_fit hL (by omega_using [hd]), frame_fit hL (by decide), hL.nc⟩
 
 theorem reduce_call (hc : Ctx L g m₀ s) (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 184)
     (ha : ReduceArgs L d s) :
@@ -462,13 +462,13 @@ theorem reduce_call (hc : Ctx L g m₀ s) (hL : L.Ok) {d : Nat} (hd : d + 32 ≤
       List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact .inl (digestWithin L)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (scratch_covered L)
   have ws : ∀ r ∈ reduceWr L d, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
     apply writes
     simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (scratchWithin L)
   refine Whole.call_ok hc scalarReduce_ok reduce_noFrames (reduce_pre hL hd ha) cov ws
     fun t ht hf hp => ⟨ht, hf, ?_⟩
@@ -476,7 +476,7 @@ theorem reduce_call (hc : Ctx L g m₀ s) (hL : L.Ok) {d : Nat} (hd : d + 32 ≤
     Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r1)) 64) at hp
   rw [State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), ha.1, ha.2.1] at hp
-  have ad := frame_addr hL (d := d) (by omega)
+  have ad := frame_addr hL (d := d) (by omega_using [hd])
   have a184 : State.addr (L.E + 184) = State.addr L.E + 184 := frame_addr hL (d := 184) (by decide)
   rw [ad, a184] at hp
   exact hp
@@ -525,7 +525,7 @@ theorem extend_step (hc : Ctx L g m₀ s) (hL : L.Ok) {digest : List Byte}
     WP isa (.block extendChallenge) s fun t => Ctx L g m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 =
         Spec.Ed25519.encodeLE 64 (Spec.Ed25519.decodeLE digest % Spec.Ed25519.L) := by
-  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega) (start := 38) (count := 8) (by decide)) fun t ⟨ht, hf, hz⟩ => ⟨ht, ?_⟩
+  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega_using [this]) (start := 38) (count := 8) (by decide)) fun t ⟨ht, hf, hz⟩ => ⟨ht, ?_⟩
   have low : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 32 =
       Spec.Ed25519.bytesAt s.mem (State.addr L.E + 120) 32 := by
     unfold Spec.Ed25519.bytesAt
@@ -538,7 +538,7 @@ theorem extend_step (hc : Ctx L g m₀ s) (hL : L.Ok) {digest : List Byte}
     have word (j : Nat) (hj : j < 8) : t.mem.readW (State.addr L.E + 152 + BitVec.ofNat 64 (4*j)) 32 = 0 := by
       have z := hz j hj
       have e : State.addr L.E + BitVec.ofNat 64 (4*(38+j)) = State.addr L.E + 152 + BitVec.ofNat 64 (4*j) := by
-        rw [show 4*(38+j)=152+4*j by omega, BitVec.ofNat_add, BitVec.add_assoc]
+        rw [show 4*(38+j)=152+4*j by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]
         rfl
       rw [e] at z
       exact z

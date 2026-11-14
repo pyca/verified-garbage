@@ -148,7 +148,7 @@ theorem lo32_sext (x : BitVec 32) : (sext32 x).setWidth 32 = x := by
   apply BitVec.eq_of_getElem_eq
   intro i hi
   rw [BitVec.getElem_setWidth, BitVec.getLsbD_signExtend]
-  simp [hi, show i < 64 by omega]
+  simp [hi, show i < 64 by omega_using [hi]]
 
 theorem lo32_add (x y : BitVec 64) : (x + y).setWidth 32 = x.setWidth 32 + y.setWidth 32 :=
   BitVec.setWidth_add x y (by decide)

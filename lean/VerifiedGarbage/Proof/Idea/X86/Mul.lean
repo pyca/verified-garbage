@@ -108,7 +108,7 @@ theorem mul_run (src : Src) (v : BitVec 32) (s : State) (hsrc : SrcOk s src v) :
     show (2 ^ 32 - 1 + _ % 2 ^ 32) % 2 ^ 32 = _
     have := Nat.le_trans hp (show 2 ^ 16 * 2 ^ 16 ≤ 2 ^ 32 by decide)
     have := Nat.le_trans (show 1 ≤ 1 * 1 by decide) hp₀
-    omega
+    omega_using [hp₀, hp]
   · refine e₁.weaken (rs' := [.eax, .edx]) (by decide) |>.trans ⟨fun q hq => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hq.1, hq.2, ite_false]

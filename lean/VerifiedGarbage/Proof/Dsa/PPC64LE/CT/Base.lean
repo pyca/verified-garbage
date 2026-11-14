@@ -73,13 +73,13 @@ structure Base (v : VD) (s : State) : Prop where
 /-- A change past the header keeps its word `hOut`. -/
 theorem Base.hdr_body {v : VD} {s t : State} (h : Base v s) (ho : Body v.L s.mem t.mem) :
     ∀ o ∈ v.out, word t.mem v.L.S Impl.Dsa.PPC64LE.Sign.hOut = o := fun o hm =>
-  (Outside.word ho (Or.inl (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega))
-    (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega)).trans (h.hdr o hm)
+  (Outside.word ho (Or.inl (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega_using []))
+    (by simp only [Impl.Dsa.PPC64LE.Sign.hOut]; omega_using [])).trans (h.hdr o hm)
 
 theorem Base.step {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Keep rs s t)
     (ho : Body v.L s.mem t.mem) (hr : ∀ r ∈ regsRegs, r ∉ rs := by decide) : Base v t :=
   ⟨h.ok, h.regs.keep k hr, h.scr.congr k.wr, h.hk.keep k.rd k.wr, h.hsg.keep k.rd k.wr,
-    h.hdg.keep k.rd k.wr, (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega))).trans h.kb,
+    h.hdg.keep k.rd k.wr, (h.hk.kept (ho.mono (Nat.zero_le _) (by have := h.ok.z256; omega_using [this]))).trans h.kb,
     h.hx.keep k.rd k.wr, h.hdr_body ho, h.sgn, h.kn⟩
 
 /-- The key's octets from `o`, `k` of them. -/
@@ -92,23 +92,23 @@ theorem Base.bytes {v : VD} {s : State} (h : Base v s) {o k : Nat} (hk : o + k �
 theorem Base.p {v : VD} {s : State} (h : Base v s) :
     pOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at 0 v.L.pl) := by
   have := h.kn
-  have := h.bytes (o := 0) (k := v.L.pl) (by omega)
+  have := h.bytes (o := 0) (k := v.L.pl) (by omega_using [this])
   rw [off, BitVec.add_zero] at this
   rw [pOf, this]
 
 theorem Base.q {v : VD} {s : State} (h : Base v s) :
     qOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at v.L.pl v.L.ql) := by
   have := h.kn
-  rw [qOf, h.bytes (by omega)]
+  rw [qOf, h.bytes (by omega_using [this])]
 
 theorem Base.g {v : VD} {s : State} (h : Base v s) :
     gOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at (v.L.pl + v.L.ql) v.L.pl) := by
   have := h.kn
-  rw [gOf, h.bytes (by omega)]
+  rw [gOf, h.bytes (by omega_using [this])]
 
 theorem Base.y {v : VD} {s : State} (h : Base v s) (h3 : 3 * v.L.pl + v.L.ql ≤ v.kn) :
     yOf s.mem v.L v.key = Spec.Dsa.decodeBE (v.at (2 * v.L.pl + v.L.ql) v.L.pl) := by
-  rw [yOf, h.bytes (by omega)]
+  rw [yOf, h.bytes (by omega_using [h3])]
 
 /-- The registers every phase fixes: `r2` and those `Regs` reads. -/
 def coreRegs : List Reg := [.r2, .r21, .r26, .r27, .r28]

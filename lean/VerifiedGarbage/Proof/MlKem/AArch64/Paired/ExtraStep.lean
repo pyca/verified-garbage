@@ -69,16 +69,16 @@ theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.
   have ub := coeffs_frame cb hm fu (by intro r hr; rw [List.mem_singleton.mp hr]; exact ctx.farB.symm)
   have checkpoints {off : Nat} (ho : off=1680 ∨ off=1696) :
       ∀r∈nextWrites p,(Region.mk (p+BitVec.ofNat 64 off) 16).Disjoint r := by
-   have hlo : 1680≤off := by omega
-   have hhi : off≤1696 := by omega
+   have hlo : 1680≤off := by omega_using [ho]
+   have hhi : off≤1696 := by omega_using [ho]
    intro r hr
    simp only [nextWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
    rcases hr with rfl|rfl|rfl|rfl|rfl
-   · exact Offset.disjoint_base p (d:=off) (n:=16) (k:=400) (by omega) (by omega)
-   · exact Offset.disjoint p (d:=off) (n:=16) (e:=400) (k:=168) (by omega) (by omega) (by decide)
-   · exact Offset.disjoint p (d:=off) (n:=16) (e:=904) (k:=168) (by omega) (by omega) (by decide)
-   · exact Offset.disjoint p (d:=off) (n:=16) (e:=1536) (k:=136) (by omega) (by omega) (by decide)
-   · exact Offset.disjoint p (d:=off) (n:=16) (e:=1408) (k:=8) (by omega) (by omega) (by decide)
+   · exact Offset.disjoint_base p (d:=off) (n:=16) (k:=400) (by omega_using [ho]) (by omega_using [ho])
+   · exact Offset.disjoint p (d:=off) (n:=16) (e:=400) (k:=168) (by omega_using [ho]) (by omega_using [ho]) (by decide)
+   · exact Offset.disjoint p (d:=off) (n:=16) (e:=904) (k:=168) (by omega_using [ho]) (by omega_using [ho]) (by decide)
+   · exact Offset.disjoint p (d:=off) (n:=16) (e:=1536) (k:=136) (by omega_using [ho]) (by omega_using [ho]) (by decide)
+   · exact Offset.disjoint p (d:=off) (n:=16) (e:=1408) (k:=8) (by omega_using [ho]) (by omega_using [ho]) (by decide)
   have usa := checkpoint_frame sa precise (checkpoints (Or.inl rfl))
   have usb := checkpoint_frame sb precise (checkpoints (Or.inr rfl))
   have ea := cu.envW (w16 := w16) ux (N:=56) (off:=400) (by decide) (by decide) (Or.inl rfl) (fun i hi=>ra.byte hi)

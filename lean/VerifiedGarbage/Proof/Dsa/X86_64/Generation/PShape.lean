@@ -43,7 +43,7 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
   have hrd : ∀ i < bs.length, InRegions (u.rd ++ u.wr) (off rp i) 1 := by
     intro i hi
     rw [hbl] at hi
-    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega)
+    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega_using [hroom, hi])
     refine ⟨r, ?_, ?_⟩
     · rw [hk.2.1, hk.2.2]; exact List.mem_append_right _ hr
     · simpa only [rp, off_off] using hc
@@ -51,9 +51,9 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
     intro i hi
     rw [hm]
     simp only [bs, Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD]
-    simp [show i < plen by omega]
+    simp [show i < plen by omega_using [hbl, hi]]
   refine WP.mono (VG.Proof.Ffdh.X86_64.ParameterCandidate.shape_ok
-    (by omega : 9 ≤ 8 * plen) (by omega) (by rw [hbl]; omega)
+    (by omega_using [hl] : 9 ≤ 8 * plen) (by omega_using [hlmax]) (by rw [hbl]; omega_using [])
     hsi hdi (by rw [hbl]; exact hcx) hdx hrd
     (fun i hi => by rw [hk.2.2]; exact hout i (hbl ▸ hi)) hb
     (fun i hi j hj => hsep i (hbl ▸ hi) j (hbl ▸ hj)))
@@ -64,12 +64,12 @@ theorem pShape_ok {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
   · change Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) + 1 -
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) % (2 * q) = _
     rw [hx]
-    exact hash_shaped_candidate hs (by omega) rfl hroom hcount hhash hsize q
+    exact hash_shaped_candidate hs (by omega_using [hl]) rfl hroom hcount hhash hsize q
   · change Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) % 2 = 1 ∧
       2 ^ (8 * plen - 1) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) ∧
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) < 2 ^ (8 * plen)
     rw [hx]
-    exact VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * plen) (by omega) _
+    exact VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * plen) (by omega_using [hl]) _
   · intro a ha
     rw [hf a (fun i hi => ha i (hbl ▸ hi)), hm]
 

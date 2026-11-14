@@ -112,7 +112,7 @@ theorem SearchLive.length_guard {p : SearchParams} {used remaining : Nat} {s : S
   have width := h.saved 1 (by simp [searchSlots])
   simp only [searchValues] at tape width
   refine WP.mono (fieldGuard_ok s h.buffers.controller (by decide : 10 < 16) (by decide : 1 < 16)
-    (by have := p.c.tapeCount; omega) (by have := p.width_bounds; omega) tape width) ?_
+    (by have := p.c.tapeCount; omega_using [this]) (by have := p.width_bounds; omega_using [this]) tape width) ?_
   rintro t ⟨⟨flag, mem⟩, rest⟩
   exact ⟨⟨h.after_read (by decide) mem rest, flag, mem⟩, rest⟩
 
@@ -127,7 +127,7 @@ theorem SearchLive.entropy_guard {p : SearchParams} {used remaining : Nat} {s : 
   have cap := h.saved 2 (by simp [searchSlots])
   simp only [searchValues] at tape cap
   refine WP.mono (fieldGuard_ok s h.buffers.controller (by decide : 10 < 16) (by decide : 2 < 16)
-    (by have := p.c.tapeCount; omega) p.entropy_fits tape cap) ?_
+    (by have := p.c.tapeCount; omega_using [this]) p.entropy_fits tape cap) ?_
   rintro t ⟨⟨flag, mem⟩, rest⟩
   exact ⟨⟨h.after_read (by decide) mem rest, flag, mem⟩, rest⟩
 

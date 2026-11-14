@@ -104,7 +104,7 @@ theorem initS_regs (E : Env) : ∀ j < 5, ∀ l < 4, (initS.reg j).nat E l =
     if l = 2 then limbNat (fun k => E.m X1 k) (E.g .rax) j
     else if j = 0 ∧ (l = 0 ∨ l = 3) then E.g .r11 else 0 := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The term `vinit` stores at `d`. -/
@@ -117,13 +117,13 @@ theorem initT_kx1 (E : Env) : ∀ j < 5, ∀ l < 4, (initT (KX1 + 32 * j)).nat E
     if l = 3 then limbNat (fun k => E.m X1 k) (E.g .rax) j
     else if j = 0 ∧ (l = 0 ∨ l = 2) then E.g .r11 else 0 := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 theorem initT_a24 (E : Env) : ∀ j < 5, ∀ l < 4, (initT (KA24 + 32 * j)).nat E l =
     if j = 0 ∧ l = 1 then E.g .r12 else 0 := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 theorem initT_const : ∀ x ∈ [(KM, Reg.rax), (K19, .rcx), (KB0, .rdx), (KB1, .rbp), (K13, .r8), (K26, .r9),
@@ -152,8 +152,8 @@ theorem limbNat_lv (w : Nat → Nat) (hw : ∀ k < 4, w k < 2 ^ 64) :
   have e39 : (2 ^ 51 - 1) / 2 ^ 39 = 2 ^ 12 - 1 := by decide
   have h0 := hw 0 (by decide); have h1 := hw 1 (by decide); have h2 := hw 2 (by decide)
   simp only [lv, limbNat, e13, e26, e39, Nat.and_two_pow_sub_one_eq_mod]
-  rw [or_mul (by omega), or_mul (by omega), or_mul (by omega)]
-  omega
+  rw [or_mul (by omega_using [h0]), or_mul (by omega_using [h1]), or_mul (by omega_using [h2])]
+  omega_using []
 
 /-- The limbs of `x₁`, from its words at `X1`. -/
 def xl (m : Mem) (base : Addr) : Nat → Nat :=
@@ -178,7 +178,7 @@ theorem stores_const {s₀ : State} {base : Addr} {m : Mem} {st : List (Nat × T
 
 theorem limbNat_congr {w w' : Nat → Nat} (m : Nat) (h : ∀ k < 4, w k = w' k) : limbNat w m = limbNat w' m := by
   funext j
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ 4 ≤ j) with rfl | rfl | rfl | rfl | h4
+  rcases (by omega_using [] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ 4 ≤ j) with rfl | rfl | rfl | rfl | h4
   · simp only [limbNat, h 0 (by decide)]
   · simp only [limbNat, h 0 (by decide), h 1 (by decide)]
   · simp only [limbNat, h 1 (by decide), h 2 (by decide)]
@@ -218,25 +218,25 @@ theorem vinit_wp {s : State} {base : Addr} (hs : Scr s base)
   have kx : ∀ j < 5, ∀ l < 4, slotv s₂.mem base KX1 l j =
       if l = 3 then xl s.mem base j else if j = 0 ∧ l ≠ 1 then 1 else 0 := fun j hj l hl => by
     have hm := initT_mem (KX1 + 32 * j) (by
-      rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide)
+      rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide)
     rw [slotv, hmem, stores_mq _ _ _ _ hm hl initS_small initS_apart,
       (nat_ok hE _ hl (initT_ok _ (by
-        rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide) l hl)).1,
+        rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide) l hl)).1,
       initT_kx1 _ j hj l hl, hxl, hg, hg, ha, h11]
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> simp [xl]
   have ka : ∀ j < 5, ∀ l < 4, slotv s₂.mem base KA24 l j = if j = 0 ∧ l = 1 then 121665 else 0 :=
     fun j hj l hl => by
       have hm := initT_mem (KA24 + 32 * j) (by
-        rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide)
+        rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide)
       rw [slotv, hmem, stores_mq _ _ _ _ hm hl initS_small initS_apart,
         (nat_ok hE _ hl (initT_ok _ (by
-          rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide) l hl)).1,
+          rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> decide) l hl)).1,
         initT_a24 _ j hj l hl, hg, h12]
       rfl
   have lan : ∀ l < 4, ∀ i < 5, lanes s₂ 0 l i =
       if l = 2 then xl s.mem base i else if i = 0 ∧ (l = 0 ∨ l = 3) then 1 else 0 := fun l hl i hi => by
     obtain ⟨o, _⟩ := initS_ok i hi l hl
-    have := (h.out hE (by omega) hl o).1
+    have := (h.out hE (by omega_using [hi]) hl o).1
     simp only [lanes, Nat.zero_add] at this ⊢
     rw [this, initS_regs _ i hi l hl, hxl, hg, hg, ha, h11]
     rfl
@@ -251,16 +251,16 @@ theorem vinit_wp {s : State} {base : Addr} (hs : Scr s base)
   · rw [cst KB0 .rdx l (by decide) hl, hd]; rfl
   · rw [cst KB1 .rbp l (by decide) hl, hb]; rfl
   · have := (initS_ok i hi 2 (by decide)).2
-    have e := (h.out hE (by omega) (show 2 < 4 by decide) (initS_ok i hi 2 (by decide)).1)
+    have e := (h.out hE (by omega_using [hi]) (show 2 < 4 by decide) (initS_ok i hi 2 (by decide)).1)
     have l2 := lan 2 (by decide) i hi
     simp only [lanes, Nat.zero_add, ite_true] at l2
-    rw [← l2]; omega
+    rw [← l2]; omega_using [this, e]
   · rw [cst K13 .r8 l (by decide) hl, h8]; rfl
   · rw [cst K26 .r9 l (by decide) hl, h9]; rfl
   · rw [cst K39 .r10 l (by decide) hl, h10]; rfl
-  · rw [mq_eq_word, O.word (by simp only [K4D]; omega) (by simp only [K4D]; omega)]; exact k4 l hl
-  · rw [mq_eq_word, O.word (by simp only [KIU]; omega) (by simp only [KIU]; omega)]; exact ku l hl
-  · rw [mq_eq_word, O.word (by simp only [KIV]; omega) (by simp only [KIV]; omega)]; exact kv l hl
+  · rw [mq_eq_word, O.word (by simp only [K4D]; omega_using [hl]) (by simp only [K4D]; omega_using [hl])]; exact k4 l hl
+  · rw [mq_eq_word, O.word (by simp only [KIU]; omega_using [hl]) (by simp only [KIU]; omega_using [hl])]; exact ku l hl
+  · rw [mq_eq_word, O.word (by simp only [KIV]; omega_using [hl]) (by simp only [KIV]; omega_using [hl])]; exact kv l hl
 
 /-- `vsetup`: the constants, and `(1, 0, x₁, 1)` in the lanes. -/
 theorem vsetup_wp {s : State} {base : Addr} (hs : Scr s base) :
@@ -284,7 +284,7 @@ theorem vsetup_wp {s : State} {base : Addr} (hs : Scr s base) :
   have st : ∀ d ∈ [K4D, KIU, KIV], ∀ l < 4, mq sb.mem base (d + 8 * l) = (init2T d).eval sa l := fun d hd l hl => by
     rw [hmem, stores_mq _ _ _ _ (init2T_mem d hd) hl init2S_small init2S_apart]
   have hx : xl sb.mem base = xl s.mem base :=
-    limbNat_congr _ fun k hk => congrArg BitVec.toNat (O.word (by simp only [X1]; omega) (by simp only [X1]; omega))
+    limbNat_congr _ fun k hk => congrArg BitVec.toNat (O.word (by simp only [X1]; omega_using [hk]) (by simp only [X1]; omega_using [hk]))
   refine WP.mono (vinit_wp hsb (fun l hl => (st K4D (by decide) l hl).trans (vals l hl).1)
     (fun l hl => (st KIU (by decide) l hl).trans (vals l hl).2.1)
     (fun l hl => (st KIV (by decide) l hl).trans (vals l hl).2.2))

@@ -1561,15 +1561,15 @@ theorem padZ_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
     have e' : ∀ d, j < d → d < 16 → ¬ (off (cx s₀) (padOff + j) - off (cx s₀) (padOff + d)).toNat < 4 := by
       intro d hd hd'
       rw [Offset.sub_toNat' _ (by simp only [padOff]; omega_using [hd']) (by simp only [padOff]; omega_using [hd, hd'])]
-      split <;> omega
+      split <;> omega_arith
     simp only [writeW32_zero_apply]
     rcases (by omega_using [] : j < 4 ∨ (4 ≤ j ∧ j < 8) ∨ (8 ≤ j ∧ j < 12) ∨ 12 ≤ j) with hj' | hj' | hj' | hj'
-    · simp (disch := omega) only [e' (4 * 3), e' (4 * 2), e' (4 * 1), ite_false, e (4 * 0),
+    · simp (disch := omega_arith) only [e' (4 * 3), e' (4 * 2), e' (4 * 1), ite_false, e (4 * 0),
         Nat.mul_zero, Nat.sub_zero, hj', ite_true]
-    · simp (disch := omega) only [e' (4 * 3), e' (4 * 2), ite_false, e (4 * 1), show j - 4 * 1 < 4 by omega,
+    · simp (disch := omega_arith) only [e' (4 * 3), e' (4 * 2), ite_false, e (4 * 1), show j - 4 * 1 < 4 by omega_using [hj'],
         ite_true]
-    · simp (disch := omega) only [e' (4 * 3), ite_false, e (4 * 2), show j - 4 * 2 < 4 by omega, ite_true]
-    · simp (disch := omega) only [e (4 * 3), show j - 4 * 3 < 4 by omega, ite_true]
+    · simp (disch := omega_arith) only [e' (4 * 3), ite_false, e (4 * 2), show j - 4 * 2 < 4 by omega_using [hj'], ite_true]
+    · simp (disch := omega_using [hj']) only [e (4 * 3), show j - 4 * 3 < 4 by omega_using [hj], ite_true]
 
 /-! ## Copying the last bytes -/
 
@@ -2190,8 +2190,8 @@ theorem lengths_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
 theorem length_pad (x : List Byte) : (x ++ Spec.ChaCha20Poly1305.pad16 x).length = 16 * ((x.length + 15) / 16) := by
   simp only [List.length_append, Spec.ChaCha20Poly1305.pad16]
   split
-  · simp; omega
-  · simp; omega
+  · simp; omega_arith
+  · simp; omega_arith
 
 theorem length_macData (a c : List Byte) :
     (Spec.ChaCha20Poly1305.macData a c).length = 16 * ((a.length + 15) / 16 + (c.length + 15) / 16 + 1) := by

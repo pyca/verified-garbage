@@ -29,14 +29,14 @@ theorem tableTile_ld {s : State} {P : Addr} {w b j i : Nat} {mi : BitVec 64} {X 
   have hE := VG.Proof.Bignum.CrtWindowFive.ent32_le w hj
   obtain ⟨r, hr, hR⟩ := hc.scrT.region
     (d := slot w 8 + 64 * b + 8 * (w + 2) * j + 16 * i) (n := 16)
-    (by omega) (by decide)
+    (by omega_using [hb, hi, he, hE]) (by decide)
   exact ⟨r, List.mem_append_right _ hr, hR⟩
 
 theorem tableTile_st {s : State} {P : Addr} {w b i : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hb : 8 * b + 8 ≤ w) (hi : i < 4) :
     InRegions s.wr (off P (slot w Crt.aT + 64 * b + 16 * i)) 16 := by
   have hT := slot_le (w := w) (show Crt.aT < 8 by decide)
-  exact hc.good.scr.region (by omega) (by decide)
+  exact hc.good.scr.region (by omega_using [hb, hi, hT]) (by decide)
 
 theorem tile_ok {s : State} {P : Addr} {w b v : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hv : v < 32)

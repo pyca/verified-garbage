@@ -71,11 +71,11 @@ theorem arg_u {P : Nat} {s u : State} (hp : RPre P s) (hf : InFrame s u) {j : Na
   have h := hf.fr.read (r := ⟨Q s + BitVec.ofNat 64 (1104 + 8 * j), 8⟩) (Region.contains_self _ _)
     (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint_base (Q s) (d := 1104 + 8 * j) (n := 8) (k := 1104) (by omega) (by omega)) (by decide)
+      exact Offset.disjoint_base (Q s) (d := 1104 + 8 * j) (n := 8) (k := 1104) (by omega_using []) (by omega_using [hj])) (by decide)
   rw [h]
   have := arg_read s hj
   rw [entered_mem] at this
-  rw [← this, Mem.writeW, Mem.read_write_sep (Offset.sep _ (.inr (by omega)) (by omega) (by omega)) (by decide)]
+  rw [← this, Mem.writeW, Mem.read_write_sep (Offset.sep _ (.inr (by omega_using [])) (by omega_using [hj]) (by omega_using [])) (by decide)]
 
 /-- The memory after the call's arguments. -/
 def argMem (s u : State) : Mem :=
@@ -101,17 +101,17 @@ theorem sub_used {n i : Nat} (hn : n < 2 ^ 64) (hi : i ≤ n) :
     BitVec.ofNat 64 n - BitVec.ofNat 64 (n - i) = BitVec.ofNat 64 i := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show n - i < 2 ^ 64 by omega), Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega),
-    show 2 ^ 64 - (n - i) + n = i + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (show n - i < 2 ^ 64 by omega_using [hn]), Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hn, hi]),
+    show 2 ^ 64 - (n - i) + n = i + 2 ^ 64 by omega_using [hn, hi], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hn, hi])]
 
 /-- What the arguments write: the tape and the callee's stack arguments. -/
 theorem argMem_frame {P : Nat} {s u : State} (hp : RPre P s) (hx2 : u.gpr .x2 = s.gpr .x2) :
     Frame [tapeR s, ⟨Q s, 48⟩] u.mem (argMem s u) := by
   have hQ := Q_toNat hp
   have hc : ∀ {d : Nat}, d + 8 ≤ 48 → (⟨Q s, 48⟩ : Region).Contains (Q s + BitVec.ofNat 64 d) 8 :=
-    fun hd => Offset.contains_base _ hd (by omega)
+    fun hd => Offset.contains_base _ hd (by omega_using [hd])
   have ht : ∀ {d : Nat}, d + 8 ≤ 16 → (tapeR s).Contains (u.gpr .x2 + BitVec.ofNat 64 d) 8 :=
-    fun hd => by rw [hx2]; exact Offset.contains_base _ hd (by omega)
+    fun hd => by rw [hx2]; exact Offset.contains_base _ hd (by omega_using [hd])
   have q : (⟨Q s, 48⟩ : Region) ∈ [tapeR s, ⟨Q s, 48⟩] := by simp
   have t : tapeR s ∈ [tapeR s, ⟨Q s, 48⟩] := by simp
   exact ((((((((Frame.refl _ _).write t _ (ht (d := 0) (by decide))).write t _ (ht (d := 8) (by decide))).write q _
@@ -138,7 +138,7 @@ theorem argMem_tape {P : Nat} {s u : State} (hp : RPre P s) (hx2 : u.gpr .x2 = s
     hp.dKt x (frame_sub (P := P) s (d := 0) (n := 48) (by decide) x (by rw [off, add_zero']; exact h₂)) h₁
   have hsep : ∀ {a : Nat}, a + 8 ≤ 16 → ∀ {d : Nat}, d + 8 ≤ 48 →
       Mem.Sep (s.gpr .x2 + BitVec.ofNat 64 a) 8 (Q s + BitVec.ofNat 64 d) 8 := fun ha _ hd' =>
-    hd.sep (Offset.contains_base _ ha (by omega)) (Offset.contains_base _ hd' (by omega))
+    hd.sep (Offset.contains_base _ ha (by omega_using [ha])) (Offset.contains_base _ hd' (by omega_using [hd']))
   have e0 : s.gpr .x2 = s.gpr .x2 + BitVec.ofNat 64 0 := (add_zero' _).symm
   constructor
   · rw [e0]
@@ -205,7 +205,7 @@ theorem args_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List By
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (dT.sub_right (Offset.sub_base _ h2)).symm
-    · exact Offset.disjoint_base _ h1 (by omega)
+    · exact Offset.disjoint_base _ h1 (by omega_using [h2])
   obtain ⟨ht0, ht1⟩ := argMem_tape hp hx2 (u := u)
   have keepS : ∀ r, r ∉ [Reg.x9, .x11, .x12, .x14, .x15, .x16, .x17] → u.gpr r = s.gpr r := h.keep
   refine ⟨rfl, h.rd, h.wr, h.v, ?_, ?_, ?_, fun j hj => ?_, ?_, h.len, ?_, ht1, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
@@ -236,8 +236,8 @@ theorem args_ok {P : Nat} {s u : State} (hp : RPre P s) {i : Nat} {pad : List By
     rw [← h.buf]
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun j hj => ?_
-    exact hfa.bytes (R := ⟨off (Q s) oBuf, psLen s⟩) (apart (by decide) (by unfold oBuf; omega))
-      (by show psLen s ≤ 2 ^ 64; omega) (List.mem_range.mp hj)
+    exact hfa.bytes (R := ⟨off (Q s) oBuf, psLen s⟩) (apart (by decide) (by unfold oBuf; omega_using [hP]))
+      (by show psLen s ≤ 2 ^ 64; omega_using [hP]) (List.mem_range.mp hj)
   · show (argMem s u).readW _ 64 = _
     rw [ht0, hx12, ← sub_used hl hu, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   all_goals simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, BitVec.or_self]

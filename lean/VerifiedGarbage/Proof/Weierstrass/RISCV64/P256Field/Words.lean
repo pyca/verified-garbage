@@ -53,7 +53,7 @@ theorem sub_borrow (x y : BitVec 64) :
     (x - y).toNat + y.toNat = x.toNat + 2 ^ 64 * (if x.toNat < y.toNat then 1 else 0) := by
   have := x.isLt; have := y.isLt
   rw [BitVec.toNat_sub]
-  split <;> omega
+  split <;> omega_arith
 
 /-- The value `sltu` writes. -/
 theorem sltu_toNat (a b : BitVec 64) :
@@ -86,9 +86,9 @@ theorem adc_ok {d x y c u : Reg} (hdy : d ≠ y := by decide) (hdc : d ≠ c := 
     have hx := (s.gpr x).isLt
     have hy := (s.gpr y).isLt
     have hs := (s.gpr x + s.gpr y + s.gpr c).isLt
-    have hk : k₁.toNat + k₀.toNat ≤ 1 := by omega
-    rw [BitVec.toNat_add k₁ k₀, Nat.mod_eq_of_lt (by omega)]
-    omega
+    have hk : k₁.toNat + k₀.toNat ≤ 1 := by omega_using [hc, c₀, c₁]
+    rw [BitVec.toNat_add k₁ k₀, Nat.mod_eq_of_lt (by omega_using [c₀, c₁])]
+    omega_using [c₀, c₁]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
 
@@ -112,14 +112,14 @@ theorem sbb_ok {d x y c u v : Reg} (hdc : d ≠ c := by decide)
   · have hx := (s.gpr x).isLt
     have hy := (s.gpr y).isLt
     have e₁ : (s.gpr x - s.gpr y).toNat = ((s.gpr x).toNat + 2 ^ 64 - (s.gpr y).toNat) % 2 ^ 64 := by
-      rw [BitVec.toNat_sub]; omega
+      rw [BitVec.toNat_sub]; omega_using []
     have e₂ : (s.gpr x - s.gpr y - s.gpr c).toNat =
         ((s.gpr x - s.gpr y).toNat + 2 ^ 64 - (s.gpr c).toNat) % 2 ^ 64 := by
-      rw [BitVec.toNat_sub]; omega
+      rw [BitVec.toNat_sub]; omega_using []
     have b₁ := sltu_toNat (s.gpr x) (s.gpr y)
     have b₂ := sltu_toNat (s.gpr x - s.gpr y) (s.gpr c)
     rw [BitVec.toNat_add, b₁, b₂, e₂, e₁]
-    split <;> split <;> omega
+    split <;> split <;> omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
@@ -154,9 +154,9 @@ theorem addTop_ok {d h c k : Reg} (hdh : d ≠ h := by decide)
   refine ⟨fun hb => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
   · have := carry (s.gpr d) (s.gpr h + s.gpr c + s.gpr k)
     have e : (s.gpr h + s.gpr c + s.gpr k).toNat = (s.gpr h).toNat + (s.gpr c).toNat + (s.gpr k).toNat := by
-      rw [BitVec.toNat_add, BitVec.toNat_add]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_add]; omega_using [hb]
     rw [e] at this
-    omega
+    omega_using [this]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
 
@@ -164,7 +164,7 @@ theorem addTop_ok {d h c k : Reg} (hdh : d ≠ h := by decide)
 theorem shl_shr (q : BitVec 64) : (q <<< 32).toNat + 2 ^ 64 * (q >>> 32).toNat = q.toNat * 2 ^ 32 := by
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
   have := q.isLt
-  omega
+  omega_using []
 
 set_option linter.unusedSimpArgs false in
 /-- `quot`: `a4 + 2⁶⁴ a5 = q 2³²` and `a6 + 2⁶⁴ a7 = q (2⁶⁴ - 2³² + 1)` for `q` in `r`,
@@ -202,20 +202,20 @@ theorem quot_ok {r : Reg} (h4 : r ≠ .a4 := by decide) (h5 : r ≠ .a5 := by de
   generalize (s.gpr r >>> 32) = H at *
   generalize (if s.gpr r < L then (1 : BitVec 64) else 0) = B at *
   have hL := L.isLt
-  have hpos : (s.gpr r).toNat / 2 ^ 32 < (s.gpr r).toNat ∨ (s.gpr r).toNat = 0 := by omega
+  have hpos : (s.gpr r).toNat / 2 ^ 32 < (s.gpr r).toNat ∨ (s.gpr r).toNat = 0 := by omega_using []
   refine ⟨e, ?_, ?_, ?_, fun r' hr => ?_, rfl, rfl, rfl, rfl⟩
   · generalize (s.gpr r).toNat = q at *
     generalize (s.gpr r - L).toNat = lo at *
     generalize (s.gpr r - H - B).toNat = hi at *
     generalize (s.gpr r - H).toNat = d at *
     rw [hsr] at f2 e
-    split at bt <;> split at f1 <;> split at f2 <;> split at f3 <;> omega
-  · rw [hsr]; omega
+    split at bt <;> split at f1 <;> split at f2 <;> split at f3 <;> omega_arith
+  · rw [hsr]; omega_using []
   · generalize (s.gpr r).toNat = q at *
     generalize (s.gpr r - H - B).toNat = hi at *
     generalize (s.gpr r - H).toNat = d at *
     rw [hsr] at f2 e
-    split at bt <;> split at f1 <;> split at f2 <;> split at f3 <;> omega
+    split at bt <;> split at f1 <;> split at f2 <;> split at f3 <;> omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 

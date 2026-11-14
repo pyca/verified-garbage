@@ -72,7 +72,7 @@ omit hq in
 theorem lo32_next_eq (k : Nat) : AesCtr.lo32 (next (iv0 s₀) k) = AesCtr.lo32 (next (iv0 s₀') k) := by
   rw [AesCtr.lo32_next (length_iv0 _), AesCtr.lo32_next (length_iv0 _)]
   unfold AesCtr.lo32 at hl
-  omega
+  omega_using [hl]
 
 theorem mOf_eq (k : Nat) : mOf s₀ k = mOf s₀' k := by
   have e := lo32_next_eq hl k
@@ -164,17 +164,17 @@ theorem loop_rel (v : Ctr32Impl) (hp : UPre s₀) (hp' : UPre s₀') (n : Nat) :
   have hbd : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
   refine (body_rel hq hl v hp hp' hk).mono (fun _ _ h => ⟨h.2.2.1, h.2.2.2⟩) fun s₁ s₂ ⟨l₁, l₂⟩ => ?_
   rw [← hm] at l₂
-  have e₁ := eval_x23 (x := N s₀ - (k + mOf s₀ k)) (by omega) l₁.x23
-  have e₂ := eval_x23 (x := N s₀ - (k + mOf s₀ k)) (by omega) (by rw [l₂.x23, ← hN])
+  have e₁ := eval_x23 (x := N s₀ - (k + mOf s₀ k)) (by omega_using [hbd]) l₁.x23
+  have e₂ := eval_x23 (x := N s₀ - (k + mOf s₀ k)) (by omega_using [hbd]) (by rw [l₂.x23, ← hN])
   refine ⟨by rw [e₁, e₂], fun hf => ?_, fun ht => ?_⟩
   · rw [e₁] at hf
     have h0 : k + mOf s₀ k = N s₀ := by
       have : N s₀ - (k + mOf s₀ k) = 0 := by simpa using hf
-      omega
+      omega_using [hk, hle, this]
     exact ⟨h0 ▸ l₁, by rw [← hN, ← h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + mOf s₀ k) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + mOf s₀ k), by omega, k + mOf s₀ k, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + mOf s₀ k), by omega_using [hk, hm0], k + mOf s₀ k, rfl, by omega_using [h0], l₁, l₂⟩
 
 end
 

@@ -77,8 +77,8 @@ theorem pubQ_trace :
   refine VG.RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun _ h => h.1.1.run) loadQ_check
     fun x h => ?_) ?_
   · obtain ⟨⟨A, _⟩, n2⟩ := h
-    have h3 : dlen = 3 * len := by have := A.geo.dl; omega
-    exact WP.mono (loadComp_ok A.run.1 A.geo (k := 2) (j := 11) (by decide) (by omega) (by decide))
+    have h3 : dlen = 3 * len := by have := A.geo.dl; omega_using [n2, this]
+    exact WP.mono (loadComp_ok A.run.1 A.geo (k := 2) (j := 11) (by decide) (by omega_using [h3]) (by decide))
       fun u ⟨_, O, K⟩ => ⟨(Step.slot A.run.1 (by decide) O K).inp, A.run.2.1.keep K, (K.1 _ (by decide)).trans A.run.2.2⟩
   · exact VG.RelCT.seq (powP_trace (b := 12) (e := 11) (by decide) (by decide) (by decide) (by decide) copy12_check
       VG.Proof.Ffdh.X86.CheckDomain.copy11_check)
@@ -114,7 +114,7 @@ theorem pub_facts {s t : State} (H : (Spec.Ffdh.checkPublicContract abi stack).p
     fun h => (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp h
   obtain ⟨L₁, L₂⟩ := List.append_inj L (by simp [Spec.Rsa.bytesAt, a1])
   refine ⟨SP, fun i hi => ?_, inj L₁, inj L₂⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact a0
   · exact a1
@@ -138,10 +138,10 @@ theorem pubAt_of {s f : State} (A : CheckPublicABI s) (Bf : BodyAt (Rd s) Impl.F
   obtain ⟨G, Y, hb, hy⟩ := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
   have yR : (arg s 4).toNat = pLenOf Impl.Ffdh.X86.CheckPublic.args s := A.yLen
   refine ⟨⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, hb,
-    frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega)⟩, Y, hy, ?_⟩
+    frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega_using [])⟩, Y, hy, ?_⟩
   show Spec.Rsa.bytesAt f.mem (argumentPointer s 3) _ = Spec.Rsa.bytesAt s.mem (argumentPointer s 3) (arg s 4).toNat
   rw [← yR]
-  exact frame_keep A Bf.2.2.2.2 A.yScratch A.belowY (by have := A.yBound; omega)
+  exact frame_keep A Bf.2.2.2.2 A.yScratch A.belowY (by have := A.yBound; omega_using [])
 
 theorem constantTime : ConstantTime isa (Spec.Ffdh.checkPublicContract abi stack).pre
     (Spec.Ffdh.checkPublicContract abi stack).pub Impl.Ffdh.X86.CheckPublic.code := by

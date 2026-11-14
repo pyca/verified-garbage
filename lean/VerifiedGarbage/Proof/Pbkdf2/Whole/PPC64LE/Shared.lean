@@ -49,7 +49,7 @@ theorem scratch (hF : FnsOK F) (hc : Checks F) {I : Spec.Hmac.Instance} (hSH : h
     intro s ⟨h1, _, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩
     exact ⟨h1, rfl, h3, h4.sub_right (Region.sub_prefix hfit), h5, h6.sub_right (Region.sub_prefix hfit),
       h7.sub_right (Region.sub_prefix hfit), h8, h9, h10, h11, h12.sub_right (Region.sub_prefix hfit), h13, h14,
-      h15, by show (s.gpr .r10).toNat + F.bytes ≤ 2 ^ 64; omega, h17, h18⟩
+      h15, by show (s.gpr .r10).toNat + F.bytes ≤ 2 ^ 64; omega_using [hfit, h16], h17, h18⟩
   have v : Verified PPC64LE.target F.pbkdf2 (pbkG hF.hH.SH F.bytes (hF.X + 144)) :=
     ⟨fun s hs => by obtain ⟨t, s', he, h₁, h₂⟩ := correct hF hs; exact ⟨t, s', he, h₁, h₂⟩, ct hF hc,
       imp.sat_left.elim fun s h => ⟨_, wide s h⟩⟩

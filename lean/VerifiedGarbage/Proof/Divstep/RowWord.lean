@@ -26,8 +26,8 @@ theorem signMask_eq (x : BitVec 64) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, e]
   split
-  · rw [show x.toNat / 2 ^ 63 = 0 by omega]; rfl
-  · rw [show x.toNat / 2 ^ 63 = 1 by omega]; rfl
+  · rw [show x.toNat / 2 ^ 63 = 0 by omega_arith]; rfl
+  · rw [show x.toNat / 2 ^ 63 = 1 by omega_arith]; rfl
 
 theorem and_mask (a x : BitVec 64) :
     a &&& (if x.toNat < 2 ^ 63 then 0#64 else BitVec.allOnes 64) = if x.toNat < 2 ^ 63 then 0#64 else a := by
@@ -38,13 +38,13 @@ theorem and_mask (a x : BitVec 64) :
 theorem toInt_cond (x : BitVec 64) : x.toInt = if x.toNat < 2 ^ 63 then (x.toNat : Int) else x.toNat - 2 ^ 64 := by
   rw [BitVec.toInt_eq_toNat_cond]
   by_cases h : x.toNat < 2 ^ 63
-  · rw [ite_eq_left (by omega : 2 * x.toNat < 2 ^ 64), ite_eq_left h]
-  · rw [ite_eq_right (by omega : ¬ 2 * x.toNat < 2 ^ 64), ite_eq_right h]
+  · rw [ite_eq_left (by omega_using [h] : 2 * x.toNat < 2 ^ 64), ite_eq_left h]
+  · rw [ite_eq_right (by omega_using [h] : ¬ 2 * x.toNat < 2 ^ 64), ite_eq_right h]
     have : ((2 ^ 64 : Nat) : Int) = 2 ^ 64 := rfl
-    omega
+    omega_using []
 
 theorem decide_toNat_div (x : Nat) (h : x < 2 ^ 65) : (decide (2 ^ 64 ≤ x)).toNat = x / 2 ^ 64 := by
-  by_cases h' : 2 ^ 64 ≤ x <;> simp [h'] <;> omega
+  by_cases h' : 2 ^ 64 ≤ x <;> simp [h'] <;> omega_arith
 
 theorem rowWord (cu cv a b c : BitVec 64) (hb : cu.toInt.natAbs + cv.toInt.natAbs ≤ 2 ^ 62)
     (hc : c.toInt.natAbs ≤ 2 ^ 62) :
@@ -77,26 +77,26 @@ theorem rowWord (cu cv a b c : BitVec 64) (hb : cu.toInt.natAbs + cv.toInt.natAb
     rw [toInt_cond, hQ, ev]; split <;> push_cast <;> grind
   have bnd : (cu.toInt * a.toNat + cv.toInt * b.toNat + c.toInt).natAbs ≤ 2 ^ 62 * (2 ^ 64 - 1) + 2 ^ 62 := by
     have e1 : (cu.toInt * a.toNat).natAbs ≤ cu.toInt.natAbs * (2 ^ 64 - 1) := by
-      rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega)
+      rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega_using [])
     have e2 : (cv.toInt * b.toNat).natAbs ≤ cv.toInt.natAbs * (2 ^ 64 - 1) := by
-      rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega)
+      rw [Int.natAbs_mul, Int.natAbs_natCast]; exact Nat.mul_le_mul_left _ (by omega_using [])
     have e3 : cu.toInt.natAbs * (2 ^ 64 - 1) + cv.toInt.natAbs * (2 ^ 64 - 1) ≤ 2 ^ 62 * (2 ^ 64 - 1) := by
       rw [← Nat.add_mul]; exact Nat.mul_le_mul_right _ hb
-    omega
+    omega_using [hb, hc, e1, e2]
   -- The carry's sign.
   obtain ⟨ec, hec⟩ : ∃ e, e = c.toNat / 2 ^ 63 := ⟨_, rfl⟩
   have tc : c.toInt = c.toNat - 2 ^ 64 * ec := by
     rw [toInt_cond, hec]
     split
-    · rw [Nat.div_eq_of_lt (by omega)]; omega
-    · rw [show c.toNat / 2 ^ 63 = 1 by omega]; omega
+    · rw [Nat.div_eq_of_lt (by omega_arith)]; omega_using []
+    · rw [show c.toNat / 2 ^ 63 = 1 by omega_arith]; omega_using []
   have hm : (c >>> 63).toNat = ec := by rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hec]
   have hl1 : lo1.toNat = P % 2 ^ 64 := by simp only [lo1, BitVec.toNat_mul, hP]
   have hl2 : lo2.toNat = Q % 2 ^ 64 := by simp only [lo2, BitVec.toNat_mul, hQ]
   have hs1 : s1.toNat = (lo1.toNat + lo2.toNat) % 2 ^ 64 := by simp only [s1, BitVec.toNat_add]
   have hlo : lo.toNat = (s1.toNat + c.toNat) % 2 ^ 64 := by simp only [lo, BitVec.toNat_add]
-  have d1 := decide_toNat_div (lo1.toNat + lo2.toNat) (by omega)
-  have d2 := decide_toNat_div (s1.toNat + c.toNat) (by omega)
+  have d1 := decide_toNat_div (lo1.toNat + lo2.toNat) (by omega_using [])
+  have d2 := decide_toNat_div (s1.toNat + c.toNat) (by omega_using [])
   -- The carry word as an integer modulo `2^64`.
   obtain ⟨K, hK⟩ : ∃ K : Int, K = ((P / 2 ^ 64 : Nat) - (Eu : Int)) + ((Q / 2 ^ 64 : Nat) - (Ev : Int)) +
       ((lo1.toNat + lo2.toNat) / 2 ^ 64 : Nat) - (ec : Int) + ((s1.toNat + c.toNat) / 2 ^ 64 : Nat) := ⟨_, rfl⟩
@@ -125,14 +125,14 @@ theorem rowWord (cu cv a b c : BitVec 64) (hb : cu.toInt.natAbs + cv.toInt.natAb
     rw [hK]
     congr 1
   have key : (cu.toInt * a.toNat + cv.toInt * b.toNat + c.toInt) = (lo.toNat : Int) + 2 ^ 64 * K := by
-    rw [pu, pv, tc, hK, hlo, hs1, hl1, hl2]; omega
+    rw [pu, pv, tc, hK, hlo, hs1, hl1, hl2]; omega_using []
   have kb : -(2 ^ 62) ≤ K ∧ K ≤ 2 ^ 62 := by
     have := lo.isLt
-    rw [key] at bnd; omega
+    rw [key] at bnd; omega_using [bnd]
   have tk : c'.toInt = K := by
-    rw [hc', BitVec.toInt_ofInt]; exact Int.bmod_eq_of_le (by omega) (by omega)
+    rw [hc', BitVec.toInt_ofInt]; exact Int.bmod_eq_of_le (by omega_using [kb]) (by omega_using [kb])
   rw [tk, ← key]
-  exact ⟨rfl, by omega⟩
+  exact ⟨rfl, by omega_using [kb]⟩
 
 
 end VG.Proof.Divstep

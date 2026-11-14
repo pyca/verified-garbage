@@ -73,7 +73,7 @@ theorem WF.ctxCiph {c : Cx} (L : Lay c) {m m' : Mem} (h : WF c m m') :
   ctxCiph_frame h (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.c_w) L.rb
 
 theorem WF.data {c : Cx} (L : Lay c) {m m' : Mem} (h : WF c m m') : bytesAt m' c.D c.n = bytesAt m c.D c.n :=
-  Proof.Cmac.bytesAt_frame h (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.d_w) (by have := L.n_lt; omega)
+  Proof.Cmac.bytesAt_frame h (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact L.d_w) (by have := L.n_lt; omega_using [this])
 
 theorem WF.descW {c : Cx} (L : Lay c) {m m' : Mem} (h : WF c m m') {i j : Nat} (hi : i < c.N) (hj : j < 2) :
     descW m' c.A i j = descW m c.A i j := by
@@ -81,7 +81,7 @@ theorem WF.descW {c : Cx} (L : Lay c) {m m' : Mem} (h : WF c m m') {i j : Nat} (
   exact h.readW (r := ⟨c.A + BitVec.ofNat 64 (16 * i + 8 * j), 8⟩) (Region.contains_self _ _)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.a_w.sub_left (Offset.sub_base _ (by omega))) (by decide)
+      exact L.a_w.sub_left (Offset.sub_base _ (by omega_using [hi, hj]))) (by decide)
 
 theorem WF.ads {c : Cx} (L : Lay c) {m m' : Mem} (h : WF c m m') {s : State} (hA : Ads c m s) : Ads c m' s :=
   fun i hi => by rw [h.descW L hi (by decide), h.descW L hi (by decide)]; exact hA i hi
@@ -92,8 +92,8 @@ theorem listed_eq (m : Mem) (A : Addr) (i : Nat) :
       (m.readW (A + BitVec.ofNat 64 (i * (2 * (64 / 8))) + BitVec.ofNat 64 (64 / 8)) 64).toNat * Elem.size .u8⟩ :
         Region) = ⟨descW m A i 0, (descW m A i 1).toNat⟩ := by
   simp only [descW, BitVec.setWidth_eq, Elem.size, Nat.mul_one]
-  rw [show i * (2 * (64 / 8)) = 16 * i + 8 * 0 by omega, show (64 / 8 : Nat) = 8 from rfl, Offset.add_add,
-    show 16 * i + 8 * 0 + 8 = 16 * i + 8 * 1 by omega]
+  rw [show i * (2 * (64 / 8)) = 16 * i + 8 * 0 by omega_using [], show (64 / 8 : Nat) = 8 from rfl, Offset.add_add,
+    show 16 * i + 8 * 0 + 8 = 16 * i + 8 * 1 by omega_using []]
 
 theorem WF.components {c : Cx} (L : Lay c) {m m' : Mem} (h : WF c m m') {s : State} (hA : Ads c m s) :
     Spec.Siv.components 64 m' c.A c.N = Spec.Siv.components 64 m c.A c.N := by
@@ -102,7 +102,7 @@ theorem WF.components {c : Cx} (L : Lay c) {m m' : Mem} (h : WF c m m') {s : Sta
   rcases List.mem_cons.mp hr with rfl | hr
   · refine L.a_w a ?_ hc
     simp only [Sig.descRegion, Region.Contains] at ha ⊢
-    omega
+    omega_using [ha]
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hr
     have hb := (hA i (List.mem_range.mp hi)).w
     rw [listed_eq] at ha
@@ -230,7 +230,7 @@ theorem encrypt_wp {c : Cx} {s : State} (Ar : Args c s) (hA : Ads c s.mem s) (hV
   have hd : bytesAt s₈.mem c.D c.n = bytesAt s₆.mem c.D c.n := by
     rw [m₈, m₇]
     exact Proof.Cmac.bytesAt_frame (copy2Mem_frame _ _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.v_d.symm) (by have := L.n_lt; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.v_d.symm) (by have := L.n_lt; omega_using [this])
   rw [hv, hd, d₆, wf₅.ctxCiph L, wf₅.data L, v₅, wf₄.ctxMac L, wf₄.data L, acc₄]
 
 end VG.Proof.AesSiv.PPC64LE

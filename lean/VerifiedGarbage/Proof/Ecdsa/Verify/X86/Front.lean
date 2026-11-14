@@ -131,12 +131,12 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
 /-- The slot of an argument is apart from what the code writes. -/
 theorem vArgs_disjI {s : State} {extra : List Region} (hp : VPre c s extra) {i : Nat} (hi : i < 4) :
     ∀ r ∈ s.wr ++ [below (s.gpr .esp) c.stk], Region.Disjoint ⟨argAddr s i, 4⟩ r := by
-  have h4 : (s.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
+  have h4 : (s.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_using [this]
   rw [hp.wr]
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
   · exact hp.args_sc.sub_left (arg_subN h4 hi)
-  · exact (below_disjoint_args hp.sp_lo (k := 16) (by omega) (by decide)).symm.sub_left (arg_subN h4 hi)
+  · exact (below_disjoint_args hp.sp_lo (k := 16) (by omega_using [h4]) (by decide)).symm.sub_left (arg_subN h4 hi)
 
 theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.loadS c =
     .mov .ebx (.mem (Cfg.argOp 2)) :: .alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len)) ::

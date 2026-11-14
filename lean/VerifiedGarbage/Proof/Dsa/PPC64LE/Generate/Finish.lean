@@ -50,12 +50,12 @@ theorem outside_frame {L : GL} (hL : L.Ok) {o n : Nat} (hon : o + n ≤ 32) {m m
   refine ho x ?_
   have hn := hx L.nR (by simp)
   simp only [Region.Contains, off] at hn
-  rw [VG.Offset.toNat_sub_add x L.F (by simp only [oNonce]; omega)] at hn
+  rw [VG.Offset.toNat_sub_add x L.F (by simp only [oNonce]; omega_using [])] at hn
   simp only [ofs, oNonce, frameBytes] at hn hF ⊢
   have := (x - L.F).isLt
   by_contra hc
   rw [show 2 ^ 64 - 120 + (x - L.F).toNat = (x - L.F).toNat - 120 + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)] at hn
+    Nat.mod_eq_of_lt (by omega_using [])] at hn
   omega
 
 /-- The length of the key, into `r17`. -/
@@ -96,7 +96,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
         R.key.getD (List.replicate (glOf s₀).ol 0) → P t₂) →
       WP isa (.ite (.zero .d .r3) (.block []) (zeroOut olen)) t₁ P := by
     intro P hP
-    refine WP.ite (decide (R.status = 1)) (by rw [eval_zero, a3, h31, RS.sub1_beq _ (by omega)]) (fun hs => ?_)
+    refine WP.ite (decide (R.status = 1)) (by rw [eval_zero, a3, h31, RS.sub1_beq _ (by omega_using [hst])]) (fun hs => ?_)
       (fun hs => ?_)
     · simp only [decide_eq_true_eq] at hs
       exact WP.block_nil (hP t₁ hc₁ (Keep.refl _ _) (by rw [m1]; exact hsig hs))
@@ -104,12 +104,12 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
       unfold zeroOut
       refine WP.seq (WP.mono (WP.keep [.r0, .r16, .r17] (Q := fun t₂ => t₂.gpr .r0 = 0 ∧
         t₂.gpr .r16 = off (glOf s₀).out 0 ∧ t₂.gpr .r17 = BitVec.ofNat 64 (glOf s₀).ol ∧ t₂.mem = t₁.mem)
-        (by prun [hc₁.r18, hc₁.r20, hc₁.r21, ← BitVec.ofNat_add]; exact ⟨rfl, by simp only [GL.ol]; congr 1; omega⟩)
+        (by prun [hc₁.r18, hc₁.r20, hc₁.r21, ← BitVec.ofNat_add]; exact ⟨rfl, by simp only [GL.ol]; congr 1; omega_using []⟩)
         (by decide))
         fun t₂ ⟨⟨b0, b16, b17, m2⟩, k2⟩ => ?_)
       have ho : Scr t₂ (glOf s₀).out (glOf s₀).ol :=
         Scr.of_mem (by rw [k2.wr, hc₁.wr, hwr]; simp) hL.nwOut
-      refine WP.mono (zeroLoop_ok (by simp only [GL.ol]; omega) (by simp only [GL.ol]; omega) ho b0 b16 b17)
+      refine WP.mono (zeroLoop_ok (by simp only [GL.ol]; omega_using [hq]) (by simp only [GL.ol]; omega_using [hq, hp]) ho b0 b16 b17)
         fun t₃ ⟨⟨z3, o3⟩, k3⟩ => ?_
       refine hP t₃ (hc₁.step hL (k2.trans k3).sp (k2.trans k3).rd (k2.trans k3).wr
         (fun r hr => (k2.trans k3).gpr r (ctx_z r hr)) ?_) ((k2.trans k3).mono (by decide)) ?_
@@ -117,7 +117,7 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
         intro x hx
         refine o3 x ?_
         by_contra hc'
-        exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega)
+        exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega_using [hc'])
       · rw [z3, hnone hs]; rfl
   refine WP.seq (hout _ fun t₂ hc₂ k2 o2 => ?_)
   have c25 : t₂.gpr .r25 = BitVec.ofNat 64 R.used := (k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans h25)
@@ -144,18 +144,18 @@ theorem finish_ok {s₀ t : State} {R : Spec.Dsa.GenerateKeyResult} (h : gkContr
         (Region.contains_self _ _) huR) (by decide)]
   have hin : ∀ i < 19, InRegions (t₄.rd ++ t₄.wr) (off (glOf s₀).F (oSave + 8 * i)) 8 := fun i hi => by
     rw [k4.rd, k4.wr, hc₃.rd, hc₃.wr]
-    exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), frameR_contains hL rfl (by simp only [oSave]; omega)
-      (by simp only [oSave, frameBytes]; omega)⟩
+    exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), frameR_contains hL rfl (by simp only [oSave]; omega_using [])
+      (by simp only [oSave, frameBytes]; omega_using [hi])⟩
   refine WP.mono (restoreRegs_ok t₄ (k4.sp.trans hc₃.sp) hin
-    (fun i hi => (fw _ (by simp only [oSave, frameBytes]; omega)).trans (hc₃.sav i hi))
+    (fun i hi => (fw _ (by simp only [oSave, frameBytes]; omega_using [hi])).trans (hc₃.sav i hi))
     ((fw _ (by decide)).trans hc₃.lr)) fun t₅ ⟨r5, l5, o5, m5, rd5, wr5, sp5⟩ => ?_
   refine ⟨?_, ?_, ?_, r5, ?_, l5, sp5.trans (k4.sp.trans hc₃.sp), rd5.trans (k4.rd.trans hc₃.rd),
     wr5.trans (k4.wr.trans hc₃.wr)⟩
   · rw [o5 .r3 (by decide) (by decide) (by decide)]; exact a3
   · rw [m5, m4, RS.bytes_frame (rs := [(glOf s₀).usedR]) (Frame.refl _ _ |>.writeW (List.mem_singleton_self _) _ huR)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hL.dOU) (by simp only [GL.ol]; omega)]
-    rw [bytes_outside (o3.mono (by omega) (by simp only [oNonce, frameBytes]; omega)) hL.dFO
-      (by simp only [GL.ol]; omega)]
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hL.dOU) (by simp only [GL.ol]; omega_using [hq, hp])]
+    rw [bytes_outside (o3.mono (by omega_using []) (by simp only [oNonce, frameBytes]; omega_using [])) hL.dFO
+      (by simp only [GL.ol]; omega_using [hq, hp])]
     exact o2
   · rw [m5, m4, BitVec.add_zero, Mem.readW_writeW_self64]
   · rw [o5 .r2 (by decide) (by decide) (by decide), k4.gpr _ (by decide), k3.gpr _ (by decide)]; exact hc₂.r2
@@ -175,7 +175,7 @@ theorem fin_post {s₀ t : State} (h : gkContract.pre s₀) (hst : (gkRes s₀).
   · simp only [freed, hf.sp, GL.F, glOf]
     exact BitVec.sub_add_cancel _ _
   · simp only [freed]
-    rw [hf.r3, BitVec.setWidth_ofNat_of_le (by decide), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hf.r3, BitVec.setWidth_ofNat_of_le (by decide), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
   · simp only [freed]
     have e3 : s₀.gpr .r3 = (glOf s₀).out := rfl
     have e4 : (s₀.gpr .r4).toNat = (glOf s₀).ol := hol

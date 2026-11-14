@@ -172,7 +172,7 @@ theorem st8_byte {s₀ : State} (m : Mem) (o v : Nat) :
     bytesAt (m.writeW (Buf.addr s₀ ⟨Y.sc, o, 1⟩) ((BitVec.ofNat 32 v).setWidth 8)) (Buf.addr s₀ ⟨Y.sc, o, 1⟩) 1 =
       [BitVec.ofNat 8 v] := by
   refine bytesAt_eq (L := [BitVec.ofNat 8 v]) rfl fun i hi => ?_
-  obtain rfl : i = 0 := by omega
+  obtain rfl : i = 0 := by omega_using [hi]
   simp only [BitVec.add_zero, writeW8_apply, List.getElem_cons_zero, ite_true]
   rw [BitVec.setWidth_ofNat_of_le (by decide)]
 

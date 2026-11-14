@@ -29,7 +29,7 @@ theorem loop_base {q : Public} {s : State} (h : PolicyLoopReady (loopPublic q) s
     WP isa (.loop Policy.record (.nonzero .x .x7)) s (fun t =>t.gpr .x0=q.B) := by
   have r:=h.record
   refine WP.mono (policyLoop_ok r.scratch q.room r.base r.source h.records q.shape
-    (by have :=q.small;omega) (by have :=q.large;omega) r.domain r.length r.keyLength
+    (by have :=q.small;omega_using [this]) (by have :=q.large;omega_using [this]) r.domain r.length r.keyLength
     r.width (loopPublic q).fit r.pointer h.count (by simp) (by change 10<2^64;decide)) ?_
   rintro t ⟨_,_,rest⟩
   exact (rest.gpr .x0 (by simp [recordClobbers])).trans r.base

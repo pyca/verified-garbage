@@ -57,7 +57,7 @@ theorem finish_ok (v : Proof.Sha3.AArch64.Permutation)
    intro p q h₁ h₂ hh
    simpa only [pe p h₁,pe q h₂] using hh
  refine WP.seq (WP.mono (squeeze_kept (hsetup_rg hs gb) (fun p h=>piece_rg hs (ho p h) gb)
-   pb ha (by decide) (by omega) hn (by simpa using ht)) fun c ⟨kc,_,oc⟩=>?_)
+   pb ha (by decide) (by omega_using [hb]) hn (by simpa using ht)) fun c ⟨kc,_,oc⟩=>?_)
  rw [maps] at kc
  have kcc : Kept (STr sc st s₀::WKr sc wk s₀::outs.map (preg s₀)) s₀ c := (kbb.mono (by simp)).trans (kc.mono (by intro r hr; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)))
  have lc : c.mem.readW (linkSlot sc wk s₀) 64=s₀.gpr .x30 := by

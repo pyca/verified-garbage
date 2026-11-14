@@ -103,7 +103,7 @@ theorem sPreP_of {s : State} (h : (Spec.RsaPkcs1Sig.signPrecomputedContract abi 
   obtain ⟨sp16, sp1, sp2, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oP, oa, ns, es, ds, ps, qs, dps, dqs, qis,
     sP, sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, wP,
     ⟨k1, k2⟩, h1, e1, e2, p1, p2, q1, q2, h6, h10, h8, hs, hpl, hyp, al, alP⟩ := h
-  exact ⟨⟨sp16, sp1, by simp only [↓reduceIte]; omega, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es,
+  exact ⟨⟨sp16, sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es,
     ds, ps, qs, dps, dqs, qis, sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq,
     wqi, ws, k1, k2, h1, e1, e2, p1, p2, q1, q2, h6, h10, h8, hs, al⟩, ⟨oP, sP, kP, wP, hpl, alP, fun _ => hyp⟩⟩
 
@@ -127,7 +127,7 @@ theorem pubS_ofP {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.signPrecomputedContr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h10.symm]
   · simp only [nA, ↓reduceIte] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,

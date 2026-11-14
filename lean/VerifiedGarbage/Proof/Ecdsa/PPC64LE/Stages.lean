@@ -293,9 +293,9 @@ theorem apart_chainW (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hr : i ≠ ACC) (h
   · exact sl_apart c hr
   · dsimp only; rw [sl_eq, sl_eq]; simp only [DX, T2] at ht ⊢
     rcases ht with ht | ht
-    · left; have := Nat.mul_le_mul_left (8 * c.n) (show i + 1 ≤ 17 by omega)
+    · left; have := Nat.mul_le_mul_left (8 * c.n) (show i + 1 ≤ 17 by omega_using [ht])
       rw [Nat.mul_succ] at this; omega_arith
-    · right; have := Nat.mul_le_mul_left (8 * c.n) (show 26 ≤ i by omega); omega_arith
+    · right; have := Nat.mul_le_mul_left (8 * c.n) (show 26 ≤ i by omega_using [ht]); omega_arith
   · exact Or.inl (sl_below_own c h7 hi)
 
 theorem fixedOk_chainW (h7 : c.n < 10) :

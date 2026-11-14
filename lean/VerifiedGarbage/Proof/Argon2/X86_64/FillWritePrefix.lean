@@ -78,7 +78,7 @@ theorem source_read {m m' : Mem} {src dest : Addr} {n : Nat}
     m'.readW (off src (8 * i.val)) 64 = m.readW (off src (8 * i.val)) 64 := by
   have full := frame_extend hf hn
   exact full.readW (r := ⟨src, 1024⟩)
-    (Offset.contains_base src (by omega) (by omega))
+    (Offset.contains_base src (by omega_using []) (by omega_using []))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 
 theorem old_read {m m' : Mem} {dest : Addr} {n : Nat}
@@ -89,7 +89,7 @@ theorem old_read {m m' : Mem} {dest : Addr} {n : Nat}
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
-      exact Offset.disjoint_base dest (Nat.le_refl _) (by omega)) (by decide)
+      exact Offset.disjoint_base dest (Nat.le_refl _) (by omega_using [hn])) (by decide)
 
 theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 128) (s : State)
     (hs : (⟨s.gpr .rsi, 1024⟩ : Region) ∈ s.rd ++ s.wr)
@@ -104,17 +104,17 @@ theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 128) (s : State)
     simp only [words, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro t ⟨written, frame, keeps, mx⟩
-    have hn' : n < 128 := by omega
+    have hn' : n < 128 := by omega_using [hn]
     have src : t.gpr .rsi = s.gpr .rsi := keeps.1 .rsi (by decide)
     have dest : t.gpr .rdi = s.gpr .rdi := keeps.1 .rdi (by decide)
     have write : InRegions t.wr (off (t.gpr .rdi) (8 * n)) 8 := by
       rw [dest, keeps.2.2]
-      exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hw, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
     have read : InRegions (t.rd ++ t.wr) (off (t.gpr .rsi) (8 * n)) 8 := by
       rw [src, keeps.2.1, keeps.2.2]
-      exact ⟨_, hs, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hs, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
     have old : InRegions (t.rd ++ t.wr) (off (t.gpr .rdi) (8 * n)) 8 := by
       obtain ⟨r, hr, hc⟩ := write
       exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -124,7 +124,7 @@ theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 128) (s : State)
         (result xorOld s.mem (s.gpr .rsi) (s.gpr .rdi))[(⟨n, hn'⟩ : Fin 128)] := by
       rw [result_get, src, dest]
       unfold value
-      rw [source_read frame (by omega) hd ⟨n, hn'⟩]
+      rw [source_read frame (by omega_using [hn]) hd ⟨n, hn'⟩]
       cases xorOld
       · rfl
       · rw [old_read frame hn']
@@ -134,6 +134,6 @@ theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 128) (s : State)
     · rw [mem, dest]
       exact (frame_extend frame (Nat.le_succ n)).writeW
         (r := ⟨s.gpr .rdi, 8 * (n + 1)⟩) (by simp) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using []) (by omega_using [hn]))
 
 end VG.Proof.Argon2.X86_64.FillWrite

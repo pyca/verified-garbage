@@ -85,7 +85,7 @@ theorem ldMask_ok {s : State} {r : Reg} {k : Nat} {M : BitVec 64} (hk : 8 * k < 
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨s.write r (s.mem.readW (s.gpr sb + BitVec.ofNat 64 (8 * k)) 64), by
     simp only [ldS, runBlock_cons, runStep_some, runBlock_nil,
-      exec_load_d hk (Spill.al8 hal (by omega)) hin], ?_,
+      exec_load_d hk (Spill.al8 hal (by omega_using [])) hin], ?_,
     fun r' h => RegUpd.gpr_write_of_ne _ _ h, rfl, rfl, rfl⟩
   simp only [RegUpd.gpr_write_self, hv]
 
@@ -103,8 +103,8 @@ theorem flRotStep_ok {s : State} {j kw sh : Nat} {src : Reg} {K : BitVec 64} (hj
   refine ⟨_, by
     simp only [flRotStep, andR, rorI, shlI, shrI, xorR, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil,
-      exec_load_d hko (Spill.al8 hal (by omega)) hk, exec_logic,
-      exec_shift_d hsh, exec_shift_d (show 64 - sh < 64 by omega)]
+      exec_load_d hko (Spill.al8 hal (by omega_using [])) hk, exec_logic,
+      exec_shift_d hsh, exec_shift_d (show 64 - sh < 64 by omega_using [hsh0])]
     rfl, ?_⟩
   refine ⟨?_, fun r r1 r2 r3 r4 => ?_, rfl, rfl, rfl⟩
   · simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ h1,
@@ -132,7 +132,7 @@ theorem flOrStep_ok {s : State} {j kw : Nat} {K : BitVec 64} (hj : j < 8) (hko :
   refine ⟨_, by
     simp only [flOrStep, orR, rorI, shlI, shrI, andR, xorR, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil,
-      exec_load_d hko (Spill.al8 hal (by omega)) hk, exec_logic,
+      exec_load_d hko (Spill.al8 hal (by omega_using [])) hk, exec_logic,
       exec_shift_d (show 8 < 64 by decide), exec_shift_d (show 64 - 8 < 64 by decide)]
     rfl, ?_⟩
   refine ⟨?_, fun r r1 r2 r3 r4 => ?_, rfl, rfl, rfl⟩

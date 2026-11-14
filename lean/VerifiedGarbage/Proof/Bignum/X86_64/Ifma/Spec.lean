@@ -82,9 +82,9 @@ theorem fit_of_lt {A B M R T : Nat} (hA : A < 2 * M) (hB : B < 2 * M) (hM : 4 * 
     have := Nat.mul_le_mul (Nat.le_of_lt hA) (Nat.le_of_lt hB)
     have e : 2 * M * (2 * M) = 4 * M * M := by grind
     exact Nat.le_trans (e ▸ this) (Nat.mul_le_mul_right _ hM)
-  have h2 : R * (2 * M) < R * T := Nat.mul_lt_mul_of_pos_left (by omega) (by omega)
-  rw [show R * (2 * M) = R * M + M * R by rw [Nat.mul_comm M R, ← Nat.mul_add]; congr 1; omega] at h2
-  omega
+  have h2 : R * (2 * M) < R * T := Nat.mul_lt_mul_of_pos_left (by omega_using [hA, hM, hRT]) (by omega_using [hA, hM])
+  rw [show R * (2 * M) = R * M + M * R by rw [Nat.mul_comm M R, ← Nat.mul_add]; congr 1; omega_using []] at h2
+  omega_using [h1, h2]
 
 /-- A multiplication `c` (`ammCore`, or `ammCoreU`) with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of
 `B = rbx`: for a second operand below `2^(52 S)` and a product that fits, the result times `2^(52 S)` is

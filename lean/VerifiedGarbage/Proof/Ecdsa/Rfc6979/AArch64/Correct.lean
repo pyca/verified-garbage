@@ -106,8 +106,8 @@ theorem x_eq {C : Spec.Weierstrass.Curve} {Q D : Nat} (hq : Spec.Ecdsa.nBits C =
   by_cases h : Q ≤ D
   · rw [Nat.min_eq_right h, Nat.sub_self, List.replicate_zero, List.nil_append,
       hashToInt_takeQ hq (by rw [hl]; exact h)]
-  · rw [Nat.min_eq_left (by omega), List.take_of_length_le (by rw [hl]), ofBytes_zeros,
-      (hashToInt_short (by rw [hl, hq]; omega) hn).1]
+  · rw [Nat.min_eq_left (by omega_using [h]), List.take_of_length_le (by rw [hl]), ofBytes_zeros,
+      (hashToInt_short (by rw [hl, hq]; omega_using [h]) hn).1]
 
 /-- After `X` and `h`: `h`, and `core`'s digest. -/
 structure QA (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (u : State) : Prop where
@@ -126,7 +126,7 @@ theorem stageX_ok (hL : L.Ok) (hk : HOk P L) {u : State} (hc : Ctx L g m₀ u) :
   obtain ⟨-, -, -, -, -, -, hD16, hD64, -, -, -, -, -, -, hQ8, hQ66, -, -⟩ := P.sizes
   have hdg : Spec.Sha256.bytesAt u.mem L.dg (min P.H.D P.Q) =
       (hBOf P L m₀).take (min P.H.D P.Q) := by
-    rw [hc.dgBytes hL (by rw [← hD]; omega), hBOf, ← bytesAt_take _ _ (Nat.min_le_left _ _)]
+    rw [hc.dgBytes hL (by rw [← hD]; omega_using []), hBOf, ← bytesAt_take _ _ (Nat.min_le_left _ _)]
   exact WP.mono (prepX_ok hL hT (by rw [← hD]) hc) fun u₁ ⟨hc₁, _, hx₁⟩ => ⟨hc₁, by show Spec.Sha256.bytesAt _ _ _ = _; rw [hx₁, hdg]⟩
 
 /-- `h` (step c's `h1` as `bits2octets`), and `core`'s digest. -/
@@ -157,16 +157,16 @@ theorem stageH_ok (hL : L.Ok) (hk : HOk P L) {u₁ : State} (hc₁ : Ctx L g m�
       rw [bytesAt_frame hf₂ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact Offset.disjoint _ (.inr (by simp only [fX]; omega)) (by simp only [fX]; omega) (by omega)
-          · exact Offset.disjoint _ (.inr (by simp only [fX]; omega)) (by simp only [fX]; omega)
-              (by omega)) (by omega),
+          · exact Offset.disjoint _ (.inr (by simp only [fX]; omega_using [])) (by simp only [fX]; omega_using [hQ66]) (by omega_using [])
+          · exact Offset.disjoint _ (.inr (by simp only [fX]; omega_using [hb₂, hb₇])) (by simp only [fX]; omega_using [hQ66])
+              (by omega_using [hb₂, hb₇])) (by omega_using [hQ66]),
         hashToInt_takeQ hq (by rw [length_bytesAt]), List.take_of_length_le (by rw [length_bytesAt])]
       exact hX
   · obtain ⟨-, hQ66', hQD⟩ := P.sizesW hb
     have hN : 8 * P.H.D < Spec.Ecdsa.nBits P.R.E.C := by
       have : P.H.D < P.R.E.C.len := hQD
-      omega
-    have hm : min P.H.D P.Q = P.H.D := Nat.min_eq_left (by omega)
+      omega_using [hl, this]
+    have hm : min P.H.D P.Q = P.H.D := Nat.min_eq_left (by omega_using [hD64, hQ66'])
     rw [hm, List.take_of_length_le (by rw [hlB])] at hx₁
     rw [show (cfgOf P).prepH = (cfgOf P).prepC by simp only [Cfg.prepH, show (cfgOf P).big = true from hb, ite_true]]
     refine WP.mono (prepC_ok hL hT hb (by rw [← hD]) hc₁) fun u₂ ⟨hc₂, hf₂, hx₂⟩ => ⟨hc₂, ?_, ?_⟩
@@ -175,11 +175,11 @@ theorem stageH_ok (hL : L.Ok) (hk : HOk P L) {u₁ : State} (hc₁ : Ctx L g m�
         bytesAt_frame hf₂ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact hL.stk_scr (by have := L.he; simp only [fX]; omega) (by decide)
-          · exact Offset.disjoint _ (.inl (by simp only [fX, fXc]; omega)) (by simp only [fX]; omega)
-              (by simp only [fXc]; omega)) (by omega),
-        hx₁, hSpec, bits2octets_short (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega)
-          (by show 8 * P.R.E.C.len < _; omega) (by rw [hlB]; exact hN) P.R.n_ne, hlB]
+          · exact hL.stk_scr (by have := L.he; simp only [fX]; omega_using [hQ66, this]) (by decide)
+          · exact Offset.disjoint _ (.inl (by simp only [fX, fXc]; omega_using [hQ66])) (by simp only [fX]; omega_using [hQ66])
+              (by simp only [fXc]; omega_using [])) (by omega_using [hQ66]),
+        hx₁, hSpec, bits2octets_short (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega_using [hl])
+          (by show 8 * P.R.E.C.len < _; omega_using [hl]) (by rw [hlB]; exact hN) P.R.n_ne, hlB]
     · -- `core`'s digest: the digest's number `e`, shifted left by `sh` bits.
       have e₂ : eOf P L m₀ = Spec.Weierstrass.ofBytes (hBOf P L m₀) :=
         (hashToInt_short (by rw [hlB]; exact hN) P.R.n_ne).1
@@ -189,12 +189,12 @@ theorem stageH_ok (hL : L.Ok) (hk : HOk P L) {u₁ : State} (hc₁ : Ctx L g m�
         rw [hlB] at this
         calc _ < 2 ^ (8 * P.H.D) * 2 ^ P.R.sh := Nat.mul_lt_mul_of_pos_right this (Nat.two_pow_pos _)
           _ ≤ 2 ^ (8 * P.Q) := by
-            rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by omega) (by simp only [RfcHash.Q]; omega)
+            rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by omega_using []) (by simp only [RfcHash.Q]; omega_using [hl, hN])
       have hl₁ : (Spec.Weierstrass.toBytes P.Q (Spec.Weierstrass.ofBytes (hBOf P L m₀) * 2 ^ P.R.sh)).length = P.Q := by
         simp [Spec.Weierstrass.toBytes]
       unfold DgOk
       simp only [dgArg, hb, ite_true]
-      rw [hx₂, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega) (by rw [hl₁]),
+      rw [hx₂, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega_using [hl]) (by rw [hl₁]),
         List.take_of_length_le (by rw [hl₁]), Rfc6979.ofBytes_toBytes _ _ hlt,
         show 8 * P.Q - Spec.Ecdsa.nBits P.R.E.C = P.R.sh from hl.2.2.symm, Nat.shiftRight_eq_div_pow,
         Nat.mul_div_cancel _ (Nat.two_pow_pos _), e₂]
@@ -206,12 +206,12 @@ theorem hOf_frame (hL : L.Ok) {ws : List Region} {m m' : Mem} (hf : Frame ws m m
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
   have he := L.he
   have hho : 16 + fH ≤ 16 + (cfgOf P).fHo ∧ 16 + (cfgOf P).fHo + P.Q ≤ 16 + fXc := by
-    simp only [Cfg.fHo]; split <;> simp only [fH, fX, fXc] <;> omega
-  refine bytesAt_frame hf (fun r hr => ?_) (by omega)
+    simp only [Cfg.fHo]; split <;> simp only [fH, fX, fXc] <;> omega_using [hQ66]
+  refine bytesAt_frame hf (fun r hr => ?_) (by omega_using [hQ66])
   rcases hd r hr with rfl | rfl | ⟨o, n, rfl, hon⟩
-  · exact hL.stk_SCR (by simp only [fXc] at hho; omega)
-  · exact Offset.disjoint_base _ (by simp only [fH] at hho; omega) (by simp only [fXc] at hho; omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by simp only [fXc] at hho; omega) (by simp only [fH] at hon; omega)
+  · exact hL.stk_SCR (by simp only [fXc] at hho; omega_using [he, hho])
+  · exact Offset.disjoint_base _ (by simp only [fH] at hho; omega_using [hho]) (by simp only [fXc] at hho; omega_using [hho])
+  · exact Offset.disjoint _ (.inr (by omega_using [hho, hon])) (by simp only [fXc] at hho; omega_using [hho]) (by simp only [fH] at hon; omega_using [hon])
 
 theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' = hOf P L m :=
   hOf_frame hL hf fun r hr => by
@@ -227,7 +227,7 @@ theorem stageB_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hq : QA P L m�
   exact WP.mono (initKV_ok hL hc) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
     ⟨hc₂, ⟨(hOf_frame hL hf₂ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact .inr (.inr ⟨16, 128, rfl, by simp only [fH]; omega⟩)).trans hq.h,
+        exact .inr (.inr ⟨16, 128, rfl, by simp only [fH]; omega_using []⟩)).trans hq.h,
       hk₂ _ hD64, hv₂ _ hD64, hq.dg.frameOf hL hf₂ (by simp [DgApart])⟩⟩
 
 theorem stageC_ok (hL : L.Ok) (hk : HOk P L) {u : State} (hc : Ctx L g m₀ u) (hq : QB P L m₀ u) :
@@ -270,7 +270,7 @@ theorem stageG_ok (hL : L.Ok) (hk : HOk P L) {u : State} (hc : Ctx L g m₀ u) {
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (hL.stk_OUT (by omega_using [])).symm.sub_left (Region.sub_prefix (by rw [hk.1]))
-      · exact (hL.stk_OUT (d := 248) (n := 8 * L.e - 16) (by omega)).symm.sub_left
+      · exact (hL.stk_OUT (d := 248) (n := 8 * L.e - 16) (by omega_using [])).symm.sub_left
           (Region.sub_prefix (by rw [hk.1]))) (by anums))⟩
 
 /-- The frame's body after the pointers' stores. -/
@@ -357,7 +357,7 @@ theorem go_iff {i : Nat} (hi : i < P.I.tries) (hf : ∀ j < i, sigI P L m₀ j =
         simp only [true_and, h7]
         simp only [kvI] at this
         rw [true_iff]
-        split <;> omega
+        split <;> omega_arith
       · rw [show P.I.tries - 1 - i = 0 by omega_using [h7]]
         simp only [Spec.Ecdsa.Rfc6979.search, h7, and_false, false_iff, Nat.not_lt]
         exact ite_le_of_not (by omega_using []) (by omega_using [])

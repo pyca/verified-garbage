@@ -31,9 +31,9 @@ theorem digit_ready (shift : Nat) (hs : shift < 64) {p : XPub} {s : State}
     Frm.of_outside oa (by simp [crtWinRanges])
   have ya : wv a.mem (off p.B p.o) (slot p.wx aY) p.wx =
       wv s.mem (off p.B p.o) (slot p.wx aY) p.wx :=
-    oa.wv (by have := hdr_lt_slot p.wx aY (show Crt.sNib < 32 by decide); omega)
+    oa.wv (by have := hdr_lt_slot p.wx aY (show Crt.sNib < 32 by decide); omega_using [this])
       (by have := hc.good.scr.nowrap
-          have := slot_le (w := p.wx) (show aY < 8 by decide); omega)
+          have := slot_le (w := p.wx) (show aY < 8 by decide); omega_arith)
   exact ⟨mi, X, Xc, V / 2 ^ shift % 32,
     hc.of_win fa ka.wr (ka.gpr .x0 (by decide)), ht.of_win fa hc.scrT.nowrap,
     ya.symm ▸ hy, hw, hw', hR, Nat.mod_lt _ (by decide), by rw [hm, word_writeW_self]⟩

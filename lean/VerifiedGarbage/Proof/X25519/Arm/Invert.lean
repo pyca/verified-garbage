@@ -71,7 +71,7 @@ theorem stores_ok {r : Reg} {o n : Nat} (ho : o + 4 * n ≤ 4096) {s : State} (h
     WP.block_nil ⟨fun j hj => ?_, ?_, by rw [u2.gpr, h3], h4.trans (u2.rest _)⟩
   · rw [u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [ho, hm])]; exact h1 j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [ho, hm])]; exact h1 j hj
     · rw [wd_write_self, h3]
   · rw [u2.mem]
     exact (h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
@@ -170,7 +170,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
         by_cases hq : q = R
         · subst hq
           rw [upd_self, upd_self, upd_of_ne _ _ (by decide : Z2 ≠ R), invV, upd_self, he, hb,
-            iteF (show ¬ (n - 1 = 4 ∨ n - 1 = 2) by omega), ← VG.Proof.X25519.pw_mul,
+            iteF (show ¬ (n - 1 = 4 ∨ n - 1 = 2) by omega_using [h4, h2]), ← VG.Proof.X25519.pw_mul,
             VG.Proof.X25519.pw_one]
         · rw [upd_of_ne _ _ hq, upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq]
   · rw [hz5, h4.r10]; exact sub_beq (by omega_using [hn']) (by decide)

@@ -45,7 +45,7 @@ theorem subInput_shift {s : State} {m : Mem} {p a : Addr} {u i : Nat}
     subInput s (16*i)=lowInput m p a (4*u+i) := by
   funext e
   simp only [subInput,lowInput,hm,h0,h1,BitVec.add_assoc,← BitVec.ofNat_add]
-  rw [show 64*u+16*i=16*(4*u+i) by omega]
+  rw [show 64*u+16*i=16*(4*u+i) by omega_using []]
 
 theorem subGroup_step {g B : Nat} (hg : IsG g) {s : State} {d : LowData} {p a l : Addr} {u i : Nat}
     (hi : i<4) (hr : LowReady g B s) (hm : s.mem=d.mem) (hf : s.v .v31=d.flags)
@@ -67,9 +67,9 @@ theorem subGroup_step {g B : Nat} (hg : IsG g) {s : State} {d : LowData} {p a l 
     rw [laneVector_word _ he,laneVector_word _ he,hout e he]
   have addr (r : Reg) (q : Addr) (h : s.gpr r=q+BitVec.ofNat 64 (64*u)) :
       s.gpr r+BitVec.ofNat 64 (16*i)=q+BitVec.ofNat 64 (16*(4*u+i)) := by
-    rw [h,BitVec.add_assoc,← BitVec.ofNat_add,show 64*u+16*i=16*(4*u+i) by omega]
+    rw [h,BitVec.add_assoc,← BitVec.ofNat_add,show 64*u+16*i=16*(4*u+i) by omega_using []]
   rw [← List.append_nil (subGroup g (16*i))]
-  refine subGroup_ok hg (by omega) ha hb hw hl hr.q hr.round32 hr.halfQ hr.toHighConstants
+  refine subGroup_ok hg (by omega_using [hi]) ha hb hw hl hr.q hr.round32 hr.halfQ hr.toHighConstants
     fun t hk hmem hflag => WP.block_nil_iff.mpr ?_
   refine ⟨hk,hr.group hk,?_,?_⟩
   · simpa only [lowStep,hm,addr _ _ h0,addr _ _ h2,hinput,houtv] using hmem
@@ -97,16 +97,16 @@ open VG.Proof.MlDsa.AArch64.Arith.Neon
 theorem lowStep_frame (g B : Nat) (p a l : Addr) {j : Nat} (hj : j<64) (d : LowData) :
     Frame [polyRegion p,polyRegion l] d.mem (lowStep g B p a l j d).mem := by
   have hp : (polyRegion p).Contains (p+BitVec.ofNat 64 (16*j)) 16 :=
-    Offset.contains_base p (by omega) (by omega)
+    Offset.contains_base p (by omega_using [hj]) (by omega_using [hj])
   have hl : (polyRegion l).Contains (l+BitVec.ofNat 64 (16*j)) 16 :=
-    Offset.contains_base l (by omega) (by omega)
+    Offset.contains_base l (by omega_using [hj]) (by omega_using [hj])
   exact ((Frame.refl _ _).write (by simp) _ hp).write (by simp) _ hl
 
 theorem coeffAt_write16_other {m : Mem} {p l : Addr} {j i : Nat} (hj : j<64) (hi : i<256)
     (hd : (polyRegion p).Disjoint (polyRegion l)) (v : BitVec 128) :
     coeffAt (m.write (l+BitVec.ofNat 64 (16*j)) 16 v) p i=coeffAt m p i := by
   have hl : (polyRegion l).Contains (l+BitVec.ofNat 64 (16*j)) 16 :=
-    Offset.contains_base l (by omega) (by omega)
+    Offset.contains_base l (by omega_using [hj]) (by omega_using [hj])
   have hf : Frame [polyRegion l] m (m.write (l+BitVec.ofNat 64 (16*j)) 16 v) :=
     (Frame.refl _ _).write (by simp) _ hl
   exact coeffAt_frame hf (by intro r hr; simpa using (List.mem_singleton.mp hr ▸ hd)) hi
@@ -118,10 +118,10 @@ theorem lowStep_high {g B : Nat} {p a l : Addr} {j i : Nat} (hj : j<64) (hi : i<
       else coeffAt d.mem p i := by
   dsimp only [lowStep]
   rw [coeffAt_write16_other hj hi hd]
-  have ha : p+BitVec.ofNat 64 (16*j)=coeffAddr p (4*j) := by congr 2; omega
-  rw [ha,coeffAt_write16 _ _ (by omega) _ hi]
+  have ha : p+BitVec.ofNat 64 (16*j)=coeffAddr p (4*j) := by congr 2; omega_using []
+  rw [ha,coeffAt_write16 _ _ (by omega_using [hj]) _ hi]
   split
-  · rename_i h; rw [laneVector_word _ (by omega)]
+  · rename_i h; rw [laneVector_word _ (by omega_using [h])]
   · rfl
 
 theorem lowStep_low {g B : Nat} {p a l : Addr} {j i : Nat} (hj : j<64) (hi : i<256)
@@ -130,17 +130,17 @@ theorem lowStep_low {g B : Nat} {p a l : Addr} {j i : Nat} (hj : j<64) (hi : i<2
       if 4*j≤i ∧ i<4*j+4 then lowOutput g d.mem p a j (i-4*j)
       else coeffAt d.mem l i := by
   dsimp only [lowStep]
-  have ha : l+BitVec.ofNat 64 (16*j)=coeffAddr l (4*j) := by congr 2; omega
-  rw [ha,coeffAt_write16 _ _ (by omega) _ hi]
+  have ha : l+BitVec.ofNat 64 (16*j)=coeffAddr l (4*j) := by congr 2; omega_using []
+  rw [ha,coeffAt_write16 _ _ (by omega_using [hj]) _ hi]
   split
-  · rename_i h; rw [laneVector_word _ (by omega)]
+  · rename_i h; rw [laneVector_word _ (by omega_using [h])]
   · exact coeffAt_write16_other hj hi hd.symm _
 
 theorem lowRun_frame (m : Mem) (g B : Nat) (p a l : Addr) {j : Nat} (hj : j≤64) :
     Frame [polyRegion p,polyRegion l] m (lowRun m g B p a l j).mem := by
   induction j with
   | zero => exact Frame.refl _ _
-  | succ j ih => exact (ih (by omega)).trans (lowStep_frame g B p a l (by omega) _)
+  | succ j ih => exact (ih (by omega_using [hj])).trans (lowStep_frame g B p a l (by omega_using [hj]) _)
 
 theorem lowRun_input {m : Mem} {g B : Nat} {p a l : Addr} {j i : Nat} (hj : j≤64) (hi : i<256)
     (hap : (polyRegion a).Disjoint (polyRegion p)) (hal : (polyRegion a).Disjoint (polyRegion l)) :
@@ -175,7 +175,7 @@ def lowSigned (m : Mem) (g : Nat) (p a : Addr) (i : Nat) : BitVec 32 :=
 theorem lowInput_coeff (m : Mem) (p a : Addr) (j : Nat) {e : Nat} (he : e<4) :
     lowInput m p a j e=lowCanonical m p a (4*j+e) := by
   unfold lowInput lowCanonical
-  rw [show 16*j=4*(4*j) by omega]
+  rw [show 16*j=4*(4*j) by omega_using []]
   change Inverse.signCorrected (reduceWord (vword (m.read (coeffAddr p (4*j)) 16) e-
     vword (m.read (coeffAddr a (4*j)) 16) e))=_
   rw [VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,coeffAddr_add]
@@ -196,30 +196,30 @@ theorem lowRun_prefix (m : Mem) (g B : Nat) (p a l : Addr)
   induction j with
   | zero => constructor <;> intro i hi <;> simp [lowRun]
   | succ j ih =>
-    have hp := ih (by omega)
-    have ha := fun (i : Nat) (hi : i<256) => lowRun_input (m:=m) (g:=g) (B:=B) (j:=j) (i:=i) (by omega) hi hap hal
+    have hp := ih (by omega_using [hj])
+    have ha := fun (i : Nat) (hi : i<256) => lowRun_input (m:=m) (g:=g) (B:=B) (j:=j) (i:=i) (by omega_using [hj]) hi hap hal
     have hh (i : Nat) (hi : i<256) (hn : ¬i<4*j) :
         lowCanonical (lowRun m g B p a l j).mem p a i=lowCanonical m p a i := by
       simp only [lowCanonical,hp.1 i hi,ite_eq_right hn,ha i hi]
     constructor
     · intro i hi
-      rw [lowRun,lowStep_high (by omega) hi hpl]
+      rw [lowRun,lowStep_high (by omega_using [hj]) hi hpl]
       by_cases before : i<4*j
-      · rw [ite_eq_right (by omega),hp.1 i hi,ite_eq_left before,ite_eq_left (by omega)]
+      · rw [ite_eq_right (by omega_using [before]),hp.1 i hi,ite_eq_left before,ite_eq_left (by omega_using [before])]
       · by_cases inside : i<4*j+4
-        · rw [ite_eq_left (by omega),lowInput_coeff _ _ _ _ (by omega),
-            show 4*j+(i-4*j)=i by omega,hh i hi before,ite_eq_left (by omega)]
+        · rw [ite_eq_left (by omega_using [before, inside]),lowInput_coeff _ _ _ _ (by omega_using [inside]),
+            show 4*j+(i-4*j)=i by omega_using [before],hh i hi before,ite_eq_left (by omega_using [inside])]
           rfl
-        · rw [ite_eq_right (by omega),hp.1 i hi,ite_eq_right before,ite_eq_right (by omega)]
+        · rw [ite_eq_right (by omega_using [inside]),hp.1 i hi,ite_eq_right before,ite_eq_right (by omega_using [inside])]
     · intro i hi
-      rw [lowRun,lowStep_low (by omega) hi hpl]
+      rw [lowRun,lowStep_low (by omega_using [hj]) hi hpl]
       by_cases before : i<4*j
-      · rw [ite_eq_right (by omega),hp.2 i hi,ite_eq_left before,ite_eq_left (by omega)]
+      · rw [ite_eq_right (by omega_using [before]),hp.2 i hi,ite_eq_left before,ite_eq_left (by omega_using [before])]
       · by_cases inside : i<4*j+4
-        · rw [ite_eq_left (by omega),lowOutput_coeff _ _ _ _ _ (by omega),
-            show 4*j+(i-4*j)=i by omega,ite_eq_left (by omega)]
+        · rw [ite_eq_left (by omega_using [before, inside]),lowOutput_coeff _ _ _ _ _ (by omega_using [inside]),
+            show 4*j+(i-4*j)=i by omega_using [before],ite_eq_left (by omega_using [inside])]
           simp only [lowSigned,lowHigh,hh i hi before]
-        · rw [ite_eq_right (by omega),hp.2 i hi,ite_eq_right before,ite_eq_right (by omega)]
+        · rw [ite_eq_right (by omega_using [inside]),hp.2 i hi,ite_eq_right before,ite_eq_right (by omega_using [inside])]
 
 theorem lowRun_coeff (m : Mem) (g B : Nat) (p a l : Addr)
     (hpl : (polyRegion p).Disjoint (polyRegion l))

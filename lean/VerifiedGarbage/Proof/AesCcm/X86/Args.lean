@@ -105,7 +105,7 @@ theorem args_of_lay {s : State} (h : oneLay s)
     retT := d20
     args := by rw [argsR_eq]; exact Proof.AesGcm.X86.covers_left (mwr _ (by simp))
     argsW := by rw [argsR_eq]; exact d15.symm
-    fa := by omega }
+    fa := by omega_using [hfa] }
 
 theorem args_of_seal {s : State} (h : sealPre s) :
     Args s (arg s 0) (arg s 10) (s.gpr .esp) (arg s 2) (arg s 4) (arg s 6) (arg s 8) (arg s 1).toNat
@@ -165,7 +165,7 @@ theorem buf_mut {s : State} {P : BitVec 32} {len : Nat} (hP : Buf W SP s P len)
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.stk.symm
-    · exact hPD) (by have := hP.lt; omega)
+    · exact hPD) (by have := hP.lt; omega_using [this])
 
 end
 

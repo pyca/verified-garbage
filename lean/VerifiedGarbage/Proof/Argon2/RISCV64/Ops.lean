@@ -69,8 +69,8 @@ theorem sext32_ushiftRight (x : BitVec 32) {sh : Nat} (h0 : 0 < sh) :
   have hx := x.isLt
   have hp : 2 ≤ 2 ^ sh := by
     calc 2 = 2 ^ 1 := rfl
-      _ ≤ 2 ^ sh := Nat.pow_le_pow_right (by omega) h0
-  have : x.toNat / 2 ^ sh < 2 ^ 31 := Nat.div_lt_of_lt_mul (by omega)
+      _ ≤ 2 ^ sh := Nat.pow_le_pow_right (by omega_using []) h0
+  have : x.toNat / 2 ^ sh < 2 ^ 31 := Nat.div_lt_of_lt_mul (by omega_using [hp])
   simpa using this
 
 /-- `srliw` by a positive count: the low word shifted, zero-extended. -/
@@ -100,7 +100,7 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 /-- `s'` is `s` with (at most) the registers `ds` changed. -/
 structure Only (ds : List Reg) (s s' : State) : Prop where

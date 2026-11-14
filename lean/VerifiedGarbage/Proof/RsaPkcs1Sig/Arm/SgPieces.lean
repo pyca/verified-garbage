@@ -117,18 +117,18 @@ theorem encode_wp {σ s : State} (h : E1 P σ s) : WP isa Impl.RsaPkcs1Sig.Arm.e
     { r0 := r0, r1 := r1, r2 := r2, r3 := r3, lr := lr
       k64 := hs.1.k64, k1024 := hK, dl32 := hs.1.dl32
       dstFit := by
-        rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM, frameBytes] at fit ⊢; omega),
+        rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM, frameBytes] at fit ⊢; omega_using [fit]),
           BitVec.toNat_ofNat]
-        simp only [oEM, frameBytes] at fit ⊢; omega
+        simp only [oEM, frameBytes] at fit ⊢; omega_using [hK, fit]
       srcFit := hfd
-      write := by rw [e]; exact hs.2.inFr (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega)
+      write := by rw [e]; exact hs.2.inFr (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega_using [hK])
       read := ⟨P.DIG, List.mem_append_left _ (by rw [hs.2.rd, ok.rd]; simp), Region.contains_self _ _⟩
       sep := by
         rw [e]
-        exact (ok.stk_fr (R := P.DIG) (.inl (by simp)) (by simp only [oEM, frameBytes]; omega)).symm }
+        exact (ok.stk_fr (R := P.DIG) (.inl (by simp)) (by simp only [oEM, frameBytes]; omega_using [hK])).symm }
   refine WP.mono (encode_ok hin) fun t ⟨fr, rest, res⟩ => ?_
   rw [e] at fr
-  have st' : P.lay.St σ t := hs.2.frameW (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega)
+  have st' : P.lay.St σ t := hs.2.frameW (by show oEM + P.K ≤ frameBytes; simp only [oEM, frameBytes]; omega_using [hK])
     fr rest.rd rest.wr rest.sp
   refine ⟨⟨hs.1, st'⟩, ?_⟩
   have hd : Spec.Rsa.bytesAt s.mem (State.addr P.dig) P.dl = digB P σ := hs.2.ro (R := P.DIG) (by simp)
@@ -168,7 +168,7 @@ theorem zero_wp {σ s : State} (h : F1 P σ s) : WP isa Impl.Bignum.Arm.maskByte
   have hfo := ok.fits P.OUT (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hfo
   have hK := hs.1.k1024
-  refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.out) (n := P.K) (by have := hs.1.k64; omega) (by omega)
+  refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.out) (n := P.K) (by have := hs.1.k64; omega_using [this]) (by omega_using [hK])
     hfo ⟨P.OUT, by rw [hs.2.wr, ok.wr]; simp, Region.contains_self _ _⟩ r0 lr) fun t ⟨hb, fr, rst⟩ => ?_
   have st : P.lay.St σ t := hs.2.write fr (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨P.OUT, by simp, fun _ h => h⟩) rst.rd rst.wr rst.sp

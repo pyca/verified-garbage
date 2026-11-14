@@ -40,7 +40,7 @@ theorem foldK_congr {α : Type} {op : α → α → α} {z : α} {f g : Nat → 
   | 1, h => by simp only [KPke.foldK]; exact h 0 (by decide)
   | k + 2, h => by
     simp only [KPke.foldK]
-    rw [foldK_congr (k := k + 1) (fun j hj => h j (by omega)), h (k + 1) (by omega)]
+    rw [foldK_congr (k := k + 1) (fun j hj => h j (by omega_using [hj])), h (k + 1) (by omega_using [])]
 
 /-- Row `i` of `t̂` depends on row `i` of `Â` alone. -/
 theorem tVW_congr {s₀ : State} {m m' : Mem} {i : Nat}
@@ -91,8 +91,8 @@ theorem IL.rowsDone_frame {s₀ : State} {m m' : Mem} {n r : Nat} (hrn : P.k * r
   intro i' hi'
   have ht : tVW P s₀ m' i' = tVW P s₀ m i' := tVW_congr fun j hj =>
     polyAtW_frame (w16 := true) hf (hA _ (by
-      have := Nat.mul_le_mul_left P.k (show i' + 1 ≤ r by omega)
-      rw [Nat.mul_succ] at this; omega))
+      have := Nat.mul_le_mul_left P.k (show i' + 1 ≤ r by omega_using [hi'])
+      rw [Nat.mul_succ] at this; omega_using [hrn, hj, this]))
   rw [ht, bytesAt_frame hf (fun q hq => (hE i' hi' q hq).1) (by decide),
     bytesAt_frame hf (fun q hq => (hE i' hi' q hq).2) (by decide)]
   exact hr i' hi'

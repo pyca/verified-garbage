@@ -62,8 +62,8 @@ theorem trialSmall_value_ok (s : State) (dst : BitVec 32) {n prime : Nat}
   rintro t ⟨flag, memT, restT⟩
   refine WP.block_nil ⟨next, steps, bound, (restT.gpr .r2 (by simp)).trans value, congruence,
     ?_, memT.trans (memory.trans mem), preserved.trans (restT.mono (by simp))⟩
-  rw [flag, value, divV, ofNat_beq_zero (by omega : next < 2 ^ 32),
-    ofNat_beq_eq (by omega : next < 2 ^ 32) (by omega : VG.Impl.RsaKeyGen.tabEntry prime < 2 ^ 32),
+  rw [flag, value, divV, ofNat_beq_zero (by omega_using [facts, bound] : next < 2 ^ 32),
+    ofNat_beq_eq (by omega_using [facts, bound] : next < 2 ^ 32) (by omega_using [facts] : VG.Impl.RsaKeyGen.tabEntry prime < 2 ^ 32),
     ← Bool.decide_or]
   apply Bool.eq_iff_iff.mpr
   simpa only [decide_eq_true_eq] using divides.symm

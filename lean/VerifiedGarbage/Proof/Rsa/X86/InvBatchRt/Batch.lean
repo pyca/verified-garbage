@@ -30,7 +30,7 @@ variable {L : Lay} {B : Addr} {Z len N : Nat}
 theorem low_cong {m : Mem} {base : Addr} {d n : Nat} {x : Int}
     (h : (val32 m base d (n + 1) : Int) % 2 ^ (32 * (n + 1)) = x % 2 ^ (32 * (n + 1))) :
     ((m.readW (off base d) 32).toNat : Int) % 2 ^ 32 = x % 2 ^ 32 := by
-  have D : (2 : Int) ^ 32 ∣ 2 ^ (32 * (n + 1)) := pow_dvd_pow 2 (by omega)
+  have D : (2 : Int) ^ 32 ∣ 2 ^ (32 * (n + 1)) := pow_dvd_pow 2 (by omega_using [])
   have E : (w32 m base d : Int) % 2 ^ 32 = (val32 m base d (n + 1) : Int) % 2 ^ 32 := by
     rw [val32]; push_cast; exact (Int.add_mul_emod_self_left _ _ _).symm
   rw [E, ← Int.emod_emod_of_dvd _ D, h, Int.emod_emod_of_dvd _ D]
@@ -55,13 +55,13 @@ theorem words_ok {s : State} (h : Bx L s B Z len N) {d f g : Int}
     rw [V₁]
     exact ⟨hd, rfl, rfl, rfl, rfl, low_cong hf, low_cong hg⟩
   have matrix := Divstep.W32.wsteps_rel (by decide) rel hdb hfo 30 (by decide)
-  refine WP.mono (VG.Proof.Weierstrass.X86.Inv.wordSteps_ok H₁.ws.ws.workspace (t := win) (by omega)
+  refine WP.mono (VG.Proof.Weierstrass.X86.Inv.wordSteps_ok H₁.ws.ws.workspace (t := win) (by omega_using [hZ, e16, e96])
     (by decide) (by decide)) fun z ⟨V₂, K₂, O₂⟩ => ⟨H₁.keepLow K₂ (by decide) (by decide) O₂ (by decide), ?_,
       (K₁.mono (by decide)).trans K₂, ?_⟩
   · rw [← V₂] at matrix
     obtain ⟨D, U, V, Q, R, _, _⟩ := matrix
     exact ⟨D, U, V, Q, R⟩
   · intro x hx
-    rw [O₂ x hx, O₁ x (by omega)]
+    rw [O₂ x hx, O₁ x (by omega_using [hx])]
 
 end VG.Proof.Rsa.X86.InvBatchRt

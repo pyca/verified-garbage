@@ -36,9 +36,9 @@ theorem vinsSelf_ok (r : XReg) (s : State) :
     WP isa (.block [.vop (.vinserti128 r r r 1)]) s fun s' =>
       (∀ l < 2, s'.lane r l = s.lane r 0) ∧ YFrame [r] s s' := by
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, fun r' hr l hl => ?_⟩⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [VOp.exec, State.setV, State.lane]
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [VOp.exec, State.setV, State.lane]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr, VOp.exec, State.setV, State.lane]
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr, VOp.exec, State.setV, State.lane]
 
 theorem preg16_ne (k : Nat) : preg16 k ≠ .xmm0 ∧ preg16 k ≠ .xmm1 ∧ preg16 k ≠ .xmm7 ∧ preg16 k ≠ .xmm8 ∧
     preg16 k ≠ .xmm9 ∧ preg16 k ≠ .xmm10 := by
@@ -65,10 +65,10 @@ theorem cvtRun_ok {s₀ : State} (hp : SPreP s₀) :
         (∀ k < n, ∀ l < 2, s'.lane (preg16 k) l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 2 * k - l))) ∧ YFrame cvtRegs s s'
   | 0, _, s, _, _, _, _, _, _, _ => by
     rw [List.range_zero, List.flatMap_nil]
-    exact WP.block_nil ⟨fun k hk => absurd hk (by omega), YFrame.refl _ _⟩
+    exact WP.block_nil ⟨fun k hk => absurd hk (by omega_using []), YFrame.refl _ _⟩
   | n + 1, hn, s, hdi, hm, hrd, hwr, h0, h8, h9 => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (cvtRun_ok hp n (by omega) s hdi hm hrd hwr h0 h8 h9) fun s₁ ⟨p₁, f₁⟩ => ?_
+    refine WP.mono (cvtRun_ok hp n (by omega_using [hn]) s hdi hm hrd hwr h0 h8 h9) fun s₁ ⟨p₁, f₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     obtain ⟨_, _, n7, n8, n9, n10⟩ := preg16_ne n
     have kin : ∀ o : Nat, o + 16 ≤ 1024 → InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .rdi + BitVec.ofInt 64 (o : Int)) 16 :=
@@ -77,21 +77,21 @@ theorem cvtRun_ok {s₀ : State} (hp : SPreP s₀) :
       (fun l hl => by rw [f₁.lane _ (by decide) l hl]; exact h0 l hl)
       (fun l hl => by rw [f₁.lane _ (by decide) l hl]; exact h8 l hl)
       (fun l hl => by rw [f₁.lane _ (by decide) l hl]; exact h9 l hl)
-      (kin _ (by omega)) (kin _ (by omega))) fun s' ⟨v0, v1, f'⟩ => ⟨fun k hk l hl => ?_, ?_⟩
+      (kin _ (by omega_using [])) (kin _ (by omega_using []))) fun s' ⟨v0, v1, f'⟩ => ⟨fun k hk l hl => ?_, ?_⟩
     · rw [f₁.mem, f₁.gpr, hm, hdi] at v0 v1
       by_cases hkn : k = n
       · subst hkn
-        rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
-        · rw [v0, pow_at hp (by omega)]; congr 2; omega
-        · rw [v1, show 240 + 16 * (15 - 2 * k) = 256 + 16 * (14 - 2 * k) by omega, pow_at hp (by omega)]
-          congr 2; omega
+        rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
+        · rw [v0, pow_at hp (by omega_using [])]; congr 2; omega_using [hn]
+        · rw [v1, show 240 + 16 * (15 - 2 * k) = 256 + 16 * (14 - 2 * k) by omega_using [hn], pow_at hp (by omega_using [])]
+          congr 2; omega_using [hn]
       · rw [f'.lane _ (fun h => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at h
           rcases h with h | h | h
           · exact (preg16_ne k).2.2.1 h
           · exact (preg16_ne k).2.2.2.2.2 h
-          · exact hkn (preg16_inj k (by omega) n (by omega) h)) l hl]
-        exact p₁ k (by omega) l hl
+          · exact hkn (preg16_inj k (by omega_using [hn, hk]) n (by omega_using [hn]) h)) l hl]
+        exact p₁ k (by omega_using [hk, hkn]) l hl
     · refine ⟨f'.gpr.trans f₁.gpr, f'.mem.trans f₁.mem, f'.rd.trans f₁.rd, f'.wr.trans f₁.wr, fun r hr l hl => ?_⟩
       rw [f'.lane r (fun h => hr (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at h
@@ -143,7 +143,7 @@ theorem setupP_ok {s₀ : State} (hp : SPreP s₀) :
   rw [WP.block_append_iff]
   exact WP.mono (setupT_ok hp.base l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (StitchZ.setupZ_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact pw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact pw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 end VG.Proof.Gcm.X86_64.StitchZP

@@ -37,7 +37,7 @@ theorem Modulus.keep {g : Geometry} (v : g.Valid) {c : Nat} {m m' : Mem}
   have fit := v.headerFit
   have hread {d : Nat} (lo : 48 ≤ d) (hi : d + 8 ≤ 128) :
       m'.readW (off g.W d) 64 = m.readW (off g.W d) 64 :=
-    O.read64 (by omega) (fun r hr => by have := header r hr; omega)
+    O.read64 (by omega_using [fit, hi]) (fun r hr => by have := header r hr; omega_using [lo, hi, this])
   have modFit := v.arrayFit (j := 0) (by decide)
   refine ⟨?_, ?_, (O.val32 modFit candidate).trans M.candidate, ?_⟩
   · change (m'.readW (off g.W 48) 64).toNat = g.w
@@ -45,10 +45,10 @@ theorem Modulus.keep {g : Geometry} (v : g.Valid) {c : Nat} {m m' : Mem}
     exact M.width
   · intro j index
     change m'.readW (off g.W (8 * arrWord j)) 64 = _
-    rw [hread (by unfold arrWord; omega) (by unfold arrWord; omega)]
+    rw [hread (by unfold arrWord; omega_using []) (by unfold arrWord; omega_using [index])]
     exact M.pointers j index
-  · rw [O.read64 (by have := v.minWidth; unfold Geometry.words at modFit; omega)
-      (fun r hr => by have := candidate r hr; have := v.minWidth; unfold Geometry.words at *; omega)]
+  · rw [O.read64 (by have := v.minWidth; unfold Geometry.words at modFit; omega_using [modFit, this])
+      (fun r hr => by have := candidate r hr; have := v.minWidth; unfold Geometry.words at *; omega_arith)]
     change (_ * (m'.readW (off g.W 56) 64).toNat + 1) % 2 ^ 64 = 0
     rw [hread (by decide) (by decide)]
     exact M.inverse

@@ -65,8 +65,8 @@ theorem wideStep_ok {s : State} {p : Addr} {L : List Zq}
     intro j hj
     have hj16 := List.mem_range.mp hj
     dsimp only [Function.comp_apply]
-    rw [hval (j/4) (by omega) (j%4) (by omega)]
-    rw [show 12*(j/4)+3*(j%4)=3*j by omega]
+    rw [hval (j/4) (by omega_using [hj16]) (j%4) (by omega_using [])]
+    rw [show 12*(j/4)+3*(j%4)=3*j by omega_using []]
   refine WP.mono (wideChoice_ok (p := p) (L := L) hbound hbranch
     (by rw [ha.only.get .x9]; exact hc.qreg)
     (by rw [ha.only.get .x3]; exact h3) (by rw [ha.only.get .x4]; exact h4) hL

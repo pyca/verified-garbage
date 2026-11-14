@@ -78,7 +78,7 @@ theorem trialStepWord_ok (s : State) {n : Nat} (positive : 0 < n) (fits : n < 2 
     change (BitVec.ofNat 32 (n - min 2 n) - 0#32 == 0#32) = _
     rw [BitVec.sub_zero]
     change (BitVec.ofNat 32 (n - min 2 n) == (0 : BitVec 32)) = _
-    rw [ofNat_beq_zero (by omega : n - min 2 n < 2 ^ 32)]
-    exact decide_eq_decide.mpr (by omega)
+    rw [ofNat_beq_zero (by omega_using [fits] : n - min 2 n < 2 ^ 32)]
+    exact decide_eq_decide.mpr (by omega_using [])
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

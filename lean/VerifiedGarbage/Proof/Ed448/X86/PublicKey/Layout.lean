@@ -71,7 +71,7 @@ theorem out_in (s : State) : OUT s ∈ pkWr s := List.mem_cons_self
 theorem scr_in (s : State) : SCR (arg s 2) ∈ pkWr s := List.mem_cons_of_mem _ List.mem_cons_self
 
 theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 2) 3 (pkRd s) (pkWr s) := by
-  refine Shake.kit h.below (by have := h.above; omega) h.scratch (scr_in s) ?_ ?_ ?_ (args_in s)
+  refine Shake.kit h.below (by have := h.above; omega_using [this]) h.scratch (scr_in s) ?_ ?_ ?_ (args_in s)
   · intro R hR
     simp only [pkWr, List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
@@ -83,7 +83,7 @@ theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 2) 3 (pkRd s) (pkWr 
   · intro r hr
     simp only [pkRd, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [h.ks.symm, Shake.args_stack (n := 3) h.below (by have := h.above; omega) (by decide)]
+    exacts [h.ks.symm, Shake.args_stack (n := 3) h.below (by have := h.above; omega_using [this]) (by decide)]
 
 theorem ret_out {s : State} (h : Facts s) : ∀ R ∈ pkWr s, (RET s).Disjoint R := by
   intro R hR

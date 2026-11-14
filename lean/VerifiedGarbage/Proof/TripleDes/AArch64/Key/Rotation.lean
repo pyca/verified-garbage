@@ -67,7 +67,7 @@ theorem eqTest_ok (s : State) (j k : Nat) (hj : j < 16) (hk : k < 16)
       isa.eval (.zero .x .x4) s' = some (decide (j = k)) ∧ Keep [.x4] s s' := by
   refine ⟨s.write .x .x4 (s.gpr .x21 - BitVec.ofNat 64 k), ?_, ?_, write_keep _ _⟩
   · simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
-      show k < 4096 from by omega, ite_true, State.read, BitVec.setWidth_eq]
+      show k < 4096 from by omega_using [hk], ite_true, State.read, BitVec.setWidth_eq]
   · change VG.AArch64.eval (.zero .x .x4) _ = _
     simp only [VG.AArch64.eval, State.read, gpr_write_self, BitVec.setWidth_eq, hv]
     exact congrArg some (comparison_values j hj k hk).2

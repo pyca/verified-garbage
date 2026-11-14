@@ -65,7 +65,7 @@ theorem vfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
 
 theorem VFacts.small {p : Params} (hF : VFacts p) : scrLen p < 2 ^ 32 ∧ p.pkLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32 := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl; have := hF.zl; have := hF.ct; have := hF.om
-  exact ⟨by rw [scr_eq]; omega, by rw [hF.pk]; omega, by rw [hF.sig]; omega⟩
+  exact ⟨by rw [scr_eq]; omega_using [hk, hl, hkl], by rw [hF.pk]; omega_using [hk], by rw [hF.sig]; omega⟩
 
 /-! ## The contract -/
 

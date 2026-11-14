@@ -19,10 +19,10 @@ theorem pcSuffix_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
       t.mem = s.mem ∧ Rest [.r2, .r3] s t := by
   unfold pcSuffix
   refine wp_loadStack (a := off (State.addr g.stack) oN) (by decide)
-    (by rw [h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oN, frameBytes] at *; omega))
+    (by rw [h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oN, frameBytes] at *; omega_using [this]))
     (h.inner.read (by decide)) fun u a => ?_
   refine wp_loadStack (a := off (State.addr g.stack) oK) (by decide)
-    (by rw [a.sp, h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oK, frameBytes] at *; omega))
+    (by rw [a.sp, h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oK, frameBytes] at *; omega_using [this]))
     (by rw [a.rd, a.wr]; exact h.inner.read (by decide)) fun t b => WP.block_nil ?_
   exact ⟨by rw [b.other .r2 (by decide), a.gpr]; exact slots 1 (by decide),
     by rw [b.gpr, a.mem]; exact slots 2 (by decide), b.mem.trans a.mem,

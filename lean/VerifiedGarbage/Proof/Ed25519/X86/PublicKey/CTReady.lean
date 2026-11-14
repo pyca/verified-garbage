@@ -56,12 +56,12 @@ theorem setup_ok {s t : State} (h : Facts n s) (hc : Ctx n s t) {vs : List Value
     WP isa (.block (setup 0 vs)) t fun u => Ctx n s u ∧
       Frame [⟨(esp s).setWidth 64, 24⟩] t.mem u.mem ∧
       ∀ j (hj : j < vs.length), Whole.slots (esp s) u j = argValue s (vs[j]'hj) := by
-  refine WP.mono (Whole.Ctx.setup hc (n := 3) (by have := h.toBounds.frame; omega)
-    (fun j hj => original_arg_readable h hc hj) (by omega) hv) fun u ⟨hu, hf, hs⟩ => ⟨hu, hf, ?_⟩
+  refine WP.mono (Whole.Ctx.setup hc (n := 3) (by have := h.toBounds.frame; omega_using [this])
+    (fun j hj => original_arg_readable h hc hj) (by omega_using [hn]) hv) fun u ⟨hu, hf, hs⟩ => ⟨hu, hf, ?_⟩
   intro j hj
   have e := hs j hj
   simp only [Nat.zero_add] at e
-  rw [addr_eq (by have := h.toBounds.frame; omega)] at e
+  rw [addr_eq (by have := h.toBounds.frame; omega_using [hn, hj, this])] at e
   rw [Whole.slots, e]
   generalize he : vs[j]'hj = v
   have vv := hv (vs[j]'hj) (List.getElem_mem hj)
@@ -86,7 +86,7 @@ def scalarPtr (s : State) : BitVec 32 := esp s + BitVec.ofNat 32 32
 
 theorem scalarPtr_addr {s : State} (h : Bounds n s) :
     (scalarPtr s).setWidth 64 = (esp s).setWidth 64 + BitVec.ofNat 64 32 :=
-  addr_eq (by have := h.frame; omega)
+  addr_eq (by have := h.frame; omega_using [this])
 
 theorem base_nosp : NoSp scalarBase := NoSp.of_all (by lit_decide)
 theorem base_stack : stackUse scalarBase = 8 := by lit_decide
@@ -103,7 +103,7 @@ def baseRd (s : State) : List Region :=
 theorem base_args {s t : State} (h : Facts n s) (hc : Ctx n s t) (ha : BaseArgs s t) :
     arg t.callEntry 0 = arg s 0 ∧ arg t.callEntry 1 = scalarPtr s ∧ arg t.callEntry 2 = arg s 2 := by
   have e : ∀ j < 64, arg t.callEntry j = Whole.slots (esp s) t j :=
-    fun j hj => Whole.call_arg hc.esp h.toBounds.call (by have := h.toBounds.frame; omega) hj
+    fun j hj => Whole.call_arg hc.esp h.toBounds.call (by have := h.toBounds.frame; omega_using [this]) hj
   exact ⟨(e 0 (by decide)).trans ha.1, (e 1 (by decide)).trans ha.2.1,
     (e 2 (by decide)).trans ha.2.2⟩
 
@@ -125,7 +125,7 @@ theorem base_pre {s t : State} (h : Facts n s) (hc : Ctx n s t) (ha : BaseArgs s
     exact fun p hp => Whole.frame_sub (esp s) p (Offset.sub_base _ (by decide : 32 + 32 ≤ 256) p hp)
   have stk : Region.Sub (below (esp s - BitVec.ofNat 32 4) 8) (Whole.STK (esp s)) :=
     Whole.inner_sub_stack be
-  have hf : (esp s).toNat + 256 ≤ 2 ^ 32 := by omega
+  have hf : (esp s).toNat + 256 ≤ 2 ^ 32 := by omega_using [fe]
   have tw : TblWords ((s.syms Impl.Ed25519.X86.combSym).setWidth 64) t.callEntry.mem := by
     refine (h.held.1.frame hc.frame fun r hr => ?_).frame (Whole.callEntry_frame t) fun r hr => ?_
     · simp only [pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -145,14 +145,14 @@ theorem base_pre {s t : State} (h : Facts n s) (hc : Ctx n s t) (ha : BaseArgs s
     h.ko.sub_left stk⟩,
     h.ko.sub_left stk, tw, h.held.2.1, ?_⟩
   · change (esp s + BitVec.ofNat 32 32).toNat + 32 ≤ 2 ^ 32
-    rw [BitVec.toNat_add, show (BitVec.ofNat 32 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_add, show (BitVec.ofNat 32 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega_using [fe])]
+    omega_using [fe]
   · change (esp s - BitVec.ofNat 32 4).toNat + 16 ≤ 2 ^ 32
-    rw [sub_toNat (by omega : 4 ≤ (esp s).toNat)]
-    omega
+    rw [sub_toNat (by omega_using [be] : 4 ≤ (esp s).toNat)]
+    omega_using [fe]
   · change 8 ≤ (esp s - BitVec.ofNat 32 4).toNat
-    rw [sub_toNat (by omega : 4 ≤ (esp s).toNat)]
-    omega
+    rw [sub_toNat (by omega_using [be] : 4 ≤ (esp s).toNat)]
+    omega_using [be]
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact h.held.2.2 _ (by simp)
@@ -192,7 +192,7 @@ theorem base_call {s t : State} (h : Facts n s) (hc : Ctx n s t) (ha : BaseArgs 
   change Region.Disjoint ⟨(esp s).setWidth 64 + BitVec.ofNat 64 32, 32⟩
     ⟨(esp s - BitVec.ofNat 32 4).setWidth 64, 4⟩
   have e : (esp s - BitVec.ofNat 32 4).setWidth 64 = (esp s).setWidth 64 - BitVec.ofNat 64 4 :=
-    Taint.sub_setWidth (m := 4) (by have := h.toBounds.call; omega)
+    Taint.sub_setWidth (m := 4) (by have := h.toBounds.call; omega_using [this])
   rw [e]
   exact (Offset.disjoint_below_above _ (m := 4) (a := 32) (l := 32) (by decide)).symm
 
@@ -215,7 +215,7 @@ theorem seed_same {s t : State} (h : Facts n s) (hc : Ctx n s t) :
     rintro r (rfl | rfl | rfl)
     · exact h.os.symm
     · exact h.sc
-    · exact h.ks.symm) (by have := h.seed; change n ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+    · exact h.ks.symm) (by have := h.seed; change n ≤ 2 ^ 64; omega_using [this]) (List.mem_range.mp hi)
 
 end VG.Proof.Ed25519.X86.PublicKey
 end
@@ -231,7 +231,7 @@ theorem prune_step {s t : State} (h : Facts n s) (hc : Ctx n s t) {digest : List
     WP isa (.block prune) t fun u => Ctx n s u ∧
       Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt u.mem ((scalarPtr s).setWidth 64) 32) =
         Spec.Ed25519.prune digest := by
-  refine WP.mono (prune_ok hc.esp (by have := h.toBounds.frame; omega)
+  refine WP.mono (prune_ok hc.esp (by have := h.toBounds.frame; omega_using [this])
     (by rw [hc.wr]; exact List.mem_cons_self) hh) fun u ⟨ku, hf, hs⟩ => ⟨?_, ?_⟩
   · refine hc.of_frame ku.rd ku.wr ku.esp ?_ hf ?_
     · intro r hr _
@@ -276,7 +276,7 @@ theorem bodyFrom_ok {s t : State} (h : Facts n s) (hy : t.syms = s.syms)
   refine WP.seq (WP.mono_syms (prune_step h hc₁ hh) fun t₂ ⟨hc₂, hn⟩ y₂ => ?_)
   refine WP.seq (WP.mono (base_step h hc₂ (y₂.trans (y₁.trans hy)) hn) fun t₃ ⟨hc₃, ho⟩ => ?_)
   refine WP.mono (Whole.Ctx.zeroWords hc₃ (start := 8) (count := 56)
-    (by have := h.toBounds.frame; omega) (by decide)) fun u ⟨hu, hf, _⟩ => ⟨hu, ?_⟩
+    (by have := h.toBounds.frame; omega_using [this]) (by decide)) fun u ⟨hu, hf, _⟩ => ⟨hu, ?_⟩
   have he : Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
       Spec.Ed25519.bytesAt t₃.mem ((arg s 0).setWidth 64) 32 := by
     apply List.map_congr_left
@@ -310,7 +310,7 @@ theorem frame_ok {post : State → State → Prop} {first : Prog isa} {s : State
       fun t => abiPreserved s t ∧ post s t := by
   have hf := facts h
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
-    (by simp only [List.length_replicate]; have := hf.below; omega) (bodyFrom_nosp hn)
+    (by simp only [List.length_replicate]; have := hf.below; omega_using [this]) (bodyFrom_nosp hn)
     (WP.mono hb fun u ⟨hu, ho⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, hp _ ?_⟩
   · by_cases he : r = .esp

@@ -133,7 +133,7 @@ abbrev prepWork : List (Nat × Nat) := [(bitsU,768),(cfg.sl EXPP,48)]
 theorem generator_point {base : Addr} {s : State} {g : Reg → BitVec 64}
     (hc : BaseCfgOk cfg) (hC : Law C) (hf : Fixed cfg base g s.mem) :
     PointAt base s gSource (G C) := by
-  have hp : 0 < cfg.C.p := by have := hc.p_ge; omega
+  have hp : 0 < cfg.C.p := by have := hc.p_ge; omega_using [this]
   have hm (x : Nat) : cfg.mont x < C.p := Nat.mod_lt _ hp
   have e1 : num base s (cfg.sl ONEP)=cfg.mont 1 := by
     rw [num,hf.onep]; simp only [Cfg.mont,Cfg.R,Nat.one_mul]
@@ -163,7 +163,7 @@ theorem prepare_ok {base : Addr} {s₀ s : State} {g : Reg → BitVec 64} {P : P
   have boundV : cfg.sl V+48 ≤ 8192 := by decide
   have hs := hM.scr
   have hn := hs.nowrap
-  have hm0 : 0 < cfg.C.p := by have := hc.p_ge; omega
+  have hm0 : 0 < cfg.C.p := by have := hc.p_ge; omega_using [this]
   have hm (x : Nat) : cfg.mont x < C.p := Nat.mod_lt _ hm0
   have hbconst : cfg.mont (3*cfg.C.b) < 2^(64*cfg.n) := Nat.lt_trans (hm _) hc.p_lt
   rw [prepare]
@@ -172,7 +172,7 @@ theorem prepare_ok {base : Addr} {s₀ s : State} {g : Reg → BitVec 64} {P : P
     fun s₁ ⟨b₁,k₁,u₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have v₁ : wordsVal s₁.mem base (cfg.sl V) 6=wordsVal s.mem base (cfg.sl V) 6 :=
-    u₁.wordsVal (by decide) (by omega)
+    u₁.wordsVal (by decide) (by omega_using [boundV])
   refine WP.seq (WP.mono (bits_ok hs₁ (n:=6) (src:=cfg.sl V) (dst:=bitsV)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (Or.inl (by decide)))
     fun s₂ ⟨b₂,k₂,u₂⟩ => ?_)
@@ -207,14 +207,14 @@ theorem prepare_ok {base : Addr} {s₀ s : State} {g : Reg → BitVec 64} {P : P
     · exact (congrArg (fun x => toM cfg.C.p (2^(64*cfg.n)) x) b₃).trans (toM_cmont hc _)
   refine ⟨W,I,?_,?_⟩
   · intro j hj
-    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 640+48 ≤ 2944+j; omega)
-        (by change 2944+j < 2^64; omega),
-      u₂.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change 2944+j+1 ≤ 3328 ∨ _; omega)
-        (by change 2944+j < 2^64; omega),b₁ j hj]
+    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 640+48 ≤ 2944+j; omega_using [])
+        (by change 2944+j < 2^64; omega_using [hj]),
+      u₂.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change 2944+j+1 ≤ 3328 ∨ _; omega_using [hj])
+        (by change 2944+j < 2^64; omega_using [hj]),b₁ j hj]
     rfl
   · intro j hj
-    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 640+48 ≤ 3328+j; omega)
-        (by change 3328+j < 2^64; omega),b₂ j hj,v₁]
+    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 640+48 ≤ 3328+j; omega_using [])
+        (by change 3328+j < 2^64; omega_using [hj]),b₂ j hj,v₁]
     rfl
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint
 end
@@ -286,19 +286,19 @@ theorem final_state {base : Addr} {s₀ s t : State} {g : Reg → BitVec 64} {P 
   have same (i : Nat) (hle : cfg.sl i+48 ≤ 8192)
       (hap : ∀ w ∈ work,cfg.sl i+48 ≤ w.1 ∨ w.1+w.2 ≤ cfg.sl i) :
       sv cfg base t i=sv cfg base s i :=
-    h.mem.wordsVal hap (by omega)
+    h.mem.wordsVal hap (by omega_using [hn8, hle])
   have r := same RM' (by decide) (by decide)
   have k := same K (by decide) (by decide)
   refine ⟨h.scr hM.scr,h.wr.trans hM.wr,h.rd.trans hM.rd,
     hM.fixed.unch hc.n10 hn (by unfold FixedOk work loopWork addWork entryWork; decide) h.mem,?_,?_,?_,?_,?_,?_,?_⟩
-  · rw [h.mem.word (by decide) (by omega)]
+  · rw [h.mem.word (by decide) (by omega_using [flagBound])]
     exact hM.flag
   · rw [r]; exact hM.rm_lt
   · rw [r]; exact hM.rm
   · exact hp.1 _ (by decide)
   · exact (hM.unch.trans h.mem).cover (by
       intro w hw
-      refine ⟨(0,8192),by simp,by omega,?_⟩
+      refine ⟨(0,8192),by simp,by omega_using [],?_⟩
       rcases List.mem_append.mp hw with hw | hw
       · rw [List.mem_singleton.mp hw]
       · have hd : ∀ w ∈ work,w.1+w.2 ≤ 8192 := by decide

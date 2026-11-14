@@ -113,7 +113,7 @@ theorem exec_storeGet {ok : Nat → Bool} {i : Instr} {s s' : State} (hi : store
       rw [Offset.sub_add_eq] at h1 h2 hlt
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat] at h1 h2 hlt
       have := (a - s.gpr .x3).isLt
-      omega
+      omega_using [hlt, h1, h2]
     all_goals first
       | exact absurd hi (by decide)
       | exact congrFun (exec_mem_of_noStore h (by intros; simp_all) (by intros; simp_all)

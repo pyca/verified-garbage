@@ -39,7 +39,7 @@ theorem Prepared.view_gpr {s e c : State} (hc : Prepared s e c) {r : Reg}
 theorem Prepared.view_arg {s e c : State} (hc : Prepared s e c) {j : Nat} (hj : j<3) :
     stackArg (callView s e c) j=stackArg s j := by
   change c.mem.readW (c.sp+BitVec.ofNat 64 (32+8*(8+j))) 64=stackArg s j
-  rw [hc.sp,show 32+8*(8+j)=96+8*j by omega]
+  rw [hc.sp,show 32+8*(8+j)=96+8*j by omega_using []]
   exact hc.args j hj
 
 

@@ -85,7 +85,7 @@ structure XPost (enc : Bool) (s : State) (W T D S : BitVec 32) (N R : Nat) (s' :
   tw : bytesAt s'.mem (T.setWidth 64) 16 = Spec.Xts.next (bytesAt s.mem (T.setWidth 64) 16) N
 
 theorem toNat_n {N : Nat} (h : N < 2 ^ 28) : (BitVec.ofNat 32 N).toNat = N := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h])
 
 /-- The regions the callee is given. -/
 abbrev xRd (E W : BitVec 32) : List Region := [⟨W.setWidth 64, 240⟩, ⟨(E - BitVec.ofNat 32 24).setWidth 64, 24⟩]
@@ -97,7 +97,7 @@ variable {s : State} {W T D S : BitVec 32} {N R : Nat} (h : XPre s W T D S N R)
 include h
 
 theorem fit : 4 * xRegs.length + 4 ≤ (s.gpr .esp).toNat := by
-  have := h.esp52; simp only [List.length_cons, List.length_nil]; omega
+  have := h.esp52; simp only [List.length_cons, List.length_nil]; omega_using [this]
 
 theorem args : arg (pushed xRegs s).callEntry 0 = W ∧ arg (pushed xRegs s).callEntry 1 = BitVec.ofNat 32 R ∧
     arg (pushed xRegs s).callEntry 2 = T ∧ arg (pushed xRegs s).callEntry 3 = D ∧
@@ -105,18 +105,18 @@ theorem args : arg (pushed xRegs s).callEntry 0 = W ∧ arg (pushed xRegs s).cal
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   rw [callEntry_arg h.fit hrs (by decide)] <;> simp [h.eax, h.ecx, h.edx, h.ebx, h.edi, h.ebp]
 
-theorem sub24 : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 52) := below_sub (by omega) h.esp52
+theorem sub24 : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 52) := below_sub (by omega_using []) h.esp52
 
 theorem subRet : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 28).setWidth 64, 4⟩ (below (s.gpr .esp) 52) := by
-  have := below_inner (sp := s.gpr .esp) (a := 4) (b := 52) (k := 24) (by omega) h.esp52
+  have := below_inner (sp := s.gpr .esp) (a := 4) (b := 52) (k := 24) (by omega_using []) h.esp52
   rw [show s.gpr .esp - BitVec.ofNat 32 28 = s.gpr .esp - BitVec.ofNat 32 24 - BitVec.ofNat 32 4 by
     rw [← VG.Offset.sub_add_eq]; rfl]
   exact this
 
 theorem subStk : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 28).setWidth 64 - BitVec.ofNat 64 24, 24⟩
     (below (s.gpr .esp) 52) := by
-  have := below_inner (sp := s.gpr .esp) (a := 24) (b := 52) (k := 28) (by omega) h.esp52
-  rw [← Taint.sub_setWidth (by rw [sub_toNat (by have := h.esp52; omega)]; have := h.esp52; omega)]
+  have := below_inner (sp := s.gpr .esp) (a := 24) (b := 52) (k := 28) (by omega_using []) h.esp52
+  rw [← Taint.sub_setWidth (by rw [sub_toNat (by have := h.esp52; omega_using [this])]; have := h.esp52; omega_using [this])]
   exact this
 
 theorem callPre (enc : Bool) :
@@ -135,8 +135,8 @@ theorem callPre (enc : Bool) :
       h.bs.sub_left h.sub24, h.bt.sub_left h.subRet, h.bd.sub_left h.subRet, h.bs.sub_left h.subRet,
       h.bw.sub_left h.subStk, h.bt.sub_left h.subStk, h.bd.sub_left h.subStk, h.bs.sub_left h.subStk,
       h.fitW, h.fitT, h.fitD, h.fitS, ?_, ?_, h.rounds⟩
-    · rw [sub_toNat (by have := h.esp52; omega)]; have := h.esp52; omega
-    · rw [sub_toNat (by have := h.esp52; omega)]; have := (s.gpr .esp).isLt; omega
+    · rw [sub_toNat (by have := h.esp52; omega_using [this])]; have := h.esp52; omega_using [this]
+    · rw [sub_toNat (by have := h.esp52; omega_using [this])]; have := (s.gpr .esp).isLt; omega_using []
   · intro a n ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -162,31 +162,31 @@ theorem xts_call (enc : Bool) {n : String} {c : Prog isa} (ok : XtsOk enc c) (no
     WP isa (.frame (.push xRegs) (.call n c) (.pop .eax 6)) s (XPost enc s W T D S N R) := by
   have hR := toNat_rounds h.rounds
   have hN := toNat_n h.n
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   refine WP.callWith (rs := xRegs) (k := modeX86 (AesXts.xtsMode enc)) ok nosp (by decide) hrs
-    (by have := h.esp52; simp only [List.length_cons, List.length_nil]; omega) (h.callPre enc)
+    (by have := h.esp52; simp only [List.length_cons, List.length_nil]; omega_using [stack, this]) (h.callPre enc)
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h.args
   have fE := callEntry_frame h.fit hrs
   rw [show 4 * xRegs.length + 4 = 28 from rfl] at fE
-  have b28 : Region.Sub (below (s.gpr .esp) 28) (below (s.gpr .esp) 52) := below_sub (by omega) h.esp52
+  have b28 : Region.Sub (below (s.gpr .esp) 28) (below (s.gpr .esp) 52) := below_sub (by omega_using []) h.esp52
   have keep : ∀ {X : Region}, (below (s.gpr .esp) 52).Disjoint X → X.len ≤ 2 ^ 64 →
       bytesAt (pushed xRegs s).callEntry.mem X.base X.len = bytesAt s.mem X.base X.len :=
     fun hd hn => Proof.Cmac.bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hd.sub_left b28).symm) hn
-  have eW := keep (X := ⟨W.setWidth 64, 16 * (R + 1)⟩) (h.bw.sub_right (Region.sub_prefix hRb)) (by dsimp only; omega)
+  have eW := keep (X := ⟨W.setWidth 64, 16 * (R + 1)⟩) (h.bw.sub_right (Region.sub_prefix hRb)) (by dsimp only; omega_using [hR])
   have eT := keep (X := ⟨T.setWidth 64, 16⟩) h.bt (by simp)
   have eD : Spec.Cbc.blocksAt (pushed xRegs s).callEntry.mem (D.setWidth 64) N =
       Spec.Cbc.blocksAt s.mem (D.setWidth 64) N :=
     blocksAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.bd.sub_left b28).symm) (by have := h.fitD; omega)
+      exact (h.bd.sub_left b28).symm) (by have := h.fitD; omega_using [hN])
   simp only [modeX86, AesXts.xtsMode, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN,
     m₂, Proof.AesXts.Unit.length_blocksAt] at post
   rw [eW, eT, eD] at post
   refine ⟨rd', wr', cs', ?_, post.1, post.2⟩
-  have f'' := Frame.below_mono f' (b := 52) (by simp only [List.length_cons, List.length_nil]; omega) h.esp52
+  have f'' := Frame.below_mono f' (b := 52) (by simp only [List.length_cons, List.length_nil]; omega_using [stack]) h.esp52
   exact f''.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
 
 /-- Calls of a whole-block function, with the same arguments and `esp` in
@@ -216,7 +216,7 @@ theorem xts_rel (enc : Bool) {n : String} {c : Prog isa} (ok : XtsOk enc c)
   obtain ⟨b0, b1, b2, b3, b4, b5⟩ := h₂.args
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]

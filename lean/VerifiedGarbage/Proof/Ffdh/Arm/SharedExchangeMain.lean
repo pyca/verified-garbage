@@ -86,7 +86,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     simpa only [decide_eq_true_eq] using flag
   have valueFit : numAt w.mem (State.addr p.base) p.w 6 < 2 ^ (8 * p.k) := by
     rw [valueW, VG.Proof.Bignum.powMod_eq]
-    exact Nat.lt_trans (Nat.mod_lt _ (by omega : 0 < p.P)) p.modulusBound
+    exact Nat.lt_trans (Nat.mod_lt _ (by omega_using [large] : 0 < p.P)) p.modulusBound
   change WP isa (.seq (.block VG.Impl.Ffdh.Arm.Domain.Exchange.saveResult)
     (.seq VG.Impl.Ffdh.Arm.Domain.Exchange.exportResult VG.Impl.Ffdh.Arm.Domain.Exchange.maskOutput)) w _
   refine WP.mono (exchangeFinish_ok w (sharedAccepted p yb xb) contextW stable h4 h32 saved readyW

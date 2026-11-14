@@ -152,7 +152,7 @@ theorem hashIW : initWords (hash v) = 12 ∨ initWords (hash v) = 26 ∨ initWor
 
 def ok : HashOK (hash v) where
   md := Proof.Sha256.md
-  dims := Proof.Sha256.X86_64.Stream.dimsS _ (by rcases v.hso with h | h | h <;> omega)
+  dims := Proof.Sha256.X86_64.Stream.dimsS _ (by rcases v.hso with h | h | h <;> omega_using [h])
   shape := Proof.Sha256.X86_64.Stream.shapeS _
   taints := Proof.Sha256.X86_64.Stream.taintsS3 _ v.hso
   comp := v.okS
@@ -160,7 +160,7 @@ def ok : HashOK (hash v) where
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha256.md, Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega_using [hj])
   lenOk _ _ := trivial
   SH := Spec.Hmac.sha224S
   iv := Spec.Sha256.H0_224
@@ -182,7 +182,7 @@ def ok : HashOK (hash v) where
     rcases v.hso with h | h | h <;> rw [h] <;> decide
   fits := by
     show v.callee.so + 48 + 32 + 64 ≤ 8 * ((v.callee.so + 48 + 32 + 64 + 7) / 8)
-    omega
+    omega_using []
   hW := by rcases hashW v with h | h | h <;> rw [h] <;> decide
   init := Proof.Sha256.X86_64.Stream.init224_verified
   initDepth := by simp only [hash] <;> decide +kernel
@@ -403,11 +403,11 @@ def variant (stream : List StreamFn := stream v) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha224I) (ok v) (coreOK v) (callees v)
     ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 560 (okU v) rfl
     (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))
-    (by rcases hashW v with h | h | h <;> omega)
-    (anyOK v) (satA (hashW v)) (by show (hash v).W + 96 < 511; rcases hashW v with h | h | h <;> omega)
+    (by rcases hashW v with h | h | h <;> omega_using [h])
+    (anyOK v) (satA (hashW v)) (by show (hash v).W + 96 < 511; rcases hashW v with h | h | h <;> omega_using [h])
     Proof.Hmac.sha224_local (satAF (hashW v)) (satW (hashIW v)) (satIF (hashIW v))
     (by decide) (satFF (hashW v))
-    (by show (hash v).W + 96 < 509; rcases hashW v with h | h | h <;> omega) (satPF (hashW v))
+    (by show (hash v).W + 96 < 509; rcases hashW v with h | h | h <;> omega_using [h]) (satPF (hashW v))
     v.suffix v.features stream
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha224

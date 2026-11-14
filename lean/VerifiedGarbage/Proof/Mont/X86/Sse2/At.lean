@@ -35,7 +35,7 @@ theorem read_val32 (m : Mem) (base : Addr) : ∀ (k d : Nat),
 
 theorem numAt_val32' (m : Mem) (ws : Addr) (d n : Nat) : numAt m ws d (8 * n) = val32 m ws d (2 * n) := by
   unfold numAt
-  rw [show 8 * n = 4 * (2 * n) by omega]
+  rw [show 8 * n = 4 * (2 * n) by omega_using []]
   exact read_val32 m ws (2 * n) d
 
 theorem numAt_w32' (m : Mem) (ws : Addr) (d : Nat) : numAt m ws d 4 = w32 m ws d := by
@@ -70,37 +70,37 @@ theorem at_correct (s : State) (h : (Proof.Rsa.MontMul.mulContract abi 56).pre s
   refine ⟨tr, t, E, ⟨cs, ?_⟩, ?_⟩
   · refine Mem.readW_congr fun i hi => mem _ (fun r hr => ?_) (fun hc => ?_)
     · have := ofs_far (base := wsOf s) (size := lenOf s) (x := (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i)
-        fun hc => A.retScratch _ (Offset.contains_base _ (by omega) (by omega)) hc
+        fun hc => A.retScratch _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [nAt, lenOf] at this ⊢ <;> omega
+      rcases hr with rfl | rfl <;> simp only [nAt, lenOf] at this ⊢ <;> omega_arith
     · have := (s.gpr .esp).isLt
       simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
         at hc
-      omega
+      omega_using [hi, hc]
   · sig_post [Proof.Rsa.MontMul.mulContract, Proof.Rsa.MontMul.sig, abi, argSlots, argVal, argBytes]
     refine ⟨?_, ?_, ?_⟩
     · rw [numAt_val32', numAt_val32']; exact lt
     · rw [numAt_val32', numAt_val32', numAt_val32', numAt_val32',
-        show 64 * (arg s 2).toNat = 32 * nAt s by simp only [nAt]; omega]
+        show 64 * (arg s 2).toNat = 32 * nAt s by simp only [nAt]; omega_using []]
       exact cong
     · intro i hi hj
       have hb := A.bound
       apply mem _ (fun r hr => ?_) (fun hc => ?_)
       · rw [show ofs (wsOf s) (wsOf s + BitVec.ofNat 64 i) = i by
-          simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega)]]
+          simp only [ofs]; rw [Mem.sub_ofNat_toNat _ (by omega_using [hi])]]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         have := hj
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, scratchBytes] at this
-        rcases hr with rfl | rfl <;> simp only [nAt] <;> omega
+        rcases hr with rfl | rfl <;> simp only [nAt] <;> omega_using [this]
       · have := (s.gpr .esp).isLt
         have := (arg s 0).isLt
         have := A.stackLo
         refine A.stkScratch (wsOf s + BitVec.ofNat 64 i) ?_ ?_
         · simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
             at hc ⊢
-          omega
+          omega_using [this, hc]
         · simp only [Region.Contains, lenOf, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth,
             BitVec.toNat_ofNat]
-          omega
+          omega_using [hi]
 
 end VG.Proof.Mont.X86.Sse2

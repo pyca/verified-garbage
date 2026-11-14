@@ -19,7 +19,7 @@ def highPad (w : Nat) := slot w aAcc+16+16*w
 theorem pads_bound {w Z : Nat} (hZ : slot w 8 ≤ Z) :
     slot w aAcc+16 ≤ highPad w ∧ highPad w+16 ≤ Z := by
   have := slot_le (w := w) (show aTmp < 8 by decide)
-  unfold highPad slot aAcc aTmp at *; omega
+  unfold highPad slot aAcc aTmp at *; omega_using [hZ]
 
 theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi) (hZ : slot w 8 ≤ Z) :
@@ -27,7 +27,7 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
       t.gpr .r8 = off B (slot w aAcc) ∧ t.gpr .r9 = off B (highPad w) ∧
       t.mem = s.mem ∧ Keep [.r8,.r9] s t := by
   have hl : ∀ k < 32, InRegions (s.rd ++ s.wr) (off B (8*k)) 8 := fun k hk =>
-    hs.ld (by have := hdr_lt_slot w 8 hk; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
   have sh : BitVec.ofNat 64 w <<< (4 : Nat) = BitVec.ofNat 64 (16*w) := by
     rw [BitVec.shiftLeft_eq_mul_twoPow]
     change BitVec.ofNat 64 w * BitVec.ofNat 64 16 = BitVec.ofNat 64 (16*w)
@@ -53,27 +53,27 @@ theorem save_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
       Frm B [(slot w aAcc,16),(highPad w,16)] s.mem t.mem ∧ Keep [.rax,.r8,.r9] s t := by
   have nowrap := hs.nowrap
   have pads := pads_bound hZ
-  have head : hdrBytes ≤ slot w aAcc := by unfold slot; omega
+  have head : hdrBytes ≤ slot w aAcc := by unfold slot; omega_using []
   unfold AdxHeader.save
   refine WP.seq (WP.mono (bases_ok hs hd hh hZ) fun a ⟨lo,hi,ma,ka⟩ => ?_)
   have da : a.gpr .rdi = off B 0 := by
     rw [show off B 0 = B from BitVec.add_zero B]
     exact (ka.gpr (by decide)).trans hd
   refine WP.seq (WP.mono (copyPair_ok (hs.congr ka.2.2) da lo (by decide) (by decide)
-    (by unfold sFn hdrBytes at *; omega) (by omega) (by unfold sFn hdrBytes at *; omega))
+    (by unfold sFn hdrBytes at *; omega_using [pads, head]) (by omega_using [pads]) (by unfold sFn hdrBytes at *; omega_using [head]))
     fun b ⟨vb,ob,kb⟩ => ?_)
   have kab := ka.trans kb
   refine WP.mono (copyPair_ok (hs.congr kab.2.2) ((kb.gpr (by decide)).trans da)
     ((kb.gpr (by decide)).trans hi) (by decide) (by decide)
-    (by unfold sFn hdrBytes at *; omega) (by omega) (by unfold sFn hdrBytes at *; omega))
+    (by unfold sFn hdrBytes at *; omega_using [pads, head]) (by omega_using [pads]) (by unfold sFn hdrBytes at *; omega_using [pads, head]))
     fun t ⟨vt,ot,kt⟩ => ?_
   simp only [Nat.add_zero,Nat.zero_add] at vb ob vt ot
   rw [ma] at vb ob
   refine ⟨?_,?_,(Frm.of_outside ob (by simp)).trans (Frm.of_outside ot (by simp)),
     (kab.trans kt).mono (by simp)⟩
   · intro q hq
-    rw [ot.word (by omega) (by omega)]; exact vb q hq
+    rw [ot.word (by omega_using [pads, hq]) (by omega_using [nowrap, pads, hq])]; exact vb q hq
   · intro q hq
-    rw [vt q hq,ob.word (by unfold sFn hdrBytes at *; omega) (by unfold sFn; omega)]
+    rw [vt q hq,ob.word (by unfold sFn hdrBytes at *; omega_using [head, hq]) (by unfold sFn; omega_using [hq])]
 
 end VG.Proof.Bignum.X86_64.AdxHeader

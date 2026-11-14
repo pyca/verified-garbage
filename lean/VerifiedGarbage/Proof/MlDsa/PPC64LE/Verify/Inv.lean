@@ -91,7 +91,7 @@ theorem VCache.frame {p : Params} {STK : Nat} {σ : State} (hc : VCache p STK σ
   obtain ⟨hl, -⟩ := hc.polys.resolve_left hne
   have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r14 + BitVec.ofNat 64 (4 * Spec.MlDsa.n * i)))
       (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
-    Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * p.k; omega)
+    Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * p.k; omega_using [hi])
   exact Proof.MlDsa.Verify.polyIs_frame hf (fun r hr => (hd r hr).sub_left hsub) (h i hi)
 
 /-! ## What holds throughout -/

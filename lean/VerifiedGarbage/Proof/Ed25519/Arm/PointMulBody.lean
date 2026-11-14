@@ -60,7 +60,7 @@ theorem batchTest_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (j : Nat) (hj : 
   refine ldr0_ok hc (by decide) fun u hu => wp_cmp (op2_imm (by decide)) fun t ht hz => WP.block_nil ?_
   refine ⟨(hu.rest (by decide)).trans (ht.rest _), by rw [ht.mem, hu.mem], ?_⟩
   have he : BitVec.ofNat 32 j - (0 : BitVec 32) = BitVec.ofNat 32 j := BitVec.sub_zero _
-  rw [hz, hu.gpr, hv, he, ofNat_beq_zero (by omega)]
+  rw [hz, hu.gpr, hv, he, ofNat_beq_zero (by omega_using [hj])]
 
 end VG.Proof.Ed25519.Arm
 end
@@ -76,7 +76,7 @@ theorem PowersKeep.counter {b : BitVec 32} {o n : Nat} {s t : State}
   apply BitVec.eq_of_toNat_eq
   exact wd_frame h.frame fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega)) (by decide) (by omega)
+    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_arith)) (by decide) (by omega_arith)
 
 theorem LoopKeep.counter {b : BitVec 32} {s t : State} (h : LoopKeep b s t) :
     t.mem.readW (State.addr b + BitVec.ofNat 64 56) 32 =
@@ -100,7 +100,7 @@ theorem smallFrame_table {b : BitVec 32} {m m' : Mem} {o n d : Nat}
     (hd : 1632 ≤ d) (hb : d + 128 ≤ 8192) : tablePoint m' b d = tablePoint m b d := by
   refine tablePoint_frame h fun r hr => ?_
   rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  exact Offset.disjoint _ (.inr (by omega_using [hn, hd])) (by omega_using [hb]) (by omega_using [hn])
 
 end VG.Proof.Ed25519.Arm
 end
@@ -130,11 +130,11 @@ theorem pointMulBody_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hl : All
   have uc := (uk.counter (by decide) (by decide)).trans ac
   have upt : point (env u.mem b) 0 1 2 3 = after scalar p (16 * j + 16) :=
     up.trans ((congrArg (fun e => point e 0 1 2 3) ae).trans
-      (hp.trans (congrArg (after scalar p) (by omega))))
+      (hp.trans (congrArg (after scalar p) (by omega_using []))))
   have utt : ∀ i < 16, tablePoint u.mem b (5728 + 128 * i) = powerPoint p (16 * j + i) := by
     intro i hib
     exact (ut i hib).trans ((congrArg (fun q => powerPoint q i)
-      ((smallFrame_table af (by decide) (by omega) (by omega)).trans ht)).trans
+      ((smallFrame_table af (by decide) (by omega_using []) (by omega_using [hj32])).trans ht)).trans
       (powerPoint_add p (16 * j) i).symm)
   refine WP.seq (WP.mono (batchBits_ok (kum.ctx hc) count j hj ui.bound ui.fit ui.pointer uc ui.readable)
     fun v ⟨vr, vf, vb⟩ => ?_)
@@ -147,7 +147,7 @@ theorem pointMulBody_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hl : All
     exact (vb i hib).trans (congrArg (fun x => BitVec.ofNat 8 (scalarBit x (16 * j + i)).toNat) ui.value)
   refine WP.seq (WP.mono (accumulate16_ok (kv.ctx (kum.ctx hc)) vl (16 * j) scalar p vbits
     ((congrFun ve 16).trans ud) ((congrArg (fun e => point e 0 1 2 3) ve).trans upt)
-    (fun i hib => (smallFrame_table vf (by decide) (by omega) (by omega)).trans (utt i hib)))
+    (fun i hib => (smallFrame_table vf (by decide) (by omega_using []) (by omega_using [hib])).trans (utt i hib)))
     fun w ⟨wl, wp, wd, wk⟩ => ?_)
   have kwm : MulKeep b 5728 2048 s w := kum.trans (kv.trans (MulKeep.of_loop wk))
   have wc := wk.counter.trans ((bitsFrame_counter vf).trans uc)

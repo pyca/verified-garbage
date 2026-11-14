@@ -183,7 +183,7 @@ theorem reduceX_ok (s : State) :
       Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rcx, .rdx, .rbp] s s' := by
   rw [reduceX_eq, WP.block_append_iff]
   refine WP.mono (reduceLo_ok s) fun s6 ⟨hv, h12, hd, k6⟩ => ?_
-  refine WP.mono (fold19X_ok s6 (by omega)) fun s8 ⟨e8, b8, k8⟩ => ?_
+  refine WP.mono (fold19X_ok s6 (by omega_using [h12])) fun s8 ⟨e8, b8, k8⟩ => ?_
   refine ⟨?_, b8, k6.trans (k8.mono (by decide))⟩
   rw [e8, hv, fold256]
 
@@ -213,8 +213,8 @@ theorem dbl5_ok (s : State) (h12 : (s.gpr .r12).toNat < 2 ^ 63) :
   have := Bool.toNat_le c8; have := Bool.toNat_le c9; have := Bool.toNat_le c10
   have := Bool.toNat_le c11; have := Bool.toNat_le c12
   refine ⟨?_, ?_, fun r hr => ?_, by trivial, by trivial, by trivial⟩
-  · simp only [val4]; omega
-  · omega
+  · simp only [val4]; omega_using [h12, e8, e9, e10, e11, e12]
+  · omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2, ite_false]
@@ -234,8 +234,8 @@ theorem reduceX2_ok (s : State) :
   rw [reduceX2_eq, WP.block_append_iff]
   refine WP.mono (reduceLo_ok s) fun s6 ⟨hv, h12, hd, k6⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (dbl5_ok s6 (by omega)) fun s7 ⟨e7, h7, k7⟩ => ?_
-  refine WP.mono (foldX_ok s7 (by have := (s7.gpr .r12).isLt; omega)
+  refine WP.mono (dbl5_ok s6 (by omega_using [h12])) fun s7 ⟨e7, h7, k7⟩ => ?_
+  refine WP.mono (foldX_ok s7 (by have := (s7.gpr .r12).isLt; omega_using [h12, h7])
     (by rw [k7.1 .rdx (by decide)]; exact hd)) fun s8 ⟨e8, k8⟩ => ?_
   refine ⟨?_, (k6.trans (k7.mono (by decide))).trans (k8.mono (by decide))⟩
   rw [e8, e7, hv, Nat.mul_mod, Nat.mul_mod (2 : Nat) (_ + 2 ^ 256 * _), fold256]

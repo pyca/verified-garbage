@@ -44,8 +44,8 @@ theorem next_ok (s : State) (n : Nat) (hn : n ≤ 4)
       (∀ r, r ≠ .x1 → r ≠ .x2 → r ≠ .x4 → r ≠ .x6 → u.gpr r = s.gpr r) ∧
       stateAt u.mem (s.gpr .x0) = ctr (stateAt s.mem (s.gpr .x0)) n ∧
       Frame [⟨s.gpr .x0,64⟩] s.mem u.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp := by
-  have hi : n < 4096 := by omega
-  have hb : 64*n < 4096 := by omega
+  have hi : n < 4096 := by omega_using [hn]
+  have hb : 64*n < 4096 := by omega_using [hn]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul, Nat.reduceMod, and_self, next,runBlock_cons,runBlock_nil,exec,
     VG.Impl.ChaCha20.AArch64.Xor.mov,
@@ -67,19 +67,19 @@ theorem step_ok {sve : Bool} (s₀ : State) (hp : TPre s₀) (h6 : s₀.gpr .x6 
   have hl : L s₀ < 2^64 := (s₀.gpr .x2).isLt
   have hi : ∀ k : Fin 16, InRegions (s₀.rd ++ s₀.wr) (st s₀+BitVec.ofNat 64 (4*k)) 4 := by
     intro k; rw [hp.rd,hp.wr]
-    exact ⟨stR s₀,by simp,Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨stR s₀,by simp,Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   have hs : ∀ r : Fin 4, ∀ j ∈ lanes n, InRegions (s₀.rd ++ s₀.wr)
       (dp s₀+BitVec.ofNat 64 (64*j+16*r)) 16 := by
     intro r j hj
     have hjn : j.val < n := (List.mem_filter.mp hj).2 |> of_decide_eq_true
     rw [hp.rd,hp.wr]
-    exact ⟨dR s₀,by simp,Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨dR s₀,by simp,Offset.contains_base _ (by omega_using [hle, hjn]) (by omega_using [])⟩
   have ho : ∀ r : Fin 4, ∀ j ∈ lanes n, InRegions s₀.wr
       (s₀.gpr .x6+BitVec.ofNat 64 (64*j+16*r)) 16 := by
     intro r j hj
     have hjn : j.val < n := (List.mem_filter.mp hj).2 |> of_decide_eq_true
     rw [hp.wr,h6]
-    exact ⟨tR s₀,by simp,Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨tR s₀,by simp,Offset.contains_base _ (by omega_using [hle, hjn]) (by omega_using [])⟩
   have sub : Region.Sub ⟨tp s₀,64*n⟩ (tR s₀) := Region.sub_prefix hle
   have ssub : Region.Sub ⟨dp s₀,64*n⟩ (dR s₀) := Region.sub_prefix hle
   have halias : s₀.gpr .x1 = s₀.gpr .x6 ∨
@@ -106,8 +106,8 @@ theorem step_ok {sve : Bool} (s₀ : State) (hp : TPre s₀) (h6 : s₀.gpr .x6 
     · rw [ha k hk',ite_eq_left hk',keystream_getD _ hkl]
     · rw [hf _ (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
-        simp only [Region.Contains,tp,Mem.sub_ofNat_toNat _ (by omega : k < 2^64)]
-        omega),ite_eq_right hk']
+        simp only [Region.Contains,tp,Mem.sub_ofNat_toNat _ (by omega_using [hl, hkl] : k < 2^64)]
+        omega_using [hk']),ite_eq_right hk']
   have hsrc : Src s₀ (64*n) a.mem := Xor.src_step hp (Nat.zero_le _)
     (fun k _ _ => rfl) hft hd
   refine (next_ok a n hn ia oa).mono fun u ⟨h1,h2,h4,hg,hcnt,hf',hrd,hwr,hsp⟩ => ?_
@@ -123,7 +123,7 @@ theorem step_ok {sve : Bool} (s₀ : State) (hp : TPre s₀) (h6 : s₀.gpr .x6 
   · rw [h2,hk.gpr _ (by decide)]
     apply BitVec.eq_of_toNat_eq
     simp only [L,BitVec.toNat_sub,BitVec.toNat_ofNat] at *
-    omega
+    omega_using [hle]
   · exact (hg _ (by decide) (by decide) (by decide) (by decide)).trans (hk.gpr _ (by decide))
   · rw [h4,hk.gpr _ (by decide),h6]
   · intro r hr

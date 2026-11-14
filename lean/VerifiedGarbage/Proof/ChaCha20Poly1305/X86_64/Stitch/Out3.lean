@@ -57,10 +57,10 @@ theorem setup3_ok0 {s : State} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9)) (h
     simp only [Bool.and_eq_true, Bool.not_eq_true', List.all_eq_true, List.mem_range, beq_iff_eq] at e
     refine WP.mono (srun_ok hc setup3 (SRel.init 0 s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
       ym3_of h e.1.2 hm, h.clean e.1.1, h.gpr, h.rd, h.wr⟩
-    have r := h.reg (zreg (4 * k + i / 4)) (4 * l + i % 4) (by omega)
-    rw [xidx_zreg _ (by omega), e.2 k hk _ (by omega) _ (by omega)] at r
-    simp only [yw, show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega,
-      show 4 * (i / 4) + i % 4 = i by omega] at r
+    have r := h.reg (zreg (4 * k + i / 4)) (4 * l + i % 4) (by omega_using [hl])
+    rw [xidx_zreg _ (by omega_using [hk, hi16]), e.2 k hk _ (by omega_using [hi16]) _ (by omega_using [hl])] at r
+    simp only [yw, show (4 * l + i % 4) / 4 = l by omega_using [], show (4 * l + i % 4) % 4 = i % 4 by omega_using [],
+      show 4 * (i / 4) + i % 4 = i by omega_using []] at r
     rw [r, inT3_eval hi hk hi16 hl]
   · cases e
 
@@ -78,12 +78,12 @@ theorem out3_ok {s : State} (hc : Ctx 96 s) (hi : Incs s.mem (s.gpr .r9)) {vs : 
     simp only [List.all_eq_true, List.mem_range, beq_iff_eq] at e
     refine WP.mono (srun_ok hc _ (SRel.init 96 s) hr) fun s' h => ⟨fun k hk => ?_, h.frame, h.gpr, h.rd, h.wr⟩
     refine byte_out (f := fun j => plus vs (S0 s) j) ?_
-    have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega)
-    rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega, e _ (by omega) _ (by omega),
-      outT3_eval hz hi (by omega) (by omega) (by omega),
-      show 2 * (k / 64 / 2) + k / 64 % 2 = k / 64 by omega] at d
+    have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega_using [hk])
+    rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega_using [], e _ (by omega_using [hk]) _ (by omega_using []),
+      outT3_eval hz hi (by omega_using [hk]) (by omega_using []) (by omega_using []),
+      show 2 * (k / 64 / 2) + k / 64 % 2 = k / 64 by omega_using []] at d
     simp only [regn, baseR] at d
-    rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega] at d
+    rw [show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega_using []] at d
     exact d
   · cases e
 

@@ -42,7 +42,7 @@ theorem or_low {x b : Nat} (hb : b < 2 ^ 32) : x ||| b = (x % 2 ^ 32 ||| b) + 2 
   by_cases h : i < 32
   · simp [h]
   · simp only [h, ↓reduceIte]
-    rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hb (Nat.pow_le_pow_right (by decide) (by omega))),
-      Bool.or_false, Nat.sub_add_cancel (by omega)]
+    rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hb (Nat.pow_le_pow_right (by decide) (by omega_using [h]))),
+      Bool.or_false, Nat.sub_add_cancel (by omega_using [h])]
 
 end VG.Proof.Dsa.Arm.Prime

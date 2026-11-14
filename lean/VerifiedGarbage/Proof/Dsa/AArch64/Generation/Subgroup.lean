@@ -37,7 +37,7 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
           used' = p.prime.rand.length - rest.length) ∧
         Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   obtain ⟨V, R⟩ := h.rep
-  have plen : p.prime.len ≤ 32 := by rcases p.width with hh | hh <;> omega
+  have plen : p.prime.len ≤ 32 := by rcases p.width with hh | hh <;> omega_using [hh]
   unfold Impl.Dsa.AArch64.Generation.subgroup
   refine WP.seq (WP.mono (qBuild_ok h1 h256 he1 he256 hs1 hs256 hd1 hd256 p.width
     h.layout R h.label p.outputSlot h.outputWrite p.outputFrame.symm p.outputScratch)
@@ -72,7 +72,7 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
     odd := by
       rw [p.modulus]
       exact (VG.Proof.Dsa.Generation.qCandidate_shape
-        (show 2 ≤ 8 * p.prime.len by rcases p.width with hh | hh <;> omega) p.seed).1
+        (show 2 ≤ 8 * p.prime.len by rcases p.width with hh | hh <;> omega_using [hh]) p.seed).1
     bitLen := p.bits }
   have hch : primeCallChanged (8 * p.prime.len) p.F (p.W 5) =
       p.primeWrites ++ [⟨p.F, frameBytes⟩] := by
@@ -89,7 +89,7 @@ theorem subgroup_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
       intro r hr
       rcases List.mem_append.mp hr with hr | hr
       · exact p.outputPrime r hr
-      · rcases List.mem_singleton.mp hr with rfl; exact p.outputFrame) (by omega), ubytes]
+      · rcases List.mem_singleton.mp hr with rfl; exact p.outputFrame) (by omega_using [plen]), ubytes]
   · exact (fu.mono (by intro r hr; simp only [SubgroupPlan.changed, List.mem_append]; exact Or.inl (Or.inl hr))).trans
       (ft.mono (by intro r hr; simp only [SubgroupPlan.changed, List.append_assoc]; exact List.mem_append_right _ hr))
 

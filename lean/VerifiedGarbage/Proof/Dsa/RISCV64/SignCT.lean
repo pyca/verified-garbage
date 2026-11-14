@@ -72,7 +72,7 @@ theorem szhead_ok {v : VD} {s : State} (B : Base v s) (ho : v.out = some (oOf v)
   refine WP.mono (WP.keep [.t5, .s0] (Q := fun u => u.gpr .t5 = BitVec.ofNat 64 (2 * v.L.ql))
     (by
       brun [b5, exec_li_zero]
-      simp only [BitVec.ofNat_add_ofNat]; congr 1; omega) (by decide) (by rfl)) fun t ⟨a5, kt⟩ => ?_
+      simp only [BitVec.ofNat_add_ofNat]; congr 1; omega_using []) (by decide) (by rfl)) fun t ⟨a5, kt⟩ => ?_
   exact ⟨(kt.gpr (r := .t4) (by decide)).trans ((kw.gpr (r := .t4) (by decide)).trans a4), a5, trivial⟩
 
 /-- `zeroOut`, from a level whose states keep `out` in the header. -/
@@ -113,11 +113,11 @@ theorem frontS : ∀ v s, C0s v s → WP isa (.block Sign.entry) s (P0 v) := by
   obtain ⟨hrd, -, -, -, -, -, -, dKS, dNS, dDS, -, -, -, -, -, -, -, -, hkl, -, -, -⟩ := h
   refine WP.mono (sfront_ok hpre) fun t ⟨F, k⟩ => ?_
   have hK : Src t (slayOf s) (s.gpr .a2) (3 * (s.gpr .a4).toNat + (s.gpr .a6).toNat) :=
-    ssrc (by rw [hrd]; simp) dKS (s.gpr .a3).isLt (by omega) k.2.1 k.2.2
+    ssrc (by rw [hrd]; simp) dKS (s.gpr .a3).isLt (by omega_using [hkl]) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, ssrc (by rw [hrd]; simp) dNS (s.gpr .a6).isLt (Nat.le_refl _) k.2.1 k.2.2,
     ssrc (by rw [hrd]; simp) dDS (stackArg s 0).isLt (Nat.min_le_left _ _) k.2.1 k.2.2,
-    hK.bytes F.out (by simp only [slayOf] at hZ ⊢; omega),
-    (by simp only [vdS, slayOf]; omega), (fun _ => F.dig), fun o ho => by cases ho; exact F.outw⟩, F.lens⟩
+    hK.bytes F.out (by simp only [slayOf] at hZ ⊢; omega_using [hZ]),
+    (by simp only [vdS, slayOf]; omega_using []), (fun _ => F.dig), fun o ho => by cases ho; exact F.outw⟩, F.lens⟩
 
 theorem outS : ∀ v s, C0s v s → v.out = some (oOf v) := by
   rintro _ s ⟨-, rfl⟩
@@ -139,7 +139,7 @@ theorem loadS_L1s {v : VD} {s : State} (h : C0s v s) :
       simp only [Region.Contains, stackArgAddr, Nat.mul_zero, add_ofNat_zero]
       rw [show s.sp + BitVec.ofNat 64 8 - s.sp = BitVec.ofNat 64 8 by rw [BitVec.add_comm, BitVec.add_sub_cancel]]; decide⟩
   have hal8 : (s.sp + BitVec.ofNat 64 8).toNat % 8 = 0 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [sp16]
   have hv8 : s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = stackArg s 1 := rfl
   have first : WP isa (.block [.addSp .t2 8, .load .d .t2 .t2 0]) s fun s₁ => s₁ = s.write .t2 (stackArg s 1) := by
     brun [exec_addSp (show 8 < 2048 by decide), hld8, hal8, hv8, write_write]
@@ -235,20 +235,20 @@ theorem yrange_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (ho : o + v.L.pl �
     WP isa (.seq (loadArr 4) elemRange) s fun t => CK v t ∧ (t.gpr .a0 = 0 ↔ ERange v o) := by
   have hL := h.base.ok
   have hbuf := hL.buf_end
-  have hqZ : v.L.qOff ≤ v.L.Z := by simp only [Lay.bOff] at hbuf; omega
+  have hqZ : v.L.qOff ≤ v.L.Z := by simp only [Lay.bOff] at hbuf; omega_using [hbuf]
   have e0 := Lay.slot_eq v.L.wp 0; have e1 := Lay.slot_eq v.L.wp 1; have e4 := Lay.slot_eq v.L.wp 4
   have hw := hL.wp_ge
   have hnw := hL.nowrap
   have en := h.inp.env
   have he := h.base.hk.sub ho
   refine WP.seq (WP.mono (loadArr_ok en (j := 4) (N := off v.key o) (by decide)
-    (by rw [h7]; exact (BitVec.add_zero _).symm) h8 (by have := h.base.pl; omega) (by have := hL.wp_eq; omega)
+    (by rw [h7]; exact (BitVec.add_zero _).symm) h8 (by have := h.base.pl; omega_using [this]) (by have := hL.wp_eq; omega_using [this])
     he.rd (fun i hi x hx => he.sep i hi x (Nat.lt_of_lt_of_le hx hqZ))) fun s₁ ⟨⟨v4, top4, o1, a7⟩, k1⟩ => ?_)
   have e1' : Env s₁ v.L.S v.L.qOff v.L.wp :=
     ⟨en.hs.congr k1.2.2, a7, (k1.gpr (by decide)).trans en.s5, (k1.gpr (by decide)).trans en.t0, en.w2, en.w48,
       en.hZ⟩
   have A0 : wordsVal s₁.mem v.L.S (slot v.L.wp 0) v.L.wp = v.p := by
-    rw [o1.wordsVal (by omega) (by omega_arith)]; exact h.p0
+    rw [o1.wordsVal (by omega_using [e0, e4]) (by omega_arith)]; exact h.p0
   refine WP.mono (elemRange_ok e1' top4) fun t ⟨⟨r0, _, o2, e2⟩, k2⟩ => ?_
   rw [v4, A0, h.base.bytes ho] at r0
   have k12 := k1.trans k2
@@ -389,7 +389,7 @@ theorem vdS_eq {s t : State} (hs : sContract.pre s) (hp : sContract.pub s t) : v
   obtain ⟨e, -⟩ := List.append_inj' hl rfl
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at e
   have e := (List.map_inj_right fun _ _ h => BitVec.eq_of_toNat_eq h).mp e
-  rw [← e2, ← e3, ← e4, ← e6, Nat.min_eq_right (by omega)] at e
+  rw [← e2, ← e3, ← e4, ← e6, Nat.min_eq_right (by omega_using [hk])] at e
   simp only [vdS, slayOf]
   rw [e, e0, e2, e4, e5, e6, e7, sa0, sa1, sa2]
 

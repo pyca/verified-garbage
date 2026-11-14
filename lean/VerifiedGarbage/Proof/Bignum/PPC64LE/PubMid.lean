@@ -92,7 +92,7 @@ theorem frame_two {S O : Addr} {d L k : Nat} {m m₁ m' : Mem} (h₁ : Outside S
   have := Offset.lt_iff x S (d := d) (n := L) hdL
   simp only [ofs]
   by_contra hc
-  exact a (by have := this.mpr ⟨by omega, by omega⟩; simp only [off]; omega)
+  exact a (by have := this.mpr ⟨by omega, by omega⟩; simp only [off]; omega_using [this])
 
 /-- The public data of a run: `out` and `k`, `pre`, `e` and its length, the
 input, and the working space and its size in bytes. -/

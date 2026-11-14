@@ -35,11 +35,11 @@ open VG.Proof.AesGcm.AArch64 (eval_zero toNat_ofNat_of_lt)
 theorem and1 {v : Nat} (hv : v < 2 ^ 64) : BitVec.ofNat 64 v &&& 1#64 = BitVec.ofNat 64 (v % 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, toNat_ofNat_of_lt hv, show (1#64).toNat = 1 from rfl, Nat.and_one_is_mod,
-    toNat_ofNat_of_lt (by omega)]
+    toNat_ofNat_of_lt (by omega_using [])]
 
 theorem shr1 {v : Nat} (hv : v < 2 ^ 64) : BitVec.ofNat 64 v >>> 1 = BitVec.ofNat 64 (v / 2) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hv, toNat_ofNat_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hv, toNat_ofNat_of_lt (by omega_using [hv]), Nat.shiftRight_eq_div_pow]
 
 /-- The registers `lNtz` writes. -/
 abbrev ntzRegs : List Reg := [.x9, .x10, .x11, .x12, .x13, .x14]
@@ -96,7 +96,7 @@ theorem lNtzLoop_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W)
     · simp [gpr_write, x14₁, shr1 hv, e]
     · simp [gpr_write, h]
     all_goals rfl
-  obtain ⟨t₃, runt₃, x12₃, x14₃, g₃, m₃, sp₃, rd₃, wr₃⟩ := low1_ok t₂ (by omega) x14₂'
+  obtain ⟨t₃, runt₃, x12₃, x14₃, g₃, m₃, sp₃, rd₃, wr₃⟩ := low1_ok t₂ (by omega_using [hv, e]) x14₂'
   refine WP.of_runBlock ⟨t₃, by rw [runBlock_append, runBlock_append, runt₁, Option.bind_some, runt₂,
     Option.bind_some, runt₃], ?_⟩
   have fr' : Frame [⟨W + BitVec.ofNat 64 lO, 16⟩] s.mem t₃.mem := by
@@ -111,15 +111,15 @@ theorem lNtzLoop_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W)
   have rd' : t₃.rd = s.rd := by rw [rd₃, rd₂'', D₁.rd, rd]
   have wr' : t₃.wr = s.wr := by rw [wr₃, wr₂'', D₁.wr, wr]
   have hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
-    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega
-  have hv' : i / 2 ^ (j + 1) < 2 ^ 64 := by omega
+    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega_using []
+  have hv' : i / 2 ^ (j + 1) < 2 ^ 64 := by omega_using [hv, e]
   by_cases hodd : i / 2 ^ (j + 1) % 2 = 0
   · right
-    refine ⟨(eval_zero x12₃ (by omega)).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega, j + 1, rfl,
-      by rw [e]; omega, hodd, hntz', x14₃, fr', v', g', sp', rd', wr'⟩
+    refine ⟨(eval_zero x12₃ (by omega_using [])).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega_using [hpos], j + 1, rfl,
+      by rw [e]; omega_using [hpos, hev], hodd, hntz', x14₃, fr', v', g', sp', rd', wr'⟩
   · left
-    refine ⟨(eval_zero x12₃ (by omega)).trans (by simp [hodd]), ⟨fr', ?_, g', sp', rd', wr'⟩⟩
-    rw [v', hntz', Proof.Ocb.ntz_odd (by omega)]
+    refine ⟨(eval_zero x12₃ (by omega_using [])).trans (by simp [hodd]), ⟨fr', ?_, g', sp', rd', wr'⟩⟩
+    rw [v', hntz', Proof.Ocb.ntz_odd (by omega_using [hodd])]
 
 
 theorem lNtz_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨W, 2560⟩] s.wr) {l : Block} {i : Nat}
@@ -157,10 +157,10 @@ theorem lNtz_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨W
   unfold lNtz
   refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₁',
     Option.bind_some, run₂], ?_⟩)
-  refine WP.ite (decide (i % 2 = 0)) (eval_zero x12₂ (by omega)) (fun hb => ?_)
+  refine WP.ite (decide (i % 2 = 0)) (eval_zero x12₂ (by omega_using [])) (fun hb => ?_)
     (fun hb => WP.block_nil (post_of s₂ fr₂ ?_ (fun _ _ => rfl) sp₂' rd₂' wr₂'))
   rotate_left
-  · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega)]
+  · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega_using [hb])]
   have he : i % 2 = 0 := of_decide_eq_true hb
   exact WP.mono (lNtzLoop_ok h19₂ (by rw [wr₂']; exact hw) hi' (a := 0)
     (by simpa using hi) (by simpa using he) (by simp) (by simpa using x14₂) v₂) fun t P =>

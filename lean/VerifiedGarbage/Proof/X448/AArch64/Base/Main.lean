@@ -70,15 +70,15 @@ theorem Pre.of (s : State) (h : Proof.X448.x448BaseAArch64.pre s) : Pre s := by
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem far_output {base p : Addr} (hd : (⟨p, 56⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < 8192) : 56 ≤ ofs p (off base i) := by
-  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega) (by omega))
+  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega_using [hi]) (by omega_using [hi]))
   simp only [Region.Contains]
   change ofs p (off base i) + 1 ≤ 56
-  omega
+  omega_using [h]
 
 /-- The tables, from the precondition. -/
 theorem Pre.tbl {s : State} (hp : Pre s) : TblAt s (s.gpr .x2) (s.syms combSym) :=
@@ -99,7 +99,7 @@ theorem correct {sE : State} (hp : Pre sE) :
   have hn := hp.sc_fit
   have hw : (⟨sE.gpr .x2, 8192⟩ : Region) ∈ sE.wr := by rw [hp.wr]; simp
   have kr : ∀ q < 56, InRegions (sE.rd ++ sE.wr) (sE.gpr .x1 + BitVec.ofNat 64 q) 1 := fun q hq =>
-    ⟨⟨sE.gpr .x1, 56⟩, by rw [hp.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨sE.gpr .x1, 56⟩, by rw [hp.rd]; simp, Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩
   have kd : ∀ q < 56, 8192 ≤ ofs (sE.gpr .x2) (sE.gpr .x1 + BitVec.ofNat 64 q) :=
     fun q hq => far hp.scalar_sc hq (by decide)
   set base := sE.gpr .x2 with hbase
@@ -127,7 +127,7 @@ theorem correct {sE : State} (hp : Pre sE) :
     rw [x16, k5.regs.1 _ (by decide), k4.regs.1 _ (by decide), f3.out, R.out]
   have wr6 : s6.wr = sE.wr := by rw [k6.2.2, k5.regs.2.2, k4.regs.2.2, f3.wr, R.wr]
   have hw6 : ∀ j < 56, InRegions s6.wr (off (sE.gpr .x0) j) 1 := fun j hj =>
-    ⟨⟨sE.gpr .x0, 56⟩, by rw [wr6, hp.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨sE.gpr .x0, 56⟩, by rw [wr6, hp.wr]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have sv6 : Saved base sE.gpr s6.mem := R.saved.outside2 o16 (by decide) (by decide)
   have svx6 : SavedX base sE.gpr s6.mem := R.savedX.outside2 o16 (by decide) (by decide)
   have svV6 : SavedV base sE.v s6.mem := R.savedV.outside2 o16 (by decide) (by decide)

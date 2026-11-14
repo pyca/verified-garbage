@@ -51,7 +51,7 @@ theorem copy_core {dst src : Ptr} {n : Nat} (h0 : 0 < n) (hn : n < 2 ^ 28)
   let d := pa s dst
   let a := pa s src
   unfold Impl.MlDsa.AArch64.PreparedKey.copy
-  rw [ite_eq_right (by omega), show 16 * n / 16 = n by omega]
+  rw [ite_eq_right (by omega_using [h0]), show 16 * n / 16 = n by omega_using []]
   refine WP.seq (WP.mono (Sign.copyGlue_ok (n := n) hd hs s)
     fun u ⟨⟨h1, h2, h3⟩, ku⟩ => ?_)
   refine WP.mono (count_loop (cr := .x2) (n := n) h0 (fun k v =>
@@ -64,9 +64,9 @@ theorem copy_core {dst src : Ptr} {n : Nat} (h0 : 0 < n) (hn : n < 2 ^ 28)
     fun t ⟨_, _, _, kt, hf, hb⟩ => ?_
   · refine WP.mono (copyBody_ok v ?_ ?_) fun t ⟨hm, t0, t1, t2, kt⟩ => ?_
     · rw [kv.rd, kv.wr, e1]
-      exact inRegions_sub hin (by omega) (by omega)
+      exact inRegions_sub hin (by omega_using [hk]) (by omega_using [hn])
     · rw [kv.wr, e0]
-      exact inRegions_sub hout (by omega) (by omega)
+      exact inRegions_sub hout (by omega_using [hk]) (by omega_using [hn])
     · have hw : Written v.mem t.mem (d + BitVec.ofNat 64 (16 * k)) 16
           (fun j => s.mem (a + BitVec.ofNat 64 (16 * k + j))) := by
         rw [hm, e0]
@@ -76,15 +76,15 @@ theorem copy_core {dst src : Ptr} {n : Nat} (h0 : 0 < n) (hn : n < 2 ^ 28)
         rw [Mem.extractLsb'_read _ _ hj, ptr_add]
         exact hf.bytes (R := ⟨a, 16 * n⟩)
           (by simpa only [List.mem_singleton, forall_eq] using hsep)
-          (by change 16 * n ≤ 2 ^ 64; omega) (by change 16 * k + j < 16 * n; omega)
-      obtain ⟨hf', hb'⟩ := Written.step hf hb hw (by omega) (by omega)
+          (by change 16 * n ≤ 2 ^ 64; omega_using [hn]) (by change 16 * k + j < 16 * n; omega_using [hk, hj])
+      obtain ⟨hf', hb'⟩ := Written.step hf hb hw (by omega_using [hk]) (by omega_using [hn])
       refine ⟨⟨?_, ?_, ?_, (kv.trans kt).mono (by simp), hf', ?_⟩, ?_⟩
       · rw [t0, e0, show 16#64 = BitVec.ofNat 64 16 by rfl, ptr_add, Nat.mul_succ]
       · rw [t1, e1, show 16#64 = BitVec.ofNat 64 16 by rfl, ptr_add, Nat.mul_succ]
       · rw [t2, e2, Sign.ofNat_sub_one hk]
       · simpa only [Nat.mul_succ] using hb'
-      · rw [t2, e2, Sign.ofNat_sub_one hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-        omega
+      · rw [t2, e2, Sign.ofNat_sub_one hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
+        omega_using [hk]
   · exact ⟨by simpa only [Nat.mul_zero, VG.Proof.MlKem.AArch64.ptr_zero] using h1,
       by simpa only [Nat.mul_zero, VG.Proof.MlKem.AArch64.ptr_zero] using h2,
       h3, ku.keep, by rw [ku.mem]; exact Frame.refl _ _, by intro j hj; omega⟩
@@ -106,9 +106,9 @@ theorem copy_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
       bytesAt t.mem (pa s dst) bytes = bytesAt s.mem (pa s src) bytes := by
   simp only [copyChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨hw, hr⟩, hd⟩, h0⟩, hn⟩, halign⟩ := hc
-  have he : 16 * (bytes / 16) = bytes := by omega
+  have he : 16 * (bytes / 16) = bytes := by omega_using [halign]
   have hi := (sepB_spec hd).2.1
-  have h := copy_core (n := bytes / 16) (by omega) (by omega)
+  have h := copy_core (n := bytes / 16) (by omega_using [halign, h0]) (by omega_using [hn])
     (L.ptrBs hi) (L.ptrBs hr) s
   rw [he] at h
   exact WP.mono (h (L.inR hr) (L.inW hw) (L.disj hd))

@@ -43,7 +43,7 @@ theorem lo_hi_sum (x : Nat) : ∀ vs : List Nat, loSum x vs + 2 ^ 64 * hiSum x v
     have hd := Nat.mod_add_div (x * v) (2 ^ 64)
     simp only [loSum, hiSum, numVal, Nat.mul_add]
     rw [Nat.mul_left_comm x (2 ^ 64), ← ih, Nat.mul_add]
-    omega
+    omega_using []
 
 theorem regsVal_eq_zero {s : State} : ∀ {rs : List Reg}, (∀ r ∈ rs, s.gpr r = 0) → regsVal s rs = 0
   | [], _ => rfl
@@ -109,7 +109,7 @@ theorem numVal_map (s : State) : ∀ bs : List Reg, numVal (bs.map fun r => (s.g
 theorem map_fst_zip_map {tl bs : List Reg} (h : tl.length = bs.length) :
     ((tl.zip bs).map fun (t, r) => (t, some (Piece.hi (.reg r)))).map Prod.fst = tl := by
   rw [List.map_map]
-  exact (List.map_congr_left fun _ _ => rfl).trans (List.map_fst_zip (by omega))
+  exact (List.map_congr_left fun _ _ => rfl).trans (List.map_fst_zip (by omega_using [h]))
 
 theorem mem_zip_map {tl bs : List Reg} {e : Reg × Option Piece}
     (h : e ∈ (tl.zip bs).map fun (t, r) => (t, some (Piece.hi (.reg r)))) :
@@ -135,7 +135,7 @@ theorem rowInit_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s
   have ht0 := hts t0 (List.mem_cons_self ..)
   have ht0l : t0 ∉ tl := (List.nodup_cons.mp hnd).1
   rw [rowInit, List.tail_cons, WP.block_append_iff]
-  refine WP.mono (mulsLo_ok (x := x) (t0 :: tl) bs (by simp only [List.length_cons]; omega) hnd
+  refine WP.mono (mulsLo_ok (x := x) (t0 :: tl) bs (by simp only [List.length_cons]; omega_using [hlen]) hnd
     (fun t ht => ⟨(hts t ht).2.2.2.2.1, (hts t ht).2.2.2.2.2⟩) h0) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (fun h => (hts _ h).1 rfl)
   have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (fun h => (hts _ h).2.2.2.1 rfl), hz]
@@ -166,7 +166,7 @@ theorem rowInit_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s
     (by rw [hLf]; exact fun h => (hts _ (List.mem_cons_of_mem _ h)).1 rfl)) fun s₂ ⟨⟨c, hc1, e₂⟩, k₂⟩ => ?_
   rw [hLf] at e₂ k₂
   rw [List.length_map, List.length_zip, hlen, Nat.min_self] at e₂
-  rw [chainVal_hi _ s₁ base tl bs (by omega), hb₁, hx₁] at e₂
+  rw [chainVal_hi _ s₁ base tl bs (by omega_using [hlen]), hb₁, hx₁] at e₂
   refine ⟨?_, k₁.mono (by sub_regs) |>.trans (k₂.mono fun q hq => by
     simp only [List.mem_cons] at hq ⊢
     rcases hq with h | h | h
@@ -188,15 +188,15 @@ theorem rowInit_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s
   have hP : 2 ^ (64 * (bs.length + 1)) = 2 ^ 64 * 2 ^ (64 * bs.length) := by
     rw [Nat.mul_add, Nat.mul_one, Nat.pow_add, Nat.mul_comm]
   rw [hP] at hlt
-  rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl
+  rcases (by omega_using [hc1] : c = 0 ∨ c = 1) with rfl | rfl
   · simp only [Nat.mul_zero, Nat.add_zero] at e₂
-    rw [← hsum, e₂, Nat.mul_add]; omega
+    rw [← hsum, e₂, Nat.mul_add]; omega_using [e₁]
   · exfalso
     simp only [Nat.mul_one] at e₂
     have h3 : 2 ^ 64 * (regsVal s₂ tl + 2 ^ (64 * bs.length)) =
         2 ^ 64 * (regsVal s₁ tl + hiSum (s.gpr x).toNat (bs.map fun r => (s.gpr r).toNat)) := by
       rw [e₂]
     rw [Nat.mul_add, Nat.mul_add] at h3
-    omega
+    omega_using [e₁, hsum, hlt, e₂]
 
 end VG.Proof.Mont.AArch64

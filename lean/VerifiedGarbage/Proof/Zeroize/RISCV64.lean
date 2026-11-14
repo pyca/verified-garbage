@@ -55,7 +55,7 @@ theorem step_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i : Nat
   have hn := (s₀.gpr .a1).isLt
   have hc : (⟨s₀.gpr .a0, (s₀.gpr .a1).toNat⟩ : Region).Contains
       (s₀.gpr .a0 + BitVec.ofNat 64 i) (sz word) :=
-    Offset.contains_base _ hi (by cases word <;> simp_all <;> omega)
+    Offset.contains_base _ hi (by cases word <;> simp_all <;> omega_using [hi])
   have hs : InRegions s.wr (s₀.gpr .a0 + BitVec.ofNat 64 i) (sz word) :=
     ⟨_, by rw [hw, hp.2]; simp, hc⟩
   have hmem := List.mem_singleton_self (⟨s₀.gpr .a0, (s₀.gpr .a1).toNat⟩ : Region)
@@ -67,18 +67,18 @@ theorem step_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i : Nat
   · simp only [sz, Bool.false_eq_true, ↓reduceIte] at hi hc hs ⊢
     unfold step
     crun [hd, ha, hs, hw, Inv]
-    exact ⟨hadd 1, by rw [show BitVec.setWidth 8 (0#64) = (0 : BitVec (8 * 1)) from rfl]; exact prefix_write hz (by omega),
+    exact ⟨hadd 1, by rw [show BitVec.setWidth 8 (0#64) = (0 : BitVec (8 * 1)) from rfl]; exact prefix_write hz (by omega_using [hi]),
       hf.write hmem _ hc⟩
   · simp only [sz, ↓reduceIte] at hi hc hs ⊢
     have hal := hal rfl
     unfold step
     crun [hd, ha, hs, hw, Inv, hal]
-    exact ⟨hadd 8, prefix_write hz (by omega), hf.write hmem _ hc⟩
+    exact ⟨hadd 8, prefix_write hz (by omega_using [hi]), hf.write hmem _ hc⟩
 
 theorem aligned_step {x : BitVec 64} (h : x.toNat % 8 = 0) (j : Nat) :
     (x + BitVec.ofNat 64 (8 * j)).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : Nat)
     (hn : i + sz word * n ≤ (s₀.gpr .a1).toNat)
@@ -87,7 +87,7 @@ theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : N
     WP isa (loop word) s fun t => Inv s₀ (i + sz word * n) t ∧ t.gpr .a1 = s.gpr .a1 := by
   have hlt : n < 2 ^ 64 := by
     have := (s₀.gpr .a1).isLt
-    cases word <;> simp only [sz, ↓reduceIte, Bool.false_eq_true] at hn <;> omega
+    cases word <;> simp only [sz, ↓reduceIte, Bool.false_eq_true] at hn <;> omega_using [hn]
   unfold loop
   by_cases he : n = 0
   · subst n
@@ -103,9 +103,9 @@ theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : N
       have hal' : word = true → (s₀.gpr .a0 + BitVec.ofNat 64 (i + sz word * j)).toNat % 8 = 0 := by
         intro hw; subst hw
         rw [BitVec.ofNat_add, ← BitVec.add_assoc]
-        exact aligned_step (hal rfl (by omega)) j
+        exact aligned_step (hal rfl (by omega_using [he])) j
       refine WP.mono (step_ok word s₀ t hp _ ?_ hal' ht) fun u ⟨hu, hcu, hsu⟩ => ?_
-      · cases word <;> simp only [sz, ↓reduceIte, Bool.false_eq_true] at hn ⊢ <;> omega
+      · cases word <;> simp only [sz, ↓reduceIte, Bool.false_eq_true] at hn ⊢ <;> omega_using [hj, hn]
       have hpred : BitVec.ofNat 64 (n-j) - 1 = BitVec.ofNat 64 (n-(j+1)) := by bv_omega
       rw [hct, hpred] at hcu
       have hoff : i + sz word * j + sz word = i + sz word * (j+1) := by
@@ -119,8 +119,8 @@ theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : N
       · right
         have hnz : BitVec.ofNat 64 (n-(j+1)) ≠ (0 : BitVec 64) := by bv_omega
         refine ⟨by simp only [VG.RISCV64.eval, hcu, bne, beq_eq_false_iff_ne.mpr hnz]; rfl,
-          n-(j+1), by omega, j+1, by omega, rfl, hu, hcu, hsu.trans hst⟩
-    · exact ⟨0, by omega, by omega, by simpa using h, by simpa using hc, rfl⟩
+          n-(j+1), by omega_using [hj, hr], j+1, by omega_using [hj, hend], rfl, hu, hcu, hsu.trans hst⟩
+    · exact ⟨0, by omega_using [he], by omega_using [], by simpa using h, by simpa using hc, rfl⟩
 
 /-- The bytes before the first 8-byte aligned address at or after `p`. -/
 def headLen (p : BitVec 64) : Nat := (2 ^ 64 - p.toNat) % 8
@@ -131,7 +131,7 @@ theorem neg_and7 (p : BitVec 64) : (0 - p) &&& 7 = BitVec.ofNat 64 (headLen p) :
   rw [BitVec.toNat_sub, show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero]
   unfold headLen
   have := p.isLt
-  omega
+  omega_using []
 
 /-- `neg_and7` and `tail` with the literals `crun` leaves. -/
 theorem neg_and7' (p : BitVec 64) :
@@ -143,7 +143,7 @@ theorem headLen_aligned (p : BitVec 64) : (p + BitVec.ofNat 64 (headLen p)).toNa
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   unfold headLen
   have := p.isLt
-  omega
+  omega_using []
 
 theorem head_ok (s₀ : State) :
     WP isa head s₀ fun t =>
@@ -159,11 +159,11 @@ theorem head_ok (s₀ : State) :
     t.gpr .a1 = s₀.gpr .a1 ∧ t.gpr .t2 = if s₀.gpr .a1 < BitVec.ofNat 64 H then 1 else 0) ?_
     fun (t : State) ⟨ht, h1, ha1, h2⟩ => ?_
   · crun [Inv, Prefix]
-    exact ⟨⟨by omega, Frame.refl _ _⟩, neg_and7' _, by rw [neg_and7']⟩
+    exact ⟨⟨by omega_using [], Frame.refl _ _⟩, neg_and7' _, by rw [neg_and7']⟩
   · refine WP.seq ?_
     by_cases hlt : L < H
     · have hlt' : s₀.gpr .a1 < BitVec.ofNat 64 H := by
-        rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hlt
+        rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hH])]; exact hlt
       refine WP.ite true (by simp [VG.RISCV64.eval, h2, hlt']) (fun _ => ?_) (by simp)
       refine WP.mono (Q := fun (u : State) => Inv s₀ 0 u ∧ u.gpr .t1 = s₀.gpr .a1 ∧ u.gpr .a1 = s₀.gpr .a1) ?_
         fun (u : State) ⟨hu, h1u, hau⟩ => ?_
@@ -172,20 +172,20 @@ theorem head_ok (s₀ : State) :
       · obtain ⟨hw, ht0, ha0, hz, hf⟩ := hu
         crun [h1u, hau, Inv, hw, ht0, ha0, hz, hf, BitVec.sub_self]
         refine ⟨?_, ?_⟩
-        · rw [Nat.min_eq_left (by omega)]; simp
-        · rw [Nat.min_eq_left (by omega), Nat.sub_self]
+        · rw [Nat.min_eq_left (by omega_using [hlt])]; simp
+        · rw [Nat.min_eq_left (by omega_using [hlt]), Nat.sub_self]
     · have hge : ¬ s₀.gpr .a1 < BitVec.ofNat 64 H := by
-        rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hlt
+        rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hH])]; exact hlt
       refine WP.ite false (by simp [VG.RISCV64.eval, h2, hge]) (by simp) (fun _ => ?_)
       refine WP.block_nil ?_
       obtain ⟨hw, ht0, ha0, hz, hf⟩ := ht
       crun [h1, ha1, Inv, hw, ht0, ha0, hz, hf]
       refine ⟨?_, ?_⟩
-      · rw [Nat.min_eq_right (by omega)]
-      · rw [Nat.min_eq_right (by omega)]
+      · rw [Nat.min_eq_right (by omega_using [hlt])]
+      · rw [Nat.min_eq_right (by omega_using [hlt])]
         apply BitVec.eq_of_toNat_eq
-        rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := H) (by omega)]
-        omega
+        rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := H) (by omega_using [hH])]
+        omega_using [hlt]
 
 theorem correct (s₀ : State) (hp : contract.pre s₀) :
     WP isa zeroize s₀ fun t => contract.post s₀ t ∧ Frame s₀.wr s₀.mem t.mem := by
@@ -194,7 +194,7 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
   have hn := (s₀.gpr .a1).isLt
   unfold zeroize
   refine WP.seq (WP.mono (head_ok s₀) fun t ⟨ht, hc, hs⟩ => ?_)
-  refine WP.seq (WP.mono (loop_ok false s₀ t hp 0 h (by simp [sz]; omega) (by simp) ht hc)
+  refine WP.seq (WP.mono (loop_ok false s₀ t hp 0 h (by simp [sz]; omega_using []) (by simp) ht hc)
     fun u ⟨hu, hsu⟩ => ?_)
   simp only [sz, Bool.false_eq_true, ↓reduceIte, Nat.one_mul, Nat.zero_add] at hu
   have mid : WP isa (.block [.shift .srl .d .t1 .a1 3, .logicImm .and .a1 .a1 7]) u fun v =>
@@ -203,16 +203,16 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
     obtain ⟨hw, ht0, ha0, hz, hf⟩ := hu
     crun [hsu, hs, count, tail]
     refine ⟨⟨hw, ht0, ha0, hz, hf⟩, ?_, ?_⟩
-    · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    · rw [tail', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := n - h) (by omega)]
+    · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
+    · rw [tail', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := n - h) (by omega_using [])]
   refine WP.seq (WP.mono mid fun v ⟨hv, hcv, hav⟩ => ?_)
   have hal : true = true → 0 < (n - h) / 8 → (s₀.gpr .a0 + BitVec.ofNat 64 h).toNat % 8 = 0 := by
     intro _ hpos
     have : h = headLen (s₀.gpr .a0) := Nat.min_eq_right (by
       have : headLen (s₀.gpr .a0) < 8 := Nat.mod_lt _ (by decide)
-      omega)
+      omega_using [hpos])
     rw [this]; exact headLen_aligned _
-  refine WP.seq (WP.mono (loop_ok true s₀ v hp h ((n - h) / 8) (by simp [sz]; omega) hal hv hcv)
+  refine WP.seq (WP.mono (loop_ok true s₀ v hp h ((n - h) / 8) (by simp [sz]; omega_using []) hal hv hcv)
     fun w ⟨hw, haw⟩ => ?_)
   simp only [sz, ↓reduceIte] at hw
   have tailp : WP isa (.block [.addi .t1 .a1 0]) w fun x =>
@@ -221,9 +221,9 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
     crun [haw, hav]
     exact ⟨hw', ht0, ha0, hz, hf⟩
   refine WP.seq (WP.mono tailp fun x ⟨hx, hcx⟩ => ?_)
-  refine WP.mono (loop_ok false s₀ x hp _ ((n - h) % 8) (by simp [sz]; omega) (by simp) hx hcx)
+  refine WP.mono (loop_ok false s₀ x hp _ ((n - h) % 8) (by simp [sz]; omega_using []) (by simp) hx hcx)
     fun y ⟨hy, _⟩ => ?_
-  have he : h + 8 * ((n - h) / 8) + sz false * ((n - h) % 8) = n := by simp [sz]; omega
+  have he : h + 8 * ((n - h) / 8) + sz false * ((n - h) % 8) = n := by simp [sz]; omega_using []
   rw [he] at hy
   exact ⟨prefix_spec hy.2.2.2.1, hy.2.2.2.2⟩
 

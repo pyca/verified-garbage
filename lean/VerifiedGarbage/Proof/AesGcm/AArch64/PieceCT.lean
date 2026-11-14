@@ -101,7 +101,7 @@ theorem flush_rel (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {k₁ k₂
       WP isa (padSeg yo [ptr .x12 .x20 32]) σ (Pad1 Ctx St W SP k yo o (St + BitVec.ofNat 64 32) σ.mem) :=
     fun he hk h25 => padSeg_ok L hyo (P := St + BitVec.ofNat 64 32) he hk h25 ho
       (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, he.x20], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)
-      (covers_left (he.perm.stC (by omega))) (L.st_w (by omega) (.inr ⟨by decide, by decide⟩))
+      (covers_left (he.perm.stC (by omega_using [ho]))) (L.st_w (by omega_using [ho]) (.inr ⟨by decide, by decide⟩))
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x25] (by rw [he₁.sp, he₂.sp])
       (by agree_tac [he₁.x19, he₂.x19, he₁.x20, he₂.x20, he₁.x21, he₂.x21, h25₁, h25₂]) t₁)
     (pad he₁ hk₁ h25₁) (pad he₂ hk₂ h25₂) fun τ₁ τ₂ a₁ a₂ => ?_
@@ -233,8 +233,8 @@ theorem j0hash_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Bl
   have pad : ∀ {k : Reg → BitVec 64} {H : Block} {m₀ : Mem} {σ : State}, J2 Ctx St W SP k H Np n m₀ σ →
       WP isa (padSeg 0 [mov .x12 .x23]) σ (Pad1 Ctx St W SP k 0 (n % 16) (Np + BitVec.ofNat 64 (16 * (n / 16)))
         σ.mem) := fun b => by
-    have hdr := b.data.drop (k := 16 * (n / 16)) (by omega)
-    rw [show n - 16 * (n / 16) = n % 16 by omega] at hdr
+    have hdr := b.data.drop (k := 16 * (n / 16)) (by omega_using [])
+    rw [show n - 16 * (n / 16) = n % 16 by omega_using []] at hdr
     exact padSeg_ok L (yo := 0) (.inl rfl) (P := Np + BitVec.ofNat 64 (16 * (n / 16)))
       b.env b.kept b.x25 (Nat.mod_lt _ (by decide))
       (by refine ⟨_, by arun [], ?_⟩; exact ⟨by simp [gpr_write, b.x23], ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩)

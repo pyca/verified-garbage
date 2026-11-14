@@ -98,7 +98,7 @@ theorem readW_mod32 (m : Mem) (a : Addr) : (m.readW a 32).toNat % 32 = (m a).toN
   have h8 : ((m.readW a 32).setWidth 8).toNat = (m.readW a 32).toNat % 256 := by
     rw [BitVec.toNat_setWidth]
   rw [← e, h8]
-  omega
+  omega_using []
 
 /-- A round, from the state of the rounds. -/
 theorem round_step {s u : State} {pr : Reg} {p kb : Addr} {n : Nat} (h : BPre s pr p kb n)
@@ -290,7 +290,7 @@ structure BPost (s : State) (p : Addr) (out : Spec.Cast5.Block) (t : State) : Pr
 theorem shr_lo (x : BitVec 64) {k : Nat} (hk : k ≤ 24) :
     (x >>> k).setWidth 8 = (lo x >>> k).setWidth 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [hi, show k + i < 32 by omega]
+  simp [hi, show k + i < 32 by omega_using [hk, hi]]
 
 /-- What the stores leave: the block `(x, y)`. -/
 theorem stored_block (m : Mem) (q : Addr) (x y : BitVec 64) :
@@ -300,19 +300,19 @@ theorem stored_block (m : Mem) (q : Addr) (x y : BitVec 64) :
   intro i hi
   rw [Proof.Cast5.blockAt_get _ _ hi]
   simp only [Spec.Cast5.encodeBlock, Vector.getElem_ofFn, writeBytes, Offset.add_sub_cancel_left,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), List.length_append,
-    ByteLoad.beBytes_length, show i < 4 + 4 by omega, ite_true]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hi]), List.length_append,
+    ByteLoad.beBytes_length, show i < 4 + 4 by omega_using [hi], ite_true]
   by_cases h4 : i < 4
   · rw [ite_eq_left h4, List.getD_eq_getElem?_getD,
       List.getElem?_append_left (by rw [ByteLoad.beBytes_length]; exact h4)]
     simp only [ByteLoad.beBytes, List.getElem?_map, List.getElem?_range h4, Option.map_some, Option.getD_some]
-    rw [shr_lo _ (by omega), Nat.mod_eq_of_lt h4]
+    rw [shr_lo _ (by omega_using []), Nat.mod_eq_of_lt h4]
   · rw [ite_eq_right h4, List.getD_eq_getElem?_getD,
-      List.getElem?_append_right (by rw [ByteLoad.beBytes_length]; omega), ByteLoad.beBytes_length]
-    simp only [ByteLoad.beBytes, List.getElem?_map, List.getElem?_range (show i - 4 < 4 by omega), Option.map_some,
+      List.getElem?_append_right (by rw [ByteLoad.beBytes_length]; omega_using [h4]), ByteLoad.beBytes_length]
+    simp only [ByteLoad.beBytes, List.getElem?_map, List.getElem?_range (show i - 4 < 4 by omega_using [hi]), Option.map_some,
       Option.getD_some]
-    rw [shr_lo _ (by omega)]
-    congr 3; omega
+    rw [shr_lo _ (by omega_using [])]
+    congr 3; omega_using [hi, h4]
 
 theorem finish_ok {s u : State} {pr : Reg} {p kb : Addr} {n : Nat} (h : BPre s pr p kb n)
     {lr : Spec.Cast5.Word × Spec.Cast5.Word} {kp : Addr} {t : Nat} (hu : RInv s lr kp t 0 u) :
@@ -320,17 +320,17 @@ theorem finish_ok {s u : State} {pr : Reg} {p kb : Addr} {n : Nat} (h : BPre s p
   have g (q : Reg) (hq : q ∉ roundRegs) : u.gpr q = s.gpr q := hu.keep.gpr hq
   have hp : u.gpr pr = p := by rw [g _ h.prOk, h.ptr]
   have hw : ∀ j < 8, InRegions u.wr (p + BitVec.ofNat 64 j) 1 := fun j hj => by
-    rw [hu.keep.2.2]; exact CallLay.inRegions_sub h.inP (by omega) (by decide)
+    rw [hu.keep.2.2]; exact CallLay.inRegions_sub h.inP (by omega_using [hj]) (by decide)
   rw [finish, WP.block_append_iff]
   refine WP.mono (ByteLoad.storeBE_ok (v := xR) (tmp := tmp) (n := pr) (off := 0) (w := 4) (by decide)
     (h.ne (by decide)).symm (by decide) (by decide) (by decide) fun j hj => by
-      rw [hp, Nat.zero_add]; exact hw j (by omega)) fun u₁ e₁ => ?_
+      rw [hp, Nat.zero_add]; exact hw j (by omega_using [hj])) fun u₁ e₁ => ?_
   subst e₁
   have hp₁ : ∀ (m : Mem) (v : BitVec 64), ({ u with mem := m }.write tmp v).gpr pr = p := fun m v => by
     rw [RegUpd.gpr_write_of_ne _ _ (h.ne (by decide))]; exact hp
   refine WP.mono (ByteLoad.storeBE_ok (v := xL) (tmp := tmp) (n := pr) (off := 4) (w := 4) (by decide)
     (h.ne (by decide)).symm (by decide) (by decide) (by decide) fun j hj => by
-      rw [hp₁]; exact hw (4 + j) (by omega)) fun u₂ e₂ => ?_
+      rw [hp₁]; exact hw (4 + j) (by omega_using [hj])) fun u₂ e₂ => ?_
   subst e₂
   simp only [RegUpd.gpr_write, RegUpd.mem_write, RegUpd.write_mem, hp, h.ne (show tmp ∈ roundRegs by decide),
     show xL ≠ tmp by decide, ite_false, BitVec.add_zero]

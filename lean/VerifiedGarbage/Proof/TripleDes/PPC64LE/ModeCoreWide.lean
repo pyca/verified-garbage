@@ -111,12 +111,12 @@ theorem cryptW_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k :
   have pre : Bitsliced.Ecb64Pre s₃ := by
     refine ⟨by rw [r3₃, rd₃, wr₃]; exact hin, ?_, ?_, ?_, ?_, ?_⟩
     · rw [r4₃, wr₃]
-      exact Bitsliced.covers_of_sub hW (off := 1024) rfl (by show 1024 + 512 ≤ 8 * 200; omega)
+      exact Bitsliced.covers_of_sub hW (off := 1024) rfl (by show 1024 + 512 ≤ 8 * 200; omega_using [])
     · rw [r6₃, wr₃]
-      exact ⟨_, hW, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
-    · rw [r4₃, r3₃]; exact hkB.sub_right (VG.Offset.sub_base _ (by show 1024 + 512 ≤ 8 * 200; omega))
-    · rw [r6₃, r3₃]; exact hkB.sub_right (Region.sub_prefix (by show 1024 ≤ 8 * 200; omega))
-    · rw [r4₃, r6₃]; exact VG.Offset.disjoint_base _ (by omega) (by omega)
+      exact ⟨_, hW, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩
+    · rw [r4₃, r3₃]; exact hkB.sub_right (VG.Offset.sub_base _ (by show 1024 + 512 ≤ 8 * 200; omega_using []))
+    · rw [r6₃, r3₃]; exact hkB.sub_right (Region.sub_prefix (by show 1024 ≤ 8 * 200; omega_using []))
+    · rw [r4₃, r6₃]; exact VG.Offset.disjoint_base _ (by omega_using []) (by omega_using [])
   -- the call: its entry changes only `r0`, `r11`, `r12` and the link register
   have ce : ∀ r, r ∉ linkRegs → s₃.callEntry.gpr r = s₃.gpr r := fun r h => State.callEntry_gpr s₃ h
   have e3 := ce .r3 (by decide)
@@ -199,8 +199,8 @@ theorem wideOne_ok (d : Direction) : OneOk (wideCoreSpec d) (wideOne d) := by
   have cw : VG.Covers [⟨s₁.gpr .r4, 8⟩, ⟨s₁.gpr .r5, 512⟩] s₁.wr := VG.Covers.of_sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨⟨B, 8 * 200⟩, by rw [wr₁]; exact hW, 1024, r4₁, by show 1024 + 8 ≤ 8 * 200; omega⟩
-    · exact ⟨⟨B, 8 * 200⟩, by rw [wr₁]; exact hW, 0, by simp [r5₁], by show 0 + 512 ≤ 8 * 200; omega⟩
+    · exact ⟨⟨B, 8 * 200⟩, by rw [wr₁]; exact hW, 1024, r4₁, by show 1024 + 8 ≤ 8 * 200; omega_using []⟩
+    · exact ⟨⟨B, 8 * 200⟩, by rw [wr₁]; exact hW, 0, by simp [r5₁], by show 0 + 512 ≤ 8 * 200; omega_using []⟩
   have hp : Ecb.CallPre s₁ :=
     ⟨VG.Covers.cons (by rw [r3₁, rd₁, wr₁]; exact VG.Covers.one hin) (VG.Covers.right cw), cw,
       by rw [r3₁, r5₁]; exact hkB.sub_right (Region.sub_prefix (by decide)),

@@ -72,10 +72,10 @@ theorem SRel.load {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) (d : XReg) (m
 theorem signExtend_ofNat {c : Nat} (hc : c < 2 ^ 31) :
     BitVec.signExtend 64 (BitVec.ofNat 32 c) = BitVec.ofNat 64 c := by
   have hm : (BitVec.ofNat 32 c).msb = false := by
-    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; simp; omega
+    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc])]; simp; omega_using [hc]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
-  simp [Nat.mod_eq_of_lt (show c < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega)]
+  simp [Nat.mod_eq_of_lt (show c < 2 ^ 32 by omega_using [hc]), Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_using [hc])]
 
 set_option simprocs false in
 /-- `cmp r10, c`. -/
@@ -87,10 +87,10 @@ theorem cmpR10_ok (s : State) {c : Nat} (hc : c < 2 ^ 31) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
     State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', signExtend_ofNat hc]
   refine ⟨trivial, trivial, trivial, trivial, fun _ _ => rfl, ?_⟩
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc])]
 
 theorem inp_block {off p : Nat} (hoff : off % 64 = 0) (hp : p < 16) : (off / 4 + p) / 16 = off / 64 := by
-  omega
+  omega_using [hoff, hp]
 
 theorem sel_ok {s₀ : State} (hc : Ctx s₀) (hs : SelOk s₀) {σ σ' : Sym} {s : State} (h : SRel σ s₀ s)
     {x t : XReg} {off : Nat} (e : σ.sel x t off = some σ') :
@@ -101,7 +101,7 @@ theorem sel_ok {s₀ : State} (hc : Ctx s₀) (hs : SelOk s₀) {σ σ' : Sym} {
   rename_i hcond
   obtain ⟨hoff, hlim, hcl⟩ := hcond
   simp only [List.all_eq_true, List.mem_range, beq_iff_eq] at hcl
-  refine WP.seq (WP.mono (cmpR10_ok s (c := off + 64) (by omega)) fun s₁ ⟨g₁, m₁, rd₁, wr₁, z₁, c₁⟩ => ?_)
+  refine WP.seq (WP.mono (cmpR10_ok s (c := off + 64) (by omega_using [hlim])) fun s₁ ⟨g₁, m₁, rd₁, wr₁, z₁, c₁⟩ => ?_)
   have h₁ : SRel σ s₀ s₁ := h.congr z₁ m₁ g₁ rd₁ wr₁
   have r10 : s₁.gpr .r10 = s₀.gpr .r10 := by rw [g₁, h.gpr]
   have ea : ∀ r, s₁.ea (at_ r off) = s₀.gpr r + BitVec.ofNat 64 off := fun r => by
@@ -115,22 +115,22 @@ theorem sel_ok {s₀ : State} (hc : Ctx s₀) (hs : SelOk s₀) {σ σ' : Sym} {
   · -- From the data.
     simp only [decide_eq_true_eq] at hb
     have i2 : InRegions (s₁.rd ++ s₁.wr) ((regn s₀ 2).base + BitVec.ofNat 64 (4 * (off / 4))) (4 * 16) :=
-      in_regn' hc (b := 2) (by decide) (wr₁.trans h.wr) (by simp only [bsize]; omega)
+      in_regn' hc (b := 2) (by decide) (wr₁.trans h.wr) (by simp only [bsize]; omega_using [hlim])
     have ea2 : s₁.ea (at_ .rsi off) = (regn s₀ 2).base + BitVec.ofNat 64 (4 * (off / 4)) := by
-      rw [ea]; simp only [regn, baseR]; congr 2; omega
+      rw [ea]; simp only [regn, baseR]; congr 2; omega_using [hoff]
     obtain ⟨s₂, hx, h₂⟩ := h₁.load t (at_ .rsi off) (f := fun p => .inp (off / 4 + p)) (by rw [ea2]; exact i2)
       (fun p hp => by
-        rw [ea2, add_ofNat', ← Nat.mul_add, h₁.mem 2 _ (by decide) (by simp only [bsize]; omega), hcl p hp]
+        rw [ea2, add_ofNat', ← Nat.mul_add, h₁.mem 2 _ (by decide) (by simp only [bsize]; omega_using [hlim, hp]), hcl p hp]
         simp only [T.eval, inpW, inp_block hoff hp, memBase_2]
-        rw [ite_eq_right (by omega)])
+        rw [ite_eq_right (by omega_using [hoff, hb])])
     exact WP.block_cons_iff.2 ⟨s₂, hx, rest s₂ h₂⟩
   · -- From `src`.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at hb
     have cs : (srcR s₀).Contains (s₀.gpr .r8 + BitVec.ofNat 64 off) 64 := by
       simp only [srcR, Region.Contains]
       rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega_arith,
-        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlim])]
+      omega_using [hlim, hb]
     obtain ⟨s₂, hx, h₂⟩ := h₁.load t (at_ .r8 off) (f := fun p => .inp (off / 4 + p))
       (by rw [ea, rd₁, wr₁, h.rd, h.wr]; exact hs.r _ _ (by decide) cs)
       (fun p hp => by
@@ -138,13 +138,13 @@ theorem sel_ok {s₀ : State} (hc : Ctx s₀) (hs : SelOk s₀) {σ σ' : Sym} {
           simp only [srcR, Region.Contains] at cs ⊢
           rw [show s₀.gpr .r8 + BitVec.ofNat 64 off + BitVec.ofNat 64 (4 * p) - s₀.gpr .r8 =
             BitVec.ofNat 64 (off + 4 * p) by rw [add_ofNat']; bv_omega_arith,
-            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlim, hp])]
           rw [show s₀.gpr .r8 + BitVec.ofNat 64 off - s₀.gpr .r8 = BitVec.ofNat 64 off by bv_omega_arith,
-            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at cs
-          omega
+            BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlim])] at cs
+          omega_using [hlim, hb, hp]
         rw [ea, m₁, h.frame.readW cp hs.d (by decide)]
         simp only [T.eval, inpW, inp_block hoff hp]
-        rw [ite_eq_left (by omega), add_ofNat', show off + 4 * p = 4 * (off / 4 + p) by omega])
+        rw [ite_eq_left (by omega_using [hb]), add_ofNat', show off + 4 * p = 4 * (off / 4 + p) by omega_using [hoff]])
     exact WP.block_cons_iff.2 ⟨s₂, hx, rest s₂ h₂⟩
 
 /-- `pieces`. -/

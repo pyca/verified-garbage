@@ -22,13 +22,13 @@ theorem passHead_ok {s : State} {passed checks : Nat} (stack : Workspace s s.sp 
       (t.gpr .r1 = BitVec.ofNat 32 (passed + 1) ∧ t.z = decide (passed + 1 = checks) ∧ t.mem = s.mem) ∧
       Rest [.r1, .r2] s t := by
   have reads (d : Nat) (fit : d + 4 ≤ 72) : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])]
     exact stack.read fit
   have increment : BitVec.ofNat 32 passed + 1 = BitVec.ofNat 32 (passed + 1) := by
     change BitVec.ofNat 32 passed + BitVec.ofNat 32 1 = _
     exact BitVec.ofNat_add_ofNat _ _
   have zero : (BitVec.ofNat 32 (passed + 1) - BitVec.ofNat 32 checks == 0) = decide (passed + 1 = checks) :=
-    (sub_beq_zero _ _).trans (ofNat_beq_eq (by omega) (by omega))
+    (sub_beq_zero _ _).trans (ofNat_beq_eq (by omega_using [more, bound]) (by omega_using [bound]))
   refine withRest_all [.r1, .r2] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.onPassHead
   ffrun [BitVec.add_zero, reads 56 (by decide), reads 52 (by decide), savedPassed, savedChecks, increment, zero]
@@ -54,7 +54,7 @@ private theorem passFinish_ok {s : State} (stack : Workspace s s.sp 72) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.onPassFinish) s fun t =>
       (t.mem = s.mem.writeW (State.addr (s.sp + 56#32)) (s.gpr .r1) ∧ t.z = (s.gpr .r3 == 4)) ∧ Rest [.r12] s t := by
   have write : InRegions s.wr (State.addr (s.sp + 56#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.write (by decide)
   refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.onPassFinish VG.Impl.Ffdh.Arm.ParameterCandidate.save

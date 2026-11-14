@@ -73,7 +73,7 @@ theorem inverseBody_ok {s0 t : State} {B : Addr} {Z len N i : Nat} (hN15 : 15 �
   · exact inv.rest.trans ((r1.mono (by decide)).trans ((r2.mono (by decide)).trans (r3.mono (by decide))))
   · rw [countU, r6, inv.count]
     change BitVec.ofNat 32 (32 * kw len - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
   · intro hNM hZ hodd h1M hst
     have prev := inv.value hNM hZ hodd h1M hst
@@ -89,12 +89,12 @@ theorem inverseBody_ok {s0 t : State} {B : Addr} {Z len N i : Nat} (hN15 : 15 �
     have s2 := e2 (by rw [n1, m1, n0, m0]; exact hNM) (by rw [z1, z0]; exact hZ)
       (by rw [m1, m0]; exact I1.x₁_lt) (by rw [m1, m0]; exact I1.x₂_lt)
     rw [m1, m0, s1, prev] at s2
-    rw [m2, s2, show 2 * (i + 1) = 2 * i + 1 + 1 by omega]
+    rw [m2, s2, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_using []]
     rfl
   · rw [hz, r6, inv.count]
     change some (BitVec.ofNat 32 (32 * kw len - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show 32 * kw len - i - 1 = 0 ↔ i + 1 = 32 * kw len by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by omega_using [wle])]
+    simp only [show 32 * kw len - i - 1 = 0 ↔ i + 1 = 32 * kw len by omega_using [hi]]
 
 theorem inverse_ok {s : State} {B : Addr} {Z len N : Nat} (h : RtWs L s B Z len N) (hN15 : 15 ≤ N) :
     WP isa (VG.Impl.Rsa.X86.KeyRt.inverse L) s fun t => RtWs L t B Z len N ∧
@@ -115,9 +115,9 @@ theorem inverse_ok {s : State} {B : Addr} {Z len N : Nat} (h : RtWs L s B Z len 
   have start : InvLoopI L s B Z len N 0 s1 := ⟨h1, by rw [m1]; exact Keep.refl _ _ _ _ _,
     u1.mono (by decide), by rw [e1]; rfl, fun _ _ _ _ _ => by rw [m1]; rfl⟩
   refine WP.loop (M := isa) (fun k t => ∃ i, i + k = 32 * kw len ∧ 0 < k ∧ InvLoopI L s B Z len N i t) ?_
-    (32 * kw len) s1 ⟨0, by omega, by omega, start⟩
+    (32 * kw len) s1 ⟨0, by omega_using [], by omega_using [wp], start⟩
   · intro k t ⟨i, hik, hk, inv⟩
-    refine WP.mono (inverseBody_ok hN15 inv (by omega)) fun u ⟨iu, hz⟩ => ?_
+    refine WP.mono (inverseBody_ok hN15 inv (by omega_using [hik, hk])) fun u ⟨iu, hz⟩ => ?_
     by_cases e : i + 1 = 32 * kw len
     · left
       refine ⟨by change u.zf.map not = some false; simp [hz, e], iu.ws, iu.keep, iu.rest, ?_⟩
@@ -130,12 +130,12 @@ theorem inverse_ok {s : State} {B : Addr} {Z len N : Nat} (h : RtWs L s B Z len 
         have := val32_lt s.mem B (arr (kw len) aM) (kw len)
         calc num s.mem B (kw len) 0 * num s.mem B (kw len) aM < 2 ^ (32 * kw len) * 2 ^ (32 * kw len) :=
               Nat.mul_lt_mul'' (by assumption) (by assumption)
-          _ = 2 ^ (2 * (32 * kw len)) := by rw [← Nat.pow_add]; congr 1; omega)
+          _ = 2 ^ (2 * (32 * kw len)) := by rw [← Nat.pow_add]; congr 1; omega_using [])
       rw [hm] at D
       dsimp only at D
       rw [← v] at D
       exact ⟨D.2.1, D.2.2.1, D.2.2.2⟩
     · right
-      exact ⟨by change u.zf.map not = some true; simp [hz, e], k - 1, by omega, i + 1, by omega, by omega, iu⟩
+      exact ⟨by change u.zf.map not = some true; simp [hz, e], k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, e], iu⟩
 
 end VG.Proof.Rsa.X86.KeyRt

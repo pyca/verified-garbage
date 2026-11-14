@@ -47,7 +47,7 @@ structure Scr (B : BitVec 32) (wr : List Region) : Prop where
   wr : ∀ o, o + 4 ≤ 4096 → InRegions wr (A B o) 4
 
 theorem Scr.reg64 {B : BitVec 32} {wr : List Region} (h : Scr B wr) : Reg64 wr B 2048 :=
-  fun o ho => ⟨h.wr o (by omega), h.wr (o + 4) (by omega)⟩
+  fun o ho => ⟨h.wr o (by omega_using [ho]), h.wr (o + 4) (by omega_using [ho])⟩
 
 section
 variable {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32)
@@ -58,17 +58,17 @@ theorem outside_pass {m m' : Mem} (hf : Frame [permR B, ctrR B] m m') {d : Nat} 
     (2048 ≤ d ∧ d + 4 ≤ 2088)) : m'.readW (A B d) 32 = m.readW (A B d) 32 := by
   refine hf.readW (r := ⟨A B d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  rw [A_eq (by omega)]
-  exact ⟨Offset.disjoint _ (by omega) (by omega) (by omega),
-    Offset.disjoint _ (by omega) (by omega) (by omega)⟩
+  rw [A_eq (by omega_using [hfit, hd])]
+  exact ⟨Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by omega_using []),
+    Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])⟩
 
 /-- A word of `scratch` beyond the permuted block is unchanged by its writes. -/
 theorem outside_perm {m m' : Mem} (hf : Frame [permR B] m m') {d : Nat} (hd : 2048 ≤ d)
     (hd' : d + 4 ≤ 4096) : m'.readW (A B d) 32 = m.readW (A B d) 32 := by
   refine hf.readW (r := ⟨A B d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   simp only [List.mem_singleton, forall_eq]
-  rw [A_eq (by omega)]
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  rw [A_eq (by omega_using [hfit, hd'])]
+  exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd']) (by omega_using [])
 
 /-- The permuted block is unchanged by writes to the counts. -/
 theorem working_ctr {m m' : Mem} (hf : Frame [ctrR B] m m') : working m' B = working m B := by
@@ -77,15 +77,15 @@ theorem working_ctr {m m' : Mem} (hf : Frame [ctrR B] m m') : working m' B = wor
   have rd (o : Nat) (ho : o + 4 ≤ 2048) : m'.readW (A B o) 32 = m.readW (A B o) 32 := by
     refine hf.readW (r := ⟨A B o, 4⟩) (Region.contains_self _ _) ?_ (by decide)
     simp only [List.mem_singleton, forall_eq]
-    rw [A_eq (by omega)]
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    rw [A_eq (by omega_using [hfit, ho])]
+    exact Offset.disjoint _ (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])
   simp only [working, Vector.getElem_ofFn, rd64, wOff]
-  rw [rd _ (by omega), rd _ (by omega)]
+  rw [rd _ (by omega_using [hj]), rd _ (by omega_using [hj])]
 
 /-- The count at `B + o` is written within the counts. -/
 theorem ctr_contains {o : Nat} (ho : 2088 ≤ o) (ho' : o + 4 ≤ 4096) : (ctrR B).Contains (A B o) 4 := by
-  rw [A_eq (by omega)]
-  exact Offset.contains _ ho (by omega) (by omega)
+  rw [A_eq (by omega_using [hfit, ho'])]
+  exact Offset.contains _ ho (by omega_using [ho']) (by omega_using [])
 
 end
 
@@ -101,11 +101,11 @@ structure PassOk (index : Fin 8 → Fin 16 → Fin 128) (sh : Nat) : Prop where
   enc8 : encodable (BitVec.ofNat 32 (8 * (8 * sh))) = true
 
 theorem rows_ok : PassOk rowIndex 16 :=
-  ⟨Proof.Argon2.rowIndex_injective, fun i k => by simp only [rowIndex]; omega, by decide, by decide,
+  ⟨Proof.Argon2.rowIndex_injective, fun i k => by simp only [rowIndex]; omega_using [], by decide, by decide,
     by decide⟩
 
 theorem cols_ok : PassOk colIndex 2 :=
-  ⟨Proof.Argon2.colIndex_injective, fun i k => by simp only [colIndex]; omega, by decide, by decide,
+  ⟨Proof.Argon2.colIndex_injective, fun i k => by simp only [colIndex]; omega_using [], by decide, by decide,
     by decide⟩
 
 theorem foldl_take_succ {α : Type} (f : α → Fin 8 → α) (x : α) {j : Nat} (hj : j < 8) :
@@ -169,11 +169,11 @@ theorem iter_ok {n : Nat} (hn : 1 ≤ n) {s : State} (h : Inv index sh s₀ n s)
   have fit := hs.fit
   have hle := h.le
   have hsh := hP.le
-  have hi : 8 - n < 8 := by omega
+  have hi : 8 - n < 8 := by omega_using [hn]
   have o₀ := off_le hsh (Nat.sub_le 8 n)
   have o₁ := off_le hsh (Nat.sub_le 8 (n - 1))
   have e₁ : 8 * (sh * (8 - n)) + 8 * sh = 8 * (sh * (8 - (n - 1))) := by
-    rw [show 8 - (n - 1) = 8 - n + 1 by omega, Nat.mul_succ, Nat.mul_add]
+    rw [show 8 - (n - 1) = 8 - n + 1 by omega_using [hn, hle], Nat.mul_succ, Nat.mul_add]
   apply WP.seq
   refine (permuteAt_ok fit (index ⟨8 - n, hi⟩) (index 0) (sh * (8 - n)) (hP.idx _) (hP.inj _)
     ⟨h.r3, by rw [h.wr]; exact hs.reg64⟩).mono fun t st => ?_
@@ -182,7 +182,7 @@ theorem iter_ok {n : Nat} (hn : 1 ≤ n) {s : State} (h : Inv index sh s₀ n s)
   unfold next
   refine wp_ldr (a := A (s₀.gpr .r3) (8 * (sh * (8 - n)) + ctrOff)) (by decide)
     (by rw [r3t]; exact A_shift _ _ _)
-    (mem_rd (by rw [k.wr, h.wr]; exact hs.wr _ (by simp only [ctrOff]; omega))) fun t₁ u₁ => ?_
+    (mem_rd (by rw [k.wr, h.wr]; exact hs.wr _ (by simp only [ctrOff]; omega_using [o₀]))) fun t₁ u₁ => ?_
   refine wp_sub (op2_imm (by decide)) fun t₂ u₂ => ?_
   refine wp_add (op2_imm hP.enc) fun t₃ u₃ => ?_
   have r3₃ : t₃.gpr .r3 = s₀.gpr .r3 + BitVec.ofNat 32 (8 * (sh * (8 - (n - 1)))) := by
@@ -190,34 +190,34 @@ theorem iter_ok {n : Nat} (hn : 1 ≤ n) {s : State} (h : Inv index sh s₀ n s)
       ← BitVec.ofNat_add, e₁]
   refine wp_str (a := A (s₀.gpr .r3) (8 * (sh * (8 - (n - 1))) + ctrOff)) (by decide)
     (by rw [r3₃]; exact A_shift _ _ _)
-    (by rw [u₃.wr, u₂.wr, u₁.wr, k.wr, h.wr]; exact hs.wr _ (by simp only [ctrOff]; omega))
+    (by rw [u₃.wr, u₂.wr, u₁.wr, k.wr, h.wr]; exact hs.wr _ (by simp only [ctrOff]; omega_using [o₁]))
     fun t₄ u₄ => ?_
   refine wp_cmp (op2_imm (by decide)) fun t₅ u₅ hz => WP.block_nil ?_
   have v₁ : t₁.gpr .r0 = BitVec.ofNat 32 n := by
-    rw [u₁.gpr, outside_perm fit st.frame (by simp only [ctrOff]; omega) (by simp only [ctrOff]; omega),
+    rw [u₁.gpr, outside_perm fit st.frame (by simp only [ctrOff]; omega_using []) (by simp only [ctrOff]; omega_using [o₀]),
       h.ctr]
   have v₃ : t₃.gpr .r0 = BitVec.ofNat 32 (n - 1) := by
-    rw [u₃.other _ (by decide), u₂.gpr, v₁, count_sub n (by omega) hn]
+    rw [u₃.other _ (by decide), u₂.gpr, v₁, count_sub n (by omega_using [hle]) hn]
   have m₅ : t₅.mem = t.mem.writeW (A (s₀.gpr .r3) (8 * (sh * (8 - (n - 1))) + ctrOff))
       (BitVec.ofNat 32 (n - 1)) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, v₃]
   have cf : Frame [ctrR (s₀.gpr .r3)] t.mem t₅.mem := by
     rw [m₅]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (ctr_contains fit (by simp only [ctrOff]; omega) (by simp only [ctrOff]; omega))
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+      (ctr_contains fit (by simp only [ctrOff]; omega_using []) (by simp only [ctrOff]; omega_using [o₁]))
+  refine ⟨⟨by omega_using [hle], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [u₅.gpr, u₄.gpr, r3₃]
   · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, k.rd, h.rd]
   · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, k.wr, h.wr]
   · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, k.sp, h.sp]
   · rw [m₅, Mem.readW_writeW_self32]
-  · rw [working_ctr fit cf, st.working, h.working, show 8 - (n - 1) = 8 - n + 1 by omega,
+  · rw [working_ctr fit cf, st.working, h.working, show 8 - (n - 1) = 8 - n + 1 by omega_using [hn, hle],
       foldl_take_succ _ _ hi]
   · rw [m₅]
     exact (h.frame.trans (st.frame.mono (by simp))).writeW (by simp) _
-      (ctr_contains fit (by simp only [ctrOff]; omega) (by simp only [ctrOff]; omega))
+      (ctr_contains fit (by simp only [ctrOff]; omega_using []) (by simp only [ctrOff]; omega_using [o₁]))
   · show some (!t₅.z) = _
-    rw [hz, u₄.gpr, v₃, count_ne n (by omega) hn]
+    rw [hz, u₄.gpr, v₃, count_ne n (by omega_using [hle]) hn]
 
 omit hP in
 /-- The start of a pass: eight rows or columns left. -/
@@ -255,7 +255,7 @@ theorem loop_ok {s : State} (h : Inv index sh s₀ 8 s) :
     · simp only [hz, ne_eq, not_true_eq_false, decide_false] at he
       exact .inl ⟨he, hz ▸ ht⟩
     · simp only [hz, ne_eq, not_false_eq_true, decide_true] at he
-      exact .inr ⟨he, n - 1, by omega, ht, by omega⟩
+      exact .inr ⟨he, n - 1, by omega_using [hz], ht, by omega_using [hz]⟩
   exact VG.WP.loop (M := isa) (fun (n : Nat) (u : State) => Inv index sh s₀ n u ∧ 1 ≤ n) step 8 s
     ⟨h, by decide⟩
 
@@ -347,7 +347,7 @@ theorem pass_ct
       exact ⟨σ₁, σ₂, hp, hz ▸ j₁, hz ▸ j₂⟩
     · rw [c₁] at htr
       have hz : n - 1 ≠ 0 := by simpa using htr
-      exact ⟨n - 1, by omega, ⟨σ₁, σ₂, hp, j₁, j₂⟩, by omega⟩
+      exact ⟨n - 1, by omega_using [hn], ⟨σ₁, σ₂, hp, j₁, j₂⟩, by omega_using [hz]⟩
   -- The end.
   have hend : RelCT isa (I 0)
       (.block [.dp .sub .r3 .r3 (.imm (BitVec.ofNat 32 (8 * (8 * sh))))]) PassRel := by

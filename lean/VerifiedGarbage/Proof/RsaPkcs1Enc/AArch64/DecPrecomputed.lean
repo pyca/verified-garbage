@@ -96,13 +96,13 @@ theorem decSpec_of {P : Nat} {s : State}
     nS eS dS iS pS qS dpS dqS qiS sPr sA kO kM kN kE kD kI kP kQ kDP kDQ kQI kS kPr kA bO bM bN bE bD bI bP bQ
     bDP bDQ bQI bS bPr kv olk ilk el1 elk dl1 dlk pl1 plk ql1 qlk dpl qil dql slk prl
   have s1 := sub120 s
-  have e : P + 239 + 1 = P + 240 := by omega
+  have e : P + 239 + 1 = P + 240 := by omega_using []
   rw [e] at sp1 kO kM kN kE kD kI kP kQ kDP kDQ kQI kS kPr kA
   refine ⟨?_, ⟨sp2, by rw [rd]; rfl, oA, mA, sA, kA, oPr, mPr, sPr, kPr, bPr, prl, h⟩⟩
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq]
   simp only [Proof.Rsa.AArch64.stackArg_withRegions, Proof.Rsa.AArch64.stackArgAddr_withRegions, e]
-  exact ⟨sp1, by omega, rfl, wr, oM, oN, oE, oD, oI, oP, oQ, oDP, oDQ, oQI, oS, oA.sub_right s1, mN, mE, mD, mI,
+  exact ⟨sp1, by omega_using [sp2], rfl, wr, oM, oN, oE, oD, oI, oP, oQ, oDP, oDQ, oQI, oS, oA.sub_right s1, mN, mE, mD, mI,
     mP, mQ, mDP, mDQ, mQI, mS, mA.sub_right s1, nS, eS, dS, iS, pS, qS, dpS, dqS, qiS, sA.sub_right s1, kO, kM,
     kN, kE, kD, kI, kP, kQ, kDP, kDQ, kQI, kS, kA.sub_right s1, bO, bM, bN, bE, bD, bI, bP, bQ, bDP, bDQ, bQI,
     bS, kv, olk, ilk, el1, elk, dl1, dlk, pl1, plk, ql1, qlk, dpl, qil, dql, slk⟩
@@ -125,7 +125,7 @@ variable (v : PrivPImpl)
 
 def S : Nat := v.stack - 1
 
-theorem stack_eq : v.stack = v.S + 1 := by have := v.pos; unfold S; omega
+theorem stack_eq : v.stack = v.S + 1 := by have := v.pos; unfold S; omega_using [this]
 
 theorem verified' :
     Verified AArch64.target v.code (Proof.Rsa.privateCheckedPrecomputedContract AArch64.abi (v.S + 1)) :=
@@ -133,7 +133,7 @@ theorem verified' :
 
 theorem depth' : 16 * v.code.aarch64Depth ≤ v.S + 1 := v.stack_eq ▸ v.depth
 
-theorem S15 : 15 ≤ v.S := by have := v.pos; unfold S; omega
+theorem S15 : 15 ≤ v.S := by have := v.pos; unfold S; omega_using [this]
 
 end PrivPImpl
 
@@ -173,10 +173,10 @@ theorem Ctx.args2 (hL : L.Ok) {t t' : State} (hc : Ctx L g vv m₀ t) (hrd : t'.
     hc.kept.frame hf fun d hd R hR => by
       rw [List.mem_singleton.mp hR]
       unfold keptOff at hd
-      exact hL.fr_sep (by omega) (by omega) (by omega),
+      exact hL.fr_sep (by omega_using [hd]) (by omega_using [hd]) (by omega_using []),
     hc.frame.trans (hf.sub fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega)⟩)⟩
+      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega_using [])⟩)⟩
 
 /-- A word of our stack arguments 15 and 16, as on entry. -/
 theorem PreX.arg (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m₀ t) {d : Nat}
@@ -184,7 +184,7 @@ theorem PreX.arg (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m�
   have hpQ := hL.pQ
   have hn := hx.nQ2
   have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ ⟨L.Q + BitVec.ofNat 64 360, 16⟩ :=
-    Offset.sub _ (by omega) (by omega)
+    Offset.sub _ (by omega_using [hd]) (by omega_using [hd])
   refine hc.frame.readW (r := ⟨L.Q + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) ?_ (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
@@ -193,7 +193,7 @@ theorem PreX.arg (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m�
   · exact (hx.as.sub_right hs).symm
   · show Region.Disjoint _ ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 240⟩
     rw [VG.Proof.RsaPkcs1Enc.AArch64.Enc.q_add L.Q L.P d]
-    exact Offset.disjoint_base _ (by omega) (by omega)
+    exact Offset.disjoint_base _ (by omega_using [hd]) (by omega_using [hd, hpQ, hn])
 
 
 theorem extra_ok (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m₀ t) (hr : Ready L t) :
@@ -215,7 +215,7 @@ theorem extra_ok (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m�
   have inA : ∀ (u : State), u.rd = t.rd → u.wr = t.wr → ∀ d, d = 360 ∨ d = 368 →
       InRegions (u.rd ++ u.wr) (L.Q + BitVec.ofNat 64 d) 8 := fun u hu hw d hd =>
     ⟨⟨L.Q + BitVec.ofNat 64 360, 16⟩, by rw [hu, hw, hc.rd, hx.x]; simp,
-      Offset.contains _ (by omega) (by omega) (by omega)⟩
+      Offset.contains _ (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])⟩
   have inF : ∀ (u : State), u.wr = t.wr → ∀ d, d + 8 ≤ frameBytes →
       InRegions u.wr (L.Q + BitVec.ofNat 64 d) 8 := fun u hw d hd => by rw [hw]; exact hc.inFr hd
   refine WP.mono (mv_step (j := 15) (d := 96) (by decide) (by decide)
@@ -230,16 +230,16 @@ theorem extra_ok (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m�
   have e15 : (t.write .x .x9 L.Q).mem.readW ((t.write .x .x9 L.Q).sp + BitVec.ofNat 64 (arg 15)) 64 = L.pre := by
     rw [RegUpd.mem_write, RegUpd.sp_write, hc.sp, show arg 15 = 360 from rfl, hx.arg hL hc (.inl rfl), hx.a15]
   have sep : Mem.Sep (L.Q + BitVec.ofNat 64 368) 8 (L.Q + BitVec.ofNat 64 96) 8 :=
-    Offset.sep _ (by omega) (by omega) (by omega)
+    Offset.sep _ (by omega_using []) (by omega_using []) (by omega_using [])
   have e16 : t₁.mem.readW (t₁.sp + BitVec.ofNat 64 (arg 16)) 64 = L.prl := by
     rw [m₁, x9, e15, sp₁, show arg 16 = 368 from rfl, RegUpd.mem_write,
       Mem.readW_writeW_sep sep (by decide), hx.arg hL hc (.inr rfl), hx.a16]
   have mu : u.mem = (t.mem.writeW (L.Q + BitVec.ofNat 64 96) L.pre).writeW (L.Q + BitVec.ofNat 64 104) L.prl := by
     rw [m₂, e16, g₁ .x9 (by decide), x9, m₁, x9, e15, RegUpd.mem_write]
   have hr96 : Region.Contains ⟨L.Q + BitVec.ofNat 64 96, 16⟩ (L.Q + BitVec.ofNat 64 96) (64 / 8) :=
-    Offset.contains _ (by omega) (by omega) (by omega)
+    Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [])
   have hr104 : Region.Contains ⟨L.Q + BitVec.ofNat 64 96, 16⟩ (L.Q + BitVec.ofNat 64 104) (64 / 8) :=
-    Offset.contains _ (by omega) (by omega) (by omega)
+    Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [])
   have gu : ∀ r, r ≠ .x9 → r ≠ .x10 → u.gpr r = t.gpr r := fun r h9 h10 => by
     rw [g₂ r h10, g₁ r h10, RegUpd.gpr_write_of_ne _ _ _ h9]
   have hfr : Frame [⟨L.Q + BitVec.ofNat 64 96, 16⟩] t.mem u.mem := by
@@ -257,8 +257,8 @@ theorem extra_ok (hL : L.Ok) (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m�
   · rw [gu .x5 (by decide) (by decide)]; exact hr.x5
   · rw [gu .x6 (by decide) (by decide)]; exact hr.x6
   · rw [gu .x7 (by decide) (by decide)]; exact hr.x7
-  · rw [mu, Mem.readW_writeW_sep (Offset.sep L.Q (d := 96) (n := 8) (e := 104) (k := 8) (by omega) (by omega)
-      (by omega)) (by decide), Mem.readW_writeW_self64]
+  · rw [mu, Mem.readW_writeW_sep (Offset.sep L.Q (d := 96) (n := 8) (e := 104) (k := 8) (by omega_using []) (by omega_using [])
+      (by omega_using [])) (by decide), Mem.readW_writeW_self64]
   · rw [mu, Mem.readW_writeW_self64]
 
 
@@ -290,7 +290,7 @@ theorem privP_pre (hL : L.Ok) {S : Nat} (hP : L.P = S + 1) (hx : PreX L m₀) {t
     simp only [Spec.Rsa.wordsAt]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    refine hc.frame.readW (r := ⟨L.pre, L.prl.toNat * 8⟩) (Offset.contains_base _ (by omega) (by omega)) ?_
+    refine hc.frame.readW (r := ⟨L.pre, L.prl.toNat * 8⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [this, hi])) ?_
       (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
@@ -409,7 +409,7 @@ theorem preX_of {P : Nat} {s : State} (hD : (decSpec P).pre (s.withRegions (rdD 
   have hsp : P + 240 ≤ s.sp.toNat := spec_sp (s := s.withRegions (rdD s) s.wr) hD
   have hQ : (lay P s).Q.toNat = s.sp.toNat - 240 := by
     show (s.sp - BitVec.ofNat 64 240).toNat = _
-    rw [BitVec.toNat_sub_of_le (by show 240 ≤ s.sp.toNat; omega)]; rfl
+    rw [BitVec.toNat_sub_of_le (by show 240 ≤ s.sp.toNat; omega_using [hsp])]; rfl
   have hsp2 := hx.sp2
   have hO : (layW P s (XD s) (stackArg s 15) (stackArg s 16)).OUT = ⟨s.gpr .x0, (s.gpr .x1).toNat⟩ := by
     have e : (s.gpr .x1).toNat = (s.gpr .x4).toNat := hL.olk
@@ -419,7 +419,7 @@ theorem preX_of {P : Nat} {s : State} (hD : (decSpec P).pre (s.withRegions (rdD 
     show (⟨(lay P s).Q - BitVec.ofNat 64 P, P + 240⟩ : Region) = _; rw [lay_stk]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · show XD s = [⟨(lay P s).Q + BitVec.ofNat 64 360, 16⟩, _]; rw [q360]; rfl
-  · show (lay P s).Q.toNat + 376 ≤ 2 ^ 64; omega
+  · show (lay P s).Q.toNat + 376 ≤ 2 ^ 64; omega_using [hQ, hsp2]
   · show s.mem.readW ((lay P s).Q + BitVec.ofNat 64 360) 64 = _; rw [q360]; rfl
   · show s.mem.readW ((lay P s).Q + BitVec.ofNat 64 368) 64 = _; rw [q368]; rfl
   · rw [hO]; show Region.Disjoint _ ⟨(lay P s).Q + BitVec.ofNat 64 360, 16⟩
@@ -453,7 +453,7 @@ theorem narrowD_covers {P : Nat} {s : State} (hx : PreD P s) :
     Covers ((narrowD s).rd ++ (narrowD s).wr) (s.rd ++ s.wr) := by
   refine Covers.of_sub fun r hr => ?_
   have self : ∀ r ∈ s.rd ++ s.wr, ∃ r' ∈ s.rd ++ s.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
-      off + r.len ≤ r'.len := fun r hr => ⟨r, hr, 0, (BitVec.add_zero _).symm, by omega⟩
+      off + r.len ≤ r'.len := fun r hr => ⟨r, hr, 0, (BitVec.add_zero _).symm, by omega_using []⟩
   have m9 : ∀ r ∈ (rdD s).take 9, ∃ r' ∈ s.rd ++ s.wr, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧
       off + r.len ≤ r'.len :=
     fun r hr => self r (by rw [hx.rd]; exact List.mem_append_left _ (List.mem_append_left _ hr))
@@ -463,9 +463,9 @@ theorem narrowD_covers {P : Nat} {s : State} (hx : PreD P s) :
     List.not_mem_nil, or_false] at hr
   rcases hr with ((rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) | (rfl | rfl)) | hw
   iterate 9 exact m9 _ (by simp [rdD])
-  · exact ⟨_, ma, 0, (BitVec.add_zero _).symm, by dsimp only; omega⟩
-  · exact ⟨_, ma, 120, by simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat], by dsimp only; omega⟩
-  · exact ⟨_, mp, 0, (BitVec.add_zero _).symm, by dsimp only; omega⟩
+  · exact ⟨_, ma, 0, (BitVec.add_zero _).symm, by dsimp only; omega_using []⟩
+  · exact ⟨_, ma, 120, by simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat], by dsimp only; omega_using []⟩
+  · exact ⟨_, mp, 0, (BitVec.add_zero _).symm, by dsimp only; omega_using []⟩
   · exact self _ (List.mem_append_right _ hw)
 
 /-- After the setup and the moves of `pre` and `pre_len`. -/
@@ -531,7 +531,7 @@ theorem decP_correct (v : Compress) (pv : PrivPImpl) (s : State)
       (Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (pv.S + 1 + 240)).post s s' := by
   have hS := pv.S15
   obtain ⟨hD, hx⟩ := decSpec_of h
-  obtain ⟨t, s', he, ha, hp⟩ := decW_ok v (by omega) (s := narrowD s) (R₀ := rdD s) (X := XD s)
+  obtain ⟨t, s', he, ha, hp⟩ := decW_ok v (by omega_using [hS]) (s := narrowD s) (R₀ := rdD s) (X := XD s)
     (pre := stackArg s 15) (prl := stackArg s 16) hD (setup ++ extraMoves) pv.name pv.code (stageP_ok pv hD hx)
   have hw := Exec.widen he (narrowD_covers hx) (Covers.refl _)
   rw [narrowD_widen] at hw
@@ -547,7 +547,7 @@ theorem PreX.pub (hx : PreX L m₀) :
     Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) =
       some (Spec.Rsa.wordsAt m₀ L.pre (Spec.Rsa.precomputedWords L.k.toNat)) := by
   have hle : Spec.Rsa.precomputedWords L.k.toNat ≤ L.prl.toNat := by
-    rw [hx.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hx.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   rw [Proof.Rsa.AArch64.publicPrecompute_of_private hx.key, Proof.Rsa.bytesAt_length',
     show 2 * Spec.Rsa.modulusWords L.k.toNat = Spec.Rsa.precomputedWords L.k.toNat from rfl,
     Proof.Rsa.AArch64.wordsAt_take _ _ hle]
@@ -559,7 +559,7 @@ theorem PreX.words (hx : PreX L m₀) {t : State} (hc : Ctx L g vv m₀ t) {n : 
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  refine hc.frame.readW (r := ⟨L.pre, L.prl.toNat * 8⟩) (Offset.contains_base _ (by omega) (by omega)) ?_
+  refine hc.frame.readW (r := ⟨L.pre, L.prl.toNat * 8⟩) (Offset.contains_base _ (by omega_using [hn, hi]) (by omega_using [hn, this, hi])) ?_
     (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
@@ -585,7 +585,7 @@ theorem privP_pub {L : Lay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂
   have hxa := ha.2.2.2.2
   have hxb := hb.2.2.2.2
   have hle : Spec.Rsa.precomputedWords L.k.toNat ≤ L.prl.toNat := by
-    rw [hxa.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hxa.prlv]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   have hw : Spec.Rsa.wordsAt a.mem L.pre (Spec.Rsa.precomputedWords L.k.toNat) =
       Spec.Rsa.wordsAt b.mem L.pre (Spec.Rsa.precomputedWords L.k.toNat) := by
     rw [hxa.words ha.1 hle, hxb.words hb.1 hle]
@@ -681,7 +681,7 @@ theorem decP_ct (v : Compress) (pv : PrivPImpl) :
   refine Proof.Rsa.AArch64.ct_of_narrow narrowD (fun s h => ⟨?_, ?_, Covers.refl _, narrowD_widen s⟩)
     (decPN_ct v pv)
   · obtain ⟨hD, hx⟩ := decSpec_of h
-    obtain ⟨t, s', he, -⟩ := decW_ok v (by omega) (s := narrowD s) (R₀ := rdD s) (X := XD s)
+    obtain ⟨t, s', he, -⟩ := decW_ok v (by omega_using [hS]) (s := narrowD s) (R₀ := rdD s) (X := XD s)
       (pre := stackArg s 15) (prl := stackArg s 16) hD (setup ++ extraMoves) pv.name pv.code (stageP_ok pv hD hx)
     exact ⟨t, s', he⟩
   · exact narrowD_covers (decSpec_of h).2
@@ -755,16 +755,16 @@ theorem decP_sat (K : Nat) (hK : K ≤ 2 ^ 20) :
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ := preD_args
   have hsp : (0x10000000000 : BitVec 64).toNat = 2 ^ 40 := by decide
   have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (K + 239 + 1)).toNat = 2 ^ 40 - (K + 240) := by
-    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega_using [hK]
   have ha : stackArgAddr preStateD 0 = 0x10000000000 := by decide
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, ha]
   have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
       Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (K + 239 + 1), K + 239 + 1⟩ ⟨b, n⟩ := fun b n h =>
-    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega)) (by dsimp only; rw [hkb]; omega)
-      (by dsimp only; omega)
+    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega_using [hK, h])) (by dsimp only; rw [hkb]; omega_using [hK])
+      (by dsimp only; omega_using [h])
   have kt : Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (K + 239 + 1), K + 239 + 1⟩ ⟨0x10000000000, 136⟩ :=
-    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega))
-      (by dsimp only; rw [hkb]; omega) (by dsimp only; rw [hsp]; omega)
+    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega_using [hK]))
+      (by dsimp only; rw [hkb]; omega_using [hK]) (by dsimp only; rw [hsp]; omega_using [])
   sig_and_intros
   rotate_right
   · exact preStateD_key
@@ -773,7 +773,7 @@ theorem decP_sat (K : Nat) (hK : K ≤ 2 ^ 20) :
     | exact Region.disjoint_of_sep (by decide)
     | exact kd _ _ (by decide)
     | exact kt
-    | (rw [hsp]; omega)
+    | (rw [hsp]; omega_using [hK])
     | (simp only [Spec.Rsa.lenValid]; decide)
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

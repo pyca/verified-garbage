@@ -50,26 +50,26 @@ theorem out64_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.to
   | succ n ih =>
     intro hn rest s Q h0 h6 hin hout k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih (by omega) _ s Q h0 h6 hin hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
-    have hP := flat_length (stateAt s.mem (State.addr p0)) n (by omega)
+    refine ih (by omega_using [hn]) _ s Q h0 h6 hin hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    have hP := flat_length (stateAt s.mem (State.addr p0)) n (by omega_using [hn])
     simp only [outW, List.cons_append, List.nil_append]
     have i₀ : ∀ o, o + 4 ≤ 8 → InRegions (s₁.rd ++ s₁.wr) (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 4 :=
       fun o ho => by
-        rw [rd₁, wr₁]; exact MdStream.Arm.InRegions.offset hin (by omega) (by omega)
+        rw [rd₁, wr₁]; exact MdStream.Arm.InRegions.offset hin (by omega_using [hn, ho]) (by omega_using [])
     have o₀ : ∀ o, o + 4 ≤ 8 → InRegions s₁.wr (State.addr p6 + BitVec.ofNat 64 (8 * n + o)) 4 :=
-      fun o ho => by rw [wr₁]; exact MdStream.Arm.InRegions.offset hout (by omega) (by omega)
-    refine wp_ldr (a := State.addr p0 + BitVec.ofNat 64 (8 * n + 0)) (by omega)
-      (by rw [g₁ _ (by decide) (by decide), h0, addr_add (by omega)]; rfl) (i₀ 0 (by omega)) fun s₂ u₂ => ?_
-    refine wp_ldr (a := State.addr p0 + BitVec.ofNat 64 (8 * n + 4)) (by omega)
-      (by rw [u₂.other _ (by decide), g₁ _ (by decide) (by decide), h0, addr_add (by omega)])
-      (by rw [u₂.rd, u₂.wr]; exact i₀ 4 (by omega)) fun s₃ u₃ => wp_rev fun s₄ u₄ => wp_rev fun s₅ u₅ => ?_
+      fun o ho => by rw [wr₁]; exact MdStream.Arm.InRegions.offset hout (by omega_using [hn, ho]) (by omega_using [])
+    refine wp_ldr (a := State.addr p0 + BitVec.ofNat 64 (8 * n + 0)) (by omega_using [hn])
+      (by rw [g₁ _ (by decide) (by decide), h0, addr_add (by omega_using [f0, hn])]; rfl) (i₀ 0 (by omega_using [])) fun s₂ u₂ => ?_
+    refine wp_ldr (a := State.addr p0 + BitVec.ofNat 64 (8 * n + 4)) (by omega_using [hn])
+      (by rw [u₂.other _ (by decide), g₁ _ (by decide) (by decide), h0, addr_add (by omega_using [f0, hn])])
+      (by rw [u₂.rd, u₂.wr]; exact i₀ 4 (by omega_using [])) fun s₃ u₃ => wp_rev fun s₄ u₄ => wp_rev fun s₅ u₅ => ?_
     have e6 : s₅.gpr .r6 = p6 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
         g₁ _ (by decide) (by decide), h6]
-    refine wp_str (a := State.addr p6 + BitVec.ofNat 64 (8 * n + 0)) (by omega)
-      (by rw [e6, addr_add (by omega)]; rfl) (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr]; exact o₀ 0 (by omega)) fun s₆ g₆ => ?_
-    refine wp_str (a := State.addr p6 + BitVec.ofNat 64 (8 * n + 4)) (by omega)
-      (by rw [g₆.gpr, e6, addr_add (by omega)]) (by rw [g₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr]; exact o₀ 4 (by omega))
+    refine wp_str (a := State.addr p6 + BitVec.ofNat 64 (8 * n + 0)) (by omega_using [hn])
+      (by rw [e6, addr_add (by omega_using [f6, hn])]; rfl) (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr]; exact o₀ 0 (by omega_using [])) fun s₆ g₆ => ?_
+    refine wp_str (a := State.addr p6 + BitVec.ofNat 64 (8 * n + 4)) (by omega_using [hn])
+      (by rw [g₆.gpr, e6, addr_add (by omega_using [f6, hn])]) (by rw [g₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr]; exact o₀ 4 (by omega_using []))
       fun s₇ g₇ => k s₇ (fun r h9 h10 => by
           rw [g₇.gpr, g₆.gpr, u₅.other r h9, u₄.other r h10, u₃.other r h10, u₂.other r h9, g₁ r h9 h10])
         (by rw [g₇.rd, g₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁]) (by rw [g₇.wr, g₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁])
@@ -81,11 +81,11 @@ theorem out64_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.to
       rw [m₁]
       refine (writeBytes_frame s.mem (State.addr p6) _ (R := ⟨State.addr p6, 64⟩) ?_).readW
         (r := ⟨State.addr p0 + BitVec.ofNat 64 (8 * n + o), 4⟩) (Region.contains_self _ _) ?_ (by decide)
-      · rw [hP]; exact Memory.contains_base (by omega)
+      · rw [hP]; exact Memory.contains_base (by omega_using [hn])
       · intro r' hr'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
-        exact hd.sub_left (Offset.sub_base _ (by omega))
+        exact hd.sub_left (Offset.sub_base _ (by omega_using [hn, ho]))
     have hw : (stateAt s.mem (State.addr p0))[n] = s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n)) 64 := by
       simp [stateAt]
     have wlo : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 0)) 32 = lo (stateAt s.mem (State.addr p0))[n] := by
@@ -93,9 +93,9 @@ theorem out64_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.to
     have whi : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 4)) 32 = hi (stateAt s.mem (State.addr p0))[n] := by
       rw [hw, readW_hi, BitVec.ofNat_add, ← BitVec.add_assoc]; rfl
     have v10 : s₅.gpr .r10 = rev (hi (stateAt s.mem (State.addr p0))[n]) := by
-      rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.mem, hread 4 (by omega), whi]
+      rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.mem, hread 4 (by omega_using []), whi]
     have v9 : s₆.gpr .r9 = rev (lo (stateAt s.mem (State.addr p0))[n]) := by
-      rw [g₆.gpr, u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, hread 0 (by omega), wlo]
+      rw [g₆.gpr, u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, hread 0 (by omega_using []), wlo]
     have a4 : State.addr p6 + BitVec.ofNat 64 (8 * n + 4) =
         State.addr p6 + BitVec.ofNat 64 (8 * n + 0) +
           BitVec.ofNat 64 (Spec.Sha256.wordBytes (hi (stateAt s.mem (State.addr p0))[n])).length := by
@@ -105,8 +105,8 @@ theorem out64_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.to
       rw [hP]; rfl
     rw [g₇.mem, v9, g₆.mem, v10, u₅.mem, u₄.mem, u₃.mem, u₂.mem, writeW_rev, writeW_rev, a4,
       writeBytes_append _ _ _ _ (by simp [Spec.Sha256.wordBytes]), ← wordBytes_split, m₁, a8,
-      writeBytes_append _ _ _ _ (by rw [hP]; simp [wordBytes]; omega), List.take_add_one,
-      List.getElem?_eq_getElem (by simp; omega), Option.toList_some, List.flatMap_append,
+      writeBytes_append _ _ _ _ (by rw [hP]; simp [wordBytes]; omega_using [hn]), List.take_add_one,
+      List.getElem?_eq_getElem (by simp; omega_using [hn]), Option.toList_some, List.flatMap_append,
       List.flatMap_singleton, Vector.getElem_toList]
 
 /-- The SHA-512 family's digest code, as HMAC and PBKDF2 use it. -/

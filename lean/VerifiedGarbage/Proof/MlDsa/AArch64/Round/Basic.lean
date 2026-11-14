@@ -121,7 +121,7 @@ theorem zextS_self (gr : Reg) (s : State) : (zextS gr s).gpr gr = ((s.gpr gr).se
   rw [zextS_gpr, ite_eq_left rfl]
 
 theorem zextS_toNat (gr : Reg) (s : State) : ((zextS gr s).gpr gr).toNat = arg32 s gr := by
-  rw [zextS_self, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := ((s.gpr gr).setWidth 32).isLt; omega)]
+  rw [zextS_self, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := ((s.gpr gr).setWidth 32).isLt; omega_using [])]
 
 /-- Running `zext gr main`: `main` from the state with `gr` zero-extended. -/
 theorem zext_ok {gr : Reg} {main : Prog isa} {s : State} {Q : State → Prop} (h : WP isa main (zextS gr s) Q) :
@@ -190,10 +190,10 @@ theorem onGamma_ok {gr t : Reg} (ht : t ≠ gr) {arm : Nat → Prog isa} {s : St
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
     have := (s.gpr gr).isLt
     simp only [g32]
-    omega
+    omega_using []
   refine WP.ite _ hz (fun hb => h _ (of_decide_eq_true hb) s₂ hk hm) fun hb => h _ ?_ s₂ hk hm
   have := of_decide_eq_false hb
-  omega
+  omega_using [hg, this]
 
 /-! ## The loop over the coefficients -/
 
@@ -337,9 +337,9 @@ theorem loop_ok {s₀ : State} {ins outs ptrs fixed clob : List Reg} {cnt : Reg}
     ?_, fun o ho k hk => ?_, hJ'⟩
   · rw [hw]
     exact frame_writes _ hI.frame outs _ hi _ fun o ho => List.mem_map_of_mem ho
-  · rw [hw, coeffAt_writes _ _ outs _ hi _ hL.pw ho (by omega)]
+  · rw [hw, coeffAt_writes _ _ outs _ hi _ hL.pw ho (by omega_using [hi, hk])]
     split
     · subst k; rfl
-    · exact hI.done o ho k (by omega)
+    · exact hI.done o ho k (by omega_arith)
 
 end VG.Proof.MlDsa.AArch64.Round

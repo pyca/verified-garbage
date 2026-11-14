@@ -29,21 +29,21 @@ theorem vector_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte
   have hl : (Scalar.LA initial B t).length+8≤256 := by
     rw [h.acc.x4] at hroom
     have := h.acc.len
-    omega
+    omega_using [hroom]
   have hb : ∀i<12,s.mem (s.gpr .x2+BitVec.ofNat 64 i)=B (3*t+i) := by
     intro i hi
     rw [h.x2,ptr_add]
     rw [byte_frame h.acc.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst r; exact hp.disj)
-      (by have := hp.bound; omega) (by omega),hp.buf _ (by omega)]
+      (by have := hp.bound; omega_using [this]) (by omega_using [ht, hi]),hp.buf _ (by omega_using [ht, hi])]
   refine WP.mono (batch_ok w16 s hc (by rw [h.acc.rd,h.acc.wr,h.x2]; exact hp.input16 t ht)
-    hroom (by rw [h.x5]; omega)
-    (by rw [h.acc.wr,h.acc.x3]; exact hp.output16 _ (by cases w16 <;> simp <;> omega))
+    hroom (by rw [h.x5]; omega_using [ht])
+    (by rw [h.acc.wr,h.acc.x3]; exact hp.output16 _ (by cases w16 <;> simp <;> omega_using [hl]))
     (fun hw => by
         subst hw
         rw [h.acc.wr,h.acc.x3,show cAddr false aP (Scalar.LA initial B t).length+16=
           cAddr false aP ((Scalar.LA initial B t).length+4) from cAddr_add false aP _ 4]
-        exact hp.output16 _ (by simp; omega))
+        exact hp.output16 _ (by simp; omega_using [hl]))
     (fun mask hm => by rw [h.acc.rd,h.acc.wr,h.keep.get .x16]; exact hp.tableRead mask hm)
     (fun mask hm => by
       rw [h.keep.get .x16,h.acc.frame.read (r := ⟨s₀.gpr .x16+BitVec.ofNat 64 (16*mask),16⟩)

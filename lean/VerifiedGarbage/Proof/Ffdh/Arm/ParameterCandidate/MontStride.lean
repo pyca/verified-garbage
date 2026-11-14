@@ -31,23 +31,23 @@ theorem keyStride_words {s : State} {base : BitVec 32} {capacity w : Nat}
   have fit := ready.arrayFit (j := 0) (by decide)
   have write224 : InRegions s.wr (State.addr (base + 224#32)) 4 := by
     rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
-      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)]
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])]
     exact workspace.write (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
-      Nat.zero_mul, Nat.add_zero] at fit; omega)
+      Nat.zero_mul, Nat.add_zero] at fit; omega_using [fit])
   have write228 : InRegions s.wr (State.addr (base + 228#32)) 4 := by
     rw [VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
-      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)]
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])]
     exact workspace.write (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
-      Nat.zero_mul, Nat.add_zero] at fit; omega)
+      Nat.zero_mul, Nat.add_zero] at fit; omega_using [fit])
   refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   have stride := ready.r7
   rw [keyView_stride] at stride
   have addr224 : State.addr (base + 224#32) = off (State.addr base) 224 :=
     VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
-      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])
   have addr228 : State.addr (base + 228#32) = off (State.addr base) 228 :=
     VG.Arm.addr_add (by have := workspace.nowrap; simp only [Proof.Rsa.Mont.arrAt,
-      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega)
+      Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit; omega_using [this, fit])
   change s.gpr .r7 = _ at stride
   rw [addr224] at write224
   rw [addr228] at write228
@@ -65,8 +65,8 @@ theorem strideMemory_write64 (m : Mem) (base : BitVec 32) {w : Nat} (bound : w �
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append]
   simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or]
-  rw [Nat.mod_eq_of_lt (by omega : 8 * (w + 2) < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : 8 * (w + 2) < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [bound] : 8 * (w + 2) < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [bound] : 8 * (w + 2) < 2 ^ 64)]
 
 theorem strideMemory_frame (m : Mem) (base : BitVec 32) {w : Nat} (bound : w ≤ 1024) :
     Frame [⟨off (State.addr base) 224, 8⟩] m (strideMemory m base w) := by
@@ -81,7 +81,7 @@ theorem keyStride_ok {s : State} {base : BitVec 32} {capacity w : Nat}
       t.mem.readW (off (State.addr base) 224) 64 = BitVec.ofNat 64 (8 * (w + 2)) ∧
       (∀ j, j < 35 → numAt t.mem (State.addr base) w j = numAt s.mem (State.addr base) w j) ∧
       Frame [⟨off (State.addr base) 224, 8⟩] s.mem t.mem ∧ Rest [.r1] s t := by
-  have wBound : w ≤ 1024 := by have := ready.wle; omega
+  have wBound : w ≤ 1024 := by have := ready.wle; omega_using [this]
   refine WP.mono (keyStride_words workspace ready ptr) ?_
   rintro t ⟨mem, rest⟩
   have frame : Frame [⟨off (State.addr base) 224, 8⟩] s.mem t.mem := by
@@ -91,14 +91,14 @@ theorem keyStride_ok {s : State} {base : BitVec 32} {capacity w : Nat}
     unfold numAt
     apply congrArg BitVec.toNat
     refine frame.read (r := ⟨off (State.addr base) (Proof.Rsa.Mont.arrAt w j), 8 * w⟩)
-      (Region.contains_self _ _) ?_ (by omega)
+      (Region.contains_self _ _) ?_ (by omega_using [wBound])
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    have scale := Nat.mul_le_mul_right (8 * (w + 2)) (show j ≤ 35 by omega)
-    apply Offset.disjoint _ (.inr ?_) (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega) (by decide)
+    have scale := Nat.mul_le_mul_right (8 * (w + 2)) (show j ≤ 35 by omega_using [jBound])
+    apply Offset.disjoint _ (.inr ?_) (by simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using [wBound, scale]) (by decide)
     simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
-    omega
+    omega_using []
   have dataT := data.after_value frame (by
     intro r hr
     rw [List.mem_singleton] at hr

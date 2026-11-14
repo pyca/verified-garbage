@@ -21,7 +21,7 @@ theorem foldL_toNat (x : BitVec 32) (hx : x.toNat < 17 * q) :
   simp only [foldL, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_shiftLeft,
     BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   change x.toNat < 17 * 8380417 at hx
-  omega
+  omega_using []
 
 theorem reduceL_toNat (x : BitVec 32) (hx : x.toNat < 17 * q) :
     (csubL (foldL x)).toNat = x.toNat % q := by
@@ -30,11 +30,11 @@ theorem reduceL_toNat (x : BitVec 32) (hx : x.toNat < 17 * q) :
 
 theorem dword_psrld (a : BitVec 128) (k : BitVec 8) (hk : k.toNat < 32) {i : Nat} (hi : i < 4) :
     dword (XShiftOp.eval .psrld a k) i = dword a i >>> k.toNat := by
-  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XShiftOp.eval, show ¬ 31 < k.toNat by omega]
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XShiftOp.eval, show ¬ 31 < k.toNat by omega_using [hk]]
 
 theorem dword_pslld (a : BitVec 128) (k : BitVec 8) (hk : k.toNat < 32) {i : Nat} (hi : i < 4) :
     dword (XShiftOp.eval .pslld a k) i = dword a i <<< k.toNat := by
-  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XShiftOp.eval, show ¬ 31 < k.toNat by omega]
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XShiftOp.eval, show ¬ 31 < k.toNat by omega_using [hk]]
 
 def foldV (x : BitVec 128) : BitVec 128 :=
   let t := XShiftOp.eval .psrld x 23

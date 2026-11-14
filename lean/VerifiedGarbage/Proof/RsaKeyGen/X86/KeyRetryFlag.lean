@@ -52,10 +52,10 @@ open VG.Impl.RsaKeyGen.X86.Key
 theorem KeyReady.retry_iff {B : Addr} {n e p q : Nat} {m : Mem} (R : KeyReady B n e p q m) :
     (slot m B kOk = 1 ∧ num m B n aD ≤ 2 ^ (16 * n)) ↔
       Spec.RsaKeyGen.keyFromPrimes (32 * n) e p q = .inr () := by
-  rw [VG.Proof.RsaKeyGen.keyFromPrimes_retry_iff, show 32 * n / 2 = 16 * n by omega, R.inverse]
+  rw [VG.Proof.RsaKeyGen.keyFromPrimes_retry_iff, show 32 * n / 2 = 16 * n by omega_using [], R.inverse]
   by_cases zero : slot m B kOk = 0
   · simp only [zero, ite_true, reduceCtorEq, false_and, exists_false]
-  · have one : slot m B kOk = 1 := by have := R.bit; omega
+  · have one : slot m B kOk = 1 := by have := R.bit; omega_using [zero, this]
     simp [one]
 
 end VG.Proof.RsaKeyGen.X86.Key

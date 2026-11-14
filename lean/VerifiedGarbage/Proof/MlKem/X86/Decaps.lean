@@ -58,7 +58,7 @@ theorem pre_of {s₀ : State} (h : (Proof.MlKem.Scrubbed.decapsBodyContract X86.
     simp only [below]; rw [Taint.sub_setWidth h1]
   rw [hs] at h19 h20 h21 h22 h23
   have c4 : ∀ i, i < (Y L768).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := fun i hi => by
-    simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi; omega
+    simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi; omega_using [hi]
   refine ⟨h1, by decide, by simp only [Y, Lay.n, List.length_cons, List.length_nil]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, h23, ?_, by decide⟩
   · intro i hi hw
@@ -98,7 +98,7 @@ theorem pub_of {s₀ s₀' : State} (h : (Proof.MlKem.Scrubbed.decapsBodyContrac
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi
-    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆]
   · have e := map_toNat_inj e₂
     show dkRho L768.p (dk L768 s₀) = dkRho L768.p (dk L768 s₀')

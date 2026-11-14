@@ -106,7 +106,7 @@ theorem sampE_step {L : Kem} {C : Ctx rbs wbs} {E : Ptr} {ek m r : List Byte} {e
   simp only [sampEChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   obtain ⟨⟨⟨hij, hkc⟩, kB⟩, kA⟩ := hc
   have L₀ := C.lay h.i.out
-  refine WP.mono (sampleIJ_ok L₀ C.bs rbx_na (by have := div_lt_k he; omega) (by have := mod_lt_k he; omega) hij)
+  refine WP.mono (sampleIJ_ok L₀ C.bs rbx_na (by have := div_lt_k he; omega_using [hk, this]) (by have := mod_lt_k he; omega_using [hk, this]) hij)
     fun s' ⟨hP, h15, hres⟩ => ⟨hP, h.i.keep hP hkc, by rw [L₀.keepBytes hP kB]; exact h.sb,
       h.m.single h.sb L₀ hP kA h15 hres⟩
 
@@ -139,7 +139,7 @@ theorem mat_ok (v : Sample4Impl) {L : Kem} {C : Ctx rbs wbs} {E : Ptr} (hk : L.k
   refine samples_ok' L v.callee (I := EB L C E ek m r) (fun e he he' s hs' => WP.mono (sampE_step hk he (hs e he he') hs')
     fun _ h => h.2) (fun q hq' s hs' => WP.mono (quadE_step v (by
       have : L.k * L.k ≤ 16 := Nat.mul_le_mul hk hk
-      omega) (hq q hq') hs') fun _ h => h.2)
+      omega_using [hq', this]) (hq q hq') hs') fun _ h => h.2)
     ⟨h₁, ?_, MatB.zero L _ (by rw [hP₁.cs .r15 (by decide), h15])⟩
   rw [show pa s₁ (sc oSB) = pa s (sc oSB) from hP₁.pa rbx_cs, hb₁]
   exact h.rho
@@ -159,8 +159,8 @@ theorem sampE_tr {L : Kem} {C : Ctx rbs wbs} {E : Ptr} {ρ : List Byte} {e : Nat
       (fun x y => LRel rbs wbs x y ∧ EBρ L C E ρ (e + 1) x ∧ EBρ L C E ρ (e + 1) y) := by
   have hc' := hc
   simp only [sampEChk, Bool.and_eq_true] at hc'
-  refine RelCT.stepL C.bs (RelCT.mono (sampleIJ_tr C.bs rbx_na (by have := div_lt_k he; omega)
-      (by have := mod_lt_k he; omega) hc'.1.1.1 ht)
+  refine RelCT.stepL C.bs (RelCT.mono (sampleIJ_tr C.bs rbx_na (by have := div_lt_k he; omega_using [hk, this])
+      (by have := mod_lt_k he; omega_using [hk, this]) hc'.1.1.1 ht)
     (fun x y ⟨hl, ⟨_, _, _, e₁, h₁⟩, ⟨_, _, _, e₂, h₂⟩⟩ => ⟨hl, by rw [h₁.sb, h₂.sb, e₁, e₂]⟩) fun _ _ h => h)
     fun x ⟨ek, m, r, eρ, hx⟩ => WP.mono (sampE_step hk he hc hx) fun x' hx' => ⟨⟨_, hx'.1⟩, ek, m, r, eρ, hx'.2⟩
 
@@ -176,12 +176,12 @@ theorem quadE_tr (v : Sample4Impl) {L : Kem} {C : Ctx rbs wbs} {E : Ptr} {ρ : L
   have hc' := hc
   simp only [quadEChk, Bool.and_eq_true] at hc'
   have h16 : L.k * L.k ≤ 16 := Nat.mul_le_mul hk hk
-  refine RelCT.stepL C.bs (RelCT.mono (quad_tr (ρ := ρ) v C.bs (by omega)
-      (fun t ht => ⟨by have := div_lt_k (show e + t < L.k * L.k by omega); omega,
-        by have := mod_lt_k (show e + t < L.k * L.k by omega); omega⟩) hc'.1.1.1)
+  refine RelCT.stepL C.bs (RelCT.mono (quad_tr (ρ := ρ) v C.bs (by omega_using [he, h16])
+      (fun t ht => ⟨by have := div_lt_k (show e + t < L.k * L.k by omega_using [he, ht]); omega_using [hk, this],
+        by have := mod_lt_k (show e + t < L.k * L.k by omega_using [he, ht]); omega_using [hk, this]⟩) hc'.1.1.1)
     (fun x y ⟨hl, ⟨_, _, _, e₁, h₁⟩, ⟨_, _, _, e₂, h₂⟩⟩ => ⟨hl, ⟨by rw [h₁.sb, e₁], fun _ h => absurd h (Nat.not_lt_zero _)⟩,
       ⟨by rw [h₂.sb, e₂], fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩) fun _ _ h => h)
-    fun x ⟨ek, m, r, eρ, hx⟩ => WP.mono (quadE_step v (by omega) hc hx) fun x' hx' =>
+    fun x ⟨ek, m, r, eρ, hx⟩ => WP.mono (quadE_step v (by omega_using [he, h16]) hc hx) fun x' hx' =>
       ⟨⟨_, hx'.1⟩, ek, m, r, eρ, hx'.2⟩
 
 theorem mat_tr (v : Sample4Impl) {L : Kem} {C : Ctx rbs wbs} {E : Ptr} (hk : L.k ≤ 4)
@@ -204,7 +204,7 @@ theorem mat_tr (v : Sample4Impl) {L : Kem} {C : Ctx rbs wbs} {E : Ptr} (hk : L.k
       fa2 (h.1.eq hin₁) (h.1.eq (p := (E.1, E.2 + 384 * L.k)) hin₂)) ht) fun x ⟨ek, m, r, eρ, hx, h15⟩ => ?_)
     (samples_tr' L v.callee (R := fun e x y => LRel rbs wbs x y ∧ EBρ L C E ρ e x ∧ EBρ L C E ρ e y)
       (fun e he he' => sampE_tr hk he (hs e he he') (hij e he))
-      (fun q hq' => quadE_tr v hk (by omega) (hq q hq')))
+      (fun q hq' => quadE_tr v hk (by omega_using [hq']) (hq q hq')))
   simp only [matChk, Bool.and_eq_true, decide_eq_true_eq] at hc₁
   have L₀ := C.lay hx.out
   refine WP.mono (copy_okL L₀ hc₁.1.2 hc₁.1.1) fun x₁ ⟨hP₁, hb₁⟩ => ⟨⟨_, hP₁.b⟩, ek, m, r, eρ, ?_⟩

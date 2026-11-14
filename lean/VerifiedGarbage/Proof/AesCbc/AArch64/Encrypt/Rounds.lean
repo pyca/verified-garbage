@@ -22,9 +22,9 @@ theorem rounds_ok {nr : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} {s : 
   | 0, _ => by simpa [Impl.AesCbc.AArch64.Encrypt.rounds] using WP.block_nil ⟨hI,VFrame.refl chainRegs s⟩
   | count+1, hc => by
     rw [Impl.AesCbc.AArch64.Encrypt.rounds,List.range_succ,List.flatMap_append,WP.block_append_iff]
-    refine WP.mono (rounds_ok hK hI count (by omega)) fun t ⟨hi,hf⟩ => ?_
+    refine WP.mono (rounds_ok hK hI count (by omega_using [hc])) fun t ⟨hi,hf⟩ => ?_
     simp only [List.flatMap_cons,List.flatMap_nil,List.append_nil]
-    exact WP.mono (VG.Proof.Aes.AArch64.Aese.round_ok chain_regs (j:=j+count) (by omega) (hK.of_frame hf chain_regs) hi)
+    exact WP.mono (VG.Proof.Aes.AArch64.Aese.round_ok chain_regs (j:=j+count) (by omega_using [hc]) (hK.of_frame hf chain_regs) hi)
       fun u ⟨hi',hf'⟩ => ⟨by simpa only [Nat.add_assoc] using hi',hf.trans hf'⟩
 
 theorem first_ok {nr : Nat} {w : List Byte} {s : State} (hK : Keys nr w s)
@@ -41,7 +41,7 @@ theorem first_ok {nr : Nat} {w : List Byte} {s : State} (hK : Keys nr w s)
     have hb' : b=.v31 := List.mem_singleton.mp hb
     subst hb'
     simp only [setV_v_self,value,h]
-    exact round_st (hK.full 0 (by have := hK.rounds; omega)) (rnds_zero w (st input)).symm
+    exact round_st (hK.full 0 (by have := hK.rounds; omega_using [this])) (rnds_zero w (st input)).symm
   · exact ⟨rfl,rfl,rfl,rfl,rfl,fun r hr => setV_v_of_ne s _ (Ne.symm (fun he => hr (by simpa only [chainRegs,List.mem_singleton] using he.symm)))⟩
 
 def lastValue (v k : BitVec 128) : BitVec 128 := aesMapBytes aesSbox (aesShiftRows (v ^^^ k))

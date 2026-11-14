@@ -30,7 +30,7 @@ abbrev H : VG.Impl.Hmac.Stream.PPC64LE.Hash := VG.Proof.Hmac.Stream.PPC64LE.Sha2
 abbrev hH : HashOK H := VG.Proof.Hmac.Stream.PPC64LE.Sha256.ok
 
 theorem fb_ge {s : State} (h : DPre pc s) : 3328 ≤ (fb s).toNat := by
-  have := fb_toNat h; have := h.sp1; unfold stackBytes frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega
+  have := fb_toNat h; have := h.sp1; unfold stackBytes frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_arith
 
 /-- The stack below our frame misses `scratch`. -/
 theorem lowD {s : State} (h : DPre pc s) {n : Nat} (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes) {a l : Nat}
@@ -67,7 +67,7 @@ theorem keep_call {s : State} (h : DPre pc s) {m m' : Mem} {ws : List Region} {n
   bytes_frame hf (fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact hs r hr
-    · rw [List.mem_singleton.mp hr]; exact (lowD h hn ha).symm) (by unfold scrBytes at ha; omega)
+    · rw [List.mem_singleton.mp hr]; exact (lowD h hn ha).symm) (by unfold scrBytes at ha; omega_using [ha])
 
 /-- After `hashD`: `DH = SHA256(D)` at `scratch + sDH`. -/
 structure DHS (s : State) (R : BitVec 64) (EM : List Byte) (t : State) : Prop where
@@ -133,7 +133,7 @@ theorem init_step {t : State} (hc : Post s R EM t) {rest : Prog isa} {Q : State 
     WP isa (.seq (.block shaInitArgs) (.seq initCall rest)) t Q := by
   refine WP.seq (WP.mono (shaInitArgs_ok hc) fun u ⟨⟨um, u3⟩, ku⟩ => ?_)
   have hu : Post s R EM u := hc.regs ku.rd ku.wr ku.sp um fun r hr => ku.gpr r (by revert r; decide)
-  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
+  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega_using [this]
   refine WP.seq <| hH.callInit_ok u3 ⟨hs, by rw [hu.sp]; exact lowD h (by decide) (by decide)⟩
     (scCovR h hu.wr (by decide)) (scCov h hu.wr (by decide))
     fun v hrd hwr hsp hf hcs hr => hQ v ?_ hr (by rw [← um, ← hu.sp]; exact hf)
@@ -149,8 +149,8 @@ theorem upd_step {t : State} (hc : Post s R EM t) {rest : Prog isa} {Q : State �
   have hk := h.k2
   refine WP.seq (WP.mono (shaUpdArgs_ok hc) fun u ⟨⟨um, u3, u4, u5, u6, u7⟩, ku⟩ => ?_)
   have hu : Post s R EM u := hc.regs ku.rd ku.wr ku.sp um fun r hr => ku.gpr r (by revert r; decide)
-  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
-  have lk : sD + (s.gpr .r7).toNat ≤ scrBytes := by unfold sD scrBytes; omega
+  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega_using [this]
+  have lk : sD + (s.gpr .r7).toNat ≤ scrBytes := by unfold sD scrBytes; omega_using [hk]
   refine WP.seq <| hH.callUpd_ok (len := (s.gpr .r7).toNat) u3 u5 (by rw [u6]) u7 (scD h (by decide) (by decide) (by decide))
     (scD h (.inr (by decide)) lk (by decide)) (scD h (.inr (by decide)) lk (by decide)) hs
     (by rw [hu.sp]; exact lowD h (by decide) (by decide)) (by rw [hu.sp]; exact lowD h (by decide) lk)
@@ -173,7 +173,7 @@ theorem fin_step {t : State} (hc : Post s R EM t) {Q : State → Prop}
   have hk := h.k2
   refine WP.seq (WP.mono (shaFinArgs_ok hc) fun u ⟨⟨um, u3, u4, u5, u6⟩, ku⟩ => ?_)
   have hu : Post s R EM u := hc.regs ku.rd ku.wr ku.sp um fun r hr => ku.gpr r (by revert r; decide)
-  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega
+  have hs : 48 ≤ u.sp.toNat := by rw [hu.sp]; have := fb_ge h; omega_using [this]
   refine hH.callFin_ok u3 u5 u6 (scD h (by decide) (by decide) (by decide))
     (scD h (by decide) (by decide) (by decide)) (scD h (by decide) (by decide) (by decide)) hs
     (by rw [hu.sp]; exact lowD h (by decide) (by decide)) (by rw [hu.sp]; exact lowD h (by decide) (by decide))
@@ -189,14 +189,14 @@ theorem fin_step {t : State} (hc : Post s R EM t) {Q : State → Prop}
       · exact scSub (by decide)
       · exact scSub (by decide)
       · exact scSub (by decide)
-  · have e := hr m (um ▸ hm) (by rw [hl]; omega) (by rw [u4, hl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
+  · have e := hr m (um ▸ hm) (by rw [hl]; omega_using []) (by rw [u4, hl, BitVec.ofNat_toNat, BitVec.setWidth_eq])
     show Spec.Sha256.bytesAt v.mem (scA s sDH) H.FD = _
     rw [e, ← List.take_of_length_le (l := hH.fh m) (i := H.D) (by rw [hH.fhLen]; decide)]
     exact (hH.hashTake m).symm
 
 theorem hashD_ok {t : State} (hd : DB s R EM t) : WP isa hashD t (DHS s R EM) := by
   have hk := h.k2
-  have lk : sD + (s.gpr .r7).toNat ≤ scrBytes := by unfold sD scrBytes; omega
+  have lk : sD + (s.gpr .r7).toNat ≤ scrBytes := by unfold sD scrBytes; omega_using [hk]
   refine init_step h hd.post fun u hu hr hf => ?_
   have hD := (keep_call h (by decide) hf lk fun r hr => by
     rw [List.mem_singleton.mp hr]; exact scD h (.inr (by decide)) lk (by decide)).trans hd.D

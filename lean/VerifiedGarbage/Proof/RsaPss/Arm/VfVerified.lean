@@ -273,10 +273,10 @@ theorem code_ok (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (c :
   have st := entered_state hc hcg hs hw hwg hh hhg (s' := s) fun _ _ => rfl
   have hin := st.1.1
   have hsp := spec_sp hs
-  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hsp; omega
+  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hsp; omega_using [hsp]
   let P := epw (mvs := mvs) (vs := vs) s s w wg
   have hb := (tab_vq w.h P (tf_of hw hwg) w.shape w.mem c).1 _ _ st
-  refine WP.mono (wrap_ok (by decide) (by omega) (W := (P.lay w.h.D).W)
+  refine WP.mono (wrap_ok (by decide) (by omega_using [hsp']) (W := (P.lay w.h.D).W)
     (Q := fun r _ => Res w.h wg.g.G P (entered frameBytes s) r) (fun r hr => ?_)
     (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
   · rw [pushRegion_eq (F := frameBytes) (A := 48) (argv := P.argv w.h.D) (ro := (P.lay w.h.D).ro)
@@ -345,7 +345,7 @@ theorem code_ct (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (c :
       show State.addr (stackArg s₂ 8) = BitVec.setWidth 64 (stackArg s₂ 8) from rfl, hw']
   refine (wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b hh => by rw [hh.1, hh.2]; exact hsp)
-    (fun a b hh => by rw [hh.1]; have := spec_sp h₁; simp only [stackBytes] at this; omega) ?_
+    (fun a b hh => by rw [hh.1]; have := spec_sp h₁; simp only [stackBytes] at this; omega_using [this]) ?_
     s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   refine (tab_vq w.h (epw (mvs := mvs) (vs := vs) s₁ s₁ w wg) (tf_of hw hwg) w.shape w.mem c).2.mono ?_
     fun _ _ _ => trivial

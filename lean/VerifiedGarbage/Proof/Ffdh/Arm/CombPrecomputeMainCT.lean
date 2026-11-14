@@ -46,10 +46,10 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32}
   have bitsBound : bits p≤8192 := CachedSample.bits_bound p
   have positive : 0<Spec.Rsa.FixedBaseComb.rows (bits p) := by
     unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth
-    omega
+    omega_using [positiveBits]
   have fits : Spec.Rsa.FixedBaseComb.rows (bits p)<2^32 := by
     unfold Spec.Rsa.FixedBaseComb.rows Spec.Rsa.FixedBaseComb.teeth
-    omega
+    omega_using [bitsBound]
   have odd : p.P%2=1 := by
     have modulus := Proof.Ffdh.domainValid_mod valid
     change Spec.Rsa.modulusValid p.P p.k=true at modulus

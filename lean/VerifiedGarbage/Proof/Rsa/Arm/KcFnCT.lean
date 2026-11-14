@@ -43,7 +43,7 @@ variable {nA iS : Nat} {ins : List (Nat × Nat)}
 
 theorem PubF.geo_eq {σ₁ σ₂ : State} (p : PubF nA σ₁ σ₂) (h : iS + 1 < nA) : geo iS σ₁ = geo iS σ₂ := by
   unfold geo fK
-  rw [p.args iS (by omega), p.args (iS + 1) h, p.r1]
+  rw [p.args iS (by omega_using [h]), p.args (iS + 1) h, p.r1]
 
 theorem PubF.nV {σ₁ σ₂ : State} (p : PubF nA σ₁ σ₂) : nV σ₁ = nV σ₂ := congrArg Spec.Rsa.os2ip p.n
 theorem PubF.eV {σ₁ σ₂ : State} (p : PubF nA σ₁ σ₂) : eV σ₁ = eV σ₂ := congrArg Spec.Rsa.os2ip p.e

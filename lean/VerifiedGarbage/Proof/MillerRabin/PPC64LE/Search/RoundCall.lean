@@ -284,7 +284,7 @@ theorem scr_covers {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) {x : Addr} 
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((x - (B₀ + BitVec.ofNat 64 o)).toNat + o % 2 ^ 64) (2 ^ 64)
   have := Nat.mod_le o (2 ^ 64)
-  omega
+  omega_using [hoL, hc]
 
 theorem roundCallTail_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a : Nat} (h : Prep s B L w c)
     (h12 : s.gpr .r12 = (word s.mem B 56 <<< 32) >>> 32)

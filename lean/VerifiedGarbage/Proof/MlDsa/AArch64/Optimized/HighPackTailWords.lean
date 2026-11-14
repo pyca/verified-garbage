@@ -20,7 +20,7 @@ theorem joinSixWord (a b c d : BitVec 8) :
   dsimp only
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨ i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 ∨ i = 29 ∨ i = 30 ∨ i = 31) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨ i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 ∨ i = 29 ∨ i = 30 ∨ i = 31) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [spaced, sixWord, HAppend.hAppend, BitVec.append, BitVec.getLsbD_setWidth', BitVec.getLsbD_shiftLeftZeroExtend, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
       BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth,
@@ -60,16 +60,16 @@ theorem vbyte_word (x : BitVec 128) (j : Nat) {r : Nat} (hr : r<4) :
     vbyte x (4*j+r) = (vword x j).extractLsb' (8*r) 8 := by
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
-  simp only [vbyte, vword, BitVec.getLsbD_extractLsb', hb, show 8*r+b<32 by omega,
+  simp only [vbyte, vword, BitVec.getLsbD_extractLsb', hb, show 8*r+b<32 by omega_using [hr, hb],
     decide_true, Bool.true_and]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem pack6Vector_byte (e o : BitVec 128) {i : Nat} (hi : i<12) :
     vbyte (pack6Vector e o 0 mask24 mask25 mask29) i =
       (sixWord (vbyte e (2*(i/3))) (vbyte o (2*(i/3)))
         (vbyte e (2*(i/3)+1)) (vbyte o (2*(i/3)+1))).extractLsb' (8*(i%3)) 8 := by
   change vbyte (tableBytes (groups6 e o) mask29) i = _
-  rw [compact_byte _ hi, vbyte_word _ _ (by omega), groups6_word _ _ (by omega)]
+  rw [compact_byte _ hi, vbyte_word _ _ (by omega_using []), groups6_word _ _ (by omega_using [hi])]
 
 /-- The six-bit tail packs each four coefficients into three little-endian bytes. -/
 theorem packed6_byte (s : State) (hz : s.v .v28=0) (h24 : s.v .v24=mask24)
@@ -78,12 +78,12 @@ theorem packed6_byte (s : State) (hz : s.v .v28=0) (h24 : s.v .v24=mask24)
       (sixWord (vbyte (gathered s) (4*(i/3))) (vbyte (gathered s) (4*(i/3)+1))
         (vbyte (gathered s) (4*(i/3)+2)) (vbyte (gathered s) (4*(i/3)+3))).extractLsb' (8*(i%3)) 8 := by
   rw [packed6, hz, h24, h25, h29, pack6Vector_byte _ _ hi,
-    uzp1_byte _ _ (by omega), uzp2_byte _ _ (by omega),
-    uzp1_byte _ _ (by omega), uzp2_byte _ _ (by omega),
-    ite_eq_left (by omega : 2*(i/3)<8), ite_eq_left (by omega : 2*(i/3)+1<8)]
-  rw [show 2*(2*(i/3))=4*(i/3) by omega,
-    show 2*(2*(i/3)+1)=4*(i/3)+2 by omega,
-    show 4*(i/3)+2+1=4*(i/3)+3 by omega]
-  rw [ite_eq_left (by omega), ite_eq_left (by omega)]
+    uzp1_byte _ _ (by omega_using [hi]), uzp2_byte _ _ (by omega_using [hi]),
+    uzp1_byte _ _ (by omega_using [hi]), uzp2_byte _ _ (by omega_using [hi]),
+    ite_eq_left (by omega_using [hi] : 2*(i/3)<8), ite_eq_left (by omega_using [hi] : 2*(i/3)+1<8)]
+  rw [show 2*(2*(i/3))=4*(i/3) by omega_using [],
+    show 2*(2*(i/3)+1)=4*(i/3)+2 by omega_using [],
+    show 4*(i/3)+2+1=4*(i/3)+3 by omega_using []]
+  rw [ite_eq_left (by omega_using [hi]), ite_eq_left (by omega_using [hi])]
 
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

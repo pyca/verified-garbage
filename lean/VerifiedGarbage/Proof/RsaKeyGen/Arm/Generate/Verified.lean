@@ -146,7 +146,7 @@ theorem AtPoint.keyStatus (h : AtPoint q o st)
     keyResultStatus (keyFromPrimes (16 * q.inputs.L) (Spec.Rsa.os2ip q.inputs.eB) (Spec.Rsa.os2ip pB)
       (Spec.Rsa.os2ip (Spec.Rsa.i2osp c q.inputs.L))) = q.key := by
   have hrest : (rOf q.inputs o q.used st).used ≤ ((genRand o).drop q.used).length := by
-    rw [List.length_drop, hrl]; omega
+    rw [List.length_drop, hrl]; omega_using [hle]
   obtain ⟨rest, hr⟩ := keySearch_trace_key (L := q.inputs.L) (eB := q.inputs.eB) ho (drop_lt hpos hrest) hph
   rw [GenPoint.key, ← h.2.2.2, tailOf, hr, primeEntry_key]
 
@@ -172,7 +172,7 @@ theorem continues_iff (h : AtPoint q o st) (hl : GenFrame q.inputs o q.used st s
     · cases hp : st.phase with
       | p => simp [h0, phaseWord]
       | q pB =>
-        have hk := h.keyStatus hl.rOf_used_le hl.genRand_length ho (by omega) hp
+        have hk := h.keyStatus hl.rOf_used_le hl.genRand_length ho (by omega_using [h0]) hp
         rw [← hk]
         simp [h0, phaseWord, keyResultStatus_two]
 
@@ -222,8 +222,8 @@ theorem gen_ct_step (sname : String) (c : Search.Cand) (name : String) {kc : Pro
     exact ⟨hl'.toGenFrame.keep k hmem, (k.gpr .r11 (by decide)).trans hl'.r11, by rw [hmem]; exact hl'.key.low,
       by rw [hmem]; exact hl'.key.high, fun pB h => by rw [hmem]; exact hl'.key.other pB h⟩
   · have hlt := keyStatus_lt' ((tailOf q.inputs o q.used st).consume q.used [])
-    refine WP.mono (Search.cmp_ok (c := 4) hd.2.1 (by omega) (by decide)) fun x ⟨⟨hx, hmem⟩, k⟩ =>
-      .inr ⟨fun h => hcs ((continues_iff ha hl.toGenFrame).mpr h), by rw [hx, decide_eq_false (by omega)],
+    refine WP.mono (Search.cmp_ok (c := 4) hd.2.1 (by omega_using [hlt]) (by decide)) fun x ⟨⟨hx, hmem⟩, k⟩ =>
+      .inr ⟨fun h => hcs ((continues_iff ha hl.toGenFrame).mpr h), by rw [hx, decide_eq_false (by omega_using [hlt])],
         o, _, hd.keep k hmem⟩
 
 end VG.Proof.RsaKeyGen.Arm.Generate
@@ -464,7 +464,7 @@ theorem callK_inputs {p : GenPublic} {o s u : State} {used : Nat} {st : KeyProgr
       Spec.Rsa.bytesAt u.mem (p.slot j) p.L = Spec.Rsa.bytesAt s.mem (p.slot j) p.L :=
     bytes_kept fa (fun r hr' => by
       obtain rfl := List.mem_singleton.mp hr'
-      exact (sK.sub_left h.a3Stack).symm.sub_left (GenFrame.kSubK hj)) (by omega)
+      exact (sK.sub_left h.a3Stack).symm.sub_left (GenFrame.kSubK hj)) (by omega_using [hL])
   refine ⟨by rw [a1, h.tL], ?_, ?_, ?_⟩
   · rw [a10, a11, show (BitVec.ofNat 32 8).toNat = 8 from rfl,
       show BitVec.setWidth 64 (p.stp + BitVec.ofNat 32 48) = off p.st 48 from congrArg Region.base h.eE,
@@ -472,8 +472,8 @@ theorem callK_inputs {p : GenPublic} {o s u : State} {used : Nat} {st : KeyProgr
         obtain rfl := List.mem_singleton.mp hr'
         exact (sT.sub_left h.a3Stack).symm.sub_left (Offset.sub_base _ (by decide))) (by decide)]
     exact h.state.e
-  · rw [a0, show BitVec.setWidth 64 (p.kp + BitVec.ofNat 32 (4 * p.L)) = p.slot 4 from kAddr h (by omega), kb 4 (by omega)]
-  · rw [a2, show BitVec.setWidth 64 (p.kp + BitVec.ofNat 32 (5 * p.L)) = p.slot 5 from kAddr h (by omega), kb 5 (by omega)]
+  · rw [a0, show BitVec.setWidth 64 (p.kp + BitVec.ofNat 32 (4 * p.L)) = p.slot 4 from kAddr h (by omega_using [hL]), kb 4 (by omega_using [])]
+  · rw [a2, show BitVec.setWidth 64 (p.kp + BitVec.ofNat 32 (5 * p.L)) = p.slot 5 from kAddr h (by omega_using [hL]), kb 5 (by omega_using [])]
 
 /-- After `q`'s search accepted a prime, at the point: the key's state. -/
 def KeyCT (q : GenPoint) (u : State) : Prop :=
@@ -659,7 +659,7 @@ theorem cmp_key {X : GenPoint → Prop} (k : Nat) (hk : k < 256) {hc : VG.Taint.
     RelCT isa (Two fun q u => AfterKCT q u ∧ X q) (.block [.cmp .r0 (.imm (BitVec.ofNat 32 k))])
       (Two fun q u => (AfterKCT q u ∧ X q) ∧ isa.eval .eq u = some (decide (q.key = k))) :=
   two_post (leaf_ct (fun q u h => h.1.1) ht) fun q u ⟨⟨hr, h0, h4⟩, hx⟩ =>
-    WP.mono (Search.cmp_ok h0 (by omega) hk) fun t ⟨⟨he, _⟩, kt⟩ =>
+    WP.mono (Search.cmp_ok h0 (by omega_using [h4]) hk) fun t ⟨⟨he, _⟩, kt⟩ =>
       ⟨⟨⟨regs_keep hr kt, (kt.gpr _ (by decide)).trans h0, h4⟩, hx⟩, he⟩
 
 theorem afterKey_ct : RelCT isa (Two AfterKCT) afterKey fun _ _ => True := by
@@ -699,13 +699,13 @@ theorem accepted_ct (name : String) {kc : Prog isa}
   · have h := hm.frame
     have hw := h.wr
     have aT : State.addr (q.inputs.stp + BitVec.ofNat 32 32) = off q.inputs.st 32 :=
-      VG.Arm.addr_add (by have := h.facts.nT; omega)
+      VG.Arm.addr_add (by have := h.facts.nT; omega_using [this])
     have hp1 := phaseWord_le st.phase
     refine WP.mono (withRest_all [.r12] (c := .block [.ldr .r12 .r9 32, .cmp .r12 (.imm 0)])
       (Q := fun t => isa.eval .eq t = some (decide (phaseWord st.phase = 0)) ∧ t.mem = u.mem) ?_ (by rfl) (by rfl))
       fun t ⟨⟨he, htm⟩, kt⟩ => ⟨⟨⟨o, st, final, a, hm.keep kt htm⟩, h0, h3, hc⟩, by rw [he, a.2.1]⟩
     ffrun [h.r9, aT, h.state_rd hw (u := u) (d := 32) (by decide), low_half h.state.phase]
-    exact congrArg some (Search.sub_eq_beq (by omega) (by decide))
+    exact congrArg some (Search.sub_eq_beq (by omega_using [hp1]) (by decide))
   refine fact_ite (Ψ := AccCT) (F := fun q => q.ph = 0) (leaf_ct (fun q u h => h.1.1.regs) (by taint_decide))
     ((keyBranch_ct name hv hks).mono (fun _ _ h => two_mono (fun q u ⟨⟨⟨o, st, final, a, hm⟩, h0, h3, hc⟩, hph⟩ => ?_) h)
       fun _ _ h => h)
@@ -714,7 +714,7 @@ theorem accepted_ct (name : String) {kc : Prog isa}
     cases e : st.phase with
     | p => have := a.2.1; rw [e] at this; exact absurd this.symm hph
     | q pB => exact ⟨pB, rfl⟩
-  exact ⟨o, st, final, c, pB, a, hm, ho, by rw [a.cand]; omega, hpB⟩
+  exact ⟨o, st, final, c, pB, a, hm, ho, by rw [a.cand]; omega_using [hc], hpB⟩
 
 
 
@@ -780,7 +780,7 @@ theorem classify_ct (name : String) {kc : Prog isa}
     (leaf_ct (fun q u h => h.1.1.regs) (by taint_decide)) fun q u ⟨⟨hmc, hs0⟩, hs3⟩ => ?_) ?_
   · obtain ⟨o, st, final, a, hm, h0, h12⟩ := id hmc
     have hu32 : (rOf q.inputs o q.used st).used < 2 ^ 32 := by
-      have := hm.used_le; have := hm.frame.randLen_lt; omega
+      have := hm.used_le; have := hm.frame.randLen_lt; omega_arith
     exact WP.mono (Search.cmp0_ok h12 hu32) fun t ⟨⟨he, htm⟩, kt⟩ =>
       ⟨⟨⟨hmc.keep kt htm, hs0⟩, hs3⟩, by rw [he, a.cand]⟩
   refine fact_ite (Ψ := fun q u => (MidCT q u ∧ ¬q.status = 0) ∧ ¬q.status = 3) (F := fun q => q.cand = 0)
@@ -842,7 +842,7 @@ theorem start_load (q : GenPoint) (s : State) (h : StartCT q s) :
     refine ⟨inArgs o, List.mem_append_left _ (by rw [hi.rd]; simp [inReads]), ?_⟩
     have e : stackArgAddr o 3 = stackArgAddr o 0 + BitVec.ofNat 64 12 := by
       simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
-      exact VG.Arm.addr_add (by omega)
+      exact VG.Arm.addr_add (by omega_using [top])
     rw [e]; exact Offset.contains_base _ (by decide) (by decide)
   have v52 : (pushed pushRegs o).mem.readW (stackArgAddr o 3) 32 = q.inputs.stp := by
     rw [hi.arg_frame (push_frame hi) (by decide), ← hi.2]; rfl
@@ -871,13 +871,13 @@ theorem entry_ct : RelCT isa (Two StartCT) (.block entry) (Two EnteredCT) := by
 theorem entry_other {p : GenPublic} {o s : State} (hi : GenInput p o) (hm : s.mem = (pushed pushRegs o).mem) :
     ∀ pB, (genProgress o).phase = .q pB → Spec.Rsa.bytesAt s.mem (p.slot 4) p.L = pB := by
   have room : 256 ≤ o.sp.toNat := hi.1.1
-  have hroom : 40 ≤ o.sp.toNat := by omega
+  have hroom : 40 ≤ o.sp.toNat := by omega_using [room]
   have cf := hi.cfacts
   have f := hi.facts
   have hst := cf.stack
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hst
   obtain ⟨sK, -, -, -, -, -⟩ := hst
-  have hL : 32 ≤ p.L ∧ p.L ≤ 512 := by have hv := f.valid; unfold primeLenValid at hv; omega
+  have hL : 32 ≤ p.L ∧ p.L ≤ 512 := by have hv := f.valid; unfold primeLenValid at hv; omega_using [hv]
   intro pB hpB
   have e : pB = Spec.Rsa.bytesAt o.mem (p.slot 4) p.L := by
     simp only [genProgress, keyProgressAt] at hpB
@@ -890,7 +890,7 @@ theorem entry_other {p : GenPublic} {o s : State} (hi : GenInput p o) (hm : s.me
   rw [hm, e]
   exact bytes_kept (FrameStack.pushed_frameA (rs := pushRegs) hroom) (fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
-    exact (sK.sub_left hsub).symm.sub_left (Offset.sub_base _ (by omega))) (by omega)
+    exact (sK.sub_left hsub).symm.sub_left (Offset.sub_base _ (by omega_using []))) (by omega_using [hL])
 
 theorem clear_ct : RelCT isa (Two EnteredCT) clearAround (Two GenCTL) := by
   refine two_post (leaf_ct (fun q s ⟨_, _, _, g, _⟩ => g.regsOf) (by taint_decide)) fun q s ⟨o, hi, hq, g, h11, hm⟩ => ?_
@@ -902,7 +902,7 @@ theorem clear_ct : RelCT isa (Two EnteredCT) clearAround (Two GenCTL) := by
     simp only [startOf, tailOf, List.drop_zero, hp]
     rfl
   · have room : 256 ≤ o.sp.toNat := hi.1.1
-    have hroom : 40 ≤ o.sp.toNat := by omega
+    have hroom : 40 ≤ o.sp.toNat := by omega_using [room]
     have cf := hi.cfacts
     have hst := cf.stack
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hst
@@ -913,7 +913,7 @@ theorem clear_ct : RelCT isa (Two EnteredCT) clearAround (Two GenCTL) := by
     have c24 : (cT q.inputs).Contains (off q.inputs.st 24) (64 / 8) := Offset.contains_base _ (by decide) (by decide)
     rw [hf.readW c24 (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact (cf.kT.sub_left (GenFrame.kSubK (by omega))).symm) (by decide), hm,
+        rcases hr with rfl | rfl <;> exact (cf.kT.sub_left (GenFrame.kSubK (by omega_using []))).symm) (by decide), hm,
       (FrameStack.pushed_frameA (rs := pushRegs) hroom).readW c24 (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr; exact (sT.sub_left hsub).symm) (by decide), ← hq]
     rfl
@@ -936,13 +936,13 @@ theorem next_lt {q : GenPoint} (hc : q.continues) {s : State} (h : GenCTL q.next
   rcases hc with ⟨h3, hl2⟩ | ⟨h1, hc0, -⟩
   · simp only [h3, ↓reduceIte]
     have : (q.inputs.randLen - (q.used + q.cand)) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
-    omega
-  · simp only [show ¬q.status = 3 by omega, ↓reduceIte]
+      Nat.mul_le_mul_right _ (by omega_using [])
+    omega_using [hl2]
+  · simp only [show ¬q.status = 3 by omega_using [h1], ↓reduceIte]
     have hmul : (q.inputs.randLen - (q.used + q.cand) + 1) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
+      Nat.mul_le_mul_right _ (by omega_using [hle, hc0])
     rw [Nat.add_mul, Nat.one_mul] at hmul
-    omega
+    omega_using [hle, hc0]
 
 /-- Pairs of loop states at the same point, its measure `n`. -/
 def LoopPair (n : Nat) (s t : State) : Prop :=
@@ -1060,7 +1060,7 @@ theorem code_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog is
   rintro a b ta tb u v ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ e1 e2
   have rs : 256 ≤ s.sp.toNat := hs.1
   have rt : 256 ≤ t.sp.toNat := ht.1
-  rw [push_pushed (by decide) (by simp only [List.length_cons, List.length_nil]; omega)] at ea eb
+  rw [push_pushed (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)] at ea eb
   cases ea
   cases eb
   have hpt := pub_same hp

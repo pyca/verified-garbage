@@ -45,14 +45,14 @@ namespace VG.PPC64LE
 theorem exec_ld {s : State} {t n : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 32768)
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 8) (hn : n ≠ .r0 := by decide) :
     exec (.load .d t n off) s = some (s.write t (s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 64)) :=
-  exec_load_d hn ⟨ho.2, by omega⟩ h
+  exec_load_d hn ⟨ho.2, by omega_using [ho]⟩ h
 
 /-- `std t, off(n)`. -/
 theorem exec_std {s : State} {t n : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 32768)
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 8) (hn : n ≠ .r0 := by decide) :
     exec (.store .d t n off) s =
       some { s with mem := s.mem.writeW (s.gpr n + BitVec.ofNat 64 off) (s.gpr t) } :=
-  exec_store_d hn ⟨ho.2, by omega⟩ h
+  exec_store_d hn ⟨ho.2, by omega_using [ho]⟩ h
 
 /-- `addi d, n, imm`. -/
 theorem exec_addi' {s : State} {d n : Reg} {imm : Nat} (h : imm < 32768) (hn : n ≠ .r0 := by decide) :
@@ -62,7 +62,7 @@ theorem exec_addi' {s : State} {d n : Reg} {imm : Nat} (h : imm < 32768) (hn : n
 /-- `subi d, n, imm`. -/
 theorem exec_subi' {s : State} {d n : Reg} {imm : Nat} (h : imm < 32768) (hn : n ≠ .r0 := by decide) :
     exec (.subi d n imm) s = some (s.write d (s.gpr n - BitVec.ofNat 64 imm)) :=
-  exec_subi hn (by omega)
+  exec_subi hn (by omega_using [h])
 
 /-- `mr d, n` (`or d, n, n`). -/
 theorem exec_or_self {s : State} {d n : Reg} :

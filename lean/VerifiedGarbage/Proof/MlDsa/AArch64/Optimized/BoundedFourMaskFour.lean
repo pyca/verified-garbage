@@ -104,21 +104,21 @@ theorem maskRows_step {σ s : State} {b p : Addr} {k : Nat} (hk : k<4)
   · intro i hi j hj
     by_cases hik : i=k
     · subst i
-      rw [ite_eq_left (by omega)]
+      rw [ite_eq_left (by omega_using [])]
       unfold maskedWord
       by_cases hz : σ.mem.readW (countAt b k) 64=0#64
-      · rw [ite_eq_left hz,hyes (by rw [hs.counts k hk]; exact hz),hs.words k hk j hj,ite_eq_right (by omega)]
+      · rw [ite_eq_left hz,hyes (by rw [hs.counts k hk]; exact hz),hs.words k hk j hj,ite_eq_right (by omega_using [])]
       · rw [ite_eq_right hz]
         exact hno (by rw [hs.counts k hk]; exact hz) j hj
     · have hframe : coeffAt t.mem (outputAt p i) j=coeffAt s.mem (outputAt p i) j := by
         unfold coeffAt
         apply hf.readW
-          (Offset.contains_base (outputAt p i) (by omega : 4*j+4≤1024) (by omega))
+          (Offset.contains_base (outputAt p i) (by omega_using [hj] : 4*j+4≤1024) (by omega_using [hj]))
           (fun r hr=>by rw [List.mem_singleton.mp hr]; exact outputs_apart p hi hk hik) (by decide)
       rw [hframe,hs.words i hi j hj]
       by_cases hlt : i<k
-      · rw [ite_eq_left hlt,ite_eq_left (by omega)]
-      · rw [ite_eq_right hlt,ite_eq_right (by omega)]
+      · rw [ite_eq_left hlt,ite_eq_left (by omega_using [hlt])]
+      · rw [ite_eq_right hlt,ite_eq_right (by omega_using [hik, hlt])]
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

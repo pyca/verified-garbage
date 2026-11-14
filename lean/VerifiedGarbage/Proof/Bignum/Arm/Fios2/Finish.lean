@@ -23,11 +23,11 @@ theorem advanceOperand2_ok (s : State) {base : BitVec 32} {size tmp : Nat}
       t.mem = s.mem.writeW (off (State.addr base) (tmp + 16))
         (s.mem.readW (off (State.addr base) (tmp + 16)) 32 + 8) ∧ Rest [.r4] s t := by
   unfold VG.Impl.Bignum.Arm.Fios2.advanceOperand2
-  refine wp_ldr (by decide) (ws.ea ptr (by omega)) (ws.read fit) fun u hu => ?_
+  refine wp_ldr (by decide) (ws.ea ptr (by omega_using [fit])) (ws.read fit) fun u hu => ?_
   refine wp_dp (op2_imm (by decide)) fun v hv => ?_
   have wv := (ws.congr hu.wr).congr hv.wr
   have pv := (hv.other .r0 (by decide)).trans ((hu.other .r0 (by decide)).trans ptr)
-  refine wp_str (by decide) (wv.ea pv (by omega)) (wv.write fit) fun t ht => WP.block_nil ?_
+  refine wp_str (by decide) (wv.ea pv (by omega_using [fit])) (wv.write fit) fun t ht => WP.block_nil ?_
   refine ⟨?_, ?_⟩
   · rw [ht.mem, hv.mem, hu.mem, hv.gpr, dpVal, hu.gpr]
   · exact (hu.rest (by simp)).trans ((hv.rest (by simp)).trans (ht.rest _))
@@ -40,11 +40,11 @@ theorem decrementRounds2_ok (s : State) {base : BitVec 32} {size tmp : Nat}
         (s.mem.readW (off (State.addr base) (tmp + 20)) 32 - 2) ∧
       t.z = (s.mem.readW (off (State.addr base) (tmp + 20)) 32 - 2 == 0) ∧ Rest [.lr] s t := by
   unfold VG.Impl.Bignum.Arm.Fios2.decrementRounds2
-  refine wp_ldr (by decide) (ws.ea ptr (by omega)) (ws.read fit) fun u hu => ?_
+  refine wp_ldr (by decide) (ws.ea ptr (by omega_using [fit])) (ws.read fit) fun u hu => ?_
   refine wp_subs (op2_imm (by decide)) fun v hv hz => ?_
   have wv := (ws.congr hu.wr).congr hv.wr
   have pv := (hv.other .r0 (by decide)).trans ((hu.other .r0 (by decide)).trans ptr)
-  refine wp_str_z (by decide) (wv.ea pv (by omega)) (wv.write fit) fun t ht htz => WP.block_nil ?_
+  refine wp_str_z (by decide) (wv.ea pv (by omega_using [fit])) (wv.write fit) fun t ht htz => WP.block_nil ?_
   refine ⟨?_, ?_, ?_⟩
   · rw [ht.mem, hv.mem, hu.mem, hv.gpr, hu.gpr]
   · rw [htz, hz, hu.gpr]
@@ -66,20 +66,20 @@ theorem finish_ok (s : State) {base : BitVec 32} {size top tmp : Nat}
   have hn := ws.nowrap
   rw [VG.Impl.Bignum.Arm.Fios2.finish, List.append_assoc]
   apply WP.block_append_iff.mpr
-  refine WP.mono (clearTop_ok s ws (by omega) ptr) ?_
+  refine WP.mono (clearTop_ok s ws (by omega_using [fit, htmp]) ptr) ?_
   rintro u ⟨mem1, ptr1, keep1⟩
   rw [← htmp] at ptr1
   have wr1 := writeW32_outside s.mem (State.addr base) (d := top) (0 : BitVec 32) (by omega)
   rw [← mem1] at wr1
-  have oldPtr := outside_read32 wr1 (d := tmp + 16) (by omega) (by omega)
-  have oldCount := outside_read32 wr1 (d := tmp + 20) (by omega) (by omega)
+  have oldPtr := outside_read32 wr1 (d := tmp + 16) (by omega_using [htmp]) (by omega_using [fit, hn])
+  have oldCount := outside_read32 wr1 (d := tmp + 20) (by omega_using [htmp]) (by omega_using [fit, hn])
   apply WP.block_append_iff.mpr
-  refine WP.mono (advanceOperand2_ok u (ws.congr keep1.wr) (by omega) ptr1) ?_
+  refine WP.mono (advanceOperand2_ok u (ws.congr keep1.wr) (by omega_using [fit]) ptr1) ?_
   rintro v ⟨mem2, keep2⟩
   have wr2 := writeW32_outside u.mem (State.addr base) (d := tmp + 16)
-    (u.mem.readW (off (State.addr base) (tmp + 16)) 32 + 8) (by omega)
+    (u.mem.readW (off (State.addr base) (tmp + 16)) 32 + 8) (by omega_using [fit, hn])
   rw [← mem2] at wr2
-  have oldCount2 := (outside_read32 wr2 (d := tmp + 20) (by omega) (by omega)).trans oldCount
+  have oldCount2 := (outside_read32 wr2 (d := tmp + 20) (by omega_using []) (by omega_using [fit, hn])).trans oldCount
   refine WP.mono (decrementRounds2_ok v ((ws.congr keep1.wr).congr keep2.wr) fit
     ((keep2.gpr .r0 (by simp)).trans ptr1)) ?_
   rintro t ⟨mem3, zero, keep3⟩
@@ -103,14 +103,14 @@ theorem finish_meta {mem : Mem} {base : BitVec 32} {size top tmp a b mod acc n i
     apply BitVec.eq_of_toNat_eq
     change w32 (finishMem2 mem (State.addr base) top tmp) (State.addr base) (tmp + d) =
       w32 mem (State.addr base) (tmp + d)
-    rw [finishMem2, w32_write_ne hb (by omega) (by omega) (by omega),
-      w32_write_ne hb (by omega) (by omega) (by omega),
-      w32_write_ne hb (by omega) (by omega) (by omega)]
+    rw [finishMem2, w32_write_ne hb (by omega_using [fit]) (by omega_using [fit, hd]) (by omega_using [sep]),
+      w32_write_ne hb (by omega_using [fit]) (by omega_using [fit, hd]) (by omega_using [sep]),
+      w32_write_ne hb (by omega_using [fit, htmp]) (by omega_using [fit, hd]) (by omega_using [htmp])]
   have ap : (finishMem2 mem (State.addr base) top tmp).readW (off (State.addr base) (tmp + 16)) 32 =
       mem.readW (off (State.addr base) (tmp + 16)) 32 + 8 := by
     apply BitVec.eq_of_toNat_eq
     change w32 (finishMem2 mem (State.addr base) top tmp) (State.addr base) (tmp + 16) = _
-    rw [finishMem2, w32_write_ne hb (by omega) (by omega) (by omega), w32_write_self]
+    rw [finishMem2, w32_write_ne hb (by omega_using [fit]) (by omega_using [fit]) (by omega_using []), w32_write_self]
   have count : (finishMem2 mem (State.addr base) top tmp).readW (off (State.addr base) (tmp + 20)) 32 =
       mem.readW (off (State.addr base) (tmp + 20)) 32 - 2 := by
     rw [finishMem2, Mem.readW_writeW_self32]
@@ -125,7 +125,7 @@ theorem finish_meta {mem : Mem} {base : BitVec 32} {size top tmp a b mod acc n i
     congr 1
   · rw [count, hdr.remaining]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 2 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
 
 theorem finish_value {mem : Mem} {base : Addr} {size acc top tmp n : Nat}
@@ -135,21 +135,21 @@ theorem finish_value {mem : Mem} {base : Addr} {size acc top tmp n : Nat}
       Outs base [(acc, 4 * (n + 2)), (tmp + 16, 8)] mem (finishMem2 mem base top tmp) := by
   have k1 := writeW32_outside mem base (d := top) (0 : BitVec 32) (by omega)
   have k2 := writeW32_outside (mem.writeW (off base top) (0 : BitVec 32)) base (d := tmp + 16)
-    (mem.readW (off base (tmp + 16)) 32 + 8) (by omega)
+    (mem.readW (off base (tmp + 16)) 32 + 8) (by omega_using [nowrap, fit])
   have k3 := writeW32_outside ((mem.writeW (off base top) (0 : BitVec 32)).writeW
     (off base (tmp + 16)) (mem.readW (off base (tmp + 16)) 32 + 8)) base (d := tmp + 20)
-    (mem.readW (off base (tmp + 20)) 32 - 2) (by omega)
-  have low1 := k1.val32 (d := acc) (k := n + 1) (by omega) (by omega)
-  have low2 := k2.val32 (d := acc) (k := n + 1) (by omega) (by omega)
-  have low3 := k3.val32 (d := acc) (k := n + 1) (by omega) (by omega)
-  have hi2 := k2.w32 (d := top) (by omega) (by omega)
-  have hi3 := k3.w32 (d := top) (by omega) (by omega)
+    (mem.readW (off base (tmp + 20)) 32 - 2) (by omega_using [nowrap, fit])
+  have low1 := k1.val32 (d := acc) (k := n + 1) (by omega_using [htop]) (by omega)
+  have low2 := k2.val32 (d := acc) (k := n + 1) (by omega_using [htop, htmp]) (by omega)
+  have low3 := k3.val32 (d := acc) (k := n + 1) (by omega_using [htop, htmp]) (by omega)
+  have hi2 := k2.w32 (d := top) (by omega_using [htmp]) (by omega)
+  have hi3 := k3.w32 (d := top) (by omega_using [htmp]) (by omega)
   refine ⟨?_, ?_⟩
-  · rw [show n + 2 = (n + 1) + 1 by omega, val32_succ, finishMem2, low3, low2, low1,
+  · rw [show n + 2 = (n + 1) + 1 by omega_using [], val32_succ, finishMem2, low3, low2, low1,
       ← htop, hi3, hi2, w32_write_self]
     simp only [show (0 : BitVec 32).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero]
-  · exact (Outs.of_outside (k1.mono (o' := acc) (n' := 4 * (n + 2)) (by omega) (by omega)) (by simp)).trans
-      ((Outs.of_outside (k2.mono (o' := tmp + 16) (n' := 8) (by omega) (by omega)) (by simp)).trans
-        (Outs.of_outside (k3.mono (o' := tmp + 16) (n' := 8) (by omega) (by omega)) (by simp)))
+  · exact (Outs.of_outside (k1.mono (o' := acc) (n' := 4 * (n + 2)) (by omega_using [htop]) (by omega_using [htop])) (by simp)).trans
+      ((Outs.of_outside (k2.mono (o' := tmp + 16) (n' := 8) (by omega_using []) (by omega_using [])) (by simp)).trans
+        (Outs.of_outside (k3.mono (o' := tmp + 16) (n' := 8) (by omega_using []) (by omega_using [])) (by simp)))
 
 end VG.Proof.Bignum.Arm.Fios2

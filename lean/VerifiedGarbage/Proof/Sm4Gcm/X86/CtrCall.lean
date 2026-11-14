@@ -90,10 +90,10 @@ include L hK
 theorem CtrReady.call {C Dp : BitVec 32} {nb : Nat} {s : State}
     (h : CtrReady Ctx St W SP C Dp nb s) : CtrCall s Ctx C Dp nb := by
   have hsp : below (s.gpr .esp) 1536 = below SP 1536 := by rw [h.esp]
-  refine ⟨h.eax, h.edx, h.ebx, h.edi, by rw [h.esp]; have := L.sp; omega,
+  refine ⟨h.eax, h.edx, h.ebx, h.edi, by rw [h.esp]; have := L.sp; omega_using [hK, this],
     h.kC.sub_left (Region.sub_prefix (by decide)), h.kD.sub_left (Region.sub_prefix (by decide)), h.cd,
     by rw [hsp]; subst hK; exact L.kc.sub_right (Region.sub_prefix (by decide)),
-    by rw [hsp]; exact h.bC, by rw [hsp]; exact h.bD, by have := L.fc; omega, h.fC, h.fD,
+    by rw [hsp]; exact h.bC, by rw [hsp]; exact h.bD, by have := L.fc; omega_using [this], h.fC, h.fD,
     covers_pre h.ctxR (by decide) (by decide), covers_cons h.wC (covers_cons h.wD covers_nil)⟩
 
 theorem CtrReady.kept {C Dp : BitVec 32} {nb : Nat} {s : State}

@@ -22,11 +22,11 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc
 
 theorem far_row {y p : Addr} {o : Nat} (ho : o + 16 ≤ 256) (h : ¬ (y - p).toNat < 258) :
     ¬ (y - (p + BitVec.ofNat 64 o)).toNat < 16 := by
-  rw [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (a := o) (by omega)]
+  rw [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho])]
   have := (y - p).isLt
-  rw [show 2 ^ 64 - o + (y - p).toNat = ((y - p).toNat - o) + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [show 2 ^ 64 - o + (y - p).toNat = ((y - p).toNat - o) + 2 ^ 64 by omega_using [ho, h], Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_using [])]
+  omega_using [ho, h]
 
 theorem j_byte (K : BitVec 8) (B : Nat) :
     (((bc K).extractLsb' 0 32).setWidth 64 + BitVec.ofNat 64 B).setWidth 8 = K + bB B := by
@@ -35,7 +35,7 @@ theorem j_byte (K : BitVec 8) (B : Nat) :
   simp only [BitVec.toNat_setWidth] at hl
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hl]
 
 theorem low_setLane (v : BitVec 128) (a : BitVec 64) : (setLane v 64 0 a).extractLsb' 0 64 = a := by
   apply BitVec.eq_of_getLsbD_eq
@@ -105,7 +105,7 @@ theorem finish_ok {u : State} {B : Nat} {T : Table} {I J : BitVec 8} (hB : B % 1
   refine ⟨?_, fun y hy => ?_, fun p hp => ?_, ?_, ?_, ?_, ?_⟩
   · rw [tm, bm, a0, a4, h4, context_finish, stored_table hB hT arow]
   · have hne (d : Nat) (hd : d < 258) : y ≠ u.gpr .x0 + BitVec.ofNat 64 d := fun e => by
-      rw [e, Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at hy; omega
+      rw [e, Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at hy; omega_using [hB, h8, h9, hj, h4, asp, a0, a4, a8, bsp, tsp, hy, hd, e]
     rw [tm, bm, a0, write_byte, ite_eq_right (hne 257 (by decide)), write_byte,
       ite_eq_right (hne 256 (by decide))]
     exact aout y fun r _ => far_row (rowOff_le r hB) hy

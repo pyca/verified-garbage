@@ -59,8 +59,8 @@ theorem tableByte_v0 (v : VReg → BitVec 128) {idx : Nat} (h : idx < 32) :
     tableByte v .v0 idx = if idx < 16 then vbyte (v .v0) idx else vbyte (v .v1) (idx - 16) := by
   by_cases h16 : idx < 16
   · simp [tableByte, h16, Nat.div_eq_of_lt h16, Nat.mod_eq_of_lt h16, Nat.repeat]
-  · have hq : idx / 16 = 1 := by omega
-    simp [tableByte, h16, hq, Nat.repeat, VReg.succ, show idx % 16 = idx - 16 by omega]
+  · have hq : idx / 16 = 1 := by omega_using [h, h16]
+    simp [tableByte, h16, hq, Nat.repeat, VReg.succ, show idx % 16 = idx - 16 by omega_using [h, h16]]
 
 /-- The 16 bytes ending `r` bytes past `p`, then byte `i + 16 - r`: byte `i` past `p`. -/
 theorem src_add (p : Addr) {r i : Nat} (hr : r ≤ 16) (hi : i < 16) :
@@ -73,7 +73,7 @@ theorem src_add (p : Addr) {r i : Nat} (hr : r ≤ 16) (hi : i < 16) :
 theorem sub_byte {e r : Nat} (he : e < 16) (hr : r < 16) :
     (BitVec.ofNat 8 (16 + e) - (BitVec.ofNat 64 r).setWidth 8).toNat = e + 16 - r := by
   simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [he, hr]
 
 /-- `tail16`: the `r` bytes at `x27`, `0x80` and zeros, stored at `x12` with one 16-byte store. -/
 theorem tail16_run {t : State} {r : Nat} (hr0 : 0 < r) (hr : r < 16) (h11 : t.gpr .x11 = BitVec.ofNat 64 r)
@@ -131,7 +131,7 @@ theorem tail16_run {t : State} {r : Nat} (hr0 : 0 < r) (hr : r < 16) (h11 : t.gp
   simp only [v_setV_self]
   rw [vbyte_ofVBytes _ he]
   simp only [VArr.map2, vbyte_ofVBytes _ he, x11B]
-  rw [idx16_byte e he, sub_byte he hr, itp (show e + 16 - r < 16 * 2 by omega), tableByte_v0 _ (by omega)]
+  rw [idx16_byte e he, sub_byte he hr, itp (show e + 16 - r < 16 * 2 by omega), tableByte_v0 _ (by omega_using [he])]
   have e0 : ((tB.setV .v3 (ofVBytes fun x => BitVec.setWidth 8 (BitVec.ofNat 64 r))).setV .v2
       (ofVBytes fun e => vbyte idx16 e - vbyte (ofVBytes fun x => BitVec.setWidth 8 (BitVec.ofNat 64 r)) e)).v
       .v0 = L := by simp [v_setV_of_ne, v0B]
@@ -140,11 +140,11 @@ theorem tail16_run {t : State} {r : Nat} (hr0 : 0 < r) (hr : r < 16) (h11 : t.gp
       .v1 = setLane 0 64 0 (BitVec.ofNat 64 0x80) := by simp [v_setV_of_ne, v1B]
   rw [e0, e1]
   by_cases her : e < r
-  · rw [itp (show e + 16 - r < 16 by omega), itp her, ← hL, vbyte,
-      Mem.extractLsb'_read _ _ (show e + 16 - r < 16 by omega), src_add _ (by omega) he]
-  · rw [itn (show ¬ e + 16 - r < 16 by omega), itn her, mark_byte _ (by omega)]
+  · rw [itp (show e + 16 - r < 16 by omega_using [her]), itp her, ← hL, vbyte,
+      Mem.extractLsb'_read _ _ (show e + 16 - r < 16 by omega_using [her]), src_add _ (by omega_using [hr]) he]
+  · rw [itn (show ¬ e + 16 - r < 16 by omega_using [her]), itn her, mark_byte _ (by omega_using [he])]
     by_cases h : e = r
-    · rw [itp (show e + 16 - r - 16 = 0 by omega), itp h]
-    · rw [itn (show ¬ e + 16 - r - 16 = 0 by omega), itn h]
+    · rw [itp (show e + 16 - r - 16 = 0 by omega_using [h]), itp h]
+    · rw [itn (show ¬ e + 16 - r - 16 = 0 by omega_using [her, h]), itn h]
 
 end VG.Proof.MdStream.AArch64.OneShot

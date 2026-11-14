@@ -47,12 +47,12 @@ theorem ldrb_ok (s : State) (d r : Reg) {off : Nat} (ho : off < 4096)
   refine ⟨s.write .w d ((s.mem.read (s.gpr r + BitVec.ofNat 64 off) 1).setWidth 32), ?_, ?_,
     fun x hx => RegUpd.gpr_write_of_ne _ _ _ hx, rfl, rfl, rfl⟩
   · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Nat.mod_one,
-      show off < 4096 * 1 by omega, and_self, ite_true, Option.bind_some, State.load, hr, Option.map_some]
+      show off < 4096 * 1 by omega_using [ho], and_self, ite_true, Option.bind_some, State.load, hr, Option.map_some]
   · rw [RegUpd.gpr_write_self]
     apply BitVec.eq_of_toNat_eq
     have := (s.mem (s.gpr r + BitVec.ofNat 64 off)).isLt
     simp only [read_one, BitVec.toNat_setWidth, Size.bits]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
 
 /-- `strb wv, [r, #off]`. -/
 theorem strb_ok (s : State) (r v : Reg) {off : Nat} (ho : off < 4096)
@@ -63,7 +63,7 @@ theorem strb_ok (s : State) (r v : Reg) {off : Nat} (ho : off < 4096)
   refine ⟨{ s with mem := s.mem.writeW (s.gpr r + BitVec.ofNat 64 off) ((s.gpr v).setWidth 8) }, ?_, rfl, rfl, rfl,
     rfl⟩
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Nat.mod_one,
-    show off < 4096 * 1 by omega, and_self, ite_true, Option.bind_some, State.store, hw, State.read, Size.bits]
+    show off < 4096 * 1 by omega_using [ho], and_self, ite_true, Option.bind_some, State.store, hw, State.read, Size.bits]
   rw [BitVec.setWidth_setWidth_of_le _ (by decide)]
   rfl
 
@@ -141,7 +141,7 @@ theorem cfb8Shift_wp {ivR : Reg} (i7 : ivR ≠ .x7) {s : State} {P : Addr} (hc :
       Frame [⟨P, 8 * c.bw⟩] s.mem s'.mem := by
   have c₁ := hc
   have inP : ∀ {u}, u < 8 * c.bw → InRegions s.wr (P + BitVec.ofNat 64 u) 1 := fun hu =>
-    ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩
+    ⟨_, hwP, VG.Offset.contains_base P (by omega_using [hu]) (by omega_using [hbw2, hu])⟩
   -- The byte moves.
   have hmv : WP isa (.block ((List.range (8 * c.bw - 1)).flatMap (Core.shiftByte ivR))) s fun s₂ =>
       (∀ x, x ≠ .x7 → s₂.gpr x = s.gpr x) ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr ∧
@@ -150,10 +150,10 @@ theorem cfb8Shift_wp {ivR : Reg} (i7 : ivR ≠ .x7) {s : State} {P : Addr} (hc :
         s₂.rd = s.rd ∧ s₂.wr = s.wr ∧ s₂.mem = shl1 s.mem P i)
       (fun i s₂ hi ⟨g₂, rd₂, wr₂, m₂⟩ => ?_) _ (Nat.le_refl _) s ⟨fun _ _ => rfl, rfl, rfl, by rw [shl1_zero]⟩
     have hc : s₂.gpr ivR = P := by rw [g₂ _ i7, c₁]
-    obtain ⟨s₃, e₃, v₃, o₃, m₃, rd₃, wr₃⟩ := ldrb_ok s₂ .x7 ivR (off := i + 1) (by omega)
-      (by rw [rd₂, wr₂, hc]; exact inRd (inP (by omega)))
-    obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄⟩ := strb_ok s₃ ivR .x7 (off := i) (by omega)
-      (by rw [wr₃, wr₂, o₃ _ i7, hc]; exact inP (by omega))
+    obtain ⟨s₃, e₃, v₃, o₃, m₃, rd₃, wr₃⟩ := ldrb_ok s₂ .x7 ivR (off := i + 1) (by omega_using [hbw2, hi])
+      (by rw [rd₂, wr₂, hc]; exact inRd (inP (by omega_using [hi])))
+    obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄⟩ := strb_ok s₃ ivR .x7 (off := i) (by omega_using [hbw2, hi])
+      (by rw [wr₃, wr₂, o₃ _ i7, hc]; exact inP (by omega_using [hi]))
     refine WP.of_runBlock ⟨s₄, by
       rw [Core.shiftByte, show ([.ldrb .x7 ivR (i + 1), .strb .x7 ivR i] : List Instr) =
         [.ldrb .x7 ivR (i + 1)] ++ [.strb .x7 ivR i] from rfl, runBlock_app, e₃, Option.bind_some, e₄],
@@ -161,43 +161,43 @@ theorem cfb8Shift_wp {ivR : Reg} (i7 : ivR ≠ .x7) {s : State} {P : Addr} (hc :
     rw [m₄, m₃, o₃ _ i7, v₃, hc, setWidth_byte, m₂]
     funext x
     rw [writeW8_apply]
-    have h64 : 8 * c.bw < 2 ^ 64 := by omega
+    have h64 : 8 * c.bw < 2 ^ 64 := by omega_using [hbw2]
     have hP1 : shl1 s.mem P i (P + BitVec.ofNat 64 (i + 1)) = s.mem (P + BitVec.ofNat 64 (i + 1)) := by
-      simp only [shl1]; rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-        ite_eq_right (by omega)]
+      simp only [shl1]; rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hbw2, hi]),
+        ite_eq_right (by omega_using [])]
     rw [hP1]
     by_cases hx : x = P + BitVec.ofNat 64 i
     · rw [ite_eq_left hx]
       simp only [shl1]
-      rw [ite_eq_left (by rw [(sub_eq_iff (by omega)).mp hx]; omega), hx, BitVec.add_assoc, ofNat_succ]
+      rw [ite_eq_left (by rw [(sub_eq_iff (by omega_using [hbw2, hi])).mp hx]; omega_using []), hx, BitVec.add_assoc, ofNat_succ]
     · rw [ite_eq_right hx]
-      have hne : (x - P).toNat ≠ i := fun h => hx ((sub_eq_iff (by omega)).mpr h)
+      have hne : (x - P).toNat ≠ i := fun h => hx ((sub_eq_iff (by omega_using [h])).mpr h)
       simp only [shl1]
       by_cases h1 : (x - P).toNat < i
-      · rw [ite_eq_left h1, ite_eq_left (by omega)]
-      · rw [ite_eq_right h1, ite_eq_right (by omega)]
+      · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1])]
+      · rw [ite_eq_right h1, ite_eq_right (by omega_using [hne, h1])]
   refine WP.block_append (WP.mono hmv fun s₂ ⟨g₂, rd₂, wr₂, m₂⟩ => ?_)
   have hc : s₂.gpr ivR = P := by rw [g₂ _ i7, c₁]
-  obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃⟩ := strb_ok s₂ ivR .x6 (off := 8 * c.bw - 1) (by omega)
-    (by rw [wr₂, hc]; exact inP (by omega))
+  obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃⟩ := strb_ok s₂ ivR .x6 (off := 8 * c.bw - 1) (by omega_using [hbw2])
+    (by rw [wr₂, hc]; exact inP (by omega_using [hbw]))
   refine WP.of_runBlock ⟨s₃, e₃, fun x h2 => by rw [g₃, g₂ x h2], by rw [rd₃, rd₂],
     by rw [wr₃, wr₂], fun u hu => ?_, ?_⟩
   · rw [m₃, hc, writeW8_apply, g₂ _ (by decide), m₂]
     by_cases hl : u + 1 < 8 * c.bw
     · rw [ite_eq_right (fun h => by
-        have := (sub_eq_iff (x := P + BitVec.ofNat 64 u) (P := P) (by omega)).mp h
-        rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-        omega), ite_eq_left hl]
+        have := (sub_eq_iff (x := P + BitVec.ofNat 64 u) (P := P) (by omega_using [hbw2])).mp h
+        rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hu, this])] at this
+        omega_using [hl, this]), ite_eq_left hl]
       simp only [shl1]
-      rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), ite_eq_left (by omega),
+      rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hbw2, hu]), ite_eq_left (by omega_using [hl]),
         BitVec.add_assoc, ofNat_succ]
-    · rw [ite_eq_left (by congr 2; omega), ite_eq_right hl]
+    · rw [ite_eq_left (by congr 2; omega_using [hu, hl]), ite_eq_right hl]
   · rw [m₃, hc, m₂]
     intro x hx
     have hx' : ¬ (x - P).toNat < 8 * c.bw := fun h => hx _ List.mem_cons_self (by
-      simp only [Region.Contains]; omega)
-    rw [writeW8_apply, ite_eq_right (fun h => hx' (by rw [(sub_eq_iff (by omega)).mp h]; omega))]
+      simp only [Region.Contains]; omega_using [h])
+    rw [writeW8_apply, ite_eq_right (fun h => hx' (by rw [(sub_eq_iff (by omega_using [hbw2])).mp h]; omega_using [hbw]))]
     simp only [shl1]
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using [hx'])]
 
 end VG.Proof.Modes.AArch64

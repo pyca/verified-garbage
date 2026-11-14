@@ -47,7 +47,7 @@ theorem crt_setupPrime_ready (s : State) {base child : BitVec 32} {len slot w : 
     (link : s.mem.readW (VG.Proof.Mont.off (State.addr base) slot) 32 = child) :
     WP isa (setupPrime slot) s (CrtAtPrime base child len w) := by
   have size := h.context.size
-  refine WP.mono (crt_setupPrime_ok s h.context.main ws (by omega) slotFit hs
+  refine WP.mono (crt_setupPrime_ok s h.context.main ws (by omega_using [size]) slotFit hs
     h.context.width h.context.widthFit h.context.arraysFit h.ptr
     (h.main.toCrtLayoutState.nativeCount h.context.main) link) ?_
   rintro t ⟨_, _, ptr, linkT, frame, rest⟩
@@ -56,7 +56,7 @@ theorem crt_setupPrime_ready (s : State) {base child : BitVec 32} {len slot w : 
 theorem crt_leavePrime_ready (s : State) {base child : BitVec 32} {len w : Nat}
     (h : CrtAtPrime base child len w s) : WP isa (.block leavePrime) s (CrtAtMain base len w) := by
   have size := h.context.size
-  refine WP.mono (crt_leavePrime_ok s h.childWorkspace (by omega) h.ptr h.link) ?_
+  refine WP.mono (crt_leavePrime_ok s h.childWorkspace (by omega_using [size]) h.ptr h.link) ?_
   rintro t ⟨ptr, mem, rest⟩
   exact ⟨h.context.congr rest.wr, mem ▸ h.main, ptr⟩
 

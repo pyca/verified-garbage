@@ -56,7 +56,7 @@ theorem sealM_xdepth : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B)).x86_64D
   simp only [Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, cond_xdepth, sealShort_xdepth, finish_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
-  omega
+  omega_using [e]
 
 theorem sealM_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX86_64M M).pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B)) s t s' ∧ abiPreserved s s' ∧
@@ -85,7 +85,7 @@ theorem openM_xdepth : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B)).x86_64D
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte,
     Bool.false_eq_true]
-  omega
+  omega_using [d]
 
 theorem openM_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.openX86_64M M).pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B)) s t s' ∧ abiPreserved s s' ∧

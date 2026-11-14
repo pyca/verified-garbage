@@ -180,9 +180,9 @@ theorem ext_mod {m : Mem} {B : Addr} {d w L N P : Nat} (hx : wordsVal m B d w = 
 /-- The number of words `prime` reduces, `w_A ⌈w / w_A⌉`, is in `[w, 2 w)`. -/
 theorem chunks_bounds {w wA : Nat} (h2 : 2 ≤ wA) (hw : wA ≤ w) :
     w ≤ wA * Win.nChunks w wA ∧ wA * Win.nChunks w wA < 2 * w := by
-  have h1 := Win.le_nChunks_mul (K := w) (w := wA) (by omega)
-  have h3 := Win.nChunks_mul_lt (K := w) (w := wA) (by omega) (by omega)
-  rw [Nat.mul_comm]; omega
+  have h1 := Win.le_nChunks_mul (K := w) (w := wA) (by omega_using [h2])
+  have h3 := Win.nChunks_mul_lt (K := w) (w := wA) (by omega_using [h2]) (by omega_using [h2, hw])
+  rw [Nat.mul_comm]; omega_using [hw, h1, h3]
 
 /-! ## `R² mod n` into `X`'s array 6 -/
 

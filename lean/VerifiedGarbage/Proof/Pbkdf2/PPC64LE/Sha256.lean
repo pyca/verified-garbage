@@ -41,7 +41,7 @@ theorem hashOk : HashOk Impl.Sha256.PPC64LE.mdParams 32 (8 * Spec.Hmac.sha256I.s
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha256.md, Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega_using [hj])
   lenOk := trivial
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => by
     show Spec.Sha256.hash m = _

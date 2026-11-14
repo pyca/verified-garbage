@@ -21,13 +21,13 @@ theorem top_bound {R L H U m : Nat} (hm : m < R)
     (h : L + R*(H + 2^64*U) < R+m) : U = 0 ∧ H ≤ 1 := by
   have h2 : H + 2^64*U < 2 := by
     by_contra hn
-    have hh := Nat.mul_le_mul_left R (show 2 ≤ H+2^64*U by omega)
-    omega
+    have hh := Nat.mul_le_mul_left R (show 2 ≤ H+2^64*U by omega_using [hn])
+    omega_using [hm, h, hh]
   have hu : U = 0 := by
     by_contra hn
-    have hh := Nat.mul_le_mul_left (2^64) (show 1 ≤ U by omega)
-    omega
-  exact ⟨hu, by omega⟩
+    have hh := Nat.mul_le_mul_left (2^64) (show 1 ≤ U by omega_using [hn])
+    omega_using [h2, hn]
+  exact ⟨hu, by omega_using [h2]⟩
 
 /-- Expose the high carry as a Boolean without inspecting any secret in control
 flow. This is a proof witness for the branch-free masked subtraction. -/
@@ -37,7 +37,7 @@ theorem top_bit {s : State} {B : Addr} {e w m : Nat}
       wv s.mem B e (w+2) = wv s.mem B e w + 2^(64*w)*bit.toNat := by
   have hh := top_bound hm (by rwa [wv_top2] at ht)
   rcases hh with ⟨hu,hh⟩
-  have hw : (word s.mem B (e+8*w)).toNat = 0 ∨ (word s.mem B (e+8*w)).toNat = 1 := by omega
+  have hw : (word s.mem B (e+8*w)).toNat = 0 ∨ (word s.mem B (e+8*w)).toNat = 1 := by omega_using [hh]
   rcases hw with hw | hw
   · refine ⟨false, ?_, ?_⟩
     · apply BitVec.eq_of_toNat_eq

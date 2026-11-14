@@ -54,25 +54,25 @@ theorem childHead_ok (a : Operand) (ha : pointerFits a.pointer) {p : ChildPublic
       (LPre aN arg argLen p.toBPub) := by
   obtain ⟨⟨mi, hg⟩, bs, hp, hl, hsrc, hlen⟩ := h
   have hkw : p.x.wx = (bs.length + 7) / 8 := by rw [hlen]; exact p.width
-  have hslot : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega
-  have hbound : p.x.o + slot p.x.wx 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; have := p.hi; omega
+  have hslot : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega_using []
+  have hbound : p.x.o + slot p.x.wx 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; have := p.hi; omega_arith
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (operand_context hg p.extent a ha (by decide) (by decide) (by decide) (by decide) (by decide))
     fun u ⟨hgu, hup, hul, _, hfu, hku⟩ => ?_
   have hfui : Frm p.x.B (initRanges p.x.o p.x.wx) s.mem u.mem := init_call_frame hfu
   have hul' : word u.mem p.x.B (8 * argLen) = BitVec.ofNat 64 bs.length := hul.trans hl
-  refine WP.mono (newChild_ok hgu p.extent p.offset (by rw [hlen]; have := p.lengthBound; omega)
+  refine WP.mono (newChild_ok hgu p.extent p.offset (by rw [hlen]; have := p.lengthBound; omega_using [this])
     hul' p.lo (by rw [← hkw]; exact p.hi)) fun v ⟨oldMi, hcv, hfv, hkv⟩ => ?_
   rw [← hkw] at hcv
-  have hfvi : Frm p.x.B (initRanges p.x.o p.x.wx) u.mem v.mem := init_child_frame hfv (by omega) hbound
+  have hfvi : Frm p.x.B (initRanges p.x.o p.x.wx) u.mem v.mem := init_child_frame hfv (by omega_using [hslot]) hbound
   have hvsrc := init_source (hfui.trans hfvi) (hku.trans hkv)
-    (Nat.le_trans (by decide) p.extent) (by have := p.hi; omega) hsrc
+    (Nat.le_trans (by decide) p.extent) (by have := p.hi; omega_using [this]) hsrc
   have hvword : ∀ i < 32, word v.mem p.x.B (8 * i) = word u.mem p.x.B (8 * i) := by
     intro i hi
     have hff : Frm (off p.x.B p.x.o) [(48, 88)] u.mem v.mem := Frm.of_outside hfv (by simp)
     exact hff.word_below (L := 136) (by intro r hr; rw [List.mem_singleton.mp hr]; decide)
-      (by omega) (by have := p.lo; unfold slot hdrBytes at this; omega)
-      (by have := p.lo; unfold slot hdrBytes at this; omega)
+      (by omega_using [hslot, hbound]) (by have := p.lo; unfold slot hdrBytes at this; omega_using [hslot, hbound])
+      (by have := p.lo; unfold slot hdrBytes at this; omega_using [hi, this])
   exact ⟨oldMi, bs, hcv, p.widthPositive, p.widthParent, p.widthBound,
     by decide, by decide, by decide, (hvword _ (by decide)).trans (hup.trans hp),
     (hvword _ (by decide)).trans hul', hlen, hvsrc, hlen ▸ p.positive,

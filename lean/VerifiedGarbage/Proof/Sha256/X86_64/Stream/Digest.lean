@@ -124,7 +124,7 @@ theorem verified224S {so : Nat} (h : so = 0 ∨ so = 112) {f : Callee} (hf : f.O
     Verified X86_64.target (Impl.MdStream.X86_64.finalize (params224S so) f.name f.code)
       (finalize224X86_64S (so + 48)) :=
   have h := MdStream.X86_64.Finalize.verifiedD (P := params224S so)
-    ⟨dims.B, dims.N, dims.L, show so ≤ 2048 by omega⟩
+    ⟨dims.B, dims.N, dims.L, show so ≤ 2048 by omega_using [h]⟩
     (shape224S so) (taints224S so h) ((calleeS hf hv).withOut _) hm
   h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hc => (h _ m hr trivial hc).trans (sha224_eq m),
     fun _ _ _ _ h => h, h.2.2⟩

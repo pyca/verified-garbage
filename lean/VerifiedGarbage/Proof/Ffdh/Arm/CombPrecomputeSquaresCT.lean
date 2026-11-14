@@ -52,7 +52,7 @@ theorem power5_bound {p : Inputs} {sp : BitVec 32} {s : State}
   apply Nat.mod_lt
   have positive := h.memory.ready.modulus
   rw [h.modulus] at positive
-  omega
+  omega_using [positive]
 
 private theorem square_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {n : Nat} :
     RelCT isa (fun s t => SquareInput p sp n s ∧ SquareInput p sp n t ∧ s.sp=t.sp)
@@ -132,7 +132,7 @@ theorem squares_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32}
         intro zero
         change some (!u.z)=some true at again
         simp only [z1,zero,decide_true,Bool.not_true,Option.some.injEq,Bool.false_eq_true] at again
-      exact ⟨n-1,by omega,by omega,by omega,left,right,sp'⟩
+      exact ⟨n-1,by omega_using [nz],by omega_using [nz],by omega,left,right,sp'⟩
   have init (s : State) (h : Core p sp s ∧ ∃E,Power5 p E s) :
       WP isa (.block VG.Impl.Ffdh.Arm.CombPrecompute.squaresInit) s
         (SquareInput p sp (Spec.Rsa.FixedBaseComb.rows (bits p))) := by

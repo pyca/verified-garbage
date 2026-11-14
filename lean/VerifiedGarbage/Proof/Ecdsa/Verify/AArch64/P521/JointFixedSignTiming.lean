@@ -31,9 +31,9 @@ theorem fixedSign_relCT {C : Curve} {base : Addr} {u j : Nat} {V : List Nat} {E 
      t.gpr .x3=BitVec.ofNat 64 (nafNegative (FastNaf.byte 7 u j)).toNat) := by
    intro s t ts tt s' t' ⟨hp,s19,t19,sb,tb⟩ es et
    obtain ⟨_,_,xs,vs,ks⟩ := nafSignRead_ok (K:=P521Joint.KG) hp.left.scr (by decide)
-     (by change 3304+j<8192; omega) s19 sb
+     (by change 3304+j<8192; omega_using [hj]) s19 sb
    obtain ⟨_,_,xt,vt,kt⟩ := nafSignRead_ok (K:=P521Joint.KG) hp.right.scr (by decide)
-     (by change 3304+j<8192; omega) t19 tb
+     (by change 3304+j<8192; omega_using [hj]) t19 tb
    obtain ⟨_,rfl⟩ := Exec.det es xs
    obtain ⟨_,rfl⟩ := Exec.det et xt
    have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by

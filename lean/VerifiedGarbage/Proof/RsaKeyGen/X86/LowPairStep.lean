@@ -25,8 +25,8 @@ theorem step_ok {s : State} {base : Addr} {size src index : Nat} (scratch : Scr 
       (t.gpr .ebx, t.gpr .esi) = select (s.gpr .ebx, s.gpr .esi) (pairAt s.mem base (src + 8 * index)) ∧
       t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebx, .esi] s t := by
   unfold step
-  refine WP.block_append (wp_movS (readSrc_sc scratch (by omega)) fun a A _ =>
-    wp_movS (readSrc_sc (scratch.of_keeps A.keeps (by decide)) (by omega)) fun b B _ => WP.block_nil ?_)
+  refine WP.block_append (wp_movS (readSrc_sc scratch (by omega_using [fit])) fun a A _ =>
+    wp_movS (readSrc_sc (scratch.of_keeps A.keeps (by decide)) (by omega_using [fit])) fun b B _ => WP.block_nil ?_)
   have K : Keeps [.eax, .ecx] s b := (A.keeps.mono (by decide)).widen B.keeps
   have M : b.mem = s.mem := B.mem.trans A.mem
   refine WP.mono (choose_ok b) fun t ⟨V, Mt, Kt⟩ => ?_

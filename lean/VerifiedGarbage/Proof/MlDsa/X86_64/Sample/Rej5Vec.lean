@@ -54,7 +54,7 @@ def sgnD : BitVec 128 := 0x8080808080808080808080800f0b0703#128
 
 theorem pshufb_shufD (a : BitVec 128) {l : Nat} (hl : l < 2) :
     XBinOp.eval .pshufb a (shufD l) = ofBytes fun j => if j % 4 < 3 then byte a (4 * l + 3 * (j / 4) + j % 4) else 0 := by
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
   · simp only [XBinOp.eval, ofBytes, shufD]
     rfl
 
@@ -80,26 +80,26 @@ theorem cand_dword (X : BitVec 256) {l i : Nat} (hl : l < 2) (hi : i < 4) :
     (dword (candD X l) i).toNat = candK X (4 * l + i) := by
   rw [candD, dword_pand', dword_mskD hi, BitVec.toNat_and, show (0x7fffff#32).toNat = 2 ^ 23 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, pshufb_shufD _ hl, toNat_dword_ofBytes _ hi]
-  simp only [show (4 * i) % 4 < 3 by omega, show (4 * i + 1) % 4 < 3 by omega, show (4 * i + 2) % 4 < 3 by omega,
-    show ¬ (4 * i + 3) % 4 < 3 by omega, ↓reduceIte, show (0 : BitVec 8).toNat = 0 from rfl,
-    byte_laneP _ (show 4 * l + 3 * (4 * i / 4) + 4 * i % 4 < 16 by omega),
-    byte_laneP _ (show 4 * l + 3 * ((4 * i + 1) / 4) + (4 * i + 1) % 4 < 16 by omega),
-    byte_laneP _ (show 4 * l + 3 * ((4 * i + 2) / 4) + (4 * i + 2) % 4 < 16 by omega)]
-  rw [show 8 * l + (4 * l + 3 * (4 * i / 4) + 4 * i % 4) = 3 * (4 * l + i) by omega,
-    show 8 * l + (4 * l + 3 * ((4 * i + 1) / 4) + (4 * i + 1) % 4) = 3 * (4 * l + i) + 1 by omega,
-    show 8 * l + (4 * l + 3 * ((4 * i + 2) / 4) + (4 * i + 2) % 4) = 3 * (4 * l + i) + 2 by omega]
+  simp only [show (4 * i) % 4 < 3 by omega_using [], show (4 * i + 1) % 4 < 3 by omega_using [], show (4 * i + 2) % 4 < 3 by omega_using [],
+    show ¬ (4 * i + 3) % 4 < 3 by omega_using [], ↓reduceIte, show (0 : BitVec 8).toNat = 0 from rfl,
+    byte_laneP _ (show 4 * l + 3 * (4 * i / 4) + 4 * i % 4 < 16 by omega_using [hl, hi]),
+    byte_laneP _ (show 4 * l + 3 * ((4 * i + 1) / 4) + (4 * i + 1) % 4 < 16 by omega_using [hl, hi]),
+    byte_laneP _ (show 4 * l + 3 * ((4 * i + 2) / 4) + (4 * i + 2) % 4 < 16 by omega_using [hl, hi])]
+  rw [show 8 * l + (4 * l + 3 * (4 * i / 4) + 4 * i % 4) = 3 * (4 * l + i) by omega_using [],
+    show 8 * l + (4 * l + 3 * ((4 * i + 1) / 4) + (4 * i + 1) % 4) = 3 * (4 * l + i) + 1 by omega_using [],
+    show 8 * l + (4 * l + 3 * ((4 * i + 2) / 4) + (4 * i + 2) % 4) = 3 * (4 * l + i) + 2 by omega_using []]
   have b0 := (byteY X (3 * (4 * l + i))).isLt
   have b1 := (byteY X (3 * (4 * l + i) + 1)).isLt
   have b2 := (byteY X (3 * (4 * l + i) + 2)).isLt
   simp only [candK, rnZ]
-  omega
+  omega_using []
 
 theorem candK_lt (X : BitVec 256) (k : Nat) : candK X k < 2 ^ 23 := by
   have b0 := (byteY X (3 * k)).isLt
   have b1 := (byteY X (3 * k + 1)).isLt
   have := Nat.mod_lt (byteY X (3 * k + 2)).toNat (show 128 > 0 by decide)
   simp only [candK, rnZ]
-  omega
+  omega_using []
 
 /-! ## The mask -/
 
@@ -119,7 +119,7 @@ theorem msb_sub_q {x : BitVec 32} (hx : x.toNat < 2 ^ 23) :
   rw [show (x - 0x7fe001#32).getLsbD 31 = (x - 0x7fe001#32).msb from (BitVec.msb_eq_getLsbD_last _).symm,
     BitVec.msb_eq_decide, BitVec.toNat_sub, show (0x7fe001#32).toNat = 8380417 from rfl]
   simp only [Spec.MlDsa.q]
-  by_cases h : x.toNat < 8380417 <;> simp [h] <;> omega
+  by_cases h : x.toNat < 8380417 <;> simp [h] <;> omega_arith
 
 /-- Byte `i < 4` of `sgnL X l` is byte 3 of doubleword `i`, the others zero. -/
 theorem sgnL_bit (X : BitVec 256) {l j : Nat} (hl : l < 2) (hj : j < 16) :
@@ -134,7 +134,7 @@ theorem sgnL_bit (X : BitVec 256) {l j : Nat} (hl : l < 2) (hj : j < 16) :
         (dword (XBinOp.eval .psubd (candD X l) qD) j).getLsbD 31 := by
       simp only [byte, getLsbD_dword, BitVec.getLsbD_extractLsb', show 7 < 8 from by decide, show 31 < 32 from by decide,
         decide_true, Bool.true_and]
-      exact congrArg _ (by omega)
+      exact congrArg _ (by omega_using [])
     rw [e, dword_psubd _ _ h4, dword_qD h4, msb_sub_q (by rw [cand_dword X hl h4]; exact candK_lt X _),
       cand_dword X hl h4, decide_eq_true h4, Bool.true_and]
   · rw [itF h4, decide_eq_false h4, Bool.false_and]; rfl
@@ -146,24 +146,24 @@ theorem mask_toNat (X : BitVec 256) :
       (decide (j % 16 < 4) && decide (candK X (4 * (j / 16) + j % 16) < Spec.MlDsa.q)) := fun j hj => by
     rw [BitVec.getLsbD_append]
     by_cases h : j < 16
-    · rw [itT (show 8 * j + 7 < 128 by omega), sgnL_bit X (by decide) h, Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]
-    · rw [itF (show ¬ 8 * j + 7 < 128 by omega), show 8 * j + 7 - 128 = 8 * (j - 16) + 7 by omega,
-        sgnL_bit X (by decide) (show j - 16 < 16 by omega), show j / 16 = 1 by omega, show j % 16 = j - 16 by omega]
+    · rw [itT (show 8 * j + 7 < 128 by omega_using [h]), sgnL_bit X (by decide) h, Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]
+    · rw [itF (show ¬ 8 * j + 7 < 128 by omega_using [h]), show 8 * j + 7 - 128 = 8 * (j - 16) + 7 by omega_using [h],
+        sgnL_bit X (by decide) (show j - 16 < 16 by omega_using [hj]), show j / 16 = 1 by omega_using [hj, h], show j % 16 = j - 16 by omega_using [hj, h]]
   rw [byteMask_eq _ (by decide), BitVec.toNat_ofNat]
   generalize hg : (fun i => (sgnL X 1 ++ sgnL X 0).getLsbD (8 * i + 7)) = g
   have hgj : ∀ j < 32, g j = (decide (j % 16 < 4) && decide (candK X (4 * (j / 16) + j % 16) < Spec.MlDsa.q)) :=
     fun j hj => by rw [← hg]; exact hbit j hj
   have hz : ∀ n, n % 16 = 4 → n + 12 ≤ 32 → bsum (fun i => g (n + i)) 12 = 0 := fun n hn hn' => by
     rw [bsum_congr (g := fun _ => false) fun i hi => by
-      rw [hgj _ (by omega), decide_eq_false (show ¬ (n + i) % 16 < 4 by omega), Bool.false_and]]
+      rw [hgj _ (by omega_using [hn', hi]), decide_eq_false (show ¬ (n + i) % 16 < 4 by omega_using [hn, hi]), Bool.false_and]]
     clear hgj hg hn hn'
     induction (12 : Nat) with
     | zero => rfl
     | succ k ih => rw [bsum, ih]; simp
   have hm : ∀ n, n % 16 = 0 → n < 32 → bsum (fun i => g (n + i)) 4 = maskL X (n / 16) := fun n hn hn' =>
     bsum_congr fun i hi => by
-      rw [hgj _ (by omega), decide_eq_true (show (n + i) % 16 < 4 by omega), Bool.true_and,
-        show (n + i) / 16 = n / 16 by omega, show (n + i) % 16 = i by omega]
+      rw [hgj _ (by omega_using [hn, hn', hi]), decide_eq_true (show (n + i) % 16 < 4 by omega_using [hn, hi]), Bool.true_and,
+        show (n + i) / 16 = n / 16 by omega_using [hn, hi], show (n + i) % 16 = i by omega_using [hn, hi]]
   have b0 : bsum g 4 = maskL X 0 := by
     rw [← hm 0 (by decide) (by decide)]; exact bsum_congr fun i _ => by rw [Nat.zero_add]
   have e1 := bsum_add g 4 12
@@ -175,8 +175,8 @@ theorem mask_toNat (X : BitVec 256) :
   have l0 : maskL X 0 < 16 := bsum_lt _ 4
   have l1 : maskL X 1 < 16 := bsum_lt _ 4
   simp only [Nat.reduceDiv] at e3
-  rw [e3, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e3, Nat.mod_eq_of_lt (by omega_using [l0, l1])]
+  omega_using []
 
 /-! ## The compaction -/
 
@@ -197,21 +197,21 @@ theorem pshufb_idxD (a : BitVec 128) {m c : Nat} (hc : c < (setBits4 m).length) 
   have hb : ∀ e < 4, byte (XBinOp.eval .pshufb a (idxD m)) (4 * c + e) = byte a (4 * (setBits4 m).getD c 0 + e) :=
     fun e he => by
       have hi : byte (idxD m) (4 * c + e) = BitVec.ofNat 8 (4 * (setBits4 m).getD c 0 + e) := by
-        rw [idxD, byte_ofBytes' _ (by omega), itT (show (4 * c + e) / 4 < (setBits4 m).length by omega),
-          show (4 * c + e) / 4 = c by omega, show (4 * c + e) % 4 = e by omega]
-      rw [XBinOp.eval, byte_ofBytes' _ (by omega)]
+        rw [idxD, byte_ofBytes' _ (by omega_using [hc4, he]), itT (show (4 * c + e) / 4 < (setBits4 m).length by omega_using [hc, he]),
+          show (4 * c + e) / 4 = c by omega_using [he], show (4 * c + e) % 4 = e by omega_using [he]]
+      rw [XBinOp.eval, byte_ofBytes' _ (by omega_using [hc4, he])]
       dsimp only
-      rw [hi, itF (by simp only [BitVec.msb_eq_decide, BitVec.toNat_ofNat, decide_eq_true_eq]; omega)]
+      rw [hi, itF (by simp only [BitVec.msb_eq_decide, BitVec.toNat_ofNat, decide_eq_true_eq]; omega_using [hs, he])]
       congr 1
       simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero]
-      omega
+      omega_using [hs, he]
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   rw [getLsbD_dword, getLsbD_dword, decide_eq_true hj, Bool.true_and, Bool.true_and]
-  have e1 : 32 * c + j = 8 * (4 * c + j / 8) + j % 8 := by omega
-  have e2 : 32 * (setBits4 m).getD c 0 + j = 8 * (4 * (setBits4 m).getD c 0 + j / 8) + j % 8 := by omega
+  have e1 : 32 * c + j = 8 * (4 * c + j / 8) + j % 8 := by omega_using []
+  have e2 : 32 * (setBits4 m).getD c 0 + j = 8 * (4 * (setBits4 m).getD c 0 + j / 8) + j % 8 := by omega_using []
   have g1 : ∀ x : BitVec 128, ∀ k, k < 16 → x.getLsbD (8 * k + j % 8) = (byte x k).getLsbD (j % 8) := fun x k hk => by
-    simp only [byte, BitVec.getLsbD_extractLsb', show j % 8 < 8 by omega, decide_true, Bool.true_and]
-  rw [e1, e2, g1 _ _ (by omega), g1 _ _ (by omega), hb _ (by omega)]
+    simp only [byte, BitVec.getLsbD_extractLsb', show j % 8 < 8 by omega_using [], decide_true, Bool.true_and]
+  rw [e1, e2, g1 _ _ (by omega_using [hc4, hj]), g1 _ _ (by omega_using [hs, hj]), hb _ (by omega_using [hj])]
 
 /-! ## The static -/
 
@@ -219,35 +219,35 @@ theorem tblWords_length : tblWords.length = 64 := by simp [tblWords, consts]
 
 theorem tblWords_idx {m h : Nat} (hm : m < 16) (hh : h < 2) : tblWords.getD (2 * m + h) 0 = idxDQ m h := by
   rw [tblWords, List.getD_eq_getElem?_getD, List.append_assoc,
-    List.getElem?_append_left (by simp; omega)]
-  simp only [List.getElem?_map, List.getElem?_range (show 2 * m + h < 32 by omega), Option.map_some,
-    Option.getD_some, show (2 * m + h) / 2 = m by omega, show (2 * m + h) % 2 = h by omega]
+    List.getElem?_append_left (by simp; omega_using [hm, hh])]
+  simp only [List.getElem?_map, List.getElem?_range (show 2 * m + h < 32 by omega_using [hm, hh]), Option.map_some,
+    Option.getD_some, show (2 * m + h) / 2 = m by omega_using [hh], show (2 * m + h) % 2 = h by omega_using [hh]]
 
 theorem tblWords_idx0 {m : Nat} (hm : m < 16) : tblWords.getD (2 * m) 0 = idxDQ m 0 := by
   have := tblWords_idx hm (show 0 < 2 by decide); rwa [Nat.add_zero] at this
 
 theorem tblWords_cst {i : Nat} (hi : i < 16) : tblWords.getD (32 + i) 0 = consts.getD i 0 := by
   rw [tblWords, List.getD_eq_getElem?_getD, List.append_assoc, List.getElem?_append_right (by simp),
-    List.getElem?_append_left (by simp [consts]; omega)]
+    List.getElem?_append_left (by simp [consts]; omega_using [hi])]
   simp [List.getD_eq_getElem?_getD]
 
 theorem tblWords_cnt {m : Nat} (hm : m < 16) :
     tblWords.getD (48 + m) 0 = BitVec.ofNat 64 (setBits4 m).length := by
-  rw [tblWords, List.getD_eq_getElem?_getD, List.append_assoc, List.getElem?_append_right (by simp; omega),
-    List.getElem?_append_right (by simp [consts]; omega)]
+  rw [tblWords, List.getD_eq_getElem?_getD, List.append_assoc, List.getElem?_append_right (by simp; omega_using []),
+    List.getElem?_append_right (by simp [consts]; omega_using [])]
   simp only [List.length_map, List.length_range, consts, List.length_cons, List.length_nil, Nat.reduceAdd,
-    show 48 + m - 32 - 16 = m by omega, List.getElem?_map, List.getElem?_range hm, Option.map_some,
+    show 48 + m - 32 - 16 = m by omega_using [], List.getElem?_map, List.getElem?_range hm, Option.map_some,
     Option.getD_some]
 
 theorem tblWords_cst' {n : Nat} (h1 : 32 ≤ n) (h2 : n < 48) : tblWords.getD n 0 = consts.getD (n - 32) 0 := by
-  have := tblWords_cst (i := n - 32) (by omega); rwa [show 32 + (n - 32) = n by omega] at this
+  have := tblWords_cst (i := n - 32) (by omega_using [h2]); rwa [show 32 + (n - 32) = n by omega_using [h1]] at this
 
 theorem idxDQ_pair (m : Nat) : idxDQ m 1 ++ idxDQ m 0 = idxD m := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [idxDQ, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : j < 64
   · rw [itT h, decide_eq_true h, Bool.true_and, Nat.mul_zero, Nat.zero_add]
-  · rw [itF h, decide_eq_true (show j - 64 < 64 by omega), Bool.true_and]; congr 1; omega
+  · rw [itF h, decide_eq_true (show j - 64 < 64 by omega_using [hj]), Bool.true_and]; congr 1; omega_using [h]
 
 /-- The constants of the static, as the lanes of `ymm8` to `ymm11`. -/
 theorem cst_vals :
@@ -334,23 +334,23 @@ theorem vidx_ok {s : State} {E : Nat} (hE : (s.gpr .rax).toNat = E) (hE32 : E < 
   refine ⟨?_, ?_, fun _ _ => rfl, rfl⟩
   · simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_and, hE, show (15 : BitVec 32).toNat = 15 from rfl,
       h15]
-    omega
+    omega_using []
   · simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ushiftRight, hE, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [hE32]
 
 open VG.Impl.MlKem.X86_64.Sample4 (idxE) in
 theorem ea_idxE {s : State} {r : Reg} {M : Nat} (h : (s.gpr r).toNat = 2 * M) (hM : M < 16)
     (ht : s.gpr .r11 = s.syms tblName) : (s.ea (idxE r) - s.syms tblName).toNat = 8 * (2 * M) := by
   simp only [State.ea, idxE, ht, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
     VG.Offset.add_sub_cancel_left, BitVec.toNat_mul, h, BitVec.toNat_ofNat]
-  omega
+  omega_using [hM]
 
 open VG.Impl.MlDsa.X86_64.Sample.Rej5 (numE) in
 theorem ea_numE {s : State} {r : Reg} {M : Nat} (h : (s.gpr r).toNat = 2 * M) (hM : M < 16)
     (ht : s.gpr .r11 = s.syms tblName) : (s.ea (numE r) - s.syms tblName).toNat = 8 * (48 + M) := by
   simp only [State.ea, numE, ht, oNum, show BitVec.ofInt 64 ((384 : Nat) : Int) = BitVec.ofNat 64 384 from rfl,
     BitVec.add_assoc, VG.Offset.add_sub_cancel_left, BitVec.toNat_add, BitVec.toNat_mul, h, BitVec.toNat_ofNat]
-  omega
+  omega_using [hM]
 
 open VG.Impl.MlDsa.X86_64.Sample.Rej5 (aJ) in
 theorem ea_aJ (s : State) : s.ea aJ = s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .rdi).toNat) := by
@@ -358,7 +358,7 @@ theorem ea_aJ (s : State) : s.ea aJ = s.gpr .rbp + BitVec.ofNat 64 (4 * (s.gpr .
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_mul, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- Lane `l` after the compaction: the candidates less than `q` at its bottom. -/
 abbrev compD (X : BitVec 256) (l : Nat) : BitVec 128 := XBinOp.eval .pshufb (candD X l) (idxD (maskL X l))
@@ -399,13 +399,13 @@ theorem vputA_ok {s : State} (hc : VC s) {X : BitVec 256} (h0 : ∀ l < 2, s.lan
         .vop (.vinserti128 .xmm2 .xmm2 .xmm3 1), vb .vpshufb .xmm0 .xmm0 .xmm2,
         .vmovdquStore .l128 aJ .xmm0, .aluTbl .add .rdi (numE .rdx) tblName tblWords] from rfl,
     WP.block_append_iff]
-  refine WP.mono (vidx_ok hrax (by omega)) fun s1 ⟨⟨hdx, hax, hm, hln, hsy⟩, k1⟩ => ?_
-  rw [show (maskL X 0 + 65536 * maskL X 1) % 16 = maskL X 0 by omega] at hdx
-  rw [show (maskL X 0 + 65536 * maskL X 1) / 2 ^ 16 = maskL X 1 by omega] at hax
+  refine WP.mono (vidx_ok hrax (by omega_using [hm0, hm1])) fun s1 ⟨⟨hdx, hax, hm, hln, hsy⟩, k1⟩ => ?_
+  rw [show (maskL X 0 + 65536 * maskL X 1) % 16 = maskL X 0 by omega_using [hm0]] at hdx
+  rw [show (maskL X 0 + 65536 * maskL X 1) / 2 ^ 16 = maskL X 1 by omega_using [hm0]] at hax
   have t1 : s1.gpr .r11 = s1.syms tblName := by rw [k1.gpr (by decide), hsy]; exact ht
-  refine wp_vtbl (o := 2 * maskL X 0) t1 (ea_idxE hdx hm0 t1) (by rw [tblWords_length]; omega) fun s2 u2 => ?_
+  refine wp_vtbl (o := 2 * maskL X 0) t1 (ea_idxE hdx hm0 t1) (by rw [tblWords_length]; omega_using [hm0]) fun s2 u2 => ?_
   have t2 : s2.gpr .r11 = s2.syms tblName := by rw [u2.gpr, u2.syms]; exact t1
-  refine wp_vtbl (o := 2 * maskL X 1) t2 (ea_idxE (by rw [u2.gpr]; exact hax) hm1 t2) (by rw [tblWords_length]; omega)
+  refine wp_vtbl (o := 2 * maskL X 1) t2 (ea_idxE (by rw [u2.gpr]; exact hax) hm1 t2) (by rw [tblWords_length]; omega_using [hm1])
     fun s3 u3 => wp_vins1 fun s4 u4 => wp_vbin fun s5 u5 => ?_
   have i0 : s4.lane .xmm2 0 = idxD (maskL X 0) := by
     rw [u4.val 0 (by decide), ite_eq_left rfl, u3.other _ (by decide) 0 (by decide), u2.val 0 (by decide),
@@ -416,7 +416,7 @@ theorem vputA_ok {s : State} (hc : VC s) {X : BitVec 256} (h0 : ∀ l < 2, s.lan
   have c5 : ∀ l < 2, s5.lane .xmm0 l = compD X l := fun l hl => by
     rw [u5.val l hl, u4.other _ (by decide) l hl, u3.other _ (by decide) l hl, u2.other _ (by decide) l hl, hln,
       h0 l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · rw [i0]; rfl
     · rw [i1]; rfl
   have v5 : VC s5 := (((hc.same hln).lupd u2 (.inr (.inr (.inl rfl)))).lupd u3 (.inr (.inr (.inr rfl)))).lupd u4
@@ -429,12 +429,12 @@ theorem vputA_ok {s : State} (hc : VC s) {X : BitVec 256} (h0 : ∀ l < 2, s.lan
     (by rw [u5.wr, u4.wr, u3.wr, u2.wr, k1.2.2]; exact hout0) fun s6 g6 l6 m6 r6 w6 y6 => ?_
   have t6 : s6.gpr .r11 = s6.syms tblName := by rw [g6, y6, g5, y5, k1.gpr (by decide)]; exact ht
   refine wp_addTbl (o := 48 + maskL X 0) t6 (ea_numE (by rw [g6, g5]; exact hdx) hm0 t6)
-    (by rw [tblWords_length]; omega) fun s7 u7 => WP.block_nil ?_
+    (by rw [tblWords_length]; omega_using [hm0]) fun s7 u7 => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, ((v5.same l6).gupd u7), ?_, ?_, ?_, fun r h1 h2 h3 => ?_⟩
   · rw [u7.mem, m6, show s5.xmm .xmm0 = s5.lane .xmm0 0 from rfl, c5 0 (by decide), u5.mem, u4.mem, u3.mem, u2.mem,
       hm]
   · rw [u7.gpr, BitVec.toNat_add, tblWords_cnt hm0, g6, di, BitVec.toNat_ofNat]
-    simp only [cntL] at c0 ⊢; omega
+    simp only [cntL] at c0 ⊢; omega_using [hdi, c0]
   · rw [u7.lane, l6, c5 1 (by decide)]
   · rw [u7.other _ (by decide), g6, g5]; exact hax
   · rw [u7.rd, r6, u5.rd, u4.rd, u3.rd, u2.rd, k1.2.1]
@@ -463,13 +463,13 @@ theorem vputB_ok {s t : State} {X : BitVec 256} (hv : VPA X s t) (ht : s.gpr .r1
   have t9 : s9.gpr .r11 = s9.syms tblName := by rw [g9, y9, u8.syms, u8.gpr]; exact tt
   have hax : (s9.gpr .rax).toNat = 2 * maskL X 1 := by rw [g9, u8.gpr]; exact hv.rax
   refine wp_addTbl (o := 48 + maskL X 1) t9 (ea_numE hax hm1 t9)
-    (by rw [tblWords_length]; omega) fun s10 u10 => wp_addi' fun s11 u11 => WP.block_nil ?_
+    (by rw [tblWords_length]; omega_using [hm1]) fun s10 u10 => wp_addi' fun s11 u11 => WP.block_nil ?_
   have x8 : s8.xmm .xmm0 = compD X 1 := by
     rw [show s8.xmm .xmm0 = s8.lane .xmm0 0 from rfl, u8.val 0 (by decide), ite_eq_left rfl, hv.hi]
   refine ⟨?_, ?_, ?_, (((hv.vc.lupd u8 (.inl rfl)).same l9).gupd u10).gupd u11, ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_⟩
   · rw [u11.mem, u10.mem, m9, u8.mem, x8, hv.mem]
   · rw [u11.other _ (by decide), u10.gpr, BitVec.toNat_add, tblWords_cnt hm1, g9, u8.gpr, hv.rdi, BitVec.toNat_ofNat]
-    simp only [cntL] at c0 c1 ⊢; omega
+    simp only [cntL] at c0 c1 ⊢; omega_using [hdi, c0, c1]
   · rw [u11.gpr, u10.other _ (by decide), g9, u8.gpr, hv.gpr _ (by decide) (by decide) (by decide)]; rfl
   · rw [u11.rd, u10.rd, r9, u8.rd, hv.rd]
   · rw [u11.wr, u10.wr, w9, u8.wr, hv.wr]
@@ -531,14 +531,14 @@ theorem stepsG_eight {a : List Zq} (h : a.length + 8 ≤ Spec.MlDsa.n) (g : Nat 
     | zero => intro _; simp [stepsG]
     | succ k ih =>
       intro hk8
-      obtain ⟨e, l⟩ := ih (by omega)
-      rw [stepsG, rnStep_room (by omega), e, List.range_succ, List.flatMap_append, List.flatMap_singleton,
+      obtain ⟨e, l⟩ := ih (by omega_using [hk8])
+      rw [stepsG, rnStep_room (by omega_using [h, hk8, l]), e, List.range_succ, List.flatMap_append, List.flatMap_singleton,
         List.append_assoc]
       refine ⟨rfl, ?_⟩
       rw [List.length_append, List.length_append]
       have := addG_length g k
       rw [e, List.length_append] at l
-      omega
+      omega_using [l, this]
   rw [(hk 8 (by decide)).1, accG_eq, accG_eq]
   simp only [show List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, Nat.mul_zero, Nat.zero_add, Nat.mul_one, List.append_assoc]
@@ -559,15 +559,15 @@ theorem stored_write4 {m : Mem} {p : Addr} {L A : List Zq} (h : Stored m p L)
   rw [List.length_append] at hk
   rw [coeffAt_eq]
   by_cases hkL : k < L.length
-  · have := readW_writeW_off m p V (d := 4 * k) (e := 4 * L.length) (n := 4) (by omega) (by omega) (by omega)
+  · have := readW_writeW_off m p V (d := 4 * k) (e := 4 * L.length) (n := 4) (by omega_using [hl, hA, hk]) (by omega_using [hl]) (by omega_using [hkL])
     rw [this, show (L ++ A).getD k 0 = L.getD k 0 by simp [List.getD_eq_getElem?_getD, List.getElem?_append_left hkL]]
     exact h k hkL
-  · have e := readW_writeW_inside m (coeffAddr p L.length) V (k := 4 * (k - L.length)) (n := 4) (by omega) (by decide)
-    rw [coeffAddr, Offset.add_add, show 4 * L.length + 4 * (k - L.length) = 4 * k by omega] at e
+  · have e := readW_writeW_inside m (coeffAddr p L.length) V (k := 4 * (k - L.length)) (n := 4) (by omega_using [hA, hk]) (by decide)
+    rw [coeffAddr, Offset.add_add, show 4 * L.length + 4 * (k - L.length) = 4 * k by omega_using [hkL]] at e
     rw [e, show (L ++ A).getD k 0 = A.getD (k - L.length) 0 by
-      simp [List.getD_eq_getElem?_getD, List.getElem?_append_right (show L.length ≤ k by omega)]]
+      simp [List.getD_eq_getElem?_getD, List.getElem?_append_right (show L.length ≤ k by omega_using [hkL])]]
     apply BitVec.eq_of_toNat_eq
-    rw [zw_toNat, show 8 * (4 * (k - L.length)) = 32 * (k - L.length) by omega, ← dword_eq, hV _ (by omega)]
+    rw [zw_toNat, show 8 * (4 * (k - L.length)) = 32 * (k - L.length) by omega_using [], ← dword_eq, hV _ (by omega_using [hk, hkL])]
 
 /-- The candidates of lane `l` of `X` are those of the bytes `g`. -/
 abbrev CandOf (X : BitVec 256) (g : Nat → Byte) (l : Nat) : Prop := ∀ i < 4, candK X (4 * l + i) = candG g (4 * l + i)

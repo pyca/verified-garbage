@@ -34,14 +34,14 @@ theorem importData_ok {s : State} {B ctx : Addr} {Z w P : Nat} {old : BitVec 64}
  ∃ mi,Good t B Z w mi ∧ wv t.mem B (slot w 0) w=P ∧
  ((word t.mem B (slot w 0)).toNat*mi.toNat+1)%2^64=0 ∧
  wv t.mem B (slot w 4) w=2^(128*w)%P ∧ Frm B (importDataRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
- have nowrap : B.toNat+slot w 8≤2^64 := by have := good.scr.nowrap;omega
+ have nowrap : B.toNat+slot w 8≤2^64 := by have := good.scr.nowrap;omega_using [room, this]
  have keepCtx (m : Mem) (frame : InScr B Z s.mem m) : wv m ctx (24+8*w) w=wv s.mem ctx (24+8*w) w := by
   apply wv_congr
   intro i hi
   apply Mem.readW_congr
   intro b hb
   apply frame
-  have sep := outside (8*w+8*i+b) (by omega)
+  have sep := outside (8*w+8*i+b) (by omega_using [hi, hb])
   simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using sep
  unfold importData
  simp only [seqs]
@@ -55,8 +55,8 @@ theorem importData_ok {s : State} {B ctx : Addr} {Z w P : Nat} {old : BitVec 64}
    have goodA : Good a B Z w old := ⟨good.scr.congr restA.wr,(restA.gpr .x0 (by decide)).trans good.x0,memA ▸ good.hdr⟩
    rw [WP.seq_iff]
    refine WP.mono (copyFromContext_ok goodA room positive size (by decide : 0<8) srcA dstA countA
-    (fun i hi =>by rw [restA.rd,restA.wr];exact readable i (by omega))
-    (fun i hi =>outside i (by omega))) ?_
+    (fun i hi =>by rw [restA.rd,restA.wr];exact readable i (by omega_using [hi]))
+    (fun i hi =>outside i (by omega_using [hi]))) ?_
    rintro b ⟨goodB,valueB,frameB,pointerB,restB⟩
    have modulusB : wv b.mem B (slot w 0) w=P := by rw [valueB,memA];exact modulus
    have inscrB : InScr B Z s.mem b.mem := by
@@ -74,9 +74,9 @@ theorem importData_ok {s : State} {B ctx : Addr} {Z w P : Nat} {old : BitVec 64}
       ((restC.gpr .x16 (by decide)).trans pointerB) dstC countC
       (fun i hi =>by
        rw [rest.rd,rest.wr]
-       simpa only [Nat.mul_add,Nat.add_assoc] using readable (w+i) (by omega))
+       simpa only [Nat.mul_add,Nat.add_assoc] using readable (w+i) (by omega_using [hi]))
       (fun i hi =>by
-       have sep := outside (8*w+i) (by omega)
+       have sep := outside (8*w+i) (by omega_using [hi])
        simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using sep)) ?_
      rintro d ⟨goodD,valueD,frameD,_,restD⟩
      have modulusD : wv d.mem B (slot w 0) w=P := by
@@ -85,9 +85,9 @@ theorem importData_ok {s : State} {B ctx : Addr} {Z w P : Nat} {old : BitVec 64}
      refine WP.mono (importInverse_ok goodD room positive (by rw [modulusD];exact odd)) ?_
      rintro t ⟨mi,goodT,inverseT,frameT,restT⟩
      have field0 : wv t.mem B (slot w 0) w=P :=
-      (frameT.wv (Or.inr (hdr_lt_slot w 0 (show sMinv<32 by decide))) (by have := slot_le (w:=w) (show 0<8 by decide);omega)).trans modulusD
+      (frameT.wv (Or.inr (hdr_lt_slot w 0 (show sMinv<32 by decide))) (by have := slot_le (w:=w) (show 0<8 by decide);omega_using [nowrap, this])).trans modulusD
      have field4 : wv t.mem B (slot w 4) w=2^(128*w)%P :=
-      (frameT.wv (Or.inr (hdr_lt_slot w 4 (show sMinv<32 by decide))) (by have := slot_le (w:=w) (show 4<8 by decide);omega)).trans r2D
+      (frameT.wv (Or.inr (hdr_lt_slot w 4 (show sMinv<32 by decide))) (by have := slot_le (w:=w) (show 4<8 by decide);omega_using [nowrap, this])).trans r2D
      have first : Frm B (importDataRanges w) s.mem b.mem := by rw [←memA];exact Frm.of_arrays frameB (by simp [importDataRanges])
      have second : Frm B (importDataRanges w) b.mem d.mem := by rw [←memC];exact Frm.of_arrays frameD (by simp [importDataRanges])
      exact ⟨mi,goodT,field0,inverseT,field4,(first.trans second).trans (Frm.of_outside frameT (by simp [importDataRanges])),

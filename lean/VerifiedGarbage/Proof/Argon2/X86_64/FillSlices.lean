@@ -54,9 +54,9 @@ theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass slic
       refine ⟨_, a, .loopExit run ?_, done.finished last⟩
       simp only [eval, done.cf, last, Nat.lt_irrefl, decide_false]
     | succ n =>
-      have active : slice + 1 < 4 := by omega
+      have active : slice + 1 < 4 := by omega_using [endSlice]
       obtain ⟨restTrace, t, restRun, finished⟩ := ih a (slice + 1) (done.next active)
-        (Proof.Argon2.lanes p pass slice 0 p.lanes state) done.represented (by omega) (by omega)
+        (Proof.Argon2.lanes p pass slice 0 p.lanes state) done.represented (by omega_using []) (by omega_using [endSlice])
       refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
       simp only [eval, done.cf, active, decide_true]
 

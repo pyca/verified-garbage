@@ -27,7 +27,7 @@ variable {P : KemLay}
 theorem st_far {s₀ : State} (hp : Pre P s₀) {b o l : Nat} (hb : b < 4) (f : o + l ≤ kL P b)
     (hs : b ≠ 3 ∨ 200 ≤ o) : (R (kA s₀) b o l).Disjoint (R (kA s₀) 3 0 200) := by
   have hw := hp.wf
-  exact hp.args.rdisj hb (by decide) f (by kl) (by rcases hs with hs | hs <;> omega)
+  exact hp.args.rdisj hb (by decide) f (by kl) (by rcases hs with hs | hs <;> omega_using [hs])
 
 /-- The all-zero third state. -/
 theorem zero_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {mB mN : Mem} {v : BitVec 64} {n : Nat}

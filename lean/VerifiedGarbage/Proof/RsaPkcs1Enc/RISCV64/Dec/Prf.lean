@@ -42,7 +42,7 @@ theorem write1_eq (m : Mem) (b x : Addr) (v : BitVec (8 * 1)) :
 theorem byte_ofNat (x : Nat) : BitVec.setWidth 8 (BitVec.ofNat 64 x) = BitVec.ofNat 8 x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem ascii_length : Spec.RsaPkcs1Enc.ascii "length" = [0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68] := by decide
 
@@ -63,7 +63,7 @@ theorem bytes11 (m : Mem) (B : Addr) : Spec.Rsa.bytesAt m B 11 = [m (B + BitVec.
 theorem am_lo (K : BitVec 64) : BitVec.setWidth 8 (K <<< 3) = BitVec.ofNat 8 (8 * K.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem am_hi (K : BitVec 64) (hK : K.toNat ≤ 1024) :
     BitVec.setWidth 8 (K <<< 3 >>> 8) = BitVec.ofNat 8 (8 * K.toNat / 256) := by
@@ -75,7 +75,7 @@ theorem am_hi (K : BitVec 64) (hK : K.toNat ≤ 1024) :
 /-- The writes of a message: `Frame` for each of its bytes. -/
 theorem frame_bytes {m : Mem} {B : Addr} {d : Nat} (hd : d + 1 ≤ 16) {m' : Mem} (h : Frame [⟨B, 16⟩] m m')
     (v : BitVec (8 * 1)) : Frame [⟨B, 16⟩] m (m'.write (B + BitVec.ofNat 64 d) 1 v) :=
-  h.write (List.mem_singleton_self _) _ (Offset.contains_base _ hd (by omega))
+  h.write (List.mem_singleton_self _) _ (Offset.contains_base _ hd (by omega_using [hd]))
 
 theorem frame_bytes0 {m : Mem} {B : Addr} {m' : Mem} (h : Frame [⟨B, 16⟩] m m')
     (v : BitVec (8 * 1)) : Frame [⟨B, 16⟩] m (m'.write B 1 v) :=
@@ -172,7 +172,7 @@ theorem shl5 (i dst : Nat) (scr : Addr) :
     (BitVec.ofNat 64 i <<< 5) + scr + BitVec.ofNat 64 dst = scr + BitVec.ofNat 64 (dst + 32 * i) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 section
 variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
@@ -183,14 +183,14 @@ theorem keep_init {m m' : Mem} {X : Nat} (hX : X ≤ callX)
     (hal : a + l ≤ scrBytes) : Spec.Rsa.bytesAt m' (scA s a) l = Spec.Rsa.bytesAt m (scA s a) l :=
   keep_call h (ws := [(sSt, 96), (sOuter, 96)]) hX hf hal (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro _ (rfl | rfl) <;> exact ⟨.inr (by dsimp only [sSt, sOuter]; omega), by decide⟩)
+    rintro _ (rfl | rfl) <;> exact ⟨.inr (by dsimp only [sSt, sOuter]; omega_using [ha]), by decide⟩)
 
 theorem keep_upd {m m' : Mem} {X : Nat} (hX : X ≤ callX)
     (hf : Frame ([scR s sSt 96] ++ [below (fb s) X]) m m') {a l : Nat} (ha : 96 ≤ a)
     (hal : a + l ≤ scrBytes) : Spec.Rsa.bytesAt m' (scA s a) l = Spec.Rsa.bytesAt m (scA s a) l :=
   keep_call h (ws := [(sSt, 96)]) hX hf hal (by
     simp only [List.mem_singleton]
-    rintro _ rfl; exact ⟨.inr (by dsimp only [sSt]; omega), by decide⟩)
+    rintro _ rfl; exact ⟨.inr (by dsimp only [sSt]; omega_using [ha]), by decide⟩)
 
 theorem keep_fin {m m' : Mem} {X o : Nat} (hX : X ≤ callX) (ho : o + 32 ≤ scrBytes)
     (hf : Frame ([scR s sSt 96, scR s o 32] ++ [below (fb s) X]) m m') {a l : Nat} (ha : 96 ≤ a)
@@ -199,7 +199,7 @@ theorem keep_fin {m m' : Mem} {X o : Nat} (hX : X ≤ callX) (ho : o + 32 ≤ sc
   keep_call h (ws := [(sSt, 96), (o, 32)]) hX hf hal (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro _ (rfl | rfl)
-    · exact ⟨.inr (by dsimp only [sSt]; omega), by decide⟩
+    · exact ⟨.inr (by dsimp only [sSt]; omega_using [ha]), by decide⟩
     · exact ⟨hao, ho⟩)
 
 theorem prfBody_ok {label : List Nat} {len count : List Instr} {dst : Nat} {t : State} {i : Nat}

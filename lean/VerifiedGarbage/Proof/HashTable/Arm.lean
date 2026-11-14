@@ -120,8 +120,8 @@ theorem held_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 44 ≤ 2 ^ 32) {s
       m.readW (tA p 24) 32 = BitVec.ofNat 32 w.g.H.D := by
   rw [MdHashTable.Arm.words_tableOf] at h
   have a : ∀ i, i < 11 → tA p (4 * i) = State.addr p + BitVec.ofNat 64 (32 / 8 * i) := fun i hi => by
-    rw [tA, VG.Arm.addr_add (by omega)]
-  have e : ∀ i (hi : i < 11), m.readW (tA p (4 * i)) 32 = _ := fun i hi => (a i hi).symm ▸ h i (by simp; omega)
+    rw [tA, VG.Arm.addr_add (by omega_using [hp, hi])]
+  have e : ∀ i (hi : i < 11), m.readW (tA p (4 * i)) 32 = _ := fun i hi => (a i hi).symm ▸ h i (by simp; omega_using [hi])
   refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩
   · have := e 0 (by decide); simp only [Nat.mul_zero] at this; rw [this, w.st]; simp
   · have := e 1 (by decide); simp only [Nat.mul_one] at this; rw [this, w.st]; simp
@@ -150,8 +150,8 @@ theorem tabFacts_entered (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp 
   have e : ∀ o, o + 4 ≤ 44 → (entered F s).mem.readW (tA p o) 32 = s.mem.readW (tA p o) 32 :=
     fun o ho => MdHashTable.Arm.entered_roW h hsp hR (by
       show (⟨State.addr p, 11 * (32 / 8)⟩ : Region).Contains (State.addr (p + BitVec.ofNat 32 o)) 4
-      rw [VG.Arm.addr_add (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega))
+      rw [VG.Arm.addr_add (by omega_using [hp, ho])]
+      exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
   obtain ⟨⟨m0, m1, m2⟩, -, hD⟩ := held_tableOf hp hh
   refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   · rw [sy]; exact tabOK_of hc hd64 hw
@@ -209,6 +209,6 @@ theorem withTable_held (s : State) (vs : List TVar) (w : TVar) :
 /-- Below `0x300000`, a word as in `s`. -/
 theorem withTable_below (s : State) (vs : List TVar) (w : TVar) {a : Addr} (ha : a.toNat + 4 ≤ 0x300000) :
     (withTable s vs w).mem.readW a 32 = s.mem.readW a 32 :=
-  putWs32_out (a := a) (.inl (by simpa using ha)) (twL_room vs w) (by omega)
+  putWs32_out (a := a) (.inl (by simpa using ha)) (twL_room vs w) (by omega_using [ha])
 
 end VG.Proof.HashTable.Arm

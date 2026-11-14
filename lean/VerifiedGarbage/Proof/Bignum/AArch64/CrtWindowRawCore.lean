@@ -29,14 +29,14 @@ theorem windowCore_raw_ok (M : Mont) (S : Selector) {s : State} {P : Addr} {w v 
     hc hw hw' hy (by simp)) fun a ⟨ca,ya,va,ha,fa,ka⟩ => ?_
   have ta := ht.of_win fa hc.scrT.nowrap
   have et : wv a.mem P (slot w (8 + v)) w = wv s.mem P (slot w (8 + v)) w :=
-    fa.wv_eq (fun r hr => by have := crtWinRanges_ent w v r hr; omega)
-      (by have := CrtWindowFive.ent32_le w hv; have := hc.scrT.nowrap; omega)
+    fa.wv_eq (fun r hr => by have := crtWinRanges_ent w v r hr; omega_using [this])
+      (by have := CrtWindowFive.ent32_le w hv; have := hc.scrT.nowrap; omega_arith)
   simp only [seqs]
   refine WP.seq (WP.mono (S.ok ca hw hw' hv ta.tab
     (by rw [ha _ (by decide)]; exact hnib)) fun b ⟨cb,tb,fb,kb⟩ => ?_)
   have ey := selection_keeps_y fb ca.good.scr.nowrap
   refine WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) cb.good (Nat.le_refl _) hw
-    (by omega) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by omega_using [hw']) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) cb.inv (by rw [cb.n,tb]; exact ta.lt v hv))
     fun t ⟨_,yt,vt,hat,kt⟩ => ?_
   rw [cb.n] at yt vt
@@ -52,11 +52,11 @@ theorem windowCore_raw_ok (M : Mont) (S : Selector) {s : State} {P : Addr} {w v 
   rw [hat.hslot hk, fb.word_eq (fun r hr => by
     simp only [selRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := hdr_lt_slot w Crt.aT hk; simp only; omega
-    · simp only; omega
-    · simp only; omega) (by
+    · have := hdr_lt_slot w Crt.aT hk; simp only; omega_using [this]
+    · simp only; omega_using [he]
+    · simp only; omega_using [hj]) (by
       have := hdr_lt_slot w 8 hk
       have := ca.good.scr.nowrap
-      omega), ha k hk]
+      omega_using [hk]), ha k hk]
 
 end VG.Proof.Bignum.AArch64.WindowFive

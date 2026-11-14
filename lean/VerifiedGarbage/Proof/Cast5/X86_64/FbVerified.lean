@@ -189,8 +189,8 @@ theorem movq_lo {v : BitVec 128} (h : v.extractLsb' 64 64 = 0) : (0 : BitVec 64)
   by_cases h64 : i < 64
   · simp [h64, hi]
   · simp only [h64, decide_false, Bool.false_and, ite_false]
-    simp only [Bool.true_and, show i - 64 < 64 by omega, decide_true]
-    congr 1; omega
+    simp only [Bool.true_and, show i - 64 < 64 by omega_using [hi], decide_true]
+    congr 1; omega_using [h64]
 
 /-- `crypt` keeps `xmm15`, its upper half zero, which it puts back from `rcx`. -/
 theorem crypt_keepsIv : Modes.X86_64.KeepsIv (dirCore true).crypt := by
@@ -289,9 +289,9 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : FPre len s) : Taint.W
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hs.wr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 8 ≤ 8; omega) (List.Forall₂.cons
-        (by change 0 ≤ len s; omega)
-        (List.Forall₂.cons (by change 8 * 29 ≤ 232; omega) List.Forall₂.nil))
+    · exact List.Forall₂.cons (by change 8 ≤ 8; omega_using []) (List.Forall₂.cons
+        (by change 0 ≤ len s; omega_using [])
+        (List.Forall₂.cons (by change 8 * 29 ≤ 232; omega_using []) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -302,10 +302,10 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : FPre len s) : Taint.W
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · change 8 ≤ 2 ^ 64; omega
+      · change 8 ≤ 2 ^ 64; omega_using []
       · change len s ≤ 2 ^ 64
-        have := hs.fD; omega
-      · change 232 ≤ 2 ^ 64; omega
+        have := hs.fD; omega_using [this]
+      · change 232 ≤ 2 ^ 64; omega_using []
   · intro p hp
     simp only [fbTaint, List.mem_singleton] at hp
     subst p

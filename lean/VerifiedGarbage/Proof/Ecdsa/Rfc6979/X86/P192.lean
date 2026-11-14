@@ -44,7 +44,7 @@ theorem p192_nBits : Spec.Ecdsa.nBits Spec.P192.curve = 192 := by
   show Spec.P192.curve.n.log2 + 1 = 192
   have h₁ : 191 ≤ Spec.P192.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P192.curve.n.log2 < 192 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 theorem core_pre_192 {s : State} (h : (coreK Impl.Ecdsa.X86.p192).pre s) :
     Proof.Ecdsa.X86.P192.signX86.pre s := by

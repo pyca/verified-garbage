@@ -174,7 +174,7 @@ theorem signMessage_ct {p : Params} {q : Bool} {STK S : Nat} (hF : MFacts p) (h4
         ce_gpr _ _ _ (show Reg.a1 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.a2 ∉ linkRegs by decide),
         hab.1.a0, hab.1.a1, hab.1.a2, hab.2.a0, hab.2.a1, hab.2.a2]
       have ks := skE_sub hF q
-      have hl : p.skLen < 2 ^ 64 := by have := hF.skl; omega
+      have hl : p.skLen < 2 ^ 64 := by have := hF.skl; omega_using [this]
       rw [s_keep k₁ (R := ⟨s₁.gpr .a0, p.skLen⟩) hl (hp₁.kg.sub_left (ks s₁)) (hp₁.kc.sub_left (ks s₁))
           (hp₁.bk.sub_right (ks s₁)),
         hab.1.ms.mu, s_keep k₁ (R := rndR s₁) (show (32 : Nat) < 2 ^ 64 by decide) hp₁.rg hp₁.rc hp₁.br,

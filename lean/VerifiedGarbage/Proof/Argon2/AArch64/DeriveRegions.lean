@@ -282,7 +282,7 @@ theorem setup_ok (s : State) (frameWrite : Covers [⟨s.gpr .x19, 192⟩] s.wr)
     rw [entered.wr, entered.regs .x19 (by decide)]
     apply frameWrite
     have bounds : ∀ arg ∈ arguments, arg.1 + 8 ≤ 192 := by decide
-    exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (bounds arg ha) (by have := bounds arg ha; omega)⟩
+    exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (bounds arg ha) (by have := bounds arg ha; omega_using [this])⟩
   refine (stores_values_ok arguments a (by decide) write (by decide) (by decide)).mono ?_
   rintro b ⟨saved, values⟩
   have bp : b.gpr .x19 = s.gpr .x19 := by rw [saved.regs, entered.regs .x19 (by decide)]
@@ -516,10 +516,10 @@ theorem copyArg_ok (s : State) (j : Nat)
     (read : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (copySource j)) 8)
     (write : InRegions s.wr (s.sp + BitVec.ofNat 64 (copyDestination j)) 8) :
     WP isa (.block (Impl.Argon2.AArch64.Derive.copyArg j)) s (CopiedArg s · j) := by
-  have sourceAlign : copySource j % 8 = 0 := by unfold copySource; omega
-  have sourceBound : copySource j < 32768 := by unfold copySource; omega
-  have destAlign : copyDestination j % 8 = 0 := by unfold copyDestination; omega
-  have destBound : copyDestination j < 32768 := by unfold copyDestination; omega
+  have sourceAlign : copySource j % 8 = 0 := by unfold copySource; omega_using []
+  have sourceBound : copySource j < 32768 := by unfold copySource; omega_using [bound]
+  have destAlign : copyDestination j % 8 = 0 := by unfold copyDestination; omega_using []
+  have destBound : copyDestination j < 32768 := by unfold copyDestination; omega_using [bound]
   apply WP.of_runBlock
   simp only [Impl.Argon2.AArch64.Derive.copyArg,
     show 384 + 8 * j = copySource j from rfl,
@@ -595,17 +595,17 @@ theorem copyArgs_ok (js : List Nat) (s : State) (bp : s.gpr .x19 = s.sp) (bounds
       hu.rd.trans ht.rd, hu.wr.trans ht.wr, hu.sp.trans ht.sp, ?_⟩
     · intro x hx
       rcases List.mem_cons.mp hx with rfl | hx
-      · rw [hu.other_word (copyDestination x) (by unfold copyDestination; omega) (by
+      · rw [hu.other_word (copyDestination x) (by unfold copyDestination; omega_using [jBound]) (by
           intro y hy
           have ne : y ≠ x := fun eq => nodup.1 (eq ▸ hy)
-          unfold copyDestination; omega) (by
-          intro y hy; have := tailBounds y hy; unfold copyDestination; omega)]
+          unfold copyDestination; omega_using [ne]) (by
+          intro y hy; have := tailBounds y hy; unfold copyDestination; omega_using [this])]
         exact ht.word
       · rw [hu.values x hx, ht.sp, ht.mem]
         apply Mem.readW_writeW_sep ?_ (by decide)
         have xBound := tailBounds x hx
-        exact Offset.sep _ (Or.inr (by unfold copyDestination copySource; omega))
-          (by unfold copySource; omega) (by unfold copyDestination; omega)
+        exact Offset.sep _ (Or.inr (by unfold copyDestination copySource; omega_using [jBound]))
+          (by unfold copySource; omega_using [xBound]) (by unfold copyDestination; omega_using [jBound])
     · apply (ht.frame.mono ?_).trans
       · have frame := hu.frame
         rw [ht.sp] at frame
@@ -643,11 +643,11 @@ theorem private_prepare_local_ok (s : State) (bp : s.gpr .x19 = s.sp) (locals : 
     WP isa (.seq (.block Impl.Argon2.AArch64.Derive.copyArgs) Impl.Argon2.AArch64.Derive.prepareLocal) s (PrivatePrepared s) := by
   have localWord : ∀ d, d + 8 ≤ 272 → InRegions s.wr (s.sp + BitVec.ofNat 64 d) 8 := by
     intro d hd
-    exact locals _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ hd (by omega)⟩
+    exact locals _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ hd (by omega_using [hd])⟩
   unfold Impl.Argon2.AArch64.Derive.copyArgs
   refine WP.seq ((copyArgs_ok (List.range 10) s bp
     (fun _ h => List.mem_range.mp h) List.nodup_range (fun j h => read j (List.mem_range.mp h))
-    (fun j h => localWord _ (by have := List.mem_range.mp h; unfold copyDestination; omega))).mono ?_)
+    (fun j h => localWord _ (by have := List.mem_range.mp h; unfold copyDestination; omega_using [this]))).mono ?_)
   intro a copied
   have sp := copied.sp
   have base : a.gpr .x19 = s.sp := (copied.regs .x19 (by decide)).trans bp
@@ -692,15 +692,15 @@ theorem private_prepare_local_ok (s : State) (bp : s.gpr .x19 = s.sp) (locals : 
     by_cases small : j < 1
     · have slot : ∀ j < 1, copyDestination j ∈ normalizedOffsets := by
         intro j hj
-        have zero : j = 0 := by omega
+        have zero : j = 0 := by omega_using [hj]
         subst j
         decide
       rw [prepared.normalized _ (slot j small), base, copiedValues j hj, ite_eq_left small]
-    · rw [ite_eq_right small, prepared.other_word _ (by unfold copyDestination; omega)
-        (by unfold copyDestination; omega) (by
+    · rw [ite_eq_right small, prepared.other_word _ (by unfold copyDestination; omega_using [])
+        (by unfold copyDestination; omega_using [hj]) (by
           intro d hd
           have upper : ∀ d ∈ normalizedOffsets, d + 8 ≤ 200 := by decide
-          have := upper d hd; unfold copyDestination; omega)]
+          have := upper d hd; unfold copyDestination; omega_using [small, this])]
       rw [base]
       exact copiedValues j hj
   · intro r hr hb hx
@@ -713,7 +713,7 @@ theorem private_prepare_local_ok (s : State) (bp : s.gpr .x19 = s.sp) (locals : 
       refine ⟨⟨s.sp + 192, 80⟩, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩
       unfold copyDestination
       rw [BitVec.ofNat_add, ← BitVec.add_assoc]
-      exact Offset.sub_base _ (by omega)
+      exact Offset.sub_base _ (by omega_using [bound])
     · intro region hr
       rcases List.mem_cons.mp hr with rfl | hr
       · rw [base]; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
@@ -722,8 +722,8 @@ theorem private_prepare_local_ok (s : State) (bp : s.gpr .x19 = s.sp) (locals : 
         have bounds : ∀ d ∈ normalizedOffsets, 192 ≤ d ∧ d + 8 ≤ 272 := by decide
         obtain ⟨lo, hi⟩ := bounds d hd
         refine ⟨⟨s.sp + 192, 80⟩, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩
-        rw [show d = 192 + (d - 192) by omega, BitVec.ofNat_add, ← BitVec.add_assoc]
-        exact Offset.sub_base _ (by omega)
+        rw [show d = 192 + (d - 192) by omega_using [lo], BitVec.ofNat_add, ← BitVec.add_assoc]
+        exact Offset.sub_base _ (by omega_using [hi])
 
 end VG.Proof.Argon2.AArch64.Derive
 
@@ -808,17 +808,17 @@ theorem prologue_reads {s : State} (h : AbiEnvironment s) :
   · change abiArguments s ∈ (frameStart s Impl.Argon2.AArch64.Derive.saved).rd
     rw [frameStart_rd, h.rd]; exact List.mem_append_right _ (List.mem_singleton_self _)
   · unfold abiArguments
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem prologue_word {s : State} (h : AbiEnvironment s) (j : Nat) (hj : j < 10) :
     (prologueState s).mem.readW ((prologueState s).sp + BitVec.ofNat 64 (copySource j)) 64 =
       abiWord s (8 * j) := by
   rw [prologue_source]
   have frame := frameStart_frame s Impl.Argon2.AArch64.Derive.saved (by
-    have space := h.stack; change 384 ≤ s.sp.toNat; omega)
+    have space := h.stack; change 384 ≤ s.sp.toNat; omega_using [space])
   apply frame.readW (r := abiArguments s) ?_ ?_ (by decide)
   · unfold abiArguments
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · intro region hr
     simp only [List.mem_singleton] at hr; subst region
     unfold abiArguments
@@ -858,7 +858,7 @@ theorem private_local_write {s t : State} (prepared : PrivatePrepared (prologueS
     (d n : Nat) (bound : d + n ≤ 272) : InRegions t.wr (t.gpr .x19 + BitVec.ofNat 64 d) n := by
   rw [prepared.wr, prepared.bp]
   apply prologue_locals s
-  exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ bound (by omega)⟩
+  exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ bound (by omega_using [bound])⟩
 
 theorem private_local_read {s t : State} (prepared : PrivatePrepared (prologueState s) t)
     (d n : Nat) (bound : d + n ≤ 272) :
@@ -914,9 +914,9 @@ theorem private_stack_minimum {s t : State} (h : AbiEnvironment s)
   rw [private_sp prepared, BitVec.toNat_sub_of_le (by
     rw [BitVec.le_def]
     change 384 ≤ s.sp.toNat
-    have := h.stack; omega)]
+    have := h.stack; omega_using [this])]
   change 16 ≤ s.sp.toNat - 384
-  have := h.stack; omega
+  have := h.stack; omega_using [this]
 
 theorem private_frame_sub {s t : State} (prepared : PrivatePrepared (prologueState s) t) :
     Region.Sub ⟨t.gpr .x19, 272⟩ (below (s.sp) 400) := by
@@ -928,7 +928,7 @@ theorem private_stack_sub {s t : State} (prepared : PrivatePrepared (prologueSta
   rw [private_sp prepared]
   unfold below
   rw [BitVec.sub_sub, ← BitVec.ofNat_add]
-  exact Offset.sub_below _ (by omega) (by omega)
+  exact Offset.sub_below _ (by omega_using [bound]) (by omega_using [bound])
 
 theorem private_frame_disjoint {s t : State} (h : AbiEnvironment s)
     (prepared : PrivatePrepared (prologueState s) t) (buffer : Region × Bool)
@@ -947,7 +947,7 @@ theorem private_stack_disjoint {s t : State} (h : AbiEnvironment s)
 theorem private_frame_stack {s t : State} (prepared : PrivatePrepared (prologueState s) t)
     (n : Nat) (bound : n ≤ 16) : (⟨t.gpr .x19, 272⟩ : Region).Disjoint (below (t.sp) n) := by
   rw [prepared.bp, prepared.sp]
-  exact Offset.base_disjoint_below _ (by omega)
+  exact Offset.base_disjoint_below _ (by omega_using [bound])
 
 theorem private_work_member {s t : State} (h : AbiEnvironment s)
     (prepared : PrivatePrepared (prologueState s) t) : abiWork s ∈ t.wr := by

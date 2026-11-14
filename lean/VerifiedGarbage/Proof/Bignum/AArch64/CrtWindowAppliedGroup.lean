@@ -39,8 +39,8 @@ theorem appliedGroup_ok (W : Window) (n : Nat) {t : State} {P : Addr} {w : Nat}
   | succ n ih =>
     unfold appliedGroup
     refine WP.seq (WP.mono (appliedStep_ok W hc ht hw hw' hR hy hyv hV hV'
-      (shift := 5 * n) (by omega)) fun a ⟨ca, ta, ya, va, hVa, ba, na, fa, ka⟩ => ?_)
-    refine WP.mono (ih (by omega) ca ta ya va hVa ba na) fun u ⟨cu, tu, yu, vu, hVu, bu, nu, fu, ku⟩ =>
+      (shift := 5 * n) (by omega_using [hn])) fun a ⟨ca, ta, ya, va, hVa, ba, na, fa, ka⟩ => ?_)
+    refine WP.mono (ih (by omega_using [hn]) ca ta ya va hVa ba na) fun u ⟨cu, tu, yu, vu, hVu, bu, nu, fu, ku⟩ =>
       ⟨cu, tu, yu, ?_, hVu, bu, nu, fa.trans fu, (ka.trans ku).mono (by decide)⟩
     intro hQ
     rw [vu hQ, CrtWindowFive.group_reconstruct]

@@ -80,8 +80,8 @@ theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
       rw [upd_ne _ _ e, k2.num (by simp) (by simp; decide) (fit _ hjn),
         k1.num (fun k hk ek => e (by rw [List.mem_singleton.mp hk] at ek; exact ek.symm)) (by simp)
           (fit _ hjn), ha.get hj]
-  · rw [k2.word (by omega) (by simp) (by simp; decide) (fit _ (by decide)),
-      k1.word (by omega) (by simp; decide) (by simp) (fit _ (by decide)), vd]
+  · rw [k2.word (by omega_using []) (by simp) (by simp; decide) (fit _ (by decide)),
+      k1.word (by omega_using []) (by simp; decide) (by simp) (fit _ (by decide)), vd]
   · rw [e2, p1]; exact mask_mod2 v.p
 
 /-- `pqChecks`: the modulus `m = mOf p`, `n R⁻¹ mod m` compared with 0 and `p q mod R`
@@ -103,7 +103,7 @@ theorem pqChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (h3.mont_ok (o := mO) (a := mA) (b := mB) hw2 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (mOf_odd _)
-    (by show 1 < mOf (aStart v aP); have := mOf_ge (aStart v aP); omega) (by decide))
+    (by show 1 < mOf (aStart v aP); have := mOf_ge (aStart v aP); omega_using [this]) (by decide))
     fun t4 ⟨Z, hZ, h4⟩ => ?_
   rw [kc_seqs_append (by simp [eqA]) (by simp)]
   refine WP.mono (h4.eqA_ok (a := mO) (b := aZ) (by decide) (by decide)) fun t5 h5 => ?_
@@ -131,24 +131,24 @@ theorem qiChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool}
   refine WP.mono (h.ltA_ok' (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t1 ⟨f1, h1⟩ => ?_
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (h1.sel_ok (o := mB) (a := aZ) (b := aQI) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) f1 (by split <;> omega)) fun t2 h2 => ?_
+    (by decide) (by decide) f1 (by split <;> omega_using [])) fun t2 h2 => ?_
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (h2.copy_ok (o := mA) (a := aQ) (by decide) (by decide) (by decide)) fun t3 h3 => ?_
   have hsel : (if (if v.qI < v.p then 1 else 0) = 0 then 0 else v.qI) = (if v.qI < v.p then v.qI else 0) := by
     by_cases hq : v.qI < v.p <;> simp [hq]
-  have hle : v.p ≤ mOf v.p := by unfold mOf; split <;> omega
+  have hle : v.p ≤ mOf v.p := by unfold mOf; split <;> omega_arith
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (h3.mont_ok (o := mO) (a := mA) (b := mB) hw2 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (mOf_odd _) (by
       show (if (if v.qI < v.p then 1 else 0) = 0 then 0 else v.qI) < mOf v.p
       have := mOf_ge v.p
-      by_cases hq : v.qI < v.p <;> simp [hq] <;> omega) (by decide))
+      by_cases hq : v.qI < v.p <;> simp [hq] <;> omega_arith) (by decide))
     fun t4 ⟨M₁, hM₁, h4⟩ => ?_
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (h4.copy_ok (o := mA) (a := aOne) (by decide) (by decide) (by decide)) fun t5 h5 => ?_
   rw [kc_seqs_cons (by simp [eqA])]
   refine WP.mono (h5.mont_ok (o := mO2) (a := mA) (b := mA) hw2 (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (mOf_odd _) (by show 1 < mOf v.p; have := mOf_ge v.p; omega)
+    (by decide) (by decide) (by decide) (mOf_odd _) (by show 1 < mOf v.p; have := mOf_ge v.p; omega_using [this])
     (by decide)) fun t6 ⟨M₂, hM₂, h6⟩ => ?_
   refine WP.mono (h6.eqA_ok (a := mO) (b := mO2) (by decide) (by decide)) fun t h7 => ?_
   refine ⟨M₁, M₂, ?_, hM₂, ?_⟩
@@ -226,7 +226,7 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
   rw [show aFin v aD = v.d from rfl, show aFin v aN = v.n from rfl] at h1
   rw [kc_seqs_append (by simp [divA]) (by simp [eqA])]
   refine WP.mono (h1.divA_ok (a := aD) (d := aM1) (by decide) (by decide) (by decide) h5 (by decide) hp1 hpw
-    (show 2 * (v.p / 2) < _ by omega))
+    (show 2 * (v.p / 2) < _ by omega_using [hpv]))
     fun t2 ⟨Xq, Y₁, hv1, h2⟩ => ?_
   rw [show aFin v aD = v.d from rfl, show aFin v aM1 = 2 * (v.p / 2) from rfl] at hv1
   rw [kc_seqs_append (by simp [eqA]) (by simp [divA])]
@@ -240,7 +240,7 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   rw [kc_seqs_append (by simp [divA]) (by simp [eqA])]
   refine WP.mono (h3'.divA_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide) h6 (by decide) hq1 hqw
-    (show 2 * (v.q / 2) < _ by omega))
+    (show 2 * (v.q / 2) < _ by omega_using [hqv]))
     fun t4 ⟨Xq', Y₂, hv2, h4⟩ => ?_
   rw [show aFin v aD = v.d from rfl, show aFin v aM2 = 2 * (v.q / 2) from rfl] at hv2
   refine WP.mono (h4.eqA_ok (a := aVR) (b := aDQ) (by decide) (by decide)) fun t h5 => ?_
@@ -254,8 +254,8 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
 theorem fit_two {k w p : Nat} (hk : 1 ≤ k) (hw : 256 ^ k ≤ 2 ^ (64 * w)) (hp : p < 256 ^ (k - 1)) :
     2 * p ≤ 2 ^ (64 * w) := by
   have : 256 ^ k = 256 * 256 ^ (k - 1) := by
-    rw [← Nat.pow_succ']; congr 1; omega
-  omega
+    rw [← Nat.pow_succ']; congr 1; omega_using [hk]
+  omega_using [hw, hp, this]
 
 /-- A Montgomery product `Z = x R⁻¹ mod m` is 0 exactly when `m` divides `x`. -/
 theorem mont_zero {m Z x K : Nat} (hm : m % 2 = 1) (hZ : Z < m) (h : Z * 2 ^ K % m = x % m) :
@@ -305,7 +305,7 @@ theorem crtKeyValid_mont {k n e p q dP dQ qI w : Nat} (hm : modulusValid n k = t
   have fp := fit_two hk hw hp
   have fq := fit_two hk hw hq
   have nR : n < 2 ^ (64 * w) := Nat.lt_of_lt_of_le hnk hw
-  have qR : q < 2 ^ (64 * w) := by omega
+  have qR : q < 2 ^ (64 * w) := by omega_using [fq, nR]
   have mo := mOf_odd p
   rw [Nat.mul_one] at hZ
   rw [Bool.eq_iff_iff]
@@ -317,33 +317,33 @@ theorem crtKeyValid_mont {k n e p q dP dQ qI w : Nat} (hm : modulusValid n k = t
     have q2 := VG.Proof.Rsa.factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := VG.Proof.Rsa.odd_factor hpq hodd
     have qodd := VG.Proof.Rsa.odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    have mp : 2 * (p / 2) = p - 1 := by omega
-    have mq : 2 * (q / 2) = q - 1 := by omega
-    have hmp : mOf p = p := mOf_eq podd (by omega)
+    have mp : 2 * (p / 2) = p - 1 := by omega_using [podd]
+    have mq : 2 * (q / 2) = q - 1 := by omega_using [qodd]
+    have hmp : mOf p = p := mOf_eq podd (by omega_using [h1, podd])
     rw [hmp] at hZ hM₁ hM₂
     rw [mp] at hR₁ ⊢
     rw [mq] at hR₂ ⊢
     refine ⟨podd, (mont_zero podd hZ.1 hZ.2).mpr (by rw [← hpq, Nat.mul_mod_right]),
       by rw [hL, hpq, Nat.mod_eq_of_lt nR], h5, (mont_eq podd hM₁.1 hM₂.1 hM₁.2 hM₂.2).mpr ?_, h1,
-      by rw [hR₁ h1 (by omega), Nat.mod_eq_of_lt he']; exact h2, h3,
-      by rw [hR₂ h3 (by omega), Nat.mod_eq_of_lt he']; exact h4⟩
-    simp only [h5, ↓reduceIte]; rw [h6, Nat.mul_one, Nat.mod_eq_of_lt (by omega)]
+      by rw [hR₁ h1 (by omega_using [hp, hw, hZ, hM₁, hM₂, hR₁, hR₂, fp, fq, nR, qR, hpq, h1, h2, h5, h6, p2, podd, mp]), Nat.mod_eq_of_lt he']; exact h2, h3,
+      by rw [hR₂ h3 (by omega_using [hq, hw, hZ, hM₁, hM₂, hR₁, hR₂, fp, fq, nR, qR, hpq, h3, h4, h6, q2, qodd, mq]), Nat.mod_eq_of_lt he']; exact h4⟩
+    simp only [h5, ↓reduceIte]; rw [h6, Nat.mul_one, Nat.mod_eq_of_lt (by omega_using [hp, hZ, hM₁, hM₂, hR₁, fp, hpq, h1, h2, h5, h6, p2, podd, mp])]
   · rintro ⟨podd, hz, hl, h5, hmeq, h1, h2, h3, h4⟩
-    have p3 : 3 ≤ p := by omega
+    have p3 : 3 ≤ p := by omega_using [podd, h1]
     have hmp : mOf p = p := mOf_eq podd p3
     rw [hmp] at hZ hM₁ hM₂
     have hpq : p * q = n := pq_of_mont podd ((mont_zero podd hZ.1 hZ.2).mp hz) (by rw [← hL]; exact hl) nR qR
     have q2 := VG.Proof.Rsa.factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have qodd := VG.Proof.Rsa.odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    have mp : 2 * (p / 2) = p - 1 := by omega
-    have mq : 2 * (q / 2) = q - 1 := by omega
+    have mp : 2 * (p / 2) = p - 1 := by omega_using [podd]
+    have mq : 2 * (q / 2) = q - 1 := by omega_using [qodd]
     have e6 := (mont_eq podd hM₁.1 hM₂.1 hM₁.2 hM₂.2).mp hmeq
     simp only [h5, ↓reduceIte] at e6
-    rw [Nat.mul_one, Nat.mod_eq_of_lt (by omega : 1 < p)] at e6
+    rw [Nat.mul_one, Nat.mod_eq_of_lt (by omega_using [hp, hZ, hM₁, hM₂, hR₁, fp, podd, h5, h1, p3, hpq, mp, e6] : 1 < p)] at e6
     rw [mp] at hR₁ h1
     rw [mq] at hR₂ h3
-    exact ⟨hpq, h1, by rw [← Nat.mod_eq_of_lt he', ← hR₁ h1 (by omega)]; exact h2, h3,
-      by rw [← Nat.mod_eq_of_lt he', ← hR₂ h3 (by omega)]; exact h4, h5, e6⟩
+    exact ⟨hpq, h1, by rw [← Nat.mod_eq_of_lt he', ← hR₁ h1 (by omega_using [hp, hw, hZ, hM₁, hM₂, hR₁, hR₂, fp, fq, nR, qR, podd, h5, h1, p3, hpq, mp, e6])]; exact h2, h3,
+      by rw [← Nat.mod_eq_of_lt he', ← hR₂ h3 (by omega_using [hq, hw, hZ, hM₁, hM₂, hR₁, hR₂, fp, fq, nR, qR, h3, hpq, q2, qodd, mq, e6])]; exact h4, h5, e6⟩
 
 theorem keyValid_mont {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = true)
     (he : exponentValid e = true) (hp : p < 256 ^ (k - 1)) (hq : q < 256 ^ (k - 1)) (hnk : n < 256 ^ k)
@@ -369,7 +369,7 @@ theorem keyValid_mont {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = tr
     have q2 := VG.Proof.Rsa.factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := VG.Proof.Rsa.odd_factor hpq hodd
     have qodd := VG.Proof.Rsa.odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    rw [hY₁ (by omega), hY₂ (by omega), show 2 * (p / 2) = p - 1 by omega, show 2 * (q / 2) = q - 1 by omega]
+    rw [hY₁ (by omega_using [p2]), hY₂ (by omega_using [q2]), show 2 * (p / 2) = p - 1 by omega_using [podd], show 2 * (q / 2) = q - 1 by omega_using [qodd]]
   · simp only [Bool.not_eq_true] at hb
     simp only [hb, Bool.false_and]
 
@@ -385,7 +385,7 @@ theorem keyValid_words {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = t
     (hY₁ : InW w (2 * (p / 2)) → Y₁ = d % (2 * (p / 2))) (hY₂ : InW w (2 * (q / 2)) → Y₂ = d % (2 * (q / 2))) :
     keyValid k n e d p q dP dQ qI = (crtBitsW n p q dP dQ qI (p * q % 2 ^ (64 * w)) Xq X₁ X₂ && decide (d < n) &&
       decide (Y₁ = dP) && decide (Y₂ = dQ)) := by
-  have hR : (2 : Nat) ^ (64 * w) = 2 ^ (32 * w) * 2 ^ (32 * w) := by rw [← Nat.pow_add]; congr 1; omega
+  have hR : (2 : Nat) ^ (64 * w) = 2 ^ (32 * w) * 2 ^ (32 * w) := by rw [← Nat.pow_add]; congr 1; omega_using []
   have lt2 : ∀ {x y : Nat}, x < 2 ^ (32 * w) → y < 2 ^ (32 * w) → x * y < 2 ^ (64 * w) := fun {x y} hx hy => by
     rw [hR]
     rcases Nat.eq_zero_or_pos y with h0 | h0
@@ -394,7 +394,7 @@ theorem keyValid_words {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = t
         (Nat.mul_lt_mul_of_pos_left hy (Nat.two_pow_pos _))
   have he' : e < 2 ^ 33 := by
     simp only [exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at he; exact he.2
-  have ev : e < 2 ^ (32 * w) := Nat.lt_of_lt_of_le he' (Nat.pow_le_pow_right (by decide) (by omega))
+  have ev : e < 2 ^ (32 * w) := Nat.lt_of_lt_of_le he' (Nat.pow_le_pow_right (by decide) (by omega_using [hw]))
   rw [VG.Proof.Rsa.keyValid_crt hm hp hq, Nat.mod_eq_of_lt (lt2 pv qv)]
   by_cases hpq : p * q = n
   · obtain ⟨hodd, hn⟩ := VG.Proof.Rsa.modulusValid_facts hm
@@ -402,14 +402,14 @@ theorem keyValid_words {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = t
     have q2 := VG.Proof.Rsa.factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := VG.Proof.Rsa.odd_factor hpq hodd
     have qodd := VG.Proof.Rsa.odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    have plo := balanced_lo hpq hn hkw qv (by omega) hw2
-    have qlo := balanced_lo (p := q) (q := p) (by rw [Nat.mul_comm]; exact hpq) hn hkw pv (by omega) hw2
-    have e64 : 64 * (w / 2) = 32 * w := by omega
-    have mp : 2 * (p / 2) = p - 1 := by omega
-    have mq : 2 * (q / 2) = q - 1 := by omega
-    have ip : InW w p := ⟨by omega, by rw [e64]; exact pv⟩
-    have ip1 : InW w (2 * (p / 2)) := ⟨by omega, by rw [e64]; omega⟩
-    have iq1 : InW w (2 * (q / 2)) := ⟨by omega, by rw [e64]; omega⟩
+    have plo := balanced_lo hpq hn hkw qv (by omega_using [hw]) hw2
+    have qlo := balanced_lo (p := q) (q := p) (by rw [Nat.mul_comm]; exact hpq) hn hkw pv (by omega_using [hw]) hw2
+    have e64 : 64 * (w / 2) = 32 * w := by omega_using [hw2]
+    have mp : 2 * (p / 2) = p - 1 := by omega_using [podd]
+    have mq : 2 * (q / 2) = q - 1 := by omega_using [qodd]
+    have ip : InW w p := ⟨by omega_using [plo], by rw [e64]; exact pv⟩
+    have ip1 : InW w (2 * (p / 2)) := ⟨by omega_using [plo], by rw [e64]; omega_using [pv]⟩
+    have iq1 : InW w (2 * (q / 2)) := ⟨by omega_using [qlo], by rw [e64]; omega_using [qv]⟩
     rw [hXq ip, hX₁ ip1, hX₂ iq1, hY₁ ip1, hY₂ iq1, mp, mq, Nat.mod_eq_of_lt (lt2 ev dPv),
       Nat.mod_eq_of_lt (lt2 ev dQv), Nat.mod_eq_of_lt (lt2 qv qIv)]
     simp only [crtKeyValid, crtBitsW, hm, he, hpq, podd, mp, mq, Bool.true_and, beq_self_eq_true,
@@ -421,12 +421,12 @@ theorem keyValid_words {k n e d p q dP dQ qI w : Nat} (hm : modulusValid n k = t
 
 /-- A number of `l < k` bytes is below `256^(k - 1)`. -/
 theorem lt_pow_of_len (bs : List VG.Byte) {k : Nat} (h : bs.length < k) : Spec.Rsa.os2ip bs < 256 ^ (k - 1) :=
-  Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs) (Nat.pow_le_pow_right (by decide) (by omega))
+  Nat.lt_of_lt_of_le (VG.Proof.Rsa.lt_of_os2ip bs) (Nat.pow_le_pow_right (by decide) (by omega_using [h]))
 
 /-- `2^(64 w)` for `w = ⌈k / 8⌉` is at least `256^k`. -/
 theorem pow_kw (k : Nat) : 256 ^ k ≤ 2 ^ (64 * ((k + 7) / 8)) := by
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-  exact Nat.pow_le_pow_right (by decide) (by omega)
+  exact Nat.pow_le_pow_right (by decide) (by omega_using [])
 
 end VG.Proof.Rsa.RISCV64.KeyCheck
 
@@ -452,7 +452,7 @@ theorem stackArg_saved {s0 u : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0
   rw [show stackArgAddr u i = stackArgAddr s0 i by simp only [stackArgAddr, hsp]]
   refine Mem.readW_congr fun b hb => h.frame _ (past_of_disjoint hp.disj.symm ?_)
   rw [stackArgAddr_eq s0 i, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hi, hb]) (by omega_using [hi, hs, hb])
 
 theorem ofNat_toNat' (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by simp
 
@@ -487,7 +487,7 @@ theorem ck_moves_ok {s0 : State} (h0 : CkP s0) (u : State) (hu : Saved s0 (stack
       v.gpr .a5 = BitVec.ofNat 64 (s0.gpr .a3).toNat ∧ v.gpr .s1 = off (s0.gpr .a0) 0 ∧
       v.gpr .s2 = BitVec.ofNat 64 (s0.gpr .a1).toNat := by
   have hp := ck_kpre h0
-  have bu := KBase.of_saved (Z := (stackArg s0 9).toNat * 8) hu (by have := hp.zk; omega)
+  have bu := KBase.of_saved (Z := (stackArg s0 9).toNat * 8) hu (by have := hp.zk; omega_using [this])
   have g : ∀ r, r ≠ .t0 → r ≠ .s11 → u.gpr r = s0.gpr r := fun r h1 h2 =>
     hu.keep.gpr (by simp [h1, h2])
   have sa : ∀ i < 10, stackArg u i = stackArg s0 i := fun i hi => stackArg_saved hp bu hu.sp hi
@@ -566,7 +566,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hev; exact hev.2
   have hsat : sat (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a2) (s0.gpr .a3).toNat)) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a2) (s0.gpr .a3).toNat) := by
-    unfold sat; omega
+    unfold sat; omega_using [he']
   rw [hsat] at h4
   have p1 := h0.p1; have p2 := h0.p2; have q1 := h0.q1; have q2 := h0.q2
   have d1 := h0.d1; have d2 := h0.d2
@@ -583,22 +583,22 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
   -- `n`.
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (ldStep_ok l2 (j := aN) (by decide) rfl (by decide) R.s1 (R.s2.trans (ofNat_toNat' _))
-    (by have := hp.k64; omega) (by omega) (by rw [h0.hrd]; simp) h0.dn h0.wn) fun t3 ⟨l3, k3⟩ => ?_
+    (by have := hp.k64; omega_using [p2]) (by omega_using [hkw]) (by rw [h0.hrd]; simp) h0.dn h0.wn) fun t3 ⟨l3, k3⟩ => ?_
   have R3 := R.of_keep k3
   -- `d`.
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (ldStep_ok l3 (j := aD) (by decide) rfl (by decide) R3.a0 (R3.a1.trans (ofNat_toNat' _))
-    d1 (by omega) (by rw [h0.hrd]; simp) h0.dd h0.wd) fun t4 ⟨l4, k4⟩ => ?_
+    d1 (by omega_using [hkw, d2]) (by rw [h0.hrd]; simp) h0.dd h0.wd) fun t4 ⟨l4, k4⟩ => ?_
   have R4 := R3.of_keep k4
   -- `p`.
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (ldStep_ok l4 (j := aP) (by decide) rfl (by decide) R4.s3 (R4.s4.trans (ofNat_toNat' _))
-    p1 (by omega) (by rw [h0.hrd]; simp) h0.dp h0.wp) fun t5 ⟨l5, k5⟩ => ?_
+    p1 (by omega_using [hkw, p2]) (by rw [h0.hrd]; simp) h0.dp h0.wp) fun t5 ⟨l5, k5⟩ => ?_
   have R5 := R4.of_keep k5
   -- `q`.
   rw [kc_seqs_cons (by simp)]
   refine WP.mono (ldStep_ok l5 (j := aQ) (by decide) rfl (by decide) R5.s5 (R5.s6.trans (ofNat_toNat' _))
-    q1 (by omega) (by rw [h0.hrd]; simp) h0.dq h0.wq) fun t6 ⟨l6, k6⟩ => ?_
+    q1 (by omega_using [hkw, q2]) (by rw [h0.hrd]; simp) h0.dq h0.wq) fun t6 ⟨l6, k6⟩ => ?_
   have R6 := R5.of_keep k6
   -- `dP`.
   rw [kc_seqs_cons (by simp)]
@@ -606,7 +606,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
   simp only [rgS, ckScr, h0.hdp] at ddp
   rw [h0.hdp] at wdp
   refine WP.mono (ldStep_ok l6 (j := aDP) (by decide) rfl (by decide) R6.a2 (R6.s4.trans (ofNat_toNat' _))
-    p1 (by omega) (by rw [h0.hrd, ← h0.hdp]; simp) ddp wdp) fun t7 ⟨l7, k7⟩ => ?_
+    p1 (by omega_using [hkw, p2]) (by rw [h0.hrd, ← h0.hdp]; simp) ddp wdp) fun t7 ⟨l7, k7⟩ => ?_
   have R7 := R6.of_keep k7
   -- `dQ`.
   rw [kc_seqs_cons (by simp)]
@@ -614,7 +614,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
   simp only [rgS, ckScr, h0.hdq] at ddq
   rw [h0.hdq] at wdq
   refine WP.mono (ldStep_ok l7 (j := aDQ) (by decide) rfl (by decide) R7.a3 (R7.s6.trans (ofNat_toNat' _))
-    q1 (by omega) (by rw [h0.hrd, ← h0.hdq]; simp) ddq wdq) fun t8 ⟨l8, k8⟩ => ?_
+    q1 (by omega_using [hkw, q2]) (by rw [h0.hrd, ← h0.hdq]; simp) ddq wdq) fun t8 ⟨l8, k8⟩ => ?_
   have R8 := R7.of_keep k8
   -- `qInv`.
   rw [kc_seqs_cons (by simp [start])]
@@ -622,7 +622,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
   simp only [rgS, ckScr, h0.hqi] at dqi
   rw [h0.hqi] at wqi
   refine WP.mono (ldStep_ok l8 (j := aQI) (by decide) rfl (by decide) R8.a6 (R8.s4.trans (ofNat_toNat' _))
-    p1 (by omega) (by rw [h0.hrd, ← h0.hqi]; simp) dqi wqi) fun t9 ⟨l9, k9⟩ => ?_
+    p1 (by omega_using [hkw, p2]) (by rw [h0.hrd, ← h0.hqi]; simp) dqi wqi) fun t9 ⟨l9, k9⟩ => ?_
   have R9 := R8.of_keep k9
   -- `p_len` into `s5`.
   rw [List.nil_append, kc_seqs_cons (by simp [start])]
@@ -644,7 +644,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 6) (s0.gpr .a7).toNat),
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a4) (s0.gpr .a5).toNat)⟩
   have a9 : Arrs t9'.mem g.B g.w (vals v) live0 := by rw [m9]; exact l9.arrs.sub (by decide)
-  have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega
+  have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega_using [this]
   rw [kc_seqs_append (l₁ := start) (by simp [start]) (by simp [checks])]
   refine WP.mono (start_ok (g := g) (v := v) (l9.ws.of_keep k9') a9 (by rw [m9]; exact l9.top _ (by decide)))
     fun t10 g10 => ?_
@@ -664,7 +664,7 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
   rw [kc_seqs_cons (by simp)]
   have hwl := g10.ws.wle
   refine WP.mono (shape_ok (pl := (s0.gpr .a7).toNat) (ql := (stackArg s0 1).toNat) (w := g.w)
-    ((g10.regs.gpr (by decide)).trans h5) ((g10.regs.gpr (by decide)).trans h6) g10.ws.s9 (by omega) (by omega)
+    ((g10.regs.gpr (by decide)).trans h5) ((g10.regs.gpr (by decide)).trans h6) g10.ws.s9 (by omega_using [p2, k1024]) (by omega_using [q2, k1024])
     hwl) fun t11 ⟨⟨hiff, m11⟩, k11⟩ => ?_
   have fr : Keys.Frame g.B g.w [] [] t10.mem t11.mem := by rw [m11]; exact Keys.Frame.refl _ _ _ _ _
   have g11 := g10.next (g10.ws.of_keep k11) fr (by simp) (by simp) k11 (by decide)
@@ -678,15 +678,15 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
   refine WP.ite _ (Steps.eval_zero t11 .t0) (fun hz => ?_) (fun hz => ?_)
   · -- A balanced key: by words.
     obtain ⟨gp8, gpw, gpq, gp32⟩ := hiff.mp (by simpa using hz)
-    have hw8 : 8 ≤ g.w := by omega
-    have hw2 : g.w % 2 = 0 := by omega
+    have hw8 : 8 ≤ g.w := by omega_using [p1, p2, q1, q2, wdp, wdq, wqi, hw2, hwl, hiff, gp8, gpw, gpq, gp32]
+    have hw2 : g.w % 2 = 0 := by omega_using [p1, p2, q1, q2, wdp, wdq, wqi, hw2, hwl, hiff, gp8, gpw, gpq, gp32, hw8]
     have b32 : ∀ {x l : Nat}, x < 2 ^ (8 * l) → l = 4 * g.w → x < 2 ^ (32 * g.w) := fun hx hl => by
       rw [hl, ← Nat.mul_assoc] at hx; exact hx
-    have e32 : 64 * (g.w / 2) = 32 * g.w := by omega
+    have e32 : 64 * (g.w / 2) = 32 * g.w := by omega_using [hw2]
     rw [kc_seqs_append (l₁ := crtChecksW) (by simp [crtChecksW, mulQH]) (by simp [dChecksW, ltA])]
-    have hwl : g.w ≤ 128 := by show ((s0.gpr .a1).toNat + 7) / 8 ≤ 128; omega
+    have hwl : g.w ≤ 128 := by show ((s0.gpr .a1).toNat + 7) / 8 ≤ 128; omega_using [k1024]
     refine WP.mono (crtChecksW_ok g11 hw8 hwl hw2 (by rw [e32]; exact b32 hpv gpw.symm)
-      (by rw [e32]; exact b32 hqv (by omega))) fun t12 ⟨Xq, X₁, X₂, hXq, hX₁, hX₂, g12⟩ => ?_
+      (by rw [e32]; exact b32 hqv (by omega_using [gpw, gpq]))) fun t12 ⟨Xq, X₁, X₂, hXq, hX₁, hX₂, g12⟩ => ?_
     refine WP.mono (dChecksW_ok g12 hw8 hwl hw2) fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
     have hqIv : v.qI < 2 ^ (8 * (s0.gpr .a7).toNat) := by
       have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt s0.mem (stackArg s0 6) (s0.gpr .a7).toNat)
@@ -699,19 +699,19 @@ theorem ck_valid {s0 t : State} (h0 : CkP s0)
       rw [len_bytes] at this; rw [Nat.pow_mul]; exact this
     have e := keyValid_words (k := (s0.gpr .a1).toNat) (w := g.w) hmv hev
       (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2))
-      (by show 8 * (((s0.gpr .a1).toNat + 7) / 8) ≤ _; omega) hw8 hw2 (b32 hpv gpw.symm)
-      (b32 hqv (by omega)) (b32 hqIv gpw.symm) (b32 hdPv gpw.symm) (b32 hdQv (by omega)) hXq hX₁ hX₂ hY₁ hY₂
+      (by show 8 * (((s0.gpr .a1).toNat + 7) / 8) ≤ _; omega_using []) hw8 hw2 (b32 hpv gpw.symm)
+      (b32 hqv (by omega_using [gpw, gpq])) (b32 hqIv gpw.symm) (b32 hdPv gpw.symm) (b32 hdQv (by omega_using [gpw, gpq])) hXq hX₁ hX₂ hY₁ hY₂
     rw [eck, e]; exact g13
   · -- Any other key.
-    have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega
+    have hw2 : 2 ≤ g.w := by have := hp.k64; show 2 ≤ ((s0.gpr .a1).toNat + 7) / 8; omega_using [this]
     rw [kc_seqs_append (l₁ := crtChecks) (by simp [crtChecks, pqChecks, setM]) (by simp [dChecks, ltA])]
     refine WP.mono (crtChecks_ok g11 hw2) fun t12 ⟨Z, L, M₁, M₂, R₁, R₂, hZ, hL, hM₁, hM₂, hR₁, hR₂, g12⟩ => ?_
-    refine WP.mono (dChecks_ok g12 h5 h6 p1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hpv
-      q1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega) hqv)
+    refine WP.mono (dChecks_ok g12 h5 h6 p1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega_using [p2]) hpv
+      q1 (show _ ≤ 8 * (((s0.gpr .a1).toNat + 7) / 8) by omega_using [q2]) hqv)
       fun t ⟨Y₁, Y₂, hY₁, hY₂, A, live, g13⟩ => ⟨A, live, ?_⟩
     have e := keyValid_mont (k := (s0.gpr .a1).toNat) (w := g.w) hmv hev
       (lt_pow_of_len _ (by rw [len_bytes]; exact p2)) (lt_pow_of_len _ (by rw [len_bytes]; exact q2)) hnk
-      (by have := hp.k64; omega) (pow_kw _) hZ hL hM₁ hM₂ hR₁ hR₂ hY₁ hY₂
+      (by have := hp.k64; omega_using [p2]) (pow_kw _) hZ hL hM₁ hM₂ hR₁ hR₂ hY₁ hY₂
     rw [eck, e]; exact g13
 
 theorem ckOk_valid {s0 : State} (h : ckOk s0 = true) :
@@ -730,7 +730,7 @@ theorem ck_main {s0 : State} (h0 : CkP s0) :
   have e2 := h0.e2
   unfold VG.Impl.Rsa.RISCV64.CheckKey.code
   show WP isa (fn (8 * 8) _ _ _) s0 _
-  exact fn_ok hp (by decide) (MV := CkRegs s0) (ck_moves_ok h0) h0.e1 (by omega) (by rw [h0.hrd]; simp)
+  exact fn_ok hp (by decide) (MV := CkRegs s0) (ck_moves_ok h0) h0.e1 (by omega_using [hk, e2]) (by rw [h0.hrd]; simp)
     h0.de h0.we (by rw [h0.hrd]; simp) h0.dn h0.wn ckOk_valid
     fun v t mv kt bt h4 ev mv' => ck_valid h0 bt (mv.of_keep kt) h4 ev mv'
 

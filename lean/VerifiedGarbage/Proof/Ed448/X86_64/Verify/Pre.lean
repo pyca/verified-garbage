@@ -93,6 +93,6 @@ theorem vlay_ok {s : State} (h : VPre s) (h8 : (s.gpr .rdx).toNat < 256) : (vlay
     by rw [eR]; exact h.retScr, h.nPk, h.nSig, h.nMsg, h.nCtx, h.nScr⟩
   have := h.sp; have := h.sp2
   simp only [vlay, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 end VG.Proof.Ed448.X86_64.Verify

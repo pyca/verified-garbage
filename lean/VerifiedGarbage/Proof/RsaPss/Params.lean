@@ -44,8 +44,8 @@ theorem os2ip_lt' : ∀ bs : List Byte, Rsa.os2ip bs < 256 ^ bs.length
     have := os2ip_lt' bs
     have hb := b.isLt
     have : b.toNat * 256 ^ bs.length + 256 ^ bs.length ≤ 256 ^ bs.length * 256 := by
-      rw [← Nat.succ_mul, Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by omega)
-    omega
+      rw [← Nat.succ_mul, Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by omega_using [])
+    omega_arith
 
 /-- The bits of the integer below the top octet. -/
 theorem log2_eq {x m : Nat} (hx : x ≠ 0) (h1 : 2 ^ m ≤ x) (h2 : x < 2 ^ (m + 1)) : Nat.log2 x = m :=
@@ -62,15 +62,15 @@ theorem emBits_eq {n₀ : Byte} (rest : List Byte) (h0 : n₀ ≠ 0) :
   rw [os2ip_cons', Nat.add_sub_cancel]
   have hpos : 0 < 256 ^ rest.length := Nat.pow_pos (by decide)
   have hm := Nat.mul_le_mul_right (256 ^ rest.length) (Nat.one_le_iff_ne_zero.mpr hn)
-  refine log2_eq (by omega) ?_ ?_
+  refine log2_eq (by omega_using [hr, hm]) ?_ ?_
   · rw [Nat.pow_add, hP, Nat.mul_comm]
     exact Nat.le_add_right_of_le (Nat.mul_le_mul_right _ hl)
   · rw [hP] at hr ⊢
-    rw [show 8 * rest.length + Nat.log2 n₀.toNat + 1 = (Nat.log2 n₀.toNat + 1) + 8 * rest.length by omega,
+    rw [show 8 * rest.length + Nat.log2 n₀.toNat + 1 = (Nat.log2 n₀.toNat + 1) + 8 * rest.length by omega_using [],
       Nat.pow_add]
     have : (n₀.toNat + 1) * 2 ^ (8 * rest.length) ≤ 2 ^ (Nat.log2 n₀.toNat + 1) * 2 ^ (8 * rest.length) :=
       Nat.mul_le_mul_right _ hu
-    rw [Nat.succ_mul] at this; omega
+    rw [Nat.succ_mul] at this; omega_using [hr, this]
 
 theorem log2_lt8 (x : Byte) : Nat.log2 x.toNat < 8 := by
   by_cases h : x.toNat = 0
@@ -80,8 +80,8 @@ theorem log2_lt8 (x : Byte) : Nat.log2 x.toNat < 8 := by
 theorem log2_eq_zero {x : Byte} (h : x.toNat ≠ 0) : Nat.log2 x.toNat = 0 ↔ x.toNat = 1 := by
   constructor
   · intro h'
-    have := (Nat.log2_lt h).mp (show Nat.log2 x.toNat < 1 by omega)
-    omega
+    have := (Nat.log2_lt h).mp (show Nat.log2 x.toNat < 1 by omega_using [h'])
+    omega_using [h, this]
   · intro h'; rw [h']; decide
 
 theorem emLength_eq {n₀ : Byte} (rest : List Byte) (h0 : n₀ ≠ 0) :
@@ -91,9 +91,9 @@ theorem emLength_eq {n₀ : Byte} (rest : List Byte) (h0 : n₀ ≠ 0) :
   have h8 := log2_lt8 n₀
   have hz := log2_eq_zero hn
   split
-  · rw [hz.mpr (by assumption)]; omega
+  · rw [hz.mpr (by assumption)]; omega_using []
   · have : Nat.log2 n₀.toNat ≠ 0 := fun h => by simp_all
-    omega
+    omega_using [h8, this]
 
 /-- `0xFF >>> z`, where `z = 8 emLen - emBits`. -/
 theorem mask_eq {n₀ : Byte} (rest : List Byte) (h0 : n₀ ≠ 0) :
@@ -106,9 +106,9 @@ theorem mask_eq {n₀ : Byte} (rest : List Byte) (h0 : n₀ ≠ 0) :
   have hz := log2_eq_zero hn
   split
   · rw [hz.mpr (by assumption)]
-    rw [show 8 * (rest.length + 0) - (8 * rest.length + 0) = 0 by omega]; rfl
+    rw [show 8 * (rest.length + 0) - (8 * rest.length + 0) = 0 by omega_using []]; rfl
   · have : Nat.log2 n₀.toNat ≠ 0 := fun h => by simp_all
-    rw [show 8 * (rest.length + 1) - (8 * rest.length + Nat.log2 n₀.toNat) = 8 - Nat.log2 n₀.toNat by omega]
+    rw [show 8 * (rest.length + 1) - (8 * rest.length + Nat.log2 n₀.toNat) = 8 - Nat.log2 n₀.toNat by omega_using []]
     generalize Nat.log2 n₀.toNat = j at h8 this
     revert j; decide
 

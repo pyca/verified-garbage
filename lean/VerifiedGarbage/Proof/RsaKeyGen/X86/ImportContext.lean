@@ -46,7 +46,7 @@ theorem source_address {g : Geometry} {s : State} (C : Context g s) {i : Nat} (i
     addr (g.sourcePtr i) 0 = g.sourceAt i := by
   change addr (g.src + BitVec.ofNat 32 (4 * i)) 0 = _
   rw [show addr (g.src + BitVec.ofNat 32 (4 * i)) 0 = addr g.src (4 * i) by
-    simp only [addr, BitVec.add_zero], addr_eq (by have := C.sourceFit; omega)]
+    simp only [addr, BitVec.add_zero], addr_eq (by have := C.sourceFit; omega_using [index, this])]
   rfl
 
 theorem dest_pointer {g : Geometry} {i : Nat} (index : i < g.count) :
@@ -55,7 +55,7 @@ theorem dest_pointer {g : Geometry} {i : Nat} (index : i < g.count) :
   apply BitVec.sub_eq_iff_eq_add.mpr
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 2
-  omega
+  omega_using [index]
 
 theorem dest_address {g : Geometry} {s : State} (C : Context g s) {i : Nat} (index : i < g.count) :
     addr (g.destPtr i) 0 = g.destAt i := by
@@ -63,7 +63,7 @@ theorem dest_address {g : Geometry} {s : State} (C : Context g s) {i : Nat} (ind
   change addr (g.dst + BitVec.ofNat 32 (4 * (g.count - 1 - i))) 0 = _
   rw [show addr (g.dst + BitVec.ofNat 32 (4 * (g.count - 1 - i))) 0 =
       addr g.dst (4 * (g.count - 1 - i)) by simp only [addr, BitVec.add_zero],
-    addr_eq (by have := C.destFit; omega)]
+    addr_eq (by have := C.destFit; omega_using [this])]
   rfl
 
 end VG.Proof.RsaKeyGen.X86.Import

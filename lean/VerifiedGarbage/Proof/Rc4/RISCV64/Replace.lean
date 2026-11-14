@@ -26,9 +26,9 @@ theorem scatter_step (s : State) (idx : Byte) {k : Nat} (hk : k < 32)
   have hr : InRegions (s.rd ++ s.wr) (s.gpr .a7 + BitVec.ofNat 64 (8 * k)) 8 := by
     obtain ⟨r, hr, hc⟩ := hw
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have hal' := al_add hal (d := 8 * k) (by omega) (by omega)
+  have hal' := al_add hal (d := 8 * k) (by omega_using []) (by omega_using [hk])
   unfold scatterStep rowMask
-  rrun [h5, hr, hw, hal', show 8 * k < 2048 by omega, show 63 - k < 64 by omega]
+  rrun [h5, hr, hw, hal', show 8 * k < 2048 by omega_using [hk], show 63 - k < 64 by omega_using []]
   rw [row_bit idx hk, allOnes_and_ite]
 
 theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 64)
@@ -49,11 +49,11 @@ theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 64)
   | succ n ih =>
     intro s h1 h4' h5' h6' hp hwr hm
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h1 h4' h5' h6' hp hwr hm) fun t ⟨tm, t1, t4, t5, t6, tp, twr⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h1 h4' h5' h6' hp hwr hm) fun t ⟨tm, t1, t4, t5, t6, tp, twr⟩ => ?_
     have hq : InRegions t.wr (t.gpr .a7 + BitVec.ofNat 64 (8 * n)) 8 := by
       rw [twr, tp]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) hw
-    refine WP.mono (scatter_step t idx (by omega) (t5.trans h5) (by rw [tp]; exact hal)
+      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) hw
+    refine WP.mono (scatter_step t idx (by omega_using [hn]) (t5.trans h5) (by rw [tp]; exact hal)
       hq) fun u ⟨um, u1, u4, u5, u6, up, _, uwr⟩ => ?_
     refine ⟨?_, u1.trans t1, u4.trans t4, u5.trans t5, u6.trans t6, up.trans tp, uwr.trans twr⟩
     rw [um, tm, t1, tp, scatter_succ]
@@ -72,7 +72,7 @@ theorem replace_core (s : State) (idx ii : Byte) (h4 : s.gpr .a4 = idx.setWidth 
     obtain ⟨r, hr, hc⟩ := hw
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have hi : InRegions (s.rd ++ s.wr) (s.gpr .a7 + BitVec.ofNat 64 ii.toNat) 1 :=
-    region_offset _ _ _ _ _ (by have := ii.isLt; omega) (by have := ii.isLt; omega) hr
+    region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) hr
   have hit : InRegions (s.rd ++ s.wr) (s.gpr .a7 + ii.setWidth 64) 1 := by
     rw [byte_addr]; exact hi
   let p := s.gpr .a7
@@ -129,6 +129,6 @@ theorem replace_core (s : State) (idx ii : Byte) (h4 : s.gpr .a4 = idx.setWidth 
   refine ⟨(yk.gpr (by decide)).trans xax, ?_⟩
   rw [ym, x1, w1, xm, xp]
   unfold scatter
-  rw [ite_eq_left (by omega), writeW_byte, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+  rw [ite_eq_left (by omega_using []), writeW_byte, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 end VG.Proof.Rc4.RISCV64

@@ -58,8 +58,8 @@ theorem precomputeArithmetic_ok (M : Mont) {s : State} {p : Parameters} {domPtr 
  have headerA : Spec.Rsa.wordsAt a.mem p.ctx 3=Spec.Rsa.wordsAt s.mem p.ctx 3 := by
   apply prefixWords_unchanged (n:=3) space
   intro i hi
-  exact inscr _ (space.outside i (by omega))
- refine WP.mono (precomputeFinish_ok M fieldA spaceA sourceA words (by change 0<p.k;omega) size reduced bits
+  exact inscr _ (space.outside i (by omega_using [hi]))
+ refine WP.mono (precomputeFinish_ok M fieldA spaceA sourceA words (by change 0<p.k;omega_using [positive]) size reduced bits
   ((frame sCtx (by decide) (by decide) (by decide)).trans context)
   ((frame sDom (by decide) (by decide) (by decide)).trans domain)
   ((frame sLen (by decide) (by decide) (by decide)).trans length)

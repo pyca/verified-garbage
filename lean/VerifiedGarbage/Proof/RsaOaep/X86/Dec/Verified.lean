@@ -141,7 +141,7 @@ theorem body_vp (P : EP) (g : OHash) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts
   show VP _ (.seq (.block (decStart ++ privArgs)) (.seq (.call (privName v) (Proof.Rsa.X86.PrivChecked.privCode v))
     (.seq (.block (lenLoad 23)) (byLen (fun d => decTail (ofLen d) f) lens)))) _
   refine VP.cont3 (VP.syms ((pa_vp P).seq ((call_vp P v).seq (len_vp h P hTL)))) (byLen_vp (D := h.H.D)
-    (by have := h.D_le; omega) (fun _ _ hs => hs.1.2)
+    (by have := h.D_le; omega_using [this]) (fun _ _ hs => hs.1.2)
     (fun σ s t ⟨⟨⟨hc, hi, he, hr0, hk⟩, dx⟩, sy⟩ fu sy' =>
       ⟨⟨⟨hc.fupd fu, hi, by rw [fu.mem]; exact he, by rw [fu.gpr]; exact hr0, hk⟩, by rw [fu.gpr]; exact dx⟩,
         sy'.trans sy⟩) ?_ h.lens cmpLens_taint)
@@ -205,7 +205,7 @@ theorem spec_sp {s : State} (hs : (dspec vs).pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
   dec_pre at hs
   obtain ⟨hsp, hsa, -⟩ := hs
-  exact ⟨hsp, by omega⟩
+  exact ⟨hsp, by omega_using [hsa]⟩
 
 theorem fne_of {w : TVar} (hw : w ∈ vs) : (fnsOf vs).init ≠ [] ∧ (fnsOf vs).upd ≠ [] ∧ (fnsOf vs).fin ≠ [] := by
   have := List.ne_nil_of_mem hw
@@ -227,7 +227,7 @@ theorem entered_state (hc : Coh vs) {s s' : State} (hs : (dspec vs).pre s) {w w�
   obtain ⟨-, -, hpw, hfitL, hfit⟩ := spec_tab hs
   have hpw' := hpw.sublist (List.sublist_append_left _ _)
   obtain ⟨hsp0, -⟩ := spec_sp hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   have ok := (in_of_pre (ai := 0) (au := 0) (af := 0) (T := fun _ => True) (aiL := 0) (auL := 0) (afL := 0)
     (TL := fun _ => True) hs trivial trivial).ok
   rw [ep_lay] at ok
@@ -254,7 +254,7 @@ theorem code_ok (hc : Coh vs) (v : Proof.Rsa.X86.PrivChecked.CrtImpl) {s : State
   have he := entered_state hc hs hw hw₁ hh hhL (s' := s) fun _ _ => rfl
   have hin := he.1.1
   obtain ⟨hsp0, hfit4⟩ := spec_sp hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   obtain ⟨ni, nu, nf⟩ := fnsOf_noSp vs
   have hb := (body_vp w₁.g (epw (vs := vs) s w w₁) w.g (fun _ x => x) (fun _ x => x) (fne_of hw) v).wp _ _ he
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp ni nu nf v) hsp hfit4

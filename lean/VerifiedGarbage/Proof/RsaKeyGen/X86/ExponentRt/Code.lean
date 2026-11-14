@@ -196,10 +196,10 @@ theorem prepare_ok {s : State} {base : Addr} {size w candidate len : Nat} {e : B
       WorkspaceFrame ⟨base, size, w⟩ [(slot w 5, 8 * w), (128, 8)] s.mem t.mem ∧
       Frame [⟨base, size⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
       t.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w) := by
-  have gap : slot w 0 + 8 * w ≤ slot w 5 := by unfold slot stride VG.Impl.Bignum.hdrBytes; omega
-  have savedLo : 400 ≤ slot w 5 := by unfold slot stride VG.Impl.Bignum.hdrBytes; omega
-  have sourceLo : 256 ≤ slot w 0 := by change 256 ≤ 256 + 0 * stride w; omega
-  have header : 256 ≤ size := by omega
+  have gap : slot w 0 + 8 * w ≤ slot w 5 := by unfold slot stride VG.Impl.Bignum.hdrBytes; omega_using []
+  have savedLo : 400 ≤ slot w 5 := by unfold slot stride VG.Impl.Bignum.hdrBytes; omega_using [width]
+  have sourceLo : 256 ≤ slot w 0 := by change 256 ≤ 256 + 0 * stride w; omega_using []
+  have header : 256 ≤ size := by omega_using [space, savedLo]
   have exponentBound : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (e.setWidth 64) len) < 2 ^ 64 := by
     calc _ < 256 ^ len := by
            simpa only [VG.Proof.Bignum.bytesAt_length] using VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s.mem (e.setWidth 64) len)
@@ -208,23 +208,23 @@ theorem prepare_ok {s : State} {base : Addr} {size w candidate len : Nat} {e : B
   refine WP.seq (WP.mono (save_ok S width widthBound space outLen
     (by rw [candidateEq]; exact odd)) fun a ⟨saved, Oa, Ka⟩ => ?_)
   rw [candidateEq] at saved
-  have savedA : val32 a.mem base (slot w 5) (2 * w) = candidate - 1 := by omega
+  have savedA : val32 a.mem base (slot w 5) (2 * w) = candidate - 1 := by omega_using [saved]
   have originalA : val32 a.mem base (slot w 0) (2 * w) = candidate :=
-    (Oa.val32 (Or.inl (by omega)) (by have := S.nowrap; omega)).trans candidateEq
+    (Oa.val32 (Or.inl (by omega_using [gap])) (by have := S.nowrap; omega_using [space, gap, this])).trans candidateEq
   have Sa := S.of_keeps Ka (by decide)
-  have Fa := VG.Proof.Bignum.outside_frame Oa (by have := S.nowrap; omega)
+  have Fa := VG.Proof.Bignum.outside_frame Oa (by have := S.nowrap; omega_using [space, this])
   have eUnchanged : Spec.Rsa.bytesAt a.mem (e.setWidth 64) len = Spec.Rsa.bytesAt s.mem (e.setWidth 64) len :=
     VG.Proof.RsaKeyGen.frame_bytesAt Fa
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact separateE.sub_right (Offset.sub_base base space))
-      (by omega)
+      (by omega_using [eBound])
   refine WP.mono (ExponentImport.code_ok Sa header
-    (by rw [BitVec.eq_of_toNat_eq (Oa.w32 (d := 12) (by omega) (by decide))]; exact pointer)
-    (by rw [Oa.w32 (d := 16) (by omega) (by decide)]; exact length)
+    (by rw [BitVec.eq_of_toNat_eq (Oa.w32 (d := 12) (by omega_using [width, gap]) (by decide))]; exact pointer)
+    (by rw [Oa.w32 (d := 16) (by omega_using [width, gap]) (by decide)]; exact length)
     ePositive eBound eFit (by rw [Ka.2.1, Ka.2.2]; exact readable)
-    (separateE.sub_right (Offset.sub_base base (by omega)))) fun b ⟨value, Ob, Kb⟩ => ?_
+    (separateE.sub_right (Offset.sub_base base (by omega_using [header])))) fun b ⟨value, Ob, Kb⟩ => ?_
   rw [eUnchanged] at value
-  have originalB := (Ob.val32 (d := slot w 0) (k := 2 * w) (Or.inr (by omega)) (by have := S.nowrap; omega)).trans originalA
-  have savedB := (Ob.val32 (d := slot w 5) (k := 2 * w) (Or.inr (by omega)) (by have := S.nowrap; omega)).trans savedA
+  have originalB := (Ob.val32 (d := slot w 0) (k := 2 * w) (Or.inr (by omega_using [sourceLo])) (by have := S.nowrap; omega_using [space, gap, this])).trans originalA
+  have savedB := (Ob.val32 (d := slot w 5) (k := 2 * w) (Or.inr (by omega_using [savedLo])) (by have := S.nowrap; omega_using [space, this])).trans savedA
   have exponentEq : Mod64.exponentValue b.mem base 128 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (e.setWidth 64) len) := by
     rw [ExponentFilter.exponent_word, value, BitVec.toNat_ofNat, Nat.mod_eq_of_lt exponentBound]
   have Ksb : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s b := (Ka.mono (by decide)).trans Kb
@@ -241,10 +241,10 @@ theorem prepare_ok {s : State} {base : Addr} {size w candidate len : Nat} {e : B
   have Fsave : Frame [⟨base, size⟩] s.mem a.mem := workspaceGlobalFrame (g := ⟨base, size, w⟩)
     (Outs.of_outside Oa (List.mem_singleton_self _)) (by intro r mem; obtain rfl := List.mem_singleton.mp mem; change slot w 5 + 8 * w ≤ size; exact space)
   have Fimport : Frame [⟨base, size⟩] a.mem b.mem := workspaceGlobalFrame (g := ⟨base, size, w⟩)
-    (Outs.of_outside Ob (List.mem_singleton_self _)) (by intro r mem; obtain rfl := List.mem_singleton.mp mem; change 128 + 8 ≤ size; omega)
+    (Outs.of_outside Ob (List.mem_singleton_self _)) (by intro r mem; obtain rfl := List.mem_singleton.mp mem; change 128 + 8 ≤ size; omega_using [header])
   have lenB : b.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w) := by
-    rw [BitVec.eq_of_toNat_eq (Ob.w32 (d := 4) (by omega) (by omega)),
-      BitVec.eq_of_toNat_eq (Oa.w32 (d := 4) (by have := slot5_eq w; omega) (by omega)), outLen]
+    rw [BitVec.eq_of_toNat_eq (Ob.w32 (d := 4) (by omega_using []) (by omega_using [])),
+      BitVec.eq_of_toNat_eq (Oa.w32 (d := 4) (by have := slot5_eq w; omega_using [width, gap]) (by omega_using [])), outLen]
   exact ⟨I, W, Fsave.trans Fimport, Ksb, lenB⟩
 
 theorem code_ok {s : State} {base : Addr} {size w candidate len : Nat} {e : BitVec 32}

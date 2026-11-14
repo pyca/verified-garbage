@@ -26,7 +26,7 @@ def phaseRanges (g : Geometry) : List (Nat × Nat) :=
 theorem phase_header (g : Geometry) {r : Nat × Nat} (mem : r ∈ phaseRanges g) : 256 ≤ r.1 := by
   simp only [phaseRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl | rfl <;>
-    simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
+    simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_using []
 
 theorem phase_fits {g : Geometry} (v : g.Valid) {r : Nat × Nat} (mem : r ∈ phaseRanges g) :
     r.1 + r.2 ≤ g.L := by
@@ -37,7 +37,7 @@ theorem phase_fits {g : Geometry} (v : g.Valid) {r : Nat × Nat} (mem : r ∈ ph
   · exact lo.o_le
   · change g.array 1 + 8 * g.w ≤ g.L
     unfold Geometry.words at tmp
-    omega
+    omega_using [tmp]
   · exact lo.acc_le
 
 theorem phase_candidate (g : Geometry) {r : Nat × Nat} (mem : r ∈ phaseRanges g) :

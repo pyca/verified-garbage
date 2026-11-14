@@ -88,7 +88,7 @@ theorem canonicalize_correct (s : State) (hp : canonicalizeK.pre s) :
   have hwrite : ∀off,off+16≤1024 → InRegions s.wr (s.gpr .x0+BitVec.ofNat 64 off) 16 := by
     intro off ho
     rw [hw]
-    exact ⟨polyRegion (s.gpr .x0),List.mem_singleton_self _,Offset.contains_base _ ho (by omega)⟩
+    exact ⟨polyRegion (s.gpr .x0),List.mem_singleton_self _,Offset.contains_base _ ho (by omega_using [ho])⟩
   have hread : ∀off,off+16≤1024 → InRegions (s.rd++s.wr) (s.gpr .x0+BitVec.ofNat 64 off) 16 := by
     intro off ho
     obtain ⟨r,hr,hc⟩ := hwrite off ho

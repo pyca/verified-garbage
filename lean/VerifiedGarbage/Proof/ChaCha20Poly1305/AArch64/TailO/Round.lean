@@ -50,28 +50,28 @@ theorem maybe_ok {R a : Nat} {W : Addr} {c n : Nat} (hc : c < 2 ^ 63) {s : State
   refine WP.ite (decide (c - n = 0)) (by
       rw [show isa.eval (.zero .x .x6) s = some (s.gpr .x6 == 0) from
         VG.Proof.ChaCha20.AArch64.Xor.eval_zero s .x6, h.left,
-        VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega)]) (fun hz => ?_) (fun hz => ?_)
-  · have hn : n = c := by have := of_decide_eq_true hz; have := h.le; omega
+        VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega_using [hc])]) (fun hz => ?_) (fun hz => ?_)
+  · have hn : n = c := by have := of_decide_eq_true hz; have := h.le; omega_arith
     subst hn
     refine WP.block_nil ?_
-    rw [show min n (n + 1) = n by omega]
+    rw [show min n (n + 1) = n by omega_using []]
     exact ⟨h, fun _ _ _ => rfl, rfl, rfl, rfl, rfl, fun _ => rfl⟩
-  · have hlt : n < c := by have := of_decide_eq_false hz; have := h.le; omega
+  · have hlt : n < c := by have := of_decide_eq_false hz; have := h.le; omega_arith
     have hv : ∀ i ∈ Poly.block, vdstOf i = none := by decide +kernel
     refine WP.block_append ((VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors hv
-      (absorb_next (by omega) h.acc h.ptr hr)).mono fun b ⟨⟨hba, hbp, hbk⟩, hbv, hbsp, _, _⟩ => ?_)
+      (absorb_next (by omega_using [hlt]) h.acc h.ptr hr)).mono fun b ⟨⟨hba, hbp, hbk⟩, hbv, hbsp, _, _⟩ => ?_)
     apply WP.block_cons_iff.mpr
     refine ⟨b.write .x .x6 (b.gpr .x6 - BitVec.ofNat 64 1), ?_, WP.block_nil ?_⟩
     · simpa only [State.read, BitVec.setWidth_eq] using
         exec_subImm_x (s := b) (d := .x6) (n := .x6) (imm := 1) (by decide)
     have hbm : b.mem = s.mem := hbk.2.1
-    rw [show min c (n + 1) = n + 1 by omega]
-    refine ⟨⟨by omega, ?_, ?_, ?_⟩, fun r h6 hp => ?_, hbm, hbk.2.2.1, hbk.2.2.2, hbsp, fun v => ?_⟩
+    rw [show min c (n + 1) = n + 1 by omega_using [hlt]]
+    refine ⟨⟨by omega_using [hlt], ?_, ?_, ?_⟩, fun r h6 hp => ?_, hbm, hbk.2.2.1, hbk.2.2.2, hbsp, fun v => ?_⟩
     · rw [RegUpd.gpr_write_of_ne b .x _ (by decide), hbp]
     · exact hba.of (fun r hr' => RegUpd.gpr_write_of_ne b .x _ (by
         intro he; rw [he] at hr'; exact absurd hr' (by decide))) rfl
     · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hbk.gpr' (r := .x6), h.left,
-        Offset.ofNat_sub_ofNat (by omega : 1 ≤ c - n), Nat.sub_sub]
+        Offset.ofNat_sub_ofNat (by omega_using [hlt] : 1 ≤ c - n), Nat.sub_sub]
     · rw [RegUpd.gpr_write_of_ne b .x _ h6, hbk.gpr' (r := r) hp]
     · rw [Stitch.write_v, hbv]
 
@@ -89,7 +89,7 @@ theorem maybes_ok {R a : Nat} {W : Addr} {c : Nat} (hc : c < 2 ^ 63) :
     have hdr : Readable W (16 * c) d := hr.of hdrd hdwr (hdk _ (by decide) (by decide))
     rw [← hdm] at hda
     refine (maybes_ok hc k hdr hda).mono fun f ⟨hfa, hfk, hfm, hfrd, hfwr, hfsp, hfv⟩ => ?_
-    rw [hdm, show min c (min c (n + 1) + k) = min c (n + (k + 1)) by omega] at hfa
+    rw [hdm, show min c (min c (n + 1) + k) = min c (n + (k + 1)) by omega_using []] at hfa
     exact ⟨hfa, fun r h6 hp => by rw [hfk r h6 hp, hdk r h6 hp], hfm.trans hdm, hfrd.trans hdrd,
       hfwr.trans hdwr, hfsp.trans hdsp, fun v => by rw [hfv, hdv]⟩
 
@@ -127,7 +127,7 @@ theorem iter_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {c k :
   · simpa only [State.read, BitVec.setWidth_eq] using
       exec_subImm_x (s := f) (d := .x4) (n := .x4) (imm := 1) (by decide)
   have hm : min c (min c (k * i) + k) = min c (k * (i + 1)) := by
-    rw [Nat.mul_succ]; omega
+    rw [Nat.mul_succ]; omega_using []
   have hfm' : f.mem = s₀.mem := hfm.trans hbm
   refine ⟨?_, ?_, hfm', hfrd.trans (hsb.rd.trans h.rd),
     hfwr.trans (hsb.wr.trans h.wr), hfsp.trans (hsb.sp.trans h.sp),
@@ -145,7 +145,7 @@ theorem iter_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {c k :
         intro he; rw [he] at hr'; exact absurd hr' (by decide))) rfl,
       by rw [RegUpd.gpr_write_of_ne f .x _ (by decide)]; exact hfa.left⟩
   · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hfk _ (by decide) (by decide),
-      hsb.gpr, h.cnt, Offset.ofNat_sub_ofNat (by omega : 1 ≤ 10 - i)]
+      hsb.gpr, h.cnt, Offset.ofNat_sub_ofNat (by omega_using [hi] : 1 ≤ 10 - i)]
     simp only [Nat.sub_sub]
 
 /-- The loop: ten iterations. -/
@@ -165,10 +165,10 @@ theorem rounds_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {c k
     · have hn0 : BitVec.ofNat 64 (10 - (i + 1)) ≠ 0 := by
         intro hz
         have hz' := congrArg BitVec.toNat hz
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 10 - (i + 1) < 2 ^ 64)] at hz'
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : 10 - (i + 1) < 2 ^ 64)] at hz'
         change 10 - (i + 1) = 0 at hz'
-        omega
-      exact .inr ⟨by rw [he]; simpa using hn0, 10 - (i + 1), by omega, i + 1, by omega, rfl, hw⟩
+        omega_using [hi, hl, hz']
+      exact .inr ⟨by rw [he]; simpa using hn0, 10 - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, hl], rfl, hw⟩
   exact WP.loop (M := isa) Inv hstep 10 s ⟨0, by decide, rfl, h⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64.TailO

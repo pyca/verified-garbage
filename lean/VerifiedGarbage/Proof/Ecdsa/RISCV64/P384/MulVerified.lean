@@ -77,12 +77,12 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (saves ++ Window.bo
   intro i hi hown hp
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
-  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
+  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega_using [hi, h8])]
   have hw' := (by decide : ∀ w ∈ saves ++ Window.bodyW, (736 ≤ w.1 ∧ w.1 + w.2 ≤ 1552) ∨ 2224 ≤ w.1) w hw
   simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
     Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
     MC, Impl.Weierstrass.Mul.p384, true_and] at hown hp
-  omega
+  omega_using [hp, hw', hown]
 
 /-- `sd t, d(a0)` (`sdAt`) at the working space's base. -/
 theorem sdAt_a0 {s : State} {base : Addr} {is : List Instr} {Q : State → Prop} (h0 : s.gpr .a0 = base)
@@ -90,8 +90,8 @@ theorem sdAt_a0 {s : State} {base : Addr} {is : List Instr} {Q : State → Prop}
     (hd : d + 8 ≤ 4096) (hd8 : d % 8 = 0)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
     WP isa (.block (sdAt t .a0 d ++ is)) s Q :=
-  wp_sdAt (by omega) ht (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
-    ⟨_, hwr, Offset.contains_base base (by omega) (by omega)⟩ k
+  wp_sdAt (by omega_using [hd]) ht (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hal, hd8])
+    ⟨_, hwr, Offset.contains_base base (by omega_using [hd]) (by omega_using [hd])⟩ k
 
 /-- `vg_p384_mul` meets `mulRVc`, given the group law. -/
 theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s) :
@@ -102,7 +102,7 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
   have hpR := unit
   have hp0 : 0 < W.p := by decide
   have ca : ∀ (m : Mem) {o : Nat}, o < 4096 → MC.toPoint.coordAt m base o = wordsVal m base o 6 :=
-    fun m _ ho => coordAt_eq m base (by omega)
+    fun m _ ho => coordAt_eq m base (by omega_using [ho])
   have dq : ∀ x, MC.toPoint.dec x = toM W.p (2 ^ 384) x :=
     VG.Proof.Weierstrass.Point.dec_eq MC.toPoint hL.one_ne_zero (VG.Proof.Weierstrass.Point.fermat_of_law hL) hpR
   -- The saves and `s0 = a0`.
@@ -125,15 +125,15 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     simp only [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₂.gpr, u₁.gpr]
   have O₄ : Unch base saves s.mem s₄.mem := by
     rw [m₄]
-    exact (((writeW_outside _ _ _ (by omega)).unch.trans (writeW_outside _ _ _ (by omega)).unch).trans
-      (writeW_outside _ _ _ (by omega)).unch)
+    exact (((writeW_outside _ _ _ (by omega_using [])).unch.trans (writeW_outside _ _ _ (by omega_using [])).unch).trans
+      (writeW_outside _ _ _ (by omega_using [])).unch)
   have sv₄ : ∀ i, i < 45 → sv base s₄ i = sv base s i := fun i hi =>
     O₄.wordsVal (fun w hw => by
       simp only [saves, List.mem_cons, List.not_mem_nil, or_false] at hw
-      have : p384.sl i + 48 ≤ 2224 := by simp only [Cfg.sl, slot, p384]; omega
-      rcases hw with rfl | rfl | rfl <;> (simp only; omega)) (by simp only [Cfg.sl, slot, p384]; omega)
+      have : p384.sl i + 48 ≤ 2224 := by simp only [Cfg.sl, slot, p384]; omega_using [hi]
+      rcases hw with rfl | rfl | rfl <;> (simp only; omega_using [this])) (by simp only [Cfg.sl, slot, p384]; omega_using [hi])
   have cs : ∀ i, i < 45 → MC.toPoint.coordAt s.mem base (p384.sl i) = sv base s i := fun i hi =>
-    ca s.mem (by simp only [Cfg.sl, slot, p384]; omega)
+    ca s.mem (by simp only [Cfg.sl, slot, p384]; omega_using [hi])
   -- The slots' values, from the contract's.
   have hz' : sv base s₄ ZERO = 0 := by rw [sv₄ _ (by decide)]; exact (cs ZERO (by decide)).symm.trans hz
   have hone' : sv base s₄ ONEP = 2 ^ 384 % W.p := by
@@ -172,14 +172,14 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     U₅.word (fun w hw => by
       have := (by decide : ∀ w ∈ Window.bodyW, w.1 + w.2 ≤ 2224 ∨ 2848 ≤ w.1) w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      omega) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega)
+      omega_using [this, hd]) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd])
   have w20 : word s₅.mem base 2240 = s.gpr .ra := by
     rw [far 2240 (by simp), m₄, word_writeW_self]
   have w12 : word s₅.mem base 2232 = s.gpr .s1 := by
-    rw [far 2232 (by simp), m₄, (writeW_outside (d := 2240) _ base _ (by omega)).word (by omega) (by omega), word_writeW_self]
+    rw [far 2232 (by simp), m₄, (writeW_outside (d := 2240) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
   have w04 : word s₅.mem base 2224 = s.gpr .s0 := by
-    rw [far 2224 (by simp), m₄, (writeW_outside (d := 2240) _ base _ (by omega)).word (by omega) (by omega),
-      (writeW_outside (d := 2232) _ base _ (by omega)).word (by omega) (by omega), word_writeW_self]
+    rw [far 2224 (by simp), m₄, (writeW_outside (d := 2240) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
+      (writeW_outside (d := 2232) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
   refine ldAt_ws hw₅ (d := 2240) (by decide) (by decide) fun s₆ u₆ => ?_
   refine ldAt_ws (hw₅.of_kp (Kp.of_upd u₆)) (d := 2232) (by decide) (by decide) fun s₇ u₇ => ?_
   have hw₇ : WsReg s₇ base := ⟨by rw [u₇.other .s0 (by decide), u₆.other .s0 (by decide)]; exact hw₅.s0,
@@ -200,7 +200,7 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     refine ⟨fun _ _ => ?_, keeps_of_unch (O₄.trans U₅)⟩
     have e : MC.scalar base s.mem = sv base s₄ K := by rw [sv₄ _ (by decide)]; exact cs K (by decide)
     have c5 : ∀ i, i < 45 → MC.toPoint.coordAt s₅.mem base (p384.sl i) = sv base s₅ i := fun i hi =>
-      ca s₅.mem (by simp only [Cfg.sl, slot, p384]; omega)
+      ca s₅.mem (by simp only [Cfg.sl, slot, p384]; omega_using [hi])
     have x0 : MC.toPoint.coordAt s₅.mem base MC.pAt = sv base s₅ RX := c5 RX (by decide)
     have x1 : MC.toPoint.coordAt s₅.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
         sv base s₅ RY := c5 RY (by decide)

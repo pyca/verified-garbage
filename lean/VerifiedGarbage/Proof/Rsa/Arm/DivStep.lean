@@ -40,7 +40,7 @@ theorem step_ok {g : Geometry} {s : State} (h : Context g s) :
     change val32 _ _ _ g.n = val32 _ _ _ g.n
     exact frameV.val32 (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> with_reducible assumption) (by omega)
+      rcases hr with rfl | rfl <;> with_reducible assumption) (by omega_using [f0, nowrap])
   have borrow : (v.gpr .r11).toNat ≤ 1 := by rw [bV]; split <;> decide
   refine WP.mono (quotientBit_ok ctxV borrow) ?_
   rintro t ⟨qT, count, zero, ctxT, frameT, restT⟩
@@ -53,13 +53,13 @@ theorem step_ok {g : Geometry} {s : State} (h : Context g s) :
   intro remainder divisor
   have rVal := rU (Nat.lt_trans remainder divisor)
   have radix : 2 ^ (32 * g.n) = 2 * 2 ^ (32 * g.n - 1) := by
-    rw [← Nat.pow_succ']; congr 1; have := h.positive; omega
+    rw [← Nat.pow_succ']; congr 1; have := h.positive; omega_using [this]
   have even : g.value v.mem 0 % 2 = 0 := by
     rw [qV, qU, Nat.mod_mod_of_dvd _ ⟨2 ^ (32 * g.n - 1), radix⟩]
-    omega
+    omega_using []
   have rT : g.value t.mem 1 = g.value v.mem 1 := by
     change val32 _ _ _ (g.n + 1) = val32 _ _ _ (g.n + 1)
-    exact frameT.val32 (by omega) (by omega)
+    exact frameT.val32 (by omega_using [sep01]) (by omega_using [f1, nowrap])
   rw [rT, rV, qT even, bV, qV, qU, rVal, dU]
   simp only [VG.Proof.Rsa.divStep]
   split <;> simp only [Nat.add_sub_cancel, Nat.sub_zero]

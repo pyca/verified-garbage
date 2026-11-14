@@ -37,7 +37,7 @@ theorem widthCompare_ok {s : State} {value n : Nat}
     (t.gpr .x6 == (0#64)) = decide (value = n) ∧ t.gpr .x2 = BitVec.ofNat 64 value ∧ t.mem = s.mem) ?_ rfl rfl rfl)
     fun t ⟨⟨hz, ht, hm⟩, hk⟩ => ⟨hz, ht, hm, hk⟩
   brun [hd, hn]
-  exact sub_beq_ofNat hv (by omega)
+  exact sub_beq_ofNat hv (by omega_using [hn])
 
 /-- Recover the saved p width and prepare the first public branch. -/
 theorem readWidth_ok {s : State} {B : Addr} {Z p : Nat} (hs : Scr s B Z)
@@ -130,7 +130,7 @@ theorem widthChoice_ok {s : State} {p q : Nat} (hp : p < 2 ^ 64) (hq : q < 2 ^ 6
     · change some (s.gpr .x6 == (0#64)) = some true
       simp only [hz, h128, decide_true]
     · have he : Spec.Dsa.supportedSizes (8 * p) (8 * q) ↔ q = 20 := by
-        unfold Spec.Dsa.supportedSizes; omega
+        unfold Spec.Dsa.supportedSizes; omega_using [h128]
       rw [decide_eq_decide.mpr he]
       exact WP.mono (widthMask_ok (by decide) hq h8) fun t ⟨ht, hm, hk⟩ => ⟨ht, hm, hk.mono (by decide)⟩
   · refine WP.ite false ?_ (fun h => Bool.noConfusion h) (fun _ => ?_)
@@ -144,7 +144,7 @@ theorem widthChoice_ok {s : State} {p q : Nat} (hp : p < 2 ^ 64) (hq : q < 2 ^ 6
         · change some (u.gpr .x6 == (0#64)) = some true
           simp only [huz, h256, decide_true]
         · have he : Spec.Dsa.supportedSizes (8 * p) (8 * q) ↔ q = 20 ∨ q = 28 ∨ q = 32 := by
-            unfold Spec.Dsa.supportedSizes; omega
+            unfold Spec.Dsa.supportedSizes; omega_using [h256]
           rw [decide_eq_decide.mpr he]
           exact WP.mono (width2048_ok hq hu8) fun t ⟨ht, hm, hk⟩ =>
             ⟨ht, hm.trans hum, (hku.trans hk).mono (by decide)⟩
@@ -159,7 +159,7 @@ theorem widthChoice_ok {s : State} {p q : Nat} (hp : p < 2 ^ 64) (hq : q < 2 ^ 6
             · change some (v.gpr .x6 == (0#64)) = some true
               simp only [hvz, h384, decide_true]
             · have he : Spec.Dsa.supportedSizes (8 * p) (8 * q) ↔ q = 32 := by
-                unfold Spec.Dsa.supportedSizes; omega
+                unfold Spec.Dsa.supportedSizes; omega_using [h384]
               rw [decide_eq_decide.mpr he]
               exact WP.mono (widthMask_ok (by decide) hq hv8) fun t ⟨ht, hm, hk⟩ =>
                 ⟨ht, hm.trans (hvm.trans hum), ((hku.trans hkv).trans hk).mono (by decide)⟩
@@ -167,7 +167,7 @@ theorem widthChoice_ok {s : State} {p q : Nat} (hp : p < 2 ^ 64) (hq : q < 2 ^ 6
             · change some (v.gpr .x6 == (0#64)) = some false
               simp only [hvz, h384, decide_false]
             · have he : ¬ Spec.Dsa.supportedSizes (8 * p) (8 * q) := by
-                unfold Spec.Dsa.supportedSizes; omega
+                unfold Spec.Dsa.supportedSizes; omega_using [h128, h256, h384]
               rw [decide_eq_false he]
               refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = mask false ∧ t.mem = v.mem)
                 (by brun) rfl rfl rfl) fun t ⟨⟨ht, hm⟩, hk⟩ =>

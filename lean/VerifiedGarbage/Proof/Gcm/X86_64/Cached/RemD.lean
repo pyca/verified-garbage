@@ -69,8 +69,8 @@ theorem loopDRM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀) {P : Na
       · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
           e + 1, hlt, hI', hCI'⟩
       · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-          nb s₀ - 16 * (e + 1), by omega, e + 1, rfl, by omega, hI', hCI'⟩
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI, hCache⟩
+          nb s₀ - 16 * (e + 1), by omega_using [he], e + 1, rfl, by omega_using [hlt], hI', hCI'⟩
+    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega_using [h], hI, hCache⟩
 
 theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat}
     {s : State} (hI : DInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16)))
@@ -101,16 +101,16 @@ theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block}
     fun s₂ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
   have hI₂ := hI₁.of_eq g l m rd wr
   have hCache₂ := hCache.keep hh (hI₂.a.keys hp)
-  rw [hI₁.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt ht] at hcf
+  rw [hI₁.r9, toNat_ofNat_lt (by omega_using [hn]), toNat_ofNat_lt ht] at hcf
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInv s₀ P e s' ∧
       VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * 0 < t))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨0, hI₂, hCache₂⟩)
-    (fun h => hbig _ (by simp at h; omega) hI₂ hCache₂)) fun s₃ ⟨e, hI₃, hCache₃⟩ => ?_)
+    (fun h => hbig _ (by simp at h; omega_using [h]) hI₂ hCache₂)) fun s₃ ⟨e, hI₃, hCache₃⟩ => ?_)
   refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp_ok s₃ 16 16 (by decide)))
     fun s₄ ⟨⟨hcf₄, g₄, l₄, m₄, rd₄, wr₄⟩, hh₄⟩ => ?_)
   have hI₄ := hI₃.of_eq g₄ l₄ m₄ rd₄ wr₄
   have hle := hI₃.a.le
-  rw [hI₃.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf₄
+  rw [hI₃.r9, toNat_ofNat_lt (by omega_using [hn]), toNat_ofNat_lt (by decide)] at hcf₄
   refine WP.seq (WP.mono (loopDR_ok hp hf hI₄ hcf₄ (hCache₃.keep hh₄ (hI₄.a.keys hp))) fun s₅ ⟨e, hlt, hI₅, hC₅⟩ => ?_)
   have hle₅ := hI₅.a.le
   refine WP.seq (WP.mono (WP.hkeep (by decide) (test99_ok s₅)) fun s₆ ⟨⟨z₆, g₆, l₆, m₆, rd₆, wr₆⟩, hh₆⟩ => ?_)
@@ -118,12 +118,12 @@ theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block}
   have hz : (s₅.gpr .r9 &&& s₅.gpr .r9 == 0) = decide (nb s₀ = 16 * e) := by
     rw [BitVec.and_self, hI₅.r9]
     by_cases h : nb s₀ = 16 * e
-    · rw [show nb s₀ - 16 * e = 0 by omega, decide_eq_true h]; rfl
+    · rw [show nb s₀ - 16 * e = 0 by omega_using [h], decide_eq_true h]; rfl
     · have : BitVec.ofNat 64 (nb s₀ - 16 * e) ≠ 0 := fun e' => by
         have := congrArg BitVec.toNat e'
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at this
         have h0 : BitVec.toNat (0 : BitVec 64) = 0 := rfl
-        omega
+        omega_using [hle₅, h, this, h0]
       rw [beq_false_of_ne this, decide_eq_false h]
   refine WP.ite (decide (nb s₀ = 16 * e)) (by simp only [eval, z₆, hz]) (fun h => ?_) (fun h => ?_)
   · exact dfinal_ok hp (by simpa using h) hI₆

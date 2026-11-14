@@ -68,7 +68,7 @@ theorem TB.of_tab {L : WsP} {s t : State} (h : TB L s) {rs : List (Nat × Nat)} 
   have dX : ∀ r ∈ tabRanges L.w, slot L.w aXm + 8 * L.w ≤ r.1 ∨ r.1 + r.2 ≤ slot L.w aXm := by
     unfold tabRanges; w_disj
   exact ⟨h4, h128, hEZ, c, bm, b, hc.of_tab hf hs k hr, hodd, hc1,
-    by rw [hf.wv_eq (fun r hr' => dX r (hs r hr')) (by omega)]; exact hX⟩
+    by rw [hf.wv_eq (fun r hr' => dX r (hs r hr')) (by omega_using [hn, hXZ])]; exact hX⟩
 
 /-- The registers pinned before an entry's copy. -/
 def entVal (L : WsP) (a e : Nat) : Reg → BitVec 64
@@ -92,7 +92,7 @@ theorem toEntPre_ok {L : WsP} {e : Nat} {s : State} (h : TBE L e s) (a : Nat) :
   have k12 := k₁.trans k₂
   refine WP.mono (WP.keep [.x17] (Q := fun t => t.gpr .x17 = off L.B (slot L.w (aT0 + e))) (by
     brun [(k12.gpr .x0 (by decide)).trans hw.x0, hdr_enc (show kV < 32 by decide),
-      (hs.congr k12.wr).ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega),
+      (hs.congr k12.wr).ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_using [h256]),
       (by rw [m₂, m₁]; exact hV : word s₂.mem L.B (8 * kV) = off L.B (slot L.w (aT0 + e)))])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨h17, k⟩ r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -120,7 +120,7 @@ theorem toEnt_ct {α : Type} (L : α → WsP) (e : α → Nat) {a : Nat} (ha : a
   refine WP.mono (toEnt_ok hw hEZ ha he hV) fun t ⟨_, ho, k⟩ => ?_
   have hE := ent_in_tab (L x).w he
   have hf : Frm (L x).B [(slot (L x).w aT0, 128 * ((L x).w + 2))] s.mem t.mem :=
-    Frm.of_outside (ho.mono (o' := slot (L x).w aT0) (n' := 128 * ((L x).w + 2)) hE.1 (by omega)) (by simp)
+    Frm.of_outside (ho.mono (o' := slot (L x).w aT0) (n' := 128 * ((L x).w + 2)) hE.1 (by omega_using [hE])) (by simp)
   exact ⟨hT.of_tab hf (by simp [tabRanges]) k (by decide), he,
     by rw [hf.word_eq (VG.Proof.RsaKeyGen.past_hdrW rfl) (by decide)]; exact hV⟩
 
@@ -174,14 +174,14 @@ theorem tabMul_ok (M : Mont) {L : WsP} {i : Nat} {s : State} (hi : i < 14) (h : 
   obtain ⟨h4, h128, hEZ, c, bm, b, s₀, hI, hodd, hc1⟩ := h
   have hc := hI.ctx
   have hn := hc.ws.scr.nowrap
-  have hX : wv s.mem L.B (slot L.w aXm) L.w < c := by rw [hI.xm]; exact Nat.mod_lt _ (by omega)
-  refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega) (by omega) (o := aY) (a := aY) (b := aXm) (by decide)
+  have hX : wv s.mem L.B (slot L.w aXm) L.w < c := by rw [hI.xm]; exact Nat.mod_lt _ (by omega_using [hodd])
+  refine WP.mono (M.mm_ok hc.good.1 hc.good.2 (by omega_using [h4]) (by omega_using [h128]) (o := aY) (a := aY) (b := aXm) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
     (by rw [hc.n]; exact hX)) fun t ⟨_, _, _, ha, k⟩ => ?_
   have hf : Frm L.B [(slot L.w aAcc, 8 * (L.w + 2)), (slot L.w aTmp, 8 * (L.w + 2)),
       (slot L.w aY, 8 * (L.w + 2))] s.mem t.mem := Frm.of_arrays ha (by simp)
   have hT : TB L s := ⟨h4, h128, hEZ, c, bm, b, hc, hodd, hc1, hI.xm⟩
-  exact ⟨hT.of_tab hf (by simp [tabRanges]) k (by decide), by omega,
+  exact ⟨hT.of_tab hf (by simp [tabRanges]) k (by decide), by omega_using [hi],
     by rw [hf.word_eq ((VG.Proof.RsaKeyGen.mm_shape _ _).hdrW rfl rfl) (by decide)]; exact hI.v⟩
 
 theorem tabMul_ct (M : Mont) : RelCT isa (Two fun (p : WsP × Nat) s => p.2 < 14 ∧ TL p.1 p.2 s) (M.mm aY aY aXm)

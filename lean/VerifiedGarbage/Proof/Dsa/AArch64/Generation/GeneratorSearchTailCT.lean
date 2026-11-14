@@ -72,7 +72,7 @@ def GeneratorSearchPublic.next (p : GeneratorSearchPublic) (hc : p.continues = t
       cases he : p.exhausted <;> simp_all [continues]
     have hb := p.bound
     have h := of_decide_eq_false hn
-    omega
+    omega_using [hb, h]
 
 def GeneratorSearchIterationAfter (len : Nat) (p : GeneratorSearchPublic) (s : State) : Prop :=
   isa.eval (.zero .x .x0) s = some p.continues ∧
@@ -85,7 +85,7 @@ theorem generatorSearch_status {len : Nat} {p : GeneratorSearchPublic} {s : Stat
   obtain ⟨V, R⟩ := hm.rep
   have exhausted : p.exhausted = false := by
     apply decide_eq_false
-    omega
+    omega_using [room]
   refine WP.mono (tapeStatus_ok hm.layout R) fun t ⟨hz, hmem, hk⟩ => ?_
   refine ⟨?_, fun hc => ⟨⟨W, generatorMemory_congr hm hmem (hk.mono (by decide)), hu⟩, he⟩⟩
   change eval (.zero .x .x0) t = some p.continues

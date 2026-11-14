@@ -123,7 +123,7 @@ theorem AtPoint.keyStatus (h : AtPoint q original st)
     keyResultStatus (keyFromPrimes (16 * q.inputs.L) (Spec.Rsa.os2ip q.inputs.eB) (Spec.Rsa.os2ip pB)
       (Spec.Rsa.os2ip (Spec.Rsa.i2osp c q.inputs.L))) = q.key := by
   have hrest : (rOf q.inputs original q.used st).used ≤ ((genRand original).drop q.used).length := by
-    rw [List.length_drop, hrl]; omega
+    rw [List.length_drop, hrl]; omega_using [hle]
   obtain ⟨rest, hr⟩ := keySearch_trace_key (L := q.inputs.L) (eB := q.inputs.eB) ho (drop_lt hpos hrest) hph
   rw [GenPoint.key, ← h.2.2.2, tailOf, hr, primeEntry_key]
 
@@ -149,7 +149,7 @@ theorem continues_iff (h : AtPoint q original st) (hl : GenFrame q.inputs origin
     · cases hp : st.phase with
       | p => simp [h0, phaseWord]
       | q pB =>
-        have hk := h.keyStatus (rOf_used_le hl) (genRand_length hl) ho (by omega) hp
+        have hk := h.keyStatus (rOf_used_le hl) (genRand_length hl) ho (by omega_using [h0]) hp
         rw [← hk]
         simp [h0, phaseWord, keyResultStatus_two]
 
@@ -199,9 +199,9 @@ theorem gen_ct_step (srch : Srch) (key : KeyImpl) (q : GenPoint) (s : State) (h 
     refine WP.mono (cmp_ok (r := .ebx) rfl 4) fun x ⟨⟨hx, _⟩, _⟩ =>
       .inr ⟨fun h => hcs ((continues_iff ha hl.toGenFrame).mpr h), ?_⟩
     rw [hx, hd.2.1, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
-      beq_nat (BitVec.toNat_ofNat _ _ ▸ Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega)) (by decide)]
+      beq_nat (BitVec.toNat_ofNat _ _ ▸ Nat.mod_eq_of_lt (show _ < 2 ^ 32 by omega_using [hlt])) (by decide)]
     simp only [Option.some.injEq, decide_eq_false_iff_not]
-    omega
+    omega_using [hlt]
 
 end VG.Proof.RsaKeyGen.X86.Generate
 
@@ -426,7 +426,7 @@ theorem search_run_ct (srch : Srch) : RelCT isa (Two GenCTL) (searchRun srch.cal
     · rw [s₁, s₂]
   · rintro q f ⟨s, ⟨o, st, a, L, w⟩, rfl⟩
     have F0 := L.toGenBase.alloc (n := 48) (by decide)
-    have hph1 : phaseWord st.phase ≤ 1 := by unfold phaseWord; split <;> omega
+    have hph1 : phaseWord st.phase ≤ 1 := by unfold phaseWord; split <;> omega_using []
     have hph : (allocFrame 48 s).mem.readW ((arg o 7).setWidth 64 + BitVec.ofNat 64 32) 32 =
         BitVec.ofNat 32 (phaseWord st.phase) := by
       show s.mem.readW _ 32 = _
@@ -496,7 +496,7 @@ theorem load_ok {q : GenPoint} {s : State} (h : AnyFrame q s) (r : Reg) (hr : r 
     fun t ⟨e, k, _⟩ => ⟨⟨o, hb.input, e⟩, (k.gpr (by simp [hr.1.symm])).trans hb.sp,
       (k.gpr (by simp [hr.2.symm])).trans g.ebp⟩
   simp only [param_eq, pushWords, Nat.reduceMul, Nat.add_zero]
-  xrun [State.ea, at_, hb.arg_ea (i := i) (d := 4 + 4 * i + 16) (by omega), hb.arg_in hi, hb.arg_val hi]
+  xrun [State.ea, at_, hb.arg_ea (i := i) (d := 4 + 4 * i + 16) (by omega_using []), hb.arg_in hi, hb.arg_val hi]
 
 theorem anyFrame_load (r : Reg) (hr : r ≠ .esp ∧ r ≠ .ebp) {i : Nat} (hi : i < 8) :
     ∀ q s, AnyFrame q s → WP isa (.block [.mov r (.mem (param 0 i))]) s (Loaded r i q) :=
@@ -543,7 +543,7 @@ theorem clearB_ok {q : GenPoint} {s : State} (h : AnyFrame q s) :
   simp only [four, param_eq, pushWords, Nat.reduceMul, Nat.reduceAdd, List.cons_append, List.nil_append]
   xrun [State.ea, at_, hf.arg_ea (i := 0) (d := 20) rfl, hf.arg_in (i := 0) (by decide),
     hf.arg_val (i := 0) (by decide), hf.ebp, four_val]
-  simp only [← BitVec.ofNat_add]; congr 1; omega
+  simp only [← BitVec.ofNat_add]; congr 1; omega_using []
 
 theorem clearAt_pins : Pins ClearAt [.edx, .ecx, .esp] := by
   rintro q s₁ s₂ ⟨d₁, c₁, p₁⟩ ⟨d₂, c₂, p₂⟩ r hr
@@ -640,12 +640,12 @@ theorem key_inputs {p : GenPublic} {o s t : State} {used : Nat} {st : KeyProgres
   have hi := F.input
   have A := hi.abi
   have hv := hi.len_valid
-  have l5 : (keyArg p 5).toNat = p.L := by rw [show keyArg p 5 = BitVec.ofNat 32 p.L from rfl, kL1 hi]; omega
+  have l5 : (keyArg p 5).toNat = p.L := by rw [show keyArg p 5 = BitVec.ofNat 32 p.L from rfl, kL1 hi]; omega_using []
   have b4 : (keyArg p 4).setWidth 64 = p.slot 4 := congrArg Region.base (kE2 hi)
   have b6 : (keyArg p 6).setWidth 64 = p.slot 5 := congrArg Region.base (kE3 hi)
   have b14 : (keyArg p 14).setWidth 64 = p.stp.setWidth 64 + 48 := by
     have := hi.sBound'
-    exact VG.Proof.MlKem.X86.ea_off (x := p.stp) (d := 48) (by omega)
+    exact VG.Proof.MlKem.X86.ea_off (x := p.stp) (d := 48) (by omega_using [this])
   have Fs : Region.Sub (fR o 72) (lowR o) := low_sub (by decide)
   have sT : Region.Sub ⟨low o + BitVec.ofNat 64 192, 4⟩ (lowR o) := low_sub (by decide)
   have sK : (lowR o).Disjoint ⟨p.kp.setWidth 64, 9 * p.L⟩ := by rw [← hi.kR_eq]; exact A.lowK
@@ -657,11 +657,11 @@ theorem key_inputs {p : GenPublic} {o s t : State} {used : Nat} {st : KeyProgres
       Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 192) v) (p.slot j) p.L =
         Spec.Rsa.bytesAt s.mem (p.slot j) p.L := by
     have hsub : Region.Sub ⟨p.slot j, p.L⟩ ⟨p.kp.setWidth 64, 9 * p.L⟩ := Offset.sub_base _ (by
-      have := Nat.mul_le_mul_right p.L hj; rw [Nat.add_mul] at this; omega)
+      have := Nat.mul_le_mul_right p.L hj; rw [Nat.add_mul] at this; omega_using [this])
     rw [bytes_keep (R := ⟨p.slot j, p.L⟩) fe (fun q hq => by
-      obtain rfl := List.mem_singleton.mp hq; exact (sK.sub_left sT).symm.sub_left hsub) (show p.L ≤ 2 ^ 64 by omega)]
+      obtain rfl := List.mem_singleton.mp hq; exact (sK.sub_left sT).symm.sub_left hsub) (show p.L ≤ 2 ^ 64 by omega_using [hv])]
     exact bytes_keep (R := ⟨p.slot j, p.L⟩) hfr (fun q hq => by
-      obtain rfl := List.mem_singleton.mp hq; exact (sK.sub_left Fs).symm.sub_left hsub) (show p.L ≤ 2 ^ 64 by omega)
+      obtain rfl := List.mem_singleton.mp hq; exact (sK.sub_left Fs).symm.sub_left hsub) (show p.L ≤ 2 ^ 64 by omega_using [hv])
   have eIn : Spec.Rsa.bytesAt (t.mem.writeW (low o + BitVec.ofNat 64 192) v) (p.stp.setWidth 64 + 48) 8 = p.eB := by
     rw [← hst.e]
     exact bytes_keep (R := ⟨p.stp.setWidth 64 + 48, 8⟩) fe (fun q hq => by
@@ -834,7 +834,7 @@ theorem exhausted_ct : RelCT isa (Two MidCT) exhaustedGen fun _ _ => True := by
   · exact two_map id (fun _ _ ⟨⟨⟨o, u, st, g, _⟩, _⟩, _⟩ => ⟨o, u, st, g⟩) fail3_ct
   · refine two_map id (fun q w ⟨⟨⟨o, u, st, g, hax, hl⟩, he⟩, hf⟩ => ⟨o, u, st, g, hax, ?_⟩) decNext_ct
     have := ev_false he hf
-    omega
+    omega_using [hl, this]
 
 /-! ## After the key -/
 
@@ -903,7 +903,7 @@ theorem accepted_ct (key : KeyImpl) :
         cases ho : (rOf q.inputs o q.used ⟨left, .q pB, remaining⟩).outcome with
         | entropy k a => rw [← ha.status, rOf_status, ho] at h1; cases h1
         | exhausted => rw [← ha.status, rOf_status, ho] at h1; cases h1
-        | accepted c => exact ⟨o, _, _, c, pB, u, ha, hm, ho, by rw [ha.cand]; omega, rfl, g, hmem⟩
+        | accepted c => exact ⟨o, _, _, c, pB, u, ha, hm, ho, by rw [ha.cand]; omega_using [h0], rfl, g, hmem⟩
     refine RelCT.seq (two_post (Ψ := AfterKCT) (two_map id (fun q x h => ?_) (key_run_ct key)) fun q x h => ?_)
       after_key_ct
     · have hc := hk q x h
@@ -944,9 +944,9 @@ theorem classify_ct (key : KeyImpl) : RelCT isa (Two AfterCT) (classify key.call
         have hs := status_cases (rOf q.inputs o q.used st)
         rw [ha.status] at hs
         have hu32 : (rOf q.inputs o q.used st).used < 2 ^ 32 := by
-          have := hm.frame.used_le; have := hm.frame.input.randLen_lt; omega
+          have := hm.frame.used_le; have := hm.frame.input.randLen_lt; omega_arith
         exact WP.mono (cmp_ok (r := .ecx) rfl 0) fun v ⟨⟨he4, hmem⟩, k, sy⟩ =>
-          ⟨⟨o, st, ha, hm.same k sy hmem⟩, by omega, by
+          ⟨⟨o, st, ha, hm.same k sy hmem⟩, by omega_using [h0, h3, hs], by
             rw [he4, hm.ecx, show (0 : BitVec 32) = BitVec.ofNat 32 0 from rfl,
               beq_nat (BitVec.toNat_ofNat _ _ ▸ Nat.mod_eq_of_lt hu32) (by decide), ha.cand]⟩
       refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.trans h₂.2.2.symm) ?_ ?_
@@ -1010,14 +1010,14 @@ theorem next_measure {q : GenPoint} {t : State} (hc : q.continues) (h : GenCTL q
   rcases hc with ⟨h3, hl2⟩ | ⟨h1, hc0, -⟩
   · simp only [h3, ↓reduceIte] at hlt ⊢
     have hmul : (q.inputs.randLen - (q.used + q.cand)) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
-    omega
-  · have h3 : ¬q.status = 3 := by omega
+      Nat.mul_le_mul_right _ (by omega_using [])
+    omega_using [hl2]
+  · have h3 : ¬q.status = 3 := by omega_using [h1]
     simp only [h3, ↓reduceIte] at hlt ⊢
     have hmul : (q.inputs.randLen - (q.used + q.cand) + 1) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
+      Nat.mul_le_mul_right _ (by omega_using [hle, hc0])
     rw [Nat.add_mul, Nat.one_mul] at hmul
-    omega
+    omega_using [hle, hc0]
 
 /-- Two loop states at a point of measure `n`. -/
 def LoopPair (n : Nat) (s t : State) : Prop := ∃ q : GenPoint, n = q.measure ∧ GenCTL q s ∧ GenCTL q t
@@ -1112,7 +1112,7 @@ theorem clearHiB_ok {q : GenPoint} {t : State} (h : ClrF q t) :
   simp only [four, param_eq, pushWords, Nat.reduceMul, Nat.reduceAdd, List.cons_append, List.nil_append]
   xrun [State.ea, at_, hf.arg_ea (i := 0) (d := 20) rfl, hf.arg_in (i := 0) (by decide),
     hf.arg_val (i := 0) (by decide), hf.ebp, four_val]
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 4 * q.inputs.L + q.inputs.L = 5 * q.inputs.L by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 4 * q.inputs.L + q.inputs.L = 5 * q.inputs.L by omega_using []]
 
 theorem clrF_pins : Pins ClrF [.esp, .ebp] :=
   fun q s₁ s₂ ⟨o₁, st₁, g₁⟩ ⟨o₂, st₂, g₂⟩ => anyFrame_pins q s₁ s₂ ⟨o₁, 0, st₁, g₁⟩ ⟨o₂, 0, st₂, g₂⟩
@@ -1213,13 +1213,13 @@ theorem start_point (q : GenPoint) (t : State) (h : ClrCT q t) : WP isa clearAro
       subst hph'
       rw [hm]
       have hf := pushed_frame (rs := pushRegs) (s := o) (by decide)
-        (by simp only [List.length_cons, List.length_nil]; omega)
+        (by simp only [List.length_cons, List.length_nil]; omega_using [h1])
       have hk : Region.Sub ⟨(genOfState o).slot 4, (genOfState o).L⟩ (kR o) := by
-        rw [hp.kR_eq]; exact Offset.sub_base _ (by omega)
+        rw [hp.kR_eq]; exact Offset.sub_base _ (by omega_using [])
       exact bytes_keep (R := ⟨(genOfState o).slot 4, (genOfState o).L⟩) hf (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
         exact (A.lowK.symm.sub_left hk).sub_right (by rw [hp.low_eq]; exact below_sub (by decide) A.stackLow))
-        (show (genOfState o).L ≤ 2 ^ 64 by omega)
+        (show (genOfState o).L ≤ 2 ^ 64 by omega_using [hv])
   show word u.mem (arg o 7) 24 = word o.mem (arg o 7) 24
   rw [word_keep fr fun r hr => ?_, hm]
   · exact hp.word_pushed (d := 24) (by decide)
@@ -1335,9 +1335,9 @@ theorem search_stack (v : RoundImpl) : stackUse (Search.searchCode v) ≤ 216 :=
       Impl.RsaKeyGen.X86.Search.classify, Impl.RsaKeyGen.X86.Search.reject, Impl.RsaKeyGen.X86.Search.short,
       Impl.RsaKeyGen.X86.Search.exhausted, Impl.RsaKeyGen.X86.Search.zeroOut, Impl.RsaKeyGen.X86.Search.callWords,
       stackUse, frameBytes, Nat.max_le]
-    omega
+    omega_using [h]
   show stackUse (Impl.RsaKeyGen.X86.Search.body (Search.Cand.ofRound v).call) + 16 ≤ 216
-  omega
+  omega_using [hb]
 
 /-- The prime search calling the shared round `v`. -/
 def srchOf (v : RoundImpl) : Srch where
@@ -1409,7 +1409,7 @@ def satState : State where
   syms _ := 0x30000
 
 theorem sat_arguments (i : Nat) (index : i < 8) : arg satState i = satArgument i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem sat_single_held {m : Mem} {f : String → Addr} {name : String} {words : List (BitVec 64)}
@@ -1441,17 +1441,17 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
   have address : ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat =
       65532 + 8 * i + j := by
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using [small, bound]
   have far : ∀ c : Addr, c.toNat < 0x10000 →
       0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j ≠ c := by
     intro c hc e
     have := congrArg BitVec.toNat e
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at this
-    omega
+    omega_using [small, bound, hc, this]
   change (if _ then _ else _) = _
   rw [ite_eq_right_of_eq_false _ _ (eq_false fun inside => by
       change ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat < 32 at inside
-      rw [address] at inside; omega),
+      rw [address] at inside; omega_using [inside]),
     ite_eq_right_of_eq_false _ _ (eq_false (far 0x6008 (by decide))),
     ite_eq_right_of_eq_false _ _ (eq_false (far 0x6010 (by decide))),
     ite_eq_right_of_eq_false _ _ (eq_false (far 0x6012 (by decide)))]

@@ -39,7 +39,7 @@ theorem StaticTable.apart_write {S : Nat} {name : String} {words : List (BitVec 
   apply h.writable r hr a ha
   apply hp.byte
   change (a-p).toNat+1≤n at hb
-  omega
+  omega_using [hb]
 
 /-- A caller frame preserves roots, including across calls that use stack
 space. Symbol equality is explicit rather than inferred from register ABI. -/
@@ -50,7 +50,7 @@ theorem StaticTable.step {S : Nat} {name : String} {words : List (BitVec 64)}
   refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hp.frame.readW (r := ⟨s.syms name,3904⟩)
-      (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)]
     · exact h.held i hi
     · intro r hr
       rcases List.mem_append.mp hr with hr | hr

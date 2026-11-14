@@ -35,7 +35,7 @@ theorem WorkspaceFrame.cover {g : Geometry} {rs rs' : List (Nat × Nat)} {m m' :
   intro r mem
   obtain ⟨R, known, lower, upper⟩ := included r mem
   have := outside R known
-  omega
+  omega_using [lower, upper, this]
 
 theorem WorkspaceFrame.of_outs {g : Geometry} {rs : List (Nat × Nat)} {m m' : Mem}
     (nowrap : g.W.toNat + g.L ≤ 2 ^ 32) (a : Outs g.W rs m m') :
@@ -43,7 +43,7 @@ theorem WorkspaceFrame.of_outs {g : Geometry} {rs : List (Nat × Nat)} {m m' : M
   intro i hi hr
   apply a
   intro r mem
-  rw [ofs_off0 g.W (by omega)]
+  rw [ofs_off0 g.W (by omega_using [nowrap, hi])]
   exact hr r mem
 
 theorem WorkspaceFrame.read32 {g : Geometry} {rs : List (Nat × Nat)} {m m' : Mem}
@@ -56,10 +56,10 @@ theorem WorkspaceFrame.read32 {g : Geometry} {rs : List (Nat × Nat)} {m m' : Me
     unfold off
     rw [BitVec.ofNat_add, BitVec.add_assoc]
   rw [step]
-  apply a (d + i) (by omega)
+  apply a (d + i) (by omega_using [fit, hi])
   intro r mem
   have := apart r mem
-  omega
+  omega_using [hi, this]
 
 theorem WorkspaceFrame.read64 {g : Geometry} {rs : List (Nat × Nat)} {m m' : Mem}
     (a : WorkspaceFrame g rs m m') {d : Nat} (fit : d + 8 ≤ g.L)
@@ -71,10 +71,10 @@ theorem WorkspaceFrame.read64 {g : Geometry} {rs : List (Nat × Nat)} {m m' : Me
     unfold off
     rw [BitVec.ofNat_add, BitVec.add_assoc]
   rw [step]
-  apply a (d + i) (by omega)
+  apply a (d + i) (by omega_using [fit, hi])
   intro r mem
   have := apart r mem
-  omega
+  omega_using [hi, this]
 
 theorem WorkspaceFrame.val32 {g : Geometry} {rs : List (Nat × Nat)} {m m' : Mem}
     (a : WorkspaceFrame g rs m m') {d n : Nat} (fit : d + 4 * n ≤ g.L)
@@ -83,9 +83,9 @@ theorem WorkspaceFrame.val32 {g : Geometry} {rs : List (Nat × Nat)} {m m' : Mem
   apply val32_congr
   intro i hi
   apply congrArg BitVec.toNat
-  apply a.read32 (by omega)
+  apply a.read32 (by omega_using [fit, hi])
   intro r mem
   have := apart r mem
-  omega
+  omega_using [hi, this]
 
 end VG.Proof.MillerRabin.X86

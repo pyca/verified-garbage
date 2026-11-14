@@ -26,14 +26,14 @@ open VG.Spec.Sha3 (bytesAt)
 
 theorem w16_off (p : Addr) (o j : Nat) :
     p + BitVec.ofNat 64 o + BitVec.ofNat 64 (32 * 16 * j) = p + BitVec.ofNat 64 (o + 512 * j) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 32 * 16 * j = 512 * j by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 32 * 16 * j = 512 * j by omega_using []]
 
 /-- The matrix of `u16`s from `aP`, from its entries. -/
 theorem matAtW_eq {k : Nat} {m : Mem} {aP : Addr} {a : Nat → Nat → Poly}
     (hA : ∀ i < k, ∀ j < k, polyAtW 16 m (aP + BitVec.ofNat 64 (512 * (k * i + j))) = a i j) :
     matAtW 16 m aP k = matrix k a := by
   refine List.map_congr_left fun i hi => List.map_congr_left fun j hj => ?_
-  rw [w16_off, show 32 * 16 * (k * i) + 512 * j = 512 * (k * i + j) by omega]
+  rw [w16_off, show 32 * 16 * (k * i) + 512 * j = 512 * (k * i + j) by omega_using []]
   exact hA i (List.mem_range.mp hi) j (List.mem_range.mp hj)
 
 /-- What `vg_mlkem*_kpke_keygen` writes, as `K-PKE.KeyGen` states it: `t̂` and `ŝ`, encoded. -/
@@ -47,12 +47,12 @@ theorem kgCore_eq {L : Kem} {m : Mem} {aP se : Addr} {a : Nat → Nat → Poly} 
     simp only [sHatW, vecAtW, List.map_map]
     refine List.map_congr_left fun j hj => ?_
     simp only [Function.comp, KPke.kgS]
-    rw [show 32 * 16 * j = 512 * j by omega, hS j (by have := List.mem_range.mp hj; omega)]
+    rw [show 32 * 16 * j = 512 * j by omega_using [], hS j (by have := List.mem_range.mp hj; omega_using [this])]
   have eE : eHatW m se L.k = (List.range L.k).map (KPke.kgE L.p d) := by
     simp only [eHatW, vecAtW, List.map_map]
     refine List.map_congr_left fun j hj => ?_
     simp only [Function.comp, KPke.kgE]
-    rw [w16_off, ← Nat.mul_add, hS _ (by have := List.mem_range.mp hj; omega)]
+    rw [w16_off, ← Nat.mul_add, hS _ (by have := List.mem_range.mp hj; omega_using [this])]
   rw [matAtW_eq hA, eS, eE, KPke.mulMatVec_matrix, KPke.addVec_map, KPke.catK_eq, KPke.catK_eq]
   simp only [encodeVec, List.flatMap_map]
   exact ⟨rfl, trivial⟩
@@ -132,7 +132,7 @@ structure KRest16 (n : Nat) (σ s : State) : Prop where
 theorem sc_w16 (s : State) (o e : Nat) :
     pa s (sc o) + BitVec.ofNat 64 (32 * 16 * e) = pa s (sc (o + 512 * e)) := by
   simp only [pa]
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 32 * 16 * e = 512 * e by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 32 * 16 * e = 512 * e by omega_using []]
 
 theorem sc_512 (s : State) (o e : Nat) : pa s (sc o) + BitVec.ofNat 64 (512 * e) = pa s (sc (o + 512 * e)) := by
   simp only [pa]

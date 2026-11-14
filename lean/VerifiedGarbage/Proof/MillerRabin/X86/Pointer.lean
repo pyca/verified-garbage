@@ -27,28 +27,28 @@ theorem ptr_ok {s : State} {W : Addr} {L w j : Nat} (hw : Ws s W L)
   unfold ptr
   split
   · rename_i short
-    refine wp_movS (readSrc_ptr hw base (d := 64 + 8 * j) (by omega)) fun t T _ => WP.block_nil ?_
+    refine wp_movS (readSrc_ptr hw base (d := 64 + 8 * j) (by omega_using [headerFit, short])) fun t T _ => WP.block_nil ?_
     refine ⟨?_, T.mem, T.keeps.mono (by simp)⟩
     rw [PtrAt, T.gpr, Nat.zero_add]
     exact pointers j short
   · rename_i long
     simp only [List.cons_append, List.nil_append]
-    refine wp_movS (readSrc_ptr hw base (d := 224) (by omega)) fun a A _ => ?_
+    refine wp_movS (readSrc_ptr hw base (d := 224) (by omega_using [headerFit])) fun a A _ => ?_
     refine wp_movS rfl fun b B _ => ?_
     have value : (b.gpr .edx).toNat = 8 * (w + 2) := by
       rw [B.other .edx notTmp, A.gpr, Nat.zero_add]; exact stride
     refine WP.block_append (WP.mono (scaleIndex_ok b r .edx notTmp j index B.gpr) fun c ⟨R, M, K⟩ => ?_)
     refine wp_addS rfl fun d D _ => wp_addS rfl fun t T _ => WP.block_nil ?_
     have baseVal : (s.gpr .edi).toNat = W.toNat := by
-      rw [base, Nat.add_zero, Nat.mod_eq_of_lt (by omega)]
+      rw [base, Nat.add_zero, Nat.mod_eq_of_lt (by omega_using [arrayFit, nowrap])]
     have ediC : c.gpr .edi = s.gpr .edi := by
       rw [K.1 .edi (by simpa using notBase), B.other .edi notBase, A.other .edi (by decide)]
     refine ⟨?_, T.mem.trans (D.mem.trans (M.trans (B.mem.trans A.mem))), ?_⟩
     · rw [PtrAt, T.gpr, D.gpr, R, ediC, BitVec.toNat_add, BitVec.toNat_add,
         BitVec.toNat_mul, BitVec.toNat_ofNat, show (256 : BitVec 32).toNat = 256 from rfl, value, baseVal]
-      rw [Nat.mod_eq_of_lt (a := j) (by omega)]
+      rw [Nat.mod_eq_of_lt (a := j) (by omega_using [index])]
       unfold arrAt hdrBytes at arrayFit ⊢
-      omega
+      omega_using []
     · exact (((A.keeps.mono (by simp)).widen B.keeps (by simp)).trans (K.mono (by simp))).trans
         ((D.keeps.mono (by simp)).trans (T.keeps.mono (by simp)))
 

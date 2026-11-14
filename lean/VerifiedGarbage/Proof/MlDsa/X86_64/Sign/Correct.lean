@@ -33,7 +33,7 @@ section
 variable {p : Params} {σ : State}
 
 theorem seedE_ij {i j : Nat} (hj : j < p.ℓ) : seedE p σ (p.ℓ * i + j) = aSeed (rhoOf p σ) i j := by
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_using [hj]
   have e1 : (p.ℓ * i + j) / p.ℓ = i := by
     rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
   have e2 : (p.ℓ * i + j) % p.ℓ = j := by
@@ -42,7 +42,7 @@ theorem seedE_ij {i j : Nat} (hj : j < p.ℓ) : seedE p σ (p.ℓ * i + j) = aSe
 
 theorem ij_lt {i j : Nat} (hi : i < p.k) (hj : j < p.ℓ) : p.ℓ * i + j < p.k * p.ℓ := by
   have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
-  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega
+  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega_using [hj, this]
 
 theorem expandA_max (hok : ∀ e < p.k * p.ℓ, (rejNTTPoly maxBounds.rejNTT (seedE p σ e)).isSome) :
     expandA p maxBounds (rhoOf p σ) = some (amat p (Am p σ)) :=
@@ -51,7 +51,7 @@ theorem expandA_max (hok : ∀ e < p.k * p.ℓ, (rejNTTPoly maxBounds.rejNTT (se
 theorem signMu_min_A (h : ∃ e < p.k * p.ℓ, rejNTTPoly minBounds.rejNTT (seedE p σ e) = none) :
     signMu p minBounds (skOf p σ) (muOf σ) (rndOf σ) = none := by
   obtain ⟨e, he, hn⟩ := h
-  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega
+  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega_using [he]
   exact signMu_none_A (expandA_none ⟨e / p.ℓ, (Nat.div_lt_iff_lt_mul hl).mpr he, e % p.ℓ, Nat.mod_lt _ hl, hn⟩)
 
 theorem signMu_min_L (hA : expandA p maxBounds (rhoOf p σ) = some (amat p (Am p σ)))
@@ -70,7 +70,7 @@ theorem signMu_max (hp : ParamsOk p) (hA : expandA p maxBounds (rhoOf p σ) = so
     (hpass : PassV p σ (p.ℓ * t)) :
     signMu p maxBounds (skOf p σ) (muOf σ) (rndOf σ) = some (sigV p σ (p.ℓ * t)) :=
   signMu_some hA (signLoop_pass _ _ _ _ _ _ _ hr (show t < maxBounds.sign by
-    show t < 1000; omega) (iter_pass hp hs hpass))
+    show t < 1000; omega_using [ht]) (iter_pass hp hs hpass))
 
 end
 
@@ -159,9 +159,9 @@ theorem entry_st {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3
   obtain ⟨_, hwr, d1, d2, d3, d4, d5, d6, d7, _, _, _, _, _, _, _, _, _, _, n1, n2, n3, n4, n5, _⟩ := hpre'
   have hsk := skLen_le_skL p σ
   exact ⟨ht, sgLay hpre hP.hD' hsz ht,
-    entry_bytes hf (d2.sub_left (Region.sub_prefix hsk)) (by omega) (ht.regs (.rbp, .rdi) (by decide)),
-    entry_bytes hf d4 (by omega) (ht.regs (.r12, .rsi) (by decide)),
-    entry_bytes hf d6 (by omega) (ht.regs (.r13, .rdx) (by decide)),
+    entry_bytes hf (d2.sub_left (Region.sub_prefix hsk)) (by omega_using [hsz]) (ht.regs (.rbp, .rdi) (by decide)),
+    entry_bytes hf d4 (by omega_using []) (ht.regs (.r12, .rsi) (by decide)),
+    entry_bytes hf d6 (by omega_using []) (ht.regs (.r13, .rdx) (by decide)),
     Frame.sub hf fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_left _ (by rw [hwr]; simp), fun _ h => h⟩⟩

@@ -507,7 +507,7 @@ theorem apart_jointW (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) (
 /-- The tables of bits are apart from what the joint multiplication writes. -/
 theorem tbl_apart_jointW (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (j t : Nat) :
     ∀ w ∈ jointW (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c), bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
-  have hc7 : c.n < 10 := by omega
+  have hc7 : c.n < 10 := by omega_using [h6]
   rw [jointW_eq]
   refine apart_append (apart_append (tbl_apart_slW hc7 (by decide) j t) fun w hw => ?_)
     (tbl_apart_slW hc7 (by decide) j t)
@@ -524,11 +524,11 @@ theorem fixedOk_jointW (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) : FixedOk c (jointW (Im
 
 theorem jointW_le (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) : ∀ w ∈ jointW (Impl.Ecdsa.Verify.PPC64LE.Cfg.jointCfg c), w.1 + w.2 ≤ size := by
   rw [jointW_eq]
-  refine le_append (le_append (slW_le (by omega) (by decide)) fun w hw => ?_) (slW_le (by omega) (by decide))
+  refine le_append (le_append (slW_le (by omega_using [h6]) (by decide)) fun w hw => ?_) (slW_le (by omega_using [h6]) (by decide))
   rw [List.mem_singleton.mp hw]
   obtain ⟨l1, l2, l3, l4, l5, l6, l7, l8, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
   show _ ≤ 8192
-  dsimp only; omega
+  dsimp only; omega_using [l1, l2, l4, l5, l6, l7, l8]
 
 /-- `[u]G + [v]Q`, into `R`, by one chain of doublings: the tables of the
 bits of `u` and `v`, then `Joint.joint_ok`. -/
@@ -555,7 +555,7 @@ theorem jointPts_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) (hC : Law c
   have hb3 : bitsAt c.n 3 + 64 * c.n ≤ size := by rw [bitsAt_eq]; show _ ≤ 8192; omega_arith
   have hsV := sl_le c h7 (i := V) (by decide)
   refine WP.seq (WP.mono (bits_ok K₁.ws.ws K₁.ws.at3 (size := size) (src := c.sl V) (dst := bitsAt c.n 3) h0
-    (by show _ ≤ 8192; omega) hb3 (Or.inl (sl_below_bits c h7 (by decide) 3 0))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
+    (by show _ ≤ 8192; omega_using [hsV]) hb3 (Or.inl (sl_below_bits c h7 (by decide) 3 0))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
   have K₂ := K₁.step h7 (k₂.rk (rs' := bitsClob)) (hU := O₂.unch) (hW := fixedOk_tbl h7 3)
     (hWs := fun w hw => by rw [List.mem_singleton.mp hw]; exact hb3)
   have v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch O₁.unch h7 hn hi (apart_tbl h7 hi 0)

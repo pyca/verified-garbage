@@ -64,28 +64,28 @@ theorem hlen {K : Nat} {s : State} (hp : PreR K s) :
     0 < (s.gpr .x1).toNat ∧ (s.gpr .x1).toNat ≤ (s.gpr .x3).toNat := by
   obtain ⟨h, -, e⟩ := hp.hh
   have := hp.k1
-  rw [e]; cases h <;> simp [Spec.RsaPkcs1Sig.Hash.len] <;> omega
+  rw [e]; cases h <;> simp [Spec.RsaPkcs1Sig.Hash.len] <;> omega_using [this]
 
 theorem kb_toNat {K : Nat} {s : State} (hp : PreR K s) :
     (kb K s).toNat + stk K = s.sp.toNat ∧ s.sp.toNat + 24 ≤ 2 ^ 64 := by
   have := hp.sp1; have := hp.sp2
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem fb_toNat {K : Nat} {s : State} (hp : PreR K s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := hp.sp1
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega_using [this]
 
 /-- The stack arguments are readable. -/
 theorem arg_in {K : Nat} {s : State} (hp : PreR K s) {rs : List Region} (hrd : Covers s.rd rs) {j : Nat}
     (hj : j < 3) : InRegions rs (stackArgAddr s j) 8 :=
   hrd _ _ <| hp.hrd _ _ ⟨aR s, by simp, by
-    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 /-- A stack argument, in memory changed only in the frame. -/
 theorem arg_frame {K : Nat} {s : State} (hp : PreR K s) {m : Mem} (h : Frame [⟨fb s, frameBytes⟩] s.mem m)
     {j : Nat} (hj : j < 3) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
-  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega))
+  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
     (keep_of_frame hp.ka) (by decide)
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Rec

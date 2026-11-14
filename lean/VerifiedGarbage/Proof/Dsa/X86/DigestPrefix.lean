@@ -25,7 +25,7 @@ theorem digestPrefix_raw {s : State} {base : Addr} {size : Nat}
           ((shapeWord s base 48 &&& 28) ||| (shapeWord s base 44 &&& 20) ||| (shapeWord s base 52 &&& 32)).toNat ∧
       Keeps [.eax, .ebx, .edx] s t ∧ Outside base (Layout.field .digestPrefixLen) 4 s.mem t.mem := by
   unfold Shape.digestPrefix
-  refine WP.block_append (WP.mono (digestWidth_ok hs (by omega)) fun u ⟨Vu, Ku, Mu⟩ => ?_)
+  refine WP.block_append (WP.mono (digestWidth_ok hs (by omega_using [hz])) fun u ⟨Vu, Ku, Mu⟩ => ?_)
   refine WP.mono (digestClamp_ok (hs.of_keeps Ku (by decide)) hz) fun t ⟨Vt, Kt, Ot⟩ => ?_
   refine ⟨?_, (Ku.mono (by decide)).trans Kt, Mu ▸ Ot⟩
   rw [Vt, Vu]

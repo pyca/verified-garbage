@@ -43,22 +43,22 @@ theorem sdepth_le_fdepth : ∀ c : Prog isa, pushFrames c = true → sdepth c �
   | .seq a b, h => by
     simp only [pushFrames, Bool.and_eq_true] at h
     have := sdepth_le_fdepth a h.1; have := sdepth_le_fdepth b h.2
-    simp only [sdepth, Code.fdepth]; omega
+    simp only [sdepth, Code.fdepth]; omega_arith
   | .ite _ t e, h => by
     simp only [pushFrames, Bool.and_eq_true] at h
     have := sdepth_le_fdepth t h.1; have := sdepth_le_fdepth e h.2
-    simp only [sdepth, Code.fdepth]; omega
+    simp only [sdepth, Code.fdepth]; omega_arith
   | .loop b _, h => by simp only [pushFrames] at h; simpa [sdepth, Code.fdepth] using sdepth_le_fdepth b h
   | .call _ b, h => by simp only [pushFrames] at h; simpa [sdepth, Code.fdepth] using sdepth_le_fdepth b h
   | .frame i b _, h => by
     simp only [pushFrames, Bool.and_eq_true] at h
     have := sdepth_le_fdepth b h.2
     cases i <;> simp only [Instr.isPush, Bool.false_eq_true, false_and] at h
-    simp only [sdepth, Instr.frameBytes, Code.fdepth]; omega
+    simp only [sdepth, Instr.frameBytes, Code.fdepth]; omega_using [this]
   | .icall _ _ b n, h => by
     simp only [pushFrames, Bool.and_eq_true] at h
     have := sdepth_le_fdepth b h.1; have := sdepth_le_fdepth n h.2
-    simp only [sdepth, Code.fdepth]; omega
+    simp only [sdepth, Code.fdepth]; omega_arith
 
 /-- The stack a frame's body uses is below the frame. -/
 theorem below_body' (sp : Addr) (a n : Nat) :
@@ -67,7 +67,7 @@ theorem below_body' (sp : Addr) (a n : Nat) :
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 (n + a)) = x - (sp - BitVec.ofNat 64 a - BitVec.ofNat 64 n) by
     rw [BitVec.ofNat_add]; bv_omega]
-  omega
+  omega_using [hx]
 
 /-- What a frame's push changes: the stack pointer moves down by the frame's
 bytes, memory changes only in them, and its region, in them, is added at the
@@ -86,17 +86,17 @@ theorem push_any {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
         (below s.sp 48).Contains (s.sp - 48 + BitVec.ofNat 64 off) 8 := fun off ho => by
       simp only [Region.Contains]
       rw [show s.sp - 48 + BitVec.ofNat 64 off - (s.sp - BitVec.ofNat 64 48) = BitVec.ofNat 64 off by
-        bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+        bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho])]
+      omega_using [ho]
     refine ⟨rfl, by decide, ?_, _, rfl, fun x hx => ?_⟩
     · refine Frame.write (Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ ?_)
-        (List.mem_singleton_self _) _ (c 32 (by omega))
-      simpa using c 0 (by omega)
+        (List.mem_singleton_self _) _ (c 32 (by omega_using []))
+      simpa using c 0 (by omega_using [])
     · simp only [Region.Contains] at hx ⊢
       rw [show x - (s.sp - BitVec.ofNat 64 48) = (x - (s.sp - 48 + 32)) + BitVec.ofNat 64 32 by
-        bv_omega, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 32) (by omega),
-        Nat.mod_eq_of_lt (by omega)]
-      omega
+        bv_omega, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 32) (by omega_using []),
+        Nat.mod_eq_of_lt (by omega_using [hx])]
+      omega_using [hx]
   | alloc n =>
     simp only [isa, push] at h
     split at h <;> cases h
@@ -107,12 +107,12 @@ theorem push_any {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     · refine Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ ?_
       simp only [Region.Contains]
       rw [BitVec.sub_self, BitVec.toNat_zero]
-      omega
+      omega_using [h1]
     · simp only [Region.Contains] at hx ⊢
       rw [show x - (s.sp - BitVec.ofNat 64 n) = (x - (s.sp - BitVec.ofNat 64 n + 32)) +
           BitVec.ofNat 64 32 by bv_omega, BitVec.toNat_add, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (a := 32) (by omega), Nat.mod_eq_of_lt (by omega)]
-      omega
+        Nat.mod_eq_of_lt (a := 32) (by omega_using []), Nat.mod_eq_of_lt (by omega_using [h2, hx])]
+      omega_using [hx]
   | _ => simp [isa, push] at h
 
 /-- Code changes memory only within the regions it may write and within the
@@ -124,28 +124,28 @@ theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec is
     simp only [sdepth] at hd ⊢
     obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
     rw [ret_eq hr]
-    have := ih (by omega)
+    have := ih (by omega_using [hd])
     rw [w₁, p₁, m₁] at this
-    exact Frame.below_mono this (by omega) (by omega)
+    exact Frame.below_mono this (by omega_using []) (by omega_using [hd])
   | icallNext _ _ _ ih =>
     simp only [sdepth] at hd ⊢
-    exact Frame.below_mono (ih (by simp only [sdepth]; omega)) (by simp only [sdepth]; omega) (by omega)
+    exact Frame.below_mono (ih (by simp only [sdepth]; omega_using [hd])) (by simp only [sdepth]; omega_using []) (by omega_using [hd])
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [sdepth] at hd ⊢
-    have f₁ := Frame.below_mono (ih₁ (by omega)) (b := max (sdepth c₁) (sdepth c₂)) (by omega)
-      (by omega)
-    have f₂ := Frame.below_mono (ih₂ (by omega)) (b := max (sdepth c₁) (sdepth c₂)) (by omega)
-      (by omega)
+    have f₁ := Frame.below_mono (ih₁ (by omega_using [hd])) (b := max (sdepth c₁) (sdepth c₂)) (by omega_using [])
+      (by omega_using [hd])
+    have f₂ := Frame.below_mono (ih₂ (by omega_using [hd])) (b := max (sdepth c₁) (sdepth c₂)) (by omega_using [])
+      (by omega_using [hd])
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
     rw [w₁, p₁] at f₂
     exact Frame.trans f₁ f₂
   | iteT _ _ ih =>
     simp only [sdepth] at hd ⊢
-    exact Frame.below_mono (ih (by omega)) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega_using [hd])) (by omega_using []) (by omega_using [hd])
   | iteF _ _ ih =>
     simp only [sdepth] at hd ⊢
-    exact Frame.below_mono (ih (by omega)) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega_using [hd])) (by omega_using []) (by omega_using [hd])
   | loopExit _ _ ih => exact ih hd
   | loopNext h₁ _ _ ih₁ ih₂ =>
     have f₂ := ih₂ hd
@@ -162,10 +162,10 @@ theorem Exec.frameAny {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec is
     simp only [sdepth] at hd ⊢
     obtain ⟨p₁, -, f₀, r, w₁, hr⟩ := push_any hp
     rw [pop_mem hq]
-    have f₁ := ih (by omega)
+    have f₁ := ih (by omega_using [hd])
     rw [w₁, p₁] at f₁
     have hsub : Region.Sub (below s₀.sp i.frameBytes) (below s₀.sp (i.frameBytes + sdepth b)) :=
-      below_sub (by omega) hd
+      below_sub (by omega_using []) hd
     refine Frame.trans (f₀.sub fun r' hr' => ?_) (Frame.sub f₁ fun r' hr' => ?_)
     · simp only [List.mem_singleton] at hr'; subst hr'
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hsub⟩
@@ -236,7 +236,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
     (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
     (hn : sdepth main + 48 < 2 ^ 64) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega))
+  refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
   · intro a n hi
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi

@@ -50,17 +50,17 @@ theorem prefixCopy_ok {q : ImportPublic} {s : State} {a i : Nat}
  (h : PrefixCopyReady q i a s) (array : a<8) (index : i<2) :
  WP isa copyWords s fun t =>ImportDataReady q t ∧ s.gpr .x0=t.gpr .x0 ∧
  t.gpr .x16=off q.ctx (24+8*q.workspace.w*i+8*q.workspace.w) := by
- have mulBound : q.workspace.w*i≤q.workspace.w := by simpa using Nat.mul_le_mul_left q.workspace.w (by omega : i≤1)
- have bytesBound : 8*q.workspace.w*i≤8*q.workspace.w := by simpa using Nat.mul_le_mul_left (8*q.workspace.w) (by omega : i≤1)
+ have mulBound : q.workspace.w*i≤q.workspace.w := by simpa using Nat.mul_le_mul_left q.workspace.w (by omega_using [index] : i≤1)
+ have bytesBound : 8*q.workspace.w*i≤8*q.workspace.w := by simpa using Nat.mul_le_mul_left (8*q.workspace.w) (by omega_using [index] : i≤1)
  obtain ⟨ready,ptr,dst,count⟩:=h
  obtain ⟨mi,good,_⟩:=ready.good
- refine WP.mono (copyFromContext_ok good q.room (by rw [q.words];have :=q.positive;omega)
-  (by rw [q.words];have :=q.size;omega) array ptr dst count
+ refine WP.mono (copyFromContext_ok good q.room (by rw [q.words];have :=q.positive;omega_using [this])
+  (by rw [q.words];have :=q.size;omega_using [this]) array ptr dst count
   (fun j hj =>by
-   have rd :=ready.readable (q.workspace.w*i+j) (by omega)
+   have rd :=ready.readable (q.workspace.w*i+j) (by omega_using [mulBound, hj])
    simpa only [Nat.mul_add,Nat.add_assoc,Nat.mul_assoc] using rd)
   (fun j hj =>by
-   have out :=ready.outside (8*q.workspace.w*i+j) (by omega)
+   have out :=ready.outside (8*q.workspace.w*i+j) (by omega_using [bytesBound, hj])
    simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using out)) ?_
  rintro t ⟨goodT,_,frame,ptrT,rest⟩
  exact ⟨ready.after_arrays goodT frame rest,(rest.gpr .x0 (by simp [mmRegs])).symm,ptrT⟩

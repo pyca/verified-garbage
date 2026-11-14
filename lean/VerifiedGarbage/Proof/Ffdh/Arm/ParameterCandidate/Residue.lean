@@ -129,14 +129,14 @@ private theorem residue3_accept {acc p : Nat} (bound : acc < 6)
     (acc ∈ [2, 5]) ↔ p % 24 = 11 := by
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   have criterion := residue24 (n := p)
-  omega
+  omega_using [bound, residue, low]
 
 private theorem residue5_accept {acc p : Nat} (bound : acc < 10)
     (residue : acc % 5 = p % 5) (odd : p % 2 = 1) :
     (acc ∈ [2, 3, 7, 8]) ↔ p % 10 = 3 ∨ p % 10 = 7 := by
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   have criterion := residue10 odd
-  omega
+  omega_using [bound, residue, odd]
 
 theorem residue2_ok {s : State} {dst : BitVec 32} {n : Nat} (h : ReadContext dst n s) :
     WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.residue2 s fun t =>
@@ -162,7 +162,7 @@ theorem residue2_ok {s : State} {dst : BitVec 32} {n : Nat} (h : ReadContext dst
       memT.trans memory, (rest.mono (by simp)).trans restT⟩
   · refine WP.ite false (by change some u.z = some false; rw [flag, decide_eq_false low]) (by intro h; cases h) ?_
     intro _
-    have reject : ¬ p % 24 = 11 := by have criterion := residue24 (n := p); omega
+    have reject : ¬ p % 24 = 11 := by have criterion := residue24 (n := p); omega_using [low]
     refine WP.block_nil ⟨?_, memory, rest.mono (by simp)⟩
     change u.z = decide (p % 24 = 11)
     rw [flag, decide_eq_false low, decide_eq_false reject]

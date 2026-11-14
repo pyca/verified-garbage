@@ -87,14 +87,14 @@ theorem witnessAt {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stac
   have product := mulY Hm montName 4
   change max 0 (max (max (max 0 (max 0 0)) (max 0 (max (max (stackUse (VG.Impl.MillerRabin.X86.mulY montName mont 4)) 0)
     (max 0 (stackUse round + 4 + 8))))) 0) ≤ 108
-  omega
+  omega_using [Hr, product]
 
 theorem millerRabinWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (checks D k w : Nat) (montName roundName : String) :
     stackUse (MillerRabinLoop.codeWith checks D k w montName mont roundName round) ≤ 108 := by
   have bound := witnessAt Hm Hr D k w montName roundName
   change max 0 (max 0 (max (max 0 (stackUse (WitnessStep.codeAt D k w montName mont roundName round))) 0)) ≤ 108
-  omega
+  omega_using [bound]
 
 theorem coreWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (e checks D k w : Nat) (montName roundName : String) :
@@ -103,14 +103,14 @@ theorem coreWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stack
   have witnesses := millerRabinWith Hm Hr checks D k w montName roundName
   change max (stackUse (Prepare.codeAt e w montName mont))
     (stackUse (MillerRabinLoop.codeWith checks D k w montName mont roundName round)) ≤ 108
-  omega
+  omega_using [setup, witnesses]
 
 theorem testWith {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (e checks D k w : Nat) (montName roundName : String) :
     stackUse (CandidateTest.codeWith e checks D k w montName mont roundName round) ≤ 136 := by
   have bound := coreWith Hm Hr e checks D k w montName roundName
   change max 0 (max 0 (stackUse (CandidateTest.coreWith e checks D k w montName mont roundName round)) + 28) ≤ 136
-  omega
+  omega_using [bound]
 
 theorem exponentRt : stackUse ExponentRt.code = 20 := rfl
 
@@ -125,7 +125,7 @@ theorem r2Rt {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
   change max (max (stackUse PrepareRt.seed) (max (stackUse PrepareRt.doubles)
     (stackUse (VG.Impl.Rsa.X86.Keys.seqs (List.replicate 6 (VG.Impl.MillerRabin.X86.mulY montName mont 6))))))
     (stackUse (VG.Impl.MillerRabin.X86.copy 4 6)) ≤ 80
-  omega
+  omega_using [squares, seed, doubles, copy]
 
 theorem constantsRt {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
     stackUse (PrepareRt.constants montName mont) ≤ 80 := by
@@ -135,14 +135,14 @@ theorem constantsRt {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : St
   have subtract : stackUse PrepareRt.subtract = 20 := rfl
   change max (stackUse PrepareRt.one) (max (stackUse (VG.Impl.MillerRabin.X86.mulY montName mont 4))
     (max (stackUse (VG.Impl.MillerRabin.X86.copy 9 6)) (stackUse PrepareRt.subtract))) ≤ 80
-  omega
+  omega_using [product, one, copy, subtract]
 
 theorem prepareHead {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
     stackUse (Candidate.prepareHead montName mont) ≤ 80 := by
   have r2bound := r2Rt Hm montName
   have constantsBound := constantsRt Hm montName
   change max (stackUse (PrepareRt.r2 montName mont)) (stackUse (PrepareRt.constants montName mont)) ≤ 80
-  omega
+  omega_using [r2bound, constantsBound]
 
 theorem prepared {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
     stackUse (Candidate.prepared montName mont) ≤ 80 := by
@@ -151,7 +151,7 @@ theorem prepared {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : Strin
   change max (stackUse HeaderRt.prepare) (max (stackUse (Candidate.prepareHead montName mont))
     (stackUse MrExponentRt.code)) ≤ 80
   rw [mrExponent, header]
-  omega
+  omega_using [bound]
 
 theorem witnessRound {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (WitnessRt.round montName mont roundName round) ≤ 108 := by
@@ -159,20 +159,20 @@ theorem witnessRound {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : s
   have drawn : stackUse WitnessRt.drawn = 0 := rfl
   change max (stackUse WitnessRt.drawn) (max 0 (max (max (stackUse (VG.Impl.MillerRabin.X86.mulY montName mont 4)) 0)
     (max 0 (stackUse round + 4 + 8)))) ≤ 108
-  omega
+  omega_using [Hr, product, drawn]
 
 theorem witnesses {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (WitnessRt.code montName mont roundName round) ≤ 108 := by
   have bound := witnessRound Hm Hr montName roundName
   change max 0 (max 0 (max (max 0 (max 0 (max (stackUse (WitnessRt.round montName mont roundName round)) 0))) 0)) ≤ 108
-  omega
+  omega_using [bound]
 
 theorem testBody {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.testBody montName mont roundName round) ≤ 108 := by
   have head := prepared Hm montName
   have loop := witnesses Hm Hr montName roundName
   change max (stackUse (Candidate.prepared montName mont)) (stackUse (WitnessRt.code montName mont roundName round)) ≤ 108
-  omega
+  omega_using [head, loop]
 
 theorem tested {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.tested montName mont roundName round) ≤ 136 := by
@@ -181,7 +181,7 @@ theorem tested {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUs
   generalize Candidate.testBody montName mont roundName round = b at bound ⊢
   change max (max 0 (max 0 (stackUse b) + 28)) (stackUse (CandidateFinish.mrResult 0)) ≤ 136
   have result : stackUse (CandidateFinish.mrResult 0) = 0 := rfl
-  omega
+  omega_using [bound, result]
 
 theorem exponentCheck {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.exponentCheck montName mont roundName round) ≤ 136 := by
@@ -190,7 +190,7 @@ theorem exponentCheck {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : 
   generalize Candidate.tested montName mont roundName round = d at bound ⊢
   change max (stackUse ExponentRt.code) (max 0 (max 0 (max 0 (stackUse d)))) ≤ 136
   rw [exponentRt]
-  omega
+  omega_using [bound]
 
 theorem front : stackUse VG.Impl.RsaKeyGen.X86.FrontRt.code = 24 := rfl
 
@@ -201,7 +201,7 @@ theorem available {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stac
   generalize Candidate.exponentCheck montName mont roundName round = e at exponent ⊢
   change max (stackUse VG.Impl.RsaKeyGen.X86.FrontRt.code) (max 0 (max (stackUse e) 0)) ≤ 136
   rw [front]
-  omega
+  omega_using [exponent]
 
 theorem body {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.body montName mont roundName round) ≤ 136 := by
@@ -209,7 +209,7 @@ theorem body {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse 
   unfold Candidate.body
   generalize Candidate.available montName mont roundName round = a at bound ⊢
   change max 0 (max 0 (max 0 (max 0 (max 0 (stackUse a))))) ≤ 136
-  omega
+  omega_using [bound]
 
 theorem code {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.code montName mont roundName round) ≤ 152 := by
@@ -217,6 +217,6 @@ theorem code {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse 
   unfold Candidate.code
   generalize Candidate.body montName mont roundName round = b at bound ⊢
   change max (stackUse b) 0 + 16 ≤ 152
-  omega
+  omega_using [bound]
 
 end VG.Proof.RsaKeyGen.X86.CandidateStackUse

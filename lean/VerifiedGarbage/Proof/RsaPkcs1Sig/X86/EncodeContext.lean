@@ -42,6 +42,6 @@ theorem refuse_ok {s0 s : State} {x : BitVec 32} {k : Nat}
 theorem add11_toNat {n : Nat} (bound : n ≤ 83) :
     (BitVec.ofNat 32 n + 11).toNat = n + 11 := by
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (11 : BitVec 32).toNat = 11 from rfl]
-  omega
+  omega_using [bound]
 
 end VG.Proof.RsaPkcs1Sig.X86

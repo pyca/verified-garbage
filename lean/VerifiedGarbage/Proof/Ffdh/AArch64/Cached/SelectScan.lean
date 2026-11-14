@@ -110,7 +110,7 @@ theorem selectScanStep_ok {s0 t : State} {B table dst : Addr} {w v j : Nat}
    · subst j
      rw [env.source_word h.frame hv hi]
      simp only [Nat.lt_irrefl,ite_false,ite_true,BitVec.and_allOnes,BitVec.zero_or,Nat.lt_succ_self]
-   · have same : v<j+1 ↔ v<j := by omega
+   · have same : v<j+1 ↔ v<j := by omega_using [eq]
      simp only [eq,ite_false,BitVec.and_zero,BitVec.or_zero,same]
  · rw [eval_nonzero,counterU]
    change some (BitVec.ofNat 64 (j+1)-32#64 != 0#64)=some (decide (j+1<32))
@@ -132,9 +132,9 @@ theorem selectScan_ok (s : State) {B table dst : Addr} {w v : Nat}
    rintro u ⟨next,condition⟩
    by_cases more : j+1<32
    · right
-     refine ⟨?_,32-(j+1),by omega,j+1,rfl,more,next⟩
+     refine ⟨?_,32-(j+1),by omega_using [rem, hj],j+1,rfl,more,next⟩
      rw [condition,decide_eq_true more]
-   · have last : j+1=32 := by omega
+   · have last : j+1=32 := by omega_using [hj, more]
      left
      refine ⟨?_,next.env,?_,next.frame,next.keep⟩
      · rw [condition,decide_eq_false more]

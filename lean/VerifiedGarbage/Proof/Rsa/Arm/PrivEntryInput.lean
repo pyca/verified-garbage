@@ -41,7 +41,7 @@ theorem PrivEntryInput.enteredFrame {g : PrivGeometry} {bs : Fin 8 → List Byte
     (h : PrivEntryInput g bs s) : Frame [g.savedRegion] s.mem (entered s).mem := by
   have f := FrameStack.pushed_frameA
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (s := s) (by change 56 ≤ s.sp.toNat; have := h.stackFit; simp only [stackBytes] at this; omega)
+    (s := s) (by change 56 ≤ s.sp.toNat; have := h.stackFit; simp only [stackBytes] at this; omega_using [this])
   change Frame [⟨State.addr (pcPushed s).sp, 56⟩] s.mem (entered s).mem at f
   rw [h.savedAddr] at f
   exact f

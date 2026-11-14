@@ -97,11 +97,11 @@ theorem stateAt_write_lane {m : Mem} {p : Addr} {j : Nat} (hj : j + 8 ≤ 200) {
     by_cases c : j ≤ i ∧ i < j + 8
     · rw [ite_eq_left c, show p + BitVec.ofNat 64 i = p + BitVec.ofNat 64 j + BitVec.ofNat 64 (i - j) by
           rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' c.1],
-        writeW64_byte _ _ _ (by omega), hv _ (by omega), Nat.add_sub_cancel' c.1,
+        writeW64_byte _ _ _ (by omega_using [c]), hv _ (by omega_using [c]), Nat.add_sub_cancel' c.1,
         show p + BitVec.ofNat 64 j + BitVec.ofNat 64 (i - j) = p + BitVec.ofNat 64 i by
           rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' c.1]]
     · rw [ite_eq_right c, Mem.writeW, Mem.write_apply]
-      rw [Offset.sub_toNat' _ (by omega) (by omega)]
-      split <;> omega
+      rw [Offset.sub_toNat' _ (by omega_using [hj]) (by omega_using [hi])]
+      split <;> omega_arith
 
 end VG.Proof.Sha3.X86_64

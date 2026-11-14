@@ -28,14 +28,14 @@ theorem tile_ok {s : State} {B : Addr} {Z eA eT : Nat}
   refine WP.mono (holes_ok hs h16 h7 hT) fun u ⟨hz,hh,ho,ku⟩ => ?_
   refine WP.mono (SquareEight.code_ok (hs.congr ku.wr)
     ((ku.gpr _ (by decide)).trans h8) ((ku.gpr _ (by decide)).trans h16)
-    hA (by omega) ((ku.gpr _ (by decide)).trans h7) (by simp [wv,hz]))
+    hA (by omega_using [hT]) ((ku.gpr _ (by decide)).trans h7) (by simp [wv,hz]))
     fun t ⟨hv,ht,kt⟩ => ?_
-  have high : word t.mem B (eT+120) = 0 := (ht.word (by omega) (by omega)).trans hh
+  have high : word t.mem B (eT+120) = 0 := (ht.word (by omega_using []) (by omega_using [hT, hn])).trans hh
   have inp : Square.crossValue u.mem B eA 8 = Square.crossValue s.mem B eA 8 := by
     apply Square.crossValue_congr
     intro j hj
-    exact ho.word (by omega) (by omega)
-  refine ⟨?_,ho.trans (ht.mono (by omega) (by omega)),(ku.trans kt).mono (by decide)⟩
+    exact ho.word (by omega_using [hsep, hj]) (by omega_using [hA, hn, hj])
+  refine ⟨?_,ho.trans (ht.mono (by omega_using []) (by omega_using [])),(ku.trans kt).mono (by decide)⟩
   exact (zero_top t.mem B eT 15 (by simpa only [show 8*15=120 from rfl] using high)).trans
     (hv.trans inp)
 
@@ -50,9 +50,9 @@ theorem prefix_ok {s : State} {B : Addr} {Z eA eT i : Nat}
         2^(64*(16*i))*Square.crossValue s.mem B eA 8 ∧
       Outside B eT (128*(i+1)) s.mem t.mem ∧ Keep SquareEight.codeRegs s t := by
   have hn := hs.nowrap
-  refine WP.mono (tile_ok hs h8 h16 h7 hA (by omega) (by omega)) fun t ⟨hv,ho,kt⟩ => ?_
-  refine ⟨?_,ho.mono (by omega) (by omega),kt⟩
-  rw [show 16*(i+1) = 16*i+16 by omega,wv_add,
-    ho.wv (d := eT) (k := 16*i) (by omega) (by omega),show eT+8*(16*i)=eT+128*i by omega,hv]
+  refine WP.mono (tile_ok hs h8 h16 h7 hA (by omega_using [hT]) (by omega_using [hsep])) fun t ⟨hv,ho,kt⟩ => ?_
+  refine ⟨?_,ho.mono (by omega_using []) (by omega_using []),kt⟩
+  rw [show 16*(i+1) = 16*i+16 by omega_using [],wv_add,
+    ho.wv (d := eT) (k := 16*i) (by omega_using []) (by omega_using [hT, hn]),show eT+8*(16*i)=eT+128*i by omega_using [],hv]
 
 end VG.Proof.Bignum.AArch64.WindowSparse

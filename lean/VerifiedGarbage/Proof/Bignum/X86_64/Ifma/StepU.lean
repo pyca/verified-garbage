@@ -74,9 +74,9 @@ theorem run_ammStartU (hu : UOk l) {p : Nat} (hp : p < l.nl) :
 theorem regsS {p : Nat} (hp : p < l.nl) :
     regOf l p 0 0 = l.R * p ∧ l.R * p + l.R ≤ l.nl * l.R ∧ ubN l p 0 = l.nl * l.R + 8 * p ∧
       uuN l p 0 = l.nl * l.R + 8 * p + 2 ∧ utN l p = l.nl * l.R + 8 * p + 4 ∧ 8 * p + 8 ≤ 8 * l.nl := by
-  have := Nat.mul_le_mul_left l.R (show p + 1 ≤ l.nl by omega)
-  refine ⟨by simp only [regOf, Nat.add_zero, Nat.zero_mod], by rw [Nat.mul_comm l.nl]; rw [Nat.mul_add, Nat.mul_one] at this; omega,
-    rfl, rfl, rfl, by omega⟩
+  have := Nat.mul_le_mul_left l.R (show p + 1 ≤ l.nl by omega_using [hp])
+  refine ⟨by simp only [regOf, Nat.add_zero, Nat.zero_mod], by rw [Nat.mul_comm l.nl]; rw [Nat.mul_add, Nat.mul_one] at this; omega_using [this],
+    rfl, rfl, rfl, by omega_using [hp]⟩
 
 /-- Lane `p`'s start: `b₀` (`b`), role 0 plus `lo(a₀ b₀)`, and `u₀`. -/
 theorem ammStartU_ok (hu : UOk l) {s : State} {p : Nat} (hp : p < l.nl) {a m : Nat → Nat} {k b : Nat}
@@ -100,21 +100,21 @@ theorem ammStartU_ok (hu : UOk l) {s : State} {p : Nat} (hp : p < l.nl) {a m : N
     rw [h0 t ht, inb, ina t ht, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by decide)]
   refine WP.mono (run_ok hc (SRel.init s) e) fun s' hs => ⟨fun t ht => ?_, fun t ht => ?_,
     fun t ht => ?_, fun r hr h1 h2 h3 h4 t ht => ?_, ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
-  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega)]
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, this]), hσ _ (by omega_using [hb, this])]
     simp only [expStartU, ite_true]
     exact hs0 t ht
-  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega)]
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, this]), hσ _ (by omega_using [hb, this])]
     simp (disch := omega) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
     simp only [b0U, T.eval, ite_true, G.eval]
     exact inb
-  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega)]
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, this]), hσ _ (by omega_using [hb, this])]
     simp (disch := omega) only [expStartU, ↓ite_eq_right, ↓ite_eq_left]
     simp only [k0U, T.eval]
     rw [hs0 0 (by decide), ink, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by decide),
       Nat.zero_add, lo_comm]
     rfl
   · rw [hs.reg _ t ht, vi_vreg _ hr, hσ _ hr]
-    simp (disch := omega) only [expStartU, ↓ite_eq_right]
+    simp (disch := omega_arith) only [expStartU, ↓ite_eq_right]
     rfl
 
 /-! ## The registers of a step -/
@@ -122,28 +122,28 @@ theorem ammStartU_ok (hu : UOk l) {s : State} {p : Nat} (hp : p < l.nl) {a m : N
 theorem regOf_bounds (hR : 0 < l.R) {p kk j : Nat} :
     l.R * p ≤ regOf l p kk j ∧ regOf l p kk j < l.R * p + l.R := by
   have := Nat.mod_lt (kk + j) hR
-  simp only [regOf]; omega
+  simp only [regOf]; omega_using [this]
 
 /-- Role `kk` at step `i + 1` was role `kk + 1` at step `i`. -/
 theorem roleAt_regOf (hR : 0 < l.R) {p kk i : Nat} :
     roleAt l (regOf l p kk (i + 1)) i = (kk + 1) % l.R := by
   unfold roleAt
-  rw [regOf_mod, show kk + (i + 1) = kk + 1 + i by omega, Nat.add_mod (kk + 1)]
+  rw [regOf_mod, show kk + (i + 1) = kk + 1 + i by omega_using [], Nat.add_mod (kk + 1)]
   exact mod_role (Nat.mod_lt _ hR) (Nat.mod_lt _ hR)
 
 theorem expRegU_role (hR : 2 ≤ l.R) {p i kk : Nat} (hk : kk < l.R) :
     expRegU l p i (regOf l p kk (i + 1)) =
       if kk = l.R - 1 then topU l p i else if kk = 0 then r1U l p i else restU l p (kk + 1) i := by
-  have hr := regOf_bounds (l := l) (by omega) (p := p) (kk := kk) (j := i + 1)
-  have hro := roleAt_regOf (l := l) (by omega) (p := p) (kk := kk) (i := i)
+  have hr := regOf_bounds (l := l) (by omega_using [hR]) (p := p) (kk := kk) (j := i + 1)
+  have hro := roleAt_regOf (l := l) (by omega_using [hR]) (p := p) (kk := kk) (i := i)
   unfold expRegU
   rw [ite_eq_left hr, hro]
   by_cases h1 : kk = l.R - 1
-  · rw [ite_eq_left h1, show (kk + 1) % l.R = 0 by rw [h1, Nat.sub_add_cancel (by omega), Nat.mod_self], ite_eq_left rfl]
-  · rw [ite_eq_right h1, Nat.mod_eq_of_lt (show kk + 1 < l.R by omega)]
+  · rw [ite_eq_left h1, show (kk + 1) % l.R = 0 by rw [h1, Nat.sub_add_cancel (by omega_using [hR]), Nat.mod_self], ite_eq_left rfl]
+  · rw [ite_eq_right h1, Nat.mod_eq_of_lt (show kk + 1 < l.R by omega_using [hk, h1])]
     by_cases h0 : kk = 0
     · subst h0; rw [ite_eq_right (by decide), ite_eq_left rfl, ite_eq_left rfl]
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right h0]
+    · rw [ite_eq_right (by omega_using []), ite_eq_right (by omega_using [h0]), ite_eq_right h0]
 
 /-- The look-ahead's registers of lane `p` after its step `i`. -/
 theorem regsU {p : Nat} (hp : p < l.nl) (i : Nat) :
@@ -152,7 +152,7 @@ theorem regsU {p : Nat} (hp : p < l.nl) (i : Nat) :
       uuN l p ((i + 1) % 2) = l.nl * l.R + 8 * p + 2 + (i + 1) % 2 ∧ utN l p = l.nl * l.R + 8 * p + 4 ∧
       um1N l p = l.nl * l.R + 8 * p + 5 ∧ um2N l p = l.nl * l.R + 8 * p + 6 ∧
       upnN l p = l.nl * l.R + 8 * p + 7 ∧ (i + 1) % 2 < 2 :=
-  ⟨(regsS hp).2.1, by omega, rfl, rfl, rfl, rfl, rfl, rfl, Nat.mod_lt _ (by decide)⟩
+  ⟨(regsS hp).2.1, by omega_using [hp], rfl, rfl, rfl, rfl, rfl, rfl, Nat.mod_lt _ (by decide)⟩
 
 theorem expRegU_other {p i r : Nat} (h1 : r < l.R * p ∨ l.R * p + l.R ≤ r)
     (h2 : r < l.nl * l.R + 8 * p ∨ l.nl * l.R + 8 * p + 8 ≤ r) :
@@ -162,7 +162,7 @@ theorem expRegU_other {p i r : Nat} (h1 : r < l.R * p ∨ l.R * p + l.R ≤ r)
       um1N l p = l.nl * l.R + 8 * p + 5 ∧ um2N l p = l.nl * l.R + 8 * p + 6 ∧
       upnN l p = l.nl * l.R + 8 * p + 7 ∧ (i + 1) % 2 < 2 :=
     ⟨rfl, rfl, rfl, rfl, rfl, rfl, Nat.mod_lt _ (by decide)⟩
-  simp (disch := omega) only [expRegU, ↓ite_eq_right]
+  simp (disch := omega_arith) only [expRegU, ↓ite_eq_right]
 
 theorem expRegU_ub {p i : Nat} (hp : p < l.nl) (hn : ¬ l.S ≤ i + 1) :
     expRegU l p i (ubN l p ((i + 1) % 2)) = bnU l p i := by
@@ -192,19 +192,19 @@ theorem ammStepU_ok (hu : UOk l) {s : State} {p i : Nat} (hp : p < l.nl) (hi : i
   obtain ⟨σ, e, hσ, _⟩ := run_ammStepU hu hp hi
   refine WP.mono (run_ok hc (SRel.init s) e) fun s' hs => ⟨fun kk hk t ht => ?_, fun hn t ht => ?_,
     fun hn t ht => ?_, fun r hr h1 h2 t ht => ?_, ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
-  · have hr := regOf_bounds (l := l) (by omega) (p := p) (kk := kk) (j := i + 1)
-    rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega), expRegU_role hR hk]
-    rcases (by omega : kk = 0 ∨ (1 ≤ kk ∧ kk + 2 ≤ l.R) ∨ kk = l.R - 1) with rfl | hk' | rfl
-    · rw [ite_eq_right (by omega), ite_eq_left rfl, r1U_eval h hR ht]
+  · have hr := regOf_bounds (l := l) (by omega_using [hR]) (p := p) (kk := kk) (j := i + 1)
+    rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, hg, hr]), hσ _ (by omega_using [hb, hg, hr]), expRegU_role hR hk]
+    rcases (by omega_using [hk] : kk = 0 ∨ (1 ≤ kk ∧ kk + 2 ≤ l.R) ∨ kk = l.R - 1) with rfl | hk' | rfl
+    · rw [ite_eq_right (by omega_using [hR]), ite_eq_left rfl, r1U_eval h hR ht]
       by_cases hn : l.S ≤ i + 1 <;> simp only [hn, ite_true, ite_false, true_and, not_true, not_false_eq_true]
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega), restU_eval h (by omega) (by omega) ht,
-        ite_eq_right (by omega), Nat.add_sub_cancel]
+    · rw [ite_eq_right (by omega_using [hk']), ite_eq_right (by omega_using [hk']), restU_eval h (by omega_using [hk']) (by omega_using [hk']) ht,
+        ite_eq_right (by omega_using [hk']), Nat.add_sub_cancel]
       exact congrArg _ (Nat.add_zero _).symm
-    · rw [ite_eq_left rfl, topU_eval h hR ht, ite_eq_right (by omega), Nat.add_zero]
-  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega), expRegU_ub hp hn]
+    · rw [ite_eq_left rfl, topU_eval h hR ht, ite_eq_right (by omega_using [hR]), Nat.add_zero]
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, hg]), hσ _ (by omega_using [hb, hg]), expRegU_ub hp hn]
     simp only [bnU, T.eval, ite_true, G.eval]
     exact h.inbn hn
-  · rw [hs.reg _ t ht, vi_vreg _ (by omega), hσ _ (by omega), expRegU_uu hp hn]
+  · rw [hs.reg _ t ht, vi_vreg _ (by omega_using [hb, hg]), hσ _ (by omega_using [hb, hg]), expRegU_uu hp hn]
     exact kU_eval h hR hn
   · rw [hs.reg _ t ht, vi_vreg _ hr, hσ _ hr, expRegU_other h1 h2]
     rfl

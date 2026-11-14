@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lazy
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.RotateExpr
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 namespace VG.Proof.Sha3.AArch64.Scalar.Lazy
@@ -39,8 +40,8 @@ theorem physicalInitial_compatible (logical physical : File) :
   · intro r; exact (environment_reg logical physical r).symm
   · intro k
     simp only [physicalInitial, Expr.eval, environment]
-    rw [show 2 * k % 2 = 0 by omega, ite_eq_left rfl,
-      show 2 * k / 2 = k by omega]
+    rw [show 2 * k % 2 = 0 by omega_using [], ite_eq_left rfl,
+      show 2 * k / 2 = k by omega_using []]
 
 /-- Every listed lane has its declared physical orientation. -/
 def LayoutHolds (layout : Layout) (logical physical : File) : Prop :=
@@ -91,7 +92,7 @@ theorem plan_math (p : Plan)
 theorem rotateRight_undo (x : Lane) (offset : Nat) (ho : offset < 64) :
     (x.rotateRight ((64-offset)%64)).rotateRight offset = x := by
   rw [VG.Bitslice.Anf.rotateRight_rotateRight]
-  have hm : (((64-offset)%64)+offset)%64 = 0 := by omega
+  have hm : (((64-offset)%64)+offset)%64 = 0 := by omega_using [ho]
   rw [hm, VG.Bitslice.Anf.rotateRight_zero]
 
 theorem plan_layout (p : Plan)
@@ -104,7 +105,7 @@ theorem plan_layout (p : Plan)
   have hget := List.mk_mem_zipIdx_iff_getElem?.mp he
   have hi : i < 25 := by
     have hlt := (List.getElem?_eq_some_iff.mp hget).1
-    omega
+    omega_using [hlen, hlt]
   have hd : p.output.getD i (.x0, 0) = entry := by
     simp only [List.getD_eq_getElem?_getD, hget, Option.getD_some]
   have hm := plan_math p cert logical physical h i hi

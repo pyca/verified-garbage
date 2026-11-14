@@ -36,8 +36,8 @@ open VG.Spec.Ed448 (L bytesAt)
 theorem rotr57 (x : BitVec 64) (h : x.toNat < 2) : (x.rotateRight 57).toNat = 128 * x.toNat := by
   rw [BitVec.toNat_rotateRight]
   simp only [Nat.reduceMod, Nat.reduceSub, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  rw [Nat.div_eq_of_lt (by omega), Nat.zero_or, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.div_eq_of_lt (by omega_using [h]), Nat.zero_or, Nat.mod_eq_of_lt (by omega_using [h])]
+  omega_using []
 
 /-- `rsi = 128 · (r8 mod 2)`. -/
 theorem signBit_ok (s : State) :
@@ -55,7 +55,7 @@ theorem signBit_ok (s : State) :
     show 1 ≤ 57 ∧ 57 ≤ 63 by decide, and_self, ite_true, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, trivial, fun r hr => by simp only [hr, ite_false], trivial⟩
-  rw [rotr57 _ (by rw [h1]; omega), h1]
+  rw [rotr57 _ (by rw [h1]; omega_using []), h1]
 
 /-- The byte `rsi` at `q + 56`, for `rax = q`. -/
 theorem byte56_ok {s : State} {q : Addr} (hq : s.gpr .rax = q)
@@ -69,7 +69,7 @@ theorem byte56_ok {s : State} {q : Addr} (hq : s.gpr .rax = q)
   exact ⟨trivial, trivial, trivial, trivial⟩
 
 theorem rv_mod2 (s : State) : rv s W % 2 = (s.gpr .r8).toNat % 2 := by
-  simp only [rv, W]; omega
+  simp only [rv, W]; omega_using []
 
 theorem bytes56_write {m : Mem} {q : Addr} (v : Byte) :
     bytesAt (m.writeW (q + BitVec.ofNat 64 56) v) q 56 = bytesAt m q 56 := by
@@ -78,9 +78,9 @@ theorem bytes56_write {m : Mem} {q : Addr} (v : Byte) :
   simp only [List.mem_range] at hi
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff _ q (by omega), Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.lt_iff _ q (by omega_using []), Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega_using [hi])]
+  omega_using [hi]
 
 theorem byte56_write (m : Mem) (q : Addr) (v : Byte) :
     (m.writeW (q + BitVec.ofNat 64 56) v) (q + BitVec.ofNat 64 56) = v := by
@@ -123,14 +123,14 @@ theorem encode_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : word s.mem
   have hs6 := hs5.of_keeps k6 (by decide)
   have hc8 : ∀ d, 0 ≤ d → d + 8 ≤ 0 + 8 * W.length → (⟨q, 57⟩ : Region).Contains (off q d) 8 :=
     fun d _ hd' => by
-      rw [W_len] at hd'; exact Offset.contains_base _ (by omega) (by omega)
+      rw [W_len] at hd'; exact Offset.contains_base _ (by omega_using [hd']) (by omega_using [hd'])
   have wr6 : s6.wr = s.wr := by rw [k6.2.2.2, k5.2.2.2, wr4, k3.2.2.2, k2.wr, k1.wr]
   rw [WP.block_append_iff]
   refine WP.mono (storesR_ok .rax (R := ⟨q, 57⟩) s6 0 W (r6.trans q5) (by rw [wr6]; exact hwo) hc8
     (by decide)) fun s7 ⟨v7, _, f7, g7, rd7, wr7⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (byte56_ok ((g7 _).trans (r6.trans q5)) ⟨_, by rw [wr7, wr6]; exact hwo,
-    Offset.contains_base _ (by omega) (by omega)⟩) fun s8 ⟨m8, g8, rd8, wr8⟩ => ?_
+    Offset.contains_base _ (by omega_using []) (by omega_using [])⟩) fun s8 ⟨m8, g8, rd8, wr8⟩ => ?_
   have O6 : Outside base 0 8192 s.mem s6.mem := by
     rw [k6.2.1, k5.2.1, m4, k3.2.1]; exact (k1.mem.trans k2.mem).mono (by decide) (by decide)
   have f8 : Frame [⟨base, 8192⟩, ⟨q, 57⟩] s.mem s8.mem := by
@@ -141,12 +141,12 @@ theorem encode_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : word s.mem
   have sv2 : Saved base g s2.mem := hsv.outside (k1.mem.trans k2.mem) (by decide)
   have sv6 : Saved base g s6.mem := by rw [k6.2.1, k5.2.1, m4, k3.2.1]; exact sv2
   have sv7 : Saved base g s7.mem := fun rd hrd => by
-    have := saved_lt rd hrd; rw [← sv6 rd hrd]; exact word_frame f7 hd (by omega)
+    have := saved_lt rd hrd; rw [← sv6 rd hrd]; exact word_frame f7 hd (by omega_using [this])
   have sv8 : Saved base g s8.mem := fun rd hrd => by
     have := saved_lt rd hrd
     rw [← sv7 rd hrd, m8]
     exact word_frame ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base q (d := 56) (n := 8 / 8) (k := 57) (by decide) (by decide))) hd (by omega)
+      (Offset.contains_base q (d := 56) (n := 8 / 8) (k := 57) (by decide) (by decide))) hd (by omega_using [this])
   have hs8 : Scr s8 base := ⟨by rw [g8, g7]; exact hs6.rdi, wr8 ▸ wr7 ▸ hs6.wr, hs6.nowrap⟩
   refine WP.mono (Proof.X448.X86_64.restore_ok hs8 sv8) fun t ⟨rt, gt, mt, rdt, wrt⟩ => ?_
   refine ⟨?_, rt, fun r hr => ?_, by rw [mt]; exact f8, by rw [rdt, rd8, rd7, k6.2.2.1, k5.2.2.1,

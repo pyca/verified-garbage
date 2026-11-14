@@ -132,12 +132,12 @@ theorem extr_eq (x y : BitVec 64) : (x ++ y).extractLsb' 8 64 = (y >>> 8) ||| (x
   simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append, BitVec.getElem_or,
     BitVec.getElem_ushiftRight, BitVec.getElem_shiftLeft]
   by_cases h : 8 + i < 64
-  · have h' : i < 56 := by omega
+  · have h' : i < 56 := by omega_using [h]
     simp [h, h']
-  · have h' : ¬ i < 56 := by omega
+  · have h' : ¬ i < 56 := by omega_using [h]
     simp only [h, h', ↓reduceIte, decide_false, Bool.not_false, Bool.true_and]
-    rw [BitVec.getLsbD_of_ge y (8 + i) (by omega), Bool.false_or, BitVec.getLsbD_eq_getElem (by omega)]
-    congr 1; omega
+    rw [BitVec.getLsbD_of_ge y (8 + i) (by omega_using [h]), Bool.false_or, BitVec.getLsbD_eq_getElem (by omega_using [hi])]
+    congr 1; omega_using []
 
 /-- The input block at `Q` shifted left by a byte, with the byte in `r9`
 shifted in. -/

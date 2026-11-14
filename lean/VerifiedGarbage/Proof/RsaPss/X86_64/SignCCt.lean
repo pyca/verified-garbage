@@ -436,9 +436,9 @@ theorem scall_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : SSib tsH tsG Xs a s₁
   have p₁ := S₁.ps
   have p₂ := S₂.ps
   have hE₁ : ∀ i < 14, stackArg (t₁.callEntry.withRegions (pRd s₁) (pWr s₁)) i = pArg a i :=
-    fun i hi => ((stackArg_call p₁ v₁.L.rsp _ _ (by omega)).trans (ha₁ i hi)).trans (pArg_sib S₁ hi)
+    fun i hi => ((stackArg_call p₁ v₁.L.rsp _ _ (by omega_using [hi])).trans (ha₁ i hi)).trans (pArg_sib S₁ hi)
   have hE₂ : ∀ i < 14, stackArg (t₂.callEntry.withRegions (pRd s₂) (pWr s₂)) i = pArg a i :=
-    fun i hi => ((stackArg_call p₂ v₂.L.rsp _ _ (by omega)).trans (ha₂ i hi)).trans (pArg_sib S₂ hi)
+    fun i hi => ((stackArg_call p₂ v₂.L.rsp _ _ (by omega_using [hi])).trans (ha₂ i hi)).trans (pArg_sib S₂ hi)
   have bn : ∀ {s t : State}, SSib tsH tsG Xs a s → t.gpr .rsp = fb s → Frame (wrR s) s.mem t.mem →
       Spec.Rsa.bytesAt t.callEntry.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
         Spec.Rsa.bytesAt a.mem (a.gpr .rdx) (a.gpr .rcx).toNat := fun {s t} S hst hM => by

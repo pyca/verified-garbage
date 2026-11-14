@@ -146,11 +146,11 @@ theorem putWs32_byte {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64
   | _, [], _, _ => rfl
   | p, w :: ws, h, hp => by
     simp only [List.length_cons] at hp
-    have h4 := add4_toNat (p := p) (by omega)
+    have h4 := add4_toNat (p := p) (by omega_using [hp])
     simp only [putWs32]
-    rw [putWs32_byte (by rw [h4]; omega) (by rw [h4]; omega)]
+    rw [putWs32_byte (by rw [h4]; omega_using [h]) (by rw [h4]; omega_using [hp])]
     have hne : ¬ (a - p).toNat < 32 / 8 := by
-      rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega)]; omega
+      rw [BitVec.toNat_sub, Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [hp]
     simp only [Mem.writeW, Mem.write, hne, ↓reduceIte]
 
 theorem satP_key (vs : List TVar) (w : TVar) :
@@ -164,7 +164,7 @@ theorem satP_key (vs : List TVar) (w : TVar) :
     have h2 : (Nat.ble 0x8000 a.toNat && Nat.blt a.toNat 0x805C) = false := by
       rw [Bool.eq_false_iff]; intro h; simp only [Bool.and_eq_true, Nat.ble_eq] at h; omega
     show putWs32 satMemP 0x300000 (VG.Proof.HashTable.Arm.twL vs w) a = keyMem a
-    rw [putWs32_byte (by show a.toNat < 0x300000; omega) (VG.Proof.HashTable.Arm.twL_room vs w)]
+    rw [putWs32_byte (by show a.toNat < 0x300000; omega_using [hk]) (VG.Proof.HashTable.Arm.twL_room vs w)]
     show (bif _ then _ else _) = _
     rw [h2, Bool.cond_false, ha, Bool.cond_true]
 

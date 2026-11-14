@@ -76,7 +76,7 @@ theorem shift_ok (s : State) {Q : Addr} {c : Byte} (hq : State.addr (s.gpr .r6) 
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       s'.mem = AesCfb8.shiftMem32 s.mem Q c ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have a (d : Nat) (hd : d < 16) : State.addr (s.gpr .r6 + BitVec.ofNat 32 d) = Q + BitVec.ofNat 64 d := by
-    rw [addr_add (by omega), hq]
+    rw [addr_add (by omega_using [hfit, hd]), hq]
   have a0 : State.addr (s.gpr .r6 + BitVec.ofNat 32 0) = Q := by rw [a 0 (by decide)]; simp
   have w0 : InRegions s.wr Q 4 := by simpa using hw 0 4 (by decide)
   refine ⟨_, by

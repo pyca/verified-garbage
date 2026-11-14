@@ -45,14 +45,14 @@ theorem FixedSource.keep_of_mem {n : Nat} {base T : Addr} {tsym : String} {size 
     rw [Nat.zero_add]
     apply Mem.readW_congr
     intro b hb
-    exact hmem _ (h.outside i hi b (by omega))
+    exact hmem _ (h.outside i hi b (by omega_using [hb]))
   have ef (d : Nat) (hd : d%8=0) (hj : d+8*n≤16*n) :
       wordsVal t.mem (off T (16*n*(a-1))) d n=wordsVal s.mem (off T (16*n*(a-1))) d n := by
     simpa only [Nat.zero_add] using nafExternalCopy_fieldAt (o:=0) ep hd hj
   refine ⟨by rw [hs]; exact h.symbol,?_,h.outside,?_,?_⟩
   · intro i hi; rw [hr,hw]; exact h.read i hi
-  · rw [ef 0 (by decide) (by omega)]; exact h.xval
-  · rw [ef (8*n) (by omega) (by omega)]; exact h.yval
+  · rw [ef 0 (by decide) (by omega_using [])]; exact h.xval
+  · rw [ef (8*n) (by omega_using []) (by omega_using [])]; exact h.yval
 
 /-- Any bounded scratch write preserves the external affine coordinates. -/
 theorem FixedSource.keep {M : Mod} {n : Nat} {base T : Addr} {tsym : String} {size a x y : Nat}
@@ -83,8 +83,8 @@ theorem jointFixedFields_ok {K : WinCfg} {s : State} {base T : Addr} {size a x y
     rw [hi.mod.val] at h
     exact h
   rw [hz] at bz
-  refine WP.mono (jointFixedLoad_ok hi.scr ha ha' (by omega) h8 hS.symbol hy (by omega)
-    (by rw [hz]; exact bz) (by omega) (Nat.lt_trans hOne hR) hS.read hS.outside)
+  refine WP.mono (jointFixedLoad_ok hi.scr ha ha' (by omega_using [hn]) h8 hS.symbol hy (by omega_using [bz])
+    (by rw [hz]; exact bz) (by omega_using [hz]) (Nat.lt_trans hOne hR) hS.read hS.outside)
     fun t ⟨vx,vy,vz,kt,ut⟩ => ?_
   have kp : ProgKeep K.M base (jacCoords K.E) s t := by
     refine ⟨fun r hr => kt.gpr r (fun hh => hr ?_),kt.rd,kt.wr,fun z hz' _ => ut z ?_⟩
@@ -97,7 +97,7 @@ theorem jointFixedFields_ok {K : WinCfg} {s : State} {base T : Addr} {size a x y
       rw [hy] at hx1
       rw [hz] at hx2
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hw
-      rcases hw with rfl|rfl <;> dsimp only <;> omega
+      rcases hw with rfl|rfl <;> dsimp only <;> omega_arith
   have hlt : ∀ v∈jacCoords K.E,wordsVal t.mem base v K.M.n<m := by
     intro v hv
     simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hv
@@ -126,9 +126,9 @@ theorem fixedLoadEnv_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {x y : Na
     (hp : InvJ C (toM C.p (2^(64*K.M.n)) x) (toM C.p (2^(64*K.M.n)) y) 1 P) :
     InvJ C (fixedLoadEnv K C.p E x y K.E.x) (fixedLoadEnv K C.p E x y K.E.y)
       (fixedLoadEnv K C.p E x y K.E.z) P ∧ fixedLoadEnv K C.p E x y K.E.z=1 := by
-  have hyx : K.E.y≠K.E.x := by omega
-  have hzx : K.E.z≠K.E.x := by omega
-  have hzy : K.E.z≠K.E.y := by omega
+  have hyx : K.E.y≠K.E.x := by omega_using [hn, hy]
+  have hzx : K.E.z≠K.E.x := by omega_using [hn, hz]
+  have hzy : K.E.z≠K.E.y := by omega_using [hy, hz, hyx]
   simpa only [fixedLoadEnv,ite_true,hyx,hzx,hzy,ite_false,hOne,and_true] using hp
 
 end VG.Proof.Weierstrass.X86_64

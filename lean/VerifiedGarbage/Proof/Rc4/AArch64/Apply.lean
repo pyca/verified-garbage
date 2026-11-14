@@ -34,14 +34,14 @@ theorem stepN_i (c : Context) (n : Nat) : (stepN c n).i = c.i + BitVec.ofNat 8 n
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 8).toNat = 1 from rfl]
-    omega
+    omega_using []
 
 theorem final_i (i : BitVec 8) (x : BitVec 64) :
     (i.setWidth 64 + x).setWidth 8 = i + BitVec.ofNat 8 x.toNat := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := i.isLt
-  omega
+  omega_using []
 
 theorem saved_kept : ∀ p ∈ saved true, p.2 ≠ .x1 ∧ p.2 ≠ .x2 ∧ p.2 ≠ .x5 ∧ p.2 ≠ .x6 ∧
     p.2 ≠ .x7 ∧ p.2 ≠ .x8 := by decide
@@ -68,14 +68,14 @@ theorem apply_ok (s : State)
     rw [h0]
     exact ⟨rfl, rfl⟩
   intro hnz
-  have hpos : 0 < (s.gpr .x2).toNat := by simp at hnz; omega
+  have hpos : 0 < (s.gpr .x2).toNat := by simp at hnz; omega_using [hnz]
   refine WP.seq (WP.mono (WP.block_append_iff.mp (applySetup_ok hp)) fun _ h => WP.seq (WP.mono h
     fun t ⟨hl, t4, t9, tsv, tg, t15, tm, trd, twr, tsp⟩ => ?_))
   let g := glob s t
   have hg : DataOk g := ⟨by show _ ∈ t.wr; rw [twr]; exact hd, hN⟩
   refine WP.seq (WP.mono (loop_ok g hg _ ⟨_, 0, _, base0_mod _, rfl, hpos,
-    by have := sk0_lt (contextAt s.mem (s.gpr .x0)).i; omega, hl⟩) fun u ⟨B, sk, hB, hu⟩ => ?_)
-  have hdN : doneAt g g.N sk 0 = g.N := by simp only [doneAt]; omega
+    by have := sk0_lt (contextAt s.mem (s.gpr .x0)).i; omega_using [this], hl⟩) fun u ⟨B, sk, hB, hu⟩ => ?_)
+  have hdN : doneAt g g.N sk 0 = g.N := by simp only [doneAt]; omega_using []
   have hpr := hu.prga
   have hdat := hu.data
   rw [hdN] at hpr hdat
@@ -99,7 +99,7 @@ theorem apply_ok (s : State)
     have hsep : ¬ (s.gpr .x1 + BitVec.ofNat 64 k - u.gpr .x0).toNat < 258 := fun h => by
       rw [u0] at h
       refine hs _ h ?_
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk])]
       exact hk
     have hb : u.mem (g.D + BitVec.ofNat 64 k) = g.M₀ (g.D + BitVec.ofNat 64 k) ^^^ ks g.c₀ k :=
       (hdat.bytes k hk).trans (ite_eq_left hk)

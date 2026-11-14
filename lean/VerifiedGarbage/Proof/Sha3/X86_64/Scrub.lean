@@ -41,7 +41,7 @@ open VG.Spec.Sha3 VG.X86_64 VG.X86_64.Scrub
 theorem agreeBuf {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
     (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
     ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := fun i hi =>
-  (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))).symm
 
 theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
     (h : ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
@@ -52,7 +52,7 @@ theorem stateAgree {m₁ m₂ : Mem} {p : Addr}
     (h : ∀ a, Region.Contains ⟨p, 25 * Elem.size .u64⟩ a 1 → m₁ a = m₂ a) :
     stateAt m₂ p = stateAt m₁ p :=
   Proof.Sha3.stateAt_congr fun i hi =>
-    agreeBuf (n := 25 * Elem.size .u64) (by decide) h i (by simp only [Elem.size]; omega)
+    agreeBuf (n := 25 * Elem.size .u64) (by decide) h i (by simp only [Elem.size]; omega_using [hi])
 
 theorem updateOut (rate stack : Nat) :
     PostOut (updateContract X86_64.abi rate stack) (updateSig.retBits 64) :=
@@ -105,8 +105,8 @@ theorem xofSqueezeOut (X : Xof) (stack : Nat) :
     refine ⟨?_, fun d => ?_⟩
     · show bytesAt m₂ ot ol.toNat = _
       rw [bytesAt_congr fun i hi => agreeBuf (n := ol.toNat * Elem.size .u8)
-        (by simp only [Elem.size]; have := ol.isLt; omega) hb.2 i
-        (by simp only [Elem.size]; omega)]
+        (by simp only [Elem.size]; have := ol.isLt; omega_using []) hb.2 i
+        (by simp only [Elem.size]; omega_using [hi])]
       exact h1
     · show squeezeFrom X.rate (stateAt m₂ st) _ d = _
       rw [stateAgree hb.1]

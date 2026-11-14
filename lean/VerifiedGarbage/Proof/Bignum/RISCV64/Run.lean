@@ -50,14 +50,14 @@ structure Scr (s : State) (base : Addr) (size : Nat) : Prop where
 /-- A writable region is a working space. -/
 theorem Scr.of_mem {s : State} {base : Addr} {size : Nat} (h : (⟨base, size⟩ : Region) ∈ s.wr)
     (hn : base.toNat + size ≤ 2 ^ 64) (ha : base.toNat % 8 = 0) : Scr s base size :=
-  ⟨⟨base, 0, size, h, by simp [off], by omega, by omega⟩, hn, ha⟩
+  ⟨⟨base, 0, size, h, by simp [off], by omega_using [], by omega_using [hn]⟩, hn, ha⟩
 
 theorem Scr.region {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (h : d + n ≤ size) (hn : 0 < n) : ∃ r ∈ s.wr, r.Contains (off base d) n := by
   obtain ⟨⟨B₀, o, L, hm, hb, hL, hL'⟩, _, _⟩ := hs
   refine ⟨_, hm, ?_⟩
   rw [hb, show off (off B₀ o) d = off B₀ (o + d) by simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-  exact Offset.contains_base B₀ (by omega) (by omega)
+  exact Offset.contains_base B₀ (by omega_using [h, hL]) (by omega_using [h, hn, hL, hL'])
 
 theorem Scr.ld {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (hd : d + n ≤ size) (hn : 0 < n := by decide) : InRegions (s.rd ++ s.wr) (off base d) n :=
@@ -77,9 +77,9 @@ theorem Scr.al8 {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d
   have ha := hs.al
   have e : (off base d).toNat = base.toNat + d := by
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hn]), Nat.mod_eq_of_lt (by omega_using [hd, hn])]
   rw [e]
-  omega
+  omega_using [h8, ha]
 
 theorem Scr.congr {s s' : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     (h : s'.wr = s.wr) : Scr s' base size :=
@@ -96,7 +96,7 @@ theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) : off p a - BitVec.ofNat 64
   simp only [off]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-! ## Frames of what a block keeps -/
 
@@ -138,7 +138,7 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
     (hstep : ∀ k < n, ∀ s, I k s →
       WP isa body s fun s' => I (k + 1) s' ∧ ((s'.gpr cr).toNat ≠ 0 ↔ k + 1 ≠ n))
     {s : State} (h0 : I 0 s) : WP isa (.loop body (.nonzero cr)) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega, hn, h0⟩
+  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_using [], hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hc⟩ => ?_
   have hz : isa.eval (.nonzero cr) s' = some (decide (k + 1 ≠ n)) := by
@@ -147,7 +147,7 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
   by_cases hl : k + 1 = n
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
     rwa [hl] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], hi'⟩
 
 /-- A do-while loop whose body decrements `cnt`, from `N > 0`: it runs `N`
 times. -/
@@ -163,9 +163,9 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 64) (
   · rw [hc', hc]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hk]
   · rw [hc', hc, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hN]
 
 /-! ## Running a block -/
 

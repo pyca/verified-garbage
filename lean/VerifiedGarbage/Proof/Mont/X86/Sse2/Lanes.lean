@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # SSE2 quadword lanes for the `pmuludq` kernel
 
@@ -30,7 +31,7 @@ theorem qword_append_1 (x y : BitVec 64) : qword (x ++ y) 1 = x := by
 
 theorem qword_paddq (a b : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .paddq a b) i = qword a i + qword b i := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · exact qword_append_0 _ _
   · exact qword_append_1 _ _
 
@@ -43,7 +44,7 @@ theorem psrlq_eq (a : BitVec 128) :
 theorem qword_psrlq (a : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XShiftOp.eval .psrlq a 32) i = qword a i >>> 32 := by
   rw [psrlq_eq]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · exact qword_append_0 _ _
   · exact qword_append_1 _ _
 
@@ -53,7 +54,7 @@ theorem qword_psrldq_0 (a : BitVec 128) : qword (XShiftOp.eval .psrldq a 8) 0 = 
   rw [psrldq_eq]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_qword, hi, decide_true, Bool.true_and, BitVec.getLsbD_ushiftRight]
-  exact congrArg _ (by omega)
+  exact congrArg _ (by omega_using [])
 
 theorem qword_pmuludq_0 (a b : BitVec 128) :
     qword (pmuludq a b) 0 = (dword a 0).setWidth 64 * (dword b 0).setWidth 64 :=
@@ -74,12 +75,12 @@ theorem qword_zero (i : Nat) : qword 0 i = 0 := by
 theorem dword_movq_0 (v : BitVec 64) : dword ((0 : BitVec 64) ++ v) 0 = v.extractLsb' 0 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_dword, hi, decide_true, Bool.true_and, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  simp [show i < 64 by omega]
+  simp [show i < 64 by omega_using [hi]]
 
 theorem dword_movq_1 (v : BitVec 64) : dword ((0 : BitVec 64) ++ v) 1 = v.extractLsb' 32 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_dword, hi, decide_true, Bool.true_and, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rw [ite_eq_left (by omega)]
+  rw [ite_eq_left (by omega_using [hi])]
 
 /-- The doublewords of `movd`'s value. -/
 theorem dword_movd_0 (r : BitVec 32) : dword ((0 : BitVec 96) ++ r) 0 = r := by
@@ -90,24 +91,24 @@ theorem dword_movd_0 (r : BitVec 32) : dword ((0 : BitVec 96) ++ r) 0 = r := by
 theorem dword_movd_2 (r : BitVec 32) : dword ((0 : BitVec 96) ++ r) 2 = 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_dword, hi, decide_true, Bool.true_and, BitVec.getLsbD_append]
-  simp [show ¬ 64 + i < 32 by omega]
+  simp [show ¬ 64 + i < 32 by omega_using []]
 
 /-- The two words of an 8-byte read. -/
 theorem readW64_lo (m : Mem) (a : Addr) : (m.readW a 64).extractLsb' 0 32 = m.readW a 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, Mem.readW, BitVec.getLsbD_setWidth,
     Nat.zero_add]
-  rw [getLsbD_read _ _ (by omega), getLsbD_read _ _ (by omega)]
-  simp [show i < 64 by omega]
+  rw [getLsbD_read _ _ (by omega_using [hi]), getLsbD_read _ _ (by omega_using [hi])]
+  simp [show i < 64 by omega_using [hi]]
 
 theorem readW64_hi (m : Mem) (a : Addr) : (m.readW a 64).extractLsb' 32 32 = m.readW (a + 4) 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, Mem.readW, BitVec.getLsbD_setWidth]
-  rw [getLsbD_read _ _ (by omega), getLsbD_read _ _ (by omega)]
-  simp only [show 32 + i < 64 by omega, decide_true, Bool.true_and]
+  rw [getLsbD_read _ _ (by omega_using [hi]), getLsbD_read _ _ (by omega_using [hi])]
+  simp only [show 32 + i < 64 by omega_using [hi], decide_true, Bool.true_and]
   rw [show a + BitVec.ofNat 64 ((32 + i) / 8) = a + 4 + BitVec.ofNat 64 (i / 8) by
-    rw [show (32 + i) / 8 = 4 + i / 8 by omega, BitVec.ofNat_add, BitVec.add_assoc]; rfl]
-  exact congrArg _ (by omega)
+    rw [show (32 + i) / 8 = 4 + i / 8 by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]; rfl]
+  exact congrArg _ (by omega_using [])
 
 /-- A product of two words as a quadword. -/
 theorem mul_setWidth (x y : BitVec 32) :
@@ -116,6 +117,6 @@ theorem mul_setWidth (x y : BitVec 32) :
   have hx := x.isLt
   have hy := y.isLt
   simp only [BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega : y.toNat < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [] : x.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [] : y.toNat < 2 ^ 64)]
 
 end VG.Proof.Mont.X86.Sse2

@@ -74,7 +74,7 @@ def StagePublic.count (a : StagePublic) : Nat :=
   a.ctx.geo.pLen * VG.Proof.Dsa.Generation.generatorCount a.value a.qval a.cands
 
 theorem StagePublic.count_lt (a : StagePublic) : a.count < 2 ^ 32 := by
-  have pn : a.ctx.geo.pLen ≤ 384 := by rcases a.ctx.geo.width with hh | hh | hh <;> omega
+  have pn : a.ctx.geo.pLen ≤ 384 := by rcases a.ctx.geo.width with hh | hh | hh <;> omega_using [hh]
   have hc : VG.Proof.Dsa.Generation.generatorCount a.value a.qval a.cands ≤ a.ctx.hs.bytes.length / a.ctx.geo.pLen := by
     refine Nat.le_trans (VG.Proof.Dsa.Generation.generatorCount_le _ _ _) (Nat.le_of_eq ?_)
     simp only [StagePublic.cands, Spec.Dsa.generationChunks, List.length_map, List.length_range]
@@ -83,7 +83,7 @@ theorem StagePublic.count_lt (a : StagePublic) : a.count < 2 ^ 32 := by
     rw [Nat.mul_comm]; exact Nat.div_mul_le_self _ _
   have := a.short
   unfold StagePublic.count
-  omega
+  omega_using [pn, hm, hd, this]
 
 /-- The stage's inputs in memory. -/
 def StageInputs (a : StagePublic) (s : State) : Prop :=
@@ -188,7 +188,7 @@ theorem refillGenerator_ct_of (G : GeneratorStage) (pLen : Nat) (hb : Generator.
 /-- The window of `rand` after the octets `p`'s search consumed. -/
 def SeedGeneratorPublic.window (a : SeedGeneratorPublic) : GenerationTape a.seed.context.geo :=
   a.seed.context.rand.slice a.seed.used (min (a.seed.context.rand.bytes.length - a.seed.used) (128 * a.seed.context.geo.pLen))
-    (by have := a.seed.bound; omega)
+    (by have := a.seed.bound; omega_using [this])
 
 def SeedGeneratorPublic.stage (a : SeedGeneratorPublic) : StagePublic where
   ctx := a.seed.context.withHs a.window
@@ -201,21 +201,21 @@ def SeedGeneratorPublic.stage (a : SeedGeneratorPublic) : StagePublic where
   short := by
     show (a.window).bytes.length ≤ 128 * a.seed.context.geo.pLen
     rw [SeedGeneratorPublic.window, slice_length]
-    omega
+    omega_using []
 
 theorem seedGenerator_window {pLen qLen : Nat} {a : SeedGeneratorPublic} {s : State}
     (h : SeedGeneratorBefore pLen qLen a s) :
     WP isa (.block (Impl.Dsa.AArch64.Generation.Refill.window pLen)) s (StageBefore pLen a.stage) := by
   obtain ⟨⟨⟨⟨W, hm, _, h16, _⟩, _, _⟩, hp, bq⟩, bp, be⟩ := h
   subst hp
-  have pn : a.seed.context.geo.pLen ≤ 384 := by rcases a.seed.context.geo.width with hh | hh | hh <;> omega
-  have qn : a.seed.context.geo.qLen ≤ 32 := by rcases a.seed.context.geo.qWidth with hh | hh <;> omega
+  have pn : a.seed.context.geo.pLen ≤ 384 := by rcases a.seed.context.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : a.seed.context.geo.qLen ≤ 32 := by rcases a.seed.context.geo.qWidth with hh | hh <;> omega_using [hh]
   have hp_b : VG.Impl.Dsa.Generation.Layout.p + a.seed.context.geo.pLen ≤ usedBytes a.seed.context.geo.pLen :=
-    a.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)
+    a.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn])
   have he_b : exponent + a.seed.context.geo.pLen ≤ usedBytes a.seed.context.geo.pLen :=
-    a.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)
+    a.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn])
   have hq_b : q + a.seed.context.geo.qLen ≤ usedBytes a.seed.context.geo.pLen :=
-    a.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)
+    a.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [qn])
   refine WP.mono (refillWindow_ok hm h16 a.seed.bound rfl) fun t ⟨mt, ft, _, _⟩ => ⟨rfl, _, mt, ?_,
     (a.seed.context.geo.frame_bytes ft hp_b).trans bp, (a.seed.context.geo.frame_bytes ft he_b).trans be,
     (a.seed.context.geo.frame_bytes ft hq_b).trans bq⟩

@@ -43,9 +43,9 @@ theorem be64_key (m : Mem) (p : Addr) {off : Nat} (ho : off ≤ 8) :
       Spec.Seed.wordAt (Spec.Seed.blockAt m p) off ++ Spec.Seed.wordAt (Spec.Seed.blockAt m p) (off + 4) := by
   have hg : ∀ i < 16, (Spec.Seed.blockAt m p).getD i 0 = m (p + BitVec.ofNat 64 i) := fun i hi => by
     rw [vector_getD _ _ hi]; simp only [Spec.Seed.blockAt, Vector.getElem_ofFn]
-  simp only [ByteLoad.be64, Spec.Seed.wordAt, hg off (by omega), hg (off + 1) (by omega),
-    hg (off + 2) (by omega), hg (off + 3) (by omega), hg (off + 4) (by omega),
-    hg (off + 4 + 1) (by omega), hg (off + 4 + 2) (by omega), hg (off + 4 + 3) (by omega)]
+  simp only [ByteLoad.be64, Spec.Seed.wordAt, hg off (by omega_using [ho]), hg (off + 1) (by omega_using [ho]),
+    hg (off + 2) (by omega_using [ho]), hg (off + 3) (by omega_using [ho]), hg (off + 4) (by omega_using [ho]),
+    hg (off + 4 + 1) (by omega_using [ho]), hg (off + 4 + 2) (by omega_using [ho]), hg (off + 4 + 3) (by omega_using [ho])]
   rw [be64_bytes]
 
 /-- What key expansion needs: the scratch buffer and the schedule writable,
@@ -83,7 +83,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have a0₁ : s₁.gpr .a0 = s.gpr .a0 := G₁ _ (by decide) (by decide) (by decide) (by decide)
   have hkey : ∀ k, k + 8 ≤ 16 → InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .a0 + BitVec.ofNat 64 k) 8 := fun k hk => by
     rw [P.rd, P.wr, a0₁]
-    exact ⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   have key₁ : ∀ off, off ≤ 8 → ByteLoad.be64 s₁.mem (s₁.gpr .a0) off =
       Spec.Seed.wordAt key off ++ Spec.Seed.wordAt key (off + 4) := fun off ho => by
     rw [be64_key _ _ ho, a0₁]
@@ -153,14 +153,14 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
     refine sv₃.frame_in savedOffs_range f₃₆ fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint_base _ (by omega) (by omega)
-    · exact (h.schedBuf.sub_right (Offset.sub_base _ (by unfold scratchSlots; omega))).symm
+    · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
+    · exact (h.schedBuf.sub_right (Offset.sub_base _ (by unfold scratchSlots; omega_using []))).symm
   rw [seedRestore_eq]
   refine WP.mono (Spill.restore_wp (B := X) (by rw [← sb₆]; exact room₆.1) sb₆ savedOffs_ho
     savedOffs_restorable (fun q hq => room₆.rw ?_) sv₆) fun s' R => ?_
   · rw [← sb₆]
     have := savedOffs_range q hq
-    exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)
+    exact Offset.contains_base _ (by unfold scratchSlots; omega_using [this]) (by omega_using [this])
   have frame : Frame [⟨X, 8 * scratchSlots⟩, ⟨s.gpr .a1, 128⟩] s.mem s'.mem := by
     rw [R.mem]
     refine (P.frame.mono (by simp [X])).trans ?_
@@ -168,7 +168,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
     refine f₃₆.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by unfold scratchSlots; omega)⟩
+    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by unfold scratchSlots; omega_using [])⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   refine ⟨fun r hr => ?_, ?_, ?_, frame⟩
   · rw [← savedOffs_regs] at hr

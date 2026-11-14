@@ -39,9 +39,9 @@ abbrev keyW (s : State) (k : Nat) : BitVec 32 := s.mem.readW (wordAddr (s.gpr kp
 def half (s : State) (d : Nat) : Nat → BitVec 32 := fun i => slotW s (d + i)
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, keySlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, keySlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
-  slots := by have := h.slots; simp [sboxCfg, layerCfg, keySlot] at this ⊢; omega
+  slots := by have := h.slots; simp [sboxCfg, layerCfg, keySlot] at this ⊢; omega_using [this]
   sep k _ j hj := by simp [sboxCfg] at hj
 
 theorem ok_lin {s : State} (h : Ok layerCfg s) : Ok linCfg s where
@@ -53,13 +53,13 @@ theorem ok_lin {s : State} (h : Ok layerCfg s) : Ok linCfg s where
 /-- A frame of the first `n` slots keeps slot `k ≥ n`. -/
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨State.addr b, 4 * n⟩] m m') (hk : n ≤ k)
     (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) : m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega)
+  have e : wordAddr b k = State.addr b + BitVec.ofNat 64 (4 * k) := addr_add (by omega_using [hfit])
   have := b.isLt
-  have hb : (State.addr b).toNat = b.toNat := by simp [State.addr]; omega
+  have hb : (State.addr b).toNat = b.toNat := by simp [State.addr]; omega_using []
   rw [e]
   exact hf.readW (r := ⟨State.addr b + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+      exact VG.Offset.disjoint_base _ (by omega_using [hk]) (by omega_using [hfit])) (by decide)
 
 /-- A frame of the slots keeps the external words. -/
 theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [slotRegion c s] s.mem m')
@@ -73,18 +73,18 @@ theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [s
   simp only [slotRegion, Region.Contains] at hc
   have hb := toNat_addr (s.gpr c.base)
   have hk : (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i - State.addr (s.gpr c.base)).toNat / 4 < c.slots := by
-    omega
+    omega_using [hc]
   have hsep := hok.sep _ hk j hj (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i)
   have e1 := wordAddr_toNat (s.gpr c.base)
-    (k := (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i - State.addr (s.gpr c.base)).toNat / 4) (by omega)
+    (k := (wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i - State.addr (s.gpr c.base)).toNat / 4) (by omega_using [hc, hfit])
   have hi' : i < 4 := by simpa using hi
   generalize wordAddr (s.gpr c.base) _ = W at hsep e1
   generalize wordAddr (s.gpr c.ext) j = A at *
   generalize State.addr (s.gpr c.base) = B at *
   have hx : (A + BitVec.ofNat 64 i - A).toNat < 4 := by
-    rw [Mem.sub_ofNat_toNat A (by omega)]; exact hi'
+    rw [Mem.sub_ofNat_toNat A (by omega_using [hi])]; exact hi'
   refine hsep ?_ hx
-  have hBl : B.toNat < 2 ^ 32 := by omega
+  have hBl : B.toNat < 2 ^ 32 := by omega_using [hb]
   bv_omega
 
 theorem runBlock_app (a b : List Instr) (s : State) :
@@ -110,8 +110,8 @@ theorem xorBits_sel (W YL SR : Nat → BitVec 32) (hS : ∀ i < 8, W i = SR i) (
     congr 1
     simp only [selG, W32.ySel]
     split
-    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hY j hj]
-    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hS _ (W32.outSrc_lt hj)]
+    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_arith), hY j hj]
+    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ (W32.outSrc_lt hj)]
 
 /-- The two rounds of a pair: `D2 ^= F(D1, k)` with the first entry at
 `kp`, `D1 ^= F(D2, k)` with the second. -/
@@ -121,8 +121,8 @@ def RoundCase (off src dst : Nat) : Prop :=
 theorem halvesIns_mem {x j i : Nat} (h : (j, i) ∈ halvesIns x) : ∃ k < 32, j = d1Slot + k ∧ i = x + k := by
   simp only [halvesIns, halfIns, List.mem_append, List.mem_map, List.mem_range, Prod.mk.injEq] at h
   rcases h with ⟨k, hk, rfl, rfl⟩ | ⟨k, hk, rfl, rfl⟩
-  · exact ⟨k, by omega, rfl, rfl⟩
-  · exact ⟨16 + k, by omega, by simp [d1Slot, d2Slot]; omega, by omega⟩
+  · exact ⟨k, by omega_using [hk], rfl, rfl⟩
+  · exact ⟨16 + k, by omega_using [hk], by simp [d1Slot, d2Slot]; omega_using [], by omega_using []⟩
 
 theorem mem_halvesSlots {k : Nat} (hk : k < 32) : d1Slot + k ∈ halvesSlots := by
   simp only [halvesSlots, List.mem_map, List.mem_range]; exact ⟨k, hk, rfl⟩

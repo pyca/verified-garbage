@@ -49,7 +49,7 @@ theorem inRange_of_norm {m : Mem} {a : Addr} {f : Poly} (h : PolyIs m a f) {B γ
   rw [getElem!_pos f i hi] at this
   rw [coeff_val h hi]
   simp only [normZq] at this
-  omega
+  omega_using [hB, this]
 
 /-! ## The hint -/
 
@@ -57,10 +57,10 @@ theorem coeff_slot {m : Mem} {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {
     coeffAt m (Buf.addr s₀ (sc (oP 5) (1024 * p.k))) (256 * i + j) = coeffAt m (Buf.addr s₀ (pS (5 + i))) j := by
   have e : Buf.addr s₀ (pS (5 + i)) = Buf.addr s₀ (sc (oP 5) (1024 * p.k)) + BitVec.ofNat 64 (1024 * i) := by
     show Buf.addr s₀ (sc (oP (5 + i)) 1024) = _
-    rw [show oP (5 + i) = oP 5 + 1024 * i by simp only [oP]; omega]
+    rw [show oP (5 + i) = oP 5 + 1024 * i by simp only [oP]; omega_using []]
     exact addr_off hp (by ofsd) (by ofsd)
   simp only [coeffAt]
-  rw [e, BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega]
+  rw [e, BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega_using []]
 
 theorem hintAt_of {m : Mem} {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {f : Nat → Vector Bool n}
     (h : HF s₀ m p.k f) : hintAt m (Buf.addr s₀ (sc (oP 5) (1024 * p.k))) p.k = (List.range p.k).map f := by
@@ -90,15 +90,15 @@ theorem hint_list {m : Mem} {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {f
   induction k with
   | zero => rfl
   | succ k ih =>
-    rw [show 256 * (k + 1) = 256 * k + 256 by omega, List.range_add, List.map_append, ih (by omega),
+    rw [show 256 * (k + 1) = 256 * k + 256 by omega_using [], List.range_add, List.map_append, ih (by omega_using [hk]),
       List.range_succ (n := k), List.map_append, List.flatMap_append]
     congr 1
     simp only [List.map_cons, List.map_nil, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.map_map]
     refine List.ext_getElem (by simp) fun j h₁ h₂ => ?_
     simp only [List.length_map, List.length_range] at h₁
-    have e := (h k (by omega)).2 0 (by decide) j h₁
+    have e := (h k (by omega_using [hk])).2 0 (by decide) j h₁
     simp only [Nat.mul_zero, Nat.zero_add, List.getD_cons_zero] at e
-    simp only [List.getElem_map, List.getElem_range, Function.comp, Vector.getElem_toList, coeff_slot hp ps (by omega : k < p.k),
+    simp only [List.getElem_map, List.getElem_range, Function.comp, Vector.getElem_toList, coeff_slot hp ps (by omega_using [hk] : k < p.k),
       e, getElem!_pos (f k) j h₁]
     cases (f k)[j] <;> rfl
 
@@ -127,9 +127,9 @@ theorem sigKeep {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {m m' : Mem} {
     (fr : Frame (FR s₀ bs N) m m') (hb : ∀ c ∈ bs, (Y p).ok c = true ∧ c.arg = 3) :
     Fam s₀ m' (yB p) p.ℓ fz ∧ HF s₀ m' p.k fh ∧
       m'.readW (Buf.addr s₀ (sc oOK 4)) 32 = m.readW (Buf.addr s₀ (sc oOK 4)) 32 :=
-  ⟨hz.keep hp ps hN fr (by simp only [nS, yB]; omega) fun c hc => ⟨(hb c hc).1, fun e => by
+  ⟨hz.keep hp ps hN fr (by simp only [nS, yB]; omega_using []) fun c hc => ⟨(hb c hc).1, fun e => by
       rw [(hb c hc).2] at e; cases e⟩,
-    hh.keep hp ps hN fr (by simp only [nS]; omega) fun c hc => ⟨(hb c hc).1, fun e => by
+    hh.keep hp ps hN fr (by simp only [nS]; omega_using []) fun c hc => ⟨(hb c hc).1, fun e => by
       rw [(hb c hc).2] at e; cases e⟩,
     keepW' hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => ⟨(hb c hc).1, fun e => by
       rw [(hb c hc).2] at e; cases e⟩⟩
@@ -149,11 +149,11 @@ structure OI (p : Params) (F : PrimsOk P) (U : State → Nat) (s₀ s : State) :
 theorem outCopy_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat) :
     SP p (OI p F U) (OS p F U 0) (copyW SC (sc oCT (cLen p)) (bSig 0 (cLen p)) (cLen p / 4)) := by
   have hc := ps.hcLen
-  have e4 : 4 * (cLen p / 4) = cLen p := by omega
+  have e4 : 4 * (cLen p / 4) = cLen p := by omega_using [hc]
   have e : copyW SC (sc oCT (cLen p)) (bSig 0 (cLen p)) (cLen p / 4) =
       copyW SC ⟨SC, oCT, 4 * (cLen p / 4)⟩ ⟨3, 0, 4 * (cLen p / 4)⟩ (cLen p / 4) := rfl
   rw [e]
-  refine copy_piece SC oCT 3 0 (cLen p / 4) (by omega) (by omega) (by ofsd) (fun _ _ _ h => h.ctx)
+  refine copy_piece SC oCT 3 0 (cLen p / 4) (by omega_using [hc]) (by omega_using [hc]) (by ofsd) (fun _ _ _ h => h.ctx)
     fun s₀ s s' hp h c' fr hb => ?_
   have fr' : Frame (FR s₀ [⟨3, 0, 4 * (cLen p / 4)⟩] 80) s.mem s'.mem := fr.mono (by simp)
   have hk := sigKeep hp ps h.fy h.fh (by decide) fr' fun c hc => by
@@ -171,13 +171,13 @@ theorem packZ_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat) (r : Nat) (h
   have hβ := ps.hβ
   have hm : zLen p * r + zLen p ≤ zLen p * p.ℓ := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hr
   have hc := ps.hcLen
-  refine bp_piece F.bitPack (F.ok _ (by simp)) (p.γ₁ - 1) p.γ₁ (zLen p) ps.hz.1 ps.hz.2 ⟨by omega, by omega, by omega⟩
+  refine bp_piece F.bitPack (F.ok _ (by simp)) (p.γ₁ - 1) p.γ₁ (zLen p) ps.hz.1 ps.hz.2 ⟨by omega_arith, by omega_arith, by omega_using [hz]⟩
     SC (oP (yB p + r)) 3 (sigZ p r) (by ofsd) (fun s₀ s _ h => ⟨h.ctx, (fam_at h.fy hr).1,
-      inRange_of_norm (fam_at h.fy hr) (h.pass.1 r hr) (by omega)⟩) fun s₀ s s' hp h c' fr hb => ?_
+      inRange_of_norm (fam_at h.fy hr) (h.pass.1 r hr) (by omega_using [])⟩) fun s₀ s s' hp h c' fr hb => ?_
   have hk := sigKeep hp ps h.fy h.fh (by decide) fr fun c hc => by
     rw [List.mem_singleton] at hc; subst hc; exact ⟨by ofsd, rfl⟩
   refine ⟨c', hk.1, hk.2.1, h.run, h.ball, h.pass, by rw [scw, hk.2.2]; exact h.ok1, ?_⟩
-  rw [bytes_split hp s'.mem (o' := sigZ p r) (l₁ := cLen p + zLen p * r) (l₂ := zLen p) (by simp only [sigZ]; omega) (by rw [Nat.mul_succ]; omega)
+  rw [bytes_split hp s'.mem (o' := sigZ p r) (l₁ := cLen p + zLen p * r) (l₂ := zLen p) (by simp only [sigZ]; omega_using []) (by rw [Nat.mul_succ]; omega_using [])
     (by ofsd) (by ofsd), keepBytes hp (N := 80) (by show 80 + 16 ≤ 96; decide) (b := ⟨3, 0, cLen p + zLen p * r⟩) (by ofsd) fr, h.sig, hb,
     (fam_at h.fy hr).2, List.append_assoc]
   simp only [zEnc, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
@@ -196,7 +196,7 @@ theorem hpack_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat)
   have hc := ps.hcLen
   have hsl := ps.hsigLen
   unfold hintBitPackAt
-  rw [show (sc (oP 5) (1024 * p.k)).len / 4 = 256 * p.k by show 1024 * p.k / 4 = _; omega]
+  rw [show (sc (oP 5) (1024 * p.k)).len / 4 = 256 * p.k by show 1024 * p.k / 4 = _; omega_using []]
   refine hbp_piece F.hintBitPack (F.ok _ (by simp)) p.ω p.k ps.hhint SC (oP 5) 3 (sigH p) (by ofsd)
     (fun s₀ s hp h => ⟨h.ctx, ?_⟩) (fun s₀ s₀' s s' hp hp' hq h h' => ?_) fun s₀ s s' hp h c' fr hb =>
       ⟨c', by rw [scw, (sigKeep hp ps h.fy h.fh (by decide) fr fun c hc => by
@@ -204,8 +204,8 @@ theorem hpack_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat)
   · rw [hintAt_of hp ps h.fh, hintOnes_map]; exact h.pass.2.2.2
   · rw [hint_list hp ps h.fh, hint_list hp' ps h'.fh, ← hU s₀ s₀' hp hp' hq]
     exact (((run_at ps hq h.run).2 h.ball).2 h.pass)
-  · rw [bytes_split hp s'.mem (o' := sigH p) (l₁ := cLen p + zLen p * p.ℓ) (l₂ := p.ω + p.k) (by simp only [sigH]; omega)
-      (by omega) (by ofsd) (by ofsd), keepBytes hp (N := 80) (by show 80 + 16 ≤ 96; decide)
+  · rw [bytes_split hp s'.mem (o' := sigH p) (l₁ := cLen p + zLen p * p.ℓ) (l₂ := p.ω + p.k) (by simp only [sigH]; omega_using [])
+      (by omega_using [hsl]) (by ofsd) (by ofsd), keepBytes hp (N := 80) (by show 80 + 16 ≤ 96; decide)
       (b := ⟨3, 0, cLen p + zLen p * p.ℓ⟩) (by ofsd) fr, h.sig, hb, hintAt_of hp ps h.fh]
 
 /-- The signature. -/
@@ -215,7 +215,7 @@ theorem output_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat)
       bytesAt s.mem (Buf.addr s₀ (bSig 0 p.sigLen)) p.sigLen = sigV p s₀ (p.ℓ * U s₀)) (output P p) := by
   unfold output
   refine (outCopy_piece F ps U).seq (Piece.seq ?_ (hpack_piece F ps U hU))
-  have := seqR_piece (p := p) (I := OS p F U) 0 p.ℓ fun r _ hr => packZ_piece F ps U r (by omega)
+  have := seqR_piece (p := p) (I := OS p F U) 0 p.ℓ fun r _ hr => packZ_piece F ps U r (by omega_using [hr])
   simpa using this
 
 end VG.Proof.MlDsa.X86.Sign

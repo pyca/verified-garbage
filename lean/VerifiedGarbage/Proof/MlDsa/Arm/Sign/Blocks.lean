@@ -80,7 +80,7 @@ theorem encodable_small {v : Nat} (hv : v < 256) : encodable (BitVec.ofNat 32 v)
   refine ⟨0, by simp, ?_⟩
   have : (BitVec.ofNat 32 v).rotateLeft 0 = BitVec.ofNat 32 v := by
     rw [BitVec.rotateLeft_def]; simp [BitVec.ushiftRight_eq_zero]
-  rw [this]; simp; omega
+  rw [this]; simp; omega_using [hv]
 
 omit L in
 /-- What a store of the block through `r0` leaves. -/

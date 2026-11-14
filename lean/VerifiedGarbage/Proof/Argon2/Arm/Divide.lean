@@ -115,7 +115,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   simp only [bit, List.cons_append, List.nil_append]
   refine wp_adds (op2_reg _ _) fun s₁ u₁ c₁ => ?_
   have cb : s₁.c = decide (b = 1) := by
-    rw [c₁, hr1]; rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega
+    rw [c₁, hr1]; rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega_using [hD, hD2, hN, ha, hrlt, hc, hPP, hP, hPb, hqlt, N', st₁, st₂, res, hr1]
   have v₁ : (s₁.gpr .r1).toNat = 2 * P + 2 * (N / D.toNat) := by
     rw [u₁.gpr, BitVec.toNat_add, hr1]
     rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl
@@ -156,7 +156,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   · -- `r1`: the remaining bits above the quotient.
     rw [R'', hP, N', ← res.1, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
       u₅.other _ (by decide), v₄, ← ht]
-    omega
+    omega_using []
   · -- `r0`: the remainder.
     have d₆ : s₆.gpr .r2 = D := by
       rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), d₂]
@@ -181,8 +181,8 @@ theorem bits_ok {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31) {n :
   | 0, _, s, _, h, hq => hq s h (Keep.refl s)
   | k + 1, hk, s, hb, h, hq => by
     simp only [bits, List.append_assoc]
-    refine bits_ok hD hD2 hn k (by omega) s hb h fun t ht kt => ?_
-    refine bit_ok hD hD2 (by rw [kt.other _ (by decide) (by decide) (by decide), hb]) hn (by omega) ht
+    refine bits_ok hD hD2 hn k (by omega_using [hk]) s hb h fun t ht kt => ?_
+    refine bit_ok hD hD2 (by rw [kt.other _ (by decide) (by decide) (by decide), hb]) hn (by omega_using [hk]) ht
       fun u hu ku => hq u hu (kt.trans ku)
 
 /-- The division: `r1 := n / D`, `r0 := n mod D`. -/

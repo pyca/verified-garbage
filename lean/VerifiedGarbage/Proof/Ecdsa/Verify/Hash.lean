@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: target-independent, for each target's verification of the hash function's output
 
@@ -50,7 +51,7 @@ def fixedDigest (len : Nat) (wide : Bool) (H : List Byte) : List Byte :=
 theorem sh_toNat (a b : Byte) : (sh a b).toNat = a.toNat % 2 * 128 + b.toNat / 2 := by
   have hb := b.isLt
   rw [sh, BitVec.toNat_ofNat]
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_using [])
 
 theorem length_shr1 : ∀ (a : Byte) (r : List Byte), (shr1 (a :: r)).length = r.length
   | _, [] => rfl
@@ -66,10 +67,10 @@ theorem half_step (a b P Y Z : Nat) (_ha : a < 256) (hb : b < 256) (hY : Y < P)
     (hZ : Z = (b % 2 * P + Y) / 2) :
     (a % 2 * 128 + b / 2) * P + (b * P + Y) / 2 % P = (a * (256 * P) + (b * P + Y)) / 2 % (256 * P) := by
   have hbP : b % 2 * P ≤ P := by
-    have : b % 2 ≤ 1 := by omega
+    have : b % 2 ≤ 1 := by omega_using []
     calc b % 2 * P ≤ 1 * P := Nat.mul_le_mul_right _ this
       _ = P := Nat.one_mul P
-  have hZP : Z < P := by omega
+  have hZP : Z < P := by omega_using [hY, hZ, hbP]
   have e1 : b * P + Y = (b % 2 * P + Y) + (b / 2 * P) * 2 := by
     conv => lhs; rw [← Nat.div_add_mod b 2]
     grind
@@ -85,8 +86,8 @@ theorem half_step (a b P Y Z : Nat) (_ha : a < 256) (hb : b < 256) (hY : Y < P)
   rw [e3, e4, Nat.add_mul_div_right _ _ (by decide), ← hZ, ← Nat.add_assoc, Nat.add_comm Z,
     Nat.add_mul_mod_self_right]
   refine (Nat.mod_eq_of_lt ?_).symm
-  have hs : a % 2 * 128 + b / 2 + 1 ≤ 256 := by omega
-  calc (a % 2 * 128 + b / 2) * P + Z < (a % 2 * 128 + b / 2) * P + P := by omega
+  have hs : a % 2 * 128 + b / 2 + 1 ≤ 256 := by omega_using [hb]
+  calc (a % 2 * 128 + b / 2) * P + Z < (a % 2 * 128 + b / 2) * P + P := by omega_using [hY, hZ, hbP]
     _ = (a % 2 * 128 + b / 2 + 1) * P := by rw [Nat.succ_mul]
     _ ≤ 256 * P := Nat.mul_le_mul_right _ hs
 
@@ -111,16 +112,16 @@ theorem ofBytes_replicate_zero (k : Nat) (l : List Byte) :
 theorem hashToInt_fixedDigest {C : Spec.Weierstrass.Curve} {len : Nat} {wide : Bool}
     (hL : 8 * len = Spec.Ecdsa.nBits C + if wide then 7 else 0) (H : List Byte) :
     Spec.Ecdsa.hashToInt C (fixedDigest len wide H) = Spec.Ecdsa.hashToInt C H := by
-  have h₁ : Spec.Ecdsa.nBits C ≤ 8 * len := by split at hL <;> omega
+  have h₁ : Spec.Ecdsa.nBits C ≤ 8 * len := by split at hL <;> omega_using [hL]
   unfold fixedDigest
   by_cases hl : len ≤ H.length
   · simp only [hl, ite_true]
-    rw [hashToInt_takeR h₁ (by rw [List.length_take]; omega), List.take_take, Nat.min_self,
+    rw [hashToInt_takeR h₁ (by rw [List.length_take]; omega_using [hl]), List.take_take, Nat.min_self,
       hashToInt_takeR h₁ hl]
   · simp only [hl, ite_false]
     have hs : Spec.Ecdsa.hashToInt C H = Spec.Weierstrass.ofBytes H := by
       rw [Spec.Ecdsa.hashToInt]
-      simp only [show 8 * H.length ≤ Spec.Ecdsa.nBits C by split at hL <;> omega, ite_true]
+      simp only [show 8 * H.length ≤ Spec.Ecdsa.nBits C by split at hL <;> omega_using [hl, hL], ite_true]
     rw [hs]
     have hH := ofBytes_lt H
     cases wide with
@@ -128,16 +129,16 @@ theorem hashToInt_fixedDigest {C : Spec.Weierstrass.Curve} {len : Nat} {wide : B
       simp only [Bool.false_eq_true, ite_false] at hL ⊢
       rw [Spec.Ecdsa.hashToInt]
       simp only [List.length_append, List.length_replicate,
-        show 8 * (len - H.length + H.length) ≤ Spec.Ecdsa.nBits C by omega, ite_true]
+        show 8 * (len - H.length + H.length) ≤ Spec.Ecdsa.nBits C by omega_using [hl, hL], ite_true]
       exact ofBytes_replicate_zero _ _
     | true =>
       simp only [ite_true] at hL ⊢
       have hT : List.replicate (len - H.length) (0 : Byte) ++ H ++ [0] =
           (0 : Byte) :: (List.replicate (len - H.length - 1) 0 ++ H ++ [0]) := by
-        rw [show len - H.length = (len - H.length - 1) + 1 by omega, List.replicate_succ]
+        rw [show len - H.length = (len - H.length - 1) + 1 by omega_using [hl], List.replicate_succ]
         simp
       have hlen : (List.replicate (len - H.length - 1) (0 : Byte) ++ H ++ [0]).length = len := by
-        simp only [List.length_append, List.length_replicate, List.length_singleton]; omega
+        simp only [List.length_append, List.length_replicate, List.length_singleton]; omega_using [hl]
       have hB : (shr1 ((0 : Byte) :: (List.replicate (len - H.length - 1) 0 ++ H ++ [0]))).length = len := by
         rw [length_shr1, hlen]
       have hv : Spec.Weierstrass.ofBytes (shr1 ((0 : Byte) :: (List.replicate (len - H.length - 1) 0 ++ H ++ [0]))) =
@@ -145,18 +146,18 @@ theorem hashToInt_fixedDigest {C : Spec.Weierstrass.Curve} {len : Nat} {wide : B
         rw [ofBytes_shr1, hlen, ofBytes_cons, hlen, List.append_assoc, ofBytes_replicate_zero,
           ofBytes_append, List.length_singleton, ofBytes_single]
         rw [show (0 : Byte).toNat = 0 from rfl, Nat.zero_mul, Nat.zero_add, Nat.add_zero, Nat.pow_one,
-          show Spec.Weierstrass.ofBytes H * 256 = Spec.Weierstrass.ofBytes H * 128 * 2 by omega,
+          show Spec.Weierstrass.ofBytes H * 256 = Spec.Weierstrass.ofBytes H * 128 * 2 by omega_using [],
           Nat.mul_div_cancel _ (by decide : 0 < 2)]
         refine Nat.mod_eq_of_lt ?_
         have : 2 ^ (8 * H.length) * 128 ≤ 2 ^ (8 * len) := by
-          rw [show 8 * len = 8 * H.length + 7 + (8 * (len - H.length) - 7) by omega, Nat.pow_add,
+          rw [show 8 * len = 8 * H.length + 7 + (8 * (len - H.length) - 7) by omega_using [hl], Nat.pow_add,
             Nat.pow_add]
           exact Nat.le_mul_of_pos_right _ (Nat.two_pow_pos _)
         calc Spec.Weierstrass.ofBytes H * 128 < 2 ^ (8 * H.length) * 128 := Nat.mul_lt_mul_of_pos_right hH (by decide)
           _ ≤ _ := this
       rw [hT, Spec.Ecdsa.hashToInt, hB, hv]
-      simp only [show ¬ 8 * len ≤ Spec.Ecdsa.nBits C by omega, ite_false]
-      rw [show 8 * len - Spec.Ecdsa.nBits C = 7 by omega, Nat.shiftRight_eq_div_pow,
+      simp only [show ¬ 8 * len ≤ Spec.Ecdsa.nBits C by omega_using [hL], ite_false]
+      rw [show 8 * len - Spec.Ecdsa.nBits C = 7 by omega_using [hL], Nat.shiftRight_eq_div_pow,
         Nat.mul_div_cancel _ (by decide)]
 
 /-! ## Bytes in memory -/
@@ -187,7 +188,7 @@ theorem shift_byte (b c : Byte) :
     BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow]
   simp only [Nat.reducePow]
-  omega
+  omega_using []
 
 /-- The bytes of the buffer after the zeros and the hash: the hash at
 `len - d`. -/
@@ -200,14 +201,14 @@ theorem tz_getD {len : Nat} {H : List Byte} (hl : H.length < len) {j : Nat} (hj 
   rw [List.append_assoc, List.getD_eq_getElem?_getD]
   by_cases h₁ : j < len - H.length
   · rw [List.getElem?_append_left (by simpa using h₁)]
-    simp [h₁, show ¬ (len - H.length ≤ j) by omega]
-  · rw [List.getElem?_append_right (by simp; omega)]
+    simp [h₁, show ¬ (len - H.length ≤ j) by omega_using [h₁]]
+  · rw [List.getElem?_append_right (by simp; omega_using [h₁])]
     simp only [List.length_replicate]
     by_cases h₂ : j < len
-    · rw [List.getElem?_append_left (by omega)]
-      simp [show len - H.length ≤ j by omega, h₂, List.getD_eq_getElem?_getD]
-    · have e : j - (len - H.length) - H.length = 0 := by omega
-      rw [List.getElem?_append_right (by omega), e]
+    · rw [List.getElem?_append_left (by omega_using [h₁, h₂])]
+      simp [show len - H.length ≤ j by omega_using [h₁], h₂, List.getD_eq_getElem?_getD]
+    · have e : j - (len - H.length) - H.length = 0 := by omega_using [hj]
+      rw [List.getElem?_append_right (by omega_using [hl, h₂]), e]
       simp [h₂]
 
 theorem fixed_short {len : Nat} {H : List Byte} (hl : H.length < len) (wide : Bool) {i : Nat}
@@ -215,20 +216,20 @@ theorem fixed_short {len : Nat} {H : List Byte} (hl : H.length < len) (wide : Bo
     (fixedDigest len wide H).getD i 0 =
       if wide then sh (tz len H i) (tz len H (i + 1)) else tz len H i := by
   unfold fixedDigest
-  simp only [show ¬ len ≤ H.length by omega, ite_false]
+  simp only [show ¬ len ≤ H.length by omega_using [hl], ite_false]
   cases wide with
   | true =>
     simp only [ite_true]
-    rw [shr1_getD _ _ (by simp; omega), tz_getD hl (by omega), tz_getD hl (by omega)]
+    rw [shr1_getD _ _ (by simp; omega_using [hi]), tz_getD hl (by omega_using [hi]), tz_getD hl (by omega_using [hi])]
   | false =>
     simp only [Bool.false_eq_true, ite_false]
     have := tz_getD hl (Nat.le_of_lt hi)
     rw [← this, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-      List.getElem?_append_left (l₁ := List.replicate (len - H.length) 0 ++ H) (by simp; omega)]
+      List.getElem?_append_left (l₁ := List.replicate (len - H.length) 0 ++ H) (by simp; omega_using [hi])]
 
 theorem contains_sub {B x : Addr} {n k : Nat} (h : (⟨B, n⟩ : Region).Contains x 1) (hk : n ≤ k) :
     (⟨B, k⟩ : Region).Contains x 1 := by
-  unfold Region.Contains at *; simp only at h ⊢; omega
+  unfold Region.Contains at *; simp only at h ⊢; omega_using [h, hk]
 
 theorem byte_writeW_ne' (m : Mem) (p : Addr) (b : Byte) {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64)
     (h : j ≠ i) : (m.writeW (p + BitVec.ofNat 64 i) b) (p + BitVec.ofNat 64 j) = m (p + BitVec.ofNat 64 j) := by
@@ -254,7 +255,7 @@ theorem in_buf {B x : Addr} {off n : Nat} (h : (⟨B + BitVec.ofNat 64 off, n⟩
   Offset.sub_base B hn x h
 
 theorem nBits_pos (C : Spec.Weierstrass.Curve) : 0 < Spec.Ecdsa.nBits C := by
-  unfold Spec.Ecdsa.nBits; omega
+  unfold Spec.Ecdsa.nBits; omega_using []
 
 /-- The bytes of a region apart from the memory a frame changes. -/
 theorem bytesAt_frame {R : Region} {m m' : Mem} (hf : Frame [R] m m') {p : Addr} {n : Nat}
@@ -277,17 +278,17 @@ theorem bytesAt_ext {m : Mem} {p : Addr} {n : Nat} {l : List Byte} (hl : l.lengt
 theorem length_fixedDigest (len : Nat) (wide : Bool) (H : List Byte) : (fixedDigest len wide H).length = len := by
   unfold fixedDigest
   split
-  · simp; omega
+  · simp; omega_arith
   · split
     · rw [show List.replicate (len - H.length) (0 : Byte) ++ H ++ [0] =
           (0 : Byte) :: (List.replicate (len - H.length - 1) 0 ++ H ++ [0]) by
-        rw [show len - H.length = (len - H.length - 1) + 1 by omega, List.replicate_succ]; simp,
+        rw [show len - H.length = (len - H.length - 1) + 1 by omega_arith, List.replicate_succ]; simp,
         length_shr1]
-      simp; omega
-    · simp; omega
+      simp; omega_arith
+    · simp; omega_arith
 
 theorem sub_prefix (B : Addr) {n k : Nat} (h : n ≤ k) : Region.Sub ⟨B, n⟩ ⟨B, k⟩ := fun x hx => by
-  unfold Region.Contains at *; simp only at *; omega
+  unfold Region.Contains at *; simp only at *; omega_using [h, hx]
 
 theorem bytes_of_leak {a₁ b₁ c₁ a₂ b₂ c₂ : List Byte} (ha : a₁.length = a₂.length) (hb : b₁.length = b₂.length)
     (h : (a₁ ++ b₁ ++ c₁).map (·.toNat) = (a₂ ++ b₂ ++ c₂).map (·.toNat)) : a₁ = a₂ ∧ b₁ = b₂ ∧ c₁ = c₂ := by

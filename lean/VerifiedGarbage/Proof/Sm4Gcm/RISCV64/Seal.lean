@@ -39,7 +39,7 @@ open VG.Spec.Sm4.Gcm (ctxCiph)
 /-- The stack below `sp`, for the state at `W + 16`. -/
 theorem one_stk3 {s : State} {rs : List Region} (h : stkOk3 s rs) {c W : Addr} (hc : ⟨c, 256⟩ ∈ rs)
     (hw : ⟨W, 2560⟩ ∈ rs) : StkOk c (W + BitVec.ofNat 64 16) W s.sp :=
-  ⟨h.buf hc, (h.buf hw).sub_left (Lay.wSub (by decide)), h.buf hw, h.1, by have := h.2.1; omega⟩
+  ⟨h.buf hc, (h.buf hw).sub_left (Lay.wSub (by decide)), h.buf hw, h.1, by have := h.2.1; omega_using [this]⟩
 
 /-- After the entry, the environment. -/
 theorem one_env {s₀ s₁ : State} {W : Addr} (h1 : SO1 W s₀ s₁)
@@ -63,7 +63,7 @@ theorem saved_otFrame {sp : Addr} (hbw : (below sp 3248).Disjoint ⟨w, 2560⟩)
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 48) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by omega) (.inl (by omega))
+  · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
   · exact saved_w (by decide) (.inr (by decide))
   · exact (hbw.sub_right (Lay.wSub (by decide))).symm
 
@@ -127,7 +127,7 @@ theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealRISCV64.
   have hb := Nat.mod_lt (bytesAt s₁.mem (s₀.gpr .a3) (s₁.gpr .s10).toNat ++
     zeros (padLen (bytesAt s₁.mem (s₀.gpr .a3) (s₁.gpr .s10).toNat).length)).length (show 16 > 0 by decide)
   have hab₃ := oa.abs.congr (blockAt_frame oc.frame (stp_crFrame hb₁.st hd₂ (by decide)))
-    (bytesAt_frame oc.frame (stp_crFrame hb₁.st hd₂ (by omega)) (by omega))
+    (bytesAt_frame oc.frame (stp_crFrame hb₁.st hd₂ (by omega_using [])) (by omega_using []))
   have hD₃s : s₃.mem.readW (s₁.gpr .s0 + BitVec.ofNat 64 dataO) 64 = s₀.gpr .a5 := by
     rw [slot_keep oc.frame (slot_crFrame L hb₁ hd₂ (by decide))]; exact hD₂s
   refine WP.seq (WP.mono (WP.with_rdwr (oneTag_ok L hb₁ (o := 0) (.inl rfl) oc.env hH₃
@@ -181,16 +181,16 @@ theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealRISCV64.
   have hc₃ : ciphOf s₃.mem (s₀.gpr .a0) = ctxCiph s₀.mem (s₀.gpr .a0) := by
     rw [ciph_frame cf₃ (ctx_crFrame' L₀ bc₀ hd₂₀), hc₂]
   have hD₂ : bytesAt s₂.mem (s₀.gpr .a5) (s₀.gpr .a6).toNat = bytesAt s₀.mem (s₀.gpr .a5) (s₀.gpr .a6).toNat :=
-    bytesAt_frame f₂ dD (by have := (s₀.gpr .a6).isLt; omega)
+    bytesAt_frame f₂ dD (by have := (s₀.gpr .a6).isLt; omega_using [])
   have hiv : bytesAt s₁.mem (s₀.gpr .a1) (s₀.gpr .a2).toNat = bytesAt s₀.mem (s₀.gpr .a1) (s₀.gpr .a2).toNat :=
     bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dnW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .a2).isLt; omega)
+      (by have := (s₀.gpr .a2).isLt; omega_using [])
   have haad : bytesAt s₁.mem (s₀.gpr .a3) (s₁.gpr .s10).toNat = bytesAt s₀.mem (s₀.gpr .a3) (s₀.gpr .a4).toNat := by
     rw [h1.s10]
     exact bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .a4).isLt; omega)
+      (by have := (s₀.gpr .a4).isLt; omega_using [])
   have hj₃ : blockAt s₃.mem (stackArg s₀ 0 + BitVec.ofNat 64 16) =
       j0 (ctxH s₀.mem (s₀.gpr .a0)) (bytesAt s₀.mem (s₀.gpr .a1) (s₀.gpr .a2).toNat) := by
     rw [blockAt_frame cf₃ (by simpa using stp_crFrame bs₀ hd₂₀ (d := 0) (k := 16) (by decide)), ← hiv, ← h1.s1]
@@ -203,7 +203,7 @@ theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealRISCV64.
     rw [h1.s11, h1.s2, hc₂, hD₂, hiv] at this
     exact this
   have hD₄ : bytesAt s₄.mem (s₀.gpr .a5) (s₀.gpr .a6).toNat = bytesAt s₃.mem (s₀.gpr .a5) (s₀.gpr .a6).toNat := by
-    refine bytesAt_frame of₄ (fun r hr => ?_) (by have := (s₀.gpr .a6).isLt; omega)
+    refine bytesAt_frame of₄ (fun r hr => ?_) (by have := (s₀.gpr .a6).isLt; omega_using [])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ddW.sub_right (Lay.wSub (by decide))
@@ -213,7 +213,7 @@ theorem seal_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : sealRISCV64.
     · exact bd₀.symm
   have hD₅ : bytesAt s₅.mem (s₀.gpr .a5) (s₀.gpr .a6).toNat = bytesAt s₄.mem (s₀.gpr .a5) (s₀.gpr .a6).toNat :=
     bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h1.s9]; exact ddt)
-      (by have := (s₀.gpr .a6).isLt; omega)
+      (by have := (s₀.gpr .a6).isLt; omega_using [])
   have ho := ot.out
   rw [h1.s2, h1.s1, h1.s11, h1.s0, hc₃, hj₃, haad, BitVec.add_zero, ← Proof.Gcm.fullTag_eq] at ho
   rw [h1.s0, h1.s9] at hb₅

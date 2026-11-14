@@ -32,20 +32,20 @@ theorem Outside.frame {base : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 n
   have := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at this
   change 0 + n ≤ (x - base).toNat
-  omega))
+  omega_using [this]))
 
 theorem FieldMem.whole {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m')
     (ho : o + 112 ≤ 8192) : Outside base 0 8192 m m' := fun p hp =>
-  h p (by omega) (by simp only [ACC]; omega)
+  h p (by omega_using [ho, hp]) (by simp only [ACC]; omega_using [hp])
 
 theorem Outside2.whole {base : Addr} {x nx y ny : Nat} {m m' : Mem}
     (h : Outside2 base x nx y ny m m') (hx : x + nx ≤ 8192) (hy : y + ny ≤ 8192) :
-    Outside base 0 8192 m m' := fun p hp => h p (by omega) (by omega)
+    Outside base 0 8192 m m' := fun p hp => h p (by omega_using [hx, hp]) (by omega_using [hy, hp])
 
 theorem Saved.field {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {o : Nat} (hm : FieldMem base o m m') (ho : 32 ≤ o) : Saved base g m' := by
   intro i hi
-  exact (hm.word (Or.inl (by omega)) (by simp only [ACC]; omega)).trans (h i hi)
+  exact (hm.word (Or.inl (by omega_using [ho, hi])) (by simp only [ACC]; omega_using [hi])).trans (h i hi)
 
 def finishRegs : List Reg := saved ++ workRegs
 
@@ -73,7 +73,7 @@ theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BoundedEnv
   have svw : Saved base g w'.mem := by
     intro i hi
     rw [hw'.mem]
-    exact (output_word wm (by decide) (by omega) hfar).trans (svv i hi)
+    exact (output_word wm (by decide) (by omega_using [hi]) hfar).trans (svv i hi)
   refine WP.mono (restore_ok ws svw) fun t ⟨tr, tm, tk⟩ => ?_
   refine ⟨tr, ?_, (uk.1.mono ?_).trans ((vk.mono ?_).trans ((wk.mono ?_).trans
     ((rest_keeps (hw'.rest (ws := [.lr]) (by decide))).mono ?_ |>.trans (tk.mono ?_)))), ?_, ?_⟩

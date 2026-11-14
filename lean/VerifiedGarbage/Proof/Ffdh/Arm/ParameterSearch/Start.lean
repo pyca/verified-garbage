@@ -45,9 +45,9 @@ theorem SearchStart.entry {p : SearchParams} {s : State} (h : SearchStart p s) :
   have buffers : SearchBuffers p t := h.storage.after_frame (by decide)
     (frame.mono (by simp [searchRegions])) fakeRest
   have widthLow := packedLow s.mem p.control 1 p.c.length
-    (by have := p.width_bounds; omega) h.width
+    (by have := p.width_bounds; omega_using [this]) h.width
   have entropyLow := packedLow s.mem p.control 2 (Spec.Ffdh.parameterEntropy p.c.bits)
-    (by have := p.entropy_bound; omega) h.entropy
+    (by have := p.entropy_bound; omega_using [this]) h.entropy
   refine ⟨⟨buffers, Nat.zero_le _, Nat.le_refl _, ?_, ?_, ?_, ?_⟩, rest⟩
   · have word := fields_word s.mem p.control (entryValues p) (entryValues_bound p)
       (j := 0) (by decide) (by simp [entryValues])

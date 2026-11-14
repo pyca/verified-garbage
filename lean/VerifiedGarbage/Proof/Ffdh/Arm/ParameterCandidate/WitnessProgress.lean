@@ -37,7 +37,7 @@ theorem draw_continue {p : WitnessParams} {passed used : Nat} (more : passed < p
       by_cases done : passed + 1 = p.checks
       · simp only [ite_eq_left done] at status
         contradiction
-      · omega
+      · omega_using [more, done]
     · rw [ite_eq_right pass] at status ⊢
       contradiction
   · rw [ite_eq_right valid]
@@ -54,12 +54,12 @@ theorem witnessRemaining_step {s : State} {p : WitnessParams} {used passed : Nat
   have width : Spec.Ffdh.witnessOctets p.modulus = (p.bits + 7) / 8 := by
     unfold Spec.Ffdh.witnessOctets
     rw [← h.bitsExact]
-  have positive : 0 < Spec.Ffdh.witnessOctets p.modulus := by rw [width]; have := h.bitsPositive; omega
-  have count : p.checks - passed = (p.checks - passed - 1) + 1 := by omega
+  have positive : 0 < Spec.Ffdh.witnessOctets p.modulus := by rw [width]; have := h.bitsPositive; omega_using [this]
+  have count : p.checks - passed = (p.checks - passed - 1) + 1 := by omega_using [more]
   rw [witnessRemaining, count, checkWitnesses_step positive, width, List.length_drop]
   have room : ((p.bits + 7) / 8 ≤ p.bytes.length - used) ↔ used + (p.bits + 7) / 8 ≤ p.bytes.length := by
     have := h.usedBound
-    omega
+    omega_using [this]
   by_cases enough : used + (p.bits + 7) / 8 ≤ p.bytes.length
   · have available := room.mpr enough
     rw [ite_eq_left available, ite_eq_left enough]
@@ -75,12 +75,12 @@ theorem witnessRemaining_step {s : State} {p : WitnessParams} {used passed : Nat
       by_cases pass : Spec.Ffdh.mrRound p.modulus (witnessValue p used) = true
       · rw [ite_eq_left pass]
         by_cases done : passed + 1 = p.checks
-        · have exhausted : p.checks - passed - 1 = 0 := by omega
+        · have exhausted : p.checks - passed - 1 = 0 := by omega_using [done]
           simp only [exhausted, checkWitnesses, drawStatus, drawPassed, ite_eq_left valid,
             roundStatus, roundPassed, ite_eq_left pass, ite_eq_left done, witnessRemaining,
-            show p.checks - (passed + 1) = 0 by omega]
+            show p.checks - (passed + 1) = 0 by omega_using [done]]
           rfl
-        · have remaining : p.checks - (passed + 1) = p.checks - passed - 1 := by omega
+        · have remaining : p.checks - (passed + 1) = p.checks - passed - 1 := by omega_using []
           simp only [drawStatus, drawPassed, ite_eq_left valid, roundStatus, roundPassed,
             ite_eq_left pass, ite_eq_right done, witnessRemaining, remaining]
           rfl

@@ -37,7 +37,7 @@ theorem ctxCiph_mut {K W D : Addr} {n : Nat} (L : Lay K W) (hD : (⟨K, 256⟩ :
     ctxCiph m' K R = ctxCiph m K R := by
   unfold ctxCiph
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
-  rw [Proof.Cmac.bytesAt_frame h (fun r hr => (k_mut L hD r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+  rw [Proof.Cmac.bytesAt_frame h (fun r hr => (k_mut L hD r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 theorem ctxLstar_mut {K W D : Addr} {n : Nat} (L : Lay K W) (hD : (⟨K, 256⟩ : Region).Disjoint ⟨D, n⟩)
     {m m' : Mem} (h : Frame (mutR W D n) m m') : ctxLstar m' K = ctxLstar m K := by
@@ -115,14 +115,14 @@ theorem nonce_ok (v : BlocksImpl) {K W D : Addr} {R n : Nat} {SP : Addr} (L : La
   · rw [P₃.o0, ktop, Proof.Ocb.offset0_eq]; rfl
   · rw [blockAtMem_frame P₃.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [ofsO, o0O]; omega) (by omega) (by decide)),
+        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [ofsO, o0O]; omega_arith) (by omega_using [h₂]) (by decide)),
       blockAtMem_frame P₂.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact L.w_w (by simp only [tmpO]; omega) (by omega) (by decide)
-        · exact L.w_w (by omega) (by omega) (by decide)),
+        · exact L.w_w (by simp only [tmpO]; omega_using [h₂]) (by omega_using [h₂]) (by decide)
+        · exact L.w_w (by omega_using [h₂]) (by omega_using [h₂]) (by decide)),
       blockAtMem_frame P₁.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [tmpO, botO]; omega) (by omega) (by decide))]
+        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [tmpO, botO]; omega_using [h₂]) (by omega_using [h₂]) (by decide))]
 
 end VG.Proof.AesOcb.AArch64

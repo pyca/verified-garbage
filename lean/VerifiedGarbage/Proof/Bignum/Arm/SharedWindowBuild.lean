@@ -30,7 +30,7 @@ theorem sharedTableBody_ok (s : State) {M x j : Nat}
       BuildInv base len w M x (j + 1) t ∧ t.z = decide (j + 1 = 8) ∧
       KeepsExp base s.mem t.mem ∧ P t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) fits
   rw [SharedWindow.tableBody, WP.seq_iff]
   refine WP.mono (A.op_ok s 1 1 5 h.power.ready hp
     (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
@@ -42,16 +42,16 @@ theorem sharedTableBody_ok (s : State) {M x j : Nat}
   have power := h.power.after_other ready keeps (by decide) (by decide) (by decide) (by decide) (by decide)
   have prod : numAt u.mem (State.addr base) w 1 % M = x ^ j * 2 ^ (64 * w) % M := by
     have := mont_mulx h.power.coprime h.prodValue h.power.inputValue value
-    rwa [show j - 1 + 1 = j by omega] at this
+    rwa [show j - 1 + 1 = j by omega_using [hj]] at this
   have entryU := (keeps_header_readW keeps size (d := 220) (bits := 32) (by decide)).trans h.entry
   have indexU := (keeps_header_readW keeps size (d := 228) (bits := 32) (by decide)).trans h.index
-  refine WP.mono (entryStep_ok u power (h.table.of_keeps keeps fits (by decide) (by omega)) fits
+  refine WP.mono (entryStep_ok u power (h.table.of_keeps keeps fits (by decide) (by omega_using [hj'])) fits
     (a := 1) (by decide) hj' entryU indexU bound prod) ?_
   rintro t ⟨powerT, tableT, prodT, entryT, indexT, zT, keepsT, frameT, restT⟩
   refine ⟨⟨powerT, tableT, fits, by rw [prodT]; exact bound, ?_, entryT, indexT⟩, zT,
     (KeepsExp.of_keeps keeps size).trans keepsT, A.stable frameT restT pu,
     frameU.trans (frameT.mono (by simpa using A.workspace)), restU.trans restT⟩
-  rw [prodT, show j + 1 - 1 = j by omega]
+  rw [prodT, show j + 1 - 1 = j by omega_using []]
   exact prod
 
 theorem sharedTableLoop_ok (s : State) {M x : Nat}
@@ -64,7 +64,7 @@ theorem sharedTableLoop_ok (s : State) {M x : Nat}
   refine WP.loop (M := isa) inv ?_ 6 s ?_
   · intro k t hk
     obtain ⟨j, hjk, hk, hj, hi, keeps, pt, frame, rest⟩ := hk
-    refine WP.mono (sharedTableBody_ok A t hi pt hj (by omega)) ?_
+    refine WP.mono (sharedTableBody_ok A t hi pt hj (by omega_using [hjk, hk])) ?_
     rintro u ⟨hu, hz, keepsU, pu, frameU, restU⟩
     by_cases he : j + 1 = 8
     · left
@@ -72,7 +72,7 @@ theorem sharedTableLoop_ok (s : State) {M x : Nat}
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, by omega,
+      refine ⟨?_, k - 1, by omega_using [hk], j + 1, by omega_using [hjk, hk], by omega_using [hjk, hk, he], by omega_using [hj],
         hu, keeps.trans keepsU, pu, frame.trans frameU, rest.trans restU⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]

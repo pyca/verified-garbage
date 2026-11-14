@@ -30,13 +30,13 @@ open VG.Proof.MlKem.X86_64 (Keep)
 /-- The handed carry's slot is outside what a row writes. -/
 theorem hand_frame {m m' : Mem} {B : Addr} {w : Nat} (hf : Frm B (rowRanges w) m m') :
     word m' B handOffset = word m B handOffset := by
-  refine hf.word_eq ?_ (by unfold handOffset sFn; omega)
+  refine hf.word_eq ?_ (by unfold handOffset sFn; omega_using [])
   intro r hr
   simp only [rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Or.inl (by unfold rawBase handOffset sFn slot hdrBytes aAcc; omega)
-  · exact Or.inr (by unfold carryOffset handOffset sFn; omega)
-  · exact Or.inr (by unfold handOffset sFn; omega)
+  · exact Or.inl (by unfold rawBase handOffset sFn slot hdrBytes aAcc; omega_using [])
+  · exact Or.inr (by unfold carryOffset handOffset sFn; omega_using [])
+  · exact Or.inr (by unfold handOffset sFn; omega_using [])
 
 /-- At column block `k` of a square's row, before the handed carry is added:
 the pending carry and the handed carry at most 2. -/
@@ -75,7 +75,7 @@ theorem loadH_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State
     WP isa (.block AdxRotate8.loadCols) s (LoopStateH ps a b L 0) := by
   obtain ⟨⟨⟨mi,hg⟩,hv,hI,hJ,hc,ca,cb,co⟩,hh⟩ := h
   have hwN := L.hwN; have hn := L.hn
-  exact WP.mono (rowLoad_ok (s₀ := s) hg.scr hg.rdi hg.hdr L.hZ L.hi (by omega) hI hJ (by rw [hc]; rfl)
+  exact WP.mono (rowLoad_ok (s₀ := s) hg.scr hg.rdi hg.hdr L.hZ L.hi (by omega_using [hwN, hn]) hI hJ (by rw [hc]; rfl)
     ca cb co rfl (Keep.refl _ _)) fun t ht => ⟨s,mi,0,2,hv,Nat.le_refl _,hh,ht⟩
 
 theorem one_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State) (h : LoopStateH ps a b L 0 s) :
@@ -83,11 +83,11 @@ theorem one_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State) 
       (fun t => LoopStateH ps a b L 0 t ∧ isa.eval .e t = some (decide (L.n = 1))) := by
   obtain ⟨s₀,mi,x,cb,hv,hcb,hh,h⟩ := h
   have hwN := L.hwN; have hw := L.hw; have hn := L.hn
-  refine WP.mono (oneTest_ok (j := L.j₀) h.scr h.rdi h.hdr L.hZ (by omega) (by omega)
+  refine WP.mono (oneTest_ok (j := L.j₀) h.scr h.rdi h.hdr L.hZ (by omega) (by omega_using [hw])
     (by simpa only [Nat.mul_zero,Nat.add_zero] using h.indexJ)) fun t ⟨mt,zt,kt⟩ =>
       ⟨⟨s₀,mi,x,cb,hv,hcb,hh,h.of_keep mt kt⟩,?_⟩
   simp only [eval,zt]
-  exact congrArg some (decide_eq_decide.mpr (by omega))
+  exact congrArg some (decide_eq_decide.mpr (by omega_using [hwN]))
 
 theorem rowS_body_ct {ps : List (Nat × Nat)} {a b : Nat}
     (ha : a < 8) (hb : b < 8)
@@ -112,23 +112,23 @@ theorem rowS_fw {ps : List (Nat × Nat)} {a b : Nat}
   obtain ⟨s₀,mi,x,cb,hv,hcb,hh,h⟩ := h
   have hwN := L.hwN; have hw := L.hw
   unfold AdxRect8.rowStepS
-  refine WP.mono (streamStep_gen L.hZ L.hw L.hi ha hb ha1 ha2 hb1 hb2 L.hwN (by omega)
-    (fun u hs hd hh' hj => nextColumnS_ok hs hd hh' L.hZ (by omega) (by omega) hj) h) fun t ⟨zt,ht⟩ => ?_
+  refine WP.mono (streamStep_gen L.hZ L.hw L.hi ha hb ha1 ha2 hb1 hb2 L.hwN (by omega_using [hk])
+    (fun u hs hd hh' hj => nextColumnS_ok hs hd hh' L.hZ (by omega) (by omega_using [hw]) hj) h) fun t ⟨zt,ht⟩ => ?_
   have post : LoopStateH ps a b L (k+1) t := ⟨s₀,mi,x,2,hv,Nat.le_refl _,hh,ht⟩
   refine ⟨?_,fun _ => post,fun he => he ▸ post⟩
   simp only [eval,zt,Option.map_some]
   by_cases he : k+1 = L.n - 1
-  · simp only [show L.j₀+8*k+16 = L.w by omega,decide_true,Bool.not_true,
-      show ¬(k+1 < L.n - 1) by omega,decide_false]
-  · simp only [show ¬(L.j₀+8*k+16 = L.w) by omega,decide_false,Bool.not_false,
-      show k+1 < L.n - 1 by omega,decide_true]
+  · simp only [show L.j₀+8*k+16 = L.w by omega_using [hwN, he],decide_true,Bool.not_true,
+      show ¬(k+1 < L.n - 1) by omega_using [he],decide_false]
+  · simp only [show ¬(L.j₀+8*k+16 = L.w) by omega_using [hwN, he],decide_false,Bool.not_false,
+      show k+1 < L.n - 1 by omega_using [hk, he],decide_true]
 
 theorem hand_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State)
     (h : LoopStateH ps a b L (L.n - 1) s) :
     WP isa (.block AdxRect8.addHand) s (LoopState ps a b L (L.n - 1)) := by
   obtain ⟨s₀,mi,x,cb,hv,hcb,hh,h⟩ := h
   have hwN := L.hwN; have hn := L.hn; have hi := L.hi
-  refine WP.mono (addHand_inv L.hZ (by omega) hcb h rfl (by rw [hand_frame h.frame]; exact hh))
+  refine WP.mono (addHand_inv L.hZ (by omega_using [hwN, hi]) hcb h rfl (by rw [hand_frame h.frame]; exact hh))
     fun t ht => ⟨s₀,mi,_,4,hv,ht⟩
 
 theorem rowS_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
@@ -164,17 +164,17 @@ theorem rowS_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps)
     rw [es] at zs
     have h1 : L.n ≠ 1 := by simpa using zs
     have hn := L.hn
-    exact ⟨L,⟨by omega,hs⟩,by omega,ht⟩
+    exact ⟨L,⟨by omega_using [h1, hn],hs⟩,by omega_using [h1, hn],ht⟩
   -- the handed carry, the last block, the columns stored
   refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) hand_fw) ?_
   · rintro L s t ⟨_,_,_,_,_,_,_,hs⟩ ⟨_,_,_,_,_,_,_,ht⟩ r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.rdi.trans ht.rdi.symm
   refine RelCT.seq (two_post (two_map (fun L : RowLayout => (L, L.n - 1))
-      (fun L s h => ⟨by dsimp only; have := L.hn; omega,h⟩) (row_body_ct ha hb ha1 ha2 hb1 hb2))
+      (fun L s h => ⟨by dsimp only; have := L.hn; omega_using [this],h⟩) (row_body_ct ha hb ha1 ha2 hb1 hb2))
     (Ψ := fun L s => LoopState ps a b L L.n s) fun L s h => WP.mono
-      (row_fw ha hb ha1 ha2 hb1 hb2 L (L.n - 1) s (by have := L.hn; omega) h)
-      fun t ⟨_,_,h3⟩ => by have := L.hn; rw [show L.n - 1 + 1 = L.n by omega] at h3; exact h3 rfl) ?_
+      (row_fw ha hb ha1 ha2 hb1 hb2 L (L.n - 1) s (by have := L.hn; omega_using [this]) h)
+      fun t ⟨_,_,h3⟩ => by have := L.hn; rw [show L.n - 1 + 1 = L.n by omega_using [this]] at h3; exact h3 rfl) ?_
   refine two_post (two_taint [.rsi] ?_ (by taint_decide)) end_fw
   rintro L s t ⟨_,_,_,_,_,hs⟩ ⟨_,_,_,_,_,ht⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

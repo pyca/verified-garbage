@@ -143,11 +143,11 @@ theorem loop_ct {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : u
   · rw [e₁] at hf
     have h0 : N s₀ = k + 1 := by
       have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_using [hk, this]
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁⟩, ⟨by omega, l₂⟩⟩
+    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, ⟨by omega_using [h0], l₁⟩, ⟨by omega_using [hN, h0], l₂⟩⟩
 
 /-! ## The whole function -/
 
@@ -186,7 +186,7 @@ theorem update_rel {s₀ s₀' : State} (h0 : updateArm.pre s₀) (h0' : updateA
         · exact hq.2.2.1
         · exact hq.2.2.2.1
         · exact hq.2.2.2.2.1
-      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+      · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
         · exact hq.2.2.2.2.2.1
         · exact hq.2.2.2.2.2.2) ⟨_, hpro⟩
     (fun s e => by rw [e]; exact prologue_wp hp) (fun s e => by rw [e]; exact prologue_wp hp')

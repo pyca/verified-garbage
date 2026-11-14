@@ -50,7 +50,7 @@ theorem call_ok {round : Prog isa} {name : String}
       obtain rfl := List.mem_singleton.mp mem
       exact List.mem_cons_of_mem _ S.ready.context.ws.wr
   refine WP.callWithReturn verified.1 noSp (by decide : args ≠ []) (by decide : Reg.esp ∉ args)
-    (by rw [S.ready.caller.sp]; change 8 + stackUse round + 4 ≤ _; omega) cp ?_
+    (by rw [S.ready.caller.sp]; change 8 + stackUse round + 4 ≤ _; omega_using [stack, fit]) cp ?_
   intro t rdT wrT saved frame post
   obtain ⟨u, mem, reg, post⟩ := post
   have K : Keeps [.eax, .ecx, .edx] s t := by
@@ -59,12 +59,12 @@ theorem call_ok {round : Prog isa} {name : String}
     apply saved r
     cases r <;> simp_all [calleeSaved]
   have far12 := far.sub_right (below_sub (by decide : 12 ≤ 108) fit)
-  have F := entry_frame (by rw [S.ready.caller.sp]; omega) S.ready.scratch.nowrap
+  have F := entry_frame (by rw [S.ready.caller.sp]; omega_using [fit]) S.ready.scratch.nowrap
     (by rw [S.ready.caller.sp]; exact far12)
   have Mu := S.ready.modulus.keep v F (by simp) (by simp)
-  have ptrBound : g.W.toNat < 2 ^ 32 := by have := S.ready.scratch.nowrap; have := v.headerFit; omega
+  have ptrBound : g.W.toNat < 2 ^ 32 := by have := S.ready.scratch.nowrap; have := v.headerFit; omega_arith
   have capBound : capacity < 2 ^ 32 := by have := S.ready.scratch.nowrap; omega
-  have sa := fun {i} (hi : i < 2) => entry_arg A (by rw [S.ready.caller.sp]; omega) hi
+  have sa := fun {i} (hi : i < 2) => entry_arg A (by rw [S.ready.caller.sp]; omega_using [fit]) hi
   obtain ⟨value, keeps⟩ := roundPost ptrBound capBound (sa (by decide)) (sa (by decide)) Mu
     ((F.val32 (v.arrayFit (by decide)) (by simp)).trans witness) post
   rw [mem] at keeps
@@ -73,7 +73,7 @@ theorem call_ok {round : Prog isa} {name : String}
     (F.mono (by simp)).trans (reviewed_frame length keeps)
   have G : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem := by
     rw [← S.ready.caller.sp]
-    exact VG.X86.Frame.below_mono frame (by change 8 + stackUse round + 4 ≤ 108; omega)
+    exact VG.X86.Frame.below_mono frame (by change 8 + stackUse round + 4 ≤ 108; omega_using [stack])
       (by rw [S.ready.caller.sp]; exact fit)
   exact ⟨data_keep v S K W G lengthFar, value, W, G, K⟩
 
@@ -99,7 +99,7 @@ theorem code_ok {round : Prog isa} {name : String}
     refine ⟨?_, A.gpr⟩
     apply BitVec.eq_of_toNat_eq
     rw [A.other .edi (by decide), S.ready.scratch.edi_toNat, BitVec.toNat_ofNat]
-    exact (Nat.mod_eq_of_lt (by have := S.ready.scratch.nowrap; have := v.headerFit; omega)).symm
+    exact (Nat.mod_eq_of_lt (by have := S.ready.scratch.nowrap; have := v.headerFit; omega_arith)).symm
   refine WP.mono (call_ok (b := b) verified noSp stack v length Da callArgs odd large (by rw [A.mem]; exact witness)
     fit far lengthFar) fun t ⟨D, result, W, F, K⟩ => ?_
   rw [A.mem] at W F

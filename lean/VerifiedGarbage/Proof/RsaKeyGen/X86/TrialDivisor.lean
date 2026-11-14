@@ -191,15 +191,15 @@ theorem divisor_ok (s : State) (p : BitVec 32) (w endOffset : Nat)
       t.gpr .eax = BitVec.ofNat 32 (decide (val32 s.mem (byteAddr p) 0 (2 * w) % (s.gpr .ebx).toNat = 0)).toNat ∧
       t.mem = s.mem ∧ Keeps [.eax, .edx, .ecx, .ebp, .edi] s t := by
   unfold divisor
-  refine WP.seq (WP.mono (words_ok s p (2 * w) endOffset (by omega) lengthBound fit
+  refine WP.seq (WP.mono (words_ok s p (2 * w) endOffset (by omega_using [positive]) lengthBound fit
     candidateRead endRead endValue ptr zero primeLow primeHigh inverse) fun a ⟨mem, K, bound, value⟩ => ?_)
   have prime : a.gpr .ebx = s.gpr .ebx := K.1 .ebx (by decide)
   have div : val32 s.mem (byteAddr p) 0 (2 * w) % (s.gpr .ebx).toNat = 0 ↔
       (a.gpr .ebp).toNat = 0 ∨ (a.gpr .ebp).toNat = (s.gpr .ebx).toNat := by
     apply VG.Proof.RsaKeyGen.trial_div odd bound
-    rw [show 64 * w = 32 * (2 * w) by omega]
+    rw [show 64 * w = 32 * (2 * w) by omega_using []]
     exact value
-  refine WP.mono (finish_ok (by rw [prime]; omega : 0 < (a.gpr .ebx).toNat)) fun t ⟨result, lastMem, lastK⟩ => ?_
+  refine WP.mono (finish_ok (by rw [prime]; omega_using [primeLow] : 0 < (a.gpr .ebx).toNat)) fun t ⟨result, lastMem, lastK⟩ => ?_
   refine ⟨?_, lastMem.trans mem, K.widen lastK⟩
   rw [result, prime]
   simp only [← div]

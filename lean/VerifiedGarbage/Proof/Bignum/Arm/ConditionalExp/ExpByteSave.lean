@@ -23,12 +23,12 @@ theorem expByteSave_ready (s : State) {base : BitVec 32} {len w M x E v : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have addr (d : Nat) (hd : d ≤ 252) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega)
+    rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega_using [size, hd, this])
   unfold expByteSave
   refine wp_str (a := off (State.addr base) 200) (by decide) (addr 200 (by decide))
-    (h.ready.workspace.write (by omega)) fun u a => ?_
+    (h.ready.workspace.write (by omega_using [size])) fun u a => ?_
   have memU : u.mem = s.mem.writeW (off (State.addr base) 200) (BitVec.ofNat 32 v) := by rw [a.mem, value]
   obtain ⟨stateU, frameU⟩ := h.after_header (d := 200) (by decide) (by decide) memU (a.rest [.r1])
     (by rw [a.gpr]; exact h.ready.ptr)
@@ -37,7 +37,7 @@ theorem expByteSave_ready (s : State) {base : BitVec 32} {len w M x E v : Nat}
     ((b.other .r0 (by decide)).trans stateU.ready.ptr)
   refine wp_str (a := off (State.addr base) 192) (by decide)
     (by rw [b.other .r0 (by decide), a.gpr]; exact addr 192 (by decide))
-    (by rw [b.wr, a.wr]; exact h.ready.workspace.write (by omega)) fun t c => WP.block_nil ?_
+    (by rw [b.wr, a.wr]; exact h.ready.workspace.write (by omega_using [size])) fun t c => WP.block_nil ?_
   have memT : t.mem = z.mem.writeW (off (State.addr base) 192) (BitVec.ofNat 32 8) := by rw [c.mem, b.gpr]; rfl
   obtain ⟨stateT, frameT⟩ := stateZ.after_header (d := 192) (by decide) (by decide) memT (c.rest [.r1])
     (by rw [c.gpr]; exact stateZ.ready.ptr)
@@ -52,8 +52,8 @@ theorem expByteSave_ready (s : State) {base : BitVec 32} {len w M x E v : Nat}
     rw [outside_read32 outsideT (d := 200) (by decide) (by decide), b.mem, memU, Mem.readW_writeW_self32]
   · rw [memT, Mem.readW_writeW_self32]
   · intro d hd
-    rw [outside_read32 outsideT (d := d) (by omega) (by omega), b.mem,
-      outside_read32 outsideU (d := d) (by omega) (by omega)]
+    rw [outside_read32 outsideT (d := d) (by omega_using [hd]) (by omega_using [hd]), b.mem,
+      outside_read32 outsideU (d := d) (by omega_using [hd]) (by omega_using [hd])]
   · rw [b.mem] at frameT
     exact frameU.trans frameT
 

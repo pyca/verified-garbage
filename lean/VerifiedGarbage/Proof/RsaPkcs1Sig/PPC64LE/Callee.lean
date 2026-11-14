@@ -89,7 +89,7 @@ theorem PdOk.pre {t : State} (h : PdOk t) :
     stackArgs_two, List.append_eq]
   simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
     Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil]
-  exact ⟨by have := h.sp; omega, rfl, rfl, hl.on, hl.oe, ⟨hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa⟩,
+  exact ⟨by have := h.sp; omega_using [this], rfl, rfl, hl.on, hl.oe, ⟨hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa⟩,
     hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h6, h.h10, h.he1, h.he2, h.hs⟩
 
 /-- The correctness of `vg_rsa_public_precomputed_checked`, from its artifact. -/

@@ -95,8 +95,8 @@ theorem encrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64) (k := 256)
     (i := 4)
     (Verified.tail_of_written (Proof.Aes.encryptBlocks_keyed (enc_verified v)) v.encWrittenOk args_length)
-    z.verified (by decide) rfl rfl rfl (by have := v.encWrittenLe; simp only [Elem.size]; omega)
-    (by have := v.encWrittenLe; omega) (by decide) v.encSpSafe (by rw [v.encNoStack]) z.spSafe
+    z.verified (by decide) rfl rfl rfl (by have := v.encWrittenLe; simp only [Elem.size]; omega_using [this])
+    (by have := v.encWrittenLe; omega_using [this]) (by decide) v.encSpSafe (by rw [v.encNoStack]) z.spSafe
     (by rw [z.xd]) (Nat.le_refl _) (pre_local 64) (postTail_local 64 _ _) (postTail_out 64 _ v.encWrittenLe)
     (wipedTail 64 _ _) (sat _)
 
@@ -107,8 +107,8 @@ theorem decrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64) (k := 256)
     (i := 4)
     (Verified.tail_of_written (Proof.Aes.decryptBlocks_keyed (dec_verified v)) v.decWrittenOk args_length)
-    z.verified (by decide) rfl rfl rfl (by have := v.decWrittenLe; simp only [Elem.size]; omega)
-    (by have := v.decWrittenLe; omega) (by decide) v.decSpSafe (by rw [v.decNoStack]) z.spSafe
+    z.verified (by decide) rfl rfl rfl (by have := v.decWrittenLe; simp only [Elem.size]; omega_using [this])
+    (by have := v.decWrittenLe; omega_using [this]) (by decide) v.decSpSafe (by rw [v.decNoStack]) z.spSafe
     (by rw [z.xd]) (Nat.le_refl _) (pre_local 64) (postTail_local 64 _ _) (postTail_out 64 _ v.decWrittenLe)
     (wipedTail 64 _ _) (sat _)
 
@@ -131,7 +131,7 @@ theorem encryptOut (stack : Nat) :
     refine ⟨fun key hk => ?_, fun z hz => ?_⟩
     · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
       have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega)]
+      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
       exact h1 key hk
     · rw [← hb.2.2 z hz]
       exact h2 z hz
@@ -149,7 +149,7 @@ theorem decryptOut (stack : Nat) :
     refine ⟨fun key hk => ?_, fun z hz => ?_⟩
     · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
       have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega)]
+      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
       exact h1 key hk
     · rw [← hb.2.2 z hz]
       exact h2 z hz

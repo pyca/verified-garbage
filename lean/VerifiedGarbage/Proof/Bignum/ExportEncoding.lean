@@ -21,8 +21,8 @@ theorem read_eq_wv (m : Mem) (base : Addr) (d : Nat) :
     ∀ k, (m.read (off base d) (8 * k)).toNat = wv m base d k
   | 0 => by simp [Mem.read, wv]
   | k + 1 => by
-    rw [show 8 * (k + 1) = 8 + 8 * k by omega, VG.Proof.Mont.read_toNat_add,
-      read_eq_wv m base d k, wv, Offset.add_add, show 8 * (8 * k) = 64 * k by omega]
+    rw [show 8 * (k + 1) = 8 + 8 * k by omega_using [], VG.Proof.Mont.read_toNat_add,
+      read_eq_wv m base d k, wv, Offset.add_add, show 8 * (8 * k) = 64 * k by omega_using []]
     rfl
 
 theorem wordsAt_two_reads {m : Mem} {p : Addr} {w x y : Nat}

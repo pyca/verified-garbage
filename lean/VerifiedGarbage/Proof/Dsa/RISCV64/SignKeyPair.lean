@@ -42,7 +42,7 @@ theorem ptrX_ok {s : State} {L : Lay} {key sig : Addr} (hs : ScrL s L) (hL : L.O
   refine WP.mono (WP.keep [.s7] (Q := fun u => u.gpr .s7 = off key (3 * L.pl + L.ql) ∧ u.mem = t.mem) ?_
     (by rfl) (by rfl)) fun u ⟨⟨b7, mu⟩, ku⟩ => ?_
   · brun [a7, a8, off_off]
-    rw [show 2 * L.pl + L.ql + L.pl = 3 * L.pl + L.ql by omega]
+    rw [show 2 * L.pl + L.ql + L.pl = 3 * L.pl + L.ql by omega_using []]
   · refine WP.mono (getQ_ok (hs.congr (k.trans ku).2.2) hL ((hr.keepM k m).keepM ku mu) .s8) fun v ⟨⟨c8, mv⟩, kv⟩ =>
       ⟨⟨(kv.gpr (by decide)).trans b7, c8, by rw [mv, mu, m]⟩, ((k.trans ku).trans kv).mono (by decide)⟩
 
@@ -53,7 +53,7 @@ def keyPairRegs : List Reg := ptrRegs ++ [.s9] ++ ptrRegs ++ powPRegs ++ ptrRegs
 abbrev PLow (L : Lay) (m m' : Mem) : Prop := Outside L.S (slot L.wp 1) (23 * (8 * (L.wp + 2))) m m'
 
 theorem PLow.parr {L : Lay} {m m' : Mem} (h : PLow L m m') : PArr L m m' :=
-  PArr.of h (Nat.le_refl _) (by simp only [Lay.slot_eq]; omega)
+  PArr.of h (Nat.le_refl _) (by simp only [Lay.slot_eq]; omega_using [])
 
 theorem PLow.arr {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') {j : Nat} (hj : j < 28)
     (hj' : j = 0 ∨ 24 ≤ j) : arrP m' L j = arrP m L j := by
@@ -62,27 +62,27 @@ theorem PLow.arr {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') {j : Nat} 
   have hn := hL.nowrap
   have e1 := Lay.slot_eq L.wp 1; have e24 := Lay.slot_eq L.wp 24; have ej := Lay.slot_eq L.wp j
   rcases hj' with rfl | hj'
-  · exact h.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.bOff, Lay.qOff] at hb; omega)
-  · exact h.wordsVal (Or.inr (by have := slot_mono (w := L.wp) hj'; omega))
-      (by simp only [Lay.bOff, Lay.qOff] at hb; omega)
+  · exact h.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega_using [])) (by simp only [Lay.bOff, Lay.qOff] at hb; omega_using [hb, hn, this])
+  · exact h.wordsVal (Or.inr (by have := slot_mono (w := L.wp) hj'; omega_using [e1, e24, this]))
+      (by simp only [Lay.bOff, Lay.qOff] at hb; omega_using [this, hb, hn])
 
 theorem PLow.word0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') :
     word m' L.S (slot L.wp 0) = word m L.S (slot L.wp 0) := by
   have hw := hL.wp_ge
-  exact h.word (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.slot_eq]; omega)
+  exact h.word (Or.inl (by simp only [Lay.slot_eq]; omega_using [])) (by simp only [Lay.slot_eq]; omega_using [])
 
 theorem mask_word0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.S hMask 8 m m') :
     word m' L.S (slot L.wp 0) = word m L.S (slot L.wp 0) := by
   have hw := hL.wp_ge
-  exact h.word (Or.inr (by simp only [hMask, Lay.slot_eq]; omega)) (by simp only [Lay.slot_eq]; omega)
+  exact h.word (Or.inr (by simp only [hMask, Lay.slot_eq]; omega_using [])) (by simp only [Lay.slot_eq]; omega_using [])
 
 theorem kp_a4 (L : Lay) (hL : L.Ok) {m m' : Mem} (h : Outside L.S (slot L.wp 5) (8 * (L.wp + 1)) m m') :
     wordsVal m' L.S (slot L.wp 4) L.wp = wordsVal m L.S (slot L.wp 4) L.wp := by
   have hw := hL.wp_ge
-  exact h.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.slot_eq]; omega)
+  exact h.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega_using [])) (by simp only [Lay.slot_eq]; omega_using [hw])
 
 theorem kp_o5 (L : Lay) {m m' : Mem} (h : Outside L.S (slot L.wp 5) (8 * (L.wp + 1)) m m') : PLow L m m' :=
-  h.mono (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)
+  h.mono (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using [])
 
 theorem PLow.body {L : Lay} (hL : L.Ok) {m m' : Mem} (h : PLow L m m') : Body L m m' :=
   h.parr.pbody.body hL
@@ -119,8 +119,8 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok) 
       (hs.congr k13.2.2) (hr.keepM k13 hm3) (hin.keep k13) (by
         show ((word s₃.mem L.S (slot L.wp 0)).toNat * (s₃.gpr .t1).toNat + 1) % 2 ^ 64 = 0
         rw [hm3, k13.gpr (by decide)]; exact hi)
-      ((hk.keep k13.2.1 k13.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega)) b7
-      ((hk.keep k13.2.1 k13.2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega))
+      ((hk.keep k13.2.1 k13.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b7
+      ((hk.keep k13.2.1 k13.2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using []))
       ((k3.gpr (by decide)).trans a9) (by rw [hm3]; exact hp0) hp hpo (by rw [hm3]; exact hrr))
     fun s₄ ⟨⟨v4, in4, i4, o4⟩, k4⟩ => ?_)
   rw [hm3] at v4 o4
@@ -129,12 +129,12 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok) 
   have hr4 : Regs s₄ L key sig := hr.keep k14 (PLow.body hL o4)
   refine WP.seq (WP.mono (ptrY_ok (hs.congr k14.2.2) hL hr4) fun s₅ ⟨⟨c7, c8, m5⟩, k5⟩ => ?_)
   have k15 := k14.trans k5
-  have hY := (hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega))
+  have hY := (hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_using []))
   refine WP.seq (WP.mono (loadArr_ok (in4.env.keep k5) (j := 5) (N := off key (2 * L.pl + L.ql)) (by decide)
-      (by rw [c7]; exact (BitVec.add_zero _).symm) c8 (by omega) (by omega)
+      (by rw [c7]; exact (BitVec.add_zero _).symm) c8 (by omega_using [hw, hw8]) (by omega_using [hw8])
       (fun i hi => by rw [k15.2.1, k15.2.2]; exact hY.rd i hi)
       (fun i hi x hx => hY.sep i hi x (by
-        have := hL.buf_end; simp only [Lay.bOff] at this; omega)))
+        have := hL.buf_end; simp only [Lay.bOff] at this; omega_using [hx, this])))
     fun s₆ ⟨⟨v5, _, o6, a76⟩, k6⟩ => ?_)
   rw [m5] at v5 o6
   have en5 := in4.env.keep k5
@@ -145,18 +145,18 @@ theorem keyPair_ok {s : State} {L : Lay} {key sig : Addr} {p : Nat} (hL : L.Ok) 
     fun s₇ ⟨⟨c0, m7⟩, k7⟩ => ?_)
   have k17 := (k15.trans k6).trans k7
   obtain ⟨_, hal0⟩ := ScrL.hdr (hs.congr k17.2.2) hL (d := 0) (by decide) (by decide)
-  have hst : InRegions s₇.wr (off L.S 0) 8 := (hs.congr k17.2.2).st (by omega)
+  have hst : InRegions s₇.wr (off L.S 0) 8 := (hs.congr k17.2.2).st (by omega_using [hZ])
   refine WP.mono (WP.keep [] (Q := fun u => u.mem = s₇.mem.writeW (off L.S 0) (s₇.gpr .a0))
     (by brun [hMask, (k17.gpr (r := .s6) (by decide)).trans hr.s6, hst, hal0]) (by decide) (by rfl))
     fun t ⟨mt, kt⟩ => ?_
   have wo : Outside L.S hMask 8 s₆.mem t.mem := by
-    rw [mt, m7]; exact writeW_outside s₆.mem L.S _ (by simp only [hMask]; omega)
+    rw [mt, m7]; exact writeW_outside s₆.mem L.S _ (by simp only [hMask]; omega_using [])
   have o6' : Outside L.S (slot L.wp 5) (8 * (L.wp + 1)) s₄.mem s₆.mem := o6
   have o46 : PLow L s.mem s₆.mem := o4.trans (kp_o5 L o6')
   have x4 : wordsVal s₆.mem L.S (slot L.wp 4) L.wp = arrP s₄.mem L 4 := kp_a4 L hL o6'
   have y5 : Spec.Rsa.bytesAt s₄.mem (off key (2 * L.pl + L.ql)) L.pl =
       Spec.Rsa.bytesAt s.mem (off key (2 * L.pl + L.ql)) L.pl :=
-    hY.bytes (PLow.body hL o4) (by omega)
+    hY.bytes (PLow.body hL o4) (by omega_using [hZ])
   rw [x4, v4, v5, y5] at c0
   have kall := k17.trans kt
   refine ⟨⟨?_, ⟨en6.keep (k7.trans kt), (kall.gpr (by decide)).trans hin.s6⟩, ?_, ⟨s₆.mem, o46, wo⟩⟩, ?_⟩

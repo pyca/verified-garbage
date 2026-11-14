@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Byte strings in memory, for the RSA padding functions
@@ -31,7 +32,7 @@ theorem wordsAt_frame' {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p :
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW (r := ⟨p, n * 8⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨p, n * 8⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi])) hd (by decide)
 
 theorem bytesAt_len (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
   simp [Spec.Rsa.bytesAt]

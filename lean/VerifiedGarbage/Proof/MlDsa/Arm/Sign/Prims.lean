@@ -88,7 +88,7 @@ theorem hv_with {c : Prog isa} {k : Contract isa} {X : State → State → Prop}
 /-! ## Values of arguments -/
 
 theorem toNat32 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 32 v).toNat = v := by
-  rw [BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_ofNat]; omega_using [h]
 
 /-! ## The entry state of a callee -/
 
@@ -127,7 +127,7 @@ theorem Ent.hint {p : Ptr} {k : Nat} (h : inB (rbs ++ wbs) p (1024 * k) = true) 
 theorem Ent.coeffs {p : Ptr} {len : Nat} (h : inB (rbs ++ wbs) p (len * 4) = true) :
     (List.range len).map (fun i => (coeffAt E.mem (pa s p) i).toNat) =
       (List.range len).map (fun i => (coeffAt s.mem (pa s p) i).toNat) :=
-  coeffs_congr fun x hx => En.mem p _ h x (by omega)
+  coeffs_congr fun x hx => En.mem p _ h x (by omega_using [hx])
 
 /-- The stack of the callee, apart from buffers of the layout. -/
 theorem Ent.conj {bs : List (Ptr × Nat)} (h : ∀ b ∈ bs, inB (rbs ++ wbs) b.1 b.2 = true) :
@@ -157,12 +157,12 @@ theorem conj_stk {sp : BitVec 32} {S : Nat} (bs : List Region) (h : ∀ B ∈ bs
 theorem wf0 {S : Nat} {sp : BitVec 32} (h : S ≤ sp.toNat) :
     (match (generalizing := false) S with | 0 => sp.toNat ≤ 2 ^ 32 | n => n ≤ sp.toNat ∧ sp.toNat ≤ 2 ^ 32) := by
   have := sp.isLt
-  cases S <;> simp only <;> omega
+  cases S <;> simp only <;> omega_arith
 
 theorem wf4 {S : Nat} {sp : BitVec 32} (h : S ≤ sp.toNat) (h' : sp.toNat + 4 ≤ 2 ^ 32) :
     (match (generalizing := false) S with
       | 0 => sp.toNat + 4 ≤ 2 ^ 32 | n => n ≤ sp.toNat ∧ sp.toNat + 4 ≤ 2 ^ 32) := by
-  cases S <;> simp only <;> omega
+  cases S <;> simp only <;> omega_arith
 
 /-- The entry state of a call with its arguments in registers. -/
 theorem ent_R {D S : Nat} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay D rbs wbs s)
@@ -171,7 +171,7 @@ theorem ent_R {D S : Nat} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay 
   refine ⟨L, fun p l h => ?_, ?_, fun p l h i hi => ?_⟩
   · simp only [State.withRegions_sp, State.callEntry_sp, k.sp]
     exact (L.stkD h).sub_left (belowA_sub hS)
-  · simp only [State.withRegions_sp, State.callEntry_sp, k.sp]; have := L.sp; omega
+  · simp only [State.withRegions_sp, State.callEntry_sp, k.sp]; have := L.sp; omega_using [hS, this]
   · simp only [State.withRegions_mem, State.callEntry_mem, k.mem]
 
 theorem pushed_sp8 (s : State) : (pushed [.r12, .lr] s).sp = s.sp - BitVec.ofNat 32 8 := rfl
@@ -180,20 +180,20 @@ theorem pushed_sp8 (s : State) : (pushed [.r12, .lr] s).sp = s.sp - BitVec.ofNat
 theorem ent_S {D S : Nat} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay D rbs wbs s)
     (k : Keep argRegs s s1) (hS : S + 8 ≤ D) (rd wr : List Region) :
     Ent D rbs wbs s S ((pushed [.r12, .lr] s1).callEntry.withRegions rd wr) := by
-  have h8 : 8 ≤ s.sp.toNat := by have := L.sp; omega
+  have h8 : 8 ≤ s.sp.toNat := by have := L.sp; omega_using [hS, this]
   refine ⟨L, fun p l h => ?_, ?_, fun p l h i hi => ?_⟩
   · simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp8, k.sp]
-    exact (L.stkD h).sub_left fun x hx => belowA_sub (show 8 + S ≤ D by omega) x
-      (belowA_push (by have := L.sp; omega) x hx)
-  · simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp8, k.sp, sp_sub8 h8]; have := L.sp; omega
+    exact (L.stkD h).sub_left fun x hx => belowA_sub (show 8 + S ≤ D by omega_using [hS]) x
+      (belowA_push (by have := L.sp; omega_using [hS, this]) x hx)
+  · simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp8, k.sp, sp_sub8 h8]; have := L.sp; omega_using [hS, this]
   · simp only [State.withRegions_mem, State.callEntry_mem]
     have f := push2_frame (s := s1) (by rw [k.sp]; exact h8)
     rw [k.mem] at f
     refine f _ fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    have hd := (L.stkD h).sub_left (belowA_sub (show 8 ≤ D by omega))
+    have hd := (L.stkD h).sub_left (belowA_sub (show 8 ≤ D by omega_using [hS]))
     intro hc
-    refine hd _ (by rw [← k.sp]; exact hc) (Offset.contains_base _ (by omega) (by have := L.nwp h; omega))
+    refine hd _ (by rw [← k.sp]; exact hc) (Offset.contains_base _ (by omega_using [hi]) (by have := L.nwp h; omega_using [hi, this]))
 
 /-! ## The stack argument of a call with a frame -/
 
@@ -205,7 +205,7 @@ include L k
 theorem stk_arg (hD : 8 ≤ D) (rd wr : List Region) :
     stackArgAddr ((pushed [.r12, .lr] s1).callEntry.withRegions rd wr) 0 = State.addr s.sp - BitVec.ofNat 64 8 ∧
       stackArg ((pushed [.r12, .lr] s1).callEntry.withRegions rd wr) 0 = s1.gpr .r12 := by
-  have h8 : 8 ≤ s1.sp.toNat := by rw [k.sp]; have := L.sp; omega
+  have h8 : 8 ≤ s1.sp.toNat := by rw [k.sp]; have := L.sp; omega_using [hD, this]
   obtain ⟨a0, a1, -⟩ := push2_arg (t := (pushed [.r12, .lr] s1).callEntry.withRegions rd wr) h8 rfl rfl
   rw [← k.sp]; exact ⟨a0, a1⟩
 
@@ -214,7 +214,7 @@ state after the push. -/
 theorem cov_S (hD : 8 ≤ D) {rd wr : List Region} (hc : Covers rd (s.rd ++ s.wr)) (hw : Covers wr s.wr) :
     Covers ((rd ++ [argR s]) ++ wr) ((pushed [.r12, .lr] s1).rd ++ (pushed [.r12, .lr] s1).wr) ∧
       Covers wr (pushed [.r12, .lr] s1).wr := by
-  have h8 : 8 ≤ s1.sp.toNat := by rw [k.sp]; have := L.sp; omega
+  have h8 : 8 ≤ s1.sp.toNat := by rw [k.sp]; have := L.sp; omega_using [hD, this]
   have hwp : (pushed [.r12, .lr] s1).wr = belowA s.sp 8 :: s.wr := by
     rw [VG.Arm.pushed_wr, frame8 h8, k.wr, k.sp]
   rw [VG.Arm.pushed_rd, hwp, k.rd]
@@ -241,11 +241,11 @@ theorem argR_disj (hD : 8 ≤ D) {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l =
 omit k in
 /-- The stack argument lies above the callee's stack. -/
 theorem argR_stk {S : Nat} (hS : S + 8 ≤ D) : (belowA (s.sp - BitVec.ofNat 32 8) S).Disjoint (argR s) := by
-  have h8 : 8 ≤ s.sp.toNat := by have := L.sp; omega
+  have h8 : 8 ≤ s.sp.toNat := by have := L.sp; omega_using [hS, this]
   have := L.sp; have := s.sp.isLt
   simp only [belowA, argR]
   rw [addr_sub h8]
-  exact (Offset.base_disjoint_below _ (by omega)).symm
+  exact (Offset.base_disjoint_below _ (by omega_arith)).symm
 
 end
 
@@ -306,9 +306,9 @@ theorem accAt_ok {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : C
     WP isa (callR n c [.ptr f, .ptr g]) s fun s' => PPostB D s s' [(f, 1024)] ∧ CS s s' ∧
       PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
   obtain ⟨w1, i1, i2, _, ok⟩ := accChk_spec hc
-  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega) ok L.sp
+  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega_arith) ok L.sp
     (rd := [pR (pa s g)]) (wr := [pR (pa s f)])
-    (fun s1 hA k => accPre (ent_R L k (by have := C.hS; omega) _ _) hc
+    (fun s1 hA k => accPre (ent_R L k (by have := C.hS; omega_using [this]) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hA).2) rfl rfl rf rg)
     (Covers.append_left (L.cR i2) (Covers.right (L.cW w1))) (L.cW w1))
     fun s' ⟨hpost, hcs, s1, hA, k, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -322,7 +322,7 @@ theorem accAt_tr {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : C
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (callR n c [.ptr f, .ptr g]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, ok⟩ := accChk_spec hc
-  have hS : C.S ≤ D := by have := C.hS; omega
+  have hS : C.S ≤ D := by have := C.hS; omega_using [this]
   refine callR_tr C.ver.1 C.ver.2.1 ok fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, accPre (ent_R R.lx kx hS [pR (pa x g)] [pR (pa x f)]) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hAx).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hAx).2) rfl rfl rfx rgx,

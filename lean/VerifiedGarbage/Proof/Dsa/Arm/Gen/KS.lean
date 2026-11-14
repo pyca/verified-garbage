@@ -39,15 +39,15 @@ abbrev GP.ksState (G : GP) (s : State) : State := s.withRegions s.rd [G.rK]
 
 theorem SS.kbNat (h : SS G σ c s) : G.KB.toNat = G.scr.toNat + sK G.pLen := by
   have := h.gi.scrBig; have := h.gi.scrFit
-  have : 0 < kz G.pLen := by simp only [kz]; omega
-  rw [GP.KB, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show sK G.pLen < 2 ^ 32 by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  have : 0 < kz G.pLen := by simp only [kz]; omega_using []
+  rw [GP.KB, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show sK G.pLen < 2 ^ 32 by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem SS.wsWith (h : SS G σ c s) (rd : List Region) : Ws (s.withRegions rd [G.rK]) G.KB (kz G.pLen) G.w nArrs := by
   have := h.gi.scrBig; have := h.gi.scrFit
   have e := h.kbNat
   have l := h.lens
-  refine ⟨by omega, List.mem_singleton_self _, ?_, ?_, ?_, h.r7, h.r8, h.r9⟩ <;>
+  refine ⟨by omega_arith, List.mem_singleton_self _, ?_, ?_, ?_, h.r7, h.r8, h.r9⟩ <;>
     simp only [arr, S, hdr, nArrs, kz, GP.w] <;> rcases l with e | e | e <;> rw [e] <;> decide
 
 theorem SS.ws (h : SS G σ c s) : Ws (G.ksState s) G.KB (kz G.pLen) G.w nArrs := h.wsWith s.rd
@@ -96,16 +96,16 @@ theorem SS.of_ks' (h : SS G σ c s) {t : State} {ws : List Reg} (r : Rest ws s t
   have gi := h.gi
   have big := gi.scrBig
   have fit := gi.scrFit
-  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_using []
   have kd : ∀ x ∈ c.cl, ∀ r ∈ [G.rK], (G.rs x.1 x.2.length).Disjoint r := fun x hx r hr => by
     rw [List.mem_singleton] at hr; subst hr
     show Region.Disjoint _ ⟨State.addr G.KB, _⟩
     rw [gi.kaddr]
     have := h.clOk x hx
-    exact gi.sdisj (.inl this) (by omega) big
+    exact gi.sdisj (.inl this) (by omega_using [big, this]) big
   refine ⟨gi.of_scr r (f.sub fun x hx => ?_), e7, e8, e9, h.sb.frame f kd fun x hx => ?_, h.clOk, ha, hl, hk, hko⟩
   · rw [List.mem_singleton] at hx; subst hx; exact ⟨G.rScr, List.mem_cons_self, gi.kSub⟩
-  · have := h.clOk x hx; omega
+  · have := h.clOk x hx; omega_using [big, fit, this]
 
 /-- After a step in the key working space: its arrays and header words. -/
 theorem SS.of_ks (h : SS G σ c s) {t : State} {ws : List Reg} (r : Rest ws s t)
@@ -156,7 +156,7 @@ theorem SS.of_opS (h : SS G σ c s) {t : State} {ws : List Reg} (r : Rest ws s t
       · exact absurd rfl hed
       rw [VG.Proof.Rsa.Arm.Keys.upd_ne _ _ hed, kp.slot (h.kslOk e' he).1 (by
         simp only [List.mem_singleton, forall_eq]
-        have := h.kslOk e' he; have := hd; simp only [KlsOk] at *; omega)]
+        have := h.kslOk e' he; have := hd; simp only [KlsOk] at *; omega_arith)]
       exact h.ksl e' he
   · rcases List.mem_cons.mp he with rfl | he
     · exact hd

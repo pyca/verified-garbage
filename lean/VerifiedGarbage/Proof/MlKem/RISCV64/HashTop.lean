@@ -54,7 +54,7 @@ theorem addrOf_val {off : Nat} :
       BitVec.ofInt 64 ((off : Int) - 4096 * ((off + 2048) / 4096 : Nat)) = BitVec.ofNat 64 off := by
   generalize (off + 2048) / 4096 = q
   have e : (off : Int) = ((4096 * q : Nat) : Int) + ((off : Int) - 4096 * (q : Int)) := by
-    rw [Int.natCast_mul]; omega
+    rw [Int.natCast_mul]; omega_using []
   rw [← BitVec.ofInt_natCast, ← BitVec.ofInt_add, ← e, BitVec.ofInt_natCast]
 
 /-- `d ← b + off` (`addrOf`). -/
@@ -65,8 +65,8 @@ theorem wp_addrOf {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg}
   split
   · exact Wp.wp_addi (by assumption) k
   · rename_i hlt
-    have hq : (off + 2048) / 4096 < 9 := by omega
-    refine Wp.WP.cons exec_lui (Wp.WP.cons (exec_addi (by unfold imm12; omega)) (Wp.WP.cons exec_add
+    have hq : (off + 2048) / 4096 < 9 := by omega_using [h]
+    refine Wp.WP.cons exec_lui (Wp.WP.cons (exec_addi (by unfold imm12; omega_using [])) (Wp.WP.cons exec_add
       (k _ ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩)))
     · simp only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ hb, lui_val _ hq, addrOf_val]
     · simp only [RegUpd.gpr_write_of_ne _ _ hr]
@@ -427,7 +427,7 @@ theorem zeroState_ok {L : Lay} {s : State} (hc : Ctx L s) :
     (by simp [State.write]) (fun k hk => by
       rw [e31]
       exact hc.cs (o := 8 * k) (l := 8) (by omega_arith) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
-    (fun k hk => by rw [e31, BitVec.toNat_add, BitVec.toNat_ofNat]; omega))
+    (fun k hk => by rw [e31, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [al0]))
     fun s₂ h₂ => ?_
   have hf := h₂.frame
   have hz := h₂.zero

@@ -67,7 +67,7 @@ theorem sampleRound_ok (M : Mont) (K : Kernel) {B p : Addr} {Z w N i uni ch : Na
         word t.mem B (8 * kUni) = BitVec.ofNat 64 (uni + wt.2.toNat)) ∧
       WorkFrame B (sampleRoundRanges w) [⟨p, bs.length⟩, below (s.gpr .rsp) 128] s.mem t.mem ∧ Keep mmRegs s t := by
   dsimp only
-  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega
+  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega_using [this]
   unfold Impl.Dsa.X86_64.Generation.sampleRound
   refine WP.seq (WP.mono (sampleWitness_ok h hd hodd hlen hmax hkw hbits)
     fun u ⟨hu, hxu, huu, hfu, ku⟩ => ?_)
@@ -75,7 +75,7 @@ theorem sampleRound_ok (M : Mont) (K : Kernel) {B p : Addr} {Z w N i uni ch : Na
     intro k hk
     apply hfu.word_eq (Z := Z)
     · rcases hk with rfl | rfl | rfl <;> simp only [testRanges] <;> rng_disj
-    · rcases hk with rfl | rfl | rfl <;> dsimp only [kI, kUni, kChecks, kU, kElen, kP, kE, sFn] <;> omega
+    · rcases hk with rfl | rfl | rfl <;> dsimp only [kI, kUni, kChecks, kU, kElen, kP, kE, sFn] <;> omega_using [hz]
     · exact h.ready.good.scr.nowrap
     · simpa using hout
   have hsp : u.gpr .rsp = s.gpr .rsp := ku.gpr (by decide)
@@ -88,7 +88,7 @@ theorem sampleRound_ok (M : Mont) (K : Kernel) {B p : Addr} {Z w N i uni ch : Na
     · apply round_header_ranges
       · rcases hk with rfl | rfl | rfl | rfl <;> decide
       · rcases hk with rfl | rfl | rfl | rfl <;> decide
-    · rcases hk with rfl | rfl | rfl | rfl <;> dsimp only [kI, kUni, kChecks, kU, kElen, kP, kE, sFn] <;> omega
+    · rcases hk with rfl | rfl | rfl | rfl <;> dsimp only [kI, kUni, kChecks, kU, kElen, kP, kE, sFn] <;> omega_using [hz]
     · exact hu.good.scr.nowrap
     · simpa using hru.disjoint
   refine WP.mono (roundTail_ok hv hd hflag

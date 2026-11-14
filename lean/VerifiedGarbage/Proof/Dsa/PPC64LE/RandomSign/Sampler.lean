@@ -41,17 +41,17 @@ def seOf (L : RL) (qb : List Byte) : SE :=
 
 theorem bytesAt_drop (m : Mem) (p : Addr) {n d : Nat} (h : d ≤ n) :
     (Spec.Rsa.bytesAt m p n).drop d = Spec.Rsa.bytesAt m (off p d) (n - d) := by
-  have := VG.Proof.Dsa.bytesAt_slice m p (offset := d) (len := n - d) (total := n) (by omega)
+  have := VG.Proof.Dsa.bytesAt_slice m p (offset := d) (len := n - d) (total := n) (by omega_using [h])
   rw [← this, List.take_of_length_le]
-  simp only [List.length_drop, VG.Proof.Bignum.bytesAt_length]; omega
+  simp only [List.length_drop, VG.Proof.Bignum.bytesAt_length]; omega_using []
 
 theorem qs_eq (L : RL) (m : Mem) :
     qSigOf (qbOf L m) = Spec.Rsa.bytesAt m (off (off L.key L.pl) (L.ql - (significant (qbOf L m)).1))
       (significant (qbOf L m)).1 := by
   have hf := Dsa.significant_fits (qbOf L m)
   rw [VG.Proof.Bignum.bytesAt_length] at hf
-  rw [qSigOf, VG.Proof.Bignum.bytesAt_length, bytesAt_drop _ _ (by omega),
-    show L.ql - (L.ql - (significant (qbOf L m)).1) = (significant (qbOf L m)).1 by omega]
+  rw [qSigOf, VG.Proof.Bignum.bytesAt_length, bytesAt_drop _ _ (by omega_using []),
+    show L.ql - (L.ql - (significant (qbOf L m)).1) = (significant (qbOf L m)).1 by omega_using [hf]]
 
 theorem seOf_Q {L : RL} (m : Mem) (hq : 1 < Spec.Dsa.decodeBE (qbOf L m)) : (seOf L (qbOf L m)).Q (qbOf L m) :=
   ⟨VG.Proof.Bignum.bytesAt_length _ _ _, rfl, rfl, rfl, hq⟩
@@ -68,19 +68,19 @@ theorem seOf_ok {L : RL} (hL : L.Ok) (m : Mem) (hq : 1 < Spec.Dsa.decodeBE (qbOf
   have ht : 0 < (significant (qbOf L m)).2.toNat := by
     have hn : (significant (qbOf L m)).2 ≠ 0 := fun h0 => by
       have := (Dsa.significant_nonzero (qbOf L m)).mpr h0
-      simp only [seOf] at hW; omega
+      simp only [seOf] at hW; omega_using [hW, this]
     exact Nat.pos_of_ne_zero fun h0 => hn (BitVec.eq_of_toNat_eq h0)
   have qoff : (off (off L.key L.pl) (L.ql - (significant (qbOf L m)).1)) =
       off L.key (L.pl + (L.ql - (significant (qbOf L m)).1)) := off_off _ _ _
   have qsub : Region.Sub ⟨off (off L.key L.pl) (L.ql - (significant (qbOf L m)).1), (significant (qbOf L m)).1⟩
       L.keyR := by
-    rw [qoff]; exact VG.Offset.sub_base _ (by simp only [RL.kl]; omega)
+    rw [qoff]; exact VG.Offset.sub_base _ (by simp only [RL.kl]; omega_using [hf])
   refine ⟨hqb.2, hW, hf, maskOf_lt (significant (qbOf L m)).2.isLt ht, qSigOf_length _, hL.nwRand, hL.rl, ?_,
     hL.fnw, ?_, ?_⟩
   · simp only [seOf]
-    rw [qoff, off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [RL.kl] at hk; omega)]
+    rw [qoff, off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [RL.kl] at hk; omega_using [hk])]
     simp only [RL.kl] at hk
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hqb, hpl])]; omega_using [hf, hk]
   · exact (RL.Ok.frame_disj (d := oNonce) (n := 32) hL.dFR (by decide)).symm
   · exact (RL.Ok.frame_disj (d := oNonce) (n := 32) hL.dFK (by decide)).symm.sub_left qsub
 
@@ -105,8 +105,8 @@ structure Scanned (L : RL) (s₀ : State) (t : State) : Prop where
 theorem Ctx.qb {L : RL} {s₀ t : State} (hL : L.Ok) (hc : Ctx L s₀ t) :
     Spec.Rsa.bytesAt t.mem (off L.key L.pl) L.ql = qbOf L s₀.mem := by
   have := hL.ql
-  rw [← VG.Proof.Dsa.bytesAt_slice t.mem L.key (total := L.kl) (by simp only [RL.kl]; omega), hc.key,
-    VG.Proof.Dsa.bytesAt_slice s₀.mem L.key (total := L.kl) (by simp only [RL.kl]; omega)]
+  rw [← VG.Proof.Dsa.bytesAt_slice t.mem L.key (total := L.kl) (by simp only [RL.kl]; omega_using []), hc.key,
+    VG.Proof.Dsa.bytesAt_slice s₀.mem L.key (total := L.kl) (by simp only [RL.kl]; omega_using [])]
 
 theorem prepareQ_ok {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀) s₀ t) :
     WP isa prepareQ t fun t' => Scanned (rlOf s₀) s₀ t' ∧
@@ -120,10 +120,10 @@ theorem prepareQ_ok {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s
   refine WP.seq (WP.mono (WP.keep [.r6, .r12] (Q := fun t₁ => t₁.gpr .r12 = off (rlOf s₀).key (rlOf s₀).pl ∧
     t₁.gpr .r6 = BitVec.ofNat 64 (rlOf s₀).ql ∧ t₁.mem = t.mem) (by prun [hc.r19, hc.r20, hc.r21, add0]) (by decide))
     fun t₁ ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
-  refine WP.mono (prepare_ok a12 a6 (by omega) hq.2 fun i hi => ?_) fun t' ⟨⟨b28, b27, b0, b29, m2⟩, k2⟩ => ?_
+  refine WP.mono (prepare_ok a12 a6 (by omega_using [hq]) hq.2 fun i hi => ?_) fun t' ⟨⟨b28, b27, b0, b29, m2⟩, k2⟩ => ?_
   · rw [k1.rd, k1.wr, hc.rd, off_off]
     exact ⟨(rlOf s₀).keyR, List.mem_append_left _ (by rw [hrd]; exact List.mem_cons_self ..),
-      VG.Offset.contains_base _ (by simp only [RL.kl]; omega) (by omega)⟩
+      VG.Offset.contains_base _ (by simp only [RL.kl]; omega_using [hq, hi]) (by omega_using [hq, hp, hi])⟩
   have kk := k1.trans k2
   have eqb : Spec.Rsa.bytesAt t₁.mem (off (rlOf s₀).key (rlOf s₀).pl) (rlOf s₀).ql = qbOf (rlOf s₀) s₀.mem := by
     rw [m1]; exact hc.qb hL
@@ -148,23 +148,23 @@ theorem Scanned.env {s₀ t : State} (h : rsContract.pre s₀) (hs : Scanned (rl
     fun i hi => ?_, hc.rand, ?_⟩
   · rw [hc.rd, hc.wr]
     exact ⟨(rlOf s₀).randR, List.mem_append_left _ (by rw [hrd]; simp),
-      VG.Offset.contains_base _ (by simp only [seOf] at hi ⊢; omega) (by have := hL.rl; simp only [seOf] at hi; omega)⟩
+      VG.Offset.contains_base _ (by simp only [seOf] at hi ⊢; omega_using [hi]) (by have := hL.rl; simp only [seOf] at hi; omega_using [hi, this])⟩
   · rw [hc.rd, hc.wr]
     simp only [seOf, off_off]
     simp only [seOf] at hW hi
     have ekl : (rlOf s₀).kl = 3 * (rlOf s₀).pl + 2 * (rlOf s₀).ql := rfl
     exact ⟨(rlOf s₀).keyR, List.mem_append_left _ (by rw [hrd]; exact List.mem_cons_self ..),
-      VG.Offset.contains_base _ (by omega) (by omega)⟩
+      VG.Offset.contains_base _ (by omega_using [hW, hi, ekl]) (by omega_using [hW, hpl, hql, hi])⟩
   · have := qs_eq (rlOf s₀) s₀.mem
     simp only [seOf] at this ⊢
     rw [this, off_off]
     simp only [seOf] at hW
     have e1 := VG.Proof.Dsa.bytesAt_slice t.mem (rlOf s₀).key (total := (rlOf s₀).kl)
       (offset := (rlOf s₀).pl + ((rlOf s₀).ql - (significant (qbOf (rlOf s₀) s₀.mem)).1))
-      (len := (significant (qbOf (rlOf s₀) s₀.mem)).1) (by simp only [RL.kl]; omega)
+      (len := (significant (qbOf (rlOf s₀) s₀.mem)).1) (by simp only [RL.kl]; omega_using [hW])
     have e2 := VG.Proof.Dsa.bytesAt_slice s₀.mem (rlOf s₀).key (total := (rlOf s₀).kl)
       (offset := (rlOf s₀).pl + ((rlOf s₀).ql - (significant (qbOf (rlOf s₀) s₀.mem)).1))
-      (len := (significant (qbOf (rlOf s₀) s₀.mem)).1) (by simp only [RL.kl]; omega)
+      (len := (significant (qbOf (rlOf s₀) s₀.mem)).1) (by simp only [RL.kl]; omega_using [hW])
     rw [hc.key] at e1
     exact e1.symm.trans e2
 

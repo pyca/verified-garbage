@@ -16,7 +16,7 @@ theorem dotMemoryBank_word (m : Mem) (a b : Addr) (count : Nat) (j : Fin 8) {e :
     vword (dotMemoryBank m a b count)[j.val] e=dotMemoryWord m a b count (16*j.val) e := by
   simp only [dotMemoryBank,Vector.getElem_ofFn]
   rw [VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem dotMemoryWord_offset (m : Mem) (a b : Addr) (count u j e : Nat) (he : e<4) :
     dotMemoryWord m (a+BitVec.ofNat 64 (128*u)) (b+BitVec.ofNat 64 (128*u)) count (16*j) e=
@@ -25,7 +25,7 @@ theorem dotMemoryWord_offset (m : Mem) (a b : Addr) (count u j e : Nat) (he : e<
   unfold dotMemoryWord
   congr 1 <;> funext k <;>
     rw [VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he] <;>
-    simp only [coeffAt,BitVec.add_assoc,← BitVec.ofNat_add] <;> congr 3 <;> omega
+    simp only [coeffAt,BitVec.add_assoc,← BitVec.ofNat_add] <;> congr 3 <;> omega_using []
 
 theorem dotPass_bank_original {m : Mem} {p a b : Addr} {count u : Nat} (hu : u<8)
     (ha : ∀k<count,(polyRegion (a+BitVec.ofNat 64 (1024*k))).Disjoint (polyRegion p))
@@ -41,13 +41,13 @@ theorem dotPass_bank_original {m : Mem} {p a b : Addr} {count u : Nat} (hu : u<8
     dotMemoryWord_offset _ _ _ _ _ _ _ he,dotMemoryWord_offset _ _ _ _ _ _ _ he]
   apply centeredDot_congr
   · intro k hk
-    exact coeffAt_frame (dotPass_frame (by omega)) (by
+    exact coeffAt_frame (dotPass_frame (by omega_using [hu])) (by
       intro r hr; have hr' := List.mem_singleton.mp hr; subst r; exact ha k hk)
-      (by change 32*u+4*i+e<256; omega)
+      (by change 32*u+4*i+e<256; omega_using [hu, hi, he])
   · intro k hk
-    exact coeffAt_frame (dotPass_frame (by omega)) (by
+    exact coeffAt_frame (dotPass_frame (by omega_using [hu])) (by
       intro r hr; have hr' := List.mem_singleton.mp hr; subst r; exact hb k hk)
-      (by change 32*u+4*i+e<256; omega)
+      (by change 32*u+4*i+e<256; omega_using [hu, hi, he])
 
 def dotMemStep (m : Mem) (p a b : Addr) (count u : Nat) : Mem :=
   writeBank (fiveValues u (dotMemoryBank m (a+BitVec.ofNat 64 (128*u))
@@ -55,20 +55,20 @@ def dotMemStep (m : Mem) (p a b : Addr) (count u : Nat) : Mem :=
 
 theorem dotPassMem_step (m : Mem) (p a b : Addr) (count u : Nat) :
     dotPassMem m p a b count (u+1)=dotMemStep (dotPassMem m p a b count u) p a b count u := by
-  simp only [dotPassMem,dotMemStep,coeffAddr,show 4*(32*u)=128*u by omega]
+  simp only [dotPassMem,dotMemStep,coeffAddr,show 4*(32*u)=128*u by omega_using []]
 
 theorem dotMemStep_at (m : Mem) (p a b : Addr) (count : Nat) {u : Nat} (hu : u<8)
     (i : Fin 8) {e : Nat} (he : e<4) :
     coeffAt (dotMemStep m p a b count u) p (32*u+4*i.val+e)=
       vword (fiveValues u (dotMemoryBank m (a+BitVec.ofNat 64 (128*u))
         (b+BitVec.ofNat 64 (128*u)) count))[i.val] e := by
-  exact writeBank_coeff_at _ m p (start:=32*u) (step:=4) (by decide) (by omega) i he
+  exact writeBank_coeff_at _ m p (start:=32*u) (step:=4) (by decide) (by omega_using [hu]) i he
 
 theorem dotMemStep_outside (m : Mem) (p a b : Addr) (count : Nat) {u k : Nat}
     (hu : u<8) (hk : k<n) (hout : k<32*u ∨ 32*(u+1)≤k) :
     coeffAt (dotMemStep m p a b count u) p k=coeffAt m p k := by
-  apply writeBank_coeff_outside (start:=32*u) (step:=4) _ m p (by omega) hk
-  intro i; omega
+  apply writeBank_coeff_outside (start:=32*u) (step:=4) _ m p (by omega_using [hu]) hk
+  intro i; omega_using [hout]
 
 theorem dotPass_processed {m : Mem} {p a b : Addr} {count u k : Nat}
     (ha : ∀j<count,(polyRegion (a+BitVec.ofNat 64 (1024*j))).Disjoint (polyRegion p))
@@ -82,15 +82,15 @@ theorem dotPass_processed {m : Mem} {p a b : Addr} {count u k : Nat}
   | succ u ih =>
     rw [dotPassMem_step]
     by_cases he : k/32=u
-    · have hi : (k%32)/4<8 := by omega
-      have hidx : 32*u+4*((k%32)/4)+k%4=k := by omega
-      have hx := dotMemStep_at (dotPassMem m p a b count u) p a b count (by omega : u<8)
-        ⟨(k%32)/4,hi⟩ (e:=k%4) (by omega)
-      rw [hidx,dotPass_bank_original (by omega) ha hb] at hx
+    · have hi : (k%32)/4<8 := by omega_using []
+      have hidx : 32*u+4*((k%32)/4)+k%4=k := by omega_using [he]
+      have hx := dotMemStep_at (dotPassMem m p a b count u) p a b count (by omega_using [hu] : u<8)
+        ⟨(k%32)/4,hi⟩ (e:=k%4) (by omega_using [])
+      rw [hidx,dotPass_bank_original (by omega_using [hu]) ha hb] at hx
       simpa only [he,
         getElem!_pos (fiveValues u (dotMemoryBank m (a+BitVec.ofNat 64 (128*u))
           (b+BitVec.ofNat 64 (128*u)) count)) ((k%32)/4) hi] using hx
-    · rw [dotMemStep_outside _ _ _ _ _ (by omega) hk (by omega)]
-      exact ih (by omega) (by omega)
+    · rw [dotMemStep_outside _ _ _ _ _ (by omega_using [hu]) hk (by omega_using [he])]
+      exact ih (by omega_using [hu]) (by omega_using [hp, he])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

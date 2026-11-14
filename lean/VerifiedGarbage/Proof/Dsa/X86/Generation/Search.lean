@@ -85,7 +85,7 @@ theorem sRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pL
   rcases List.mem_append.mp ho with h | h
   · exact atRanges_apart G v hp o h
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl <;> simp only [fSeed, fSeedLeft, fC, fOut, fUsedP, fWitLen, hdr] <;> omega
+    rcases h with rfl | rfl | rfl <;> simp only [fSeed, fSeedLeft, fC, fOut, fUsedP, fWitLen, hdr] <;> omega_using [sz]
 
 /-- What the search keeps. -/
 structure SKeep (E : Env) (g : Geo) (s t : State) : Prop where
@@ -147,16 +147,16 @@ theorem availCmp_ok {E : Env} (v : E.Valid) {s : State} (B : Base E s) {c : Nat}
   have sz := v.size_ge
   have wl := v.witLen32
   simp only [Geo.avail, List.cons_append, List.nil_append]
-  refine ld_ok B.scr (d := fWitLen) (by simp only [fWitLen, hdr]; omega) fun s₁ u₁ =>
+  refine ld_ok B.scr (d := fWitLen) (by simp only [fWitLen, hdr]; omega_using [sz]) fun s₁ u₁ =>
     ld_ok (Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr) (d := fC)
-      (by simp only [fC, hdr]; omega) fun s₂ u₂ => wp_sub fun s₃ u₃ _ => wp_cmpi fun s₄ f₄ c₄ _ => ?_
+      (by simp only [fC, hdr]; omega_using [sz]) fun s₂ u₂ => wp_sub fun s₃ u₃ _ => wp_cmpi fun s₄ f₄ c₄ _ => ?_
   have eax : s₄.gpr .eax = BitVec.ofNat 32 (E.witLen - c) := by
     rw [f₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, B.witLenW, hC, sub_ofNat hc]
   refine k s₄ (fun r h₁ h₂ => by rw [f₄.gpr, u₃.other _ h₁, u₂.other _ h₂, u₁.other _ h₁])
     (by rw [f₄.mem, u₃.mem, u₂.mem, u₁.mem]) (by rw [f₄.rd, u₃.rd, u₂.rd, u₁.rd])
     (by rw [f₄.wr, u₃.wr, u₂.wr, u₁.wr]) (by rw [f₄.syms, u₃.syms, u₂.syms, u₁.syms]) eax ?_
   show s₄.cf = _
-  rw [c₄, show s₃.gpr .eax = BitVec.ofNat 32 (E.witLen - c) by rw [← eax, f₄.gpr], toNat_ofNat_lt (by omega),
+  rw [c₄, show s₃.gpr .eax = BitVec.ofNat 32 (E.witLen - c) by rw [← eax, f₄.gpr], toNat_ofNat_lt (by omega_using [wl]),
     toNat_ofNat_lt hw]
 
 /-- The seed at the cursor `c`: `fSeed` := `rand + c`, its witnesses from `c + q_len`. -/
@@ -167,15 +167,15 @@ theorem seedStart_ok {g : Geo} {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) {s
       (∀ r, r ≠ .eax → r ≠ .ecx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms := by
   have sz := v.size_ge
   unfold Geo.seedStart
-  refine ld_ok B.scr (d := fC) (by simp only [fC, hdr]; omega) fun s₁ u₁ =>
+  refine ld_ok B.scr (d := fC) (by simp only [fC, hdr]; omega_using [sz]) fun s₁ u₁ =>
     ld_ok (Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr) (d := fWit)
-      (by simp only [fWit, hdr]; omega) fun s₂ u₂ => wp_add fun s₃ u₃ _ => ?_
+      (by simp only [fWit, hdr]; omega_using [sz]) fun s₂ u₂ => wp_add fun s₃ u₃ _ => ?_
   have hs₃ : Scr s₃ E.base E.size := Scr.of_eq B.scr (by rw [u₃.other _ (by decide), u₂.other _ (by decide),
     u₁.other _ (by decide)]) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
     (by rw [u₃.wr, u₂.wr, u₁.wr])
-  refine st_ok hs₃ (d := fSeed) (by simp only [fSeed, hdr]; omega) fun s₄ M₄ => wp_addi fun s₅ u₅ =>
+  refine st_ok hs₃ (d := fSeed) (by simp only [fSeed, hdr]; omega_using [sz]) fun s₄ M₄ => wp_addi fun s₅ u₅ =>
     st_ok (Scr.of_eq hs₃ (by rw [u₅.other _ (by decide), M₄.gpr]) (by rw [u₅.other _ (by decide), M₄.gpr])
-      (by rw [u₅.wr, M₄.wr])) (d := fUsed) (by simp only [fUsed, hdr]; omega) fun s₆ M₆ => WP.block_nil ?_
+      (by rw [u₅.wr, M₄.wr])) (d := fUsed) (by simp only [fUsed, hdr]; omega_using [sz]) fun s₆ M₆ => WP.block_nil ?_
   have ecx₃ : s₃.gpr .ecx = BitVec.ofNat 32 c := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hC]
   refine ⟨?_, fun r h₁ h₂ => by
@@ -217,7 +217,7 @@ end
 /-- The cursor after a seed, from the witnesses its attempt left. -/
 theorem cursor_of {E : Env} (hl : E.witT.length = E.witLen) {u : Nat} (hu : u ≤ E.witLen) :
     E.witLen - (E.witT.drop u).length = u := by
-  rw [List.length_drop, hl]; omega
+  rw [List.length_drop, hl]; omega_using [hu]
 
 /-- One seed: the loop exits with the search's end, or goes on to the next. -/
 theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
@@ -237,33 +237,33 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   have wl := v.witLen32
   have hl : E.witT.length = E.witLen := by rw [← L.keep.base.wit, VG.Proof.Bignum.bytesAt_length]
   have qE := v.qLen_eq
-  have pp : 0 < E.pLen := by omega
+  have pp : 0 < E.pLen := by omega_using [hp, bd]
   have ws : ∀ (m : Mem) {d e : Nat}, d + 4 ≤ sState → e + 4 ≤ sState → (d + 4 ≤ e ∨ e + 4 ≤ d) → ∀ y,
       (m.writeW (off E.base e) y).readW (off E.base d) 32 = m.readW (off E.base d) 32 :=
-    fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega) (by simp only [sState] at h₂; omega)
+    fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega_using [sz, h₁]) (by simp only [sState] at h₂; omega_using [sz, h₂])
       h y
   simp only [seqs]
-  refine WP.seq (cmpF_end L.keep.base.scr (o := fSeedLeft) (v := 0) (by simp only [fSeedLeft, hdr]; omega) L.left
-    (by have := L.hj; simp only [Spec.Dsa.parameterSeeds] at this; omega) (by decide)
+  refine WP.seq (cmpF_end L.keep.base.scr (o := fSeedLeft) (v := 0) (by simp only [fSeedLeft, hdr]; omega_using [sz]) L.left
+    (by have := L.hj; simp only [Spec.Dsa.parameterSeeds] at this; omega_using [this]) (by decide)
     fun t₁ g₁ m₁ rd₁ wr₁ sy₁ z₁ => ?_)
   have K₁ := L.keep.mem m₁ (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ sy₁
   rcases j with _ | j
   · -- No seeds left: `fStatus` := 3.
     refine WP.seq (WP.ite _ z₁ (fun _ => stImm_end K₁.base.scr (o := fStatus) (v := 3)
-      (by simp only [fStatus, hdr]; omega) fun t₂ g₂ m₂ rd₂ wr₂ sy₂ => ?_) (fun h => by simp at h))
+      (by simp only [fStatus, hdr]; omega_using [sz]) fun t₂ g₂ m₂ rd₂ wr₂ sy₂ => ?_) (fun h => by simp at h))
     have K₂ := K₁.store G v hp (d := fStatus) (by simp [sRanges, atRanges]) _ m₂ (g₂ _ (by decide))
       (g₂ _ (by decide)) rd₂ wr₂ sy₂
-    refine cmpF_end K₂.base.scr (o := fStatus) (v := 0) (w := 3) (by simp only [fStatus, hdr]; omega)
+    refine cmpF_end K₂.base.scr (o := fStatus) (v := 0) (w := 3) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₂, Mem.readW_writeW_self32]) (by decide) (by decide) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ z₃ => ?_
     refine ⟨z₃, fun _ => ⟨K₂.mem m₃ (g₃ _ (by decide)) (g₃ _ (by decide)) rd₃ wr₃ sy₃, ?_, ?_⟩,
       fun _ _ h => by simp [sStep] at h⟩
     · refine ⟨by rw [m₃, m₂, Mem.readW_writeW_self32], ?_, L.hc⟩
-      rw [m₃, m₂, ws _ (by simp only [fC, sState, hdr]; omega) (by simp only [fStatus, sState, hdr]; omega)
-        (by simp only [fC, fStatus, hdr]; omega), m₁, L.cur]
+      rw [m₃, m₂, ws _ (by simp only [fC, sState, hdr]; omega_using []) (by simp only [fStatus, sState, hdr]; omega_using [])
+        (by simp only [fC, fStatus, hdr]; omega_using []), m₁, L.cur]
     · rw [← L.spec]; exact (search_zero _ _ _).symm
-  have j1 : j + 1 < 2 ^ 32 := by have := L.hj; simp only [Spec.Dsa.parameterSeeds] at this; omega
+  have j1 : j + 1 < 2 ^ 32 := by have := L.hj; simp only [Spec.Dsa.parameterSeeds] at this; omega_using [this]
   refine WP.seq (WP.ite _ z₁ (fun h => by simp only [decide_eq_true_eq] at h; omega) (fun _ => ?_))
-  refine WP.seq (availCmp_ok v K₁.base (c := c) (by rw [m₁]; exact L.cur) L.hc (w := g.qLen) (by omega)
+  refine WP.seq (availCmp_ok v K₁.base (c := c) (by rw [m₁]; exact L.cur) L.hc (w := g.qLen) (by omega_using [bd])
     fun t₂ g₂ m₂ rd₂ wr₂ sy₂ _ c₂ => WP.block_nil ?_)
   have K₂ := K₁.mem m₂ (g₂ _ (by decide) (by decide)) (g₂ _ (by decide) (by decide)) rd₂ wr₂ sy₂
   have mem₂ : t₂.mem = t.mem := by rw [m₂, m₁]
@@ -271,24 +271,24 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   by_cases short : E.witLen - c < E.qLen
   · -- Too few octets for a seed: `fStatus` := 2.
     refine WP.ite _ c₂ (fun _ => stImm_end K₂.base.scr (o := fStatus) (v := 2)
-      (by simp only [fStatus, hdr]; omega) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ => ?_) (fun h => by simp [hq ▸ short] at h)
+      (by simp only [fStatus, hdr]; omega_using [sz]) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ => ?_) (fun h => by simp [hq ▸ short] at h)
     have K₃ := K₂.store G v hp (d := fStatus) (by simp [sRanges, atRanges]) _ m₃ (g₃ _ (by decide))
       (g₃ _ (by decide)) rd₃ wr₃ sy₃
     have hS : sStep E (j + 1) c = none := by simp [sStep, short]
-    refine cmpF_end K₃.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega)
+    refine cmpF_end K₃.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₃, Mem.readW_writeW_self32]) (by decide) (by decide) fun t₄ g₄ m₄ rd₄ wr₄ sy₄ z₄ => ?_
     refine ⟨by rw [show t₄.zf = _ from z₄, hS]; rfl, fun _ => ⟨K₃.mem m₄ (g₄ _ (by decide)) (g₄ _ (by decide)) rd₄
       wr₄ sy₄, ?_, ?_⟩, fun _ _ h => by rw [hS] at h; cases h⟩
     · simp only [sOut, short, ↓reduceIte, SRes]
       refine ⟨by rw [m₄, m₃, Mem.readW_writeW_self32], ?_, ?_, L.hc, L.hj⟩
-      · rw [m₄, m₃, ws _ (by simp only [fC, sState, hdr]; omega) (by simp only [fStatus, sState, hdr]; omega)
-          (by simp only [fC, fStatus, hdr]; omega), mem₂, L.cur]
-      · rw [m₄, m₃, ws _ (by simp only [fSeedLeft, sState, hdr]; omega) (by simp only [fStatus, sState, hdr]; omega)
-          (by simp only [fSeedLeft, fStatus, hdr]; omega), mem₂, L.left]
+      · rw [m₄, m₃, ws _ (by simp only [fC, sState, hdr]; omega_using []) (by simp only [fStatus, sState, hdr]; omega_using [])
+          (by simp only [fC, fStatus, hdr]; omega_using []), mem₂, L.cur]
+      · rw [m₄, m₃, ws _ (by simp only [fSeedLeft, sState, hdr]; omega_using []) (by simp only [fStatus, sState, hdr]; omega_using [])
+          (by simp only [fSeedLeft, fStatus, hdr]; omega_using []), mem₂, L.left]
     · simp only [sOut, short, ↓reduceIte, cRes]
       rw [← L.spec, search_short (by rw [hl, ← qE]; exact short), hl]
   -- A seed.
-  have hcq : c + E.qLen ≤ E.witLen := by omega
+  have hcq : c + E.qLen ≤ E.witLen := by omega_using [hq, bd, short]
   refine WP.ite _ c₂ (fun h => by simp only [decide_eq_true_eq] at h; omega) (fun _ => ?_)
   refine WP.seq (WP.mono (seedStart_ok v hq K₂.base (c := c) (by rw [mem₂]; exact L.cur))
     fun t₃ ⟨m₃, g₃, rd₃, wr₃, sy₃⟩ => ?_)
@@ -303,21 +303,21 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
       rcases ho with rfl | rfl <;> simp [sRanges, atRanges, qRanges]) C₃ edi₃ esp₃ rd₃ wr₃ sy₃
   have w₃ : ∀ d, d + 4 ≤ sState → (d + 4 ≤ fSeed ∨ fSeed + 4 ≤ d) → (d + 4 ≤ fUsed ∨ fUsed + 4 ≤ d) →
       t₃.mem.readW (off E.base d) 32 = t.mem.readW (off E.base d) 32 := fun d h₀ h₁ h₂ => by
-    rw [m₃, ws _ h₀ (by simp only [fUsed, sState, hdr]; omega) h₂, ws _ h₀ (by simp only [fSeed, sState, hdr]; omega) h₁,
+    rw [m₃, ws _ h₀ (by simp only [fUsed, sState, hdr]; omega_using []) h₂, ws _ h₀ (by simp only [fSeed, sState, hdr]; omega_using []) h₁,
       mem₂]
   have v' := v.atSeed hcq
   have hS : t₃.mem.readW (off E.base fSeed) 32 =
       ((E.atSeed c).seeds + BitVec.ofNat 64 (0 * (E.atSeed c).qLen)).setWidth 32 := by
-    rw [m₃, ws _ (by simp only [fSeed, sState, hdr]; omega) (by simp only [fUsed, sState, hdr]; omega)
-      (by simp only [fSeed, fUsed, hdr]; omega), Mem.readW_writeW_self32, Nat.zero_mul, BitVec.add_zero]
+    rw [m₃, ws _ (by simp only [fSeed, sState, hdr]; omega_using []) (by simp only [fUsed, sState, hdr]; omega_using [])
+      (by simp only [fSeed, fUsed, hdr]; omega_using []), Mem.readW_writeW_self32, Nat.zero_mul, BitVec.add_zero]
     rfl
   have hU : t₃.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 (c + E.qLen) := by
     rw [m₃, Mem.readW_writeW_self32]
   have st₃ : t₃.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := by
-    rw [w₃ fStatus (by simp only [fStatus, sState, hdr]; omega) (.inr (by simp only [fSeed, fStatus, hdr]; omega))
-      (.inr (by simp only [fUsed, fStatus, hdr]; omega)), L.status]
+    rw [w₃ fStatus (by simp only [fStatus, sState, hdr]; omega_using []) (.inr (by simp only [fSeed, fStatus, hdr]; omega_using []))
+      (.inr (by simp only [fUsed, fStatus, hdr]; omega_using [])), L.status]
   refine WP.seq (WP.mono (attempt_ok G v' hp hq (K₃.base.toSeed c) (k := 0)
-    (by simp only [Env.atSeed]; omega) hS hU hcq st₃) fun t₄ ⟨AK, AR⟩ => ?_)
+    (by simp only [Env.atSeed]; omega_using []) hS hU hcq st₃) fun t₄ ⟨AK, AR⟩ => ?_)
   have eR : refillAttempt g.pLen g.qLen (chunk (E.atSeed c) 0) ((E.atSeed c).witT.drop (c + E.qLen)) = sR E c := by
     simp only [chunk, Env.seedT, Env.atSeed, sR, hp, hq, Nat.zero_mul, List.drop_zero, List.take_take, Nat.min_self]
   rw [eR] at AR
@@ -326,13 +326,13 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     by rw [AK.syms, K₃.syms]⟩
   have left₄ : t₄.mem.readW (off E.base fSeedLeft) 32 = BitVec.ofNat 32 (j + 1) := by
     rw [show t₄.mem.readW (off E.base fSeedLeft) 32 = t₃.mem.readW (off E.base fSeedLeft) 32 from
-      AK.word G v' hp (by simp only [fSeedLeft]; omega) (by simp only [fSeedLeft, fUsed, hdr]; omega),
-      w₃ fSeedLeft (by simp only [fSeedLeft, sState, hdr]; omega) (.inr (by simp only [fSeed, fSeedLeft, hdr]; omega))
-        (.inl (by simp only [fUsed, fSeedLeft, hdr]; omega)), L.left]
+      AK.word G v' hp (by simp only [fSeedLeft]; omega_using []) (by simp only [fSeedLeft, fUsed, hdr]; omega_using []),
+      w₃ fSeedLeft (by simp only [fSeedLeft, sState, hdr]; omega_using []) (.inr (by simp only [fSeed, fSeedLeft, hdr]; omega_using []))
+        (.inl (by simp only [fUsed, fSeedLeft, hdr]; omega_using [])), L.left]
   have cur₄ : t₄.mem.readW (off E.base fC) 32 = BitVec.ofNat 32 c := by
     rw [show t₄.mem.readW (off E.base fC) 32 = t₃.mem.readW (off E.base fC) 32 from AK.cur G v' hp,
-      w₃ fC (by simp only [fC, sState, hdr]; omega) (.inr (by simp only [fSeed, fC, hdr]; omega))
-        (.inr (by simp only [fUsed, fC, hdr]; omega)), L.cur]
+      w₃ fC (by simp only [fC, sState, hdr]; omega_using []) (.inr (by simp only [fSeed, fC, hdr]; omega_using []))
+        (.inr (by simp only [fUsed, fC, hdr]; omega_using [])), L.cur]
   have hRc : (E.witT.drop c).take (Spec.Dsa.generationQLen E.pLen) = (E.witT.drop c).take E.qLen := by rw [qE]
   have hcq' : c + Spec.Dsa.generationQLen E.pLen ≤ E.witT.length := by rw [hl, ← qE]; exact hcq
   have sOutE : ∀ x, sR E c = x → sOut E (j + 1) c = match x with
@@ -344,11 +344,11 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   · -- `rand` ran out inside the seed.
     have hS' : sStep E (j + 1) c = none := by simp [sStep, short, hR]
     have st₄ : t₄.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 2 := AR
-    refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega) st₄
+    refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega_using [sz]) st₄
       (by decide) (by decide) fun t₅ g₅ m₅ rd₅ wr₅ sy₅ z₅ => ?_)
     have K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
     refine WP.ite _ z₅ (fun h => by simp at h) (fun _ => WP.block_nil ?_)
-    refine cmpF_end K₅.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega)
+    refine cmpF_end K₅.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₅]; exact st₄) (by decide) (by decide) fun t₆ g₆ m₆ rd₆ wr₆ sy₆ z₆ => ?_
     refine ⟨by rw [show t₆.zf = _ from z₆, hS']; rfl, fun _ => ⟨K₅.mem m₆ (g₆ _ (by decide)) (g₆ _ (by decide)) rd₆
       wr₆ sy₆, ?_, ?_⟩, fun _ _ h => by rw [hS'] at h; cases h⟩
@@ -361,7 +361,7 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     replace fu₄ : t₄.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 u := fu₄
     have uc : E.witLen - rest.length = u := by rw [← du]; exact cursor_of hl hu
     have hS' : sStep E (j + 1) c = some (j, u) := by simp [sStep, short, hR, uc]
-    refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 0) (by simp only [fStatus, hdr]; omega) st₄
+    refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 0) (by simp only [fStatus, hdr]; omega_using [sz]) st₄
       (by decide) (by decide) fun t₅ g₅ m₅ rd₅ wr₅ sy₅ z₅ => ?_)
     have K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
     refine WP.ite _ z₅ (fun _ => WP.mono (rejected_ok v K₅.base (u := u) (j := j) (by rw [m₅]; exact fu₄)
@@ -374,21 +374,21 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
         rcases ho with rfl | rfl <;> simp [sRanges]) C₆ (g₆ _ (by decide)) (g₆ _ (by decide)) rd₆ wr₆ sy₆
     have st₆ : t₆.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := by
-      rw [m₆, ws _ (by simp only [fStatus, sState, hdr]; omega) (by simp only [fSeedLeft, sState, hdr]; omega)
-        (by simp only [fSeedLeft, fStatus, hdr]; omega), ws _ (by simp only [fStatus, sState, hdr]; omega)
-        (by simp only [fC, sState, hdr]; omega) (by simp only [fC, fStatus, hdr]; omega), m₅, st₄]
-    refine cmpF_end K₆.base.scr (o := fStatus) (v := 0) (w := 0) (by simp only [fStatus, hdr]; omega) st₆
+      rw [m₆, ws _ (by simp only [fStatus, sState, hdr]; omega_using []) (by simp only [fSeedLeft, sState, hdr]; omega_using [])
+        (by simp only [fSeedLeft, fStatus, hdr]; omega_using []), ws _ (by simp only [fStatus, sState, hdr]; omega_using [])
+        (by simp only [fC, sState, hdr]; omega_using []) (by simp only [fC, fStatus, hdr]; omega_using []), m₅, st₄]
+    refine cmpF_end K₆.base.scr (o := fStatus) (v := 0) (w := 0) (by simp only [fStatus, hdr]; omega_using [sz]) st₆
       (by decide) (by decide) fun t₇ g₇ m₇ rd₇ wr₇ sy₇ z₇ => ?_
     refine ⟨by rw [show t₇.zf = _ from z₇, hS']; rfl, (fun h => by rw [hS'] at h; cases h), fun j' c' h => ?_⟩
     rw [hS'] at h
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj h)
-    refine ⟨by omega, K₆.mem m₇ (g₇ _ (by decide)) (g₇ _ (by decide)) rd₇ wr₇ sy₇, ?_, ?_, by rw [m₇]; exact st₆, hu,
-      by have := L.hj; omega, ?_, ?_⟩
+    refine ⟨by omega_using [], K₆.mem m₇ (g₇ _ (by decide)) (g₇ _ (by decide)) rd₇ wr₇ sy₇, ?_, ?_, by rw [m₇]; exact st₆, hu,
+      by have := L.hj; omega_using [this], ?_, ?_⟩
     · rw [m₇, m₆, Mem.readW_writeW_self32]
-    · rw [m₇, m₆, ws _ (by simp only [fC, sState, hdr]; omega) (by simp only [fSeedLeft, sState, hdr]; omega)
-        (by simp only [fSeedLeft, fC, hdr]; omega), Mem.readW_writeW_self32]
+    · rw [m₇, m₆, ws _ (by simp only [fC, sState, hdr]; omega_using []) (by simp only [fSeedLeft, sState, hdr]; omega_using [])
+        (by simp only [fSeedLeft, fC, hdr]; omega_using []), Mem.readW_writeW_self32]
     · have du' : E.witT.drop u = rest := du
-      rw [← L.spec, search_rejected (u := u) hpL hcq' (by omega) (by rw [hRc, ← qE, du']; exact hR)]
+      rw [← L.spec, search_rejected (u := u) hpL hcq' (by omega_using [hl, uc]) (by rw [hRc, ← qE, du']; exact hR)]
     · rw [← L.out, sOutE _ hR]
       dsimp only
       rw [uc]
@@ -400,11 +400,11 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
       Spec.Dsa.encodeParams g.pLen g.qLen a := pk₄
     have uc : E.witLen - rest.length = u := by rw [← du]; exact cursor_of hl hu
     have hS' : sStep E (j + 1) c = none := by simp [sStep, short, hR]
-    refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 1) (by simp only [fStatus, hdr]; omega) st₄
+    refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 1) (by simp only [fStatus, hdr]; omega_using [sz]) st₄
       (by decide) (by decide) fun t₅ g₅ m₅ rd₅ wr₅ sy₅ z₅ => ?_)
     have K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
     refine WP.ite _ z₅ (fun h => by simp at h) (fun _ => WP.block_nil ?_)
-    refine cmpF_end K₅.base.scr (o := fStatus) (v := 0) (w := 1) (by simp only [fStatus, hdr]; omega)
+    refine cmpF_end K₅.base.scr (o := fStatus) (v := 0) (w := 1) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₅]; exact st₄) (by decide) (by decide) fun t₆ g₆ m₆ rd₆ wr₆ sy₆ z₆ => ?_
     refine ⟨by rw [show t₆.zf = _ from z₆, hS']; rfl, fun _ => ⟨K₅.mem m₆ (g₆ _ (by decide)) (g₆ _ (by decide)) rd₆
       wr₆ sy₆, ?_, ?_⟩, fun _ _ h => by rw [hS'] at h; cases h⟩
@@ -415,7 +415,7 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     · have du' : E.witT.drop u = rest := du
       rw [sOutE _ hR]
       dsimp only
-      rw [uc, cRes, ← L.spec, search_accepted (u := u) hpL hcq' (by omega) (by rw [hRc, ← qE, du']; exact hR)]
+      rw [uc, cRes, ← L.spec, search_accepted (u := u) hpL hcq' (by omega_using [hl, uc]) (by rw [hRc, ← qE, du']; exact hR)]
 
 /-- The seeds from the cursor 0, with `state[0]` seeds left. -/
 theorem search_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen)
@@ -430,7 +430,7 @@ theorem search_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   unfold Geo.search
   refine WP.loop (M := isa) (fun m t => ∃ j c, j < m ∧ SLoop E g s j c t)
     (fun m t ⟨j, c, hm, L⟩ => WP.mono (sBody_ok G v hp hq L) fun t' ⟨z, hn, hs⟩ => ?_) (E.k0 + 1) s
-    ⟨E.k0, 0, by omega, L₀⟩
+    ⟨E.k0, 0, by omega_using [], L₀⟩
   rcases h : sStep E j c with _ | ⟨j', c'⟩
   · rw [h] at z
     obtain ⟨K, R, e⟩ := hn h
@@ -438,6 +438,6 @@ theorem search_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     exact .inl ⟨z, K, R, e⟩
   · rw [h] at z
     obtain ⟨hj, L'⟩ := hs j' c' h
-    exact .inr ⟨z, m - 1, by omega, j', c', by omega, L'⟩
+    exact .inr ⟨z, m - 1, by omega_using [hm], j', c', by omega_using [hm, hj], L'⟩
 
 end VG.Proof.Dsa.X86.Generation

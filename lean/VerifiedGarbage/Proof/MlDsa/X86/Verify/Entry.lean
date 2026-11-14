@@ -80,7 +80,7 @@ theorem okWS {o l : Nat} (hl : 0 < l) (h : o + l ≤ scratchWords p * 8) :
 theorem off_congr {m m' : Mem} {x : Addr} {L : Nat} (h : ∀ j < L, m' (x + BitVec.ofNat 64 j) = m (x + BitVec.ofNat 64 j))
     {o len : Nat} (ho : o + len ≤ L) : ∀ i < len, m' (x + BitVec.ofNat 64 o + BitVec.ofNat 64 i) =
       m (x + BitVec.ofNat 64 o + BitVec.ofNat 64 i) := fun i hi => by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega)
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega_using [ho, hi])
 
 /-- The call of the core, with `t̂₁` in the buffer `t`. -/
 theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (verifyCoreContract p X86.abi 96))
@@ -97,10 +97,10 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (veri
   have hsig := hF.sig
   have hscr := hF.scr
   have hsw := hF.sw
-  have o0 : (YVE p kl).ok ⟨0, 0, p.pkLen⟩ = true := okA (by decide) (by omega) (by simp [YVE, Lay.alen]; omega)
+  have o0 : (YVE p kl).ok ⟨0, 0, p.pkLen⟩ = true := okA (by decide) (by omega_using [hpk]) (by simp [YVE, Lay.alen]; omega_using [hkl])
   have o1 : (YVE p kl).ok ⟨1, 0, 64⟩ = true := okA (by decide) (by decide) (by simp [YVE, Lay.alen])
-  have o2 : (YVE p kl).ok ⟨2, 0, p.sigLen⟩ = true := okA (by decide) (by have := hF.ct; omega) (by simp [YVE, Lay.alen])
-  have w3 : (YVE p kl).okW ⟨3, 0, oT1 p⟩ = true := okWS (by simp only [oT1]; omega) (by simp only [oT1]; omega)
+  have o2 : (YVE p kl).ok ⟨2, 0, p.sigLen⟩ = true := okA (by decide) (by have := hF.ct; omega_using [hk, hsig]) (by simp [YVE, Lay.alen])
+  have w3 : (YVE p kl).okW ⟨3, 0, oT1 p⟩ = true := okWS (by simp only [oT1]; omega_using [hscr]) (by simp only [oT1]; omega_using [])
   have r3 := (Lay.okW_iff.mp w3).1
   refine callPR_pieceK (lk := lkV p) (K := 96) (coreArgs p t) [⟨0, 0, p.pkLen⟩, ⟨1, 0, 64⟩, ⟨2, 0, p.sigLen⟩, t]
     [⟨3, 0, oT1 p⟩] (fun _ _ h => h) hv hsp hst (by simp [coreArgs])
@@ -115,7 +115,7 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (veri
     have hkp : T1In p e.mem (Buf.addr s₀ t) (bytesAt e.mem (Buf.addr s₀ ⟨0, 0, p.pkLen⟩) p.pkLen) := by
       intro r hr
       rw [hpkb, PreparedKey.public_poly p _ hr]
-      exact Proof.MlDsa.Verify.polyIs_congr (off_congr (he.mem _ ht) (by rw [htl]; omega)) (ht1 r hr)
+      exact Proof.MlDsa.Verify.polyIs_congr (off_congr (he.mem _ ht) (by rw [htl]; omega_using [hr])) (ht1 r hr)
     obtain ⟨b₀, b₀', b₀'', b₀f⟩ := he.bufK hp (by simp [coreArgs]) o0 (K := 96) (by simp [YVE])
     obtain ⟨b₁, b₁', b₁'', b₁f⟩ := he.bufK hp (by simp [coreArgs]) o1 (K := 96) (by simp [YVE])
     obtain ⟨b₂, b₂', b₂'', b₂f⟩ := he.bufK hp (by simp [coreArgs]) o2 (K := 96) (by simp [YVE])
@@ -124,7 +124,7 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (veri
     obtain ⟨x₁, x₂⟩ := he.selfK hp (by simp [coreArgs]) (K := 96) (by simp [YVE])
     obtain ⟨en, hE⟩ := he.espNat hp (by simp [YVE]) (by simp [coreArgs])
     have hE2 : 120 ≤ (E1 s₀).toNat := by
-      rw [E1_nat s₀ hp.E0_big]; have := hp.sp; simp only [YVE] at this; omega
+      rw [E1_nat s₀ hp.E0_big]; have := hp.sp; simp only [YVE] at this; omega_using [this]
     have d03 := Buf.disj hp o0 r3 (by simp [Lay.sep, YVE, Lay.awr])
     have d13 := Buf.disj hp o1 r3 (by simp [Lay.sep, YVE, Lay.awr])
     have d23 := Buf.disj hp o2 r3 (by simp [Lay.sep, YVE, Lay.awr])
@@ -137,7 +137,7 @@ theorem core_piece {n : String} {f : Prog isa} (hv : Verified X86.target f (veri
     have a₃ := he.arg 3 (by simp [coreArgs])
     have a₄ := he.arg 4 (by simp [coreArgs])
     have aa := he.argAddr0
-    have e3 : (scratchWords p - 128 * p.k) * 8 = oT1 p := by simp only [oT1]; omega
+    have e3 : (scratchWords p - 128 * p.k) * 8 = oT1 p := by simp only [oT1]; omega_using []
     generalize e = e' at *
     sig_pre [verifyCoreContract, verifyCoreSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, argAddr_withRegions, a₀, a₁, a₂, a₃, a₄, aa, coreArgs, List.getElem_cons_zero,
@@ -203,11 +203,11 @@ def TI (p : Params) (r : Nat) (s₀ s : State) : Prop :=
 
 theorem t1S_ok (hF : VFacts p) {j : Nat} (hj : j < p.k) : (YVE p p.pkLen).okW (t1S p j) = true := by
   have hk := hF.k; have hsw := hF.sw; have hscr := hF.scr
-  exact okWS (by decide) (by simp only [oT1]; omega)
+  exact okWS (by decide) (by simp only [oT1]; omega_using [hj, hsw])
 
 theorem ws_ok (hF : VFacts p) : (YVE p p.pkLen).okW (sb 0 1024) = true := by
   have hk := hF.k; have hsw := hF.sw; have hscr := hF.scr
-  exact okWS (by decide) (by omega)
+  exact okWS (by decide) (by omega_using [hsw])
 
 /-- Row `r` of `t̂₁`. -/
 theorem t1One_piece {P : Prims} (hP : PrimsOk P) (hF : VFacts p) {r : Nat} (hr : r < p.k) :
@@ -216,13 +216,13 @@ theorem t1One_piece {P : Prims} (hP : PrimsOk P) (hF : VFacts p) {r : Nat} (hr :
   have ws := ws_ok hF
   have tr := t1S_ok hF hr
   have vo : (YVE p p.pkLen).ok ⟨0, 32 + 320 * r, 320⟩ = true :=
-    okA (by decide) (by decide) (by simp only [YVE, Lay.alen, List.getD_cons_zero]; omega)
+    okA (by decide) (by decide) (by simp only [YVE, Lay.alen, List.getD_cons_zero]; omega_using [hr, hpk])
   have vall : (YVE p p.pkLen).ok ⟨0, 0, p.pkLen⟩ = true :=
-    okA (by decide) (by omega) (by simp only [YVE, Lay.alen, List.getD_cons_zero]; omega)
+    okA (by decide) (by omega_using [hpk]) (by simp only [YVE, Lay.alen, List.getD_cons_zero]; omega_using [])
   have sepT : ∀ j < p.k, j ≠ r → (YVE p p.pkLen).sep (t1S p j) (t1S p r) = true := fun j hj hne =>
-    VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, by simp only; omega⟩)
+    VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, by simp only; omega_using [hne]⟩)
   have sepW : ∀ j < p.k, (YVE p p.pkLen).sep (t1S p j) (sb 0 1024) = true := fun j hj =>
-    VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, .inr (by simp only [oT1]; omega)⟩)
+    VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, .inr (by simp only [oT1]; omega_using [hsw])⟩)
   unfold t1One
   refine Piece.seq (B := fun s₀ s => TI p r s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (t1S p r))
       ((vT1 (vPk p s₀) r).map fun c => ofInt (c * 2 ^ d : Nat)))
@@ -231,9 +231,9 @@ theorem t1One_piece {P : Prims} (hP : PrimsOk P) (hF : VFacts p) {r : Nat} (hr :
       (by simp [YVE]) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
       fun s₀ s s' hp h h' fr out => ⟨⟨h', fun j hj => keepPolyD hp (N := 80) (by simp [YVE])
         (by simp only [Lay.apart, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true]
-            exact ⟨(Lay.okW_iff.mp (t1S_ok hF (by omega))).1, (Lay.okW_iff.mp tr).1, sepT j (by omega) (by omega)⟩)
+            exact ⟨(Lay.okW_iff.mp (t1S_ok hF (by omega_using [hr, hj]))).1, (Lay.okW_iff.mp tr).1, sepT j (by omega_using [hr, hj]) (by omega_using [hj])⟩)
         fr (h.2 j hj)⟩, ?_⟩) ?_
-  · have e := bytes_sub hp s.mem (a := 0) (o := 0) (k := 32 + 320 * r) (c := 320) (L := p.pkLen) (by omega) vall
+  · have e := bytes_sub hp s.mem (a := 0) (o := 0) (k := 32 + 320 * r) (c := 320) (L := p.pkLen) (by omega_using [hr, hpk]) vall
       (by rw [Nat.zero_add]; exact vo)
     rw [Nat.zero_add, h.1.roBytes hp vall rfl] at e
     rw [e] at out
@@ -241,19 +241,19 @@ theorem t1One_piece {P : Prims} (hP : PrimsOk P) (hF : VFacts p) {r : Nat} (hr :
   refine inPlace_piece (Y := YVE p p.pkLen) hP.ntt 3 (oT1 p + 1024 * r) 3 0
     (by simp only [Bool.and_eq_true]; exact ⟨⟨tr, ws⟩, sepW r hr⟩) (by simp [YVE]) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => ⟨h.1.1, h.2.1⟩) fun s₀ s s' hp h h' fr out => ⟨h', fun j hj => ?_⟩
-  rcases (by omega : j < r ∨ j = r) with hj' | rfl
+  rcases (by omega_using [hj] : j < r ∨ j = r) with hj' | rfl
   · exact keepPolyD hp (N := 80) (by simp [YVE])
       (by simp only [Lay.apart, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true]
-          exact ⟨(Lay.okW_iff.mp (t1S_ok hF (by omega))).1, ⟨(Lay.okW_iff.mp tr).1, sepT j (by omega) (by omega)⟩,
-            (Lay.okW_iff.mp ws).1, sepW j (by omega)⟩) fr (h.1.2 j hj')
+          exact ⟨(Lay.okW_iff.mp (t1S_ok hF (by omega_using [hr, hj]))).1, ⟨(Lay.okW_iff.mp tr).1, sepT j (by omega_using [hr, hj]) (by omega_using [hj'])⟩,
+            (Lay.okW_iff.mp ws).1, sepW j (by omega_using [hr, hj])⟩) fr (h.1.2 j hj')
   · rw [h.2.2] at out; exact out
 
 theorem tS_addr (hF : VFacts p) {s₀ : State} (hp : TPre (YVE p p.pkLen) s₀) {r : Nat} (hr : r < p.k) :
     Buf.addr s₀ (t1S p r) = Buf.addr s₀ (sb (oT1 p) (1024 * p.k)) + BitVec.ofNat 64 (1024 * r) := by
   have hk := hF.k; have hsw := hF.sw; have hscr := hF.scr
   rw [Buf.addr_eq hp (Lay.okW_iff.mp (t1S_ok hF hr)).1,
-    Buf.addr_eq hp (Lay.okW_iff.mp (okWS (p := p) (kl := p.pkLen) (o := oT1 p) (l := 1024 * p.k) (by omega)
-      (by simp only [oT1]; omega))).1, BitVec.add_assoc, ← BitVec.ofNat_add]
+    Buf.addr_eq hp (Lay.okW_iff.mp (okWS (p := p) (kl := p.pkLen) (o := oT1 p) (l := 1024 * p.k) (by omega_using [hr])
+      (by simp only [oT1]; omega_using [hsw]))).1, BitVec.add_assoc, ← BitVec.ofNat_add]
 
 /-- The body of `vg_mldsa*_verify`. -/
 theorem entry_piece {P : Prims} (hP : PrimsOk P) (hF : VFacts p) {n : String} {f : Prog isa}
@@ -267,10 +267,10 @@ theorem entry_piece {P : Prims} (hP : PrimsOk P) (hF : VFacts p) {n : String} {f
   have hk := hF.k; have hsw := hF.sw; have hscr := hF.scr
   refine (ldsc_piece (Y := YVE p p.pkLen) (ht := .block []) (by kernel_rfl)).seq ?_
   refine Piece.seq (B := TI p p.k) ((seqR_piece (I := fun r => TI p r) p.k 0
-    fun r _ hr => t1One_piece hP hF (by omega)).mono (fun _ _ _ h => ⟨h, fun j hj => absurd hj (Nat.not_lt_zero _)⟩)
+    fun r _ hr => t1One_piece hP hF (by omega_using [hr])).mono (fun _ _ _ h => ⟨h, fun j hj => absurd hj (Nat.not_lt_zero _)⟩)
       fun _ _ _ h => by simpa using h) ?_
   exact core_piece hv hsp hst hF (Nat.le_refl _) _ rfl
-    (Lay.okW_iff.mp (okWS (by omega) (by simp only [oT1]; omega))).1
+    (Lay.okW_iff.mp (okWS (by omega_using [hk]) (by simp only [oT1]; omega_using [hsw]))).1
     (VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, .inr (Nat.le_of_eq (Nat.zero_add _))⟩)) tt
     fun s₀ s hp h => ⟨h.1, fun r hr => by rw [← tS_addr hF hp hr]; exact h.2 r hr⟩
 
@@ -308,7 +308,7 @@ theorem tpre_of {p : Params} {kl : Nat} {s₀ : State} (h1 : 136 ≤ (s₀.gpr .
     (h24 : (arg s₀ 2).toNat + p.sigLen ≤ 2 ^ 32) (h25 : (arg s₀ 3).toNat + scratchWords p * 8 ≤ 2 ^ 32) :
     TPre (YVE p kl) s₀ := by
   have c4 : ∀ i, i < (YVE p kl).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := fun i hi => by
-    rw [yve_n] at hi; omega
+    rw [yve_n] at hi; omega_using [hi]
   refine ⟨h1, by show 16 ≤ 136; decide, by rw [yve_n]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, h21, ?_, by show 3 < 4; decide⟩
   · intro i hi hw
@@ -364,7 +364,7 @@ theorem ePub_of {kl : Nat} {s₀ s₀' : State} (h : (verifyContract p X86.abi 1
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · rw [yve_n] at hi
-    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆]
   · simp only [lkV, vPk, vMu, vSig, eaddr0]
     exact Proof.MlDsa.KeyGen.leakBytes_inj e₂
@@ -411,7 +411,7 @@ abbrev PPK (p : Params) (s₀ : State) : Prop := PreparedPublicKey p s₀.mem ((
 
 theorem ppk_ok {o l : Nat} (hl : 0 < l) (h : o + l ≤ p.pkLen + 1024 * p.k) :
     (YVE p (preparedPublicKeyBytes p)).ok ⟨0, o, l⟩ = true :=
-  okA (by decide) hl (by simp only [YVE, Lay.alen, List.getD_cons_zero, preparedPublicKeyBytes, Spec.MlDsa.n]; omega)
+  okA (by decide) hl (by simp only [YVE, Lay.alen, List.getD_cons_zero, preparedPublicKeyBytes, Spec.MlDsa.n]; omega_using [h])
 
 /-- Polynomial `r` of the prepared key, as the call of the core sees it. -/
 theorem ppk_poly {s₀ s : State} (hp : TPre (YVE p (preparedPublicKeyBytes p)) s₀)
@@ -420,13 +420,13 @@ theorem ppk_poly {s₀ s : State} (hp : TPre (YVE p (preparedPublicKeyBytes p)) 
   have e := (Proof.MlDsa.preparedPublicKey_iff.mp hk) r hr
   have pk : bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.pkLen = vPk p s₀ := by simp only [vPk, eaddr0]
   rw [pk, PreparedKey.public_poly p _ hr] at e
-  have hB := ppk_ok (p := p) (o := p.pkLen + 1024 * r) (l := 1024) (by decide) (by omega)
+  have hB := ppk_ok (p := p) (o := p.pkLen + 1024 * r) (l := 1024) (by decide) (by omega_using [hr])
   have a1 : (arg s₀ 0).setWidth 64 + BitVec.ofNat 64 (p.pkLen + 4 * Spec.MlDsa.n * r) =
       Buf.addr s₀ ⟨0, p.pkLen + 1024 * r, 1024⟩ := by
     rw [Buf.addr_eq hp hB]; simp only [Spec.MlDsa.n]
   have a2 : Buf.addr s₀ ⟨0, p.pkLen, 1024 * p.k⟩ + BitVec.ofNat 64 (1024 * r) =
       Buf.addr s₀ ⟨0, p.pkLen + 1024 * r, 1024⟩ := by
-    rw [Buf.addr_eq hp hB, Buf.addr_eq hp (ppk_ok (by omega) (Nat.le_refl _)), BitVec.add_assoc,
+    rw [Buf.addr_eq hp hB, Buf.addr_eq hp (ppk_ok (by omega_using [hr]) (Nat.le_refl _)), BitVec.add_assoc,
       ← BitVec.ofNat_add]
   rw [a1] at e
   rw [a2]
@@ -444,9 +444,9 @@ theorem prep_piece (hF : VFacts p) {n : String} {f : Prog isa}
         (callPR vS n f (coreArgs p ⟨0, p.pkLen, 1024 * p.k⟩))) := by
   have hk := hF.k
   have hpk := hF.pk
-  have hkl : p.pkLen ≤ preparedPublicKeyBytes p := by simp only [preparedPublicKeyBytes]; omega
+  have hkl : p.pkLen ≤ preparedPublicKeyBytes p := by simp only [preparedPublicKeyBytes]; omega_using []
   have hcore := core_piece (n := n) (A := fun s₀ s => Ctx (YVE p (preparedPublicKeyBytes p)) s₀ s ∧ PPK p s₀)
-    hv hsp hst hF hkl _ rfl (ppk_ok (by omega) (Nat.le_refl _))
+    hv hsp hst hF hkl _ rfl (ppk_ok (by omega_using [hk]) (Nat.le_refl _))
     (VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inr rfl⟩)) tt
     fun s₀ s hp h => ⟨h.1, fun r hr => ppk_poly hp h.1 h.2 hr⟩
   have hl := (piece_pureV (PPK p) (ldsc_piece (Y := YVE p (preparedPublicKeyBytes p))
@@ -472,7 +472,7 @@ theorem pPub_of {s₀ s₀' : State} (h : (Proof.MlDsa.preparedVerifyContract p 
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · rw [yve_n] at hi
-    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆]
   · simp only [lkV, vPk, vMu, vSig, eaddr0]
     exact Proof.MlDsa.KeyGen.leakBytes_inj e₂
@@ -492,7 +492,7 @@ theorem prepared_verified (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {n 
     Verified X86.target (verifyPrepared p n f) (Proof.MlDsa.preparedVerifyContract p X86.abi 136) := by
   have hF := vfacts hp
   have hl := Piece.leaf (W (YVE p (preparedPublicKeyBytes p))) hsp'
-    (fun _ hp => ⟨hp.1.E0_big, by have := hp.1.sp'; omega⟩) (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1)
+    (fun _ hp => ⟨hp.1.E0_big, by have := hp.1.sp'; omega_using [this]⟩) (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1)
     ((prep_piece hF hv hsp hst tt).mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h.2⟩)
   refine Piece.verified ((hl.pre_mono (fun _ h => pPre_of h) fun _ _ _ _ h => pPub_of h).mono
     (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) hsat

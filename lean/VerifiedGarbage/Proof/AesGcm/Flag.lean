@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.AesGcm.ScratchOpenTo
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM's functions on a prepared key context, with the number of rounds
@@ -187,12 +188,12 @@ theorem flaggedPowers_congr {t : Nat} {m₁ m₂ : Mem} {p : Addr}
     apply Mem.readW_congr
     intro i hi
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact h (1024 + i) (by omega)
+    exact h (1024 + i) (by omega_using [hi])
   have ec : powerCount m₂ p = powerCount m₁ p := by
     simp only [powerCount]
     rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl, e]
-  refine ⟨?_, fun h16 => AesGcm.preparedPowers16Repr_congr (fun i hi => h i (by omega)) (hr.2.1 (ec ▸ h16)),
-    fun h48 => AesGcm.preparedPowersRepr_congr (fun i hi => h i (by omega)) (hr.2.2 (ec ▸ h48))⟩
+  refine ⟨?_, fun h16 => AesGcm.preparedPowers16Repr_congr (fun i hi => h i (by omega_using [hi])) (hr.2.1 (ec ▸ h16)),
+    fun h48 => AesGcm.preparedPowersRepr_congr (fun i hi => h i (by omega_using [hi])) (hr.2.2 (ec ▸ h48))⟩
   rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl, e]
   exact hr.1
 
@@ -201,9 +202,9 @@ count's. -/
 theorem ctx_ne1024 {i : Nat} (hi : i < 128 * 8) : ¬ ((0x1000 + BitVec.ofNat 64 i : Addr) = 0x1400) := by
   intro h
   have := congrArg BitVec.toNat h
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega)] at this
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega_using [hi])] at this
   simp at this
-  omega
+  omega_using [hi, this]
 
 /-- A context whose first 1024 bytes are zeros has the powers (of the hash
 subkey 0), and a count of 48 says so. -/
@@ -276,7 +277,7 @@ theorem openToFlaggedRoundsPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.len
     (AesGcm.openToRoundsPost pb) _ m₂ m' r
   dsimp only [Curry.apply, AesGcm.openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
-  rw [AesGcm.openToResult_local pb hr (fun i hi => AesGcm.agree_of hb.1 i (by omega)) (AesGcm.agree_of hb.2.1) (AesGcm.agree_of hb.2.2.1) (AesGcm.agree_of hb.2.2.2.1)
+  rw [AesGcm.openToResult_local pb hr (fun i hi => AesGcm.agree_of hb.1 i (by omega_using [hi])) (AesGcm.agree_of hb.2.1) (AesGcm.agree_of hb.2.2.1) (AesGcm.agree_of hb.2.2.2.1)
     (AesGcm.agree_of hb.2.2.2.2.2)]
   exact h hr
 
@@ -321,7 +322,7 @@ theorem openToFlaggedLeak_local (pb : Nat) : ∀ vs m₁ m₂, vs.length = (Spec
   dsimp only [Curry.apply, Spec.Gcm.openToLeak, ArgWord.ofRaw, IntTy.bits]
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨ (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [AesGcm.openToResult_local pb hr (fun i hi => AesGcm.agree_of hb.1 i (by omega)) (AesGcm.agree_of hb.2.1) (AesGcm.agree_of hb.2.2.1) (AesGcm.agree_of hb.2.2.2.1)
+    simp only [AesGcm.openToResult_local pb hr (fun i hi => AesGcm.agree_of hb.1 i (by omega_using [hi])) (AesGcm.agree_of hb.2.1) (AesGcm.agree_of hb.2.2.1) (AesGcm.agree_of hb.2.2.2.1)
       (AesGcm.agree_of hb.2.2.2.2.2)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]

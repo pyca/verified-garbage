@@ -57,8 +57,8 @@ theorem hashFill_ct {p : Prm} (L : Lay p) {j c i : Nat} (hi : i < c) (hjc : j + 
   unfold hashFill
   refine CT.seq (J := fun t => Env p t ∧ t.gpr .esi = p.A + BitVec.ofNat 32 (16 * (j + i)) ∧
       slotv t.mem p.W fpO = p.W + BitVec.ofNat 32 (bufO + 16 * i))
-    (lNtz_ct L (i := j + i + 1) (by omega) (by omega) fun t ⟨_, _, _, _, _, F⟩ => ⟨F.env, F.edi⟩)
-    (fun t ⟨_, _, _, _, _, F⟩ => WP.mono (lNtz_ok L F.env (by omega) (by omega) F.edi F.l0) fun t₁ P₁ =>
+    (lNtz_ct L (i := j + i + 1) (by omega_using []) (by omega_using [hi, hjc, hal]) fun t ⟨_, _, _, _, _, F⟩ => ⟨F.env, F.edi⟩)
+    (fun t ⟨_, _, _, _, _, F⟩ => WP.mono (lNtz_ok L F.env (by omega_using []) (by omega_using [hi, hjc, hal]) F.edi F.l0) fun t₁ P₁ =>
       ⟨P₁.env L F.env, by rw [P₁.gpr _ (by decide) (by decide) (by decide), F.esi], by
         rw [← F.fp]
         exact P₁.frame.readW (r := ⟨w64 p.W + BitVec.ofNat 64 fpO, 4⟩) (Region.contains_self _ _) (fun r hr => by
@@ -89,12 +89,12 @@ theorem hashFill_ct {p : Prm} (L : Lay p) {j c i : Nat} (hi : i < c) (hjc : j + 
 theorem fillLoop_ct {p : Prm} (L : Lay p) {j c : Nat} (hc0 : 0 < c) (hc : c ≤ 8) (hjc : j + c ≤ p.al / 16) :
     CT (FillI p j c 0) (.loop hashFill .ne) := by
   refine (CT.loopN (fun n t => 0 < n ∧ n ≤ c ∧ FillI p j c (c - n) t) (fun n => ?_)
-    (fun n t ⟨hn0, hn, _, _, _, _, C, F⟩ => WP.mono (fill_step C hc hjc (by omega) F) fun t' ⟨F', zf'⟩ =>
-      ⟨hn0, by rw [eval_ne zf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega,
-        fun h1 => ⟨by omega, by omega, _, _, _, _, C, by rw [show c - (n - 1) = c - n + 1 by omega]; exact F'⟩⟩) c).mono
+    (fun n t ⟨hn0, hn, _, _, _, _, C, F⟩ => WP.mono (fill_step C hc hjc (by omega_using [hc0, hn0]) F) fun t' ⟨F', zf'⟩ =>
+      ⟨hn0, by rw [eval_ne zf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega_arith,
+        fun h1 => ⟨by omega_using [hn0, h1], by omega_using [hn], _, _, _, _, C, by rw [show c - (n - 1) = c - n + 1 by omega_using [hn0, hn]]; exact F'⟩⟩) c).mono
     fun t h => ⟨hc0, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
   by_cases hn : 0 < n
-  · exact (hashFill_ct L (i := c - n) (by omega) hjc).mono fun _ h => h.2.2
+  · exact (hashFill_ct L (i := c - n) (by omega_using [hc0, hn]) hjc).mono fun _ h => h.2.2
   · exact RelCT.of_false fun _ _ h => hn h.1.1
 
 /-- The sum of the buffer. -/
@@ -117,9 +117,9 @@ theorem chunk_ct (v : BlocksImpl) {p : Prm} (L : Lay p) {j : Nat} (hj : j < p.al
       (CT.taint [.ebx] (pin1 fun t h => by obtain ⟨_, _, hv, _⟩ := h; exact hv) (by taint_decide)))
     (fun t ⟨_, _, _, _, C, H⟩ => WP.mono (chunkHead_ok C H) fun t' ⟨H', bx⟩ => ⟨⟨_, _, _, _, C, H'⟩, bx⟩) ?_)
   generalize hc : min 8 (p.al / 16 - j) = c
-  have hc0 : 0 < c := by omega
-  have hc8 : c ≤ 8 := by omega
-  have hjc : j + c ≤ p.al / 16 := by omega
+  have hc0 : 0 < c := by omega_using [hj, hc]
+  have hc8 : c ≤ 8 := by omega_using [hc]
+  have hjc : j + c ≤ p.al / 16 := by omega_using [hj, hc]
   -- The chunk's count and the buffer's start.
   refine CT.seq (J := FillI p j c 0)
     (CT.taint [.ebp] (pin_ebp fun t h => by obtain ⟨⟨_, _, _, _, _, H⟩, _⟩ := h; exact H.env.ebp) (by taint_decide))
@@ -140,7 +140,7 @@ theorem chunk_ct (v : BlocksImpl) {p : Prm} (L : Lay p) {j : Nat} (hj : j < p.al
     exact ⟨_, by grun [F.env.ebp, L.aW, F.env.perm.wR, hcnt], by gregs [F.env.ebp], by gregs [hcnt],
       fun r _ h₂ _ h₄ => by gregs [h₂, h₄], by gmems [], by gmems [], by gmems []⟩
   have hD : ∀ t, FillI p j c c t → DReg p t (p.W + BitVec.ofNat 32 bufO) c := fun t ⟨_, _, _, _, _, F⟩ =>
-    DReg.w L F.env (d := bufO) (n := c) (by simp only [bufO, scrO]; omega) (.inr (.inr (.inr (by decide))))
+    DReg.w L F.env (d := bufO) (n := c) (by simp only [bufO, scrO]; omega_using [hc]) (.inr (.inr (.inr (by decide))))
   refine CT.seq (J := fun t => Env p t ∧ slotv t.mem p.W cntO = BitVec.ofNat 32 c)
     (callBlocks_ct v.encOk v.encCt v.encNosp v.encStack L
       (fun t h => ⟨by obtain ⟨_, _, _, _, _, F⟩ := h; exact F.env, hD t h, hargs t h⟩)
@@ -154,7 +154,7 @@ theorem chunk_ct (v : BlocksImpl) {p : Prm} (L : Lay p) {j : Nat} (hj : j < p.al
     exact P.frame.readW (r := ⟨w64 p.W + BitVec.ofNat 64 cntO, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · rw [aB]; exact Lay.w_w (.inl (by decide)) (by decide) (by simp only [bufO]; omega)
+      · rw [aB]; exact Lay.w_w (.inl (by decide)) (by decide) (by simp only [bufO]; omega_using [hc])
       · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.bw' (by decide)).symm) (by decide)
   -- The sum, and the blocks left.
@@ -171,18 +171,18 @@ theorem hashLoop_ct (v : BlocksImpl) {p : Prm} (L : Lay p) (hm : 0 < p.al / 16) 
     CT (HI p 0) (.loop (hashChunk (callees v)) .ne) := by
   have hal := L.al32
   have hk : ∀ n, 0 < n → n ≤ (p.al / 16 + 7) / 8 → 8 * ((p.al / 16 + 7) / 8 - n) < p.al / 16 := fun n h₁ h₂ => by
-    omega
+    omega_using [hm, h₁]
   refine (CT.loopN (fun n t => 0 < n ∧ n ≤ (p.al / 16 + 7) / 8 ∧ HI p (8 * ((p.al / 16 + 7) / 8 - n)) t)
     (fun n => ?_) (fun n t ⟨hn0, hn, _, _, _, _, C, H⟩ => ?_) ((p.al / 16 + 7) / 8)).mono
-    fun t h => ⟨by omega, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
+    fun t h => ⟨by omega_using [hm], Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
   · by_cases h : 0 < n ∧ n ≤ (p.al / 16 + 7) / 8
     · exact (chunk_ct v L (hk n h.1 h.2)).mono fun _ h => h.2.2
     · exact RelCT.of_false fun _ _ h' => h ⟨h'.1.1, h'.1.2.1⟩
-  refine WP.mono (hashChunk_ok v C H (hk n hn0 hn)) fun t' ⟨H', zf'⟩ => ⟨hn0, ?_, fun h1 => ⟨by omega, by omega,
+  refine WP.mono (hashChunk_ok v C H (hk n hn0 hn)) fun t' ⟨H', zf'⟩ => ⟨hn0, ?_, fun h1 => ⟨by omega_using [hn0, h1], by omega_using [hn],
     _, _, _, _, C, ?_⟩⟩
-  · rw [eval_ne zf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega
+  · rw [eval_ne zf']; congr 1; by_cases h : n = 1 <;> simp [h] <;> omega_arith
   · rw [show 8 * ((p.al / 16 + 7) / 8 - (n - 1)) = 8 * ((p.al / 16 + 7) / 8 - n) +
-      min 8 (p.al / 16 - 8 * ((p.al / 16 + 7) / 8 - n)) by omega]
+      min 8 (p.al / 16 - 8 * ((p.al / 16 + 7) / 8 - n)) by omega_using [hn, h1]]
     exact H'
 
 /-- The rest of the associated data. -/
@@ -191,12 +191,12 @@ theorem hashRest_ct (v : BlocksImpl) {p : Prm} (L : Lay p) (hr : 0 < p.al % 16) 
   have hal := L.aw
   have hS : ∀ t, Env p t → SBuf p t (p.A + BitVec.ofNat 32 (16 * (p.al / 16))) (p.al % 16) := fun t E => by
     have a16 : w64 (p.A + BitVec.ofNat 32 (16 * (p.al / 16))) = w64 p.A + BitVec.ofNat 64 (16 * (p.al / 16)) :=
-      w64_add (by omega)
+      w64_add (by omega_using [hr, hal])
     have sub : Region.Sub ⟨w64 (p.A + BitVec.ofNat 32 (16 * (p.al / 16))), p.al % 16⟩ ⟨w64 p.A, p.al⟩ := by
-      rw [a16]; exact Offset.sub_base _ (by omega)
+      rw [a16]; exact Offset.sub_base _ (by omega_using [])
     refine ⟨?_, L.a_w.sub_left sub, ?_⟩
-    · rw [toNat_add32 (by omega)]; omega
-    · rw [a16]; exact covers_off E.perm.aad (by omega) (by omega)
+    · rw [toNat_add32 (by omega_using [hr, hal])]; omega_using [hal]
+    · rw [a16]; exact covers_off E.perm.aad (by omega_using []) (by omega_using [hal])
   -- After the head: the environment, the rest's address and length.
   let J : State → Prop := fun t => Env p t ∧ t.gpr .esi = p.A + BitVec.ofNat 32 (16 * (p.al / 16)) ∧
     slotv t.mem p.W restO = BitVec.ofNat 32 (p.al % 16)
@@ -216,7 +216,7 @@ theorem hashRest_ct (v : BlocksImpl) {p : Prm} (L : Lay p) (hr : 0 < p.al % 16) 
       (by decide)
   -- `pad(A_*)`, its offset, the call and the sum.
   refine CT.seq (J := Env p) (padTo_ct L (.inl rfl) fun t h => h)
-    (fun t ⟨E, si, rest⟩ => WP.mono (padTo_ok L E (d := bufO) (cO := restO) hr (by omega) (by decide) (by decide)
+    (fun t ⟨E, si, rest⟩ => WP.mono (padTo_ok L E (d := bufO) (cO := restO) hr (by omega_using []) (by decide) (by decide)
       (.inl (by decide)) si rest (hS t E)) fun t' ⟨fr, _, g, rd, wr⟩ =>
         E.mut L (by rw [g _ (by decide) (by decide) (by decide) (by decide), E.ebp])
           (by rw [g _ (by decide) (by decide) (by decide) (by decide), E.esp]) rd wr
@@ -244,12 +244,12 @@ theorem hashTail_ct (v : BlocksImpl) {p : Prm} (L : Lay p) :
   refine CT.seq (J := fun t => HI p (p.al / 16) t ∧ t.zf = some (decide (p.al % 16 = 0)))
     (CT.taint [] (fun _ _ _ _ _ h => by simp at h) (by taint_decide)) (fun t ⟨s₀, h₀, ax, g, m, rd, wr⟩ => ?_)
     (CT.ite (decide (p.al % 16 = 0)) (fun _ h => eval_e h.2) (fun _ => CT.nil)
-      (fun hb => (hashRest_ct v L (by have := of_decide_eq_false hb; omega)).mono fun _ h => h.1))
+      (fun hb => (hashRest_ct v L (by have := of_decide_eq_false hb; omega_using [this])).mono fun _ h => h.1))
   obtain ⟨_, _, _, _, C, H⟩ := h₀
   have hal := L.al32
   refine WP.of_runBlock ⟨_, by grun [], ⟨_, _, _, _, C, H.of_keep (fun r h₁ _ _ _ => by gregs [g r h₁]) (by gmems [m])
     (by gmems [rd]) (by gmems [wr])⟩, ?_⟩
-  gmems [ax, BitVec.and_self, beq_zero32 (show p.al % 16 < 2 ^ 32 by omega)]
+  gmems [ax, BitVec.and_self, beq_zero32 (show p.al % 16 < 2 ^ 32 by omega_using [])]
 
 /-- `HASH`. -/
 theorem hash_ct (v : BlocksImpl) {p : Prm} (L : Lay p) :
@@ -261,10 +261,10 @@ theorem hash_ct (v : BlocksImpl) {p : Prm} (L : Lay p) :
     (fun t ⟨_, _, _, C, E, hl0⟩ => WP.mono (hashHead_ok C E hl0) fun t' ⟨H, zf⟩ => ⟨⟨_, _, _, _, C, H⟩, zf⟩) ?_
   refine CT.seq (J := HI p (p.al / 16))
     (CT.ite (decide (p.al / 16 = 0)) (fun _ h => eval_e h.2) (fun _ => CT.nil)
-      (fun hb => (hashLoop_ct v L (by have := of_decide_eq_false hb; omega)).mono fun _ h => h.1))
+      (fun hb => (hashLoop_ct v L (by have := of_decide_eq_false hb; omega_using [this])).mono fun _ h => h.1))
     (fun t ⟨⟨_, _, _, _, C, H⟩, zf⟩ => WP.ite (decide (p.al / 16 = 0)) (eval_e zf)
       (fun hb => WP.block_nil ⟨_, _, _, _, C, by rw [of_decide_eq_true hb]; exact H⟩)
-      (fun hb => WP.mono (hashLoop_ok v C H (by have := of_decide_eq_false hb; omega)) fun t' H' =>
+      (fun hb => WP.mono (hashLoop_ok v C H (by have := of_decide_eq_false hb; omega_using [this])) fun t' H' =>
         ⟨_, _, _, _, C, H'⟩)) (hashTail_ct v L)
 
 end VG.Proof.AesOcb.X86

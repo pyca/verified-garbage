@@ -32,10 +32,10 @@ theorem ror_mask (x : BitVec 64) {a : Nat} (ha : 0 < a) (ha' : a < 64) :
   by_cases hia : i < a
   · simp [hia]
   · simp only [hia, decide_false, Bool.not_false, Bool.true_and]
-    simp only [BitVec.getLsbD, show i < 64 - (64 - a) ↔ i < a by omega, hia, ↓reduceIte,
-      Nat.mod_eq_of_lt (show 64 - a < 64 by omega)]
-    rw [show i - (64 - (64 - a)) = i - a by omega]
-    simp [show i - a < 64 by omega]
+    simp only [BitVec.getLsbD, show i < 64 - (64 - a) ↔ i < a by omega_using [ha'], hia, ↓reduceIte,
+      Nat.mod_eq_of_lt (show 64 - a < 64 by omega_using [ha])]
+    rw [show i - (64 - (64 - a)) = i - a by omega_using [ha']]
+    simp [show i - a < 64 by omega_using [hi]]
 
 /-- Bit `k` of `bottom` (less than 64), as 0 or 1. -/
 theorem bit_bottom {v : Nat} (hv : v < 64) (k : Nat) :
@@ -44,12 +44,12 @@ theorem bit_bottom {v : Nat} (hv : v < 64) (k : Nat) :
   have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
   rw [e1]
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv]),
     show (1 : BitVec 64).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.testBit_eq_decide_div_mod_eq, Nat.shiftRight_eq_div_pow]
   have h2 : v / 2 ^ k % 2 < 2 := Nat.mod_lt _ (by decide)
   by_cases h : v / 2 ^ k % 2 = 1
   · simp [h]
-  · simp [h]; omega
+  · simp [h]; omega_using [h]
 
 /-- A shift of three words left by `a` (from 1 to 63), a word at a time. -/
 theorem shl3 (x y z : BitVec 64) {a : Nat} (ha : 0 < a) (ha' : a < 64) :
@@ -58,23 +58,23 @@ theorem shl3 (x y z : BitVec 64) {a : Nat} (ha : 0 < a) (ha' : a < 64) :
   intro i hi
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_or,
     BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
-  rcases (show i < 64 ∨ (64 ≤ i ∧ i < 128) ∨ (128 ≤ i ∧ i < 192) by omega) with h | ⟨h, h'⟩ | ⟨h, h'⟩
+  rcases (show i < 64 ∨ (64 ≤ i ∧ i < 128) ∨ (128 ≤ i ∧ i < 192) by omega_using [hi]) with h | ⟨h, h'⟩ | ⟨h, h'⟩
   · by_cases h2 : i < a
     · simp [h, h2]
-    · simp [h, h2, show i - a < 64 by omega]
-  · simp only [show ¬ i < 64 by omega, show i - 64 < 64 by omega, show ¬ i < a by omega, ↓reduceIte,
+    · simp [h, h2, show i - a < 64 by omega_using [h]]
+  · simp only [show ¬ i < 64 by omega_using [h], show i - 64 < 64 by omega_using [h'], show ¬ i < a by omega_using [ha', h], ↓reduceIte,
       decide_false, Bool.not_false, Bool.true_and]
     by_cases h2 : i - 64 < a
-    · simp [h2, show i - a < 64 by omega, show 64 - a + (i - 64) = i - a by omega]
-    · simp [h2, show ¬ i - a < 64 by omega, BitVec.getLsbD_of_ge z (64 - a + (i - 64)) (by omega),
-        show i - a - 64 = i - 64 - a by omega, show i - 64 - a < 64 by omega]
-  · simp only [show ¬ i < 64 by omega, show ¬ i - 64 < 64 by omega, show ¬ i < a by omega, ↓reduceIte,
-      decide_false, Bool.not_false, Bool.true_and, show ¬ i - a < 64 by omega]
+    · simp [h2, show i - a < 64 by omega_using [h2], show 64 - a + (i - 64) = i - a by omega_using [ha', h]]
+    · simp [h2, show ¬ i - a < 64 by omega_using [ha, h2], BitVec.getLsbD_of_ge z (64 - a + (i - 64)) (by omega_using [h2]),
+        show i - a - 64 = i - 64 - a by omega_using [], show i - 64 - a < 64 by omega_using [h']]
+  · simp only [show ¬ i < 64 by omega_using [h], show ¬ i - 64 < 64 by omega_using [h], show ¬ i < a by omega_using [ha', h], ↓reduceIte,
+      decide_false, Bool.not_false, Bool.true_and, show ¬ i - a < 64 by omega_using [ha', h]]
     by_cases h2 : i - 128 < a
-    · simp [show i - 64 - 64 < a by omega, show i - a - 64 < 64 by omega,
-        show 64 - a + (i - 64 - 64) = i - a - 64 by omega]
-    · simp [show ¬ i - 64 - 64 < a by omega, show i - 64 - 64 < 64 by omega, show ¬ i - a - 64 < 64 by omega,
-        BitVec.getLsbD_of_ge y (64 - a + (i - 64 - 64)) (by omega), show i - a - 64 - 64 = i - 64 - 64 - a by omega]
+    · simp [show i - 64 - 64 < a by omega_using [h2], show i - a - 64 < 64 by omega_using [h2],
+        show 64 - a + (i - 64 - 64) = i - a - 64 by omega_using [ha', h]]
+    · simp [show ¬ i - 64 - 64 < a by omega_using [h2], show i - 64 - 64 < 64 by omega_using [hi], show ¬ i - a - 64 < 64 by omega_using [ha, h2],
+        BitVec.getLsbD_of_ge y (64 - a + (i - 64 - 64)) (by omega_using [h2]), show i - a - 64 - 64 = i - 64 - 64 - a by omega_using []]
 
 /-- The choice of `x'` or `x` with a mask of all ones or all zeros. -/
 theorem sel_mask (x x' : BitVec 64) (b : Bool) :
@@ -95,12 +95,12 @@ theorem stretch_words (h l : BitVec 64) :
   rw [BitVec.xor_comm _ h]
   simp only [BitVec.getLsbD_xor, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
     BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight, hi, decide_true,
-    Bool.true_and, show ¬ 64 + i < 64 by omega, ↓reduceIte, show 64 + i - 64 = i by omega]
+    Bool.true_and, show ¬ 64 + i < 64 by omega_using [], ↓reduceIte, show 64 + i - 64 = i by omega_using []]
   congr 1
   by_cases h8 : i < 8
-  · simp [h8, show 56 + i < 64 by omega]
-  · simp [h8, show ¬ 56 + i < 64 by omega, show 56 + i - 64 = i - 8 by omega,
-      BitVec.getLsbD_of_ge l (56 + i) (by omega)]
+  · simp [h8, show 56 + i < 64 by omega_using [h8]]
+  · simp [h8, show ¬ 56 + i < 64 by omega_using [h8], show 56 + i - 64 = i - 8 by omega_using [],
+      BitVec.getLsbD_of_ge l (56 + i) (by omega_using [h8])]
 
 /-- The top 128 bits of `Stretch` shifted left by `b ≤ 64` are its bits from
 `64 − b`. -/
@@ -109,8 +109,8 @@ theorem offset_shl (s : BitVec 192) {b : Nat} (hb : b ≤ 64) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and,
-    show 64 + i < 192 by omega, show ¬ 64 + i < b by omega, decide_false, Bool.not_false]
-  congr 1; omega
+    show 64 + i < 192 by omega_using [hi], show ¬ 64 + i < b by omega_using [hb], decide_false, Bool.not_false]
+  congr 1; omega_using [hb]
 
 /-- A shift left by `k` if `c`. -/
 def shlIf (c : Bool) (k : Nat) (x : BitVec 192) : BitVec 192 := if c then x <<< k else x

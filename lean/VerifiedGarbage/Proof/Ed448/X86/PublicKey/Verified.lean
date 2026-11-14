@@ -49,7 +49,7 @@ theorem wr_eq (hp : pkLocal.pub s₁ s₂) : pkWr s₂ = pkWr s₁ := by
 theorem args₂ (hp : pkLocal.pub s₁ s₂) : Args (base s₁) 3 (arg s₁) s₂.mem := by
   intro i hi
   rw [← base_eq hp, args_val s₂ 3 i hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
   exacts [hp.2.1.symm, hp.2.2.1.symm, hp.2.2.2.symm]
 
 abbrev Two₁ (s₁ s₂ : State) := Two (base s₁) (pkRd s₁) (pkWr s₁) s₁.gpr s₂.gpr s₁.mem s₂.mem
@@ -59,7 +59,7 @@ theorem base_ct {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (h : Fa
   call_ct hB.ok hB.ct (fun _ _ _ hc hs => base_ready h hc hs)
     (fun a b ea eb ha hb ar aw br bw => by
       have e := (kit h).args_eq ea eb (k := 3) (by decide) (fun i hi => by
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
         exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm]) ar aw br bw
       exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide)⟩)
     (fun _ hc hs => WP.mono (base_call hB h hc hs) fun _ hv => ⟨hv.1, trivial⟩)

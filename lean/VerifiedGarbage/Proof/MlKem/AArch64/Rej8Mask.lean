@@ -29,7 +29,7 @@ theorem laneSum_h8 (x : BitVec 128) :
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (vhalf x i).isLt (by decide))]
   rw [VArr.laneSum, VArr.lanes, show List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl]
   simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, h]
-  omega
+  omega_using []
 
 theorem sum8_toNat (x : BitVec 128) : (sum8 x).toNat = ((vhalf x 0).toNat + (vhalf x 1).toNat + (vhalf x 2).toNat +
     (vhalf x 3).toNat + (vhalf x 4).toNat + (vhalf x 5).toNat + (vhalf x 6).toNat + (vhalf x 7).toNat) % 2 ^ 16 := by

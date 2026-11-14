@@ -64,7 +64,7 @@ theorem copyEntry_ok {st : State} (h : Base s (AL s) 0 st) (h11 : st.gpr .r11 = 
   have r₄ := h.slot hp (d := 32) (by decide)
   have r₇ := h.slot hp (d := 56) (by decide)
   have w : ∀ d, d + 8 ≤ 184 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d hd => by
-    rw [h.wr]; exact w_in hp (by omega)
+    rw [h.wr]; exact w_in hp (by omega_using [hd])
   have hleft : st.mem.readW (W s + BitVec.ofNat 64 64) 64 = BitVec.ofNat 64 (Cnt s) := by
     rw [h.kept.left, Nat.sub_zero]
   have hdesc : st.mem.readW (W s + BitVec.ofNat 64 56) 64 = Src s := by
@@ -75,11 +75,11 @@ theorem copyEntry_ok {st : State} (h : Base s (AL s) 0 st) (h11 : st.gpr .r11 = 
     xrun [h11, hsi, hdx, w 104 (by decide), w 112 (by decide), r₈, r₄, r₇, h.kept.dst, hleft, hdesc,
       readW_writeW_off], ?_⟩
   have c : ∀ d, d + 8 ≤ 184 → (wkR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun d h₂ => Offset.contains_base _ h₂ (by omega)
+    fun d h₂ => Offset.contains_base _ h₂ (by omega_using [h₂])
   have cs : ∀ d, 104 ≤ d → d + 8 ≤ 184 → (stR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => by
     have e : W s + BitVec.ofNat 64 d = St s + BitVec.ofNat 64 (d - 104) := by
-      rw [St, BitVec.add_assoc, ofNat_add_ofNat]; congr 2; omega
-    rw [e]; exact Offset.contains_base _ (by omega) (by omega)
+      rw [St, BitVec.add_assoc, ofNat_add_ofNat]; congr 2; omega_using [h₁]
+    rw [e]; exact Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂])
   have fS : Frame [stR s] st.mem
       ((st.mem.writeW (W s + BitVec.ofNat 64 104) (Nn s)).writeW (W s + BitVec.ofNat 64 112) (s.gpr .rcx)) :=
     ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cs 104 (by decide) (by decide))).writeW
@@ -117,10 +117,10 @@ theorem pt_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) {i : Nat} (hi : i 
   induction i with
   | zero => simp [pt, gathered, Sig.listed]
   | succ i ih =>
-    rw [Proof.Gcm.gathered_succ, desc_off, BitVec.setWidth_eq, ih (by omega), pt_succ,
-      sb_eq hp hf (by omega), sl_eq hp hf (by omega), toNat_ofNat_of_lt (by
-        have := gl_succ_le hp (show i < Cnt s by omega); have : L s < 2 ^ 64 := (stackArg s 3).isLt; omega),
-      slice_eq hp hf (by omega)]
+    rw [Proof.Gcm.gathered_succ, desc_off, BitVec.setWidth_eq, ih (by omega_using [hi]), pt_succ,
+      sb_eq hp hf (by omega_using [hi]), sl_eq hp hf (by omega_using [hi]), toNat_ofNat_of_lt (by
+        have := gl_succ_le hp (show i < Cnt s by omega_using [hi]); have : L s < 2 ^ 64 := (stackArg s 3).isLt; omega_arith),
+      slice_eq hp hf (by omega_using [hi])]
 
 /-- What the gathering needs, after `copyEntry`. -/
 theorem copyGatherPre {st : State} (hL : L s < 2 ^ 63) (h : Base s (AL s) 0 st)
@@ -165,7 +165,7 @@ theorem gathered_after {st st' : State} (h : CBase s st)
   have e8 : st'.mem.readW (St s + BitVec.ofNat 64 8) 64 = s.gpr .rcx := by
     rw [fD.readW cS8 dS (by decide)]; exact h.nonceLen
   have e9 : bytesAt st'.mem (Dst s) (L s) = pt s (Cnt s) := by
-    rw [hm, ← hlen]; exact bytesAt_writeBytes_self _ _ _ (by omega)
+    rw [hm, ← hlen]; exact bytesAt_writeBytes_self _ _ _ (by omega_using [hL, hlen])
   exact ⟨⟨⟨e1, e2, hk.rd.trans h.rd, hk.wr.trans h.wr, e5, e6⟩, e7, e8⟩, e9⟩
 
 /-- The arguments of `vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad,

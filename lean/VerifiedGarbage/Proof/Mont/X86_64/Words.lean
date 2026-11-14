@@ -41,7 +41,7 @@ theorem regsVal_append (s : State) (rs qs : List Reg) :
   | cons r rs ih =>
     rw [List.cons_append, regsVal, ih, regsVal, List.length_cons, pow64_succ, Nat.mul_add,
       Nat.mul_assoc]
-    omega
+    omega_using []
 
 theorem regsVal_congr {s s' : State} {rs : List Reg} (h : ∀ r ∈ rs, s'.gpr r = s.gpr r) :
     regsVal s' rs = regsVal s rs := by
@@ -62,7 +62,7 @@ theorem ea_sc (s : State) (d : Nat) : s.ea (sc d) = off (s.gpr .rdi) d := by
 
 theorem Scr.contains {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (h : d + n ≤ size) (hn : 0 < n) : (⟨base, size⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by have := hs.nowrap; omega)
+  Offset.contains_base base h (by have := hs.nowrap; omega_using [h, hn, this])
 
 theorem load_sc {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 8 ≤ size) : s.load64 (s.ea (sc d)) = some (word s.mem base d) := by

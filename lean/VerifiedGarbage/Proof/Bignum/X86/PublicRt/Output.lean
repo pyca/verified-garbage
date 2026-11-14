@@ -32,10 +32,10 @@ theorem compareAt_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat →
   have wbe := wb_eq len
   unfold PublicRt.compareAt
   simp only [List.append_assoc]
-  refine WP.seq (slotPtr_ok (r := .esi) (t := .edx) (j := a) (by decide) (by decide) h.edi h.width h.upper (by omega)
+  refine WP.seq (slotPtr_ok (r := .esi) (t := .edx) (j := a) (by decide) (by decide) h.edi h.width h.upper (by omega_using [ha])
     fun u K m p _ => ?_)
   have hu := h.keep K (by decide) (by decide) (by rw [m]; exact Outside.refl _ _ _ _)
-  refine slotPtr_ok (r := .ebp) (t := .edx) (j := b) (by decide) (by decide) hu.edi hu.width h.upper (by omega)
+  refine slotPtr_ok (r := .ebp) (t := .edx) (j := b) (by decide) (by decide) hu.edi hu.width h.upper (by omega_using [hb])
     fun v Kv mv pv cv => wp_movS rfl fun w uw _ => WP.block_nil ?_
   have Kw : Keeps [.ecx, .edx, .ebp, .esi] s w :=
     ((K.mono (by decide)).trans (Kv.mono (by decide))).trans (uw.keeps.mono (by decide))
@@ -44,10 +44,10 @@ theorem compareAt_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat →
     rw [PtrAt, uw.other _ (by decide), Kv.1 _ (by decide)]; exact p
   have ebp : PtrAt w base .ebp (numAt len b) := by rw [PtrAt, uw.other _ (by decide)]; exact pv
   have edx : (w.gpr .edx).toNat = 4 * nw len := by
-    rw [uw.other _ (by decide), cv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wb_le h.upper; omega)]
+    rw [uw.other _ (by decide), cv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wb_le h.upper; omega_using [this])]
     exact wbe
-  refine WP.mono (compareLoop_ok (h.ws.of_keeps Kw) (N := nw len) (by simp only [nw]; omega)
-    (by omega) (by omega) esi ebp edx uw.gpr) fun t ⟨mt, et, Kt⟩ => ⟨by rw [mt, mw], by rw [et, mw],
+  refine WP.mono (compareLoop_ok (h.ws.of_keeps Kw) (N := nw len) (by simp only [nw]; omega_using [dims])
+    (by omega_using [f1, wbe]) (by omega_using [f0, wbe]) esi ebp edx uw.gpr) fun t ⟨mt, et, Kt⟩ => ⟨by rw [mt, mw], by rw [et, mw],
       (Kw.mono (by decide)).trans Kt⟩
 
 theorem compare_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -71,12 +71,12 @@ theorem maskOut_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     fun u K m p c' => ?_)
   have hu := h.keep K (by decide) (by decide) (by rw [m]; exact Outside.refl _ _ _ _)
   refine wp_movS (readSrc_sc hu.scratch (d := PublicFn.acceptanceOffset)
-    (by simp only [PublicFn.acceptanceOffset, numAt, numOff] at f2 ⊢; omega)) fun w uw _ => WP.block_nil ?_
+    (by simp only [PublicFn.acceptanceOffset, numAt, numOff] at f2 ⊢; omega_using [f2])) fun w uw _ => WP.block_nil ?_
   have Kw : Keeps [.ecx, .edx, .ebp] s w := (K.mono (by decide)).trans (uw.keeps.mono (by decide))
   have mw : w.mem = s.mem := by rw [uw.mem, m]
-  refine WP.mono (maskLoop_ok (h.ws.of_keeps Kw) (x := numAt len 2) (N := nw len) (c := c) (by simp only [nw]; omega) (by omega)
+  refine WP.mono (maskLoop_ok (h.ws.of_keeps Kw) (x := numAt len 2) (N := nw len) (c := c) (by simp only [nw]; omega_using [dims]) (by omega_using [f2, wbe])
     (by rw [PtrAt, uw.other _ (by decide)]; exact p)
-    (by rw [uw.other _ (by decide), c', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wb_le h.upper; omega)]
+    (by rw [uw.other _ (by decide), c', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wb_le h.upper; omega_using [this])]
         exact wbe)
     (by rw [uw.gpr, m, hm])) fun t ⟨O, V, Kt⟩ => ⟨by rw [← mw, wbe]; exact O, by rw [V, mw],
       (Kw.mono (by decide)).trans (Kt.mono (by decide))⟩
@@ -109,8 +109,8 @@ theorem write_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat →
       ((w₁.keeps.mono (by decide)).trans (w₂.keeps.mono (by decide)))
   have m₂ : v₂.mem = s.mem := by rw [w₂.mem, w₁.mem, mv, e₂.mem, e₁.mem]
   have src := v.gpr .esi
-  have srcAddr : byteAddr (v.gpr .esi) = off base (numAt len 2) := byteAddr_ptr pv (by omega)
-  have srcNat : (v.gpr .esi).toNat = base.toNat + numAt len 2 := by rw [pv, Nat.mod_eq_of_lt (by omega)]
+  have srcAddr : byteAddr (v.gpr .esi) = off base (numAt len 2) := byteAddr_ptr pv (by omega_using [f2, wbg, nw', hlow])
+  have srcNat : (v.gpr .esi).toNat = base.toNat + numAt len 2 := by rw [pv, Nat.mod_eq_of_lt (by omega_using [f2, wbg, nw', hlow])]
   have ecx₂ : v₂.gpr .ecx = BitVec.ofNat 32 len := by
     rw [w₂.other _ (by decide), w₁.other _ (by decide), Kv.1 _ (by decide), e₂.gpr, h.outLen]
   have ebx₂ : v₂.gpr .ebx = args 0 := by
@@ -118,12 +118,12 @@ theorem write_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat →
   have esi₂ : v₂.gpr .esi = v.gpr .esi + BitVec.ofNat 32 (len - 1) := by
     rw [w₂.gpr, w₁.gpr, Kv.1 .ecx (by decide), e₂.gpr, h.outLen]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hlow])]
   have hsub : Region.Sub ⟨off base (numAt len 2), len⟩ ⟨base, bytes⟩ := by
-    have := Offset.sub base (d := numAt len 2) (n := len) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := numAt len 2) (n := len) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [f2, wbg])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
-  refine WP.seq (WP.mono (reverseBuffer_ok v₂ (src := v.gpr .esi) (dst := args 0) (n := len) (by omega)
-    (by omega) h.outFit (by omega) (by rw [K₂.2.1, K₂.2.2, srcAddr]; exact h.scratch.read (by omega))
+  refine WP.seq (WP.mono (reverseBuffer_ok v₂ (src := v.gpr .esi) (dst := args 0) (n := len) (by omega_using [hlow])
+    (by omega_using [f2, wbg, nw', srcNat]) h.outFit (by omega_using [dims]) (by rw [K₂.2.1, K₂.2.2, srcAddr]; exact h.scratch.read (by omega_using [f2, wbg]))
     (by rw [K₂.2.2]; exact h.outWrite) (by rw [srcAddr]; exact h.outApart.sub_left hsub) ebx₂ esi₂ ecx₂)
     fun t ⟨V, F, _, T⟩ => ?_)
   have Kt : Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := (K₂.mono (by decide)).trans (T.mono (by decide))
@@ -133,17 +133,17 @@ theorem write_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat →
   have st : Scr t base bytes := ⟨by rw [← h.scratch.edi, Kt.1 _ (by decide)], ht.wr, ht.nowrap,
     by rw [Kt.1 _ (by decide)]; exact h.scratch.stk⟩
   refine wp_movS (readSrc_sc st (d := PublicFn.acceptanceOffset)
-    (by simp only [PublicFn.acceptanceOffset, numAt, numOff] at f2 ⊢; omega)) fun t₁ u₁ _ => ?_
+    (by simp only [PublicFn.acceptanceOffset, numAt, numOff] at f2 ⊢; omega_using [f2])) fun t₁ u₁ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun t₂ u₂ => WP.block_nil ?_
   have acc : t.mem.readW (off base PublicFn.acceptanceOffset) 32 = s.mem.readW (off base PublicFn.acceptanceOffset) 32 :=
-    Ft.readW (r := ⟨base, bytes⟩) (Scr.contains nw' (by simp only [PublicFn.acceptanceOffset, numAt, numOff] at f2 ⊢; omega))
+    Ft.readW (r := ⟨base, bytes⟩) (Scr.contains nw' (by simp only [PublicFn.acceptanceOffset, numAt, numOff] at f2 ⊢; omega_using [f2]))
       (by intro r hr; rw [List.mem_singleton.mp hr]; exact h.outApart) (by decide)
   refine ⟨?_, ?_, by rw [u₂.mem, u₁.mem]; exact Ft, (Kt.trans (u₁.keeps.mono (by decide))).trans (u₂.keeps.mono (by decide))⟩
   · intro fitv
     rw [u₂.mem, u₁.mem, V, srcAddr, m₂]
     have eq : (s.mem.read (off base (numAt len 2)) (4 * nw len)).toNat = val32 s.mem base (numAt len 2) (nw len) :=
       read_eq_val32 _ _ _ _
-    rw [VG.Proof.Bignum.read_prefix_value s.mem _ (by omega : len ≤ 4 * nw len) (by rw [eq]; exact fitv), eq]
+    rw [VG.Proof.Bignum.read_prefix_value s.mem _ (by omega_using [wbe, wbg] : len ≤ 4 * nw len) (by rw [eq]; exact fitv), eq]
   · rw [u₂.gpr, u₁.gpr, acc]; rfl
 
 end VG.Proof.Bignum.X86.PublicRt

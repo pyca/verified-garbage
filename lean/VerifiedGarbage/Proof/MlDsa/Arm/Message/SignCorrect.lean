@@ -44,12 +44,12 @@ theorem lsr8_zero (x : BitVec 32) : (x >>> 8 - 0#32 == 0#32) = decide (x.toNat <
   · rw [decide_eq_true h, beq_iff_eq]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    simp only [BitVec.toNat_zero]; omega
+    simp only [BitVec.toNat_zero]; omega_using [h]
   · rw [decide_eq_false h, beq_eq_false_iff_ne]
     intro e
     have := congrArg BitVec.toNat e
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at this
-    simp only [BitVec.toNat_zero] at this; omega
+    simp only [BitVec.toNat_zero] at this; omega_using [h, this]
 
 /-- `r12 ← ctx_len >> 8`, compared with 0, and the branch on it. -/
 theorem chk_ok {s : State} (hin : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 0)) 4) :
@@ -67,15 +67,15 @@ theorem SPre.args {p : Params} {prepared : Bool} {s : State} (h : SPre p prepare
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 o)) 4 := by
   refine ⟨rArgs s 16, by simp [h.rd], ?_⟩
   simp only [rArgs, stackArgAddr0]
-  rw [addr_add (by have := h.spA; omega)]
-  exact Offset.contains_base _ ho (by omega)
+  rw [addr_add (by have := h.spA; omega_using [ho, this])]
+  exact Offset.contains_base _ ho (by omega_using [ho])
 
 theorem stackArg_eq (s : State) (j : Nat) :
     s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 (4 * j))) 32 = stackArg s j := rfl
 
 theorem Ctx.slotOffV {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
     (hc : Ctx L g m₀ t) (hL : L.Ok) (o : Nat) : (Arg.slotOff fKey o).val t = L.key + BitVec.ofNat 32 o := by
-  have := hc.slotV hL (f := fKey) (j := 0) rfl (by omega)
+  have := hc.slotV hL (f := fKey) (j := 0) rfl (by omega_using [])
   simp only [Arg.val] at this ⊢
   rw [this]; rfl
 
@@ -84,7 +84,7 @@ theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa
     WP isa (signMessage n c p) s fun s' =>
       abiPreserved s s' ∧ (signMessageContract p Arm.abi 52).post s s' := by
   unfold signMessage top
-  refine WP.seq (WP.mono (chk_ok (h.args (by omega))) fun s1 ⟨o1, hc1⟩ => ?_)
+  refine WP.seq (WP.mono (chk_ok (h.args (by omega_using []))) fun s1 ⟨o1, hc1⟩ => ?_)
   by_cases h8 : (stackArg s 0).toNat < 256
   · rw [decide_eq_false (by simpa using h8)] at hc1
     have hL := slay_ok hp h h8
@@ -93,10 +93,10 @@ theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa
     refine wp_ite_f hc1 (WP.seq (WP.mono (enter_ok hL rfl (nA := 16) (by decide) (Nat.le_refl _) (o1.sp)
       (by rw [o1.rd]; rfl) (by rw [o1.wr]; rfl) (o1.get .r0) (o1.get .r1) (o1.get .r2) (o1.get .r3)
       (fun o ho => by rw [o1.rd, o1.wr, o1.sp]; exact h.args ho) (by rw [o1.sp]; exact h.spA)
-      (by rw [o1.sp, ← stackArgAddr0]; exact h.scrArgs) (by omega)
-      (by rw [hs1 12 (by omega)]; exact stackArg_eq s 3) (by decide) (fun j hj => by
+      (by rw [o1.sp, ← stackArgAddr0]; exact h.scrArgs) (by omega_using [])
+      (by rw [hs1 12 (by omega_using [])]; exact stackArg_eq s 3) (by decide) (fun j hj => by
         have hj4 : j < 4 := hj
-        rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+        rcases (by omega_using [hj4] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
         · exact (hs1 0 (by decide)).trans (stackArg_eq s 0)
         · exact (hs1 4 (by decide)).trans (stackArg_eq s 1)
         · exact (hs1 8 (by decide)).trans (stackArg_eq s 2)
@@ -104,28 +104,28 @@ theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa
     have hsk := (skLen_ge hp).1
     have hkl := skLen_le (p := p) prepared
     have ekey : State.addr ((slay p prepared s).key + BitVec.ofNat 32 64) = State.addr (slay p prepared s).key + BitVec.ofNat 64 64 :=
-      addr_add (by have := h.nSk; simp only [slay]; omega)
+      addr_add (by have := h.nSk; simp only [slay]; omega_using [hsk, hkl, this])
     have wtr : Within ⟨State.addr ((slay p prepared s).key + BitVec.ofNat 32 64), 64⟩ (slay p prepared s).KEY := by
-      rw [ekey]; exact within_off _ (show 64 + 64 ≤ secretKeyLen p prepared by omega)
+      rw [ekey]; exact within_off _ (show 64 + 64 ≤ secretKeyLen p prepared by omega_using [hsk, hkl])
     have hfit : ((slay p prepared s).key + BitVec.ofNat 32 64).toNat + 64 ≤ 2 ^ 32 := by
       have := h.nSk
       simp only [slay]
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide), Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide), Nat.mod_eq_of_lt (by omega_using [hsk, hkl, this])]
+      omega_using [hsk, hkl, this]
     have hst : Region.Sub ⟨(slay p prepared s).ST, 200⟩ (slay p prepared s).SC := by
-      have := hL.sub_sc (e := 0) (k := 200) (by omega)
+      have := hL.sub_sc (e := 0) (k := 200) (by omega_using [])
       simpa only [x0] using this
     refine WP.seq (WP.seq (WP.mono (muHash_ok hL hc (tr := .slotOff fKey 64) (by decide) rfl
       (fun t' hc' => hc'.slotOffV hL 64) hfit ⟨_, List.mem_append_left _ hL.inKey, wtr⟩
       ((hL.xKey.symm.sub_left wtr.sub).sub_right hst)
-      ((hL.xKey.symm.sub_left wtr.sub).sub_right (hL.sub_sc (by omega : 200 + 640 ≤ 1024)))
+      ((hL.xKey.symm.sub_left wtr.sub).sub_right (hL.sub_sc (by omega_using [] : 200 + 640 ≤ 1024)))
       (hL.kKey.sub_right wtr.sub)) fun t₁ ⟨hc₁, hμ⟩ => ?_))
     have hm₀ : s1.mem = s.mem := o1.mem
     have hkey : SecretKeyOk p prepared t₁.mem (State.addr (s.gpr .r0)) := fun hpr =>
       VG.Proof.MlDsa.PreparedKey.preparedSecretKey_of_bytes (by
         subst hpr
         have := hc₁.bytesAt_eq (p := State.addr (slay p true s).key) (n := secretKeyLen p true) hL.xKey hL.kKey
-          (by have := h.nSk; omega)
+          (by have := h.nSk; omega_using [this])
         rw [hm₀] at this
         exact this) (h.key hpr)
     refine WP.mono (signCall_ok hS hp h h8 hc₁ hkey) fun s' ⟨hf, hq⟩ => ?_
@@ -138,7 +138,7 @@ theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa
     have ek : bytesAt t₁.mem (State.addr (s.gpr .r0)) p.skLen = bytesAt s.mem (State.addr (s.gpr .r0)) p.skLen :=
       (hc₁.bytesAt_eq (p := State.addr (slay p prepared s).key) (n := p.skLen)
         (hL.xKey.sub_right (Region.sub_prefix hkl)) (hL.kKey.sub_right (Region.sub_prefix hkl))
-        (by have := h.nSk; omega)).trans
+        (by have := h.nSk; omega_using [hkl, this])).trans
         (by rw [hm₀]; rfl)
     have er : bytesAt t₁.mem (State.addr (stackArg s 1)) 32 = bytesAt s.mem (State.addr (stackArg s 1)) 32 :=
       (hc₁.bytesAt_eq (p := State.addr (slay p prepared s).rnd) (n := 32) h.rndScr.symm h.stkRnd (by decide)).trans
@@ -146,7 +146,7 @@ theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa
     have etr : bytesAt t.mem (State.addr ((slay p prepared s).key + BitVec.ofNat 32 64)) 64 =
         ((bytesAt s.mem (State.addr (s.gpr .r0)) p.skLen).drop 64).take 64 := by
       rw [hc.bytesAt_eq (hL.xKey.sub_right wtr.sub) (hL.kKey.sub_right wtr.sub) (by decide), hm₀, ekey,
-        Proof.MlKem.bytesAt_slice _ _ (by omega)]
+        Proof.MlKem.bytesAt_slice _ _ (by omega_using [hsk])]
       rfl
     rw [ek, er, hμ, etr, hm₀] at hq
     rw [Proof.MlKem.Arm.setWidth_append32, hx0, hm]
@@ -158,6 +158,6 @@ theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa
       have h12 : r ∉ [Reg.r12] := fun e => by simp only [List.mem_singleton] at e; subst e; revert hr; decide
       rw [o2.gpr r h0, o1.gpr r h12]
     · sig_post [signMessageContract, signMessageSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega), Proof.MlKem.Arm.setWidth_append32, e2]
+      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_using [h8]), Proof.MlKem.Arm.setWidth_append32, e2]
 
 end VG.Proof.MlDsa.Arm.Message

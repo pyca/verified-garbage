@@ -23,10 +23,10 @@ theorem packSecret_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (h
   have hle : 128 + lenS p * r + lenS p ≤ oT0 p := by
     simp only [oT0]; rw [Nat.add_assoc, ← Nat.mul_succ]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ hr) _
   have hk' := h.keep hF hp hP' x' (KRChk.x27 (o := 128 + lenS p * r) (n := lenS p) hF (Nat.le_of_lt hr)
-    (Nat.zero_le _) (by omega) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega))
+    (Nat.zero_le _) (by omega_using []) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega_using [hle]))
   refine ⟨hk'.kc, hk'.x24, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1,
     fun r' hr' => ?_, hk'.rows⟩
-  rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
+  rcases (by omega_using [hr'] : r' < r ∨ r' = r) with hr' | rfl
   · exact hk'.packs r' hr'
   · rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), hb, hS.2,
       Proof.MlDsa.KeyGen.modPm_toRq (small_big (eta_le hF) (h.small r' hr))]

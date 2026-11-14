@@ -70,7 +70,7 @@ theorem rotateLeft_eq (x : Word) {n : Nat} (h₁ : 1 ≤ n) (h₂ : n ≤ 31) :
     x.rotateLeft n = x.rotateRight (32 - n) := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft, BitVec.getElem_rotateRight]
-  (repeat' split) <;> first | omega | (congr 1; omega)
+  (repeat' split) <;> first | omega | (congr 1; omega_using [h₁, h₂])
 
 /-- A 32-bit load reads four bytes, low-order byte first. -/
 theorem readW_bytes (m : Mem) (a : Addr) :

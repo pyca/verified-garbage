@@ -42,8 +42,8 @@ theorem vpkfront_S0 {v : VD} {s : State} (h : VPK0 v s) :
   obtain ⟨hp, rfl⟩ := h
   have hL := vpkContract_lay hp
   obtain ⟨hrd, hwr, dKS, -, nw, -, hkl, -⟩ := hp
-  exact (pfront_S0_of hL hwr nw (fun hr hw => psrc_of hrd dKS (by omega) hr hw)
-    (by simp only [playOf]; omega)).mono fun _ h => ⟨h, by simp only [KY, vpkvdOf, pvdN, playOf]; omega⟩
+  exact (pfront_S0_of hL hwr nw (fun hr hw => psrc_of hrd dKS (by omega_using [hkl]) hr hw)
+    (by simp only [playOf]; omega_using [])).mono fun _ h => ⟨h, by simp only [KY, vpkvdOf, pvdN, playOf]; omega_using []⟩
 
 /-- The checks of the key leave the P space's registers fixed. -/
 theorem pins_K9P : Pins K9 (coreRegs ++ envRegs') := by
@@ -70,7 +70,7 @@ theorem vpkvdOf_eq {s t : State} (hs : vpkContract.pre s) (hp : vpkContract.pub 
   obtain ⟨e, -⟩ := List.append_inj' hl rfl
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at e
   have e := map_toNat_inj e
-  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega)] at e
+  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega_using [hk])] at e
   simp only [vpkvdOf, pvdN, playOf, ← h3, ← h5, ← h6, ← h7, ← h8, e]
 
 theorem validatePrivate_ct : ConstantTime isa vpkContract.pre vpkContract.pub PrevalidatedSign.validate :=

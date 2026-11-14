@@ -20,7 +20,7 @@ theorem sanitizeBit_ok (s : State) {base : BitVec 32} {size : Nat}
       t.mem = s.mem ∧ Rest [.r11] s t := by
   unfold sanitizeBit
   refine wp_ldr (by decide) (a := off (State.addr base) 212)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read (by omega)) fun t h =>
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read (by omega_using [fit])) fun t h =>
     WP.block_nil ⟨h.gpr, h.mem, h.rest (by simp)⟩
 
 end VG.Proof.Bignum.Arm

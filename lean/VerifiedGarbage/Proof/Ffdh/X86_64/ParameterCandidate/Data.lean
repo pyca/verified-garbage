@@ -114,7 +114,7 @@ theorem CandidateBase.inner_header {p : CandidateP} {s t : State} {rs : List (Na
     (hrs : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z - 256) :
     ∀ j < 32, word t.mem p.B (8 * j) = word s.mem p.B (8 * j) := by
   intro j hj
-  exact hf.word_below hrs (by omega_using [h.header_room, h.size64]) (by decide) (by omega)
+  exact hf.word_below hrs (by omega_using [h.header_room, h.size64]) (by decide) (by omega_using [hj])
 
 theorem CandidateBase.output_eq {p : CandidateP} {s : State} {m' : Mem}
     (h : CandidateBase p s) (hf : InScr p.B p.Z s.mem m') :
@@ -151,14 +151,14 @@ theorem CandidateTape.keep {p : CandidateP} {used : Nat} {s t : State} {regs : L
     (h : CandidateTape p used s) (hf : CandidateFrame p s.mem t.mem)
     (hh : ∀ j < 15, word t.mem p.B (8 * j) = word s.mem p.B (8 * j))
     (k : Keep regs s t) (hsp : t.gpr .rsp = p.sp) : CandidateTape p used t :=
-  ⟨h.base.keep hf (fun j hj => hh j (by omega)) k hsp, h.bound,
+  ⟨h.base.keep hf (fun j hj => hh j (by omega_using [hj])) k hsp, h.bound,
     (hh _ (by decide)).trans h.ptr, (hh _ (by decide)).trans h.left, (hh _ (by decide)).trans h.usedWord⟩
 
 theorem CandidateTape.keep_inner {p : CandidateP} {used : Nat} {s t : State} {regs : List Reg}
     {rs : List (Nat × Nat)} (h : CandidateTape p used s) (hf : Frm (off p.B 256) rs s.mem t.mem)
     (hrs : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z - 256) (k : Keep regs s t) (hsp : .rsp ∉ regs) : CandidateTape p used t :=
   h.keep (CandidateFrame.of_scr (h.base.inner_changes hf hrs))
-    (fun j hj => h.base.inner_header hf hrs j (by omega)) k ((k.gpr hsp).trans h.base.sp)
+    (fun j hj => h.base.inner_header hf hrs j (by omega_using [hj])) k ((k.gpr hsp).trans h.base.sp)
 
 theorem CandidateTape.after_bytes {p : CandidateP} {used : Nat} {s t : State} {regs : List Reg}
     (h : CandidateTape p used s)
@@ -169,13 +169,13 @@ theorem CandidateTape.after_bytes {p : CandidateP} {used : Nat} {s t : State} {r
   have hh : ∀ j < 15, word t.mem p.B (8 * j) = word s.mem p.B (8 * j) :=
     fun j hj => hw _ (by omega_using [hj, h.base.header_room])
   exact ⟨h.keep (CandidateFrame.of_bytes hf) hh k ((k.gpr hrsp).trans h.base.sp),
-    fun j hj => hh j (by omega), CandidateFrame.of_bytes hf⟩
+    fun j hj => hh j (by omega_using [hj]), CandidateFrame.of_bytes hf⟩
 
 theorem CandidateTape.same_mem {p : CandidateP} {used : Nat} {s t : State} {regs : List Reg}
     (h : CandidateTape p used s) (hm : t.mem = s.mem) (k : Keep regs s t) (hsp : .rsp ∉ regs) :
     CandidateTape p used t ∧ CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem := by
   have hf : CandidateFrame p s.mem t.mem := by rw [hm]; exact CandidateFrame.refl _ _
   have hh : ∀ j < 15, word t.mem p.B (8 * j) = word s.mem p.B (8 * j) := fun _ _ => by rw [hm]
-  exact ⟨h.keep hf hh k ((k.gpr hsp).trans h.base.sp), fun j hj => hh j (by omega), hf⟩
+  exact ⟨h.keep hf hh k ((k.gpr hsp).trans h.base.sp), fun j hj => hh j (by omega_using [hj]), hf⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

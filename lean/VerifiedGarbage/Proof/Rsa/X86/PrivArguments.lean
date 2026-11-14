@@ -22,15 +22,15 @@ theorem Arguments.append {g : PrivGeometry} {values : Nat → BitVec 32} {n : Na
   intro j hj
   by_cases same : j = n
   · subst j; rw [M, Mem.readW_writeW_self32]
-  · rw [outgoing_word_preserved (by omega) hn same F]
-    exact h j (by omega)
+  · rw [outgoing_word_preserved (by omega_using [hn, hj]) hn same F]
+    exact h j (by omega_using [hj, same])
 
 theorem slotFrame_outgoing {g : PrivGeometry} {s t : State} {j : Nat} (hj : j < 18)
     (F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem) :
     Frame [⟨byteAddr g.stack, 72⟩] s.mem t.mem := F.sub (by
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩)
+  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega_using [hj])⟩)
 
 theorem prepareArgument_ok {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     {values : Nat → BitVec 32} {n : Nat} {code : List Instr}

@@ -51,7 +51,7 @@ theorem pre_of {s : State}
     dRo, -, -, -, dRs, -, -, dKo, dKn, dKe, dKg, dKs, dKq, dKa,
     wO, wN, wE, wG, wS, wQ, ⟨k1, k2⟩, L1, L2, hash, hsl, pl⟩ := h
   have ha : Region.Sub ⟨stackArgAddr s 0, 40⟩ ⟨stackArgAddr s 0, 56⟩ := Region.sub_prefix (by decide)
-  refine ⟨⟨sp1, by omega, ?_, hwr, dOn, dOe, dOg, dOs, dOa.sub_right ha, dns, des, dgs, dsa.sub_right ha, dRo,
+  refine ⟨⟨sp1, by omega_using [sp3], ?_, hwr, dOn, dOe, dOg, dOs, dOa.sub_right ha, dns, des, dgs, dsa.sub_right ha, dRo,
     dRs, dKo, dKn, dKe, dKg, dKs, dKa.sub_right ha, wO, wN, wE, wG, wS, k1, k2, L1, L2, hash,
     hsl⟩,
     sp3, ?_, ?_, dOa.symm, dsa.symm, dKa.symm, dOq.symm, dsq.symm, dKq.symm, wQ, pl⟩

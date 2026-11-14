@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Montgomery reduction with packed 32-bit words
 
@@ -16,12 +17,12 @@ namespace VG.Proof.Bignum.Arm
 `u < 2³²`. -/
 theorem round_sum_lt {T a b u m : Nat} (hT : T < 2 * m) (ha : a < 2 ^ 32) (hb : b < m)
     (hu : u < 2 ^ 32) : T + a * b + u * m < 2 ^ 33 * m := by
-  have h1 : a * b ≤ (2 ^ 32 - 1) * b := Nat.mul_le_mul_right _ (by omega)
-  have h2 : u * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_right _ (by omega)
-  have h3 : (2 ^ 32 - 1) * b ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_left _ (by omega)
+  have h1 : a * b ≤ (2 ^ 32 - 1) * b := Nat.mul_le_mul_right _ (by omega_using [ha])
+  have h2 : u * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_right _ (by omega_using [hu])
+  have h3 : (2 ^ 32 - 1) * b ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_left _ (by omega_using [hb])
   rw [Nat.sub_mul, Nat.one_mul] at h1 h2 h3
   have : 2 ^ 33 * m = 2 * 2 ^ 32 * m := by rw [show (2 : Nat) ^ 33 = 2 * 2 ^ 32 by decide]
-  omega
+  omega_using [hT, hb, h1, h2]
 
 /-- A round keeps the accumulator below `2m`. -/
 theorem round_lt {T T' a b u m : Nat} (h : 2 ^ 32 * T' = T + a * b + u * m) (hT : T < 2 * m)
@@ -58,7 +59,7 @@ theorem inverse32 {m inv : Nat} (h : (m * inv + 1) % 2 ^ 64 = 0) :
 /-- Two 32-bit rounds per workspace word retain the existing Montgomery radix. -/
 theorem radix32 (w : Nat) : (2 : Nat) ^ (32 * (2 * w)) = 2 ^ (64 * w) := by
   congr 1
-  omega
+  omega_using []
 
 /-- What `subMod` and `selectAcc` leave: for `T = T_l + R (T_w + 2³² T_{w+1}) < 2m`
 (`T_l < R` its low words, `m < R`) and `D + m = T_l + R c` (`D < R`, `c` the
@@ -72,41 +73,41 @@ theorem csub_result {Tl Tw Tw1 D m R c : Nat} (hm : m < R) (hD : D < R) (hc : c 
     rcases Nat.eq_zero_or_pos Tw1 with h | h
     · exact h
     · have : R * 2 ^ 32 ≤ R * (Tw + 2 ^ 32 * Tw1) := Nat.mul_le_mul_left _ (by
-        have := Nat.mul_le_mul_left (2 ^ 32) h; omega)
+        have := Nat.mul_le_mul_left (2 ^ 32) h; omega_using [h])
       have : R * 2 ^ 32 ≥ 2 * R := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by decide)
-      omega
+      omega_arith
   subst h1
   simp only [Nat.mul_zero, Nat.add_zero] at hT ⊢
   rcases Nat.lt_or_ge Tw 1 with hw | hw
-  · have hw0 : Tw = 0 := by omega
+  · have hw0 : Tw = 0 := by omega_using [hw]
     subst hw0
     simp only [Nat.mul_zero, Nat.add_zero] at hT ⊢
     rcases Nat.lt_or_ge c 1 with hc0 | hc1
-    · have : c = 0 := by omega
+    · have : c = 0 := by omega_using [hc0]
       subst this
       simp only [Nat.lt_irrefl, ite_false]
       simp only [Nat.mul_zero, Nat.add_zero] at hsub
-      rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-      omega
-    · have : c = 1 := by omega
+      rw [Nat.mod_eq_sub_mod (by omega_using [hsub]), Nat.mod_eq_of_lt (by omega_using [hT])]
+      omega_using [hsub]
+    · have : c = 1 := by omega_using [hc, hc1]
       subst this
       simp only [Nat.zero_lt_one, ite_true]
-      rw [Nat.mod_eq_of_lt (by omega)]
+      rw [Nat.mod_eq_of_lt (by omega_using [hD, hsub])]
   · have : R * 1 ≤ R * Tw := Nat.mul_le_mul_left _ hw
     have hw1 : Tw = 1 := by
       rcases Nat.lt_or_ge Tw 2 with h | h
-      · omega
+      · omega_using [hw, h]
       · have : R * 2 ≤ R * Tw := Nat.mul_le_mul_left _ h
-        omega
+        omega_using [hm, hT, this]
     subst hw1
     have hc1 : c = 1 := by
       rcases Nat.lt_or_ge c 1 with h | h
-      · have : c = 0 := by omega
-        subst this; omega
-      · omega
+      · have : c = 0 := by omega_using [h]
+        subst this; omega_using [hm, hT, hsub]
+      · omega_using [hc, h]
     subst hc1
     simp only [Nat.lt_irrefl, ite_false, Nat.mul_one] at hsub ⊢
-    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_sub_mod (by omega_using [hm]), Nat.mod_eq_of_lt (by omega_using [hT])]
+    omega_using [hsub]
 
 end VG.Proof.Bignum.Arm

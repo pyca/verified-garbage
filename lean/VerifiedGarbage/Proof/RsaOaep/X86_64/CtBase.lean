@@ -91,7 +91,7 @@ theorem frT_agree {n : Nat} {F : Addr} {ws : List Region} {rs : List Reg} {ks : 
     obtain ⟨k, hk', rfl⟩ := hsl
     have := hk k hk'
     simp only [frT, List.getD_cons_zero]
-    unfold nW frameBytes at *; omega
+    unfold nW frameBytes at *; omega_using [this]
   · simp only [frT, List.mem_map] at hsl
     obtain ⟨k, hk', rfl⟩ := hsl
     simp only at hj₁ hj₂
@@ -99,9 +99,9 @@ theorem frT_agree {n : Nat} {F : Addr} {ws : List Region} {rs : List Reg} {ks : 
       fun h => by
         simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, h.wr, List.getD_cons_zero, off, BitVec.add_assoc,
           ← BitVec.ofNat_add]
-        congr 2; omega
+        congr 2; omega_using [hj₁]
     rw [hb h₁, hb h₂]
-    exact word_byte (hw k hk') (by omega)
+    exact word_byte (hw k hk') (by omega_using [hj₂])
 
 variable {α : Type}
 
@@ -138,7 +138,7 @@ include hG in
 theorem two_init {Φ : α → State → Prop} (F S : α → Addr)
     (h : ∀ a t, Φ a t → Lay t (F a) (S a) ∧ t.gpr .rdi = off (S a) oSt) :
     RelCT isa (Two Φ) (.call G.initN G.initC) fun _ _ => True := by
-  have h1 : oSt + G.S ≤ oRsa := by have := (sizes hG).1; unfold oSt oRsa; omega
+  have h1 : oSt + G.S ≤ oRsa := by have := (sizes hG).1; unfold oSt oRsa; omega_using [this]
   refine (RelCT.exists_ (P := fun a t₁ t₂ => Φ a t₁ ∧ Φ a t₂) fun a =>
     init_rel hG (st := off (S a) oSt) fun t₁ t₂ ⟨p₁, p₂⟩ => ?_).mono (fun _ _ h => h) fun _ _ h => h
   obtain ⟨L₁, d₁⟩ := h a t₁ p₁
@@ -153,11 +153,11 @@ theorem updArgs {t : State} {F S : Addr} (L : Lay t F S) {a len : Nat} (ha : a +
     (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = off S a) (hcx : t.gpr .rcx = BitVec.ofNat 64 len)
     (h8 : t.gpr .r8 = off S oW) : UpdArgs hG t (off S oSt) (off S a) (off S oW) len := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2 : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2 : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega_using [hz]
   exact { rdi := hdi, rdx := hdx
-          rcx := by rw [hcx, BitVec.toNat_ofNat]; unfold oRsa at ha; omega
+          rcx := by rw [hcx, BitVec.toNat_ofNat]; unfold oRsa at ha; omega_using [ha]
           r8 := h8
           cd := Covers.right (L.cov ha)
           cw := Covers.pair (L.cov h1) (L.cov h2)
@@ -191,13 +191,13 @@ theorem two_updExt {Φ : α → State → Prop} (F S d : α → Addr) (len : α 
       t.gpr .rcx = BitVec.ofNat 64 (len a) ∧ t.gpr .r8 = off (S a) oW) :
     RelCT isa (Two Φ) (.call G.updN G.updC) fun _ _ => True := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2 : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2 : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega_using [hz]
   have args : ∀ a t, Φ a t → UpdArgs hG t (off (S a) oSt) (d a) (off (S a) oW) (len a) := fun a t p => by
     obtain ⟨L, hl, hcd, hds, hdk, hdi, -, hdx, hcx, h8⟩ := h a t p
     exact { rdi := hdi, rdx := hdx
-            rcx := by rw [hcx, BitVec.toNat_ofNat]; omega
+            rcx := by rw [hcx, BitVec.toNat_ofNat]; omega_using [hl]
             r8 := h8
             cd := hcd
             cw := Covers.pair (L.cov h1) (L.cov h2)
@@ -220,17 +220,17 @@ theorem two_fin {Φ : α → State → Prop} (F S : α → Addr) (o : α → Nat
       t.gpr .rcx = off (S a) oW) :
     RelCT isa (Two Φ) (.call G.finN G.finC) fun _ _ => True := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2 : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2 : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega_using [hz]
   have args : ∀ a t, Φ a t → FinArgs hG t (off (S a) oSt) (off (S a) (o a)) (off (S a) oW) := fun a t p => by
     obtain ⟨L, ho, hdi, -, hdx, hcx⟩ := h a t p
-    have h3 : o a + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega
+    have h3 : o a + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega_using [hz, ho]
     exact { rdi := hdi, rdx := hdx, rcx := hcx
             cw := Covers.cons (L.cov h1) (Covers.pair (L.cov h3) (L.cov h2))
-            st_o := sdis (S a) (by unfold oSt oW at *; omega) h1 h3
+            st_o := sdis (S a) (by unfold oSt oW at *; omega_using [hz, ho]) h1 h3
             st_sc := sdis (S a) (Or.inl hsw) h1 h2
-            o_sc := sdis (S a) (by unfold oSt oW at *; omega) h3 h2
+            o_sc := sdis (S a) (by unfold oSt oW at *; omega_using [hz, ho]) h3 h2
             stk_st := L.stk h1, stk_o := L.stk h3, stk_sc := L.stk h2 }
   refine (RelCT.exists_ (P := fun a t₁ t₂ => Φ a t₁ ∧ Φ a t₂) fun a =>
     fin_rel hG (st := off (S a) oSt) (o := off (S a) (o a)) (sc := off (S a) oW)

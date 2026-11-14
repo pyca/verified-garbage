@@ -82,13 +82,13 @@ theorem JInv.after {m m' : Mem} {B : Addr} {w N G Y RR : Nat} {done : List (Nat 
     (hv : ∀ j < 24, j ≠ 2 → j ≠ 3 → j ≠ o → Win.A m' B w j = Win.A m B w j) :
     JInv m' B w N G Y RR done := by
   refine ⟨?_, ?_, ?_, ?_, fun q hq => ?_⟩
-  · rw [hv 1 (by decide) (by decide) (by decide) (by omega)]; exact h.rr
-  · rw [hv 4 (by decide) (by decide) (by decide) (by omega)]; exact h.g
-  · rw [hv 5 (by decide) (by decide) (by decide) (by omega)]; exact h.y
-  · rw [hv 7 (by decide) (by decide) (by decide) (by omega)]; exact h.one
+  · rw [hv 1 (by decide) (by decide) (by decide) (by omega_using [ho])]; exact h.rr
+  · rw [hv 4 (by decide) (by decide) (by decide) (by omega_using [ho])]; exact h.g
+  · rw [hv 5 (by decide) (by decide) (by decide) (by omega_using [ho])]; exact h.y
+  · rw [hv 7 (by decide) (by decide) (by decide) (by omega_using [ho])]; exact h.one
   · have := hf q hq
     unfold JGood
-    rw [hv (8 + q.1) (by omega) (by omega) (by omega) this.1]
+    rw [hv (8 + q.1) (by omega_using [this]) (by omega_using []) (by omega_using []) this.1]
     exact h.good q hq
 
 /-- `T_k := T_k1 T_k2`, for entries `(k1, i1, j1)` and `(k2, i2, j2)` of `done`. -/
@@ -102,11 +102,11 @@ theorem montStep {s : State} {B : Addr} {Z w N G Y RR : Nat} {done : List (Nat �
   simp only [Fresh, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at hk
   obtain ⟨hk16, hall⟩ := hk
   have f1 := hall _ h1; have f2 := hall _ h2
-  refine WP.mono (h.mont (o := 8 + k) (a := 8 + k1) (b := 8 + k2) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (hj.good _ h2).1) fun t ⟨⟨ct, lt, e, v, o⟩, kt⟩ =>
+  refine WP.mono (h.mont (o := 8 + k) (a := 8 + k1) (b := 8 + k2) (by omega_using [hk16]) (by omega) (by omega) (by omega_using [])
+    (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (hj.good _ h2).1) fun t ⟨⟨ct, lt, e, v, o⟩, kt⟩ =>
     ⟨⟨ct, o, ?_⟩, kt⟩
-  have hj' := hj.after (m' := t.mem) (o := 8 + k) (by omega)
-    (fun q hq => ⟨by have := (hall q hq).2; omega, (hall q hq).1⟩) v
+  have hj' := hj.after (m' := t.mem) (o := 8 + k) (by omega_using [])
+    (fun q hq => ⟨by have := (hall q hq).2; omega_using [this], (hall q hq).1⟩) v
   refine ⟨hj'.rr, hj'.g, hj'.y, hj'.one, fun q hq => ?_⟩
   rcases List.mem_cons.1 hq with rfl | hq
   · exact ⟨lt, fun hE => mont_pow2 hR ((hj.good _ h1).2 hE) ((hj.good _ h2).2 hE) e⟩
@@ -241,8 +241,8 @@ theorem jDone_mem {i j : Nat} (hi : i < 4) (hj : j < 4) : (i + 4 * j, i, j) ∈ 
 
 theorem jDone_lt {m : Mem} {B : Addr} {w N G Y RR : Nat} (h : JInv m B w N G Y RR jDone) :
     ∀ k < 16, Win.A m B w (8 + k) < N := fun k hk => by
-  have := (h.good _ (jDone_mem (i := k % 4) (j := k / 4) (Nat.mod_lt _ (by decide)) (by omega))).1
-  rwa [show k % 4 + 4 * (k / 4) = k by omega] at this
+  have := (h.good _ (jDone_mem (i := k % 4) (j := k / 4) (Nat.mod_lt _ (by decide)) (by omega_using [hk]))).1
+  rwa [show k % 4 + 4 * (k / 4) = k by omega_using []] at this
 
 /-- The digit of a joint window: `r24`'s top two bits, and its bits 54–55
 times 4. -/
@@ -254,7 +254,7 @@ theorem digit_eq (x : BitVec 64) :
     BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     Nat.shiftLeft_eq, BitVec.toNat_ofNat]
   have e1 : x.toNat * 2 ^ 8 % 2 ^ 64 / 2 ^ 62 = x.toNat / 2 ^ 54 % 4 := by
-    have h1 : x.toNat * 2 ^ 8 % 2 ^ 64 = x.toNat % 2 ^ 56 * 2 ^ 8 := by omega
+    have h1 : x.toNat * 2 ^ 8 % 2 ^ 64 = x.toNat % 2 ^ 56 * 2 ^ 8 := by omega_using []
     rw [h1, show (2 : Nat) ^ 62 = 2 ^ 54 * 2 ^ 8 by rw [← Nat.pow_add],
       Nat.mul_div_mul_right _ _ (Nat.two_pow_pos 8), show (2 : Nat) ^ 56 = 2 ^ 54 * 4 by rw [show 4 = 2 ^ 2 from rfl,
         ← Nat.pow_add], Nat.mod_mul_right_div_self]
@@ -298,7 +298,7 @@ theorem jointWindow_ok {s : State} {B : Addr} {Z w N : Nat} (h : Win.WCtx s B Z 
   have hx := (s.gpr .r24).isLt
   have hd1 : (s.gpr .r24).toNat / 2 ^ 62 < 4 := by omega_arith
   have hd2 : (s.gpr .r24).toNat / 2 ^ 54 % 4 < 4 := Nat.mod_lt _ (by decide)
-  have hd : (s.gpr .r24).toNat / 2 ^ 62 + 4 * ((s.gpr .r24).toNat / 2 ^ 54 % 4) < 16 := by omega
+  have hd : (s.gpr .r24).toNat / 2 ^ 62 + 4 * ((s.gpr .r24).toNat / 2 ^ 54 % 4) < 16 := by omega_using []
   refine WP.seq (WP.mono (WP.keep [.r18, .r3] (Q := fun t =>
       t.gpr .r18 = BitVec.ofNat 64 ((s.gpr .r24).toNat / 2 ^ 62 + 4 * ((s.gpr .r24).toNat / 2 ^ 54 % 4)) ∧
         t.mem = s₂.mem)
@@ -306,7 +306,7 @@ theorem jointWindow_ok {s : State} {B : Addr} {Z w N : Nat} (h : Win.WCtx s B Z 
   have cs3 := cs2.regs k3 (by decide) m3
   refine WP.seq (WP.mono (Win.select_ok cs3 a18 hd) fun s₄ ⟨⟨a5, v4, cs4, o4⟩, k4⟩ => ?_)
   have A6 : Win.A s₄.mem B w 6 = Win.A s₂.mem B w 6 := by rw [v4 6 (by decide) (by decide) (by decide), m3]
-  rw [m3, f12 _ (by omega) (by omega) (by omega) (by omega) (by omega)] at a5
+  rw [m3, f12 _ (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])] at a5
   refine WP.seq (WP.mono (cs4.mont (o := 6) (a := 6) (b := 5) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by rw [a5]; exact htab _ hd))
     fun s₅ ⟨⟨cs5, l5, e5, v5, o5⟩, k5⟩ => ?_)
@@ -323,14 +323,14 @@ theorem jointWindow_ok {s : State} {B : Addr} {Z w N : Nat} (h : Win.WCtx s B Z 
     rw [mt]
     rw [A6] at e5
     have := mont_pow2 hR (e2 (e1 hA)) (by rw [a5]; exact hT _ hd1 _ hd2) e5
-    rw [this, show c1 + c1 + (c1 + c1) + (s.gpr .r24).toNat / 2 ^ 62 = 4 * c1 + (s.gpr .r24).toNat / 2 ^ 62 by omega,
-      show c2 + c2 + (c2 + c2) + (s.gpr .r24).toNat / 2 ^ 54 % 4 = 4 * c2 + (s.gpr .r24).toNat / 2 ^ 54 % 4 by omega]
+    rw [this, show c1 + c1 + (c1 + c1) + (s.gpr .r24).toNat / 2 ^ 62 = 4 * c1 + (s.gpr .r24).toNat / 2 ^ 62 by omega_using [],
+      show c2 + c2 + (c2 + c2) + (s.gpr .r24).toNat / 2 ^ 54 % 4 = 4 * c2 + (s.gpr .r24).toNat / 2 ^ 54 % 4 by omega_using []]
   · exact ((((k12.trans k3).trans k4).trans k5).trans kt).mono (by decide)
 
 /-- A byte's four 2-bit digits, most significant first, after `c`. -/
 theorem byte_digits (c b : Nat) :
     4 * (4 * (4 * (4 * c + b / 64) + b / 16 % 4) + b / 4 % 4) + b % 4 = 256 * c + b := by
-  omega
+  omega_using []
 
 /-- The word of a byte pair: `b1` at the top, `b2` below it. -/
 theorem pair_eq {b1 b2 : Nat} (h1 : b1 < 256) (h2 : b2 < 256) :
@@ -387,8 +387,8 @@ theorem jtab_of {t₀ : State} {m : Mem} {B : Addr} {w N G Y RR : Nat} (htab : J
     (∀ k < 16, Win.A m B w (8 + k) < N) ∧ (RR = 2 ^ (64 * w) * 2 ^ (64 * w) % N →
       ∀ i < 4, ∀ j < 4, Win.A m B w (8 + (i + 4 * j)) % N = G ^ i * Y ^ j * 2 ^ (64 * w) % N) := by
   refine ⟨fun k hk => ?_, fun hE i hi j hj => ?_⟩
-  · rw [hf (8 + k) (by omega) (by omega) (by omega) (by omega) (by omega)]; exact jDone_lt htab k hk
-  · rw [hf (8 + (i + 4 * j)) (by omega) (by omega) (by omega) (by omega) (by omega)]
+  · rw [hf (8 + k) (by omega_using [hk]) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])]; exact jDone_lt htab k hk
+  · rw [hf (8 + (i + 4 * j)) (by omega_using [hi, hj]) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])]
     exact (htab.good _ (jDone_mem hi hj)).2 hE
 
 theorem jw_jl {r : Reg} (h : r ∈ jwRegs) : r ∈ jlRegs :=
@@ -549,7 +549,7 @@ theorem parr_win {L : Lay} {m m' : Mem} (h : Outs L.S (Win.win L.wp) m m') : PAr
     rw [Win.win, List.mem_singleton] at hr
     subst hr
     simp only [Lay.qOff, Lay.slot_eq]
-    omega
+    omega_using []
 
 /-- The registers `combine` writes. -/
 def combRegs : List Reg :=

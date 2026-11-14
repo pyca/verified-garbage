@@ -70,16 +70,16 @@ theorem operand_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z)
   have hpMax : pWorkspace < 2 ^ 64 := by decide
   have hw : word (u.mem.writeW (off B (8 * sp)) (pointerValue s.mem B a.pointer)) B a.length.offset =
       word s.mem B a.length.offset := by
-    rw [(writeW_outside u.mem B (pointerValue s.mem B a.pointer) (by omega)).word
-      (Or.inr (by omega)) (by omega), hum]
+    rw [(writeW_outside u.mem B (pointerValue s.mem B a.pointer) (by omega_using [hsp])).word
+      (Or.inr (by omega_using [hsp, hbounds])) (by omega_using [hbounds, hpMax]), hum]
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
     t.mem = (u.mem.writeW (off B (8 * sp)) (pointerValue s.mem B a.pointer)).writeW
       (off B (8 * sl)) (word s.mem B a.length.offset)) ?_ rfl)
     fun t ⟨htm, hkt⟩ => ⟨by rw [hum] at htm; exact htm, (hku.trans hkt).mono (by decide)⟩
   unfold Core.field
   xrun [State.ea, hdr, hdu, hdrOff, hua, fieldAddress, hw,
-    hsu.st (show 8 * sp + 8 ≤ Z by omega),
-    hsu.ld (show a.length.offset + 8 ≤ Z by omega),
-    hsu.st (show 8 * sl + 8 ≤ Z by omega)]
+    hsu.st (show 8 * sp + 8 ≤ Z by omega_using [hZ, hsp, hbounds]),
+    hsu.ld (show a.length.offset + 8 ≤ Z by omega_using [hZ, hbounds]),
+    hsu.st (show 8 * sl + 8 ≤ Z by omega_using [hZ, hsl, hbounds])]
 
 end VG.Proof.Dsa.X86_64

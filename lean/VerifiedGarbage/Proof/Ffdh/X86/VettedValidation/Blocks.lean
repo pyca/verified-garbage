@@ -15,12 +15,12 @@ open VG.Impl.Ffdh.X86.VettedValidation VG.Impl.Ffdh.VettedGroups
 theorem arg_read {base src sp table : BitVec 32} {k : Nat} {dom : List Byte} {s : State}
     (h : Context base src sp table k dom s) (i : Nat) (hi : i < 3) :
     InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (4 + 4 * i)) 4 := by
-  have read := CallLay.inRegions_sub h.argsRead (off := 4 * i) (l := 4) (by omega) (by decide)
+  have read := CallLay.inRegions_sub h.argsRead (off := 4 * i) (l := 4) (by omega_using [hi]) (by decide)
   have pointer : addr (s.gpr .esp) (4 + 4 * i) = argAddr s 0 + BitVec.ofNat 64 (4 * i) := by
     change addr (s.gpr .esp) (4 + 4 * i) = addr (s.gpr .esp) 4 + BitVec.ofNat 64 (4 * i)
     rw [addr_eq (x := s.gpr .esp) (k := 4 + 4 * i)
-      (by rw [h.stack]; have := h.stackFits; omega)]
-    rw [addr_eq (x := s.gpr .esp) (k := 4) (by rw [h.stack]; have := h.stackFits; omega),
+      (by rw [h.stack]; have := h.stackFits; omega_using [hi, this])]
+    rw [addr_eq (x := s.gpr .esp) (k := 4) (by rw [h.stack]; have := h.stackFits; omega_using [this]),
       BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   rw [pointer]
   exact read
@@ -36,7 +36,7 @@ theorem header_ok {base src sp table : BitVec 32} {k : Nat} {dom : List Byte} {s
   have value : u.gpr .eax = BitVec.ofNat 32 k := U.gpr.trans h.width
   rw [zero, value]
   congr 1
-  have hk : k < 2 ^ 32 := by have := h.upper; omega
+  have hk : k < 2 ^ 32 := by have := h.upper; omega_using [this]
   simpa only [eq_comm] using sub_beq hk fit
 
 theorem args_ok {base src sp table : BitVec 32} {k offset : Nat} {dom : List Byte} {s : State}

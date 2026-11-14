@@ -92,11 +92,11 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa pad s₀ (Post s₀) := 
   have fC := hp.scr_fit
   have hin : ∀ rs : List Region, stR s₀ ∈ rs → ∀ j < 200,
       InRegions rs (stA s₀ + BitVec.ofNat 64 j) 1 :=
-    fun rs h j hj => ⟨stR s₀, h, contains_offset (by omega) (by omega)⟩
+    fun rs h j hj => ⟨stR s₀, h, contains_offset (by omega_using [hj]) (by omega_using [hj])⟩
   have hlr : ∀ rs : List Region, scR s₀ ∈ rs → InRegions rs (A (scr s₀) 512) 4 :=
-    fun rs h => ⟨scR s₀, h, contains_A fC (by omega)⟩
-  have hp1 : pos s₀ < 200 := show (s₀.gpr .r2).toNat < 200 by omega
-  have hq : rt s₀ - 1 < 200 := show (s₀.gpr .r1).toNat - 1 < 200 by omega
+    fun rs h => ⟨scR s₀, h, contains_A fC (by omega_using [])⟩
+  have hp1 : pos s₀ < 200 := show (s₀.gpr .r2).toNat < 200 by omega_using [hr₁', hpl]
+  have hq : rt s₀ - 1 < 200 := show (s₀.gpr .r1).toNat - 1 < 200 by omega_using [hr₁']
   unfold pad
   refine WP.seq ?_
   refine wp_ldrSp (a := stackArgAddr s₀ 0) (by decide) rfl
@@ -107,13 +107,13 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa pad s₀ (Post s₀) := 
   have hm₂ : s₂.mem = s₀.mem.writeW (A (scr s₀) 512) (s₀.gpr .lr) := by
     rw [m₂.mem, u₁.mem, u₁.other .lr (by decide)]
   have hf₂ : Frame [scR s₀] s₀.mem s₂.mem := by
-    rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_A fC (by omega))
+    rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_A fC (by omega_using []))
   have k₂ : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r h => by rw [m₂.gpr, u₁.other r h]
   -- The suffix.
   refine wp_add (op2_reg _ _) fun s₃ u₃ => ?_
   have e₁ : State.addr (s₃.gpr .r2 + BitVec.ofNat 32 0) = stA s₀ + BitVec.ofNat 64 (pos s₀) := by
     rw [u₃.gpr, k₂ .r0 (by decide), k₂ .r2 (by decide), BitVec.add_zero]
-    have := addr_add (a := s₀.gpr .r0) (k := pos s₀) (by omega)
+    have := addr_add (a := s₀.gpr .r0) (k := pos s₀) (by omega_using [fS, hp1])
     rwa [ofNat_toNat32] at this
   refine wp_ldrb (a := stA s₀ + BitVec.ofNat 64 (pos s₀)) (by decide) e₁
     (hin _ (by simp [u₃.rd, u₃.wr, m₂.rd, m₂.wr, u₁.rd, u₁.wr, hp.rd, hp.wr]) _ hp1) fun s₄ u₄ => ?_
@@ -133,8 +133,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa pad s₀ (Post s₀) := 
     rw [u₈.gpr, u₇.gpr, k₆ .r0 (by decide) (by decide) (by decide),
       k₆ .r1 (by decide) (by decide) (by decide), BitVec.add_zero,
       show s₀.gpr .r0 + s₀.gpr .r1 - 1 = s₀.gpr .r0 + BitVec.ofNat 32 ((s₀.gpr .r1).toNat - 1) by
-        exact Offset.add_sub_one32 _ _ (by omega)]
-    exact addr_add (by omega)
+        exact Offset.add_sub_one32 _ _ (by omega_using [hr₀'])]
+    exact addr_add (by omega_using [hr₁', fS])
   refine wp_ldrb (a := stA s₀ + BitVec.ofNat 64 (rt s₀ - 1)) (by decide) e₂
     (hin _ (by simp [u₈.rd, u₈.wr, u₇.rd, u₇.wr, g₆.rd, g₆.wr, u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd,
       u₃.wr, m₂.rd, m₂.wr, u₁.rd, u₁.wr, hp.rd, hp.wr]) _ hq) fun s₉ u₉ => ?_
@@ -161,10 +161,10 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa pad s₀ (Post s₀) := 
         rw [hb₂, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (ne_of_lt200 hi hq hne))])
   have hf₆ : Frame [stR s₀] s₂.mem s₆.mem := by
     rw [hb₁]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_offset (by omega) (by omega))
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_offset (by omega_using [hp1]) (by omega_using [hp1]))
   have hf₁₂ : Frame [stR s₀] s₂.mem s₁₂.mem := by
     rw [u₁₂.mem, hb₂]
-    exact hf₆.writeW (List.mem_singleton_self _) _ (contains_offset (by omega) (by omega))
+    exact hf₆.writeW (List.mem_singleton_self _) _ (contains_offset (by omega_using [hr₁]) (by omega_using [hr₁]))
   have k₁₂ : ∀ r, r ≠ .r12 → r ≠ .r2 → r ≠ .lr → r ≠ .r1 → s₁₂.gpr r = s₀.gpr r :=
     fun r h12 h2 hl h1 => by
       rw [u₁₂.other r h1, g₁₁.gpr, u₁₀.other r hl, u₉.other r hl, u₈.other r h2, u₇.other r h2,
@@ -179,9 +179,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa pad s₀ (Post s₀) := 
     rw [u₁₂.wr, g₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, g₆.wr, u₅.wr, u₄.wr, u₃.wr, m₂.wr, u₁.wr]
   -- The call, and the return address.
   refine WP.seq (call_ok (st := st s₀) (scr := scr s₀)
-    (k₁₂ .r0 (by decide) (by decide) (by decide) (by decide)) r1₁₂ fS (by omega)
-    (hp.st_scr.sub_right (Region.sub_prefix (by omega)))
-    (by rw [wr₁₂, hp.wr]; exact covers_of (N := 640) (by omega) (by simp) (by simp))
+    (k₁₂ .r0 (by decide) (by decide) (by decide) (by decide)) r1₁₂ fS (by omega_using [fC])
+    (hp.st_scr.sub_right (Region.sub_prefix (by omega_using [])))
+    (by rw [wr₁₂, hp.wr]; exact covers_of (N := 640) (by omega_using []) (by simp) (by simp))
     fun s' rd' wr' _ cs' _ r1' f' e' => ?_)
   refine wp_ldr (a := A (scr s₀) 512) (by decide) (by rw [r1'])
     (hlr _ (by simp [rd', wr', rd₁₂, wr₁₂, hp.rd, hp.wr])) fun s'' u'' => WP.block_nil ?_
@@ -189,11 +189,11 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa pad s₀ (Post s₀) := 
   · by_cases hl : r = .lr
     · subst hl
       rw [u''.gpr, readW_hi fC hp.st_scr f' (fun r hr => by simpa using hr) (d := 512) (Nat.le_refl _)
-        (by omega), readW_hi fC hp.st_scr hf₁₂ (fun r hr => .inl (List.mem_singleton.mp hr))
-        (d := 512) (Nat.le_refl _) (by omega), hm₂, Mem.readW_writeW_self32]
+        (by omega_using []), readW_hi fC hp.st_scr hf₁₂ (fun r hr => .inl (List.mem_singleton.mp hr))
+        (d := 512) (Nat.le_refl _) (by omega_using []), hm₂, Mem.readW_writeW_self32]
     · have ne := keep_ne r hr
       rw [u''.other r hl, cs' r hr hl, k₁₂ r ne.1 ne.2.1 hl ne.2.2]
-  · rw [u''.mem, e', hS, Proof.Sha3.repr_iff.mp hR, absorb_pad (by omega) (by omega), ← hm]
+  · rw [u''.mem, e', hS, Proof.Sha3.repr_iff.mp hR, absorb_pad (by omega_using [hr₀']) (by omega_using [hr₁']), ← hm]
 
 /-! ## Constant time -/
 
@@ -234,8 +234,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.padArm.pre s₁) (h₂ :
   · rw [hp₁.wr, hp₂.wr]; simp only [stR, scR, stA, scr, st, p0, a0]
   · simp only [τ₀] at hk
     rw [argByte_eq hp₁.sp_fit hk, argByte_eq hp₂.sp_fit hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega)),
-      show k / 4 = 0 by omega]
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using [])),
+      show k / 4 = 0 by omega_using [hk]]
     exact congrArg _ a0
 
 /-- A state satisfying the precondition (with the scratch space at 0). -/

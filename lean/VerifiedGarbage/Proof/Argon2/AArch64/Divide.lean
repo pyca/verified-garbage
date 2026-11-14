@@ -19,7 +19,7 @@ theorem prefix_step (x : BitVec 64) (j : Nat) :
   rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ] at h
   simp only [Nat.succ_eq_add_one] at h
   simp only [← BitVec.testBit_toNat, Nat.toNat_testBit]
-  omega
+  omega_using [h]
 
 def changed : List Reg := [.x3, .x4, .x6, .x8, .x5, .x9]
 

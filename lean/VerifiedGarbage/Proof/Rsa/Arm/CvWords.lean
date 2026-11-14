@@ -88,13 +88,13 @@ abbrev fQ (s0 : State) : Nat := VG.Proof.Rsa.fixT (cvW s0 / 2) (2 * (cvQ s0 / 2)
 theorem slot16 {s0 : State} {m : Mem} (pre : CvPre s0)
     (h : m.readW (off (State.addr (cvB s0)) 16) 32 = BitVec.ofNat 32 (cvW s0)) : slot m (cvB s0) 16 = cvW s0 := by
   have := pre.w16
-  simp only [slot, w32]; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  simp only [slot, w32]; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]
 
 theorem bytes_lt_half {s0 : State} {b : List Byte} (hl : b.length = 2 * cvW s0) (hw : cvW s0 % 2 = 0) :
     Spec.Rsa.os2ip b < 2 ^ (32 * (cvW s0 / 2)) := by
   have := VG.Proof.Bignum.os2ip_lt b
   rw [hl, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
-  rw [show 32 * (cvW s0 / 2) = 8 * (2 * cvW s0) by omega]
+  rw [show 32 * (cvW s0 / 2) = 8 * (2 * cvW s0) by omega_using [hw]]
   exact this
 
 theorem BalCv.p_lt {s0 : State} (hB : BalCv s0) : cvP s0 < 2 ^ (32 * (cvW s0 / 2)) :=
@@ -154,7 +154,7 @@ theorem mulW_ok {s0 s : State} (h : SA s0 s) (hB : BalCv s0) :
   have w16 := pre.w16
   have fit := fun j (hj : j < nArr) => h.ws.fit64 (j := j) hj
   refine WP.mono (VG.Proof.Rsa.Arm.KeyDiv.mulLo_ok h.ws (o := aDR) (x := aP) (y := aQ) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (slot16 pre h.count) hB.2.2 (by omega) (n := none)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (slot16 pre h.count) hB.2.2 (by omega_using [w16]) (n := none)
     h.p h.q hB.q_lt (h.zeros 0 (by decide))) fun t ⟨ht, e, k, r⟩ => ⟨?_, by rw [e, Nat.mod_eq_of_lt hB.p_lt]⟩
   have K1 : ∀ j, j < nArr → j ≠ aDR → num t.mem (cvB s0) (cvW s0) j = num s.mem (cvB s0) (cvW s0) j :=
     fun j hj hn => k.num (by simpa using Ne.symm hn) (by decide) (fit j hj)
@@ -199,7 +199,7 @@ theorem cmpW_ok {s0 s : State} (h : SA s0 s)
     have hj' : j < nArr ∧ j ≠ aT1 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; rcases hj with rfl | rfl | rfl | rfl <;> decide
     rw [K1 _ hj'.1 hj'.2]
-    exact h.zeros j (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega)
+    exact h.zeros j (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega_using [hj])
 
 /-- Between the divisions by words: the mask, `q`, `d` and the zero array. -/
 structure SW (s0 : State) (X₁ : Nat) (s : State) : Prop where
@@ -230,7 +230,7 @@ theorem SW.keep {s0 s t : State} {X₁ : Nat} (h : SW s0 X₁ s) {js ds : List N
     by rw [K1 _ (by decide) fun j hj' => (hj j hj').1, h.q], by rw [K1 _ (by decide) fun j hj' => (hj j hj').2.1, h.d],
     by rw [K1 _ (by decide) fun j hj' => (hj j hj').2.2.1, h.zero], V, ?_, ?_⟩
   · rw [← h.count]
-    exact BitVec.eq_of_toNat_eq (k.slot (e := 16) (by decide) fun d hd => Or.inl (by have := (hds d hd).1; omega))
+    exact BitVec.eq_of_toNat_eq (k.slot (e := 16) (by decide) fun d hd => Or.inl (by have := (hds d hd).1; omega_using [this]))
   · rw [k.slot (by decide) fun d hd => (hds d hd).2.2, mV]
   · rw [K1 _ (by decide) fun j hj' => (hj j hj').2.2.2]; exact iV
 
@@ -238,10 +238,10 @@ theorem SW.divPre {s0 s : State} {X₁ : Nat} (h : SW s0 X₁ s) {M : Nat}
     (hM : num s.mem (cvB s0) (cvW s0) aDD = VG.Proof.Rsa.fixT (cvW s0 / 2) M) (hMl : M < 2 ^ (32 * (cvW s0 / 2))) :
     VG.Proof.Rsa.Arm.KeyDiv.DivPre (cvB s0) (cvZ s0) (cvW s0) nArr aDD s := by
   have w16 := h.base.pre.w16
-  have l := VG.Proof.Rsa.fixT_lt (k := cvW s0 / 2) (by omega) hMl
+  have l := VG.Proof.Rsa.fixT_lt (k := cvW s0 / 2) (by omega_using [w16]) hMl
   refine ⟨h.ws, slot16 h.base.pre h.count, by rw [hM]; exact l,
-    VG.Proof.Rsa.Arm.KeyCheck.top_word_pos (k := cvW s0 / 2 - 1) (n := cvW s0) (by omega) hM
-      (by rw [show cvW s0 / 2 - 1 + 1 = cvW s0 / 2 by omega]; exact l) VG.Proof.Rsa.fixT_ge, h.zero, trivial⟩
+    VG.Proof.Rsa.Arm.KeyCheck.top_word_pos (k := cvW s0 / 2 - 1) (n := cvW s0) (by omega_using [w16]) hM
+      (by rw [show cvW s0 / 2 - 1 + 1 = cvW s0 / 2 by omega_using [w16]]; exact l) VG.Proof.Rsa.fixT_ge, h.zero, trivial⟩
 
 /-- `[aDD] := fixT [d']` cleared of its low bit. -/
 theorem setW_ok {s0 s : State} {X₁ : Nat} (h : SW s0 X₁ s) {d' : Nat} (hd : d' ∈ [aP, aQ])
@@ -259,7 +259,7 @@ theorem setW_ok {s0 s : State} {X₁ : Nat} (h : SW s0 X₁ s) {d' : Nat} (hd : 
   refine clrLow_ok h1 (j := aDD) (by decide) (by decide) fun t2 h2 k2 e2 r2 _ => ?_
   have D2 : num t2.mem (cvB s0) (cvW s0) aDD = 2 * (Dv / 2) := by rw [e2, e1, hD]
   refine WP.mono (VG.Proof.Rsa.Arm.KeyDiv.fixTopW_ok h2 (m := aDD) (by decide) (by decide) D2
-    (Nat.lt_of_le_of_lt (by omega) hDl) (by omega)) fun t ⟨ht, k3, e3, r3, _⟩ => ?_
+    (Nat.lt_of_le_of_lt (by omega_using []) hDl) (by omega_using [w16])) fun t ⟨ht, k3, e3, r3, _⟩ => ?_
   have K : Keep (cvB s0) (cvW s0) [aDD] [] s.mem t.mem := k1.trans (k2.trans k3)
   have R : Rest opRegs s t := r1.trans (r2.trans (r3.mono (by decide)))
   refine ⟨h.keep K (by decide) (by decide) (by decide) ht R.sp R.rd R.wr, e3, fun j hj hn =>
@@ -280,7 +280,7 @@ theorem remW_ok {s0 s : State} {X₁ : Nat} (h : SW s0 X₁ s) {r : Nat} (hr : r
     (u := aT1) (by decide) hr'.1 (by decide) (by decide) (by decide) (by decide) (by decide) hr'.2.1
     hr'.2.2.2.1 hr'.2.2.2.2.1 (by decide) (Ne.symm hr'.2.2.1) (by decide) (by decide)
     (Ne.symm hr'.2.2.2.2.2.1) (by decide) (by decide) (by decide) hr'.2.2.2.2.2.2.1 (by decide) (by decide)
-    (by decide) (by omega) c hM (by rw [← hM]; exact ML) T0 z) fun t ⟨ht, et, _, kt, rt⟩ => ?_
+    (by decide) (by omega_using [w16]) c hM (by rw [← hM]; exact ML) T0 z) fun t ⟨ht, et, _, kt, rt⟩ => ?_
   refine ⟨h.keep kt (fun j hj => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl <;> first | decide | exact hr'.1)
@@ -334,7 +334,7 @@ theorem div2W_ok {s0 s : State} (h : SW s0 (xW s0) s) (hB : BalCv s0)
     (e : num s.mem (cvB s0) (cvW s0) aDD = fP s0) :
     WP isa (VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR2 aDD aDQ aDT aT1) s fun t =>
       SW s0 (xW s0) t ∧ num t.mem (cvB s0) (cvW s0) aDR2 = cvD s0 % fP s0 :=
-  WP.mono (remW_ok h (r := aDR2) (by decide) e (Nat.lt_of_le_of_lt (by omega) hB.p_lt)) fun _ ⟨ht, et, _⟩ => ⟨ht, et⟩
+  WP.mono (remW_ok h (r := aDR2) (by decide) e (Nat.lt_of_le_of_lt (by omega_using []) hB.p_lt)) fun _ ⟨ht, et, _⟩ => ⟨ht, et⟩
 
 theorem setQW_ok {s0 s : State} (h : SW s0 (xW s0) s) (hB : BalCv s0)
     (e : num s.mem (cvB s0) (cvW s0) aDR2 = cvD s0 % fP s0) :
@@ -347,7 +347,7 @@ theorem setQW_ok {s0 s : State} (h : SW s0 (xW s0) s) (hB : BalCv s0)
 theorem div3W_ok {s0 s : State} (h : SW s0 (xW s0) s) (hB : BalCv s0)
     (e2 : num s.mem (cvB s0) (cvW s0) aDR2 = cvD s0 % fP s0) (e : num s.mem (cvB s0) (cvW s0) aDD = fQ s0) :
     WP isa (VG.Impl.Rsa.Arm.KeyDiv.divW aD aDR3 aDD aDQ aDT aT1) s (MidW s0) :=
-  WP.mono (remW_ok h (r := aDR3) (by decide) e (Nat.lt_of_le_of_lt (by omega) hB.q_lt)) fun _ ⟨ht, et, k⟩ =>
+  WP.mono (remW_ok h (r := aDR3) (by decide) e (Nat.lt_of_le_of_lt (by omega_using []) hB.q_lt)) fun _ ⟨ht, et, k⟩ =>
     ⟨⟨ht.base, ht.mask⟩, by rw [k _ (by decide) (by decide), e2], et⟩
 
 /-- A balanced key's checks and values. -/

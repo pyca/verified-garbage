@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The divstep
@@ -73,12 +74,12 @@ theorem divsteps_add (n k : Nat) (t : Int × Int × Int) : divsteps (n + k) t = 
   | succ k ih => rw [← Nat.add_assoc, divsteps_succ, divsteps_succ, ih]
 
 theorem gcd_two {a : Int} (ha : a % 2 = 1) : Int.gcd a 2 = 1 := by
-  obtain ⟨k, rfl⟩ : ∃ k, a = 1 + k * 2 := ⟨a / 2, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, a = 1 + k * 2 := ⟨a / 2, by omega_using [ha]⟩
   rw [Int.gcd_add_mul_right_left]; decide
 
 /-- Halving with an odd other side keeps the gcd. -/
 theorem gcd_half {a b : Int} (ha : a % 2 = 1) (hb : b % 2 = 0) : Int.gcd a (b / 2) = Int.gcd a b := by
-  obtain ⟨c, rfl⟩ : ∃ c, b = c * 2 := ⟨b / 2, by omega⟩
+  obtain ⟨c, rfl⟩ : ∃ c, b = c * 2 := ⟨b / 2, by omega_using [hb]⟩
   rw [Int.mul_ediv_cancel _ (by decide), Int.gcd_mul_left_right_of_gcd_eq_one (gcd_two ha)]
 
 /-- A divstep keeps `gcd(f, g)` (with `f` odd). -/
@@ -88,10 +89,10 @@ theorem divstep_gcd {d f g : Int} (hf : f % 2 = 1) :
   simp only
   split
   · rename_i h
-    rw [gcd_half h.2 (by omega), Int.gcd_self_sub_right, Int.gcd_comm]
-  · rcases (by omega : g % 2 = 0 ∨ g % 2 = 1) with hg | hg
+    rw [gcd_half h.2 (by omega_using [hf, h]), Int.gcd_self_sub_right, Int.gcd_comm]
+  · rcases (by omega_using [] : g % 2 = 0 ∨ g % 2 = 1) with hg | hg
     · rw [hg, Int.zero_mul, Int.add_zero, gcd_half hf hg]
-    · rw [hg, Int.one_mul, gcd_half hf (by omega)]
+    · rw [hg, Int.one_mul, gcd_half hf (by omega_using [hf, hg])]
       have : g + f = g + 1 * f := by rw [Int.one_mul]
       rw [this, Int.gcd_add_mul_right_right]
 

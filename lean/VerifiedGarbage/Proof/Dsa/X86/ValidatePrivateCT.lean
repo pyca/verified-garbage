@@ -77,20 +77,20 @@ theorem privateValidatingInputs_shape (pLen qLen : Nat) :
 theorem privateValidatingInstalled_ready {s t : State} (A : PrivateValidatingABI s) (I : PrivateInstalled s t) :
     ShapeCallReady (privateValidatingLayout s A) (arg s 2).toNat t := by
   have L : 0 < (arg s 2).toNat ∧ 0 < (arg s 3).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Key, Bytes⟩ := I.installed.input (by decide : (0, .p) ∈ Generate.checkArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Qptr, Gptr, Yptr, Xptr⟩ := I.installed.pointers (by decide)
   obtain ⟨P, Q, G, Y, X, Value⟩ := privateKey_buffers Key L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr Yptr Xptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr Yptr Xptr
   have Value' : Spec.Dsa.publicKeyBytes (arg s 2).toNat (arg s 3).toNat
       (Spec.Rsa.bytesAt s.mem (argumentPointer s 0) (arg s 1).toNat) =
       ⟨⟨operandValue t (argumentPointer s 4) (.input .p) (arg s 2).toNat,
         operandValue t (argumentPointer s 4) (.input .q) (arg s 3).toNat,
         operandValue t (argumentPointer s 4) (.input .g) (arg s 2).toNat⟩,
         operandValue t (argumentPointer s 4) (.input .y) (arg s 2).toNat, none⟩ := by
-    obtain ⟨_, _, _, _, V⟩ := publicKey_buffers Key L.1 L.2 (by have := A.keyLength; omega) Bytes Qptr Gptr Yptr
+    obtain ⟨_, _, _, _, V⟩ := publicKey_buffers Key L.1 L.2 (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr Yptr
     rw [← V, ← Bytes]
   refine ⟨I.installed.keeps.1 .esp (by decide), I.installed.scr, ?_, ?_, ?_, ?_,
     congrArg BitVec.toNat (I.installed.arguments (2, .digestLen) (by decide))⟩

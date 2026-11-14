@@ -68,7 +68,7 @@ theorem Saved.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem}
     (h : Spill.Saved base g Cfg.saved m) {W : List (Nat × Nat)} (hW : ∀ w ∈ W, 64 ≤ w.1)
     (hu : Unch base W m m') : Spill.Saved base g Cfg.saved m' := fun p hp => by
   have := saved_lt p hp
-  exact (hu.word (d := p.2) (fun w hw => Or.inl (by have := hW w hw; omega)) (by omega)).trans (h p hp)
+  exact (hu.word (d := p.2) (fun w hw => Or.inl (by have := hW w hw; omega_arith)) (by omega_using [this])).trans (h p hp)
 
 /-- The result, the return value and the callee-saved registers. -/
 theorem finish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
@@ -106,41 +106,41 @@ theorem finish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
       Region.Disjoint ⟨base, size⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun hd' =>
     hd.symm.sub_right (Offset.sub_base out hd')
   rw [finish_eq, WP.block_append_iff]
-  refine WP.mono (ld_ok hs (d := c.sl FLAG) (by omega) (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+  refine WP.mono (ld_ok hs (d := c.sl FLAG) (by omega_using [hn0, hF]) (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.mem
   have hx20₁ : s₁.gpr .x20 = out := by rw [k₁.gpr _ (by decide), hx20]
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok hs₁ (dst := .x20) (d := 0) (a := c.sl RR) (by decide) (by decide) (by decide) b
-    (by rw [e₁, hf]) hRR (sl_mod8 c RR) (by omega) hlo hhi (by omega)
-    (by rw [hx20₁, BitVec.add_zero]; omega)
+    (by rw [e₁, hf]) hRR (sl_mod8 c RR) (by omega_using [hl8]) hlo hhi (by omega_using [h7, hhi])
+    (by rw [hx20₁, BitVec.add_zero]; omega_using [hfit])
     (fun e m he => ⟨_, by rw [k₁.wr]; exact hw, by
-      rw [hx20₁, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hx20₁]; exact hdsc hRR (by omega))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+      rw [hx20₁, h0]; exact Offset.contains_base out (by omega_using [he]) (by omega_using [hfit, he])⟩)
+    (by rw [hx20₁]; exact hdsc hRR (by omega_using []))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   rw [hx20₁] at e₂ O₂
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  have U₂ := O₂.unch_far (hscd (d := 0) (by omega))
+  have U₂ := O₂.unch_far (hscd (d := 0) (by omega_using []))
   have hx20₂ : s₂.gpr .x20 = out := by rw [k₂.gpr _ (by decide), hx20₁]
   have hx3₂ : s₂.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
     rw [k₂.gpr _ (by decide), e₁, hf]
   have ss₂ : wordsVal s₂.mem base (c.sl SS) c.n = sv c base s SS := by
-    rw [U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₁]
+    rw [U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [hSS]) (by omega_using [hn, hSS]), hm₁]
   rw [WP.block_append_iff]
   refine WP.mono (storeBytes_ok hs₂ (dst := .x20) (d := c.C.len) (a := c.sl SS) (by decide) (by decide)
-    (by decide) b hx3₂ hSS (sl_mod8 c SS) (by omega) hlo hhi (by omega)
-    (by rw [hx20₂, Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show c.C.len < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (by omega)]; omega)
+    (by decide) b hx3₂ hSS (sl_mod8 c SS) (by omega_using [hl8]) hlo hhi (by omega_using [h7, hhi])
+    (by rw [hx20₂, Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show c.C.len < 2 ^ 64 by omega_using [hfit]),
+      Nat.mod_eq_of_lt (by omega_using [hfit])]; omega_using [hfit])
     (fun e m he => ⟨_, by rw [k₂.wr, k₁.wr]; exact hw, by
-      rw [hx20₂, hL]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hx20₂]; exact hdsc hSS (by omega))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+      rw [hx20₂, hL]; exact Offset.contains_base out (by omega_using [he]) (by omega_using [h7, hhi, he])⟩)
+    (by rw [hx20₂]; exact hdsc hSS (by omega_using []))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   rw [hx20₂] at e₃ O₃
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have U₃ := O₃.unch_far (hscd (d := c.C.len) (by omega))
+  have U₃ := O₃.unch_far (hscd (d := c.C.len) (by omega_using []))
   have hx3₃ : s₃.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
     rw [k₃.gpr _ (by decide), hx3₂]
   have first : Spec.Ecdsa.bytesAt s₃.mem out c.C.len =
       if b then toBytes c.C.len (sv c base s RR) else List.replicate c.C.len 0 := by
-    rw [bytesAt_keep O₃ (Offset.base_disjoint out (Nat.le_refl _) (by omega)) (by omega) (by omega)]
+    rw [bytesAt_keep O₃ (Offset.base_disjoint out (Nat.le_refl _) (by omega_using [hfit])) (by omega_using [hfit]) (by omega_using [hfit])]
     have e₂' := e₂
     rw [(BitVec.add_zero out : out + BitVec.ofNat 64 0 = out)] at e₂'
     rw [e₂', hm₁]
@@ -150,10 +150,10 @@ theorem finish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     exact Saved.unch (Saved.unch (hm₁ ▸ hsv) h16 U₂) h16 U₃
   refine Spill.restore_ok hs₃.x0 (by decide) (by decide) (fun p hp => ?_) hsv₃ fun s₄ R₄ => ?_
   · have := saved_lt p hp
-    exact ⟨_, List.mem_append_right _ hs₃.wr, hs₃.contains (by have : size = 8192 := rfl; omega) (by decide)⟩
+    exact ⟨_, List.mem_append_right _ hs₃.wr, hs₃.contains (by have : size = 8192 := rfl; omega_arith) (by decide)⟩
   refine WP.mono (retBit_ok s₄) fun s₅ ⟨e₅, k₅⟩ => ?_
   refine ⟨?_, ?_, fun r hr => ?_, fun r hr => ?_⟩
-  · rw [k₅.mem, R₄.mem, show 2 * c.C.len = c.C.len + c.C.len by omega, bytesAt_add, first, e₃, ss₂]
+  · rw [k₅.mem, R₄.mem, show 2 * c.C.len = c.C.len + c.C.len by omega_using [], bytesAt_add, first, e₃, ss₂]
     cases b
     · simp only [Bool.false_eq_true, ite_false, List.replicate_append_replicate]
     · simp only [ite_true]

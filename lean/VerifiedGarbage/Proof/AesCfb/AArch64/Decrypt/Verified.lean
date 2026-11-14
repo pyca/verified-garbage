@@ -60,7 +60,7 @@ theorem written (s : State) (tr : List Leak) (t : State)
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   have hi' : i < 2176 := by simpa [Elem.size] using hi
   have hc : (scrR s).Contains (S s+BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi']) (by omega_using [hi'])
   rcases hr with rfl | rfl
   · exact fun hi => h.iv_scr _ hi hc
   · exact fun hi => h.data_scr _ hi hc

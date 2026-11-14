@@ -63,7 +63,7 @@ theorem rel_front {P Q : State → State → Prop} {e n h b t tail : Prog isa}
 /-- The entry's stack arguments are where the state may read them. -/
 theorem argsIn {s : State} (hA : Covers [⟨s.sp + BitVec.ofNat 64 96, 24⟩] (s.rd ++ s.wr)) {i : Nat} (hi : i < 3) :
     InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (96 + 8 * i)) 8 := by
-  have := in_off hA (d := 8 * i) (n := 8) (by omega) (by decide)
+  have := in_off hA (d := 8 * i) (n := 8) (by omega_using [hi]) (by decide)
   rwa [add_ofNat_assoc] at this
 
 /-- The entry of `seal` and `open`, in two runs with the same arguments. -/
@@ -169,7 +169,7 @@ theorem front_rel (enc : Bool) {d : Nat} (hd : d = tagO ∨ d = t2O) {k : Prog i
   have L₂' : Lay (τ₂.gpr .r29) (τ₂.gpr .r31) := hV.lay L
   have hn1 := A₁.n1
   have hn15 := A₁.n15
-  have ht : tl < 2 ^ 64 := by have := A₁.t16; omega
+  have ht : tl < 2 ^ 64 := by have := A₁.t16; omega_using [this]
   -- `nonce` and `HASH`
   refine RelCT.assoc (rel_seq (rel_seq (nonce_rel L hV A₁.rounds h28 E₁ E₂ (by rw [P₁.r24, P₂.r24, h5₁, h5₂])
       (by rw [P₁.r25, P₂.r25, h6₁, h6₂]))

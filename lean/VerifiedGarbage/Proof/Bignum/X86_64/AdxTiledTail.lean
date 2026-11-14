@@ -25,7 +25,7 @@ theorem suffix_value {m m' : Mem} {B : Addr} {e d n cin cout : Nat}
     (hv : wv m' B (e+8*d) n + (2 : Nat)^(64*n)*cout = wv m B (e+8*d) n+cin) :
     wv m' B e (d+n)+(2 : Nat)^(64*(d+n))*cout =
       wv m B e (d+n)+(2 : Nat)^(64*d)*cin := by
-  have lo := hf.wv (show e+8*d ≤ e+8*d ∨ e+8*d+8*n ≤ e by omega) (by omega)
+  have lo := hf.wv (show e+8*d ≤ e+8*d ∨ e+8*d+8*n ≤ e by omega_using []) (by omega_using [hZ])
   rw [wv_add,wv_add,lo,Nat.mul_add,Nat.pow_add]
   exact suffix_arith hv
 
@@ -39,30 +39,30 @@ theorem tail_ok {s : State} {B : Addr} {Z w i n : Nat} {mi : BitVec 64}
         wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*(i+w+8))*(word s.mem B carryOffset).toNat) ∧
       Outside B (rawBase w) (16*w) s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
-  have rawEnd : rawBase w+16*w=highPad w := by unfold rawBase highPad; omega
-  have padBound : highPad w+16 ≤ slot w 8 := by unfold highPad slot aAcc; omega
+  have rawEnd : rawBase w+16*w=highPad w := by unfold rawBase highPad; omega_using []
+  have padBound : highPad w+16 ≤ slot w 8 := by unfold highPad slot aAcc; omega_using []
   unfold AdxTiledProduct.tail
-  refine WP.seq (WP.mono (tailTest_ok hs hd hh hZ hw (by omega) hidx) fun a ⟨za,ma,ka⟩ => ?_)
+  refine WP.seq (WP.mono (tailTest_ok hs hd hh hZ hw (by omega_using [hn]) hidx) fun a ⟨za,ma,ka⟩ => ?_)
   by_cases he : i+8=w
   · refine WP.ite true (by simp [eval,za,he]) (fun _ => WP.block_nil ?_) (by simp)
     refine ⟨⟨(word s.mem B carryOffset).toNat,?_⟩,?_,ka.mono (by decide)⟩
-    · rw [ma,show 64*(i+w+8)=128*w by omega]
+    · rw [ma,show 64*(i+w+8)=128*w by omega_using [he]]
     · rw [ma]; exact Outside.refl _ _ _ _
   · refine WP.ite false (by simp [eval,za,he]) (by simp) (fun _ => ?_)
     refine WP.seq (WP.mono (tailSetup_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hd)
       (ma ▸ hh) hZ ((ka.gpr (by decide)).trans hp)) fun b ⟨cb,pb,eb,zb,mb,kb⟩ => ?_)
-    have hend : rawBase w+8*(i+w+8)+64*n=highPad w := by rw [← rawEnd]; omega
+    have hend : rawBase w+8*(i+w+8)+64*n=highPad w := by rw [← rawEnd]; omega_using [hn]
     refine WP.mono (AdxCarry8.propagate_ok (hs.congr (ka.trans kb).2.2) pb
-      (by rw [hend]; exact eb) zb (by rw [hend]; omega) (by rw [hend]; omega) (by omega : 0<n))
+      (by rw [hend]; exact eb) zb (by rw [hend]; omega_using [hZ, padBound]) (by rw [hend]; omega_using [hZ, nowrap, padBound]) (by omega_using [hn, he] : 0<n))
       fun t ⟨_,ht⟩ => ?_
     have val := ht.val
-    rw [cb,ma,show 512*n=64*(8*n) by omega] at val
+    rw [cb,ma,show 512*n=64*(8*n) by omega_using []] at val
     have lifted := suffix_value (e := rawBase w) (d := i+w+8) (n := 8*n)
-      (by omega : rawBase w+8*(i+w+8+8*n) ≤ (2 : Nat)^64)
-      (by rw [show 8*(8*n)=64*n by omega]; exact ht.frame) val
-    rw [mb,ma,show i+w+8+8*n=2*w by omega,show 64*(2*w)=128*w by omega] at lifted
+      (by omega_using [hZ, hn, nowrap, rawEnd, padBound] : rawBase w+8*(i+w+8+8*n) ≤ (2 : Nat)^64)
+      (by rw [show 8*(8*n)=64*n by omega_using []]; exact ht.frame) val
+    rw [mb,ma,show i+w+8+8*n=2*w by omega_using [hn],show 64*(2*w)=128*w by omega_using []] at lifted
     refine ⟨⟨(t.gpr .rbp).toNat,lifted⟩,?_,((ka.trans kb).trans ht.keep).mono (by decide)⟩
-    have frame := ht.frame.mono (o' := rawBase w) (n' := 16*w) (by omega) (by omega)
+    have frame := ht.frame.mono (o' := rawBase w) (n' := 16*w) (by omega_using []) (by omega_using [hn])
     rw [mb,ma] at frame
     exact frame
 

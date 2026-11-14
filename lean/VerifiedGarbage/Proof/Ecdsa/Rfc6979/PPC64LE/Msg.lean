@@ -37,9 +37,9 @@ theorem msgPtrs_ok (hL : L.Ok) {t : State} (hc : Ctx L g lr m₀ t) :
   refine WP.of_syms (stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_)
   have hb : t₁.gpr .r11 = L.B + BitVec.ofNat 64 96 := by rw [v₁, hc.sp, BitVec.add_zero]
   refine stepLd (a := L.B + BitVec.ofNat 64 272) (by decide) (by decide) (by rw [hb, fr_add]; rfl)
-    (hc.inFrK k₁ (by omega) (by omega)) fun t₂ k₂ m₂ v₂ => ?_
+    (hc.inFrK k₁ (by omega_using []) (by omega_using [])) fun t₂ k₂ m₂ v₂ => ?_
   refine stepLd (a := L.B + BitVec.ofNat 64 288) (by decide) (by decide)
-    (by rw [k₂.gpr _ (by decide), hb, fr_add]; rfl) (hc.inFrK (k₁.mono.trans k₂.mono (rs := [.r11, .r9])) (by omega) (by omega))
+    (by rw [k₂.gpr _ (by decide), hb, fr_add]; rfl) (hc.inFrK (k₁.mono.trans k₂.mono (rs := [.r11, .r9])) (by omega_using []) (by omega_using []))
     fun t₃ k₃ m₃ v₃ => wp_nil fun hsy => ?_
   have K : Kp [.r9, .r10, .r11] t t₃ := (k₁.mono.trans k₂.mono).trans k₃.mono
   have hm : t₃.mem = t.mem := by rw [m₃, m₂, m₁]
@@ -90,7 +90,7 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
   -- The byte.
   refine stepLi hb fun t₃ k₃ m₃ v₃ => ?_
   refine stepStb (a := L.scr + BitVec.ofNat 64 2256) (by decide) (by decide)
-    (by rw [k₃.gpr _ (by decide), h9]; rfl) (by rw [k₃.wr]; exact hc.inScrW (by omega))
+    (by rw [k₃.gpr _ (by decide), h9]; rfl) (by rw [k₃.wr]; exact hc.inScrW (by omega_using []))
     fun t₄ k₄ g₄ m₄ => ?_
   have hb₄ : Spec.Sha256.bytesAt t₄.mem (L.scr + BitVec.ofNat 64 2256) 1 = [BitVec.ofNat 8 b] := by
     rw [m₄, bytesAt_byte, v₃]
@@ -106,11 +106,11 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
       Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 o) n = Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 o) n :=
     fun f h h₁ h₂ => bytesAt_frame f (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ h (by omega) (by omega)) (by omega)
+      exact Offset.disjoint _ h (by omega_using [h₂]) (by omega_using [h₁])) (by omega_using [h₂])
   have keepS : ∀ {u u' : State} {p : Addr} {n o' n' : Nat}, Frame [⟨L.scr + BitVec.ofNat 64 o', n'⟩] u.mem u'.mem →
       Region.Disjoint ⟨p, n⟩ ⟨L.scr + BitVec.ofNat 64 o', n'⟩ → n ≤ 8192 →
       Spec.Sha256.bytesAt u'.mem p n = Spec.Sha256.bytesAt u.mem p n :=
-    fun f h hn => bytesAt_frame f (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h) (by omega)
+    fun f h hn => bytesAt_frame f (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h) (by omega_using [hn])
   have sub : ∀ {o n : Nat}, 2256 ≤ o → o + n ≤ 2256 + (1 + 2 * P.Q) →
       ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 o, n⟩ : Region)],
         ∃ r' ∈ [(⟨L.scr + BitVec.ofNat 64 2256, 1 + 2 * P.Q⟩ : Region)], Region.Sub r r' :=
@@ -122,8 +122,8 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
   cases full
   · simp only [Bool.false_eq_true, ite_false]
     refine wp_nil fun hsy => ⟨hc.keep hL K₄.rd K₄.wr K₄.sp (fun r hr => K₄.gpr r (by
-        intro h; simp at h; subst h; simp [preserved] at hr)) (f₄.sub (sub (by omega) (by omega))) safeM hsy,
-      f₄.sub (sub (by omega) (by omega)), hb₄, keep f₄ (by omega) (by omega) (by nums)⟩
+        intro h; simp at h; subst h; simp [preserved] at hr)) (f₄.sub (sub (by omega_using []) (by omega_using []))) safeM hsy,
+      f₄.sub (sub (by omega_using []) (by omega_using [])), hb₄, keep f₄ (by omega_using []) (by omega_using []) (by nums)⟩
   · simp only [ite_true]
     rw [WP.block_append_iff]
     -- `d`.
@@ -131,40 +131,40 @@ theorem msg_ok (hL : L.Ok) (hq : L.q = P.Q) {t : State} (hc : Ctx L g lr m₀ t)
       (by decide) (by decide) (by decide) (by decide)
       (by
         rw [BitVec.add_zero]
-        exact (hL.dc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by simp only [sMsg]; nums)))
+        exact (hL.dc.sub_left (Region.sub_prefix (by omega_using [hq]))).sub_right (Offset.sub_base _ (by simp only [sMsg]; nums)))
       (by nums) (by simp only [sMsg]; nums) t₄
       (by rw [K₄.gpr _ (by decide), h10]) (by rw [K₄.gpr _ (by decide), h9])
-      (fun j k hjk => by rw [K₄.rd, K₄.wr, Nat.zero_add]; exact hc.inD (by omega) (by nums))
+      (fun j k hjk => by rw [K₄.rd, K₄.wr, Nat.zero_add]; exact hc.inD (by omega_using [hq, hjk]) (by nums))
       (fun j k hjk => by rw [K₄.wr]; exact hc.inScrW (by simp only [sMsg]; nums)))
       fun t₅ ⟨k₅, f₅, v₅⟩ => ?_
     -- `h`.
     refine WP.mono (copyN_ok (S := L.B + BitVec.ofNat 64 96) (D := L.scr) (so := (cfgOf P).fHo)
       (d := sMsg + 1 + P.Q) (n := P.Q) (by decide) (by decide) (by decide) (by decide)
-      (by rw [fr_add]; exact hL.stk_scr (by omega) (by simp only [sMsg]; nums)) (by omega)
+      (by rw [fr_add]; exact hL.stk_scr (by omega_using [hho]) (by simp only [sMsg]; nums)) (by omega_using [hho])
       (by simp only [sMsg]; nums) t₅
       (by rw [k₅.gpr _ (by decide), K₄.gpr _ (by decide), h11])
       (by rw [k₅.gpr _ (by decide), K₄.gpr _ (by decide), h9])
-      (fun j k hjk => by rw [k₅.rd, k₅.wr, K₄.rd, K₄.wr, fr_add]; exact hc.inFr (by omega) (by omega))
+      (fun j k hjk => by rw [k₅.rd, k₅.wr, K₄.rd, K₄.wr, fr_add]; exact hc.inFr (by omega_using [hho]) (by omega_using [hho, hjk]))
       (fun j k hjk => by rw [k₅.wr, K₄.wr]; exact hc.inScrW (by simp only [sMsg]; nums)))
       fun t₆ ⟨k₆, f₆, v₆⟩ hsy => ?_
     simp only [sMsg] at f₅ v₅ f₆ v₆
     have F : Frame [⟨L.scr + BitVec.ofNat 64 2256, 1 + 2 * P.Q⟩] t.mem t₆.mem :=
-      ((f₄.sub (sub (by omega) (by omega))).trans (f₅.sub (sub (by omega) (by omega)))).trans
-        (f₆.sub (sub (by omega) (by omega)))
+      ((f₄.sub (sub (by omega_using []) (by omega_using []))).trans (f₅.sub (sub (by omega_using []) (by omega_using [])))).trans
+        (f₆.sub (sub (by omega_using []) (by omega_using [])))
     have K : Kp [.r8] t t₆ := (K₄.trans k₅).trans k₆
     refine ⟨hc.keep hL K.rd K.wr K.sp (fun r hr => K.gpr r (by
         intro h; simp at h; subst h; simp [preserved] at hr)) F safeM hsy, F, ?_, ?_⟩
-    · rw [keep (o := 2256) (n := 1) f₆ (by omega) (by nums) (by omega),
-        keep (o := 2256) (n := 1) f₅ (by omega) (by nums) (by omega), hb₄]
+    · rw [keep (o := 2256) (n := 1) f₆ (by omega_using []) (by nums) (by omega_using []),
+        keep (o := 2256) (n := 1) f₅ (by omega_using []) (by nums) (by omega_using []), hb₄]
     -- `d` and `h`, as on entry.
     have hd₄ : Spec.Sha256.bytesAt t₄.mem L.d P.Q = Spec.Sha256.bytesAt t.mem L.d P.Q :=
-      keepS f₄ ((hL.dc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by omega)))
-        (by omega)
+      keepS f₄ ((hL.dc.sub_left (Region.sub_prefix (by omega_using [hq]))).sub_right (Offset.sub_base _ (by omega_using [])))
+        (by omega_using [hQ])
     have hh₅ : Spec.Sha256.bytesAt t₅.mem (L.B + BitVec.ofNat 64 (96 + (cfgOf P).fHo)) P.Q = hOf P L t.mem := by
-      rw [keepS f₅ (hL.stk_scr (by omega) (by nums)) (by omega), keepS f₄ (hL.stk_scr (by omega) (by omega))
-        (by omega)]
+      rw [keepS f₅ (hL.stk_scr (by omega_using [hho]) (by nums)) (by omega_using [hQ]), keepS f₄ (hL.stk_scr (by omega_using [hho]) (by omega_using []))
+        (by omega_using [hQ])]
     show Spec.Sha256.bytesAt t₆.mem (L.scr + BitVec.ofNat 64 (2256 + 1)) (2 * P.Q) = _
-    rw [show 2 * P.Q = P.Q + P.Q by omega, bytesAt_add, Offset.add_add,
-      keep (o := 2256 + 1) (n := P.Q) f₆ (by omega) (by nums) (by nums), v₅, BitVec.add_zero, hd₄, v₆, fr_add, hh₅]
+    rw [show 2 * P.Q = P.Q + P.Q by omega_using [], bytesAt_add, Offset.add_add,
+      keep (o := 2256 + 1) (n := P.Q) f₆ (by omega_using []) (by nums) (by nums), v₅, BitVec.add_zero, hd₄, v₆, fr_add, hh₅]
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

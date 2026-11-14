@@ -299,8 +299,8 @@ theorem loadInput_ok {b : Addr} {s : State} (hc : Ctx b s) {o : Nat} (ho : o + 3
     WP isa (.block (unpackField p o 0)) s fun t =>
       Rest [.a4, .a5] s t ∧ Frame [⟨b + BitVec.ofNat 64 o, 32⟩] s.mem t.mem ∧
       V t.mem b o = decodeLE (bytesAt s.mem q 32) := by
-  refine WP.mono (unpackField_ok hc hp hq (src := 0) (by omega) ho4 (by decide)
-    (fun k hk => in_base hr (by omega) (by omega)) (by rw [BitVec.add_zero]; exact hd))
+  refine WP.mono (unpackField_ok hc hp hq (src := 0) (by omega_using [ho]) ho4 (by decide)
+    (fun k hk => in_base hr (by omega_using [hk]) (by omega_using [hk])) (by rw [BitVec.add_zero]; exact hd))
     fun t ⟨rt, ft, lt⟩ => ⟨rt, ft, (bytes_of_words fun j hj => by rw [lt j hj, Nat.zero_add]).symm⟩
 
 /-- After the arguments of `scalar_mul_add`, from `s`. -/
@@ -336,7 +336,7 @@ theorem mulAddArgs_ok {s : State} (hp : MulAddPre s) : WP isa (.block scalarMulA
     · exact hp.s_ws
   have hlow : ∀ o, o + 32 ≤ 1024 → ∀ r : Reg, r = .a1 ∨ r = .a2 ∨ r = .a3 →
       (⟨s.gpr r, 32⟩ : Region).Disjoint ⟨B + BitVec.ofNat 64 o, 32⟩ := fun o ho r hr =>
-    (hdws r hr).sub_right (base_sub _ (by omega))
+    (hdws r hr).sub_right (base_sub _ (by omega_using [ho]))
   refine WP.append (loadInput_ok hc3 (o := 64) (by decide) (by decide) (p := .a1) (by decide)
     (g3 _ (.inl rfl)) (by rw [hr03.rd, hr03.wr]; exact hrin _ (.inl rfl)) (hlow 64 (by decide) _ (.inl rfl)))
     fun s5 ⟨rr5, f5, v5⟩ => ?_
@@ -361,7 +361,7 @@ theorem mulAddArgs_ok {s : State} (hp : MulAddPre s) : WP isa (.block scalarMulA
   have disj : ∀ o o', o + 32 ≤ o' ∨ o' + 32 ≤ o → o + 32 ≤ 2048 → o' + 32 ≤ 2048 →
       ∀ r ∈ ([⟨B + BitVec.ofNat 64 o', 32⟩] : List Region), ∀ k < 8,
         (⟨B + BitVec.ofNat 64 (o + 4 * k), 4⟩ : Region).Disjoint r := fun o o' h h1 h2 r hr k hk => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_using [h, hk]) (by omega_using [h1, hk]) (by omega_using [h2])
   refine ⟨hc6.of_rest rr7 (by decide), (hr03.mono (by decide)).trans ((rr5.trans (rr6.trans rr7)).mono (by decide)),
     ?_, ?_, ?_⟩
   · rw [V, val32_congr (limb_frame f7 (disj 64 128 (by decide) (by decide) (by decide))),

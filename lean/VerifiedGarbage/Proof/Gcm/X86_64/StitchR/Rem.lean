@@ -340,19 +340,19 @@ theorem remD_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat �
     { inS := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
         rw [hrd₃, hwr₃, Offset.add_add, ← Nat.mul_add]
-        exact in_rdwr (in_sub hp.d_in (by omega))
+        exact in_rdwr (in_sub hp.d_in (by omega_using [hr_def, hj]))
       inK := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (pp s₀ - BitVec.ofNat 64 512 + BitVec.ofNat 64 (768 + 16 * j)) 32
         rw [hrd₃, hwr₃, eK]
-        exact in_rdwr (in_sub hp.p_in (by omega))
+        exact in_rdwr (in_sub hp.p_in (by omega_using [hr15, hj]))
       inD := fun j (hj : j + 2 ≤ r) => by
         show InRegions s₃.wr (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
         rw [hwr₃, Offset.add_add, ← Nat.mul_add]
-        exact in_sub hp.d_in (by omega)
+        exact in_sub hp.d_in (by omega_using [hr_def, hj])
       inW := fun j (hj : j + 2 ≤ r) => by
         show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j)) 32
         rw [hrd₃, hwr₃, Offset.add_add]
-        exact in_rdwr (in_sub hp.p_in (by omega)) }
+        exact in_rdwr (in_sub hp.p_in (by omega_using [hr15, hj])) }
   have z1 : ∀ x, s₃.zlane x 1 = 0 → s₃.lane x 1 = 0 := fun x h => by rw [← State.zlane_lt2 _ _ (by decide)]; exact h
   -- The first block alone if `r` is odd, then the pairs and their lanes added.
   refine remMid_ok hE hE2 rfl hI₃ (z1 _ (p₃ 1 (by decide)).1) (z1 _ (p₃ 1 (by decide)).2.1)

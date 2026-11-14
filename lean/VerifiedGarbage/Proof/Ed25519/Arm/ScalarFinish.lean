@@ -30,8 +30,8 @@ theorem scalarFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
   refine ldr0_ok hc (by decide) fun u hu => ?_
   have hcu := hc.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide)
   refine WP.append (packField_ok (p := p) (a := SR) (dst := 0) hcu (by decide) (hu.mem ▸ hl) (by decide)
-    (hu.gpr.trans hp) (by omega)
-    (fun i hi => by rw [hu.wr]; simpa only [Nat.zero_add] using in_base hw (by omega) (by omega))
+    (hu.gpr.trans hp) (by omega_using [hfit])
+    (fun i hi => by rw [hu.wr]; simpa only [Nat.zero_add] using in_base hw (by omega_using [hi]) (by omega_using [hi]))
     (by simpa only [BitVec.add_zero] using
       hsep.symm.sub_left (Offset.sub_base _ (by decide : SR + 64 ≤ 8192))))
     fun v ⟨kv, fv, vv⟩ => ?_
@@ -39,7 +39,7 @@ theorem scalarFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
   have hs' : ScalarSaved (State.addr b) g v.mem :=
     (hu.mem ▸ hs).frame fv fun r hr i hi => by
       rw [List.mem_singleton.mp hr, BitVec.add_zero]
-      exact hsep.symm.sub_left (Offset.sub_base _ (by omega))
+      exact hsep.symm.sub_left (Offset.sub_base _ (by omega_using [hi]))
   refine WP.mono (scalarRestore_ok hcv hs') fun t ⟨saved, kt, mt⟩ => ?_
   refine ⟨saved, (hu.rest (by decide)).trans ((kv.mono (by decide)).trans (kt.mono (by decide))), ?_, ?_⟩
   · rw [mt, ← hu.mem]; simpa only [BitVec.add_zero] using fv

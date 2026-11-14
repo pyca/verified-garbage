@@ -59,7 +59,7 @@ theorem block_step (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : P
   have ek : (⟨kA s₀ 1, (Kem16.kgSrc P).len⟩ : Region) = R (kA s₀) 1 0 (kL P 1) := ekR s₀
   have fS : 0 + 200 ≤ kL P 3 := by
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
-  have fE : 0 + kL P 1 ≤ kL P 1 := by omega
+  have fE : 0 + kL P 1 ≤ kL P 1 := by omega_using []
   refine WP.seq (WP.mono (Hybrid.absorbBlock_ok (Kem16.kgSrc P) (srcOkK hw)
     (by show s.gpr .x26 + BitVec.ofNat 64 0 = kA s₀ 1; rw [kb.x26, ptr_zero]) kb.x28 hb H.ek H.hash
     (by rw [ek]; exact cov_r hp kb (b := 1) (o := 0) (l := kL P 1) (by decide) fE)
@@ -108,13 +108,13 @@ theorem blocks_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ : State} (hp : Pre 
     have hf := hw.facts
     have hb : 136 * b < P.ekLen := by
       simp only [Hybrid.blocks, Kem16.kgSrc, KemLay.ekLen] at hd ⊢
-      have := Nat.lt_succ_iff.mp (show b < (384 * P.k + 32) / 136 + 1 by omega)
+      have := Nat.lt_succ_iff.mp (show b < (384 * P.k + 32) / 136 + 1 by omega_using [hd])
       have := (Nat.le_div_iff_mul_le (by decide)).1 this
-      omega
+      omega_using [hd, hf]
     rw [List.range'_succ, List.map_cons]
     refine WPs.cons (WP.mono (block_step v hp hb H) fun t ht => ?_)
-    have r := blocks_ok v hp d (b + 1) (by omega) ht
-    rwa [show b + 1 + d = b + (d + 1) by omega] at r
+    have r := blocks_ok v hp d (b + 1) (by omega_using [hd]) ht
+    rwa [show b + 1 + d = b + (d + 1) by omega_using []] at r
 
 /-- `H(ek)` and `z` into `dk`, and the epilogue. -/
 theorem final_ok {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {vv : BitVec 64}
@@ -130,7 +130,7 @@ theorem final_ok {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {vv : BitVec 64}
     apply Hybrid.hstate_done
     rw [← HT.ek, VG.Proof.MlKem.bytesAt_length]
     simp only [Hybrid.blocks, Kem16.kgSrc]
-    omega
+    omega_using []
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (copy_ok (S := kA s₀ 3) (D := kA s₀ 2) (so := KG.ST) (dO := 768 * P.k + 32) (by decide) (by decide)
     (by decide) (by lom) (hp.args.rdisj (by decide) (by decide) (by kl) (by kl) (by kl))
@@ -167,7 +167,7 @@ theorem final_ok {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {vv : BitVec 64}
       ekK P s₀ mB ++ H (ekK P s₀ mB) ++ zB s₀ :=
     dk_at (cat_at (T := KPke.kgS P.params (dB s₀)) fun j hj => h₃.tl.dk j hj)
       (ek_at (T := tVW P s₀ mB) (ρ := rhoK P s₀) (fun i hi => by rw [ptr_add]; exact (h₃.tl.ek i hi).2)
-        (by rw [ptr_add, show 384 * P.k + 384 * P.k = 768 * P.k by omega]; exact h₃.rdk)) hh₃ z₃
+        (by rw [ptr_add, show 384 * P.k + 384 * P.k = 768 * P.k by omega_using []]; exact h₃.rdk)) hh₃ z₃
   refine WP.mono (restore_ok hp kb₃) fun s' ⟨abi, x0, hm⟩ => ⟨abi, by rw [x0, h₃.tl.c.x24], ?_, ?_⟩
   · rw [hm]; exact ek₃
   · rw [hm]; exact dk₃
@@ -181,7 +181,7 @@ theorem tail_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : Pre 
   have kb := H.b.kb
   have hh := H.hr
   have hle : 136 * Kem16.hashedBy P (P.k * P.k / 2) ≤ P.ekLen := by
-    simp only [KemLay.ekLen]; omega
+    simp only [KemLay.ekLen]; omega_using [hh]
   have tl : TLW P s₀ s.mem (s.gpr .x24) (P.k * P.k) P.k s :=
     ⟨⟨kb, H.b.rho, H.b.sig, rfl, Nat.le_refl _, fun e he => ⟨H.b.red e he, rfl⟩⟩, H.sp, H.dk, H.rows⟩
   unfold Kem16.kgTail
@@ -200,20 +200,20 @@ theorem tail_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : Pre 
       · exact (st_far hp (by decide) (by kl) (.inl (by decide))).symm), H.hash, ← ek₁]
     refine hstate_prefix hle ?_
     have e1 : kA s₀ 1 = kA s₀ 1 + BitVec.ofNat 64 0 := (ptr_zero _).symm
-    rw [e1, bytesAt_frame f₁ (fun q hq => ?_) (by have := kL_le hw 1; simp only [kL] at this; omega)]
+    rw [e1, bytesAt_frame f₁ (fun q hq => ?_) (by have := kL_le hw 1; simp only [kL] at this; omega_using [hf, hh])]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl
     · exact hp.args.rdisj (b₁ := 1) (o₁ := 0) (l₁ := 136 * Kem16.hashedBy P (P.k * P.k / 2)) (by decide) (by decide)
-        (by simp only [kL]; omega) (by kl) (.inr (.inl (by omega)))
-    · exact hp.args.rdisj (b₁ := 1) (o₁ := 0) (by decide) (by decide) (by simp only [kL]; omega) (by kl)
+        (by simp only [kL]; omega_using [hle]) (by kl) (.inr (.inl (by omega_using [hh])))
+    · exact hp.args.rdisj (b₁ := 1) (o₁ := 0) (by decide) (by decide) (by simp only [kL]; omega_using [hle]) (by kl)
         (.inl (by decide))
   have hb : Kem16.hashedBy P (P.k * P.k / 2) ≤ Hybrid.blocks (Kem16.kgSrc P) := by
     simp only [Hybrid.blocks, Kem16.kgSrc]
     have := (Nat.le_div_iff_mul_le (k := 136) (by decide)).2
-      (show Kem16.hashedBy P (P.k * P.k / 2) * 136 ≤ P.ekLen by omega)
-    omega
+      (show Kem16.hashedBy P (P.k * P.k / 2) * 136 ≤ P.ekLen by omega_using [hle])
+    omega_using [hle]
   have r := blocks_ok v hp (Hybrid.blocks (Kem16.kgSrc P) - Kem16.hashedBy P (P.k * P.k / 2))
-    (Kem16.hashedBy P (P.k * P.k / 2)) (by omega) (s := s₁) ⟨kb₁, e₁, hs₁⟩
+    (Kem16.hashedBy P (P.k * P.k / 2)) (by omega_using [hb]) (s := s₁) ⟨kb₁, e₁, hs₁⟩
   rw [Nat.add_sub_cancel' hb] at r
   exact WPs.mono r fun u hu => WPs.single (final_ok hp hu)
 

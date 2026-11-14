@@ -33,7 +33,7 @@ theorem nextCarry_ok {s : State} {B : Addr} {Z e k : Nat}
       (∃ v : Word, t.mem = s.mem.writeW (off B (e+8*(k+8))) v ∧
         v.toNat + 2 ^ 64 * t.c.toNat = (word s.mem B (e+8*(k+8))).toNat + s.c.toNat) ∧
           Keep [.x13] s t := by
-  have enc : (8*(k+8)) % 8 = 0 ∧ 8*(k+8) < 32768 := by omega
+  have enc : (8*(k+8)) % 8 = 0 ∧ 8*(k+8) < 32768 := by omega_using [hk']
   unfold VG.Impl.Bignum.AArch64.SquareEightRaw.carryWord
   rw [show (k == 0) = false by simp [Nat.ne_of_gt hk]]
   simp only [Bool.false_eq_true, ite_false]

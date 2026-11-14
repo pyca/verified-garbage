@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A concrete prepared four-limb candidate meets the i686 round contract -/
 
@@ -44,7 +45,7 @@ theorem sat_layout : Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.comp
   refine ⟨Or.inr rfl, ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   case refine_4 =>
     intro j hj
-    have cases : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
+    have cases : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega_using [hj]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
   all_goals first
     | decide +kernel

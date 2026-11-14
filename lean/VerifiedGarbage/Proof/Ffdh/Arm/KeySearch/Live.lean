@@ -68,7 +68,7 @@ theorem KeyLive.keys_guard {p : KeyPublic sampling} {original s : State} {used k
     (h : KeyLive p original used keys scalars s) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 0, .cmp .r9 (.imm 0)]) s fun t =>
       KeyLive p original used keys scalars t ∧ t.z = decide (keys = 0) := by
-  refine WP.mono_syms (budgetGuard_ok s (n := keys) h.controller (by decide) (by have := h.keys_le; omega)
+  refine WP.mono_syms (budgetGuard_ok s (n := keys) h.controller (by decide) (by have := h.keys_le; omega_using [this])
     (h.header (by simp [KeyPublic.headers]))) ?_
   rintro t ⟨⟨flag, mem⟩, rest⟩ syms
   exact ⟨h.keep rest mem syms, flag⟩
@@ -77,7 +77,7 @@ theorem KeyLive.scalars_guard {p : KeyPublic sampling} {original s : State} {use
     (h : KeyLive p original used keys scalars s) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 1, .cmp .r9 (.imm 0)]) s fun t =>
       KeyLive p original used keys scalars t ∧ t.z = decide (scalars = 0) := by
-  refine WP.mono_syms (budgetGuard_ok s (n := scalars) h.controller (by decide) (by have := h.scalars_le; omega)
+  refine WP.mono_syms (budgetGuard_ok s (n := scalars) h.controller (by decide) (by have := h.scalars_le; omega_using [this])
     (h.header (by simp [KeyPublic.headers]))) ?_
   rintro t ⟨⟨flag, mem⟩, rest⟩ syms
   exact ⟨h.keep rest mem syms, flag⟩
@@ -86,8 +86,8 @@ theorem KeyLive.room_guard {p : KeyPublic sampling} {original s : State} {used k
     (h : KeyLive p original used keys scalars s) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.room) s fun t =>
       KeyLive p original used keys scalars t ∧ t.z = decide (p.randLen - used < p.len) := by
-  refine WP.mono_syms (roomGuard_ok s (remaining := p.randLen - used) (width := p.len) h.controller (by have := h.input.bounds.randomFits; omega)
-    (by have := h.input.bounds.maxLength; omega) (h.header (by simp [KeyPublic.headers]))
+  refine WP.mono_syms (roomGuard_ok s (remaining := p.randLen - used) (width := p.len) h.controller (by have := h.input.bounds.randomFits; omega_using [this])
+    (by have := h.input.bounds.maxLength; omega_using [this]) (h.header (by simp [KeyPublic.headers]))
     (h.header (by simp [KeyPublic.headers]))) ?_
   rintro t ⟨⟨flag, mem⟩, rest⟩ syms
   exact ⟨h.keep rest mem syms, flag⟩

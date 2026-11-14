@@ -154,7 +154,7 @@ theorem combPts_ok (hC : Law Spec.P256.curve) {s₀ : State} {T : Addr}
       (∀ w ∈ W, w.1 + w.2 ≤ 4352 ∨ 4608 ≤ w.1) → ∀ t < 64 * p256.n,
       m' (off (s₀.gpr .r6) (bitsAt p256.n 1 + t)) = m (off (s₀.gpr .r6) (bitsAt p256.n 1 + t)) :=
     fun {_ _ _} U hW t ht => tbl_unch U (by decide) (j := 1) (by decide) ht (fun w hw => by
-      have := hW w hw; have : t < 256 := ht; show 4352 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ 4352 + t; omega)
+      have := hW w hw; have : t < 256 := ht; show 4352 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ 4352 + t; omega_arith)
   have fl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
       (∀ w ∈ W, p256.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ p256.sl FLAG) →
       word m' (s₀.gpr .r6) (p256.sl FLAG) = word m (s₀.gpr .r6) (p256.sl FLAG) :=

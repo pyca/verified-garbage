@@ -75,11 +75,11 @@ theorem choose_ct (backend : MontBackend) (base source table sp : BitVec 32)
       VG.Impl.Bignum.Arm.CombExp.choose (fun _ _ => True) := by
   unfold VG.Impl.Bignum.Arm.CombExp.choose
   apply RelCT.assoc
-  refine relCT_chain (gather_ct (by omega))
+  refine relCT_chain (gather_ct (by omega_using [scheduleFit, hi]))
     (fun s h => gathered_ok backend base source table sp len w bytes N M g E1 i bs1 length1
-      widthBound size (by omega) widthFit scalarFit1 (by omega) s h)
+      widthBound size (by omega_using [scheduleFit, hi]) widthFit scalarFit1 (by omega_using [scheduleFit, hi]) s h)
     (fun s h => gathered_ok backend base source table sp len w bytes N M g E2 i bs2 length2
-      widthBound size (by omega) widthFit scalarFit2 (by omega) s h) ?_
+      widthBound size (by omega_using [scheduleFit, hi]) widthFit scalarFit2 (by omega_using [scheduleFit, hi]) s h) ?_
   exact relCT_chain
     (save_ct.mono (fun _ _ h => h.1.power.ready.ptr.trans h.2.1.power.ready.ptr.symm) (fun _ _ h => h))
     (fun s h => savedScan_ok backend base source table sp len w bytes N M g E1 i _ bs1 s h)

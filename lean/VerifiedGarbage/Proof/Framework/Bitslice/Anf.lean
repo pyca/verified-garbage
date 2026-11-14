@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The ANF domain: XORs of ANDs of XORs of rotated words
@@ -202,7 +203,7 @@ theorem rotateRight_rotateRight (x : W) (a n : Nat) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_rotateRight_lt _ _ _ hi, getLsbD_rotateRight_lt _ _ _ (Nat.mod_lt _ (by decide : 0 < 64))]
   congr 1
-  omega
+  omega_using []
 
 theorem lin_keyIns (k : Nat) (l : List Nat) : lin V (keyIns k l) = key V k ^^^ lin V l := by
   induction l with
@@ -225,8 +226,8 @@ theorem lin_linXor (a b : List Nat) : lin V (linXor a b) = lin V a ^^^ lin V b :
     simp only [lin, List.foldr_cons, BitVec.xor_assoc]
 
 theorem key_ror (k n : Nat) : key V (k / 64 * 64 + (k % 64 + n) % 64) = (key V k).rotateRight n := by
-  have h1 : (k / 64 * 64 + (k % 64 + n) % 64) / 64 = k / 64 := by omega
-  have h2 : (k / 64 * 64 + (k % 64 + n) % 64) % 64 = (k % 64 + n) % 64 := by omega
+  have h1 : (k / 64 * 64 + (k % 64 + n) % 64) / 64 = k / 64 := by omega_using []
+  have h2 : (k / 64 * 64 + (k % 64 + n) % 64) % 64 = (k % 64 + n) % 64 := by omega_using []
   simp only [key, h1, h2, rotateRight_rotateRight]
 
 theorem lin_linRor (n : Nat) (l : List Nat) : lin V (linRor n l) = (lin V l).rotateRight n := by
@@ -246,7 +247,7 @@ theorem linCmp_eq : ∀ {a b : List Nat}, linCmp a b = .eq → a = b
     · cases h
     · split at h
       · cases h
-      · rw [show x = y by omega, linCmp_eq h]
+      · rw [show x = y by omega_arith, linCmp_eq h]
 
 theorem mono_atomIns (a : List Nat) (m : List (List Nat)) :
     mono V (atomIns a m) = lin V a &&& mono V m := by
@@ -400,7 +401,7 @@ theorem eval_por (p q : Poly) : eval V (por p q) = eval V p ||| eval V q := by
 
 theorem eval_atom (a : Nat) : eval V (atom a) = V a := by
   simp only [eval, atom, lin, key, monos, cst, List.foldr_cons, List.foldr_nil, Bool.false_eq_true,
-    ite_false, xor_zero', show 64 * a / 64 = a by omega, show 64 * a % 64 = 0 by omega,
+    ite_false, xor_zero', show 64 * a / 64 = a by omega_using [], show 64 * a % 64 = 0 by omega_using [],
     rotateRight_zero]
 
 /-- `Poly` stands for the word it evaluates to. -/

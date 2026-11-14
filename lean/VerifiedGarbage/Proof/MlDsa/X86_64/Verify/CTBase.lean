@@ -92,7 +92,7 @@ theorem maskPre_wp {a : Ptr} (hok : (Arg.ptr a).Ok) {N : Nat} (hN : N < 2 ^ 31) 
       fun s' => s'.gpr .rdi = (Arg.ptr a).val s ∧ s'.gpr .rcx = BitVec.ofNat 64 (N / 4) := by
   have hok' : ∀ x ∈ ([(.rdi, .ptr a), (.rcx, .imm (N / 4))] : List (Reg × Arg)), x.2.Ok ∧ x.1 ∈ argRegs := by
     simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-    exact ⟨⟨hok, by decide⟩, ⟨show N / 4 < 2 ^ 31 by omega, by decide⟩⟩
+    exact ⟨⟨hok, by decide⟩, ⟨show N / 4 < 2 ^ 31 by omega_using [hN], by decide⟩⟩
   rw [WP.block_append_iff]
   refine WP.mono (glue_ok' hok' (by simp only [List.map_cons, List.map_nil]; decide) s) fun s1 h1 => ?_
   refine WP.mono (maskPre_ok s1) fun s2 ⟨_, k2⟩ => ⟨?_, ?_⟩

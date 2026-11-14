@@ -837,29 +837,29 @@ theorem wipeLoop_wp (u : State) {D : Addr} {n : Nat} (hn : n < 2 ^ 64) (h9 : u.g
       t.gpr .x9 = D + BitVec.ofNat 64 j ∧ t.gpr .x10 = BitVec.ofNat 64 (n - j) ∧
       (∀ r, r ≠ .x9 → r ≠ .x10 → t.gpr r = u.gpr r) ∧ t.sp = u.sp ∧ t.rd = u.rd ∧ t.wr = u.wr ∧ t.v = u.v ∧
       Frame [⟨D, n⟩] u.mem t.mem ∧ Proof.Zeroize.Prefix t.mem D j) ?_ n u
-      ⟨0, by omega, by omega, h11, by rw [h9]; exact (BitVec.add_zero _).symm, by rw [h10, Nat.sub_zero], fun _ _ _ => rfl,
+      ⟨0, by omega_using [h0], by omega_using [], h11, by rw [h9]; exact (BitVec.add_zero _).symm, by rw [h10, Nat.sub_zero], fun _ _ _ => rfl,
         rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     intro rem t ⟨j, hj, hr, e11, e9, e10, ho, esp, erd, ewr, ev, hf', hpz⟩
-    have hc : (⟨D, n⟩ : Region).Contains (D + BitVec.ofNat 64 j) 1 := Offset.contains_base _ (by omega) (by omega)
+    have hc : (⟨D, n⟩ : Region).Contains (D + BitVec.ofNat 64 j) 1 := Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn, hj])
     have hin : InRegions t.wr (D + BitVec.ofNat 64 j) 1 := by
       rw [ewr]; exact hw _ _ ⟨_, List.mem_singleton_self _, hc⟩
     obtain ⟨t', run, m', x9', x10', o', sp', rd', wr', v'⟩ := zeroStep_ok t e9 e11 hin
     refine WP.of_runBlock ⟨t', run, ?_⟩
     have hsub : BitVec.ofNat 64 (n - j) - 1 = BitVec.ofNat 64 (n - (j + 1)) := by
-      rw [ofNat64_sub_one (by omega) (by omega), Nat.sub_sub]
+      rw [ofNat64_sub_one (by omega_using [hj]) (by omega_using [hn]), Nat.sub_sub]
     rw [e10, hsub] at x10'
     have f'' : Frame [⟨D, n⟩] u.mem t'.mem := by
       rw [m']; exact hf'.write (List.mem_singleton_self _) _ hc
     have p' : Proof.Zeroize.Prefix t'.mem D (j + 1) := by
-      rw [m']; exact Proof.Zeroize.prefix_write hpz (by omega)
+      rw [m']; exact Proof.Zeroize.prefix_write hpz (by omega_using [hn, hj])
     have o'' : ∀ r, r ≠ .x9 → r ≠ .x10 → t'.gpr r = u.gpr r := fun r a b => by rw [o' r a b, ho r a b]
     by_cases he : j + 1 = n
     · left
-      refine ⟨by rw [eval_nonzero x10' (by omega)]; simp only [Option.some.injEq]; simp; omega,
+      refine ⟨by rw [eval_nonzero x10' (by omega_using [hn])]; simp only [Option.some.injEq]; simp; omega_using [he],
         by rw [← he]; exact p', f'', o'', sp'.trans esp, rd'.trans erd, wr'.trans ewr, v'.trans ev⟩
     · right
-      refine ⟨by rw [eval_nonzero x10' (by omega)]; simp only [Option.some.injEq]; simp; omega,
-        n - (j + 1), by omega, j + 1, by omega, rfl, by rw [o' _ (by decide) (by decide), e11],
+      refine ⟨by rw [eval_nonzero x10' (by omega_using [hn])]; simp only [Option.some.injEq]; simp; omega_using [hj, he],
+        n - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, by rw [o' _ (by decide) (by decide), e11],
         x9', x10', o'', sp'.trans esp, rd'.trans erd, wr'.trans ewr, v'.trans ev, f'', p'⟩
 
 /-- The zeros of `Prefix`, as bytes. -/

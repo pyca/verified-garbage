@@ -65,7 +65,7 @@ structure KD (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ 
   kdk : Spec.Rsa.bytesAt t.mem (scA L sKDK) 32 = Spec.RsaPkcs1Enc.kdk L.k.toNat (dOf L m₀) (cOf L m₀)
 
 theorem below_low (hL : L.Ok) (hP : 16 ≤ L.P) : Region.Sub (below L.Q 16) L.STK :=
-  sub_trans (Offset.sub_below _ hP (by have := hL.pQ; omega)) Lay.Ok.low_stk
+  sub_trans (Offset.sub_below _ hP (by have := hL.pQ; omega_using [hP])) Lay.Ok.low_stk
 
 theorem kdkMac_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (h : HD L g vv m₀ R EM t) :
     WP isa (kdkMac (HH v)) t (KD L g vv m₀ R EM) := by
@@ -79,7 +79,7 @@ theorem kdkMac_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (h : HD L g vv m₀ 
   have hk0 := blockKey_length (key := Spec.Rsa.bytesAt t.mem (scA L sDH) 32) (by simp [Spec.Rsa.bytesAt])
   refine WP.seq (WP.mono (mac_upd hL hP hc₂ x0 x1 x2 (by rw [x3]) x4
     (Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, hc₂.ctx.rd]; simp))
-    (fun a l hal => (hL.sR _ (ro_INP L)).symm.sub_right (sub_trans (scSub (by unfold scrBytes; omega)) hL.sc_sub))
+    (fun a l hal => (hL.sR _ (ro_INP L)).symm.sub_right (sub_trans (scSub (by unfold scrBytes; omega_using [hal])) hL.sc_sub))
     ((hL.kR _ (ro_INP L)).sub_left (below_low hL hP)) hk0 (by rw [S₂.mem]; exact hu.inner)
     (by rw [S₂.mem]; exact hu.outer)) fun t₃ ⟨hc₃, hi₃, ho₃, _⟩ => ?_)
   refine WP.seq (WP.mono (kdkFinArgs_ok hc₃.ctx.sp hc₃.slots) fun t₄ ⟨S₄, y0, y1, y2, y3, y4⟩ => ?_)
@@ -87,12 +87,12 @@ theorem kdkMac_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (h : HD L g vv m₀ 
   simp only [hc₃.ctx.kept.scr, hc₃.ctx.kept.k] at y0 y1 y2 y3 y4
   have hC : Spec.Rsa.bytesAt t₂.mem L.inp L.k.toNat = cOf L m₀ := hc₂.ctx.bytes_ro hL (ro_INP L)
   refine WP.mono (mac_fin hL hP hc₄ (o := sKDK) (by decide) (by decide) hk0
-    (text := Spec.Rsa.bytesAt t₂.mem L.inp L.k.toNat) (by simp [Spec.Rsa.bytesAt]; omega) y0 y1 ?_ y3 y4
+    (text := Spec.Rsa.bytesAt t₂.mem L.inp L.k.toNat) (by simp [Spec.Rsa.bytesAt]; omega_using [hk]) y0 y1 ?_ y3 y4
     (by rw [S₄.mem]; exact hi₃) (by rw [S₄.mem]; exact ho₃)) fun t₅ ⟨hc₅, hb₅, _⟩ => ⟨hc₅, ?_⟩
   · rw [y2]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Spec.Rsa.bytesAt, List.length_map, List.length_range]
-    omega
+    omega_using []
   · rw [hb₅, h.dh, hC]
     rfl
 

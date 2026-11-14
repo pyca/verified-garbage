@@ -26,11 +26,11 @@ theorem clearMem_frame (m : Mem) (p : Addr) (n : Nat) (bound : 8 * n < 2 ^ 64) :
   | zero => exact Frame.refl _ _
   | succ n ih =>
     have smaller : Frame [⟨p, 8 * (n + 1)⟩] m (clearMem m p n) :=
-      (ih (by omega)).sub (by
+      (ih (by omega_using [bound])).sub (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩)
     exact smaller.writeW (List.mem_singleton_self _) (0 : BitVec 64)
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using []) (by omega_using [bound]))
 
 theorem clearMem_word (m : Mem) (p : Addr) (n j : Nat)
     (bound : 8 * n < 2 ^ 64) (hj : j < n) :
@@ -42,7 +42,7 @@ theorem clearMem_word (m : Mem) (p : Addr) (n j : Nat)
     by_cases eq : j = n
     · subst j; exact Mem.readW_writeW_self64 _ _ _
     · rw [Mem.readW_writeW_sep ?_ (by decide)]
-      · exact ih (by omega) (by omega)
-      · exact Offset.sep p (by omega) (by omega) (by omega)
+      · exact ih (by omega_using [bound]) (by omega_using [hj, eq])
+      · exact Offset.sep p (by omega_using [eq]) (by omega_using [bound, hj]) (by omega_using [bound])
 
 end VG.Proof.Argon2.AArch64.MemoryInit

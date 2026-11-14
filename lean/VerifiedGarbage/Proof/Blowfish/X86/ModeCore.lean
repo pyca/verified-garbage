@@ -86,7 +86,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Schedule} (h : KeyA
 /-! ## The block -/
 
 theorem addr_slot48 {B : BitVec 32} (h : B.toNat + 48 ≤ 2 ^ 32) {d : Nat} (hd : d < 48) :
-    addr B d = slot B d := addr_of_fit (by omega)
+    addr B d = slot B d := addr_of_fit (by omega_using [h, hd])
 
 /-- `ebp` the scratch buffer, and the buffer's address to the data pointer. -/
 theorem setup_run (u : State) {B : BitVec 32} (hb : u.gpr .edi = B) (bfit : B.toNat + 48 ≤ 2 ^ 32)
@@ -114,11 +114,11 @@ theorem stored_block (m : Mem) (Pa : Addr) (L R : BitVec 32) :
   refine blockAt_eq _ _ _ fun i hi => ?_
   rw [encodeBlock_getD _ _ hi]
   by_cases h4 : i < 4
-  · rw [ite_eq_left h4, writeW32_other _ (Offset.disjoint Pa (d := i) (n := 1) (e := 4) (k := 4) (by omega)
-      (by omega) (by decide)), st_byte _ _ _ h4, bswap_byte _ h4]
-  · rw [ite_eq_right h4, show i = 4 + (i - 4) by omega, ← Offset.add_add, st_byte _ _ _ (by omega),
-      bswap_byte _ (by omega)]
-    congr 2; omega
+  · rw [ite_eq_left h4, writeW32_other _ (Offset.disjoint Pa (d := i) (n := 1) (e := 4) (k := 4) (by omega_using [h4])
+      (by omega_using [hi]) (by decide)), st_byte _ _ _ h4, bswap_byte _ h4]
+  · rw [ite_eq_right h4, show i = 4 + (i - 4) by omega_using [h4], ← Offset.add_add, st_byte _ _ _ (by omega_using [hi]),
+      bswap_byte _ (by omega_using [hi])]
+    congr 2; omega_using []
 
 theorem dirCore_total (up : Bool) : (dirCore up).total = 22 := rfl
 theorem dirCore_ka (up : Bool) : (dirCore up).ka = 1 := rfl
@@ -135,11 +135,11 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
   have hB' : s.gpr .edi = B := hB
   have hfit := hs.fit
   rw [dirCore_total] at hfit
-  have bfit : B.toNat + 48 ≤ 2 ^ 32 := by omega
+  have bfit : B.toNat + 48 ≤ 2 ^ 32 := by omega_using [hfit]
   have scr : (⟨B.setWidth 64, 88⟩ : Region) ∈ s.wr := hs.wr
   have hea : s.ea (at_ .esp 4) = addr (s.gpr .esp) 4 := rfl
   have wS : ∀ d, d + 4 ≤ 48 → InRegions s.wr (slot B d) 4 := fun d hd =>
-    ⟨_, scr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, scr, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩
   have core48 : Region.Sub ⟨B.setWidth 64, 48⟩ ⟨B.setWidth 64, 88⟩ := Region.sub_prefix (by decide)
   have aS := (ha _ scr).1
   have aA := (ha _ scr).2
@@ -157,7 +157,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
     unfold addr; rw [ofs_add, ← addr, addr_slot48 bfit (by decide)]
   have e4 : addr (B + BitVec.ofNat 32 40) 4 = Pa + BitVec.ofNat 64 4 := by
     unfold addr; rw [ofs_add, ← addr, addr_slot48 bfit (by decide), e44]
-  refine WP.mono (WP.keep [.eax, .ebx] (loadBlock_run u₁ (B := B) bp₁ (by omega) (w₁ 16 (by decide))
+  refine WP.mono (WP.keep [.eax, .ebx] (loadBlock_run u₁ (B := B) bp₁ (by omega_using [hfit]) (w₁ 16 (by decide))
     (w₁ 20 (by decide)) (region_in (w₁ 32 (by decide)))
     (by rw [m₁, Mem.readW_writeW_self32]) e0 e4 (region_in (w₁ 40 (by decide)))
     (by rw [e44]; exact region_in (w₁ 44 (by decide)))
@@ -185,11 +185,11 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
         exact Offset.disjoint _ (by decide) (by decide) (by decide)
   -- the cipher
   have CE : CipherEnv 4 S B u₂ := by
-    refine ⟨(k₂.gpr (by decide)).trans bp₁, by omega, ?_, ?_, ?_, hSfit, fun o ho => ?_, ?_, ?_⟩
+    refine ⟨(k₂.gpr (by decide)).trans bp₁, by omega_using [hfit], ?_, ?_, ?_, hSfit, fun o ho => ?_, ?_, ?_⟩
     · rw [k₂.2.2, wr₁]; exact ⟨_, scr, contains_pre _ (by decide)⟩
     · rw [keep_reads k₁₂, esp₂, ← hea]; exact hin
     · rw [esp₂, ← hea, (wide F₂).readW (Region.contains_self _ _) (fun r hr => (apS r hr).2) (by decide)]; exact hv
-    · rw [keep_reads k₁₂]; exact ⟨_, hsch, Offset.contains_base _ (by omega) (by omega)⟩
+    · rw [keep_reads k₁₂]; exact ⟨_, hsch, Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])⟩
     · exact aS.symm.sub_left (Region.sub_prefix (by decide))
     · rw [esp₂, ← hea]; exact aA.symm.sub_left (Region.sub_prefix (by decide))
   apply WP.seq
@@ -221,7 +221,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
     F₄.sub fun r hr => ?_, fun j hj => ?_, rd₄, wr₄⟩
   · simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-  · obtain rfl : j = 0 := by simp only [dirCore] at hj; omega
+  · obtain rfl : j = 0 := by simp only [dirCore] at hj; omega_using [hj]
     have hba : blkAddr (dirCore up) B 0 = Pa := by
       simp only [blkAddr, slotA, dirCore, Offset.add_add]; rfl
     have e16 : u₂.mem.readW (slot B 16) 32 = decodeWord (blockAt u₁.mem Pa) 0 := by
@@ -245,8 +245,8 @@ def dirCoreSpec (up : Bool) : CoreSpec (dirCore up) where
   KeyArgs := KeyArgs
   Ready s B k := Ready s k ∧ B.toNat + 4 * (dirCore up).total ≤ 2 ^ 32
   cipher_len _ _ := dirCipher_len _ _ _
-  layout := ⟨by simp only [dirCore]; decide, .inl rfl, by simp only [dirCore]; omega,
-    by simp only [dirCore]; omega⟩
+  layout := ⟨by simp only [dirCore]; decide, .inl rfl, by simp only [dirCore]; omega_using [],
+    by simp only [dirCore]; omega_using []⟩
   keyArgs_congr h e r w _ f := keyArgs_congr h e r w f
   ready_frame h e r w _ hf hs _ := ⟨h.1.frame e r w hf hs, h.2⟩
   prepare_wp hB hs _ hk _ := by

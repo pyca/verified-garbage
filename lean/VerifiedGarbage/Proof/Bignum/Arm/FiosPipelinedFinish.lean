@@ -27,19 +27,19 @@ theorem finish_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start 
   have progress := h.progress
   have index := h.index
   refine WP.mono (cancelAt_ok s pending hp (ctx.workspace.congr h.rest.wr) offsetFits
-    (by omega) (by omega) h.mPtr h.outPtr) ?_
+    (by omega_using [modf, progress, index]) (by omega_using [outf, progress, index]) h.mPtr h.outPtr) ?_
   rintro t ⟨cancel,mem,rest⟩
-  have eM : mod+4*(start+1)+4*(i-start)=mod+4*(i+1) := by omega
-  have eO : acc+4*start+4*(i-start)=acc+4*i := by omega
+  have eM : mod+4*(start+1)+4*(i-start)=mod+4*(i+1) := by omega_using [progress]
+  have eO : acc+4*start+4*(i-start)=acc+4*i := by omega_using [progress]
   rw [eO] at mem
-  have oldM := h.outside.w32 (d:=mod+4*(i+1)) (by rcases ctx.accM with h|h <;> omega) (by omega)
+  have oldM := h.outside.w32 (d:=mod+4*(i+1)) (by rcases ctx.accM with h|h <;> omega_arith) (by omega_using [nowrap, modf, index])
   rw [eM,oldM,h.quotient] at cancel
   have nowrap' : (State.addr base).toNat+size≤2^32 := by
     simpa only [VG.Proof.X25519.Arm.addr_toNat] using nowrap
-  obtain ⟨writes,stored⟩ := store_prefix nowrap' (by omega) mem
+  obtain ⟨writes,stored⟩ := store_prefix nowrap' (by omega_using [outf, index]) mem
   have outside : Outside (State.addr base) acc (4*(i+1)) s0.mem t.mem :=
-    (h.outside.mono (Nat.le_refl _) (by omega)).trans (writes.mono (by omega) (by omega))
-  refine ⟨by omega,by omega,?_,?_,?_,?_,?_,?_,outside,?_,?_⟩
+    (h.outside.mono (Nat.le_refl _) (by omega_using [])).trans (writes.mono (by omega_using []) (by omega_using []))
+  refine ⟨by omega_using [index],by omega_using [progress],?_,?_,?_,?_,?_,?_,outside,?_,?_⟩
   · rw [rest.gpr .r0 (by rcases hp with rfl|rfl <;> decide)];exact h.outPtr
   · rw [rest.gpr .r12 (by rcases hp with rfl|rfl <;> decide)];exact h.bPtr
   · rw [rest.gpr .r4 (by rcases hp with rfl|rfl <;> decide)];exact h.mPtr

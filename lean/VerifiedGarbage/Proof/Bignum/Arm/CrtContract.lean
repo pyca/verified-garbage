@@ -44,12 +44,12 @@ def baselineStages : CrtStages where
   primeOk := fun {g} {_} j s hj _ h => by
     obtain ⟨_, le, _, _, _, _, _⟩ := h.1.narrow_fits j hj
     have words : g.words ≤ 128 := (crt_width_valid h.1.buffers.lengthValid).2.1
-    exact crt_narrowPrime_ok s h.2 (by omega)
+    exact crt_narrowPrime_ok s h.2 (by omega_using [le, words])
   primeCt := fun {g} {_} {_} j hj _ _ => by
     intro s t tr1 tr2 u w h e1 e2
     obtain ⟨_, le, _, _, _, _, _⟩ := h.1.1.narrow_fits j hj
     have words : g.words ≤ 128 := (crt_width_valid h.1.1.buffers.lengthValid).2.1
-    exact crt_narrowPrime_ct (by omega) s t tr1 tr2 u w ⟨h.1.2, h.2.1.2, h.2.2⟩ e1 e2
+    exact crt_narrowPrime_ct (by omega_using [le, words]) s t tr1 tr2 u w ⟨h.1.2, h.2.1.2, h.2.2⟩ e1 e2
 
 end VG.Proof.Bignum.Arm
 end
@@ -135,9 +135,9 @@ theorem crt_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 
       simp only [crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with (rfl | rfl | rfl | rfl) | rfl
       · exact workspace.sub_left sub
-      · exact Offset.disjoint_base _ (by omega) (by omega)
-      · exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by decide)
-      · exact Offset.disjoint _ gap (by omega) (by decide)
+      · exact Offset.disjoint_base _ (by omega_using [low]) (by omega_using [fit])
+      · exact Offset.disjoint _ (Or.inr (by omega_using [low])) (by omega_using [fit]) (by decide)
+      · exact Offset.disjoint _ gap (by omega_using [fit]) (by decide)
       · exact output.sub_left sub) (by decide : 32 / 8 < 2 ^ 64)
   exact keep.trans (saved p hp)
 
@@ -179,7 +179,7 @@ theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : C
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
-    omega
+    omega_using []
   have read : InRegions (v.rd ++ v.wr) (State.addr v.sp) 56 := by
     refine ⟨⟨State.addr v.sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
     rw [wrV, spV]

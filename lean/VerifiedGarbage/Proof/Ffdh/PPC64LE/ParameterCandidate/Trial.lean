@@ -53,16 +53,16 @@ theorem TabIn.step {B T : Addr} {Z : Nat} {s t : State} {rs : List (Nat × Nat)}
   refine ⟨sy ▸ h.sym, fun i hi => ?_, by rw [krd]; exact h.rd, h.fit, h.dj⟩
   rw [← h.tab i hi]
   refine Mem.readW_congr fun j hj => (hf _ fun r hr' => .inr ?_)
-  have hj' : j < 8 := by omega
+  have hj' : j < 8 := by omega_using [hj]
   have hc : (⟨T, 8192⟩ : Region).Contains (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) 1 := by
     simp only [Region.Contains, BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.ofNat_add_ofNat,
       BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hi, hj])]; omega_using [hi, hj]
   have hn := h.dj _ hc
   simp only [Region.Contains, Nat.not_le] at hn
   have := hr r hr'
   unfold ofs
-  omega
+  omega_using [hn, this]
 
 /-- The count of entries, `1024 − 512 [bits ≤ 1024]`. -/
 theorem trialCount_eq {bits : Nat} (hb : bits ≤ 8192) :
@@ -71,7 +71,7 @@ theorem trialCount_eq {bits : Nat} (hb : bits ≤ 8192) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, trialN]
-  split <;> omega
+  split <;> omega_arith
 
 /-- In p's working space, with `x` in array 0, `hBad` zero iff `B`, and
 the table at `T`. -/

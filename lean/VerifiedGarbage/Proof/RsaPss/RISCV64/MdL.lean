@@ -125,21 +125,21 @@ theorem ext_ofNat {n i : Nat} (hn : n < 2 ^ 64) :
     (BitVec.ofNat 128 n).extractLsb' (8 * i) 8 = (BitVec.ofNat 64 n).extractLsb' (8 * i) 8 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.extractLsb'_toNat, BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show n < 2 ^ 128 by omega), Nat.mod_eq_of_lt hn]
+    Nat.mod_eq_of_lt (show n < 2 ^ 128 by omega_using [hn]), Nat.mod_eq_of_lt hn]
 
 theorem ext_zero {n i : Nat} (hn : n < 2 ^ 64) (hi : 8 ≤ i) :
     (BitVec.ofNat 128 n).extractLsb' (8 * i) 8 = 0 := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 128 by omega),
+  rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 128 by omega_using [hn]),
     Nat.shiftRight_eq_div_pow,
-    Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hn (Nat.pow_le_pow_right (by decide) (by omega)))]
+    Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hn (Nat.pow_le_pow_right (by decide) (by omega_using [hi])))]
   rfl
 
 /-- The SHA-512 family's 128-bit length field of a message shorter than
 `2⁶¹` bytes: eight zeros, then the 64-bit bit count. -/
 theorem sha512_len (n : Nat) (hn : n < 2 ^ 61) :
     Proof.Sha512.md.lenBytes n = List.replicate 8 0 ++ bytes64 true (BitVec.ofNat 64 (8 * n)) := by
-  have h : 8 * n < 2 ^ 64 := by omega
+  have h : 8 * n < 2 ^ 64 := by omega_using [hn]
   show Proof.Sha512.lenField (BitVec.ofNat 128 (8 * n)) = _
   simp only [Proof.Sha512.lenField, bytes64, ite_true]
   rw [show List.range 16 = List.range (8 + 8) from rfl, List.range_add,
@@ -148,7 +148,7 @@ theorem sha512_len (n : Nat) (hn : n < 2 ^ 61) :
   · refine List.ext_getElem (by simp) fun i h₁ h₂ => ?_
     simp only [List.getElem_reverse, List.getElem_map, List.getElem_range, List.getElem_replicate,
       Function.comp_apply]
-    exact ext_zero h (by omega)
+    exact ext_zero h (by omega_using [])
   · exact List.map_congr_left fun _ _ => ext_ofNat h
 
 /-! ## The hash functions -/

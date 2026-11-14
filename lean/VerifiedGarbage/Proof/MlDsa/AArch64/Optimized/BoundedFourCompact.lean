@@ -20,12 +20,12 @@ theorem word_eq_of_bytes (x y : BitVec 128) (i j : Nat)
     (h : ∀r<4,vbyte x (4*i+r)=vbyte y (4*j+r)) : vword x i=vword y j := by
   apply BitVec.eq_of_getLsbD_eq
   intro a ha
-  have hh := congrArg (fun z : BitVec 8 => z.getLsbD (a%8)) (h (a/8) (by omega))
+  have hh := congrArg (fun z : BitVec 8 => z.getLsbD (a%8)) (h (a/8) (by omega_using [ha]))
   have hm : a%8<8 := Nat.mod_lt _ (by decide)
   simp only [vbyte,BitVec.getLsbD_extractLsb',hm,decide_true,Bool.true_and] at hh
   simp only [vword,BitVec.getLsbD_extractLsb',ha,decide_true,Bool.true_and]
-  have hx : 8*(4*i+a/8)+a%8=32*i+a := by omega
-  have hy : 8*(4*j+a/8)+a%8=32*j+a := by omega
+  have hx : 8*(4*i+a/8)+a%8=32*i+a := by omega_using []
+  have hy : 8*(4*j+a/8)+a%8=32*j+a := by omega_using []
   simpa only [hx,hy] using hh
 
 theorem compact_word (x : BitVec 128) {mask i : Nat} (hm : mask<16)
@@ -35,11 +35,11 @@ theorem compact_word (x : BitVec 128) {mask i : Nat} (hm : mask<16)
   have hid := index_bound mask hm i hi
   apply word_eq_of_bytes
   intro j hj
-  rw [tableBytes,vbyte_ofVBytes _ (by omega),shuffle_byte mask hm i hi j hj]
+  rw [tableBytes,vbyte_ofVBytes _ (by omega_using [hi, hn, hj]),shuffle_byte mask hm i hi j hj]
   have hidx : (BitVec.ofNat 8 (4*(acceptedIndices mask)[i]!+j)).toNat=
       4*(acceptedIndices mask)[i]!+j := by
-    rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
-  rw [hidx,ite_eq_left (by omega)]
+    rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hid, hj])]
+  rw [hidx,ite_eq_left (by omega_using [hid, hj])]
 
 /-- TBL preserves the accepted coefficients in their original scalar order. -/
 theorem compact_ok {s : State} {rest : List Instr} {Q : State → Prop} {mask : Nat}

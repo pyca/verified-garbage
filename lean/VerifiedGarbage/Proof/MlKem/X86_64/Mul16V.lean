@@ -37,7 +37,7 @@ theorem encMul16Y_correct {k : Nat} (hk : k = 3 ∨ k = 4)
       (EncMulY.innerY16 k) = true)
     (hctl : ctlOk (encryptMul16Y k) = true) (s : State) (hs : (encMulK16 k).pre s) :
     ∃ t s', Exec isa (encryptMul16Y k) s t s' ∧ abiPreserved s s' ∧ (encMulK16 k).post s s' := by
-  obtain ⟨t, s', he, hg, hpost⟩ := EncMulY.wp_all16 hs (by omega) hk hwo
+  obtain ⟨t, s', he, hg, hpost⟩ := EncMulY.wp_all16 hs (by omega_using [hk]) hk hwo
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hg, hpost⟩
 
 theorem encMul16Y3_correct : ∀ s, (encMulK16 3).pre s →

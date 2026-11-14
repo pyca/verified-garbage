@@ -41,19 +41,19 @@ theorem top_iff (m : Mem) (W : Addr) (b sz n : Nat) :
   generalize VG.Proof.Mont.w32 m W (b + sz * n) = t
   generalize hK : 2 ^ (32 * n) = K at hl ⊢
   constructor
-  · intro h; have := Nat.mul_le_mul_left K h; omega
+  · intro h; have := Nat.mul_le_mul_left K h; omega_using [this]
   · intro h
     by_contra hc
-    have : K * t ≤ K * (2 ^ 31 - 1) := Nat.mul_le_mul_left K (by omega)
+    have : K * t ≤ K * (2 ^ 31 - 1) := Nat.mul_le_mul_left K (by omega_using [hc])
     have : K * (2 ^ 31 - 1) = K * 2 ^ 31 - K := by rw [Nat.mul_sub, Nat.mul_one]
     have : K ≤ K * 2 ^ 31 := Nat.le_mul_of_pos_right K (by decide)
-    omega
+    omega_arith
 
 /-- The low word of the number. -/
 theorem sval_low (m : Mem) (W : Addr) (b sz n : Nat) :
     (VG.Proof.Mont.w32 m W b : Int) ≡ sval m W b sz n [ZMOD 2 ^ 32] := by
   unfold sval Int.ModEq
-  rw [sv_cons, show 32 * (n + 1) = 32 + 32 * n by omega, pow_add]
+  rw [sv_cons, show 32 * (n + 1) = 32 + 32 * n by omega_using [], pow_add]
   generalize VG.Proof.Mont.w32 m W b = w
   generalize sv m W (b + sz) sz n = v
   split
@@ -70,7 +70,7 @@ theorem maskW_top (m : Mem) (W : Addr) (b sz n : Nat) :
   have hlt := sv_lt m W b sz (n + 1)
   have ht := top_iff m W b sz n
   simp only [VG.Proof.Mont.w32] at ht ⊢
-  have e : 2 ^ (32 * (n + 1)) = 2 ^ (32 * n) * 2 ^ 32 := by rw [show 32 * (n + 1) = 32 * n + 32 by omega, Nat.pow_add]
+  have e : 2 ^ (32 * (n + 1)) = 2 ^ (32 * n) * 2 ^ 32 := by rw [show 32 * (n + 1) = 32 * n + 32 by omega_using [], Nat.pow_add]
   have hK := Nat.two_pow_pos (32 * n)
   by_cases h : 2 ^ 31 ≤ (m.readW (off W (b + sz * n)) 32).toNat
   · have h2 := ht.mp h
@@ -78,11 +78,11 @@ theorem maskW_top (m : Mem) (W : Addr) (b sz n : Nat) :
     have : (sv m W b sz (n + 1) : Int) < 2 ^ (32 * (n + 1)) := by exact_mod_cast hlt
     split
     · rfl
-    · omega
+    · omega_arith
   · have h2 : ¬ 2 ^ (32 * n) * 2 ^ 31 ≤ sv m W b sz (n + 1) := fun h' => h (ht.mpr h')
     simp only [h, ↓reduceIte]
     split
-    · omega
+    · omega_arith
     · rfl
 
 /-- Words holding `X mod 2^(32 (n + 1))` hold `X` in two's complement, for `X` in range. -/
@@ -91,7 +91,7 @@ theorem sval_of_mod {m : Mem} {W : Addr} {b sz n : Nat} {X : Int}
     (h1 : -(2 ^ (32 * n) * 2 ^ 31) ≤ X) (h2 : X < 2 ^ (32 * n) * 2 ^ 31) : sval m W b sz n = X := by
   have ht := top_iff m W b sz n
   have e : (2 : Int) ^ (32 * (n + 1)) = 2 ^ (32 * n) * 2 ^ 32 := by
-    rw [show 32 * (n + 1) = 32 * n + 32 by omega, pow_add]
+    rw [show 32 * (n + 1) = 32 * n + 32 by omega_using [], pow_add]
   have hK : (0 : Int) < 2 ^ (32 * n) := by positivity
   have hM : (0 : Int) < 2 ^ (32 * (n + 1)) := by positivity
   have r0 := Int.emod_nonneg X hM.ne'
@@ -99,7 +99,7 @@ theorem sval_of_mod {m : Mem} {W : Addr} {b sz n : Nat} {X : Int}
   unfold sval
   rcases Int.lt_or_le X 0 with hX | hX
   · have : X % 2 ^ (32 * (n + 1)) = X + 2 ^ (32 * (n + 1)) := by
-      rw [Int.emod_eq_add_self_emod, Int.emod_eq_of_lt (by omega) (by rw [e] at *; nlinarith)]
+      rw [Int.emod_eq_add_self_emod, Int.emod_eq_of_lt (by omega_using [h1, h2, e]) (by rw [e] at *; nlinarith)]
     have top : 2 ^ 31 ≤ VG.Proof.Mont.w32 m W (b + sz * n) := by
       apply ht.mpr
       have : ((2 ^ (32 * n) * 2 ^ 31 : Nat) : Int) ≤ (sv m W b sz (n + 1) : Int) := by
@@ -116,7 +116,7 @@ theorem sval_of_mod {m : Mem} {W : Addr} {b sz n : Nat} {X : Int}
 
 /-! ## The rows' values -/
 
-theorem top_addr (a sz n x : Nat) : a + sz * (n + 1) + x = a + sz + x + sz * n := by rw [Nat.mul_succ]; omega
+theorem top_addr (a sz n x : Nat) : a + sz * (n + 1) + x = a + sz + x + sz * n := by rw [Nat.mul_succ]; omega_using []
 
 theorem coef_sval (m : Mem) (W : Addr) (a sz n : Nat) (t : Term) :
     (m.readW (off W t.c) 32).toInt * (sv m W (a + sz + t.x) sz (n + 1) : Int) -
@@ -155,10 +155,10 @@ theorem RowWr.w32 {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A0 sz o
   congr 1
   refine (Mem.readW_congr fun i hi => ?_).symm
   have hi' : i < 4 := by simpa using hi
-  have e := ofs_off B (d := d) (i := i) (by omega)
+  have e := ofs_off B (d := d) (i := i) (by omega_using [hd', hi])
   refine (h _ (fun j hj => ?_) ?_).symm
-  · rw [e]; have := hd j hj; omega
-  · rw [e]; omega
+  · rw [e]; have := hd j hj; omega_using [hi, this]
+  · rw [e]; omega_using [hp, hi]
 
 /-- A word of another region, or of another byte of the same elements, survives a row. -/
 theorem RowWr.w32_apart {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A0 sz o n m m') (ho : o + 4 ≤ sz)
@@ -167,8 +167,8 @@ theorem RowWr.w32_apart {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A
     VG.Proof.Mont.w32 m' B d = VG.Proof.Mont.w32 m B d := by
   refine h.w32 (fun j hj => ?_) hp hd'
   rcases hd with hd | hd | ⟨j', x, rfl, hx, hxo⟩
-  · omega
-  · have := mul_step (sz := sz) hj; omega
+  · omega_using [hd]
+  · have := mul_step (sz := sz) hj; omega_using [ho, hd, this]
   · exact elem_sep hx ho hxo j
 
 /-! ## The state between batches -/
@@ -200,7 +200,7 @@ theorem Same.sv {B : Addr} {b sz K : Nat} {m m' : Mem} (h : Same B b sz K m m') 
 
 theorem Same.sval_eq {B : Addr} {b sz n : Nat} {m m' : Mem} (h : Same B b sz (n + 1) m m') :
     VG.Proof.Rsa.X86.InvBatchRt.F.sval m' B b sz n = VG.Proof.Rsa.X86.InvBatchRt.F.sval m B b sz n := by
-  unfold VG.Proof.Rsa.X86.InvBatchRt.F.sval; rw [h.sv, h n (by omega)]
+  unfold VG.Proof.Rsa.X86.InvBatchRt.F.sval; rw [h.sv, h n (by omega_using [])]
 
 /-- From a frame `Unch` apart from the words. -/
 theorem Same.of_unch {B : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch B W m m') {b sz K : Nat}
@@ -210,9 +210,9 @@ theorem Same.of_unch {B : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch B
   congr 1
   refine (Mem.readW_congr fun i hi => ?_).symm
   have hi' : i < 4 := by simpa using hi
-  have e := ofs_off B (d := b + sz * w) (i := i) (by have := hb w hwK; omega)
+  have e := ofs_off B (d := b + sz * w) (i := i) (by have := hb w hwK; omega_using [hi, this])
   refine (h _ fun r hr => ?_).symm
-  rw [e]; have := hw w hwK r hr; omega
+  rw [e]; have := hw w hwK r hr; omega_using [hi, this]
 
 /-- Through a row: words of another byte of its elements, or of another region. -/
 theorem Same.of_row {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A0 sz o n m m') (ho : o + 4 ≤ sz)
@@ -230,43 +230,43 @@ theorem RowWr.unch {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A0 sz 
   have h2 := hx (sP, 8) (by simp)
   refine h x (fun j hj => ?_) h2
   have := mul_step (sz := sz) hj
-  simp only at h1; omega
+  simp only at h1; omega_using [ho, h1, this]
 
 /-- The elements of an interleaved array: element `w` of the `n + 1` at byte `x`. -/
-theorem elem_of (A0 sz x w : Nat) : A0 + sz + x + sz * w = A0 + sz * (w + 1) + x := by rw [Nat.mul_succ]; omega
+theorem elem_of (A0 sz x w : Nat) : A0 + sz + x + sz * w = A0 + sz * (w + 1) + x := by rw [Nat.mul_succ]; omega_using []
 
 /-- Through a row: another byte of the same elements. -/
 theorem Same.row_slot {B : Addr} {A0 sz o n x : Nat} {m m' : Mem} (h : RowWr B A0 sz o n m m') (ho : o + 4 ≤ sz)
     (hx : x + 4 ≤ sz) (hxo : x + 4 ≤ o ∨ o + 4 ≤ x) (hA : sP + 8 ≤ A0) (hb : A0 + sz * (n + 2) ≤ 2 ^ 32) :
     Same B (A0 + sz + x) sz (n + 1) m m' :=
   h.unch ho |> fun _ => Same.of_row h ho fun w hw => by
-    have := mul_step (sz := sz) (show w + 1 < n + 2 by omega)
+    have := mul_step (sz := sz) (show w + 1 < n + 2 by omega_using [hw])
     have := elem_of A0 sz x w
-    refine ⟨.inr (.inr ⟨w + 1, x, this, hx, hxo⟩), .inr (by omega), by omega⟩
+    refine ⟨.inr (.inr ⟨w + 1, x, this, hx, hxo⟩), .inr (by omega_using [hA]), by omega_arith⟩
 
 /-- Through a row: elements of another region. -/
 theorem Same.row_far {B : Addr} {A0 sz o n A1 sz' x : Nat} {m m' : Mem} (h : RowWr B A0 sz o n m m') (ho : o + 4 ≤ sz)
     (hx : x + 4 ≤ sz') (hfar : A1 + sz' * (n + 2) ≤ A0 ∨ A0 + sz * (n + 2) ≤ A1) (hA : sP + 8 ≤ A1)
     (hb : A1 + sz' * (n + 2) ≤ 2 ^ 32) : Same B (A1 + sz' + x) sz' (n + 1) m m' :=
   Same.of_row h ho fun w hw => by
-    have := mul_step (sz := sz') (show w + 1 < n + 2 by omega)
+    have := mul_step (sz := sz') (show w + 1 < n + 2 by omega_using [hw])
     rw [elem_of]
-    refine ⟨?_, .inr (by omega), by omega⟩
+    refine ⟨?_, .inr (by omega_using [hA]), by omega_using [hx, hb, this]⟩
     rcases hfar with hf | hf
-    · exact .inl (by omega)
-    · exact .inr (.inl (by omega))
+    · exact .inl (by omega_using [hx, this, hf])
+    · exact .inr (.inl (by omega_using [hf]))
 
 /-- Through a write below the elements. -/
 theorem Same.below {B : Addr} {o c : Nat} {m m' : Mem} (h : Outside B o c m m') {A1 sz' x n : Nat} (hx : x + 4 ≤ sz')
     (hb : o + c ≤ A1) (hb' : A1 + sz' * (n + 2) ≤ 2 ^ 32) : Same B (A1 + sz' + x) sz' (n + 1) m m' :=
   Same.of_unch h.unch (fun w hw r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inr (by omega))
-    fun w hw => by have := mul_step (sz := sz') (show w + 1 < n + 2 by omega); rw [elem_of]; omega
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr (by omega_using [hb]))
+    fun w hw => by have := mul_step (sz := sz') (show w + 1 < n + 2 by omega_using [hw]); rw [elem_of]; omega_using [hx, hb', this]
 
 /-- A header word through a row. -/
 theorem hdr_row {B : Addr} {A0 sz o n : Nat} {m m' : Mem} (h : RowWr B A0 sz o n m m') {d : Nat} (hd : d + 4 ≤ A0)
     (hp : d + 4 ≤ sP ∨ sP + 8 ≤ d) (hA : A0 ≤ 2 ^ 32) : m'.readW (off B d) 32 = m.readW (off B d) 32 :=
-  BitVec.eq_of_toNat_eq (h.w32 (fun j _ => .inl (by omega)) hp (by omega))
+  BitVec.eq_of_toNat_eq (h.w32 (fun j _ => .inl (by omega_using [hd])) hp (by omega_using [hd, hA]))
 
 /-- A header word through another write. -/
 theorem hdr_out {B : Addr} {o c : Nat} {m m' : Mem} (h : Outside B o c m m') {d : Nat} (hd : d + 4 ≤ o ∨ o + c ≤ d)
@@ -279,7 +279,7 @@ variable {L : Lay} {B : Addr} {Z len N n : Nat}
 
 theorem ofInt_toInt {c : Int} (h : |c| ≤ 2 ^ 31 - 1) : (BitVec.ofInt 32 c).toInt = c := by
   rw [abs_le] at h
-  exact BitVec.toInt_ofInt_eq_self (by decide) (by omega) (by omega)
+  exact BitVec.toInt_ofInt_eq_self (by decide) (by omega_using [h]) (by omega_using [h])
 
 /-- A row of two signed terms with coefficients `U`, `V`: `(U x₁ + V x₂) / 2^30`. -/
 theorem rowTwo_ok {s : State} (h : Bx L s B Z len N n) (hn2 : 2 ≤ n) (he : n % 2 = 0)
@@ -298,17 +298,17 @@ theorem rowTwo_ok {s : State} (h : Bx L s B Z len N n) (hn2 : 2 ≤ n) (he : n %
       sval t.mem B (rv (kw len) { arr := arr } n + sz + o) sz (n) =
         (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
           V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n)) / 2 ^ 30 := by
-  have hu : |U| ≤ 2 ^ 31 - 1 := by have := abs_nonneg V; omega
-  have hv : |V| ≤ 2 ^ 31 - 1 := by have := abs_nonneg U; omega
+  have hu : |U| ≤ 2 ^ 31 - 1 := by have := abs_nonneg V; omega_using [huv, this]
+  have hv : |V| ≤ 2 ^ 31 - 1 := by have := abs_nonneg U; omega_using [huv, this]
   have bound : cB s.mem B [t₁, t₂] * 2 ^ 32 ≤ if false = true then 2 ^ 94 else 2 ^ 62 := by
     simp only [cB, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, hU, hV, ofInt_toInt hu,
       ofInt_toInt hv, Bool.false_eq_true, ↓reduceIte]
     have : (U.natAbs : Int) + V.natAbs ≤ 2 ^ 30 := by rw [Int.natCast_natAbs, Int.natCast_natAbs]; exact huv
-    omega
+    omega_using [this]
   refine WP.mono (row_ok h hn2 he hsz ho hfit harr hts (fun t ht => ht) bound) fun t ⟨Ht, Kt, Ft, Vt⟩ =>
     ⟨Ht, Kt, Ft, ?_⟩
   rw [rowT_two, hU, hV, ofInt_toInt hu, ofInt_toInt hv] at Vt
-  rw [show rv (kw len) { arr := arr } n + sz + o = rv (kw len) { arr := arr } n + o + sz by omega]
+  rw [show rv (kw len) { arr := arr } n + sz + o = rv (kw len) { arr := arr } n + o + sz by omega_using []]
   exact sval_of_mod Vt hr.1 hr.2
 
 /-- A row of two signed terms and `md p`: `(U x₁ + V x₂ + M y) / 2^30`. -/
@@ -332,19 +332,19 @@ theorem rowThree_ok {s : State} (h : Bx L s B Z len N n) (hn2 : 2 ≤ n) (he : n
         (U * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₁.x) sz (n) +
           V * sval s.mem B (rv (kw len) { arr := arr } n + sz + t₂.x) sz (n) +
           M * (sv s.mem B (rv (kw len) { arr := arr } n + sz + t₃.x) sz (n + 1) : Int)) / 2 ^ 30 := by
-  have hu : |U| ≤ 2 ^ 31 - 1 := by have := abs_nonneg V; omega
-  have hv : |V| ≤ 2 ^ 31 - 1 := by have := abs_nonneg U; omega
+  have hu : |U| ≤ 2 ^ 31 - 1 := by have := abs_nonneg V; omega_using [huv, this]
+  have hv : |V| ≤ 2 ^ 31 - 1 := by have := abs_nonneg U; omega_using [huv, this]
   have bound : cB s.mem B [t₁, t₂, t₃] * 2 ^ 32 ≤ if true = true then 2 ^ 94 else 2 ^ 62 := by
     simp only [cB, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, hU, hV, hM, ofInt_toInt hu,
       ofInt_toInt hv, ↓reduceIte]
     have : (U.natAbs : Int) + V.natAbs + M.natAbs ≤ 2 ^ 30 + 2 ^ 31 := by
-      rw [Int.natCast_natAbs, Int.natCast_natAbs, Int.natCast_natAbs]; omega
-    omega
+      rw [Int.natCast_natAbs, Int.natCast_natAbs, Int.natCast_natAbs]; omega_using [huv, hm]
+    omega_using [this]
   refine WP.mono (row_ok h hn2 he hsz ho hfit harr hts (fun t ht => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ht ⊢; rcases ht with h | h <;> simp [h]) bound)
     fun t ⟨Ht, Kt, Ft, Vt⟩ => ⟨Ht, Kt, Ft, ?_⟩
   rw [rowT_three, hU, hV, hM, ofInt_toInt hu, ofInt_toInt hv] at Vt
-  rw [show rv (kw len) { arr := arr } n + sz + o = rv (kw len) { arr := arr } n + o + sz by omega]
+  rw [show rv (kw len) { arr := arr } n + sz + o = rv (kw len) { arr := arr } n + o + sz by omega_using []]
   exact sval_of_mod Vt hr.1 hr.2
 
 end VG.Proof.Rsa.X86.InvBatchRt.F

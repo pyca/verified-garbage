@@ -263,9 +263,9 @@ def withQuad (xz : XZ) (v : Spec.Cast5.Word) : Option (Arr × Nat) → Spec.Cast
 /-- A quadruple of `x` or `z`, read big-endian a byte at a time. -/
 theorem holdsXZ_beWord {m : Mem} {p : Addr} {st : XZ} (h : HoldsXZ m p st) (a : Arr) {q : Nat} (hq : q < 4) :
     ByteLoad.beWord m p (off a + 4 * q) = quadOf (st.arr a) q := by
-  rw [ByteLoad.beWord, quadOf, show off a + 4 * q + 1 = off a + (4 * q + 1) by omega,
-    show off a + 4 * q + 2 = off a + (4 * q + 2) by omega, show off a + 4 * q + 3 = off a + (4 * q + 3) by omega,
-    h a _ (by omega), h a _ (by omega), h a _ (by omega), h a _ (by omega)]
+  rw [ByteLoad.beWord, quadOf, show off a + 4 * q + 1 = off a + (4 * q + 1) by omega_using [],
+    show off a + 4 * q + 2 = off a + (4 * q + 2) by omega_using [], show off a + 4 * q + 3 = off a + (4 * q + 3) by omega_using [],
+    h a _ (by omega_using [hq]), h a _ (by omega_using [hq]), h a _ (by omega_using [hq]), h a _ (by omega_using [hq])]
 
 theorem wordCode_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k : KSt} (h : KS m0 cb kb T u k)
     (w : Option (Arr × Nat)) (hq : ∀ a q, w = some (a, q) → q < 4) :
@@ -308,7 +308,7 @@ theorem writeBytes_beBytes (m : Mem) (a : Addr) (x : BitVec 64) :
     rw [List.getD_eq_getElem?_getD]
     simp only [ByteLoad.beBytes, List.getElem?_map, List.getElem?_range hy, Option.map_some, Option.getD_some,
       BitVec.setWidth_eq]
-    rw [Proof.Cast5.byteRev32_byte _ hy, shr_lo _ (by omega)]
+    rw [Proof.Cast5.byteRev32_byte _ hy, shr_lo _ (by omega_using [])]
   · rfl
 
 /-- Where a line's value goes. -/

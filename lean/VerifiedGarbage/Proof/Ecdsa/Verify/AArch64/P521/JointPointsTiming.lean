@@ -80,7 +80,7 @@ theorem jointMul_relCT (hc : CfgOk p521) (hC : Law p521.C)
    rw [show P521Joint.K.M.n=p521.n from rfl,toM_cmont hc.toBaseCfgOk]; rfl
  obtain ⟨hw,post⟩:=jointWindow_relCT (packedNafLay hc rfl)
    (unitMod_pow_two hc.p_odd (64*P521Joint.K.M.n)) hC hc.am3 (by simpa only [show P521Joint.K.M.n=p521.n from rfl] using hc.p_lt)
-   (Nat.mod_lt _ (by have := hc.p_ge; omega)) one hwin mixed hO hn17 hP hc.onG vb ub zs'
+   (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])) one hwin mixed hO hn17 hP hc.onG vb ub zs'
    _ _ _ _ _ _ ⟨pair,⟨ss,ms,Fs⟩,⟨st,mt,Ft⟩,genS,genT⟩ ws wt
  exact ⟨by rw [he,hw],post⟩
 end VG.Proof.Ecdsa.Verify.AArch64.P521.Joint

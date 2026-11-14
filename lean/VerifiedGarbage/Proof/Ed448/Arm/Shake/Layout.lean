@@ -59,13 +59,13 @@ theorem top : E.toNat + 272 ≤ 2 ^ 32 := by have := hk.fits; omega
 
 theorem frame_addr {d : Nat} (hd : d < 272) :
     State.addr (E + BitVec.ofNat 32 d) = State.addr E + BitVec.ofNat 64 d :=
-  addr_add (by have := hk.top; omega)
+  addr_add (by have := hk.top; omega_using [hd, this])
 
 theorem frame_fit {d k : Nat} (hd : d + k ≤ 248) : (E + BitVec.ofNat 32 d).toNat + k ≤ 2 ^ 32 := by
   have ht := hk.top
-  rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd])]; omega_using [hd, ht]),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd])]
+  omega_using [hd, ht]
 
 /-- A region of the frame, and the stack, are outside `scratch`. -/
 theorem stack_scr {d k : Nat} (hd : d + k ≤ 280) :
@@ -136,6 +136,6 @@ theorem bytes_setup {m m' : Mem} {k : Nat} (hm : Frame [⟨State.addr E, k⟩] m
 /-- A region of the frame at `d ≥ k`, outside the first `k` bytes. -/
 theorem frame_out {k d l : Nat} (hd : k ≤ d) (hl : d + l ≤ 248) :
     (⟨State.addr E, k⟩ : Region).Disjoint ⟨State.addr E + BitVec.ofNat 64 d, l⟩ :=
-  Offset.base_disjoint _ hd (by omega)
+  Offset.base_disjoint _ hd (by omega_using [hl])
 
 end VG.Proof.Ed448.Arm.Shake

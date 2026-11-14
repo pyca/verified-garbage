@@ -79,7 +79,7 @@ theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
   show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R) (Spec.GcmSiv.keyLen (prmOf s).R)
       (bytesAt s.mem (prmOf s).N 12) (bytesAt s.mem (prmOf s).D (prmOf s).n) (bytesAt s.mem (prmOf s).A (prmOf s).al) =
     (bytesAt s'.mem (prmOf s).D (prmOf s).n, bytesAt s'.mem (prmOf s).T 16)
-  rw [hm, hT₆, bytesAt_keep fT (by disj_tac L) (by omega)]
+  rw [hm, hT₆, bytesAt_keep fT (by disj_tac L) (by omega_using [hn])]
   -- What the pieces read.
   have hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (prmOf s).K (prmOf s).R = Spec.GcmSiv.ctxCiph s.mem (prmOf s).K (prmOf s).R :=
     ciph_keep f₁ (by disj_tac L) hRb
@@ -87,12 +87,12 @@ theorem seal_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
   have n₂ : bytesAt s₂.mem (prmOf s).N 12 = bytesAt s.mem (prmOf s).N 12 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), n₁]
   have a₂ : bytesAt s₂.mem (prmOf s).A (prmOf s).al = bytesAt s.mem (prmOf s).A (prmOf s).al := by
-    rw [bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega),
-      bytesAt_keep f₁ (by disj_tac L) (by have := L.al_lt; omega)]
+    rw [bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega_using [this]),
+      bytesAt_keep f₁ (by disj_tac L) (by have := L.al_lt; omega_using [this])]
   have d₂ : bytesAt s₂.mem (prmOf s).D (prmOf s).n = bytesAt s.mem (prmOf s).D (prmOf s).n := by
-    rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega), bytesAt_keep f₁ (by disj_tac L) (by omega)]
+    rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega_using [hn]), bytesAt_keep f₁ (by disj_tac L) (by omega_using [hn])]
   have d₄ : bytesAt s₄.mem (prmOf s).D (prmOf s).n = bytesAt s.mem (prmOf s).D (prmOf s).n := by
-    rw [bytesAt_keep Tg.frame (by disj_tac L) (by omega), bytesAt_keep Po.frame (by disj_tac L) (by omega), d₂]
+    rw [bytesAt_keep Tg.frame (by disj_tac L) (by omega_using [hn]), bytesAt_keep Po.frame (by disj_tac L) (by omega_using [hn]), d₂]
   have key₃ : Spec.GcmSiv.ctxCiph s₃.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s₂.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R :=
     ciph_keep Po.frame (by disj_tac L) hRb
@@ -186,7 +186,7 @@ theorem openMid_ok (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) {p : Pr
     rw [L.w0] at hw0
     rw [d₆, O.data, hw0, hk, dA L.d_w (Nat.le_of_lt hn)]
   · have hp : ∀ xs ys : List Byte, (Spec.GcmSiv.pad16 xs ++ Spec.GcmSiv.pad16 ys).length % 16 = 0 := fun xs ys => by
-      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega
+      rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega_arith
     have nN : bytesAt t₅.mem p.N 12 = bytesAt t.mem p.N 12 :=
       Proof.AesGcm.AArch64.bytesAt_frame P₂₅.frame (forall_app (by disj_tac L) (absorbR_buf L.n_w)) (by decide)
     rw [d₆, hm₆, tagInMem_bytes, nN, P₂₅.out, hG, hY, tagInputG, length_bytesAt, length_bytesAt,
@@ -251,10 +251,10 @@ theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
   have n₂ : bytesAt s₂.mem (prmOf s).N 12 = bytesAt s.mem (prmOf s).N 12 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), n₁]
   have a₂ : bytesAt s₂.mem (prmOf s).A (prmOf s).al = bytesAt s.mem (prmOf s).A (prmOf s).al := by
-    rw [bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega),
-      bytesAt_keep f₁ (by disj_tac L) (by have := L.al_lt; omega)]
+    rw [bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega_using [this]),
+      bytesAt_keep f₁ (by disj_tac L) (by have := L.al_lt; omega_using [this])]
   have d₂ : bytesAt s₂.mem (prmOf s).D (prmOf s).n = bytesAt s.mem (prmOf s).D (prmOf s).n := by
-    rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega), bytesAt_keep f₁ (by disj_tac L) (by omega)]
+    rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega_using [hn]), bytesAt_keep f₁ (by disj_tac L) (by omega_using [hn])]
   have tag₂ : bytesAt s₂.mem ((prmOf s).W + BitVec.ofNat 64 0) 16 = bytesAt s.mem (prmOf s).T 16 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), L.w0, hT₁]
   have tag₅ : bytesAt s₅.mem ((prmOf s).W + BitVec.ofNat 64 0) 16 = bytesAt s.mem (prmOf s).T 16 := by
@@ -265,7 +265,7 @@ theorem open_wp (hP : PrepPow) (gh : Gh8Ok) (e3 : Bool) (v : GcmImpl) (hti : Tag
       Spec.GcmSiv.ctxCiph s₂.mem ((prmOf s).W + BitVec.ofNat 64 240) (prmOf s).R :=
     ciph_keep Md.frame (dMd (by disj_tac L) (by disj_tac L)) hRb
   have d₆ : bytesAt s₆.mem (prmOf s).D (prmOf s).n = bytesAt s₄.mem (prmOf s).D (prmOf s).n := by
-    rw [hm₆, bytesAt_keep Tg.frame (by disj_tac L) (by omega)]
+    rw [hm₆, bytesAt_keep Tg.frame (by disj_tac L) (by omega_using [hn])]
   have au := Ky.auth
   have ci := Ky.ciph
   rw [hK₁, n₁] at au ci

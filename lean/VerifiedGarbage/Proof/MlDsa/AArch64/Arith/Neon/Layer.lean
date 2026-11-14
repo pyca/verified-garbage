@@ -56,12 +56,12 @@ theorem layer_large_ok {fP zP : Addr} {len : Nat} (hlen : len ∈ [4,8,16,32,64,
   obtain ⟨h4,hl4,hl,hcov,hN0,hN⟩ := hfacts
   have hfirst : firstZ len up < 256 := hzi0 ▸ hzi 0 hN0
   unfold layer
-  rw [ite_eq_right (by omega : ¬ len < 4)]
-  refine WP.seq (WP.mono (preLayer_ok len up (by omega) s) fun s₁ ⟨⟨⟨hx2,hx3,hm1⟩,k1⟩,hv1⟩ => ?_)
-  refine WP.seq (WP.mono (counter4_ok (128/len) (by omega) s₁)
+  rw [ite_eq_right (by omega_using [h4] : ¬ len < 4)]
+  refine WP.seq (WP.mono (preLayer_ok len up (by omega_using [hfirst]) s) fun s₁ ⟨⟨⟨hx2,hx3,hm1⟩,k1⟩,hv1⟩ => ?_)
+  refine WP.seq (WP.mono (counter4_ok (128/len) (by omega_using [hN]) s₁)
     fun s₂ ⟨⟨⟨hcnt,hm2⟩,k2⟩,hv2⟩ => ?_)
   have c2 : VConsts s₂ := ⟨by rw [hv2,hv1]; exact hc.q, by rw [hv2,hv1]; exact hc.qi⟩
-  refine WP.mono (wp_countdown (cnt := .x4) (N := 128/len) (by omega) hN0
+  refine WP.mono (wp_countdown (cnt := .x4) (N := 128/len) (by omega_using [hN]) hN0
     (fun c s' => PolyIs s'.mem fP (layF blk F len zi c) ∧
       s'.gpr .x2 = coeffAddr fP (2*len*c) ∧ s'.gpr .x3 = coeffAddr zP (zi c) ∧
       BInv fP s₂ s' ∧ Tab tab s'.mem zP 256)
@@ -72,7 +72,7 @@ theorem layer_large_ok {fP zP : Addr} {len : Nat} (hlen : len ∈ [4,8,16,32,64,
     fun s' ⟨hp,_,_,hi,_⟩ => ⟨hp,⟨((k1.trans k2).trans hi.keep).mono,
       by simpa only [hm2,hm1] using hi.frame,hi.consts⟩⟩
   have hst : 2*len*c+2*len ≤ 256 := by
-    have hh := Nat.mul_le_mul_left (2*len) (show c+1 ≤ 128/len by omega)
+    have hh := Nat.mul_le_mul_left (2*len) (show c+1 ≤ 128/len by omega_using [hcc])
     rw [Nat.mul_succ,hcov] at hh; exact hh
   refine WP.mono (block_ok hbf hblk h4 hl hl4 hst (hzi c hcc) hzt up hx2' hx3' hi.consts hp ht'
     (by rw [hi.keep.wr,k2.wr,k1.wr]; exact hw)

@@ -100,20 +100,20 @@ theorem sc_add (s₀ : State) (a : Nat) :
 
 /-- A part of the aligned scratch space, within `scratch`. -/
 theorem sc_sub {a n : Nat} (h : a + n + 7 ≤ Wi) : Region.Sub ⟨sc s₀ + BitVec.ofNat 64 a, n⟩ (scR Wi s₀) := by
-  rw [sc_add]; exact Offset.sub_base _ (by have := pad_le (scr s₀); omega)
+  rw [sc_add]; exact Offset.sub_base _ (by have := pad_le (scr s₀); omega_using [h, this])
 
 theorem sc_contains (hz : Sizes P Wi) {a n : Nat} (h : a + n + 7 ≤ Wi) :
     (scR Wi s₀).Contains (sc s₀ + BitVec.ofNat 64 a) n := by
   rw [sc_add]
-  exact Offset.contains_base _ (by have := pad_le (scr s₀); omega)
-    (by have := pad_le (scr s₀); have := hz.W; omega)
+  exact Offset.contains_base _ (by have := pad_le (scr s₀); omega_using [h, this])
+    (by have := pad_le (scr s₀); have := hz.W; omega_arith)
 
 theorem sc_al : (sc s₀).toNat % 8 = 0 := Align.align_al _
 
 /-- Two parts of the aligned scratch space. -/
 theorem sc_disj (hz : Sizes P Wi) {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : a + n ≤ Wi) (hb : b + k ≤ Wi) :
     Region.Disjoint ⟨sc s₀ + BitVec.ofNat 64 a, n⟩ ⟨sc s₀ + BitVec.ofNat 64 b, k⟩ :=
-  Offset.disjoint _ h (by have := hz.W; omega) (by have := hz.W; omega)
+  Offset.disjoint _ h (by have := hz.W; omega_using [ha, this]) (by have := hz.W; omega_using [hb, this])
 
 theorem sc0 (s₀ : State) : sc s₀ + BitVec.ofNat 64 0 = sc s₀ := BitVec.add_zero _
 
@@ -146,16 +146,16 @@ include hp hz
 theorem in_scr {s : State} (hwr : s.wr = s₀.wr) {a n : Nat} (h : a + n + 7 ≤ Wi) {k : Nat} (hk : k < n) :
     InRegions s.wr (sc s₀ + BitVec.ofNat 64 a + BitVec.ofNat 64 k) 1 :=
   ⟨scR Wi s₀, by rw [hwr, hp.wr]; simp, by
-    rw [Offset.add_add]; exact sc_contains hz (by omega)⟩
+    rw [Offset.add_add]; exact sc_contains hz (by omega_using [h, hk])⟩
 
 theorem in_t {s : State} (hwr : s.wr = s₀.wr) {k : Nat} (hk : k < P.D) :
     InRegions s.wr (tp s₀ + BitVec.ofNat 64 k) 1 :=
-  ⟨tR P s₀, by rw [hwr, hp.wr]; simp, Offset.contains_base _ (by omega) (by have := hz.DN; have := hz.N64; omega)⟩
+  ⟨tR P s₀, by rw [hwr, hp.wr]; simp, Offset.contains_base _ (by omega_using [hk]) (by have := hz.DN; have := hz.N64; omega_arith)⟩
 
 theorem in_key {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {k : Nat} (hk : k < 2 * P.S) :
     InRegions (s.rd ++ s.wr) (key s₀ + BitVec.ofNat 64 k) 1 :=
   ⟨keyR P s₀, by rw [hrd, hwr, hp.rd]; simp,
-    Offset.contains_base _ (by omega) (by have := hz.N64; have := hz.B128; simp only [It.S] at hk; omega)⟩
+    Offset.contains_base _ (by omega_using [hk]) (by have := hz.N64; have := hz.B128; simp only [It.S] at hk; omega_arith)⟩
 
 /-- What a step writes keeps `St`'s facts: the regions written are in the
 scratch space before the saved registers, the hash value, the block's first
@@ -177,42 +177,42 @@ theorem St.frame {H : Md P.B P.N L} {c c' : BitVec 64} {s s' : State} (h : St P 
   have hsub : ∀ r ∈ rs, ∃ r' ∈ [tR P s₀, scR Wi s₀], Region.Sub r r' := by
     intro r hr
     rcases hrs r hr with rfl | rfl | rfl | rfl
-    · exact ⟨scR Wi s₀, by simp, by rw [← sc0 s₀]; exact sc_sub (by omega)⟩
-    · exact ⟨scR Wi s₀, by simp, sc_sub (by simp only [It.hvO]; omega)⟩
-    · exact ⟨scR Wi s₀, by simp, sc_sub (by simp only [It.blkO, It.hvO]; omega)⟩
+    · exact ⟨scR Wi s₀, by simp, by rw [← sc0 s₀]; exact sc_sub (by omega_using [hf₁])⟩
+    · exact ⟨scR Wi s₀, by simp, sc_sub (by simp only [It.hvO]; omega_using [hf₁])⟩
+    · exact ⟨scR Wi s₀, by simp, sc_sub (by simp only [It.blkO, It.hvO]; omega_using [hf₁, hDB])⟩
     · exact ⟨tR P s₀, by simp, fun _ h => h⟩
   -- The saved registers and the padding are outside it.
   have dsv : ∀ r ∈ rs, Region.Disjoint ⟨sc s₀ + BitVec.ofNat 64 P.CW, 56⟩ r := by
     intro r hr
     rcases hrs r hr with rfl | rfl | rfl | rfl
-    · have := sc_disj (s₀ := s₀) hz (a := P.CW) (n := 56) (b := 0) (k := P.CW) (.inr (by omega))
-        (by omega) (by omega)
+    · have := sc_disj (s₀ := s₀) hz (a := P.CW) (n := 56) (b := 0) (k := P.CW) (.inr (by omega_using []))
+        (by omega_using [hf₁]) (by omega_using [hf₁])
       rwa [sc0] at this
-    · exact sc_disj hz (.inl (by simp only [It.hvO]; omega)) (by omega) (by simp only [It.hvO]; omega)
-    · exact sc_disj hz (.inl (by simp only [It.blkO, It.hvO]; omega)) (by omega)
-        (by simp only [It.blkO, It.hvO]; omega)
-    · exact (tsc (by omega)).symm
+    · exact sc_disj hz (.inl (by simp only [It.hvO]; omega_using [])) (by omega_using [hf₁]) (by simp only [It.hvO]; omega_using [hf₁])
+    · exact sc_disj hz (.inl (by simp only [It.blkO, It.hvO]; omega_using [])) (by omega_using [hf₁])
+        (by simp only [It.blkO, It.hvO]; omega_using [hf₁, hDB])
+    · exact (tsc (by omega_using [hf₁])).symm
   have dpad : ∀ r ∈ rs, Region.Disjoint ⟨blk P s₀ + BitVec.ofNat 64 P.D, P.B - P.D⟩ r := by
     intro r hr
     have e : blk P s₀ + BitVec.ofNat 64 P.D = sc s₀ + BitVec.ofNat 64 (P.blkO + P.D) := Offset.add_add _ _ _
     rw [e]
     rcases hrs r hr with rfl | rfl | rfl | rfl
     · have := sc_disj (s₀ := s₀) hz (a := P.blkO + P.D) (n := P.B - P.D) (b := 0) (k := P.CW)
-        (.inr (by simp only [It.blkO, It.hvO]; omega)) (by simp only [It.blkO, It.hvO]; omega) (by omega)
+        (.inr (by simp only [It.blkO, It.hvO]; omega_using [])) (by simp only [It.blkO, It.hvO]; omega_using [hf₁, hDB]) (by omega_using [hf₁])
       rwa [sc0] at this
-    · exact sc_disj hz (.inr (by simp only [It.blkO]; omega)) (by simp only [It.blkO, It.hvO]; omega)
-        (by simp only [It.hvO]; omega)
-    · exact sc_disj hz (.inr (by omega)) (by simp only [It.blkO, It.hvO]; omega)
-        (by simp only [It.blkO, It.hvO]; omega)
-    · exact (tsc (by simp only [It.blkO, It.hvO]; omega)).symm
+    · exact sc_disj hz (.inr (by simp only [It.blkO]; omega_using [])) (by simp only [It.blkO, It.hvO]; omega_using [hf₁, hDB])
+        (by simp only [It.hvO]; omega_using [hf₁])
+    · exact sc_disj hz (.inr (by omega_using [])) (by simp only [It.blkO, It.hvO]; omega_using [hf₁, hDB])
+        (by simp only [It.blkO, It.hvO]; omega_using [hf₁, hDB])
+    · exact (tsc (by simp only [It.blkO, It.hvO]; omega_using [hf₁, hDB])).symm
   refine ⟨hrd, hwr, hsp, by rw [hg _ (by simp)]; exact h.s1, by rw [hg _ (by simp)]; exact h.s2,
     by rw [hg _ (by simp)]; exact h.s3, by rw [hg _ (by simp)]; exact h.s4, by rw [hg _ (by simp)]; exact h.s5,
     hc, fun r hr => by rw [hg r (by simp only [List.mem_append]; exact .inr hr)]; exact h.nv r hr,
     h.fr.trans (hf.sub hsub), h.saved.frame_in (lo := P.CW) (n := 56) (fun q hq => by
       simp only [It.saved, It.so, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega) hf dsv, ?_⟩
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []) hf dsv, ?_⟩
   rw [← h.pad]
-  exact VG.Proof.Pbkdf2.Memory.frame_bytesAt hf dpad (by omega)
+  exact VG.Proof.Pbkdf2.Memory.frame_bytesAt hf dpad (by omega_using [hB])
 
 end
 
@@ -224,18 +224,18 @@ theorem blk_eq (P : It) (s₀ : State) : blk P s₀ = sc s₀ + BitVec.ofNat 64 
 /-- The hash value and the block are disjoint. -/
 theorem hv_blk (hz : Sizes P Wi) : Region.Disjoint ⟨hv P s₀, P.N⟩ ⟨blk P s₀, P.B⟩ := by
   rw [hv_eq, blk_eq]
-  exact sc_disj hz (.inl (by omega)) (by have := hz.fits; omega) (by have := hz.fits; omega)
+  exact sc_disj hz (.inl (by omega_using [])) (by have := hz.fits; omega_using [this]) (by have := hz.fits; omega_using [this])
 
 theorem hv_sc (hz : Sizes P Wi) : Region.Disjoint ⟨hv P s₀, P.N⟩ ⟨sc s₀, P.CW⟩ := by
   rw [hv_eq]
-  have := sc_disj (s₀ := s₀) hz (a := P.CW + 56) (n := P.N) (b := 0) (k := P.CW) (.inr (by omega))
-    (by have := hz.fits; omega) (by have := hz.fits; omega)
+  have := sc_disj (s₀ := s₀) hz (a := P.CW + 56) (n := P.N) (b := 0) (k := P.CW) (.inr (by omega_using []))
+    (by have := hz.fits; omega_using [this]) (by have := hz.fits; omega_using [this])
   rwa [sc0] at this
 
 theorem blk_sc (hz : Sizes P Wi) : Region.Disjoint ⟨blk P s₀, P.B⟩ ⟨sc s₀, P.CW⟩ := by
   rw [blk_eq]
-  have := sc_disj (s₀ := s₀) hz (a := P.CW + 56 + P.N) (n := P.B) (b := 0) (k := P.CW) (.inr (by omega))
-    (by have := hz.fits; omega) (by have := hz.fits; omega)
+  have := sc_disj (s₀ := s₀) hz (a := P.CW + 56 + P.N) (n := P.B) (b := 0) (k := P.CW) (.inr (by omega_using []))
+    (by have := hz.fits; omega_using [this]) (by have := hz.fits; omega_using [this])
   rwa [sc0] at this
 
 section
@@ -243,20 +243,20 @@ variable (hp : Pre P Wi s₀) (hz : Sizes P Wi)
 include hp hz
 
 theorem t_hv : Region.Disjoint (tR P s₀) ⟨hv P s₀, P.N⟩ :=
-  hp.t_s.sub_right (by rw [hv_eq]; exact sc_sub (by have := hz.fits; omega))
+  hp.t_s.sub_right (by rw [hv_eq]; exact sc_sub (by have := hz.fits; omega_using [this]))
 
 theorem t_blk : Region.Disjoint (tR P s₀) ⟨blk P s₀, P.B⟩ :=
-  hp.t_s.sub_right (by rw [blk_eq]; exact sc_sub (by have := hz.fits; omega))
+  hp.t_s.sub_right (by rw [blk_eq]; exact sc_sub (by have := hz.fits; omega_using [this]))
 
 theorem t_blkD : Region.Disjoint (tR P s₀) ⟨blk P s₀, P.D⟩ :=
   (t_blk hp hz).sub_right (Region.sub_prefix (Nat.le_of_lt hz.DB))
 
 theorem hv_in {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
     InRegions (s.rd ++ s.wr) (hv P s₀) P.N :=
-  ⟨scR Wi s₀, by rw [hrd, hwr, hp.rd, hp.wr]; simp, by rw [hv_eq]; exact sc_contains hz (by have := hz.fits; omega)⟩
+  ⟨scR Wi s₀, by rw [hrd, hwr, hp.rd, hp.wr]; simp, by rw [hv_eq]; exact sc_contains hz (by have := hz.fits; omega_using [this])⟩
 
 theorem blk_in {s : State} (hwr : s.wr = s₀.wr) {n : Nat} (hn : n ≤ P.B) : InRegions s.wr (blk P s₀) n :=
-  ⟨scR Wi s₀, by rw [hwr, hp.wr]; simp, by rw [blk_eq]; exact sc_contains hz (by have := hz.fits; omega)⟩
+  ⟨scR Wi s₀, by rw [hwr, hp.wr]; simp, by rw [blk_eq]; exact sc_contains hz (by have := hz.fits; omega_using [hn, this])⟩
 
 omit hz in
 /-- Regions of the aligned scratch space are within the writable regions. -/
@@ -265,7 +265,7 @@ theorem sc_covers {rs : List Region}
   have hpd := pad_le (scr s₀)
   have hc : VG.Covers rs s₀.wr := VG.Covers.of_sub fun r hr => by
     obtain ⟨a, ha, hl⟩ := h r hr
-    exact ⟨scR Wi s₀, by rw [hp.wr]; simp, Align.pad (scr s₀) + a, by rw [ha, sc_add], by dsimp only; omega⟩
+    exact ⟨scR Wi s₀, by rw [hp.wr]; simp, Align.pad (scr s₀) + a, by rw [ha, sc_add], by dsimp only; omega_using [hpd, hl]⟩
   exact hc
 
 /-- The hash value at `key + o` into the scratch space. -/
@@ -281,13 +281,13 @@ theorem load_ok {H : Md P.B P.N L} (hR : H.Reloc) {c : BitVec 64} {s : State} (h
   have hD := hz.DN
   have kS : (keyR P s₀).Disjoint (scR Wi s₀) := hp.k_s
   have kv : Region.Disjoint ⟨key s₀ + BitVec.ofNat 64 o, P.N⟩ ⟨hv P s₀, P.N⟩ :=
-    (kS.sub_left (Offset.sub_base _ ho)).sub_right (by rw [hv_eq]; exact sc_sub (by have := hz.fits; omega))
-  refine cp_ok (by decide) (by decide) o 0 P.N (by omega) (by omega) rest s Q
+    (kS.sub_left (Offset.sub_base _ ho)).sub_right (by rw [hv_eq]; exact sc_sub (by have := hz.fits; omega_using [this]))
+  refine cp_ok (by decide) (by decide) o 0 P.N (by omega_using [ho, hN, hB, hS]) (by omega_using [hN]) rest s Q
     (fun j hj => by
-      rw [h.s4, Offset.add_add]; exact in_key hp hz h.rd h.wr (by omega))
+      rw [h.s4, Offset.add_add]; exact in_key hp hz h.rd h.wr (by omega_using [ho, hj]))
     (fun j hj => by
       rw [h.s1, BitVec.add_zero, hv_eq]
-      exact in_scr hp hz h.wr (by have := hz.fits; omega) hj)
+      exact in_scr hp hz h.wr (by have := hz.fits; omega_using [this]) hj)
     (by
       rw [h.s4, h.s1, BitVec.add_zero]
       exact kv.sep (Region.contains_self _ _) (Region.contains_self _ _))
@@ -299,18 +299,18 @@ theorem load_ok {H : Md P.B P.N L} (hR : H.Reloc) {c : BitVec 64} {s : State} (h
       (by rw [g _ (by decide)]; exact h.s6) (fun r hr => g r (by revert r; decide)) hf
       (by simp only [List.mem_singleton]; rintro r rfl; exact .inr (.inl rfl))) ?_ ?_ ?_
   · refine hR s₀.mem s'.mem _ _ fun i hi => ?_
-    rw [m', writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega),
+    rw [m', writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega_using [hN]),
       bytesAt_getD' _ _ hi, Offset.add_add]
-    refine h.fr.bytes (R := keyR P s₀) (fun r hr => ?_) (by simp only [hS]; omega)
-      (show o + i < 2 * P.S by omega)
+    refine h.fr.bytes (R := keyR P s₀) (fun r hr => ?_) (by simp only [hS]; omega_using [hN, hB])
+      (show o + i < 2 * P.S by omega_using [ho, hi])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     exacts [hp.k_t, kS]
   · exact VG.Proof.Pbkdf2.Memory.frame_bytesAt hf (by
       simp only [List.mem_singleton]; rintro r rfl
-      exact ((hv_blk hz).sub_right (Region.sub_prefix (Nat.le_of_lt hz.DB))).symm) (by omega)
+      exact ((hv_blk hz).sub_right (Region.sub_prefix (Nat.le_of_lt hz.DB))).symm) (by omega_using [hN, hD])
   · exact VG.Proof.Pbkdf2.Memory.frame_bytesAt hf (by
-      simp only [List.mem_singleton]; rintro r rfl; exact t_hv hp hz) (by omega)
+      simp only [List.mem_singleton]; rintro r rfl; exact t_hv hp hz) (by omega_using [hN, hD])
 
 /-- `load_ok`, alone in its block. -/
 theorem load_ok' {H : Md P.B P.N L} (hR : H.Reloc) {c : BitVec 64} {s : State} (h : St P Wi H s₀ c s) {o : Nat}
@@ -340,15 +340,15 @@ theorem cmp_ok {H : Md P.B P.N L} (hf : CalleeOk H P.CW P.cmpC) {c : BitVec 64} 
     refine sc_covers hp fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨_, blk_eq P s₀, by dsimp only; omega⟩
-    · exact ⟨_, hv_eq P s₀, by dsimp only; omega⟩
-    · exact ⟨0, (sc0 s₀).symm, by dsimp only; omega⟩
+    · exact ⟨_, blk_eq P s₀, by dsimp only; omega_using [hfi]⟩
+    · exact ⟨_, hv_eq P s₀, by dsimp only; omega_using [hfi]⟩
+    · exact ⟨0, (sc0 s₀).symm, by dsimp only; omega_using [hfi]⟩
   have hcw : RISCV64.Covers [⟨hv P s₀, P.N⟩, ⟨sc s₀, P.CW⟩] s₀.wr := by
     refine sc_covers hp fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, hv_eq P s₀, by dsimp only; omega⟩
-    · exact ⟨0, (sc0 s₀).symm, by dsimp only; omega⟩
+    · exact ⟨_, hv_eq P s₀, by dsimp only; omega_using [hfi]⟩
+    · exact ⟨0, (sc0 s₀).symm, by dsimp only; omega_using [hfi]⟩
   refine compressAt_ok hf h.s1 h.s2 h.s3 (hv_sc hz) (hv_blk hz).symm (blk_sc hz) sc_al
     (by rw [h.rd, h.wr]; exact fun a n hi => (hcv a n hi).elim fun r ⟨hr, hc⟩ =>
       ⟨r, List.mem_append_right _ hr, hc⟩)
@@ -359,7 +359,7 @@ theorem cmp_ok {H : Md P.B P.N L} (hf : CalleeOk H P.CW P.cmpC) {c : BitVec 64} 
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
       · exact ((hv_blk hz).sub_right (Region.sub_prefix (Nat.le_of_lt hDB))).symm
-      · exact (blk_sc hz).sub_left (Region.sub_prefix (Nat.le_of_lt hDB))) (by omega)
+      · exact (blk_sc hz).sub_left (Region.sub_prefix (Nat.le_of_lt hDB))) (by omega_using [hB, hDB])
   refine k s' (h.frame hp hz (rd'.trans h.rd) (wr'.trans h.wr) (sp'.trans h.sp)
       (by rw [cs' _ (by decide)]; exact h.s6) (fun r hr => cs' r (by revert r; decide)) f' (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -370,7 +370,7 @@ theorem cmp_ok {H : Md P.B P.N L} (hf : CalleeOk H P.CW P.cmpC) {c : BitVec 64} 
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
       · exact t_hv hp hz
-      · exact hp.t_s.sub_right (by rw [← sc0 s₀]; exact sc_sub (by omega))) (by omega)
+      · exact hp.t_s.sub_right (by rw [← sc0 s₀]; exact sc_sub (by omega_using [hfi]))) (by omega_using [hB, hDB])
 
 /-- The digest of the hash value over the block's first `D` bytes. -/
 theorem digest_ok {H : Md P.B P.N L} (hout : OutOk H P.D P.out) {c : BitVec 64} {s : State}
@@ -383,7 +383,7 @@ theorem digest_ok {H : Md P.B P.N L} (hout : OutOk H P.D P.out) {c : BitVec 64} 
   have hD := hz.DN
   have hN := hz.N64
   have hl : ((H.digest (H.stateAt s.mem (hv P s₀))).take P.D).length = P.D := by
-    rw [List.length_take, H.digest_length]; omega
+    rw [List.length_take, H.digest_length]; omega_using [hD]
   refine WP.block_append_iff.mpr (WP.mono (hout s (by rw [h.s1]; exact hv_in hp hz h.rd h.wr)
     (by rw [h.s3]; exact blk_in hp hz h.wr (Nat.le_of_lt hDB))
     (by rw [h.s1, h.s3]; exact (hv_blk hz).sub_right (Region.sub_prefix (Nat.le_of_lt hDB))))
@@ -397,10 +397,10 @@ theorem digest_ok {H : Md P.B P.N L} (hout : OutOk H P.D P.out) {c : BitVec 64} 
       (by simp only [List.mem_singleton]; rintro r rfl; exact .inr (.inr (.inl rfl)))) ?_ ?_
   · rw [m']
     have := bytesAt_writeBytes_self s.mem (blk P s₀) ((H.digest (H.stateAt s.mem (hv P s₀))).take P.D)
-      (by rw [hl]; omega)
+      (by rw [hl]; omega_using [hD, hN])
     rwa [hl] at this
   · exact VG.Proof.Pbkdf2.Memory.frame_bytesAt hf (by
-      simp only [List.mem_singleton]; rintro r rfl; exact t_blkD hp hz) (by omega)
+      simp only [List.mem_singleton]; rintro r rfl; exact t_blkD hp hz) (by omega_using [hD, hN])
 
 /-- `T ← T ⊕ U` and the count. -/
 theorem tail_ok {H : Md P.B P.N L} {c : BitVec 64} {s : State} (h : St P Wi H s₀ c s) {Q : State → Prop}
@@ -413,10 +413,10 @@ theorem tail_ok {H : Md P.B P.N L} {c : BitVec 64} {s : State} (h : St P Wi H s�
   have hN := hz.N64
   have hfi := hz.fits
   rw [xorT_eq]
-  refine xor_ok P.D (by omega) _ s Q
+  refine xor_ok P.D (by omega_using [hD, hN]) _ s Q
     (fun j hj => by
       rw [h.s3, blk_eq]
-      have := in_scr hp hz h.wr (a := P.CW + 56 + P.N) (n := P.B) (by omega) (Nat.lt_trans hj hDB)
+      have := in_scr hp hz h.wr (a := P.CW + 56 + P.N) (n := P.B) (by omega_using [hfi]) (Nat.lt_trans hj hDB)
       exact ⟨_, List.mem_append_right _ this.choose_spec.1, this.choose_spec.2⟩)
     (fun j hj => by rw [h.s5]; exact in_t hp hz h.wr hj)
     (by rw [h.s5, h.s3]; exact (t_blkD hp hz).sep (Region.contains_self _ _) (Region.contains_self _ _))
@@ -434,10 +434,10 @@ theorem tail_ok {H : Md P.B P.N L} {c : BitVec 64} {s : State} (h : St P Wi H s�
       (by simp only [List.mem_singleton]; rintro r rfl; exact .inr (.inr (.inr rfl)))) ?_ ?_
   · rw [u.mem, m']
     have := bytesAt_writeBytes_self s.mem (tp s₀)
-      (xorBytes (bytesAt s.mem (tp s₀) P.D) (bytesAt s.mem (blk P s₀) P.D)) (by rw [hl]; omega)
+      (xorBytes (bytesAt s.mem (tp s₀) P.D) (bytesAt s.mem (blk P s₀) P.D)) (by rw [hl]; omega_using [hD, hN])
     rwa [hl] at this
   · exact VG.Proof.Pbkdf2.Memory.frame_bytesAt hf (by
-      simp only [List.mem_singleton]; rintro r rfl; exact (t_blkD hp hz).symm) (by omega)
+      simp only [List.mem_singleton]; rintro r rfl; exact (t_blkD hp hz).symm) (by omega_using [hD, hN])
 
 end
 
@@ -466,10 +466,10 @@ theorem body_ok {H : Md P.B P.N L} (hR : H.Reloc) (hf : CalleeOk H P.CW P.cmpC) 
     WP isa P.body s (Inv P Wi H s₀ (r - 1)) := by
   have hS : P.S = P.N + P.B := rfl
   unfold It.body
-  refine WP.seq (load_ok' hp hz hR h.toSt (o := 0) (by omega) fun s₁ t₁ e₁ b₁ tp₁ => ?_)
+  refine WP.seq (load_ok' hp hz hR h.toSt (o := 0) (by omega_using [hS]) fun s₁ t₁ e₁ b₁ tp₁ => ?_)
   refine WP.seq (cmp_ok hp hz hf t₁ fun s₂ t₂ e₂ b₂ tp₂ => ?_)
   refine WP.seq (digest_ok hp hz hout t₂ fun s₃ t₃ b₃ tp₃ =>
-    load_ok' hp hz hR t₃ (o := P.S) (by omega) fun s₄ t₄ e₄ b₄ tp₄ => ?_)
+    load_ok' hp hz hR t₃ (o := P.S) (by omega_using [hS]) fun s₄ t₄ e₄ b₄ tp₄ => ?_)
   refine WP.seq (cmp_ok hp hz hf t₄ fun s₅ t₅ e₅ b₅ tp₅ => ?_)
   rw [List.append_assoc]
   refine digest_ok hp hz hout t₅ fun s₆ t₆ b₆ tp₆ => tail_ok hp hz t₆ fun s₇ t₇ tp₇ b₇ => ?_
@@ -480,10 +480,10 @@ theorem body_ok {H : Md P.B P.N L} (hR : H.Reloc) (hf : CalleeOk H P.CW P.cmpC) 
   have ht : bytesAt s₇.mem (tp s₀) P.D =
       xorBytes (bytesAt s.mem (tp s₀) P.D) (stepM P H s₀ (bytesAt s.mem (blk P s₀) P.D)) := by
     rw [tp₇, tp₆, tp₅, tp₄, tp₃, tp₂, tp₁, ← hu, b₇, b₆]
-  obtain ⟨r', rfl⟩ : ∃ r', r = r' + 1 := ⟨r - 1, by omega⟩
+  obtain ⟨r', rfl⟩ : ∃ r', r = r' + 1 := ⟨r - 1, by omega_using [hr]⟩
   have e := ofNat_pred (Nat.succ_pos r')
   rw [Nat.succ_sub_one] at e
-  refine ⟨by rw [Nat.add_sub_cancel, ← e]; exact t₇, by have := h.le; omega, ?_⟩
+  refine ⟨by rw [Nat.add_sub_cancel, ← e]; exact t₇, by have := h.le; omega_using [this], ?_⟩
   rw [h.val, Nat.add_sub_cancel, hu, ht]
   rfl
 

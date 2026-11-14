@@ -80,20 +80,20 @@ theorem sizesW (h : R.big = true) : R.w = 9 ∧ R.Q = 66 ∧ Spec.Ecdsa.nBits R.
 /-- The scalars' bytes fill their words, the last possibly in part. -/
 theorem len_words : 24 ≤ R.Q ∧ R.Q ≤ 66 ∧ 8 * R.w ≤ R.Q + 7 ∧ R.Q ≤ 8 * R.w ∧ R.w ≤ 9 := by
   cases h : R.big
-  · have := R.sizesA h; simp only [Q] at *; omega
-  · have := R.sizesW h; simp only [Q] at *; omega
+  · have := R.sizesA h; simp only [Q] at *; omega_using [this]
+  · have := R.sizesW h; simp only [Q] at *; omega_using [this]
 
 /-- If `big`, `sh` is P-521's 7. -/
 theorem sh7 (h : R.big = true) : R.sh = 7 := by
-  have := R.sizesW h; simp only [Q] at this; rw [R.sh_eq]; omega
+  have := R.sizesW h; simp only [Q] at this; rw [R.sh_eq]; omega_using [this]
 
 /-- Unless `big`, `sh` is 0. -/
 theorem sh0 (h : R.big = false) : R.sh = 0 := by
-  have := R.sizesA h; simp only [Q] at this; rw [R.sh_eq]; omega
+  have := R.sizesA h; simp only [Q] at this; rw [R.sh_eq]; omega_using [this]
 
 theorem n_pos : 0 < R.C.E.curve.n := by
   cases h : R.big
-  · have := (R.sizesA h).2.2.2; have := Nat.two_pow_pos (8 * R.Q); omega
+  · have := (R.sizesA h).2.2.2; have := Nat.two_pow_pos (8 * R.Q); omega_arith
   · have h₁ := (R.sizesW h).2.2
     by_contra h₀
     have : R.C.E.curve.n = 0 := by omega
@@ -150,7 +150,7 @@ abbrev Q : Nat := P.R.Q
 theorem shape (h : (P.v.H.D, P.v.H.B) ∈ shapes) :
     16 ≤ P.v.H.D ∧ P.v.H.D ≤ 64 ∧ P.v.H.D % 4 = 0 ∧ P.v.H.D < P.v.H.B ∧ P.v.H.B ≤ 128 ∧ 64 ≤ P.v.H.B := by
   simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
-  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega
+  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega_using [h, h']
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.v.H.S ≤ 192 ∧ sWork + P.v.I.scratch * 8 ≤ sMsg ∧ sWork + P.v.H.W ≤ sMsg ∧
@@ -165,7 +165,7 @@ theorem sizes : P.v.H.S ≤ 192 ∧ sWork + P.v.I.scratch * 8 ≤ sMsg ∧ sWork
 theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.v.H.D < P.Q := by
   have h₁ := P.R.sizesW h
   have h₂ := P.sizes.2.2.2.2.1
-  exact ⟨h₁.1, h₁.2.1, by simp only [Q]; omega⟩
+  exact ⟨h₁.1, h₁.2.1, by simp only [Q]; omega_using [h₁, h₂]⟩
 
 end RfcHash
 

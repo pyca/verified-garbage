@@ -42,6 +42,6 @@ theorem hashSetup_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
   · rw [hv,h.c.masks.l.kap,ofNat64_add]
     apply congrArg (BitVec.ofNat 64)
     have hl : 1≤2*p.ℓ := by rcases hp with rfl|rfl|rfl <;> decide
-    omega
+    omega_using [hl]
 
 end VG.Proof.MlDsa.AArch64.Sign.Cached

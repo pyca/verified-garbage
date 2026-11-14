@@ -54,20 +54,20 @@ theorem cachedPrepare_import_input (s : State) {p : Inputs}
   have count : 3 + 2 * p.w ≤ p.cachedWords := by
     rw [environment.canonical.1, Spec.Ffdh.generationPrecomputedWords,
       Spec.Rsa.FixedBaseComb.precomputedWords, Spec.Rsa.precomputedWords, Inputs.w]
-    omega
+    omega_using []
   have widthPositive := p.width.1
   have originalFit := environment.fit
-  have address : State.addr pp = off (State.addr p.cachedContext) 24 := VG.Arm.addr_add (by omega)
+  have address : State.addr pp = off (State.addr p.cachedContext) 24 := VG.Arm.addr_add (by omega_using [count, widthPositive, originalFit])
   have ppFit : pp.toNat + 16 * p.w ≤ 2 ^ 32 := by
     simp only [pp, BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : p.cachedContext.toNat + 24 < 2 ^ 32)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [count, widthPositive, originalFit] : p.cachedContext.toNat + 24 < 2 ^ 32)]
+    omega_using [count, originalFit]
   have regionSub : (⟨State.addr pp, 16 * p.w⟩ : Region).Sub (cachedRegion p) := by
     rw [address]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [count])
   exact ⟨ready, ppFit, by
     rw [address]
-    exact CallLay.inRegions_sub environment.readable (by omega) (by omega),
+    exact CallLay.inRegions_sub environment.readable (by omega_using [count]) (by omega_using [originalFit]),
     ((environment.separate _ (by simp [keyCallWrites, keyWrites])).sub_left regionSub).symm, source⟩
 
 theorem cachedPrepare_source_next (s : State) {p : Inputs} {slots : List Nat}
@@ -87,11 +87,11 @@ theorem cachedPrepare_import_next (s : State) {p : Inputs} (h : CachedPrepareLoa
   have count : 3 + 2 * p.w ≤ p.cachedWords := by
     rw [h.environment.canonical.1, Spec.Ffdh.generationPrecomputedWords,
       Spec.Rsa.FixedBaseComb.precomputedWords, Spec.Rsa.precomputedWords, Inputs.w]
-    omega
+    omega_using []
   have widthPositive := p.width.1
   have fit := h.environment.fit
   have address : State.addr (p.cachedContext + BitVec.ofNat 32 24) = off (State.addr p.cachedContext) 24 :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [count, widthPositive, fit])
   rw [address] at modulus
   have value : (s.mem.read (off (State.addr p.cachedContext) 24) (8 * p.w)).toNat = p.P := by
     simpa only [VG.Proof.Mont.off, BitVec.ofNat_eq_ofNat] using h.environment.montgomeryReads.1

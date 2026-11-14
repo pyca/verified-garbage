@@ -31,7 +31,7 @@ theorem highPair_ok {s : State} {p : Addr} {i : Nat}
       t.mem=s.mem.write (p+BitVec.ofNat 64 (16*i)) 16
         (ofVDwords (vdword (s.v (vreg (2*i))) 1) (vdword (s.v (vreg (2*i+1))) 1)) := by
   refine wp_vop (d:=.v26) rfl fun a ha =>
-    wp_strq ⟨by omega,by omega⟩ (by rw [ha.gpr,hp]) (by rw [ha.wr]; exact hout)
+    wp_strq ⟨by omega_using [],by omega_using [hi]⟩ (by rw [ha.gpr,hp]) (by rw [ha.wr]; exact hout)
       fun t ht => WP.block_nil_iff.mpr ?_
   refine ⟨⟨fun r _ _ => by rw [ht.gpr,ha.gpr],fun r h26 _ => by rw [ht.v,ha.get r h26],
     ht.rd.trans ha.rd,ht.wr.trans ha.wr,ht.sp.trans ha.sp⟩,?_⟩
@@ -81,17 +81,17 @@ theorem highPairs_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
   refine WP.mono (highPair_ok hk ((ht.1.gpr .x10 (by decide) (by decide)).trans hptr)
     (by rw [ht.1.wr]; exact hout k hk)) fun u hu => ?_
   have hm : u.mem=t.mem.write (p+BitVec.ofNat 64 (16*k)) 16 (ofVDwords B[2*k]! B[2*k+1]!) := by
-    rw [hu.2,hpt _ (by omega),hpt _ (by omega),vdword_ofVDwords_1,vdword_ofVDwords_1]
+    rw [hu.2,hpt _ (by omega_using [hk]),hpt _ (by omega_using [hk]),vdword_ofVDwords_1,vdword_ofVDwords_1]
   refine ⟨ht.1.trans hu.1,?_,?_⟩
   · intro i hi
     rw [hm]
     by_cases he : i=k
     · subst i; exact read_write16 _ _ _
     · rw [Mem.read_write_sep (Offset.sep p (d:=16*i) (n:=16) (e:=16*k) (k:=16)
-        (by omega) (by omega) (by omega)) (by decide)]
-      exact ht.2.1 i (by omega)
+        (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])) (by decide)]
+      exact ht.2.1 i (by omega_using [hi, he])
   · rw [hm]
-    exact ht.2.2.write (r:=⟨p,128⟩) (by simp) _ (Offset.contains_base p (by omega) (by omega))
+    exact ht.2.2.write (r:=⟨p,128⟩) (by simp) _ (Offset.contains_base p (by omega_using [hk]) (by omega_using [hk]))
 
 /-- One 136-byte high-lane squeeze preserves both resident permutation states. -/
 theorem highRate_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
@@ -115,7 +115,7 @@ theorem highRate_ok {s : State} {p : Addr} {A B : Spec.Sha3.State}
     rw [hm]
     change (a.mem.write (p+BitVec.ofNat 64 128) 8 B[16]!).read (p+BitVec.ofNat 64 (16*i)) 16=_
     rw [Mem.read_write_sep (Offset.sep p (d:=16*i) (n:=16) (e:=128) (k:=8)
-      (by omega) (by omega) (by omega)) (by decide)]
+      (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)]
     exact ha.2.2.1 i hi
   · change t.mem.readW (p+128) 64=B[16]!
     rw [hm,Mem.readW_writeW_self64]

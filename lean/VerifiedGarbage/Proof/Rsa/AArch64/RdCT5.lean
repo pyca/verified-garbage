@@ -91,12 +91,12 @@ theorem storeA_w {j sPtr : Nat} (hj : j < 16) (hP : sPtr < 32) (ptr : DP → Add
     obtain ⟨hwr, hsep⟩ := hO I O
     have hn := hw.scr.nowrap
     have h256 := hw.h256
-    refine WP.mono (storeA_ws hw hj hP (by decide) (hA I s.mem ha) ha.k hm (by have := L.k1; omega)
-      (by have := L.k2; simp only [vk]; omega) (fun i hi => by rw [hW]; exact hwr i hi) hsep)
+    refine WP.mono (storeA_ws hw hj hP (by decide) (hA I s.mem ha) ha.k hm (by have := L.k1; omega_using [this])
+      (by have := L.k2; simp only [vk]; omega_using []) (fun i hi => by rw [hW]; exact hwr i hi) hsep)
       fun t ⟨_, _, ht, hf, k⟩ => ?_
     have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
-      fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
-    exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold rArg at hi; omega), k.wr.trans hW, L, O,
+      fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
+    exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold rArg at hi; omega_using [hi]), k.wr.trans hW, L, O,
       (fw _ (by decide)).trans hm⟩
 
 theorem stores_ct : RelCT isa (Two (GC vk XT)) (seqs (storeA nP VG.Impl.Rsa.AArch64.Recover.sP Public.sK Public.sMask ++

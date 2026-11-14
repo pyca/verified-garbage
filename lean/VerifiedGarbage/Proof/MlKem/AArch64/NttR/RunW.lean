@@ -9,6 +9,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Sym
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
 meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on AArch64: the runs of the 16-bit NTTs of a polynomial stored with 16 bits
@@ -43,6 +44,6 @@ theorem tabT_get {j e : Nat} (hj : j < 32) (he : e < 8) :
   have hl : Impl.MlKem.AArch64.Ntt16.tableHalves.length = 256 := by
     rw [Impl.MlKem.AArch64.Ntt16.tableHalves.lit_eq]; decide +kernel
   show slot tw (slot (tw * 8) tabT j) e = _
-  rw [slot_slot _ _ _ _ _ he, tabT, slot_foldr cT (fun h => Nat.lt_trans (mk_lt _ _ _ _ _) (by decide)) _ _ (by omega)]
+  rw [slot_slot _ _ _ _ _ he, tabT, slot_foldr cT (fun h => Nat.lt_trans (mk_lt _ _ _ _ _) (by decide)) _ _ (by omega_using [hj, he, hl])]
 
 end VG.Proof.MlKem.AArch64.NttR

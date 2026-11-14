@@ -80,7 +80,7 @@ theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherCont
   obtain ⟨ods, ol⟩ := fl
   exact ⟨hrd, hwr, kd, kt, karg, nd, nt, narg, ad, at_, aarg, dt, dds, dls, darg, tds, tls, targ, dsarg, lsarg,
     ek, en, ea, ed, et, eds, els, earg, bk, bn, ba, bd, bt, bds, bls, barg, ok, on, oa, od, ot, ods, ol, w₁,
-    by omega, hgl, h⟩
+    by omega_using [w₂], hgl, h⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
     (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824).post s s' := by
@@ -96,7 +96,7 @@ theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.ChaCha20Poly1305.sealGather
     List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32, toNat_w64] at hp
   obtain ⟨qsp, a0, a1, a2, a3, a4, a5, a6, a7, a8, hd⟩ := hp
   refine ⟨qsp, fun i hi => ?_, hd⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega) with
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega_using [hi]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8]
 

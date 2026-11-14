@@ -38,7 +38,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
     (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
     (hn : sdepth main + 16 < 2 ^ 64) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega))
+  refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
   · intro a n hi
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi
@@ -121,8 +121,8 @@ theorem entry_ok {p : SearchPublic} {s : State} (h : SearchInput p s) :
     have h16 : s.sp.toNat % 16 = 0 := by have := h.sp16; rwa [h.sp_eq] at this
     have ht : s.sp.toNat + 32 ≤ 2 ^ 64 := by have := h.top; rwa [h.sp_eq] at this
     have e : (s.sp + BitVec.ofNat 64 (8 * k)).toNat = s.sp.toNat + 8 * k := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-    rw [e]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hk, ht]
+    rw [e]; omega_using [h16]
   have hst : InRegions ((allocd 160 s).rd ++ (allocd 160 s).wr) (stackArg s 3 + BitVec.ofNat 64 0) 8 := by
     rw [hrd, BitVec.add_zero]
     refine ⟨inState s, ?_, ?_⟩
@@ -197,8 +197,8 @@ theorem search_start {p : SearchPublic} {s t : State} (h : SearchInput p s)
   have hx1 : s.gpr .a1 = BitVec.ofNat 64 p.len := by
     rw [← h.2]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
   have hcap : (s.gpr .a1 <<< 15) + s.gpr .a1 = BitVec.ofNat 64 (primeEntropy p.len) := by
-    rw [hx1, SearchInit.shl_ofNat _ _ (by omega), SearchInit.add_ofNat]
-    unfold primeEntropy; congr 1; omega
+    rw [hx1, SearchInit.shl_ofNat _ _ (by omega_using [hL]), SearchInit.add_ofNat]
+    unfold primeEntropy; congr 1; omega_using []
   refine ⟨h, Nat.zero_le _, Nat.le_refl _, k.2.1, k.2.2.trans (alloc_wr h), ?_, hx, ?_, hy, ?_, ?_, ?_, ?_,
     hf₂, ?_⟩
   · show t.sp - 16 = p.F - 16

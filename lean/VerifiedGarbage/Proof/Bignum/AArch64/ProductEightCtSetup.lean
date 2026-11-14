@@ -27,7 +27,7 @@ def finishRaw (a : Nat) : List Instr :=
 
 theorem setup_fast_ctx {a : Nat} (ha : a < 8) (L : Ws) (s : State) (h : FastW L s) :
     WP isa (.block (VG.Impl.Bignum.AArch64.Square.squareSetup a)) s (SetupFast a L) :=
-  WP.mono (Square.setup_ctx ha L s ⟨h.1, by have := h.2.1; omega⟩)
+  WP.mono (Square.setup_ctx ha L s ⟨h.1, by have := h.2.1; omega_using [this]⟩)
     fun _ ht => ⟨ht, h.2⟩
 
 theorem preparation_ctx {a b : Nat} (ha : a < 8)
@@ -41,14 +41,14 @@ theorem preparation_ctx {a b : Nat} (ha : a < 8)
     unfold productBase
     rw [he]
     unfold slot Public.aAcc at *
-    omega
+    omega_using [he, hz]
   have h8 : s.gpr .x8 = off L.B (productBase (blocks L)) := by
     simpa only [productBase, he] using h.1.x8
   have h12 : s.gpr .x12 = BitVec.ofNat 64 (8 * blocks L) := by rw [he]; exact h.1.x12
   unfold preparation
   refine WP.seq (WP.mono (WideLoops.zero_ok hg.scr h8 h.1.x7 h12 hP hk hk')
     fun u ⟨hu0, huo, ku⟩ => ?_)
-  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega
+  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega_using []
   have hframe := Square.scratch_arrays (s := s) (t := u) (B := L.B) (w := 8 * blocks L)
     (by simpa only [productBase, hlen] using huo)
   have hh : Hdr u.mem L.B (8 * blocks L) mi := hframe.hdr (he.symm ▸ hg.hdr)

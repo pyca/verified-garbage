@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Argon2.Dimensions
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Bounds for the quadratic reference-window mapping in RFC 9106 §3.4.2 -/
 
@@ -30,7 +31,7 @@ theorem reference_scale_lt_count (count j : Nat) (hc : 0 < count) (hj : j < 2 ^ 
 
 theorem reference_relative_bound (count j : Nat) (hc : 0 < count) :
     count - 1 - count * (j * j / 2 ^ 32) / 2 ^ 32 < count := by
-  omega
+  omega_using [hc]
 
 open VG.Spec.Argon2
 
@@ -46,15 +47,15 @@ theorem reference_count_lt_lane (p : Params) (hl : 0 < p.lanes)
   · rw [ite_eq_left first]
     cases same
     · simp only [Bool.false_eq_true, ite_false]
-      split <;> omega
+      split <;> omega_using [column]
     · simp only [ite_true]
-      omega
+      omega_using [column]
   · rw [ite_eq_right first]
     cases same
     · simp only [Bool.false_eq_true, ite_false]
-      split <;> omega
+      split <;> omega_using [hi, len]
     · simp only [ite_true]
-      omega
+      omega_using [hi, len]
 
 theorem reference_count_positive (p : Params) (hl : 0 < p.lanes)
     (hm : 8 * p.lanes ≤ p.memory) (pass slice index : Nat) (same : Bool)
@@ -68,20 +69,20 @@ theorem reference_count_positive (p : Params) (hl : 0 < p.lanes)
   · rw [ite_eq_left first]
     by_cases zero : slice = 0
     · simp only [firstLane first zero, zero, Nat.zero_mul, ite_true]
-      omega
-    · have mul := Nat.mul_le_mul_right p.segmentLen (show 1 ≤ slice by omega)
+      omega_using [active, first, zero]
+    · have mul := Nat.mul_le_mul_right p.segmentLen (show 1 ≤ slice by omega_using [zero])
       rw [Nat.one_mul] at mul
       cases same
       · simp only [Bool.false_eq_true, ite_false]
-        split <;> omega
+        split <;> omega_using [seg, mul]
       · simp only [ite_true]
-        omega
+        omega_using [seg, mul]
   · rw [ite_eq_right first]
     cases same
     · simp only [Bool.false_eq_true, ite_false]
-      split <;> omega
+      split <;> omega_using [seg, len]
     · simp only [ite_true]
-      omega
+      omega_using [seg, len]
 
 theorem reference_count_32 (p : Params) (hl : 0 < p.lanes)
     (hm : 8 * p.lanes ≤ p.memory) (memoryBound : p.memory < 2 ^ 32)
@@ -96,6 +97,6 @@ theorem reference_wrap (sum q : Nat) (bound : sum < 2 * q) :
     sum % q = if sum < q then sum else sum - q := by
   by_cases small : sum < q
   · rw [ite_eq_left small, Nat.mod_eq_of_lt small]
-  · rw [ite_eq_right small, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+  · rw [ite_eq_right small, Nat.mod_eq_sub_mod (by omega_using [small]), Nat.mod_eq_of_lt (by omega_using [bound])]
 
 end VG.Proof.Argon2

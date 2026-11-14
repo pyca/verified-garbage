@@ -46,7 +46,7 @@ theorem sel_ok {o q r : Nat} (ho : o + 56 ≤ 4096) (hq : q + 56 ≤ 4096) (hr :
   have wq : wd s.mem b (q + 4 * k) = limb s0.mem b q k :=
     wd_frame h.frame fun x hx => by
       rw [List.mem_singleton.mp hx]
-      exact Offset.disjoint _ (by omega) (by omega_using [hq, hk]) (by omega_using [ho, hk])
+      exact Offset.disjoint _ (by omega_using [hoq, hk]) (by omega_using [hq, hk]) (by omega_using [ho, hk])
   have wr : wd s.mem b (r + 4 * k) = limb s0.mem b r k :=
     wd_frame h.frame fun x hx => by
       rw [List.mem_singleton.mp hx]
@@ -84,7 +84,7 @@ theorem sel_ok {o q r : Nat} (ho : o + 56 ≤ 4096) (hq : q + 56 ≤ 4096) (hr :
       (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [ho, hk]))
   · rw [limb, hm6]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [ho, hk])]; exact h.lo j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [ho, hk])]; exact h.lo j hj
     · rw [wd_write_self, vo]
 
 /-- An element above the field area is kept by code writing only there. -/

@@ -202,7 +202,7 @@ theorem longFrame {n bytes : Nat} (h : Verified PPC64LE.target H.initLong (longS
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64) (n := n)
     (pre := longPre I.S PPC64LE.abi.ptrBits) (post := Spec.Hmac.initPost I.S PPC64LE.abi.ptrBits) (wa := true)
     (stack := 144) (bytes := bytes) (words := n) h (by exact (by decide : 4 < 8)) hb
-    (by simp only [Elem.size]; omega) (longPre_local _ _) (Proof.Hmac.initPost_local _ _)
+    (by simp only [Elem.size]; omega_using []) (longPre_local _ _) (Proof.Hmac.initPost_local _ _)
     (Proof.Hmac.initPostOut_local _ _ hR hS) hsat rfl
 
 /-! ## `init` for a key of any length, choosing on entry -/
@@ -229,12 +229,12 @@ theorem cmp_ne {b : Nat} (hb : b = 6 ∨ b = 7) (x : BitVec 64) :
       x.toNat % 2 ^ (b + 1) + (2 ^ b - 1) := by
     rw [BitVec.toNat_add, ha, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 ^ b - 1)
       (by rcases hb with rfl | rfl <;> decide)]
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using []
   have hv : ((x >>> (b + 1)) + ((x &&& BitVec.ofNat 64 (2 ^ (b + 1) - 1)) + BitVec.ofNat 64 (2 ^ b - 1)) >>>
       (b + 1)).toNat = x.toNat / 2 ^ (b + 1) + (x.toNat % 2 ^ (b + 1) + (2 ^ b - 1)) / 2 ^ (b + 1) := by
     rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ushiftRight, hb', Nat.shiftRight_eq_div_pow,
       Nat.shiftRight_eq_div_pow]
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using []
   by_cases h : 2 ^ b < x.toNat
   · rw [decide_eq_true h]
     simp only [bne_iff_ne, ne_eq]
@@ -242,13 +242,13 @@ theorem cmp_ne {b : Nat} (hb : b = 6 ∨ b = 7) (x : BitVec 64) :
     have := congrArg BitVec.toNat e
     rw [hv] at this
     simp at this
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using [h, this]
   · rw [decide_eq_false h]
     simp only [bne_eq_false_iff_eq]
     apply BitVec.eq_of_toNat_eq
     rw [hv]
     simp
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using [h]
 
 theorem entry_run {b : Nat} (hb : b = 6 ∨ b = 7) (s : State) :
     ∃ u, execBlock isa (Hash.entryCmp b) s = some (u, []) ∧ Ran s u ∧
@@ -269,7 +269,7 @@ theorem initAny {b : Nat} (hb : b = 6 ∨ b = 7) (hbB : I.S.H.blockSize = 2 ^ b)
     (hsat : ∃ s, (I.initAnyKeyContract PPC64LE.abi (96 + Fs)).pre s) :
     Verified PPC64LE.target (Hash.initEntry b short long) (I.initAnyKeyContract PPC64LE.abi (96 + Fs)) := by
   have hp : ∀ r ∈ preserved, r ≠ .r11 ∧ r ≠ .r12 := by decide
-  rw [show 96 + Fs = 144 + Fl by omega] at hshort hsat ⊢
+  rw [show 96 + Fs = 144 + Fl by omega_using [hst]] at hshort hsat ⊢
   refine Verified.entryBranch (p := fun s => decide (2 ^ b < (s.gpr .r6).toNat))
     (fun _ => []) hlong hshort (fun s hs => ?_) ?_ hsat
   · obtain ⟨u, e, r, ev⟩ := entry_run hb s
@@ -294,7 +294,7 @@ theorem initAny {b : Nat} (hb : b = 6 ∨ b = 7) (hbB : I.S.H.blockSize = 2 ^ b)
       sig_post [longContract, longPre, Spec.Hmac.initSig, Spec.Hmac.initPost, PPC64LE.abi,
         PPC64LE.argRegs] at q
       rw [g3, g4, g5, g6, r.mem] at q; exact q
-    · have hk : (s.gpr .r6).toNat ≤ 2 ^ b := by have := of_decide_eq_false hl; omega
+    · have hk : (s.gpr .r6).toNat ≤ 2 ^ b := by have := of_decide_eq_false hl; omega_using [this]
       sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, PPC64LE.abi, PPC64LE.argRegs] at hs
       sig_pre [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,

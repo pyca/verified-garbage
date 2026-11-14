@@ -31,21 +31,21 @@ theorem symmetricColumns_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat
     intro n t hn ⟨tf, tm, tk⟩
     refine WP.mono (symmetricColumn_ok (hs.of_keeps tk (by decide)) hn (by
       intro i hi; rw [tk.1 _ (cacheReg_kept hi)]; exact fc i hi) fb) fun u ⟨uv, um, uk⟩ => ?_
-    refine ⟨?_, tm.trans (um.mono (by omega) (by omega)), tk.trans uk⟩
+    refine ⟨?_, tm.trans (um.mono (by omega_using []) (by omega_using [hn])), tk.trans uk⟩
     intro k hk
     by_cases h : k = n
     · subst k
-      rw [ite_eq_left (by omega), uv]
+      rw [ite_eq_left (by omega_using []), uv]
 
     · have hsep : ACC + 16 * k + 16 ≤ ACC + 16 * n ∨
-          ACC + 16 * n + 16 ≤ ACC + 16 * k := by omega
+          ACC + 16 * n + 16 ≤ ACC + 16 * k := by omega_using [h]
       change pair (word u.mem base (ACC + 16 * k)) (word u.mem base (ACC + 16 * k + 8)) = _
-      rw [outside_coeff um hsep (by simp only [ACC]; omega)]
+      rw [outside_coeff um hsep (by simp only [ACC]; omega_using [hk])]
       change coeff t.mem base ACC k = _
       rw [tf k hk]
-      have e : (k < n) = (k < n + 1) := propext (by omega)
+      have e : (k < n) = (k < n + 1) := propext (by omega_using [h])
       simp only [e]
-  have init : inv 0 s := ⟨by intro k _; rw [ite_eq_right (by omega)], Outside.refl _ _ _ _, Keeps.refl _ _⟩
+  have init : inv 0 s := ⟨by intro k _; rw [ite_eq_right (by omega_using [])], Outside.refl _ _ _ _, Keeps.refl _ _⟩
   refine WP.mono (wp_range_flatMap (M := isa) (N := 16) inv step 16 (by decide) s init)
     fun t ⟨tf, tm, tk⟩ => ?_
   exact ⟨fun k hk => (tf k hk).trans (ite_eq_left hk), tm, tk⟩

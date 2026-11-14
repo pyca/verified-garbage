@@ -46,7 +46,7 @@ theorem zeroOut_bytes_ok {s : State} {F S op : Addr} {k : Nat}
     fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
   refine WP.mono (VG.Proof.RsaOaep.AArch64.count_loop (cr := .x12) hk1 (OutputZeroInv s₁ op k) ?_
     ⟨Keep.refl _ _, by rw [hsi, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
         rw [hI.frame x hx, hm₁], ((k₁.trans hI.keep).mono (by decide))⟩
   intro j hj t hI
   have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
@@ -55,7 +55,7 @@ theorem zeroOut_bytes_ok {s : State} {F S op : Addr} {k : Nat}
   have hp : BitVec.ofNat 64 (k - j) - 1#64 = BitVec.ofNat 64 (k - (j + 1)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   refine WP.mono (WP.keep [.x11, .x12] (Q := fun t' =>
       t'.mem = t.mem.writeW (op + BitVec.ofNat 64 j) (0 : BitVec 8) ∧
       t'.gpr .x11 = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .x12 = BitVec.ofNat 64 (k - (j + 1)))
@@ -66,12 +66,12 @@ theorem zeroOut_bytes_ok {s : State} {F S op : Addr} {k : Nat}
     rw [hm, writeW8_apply]
     by_cases hij : i = j
     · subst hij; simp
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-      exact hI.bytes i (by omega)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hk', hj, hi]) (by omega_using [hk', hj]) hij))]
+      exact hI.bytes i (by omega_using [hi, hij])
   · intro x hx
-    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-    exact hI.frame x fun i hi => hx i (by omega)
+    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+    exact hI.frame x fun i hi => hx i (by omega_using [hi])
   · rw [hcx']
-    exact VG.Proof.RsaOaep.AArch64.counter_ne (by omega) hk'
+    exact VG.Proof.RsaOaep.AArch64.counter_ne (by omega_using [hj]) hk'
 
 end VG.Proof.Dsa.AArch64.Generation

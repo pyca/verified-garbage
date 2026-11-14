@@ -37,7 +37,7 @@ def params : List Params := [mlDsa44, mlDsa65, mlDsa87]
 abbrev mScrLen (p : Params) : Nat := messageScratchWords p * 8
 
 theorem mScr_eq (p : Params) : mScrLen p = oE p + 1024 := by
-  simp only [mScrLen, messageScratchWords, oE]; omega
+  simp only [mScrLen, messageScratchWords, oE]; omega_using []
 
 theorem skLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.skLen ∧ p.skLen < 2 ^ 16 := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp

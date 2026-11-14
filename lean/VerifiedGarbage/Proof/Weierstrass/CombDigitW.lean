@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A `w`-bit comb's digits from a table of bits, on any target
@@ -25,7 +26,7 @@ theorem hornerVal_lt {v : Nat → Nat} (hv : ∀ i, v i ≤ 1) : ∀ d k, horner
   | d, k + 1 => by
     have := hornerVal_lt hv (d + 1) k
     have := hv d
-    simp only [hornerVal, Nat.pow_succ]; omega
+    simp only [hornerVal, Nat.pow_succ]; omega_arith
 
 /-- The window from its bits. -/
 theorem hornerVal_eq (k w j : Nat) :
@@ -36,8 +37,8 @@ theorem hornerVal_eq (k w j : Nat) :
   | zero => intro _; simp [hornerVal, Nat.mod_one]
   | succ i ih =>
     intro hi
-    have e := ih (by omega)
-    rw [show w * j + (w - i) = w * j + (w - (i + 1)) + 1 by omega] at e
+    have e := ih (by omega_using [hi])
+    rw [show w * j + (w - i) = w * j + (w - (i + 1)) + 1 by omega_using [hi]] at e
     simp only [hornerVal, e]
     generalize w * j + (w - (i + 1)) = t
     have hq : k / 2 ^ (t + 1) = k / 2 ^ t / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
@@ -45,12 +46,12 @@ theorem hornerVal_eq (k w j : Nat) :
       rw [Nat.testBit_eq_decide_div_mod_eq]
       rcases Nat.mod_two_eq_zero_or_one (k / 2 ^ t) with h | h <;> simp [h]
     rw [hq, hb, Nat.pow_succ, Nat.mul_comm (2 ^ i) 2, Nat.mod_mul]
-    omega
+    omega_using []
 
 /-- `|v - H|`, the magnitude of the digit of the window `v`. -/
 def magH (H v : Nat) : Nat := if H ≤ v then v - H else H - v
 
-theorem magH_le {H v : Nat} (hv : v < 2 * H) : magH H v ≤ H := by unfold magH; split <;> omega
+theorem magH_le {H v : Nat} (hv : v < 2 * H) : magH H v ≤ H := by unfold magH; split <;> omega_arith
 
 /-- The window's top bit says whether its digit is not negative. -/
 theorem testBit_top (k w j : Nat) (hw : 1 ≤ w) :
@@ -62,19 +63,19 @@ theorem testBit_top (k w j : Nat) (hw : 1 ≤ w) :
   rw [combWin] at hl
   generalize k / 2 ^ (w * j) % 2 ^ w = r at hl ⊢
   generalize k / 2 ^ (w * j) / 2 ^ w = q
-  have hw' : 2 ^ w = 2 ^ (w - 1) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
+  have hw' : 2 ^ w = 2 ^ (w - 1) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_using [hw]
   rw [Nat.testBit_eq_decide_div_mod_eq, hw', Nat.mul_assoc, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _)]
-  have h2 : r / 2 ^ (w - 1) < 2 := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; omega)
+  have h2 : r / 2 ^ (w - 1) < 2 := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; omega_using [hl, hw'])
   rw [Nat.add_mul_mod_self_left]
   have hr : (r + 2 ^ (w - 1) * (2 * q)) % (2 ^ (w - 1) * 2) = r := by
-    rw [← Nat.mul_assoc, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
+    rw [← Nat.mul_assoc, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega_using [hl, hw'])]
   rw [hr]
   by_cases h : 2 ^ (w - 1) ≤ r
   · have : r / 2 ^ (w - 1) = 1 := by
-      have := (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr (by omega : 1 * 2 ^ (w - 1) ≤ r)
-      omega
+      have := (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr (by omega_using [h] : 1 * 2 ^ (w - 1) ≤ r)
+      omega_using [h2, this]
     simp [this, h]
-  · have : r / 2 ^ (w - 1) = 0 := Nat.div_eq_of_lt (by omega)
+  · have : r / 2 ^ (w - 1) = 0 := Nat.div_eq_of_lt (by omega_using [h])
     simp [this, h]
 
 theorem hornerVal_congr {v v' : Nat → Nat} : ∀ {d d' k : Nat}, (∀ i < k, v (d + i) = v' (d' + i)) →
@@ -83,9 +84,9 @@ theorem hornerVal_congr {v v' : Nat → Nat} : ∀ {d d' k : Nat}, (∀ i < k, v
   | d, d', k + 1, h => by
     simp only [hornerVal]
     rw [hornerVal_congr (d := d + 1) (d' := d' + 1) (k := k) fun i hi => by
-      rw [show d + 1 + i = d + (i + 1) by omega, show d' + 1 + i = d' + (i + 1) by omega]
-      exact h (i + 1) (by omega)]
-    have := h 0 (by omega)
+      rw [show d + 1 + i = d + (i + 1) by omega_using [], show d' + 1 + i = d' + (i + 1) by omega_using []]
+      exact h (i + 1) (by omega_using [hi])]
+    have := h 0 (by omega_using [])
     simp only [Nat.add_zero] at this
     rw [this]
 

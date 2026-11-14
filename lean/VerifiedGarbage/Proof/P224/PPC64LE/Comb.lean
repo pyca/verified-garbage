@@ -70,7 +70,7 @@ theorem p224Comb7x32_length : p224Comb7x32.length = 32 := by
 theorem p224Comb7x32_rows : ∀ j < 32, (p224Comb7x32.getD j []).length = 64 := fun j hj => by
   unfold p224Comb7x32
   rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hj, ← List.getD_eq_getElem?_getD]
-  exact Proof.P224.p224Comb7_rows j (by omega)
+  exact Proof.P224.p224Comb7_rows j (by omega_using [hj])
 
 theorem comb_words_length : p224CombWords.length = 16384 := by
   unfold p224CombWords
@@ -103,6 +103,6 @@ table). -/
 theorem combSatMem_held : ∀ i < p224CombWords.length,
     combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p224CombWords.getD i 0 := by
   unfold combSatMem
-  exact constMem_held _ _ (by rw [comb_words_length]; omega)
+  exact constMem_held _ _ (by rw [comb_words_length]; omega_using [])
 
 end VG.Proof.P224.PPC64LE

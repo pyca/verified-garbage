@@ -74,7 +74,7 @@ theorem zeroSt_ok (hV : V.Ok) (hs : ScrOk V d scr) (hc : WCtx V g vec m₀ t) :
   simp only at hd
   rw [zeroSt, WP.seq_iff]
   refine WP.mono (wsetup_ok hV hc (args := [(.x15, .loc d 0)]) (by simp)
-    (by simp [srcValid, hd.1]; omega) rfl (by simp [preserved])) fun u ⟨hu, hm, hvs⟩ => ?_
+    (by simp [srcValid, hd.1]; omega_using [hd]) rfl (by simp [preserved])) fun u ⟨hu, hm, hvs⟩ => ?_
   have h15 : u.gpr .x15 = scr := by
     rw [hvs _ List.mem_cons_self, hs.loc hc, BitVec.add_zero]
   have hw : (⟨scr, 8192⟩ : Region) ∈ u.wr := by
@@ -101,7 +101,7 @@ theorem absorb_pre (hV : V.Ok) (hs : ScrOk V d scr) {u : State} (hsp : u.sp = V.
     (kD : (CK V.E).Disjoint ⟨dp, n⟩) :
     Proof.Sha3.absorbAArch64.pre (u.callEntry.withRegions [⟨dp, n⟩] [ST scr, KS scr]) := by
   have hn' := toNat_ofNat64 hnl
-  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega)
+  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega_using [hql])
   simp only [Proof.Sha3.absorbAArch64, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, State.callEntry_sp,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
@@ -153,7 +153,7 @@ theorem kabs_ok (v : Proof.Sha3.AArch64.Permutation) (hV : V.Ok) (hs : ScrOk V d
   rw [hn] at h4
   simp only [srcValue, VG.Proof.Ed25519.AArch64.Whole.value] at h1
   have hn' := toNat_ofNat64 hnl
-  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega)
+  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega_using [hql])
   have hpre := absorb_pre hV hs hu.1.sp h0 h1 h2 h3 h4 h5 hql hnl dS dK kD
   refine wcall hV hu (Proof.Sha3.AArch64.Stream.Absorb.absorb_correct v) (Nat.le_of_eq v.absorb_depth)
     hpre (covers_of fun r hr => ?_) hs.sponge_writes fun w hw hf hp => ⟨hw, ?_, fun msg hr hpos => ?_, ?_⟩
@@ -201,7 +201,7 @@ theorem pad_pre (hV : V.Ok) (hs : ScrOk V d scr) {u : State} (hsp : u.sp = V.E) 
     (h0 : u.gpr .x0 = scr) (h1 : u.gpr .x1 = BitVec.ofNat 64 136) (h2 : u.gpr .x2 = BitVec.ofNat 64 q)
     (h4 : u.gpr .x4 = scr + BitVec.ofNat 64 256) (hql : q < 136) :
     Proof.Sha3.padAArch64.pre (u.callEntry.withRegions [] [ST scr, KS scr]) := by
-  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega)
+  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega_using [hql])
   simp only [Proof.Sha3.padAArch64, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, State.callEntry_sp,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
@@ -239,7 +239,7 @@ theorem kpad_ok (v : Proof.Sha3.AArch64.Permutation) (hV : V.Ok) (hs : ScrOk V d
   rw [hs.loc hc] at h4
   rw [hq] at h2
   simp only [srcValue, VG.Proof.Ed25519.AArch64.Whole.value] at h1 h3
-  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega)
+  have hq' := toNat_ofNat64 (show q < 2 ^ 64 by omega_using [hql])
   have hpre := pad_pre hV hs hu.1.sp h0 h1 h2 h4 hql
   refine wcall hV hu (Proof.Sha3.AArch64.Stream.Pad.pad_correct v) (Nat.le_of_eq v.pad_depth)
     hpre (covers_of fun r hr => ?_) hs.sponge_writes fun w hw hf hp => ⟨hw, ?_, fun msg hr hpos => ?_⟩
@@ -379,7 +379,7 @@ theorem kabs_chain (v : Proof.Sha3.AArch64.Permutation) (hV : V.Ok) (hs : ScrOk 
   refine WP.mono (kabs_ok v hV hs hc hvs hvl hvp hrs hrl hdp hn hq (Nat.mod_lt _ (by decide)) hnl hin dS dK kD)
     fun u ⟨hu, hf, hp, hx⟩ => ⟨hu, hf, hp msg hr rfl, ?_⟩
   apply BitVec.eq_of_toNat_eq
-  rw [hx, toNat_ofNat64 (by omega), List.length_append, sha3_bytesAt_length, Nat.mod_add_mod]
+  rw [hx, toNat_ofNat64 (by omega_using []), List.length_append, sha3_bytesAt_length, Nat.mod_add_mod]
 
 theorem shake256_eq (m : List Byte) (d : Nat) :
     Spec.Sha3.shake256 m d =

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Square-and-multiply from the top bit
@@ -18,7 +19,7 @@ theorem shiftRight_succ_bit (e j : Nat) :
     e >>> j = 2 * (e >>> (j + 1)) + (if e.testBit j then 1 else 0) := by
   rw [Nat.shiftRight_succ, Nat.testBit, Nat.one_and_eq_mod_two]
   have := Nat.div_add_mod (e >>> j) 2
-  rcases Nat.mod_two_eq_zero_or_one (e >>> j) with h | h <;> simp [h] <;> omega
+  rcases Nat.mod_two_eq_zero_or_one (e >>> j) with h | h <;> simp [h] <;> omega_using [h]
 
 theorem pow_shiftRight {M : Type _} [Lean.Grind.Semiring M] (b : M) (e j : Nat) :
     b ^ (e >>> j) = (b ^ (e >>> (j + 1))) ^ 2 * (if e.testBit j then b else 1) := by

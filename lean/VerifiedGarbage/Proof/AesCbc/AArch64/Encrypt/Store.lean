@@ -49,7 +49,7 @@ theorem store_advance_ok {s₀ s : State} {k : Nat} (hp : UPre s₀) (hk : k < N
   change WP isa (.block (VG.Impl.Aes.AArch64.Aese.stData [.v1] 0 ++ [.addImm .x .x2 .x2 16])) u _
   rw [WP.block_append_iff]
   refine WP.mono (stData_ok (m₀:=s₀.mem) (n:=N s₀) (c:=k) (F:=output s₀)
-    (by have := hp.data_wrap; omega) [.v1] 0 u cu.ptr (by decide) (by simp only [List.length_singleton,Nat.add_zero]; omega)
+    (by have := hp.data_wrap; omega_using [this]) [.v1] 0 u cu.ptr (by decide) (by simp only [List.length_singleton,Nat.add_zero]; omega_using [hk])
     (by rw [cu.env.wr,hp.wr]; simp) (by simpa using cu.data) hv)
     fun v ⟨hd,hf,hg,hv,_,hr,hw⟩ => ?_
   have ev := cu.env.store hv hg hf hr hw
@@ -63,11 +63,11 @@ theorem store_advance_ok {s₀ s : State} {k : Nat} (hp : UPre s₀) (hk : k < N
   have cv := (congrFun hg .x3).trans cu.count
   rw [WP.block_cons_iff]
   refine ⟨_,exec_addImm_x (imm:=16) (by decide),WP.block_nil ?_⟩
-  refine ⟨by omega,ev.transfer (fun _ _ => rfl) (gpr_write_of_ne _ _ _ (by decide)) (gpr_write_of_ne _ _ _ (by decide))
+  refine ⟨by omega_using [hk],ev.transfer (fun _ _ => rfl) (gpr_write_of_ne _ _ _ (by decide)) (gpr_write_of_ne _ _ _ (by decide))
     (gpr_write_of_ne _ _ _ (by decide)) rfl rfl rfl,
     ?_,?_,hch,by change EcbInv s₀.mem v.mem (Dp s₀) (N s₀) (k+1) (output s₀); exact hd,hn'⟩
   · simp only [State.write,State.read,BitVec.setWidth_eq,ite_true,pv]
     change (Dp s₀+BitVec.ofNat 64 (16*k))+BitVec.ofNat 64 16=Dp s₀+BitVec.ofNat 64 (16*(k+1))
-    exact Offset.add_add_eq (Dp s₀) (by omega)
+    exact Offset.add_add_eq (Dp s₀) (by omega_using [])
   · exact (gpr_write_of_ne _ _ _ (by decide : Reg.x3≠.x2)).trans cv
 end VG.Proof.AesCbc.AArch64.Encrypt

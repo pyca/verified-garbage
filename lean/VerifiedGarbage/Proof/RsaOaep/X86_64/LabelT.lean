@@ -69,7 +69,7 @@ theorem mem_lens {G : Spec.Mgf1.Hash} (h : G ∈ Proof.Pbkdf2.Md.X86_64.mdHashes
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem mem_lens_lt {d : Nat} (h : d ∈ lens) : d < 2 ^ 31 := by
-  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 /-- The comparison of the digest length `d` in `r11` with `x`. -/
 theorem cmpLen_ok {u : State} {d x : Nat} (h11 : u.gpr .r11 = BitVec.ofNat 64 d) (hd : d < 2 ^ 31)
@@ -83,7 +83,7 @@ theorem cmpLen_ok {u : State} {d x : Nat} (h11 : u.gpr .r11 = BitVec.ofNat 64 d)
       · subst hr; exact h11'
       · exact k.gpr (by simpa using hr), k.2.1, k.2.2⟩, hm, hs, hmx⟩
   xrun [im, h11, VG.Proof.MlKem.X86_64.sx_ofNat hx,
-    VG.Proof.Bignum.X86_64.ofNat_sub_beq (show d < 2 ^ 64 by omega) (show x < 2 ^ 64 by omega),
+    VG.Proof.Bignum.X86_64.ofNat_sub_beq (show d < 2 ^ 64 by omega_using [hd]) (show x < 2 ^ 64 by omega_using [hx]),
     VG.X86_64.RegUpd.mxcsr_setFlags]
 
 /-- The code for the digest length `d` in `r11`, from a state that differs
@@ -198,15 +198,15 @@ theorem hashLabelT_ok (hgi : FnsGood f.init) (hgu : FnsGood f.upd)
     hdi5 hdx5 hcx5) fun u6 ⟨L6, rd6, wr6, cs6, R6, hr6⟩ => ?_
   have hlb : (Spec.Rsa.bytesAt u2.mem lab labLen).length = labLen := by
     simp [Spec.Rsa.bytesAt]
-  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega) (by rw [hsi5, hlb])
+  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega_using [hlen]) (by rw [hsi5, hlb])
   have hlab : Spec.Rsa.bytesAt u2.mem lab labLen = Spec.Rsa.bytesAt u.mem lab labLen := by
     rw [← hm1]
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => hF2.bytes (R := ⟨lab, labLen⟩) (fun r hr => ?_)
-      (by show labLen ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+      (by show labLen ≤ 2 ^ 64; omega_using [hlen]) (List.mem_range.mp hi)
     rcases List.mem_append.mp hr with hr | hr
     · simp only [regs, List.map_cons, List.map_nil, List.mem_singleton] at hr; subst hr
-      have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+      have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hzS]
       have hs : Region.Sub ⟨off S oSt, G.S⟩ ⟨S, oRsa⟩ := Offset.sub_base S h1
       exact A.dS.sub_right hs
     · rw [List.mem_singleton.mp hr]; exact A.dK.symm
@@ -217,9 +217,9 @@ theorem hashLabelT_ok (hgi : FnsGood f.init) (hgu : FnsGood f.upd)
   · rw [cs6 r hr, keep_cs' k5 (cs_disj _ (by decide)) r hr, cs4 r hr, keep_cs' k3 (cs_disj _ (by decide)) r hr,
       cs2 r hr, keep_cs' k1 (cs_disj _ (by decide)) r hr]
   · simp only [labR, inR_cons, inR_nil, or_false] at hx
-    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega)]
-  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega), hdig i hi, hHh, hlab]
+    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzF, hzW, hx]),
+      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzW, hx]),
+      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hx])]
+  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzDF, hi]), hdig i hi, hHh, hlab]
 
 end VG.Proof.RsaOaep.X86_64

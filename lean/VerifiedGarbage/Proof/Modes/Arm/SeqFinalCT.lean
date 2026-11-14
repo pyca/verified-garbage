@@ -267,8 +267,8 @@ theorem loopF_ct (hM : FinalOk c M) (hT : FinalTaint c M) (n : Nat) :
     exact ⟨d₁ h0, d₂ (by rw [← hN]; exact h0)⟩
   · rw [e₁] at ht
     have h0 : ¬ N c s₀ ≤ c.bs * (k + 1) := by simpa using ht
-    refine ⟨N c s₀ - c.bs * (k + 1), by rw [Nat.mul_succ] at h0 ⊢; omega, k + 1, rfl,
-      ⟨by omega, i₁ (by omega), y₁⟩, ⟨by rw [← hN]; omega, i₂ (by rw [← hN]; omega), y₂⟩⟩
+    refine ⟨N c s₀ - c.bs * (k + 1), by rw [Nat.mul_succ] at h0 ⊢; omega_using [hb, hk], k + 1, rfl,
+      ⟨by omega_using [h0], i₁ (by omega_using [h0]), y₁⟩, ⟨by rw [← hN]; omega_using [h0], i₂ (by rw [← hN]; omega_using [h0]), y₂⟩⟩
 
 end
 
@@ -304,9 +304,9 @@ theorem seqFinal_rel {c : Core} (S : CoreSpec c) {M : Mode} (hM : FinalOk c M) (
         · exact hq.2.2.2.1
         · exact hq.2.2.2.2.1
       · cases hr : c.rounds <;> simp only [hr, Bool.false_eq_true, ↓reduceIte] at hi
-        · rcases (by omega : i = 0) with rfl
+        · rcases (by omega_using [hi] : i = 0) with rfl
           exact hq.2.2.2.2.2.1
-        · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+        · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
           · exact hq.2.2.2.2.2.1
           · exact hq.2.2.2.2.2.2.1 hr) hT.pro
     (fun s e => by

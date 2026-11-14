@@ -41,16 +41,16 @@ theorem ld_ws (hw : WsReg s base) {t : Reg} {d : Nat} (hd : d < 2048) (hd8 : d %
     (k : ∀ s', Upd s s' t (word s.mem base d) → WP isa (.block is) s' Q) :
     WP isa (.block (.load .d t .s0 d :: is)) s Q := by
   have := hw.nowrap
-  refine wp_ld hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
-    ⟨_, List.mem_append_right _ hw.wr, Offset.contains_base base (by omega) (by omega)⟩ k
+  refine wp_ld hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega_using [hd8, this])
+    ⟨_, List.mem_append_right _ hw.wr, Offset.contains_base base (by omega_using [hd]) (by omega_using [hd])⟩ k
 
 /-- `sd t, d(s0)` in the working space. -/
 theorem sd_ws (hw : WsReg s base) {t : Reg} {d : Nat} (hd : d < 2048) (hd8 : d % 8 = 0)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store .d t .s0 d :: is)) s Q := by
   have := hw.nowrap
-  exact wp_sd hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
-    ⟨_, hw.wr, Offset.contains_base base (by omega) (by omega)⟩ k
+  exact wp_sd hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega_using [hd8, this])
+    ⟨_, hw.wr, Offset.contains_base base (by omega_using [hd]) (by omega_using [hd])⟩ k
 
 /-- `sd t, d(a0)` at the working space's base. -/
 theorem sd_a0 (h0 : s.gpr .a0 = base)
@@ -58,24 +58,24 @@ theorem sd_a0 (h0 : s.gpr .a0 = base)
     {t : Reg} {d : Nat} (hd : d + 8 ≤ 2048) (hd8 : d % 8 = 0)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store .d t .a0 d :: is)) s Q :=
-  wp_sd (by omega) (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
-    ⟨_, hwr, Offset.contains_base base (by omega) (by omega)⟩ k
+  wp_sd (by omega_using [hd]) (by rw [h0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hal, hd8])
+    ⟨_, hwr, Offset.contains_base base (by omega_using [hd]) (by omega_using [hd])⟩ k
 
 /-- `ld t, d(s0)` (`ldAt`) in the working space. -/
 theorem ldAt_ws (hw : WsReg s base) {t : Reg} {d : Nat} (hd : d < 4095) (hd8 : d % 8 = 0)
     (k : ∀ s', Upd s s' t (word s.mem base d) → WP isa (.block is) s' Q) :
     WP isa (.block (ldAt t .s0 d ++ is)) s Q := by
   have := hw.nowrap
-  refine wp_ldAt hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
-    ⟨_, List.mem_append_right _ hw.wr, Offset.contains_base base (by omega) (by omega)⟩ k
+  refine wp_ldAt hd (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega_using [hd8, this])
+    ⟨_, List.mem_append_right _ hw.wr, Offset.contains_base base (by omega_using [hd]) (by omega_using [hd])⟩ k
 
 /-- `sd t, d(s0)` (`sdAt`) in the working space, `t` not `s0`. -/
 theorem sdAt_ws (hw : WsReg s base) {t : Reg} (ht : t ≠ .s0) {d : Nat} (hd : d < 4095) (hd8 : d % 8 = 0)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr t)) → WP isa (.block is) s' Q) :
     WP isa (.block (sdAt t .s0 d ++ is)) s Q := by
   have := hw.nowrap
-  exact wp_sdAt hd ht (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega)
-    ⟨_, hw.wr, Offset.contains_base base (by omega) (by omega)⟩ k
+  exact wp_sdAt hd ht (by rw [hw.s0]) (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hw.al; omega_using [hd8, this])
+    ⟨_, hw.wr, Offset.contains_base base (by omega_using [hd]) (by omega_using [hd])⟩ k
 
 end
 
@@ -101,12 +101,12 @@ theorem copy_ok : ∀ (k : Nat) {s : State} {base : Addr} {o a : Nat},
   | k + 1, s, base, o, a, hw, ho8, ha8, ho, ha, hsep => by
     have hn := hw.nowrap
     rw [copy]
-    refine WP.block_append (WP.mono (copyWord_ok hw (by omega) (by omega) ho8 ha8) fun s₁ ⟨m₁, K₁⟩ => ?_)
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (copy_ok k (hw.of_rest K₁) (o := o + 8) (a := a + 8) (by omega) (by omega)
-      (by omega) (by omega) (by omega)) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
-        (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
-    rw [wordsVal, wordsVal, O₂.word (by omega) (by omega), e₂, O₁.wordsVal (by omega) (by omega), m₁,
+    refine WP.block_append (WP.mono (copyWord_ok hw (by omega_using [ho]) (by omega_using [ha]) ho8 ha8) fun s₁ ⟨m₁, K₁⟩ => ?_)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_using [ho])
+    refine WP.mono (copy_ok k (hw.of_rest K₁) (o := o + 8) (a := a + 8) (by omega_using [ho8]) (by omega_using [ha8])
+      (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hsep])) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
+        (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
+    rw [wordsVal, wordsVal, O₂.word (by omega_using []) (by omega_using [ho]), e₂, O₁.wordsVal (by omega_using [hsep]) (by omega_using [ha]), m₁,
       word_writeW_self]
 
 /-- The mask of a bit. -/
@@ -153,19 +153,19 @@ theorem sel_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {o a b : Nat
   | k + 1, s, base, o, a, b, hw, hc, ho8, ha8, hb8, ho, ha, hb, hsa, hsb => by
     have hn := hw.nowrap
     rw [sel]
-    refine WP.block_append (WP.mono (selWord_ok hw (by omega) (by omega) (by omega) ho8 ha8 hb8)
+    refine WP.block_append (WP.mono (selWord_ok hw (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) ho8 ha8 hb8)
       fun s₁ ⟨m₁, K₁⟩ => ?_)
     rw [hc, sel_mask'] at m₁
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_using [ho])
     refine WP.mono (sel_ok c k (hw.of_rest K₁) (by rw [K₁.gpr _ (by decide)]; exact hc) (o := o + 8) (a := a + 8)
-      (b := b + 8) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by omega)) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
-        (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (b := b + 8) (by omega_using [ho8]) (by omega_using [ha8]) (by omega_using [hb8]) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) (by omega_using [hsa])
+      (by omega_using [hsb])) fun s₂ ⟨e₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂,
+        (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
     have ea : wordsVal s₁.mem base (a + 8) k = wordsVal s.mem base (a + 8) k :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_using [hsa]) (by omega_using [ha])
     have eb : wordsVal s₁.mem base (b + 8) k = wordsVal s.mem base (b + 8) k :=
-      O₁.wordsVal (by omega) (by omega)
-    rw [wordsVal, O₂.word (by omega) (by omega), e₂, ea, eb, m₁, word_writeW_self]
+      O₁.wordsVal (by omega_using [hsb]) (by omega_using [hb])
+    rw [wordsVal, O₂.word (by omega_using []) (by omega_using [ho]), e₂, ea, eb, m₁, word_writeW_self]
     cases c <;> simp [wordsVal]
 
 end VG.Proof.Weierstrass.RISCV64

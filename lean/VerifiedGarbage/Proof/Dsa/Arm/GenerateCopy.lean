@@ -51,21 +51,21 @@ theorem copyStep_ok {s t : State} {src dst : BitVec 32} {bs : List Byte} {mask :
       u.z = decide (bs.length - (k + 1) = 0) := by
   have hfit := hin.fit
   have dfit := D.fit
-  have hlt : bs.length < 2 ^ 32 := by omega
+  have hlt : bs.length < 2 ^ 32 := by omega_using [hn]
   -- The source byte, apart from what the copy wrote.
   have src_ofs : ofs (State.addr src) (State.addr src + BitVec.ofNat 64 k) = k := by
-    have := ofs_off (State.addr src) (d := 0) (i := k) (by omega)
+    have := ofs_off (State.addr src) (d := 0) (i := k) (by omega_using [hn, hk])
     rwa [off, BitVec.add_zero, Nat.zero_add] at this
   have keep : t.mem (State.addr src + BitVec.ofNat 64 k) = bs[k] := by
-    rw [I.out _ (.inr (by rw [Nat.zero_add]; exact ofs_apart D.apart.symm (by omega))), hin.val k hk]
+    rw [I.out _ (.inr (by rw [Nat.zero_add]; exact ofs_apart D.apart.symm (by omega_using [hk, src_ofs]))), hin.val k hk]
   unfold Generate.copyStep
   refine wp_ldrb (a := State.addr src + BitVec.ofNat 64 k) (by decide)
-    (by rw [BitVec.add_zero, I.r1, VG.Arm.addr_add (by omega)])
+    (by rw [BitVec.add_zero, I.r1, VG.Arm.addr_add (by omega_using [hk, hfit])])
     (by rw [I.rest.rd, I.rest.wr]; exact hin.rd k hk) fun t₁ u₁ => ?_
   rw [keep] at u₁
   refine wp_dp (op2_reg _ _) fun t₂ u₂ => ?_
   refine wp_strb (a := State.addr dst + BitVec.ofNat 64 k) (by decide)
-    (by rw [BitVec.add_zero, u₂.other _ (by decide), u₁.other _ (by decide), I.r10, VG.Arm.addr_add (by omega)])
+    (by rw [BitVec.add_zero, u₂.other _ (by decide), u₁.other _ (by decide), I.r10, VG.Arm.addr_add (by omega_using [hk, dfit])])
     (by rw [u₂.wr, u₁.wr, I.rest.wr]; exact D.wr k hk) fun t₃ u₃ => ?_
   refine wp_inc fun t₄ u₄ => wp_inc fun t₅ u₅ => wp_dec fun t₆ u₆ z₆ => WP.block_nil ?_
   have r3 : t₂.gpr .r3 = mask := by rw [u₂.other _ (by decide), u₁.other _ (by decide), I.r3]
@@ -77,16 +77,16 @@ theorem copyStep_ok {s t : State} {src dst : BitVec 32} {bs : List Byte} {mask :
     ((u₃.rest _).trans ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans (u₆.rest (by decide))))))
   have r2 : t₆.gpr .r2 = BitVec.ofNat 32 (bs.length - (k + 1)) := by
     rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
-      u₁.other _ (by decide), I.r2, ofNat_sub_one (by omega), show bs.length - k - 1 = bs.length - (k + 1) by omega]
+      u₁.other _ (by decide), I.r2, ofNat_sub_one (by omega_using [hk]), show bs.length - k - 1 = bs.length - (k + 1) by omega_using []]
   have dst_ofs : ∀ i, i < bs.length →
       ofs (State.addr dst) (State.addr dst + BitVec.ofNat 64 i) = i := fun i hi => by
-    have := ofs_off (State.addr dst) (d := 0) (i := i) (by omega)
+    have := ofs_off (State.addr dst) (d := 0) (i := i) (by omega_using [hn, hi])
     rwa [off, BitVec.add_zero, Nat.zero_add] at this
   have O : Outside (State.addr dst) 0 bs.length t.mem t₆.mem := by
     rw [m₆]
-    have := writeW8_outside t.mem (State.addr dst) (d := k) (masked mask bs[k]) (by omega)
+    have := writeW8_outside t.mem (State.addr dst) (d := k) (masked mask bs[k]) (by omega_using [hn, hk])
     simp only [off] at this
-    exact this.mono (by omega) (by omega)
+    exact this.mono (by omega_using []) (by omega_using [hk])
   refine ⟨⟨?_, ?_, r2, ?_, fun i hi => ?_, I.out.trans O, I.rest.trans R⟩, ?_⟩
   · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
       I.r1, Offset.add_ofNat_add_one]
@@ -97,12 +97,12 @@ theorem copyStep_ok {s t : State} {src dst : BitVec 32} {bs : List Byte} {mask :
     by_cases hik : i = k
     · subst hik
       rw [writeW8_self, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hk, Option.getD_some]
-    · rw [(writeW8_outside t.mem (State.addr dst) (d := k) (masked mask bs[k]) (by omega)) _
-        (by rw [dst_ofs i (by omega)]; omega)]
-      exact I.bytes i (by omega)
+    · rw [(writeW8_outside t.mem (State.addr dst) (d := k) (masked mask bs[k]) (by omega_using [hn, hk])) _
+        (by rw [dst_ofs i (by omega_using [hk, hi])]; omega_using [hik])]
+      exact I.bytes i (by omega_using [hi, hik])
   · rw [z₆, u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
-      I.r2, ofNat_sub_one (by omega), show bs.length - k - 1 = bs.length - (k + 1) by omega,
-      ofNat_beq_zero (by omega)]
+      I.r2, ofNat_sub_one (by omega_using [hk]), show bs.length - k - 1 = bs.length - (k + 1) by omega_using [],
+      ofNat_beq_zero (by omega_using [hn])]
 
 theorem copyMasked_ok {s : State} {src dst : BitVec 32} {bs : List Byte} {mask : BitVec 32}
     (hin : BytesIn s src bs) (D : CopyDst s src dst bs.length) (hn : bs.length < 2 ^ 16) (h0 : 0 < bs.length)
@@ -110,15 +110,15 @@ theorem copyMasked_ok {s : State} {src dst : BitVec 32} {bs : List Byte} {mask :
     WP isa Generate.copyMasked s fun u => CopyMaskInv s src dst bs mask bs.length u := by
   refine WP.loop (M := isa) (fun (n : Nat) (u : State) =>
       ∃ j, n = bs.length - j ∧ j < bs.length ∧ CopyMaskInv s src dst bs mask j u)
-    (fun n u hu => ?_) bs.length s ⟨0, by omega, h0, I⟩
+    (fun n u hu => ?_) bs.length s ⟨0, by omega_using [], h0, I⟩
   obtain ⟨j, hnj, hj, J⟩ := hu
   refine WP.mono (copyStep_ok hin D hn hj J) fun v ⟨J', z⟩ => ?_
   by_cases he : bs.length - (j + 1) = 0
   · left
     refine ⟨by rw [eval_ne, z, decide_eq_true he]; rfl, ?_⟩
-    rw [show bs.length = j + 1 by omega]; exact J'
+    rw [show bs.length = j + 1 by omega_using [hj, he]]; exact J'
   · right
-    exact ⟨by rw [eval_ne, z, decide_eq_false he]; rfl, bs.length - (j + 1), by omega, j + 1, rfl, by omega, J'⟩
+    exact ⟨by rw [eval_ne, z, decide_eq_false he]; rfl, bs.length - (j + 1), by omega_using [hnj, hj], j + 1, rfl, by omega_using [he], J'⟩
 
 /-- The copied bytes. -/
 theorem CopyMaskInv.bytesAt {s t : State} {src dst : BitVec 32} {bs : List Byte} {mask : BitVec 32}

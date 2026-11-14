@@ -423,7 +423,7 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hu : Inv 
   have hfit := hp.fit_o
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .r8).isLt
   have hc : (oR s₀).Contains (op s₀ + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj, hfit])
   refine wp_stb (off := 0) (a := op s₀ + BitVec.ofNat 64 j) (by decide) (by decide)
     (by rw [h4, BitVec.add_zero]) ⟨oR s₀, by rw [hu.wr]; exact hp.o_wr, hc⟩ fun u₁ m₁ => ?_
   refine wp_addi (imm := 1) (by decide) (by decide) fun u₂ v₂ =>
@@ -443,7 +443,7 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hu : Inv 
     by rw [v₃.lr, v₂.lr, m₁.lr], ?_⟩
   · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, h4, BitVec.add_assoc, BitVec.ofNat_add]
   · rw [v₃.mem, v₂.mem, m₁.mem, h3, show BitVec.setWidth 8 (0 : BitVec 64) = 0 by decide]
-    exact Proof.Zeroize.prefix_writeW hz (by omega)
+    exact Proof.Zeroize.prefix_writeW hz (by omega_using [hj, hL])
 
 /-- `zeroData`, with `r3` zero: zeros at the destination, and only `r4` and `r5`
 written. -/
@@ -464,7 +464,7 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
   · refine WP.ite true (by simp only [VG.PPC64LE.eval, State.read, r5₂, hz]; rfl)
       (fun _ => WP.block_nil ⟨i₂, ?_, o₂, l₂⟩) (by simp)
     rw [hz]; rfl
-  · have hne := ofNat_ne_zero (n := L s₀) (by omega) hL
+  · have hne := ofNat_ne_zero (n := L s₀) (by omega_using [hz]) hL
     refine WP.ite false (by
         show some ((u₂.gpr .r5).setWidth 64 == 0) = some false
         rw [r5₂, BitVec.setWidth_eq, beq_false_of_ne hne])
@@ -473,13 +473,13 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
       u.gpr .r4 = op s₀ + BitVec.ofNat 64 j ∧ u.gpr .r5 = BitVec.ofNat 64 (L s₀ - j) ∧
       (∀ r, r ≠ .r4 → r ≠ .r5 → u.gpr r = s.gpr r) ∧ u.lr = s.lr ∧
       Proof.Zeroize.Prefix u.mem (op s₀) j) ?_ (L s₀) u₂
-      ⟨0, by omega, by omega, i₂, by rw [o₂ _ (by decide) (by decide), h3],
+      ⟨0, by omega_using [hz], by omega_using [], i₂, by rw [o₂ _ (by decide) (by decide), h3],
         by rw [r4₂]; exact (BitVec.add_zero _).symm, by rw [r5₂, Nat.sub_zero], o₂, l₂,
         fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     intro rem u ⟨j, hj, hr, hu, e3, e4, e5, ho, hl, hpz⟩
     refine WP.mono (zeroStep_ok hp hu hj e3 e4 hpz) fun u' ⟨i', r3', r4', r5', o', l', z'⟩ => ?_
     have r5'' : u'.gpr .r5 = BitVec.ofNat 64 (L s₀ - (j + 1)) := by
-      rw [r5', e5, ofNat_sub_one (by omega) (by omega), Nat.sub_sub]
+      rw [r5', e5, ofNat_sub_one (by omega_using [hj]) (by omega_using [hL]), Nat.sub_sub]
     have o'' : ∀ r, r ≠ .r4 → r ≠ .r5 → u'.gpr r = s.gpr r := fun r a b => by rw [o' r a b, ho r a b]
     by_cases he : j + 1 = L s₀
     · left
@@ -488,11 +488,11 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
       rw [he] at z'
       exact Proof.Zeroize.prefix_spec z'
     · right
-      have hne := ofNat_ne_zero (n := L s₀ - (j + 1)) (by omega) (by omega)
+      have hne := ofNat_ne_zero (n := L s₀ - (j + 1)) (by omega_using [hj, he]) (by omega_using [hL])
       refine ⟨by
           show some ((u'.gpr .r5).setWidth 64 != 0) = some true
           rw [r5'', BitVec.setWidth_eq, bne, beq_false_of_ne hne]; rfl,
-        L s₀ - (j + 1), by omega, j + 1, by omega, rfl, i', r3', r4', r5'', o'', by rw [l', hl], z'⟩
+        L s₀ - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, i', r3', r4', r5'', o'', by rw [l', hl], z'⟩
 
 /-- The epilogue: our caller's registers restored. -/
 theorem tail_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ s) :
@@ -906,7 +906,7 @@ theorem toEntry_ok {s : State} (hs : openToPrePPC64LE s) : WP isa (.block toEntr
     refine ⟨toArgs s, List.mem_append_left _ (by rw [hrd]; simp), ?_⟩
     show (⟨stackArgAddr s 0, 16⟩ : Region).Contains (stackArgAddr s j) 8
     rw [stackArgAddr_eq, stackArgAddr_eq]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [])
   unfold toEntry
   refine wp_mov fun s₁ u₁ => wp_addSp0 (imm := 0) (by decide) fun s₂ u₂ => ?_
   have p₂ : s₂.gpr .r12 = s.sp := by rw [u₂.gpr, u₁.sp, BitVec.add_zero]

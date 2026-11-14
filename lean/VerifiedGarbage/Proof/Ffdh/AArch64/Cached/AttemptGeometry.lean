@@ -41,26 +41,26 @@ theorem attempt_geometry {s : State} (h : attemptPre s) : AttemptGeometry s :=by
  obtain ⟨spFits,rd,wr,dXY,dXD,dXR,dXS,dXC,dXA,dYD,dYR,dYS,dYC,dYA,dDS,dRS,dSC,dSA,
   wX,wY,wD,wR,wS,wC,⟨small,large⟩,shape,xLen,yLen,rLen,sLen,checked,canonical⟩:=h
  have scratch : Scr s (stackArg s 1) ((stackArg s 2).toNat*8) :=Scr.of_mem (by rw [wr];simp) wS
- have scrRoom : 128*(s.gpr .x6).toNat+256≤(stackArg s 2).toNat*8 :=by unfold Spec.Rsa.scratchWords at sLen;omega
+ have scrRoom : 128*(s.gpr .x6).toNat+256≤(stackArg s 2).toNat*8 :=by unfold Spec.Rsa.scratchWords at sLen;omega_using [sLen]
  have dlen : (attemptDomain s).length=(s.gpr .x5).toNat :=by simp only [attemptDomain,Spec.Rsa.bytesAt,List.length_map,List.length_range]
  have readArgs (d : Nat) (fit : d+8≤40) : InRegions (s.rd++s.wr) (s.sp+BitVec.ofNat 64 d) 8 :=
-  ⟨⟨s.sp,40⟩,by rw [rd];simp [stackArgAddr],Offset.contains_base _ fit (by omega)⟩
+  ⟨⟨s.sp,40⟩,by rw [rd];simp [stackArgAddr],Offset.contains_base _ fit (by omega_using [fit])⟩
  refine ⟨small,large,shape,rLen,?_,scratch,readArgs 8 (by decide),readArgs 24 (by decide),
-  src_of_region (by rw [rd];simp) (by omega) dDS,src_of_region (by rw [rd];simp) (by omega) dRS,
+  src_of_region (by rw [rd];simp) (by omega_using []) dDS,src_of_region (by rw [rd];simp) (by omega_using []) dRS,
   ⟨canonical,?_,?_⟩,checked,?_,?_,?_,?_,?_,?_,?_,?_⟩
- · dsimp only [slot,hdrBytes];omega
+ · dsimp only [slot,hdrBytes];omega_using [small, scrRoom]
  · intro i hi
-   exact ⟨⟨stackArg s 3,(stackArg s 4).toNat*8⟩,by rw [rd];simp,Offset.contains_base _ (by omega) (by omega)⟩
+   exact ⟨⟨stackArg s 3,(stackArg s 4).toNat*8⟩,by rw [rd];simp,Offset.contains_base _ (by omega_using [hi]) (by omega_using [wC, hi])⟩
  · intro i hi
-   exact out_scr dSC.symm (contains_byte _ (by omega) (by omega))
+   exact out_scr dSC.symm (contains_byte _ (by omega_using [hi]) (by omega_using [wC]))
  · intro i hi
-   exact ⟨⟨s.gpr .x0,(s.gpr .x1).toNat⟩,by rw [wr];simp,contains_byte _ (by omega) (by omega)⟩
+   exact ⟨⟨s.gpr .x0,(s.gpr .x1).toNat⟩,by rw [wr];simp,contains_byte _ (by omega_using [xLen, hi]) (by omega_using [])⟩
  · intro i hi
-   exact ⟨⟨s.gpr .x2,(s.gpr .x3).toNat⟩,by rw [wr];simp,contains_byte _ (by omega) (by omega)⟩
+   exact ⟨⟨s.gpr .x2,(s.gpr .x3).toNat⟩,by rw [wr];simp,contains_byte _ (by omega_using [yLen, hi]) (by omega_using [])⟩
  · intro i hi
-   exact out_scr dXS (contains_byte _ (by omega) (by omega))
+   exact out_scr dXS (contains_byte _ (by omega_using [xLen, hi]) (by omega_using []))
  · intro i hi
-   exact out_scr dYS (contains_byte _ (by omega) (by omega))
+   exact out_scr dYS (contains_byte _ (by omega_using [yLen, hi]) (by omega_using []))
  · intro i hi j hj
    rw [xLen,rLen] at dXR
    rw [xLen] at wX
@@ -68,12 +68,12 @@ theorem attempt_geometry {s : State} (h : attemptPre s) : AttemptGeometry s :=by
    exact VG.Proof.Ffdh.AArch64.GenerateKey.ne_of_disj dXR.symm wR wX hi hj
  · intro i hi
    rw [xLen] at dXD
-   exact out_scr dXD.symm (contains_byte _ (by rw [dlen] at hi;exact hi) (by omega))
+   exact out_scr dXD.symm (contains_byte _ (by rw [dlen] at hi;exact hi) (by omega_using []))
  · intro i hi
    rw [xLen] at dXC
-   exact out_scr dXC.symm (contains_byte _ (by omega) (by omega))
+   exact out_scr dXC.symm (contains_byte _ (by omega_using [hi]) (by omega_using [wC]))
  · intro i hi
    rw [xLen,yLen] at dXY
-   exact out_scr dXY (contains_byte _ (by omega) (by omega))
+   exact out_scr dXY (contains_byte _ (by omega_using [hi]) (by omega_using []))
 
 end VG.Proof.Ffdh.AArch64.Cached

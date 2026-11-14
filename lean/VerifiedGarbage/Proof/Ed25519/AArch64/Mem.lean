@@ -49,7 +49,7 @@ abbrev fe (m : Mem) (base : Addr) (o : Nat) : Nat :=
 
 theorem contains_scWith {base : Addr} {d n : Nat} (h : d + n ≤ workSize large) :
     (⟨base, workSize large⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by have := workSize_le large; omega)
+  Offset.contains_base base h (by have := workSize_le large; omega_using [h, this])
 
 theorem contains_sc {base : Addr} {d n : Nat} (h : d + n ≤ 8192) :
     (⟨base, 8192⟩ : Region).Contains (off base d) n := contains_scWith (large := true) h
@@ -59,7 +59,7 @@ theorem load_sc {s : State} {base : Addr} (hs : Scr s base large) {d : Nat}
     exec (ld r d) s = some (s.write .x r (word s.mem base d)) := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
-  rw [ld, exec_ldr_x ⟨ha, by omega⟩]
+  rw [ld, exec_ldr_x ⟨ha, by omega_using [hd, _hcap]⟩]
   · rw [hs.x0]
   · rw [hs.x0]
     exact ⟨_, List.mem_append_right _ hs.wr, contains_scWith (large := large) hd⟩
@@ -69,7 +69,7 @@ theorem store_sc {s : State} {base : Addr} (hs : Scr s base large) {d : Nat}
     exec (st r d) s = some { s with mem := s.mem.writeW (off base d) (s.gpr r) } := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
-  rw [st, exec_str_x ⟨ha, by omega⟩]
+  rw [st, exec_str_x ⟨ha, by omega_using [hd, _hcap]⟩]
   · rw [hs.x0]
   · rw [hs.x0]
     exact ⟨_, hs.wr, contains_scWith (large := large) hd⟩
@@ -110,18 +110,18 @@ theorem Outside.trans {base : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : O
 
 theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside base o n m m')
     (h₁ : o' ≤ o) (h₂ : o + n ≤ o' + n') : Outside base o' n' m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_using [h₁, h₂, hx])
 
 /-- A word at an offset outside the bytes that changed. -/
 theorem Outside.word {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 8 ≤ o ∨ o + n ≤ d) (hd' : d + 8 < 2 ^ 64) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_using [hd', hi])]; omega_using [hd, hi])).symm).symm
 
 theorem Outside.fe {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 32 ≤ o ∨ o + n ≤ d) (hd' : d + 32 < 2 ^ 64) : fe m' base d = fe m base d := by
   simp only [AArch64.fe]
-  rw [h.word (by omega) (by omega), h.word (by omega) (by omega), h.word (by omega) (by omega),
-    h.word (by omega) (by omega)]
+  rw [h.word (by omega_using [hd]) (by omega_using [hd']), h.word (by omega_using [hd]) (by omega_using [hd']), h.word (by omega_using [hd]) (by omega_using [hd']),
+    h.word (by omega_using [hd]) (by omega_using [hd'])]
 
 /-- Four words stored at `base + o`. -/
 def st4 (m : Mem) (base : Addr) (o : Nat) (w0 w1 w2 w3 : BitVec 64) : Mem :=
@@ -135,14 +135,14 @@ theorem sep_off (base : Addr) {d e : Nat} (h : d + 8 ≤ e ∨ e + 8 ≤ d) (hd 
 theorem fe_st4 (m : Mem) (base : Addr) {o : Nat} (ho : o + 32 < 2 ^ 64) (w0 w1 w2 w3 : BitVec 64) :
     fe (st4 m base o w0 w1 w2 w3) base o = val4 w0 w1 w2 w3 := by
   simp only [AArch64.fe, AArch64.word, st4]
-  rw [Mem.readW_writeW_sep (sep_off base (by omega) (by omega) (by omega)) (by decide),
-    Mem.readW_writeW_sep (sep_off base (by omega) (by omega) (by omega)) (by decide),
-    Mem.readW_writeW_sep (sep_off base (by omega) (by omega) (by omega)) (by decide),
+  rw [Mem.readW_writeW_sep (sep_off base (by omega_using []) (by omega_using [ho]) (by omega_using [ho])) (by decide),
+    Mem.readW_writeW_sep (sep_off base (by omega_using []) (by omega_using [ho]) (by omega_using [ho])) (by decide),
+    Mem.readW_writeW_sep (sep_off base (by omega_using []) (by omega_using [ho]) (by omega_using [ho])) (by decide),
     Mem.readW_writeW_self64,
-    Mem.readW_writeW_sep (sep_off base (by omega) (by omega) (by omega)) (by decide),
-    Mem.readW_writeW_sep (sep_off base (by omega) (by omega) (by omega)) (by decide),
+    Mem.readW_writeW_sep (sep_off base (by omega_using []) (by omega_using [ho]) (by omega_using [ho])) (by decide),
+    Mem.readW_writeW_sep (sep_off base (by omega_using []) (by omega_using [ho]) (by omega_using [ho])) (by decide),
     Mem.readW_writeW_self64,
-    Mem.readW_writeW_sep (sep_off base (by omega) (by omega) (by omega)) (by decide),
+    Mem.readW_writeW_sep (sep_off base (by omega_using []) (by omega_using [ho]) (by omega_using [ho])) (by decide),
     Mem.readW_writeW_self64, Mem.readW_writeW_self64]
 
 theorem write_outside (m : Mem) (base : Addr) {d o : Nat} (v : BitVec 64) (h1 : o ≤ d)
@@ -150,25 +150,25 @@ theorem write_outside (m : Mem) (base : Addr) {d o : Nat} (v : BitVec 64) (h1 : 
     (hx : ofs base x < o ∨ o + 32 ≤ ofs base x) : (m.writeW (off base d) v) x = m x := by
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_using [h2, h3])]
   simp only [ofs] at hx
-  omega
+  omega_using [h1, h2, hx]
 
 theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : d + 8 < 2 ^ 64) :
     Outside base d 8 m (m.writeW (off base d) v) := by
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_using [h])]
   simp only [ofs] at hx
-  omega
+  omega_using [hx]
 
 theorem st4_outside (m : Mem) (base : Addr) {o : Nat} (ho : o + 32 < 2 ^ 64) (w0 w1 w2 w3 : BitVec 64) :
     Outside base o 32 m (st4 m base o w0 w1 w2 w3) := by
   intro x hx
   simp only [st4]
-  rw [write_outside _ _ _ (by omega) (by omega) ho hx, write_outside _ _ _ (by omega) (by omega) ho hx,
-    write_outside _ _ _ (by omega) (by omega) ho hx, write_outside _ _ _ (by omega) (by omega) ho hx]
+  rw [write_outside _ _ _ (by omega_using []) (by omega_using []) ho hx, write_outside _ _ _ (by omega_using []) (by omega_using []) ho hx,
+    write_outside _ _ _ (by omega_using []) (by omega_using []) ho hx, write_outside _ _ _ (by omega_using []) (by omega_using []) ho hx]
 
 /-- An aligned field element inside the workspace. -/
 def FieldRange (o : Nat) (large : Bool := true) : Prop := o % 8 = 0 ∧ o + 32 ≤ workSize large
@@ -182,10 +182,10 @@ theorem stores_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat} (h
   obtain ⟨ha, hb⟩ := ho
   apply WP.of_runBlock
   simp only [stores, runBlock_cons, runStep_some, runBlock_nil,
-    store_sc hs ha (by omega),
-    store_sc (hs.setMem _) (show (o + 8) % 8 = 0 by omega) (by omega),
-    store_sc (hs.setMem _) (show (o + 16) % 8 = 0 by omega) (by omega),
-    store_sc (hs.setMem _) (show (o + 24) % 8 = 0 by omega) (by omega),
+    store_sc hs ha (by omega_using [hb]),
+    store_sc (hs.setMem _) (show (o + 8) % 8 = 0 by omega_using [ha]) (by omega_using [hb]),
+    store_sc (hs.setMem _) (show (o + 16) % 8 = 0 by omega_using [ha]) (by omega_using [hb]),
+    store_sc (hs.setMem _) (show (o + 24) % 8 = 0 by omega_using [ha]) (by omega_using [hb]),
     Option.some.injEq, exists_eq_left']
   rfl
 
@@ -220,10 +220,10 @@ theorem loads_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat} (ho
   obtain ⟨⟨hab, hac, had, ha0⟩, ⟨hbc, hbd, hb0⟩, ⟨hcd, hc0⟩, ⟨hd0, _⟩⟩ := hd
   apply WP.of_runBlock
   simp only [loads, runBlock_cons, runStep_some, runBlock_nil,
-    load_sc hs halign (by omega),
-    load_sc (hs.write ha0 _) (show (o + 8) % 8 = 0 by omega) (by omega),
-    load_sc ((hs.write ha0 _).write hb0 _) (show (o + 16) % 8 = 0 by omega) (by omega),
-    load_sc (((hs.write ha0 _).write hb0 _).write hc0 _) (show (o + 24) % 8 = 0 by omega) (by omega),
+    load_sc hs halign (by omega_using [hbound]),
+    load_sc (hs.write ha0 _) (show (o + 8) % 8 = 0 by omega_using [halign]) (by omega_using [hbound]),
+    load_sc ((hs.write ha0 _).write hb0 _) (show (o + 16) % 8 = 0 by omega_using [halign]) (by omega_using [hbound]),
+    load_sc (((hs.write ha0 _).write hb0 _).write hc0 _) (show (o + 24) % 8 = 0 by omega_using [halign]) (by omega_using [hbound]),
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, ?_, ?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
   · simp only [RegUpd.gpr_write, had, hac, hab, ite_false, ite_true, BitVec.setWidth_eq]
@@ -238,12 +238,12 @@ theorem read_byte (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
   simp only [Mem.read]
   ext i hi
   rw [BitVec.getElem_append]
-  simp only [show i < 8 by omega, dite_true]
+  simp only [show i < 8 by omega_using [hi], dite_true]
 
 theorem Outside.writeW {base : Addr} {o n d : Nat} {m m' : Mem} (h : Outside base o n m m')
     (h₁ : o ≤ d) (h₂ : d + 8 ≤ o + n) (h₃ : o + n < 2 ^ 64) (v : BitVec 64) :
     Outside base o n m (m'.writeW (off base d) v) :=
-  h.trans ((writeW_outside m' base v (by omega)).mono h₁ h₂)
+  h.trans ((writeW_outside m' base v (by omega_using [h₂, h₃])).mono h₁ h₂)
 
 theorem word_writeW_sep (m : Mem) (base : Addr) {d e : Nat} (v : BitVec 64)
     (h : e + 8 ≤ d ∨ d + 8 ≤ e) (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :

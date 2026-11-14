@@ -41,9 +41,9 @@ theorem p256ScalarPower_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {bas
   refine WP.seq (wp_movS rfl fun s₃ u₃ _ => WP.block_nil ?_)
   refine countLoop_ok (Inv := fun j u => PowInv P wk base size m (p256Order - 2) s u j)
     (n := 128)
-    (fun j u h1 h2 hi => powBody_ok hL hW hm hB hbits h1 (by omega) hi)
+    (fun j u h1 h2 hi => powBody_ok hL hW hm hB hbits h1 (by omega_using [hnb, h2]) hi)
     (fun u hi => ⟨hi.keep, hi.unch, hi.lt, by rw [hi.val, Nat.shiftRight_zero]⟩)
-    (by omega) ?_
+    (by omega_using []) ?_
   refine ⟨I₂.scr.of_keeps u₃.keeps (by decide), u₃.gpr,
     ((K₁.mono (by decide)).trans K₂).trans (u₃.keeps.mono (by decide)), ?_, ?_, ?_⟩
   · intro x hx

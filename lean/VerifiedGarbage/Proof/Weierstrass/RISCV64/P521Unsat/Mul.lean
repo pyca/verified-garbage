@@ -59,7 +59,7 @@ structure DblInv (b P : Addr) (s0 : State) (j : Nat) (s : State) : Prop where
   frame : Frame [⟨b + BitVec.ofNat 64 Y, 72⟩] s0.mem s.mem
   outs : ∀ i < j, dw s.mem b (Y + 8 * i) = dw s0.mem P (8 * i) * 2 % 2 ^ 64
 
-theorem Y_own {b : Addr} : Region.Sub ⟨b + BitVec.ofNat 64 Y, 72⟩ (ownR 9 b) := own_sub (by rw [Y_eq]; omega) (by rw [Y_eq]; omega)
+theorem Y_own {b : Addr} : Region.Sub ⟨b + BitVec.ofNat 64 Y, 72⟩ (ownR 9 b) := own_sub (by rw [Y_eq]; omega_using []) (by rw [Y_eq]; omega_using [])
 
 /-- `dbl src`: `Y[j] = 2 [P + 8 j]` (modulo `2⁶⁴`). -/
 theorem dbl_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {src : Reg} {P : Addr}
@@ -72,19 +72,19 @@ theorem dbl_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {src : R
   refine ldP_ok hCs hP hj fun s₁ u₁ => wp_sll (by decide) fun s₂ u₂ => ?_
   have hc₂ : Ctx b s₂ := ⟨by rw [u₂.other _ (by decide), u₁.other _ (by decide), hCs.ctx.a3], hCs.ctx.al,
     by rw [u₂.wr, u₁.wr]; exact hCs.ctx.wr⟩
-  refine sd_ok hc₂ (by rw [Y_eq]; omega) (by rw [Y_eq]; omega) fun s₃ u₃ => WP.block_nil ⟨fun r hr => ?_,
+  refine sd_ok hc₂ (by rw [Y_eq]; omega_using [hj]) (by rw [Y_eq]; omega_using []) fun s₃ u₃ => WP.block_nil ⟨fun r hr => ?_,
     by rw [u₃.rd, u₂.rd, u₁.rd, h.rd], by rw [u₃.wr, u₂.wr, u₁.wr, h.wr], by rw [u₃.sp, u₂.sp, u₁.sp, h.sp], ?_,
     fun i hi => ?_⟩
   · rw [u₃.gpr, u₂.other r hr, u₁.other r hr, h.gpr r hr]
   · rw [u₃.mem, u₂.mem, u₁.mem]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains b (by rw [Y_eq]; omega)
-      (by rw [Y_eq]; omega) (by rw [Y_eq]; omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains b (by rw [Y_eq]; omega_using [])
+      (by rw [Y_eq]; omega_using [hj]) (by rw [Y_eq]; omega_using []))
   · have hP0 : dw s.mem P (8 * j) = dw s0.mem P (8 * j) :=
       dwP_kept hC hP (h.frame.sub fun _ hr => ⟨_, List.mem_singleton_self _, by
         rw [List.mem_singleton.mp hr]; exact Y_own⟩) hj
     rw [u₃.mem, u₂.mem, u₁.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [dw_write_other _ _ _ (by omega) (by rw [Y_eq]; omega) (by rw [Y_eq]; omega)]
+    · rw [dw_write_other _ _ _ (by omega_using [hi]) (by rw [Y_eq]; omega_arith) (by rw [Y_eq]; omega_using [hj])]
       exact h.outs i hi
     · rw [dw_write_self, u₂.gpr, u₁.gpr, shl_toNat, ← hP0]
       rfl
@@ -112,11 +112,11 @@ theorem fold_ok {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O s) (h6 : s.g
   have z0 := hz 0 (by decide)
   have z1 := hz 1 (by decide)
   have hL := (s.gpr .a4).isLt
-  have hH : (s.gpr .a5).toNat < 2 ^ 6 := by simp only [acc] at ha; omega
+  have hH : (s.gpr .a5).toNat < 2 ^ 6 := by simp only [acc] at ha; omega_using [ha]
   refine WP.block_append ?_
-  refine ld_ok hC.ctx (by rw [Z_eq]; omega) (by rw [Z_eq]) fun s₁ u₁ => ?_
+  refine ld_ok hC.ctx (by rw [Z_eq]; omega_using []) (by rw [Z_eq]) fun s₁ u₁ => ?_
   refine ld_ok (b := b) ⟨by rw [u₁.other _ (by decide), hC.ctx.a3], hC.ctx.al, by rw [u₁.wr]; exact hC.ctx.wr⟩
-    (by rw [Z_eq]; omega) (by rw [Z_eq]) fun s₂ u₂ => ?_
+    (by rw [Z_eq]; omega_using []) (by rw [Z_eq]) fun s₂ u₂ => ?_
   refine wp_sll (by decide) fun s₃ u₃ => wp_and fun s₄ u₄ => wp_add fun s₅ u₅ => wp_srl (by decide) fun s₆ u₆ =>
     wp_sll (by decide) fun s₇ u₇ => wp_add fun s₈ u₈ => wp_add fun s₉ u₉ => wp_srl (by decide) fun s₁₀ u₁₀ =>
     wp_and fun s₁₁ u₁₁ => wp_add fun s₁₂ u₁₂ => ?_
@@ -145,14 +145,14 @@ theorem fold_ok {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O s) (h6 : s.g
   generalize hHv : (s.gpr .a5).toNat = H at hH
   have hm : 2 * L % 2 ^ 58 < 2 ^ 58 := Nat.mod_lt _ (by decide)
   have e11' : (s₁₂.gpr .a1).toNat = (Z0 + 2 * L % 2 ^ 58) % 2 ^ 58 := by
-    rw [ra1, and_M58, BitVec.toNat_add, shl1_and, hZ0, hLv, Nat.mod_eq_of_lt (a := Z0 + _) (by omega)]
+    rw [ra1, and_M58, BitVec.toNat_add, shl1_and, hZ0, hLv, Nat.mod_eq_of_lt (a := Z0 + _) (by omega_using [z0])]
   have e12 : (s₁₂.gpr .a2).toNat = Z1 + (L / 2 ^ 57 + H * 2 ^ 7) + (Z0 + 2 * L % 2 ^ 58) / 2 ^ 58 := by
     rw [ra2, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, shr_toNat, shl_toNat, shr_toNat, BitVec.toNat_add,
-      shl1_and, hZ0, hZ1, hLv, hHv, Nat.mod_eq_of_lt (a := Z0 + _) (by omega), Nat.mod_eq_of_lt (a := H * _) (by omega)]
-    have : (Z0 + 2 * L % 2 ^ 58) / 2 ^ 58 ≤ 1 := by omega
-    have : L / 2 ^ 57 < 2 ^ 7 := by omega
-    rw [Nat.mod_eq_of_lt (a := L / 2 ^ 57 + _) (by omega), Nat.mod_eq_of_lt (a := Z1 + _) (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+      shl1_and, hZ0, hZ1, hLv, hHv, Nat.mod_eq_of_lt (a := Z0 + _) (by omega_using [z0]), Nat.mod_eq_of_lt (a := H * _) (by omega_using [hH])]
+    have : (Z0 + 2 * L % 2 ^ 58) / 2 ^ 58 ≤ 1 := by omega_using [z0]
+    have : L / 2 ^ 57 < 2 ^ 7 := by omega_using [hLv]
+    rw [Nat.mod_eq_of_lt (a := L / 2 ^ 57 + _) (by omega_using [hLv, hH]), Nat.mod_eq_of_lt (a := Z1 + _) (by omega_using [z1, hLv, hH])]
+    exact Nat.mod_eq_of_lt (by omega_using [z0, z1, hLv, hH])
   have hC12 : CoreOk 9 b A B O s₁₂ := hK12.core hC
   refine sdO_ok hC12 (by decide) fun s₁₃ u₁₃ => ?_
   have hC13 : CoreOk 9 b A B O s₁₃ := core_of hC12 (fun r _ => by rw [u₁₃.gpr]) u₁₃.rd u₁₃.wr
@@ -168,7 +168,7 @@ theorem fold_ok {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O s) (h6 : s.g
   have o1 : dw s'.mem O (8 * 1) = Z1 + (L / 2 ^ 57 + H * 2 ^ 7) + (Z0 + 2 * L % 2 ^ 58) / 2 ^ 58 := by
     rw [hout 1 (by decide), ite_eq_right (by decide), u₁₄.mem, dw_write_self, u₁₃.gpr, e12]
   have oj : ∀ j, 2 ≤ j → j < 9 → dw s'.mem O (8 * j) = dw s.mem b (Z + 8 * j) := fun j hj hj' => by
-    rw [hout j hj', ite_eq_left hj, hm14 _ (by rw [Z_eq]; omega) (by rw [Z_eq]; omega)]
+    rw [hout j hj', ite_eq_left hj, hm14 _ (by rw [Z_eq]; omega_using []) (by rw [Z_eq]; omega_using [hj'])]
   refine ⟨hK14.trans hK, ?_, ⟨fun i hi => ?_, ?_⟩⟩
   · refine lv_fold _ _ ?_ fun j hj hj' => oj j hj hj'
     show dw s'.mem O (8 * 0) + 2 ^ 58 * dw s'.mem O (8 * 1) =
@@ -177,12 +177,12 @@ theorem fold_ok {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O s) (h6 : s.g
     simp only [acc, hLv, hHv]
     have := Nat.div_add_mod (Z0 + 2 * L % 2 ^ 58) (2 ^ 58)
     have := Nat.div_add_mod (2 * L) (2 ^ 58)
-    omega
+    omega_using []
   · show dw s'.mem O (8 * i) < 2 ^ 59
-    rcases (show i = 0 ∨ i = 1 ∨ 2 ≤ i by omega) with rfl | rfl | h2
+    rcases (show i = 0 ∨ i = 1 ∨ 2 ≤ i by omega_using []) with rfl | rfl | h2
     · rw [o0]; exact Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide)
-    · rw [o1]; omega
-    · rw [oj i h2 (by omega)]; exact Nat.lt_trans (hz i (by omega)) (by decide)
+    · rw [o1]; omega_using [z0, z1, hLv, hH]
+    · rw [oj i h2 (by omega_using [hi])]; exact Nat.lt_trans (hz i (by omega_using [hi])) (by decide)
   · show dw s'.mem O (8 * 8) < 2 ^ 58
     rw [oj 8 (by decide) (by decide)]; exact hz 8 (by decide)
 
@@ -219,7 +219,7 @@ theorem maskDbl_ok {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0) {src
   refine ⟨K₂, K₂.core hC, by rw [h₂.gpr _ (by decide), h6], fun j hj => ?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [h₂.outs j hj, hm₁]
     have := hPt.lt hj
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (by omega_using [this])]; omega_using []
   · rw [dwA_kept hC₁ hf hi, hm₁]
   · rw [dwB_kept hC₁ hf hi, hm₁]
 
@@ -232,7 +232,7 @@ theorem srcsLt {b A B O P : Addr} {s0 s : State} (h : Dbl b A B O P s0 s) (hA : 
     rcases srcOk_cases hx with ⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩ | ⟨j, hj, rfl⟩
     · dsimp only; rw [h.core.a, h.as i hi]; exact Nat.lt_trans (hA.lt hi) (by decide)
     · dsimp only; rw [h.core.b', h.bs i hi]; exact Nat.lt_trans (hB.lt hi) (by decide)
-    · dsimp only; rw [h.core.ctx.a3, h.ys j hj]; have := hPt.lt hj; omega
+    · dsimp only; rw [h.core.ctx.a3, h.ys j hj]; have := hPt.lt hj; omega_using [this]
   exact fun n hn => ⟨key _ (hsrc n hn).1, key _ (hsrc n hn).2⟩
 
 /-- The kernel's result: tight, and its number modulo `p`. -/
@@ -247,7 +247,7 @@ theorem colsFold_ok {b A B O P : Addr} {s0 s : State} (hC : CoreOk 9 b A B O s0)
   refine WP.block_append (WP.mono (pipe_ok h.core h.a6 ht hlt) fun s₃ h₃ => ?_)
   have K₃ : Kept b O s0 s₃ := h.kept.trans ⟨h₃.inv.gpr, h₃.inv.rd, h₃.inv.wr, h₃.inv.sp,
     h₃.inv.frame.sub fun _ hr => ⟨_, List.mem_cons_self .., by
-      rw [List.mem_singleton.mp hr]; exact own_sub (by rw [Z_eq]) (by rw [Z_eq]; omega)⟩⟩
+      rw [List.mem_singleton.mp hr]; exact own_sub (by rw [Z_eq]) (by rw [Z_eq]; omega_using [])⟩⟩
   refine WP.mono (fold_ok (K₃.core hC) (h₃.inv.a6.trans h.a6) h₃.lt h₃.accLt) fun s₄ ⟨K₄, e₄, t₄⟩ =>
     ⟨K₃.trans K₄, t₄, mod_cancel (K := acc s₃ + H) ?_⟩
   have hv := h₃.val
@@ -255,9 +255,9 @@ theorem colsFold_ok {b A B O P : Addr} {s0 s : State} (hC : CoreOk 9 b A B O s0)
   rw [e₄]
   have : lv (fun c => dw s₃.mem b (Z + 8 * c)) 9 + 2 * acc s₃ + 2 ^ 522 * (acc s₃ + H) =
       (lv (fun c => dw s₃.mem b (Z + 8 * c)) 9 + 2 ^ 522 * acc s₃) + 2 ^ 522 * H + 2 * acc s₃ := by
-    rw [Nat.mul_add]; omega
+    rw [Nat.mul_add]; omega_using []
   rw [this, hv, hV]
-  omega
+  omega_using []
 
 /-- `mulC`: `[O] ≡ [A] [B]`. -/
 theorem mulC_ok {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O s) (hA : TightF (fun i => dw s.mem A (8 * i)))

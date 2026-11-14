@@ -149,8 +149,8 @@ theorem inv_step {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : N
     · subst hij; simp
     · rw [ite_eq_right hij]
       by_cases hj' : j < i
-      · rw [ite_eq_left hj', ite_eq_left (by omega)]
-      · rw [ite_eq_right hj', ite_eq_right (by omega)]
+      · rw [ite_eq_left hj', ite_eq_left (by omega_using [hj'])]
+      · rw [ite_eq_right hj', ite_eq_right (by omega_using [hij, hj'])]
   · rw [r6, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
 /-- `consts` and the count. -/
@@ -212,7 +212,7 @@ theorem reads {out : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i : Nat}
 theorem load_val {m : Mem} {p : Addr} (hr : Reduced m p) {i : Nat} (hi : i < n) :
     (coeffAt m p i).setWidth 64 = BitVec.ofNat 64 ((polyAt m p)[i]!).val := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_setWidth64, polyAt_val hr hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hr i hi; omega)]
+  rw [toNat_setWidth64, polyAt_val hr hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hr i hi; omega_using [])]
 
 theorem mul_hb {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ s, Inv (mulOut s₀) s₀ i s →
     ∀ {x y z c : BitVec 64}, s.gpr .r3 = x → s.gpr .r4 = y → s.gpr .r5 = z → s.gpr .r6 = c →
@@ -247,7 +247,7 @@ theorem polyIs_of_inv {out : Nat → BitVec 32} {s₀ s : State} {g : Poly}
     PolyIs s.mem (H s₀) g :=
   polyIs_of_toNat fun j hj => by
     rw [h.coeff j hj, ite_eq_left hj, hg j hj, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := val_lt g[j]!; omega)]
+      Nat.mod_eq_of_lt (by have := val_lt g[j]!; omega_using [this])]
 
 /-! ## Verified -/
 

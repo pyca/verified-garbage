@@ -138,7 +138,7 @@ theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o R : Nat} (ho : o = 0
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
   have hc : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
     ciph_frame h.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega))) h.call.rounds
+      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))) h.call.rounds
   refine ⟨h.env.of_saved g.saved g.sp g.rd g.wr, h.kept.of_saved g.saved, ?_, ?_⟩
   · rw [Proof.Cmac.bytesAt_blockAt, gout.1, h.hJ, h.cp,
       show Spec.Gcm.aesWith R (bytesAt s.mem Ctx (16 * (R + 1))) = ciphOf s.mem Ctx R from rfl, hc]

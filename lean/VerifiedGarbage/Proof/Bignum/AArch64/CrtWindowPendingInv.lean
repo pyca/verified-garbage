@@ -34,7 +34,7 @@ theorem takeBit_pending (W : Window) {s : State} {P : Addr} {w b K V i : Nat}
   obtain ⟨E,v,hb,hv,hK,hy,hyv,hn,bc⟩ := hp
   refine WP.mono (takeBit_ok W hc ht hw hw' hR hy hyv hi hb
     (pending_lt16 hb hv) hV hn bc hbyte) fun t ⟨ct,tt,yt,vt,ft,kt,nt,bt,hh⟩ => ?_
-  have bounds := pending_bounds hb hv (show V / 2 ^ (7 - i) % 2 < 2 by omega)
+  have bounds := pending_bounds hb hv (show V / 2 ^ (7 - i) % 2 < 2 by omega_using [])
   have hpref := pending_prefix b E v (V / 2 ^ (7 - i) % 2)
   rw [hK] at hpref
   refine ⟨ct,tt,?_,ft,kt,hh⟩

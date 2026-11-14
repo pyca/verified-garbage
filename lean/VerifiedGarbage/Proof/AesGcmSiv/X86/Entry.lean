@@ -89,7 +89,7 @@ theorem perm_of {s : State} (h : onePre s) : Perm (prmOf s) s :=
 theorem argsOk_of {s : State} (h : onePre s) : ArgsOk s := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, wa, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     -, spf, -⟩ := h.lay
-  refine ⟨?_, ?_, by omega⟩
+  refine ⟨?_, ?_, by omega_using [spf]⟩
   · rw [argsR_eq]; exact covers_left (h.wr (argsR' s) (by simp))
   · rw [argsR_eq]; exact wa.symm
 
@@ -118,7 +118,7 @@ theorem entry_ok {s : State} (h : onePre s) : WP isa sivEntry s (Entered s (prmO
   have aw := Ao.aw
   have fa := Ao.fa
   rw [hSP] at rA aw fa
-  have fw : (arg s 8).toNat + 2560 ≤ 2 ^ 32 := by have := L.ww; simp only [prmOf] at this; omega
+  have fw : (arg s 8).toNat + 2560 ≤ 2 ^ 32 := by have := L.ww; simp only [prmOf] at this; omega_using [this]
   have wW : Covers [⟨w64 (arg s 8), 2560⟩] s.wr := P.w2560
   have i₀ : InRegions (s.rd ++ s.wr) (argA SP 8) 4 := rA _ _ ⟨_, List.mem_singleton_self _, argA_contains (by decide) fa⟩
   refine WP.seq (WP.of_runBlock ⟨_, by grun [hSP, i₀], ?_⟩)

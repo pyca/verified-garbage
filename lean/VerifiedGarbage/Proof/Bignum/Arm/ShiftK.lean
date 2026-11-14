@@ -46,7 +46,7 @@ theorem shiftRightK_word {k : Nat} (hk : k < 32) (x y : BitVec 32) :
   have h3 : 2 ^ (32 - k) * (y.toNat % 2 ^ k) + 2 ^ (32 - k) ≤ 2 ^ k * 2 ^ (32 - k) := by
     rw [Nat.mul_comm (2 ^ k), ← Nat.mul_succ]
     exact Nat.mul_le_mul_left _ (Nat.mod_lt _ (Nat.two_pow_pos _))
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_using [h1, h3])
 
 theorem shiftLeftK_word {k : Nat} (hk : k < 32) (x c : BitVec 32) (hc : c.toNat < 2 ^ k) :
     (c + (x <<< k)).toNat + 2 ^ 32 * (x >>> (32 - k)).toNat = 2 ^ k * x.toNat + c.toNat := by
@@ -57,7 +57,7 @@ theorem shiftLeftK_word {k : Nat} (hk : k < 32) (x c : BitVec 32) (hc : c.toNat 
   have h3 : x.toNat % 2 ^ (32 - k) * 2 ^ k + 2 ^ k ≤ 2 ^ (32 - k) * 2 ^ k := by
     rw [← Nat.succ_mul]
     exact Nat.mul_le_mul_right _ (Nat.mod_lt _ (Nat.two_pow_pos _))
-  rw [Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [hc, h3])]
   have d := Nat.div_add_mod x.toNat (2 ^ (32 - k))
   generalize x.toNat / 2 ^ (32 - k) = q at *
   generalize x.toNat % 2 ^ (32 - k) = r at *
@@ -80,8 +80,8 @@ theorem shiftRightKStep_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) (a a' :
   refine wp_ldr (by decide) ha ra fun s1 u1 => ?_
   refine wp_ldr (a := a') (by decide) (by rw [u1.other .r0 (by decide), ha'])
     (by rw [u1.rd, u1.wr]; exact ra') fun s2 u2 => ?_
-  refine wp_mov (op2_lsr (by omega)) fun s3 u3 => ?_
-  refine wp_dp (op2_lsl (by omega)) fun s4 u4 => ?_
+  refine wp_mov (op2_lsr (by omega_using [hk])) fun s3 u3 => ?_
+  refine wp_dp (op2_lsl (by omega_using [hk])) fun s4 u4 => ?_
   have p0 : s4.gpr .r0 = s.gpr .r0 := by
     rw [u4.other .r0 (by decide), u3.other .r0 (by decide), u2.other .r0 (by decide),
       u1.other .r0 (by decide)]
@@ -118,8 +118,8 @@ theorem shiftLeftKStep_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) (a : Add
       t.z = (s.gpr .lr - 1 == 0) ∧ Rest [.r0, .r3, .r4, .r11, .lr] s t := by
   unfold shiftLeftKStep
   refine wp_ldr (by decide) ha ra fun s1 u1 => ?_
-  refine wp_dp (op2_lsl (by omega)) fun s2 u2 => ?_
-  refine wp_mov (op2_lsr (by omega)) fun s3 u3 => ?_
+  refine wp_dp (op2_lsl (by omega_using [hk])) fun s2 u2 => ?_
+  refine wp_mov (op2_lsr (by omega_using [hk])) fun s3 u3 => ?_
   have p0 : s3.gpr .r0 = s.gpr .r0 := by
     rw [u3.other .r0 (by decide), u2.other .r0 (by decide), u1.other .r0 (by decide)]
   refine wp_str (a := a) (by decide) (by rw [p0]; exact ha)
@@ -168,37 +168,37 @@ theorem shiftRightKBody_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s0 s : State} {bas
   have writable (d : Nat) (hd : d + 4 ≤ size) :
       InRegions s.wr (off (State.addr base) d) 4 := by
     rw [inv.rest.wr]
-    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega)⟩
+    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega_using [hn, hd])⟩
   have readable (d : Nat) (hd : d + 4 ≤ size) :
       InRegions (s.rd ++ s.wr) (off (State.addr base) d) 4 := by
     obtain ⟨R, hR, hsub⟩ := writable d hd
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
   have alo : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr base) (o + 4 * i) := by
     rw [inv.ptr, Offset.add_add, Nat.add_zero]
-    exact VG.Arm.addr_add (by omega)
+    exact VG.Arm.addr_add (by omega_using [hi, hn, hf])
   have ahi : State.addr (s.gpr .r0 + BitVec.ofNat 32 4) = off (State.addr base) (o + 4 * (i + 1)) := by
-    rw [inv.ptr, Offset.add_add, show o + 4 * i + 4 = o + 4 * (i + 1) by omega]
-    exact VG.Arm.addr_add (by omega)
-  refine WP.mono (shiftRightKStep_ok hk s _ _ alo ahi (writable _ (by omega)) (readable _ (by omega))
-    (readable _ (by omega))) ?_
+    rw [inv.ptr, Offset.add_add, show o + 4 * i + 4 = o + 4 * (i + 1) by omega_using []]
+    exact VG.Arm.addr_add (by omega_using [hi, hn, hf])
+  refine WP.mono (shiftRightKStep_ok hk s _ _ alo ahi (writable _ (by omega_using [hi, hf])) (readable _ (by omega_using [hi, hf]))
+    (readable _ (by omega_using [hi, hf]))) ?_
   rintro t ⟨value, mem, ptr, count, zero, rest⟩
-  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega)
+  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega_using [hi, hn, hf])
   rw [← mem] at wr
-  have low := wr.val32 (d := o) (k := i) (by omega) (by omega)
-  have src := inv.outside.w32 (d := o + 4 * i) (by omega) (by omega)
-  have src' := inv.outside.w32 (d := o + 4 * (i + 1)) (by omega) (by omega)
+  have low := wr.val32 (d := o) (k := i) (by omega_using []) (by omega_using [hi, hn, hf])
+  have src := inv.outside.w32 (d := o + 4 * i) (by omega_using []) (by omega_using [hi, hn, hf])
+  have src' := inv.outside.w32 (d := o + 4 * (i + 1)) (by omega_using []) (by omega_using [hi, hn, hf])
   have top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
     rw [mem, w32_write_self]
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
+  refine ⟨⟨by omega_using [hi], ?_, ?_, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
   · rw [ptr, inv.ptr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
     congr 1
   · rw [count, inv.count]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
-  · exact (inv.outside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega))
+  · exact (inv.outside.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using []))
   · change (t.gpr .r3).toNat = w32 s.mem (State.addr base) (o + 4 * i) / 2 ^ k +
       2 ^ (32 - k) * (w32 s.mem (State.addr base) (o + 4 * (i + 1)) % 2 ^ k) at value
     rw [src, src'] at value
@@ -216,8 +216,8 @@ theorem shiftRightKBody_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s0 s : State} {bas
     grind
   · rw [zero, inv.count]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by omega_using [hn, hf])]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_using [hi]]
 
 theorem shiftRightK_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) {base : BitVec 32} {size o n : Nat}
     (ctx : ShiftLeftCtx s base size o (n + 1)) (hn : 0 < n)
@@ -228,7 +228,7 @@ theorem shiftRightK_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) {base : Bit
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro j t h
     obtain ⟨i, hij, hj, hi⟩ := h
-    refine WP.mono (shiftRightKBody_ok hk ctx hi (by omega)) ?_
+    refine WP.mono (shiftRightKBody_ok hk ctx hi (by omega_using [hij, hj])) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 1 = n
     · left
@@ -236,11 +236,11 @@ theorem shiftRightK_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) {base : Bit
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, j - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, j - 1, by omega_using [hj], i + 1, by omega_using [hij, hj], by omega_using [hij, hj, he], hu⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, hn, ?_⟩
-    refine ⟨by omega, ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
+  · refine ⟨0, by omega_using [], hn, ?_⟩
+    refine ⟨by omega_using [], ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
     · simpa only [Nat.mul_zero, Nat.add_zero] using hp
     · simpa only [Nat.sub_zero] using hc
     · simp only [val32, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
@@ -253,7 +253,7 @@ theorem ShiftRightKInv.result {k : Nat} (hk : 0 < k ∧ k < 32) {s t : State} {b
         2 ^ k := by
   have v := h.value
   have low : val32 s.mem (State.addr base) o n % 2 ^ k = w32 s.mem (State.addr base) o % 2 ^ k := by
-    obtain ⟨j, rfl⟩ : ∃ j, n = j + 1 := ⟨n - 1, by omega⟩
+    obtain ⟨j, rfl⟩ : ∃ j, n = j + 1 := ⟨n - 1, by omega_using [hn]⟩
     rw [val32, two_pow_split hk.2, Nat.mul_assoc, Nat.add_mul_mod_self_left]
   have hK := Nat.two_pow_pos k
   rw [← v, Nat.mul_comm, Nat.add_comm, Nat.add_mul_div_right _ _ hK,
@@ -280,31 +280,31 @@ theorem shiftLeftKBody_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s0 s : State} {base
   have writable (d : Nat) (hd : d + 4 ≤ size) :
       InRegions s.wr (off (State.addr base) d) 4 := by
     rw [inv.rest.wr]
-    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega)⟩
+    exact ⟨_, ctx.writable, Offset.contains_base _ hd (by omega_using [hn, hd])⟩
   have alo : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr base) (o + 4 * i) := by
     rw [inv.ptr, Offset.add_add, Nat.add_zero]
-    exact VG.Arm.addr_add (by omega)
+    exact VG.Arm.addr_add (by omega_using [hi, hn, hf])
   have read : InRegions (s.rd ++ s.wr) (off (State.addr base) (o + 4 * i)) 4 := by
-    obtain ⟨R, hR, hsub⟩ := writable (o + 4 * i) (by omega)
+    obtain ⟨R, hR, hsub⟩ := writable (o + 4 * i) (by omega_using [hi, hf])
     exact ⟨R, List.mem_append_right _ hR, hsub⟩
-  refine WP.mono (shiftLeftKStep_ok hk s _ alo (writable _ (by omega)) read inv.carry) ?_
+  refine WP.mono (shiftLeftKStep_ok hk s _ alo (writable _ (by omega_using [hi, hf])) read inv.carry) ?_
   rintro t ⟨value, carry, mem, ptr, count, zero, rest⟩
-  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega)
+  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega_using [hi, hn, hf])
   rw [← mem] at wr
-  have low := wr.val32 (d := o) (k := i) (by omega) (by omega)
-  have source := inv.outside.w32 (d := o + 4 * i) (by omega) (by omega)
+  have low := wr.val32 (d := o) (k := i) (by omega_using []) (by omega_using [hi, hn, hf])
+  have source := inv.outside.w32 (d := o + 4 * i) (by omega_using []) (by omega_using [hi, hn, hf])
   have top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
     rw [mem, w32_write_self]
-  refine ⟨⟨by omega, ?_, ?_, carry, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
+  refine ⟨⟨by omega_using [hi], ?_, ?_, carry, ?_, ?_, inv.rest.trans rest⟩, ?_⟩
   · rw [ptr, inv.ptr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
     congr 1
   · rw [count, inv.count]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
-  · exact (inv.outside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega))
+  · exact (inv.outside.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using []))
   · change (t.gpr .r3).toNat + 2 ^ 32 * (t.gpr .r11).toNat =
       2 ^ k * w32 s.mem (State.addr base) (o + 4 * i) + (s.gpr .r11).toNat at value
     rw [source] at value
@@ -315,8 +315,8 @@ theorem shiftLeftKBody_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s0 s : State} {base
     grind
   · rw [zero, inv.count]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by omega_using [hn, hf])]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_using [hi]]
 
 theorem shiftLeftK_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) {base : BitVec 32} {size o n : Nat}
     (ctx : ShiftLeftCtx s base size o n) (hn : 0 < n)
@@ -328,7 +328,7 @@ theorem shiftLeftK_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) {base : BitV
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro j t h
     obtain ⟨i, hij, hj, hi⟩ := h
-    refine WP.mono (shiftLeftKBody_ok hk ctx hi (by omega)) ?_
+    refine WP.mono (shiftLeftKBody_ok hk ctx hi (by omega_using [hij, hj])) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 1 = n
     · left
@@ -336,11 +336,11 @@ theorem shiftLeftK_ok {k : Nat} (hk : 0 < k ∧ k < 32) (s : State) {base : BitV
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, j - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, j - 1, by omega_using [hj], i + 1, by omega_using [hij, hj], by omega_using [hij, hj, he], hu⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, hn, ?_⟩
-    refine ⟨by omega, ?_, ?_, carry, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
+  · refine ⟨0, by omega_using [], hn, ?_⟩
+    refine ⟨by omega_using [], ?_, ?_, carry, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
     · simpa only [Nat.mul_zero, Nat.add_zero] using hp
     · simpa only [Nat.sub_zero] using hc
     · simp only [val32, Nat.pow_zero, Nat.mul_zero, Nat.one_mul, Nat.zero_add]

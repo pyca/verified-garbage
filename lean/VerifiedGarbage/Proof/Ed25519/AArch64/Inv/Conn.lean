@@ -29,7 +29,7 @@ theorem flip4_eq (m : Mem) (base : Addr) (o : Nat) (w : Word) :
   have l3 := (word m base (o + 24)).isLt
   rcases maskN_cases w with ⟨h, e⟩ | ⟨h, e⟩
   · simp only [flip4, e, h, ↓reduceIte, BitVec.xor_allOnes, val4, fe, BitVec.toNat_not]
-    omega
+    omega_using []
   · simp only [flip4, e, h, Bool.false_eq_true, ↓reduceIte, val4, fe, BitVec.toNat_xor,
       show (0 : Word).toNat = 0 from rfl, Nat.xor_zero]
 
@@ -43,7 +43,7 @@ theorem top_msb (m : Mem) (base : Addr) (o : Nat) (w : Word) :
   simp only [flip4, val4]
   congr 1
   apply propext
-  omega
+  omega_using []
 
 theorem corrV_true_eq (m : Mem) (base : Addr) (o : Nat) (w : Word) :
     (corrV true (word m base (o + 24) ^^^ maskN w) (absW w) (maskN w)).toNat =
@@ -64,14 +64,14 @@ theorem corrV_false_eq (x : Word) (w : Word) :
   rw [BitVec.and_comm]
   exact negN_word w
 
-theorem negN_le_absN (w : Word) : negN w ≤ absN w := by unfold negN; split <;> omega
+theorem negN_le_absN (w : Word) : negN w ≤ absN w := by unfold negN; split <;> omega_using []
 
 /-- The carry of two entries, below `2⁶⁴`. -/
 theorem car_eq (a b : Word) (h : absN a + absN b < 2 ^ 64) :
     ((absW a &&& maskN a) + (absW b &&& maskN b)).toNat = negN a + negN b := by
   rw [BitVec.toNat_add, negN_word, negN_word]
   have := negN_le_absN a; have := negN_le_absN b
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 /-- A row of `f` and `g` as integers. -/
 theorem rowF_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256)
@@ -85,7 +85,7 @@ theorem rowF_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256
   generalize flipN a X * absN a = P1 at e1 h
   generalize flipN b Y * absN b = P2 at e2 h
   rw [show (2 : Int) ^ 320 = 2 ^ 256 * 2 ^ 64 by rw [← pow_add]]
-  omega
+  omega_using [e1, e2, h]
 
 /-- A row of `u` and `v` as integers. -/
 theorem rowU_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256)
@@ -99,6 +99,6 @@ theorem rowU_int {a b : Word} {X Y W : Nat} (hX : X < 2 ^ 256) (hY : Y < 2 ^ 256
   generalize flipN a X * absN a = P1 at e1 h
   generalize flipN b Y * absN b = P2 at e2 h
   rw [show (2 : Int) ^ 320 = 2 ^ 256 * 2 ^ 64 by rw [← pow_add]]
-  omega
+  omega_using [e1, e2, h]
 
 end VG.Proof.Ed25519.AArch64.Inv

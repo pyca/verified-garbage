@@ -24,9 +24,9 @@ theorem sqFinishHeader_ok (s : State) {base : BitVec 32} {size mod M : Nat}
       t.mem = s.mem ∧ Rest [.r0, .r12] s t := by
   have nowrap := ws.nowrap
   unfold sqFinishHeader
-  refine wp_ldr (by decide) (sq_ea0 nowrap p0 (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
-  refine wp_ldr (by decide) (sq_ea0 nowrap ((u1.other .r0 (by decide)).trans p0) (by omega))
-    (by rw [u1.rd, u1.wr]; exact ws.read (by omega)) fun t u2 => WP.block_nil ?_
+  refine wp_ldr (by decide) (sq_ea0 nowrap p0 (by omega_using [fit])) (ws.read (by omega_using [fit])) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (sq_ea0 nowrap ((u1.other .r0 (by decide)).trans p0) (by omega_using [fit]))
+    (by rw [u1.rd, u1.wr]; exact ws.read (by omega_using [fit])) fun t u2 => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [u2.other .r12 (by decide), u1.gpr, hm]
   · rw [u2.gpr, u1.mem, hM]
@@ -43,14 +43,14 @@ theorem sqFinishLoad_ok (s : State) {base : BitVec 32} {size M n out : Nat}
       t.mem = s.mem ∧ Rest [.r3, .r7, .r9] s t := by
   have nowrap := ws.nowrap
   unfold sqFinishLoad
-  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega))
-    (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea nowrap p0 (imm := 0) (by omega_using [fit]))
+    (ws.read (by omega_using [fit])) fun s1 u1 => ?_
   have p1 := (u1.other .r0 (by decide)).trans p0
-  refine wp_ldr (by decide) (sq_ea nowrap p1 (by omega)) (by rw [u1.rd, u1.wr]; exact ws.read (by omega))
+  refine wp_ldr (by decide) (sq_ea nowrap p1 (by omega_using [fit])) (by rw [u1.rd, u1.wr]; exact ws.read (by omega_using [fit]))
     fun s2 u2 => ?_
   have p2 := (u2.other .r0 (by decide)).trans p1
-  refine wp_ldr (by decide) (sq_ea nowrap p2 (by omega))
-    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega)) fun t u3 => WP.block_nil ?_
+  refine wp_ldr (by decide) (sq_ea nowrap p2 (by omega_using [fit]))
+    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega_using [fit])) fun t u3 => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u3.other .r7 (by decide), u2.other .r7 (by decide), u1.gpr, hn]
   · rw [u3.other .r9 (by decide), u2.gpr, u1.mem, ho]
@@ -70,8 +70,8 @@ theorem sqFinishArgs_ok (s : State) {base : BitVec 32} {size M n : Nat}
   unfold sqFinishArgs
   refine wp_dp (op2_lsl (by decide)) fun s1 u1 => ?_
   have v1 : s1.gpr .r10 = base + BitVec.ofNat 32 (M + 8 * n) := by
-    rw [u1.gpr, dpVal, p0, p7, ofNat_shl (by omega), Offset.add_add, Nat.mul_comm n]
-  refine wp_str (by decide) (sq_ea nowrap v1 (by omega)) (by rw [u1.wr]; exact ws.write (by omega))
+    rw [u1.gpr, dpVal, p0, p7, ofNat_shl (by omega_using [fit, nowrap]), Offset.add_add, Nat.mul_comm n]
+  refine wp_str (by decide) (sq_ea nowrap v1 (by omega_using [fit])) (by rw [u1.wr]; exact ws.write (by omega_using [fit]))
     fun s2 u2 => ?_
   refine wp_dp (op2_lsl (by decide)) fun s3 u3 => ?_
   refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
@@ -80,9 +80,9 @@ theorem sqFinishArgs_ok (s : State) {base : BitVec 32} {size M n : Nat}
   refine ⟨?_, ?_, ?_, u6.gpr, ?_⟩
   · rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, u1.other .r3 (by decide)]
   · rw [u6.other .r10 (by decide), u5.other .r10 (by decide), u4.gpr, dpVal, u3.gpr, dpVal, u2.gpr,
-      u1.other .r0 (by decide), u1.other .r7 (by decide), p0, p7, ofNat_shl (by omega)]
+      u1.other .r0 (by decide), u1.other .r7 (by decide), p0, p7, ofNat_shl (by omega_using [fit, nowrap])]
     change base + BitVec.ofNat 32 M + BitVec.ofNat 32 (n * 2 ^ 2) + BitVec.ofNat 32 24 = _
-    rw [Offset.add_add, Offset.add_add, show M + (n * 2 ^ 2 + 24) = M + 24 + 4 * n by omega]
+    rw [Offset.add_add, Offset.add_add, show M + (n * 2 ^ 2 + 24) = M + 24 + 4 * n by omega_using []]
   · rw [u6.other .lr (by decide), u5.gpr, u4.other .r7 (by decide), u3.other .r7 (by decide), u2.gpr,
       u1.other .r7 (by decide), p7]
   · exact (u1.rest (by simp)).trans ((u2.rest _).trans ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans

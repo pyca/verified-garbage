@@ -104,20 +104,20 @@ private theorem joined_three (F I P : List (BitVec 64)) (hf : F.length=488) (hi 
   have hl : (F++I++P).length=1488 := by simp only [List.length_append,hf,hi,hp]
   constructor
   · intro j hj
-    rw [constMem_held _ _ (by rw [hl]; decide) j (by rw [hl]; omega)]
-    simp only [List.getD_eq_getElem?_getD,List.getElem?_append_left (by simp [hf,hi]; omega : j<(F++I).length),
-      List.getElem?_append_left (by omega : j<F.length)]
+    rw [constMem_held _ _ (by rw [hl]; decide) j (by rw [hl]; omega_using [hj])]
+    simp only [List.getD_eq_getElem?_getD,List.getElem?_append_left (by simp [hf,hi]; omega_using [hj] : j<(F++I).length),
+      List.getElem?_append_left (by omega_using [hf, hj] : j<F.length)]
   · constructor
     · intro j hj
       have ha : (1052480+BitVec.ofNat 64 (8*j) : Addr)=1048576+BitVec.ofNat 64 (8*(488+j)) := by
         rw [Nat.mul_add,BitVec.ofNat_add,← BitVec.add_assoc]; rfl
-      rw [ha,constMem_held _ _ (by rw [hl]; decide) (488+j) (by rw [hl]; omega)]
-      simp only [List.getD_eq_getElem?_getD,List.getElem?_append_left (by simp [hf,hi]; omega : 488+j<(F++I).length),
-        List.getElem?_append_right (by omega : F.length≤488+j),hf,Nat.add_sub_cancel_left]
+      rw [ha,constMem_held _ _ (by rw [hl]; decide) (488+j) (by rw [hl]; omega_using [hj])]
+      simp only [List.getD_eq_getElem?_getD,List.getElem?_append_left (by simp [hf,hi]; omega_using [hj] : 488+j<(F++I).length),
+        List.getElem?_append_right (by omega_using [hf] : F.length≤488+j),hf,Nat.add_sub_cancel_left]
     · intro j hj
       have ha : (1056384+BitVec.ofNat 64 (8*j) : Addr)=1048576+BitVec.ofNat 64 (8*(976+j)) := by
         rw [Nat.mul_add,BitVec.ofNat_add,← BitVec.add_assoc]; rfl
-      rw [ha,constMem_held _ _ (by rw [hl]; decide) (976+j) (by rw [hl]; omega)]
+      rw [ha,constMem_held _ _ (by rw [hl]; decide) (976+j) (by rw [hl]; omega_using [hj])]
       simp only [List.getD_eq_getElem?_getD,List.getElem?_append_right (by simp [hf,hi] : (F++I).length≤976+j),
         List.length_append,hf,hi,show 488+488=976 from rfl,Nat.add_sub_cancel_left]
 

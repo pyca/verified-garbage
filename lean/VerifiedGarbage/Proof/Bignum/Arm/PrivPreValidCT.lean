@@ -75,9 +75,9 @@ theorem pp_phase_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j : Fin 6
     refine WP.mono (pp_enterFactor_ok s h.1 j prime) ?_
     rintro z ⟨sharedZ, selectedZ, flagZ, _, _⟩
     have flag : ppFlag z = ppFlag s := by unfold ppFlag; rw [flagZ]
-    refine ⟨sharedZ, selectedZ, ?_, kpos, kfit, by have := sharedZ.stack.nowrap; omega, sharedZ.stack.read (by decide),
+    refine ⟨sharedZ, selectedZ, ?_, kpos, kfit, by have := sharedZ.stack.nowrap; omega_using [this], sharedZ.stack.read (by decide),
       by rw [← ppFlag, flag]; exact h.2.1, by rw [← ppFlag, flag]; exact h.2.2⟩
-    simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using sharedZ.savedOperand j sharedZ.narrow_member
+    simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []] using sharedZ.savedOperand j sharedZ.narrow_member
   have enterCT : RelCT isa (fun s t => PpFactorIn g bs1 j s ∧ PpFactorIn g bs2 j t ∧ s.sp = t.sp)
       (enterFactor (56 + 8 * j.val + 4)) (fun _ _ => True) :=
     (pp_enterFactor_ct j prime).mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
@@ -162,7 +162,7 @@ theorem pp_modulusR2_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
   have loadWP (s : State) {bs : Fin 7 → List Byte} (h : CrtSelected g bs P s) :
       WP isa (.block [.ldrSp .r1 8]) s (T bs) := by
     refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide)
-      (addr_add (by have := h.1.stack.nowrap; omega)) (h.1.stack.read (by decide)) fun x a => WP.block_nil ?_
+      (addr_add (by have := h.1.stack.nowrap; omega_using [this])) (h.1.stack.read (by decide)) fun x a => WP.block_nil ?_
     have ra : Rest [.r1] s x := a.rest (by decide)
     exact ⟨⟨h.2.of_mem a.mem ra ((a.other .r0 (by decide)).trans h.2.ptr),
       h.1.buffers.context.main.congr ra.wr, by rw [a.mem]; exact h.1.main.toCrtLayoutState,
@@ -187,7 +187,7 @@ theorem pp_modulusR2_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
   have prepCT : RelCT isa (fun s t => M bs1 s ∧ M bs2 t ∧ s.sp = t.sp) prepareModulus (fun _ _ => True) := by
     intro s t tr1 tr2 u w h e1 e2
     have words : g.words ≤ 128 := (crt_width_valid h.1.2.2).2.1
-    exact prepareModulus_ct (M := Spec.Rsa.os2ip (bs1 0)) (by omega) s t tr1 tr2 u w
+    exact prepareModulus_ct (M := Spec.Rsa.os2ip (bs1 0)) (by omega_using [words]) s t tr1 tr2 u w
       ⟨⟨h.1.1, h.1.2.1⟩, ⟨h.2.1.1, h.2.1.2.1.trans hn.symm⟩, h.2.2⟩ e1 e2
   rw [modulusR2]
   exact crt_seq_ct pp_selectP_ct (fun s h => selectWP s h) (fun s h => selectWP s h)
@@ -199,7 +199,7 @@ theorem pp_modulusPart_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
       (CrtShared g bs2 t ∧ PpPre g t ∧ ppFlag t ≤ 1) ∧ s.sp = t.sp) modulusPart (fun _ _ => True) := by
   let len := workspaceWords g.words
   let P := crtP g.base g.words
-  have mainSize : 256 ≤ 8 * len := by simp only [len, workspaceWords]; omega
+  have mainSize : 256 ≤ 8 * len := by simp only [len, workspaceWords]; omega_using []
   have mainSub {bs : Fin 7 → List Byte} {s : State} (h : CrtShared g bs s) :
       (⟨State.addr g.base, 8 * len⟩ : Region).Sub ⟨State.addr g.base, g.size⟩ :=
     crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits (by simp [crtRegions, len])
@@ -232,16 +232,16 @@ theorem pp_modulusPart_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     obtain ⟨dl, kept, sep, sepOut, ws, layout, width⟩ := h
     have pre := kept.2.2.1
     have preFit := pre.fit
-    have six : 16 * g.words ≤ 8 * ppPreWords g := by simp only [ppPreWords]; omega
-    refine wp_loadStack (a := off (State.addr s.sp) 4) (by decide) (addr_add (by have := kept.1.nowrap; omega))
+    have six : 16 * g.words ≤ 8 * ppPreWords g := by simp only [ppPreWords]; omega_using []
+    refine wp_loadStack (a := off (State.addr s.sp) 4) (by decide) (addr_add (by have := kept.1.nowrap; omega_using [this]))
       (kept.1.read (by decide)) fun t a => WP.block_nil ?_
     have rest : Rest [.r4] s t := a.rest (by decide)
     refine ⟨⟨dl.workspace.congr a.wr, by rw [a.mem]; exact dl.layout, by rw [a.mem]; exact dl.width,
-      (a.other .r0 (by decide)).trans dl.ptr, a.gpr.trans kept.1.output, by omega, by omega, ?_, ?_⟩,
+      (a.other .r0 (by decide)).trans dl.ptr, a.gpr.trans kept.1.output, by omega_using [], by omega_using [preFit, six], ?_, ?_⟩,
       kept.after (regions := []) (by rw [a.mem]; exact Frame.refl _ _) rest (by simp),
       ws.congr a.wr, by rw [a.mem]; exact layout, by rw [a.mem]; exact width⟩
     · rw [a.wr]
-      have := CallLay.inRegions_sub (off := 0) (l := 16 * g.words) pre.write (by omega) (by omega)
+      have := CallLay.inRegions_sub (off := 0) (l := 16 * g.words) pre.write (by omega_using [six]) (by omega_using [preFit])
       simpa only [BitVec.add_zero] using this
     · exact sepOut.sub_right (Region.sub_prefix six)
   have loadCT : RelCT isa (fun s t => S1 s ∧ S1 t ∧ s.sp = t.sp) (.block [.ldrSp .r4 4]) (fun _ _ => True) :=
@@ -254,13 +254,13 @@ theorem pp_modulusPart_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     rintro t ⟨_, _, frame, rest⟩
     have pre := kept.2.2.1
     have sub : Region.Sub ⟨State.addr g.output, 16 * g.words⟩ ⟨State.addr g.output, 8 * ppPreWords g⟩ :=
-      Region.sub_prefix (by simp only [ppPreWords]; omega)
+      Region.sub_prefix (by simp only [ppPreWords]; omega_using [])
     have eq : WorkspaceEq (State.addr g.base) (8 * len) s.mem t.mem :=
-      WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame
+      WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
         (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact kept.2.2.2.2.1.sub_right sub)
     exact ⟨kept.after frame rest (fun r hr => by
         simp only [List.mem_singleton] at hr; subst r; exact pre.stack.sub_right sub),
-      ws.congr rest.wr, eq.layout layout, (eq.width (by have := mainSize; omega)).trans width⟩
+      ws.congr rest.wr, eq.layout layout, (eq.width (by have := mainSize; omega_using [mainSize])).trans width⟩
   have exportCT : RelCT isa (fun s t => S3 s ∧ S3 t ∧ s.sp = t.sp) precomputeOut (fun _ _ => True) :=
     precomputeOut_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1⟩) (fun _ _ _ => trivial)
   -- The mask's arguments, and the mask.
@@ -270,10 +270,10 @@ theorem pp_modulusPart_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     have header := nativeHeader_of_layout s.mem g.base ws.nowrap (Nat.le_refl _) layout
     rw [width] at header
     obtain ⟨p1, p2, q1, q2⟩ := kept.2.2.2.2.2
-    refine WP.mono (pp_maskArgs_ok s kept.1 kept.2.1 (by have := ws.nowrap; omega)
-      (ws.read (by omega)) header.count kept.2.2.2.1 p1 p2 q1 q2) ?_
+    refine WP.mono (pp_maskArgs_ok s kept.1 kept.2.1 (by have := ws.nowrap; omega_using [mainSize, this])
+      (ws.read (by omega_using [mainSize])) header.count kept.2.2.2.1 p1 p2 q1 q2) ?_
     rintro t ⟨r4, r6, mem, rest⟩
-    exact ⟨r4, r6, by rw [rest.sp]; have := kept.1.nowrap; omega,
+    exact ⟨r4, r6, by rw [rest.sp]; have := kept.1.nowrap; omega_using [this],
       by rw [rest.rd, rest.wr, rest.sp]; exact kept.1.read (by decide)⟩
   have argsCT : RelCT isa (fun s t => S4 s ∧ S4 t ∧ s.sp = t.sp) (.block maskArgs) (fun _ _ => True) :=
     pp_maskArgs_ct (fun s h => ⟨h.1.2.1, h.1.1.nowrap, h.1.1.read (by decide)⟩)
@@ -355,11 +355,11 @@ theorem pp_phaseP_wp (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h
   have pre := h.1.2.1
   have words : g.words ≤ 128 := (crt_width_valid h.1.1.buffers.lengthValid).2.1
   have wordsLen : g.length ≤ 8 * g.words := by
-    change g.length ≤ 8 * Spec.Rsa.modulusWords g.length; simp only [Spec.Rsa.modulusWords]; omega
+    change g.length ≤ 8 * Spec.Rsa.modulusWords g.length; simp only [Spec.Rsa.modulusWords]; omega_using []
   have twoP := pre.words_le
   have dest : PpDest g (ppDestP g) (8 * ppWords g.pLength) s :=
-    pre.dest wordsLen (by have := h.1.1.buffers.pShort; omega) pre.addrP (Nat.le_refl _)
-      (by simp only [ppPreWords]; omega)
+    pre.dest wordsLen (by have := h.1.1.buffers.pShort; omega_using [wordsLen, this]) pre.addrP (Nat.le_refl _)
+      (by simp only [ppPreWords]; omega_using [])
   have fac := h.1.factor 1 (Or.inl rfl)
   refine WP.mono (pp_phase_ok s h.1.1 1 (Or.inl rfl) (fun u hu => pp_pDest_ok u hu) dest fac.2.1 fac.2.2
     (fun ne => ⟨Spec.Rsa.os2ip (bs 3), (h.1.accepted ne).2.2.symm⟩) h.2) ?_
@@ -372,11 +372,11 @@ theorem pp_phaseQ_wp (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h
   have pre := h.1.2.1
   have words : g.words ≤ 128 := (crt_width_valid h.1.1.buffers.lengthValid).2.1
   have wordsLen : g.length ≤ 8 * g.words := by
-    change g.length ≤ 8 * Spec.Rsa.modulusWords g.length; simp only [Spec.Rsa.modulusWords]; omega
+    change g.length ≤ 8 * Spec.Rsa.modulusWords g.length; simp only [Spec.Rsa.modulusWords]; omega_using []
   have twoP := pre.words_le
   have dest : PpDest g (ppDestQ g) (8 * ppWords g.qLength) s :=
-    pre.dest wordsLen (by have := h.1.1.buffers.pShort; omega) pre.addrQ (by omega)
-      (by simp only [ppPreWords]; omega)
+    pre.dest wordsLen (by have := h.1.1.buffers.pShort; omega_using [wordsLen, this]) pre.addrQ (by omega_using [])
+      (by simp only [ppPreWords]; omega_using [])
   have fac := h.1.factor 2 (Or.inr rfl)
   refine WP.mono (pp_phase_ok s h.1.1 2 (Or.inr rfl) (fun u hu => pp_qDest_ok u hu) dest fac.2.1 fac.2.2
     (fun ne => ⟨Spec.Rsa.os2ip (bs 2), by rw [Nat.mul_comm]; exact (h.1.accepted ne).2.2.symm⟩) h.2) ?_

@@ -26,7 +26,7 @@ theorem shiftArray_ok {g : Geometry} {s : State} (h : Context g s) (i : Fin 4)
   have ctx : ShiftLeftCtx s g.base g.size (g.offsets i) (g.words i) :=
     ⟨h.workspace.nowrap, h.fits i, h.workspace.writable⟩
   have positive : 0 < g.words i := by
-    have := h.positive; simp only [Geometry.words]; split <;> omega
+    have := h.positive; simp only [Geometry.words]; split <;> omega_arith
   refine WP.mono (shiftLeft_ok s ctx positive ptr count carry) ?_
   intro t inv
   have frame : Outs (State.addr g.base) g.ranges s.mem t.mem :=

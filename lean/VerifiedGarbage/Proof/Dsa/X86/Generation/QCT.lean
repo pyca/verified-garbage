@@ -36,7 +36,7 @@ theorem copyIn_ct {E : Env} (v : E.Valid) {w : Nat} (hw : w + 4 ≤ 73728) (dst 
     (both_agree [.esp, .edi, .esi, .ebx, .ecx] _ (fun _ _ h => h)
       (tcheck _ _ (by decide +kernel)))
   simp only [List.cons_append, List.nil_append, scr]
-  refine ld_ok h.1.scr (d := w) (by omega) fun t₁ u₁ => wp_mov fun t₂ u₂ => wp_addi fun t₃ u₃ =>
+  refine ld_ok h.1.scr (d := w) (by omega_using [hw, sz]) fun t₁ u₁ => wp_mov fun t₂ u₂ => wp_addi fun t₃ u₃ =>
     wp_movi fun t₄ u₄ => WP.block_nil ?_
   have pins := base_pins h.1
   intro r hr
@@ -64,8 +64,8 @@ theorem qAt_pins {E : Env} {g : Geo} {s t : State} (Q : QAt E g s t) : ∀ r ∈
 theorem qPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) :
     RelCT isa (Both (QIn E)) g.qPart fun _ _ => True := by
   have sz := v.size_ge
-  have q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega
-  have q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega
+  have q20 : 20 ≤ g.qLen := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_using [h]
+  have q32 : g.qLen ≤ 32 := by rcases G.lengths with ⟨_, h⟩ | ⟨_, h⟩ | ⟨_, h⟩ <;> omega_using [h]
   unfold Geo.qPart
   simp only [seqs]
   -- The seed in the block.
@@ -106,11 +106,11 @@ theorem qPart_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
     (test_ct G.qv G.qNoSp G.qStack v lay)
   obtain ⟨s, hs, Q, cval⟩ := h
   have Ap := qPre_apart G v
-  have qsh := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * g.qLen) (by omega) (chunk E a.1)
-  refine ⟨Q.base, ?_, hs.2.2.2.2, cval, qsh.1, VG.Proof.Dsa.Generation.qCandidate_bitLength (by omega) _⟩
-  rw [Env.Chg.word v Q.chg (by simp only [fUsed, hdr]; omega) (fun o ho => ⟨(Ap o ho).1, by
+  have qsh := VG.Proof.Dsa.Generation.qCandidate_shape (n := 8 * g.qLen) (by omega_using [q20]) (chunk E a.1)
+  refine ⟨Q.base, ?_, hs.2.2.2.2, cval, qsh.1, VG.Proof.Dsa.Generation.qCandidate_bitLength (by omega_using [q20]) _⟩
+  rw [Env.Chg.word v Q.chg (by simp only [fUsed, hdr]; omega_using [sz]) (fun o ho => ⟨(Ap o ho).1, by
     simp only [qPre, List.mem_cons, List.not_mem_nil, or_false] at ho
-    rcases ho with rfl | rfl | rfl | rfl <;> simp only [sState, sHScr, sPk, sPP, fUsed, hdr] <;> omega⟩),
+    rcases ho with rfl | rfl | rfl | rfl <;> simp only [sState, sHScr, sPk, sPP, fUsed, hdr] <;> omega_using []⟩),
     hs.2.2.2.1]
 
 end VG.Proof.Dsa.X86.Generation

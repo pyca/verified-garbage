@@ -91,14 +91,14 @@ theorem stack (c : Prog isa) : FrameStack.armStack (callerRows c) ≤ FrameStack
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
     · split
       · simp [DownRowUmaal.codeU_stack]
-      · simp only [FrameStack.armStack]; omega
+      · simp only [FrameStack.armStack]; omega_using [iha, ihb]
   | ite _ a b iha ihb =>
     simp only [callerRows]
     split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
     · split
       · simp [DownRowUmaal.codeU_stack]
-      · simp only [FrameStack.armStack]; omega
+      · simp only [FrameStack.armStack]; omega_using [iha, ihb]
   | loop a _ ih =>
     simp only [callerRows]
     split
@@ -113,6 +113,6 @@ theorem stack (c : Prog isa) : FrameStack.armStack (callerRows c) ≤ FrameStack
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
     · split
       · simp [DownRowUmaal.codeU_stack]
-      · cases i <;> simp only [FrameStack.armStack] <;> omega
+      · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
 
 end VG.Proof.Ffdh.Arm.CallerRows

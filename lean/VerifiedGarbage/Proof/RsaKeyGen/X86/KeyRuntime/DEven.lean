@@ -65,7 +65,7 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
     (Ov.num (by simp) (by decide) (h.fit64 (by decide))).trans Eu
   have frameV := exponent_keep_frame (by decide) (by decide) Ov
   refine WP.seq (WP.mono (arrayDivision_ok hv (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [Mv]; omega))
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [Mv]; omega_using [mo]))
     fun w ⟨hw, Ow, _, R, Kw⟩ => ?_)
   rw [Ev, Mv] at R
   have Mw : num w.mem B n aDen = M :=
@@ -104,7 +104,7 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
     Ob.num (by decide) (by decide) (h.fit64 (by decide))
   have frameB := exponent_keep_frame (by decide) (by decide) Ob
   refine WP.seq (WP.mono (andS_ok hb (by decide) (by decide) (by decide)
-    (by rw [maskB]; split <;> omega) (by rw [flagB]; split <;> omega))
+    (by rw [maskB]; split <;> omega_using []) (by rw [flagB]; split <;> omega_using []))
     fun c ⟨hc, Oc, maskC, Kc⟩ => ?_)
   rw [maskB, flagB] at maskC
   have Xc : num c.mem B n 3 = num a.mem B n 3 :=

@@ -39,7 +39,7 @@ theorem pp_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : ppContra
   have c := ppCtx_of hs
   have hm := Clear.miss_wr hc c.hpreR c.hwrap (k := (s.gpr .rsi).toNat * 8) (Nat.le_refl _)
   simp only [ppContract, State.patch_gpr] at hp ⊢
-  rw [patch_mem, wordsAt_overlay fun i hi => hm i (by omega)]
+  rw [patch_mem, wordsAt_overlay fun i hi => hm i (by omega_using [hi])]
   exact hp
 
 theorem pp_call_verified (M : Mont) {c : Prog isa} (hc : c.InlineOk = true) (hin : c.inline = PrivPre.code M.mm)
@@ -56,7 +56,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
   List.map_congr_left fun i hi => Mem.readW_congr fun t ht => by
     have := List.mem_range.mp hi
     rw [Offset.add_add]
-    exact (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+    exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
 open VG.X86_64.Scrub in
 /-- The postcondition reads memory on return only in `pre`. -/
@@ -94,7 +94,7 @@ theorem pp_postOut (stack : Nat) :
     simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.primeWords,
       Spec.Rsa.modulusWords] at hL
     rw [wordsAt_congr (q := ArgWord.addr.ofRaw pre) (k := BitVec.toNat ((ArgWord.int abi.ptrBits).ofRaw preLen))
-      (N := BitVec.toNat ((ArgWord.int abi.ptrBits).ofRaw preLen) * 8) (by omega) (by omega) hb.1]
+      (N := BitVec.toNat ((ArgWord.int abi.ptrBits).ofRaw preLen) * 8) (by omega_using []) (by omega_using [hpl2, hql2, hL, hk2]) hb.1]
     exact h
 theorem pp_verified :
     Verified target (Impl.Rsa.X86_64.PrivPre.code Proof.Rsa.X86_64.CallMont.base.mm)

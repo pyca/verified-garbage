@@ -31,14 +31,14 @@ theorem scaleStep_ok {p : Addr} {G : Poly} {u : Nat} (hu : u < 64) {s : State}
     WP isa (.block scaleBody) s fun s' => Scaled G s'.mem p (u+1) ∧
       s'.gpr .x2 = coeffAddr p (4*(u+1)) ∧ s'.gpr .x5 = s.gpr .x5-1 ∧
       Frame [pR p] s.mem s'.mem ∧ VConsts s' ∧ s'.v .v18 = s.v .v18 ∧ Keep [.x2,.x5] s s' := by
-  have hj : 4*u+4 ≤ 256 := by omega
+  have hj : 4*u+4 ≤ 256 := by omega_using [hu]
   unfold scaleBody
   simp only [List.cons_append,List.nil_append,List.append_assoc]
   refine wp_ldrq (by decide) (by rw [hx,BitVec.add_zero])
     ⟨_,List.mem_append_right _ hw,vector_contains _ hj⟩ fun s₁ h1 => ?_
   have a1 : Lanes (s₁.v .v0) (fun e => (G[4*u+e]!).val) := by
     intro e he
-    rw [h1.v,vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,hp _ (by omega),ite_eq_right (by omega)]
+    rw [h1.v,vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,hp _ (by omega_using [hu, he]),ite_eq_right (by omega_using [])]
   have z1 : Lanes (s₁.v .v18) (fun _ => 16382) := by rw [h1.get .v18]; exact hz
   have hm : ∀ e < 4, VG.Proof.MlDsa.Arith.mont ((G[4*u+e]!).val*16382) < 2*q := by
     intro e he
@@ -65,13 +65,13 @@ theorem scaleStep_ok {p : Addr} {G : Poly} {u : Nat} (hu : u < 64) {s : State}
   · intro j hj'
     rw [hm5,h4.mem,m3,coeffAt_write16 _ _ hj _ hj']
     by_cases h : 4*u ≤ j ∧ j < 4*u+4
-    · rw [ite_eq_left h,ite_eq_left (by omega),v3 _ (by omega)]
+    · rw [ite_eq_left h,ite_eq_left (by omega_using [h]),v3 _ (by omega_using [h])]
       dsimp only
-      rw [show 4*u+(j-4*u) = j by omega]
+      rw [show 4*u+(j-4*u) = j by omega_using [h]]
     · rw [ite_eq_right h,hp j hj']
       by_cases h' : j < 4*u <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
   · rw [hx5,h4.gpr,g3,hx,show (16 : BitVec 64) = BitVec.ofNat 64 (4*4) from rfl,
-      coeffAddr_add,show 4*u+4 = 4*(u+1) by omega]
+      coeffAddr_add,show 4*u+4 = 4*(u+1) by omega_using []]
   · rw [hm5,h4.mem,m3]
     exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (vector_contains p hj)
 
@@ -104,12 +104,12 @@ theorem scale_ok {p : Addr} {G : Poly} {s : State} (h0 : s.gpr .x0 = p)
     (fun u s' => Scaled G s'.mem p u ∧ s'.gpr .x2 = coeffAddr p (4*u) ∧
       s'.v .v18 = s₁.v .v18 ∧ VConsts s' ∧ Keep [.x2,.x5] s₁ s')
     (fun u hu s' ⟨hp',hx',hz',hc',hk'⟩ _ => ?_)
-    ⟨by intro j hj; rw [hm,ite_eq_right (by omega)]; exact polyIs_toNat hp hj,
+    ⟨by intro j hj; rw [hm,ite_eq_right (by omega_using [])]; exact polyIs_toNat hp hj,
       by rw [hx,h0]; simp only [coeffAddr,Nat.mul_zero,BitVec.add_zero],rfl,c1,Keep.refl _ _⟩ hcnt)
     fun s' ⟨hp',_,_,_,_⟩ => ?_
   · refine WP.mono (scaleStep_ok hu hc' (by rw [hz']; exact hz) hx' hp'
       (by rw [hk'.wr,k1.wr]; exact hw)) fun s'' ⟨hp'',hx'',hcnt'',_,hc'',hz'',hk''⟩ =>
       ⟨⟨hp'',hx'',hz''.trans hz',hc'',(hk'.trans hk'').mono⟩,hcnt''⟩
   · refine polyIs_of_toNat fun j hj => ?_
-    rw [hp' j hj,ite_eq_left (by rw [n_eq] at hj; omega),map_mul_get _ _ hj]
+    rw [hp' j hj,ite_eq_left (by rw [n_eq] at hj; omega_using [hj]),map_mul_get _ _ hj]
 end VG.Proof.MlDsa.AArch64.Arith.Neon

@@ -31,7 +31,7 @@ theorem Done.frame_word {s t : State} {p : Params} {pass lane slice index old : 
     rcases hr with rfl | rfl | rfl
     · exact h.cache.layout.frameWork.sub_left sub
     · exact h.cache.layout.frameStack.sub_left sub
-    · exact Offset.disjoint _ separate (by omega) (by decide)) (by decide)
+    · exact Offset.disjoint _ separate (by omega_using [bound]) (by decide)) (by decide)
 
 end VG.Proof.Argon2.X86_64.RandomSource
 end

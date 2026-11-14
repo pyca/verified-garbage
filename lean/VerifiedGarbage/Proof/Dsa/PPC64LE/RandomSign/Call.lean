@@ -64,7 +64,7 @@ theorem callArgs_ok {L : RL} {s₀ t : State} (hL : L.Ok) (hc : Ctx L s₀ t) :
   unfold callArgs
   prun [hc.r18, hc.r19, hc.r20, hc.r21, hc.r22, hc.sp, exec_addSp (show oNonce < 2 ^ 15 by decide), add0,
     ← BitVec.ofNat_add]
-  refine ⟨by congr 1; omega, by simp only [RL.kl]; congr 1; omega⟩
+  refine ⟨by congr 1; omega_using [], by simp only [RL.kl]; congr 1; omega_using []⟩
 
 /-- The arguments' values in the state `vg_dsa_sign_prevalidated` is entered in. -/
 theorem entry_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) :
@@ -113,17 +113,17 @@ theorem sign_pre' {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s�
   have hsl := hL.sl
   have ekl : (rlOf s₀).kl = 3 * (rlOf s₀).pl + 2 * (rlOf s₀).ql := rfl
   have nwN : (off (rlOf s₀).F oNonce).toNat + (rlOf s₀).ql ≤ 2 ^ 64 := by
-    rw [off, BitVec.toNat_add, tn _ (by decide), Nat.mod_eq_of_lt (by simp only [oNonce]; omega)]
-    simp only [oNonce]; omega
+    rw [off, BitVec.toNat_add, tn _ (by decide), Nat.mod_eq_of_lt (by simp only [oNonce]; omega_using [hF])]
+    simp only [oNonce]; omega_using [hq, hF]
   unfold sContract
   dsimp only
-  rw [g3, g4, g5, g6, g7, g8, g9, g10, sa0, sa1, sa2, sargs, ssp, tn (2 * (rlOf s₀).ql) (by omega),
-    tn (rlOf s₀).kl (by omega), tn (rlOf s₀).ql (by omega), tn (rlOf s₀).pl (by omega), tn _ hdl, tn _ hsl]
-  refine ⟨by omega, rfl, rfl, hL.dOK, ?_, hL.dOD, hL.dOS, ?_, hL.dKS, ?_, hL.dDS, ?_, hL.nwOut, hk, nwN, hL.nwDig,
-    hL.nwScr, hL.lv, by omega, by omega, by simp only [Spec.Dsa.scratchWords]; omega⟩
-  · exact (RL.Ok.frame_disj (d := oNonce) (n := (rlOf s₀).ql) hL.dFO (by simp only [oNonce, frameBytes]; omega)).symm
+  rw [g3, g4, g5, g6, g7, g8, g9, g10, sa0, sa1, sa2, sargs, ssp, tn (2 * (rlOf s₀).ql) (by omega_using [hq]),
+    tn (rlOf s₀).kl (by omega_using [hp, hq, ekl]), tn (rlOf s₀).ql (by omega_using [hq]), tn (rlOf s₀).pl (by omega_using [hp]), tn _ hdl, tn _ hsl]
+  refine ⟨by omega_using [hF], rfl, rfl, hL.dOK, ?_, hL.dOD, hL.dOS, ?_, hL.dKS, ?_, hL.dDS, ?_, hL.nwOut, hk, nwN, hL.nwDig,
+    hL.nwScr, hL.lv, by omega_using [], by omega_using [ekl], by simp only [Spec.Dsa.scratchWords]; omega_using [hsw]⟩
+  · exact (RL.Ok.frame_disj (d := oNonce) (n := (rlOf s₀).ql) hL.dFO (by simp only [oNonce, frameBytes]; omega_using [hq])).symm
   · exact (RL.Ok.frame_disj (d := oArgs) (n := 24) hL.dFO (by decide)).symm
-  · exact RL.Ok.frame_disj (d := oNonce) (n := (rlOf s₀).ql) hL.dFS (by simp only [oNonce, frameBytes]; omega)
+  · exact RL.Ok.frame_disj (d := oNonce) (n := (rlOf s₀).ql) hL.dFS (by simp only [oNonce, frameBytes]; omega_using [hq])
   · exact (RL.Ok.frame_disj (d := oArgs) (n := 24) hL.dFS (by decide)).symm
 
 /-- The key passes validation, on entry. -/
@@ -132,7 +132,7 @@ theorem rs_valid {s₀ : State} (h : rsContract.pre s₀) :
       (Spec.Rsa.bytesAt s₀.mem (rlOf s₀).key (rlOf s₀).kl) = true := by
   have hkl : (rlOf s₀).kl = (s₀.gpr .r7).toNat := by
     have := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-    simp only [RL.kl, rlOf]; omega
+    simp only [RL.kl, rlOf]; omega_using [this]
   rw [hkl]
   exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
@@ -147,8 +147,8 @@ theorem sign_pre {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s�
   simp only [State.withRegions_mem, State.callEntry_mem]
   rw [g .r5 (by decide), g .r6 (by decide), g .r7 (by decide), g .r9 (by decide), ha.r5, ha.r6, ha.r7, ha.r9]
   simp only [BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
-    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), ha.ctx.key]
+  rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega_using [hp]), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega_using [hq]),
+    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega_using [hp, hq]), ha.ctx.key]
   exact rs_valid h
 
 /-- What the call leaves. -/
@@ -175,7 +175,7 @@ theorem sign_cov {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀
     · exact VG.Covers.of_mem fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
         exact List.mem_append_left _ (by rw [hc.rd, hrd]; exact List.mem_cons_self ..)
-    · exact VG.Covers.one (inF _ _ (by decide) (by simp only [oNonce, frameBytes]; omega))
+    · exact VG.Covers.one (inF _ _ (by decide) (by simp only [oNonce, frameBytes]; omega_using [hq]))
     · exact VG.Covers.of_mem fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
         exact List.mem_append_left _ (by rw [hc.rd, hrd]; simp)
@@ -207,8 +207,8 @@ theorem sres_eq {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀
   have a0' : t.mem.readW ((rlOf s₀).F + BitVec.ofNat 64 (32 + 8 * (8 + 0))) 64 = BitVec.ofNat 64 (rlOf s₀).dl := hc.a0
   rw [a0']
   simp only [BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega),
-    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega), Nat.mod_eq_of_lt hdl]
+  rw [Nat.mod_eq_of_lt (a := (rlOf s₀).pl) (by omega_using [hp]), Nat.mod_eq_of_lt (a := (rlOf s₀).ql) (by omega_using [hq]),
+    Nat.mod_eq_of_lt (a := (rlOf s₀).kl) (by simp only [RL.kl]; omega_using [hp, hq]), Nat.mod_eq_of_lt hdl]
 
 theorem sign_ok {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀) s₀ t) :
     WP isa (.call "vg_dsa_sign_prevalidated" Impl.Dsa.PPC64LE.PrevalidatedSign.sign) t (Signed (rlOf s₀) s₀ t) := by
@@ -227,7 +227,7 @@ theorem sign_ok {s₀ t : State} (h : rsContract.pre s₀) (ha : Args (rlOf s₀
   refine ⟨hc.step hL hsp' hrd' hwr' (fun r hr => hpres r (hdis r hr)) (hf.mono (by simp)), hpres, hf, p3, ?_⟩
   simp only [State.withRegions_mem, State.withRegions_gpr] at pout
   rw [State.callEntry_gpr t (r := .r3) (by decide), State.callEntry_gpr t (r := .r4) (by decide), ha.r3, ha.r4,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * (rlOf s₀).ql) (by omega)] at pout
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * (rlOf s₀).ql) (by omega_using [hq])] at pout
   exact pout
 
 end VG.Proof.Dsa.PPC64LE.RS

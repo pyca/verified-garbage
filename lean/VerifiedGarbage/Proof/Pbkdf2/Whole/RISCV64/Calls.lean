@@ -48,12 +48,12 @@ theorem hi_sdepth (hH : HashOK F.H) : sdepth F.H.init ≤ F.H.ibytes + F.H.F := 
   have := hH.initSd; have := hH.updSd; have := hH.finSd
   simp only [Hash.init, Hash.initMain, Hash.longKey, Hash.padKey, Hash.updBlock, Hash.callInit, Hash.callUpd,
     Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes]
-  omega
+  omega_arith
 
 theorem hf_sdepth (hH : HashOK F.H) : sdepth F.H.finalize ≤ F.H.fbytes + F.H.F := by
   have := hH.updSd; have := hH.finSd
   simp only [Hash.finalize, Hash.finalizeMain, Hash.callUpd, Hash.callFin, sdepth, Instr.frameBytes]
-  omega
+  omega_arith
 
 theorem hi_ok : ∀ s, (hiK F.H hF.hH.SH).pre s → ∃ t s', Exec isa F.H.init s t s' ∧
     abiPreserved s s' ∧ (hiK F.H hF.hH.SH).post s s' := fun _ hs => by
@@ -108,13 +108,13 @@ theorem hi_call {s : State} {inn ou k : Addr} {kl : Nat} (h : HiArgs F s inn ou 
   have c3 : (s.callEntry.gpr .a3).toNat = kl := by rw [State.callEntry_gpr _ (by decide), h.a3]
   refine WP.callAny (k := hiK F.H hF.hH.SH) (hi_ok hF) (rd := [⟨k, kl⟩])
     (wr := [⟨inn, hF.hH.SH.stateBytes⟩, ⟨ou, hF.hH.SH.stateBytes⟩]) (h.pre hF) (by rw [hS]; exact h.hc)
-    (by rw [hS]; exact h.hw) ?_ (by have := hi_sdepth hF.hH; have := hl.ibytes; have := hl.F; omega)
+    (by rw [hS]; exact h.hw) ?_ (by have := hi_sdepth hF.hH; have := hl.ibytes; have := hl.F; omega_arith)
   intro s' hrd hwr hsp' hf hcs hpost
   simp only [hiK, initG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2,
     c3] at hpost
   refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost.1 hpost.2
   rw [hS] at hf
-  exact Frame.below_mono hf (hi_sdepth hF.hH) (by have := hl.ibytes; have := hl.F; omega)
+  exact Frame.below_mono hf (hi_sdepth hF.hH) (by have := hl.ibytes; have := hl.F; omega_arith)
 
 include hF in
 /-- Two runs of a call of HMAC's `init` with the same arguments. -/
@@ -184,13 +184,13 @@ theorem hf_call {s : State} {inn ou o : Addr} (h : HfArgs F s inn ou o) {Q : Sta
   have c3 : s.callEntry.gpr .a3 = o := (State.callEntry_gpr _ (by decide)).trans h.a3
   refine WP.callAny (k := hfK F.H hF.hH.SH) (hf_ok hF) (rd := [⟨ou, hF.hH.SH.stateBytes⟩])
     (wr := [⟨inn, hF.hH.SH.stateBytes⟩, ⟨o, hF.hH.SH.digestBytes⟩]) (h.pre hF) (by rw [hS, hD]; exact h.hc)
-    (by rw [hS, hD]; exact h.hw) ?_ (by have := hf_sdepth hF.hH; have := hl.fbytes; have := hl.F; omega)
+    (by rw [hS, hD]; exact h.hw) ?_ (by have := hf_sdepth hF.hH; have := hl.fbytes; have := hl.F; omega_arith)
   intro s' hrd hwr hsp' hf hcs hpost
   simp only [hfK, finG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1, c2, c3,
     hD, hB] at hpost
   refine hQ s' ⟨hrd, hwr, hsp', hcs, ?_⟩ hpost
   rw [hS, hD] at hf
-  exact Frame.below_mono hf (hf_sdepth hF.hH) (by have := hl.fbytes; have := hl.F; omega)
+  exact Frame.below_mono hf (hf_sdepth hF.hH) (by have := hl.fbytes; have := hl.F; omega_arith)
 
 include hF in
 /-- Two runs of a call of HMAC's `finalize` with the same arguments. -/

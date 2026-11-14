@@ -74,7 +74,7 @@ theorem signWith_wp (C : ShaOK) (B : BaseOk) {first : Prog isa} {D : List Byte} 
   have hFw : (⟨s.gpr .a6, 288⟩ : Region) ∈ t₄.rd ++ t₄.wr := List.mem_append_right _ (sign_Fw hp h₄)
   have hrl : ∀ p ∈ restoreList 224 signRegs, p.2 + 8 ≤ 288 := by decide
   refine restore_ok h₄ hp.alF (h₄.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
-    (fun p hp' => in_base hFw (hrl p hp') (by have := hrl p hp'; omega))
+    (fun p hp' => in_base hFw (hrl p hp') (by have := hrl p hp'; omega_using [this]))
     fun t₅ g₅ sp₅ ra₅ m₅ _ => ⟨g₅, sp₅, ra₅, ?_⟩
   rw [m₅, Proof.Ed25519.signatureBytes_split, hR, hS]
   rfl

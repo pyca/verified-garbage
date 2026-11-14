@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Padding a message of secret length
@@ -36,8 +37,8 @@ theorem getD_app {l l' : List Byte} {n : Nat} :
     (l ++ l').getD n 0 = if n < l.length then l.getD n 0 else l'.getD (n - l.length) 0 := by
   simp only [List.getD_eq_getElem?_getD]
   split
-  · rw [List.getElem?_append_left (by omega)]
-  · rw [List.getElem?_append_right (by omega)]
+  · rw [List.getElem?_append_left (by omega_arith)]
+  · rw [List.getElem?_append_right (by omega_arith)]
 
 /-- The padded message's length, `ℓ + 1 + z + L`, fills `⌊(ℓ + L) / B⌋ + 1` blocks. -/
 theorem pad_total {B L ℓ : Nat} (hB : 0 < B) (hLB : L < B) :
@@ -49,13 +50,13 @@ theorem pad_total {B L ℓ : Nat} (hB : 0 < B) (hLB : L < B) :
   generalize ℓ % B = r at e hr ⊢
   subst e
   by_cases h : r + L + 1 ≤ B
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega),
-      Nat.div_eq_of_lt_le (k := q) (by rw [Nat.mul_comm]; omega) (by rw [Nat.mul_comm, Nat.succ_mul]; omega)]
-    rw [Nat.mul_add]; omega
-  · rw [Nat.mod_eq_of_lt (by omega),
-      Nat.div_eq_of_lt_le (k := q + 1) (by rw [Nat.mul_comm, Nat.mul_add]; omega)
-        (by rw [Nat.add_mul, Nat.add_mul]; rw [Nat.mul_comm] at *; omega)]
-    rw [Nat.mul_add, Nat.mul_add]; omega
+  · rw [Nat.mod_eq_sub_mod (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [hB]),
+      Nat.div_eq_of_lt_le (k := q) (by rw [Nat.mul_comm]; omega_using []) (by rw [Nat.mul_comm, Nat.succ_mul]; omega_using [h])]
+    rw [Nat.mul_add]; omega_using [h]
+  · rw [Nat.mod_eq_of_lt (by omega_using [hB, h]),
+      Nat.div_eq_of_lt_le (k := q + 1) (by rw [Nat.mul_comm, Nat.mul_add]; omega_using [h])
+        (by rw [Nat.add_mul, Nat.add_mul]; rw [Nat.mul_comm] at *; omega_using [hLB, hr])]
+    rw [Nat.mul_add, Nat.mul_add]; omega_using [hLB, hr]
 
 variable {B N L : Nat} (H : Md B N L)
 
@@ -64,7 +65,7 @@ theorem pad_length (msg : List Byte) (hB : 0 < B) (hLB : L < B) :
   simp only [Md.pad, List.length_append, List.length_cons, List.length_nil, List.length_replicate,
     H.lenBytes_length]
   have := pad_total (ℓ := msg.length) hB hLB
-  omega
+  omega_using [this]
 
 theorem pad_getD (msg : List Byte) (hB : 0 < B) (hLB : L < B) {i : Nat}
     (hi : i < B * (lastBlk B L msg.length + 1)) :
@@ -77,13 +78,13 @@ theorem pad_getD (msg : List Byte) (hB : 0 < B) (hLB : L < B) {i : Nat}
   rw [Nat.mul_add, Nat.mul_one] at hz hi
   simp only [getD_app, List.length_append, List.length_cons, List.length_nil, List.length_replicate]
   by_cases h1 : i < msg.length
-  · simp only [h1, ite_true, show i < msg.length + (0 + 1) by omega, show i < msg.length + (0 + 1) + z by omega]
+  · simp only [h1, ite_true, show i < msg.length + (0 + 1) by omega_using [h1], show i < msg.length + (0 + 1) + z by omega_using [h1]]
   · by_cases h2 : i = msg.length
     · subst h2
       repeat' split
       all_goals first | omega | simp only [List.getD_eq_getElem?_getD, List.getElem?_cons_zero, Nat.sub_self,
         Option.getD_some]
-    · have h3 : ¬ i < msg.length + (0 + 1) := by omega
+    · have h3 : ¬ i < msg.length + (0 + 1) := by omega_using [h1, h2]
       by_cases h4 : i < msg.length + (0 + 1) + z
       · simp only [h1, h2, h3, h4, ite_true, ite_false, List.getD_eq_getElem?_getD,
           List.getElem?_replicate]
@@ -91,7 +92,7 @@ theorem pad_getD (msg : List Byte) (hB : 0 < B) (hLB : L < B) {i : Nat}
         all_goals first | rfl | omega
       · simp only [h1, h2, h3, h4, ite_false]
         split
-        · congr 1; omega
+        · congr 1; omega_using [hz]
         · omega
 
 end VG.Proof.RsaPss

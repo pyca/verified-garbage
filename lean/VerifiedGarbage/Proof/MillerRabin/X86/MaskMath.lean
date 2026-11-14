@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MillerRabin.Word32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The fixed-window digit comparison produces an all-ones selection mask -/
 
@@ -11,7 +12,7 @@ open VG.Proof.MillerRabin.Word32
 theorem digit_lt (x : BitVec 32) : (x >>> 28).toNat < 16 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem digitMask (x : BitVec 32) {j : Nat} (index : j < 16) :
     0#32 - ((((x >>> 28) ^^^ BitVec.ofNat 32 j) - 1) >>> 31) =

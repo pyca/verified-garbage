@@ -121,13 +121,13 @@ theorem encapsHSat_h {ekLen ctLen scr : Nat} (hk : ekLen ≤ 0x1000) :
     simp only [encapsHSat]
     rw [ite_eq_right_iff.mpr fun h => absurd h ?_]
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (4096 : BitVec 64).toNat = 4096 from rfl]
-    omega
+    omega_using [hk, hi]
   rw [ek]
   refine List.ext_getElem (by rw [H_length]; simp [bytesAt]) fun i h₁ h₂ => ?_
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, encapsHSat]
   have e : (0x2000 + BitVec.ofNat 64 i : BitVec 64).toNat = 0x2000 + i := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (8192 : BitVec 64).toNat = 8192 from rfl]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (8192 : BitVec 64).toNat = 8192 from rfl]; omega_using [h₁]
   simp only [e]
   split
   · rw [Nat.add_sub_cancel_left]; simp [List.getD_eq_getElem?_getD, h₂]

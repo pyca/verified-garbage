@@ -38,15 +38,15 @@ theorem exponentLoop_ok (s : State) {ep : BitVec 32} {eb : List Byte}
   refine WP.loop (M := isa) I ?_ eb.length s ?_
   · intro k t inv
     obtain ⟨j, jk, hk, lo, hi, pointer, counter, mem, rest⟩ := inv
-    have hj : j < eb.length := by omega
+    have hj : j < eb.length := by omega_using [jk, hk]
     have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
-      addr_add (by omega)
+      addr_add (by omega_using [sourceFit, hj])
     have currentRead : InRegions (t.rd ++ t.wr) (State.addr (ep + BitVec.ofNat 32 j)) 1 := by
       rw [rest.rd, rest.wr, address]
-      exact CallLay.inRegions_sub read (by omega) (by omega)
+      exact CallLay.inRegions_sub read (by omega_using [hj]) (by omega_using [countFit])
     have currentByte : t.mem (State.addr (ep + BitVec.ofNat 32 j)) = eb[j] := by
       rw [mem, address]; exact bytes j hj
-    refine WP.mono (exponentByte_ok t hk (by omega) pointer counter currentRead currentByte lo hi) ?_
+    refine WP.mono (exponentByte_ok t hk (by omega_using [countFit, jk]) pointer counter currentRead currentByte lo hi) ?_
     rintro u ⟨loU, hiU, ptrU, countU, zero, memU, restU⟩
     have next : 256 * pre eb j + (eb[j]).toNat = pre eb (j + 1) := by
       rw [pre_succ eb hj, Nat.mul_comm]
@@ -60,14 +60,14 @@ theorem exponentLoop_ok (s : State) {ep : BitVec 32} {eb : List Byte}
       refine ⟨?_, ?_, ?_, memU.trans mem, rest.trans restU⟩
       · change some (!u.z) = some false
         simp only [zero, last, decide_true, Bool.not_true]
-      · simpa only [show j + 1 = eb.length by omega, pre_len] using loU
-      · simpa only [show j + 1 = eb.length by omega, pre_len] using hiU
+      · simpa only [show j + 1 = eb.length by omega_using [jk, last], pre_len] using loU
+      · simpa only [show j + 1 = eb.length by omega_using [jk, last], pre_len] using hiU
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, loU, hiU, ptrNext, countU,
+      refine ⟨?_, k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [hk, last], loU, hiU, ptrNext, countU,
         memU.trans mem, rest.trans restU⟩
       change some (!u.z) = some true
       simp only [zero, last, decide_false, Bool.not_false]
-  · exact ⟨0, by omega, positive, low, by simpa [pre_zero, exponentHigh] using high, by simpa using ptr, count, rfl, Rest.refl _ _⟩
+  · exact ⟨0, by omega_using [], positive, low, by simpa [pre_zero, exponentHigh] using high, by simpa using ptr, count, rfl, Rest.refl _ _⟩
 
 theorem exponentScan_ok (s : State) {ep : BitVec 32} {eb : List Byte}
     (positive : 0 < eb.length) (countFit : eb.length < 2 ^ 32)

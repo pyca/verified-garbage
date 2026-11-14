@@ -34,9 +34,9 @@ theorem shapeFrame_field {s t : State} {base : Addr} {f : Field}
     · intro pair hp
       simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
-      · change Layout.field f + 4 ≤ 0 ∨ 7048 ≤ Layout.field f; omega
-      · change Layout.field f + 4 ≤ 8240 ∨ 8248 ≤ Layout.field f; omega
-    · omega
+      · change Layout.field f + 4 ≤ 0 ∨ 7048 ≤ Layout.field f; omega_using [B]
+      · change Layout.field f + 4 ≤ 8240 ∨ 8248 ≤ Layout.field f; omega_using [high]
+    · omega_using [high]
   apply BitVec.eq_of_toNat_eq
   simpa only [val32, w32, pointerValue, Nat.mul_zero, Nat.add_zero] using H
 
@@ -67,7 +67,7 @@ theorem CallerBuffer.value_keep_shape {s t : State} {base : Addr} {size len : Na
   unfold operandValue
   rw [shapeFrame_pointer O K hd hp]
   congr 1
-  apply outs_bytes O (by have := B.fits; omega)
+  apply outs_bytes O (by have := B.fits; omega_using [this])
   · intro pair hr
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> decide
@@ -76,8 +76,8 @@ theorem CallerBuffer.value_keep_shape {s t : State} {base : Addr} {size len : Na
     apply Offset.sub_base
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · change 7048 ≤ size; omega
-    · change 8248 ≤ size; omega
+    · change 7048 ≤ size; omega_using [hz]
+    · change 8248 ≤ size; omega_using [hz]
 
 theorem CallerBuffer.bytes_keep_shape {s t : State} {base : Addr} {size len : Nat} {p : Pointer} {regs : List Reg}
     (B : CallerBuffer s base size p len) (O : Outs base shapeRanges s.mem t.mem)
@@ -85,7 +85,7 @@ theorem CallerBuffer.bytes_keep_shape {s t : State} {base : Addr} {size len : Na
     Spec.Rsa.bytesAt t.mem ((pointerValue base t p).setWidth 64) len =
       Spec.Rsa.bytesAt s.mem ((pointerValue base s p).setWidth 64) len := by
   rw [shapeFrame_pointer O K hd hp]
-  apply outs_bytes O (by have := B.fits; omega)
+  apply outs_bytes O (by have := B.fits; omega_using [this])
   · intro pair hr
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> decide
@@ -94,7 +94,7 @@ theorem CallerBuffer.bytes_keep_shape {s t : State} {base : Addr} {size len : Na
     apply Offset.sub_base
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · change 7048 ≤ size; omega
-    · change 8248 ≤ size; omega
+    · change 7048 ≤ size; omega_using [hz]
+    · change 8248 ≤ size; omega_using [hz]
 
 end VG.Proof.Dsa.X86

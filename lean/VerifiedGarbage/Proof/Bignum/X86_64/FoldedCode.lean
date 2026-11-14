@@ -44,16 +44,16 @@ theorem codeWith_correct (rest : Prog isa)
         s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 by
     obtain ⟨t, s', he, ⟨hg, hp⟩, hx⟩ := hwp
     exact ⟨t, s', he, ⟨hg.1, hg.2, hx⟩, hp⟩
-  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 2) (8 * i)) 8 := fun i hi => c.hs.st (by omega_using [hZ', hi])
   refine WP.seq (WP.mono_mx (by decide +kernel) (pdEntry_ok rfl hw c.ha0 c.ha2 c.hsep) fun t₁ ⟨hdi, h0, h1, h2, h3, h4, h5, hO, hN, hK,
     hE, hL, hIn, ho₁, k₁⟩ mx₁ => ?_)
-  have i₁ : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
-  have hz : slot (((s.gpr .rsi).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega
-  refine WP.seq (WP.mono_mx (by decide +kernel) (pdLoadWith_ok VG.Impl.Rsa.X86_64.Compare8.code @Compare8.code_ok (c.hs.congr k₁.2.2) hdi hz (by omega) (by omega) (by rw [hK, ofNat_toNat64])
+  have i₁ : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_using [hZ'])
+  have hz : slot (((s.gpr .rsi).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega_using [hZ']
+  refine WP.seq (WP.mono_mx (by decide +kernel) (pdLoadWith_ok VG.Impl.Rsa.X86_64.Compare8.code @Compare8.code_ok (c.hs.congr k₁.2.2) hdi hz (by omega_using [hk1]) (by omega_using [hk2]) (by rw [hK, ofNat_toNat64])
     hN (fun i hi => by rw [k₁.2.1, k₁.2.2]; exact c.hpr i hi) c.hps)
     fun t₂ ⟨hN₂, hR₂, hW₂, hb₂, hz₂, f₂, k₂⟩ mx₂ => ?_)
-  rw [pre_wv_entry c i₁ (by omega)] at hN₂
-  rw [pre_wv_entry c i₁ (by omega)] at hR₂
+  rw [pre_wv_entry c i₁ (by omega_using [])] at hN₂
+  rw [pre_wv_entry c i₁ (by omega_using [])] at hR₂
   have x₂ := Fixed.of_frm f₂ (pdLoadRanges_fixed _)
   have i₂ : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t₂.mem :=
     i₁.trans (InScr.of_frm f₂ fun r hr => (pdLoadRanges_le _ r hr).trans hz)
@@ -102,23 +102,23 @@ theorem codeWith_correct (rest : Prog isa)
   refine WP.ite (!cb) (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
   · -- Values of no modulus.
     have hcf : cb = false := by simpa using hb
-    refine WP.mono_mx (by decide +kernel) (fail_ok hs₂ hdi₂ (by omega) (by omega) (by omega) hO₂ hK₂ hout₂ c.houts)
+    refine WP.mono_mx (by decide +kernel) (fail_ok hs₂ hdi₂ (by omega_using [hZ']) (by omega_using [hk1]) (by omega_using [hk2]) hO₂ hK₂ hout₂ c.houts)
       fun t hp mxt => ⟨fin t 0 false hp fun nB hl hv hNv hRv => ?_, by rw [mxt, mx₂, mx₁]⟩
     obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
-    have := checks_true (by omega) (hN₂.trans hNv) hodd hlo
-      (by rw [hR₂, hRv]; exact Nat.mod_lt _ (by omega))
+    have := checks_true (by omega_using [hk1]) (hN₂.trans hNv) hodd hlo
+      (by rw [hR₂, hRv]; exact Nat.mod_lt _ (by omega_using [hodd]))
     rw [hcb, hcf] at this
     exact absurd this (by decide)
   · have hct : cb = true := by simpa using hb
     rw [hct] at hcb
-    obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega) hcb
-    have hpre := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 (checks_big (by omega) hcb) hRN hev
+    obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega_using [hk1]) hcb
+    have hpre := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 (checks_big (by omega_using [hk1]) hcb) hRN hev
     refine WP.mono (hrest hpre) fun t ⟨y, hy, hp, mxt⟩ => ⟨fin t _ _ hp fun nB hl hv hNv hRv => ?_,
       by rw [mxt, mx₂, mx₁]⟩
     rw [hN₂.trans hNv] at hy hp ⊢
     have hyX := hy (by
       rw [hR₂, hRv, Nat.mod_mod, ← Nat.pow_add, show 128 * (((s.gpr .rsi).toNat + 7) / 8) =
-        64 * (((s.gpr .rsi).toNat + 7) / 8) + 64 * (((s.gpr .rsi).toNat + 7) / 8) by omega])
+        64 * (((s.gpr .rsi).toNat + 7) / 8) + 64 * (((s.gpr .rsi).toNat + 7) / 8) by omega_using []])
     exact ⟨rfl, by rw [hyX]⟩
 
 /-- The code after the check of `e`, for a valid `e`. -/

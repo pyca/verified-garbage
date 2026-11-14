@@ -41,15 +41,15 @@ theorem kpe_stable {s₀ : State} (hp : UPre s₀) : Stable (KPe s₀) s₀ :=
         exact AesCbc.X86_64.bytesAt_frame hf (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact (hp.sch_data.sub_left (Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega)))
-          · exact (hp.sch_scr.sub_left (Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega))).sub_right
-              buf_scr) (by rcases hp.rounds with h | h | h <;> omega)),
+          · exact (hp.sch_data.sub_left (Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega_using [h])))
+          · exact (hp.sch_scr.sub_left (Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega_using [h]))).sub_right
+              buf_scr) (by rcases hp.rounds with h | h | h <;> omega_using [h])),
       by rw [g1, hrdi], by rw [g2, hrsi], by rw [g4, g1, hr10]⟩
 
 theorem keys_entry {s₀ : State} (hp : UPre s₀) : Keys (R s₀) (wK s₀) s₀ :=
-  ⟨rfl, by rcases hp.rounds with h | h | h <;> omega, fun j hj => ⟨schR s₀, by simp [hp.rd], by
-    rw [ofInt_natCast]; exact contains_offset (by rcases hp.rounds with h | h | h <;> omega)
-      (by rcases hp.rounds with h | h | h <;> omega)⟩⟩
+  ⟨rfl, by rcases hp.rounds with h | h | h <;> omega_using [h], fun j hj => ⟨schR s₀, by simp [hp.rd], by
+    rw [ofInt_natCast]; exact contains_offset (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])
+      (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩⟩
 
 theorem rsi_ofNat (s₀ : State) : s₀.gpr .rsi = BitVec.ofNat 64 (R s₀) := by
   apply BitVec.eq_of_toNat_eq; simp
@@ -63,8 +63,8 @@ theorem kpe_pre {s₁ : State} (hp₁ : UPre s₁) {s : State} (h : SInvK s₁ s
     by rw [h.2, hrdi]⟩
   exact AesCbc.X86_64.bytesAt_frame h.1.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp₁.sch_scr.sub_left (Region.sub_prefix (by rcases hp₁.rounds with h | h | h <;> omega)))
-    (by rcases hp₁.rounds with h | h | h <;> omega)
+    exact hp₁.sch_scr.sub_left (Region.sub_prefix (by rcases hp₁.rounds with h | h | h <;> omega_using [h])))
+    (by rcases hp₁.rounds with h | h | h <;> omega_using [h])
 
 theorem encrypt_wp {s₀ : State} (h0 : (modeX86_64 (AesXts.xtsMode true)).pre s₀) :
     WP isa Impl.AesXts.X86_64Vaes.encrypt s₀ fun s' =>

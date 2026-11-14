@@ -85,7 +85,7 @@ theorem KRel.sched {a : CD} {s₁ s₂ : State} (h₁ : KRel a s₁) (h₂ : KRe
   unfold Spec.RsaKeyGen.candidateOp at hl
   unfold schedS
   rw [h₁.e h₂, eo]
-  have h0 : 0 < oL s₂ := by rw [← eo]; simp only [oL]; omega
+  have h0 : 0 < oL s₂ := by rw [← eo]; simp only [oL]; omega_using [hv]
   exact VG.Proof.RsaKeyGen.schedOf_eq h0 (by rw [bytesAt_length, bytesAt_length, er])
     (by rw [bytesAt_length, ← eo]; exact hk) hl
 
@@ -108,10 +108,10 @@ theorem rej_take {L e : Nat} {p : Option Nat} {r rest : Spec.RsaKeyGen.Rand} (hL
           have := VG.Proof.RsaKeyGen.primalityTest_rest hp
           rw [← h.2]
           simp only [List.length_drop] at this
-          omega
+          omega_using [hk, this]
       · simp only [Option.some.injEq, Prod.mk.injEq] at h
         rw [← h.2, List.length_drop]
-        omega
+        omega_using [hk]
   · cases h
 
 /-- Two candidates rejected with the same leak were read from the same
@@ -126,7 +126,7 @@ theorem rej_same {L e : Nat} {p₁ p₂ : Option Nat} {r₁ r₂ rest₁ rest₂
   have t₂ := rej_take hL h₂
   rw [h₁, h₂] at h
   simp only [leakOf, List.cons.injEq, true_and] at h
-  obtain ⟨hu, he⟩ := VG.Proof.RsaKeyGen.take_eq_of_map (by omega) (by omega) h
+  obtain ⟨hu, he⟩ := VG.Proof.RsaKeyGen.take_eq_of_map (by omega_using []) (by omega_using []) h
   have := congrArg (List.take L) he
   rw [VG.Proof.RsaKeyGen.take_take_of_le t₁, VG.Proof.RsaKeyGen.take_take_of_le (hu ▸ t₁)] at this
   exact this
@@ -183,7 +183,7 @@ theorem comp_same {a : CD} {s₁ s₂ : State} (h₁ : KRel a s₁) (h₂ : KRel
   have er := h₁.rL_eq h₂
   have hc₂ := (close_agree h₁ h₂ hk).symm.trans hc
   have ho₂ := (comp_agree h₁ h₂ hk hc).symm.trans ho
-  have h0 : 0 < oL s₁ := by simp only [oL]; omega
+  have h0 : 0 < oL s₁ := by simp only [oL]; omega_using [hv]
   have t := rej_same (L := oL s₁) h0
     (step_comp h0 (by rw [bytesAt_length]; exact hk) hc ho)
     (eo ▸ step_comp (eo ▸ h0) (by rw [bytesAt_length, ← eo, ← er]; exact hk) hc₂ ho₂)

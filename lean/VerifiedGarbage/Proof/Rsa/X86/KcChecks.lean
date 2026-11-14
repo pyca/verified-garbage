@@ -178,12 +178,12 @@ theorem mulModHiBody_ok {full : Bool} {s0 u : State} {z y x a m t k o i : Nat}
   have mk : num u.mem B (kw len) m = num s0.mem B (kw len) m := inv.keep.num (by simp; omega_arith) (by decide) fm
   refine WP.mono (mulModStepHi_ok h hi) fun u' ⟨h', k', r', c', f', y', v'⟩ => ?_
   have le : (k - (i + 1)) * stepUnit + o + stepUnit = (k - i) * stepUnit + o := by
-    have : k - i = k - (i + 1) + 1 := by omega
-    rw [this, Nat.succ_mul]; omega
+    have : k - i = k - (i + 1) + 1 := by omega_using [hik]
+    rw [this, Nat.succ_mul]; omega_using []
   have bound : (k - i) * stepUnit + o < 2 ^ 32 :=
     Nat.lt_of_le_of_lt (Nat.add_le_add_right (Nat.mul_le_mul_right _ (Nat.sub_le _ _)) _) hk
   have cnt : u.gpr .esi - BitVec.ofNat 32 stepUnit = BitVec.ofNat 32 ((k - (i + 1)) * stepUnit + o) := by
-    rw [inv.count, ← le, BitVec.ofNat_sub_ofNat_of_le _ _ (by unfold stepUnit; omega) (by omega),
+    rw [inv.count, ← le, BitVec.ofNat_sub_ofNat_of_le _ _ (by unfold stepUnit; omega_using []) (by omega_using []),
       Nat.add_sub_cancel]
   refine ⟨⟨h', inv.keep.trans k', inv.rest.trans r', by rw [c', cnt], ?_, fun hZ hA hX hM => ?_⟩, ?_⟩
   · rw [y', inv.yv, Nat.div_div_eq_div_mul, Nat.pow_succ]
@@ -194,16 +194,16 @@ theorem mulModHiBody_ok {full : Bool} {s0 u : State} {z y x a m t k o i : Nat}
     obtain ⟨va', vx'⟩ := v' (by rw [zk, hZ]) aLt xLt (by rw [mk]; exact hM)
     rw [va', vx', va, vx, inv.yv, mk]
     exact ⟨VG.Proof.Rsa.mulMod_arith, VG.Proof.Rsa.double_arith⟩
-  · rw [f', cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [f', cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [le, bound])]
     congr 1
     simp only [decide_eq_decide]
     constructor
     · intro hlt
       rcases Nat.eq_zero_or_pos (k - (i + 1)) with e | e
-      · omega
-      · have := Nat.mul_le_mul_right stepUnit e; omega
+      · omega_using [hik, e]
+      · have := Nat.mul_le_mul_right stepUnit e; omega_using [hlt, this]
     · intro e
-      rw [show k - (i + 1) = 0 by omega, Nat.zero_mul, Nat.zero_add]
+      rw [show k - (i + 1) = 0 by omega_using [e], Nat.zero_mul, Nat.zero_add]
       exact ho
 
 /-- `mulModHi z y x a m t` with `esi = 2^16 k + o`, `k > 0` and `o < 2^16`: `mulMod`'s product, and
@@ -250,10 +250,10 @@ theorem rot13 {a : Nat} (h : a < 2 ^ 13) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_rotateRight]
   simp only [BitVec.toNat_ofNat, stepUnit]
-  rw [Nat.mod_eq_of_lt (by omega : a < 2 ^ 32), Nat.mod_eq_of_lt (by omega : 8 * a * 65536 < 2 ^ 32)]
+  rw [Nat.mod_eq_of_lt (by omega_using [h] : a < 2 ^ 32), Nat.mod_eq_of_lt (by omega_using [h] : 8 * a * 65536 < 2 ^ 32)]
   rw [Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.div_eq_of_lt (by omega)]
   simp
-  omega
+  omega_using [h]
 
 /-- What a check's step count leaves: `esi` up by `2^16 k`. -/
 def Stepped (k : Nat) (u u' : State) : Prop :=
@@ -321,7 +321,7 @@ theorem Stg.mulHi_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   have gM : num s.mem g.B g.w m = A m := h.arrs.get hm
   refine ⟨num t.mem g.B g.w aA, fun hlt hM => ?_, ?_, e5⟩
   · rw [gZ, gA, gM] at v5
-    rw [v5 rfl (by omega) hlt hM, Nat.zero_add]
+    rw [v5 rfl (by omega_using [hlt]) hlt hM, Nat.zero_add]
   · refine h.next ht k5 (by decide) (by decide) r5 allRegs_body ?_ h.live_lt
       (h.vd_keep k5 (by decide) (by decide)) (h.mask_keep k5 (by decide))
     intro j hj
@@ -434,7 +434,7 @@ theorem Stg.checkRest_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List
   · rw [ct, e4, e3]
     exact BitVec.ofNat_sub_ofNat_of_le (w := 32) i 1 (by decide) hi
   · rw [zt, e4, e3, show BitVec.ofNat 32 i - 1 = BitVec.ofNat 32 (i - 1) from
-      BitVec.ofNat_sub_ofNat_of_le (w := 32) i 1 (by decide) hi, ofNat_beq_zero (by unfold stepUnit at hi'; omega)]
+      BitVec.ofNat_sub_ofNat_of_le (w := 32) i 1 (by decide) hi, ofNat_beq_zero (by unfold stepUnit at hi'; omega_using [hk'])]
 
 /-- Check `i`'s multiplier, multiplicand, modulus and steps (3: `e dP`, 2: `e dQ`, 1: `q qInv`). -/
 def opY (i : Nat) : Nat := if i = 1 then aQ else aE
@@ -505,13 +505,13 @@ theorem Stg.product_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     WP isa (productCheck g.full) s fun t => ∃ R, Prod g A (opY i) (opX i) (opM i) (opK qa i) R ∧
       Stg g s0 A live ((c && decide (A (opX i) < A (opM i))) && decide (R = 1)) t ∧
       t.gpr .esi = BitVec.ofNat 32 (i - 1) ∧ t.zf = some (decide (i - 1 = 0)) := by
-  have hk : 0 < opK qa i := by unfold opK; split <;> omega
-  have hk' : opK qa i * stepUnit + i < 2 ^ 32 := by unfold opK stepUnit; split <;> omega
+  have hk : 0 < opK qa i := by unfold opK; split <;> omega_arith
+  have hk' : opK qa i * stepUnit + i < 2 ^ 32 := by unfold opK stepUnit; split <;> omega_arith
   rw [show productCheck g.full = seqs (choose g.full :: (ltA g.full aX aVD ++
     ([VG.Impl.Rsa.X86.KeyRt.copy (lay g.full) aA aZ, mulModHi g.full aZ aY aX aA aVD aT] : List (Prog isa)) ++
     eqA g.full aA aOne ++ ([.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]] : List (Prog isa)))) from rfl, wp_seqs_cons (by simp [ltA])]
   refine WP.mono (h.choose_ok b hlive hi e qarg qa2) fun u ⟨hu, eu⟩ => ?_
-  exact hu.checkRest_ok b hk hk' (by omega) (by unfold stepUnit; omega) eu
+  exact hu.checkRest_ok b hk hk' (by omega_using [hi]) (by unfold stepUnit; omega_using [hi]) eu
 
 /-- The three checks: `dP`, `dQ`, then `qInv`. -/
 theorem Stg.products_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
@@ -535,10 +535,10 @@ theorem Stg.products_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
   rintro n v (⟨rfl, hv, ev⟩ | ⟨rfl, R₁, p₁, hv, ev⟩ | ⟨rfl, R₁, R₂, p₁, p₂, hv, ev⟩)
   · refine WP.mono (hv.product_ok b hlive (.inr (.inr rfl)) ev qarg qa1 qa2) fun t ⟨R, pR, ht, et, zt⟩ => ?_
     simp only [opY, opX, opM, opK] at pR ht
-    exact .inr ⟨by change t.zf.map (!·) = _; rw [zt]; rfl, 2, by omega, .inr (.inl ⟨rfl, R, pR, ht, et⟩)⟩
+    exact .inr ⟨by change t.zf.map (!·) = _; rw [zt]; rfl, 2, by omega_using [], .inr (.inl ⟨rfl, R, pR, ht, et⟩)⟩
   · refine WP.mono (hv.product_ok b hlive (.inr (.inl rfl)) ev qarg qa1 qa2) fun t ⟨R, pR, ht, et, zt⟩ => ?_
     simp only [opY, opX, opM, opK] at pR ht
-    exact .inr ⟨by change t.zf.map (!·) = _; rw [zt]; rfl, 1, by omega, .inr (.inr ⟨rfl, R₁, R, p₁, pR, ht, et⟩)⟩
+    exact .inr ⟨by change t.zf.map (!·) = _; rw [zt]; rfl, 1, by omega_using [], .inr (.inr ⟨rfl, R₁, R, p₁, pR, ht, et⟩)⟩
   · refine WP.mono (hv.product_ok b hlive (.inl rfl) ev qarg qa1 qa2) fun t ⟨R, pR, ht, _, zt⟩ => ?_
     simp only [opY, opX, opM, opK] at pR ht
     exact .inl ⟨by change t.zf.map (!·) = _; rw [zt]; rfl, R₁, R₂, R, p₁, p₂, pR, ht⟩

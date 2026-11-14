@@ -41,13 +41,13 @@ theorem choice_eval {q : ChoicePublic} {s : State} (h : ChoiceReady q s) :
  isa.eval (.zero .x .x3) s=some (decide (q.k=q.g.len)) := by
  rw [eval_zero,h.test]
  change some (BitVec.ofNat 64 q.k-BitVec.ofNat 64 q.g.len==0#64)=_
- rw [sub_zero_iff (by have :=q.size;omega) (by have :=h.record.lenFit;omega)]
+ rw [sub_zero_iff (by have :=q.size;omega_using [this]) (by have :=h.record.lenFit;omega_using [this])]
 
 def choiceCompare (q : ChoicePublic) (same : q.k=q.g.len) : ComparePublic :=
  ⟨q.B,q.Z,q.src,off q.recordPtr 8,q.dom,q.g.domain.take q.dom.length,q.room,
-  by rw [List.length_take,policyDomain_length];have :=q.shape;omega,
-  by have :=q.shape;have :=q.positive;omega,
-  by have :=q.shape;have :=q.size;omega⟩
+  by rw [List.length_take,policyDomain_length];have :=q.shape;omega_using [same, this],
+  by have :=q.shape;have :=q.positive;omega_arith,
+  by have :=q.shape;have :=q.size;omega_arith⟩
 
 theorem choice_compare_ready {q : ChoicePublic} {s : State} (h : ChoiceReady q s) (same : q.k=q.g.len) :
  PolicyCompareReady (choiceCompare q same) s :=

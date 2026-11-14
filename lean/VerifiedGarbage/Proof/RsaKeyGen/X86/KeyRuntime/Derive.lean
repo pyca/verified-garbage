@@ -35,8 +35,8 @@ theorem deriveLoaded_ok {s : State} {B : Addr} {Z n k : Nat}
       Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (stageRanges n deriveArrays) s.mem t.mem ∧
       CoreOutcome B n (val32 s.mem B kEv 2) (num s.mem B n aPa) (num s.mem B n aQa) t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  have boundP' : num s.mem B n aPa < 2 ^ (16 * n) := by rw [show 16 * n = 32 * k by omega]; exact boundP
-  have boundQ' : num s.mem B n aQa < 2 ^ (16 * n) := by rw [show 16 * n = 32 * k by omega]; exact boundQ
+  have boundP' : num s.mem B n aPa < 2 ^ (16 * n) := by rw [show 16 * n = 32 * k by omega_using [width]]; exact boundP
+  have boundQ' : num s.mem B n aQa < 2 ^ (16 * n) := by rw [show 16 * n = 32 * k by omega_using [width]]; exact boundQ
   unfold deriveLoaded
   refine WP.seq (WP.mono (prepareLoaded_ok h width positive even boundP boundQ zero one loaded)
     fun u ⟨hu, Ou, R, Ku⟩ => ?_)

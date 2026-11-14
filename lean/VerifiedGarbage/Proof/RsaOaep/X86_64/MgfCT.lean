@@ -109,6 +109,6 @@ def nR (D : Nat) (q : MQ) : Nat := (q.dstLen + D - 1) / D
 theorem lt_nR {D : Nat} (hD : 0 < D) (q : MQ) (j : Nat) : j < nR D q ↔ j * D < q.dstLen := by
   unfold nR
   rw [← Nat.succ_le_iff, Nat.le_div_iff_mul_le hD, Nat.succ_mul]
-  omega
+  omega_using [hD]
 
 end VG.Proof.RsaOaep.X86_64

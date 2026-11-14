@@ -30,7 +30,7 @@ theorem csub_value {mem mem' : Mem} {base : Addr} {acc mod tmp n borrow : Nat}
     (val32_lt mem base acc n) hT hsub
   by_cases hc : borrow ≤ w32 mem base (acc + 4 * n)
   · simpa only [hc, Nat.not_lt.mpr hc, ite_true, ite_false] using h
-  · have hlt : w32 mem base (acc + 4 * n) < borrow := by omega
+  · have hlt : w32 mem base (acc + 4 * n) < borrow := by omega_using [hc]
     simpa only [hc, hlt, ite_true, ite_false] using h
 
 end VG.Proof.Bignum.Arm

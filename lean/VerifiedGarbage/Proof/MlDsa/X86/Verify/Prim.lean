@@ -59,7 +59,7 @@ theorem ball_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.sampleIn
   have hA₁ := (Lay.okW_iff.mp hAw).1
   have hW₁ := (Lay.okW_iff.mp hW).1
   have hbnd : L < 2 ^ 32 ∧ τ < 2 ^ 32 := by
-    simp only [Proof.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb; omega
+    simp only [Proof.MlDsa.ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hb; omega_using [hb]
   have eL : (BitVec.ofNat 32 L).toNat = L := KeyGen.toNat_ofNat32 hbnd.1
   have eτ : (BitVec.ofNat 32 τ).toNat = τ := KeyGen.toNat_ofNat32 hbnd.2
   refine callPR_piece _ [⟨da, dO, L⟩] [⟨aa, ao, 1024⟩, ⟨wa, wo, 2048⟩] hv hsp hst (by simp) (by simp)
@@ -139,7 +139,7 @@ theorem useHint_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.useHi
   obtain ⟨⟨⟨⟨hH, hR⟩, hOw⟩, dHO⟩, dRO⟩ := hk
   have hO := (Lay.okW_iff.mp hOw).1
   have hgb : g < 2 ^ 32 := by
-    simp only [Proof.MlDsa.gamma2s, Spec.MlDsa.q, List.mem_cons, List.not_mem_nil, or_false] at hg; omega
+    simp only [Proof.MlDsa.gamma2s, Spec.MlDsa.q, List.mem_cons, List.not_mem_nil, or_false] at hg; omega_using [hg]
   have eg : (BitVec.ofNat 32 g).toNat = g := KeyGen.toNat_ofNat32 hgb
   refine callP_piece _ [⟨ha, hao, 1024⟩, ⟨ra, ro, 1024⟩] [⟨oa, oo, 1024⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hH, hR, hO, hgb]) hN (by simp [hH, hR]) (by simp [hOw]) tt (fun s₀ s hp ha => (hA s₀ s hp ha).1)
@@ -181,7 +181,7 @@ theorem useHint_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.useHi
     simp only [arg_withRegions, a₀, a₁, a₂, a₃, List.getElem_cons_zero, List.getElem_cons_succ, Arg.val, m₂,
       eg] at post
     rw [ent_polyAt he hR, Proof.MlDsa.Pack.hintAt_congr (fun t ht =>
-      Proof.MlDsa.KeyGen.coeffAt_congr (he.mem _ hH) (by simp only [Spec.MlDsa.n]; omega))] at post
+      Proof.MlDsa.KeyGen.coeffAt_congr (he.mem _ hH) (by simp only [Spec.MlDsa.n]; omega_using [ht]))] at post
     exact hQ s₀ s s' hp ha h' fr post
 
 /-! ## `vg_mldsa_bit_unpack`, `vg_mldsa_unpack_t1` -/
@@ -329,11 +329,11 @@ theorem hu_piece {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.hintBitUnp
   obtain ⟨⟨hYb, hHw⟩, dYH⟩ := hk
   have hH := (Lay.okW_iff.mp hHw).1
   have hb : ω + k < 2 ^ 32 ∧ ω < 2 ^ 32 ∧ 256 * k < 2 ^ 32 := by
-    simp only [Proof.MlDsa.hintParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hwk; omega
+    simp only [Proof.MlDsa.hintParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hwk; omega_using [hwk]
   have e1 : (BitVec.ofNat 32 (ω + k)).toNat = ω + k := KeyGen.toNat_ofNat32 hb.1
   have e2 : (BitVec.ofNat 32 ω).toNat = ω := KeyGen.toNat_ofNat32 hb.2.1
   have e3 : (BitVec.ofNat 32 (256 * k)).toNat = 256 * k := KeyGen.toNat_ofNat32 hb.2.2
-  have e4 : ω + k - ω = k := by omega
+  have e4 : ω + k - ω = k := by omega_using []
   refine callPR_piece _ [⟨ya, yo, ω + k⟩] [⟨ha, ho, 256 * k * 4⟩] hv hsp hst (by simp) (by simp)
     (by simp [Arg.ok, hYb, hH, hb]) hN (by simp [hYb]) (by simp [hHw]) tt hA
     (fun s₀ s e hp ha he => ?_) (fun s₀ s₀' s s' e e' hp hp' hq ha ha' he he' => ?_)

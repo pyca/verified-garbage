@@ -73,15 +73,15 @@ theorem p2r0_val {a : BitVec 64} (ha : a.toNat < q) :
       else (a.toNat + 4095) % 8192 - 4095 := by
   rw [VG.Proof.MlDsa.Round.q_eq] at ha ⊢
   have t : (4095 : BitVec 64).toNat = 4095 := by simp
-  have h1 : (a + 4095).toNat = a.toNat + 4095 := by rw [BitVec.toNat_add, t]; omega
+  have h1 : (a + 4095).toNat = a.toNat + 4095 := by rw [BitVec.toNat_add, t]; omega_using [ha]
   have h2 : ((a + 4095) >>> 13 <<< 13).toNat = (a.toNat + 4095) / 8192 * 8192 := by
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, h1, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [ha])
   have hx : (a + (4095 : BitVec 64) - ((a + (4095 : BitVec 64)) >>> 13) <<< 13).toNat = (a.toNat + 4095) % 8192 := by
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, h1, h2]; omega), h1, h2]; omega
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, h1, h2]; omega_using []), h1, h2]; omega_using []
   have := fixk_diff (k := 8380417) (by decide)
     (a := a + (4095 : BitVec 64) - ((a + (4095 : BitVec 64)) >>> 13) <<< 13) (b := 4095)
-    (by rw [hx]; omega) (by rw [hx, t]; exact Nat.le_add_left _ _) (by rw [t]; decide)
+    (by rw [hx]; omega_using []) (by rw [hx, t]; exact Nat.le_add_left _ _) (by rw [t]; decide)
   rw [hx, t] at this
   exact this
 
@@ -189,7 +189,7 @@ theorem inv_step {o1 o0 : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i :
       coeffAt_writeW _ _ hj hi]
     by_cases e : i = j
     · subst e; rw [ite_eq_left rfl, v1]
-    · rw [ite_eq_right e]; exact h.c1 j hj (by omega)
+    · rw [ite_eq_right e]; exact h.c1 j hj (by omega_using [hji, e])
   · intro j hj hji
     rw [m, show T0 s₀ + BitVec.ofNat 64 (4 * i) = coeffAddr (T0 s₀) i from rfl,
       coeffAt_writeW _ _ hj hi]
@@ -197,7 +197,7 @@ theorem inv_step {o1 o0 : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀) {i :
     · subst e; rw [ite_eq_left rfl, v0]
     · rw [ite_eq_right e, VG.Proof.MlDsa.Round.coeffAt_writeW_disjoint _ hp.d01.symm (coeff_contains _ hi)
         (i := j) (by omega)]
-      exact h.c0 j hj (by omega)
+      exact h.c0 j hj (by omega_using [hji, e])
   · rw [r6, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
 theorem loop_ok {o1 o0 : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀)
@@ -208,8 +208,8 @@ theorem loop_ok {o1 o0 : Nat → BitVec 32} {s₀ : State} (hp : Pre s₀)
   refine wp_loop_nz (Inv o1 o0 s₀) (N := 256) (by decide)
     (fun i hi s h => inv_step hp hi h (hv i hi)) (fun _ h => h) ?_
   refine ⟨by simp [State.write], by simp [State.write], by simp [State.write], by simp [State.write], ?_,
-    rfl, rfl, rfl, rfl, fun r hr => ?_, Frame.refl _ _, fun j _ h => absurd h (by omega),
-    fun j _ h => absurd h (by omega)⟩
+    rfl, rfl, rfl, rfl, fun r hr => ?_, Frame.refl _ _, fun j _ h => absurd h (by omega_using []),
+    fun j _ h => absurd h (by omega_using [])⟩
   · simp only [State.write, reduceCtorEq, ite_false, ite_true]
     exact VG.Proof.MlDsa.PPC64LE.Arith.loadImm_val (by decide)
   · have : r ≠ .r6 ∧ r ≠ .r7 := by revert r hr; decide
@@ -229,7 +229,7 @@ theorem vals {s₀ : State} (hp : Pre s₀) : ∀ i < 256, ∀ {a : BitVec 64}, 
   intro i hi a ha
   have hr := hp.red i hi
   have hat : a.toNat = (coeffAt s₀.mem (T s₀) i).toNat := by
-    rw [ha, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (T s₀) i).isLt; omega)
+    rw [ha, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (T s₀) i).isLt; omega_using [])
   have hpv := polyAt_val hp.red (i := i) hi
   have hq : a.toNat < q := by rw [hat]; exact hr
   refine ⟨?_, ?_⟩

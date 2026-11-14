@@ -104,7 +104,7 @@ theorem prfsE_ok (v : Sample4Impl) {C : Ctx rbs wbs} (hk : L.k ≤ 4) (hc : prfs
   simp only [prfsEChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   obtain ⟨⟨hpc, hin⟩, kA⟩ := hc
   have L₀ := C.lay h.i.out
-  refine WP.mono (v.prfs_ok L₀ C.bs (by omega) hpc) fun s' ⟨hP, hb⟩ => ⟨hP, h.ok, h.i.keep hP.b hin,
+  refine WP.mono (v.prfs_ok L₀ C.bs (by omega_using [hk]) hpc) fun s' ⟨hP, hb⟩ => ⟨hP, h.ok, h.i.keep hP.b hin,
     by rw [hP.cs .r15 (by decide)]; exact h.r15, fun e he => L₀.keepPoly hP.b (kA e he) (h.mat e he), fun N hN => ?_,
     fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
   rw [prfO, hP.pa rbx_cs, hb N hN, h.i.r, Nat.zero_add]
@@ -119,7 +119,7 @@ theorem prfsE_tr (v : Sample4Impl) {C : Ctx rbs wbs} (hk : L.k ≤ 4) (hc : prfs
       (fun x y => LRel rbs wbs x y ∧ ERρ L C E ρ 0 0 x ∧ ERρ L C E ρ 0 0 y) := by
   have hc' := hc
   simp only [prfsEChk, Bool.and_eq_true] at hc'
-  exact RelCT.stepL C.bs (RelCT.mono (v.prfs_tr C.bs (by omega) hc'.1.1) (fun _ _ h => h.1) fun _ _ h => h)
+  exact RelCT.stepL C.bs (RelCT.mono (v.prfs_tr C.bs (by omega_using [hk]) hc'.1.1) (fun _ _ h => h.1) fun _ _ h => h)
     fun x ⟨ek, m, r, eρ, hx⟩ => WP.mono (prfsE_ok v hk hc hx) fun _ h => ⟨⟨_, h.1.b⟩, ek, m, r, eρ, h.2⟩
 
 /-! ## `y` -/
@@ -135,9 +135,9 @@ theorem y_ok {A : Arith} (hA : ArithOk A) {C : Ctx rbs wbs} {N : Nat} (hN : N < 
   refine WP.mono (cbd2At_okL hA L₀ rbx_na hc.1) fun s' ⟨hP, hp⟩ => ?_
   have hk := h.keep hP hc.2
   refine ⟨hP, hk.ok, hk.i, hk.r15, hk.mat, hk.prf, fun k hk' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  rcases (by omega : k < N ∨ k = N) with hk' | rfl
+  rcases (by omega_using [hk'] : k < N ∨ k = N) with hk' | rfl
   · exact hk.y k hk'
-  · rw [h.prf k (by omega), ← hP.pa rbx_cs] at hp; exact hp
+  · rw [h.prf k (by omega_using [hN]), ← hP.pa rbx_cs] at hp; exact hp
 
 theorem y_tr {A : Arith} (hA : ArithOk A) {C : Ctx rbs wbs} {N : Nat} (hN : N < L.k)
     (hc : yChk L (rbs ++ wbs) wbs C.chk E N = true) {ρ : List Byte} :
@@ -161,13 +161,13 @@ theorem t_ok {A : Arith} (hA : ArithOk A) {C : Ctx rbs wbs} {i : Nat} (hi : i < 
   refine WP.mono (dec12At_okL hA L₀ rbx_na hc.1) fun s' ⟨hP, hp⟩ => ?_
   have hk := h.keep hP hc.2
   refine ⟨hP, hk.ok, hk.i, hk.r15, hk.mat, hk.prf, hk.y, fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact hk.t i' hi'
   · rw [hP.pa rbx_cs]
     have e : bytesAt s.mem (pa s (E.1, E.2 + 384 * i')) 384 = (ek.drop (384 * i')).take 384 := by
       rw [← h.i.ek]
       show _ = ((bytesAt s.mem (pa s E) (384 * L.k + 32)).drop (384 * i')).take 384
-      rw [bytesAt_slice _ _ (show 384 * i' + 384 ≤ 384 * L.k + 32 by omega), pa, pa, off_add]
+      rw [bytesAt_slice _ _ (show 384 * i' + 384 ≤ 384 * L.k + 32 by omega_using [hi]), pa, pa, off_add]
     rw [e] at hp
     exact hp
 
@@ -242,10 +242,10 @@ theorem ER.prods {C : Ctx rbs wbs} {ek m r : List Byte} {s : State} (h : ER L C 
       have hj := List.mem_range.mp hj
       rw [Function.comp_apply, List.getD_eq_getElem?_getD, vecAt, List.getElem?_map, List.getElem?_range h',
         Option.map_some, Option.getD_some, BitVec.add_assoc, ← BitVec.ofNat_add, ← Nat.mul_add, ← pa_pS,
-        show L.pA + (L.k * j + i) = L.pA + L.k * j + i by omega]
+        show L.pA + (L.k * j + i) = L.pA + L.k * j + i by omega_using []]
       exact (h.matIJ hj h').2
     rw [hcol, KPke.dot_eq_dotK]
-  · have hik : i = L.k := by omega
+  · have hik : i = L.k := by omega_using [hi, h']
     subst hik
     rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [EncMul.mulMatTVec_length]),
       EncMul.mulMatTVec_length, Nat.sub_self, List.getElem?_cons_zero, Option.getD_some, encW,
@@ -309,8 +309,8 @@ theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   unfold u
   refine WP.seq (WP.mono (cbd2At_okL hA L₀ rbx_na hpc) fun s₁ ⟨hP₁, hp₁⟩ => ?_)
   have L₁ := L₀.post hP₁.b C.bs
-  rw [h.prf (L.k + i) (by omega), ← hP₁.pa rbx_cs] at hp₁
-  have hw₁ := L₀.keepPoly hP₁.b hkw (h.w i (by omega) (Nat.le_refl _))
+  rw [h.prf (L.k + i) (by omega_using [hi]), ← hP₁.pa rbx_cs] at hp₁
+  have hw₁ := L₀.keepPoly hP₁.b hkw (h.w i (by omega_using [hi]) (Nat.le_refl _))
   refine WP.seq (WP.mono (addAt_ok hA L₁ rbx_na hac hw₁.1 hp₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
   have L₂ := L₁.post hP₂.b C.bs
   rw [hw₁.2, hp₁.2, ← hP₂.pa rbx_cs] at hp₂
@@ -318,7 +318,7 @@ theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   have hP := PPost.app (PPost.app hP₁ hP₂ (by simp [calleeSaved])) hP₃ (by simp [calleeSaved])
   obtain ⟨hk, hw, hu⟩ := h.keep (Nat.le_succ i) hP hrc
   refine ⟨hP, hk, hw, fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact hu i' hi'
   · rw [hP₃.pa rbx_cs, hb₃, hp₂.2, encW, ifp hi]; rfl
 
@@ -342,7 +342,7 @@ theorem u_tr {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
       (ceCall_trL (K.ce A.codecs) rbx_na htw K.du.1)))
     (fun x y ⟨hl, ⟨_, _, _, _, h₁⟩, ⟨_, _, _, _, h₂⟩⟩ =>
-      ⟨hl, (h₁.w i (by omega) (Nat.le_refl _)).1, (h₂.w i (by omega) (Nat.le_refl _)).1⟩) fun _ _ h => h
+      ⟨hl, (h₁.w i (by omega_using [hi]) (Nat.le_refl _)).1, (h₂.w i (by omega_using [hi]) (Nat.le_refl _)).1⟩) fun _ _ h => h
 
 /-! ## `v` -/
 
@@ -366,8 +366,8 @@ theorem v_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   unfold v
   refine WP.seq (WP.mono (cbd2At_okL hA L₀ rbx_na hpc) fun s₁ ⟨hP₁, hp₁⟩ => ?_)
   have L₁ := L₀.post hP₁.b C.bs
-  rw [h.prf (2 * L.k) (by omega), ← hP₁.pa rbx_cs] at hp₁
-  have hw₁ := L₀.keepPoly hP₁.b hkw (h.w L.k (by omega) (Nat.le_refl _))
+  rw [h.prf (2 * L.k) (by omega_using []), ← hP₁.pa rbx_cs] at hp₁
+  have hw₁ := L₀.keepPoly hP₁.b hkw (h.w L.k (by omega_using []) (Nat.le_refl _))
   refine WP.seq (WP.mono (addAt_ok hA L₁ rbx_na hac hw₁.1 hp₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
   have hP₁₂ := PPost.app hP₁ hP₂ (by simp [calleeSaved])
   have e₂ := h.i.keep hP₁₂.b hi₂
@@ -433,7 +433,7 @@ theorem v_tr {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
       (ceCall_trL (K.ce A.codecs) (d := L.dv) rbx_na htw K.dv.1)))))
     (fun x y ⟨hl, ⟨_, _, _, _, h₁⟩, ⟨_, _, _, _, h₂⟩⟩ =>
-      ⟨hl, (h₁.w L.k (by omega) (Nat.le_refl _)).1, (h₂.w L.k (by omega) (Nat.le_refl _)).1⟩) fun _ _ h => h
+      ⟨hl, (h₁.w L.k (by omega_using []) (Nat.le_refl _)).1, (h₂.w L.k (by omega_using []) (Nat.le_refl _)).1⟩) fun _ _ h => h
 
 end Enc
 

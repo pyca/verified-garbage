@@ -43,8 +43,8 @@ theorem jointPair_counter {c : Joint.Cfg} {C : Curve} {base : Addr} {size j : Na
     RelCT isa (JointPair c C base size Core A (j+1)) (.block [decCounter])
       (JointPair c C base size Core A j) := by
   intro s t ts tt s' t' ⟨⟨E,hp⟩,cs,ct,ps,pt⟩ es et
-  obtain ⟨_,_,xs,s19,ks⟩ := decCounter_ok s (by omega) (by omega) ps
-  obtain ⟨_,_,xt,t19,kt⟩ := decCounter_ok t (by omega) (by omega) pt
+  obtain ⟨_,_,xs,s19,ks⟩ := decCounter_ok s (by omega_using []) (by omega_using [hj]) ps
+  obtain ⟨_,_,xt,t19,kt⟩ := decCounter_ok t (by omega_using []) (by omega_using [hj]) pt
   obtain ⟨_,rfl⟩ := Exec.det es xs
   obtain ⟨_,rfl⟩ := Exec.det et xt
   have he : ts=tt := hc _ _ _ _ _ _ trivial trivial ⟨hp.sp,fun r hr => by

@@ -569,7 +569,7 @@ theorem Pre.nb_lt {s₀ : State} (h : Pre s₀) : 64 * nb s₀ < 2 ^ 64 := by
   refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
   simp only [Region.Contains]
   have := (st s₀ - bp s₀).isLt
-  omega
+  omega_using [hn]
 
 /-- The 16-byte words of the blocks are readable, for a state whose readable
 regions are the blocks, which fit in the address space. -/

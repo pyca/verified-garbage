@@ -42,15 +42,15 @@ theorem run_ok {P : InvCfg} {s : State} {base : Addr} {size p x : Nat}
   refine countLoop_ok (Inv := J) (n := 20) ?_ ?_ (by decide) ?_
   · intro j u hj hj20 hJ
     obtain ⟨hu, Iu, Cu, Ku, Ou⟩ := hJ
-    have F := facts (20 - j) (by omega)
+    have F := facts (20 - j) (by omega_using [hj])
     have Mu : val32 u.mem base P.M.mo 8 = p := by
       rw [Outs.val32 Ou (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-        constructor <;> omega) (by omega), hm]
+        constructor <;> omega_arith) (by omega_using [hn, hmod]), hm]
     refine WP.mono (batch_ok hu L Iu F.delta F.odd F.f F.g F.a F.b hp hp256 Mu hinv hj
-      (by omega) Cu F.matrix F.division) fun z ⟨Iz, Cz, Zz, Kz, Oz⟩ => ⟨?_, Zz⟩
+      (by omega_using [hj20]) Cu F.matrix F.division) fun z ⟨Iz, Cz, Zz, Kz, Oz⟩ => ⟨?_, Zz⟩
     refine ⟨hu.of_keeps Kz (by decide), ?_, Cz, Ku.trans Kz, ?_⟩
-    · rw [show 20 - (j - 1) = (20 - j) + 1 by omega, Divstep.W32.invRun]
+    · rw [show 20 - (j - 1) = (20 - j) + 1 by omega_using [hj, hj20], Divstep.W32.invRun]
       exact Iz
     · exact (Ou.trans Oz).mono (by
         intro w hw

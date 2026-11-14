@@ -33,14 +33,14 @@ theorem ilayer1_get (W : Poly) {j : Nat} (hj : j < 256) :
     (nttInvLayer W 1)[j]! = if j % 2 = 0 then W[j]! + W[j + 1]!
       else zetas (255 - j / 2) * (W[j]! - W[j - 1]!) := by
   have h := layF1_get nttInvBlk_ok W (fun c => 255 - c) (b := 128) (by decide) hj
-  rw [ite_eq_left (by omega)] at h
+  rw [ite_eq_left (by omega_using [hj])] at h
   exact h
 
 theorem ilayer2_get (W : Poly) {j : Nat} (hj : j < 256) :
     (nttInvLayer W 2)[j]! = if j % 4 < 2 then W[j]! + W[j + 2]!
       else zetas (127 - j / 4) * (W[j]! - W[j - 2]!) := by
   have h := layF2_get nttInvBlk_ok W (fun c => 127 - c) (b := 64) (by decide) hj
-  rw [ite_eq_left (by omega)] at h
+  rw [ite_eq_left (by omega_using [hj])] at h
   exact h
 
 /-- The two inverse layers on block `r` of group `g`, from `W`. -/
@@ -58,18 +58,18 @@ theorem ilayers_block (W : Poly) {g r : Nat} (hg : g < 16) (hr : r < 4) :
   intro b L za zb z2
   have hb : b + 3 < 256 := by omega
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [ilayer1_get W (by omega), ite_eq_left (by omega)]
-  · rw [ilayer1_get W (by omega), ite_eq_right (by omega), show 255 - (b + 1) / 2 = 255 - 8 * g - 2 * r by omega,
-      show b + 1 - 1 = b by omega]
-  · rw [ilayer1_get W (by omega), ite_eq_left (by omega), show b + 2 + 1 = b + 3 by omega]
-  · rw [ilayer1_get W (by omega), ite_eq_right (by omega), show 255 - (b + 3) / 2 = 254 - 8 * g - 2 * r by omega,
-      show b + 3 - 1 = b + 2 by omega]
-  · rw [ilayer2_get L (by omega), ite_eq_left (by omega)]
-  · rw [ilayer2_get L (by omega), ite_eq_left (by omega), show b + 1 + 2 = b + 3 by omega]
-  · rw [ilayer2_get L (by omega), ite_eq_right (by omega), show 127 - (b + 2) / 4 = 127 - 4 * g - r by omega,
-      show b + 2 - 2 = b by omega]
-  · rw [ilayer2_get L (by omega), ite_eq_right (by omega), show 127 - (b + 3) / 4 = 127 - 4 * g - r by omega,
-      show b + 3 - 2 = b + 1 by omega]
+  · rw [ilayer1_get W (by omega_using [hb]), ite_eq_left (by omega_using [])]
+  · rw [ilayer1_get W (by omega_using [hb]), ite_eq_right (by omega_using []), show 255 - (b + 1) / 2 = 255 - 8 * g - 2 * r by omega_using [],
+      show b + 1 - 1 = b by omega_using []]
+  · rw [ilayer1_get W (by omega_using [hb]), ite_eq_left (by omega_using []), show b + 2 + 1 = b + 3 by omega_using []]
+  · rw [ilayer1_get W (by omega_using [hb]), ite_eq_right (by omega_using []), show 255 - (b + 3) / 2 = 254 - 8 * g - 2 * r by omega_using [],
+      show b + 3 - 1 = b + 2 by omega_using []]
+  · rw [ilayer2_get L (by omega_using [hb]), ite_eq_left (by omega_using [])]
+  · rw [ilayer2_get L (by omega_using [hb]), ite_eq_left (by omega_using []), show b + 1 + 2 = b + 3 by omega_using []]
+  · rw [ilayer2_get L (by omega_using [hb]), ite_eq_right (by omega_using []), show 127 - (b + 2) / 4 = 127 - 4 * g - r by omega_using [],
+      show b + 2 - 2 = b by omega_using []]
+  · rw [ilayer2_get L (by omega_using [hb]), ite_eq_right (by omega_using []), show 127 - (b + 3) / 4 = 127 - 4 * g - r by omega_using [],
+      show b + 3 - 2 = b + 1 by omega_using []]
 
 /-! ## A group's arithmetic -/
 
@@ -98,19 +98,19 @@ theorem iGroupBody_eq : iGroupBody = loads4 ++ (icore ++ stores4) := by
 
 theorem invK_even {g e : Nat} (hg : g < 16) (he : e < 4) :
     zeta (invK (128 + 8 * g + swap1 e)) = (zetas (255 - 8 * g - 2 * e)).val := by
-  rw [invK, ite_eq_right (by omega), ite_eq_right (by omega), scrK_even hg he,
-    show 383 - (128 + 8 * g + 2 * e) = 255 - 8 * g - 2 * e by omega, zeta_eq]
+  rw [invK, ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), scrK_even hg he,
+    show 383 - (128 + 8 * g + 2 * e) = 255 - 8 * g - 2 * e by omega_using [], zeta_eq]
 
 theorem invK_odd {g e : Nat} (hg : g < 16) (he : e < 4) :
     zeta (invK (132 + 8 * g + swap1 e)) = (zetas (254 - 8 * g - 2 * e)).val := by
-  rw [invK, ite_eq_right (by omega), ite_eq_right (by omega), scrK_odd hg he,
-    show 383 - (128 + 8 * g + 2 * e + 1) = 254 - 8 * g - 2 * e by omega, zeta_eq]
+  rw [invK, ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), scrK_odd hg he,
+    show 383 - (128 + 8 * g + 2 * e + 1) = 254 - 8 * g - 2 * e by omega_using [], zeta_eq]
 
 theorem invK_two {g e : Nat} (hg : g < 16) (he : e < 4) :
     zeta (invK (64 + 4 * g + swap1 e)) = (zetas (127 - 4 * g - e)).val := by
   have := flip_lt he
-  rw [invK, ite_eq_right (by omega), ite_eq_left (by omega), scrK_two hg he,
-    show 191 - (64 + 4 * g + e) = 127 - 4 * g - e by omega, zeta_eq]
+  rw [invK, ite_eq_right (by omega_using []), ite_eq_left (by omega_using [hg, this]), scrK_two hg he,
+    show 191 - (64 + 4 * g + e) = 127 - 4 * g - e by omega_using [], zeta_eq]
 
 theorem icore_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : ICEnv s₀ u) {g : Nat} (hg : g < 16)
     (h6 : u.gpr .r6 = S s₀ + BitVec.ofNat 64 (4 * (64 + 4 * g)))
@@ -132,7 +132,7 @@ theorem icore_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : ICEnv s₀ u)
   simp only [tv, Nat.reduceXor, Nat.add_zero] at L9 L8 L11 L10
   -- `len = 1`, the even pairs
   rw [WP.block_append_iff]
-  refine WP.mono (zl_run hp u₁ c₁ (a := .r7) (b := .r9) (by decide) (P := 128 + 8 * g) (by omega) (by omega)
+  refine WP.mono (zl_run hp u₁ c₁ (a := .r7) (b := .r9) (by decide) (P := 128 + 8 * g) (by omega_using []) (by omega_using [hg])
     (by rw [vo₁.gpr, h7, h9, BitVec.add_zero]) (z := fun r => zetas (255 - 8 * g - 2 * r))
     fun e he => invK_even hg he) fun u₂ ⟨Z₂, P₂, f₂⟩ => ?_
   have c₂ : ICEnv s₀ u₂ := c₁.fr f₂ (by decide)
@@ -145,9 +145,9 @@ theorem icore_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : ICEnv s₀ u)
   have g₃ : ∀ r, u₃.gpr r = u.gpr r := fun r => by rw [f₃.g _ (by simp), f₂.g _ (by simp), vo₁.gpr]
   -- `len = 1`, the odd pairs
   rw [WP.block_append_iff]
-  refine WP.mono (zl_run hp u₃ c₃ (a := .r7) (b := .r8) (by decide) (P := 132 + 8 * g) (by omega) (by omega)
+  refine WP.mono (zl_run hp u₃ c₃ (a := .r7) (b := .r8) (by decide) (P := 132 + 8 * g) (by omega_using []) (by omega_using [hg])
     (by rw [g₃, g₃, h7, h8, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 4 * (128 + 8 * g) + 16 = 4 * (132 + 8 * g) by omega])
+      show 4 * (128 + 8 * g) + 16 = 4 * (132 + 8 * g) by omega_using []])
     (z := fun r => zetas (254 - 8 * g - 2 * r)) fun e he => invK_odd hg he) fun u₄ ⟨Z₄, P₄, f₄⟩ => ?_
   have c₄ : ICEnv s₀ u₄ := c₃.fr f₄ (by decide)
   rw [WP.block_append_iff]
@@ -160,7 +160,7 @@ theorem icore_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : ICEnv s₀ u)
   have g₅ : ∀ r, u₅.gpr r = u.gpr r := fun r => by rw [f₅.g _ (by simp), f₄.g _ (by simp), g₃]
   -- `len = 2`
   rw [WP.block_append_iff]
-  refine WP.mono (zl_run hp u₅ c₅ (a := .r6) (b := .r9) (by decide) (P := 64 + 4 * g) (by omega) (by omega)
+  refine WP.mono (zl_run hp u₅ c₅ (a := .r6) (b := .r9) (by decide) (P := 64 + 4 * g) (by omega_using []) (by omega_using [hg])
     (by rw [g₅, g₅, h6, h9, BitVec.add_zero]) (z := fun r => zetas (127 - 4 * g - r))
     fun e he => invK_two hg he) fun u₆ ⟨Z₆, P₆, f₆⟩ => ?_
   have c₆ : ICEnv s₀ u₆ := c₅.fr f₆ (by decide)
@@ -171,11 +171,11 @@ theorem icore_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : ICEnv s₀ u)
   have r6₇ : u₇.gpr .r6 = S s₀ + BitVec.ofNat 64 (4 * (64 + 4 * (g + 1))) := by
     rw [← hu₇]; simp only [State.write, reduceCtorEq, ite_false, ite_true]
     rw [f₆.g _ (by simp), g₅, h6, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 4 * (64 + 4 * g) + 16 = 4 * (64 + 4 * (g + 1)) by omega]
+      show 4 * (64 + 4 * g) + 16 = 4 * (64 + 4 * (g + 1)) by omega_using []]
   have r7₇ : u₇.gpr .r7 = S s₀ + BitVec.ofNat 64 (4 * (128 + 8 * (g + 1))) := by
     rw [← hu₇]; simp only [State.write, reduceCtorEq, ite_false, ite_true]
     rw [f₆.g _ (by simp), g₅, h7, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 4 * (128 + 8 * g) + 32 = 4 * (128 + 8 * (g + 1)) by omega]
+      show 4 * (128 + 8 * g) + 32 = 4 * (128 + 8 * (g + 1)) by omega_using []]
   have c₇ : ICEnv s₀ u₇ := c₆.fr f₇ (by simp)
   rw [WP.block_append_iff]
   refine WP.mono (ibfly_exec u₇ (.inr (.inl ⟨rfl, rfl⟩))) fun u₈ ⟨a₈, b₈, vo₈, sy₈⟩ => ?_
@@ -204,7 +204,7 @@ theorem icore_run {s₀ : State} (hp : Pre s₀) (u : State) (hc : ICEnv s₀ u)
   refine ⟨fun r hr e he => ?_, ?_, ?_, ?_⟩
   · obtain ⟨e0, e1, e2, e3, t0, t1, t2, t3⟩ := ilayers_block W hg hr
     rw [l₁₀ r hr e he]
-    rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [he] : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
       simp only [tv, Nat.reduceXor]
     · rw [M8 r hr, t1, e1, e3]
     · rw [P9 r hr, Nat.add_zero, t0, e0, e2]
@@ -250,14 +250,14 @@ theorem igroup_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 
   have e32 : coeffAddr (F s₀) (16 * g) + 32#64 = coeffAddr (F s₀) (16 * g + 8) := ea 8
   have e48 : coeffAddr (F s₀) (16 * g) + 48#64 = coeffAddr (F s₀) (16 * g + 12) := ea 12
   rw [iGroupBody_eq, WP.block_append_iff]
-  refine WP.mono (loads4_run s h.r5 h.r9 h.r8 h.r11 h.r12 (h.env.inR hp (by omega))
-    (by rw [e16]; exact h.env.inR hp (by omega)) (by rw [e32]; exact h.env.inR hp (by omega))
-    (by rw [e48]; exact h.env.inR hp (by omega))) fun u₁ ⟨l₁, f₁⟩ => ?_
+  refine WP.mono (loads4_run s h.r5 h.r9 h.r8 h.r11 h.r12 (h.env.inR hp (by omega_using [hg]))
+    (by rw [e16]; exact h.env.inR hp (by omega_using [hg])) (by rw [e32]; exact h.env.inR hp (by omega_using [hg]))
+    (by rw [e48]; exact h.env.inR hp (by omega_using [hg]))) fun u₁ ⟨l₁, f₁⟩ => ?_
   have c₁ : ICEnv s₀ u₁ := (CEnvK.of_env h.env).fr f₁ (by decide)
   have hin : ∀ r < 4, Lanes (u₁.vpr (tv r)) (fun e => W[16 * g + 4 * r + (e ^^^ 1)]!) := fun r hr e he => by
     have hx := xor1_lt he
-    rw [l₁ r hr, show 16 * r = 4 * (4 * r) by omega, ea, vword_loadC _ _ _ he, polyIs_toNat h.poly (by show _ < 256; omega),
-      imix_get _ _ (by omega), ite_eq_right (by omega)]
+    rw [l₁ r hr, show 16 * r = 4 * (4 * r) by omega_using [], ea, vword_loadC _ _ _ he, polyIs_toNat h.poly (by show _ < 256; omega_using [hg, hr, hx]),
+      imix_get _ _ (by omega_using [hg, hr, hx]), ite_eq_right (by omega_using [])]
   rw [WP.block_append_iff]
   refine WP.mono (icore_run hp u₁ c₁ hg (by rw [f₁.g _ (by simp)]; exact h.r6) (by rw [f₁.g _ (by simp)]; exact h.r7)
     (by rw [f₁.g _ (by simp)]; exact h.r8) (by rw [f₁.g _ (by simp)]; exact h.r9) hin)
@@ -266,10 +266,10 @@ theorem igroup_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 
     rw [f₂.g r hr, f₁.g r (by simp)]
   refine WP.mono (stores4_run u₂ (x := coeffAddr (F s₀) (16 * g)) (by rw [g₂ _ (by decide), h.r5])
     (by rw [g₂ _ (by decide), h.r9]) (by rw [g₂ _ (by decide), h.r8]) (by rw [g₂ _ (by decide), h.r11])
-    (by rw [g₂ _ (by decide), h.r12]) (by rw [f₂.wr, f₁.wr]; exact h.env.inW hp (by omega))
-    (by rw [f₂.wr, f₁.wr, e16]; exact h.env.inW hp (by omega))
-    (by rw [f₂.wr, f₁.wr, e32]; exact h.env.inW hp (by omega))
-    (by rw [f₂.wr, f₁.wr, e48]; exact h.env.inW hp (by omega)))
+    (by rw [g₂ _ (by decide), h.r12]) (by rw [f₂.wr, f₁.wr]; exact h.env.inW hp (by omega_using [hg]))
+    (by rw [f₂.wr, f₁.wr, e16]; exact h.env.inW hp (by omega_using [hg]))
+    (by rw [f₂.wr, f₁.wr, e32]; exact h.env.inW hp (by omega_using [hg]))
+    (by rw [f₂.wr, f₁.wr, e48]; exact h.env.inW hp (by omega_using [hg])))
     fun u₃ ⟨m₃, r5₃, r10₃, gk₃, v₃, sy₃, rd₃, wr₃, sp₃, lr₃⟩ => ?_
   have hm : u₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   have hv : ∀ r, r ∉ [.v8, .v9, .v10, .v11] ++ coreV → u₃.vpr r = s.vpr r := fun r hr => by
@@ -294,29 +294,29 @@ theorem igroup_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 
     (hg₃ .r12 (by decide) (by decide) (by decide)).trans h.r12, ?_,
     by rw [gk₃ _ (by decide) (by decide), r6₂], by rw [gk₃ _ (by decide) (by decide), r7₂], ?_⟩, ?_⟩
   · rw [m₃, hm, e16, e32, e48]
-    exact (((h.env.frame.write (by simp) _ (vector_contains _ (j := 16 * g) (by omega))).write (by simp) _
-      (vector_contains _ (j := 16 * g + 4) (by omega))).write (by simp) _
-      (vector_contains _ (j := 16 * g + 8) (by omega))).write (by simp) _
-      (vector_contains _ (j := 16 * g + 12) (by omega))
+    exact (((h.env.frame.write (by simp) _ (vector_contains _ (j := 16 * g) (by omega_using [hg]))).write (by simp) _
+      (vector_contains _ (j := 16 * g + 4) (by omega_using [hg]))).write (by simp) _
+      (vector_contains _ (j := 16 * g + 8) (by omega_using [hg]))).write (by simp) _
+      (vector_contains _ (j := 16 * g + 12) (by omega_using [hg]))
   · rw [m₃, hm, e16, e32, e48]
     exact tab_write hp (j := 16 * g + 12) (tab_write hp (j := 16 * g + 8) (tab_write hp (j := 16 * g + 4)
-      (tab_write hp (j := 16 * g) h.env.tab (by omega) _) (by omega) _) (by omega) _) (by omega) _
+      (tab_write hp (j := 16 * g) h.env.tab (by omega_using [hg]) _) (by omega_using [hg]) _) (by omega_using [hg]) _) (by omega_using [hg]) _
   · rw [r5₃, show (64 : BitVec 64) = BitVec.ofNat 64 (4 * 16) from rfl, ea]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
   · rw [r10₃, g₂10, h.r10]; exact count_sub hg
   · rw [m₃, hm]
-    refine polyIs_store4 (x := fun r => u₂.vpr (tv r)) h.poly (by omega) (fun r hr e he => ?_) (fun i hi hn => ?_)
-    · rw [imix_get _ _ (by have := xor1_lt he; omega), ite_eq_left (by have := xor1_lt he; omega)]
+    refine polyIs_store4 (x := fun r => u₂.vpr (tv r)) h.poly (by omega_using [hg]) (fun r hr e he => ?_) (fun i hi hn => ?_)
+    · rw [imix_get _ _ (by have := xor1_lt he; omega_using [hg, hr, this]), ite_eq_left (by have := xor1_lt he; omega_using [hr, this])]
       exact l₂ r hr e he
     · rw [imix_get _ _ hi, imix_get _ _ hi]
       by_cases hi' : i < 16 * g
-      · rw [ite_eq_left (by omega), ite_eq_left hi']
-      · rw [ite_eq_right (by omega), ite_eq_right hi']
+      · rw [ite_eq_left (by omega_using [hi']), ite_eq_left hi']
+      · rw [ite_eq_right (by omega_using [hn, hi']), ite_eq_right hi']
   · rw [r10₃, g₂10, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
     exact count_nz hg (by decide)
 
 theorem imix_zero (W : Poly) : imix 0 W = W :=
-  VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by rw [imix_get _ _ hi, ite_eq_right (by omega)]
+  VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by rw [imix_get _ _ hi, ite_eq_right (by omega_using [])]
 
 theorem imix_sixteen (W : Poly) : imix 16 W = nttInvLayer (nttInvLayer W 1) 2 :=
   VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by rw [imix_get _ _ hi, ite_eq_left (by show i < 256; exact hi)]
@@ -366,7 +366,7 @@ structure SclInv (s₀ : State) (W : Poly) (g : Nat) (s : State) : Prop where
   poly : PolyIs s.mem (F s₀) (smix g W)
 
 theorem tv_cases {r : Nat} (hr : r < 4) : tv r = .v8 ∨ tv r = .v9 ∨ tv r = .v10 ∨ tv r = .v11 := by
-  rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> simp [tv]
+  rcases (by omega_using [hr] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> simp [tv]
 
 /-- `smul` of one of `v8 … v11`, the lanes of the others and of `v2 … v5` kept. -/
 theorem smul_run {s₀ u : State} (hc : ICEnv s₀ u) {a : VReg} (ha : a = .v8 ∨ a = .v9 ∨ a = .v10 ∨ a = .v11)
@@ -389,14 +389,14 @@ theorem sgroup_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 
   unfold scaleBody
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loads4_run s h.r5 h.r9 h.r8 h.r11 h.r12 (h.env.inR hp (by omega))
-    (by rw [e16]; exact h.env.inR hp (by omega)) (by rw [e32]; exact h.env.inR hp (by omega))
-    (by rw [e48]; exact h.env.inR hp (by omega))) fun u₁ ⟨l₁, f₁⟩ => ?_
+  refine WP.mono (loads4_run s h.r5 h.r9 h.r8 h.r11 h.r12 (h.env.inR hp (by omega_using [hg]))
+    (by rw [e16]; exact h.env.inR hp (by omega_using [hg])) (by rw [e32]; exact h.env.inR hp (by omega_using [hg]))
+    (by rw [e48]; exact h.env.inR hp (by omega_using [hg]))) fun u₁ ⟨l₁, f₁⟩ => ?_
   have c₁ : ICEnv s₀ u₁ := (CEnvK.of_env h.env).fr f₁ (by decide)
   have hin : ∀ r < 4, Lanes (u₁.vpr (tv r)) (fun e => W[16 * g + 4 * r + (e ^^^ 1)]!) := fun r hr e he => by
     have hx := xor1_lt he
-    rw [l₁ r hr, show 16 * r = 4 * (4 * r) by omega, ea, vword_loadC _ _ _ he, polyIs_toNat h.poly (by show _ < 256; omega),
-      smix_get _ _ (by omega), ite_eq_right (by omega)]
+    rw [l₁ r hr, show 16 * r = 4 * (4 * r) by omega_using [], ea, vword_loadC _ _ _ he, polyIs_toNat h.poly (by show _ < 256; omega_using [hg, hr, hx]),
+      smix_get _ _ (by omega_using [hg, hr, hx]), ite_eq_right (by omega_using [])]
   have k2 : ∀ i < 4, (vword (u₁.vpr .v2) i).toNat = (8347681 : Zq).val := by
     rw [f₁.v _ (by decide)]; exact h.v2
   have k3 : ∀ i < 4, (vword (u₁.vpr .v3) i).toNat = (8347681 : Zq).val * 2 ^ 32 / Spec.MlDsa.q := by
@@ -424,7 +424,7 @@ theorem sgroup_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 
       (f₄.mono (by decide) (by simp))).trans' (f₅.mono (by decide) (by simp))
   have out : ∀ r < 4, Lanes (u₅.vpr (tv r)) (fun e => W[16 * g + 4 * r + (e ^^^ 1)]! * 8347681) := by
     intro r hr
-    rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> simp only [tv]
+    rcases (by omega_using [hr] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> simp only [tv]
     · rw [f₅.v _ (by decide), f₄.v _ (by decide), f₃.v _ (by decide)]; exact S8
     · rw [f₅.v _ (by decide), f₄.v _ (by decide)]; exact S9
     · rw [f₅.v _ (by decide)]; exact S10
@@ -432,10 +432,10 @@ theorem sgroup_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 
   have g₅ : ∀ r, u₅.gpr r = s.gpr r := fun r => by rw [f₂₅.g _ (by simp), f₁.g _ (by simp)]
   refine WP.mono (stores4_run u₅ (x := coeffAddr (F s₀) (16 * g)) (by rw [g₅, h.r5])
     (by rw [g₅, h.r9]) (by rw [g₅, h.r8]) (by rw [g₅, h.r11])
-    (by rw [g₅, h.r12]) (by rw [f₂₅.wr, f₁.wr]; exact h.env.inW hp (by omega))
-    (by rw [f₂₅.wr, f₁.wr, e16]; exact h.env.inW hp (by omega))
-    (by rw [f₂₅.wr, f₁.wr, e32]; exact h.env.inW hp (by omega))
-    (by rw [f₂₅.wr, f₁.wr, e48]; exact h.env.inW hp (by omega)))
+    (by rw [g₅, h.r12]) (by rw [f₂₅.wr, f₁.wr]; exact h.env.inW hp (by omega_using [hg]))
+    (by rw [f₂₅.wr, f₁.wr, e16]; exact h.env.inW hp (by omega_using [hg]))
+    (by rw [f₂₅.wr, f₁.wr, e32]; exact h.env.inW hp (by omega_using [hg]))
+    (by rw [f₂₅.wr, f₁.wr, e48]; exact h.env.inW hp (by omega_using [hg])))
     fun u₆ ⟨m₆, r5₆, r10₆, gk₆, v₆, sy₆, rd₆, wr₆, sp₆, lr₆⟩ => ?_
   have hm : u₅.mem = s.mem := by rw [f₂₅.mem, f₁.mem]
   have hv : ∀ r, r ∉ [.v8, .v9, .v10, .v11] ++ [.v8, .v9, .v10, .v11, .v6, .v7] → u₆.vpr r = s.vpr r :=
@@ -455,29 +455,29 @@ theorem sgroup_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 
     (hg₆ .r12 (by decide) (by decide)).trans h.r12, ?_,
     by rw [hv .v2 (by decide)]; exact h.v2, by rw [hv .v3 (by decide)]; exact h.v3, ?_⟩, ?_⟩
   · rw [m₆, hm, e16, e32, e48]
-    exact (((h.env.frame.write (by simp) _ (vector_contains _ (j := 16 * g) (by omega))).write (by simp) _
-      (vector_contains _ (j := 16 * g + 4) (by omega))).write (by simp) _
-      (vector_contains _ (j := 16 * g + 8) (by omega))).write (by simp) _
-      (vector_contains _ (j := 16 * g + 12) (by omega))
+    exact (((h.env.frame.write (by simp) _ (vector_contains _ (j := 16 * g) (by omega_using [hg]))).write (by simp) _
+      (vector_contains _ (j := 16 * g + 4) (by omega_using [hg]))).write (by simp) _
+      (vector_contains _ (j := 16 * g + 8) (by omega_using [hg]))).write (by simp) _
+      (vector_contains _ (j := 16 * g + 12) (by omega_using [hg]))
   · rw [m₆, hm, e16, e32, e48]
     exact tab_write hp (j := 16 * g + 12) (tab_write hp (j := 16 * g + 8) (tab_write hp (j := 16 * g + 4)
-      (tab_write hp (j := 16 * g) h.env.tab (by omega) _) (by omega) _) (by omega) _) (by omega) _
+      (tab_write hp (j := 16 * g) h.env.tab (by omega_using [hg]) _) (by omega_using [hg]) _) (by omega_using [hg]) _) (by omega_using [hg]) _
   · rw [r5₆, show (64 : BitVec 64) = BitVec.ofNat 64 (4 * 16) from rfl, ea]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
   · rw [r10₆, g₅, h.r10]; exact count_sub hg
   · rw [m₆, hm]
-    refine polyIs_store4 (x := fun r => u₅.vpr (tv r)) h.poly (by omega) (fun r hr e he => ?_) (fun i hi hn => ?_)
-    · rw [smix_get _ _ (by have := xor1_lt he; omega), ite_eq_left (by have := xor1_lt he; omega)]
+    refine polyIs_store4 (x := fun r => u₅.vpr (tv r)) h.poly (by omega_using [hg]) (fun r hr e he => ?_) (fun i hi hn => ?_)
+    · rw [smix_get _ _ (by have := xor1_lt he; omega_using [hg, hr, this]), ite_eq_left (by have := xor1_lt he; omega_using [hr, this])]
       exact out r hr e he
     · rw [smix_get _ _ hi, smix_get _ _ hi]
       by_cases hi' : i < 16 * g
-      · rw [ite_eq_left (by omega), ite_eq_left hi']
-      · rw [ite_eq_right (by omega), ite_eq_right hi']
+      · rw [ite_eq_left (by omega_using [hi']), ite_eq_left hi']
+      · rw [ite_eq_right (by omega_using [hn, hi']), ite_eq_right hi']
   · rw [r10₆, g₅, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
     exact count_nz hg (by decide)
 
 theorem smix_zero (W : Poly) : smix 0 W = W :=
-  VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by rw [smix_get _ _ hi, ite_eq_right (by omega)]
+  VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by rw [smix_get _ _ hi, ite_eq_right (by omega_using [])]
 
 theorem smix_sixteen (W : Poly) : smix 16 W = W.map (· * 8347681) :=
   VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by

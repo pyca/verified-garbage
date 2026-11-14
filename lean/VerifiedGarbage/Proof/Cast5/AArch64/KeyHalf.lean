@@ -49,26 +49,26 @@ theorem half_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Ca
   refine WP.seq (WP.mono (groupQ_ok h .z gZ) fun u1 ⟨h1, s1, k1⟩ => ?_)
   rw [runQ_z] at h1
   have g2 := groupK_ok h1 gA (b := 0) (hh := hh) (by decide) (by rw [kd k1, hdx]) (by rw [hlen]; rfl)
-    (by omega)
+    (by omega_using [hlen, hle])
   rw [storeKey_zero] at g2
   refine WP.seq (WP.mono g2 fun u2 ⟨h2, s2, k2⟩ => ?_)
   refine WP.seq (WP.mono (groupQ_ok h2 .x gX) fun u3 ⟨h3, s3, k3⟩ => ?_)
   rw [runQ_x] at h3
   have g4 := groupK_ok h3 gB (b := 4) (hh := hh) (by decide) (by rw [kd k3, kd k2, kd k1, hdx])
-    (by rw [List.length_append, hlen, l4]) (by rw [List.length_append, hlen, l4]; omega)
+    (by rw [List.length_append, hlen, l4]) (by rw [List.length_append, hlen, l4]; omega_using [hle])
   refine WP.seq (WP.mono g4 fun u4 ⟨h4, s4, k4⟩ => ?_)
   refine WP.seq (WP.mono (groupQ_ok h4 .z gZ) fun u5 ⟨h5, s5, k5⟩ => ?_)
   rw [runQ_z] at h5
   have g6 := groupK_ok h5 gC (b := 8) (hh := hh) (by decide) (by rw [kd k5, kd k4, kd k3, kd k2, kd k1, hdx])
     (by rw [List.length_append, List.length_append, hlen, l4, l4])
-    (by rw [List.length_append, List.length_append, hlen, l4, l4]; omega)
+    (by rw [List.length_append, List.length_append, hlen, l4, l4]; omega_using [hle])
   refine WP.seq (WP.mono g6 fun u6 ⟨h6, s6, k6⟩ => ?_)
   refine WP.seq (WP.mono (groupQ_ok h6 .x gX) fun u7 ⟨h7, s7, k7⟩ => ?_)
   rw [runQ_x] at h7
   have g8 := groupK_ok h7 gD (b := 12) (hh := hh) (by decide)
     (by rw [kd k7, kd k6, kd k5, kd k4, kd k3, kd k2, kd k1, hdx])
     (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4])
-    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4]; omega)
+    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4]; omega_using [hle])
   refine WP.seq (WP.mono g8 fun u8 ⟨h8, s8, k8⟩ => ?_)
   have k18 := keep_same (keep_same (keep_same (keep_same (keep_same (keep_same (keep_same k1 k2) k3) k4) k5)
     k6) k7) k8

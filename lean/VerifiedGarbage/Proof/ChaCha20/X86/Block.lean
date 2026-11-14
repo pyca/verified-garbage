@@ -285,14 +285,14 @@ variable {s₀ : State} (hp : Pre s₀)
 include hp
 
 theorem eaB {d : Nat} (hd : d < 256) : addr (bp s₀) d = BA s₀ + BitVec.ofNat 64 d :=
-  addr_eq (by have := hp.buf_fits; omega)
+  addr_eq (by have := hp.buf_fits; omega_using [hd, this])
 
 theorem eaS {d : Nat} (hd : d < 64) : addr (st s₀) d = SA s₀ + BitVec.ofNat 64 d :=
-  addr_eq (by have := hp.st_fits; omega)
+  addr_eq (by have := hp.st_fits; omega_using [hd, this])
 
 theorem eaA {d : Nat} (hd : d < 12) :
     addr (esp₀ s₀) d = (esp₀ s₀).setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := hp.esp_fits; omega)
+  addr_eq (by have := hp.esp_fits; omega_using [hd, this])
 
 theorem in_buf {d n : Nat} (h : d + n ≤ 256) (rs : List Region) :
     InRegions (rs ++ s₀.wr) (BA s₀ + BitVec.ofNat 64 d) n :=
@@ -577,7 +577,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.blockX86.pre s₁)
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by lit_omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by lit_omega))]
-    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 := by omega
+    have : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 := by omega_using [hk]
     rcases this with h | h <;> rw [h]
     · exact congrArg _ a0
     · exact congrArg _ a1

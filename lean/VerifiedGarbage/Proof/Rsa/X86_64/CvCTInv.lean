@@ -57,8 +57,8 @@ theorem invQ_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   pin_ct [.rdi] [.rdi, .r12, .r9, .r13] (fun p => nVal p.B (wk p.k) (nOf p.pl p.ql)) pins_GA (by taint_decide)
     (fun p s h => by
       obtain ⟨I, m₀, c, rfl, h', L, -⟩ := h
-      exact WP.mono (nPQ_ok h'.ws h'.args.pl h'.args.ql (by have := L.pl2; have := L.k2; omega)
-        (by have := L.ql2; have := L.k2; omega)) fun t ⟨h12, h9, h13, hdi, _⟩ r hr => by
+      exact WP.mono (nPQ_ok h'.ws h'.args.pl h'.args.ql (by have := L.pl2; have := L.k2; omega_arith)
+        (by have := L.ql2; have := L.k2; omega_arith)) fun t ⟨h12, h9, h13, hdi, _⟩ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact hdi
@@ -69,11 +69,11 @@ theorem invQ_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
     have hn := h'.ws.scr.nowrap
     have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
-      have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega
-    have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
+      have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega_arith
+    have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega_using [this]
     have e16 := slot_lin (wk I.k) 16
-    exact WP.mono (invQ_gen h'.ws hZ26 hw20 h'.args.pl h'.args.ql L.pl1 (by have := L.pl2; unfold wk; omega)
-      (by have := L.ql2; unfold wk; omega)) fun t ⟨_, f, k, _⟩ =>
+    exact WP.mono (invQ_gen h'.ws hZ26 hw20 h'.args.pl h'.args.ql L.pl1 (by have := L.pl2; unfold wk; omega_using [this])
+      (by have := L.ql2; unfold wk; omega_using [this])) fun t ⟨_, f, k, _⟩ =>
       ⟨I, m₀, c, rfl, h'.step f (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
@@ -109,8 +109,8 @@ theorem invQS_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   pin_ct [.rdi] [.rdi, .r12, .r9, .r13] (fun p => nVal p.B (wk p.k) (nOf p.pl p.ql)) pins_GA (by taint_decide)
     (fun p s h => by
       obtain ⟨I, m₀, c, rfl, h', L, -⟩ := h
-      exact WP.mono (nPQ_ok h'.ws h'.args.pl h'.args.ql (by have := L.pl2; have := L.k2; omega)
-        (by have := L.ql2; have := L.k2; omega)) fun t ⟨h12, h9, h13, hdi, _⟩ r hr => by
+      exact WP.mono (nPQ_ok h'.ws h'.args.pl h'.args.ql (by have := L.pl2; have := L.k2; omega_arith)
+        (by have := L.ql2; have := L.k2; omega_arith)) fun t ⟨h12, h9, h13, hdi, _⟩ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact hdi
@@ -120,10 +120,10 @@ theorem invQS_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     ht fun _ _ h => by
     obtain ⟨I, m₀, c, rfl, h', L, O, hm⟩ := h
     have hZ26 : slot (wk I.k) 26 ≤ I.Z := by
-      have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega
-    have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega
-    exact WP.mono (invQS_gen h'.ws hZ26 hw20 h'.args.pl h'.args.ql L.pl1 (by have := L.pl2; unfold wk; omega)
-      (by have := L.ql2; unfold wk; omega)) fun t ⟨_, f, k⟩ => by
+      have := slot_lin (wk I.k) 26; have := L.z; have := L.k1; unfold wk at *; omega_arith
+    have hw20 : wk I.k < 2 ^ 20 := by have := L.k2; unfold wk; omega_using [this]
+    exact WP.mono (invQS_gen h'.ws hZ26 hw20 h'.args.pl h'.args.ql L.pl1 (by have := L.pl2; unfold wk; omega_using [this])
+      (by have := L.ql2; unfold wk; omega_using [this])) fun t ⟨_, f, k⟩ => by
       obtain ⟨ht, hmt, -⟩ := cvInvFrame h' f k L
       exact ⟨I, m₀, c, rfl, ht, L, O, hmt.trans hm⟩
 

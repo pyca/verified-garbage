@@ -167,7 +167,7 @@ theorem Env.seedBytes {σ s : State} (hp : Pre σ) (h : Env σ s) {p : Nat} (hpn
   · intro i hi _
     rw [VG.Proof.MlKem.bytesAt_length] at hi
     rw [VG.Proof.MlKem.bytesAt_getElem,VG.Proof.MlKem.bytesAt_getElem,Offset.add_add]
-    exact h.frame.bytes (R := ⟨σ.gpr .x0,132⟩) (i := 66*p+i) hp.seedSep (by change 132≤2^64; decide) (by change 66*p+i<132; omega)
+    exact h.frame.bytes (R := ⟨σ.gpr .x0,132⟩) (i := 66*p+i) hp.seedSep (by change 132≤2^64; decide) (by change 66*p+i<132; omega_using [hpn, hi])
 
 theorem Env.seedState {σ s : State} (hp : Pre σ) (h : Env σ s) {p : Nat} (hpn : p<2) :
     seedState s.mem (σ.gpr .x0+BitVec.ofNat 64 (66*p))=
@@ -184,7 +184,7 @@ theorem maskInit_ok (σ : State) (hp : Pre σ) :
   intro a ha
   rw [WP.block_append_iff]
   refine WP.mono (zeros_ok ha.base (fun i hi => by
-    rw [ha.wr]; exact ⟨_,hp.scratch,Offset.contains_base _ (by omega) (by omega)⟩)) ?_
+    rw [ha.wr]; exact ⟨_,hp.scratch,Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)) ?_
   intro b ⟨hb,hfb,hzb⟩
   have eb : Env σ b := ha.lowStep hb hfb (by simp) (by
     intro r hr; simp only [List.mem_singleton] at hr; subst r
@@ -243,11 +243,11 @@ theorem sponge_ok (core : Resident.Core) {σ s : State} (hp : Pre σ) (he : Env 
     WP isa (Impl.MlDsa.AArch64.Optimized.Resident.maskPairWith core.code .x23 .x24 .x25 .x19) s (SpongePost σ) := by
   have hw (off len : Nat) (hb : off+len≤8192) :
       InRegions s.wr (σ.gpr .x4+BitVec.ofNat 64 off) len := by
-    rw [he.wr]; exact ⟨_,hp.scratch,Offset.contains_base _ hb (by omega)⟩
+    rw [he.wr]; exact ⟨_,hp.scratch,Offset.contains_base _ hb (by omega_using [hb])⟩
   have hr (off len : Nat) (hb : off+len≤8192) :
       InRegions (s.rd++s.wr) (σ.gpr .x4+BitVec.ofNat 64 off) len := by
     rw [he.rd,he.wr]
-    exact ⟨_,List.mem_append_right _ hp.scratch,Offset.contains_base _ hb (by omega)⟩
+    exact ⟨_,List.mem_append_right _ hp.scratch,Offset.contains_base _ hb (by omega_using [hb])⟩
   have hp0 : (Region.mk (σ.gpr .x4+BitVec.ofNat 64 840) 680).Disjoint (pairR (σ.gpr .x4)) := by
     have hh := Offset.disjoint (σ.gpr .x4) (d := 840) (n := 680) (e := 0) (k := 400)
       (Or.inr (by decide)) (by decide) (by decide)
@@ -261,22 +261,22 @@ theorem sponge_ok (core : Resident.Core) {σ s : State} (hp : Pre σ) (he : Env 
     (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide)
     (Offset.disjoint _ (Or.inl (by decide)) (by decide) (by decide)) hp0 hp1
-    (fun i hi => hr (16*i) 16 (by omega)) (fun i hi => hw (16*i) 16 (by omega))
+    (fun i hi => hr (16*i) 16 (by omega_using [hi])) (fun i hi => hw (16*i) 16 (by omega_using [hi]))
     (fun j hj i hi => by
       change InRegions _ (σ.gpr .x4+BitVec.ofNat 64 840+BitVec.ofNat 64 (136*j)+BitVec.ofNat 64 (16*i)) 16
-      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega))
+      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega_using [hj, hi]))
     (fun j hj i hi => by
       change InRegions _ (σ.gpr .x4+BitVec.ofNat 64 1520+BitVec.ofNat 64 (136*j)+BitVec.ofNat 64 (16*i)) 16
-      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega))
+      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega_using [hj, hi]))
     (fun j hj => by
       change InRegions _ (σ.gpr .x4+BitVec.ofNat 64 840+BitVec.ofNat 64 (136*j)+BitVec.ofNat 64 128) 8
-      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega))
+      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega_using [hj]))
     (fun j hj => by
       change InRegions _ (σ.gpr .x4+BitVec.ofNat 64 1520+BitVec.ofNat 64 (136*j)+BitVec.ofNat 64 128) 8
-      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega))
+      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega_using [hj]))
     (by decide) (by decide) (by decide) (by decide) (by rw [he.base])
-    (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega))
-    (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega))
+    (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega_using [hk]))
+    (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega_using [hk]))
     (Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide))
     (Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide))) ?_
   intro t ht
@@ -310,7 +310,7 @@ theorem pairAccess_ok {σ s : State} {d : Nat} (hp : Pre σ) (he : Env σ s)
   have hr (off len : Nat) (hb : off+len≤8192) :
       InRegions (s.rd++s.wr) (σ.gpr .x4+BitVec.ofNat 64 off) len := by
     rw [he.rd,he.wr]
-    exact ⟨_,List.mem_append_right _ hp.scratch,Offset.contains_base _ hb (by omega)⟩
+    exact ⟨_,List.mem_append_right _ hp.scratch,Offset.contains_base _ hb (by omega_using [hb])⟩
   have hs : ∀ p∈[Reg.x21,.x22],
       (Region.mk (σ.gpr .x4) 8192).Disjoint ⟨s.gpr p,1024⟩ := by
     intro p hp'
@@ -329,25 +329,25 @@ theorem pairAccess_ok {σ s : State} {d : Nat} (hp : Pre σ) (he : Env σ s)
     rw [he.base,Offset.add_add]
     apply hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
-    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega
+    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega_using [hj]
   · intro off hoff j hj
     rw [he.base,Offset.add_add,Offset.add_add]
     apply hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
-    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega
+    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega_using [hj]
   · intro off hoff j hj
     rw [he.base,Offset.add_add,Offset.add_add]
     apply hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
-    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega
+    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega_using [hj]
   · intro p hp' j hj g hg
     rw [Offset.add_add]
-    exact ⟨_,hw p hp',Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_,hw p hp',Offset.contains_base _ (by omega_using [hj, hg]) (by omega_using [hj, hg])⟩
   · intro off hoff p hp'
     rw [he.base]
     refine (hs p hp').sub_left (Offset.sub_base _ ?_)
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hoff
-    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega
+    rcases hoff with rfl | rfl <;> rcases hd with rfl | rfl <;> omega_using []
   · rw [he.out1,he.out2]; exact hp.outputs
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask

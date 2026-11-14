@@ -49,7 +49,7 @@ theorem TblAt.of_far {s t : State} {base T : Addr} (h : TblAt s base T)
     rw [← h.val i hi]
     refine Mem.readW_congr fun b hb => hm _ ?_
     rw [tbl_add T _ _]
-    exact h.far _ (by omega)⟩
+    exact h.far _ (by omega_using [hi, hb])⟩
 
 /-- The tables, from a contract's facts: readable, and apart from the working space at `base`,
 one of the regions `wr`. -/
@@ -60,12 +60,12 @@ theorem CombHeld.tblAt {s : State} {wr : List Region} {base : Addr} (h : CombHel
   rw [combWords_length] at held fit dj hrd
   have hc : Region.Contains ⟨s.syms combSym, 8 * (64 * 96)⟩ (s.syms combSym) (8 * (64 * 96)) := by
     have := Offset.contains_base (s.syms combSym) (d := 0) (n := 8 * (64 * 96)) (k := 8 * (64 * 96))
-      (by omega) (by omega)
+      (by omega_using []) (by omega_using [])
     rwa [BitVec.add_zero] at this
   refine ⟨⟨_, hrd, hc⟩, fun i hi => ?_, fun i hi => ?_⟩
   · refine Nat.le_of_not_lt fun hlt => dj _ hsc _
-      (Offset.contains_base _ (d := i) (n := 1) (k := 8 * (64 * 96)) (by omega) (by omega)) ?_
-    simp only [Region.Contains]; simp only [ofs] at hlt; omega
+      (Offset.contains_base _ (d := i) (n := 1) (k := 8 * (64 * 96)) (by omega_using [hi]) (by omega_using [hi])) ?_
+    simp only [Region.Contains]; simp only [ofs] at hlt; omega_using [hlt]
   · rw [← combWords_getD hi, ← held i hi]
 
 theorem feWord_val (v : Spec.X25519.Fe) :
@@ -112,18 +112,18 @@ theorem cachedAt_eq {e : Env} {a b c : Slot} {q : Spec.Ed25519.Point} (hq : q.T 
 table `j`. -/
 theorem combWord_eq {j c m w : Nat} (hc : c < 3) (hm : m < 8) (hw : w < 4) :
     combWord (96 * j + 32 * c + 4 * m + w) = feWord (coord c (combCached64 j (m + 1))) w := by
-  have e1 : (96 * j + 32 * c + 4 * m + w) / 96 = j := by omega
-  have e2 : (96 * j + 32 * c + 4 * m + w) % 32 / 4 + 1 = m + 1 := by omega
-  have e3 : (96 * j + 32 * c + 4 * m + w) % 4 = w := by omega
-  have e4 : (96 * j + 32 * c + 4 * m + w) % 96 = 32 * c + 4 * m + w := by omega
+  have e1 : (96 * j + 32 * c + 4 * m + w) / 96 = j := by omega_using [hc, hm, hw]
+  have e2 : (96 * j + 32 * c + 4 * m + w) % 32 / 4 + 1 = m + 1 := by omega_using [hm, hw]
+  have e3 : (96 * j + 32 * c + 4 * m + w) % 4 = w := by omega_using [hw]
+  have e4 : (96 * j + 32 * c + 4 * m + w) % 96 = 32 * c + 4 * m + w := by omega_using [hc, hm, hw]
   unfold combWord
   simp only [e1, e2, e3, e4]
   refine congrArg (feWord · w) ?_
-  rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl
-  · simp only [show 32 * 0 + 4 * m + w < 32 from by omega, ite_true]; rfl
-  · simp only [show ¬ 32 * 1 + 4 * m + w < 32 from by omega, show 32 * 1 + 4 * m + w < 64 from by omega,
+  rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl
+  · simp only [show 32 * 0 + 4 * m + w < 32 from by omega_using [hm, hw], ite_true]; rfl
+  · simp only [show ¬ 32 * 1 + 4 * m + w < 32 from by omega_using [], show 32 * 1 + 4 * m + w < 64 from by omega_using [hm, hw],
       ite_true, ite_false]; rfl
-  · simp only [show ¬ 32 * 2 + 4 * m + w < 32 from by omega, show ¬ 32 * 2 + 4 * m + w < 64 from by omega,
+  · simp only [show ¬ 32 * 2 + 4 * m + w < 32 from by omega_using [], show ¬ 32 * 2 + 4 * m + w < 64 from by omega_using [],
       ite_false]; rfl
 
 end VG.Proof.Ed25519.AArch64

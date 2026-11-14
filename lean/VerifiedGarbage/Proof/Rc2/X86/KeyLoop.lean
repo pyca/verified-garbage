@@ -175,7 +175,7 @@ theorem forwardLoop (body : Prog isa) (I : Nat → State → Prop) (stop : Nat)
   · right
     constructor
     · simp only [eval_nonzero, h'.2, he, decide_false, Option.map_some, Bool.not_false]
-    · exact ⟨stop - (j + 1), by omega, j + 1, by omega, rfl, h'.1⟩
+    · exact ⟨stop - (j + 1), by omega_using [hj, hn], j + 1, by omega_using [hj, he], rfl, h'.1⟩
 
 /-- Across a key-expansion loop only the four temporaries and the schedule
 buffer change. The key, scratch saves, and return address are separate. -/
@@ -201,7 +201,7 @@ theorem KeyFrame.step {s₀ s s' : State} (h : KeyFrame s₀ s) (i : Nat) (hi : 
   refine ⟨fun r hr => (keep.reg r hr).trans (h.reg r hr), keep.rd.trans h.rd,
     keep.wr.trans h.wr, ?_⟩
   rw [keep.mem]
-  exact h.mem.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  exact h.mem.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
 
 theorem KeyFrame.keep {s₀ s s' : State} (h : KeyFrame s₀ s) (keep : Keep keyTemps s s') :
     KeyFrame s₀ s' := by

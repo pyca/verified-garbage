@@ -66,7 +66,7 @@ theorem add_off (p : Addr) (o j : Nat) :
 theorem movw_ofNat {n : Nat} (h : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 32 = BitVec.ofNat 32 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- `d ← scratch + o`, with `scratch` in `r11`. -/
 theorem scrAt_ok {d : Reg} {o : Nat} (ho : o < 2 ^ 16) {s : State} {rest : List Instr} {Q : State → Prop}
@@ -186,7 +186,7 @@ theorem wordsBytes_length (ws : List (BitVec 32)) : (wordsBytes ws).length = 4 *
   | nil => rfl
   | cons w ws ih =>
     simp only [wordsBytes, List.flatMap_cons, List.length_append, MdStream.bytes32_length] at ih ⊢
-    rw [ih, List.length_cons]; omega
+    rw [ih, List.length_cons]; omega_using []
 
 theorem movw_movt' (x : BitVec 32) :
     (x.extractLsb' 16 16 ++ ((x.extractLsb' 0 16).setWidth 32).extractLsb' 0 16 : BitVec 32) = x :=
@@ -327,7 +327,7 @@ theorem blockAt_eq {B N L D : Nat} {md : Md B N L} {m : Mem} {p : Addr} (hD : D 
   simp only [Md.blockAt, Md.tailBlock]
   refine md.parse_congr fun k hk => ?_
   have e := bytesAt_add m p D (B - D)
-  rw [h, show D + (B - D) = B by omega] at e
+  rw [h, show D + (B - D) = B by omega_using [hD]] at e
   rw [← e, bytesAt_getD' _ _ hk]
 
 end VG.Proof.Pbkdf2.Md.Arm

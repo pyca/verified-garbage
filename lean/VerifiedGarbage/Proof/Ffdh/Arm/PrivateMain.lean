@@ -39,7 +39,7 @@ theorem privateMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : List
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (prepareAtWrites p s) m m' :=
     f.mono (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact List.mem_cons_self)
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   rw [VG.Impl.Ffdh.Arm.Domain.CheckPrivate.main, WP.seq_iff]
   refine WP.mono (prepareAt_ok s 24 h stable h24 h32 h0 h.pBytes p.pLength pStack large odd) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
@@ -82,7 +82,7 @@ theorem privateMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : List
     refine WP.mono (privatePublic_ok z contextZ stable h28 h32 h36 h40 h44 h56 h60 readyZ
       (by rw [memZ]; exact modW) odd (by rw [memZ]; exact r2W)
       (valueW.after_workspace frameZ restZ) length (scalarW.after_workspace frameZ restZ) positive
-      (by have := p.maxLength; omega) count) ?_
+      (by have := p.maxLength; omega_using [scalarLength, this]) count) ?_
     rintro t ⟨result, frameT⟩
     exact ⟨by rw [privateMainFlag, ite_eq_left valid]; exact result,
       (fullW.trans (extend frameZ)).trans (extend frameT)⟩

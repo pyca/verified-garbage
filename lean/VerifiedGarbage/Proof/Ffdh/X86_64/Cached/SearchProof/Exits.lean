@@ -81,10 +81,10 @@ theorem key_advance_ok {p : KeyPublic} {original s : State} {used keys scalars :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub_of_le (by
       simp only [BitVec.le_def, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]; omega)]
+      rw [Nat.mod_eq_of_lt (by omega_using [hroom, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]; omega_using [hroom])]
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hlen]), Nat.mod_eq_of_lt (by omega_using [hroom, hlen]), Nat.mod_eq_of_lt (by omega_using [hlen])]
+    omega_using []
   have e11 : BitVec.ofNat 64 used + BitVec.ofNat 64 p.len = BitVec.ofNat 64 (used + p.len) := by
     rw [← BitVec.ofNat_add]
   refine WP.keep [.rcx, .rdx, .rsi, .r8] ?_ rfl
@@ -133,23 +133,23 @@ theorem key_zero_outputs {p : KeyPublic} {original s : State} {used keys scalars
   have scr := h.input.control_scr (t := u) hu.wr
   refine WP.seq (WP.mono (controller_zero_out scr hdi (by decide) (sPtr := 5) (sLen := 2) (by decide)
     (by decide) (hu.header (by simp [KeyPublic.headers])) (hu.header (by simp [KeyPublic.headers]))
-    (by omega) (by omega) (h.input.output_x hu.wr)) fun v ⟨hv, hfv, kv⟩ => ?_)
+    (by omega_using [hk]) (by omega_using [hk]) (h.input.output_x hu.wr)) fun v ⟨hv, hfv, kv⟩ => ?_)
   have hvl := zero_live hu hxw hxc hfv kv
   have hdv : v.gpr .rdi = p.control := (kv.gpr (by decide)).trans hdi
   have scr' := h.input.control_scr (t := v) hvl.wr
   refine WP.mono (controller_zero_out scr' hdv (by decide) (sPtr := 6) (sLen := 2) (by decide)
     (by decide) (hvl.header (by simp [KeyPublic.headers])) (hvl.header (by simp [KeyPublic.headers]))
-    (by omega) (by omega) (h.input.output_y hvl.wr)) fun t ⟨ht, hft, kt⟩ => ?_
+    (by omega_using [hk]) (by omega_using [hk]) (h.input.output_y hvl.wr)) fun t ⟨ht, hft, kt⟩ => ?_
   have htl := zero_live hvl hyw hyc hft kt
   have hxy := h.input.xy_disjoint
-  have hk64 : p.len < 2 ^ 64 := by omega
+  have hk64 : p.len < 2 ^ 64 := by omega_using [hk]
   refine ⟨htl, ?_, ?_, ?_⟩
   · refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
     intro b hb
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hb
     have hi' := List.mem_range.mp hi
-    rw [hft _ (fun j hj he => hxy _ (contains_byte _ hi' (by omega)) (by
-      rw [he]; exact contains_byte _ hj (by omega)))]
+    rw [hft _ (fun j hj he => hxy _ (contains_byte _ hi' (by omega_using [hk])) (by
+      rw [he]; exact contains_byte _ hj (by omega_using [hk])))]
     exact hv i hi'
   · refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
     intro b hb

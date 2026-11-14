@@ -53,7 +53,7 @@ theorem scalar_op (op : Op) (hv : Valid op) {v : CState} {s : State} (h : C v s)
     · intro r hr
       simp [State.write, keep r hr d]
   | xorRol d a b n =>
-    have hn : 32 - n.val < 32 := by change 0 < n.val at hv; omega
+    have hn : 32 - n.val < 32 := by change 0 < n.val at hv; omega_using [hv]
     apply WP.of_runBlock
     simp only [↓reduceIte, Nat.reduceLeDiff, and_self, scalarCode, runBlock_cons, runBlock_nil, exec_logic, exec_ror_w hn, isa,
       runStep_some, Option.some.injEq, exists_eq_left',

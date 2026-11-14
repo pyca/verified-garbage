@@ -39,7 +39,7 @@ theorem laneW_eq (s : State) {q i : Nat} (hq : q < 2) :
     laneW s q i = s.mem.readW (wAt (s.gpr .x4) (2 * i + q)) 64 := by
   simp only [laneW, words, vAddr]
   rw [← read16_readW, vdword_read16 _ _ hq, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-    show 16 * i + 8 * q = 8 * (2 * i + q) by omega]
+    show 16 * i + 8 * q = 8 * (2 * i + q) by omega_using []]
 
 /-- Lane `64 q + i` of 128-bit words is lane `i` of their doublewords `q`. -/
 theorem ipLane_dw {W : Nat → BitVec 128} {q i : Nat} (hi : i < 64) :
@@ -162,7 +162,7 @@ theorem batch_ok (d : Direction) {s : State} (h : Room s) (hS : Sched s) :
   refine ⟨fun b hb => ?_, fun r a c e f => by rw [g₄ r f e, g₃ r e a c f], rd₄.trans (q₃.rd.trans rd₁),
     wr₄.trans (q₃.wr.trans wr₁), sp₄.trans (q₃.sp.trans sp₁), ?_⟩
   · have hq : b % 2 < 2 := Nat.mod_lt _ (by decide)
-    have hi : b / 2 < 64 := by omega
+    have hi : b / 2 < 64 := by omega_using [hb]
     have eb : 2 * (b / 2) + b % 2 = b := Nat.div_add_mod b 2
     -- lane 64 q + i before the passes: IP of the block
     have lane₂ : ipLane (words s₂) (64 * (b % 2) + b / 2) =
@@ -183,7 +183,7 @@ theorem batch_ok (d : Direction) {s : State} (h : Room s) (hS : Sched s) :
     rw [word₄, VG.Proof.TripleDes.Bitslice.transpose_out _ _ j hj]
     have e₃ : ipLane (laneW s₃ (b % 2)) (b / 2) = ipLane (words s₃) (64 * (b % 2) + b / 2) :=
       (ipLane_dw hi).symm
-    rw [e₃, ipLane_congr q₃.words, tdeaW_lane _ d _ (by omega), lane₂]
+    rw [e₃, ipLane_congr q₃.words, tdeaW_lane _ d _ (by omega_using [hb]), lane₂]
   · have a : Frame [stateR s] s.mem s₂.mem := f₁
     have b : Frame [stateR s] s₂.mem s₃.mem := by rw [← st₂]; exact q₃.frame
     have c : Frame [stateR s] s₃.mem s₄.mem := by

@@ -136,8 +136,8 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
       exact hmo _ (slot_not_below hst (by
         simp only [Region.Contains]
         rw [show s.gpr .rsp + BitVec.ofNat 64 i - s.gpr .rsp = BitVec.ofNat 64 i by
-          rw [BitVec.add_comm, BitVec.add_sub_cancel], BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-        simp only [Nat.reduceDiv] at hi; omega))
+          rw [BitVec.add_comm, BitVec.add_sub_cancel], BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi])]
+        simp only [Nat.reduceDiv] at hi; omega_using [hi]))
     · rw [finState_other.2.2.2.2.2.1, fixMx_ctl]; exact ha.2.2
     · refine hpost s u _ hs hq (fun x hx => hmo x (outB s hs x hx)) ?_
       rw [finState_rax (hngs _ (by decide))]
@@ -171,7 +171,7 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
       exact ⟨k₁, k₂⟩
     have cH : v ≠ .evex → ∀ w : State, (clearedH v w).ymmH = w.ymmH ∧ (clearedH v w).zmmHiH = w.zmmHiH :=
       fun hne w => by cases v <;> first | exact ⟨rfl, rfl⟩ | exact absurd rfl hne
-    have hdep : c.x86_64Depth < 2 ^ 64 := by omega
+    have hdep : c.x86_64Depth < 2 ^ 64 := by omega_using [hd, hst]
     have f₁ := Exec.stackFrame hsp a₁ hdep
     have f₂ := Exec.stackFrame hsp a₂ hdep
     have cs_ : ∀ r : Reg, r ∉ scratchRegs → r ≠ .rax → r ∈ calleeSaved := by intro r; cases r <;> decide
@@ -238,7 +238,7 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
           exact hres _ _ _ _ _ _ h₁ h₂ hp ho' hun a₁ a₂ x hb hw
       · have nd : ∀ sp : Addr, sp = s₁.gpr .rsp →
             ¬ (⟨sp - BitVec.ofNat 64 c.x86_64Depth, c.x86_64Depth⟩ : Region).Contains x 1 := by
-          rintro sp rfl hc; exact hb (below_sub hd (by omega) x hc)
+          rintro sp rfl hc; exact hb (below_sub hd (by omega_using [hst]) x hc)
         have nw : ∀ r ∈ s₁.wr, ¬ r.Contains x 1 := fun r hr => hx' r (List.mem_append_right _ hr)
         rw [hmo₁ x hb, hmo₂ x (hsp' ▸ hb),
           f₁ x (fun r hr => by

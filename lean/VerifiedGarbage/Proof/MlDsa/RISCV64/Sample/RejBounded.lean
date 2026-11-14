@@ -153,7 +153,7 @@ theorem rbB_two : rbB 2 = 15 := rfl
 
 theorem rbB_four : rbB 4 = 9 := rfl
 
-theorem rbB_le {η : Nat} : rbB η ≤ 15 := by unfold rbB; split <;> omega
+theorem rbB_le {η : Nat} : rbB η ≤ 15 := by unfold rbB; split <;> omega_using []
 
 theorem csub_ten : csub 10 = [.addi .a6 .a6 (-(10 : Nat)), .shift .srl .d .t1 .a6 63, .shift .sll .d .a7 .t1 3,
     .add .a6 .a6 .a7, .shift .sll .d .a7 .t1 1, .add .a6 .a6 .a7] := rfl
@@ -299,7 +299,7 @@ theorem try_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} {L
     have := l.hN
     rw [MlKem.bytesAt_frame hf (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := N) (by omega))).symm) (by omega)]
+      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := N) (by omega_using [this]))).symm) (by omega_using [this])]
     exact l.out
 
 /-! ## An iteration -/
@@ -309,9 +309,9 @@ theorem byte_ok {X : List Byte} {t : Nat} (ht : t < N) {L : List Zq} {s : State}
     InRegions (s.rd ++ s.wr) (s.gpr .a0) 1 ∧ s.mem (s.gpr .a0) = zAt X t := by
   have := h.hN
   rw [h.a0]
-  refine ⟨by rw [← BitVec.add_zero (σ.gpr .a3 + _), ptr_add]; exact inScrRd hp h.env.wr (by omega), ?_⟩
+  refine ⟨by rw [← BitVec.add_zero (σ.gpr .a3 + _), ptr_add]; exact inScrRd hp h.env.wr (by omega_using [ht, this]), ?_⟩
   have := congrArg (fun L => L.getD t 0) h.out
-  rw [MlKem.bytesAt_getD _ _ (by omega), ptr_add] at this
+  rw [MlKem.bytesAt_getD _ _ (by omega_using [ht]), ptr_add] at this
   exact this
 
 omit hp in
@@ -321,7 +321,7 @@ theorem lo_eq (z : Byte) : z.setWidth 64 <<< 60 >>> 60 = BitVec.ofNat 64 (z.toNa
   have := z.isLt
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, toNat_setWidth8, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 omit hp in
 /-- The high half-byte of a byte, as the code computes it. -/
@@ -329,7 +329,7 @@ theorem hi_eq (z : Byte) : z.setWidth 64 >>> 4 = BitVec.ofNat 64 (z.toNat / 16) 
   apply BitVec.eq_of_toNat_eq
   have := z.isLt
   rw [BitVec.toNat_ushiftRight, toNat_setWidth8, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- The load of the byte and its low half-byte. -/
 theorem lo_ok {X : List Byte} {t : Nat} (ht : t < N) {L : List Zq} {s : State} (h : Base N σ X t L s) :
@@ -384,7 +384,7 @@ theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} 
   refine WP.seq (WP.mono (loHalf_ok hp hη ht h) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (try_ok hp hη (Nat.mod_lt _ (by decide)) h2) fun s3 ⟨b3, f5⟩ => ?_)
   refine WP.seq (WP.mono (hiHalf_ok hp hη b3 f5) fun s5 h5 => ?_)
-  exact WP.seq (WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega) h5) fun s6 h6 => hr s6 h6.1)
+  exact WP.seq (WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega_using []) h5) fun s6 h6 => hr s6 h6.1)
 
 /-- The step, to iteration `t + 1`: `a3` zero iff it is the last. -/
 theorem step_ok {X : List Byte} {t : Nat} (ht : t < N) {L : List Zq} {s : State} (h : Base N σ X t L s) :
@@ -406,7 +406,7 @@ theorem step_ok {X : List Byte} {t : Nat} (ht : t < N) {L : List Zq} {s : State}
       (by rintro rfl; exact absurd hr (by decide))) rd wr sp
   · rw [r3, h.a0, ptr_add, Nat.add_assoc]
   · rw [r6, h.a3]; exact count_sub ht
-  · rw [r6, h.a3, count_sub ht]; exact count_nz ht (by have := h.hN; omega)
+  · rw [r6, h.a3, count_sub ht]; exact count_nz ht (by have := h.hN; omega_using [this])
 
 end
 
@@ -420,7 +420,7 @@ theorem take_succ' (L : List Byte) {i : Nat} (h : i < L.length) : L.take (i + 1)
 theorem Lf_succ (η : Nat) {X : List Byte} (hX : X.length = N) {t : Nat} (ht : t < N) :
     Lf η X (t + 1) = rbStep η (Lf η X t) (zAt X t) := by
   simp only [Lf]
-  rw [take_succ' _ (by omega), rbFold_snoc]
+  rw [take_succ' _ (by omega_using [hX, ht]), rbFold_snoc]
 
 /-- An iteration: what `rbStep` does to the coefficients. -/
 theorem body_ok {σ : State} (hp : SpOk (spOf σ) σ) {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte}
@@ -606,7 +606,7 @@ theorem init_ok (hN : N = 272 ∨ N = 544) {s₀ s : State} (h : J6 136 N (spOf 
     rw [e r (n _ (by decide)), g r (n _ (by decide)) (n _ (by decide)) (n _ (by decide)) (n _ (by decide))]
   refine ⟨h.j0.env.regs hp (m'.trans m) gp (k.2.1.trans rd) (k.2.2.trans wr) (sp'.trans sp),
     by rw [m', m, h.out]; exact (H_eq _ _).symm, by rw [e _ (by decide)]; exact g0,
-    by rw [e _ (by decide)]; exact g3, g4, ?_, by omega, (gp _ (by decide)).trans h7,
+    by rw [e _ (by decide)]; exact g3, g4, ?_, by omega_using [hN], (gp _ (by decide)).trans h7,
     (gp _ (by decide)).trans h.j0.s8, (gp _ (by decide)).trans h.j0.s9⟩
   exact ⟨by rw [e _ (by decide), g1]; exact (BitVec.add_zero _).symm, by rw [e _ (by decide)]; exact g2,
     by simp, stored_nil _ _⟩
@@ -616,7 +616,7 @@ theorem loop_ok (hN : N = 272 ∨ N = 544) {η : Nat} (hη : η = 2 ∨ η = 4) 
     (h : J6 136 N (spOf σ) σ s₀ s) (h7 : s.gpr .s7 = σ.gpr .a1) :
     WP isa (rbLoop N η) s (Base N σ (XN N σ) N (Lf η (XN N σ) N)) :=
   WP.seq (WP.mono (init_ok hp hN h h7) fun _ h0 =>
-    wp_loop_nz (fun t s => Base N σ (XN N σ) t (Lf η (XN N σ) t) s) (N := N) (by omega)
+    wp_loop_nz (fun t s => Base N σ (XN N σ) t (Lf η (XN N σ) t) s) (N := N) (by omega_using [hN])
       (fun _ ht _ hs => body_ok hp hη (XN_length N σ) ht hs) (fun _ h => h) h0)
 
 /-- The block of the branch on `η`, which keeps `J6` and `s7`. -/
@@ -647,7 +647,7 @@ theorem sel_ok (hN : N = 272 ∨ N = 544) (hη : etaOf σ = 2 ∨ etaOf σ = 4) 
 theorem rbTry_ok (hN : N = 272 ∨ N = 544) (hη : etaOf σ = 2 ∨ etaOf σ = 4) {s : State}
     (h : J0 (spOf σ) σ s) (h7 : s.gpr .s7 = σ.gpr .a1) :
     WP isa (rbTry N) s (Base N σ (XN N σ) N (Lf (etaOf σ) (XN N σ) N)) :=
-  WP.seq (WP.mono (sponge_ok hp (rate := 136) (outlen := N) (by decide) (by omega) h) fun _ h6 =>
+  WP.seq (WP.mono (sponge_ok hp (rate := 136) (outlen := N) (by decide) (by omega_using [hN]) h) fun _ h6 =>
     sel_ok hp hN hη h6 ((h6.gp .s7 (by decide)).trans h7))
 
 /-- The test of the first try's result: `t0 = j >> 8`. -/
@@ -742,7 +742,7 @@ theorem rbLoop_ct (hN : N = 272 ∨ N = 544) {η : Nat} (hη : η = 2 ∨ η = 4
     (relct_wp (RelCT.block_append (RelCT.seq (R := fun _ _ => True) (Pack.relct_noMem rfl)
       (Pack.relct_noMem (by unfold loadQ Impl.MlDsa.RISCV64.Pack.loadQ VG.Impl.MlDsa.RISCV64.Arith.loadImm; rfl))))
       fun a b ⟨⟨⟨x, ha⟩, e₁⟩, ⟨⟨y, hb⟩, e₂⟩⟩ => ⟨?_, ?_⟩)
-    (loop_ct h.hp₁ h.hp₂ h.sp h.a2 h.a3 hη (XN_length N σ₁) (XN_length N σ₂) ho (by omega))
+    (loop_ct h.hp₁ h.hp₂ h.sp h.a2 h.a3 hη (XN_length N σ₁) (XN_length N σ₂) ho (by omega_using [hN]))
   · rw [Lf_zero]; exact init_ok h.hp₁ hN ha e₁
   · rw [Lf_zero]; exact init_ok h.hp₂ hN hb e₂
 
@@ -759,10 +759,10 @@ theorem rbTry_ct (hN : N = 272 ∨ N = 544) :
   -- the sponge
   refine RelCT.seq (R := fun (a b : State) => ((∃ x, J6 136 N (spOf σ₁) σ₁ x a) ∧ a.gpr .s7 = σ₁.gpr .a1) ∧
       ((∃ y, J6 136 N (spOf σ₁) σ₂ y b) ∧ b.gpr .s7 = σ₂.gpr .a1))
-    (relct_wp (RelCT.mono (sponge_ct hp₁ hp₂' h.sp (rate := 136) (outlen := N) (by decide) (by omega))
+    (relct_wp (RelCT.mono (sponge_ct hp₁ hp₂' h.sp (rate := 136) (outlen := N) (by decide) (by omega_using [hN]))
       (fun a b hab => ⟨hab.1.1, hab.2.1⟩) fun _ _ h => h) fun a b hab =>
-      ⟨WP.mono (sponge_ok hp₁ (by decide) (by omega) hab.1.1) fun _ x => ⟨⟨_, x⟩, (x.gp .s7 (by decide)).trans hab.1.2⟩,
-        WP.mono (sponge_ok hp₂' (by decide) (by omega) hab.2.1) fun _ x =>
+      ⟨WP.mono (sponge_ok hp₁ (by decide) (by omega_using [hN]) hab.1.1) fun _ x => ⟨⟨_, x⟩, (x.gp .s7 (by decide)).trans hab.1.2⟩,
+        WP.mono (sponge_ok hp₂' (by decide) (by omega_using [hN]) hab.2.1) fun _ x =>
           ⟨⟨_, x⟩, (x.gp .s7 (by decide)).trans hab.2.2⟩⟩) ?_
   -- the branch on `η`, and the loop
   refine RelCT.seq (R := fun (a b : State) => ((∃ x, J6 136 N (spOf σ₁) σ₁ x a) ∧

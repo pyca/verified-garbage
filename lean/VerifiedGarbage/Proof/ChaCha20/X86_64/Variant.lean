@@ -313,7 +313,7 @@ theorem wpIn (v : XorImpl) {s : State} {rd wr : List Region}
         (xorStack v.stack).post (s.callEntry.withRegions rd wr) s₂) → Q s') :
     WP isa v.callee.inPlace s Q := by
   have hd := v.depth_le
-  exact wpCallIn (okIn_of_okTo v.ok) v.nosp (by omega) hpre hc hw hQ
+  exact wpCallIn (okIn_of_okTo v.ok) v.nosp (by omega_using [hd]) hpre hc hw hQ
 
 /-- Two runs that call `v` in place (`Callee.inPlace`) with the in-place
 contract's public arguments agreeing: as `RelCT.callEx`. -/
@@ -340,7 +340,7 @@ theorem wpTo (v : XorImpl) {s : State} {rd wr : List Region}
         (xorTo v.stack).post ((toR8 s).callEntry.withRegions rd wr) s₂) → Q s') :
     WP isa (Impl.ChaCha20.X86_64.Xor.callTo v.callee.name v.callee.code) s Q := by
   have hd := v.depth_le
-  exact wpCallTo v.ok v.nosp (by omega) hpre hc hw hQ
+  exact wpCallTo v.ok v.nosp (by omega_using [hd]) hpre hc hw hQ
 
 /-- Two runs that call `v` from a source to a destination (`Xor.callTo`)
 with `xorTo`'s public arguments agreeing: as `RelCT.callEx`. -/

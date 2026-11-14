@@ -80,15 +80,15 @@ theorem varEnv_rel {s : State} (regs : List VReg) :
     obtain ⟨i, hi, rfl⟩ := h
     obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
-    simp only [varVals, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    rw [xorSet_two_pow _ (by omega_using [hlt])]
+    simp only [varVals, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
   slot k a hk h q hq := by
     have hk' : k < 64 := hk
     simp only [varEnv, hk', ite_true, Option.some.injEq] at h
     subst h
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
+    rw [xorSet_two_pow _ (by omega_using [hk'])]
     simp only [varVals, hk', ite_true, laneW, words, stateCfg]
   gc _ _ h := by cases h
 

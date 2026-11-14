@@ -29,12 +29,12 @@ local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 theorem baseDigit_bound (k i:Nat) : -127≤digitAt true k i ∧ digitAt true k i≤127:=by
   have h:=WnafWide.digit_bounds true (residual true k i)
   change (-128:Int)<digitAt true k i ∧ digitAt true k i<128 at h
-  omega
+  omega_using [h]
 
 theorem keyDigit_bound (k i:Nat) : -15≤digitAt false k i ∧ digitAt false k i≤15:=by
   have h:=WnafWide.digit_bounds false (residual false k i)
   change (-16:Int)<digitAt false k i ∧ digitAt false k i<16 at h
-  omega
+  omega_using [h]
 
 structure JointInv (s₀:State) (base:Addr) (P:Spec.Ed448.Point) (S K n:Nat) (s:State) : Prop where
   bound : n≤464
@@ -55,11 +55,11 @@ structure JointInv (s₀:State) (base:Addr) (P:Spec.Ed448.Point) (S K n:Nat) (s:
 theorem jointRound_ok (hA:AffineOk) {s₀ s:State} {base:Addr} {P:Spec.Ed448.Point} {S K i:Nat}
     (h:JointInv s₀ base P S K (i+1) s) :
     WP isa step s fun t => JointInv s₀ base P S K i t ∧ t.gpr .x9=BitVec.ofNat 64 i:=by
-  have hi:i<464:=by have := h.bound;omega
+  have hi:i<464:=by have := h.bound;omega_using [this]
   refine WP.mono_syms (jointStep_ok hA h.core h.tab h.xb h.baseTable hi h.counter
     (baseDigit_bound S i) (keyDigit_bound K i) (h.sd i hi) (h.kd i hi))
     fun t ⟨tc,tk,t19,t9,tp⟩ sy => ?_
-  refine ⟨⟨by omega,tc,t19,tk.mem.oddTable h.tab,tk.mem.xbounds h.xb,?_,?_,?_,?_,?_,?_,?_,?_⟩,t9⟩
+  refine ⟨⟨by omega_using [hi],tc,t19,tk.mem.oddTable h.tab,tk.mem.xbounds h.xb,?_,?_,?_,?_,?_,?_,?_,?_⟩,t9⟩
   · rw [sy]
     exact h.baseTable.of_frame (by rw [tk.regs.2.1,tk.regs.2.2]) tk.mem
   · intro j hj
@@ -89,14 +89,14 @@ theorem jointLoop_ok (hA:AffineOk) {s₀ s:State} {base:Addr} {P:Spec.Ed448.Poin
     (Q:=JointInv s₀ base P S K 0)
     (fun m s => 0<m ∧ JointInv s₀ base P S K m s) ?_ n s ⟨hn,h⟩
   intro m s ⟨hm,h⟩
-  obtain ⟨i,rfl⟩:∃ i,m=i+1:=⟨m-1,by omega⟩
+  obtain ⟨i,rfl⟩:∃ i,m=i+1:=⟨m-1,by omega_using [hm]⟩
   refine WP.mono (jointRound_ok hA h) fun t ⟨ht,t9⟩ => ?_
-  have hi:i<464:=by have := h.bound;omega
+  have hi:i<464:=by have := h.bound;omega_using [this]
   simp only [eval,State.read,BitVec.setWidth_eq,t9,bne,counter_zero i hi]
   by_cases hz:i=0
   · subst i
     exact Or.inl ⟨rfl,ht⟩
-  · refine Or.inr ⟨?_,i,by omega,by omega,ht⟩
+  · refine Or.inr ⟨?_,i,by omega_using [],by omega_using [hz],ht⟩
     simp only [hz,decide_false,Bool.not_false]
 
 end VG.Proof.Ed448.AArch64.Sparse

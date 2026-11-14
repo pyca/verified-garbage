@@ -96,8 +96,8 @@ theorem UPre.of_frame {m : Mem} (hf : Frame [ivR s₀, ⟨S s₀, 2064⟩] (save
 
 theorem UPre.sched {m : Mem} (hf : Frame [ivR s₀, scrR s₀] s₀.mem m) :
     bytesAt m (W s₀) (16 * (R s₀ + 1)) = wK s₀ := by
-  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  refine bytesAt_frame hf (fun r hr => ?_) (by omega_using [hR])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hp.sch_st.sub_left (Region.sub_prefix hR)
@@ -105,7 +105,7 @@ theorem UPre.sched {m : Mem} (hf : Frame [ivR s₀, scrR s₀] s₀.mem m) :
 
 omit hp in
 theorem UPre.blk_sub {k : Nat} (hk : k < N s₀) : Region.Sub ⟨blk s₀ k, 16⟩ (dataR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hk])
 
 theorem UPre.block {m : Mem} (hf : Frame [ivR s₀, scrR s₀] s₀.mem m) {k : Nat} (hk : k < N s₀) :
     bytesAt m (blk s₀ k) 16 = (cblks s₀)[k]'(by simp [Spec.Cmac.blocksAt]; exact hk) := by
@@ -127,7 +127,7 @@ theorem prologue_wp {s₀ : State} (hp : UPre s₀) : WP isa (.block (save ++ se
   · have := saved_bound p hp'
     show InRegions s₀.wr (S s₀ + BitVec.ofNat 64 p.2) 8
     rw [hp.wr]
-    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega))
+    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_using [this]) (by omega_using [this]))
   unfold setup Impl.AesCbc.PPC64LE.mov
   refine wp_mr fun s₁ u₁ => wp_mr fun s₂ u₂ => wp_mr fun s₃ u₃ => wp_mr fun s₄ u₄ =>
     wp_mr fun s₅ u₅ => wp_mr fun s₆ u₆ => wp_nil ?_
@@ -218,9 +218,9 @@ theorem bodyPre_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {
   have hR : s.rd ++ s.wr = [schR s₀, dataR s₀, ivR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have hW : s.wr = [ivR s₀, scrR s₀] := by rw [h.wr, hp.wr]
   have dw := hp.data_wrap
-  have cB0 : (dataR s₀).Contains (blk s₀ k) 8 := Offset.contains_base _ (by omega) (by omega)
+  have cB0 : (dataR s₀).Contains (blk s₀ k) 8 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, dw])
   have cB8 : (dataR s₀).Contains (blk s₀ k + BitVec.ofNat 64 8) 8 := by
-    rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [Offset.add_add]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, dw])
   refine xorInto_wp (P := Iv s₀) (Q := blk s₀ k) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) h.r16 h.r17
     (by rw [hR]; exact in_rw (by simp) AesCbc.PPC64LE.cIv0) (by rw [hR]; exact in_rw (by simp) AesCbc.PPC64LE.cIv8)
@@ -290,9 +290,9 @@ theorem loop_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_using [hk, hz]]
   · right
-    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz], h'⟩
 
 theorem mid_wp {s₀ : State} (hp : UPre s₀) {s₁ : State} (h : UInv s₀ 0 s₁) :
     WP isa (.ite (.zero .d .r18) (.block []) (.loop body (.nonzero .d .r18))) s₁ (UInv s₀ (N s₀)) := by
@@ -303,7 +303,7 @@ theorem mid_wp {s₀ : State} (hp : UPre s₀) {s₁ : State} (h : UInv s₀ 0 s
   · refine WP.ite true (by rw [ev, hn]; rfl) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hp (by omega) h
+    exact loop_ok hp (by omega_using [hn]) h
 
 /-- The postcondition, but for the stack pointer. -/
 def UDone (s₀ s' : State) : Prop :=
@@ -315,18 +315,18 @@ theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s₂ : State} (h₂ : UInv 
   have hsv : Spill.Saved (S s₀) (saveG s₀) saveL s₂.mem :=
     (Spill.saveMem_saved (by decide) _ _ _).frame h₂.frame fun p hp' r hr => by
       have hb := saved_bound p hp'
-      have hsub : Region.Sub ⟨S s₀ + BitVec.ofNat 64 p.2, 8⟩ (scrR s₀) := AesCbc.PPC64LE.UPre.scr_sub (by omega)
+      have hsub : Region.Sub ⟨S s₀ + BitVec.ofNat 64 p.2, 8⟩ (scrR s₀) := AesCbc.PPC64LE.UPre.scr_sub (by omega_using [hb])
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.st_scr.symm.sub_left hsub
-      · exact Offset.disjoint_base _ (by omega) (by have := hp.scr_wrap; omega)
+      · exact Offset.disjoint_base _ (by omega_using [hb]) (by have := hp.scr_wrap; omega_using [hb])
   have hall : (cblks s₀).take (N s₀) = cblks s₀ := List.take_of_length_le (by simp [Spec.Cmac.blocksAt])
   rw [restore_eq]
   refine Spill.restore_ok (b := .r19) (l := saveL) (by decide) h₂.r19 (by decide) (by decide)
     (fun p hp' => ?_) hsv fun s₃ r₃ => ?_
   · have := saved_bound p hp'
     rw [rdwr, hp.rd, hp.wr]
-    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by have := hp.scr_wrap; omega))
+    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_using [this]) (by have := hp.scr_wrap; omega_arith))
   refine WP.cons exec_mtlr (wp_nil ⟨fun r hr => ?_, ?_, ?_⟩)
   · show s₃.gpr r = _
     have h0 : saveG s₀ r = s₀.gpr r := ite_eq_right_iff.mpr fun h => absurd h (preserved_ne_r0 r hr)

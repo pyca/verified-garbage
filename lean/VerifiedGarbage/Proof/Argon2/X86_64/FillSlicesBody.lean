@@ -90,7 +90,7 @@ theorem body_ok [CompressImpl] (s : State) (p : Params) (pass slice : Nat) (h : 
   · intro r hr bx sl ix
     have outside : r ∉ [Reg.r14] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact sl
     exact (keeps.regs r outside).trans (filled.regs r hr bx ix)
-  · rw [flag, added, ReferenceMap.word_nat (slice + 1) (by omega)]
+  · rw [flag, added, ReferenceMap.word_nat (slice + 1) (by omega_using [sliceBound])]
   · intro active
     exact ⟨{ h.parameters with sliceBound := active }, p.lanes, nextHeader⟩
 

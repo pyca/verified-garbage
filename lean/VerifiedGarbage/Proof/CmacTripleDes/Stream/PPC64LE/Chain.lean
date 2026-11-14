@@ -73,9 +73,9 @@ theorem body_step {c t : State} {S W P : Addr} {nb j : Nat} (he : LoopEnv c S W 
   obtain ⟨L, hL, hW⟩ := he.scr
   have hWt : (⟨W, L⟩ : Region) ∈ t.wr := by rw [hI.wr]; exact hW
   have bufIn : (⟨W, L⟩ : Region).Contains (W + BitVec.ofNat 64 512) 8 :=
-    VG.Offset.contains_base _ (show 512 + 8 ≤ L by omega) (by omega)
+    VG.Offset.contains_base _ (show 512 + 8 ≤ L by omega_using [hL]) (by omega_using [])
   have buf520 : (⟨W, 520⟩ : Region).Contains (W + BitVec.ofNat 64 512) (64 / 8) :=
-    VG.Offset.contains_base _ (show 512 + 64 / 8 ≤ 520 by decide) (by omega)
+    VG.Offset.contains_base _ (show 512 + 64 / 8 ≤ 520 by decide) (by omega_using [])
   unfold chainBody
   refine WP.seq ?_
   refine wp_ld (a := W + BitVec.ofNat 64 512) (by decide) (by decide) (by rw [hI.r5]; rfl)
@@ -110,13 +110,13 @@ theorem body_step {c t : State} {S W P : Addr} {nb j : Nat} (he : LoopEnv c S W 
     fun v rdv wrv cv v3 v4 v5 fv outv => ?_
   refine ⟨v3, v4, v5, ?_, ?_, fun r hr h29 h30 => ?_, by rw [rdv, rd₆], by rw [wrv, wr₆], F₆.trans fv, ?_⟩
   · rw [cv _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide),
-      u₁.other _ (by decide), hI.r29, VG.Offset.add_add, show 8 * j + 8 = 8 * (j + 1) by omega]
+      u₁.other _ (by decide), hI.r29, VG.Offset.add_add, show 8 * j + 8 = 8 * (j + 1) by omega_using []]
   · rw [cv _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide), hI.r30]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     have := he.nbLt
-    omega
+    omega_using [hj]
   · obtain ⟨-, -, -, -, -, h7, -, h9, -, -, -⟩ := preserved_ne r hr
     rw [cv r hr, g₆ r h7 h9 h29 h30, hI.regs r hr h29 h30]
   · have hdata : Spec.Aes.bytesAt t.mem (P + BitVec.ofNat 64 (8 * j)) 8 =
@@ -139,12 +139,12 @@ theorem chainLoop_wp {c : State} {S W P : Addr} {nb : Nat} (he : LoopEnv c S W P
     fun _ => ?_
   refine WP.loop (M := isa) (Q := Q)
     (fun (m : Nat) (t : State) => ∃ j, m = nb - j ∧ j < nb ∧ LoopInv c S W P nb j t) ?_ nb c
-    ⟨0, by omega, by omega, h0⟩
+    ⟨0, by omega_using [], by omega_using [hz], h0⟩
   rintro _ t ⟨j, rfl, hj, hI⟩
   refine WP.mono (body_step he hj hI) fun t' h' => ?_
-  have e := eval_nonzero_ofNat' t' .r30 (k := nb - (j + 1)) (by have := he.nbLt; omega) h'.r30
+  have e := eval_nonzero_ofNat' t' .r30 (k := nb - (j + 1)) (by have := he.nbLt; omega_using [this]) h'.r30
   by_cases hf : j + 1 = nb
   · left; exact ⟨by rw [e]; simp [hf], k t' (hf ▸ h')⟩
-  · right; exact ⟨by rw [e]; simp; omega, nb - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+  · right; exact ⟨by rw [e]; simp; omega_using [hj, hf], nb - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, hf], h'⟩
 
 end VG.Proof.CmacTripleDes.Stream.PPC64LE

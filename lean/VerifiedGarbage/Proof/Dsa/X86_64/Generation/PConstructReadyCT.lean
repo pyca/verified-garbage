@@ -66,7 +66,7 @@ theorem pConstruct_ready {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK
   let q := p.plan.withWords W hw
   have hl : 2 ≤ q.len ∧ q.len ≤ 1024 ∧ q.len = 8 * (q.len / 8) := by
     change 2 ≤ p.plan.len ∧ p.plan.len ≤ 1024 ∧ p.plan.len = 8 * (p.plan.len / 8)
-    rcases p.plan.width with h | h | h <;> omega
+    rcases p.plan.width with h | h | h <;> omega_using [h]
   have hd' : G.D = q.hash.len := hd.trans hq.symm
   have hv := pBuild_value hG hmatch hsize hd' hs.hash hl.1 hl.2.1 q.hashRoom q.shapedSlot
     hs.shapedWrite q.shapedInput
@@ -84,10 +84,10 @@ theorem pConstruct_ready {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK
     simpa only [PConstructPublic.workspace, q, PConstructPlan.withWords, HashPlan.withWords, hw 5 (by decide), HashPlan.shapedValue,
       HashPlan.digest] using bt
   have sq := source_of_frame hs.qSource ff q.qHash
-    (by rw [q.qLength]; have := q.hash.size; omega) rd wr
+    (by rw [q.qLength]; have := q.hash.size; omega_using [this]) rd wr
   refine ⟨?_, hs.scratch.congr wr, ?_, ?_, ?_⟩
   · refine ⟨L.rsp, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · intro k hk; exact L.ld (by unfold VG.Impl.RsaOaep.X86_64.frameBytes; omega)
+    · intro k hk; exact L.ld (by unfold VG.Impl.RsaOaep.X86_64.frameBytes; omega_using [hk])
     · exact (R.fr 5 (by decide)).trans (hw 5 (by decide))
     · refine ⟨?_, ?_, ?_⟩
       · intro i hi

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Idea.Memory
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Spec.Idea.Cbc
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # IDEA's blocks and schedule as the modes see them
@@ -42,7 +43,7 @@ theorem scheduleAt_congr_at {m m' : Mem} {p q : Addr}
   apply Vector.ext
   intro i hi
   simp only [Spec.Idea.scheduleAt, Vector.getElem_ofFn]
-  rw [h _ (by omega), h _ (by omega)]
+  rw [h _ (by omega_using [hi]), h _ (by omega_using [hi])]
 
 theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (⟨p, 104⟩ : Region).Disjoint r) :

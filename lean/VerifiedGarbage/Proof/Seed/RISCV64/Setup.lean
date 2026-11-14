@@ -65,7 +65,7 @@ theorem kAbs_range : ∀ p ∈ kAbs, kSlot ≤ p.1 ∧ p.1 < kSlot + 13 := by de
 
 theorem slot_al {B : Addr} (hB : B.toNat % 8 = 0) {k : Nat} (hk : k < 256) :
     (Straight.wordAddr B k).toNat % 8 = 0 :=
-  Straight.wordAddr_al hB k (by omega)
+  Straight.wordAddr_al hB k (by omega_using [hk])
 
 /-- The slots of `ks`. -/
 def ksRegions (b : Addr) (ks : List (Nat × BitVec 64)) : List Region :=
@@ -116,7 +116,7 @@ theorem storeKs_ok {ks : List (Nat × BitVec 64)} {s : State} (h : Room s)
           simp only [List.mem_map]; exact ⟨(j', w'), hj', e.symm⟩)
         have h1 := hk _ (List.mem_cons_of_mem _ hj')
         simp only at h1
-        exact Offset.disjoint (s.gpr sb) (by omega) (by unfold kSlot at h1 hk0; omega)
+        exact Offset.disjoint (s.gpr sb) (by omega_using [hne]) (by unfold kSlot at h1 hk0; omega)
           (by unfold kSlot at h1 hk0; omega)
       · exact mk₃ j w hj
     · simp only [ksRegions, List.map_cons]
@@ -135,14 +135,14 @@ theorem buildMasks_ok {s : State} (h : Room s) :
   · have := h1 (kSlot + j) v (List.mem_map.mpr ⟨(j, v), hj, rfl⟩)
     simp only [Straight.wordAddr] at this ⊢
     rw [Offset.add_add]
-    rw [show 8 * (kSlot + j) = 8 * kSlot + 8 * j by omega] at this
+    rw [show 8 * (kSlot + j) = 8 * kSlot + 8 * j by omega_using []] at this
     exact this
   · simp only [ksRegions, List.mem_map] at hr
     obtain ⟨⟨k, v⟩, hk, rfl⟩ := hr
     have := kAbs_range _ hk
     refine ⟨masksR s, List.mem_singleton_self _, ?_⟩
     simp only [masksR, Straight.wordAddr] at this ⊢
-    exact Offset.sub (s.gpr sb) (d := 8 * k) (n := 8) (e := 8 * kSlot) (k := 8 * 13) (by omega) (by omega)
+    exact Offset.sub (s.gpr sb) (d := 8 * k) (n := 8) (e := 8 * kSlot) (k := 8 * 13) (by omega_using [this]) (by omega_using [this])
 
 /-! ## The prologue -/
 
@@ -170,8 +170,8 @@ theorem prologue_ok {r : Reg} {s : State} (hal : (s.gpr r).toNat % 8 = 0)
   rw [seedSave_eq]
   refine Spill.save_ok (rest := []) room₁.1 savedOffs_ho (fun p hp => room₁.wr ?_) (WP.block_nil ?_)
   · have := savedOffs_range p hp
-    have h8 : p.2 + 8 ≤ 8 * scratchSlots := by unfold scratchSlots; omega
-    exact Offset.contains_base _ h8 (by omega)
+    have h8 : p.2 + 8 ≤ 8 * scratchSlots := by unfold scratchSlots; omega_using [this]
+    exact Offset.contains_base _ h8 (by omega_using [this])
   generalize hS : ({ s₁ with mem := Spill.saveMem s₁.mem (s₁.gpr sb) s₁.gpr savedOffs } : State) = s₂
   have g₂ : s₂.gpr = s₁.gpr := by rw [← hS]
   have mm₂ : s₂.mem = Spill.saveMem s₁.mem (s₁.gpr sb) s₁.gpr savedOffs := by rw [← hS]
@@ -186,10 +186,10 @@ theorem prologue_ok {r : Reg} {s : State} (hal : (s.gpr r).toNat % 8 = 0)
     exact u₁.other _ (not_saved p hp).1
   have f₂ : Frame [⟨s.gpr r, 8 * scratchSlots⟩] s.mem s₂.mem := by
     rw [mm₂, u₁.mem, u₁.gpr]
-    exact Spill.saveMem_frame_base (fun p hp => by have := savedOffs_range p hp; unfold scratchSlots; omega)
-      (by unfold scratchSlots; omega) _ _ _
+    exact Spill.saveMem_frame_base (fun p hp => by have := savedOffs_range p hp; unfold scratchSlots; omega_using [this])
+      (by unfold scratchSlots; omega_using []) _ _ _
   refine WP.mono (buildMasks_ok room₂) fun s₃ ⟨mk₃, fm₃, g₃, rd₃, wr₃, sp₃⟩ => ?_
-  refine wp_addi (by unfold kSlot; omega) fun s₄ u₄ => WP.block_nil ?_
+  refine wp_addi (by unfold kSlot; omega_using []) fun s₄ u₄ => WP.block_nil ?_
   have sb₃ : s₃.gpr sb = s.gpr r := by rw [g₃ _ (by decide) (by decide), sb₂]
   have sb₄ : s₄.gpr sb = s.gpr r := by rw [u₄.other _ (by decide), sb₃]
   have mR : masksR s₂ = ⟨s.gpr r + BitVec.ofNat 64 (8 * kSlot), 8 * 13⟩ := by
@@ -207,10 +207,10 @@ theorem prologue_ok {r : Reg} {s : State} (hal : (s.gpr r).toNat % 8 = 0)
   · rw [u₄.mem]
     refine sv₂.frame_in savedOffs_range fm₃ fun r' hr' => ?_
     simp only [List.mem_singleton] at hr'; subst hr'
-    exact Offset.disjoint _ (by unfold kSlot; omega) (by omega) (by unfold kSlot; omega)
+    exact Offset.disjoint _ (by unfold kSlot; omega_using []) (by omega_using []) (by unfold kSlot; omega_using [])
   · rw [u₄.mem]
     exact f₂.trans (fm₃.sub fun r' hr' => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr'; subst hr'
-      exact Offset.sub_base _ (by unfold kSlot scratchSlots; omega)⟩)
+      exact Offset.sub_base _ (by unfold kSlot scratchSlots; omega_using [])⟩)
 
 end VG.Proof.Seed.RISCV64

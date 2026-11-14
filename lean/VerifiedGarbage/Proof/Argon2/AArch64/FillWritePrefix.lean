@@ -47,10 +47,10 @@ theorem pair_ok (xorOld : Bool) (s : State) (i : Nat) (hi : i < 64)
         (off (s.gpr .x0) (8 * (2 * i + 1)))
           (value xorOld s.mem (s.gpr .x1) (s.gpr .x0) (2 * i + 1)) ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have e : (16 * i) % 16 = 0 ∧ 16 * i < 65536 := by omega
+  have e : (16 * i) % 16 = 0 ∧ 16 * i < 65536 := by omega_using [hi]
   simp only [off] at hr hw ho
-  have a0 : 8 * (2 * i) = 16 * i := by omega
-  have a1 : 8 * (2 * i + 1) = 16 * i + 8 := by omega
+  have a0 : 8 * (2 * i) = 16 * i := by omega_using []
+  have a1 : 8 * (2 * i + 1) = 16 * i + 8 := by omega_using []
   cases xorOld
   · refine WP.block_cons_iff.mpr ⟨_, exec_ldrq_dwords e hr, ?_⟩
     refine WP.block_cons_iff.mpr ⟨_, exec_strq_write e hw, ?_⟩
@@ -97,7 +97,7 @@ theorem source_read {m m' : Mem} {src dest : Addr} {n : Nat}
     m'.readW (off src (8 * i.val)) 64 = m.readW (off src (8 * i.val)) 64 := by
   have full := frame_extend hf hn
   exact full.readW (r := ⟨src, 1024⟩)
-    (Offset.contains_base src (by omega) (by omega))
+    (Offset.contains_base src (by omega_using []) (by omega_using []))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 
 theorem old_read {m m' : Mem} {dest : Addr} {n k : Nat}
@@ -108,7 +108,7 @@ theorem old_read {m m' : Mem} {dest : Addr} {n k : Nat}
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
-      exact Offset.disjoint_base dest (by omega) (by omega)) (by decide)
+      exact Offset.disjoint_base dest (by omega_using [hk]) (by omega_using [hk'])) (by decide)
 
 theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 64) (s : State)
     (hs : (⟨s.gpr .x1, 1024⟩ : Region) ∈ s.rd ++ s.wr)
@@ -124,17 +124,17 @@ theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 64) (s : State)
     simp only [words, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro t ⟨written, frame, gpr, rd, wr, mx⟩
-    have hn' : n < 64 := by omega
+    have hn' : n < 64 := by omega_using [hn]
     have src : t.gpr .x1 = s.gpr .x1 := congrFun gpr .x1
     have dest : t.gpr .x0 = s.gpr .x0 := congrFun gpr .x0
     have write : InRegions t.wr (off (t.gpr .x0) (16 * n)) 16 := by
       rw [dest, wr]
-      exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hw, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
     have read : InRegions (t.rd ++ t.wr) (off (t.gpr .x1) (16 * n)) 16 := by
       rw [src, rd, wr]
-      exact ⟨_, hs, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hs, Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn])⟩
     have old : InRegions (t.rd ++ t.wr) (off (t.gpr .x0) (16 * n)) 16 := by
       obtain ⟨r, hr, hc⟩ := write
       exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -145,17 +145,17 @@ theorem prefix_ok (xorOld : Bool) (n : Nat) (hn : n ≤ 64) (s : State)
           (result xorOld s.mem (s.gpr .x1) (s.gpr .x0))[(⟨k, hk⟩ : Fin 128)] := by
       rw [result_get, src, dest]
       unfold value
-      rw [source_read frame (by omega) hd ⟨k, hk⟩]
+      rw [source_read frame (by omega_using [hn]) hd ⟨k, hk⟩]
       cases xorOld
       · rfl
       · rw [old_read frame hk' hk]
     refine ⟨?_, ?_, gpr'.trans gpr, rd'.trans rd, wr'.trans wr, mx'.trans mx⟩
-    · rw [mem, v (2 * n) (by omega) (by omega), v (2 * n + 1) (by omega) (by omega), dest,
-        show 2 * (n + 1) = 2 * n + 1 + 1 by omega]
-      exact written_step (by omega) (written_step (by omega) written)
+    · rw [mem, v (2 * n) (by omega_using [hn]) (by omega_using []), v (2 * n + 1) (by omega_using [hn]) (by omega_using []), dest,
+        show 2 * (n + 1) = 2 * n + 1 + 1 by omega_using []]
+      exact written_step (by omega_using [hn]) (written_step (by omega_using [hn]) written)
     · rw [mem, dest]
-      exact ((frame_extend frame (by omega : 2 * n ≤ 2 * (n + 1))).writeW
+      exact ((frame_extend frame (by omega_using [] : 2 * n ≤ 2 * (n + 1))).writeW
         (r := ⟨s.gpr .x0, 8 * (2 * (n + 1))⟩) (by simp) _
-        (Offset.contains_base _ (by omega) (by omega))).writeW
+        (Offset.contains_base _ (by omega_using []) (by omega_using [hn]))).writeW
         (r := ⟨s.gpr .x0, 8 * (2 * (n + 1))⟩) (by simp) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using []) (by omega_using [hn]))

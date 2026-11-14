@@ -91,7 +91,7 @@ theorem pass_ok {rb : Reg} {o : Nat} {src : Nat → List Instr} {s0 : State} {c 
     exact Region.sub_prefix (by omega_using [])
   · rw [hm2]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega_using [ho, hk, hj]) (by omega_using [ho, hk])]; exact h.outs j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_using [ho, hk, hj]) (by omega_using [ho, hk])]; exact h.outs j hj
     · rw [wd_write_self, hv]; rfl
 
 end VG.Proof.X25519.PPC64LE

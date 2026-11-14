@@ -194,12 +194,12 @@ theorem compress_rel {σ₁ σ₂ : State} (h₁ : Pre σ₁) (h₂ : Pre σ₂)
           have hx : nxtI σ₂ i = nxtI σ₁ i := by simp only [nxtI, hnb]
           rcases q₁ with ⟨x₁, f₁, c₁⟩ | ⟨x₁, t₁, l₁⟩ <;> rcases q₂ with ⟨x₂, f₂, c₂⟩ | ⟨x₂, t₂, l₂⟩
           · exact ⟨f₁.trans f₂.symm, fun _ => ⟨c₁, c₂⟩, fun h => absurd (h.symm.trans f₁) (by simp)⟩
-          · exfalso; rw [hx, hnb] at x₂; omega
-          · exfalso; rw [hx, hnb] at x₂; omega
+          · exfalso; rw [hx, hnb] at x₂; omega_using [x₁, x₂]
+          · exfalso; rw [hx, hnb] at x₂; omega_using [x₁, x₂]
           · refine ⟨t₁.trans t₂.symm, fun h => absurd (h.symm.trans t₁) (by simp),
               fun _ => ⟨nb σ₁ - nxtI σ₁ i, ?_, nxtI σ₁ i, rfl, x₁, l₁, hx ▸ l₂⟩⟩
-            have : i < nxtI σ₁ i := by simp only [nxtI]; split <;> omega
-            omega
+            have : i < nxtI σ₁ i := by simp only [nxtI]; split <;> omega_using []
+            omega_using [hi, hn, this]
       refine (RelCT.loop I hstep (nb σ₁)).mono (fun a b ⟨⟨_, p₁, p₂⟩, he⟩ => ?_) fun _ _ h => h
       obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁, x₁, y₁⟩ := p₁
       obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂, x₂, y₂⟩ := p₂

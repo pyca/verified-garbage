@@ -84,7 +84,7 @@ theorem shift_ok (s : State) {Q : Addr} (hq : (s.gpr .ebx).setWidth 64 = Q) (hfi
       (∀ r, r ≠ .ecx → r ≠ .edx → r ≠ .edi → r ≠ .ebp → s'.gpr r = s.gpr r) ∧
       s'.mem = AesCfb8.shiftMem32 s.mem Q ((s.gpr .eax).setWidth 8) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have a (d : Nat) (hd : d < 16) : addr (s.gpr .ebx) d = Q + BitVec.ofNat 64 d := by
-    rw [addr_eq (by omega), hq]
+    rw [addr_eq (by omega_using [hfit, hd]), hq]
   have a0 : addr (s.gpr .ebx) 0 = Q := by rw [a 0 (by decide)]; simp
   have w0 : InRegions s.wr Q 4 := by simpa using hw 0 4 (by decide)
   refine ⟨_, by

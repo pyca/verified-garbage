@@ -98,7 +98,7 @@ theorem countSelect_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillS
     rw [u₅.gpr, v₄, u₃.other _ (by decide), u₂.other _ (by decide), r5₁]
     by_cases h0 : index = 0
     · subst h0; decide
-    · rw [ite_eq_right (mt (ofNat_eq_zero (by omega)).mp h0), ite_eq_right h0]; decide
+    · rw [ite_eq_right (mt (ofNat_eq_zero (by omega_using [hi, sl])).mp h0), ite_eq_right h0]; decide
   have Y : s₁₁.gpr .r3 = BitVec.ofNat 64 base + (if index = 0 then BitVec.allOnes 64 else 0) := by
     rw [u₁₁.other _ (by decide), o₁₀.gpr _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
       u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), o₄.gpr _ (by decide),
@@ -108,7 +108,7 @@ theorem countSelect_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillS
       (h.of_only o₆).fs.pos.lane]
     by_cases hs : rl = lane
     · rw [hs, BitVec.xor_self, ite_eq_left rfl]; decide
-    · rw [ite_eq_right (mt (xor_eq_zero (by omega) (by omega)).mp hs), ite_eq_right hs]; decide
+    · rw [ite_eq_right (mt (xor_eq_zero (by omega_using [hrl, lt]) (by omega_using [hl, lt])).mp hs), ite_eq_right hs]; decide
   have val : s₁₄.gpr .r3 = BitVec.ofNat 64 (countV base index (rl == lane)) := by
     rw [u₁₄.gpr, u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₃.gpr, u₁₂.gpr,
       u₁₂.other _ (by decide), X, Y, M₂, sel, countV]
@@ -119,7 +119,7 @@ theorem countSelect_ok {s : State} {pass slice lane index ctr : Nat} {σ : FillS
     · rw [ite_eq_right hs, show (rl == lane) = false from beq_eq_false_iff_ne.mpr hs]
       simp only [Bool.false_eq_true, ite_false]
       by_cases hi0 : index = 0
-      · simp only [hi0, ite_true]; exact add_allOnes (hother hs hi0) (by omega)
+      · simp only [hi0, ite_true]; exact add_allOnes (hother hs hi0) (by omega_using [hb])
       · simp only [hi0, ite_false, Nat.sub_zero]; exact BitVec.add_zero _
   refine wp_stloc h₁₄.fs.inv (d := cntOff) (by decide) fun t it vt ot gt mt =>
     k t (h₁₄.store hp it (d := cntOff) (by decide) (by decide) mt ot) (by rw [gt, val]) (by rw [vt, val])

@@ -41,8 +41,8 @@ theorem packed_tableRoots {s : State} {p : Addr} {u : Nat} (hu : u<8)
   · intro g hg len hl b hb
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
     have ho : packedOffset g len≤224 := by
-      rcases hl with rfl | rfl <;> simp [packedOffset] <;> omega
-    exact hr _ (by rcases hb with rfl | rfl <;> omega)
+      rcases hl with rfl | rfl <;> simp [packedOffset] <;> omega_using [hg]
+    exact hr _ (by rcases hb with rfl | rfl <;> omega_using [hu, ho])
   · intro g hg len hl e he
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
     exact (packed_words h hu hg hl he).1

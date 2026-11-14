@@ -53,14 +53,14 @@ theorem al8_add {p : Addr} (hp : p.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) (hd
     (p + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) hd']
   have := p.isLt
-  omega
+  omega_using [hp, hd]
 
 /-- A 4-byte aligned offset of a 4-byte aligned base. -/
 theorem al_add {p : Addr} (hp : p.toNat % 4 = 0) {d : Nat} (hd : d % 4 = 0) (hd' : d < 2 ^ 64) :
     (p + BitVec.ofNat 64 d).toNat % 4 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) hd']
   have := p.isLt
-  omega
+  omega_using [hp, hd]
 
 /-- `a - c` (as doublewords, both below `2 ^ 64`) is nonzero iff `a ≠ c`. -/
 theorem ofNat_sub_bne {a c : Nat} (ha : a < 2 ^ 64) (hc : c < 2 ^ 64) :
@@ -71,7 +71,7 @@ theorem ofNat_sub_bne {a c : Nat} (ha : a < 2 ^ 64) (hc : c < 2 ^ 64) :
       intro e
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show BitVec.toNat (0 : BitVec 64) = 0 from rfl] at this
-      omega
+      omega_using [ha, hc, h, this]
     rw [decide_eq_false h, Bool.not_false]
     exact bne_iff_ne.mpr this
 
@@ -85,11 +85,11 @@ theorem index_val (x : BitVec 64) {j : Nat} (hj : j < 4) :
   simp only [quarter, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_shiftLeft]
   by_cases h8 : i < 8
-  · simp only [h8, decide_true, Bool.true_and, show 56 + i < 64 by omega,
-      show ¬ (56 + i < 32 + 8 * j) by omega, decide_false, Bool.not_false,
-      show 8 * (3 - j) + i < 32 by omega]
+  · simp only [h8, decide_true, Bool.true_and, show 56 + i < 64 by omega_using [h8],
+      show ¬ (56 + i < 32 + 8 * j) by omega_using [hj], decide_false, Bool.not_false,
+      show 8 * (3 - j) + i < 32 by omega_using [h8]]
     rw [decide_eq_true hi, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_using [hj]
   · simp only [h8, decide_false, Bool.false_and]
     by_cases h : 56 + i < 64
     · omega
@@ -116,9 +116,9 @@ theorem row_run (u : State) {k : Nat} (hk : k < 32) {B q : BitVec 64}
       t.gpr .t0 = u.gpr .t0 ||| (u.mem.readW (B + BitVec.ofNat 64 (768 + 8 * k)) 64 &&& M) ∧
       t.mem = u.mem := by
   unfold row rowMask plane
-  brun [accOf, Nat.zero_add, h7, h1, r0, r1, r2, r3, a0, a1, a2, a3, show 63 - k < 64 by omega,
-    show 8 * k < 2048 by omega, show 256 * 1 + 8 * k < 2048 by omega,
-    show 256 * 2 + 8 * k < 2048 by omega, show 256 * 3 + 8 * k < 2048 by omega]
+  brun [accOf, Nat.zero_add, h7, h1, r0, r1, r2, r3, a0, a1, a2, a3, show 63 - k < 64 by omega_using [],
+    show 8 * k < 2048 by omega_using [hk], show 256 * 1 + 8 * k < 2048 by omega_using [hk],
+    show 256 * 2 + 8 * k < 2048 by omega_using [hk], show 256 * 3 + 8 * k < 2048 by omega_using [hk]]
 
 /-- Row 0: each accumulator its plane's doubleword, masked. -/
 theorem row0_run (u : State) {B q : BitVec 64}
@@ -140,9 +140,9 @@ theorem row0_run (u : State) {B q : BitVec 64}
 /-- The row's mask, from the bit of the index's row in `t1`. -/
 theorem mask_eq (x : Byte) {k : Nat} (hk : k < 32) :
     (BitVec.twoPow 64 (x.toNat / 8) <<< (63 - k)).sshiftRight 63 = rowSel x.toNat k := by
-  rw [bit_mask _ (by omega), BitVec.getLsbD_twoPow, rowSel]
+  rw [bit_mask _ (by omega_using [hk]), BitVec.getLsbD_twoPow, rowSel]
   by_cases h : x.toNat / 8 = k
-  · subst h; simp only [ite_true, decide_eq_true (by omega : x.toNat / 8 < 64), Bool.true_and, decide_true]
+  · subst h; simp only [ite_true, decide_eq_true (by omega_using [] : x.toNat / 8 < 64), Bool.true_and, decide_true]
   · simp [h]
 
 theorem index_run (s : State) {j : Nat} (hj : j < 4) :
@@ -155,11 +155,11 @@ theorem index_run (s : State) {j : Nat} (hj : j < 4) :
     apply BitVec.eq_of_toNat_eq
     have := (quarter (lo (s.gpr .a3)) j).isLt
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
   have hq := (quarter (lo (s.gpr .a3)) j).isLt
   unfold index
-  brun [show 32 + 8 * j < 64 by omega, e]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  brun [show 32 + 8 * j < 64 by omega_using [hj], e]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
   rfl
 
 /-- The schedule at `S`, readable a doubleword at a time, and aligned. -/
@@ -182,7 +182,7 @@ structure RowInv (s₀ : State) (S : Addr) (j : Nat) (idx : Byte) (n : Nat) (u :
 theorem plane_addr (S : Addr) (j b k : Nat) (_ : 1024 * j + 256 * b + 8 * k < 2 ^ 64) :
     S + BitVec.ofNat 64 (1024 * j) + BitVec.ofNat 64 (256 * b + 8 * k) =
       S + BitVec.ofNat 64 (1024 * j + 256 * b + 8 * k) :=
-  Offset.add_add_eq _ (by omega)
+  Offset.add_add_eq _ (by omega_using [])
 
 theorem row0_step {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j < 4) (idx : Byte)
     {u : State} (h7 : u.gpr .a7 = S + BitVec.ofNat 64 (1024 * j))
@@ -191,11 +191,11 @@ theorem row0_step {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j
   have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [hk.2.1, hk.2.2]
   let B := S + BitVec.ofNat 64 (1024 * j)
   have ad : ∀ b < 4, B + BitVec.ofNat 64 (256 * b) = S + BitVec.ofNat 64 (1024 * j + 256 * b + 8 * 0) :=
-    fun b hb => plane_addr S j b 0 (by omega)
+    fun b hb => plane_addr S j b 0 (by omega_using [hj, hb])
   have hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (256 * b)) 8 :=
-    fun b hb => by rw [ad b hb, hrd]; exact E.rd8 _ (by omega) (by omega)
+    fun b hb => by rw [ad b hb, hrd]; exact E.rd8 _ (by omega_using []) (by omega_using [hj, hb])
   have hal : ∀ b < 4, (B + BitVec.ofNat 64 (256 * b)).toNat % 8 = 0 :=
-    fun b hb => by rw [ad b hb]; exact al8_add E.al8 (by omega) (by omega)
+    fun b hb => by rw [ad b hb]; exact al8_add E.al8 (by omega_using []) (by omega_using [hj, hb])
   have r0 := hr 0 (by decide)
   have l0 := hal 0 (by decide)
   simp only [Nat.mul_zero, BitVec.add_zero] at r0 l0
@@ -220,11 +220,11 @@ theorem row_step {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j 
   have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
   let B := S + BitVec.ofNat 64 (1024 * j)
   have ad : ∀ b < 4, B + BitVec.ofNat 64 (256 * b + 8 * k) = S + BitVec.ofNat 64 (1024 * j + 256 * b + 8 * k) :=
-    fun b hb => plane_addr S j b k (by omega)
+    fun b hb => plane_addr S j b k (by omega_using [hj, hk, hb])
   have hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (256 * b + 8 * k)) 8 :=
-    fun b hb => by rw [ad b hb, hrd]; exact E.rd8 _ (by omega) (by omega)
+    fun b hb => by rw [ad b hb, hrd]; exact E.rd8 _ (by omega_using []) (by omega_using [hj, hk, hb])
   have hal : ∀ b < 4, (B + BitVec.ofNat 64 (256 * b + 8 * k)).toNat % 8 = 0 :=
-    fun b hb => by rw [ad b hb]; exact al8_add E.al8 (by omega) (by omega)
+    fun b hb => by rw [ad b hb]; exact al8_add E.al8 (by omega_using []) (by omega_using [hj, hk, hb])
   have pl : ∀ b < 4, u.mem.readW (B + BitVec.ofNat 64 (256 * b + 8 * k)) 64 = planeWord64 s₀.mem S j b k :=
     fun b hb => by rw [ad b hb, I.mem]; rfl
   have r0 := hr 0 (by decide)
@@ -264,7 +264,7 @@ theorem rows_run {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j 
   | succ n ih =>
     intro hn
     rw [rows_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun v V => row_step E hj idx hn ?_ V
+    refine WP.mono (ih (by omega_using [hn])) fun v V => row_step E hj idx hn ?_ V
     rw [V.keep.gpr (by decide), h7₀]
 
 /-! ## The entry from the accumulators -/
@@ -279,9 +279,9 @@ theorem lane_val (x : BitVec 64) {j : Nat} (hj : j < 4) :
   rw [show (7 : Nat) % 2 ^ 64 = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
     show 24 - 8 * j = 8 * (3 - j) by omega]
   have e32 : (2 : Nat) ^ 32 = 2 ^ (8 * (3 - j)) * 2 ^ (32 - 8 * (3 - j)) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using []
   rw [e32, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (by decide : 8 ∣ 2 ^ 8),
-    Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega : 3 ≤ 32 - 8 * (3 - j)))]
+    Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [] : 3 ≤ 32 - 8 * (3 - j)))]
   generalize x.toNat / 2 ^ (8 * (3 - j)) = n
   have : n % 8 < 8 := Nat.mod_lt _ (by decide)
   show n % 8 * 8 % 2 ^ 64 = 8 * (n % 8) % 2 ^ 64
@@ -292,7 +292,7 @@ theorem lane_run (s : State) {j : Nat} (hj : j < 4) :
       .shift .sll .d mReg mReg 3]) s fun t =>
       t.gpr .t3 = BitVec.ofNat 64 (8 * ((quarter (lo (s.gpr .a3)) j).toNat % 8)) ∧ t.mem = s.mem := by
   rw [← lane_val _ hj]
-  brun [show 24 - 8 * j < 64 by omega]
+  brun [show 24 - 8 * j < 64 by omega_using []]
 
 theorem pick_run (u : State) {K A0 A1 A2 A3 : BitVec 64} (h3 : u.gpr .t3 = K) (h2 : u.gpr .t2 = A0)
     (h5 : u.gpr .t5 = A1) (h6 : u.gpr .t6 = A2) (h0 : u.gpr .t0 = A3) :
@@ -313,12 +313,12 @@ theorem shr_byte (a : BitVec 64) (L : Nat) :
     BitVec.getLsbD_extractLsb']
   by_cases h8 : i < 8
   · have : (255#64).getLsbD i = true := by
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+      rcases (by omega_using [h8] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
     rw [this, Bool.and_true, decide_eq_true h8, decide_eq_true hi, Bool.true_and, Bool.true_and, Nat.add_comm]
   · have : (255#64).getLsbD i = false := by
       rw [BitVec.getLsbD_ofNat]; simp only [Bool.and_eq_false_iff]; right
-      rw [Nat.testBit_lt_two_pow (by have := Nat.pow_le_pow_right (by decide : 0 < 2) (by omega : 8 ≤ i); omega)]
+      rw [Nat.testBit_lt_two_pow (by have := Nat.pow_le_pow_right (by decide : 0 < 2) (by omega_using [h8] : 8 ≤ i); omega_using [this])]
     rw [this, Bool.and_false, decide_eq_false h8, Bool.false_and, Bool.and_false]
 
 /-- The low word of four bytes ORed into place. -/
@@ -328,7 +328,7 @@ theorem pack_byte (y : Nat → Byte) {c : Nat} (hc : c < 4) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_or,
     BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and]
-  rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
     simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.and_true,
       Bool.false_and, Bool.and_false, Bool.false_or, Bool.or_false, Bool.not_true, Bool.not_false,
       Nat.add_sub_cancel_left, Nat.zero_add, BitVec.getLsbD_of_ge, Nat.reduceMul]
@@ -355,7 +355,7 @@ theorem lookup_run {s : State} {S : Addr} (E : SchAt s S) {j : Nat} (hj : j < 4)
   have hv3 : v.gpr .a3 = s.gpr .a3 := V.keep.gpr (by decide)
   have hK : (w.gpr .t3).toNat % 64 = 8 * (idx.toNat % 8) := by
     have := idx.isLt
-    rw [w3, hv3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [w3, hv3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
   simp only [← List.append_assoc]
   refine WP.mono (WP.keep [.t2, .t5, .t6, .t0] (pick_run w rfl
     ((wk.gpr (by decide)).trans V.p0) ((wk.gpr (by decide)).trans V.p1)

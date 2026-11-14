@@ -24,11 +24,11 @@ theorem saveFlag_ok (s : State) {base : BitVec 32} {len w : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   unfold VG.Impl.Ffdh.Arm.saveFlag
   refine wp_str (a := off (State.addr base) 136) (by decide)
-    (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega))
-    (h.workspace.write (by omega)) fun t a => WP.block_nil ?_
+    (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, this]))
+    (h.workspace.write (by omega_using [size])) fun t a => WP.block_nil ?_
   have rest : Rest [] s t := a.rest []
   obtain ⟨ready, frame, arrays⟩ := h.after_header (d := 136) (by decide) (by decide) a.mem rest
     ((rest.gpr .r0 (by simp)).trans h.ptr)

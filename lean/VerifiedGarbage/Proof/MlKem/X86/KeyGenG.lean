@@ -111,7 +111,7 @@ theorem start_piece [GOK L] {Q : State → State → Prop} {c : Prog isa}
   · rw [← h.acc, m']; exact keepW hp (N := 0) (by rdecide) a₁ (frW8 (Y := Y L))
   · rw [m']
     refine bytesAt_eq (L := [BitVec.ofNat 8 L.p.k]) rfl fun i hi => ?_
-    obtain rfl : i = 0 := by omega
+    obtain rfl : i = 0 := by omega_using [hi]
     simp only [BitVec.add_zero, writeW8_apply, List.getElem_cons_zero]
     exact (ite_eq_left (rfl : Buf.addr s₀ (bNB L) = Buf.addr s₀ ⟨(Y L).sc, L.kgRS + 64, 1⟩)).trans
       (by rw [BitVec.setWidth_ofNat_of_le (by decide)])

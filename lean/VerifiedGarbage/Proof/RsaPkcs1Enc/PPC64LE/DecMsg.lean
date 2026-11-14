@@ -41,7 +41,7 @@ theorem write1_eq (m : Mem) (b x : Addr) (v : BitVec (8 * 1)) :
 theorem byte_ofNat (x : Nat) : BitVec.setWidth 8 (BitVec.ofNat 64 x) = BitVec.ofNat 8 x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem ascii_length : Spec.RsaPkcs1Enc.ascii "length" = [0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68] := by decide
 
@@ -68,7 +68,7 @@ theorem exec_stb9 {s : State} {t : Reg} {B : Addr} {d : Nat} (h9 : s.gpr .r9 = B
 theorem am_lo (K : BitVec 64) : BitVec.setWidth 8 (K <<< 3) = BitVec.ofNat 8 (8 * K.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem am_hi (K : BitVec 64) (hK : K.toNat ≤ 1024) :
     BitVec.setWidth 8 (K <<< 3 >>> 8) = BitVec.ofNat 8 (8 * K.toNat / 256) := by
@@ -80,7 +80,7 @@ theorem am_hi (K : BitVec 64) (hK : K.toNat ≤ 1024) :
 /-- The writes of a message: `Frame` for each of its bytes. -/
 theorem frame_bytes {m : Mem} {B : Addr} {d : Nat} (hd : d + 1 ≤ 16) {m' : Mem} (h : Frame [⟨B, 16⟩] m m')
     (v : BitVec (8 * 1)) : Frame [⟨B, 16⟩] m (m'.write (B + BitVec.ofNat 64 d) 1 v) :=
-  h.write (List.mem_singleton_self _) _ (Offset.contains_base _ hd (by omega))
+  h.write (List.mem_singleton_self _) _ (Offset.contains_base _ hd (by omega_using [hd]))
 
 theorem msgCL_ok {t : State} {B : Addr} {i : Nat} (h9 : t.gpr .r9 = B) (h11 : t.gpr .r11 = BitVec.ofNat 64 i)
     (hi : i < 256) (hw : ∀ d < 16, InRegions t.wr (B + BitVec.ofNat 64 d) 1) :

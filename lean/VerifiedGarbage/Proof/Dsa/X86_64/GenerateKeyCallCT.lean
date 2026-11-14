@@ -76,10 +76,10 @@ theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
     hca, hwa, hcb, hwb, ha.sp.trans (hp.base.trans hb.sp.symm)⟩
   have hA (i : Nat) (hi : i < 3) :
       stackArg (a.callEntry.withRegions (keygenDeriveRd s) (keygenDeriveWr s)) i = keygenDeriveArg s i :=
-    (random_call_stackArg ha.sp _ _ (by omega)).trans (aw i hi)
+    (random_call_stackArg ha.sp _ _ (by omega_using [hi])).trans (aw i hi)
   have hB (i : Nat) (hi : i < 3) :
       stackArg (b.callEntry.withRegions (keygenDeriveRd t) (keygenDeriveWr t)) i = keygenDeriveArg t i :=
-    (random_call_stackArg hb.sp _ _ (by omega)).trans (bw i hi)
+    (random_call_stackArg hb.sp _ _ (by omega_using [hi])).trans (bw i hi)
   sig_pub [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
   simp only [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hB 0 (by decide), hB 1 (by decide),
     hB 2 (by decide), keygenDeriveArg, List.getD_cons_succ, List.getD_cons_zero]

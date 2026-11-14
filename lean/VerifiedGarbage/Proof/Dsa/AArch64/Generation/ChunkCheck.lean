@@ -27,11 +27,11 @@ theorem chunkCheck_frame_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat
   have hsub : BitVec.ofNat 64 total - BitVec.ofNat 64 used = BitVec.ofNat 64 (total - used) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hle]
   have himm : (BitVec.ofNat 16 width).setWidth 64 = BitVec.ofNat 64 width := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hw]
   have hwt : s.mem.readW (F + BitVec.ofNat 64 (8 * slots.total)) 64 = BitVec.ofNat 64 total :=
     (R.fr slots.total ht).trans htotal
   have hwu : s.mem.readW (F + BitVec.ofNat 64 (8 * slots.used)) 64 = BitVec.ofNat 64 used :=
@@ -40,11 +40,11 @@ theorem chunkCheck_frame_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat
     t.gpr .x0 = (if width ≤ total - used then 0 else 1) ∧ t.mem = s.mem) ?_ rfl rfl rfl)
     fun _ ⟨⟨hc, hm⟩, hk⟩ => ⟨hc, hm, hk⟩
   unfold chunkCheck
-  brun [exec_ldrSp (off := 8 * slots.total) ⟨by omega, by omega⟩,
-    exec_ldrSp (off := 8 * slots.used) ⟨by omega, by omega⟩, L.sp,
-    L.ld (d := 8 * slots.total) (n := 8) (by unfold frameBytes; omega),
-    L.ld (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega), hwt, hwu, hsub, himm,
-    subs_ge (show total - used < 2 ^ 64 by omega) (show width < 2 ^ 64 by omega)]
+  brun [exec_ldrSp (off := 8 * slots.total) ⟨by omega_using [], by omega_using [ht]⟩,
+    exec_ldrSp (off := 8 * slots.used) ⟨by omega_using [], by omega_using [hu]⟩, L.sp,
+    L.ld (d := 8 * slots.total) (n := 8) (by unfold frameBytes; omega_using [ht]),
+    L.ld (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega_using [hu]), hwt, hwu, hsub, himm,
+    subs_ge (show total - used < 2 ^ 64 by omega_using [hmax]) (show width < 2 ^ 64 by omega_using [hw])]
   simp only [decide_eq_true_eq]
   rfl
 

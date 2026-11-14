@@ -120,7 +120,7 @@ theorem SafeR.sc {p : Params} (hF : PFacts p) {np nr : Nat} (hnp : np ≤ p.ℓ 
     (h2 : o + l ≤ oP 0 ∨ (oP (p.k * p.ℓ) ≤ o ∧ o + l ≤ oP (p.k * p.ℓ + p.ℓ)) ∨ oP (p.k * p.ℓ + p.ℓ + p.k) ≤ o)
     (h3 : o + l ≤ scrLen p) : SafeR p np nr [sb o l] := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by simp only [scrLen, hF.sw]; omega
+  have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by simp only [scrLen, hF.sw]; omega_using []
   have hpk := hF.pk; have hsk := hF.sk
   simp only [oT0] at hsk
   simp only [oACC, oP] at h1 h2
@@ -142,7 +142,7 @@ theorem SafeR.sc {p : Params} (hF : PFacts p) {np nr : Nat} (hnp : np ≤ p.ℓ 
 theorem SafeR.pk {p : Params} (hF : PFacts p) {np nr : Nat} (hnp : np ≤ p.ℓ + p.k) (hnr : nr ≤ p.k) {o l : Nat}
     (h0 : 0 < l) (h1 : 32 + 320 * nr ≤ o) (h2 : o + l ≤ p.pkLen) : SafeR p np nr [⟨1, o, l⟩] := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by simp only [scrLen, hF.sw]; omega
+  have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by simp only [scrLen, hF.sw]; omega_using []
   have hpk := hF.pk; have hsk := hF.sk
   simp only [oT0] at hsk
   have hc : (YK p).ok ⟨1, o, l⟩ = true := ykOk (by decide) h0 h2
@@ -164,7 +164,7 @@ theorem SafeR.sk {p : Params} (hF : PFacts p) {np nr : Nat} (hnp : np ≤ p.ℓ 
     (h0 : 0 < l) (h1 : 64 ≤ o) (hp : o + l ≤ 128 ∨ 128 + lenS p * np ≤ o) (hr : o + l ≤ oT0 p ∨ oT0 p + 416 * nr ≤ o)
     (h2 : o + l ≤ p.skLen) : SafeR p np nr [⟨2, o, l⟩] := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by simp only [scrLen, hF.sw]; omega
+  have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by simp only [scrLen, hF.sw]; omega_using []
   have hpk := hF.pk; have hsk := hF.sk
   have hc : (YK p).ok ⟨2, o, l⟩ = true := ykOk (by decide) h0 h2
   simp only [oT0] at hsk hr
@@ -224,16 +224,16 @@ theorem copies_piece {p : Params} (hF : PFacts p) :
   refine Piece.seq (B := fun s₀ s => KSamp p (p.k * p.ℓ) (p.ℓ + p.k) s₀ s ∧
       bytesAt s.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32 = rhoOf p s₀)
     (copyW_piece (Y := YK p) kS oHX 1 0 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
-      (by native_taint_decide) (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.keep hp (N := 0) (by omega)
+      (by native_taint_decide) (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.keep hp (N := 0) (by omega_using [])
         ⟨by layd, by layd, fun _ _ => by layd, fun _ _ => by layd⟩ (fr1 fr) h', ?_⟩) ?_
   · show bytesAt s'.mem _ 32 = _
     rw [cp]; exact h.kb.rho
   refine Piece.seq (B := fun s₀ s => KSamp p (p.k * p.ℓ) (p.ℓ + p.k) s₀ s ∧
       bytesAt s.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32 = rhoOf p s₀ ∧ bytesAt s.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 = rhoOf p s₀)
     (copyW_piece (Y := YK p) kS oHX 2 0 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
-      (by native_taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.1.keep hp (N := 0) (by omega)
+      (by native_taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.1.keep hp (N := 0) (by omega_using [])
         ⟨by layd, by layd, fun _ _ => by layd, fun _ _ => by layd⟩ (fr1 fr) h',
-        by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := ⟨1, 0, 32⟩) (by layd) (fr1 fr)]; exact h.2, ?_⟩) ?_
+        by rw [keepBytes hp (N := 0) (stkN (by omega_using [])) (b := ⟨1, 0, 32⟩) (by layd) (fr1 fr)]; exact h.2, ?_⟩) ?_
   · show bytesAt s'.mem _ 32 = _
     rw [cp]; exact h.1.kb.rho
   refine copyW_piece (Y := YK p) kS (oHX + 96) 2 32 8 (by decide) (by decide) (by layd) (h₁ := .block [])
@@ -241,14 +241,14 @@ theorem copies_piece {p : Params} (hF : PFacts p) :
   obtain ⟨⟨kb, A, S, hA, hS, hG⟩, e1, e2⟩ := h
   have k : ∀ b : Buf, (YK p).apart b [⟨2, 32, 32⟩] = true →
       bytesAt s'.mem (Buf.addr s₀ b) b.len = bytesAt s.mem (Buf.addr s₀ b) b.len :=
-    fun b hb => keepBytes hp (N := 0) (stkN (by omega)) hb (fr1 fr)
-  refine ⟨A, S, h', ?_, fun r hr => (hS r hr).2, fun e he => keepPolyD hp (stkN (by omega)) (by layd) (fr1 fr)
-    (hA e he), fun i hi => keepPolyD hp (stkN (by omega)) (by layd) (fr1 fr) (hS _ (by omega)).1,
+    fun b hb => keepBytes hp (N := 0) (stkN (by omega_using [])) hb (fr1 fr)
+  refine ⟨A, S, h', ?_, fun r hr => (hS r hr).2, fun e he => keepPolyD hp (stkN (by omega_using [])) (by layd) (fr1 fr)
+    (hA e he), fun i hi => keepPolyD hp (stkN (by omega_using [])) (by layd) (fr1 fr) (hS _ (by omega_using [hi])).1,
     fun j hj => ?_, by rw [k _ (by layd)]; exact e1, by rw [k _ (by layd)]; exact e2, ?_,
     fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  · rw [acc_keep hp (N := 0) (by omega) (by layd) (fr1 fr)]; exact hG
+  · rw [acc_keep hp (N := 0) (by omega_using []) (by layd) (fr1 fr)]; exact hG
   · rw [ifn (Nat.not_lt_zero j)]
-    exact keepPolyD hp (stkN (by omega)) (by layd) (fr1 fr) (hS _ (by omega)).1
+    exact keepPolyD hp (stkN (by omega_using [])) (by layd) (fr1 fr) (hS _ (by omega_using [hj])).1
   · show bytesAt s'.mem _ 32 = _
     rw [cp]; exact kb.kk hF hp
 

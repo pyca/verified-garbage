@@ -49,14 +49,14 @@ theorem mac_exec (s : State) (hi fresh : Bool) (i : Nat) (M : Nat → VReg) (k :
   cases fresh
   · refine ⟨_, exec_vo rfl, fun e he => ?_⟩
     simp only [ln, term, wd, Bool.false_eq_true, ite_false]
-    rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+    rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
     · rw [vdword_ofVDwords_0]; exact umlal_lane _ _ _ _ _
     · rw [vdword_ofVDwords_1]; exact umlal_lane _ _ _ _ _
   · refine ⟨_, exec_vo rfl, fun e he => ?_⟩
     simp only [ln, term, wd, ite_true, Nat.zero_add]
     have hlt : ∀ a b : BitVec 32, a.toNat * b.toNat < 2 ^ 64 := fun a b =>
       Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' a.isLt b.isLt) (by decide)
-    rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+    rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
     · rw [vdword_ofVDwords_0, umull_lane, Nat.mod_eq_of_lt (hlt _ _)]
     · rw [vdword_ofVDwords_1, umull_lane, Nat.mod_eq_of_lt (hlt _ _)]
 

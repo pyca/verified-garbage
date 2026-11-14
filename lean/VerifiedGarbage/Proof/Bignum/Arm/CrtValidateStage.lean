@@ -166,7 +166,7 @@ theorem crt_factor_fit {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} 
   have w := (crt_width_valid h.buffers.lengthValid).2.2
   have := VG.Proof.Bignum.os2ip_lt (bs i)
   rw [len, VG.Proof.Bignum.pow256_eq] at this
-  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [CrtGeometry.words]; omega))
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [CrtGeometry.words]; omega_using [hi, w]))
 
 theorem crt_validateStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
@@ -181,10 +181,10 @@ theorem crt_validateStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List 
       (by have := hx.buffers.storageFits
           simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset, stride,
             workspaceWords] at this
-          omega)
+          omega_using [this])
       (hx.main.toCrtLayoutState.nativeCount hx.buffers.context.main))
-    (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _)
-    (by simp only [CrtGeometry.words] at two ⊢; omega) (Nat.le_refl _)
+    (by simp only [CrtGeometry.words] at two ⊢; omega_using [two]) (Nat.le_refl _)
+    (by simp only [CrtGeometry.words] at two ⊢; omega_using [two]) (Nat.le_refl _)
     (crt_factor_fit h (i := 2) h.buffers.pShort) (crt_factor_fit h (i := 3) h.buffers.qShort)
 
 /-- The key check without `p q = n` (`CrtFn.validateGiven`), for a key whose

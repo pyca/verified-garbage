@@ -70,7 +70,7 @@ open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 private theorem bytes_after_used {s t : State} {dst usedPtr : BitVec 32} {n consumed : Nat}
     (h : ResultContext dst usedPtr n consumed s) (changed : Frame [⟨State.addr usedPtr, 8⟩] s.mem t.mem) :
     Spec.Rsa.bytesAt t.mem (State.addr dst) n = Spec.Rsa.bytesAt s.mem (State.addr dst) n :=
-  rsa_bytes_frame changed (by have := h.countFits; omega) (by
+  rsa_bytes_frame changed (by have := h.countFits; omega_using [this]) (by
     intro r hr
     rw [List.mem_singleton] at hr
     subst r

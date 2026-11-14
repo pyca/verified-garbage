@@ -69,7 +69,7 @@ theorem streamAadEntry_ok {N : Nat} {s : State} (hp : (Proof.AesGcm.streamAadX86
     · simp [gpr_setReg, hg₁]
     all_goals rfl
   refine WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, _, ⟨h13, h14, h15, hg₂, ?_⟩,
-    h12, hbp, hbx, ⟨?_, by have := (s.gpr .r8).isLt; omega, wd, d_ds, d_dw, k_d⟩, rfl⟩⟩)
+    h12, hbp, hbx, ⟨?_, by have := (s.gpr .r8).isLt; omega_using [], wd, d_ds, d_dw, k_d⟩, rfl⟩⟩)
   · refine ⟨?_, ?_, ?_⟩ <;> simp only [hrd₂, hwr₂, hrd₁, hwr₁]
     · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
     · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
@@ -86,13 +86,13 @@ theorem streamAad_rel (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s₀ s₀'
     obtain ⟨-, -, d_cs, d_cw, -, -, d_sw, -, -, k_c, -, k_s, k_w, wc, -, ws, ww⟩ := hp
     exact Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w hN hN'
   obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇⟩ := hq
-  have hE₂ := streamAadEntry_ok hp' (by omega)
+  have hE₂ := streamAadEntry_ok hp' (by omega_using [hN])
   rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇] at hE₂
   refine fn_relN (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := s₀.gpr .r9) (SP := s₀.gpr .rsp) (N := N)
     [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
-    ⟨_, by taint_decide⟩ (streamAadEntry_ok hp (by omega)) hE₂ ?_
+    ⟨_, by taint_decide⟩ (streamAadEntry_ok hp (by omega_using [hN])) hE₂ ?_
   have a := RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ =>
     absorb_rel v L (.inr rfl) (H₁ := H₁) (H₂ := H₂) (x₁ := List.replicate ((s₀.gpr .rdx).toNat % 16) 0)
       (x₂ := List.replicate ((s₀.gpr .rdx).toNat % 16) 0) (D := s₀.gpr .rcx) (n := (s₀.gpr .r8).toNat) rfl

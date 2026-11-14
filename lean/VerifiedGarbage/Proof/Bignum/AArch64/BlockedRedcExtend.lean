@@ -19,14 +19,14 @@ theorem extend_row_value {m m' : Mem} {B : Addr} {e k n q modulus p p' : Nat}
     (2 ^ 64) ^ 8 * (wv m' B (e + 64) (8 * (n - 1)) + 2 ^ (64 * (8 * k)) * p') =
       wv m B e (8 * n) + q * modulus + 2 ^ (64 * (8 * k)) * p := by
   have htail := ho.wv (d := e + 64 * (k + 1)) (k := 8 * (n - (k + 1)))
-    (by omega) (by omega)
+    (by omega_using []) (by omega_using [hk, hn])
   have hOld := wv_add m B e (8 * (k + 1)) (8 * (n - (k + 1)))
-  rewrite [show 8 * (k + 1) + 8 * (n - (k + 1)) = 8 * n by omega,
-    show e + 8 * (8 * (k + 1)) = e + 64 * (k + 1) by omega,
+  rewrite [show 8 * (k + 1) + 8 * (n - (k + 1)) = 8 * n by omega_using [hk],
+    show e + 8 * (8 * (k + 1)) = e + 64 * (k + 1) by omega_using [],
     pow_blocks_succ] at hOld
   have hNew := wv_add m' B (e + 64) (8 * k) (8 * (n - (k + 1)))
-  rewrite [show 8 * k + 8 * (n - (k + 1)) = 8 * (n - 1) by omega,
-    show e + 64 + 8 * (8 * k) = e + 64 * (k + 1) by omega, htail] at hNew
+  rewrite [show 8 * k + 8 * (n - (k + 1)) = 8 * (n - 1) by omega_using [hk],
+    show e + 64 + 8 * (8 * k) = e + 64 * (k + 1) by omega_using [], htail] at hNew
   rewrite [hOld, hNew]
   exact row_extend hv
 

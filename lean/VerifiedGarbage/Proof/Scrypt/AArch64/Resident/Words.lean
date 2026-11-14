@@ -58,7 +58,7 @@ theorem mixed_get (s₀ : State) (src : Addr) (x : Vector Word 16) {j : Nat} (hj
   simp only [mixed, Vector.getElem_zipWith, words_get]
 
 theorem part (p : Addr) {j : Nat} (hj : j < 16) : (Region.mk p 64).Contains (addr p j) 4 :=
-  VG.Proof.Scrypt.AArch64.contains_off (by omega) (by omega)
+  VG.Proof.Scrypt.AArch64.contains_off (by omega_using [hj]) (by omega_using [hj])
 
 theorem xor_step {s₀ s : State} {src out : Addr} {x : Vector Word 16} {i : Nat}
     {d : Reg} (hi : i < 16) (hd : d = .x20 ∨ d = .x21)
@@ -84,10 +84,10 @@ theorem xor_step {s₀ s : State} {src out : Addr} {x : Vector Word 16} {i : Nat
     rw [h.rd,h.wr,h19]; exact hin i hi
   apply WP.of_runBlock
   simp only [VG.Impl.Scrypt.AArch64.Resident.xorWord, runBlock_cons, runStep_some,
-    exec_ldr_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega) ir, exec_logic, isa,
+    exec_ldr_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega_using [hi]) ir, exec_logic, isa,
     State.read, State.write, Size.bits, n1, hw, h19,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, ↓reduceIte, Nat.reduceLeDiff, hread']
-  rw [exec_str_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega)
+  rw [exec_str_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega_using [hi])
     (by simpa [State.write, dn, nd.2, hD, h.wr, addr] using hout i hi)]
   simp only [runStep_some,runBlock_nil,Option.some.injEq,exists_eq_left',↓reduceIte,narrow64]
   refine ⟨⟨h.rd,h.wr,h.sp,?_,?_⟩,?_,?_⟩
@@ -106,15 +106,15 @@ theorem xor_step {s₀ s : State} {src out : Addr} {x : Vector Word 16} {i : Nat
       simp only [n,wreg_ne_x1 hj,ite_false]
       rw [h.holds j hj]
       by_cases hjlt : j < i
-      · rw [VG.Proof.Scrypt.AArch64.ite_pos' hjlt, VG.Proof.Scrypt.AArch64.ite_pos' (by omega)]
-      · rw [VG.Proof.Scrypt.AArch64.ite_neg' hjlt, VG.Proof.Scrypt.AArch64.ite_neg' (by omega)]
+      · rw [VG.Proof.Scrypt.AArch64.ite_pos' hjlt, VG.Proof.Scrypt.AArch64.ite_pos' (by omega_using [hjlt])]
+      · rw [VG.Proof.Scrypt.AArch64.ite_neg' hjlt, VG.Proof.Scrypt.AArch64.ite_neg' (by omega_using [e, hjlt])]
   · intro j hj hji
     by_cases e : j = i
     · subst j
       simp only [dn,nd.2,ite_false,hD,Mem.readW_writeW_self32,addr,mixed_get s₀ src x hi]
     · simp only [dn,nd.2,ite_false,hD,addr]
       rw [VG.Proof.Scrypt.AArch64.readW_writeW_word _ _ _ hj hi e]
-      exact h.written j hj (by omega)
+      exact h.written j hj (by omega_using [hji, e])
 theorem xor_ok {s₀ : State} {src out : Addr} {x : Vector Word 16} {d : Reg}
     (hd : d = .x20 ∨ d = .x21) (hsrc : s₀.gpr .x19 = src) (hdst : s₀.gpr d = out)
     (sep : (Region.mk src 64).Disjoint ⟨out,64⟩)
@@ -128,7 +128,7 @@ theorem xor_ok {s₀ : State} {src out : Addr} {x : Vector Word 16} {d : Reg}
     ⟨⟨rfl,rfl,rfl,fun _ _ _ => rfl,Frame.refl _ _⟩,
       fun j hj => by simpa using hh j hj,fun _ _ h => by omega⟩
   refine WP.mono (wp_range_flatMap (M := isa) (XI s₀ src out x)
-    (fun k s hk h => xor_step hk hd hsrc hdst sep hin hout h) 16 (by omega) s₀ h0) ?_
+    (fun k s hk h => xor_step hk hd hsrc hdst sep hin hout h) 16 (by omega_using []) s₀ h0) ?_
   intro s h
   exact ⟨h.toMeta,fun j hj => by simpa only [VG.Proof.Scrypt.AArch64.ite_pos' hj] using h.holds j hj,
     fun j hj => h.written j hj hj⟩
@@ -162,10 +162,10 @@ theorem finish_step {s₀ s : State} {out : Addr} {R : Vector Word 16} {i : Nat}
     exact ⟨r,List.mem_append_right _ hr,hc⟩
   apply WP.of_runBlock
   simp only [VG.Impl.Scrypt.AArch64.Resident.finishWord,runBlock_cons,runStep_some,
-    exec_ldr_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega) ir,exec_add,isa,
+    exec_ldr_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega_using [hi]) ir,exec_add,isa,
     State.read,State.write,Size.bits,n1,hw,hD,
     BitVec.setWidth_setWidth_of_le,BitVec.setWidth_eq,↓reduceIte,Nat.reduceLeDiff,hread]
-  rw [exec_str_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega)
+  rw [exec_str_w (show 4*i % 4 = 0 ∧ 4*i < 16384 by omega_using [hi])
     (by simpa [State.write,dn,nd.2,hD] using iw)]
   simp only [runStep_some,runBlock_nil,Option.some.injEq,exists_eq_left',↓reduceIte,narrow64]
   refine ⟨⟨h.rd,h.wr,h.sp,?_,?_⟩,?_,?_⟩
@@ -183,8 +183,8 @@ theorem finish_step {s₀ s : State} {out : Addr} {R : Vector Word 16} {i : Nat}
       simp only [n,wreg_ne_x1 hj,ite_false]
       rw [h.holds j hj]
       by_cases hjlt : j < i
-      · rw [VG.Proof.Scrypt.AArch64.ite_pos' hjlt,VG.Proof.Scrypt.AArch64.ite_pos' (by omega)]
-      · rw [VG.Proof.Scrypt.AArch64.ite_neg' hjlt,VG.Proof.Scrypt.AArch64.ite_neg' (by omega)]
+      · rw [VG.Proof.Scrypt.AArch64.ite_pos' hjlt,VG.Proof.Scrypt.AArch64.ite_pos' (by omega_using [hjlt])]
+      · rw [VG.Proof.Scrypt.AArch64.ite_neg' hjlt,VG.Proof.Scrypt.AArch64.ite_neg' (by omega_using [e, hjlt])]
   · intro j hj
     by_cases e : j = i
     · subst j
@@ -195,8 +195,8 @@ theorem finish_step {s₀ s : State} {out : Addr} {R : Vector Word 16} {i : Nat}
       change s.mem.readW (addr out j) 32 = _
       rw [h.written j hj]
       by_cases hjlt : j < i
-      · rw [VG.Proof.Scrypt.AArch64.ite_pos' hjlt,VG.Proof.Scrypt.AArch64.ite_pos' (by omega)]
-      · rw [VG.Proof.Scrypt.AArch64.ite_neg' hjlt,VG.Proof.Scrypt.AArch64.ite_neg' (by omega)]
+      · rw [VG.Proof.Scrypt.AArch64.ite_pos' hjlt,VG.Proof.Scrypt.AArch64.ite_pos' (by omega_using [hjlt])]
+      · rw [VG.Proof.Scrypt.AArch64.ite_neg' hjlt,VG.Proof.Scrypt.AArch64.ite_neg' (by omega_using [e, hjlt])]
 
 theorem finish_ok {s₀ : State} {out : Addr} {R : Vector Word 16} {d : Reg}
     (hd : d = .x20 ∨ d = .x21) (hdst : s₀.gpr d = out)
@@ -208,7 +208,7 @@ theorem finish_ok {s₀ : State} {out : Addr} {R : Vector Word 16} {d : Reg}
     ⟨⟨rfl,rfl,rfl,fun _ _ _ => rfl,Frame.refl _ _⟩,
       fun j hj => by simpa using hh j hj,fun j hj => by simp [words_get]⟩
   refine WP.mono (wp_range_flatMap (M := isa) (FI s₀ out R)
-    (fun k s hk h => finish_step hk hd hdst hout h) 16 (by omega) s₀ h0) ?_
+    (fun k s hk h => finish_step hk hd hdst hout h) 16 (by omega_using []) s₀ h0) ?_
   intro s h
   refine ⟨h.toMeta,fun j hj => ?_,fun j hj => ?_⟩
   · simpa only [VG.Proof.Scrypt.AArch64.ite_pos' hj,Vector.getElem_zipWith] using h.holds j hj
@@ -250,11 +250,11 @@ theorem wordLE_xor {a b : List Byte} {j : Nat} (ha : 4*j+4 ≤ a.length) (hb : 4
   have hd (i : Nat) (hi : i < 4) :
       (VG.Spec.Pbkdf2.xorBytes a b).getD (4*j+i) 0 = a.getD (4*j+i) 0 ^^^ b.getD (4*j+i) 0 := by
     simp only [VG.Spec.Pbkdf2.xorBytes,List.getD_eq_getElem?_getD,List.getElem?_zipWith,
-      List.getElem?_eq_getElem (by omega : 4*j+i < a.length),
-      List.getElem?_eq_getElem (by omega : 4*j+i < b.length),Option.getD_some]
-  have hd0 := hd 0 (by omega)
+      List.getElem?_eq_getElem (by omega_using [ha, hi] : 4*j+i < a.length),
+      List.getElem?_eq_getElem (by omega_using [hb, hi] : 4*j+i < b.length),Option.getD_some]
+  have hd0 := hd 0 (by omega_using [])
   simp only [Nat.add_zero] at hd0
-  simp only [wordLE,hd 3 (by omega),hd 2 (by omega),hd 1 (by omega),hd0]
+  simp only [wordLE,hd 3 (by omega_using []),hd 2 (by omega_using []),hd 1 (by omega_using []),hd0]
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_append,BitVec.getLsbD_xor]
@@ -274,8 +274,8 @@ theorem step_ok {s₀ : State} {src out xp : Addr} {d : Reg}
     apply Vector.ext
     intro j hj
     simp only [Vector.getElem_ofFn,mixed_get s₀ src _ hj,words_get _ _ hj]
-    rw [wordLE_xor (by simp [bytesAt]; omega) (by simp [bytesAt]; omega),
-      wordLE_bytesAt _ _ (by omega),wordLE_bytesAt _ _ (by omega)]
+    rw [wordLE_xor (by simp [bytesAt]; omega_using [hj]) (by simp [bytesAt]; omega_using [hj]),
+      wordLE_bytesAt _ _ (by omega_using [hj]),wordLE_bytesAt _ _ (by omega_using [hj])]
     rfl
   refine WP.mono (step_words hd hsrc hdst sep hin hout hh) fun s ⟨hm,hh,we,hb⟩ => ?_
   exact ⟨hm,by rw [we]; exact hh,by simpa only [salsa,mi] using hb⟩

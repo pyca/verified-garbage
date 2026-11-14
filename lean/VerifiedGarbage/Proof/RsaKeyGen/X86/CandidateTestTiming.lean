@@ -195,10 +195,10 @@ theorem private_input {E : Environment} (v : E.Valid) {eBytes pBytes entropy : L
     have lower := (candidate_shape v entropy).2.1
     have width := v.width_bounds.1
     have eqPower : 2 ^ (64 * E.width - 1) = 2 ^ (64 * E.width - 2) * 2 := by
-      rw [← Nat.pow_succ]; congr 1; omega
+      rw [← Nat.pow_succ]; congr 1; omega_using [width]
     rw [eqPower]
-    omega
-  refine ⟨⟨S, C, ?_, ?_, candidate_odd v entropy, by change 1 < candidateValue E entropy; have := candidate_large v entropy; omega, top⟩, ?_, ?_, ?_, ?_, ?_⟩
+    omega_using [lower]
+  refine ⟨⟨S, C, ?_, ?_, candidate_odd v entropy, by change 1 < candidateValue E entropy; have := candidate_large v entropy; omega_using [this], top⟩, ?_, ?_, ?_, ?_, ?_⟩
   · have value := W.val32 (v.geometry.arrayFit (j := 0) (by decide)) (by intro r mem; cases mem)
     rw [← Prepared.slot_eq] at value
     exact value.trans D.candidate
@@ -212,14 +212,14 @@ theorem private_input {E : Environment} (v : E.Valid) {eBytes pBytes entropy : L
     exact (List.mem_append.mp mem).elim (List.mem_append_left _) (fun known => List.mem_append_right _ (List.mem_cons_of_mem _ known))
   · change Spec.Rsa.bytesAt t.mem (E.rand.setWidth 64) E.randLength = entropy
     rw [VG.Proof.RsaKeyGen.frame_bytesAt F
-      (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact randFar) (by have := v.randLengthFit; omega)]
+      (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact randFar) (by have := v.randLengthFit; omega_using [this])]
     exact D.input.memory.entropy
-  · exact (W.read32 (d := 28) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 28 + 4 ≤ E.size; omega)
+  · exact (W.read32 (d := 28) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 28 + 4 ≤ E.size; omega_using [H])
       (by intro r mem; cases mem)).trans D.input.rand_eq
-  · have word := W.read32 (d := 32) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 32 + 4 ≤ E.size; omega)
+  · have word := W.read32 (d := 32) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 32 + 4 ≤ E.size; omega_using [H])
       (by intro r mem; cases mem)
     exact (congrArg BitVec.toNat word).trans (D.input.randLength_eq v)
-  · have word := W.read32 (d := 152) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 152 + 4 ≤ E.size; omega)
+  · have word := W.read32 (d := 152) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 152 + 4 ≤ E.size; omega_using [H])
       (by intro r mem; cases mem)
     change (t.mem.readW (off E.base 152) 32).toNat = 8 * E.width
     rw [v.length_eq]
@@ -254,7 +254,7 @@ theorem private_len {E : Environment} (v : E.Valid) {eBytes pBytes entropy : Lis
   have W : WorkspaceFrame E.geometry [] s.mem t.mem := workspace_of_frame F D.input.scratch.nowrap
     (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
   change t.mem.readW (off E.geometry.W 4) 32 = BitVec.ofNat 32 (8 * E.width)
-  rw [W.read32 (d := 4) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 4 + 4 ≤ E.size; omega)
+  rw [W.read32 (d := 4) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 4 + 4 ≤ E.size; omega_using [H])
     (by intro r mem; cases mem)]
   change s.mem.readW (off E.base (4 * 1)) 32 = _
   rw [D.input.header 1 (by decide)]
@@ -281,8 +281,8 @@ theorem test_trace {mont round : Prog isa} {montName roundName : String}
     cases B with
     | seq argsB frameB =>
       have argsTrace := (raw _ _ _ _ _ _ H.toDrawnPair.inputs.agree argsA argsB).1
-      have Ua := wp_result (capacity_ok H.left.input.scratch (by omega)) argsA
-      have Ub := wp_result (capacity_ok H.right.input.scratch (by omega)) argsB
+      have Ua := wp_result (capacity_ok H.left.input.scratch (by omega_using [space])) argsA
+      have Ub := wp_result (capacity_ok H.right.input.scratch (by omega_using [space])) argsB
       have Da := H.left.keepMem v Ua.mem Ua.keeps (by decide) (by decide) Ua.syms
       have Db := H.right.keepMem v Ub.mem Ub.keeps (by decide) (by decide) Ub.syms
       have capA : _ := Ua.gpr.trans (H.left.input.header 10 (by decide))

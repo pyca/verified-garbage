@@ -54,13 +54,13 @@ theorem wipe_ok {t : State} {f : Reg} {F : Addr} {o n : Nat} (hf0 : f ≠ .r0) (
   refine WP.mono (wp_range_flatMap (M := isa) (WInv u₁ F o n) (fun k u hk h => ?_) n (Nat.le_refl _) u₁
     ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩) fun u h => ?_
   · have hf : u.gpr f = F := by rw [h.gpr, h₁.other _ hf8, hF]
-    refine wp_stdd (a := F + BitVec.ofNat 64 (o + 8 * k)) hf0 ⟨by omega, by omega⟩ (by rw [hf])
+    refine wp_stdd (a := F + BitVec.ofNat 64 (o + 8 * k)) hf0 ⟨by omega_using [hon, hk], by omega_using [ho]⟩ (by rw [hf])
       (by rw [h.wr, h₁.wr]; exact hw k hk) fun u' h' => WP.block_nil ⟨by rw [h'.gpr, h.gpr], by rw [h'.rd, h.rd],
         by rw [h'.wr, h.wr], by rw [h'.sp, h.sp], ?_⟩
     rw [h'.mem]
     refine h.frame.writeW List.mem_cons_self _ ?_
     rw [← Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hon, hk])
   · refine K u (by rw [← h₁.mem]; exact h.frame) (by rw [h.rd, h₁.rd]) (by rw [h.wr, h₁.wr])
       (by rw [h.sp, h₁.sp]) fun r hr => by rw [h.gpr, h₁.other r hr]
 
@@ -81,7 +81,7 @@ theorem signCached_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : SignPre
   have g30 : t₄.gpr .r21 = sF s := h₄.inv.regs _ (by decide)
   have hFw : (fR s) ∈ t₄.wr := fF hp h₄.inv
   refine wipe_ok (f := .r21) (o := 16) (n := 46) (by decide) (by decide) g30 (by decide) (by decide)
-    (fun k hk => in_base hFw (by omega) (by omega)) fun u uf urd uwr usp ug => ?_
+    (fun k hk => in_base hFw (by omega_using [hk]) (by omega_using [hk])) fun u uf urd uwr usp ug => ?_
   have h₅ : SInv s u := h₄.inv.step signRegs_pres urd uwr usp (fun r hr => ug r fun e => by revert hr; rw [e]; decide)
     uf (fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨fR s, by simp, fsub (by decide)⟩)
     fun r hr => by rw [List.mem_singleton.mp hr]; exact fslot (by decide)
@@ -89,7 +89,7 @@ theorem signCached_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : SignPre
   refine restore_ok h₅ (by decide) (h₅.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
     (fun p (hp' : p ∈ restoreList 384 signRegs) => show InRegions (u.rd ++ u.wr) (sF s + BitVec.ofNat 64 p.2) 8 by
       rw [h₅.rd, h₅.wr, hp.rd, hp.wr]
-      exact ⟨fR s, by simp, Offset.contains_base _ (hrl p hp') (by have := hrl p hp'; omega)⟩)
+      exact ⟨fR s, by simp, Offset.contains_base _ (hrl p hp') (by have := hrl p hp'; omega_using [this])⟩)
     fun t₆ g₆ sp₆ lr₆ m₆ _ => ⟨g₆, sp₆, lr₆, ?_⟩
   have kO : bytesAt t₆.mem (s.gpr .r3) 114 = bytesAt t₄.mem (s.gpr .r3) 114 := by
     rw [m₆]

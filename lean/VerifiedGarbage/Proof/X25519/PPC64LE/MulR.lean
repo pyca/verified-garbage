@@ -65,14 +65,14 @@ theorem loadOps_ok {x y : Nat} (hx : x + 32 ≤ 4096) (hy : y + 32 ≤ 4096) (hx
     refine ld0_ok hct hd hd4 fun t' u => kk t' (hct.of_rest (u.rest hr) (by decide)) (u.rest hr) u.mem u.gpr u.other
   simp only [loadOps, List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
     List.cons_append, opA, opB, Nat.reduceEqDiff, ↓reduceIte]
-  refine ld s .r14 _ hc (by decide) (by omega) (by omega) _ _ fun s1 c1 r1 m1 g1 o1 => ?_
-  refine ld s1 .r15 _ c1 (by decide) (by omega) (by omega) _ _ fun s2 c2 r2 m2 g2 o2 => ?_
-  refine ld s2 .r16 _ c2 (by decide) (by omega) (by omega) _ _ fun s3 c3 r3 m3 g3 o3 => ?_
-  refine ld s3 .r17 _ c3 (by decide) (by omega) (by omega) _ _ fun s4 c4 r4 m4 g4 o4 => ?_
-  refine ld s4 .r18 _ c4 (by decide) (by omega) (by omega) _ _ fun s5 c5 r5 m5 g5 o5 => ?_
-  refine ld s5 .r19 _ c5 (by decide) (by omega) (by omega) _ _ fun s6 c6 r6 m6 g6 o6 => ?_
-  refine ld s6 .r20 _ c6 (by decide) (by omega) (by omega) _ _ fun s7 c7 r7 m7 g7 o7 => ?_
-  refine ld s7 .r21 _ c7 (by decide) (by omega) (by omega) _ _ fun s8 c8 r8 m8 g8 o8 => ?_
+  refine ld s .r14 _ hc (by decide) (by omega_using [hx]) (by omega_using [hx4]) _ _ fun s1 c1 r1 m1 g1 o1 => ?_
+  refine ld s1 .r15 _ c1 (by decide) (by omega_using [hx]) (by omega_using [hx4]) _ _ fun s2 c2 r2 m2 g2 o2 => ?_
+  refine ld s2 .r16 _ c2 (by decide) (by omega_using [hx]) (by omega_using [hx4]) _ _ fun s3 c3 r3 m3 g3 o3 => ?_
+  refine ld s3 .r17 _ c3 (by decide) (by omega_using [hx]) (by omega_using [hx4]) _ _ fun s4 c4 r4 m4 g4 o4 => ?_
+  refine ld s4 .r18 _ c4 (by decide) (by omega_using [hy]) (by omega_using [hy4]) _ _ fun s5 c5 r5 m5 g5 o5 => ?_
+  refine ld s5 .r19 _ c5 (by decide) (by omega_using [hy]) (by omega_using [hy4]) _ _ fun s6 c6 r6 m6 g6 o6 => ?_
+  refine ld s6 .r20 _ c6 (by decide) (by omega_using [hy]) (by omega_using [hy4]) _ _ fun s7 c7 r7 m7 g7 o7 => ?_
+  refine ld s7 .r21 _ c7 (by decide) (by omega_using [hy]) (by omega_using [hy4]) _ _ fun s8 c8 r8 m8 g8 o8 => ?_
   have hm : ∀ t : State, t.mem = s.mem → t.mem = s.mem := fun _ h => h
   have e2 : s1.mem = s.mem := m1
   have e3 : s2.mem = s.mem := m2.trans m1
@@ -83,7 +83,7 @@ theorem loadOps_ok {x y : Nat} (hx : x + 32 ≤ 4096) (hy : y + 32 ≤ 4096) (hx
   have e8 : s7.mem = s.mem := m7.trans e7
   refine k s8 c8 (r1.trans (r2.trans (r3.trans (r4.trans (r5.trans (r6.trans (r7.trans r8)))))))
     (m8.trans e8) (fun i hi => ?_) (fun j hj => ?_)
-  · have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+  · have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
     rcases this with rfl | rfl | rfl | rfl <;> simp only [opA, Nat.reduceEqDiff, ↓reduceIte]
     · rw [o8 _ (by decide), o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), o4 _ (by decide),
         o3 _ (by decide), o2 _ (by decide), g1]; rfl
@@ -92,7 +92,7 @@ theorem loadOps_ok {x y : Nat} (hx : x + 32 ≤ 4096) (hy : y + 32 ≤ 4096) (hx
     · rw [o8 _ (by decide), o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), o4 _ (by decide),
         g3, e3]; rfl
     · rw [o8 _ (by decide), o7 _ (by decide), o6 _ (by decide), o5 _ (by decide), g4, e4]; rfl
-  · have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
+  · have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega_using [hj]
     rcases this with rfl | rfl | rfl | rfl <;> simp only [opB, Nat.reduceEqDiff, ↓reduceIte]
     · rw [o8 _ (by decide), o7 _ (by decide), o6 _ (by decide), g5, e5]; rfl
     · rw [o8 _ (by decide), o7 _ (by decide), g6, e6]; rfl
@@ -117,12 +117,12 @@ theorem termR_ok {s0 : State} {k i j : Nat} (hk : k < 7) (hi : i < 4) (hj : j < 
     WP isa (.block (termR k (i, j))) s fun s' => RT (b := b) s0 k s' ∧
       (v3 s (pw k) (pw (k + 1)) (pw (k + 2)) + opF s0 (i, j) < 2 ^ 192 →
         v3 s' (pw k) (pw (k + 1)) (pw (k + 2)) = v3 s (pw k) (pw (k + 1)) (pw (k + 2)) + opF s0 (i, j)) := by
-  obtain ⟨p04, -, -, p07, p0c, p0o, -⟩ := pw_facts k (by omega)
-  obtain ⟨p14, -, -, p17, p1c, p1o, -⟩ := pw_facts (k + 1) (by omega)
-  obtain ⟨p24, -, -, p27, p2c, p2o, -⟩ := pw_facts (k + 2) (by omega)
-  have h01 : pw k ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
-  have h02 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
-  have h12 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
+  obtain ⟨p04, -, -, p07, p0c, p0o, -⟩ := pw_facts k (by omega_using [hk])
+  obtain ⟨p14, -, -, p17, p1c, p1o, -⟩ := pw_facts (k + 1) (by omega_using [hk])
+  obtain ⟨p24, -, -, p27, p2c, p2o, -⟩ := pw_facts (k + 2) (by omega_using [hk])
+  have h01 : pw k ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  have h02 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  have h12 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
   obtain ⟨a4, -, a7, -, -, -, -, -, -, -, -⟩ := op_facts i hi
   obtain ⟨-, -, -, b4, -, b7, -, -, -, -, -⟩ := op_facts j hj
   have ka : s.gpr (opA i) = s0.gpr (opA i) :=
@@ -168,10 +168,10 @@ theorem termsR_ok {s0 : State} {k : Nat} (hk : k < 7) :
     rw [tsum_cons] at hb
     obtain ⟨hp1, hp2⟩ := hps (i, j) (List.mem_cons_self ..)
     refine WP.append (termR_ok (i := i) (j := j) hk hp1 hp2 h) fun s1 ⟨h1, hv1⟩ => ?_
-    have hv1 := hv1 (by omega)
-    refine WP.mono (termsR_ok hk ps (fun q hq => hps q (List.mem_cons_of_mem _ hq)) s1 h1 (by omega))
+    have hv1 := hv1 (by omega_using [hb])
+    refine WP.mono (termsR_ok hk ps (fun q hq => hps q (List.mem_cons_of_mem _ hq)) s1 h1 (by omega_arith))
       fun s2 ⟨h2, hv2⟩ => ⟨h2, ?_⟩
-    rw [hv2, hv1, tsum_cons]; omega
+    rw [hv2, hv1, tsum_cons]; omega_using []
 
 /-- The value of the words `pw 0`, …, `pw (k - 1)`. -/
 abbrev pwV (s : State) (k : Nat) : Nat := colsV (fun j => (s.gpr (pw j)).toNat) k
@@ -189,12 +189,12 @@ structure PInv (s0 : State) (k : Nat) (s : State) : Prop where
 
 theorem colsV_congr' {f g : Nat → Nat} : ∀ {n : Nat}, (∀ k < n, f k = g k) → colsV f n = colsV g n
   | 0, _ => rfl
-  | n + 1, h => by rw [colsV, colsV, colsV_congr' (fun k hk => h k (by omega)), h n (by omega)]
+  | n + 1, h => by rw [colsV, colsV, colsV_congr' (fun k hk => h k (by omega_using [hk])), h n (by omega_using [])]
 
 /-- Column `k`. -/
 theorem colR_ok {s0 : State} {k : Nat} (hk : k < 7) {s : State} (h : PInv (b := b) s0 k s) :
     WP isa (.block (colR k)) s (PInv (b := b) s0 (k + 1)) := by
-  obtain ⟨-, -, -, -, p2c, p2o, -⟩ := pw_facts (k + 2) (by omega)
+  obtain ⟨-, -, -, -, p2c, p2o, -⟩ := pw_facts (k + 2) (by omega_using [hk])
   unfold colR
   refine wp_li (by decide) fun s1 u1 => ?_
   have hr1 : Rest clobR s s1 := u1.rest p2c
@@ -203,33 +203,33 @@ theorem colR_ok {s0 : State} {k : Nat} (hk : k < 7) {s : State} (h : PInv (b := 
     ⟨by rw [u1.other _ (fun e => (p2o i hi).1 e.symm)]; exact (h.ops i hi).1,
       by rw [u1.other _ (fun e => (p2o i hi).2 e.symm)]; exact (h.ops i hi).2⟩
   have hF : ∀ p ∈ colPairs k, opF s1 p = opF s0 p := fun p hp => by
-    obtain ⟨h1, h2⟩ := colPairs_ok k (by omega) p hp
+    obtain ⟨h1, h2⟩ := colPairs_ok k (by omega_using [hk]) p hp
     simp only [opF, (hops _ h1).1, (hops _ h2).2]
   have hts : tsum (opF s1) (colPairs k) = tsum (opF s0) (colPairs k) := by
     unfold tsum; congr 1; exact List.map_congr_left hF
   have hlt : tsum (opF s1) (colPairs k) < 4 * 2 ^ 128 :=
-    tsum_lt (fun p => Nat.mul_le_mul (by have := (s1.gpr (opA p.1)).isLt; omega)
-      (by have := (s1.gpr (opB p.2)).isLt; omega)) (colPairs_len k (by omega))
+    tsum_lt (fun p => Nat.mul_le_mul (by have := (s1.gpr (opA p.1)).isLt; omega_using [])
+      (by have := (s1.gpr (opB p.2)).isLt; omega_using [])) (colPairs_len k (by omega_using [hk]))
   have g2 : s1.gpr (pw (k + 2)) = 0 := u1.gpr
-  have h01 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
-  have h11 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
+  have h01 : pw k ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
+  have h11 : pw (k + 1) ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk]) _ (by omega_using [hk]) e; omega_using [this]
   have hv0 : v3 s1 (pw k) (pw (k + 1)) (pw (k + 2)) =
       (s.gpr (pw k)).toNat + 2 ^ 64 * (s.gpr (pw (k + 1))).toNat := by
     simp only [v3, g2, u1.other _ h01, u1.other _ h11]; rfl
   have hl := (s.gpr (pw k)).isLt
   have hh := (s.gpr (pw (k + 1))).isLt
-  refine WP.mono (termsR_ok hk (colPairs k) (fun p hp => colPairs_ok k (by omega) p hp) s1 hRT
+  refine WP.mono (termsR_ok hk (colPairs k) (fun p hp => colPairs_ok k (by omega_using [hk]) p hp) s1 hRT
     (by rw [hv0]; omega_arith)) fun s2 ⟨h2, hv2⟩ => ?_
   have hlow : ∀ j < k, s2.gpr (pw j) = s.gpr (pw j) := fun j hj => by
-    have n0 : pw j ≠ pw k := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
-    have n1 : pw j ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
-    have n2 : pw j ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega) _ (by omega) e; omega
-    obtain ⟨j4, -, -, j7, -⟩ := pw_facts j (by omega)
+    have n0 : pw j ≠ pw k := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_using [hj, this]
+    have n1 : pw j ≠ pw (k + 1) := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_using [hj, this]
+    have n2 : pw j ≠ pw (k + 2) := fun e => by have := pw_inj _ (by omega_using [hk, hj]) _ (by omega_using [hk]) e; omega_using [hj, this]
+    obtain ⟨j4, -, -, j7, -⟩ := pw_facts j (by omega_using [hk, hj])
     rw [h2.keep _ n0 n1 n2 j4 j7, u1.other _ n2]
   refine ⟨h2.ctx, h.rest.trans (hr1.trans h2.rest), h2.mem.trans (by rw [u1.mem, h.mem]), fun i hi => ?_, ?_⟩
   · obtain ⟨-, -, -, -, -, -, -, -, -, -, -⟩ := op_facts i hi
-    have k0 := pw_facts k (by omega); have k1 := pw_facts (k + 1) (by omega)
-    have k2 := pw_facts (k + 2) (by omega); have oi := op_facts i hi
+    have k0 := pw_facts k (by omega_using [hk]); have k1 := pw_facts (k + 1) (by omega_using [hk])
+    have k2 := pw_facts (k + 2) (by omega_using [hk]); have oi := op_facts i hi
     refine ⟨?_, ?_⟩
     · rw [h2.keep _ (fun e => (k0.2.2.2.2.2.1 i hi).1 e.symm) (fun e => (k1.2.2.2.2.2.1 i hi).1 e.symm)
         (fun e => (k2.2.2.2.2.2.1 i hi).1 e.symm) oi.1 oi.2.2.1]
@@ -238,7 +238,7 @@ theorem colR_ok {s0 : State} {k : Nat} (hk : k < 7) {s : State} (h : PInv (b := 
         (fun e => (k2.2.2.2.2.2.1 i hi).2 e.symm) oi.2.2.2.1 oi.2.2.2.2.2.1]
       exact (hops i hi).2
   · have hv := h.val
-    rw [show k + 1 + 1 = k + 2 by omega]
+    rw [show k + 1 + 1 = k + 2 by omega_using []]
     simp only [pwV, colsV]
     rw [colsV_congr' (fun j hj => by rw [hlow j hj])]
     rw [← pwV, ← hts]
@@ -256,7 +256,7 @@ theorem colR_ok {s0 : State} {k : Nat} (hk : k < 7) {s : State} (h : PInv (b := 
     generalize (s2.gpr (pw (k + 2))).toNat = d' at *
     generalize 2 ^ 64 = W at *
     rw [Nat.add_assoc, Nat.mul_assoc, ← Nat.mul_add, hv2, ← hv, Nat.mul_add K (a + W * c) T]
-    omega
+    omega_using []
 
 /-- The columns, by induction. -/
 theorem colsR_ok {s0 : State} : ∀ n ≤ 7, ∀ s, PInv (b := b) s0 0 s →
@@ -264,7 +264,7 @@ theorem colsR_ok {s0 : State} : ∀ n ≤ 7, ∀ s, PInv (b := b) s0 0 s →
   | 0, _, s, h => WP.block_nil h
   | n + 1, hn, s, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.append (colsR_ok n (by omega) s h) fun s1 h1 => colR_ok (by omega) h1
+    exact WP.append (colsR_ok n (by omega_using [hn]) s h) fun s1 h1 => colR_ok (by omega_using [hn]) h1
 
 /-- The columns sum to the product of the operands' words. -/
 theorem colsR_sum (s0 : State) :
@@ -321,9 +321,9 @@ theorem productR_ok {x y : Nat} (hx : x + 32 ≤ 4096) (hy : y + 32 ≤ 4096) (h
         have := (s4.gpr (pw n)).isLt
         rw [Nat.pow_succ]
         calc colsV (fun j => (s4.gpr (pw j)).toNat) n + (2 ^ 64) ^ n * (s4.gpr (pw n)).toNat
-            < (2 ^ 64) ^ n + (2 ^ 64) ^ n * (s4.gpr (pw n)).toNat := by omega
+            < (2 ^ 64) ^ n + (2 ^ 64) ^ n * (s4.gpr (pw n)).toNat := by omega_using [ih]
           _ = (2 ^ 64) ^ n * ((s4.gpr (pw n)).toNat + 1) := by rw [Nat.mul_add, Nat.mul_one, Nat.add_comm]
-          _ ≤ (2 ^ 64) ^ n * 2 ^ 64 := Nat.mul_le_mul_left _ (by omega)
+          _ ≤ (2 ^ 64) ^ n * 2 ^ 64 := Nat.mul_le_mul_left _ (by omega_using [])
     exact this 7
   simp only [pwV, colsV] at hv hp7 ⊢
   generalize colsV (fun j => (s4.gpr (pw j)).toNat) 7 = S at *
@@ -335,7 +335,7 @@ theorem productR_ok {x y : Nat} (hx : x + 32 ≤ 4096) (hy : y + 32 ≤ 4096) (h
   · exfalso
     have : (2 ^ 64) ^ 7 * (2 ^ 64 * c) ≥ (2 ^ 64) ^ 8 := by
       rw [← Nat.mul_assoc, ← Nat.pow_succ]; exact Nat.le_mul_of_pos_right _ hc0
-    omega
+    omega_using [hlt, hv, hc0]
 
 /-! ## The reduction -/
 
@@ -356,7 +356,7 @@ theorem opR_ok {d n src : Reg} (hn4 : n ≠ .r4) {s : State} (h5 : s.gpr .r5 = 3
     rw [← hs1, RegUpd.gpr_write_self]
     cases hi
     · simp only [Bool.false_eq_true, ↓reduceIte, part]; rw [BitVec.toNat_mul, h5, t38]
-    · simp only [↓reduceIte, part]; rw [h5, t38, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    · simp only [↓reduceIte, part]; rw [h5, t38, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
   have gn : s1.gpr n = s.gpr n := by rw [← hs1, RegUpd.gpr_write_of_ne _ _ hn4]
   have c1 : s1.ca = s.ca := by rw [← hs1, RegUpd.ca_write]
   have m1 : s1.mem = s.mem := by rw [← hs1, RegUpd.mem_write]
@@ -434,7 +434,7 @@ theorem highsR_ok {s : State} (h5 : s.gpr .r5 = 38) (h7 : (s.gpr .r7).toNat ≤ 
     rw [r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide)]
   rw [e7] at v4
   have hl7 := (s4.gpr .r7).isLt
-  refine ⟨?_, by omega, (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
+  refine ⟨?_, by omega_using [h7, c3, v4, p3], (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
       (r4.mono (by decide)))), by rw [m4, m3, m2, m1]⟩
   have e8 : s4.gpr .r8 = s.gpr .r8 := by
     rw [r4.gpr _ (by decide), r3.gpr _ (by decide), r2.gpr _ (by decide), r1.gpr _ (by decide)]
@@ -464,7 +464,7 @@ theorem reduceR_ok {o : Nat} (ho : o + 32 ≤ 4096) (ho4 : o % 4 = 0) {s : State
   refine wp_li (by decide) fun s1 u1 => ?_
   have hc1 := hc.of_rest (u1.rest (ws := [.r5]) (by decide)) (by decide)
   have hp1 : ∀ k < 8, s1.gpr (pw k) = s.gpr (pw k) := fun k hk =>
-    u1.other _ (pw_facts k (by omega)).2.1
+    u1.other _ (pw_facts k (by omega_using [hk])).2.1
   refine WP.append (lowsR_ok (by rw [u1.gpr]; rfl)) fun s2 ⟨v2, r2, m2⟩ => ?_
   have hc2 := hc1.of_rest r2 (by decide)
   refine WP.cons (exec_li (by decide)) (wp_addze fun s3 u3 => ?_)
@@ -474,7 +474,7 @@ theorem reduceR_ok {o : Nat} (ho : o + 32 ≤ 4096) (ho4 : o % 4 = 0) {s : State
   rw [z] at v3
   have c2 : s2.ca.toNat ≤ 1 := Bool.toNat_le _
   have l3 := (s3.gpr .r7).isLt
-  have e3 : (s3.gpr .r7).toNat = s2.ca.toNat := by omega
+  have e3 : (s3.gpr .r7).toNat = s2.ca.toNat := by omega_using [v3, c2]
   have rv3 : rv4 s3 = rv4 s2 := by
     simp only [rv4, val4, wreg, Nat.reduceEqDiff, ↓reduceIte]
     rw [u3.other _ (by decide), u3.other _ (by decide), u3.other _ (by decide), u3.other _ (by decide),
@@ -489,10 +489,10 @@ theorem reduceR_ok {o : Nat} (ho : o + 32 ≤ 4096) (ho4 : o % 4 = 0) {s : State
     rw [r3.gpr _ (by revert hk; revert k; decide), r2.gpr _ (by revert hk; revert k; decide), hp1 k hk]
   have hc3 := hc2.of_rest r3 (by decide)
   rw [List.nil_append]
-  refine WP.append (highsR_ok h53 (by omega)) fun s4 ⟨v4, t4, r4, m4⟩ => ?_
-  refine WP.append (foldTop_ok (by rw [r4.gpr _ (by decide), h53]) (by omega))
+  refine WP.append (highsR_ok h53 (by omega_using [v3, c2])) fun s4 ⟨v4, t4, r4, m4⟩ => ?_
+  refine WP.append (foldTop_ok (by rw [r4.gpr _ (by decide), h53]) (by omega_using [t4]))
     fun s5 ⟨v5, t5, r5, m5⟩ => ?_
-  refine WP.append (foldTop_ok (by rw [r5.gpr _ (by decide), r4.gpr _ (by decide), h53]) (by omega))
+  refine WP.append (foldTop_ok (by rw [r5.gpr _ (by decide), r4.gpr _ (by decide), h53]) (by omega_using [t5]))
     fun s6 ⟨v6, t6, r6, m6⟩ => ?_
   have hc6 := hc3.of_rest ((r4.mono (ws' := [.r4, .r7, .r8, .r9, .r10, .r11]) (by decide)).trans
     (r5.trans r6)) (by decide)
@@ -504,12 +504,12 @@ theorem reduceR_ok {o : Nat} (ho : o + 32 ≤ 4096) (ho4 : o % 4 = 0) {s : State
   · rw [v7, pwV_halves]
     have hH4 : val4 (fun k => part true (s3.gpr (pw (4 + k))).toNat) =
         val4 (fun k => part true (s.gpr (pw (4 + k))).toNat) :=
-      val4_congr fun k hk => by rw [hp3 _ (by omega)]
+      val4_congr fun k hk => by rw [hp3 _ (by omega_using [hk])]
     have hL1 : val4 (fun k => (s1.gpr (pw k)).toNat) = val4 (fun k => (s.gpr (pw k)).toNat) :=
-      val4_congr fun k hk => by rw [hp1 _ (by omega)]
+      val4_congr fun k hk => by rw [hp1 _ (by omega_using [hk])]
     have hP1 : val4 (fun k => part false (s1.gpr (pw (4 + k))).toNat) =
         val4 (fun k => part false (s.gpr (pw (4 + k))).toNat) :=
-      val4_congr fun k hk => by rw [hp1 _ (by omega)]
+      val4_congr fun k hk => by rw [hp1 _ (by omega_using [hk])]
     rw [hL1, hP1] at v2
     rw [hH4] at v4
     have hs := parts_sum (fun k => (s.gpr (pw (4 + k))).toNat)
@@ -520,10 +520,10 @@ theorem reduceR_ok {o : Nat} (ho : o + 32 ≤ 4096) (ho4 : o % 4 = 0) {s : State
     generalize val4 (fun k => (s.gpr (pw (4 + k))).toNat) = H at *
     generalize val4 (fun k => part false (s.gpr (pw (4 + k))).toNat) = LO at *
     generalize val4 (fun k => part true (s.gpr (pw (4 + k))).toNat) = HI at *
-    have z6 : (s6.gpr .r7).toNat = 0 := by omega
+    have z6 : (s6.gpr .r7).toNat = 0 := by omega_using [v3, c2, l3, e3, t4, v5, t5, v6, t6, b2, b4, b5, b6, v2, v4, hs]
     rw [z6] at v6
     rw [hP]
-    omega
+    omega_using [v5, v6, v2, v4, hs]
 
 /-- `mulR o x y`: `[o] = [x] · [y]` modulo `p`, in registers. -/
 theorem mulR_ok {o x y : Nat} (ho : o + 32 ≤ 4096) (hx : x + 32 ≤ 4096) (hy : y + 32 ≤ 4096)

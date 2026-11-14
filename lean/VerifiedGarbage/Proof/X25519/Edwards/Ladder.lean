@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.FieldTheory.Finite.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519 of the base point is the u-coordinate of a multiple of Ed25519's
@@ -97,7 +98,7 @@ theorem dadd {x2 z2 x3 z3 : Fe} {p q : EPoint dZ} (h2 : U (x2, z2) p) (h3 : U (x
 theorem inv_step (k n : Nat) (st : Ladder) (hs : st.swap ≤ 1) (h : Inv k (n + 1) st) :
     Inv k n (ladderStep k 9 st n) := by
   have hm : k >>> n = 2 * (k >>> (n + 1)) + bit k n := by
-    simp only [bit, Nat.shiftRight_succ, Nat.and_one_is_mod]; omega
+    simp only [bit, Nat.shiftRight_succ, Nat.and_one_is_mod]; omega_using []
   set m := k >>> (n + 1)
   obtain ⟨h0, h1⟩ := h
   rw [ladderStep_eq]
@@ -108,23 +109,23 @@ theorem inv_step (k n : Nat) (st : Ladder) (hs : st.swap ≤ 1) (h : Inv k (n + 
   · simp only [hs0, hb0, cswap, Nat.xor_self, Nat.reduceEqDiff, ↓reduceIte] at h0 h1 ⊢
     refine ⟨?_, ?_⟩
     · rw [hm, hb0, Nat.add_zero, two_mul, add_nsmul]; exact dbl h0
-    · rw [hm, hb0, Nat.add_zero, show 2 * m + 1 = m + (m + 1) by omega, add_nsmul]
+    · rw [hm, hb0, Nat.add_zero, show 2 * m + 1 = m + (m + 1) by omega_using [], add_nsmul]
       exact dadd h0 h1 (Or.inl (by rw [add_nsmul, one_nsmul, add_sub_cancel_left]))
   · simp only [hs0, hb1, cswap, Nat.zero_xor, ↓reduceIte] at h0 h1 ⊢
     refine ⟨?_, ?_⟩
-    · rw [hm, hb1, show 2 * m + 1 = (m + 1) + m by omega, add_nsmul]
+    · rw [hm, hb1, show 2 * m + 1 = (m + 1) + m by omega_using [], add_nsmul]
       exact dadd h1 h0 (Or.inr (by rw [add_nsmul, one_nsmul, add_sub_cancel_left]))
-    · rw [hm, hb1, show 2 * m + 1 + 1 = (m + 1) + (m + 1) by omega, add_nsmul]; exact dbl h1
+    · rw [hm, hb1, show 2 * m + 1 + 1 = (m + 1) + (m + 1) by omega_using [], add_nsmul]; exact dbl h1
   · simp only [hs1, hb0, cswap, Nat.xor_zero, ↓reduceIte] at h0 h1 ⊢
     refine ⟨?_, ?_⟩
     · rw [hm, hb0, Nat.add_zero, two_mul, add_nsmul]; exact dbl h0
-    · rw [hm, hb0, Nat.add_zero, show 2 * m + 1 = m + (m + 1) by omega, add_nsmul]
+    · rw [hm, hb0, Nat.add_zero, show 2 * m + 1 = m + (m + 1) by omega_using [], add_nsmul]
       exact dadd h0 h1 (Or.inl (by rw [add_nsmul, one_nsmul, add_sub_cancel_left]))
   · simp only [hs1, hb1, cswap, Nat.xor_self, ↓reduceIte] at h0 h1 ⊢
     refine ⟨?_, ?_⟩
-    · rw [hm, hb1, show 2 * m + 1 = (m + 1) + m by omega, add_nsmul]
+    · rw [hm, hb1, show 2 * m + 1 = (m + 1) + m by omega_using [], add_nsmul]
       exact dadd h1 h0 (Or.inr (by rw [add_nsmul, one_nsmul, add_sub_cancel_left]))
-    · rw [hm, hb1, show 2 * m + 1 + 1 = (m + 1) + (m + 1) by omega, add_nsmul]; exact dbl h1
+    · rw [hm, hb1, show 2 * m + 1 + 1 = (m + 1) + (m + 1) by omega_using [], add_nsmul]; exact dbl h1
 
 theorem inv_init (k : Nat) (h0 : k >>> 255 = 0) : Inv k 255 (VG.Proof.X25519.init 9) := by
   simp only [Inv, VG.Proof.X25519.init, cswap, h0, zero_nsmul, zero_add, one_nsmul, Nat.reduceEqDiff,
@@ -142,12 +143,12 @@ theorem inv_after (k : Nat) (hk : k >>> 255 = 0) :
   | zero => intro _; rw [ladderAfter_255]; exact inv_init k hk
   | succ j ih =>
     intro hj
-    have hn : 255 - (j + 1) < 255 := by omega
+    have hn : 255 - (j + 1) < 255 := by omega_using []
     rw [ladderAfter_step k 9 hn]
-    have e : 255 - (j + 1) + 1 = 255 - j := by omega
+    have e : 255 - (j + 1) + 1 = 255 - j := by omega_using [hj]
     refine inv_step k _ _ ?_ ?_
-    · rw [e]; exact ladderAfter_swap_le k 9 (by omega)
-    · rw [e]; exact ih (by omega)
+    · rw [e]; exact ladderAfter_swap_le k 9 (by omega_using [])
+    · rw [e]; exact ih (by omega_using [hj])
 
 /-- Bit 7 of a byte masked with `127` and then 64 set is clear. -/
 private theorem bit7_and_or_64 : ∀ x < 256, (((x &&& 127) ||| 64) >>> 7) &&& 1 = 0 := by
@@ -173,7 +174,7 @@ theorem decodeScalar25519_shift {kb : List Byte} (h : kb.length = 32) :
     rw [Nat.shiftRight_eq_div_pow]
     exact Nat.div_lt_of_lt_mul (by rw [← Nat.pow_succ]; exact hlt)
   rw [Nat.and_one_is_mod] at hbit
-  omega
+  omega_using [hbit, h2]
 
 /-- `z^(P-2) = z⁻¹`, also for `z = 0`. -/
 theorem pow_P_sub_two (z : ZMod P) : z ^ (P - 2) = z⁻¹ := by

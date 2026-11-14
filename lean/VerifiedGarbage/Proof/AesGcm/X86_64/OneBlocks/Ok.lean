@@ -48,7 +48,7 @@ theorem w192_eqs {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W S
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have sep : ∀ d, d + 8 ≤ 192 ∨ 200 ≤ d → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 d) (64 / 8) (W + BitVec.ofNat 64 192) (64 / 8) :=
-    fun d h₁ h₂ => Offset.sep _ (by omega) (by omega) (by omega)
+    fun d h₁ h₂ => Offset.sep _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
   have one : ∀ {r : Region}, r.Disjoint ⟨W + BitVec.ofNat 64 192, 8⟩ →
       ∀ r' ∈ [(⟨W + BitVec.ofNat 64 192, 8⟩ : Region)], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd
@@ -57,11 +57,11 @@ theorem w192_eqs {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W S
     Mem.readW_writeW_sep (sep 200 (.inr (by decide)) (by decide)) (by decide),
     Mem.readW_writeW_sep (sep 208 (.inr (by decide)) (by decide)) (by decide),
     bytesAt_frame hf (one ((L.cw'.sub_left (Region.sub_prefix hRb)).sub_right (Lay.wSub (by decide))))
-      (by have := L.cw; omega),
+      (by have := L.cw; omega_using [hRb]),
     blockAt_frame hf (one (by simp only [cbA, yA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide))),
     blockAt_frame hf (one (by simp only [cbA, yA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide))),
-    blocksAt_frame hf (one ((h.data.ok.w.sub_left (Region.sub_prefix (by omega))).sub_right
-      (Lay.wSub (by decide)))) (by have := h.data.ok.wrap; omega),
+    blocksAt_frame hf (one ((h.data.ok.w.sub_left (Region.sub_prefix (by omega_using []))).sub_right
+      (Lay.wSub (by decide)))) (by have := h.data.ok.wrap; omega_using [this]),
     blockAt_frame hf (one ((L.cw'.sub_left (Offset.sub_base (d := 240) _ (by decide))).sub_right
       (Lay.wSub (by decide)))),
     hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
@@ -93,7 +93,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
   · simp only [decide_eq_true_eq] at hz
     refine WP.block_nil ⟨⟨he₁, rd₁, wr₁, hf₁, t₁, ?_, ?_⟩, h0 hz s₁ m₁⟩
     · rw [m₁, e200, h.dat, hz]; simp
-    · rw [m₁, e208, h.len]; congr 1; omega
+    · rw [m₁, e208, h.len]; congr 1; omega_using [hz]
   · simp only [decide_eq_false_iff_not] at hz
     have hR₁ : RoundsAt s₁.mem W R := ⟨by rw [m₁, e176]; exact h.rounds.1, h.rounds.2⟩
     have hd₁ : s₁.mem.readW (W + BitVec.ofNat 64 200) 64 = D := by rw [m₁, e200, h.dat]
@@ -103,7 +103,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by decide)) rd₂ wr₂
     have obi : ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ := ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁),
-      by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide)),
+      by omega_using [], h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide)),
       h.ext.keep (rd₂.trans rd₁) (wr₂.trans wr₁) (by rw [m₂, m₁]; exact f192) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact h.ext.cw.sub_right (Lay.wSub (by decide)))⟩
     refine WP.seq (WP.mono (hframe s₂ obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₄⟩ => ?_)
@@ -112,7 +112,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
       rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₄ wr₄
     have kp : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
         s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
-      rw [fr₄.readW (Region.contains_self _ _) (ob_slots L h.data.ok.w (by omega) h.t_w h₁ h₂) (by decide), m₂]
+      rw [fr₄.readW (Region.contains_self _ _) (ob_slots L h.data.ok.w (by omega_using []) h.t_w h₁ h₂) (by decide), m₂]
     have hd₄ : s₄.mem.readW (W + BitVec.ofNat 64 200) 64 = D := by rw [kp 200 (by decide) (by decide), hd₁]
     have hl₄ : s₄.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n := by
       rw [kp 208 (by decide) (by decide), m₁, e208, h.len]
@@ -158,8 +158,8 @@ theorem ob_after {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W S
   have one : ∀ {r : Region}, r.Disjoint ⟨W + BitVec.ofNat 64 200, 16⟩ →
       ∀ r' ∈ [(⟨W + BitVec.ofNat 64 200, 16⟩ : Region)], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd
-  refine ⟨blocksAt_frame hf (one ((h.data.ok.w.sub_left (Region.sub_prefix (by omega))).sub_right
-      (Lay.wSub (by decide)))) (by have := h.data.ok.wrap; omega),
+  refine ⟨blocksAt_frame hf (one ((h.data.ok.w.sub_left (Region.sub_prefix (by omega_using []))).sub_right
+      (Lay.wSub (by decide)))) (by have := h.data.ok.wrap; omega_using [this]),
     blockAt_frame hf (one (by simp only [cbA, yA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide))),
     blockAt_frame hf (one (by simp only [cbA, yA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide)))⟩
 

@@ -40,7 +40,7 @@ theorem hashOk : HashOk Impl.Sha1.PPC64LE.Stream.params 20 (8 * Spec.Hmac.sha1I.
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha1.md, Spec.Sha1.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega_using [hj])
   lenOk := trivial
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => by
     show Spec.Sha1.hash m = _

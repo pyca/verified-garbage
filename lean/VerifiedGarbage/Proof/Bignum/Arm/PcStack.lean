@@ -54,9 +54,9 @@ theorem pcInputs_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
       t.mem = s.mem ∧ Rest [.r4, .r6] s t := by
   have nowrap := h.nowrap
   unfold PcFn.inputs
-  refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide) (addr_add (by omega)) (h.read (by decide)) fun u j => ?_
+  refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide) (addr_add (by omega_using [nowrap])) (h.read (by decide)) fun u j => ?_
   refine wp_loadStack (a := off (State.addr s.sp) 12) (by decide)
-    (by rw [j.sp]; exact addr_add (by omega)) (by rw [j.rd, j.wr]; exact h.read (by decide)) fun t l => WP.block_nil ?_
+    (by rw [j.sp]; exact addr_add (by omega_using [nowrap])) (by rw [j.rd, j.wr]; exact h.read (by decide)) fun t l => WP.block_nil ?_
   exact ⟨(l.other .r4 (by decide)).trans (j.gpr.trans h.savedInput),
     by rw [l.gpr, j.mem]; exact h.savedCount, l.mem.trans j.mem,
     (j.rest (by simp)).trans (l.rest (by simp))⟩
@@ -66,7 +66,7 @@ theorem pcOutput_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     WP isa (.block [.ldrSp .r4 4]) s fun t =>
       t.gpr .r4 = dst ∧ t.mem = s.mem ∧ Rest [.r4] s t := by
   refine wp_loadStack (a := off (State.addr s.sp) 4) (by decide)
-    (addr_add (by have := h.nowrap; omega)) (h.read (by decide)) fun t j => WP.block_nil ?_
+    (addr_add (by have := h.nowrap; omega_using [this])) (h.read (by decide)) fun t j => WP.block_nil ?_
   exact ⟨j.gpr.trans h.savedOutput, j.mem, j.rest (by simp)⟩
 
 end VG.Proof.Bignum.Arm

@@ -79,7 +79,7 @@ theorem finTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
     · have hc : ct ≠ [] := fun e => by subst e; simp only [List.length_nil] at hP; simp [hP] at hf
       have e : (ghashInput a ct).length % 16 = (V .s11).toNat % 16 := by
         rw [Proof.Gcm.ghashInput_of_ne hc, List.length_append, List.length_append, Proof.Gcm.length_zeros, hP]
-        have := Proof.Gcm.length_pad_mod a.length; omega
+        have := Proof.Gcm.length_pad_mod a.length; omega_using [this]
       have hand := and15 (V .s11)
       rw [e]
       crun [Int.reduceNatCast', h23, hand]

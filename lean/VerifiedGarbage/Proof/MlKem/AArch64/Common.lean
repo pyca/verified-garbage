@@ -104,13 +104,13 @@ theorem BytesUpTo.zero {m : Mem} {p : Addr} {N : Nat} (L : Nat → Byte) :
 theorem BytesUpTo.write {m : Mem} {p : Addr} {N t : Nat} {L old : Nat → Byte}
     (h : BytesUpTo m p N t L old) (hN : N < 2 ^ 64) (ht : t < N) {b : Byte} (hb : b = L t) :
     BytesUpTo (m.writeW (p + BitVec.ofNat 64 t) b) p N (t + 1) L old := fun j hj => by
-  rw [write8_at m p (by omega) (by omega)]
+  rw [write8_at m p (by omega_using [hN, hj]) (by omega_using [hN, ht])]
   by_cases e : j = t
-  · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega), hb]
+  · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega_using []), hb]
   · rw [ite_eq_right e, h j hj]
     by_cases hjt : j < t
-    · rw [ite_eq_left hjt, ite_eq_left (by omega)]
-    · rw [ite_eq_right hjt, ite_eq_right (by omega)]
+    · rw [ite_eq_left hjt, ite_eq_left (by omega_using [hjt])]
+    · rw [ite_eq_right hjt, ite_eq_right (by omega_using [e, hjt])]
 
 /-- All `N` bytes written. -/
 theorem BytesUpTo.eq {m : Mem} {p : Addr} {N : Nat} {L : Nat → Byte} {old : Nat → Byte}
@@ -132,11 +132,11 @@ theorem CoeffsUpTo.write {m : Mem} {p : Addr} {t : Nat} {G old : Nat → BitVec 
     CoeffsUpTo (m.writeW (coeffAddr p t) v) p (t + 1) G old := fun i hi => by
   rw [coeffAt_writeW m p (show i < n from hi) (show t < n from ht)]
   by_cases e : t = i
-  · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega), hv]
+  · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega_using []), hv]
   · rw [ite_eq_right e, h i hi]
     by_cases hit : i < t
-    · rw [ite_eq_left hit, ite_eq_left (by omega)]
-    · rw [ite_eq_right hit, ite_eq_right (by omega)]
+    · rw [ite_eq_left hit, ite_eq_left (by omega_using [hit])]
+    · rw [ite_eq_right hit, ite_eq_right (by omega_using [e, hit])]
 
 /-- All 256 coefficients written. -/
 theorem CoeffsUpTo.polyIs {m : Mem} {p : Addr} {G old : Nat → BitVec 32}

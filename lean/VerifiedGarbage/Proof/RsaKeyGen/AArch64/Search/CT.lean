@@ -202,7 +202,7 @@ private theorem head_first (q : SearchPoint) (s : State) (h : CandCT q s) :
   have h0 : (s.gpr .x0).setWidth 32 = BitVec.ofNat 32 q.status := by
     apply BitVec.eq_of_toNat_eq
     rw [hp.1, BitVec.toNat_ofNat, ← SearchCTL.status ht hr, Nat.mod_eq_of_lt (by
-      rw [SearchCTL.status ht hr]; omega)]
+      rw [SearchCTL.status ht hr]; omega_using [hst])]
   refine WP.mono (WP.keep [.x9, .x11] (Q := fun t =>
     (t.gpr .x11 = q.inputs.up ∧ t.gpr .x9 = BitVec.ofNat 64 q.status) ∧ t.mem = s.mem) ?_
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨⟨h11, h9⟩, hm⟩, k⟩ => ?_
@@ -210,7 +210,7 @@ private theorem head_first (q : SearchPoint) (s : State) (h : CandCT q s) :
       VG.Proof.RsaKeyGen.AArch64.exec_addImm_w (show 0 < 4096 by decide), h0]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.add_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hst]
   · exact ⟨⟨original, h.keep k hm, hp.keep hm (by rw [k.gpr .x0 (by decide)]), ht, hr⟩, h11, h9⟩
 
 theorem head_pins : Pins HeadCT [.x11] := by
@@ -342,10 +342,10 @@ theorem call_leak {q : SearchPoint} {u : State} (h : CallCT q u) :
   obtain ⟨a0, -, -⟩ := call_args hu hm
   obtain ⟨-, r1, -, r3, r4, r5, r6, r7⟩ := ha
   have tl := toNat_ofNat_lt hf.len64
-  have te : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := toNat_ofNat_lt (by have := hf.e8; omega)
+  have te : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := toNat_ofNat_lt (by have := hf.e8; omega_using [this])
   have tp := toNat_ofNat_lt hf.plen64
   have tr : (BitVec.ofNat 64 (q.inputs.randLen - q.used)).toNat = q.inputs.randLen - q.used :=
-    toNat_ofNat_lt (by have := hf.rand64; omega)
+    toNat_ofNat_lt (by have := hf.rand64; omega_using [this])
   simp only [VG.Proof.RsaKeyGen.AArch64.candLeak, call_gpr (by decide : Reg.x1 ∉ linkRegs),
     call_gpr (by decide : Reg.x3 ∉ linkRegs), call_gpr (by decide : Reg.x4 ∉ linkRegs),
     call_gpr (by decide : Reg.x5 ∉ linkRegs), call_gpr (by decide : Reg.x6 ∉ linkRegs),
@@ -435,7 +435,7 @@ theorem ctl_next {q : SearchPoint} {original s t : State} {final : PrimeSearchRe
   obtain ⟨hr, u, k, -, hi, hu, hk, htail⟩ := hc
   have hs := SearchCTL.status ht hr
   have hcu := SearchCTL.used hl ht hr
-  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega
+  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega_using [hu, hcu]
   have hk' : q.next.remaining = k := by
     simp only [SearchPoint.next]
     rcases hk with ⟨rfl, h2⟩ | ⟨rfl, h3⟩
@@ -543,7 +543,7 @@ private theorem iteration_pair (c : Cand) (n : Nat) :
       have hle := hl.used_le
       have hcand := hb.2.2
       simp only [SearchPoint.next] at hle ⊢
-      omega
+      omega_using [hn, hle, hcand]
     · obtain ⟨_, hl₁, _⟩ := c₁
       obtain ⟨_, hl₂, _⟩ := c₂
       exact hl₁.sp.trans hl₂.sp.symm

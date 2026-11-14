@@ -44,7 +44,7 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
   rw [h20.get .x0,e20,e2,h20.mem] at hco
   have hco4 : ∀ k < 4,∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (4*g))) k) i =
       if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (4*g))) k) i else 0 :=
-    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega)
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_using [hk, hi])
   have e3 : ∀ k,pa s3 (aP (4*g+k)) = poly4 (pa s (aP (4*g))) k := fun k => by rw [pa_poly4,sc_pa hP13]
   obtain ⟨q,hq,h1,h0⟩ := h.va.ok
   have hA : ∀ e' < 4*g,polyAt s3.mem (pa s3 (aP e')) = polyAt s.mem (pa s (aP e')) := fun e' he' => L.keepPolyAt hP13 (by vlay)
@@ -52,11 +52,11 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
     fun e' he' => ?_,q && ((s2.gpr .x0).setWidth 32 == 1),?_,fun hq' e' he' => ?_,fun hq' => ?_⟩
   · by_cases hlt : e' < 4*g
     · exact L.keepRed hP13 (by vlay) (h.va.red e' hlt)
-    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
+    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
       rw [e3]
       by_cases hret : (s2.gpr .x0).setWidth 32 = 1
-      · exact (masked_one hret (hco4 k (by omega))).2 (hred hret k (by omega))
-      · exact (masked_zero hret (hco4 k (by omega))).1
+      · exact (masked_one hret (hco4 k (by omega_using [he']))).2 (hred hret k (by omega_using [he']))
+      · exact (masked_zero hret (hco4 k (by omega_using [he']))).1
   · rw [k3.get .x24,e24,h24,hq,and_flag _ (Q := (s2.gpr .x0).setWidth 32 = 1)
       (by rcases hr01 with h | h <;> rw [h] <;> decide)]
     exact flag_congr (by simp)
@@ -64,18 +64,18 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
     by_cases hlt : e' < 4*g
     · obtain ⟨b,hb⟩ := h1 hq'.1 e' hlt
       exact ⟨b,by rw [hb,hA e' hlt]⟩
-    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
+    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
       rcases hout with ⟨_,hb⟩ | ⟨hret,_⟩
-      · obtain ⟨b,hb⟩ := hb k (by omega)
-        exact ⟨b,by rw [e3,(masked_one hq'.2 (hco4 k (by omega))).1,← vseed4_eq h (by omega)]; exact hb⟩
+      · obtain ⟨b,hb⟩ := hb k (by omega_using [he'])
+        exact ⟨b,by rw [e3,(masked_one hq'.2 (hco4 k (by omega_using [he']))).1,← vseed4_eq h (by omega_using [he'])]; exact hb⟩
       · rw [hq'.2] at hret; exact absurd hret (by decide)
   · cases hqq : q
-    · obtain ⟨e',he',hn⟩ := h0 hqq; exact ⟨e',by omega,hn⟩
+    · obtain ⟨e',he',hn⟩ := h0 hqq; exact ⟨e',by omega_using [he'],hn⟩
     · rw [hqq] at hq'
       simp only [Bool.true_and,beq_eq_false_iff_ne,ne_eq] at hq'
       rcases hout with ⟨hret,_⟩ | ⟨_,k,hk,hn⟩
       · exact absurd hret hq'
-      · exact ⟨4*g+k,by omega,by rw [← vseed4_eq h hk]; exact hn⟩
+      · exact ⟨4*g+k,by omega_using [hk],by rw [← vseed4_eq h hk]; exact hn⟩
 
 
 end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic: the mathematics
@@ -28,7 +29,7 @@ namespace VG.Proof.Bignum
 
 /-- An odd square is `1` modulo 8. -/
 theorem odd_sq (a : Nat) (ha : a % 2 = 1) : a * a % 8 = 1 := by
-  have h : a % 8 = 1 ∨ a % 8 = 3 ∨ a % 8 = 5 ∨ a % 8 = 7 := by omega
+  have h : a % 8 = 1 ∨ a % 8 = 3 ∨ a % 8 = 5 ∨ a % 8 = 7 := by omega_using [ha]
   rw [Nat.mul_mod]
   rcases h with h | h | h | h <;> rw [h]
 
@@ -71,12 +72,12 @@ theorem emod_pow_weaken {y : Int} {i j : Nat} (hij : i ≤ j) (h : y % (2 ^ j : 
 `u < 2⁶⁴`. -/
 theorem round_sum_lt {T a b u m : Nat} (hT : T < 2 * m) (ha : a < 2 ^ 64) (hb : b < m)
     (hu : u < 2 ^ 64) : T + a * b + u * m < 2 ^ 65 * m := by
-  have h1 : a * b ≤ (2 ^ 64 - 1) * b := Nat.mul_le_mul_right _ (by omega)
-  have h2 : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right _ (by omega)
-  have h3 : (2 ^ 64 - 1) * b ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_left _ (by omega)
+  have h1 : a * b ≤ (2 ^ 64 - 1) * b := Nat.mul_le_mul_right _ (by omega_using [ha])
+  have h2 : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right _ (by omega_using [hu])
+  have h3 : (2 ^ 64 - 1) * b ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_left _ (by omega_using [hb])
   rw [Nat.sub_mul, Nat.one_mul] at h1 h2 h3
   have : 2 ^ 65 * m = 2 * 2 ^ 64 * m := by rw [show (2 : Nat) ^ 65 = 2 * 2 ^ 64 by decide]
-  omega
+  omega_using [hT, hb, h1, h2]
 
 /-- A round keeps the accumulator below `2m`. -/
 theorem round_lt {T T' a b u m : Nat} (h : 2 ^ 64 * T' = T + a * b + u * m) (hT : T < 2 * m)
@@ -112,42 +113,42 @@ theorem csub_result {Tl Tw Tw1 D m R c : Nat} (hm : m < R) (hD : D < R) (hc : c 
     rcases Nat.eq_zero_or_pos Tw1 with h | h
     · exact h
     · have : R * 2 ^ 64 ≤ R * (Tw + 2 ^ 64 * Tw1) := Nat.mul_le_mul_left _ (by
-        have := Nat.mul_le_mul_left (2 ^ 64) h; omega)
+        have := Nat.mul_le_mul_left (2 ^ 64) h; omega_using [h])
       have : R * 2 ^ 64 ≥ 2 * R := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by decide)
-      omega
+      omega_arith
   subst h1
   simp only [Nat.mul_zero, Nat.add_zero] at hT ⊢
   rcases Nat.lt_or_ge Tw 1 with hw | hw
-  · have hw0 : Tw = 0 := by omega
+  · have hw0 : Tw = 0 := by omega_using [hw]
     subst hw0
     simp only [Nat.mul_zero, Nat.add_zero] at hT ⊢
     rcases Nat.lt_or_ge c 1 with hc0 | hc1
-    · have : c = 0 := by omega
+    · have : c = 0 := by omega_using [hc0]
       subst this
       simp only [Nat.lt_irrefl, ite_false]
       simp only [Nat.mul_zero, Nat.add_zero] at hsub
-      rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-      omega
-    · have : c = 1 := by omega
+      rw [Nat.mod_eq_sub_mod (by omega_using [hsub]), Nat.mod_eq_of_lt (by omega_using [hT])]
+      omega_using [hsub]
+    · have : c = 1 := by omega_using [hc, hc1]
       subst this
       simp only [Nat.zero_lt_one, ite_true]
-      rw [Nat.mod_eq_of_lt (by omega)]
+      rw [Nat.mod_eq_of_lt (by omega_using [hD, hsub])]
   · have : R * 1 ≤ R * Tw := Nat.mul_le_mul_left _ hw
     have hw1 : Tw = 1 := by
       rcases Nat.lt_or_ge Tw 2 with h | h
-      · omega
+      · omega_using [hw, h]
       · have : R * 2 ≤ R * Tw := Nat.mul_le_mul_left _ h
-        omega
+        omega_using [hm, hT, this]
     subst hw1
     have hc1 : c = 1 := by
       rcases Nat.lt_or_ge c 1 with h | h
-      · have : c = 0 := by omega
-        subst this; omega
-      · omega
+      · have : c = 0 := by omega_using [h]
+        subst this; omega_using [hm, hT, hsub]
+      · omega_using [hc, h]
     subst hc1
     simp only [Nat.lt_irrefl, ite_false, Nat.mul_one] at hsub ⊢
-    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_sub_mod (by omega_using [hm]), Nat.mod_eq_of_lt (by omega_using [hT])]
+    omega_using [hsub]
 
 /-! ## Bytes and words -/
 
@@ -158,17 +159,17 @@ theorem bytes_mod_step (X b r : Nat) (hb : b < 256) :
   have h1 : 256 * X + b = (256 * (X % 256 ^ r) + b) + 256 * 256 ^ r * (X / 256 ^ r) := by
     have := Nat.mod_add_div X (256 ^ r)
     calc 256 * X + b = 256 * (X % 256 ^ r + 256 ^ r * (X / 256 ^ r)) + b := by rw [this]
-      _ = _ := by rw [Nat.mul_add, ← Nat.mul_assoc]; omega
+      _ = _ := by rw [Nat.mul_add, ← Nat.mul_assoc]; omega_using []
   rw [h1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt]
   have := Nat.mod_lt X (show 0 < 256 ^ r from Nat.pow_pos (by decide))
   have : 256 * (X % 256 ^ r) + 256 ≤ 256 * 256 ^ r := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ this
-  omega
+  omega_using [hb]
 
 /-- Appending a byte shifts the high bytes up by one. -/
 theorem bytes_div_step (X b n : Nat) (hb : b < 256) : (256 * X + b) / 256 ^ (n + 1) = X / 256 ^ n := by
   rw [Nat.pow_succ, Nat.mul_comm (256 ^ n) 256, ← Nat.div_div_eq_div_mul,
-    show (256 * X + b) / 256 = X by omega]
+    show (256 * X + b) / 256 = X by omega_using [hb]]
 
 theorem pow256_8 : (256 : Nat) ^ 8 = 2 ^ 64 := by decide
 
@@ -186,7 +187,7 @@ theorem mont_cancel {o c R m : Nat} (hR : Nat.Coprime R m) (h : o * R % m = c * 
     have hd : m ∣ (o - c) * R := by
       rw [Nat.sub_mul]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq h)
     obtain ⟨q, hq⟩ := hR.symm.dvd_of_dvd_mul_right hd
-    rw [show o = c + m * q by omega, Nat.add_mul_mod_self_left]
+    rw [show o = c + m * q by omega_using [hco, hq], Nat.add_mul_mod_self_left]
   rcases Nat.le_total c o with hco | hoc
   · exact key hco h
   · exact (key hoc h.symm).symm
@@ -200,15 +201,15 @@ theorem powMod_eq (a e m : Nat) : Spec.Rsa.powMod a e m = a ^ e % m := by
     · subst_vars; simp
     · rename_i he
       simp only
-      rw [ih (e / 2) (by omega)]
+      rw [ih (e / 2) (by omega_using [he])]
       have : a ^ e = a ^ (e / 2) * a ^ (e / 2) * a ^ (e % 2) := by
-        rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega
+        rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_using []
       split
       · rename_i h2
         rw [this, h2, Nat.pow_zero, Nat.mul_one]
         exact (Nat.mul_mod _ _ _).symm
       · rename_i h2
-        rw [this, show e % 2 = 1 by omega, Nat.pow_one, ← Nat.mod_mul_mod (a ^ (e / 2) * a ^ (e / 2)),
+        rw [this, show e % 2 = 1 by omega_using [h2], Nat.pow_one, ← Nat.mod_mul_mod (a ^ (e / 2) * a ^ (e / 2)),
           Nat.mul_mod (a ^ (e / 2)) (a ^ (e / 2))]
 
 /-! ## Exponentiation in Montgomery form -/
@@ -219,7 +220,7 @@ theorem mont_sq {Y Y' x E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x ^ E 
   apply mont_cancel hR
   rw [h, Nat.mul_mod, hY, ← Nat.mul_mod]
   congr 1
-  rw [show 2 * E = E + E by omega, Nat.pow_add, Nat.mul_mul_mul_comm]
+  rw [show 2 * E = E + E by omega_using [], Nat.pow_add, Nat.mul_mul_mul_comm]
   simp only [Nat.mul_assoc]
 
 /-- A Montgomery multiplication of `Y ≡ x^E R` by `X ≡ x R`: `x^(E+1) R`. -/

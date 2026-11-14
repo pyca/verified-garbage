@@ -27,14 +27,14 @@ theorem select_ok {s : State} {B table : Addr} {Z w v : Nat} {mi : BitVec 64}
  have nowrap : slot w 5+8*(w+2)≤2^64 := by
   have := good.scr.nowrap
   have := slot_le (w:=w) (by decide : 5<8)
-  omega
+  omega_arith
  unfold VG.Impl.Ffdh.AArch64.Cached.Comb.select
  rw [WP.seq_iff]
  refine WP.mono (const_ok good room positive width (by decide : 5<8) (by decide : 0<2^16)) ?_
  rintro u ⟨goodU,zeroU,frameU,restU⟩
- have arraysU : Arrays B w [5] s.mem u.mem := Arrays.of_outside (j:=5) (by simp) frameU (by omega) (by omega)
+ have arraysU : Arrays B w [5] s.mem u.mem := Arrays.of_outside (j:=5) (by simp) frameU (by omega_using []) (by omega_using [])
  have headerU (i : Nat) (hi : i<32) : word u.mem B (8*i)=word s.mem B (8*i) :=
-  frameU.word (Or.inl (hdr_lt_slot w 5 hi)) (by omega)
+  frameU.word (Or.inl (hdr_lt_slot w 5 hi)) (by omega_using [hi])
  rw [WP.seq_iff]
  refine WP.mono (WP.keep [.x9,.x10,.x11] (Q:=fun z =>
   z.gpr .x9=table ∧ z.gpr .x10=BitVec.ofNat 64 v ∧ z.gpr .x11=0#64 ∧ z.mem=u.mem)
@@ -42,9 +42,9 @@ theorem select_ok {s : State} {B table : Addr} {Z w v : Nat} {mi : BitVec 64}
  · brun [goodU.x0,hdr_enc (show VG.Impl.Ffdh.AArch64.Cached.sTab<32 by decide),
    hdr_enc (show VG.Impl.Ffdh.AArch64.Cached.sD<32 by decide),
    goodU.scr.ld (d:=8*VG.Impl.Ffdh.AArch64.Cached.sTab)
-    (by have := hdr_lt_slot w 8 (show VG.Impl.Ffdh.AArch64.Cached.sTab<32 by decide);omega),
+    (by have := hdr_lt_slot w 8 (show VG.Impl.Ffdh.AArch64.Cached.sTab<32 by decide);omega_using [room, this]),
    goodU.scr.ld (d:=8*VG.Impl.Ffdh.AArch64.Cached.sD)
-    (by have := hdr_lt_slot w 8 (show VG.Impl.Ffdh.AArch64.Cached.sD<32 by decide);omega),
+    (by have := hdr_lt_slot w 8 (show VG.Impl.Ffdh.AArch64.Cached.sD<32 by decide);omega_using [room, this]),
    headerU VG.Impl.Ffdh.AArch64.Cached.sTab (by decide),
    headerU VG.Impl.Ffdh.AArch64.Cached.sD (by decide),tablePtr,digit]
  · rintro z ⟨⟨pointerZ,digitZ,candidateZ,memZ⟩,restZ⟩
@@ -57,11 +57,11 @@ theorem select_ok {s : State} {B table : Addr} {Z w v : Nat} {mi : BitVec 64}
     intro i hi
     rw [convert,memZ]
     exact (wv_eq_zero_iff _ _ _ _).mp zeroU i hi
-   refine WP.mono (selectScan_ok z envZ positive (by omega) hv pointerZ digitZ candidateZ zeros) ?_
+   refine WP.mono (selectScan_ok z envZ positive (by omega_using [width]) hv pointerZ digitZ candidateZ zeros) ?_
    rintro t ⟨_,words,frame,restT⟩
    have frameZ : Outside B (slot w 5) (8*w) z.mem t.mem :=
-    outside_to_workspace (by omega) (by omega) frame
-   have arraysZ : Arrays B w [5] z.mem t.mem := Arrays.of_outside (j:=5) (by simp) frameZ (by omega) (by omega)
+    outside_to_workspace (by omega_using [nowrap]) (by omega_using [nowrap]) frame
+   have arraysZ : Arrays B w [5] z.mem t.mem := Arrays.of_outside (j:=5) (by simp) frameZ (by omega_using []) (by omega_using [])
    have totalArrays : Arrays B w [5] s.mem t.mem := by
     rw [memZ] at arraysZ
     exact arraysU.trans arraysZ

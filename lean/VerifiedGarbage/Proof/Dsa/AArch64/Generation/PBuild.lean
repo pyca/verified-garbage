@@ -50,7 +50,7 @@ theorem pBuild_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.strea
   have hframe : Frame (⟨op, plen⟩ :: p.changed) s.mem t.mem := by
     intro a ha
     rw [hf a (fun i hi he => ha ⟨op, plen⟩ (by simp) (he ▸
-      Offset.contains_base op (by omega) (by omega)))]
+      Offset.contains_base op (by omega_using [hi]) (by omega_using [hlmax, hi])))]
     exact hfu a (fun r hr => ha r (List.mem_cons_of_mem _ hr))
   refine ⟨hx, hb, lay_of_rep hu.layout R Rt rfl hk.sp hk.wr,
     ⟨V, Rt⟩, hk.rd.trans su.rd, hk.wr.trans su.wr,

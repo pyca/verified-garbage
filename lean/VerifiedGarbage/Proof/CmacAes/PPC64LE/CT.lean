@@ -252,11 +252,11 @@ theorem upd_loop_ct {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq
   · rw [e₁] at hf
     have h0 : N s₀ = k + 1 := by
       have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_using [hk, this]
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [h0], l₁, l₂⟩
 
 theorem update_rel {s₀ s₀' : State} (h0 : updatePPC64LE.pre s₀) (h0' : updatePPC64LE.pre s₀')
     (hq : updatePPC64LE.pub s₀ s₀') :
@@ -300,7 +300,7 @@ theorem update_rel {s₀ s₀' : State} (h0 : updatePPC64LE.pre s₀) (h0' : upd
         (fun a b h => ⟨?_, h.1.1, h.1.2⟩) fun _ _ h => h
       have := h.2; rw [ev h.1.1] at this
       have : N s₀ ≠ 0 := by simpa using this
-      omega
+      omega_using [this]
   have epi := taintRegs (P := fun a b => US s₀ (N s₀) a ∧ US s₀' (N s₀') b) [.r19]
     (fun a b h => ⟨by rw [h.1.2, h.2.2, upub_sp hq], fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

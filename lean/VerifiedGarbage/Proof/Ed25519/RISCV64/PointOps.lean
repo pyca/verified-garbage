@@ -33,7 +33,7 @@ structure Ctx8 (b : Addr) (s : State) : Prop where
   wr : (⟨b, 8192⟩ : Region) ∈ s.wr
 
 theorem Ctx8.ctx {b : Addr} {s : State} (h : Ctx8 b s) : Ctx b s :=
-  ⟨h.a3, h.al, fun d n hd => in_base h.wr (by omega) (by omega)⟩
+  ⟨h.a3, h.al, fun d n hd => in_base h.wr (by omega_using [hd]) (by omega_using [hd])⟩
 
 theorem Ctx8.ws {b : Addr} {s : State} (h : Ctx8 b s) : WS b s :=
   Covers.of_sub fun r hr => ⟨_, h.wr, 0, by rw [List.mem_singleton.mp hr]; simp, by

@@ -17,8 +17,8 @@ open VG.Impl.X448.AArch64.Wide VG.Proof.X448.AArch64
 
 theorem coeff_limbs (m : Mem) (base : Addr) (o i : Nat) :
     coeff m base o i = limbs m base o (2 * i) + 2 ^ 64 * limbs m base o (2 * i + 1) := by
-  have e0 : o + 8 * (2 * i) = o + 16 * i := by omega
-  have e1 : o + 8 * (2 * i + 1) = o + 16 * i + 8 := by omega
+  have e0 : o + 8 * (2 * i) = o + 16 * i := by omega_using []
+  have e1 : o + 8 * (2 * i + 1) = o + 16 * i + 8 := by omega_using []
   simp only [coeff, pair, limbs, e0, e1]
 
 theorem foldLimb_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : k < 8)
@@ -27,21 +27,21 @@ theorem foldLimb_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : 
       (∀ i < 8, coeff t.mem base TMP i =
         if i = k then coeff s.mem base TMP i + (s.gpr .x6).toNat else coeff s.mem base TMP i) ∧
       Outside base TMP 128 s.mem t.mem ∧ Keeps [.x4] s t := by
-  have e : TMP + 8 * (2 * k) = TMP + 16 * k := by omega
+  have e : TMP + 8 * (2 * k) = TMP + 16 * k := by omega_using []
   have low : limbs s.mem base TMP (2 * k) + (s.gpr .x6).toNat < 2 ^ 64 := by
     rw [coeff_limbs] at hb
-    omega
-  have run := VG.Proof.X448.AArch64.foldLimb_ok hs (k := 2 * k) (by omega) low
+    omega_using [hb]
+  have run := VG.Proof.X448.AArch64.foldLimb_ok hs (k := 2 * k) (by omega_using [hk]) low
   rw [e] at run
   refine WP.mono run fun t ⟨tf, tm, tk⟩ => ⟨?_, tm, tk⟩
   intro i hi
-  rw [coeff_limbs, tf (2 * i) (by omega), tf (2 * i + 1) (by omega),
-    ite_eq_right (by omega : 2 * i + 1 ≠ 2 * k), coeff_limbs]
+  rw [coeff_limbs, tf (2 * i) (by omega_using [hi]), tf (2 * i + 1) (by omega_using [hi]),
+    ite_eq_right (by omega_using [] : 2 * i + 1 ≠ 2 * k), coeff_limbs]
   by_cases h : i = k
   · subst i
     rw [ite_eq_left rfl, ite_eq_left rfl]
-    omega
-  · rw [ite_eq_right (by omega : 2 * i ≠ 2 * k), ite_eq_right h]
+    omega_using []
+  · rw [ite_eq_right (by omega_using [h] : 2 * i ≠ 2 * k), ite_eq_right h]
 
 theorem fold_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat → Nat}
     (hf : ∀ i < 8, coeff s.mem base TMP i = digit f i)
@@ -53,7 +53,7 @@ theorem fold_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat → Nat}
     intro i _
     have h := digit_lt f i
     simp only [radix] at h
-    omega
+    omega_using [hb, h]
   change WP isa (.block
     (([ld .x4 (TMP + 16 * 0), .add .x .x4 .x4 .x6,
        st .x4 (TMP + 16 * 0)] : List Instr) ++

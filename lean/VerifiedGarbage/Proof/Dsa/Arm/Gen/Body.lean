@@ -76,16 +76,16 @@ theorem stWords_vp : VP (fun σ s => E1 G σ s ∧ s.gpr .r1 = G.stP) (.block [.
   have pre := h.pre
   have fit : G.stP.toNat + 32 ≤ 2 ^ 32 := by rw [← h.hG]; exact pre.nS
   have inS : ∀ d, d + 4 ≤ 32 → InRegions (s.rd ++ s.wr) (State.addr G.stP + BitVec.ofNat 64 d) 4 := fun d hd =>
-    ⟨G.rSt, List.mem_append_right _ (by rw [h.wr, pre.wr, h.hG]; simp), Offset.contains_base _ hd (by omega)⟩
+    ⟨G.rSt, List.mem_append_right _ (by rw [h.wr, pre.wr, h.hG]; simp), Offset.contains_base _ hd (by omega_using [hd])⟩
   have l := pre.lens
   have v8 : σ.mem.readW (State.addr G.stP + BitVec.ofNat 64 8) 32 = BitVec.ofNat 32 G.pLen :=
     lo_word (by rw [← h.hG]; rfl)
   have v0 : σ.mem.readW (State.addr G.stP + BitVec.ofNat 64 0) 32 = BitVec.ofNat 32 G.k0 :=
     lo_word (by rw [BitVec.add_zero, ← h.hG]; rfl)
   refine VG.Proof.X25519.Arm.wp_ldr (a := State.addr G.stP + BitVec.ofNat 64 8) (by decide)
-    (by rw [r1]; exact addr_add (by omega)) (inS 8 (by decide)) fun s₁ u₁ => ?_
+    (by rw [r1]; exact addr_add (by omega_using [fit])) (inS 8 (by decide)) fun s₁ u₁ => ?_
   refine VG.Proof.X25519.Arm.wp_ldr (a := State.addr G.stP + BitVec.ofNat 64 0) (by decide)
-    (by rw [u₁.other _ (by decide), r1]; exact addr_add (by omega))
+    (by rw [u₁.other _ (by decide), r1]; exact addr_add (by omega_using []))
     (by rw [u₁.rd, u₁.wr]; exact inS 0 (by decide)) fun t u => WP.block_nil ⟨?_, ?_, ?_⟩
   · exact (h.of_rest (u₁.rest (ws := [.r2]) (by simp)) u₁.mem).of_rest (u.rest (ws := [.r1]) (by simp)) u.mem
   · rw [u.other _ (by decide), u₁.gpr, h.stWord (by decide), v8]
@@ -203,11 +203,11 @@ theorem restore_vp {G : GP} :
     ⟨h.pre, h.hG, R.sp.trans h.sp, R.rd.trans h.rd, R.wr.trans h.wr, hg, ⟨s, h, m, R.gpr _ (by decide)⟩, hr, hk⟩
   have hb := saved_ok p hp
   have ea : State.addr (G.sp + BitVec.ofNat 32 p.2) = State.addr G.sp + BitVec.ofNat 64 p.2 :=
-    addr_add (by simp only [F] at *; omega)
-  refine ⟨by omega, ?_, by rw [ea]; exact h.saved p hp⟩
+    addr_add (by simp only [F] at *; omega_using [spN, hb])
+  refine ⟨by omega_using [hb], ?_, by rw [ea]; exact h.saved p hp⟩
   rw [ea]
   exact ⟨G.rFrame, List.mem_append_right _ (by rw [h.wr]; exact List.mem_cons_self),
-    Offset.contains_base _ (by simp only [F]; omega) (by simp only [F] at *; omega)⟩
+    Offset.contains_base _ (by simp only [F]; omega_using [hb]) (by simp only [F] at *; omega_using [hb])⟩
 
 /-! ## The body -/
 

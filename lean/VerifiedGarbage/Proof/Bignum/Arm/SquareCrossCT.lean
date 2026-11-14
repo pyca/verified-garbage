@@ -86,22 +86,22 @@ theorem crossRound_ct {k : Nat} (hk : k + 2 ≤ n) :
       have env := h.env
       have nowrap := env.nowrap
       have := env.fits; have := env.count
-      refine WP.mono (crossArgs_ok s (A := a + 4 * k) (C := len) (P := o) env.workspace (by omega) p0 h.next
+      refine WP.mono (crossArgs_ok s (A := a + 4 * k) (C := len) (P := o) env.workspace (by omega_arith) p0 h.next
         h.cnt h.tptr) ?_
       rintro t ⟨g2, g12, glr, g0, _, mt, rt⟩
-      have o1 := writeW32_outside s.mem (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (o + 8)) (by omega)
+      have o1 := writeW32_outside s.mem (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (o + 8)) (by omega_arith)
       have o2 := writeW32_outside (s.mem.writeW (off (State.addr base) (M + 20)) (base + BitVec.ofNat 32 (o + 8)))
-        (State.addr base) (d := M + 12) (base + BitVec.ofNat 32 (a + 4 * k + 4)) (by omega)
+        (State.addr base) (d := M + 12) (base + BitVec.ofNat 32 (a + 4 * k + 4)) (by omega_arith)
       rw [← mt] at o2
       have O : Outside (State.addr base) M (4 * (2 * n + 8)) s.mem t.mem :=
-        (o1.mono (by omega) (by omega)).trans (o2.mono (by omega) (by omega))
+        (o1.mono (by omega_using []) (by omega_using [])).trans (o2.mono (by omega_using []) (by omega_using []))
       exact ⟨⟨rt.sp.trans sp, m0, inv, env.next (Outs.of_outside O (by simp)) rt⟩, g2, g12, glr, g0⟩
   have C : RelCT isa (fun s t => P2 s ∧ P2 t) (.block crossScalar) (fun s t => P3 s ∧ P3 t) := by
     refine seg crossScalar_cert (fun s t hs ht r hr => ?_) (fun s hs => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; exact hs.2.1.trans ht.2.1.symm
     · obtain ⟨⟨sp, m0, inv, env⟩, g2, g12, glr, g0⟩ := hs
       have := env.aFits; have := env.count
-      refine WP.mono (crossScalar_ok s env.workspace (by omega) g2) ?_
+      refine WP.mono (crossScalar_ok s env.workspace (by omega_arith) g2) ?_
       rintro t ⟨_, mt, rt⟩
       exact ⟨⟨rt.sp.trans sp, m0, inv, env.of_mem mt rt⟩, by rw [rt.gpr .r12 (by simp)]; exact g12,
         by rw [rt.gpr .lr (by simp)]; exact glr, by rw [rt.gpr .r0 (by simp)]; exact g0⟩
@@ -111,22 +111,22 @@ theorem crossRound_ct {k : Nat} (hk : k + 2 ≤ n) :
     obtain ⟨⟨sp, m0, inv, env⟩, g12, glr, g0⟩ := hs
     have := env.aFits; have := env.count; have := env.fits; have := env.sepA
     have ctx : RowCtx s base size o (a + 4 * (k + 1)) len :=
-      ⟨env.nowrap, by omega, by omega, by omega, env.workspace.writable⟩
-    refine WP.mono (row_ok s ctx (by omega) g0 (by rw [g12, show a + 4 * k + 4 = a + 4 * (k + 1) by omega]) glr) ?_
+      ⟨env.nowrap, by omega_arith, by omega_arith, by omega_using [this], env.workspace.writable⟩
+    refine WP.mono (row_ok s ctx (by omega) g0 (by rw [g12, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_using []]) glr) ?_
     intro t ri
     exact ⟨⟨ri.rest.sp.trans sp, m0, inv, env.next (Outs.of_outside (ri.outside.mono (o' := M)
-      (n' := 4 * (2 * n + 8)) (by omega) (by omega)) (by simp)) ri.rest⟩, ri.outPtr⟩
+      (n' := 4 * (2 * n + 8)) (by omega_using []) (by omega_using [hk])) (by simp)) ri.rest⟩, ri.outPtr⟩
   have E : RelCT isa (fun s t => P4 s ∧ P4 t) (.block crossCarry) (fun s t => P5 s ∧ P5 t) := by
     refine seg crossCarry_cert (fun s t hs ht r hr => ?_) (fun s hs => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; exact hs.2.trans ht.2.symm
     · obtain ⟨⟨sp, m0, inv, env⟩, g0⟩ := hs
       have := env.count; have := env.fits; have := env.nowrap
-      refine WP.mono (crossCarry_ok s env.workspace (by omega) g0) ?_
+      refine WP.mono (crossCarry_ok s env.workspace (by omega_arith) g0) ?_
       rintro t ⟨mt, rt⟩
       have O := writeW32_outside s.mem (State.addr base) (d := o + 4 * len) (s.gpr .r11) (by omega)
       rw [← mt] at O
       exact ⟨rt.sp.trans sp, m0, inv, env.next (Outs.of_outside (O.mono (o' := M) (n' := 4 * (2 * n + 8))
-        (by omega) (by omega)) (by simp)) rt⟩
+        (by omega_using []) (by omega_using [hk])) (by simp)) rt⟩
   have F := sqAnchor_ct (P := P5) (fun _ h => h) holdStable
   have G : RelCT isa (fun s t => (P5 s ∧ s.gpr .r0 = base + BitVec.ofNat 32 M) ∧
       (P5 t ∧ t.gpr .r0 = base + BitVec.ofNat 32 M)) (.block sqCount) (fun _ _ => True) :=
@@ -153,7 +153,7 @@ theorem crossRows_ct :
     have hn : i + 2 ≤ n := by
       obtain ⟨_, _, _, hi⟩ := hs
       have := hi.index
-      omega
+      omega_using [hik, hk]
     have ready (x : State) (hx : CrossReady base size out a mod M n sp0 i x) :
         WP isa crossRound x fun y => CrossReady base size out a mod M n sp0 (i + 1) y ∧ y.z = decide (i + 2 = n) := by
       obtain ⟨sp, m0, inv, hx⟩ := hx
@@ -168,19 +168,19 @@ theorem crossRows_ct :
         by_contra ne
         simp only [zu, ne, decide_false, Bool.not_false] at branch
         cases branch
-      rw [show n - 1 = i + 1 by omega]
+      rw [show n - 1 = i + 1 by omega_using [this]]
       exact ⟨hu, hv⟩
     · have ne : i + 2 ≠ n := by
         intro eq
         change some (!u.z) = some true at branch
         simp only [zu, eq, decide_true, Bool.not_true] at branch
         cases branch
-      exact ⟨k - 1, by omega, i + 1, by omega, by omega, hu, hv⟩
+      exact ⟨k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, ne], hu, hv⟩
   apply (RelCT.loop I step (n - 1)).mono _ (fun _ _ h => h)
   intro s t h
   obtain ⟨_, m0, inv, hi⟩ := h.1
   have := hi.env.count
-  exact ⟨0, by omega, by omega, h⟩
+  exact ⟨0, by omega_using [], by omega_using [this], h⟩
 
 end
 

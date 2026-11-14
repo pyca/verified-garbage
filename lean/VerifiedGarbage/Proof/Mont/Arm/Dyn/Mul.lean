@@ -88,7 +88,7 @@ theorem rowD_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {inv acc o a b 
     (hB : val32 s.mem base b W < m) {k : Nat} (hk : k < W) {t : State} (I : MulInv s base size acc a b m W k t) :
     WP isa (rowD M inv a b) t fun u => MulInv s base size acc a b m W (k + 1) u ∧ u.z = decide (k + 1 = W) := by
   have hnw := I.ws.nowrap
-  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega
+  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega_using []
   obtain ⟨acc_le, a_le, b_le, mo_le, tmp_le, o_le, inv_le, acc16, a16, b16, mo16, tmp16, o16, inv16, sa, sb, smo,
     sinv, stmp, so, tmo, ot⟩ := hL
   simp only [accLen, hD, hW] at acc_le a_le b_le mo_le tmp_le o_le acc16 a16 b16 mo16 tmp16 sa sb smo sinv stmp so tmo ot
@@ -172,7 +172,7 @@ theorem rowD_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {inv acc o a b 
 theorem dval_zeros {m : Mem} {base : Addr} {d : Nat} :
     ∀ {k : Nat}, (∀ j < k, w32 m base (d + 4 * j) = 0) → dval m base d k = 0
   | 0, _ => rfl
-  | k + 1, h => by rw [dval, dval_zeros fun j hj => h j (by omega), h k (by omega), Nat.zero_mul]
+  | k + 1, h => by rw [dval, dval_zeros fun j hj => h j (by omega_using [hj]), h k (by omega_using []), Nat.zero_mul]
 
 /-- The modulus is odd when `m m' ≡ -1 (mod 2¹⁶)`. -/
 theorem m_pos_of_inv16 {m x : Nat} (h : (m * x + 1) % 2 ^ 16 = 0) : 0 < m := by
@@ -186,15 +186,15 @@ theorem mulLoop_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {inv acc o a
     (hm : val32 s.mem base M.mo W = m) (hinv : (m * w32 s.mem base inv + 1) % 2 ^ 16 = 0)
     (hB : val32 s.mem base b W < m) {t : State} (h0 : MulInv s base size acc a b m W 0 t) :
     WP isa (.loop (rowD M inv a b) .ne) t fun u => MulInv s base size acc a b m W W u := by
-  have hW0 : 0 < W := by rw [← hW]; simp only [Impl.Mont.Arm.words]; omega
+  have hW0 : 0 < W := by rw [← hW]; simp only [Impl.Mont.Arm.words]; omega_using [hn]
   refine WP.loop (M := isa)
     (fun n t' => ∃ k, n = W - k ∧ k < W ∧ MulInv s base size acc a b m W k t') ?_ W t ⟨0, rfl, hW0, h0⟩
   rintro n t' ⟨k, rfl, hk, I⟩
   refine WP.mono (rowD_ok hn hW hL hm hinv hB hk I) fun u ⟨I', hz⟩ => ?_
   by_cases hk1 : k + 1 = W
   · exact .inl ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_true hk1]; rfl, hk1 ▸ I'⟩
-  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hk1]; rfl, W - (k + 1), by omega,
-      k + 1, rfl, by omega, I'⟩
+  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hk1]; rfl, W - (k + 1), by omega_using [hk],
+      k + 1, rfl, by omega_using [hk, hk1], I'⟩
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`R = 2^(32W)`), with `m'` at `[inv]`, through
 the accumulator at `[acc]` and the temporary area. `[o]` may be `[a]` or `[b]`. -/
@@ -211,8 +211,8 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M :
   have hnw := hs.nowrap
   have hm0 := m_pos_of_inv16 hinv
   obtain ⟨W, hW⟩ : ∃ W, words M = W := ⟨_, rfl⟩
-  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega
-  have hW0 : 0 < W := by rw [← hW]; simp only [Impl.Mont.Arm.words]; omega
+  have hD : digits M = 2 * W := by rw [← hW]; simp only [digits, Impl.Mont.Arm.words]; omega_using []
+  have hW0 : 0 < W := by rw [← hW]; simp only [Impl.Mont.Arm.words]; omega_using [hn]
   have hL' := hL
   obtain ⟨acc_le, a_le, b_le, mo_le, tmp_le, o_le, inv_le, acc16, a16, b16, mo16, tmp16, o16, inv16, sa, sb, smo,
     sinv, stmp, so, tmo, ot⟩ := hL'

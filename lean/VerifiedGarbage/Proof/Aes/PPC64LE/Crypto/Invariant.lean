@@ -57,7 +57,7 @@ theorem LoopInv.schedule_eq {inverse ctr : Bool} {o : Reg} {base s : State} {nr 
     (hc : LoopConfig inverse ctr o base nr n D E) (h : LoopInv inverse ctr base nr n D E icb k s) :
     schedule nr s = schedule nr base := by
   rw [Crypto.schedule, h.keep.gpr (by decide)]
-  exact bytesAt_frame (R := ⟨base.gpr .r3, 240⟩) h.frame hc.sep (by change 16*(nr+1) ≤ 240; have := hc.inputs.max; omega) (by change 240 ≤ 2^64; decide)
+  exact bytesAt_frame (R := ⟨base.gpr .r3, 240⟩) h.frame hc.sep (by change 16*(nr+1) ≤ 240; have := hc.inputs.max; omega_using [this]) (by change 240 ≤ 2^64; decide)
 
 theorem loop_group_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k N : Nat} {D E : Addr}
     {icb : Spec.Gcm.Block}
@@ -77,20 +77,20 @@ theorem loop_group_ok {inverse ctr : Bool} {o : Reg} {base s : State} {nr n k N 
           outputState inverse ctr nr (schedule nr base) icb base.mem D (k+i) := by
     intro i hi v hv m hm hf
     rw [h.schedule_eq hc, input_state ctr s icb h.ptr h.counter i
-      (src_stateAt hc.alias hc.size h.processed h.frame (by omega) (by omega))] at hv
+      (src_stateAt hc.alias hc.size h.processed h.frame (by omega_using []) (by omega_using [hkn, hi]))] at hv
     exact output_state inverse ctr nr (schedule nr base) icb
-      (src_stateAt hc.alias hc.size hm (h.frame.trans hf) (Nat.le_refl _) (by omega)) hc.direction hv
+      (src_stateAt hc.alias hc.size hm (h.frame.trans hf) (Nat.le_refl _) (by omega_using [hkn, hi])) hc.direction hv
   refine WP.mono (group_ok inverse ctr N o s hN hkn hc.size (h.inputs hc) h.control hw hrd ho hO h.ptr
     h.processed hF) fun t ht => ?_
-  have hfacts := batchFacts ⟨N, by omega⟩
+  have hfacts := batchFacts ⟨N, by omega_using [hN]⟩
   have hm : t.vpr mask = s.vpr mask := ht.fixed mask (by simp [hfacts.2.2.1, mask, key, data, counterBase])
   have hctrl : t.vpr counterStep = s.vpr counterStep :=
     ht.fixed counterStep (by simp [hfacts.2.2.2.2.1, counterStep, key, data, counterBase])
   refine ⟨hkn, (h.keep.trans ht.keep).mono (by simp [loopGprs]), ht.ptr, ?_, ht.processed,
     h.frame.trans ht.frame, hm.trans h.mask, ?_, ?_⟩
   · rw [ht.left, h.left]
-    rw [Offset.ofNat_sub_ofNat (by omega)]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hkn])]
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
   · intro he; rw [hctrl]; exact h.control he
   · intro he
     rw [ht.counter, he]

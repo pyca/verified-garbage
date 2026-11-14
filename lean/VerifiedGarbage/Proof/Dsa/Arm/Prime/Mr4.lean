@@ -55,15 +55,15 @@ theorem witness_dsa {c x bits : Nat} (hb : Spec.RsaKeyGen.bitLength (c - 1) = bi
 /-- `c − 1` has `8 len` bits. -/
 theorem In.cm1_bits {P : CP} {σ : State} (pre : In P σ) : Spec.RsaKeyGen.bitLength (cv P σ - 1) = 8 * P.len := by
   have sz := pre.sizes
-  rw [VG.Proof.Dsa.Generation.predecessor_bits (n := P.bits) (by omega) pre.odd pre.bl]
-  omega
+  rw [VG.Proof.Dsa.Generation.predecessor_bits (n := P.bits) (by omega_using [sz]) pre.odd pre.bl]
+  omega_using [sz]
 
 /-- The witness is that of the loaded octets, the last `len` of its draw. -/
 theorem wf_eq {P : CP} {σ : State} (pre : In P σ) {k : Nat} (hu : P.D * k + P.D ≤ P.rl) :
     wf P σ k = Spec.RsaKeyGen.witness (cv P σ - 1) (xw P σ k) := by
   have sz := pre.sizes
   unfold wf dwit xw
-  exact VG.Proof.Dsa.Generation.witness_slice (by omega) (by rw [rB_length]; exact hu) pre.cm1_bits
+  exact VG.Proof.Dsa.Generation.witness_slice (by omega_using [sz]) (by rw [rB_length]; exact hu) pre.cm1_bits
 
 section
 variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
@@ -213,18 +213,18 @@ theorem witnessFix_vp {k : Nat} (hE : ∀ σ, E σ → P.D * k + P.D ≤ P.rl) :
     (St.phiOpRM (i := fun P => P.len / 4 - 1) (f := fun x => (x <<< 1) >>> 1)
       (g := fun σ => (xw P σ k ||| 2) % 2 ^ (8 * P.len - 1))
       clrBitXf_taint (by simp) (by decide)
-      (fun σ _ pre => by have := pre.wge; have := pre.sizes; have := pre.W_eq; have := pre.L_eq; omega)
+      (fun σ _ pre => by have := pre.wge; have := pre.sizes; have := pre.W_eq; have := pre.L_eq; omega_arith)
       (fun u R k' => wp_mov (op2_lsl (by decide)) fun u1 v1 => wp_mov (op2_lsr (by decide)) fun u2 v2 =>
         WP.block_nil (k' u2 ⟨by rw [v2.gpr, v1.gpr], fun r hr => by rw [v2.other r hr, v1.other r hr],
           v2.mem.trans v1.mem, v2.rd.trans v1.rd, v2.wr.trans v1.wr, v2.sp.trans v1.sp⟩))
-      (fun σ _ pre => ?_) (fun σ _ pre => by have := pre.sizes; omega)))) ?_
+      (fun σ _ pre => ?_) (fun σ _ pre => by have := pre.sizes; omega_using [this])))) ?_
   · have sz := pre.sizes
     simp (config := {decide := true}) only [upd, ↓reduceIte]
-    rw [show 8 * P.len - 1 = 32 * (P.len / 4 - 1) + 31 by omega]
+    rw [show 8 * P.len - 1 = 32 * (P.len / 4 - 1) + 31 by omega_using [sz]]
     refine clrTop_val ?_
-    rw [show 32 * (P.len / 4 - 1) + 32 = 8 * P.len by omega]
+    rw [show 32 * (P.len / 4 - 1) + 32 = 8 * P.len by omega_using [sz]]
     exact Nat.or_lt_two_pow (xw_lt P σ k) (Nat.lt_of_lt_of_le (show 2 < 2 ^ 2 by decide)
-      (Nat.pow_le_pow_right (by decide) (show 2 ≤ 8 * P.len by omega)))
+      (Nat.pow_le_pow_right (by decide) (show 2 ≤ 8 * P.len by omega_using [sz])))
   refine (St.pselM selX_taint (by decide) (by simp) (by simp) (by decide) (by decide) (by simp)
     (fun σ _ => ?_) (by decide)).mono (fun _ _ h => h) fun σ s ⟨h, m⟩ =>
       ⟨h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d hd => ⟨by revert hd; revert d; decide, ?_⟩), m⟩

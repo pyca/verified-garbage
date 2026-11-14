@@ -31,8 +31,8 @@ theorem validateRange_relCT (len : Nat) (modulus : Field) (input : Pointer) (abo
   unfold Validate.range
   dsimp only
   apply RelCT.assoc
-  apply RelCT.seq (rawInputs_relCT _ len len 0 5 (.input modulus) input base size hz (by omega) (by decide) h4
-    (by omega) hw4)
+  apply RelCT.seq (rawInputs_relCT _ len len 0 5 (.input modulus) input base size hz (by omega_using [hmax]) (by decide) h4
+    (by omega_using []) hw4)
   exact (rangeMask_relCT _ aboveOne).mono (fun _ _ h => forget_counter h) (fun _ _ h => h)
 
 theorem validateEqual_relCT (len : Nat) (a b : Pointer) (base : Addr) (size : Nat)
@@ -44,7 +44,7 @@ theorem validateEqual_relCT (len : Nat) (a b : Pointer) (base : Addr) (size : Na
   unfold Validate.equalValues
   dsimp only
   apply RelCT.assoc
-  apply RelCT.seq (rawInputs_relCT _ len len 5 8 a b base size hz (by omega) (by decide) h4 (by omega) hw4)
+  apply RelCT.seq (rawInputs_relCT _ len len 5 8 a b base size hz (by omega_using [hmax]) (by decide) h4 (by omega_using []) hw4)
   exact (equalMask_relCT _ _ _).mono (fun _ _ h => forget_counter h) (fun _ _ h => h)
 
 theorem validateOne_relCT (len : Nat) (input : Pointer) (base : Addr) (size : Nat) (hz : Layout.saved ≤ size) :

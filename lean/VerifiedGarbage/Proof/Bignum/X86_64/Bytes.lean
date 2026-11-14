@@ -36,7 +36,7 @@ theorem and7_eq (p : Nat) (hp : p < 2 ^ 64) : (BitVec.ofNat 64 p &&& 7 == 0) = d
 theorem shr3_eq (p : Nat) (hp : p < 2 ^ 64) : BitVec.ofNat 64 p >>> 3 = BitVec.ofNat 64 (p / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hp,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hp])]
 
 theorem test_eq (x : BitVec 64) : (x &&& x == 0) = (x == 0) := by rw [BitVec.and_self]
 
@@ -44,7 +44,7 @@ theorem ror56_toNat (x : BitVec 64) (h : x.toNat < 2 ^ 56) : (x.rotateRight 56).
   rw [BitVec.toNat_rotateRight, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     Nat.div_eq_of_lt (by simpa using h), Nat.zero_or]
   simp only [show 56 % 64 = 56 from rfl, show 64 - 56 = 8 from rfl]
-  rw [Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [h])]
 
 /-- `loadByte`: `p := p - 1`, `rax := 256 rax + byte`, `r14 += 1`, ZF iff
 `8 ∣ p - 1`. -/
@@ -55,16 +55,16 @@ theorem loadByte_ok {t : State} {p : Nat} {a : Addr} {b : Byte} (hp1 : 1 ≤ p) 
       t'.gpr .rdx = BitVec.ofNat 64 (p - 1) ∧ (t'.gpr .rax).toNat = (t.gpr .rax).toNat * 256 + b.toNat ∧
       t'.gpr .r14 = a + 1 ∧ t'.zf = some (decide ((p - 1) % 8 = 0)) ∧ t'.mem = t.mem ∧
       Keep [.rax, .rdx, .rbp, .r14] t t' := by
-  have hpred : BitVec.ofNat 64 p - 1 = BitVec.ofNat 64 (p - 1) := ofNat64_pred hp1 (by omega)
+  have hpred : BitVec.ofNat 64 p - 1 = BitVec.ofNat 64 (p - 1) := ofNat64_pred hp1 (by omega_using [hp])
   refine WP.mono (WP.keep [.rax, .rdx, .rbp, .r14] (c := .block loadByte) (Q := fun t' =>
       t'.gpr .rdx = BitVec.ofNat 64 (p - 1) ∧ (t'.gpr .rax).toNat = (t.gpr .rax).toNat * 256 + b.toNat ∧
       t'.gpr .r14 = a + 1 ∧ t'.zf = some (decide ((p - 1) % 8 = 0)) ∧ t'.mem = t.mem) ?_ rfl)
     fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
   unfold loadByte
-  xrun [State.ea, at0, hdx, h14, hpred, ha, hb, sx7, and7_eq (p - 1) (by omega),
+  xrun [State.ea, at0, hdx, h14, hpred, ha, hb, sx7, and7_eq (p - 1) (by omega_using [hp]),
     show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero]
   rw [BitVec.toNat_add, ror56_toNat _ hax, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (b := 2 ^ 64)
-    (by have := b.isLt; omega), Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+    (by have := b.isLt; omega_using [hax]), Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 /-- `storeWord`: `rax` as word `p / 8` of the array at `rbx = B + ed`. -/
 theorem storeWord_ok {t : State} {B : Addr} {Z ed p : Nat} (hs : Scr t B Z) (hp : p < 2 ^ 63)
@@ -76,7 +76,7 @@ theorem storeWord_ok {t : State} {B : Addr} {Z ed p : Nat} (hs : Scr t B Z) (hp 
       t'.mem = t.mem.writeW (off B (ed + 8 * (p / 8))) (t.gpr .rax) ∧ t'.gpr .rax = 0) ?_ rfl)
     fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
   unfold storeWord
-  xrun [State.ea, ix, hdx, shr3_eq p (by omega), addr0 hbx rfl, hs.st hed]
+  xrun [State.ea, ix, hdx, shr3_eq p (by omega_using [hp]), addr0 hbx rfl, hs.st hed]
 
 /-! ## The loop of `loadBE` -/
 
@@ -189,7 +189,7 @@ theorem loadBE_ok {s : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs : Lis
     (hbx : s.gpr .rbx = off B ed) (hk : bs.length = k) (hk1 : 1 ≤ k) (hk' : k < 2 ^ 31)
     (hw : w = (k + 7) / 8) (hed : ed + 8 * w ≤ Z)
     (hsrc : ∀ i < k, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 i) 1)
-    (hbytes : ∀ i (h : i < k), s.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega))
+    (hbytes : ∀ i (h : i < k), s.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_using [hk, h]))
     (hsep : ∀ i < k, ofs B (src + BitVec.ofNat 64 i) < ed ∨ ed + 8 * w ≤ ofs B (src + BitVec.ofNat 64 i)) :
     WP isa loadBE s fun t =>
       wv t.mem B ed w = Spec.Rsa.os2ip bs ∧ Outside B ed (8 * w) s.mem t.mem ∧
@@ -199,18 +199,18 @@ theorem loadBE_ok {s : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs : Lis
       t.gpr .rdx = BitVec.ofNat 64 k ∧ t.gpr .r14 = src ∧ t.mem = s.mem) (by xrun [hcx, hsi]) rfl)
     fun s₁ ⟨⟨hax, hdx, h14, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
-  refine wp_upto (a := 0) (N := k) (by omega) (LInv s B Z ed k w src bs) ?_
+  refine wp_upto (a := 0) (N := k) (by omega_using [hk1]) (LInv s B Z ed k w src bs) ?_
     (fun t hI => ⟨?_, hI.out, hI.keep⟩) ⟨hs₁, k₁.mono (by decide), by rw [hdx, Nat.sub_zero], by
       rw [h14]; exact (BitVec.add_zero src).symm, by rw [hax, pre_zero]; rfl,
-      fun q hq hle => absurd hle (by omega), by rw [hm₁]; exact Outside.refl _ _ _ _⟩
+      fun q hq hle => absurd hle (by omega_using [hw, hq]), by rw [hm₁]; exact Outside.refl _ _ _ _⟩
   · intro i _ hi t hI
     exact loadStep_ok hk hk' hw hed hbx hsrc hbytes hsep hi hI
-  · rw [wv_digits w fun q hq => by rw [hI.words q hq (by omega), Nat.sub_self, Nat.sub_zero],
+  · rw [wv_digits w fun q hq => by rw [hI.words q hq (by omega_using []), Nat.sub_self, Nat.sub_zero],
       ← hk, pre_len, Nat.mod_eq_of_lt]
     have := pre_lt bs (Nat.le_refl _)
     rw [pre_len, hk] at this
     have : (256 : Nat) ^ k ≤ 2 ^ (64 * w) := by
-      rw [← pow256]; exact Nat.pow_le_pow_right (by decide) (by omega)
-    omega
+      rw [← pow256]; exact Nat.pow_le_pow_right (by decide) (by omega_using [hw])
+    omega_arith
 
 end VG.Proof.Bignum.X86_64

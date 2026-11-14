@@ -46,13 +46,13 @@ theorem KS.ctxW_ok (h : KS P σ A live V ls s) (r8 : s.gpr .r8 = P.B) :
   have hz := pre.hdr_Z
   have hf := pre.fS
   unfold ctxW
-  refine wp_ldr (by decide) (by rw [r8]; exact addr_add (by simp only [hdr] at hz; omega))
+  refine wp_ldr (by decide) (by rw [r8]; exact addr_add (by simp only [hdr] at hz; omega_using [hz, hf]))
     ⟨P.rS, List.mem_append_right _ (by rw [h.wr]; exact pre.rS_mem), Offset.contains_base _
-      (by simp only [hdr] at hz; omega) (by omega)⟩ fun s1 u1 => ?_
+      (by simp only [hdr] at hz; omega_using [hz]) (by omega_using [])⟩ fun s1 u1 => ?_
   have e9 : s1.gpr .r9 = BitVec.ofNat 32 P.W := by
     rw [u1.gpr, ← h.cnt]; simp only [slot, w32, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   rw [← List.append_nil stride]
-  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by have := pre.wle; omega) e9 fun t h7 r m => WP.block_nil ?_
+  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by have := pre.wle; omega_using [this]) e9 fun t h7 r m => WP.block_nil ?_
   have rt : Rest [.r9, .r7] s t := (u1.rest (by simp)).trans (r.mono (by simp))
   have ht : KS P σ A live V ls t := h.of_rest rt (m.trans u1.mem)
   exact ⟨ht, ht.ws h7 (by rw [rt.gpr _ (by decide), r8]) (by rw [r.gpr _ (by decide), e9])⟩
@@ -82,16 +82,16 @@ theorem St.pdivHdr {q : Nat} (cert : Cert (.block (VG.Impl.Rsa.Arm.Recover.clrW 
     have c1 : s1.mem.readW (off (State.addr P.B) 16) 32 = BitVec.ofNat 32 P.W := by
       rw [← h1.cnt]; simp only [slot, w32, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     rw [← List.append_nil (VG.Impl.Rsa.Arm.CrtValues.divHdr _ _ _ _)]
-    refine VG.Proof.Rsa.Arm.CrtValues.divHdr_ok hw1 (by simp only [nArr] at hq; omega) (by decide) (by decide)
+    refine VG.Proof.Rsa.Arm.CrtValues.divHdr_ok hw1 (by simp only [nArr] at hq; omega_using [hq]) (by decide) (by decide)
       (by decide) c1 fun t hwt k2 d2 r2 => WP.block_nil ⟨⟨e, ?_, hwt⟩, d2, ?_⟩
     · have hds : ∀ d ∈ ([0, 4, 8, 12] : List Nat), SlotOk d := by decide
       exact h1.core k2 (by simp) hds r2.sp r2.rd r2.wr (h1.arrs_keep k2 (by simp) hds)
         (h1.sl_keep k2 hds fun d hd x => by
           have := (h1.ls_ok d hd).2.1
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at x; omega) h1.live_lt h1.ls_ok
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at x; omega_using [this, x]) h1.live_lt h1.ls_ok
     · have fD := h.pre.fit (show aDv < nArr by decide)
       have hS : S P.W = 4 * (P.W + 2) := rfl
-      rw [k2.word (by omega) (by simp) (by decide) fD, z1]
+      rw [k2.word (by omega_using [hS]) (by simp) (by decide) fD, z1]
 
 /-- The division, of `[q]` by the nonzero `[aDv]`. -/
 theorem St.pdiv {q : Nat} (hqN : q < nArr) (hq : q ∈ L) (hD : aDv ∈ L) (hqD : q ≠ aDv) (hqr : q ≠ aDr) (hqt : q ≠ aDt)

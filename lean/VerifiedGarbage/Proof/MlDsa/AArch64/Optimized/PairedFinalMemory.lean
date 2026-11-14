@@ -36,9 +36,9 @@ theorem finalPass_frame (hint : Bool) (work out aux : Addr) (c : CheckConstants)
   | zero => exact Frame.refl _ _
   | succ u ih =>
     simp only [finalPassData]
-    refine checkRun_frame _ _ _ _ _ _ _ (r:=⟨out,2048⟩) (by simp) ?_ (ih (by omega))
+    refine checkRun_frame _ _ _ _ _ _ _ (r:=⟨out,2048⟩) (by simp) ?_ (ih (by omega_using [hu]))
     intro p j
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact Offset.contains_base out (by omega) (by omega)
+    exact Offset.contains_base out (by omega_using [hu]) (by omega_using [hu])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired

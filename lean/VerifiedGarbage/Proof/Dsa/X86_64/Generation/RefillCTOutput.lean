@@ -46,8 +46,8 @@ theorem finishOutput_status {n pLen qLen : Nat} {D : DonePublic} {s : State} (h 
     WP isa Impl.Dsa.X86_64.Generation.finishOutput s (StatusAt D) := by
   obtain ⟨⟨W, hm, h19, _⟩, _, _, _, hwr, _⟩ := h
   have o := D.outputPlan
-  have pn : 0 < D.ctx.geo.pLen ∧ D.ctx.geo.pLen ≤ 384 := by rcases D.ctx.geo.width with hh | hh | hh <;> omega
-  have qn : D.ctx.geo.qLen ≤ 32 := by rcases D.ctx.geo.qWidth with hh | hh <;> omega
+  have pn : 0 < D.ctx.geo.pLen ∧ D.ctx.geo.pLen ≤ 384 := by rcases D.ctx.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : D.ctx.geo.qLen ≤ 32 := by rcases D.ctx.geo.qWidth with hh | hh <;> omega_using [hh]
   have pn' : 0 < (D.ctx.withHs D.hs).geo.pLen ∧ (D.ctx.withHs D.hs).geo.pLen ≤ 384 := pn
   have qn' : (D.ctx.withHs D.hs).geo.qLen ≤ 32 := qn
   have hw : (⟨(D.ctx.withHs D.hs).saved 6, 2 * D.ctx.geo.pLen + D.ctx.geo.qLen⟩ : Region) ∈ s.wr := by
@@ -72,7 +72,7 @@ theorem finishOutput_status {n pLen qLen : Nat} {D : DonePublic} {s : State} (h 
     have h7 := (mu.slots 7 (by simp [generationSlots])).trans o.lengthSlot
     unfold Impl.Dsa.X86_64.Generation.outputZero
     refine WP.seq (WP.mono (zeroArgs_ok mu.layout Ru) fun u₁ ⟨L₁, R₁, _, k₁⟩ => ?_)
-    refine WP.mono (zeroOut_ok L₁ R₁ (by simp [upd, h6]) (by simpa [upd] using h7) (by omega) (by omega)
+    refine WP.mono (zeroOut_ok L₁ R₁ (by simp [upd, h6]) (by simpa [upd] using h7) (by omega_using [pn']) (by omega_using [pn', qn'])
       (by rw [k₁.2.2]; exact hwu) o.bound o.apart) fun u₂ ⟨L₂, _, R₂, _, _, _⟩ => ?_
     exact ⟨_, _, L₂, R₂, by simpa [upd] using h19⟩
 

@@ -245,15 +245,15 @@ theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size
   have pyc := hap.2.1.2.2.2.2.2 yc
   have pzc := hap.2.2.2.2.2.2.2 zc
   rw [copyPt, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (copyWords_ok hs (o := o.x) (a := a.x) hle.1 hle.2.2.2.1 (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  refine WP.mono (copyWords_ok hs (o := o.x) (a := a.x) hle.1 hle.2.2.2.1 (by omega_using [ho, hle, hap, xa, xb, xc, ya, za, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  refine WP.mono (copyWords_ok hs₁ (o := o.y) (a := a.y) hle.2.1 hle.2.2.2.2.1 (by omega)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  refine WP.mono (copyWords_ok hs₁ (o := o.y) (a := a.y) hle.2.1 hle.2.2.2.2.1 (by omega_using [ho, hle, hap, xb, ya, yb, yc, zb, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  refine WP.mono (copyWords_ok hs₂ (o := o.z) (a := a.z) hle.2.2.1 hle.2.2.2.2.2 (by omega))
+  refine WP.mono (copyWords_ok hs₂ (o := o.z) (a := a.z) hle.2.2.1 hle.2.2.2.2.2 (by omega_using [ho, hle, hap, xc, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]))
     fun t ⟨e₃, k₃, O₃⟩ => ⟨?_, ?_, ?_, (k₁.trans k₂).trans k₃, ?_⟩
-  · rw [O₃.wordsVal (by omega) (by omega), O₂.wordsVal (by omega) (by omega), e₁]
-  · rw [O₃.wordsVal (by omega) (by omega), e₂, O₁.wordsVal (by omega) (by omega)]
-  · rw [e₃, O₂.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega)]
+  · rw [O₃.wordsVal (by omega_using [ho, hle, hap, xa, xb, xc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]) (by omega_using [ho, hn, hle, hap, xa, xb, xc, ya, yb, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]), O₂.wordsVal (by omega_using [ho, hle, hap, xa, xb, xc, ya, yb, yc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]) (by omega_using [ho, hn, hle, hap, xa, xb, xc, ya, yb, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]), e₁]
+  · rw [O₃.wordsVal (by omega_using [ho, hle, hap, ya, yb, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]) (by omega_using [ho, hn, hle, hap, xa, xb, xc, ya, yb, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]), e₂, O₁.wordsVal (by omega_using [ho, hle, hap, xa, xb, xc, yb, zb, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]) (by omega_using [ho, hn, hle, hap, xa, xb, xc, ya, yb, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc])]
+  · rw [e₃, O₂.wordsVal (by omega_using [ho, hle, hap, xc, ya, yb, yc, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]) (by omega_using [ho, hn, hle, hap, xa, xb, xc, ya, yb, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]), O₁.wordsVal (by omega_using [ho, hle, hap, xa, xb, xc, yc, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc]) (by omega_using [ho, hn, hle, hap, xa, xb, xc, ya, yb, yc, za, zb, zc, pxy, pxz, pyz, pxa, pxb, pxc, pyb, pyc, pzc])]
   · exact (O₁.unch.trans (O₂.unch.trans O₃.unch)).mono fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with h | h | h <;> simp [h]

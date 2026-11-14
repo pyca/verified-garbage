@@ -23,7 +23,7 @@ theorem powerBlock_correct (p a b n : Nat) :
     rw [powerBlock, ih]
     have bits : b % 2 ^ (n + 1) = 2 * (b / 2 % 2 ^ n) + b % 2 := by
       rw [Nat.pow_succ, Nat.mul_comm (2 ^ n) 2, Nat.mod_mul]
-      omega
+      omega_using []
     rw [bits, Nat.pow_succ, Nat.pow_mul a, Nat.pow_add,
       Nat.mul_comm 2 (b / 2 % 2 ^ n), Nat.pow_mul 2]
     rw [← Nat.mod_mul_mod

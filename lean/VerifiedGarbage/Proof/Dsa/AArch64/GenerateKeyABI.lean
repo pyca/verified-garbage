@@ -88,7 +88,7 @@ def keygenQBytes (s : State) : List Byte :=
 theorem keygen_q_length {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
     (keygenQBytes s).length = (s.gpr .x6).toNat := by
   simp only [keygenQBytes, keygenInput, List.length_take, List.length_drop, bytesAt_length, h.paramsLength]
-  omega
+  omega_using []
 
 theorem keygen_q_decode (s : State) :
     Spec.Dsa.decodeBE (keygenQBytes s) =
@@ -105,14 +105,14 @@ theorem keygenBase_toNat {extra : Nat} {s : State} (h : GenerateKeyABI extra s) 
   have hl := h.stackLower
   simp only [randomBase, BitVec.toNat_sub, BitVec.toNat_ofNat, Random.frameBytes]
   have hb := (s.sp).isLt
-  omega
+  omega_using [hl]
 
 theorem keygen_frame_sub {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
     Region.Sub ⟨randomBase s, Random.frameBytes⟩ (below (s.sp) (extra + 256)) := by
-  apply below_sub (by unfold Random.frameBytes; omega)
+  apply below_sub (by unfold Random.frameBytes; omega_using [])
   have hl := h.stackLower
   have hb := (s.sp).isLt
-  omega
+  omega_using [hl]
 
 theorem keygen_alloc_scr {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
     Scr (allocated Random.frameBytes s) (randomBase s) Random.frameBytes := by
@@ -120,7 +120,7 @@ theorem keygen_alloc_scr {extra : Nat} {s : State} (h : GenerateKeyABI extra s) 
   rw [keygenBase_toNat h]
   have hb := (s.sp).isLt
   unfold Random.frameBytes
-  omega
+  omega_using []
 
 theorem keygen_incoming_read {extra : Nat} {s : State} (h : GenerateKeyABI extra s)
     (p : Nat × Nat) (hp : p ∈ GenerateKey.incomingSlots) :
@@ -136,7 +136,7 @@ theorem keygen_incoming_read {extra : Nat} {s : State} (h : GenerateKeyABI extra
       simp only [List.mem_cons, List.not_mem_nil, or_false, or_true]
     · simp only [stackArgAddr]
       exact Offset.contains _ (d := 8 * j) (n := 8) (e := 0) (k := 24)
-        (by omega) (by omega) (by decide)
+        (by omega_using []) (by omega_using [hj]) (by decide)
   simp only [GenerateKey.incomingSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl
   · exact hj 0 (by decide)
@@ -152,7 +152,7 @@ theorem keygen_frame_ok {extra : Nat} {s : State} (h : GenerateKeyABI extra s)
   have hl := h.stackLower
   have ha : isa.push (.alloc Random.frameBytes) s = some (allocated Random.frameBytes s) := by
     simp only [isa, push, allocated]
-    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega⟩
+    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
   have hf : isa.pop (.free Random.frameBytes) (allocated Random.frameBytes s) t = some (randomFreed t) := by
     simp only [isa, pop]
     exact ite_eq_left ⟨by decide, by decide, by decide, htsp, htwr, rfl⟩
@@ -184,10 +184,10 @@ def keygenContextOf {extra : Nat} {s : State} (h : GenerateKeyABI extra s) (m : 
     rw [keygen_q_length h]
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   randBound := by rw [keygenInput, bytesAt_length]; exact (stackArg s 0).isLt
   positive := by
     have hh := (VG.Proof.Dsa.random_valid_scan (keygenQBytes s)).mp hq
-    omega
+    omega_using [hh]
 
 end VG.Proof.Dsa.AArch64

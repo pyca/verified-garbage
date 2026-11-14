@@ -28,7 +28,7 @@ theorem StageFrame.local_value_keep {base : Addr} {s t : State} {size output len
     Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem ((pointerValue base t (.local d)).setWidth 64) count) =
       Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.local d)).setWidth 64) count) := by
   rw [local_pointer (F.scr hs) hc hb, local_pointer hs hc hb,
-    F.local_bytes hd hused (by have := hs.nowrap; omega) hsep]
+    F.local_bytes hd hused (by have := hs.nowrap; omega_using [ho, this]) hsep]
 
 /-- A value in the working space lies apart from the stack its calls use. -/
 theorem localStack {s : State} {base : Addr} {size offset len : Nat}
@@ -39,15 +39,15 @@ theorem localStack {s : State} {base : Addr} {size offset len : Nat}
   have R := room
   unfold Pow.Room at R
   have e₁ : (off base offset).toNat = base.toNat + offset := by
-    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hb, nw]
   have e₂ : (BitVec.setWidth 64 (s.gpr .esp - 108#32)).toNat = (s.gpr .esp).toNat - 108 := by
     simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using [R]
   apply Region.disjoint_of_le
-  · simp only [callStack, e₁, e₂]; omega
-  · simp only [e₁]; omega
-  · simp only [callStack, e₂]; omega
+  · simp only [callStack, e₁, e₂]; omega_using [hb, R]
+  · simp only [e₁]; omega_using [hb, nw]
+  · simp only [callStack, e₂]; omega_using []
 
 theorem localStream {s : State} {base : Addr} {size offset len n : Nat}
     (hs : Scr s base size) (hlen : 0 < len) (hb : offset + len ≤ size) (hfar : contextBytes n ≤ offset) :
@@ -59,10 +59,10 @@ theorem localStream {s : State} {base : Addr} {size offset len n : Nat}
     rw [ptr]
     change InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 offset + BitVec.ofNat 64 i) 1
     rw [Offset.add_add]
-    exact hs.read (by omega)
+    exact hs.read (by omega_using [hb, hi])
   · intro i hi
-    rw [ptr, ofs_off base (by have := hs.nowrap; omega)]
-    omega
+    rw [ptr, ofs_off base (by have := hs.nowrap; omega_using [hb, hi, this])]
+    omega_using [hfar]
   · rw [ptr]
     exact hs.read hb
 

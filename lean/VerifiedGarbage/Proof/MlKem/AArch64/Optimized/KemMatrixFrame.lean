@@ -26,8 +26,8 @@ theorem pair_far {s₀ : State} (hp : Pre P L s₀) {e : Nat} (he : e+1<P.k*P.k)
   simp only [pairWrites,Paired.stepWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl|rfl
   · exact sdisj hp hf (by lom) hs.1
-  · exact sdisj hp hf (by lom) (by rcases hs.2 with h|h <;> omega)
-  · exact sdisj hp hf (by lom) (by rcases hs.2 with h|h <;> omega)
+  · exact sdisj hp hf (by lom) (by rcases hs.2 with h|h <;> omega_using [hs])
+  · exact sdisj hp hf (by lom) (by rcases hs.2 with h|h <;> omega_using [hs])
 
 theorem pair_kb {s₀ s t : State} (hp : Pre P L s₀) {e : Nat} (he : e+1<P.k*P.k)
     (h : KB P L s₀ s) (hk : Keep Paired.pairRegs s t) (hf : Frame (pairWrites L s₀ e) s.mem t.mem) :
@@ -44,8 +44,8 @@ theorem pair_sub {s₀ : State} {e : Nat} (he : e+1<P.k*P.k) :
   simp only [pairWrites,Paired.stepWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl|rfl
   · exact ⟨_,by simp,fun _ h => h⟩
-  · exact ⟨R (kA s₀) L.sc AH (1024*(P.k*P.k)),by simp,R.sub2 (by omega) (by omega)⟩
-  · exact ⟨R (kA s₀) L.sc AH (1024*(P.k*P.k)),by simp,R.sub2 (by omega) (by omega)⟩
+  · exact ⟨R (kA s₀) L.sc AH (1024*(P.k*P.k)),by simp,R.sub2 (by omega_using []) (by omega_using [he])⟩
+  · exact ⟨R (kA s₀) L.sc AH (1024*(P.k*P.k)),by simp,R.sub2 (by omega_using []) (by omega_using [he])⟩
 
 theorem last_far {s₀ : State} (hp : Pre P L s₀) {e : Nat} (he : e<P.k*P.k)
     {o l : Nat} (hf : o+l≤SV P+48)
@@ -56,7 +56,7 @@ theorem last_far {s₀ : State} (hp : Pre P L s₀) {e : Nat} (he : e<P.k*P.k)
   simp only [lastWrites,Paired.fullWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl
   · exact sdisj hp hf (by lom) hs.1
-  · exact sdisj hp hf (by lom) (by rcases hs.2 with h|h <;> omega)
+  · exact sdisj hp hf (by lom) (by rcases hs.2 with h|h <;> omega_using [hs])
 
 theorem last_kb {s₀ s t : State} (hp : Pre P L s₀) {e : Nat} (he : e<P.k*P.k)
     (h : KB P L s₀ s) (hk : Keep Paired.pairRegs s t) (hf : Frame (lastWrites L s₀ e) s.mem t.mem) :
@@ -73,6 +73,6 @@ theorem last_sub {s₀ : State} {e : Nat} (he : e<P.k*P.k) :
   simp only [lastWrites,Paired.fullWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl
   · exact ⟨_,by simp,fun _ h => h⟩
-  · exact ⟨R (kA s₀) L.sc AH (1024*(P.k*P.k)),by simp,R.sub2 (by omega) (by omega)⟩
+  · exact ⟨R (kA s₀) L.sc AH (1024*(P.k*P.k)),by simp,R.sub2 (by omega_using []) (by omega_using [he])⟩
 
 end VG.Proof.MlKem.AArch64.Kem

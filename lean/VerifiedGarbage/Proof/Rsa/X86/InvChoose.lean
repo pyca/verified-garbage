@@ -30,12 +30,12 @@ open VG.Impl.Rsa.X86.CrtValuesRt (lay)
     change kw a = kw len at aw
     have eq : BitVec.ofNat 32 a = args 7 := Option.some.inj (arg.readSrc.symm.trans g.input.gate.nArg.readSrc)
     have ae := congrArg BitVec.toNat eq
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at ae
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [al])] at ae
     have nwl : VG.Proof.Rsa.X86.InvBatchRt.nw len = a / 8 := by
       have aw' := aw
       simp only [kw, Spec.Rsa.modulusWords] at aw'
-      simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw, Spec.Rsa.modulusWords]; omega
-    exact inverseBodyRt_ok g.input (by omega) (by omega) (by omega) (by omega)
+      simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw, Spec.Rsa.modulusWords]; omega_using [m16, ae, aw']
+    exact inverseBodyRt_ok g.input (by omega_using [big, ae, nwl]) (by omega_using [m16, ae, nwl]) (by omega_using [m16, pb, ae, nwl]) (by omega_using [m16, qb, ae, nwl])
   · intro _; exact inverseFallback_ok g.input
 
 end VG.Proof.Rsa.X86.CrtValuesRt

@@ -66,7 +66,7 @@ theorem nibAt_lt (m : Mem) (p : Addr) (i : Nat) : nibAt m p i < 16 := Nat.mod_lt
 def magOf (n : Nat) : Nat := if n < 8 then 8 - n else n - 8
 
 theorem magOf_le {n : Nat} (hn : n < 16) : magOf n ≤ 8 := by
-  unfold magOf; split <;> omega
+  unfold magOf; split <;> omega_arith
 
 /-- All ones for `true`, zero for `false`. -/
 def maskB (b : Bool) : BitVec 32 := if b then BitVec.allOnes 32 else 0
@@ -121,7 +121,7 @@ theorem combMasks_ok {s₀ : State} {a : Nat} (ha : a ≤ 8) (h9 : s₀.gpr .r9 
   refine ⟨h.rest.trans ((hr u₁).trans ((hr u₂).trans ((hr u₃).trans (hr u₄)))), ?_, fun k' hk' => ?_⟩
   · rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem, h.mem]
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hk' with hk' | rfl
-    · have ne := maskReg_ne k hk k' (by omega) (by omega)
+    · have ne := maskReg_ne k hk k' (by omega_arith) (by omega_using [hk'])
       rw [u₄.other _ ne, u₃.other _ ne, u₂.other _ ne, u₁.other _ ne]
       exact h.masks k' hk'
     · rw [u₄.gpr, dpVal, u₃.other _ m.1.symm, u₂.other _ m.1.symm, u₁.other _ m.1.symm, g9, u₃.gpr,
@@ -150,12 +150,12 @@ theorem combDigit_ok {b p : BitVec 32} {s : State} (hc : Ctx b s) {i : Nat} (hi 
   have m3 : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   let a := State.addr p + BitVec.ofNat 64 (i / 2)
   refine wp_ldrb (a := a) (by decide)
-    (by rw [e3]; exact (congrArg State.addr (BitVec.add_zero _)).trans (addr_add (by omega)))
+    (by rw [e3]; exact (congrArg State.addr (BitVec.add_zero _)).trans (addr_add (by omega_using [hi, hfit])))
     (by rw [r3.rd, r3.wr]; exact hr) fun s₄ u₄ => ?_
   have v_lt := (s.mem a).isLt
   have e4 : s₄.gpr .r3 = BitVec.ofNat 32 (s.mem a).toNat := by
     rw [u₄.gpr, m3]
-    exact BitVec.eq_of_toNat_eq (by rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])])
   refine wp_dp (op2_imm (by decide)) fun s₅ u₅ => wp_mov (op2_lsr (by decide)) fun s₆ u₆ =>
     wp_mov (op2_imm (by decide)) fun s₇ u₇ => wp_dp (op2_imm (by decide)) fun s₈ u₈ =>
     wp_dp (op2_reg _ _) fun s₉ u₉ => wp_dp (op2_reg _ _) fun s₁₀ u₁₀ =>
@@ -225,8 +225,8 @@ theorem TblAt.of_frame {s t : State} {T : BitVec 32} {L : List Region} (h : TblA
     rw [← h.words j hj]
     refine hf.readW (r := TBL T) ?_ hd (by decide)
     simp only [Region.Contains]
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega⟩
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
+    omega_using [hj]⟩
 
 theorem combLimb_lt (i m c k : Nat) : combLimb i m c k < 2 ^ 16 := Nat.mod_lt _ (by decide)
 
@@ -238,21 +238,21 @@ theorem tbl_read {m : Mem} {T : Addr}
     (hq : q < 64 * 384) : m.readW (T + BitVec.ofNat 64 (4 * q)) 32 = BitVec.ofNat 32 (combLimbAt q) := by
   have lo := combLimbAt_lt (2 * (q / 2))
   have hi := combLimbAt_lt (2 * (q / 2) + 1)
-  have w := hw (q / 2) (by omega)
+  have w := hw (q / 2) (by omega_using [hq])
   rcases Nat.mod_two_eq_zero_or_one q with h | h
-  · have e : 4 * q = 8 * (q / 2) := by omega
+  · have e : 4 * q = 8 * (q / 2) := by omega_using [h]
     rw [e, Mem.readW_lo32 w, combWord]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [show 2 * (q / 2) = q by omega] at lo ⊢
-    omega
+    rw [show 2 * (q / 2) = q by omega_using [h]] at lo ⊢
+    omega_using []
   · have e : T + BitVec.ofNat 64 (4 * q) = T + BitVec.ofNat 64 (8 * (q / 2)) + BitVec.ofNat 64 4 := by
-      rw [Offset.add_add]; congr 2; omega
+      rw [Offset.add_add]; congr 2; omega_using [h]
     rw [e, Mem.readW_hi32 w, combWord]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [show 2 * (q / 2) + 1 = q by omega] at hi ⊢
-    omega
+    rw [show 2 * (q / 2) + 1 = q by omega_using [h]] at hi ⊢
+    omega_using [lo]
 
 /-- Limb `k` of coordinate `c` of entry `a` of table `i`: the identity's `[1, 1, 0]` for
 `a = 0`. -/
@@ -313,16 +313,16 @@ theorem selectCand_ok {b T : BitVec 32} {i a c k m : Nat} {s : State} (h : SelCt
       t.gpr .r9 = s.gpr .r9 ||| (BitVec.ofNat 32 (combLimb i m c k) &&& maskB (decide (a = m + 1))) ∧
       Rest [.r9, .r10] s t ∧ t.mem = s.mem := by
   have fit := h.tbl.fit
-  have q_lt : 384 * i + 48 * m + 16 * c + k < 64 * 384 := by omega
-  have e : 1536 * i + (192 * m + 64 * c + 4 * k) = 4 * (384 * i + 48 * m + 16 * c + k) := by omega
+  have q_lt : 384 * i + 48 * m + 16 * c + k < 64 * 384 := by omega_using [hi, hc, hk, hm]
+  have e : 1536 * i + (192 * m + 64 * c + 4 * k) = 4 * (384 * i + 48 * m + 16 * c + k) := by omega_using []
   have ha : State.addr (s.gpr .r12 + BitVec.ofNat 32 (192 * m + 64 * c + 4 * k)) =
       State.addr T + BitVec.ofNat 64 (4 * (384 * i + 48 * m + 16 * c + k)) := by
-    rw [h.r12, BitVec.add_assoc, ← BitVec.ofNat_add, e, addr_add (by omega)]
+    rw [h.r12, BitVec.add_assoc, ← BitVec.ofNat_add, e, addr_add (by omega_using [hi, hc, hk, hm, fit])]
   have hv := tbl_read h.tbl.words q_lt
   have lv : combLimbAt (384 * i + 48 * m + 16 * c + k) = combLimb i m c k := by
-    unfold combLimbAt; congr 1 <;> omega
+    unfold combLimbAt; congr 1 <;> omega_arith
   unfold selectCand
-  refine wp_ldr (by omega) ha (CallLay.inRegions_sub h.tbl.rd (by omega) (by decide)) fun s₁ u₁ =>
+  refine wp_ldr (by omega_using [hc, hk, hm]) ha (CallLay.inRegions_sub h.tbl.rd (by omega_using [hi, hc, hk, hm]) (by decide)) fun s₁ u₁ =>
     wp_dp (op2_reg _ _) fun s₂ u₂ => wp_dp (op2_reg _ _) fun s₃ u₃ => WP.block_nil ?_
   have mm := h.masks m hm
   have hne : maskReg (m + 1) ≠ .r10 := maskReg_r10 m hm
@@ -378,28 +378,28 @@ theorem selectLimb_ok {b T : BitVec 32} {i a c k : Nat} {s : State} (h : SelCtx 
       t.gpr .r9 = BitVec.ofNat 32 (if 1 ≤ a ∧ a ≤ n then selLimb i a c k else
         if a = 0 ∧ c < 2 ∧ k = 0 then 1 else 0))
     (fun n t hn ⟨ht, rt, mt, gt⟩ => ?_) 8 (Nat.le_refl _) s₀
-    ⟨h₀, Rest.refl _ _, rfl, by rw [g₀, ite_eq_right (show ¬(1 ≤ a ∧ a ≤ 0) by omega)]⟩) fun s₁ ⟨h₁, r₁, m₁, g₁⟩ => ?_
+    ⟨h₀, Rest.refl _ _, rfl, by rw [g₀, ite_eq_right (show ¬(1 ≤ a ∧ a ≤ 0) by omega_using [])]⟩) fun s₁ ⟨h₁, r₁, m₁, g₁⟩ => ?_
   · refine WP.mono (selectCand_ok ht hi hc hk hn) fun u ⟨gu, ru, mu⟩ =>
       ⟨ht.of_rest ru (by rw [mu]; exact Frame.refl _ _), rt.trans ru, mu.trans mt, ?_⟩
     rw [gu, gt, cand_fact a ha n hn]
     by_cases e : a = n + 1
     · subst e
-      rw [ite_eq_left rfl, ite_eq_right (show ¬(1 ≤ n + 1 ∧ n + 1 ≤ n) by omega),
-        ite_eq_right (show ¬(n + 1 = 0 ∧ c < 2 ∧ k = 0) by omega),
-        ite_eq_left (show 1 ≤ n + 1 ∧ n + 1 ≤ n + 1 from ⟨by omega, Nat.le_refl _⟩), selLimb_succ]
+      rw [ite_eq_left rfl, ite_eq_right (show ¬(1 ≤ n + 1 ∧ n + 1 ≤ n) by omega_using []),
+        ite_eq_right (show ¬(n + 1 = 0 ∧ c < 2 ∧ k = 0) by omega_using []),
+        ite_eq_left (show 1 ≤ n + 1 ∧ n + 1 ≤ n + 1 from ⟨by omega_using [], Nat.le_refl _⟩), selLimb_succ]
       exact BitVec.zero_or
     · rw [ite_eq_right e]
       congr 1
       by_cases h1 : 1 ≤ a ∧ a ≤ n
-      · rw [ite_eq_left h1, ite_eq_left (show 1 ≤ a ∧ a ≤ n + 1 from ⟨h1.1, by omega⟩)]
-      · rw [ite_eq_right h1, ite_eq_right (show ¬(1 ≤ a ∧ a ≤ n + 1) by omega)]
+      · rw [ite_eq_left h1, ite_eq_left (show 1 ≤ a ∧ a ≤ n + 1 from ⟨h1.1, by omega_using [h1]⟩)]
+      · rw [ite_eq_right h1, ite_eq_right (show ¬(1 ≤ a ∧ a ≤ n + 1) by omega_using [e, h1])]
   -- The store.
-  refine str0_ok h₁.ctx (by omega) fun t ut => WP.block_nil ⟨r₀.trans (r₁.trans (ut.rest _)), ?_⟩
+  refine str0_ok h₁.ctx (by omega_using [hc, hk]) fun t ut => WP.block_nil ⟨r₀.trans (r₁.trans (ut.rest _)), ?_⟩
   have sel : (if 1 ≤ a ∧ a ≤ 8 then selLimb i a c k else if a = 0 ∧ c < 2 ∧ k = 0 then 1 else 0) =
       selLimb i a c k := by
     rcases Nat.eq_zero_or_pos a with a0 | apos
     · subst a0
-      rw [ite_eq_right (show ¬(1 ≤ 0 ∧ 0 ≤ 8) by omega), selLimb_zero i c k hc hk]
+      rw [ite_eq_right (show ¬(1 ≤ 0 ∧ 0 ≤ 8) by omega_using []), selLimb_zero i c k hc hk]
       by_cases hck : c < 2 ∧ k = 0
       · rw [ite_eq_left ⟨rfl, hck⟩, ite_eq_left hck]
       · rw [ite_eq_right (fun h => hck h.2), ite_eq_right hck]
@@ -447,19 +447,19 @@ theorem combSelect_ok {b T : BitVec 32} {i a : Nat} {s : State} (hc : Ctx b s) (
     fun t h => ⟨(r4.mono (by decide)).trans (h.rest.mono (by decide)), by rw [← m4]; exact h.frame,
       h.limbs⟩
   have fit := h.sel.ctx.fit
-  have e : 64 + 64 * (4 + q / 16) + 4 * (q % 16) = 320 + 4 * q := by omega
-  refine WP.mono (selectLimb_ok h.sel hi ha (by omega) (Nat.mod_lt _ (by decide))) fun u ⟨ru, mu⟩ => ?_
+  have e : 64 + 64 * (4 + q / 16) + 4 * (q % 16) = 320 + 4 * q := by omega_using []
+  refine WP.mono (selectLimb_ok h.sel hi ha (by omega_using [hq]) (Nat.mod_lt _ (by decide))) fun u ⟨ru, mu⟩ => ?_
   rw [e] at mu
   have fw : Frame [selR b] t.mem u.mem := by
     rw [mu]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains (State.addr b) (by omega) (by omega) (by omega))
+      (Offset.contains (State.addr b) (by omega_using []) (by omega_using [hq]) (by omega_using []))
   refine ⟨h.sel.of_rest ru (fw.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Offset.sub_base (State.addr b) (by decide)⟩),
     h.rest.trans ru, h.frame.trans fw, fun q' hq' => ?_⟩
   rw [mu]
   rcases Nat.lt_succ_iff_lt_or_eq.mp hq' with hq' | rfl
-  · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+  · rw [wd_write_other _ _ _ (by omega_using [hq']) (by omega_arith) (by omega_using [hq])]
     exact h.limbs q' hq'
   · rw [wd_write_self, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (selLimb_lt i a _ _) (by decide))]
@@ -479,7 +479,7 @@ theorem magOf_eq (n : Nat) : magOf n = mag n := rfl
 theorem val16_digits16 (v : Nat) : ∀ n, val16 (fun k => v / 2 ^ (16 * k) % 2 ^ 16) n = v % 2 ^ (16 * n)
   | 0 => by simp [val16, Nat.mod_one]
   | n + 1 => by
-    rw [val16_succ, val16_digits16 v n, show 16 * (n + 1) = 16 * n + 16 by omega, Nat.pow_add,
+    rw [val16_succ, val16_digits16 v n, show 16 * (n + 1) = 16 * n + 16 by omega_using [], Nat.pow_add,
       Nat.mod_mul]
 
 /-- The selected entry's coordinate `c` in slot `4 + c`, with limbs below `2¹⁶`. -/
@@ -488,9 +488,9 @@ theorem sel_env {m : Mem} {b : BitVec 32} {i a : Nat}
     (sl : Slot) (c : Nat) (hc : c < 3) (hs : sl.val = 4 + c) :
     env m b sl = combCoord (combCached64 i a) c ∧ Lim m (State.addr b) (offset sl) := by
   have hl : ∀ k < 16, limb m (State.addr b) (offset sl) k = selLimb i a c k := fun k hk => by
-    have e := h (16 * c + k) (by omega)
-    rw [show (16 * c + k) / 16 = c by omega, show (16 * c + k) % 16 = k by omega,
-      show 320 + 4 * (16 * c + k) = offset sl + 4 * k by simp only [offset, hs]; omega] at e
+    have e := h (16 * c + k) (by omega_using [hc, hk])
+    rw [show (16 * c + k) / 16 = c by omega_using [hk], show (16 * c + k) % 16 = k by omega_using [hk],
+      show 320 + 4 * (16 * c + k) = offset sl + 4 * k by simp only [offset, hs]; omega_using []] at e
     exact e
   refine ⟨?_, fun k hk => by rw [hl k hk]; exact selLimb_lt _ _ _ _⟩
   have hv : V m (State.addr b) (offset sl) = (combCoord (combCached64 i a) c).val := by
@@ -512,19 +512,19 @@ theorem slot_apart {b : BitVec 32} (sl : Slot) {d n : Nat} (h : d + n ≤ offset
     (hn : d + n ≤ 8192) :
     ∀ k < 16, (⟨State.addr b + BitVec.ofNat 64 (offset sl + 4 * k), 4⟩ : Region).Disjoint
       ⟨State.addr b + BitVec.ofNat 64 d, n⟩ := fun k hk =>
-  Offset.disjoint _ (by omega) (by simp only [offset] at h ⊢; have := sl.isLt; omega) (by omega)
+  Offset.disjoint _ (by omega_using [h, hk]) (by simp only [offset] at h ⊢; have := sl.isLt; omega_using [hk]) (by omega_using [hn])
 
 /-- Nibble `i` of the scalar's bytes is the decoded scalar's. -/
 theorem nibAt_eq (m : Mem) (p : Addr) {i : Nat} (hi : i < 64) :
     nibAt m p i = nib (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p 32)) i := by
   rw [nib, decodeLE_nibble, nibbleOf, nibAt]
   have hg : (Spec.Ed25519.bytesAt m p 32).getD (i / 2) 0 = m (p + BitVec.ofNat 64 (i / 2)) := by
-    simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, show i / 2 < 32 by omega]
+    simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, show i / 2 < 32 by omega_using [hi]]
   rw [hg]
   have := (m (p + BitVec.ofNat 64 (i / 2))).isLt
   rcases Nat.mod_two_eq_zero_or_one i with h | h
   · rw [h, ite_eq_right (by decide), pow_zero, Nat.div_one]
-  · rw [h, ite_eq_left rfl, pow_one]; omega
+  · rw [h, ite_eq_left rfl, pow_one]; omega_using []
 
 /-! ## The addition -/
 
@@ -623,7 +623,7 @@ theorem combStep_ok {s₀ s : State} {b p T : BitVec 32} {S j : Nat} (E : CombEn
   rw [combStep]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono_syms (combDigit_ok h.ctx hj E.hp h.r11 E.fit (by rw [hrr]; exact E.readable _ (by omega)))
+  refine WP.mono_syms (combDigit_ok h.ctx hj E.hp h.r11 E.fit (by rw [hrr]; exact E.readable _ (by omega_using [hj])))
     fun u ⟨ru, mu, _, _, gm⟩ syu => ?_
   have fu : Frame [⟨State.addr b + BitVec.ofNat 64 56, 4⟩] s.mem u.mem := by
     rw [mu]
@@ -638,11 +638,11 @@ theorem combStep_ok {s₀ s : State} {b p T : BitVec 32} {S j : Nat} (E : CombEn
     fun v ⟨rv, fv, lv⟩ => ?_
   -- The slots after the selection.
   have envu : ∀ sl : Slot, env u.mem b sl = env s.mem b sl ∧ Lim u.mem (State.addr b) (offset sl) := fun sl =>
-    let e := env_frame fu sl (slot_apart sl (by have := sl.isLt; simp only [offset]; omega) (by decide))
+    let e := env_frame fu sl (slot_apart sl (by have := sl.isLt; simp only [offset]; omega_using []) (by decide))
     ⟨e.1, e.2 (h.lim sl)⟩
   have envv : ∀ sl : Slot, (sl.val < 4 ∨ 7 ≤ sl.val) → env v.mem b sl = env s.mem b sl ∧
       Lim v.mem (State.addr b) (offset sl) := fun sl hs => by
-    have e := env_frame fv sl (slot_apart sl (by simp only [offset]; have := sl.isLt; omega) (by decide))
+    have e := env_frame fv sl (slot_apart sl (by simp only [offset]; have := sl.isLt; omega_using [hs]) (by decide))
     exact ⟨e.1.trans (envu sl).1, e.2 (envu sl).2⟩
   have ent : ∀ c < 3, ∀ sl : Slot, sl.val = 4 + c →
       env v.mem b sl = combCoord (combCached64 j (magOf (nibAt s.mem (State.addr p) j))) c ∧
@@ -738,7 +738,7 @@ theorem combStep_ok {s₀ s : State} {b p T : BitVec 32} {S j : Nat} (E : CombEn
       exact hc
     · simp only [hlt, decide_false, Bool.false_eq_true, ↓reduceIte] at hc ⊢
       exact hc
-  refine fun hsz => ⟨?_, ⟨by omega, cy.of_rest ((uz.rest (ws := [.r11]) (by decide)).trans (fz.rest _)) (by decide), r11z,
+  refine fun hsz => ⟨?_, ⟨by omega_using [hj], cy.of_rest ((uz.rest (ws := [.r11]) (by decide)).trans (fz.rest _)) (by decide), r11z,
     by rw [memz]; exact ly, ?_, ?_, h.keep.trans pk, ?_, ?_⟩⟩
   · rw [eval_ne, zz, uz.gpr, dpVal, r11y, nf.1, nf.2]
     simp
@@ -766,15 +766,15 @@ theorem combSteps_ok {s₀ s : State} {b p T : BitVec 32} {S j₀ : Nat} (E : Co
     WP isa (.loop combStep .ne) s fun t => CombInv s₀ b p T S 64 t := by
   apply WP.loop (fun n t => CombInv s₀ b p T S (64 - n) t ∧ 0 < n ∧ n ≤ 64) (n := 64 - j₀)
   · intro n t ⟨ht, hn0, hn⟩
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono (combStep_ok E ht (by omega)) fun u ⟨ue, hu⟩ => ?_
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [hn0]⟩
+    refine WP.mono (combStep_ok E ht (by omega_using [])) fun u ⟨ue, hu⟩ => ?_
     by_cases hk : k = 0
     · subst hk
       exact Or.inl ⟨by rw [ue]; rfl, hu⟩
-    · refine Or.inr ⟨by rw [ue]; simp only [show 64 - (k + 1) + 1 ≠ 64 by omega, ne_eq,
-        not_false_eq_true, decide_true], k, by omega, ?_, by omega, by omega⟩
-      rw [show 64 - k = 64 - (k + 1) + 1 by omega]; exact hu
-  · exact ⟨by rw [show 64 - (64 - j₀) = j₀ by omega]; exact h, by omega, by omega⟩
+    · refine Or.inr ⟨by rw [ue]; simp only [show 64 - (k + 1) + 1 ≠ 64 by omega_using [hk], ne_eq,
+        not_false_eq_true, decide_true], k, by omega_using [], ?_, by omega_using [hk], by omega_using [hn]⟩
+      rw [show 64 - k = 64 - (k + 1) + 1 by omega_using [hn]]; exact hu
+  · exact ⟨by rw [show 64 - (64 - j₀) = j₀ by omega_using [hj₀]]; exact h, by omega_using [hj₀], by omega_using []⟩
 
 /-! ## The scalar's copy -/
 
@@ -803,12 +803,12 @@ theorem combCopy_ok {s : State} {b P : BitVec 32} (hc : Ctx b s) (hp : s.gpr .r1
       ∀ i < k, t.mem (State.addr b + BitVec.ofNat 64 (SCAL + i)) = s.mem (State.addr P + BitVec.ofNat 64 i))
     (fun (k : Nat) (t : State) hk ⟨rt, ft, ct⟩ => ?_) 32 le_rfl s
     ⟨Rest.refl _ _, Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
-  refine wp_ldrb (a := State.addr P + BitVec.ofNat 64 k) (by omega)
-    (by rw [rt.gpr _ (by decide), hp]; exact addr_add (by omega))
+  refine wp_ldrb (a := State.addr P + BitVec.ofNat 64 k) (by omega_using [hk])
+    (by rw [rt.gpr _ (by decide), hp]; exact addr_add (by omega_using [hfit, hk]))
     (by rw [rt.rd, rt.wr]; exact hr k hk) fun t₁ u₁ => ?_
-  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (SCAL + k)) (by simp only [SCAL]; omega)
-    (by rw [u₁.other _ (by decide), rt.gpr _ (by decide), hc.r0]; exact addr_add (by simp only [SCAL]; omega))
-    (by rw [u₁.wr, rt.wr]; exact in_base hc.wr (by simp only [SCAL]; omega) (by simp only [SCAL]; omega))
+  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (SCAL + k)) (by simp only [SCAL]; omega_using [hk])
+    (by rw [u₁.other _ (by decide), rt.gpr _ (by decide), hc.r0]; exact addr_add (by simp only [SCAL]; omega_using [hfb, hk]))
+    (by rw [u₁.wr, rt.wr]; exact in_base hc.wr (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using [hk]))
     fun t₂ u₂ => WP.block_nil ?_
   have m2 : t₂.mem = t.mem.writeW (State.addr b + BitVec.ofNat 64 (SCAL + k))
       (t.mem (State.addr P + BitVec.ofNat 64 k)) := by
@@ -816,7 +816,7 @@ theorem combCopy_ok {s : State} {b P : BitVec 32} (hc : Ctx b s) (hp : s.gpr .r1
   refine ⟨rt.trans ((u₁.rest (by decide)).trans (u₂.rest _)), ?_, fun i hi => ?_⟩
   · rw [m2]
     exact ft.writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by simp only [SCAL]; omega) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega))
+      (Offset.contains _ (by simp only [SCAL]; omega_using []) (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using []))
   · rw [m2, VG.WriteBytes.writeW8_apply]
     by_cases hik : i = k
     · subst hik
@@ -824,10 +824,10 @@ theorem combCopy_ok {s : State} {b P : BitVec 32} (hc : Ctx b s) (hp : s.gpr .r1
       exact src i hk _ ft
     · have hne : State.addr b + BitVec.ofNat 64 (SCAL + i) ≠ State.addr b + BitVec.ofNat 64 (SCAL + k) :=
         fun he => Offset.disjoint (State.addr b) (d := SCAL + i) (n := 1) (e := SCAL + k) (k := 1)
-          (by omega) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega) _
+          (by omega_using [hik]) (by simp only [SCAL]; omega_using [hk, hi]) (by simp only [SCAL]; omega_using [hk]) _
           (Region.contains_self _ _) (he ▸ Region.contains_self _ _)
       rw [ite_eq_right hne]
-      exact ct i (by omega)
+      exact ct i (by omega_using [hi, hik])
 
 /-! ## The start -/
 
@@ -859,10 +859,10 @@ theorem combInit_ok {u : State} {b T : BitVec 32} (hcu : Ctx b u) (lu : AllLim u
   refine WP.mono_syms (Q := fun w => Upd v w .r11 ((0 : BitVec 16).setWidth 32))
     (wp_movw fun w uw => WP.block_nil uw) fun w uw syw => ?_
   let p := b + BitVec.ofNat 32 SCAL
-  have hpa : State.addr p = State.addr b + BitVec.ofNat 64 SCAL := addr_add (by simp only [SCAL]; omega)
+  have hpa : State.addr p = State.addr b + BitVec.ofNat 64 SCAL := addr_add (by simp only [SCAL]; omega_using [hfb])
   have hpn : p.toNat = b.toNat + SCAL := by
     simp only [p, BitVec.toNat_add, BitVec.toNat_ofNat, SCAL]
-    rw [Nat.mod_eq_of_lt (by omega : 2048 < 2 ^ 32), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [] : 2048 < 2 ^ 32), Nat.mod_eq_of_lt (by omega_using [hfb])]
   have frw : Frame [FA b] u.mem w.mem := by rw [uw.mem]; exact kv.frame
   have tw : TblAt w T := tu.of_frame (by rw [uw.rd, uw.wr, kv.rest.rd, kv.rest.wr]) frw fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
@@ -875,10 +875,10 @@ theorem combInit_ok {u : State} {b T : BitVec 32} (hcu : Ctx b u) (lu : AllLim u
           exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide))
       (show (32 : Nat) ≤ 2 ^ 64 by decide) hn]
   have E : CombEnv w b p T := by
-    refine ⟨rfl, by rw [hpn]; simp only [SCAL]; omega, fun k hk => ?_, ?_, tw, apart⟩
+    refine ⟨rfl, by rw [hpn]; simp only [SCAL]; omega_using [hfb], fun k hk => ?_, ?_, tw, apart⟩
     · rw [hpa, Offset.add_add, uw.rd, uw.wr, kv.rest.rd, kv.rest.wr]
       have hw : (⟨State.addr b, 4096 + 4096⟩ : Region) ∈ u.wr := hcu.wr
-      exact in_base (List.mem_append_right _ hw) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega)
+      exact in_base (List.mem_append_right _ hw) (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using [hk])
     · intro r hr
       rw [hpa]
       simp only [stepRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -908,12 +908,12 @@ theorem combPrepare_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllL
   have ku : PointKeep b s u := PointKeep.of_small ru (by decide) fu (by decide) (by decide)
   have hcu := ku.ctx hc
   have lu : AllLim u.mem b := fun sl =>
-    (env_frame fu sl (slot_apart sl (.inr (by simp only [offset, SCAL]; have := sl.isLt; omega))
+    (env_frame fu sl (slot_apart sl (.inr (by simp only [offset, SCAL]; have := sl.isLt; omega_using []))
       (by decide))).2 (hl sl)
   have tu : TblAt u T := hT.of_frame (by rw [ru.rd, ru.wr]) fu fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right sub
   have hpa : State.addr (b + BitVec.ofNat 32 SCAL) = State.addr b + BitVec.ofNat 64 SCAL :=
-    addr_add (by simp only [SCAL]; omega)
+    addr_add (by simp only [SCAL]; omega_using [hfb])
   have scal : Spec.Ed25519.bytesAt u.mem (State.addr (b + BitVec.ofNat 32 SCAL)) 32 =
       Spec.Ed25519.bytesAt s.mem (State.addr P) 32 := by
     unfold Spec.Ed25519.bytesAt

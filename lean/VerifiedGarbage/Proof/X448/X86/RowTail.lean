@@ -28,9 +28,9 @@ theorem rowTail_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i
       t.zf = some (decide (i + 1 = 28)) ∧
       t.mem = s.mem.writeW (off base (ACC + 4 * (i + 28))) (s.gpr .ebx) ∧ Keeps clob s t := by
   have ea : s.ea (at_ .ebp (ACC + 112)) = off base (ACC + 4 * (i + 28)) := by
-    rw [rowEa hs hp (by simp only [ACC]; omega), show 4 * i + (ACC + 112) = ACC + 4 * (i + 28) by omega]
+    rw [rowEa hs hp (by simp only [ACC]; omega_using [hi]), show 4 * i + (ACC + 112) = ACC + 4 * (i + 28) by omega_using []]
   unfold rowEnd
-  refine wp_store ea (hs.write (by simp only [ACC]; omega)) fun t ht => ?_
+  refine wp_store ea (hs.write (by simp only [ACC]; omega_using [hi])) fun t ht => ?_
   refine wp_alu (Or.inl rfl) rfl fun u hu _ => ?_
   refine wp_mov rfl fun v hv => ?_
   refine wp_alu (Or.inl rfl) rfl fun w hw _ => ?_

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448: pruning a scalar, on 64-bit words
@@ -42,7 +43,7 @@ theorem or_two_pow_mod {q r k : Nat} (hr : r < 2 ^ k) (hq : q ≤ 1) : (2 ^ k * 
 /-- Setting bit `k` of a number below `2^(k+1)`. -/
 theorem or_pow_eq {y k : Nat} (h : y < 2 ^ (k + 1)) : y ||| 2 ^ k = 2 ^ k + y % 2 ^ k := by
   have hq : y / 2 ^ k ≤ 1 := Nat.lt_succ_iff.mp ((Nat.div_lt_iff_lt_mul (Nat.two_pow_pos k)).mpr (by
-    rw [Nat.pow_succ] at h; omega))
+    rw [Nat.pow_succ] at h; omega_using [h]))
   have := or_two_pow_mod (q := y / 2 ^ k) (Nat.mod_lt y (Nat.two_pow_pos k)) hq
   rwa [Nat.div_add_mod] at this
 
@@ -53,9 +54,9 @@ theorem prune_nat (w0 w1 w2 w3 w4 w5 w6 b : Nat) (h0 : w0 < 2 ^ 64) (h1 : w1 < 2
       (w6 + 2 ^ 64 * b))))))) &&& (2 ^ 448 - 4)) ||| 2 ^ 447 =
     (w0 &&& (2 ^ 64 - 4)) + 2 ^ 64 * (w1 + 2 ^ 64 * (w2 + 2 ^ 64 * (w3 + 2 ^ 64 * (w4 + 2 ^ 64 *
       (w5 + 2 ^ 64 * ((w6 ||| 2 ^ 63) + 2 ^ 64 * 0)))))) := by
-  rw [and_sub4 _ 448 (by omega), and_sub4 _ 64 (by omega), or_pow_eq (k := 63) (by omega),
-    or_pow_eq (k := 447) (by omega)]
+  rw [and_sub4 _ 448 (by omega_using []), and_sub4 _ 64 (by omega_using []), or_pow_eq (k := 63) (by omega_using [h6]),
+    or_pow_eq (k := 447) (by omega_using [])]
   simp only [show 448 - 2 = 446 from rfl, show 64 - 2 = 62 from rfl]
-  omega
+  omega_using [h0, h1, h2, h3, h4, h5]
 
 end VG.Proof.Ed448

@@ -46,7 +46,7 @@ theorem n0_eq {s t : State} (E : Entered s t) (hz : (t.gpr .t1 == 0) = true) : s
   apply BitVec.eq_of_toNat_eq
   have := congrArg BitVec.toNat h
   simp only [n0S, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at this
-  rw [Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .a2)).isLt; omega)] at this
+  rw [Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .a2)).isLt; omega_using [])] at this
   simpa using this
 
 theorem n0_ne {s t : State} (E : Entered s t) (hz : (t.gpr .t1 == 0) = false) : s.mem (s.gpr .a2) ≠ 0 :=
@@ -71,28 +71,28 @@ theorem checks_done {t : State} (E : Entered s t) (sy : t.syms = s.syms) :
     WP isa (checks H M.be f g pc) t (Done Hs Gs s) := by
   have hk1 : 64 ≤ kk s := P.k1
   have hD64 : H.D ≤ 64 := hH.hD64
-  refine WP.ite _ (eval_zero _ _) (fun hz => fail_done P E.base (signOut_zero Hs Gs (by omega) (n0_eq E hz)))
+  refine WP.ite _ (eval_zero _ _) (fun hz => fail_done P E.base (signOut_zero Hs Gs (by omega_using [hk1]) (n0_eq E hz)))
     (fun hz => ?_)
   have h0 := n0_ne E hz
   refine WP.seq (WP.mono_syms (chkEm_ok P hD64 E h0) fun t₃ ⟨E₃, r3⟩ y₃ => ?_)
-  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₃.base (signOut_long Hs Gs (by omega) h0 ?_))
+  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₃.base (signOut_long Hs Gs (by omega_using [hk1]) h0 ?_))
     (fun hc => ?_)
-  · rw [r3] at hc; simp at hc; omega
-  have hem : H.D + 2 ≤ kk s - loN s := by rw [r3] at hc; simp at hc; omega
+  · rw [r3] at hc; simp at hc; omega_using [hHl, hc]
+  have hem : H.D + 2 ≤ kk s - loN s := by rw [r3] at hc; simp at hc; omega_using [hc]
   refine WP.seq (WP.mono_syms (chkSalt_ok P hD64 E₃ h0 hem) fun t₄ ⟨E₄, r3'⟩ y₄ => ?_)
-  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₄.base (signOut_long Hs Gs (by omega) h0 ?_))
+  refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done P E₄.base (signOut_long Hs Gs (by omega_using [hk1]) h0 ?_))
     (fun hc => ?_)
-  · rw [r3'] at hc; simp at hc; omega
-  have hfit : Hs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s := by rw [r3'] at hc; simp at hc; omega
+  · rw [r3'] at hc; simp at hc; omega_using [hHl, hc]
+  have hfit : Hs.len + (stackArg s 11).toNat + 2 ≤ kk s - loN s := by rw [r3'] at hc; simp at hc; omega_using [hHl, hem, hc]
   refine signEnc_ok P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E₄ (y₄.trans (y₃.trans sy)) h0 hfit
     fun t' b' sp' _ hb => ?_
   refine WP.mono (priv_ok P b' sp' hb) fun u ⟨sv, _, hw⟩ => ⟨sv, ?_⟩
-  rw [signOut_eq Hs Gs hHv hGv (by omega) h0 hfit]
+  rw [signOut_eq Hs Gs hHv hGv (by omega_using [hk1]) h0 hfit]
   exact hw
 
 /-- The code for the hash function `H`, in its frame. -/
 theorem code_ok : WP isa (signFor H M.be f g pc) s (Post Hs Gs s) := by
-  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega) ?_
+  refine WP.alloc (by decide) (by have := P.sp1; have := stackBytes_ge pc; unfold frameBytes; omega_arith) ?_
   refine WP.seq (WP.mono_syms (pro_ok P) fun t₀ E₀ y₀ => WP.seq (WP.mono_syms (spill_ok P E₀) fun t E y =>
     WP.seq (WP.mono (checks_done P hH hF T hHh hHl hHv hG hGF TG hGh hGl hGv E (y.trans (y₀.trans rfl)))
       fun t' ⟨sv, res⟩ => WP.mono (restore_ok sv (fb_al8 P)) fun w ⟨habi, h3, hm⟩ => ⟨habi, ?_⟩)))

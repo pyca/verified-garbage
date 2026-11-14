@@ -48,10 +48,10 @@ theorem dotRow_value {p : Params} (hF : PFacts p) {S' : Nat} {σ s : State}
   have hc : KRChk p (p.ℓ+p.k) p.ℓ i (dotWrites p i) := by
     have hk := hF.k; have hl := hF.l; have hs := hF.scr
     exact KRChk.append (ws₁ := [_])
-      (KRChk.x28 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [SV, oP]; omega) (.inr (Nat.le_refl _))
-        (by rw [hs]; simp only [oP]; omega))
-      (KRChk.x28 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [SV, oSS]; omega)
-        (.inl (by simp only [oSS, oP]; omega)) (by rw [hs]; simp only [oSS]; omega))
+      (KRChk.x28 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [SV, oP]; omega_using []) (.inr (Nat.le_refl _))
+        (by rw [hs]; simp only [oP]; omega_using []))
+      (KRChk.x28 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [SV, oSS]; omega_using [])
+        (.inl (by simp only [oSS, oP]; omega_using [])) (by rw [hs]; simp only [oSS]; omega_using []))
   refine ⟨h.keep hF hp hP h24 hc,rt,?_⟩
   have he : dotNTT
       (fun j => polyAt s.mem (pa s (aP (p.ℓ*i))+BitVec.ofNat 64 (1024*j)))

@@ -33,10 +33,10 @@ theorem frame_word {p : Params} {s t : State} {memory : Array Block} {acc : Bloc
     (h : Ready p s) (done : ReduceLane.Done s t p memory acc) (d : Nat) (bound : d + 8 ≤ 272) :
     t.mem.readW (off (t.gpr .x19) d) 64 = s.mem.readW (off (s.gpr .x19) d) 64 := by
   rw [done.regs .x19 (by simp [FillCompress.loopRegs])]
-  exact done.frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega))
+  exact done.frame.readW (r := ⟨s.gpr .x19, 272⟩) (Offset.contains_base _ bound (by omega_using [bound]))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r
         exact h.frame.symm.sub_right (Region.sub_prefix (by
           have nonempty := Proof.Argon2.lastIndex_bounds p h.positive h.minimum 0 h.positive
-          omega))) (by decide)
+          omega_using [nonempty]))) (by decide)
 
 end VG.Proof.Argon2.AArch64.ReductionState

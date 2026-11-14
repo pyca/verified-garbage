@@ -73,7 +73,7 @@ theorem restore_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
   refine WP.mono (Spill.restore_ok .rdi saved g s (by decide) (fun p hp => ?_) (by rw [hs.rdi]; exact hsv))
     fun s' ⟨h₁, h₂, hm, hrd, hwr⟩ => ⟨fun rd hrd => h₁ _ (List.mem_map_of_mem hrd), h₂, hm, hrd, hwr⟩
   have := saved_lt p hp
-  rw [hs.rdi]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by omega)⟩
+  rw [hs.rdi]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by omega_using [this])⟩
 
 /-- Stores relative to a register `b`, as a list. -/
 def storesR (b : Reg) : Nat → List Reg → List Instr
@@ -97,17 +97,17 @@ theorem storesR_ok {q : Addr} {R : Region} :
     rw [storesR, WP.block_cons_iff]
     have hl : (r :: rs).length = rs.length + 1 := rfl
     let s1 : State := { s with mem := s.mem.writeW (off q o) (s.gpr r) }
-    have hw : InRegions s.wr (off q o) 8 := ⟨R, hR, hc o (Nat.le_refl _) (by omega)⟩
+    have hw : InRegions s.wr (off q o) 8 := ⟨R, hR, hc o (Nat.le_refl _) (by omega_using [hl])⟩
     refine ⟨s1, by simp only [exec, ea_at, hq, State.store64, hw, ite_true]; rfl, ?_⟩
-    refine WP.mono (storesR_ok s1 (o + 8) rs hq hR (fun d h₁ h₂ => hc d (by omega) (by omega))
-      (by omega)) fun s' ⟨hv, ho', hf, hg, hrd, hwr⟩ => ?_
-    have o1 : Outside q o 8 s.mem s1.mem := writeW_outside _ _ _ (by omega)
-    refine ⟨?_, (o1.mono (by omega) (by omega)).trans (ho'.mono (by omega) (by omega)), ?_,
+    refine WP.mono (storesR_ok s1 (o + 8) rs hq hR (fun d h₁ h₂ => hc d (by omega_using [h₁]) (by omega_using [hl, h₂]))
+      (by omega_using [hn, hl])) fun s' ⟨hv, ho', hf, hg, hrd, hwr⟩ => ?_
+    have o1 : Outside q o 8 s.mem s1.mem := writeW_outside _ _ _ (by omega_using [hn, hl])
+    refine ⟨?_, (o1.mono (by omega_using []) (by omega_using [hl])).trans (ho'.mono (by omega_using []) (by omega_using [hl])), ?_,
       fun r' => hg r', hrd, hwr⟩
-    · rw [List.length_cons, mv, hv, rv, ho'.word (by omega) (by omega)]
+    · rw [List.length_cons, mv, hv, rv, ho'.word (by omega_using []) (by omega_using [hn, hl])]
       simp only [s1, word_writeW_self]
       rw [rv_congr (s := s) (s' := s1) fun _ _ => rfl]
-    · exact (Frame.refl _ _ |>.writeW (List.mem_singleton_self R) _ (hc o (Nat.le_refl _) (by omega))).trans hf
+    · exact (Frame.refl _ _ |>.writeW (List.mem_singleton_self R) _ (hc o (Nat.le_refl _) (by omega_using [hl]))).trans hf
 
 /-- The bytes of seven words. -/
 theorem bytesAt_mv (m : Mem) (q : Addr) :

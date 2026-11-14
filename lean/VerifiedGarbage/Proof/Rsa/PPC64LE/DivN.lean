@@ -40,7 +40,7 @@ abbrev numN (m : Mem) (B : Addr) (w wd j : Nat) : Nat := val32 m B (arr w j) (wd
 
 theorem numN_eq (m : Mem) (B : Addr) (w : Nat) {wd : Nat} (hev : wd % 2 = 0) (j : Nat) :
     numN m B w wd j = wordsVal m B (arr w j) (wd / 2) + 2 ^ (32 * wd) * w32 m B (arr w j + 4 * wd) := by
-  rw [numN, val32_succ, wordsVal_eq_val32, show 2 * (wd / 2) = wd by omega]
+  rw [numN, val32_succ, wordsVal_eq_val32, show 2 * (wd / 2) = wd by omega_using [hev]]
 
 /-- A number below `2^(32 wd)` with its extra digit 0 is its `wd + 1` low digits. -/
 theorem numN_of_lt (m : Mem) (B : Addr) {w wd d : Nat} (hwd : wd ≤ w)
@@ -49,15 +49,15 @@ theorem numN_of_lt (m : Mem) (B : Addr) {w wd d : Nat} (hwd : wd ≤ w)
   have e1 : num1 m B w d = num m B w d := by
     rw [num1_eq, hdz, Nat.mul_zero, Nat.add_zero]
   have e2 := val32_append m B (arr w d) (wd + 1) (w - wd)
-  rw [show wd + 1 + (w - wd) = w + 1 by omega] at e2
+  rw [show wd + 1 + (w - wd) = w + 1 by omega_using [hwd]] at e2
   change num1 m B w d = _ at e2
   rw [e1] at e2
-  have hp : 2 ^ (32 * wd) ≤ 2 ^ (32 * (wd + 1)) := Nat.pow_le_pow_right (by decide) (by omega)
+  have hp : 2 ^ (32 * wd) ≤ 2 ^ (32 * (wd + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
   have hz : val32 m B (arr w d + 4 * (wd + 1)) (w - wd) = 0 := by
     by_contra hc
     have : 2 ^ (32 * (wd + 1)) ≤ 2 ^ (32 * (wd + 1)) * val32 m B (arr w d + 4 * (wd + 1)) (w - wd) :=
       Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hc)
-    omega
+    omega_using [hlt, e2, hp, this]
   rw [hz, Nat.mul_zero, Nat.add_zero] at e2
   exact e2.symm
 

@@ -84,7 +84,7 @@ theorem streamRepr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p
   have e0 := blockAt_frame hf (sub (d := 0) (k := 16) (by decide))
   simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at e0
   refine ⟨by rw [e0, hj], ha.congr (blockAt_frame hf (sub (by decide)))
-    (bytesAt_frame hf (sub (d := 32) (k := (Spec.Gcm.ghashInput a c).length % 16) (by omega)) (by omega)),
+    (bytesAt_frame hf (sub (d := 32) (k := (Spec.Gcm.ghashInput a c).length % 16) (by omega_using [])) (by omega_using [])),
     hc.congr (blockAt_frame hf (sub (by decide))) (blockAt_frame hf (sub (by decide)))⟩
 
 section
@@ -110,7 +110,7 @@ theorem ciph_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : ctxCiph m (K s
   have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
   simp only [ciph, ctxCiph]
   rw [bytesAt_frame hf (fun r hr => (k_disj hp r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge)))
-    (by have := hp.w_k; have := M.ge; omega)]
+    (by have := hp.w_k; have := M.ge; omega_using [hRb])]
 
 /-- The hash subkey, through a frame of the regions written and the stack. -/
 theorem hk_eq {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) : ctxH m (K s) = hk s := by
@@ -121,7 +121,7 @@ omit hp in
 theorem Kept.frame {o : Nat} {m m' : Mem} (h : Kept s o m) {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (kR' s).Disjoint r) : Kept s o m' := by
   have k : ∀ d, d + 8 ≤ 72 → m'.readW (W s + BitVec.ofNat 64 d) 64 = m.readW (W s + BitVec.ofNat 64 d) 64 :=
-    fun d hd' => hf.readW (Offset.contains_base _ hd' (by omega)) hd (by decide)
+    fun d hd' => hf.readW (Offset.contains_base _ hd' (by omega_using [hd'])) hd (by decide)
   have k0 : m'.readW (W s) 64 = m.readW (W s) 64 := by simpa using k 0 (by decide)
   exact ⟨by rw [k0]; exact h.ctx, by rw [k 8 (by decide)]; exact h.rounds, by rw [k 16 (by decide)]; exact h.st,
     by rw [k 24 (by decide)]; exact h.aad, by rw [k 32 (by decide)]; exact h.tl,
@@ -140,7 +140,7 @@ theorem mid_entry {s₁ : State} (hsp : s₁.gpr .rsp = s.gpr .rsp)
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     Mid s 0 s₁ := by
-  refine ⟨Nat.zero_le _, by have := (TL s).isLt; omega, hsp, hcs, hrd, hwr, hk, frame_kR' hf,
+  refine ⟨Nat.zero_le _, by have := (TL s).isLt; omega_using [], hsp, hcs, hrd, hwr, hk, frame_kR' hf,
     fun iv a p hr _ hl => ⟨?_, ?_⟩⟩
   all_goals have z : pt s 0 = [] := rfl
   · rw [z, List.append_nil]
@@ -162,6 +162,6 @@ theorem Sem.kR' {M : CtxMode} {s : State} (hp : SP' M s) {o : Nat} {m m' : Mem} 
   rw [← dd]
   exact bytesAt_frame hf (fun r hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'
-    exact (hp.d_w.sub_left (Region.sub_prefix ho)).sub_right kR'_sub) (by omega)
+    exact (hp.d_w.sub_left (Region.sub_prefix ho)).sub_right kR'_sub) (by omega_using [ho, hL])
 
 end VG.Proof.AesGcm.X86_64.StreamTo

@@ -38,7 +38,7 @@ theorem frame_sp_nat {s : State} (h : Gather.Lay s) : (Pf s).toNat+160=s.sp.toNa
   have hs := congrArg BitVec.toNat h.hB
   rw [BitVec.toNat_add,BitVec.toNat_ofNat] at hs
   rw [h.pf_toNat]
-  omega
+  omega_using [hn, hs]
 
 
 theorem prepared_layout {s e c : State} (h : Layout s) (he : Gather.Entered s e)
@@ -55,9 +55,9 @@ theorem prepared_layout {s e c : State} (h : Layout s) (he : Gather.Entered s e)
       (below (Pf s) 2800).Disjoint r := (h.stack r hr).sub_left (callee_stack_sub h)
   refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · rw [hsp]
-    omega
+    omega_using [hsn, hspace]
   · rw [hsp]
-    omega
+    omega_using [hsn]
   · change callRead s e=_
     rw [rc,rn,ra,rs,rargs]
     rfl

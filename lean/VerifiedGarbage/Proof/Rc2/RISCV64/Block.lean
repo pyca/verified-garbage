@@ -59,7 +59,7 @@ theorem scheduleAt_copy {m m' : Mem} {S D : Addr}
     Spec.Rc2.scheduleAt m' D = Spec.Rc2.scheduleAt m S := by
   apply Vector.ext; intro i hi
   simp only [Spec.Rc2.scheduleAt, Vector.getElem_ofFn]
-  rw [h _ (by omega), h _ (by omega)]
+  rw [h _ (by omega_using [hi]), h _ (by omega_using [hi])]
 
 /-- The schedule's copy: its bytes in the working space, the rest of memory
 as it was. -/
@@ -78,7 +78,7 @@ theorem copySchedule_run (s : State) (hrd : s.rd = [⟨s.gpr .a0, 128⟩])
     (fun i hi => by
       rw [uk.2.1, uk.2.2, u3, hrd]
       exact ⟨⟨s.gpr .a0, 128⟩, List.mem_append_left _ (List.mem_singleton_self _),
-        Offset.contains_base _ (by omega) (by omega)⟩)
+        Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
     (fun i hi => by rw [uk.2.2, u4]; exact hwr i hi) (by rw [u3, u4]; exact hsep))
     fun t ⟨tc, tf, tk⟩ => ⟨fun i hi => by rw [← u4, tc i hi, u3, um], by rw [← um, ← u4]; exact tf,
       (uk.trans tk).mono (by decide)⟩
@@ -113,7 +113,7 @@ theorem placeSchedule_run (s : State) (hrd : s.rd = [⟨s.gpr .a0, 128⟩])
       (uk.trans tk).mono (by decide)⟩
     rw [t2, hrd]
     exact ⟨⟨s.gpr .a0, 128⟩, List.mem_append_left _ (List.mem_singleton_self _),
-      Offset.contains_base _ hn (by omega)⟩
+      Offset.contains_base _ hn (by omega_using [hn])⟩
   · refine WP.mono (copySchedule_run u (by rw [uk.2.1, ga0]; exact hrd) (fun i hi => by
         rw [uk.2.2, ga2]; exact hwr i hi) (by rw [ga0, ga2]; exact hsep)) fun t ⟨tc, tf, tk⟩ => ?_
     have t2 : t.gpr .a2 = s.gpr .a2 := by rw [tk.gpr (by decide), ga2]
@@ -126,29 +126,29 @@ theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
     WP isa (blockCode d) s fun s' => (blockC d).post s s' := by
   obtain ⟨hrd, hwr, hal, hfit1, hfit2, hks, hds⟩ := hs
   have inScratch : ∀ o n, o + n ≤ 256 → InRegions s.wr (s.gpr .a2 + BitVec.ofNat 64 o) n :=
-    fun o n h => by rw [hwr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega)⟩
+    fun o n h => by rw [hwr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_using [h])⟩
   have inData : ∀ o n, o + n ≤ 8 → InRegions s.wr (s.gpr .a1 + BitVec.ofNat 64 o) n :=
-    fun o n h => by rw [hwr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega)⟩
+    fun o n h => by rw [hwr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_using [h])⟩
   unfold blockCode
   apply WP.seq
-  refine WP.mono (placeSchedule_run s hrd (fun i hi => inScratch i 1 (by omega))
-    (hks.symm.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+  refine WP.mono (placeSchedule_run s hrd (fun i hi => inScratch i 1 (by omega_using [hi]))
+    (hks.symm.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [])
     (Region.contains_self _ _)) hal (fun o n hn => by
-      obtain ⟨r, hr, hc⟩ := inScratch o n (by omega); exact ⟨r, List.mem_append_right _ hr, hc⟩))
+      obtain ⟨r, hr, hc⟩ := inScratch o n (by omega_using [hn]); exact ⟨r, List.mem_append_right _ hr, hc⟩))
     fun t₀ ⟨al₀, rd₀, K₀, f₀, k₀⟩ => ?_
   have p1₀ : t₀.gpr .a1 = s.gpr .a1 := k₀.gpr (by decide)
   have B₀ : Spec.Rc2.blockAt t₀.mem (s.gpr .a1) = Spec.Rc2.blockAt s.mem (s.gpr .a1) :=
     Proof.Rc2.blockAt_frame f₀ _ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hds.sub_right fun a h => by simp only [Region.Contains] at h ⊢; omega
+      exact hds.sub_right fun a h => by simp only [Region.Contains] at h ⊢; omega_using [h]
   apply WP.seq
   refine WP.mono (blockLoad_run t₀ (by
       rw [p1₀, k₀.2.1, k₀.2.2]
-      obtain ⟨r, hr, hc⟩ := inData 0 4 (by omega)
+      obtain ⟨r, hr, hc⟩ := inData 0 4 (by omega_using [])
       rw [BitVec.add_zero] at hc
       exact ⟨r, List.mem_append_right _ hr, hc⟩)
     (by rw [p1₀, k₀.2.1, k₀.2.2]
-        obtain ⟨r, hr, hc⟩ := inData 4 4 (by omega); exact ⟨r, List.mem_append_right _ hr, hc⟩))
+        obtain ⟨r, hr, hc⟩ := inData 4 4 (by omega_using []); exact ⟨r, List.mem_append_right _ hr, hc⟩))
     fun t₁ ⟨H₁, m₁, k₁⟩ => ?_
   apply WP.seq
   have E : KeyEnv (t₀.gpr .a2) t₁ := ⟨k₁.gpr (by decide), al₀, fun o n hn => by
@@ -156,8 +156,8 @@ theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
   refine WP.mono (rounds_runsTo d t₁ E rfl _ H₁) fun t₂ ⟨H₂, m₂, k₂⟩ => ?_
   have p4 : t₂.gpr .a1 = s.gpr .a1 := by rw [k₂.gpr (by decide), k₁.gpr (by decide), p1₀]
   refine WP.mono (blockStore_run t₂ H₂
-    (by rw [p4, k₂.2.2, k₁.2.2, k₀.2.2]; simpa using inData 0 4 (by omega))
-    (by rw [p4, k₂.2.2, k₁.2.2, k₀.2.2]; exact inData 4 4 (by omega)))
+    (by rw [p4, k₂.2.2, k₁.2.2, k₀.2.2]; simpa using inData 0 4 (by omega_using []))
+    (by rw [p4, k₂.2.2, k₁.2.2, k₀.2.2]; exact inData 4 4 (by omega_using [])))
     fun t₃ ⟨m₃, _⟩ => ?_
   change Spec.Rc2.blockAt t₃.mem (s.gpr .a1) = _
   rw [m₃, p4, m₂, Proof.Rc2.blockAt_write64, cipher_rounds, m₁, K₀, p1₀, B₀]

@@ -40,7 +40,7 @@ theorem privateMatch_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : Lis
   rintro u ⟨contextU, readyU, power, _, _, _, frameU, restU⟩
   rw [WP.seq_iff]
   refine WP.mono (importAt_ok u 1 36 32 contextU stable h36 h32 readyU (by decide) (by decide)
-    (value.after_workspace frameU restU) (by rw [length]; have := p.minLength; omega)
+    (value.after_workspace frameU restU) (by rw [length]; have := p.minLength; omega_using [this])
     (by rw [length]; exact p.width.2.2.2.1) (by change BitVec.ofNat 32 p.k = _; rw [length])) ?_
   rintro v ⟨_, readyV, y, keepsV, frameV, _⟩
   have fit : arrAt p.w 8 ≤ 8 * p.len := readyV.width ▸ readyV.layout.2.2.1

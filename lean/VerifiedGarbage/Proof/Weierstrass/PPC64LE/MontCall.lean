@@ -53,10 +53,10 @@ theorem outs_wordsVal {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : O
     {d k : Nat} (hd : ∀ r ∈ rs, d + 8 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd' : d + 8 * k ≤ 2 ^ 64) :
     wordsVal m' base d k = wordsVal m base d k := by
   rw [wordsVal_eq_val32, wordsVal_eq_val32]
-  exact h.val32 (fun r hr => by have := hd r hr; omega) (by omega)
+  exact h.val32 (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hd'])
 
 theorem lo_li {x : Nat} (hx : x < 2 ^ 32) : ((BitVec.ofNat 64 x).setWidth 32).toNat = x := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hx]
 
 /-- A call of `body`, which from the working space in `r3` and the offsets
 `o`, `a` and `b` in `r4`–`r6` changes only `[o]`, its own working space and
@@ -75,9 +75,9 @@ theorem callOp_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {n 
     (BitVec.ofNat 64 b) = s₃
   have K₃ : Kp fnClob s s₃ := by
     rw [← hs₃]; exact ((Kp.write s _ (by decide)).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))
-  have g4 : lo s₃ .r4 = o := by rw [← hs₃]; simp only [lo, write_gpr, reduceCtorEq, ite_false, ite_true]; exact lo_li (by omega)
-  have g5 : lo s₃ .r5 = a := by rw [← hs₃]; simp only [lo, write_gpr, reduceCtorEq, ite_false, ite_true]; exact lo_li (by omega)
-  have g6 : lo s₃ .r6 = b := by rw [← hs₃]; simp only [lo, write_gpr, reduceCtorEq, ite_false, ite_true]; exact lo_li (by omega)
+  have g4 : lo s₃ .r4 = o := by rw [← hs₃]; simp only [lo, write_gpr, reduceCtorEq, ite_false, ite_true]; exact lo_li (by omega_using [ho])
+  have g5 : lo s₃ .r5 = a := by rw [← hs₃]; simp only [lo, write_gpr, reduceCtorEq, ite_false, ite_true]; exact lo_li (by omega_using [ha])
+  have g6 : lo s₃ .r6 = b := by rw [← hs₃]; simp only [lo, write_gpr, reduceCtorEq, ite_false, ite_true]; exact lo_li (by omega_using [hb])
   have g3 : s₃.gpr .r3 = base := by rw [K₃.g]; exact hw.r3
   have hcov : Covers [⟨base, 8192⟩] s₃.wr := Covers.of_mem fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; rw [K₃.wr]; exact hw.wr
@@ -104,7 +104,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hn : body.noFrames = true) {n 
   rw [G r hr, State.callEntry_gpr _ hl, K₃.gpr r hr]
 
 theorem own_lt (n : Nat) : own n < 2 ^ 15 := by
-  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega_using []
 
 /-- The arguments of a call, as the functions' precondition has them. -/
 theorem pre_of_call {n : Nat} {base : Addr} (hn : base.toNat + 8192 ≤ 2 ^ 64) {o a b : Nat}
@@ -127,7 +127,7 @@ theorem mulCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
   have := own_lt S.k
   exact callOp_ok (V := fun m m' => wordsVal m' base o S.k < S.m ∧
       wordsVal m' base o S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base a S.k * wordsVal m base b S.k % S.m)
-    (mulFn_noFrames _ _) hw (by omega) (by omega) (by omega) fun t _ h2 h3 h4 h5 h6 h7 => by
+    (mulFn_noFrames _ _) hw (by omega_using [ho, this]) (by omega_using [ha, this]) (by omega_using [hb, this]) fun t _ h2 h3 h4 h5 h6 h7 => by
       obtain ⟨tr, t', he, A, G, V, C, K⟩ := mulFn_ok hM (pre_of_call hw.nowrap ho ha hb h2 h3 h4 h5 h6)
         (by rw [h3, h6, h7]; exact hB)
       rw [h3, h4, h5, h6] at *
@@ -142,7 +142,7 @@ theorem addCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
       wordsVal s'.mem base o S.k = (wordsVal s.mem base a S.k + wordsVal s.mem base b S.k) % S.m := by
   have := own_lt S.k
   exact callOp_ok (V := fun m m' => wordsVal m' base o S.k = (wordsVal m base a S.k + wordsVal m base b S.k) % S.m)
-    rfl hw (by omega) (by omega) (by omega) fun t _ h2 h3 h4 h5 h6 h7 => by
+    rfl hw (by omega_using [ho, this]) (by omega_using [ha, this]) (by omega_using [hb, this]) fun t _ h2 h3 h4 h5 h6 h7 => by
       obtain ⟨tr, t', he, A, G, V, K⟩ := addFn_ok hM (pre_of_call hw.nowrap ho ha hb h2 h3 h4 h5 h6)
         (by rw [h3, h5, h6, h7]; exact hAB)
       rw [h3, h4, h5, h6] at *
@@ -157,7 +157,7 @@ theorem subCall_ok {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s :
       wordsVal s'.mem base o S.k = (wordsVal s.mem base a S.k + S.m - wordsVal s.mem base b S.k) % S.m := by
   have := own_lt S.k
   exact callOp_ok (V := fun m m' => wordsVal m' base o S.k = (wordsVal m base a S.k + S.m - wordsVal m base b S.k) % S.m)
-    rfl hw (by omega) (by omega) (by omega) fun t _ h2 h3 h4 h5 h6 h7 => by
+    rfl hw (by omega_using [ho, this]) (by omega_using [ha, this]) (by omega_using [hb, this]) fun t _ h2 h3 h4 h5 h6 h7 => by
       obtain ⟨tr, t', he, A, G, V, K⟩ := subFn_ok hM (pre_of_call hw.nowrap ho ha hb h2 h3 h4 h5 h6)
         (by rw [h3, h5, h7]; exact hA) (by rw [h3, h6, h7]; exact hB)
       rw [h3, h4, h5, h6] at *

@@ -106,8 +106,8 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : 
   have cw : VG.Covers [⟨s₁.gpr .r4, 8⟩, ⟨s₁.gpr .r5, 512⟩] s₁.wr := VG.Covers.of_sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨⟨B, 8 * 72⟩, by rw [wr₁]; exact hW, 512, r4₁, by show 512 + 8 ≤ 8 * 72; omega⟩
-    · exact ⟨⟨B, 8 * 72⟩, by rw [wr₁]; exact hW, 0, by simp [r5₁], by show 0 + 512 ≤ 8 * 72; omega⟩
+    · exact ⟨⟨B, 8 * 72⟩, by rw [wr₁]; exact hW, 512, r4₁, by show 512 + 8 ≤ 8 * 72; omega_using []⟩
+    · exact ⟨⟨B, 8 * 72⟩, by rw [wr₁]; exact hW, 0, by simp [r5₁], by show 0 + 512 ≤ 8 * 72; omega_using []⟩
   have hp : Ecb.CallPre s₁ :=
     ⟨VG.Covers.cons (by rw [r3₁, rd₁, wr₁]; exact VG.Covers.one hin) (VG.Covers.right cw), cw,
       by rw [r3₁, r5₁]; exact hkB.sub_right (Region.sub_prefix (by decide)),
@@ -137,7 +137,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : 
         rw [r4₁]; exact VG.Offset.sub_base _ (by show 512 + 8 ≤ 8 * (bufSlot + 1); decide)⟩
     · exact ⟨_, List.mem_singleton_self _, by
         rw [r5₁]; exact Region.sub_prefix (by show 512 ≤ 8 * (bufSlot + 1); decide)⟩
-  · obtain rfl : j = 0 := by omega
+  · obtain rfl : j = 0 := by omega_using [hj]
     have e : blkAddr (dirCore d) B 0 = s₁.gpr .r4 := by
       rw [r4₁]; simp [blkAddr, slotA, dirCore, bufSlot]
     simp only [dirCore] at e

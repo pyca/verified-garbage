@@ -36,12 +36,12 @@ theorem counter_ok {s : State} {base : Addr} (hs : Scratch s base) {p : Nat}
     WP isa (.block [.mov .rax (.mem (Impl.X25519.X86_64.sc 56)), .alu .add .rax (.reg .rax)]) s fun t =>
       t.gpr .rax = BitVec.ofNat 64 (2 * p) ∧ Keeps [.rax] s t := by
   have hr : InRegions (s.rd ++ s.wr) (off base 56) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by decide) (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by decide) (by omega_using [])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load64,
     VG.Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hs.rdi, hr, hc, ite_true,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
-  refine ⟨by rw [← BitVec.ofNat_add]; congr 1; omega, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨by rw [← BitVec.ofNat_add]; congr 1; omega_using [], fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_singleton] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
@@ -60,7 +60,7 @@ theorem bytes_or_zero (b c : BitVec 8) :
       show (0 : BitVec 64).toNat = 0 from rfl, Nat.or_eq_zero_iff] at this
     have hb := b.isLt
     have hc := c.isLt
-    omega
+    omega_using [this]
   · intro ⟨hb, hc⟩
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_or, BitVec.toNat_setWidth, BitVec.toNat_setWidth, hb, hc]
@@ -85,11 +85,11 @@ theorem digitAt_ok {s : State} {base : Addr} (hs : Scratch s base) {p dst : Nat}
   refine WP.mono (counter_ok hs hc) fun a ⟨ar, ka⟩ => ?_
   have ha := hs.of_keeps ka (by decide)
   have he := ea_dig ha.rdi ar (d0 := ((2048 + dst : Nat) : Int)) (d := 2048 + dst) (BitVec.ofInt_natCast _ _)
-  rw [show 2048 + dst + 2 * p = 2048 + 2 * p + dst by omega] at he
+  rw [show 2048 + dst + 2 * p = 2048 + 2 * p + dst by omega_using []] at he
   generalize ((2048 + dst : Nat) : Int) = d0 at he ⊢
   have hrg : InRegions (a.rd ++ a.wr) (off base (2048 + 2 * p + dst)) 1 :=
-    ⟨_, List.mem_append_right _ ha.wr, Offset.contains_base _ (show 2048 + 2 * p + dst + 1 ≤ 8192 by omega)
-      (by omega)⟩
+    ⟨_, List.mem_append_right _ ha.wr, Offset.contains_base _ (show 2048 + 2 * p + dst + 1 ≤ 8192 by omega_using [hp, hdst])
+      (by omega_using [hp, hdst])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load8, he,
     RegUpd.gpr_setReg, RegUpd.zf_arithFlags, RegUpd.gpr_arithFlags, hrg, BitVec.and_self, byte_zero,
@@ -118,15 +118,15 @@ theorem digitsAt_ok {s : State} {base : Addr} (hs : Scratch s base) {p : Nat} (h
   generalize (2048 : Int) = d0 at he0 ⊢
   generalize (2049 : Int) = d1 at he1 ⊢
   have hrg (d : Nat) (hd : d < 2050) : InRegions (a.rd ++ a.wr) (off base (d + 2 * p)) 1 :=
-    ⟨_, List.mem_append_right _ ha.wr, Offset.contains_base _ (show d + 2 * p + 1 ≤ 8192 by omega)
-      (by omega)⟩
+    ⟨_, List.mem_append_right _ ha.wr, Offset.contains_base _ (show d + 2 * p + 1 ≤ 8192 by omega_using [hp, hd])
+      (by omega_using [hp, hd])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load8, he0, he1,
     RegUpd.gpr_setReg, RegUpd.zf_arithFlags, RegUpd.zf_setReg, RegUpd.rd_setReg,
     RegUpd.wr_setReg, RegUpd.mem_setReg, hrg 2048 (by decide), hrg 2049 (by decide), reduceCtorEq, ite_true, ite_false,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left', bytes_or_zero]
-  refine ⟨by rw [ka.2.1]; simp only [dig, show 2048 + 2 * p + 0 = 2048 + 2 * p by omega,
-      show 2048 + 2 * p + 1 = 2049 + 2 * p by omega], fun r hr => ?_, ka.2.1, ka.2.2.1, ka.2.2.2⟩
+  refine ⟨by rw [ka.2.1]; simp only [dig, show 2048 + 2 * p + 0 = 2048 + 2 * p by omega_using [],
+      show 2048 + 2 * p + 1 = 2049 + 2 * p by omega_using []], fun r hr => ?_, ka.2.1, ka.2.2.1, ka.2.2.2⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.2.1, hr.2.2, ite_false]
   exact ka.1 r (by simpa using hr.1)
@@ -136,7 +136,7 @@ theorem counterTest_ok {s : State} {base : Addr} (hs : Scratch s base) {p : Nat}
     (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 p) :
     WP isa (.block batchTest) s fun t => t.zf = some (decide (p = 0)) ∧ Keeps [.rbx] s t := by
   have hr : InRegions (s.rd ++ s.wr) (off base 56) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by decide) (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by decide) (by omega_using [])⟩
   have hz : (BitVec.ofNat 64 p == 0) = decide (p = 0) := by
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]

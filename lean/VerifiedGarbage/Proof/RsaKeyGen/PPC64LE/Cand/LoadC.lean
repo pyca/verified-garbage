@@ -62,24 +62,24 @@ theorem loadC_ok {s : State} {B R : Addr} {Z w : Nat} (h : Env s B Z w) (h26 : s
     exact BitVec.add_zero _
   refine WP.mono hpre fun u ⟨⟨u12, u6, um⟩, ku⟩ => ?_
   have eu := h.keep ku (by decide)
-  refine WP.seq (WP.mono (loadN_ok eu.hs eu.h10 u12 u6 eu.h11 (by omega) (Nat.le_refl _) (by omega)
-    (by rw [h0]; decide) (by rw [h0]; omega) (fun i hi => by rw [ku.rd, ku.wr]; exact hR i hi) hsep)
+  refine WP.seq (WP.mono (loadN_ok eu.hs eu.h10 u12 u6 eu.h11 (by omega_using [hw4]) (Nat.le_refl _) (by omega_using [hw128])
+    (by rw [h0]; decide) (by rw [h0]; omega_using [hZ']) (fun i hi => by rw [ku.rd, ku.wr]; exact hR i hi) hsep)
     fun v ⟨vv, vout, kv⟩ => ?_)
   rw [um] at vv vout
   have ev := eu.keep kv (by decide)
   have hsv := ev.hs
   -- The candidate's bits.
-  have hw0 := hsv.ld (d := slot w 0) (n := 8) (by omega)
-  have hwt := hsv.ld (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega)
-  have hs0 := hsv.st (d := slot w 0) (n := 8) (by omega)
-  have hst := hsv.st (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega)
+  have hw0 := hsv.ld (d := slot w 0) (n := 8) (by omega_using [h0, hZ'])
+  have hwt := hsv.ld (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega_using [h0, hZ'])
+  have hs0 := hsv.st (d := slot w 0) (n := 8) (by omega_using [h0, hZ'])
+  have hst := hsv.st (d := slot w 0 + 8 * (w - 1)) (n := 8) (by omega_using [h0, hZ'])
   have e5 : (BitVec.ofNat 64 (2 * w) <<< 2) + off B (slot w 0) - BitVec.ofNat 64 8 = off B (slot w 0 + 8 * (w - 1)) := by
     have e8 : BitVec.ofNat 64 (2 * w) <<< 2 = BitVec.ofNat 64 (8 * w) := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-      omega
-    rw [e8, BitVec.add_comm, off_add, Offset.add_ofNat_sub _ (show 8 ≤ slot w 0 + 8 * w by omega),
-      show slot w 0 + 8 * w - 8 = slot w 0 + 8 * (w - 1) by omega]
+      omega_using []
+    rw [e8, BitVec.add_comm, off_add, Offset.add_ofNat_sub _ (show 8 ≤ slot w 0 + 8 * w by omega_using [hw4]),
+      show slot w 0 + 8 * w - 8 = slot w 0 + 8 * (w - 1) by omega_using [hw4]]
   have r24 : v.gpr .r24 = BitVec.ofNat 64 (8 * w) := by rw [kv.gpr _ (by decide), ku.gpr _ (by decide), h24]
   refine WP.mono (WP.keep [.r3, .r4, .r5, .r28] (Q := fun t =>
       t.mem = (v.mem.writeW (off B (slot w 0)) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1)).writeW
@@ -88,24 +88,24 @@ theorem loadC_ok {s : State} {B R : Addr} {Z w : Nat} (h : Env s B Z w) (h26 : s
   · prun [ev.h10, ev.h11, r24, hw0, hs0, e5, hwt, hst, exec_lis, top2_eq]
     refine ⟨?_, BitVec.add_zero _⟩
     rw [Mem.readW_writeW_sep (Offset.sep B (d := slot w 0 + 8 * (w - 1)) (n := 8) (e := slot w 0) (k := 8)
-      (by omega) (by omega) (by omega)) (by decide)]
+      (by omega_using [hw4]) (by omega_using [hw128, h0]) (by omega_using [h0])) (by decide)]
   · have sep : ∀ d e : Nat, d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ Z → e + 8 ≤ Z → ∀ (m : Mem) (x : BitVec 64),
         (m.writeW (off B e) x).readW (off B d) 64 = m.readW (off B d) 64 := fun d e h1 h2 h3 m x =>
-      Mem.readW_writeW_sep (Offset.sep B h1 (by omega) (by omega)) (by decide)
-    rw [VG.Proof.RsaKeyGen.wv_candidate (m := v.mem) (by omega) ?_ ?_ ?_, ← Pre.val32_eq_wv, vv]
+      Mem.readW_writeW_sep (Offset.sep B h1 (by omega_using [hnw, h2]) (by omega_using [hnw, h3])) (by decide)
+    rw [VG.Proof.RsaKeyGen.wv_candidate (m := v.mem) (by omega_using [hw4]) ?_ ?_ ?_, ← Pre.val32_eq_wv, vv]
     · show t.mem.readW _ 64 = _
-      rw [tm, sep _ _ (by omega) (by omega) (by omega), Mem.readW_writeW_self64]; rfl
+      rw [tm, sep _ _ (by omega_using [hw4]) (by omega_using [h0, hZ']) (by omega_using [h0, hZ']), Mem.readW_writeW_self64]; rfl
     · show t.mem.readW _ 64 = _
       rw [tm, Mem.readW_writeW_self64]
     · intro j hj0 hj
       show t.mem.readW _ 64 = v.mem.readW _ 64
-      rw [tm, sep _ _ (by omega) (by omega) (by omega), sep _ _ (by omega) (by omega) (by omega)]
-  · have o1 := writeW_outside v.mem B (d := slot w 0) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1) (by omega)
+      rw [tm, sep _ _ (by omega_using [hj]) (by omega_using [h0, hZ', hj]) (by omega_using [h0, hZ']), sep _ _ (by omega_using [hj0]) (by omega_using [h0, hZ', hj]) (by omega_using [h0, hZ'])]
+  · have o1 := writeW_outside v.mem B (d := slot w 0) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1) (by omega_using [h0])
     have o2 := writeW_outside (v.mem.writeW (off B (slot w 0)) (word v.mem B (slot w 0) ||| BitVec.ofNat 64 1)) B
       (d := slot w 0 + 8 * (w - 1)) (word v.mem B (slot w 0 + 8 * (w - 1)) ||| BitVec.ofNat 64 (3 * 2 ^ 62))
-      (by omega)
+      (by omega_using [hw128, h0])
     rw [tm]
-    exact (vout.trans (o1.mono (by omega) (by omega))).trans (o2.mono (by omega) (by omega))
+    exact (vout.trans (o1.mono (by omega_using []) (by omega_using [hw4]))).trans (o2.mono (by omega_using []) (by omega_using [hw4]))
   · exact ((ku.trans kv).trans kt).mono (by simp [lcRegs])
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

@@ -23,13 +23,13 @@ theorem Context.em1Status {g : Geometry} {bs : Fin 5 → List Byte} {s : State} 
     (⟨byteAddr g.em1, g.length⟩ : Region).Disjoint (localRegion g statusOffset 4) := by
   rw [Geometry.em1, h.valid.offsetAddr (by decide)]
   exact Offset.disjoint _ (Or.inr (by decide : statusOffset + 4 ≤ em1Offset))
-    (by have := h.valid.maxLength; simp only [em1Offset]; omega) (by decide)
+    (by have := h.valid.maxLength; simp only [em1Offset]; omega_using [this]) (by decide)
 
 theorem Context.statusEm2 {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : Context g bs s) :
     (localRegion g statusOffset 4).Disjoint ⟨byteAddr g.em2, g.length⟩ := by
   rw [Geometry.em2, h.valid.offsetAddr (by decide)]
   exact Offset.disjoint _ (Or.inl (by decide : statusOffset + 4 ≤ em2Offset)) (by decide)
-    (by have := h.valid.maxLength; simp only [em2Offset]; omega)
+    (by have := h.valid.maxLength; simp only [em2Offset]; omega_using [this])
 
 theorem afterPub_ok {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : Context g bs s) :
     WP isa afterPub s fun t => Context g bs t ∧ t.gpr .eax = checkedResult g bs s ∧
@@ -45,11 +45,11 @@ theorem afterPub_ok {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : C
   rintro t ⟨ht, Mt, Kt, value⟩
   have first : Spec.Rsa.bytesAt a.mem (byteAddr g.em1) g.length =
       Spec.Rsa.bytesAt s.mem (byteAddr g.em1) g.length :=
-    VG.Proof.Rsa.rsa_bytes_frame Fa (by have := h.valid.maxLength; omega)
+    VG.Proof.Rsa.rsa_bytes_frame Fa (by have := h.valid.maxLength; omega_using [this])
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact h.em1Status)
   have next : Spec.Rsa.bytesAt c.mem (byteAddr g.em1) g.length =
       Spec.Rsa.bytesAt b.mem (byteAddr g.em1) g.length :=
-    VG.Proof.Rsa.rsa_bytes_frame Fc (by have := h.valid.maxLength; omega)
+    VG.Proof.Rsa.rsa_bytes_frame Fc (by have := h.valid.maxLength; omega_using [this])
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact h.encodingsSeparate)
   have status : savedStatus g c = savedStatus g b :=
     Fc.readW (r := localRegion g statusOffset 4) (Region.contains_self _ _)

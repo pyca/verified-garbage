@@ -80,7 +80,7 @@ theorem addr_add (b : Addr) (x y : Nat) :
 theorem keyW_entry {s : State} {b : Addr} {m : Nat} (hk : AtEntry s b m) (e j : Nat) :
     keyW s (8 * e + j) = entryW s.mem b (m + e) j := by
   simp only [keyW, wordAddr, entryW]
-  rw [hk, addr_add, show 8 * tableSlot + 64 * m + 8 * (8 * e + j) = 8 * tableSlot + 64 * (m + e) + 8 * j by omega]
+  rw [hk, addr_add, show 8 * tableSlot + 64 * m + 8 * (8 * e + j) = 8 * tableSlot + 64 * (m + e) + 8 * j by omega_using []]
 
 theorem ok_layer {s : State} {b : Addr} {m : Nat} (hscr : (⟨b, 8 * slots⟩ : Region) ∈ s.wr)
     (hb : s.gpr sb = b) (hal : b.toNat % 8 = 0) (hk : AtEntry s b m) (hm : m + 4 ≤ 32) :
@@ -89,24 +89,24 @@ theorem ok_layer {s : State} {b : Addr} {m : Nat} (hscr : (⟨b, 8 * slots⟩ : 
     simp only [layerCfg, tableSlot_eq] at hk'
     simp only [wordAddr, layerCfg, hb]
     rw [slots_eq]
-    exact VG.Offset.contains_base b (by omega) (by omega)⟩
+    exact VG.Offset.contains_base b (by omega_using [hk']) (by omega_using [hk'])⟩
   extIn j hj := ⟨_, List.mem_append_right _ hscr, by
     simp only [layerCfg] at hj
     simp only [wordAddr, layerCfg]
     rw [show s.gpr kr = _ from hk, addr_add]
     rw [slots_eq]
     rw [tableSlot_eq]
-    exact VG.Offset.contains_base b (by omega) (by omega)⟩
+    exact VG.Offset.contains_base b (by omega_using [hm, hj]) (by omega_using [hm, hj])⟩
   baseAl _ := by simp only [layerCfg, hb]; exact hal
   extAl _ := by
     simp only [layerCfg]; rw [show s.gpr kr = _ from hk]
-    exact Spill.al8 hal (by omega)
-  slots := by simp only [layerCfg, tableSlot_eq]; omega
+    exact Spill.al8 hal (by omega_using [])
+  slots := by simp only [layerCfg, tableSlot_eq]; omega_using []
   sep k hk' j hj := by
     simp only [layerCfg, tableSlot_eq] at hk' hj
     simp only [wordAddr, layerCfg, hb]
     rw [show s.gpr kr = _ from hk, addr_add, tableSlot_eq]
-    exact VG.Offset.sep b (by omega) (by omega) (by omega)
+    exact VG.Offset.sep b (by omega_using [hk']) (by omega_using [hk']) (by omega_using [hm, hj])
 
 /-! ## Under `Ctx` -/
 
@@ -119,7 +119,7 @@ theorem Ctx.entry {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
   refine hc.frame.readW (r := ⟨s₀.gpr sb + BitVec.ofNat 64 (8 * tableSlot + 64 * e + 8 * j), 8⟩)
     (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
-  exact VG.Offset.disjoint_base _ (by rw [tableSlot_eq]; omega) (by rw [tableSlot_eq]; omega)
+  exact VG.Offset.disjoint_base _ (by rw [tableSlot_eq]; omega_using []) (by rw [tableSlot_eq]; omega_using [he, hj])
 
 theorem Ctx.keyRel {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hc : Ctx s₀ s)
     {m e : Nat} (hk : AtEntry s (s₀.gpr sb) m) (hme : m + e < 32) :
@@ -143,7 +143,7 @@ theorem round_step (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : 
     ∃ s', runBlock isa (round l a a b c d) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kr = s.gpr kr ∧
       StRel s' (fun b' => sround l (E (m + a)) a (X b')) := by
   obtain ⟨s', h', hX', hm', rd', wr', -, o', f'⟩ :=
-    round_ok l ha hb hc' hd hpre hlin hall (hc.ok hp hk hm) hc.masks hX (hc.keyRel hp hk (e := a) (by omega))
+    round_ok l ha hb hc' hd hpre hlin hall (hc.ok hp hk hm) hc.masks hX (hc.keyRel hp hk (e := a) (by omega_using [ha, hm]))
   refine ⟨s', h', hc.step rd' wr' (fun r hr _ => o' r hr) (f'.mono fun r hr => ?_) hm', o' _ (by decide), hX'⟩
   simp only [List.mem_singleton] at hr; subst hr
   simp only [slotRegion, layerCfg, hc.base]; simp
@@ -154,7 +154,7 @@ theorem rounds4_ok (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : 
     (hX : StRel s X) :
     ∃ s', runBlock isa (rounds4 l) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kr = s.gpr kr ∧
       StRel s' (fun b => quad l E m (X b)) := by
-  have hm4 : 4 * m + 4 ≤ 32 := by omega
+  have hm4 : 4 * m + 4 ≤ 32 := by omega_using [hm]
   obtain ⟨s₁, e₁, c₁, k₁, X₁⟩ := round_step l hp hc (a := 0) (by decide) rfl rfl rfl pre0_check
     (by cases l <;> [exact linE0_check; exact linK0_check]) (by cases l <;> decide +kernel) hk hm4 hX
   obtain ⟨s₂, e₂, c₂, k₂, X₂⟩ := round_step l hp c₁ (a := 1) (by decide) rfl rfl rfl pre1_check
@@ -228,7 +228,7 @@ theorem roundsBody_ok (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp
   have hk₂ : AtEntry s₂ (s₀.gpr sb) (4 * (m + 1)) := by
     rw [AtEntry, kr₂, k₁, show s.gpr kr = _ from hk, show BitVec.ofInt 64 256 = BitVec.ofNat 64 256 from rfl,
       addr_add,
-      show 8 * tableSlot + 64 * (4 * m) + 256 = 8 * tableSlot + 64 * (4 * (m + 1)) by omega]
+      show 8 * tableSlot + 64 * (4 * m) + 256 = 8 * tableSlot + 64 * (4 * (m + 1)) by omega_using []]
   have hk₃ : AtEntry s₃ (s₀.gpr sb) (4 * (m + 1)) := by rw [AtEntry, g₃ _ (by decide)]; exact hk₂
   have hr11₂ : s₂.gpr .a0 = s₀.gpr sb + BitVec.ofNat 64 (8 * tableEnd) := by
     rw [hc₂.keep _ (by decide) (by decide), hr11]
@@ -240,8 +240,8 @@ theorem roundsBody_ok (l : Lin) {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp
   · exact X₁.congr fun k => by simp only [slotW, m₃, g₃ sb (by decide), m₂, o₂ sb (by decide)]
   · rw [z₃, show s₂.gpr kr = _ from hk₂, hr11₂,
       show 8 * tableEnd = 8 * tableSlot + 64 * 32 by rw [tableSlot_eq, tableEnd_eq],
-      entry_beq _ (by rw [tableSlot_eq]; omega) (by rw [tableSlot_eq]; omega)]
-    simp only [decide_eq_decide]; omega
+      entry_beq _ (by rw [tableSlot_eq]; omega_using [hm]) (by rw [tableSlot_eq]; omega_using [])]
+    simp only [decide_eq_decide]; omega_using []
 
 /-- `r := ` the address of slot `k`, in one `addi` or two. -/
 theorem slotAddr_ok (s : State) (r : Reg) (k : Nat) (hk : 8 * k < 4088 := by decide) :
@@ -255,13 +255,13 @@ theorem slotAddr_ok (s : State) (r : Reg) (k : Nat) (hk : 8 * k < 4088 := by dec
       RegUpd.gpr_write_self _ _ _, fun r' hr' => RegUpd.gpr_write_of_ne _ _ hr', rfl, rfl, rfl⟩
   · rename_i h
     let s₁ := s.write r (s.gpr sb + BitVec.ofInt 64 2040)
-    have hi : imm12 ((8 * k - 2040 : Nat) : Int) := by unfold imm12; omega
+    have hi : imm12 ((8 * k - 2040 : Nat) : Int) := by unfold imm12; omega_using [hk]
     refine ⟨s₁.write r (s₁.gpr r + BitVec.ofInt 64 ((8 * k - 2040 : Nat) : Int)), by
       simp only [runBlock_cons, exec_addi (show imm12 2040 by decide), exec_addi hi, runStep_some,
         runBlock_nil, s₁], ?_, fun r' hr' => ?_, rfl, rfl, rfl⟩
     · rw [RegUpd.gpr_write_self, RegUpd.gpr_write_self, BitVec.ofInt_natCast,
         show BitVec.ofInt 64 2040 = BitVec.ofNat 64 2040 from rfl, addr_add,
-        show 2040 + (8 * k - 2040) = 8 * k by omega]
+        show 2040 + (8 * k - 2040) = 8 * k by omega_using [h]]
     · rw [RegUpd.gpr_write_of_ne _ _ hr', RegUpd.gpr_write_of_ne _ _ hr']
 
 /-- The 32 rounds, the round keys at entries `0 … 31`, `a0` the table's end. -/
@@ -275,7 +275,7 @@ theorem rounds_wp (l : Lin) {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : Key
   let Inv : Nat → State → Prop := fun n s' => ∃ m, n = 8 - m ∧ m < 8 ∧ Ctx s₀ s' ∧
     AtEntry s' (s₀.gpr sb) (4 * m) ∧ StRel s' (fun b => quads l E m (X b))
   refine WP.loop (M := isa) Inv (fun n s' hs' => ?_) 8 s₁
-    ⟨0, rfl, by omega, hc₁, by rw [AtEntry, k₁]; simp, hX.congr fun k => by simp only [slotW, m₁, o₁ sb (by decide)]⟩
+    ⟨0, rfl, by omega_using [], hc₁, by rw [AtEntry, k₁]; simp, hX.congr fun k => by simp only [slotW, m₁, o₁ sb (by decide)]⟩
   obtain ⟨m, rfl, hm8, hc', hk', hX'⟩ := hs'
   obtain ⟨s'', e'', c'', k'', X'', z''⟩ := roundsBody_ok l hp hc' hr11 hk' hm8 hX'
   have X3 : StRel s'' fun b => quads l E (m + 1) (X b) := X''
@@ -283,6 +283,6 @@ theorem rounds_wp (l : Lin) {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : Key
   by_cases h8 : m + 1 = 8
   · refine .inl ⟨by rw [eval_nonzero, z'', h8]; rfl, c'', ?_⟩
     rw [h8] at X3; exact X3
-  · exact .inr ⟨by rw [eval_nonzero, z'']; simp [h8], 8 - (m + 1), by omega, m + 1, rfl, by omega, c'', k'', X3⟩
+  · exact .inr ⟨by rw [eval_nonzero, z'']; simp [h8], 8 - (m + 1), by omega_using [hm8], m + 1, rfl, by omega_using [hm8, h8], c'', k'', X3⟩
 
 end VG.Proof.Sm4.RISCV64

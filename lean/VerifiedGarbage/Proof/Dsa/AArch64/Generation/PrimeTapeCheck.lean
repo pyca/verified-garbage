@@ -16,6 +16,6 @@ theorem tapeCheck_ok {P : PrimeParams} {used : Nat} {s : State}
       isa.eval (.zero .x .x5) t = some (decide (P.rand.length < used + P.drawBytes)) ∧
       t.mem = s.mem ∧ Keep [.x3, .x4, .x5, .x7] s t :=
   VG.Proof.Ffdh.AArch64.ParameterCandidate.roomHead_ok h.ready.ws
-    (by have := P.drawMax; omega) P.randMax hu h.draw h.randLen h.used
+    (by have := P.drawMax; omega_using [this]) P.randMax hu h.draw h.randLen h.used
 
 end VG.Proof.Dsa.AArch64.Generation

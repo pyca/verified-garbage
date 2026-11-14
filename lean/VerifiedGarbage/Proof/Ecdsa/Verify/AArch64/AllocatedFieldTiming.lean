@@ -108,11 +108,11 @@ theorem field_ok (raw : RawCorrect) {k : Kind} (cert : Proof.P256.VerifyAllocate
   refine ⟨hk,(hu.sub hout).of_observed hs hm fun x hx i him => ?_⟩
   apply ho (x+8*i) (hobs x hx i him)
   · have ha := JointLayout.layout.aligned.sl x (hu.sl x (hout x hx))
-    omega
+    omega_using [ha]
   · have hb := JointLayout.layout.lay.le x (hu.sl x (hout x hx))
     change i<4 at him
     change x+32≤8192 at hb
-    omega
+    omega_using [him, hb]
 
 /-- Addition blocks retain all live field slots, including header temporaries. -/
 theorem field_all_ok (raw : RawCorrect) {k : Kind} (cert : Proof.P256.VerifyAllocated.Case k)
@@ -133,7 +133,7 @@ theorem field_all_ok (raw : RawCorrect) {k : Kind} (cert : Proof.P256.VerifyAllo
       exact hslots op hop op.out (by simp)
   have bound : ∀ x∈jointSlots cfg,x+32≤6512 := by decide +kernel
   have hb := bound x hs
-  exact ⟨Or.inl hk,Or.inl (by omega)⟩
+  exact ⟨Or.inl hk,Or.inl (by omega_using [hi4, hb])⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64.Allocated
 

@@ -65,7 +65,7 @@ theorem refill_subs_ge {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
 
 theorem movi_ofNat {n : Nat} (h : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
-  simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega : n < 2 ^ 64)]
+  simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_using [h] : n < 2 ^ 64)]
 
 /-! ## The window -/
 
@@ -94,15 +94,15 @@ theorem window_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitV
   brun [State.write, exec_ldrSp (off := 112) (by decide), exec_ldrSp (off := 128) (by decide),
     exec_ldrSp (off := 120) (by decide), exec_storeSp (off := 88) (by decide),
     exec_storeSp (off := 104) (by decide), w14, w16, w15, l112, l128, l120, s88, s104, hsub, hm,
-    refill_subs_ge (show total - used < 2 ^ 64 by omega) (show 128 * pLen < 2 ^ 64 by omega)]
+    refill_subs_ge (show total - used < 2 ^ 64 by omega_using [hmax]) (show 128 * pLen < 2 ^ 64 by omega_using [hp])]
   rw [L.sp]
   by_cases hc : 128 * pLen ≤ total - used
   · simp only [hc, decide_true, ite_true, Nat.min_eq_right hc]
-  · simp only [hc, decide_false, Bool.false_eq_true, ite_false, Nat.min_eq_left (by omega : total - used ≤ 128 * pLen)]
+  · simp only [hc, decide_false, Bool.false_eq_true, ite_false, Nat.min_eq_left (by omega_using [hc] : total - used ≤ 128 * pLen)]
 
 theorem slice_length {g : GenerationGeometry} (t : GenerationTape g) {d n : Nat}
     (h : d + n ≤ t.bytes.length) : (t.slice d n h).bytes.length = n := by
-  simp only [GenerationTape.slice, List.length_take, List.length_drop]; omega
+  simp only [GenerationTape.slice, List.length_take, List.length_drop]; omega_using [h]
 
 /-- `window`: the `h` tape is the window of `rand` after its first `used`
 octets. -/
@@ -110,7 +110,7 @@ theorem refillWindow_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
     (h : GenerationMemory p W s) {used n : Nat} (h16 : W 16 = BitVec.ofNat 64 used)
     (hu : used ≤ p.rand.bytes.length) (hn : n = min (p.rand.bytes.length - used) (128 * p.geo.pLen)) :
     WP isa (.block (Impl.Dsa.AArch64.Generation.Refill.window p.geo.pLen)) s fun t =>
-      GenerationMemory (p.withHs (p.rand.slice used n (by omega)))
+      GenerationMemory (p.withHs (p.rand.slice used n (by omega_using [hu, hn])))
         (upd (upd W 11 (VG.Proof.Bignum.off p.rand.ptr used)) 13 (BitVec.ofNat 64 n)) t ∧
       Frame [⟨p.geo.F, frameBytes⟩] s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   obtain ⟨V, R⟩ := h.rep
@@ -118,9 +118,9 @@ theorem refillWindow_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
   have h14 : W 14 = p.rand.ptr := (h.slots 14 (by simp [generationSlots])).trans p.randSlot
   have h15 : W 15 = BitVec.ofNat 64 p.rand.bytes.length :=
     (h.slots 15 (by simp [generationSlots])).trans p.randLengthSlot
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
+  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
   refine WP.mono (WP.keep [.x3, .x4, .x5, .x6]
-    (window_run L R h14 h16 h15 hu p.rand.size (by omega))
+    (window_run L R h14 h16 h15 hu p.rand.size (by omega_using [pn]))
     (by rcases p.geo.width with hw | hw | hw <;> rw [hw] <;> decide) rfl
     (by rcases p.geo.width with hw | hw | hw <;> rw [hw] <;> decide +kernel)) fun t ⟨hm, kt⟩ => ?_
   rw [← hn] at hm
@@ -131,7 +131,7 @@ theorem refillWindow_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
     exact ((Frame.refl _ _).writeW List.mem_cons_self _ (cF p.geo.F (d := 88) (by decide))).writeW
       List.mem_cons_self _ (cF p.geo.F (d := 104) (by decide))
   have fc : Frame p.changed s.mem t.mem := GenerationContext.frame_single ft
-  have room : used + n ≤ p.rand.bytes.length := by omega
+  have room : used + n ≤ p.rand.bytes.length := by omega_using [hu, hn]
   refine ⟨⟨lay_of_rep L R Rt (by simp [upd]) kt.sp kt.wr, ⟨V, Rt⟩, ?_, h.scratch.congr kt.wr,
     h.seeds.frame fc kt.rd kt.wr, (h.rand.frame fc kt.rd kt.wr).slice room, h.rand.frame fc kt.rd kt.wr⟩,
     ft, kt.rd, kt.wr⟩
@@ -149,12 +149,12 @@ theorem shr2_ofNat {c b : Nat} (hc : c < 4) (h : c + 4 * b < 2 ^ 64) :
     BitVec.ofNat 64 (c + 4 * b) >>> 2 = BitVec.ofNat 64 b := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt h]
-  omega
+  omega_using [hc, h]
 
 theorem shl2_ofNat (b : Nat) : BitVec.ofNat 64 b <<< 2 = BitVec.ofNat 64 (4 * b) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-- The seed's status from the stage's end `c` (`Proof.Dsa.GeneratorStage.code`)
 and the window's length `n`. -/
@@ -170,10 +170,10 @@ theorem consumed_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
     rw [L.sp]; exact (R.fr 16 (by decide)).trans h16
   have l128 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 128) 8 := by rw [L.sp]; exact L.ld (d := 128) (by decide)
   have s128 : InRegions s.wr (s.sp + BitVec.ofNat 64 128) 8 := by rw [L.sp]; exact L.st (d := 128) (by decide)
-  have e1 := shr2_ofNat hc (by omega : c + 4 * b < 2 ^ 64)
+  have e1 := shr2_ofNat hc (by omega_using [hc, hb] : c + 4 * b < 2 ^ 64)
   have e2 := shl2_ofNat b
   have e3 : BitVec.ofNat 64 (c + 4 * b) - BitVec.ofNat 64 (4 * b) = BitVec.ofNat 64 c := by
-    rw [Offset.ofNat_sub_ofNat (by omega)]; congr 1; omega
+    rw [Offset.ofNat_sub_ofNat (by omega_using [])]; congr 1; omega_using []
   refine WP.keep [.x3, .x4, .x5] ?_ (by decide)
   unfold Impl.Dsa.AArch64.Generation.Refill.consumed
   brun [State.write, exec_lsr_x' (by decide : 2 < 64), exec_lsl_x (by decide : 2 < 64),
@@ -194,18 +194,18 @@ theorem shortStatus_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
   have hm := movi_ofNat hp
   unfold Impl.Dsa.AArch64.Generation.Refill.shortStatus Impl.Dsa.AArch64.Generation.Refill.windowBytes
   brun [State.write, exec_ldrSp (off := 104) (by decide), exec_storeSp (off := 152) (by decide), w13, l104, s152, hm,
-    refill_subs_ge hn (show 128 * pLen < 2 ^ 64 by omega)]
+    refill_subs_ge hn (show 128 * pLen < 2 ^ 64 by omega_using [hp])]
   rw [L.sp]
   by_cases hc : 128 * pLen ≤ n
-  · simp only [hc, decide_true, ite_true, show ¬ n < 128 * pLen by omega, ite_false]; rfl
-  · simp only [hc, decide_false, Bool.false_eq_true, ite_false, show n < 128 * pLen by omega, ite_true]; rfl
+  · simp only [hc, decide_true, ite_true, show ¬ n < 128 * pLen by omega_using [hc], ite_false]; rfl
+  · simp only [hc, decide_false, Bool.false_eq_true, ite_false, show n < 128 * pLen by omega_using [hc], ite_true]; rfl
 
 theorem foundStatus_run {s : State} {F S : Addr} (L : Lay s F S) {c : Nat} (hc : 1 ≤ c ∧ c < 4) (hx : s.gpr .x3 = BitVec.ofNat 64 c) :
     WP isa (.block Impl.Dsa.AArch64.Generation.Refill.foundStatus) s fun t =>
       t.mem = s.mem.writeW (VG.Proof.Bignum.off F 152) (BitVec.ofNat 64 (2 * c - 1)) := by
   have s152 : InRegions s.wr (s.sp + BitVec.ofNat 64 152) 8 := by rw [L.sp]; exact L.st (d := 152) (by decide)
   have e : BitVec.ofNat 64 c + BitVec.ofNat 64 c - BitVec.ofNat 64 1 = BitVec.ofNat 64 (2 * c - 1) := by
-    rw [← BitVec.ofNat_add, Offset.ofNat_sub_ofNat (by omega)]; congr 1; omega
+    rw [← BitVec.ofNat_add, Offset.ofNat_sub_ofNat (by omega_using [hc])]; congr 1; omega_using []
   unfold Impl.Dsa.AArch64.Generation.Refill.foundStatus
   brun [State.write, exec_subImm_x' (by decide : 1 < 4096), exec_storeSp (off := 152) (by decide), s152, hx, e]
   rw [L.sp]
@@ -220,7 +220,7 @@ theorem stageStatus_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
       Lay t F S ∧ Rep t.mem F S V (upd (upd W 16 (BitVec.ofNat 64 (u + b))) 19 (BitVec.ofNat 64 (refillStatus c n pLen))) ∧
       Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold Impl.Dsa.AArch64.Generation.Refill.stageStatus
-  refine WP.seq (WP.mono (consumed_run L R (by omega) hb hx h16) fun u₁ ⟨⟨hm₁, h3, h4⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (consumed_run L R (by omega_using [hc]) hb hx h16) fun u₁ ⟨⟨hm₁, h3, h4⟩, k₁⟩ => ?_)
   have R₁ : Rep u₁.mem F S V (upd W 16 (BitVec.ofNat 64 (u + b))) := by
     rw [hm₁]; exact R.wf L.geo (k := 16) (by decide) _
   have L₁ := lay_of_rep L R R₁ (by simp [upd]) k₁.sp k₁.wr
@@ -243,11 +243,11 @@ theorem stageStatus_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
     have h13' : upd W 16 (BitVec.ofNat 64 (u + b)) 13 = BitVec.ofNat 64 n := by simp [upd, h13]
     refine WP.mono (shortStatus_run L₁ R₁ h13' hn hp) fun t ⟨hm, hsp, hrd, hwr⟩ =>
       done _ t hm hsp hrd hwr (by simp [refillStatus])
-  · have hc' : c = 1 ∨ c = 2 := by omega
+  · have hc' : c = 1 ∨ c = 2 := by omega_using [hc, h3c]
     refine WP.ite false (by
       simp only [eval, State.read, h4, BitVec.setWidth_eq, Option.some.injEq, beq_eq_false_iff_ne]
       rcases hc' with rfl | rfl <;> decide) (fun he => Bool.noConfusion he) (fun _ => ?_)
-    refine WP.mono (WP.keep [.x3] (foundStatus_run L₁ (by omega) h3) (by decide)) fun t ⟨hm, kt⟩ =>
+    refine WP.mono (WP.keep [.x3] (foundStatus_run L₁ (by omega_using [hc]) h3) (by decide)) fun t ⟨hm, kt⟩ =>
       done _ t hm kt.sp kt.rd kt.wr (by simp [refillStatus, h3c])
 
 /-! ## After `p`: the window, the stage and the status -/
@@ -255,12 +255,12 @@ theorem stageStatus_run {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
 theorem GenerationGeometry.frame_bytes {g : GenerationGeometry} {m m' : Mem}
     (hf : Frame [⟨g.F, frameBytes⟩] m m') {d n : Nat} (hd : d + n ≤ usedBytes g.pLen) :
     Spec.Rsa.bytesAt m' (VG.Proof.Bignum.off g.B d) n = Spec.Rsa.bytesAt m (VG.Proof.Bignum.off g.B d) n := by
-  have pn : g.pLen ≤ 384 := by rcases g.width with hh | hh | hh <;> omega
+  have pn : g.pLen ≤ 384 := by rcases g.width with hh | hh | hh <;> omega_using [hh]
   apply VG.Proof.Dsa.Generation.frame_bytesAt hf
   · intro r hr
     rcases List.mem_singleton.mp hr with rfl
     exact (g.frame_part hd).symm
-  · unfold usedBytes domainCheck at hd; omega
+  · unfold usedBytes domainCheck at hd; omega_using [hd, pn]
 
 /-- The generation's memory after the stage's call: the frame and the hash
 workspace are as they were. -/
@@ -279,24 +279,24 @@ theorem generatorCalled_memory {p : GenerationContext} {W : Nat → BitVec 64} {
       rcases p.geo.width with hw | hw | hw <;> rw [hw] <;> decide
     have hhb : VG.Impl.Dsa.Generation.Layout.hash + oRsa ≤ usedBytes p.geo.pLen :=
       p.geo.small_bound (by decide) (by decide)
-    have k := C.keeps (VG.Impl.Dsa.Generation.Layout.hash + o) (by omega) (by
+    have k := C.keeps (VG.Impl.Dsa.Generation.Layout.hash + o) (by omega_using [ho, hw8, hhb]) (by
       intro r hr
-      have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hw | hw | hw <;> omega
+      have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hw | hw | hw <;> omega_using [hw]
       have qn : Impl.Dsa.AArch64.Generator.qLen p.geo.pLen ≤ 32 := by
-        unfold Impl.Dsa.AArch64.Generator.qLen; split <;> omega
+        unfold Impl.Dsa.AArch64.Generator.qLen; split <;> omega_using []
       simp only [Impl.Dsa.AArch64.Generator.layout, Impl.Dsa.AArch64.Generator.scratch, List.mem_cons,
         List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
         simp only [parent, g, packed, Impl.Dsa.AArch64.Generator.spill,
           VG.Impl.Dsa.Generation.Layout.control, arithmetic, domainCheck, Impl.Dsa.Layout.activeBytes,
-          Impl.Dsa.AArch64.Generator.spillBytes, Impl.Dsa.Layout.usedBytes, arithmeticBytes] <;> omega)
+          Impl.Dsa.AArch64.Generator.spillBytes, Impl.Dsa.Layout.usedBytes, arithmeticBytes] <;> omega_arith)
     simpa only [GenerationGeometry.hash, VG.Proof.Bignum.off, BitVec.add_assoc, BitVec.ofNat_add] using k
   have frameKept : ∀ k < nW, VG.Proof.Bignum.word t.mem p.geo.F (8 * k) = W k := by
     intro k hk
     rw [← R.fr k hk]
     refine C.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     have hf : Region.Sub ⟨VG.Proof.Bignum.off p.geo.F (8 * k), 8⟩ ⟨p.geo.F, frameBytes⟩ :=
-      Offset.sub_base _ (by have : nW = 34 := rfl; have : frameBytes = 272 := rfl; omega)
+      Offset.sub_base _ (by have : nW = 34 := rfl; have : frameBytes = 272 := rfl; omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact p.geo.frameArena.sub_left hf
@@ -340,20 +340,20 @@ theorem refillGenerator_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat
         (p.rand.bytes.drop used).drop (p.geo.pLen * VG.Proof.Dsa.Generation.generatorCount value qval
           (VG.Proof.Dsa.Generation.windowCandidates p.geo.pLen Spec.Dsa.generatorAttempts (p.rand.bytes.drop used))))) :
     WP isa (Impl.Dsa.AArch64.Generation.Refill.refillGenerator G.run p.geo.pLen) s (RefillFinished p W res s) := by
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have p0 : 0 < p.geo.pLen := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have p0 : 0 < p.geo.pLen := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   have hp_b : VG.Impl.Dsa.Generation.Layout.p + p.geo.pLen ≤ usedBytes p.geo.pLen :=
-    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)
+    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn])
   have he_b : exponent + p.geo.pLen ≤ usedBytes p.geo.pLen :=
-    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)
+    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn])
   have hq_b : q + p.geo.qLen ≤ usedBytes p.geo.pLen :=
-    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)
+    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [qn])
   have hpk_b : packed + (2 * p.geo.pLen + p.geo.qLen) ≤ usedBytes p.geo.pLen :=
-    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)
+    p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   obtain ⟨n, hn⟩ : ∃ n, n = min (p.rand.bytes.length - used) (128 * p.geo.pLen) := ⟨_, rfl⟩
   have rlen : (p.rand.bytes.drop used).length = p.rand.bytes.length - used := List.length_drop
-  have hwin : used + n ≤ p.rand.bytes.length := by omega
+  have hwin : used + n ≤ p.rand.bytes.length := by omega_using [hu, hn]
   let win := p.rand.slice used n hwin
   have hsub : Region.Sub ⟨win.ptr, win.bytes.length⟩ ⟨p.rand.ptr, p.rand.bytes.length⟩ := by
     rw [slice_length]
@@ -368,7 +368,7 @@ theorem refillGenerator_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat
     show (Spec.Dsa.generationChunks p.geo.pLen ((p.rand.bytes.drop used).take n)).map Spec.Dsa.decodeBE = _
     have ht : (p.rand.bytes.drop used).take n =
         (p.rand.bytes.drop used).take (Spec.Dsa.generatorAttempts * p.geo.pLen) :=
-      List.take_eq_take_iff.mpr (by rw [rlen]; unfold Spec.Dsa.generatorAttempts; omega)
+      List.take_eq_take_iff.mpr (by rw [rlen]; unfold Spec.Dsa.generatorAttempts; omega_using [hn])
     unfold VG.Proof.Dsa.Generation.windowCandidates
     rw [ht]
   simp only [Impl.Dsa.AArch64.Generation.Refill.refillGenerator, VG.Impl.Bignum.AArch64.seqs]
@@ -398,7 +398,7 @@ theorem refillGenerator_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat
     simp [upd, h16]
   have t13 : upd (upd W 11 (VG.Proof.Bignum.off p.rand.ptr used)) 13 (BitVec.ofNat 64 n) 13 = BitVec.ofNat 64 n := by
     simp [upd]
-  refine WP.mono (stageStatus_run Lt Rt (stage_code_cases value qval hs) (by omega) hx t16 t13 (by omega) (by omega))
+  refine WP.mono (stageStatus_run Lt Rt (stage_code_cases value qval hs) (by omega) hx t16 t13 (by omega_using [pn, hn]) (by omega_using [pn]))
     fun t' ⟨Lt', Rt', ft', rt', wt'⟩ => ?_
   have fut : Frame p.changed u.mem t'.mem := ft.trans (GenerationContext.frame_single ft')
   have fsx : Frame p.changed s.mem t'.mem := (GenerationContext.frame_single fu).trans fut
@@ -408,13 +408,13 @@ theorem refillGenerator_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat
     (BitVec.ofNat 64 (used + b))) 19 (BitVec.ofNat 64 (refillStatus c n p.geo.pLen))
   have mt : GenerationMemory (p.withHs win) Wt t' := by
     refine mu.frame Lt' ⟨V, Rt'⟩ (fun k hk => ?_) fut (rt'.trans rt) (wt'.trans wt)
-    have : k ≠ 16 ∧ k ≠ 19 := by simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+    have : k ≠ 16 ∧ k ≠ 19 := by simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     simp [Wt, upd, this.1, this.2]
-  have hbound : used + b ≤ p.rand.bytes.length := by omega
+  have hbound : used + b ≤ p.rand.bytes.length := by omega_using [hu, hn, hc]
   have wslots : ∀ k ∈ refillSlots, Wt k = W k := by
     intro k hk
     have : k ≠ 11 ∧ k ≠ 13 ∧ k ≠ 16 ∧ k ≠ 19 := by
-      simp only [refillSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+      simp only [refillSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     simp [Wt, upd, this.1, this.2.1, this.2.2.1, this.2.2.2]
   have w16 : Wt 16 = BitVec.ofNat 64 (used + b) := by simp [Wt, upd]
   have w19 : Wt 19 = BitVec.ofNat 64 (refillStatus c n p.geo.pLen) := by simp [Wt, upd]
@@ -426,13 +426,13 @@ theorem refillGenerator_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat
     have hcount := generatorCount_of_none hg
     by_cases short : n < 128 * p.geo.pLen
     · have hnot : ¬ (Spec.Dsa.generatorAttempts * p.geo.pLen ≤ (p.rand.bytes.drop used).length) := by
-        simp only [rlen, Spec.Dsa.generatorAttempts]; omega
+        simp only [rlen, Spec.Dsa.generatorAttempts]; omega_using [hu, pn, p0, qn, hp_b, he_b, hq_b, hpk_b, hn, hwin, hc, hbound, hcount, short]
       refine Or.inl ⟨by rw [w19, hcode]; simp [refillStatus, short], by rw [hnone hg, ite_eq_right hnot]⟩
-    · have hn128 : n = 128 * p.geo.pLen := by omega
+    · have hn128 : n = 128 * p.geo.pLen := by omega_using [hn, short]
       have hc128 : VG.Proof.Dsa.Generation.generatorCount value qval hs = 128 := by
         rw [hcount, hlen, hn128, Nat.mul_div_cancel _ p0]
       have hyes : Spec.Dsa.generatorAttempts * p.geo.pLen ≤ (p.rand.bytes.drop used).length := by
-        simp only [rlen, Spec.Dsa.generatorAttempts]; omega
+        simp only [rlen, Spec.Dsa.generatorAttempts]; omega_using [hwin, short]
       refine Or.inr (Or.inl ⟨by rw [w19, hcode]; simp [refillStatus, short], ?_⟩)
       rw [hnone hg, ite_eq_left hyes, hdrop]
       congr 3
@@ -447,7 +447,7 @@ theorem refillGenerator_ok (G : GeneratorStage) {p : GenerationContext} {W : Nat
       rw [VG.Proof.Dsa.Generation.frame_bytesAt ft' (by
         intro r hr
         obtain rfl := List.mem_singleton.mp hr
-        exact (p.geo.frame_part hpk_b).symm) (by omega)]
+        exact (p.geo.frame_part hpk_b).symm) (by omega_using [pn, qn])]
       exact hpk _ hst
     · have hcode : c = 2 := by simp [c, Proof.Dsa.GeneratorStage.code, hg, valid]
       exact Or.inr (Or.inl ⟨by rw [w19, hcode]; rfl, by simp only [valid, ite_false]; rfl⟩)
@@ -471,7 +471,7 @@ theorem refillPrimeFinish_ok (H : GenerationHashes) (G : GeneratorStage) (T : Pr
         (Impl.Dsa.AArch64.Generation.Refill.refillGenerator G.run p.geo.pLen))) s
       (RefillFinished p W (VG.Proof.Dsa.Generation.refillAttempt p.geo.pLen p.geo.qLen seed.bytes rest) s) := by
   have shape := VG.Proof.Dsa.Generation.qCandidate_shape
-    (by rcases p.geo.qWidth with hh | hh <;> omega : 2 ≤ 8 * p.geo.qLen) seed.bytes
+    (by rcases p.geo.qWidth with hh | hh <;> omega_using [hh] : 2 ≤ 8 * p.geo.qLen) seed.bytes
   have qfit : Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes < 256 ^ p.geo.qLen := by
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using shape.2.2
   have qpos : 0 < Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) shape.2.1

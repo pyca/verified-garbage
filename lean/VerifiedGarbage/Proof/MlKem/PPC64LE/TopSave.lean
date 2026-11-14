@@ -45,7 +45,7 @@ abbrev saveR (P : Addr) : Region := ⟨P + BitVec.ofNat 64 840, 72⟩
 
 theorem saveR_contains (P : Addr) {o : Nat} (h₁ : 840 ≤ o) (h₂ : o + 8 ≤ 912) :
     (saveR P).Contains (P + BitVec.ofNat 64 o) 8 :=
-  Offset.contains _ h₁ (by omega) (by decide)
+  Offset.contains _ h₁ (by omega_using [h₂]) (by decide)
 
 /-- `TopSaved` through a change of memory apart from where they are saved. -/
 theorem TopSaved.keep {m m' : Mem} {P : Addr} {s₀ : State} (h : TopSaved m P s₀) {rs : List Region}

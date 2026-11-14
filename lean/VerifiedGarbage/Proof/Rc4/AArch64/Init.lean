@@ -152,7 +152,7 @@ theorem init_ok (s : State)
     have hpt : InRegions t.wr (t.gpr .x2) 258 := by rw [htw, ht2]; exact hp
     have hkt : InRegions (t.rd ++ t.wr) (t.gpr .x0) (t.gpr .x1).toNat := by
       rw [htr, htw, ht0, ht1]; exact hk
-    have hlt : 0 < (t.gpr .x1).toNat ∧ (t.gpr .x1).toNat ≤ 256 := by rw [ht1]; omega
+    have hlt : 0 < (t.gpr .x1).toNat ∧ (t.gpr .x1).toNat ≤ 256 := by rw [ht1]; omega_using [hg]
     refine WP.mono (initValid_ok t hlt hpt hkt) fun u ⟨u0, uc, uv⟩ => ?_
     refine ⟨⟨u0, ?_⟩, fun r hr => by rw [uv r hr, htv]⟩
     rw [← ht2, uc, htm, ht0, ht1]

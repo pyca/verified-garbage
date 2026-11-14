@@ -134,9 +134,9 @@ private theorem gi_crm {c st w sp : Addr} {R : Nat} {A D N : BitVec 64} {s : Sta
     (hv : R=10 ∨ R=12 ∨ R=14) (hs : GI c st w sp R A D N s) :
     CrM c st w sp R (D+BitVec.ofNat 64 (16*(N.toNat/16))) (N.toNat%16) 0 0 s := by
   obtain ⟨⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩,h24,h25,_⟩ := hs
-  have hds := data_suffix hdata (j := 16*(N.toNat/16)) (by omega)
-  rw [show N.toNat-16*(N.toNat/16)=N.toNat%16 by omega] at hds
-  refine ⟨V,0,16*(N.toNat/16),s.mem,hc,hst,hw,by omega,he,by omega,?_,?_,hR,hv,?_,?_,?_,?_,.inr (by omega),Frame.refl _ _⟩
+  have hds := data_suffix hdata (j := 16*(N.toNat/16)) (by omega_using [])
+  rw [show N.toNat-16*(N.toNat/16)=N.toNat%16 by omega_using []] at hds
+  refine ⟨V,0,16*(N.toNat/16),s.mem,hc,hst,hw,by omega_using [],he,by omega_using [],?_,?_,hR,hv,?_,?_,?_,?_,.inr (by omega_using []),Frame.refl _ _⟩
   · simpa only [BitVec.add_zero] using h24
   · simpa only [Nat.sub_zero] using h25
   · rw [hc,hst,hw]; exact hds
@@ -169,8 +169,8 @@ private theorem gi_abs {c st w sp : Addr} {R : Nat} {A D N : BitVec 64} {s : Sta
     (hs : GI c st w sp R A D N s) :
     AbsI c st w sp 16 (D+BitVec.ofNat 64 (16*(N.toNat/16))) (N.toNat%16) 0 s := by
   obtain ⟨⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩,h24,h25,h26⟩ := hs
-  have hds := data_suffix hdata (j := 16*(N.toNat/16)) (by omega)
-  rw [show N.toNat-16*(N.toNat/16)=N.toNat%16 by omega] at hds
+  have hds := data_suffix hdata (j := 16*(N.toNat/16)) (by omega_using [])
+  rw [show N.toNat-16*(N.toNat/16)=N.toNat%16 by omega_using []] at hds
   refine ⟨V,Spec.Gcm.blockAt s.mem (V .r29+BitVec.ofNat 64 240),[],hc,hst,hw,rfl,
     he,h24,h25,h26,?_,rfl⟩
   rw [hst,hw]; exact hds.ok
@@ -183,8 +183,8 @@ theorem absorb_fin_ct [VG.Proof.Gcm.PPC64LE.GhashLaw]
     ((absorb_ct L (.inr rfl) (q := 0) (by decide)).mono fun _ => gi_abs)
     (fun s ⟨⟨V,hc,hst,hw,hR,ha,hd,hn,he,hdata⟩,h24,h25,h26⟩ => ?_)
     (finTag_ct L (.inl rfl) hv)
-  have hds := data_suffix hdata (j := 16*(N.toNat/16)) (by omega)
-  rw [show N.toNat-16*(N.toNat/16)=N.toNat%16 by omega] at hds
+  have hds := data_suffix hdata (j := 16*(N.toNat/16)) (by omega_using [])
+  rw [show N.toNat-16*(N.toNat/16)=N.toNat%16 by omega_using []] at hds
   have ai : AbsIn V sp 16 (Spec.Gcm.blockAt s.mem (V .r29+BitVec.ofNat 64 240)) []
       (D+BitVec.ofNat 64 (16*(N.toNat/16))) (N.toNat%16) s :=
     ⟨he,h24,h25,h26,by rw [hst,hw]; exact hds.ok,rfl⟩
@@ -247,7 +247,7 @@ theorem body_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     have het := he.keep (fun r hr => hg r (by revert r; decide)) hk.sp hk.rd hk.wr
     exact ⟨hs₀.keep (fun r hr => (he.fr r hr).symm) het hk.rd hk.wr,h12⟩
   · exact CT.ite (decide (N.toNat/512=0))
-      (fun _ hs => eval_zero hs.2 (by have := N.isLt; omega))
+      (fun _ hs => eval_zero hs.2 (by have := N.isLt; omega_using []))
       (fun _ => (smallBody_ct L hv).mono fun _ hs => hs.1)
       (fun _ => (fastBody_ct L hv).mono fun _ hs => one_bi hs.1)
 

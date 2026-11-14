@@ -36,7 +36,7 @@ theorem restore_frame_ok {s w : State} (hsp : w.sp = fb s) (hwr : w.wr = ⟨fb s
     (fun p hp' => by
       rw [o₁.rd, o₁.wr, hwr]
       exact InRegions_append_cons (xs := w.rd) |>.mpr (.inl (Offset.contains_base _
-        (by have := saved_offs p hp'; unfold frameBytes; omega) (by have := saved_offs p hp'; omega))))
+        (by have := saved_offs p hp'; unfold frameBytes; omega_using [this]) (by have := saved_offs p hp'; omega_using [this]))))
     (by rw [o₁.mem]; exact hsv)) fun w' hr => ⟨⟨fun r hr' => ?_, ?_, fun r hr' => ?_⟩, ?_, ?_⟩
   · simp only [freed]
     obtain ⟨p, hp', rfl⟩ := List.mem_map.mp (preserved_saved r hr')
@@ -69,7 +69,7 @@ theorem restoreP_frame_ok {s w : State} (hsp : w.sp = fb s) (hwr : w.wr = ⟨fb 
       have := saved_offs p (List.mem_of_mem_drop hp')
       rw [o₁.rd, o₁.wr, hwr]
       exact InRegions_append_cons (xs := w.rd) |>.mpr (.inl (Offset.contains_base _
-        (by unfold frameBytes; omega) (by omega))))
+        (by unfold frameBytes; omega_using [this]) (by omega_using [this]))))
     (by rw [o₁.mem]; exact hsv)) fun w' hr => ⟨⟨fun r hr' => ?_, ?_, fun r hr' => ?_⟩, ?_, ?_⟩
   · simp only [freed]
     by_cases h : r ∈ (saved.drop 2).map Prod.fst

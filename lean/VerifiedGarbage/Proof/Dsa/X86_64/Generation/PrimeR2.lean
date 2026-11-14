@@ -31,27 +31,27 @@ theorem primeR2_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat} {mi : BitVec 
   have hnw := hg.scr.nowrap
   have hN8 := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
   have hodd0 : (word s.mem B (slot w aN)).toNat % 2 = 1 := by
-    rw [← wv_mod64 (n := w) _ _ _ (by omega), hn, Nat.mod_mod_of_dvd _ (show 2 ∣ 2 ^ 64 by decide)]
+    rw [← wv_mod64 (n := w) _ _ _ (by omega_using [hw]), hn, Nat.mod_mod_of_dvd _ (show 2 ∣ 2 ^ 64 by decide)]
     exact hodd
   unfold Impl.Dsa.X86_64.Generation.primeR2
   refine WP.seq (WP.mono (msHead_ok hg hZ hodd0) fun u ⟨hgu, hinv, _, _, _, hmu, ku⟩ => ?_)
   have hnu : wv u.mem B (slot w aN) w = N := by
-    rw [hmu, hdrStore_wv _ _ _ (by decide) (by decide) (by omega)]
+    rw [hmu, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_using [hZ, hnw])]
     exact hn
   have hwu : word u.mem B (slot w aN) = word s.mem B (slot w aN) := by
-    rw [hmu, hdrStore_word _ _ _ (by decide) (by decide) (by omega)]
+    rw [hmu, hdrStore_word _ _ _ (by decide) (by decide) (by omega_using [hZ, hnw])]
   refine WP.mono (VG.Proof.Dsa.X86_64.constants_ok M hgu hZ hw hw48 hnu hN hodd (by rw [hwu]; exact hinv))
     fun t ⟨hgt, hone, hr2, hf, kt⟩ => ?_
   have hsep := VG.Proof.Dsa.X86_64.constantRanges_modulus w
   have hnt : wv t.mem B (slot w aN) w = N := by
-    rw [hf.wv_eq (fun r hr => by have := hsep r hr; omega) (by omega)]
+    rw [hf.wv_eq (fun r hr => by have := hsep r hr; omega_using [this]) (by omega_using [hnw, hN8])]
     exact hnu
   have hwt : word t.mem B (slot w aN) = word s.mem B (slot w aN) := by
-    rw [hf.word_eq (fun r hr => by have := hsep r hr; omega) (by omega), hwu]
+    rw [hf.word_eq (fun r hr => by have := hsep r hr; omega_using [this]) (by omega_using [hnw, hN8]), hwu]
   refine ⟨u.gpr .r15, hgt, by rw [hwt]; exact hinv, hnt, hone, ?_, ?_, ?_, (ku.trans kt).mono (by decide)⟩
-  · rw [hr2, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega]
+  · rw [hr2, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []]
   · rw [hr2]
-    exact Nat.mod_lt _ (by omega)
+    exact Nat.mod_lt _ (by omega_using [hodd])
   · have hhead : Frm B [(8 * sMinv, 8)] s.mem u.mem := by
       rw [hmu]
       exact Frm.of_outside (writeW_outside _ _ _ (by decide)) (by simp)

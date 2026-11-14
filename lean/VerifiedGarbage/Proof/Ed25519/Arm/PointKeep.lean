@@ -49,12 +49,12 @@ theorem PointKeep.word {b : BitVec 32} {s t : State} (h : PointKeep b s t)
   apply BitVec.eq_of_toNat_eq
   exact wd_frame h.frame fun r hr => by
     simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by decide)
+    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hn]) (by decide)
 
 theorem PointKeep.table {b : BitVec 32} {s t : State} (h : PointKeep b s t) {d : Nat}
     (hd : 7776 ≤ d) (hn : d + 128 ≤ 8192) : tablePoint t.mem b d = tablePoint s.mem b d := by
   refine tablePoint_frame h.frame fun r hr => ?_
   simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by omega)) (by omega) (by decide)
+  rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by omega_using [hd])) (by omega_using [hn]) (by decide)
 
 end VG.Proof.Ed25519.Arm

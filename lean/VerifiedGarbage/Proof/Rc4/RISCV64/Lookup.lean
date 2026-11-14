@@ -32,7 +32,7 @@ theorem al_add {p : Addr} (hp : p.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) (hd'
     (p + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) hd']
   have := p.isLt
-  omega
+  omega_using [hp, hd]
 
 /-! ## The row's bit and masks -/
 
@@ -46,21 +46,21 @@ theorem bit_mask (q : BitVec 64) {c : Nat} (hc : c < 64) :
   have key : (q <<< (63 - c)).getLsbD 63 = q.getLsbD c := by
     rw [BitVec.getLsbD_shiftLeft]
     simp only [show (63 : Nat) < 64 by decide, decide_true, Bool.true_and,
-      show ¬ (63 < 63 - c) by omega, decide_false, Bool.not_false, show 63 - (63 - c) = c by omega]
+      show ¬ (63 < 63 - c) by omega_using [], decide_false, Bool.not_false, show 63 - (63 - c) = c by omega_using [hc]]
   rw [show (if 63 + i < 64 then (q <<< (63 - c)).getLsbD (63 + i) else (q <<< (63 - c)).getLsbD (64 - 1)) =
-    (q <<< (63 - c)).getLsbD 63 by split; (congr 1; omega); rfl, key]
+    (q <<< (63 - c)).getLsbD 63 by split; (congr 1; omega_arith); rfl, key]
   cases q.getLsbD c
   · simp
-  · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true, show ¬ 64 ≤ i by omega, decide_false,
+  · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true, show ¬ 64 ≤ i by omega_using [hi], decide_false,
       Bool.not_false, Bool.and_true]
 
 /-- Doubleword `k`'s mask from the bit of byte `idx`'s doubleword. -/
 theorem row_bit (idx : Byte) {k : Nat} (hk : k < 32) :
     (BitVec.twoPow 64 (idx.toNat / 8) <<< (63 - k)).sshiftRight 63 =
       if idx.toNat / 8 = k then BitVec.allOnes 64 else 0#64 := by
-  rw [bit_mask _ (by omega), BitVec.getLsbD_twoPow]
+  rw [bit_mask _ (by omega_using [hk]), BitVec.getLsbD_twoPow]
   by_cases h : idx.toNat / 8 = k
-  · subst h; simp only [ite_true, decide_eq_true (by omega : idx.toNat / 8 < 64), Bool.true_and, decide_true]
+  · subst h; simp only [ite_true, decide_eq_true (by omega_using [] : idx.toNat / 8 < 64), Bool.true_and, decide_true]
   · simp [h]
 
 theorem rowBit_run (s : State) (idx : Byte) (h4 : s.gpr .a4 = idx.setWidth 64) :
@@ -69,8 +69,8 @@ theorem rowBit_run (s : State) (idx : Byte) (h4 : s.gpr .a4 = idx.setWidth 64) :
   unfold rowBit
   rrun [h4]
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega), show (2 : Nat) ^ 3 = 8 from rfl,
-    Nat.mod_eq_of_lt (show idx.toNat / 8 < 64 by omega)]
+    Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega_using []), show (2 : Nat) ^ 3 = 8 from rfl,
+    Nat.mod_eq_of_lt (show idx.toNat / 8 < 64 by omega_using [])]
   rfl
 
 /-- The lane's shift: eight times byte `idx`'s offset in its doubleword. -/
@@ -79,9 +79,9 @@ theorem lane_shift (idx : Byte) :
   have := Nat.mod_lt idx.toNat (by decide : 8 > 0)
   have hi := idx.isLt
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega), show 7 % 2 ^ 64 = 2 ^ 3 - 1 from rfl,
-    Nat.and_two_pow_sub_one_eq_mod, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.mul_comm]
+    Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega_using []), show 7 % 2 ^ 64 = 2 ^ 3 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_using []),
+    Nat.mod_eq_of_lt (by omega_using []), Nat.mul_comm]
 
 theorem laneShift_run (s : State) (idx : Byte) (h4 : s.gpr .a4 = idx.setWidth 64) :
     WP isa (.block laneShift) s fun t => (t.gpr .t2).toNat % 64 = 8 * (idx.toNat % 8) ∧ t.mem = s.mem := by
@@ -99,9 +99,9 @@ theorem gather_step (s : State) (idx : Byte) {k : Nat} (hk : k < 32)
         (if idx.toNat / 8 = k then s.mem.readW (s.gpr .a7 + BitVec.ofNat 64 (8 * k)) 64 else 0) ∧
       t.gpr .a4 = s.gpr .a4 ∧ t.gpr .t5 = s.gpr .t5 ∧ t.gpr .t6 = s.gpr .t6 ∧ t.gpr .a7 = s.gpr .a7 ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have hal' := al_add hal (d := 8 * k) (by omega) (by omega)
+  have hal' := al_add hal (d := 8 * k) (by omega_using []) (by omega_using [hk])
   unfold gatherStep rowMask
-  rrun [h5, hr, hal', show 8 * k < 2048 by omega, show 63 - k < 64 by omega]
+  rrun [h5, hr, hal', show 8 * k < 2048 by omega_using [hk], show 63 - k < 64 by omega_using []]
   rw [row_bit idx hk, and_allOnes_ite]; rfl
 
 def GInv (s₀ : State) (idx : Byte) (k : Nat) (t : State) : Prop :=
@@ -113,14 +113,14 @@ theorem gather0_run (s : State) (idx : Byte) (h5 : s.gpr .t5 = BitVec.twoPow 64 
     (hal : (s.gpr .a7).toNat % 8 = 0) (hr : InRegions (s.rd ++ s.wr) (s.gpr .a7) 256) :
     WP isa (.block gather0) s (GInv s idx 1) := by
   have hr0 : InRegions (s.rd ++ s.wr) (s.gpr .a7) 8 := by
-    simpa using region_offset _ _ 256 0 8 (by omega) (by omega) hr
+    simpa using region_offset _ _ 256 0 8 (by omega_using []) (by omega_using []) hr
   unfold gather0 rowMask
   rrun [GInv, h5, hr0, hal]
   rw [row_bit idx (k := 0) (by decide), and_allOnes_ite]
   unfold gather
   by_cases h : idx.toNat / 8 = 0
-  · rw [ite_eq_left h, ite_eq_left (by omega), h, Nat.mul_zero, BitVec.add_zero]
-  · rw [ite_eq_right h, ite_eq_right (by omega)]; rfl
+  · rw [ite_eq_left h, ite_eq_left (by omega_using [h]), h, Nat.mul_zero, BitVec.add_zero]
+  · rw [ite_eq_right h, ite_eq_right (by omega_using [h])]; rfl
 
 theorem gather_steps (s₀ : State) (idx : Byte) (h5 : s₀.gpr .t5 = BitVec.twoPow 64 (idx.toNat / 8))
     (hal : (s₀.gpr .a7).toNat % 8 = 0)
@@ -133,12 +133,12 @@ theorem gather_steps (s₀ : State) (idx : Byte) (h5 : s₀.gpr .t5 = BitVec.two
   | succ n ih =>
     intro s h
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun t ht => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h) fun t ht => ?_
     obtain ⟨h1, h4', h5', h6', hp, hm, hrd, hwr⟩ := ht
     have hq : InRegions (t.rd ++ t.wr) (t.gpr .a7 + BitVec.ofNat 64 (8 * (n + 1))) 8 := by
       rw [hrd, hwr, hp]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) hr
-    refine WP.mono (gather_step t idx (by omega) (h5'.trans h5) (by rw [hp]; exact hal) hq) fun u hu => ?_
+      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) hr
+    refine WP.mono (gather_step t idx (by omega_using [hn]) (h5'.trans h5) (by rw [hp]; exact hal) hq) fun u hu => ?_
     obtain ⟨u1, u4, u5, u6, up, um, urd, uwr⟩ := hu
     refine ⟨?_, u4.trans h4', u5.trans h5', u6.trans h6', up.trans hp, um.trans hm, urd.trans hrd,
       uwr.trans hwr⟩
@@ -175,6 +175,6 @@ theorem lookup_core (s : State) (idx : Byte) (h4 : s.gpr .a4 = idx.setWidth 64)
   rrun [w2, w1, wm, vm, tm, w5, v5, t5]
   rw [v1, tp]
   unfold gather
-  rw [ite_eq_left (by omega), qword_byte _ _ hL, row_lane, tm]
+  rw [ite_eq_left (by omega_using []), qword_byte _ _ hL, row_lane, tm]
 
 end VG.Proof.Rc4.RISCV64

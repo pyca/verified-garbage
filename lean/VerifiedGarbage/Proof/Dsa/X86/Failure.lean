@@ -31,9 +31,9 @@ theorem signFailure_ok {s : State} {base : Addr} {size qLen : Nat} {out : BitVec
   have bound : 8256 ≤ size := hz
   unfold Entry.failure Core.sequence
   dsimp only [List.foldr, ite_true]
-  refine WP.seq (wp_movS (readSrc_sc hs (d := Layout.field .out) (by change 8228 ≤ size; omega)) fun s1 U1 _ => ?_)
+  refine WP.seq (wp_movS (readSrc_sc hs (d := Layout.field .out) (by change 8228 ≤ size; omega_using [bound])) fun s1 U1 _ => ?_)
   have K1 := U1.keeps
-  refine wp_movS (readSrc_sc (hs.of_keeps K1 (by decide)) (d := Layout.field .qLen) (by change 8236 ≤ size; omega)) fun s2 U2 _ => ?_
+  refine wp_movS (readSrc_sc (hs.of_keeps K1 (by decide)) (d := Layout.field .qLen) (by change 8236 ≤ size; omega_using [bound])) fun s2 U2 _ => ?_
   refine wp_addS rfl fun s3 U3 _ => ?_
   refine wp_movS rfl fun s4 U4 _ => WP.block_nil ?_
   have K4 : Keeps [.esi, .ecx, .eax] s s4 :=
@@ -46,7 +46,7 @@ theorem signFailure_ok {s : State} {base : Addr} {size qLen : Nat} {out : BitVec
     rw [U4.other _ (by decide), U3.gpr, U2.gpr, U1.mem]
     change pointerValue base s (.input .qLen) + pointerValue base s (.input .qLen) = _
     rw [hc, ← BitVec.ofNat_add, ← Nat.two_mul]
-  refine WP.seq (WP.mono (failureLoop_ok (by omega) (by omega) hf P4 C4 U4.gpr
+  refine WP.seq (WP.mono (failureLoop_ok (by omega_using [hl]) (by omega_using [hq]) hf P4 C4 U4.gpr
     (by intro i hi; rw [K4.2.2]; exact hw i hi)) fun t ⟨V, Z, O, K⟩ => ?_)
   exact WP.block_nil ⟨V, Z, by simpa only [O4] using O, K4.trans (K.mono (by decide))⟩
 

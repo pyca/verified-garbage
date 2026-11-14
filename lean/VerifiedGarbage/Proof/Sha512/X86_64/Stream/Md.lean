@@ -80,11 +80,11 @@ theorem len_ok (s : State) (hout : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 
       s'.wr = s.wr ∧ s'.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 176) (md.lenOf (s.gpr .r12)) := by
   have h176 : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 176) 8 := by
     obtain ⟨R, hR, hc⟩ := hout
-    exact ⟨R, hR, by unfold Region.Contains at *; omega⟩
+    exact ⟨R, hR, by unfold Region.Contains at *; omega_using [hc]⟩
   have e184 : s.gpr .rbx + BitVec.ofNat 64 176 + BitVec.ofNat 64 8 = s.gpr .rbx + BitVec.ofNat 64 184 := by
     rw [BitVec.add_assoc]; rfl
   have h184 : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 184) 8 := by
-    rw [← e184]; exact InRegions.offset hout (by omega) (by omega)
+    rw [← e184]; exact InRegions.offset hout (by omega_using []) (by omega_using [])
   show WP isa (.block (.mov .rax (.reg .r12) :: .shift .shr .rax 61 :: .bswap .rax ::
     .store (at_ .rbx 176) .rax :: (len64 184 true ++ []))) s _
   refine wp_mov fun s₁ u₁ _ _ => wp_shri (by decide) fun s₂ u₂ => wp_bswap fun s₃ u₃ =>
@@ -184,7 +184,7 @@ theorem Update.verifiedS {so : Nat} (h : so = 0 ∨ so = 192) {f : Callee} (hf :
     (hm : (Impl.MdStream.X86_64.update (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.MdStream.X86_64.update (paramsS so) f.name f.code)
       (Proof.Sha512.updateX86_64S (so + 48)) :=
-  MdStream.X86_64.Update.verified (dimsS so (by omega)) (taintsS so h) (calleeS hf hv) hm
+  MdStream.X86_64.Update.verified (dimsS so (by omega_using [h])) (taintsS so h) (calleeS hf hv) hm
 
 /-- `finalize` made with `so` bytes of working space for the compression
 function, for an implementation verified with that much (`hv`). -/
@@ -193,7 +193,7 @@ theorem Finalize.verifiedS {so : Nat} (h : so = 0 ∨ so = 192) {f : Callee} (hf
     (hm : (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.MdStream.X86_64.finalize (paramsS so) f.name f.code)
       (Proof.Sha512.finalizeX86_64S (so + 48)) :=
-  MdStream.X86_64.Finalize.verified (dimsS so (by omega)) (shapeS so) (taintsS so h) (calleeS hf hv) hm
+  MdStream.X86_64.Finalize.verified (dimsS so (by omega_using [h])) (shapeS so) (taintsS so h) (calleeS hf hv) hm
 
 namespace Update
 
@@ -257,8 +257,8 @@ theorem updateOwn_verified {f : Callee} (h : f.so = 0 ∨ f.so = 192 ∨ f.so = 
     (hsat : ∃ s, Proof.Sha512.updateX86_64.pre s) :
     Verified X86_64.target (Impl.Sha512.X86_64.Stream.updateOwn f) Proof.Sha512.updateX86_64 :=
   updateS_widen (a := f.so + 48)
-    (MdStream.X86_64.Update.verified (dimsS f.so (by omega)) (taintsS3 f.so h) hf hm)
-    (by omega) hsat
+    (MdStream.X86_64.Update.verified (dimsS f.so (by omega_using [h])) (taintsS3 f.so h) hf hm)
+    (by omega_using [h]) hsat
 
 /-- `Impl.Sha512.X86_64.Stream.finalizeOwn`, likewise. -/
 theorem finalizeOwn_verified {f : Callee} (h : f.so = 0 ∨ f.so = 192 ∨ f.so = 1328)
@@ -267,7 +267,7 @@ theorem finalizeOwn_verified {f : Callee} (h : f.so = 0 ∨ f.so = 192 ∨ f.so 
     (hsat : ∃ s, Proof.Sha512.finalizeX86_64.pre s) :
     Verified X86_64.target (Impl.Sha512.X86_64.Stream.finalizeOwn f) Proof.Sha512.finalizeX86_64 :=
   finalizeS_widen (a := f.so + 48)
-    (MdStream.X86_64.Finalize.verified (dimsS f.so (by omega)) (shapeS f.so) (taintsS3 f.so h) hf hm)
-    (by omega) hsat
+    (MdStream.X86_64.Finalize.verified (dimsS f.so (by omega_using [h])) (shapeS f.so) (taintsS3 f.so h) hf hm)
+    (by omega_using [h]) hsat
 
 end VG.Proof.Sha512.X86_64.Stream

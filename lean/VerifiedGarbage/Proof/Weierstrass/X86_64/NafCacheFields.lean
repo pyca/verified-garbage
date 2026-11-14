@@ -42,10 +42,10 @@ theorem Inv.transferCachedFields {M : Mod} {base : Addr} {size m : Nat} [NeZero 
       have hx2 := hx o.z (by simp [cachedSlots,jacCoords])
       rw [hy] at hx1
       rw [hz] at hx2
-      omega
+      omega_using [hx0, hx1, hx2]
     · have hx0 := hx dst (by simp [cachedSlots])
       have hx1 := hx (dst+8*M.n) (by simp [cachedSlots])
-      omega
+      omega_using [hx0, hx1]
   have hlt : ∀ x∈cachedSlots M.n o dst,wordsVal t.mem base x M.n<m := by
     intro x hx
     simp only [cachedSlots,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -102,11 +102,11 @@ theorem nafCachedFields_ok {K : WinCfg} {base : Addr} {size tbl dst a m : Nat} [
   have hd3 := hL.le (dst+8*K.M.n) (hD _ (by simp [cachedSlots]))
   rw [hz] at hez
   refine WP.mono (nafCachedEntry_ok hI.scr h8 ha ha' hodd hn hp hc hP hC
-    (by omega) (by omega) hEP hEC hDC hDE) fun t ⟨vp,vc,hk,ho⟩ =>
+    (by omega_using [hez]) (by omega_using [hd3]) hEP hEC hDC hDE) fun t ⟨vp,vc,hk,ho⟩ =>
       hI.transferCachedFields hL hy hz hD hQ ?_ ?_ ?_ ?_ ?_ hk ho
   · simpa only [WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_zero,Nat.add_zero] using vp 0 (by decide)
   · simpa only [hy,WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_one] using vp 1 (by decide)
-  · simpa only [hz,WinCfg.tblPt,Nat.add_sub_cancel,show 8*K.M.n*2=16*K.M.n by omega]
+  · simpa only [hz,WinCfg.tblPt,Nat.add_sub_cancel,show 8*K.M.n*2=16*K.M.n by omega_using []]
       using vp 2 (by decide)
   · simpa only [Nat.mul_zero,Nat.add_zero] using vc 0 (by decide)
   · simpa only [Nat.mul_one] using vc 1 (by decide)

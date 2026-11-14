@@ -37,7 +37,7 @@ theorem ldMask_ok {s : State} {r : Reg} {k : Nat} {M : BitVec 64} (hk : 8 * k < 
     ∃ s', runBlock isa [ldS r k] s = some s' ∧ s'.gpr r = M ∧ (∀ r', r' ≠ r → s'.gpr r' = s.gpr r') ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨s.write .x r (s.mem.readW (s.gpr sb + BitVec.ofNat 64 (8 * k)) 64), by
-    simp only [ldS, runBlock_cons, runStep_some, runBlock_nil, exec_ldr_x ⟨by omega, hk⟩ hin], ?_,
+    simp only [ldS, runBlock_cons, runStep_some, runBlock_nil, exec_ldr_x ⟨by omega_using [], hk⟩ hin], ?_,
     fun r' h => RegUpd.gpr_write_of_ne _ _ _ h, rfl, rfl, rfl⟩
   simp only [RegUpd.gpr_write_self, BitVec.setWidth_eq, hv]
 
@@ -66,7 +66,7 @@ theorem ldS_list_ok : ∀ (L : List (Reg × Nat)) (s : State), (∀ x ∈ L, x.1
 theorem stS_ok (s : State) {k : Nat} (t : Reg) (hk : 8 * k < 32768)
     (hin : InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * k)) 8) :
     runBlock isa [stS k t] s = some { s with mem := s.mem.writeW (wordAddr (s.gpr sb) k) (s.gpr t) } := by
-  simp only [stS, runBlock_cons, runStep_some, runBlock_nil, exec_str_x ⟨by omega, hk⟩ hin]
+  simp only [stS, runBlock_cons, runStep_some, runBlock_nil, exec_str_x ⟨by omega_using [], hk⟩ hin]
 
 /-- Stores of registers to distinct slots in the region `R`. -/
 theorem stS_list_ok (R : Region) : ∀ (L : List (Nat × Reg)) (s : State), (L.map (·.1)).Nodup →
@@ -84,7 +84,7 @@ theorem stS_list_ok (R : Region) : ∀ (L : List (Nat × Reg)) (s : State), (L.m
     obtain ⟨s', e', g', rd', wr', f', o', v'⟩ :=
       stS_list_ok R L s₁ hnd.2 fun y hy => hin y (List.mem_cons_of_mem _ hy)
     have hsep : ∀ k, k ≠ x.1 → k < 2 ^ 58 → slotW s₁ k = slotW s k := fun k hk hk58 =>
-      Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hk) (by decide)
+      Mem.readW_writeW_sep (slot_sep _ (by omega_using [hk58]) (by omega) hk) (by decide)
     refine ⟨s', ?_, g', rd', wr', ?_, fun k hk hk58 => ?_, fun y hy => ?_⟩
     · rw [List.map_cons, ← List.singleton_append, runBlock_app, stS_ok s x.2 hx.1 hx.2.1,
         Option.bind_some]
@@ -129,13 +129,13 @@ theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s
       · rw [hb, wordAddr, slots_eq]
         exact VG.Offset.contains_base b (by rw [savedSlot_eq]; omega) (by rw [savedSlot_eq]; omega))
   refine ⟨s', by rw [hL]; exact e', fun i hi => ?_, g', rd', wr', f', fun k hk => o' k ?_ (by
-    rw [savedSlot_eq] at hk; omega)⟩
+    rw [savedSlot_eq] at hk; omega_using [hk])⟩
   · have := v' (savedSlot + i, sreg i) (by simp only [L, List.mem_map, List.mem_range]; exact ⟨i, hi, rfl⟩)
     simp only [slotW, g', hb] at this
     exact this
   · rw [hslots]
     simp only [List.mem_map, List.mem_range, not_exists, not_and]
-    intro i hi h; omega
+    intro i hi h; omega_using [hk, h]
 
 theorem restore_ok {s₀ s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b)
     (hs : Saved s₀ b s.mem) :
@@ -192,8 +192,8 @@ theorem setSlotsN_ok (N : Nat) (hN : N ≤ slots) (ms : List (Nat × BitVec 64))
   | nil => exact ⟨s, rfl, by simp, fun _ _ _ => rfl, fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩
   | cons kv ms ih =>
     have hk0 : kv.1 < N := hk kv List.mem_cons_self
-    obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := setOne_ok (k := kv.1) kv.2 hb (by omega) ⟨_, hw, by
-      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega) (by omega)⟩
+    obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := setOne_ok (k := kv.1) kv.2 hb (by omega_using [hN, hk0]) ⟨_, hw, by
+      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega_using [hN, hk0]) (by omega_using [hN, hk0])⟩
     obtain ⟨s', e', v', k', g', rd', wr', f'⟩ := ih (s := s₁) (by rw [g₁ _ sb_ne_t0, hb]) (by rw [wr₁]; exact hw)
       (fun kv h => hk kv (List.mem_cons_of_mem _ h)) (List.nodup_cons.mp hnd).2
     have hb₁ : s₁.gpr sb = b := by rw [g₁ _ sb_ne_t0, hb]
@@ -204,13 +204,13 @@ theorem setSlotsN_ok (N : Nat) (hN : N ≤ slots) (ms : List (Nat × BitVec 64))
       · rename_i h; subst h; exact Mem.readW_writeW_self64 _ _ _
       · rename_i h
         rw [slots_eq] at hk'
-        exact Mem.readW_writeW_sep (slot_sep b (by omega) (by omega) h) (by decide)
+        exact Mem.readW_writeW_sep (slot_sep b (by omega_using [hk']) (by omega_using [hN, hk0]) h) (by decide)
     refine ⟨s', by
       rw [show setSlots (kv :: ms) = (imm t0 kv.2 ++ [stS kv.1 t0]) ++ setSlots ms from rfl,
         runBlock_app, e₁, Option.bind_some, e'], fun x hx => ?_, fun k hk' hn => ?_,
       fun r hr => by rw [g' r hr, g₁ r hr], by rw [rd', rd₁], by rw [wr', wr₁], ?_⟩
     · rcases List.mem_cons.mp hx with rfl | hx
-      · rw [k' _ (by rw [slots_eq]; omega) hnot, hslot _ (by rw [slots_eq]; omega), ite_eq_left rfl]
+      · rw [k' _ (by rw [slots_eq]; omega_using [hN, hk0]) hnot, hslot _ (by rw [slots_eq]; omega_using [hN, hk0]), ite_eq_left rfl]
       · exact v' x hx
     · simp only [List.map_cons, List.mem_cons, not_or] at hn
       rw [k' k hk' hn.2, hslot k hk', ite_eq_right hn.1]
@@ -218,7 +218,7 @@ theorem setSlotsN_ok (N : Nat) (hN : N ≤ slots) (ms : List (Nat × BitVec 64))
       rw [m₁]
       simp only [Mem.writeW, Mem.write, wordAddr]
       exact ite_eq_right fun h => hx _ (List.mem_singleton_self _) (VG.Offset.sub_base b
-        (show 8 * kv.1 + 8 ≤ 8 * N by omega) _ (by simp only [Region.Contains]; omega))
+        (show 8 * kv.1 + 8 ≤ 8 * N by omega_using [hk0]) _ (by simp only [Region.Contains]; omega_using [h]))
 
 theorem setSlots_ok (ms : List (Nat × BitVec 64)) {s : State} {b : Addr} (hb : s.gpr sb = b)
     (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hk : ∀ kv ∈ ms, kv.1 < tableSlot)
@@ -227,6 +227,6 @@ theorem setSlots_ok (ms : List (Nat × BitVec 64)) {s : State} {b : Addr} (hb : 
       (∀ k < slots, k ∉ ms.map (·.1) → slotW s' k = slotW s k) ∧
       (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨b, 8 * tableSlot⟩] s.mem s'.mem :=
-  setSlotsN_ok tableSlot (by rw [tableSlot_eq, slots_eq]; omega) ms hb hw hk hnd
+  setSlotsN_ok tableSlot (by rw [tableSlot_eq, slots_eq]; omega_using []) ms hb hw hk hnd
 
 end VG.Proof.Sm4.AArch64

@@ -75,7 +75,7 @@ theorem random_signer_call (S : Signer) {s : State} {rd wr : List Region}
       (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) := by
   have hd := S.depth
   have hb := S.stackBound
-  refine WP.callFV S.verified.1 hp hr hw (fun t hrd hwr hsp hf hcs hv hp => ?_) (by omega)
-  exact ⟨hrd, hwr, hsp, hcs, Frame.below_mono hf hd (by omega), hp, hv⟩
+  refine WP.callFV S.verified.1 hp hr hw (fun t hrd hwr hsp hf hcs hv hp => ?_) (by omega_using [hd, hb])
+  exact ⟨hrd, hwr, hsp, hcs, Frame.below_mono hf hd (by omega_using [hb]), hp, hv⟩
 
 end VG.Proof.Dsa.AArch64

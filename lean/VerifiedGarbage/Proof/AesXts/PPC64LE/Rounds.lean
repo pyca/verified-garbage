@@ -76,7 +76,7 @@ theorem streamed_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key 
   have hmax := hp.max
   have r3 : s.gpr .r3 = s₀.gpr .r3 := h.effects.keep.gpr (by decide)
   rw [streamed]
-  refine WP.cons (exec_addi' (d := .r9) (n := .r3) (imm := 16 * i) (by omega)) ?_
+  refine WP.cons (exec_addi' (d := .r9) (n := .r3) (imm := 16 * i) (by omega_using [hin, hmax])) ?_
   have h9 : (s.write .r9 (s.gpr .r3 + BitVec.ofNat 64 (16 * i))).gpr .r9 = s₀.gpr .r3 + BitVec.ofNat 64 (16 * i) := by
     rw [RegUpd.gpr_write_self, r3]
   have hz : (s.write .r9 (s.gpr .r3 + BitVec.ofNat 64 (16 * i))).gpr .r0 = 0 := by
@@ -92,7 +92,7 @@ theorem streamed_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key 
       ((s.write .r9 (s.gpr .r3 + BitVec.ofNat 64 (16 * i))).gpr .r9) 16))
       (roundKey (schedule nr s₀) (keyIndex inverse nr (j + 1))) := by
     rw [RegUpd.mem_write, h9, h.effects.mem, hi]
-    exact key_read s₀.mem (s₀.gpr .r3) (by omega)
+    exact key_read s₀.mem (s₀.gpr .r3) (by omega_using [hin])
   refine WP.mono (round_ok inverse false rs _ hn hk hz hmk hr) fun t ⟨hv, ho⟩ => ⟨?_, fun b hb => ?_⟩
   · have hf := (h.effects.trans (Local.write s .r9 (s.gpr .r3 + BitVec.ofNat 64 (16 * i)))).trans
       (Local.of_vector ho)
@@ -117,14 +117,14 @@ theorem residents_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hkr : �
     (fun t u ht hu => ?_) 9 (Nat.le_refl _) s h
   refine resident_ok inverse rs hn hkr hu ?_
   have e : keyIndex inverse nr ((if inverse then nr - 10 else 0) + t + 1) = if inverse then 9 - t else t + 1 := by
-    cases inverse <;> simp only [keyIndex, Bool.false_eq_true, ite_false, ite_true] <;> omega
+    cases inverse <;> simp only [keyIndex, Bool.false_eq_true, ite_false, ite_true] <;> omega_arith
   simp only [Nat.add_eq]
   rw [e]
   cases inverse
   · simp only [Bool.false_eq_true, ite_false]
-    exact hres (t + 1) (by omega) (by omega)
+    exact hres (t + 1) (by omega_using []) (by omega_using [ht])
   · simp only [ite_true]
-    exact hres (9 - t) (by omega) (by omega)
+    exact hres (9 - t) (by omega_using [ht]) (by omega_using [])
 
 /-- `r12` set to `r4 - c`, which is `Nr - c`. -/
 theorem sub12_ok (inverse : Bool) (rs : List VReg) {s₀ s : State} {nr j c : Nat} (hp : Inputs nr s₀)
@@ -143,40 +143,40 @@ theorem extra_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key ∉
     WP isa (extra inverse rs) s (SInv inverse rs s₀ nr ((if inverse then 0 else 9) + (nr - 10))) := by
   have hmax := hp.max
   rw [extra]
-  refine WP.seq (WP.mono (sub12_ok inverse rs hp (c := 10) (by omega) (by decide) h) fun t ⟨ht, h12⟩ => ?_)
-  refine WP.ite (decide (nr - 10 = 0)) (eval_zero_ofNat t .r12 (by omega) h12) (fun hz => ?_) (fun hz => ?_)
+  refine WP.seq (WP.mono (sub12_ok inverse rs hp (c := 10) (by omega_using [hR]) (by decide) h) fun t ⟨ht, h12⟩ => ?_)
+  refine WP.ite (decide (nr - 10 = 0)) (eval_zero_ofNat t .r12 (by omega_using [hR]) h12) (fun hz => ?_) (fun hz => ?_)
   · exact WP.block_nil (by rw [show nr - 10 = 0 by simpa using hz, Nat.add_zero]; exact ht)
-  · have hnz : nr ≠ 10 := by simp at hz; omega
+  · have hnz : nr ≠ 10 := by simp at hz; omega_using [hz]
     cases inverse
     · simp only [Bool.false_eq_true, ite_false] at ht ⊢
       refine WP.seq (WP.mono (?_ : WP isa (.block (streamed false rs 10 ++ streamed false rs 11)) t
         (SInv false rs s₀ nr 11)) fun u hu => ?_)
       · rw [WP.block_append_iff]
-        exact WP.mono (streamed_ok false rs hn hk hm hp ht (by simp [keyIndex]) (by omega)) fun u hu =>
-          streamed_ok false rs hn hk hm hp hu (by simp [keyIndex]) (by omega)
-      refine WP.seq (WP.mono (sub12_ok false rs hp (c := 12) (by omega) (by decide) hu) fun v ⟨hv, h12⟩ => ?_)
-      refine WP.ite (decide (nr - 12 = 0)) (eval_zero_ofNat v .r12 (by omega) h12) (fun hz => ?_) (fun hz => ?_)
-      · exact WP.block_nil (by rw [show 9 + (nr - 10) = 11 by simp at hz; omega]; exact hv)
-      · have e : nr = 14 := by simp at hz; omega
+        exact WP.mono (streamed_ok false rs hn hk hm hp ht (by simp [keyIndex]) (by omega_using [hR])) fun u hu =>
+          streamed_ok false rs hn hk hm hp hu (by simp [keyIndex]) (by omega_using [hR, hnz])
+      refine WP.seq (WP.mono (sub12_ok false rs hp (c := 12) (by omega_using [hR, hnz]) (by decide) hu) fun v ⟨hv, h12⟩ => ?_)
+      refine WP.ite (decide (nr - 12 = 0)) (eval_zero_ofNat v .r12 (by omega_using [hR]) h12) (fun hz => ?_) (fun hz => ?_)
+      · exact WP.block_nil (by rw [show 9 + (nr - 10) = 11 by simp at hz; omega_using [hR, hnz, hz]]; exact hv)
+      · have e : nr = 14 := by simp at hz; omega_using [hR, hz]
         subst e
         rw [WP.block_append_iff]
-        exact WP.mono (streamed_ok false rs hn hk hm hp hv (by simp [keyIndex]) (by omega)) fun w hw =>
-          streamed_ok false rs hn hk hm hp hw (by simp [keyIndex]) (by omega)
+        exact WP.mono (streamed_ok false rs hn hk hm hp hv (by simp [keyIndex]) (by omega_using [])) fun w hw =>
+          streamed_ok false rs hn hk hm hp hw (by simp [keyIndex]) (by omega_using [])
     · simp only [ite_true] at ht ⊢
       refine WP.seq (WP.mono (?_ : WP isa (.seq (.block [.subi .r12 .r4 12])
           (.ite (.zero .d .r12) (.block []) (.block (streamed true rs 13 ++ streamed true rs 12)))) t
         (SInv true rs s₀ nr (nr - 12))) fun u hu => ?_)
-      · refine WP.seq (WP.mono (sub12_ok true rs hp (c := 12) (by omega) (by decide) ht) fun v ⟨hv, h12⟩ => ?_)
-        refine WP.ite (decide (nr - 12 = 0)) (eval_zero_ofNat v .r12 (by omega) h12) (fun hz => ?_) (fun hz => ?_)
+      · refine WP.seq (WP.mono (sub12_ok true rs hp (c := 12) (by omega_using [hR, hnz]) (by decide) ht) fun v ⟨hv, h12⟩ => ?_)
+        refine WP.ite (decide (nr - 12 = 0)) (eval_zero_ofNat v .r12 (by omega_using [hR]) h12) (fun hz => ?_) (fun hz => ?_)
         · exact WP.block_nil (by rw [show nr - 12 = 0 by simpa using hz]; exact hv)
-        · have e : nr = 14 := by simp at hz; omega
+        · have e : nr = 14 := by simp at hz; omega_using [hR, hz]
           subst e
           rw [WP.block_append_iff]
-          exact WP.mono (streamed_ok true rs hn hk hm hp hv (by simp [keyIndex]) (by omega)) fun w hw =>
-            streamed_ok true rs hn hk hm hp hw (by simp [keyIndex]) (by omega)
-      · rw [WP.block_append_iff, show 0 + (nr - 10) = nr - 12 + 1 + 1 by omega]
-        exact WP.mono (streamed_ok true rs hn hk hm hp hu (by simp [keyIndex]; omega) (by omega)) fun w hw =>
-          streamed_ok true rs hn hk hm hp hw (by simp [keyIndex]; omega) (by omega)
+          exact WP.mono (streamed_ok true rs hn hk hm hp hv (by simp [keyIndex]) (by omega_using [])) fun w hw =>
+            streamed_ok true rs hn hk hm hp hw (by simp [keyIndex]) (by omega_using [])
+      · rw [WP.block_append_iff, show 0 + (nr - 10) = nr - 12 + 1 + 1 by omega_using [hR, hnz]]
+        exact WP.mono (streamed_ok true rs hn hk hm hp hu (by simp [keyIndex]; omega_using [hR, hnz]) (by omega_using [hR, hnz])) fun w hw =>
+          streamed_ok true rs hn hk hm hp hw (by simp [keyIndex]; omega_using [hR, hnz]) (by omega_using [hR])
 
 /-- The last round, with key `Nr` (key 0 when deciphering). -/
 theorem final_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key ∉ rs) (hm : mask ∉ rs)
@@ -212,7 +212,7 @@ theorem final_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key ∉
     exact hp.reads _ hidx
   have hkey : IsKey (rev128 (w.mem.read (w.gpr .r9) 16)) (roundKey (schedule nr s₀) (keyIndex inverse nr nr)) := by
     rw [lw.mem, h.effects.mem, h9]
-    exact key_read s₀.mem (s₀.gpr .r3) (by omega)
+    exact key_read s₀.mem (s₀.gpr .r3) (by omega_using [hidx])
   refine WP.mono (round_ok inverse true rs w hn hk hz hmk hr) fun t ⟨hv, ho⟩ => ⟨fun b hb => ?_, ?_⟩
   · rw [hv b hb, vcipher_transform inverse true hkey, lw.v _ (by simp), h.val b hb]
     have e := middle_last inverse nr (schedule nr s₀) (aesState (s₀.vpr b))
@@ -229,7 +229,7 @@ theorem aesRes_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key �
     WP isa (aesRes inverse rs) s fun t =>
       (∀ b ∈ rs, aesState (t.vpr b) = result inverse nr (schedule nr s) (aesState (s.vpr b))) ∧
       Local [.r9, .r10, .r12] (key :: rs) s t := by
-  have hnr : 10 ≤ nr := by omega
+  have hnr : 10 ≤ nr := by omega_using [hR]
   rw [aesRes]
   refine WP.seq (WP.mono (initialBody_ok inverse rs hn hk hp) fun t ht => ?_)
   have h0 : SInv inverse rs s nr 0 t := ⟨ht.effects.weaken (by simp) (fun _ h => h), ht.val⟩
@@ -241,11 +241,11 @@ theorem aesRes_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key �
     refine WP.seq (WP.mono (residents_ok false rs hn hkr hnr hres (by simpa using h0)) fun u hu => ?_)
     refine WP.mono (extra_ok false rs hn hk hm hp hR (by simpa using hu)) fun v hv => ?_
     simp only [Bool.false_eq_true, ite_false] at hv
-    rwa [show 9 + (nr - 10) = nr - 1 by omega] at hv
+    rwa [show 9 + (nr - 10) = nr - 1 by omega_using [hR]] at hv
   · simp only [ite_true]
     refine WP.seq (WP.mono (extra_ok true rs hn hk hm hp hR (by simpa using h0)) fun u hu => ?_)
     refine WP.mono (residents_ok true rs hn hkr hnr hres (by simpa using hu)) fun v hv => ?_
     simp only [ite_true] at hv
-    rwa [show nr - 10 + 9 = nr - 1 by omega] at hv
+    rwa [show nr - 10 + 9 = nr - 1 by omega_using [hR]] at hv
 
 end VG.Proof.AesXts.PPC64LE

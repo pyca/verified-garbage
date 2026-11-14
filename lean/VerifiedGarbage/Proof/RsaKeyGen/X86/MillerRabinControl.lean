@@ -18,13 +18,13 @@ theorem word_equal4 (x : BitVec 32) : (x - 4#32 == 0#32) = decide (x.toNat = 4) 
   rw [← BitVec.toNat_inj, BitVec.toNat_sub]
   change (2 ^ 32 - 4 + x.toNat) % 2 ^ 32 = 0 ↔ x.toNat = 4
   have := x.isLt
-  omega
+  omega_using []
 
 theorem again_ok {g : Geometry} (v : g.Valid) {s : State} (S : Scr s g.W g.L) :
     WP isa (.block again) s fun t =>
       t.zf = some (decide (w32 s.mem g.W 168 = 4)) ∧ t.mem = s.mem ∧ Keeps [.eax] s t := by
   unfold again
-  refine wp_movS (readSrc_sc S (by have := v.headerFit; omega)) fun a A _ =>
+  refine wp_movS (readSrc_sc S (by have := v.headerFit; omega_using [this])) fun a A _ =>
     wp_cmpS rfl fun t T Z => WP.block_nil ?_
   refine ⟨?_, T.mem.trans A.mem, A.keeps.trans (T.keeps _)⟩
   rw [Z, A.gpr]
@@ -40,7 +40,7 @@ theorem exhausted_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat}
   unfold exhausted
   refine wp_movS rfl fun a A _ => ?_
   have Sa := S.ready.scratch.of_keeps A.keeps (by decide)
-  refine wp_storeS (Sa.ea (by omega)) (Sa.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (Sa.ea (by omega_using [head])) (Sa.write (by omega_using [head])) fun t T => WP.block_nil ?_
   have O : Outside g.W 168 4 s.mem t.mem := by
     rw [T.mem, A.mem]
     exact writeW32_outside _ _ _ (by decide)

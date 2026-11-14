@@ -37,7 +37,7 @@ theorem Inv.transferPoint {M : Mod} {base : Addr} {size : Nat} {C : Curve}
       have hx₂ := hx o.z (by simp [jacCoords])
       rw [hy] at hx₁
       rw [hz] at hx₂
-      omega
+      omega_using [hx₀, hx₁, hx₂]
   have hlt : ∀ x∈jacCoords o, wordsVal t.mem base x M.n<C.p := by
     intro x hx
     simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -69,13 +69,13 @@ theorem nafTablePoint_ok {K : WinCfg} {base : Addr} {size j : Nat} {C : Curve}
         (tmv C K.M.n base t (K.tblPt (j+1)).y) (tmv C K.M.n base t (K.tblPt (j+1)).z) P := by
   have hrz := hL.le K.R.z (hI.sl _ (hQ _ (by simp [jacCoords])))
   rw [hz] at hrz
-  refine WP.mono (nafTableStore_ok hI.scr hj hc hn ht hT (by omega) hSep)
+  refine WP.mono (nafTableStore_ok hI.scr hj hc hn ht hT (by omega_using [hrz]) hSep)
     fun t ⟨hv,hk,ho⟩ => hI.transferPoint hL ?_ ?_ hD hQ ?_ ?_ ?_ hk ?_ hJ
   · simp only [WinCfg.tblPt]
   · simp only [WinCfg.tblPt]
   · simpa only [WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_zero,Nat.add_zero] using hv 0 (by decide)
   · simpa only [hy,WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_one] using hv 1 (by decide)
-  · simpa only [hz,WinCfg.tblPt,Nat.add_sub_cancel,show 8*K.M.n*2=16*K.M.n by omega]
+  · simpa only [hz,WinCfg.tblPt,Nat.add_sub_cancel,show 8*K.M.n*2=16*K.M.n by omega_using []]
       using hv 2 (by decide)
   · simpa only [WinCfg.tblPt,Nat.add_sub_cancel] using ho
 

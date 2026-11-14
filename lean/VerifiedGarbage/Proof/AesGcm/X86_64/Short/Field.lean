@@ -53,29 +53,29 @@ theorem gacc_field {m : Mem} {G T : Addr} {H : Block} {g : Nat} (hT : TabOk m T 
     simp only [gacc, List.range_zero, List.foldl_nil, Prod.val_zero, Nat.mul_zero, blocksAt, List.map_nil,
       ghashFrom_nil, φ_zero, zero_mul, add_zero]
   | n + 1, h => by
-    have ih := gacc_field (G := G) hT n (by omega)
-    obtain ⟨k, rfl⟩ : ∃ k, g = n + 1 + k := ⟨g - (n + 1), by omega⟩
-    have t := F_of_tabOk hT k (by omega)
+    have ih := gacc_field (G := G) hT n (by omega_using [h])
+    obtain ⟨k, rfl⟩ : ∃ k, g = n + 1 + k := ⟨g - (n + 1), by omega_using [h]⟩
+    have t := F_of_tabOk hT k (by omega_using [])
     simp only [gacc_succ, Prod.val_acc]
-    rw [show n + 1 + k - 1 - n = k by omega, show 4 * (n + 1) = 4 * n + 4 by omega, blocksAt_add,
-      ghashFrom_append, show n + 1 + k - (n + 1) = k by omega]
-    rw [show n + 1 + k - n = k + 1 by omega] at ih
+    rw [show n + 1 + k - 1 - n = k by omega_using [], show 4 * (n + 1) = 4 * n + 4 by omega_using [], blocksAt_add,
+      ghashFrom_append, show n + 1 + k - (n + 1) = k by omega_using []]
+    rw [show n + 1 + k - n = k + 1 by omega_using []] at ih
     have hb : blocksAt m (G + BitVec.ofNat 64 (16 * (4 * n))) 4 =
         [blockAt m (G + BitVec.ofNat 64 (64 * n + 16 * 0)), blockAt m (G + BitVec.ofNat 64 (64 * n + 16 * 1)),
          blockAt m (G + BitVec.ofNat 64 (64 * n + 16 * 2)), blockAt m (G + BitVec.ofNat 64 (64 * n + 16 * 3))] := by
       simp only [blocksAt, List.range_succ, List.range_zero, List.nil_append, List.cons_append, List.map_cons,
         List.map_nil, add_ofNat_ofNat]
-      refine List.cons_eq_cons.mpr ⟨by congr 3; omega, List.cons_eq_cons.mpr ⟨by congr 3; omega,
-        List.cons_eq_cons.mpr ⟨by congr 3; omega, List.cons_eq_cons.mpr ⟨by congr 3; omega, rfl⟩⟩⟩⟩
+      refine List.cons_eq_cons.mpr ⟨by congr 3; omega_using [], List.cons_eq_cons.mpr ⟨by congr 3; omega_using [],
+        List.cons_eq_cons.mpr ⟨by congr 3; omega_using [], List.cons_eq_cons.mpr ⟨by congr 3; omega_using [], rfl⟩⟩⟩⟩
     rw [hb, φ_ghashFrom4]
     have t0 := t 0 (by decide)
     have t1 := t 1 (by decide)
     have t2 := t 2 (by decide)
     have t3 := t 3 (by decide)
-    rw [show 4 * k + 4 - 0 = 4 * k + 4 by omega] at t0
-    rw [show 4 * k + 4 - 1 = 4 * k + 3 by omega] at t1
-    rw [show 4 * k + 4 - 2 = 4 * k + 2 by omega] at t2
-    rw [show 4 * k + 4 - 3 = 4 * k + 1 by omega] at t3
+    rw [show 4 * k + 4 - 0 = 4 * k + 4 by omega_using []] at t0
+    rw [show 4 * k + 4 - 1 = 4 * k + 3 by omega_using []] at t1
+    rw [show 4 * k + 4 - 2 = 4 * k + 2 by omega_using []] at t2
+    rw [show 4 * k + 4 - 3 = 4 * k + 1 by omega_using []] at t3
     linear_combination ih + φ (blockAt m (G + BitVec.ofNat 64 (64 * n + 16 * 0))) * t0 +
       φ (blockAt m (G + BitVec.ofNat 64 (64 * n + 16 * 1))) * t1 +
       φ (blockAt m (G + BitVec.ofNat 64 (64 * n + 16 * 2))) * t2 +

@@ -100,9 +100,9 @@ theorem args_out {t : State} (h : Pre F t) {s : State} (hsp : s.gpr .esp = E t) 
   rw [e, hwr, h.wr]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_i h.i_a.symm
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_o h.o_a.symm
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_s h.s_a.symm
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_i h.i_a.symm
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_o h.o_a.symm
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_s h.s_a.symm
 
 section
 variable {s₀ s₀' : State} (hp : Pre F s₀) (hp' : Pre F s₀') (hq : PubEq s₀ s₀')
@@ -212,7 +212,7 @@ theorem hashKey_rel :
       have ekp : kp F t₀ = dO t₀ F.hkO := by simp only [kp, hlt, ↓reduceIte]
       have ekl : kl F t₀ = F.H.D := by simp only [kl, hlt, ↓reduceIte]
       refine ⟨k', by rw [ekp]; exact d, by rw [ekl]; exact c, ?_⟩
-      rw [ekp, ekl, dO_addr hp₀ (hz.hkO_lt), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
+      rw [ekp, ekl, dO_addr hp₀ (hz.hkO_lt), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega_using [hlt])
         (hash_len hF.hH b)])
   exact r1.seq (r2.seq (r3.seq (r4.seq (r5.seq (r6.seq r7)))))
 
@@ -239,7 +239,7 @@ theorem key_rel :
       · rw [u₂.other _ (by decide), c, ekl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       · rw [u₂.mem, ekp, ekl, k.keyBytes hp₀]
     · have := of_decide_eq_false ((ev h.1.1).symm.trans h.2 |> Option.some.inj)
-      have hlt : kln s₀ < F.H.B + 1 := by omega
+      have hlt : kln s₀ < F.H.B + 1 := by omega_using [this]
       exact ⟨⟨h.1.1, hlt⟩, h.1.2, by rw [hq.klnEq]; exact hlt⟩
 
 /-- After `anyArgs`. -/
@@ -348,7 +348,7 @@ theorem anyImp (h : ∃ s, (anyScratchContract S W).pre s) : (anyG S W).Implies 
         simp only [argVal32] at h
         obtain ⟨e, a0, a1, a2, a3, a4⟩ := h
         refine ⟨e, fun i hi => ?_⟩
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
         · exact setWidth_inj32 a0
         · exact setWidth_inj32 a1
         · exact setWidth_inj32 a2
@@ -405,7 +405,7 @@ theorem hmacInitAny_stack (hF : FnsOK F) : stackUse F.hmacInitAny ≤ 76 := by
   have := hF.hH.initSU; have := hF.hH.updSU; have := hF.hH.finSU; have := hF.hiSU
   simp only [Fns.hmacInitAny, Fns.anyKey, Fns.anyHashKey, Impl.Pbkdf2.Stream.X86.Hash.callInit,
     stackUse, frameBytes, List.length_cons, List.length_nil, Nat.max_le] at *
-  omega
+  omega_arith
 
 /-- `initAny`'s instructions all satisfy `p` if those of the functions it
 calls do and those of its own pieces do (`shapeOf`, decided for each hash
@@ -460,10 +460,10 @@ theorem anyFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (n := I.initAnyKeyScratch) (post := Spec.Hmac.initPost I.S X86.abi.ptrBits) (wa := true) (stack := 76)
     (bytes := anyFrame I) (words := 2 * I.initAnyKeyScratch) h
     (by
-      refine ⟨?_, by simp only [anyFrame]; omega, by simp only [anyFrame]; omega⟩
+      refine ⟨?_, by simp only [anyFrame]; omega_using [hs], by simp only [anyFrame]; omega_using []⟩
       change 8 + 4 * 4 + I.initAnyKeyScratch * 8 ≤ anyFrame I
-      simp only [anyFrame]; omega)
-    hsp hd (by change 4 * (2 * I.initAnyKeyScratch) ≤ I.initAnyKeyScratch * 8; omega)
+      simp only [anyFrame]; omega_using [])
+    hsp hd (by change 4 * (2 * I.initAnyKeyScratch) ≤ I.initAnyKeyScratch * 8; omega_using [])
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
 

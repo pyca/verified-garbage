@@ -102,9 +102,9 @@ theorem entry_base {s : State} (c : CdCtx s) :
       (∀ i < 6, word t.mem (cdOf s).B (8 * i) = s.gpr (saved.getD i .rax)) ∧ Keep (.rdi :: mmRegs) s t := by
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (cdEntry_ok rfl (fun i hi => c.scr.st (by omega)))
+  refine WP.mono (cdEntry_ok rfl (fun i hi => c.scr.st (by omega_using [hZ, hi])))
     fun t ⟨hd, hs, hh, hf, k⟩ => ?_
-  have hi : InScr (cdOf s).B (cdOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [cdOf]; omega)
+  have hi : InScr (cdOf s).B (cdOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [cdOf]; omega_using [hZ])
   refine ⟨⟨c.k1, c.k2, c.dl, bytesAt_length _ _ _, c.hZ, c.scr.congr k.2.2, c.dom.congrK hi k,
     ?_⟩, hd, hi, hs, k.mono (by decide)⟩
   change Slots t.mem (s.gpr .rcx) (cdOf s).headers
@@ -118,23 +118,23 @@ theorem dom_base {p : CdP} {s : State} (h : Base p s) (hdi : s.gpr .rdi = p.B) :
       (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) ∧ Keep (.rdi :: mmRegs) s t := by
   have hZ := h.hZ
   have hk := h.k1
-  refine WP.mono (domHead_ok h.scr hdi (by omega) h.k1 h.k2
+  refine WP.mono (domHead_ok h.scr hdi (by omega_using [hZ]) h.k1 h.k2
     (h.hdr (sDom, p.dp) (by simp [CdP.headers]))
     (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers])) (h.dom.take p.k) h.plen)
     fun t ⟨hz, hG, hQ, hf, hd, k⟩ => ?_
   have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega)
+    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_using [hZ])
   have hh : ∀ i < 32, i ≠ sG → i ≠ sQ → word t.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
     fun i hi hg hq => hf.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega) (by omega)
+      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_arith) (by omega_using [hi])
   refine ⟨h.keep hi k ?_, hz, hd, hG, hQ, hi, ?_, k.mono (by decide)⟩
   · intro e he
     simp only [CdP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl <;>
       exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide)
   · intro i hi
-    exact hh i (by omega) (by unfold sG sFn; omega) (by unfold sQ sFn; omega)
+    exact hh i (by omega_using [hi]) (by unfold sG sFn; omega_using [hi]) (by unfold sQ sFn; omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.CheckDomain

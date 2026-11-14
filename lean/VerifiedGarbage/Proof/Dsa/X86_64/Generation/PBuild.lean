@@ -56,7 +56,7 @@ theorem pBuild_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
     exact (hk.gpr hr').trans (csu r hr)
   · intro a ha
     rw [hf a (fun i hi he => ha ⟨op, plen⟩ (by simp) (he ▸
-      Offset.contains_base op (by omega) (by omega)))]
+      Offset.contains_base op (by omega_using [hi]) (by omega_using [hlmax, hi])))]
     exact hfu a (fun r hr => ha r (List.mem_cons_of_mem _ hr))
 
 end VG.Proof.Dsa.X86_64.Generation

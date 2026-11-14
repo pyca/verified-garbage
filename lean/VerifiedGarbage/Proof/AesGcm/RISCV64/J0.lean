@@ -49,7 +49,7 @@ theorem ww32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega), Nat.mod_eq_of_lt this]
+  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega_using []), Nat.mod_eq_of_lt this]
 
 theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := by simp
 
@@ -103,7 +103,7 @@ theorem inc32_bytes {t : List Byte} (ht : t.length = 16) {w : BitVec 32}
     rw [← hw, Proof.AesCtr.lo32, hT]; omega_arith
   have hx : (w.setWidth 64 + BitVec.ofNat 64 1).toNat = w.toNat + 1 := by
     have := w.isLt
-    rw [BitVec.toNat_add, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (show w.toNat < 2 ^ 64 by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (show w.toNat < 2 ^ 64 by omega_using [])]
     show (w.toNat + 1) % 2 ^ 64 = _
     omega_arith
   apply BitVec.eq_of_toNat_eq
@@ -173,15 +173,15 @@ theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In V sp H Np 12 s) :
   refine WP.block_append (WP.mono (Bytes.copyBytes_ok (tmp := .t0) (src := .s4) (dst := .s1) (soff := 0)
     (doff := 0) (n := 12) (by decide) (by decide) (by decide) (by decide) (fun i hi => ?_) (fun i hi => ?_)
     (fun i hi hc => ?_)) fun s₁ c => ?_)
-  · rw [h24, Nat.zero_add]; exact in_off hd.rd (d := i) (n := 1) (by omega) (by decide)
-  · rw [hst, Nat.zero_add]; exact he.perm.stW (by omega)
+  · rw [h24, Nat.zero_add]; exact in_off hd.rd (d := i) (n := 1) (by omega_using [hi]) (by decide)
+  · rw [hst, Nat.zero_add]; exact he.perm.stW (by omega_using [hi])
   · rw [hst, h24, Nat.zero_add, add_ofNat_zero] at hc
-    refine hd.st (Np + BitVec.ofNat 64 i) (Offset.contains_base Np (by omega) (by omega)) ?_
+    refine hd.st (Np + BitVec.ofNat 64 i) (Offset.contains_base Np (by omega_using [hi]) (by omega_using [hi])) ?_
     exact Lay.stSub (S := V .s1) (d := 0) (n := 12) (by decide) _ (by rw [add_ofNat_zero]; exact hc)
   have g1 : s₁.gpr .s1 = V .s1 := (c.gpr _ (by decide)).trans hst
   refine WP.mono (Bytes.storeBytes_ok (tmp := .t0) (dst := .s1) (doff := 12) (bs := [0, 0, 0, 1])
     (by decide) (by decide) (by decide) (fun i hi => ?_)) fun s₂ c₂ => ?_
-  · rw [g1, c.wr]; simp only [List.length_cons, List.length_nil] at hi; exact he.perm.stW (by omega)
+  · rw [g1, c.wr]; simp only [List.length_cons, List.length_nil] at hi; exact he.perm.stW (by omega_using [hi])
   have c₂f : Frame [⟨V .s1 + BitVec.ofNat 64 12, 4⟩] s₁.mem s₂.mem := by
     have := c₂.frame; rwa [g1] at this
   have c₂s : ∀ j < 4, s₂.mem (V .s1 + BitVec.ofNat 64 (12 + j)) = BitVec.ofNat 8 ([0, 0, 0, 1].getD j 0) :=
@@ -256,7 +256,7 @@ theorem initState_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : 
   rw [WP.block_append_iff]
   refine WP.mono (ByteLoad.storeBE_ok (v := .a0) (tmp := .t0) (n := .s1) (off := 60) (w := 4) (by decide)
     (by decide) (by decide) (by decide) (by decide) fun j hj => by
-      rw [g₆, w₆]; exact he.perm.stW (d := 60 + j) (n := 1) (by omega)) fun s₇ e₇ => ?_
+      rw [g₆, w₆]; exact he.perm.stW (d := 60 + j) (n := 1) (by omega_using [hj])) fun s₇ e₇ => ?_
   have g₇ : s₇.gpr .s1 = V .s1 := by rw [e₇, RegUpd.gpr_write_of_ne _ _ (by decide)]; exact g₆
   have w₇ : s₇.wr = s.wr := by rw [e₇]; exact w₆
   refine Steps.wp_li (imm := 0) (by decide) fun s₈ u₈ => ?_
@@ -396,7 +396,7 @@ theorem j0zero_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H
     exact hd.st.sub_right (Lay.stSub (by decide))
   refine ⟨⟨he.keep (fun r hr => hg₁ r (by revert r; decide) (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr,
     by rw [hg₁ _ (by decide) (by decide), h.s4], by rw [hg₁ _ (by decide) (by decide), h.s5],
-    by rw [h26]; rfl, hd.of_eq hk₁.rd hk₁.wr hk₁.sp, ?_⟩, ?_, bytesAt_frame f₁ dD (by have := hd.lt; omega), f₁⟩
+    by rw [h26]; rfl, hd.of_eq hk₁.rd hk₁.wr hk₁.sp, ?_⟩, ?_, bytesAt_frame f₁ dD (by have := hd.lt; omega_using [this]), f₁⟩
   · rw [blockAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_st (by decide) (by decide)), h.hH]
   · rw [blockAt, hm₁, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; decide
@@ -465,7 +465,7 @@ theorem eval_subk {s : State} {r : Reg} {a k : Nat}
       intro e
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_sub, toNat64 ha, toNat64 hk] at this
-      simp at this; omega
+      simp at this; omega_using [ha, hk, hak, this]
     simp only [hak, decide_false, beq_eq_false_iff_ne.mpr this]
 
 /-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/

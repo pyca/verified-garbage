@@ -73,10 +73,10 @@ theorem powerBase_ok (s : State) {base src ep : BitVec 32} {len w M : Nat} {bb e
     (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide : 0 ≠ 1)).trans h.modulus
   have r2T := (keeps_array_num keeps bound
     (by simp [Proof.Rsa.Mont.Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide : 4 ≠ 1)).trans h.r2
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at bound; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at bound; omega_using [bound]
   refine ⟨⟨ready, modT, h.odd, value,
-    by rw [r2T]; exact Nat.mod_lt _ (by have := h.ready.modulus; rw [h.modulus] at this; omega),
-    by rw [r2T, Nat.mod_mod, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega],
+    by rw [r2T]; exact Nat.mod_lt _ (by have := h.ready.modulus; rw [h.modulus] at this; omega_using [this]),
+    by rw [r2T, Nat.mod_mod, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []],
     (keeps_header_readW keeps size (d := 128) (bits := 32) (by decide)).trans prepared.pointer,
     (keeps_header_readW keeps size (d := 132) (bits := 32) (by decide)).trans prepared.count,
     h.exponentPositive, h.exponentFits, ebT.fits, ebT.readable, ebT.separate, ebT.byte⟩, frame, rest⟩

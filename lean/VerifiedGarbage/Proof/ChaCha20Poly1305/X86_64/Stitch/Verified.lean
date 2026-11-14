@@ -1295,13 +1295,13 @@ theorem preS_rel :
       exact hc hb
     refine (relCT_narrow (c := .seq (.block enter) (tailP v.callee.vl))
       (fun _ => bulkWr (cx s₀) (dp s₀) (L s₀)) (fun s₁ s₂ ⟨⟨h₁, h₂⟩, _⟩ => ?_)
-      (tailPS_rel hl (s₀.gpr .rsp) v.callee.vl (by omega) (by omega))).mono (fun _ _ h => h) fun _ _ h => h
+      (tailPS_rel hl (s₀.gpr .rsp) v.callee.vl (by omega) (by omega_using [hc]))).mono (fun _ _ h => h) fun _ _ h => h
     have B₁ := h₁.bpp
     have B₂ := b₂ h₂
     obtain ⟨-, wr₁, rsi₁, rdx₁, rcx₁, -, k₁, m₁, r₁⟩ := id B₁
     obtain ⟨-, wr₂, rsi₂, rdx₂, rcx₂, -, k₂, m₂, r₂⟩ := id B₂
-    exact ⟨cov h₁, cov' h₂, ⟨_, tailPS_ok _ hl (by omega) (by omega) wr₁ rsi₁ rdx₁ rcx₁ r₁⟩,
-      ⟨_, tailPS_ok _ hl (by omega) (by omega) wr₂ rsi₂ rdx₂ rcx₂ r₂⟩, B₁, B₂⟩
+    exact ⟨cov h₁, cov' h₂, ⟨_, tailPS_ok _ hl (by omega) (by omega_using [hc]) wr₁ rsi₁ rdx₁ rcx₁ r₁⟩,
+      ⟨_, tailPS_ok _ hl (by omega) (by omega_using [hc]) wr₂ rsi₂ rdx₂ rcx₂ r₂⟩, B₁, B₂⟩
   · -- The whole chunks after the 448 bytes.
     by_cases hc : L s₀ - 448 < 513
     · refine RelCT.of_false fun s₁ s₂ ⟨⟨h₁, _⟩, hb⟩ => ?_

@@ -55,6 +55,6 @@ theorem PrecomputedInputs.dimensions {base : Addr} {bytes len : Nat} {args : Nat
   have := h.lower
   have := h.upper
   unfold Spec.Rsa.modulusWords
-  omega
+  omega_arith
 
 end VG.Proof.Bignum.X86

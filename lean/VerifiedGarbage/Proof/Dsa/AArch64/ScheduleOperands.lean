@@ -28,8 +28,8 @@ theorem CallResult.external {L : ExecutionLayout} {side : ModulusSide} {d value 
       pointerValue s.mem L.base a.pointer + BitVec.ofNat 64 i ≠ off L.base d + BitVec.ofNat 64 j := by
     intro i hi j hj he
     have hx := hs.source.out i hi
-    rw [he, ofs_off L.base (by have := h.ready.scratch.nowrap; omega)] at hx
-    omega
+    rw [he, ofs_off L.base (by have := h.ready.scratch.nowrap; omega_using [hend, hj, this])] at hx
+    omega_using [hend, hj, hx]
   exact callFrame_source h.frame h.keep (by decide) (Nat.le_trans hhi (by decide)) (by decide) hs.source hsep
 
 theorem CallResult.local {L : ExecutionLayout} {side : ModulusSide} {d value e : Nat} {s t : State}
@@ -42,8 +42,8 @@ theorem CallResult.local {L : ExecutionLayout} {side : ModulusSide} {d value e :
   change off L.base e + BitVec.ofNat 64 i = off L.base d + BitVec.ofNat 64 j at heq
   have hn := h.ready.scratch.nowrap
   have hx := congrArg (ofs L.base) heq
-  rw [ofs_off L.base (by omega), ofs_off L.base (by omega)] at hx
-  omega
+  rw [ofs_off L.base (by omega_using [he, hi, hn]), ofs_off L.base (by omega_using [hend, hj, hn])] at hx
+  omega_using [hsep, hi, hj, hx]
 
 theorem ExecutionLayout.widths (L : ExecutionLayout) :
     1 ≤ L.qLen ∧ L.qLen ≤ 32 ∧ L.qLen ≤ L.pLen ∧ L.pLen ≤ 384 := by
@@ -55,7 +55,7 @@ theorem CallResult.scheduleFrame {L : ExecutionLayout} {side : ModulusSide} {d v
   have hhi := (side.bounds L).2.2.2.2.1
   have hslot : 136 ≤ slot (side.words L) 8 + tabBytes (side.words L) := by
     unfold slot hdrBytes
-    omega
+    omega_using []
   have hau : activeBytes ≤ usedBytes := by decide
   have hlu : 176 ≤ usedBytes := by decide
   have hla : 128 ≤ activeBytes := by decide
@@ -64,6 +64,6 @@ theorem CallResult.scheduleFrame {L : ExecutionLayout} {side : ModulusSide} {d v
   apply h.localFrame hend x
   intro range hr
   simp only [localCallRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> simp only at * <;> omega
+  rcases hr with rfl | rfl | rfl <;> simp only at * <;> omega_arith
 
 end VG.Proof.Dsa.AArch64

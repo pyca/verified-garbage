@@ -53,7 +53,7 @@ theorem wf {s : State} (hp : UPre s) : X86_64.Taint.Wf τ₀ s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · show 16 ≤ 2 ^ 64; decide
-    · show 16 * N s ≤ 2 ^ 64; omega
+    · show 16 * N s ≤ 2 ^ 64; omega_using [this]
     · show 2176 ≤ 2 ^ 64; decide
   · simp only [τ₀, List.mem_singleton] at hq; subst hq
     simp only [X86_64.Taint.region, hp.wr, List.getD_cons_succ, List.getD_cons_zero, BitVec.ofNat_eq_ofNat,

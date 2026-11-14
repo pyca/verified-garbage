@@ -21,6 +21,6 @@ theorem productInput_offset {s : State} {a b : Addr} {u j e : Nat}
   unfold productInput
   rw [ha,hb,vword_read16 _ _ he,vword_read16 _ _ he]
   simp only [coeffAt,BitVec.add_assoc,← BitVec.ofNat_add]
-  congr 3 <;> congr 1 <;> omega
+  congr 3 <;> congr 1 <;> omega_using []
 
 end VG.Proof.MlDsa.AArch64.Optimized

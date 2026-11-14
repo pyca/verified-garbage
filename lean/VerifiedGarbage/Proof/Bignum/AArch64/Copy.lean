@@ -41,7 +41,7 @@ theorem copyStep_ok {s₀ : State} {S D : Addr} {eS eD w : Nat} (hD : eD + 8 * w
     rw [hI.keep.rd, hI.keep.wr]; exact hrd j hj
   have hst : InRegions t.wr (off D (eD + 8 * j)) 8 := by rw [hI.keep.wr]; exact hwr j hj
   have hv : word t.mem S (eS + 8 * j) = word s₀.mem S (eS + 8 * j) :=
-    Mem.readW_congr fun b hb => hI.frame _ (by have := hsep j hj b hb; omega)
+    Mem.readW_congr fun b hb => hI.frame _ (by have := hsep j hj b hb; omega_using [hj, this])
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x3, .x16, .x17] (Q := fun t₁ =>
       t₁.mem = t.mem.writeW (off D (eD + 8 * j)) (word s₀.mem S (eS + 8 * j)) ∧
@@ -54,12 +54,12 @@ theorem copyStep_ok {s₀ : State} {S D : Addr} {eS eD w : Nat} (hD : eD + 8 * w
     by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], fun i hi => ?_, ?_⟩
   · rw [hm', hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [(writeW_outside t.mem D _ (by omega)).word (by omega) (by omega)]; exact hI.done i hi
+    · rw [(writeW_outside t.mem D _ (by omega_using [hD, hj])).word (by omega_using [hi]) (by omega_arith)]; exact hI.done i hi
     · exact word_writeW_self _ _ _ _
   · rw [hm', hm]
     intro x hx'
-    rw [writeW_outside t.mem D _ (by omega) x (by omega)]
-    exact hI.frame x (by omega)
+    rw [writeW_outside t.mem D _ (by omega_using [hD, hj]) x (by omega_using [hx'])]
+    exact hI.frame x (by omega_using [hx'])
 
 /-- `copyWords`: the `w` words at `S + eS` (`x16`) to `D + eD` (`x17`), which
 they do not overlap, changing only those. -/
@@ -80,7 +80,7 @@ theorem copyWords_ok {s : State} {S D : Addr} {eS eD w : Nat}
   have h0 : CopyInv s S D eS eD 0 s₁ :=
     ⟨k₁.mono (by decide), by rw [k₁.gpr .x16 (by decide), h16]; rfl, by rw [k₁.gpr .x17 (by decide), h17]; rfl,
       fun i hi => absurd hi (Nat.not_lt_zero _), by rw [hm₁]; exact Outside.refl _ _ _ _⟩
-  refine WP.mono (wp_countdown (N := w) (by omega) (by omega) (CopyInv s S D eS eD)
+  refine WP.mono (wp_countdown (N := w) (by omega_using [hw']) (by omega_using [hw]) (CopyInv s S D eS eD)
     (fun j hj t hI _ => copyStep_ok hD hrd hwr hsep hj hI) h0 h14) fun t hI => ?_
   exact ⟨wv_congr2 hI.done, hI.done, hI.frame, hI.x16, hI.x17, hI.keep⟩
 
@@ -108,8 +108,8 @@ theorem cmpStep_ok {s₀ : State} {B : Addr} {Z w eX eN : Nat} (hX : eX + 8 * w 
         t.c.toNat) ∧
       t₁.gpr .x3 = word t.mem B (eX + 8 * j) + ~~~word t.mem B (eN + 8 * j) + BitVec.ofNat 64 t.c.toNat ∧
       t₁.gpr .x16 = off B (eX + 8 * j + 8) ∧ t₁.gpr .x17 = off B (eN + 8 * j + 8))
-    (by brun [hI.x16, hI.x17, hI.scr.ld (show eX + 8 * j + 8 ≤ Z by omega),
-      hI.scr.ld (show eN + 8 * j + 8 ≤ Z by omega)]) (by decide) (by decide) (by decide +kernel))
+    (by brun [hI.x16, hI.x17, hI.scr.ld (show eX + 8 * j + 8 ≤ Z by omega_using [hX, hj]),
+      hI.scr.ld (show eN + 8 * j + 8 ≤ Z by omega_using [hN, hj])]) (by decide) (by decide) (by decide +kernel))
     fun t₁ ⟨⟨hm, hc, h3, h16, h17⟩, k₁⟩ => ?_
   refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', hc'⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
   have hs := sbcs_toNat (word t.mem B (eX + 8 * j)) (word t.mem B (eN + 8 * j)) t.c
@@ -119,7 +119,7 @@ theorem cmpStep_ok {s₀ : State} {B : Addr} {Z w eX eN : Nat} (hX : eX + 8 * w 
     by rw [hm', hm, hI.mem], by rw [k'.gpr .x16 (by decide), h16, Nat.mul_succ, Nat.add_assoc],
     by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ⟨d + 2 ^ (64 * j) * r.toNat, ?_, ?_⟩⟩
   · have := Nat.mul_le_mul_left (2 ^ (64 * j)) (show r.toNat + 1 ≤ 2 ^ 64 from r.isLt)
-    rw [pow64_succ]; rw [Nat.mul_add, Nat.mul_one] at this; omega
+    rw [pow64_succ]; rw [Nat.mul_add, Nat.mul_one] at this; omega_using [hd, this]
   · rw [hc', hc, hI.mem]
     simp only [wv]
     rw [pow64_succ]
@@ -135,7 +135,7 @@ theorem cmpLoop_ok {s : State} {B : Addr} {Z w eX eN : Nat} (hs : Scr s B Z)
       Keep [.x3, .x4, .x14, .x16, .x17] s t := by
   have h0 : CmpInv s B Z eX eN 0 s :=
     ⟨hs, Keep.refl _ _, rfl, by rw [h16]; rfl, by rw [h17]; rfl, ⟨0, Nat.one_pos, by rw [hc]; rfl⟩⟩
-  refine WP.mono (wp_countdown (N := w) (by omega) (by omega) (CmpInv s B Z eX eN)
+  refine WP.mono (wp_countdown (N := w) (by omega_using [hw']) (by omega_using [hw]) (CmpInv s B Z eX eN)
     (fun j hj t hI _ => cmpStep_ok hX hN hj hI) h0 h14) fun t hI => ?_
   obtain ⟨d, hd, hval⟩ := hI.val
   refine ⟨?_, hI.mem, hI.keep⟩

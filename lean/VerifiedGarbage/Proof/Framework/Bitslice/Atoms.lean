@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Diag
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Words of atoms, for checking linear layers
@@ -43,7 +44,7 @@ def xorBits {w : Nat} (W : Nat → BitVec w) (l : List Nat) : Bool :=
 theorem bitOf_word {w : Nat} (W : Nat → BitVec w) (i t : Nat) (ht : t < w) :
     bitOf W (w * i + t) = (W i).getLsbD t := by
   simp only [bitOf]
-  rw [Nat.mul_add_div (by omega), Nat.div_eq_of_lt ht, Nat.add_zero, Nat.mul_add_mod,
+  rw [Nat.mul_add_div (by omega_using [ht]), Nat.div_eq_of_lt ht, Nat.add_zero, Nat.mul_add_mod,
     Nat.mod_eq_of_lt ht]
 
 /-- The assignment of the atoms below `N` given by the words `W`. -/
@@ -64,10 +65,10 @@ theorem inWordW_rel {w k : Nat} (W : Nat → BitVec w) {i : Nat} (hi : w * i + w
   simp only [inWordW_eq_mk, Nat.zero_testBit, Bool.false_xor]
   rw [par_mk hq (Nat.le_refl _) _ (fun q' hq' a ha => by
       simp at ha; have := lane_lt (n := i + 1) (w := w) (Nat.lt_succ_self i) hq'
-      rw [Nat.mul_succ] at this; omega),
+      rw [Nat.mul_succ] at this; omega_using [hi, hq', ha]),
     xorA_assign W (by
       intro a ha; simp at ha; have := lane_lt (n := i + 1) (w := w) (Nat.lt_succ_self i) hq
-      rw [Nat.mul_succ] at this; omega)]
+      rw [Nat.mul_succ] at this; omega_using [hi, hq, ha])]
   simp [hq, bitOf_word W i q hq]
 
 theorem outWordW_rel {w k : Nat} {W : Nat → BitVec w} {g : Nat → List Nat} {x : BitVec w}
@@ -101,7 +102,7 @@ theorem outWordW_rel_of_lt {w k : Nat} {W : Nat → BitVec w} {g : Nat → List 
     ← decide_eq_true hp, ← par_mk hp (Nat.le_refl _) _ hM, par_high hb hp]
   refine par_congr_assign fun a ha => ?_
   simp only [assign, testBit_tableOf, ha, decide_true, Bool.true_and,
-    show a < 2 ^ k + (((List.range w).flatMap g).sum + 1) by omega]
+    show a < 2 ^ k + (((List.range w).flatMap g).sum + 1) by omega_using [ha]]
 
 theorem inWord_rel {k : Nat} (W : Nat → BitVec 64) {i : Nat} (hi : 64 * i + 64 ≤ 2 ^ k) :
     LaneRel k (assign W (2 ^ k)) (inWord i) (W i) :=

@@ -35,7 +35,7 @@ theorem zext_eq (x : BitVec 64) : x <<< 32 >>> 32 = BitVec.ofNat 64 (x.setWidth 
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_setWidth,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, show 2 ^ 64 = 2 ^ 32 * 2 ^ 32 by decide,
     Nat.mul_mod_mul_right, Nat.mul_div_cancel _ (by decide)]
-  omega
+  omega_using []
 
 /-- The sign bit of `x - y`, for `x` and `y` less than `2⁶³`: whether `x < y`. -/
 theorem ltBit_eq {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
@@ -43,7 +43,7 @@ theorem ltBit_eq {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  split <;> omega
+  split <;> omega_arith
 
 /-- The counter of a loop over 256 coefficients: `j + 1 - 256`. -/
 theorem cnt256 {j : Nat} (hj : j < 256) :
@@ -57,7 +57,7 @@ theorem cnt256 {j : Nat} (hj : j < 256) :
     have := congrArg BitVec.toNat e
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this
     simp at this
-    omega
+    omega_using [hj, this]
 
 theorem ofNat_succ (x : Nat) : BitVec.ofNat 64 x + BitVec.ofNat 64 1 = BitVec.ofNat 64 (x + 1) := by
   rw [BitVec.ofNat_add_ofNat]
@@ -73,8 +73,8 @@ theorem lowByte (x : Nat) : (BitVec.ofNat 64 x).setWidth 8 = BitVec.ofNat 8 x :=
 /-- A byte, zero-extended, as a number. -/
 theorem byte_ofNat (b : Byte) : b.setWidth 64 = BitVec.ofNat 64 b.toNat := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, ofNat_lt (by have := b.isLt; omega),
-    Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [BitVec.toNat_setWidth, ofNat_lt (by have := b.isLt; omega_using []),
+    Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 /-- A word, zero-extended: zero exactly when the word is. -/
 theorem word_w_zero (v : BitVec 32) : (v.setWidth 64 == 0) = (v == 0) := by
@@ -83,7 +83,7 @@ theorem word_w_zero (v : BitVec 32) : (v.setWidth 64 == 0) = (v == 0) := by
   · have : v.setWidth 64 ≠ 0 := fun e => h (by
       apply BitVec.eq_of_toNat_eq
       have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := v.isLt; omega)] at this
+      rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := v.isLt; omega_using [])] at this
       exact this)
     rw [beq_false_of_ne this, beq_false_of_ne h]
 
@@ -129,6 +129,6 @@ theorem wp_sp {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q)
 /-- The parameters of the hint encodings. -/
 theorem mem_hintParams' {ω k : Nat} (h : (ω, k) ∈ hintParams) : 4 ≤ k ∧ k ≤ 8 ∧ 55 ≤ ω ∧ ω ≤ 80 := by
   simp only [hintParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
-  omega
+  omega_using [h]
 
 end VG.Proof.MlDsa.RISCV64.Pack.Hint

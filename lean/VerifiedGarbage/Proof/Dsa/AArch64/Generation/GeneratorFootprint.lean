@@ -20,7 +20,7 @@ theorem generator_power_frame {B : Addr} {len : Nat} {m m' : Mem}
   have hsize : pWorkspace + slot (len / 8) 8 + tabBytes (len / 8) ≤ activeBytes := by
     rcases hl with hh | hh | hh <;> rw [hh] <;> decide
   have sub : Region.Sub ⟨off B pWorkspace, slot (len / 8) 8 + tabBytes (len / 8)⟩ ⟨B, activeBytes⟩ :=
-    Offset.sub_base B (by omega)
+    Offset.sub_base B (by omega_using [hsize])
   intro a ha
   have hn := ha ⟨B, activeBytes⟩ (by simp)
   have hn' : ¬ (⟨off B pWorkspace, slot (len / 8) 8 + tabBytes (len / 8)⟩ : Region).Contains a 1 :=
@@ -29,15 +29,15 @@ theorem generator_power_frame {B : Addr} {len : Nat} {m m' : Mem}
   · right
     change ¬ ofs B a < activeBytes at hn
     unfold activeBytes at hn
-    omega
+    omega_using [hn]
   · intro r hr
     right
     have hb := (workRanges_ok (len / 8) r hr).2
     change ¬ ofs (off B pWorkspace) a < slot (len / 8) 8 + tabBytes (len / 8) at hn'
-    omega
+    omega_using [hb, hn']
   · intro i hi he
     apply ha ⟨off B VG.Impl.Dsa.Generation.Layout.g, len⟩ (by simp)
     rw [he]
-    exact Offset.contains_base _ (by omega) (by rcases hl with hh | hh | hh <;> omega)
+    exact Offset.contains_base _ (by omega_using [hi]) (by rcases hl with hh | hh | hh <;> omega_using [hi, hh])
 
 end VG.Proof.Dsa.AArch64.Generation

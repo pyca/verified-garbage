@@ -83,7 +83,7 @@ theorem jwLayQO (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQO c) 
         refine Or.inl ?_
         dsimp only
         rw [sl_tmp6 c h6]; simp (disch := sl_ne) only [sl_eq]; unfold WB
-        rw [h6] at hJle ⊢; omega
+        rw [h6] at hJle ⊢; omega_using [hJle]
       · exact Or.inr (Nat.le_succ_of_le (sl_lt c h (by
           by_cases ht : i = TMP
           · exact .inr (.inr ⟨fun e => h6 ⟨ht, e⟩, by decide⟩)

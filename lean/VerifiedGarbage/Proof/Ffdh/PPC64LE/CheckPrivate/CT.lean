@@ -60,7 +60,7 @@ theorem InvK.keep {d : KD} {s t : State} (h : InvK d s) (hb : Base d.c s) (he : 
     (hm : Body d.c.S d.c.w s.mem t.mem) : InvK d t := by
   have hZ := hb.env.hZ
   refine ⟨h.1, (bnd_congr fun hq => hm.bytesAt hZ fun i hi => by
-    rw [off_off']; exact hb.sepD _ (by omega)).trans h.2.1, ?_⟩
+    rw [off_off']; exact hb.sepD _ (by omega_using [hq, hi])).trans h.2.1, ?_⟩
   have ex : xvalK d t = xvalK d s := by simp only [xvalK]; rw [hm.bytesAt hZ he.sepX]
   rw [ex]; exact h.2.2
 
@@ -210,7 +210,7 @@ theorem KF0 {d : KD} {s : State} (h : K0 d s) : WP isa (.block cpFront) s (KB d)
   obtain ⟨hpre, rfl⟩ := h
   refine WP.mono (kp_front hpre) fun t ⟨hb, he, _, hby, _⟩ => ⟨hb, he, rfl,
     bnd_congr fun hq => hby _ _ fun i hi => by
-      rw [off_off']; exact hb.sepD _ (by simp only [kdOf] at hq hi ⊢; omega), ?_⟩
+      rw [off_off']; exact hb.sepD _ (by simp only [kdOf] at hq hi ⊢; omega_using [hq, hi]), ?_⟩
   have ex : xvalK (kdOf s) t = xvalK (kdOf s) s := by simp only [xvalK]; rw [hby _ _ he.sepX]
   show 0 < xvalK (kdOf s) t ∧ xvalK (kdOf s) t < bnd s.mem (s.gpr .r3) (s.gpr .r5).toNat (s.gpr .r4).toNat
     (kdOf s).c.p ↔ decide _ = true
@@ -221,8 +221,8 @@ theorem KF0 {d : KD} {s : State} (h : K0 d s) : WP isa (.block cpFront) s (KB d)
 theorem KB_loadP {d : KD} {s : State} (h : KB d s) : WP isa loadP s (K4 d) := by
   obtain ⟨hb, he, hi⟩ := h
   have hk := hb.k64
-  refine WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hb.k1024 (fun i hi => hb.rdD i (by have := hb.kL; omega))
-    (fun i hi => hb.sepD i (by have := hb.kL; omega))) fun t ⟨⟨pt, ct, bt⟩, kt⟩ => ?_
+  refine WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hb.k1024 (fun i hi => hb.rdD i (by have := hb.kL; omega_using [hi, this]))
+    (fun i hi => hb.sepD i (by have := hb.kL; omega_using [hi, this]))) fun t ⟨⟨pt, ct, bt⟩, kt⟩ => ?_
   have ep : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem d.c.D d.c.k) = d.c.p := by
     rw [← Proof.Ffdh.take_bytesAt _ _ hb.kL, hb.bD]
   rw [ep] at pt ct
@@ -256,12 +256,12 @@ theorem KTR1 {d : KD} {s : State} (h : K4 d s ∧ s.gpr .r0 = 0) : WP isa (.bloc
   have hwd : d.c.w = (d.c.k + 7) / 8 := rfl
   have e28 := Domain.slot_eq d.c.w 28
   have rdQ : d.c.L = 3 * d.c.k → ∀ i < d.c.k, InRegions (s.rd ++ s.wr) (off (off d.c.D (2 * d.c.k)) i) 1 :=
-    fun hq i hi => by rw [off_off']; exact hb.rdD _ (by omega)
+    fun hq i hi => by rw [off_off']; exact hb.rdD _ (by omega_using [hq, hi])
   have sepQ : d.c.L = 3 * d.c.k → ∀ i < d.c.k, ∀ y, ofs d.c.S y < d.c.Z →
-      off (off d.c.D (2 * d.c.k)) i ≠ y := fun hq i hi => by rw [off_off']; exact hb.sepD _ (by omega)
-  have hrange := xRange_ok hb.env hb.r23 hb.r21 hb.r27 hb.r28 (by omega) (by omega)
-    (by rcases hb.hL with h | h <;> omega) (by omega) he.xl1 he.xlk he.wX he.wXL he.rdX he.sepX rdQ sepQ
-    (by rw [hp]; omega)
+      off (off d.c.D (2 * d.c.k)) i ≠ y := fun hq i hi => by rw [off_off']; exact hb.sepD _ (by omega_using [hq, hi])
+  have hrange := xRange_ok hb.env hb.r23 hb.r21 hb.r27 hb.r28 (by omega_using [hk]) (by omega_using [hwd])
+    (by rcases hb.hL with h | h <;> omega_using [hk', h]) (by omega_using [hk']) he.xl1 he.xlk he.wX he.wXL he.rdX he.sepX rdQ sepQ
+    (by rw [hp]; omega_using [hf])
   unfold xRange at hrange
   refine wp_split (WP.mono (xLoadPre_ok hb.env hb.r23 he.wX he.wXL) fun t ⟨⟨a10, a12, a6, _⟩, kt⟩ =>
     ⟨a10, a12, a6, (kt.gpr .r11 (by decide)).trans hb.env.h11, (kt.gpr .r21 (by decide)).trans hb.r21,
@@ -300,9 +300,9 @@ theorem KG3 {d : KD} {s : State} (h : KG2 d s) : WP isa exPre s (V5 d) := by
   have hwd : d.c.w = (d.c.k + 7) / 8 := rfl
   have e0 := Domain.slot_eq d.c.w 0
   have e28 := Domain.slot_eq d.c.w 28
-  refine WP.mono (exPower_split hb.env hb.r23 h9 hb.r28 (by omega) (by omega) he.xl1 (by omega) hb.rdY hb.sepY
+  refine WP.mono (exPower_split hb.env hb.r23 h9 hb.r28 (by omega_using [hk]) (by omega_using [hwd]) he.xl1 (by omega_using [hk', hxk]) hb.rdY hb.sepY
     he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2)
-    (by rw [hp]; exact top_of_valid hv (by omega) (by omega)))
+    (by rw [hp]; exact top_of_valid hv (by omega_using [hwd]) (by omega_using [hk, hwd])))
     fun s₆ ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, hw⟩ => ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, WP.mono hw
       fun t ⟨⟨_, p5, b5, r10₅⟩, k5⟩ => ?_⟩
   have k29 := (k5.gpr .r29 (by decide)).trans hb.env.h29
@@ -310,10 +310,10 @@ theorem KG3 {d : KD} {s : State} (h : KG2 d s) : WP isa exPre s (V5 d) := by
   have k23 := (k5.gpr .r23 (by decide)).trans hb.r23
   have k28 := (k5.gpr .r28 (by decide)).trans hb.r28
   refine ⟨⟨r10₅, k29, k11, k23, k28⟩, WP.mono (cpCmp_split (Yv := d.Yv) (hb.env.hs.congr k5.wr) r10₅ k29 k11 k23
-    k28 ?_ hb.env.hw hb.env.hw' hZ (by omega) (by omega) (by rw [k5.rd, k5.wr]; exact he.rdY) he.sepY
-    (by rw [p5, hp]; omega)) fun s₁ ⟨regs, hw'⟩ => ⟨regs, WP.mono hw' fun u ⟨⟨_, _, u23⟩, _⟩ => u23⟩⟩
+    k28 ?_ hb.env.hw hb.env.hw' hZ (by omega_using [hk]) (by omega_using [hwd]) (by rw [k5.rd, k5.wr]; exact he.rdY) he.sepY
+    (by rw [p5, hp]; omega_using [hf])) fun s₁ ⟨regs, hw'⟩ => ⟨regs, WP.mono hw' fun u ⟨⟨_, _, u23⟩, _⟩ => u23⟩⟩
   show word t.mem d.c.S 80 = _
-  rw [Outside.word b5 (Or.inl (by omega)) (by omega)]; exact he.wY
+  rw [Outside.word b5 (Or.inl (by omega_using [e0])) (by omega_using [])]; exact he.wY
 
 /-! ## Constant time -/
 
@@ -378,17 +378,17 @@ theorem kdOf_eq {s t : State} (hs : kpContract.pre s) (h3 : s.gpr .r3 = t.gpr .r
     rw [← VG.Proof.Dsa.bytesAt_slice s.mem _ ho, ← VG.Proof.Dsa.bytesAt_slice t.mem _ ho, ed]
   have hp : ∀ m : Mem, Spec.Rsa.os2ip ((Spec.Rsa.bytesAt m (s.gpr .r3) (s.gpr .r4).toNat).take (s.gpr .r5).toNat) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (s.gpr .r3) (s.gpr .r5).toNat) := fun m => by
-    rw [Proof.Ffdh.take_bytesAt _ _ (by omega)]
+    rw [Proof.Ffdh.take_bytesAt _ _ (by omega_using [hL])]
   have hpT : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (s.gpr .r3) (s.gpr .r5).toNat) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r5).toNat) := by rw [← hp, ← hp, ed]
   have hbT : ∀ P, bnd t.mem (s.gpr .r3) (s.gpr .r5).toNat (s.gpr .r4).toNat P =
       bnd s.mem (s.gpr .r3) (s.gpr .r5).toNat (s.gpr .r4).toNat P := fun P =>
-    bnd_congr fun hq => (sl _ (by omega)).symm
+    bnd_congr fun hq => (sl _ (by omega_using [hq])).symm
   have e4 := (privateStatus_two _ _ _).symm.trans
     ((iff_of_eq (congrArg (· = 2) (List.cons.inj e3).1)).trans (privateStatus_two _ _ _))
   rw [← h3, ← h4, ← h5, ← h8, ← h9] at e4
-  rw [Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega) (by omega),
-    Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega) (by omega), hpT, hbT] at e4
+  rw [Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega_using [hk]) (by omega_using [hL]),
+    Proof.Ffdh.PPC64LE.Derive.privateValid_dom (by omega_using [hk]) (by omega_using [hL]), hpT, hbT] at e4
   have hv := bool_eq_of_false_iff e4
   have ext : ∀ a b : KD, a.c = b.c → a.X = b.X → a.xl = b.xl → a.Yv = b.Yv → a.b = b.b → a.v = b.v → a = b := by
     rintro ⟨⟩ ⟨⟩; simp_all
@@ -396,7 +396,7 @@ theorem kdOf_eq {s t : State} (hs : kpContract.pre s) (h3 : s.gpr .r3 = t.gpr .r
     simp only [kdOf]
     rw [← h3, ← h4, ← h5, ← h10, ← a0, ed]
     simp only [off]
-    rw [sl _ (by omega)]
+    rw [sl _ (by omega_using [hL])]
   refine ext _ _ hc (by simp only [kdOf, h8]) (by simp only [kdOf, h9]) (by simp only [kdOf, h6]) ?_ ?_
   · show bnd s.mem _ _ _ (kdOf s).c.p = bnd t.mem _ _ _ (kdOf t).c.p
     rw [← hc, ← h3, ← h4, ← h5, hbT]

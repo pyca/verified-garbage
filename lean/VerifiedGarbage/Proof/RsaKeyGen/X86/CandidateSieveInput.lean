@@ -36,12 +36,12 @@ theorem read_offset {rs : List Region} {base : Addr} {L d n : Nat}
     exact Nat.mod_le _ _
   change (base - r.base).toNat + L ≤ r.len at contains
   change (off base d - r.base).toNat + n ≤ r.len
-  omega
+  omega_using [bound, distance, contains]
 
 theorem sieve_context {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (D : Drawn E eBytes pBytes entropy s) :
     Sieve.Context E.sieveGeometry (candidateValue E entropy) (allocFrame 20 s) := by
-  have fit : 20 ≤ (s.gpr .esp).toNat := by rw [D.input.stack]; have := v.low; omega
+  have fit : 20 ≤ (s.gpr .esp).toNat := by rw [D.input.stack]; have := v.low; omega_using [this]
   have stack := FilterStack.allocated_context fit
   rw [D.input.stack] at stack
   refine ⟨stack, ?_, ?_, ?_, ?_⟩
@@ -53,7 +53,7 @@ theorem sieve_context {E : Environment} (v : E.Valid) {eBytes pBytes entropy : L
     have source := D.input.scratch.read (d := 256 + 4 * i) (n := 4) (by
       have := v.slotFit (j := 0) (by decide)
       change 256 + 0 * stride E.width + 8 * E.width ≤ E.size at this
-      omega)
+      omega_using [index, this])
     obtain ⟨r, mem, contains⟩ := source
     refine ⟨r, ?_, contains⟩
     simp only [allocFrame_rd, allocFrame_wr, List.mem_append, List.mem_cons]
@@ -62,11 +62,11 @@ theorem sieve_context {E : Environment} (v : E.Valid) {eBytes pBytes entropy : L
     have native := v.sieve_valid
     have dBound : d = 0 ∨ d = 4 := by simpa only [List.mem_cons, List.not_mem_nil, or_false] using mem
     have address : addr (E.sieveGeometry.cursor i) d = off (E.table.setWidth 64) (8 * i + d) := by
-      rw [addr_eq (by have := native.cursor_fit index; rcases dBound with rfl | rfl <;> omega), native.cursor_addr index]
+      rw [addr_eq (by have := native.cursor_fit index; rcases dBound with rfl | rfl <;> omega_arith), native.cursor_addr index]
       exact Offset.add_add _ _ _
     rw [address]
     obtain ⟨r, member, contains⟩ := read_offset D.input.memory.tableRead (d := 8 * i + d) (n := 4)
-      (by rcases dBound with rfl | rfl <;> omega) (by rcases dBound with rfl | rfl <;> omega)
+      (by rcases dBound with rfl | rfl <;> omega_using [index]) (by rcases dBound with rfl | rfl <;> omega_using [index])
     refine ⟨r, ?_, contains⟩
     simp only [allocFrame_rd, allocFrame_wr, List.mem_append, List.mem_cons]
     exact (List.mem_append.mp member).elim Or.inl (fun h => Or.inr (Or.inr h))

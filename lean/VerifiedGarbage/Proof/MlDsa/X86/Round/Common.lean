@@ -69,7 +69,7 @@ theorem arg_P0 {s₀ : State} {n i : Nat} (hi : i < n) (hsp : 16 ≤ (E0 s₀).t
 /-- Coefficient `k` at the pointer `x + 4k`. -/
 theorem ea_cf {x : BitVec 32} (hx : x.toNat + 1024 ≤ 2 ^ 32) {k : Nat} (hk : k < 256) :
     (x + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (x.setWidth 64) k := by
-  rw [ea_add (by omega), Nat.add_zero]
+  rw [ea_add (by omega_using [hx, hk]), Nat.add_zero]
 
 /-- A polynomial apart from the frame and the regions written keeps its coefficients. -/
 theorem in_keep {s₀ : State} {W : List Region} {m : Mem} (hsp : 16 ≤ (E0 s₀).toNat)

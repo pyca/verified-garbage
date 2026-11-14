@@ -60,32 +60,32 @@ theorem init_correct {s₀ : State} (hp : Proof.Sm3.initArm.pre s₀) :
     WP isa init s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sm3.initArm.post s₀ s' := by
   obtain ⟨-, hwr, hfit⟩ := hp
   have o : ∀ k, k < 8 → InRegions s₀.wr (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * k)) 4 :=
-    fun k hk => ⟨⟨State.addr (s₀.gpr .r0), 96⟩, by simp [hwr], contains_offset (by omega) (by omega)⟩
+    fun k hk => ⟨⟨State.addr (s₀.gpr .r0), 96⟩, by simp [hwr], contains_offset (by omega_using [hk]) (by omega_using [hk])⟩
   rw [init_eq, ← List.append_nil (_ ++ word iv[7] 28)]
   simp only [List.append_assoc]
-  refine word_ok (by decide) (by omega) (o 0 (by omega)) fun s1 g1 _ wr1 sp1 m1 => ?_
+  refine word_ok (by decide) (by omega_using []) (o 0 (by omega_using [])) fun s1 g1 _ wr1 sp1 m1 => ?_
   have k1 : s1.gpr .r0 = s₀.gpr .r0 := g1 _ (by decide)
-  refine word_ok (by decide) (by rw [k1]; omega) (by rw [wr1, k1]; exact o 1 (by omega))
+  refine word_ok (by decide) (by rw [k1]; omega_using [hfit]) (by rw [wr1, k1]; exact o 1 (by omega_using []))
     fun s2 g2 _ wr2 sp2 m2 => ?_
   have k2 : s2.gpr .r0 = s₀.gpr .r0 := by rw [g2 _ (by decide), k1]
-  refine word_ok (by decide) (by rw [k2]; omega) (by rw [wr2, wr1, k2]; exact o 2 (by omega))
+  refine word_ok (by decide) (by rw [k2]; omega_using [hfit]) (by rw [wr2, wr1, k2]; exact o 2 (by omega_using []))
     fun s3 g3 _ wr3 sp3 m3 => ?_
   have k3 : s3.gpr .r0 = s₀.gpr .r0 := by rw [g3 _ (by decide), k2]
-  refine word_ok (by decide) (by rw [k3]; omega) (by rw [wr3, wr2, wr1, k3]; exact o 3 (by omega))
+  refine word_ok (by decide) (by rw [k3]; omega_using [hfit]) (by rw [wr3, wr2, wr1, k3]; exact o 3 (by omega_using []))
     fun s4 g4 _ wr4 sp4 m4 => ?_
   have k4 : s4.gpr .r0 = s₀.gpr .r0 := by rw [g4 _ (by decide), k3]
-  refine word_ok (by decide) (by rw [k4]; omega) (by rw [wr4, wr3, wr2, wr1, k4]; exact o 4 (by omega))
+  refine word_ok (by decide) (by rw [k4]; omega_using [hfit]) (by rw [wr4, wr3, wr2, wr1, k4]; exact o 4 (by omega_using []))
     fun s5 g5 _ wr5 sp5 m5 => ?_
   have k5 : s5.gpr .r0 = s₀.gpr .r0 := by rw [g5 _ (by decide), k4]
-  refine word_ok (by decide) (by rw [k5]; omega)
-    (by rw [wr5, wr4, wr3, wr2, wr1, k5]; exact o 5 (by omega)) fun s6 g6 _ wr6 sp6 m6 => ?_
+  refine word_ok (by decide) (by rw [k5]; omega_using [hfit])
+    (by rw [wr5, wr4, wr3, wr2, wr1, k5]; exact o 5 (by omega_using [])) fun s6 g6 _ wr6 sp6 m6 => ?_
   have k6 : s6.gpr .r0 = s₀.gpr .r0 := by rw [g6 _ (by decide), k5]
   have w6 : s6.wr = s₀.wr := by rw [wr6, wr5, wr4, wr3, wr2, wr1]
-  refine word_ok (by decide) (by rw [k6]; omega) (by rw [w6, k6]; exact o 6 (by omega))
+  refine word_ok (by decide) (by rw [k6]; omega_using [hfit]) (by rw [w6, k6]; exact o 6 (by omega_using []))
     fun s7 g7 _ wr7 sp7 m7 => ?_
   have k7 : s7.gpr .r0 = s₀.gpr .r0 := by rw [g7 _ (by decide), k6]
   have w7 : s7.wr = s₀.wr := by rw [wr7, w6]
-  refine word_ok (by decide) (by rw [k7]; omega) (by rw [w7, k7]; exact o 7 (by omega))
+  refine word_ok (by decide) (by rw [k7]; omega_using [hfit]) (by rw [w7, k7]; exact o 7 (by omega_using []))
     fun s8 g8 _ _ sp8 m8 => WP.block_nil ?_
   have k8 : ∀ r, r ≠ .r12 → s8.gpr r = s₀.gpr r := fun r h => by
     rw [g8 r h, g7 r h, g6 r h, g5 r h, g4 r h, g3 r h, g2 r h, g1 r h]

@@ -58,7 +58,7 @@ theorem seedGenerator_start {n pLen qLen : Nat} {p : SeedGeneratorPublic} {s : S
   · subst k; simpa [upd, SeedPublic.words] using h10
   have member : k ∈ generationSlots := by
     simp only [generatorSlots, generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢
-    omega
+    omega_using [h16k, h1k, h10k, hk]
   simpa [upd, SeedPublic.words, h16k, h1k, h10k] using hm.slots k member
 
 end VG.Proof.Dsa.X86_64.Generation

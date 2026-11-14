@@ -29,7 +29,7 @@ theorem Octets.after_frame {base src : BitVec 32} {len : Nat} {bs : List Byte}
     Octets base src len bs t := by
   refine ⟨h.fits, ?_, h.separate, ?_⟩
   · rw [rest.rd, rest.wr]; exact h.readable
-  · rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by have := h.fits; omega) separate]
+  · rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by have := h.fits; omega_using [this]) separate]
     exact h.bytes
 
 theorem Octets.after_workspace {base src : BitVec 32} {len : Nat} {bs : List Byte}
@@ -38,7 +38,7 @@ theorem Octets.after_workspace {base src : BitVec 32} {len : Nat} {bs : List Byt
     Octets base src len bs t := by
   refine ⟨h.fits, ?_, h.separate, ?_⟩
   · rw [rest.rd, rest.wr]; exact h.readable
-  · rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by have := h.fits; omega)
+  · rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by have := h.fits; omega_using [this])
       (by simpa using h.separate)]; exact h.bytes
 
 theorem Octets.byte {base src : BitVec 32} {len : Nat} {bs : List Byte} {s : State}
@@ -53,16 +53,16 @@ theorem Octets.slice {base src : BitVec 32} {len : Nat} {bs : List Byte} {s : St
     Octets base (src + BitVec.ofNat 32 d) len ((bs.drop d).take k) s := by
   have size : ((bs.drop d).take k).length = k := by
     simp only [List.length_take, List.length_drop]
-    omega
-  have dn : d < 2 ^ 32 := by have := h.fits; omega
-  have pn : src.toNat + d < 2 ^ 32 := by have := h.fits; omega
+    omega_using [fit]
+  have dn : d < 2 ^ 32 := by have := h.fits; omega_using [positive, fit, this]
+  have pn : src.toNat + d < 2 ^ 32 := by have := h.fits; omega_using [positive, fit, this]
   have ptrNat : (src + BitVec.ofNat 32 d).toNat = src.toNat + d := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt dn, Nat.mod_eq_of_lt pn]
   have addr : State.addr (src + BitVec.ofNat 32 d) = State.addr src + BitVec.ofNat 64 d :=
     VG.Arm.addr_add pn
-  refine ⟨by rw [size, ptrNat]; have := h.fits; omega, ?_, ?_, ?_⟩
+  refine ⟨by rw [size, ptrNat]; have := h.fits; omega_using [fit, this], ?_, ?_, ?_⟩
   · rw [size, addr]
-    exact CallLay.inRegions_sub h.readable fit (by have := h.fits; omega)
+    exact CallLay.inRegions_sub h.readable fit (by have := h.fits; omega_using [this])
   · rw [size, addr]
     exact h.separate.sub_left (Offset.sub_base _ fit)
   · rw [size, addr, ← VG.Proof.Dsa.bytesAt_slice _ _ fit, h.bytes]

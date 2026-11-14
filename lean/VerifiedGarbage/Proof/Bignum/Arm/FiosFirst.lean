@@ -28,13 +28,13 @@ private theorem firstLoads_ok (s : State) {base : BitVec 32} {size a m d : Nat}
       u.mem=s.mem ∧ Rest [.r3,.r5,.r6] s u := by
   unfold VG.Impl.Bignum.Arm.Fios.firstLoads
   refine wp_ldr (a:=off (State.addr base) a) (by decide)
-    (by simpa only [Nat.add_zero] using ws.ea pa (imm:=0) (by omega)) (ws.read fa) fun u hu => ?_
+    (by simpa only [Nat.add_zero] using ws.ea pa (imm:=0) (by omega_using [fa])) (ws.read fa) fun u hu => ?_
   refine wp_ldr (a:=off (State.addr base) m) (by decide)
-    (by rw [hu.other .r4 (by decide)];simpa only [Nat.add_zero] using ws.ea pm (imm:=0) (by omega))
+    (by rw [hu.other .r4 (by decide)];simpa only [Nat.add_zero] using ws.ea pm (imm:=0) (by omega_using [fm]))
     (by rw [hu.rd,hu.wr];exact ws.read fm) fun v hv => ?_
   refine wp_ldr (a:=off (State.addr base) d) (by decide)
     (by rw [hv.other .r0 (by decide),hu.other .r0 (by decide)]
-        simpa only [Nat.add_zero] using ws.ea pd (imm:=0) (by omega))
+        simpa only [Nat.add_zero] using ws.ea pd (imm:=0) (by omega_using [fd]))
     (by rw [hv.rd,hv.wr,hu.rd,hu.wr];exact ws.read fd) fun w hw => WP.block_nil ?_
   refine ⟨?_,?_,?_,?_,?_⟩
   · rw [hw.other .r3 (by decide),hv.other .r3 (by decide),hu.gpr]

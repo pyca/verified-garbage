@@ -79,11 +79,11 @@ abbrev gInv (c : Cfg) (G : GP) (w HL pv ev qv N : Nat) (X : State → Prop) (r :
 theorem hsW_take {G : GP} {w HL i : Nat} (hi : i + G.pLen ≤ HL) :
     ((hsW G w HL).drop i).take G.pLen = hAt G (w + i) := by
   simp only [hsW, hAt, List.drop_take, List.take_take, List.drop_drop]
-  rw [Nat.min_eq_left (by omega), Nat.add_comm]
+  rw [Nat.min_eq_left (by omega_using [hi]), Nat.add_comm]
 
 theorem hsW_length {G : GP} {w HL : Nat} (hw : w + HL ≤ G.witLen) (hl : G.witB.length = G.witLen) :
     (hsW G w HL).length = HL := by
-  simp only [hsW, List.length_take, List.length_drop, hl]; omega
+  simp only [hsW, List.length_take, List.length_drop, hl]; omega_using [hw]
 
 section
 variable {G : GP} {X : State → Prop}

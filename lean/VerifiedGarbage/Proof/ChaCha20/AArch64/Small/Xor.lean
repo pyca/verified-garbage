@@ -25,8 +25,8 @@ theorem tail_ok {s₀ : State} (hp : TPre s₀) {n : Nat} {s : State} (h : Prefi
       GprAbi s₀ s' ∧ xorAArch64.post s₀ s' ∧
       s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 :=
   (Xor.rest_ok BlockImpl.scalar.xorNoFrames (fun s hs _ => Xor.xor_gpr BlockImpl.scalar s hs) hp
-    (n := 64*n) hle (by omega) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
-    (by rw [h.cnt, show 64*n/64 = n by omega]) h.data h.src).mono fun _ ⟨ha, hpost, h0, h1⟩ =>
+    (n := 64*n) hle (by omega_using []) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
+    (by rw [h.cnt, show 64*n/64 = n by omega_using []]) h.data h.src).mono fun _ ⟨ha, hpost, h0, h1⟩ =>
     ⟨⟨fun r hr => (ha.1 r hr).trans (h.cs r hr), ha.2.trans h.sp⟩, hpost, h0, h1⟩
 
 structure CheckKeep (s a : State) : Prop where
@@ -160,8 +160,8 @@ theorem tail_short {sve : Bool} {s₀ : State} (hp : TPre s₀) {t : Nat} {s : S
       GprAbi s₀ s' ∧ xorAArch64.post s₀ s' ∧
       s'.gpr .x0 = s₀.gpr .x0 ∧ s'.gpr .x1 = s₀.gpr .x3 :=
   (Xor.rest_ok (short_noFrames sve) (fun s hs hl => short_ok (sve := sve) s hs (by rw [hl]; exact hlt))
-    hp (n := 256 * t) h.le (by omega) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
-    (by rw [h.cnt, show 256 * t / 64 = 4 * t by omega]) h.data h.src).mono fun _ ⟨ha, hpost, h0, h1⟩ =>
+    hp (n := 256 * t) h.le (by omega_using []) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
+    (by rw [h.cnt, show 256 * t / 64 = 4 * t by omega_using []]) h.data h.src).mono fun _ ⟨ha, hpost, h0, h1⟩ =>
     ⟨⟨fun r hr => (ha.1 r hr).trans (h.keep r (by intro he; subst he; simp [preserved] at hr)
       (by intro he; subst he; simp [preserved] at hr) (by intro he; subst he; simp [preserved] at hr)
       (by intro he; subst he; simp [preserved] at hr) (by intro he; subst he; simp [preserved] at hr)),

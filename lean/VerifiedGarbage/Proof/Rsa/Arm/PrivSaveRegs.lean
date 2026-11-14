@@ -25,8 +25,8 @@ theorem saveRegs_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte} (h
   have fit := h.valid.stackHigh
   have ws := h.inner.congr moved.wr
   obtain ⟨trace, t, run, regs, rd, wr, mem⟩ := Spill.save_block_ok (b := .r12) savedArguments_slots
-    (s := u) (by rw [ptr]; simp only [frameBytes] at fit; omega)
-    (fun d _ hd => by rw [ptr]; exact ws.write (by simp only [frameBytes]; omega))
+    (s := u) (by rw [ptr]; simp only [frameBytes] at fit; omega_using [fit])
+    (fun d _ hd => by rw [ptr]; exact ws.write (by simp only [frameBytes]; omega_using [hd]))
   have rest : Rest [.r12] s t := (moved.rest (by simp)).trans
     ⟨fun r _ => congrFun regs r, rd, wr, (Exec.rdwr run).2.2⟩
   have saved := Spill.saveMem_saved (State.addr g.stack) u.gpr u.mem savedArguments savedArguments_slots
@@ -39,7 +39,7 @@ theorem saveRegs_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte} (h
   refine ⟨trace, t, run, h.after (frame.mono (by simp [bodyWrites])) rest, ?_, ?_, frame, rest⟩
   · intro i hi
     rw [mem, ptr]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
     · exact (saved (.r0, oOut) (by simp [savedArguments])).trans ((moved.other .r0 (by decide)).trans output)
     · exact (saved (.r2, oN) (by simp [savedArguments])).trans ((moved.other .r2 (by decide)).trans modulus)
     · exact (saved (.r3, oK) (by simp [savedArguments])).trans ((moved.other .r3 (by decide)).trans count)

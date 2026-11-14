@@ -122,7 +122,7 @@ theorem call_ok (d : Spec.TripleDes.Direction) (s : State) (hp : CallPre s) :
       hp.keyFit, hp.dataFit, hp.bufFit, ?_⟩
     rw [sub_toNat hp.stackLo]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using []
   · intro a n ⟨r, hr, hc⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -244,7 +244,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
   have sub : Region.Sub (dataR s' m) (dataR s n) := by
     change Region.Sub ⟨addr32 (s'.gpr .esi), 8 * m⟩ ⟨addr32 (s.gpr .esi), 8 * n⟩
     rw [ptrAddr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [bound])
   constructor
   · have hc : Covers [keyR s', dataR s' m, bufR s'] [keyR s, dataR s n, bufR s] := by
       apply Covers.of_sub
@@ -252,7 +252,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨keyR s, by simp, 0, by simp [key], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega_using [bound]⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [rd, wr]
     exact fun a k h => hp.reads a k (hc a k h)
@@ -261,7 +261,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega_using [bound]⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [wr]
     exact fun a k h => hp.writes a k (hc a k h)
@@ -367,7 +367,7 @@ theorem body_ok (d : Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (bound : n 
 
 theorem BodyPost.tail {d : Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (hn : 1 ≤ n) : StepPre s' n :=
-  hp.slice (i := 1) (by omega) hn h.rd h.wr
+  hp.slice (i := 1) (by omega_using []) hn h.rd h.wr
     (h.reg .ebx (by decide) (by decide) (by decide))
     (h.reg .ebp (by decide) (by decide) (by decide))
     (h.reg .esp (by decide) (by decide) (by decide)) h.ptr
@@ -404,7 +404,7 @@ theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
   · refine ⟨dataR s n, by simp [loopWrites], ?_⟩
     change Region.Sub ⟨addr32 (s'.gpr .esi), 8 * m⟩ ⟨addr32 (s.gpr .esi), 8 * n⟩
     rw [ptr, addr_add fit]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [bound])
   · refine ⟨⟨addr32 (s.gpr .ebp), 512⟩, by simp [loopWrites], ?_⟩
     rw [buf]; exact fun _ h => h
   · refine ⟨below (s.gpr .esp) 16, by simp [loopWrites], ?_⟩
@@ -426,9 +426,9 @@ theorem BodyPost.tailData {d : Spec.TripleDes.Direction} {s s' : State} {n : Nat
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
     Spec.TripleDes.blocksAt s'.mem (addr32 (s.gpr .esi) + 8) n = Spec.TripleDes.blocksAt s.mem (addr32 (s.gpr .esi) + 8) n := by
   have sub : Region.Sub ⟨addr32 (s.gpr .esi) + 8, 8 * n⟩ (dataR s (n + 1)) :=
-    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega)
+    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega_using [])
   have sep : (Region.mk (addr32 (s.gpr .esi) + 8) (8 * n)).Disjoint (dataR s) :=
-    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply VG.Proof.TripleDes.blocksAt_frame h.mem
   simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro sep
@@ -439,9 +439,9 @@ theorem firstBlock_frame {d : Spec.TripleDes.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64)
     (frame : Frame (loopWrites s' n) s'.mem m) (hn : 1 ≤ n) :
     Spec.TripleDes.blockAt m (addr32 (s.gpr .esi)) = Spec.TripleDes.blockAt s'.mem (addr32 (s.gpr .esi)) := by
-  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega)
+  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_using [])
   have sep : (dataR s).Disjoint ⟨addr32 (s.gpr .esi) + 8, 8 * n⟩ :=
-    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply VG.Proof.TripleDes.blockAt_eq_of_frame _ frame
   have buf := h.reg .ebp (by decide) (by decide) (by decide)
   have ptrAddr : addr32 (s'.gpr .esi) = addr32 (s.gpr .esi) + 8 := by
@@ -493,7 +493,7 @@ theorem loop_ok (d : Spec.TripleDes.Direction) (n : Nat) :
   | zero => intro s hn; omega
   | succ n ih =>
     intro s hn bound hp count
-    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega) count (hp.head hn)
+    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega_using [bound]) count (hp.head hn)
     by_cases hz : n = 0
     · subst n
       refine ⟨_, s₁, Exec.loopExit exec₁ ?_, ?_⟩
@@ -504,11 +504,11 @@ theorem loop_ok (d : Spec.TripleDes.Direction) (n : Nat) :
           simp only [Spec.TripleDes.blocksAt, List.range_zero, List.map_nil,
             Spec.TripleDes.ecb, List.map_nil]
           exact congrArg (· :: []) h₁.data
-    · have hp₁ := h₁.tail hp (by omega)
-      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega) (by omega) hp₁ (by simpa using h₁.count)
+    · have hp₁ := h₁.tail hp (by omega_using [hz])
+      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega_using [hz]) (by omega_using [bound]) hp₁ (by simpa using h₁.count)
       refine ⟨_, s₂, Exec.loopNext exec₁ ?_ exec₂, ?_⟩
       · change isa.eval .ne s₁ = some true
-        simpa only [show 1 < n + 1 by omega, decide_true] using h₁.flag
+        simpa only [show 1 < n + 1 by omega_using [hz], decide_true] using h₁.flag
       · have key := h₁.schedule (hp.head hn)
         have tail := h₁.tailData hp (by omega_using [bound])
         have data := h₂.data
@@ -523,11 +523,11 @@ theorem loop_ok (d : Spec.TripleDes.Direction) (n : Nat) :
           exact congrArg (s.gpr .esi + ·) (by
             change BitVec.ofNat 32 8 + BitVec.ofNat 32 (8 * n) = _
             rw [← BitVec.ofNat_add]
-            exact congrArg (BitVec.ofNat 32) (by omega))
+            exact congrArg (BitVec.ofNat 32) (by omega_using []))
         · intro r hr hs hb
           exact (h₂.reg r hr hs hb).trans (h₁.reg r hr hs hb)
-        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega) (by omega_using [hp.dataFit, hz]) bi (h₁.reg .esp (by decide) (by decide) (by decide)) h₁.ptr)
-        · have first := firstBlock_frame h₁ hp (by omega_using [bound]) h₂.mem (by omega)
+        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega_using []) (by omega_using [hp.dataFit, hz]) bi (h₁.reg .esp (by decide) (by decide) (by decide)) h₁.ptr)
+        · have first := firstBlock_frame h₁ hp (by omega_using [bound]) h₂.mem (by omega_using [hz])
           rw [blocksAt_cons, first, h₁.data, data, blocksAt_cons, ecb_cons]
 
 theorem maybeLoop_ok (d : Spec.TripleDes.Direction) (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 32)
@@ -547,7 +547,7 @@ theorem maybeLoop_ok (d : Spec.TripleDes.Direction) (s : State) (n : Nat) (bound
   · apply WP.ite false (by change isa.eval .e s = some false; simpa only [hz, decide_false] using flag')
     · simp
     · intro _
-      exact loop_ok d n s (by omega) bound hp count
+      exact loop_ok d n s (by omega_using [hz]) bound hp count
 
 
 end VG.Proof.TripleDes.X86.Ecb
@@ -913,11 +913,11 @@ theorem ecbTaint_wf {d : Spec.TripleDes.Direction} {s : State} (hs : (contract d
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨dataSep, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [addr32, BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [addr32, BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) retData argsData
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) retScratch argsScratch
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spFit]) retData argsData
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spFit]) retScratch argsScratch
   · intro p hp
     simp only [ecbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -950,7 +950,7 @@ theorem ecbTaint_agree {d : Spec.TripleDes.Direction} {s t : State} (hs : (contr
     rw [show VG.X86.Taint.depth ecbTaint.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (fit _ hs) h4 hk, VG.X86.Taint.argByte_eq (fit _ ht) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 end VG.Proof.TripleDes.X86.Ecb
 
@@ -1026,7 +1026,7 @@ theorem wide_implies (d : Spec.TripleDes.Direction) :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
-      | (rw [Taint.sub_setWidth (by omega)]; simp only [Nat.mul_comm] at *; with_reducible assumption)
+      | (rw [Taint.sub_setWidth (by omega_arith)]; simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
   · sig_implies_pub [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]

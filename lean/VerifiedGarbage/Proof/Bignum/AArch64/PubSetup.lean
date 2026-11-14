@@ -204,36 +204,36 @@ theorem pcLoadWith_ok {load : Prog isa} {s : State} {B : Addr} {Z k : Nat} {np :
     hf₁'.trans (Frm.of_arrays1 ha₂ (by simp [pcLoadRanges]))
   have h0₂ : t₂.gpr .x0 = B := (k₂.gpr .x0 (by decide)).trans ((k₁.gpr .x0 (by decide)).trans h0)
   have hb₂ : ∀ j < 8, word t₂.mem B (8 * sArr j) = off B (slot ((k + 7) / 8) j) := fun j hj => by
-    rw [ha₂.hslot (by unfold sArr; omega)]; exact hb₁ j hj
+    rw [ha₂.hslot (by unfold sArr; omega_using [hj])]; exact hb₁ j hj
   have hW₂ : word t₂.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := by
     rw [ha₂.hslot (by decide)]; exact hW₁
   have hodd₀ : (word t₂.mem B (slot ((k + 7) / 8) aN)).toNat % 2 = 1 := by
-    rw [← wv_mod64 _ _ _ (show 1 ≤ (k + 7) / 8 by omega), Nat.mod_mod_of_dvd _ (by decide), hv₂, hodd]
+    rw [← wv_mod64 _ _ _ (show 1 ≤ (k + 7) / 8 by omega_using [hk1]), Nat.mod_mod_of_dvd _ (by decide), hv₂, hodd]
   have h8₂ : t₂.gpr .x8 = off B (slot ((k + 7) / 8) aN) := (k₂.gpr .x8 (by decide)).trans h8'
   show WP isa (.block ([ld .x3 .x8] ++ minv ++ [sth .x15 sMinv])) t₂ _
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = word t₂.mem B (slot ((k + 7) / 8) aN) ∧
       t.mem = t₂.mem) (by
-    brun [h8₂, hs₂.ld (d := slot ((k + 7) / 8) aN) (by omega)]) (by decide) (by decide) (by decide +kernel))
+    brun [h8₂, hs₂.ld (d := slot ((k + 7) / 8) aN) (by omega_using [hZ, hsN])]) (by decide) (by decide) (by decide +kernel))
     fun t₃ ⟨⟨h3₃, hm₃⟩, k₃⟩ => ?_
   refine WP.mono (minv_ok t₃ (by rw [h3₃]; exact hodd₀)) fun t₄ ⟨hinv, k₄, hm₄⟩ => ?_
   rw [h3₃] at hinv
   have hs₄ := (hs₂.congr k₃.wr).congr k₄.wr
   have h0₄ : t₄.gpr .x0 = B := (k₄.gpr .x0 (by decide)).trans ((k₃.gpr .x0 (by decide)).trans h0₂)
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = t₄.mem.writeW (off B (8 * sMinv)) (t₄.gpr .x15)) (by
-    brun [h0₄, hdr_enc (show sMinv < 32 by decide), hs₄.st (d := 8 * sMinv) (by omega)])
+    brun [h0₄, hdr_enc (show sMinv < 32 by decide), hs₄.st (d := 8 * sMinv) (by omega_using [hZ, eM, h8, h0'])])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₅⟩ => ?_
   have hm' : t.mem = t₂.mem.writeW (off B (8 * sMinv)) (t₄.gpr .x15) := by rw [hm, hm₄, hm₃]
-  have hwo : Outside B (8 * sMinv) 8 t₂.mem t.mem := by rw [hm']; exact writeW_outside _ B _ (by omega)
+  have hwo : Outside B (8 * sMinv) 8 t₂.mem t.mem := by rw [hm']; exact writeW_outside _ B _ (by omega_using [eM])
   refine ⟨t₄.gpr .x15, ⟨hs₄.congr k₅.wr, (k₅.gpr .x0 (by decide)).trans h0₄, ⟨?_, ?_, fun j hj => ?_⟩⟩, ?_, ?_,
     hf₂.trans (Frm.of_outside hwo (by simp [pcLoadRanges])),
     ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)⟩
-  · rw [hwo.word (by omega) (by omega)]; exact hW₂
+  · rw [hwo.word (by omega_using [eW, eM]) (by omega_using [eW])]; exact hW₂
   · rw [hm', word_writeW_self]
-  · rw [hwo.word (d := 8 * sArr j) (by unfold sArr sMinv; omega) (by unfold sArr; omega)]; exact hb₂ j hj
-  · rw [hwo.wv (by have := hdr_lt_slot ((k + 7) / 8) aN (show sMinv < 32 by decide); omega) (by omega)]
+  · rw [hwo.word (d := 8 * sArr j) (by unfold sArr sMinv; omega_using []) (by unfold sArr; omega_using [hj])]; exact hb₂ j hj
+  · rw [hwo.wv (by have := hdr_lt_slot ((k + 7) / 8) aN (show sMinv < 32 by decide); omega_using [this]) (by omega_using [hZ, hn, hsN])]
     exact hv₂
-  · rw [hwo.word (by have := hdr_lt_slot ((k + 7) / 8) aN (show sMinv < 32 by decide); omega) (by omega)]
+  · rw [hwo.word (by have := hdr_lt_slot ((k + 7) / 8) aN (show sMinv < 32 by decide); omega_using [this]) (by omega_using [hZ, hn, hsN])]
     exact hinv
 
 /-- The load a byte at a time: `w`, the bases, `m`, and `-m⁻¹` for the odd

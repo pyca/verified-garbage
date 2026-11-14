@@ -52,19 +52,19 @@ theorem dispatch_ok (c : Nat → Hash → Prog isa) (d : Prog isa) {Q : State �
     rw [hrdx] at hz
     by_cases he : x.toNat = i
     · have hxe : x = BitVec.ofNat 32 i := by
-        apply BitVec.eq_of_toNat_eq; rw [he, BitVec.toNat_ofNat]; simp at hi; omega
+        apply BitVec.eq_of_toNat_eq; rw [he, BitVec.toNat_ofNat]; simp at hi; omega_using [hi]
       refine WP.ite true (by simp [eval, hz, hxe]) (fun _ => ?_) (by simp)
       exact hc 0 (by simp) (by simpa using he) t hst
     · have hxe : x ≠ BitVec.ofNat 32 i := by
-        intro h'; apply he; rw [h', BitVec.toNat_ofNat]; simp at hi; omega
+        intro h'; apply he; rw [h', BitVec.toNat_ofNat]; simp at hi; omega_using [hi]
       refine WP.ite false (by simp [eval, hz, hxe]) (by simp) (fun _ => ?_)
-      refine ih (i + 1) (by simp at hi; omega) (fun j hj hxj t' ht' => ?_) (fun hn t' ht' => ?_) t hst
-      · have := hc (j + 1) (by simp; omega) (by omega) t' ht'
+      refine ih (i + 1) (by simp at hi; omega_using [hi]) (fun j hj hxj t' ht' => ?_) (fun hn t' ht' => ?_) t hst
+      · have := hc (j + 1) (by simp; omega_using [hj]) (by omega_using [hxj]) t' ht'
         simpa [Nat.add_assoc, Nat.add_comm 1 j] using this
       · refine hd (fun j hj => ?_) t' ht'
         cases j with
         | zero => simpa using he
-        | succ j => have := hn j (by simp at hj; omega); omega
+        | succ j => have := hn j (by simp at hj; omega_using [hj]); omega_using [this]
 
 
 theorem ofId_hashes : ∀ j (h : j < hashes.length), Hash.ofId j = some hashes[j] := by decide

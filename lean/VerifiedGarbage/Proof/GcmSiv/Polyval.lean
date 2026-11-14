@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.GcmSiv.Words
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM-SIV: POLYVAL is GHASH
@@ -48,7 +49,7 @@ theorem gp_of_bits (v : BitVec 128) (S : Finset ℕ) (hS : ∀ d ∈ S, d < 128)
   by_cases hk : k < 128
   · rw [h k hk]; by_cases hm : k ∈ S <;> simp [hm, bit]
   · have e : v.getMsbD k = false := by
-      simp only [BitVec.getMsbD, Bool.and_eq_false_imp, decide_eq_true_eq]; omega
+      simp only [BitVec.getMsbD, Bool.and_eq_false_imp, decide_eq_true_eq]; omega_using [hk]
     have hm : k ∉ S := fun hm => hk (hS k hm)
     simp [e, hm, bit]
 
@@ -78,12 +79,12 @@ theorem gp_shl1 (a : BitVec 128) :
     have e : (a <<< 1).getMsbD d = a.getMsbD (d + 1) := by
       simp only [BitVec.getMsbD, BitVec.getLsbD_shiftLeft]
       by_cases h : d + 1 < 128
-      · simp only [show d < 128 by omega, h, decide_true, Bool.true_and]
-        rw [show 128 - 1 - d - 1 = 128 - 1 - (d + 1) by omega]
-        simp [show ¬ (128 - 1 - d < 1) by omega]; omega
+      · simp only [show d < 128 by omega_using [h], h, decide_true, Bool.true_and]
+        rw [show 128 - 1 - d - 1 = 128 - 1 - (d + 1) by omega_using []]
+        simp [show ¬ (128 - 1 - d < 1) by omega_using [h]]; omega_using []
       · by_cases h' : d < 128
         · simp only [h', h, decide_true, decide_false, Bool.true_and, Bool.false_and]
-          simp only [show 128 - 1 - d < 1 by omega, decide_true, Bool.not_true, Bool.false_and,
+          simp only [show 128 - 1 - d < 1 by omega_using [h], decide_true, Bool.not_true, Bool.false_and,
             Bool.and_false]
         · simp only [h', h, decide_false, Bool.false_and]
     rw [e]

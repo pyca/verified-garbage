@@ -25,27 +25,27 @@ theorem Layout.slot {n context size : Nat} (L : Layout n context size) {i : Nat}
   have := slot_bound (n := n) hi
   have := L.apart
   unfold stride at *
-  omega
+  omega_arith
 
 theorem entry_apart (n tab : Nat) {j k : Nat} (h : j ≠ k) :
     entry n tab j+8*n ≤ entry n tab k ∨ entry n tab k+8*n ≤ entry n tab j := by
   rcases Nat.lt_or_gt_of_ne h with h | h
   · left
-    have := Nat.mul_le_mul_left (8*n) (show j+1 ≤ k by omega)
+    have := Nat.mul_le_mul_left (8*n) (show j+1 ≤ k by omega_using [h])
     simp only [Nat.mul_add, Nat.mul_one] at this
-    unfold entry; omega
+    unfold entry; omega_using [this]
   · right
-    have := Nat.mul_le_mul_left (8*n) (show k+1 ≤ j by omega)
+    have := Nat.mul_le_mul_left (8*n) (show k+1 ≤ j by omega_using [h])
     simp only [Nat.mul_add, Nat.mul_one] at this
-    unfold entry; omega
+    unfold entry; omega_using [this]
 
 theorem Layout.entry {n context size : Nat} (_L : Layout n context size) {j : Nat} (hj : j < 32) :
     context+16*n ≤ entry n (context+16*n) j ∧
     entry n (context+16*n) j+8*n ≤ context+272*n := by
-  have := Nat.mul_le_mul_left (8*n) (show j+1 ≤ 32 by omega)
+  have := Nat.mul_le_mul_left (8*n) (show j+1 ≤ 32 by omega_using [hj])
   simp only [Nat.mul_add, Nat.mul_one] at this
   unfold VG.Impl.Mont.X86.Dynamic.entry
-  omega
+  omega_using [this]
 
 theorem op_high {n size m o d : Nat} {base : Addr} {s t : State}
     (C : Context n m base size s) (ho : o < 9)
@@ -58,18 +58,18 @@ theorem op_high {n size m o d : Nat} {base : Addr} {s t : State}
   have nw := C.scr.nowrap
   unfold stride at bo b1 b2
   apply OpKeep.val K
-  · right; change slot n o+8*n ≤ d; omega
-  · right; change slot n 1+8*n ≤ d; omega
-  · right; rw [context_accLen]; omega
-  · omega
+  · right; change slot n o+8*n ≤ d; omega_using [hd, bo]
+  · right; change slot n 1+8*n ≤ d; omega_using [hd, b1]
+  · right; rw [context_accLen]; omega_using [hd, b2]
+  · omega_using [hz, nw]
 
 theorem outside_high_context {n context size m d len : Nat} {base : Addr} {s t : State}
     (L : Layout n context size) (C : Context n m base size s) {rs : List Reg}
     (K : Keeps rs s t) (hdi : .edi ∉ rs) (hsp : .esp ∉ rs)
     (O : Outside base d len s.mem t.mem) (hd : context ≤ d) : Context n m base size t := by
   apply C.outside_keep K hdi hsp O
-  · left; have := L.slot (i := 0) (by decide); omega
-  · have := slot_header n 9; have := L.apart; change slot n 9 ≤ context at this; omega
+  · left; have := L.slot (i := 0) (by decide); omega_using [hd, this]
+  · have := slot_header n 9; have := L.apart; change slot n 9 ≤ context at this; omega_arith
 
 /-- A retained-context write preserves every arithmetic slot. -/
 theorem high_write_low {n context size i d len : Nat} {base : Addr} {s t : State}
@@ -79,7 +79,7 @@ theorem high_write_low {n context size i d len : Nat} {base : Addr} {s t : State
   have bound := L.slot hi
   have size := L.bound
   have nw := hs.nowrap
-  exact O.wordsVal (.inl (by omega)) (by omega)
+  exact O.wordsVal (.inl (by omega_using [hd, bound])) (by omega_using [bound, size, nw])
 
 theorem encode_high {n context size d : Nat} {base : Addr} {s t : State}
     (L : Layout n context size) (hs : Scr s base size)
@@ -95,8 +95,8 @@ theorem encode_high {n context size d : Nat} {base : Addr} {s t : State}
   apply O.val32
   · intro r hr
     simp only [encodeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> right <;> omega
-  · have := hs.nowrap; omega
+    rcases hr with rfl | rfl | rfl | rfl <;> right <;> omega_arith
+  · have := hs.nowrap; omega_using [hz, this]
 
 theorem high_copy_ok {n context size m src dst : Nat} {base : Addr} {s : State}
     (L : Layout n context size) (C : Context n m base size s)
@@ -117,6 +117,6 @@ theorem widen {base : Addr} {rs qs : List (Nat × Nat)} {s t : Mem}
   intro r hr
   obtain ⟨q, hq, lo, hi⟩ := h r hr
   have := hx q hq
-  omega
+  omega_using [lo, hi, this]
 
 end VG.Proof.Mont.X86.Comb

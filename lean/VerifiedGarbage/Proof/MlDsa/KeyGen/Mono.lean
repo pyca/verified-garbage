@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA key generation: larger bounds give the same result
@@ -29,9 +30,9 @@ theorem ifn {α : Sort _} {p : Prop} [Decidable p] (h : ¬ p) (a b : α) : (if p
 
 theorem squeeze_take {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : Spec.Sha3.State) {d d' : Nat}
     (h : d ≤ d') : (squeeze rate S d').take d = squeeze rate S d :=
-  List.ext_getElem (by rw [List.length_take, Proof.Sha3.length_squeeze hr hr', Proof.Sha3.length_squeeze hr hr']; omega)
+  List.ext_getElem (by rw [List.length_take, Proof.Sha3.length_squeeze hr hr', Proof.Sha3.length_squeeze hr hr']; omega_using [h])
     fun i h₁ h₂ => by
-      rw [List.getElem_take, Proof.Sha3.squeeze_getElem hr hr' _ (by rw [List.length_take] at h₁; omega),
+      rw [List.getElem_take, Proof.Sha3.squeeze_getElem hr hr' _ (by rw [List.length_take] at h₁; omega_using [h, h₁]),
         Proof.Sha3.squeeze_getElem hr hr' _ (by rw [Proof.Sha3.length_squeeze hr hr'] at h₂; exact h₂)]
 
 theorem H_eq (s : List Byte) (d : Nat) :
@@ -186,8 +187,8 @@ theorem expandA_none {p : Params} {b : Bounds} {ρ : List Byte}
 theorem expandS_some {p : Params} {b : Bounds} {ρ' : List Byte} {S : Nat → IPoly}
     (h : ∀ r < p.ℓ + p.k, rejBoundedPoly p.η b.rejBounded (seedS ρ' r) = some (S r)) :
     expandS p b ρ' = some ((List.range p.ℓ).map S, (List.range p.k).map fun r => S (r + p.ℓ)) := by
-  rw [expandS_eq, mapM_some (g := S) fun r hr => h r (by have := List.mem_range.mp hr; omega),
-    Option.bind_some, mapM_some (g := fun r => S (r + p.ℓ)) fun r hr => h (r + p.ℓ) (by have := List.mem_range.mp hr; omega)]
+  rw [expandS_eq, mapM_some (g := S) fun r hr => h r (by have := List.mem_range.mp hr; omega_using [this]),
+    Option.bind_some, mapM_some (g := fun r => S (r + p.ℓ)) fun r hr => h (r + p.ℓ) (by have := List.mem_range.mp hr; omega_using [this])]
   rfl
 
 theorem expandS_none {p : Params} {b : Bounds} {ρ' : List Byte}
@@ -196,7 +197,7 @@ theorem expandS_none {p : Params} {b : Bounds} {ρ' : List Byte}
   rw [expandS_eq]
   by_cases hl : r < p.ℓ
   · rw [mapM_none ⟨r, List.mem_range.mpr hl, hn⟩]; rfl
-  · rw [mapM_none (l := List.range p.k) ⟨r - p.ℓ, List.mem_range.mpr (by omega), by rw [Nat.sub_add_cancel (by omega)]; exact hn⟩]
+  · rw [mapM_none (l := List.range p.k) ⟨r - p.ℓ, List.mem_range.mpr (by omega_using [hr, hl]), by rw [Nat.sub_add_cancel (by omega_using [hl])]; exact hn⟩]
     cases (List.mapM _ _ : Option (List IPoly)) <;> rfl
 
 /-- `ML-DSA.KeyGen_internal` after `ExpandA` and `ExpandS`: lines 5–10 of Algorithm 6. -/

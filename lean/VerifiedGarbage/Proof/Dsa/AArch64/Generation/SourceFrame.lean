@@ -24,7 +24,7 @@ theorem source_of_work {s t : State} {B p : Addr} {Z : Nat} {bs : List Byte}
   · intro r hmem hc
     apply he r hmem _ ?_ hc
     apply (Region.contains_self p bs.length).byte
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlen, hi])]
     exact hi
   · intro r hmem
     exact Or.inr (Nat.le_trans (hr r hmem) (h.out i hi))
@@ -36,7 +36,7 @@ theorem source_of_frame {s t : State} {B p : Addr} {Z : Nat} {bs : List Byte}
     (hlen : bs.length < 2 ^ 64) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : Src t B Z p bs := by
   refine ⟨fun i hi => by rw [hrd, hwr]; exact h.rd i hi, ?_, h.out⟩
   intro i hi
-  rw [hf _ (fun r hr hc => hsep r hr _ (Offset.contains_base p (by omega) (by omega)) hc)]
+  rw [hf _ (fun r hr hc => hsep r hr _ (Offset.contains_base p (by omega_using [hi]) (by omega_using [hlen, hi])) hc)]
   exact h.val i hi
 
 end VG.Proof.Dsa.AArch64.Generation

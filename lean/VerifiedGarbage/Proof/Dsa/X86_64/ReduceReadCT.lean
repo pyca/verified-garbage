@@ -56,7 +56,7 @@ theorem reduceRead_ct : RelCT isa (Two ReduceReadPre) (.block Arithmetic.reduceR
         hsi, by simpa only [hk.2.1, hk.2.2] using hr⟩
     xrun [State.ea, hdr, hg.1.rdi, hdrOff, hp,
       hg.1.scr.ld (show 8 * Crt.sSrc + 8 ≤ p.layout.Z by
-        have := hdr_lt_slot p.layout.w 8 (show Crt.sSrc < 32 by decide); have := hg.2; omega)]
+        have := hdr_lt_slot p.layout.w 8 (show Crt.sSrc < 32 by decide); have := hg.2; omega_arith)]
   apply RelCT.block_append
   refine RelCT.seq (two_piece (Ψ := ReduceReadStore) [.rdi, .rsi]
     (pins_of (fun p r => if r = .rdi then p.layout.B else p.pointer) (by
@@ -74,7 +74,7 @@ theorem reduceRead_ct : RelCT isa (Two ReduceReadPre) (.block Arithmetic.reduceR
       show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
       hg.1.hdr.harr aX (by decide),
       hg.1.scr.ld (show 8 * sArr aX + 8 ≤ p.layout.Z by
-        have := hdr_lt_slot p.layout.w 8 (show sArr aX < 32 by decide); have := hg.2; omega)]
+        have := hdr_lt_slot p.layout.w 8 (show sArr aX < 32 by decide); have := hg.2; omega_arith)]
   exact two_taint [.rdi, .rsi, .rbx]
     (pins_of (fun p r => if r = .rdi then p.layout.B else if r = .rsi then p.pointer else
       off p.layout.B (slot p.layout.w aX)) (by

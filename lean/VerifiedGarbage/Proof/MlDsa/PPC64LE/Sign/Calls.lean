@@ -167,8 +167,8 @@ theorem bit_congr {a b : Prop} [Decidable a] [Decidable b] (h : a ↔ b) : bit a
 
 theorem forall_lt_succ {Q : Nat → Prop} {r : Nat} : ((∀ j < r, Q j) ∧ Q r) ↔ ∀ j < r + 1, Q j :=
   ⟨fun ⟨h1, h2⟩ j hj => by
-    rcases (by omega : j < r ∨ j = r) with hj | rfl
-    exacts [h1 j hj, h2], fun h => ⟨fun j hj => h j (by omega), h r (by omega)⟩⟩
+    rcases (by omega_using [hj] : j < r ∨ j = r) with hj | rfl
+    exacts [h1 j hj, h2], fun h => ⟨fun j hj => h j (by omega_using [hj]), h r (by omega_using [])⟩⟩
 
 section
 variable {p : Params} {STK : Nat} {J J' : State → State → Prop} (hJ : ∀ σ s, J σ s → SC2 p STK σ s)

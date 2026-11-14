@@ -220,15 +220,15 @@ theorem KH.keepG {i i' e : Nat} (hi : i ≤ i') {s s' : State} (h : KH K σ i e 
       (List.mem_append_left _ (List.mem_append_right _ (List.mem_map.2 ⟨j, List.mem_range.2 hj, rfl⟩)))))))
       (h.sh j hj)
   · have hm : (ehP j, 1024) ∈ liveG K i' i e := List.mem_append_left _ (List.mem_append_left _
-      (List.mem_append_left _ (List.mem_append_right _ (List.mem_map.2 ⟨j - i', List.mem_range.2 (by omega),
+      (List.mem_append_left _ (List.mem_append_right _ (List.mem_map.2 ⟨j - i', List.mem_range.2 (by omega_using [hj, hij]),
         by rw [Nat.add_sub_cancel' hij]⟩))))
-    exact L₀.keepPoly hP (m _ hm) (h.eh j hj (by omega))
+    exact L₀.keepPoly hP (m _ hm) (h.eh j hj (by omega_using [hi, hij]))
   · rw [L₀.keepBytes hP (m _ (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _
       (List.mem_singleton_self _)))))]; exact h.dk
   · by_cases hji : j < i
     · rw [L₀.keepBytes hP (m _ (List.mem_append_left _ (List.mem_append_right _
         (List.mem_map.2 ⟨j, List.mem_range.2 hji, rfl⟩))))]; exact (h.ok ho).1 j hji
-    · exact hrow ho j (by omega) hj
+    · exact hrow ho j (by omega_using [hji]) hj
   · rw [EkF.stateAt_keep L₀ hP (hhs ho)]; exact (h.ok ho).2
 
 theorem KS.keep {i i' : Nat} (hi : i ≤ i') {s s' : State} (h : KS K σ i s) {ws : List (Ptr × Nat)}
@@ -241,14 +241,14 @@ theorem KS.keep {i i' : Nat} (hi : i ≤ i') {s s' : State} (h : KS K σ i s) {w
   · exact L₀.keepPoly hP (hk _ (List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _
       (List.mem_map.2 ⟨j, List.mem_range.2 hj, rfl⟩))))) (h.sh j hj)
   · exact L₀.keepPoly hP (hk (ehP j, 1024) (List.mem_append_left _ (List.mem_append_right _
-      (List.mem_map.2 ⟨j - i', List.mem_range.2 (by omega), by rw [Nat.add_sub_cancel' hij]⟩)))) (h.eh j hj (by omega))
+      (List.mem_map.2 ⟨j - i', List.mem_range.2 (by omega_using [hj, hij]), by rw [Nat.add_sub_cancel' hij]⟩)))) (h.eh j hj (by omega_using [hi, hij]))
   · rw [L₀.keepBytes hP (hk _ (List.mem_append_right _ (List.mem_singleton_self _)))]; exact h.dk
 
 theorem KH.keep {i e : Nat} {s s' : State} (h : KH K σ i e s) {ws : List (Ptr × Nat)} (hP : PPostB s s' ws)
     (h15 : s'.gpr .r15 = s.gpr .r15) (hkc : kcChk K.L ws = true)
     (hk : ∀ r ∈ liveR K i e, keepB (kgB K.L) ws r.1 r.2 = true)
     (hhs : allOk K.L.k (rhoK K.L σ) e → keepB (kgB K.L) ws (hsP K) 200 = true) : KH K σ i e s' :=
-  h.keepG W hp (Nat.le_refl _) hP h15 hkc hk (fun _ _ h₁ h₂ => absurd h₂ (by omega)) hhs
+  h.keepG W hp (Nat.le_refl _) hP h15 hkc hk (fun _ _ h₁ h₂ => absurd h₂ (by omega_using [h₁])) hhs
 
 end
 
@@ -263,13 +263,13 @@ theorem prfs_ok (v : Sample4Impl) {s : State} (h : KA K.L σ s) (h15 : s.gpr .r1
   simp only [Bool.and_eq_true] at hc
   obtain ⟨hkc, hr⟩ := keepAll_spec hc.2
   have L₀ := h.kc.lay W.toKgWfB hp
-  refine WP.mono (v.prfs_ok L₀ (kgB_bases K.L) (by omega) hc.1) fun s' ⟨hP, hb⟩ => ?_
+  refine WP.mono (v.prfs_ok L₀ (kgB_bases K.L) (by omega_using []) hc.1) fun s' ⟨hP, hb⟩ => ?_
   have hσ : bytesAt s'.mem (pa s' sigP) 32 = bytesAt s.mem (pa s sigP) 32 := L₀.keepBytes hP.b (hr (sigP, 32) (.tail _ (.head _)))
   refine ⟨h.kc.step W.toKgWfB hp hP.b hkc, by rw [L₀.keepBytes hP.b (hr (sc oG, 32) (by simp))]; exact h.rho,
     hσ.trans h.sig, by rw [L₀.keepBytes hP.b (hr (sc oSB, 32) (by simp))]; exact h.sb,
-    by rw [hP.cs .r15 (by decide)]; exact h15, fun N hN h2 => ?_, fun _ h h2 => absurd h (by omega)⟩
-  have := hb (N - 2) (by omega)
-  rw [show K.oPR + 256 + 128 * (N - 2) = K.oPR + 128 * N by omega, show 2 + (N - 2) = N by omega] at this
+    by rw [hP.cs .r15 (by decide)]; exact h15, fun N hN h2 => ?_, fun _ h h2 => absurd h (by omega_using [h2])⟩
+  have := hb (N - 2) (by omega_using [hN])
+  rw [show K.oPR + 256 + 128 * (N - 2) = K.oPR + 128 * N by omega_using [h2], show 2 + (N - 2) = N by omega_using [h2]] at this
   rw [Top16.prfO, hP.pa rbx_cs, this, h.sig]
 
 /-- `s ‖ e`, polynomial `N`. -/
@@ -289,7 +289,7 @@ theorem se_ok {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 6) (h2 : 2 ≤ N)
   · rw [L₀.keepBytes hP₁.b (k (sc oSB, 32) (by simp))]; exact h.sb
   · rw [L₀.keepBytes hP₁.b (k (prfO K N', 128) (List.mem_append_left _ (List.mem_append_right _
       (List.mem_map.2 ⟨N', List.mem_range.2 hN', rfl⟩))))]; exact h.prf N' hN' h2'
-  · rcases (by omega : N' < N ∨ N' = N) with hN' | rfl
+  · rcases (by omega_using [hN'] : N' < N ∨ N' = N) with hN' | rfl
     · exact L₀.keepPoly16 hP₁.b (k (rP K N', 512) (List.mem_append_right _
         (List.mem_map.2 ⟨N', List.mem_range.2 hN', rfl⟩))) (h.se N' hN' h2')
     · exact hp₁

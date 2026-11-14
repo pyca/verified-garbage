@@ -50,7 +50,7 @@ theorem callE_gpr (s t : State) {r : Reg} (hr : r ∉ linkRegs := by decide) : (
 theorem callE_stackArg {s t : State} (A : AtPriv pc s t) {i : Nat} (hi : i < nCallArgs pc) :
     stackArg (callE pc s t) i = stackArg s (3 + i) := by
   show t.mem.readW (stackArgAddr (callE pc s t) i) 64 = _
-  rw [stackArgAddr, show (callE pc s t).sp = fb s from A.sp, show 32 + 8 * (8 + i) = 96 + 8 * i by omega]
+  rw [stackArgAddr, show (callE pc s t).sp = fb s from A.sp, show 32 + 8 * (8 + i) = 96 + 8 * i by omega_using []]
   exact A.psa i hi
 
 theorem callE_addr {s t : State} (A : AtPriv pc s t) :
@@ -58,7 +58,7 @@ theorem callE_addr {s t : State} (A : AtPriv pc s t) :
   rw [stackArgAddr, show (callE pc s t).sp = fb s from A.sp]
 
 theorem lt_nCall {i : Nat} (hi : i < 12) : i < nCallArgs pc := by
-  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] <;> omega
+  cases pc <;> simp only [nCallArgs, Bool.false_eq_true, ↓reduceIte] <;> omega_using [hi]
 
 theorem preP_entry {s t : State} (h : DPre pc s) (A : AtPriv pc s t) : Rsa.PPC64LE.Priv.PreP pc (callE pc s t) := by
   have hk := h.k2
@@ -75,8 +75,8 @@ theorem preP_entry {s t : State} (h : DPre pc s) (A : AtPriv pc s t) : Rsa.PPC64
   have ka : Region.Disjoint ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ (psaR pc s) := by
     show Region.Disjoint _ ⟨fb s + BitVec.ofNat 64 96, _⟩
     rw [fb_eq, Offset.add_add]
-    exact (Offset.disjoint_base _ (by unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega)
-      (by unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega)).symm
+    exact (Offset.disjoint_base _ (by unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega_using [])
+      (by unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega_using [pl])).symm
   have cs' : Region.Sub ⟨kb s, Impl.Rsa.PPC64LE.Priv.frameBytes⟩ (kR s) := by
     have := callee_sub s; rwa [fb_eq, BitVec.add_sub_cancel] at this
   have g3 : (callE pc s t).gpr .r3 = s.gpr .r3 := (callE_gpr (pc := pc) s t).trans A.r3
@@ -111,7 +111,7 @@ theorem preP_entry {s t : State} (h : DPre pc s) (A : AtPriv pc s t) : Rsa.PPC64
   have s9 := sa 9 (by decide)
   have s11 := sa 11 (by decide)
   have wo' : (s.gpr .r3).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64 := h.h4 ▸ h.wo
-  refine ⟨by rw [hsp]; unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega, by rw [hsp]; omega, ?_, ?_, ?_, ?_, ?_,
+  refine ⟨by rw [hsp]; unfold Impl.Rsa.PPC64LE.Priv.frameBytes; omega_using [fbt, kbt], by rw [hsp]; omega_using [fbt], ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [Rsa.PPC64LE.Priv.rdL]
@@ -235,7 +235,7 @@ theorem call_covers {s t : State} (h : DPre pc s) (A : AtPriv pc s t) :
     · simp at hp
     · simp only [↓reduceIte, List.mem_singleton] at hp
       subst hp; exact hleft (by simp [rdL])
-  · exact Covers.right (Covers.one (in_fr s _ (by decide) (by unfold frameBytes; omega)))
+  · exact Covers.right (Covers.one (in_fr s _ (by decide) (by unfold frameBytes; omega_using [pl])))
 
 theorem priv_sdepth : sdepth Impl.Rsa.PPC64LE.Priv.code = Impl.Rsa.PPC64LE.Priv.frameBytes := by decide +kernel
 
@@ -266,17 +266,17 @@ theorem preX_entry {s t : State} (h : DPre true s) (X : PreX s) (A : AtPriv true
   · rw [sa 12 (by decide), sa 13 (by decide)]; exact X.wP
   · rw [sa 13 (by decide), sa 1 (by decide), sa 3 (by decide), callE_gpr (pc := true) s t (r := .r6), A.r6]
     exact X.pl
-  · rw [hsp]; omega
+  · rw [hsp]; omega_using [fbt]
   · have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
       bytes_of_frame (s := s) (rs := [kR s]) A.mem (p := p) (len := len)
         (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
     have hw := VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (p := stackArg s 15) (n := (stackArg s 16).toNat)
-      (fun r hr => by rw [List.mem_singleton.mp hr, Nat.mul_comm]; exact X.kP.symm) (by have := X.wP; omega)
+      (fun r hr => by rw [List.mem_singleton.mp hr, Nat.mul_comm]; exact X.kP.symm) (by have := X.wP; omega_using [this])
     simp only [Rsa.PPC64LE.Priv.PreHyp, State.withRegions_mem, State.callEntry_mem,
       callE_gpr (pc := true) s t (r := .r5), callE_gpr (pc := true) s t (r := .r6), A.r5, A.r6, sa 0 (by decide),
       sa 1 (by decide), sa 2 (by decide), sa 3 (by decide), sa 12 (by decide), sa 13 (by decide), hw]
-    rw [hb h.kn.symm (by have := h.wn; omega), hb h.kp.symm (by have := h.wp; omega),
-      hb h.kq.symm (by have := h.wq; omega)]
+    rw [hb h.kn.symm (by have := h.wn; omega_using []), hb h.kp.symm (by have := h.wp; omega_using []),
+      hb h.kq.symm (by have := h.wq; omega_using [])]
     exact X.hyp rfl
 
 /-- The call of `vg_rsa_private_checked`, or with `pc` of
@@ -340,11 +340,11 @@ theorem call_ok {s t : State} (h : DPre pc s) (X : pc = true → PreX s) (A : At
     have hb := fun {p : Addr} {len : Nat} (hd : Region.Disjoint ⟨p, len⟩ (kR s)) (hl : len ≤ 2 ^ 64) =>
       bytes_of_frame (s := s) (rs := [kR s]) A.mem (p := p) (len := len)
         (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hl
-    rw [hb h.kn.symm (by have := h.wn; omega), hb h.ke.symm (by have := h.we; omega),
-      hb (h.hi ▸ h.ki.symm) (by have := h.wi; rw [h.hi] at this; omega),
-      hb h.kp.symm (by have := h.wp; omega), hb h.kq.symm (by have := h.wq; omega),
-      hb (h.h8 ▸ h.kdp.symm) (by have := h.wdp; omega), hb (h.h10 ▸ h.kdq.symm) (by have := h.wdq; omega),
-      hb (h.h12 ▸ h.kqi.symm) (by have := h.wqi; omega)] at hpost
+    rw [hb h.kn.symm (by have := h.wn; omega_using []), hb h.ke.symm (by have := h.we; omega_using []),
+      hb (h.hi ▸ h.ki.symm) (by have := h.wi; rw [h.hi] at this; omega_using []),
+      hb h.kp.symm (by have := h.wp; omega_using []), hb h.kq.symm (by have := h.wq; omega_using []),
+      hb (h.h8 ▸ h.kdp.symm) (by have := h.wdp; omega_using []), hb (h.h10 ▸ h.kdq.symm) (by have := h.wdq; omega_using []),
+      hb (h.h12 ▸ h.kqi.symm) (by have := h.wqi; omega_using [])] at hpost
     exact hpost
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec

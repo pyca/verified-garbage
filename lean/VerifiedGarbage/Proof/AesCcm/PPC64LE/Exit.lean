@@ -41,7 +41,7 @@ theorem exit_wp {c : Cx} {s₀ s : State} (E : Env c s) (sv : Saved c.W (saveG s
     (by decide) (fun p hp => by
       have := saved_bound p hp
       rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-      exact E.perm.wR (by omega)) sv₂) fun s' R => ?_
+      exact E.perm.wR (by omega_using [this])) sv₂) fun s' R => ?_
   have lr₂ : s₂.lr = s₀.lr := by
     rw [u₂.lr, u₁.gpr, sv (.r0, lrO) List.mem_cons_self]
     simp [saveG, State.write]

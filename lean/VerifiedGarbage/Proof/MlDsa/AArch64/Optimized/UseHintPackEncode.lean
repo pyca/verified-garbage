@@ -20,7 +20,7 @@ theorem packedVector_fields {g : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
     {s : State} (hc : PackConstants s) {block i : Nat}
     (hb : block<16) (hi : i<2*packWidth g)
     (hv : ∀j (hj : j<4),∀e (he : e<4),(vword (s.v ([.v0,.v1,.v2,.v3] : List VReg)[j]!) e).toNat=
-      L[16*block+4*j+e]'(by omega)) :
+      L[16*block+4*j+e]'(by omega_using [hb, hj, he])) :
     vbyte (packedVector (packWidth g) s) i=
       (simpleBitPack L ((q-1)/(2*g)-1))[2*packWidth g*block+i]! := by
   have gathered : ∀j<16,vbyte (HighPack.gathered s) j=
@@ -28,11 +28,11 @@ theorem packedVector_fields {g : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
     intro j hj
     rw [gathered_word s hj]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_setWidth,BitVec.toNat_ofNat,hv (j/4) (by omega) (j%4) (by omega)]
-    rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by simp; omega),Option.getD_some]
+    rw [BitVec.toNat_setWidth,BitVec.toNat_ofNat,hv (j/4) (by omega_using [hj]) (j%4) (by omega_using [])]
+    rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by simp; omega_using [hb, hj]),Option.getD_some]
     simp only [Vector.getElem_toList]
     congr 2
-    omega
+    omega_using []
   have hlen : L.toList.length=256 := by simp
   have bounds : ∀a∈L.toList,a<2^packWidth g := by
     intro a ha

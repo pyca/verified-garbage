@@ -24,10 +24,10 @@ open VG.Proof.Rsa.MontMul (scratchBytes)
 abbrev cwc (len : Nat) (c : Ctx) : Nat := bc len c / 4
 
 theorem cwc_eq (len : Nat) (c : Ctx) : 2 * (bc len c / 8) = cwc len c := by
-  have := bc_dvd len c; simp only [cwc]; omega
+  have := bc_dvd len c; simp only [cwc]; omega_using [this]
 
 theorem bc_eq_cwc (len : Nat) (c : Ctx) : bc len c = 4 * cwc len c := by
-  have := bc_dvd len c; simp only [cwc]; omega
+  have := bc_dvd len c; simp only [cwc]; omega_using [this]
 
 theorem mulBody_noSp (c : Ctx) (o a b : Nat) :
     NoSp (.seq (.block (mulArgs c o a b)) (.call "vg_rsa_mont_mul_at" Sse2.atBody) : Prog isa) := by
@@ -53,16 +53,16 @@ theorem In.offs {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
       lo len (.slot c j) + st len c ≤ lo len (.slot c 8) + st len c := fun j h3 h8 => by
     have := Nat.mul_le_mul_right (st len c) h3
     have := Nat.mul_le_mul_right (st len c) h8
-    simp only [lo]; omega
+    simp only [lo]; omega_arith
   obtain ⟨o1, o2⟩ := mo o ho3 ho
   obtain ⟨a1, a2⟩ := mo a ha3 ha
   obtain ⟨b1, b2⟩ := mo b hb3 hb
-  have hb8 : 8 * (bc len c / 8) = bc len c := by omega
+  have hb8 : 8 * (bc len c / 8) = bc len c := by omega_using [e8]
   have est : st len c = 2 * bc len c + 32 := rfl
   have nb : numBase = 3336 := rfl
   simp only [lo] at f8 o1 o2 a1 a2 b1 b2
-  refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [lo, scratchBytes, VG.Proof.Rsa.MontMul.Apart, invOff, hb8] <;> omega
+  refine ⟨by omega_using [g], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [lo, scratchBytes, VG.Proof.Rsa.MontMul.Apart, invOff, hb8] <;> omega_arith
 
 theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : In Ex base bytes len args s) (c : Ctx) {o a b : Nat} (ho3 : 3 ≤ o) (ho : o ≤ 8) (ha3 : 3 ≤ a) (ha : a ≤ 8)
@@ -80,18 +80,18 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   have low := h.room.low
   have top := h.top
   have e8 := bc_dvd len c
-  have hb8 : 8 * (bc len c / 8) = bc len c := by omega
-  have sb : scratchBytes (bc len c / 8) = 3 * bc len c + 56 := by simp only [scratchBytes]; omega
-  have p64 : 64 * (bc len c / 8) = 8 * bc len c := by omega
+  have hb8 : 8 * (bc len c / 8) = bc len c := by omega_using [e8]
+  have sb : scratchBytes (bc len c / 8) = 3 * bc len c + 56 := by simp only [scratchBytes]; omega_using [e8]
+  have p64 : 64 * (bc len c / 8) = 8 * bc len c := by omega_using [e8]
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   have fEspN : ((allocFrame 36 s).gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by
-    rw [fEsp, VG.X86.sub_toNat (by omega)]
+    rw [fEsp, VG.X86.sub_toNat (by omega_using [low])]
   have C := call_ok (is := mulArgs c o a b) h.scratch h.hbytes h.room (h.offs c ho3 ho ha3 ha hb3 hb)
     (by rw [cwc_eq]; exact hinv) (by rw [cwc_eq]; exact hB) (mulBody_noSp c o a b)
     (by
       have := mulArgs_ok (f := allocFrame 36 s) (len := len) (c := c) (o := o) (a := a) (b := b)
-        (argAt_alloc h.width) (argAt_alloc (h.arg (i := wsLenArg) (by decide))) h.upper' (by omega) (by omega)
-        (by omega) (by omega) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
+        (argAt_alloc h.width) (argAt_alloc (h.arg (i := wsLenArg) (by decide))) h.upper' (by omega_using [ho]) (by omega_using [ha])
+        (by omega_using [hb]) (by omega_using [fEspN]) (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)
       rwa [show (allocFrame 36 s).gpr .edi = s.gpr .edi from allocFrame_gpr _ _ (by decide)] at this)
   refine WP.mono C fun t ⟨cs, rd, wr, F, L, V⟩ => ⟨cs, rd, wr, ?_, ?_, ?_⟩
   · rw [hb8, sb] at F; exact F

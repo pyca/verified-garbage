@@ -162,7 +162,7 @@ theorem apply_step (s : State) (i j : Byte) (P D L Sc : BitVec 32) (n : Nat)
       t.gpr .ebx = BitVec.ofNat 32 (n + 1) ∧
       t.zf = some (BitVec.ofNat 32 (n + 1) - L == 0#32) := by
   intro p ii a jj b swapped m₂ k
-  have hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32 := by rw [he.p]; have := he.pfit; omega
+  have hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32 := by rw [he.p]; have := he.pfit; omega_using [this]
   have hp : InRegions s.wr ((s.gpr .edi).setWidth 64) 256 := by rw [he.p]; exact he.table
   have hr : InRegions (s.rd ++ s.wr) ((s.gpr .edi).setWidth 64) 256 := by
     obtain ⟨r, hr, hc⟩ := hp
@@ -172,7 +172,7 @@ theorem apply_step (s : State) (i j : Byte) (P D L Sc : BitVec 32) (n : Nat)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have argT {o : Nat} (h : Mem.Sep (addr (s.gpr .esp) o) 4 p 256) (x : Byte) :
       Mem.Sep (addr (s.gpr .esp) o) 4 (p + BitVec.ofNat 64 x.toNat) 1 :=
-    sep_offset_right h (by have := x.isLt; omega) (by have := x.isLt; omega)
+    sep_offset_right h (by have := x.isLt; omega_using []) (by have := x.isLt; omega_using [])
   simp only [applyStep, List.append_assoc]
   rw [← List.append_assoc, ← List.append_assoc, WP.block_append_iff]
   refine WP.mono (apply_before s i j hsi hbp hfit hr) fun t ⟨tsi, tbp, tk, tm⟩ => ?_
@@ -183,7 +183,7 @@ theorem apply_step (s : State) (i j : Byte) (P D L Sc : BitVec 32) (n : Nat)
   have htp : InRegions t.wr ((t.gpr .edi).setWidth 64) 256 := by rw [tk.2.2, tdi]; exact he.table
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.eax, .ecx, .edx]
-    (replace_core t jj ii tbp tsi (by rw [tdi]; have := he.pfit; omega) htp) (by decide +kernel))
+    (replace_core t jj ii tbp tsi (by rw [tdi]; have := he.pfit; omega_using [this]) htp) (by decide +kernel))
     fun u ⟨⟨uax, um⟩, uk⟩ => ?_
   rw [tm, tdi] at uax um
   have usi : u.gpr .esi = ii.setWidth 32 := (uk.gpr (by decide)).trans tsi
@@ -194,7 +194,7 @@ theorem apply_step (s : State) (i j : Byte) (P D L Sc : BitVec 32) (n : Nat)
   have urd : u.rd = s.rd := uk.2.1.trans tk.2.1
   have uwr : u.wr = s.wr := uk.2.2.trans tk.2.2
   rw [WP.block_append_iff]
-  refine WP.mono (loadI_ok u ii usi (by rw [udi]; have := he.pfit; omega)
+  refine WP.mono (loadI_ok u ii usi (by rw [udi]; have := he.pfit; omega_using [this])
     (by rw [urd, uwr, udi]; exact hrP)) fun v ⟨vdx, vk, vm⟩ => ?_
   have ha : u.mem (p + BitVec.ofNat 64 ii.toNat) = a := by
     rw [um, write_byte]
@@ -210,8 +210,8 @@ theorem apply_step (s : State) (i j : Byte) (P D L Sc : BitVec 32) (n : Nat)
   rw [WP.block_append_iff]
   have hw : InRegions v.wr ((v.gpr .edi).setWidth 64 + BitVec.ofNat 64 ii.toNat) 1 := by
     rw [vwr, vdi]
-    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega) (by have := ii.isLt; omega) he.table
-  refine WP.mono (apply_middle v ii a b jj Sc vsi vax vdx vbp (by rw [vdi]; have := he.pfit; omega)
+    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) he.table
+  refine WP.mono (apply_middle v ii a b jj Sc vsi vax vdx vbp (by rw [vdi]; have := he.pfit; omega_using [this])
     he.sfit hw (by rw [vwr]; exact he.spill) (by rw [vrd, vwr, vsp]; exact he.a16)
     (by rw [vm, um, vsp, vdi, readW_write2 (argT he.s16T jj) (argT he.s16T ii)]; exact he.v16))
     fun w ⟨wm, wbp, wk⟩ => ?_
@@ -227,12 +227,12 @@ theorem apply_step (s : State) (i j : Byte) (P D L Sc : BitVec 32) (n : Nat)
   have wbp' : w.gpr .ebp = (a + b).setWidth 32 := by rw [wbp, BitVec.add_comm]
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.eax, .ecx, .edx] (lookup_core w (a + b) wbp'
-    (by rw [wdi]; have := he.pfit; omega) (by rw [wrd, wwr, wdi]; exact hrP))
+    (by rw [wdi]; have := he.pfit; omega_using [this]) (by rw [wrd, wwr, wdi]; exact hrP))
     (by decide +kernel)) fun x ⟨⟨xax, xm⟩, xk⟩ => ?_
   have hk : w.mem ((w.gpr .edi).setWidth 64 + BitVec.ofNat 64 (a + b).toNat) = k := by
     rw [hwm, wdi]
     apply Mem.write_apply
-    exact he.sTS _ (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact (a + b).isLt)
+    exact he.sTS _ (by rw [Mem.sub_ofNat_toNat _ (by omega_using [])]; exact (a + b).isLt)
   rw [hk] at xax
   have xsp : x.gpr .esp = s.gpr .esp := (xk.gpr (by decide)).trans wsp
   have xrd : x.rd = s.rd := xk.2.1.trans wrd
@@ -243,14 +243,14 @@ theorem apply_step (s : State) (i j : Byte) (P D L Sc : BitVec 32) (n : Nat)
     rw [readW_writeW_sep4 hS, readW_write2 (argT hT jj) (argT hT ii)]
   have hdn : n < L.toNat := hn
   refine WP.mono (apply_after x k Sc D L n xax ((xk.gpr (by decide)).trans wbx) he.sfit
-    (by have := he.dfit; omega)
+    (by have := he.dfit; omega_using [hn, this])
     (by rw [xrd, xwr, xsp]; exact he.a16) (by rw [xm, hwm, xsp, hm2 16 he.s16T he.s16S]; exact he.v16)
     (by rw [xrd, xwr]; obtain ⟨r, hr', hc⟩ := he.spill; exact ⟨r, List.mem_append_right _ hr', hc⟩)
     (by rw [xrd, xwr, xsp]; exact he.a8) (by rw [xm, hwm, xsp, hm2 8 he.s8T he.s8S]; exact he.v8)
-    (by rw [xwr]; exact region_offset _ _ _ _ _ (by omega) (by omega) he.data)
+    (by rw [xwr]; exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) he.data)
     (by rw [xrd, xwr, xsp]; exact he.a12)
     (fun v => by
-      rw [xm, hwm, xsp, readW_write1 (sep_offset_right he.s12D (by omega) (by omega)),
+      rw [xm, hwm, xsp, readW_write1 (sep_offset_right he.s12D (by omega_using [hn]) (by omega_using [hn])),
         hm2 12 he.s12T he.s12S]
       exact he.v12)) fun y ⟨ym, ybp, ybx, yz, yk⟩ => ?_
   refine ⟨by rw [ym, xm, hwm], yk.2.1.trans xrd, yk.2.2.trans xwr,

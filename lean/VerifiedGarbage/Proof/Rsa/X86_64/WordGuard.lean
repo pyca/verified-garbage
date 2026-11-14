@@ -40,7 +40,7 @@ theorem guardHead_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) :
 theorem guardTail_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I)
     (h12 : s.gpr .r12 = BitVec.ofNat 64 (wk I.k)) (hdx : s.gpr .rdx = I.pN) :
     WP isa (.block wordGuardTail) s fun t =>
-      CvS I m₀ t ∧ t.mem = s.mem ∧ t.zf = some (guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega)) == 0) := by
+      CvS I m₀ t ∧ t.mem = s.mem ∧ t.zf = some (guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega_using [this])) == 0) := by
   have hk := L.k1
   have hn : 0 < I.nb.length := by rw [L.nl]; omega_using [hk]
   have hz := h.ws.h256
@@ -84,7 +84,7 @@ theorem guard_zero {W k pl ql : Nat} {b : Byte} (hW : W < 2 ^ 24) (hk : k < 2 ^ 
 
 /-- The public guard ensures that valid factors fit the normalized half width. -/
 theorem factors_word {I : CvIn} (L : CvLens I)
-    (hg : guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega)) = 0)
+    (hg : guardVal (wk I.k) I.k I.pl I.ql (I.nb[0]'(by rw [L.nl]; have := L.k1; omega_using [this])) = 0)
     (he : Spec.Rsa.os2ip I.pb * Spec.Rsa.os2ip I.qb = Spec.Rsa.os2ip I.nb) :
     (2 ^ (64 * (wk I.k / 2) - 1) ≤ Spec.Rsa.os2ip I.pb - 1 ∧
       Spec.Rsa.os2ip I.pb < 2 ^ (64 * (wk I.k / 2))) ∧
@@ -103,7 +103,7 @@ theorem factors_word {I : CvIn} (L : CvLens I)
   have qbound := os2ip_lt I.qb
   rw [L.pbl, pow256_eq, ep] at pbound
   rw [L.qbl, pow256_eq, eq] at qbound
-  have nb := os2ip_high (by rw [L.nl]; have := L.k1; omega) hb
+  have nb := os2ip_high (by rw [L.nl]; have := L.k1; omega_using [hp]) hb
   rw [L.nl, show 8 * I.k - 1 = 2 * (64 * (wk I.k / 2)) - 1 by omega_using [hwk, hbits]] at nb
   have npos : 1 ≤ 64 * (wk I.k / 2) := by have := L.k1; omega_using [this, hwk, hbits]
   have fb := balanced_factor npos pbound qbound nb he

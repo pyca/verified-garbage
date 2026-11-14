@@ -34,13 +34,13 @@ theorem num5' (s₀ : State) (g : Nat) :
       byte width5 s₀ (5 * g + 4) * 2 ^ 32 := by
   rw [num_succ, num_succ, num_succ, num_succ, num_succ, num, List.range_zero, List.map_nil, digits_nil]
   simp only [show width5.nb = 5 from rfl, Nat.add_zero]
-  omega
+  omega_using []
 
 /-- Coefficient `32 k + m` of the output for `d = 5`. -/
 theorem G5 (s₀ : State) {k m : Nat} (hk : k < 8) (hm : m < 32) :
     DD.G width5 s₀ (32 * k + m) = BitVec.ofNat 32 (df 5 (dig5 (fun l => num width5 s₀ (4 * k + l) 5) m)) := by
-  rw [show 32 * k + m = width5.c * (4 * k + m / 8) + m % 8 by simp [width5]; omega,
-    G_eq width5_ok s₀ (by simp [width5]; omega) (by simp [width5]; omega)]
+  rw [show 32 * k + m = width5.c * (4 * k + m / 8) + m % 8 by simp [width5]; omega_using [],
+    G_eq width5_ok s₀ (by simp [width5]; omega_using [hk, hm]) (by simp [width5]; omega_using [])]
   simp only [show width5.d = 5 from rfl, show width5.nb = 5 from rfl, df, dig5]
 
 theorem step5 {s₀ : State} (hp : Pre width5 s₀) {k : Nat} (hk : k < 8) {s : State}

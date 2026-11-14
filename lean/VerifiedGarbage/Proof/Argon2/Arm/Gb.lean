@@ -51,17 +51,17 @@ theorem wp_gb {a b c d : Nat} {V : BitVec 32} {N : Nat} (hN : N ≤ 4092)
   have iV : ∀ o, o + 8 ≤ N → InRegions (s.rd ++ s.wr) (A V o) 4 ∧
       InRegions (s.rd ++ s.wr) (A V (o + 4)) 4 := fun o ho => ⟨mem_rd (hRV o ho).1, mem_rd (hRV o ho).2⟩
   -- Load the four words.
-  refine wp_ld64 (by decide) (by decide) (by omega) h3 rfl (iV a ha).1 (iV a ha).2
+  refine wp_ld64 (by decide) (by decide) (by omega_using [hN, ha]) h3 rfl (iV a ha).1 (iV a ha).2
     fun s₁ o₁ pa => ?_
-  refine wp_ld64 (by decide) (by decide) (by omega) (by rw [o₁.gpr _ (by decide), h3]) o₁.mem
+  refine wp_ld64 (by decide) (by decide) (by omega_using [hN, hb]) (by rw [o₁.gpr _ (by decide), h3]) o₁.mem
     (by rw [o₁.rd, o₁.wr]; exact (iV b hb).1) (by rw [o₁.rd, o₁.wr]; exact (iV b hb).2)
     fun s₂ o₂ pb => ?_
   have O₂ := o₁.trans o₂
-  refine wp_ld64 (by decide) (by decide) (by omega) (by rw [O₂.gpr _ (by decide), h3]) O₂.mem
+  refine wp_ld64 (by decide) (by decide) (by omega_using [hN, hc]) (by rw [O₂.gpr _ (by decide), h3]) O₂.mem
     (by rw [O₂.rd, O₂.wr]; exact (iV c hc).1) (by rw [O₂.rd, O₂.wr]; exact (iV c hc).2)
     fun s₃ o₃ pc => ?_
   have O₃ := O₂.trans o₃
-  refine wp_ld64 (by decide) (by decide) (by omega) (by rw [O₃.gpr _ (by decide), h3]) O₃.mem
+  refine wp_ld64 (by decide) (by decide) (by omega_using [hN, hd]) (by rw [O₃.gpr _ (by decide), h3]) O₃.mem
     (by rw [O₃.rd, O₃.wr]; exact (iV d hd).1) (by rw [O₃.rd, O₃.wr]; exact (iV d hd).2)
     fun s₄ o₄ pd => ?_
   have O₄ := O₃.trans o₄
@@ -108,13 +108,13 @@ theorem wp_gb {a b c d : Nat} {V : BitVec 32} {N : Nat} (hN : N ≤ 4092)
   -- Store them.
   have w : Reg64 s₁₅.wr V N := by rw [O₁₅.wr]; exact hRV
   have r3 : s₁₅.gpr .r3 = V := by rw [O₁₅.gpr _ (by decide), h3]
-  refine wp_st (by omega) r3 pa₂' (w a ha).1 (w a ha).2 fun s₁₆ u₁₆ => ?_
-  refine wp_st (by omega) (by rw [u₁₆.gpr, r3]) (by rw [Pair, u₁₆.gpr]; exact pb₂)
+  refine wp_st (by omega_using [hN, ha]) r3 pa₂' (w a ha).1 (w a ha).2 fun s₁₆ u₁₆ => ?_
+  refine wp_st (by omega_using [hN, hb]) (by rw [u₁₆.gpr, r3]) (by rw [Pair, u₁₆.gpr]; exact pb₂)
     (by rw [u₁₆.wr]; exact (w b hb).1) (by rw [u₁₆.wr]; exact (w b hb).2) fun s₁₇ u₁₇ => ?_
-  refine wp_st (by omega) (by rw [u₁₇.gpr, u₁₆.gpr, r3]) (by rw [Pair, u₁₇.gpr, u₁₆.gpr]; exact pc₂')
+  refine wp_st (by omega_using [hN, hc]) (by rw [u₁₇.gpr, u₁₆.gpr, r3]) (by rw [Pair, u₁₇.gpr, u₁₆.gpr]; exact pc₂')
     (by rw [u₁₇.wr, u₁₆.wr]; exact (w c hc).1) (by rw [u₁₇.wr, u₁₆.wr]; exact (w c hc).2)
     fun s₁₈ u₁₈ => ?_
-  refine wp_st (by omega) (by rw [u₁₈.gpr, u₁₇.gpr, u₁₆.gpr, r3])
+  refine wp_st (by omega_using [hN, hd]) (by rw [u₁₈.gpr, u₁₇.gpr, u₁₆.gpr, r3])
     (by rw [Pair, u₁₈.gpr, u₁₇.gpr, u₁₆.gpr]; exact pd₂')
     (by rw [u₁₈.wr, u₁₇.wr, u₁₆.wr]; exact (w d hd).1)
     (by rw [u₁₈.wr, u₁₇.wr, u₁₆.wr]; exact (w d hd).2) fun s₁₉ u₁₉ => K s₁₉ ⟨fun r hr => ?_, ?_,
@@ -139,7 +139,7 @@ theorem working_get (m : Mem) (B : BitVec 32) (i : Fin 128) :
 /-- The permuted block's region. -/
 abbrev permR (B : BitVec 32) : Region := ⟨State.addr B + BitVec.ofNat 64 1024, 1024⟩
 
-theorem wOff_lt (i : Fin 128) : wOff i.val + 8 ≤ 2048 := by have := i.isLt; simp only [wOff]; omega
+theorem wOff_lt (i : Fin 128) : wOff i.val + 8 ≤ 2048 := by have := i.isLt; simp only [wOff]; omega_using []
 
 section
 variable {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32)
@@ -153,23 +153,23 @@ theorem working_write (m : Mem) (i : Fin 128) (v : Word) :
   by_cases h : i.val = j
   · subst j
     simp only [ite_true]
-    exact rd64_write64_self m v (by have := wOff_lt i; omega)
+    exact rd64_write64_self m v (by have := wOff_lt i; omega_using [hfit, this])
   · simp only [h, ite_false]
-    exact rd64_write64_ne m v (by have := wOff_lt i; omega) (by simp only [wOff]; omega)
-      (by simp only [wOff]; omega)
+    exact rd64_write64_ne m v (by have := wOff_lt i; omega_using [hfit, this]) (by simp only [wOff]; omega_using [hfit, hj])
+      (by simp only [wOff]; omega_using [h])
 
 /-- A write to a word of the permuted block stays in its region. -/
 theorem frame_write (m m' : Mem) (hf : Frame [permR B] m m') (i : Fin 128) (v : Word) :
     Frame [permR B] m (write64 m' B (wOff i.val) v) := by
   have c : ∀ e, e + 4 ≤ 1024 → (permR B).Contains (A B (1024 + e)) 4 := fun e he => by
-    rw [VG.Proof.Sha512.Arm.A_eq (by omega), ← Offset.add_ofNat_add_ofNat]
-    exact Offset.contains_base _ he (by omega)
+    rw [VG.Proof.Sha512.Arm.A_eq (by omega_using [hfit, he]), ← Offset.add_ofNat_add_ofNat]
+    exact Offset.contains_base _ he (by omega_using [he])
   have m₁ := List.mem_singleton_self (permR B)
   have := i.isLt
   simp only [write64]
-  exact (hf.writeW m₁ _ (c (8 * i.val) (by omega))).writeW m₁ _
-    (by rw [show wOff i.val + 4 = 1024 + (8 * i.val + 4) by simp only [wOff]; omega]
-        exact c _ (by omega))
+  exact (hf.writeW m₁ _ (c (8 * i.val) (by omega_using []))).writeW m₁ _
+    (by rw [show wOff i.val + 4 = 1024 + (8 * i.val + 4) by simp only [wOff]; omega_using []]
+        exact c _ (by omega_using []))
 
 end
 
@@ -219,7 +219,7 @@ theorem gbMem_shift (m : Mem) (B : BitVec 32) (e a b c d : Nat) :
 theorem reg64_shift {wr : List Region} {B : BitVec 32} {N N' d : Nat} (h : Reg64 wr B N)
     (hd : d + N' ≤ N) : Reg64 wr (B + BitVec.ofNat 32 d) N' := fun o ho => by
   rw [A_shift, A_shift, ← Nat.add_assoc]
-  exact h (d + o) (by omega)
+  exact h (d + o) (by omega_using [hd, ho])
 
 /-- GB on the words `a₀`, …, `d₀` of the permuted block at `r3`, which is
 `8e` bytes past `B`: on the words `a = a₀ + e`, …, `d` of the block at `B`. -/
@@ -230,12 +230,12 @@ theorem gbAt_ok {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32) {s : State} {
     WP isa (gbAt a₀ b₀ c₀ d₀) s
       (Step B s (Proof.Argon2.mixWords (working s.mem B) a b c d)) := by
   have sh (x : Fin 128) (x₀ : Nat) (h : x.val = x₀ + e) : 8 * e + wOff x₀ = wOff x.val := by
-    simp only [wOff]; omega
+    simp only [wOff]; omega_using [h]
   have lt (x : Fin 128) (x₀ : Nat) (h : x.val = x₀ + e) : wOff x₀ + 8 ≤ 2048 - 8 * e := by
     have := x.isLt; simp only [wOff]; omega
   unfold gbAt
   rw [← List.append_nil (gb _ _ _ _)]
-  refine wp_gb (N := 2048 - 8 * e) (by omega) (lt a a₀ ha) (lt b b₀ hb) (lt c c₀ hc) (lt d d₀ hd)
+  refine wp_gb (N := 2048 - 8 * e) (by omega_using []) (lt a a₀ ha) (lt b b₀ hb) (lt c c₀ hc) (lt d d₀ hd)
     (reg64_shift hA (by omega)) h3 fun t w => WP.block_nil ⟨⟨w.gpr, w.rd, w.wr, w.sp⟩, ?_, ?_⟩
   · rw [w.mem, gbMem_shift, sh a a₀ ha, sh b b₀ hb, sh c c₀ hc, sh d d₀ hd, gbMem]
     simp only [working_write hfit, ← working_get]

@@ -52,14 +52,14 @@ theorem clearBuf_ok {t : State} (h : Base (SD s) (VD s rc) (withMem s m) t) :
   refine WP.mono (fill_ok (p := off (Sd s) oBuf) (n := 2048) (b := 0) (by decide) (by decide)
     (by rw [o₅.get .a1, o₄.get .a1, o₃.get .a1, e₂, e₁, h.s0]; exact bufBase_eq _)
     (by rw [o₅.get .t5, e₄, e₃]; decide) (by rw [e₅]; rfl)
-    (sc_w PF (by rw [k₅.wr, h.wr]) (by omega))) fun t' ⟨hk, hm⟩ => ?_
+    (sc_w PF (by rw [k₅.wr, h.wr]) (by omega_using [hB, hRs]))) fun t' ⟨hk, hm⟩ => ?_
   have hK : Kept [.a1, .t5, .t0] t t' := (k₅.keep.trans hk).mono
   have hm' : t'.mem = writeBytes t.mem (off (Sd s) oBuf) (List.replicate 2048 0) := by rw [hm, k₅.mem]
-  refine ⟨h.wb PF hK (by rw [List.length_replicate]; omega) hm', hK, fun o ho => ?_⟩
-  rw [hm', view_wb _ _ (by rw [List.length_replicate]; omega) ho, List.length_replicate]
+  refine ⟨h.wb PF hK (by rw [List.length_replicate]; omega_using [hB, hRs]) hm', hK, fun o ho => ?_⟩
+  rw [hm', view_wb _ _ (by rw [List.length_replicate]; omega_using [hB, hRs]) ho, List.length_replicate]
   split
   · rename_i hc
-    rw [List.getD_eq_getElem?_getD, List.getElem?_replicate, ifp (by omega)]; rfl
+    rw [List.getD_eq_getElem?_getD, List.getElem?_replicate, ifp (by omega_using [hc])]; rfl
   · rfl
 
 /-- `T` (`k - 2 D - 1` bytes at `1 + 2 D`) to the buffer. -/
@@ -75,33 +75,33 @@ theorem copyT_ok {H : Hash} {D : Nat} (hD : H.D = D) (hD64 : D ≤ 64) (hk : 2 *
   subst hD
   unfold copyT bufBase
   simp only [List.cons_append, List.nil_append]
-  refine WP.seq (wp_addi (imm := oEm + 1 + 2 * H.D) (h := by unfold oEm; omega) fun t₁ o₁ e₁ =>
+  refine WP.seq (wp_addi (imm := oEm + 1 + 2 * H.D) (h := by unfold oEm; omega_using [hD64]) fun t₁ o₁ e₁ =>
     wp_addi (imm := 2047) fun t₂ o₂ e₂ => wp_addi (imm := 513) fun t₃ o₃ e₃ =>
-    wp_subi (imm := 2 * H.D + 1) (h := by omega) fun t₄ o₄ e₄ => wp_nil ?_)
+    wp_subi (imm := 2 * H.D + 1) (h := by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil ?_)
   have k₄ : Only [.a4, .a1, .a5] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have hn : t₄.gpr .a5 = BitVec.ofNat 64 (kk s - (2 * H.D + 1)) := by
-    rw [e₄, o₃.get .s1, o₂.get .s1, o₁.get .s1, Base.dk h, sub_k (by omega)]
+    rw [e₄, o₃.get .s1, o₂.get .s1, o₁.get .s1, Base.dk h, sub_k (by omega_using [ek, hk])]
   refine WP.mono (copy_ok (q := off (Sd s) (1 + 2 * H.D)) (p := off (Sd s) oBuf) (n := kk s - (2 * H.D + 1))
-    (by omega) (by omega) (by rw [o₄.get .a1, e₃, e₂, o₁.get .s0, h.s0]; exact bufBase_eq _)
+    (by omega_using [hk]) (by omega_using [ek]) (by rw [o₄.get .a1, e₃, e₂, o₁.get .s0, h.s0]; exact bufBase_eq _)
     (by rw [o₄.get .a4, o₃.get .a4, o₂.get .a4, e₁, h.s0, hE, Nat.zero_add]) hn
     (fun j hj => by
       rw [k₄.rd, k₄.wr, h.wr]
       show InRegions _ (off (off (Sd s) (1 + 2 * H.D)) j) 1
-      rw [off_off]; exact sc_inR PF (by omega) _)
-    (sc_w PF (by rw [k₄.wr, h.wr]) (by omega))
+      rw [off_off]; exact sc_inR PF (by omega_using [hRs, hk2, ek, hj]) _)
+    (sc_w PF (by rw [k₄.wr, h.wr]) (by omega_using [hB, hRs, hk2, ek]))
     (fun j hj i hi => by
       show off (off (Sd s) (1 + 2 * H.D)) j ≠ off (off (Sd s) oBuf) i
       rw [off_off, off_off]
-      exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))) fun t' ⟨hk', hm⟩ => ?_
+      exact Offset.add_ofNat_ne _ (by omega_using [ek, hj]) (by omega_using [hB, hk2, ek, hi]) (by omega_using [hB, hk2, ek, hj]))) fun t' ⟨hk', hm⟩ => ?_
   have hK : Kept [.t0, .a4, .a1, .a5] t t' := (k₄.keep.trans hk').mono
   have hm' : t'.mem = writeBytes t.mem (off (Sd s) oBuf)
       (Spec.Rsa.bytesAt t.mem (off (Sd s) (1 + 2 * H.D)) (kk s - (2 * H.D + 1))) := by rw [hm, k₄.mem]
-  refine ⟨h.wb PF hK (by rw [bytesAt_length]; omega) hm', hK, fun o ho => ?_⟩
-  rw [hm', view_wb _ _ (by rw [bytesAt_length]; omega) ho, bytesAt_length]
+  refine ⟨h.wb PF hK (by rw [bytesAt_length]; omega_using [hB, hRs, hk2, ek]) hm', hK, fun o ho => ?_⟩
+  rw [hm', view_wb _ _ (by rw [bytesAt_length]; omega_using [hB, hRs, hk2, ek]) ho, bytesAt_length]
   split
   · rename_i hc
     simp only [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
-      List.getElem?_range (show o - oBuf < kk s - (2 * H.D + 1) by omega), Option.map_some, Option.getD_some]
+      List.getElem?_range (show o - oBuf < kk s - (2 * H.D + 1) by omega_using [hc]), Option.map_some, Option.getD_some]
     show t.mem (off (off (Sd s) (1 + 2 * H.D)) (o - oBuf)) = _
     rw [off_off]; rfl
   · rfl

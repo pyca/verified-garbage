@@ -62,7 +62,7 @@ theorem copyPt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
       O₁.val32 (d := a.y) (by omega_using [xay]) (by omega_using [iay, hn])]
   · rw [e₃, O₂.val32 (d := a.z) (by omega_using [yaz]) (by omega_using [iaz, hn]),
       O₁.val32 (d := a.z) (by omega_using [xaz]) (by omega_using [iaz, hn])]
-  · rw [show 4 * (2 * n) = 8 * n by omega] at O₁ O₂ O₃
+  · rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₁ O₂ O₃
     exact ((Outs.of_outside O₁ (by simp)).trans (Outs.of_outside O₂ (by simp))).trans
       (Outs.of_outside O₃ (by simp))
 
@@ -146,7 +146,7 @@ theorem zone8 {s : State} {base : Addr} (hs : Scr s base 8192) (h28 : 28 ≤ (s.
   simp only [ofs]
   have e : ((s.gpr .esp - BitVec.ofNat 32 8).setWidth 64).toNat = (s.gpr .esp).toNat - 8 := by
     rw [BitVec.toNat_setWidth, sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [])
   generalize ((s.gpr .esp - BitVec.ofNat 32 8).setWidth 64) = z at hx e
   bv_omega
 
@@ -159,8 +159,8 @@ theorem frame_val32P' {s : State} {base : Addr} (hs : Scr s base 8192) {m m' : M
   refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => hF _ fun r hr hc => ?_)
   rw [List.mem_singleton.mp hr] at hc
   have := zone8 hs h28 hz hc
-  rw [ofs_off base (by omega)] at this
-  omega
+  rw [ofs_off base (by omega_using [h, hj, hi])] at this
+  omega_using [h, hj, hi, this]
 
 /-- What the slot of number `x` stands for, in the working space at `base`. -/
 def Eb (k m : Nat) [NeZero m] (dbl : Bool) (mem : Mem) (base : Addr) (x : Nat) : Fin m :=

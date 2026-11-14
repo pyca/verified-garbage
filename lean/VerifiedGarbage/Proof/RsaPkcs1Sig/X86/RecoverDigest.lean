@@ -29,10 +29,10 @@ theorem Valid.outputBound {g : Geometry} (h : g.Valid) : g.outputLength ≤ 64 :
 theorem Valid.outputFits {g : Geometry} (h : g.Valid) : g.outputLength ≤ g.length := by
   have := h.outputBound
   have := h.minLength
-  omega
+  omega_arith
 
 theorem Valid.em1Fit {g : Geometry} (h : g.Valid) : g.em1.toNat + g.length ≤ 2 ^ 32 :=
-  h.encodingFit (by have := h.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
+  h.encodingFit (by have := h.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
 
 theorem Valid.digestNat {g : Geometry} (h : g.Valid) :
     g.digest.toNat = g.em1.toNat + (g.length - g.outputLength) := by
@@ -40,25 +40,25 @@ theorem Valid.digestNat {g : Geometry} (h : g.Valid) :
     have := h.em1Fit
     have := h.outputPositive
     have := h.outputFits
-    omega
+    omega_arith
   unfold digest
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : g.length - g.outputLength < 2 ^ 32),
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [sum] : g.length - g.outputLength < 2 ^ 32),
     Nat.mod_eq_of_lt sum]
 
 theorem Valid.digestFit {g : Geometry} (h : g.Valid) : g.digest.toNat + g.outputLength ≤ 2 ^ 32 := by
   rw [h.digestNat]
   have := h.em1Fit
   have := h.outputFits
-  omega
+  omega_arith
 
 theorem Valid.digestAddr {g : Geometry} (h : g.Valid) :
     byteAddr g.digest = byteAddr g.em1 + BitVec.ofNat 64 (g.length - g.outputLength) :=
-  byteAddr_add (by have := h.em1Fit; have := h.outputPositive; have := h.outputFits; omega)
+  byteAddr_add (by have := h.em1Fit; have := h.outputPositive; have := h.outputFits; omega_arith)
 
 theorem Valid.digestSub {g : Geometry} (h : g.Valid) :
     (⟨byteAddr g.digest, g.outputLength⟩ : Region).Sub ⟨byteAddr g.em1, g.length⟩ := by
   rw [h.digestAddr]
-  exact Offset.sub_base _ (by have := h.outputFits; omega)
+  exact Offset.sub_base _ (by have := h.outputFits; omega_using [this])
 
 theorem Valid.digestPointer {g : Geometry} (h : g.Valid) :
     g.em1 + BitVec.ofNat 32 g.length - BitVec.ofNat 32 g.outputLength = g.digest := by
@@ -66,7 +66,7 @@ theorem Valid.digestPointer {g : Geometry} (h : g.Valid) :
     rw [← BitVec.ofNat_add]
     congr 1
     have := h.outputFits
-    omega
+    omega_using [this]
   rw [split, ← BitVec.add_assoc, BitVec.add_sub_cancel]
   rfl
 

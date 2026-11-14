@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Arithmetic identities for joint fixed-window exponentiation -/
 
@@ -10,7 +11,7 @@ namespace VG.Proof.Dsa
 /-- The table index has one base-four digit from each exponent. -/
 theorem joint_index {i j : Nat} (hi : i < 4) (hj : j < 4) :
     4 * i + j < 16 ∧ (4 * i + j) / 4 = i ∧ (4 * i + j) % 4 = j := by
-  omega
+  omega_using [hi, hj]
 
 /-- Four joint windows consume exactly one byte from each exponent. -/
 theorem joint_byte_step {v z j : Nat} (hv : v < 256) (hz : z < 256) (hj : j < 4)

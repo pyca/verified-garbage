@@ -25,8 +25,8 @@ theorem selWords_ok {s₀ : State} {B : Addr} {Z w eA eT eo j : Nat} {lt : Bool}
     | succ k ih =>
       rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
         WP.block_append_iff]
-      exact WP.mono (ih (by omega)) fun v hv => selWord_ok hA hT ho sA sT (by omega) (by omega) hv
-  exact WP.keep [.x3, .x4] (each 4 (by omega) hI) rfl rfl rfl
+      exact WP.mono (ih (by omega_using [hk])) fun v hv => selWord_ok hA hT ho sA sT (by omega_using [hk]) (by omega_using [hj, hk]) hv
+  exact WP.keep [.x3, .x4] (each 4 (by omega_using []) hI) rfl rfl rfl
 
 theorem selTile_ok {s₀ : State} {B : Addr} {Z n eA eT eo j : Nat} {lt : Bool}
     (hA : eA+8*(4*n) ≤ Z) (hT : eT+8*(4*n) ≤ Z) (ho : eo+8*(4*n) ≤ Z)
@@ -40,22 +40,22 @@ theorem selTile_ok {s₀ : State} {B : Addr} {Z n eA eT eo j : Nat} {lt : Bool}
   rw [WP.block_append_iff, WP.block_append_iff]
   have hi : SelTileInv s₀ B Z eA eT eo lt (4*j) 0 t :=
     ⟨hI.scr, hI.keep, hI.x16, hI.x6, hI.x5, hI.c, hI.out, hI.val⟩
-  refine WP.mono (selWords_ok hA hT ho sA sT (by omega) hi) fun u ⟨hu, ku⟩ => ?_
+  refine WP.mono (selWords_ok hA hT ho sA sT (by omega_using [hj]) hi) fun u ⟨hu, ku⟩ => ?_
   refine WP.mono (WP.keep [.x16, .x6, .x5] (Q := fun v =>
     v.gpr .x16 = off B (eA+8*(4*(j+1))) ∧
     v.gpr .x6 = off B (eT+8*(4*(j+1))) ∧
     v.gpr .x5 = off B (eo+8*(4*(j+1))) ∧ v.mem = u.mem ∧ v.c = u.c)
     (by
       brun [hu.x16, hu.x6, hu.x5,
-        show eA+8*(4*j)+32 = eA+8*(4*(j+1)) by omega,
-        show eT+8*(4*j)+32 = eT+8*(4*(j+1)) by omega,
-        show eo+8*(4*j)+32 = eo+8*(4*(j+1)) by omega]) rfl rfl rfl) fun v ⟨⟨h16, h6, h5, hm, hc⟩, kv⟩ => ?_
+        show eA+8*(4*j)+32 = eA+8*(4*(j+1)) by omega_using [],
+        show eT+8*(4*j)+32 = eT+8*(4*(j+1)) by omega_using [],
+        show eo+8*(4*j)+32 = eo+8*(4*(j+1)) by omega_using []]) rfl rfl rfl) fun v ⟨⟨h16, h6, h5, hm, hc⟩, kv⟩ => ?_
   refine WP.mono (dec_ok v .x14) fun z ⟨⟨h14, hzm, hzc⟩, kz⟩ => ⟨?_, ?_⟩
   · refine ⟨hu.scr.congr (kz.wr.trans kv.wr), (hu.keep.trans (kv.trans kz)).mono (by decide),
       (kz.gpr .x16 (by decide)).trans h16, (kz.gpr .x6 (by decide)).trans h6,
       (kz.gpr .x5 (by decide)).trans h5, hzc.trans (hc.trans hu.c), ?_, ?_⟩
-    · rw [hzm, hm, show 4*(j+1) = 4*j+4 by omega]; exact hu.out
-    · rw [hzm, hm, show 4*(j+1) = 4*j+4 by omega]; exact hu.val
+    · rw [hzm, hm, show 4*(j+1) = 4*j+4 by omega_using []]; exact hu.out
+    · rw [hzm, hm, show 4*(j+1) = 4*j+4 by omega_using []]; exact hu.val
   · rw [h14, kv.gpr .x14 (by decide)]
     rw [ku.gpr .x14 (by decide)]
 

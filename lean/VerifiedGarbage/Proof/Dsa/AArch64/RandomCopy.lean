@@ -39,14 +39,14 @@ theorem random_copyLoop_ok {s : State} {src out : Addr} {n : Nat}
       Keep [.x0, .x12, .x2, .x9] s t := by
   refine WP.mono (wp_countdown (N := n) h64 h1 (fun j t => RandomCopyInv s src out n j t)
     ?_ ⟨Keep.refl _ _, by simpa using hsi, by simpa using hdx, by simpa using hcx,
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩ hcx)
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩ hcx)
     fun t ht => ⟨ht.bytes, ht.frame, ht.keep⟩
   intro j hj t ht hcount
   have hrd : InRegions (t.rd ++ t.wr) (src + BitVec.ofNat 64 j) 1 := by
     rw [ht.keep.rd, ht.keep.wr]; exact hr j hj
   have hwr : InRegions t.wr (out + BitVec.ofNat 64 j) 1 := by
     rw [ht.keep.wr]; exact hw j hj
-  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega))
+  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega_using [hj, hi]))
   refine WP.mono (WP.keep [.x0, .x12, .x2, .x9] (Q := fun u =>
     u.mem = t.mem.writeW (out + BitVec.ofNat 64 j) (s.mem (src + BitVec.ofNat 64 j)) ∧
     u.gpr .x12 = src + BitVec.ofNat 64 (j + 1) ∧ u.gpr .x2 = out + BitVec.ofNat 64 (j + 1) ∧
@@ -56,7 +56,7 @@ theorem random_copyLoop_ok {s : State} {src out : Addr} {n : Nat}
     have hp : BitVec.ofNat 64 (n - j) - (1#64) = BitVec.ofNat 64 (n - (j + 1)) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_using [hj]
     brun [ht.rsi, ht.rdx, ht.rcx, hrd, hwr, read_one, hval,
       BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 32 by decide), BitVec.setWidth_eq,
       hp, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -68,16 +68,16 @@ theorem random_copyLoop_ok {s : State} {src out : Addr} {n : Nat}
       rw [hum, writeW8_apply]
       by_cases hij : i = j
       · subst i; simp
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-        exact ht.bytes i (by omega)
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [h64, hj, hi]) (by omega_using [h64, hj]) hij))]
+        exact ht.bytes i (by omega_using [hi, hij])
     · intro x hx
-      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-      exact ht.frame x fun i hi => hx i (by omega)
+      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+      exact ht.frame x fun i hi => hx i (by omega_using [hi])
 
     · rw [hucx, hcount]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_using [hj]
 
 /-- An empty suffix does not touch memory. -/
 theorem random_copyRest_ok {s : State} {src out : Addr} {n : Nat}
@@ -95,8 +95,8 @@ theorem random_copyRest_ok {s : State} {src out : Addr} {n : Nat}
   · refine WP.ite false ?_ (fun h => Bool.noConfusion h) (fun _ => WP.block_nil ?_)
     · simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hn, h0]
       rfl
-    · exact ⟨fun i hi => False.elim (by omega), fun _ _ => rfl, Keep.refl _ _⟩
-  · refine WP.ite true ?_ (fun _ => random_copyLoop_ok hp hd hn (by omega) hbound hr hw hsep)
+    · exact ⟨fun i hi => False.elim (by omega_using [h0, hi]), fun _ _ => rfl, Keep.refl _ _⟩
+  · refine WP.ite true ?_ (fun _ => random_copyLoop_ok hp hd hn (by omega_using [h0]) hbound hr hw hsep)
       (fun h => Bool.noConfusion h)
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hn]
     have hz : BitVec.ofNat 64 n ≠ (0#64) := by

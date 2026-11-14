@@ -294,7 +294,7 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p prepared s) (h8 : (stackArg s 
     rw [e] at dk nk
     refine VG.Proof.MlDsa.PreparedKey.preparedSecretKey_of_bytes ?_ (hk rfl)
     show bytesAt (storeWords t1.mem (t1.sp - 8#32) [t1.gpr .r12, t1.gpr .lr]) _ _ = _
-    rw [storeWords_bytes h8' dk (by omega), hm1]
+    rw [storeWords_bytes h8' dk (by omega_using [nk]), hm1]
 
 /-- The call of the signing function on `μ`. -/
 theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p prepared c) (hp : p ∈ params) (h : SPre p prepared s)

@@ -51,7 +51,7 @@ theorem exportResult_ct {p : Inputs} {slots : List Nat} (h4 : 4 ∈ slots) (h32 
     have ready := h.ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr)
     exact ⟨⟨ready.workspace, ready.layout, ready.width, ready.ptr, index⟩, dst, count⟩
   have bytes := (exportBE_ct (base := p.base) (dst := p.output) (len := p.len) (w := p.w)
-    (o := 6) (k := p.k) (by decide) (by have := p.minLength; omega)).mono
+    (o := 6) (k := p.k) (by decide) (by have := p.minLength; omega_using [this])).mono
     (P' := fun (s t : State) => ExportArgsReady p s ∧ ExportArgsReady p t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.ready, h.2.1.ready, h.1.dst, h.2.1.dst, h.1.count, h.2.1.count⟩)
     (fun _ _ h => h)

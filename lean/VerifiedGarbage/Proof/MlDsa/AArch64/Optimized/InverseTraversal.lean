@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.Arith.Schedule
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -17,8 +18,8 @@ theorem bflyInv_comm (w : Poly) {j len k step : Nat} (hl : 0 < len) (hm : 0 < st
   apply ext_getElem!
   intro i hi
   rw [bflyInv_get (bflyInv w j len z) hm hk t hi, bflyInv_get (bflyInv w k step t) hl hj z hi,
-    bflyInv_get w hl hj z (by omega : k < n), bflyInv_get w hl hj z hk,
-    bflyInv_get w hl hj z hi, bflyInv_get w hm hk t (by omega : j < n),
+    bflyInv_get w hl hj z (by omega_using [hk] : k < n), bflyInv_get w hl hj z hk,
+    bflyInv_get w hl hj z hi, bflyInv_get w hm hk t (by omega_using [hj] : j < n),
     bflyInv_get w hm hk t hj, bflyInv_get w hm hk t hi]
   simp only [h00, h01, h10, h11, Ne.symm h00, Ne.symm h01, Ne.symm h10,
     Ne.symm h11, ite_false]

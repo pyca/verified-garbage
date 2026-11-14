@@ -31,9 +31,9 @@ theorem windowByteBody_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 j : Nat} {eb1
       WP isa expByteHead s (WinBitState base len w M x (pre eb j) (eb[j]).toNat (8 * j) 0) := by
     obtain ⟨⟨A, p, state, sum⟩, ptr, _, _, sourceFit, read, _, bytes⟩ := h
     have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
-      addr_add (by omega)
+      addr_add (by omega_using [hj, sourceFit])
     have current : InRegions (s.rd ++ s.wr) (State.addr (ep + BitVec.ofNat 32 j)) 1 := by
-      rw [address]; exact CallLay.inRegions_sub read (by omega) (by omega)
+      rw [address]; exact CallLay.inRegions_sub read (by omega_using [hj]) (by omega_arith)
     refine WP.mono (windowByteHead_ok s state ptr current) ?_
     rintro u ⟨stateU, byteU, countU, _, _, _⟩
     rw [address, bytes j hj] at byteU
@@ -68,10 +68,10 @@ theorem windowBytes_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb1 eb2 
     intro k s t tr1 tr2 u z h e1 e2
     obtain ⟨j, jk, hk, hs, ht, sp⟩ := h
     have ct := relCT_keep_sp (windowByteBody_ct (base := base) (ep := ep) (M1 := M1) (M2 := M2) (x1 := x1)
-      (x2 := x2) (j := j) (eb1 := eb1) (eb2 := eb2) fit fits (by omega) (by omega)) (fun _ _ h => h.2.2)
+      (x2 := x2) (j := j) (eb1 := eb1) (eb2 := eb2) fit fits (by omega_using [jk, hk]) (by omega_using [length, jk, hk])) (fun _ _ h => h.2.2)
     obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u z ⟨hs, ht, sp⟩ e1 e2
-    obtain ⟨_, _, run1, next1, zero1, _, _⟩ := windowByteStep_ok s hs (by omega)
-    obtain ⟨_, _, run2, next2, zero2, _, _⟩ := windowByteStep_ok t ht (by omega)
+    obtain ⟨_, _, run1, next1, zero1, _, _⟩ := windowByteStep_ok s hs (by omega_using [jk, hk])
+    obtain ⟨_, _, run2, next2, zero2, _, _⟩ := windowByteStep_ok t ht (by omega_using [length, jk, hk])
     obtain ⟨-, rfl⟩ := Exec.det e1 run1
     obtain ⟨-, rfl⟩ := Exec.det e2 run2
     refine ⟨trace, ?_, fun _ => trivial, ?_⟩
@@ -82,10 +82,10 @@ theorem windowBytes_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb1 eb2 
         intro last
         change some (!_) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega, j + 1, by omega, by omega, next1, next2, sp'⟩
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], next1, next2, sp'⟩
   unfold windowBytes
   exact (RelCT.loop I step eb1.length).mono
-    (fun _ _ h => ⟨0, by omega, positive, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
+    (fun _ _ h => ⟨0, by omega_using [], positive, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
 
 theorem windowExpPhase_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb1 eb2 : List Byte}
     (fit : arrAt w 3 + 32 ≤ 8 * len) (fits : arrAt w 16 ≤ 8 * len) (positive : 0 < eb1.length)

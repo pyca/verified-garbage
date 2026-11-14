@@ -46,7 +46,7 @@ abbrev labB (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (stackArg s 9) (st
 
 theorem writeBytes_at (m : Mem) (q : Addr) (xs : List Byte) {i : Nat} (hi : i < xs.length) (hl : xs.length < 2 ^ 64) :
     writeBytes m q xs (q + BitVec.ofNat 64 i) = xs.getD i 0 := by
-  simp only [writeBytes, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]
+  simp only [writeBytes, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hl] : i < 2 ^ 64)]
   rw [ifp hi]
 
 section
@@ -55,7 +55,7 @@ include P
 
 theorem labB_eq {m : Mem} (hm : Frame [kD s, scR s] s.mem m) :
     Spec.Rsa.bytesAt m (stackArg s 9) (stackArg s 10).toNat = labB s :=
-  bytes_entry hm P.kl P.ls.symm (by have := (stackArg s 10).isLt; omega)
+  bytes_entry hm P.kl P.ls.symm (by have := (stackArg s 10).isLt; omega_using [])
 
 /-- The decoding, after the private operation's outcome. -/
 theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mgf1.Hash}
@@ -81,52 +81,52 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
   rw [hO, hRC] at b0
   unfold decMain
   -- `EM` unmasked.
-  refine unmask_ok P hG (tabS_wm P T A.mem) hGh hGl hGv hD hD0 (by omega) (by omega) b0 hsy fun t₁ b₁ y₁ v₁ => ?_
+  refine unmask_ok P hG (tabS_wm P T A.mem) hGh hGl hGv hD hD0 (by omega_using [hFD, hDF]) (by omega_using [hk]) b0 hsy fun t₁ b₁ y₁ v₁ => ?_
   -- The label's hash, through its table.
   refine WP.seq (WP.mono (hashLabelT_ok P hH (tabS_wmL P TL A.mem) b₁ y₁) fun t₂ ⟨⟨b₂, _, s₂, h₂⟩, _⟩ => ?_)
   -- `lHash'` against `lHash`.
-  refine WP.seq (WP.mono (accLh_ok P hD hD0 (by omega) (by omega) b₂) fun t₃ ⟨b₃, m₃, g₃, a₃⟩ => ?_)
+  refine WP.seq (WP.mono (accLh_ok P hD hD0 (by omega_using [hFD, hDF]) (by omega_using [hk]) b₂) fun t₃ ⟨b₃, m₃, g₃, a₃⟩ => ?_)
   -- The scan.
-  refine WP.seq (WP.mono (scan_ok P hD (by omega) (by omega) b₃) fun t₄ ⟨b₄, m₄, g₄, a₄, i₄⟩ => ?_)
+  refine WP.seq (WP.mono (scan_ok P hD (by omega_using [hFD, hDF]) (by omega_using [hk]) b₃) fun t₄ ⟨b₄, m₄, g₄, a₄, i₄⟩ => ?_)
   -- The buffer.
   refine WP.seq (WP.mono (clearBuf_ok P b₄) fun t₅ ⟨b₅, g₅, v₅⟩ => ?_)
-  refine WP.seq (WP.mono (copyT_ok P hD (by omega) (by omega) b₅) fun t₆ ⟨b₆, g₆, v₆⟩ => ?_)
+  refine WP.seq (WP.mono (copyT_ok P hD (by omega_using [hFD, hDF]) (by omega_using [hk]) b₅) fun t₆ ⟨b₆, g₆, v₆⟩ => ?_)
   generalize hsc : scanS (fun i => view t₃.mem (Sd s) (1 + 2 * D + i)) (t₃.gpr .r24) (kk s - (2 * D + 1)) = sc at a₄ i₄
   obtain ⟨idx, hidx, hidx'⟩ := scan_idx (fun i => view t₃.mem (Sd s) (1 + 2 * D + i)) (t₃.gpr .r24)
     (kk s - (2 * D + 1))
   rw [hsc] at hidx
   have h25 : t₆.gpr .r25 = BitVec.ofNat 64 idx := by
     rw [g₆ .r25 (by simp), g₅ .r25 (by simp), i₄, hidx]
-  refine WP.seq (WP.mono (shift_ok P b₆ h25 (by omega)) fun t₇ ⟨b₇, k₇, v₇⟩ => ?_)
+  refine WP.seq (WP.mono (shift_ok P b₆ h25 (by omega_using [hk2, ek, hidx'])) fun t₇ ⟨b₇, k₇, v₇⟩ => ?_)
   -- `ok`, `out`, the length and the result.
-  refine WP.seq (WP.mono (okMask_ok P b₇ (by omega)) fun t₈ ⟨b₈, m₈, g₈, o₈⟩ => ?_)
+  refine WP.seq (WP.mono (okMask_ok P b₇ (by omega_using [hrc])) fun t₈ ⟨b₈, m₈, g₈, o₈⟩ => ?_)
   refine WP.seq (WP.mono (outLoop_ok P b₈) fun t₉ ⟨sv₉, rd₉, g₉, m₉⟩ => ?_)
-  refine WP.mono (decRet_ok P hD (by omega) (rc := rc) (idx := idx) sv₉ (by rw [g₉ .r15 (by simp), g₈ .r15 (by simp), Base.r15 b₇])
+  refine WP.mono (decRet_ok P hD (by omega_using [hFD, hDF]) (rc := rc) (idx := idx) sv₉ (by rw [g₉ .r15 (by simp), g₈ .r15 (by simp), Base.r15 b₇])
     (by rw [g₉ .r17 (by simp), g₈ .r17 (by simp), Base.r17 b₇]) (by rw [g₉ .r20 (by simp), g₈ .r20 (by simp),
-      Base.r20 b₇]) (by omega) (by rw [g₉ .r25 (by simp), g₈ .r25 (by simp), k₇.get .r25, h25])) fun u ⟨svu, rdu, mu, ru⟩ =>
+      Base.r20 b₇]) (by omega_using [hrc]) (by rw [g₉ .r25 (by simp), g₈ .r25 (by simp), k₇.get .r25, h25])) fun u ⟨svu, rdu, mu, ru⟩ =>
     ⟨svu, rdu.trans rd₉, ?_⟩
   -- The views.
   have hS : ∀ {x}, x < oSt → ∀ p ∈ [(oSt, H.S), (oDig, H.FD), (oW, H.W)], x < p.1 ∨ p.1 + p.2 ≤ x :=
     fun hx p hp => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl <;> exact .inl (by simp only; omega)
-  have e2 : ∀ x < oSt, view t₂.mem (Sd s) x = view t₁.mem (Sd s) x := fun x hx => s₂ x (by omega) (hS hx)
+      rcases hp with rfl | rfl | rfl <;> exact .inl (by simp only; omega_arith)
+  have e2 : ∀ x < oSt, view t₂.mem (Sd s) x = view t₁.mem (Sd s) x := fun x hx => s₂ x (by omega_using [hSt, hRs, hx]) (hS hx)
   have hlab : Spec.Rsa.bytesAt v.mem (stackArg s 9) (stackArg s 10).toNat = labB s := labB_eq P A.mem
   rw [hlab] at h₂
   have hlh : ∀ i < D, view t₂.mem (Sd s) (oDig + i) = (Hs.hash (labB s)).getD i 0 := fun i hi => by
     have := congrArg (fun l => l.getD i 0) h₂
-    rw [bytesAt_view, srcB, map_range_getD' _ (by omega)] at this
+    rw [bytesAt_view, srcB, map_range_getD' _ (by omega_using [hDF, hi])] at this
     rw [this, hHh, hH.hashTake]
-    simp [List.getD_eq_getElem?_getD, show i < H.D by omega]
+    simp [List.getD_eq_getElem?_getD, show i < H.D by omega_using [hD, hi]]
   -- `lHash'`, `lHash` and the scan, on the view after unmasking.
   have hc0 : t₃.gpr .r24 = accG (view t₁.mem (Sd s) 0) (fun i => view t₁.mem (Sd s) (1 + D + i))
       (fun i => view t₂.mem (Sd s) (oDig + i)) D := by
-    rw [a₃, e2 0 (by omega)]
-    exact accG_congr _ D (fun i hi => e2 _ (by omega)) (fun _ _ => rfl)
+    rw [a₃, e2 0 (by omega_using [hSt])]
+    exact accG_congr _ D (fun i hi => e2 _ (by omega_using [hFD, hSt, hDF, hi])) (fun _ _ => rfl)
   have hsc' : sc = scanS (fun i => view t₁.mem (Sd s) (1 + 2 * D + i)) (accG (view t₁.mem (Sd s) 0)
       (fun i => view t₁.mem (Sd s) (1 + D + i)) (fun i => view t₂.mem (Sd s) (oDig + i)) D) (kk s - (2 * D + 1)) := by
     rw [← hsc, hc0, m₃]
-    exact scanS_congr _ _ fun i hi => e2 _ (by omega)
+    exact scanS_congr _ _ fun i hi => e2 _ (by omega_using [hk2, ek, hSt, hi])
   rw [hsc'] at hidx
   have r24 : t₇.gpr .r24 = sc.2.2 ||| sc.1 := by
     rw [k₇.get .r24, g₆ .r24 (by simp), g₅ .r24 (by simp), a₄]
@@ -137,20 +137,20 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
   have hT : ∀ y < 2048, view t₆.mem (Sd s) (oBuf + y) =
       (srcB (view t₁.mem (Sd s)) (1 + 2 * D) (kk s - (2 * D + 1))).getD y 0 := by
     intro y hy
-    rw [v₆ _ (by omega)]
+    rw [v₆ _ (by omega_using [hB, hRs, hy])]
     by_cases hyt : y < kk s - (2 * D + 1)
-    · rw [ifp ⟨by omega, by omega⟩, show oBuf + y - oBuf = y by omega, v₅ _ (by omega), ifn (by omega), m₄, m₃,
-        e2 _ (by omega), srcB, map_range_getD' _ hyt]
-    · rw [ifn (by omega), v₅ _ (by omega), ifp ⟨by omega, by omega⟩]
+    · rw [ifp ⟨by omega_using [], by omega_using [hyt]⟩, show oBuf + y - oBuf = y by omega_using [], v₅ _ (by omega_using [hFD, hRs, hDF, hy]), ifn (by omega_using [hFD, hB, hDF, hy]), m₄, m₃,
+        e2 _ (by omega_using [hk2, ek, hSt, hyt]), srcB, map_range_getD' _ hyt]
+    · rw [ifn (by omega_using [hyt]), v₅ _ (by omega_using [hB, hRs, hy]), ifp ⟨by omega_using [], by omega_using [hy]⟩]
       simp [srcB, List.getD_eq_getElem?_getD, hyt]
   have hbuf : ∀ i < kk s, view t₇.mem (Sd s) (oBuf + i) =
       (srcB (view t₁.mem (Sd s)) (1 + 2 * D) (kk s - (2 * D + 1))).getD (i + (idx + 1)) 0 := by
     intro i hi
-    rw [v₇ _ (by omega), shV_eq _ (by omega) (fun x h₁ h₂ => by
-      rw [hT x (by omega)]; simp [srcB, List.getD_eq_getElem?_getD, show ¬ x < kk s - (2 * D + 1) by omega]) hi]
+    rw [v₇ _ (by omega_using [hk2, ek, hB, hRs, hi]), shV_eq _ (by omega_using [hk2, ek, hidx']) (fun x h₁ h₂ => by
+      rw [hT x (by omega_using [hk2, ek, h₂])]; simp [srcB, List.getD_eq_getElem?_getD, show ¬ x < kk s - (2 * D + 1) by omega_using [h₁]]) hi]
     by_cases hl : i + (idx + 1) < kk s
-    · rw [ifp hl, hT _ (by omega)]
-    · rw [ifn hl]; simp [srcB, List.getD_eq_getElem?_getD, show ¬ i + (idx + 1) < kk s - (2 * D + 1) by omega]
+    · rw [ifp hl, hT _ (by omega_using [hk2, ek, hidx', hi])]
+    · rw [ifn hl]; simp [srcB, List.getD_eq_getElem?_getD, show ¬ i + (idx + 1) < kk s - (2 * D + 1) by omega_using [hl]]
   -- `out`, `*msg_len` and the result.
   have hu : ∀ x, ¬ (mlR s).Contains x 1 → u.mem x = t₉.mem x := fun x hx => by
     rw [mu]
@@ -161,8 +161,8 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
   have hout : ∀ i < kk s, u.mem (s.gpr .r3 + BitVec.ofNat 64 i) =
       andB ((srcB (view t₁.mem (Sd s)) (1 + 2 * D) (kk s - (2 * D + 1))).getD (i + (idx + 1)) 0) (t₉.gpr .r26) := by
     intro i hi
-    rw [hu _ (fun hc => P.oml _ (Offset.contains_base _ (by have := P.ok; omega) (by omega)) hc), m₉]
-    rw [writeBytes_at _ _ _ (by rw [hlen]; exact hi) (by rw [hlen]; omega), List.getD_eq_getElem?_getD,
+    rw [hu _ (fun hc => P.oml _ (Offset.contains_base _ (by have := P.ok; omega_using [ek, hi, this]) (by omega_using [ek, hi])) hc), m₉]
+    rw [writeBytes_at _ _ _ (by rw [hlen]; exact hi) (by rw [hlen]; omega_using [ek]), List.getD_eq_getElem?_getD,
       List.getElem?_map, Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range hi]
     simp only [Option.map_some, Option.getD_some]
     rw [g₉ .r26 (by simp)]
@@ -174,7 +174,7 @@ theorem decMain_ok {H G : Hash} (hH : HashOK H) (hG : HashOK G) {Hs Gs : Spec.Mg
       (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm]
   rw [hok] at hout hml ru
 
-  exact dec_written hGv hHv hHl (by omega) hk2 v₁ hlh (fun em he => by
+  exact dec_written hGv hHv hHl (by omega_using [hk]) hk2 v₁ hlh (fun em he => by
       have := A.em; rw [hO, he] at this; exact this.symm)
     hidx (by rcases hidx' with h | h; exact .inl h; exact .inr h) hout hml (by rw [ru, hRC])
 

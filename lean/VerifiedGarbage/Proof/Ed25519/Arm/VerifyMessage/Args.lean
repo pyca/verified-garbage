@@ -28,7 +28,7 @@ theorem valid_whole {v : Value} (h : valid v) : Whole.valid v := by
   cases v with
   | const n => exact h
   | frame d => exact h
-  | caller j d => exact ⟨by have := h.1; omega,h.2⟩
+  | caller j d => exact ⟨by have := h.1; omega_using [this],h.2⟩
 
 def OutArgs (L : Lay) (args : List (Reg × Value)) (s : State) : Prop :=
   ∀ p ∈ args, s.gpr p.1 = value L p.2
@@ -43,7 +43,7 @@ theorem Ctx.value (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) {v :
   | frame d => rfl
   | caller j d =>
     change _ + BitVec.ofNat 32 d = _ + BitVec.ofNat 32 d
-    rw [hc.arg_word hL (by have := hv.1; omega), ha j hv.1]
+    rw [hc.arg_word hL (by have := hv.1; omega_using [this]), ha j hv.1]
 
 theorem args_regs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     {args : List (Reg × Value)} (hn : (args.map Prod.fst).Nodup)
@@ -51,7 +51,7 @@ theorem args_regs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     WP isa (.block (setup args [])) s fun t => Ctx L g m₀ t ∧ t.mem = s.mem ∧ OutArgs L args t := by
   have rd : ∀ j < 6, InRegions (s.rd ++ s.wr) (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 4 := by
     intro j hj
-    refine ⟨L.ARGS, ?_, Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)⟩
+    refine ⟨L.ARGS, ?_, Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)⟩
     rw [hc.rd]
     exact List.mem_append_left _ (by simp [Lay.inputs])
   refine WP.mono (Whole.setupRegs_ok hc.sp hL.top hn (fun p hp => valid_whole (hv p hp)) rd) fun t ⟨ht, hargs⟩ => ?_

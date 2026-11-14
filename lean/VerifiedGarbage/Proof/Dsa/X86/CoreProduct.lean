@@ -35,15 +35,15 @@ theorem coreLoadProduct_ok {s : State} {base : Addr} {size len n m : Nat} {a b :
       wordsVal t.mem base (slot n 8) n =
         Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s b).setWidth 64) len) ∧
       Outside base 0 (contextBytes n) s.mem t.mem ∧ Keeps loadClob s t := by
-  have hn48 : n ≤ 48 := by omega
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn48
-  have hl : len ≤ 8 * n := by omega
+  have hl : len ≤ 8 * n := by omega_using [hn]
   have nw := hs.nowrap
   have bound (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ contextBytes n := by
     have H := slot_bound (n := n) hj
     simp only [stride] at H
-    omega
-  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega
+    omega_using [H]
+  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega_using [contextRoom, this]
   unfold Core.loadPower
   refine WP.seq (WP.mono (coreLoad_ok hs hz (bounds 0 (by decide)) h4 hl hw4
     Rq.toReadableComponent (Rq.slot (by decide))) fun u ⟨Mu, Ku, Ou⟩ => ?_)
@@ -60,9 +60,9 @@ theorem coreLoadProduct_ok {s : State} {base : Addr} {size len n m : Nat} {a b :
   refine WP.mono (coreLoad_ok (hs.of_keeps Ksv (by decide)) hz (bounds 8 (by decide))
     h4 hl hw4 Rbv.toReadableComponent (Rbv.slot (by decide))) fun w ⟨Bw, Kw, Ow⟩ => ?_
   refine ⟨?_, ?_, ?_, Osv.trans (slotOutside_whole Ow (by decide)), Ksv.trans Kw⟩
-  · rw [slotOutside_val Ow (by decide) (by have := bounds 0 (by decide); omega),
-      slotOutside_val Ov (by decide) (by have := bounds 0 (by decide); omega), Mu, hm]
-  · rw [slotOutside_val Ow (by decide) (by have := bounds 5 (by decide); omega), Av,
+  · rw [slotOutside_val Ow (by decide) (by have := bounds 0 (by decide); omega_using [nw, this]),
+      slotOutside_val Ov (by decide) (by have := bounds 0 (by decide); omega_using [nw, this]), Mu, hm]
+  · rw [slotOutside_val Ow (by decide) (by have := bounds 5 (by decide); omega_using [nw, this]), Av,
       Ra.bytes Ku (by decide) Ou' hn48]
   · rw [Bw, Rb.bytes Ksv (by decide) Osv hn48]
 
@@ -80,28 +80,28 @@ theorem coreProductMod_ok {s : State} {base : Addr} {size len n m output : Nat} 
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s a).setWidth 64) len) *
           Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s b).setWidth 64) len) % m) ∧
       StackOuts base (s.gpr .esp) [(0, contextBytes n), (output, len)] s.mem t.mem ∧ Keeps powerClob s t := by
-  have hn48 : n ≤ 48 := by omega
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn48
-  have hl : len ≤ 8 * n := by omega
+  have hl : len ≤ 8 * n := by omega_using [hn]
   have bound (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ contextBytes n := by
     have H := slot_bound (n := n) hj
     simp only [stride] at H
-    omega
-  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega
+    omega_using [H]
+  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega_using [ho, hfar, this]
   unfold Core.productMod
   dsimp only
   rw [← hn]
-  refine WP.seq (WP.mono (coreLoadProduct_ok hs hz hn h4 hmax hw4 Rq Ra Rb hm (by omega))
+  refine WP.seq (WP.mono (coreLoadProduct_ok hs hz hn h4 hmax hw4 Rq Ra Rb hm (by omega_using [ho, hfar]))
     fun w ⟨Mw, Aw, Bw, Opre, Ksw⟩ => ?_)
   have Wscr := hs.of_keeps Ksw (by decide)
   refine WP.seq (WP.mono (Mul.call_ok Wscr (by rw [Ksw.1 _ (by decide)]; exact room)
-    (by omega) hused (by omega) hn48 Mw hm1 hodd) fun v ⟨Vv, Ov, Kv⟩ => ?_)
+    (by omega_using [ho, hfar]) hused (by omega_using [hn, h4]) hn48 Mw hm1 hodd) fun v ⟨Vv, Ov, Kv⟩ => ?_)
   refine WP.mono (coreStore_ok (Wscr.of_keeps Kv (by decide)) hz hn.symm
-    (bounds 6 (by decide)) h4 hl hw4 ho (by have := bound 6 (by decide); omega)) fun t ⟨Vt, Kt, Ot⟩ => ?_
+    (bounds 6 (by decide)) h4 hl hw4 ho (by have := bound 6 (by decide); omega_using [hfar, this])) fun t ⟨Vt, Kt, Ot⟩ => ?_
   refine ⟨by rw [Vt, Vv, Aw, Bw], ?_, ?_⟩
   · rw [Ksw.1 _ (by decide)] at Ov
     have Of : StackOuts base (s.gpr .esp) [(0, contextBytes n), (output, len)] w.mem v.mem :=
-      Ov.mono fun r hr => ⟨(0, contextBytes n), by simp, by omega,
+      Ov.mono fun r hr => ⟨(0, contextBytes n), by simp, by omega_using [],
         by simpa only [Nat.zero_add] using Pow.scratch_fits (Nat.le_refl _) r hr⟩
     exact ((StackOuts.of_outs (Outs.of_outside Opre (by simp))).trans Of).trans
       (StackOuts.of_outs (Outs.of_outside Ot (by simp)))

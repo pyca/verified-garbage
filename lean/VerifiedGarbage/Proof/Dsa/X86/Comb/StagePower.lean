@@ -44,18 +44,18 @@ theorem stagePower_ok {base : Addr} {size pLen qLen p q output : Nat} {s : State
     simp only [Layout.wideValues,List.mem_cons,List.not_mem_nil,or_false] at ho
     rcases ho with rfl|rfl <;> decide
   have fit := M.wideFit ho
-  have np : (pLen+7)/8≤48 := by omega
+  have np : (pLen+7)/8≤48 := by omega_using [L]
   have sep : output+pLen≤context ((pLen+7)/8) ∨ context ((pLen+7)/8)+272*((pLen+7)/8)≤output := by
     rcases sup with ⟨hn,_⟩|⟨hn,_⟩|⟨hn,_⟩|⟨hn,_⟩|⟨hn,_⟩ <;> rw [hn]
-    · change output+pLen≤9216 ∨ 13568≤output; omega
-    · change output+pLen≤16384 ∨ 25088≤output; omega
-    · change output+pLen≤16384 ∨ 25088≤output; omega
-    · change output+pLen≤16384 ∨ 25088≤output; omega
-    · change output+pLen≤16384 ∨ 29440≤output; omega
+    · change output+pLen≤9216 ∨ 13568≤output; omega_using [W]
+    · change output+pLen≤16384 ∨ 25088≤output; omega_using [L, W]
+    · change output+pLen≤16384 ∨ 25088≤output; omega_using [L, W]
+    · change output+pLen≤16384 ∨ 25088≤output; omega_using [L, W]
+    · change output+pLen≤16384 ∨ 29440≤output; omega_using [L, W]
   refine WP.mono (corePower_ok sup prepare M.scr M.saved M.room M.extent rfl
-    (by omega) (by omega) Al.1 (by omega) (by omega) Al.2 M.pReady Ra Rb M.pValue
+    (by omega_using [L]) (by omega_using [L]) Al.1 (by omega_using [L]) (by omega_using [L]) Al.2 M.pReady Ra Rb M.pValue
     M.pLarge M.pOdd (Nat.le_trans fit M.extent)
-    (by have := VG.Proof.Dsa.X86.Layout.context_bound np; change _≤7048 at this; omega)
+    (by have := VG.Proof.Dsa.X86.Layout.context_bound np; change _≤7048 at this; omega_using [W, this])
     sizeComb sep H) fun t ⟨V,C,O,K⟩ => ?_
   have bounds : ∀ r∈callRanges prepare ((pLen+7)/8) output pLen, r.1+r.2≤size := by
     intro r hr
@@ -77,18 +77,18 @@ theorem stagePower_ok {base : Addr} {size pLen qLen p q output : Nat} {s : State
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl|rfl
       · have B := VG.Proof.Dsa.X86.Layout.context_bound np
-        change _≤7048 at B; simp only [Nat.zero_add]; omega
+        change _≤7048 at B; simp only [Nat.zero_add]; omega_using [lo, B]
       · change 14944≤output ∧ output+384≤15712 at W
         exact .inl (by omega)
     · cases prepare with
       | false => simp at hr
       | true => simp only [ite_true,List.mem_singleton] at hr; subst r
-                exact .inl (by unfold context; split <;> omega)
+                exact .inl (by unfold context; split <;> omega_using [hi])
   have F := ScheduleFrame.of_ranges K O bounds (fun f _ => unchanged _
     (VG.Proof.Dsa.X86.Layout.field_bounds f).1 (by
       have B := (VG.Proof.Dsa.X86.Layout.field_bounds f).2
-      change _≤8256 at B; omega)) (fun p hp => unchanged _
-    (by have := (saved_bounds hp).1; omega) (saved_bounds hp).2)
+      change _≤8256 at B; omega_using [B])) (fun p hp => unchanged _
+    (by have := (saved_bounds hp).1; omega_using [this]) (saved_bounds hp).2)
   refine ⟨F.moduli M,V,C,?_,F,O⟩
   have Vmask := O.val32 (unchanged (Layout.field .mask) (by decide) (by decide)) (by decide : Layout.field .mask+4*1≤usedBytes)
   apply BitVec.eq_of_toNat_eq
@@ -107,6 +107,6 @@ theorem stagePrivate_ok {base : Addr} {size pLen qLen p q output : Nat} {s : Sta
   refine WP.mono (stagePower_ok false M Ra Rb ho sizeComb (fun _ => C)) fun t ⟨Mt,V,_,_,F,O⟩ => ?_
   have O' : StackOuts base (s.gpr .esp) [(0,contextBytes ((pLen+7)/8)),(output,pLen)] s.mem t.mem := by
     simpa only [callRanges,Bool.false_eq_true,ite_false,List.append_nil] using O
-  exact ⟨Mt,⟨StageFrame.of_stackFrame F.keeps (by decide) O' (by have := M.lengths; omega),V⟩⟩
+  exact ⟨Mt,⟨StageFrame.of_stackFrame F.keeps (by decide) O' (by have := M.lengths; omega_using [this]),V⟩⟩
 
 end VG.Proof.Dsa.X86.Comb

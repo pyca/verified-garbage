@@ -48,7 +48,7 @@ theorem cbcEncC_shift (L : Nat) (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D : Addr)
       ciph (Spec.Cbc.xor (bytesAt m₀ (D + BitVec.ofNat 64 L + BitVec.ofNat 64 (L * (j + 1))) L)
         (cbcEncC L ciph m₀ (D + BitVec.ofNat 64 L) (cbcEncC L ciph m₀ D iv 0) j))
     rw [cbcEncC_shift L ciph m₀ D iv j, VG.Offset.add_add, show L + L * (j + 1) = L * (j + 1 + 1) by
-      rw [Nat.mul_succ L (j + 1)]; omega]
+      rw [Nat.mul_succ L (j + 1)]; omega_using []]
 
 theorem blocksOf_succ (L : Nat) (m : Mem) (D : Addr) (n : Nat) :
     blocksOf L m D (n + 1) = bytesAt m D L :: blocksOf L m (D + BitVec.ofNat 64 L) n := by

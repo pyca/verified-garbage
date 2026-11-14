@@ -125,7 +125,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   have hscr₂ : Scr s₂ X 2048 := ⟨by rw [wr₂, wr₁]; exact hwS, hb₂⟩
   rw [saveRegs_eq]
   refine Spill.save_ok (rest := []) hscr₂.al savedOffs_ho (fun p hp => ⟨_, hscr₂.wr,
-    hscr₂.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) (WP.block_nil ?_)
+    hscr₂.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) (WP.block_nil ?_)
   -- The registers' slots, which later code keeps.
   generalize hS : ({ s₂ with mem := Spill.saveMem s₂.mem (s₂.gpr sb) s₂.gpr savedOffs } : State) = s₂'
   have g₂' : s₂'.gpr = s₂.gpr := by rw [← hS]
@@ -152,15 +152,15 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   have f₀₃ : Frame [⟨X, 2048⟩] s₀.mem s₃.mem := by
     rw [m₃]
     have f12 : Frame [⟨X, 2048⟩] s₂.mem s₂'.mem := f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact scr_part X (by omega)⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact scr_part X (by omega_using [])⟩
     have f02 : Frame [⟨X, 2048⟩] s₀.mem s₂'.mem := fun x hx =>
       (f12 x hx).trans (congrFun (m₂.trans m₁) x)
     refine Frame.trans f02 ?_
     refine fm₃.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact scr_part X (by omega)
-    · exact scr_part X (by omega)
+    · exact scr_part X (by omega_using [])
+    · exact scr_part X (by omega_using [])
   let w := Spec.Aes.bytesAt s₀.mem sc (16 * (R + 1))
   have hk : KSetup s₃ X b sc R w :=
     { scr := hscr₃
@@ -229,8 +229,8 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   have dK : ∀ r ∈ kRegions b, Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact dDS.sub_right (scr_base X (by omega))
-    · exact dDS.sub_right (scr_part X (by omega))
+    · exact dDS.sub_right (scr_base X (by omega_using []))
+    · exact dDS.sub_right (scr_part X (by omega_using []))
   have data₅ : EcbInv s₀.mem s₅.mem D n 0 (ecbOut f s₀.mem D R w) :=
     ecbInv_frame fK dK n16
       (ecbInv_frame f₀₃ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS)
@@ -249,7 +249,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       refine WP.seq (wp_andi (imm := 7) (by decide) fun s₆ u₆ => WP.block_nil ?_)
       have hi₆ := hi₅.of_t0 u₆
       have ev : isa.eval (.zero t0) s₆ = some (decide (D.toNat % 8 = 0)) := by
-        rw [Steps.eval_zero, u₆.gpr, a3₅, and7, Steps.ofNat_beq_zero (by omega)]
+        rw [Steps.eval_zero, u₆.gpr, a3₅, and7, Steps.ofNat_beq_zero (by omega_using [])]
       exact WP.ite (decide (D.toNat % 8 = 0)) ev
         (fun h => ecbGroups_ok hcr hs (fun _ => by simpa using h) hi₆)
         (fun _ => ecbGroups_ok hcr hs (fun h => Bool.noConfusion h) hi₆)
@@ -259,18 +259,18 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
         Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint b (by omega) (by omega) (by omega)
-      · exact Offset.disjoint b (by omega) (by omega) (by omega)
+      · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
+      · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
     have dK' : ∀ r ∈ kRegions b, Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_base b (by omega) (by omega)
-      · exact Offset.disjoint b (by omega) (by omega) (by omega)
+      · exact Offset.disjoint_base b (by omega_using []) (by omega_using [])
+      · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
     have dE : ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [eRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_base b (by omega) (by omega)
-      · exact (dDS.sub_right (scr_part X (by omega))).symm
+      · exact Offset.disjoint_base b (by omega_using []) (by omega_using [])
+      · exact (dDS.sub_right (scr_part X (by omega_using []))).symm
     have fK' : Frame (kRegions b) s₃'.mem s₅.mem := fun x hx => (fK x hx).trans (congrFun m₃ x)
     exact ((sv₂.frame_in savedOffs_range fm₃ dS).frame_in savedOffs_range fK' dK').frame_in
       savedOffs_range gd.frame dE
@@ -279,7 +279,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   refine WP.mono (Spill.restore_wp (B := b) (by rw [← hb₂]; exact hscr₂.al) gd.base savedOffs_ho
     savedOffs_restorable (fun p hp => ⟨_, List.mem_append_right _ hscr₆.wr, by
       rw [← gd.base]
-      exact hscr₆.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) sv)
+      exact hscr₆.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) sv)
     fun s₇ rs₇ => ?_
   have dR : ∀ r ∈ [(⟨b, 0⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr

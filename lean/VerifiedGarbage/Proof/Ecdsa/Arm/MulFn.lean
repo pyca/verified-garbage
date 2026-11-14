@@ -358,7 +358,7 @@ theorem mulSaved_pairwise (c : Cfg) :
   rw [mulSaved_eq]; simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, List.Pairwise.nil, and_true, false_implies, implies_true]
   generalize c.sl 45 = x
-  omega
+  omega_using []
 
 theorem mulSaved_regs (c : Cfg) : (c.mulSaved.map Prod.fst).Nodup ∧ ∀ p ∈ c.mulSaved, p.1 ≠ .r12 := by
   rw [mulSaved_eq]
@@ -389,7 +389,7 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hb : State.addr (s.gp
   rw [Cfg.mulFn]
   refine WP.seq (wp_mov (op2_reg _ _) fun s₁ u₁ => ?_)
   have hs₁ : Scr s₁ base size := ⟨by rw [u₁.gpr]; exact hb, ⟨8192, by decide, by decide,
-    by rw [u₁.wr, hwr]; simp⟩, by omega, by decide⟩
+    by rw [u₁.wr, hwr]; simp⟩, by omega_using [hfit, hsz], by decide⟩
   have hf₁ : Far s₁ base 8192 := ⟨by rw [u₁.wr, hwr]; simp, hfit⟩
   refine WP.mono (strs_ok hs₁ c.mulSaved (mulSaved_bounds h7) (mulSaved_pairwise c))
     fun s₂₀ ⟨K₂₀, O₂₀, V₂₀⟩ => ?_
@@ -539,7 +539,7 @@ theorem mulAt_ok (hc : CfgOk c) (C : Impl.Weierstrass.Mul.Curve) (hnf : c.mulFn.
     rw [tv (e₄ (i := ZERO) (by decide) (by decide) (by decide)), tv (e₄ (i := ONEP) (by decide) (by decide) (by decide))]
     exact hO
   have hcov : Covers [⟨base, 8192⟩] s₄.wr := by
-    have h := hf₄.write (d := 0) (n := 8192) (by omega)
+    have h := hf₄.write (d := 0) (n := 8192) (by omega_using [])
     simp only [off, BitVec.add_zero] at h
     exact Covers.one h
   have e0 : ∀ t : State, t.gpr .r0 = s.gpr .r12 → State.addr (t.gpr .r0) = base := fun t h => by
@@ -645,17 +645,17 @@ theorem mulFW_ge (h7 : c.n < 10) : ∀ w ∈ mulFW c, c.sl TMP ≤ w.1 := by
   rcases hw with (((⟨j, hj, rfl⟩ | hw) | hw) | (⟨j, hj, rfl⟩ | hw)) | hw
   · rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [sl_eq, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP] <;> omega
-  · rw [hw, wk_eq, sl_eq]; simp only [TMP]; omega
+      simp only [sl_eq, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP] <;> omega_using []
+  · rw [hw, wk_eq, sl_eq]; simp only [TMP]; omega_using [h7]
   · unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
     split at hw
     · rw [List.mem_singleton.mp hw, show c.ladderCfg.M.n = c.n from rfl]
       have h1 := save_le_oAt (c := c) ‹_›
-      rw [sl_eq] at h1 ⊢; simp only [TMP]; omega
+      rw [sl_eq] at h1 ⊢; simp only [TMP]; omega_using [h1]
     · simp at hw
-  · rcases hj with rfl | rfl <;> simp only [sl_eq, ACC, PT, TMP] <;> omega
-  · rw [hw, bitsAt_eq, sl_eq]; simp only [TMP]; omega
-  · rw [hw]; simp only [sl_eq, nslots, TMP]; omega
+  · rcases hj with rfl | rfl <;> simp only [sl_eq, ACC, PT, TMP] <;> omega_using []
+  · rw [hw, bitsAt_eq, sl_eq]; simp only [TMP]; omega_using [h7]
+  · rw [hw]; simp only [sl_eq, nslots, TMP]; omega_using []
 
 /-! ## `R = [k]P`, by the call or the ladder -/
 
@@ -680,7 +680,7 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hpx])
   have tone : toM c.C.p (2 ^ (64 * c.n)) (2 ^ (64 * c.n) % c.C.p) = 1 := toM_one hpR
   unfold Cfg.qMul
   cases hm : c.mul with
@@ -697,10 +697,10 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
       · exact lt_of_eq_of_lt F.b3p (hmont _)
       · exact hpx
       · exact hpy
-      · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))
-      · exact lt_of_eq_of_lt hrx (by omega)
+      · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega_using [hpx]))
+      · exact lt_of_eq_of_lt hrx (by omega_using [hpx])
       · exact lt_of_eq_of_lt hry (hmont _)
-      · exact lt_of_eq_of_lt hrz (by omega)
+      · exact lt_of_eq_of_lt hrz (by omega_using [hpx])
     have hR : Q (pLadder c px py).nbits (tmv c.C c.n base s (pLadder c px py).R.x)
         (tmv c.C c.n base s (pLadder c px py).R.y) (tmv c.C c.n base s (pLadder c px py).R.z) := by
       show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
@@ -735,7 +735,7 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
       exact hO
     refine WP.mono (mulAt_ok (px := px) (py := py) (Q := Q) hc C (hc.mulNf C hm) hs hf hpx'.1 hpy'.1
       hpxr hpyr F.mp (lt_of_eq_of_lt F.ap (hmont _)) (lt_of_eq_of_lt F.b3p (hmont _))
-      (lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))) (lt_of_eq_of_lt F.zero (by omega)) hpx hpy
+      (lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega_using [hpx]))) (lt_of_eq_of_lt F.zero (by omega_using [hpx])) hpx hpy
       hstep' hO')
       fun t ⟨K, U, L, R⟩ => ⟨K.mono (by simp [powClob, clob]), ?_, ?_, L, R⟩
     · refine U.mono fun w hw => ?_
@@ -760,7 +760,7 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
             rcases hi with rfl | rfl <;> exact Nat.le_trans h12 (Nat.le_trans (Nat.le_add_right _ _)
               (sl_lt c (by decide)))
           · exact Nat.le_trans h12 (mulFW_ge h7 w hw)
-        · have := sl_le c h7 (i := MP) (by decide); dsimp only [size] at this; omega
+        · have := sl_le c h7 (i := MP) (by decide); dsimp only [size] at this; omega_using [this]
       exact modP_of hc (hmp.trans F.mp)
 
 end VG.Proof.Ecdsa.Arm

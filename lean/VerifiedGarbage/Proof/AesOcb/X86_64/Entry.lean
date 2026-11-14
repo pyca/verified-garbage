@@ -116,7 +116,7 @@ theorem entry_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (P : Perm K W s) {
       s₁.mem.readW (W + BitVec.ofNat 64 248) 64 = BitVec.ofNat 64 al := by
     have cE : ∀ d, 160 ≤ d → d + 8 ≤ 304 → (⟨W + BitVec.ofNat 64 160, 144⟩ : Region).Contains
         (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
+      fun d h₁ h₂ => Offset.contains W h₁ (by omega_using [h₂]) (by decide)
     refine ⟨_, by orun [save, saved, List.map_cons, List.map_nil, hW, hsp, a₄₀, w₁, w₂, w₃, w₄, w₅, w₆, w₇,
       w₈, w₉, w₁₀, w₁₁], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, hsp]
@@ -137,8 +137,8 @@ theorem entry_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (P : Perm K W s) {
   have dA : ∀ {a d k : Nat}, 8 ≤ a → a + 8 ≤ 48 → d + k ≤ 3584 →
       (⟨SP + BitVec.ofNat 64 a, 8⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ := fun {a d k} h₁ h₂ h₃ => by
     have e : SP + BitVec.ofNat 64 a = SP + BitVec.ofNat 64 8 + BitVec.ofNat 64 (a - 8) := by
-      rw [add_ofNat_assoc, show 8 + (a - 8) = a by omega]
-    rw [e]; exact (hargsW.sub_left (Offset.sub_base _ (by omega))).sub_right (Lay.wSub h₃)
+      rw [add_ofNat_assoc, show 8 + (a - 8) = a by omega_using [h₁]]
+    rw [e]; exact (hargsW.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right (Lay.wSub h₃)
   have kA : ∀ {a : Nat}, 8 ≤ a → a + 8 ≤ 48 →
       s₁.mem.readW (SP + BitVec.ofNat 64 a) 64 = s.mem.readW (SP + BitVec.ofNat 64 a) 64 := fun {a} h₁ h₂ =>
     f₁.readW (r := ⟨SP + BitVec.ofNat 64 a, 8⟩) (Region.contains_self _ _) (fun r hr => by
@@ -172,10 +172,10 @@ theorem entry_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (P : Perm K W s) {
   -- What the writes of the arguments keep.
   have k₄ : ∀ {d : Nat}, (d + 8 ≤ 208 ∨ 232 ≤ d ∧ d + 8 ≤ 304) → d + 8 ≤ 3584 →
       s₄'.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun {d} h₁ h₂ => by
-    rw [m₄', readW_writeW_off _ (by simp only [tgO]; omega) (by omega) (by decide),
-      m₄, readW_writeW_off _ (by simp only [tlO]; omega) (by omega) (by decide), m₃,
-      readW_writeW_off _ (by simp only [lenO]; omega) (by omega) (by decide), m₂,
-      readW_writeW_off _ (by simp only [dataO]; omega) (by omega) (by decide)]
+    rw [m₄', readW_writeW_off _ (by simp only [tgO]; omega_using [h₁]) (by omega_using [h₁]) (by decide),
+      m₄, readW_writeW_off _ (by simp only [tlO]; omega_using [h₁]) (by omega_using [h₁]) (by decide), m₃,
+      readW_writeW_off _ (by simp only [lenO]; omega_using [h₁]) (by omega_using [h₁]) (by decide), m₂,
+      readW_writeW_off _ (by simp only [dataO]; omega_using [h₁]) (by omega_using [h₁]) (by decide)]
   have fr₄ : Frame [⟨W + BitVec.ofNat 64 208, 104⟩] s₁.mem s₄'.mem := by
     rw [m₄', m₄, m₃, m₂]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains W (d := 208) (n := 8) (e := 208)
@@ -217,13 +217,13 @@ theorem entry_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (P : Perm K W s) {
   have k₇ : ∀ {d : Nat}, 96 ≤ d → d + 8 ≤ 3584 →
       s₇.mem.readW (W + BitVec.ofNat 64 d) 64 = s₄'.mem.readW (W + BitVec.ofNat 64 d) 64 := fun {d} h₁ h₂ =>
     fr₇.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by omega)) h₂ (by decide)) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by omega_using [h₁])) h₂ (by decide)) (by decide)
   have k : ∀ {d : Nat}, 232 ≤ d → d + 8 ≤ 304 →
       s₇.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun {d} h₁ h₂ => by
-    rw [k₇ (by omega) (by omega), k₄ (.inr ⟨h₁, h₂⟩) (by omega)]
+    rw [k₇ (by omega_using [h₁]) (by omega_using [h₂]), k₄ (.inr ⟨h₁, h₂⟩) (by omega_using [h₂])]
   have kd : ∀ {d : Nat}, 208 ≤ d → d + 8 ≤ 3584 →
       s₇.mem.readW (W + BitVec.ofNat 64 d) 64 = s₄'.mem.readW (W + BitVec.ofNat 64 d) 64 := fun {d} h₁ h₂ =>
-    k₇ (by omega) (by omega)
+    k₇ (by omega_using [h₁]) (by omega_using [h₂])
   refine ⟨s₇, ?_, ⟨E₇, ⟨?_, ?_, ?_, by rw [k (by decide) (by decide), s232], by rw [k (by decide) (by decide), s240],
     by rw [k (by decide) (by decide), s288], by rw [k (by decide) (by decide), s296]⟩, ?_,
     by rw [show alenO = 248 from rfl, k (by decide) (by decide), s248], fun p hp => ?_, ?_, ?_, B₇.val, ?_,

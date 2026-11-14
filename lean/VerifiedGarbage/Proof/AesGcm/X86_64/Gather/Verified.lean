@@ -54,7 +54,7 @@ theorem framedS_mx {bytes : Nat} {r : Reg} {c : Prog isa} (h : c.allInstrs (fun 
 theorem framedS_xdepth {bytes d : Nat} {r : Reg} {c : Prog isa} (h : c.x86_64Depth ≤ d) :
     (Impl.StackScratch.X86_64.withStackScratch bytes r c).x86_64Depth ≤ d + bytes := by
   simp only [Impl.StackScratch.X86_64.withStackScratch, Code.x86_64Depth, X86_64.Instr.frameBytes]
-  omega
+  omega_using [h]
 
 /-! ## The code -/
 
@@ -115,15 +115,15 @@ def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (
     (htt : ts + 16 ≤ t) : ShortFn M where
   q := ts
   quick := .block (quickTest ts)
-  quickWp := fun hp _ h => w_quick hp (by omega) h
-  quickRel := fun hp hp' pb => quick_rel hp hp' pb (by omega)
+  quickWp := fun hp _ h => w_quick hp (by omega_using [ht, htt]) h
+  quickRel := fun hp hp' pb => quick_rel hp hp' pb (by omega_using [ht, htt])
   quickMx := rfl
   quickSp := rfl
   quickXd := Nat.zero_le _
   fast := copySeal Se.fn
-  fastWp := fun hp e st E r11 => sealShort_wp hp Se ht (by simp only [decide_eq_true_eq]; omega) st E r11
+  fastWp := fun hp e st E r11 => sealShort_wp hp Se ht (by simp only [decide_eq_true_eq]; omega_using [htt, e]) st E r11
   fastRel := fun hp hp' pb e _ _ E₁ r₁ E₂ r₂ => sealShort_rel Se hp hp' pb
-    (by simp only [decide_eq_true_eq]; omega) ht E₁ r₁ E₂ r₂
+    (by simp only [decide_eq_true_eq]; omega_using [htt, e]) ht E₁ r₁ E₂ r₂
   fastMx := by
     simp only [copySeal, gatherCopy, copy, Code.allInstrs, Se.mx, Bool.true_and, Bool.and_true]
     rfl
@@ -134,7 +134,7 @@ def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (
     have s₀ := Se.xd
     simp only [copySeal, gatherCopy, copy, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
       List.length_nil, Nat.max_le]
-    omega
+    omega_using [s₀]
   test := splitTest t
   code := copyShort ts Se.fn Sp.fn
   go s := decide (shortLen s < t)
@@ -144,7 +144,7 @@ def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (
   wp := fun {s} hp e st E r11 => by
     have hs : shortLen s < t := by simpa using e
     unfold copyShort
-    refine WP.seq (WP.mono (selTest_wp hp (ts := ts) (by omega) E) fun st' ⟨E', r11', cf'⟩ => ?_)
+    refine WP.seq (WP.mono (selTest_wp hp (ts := ts) (by omega_using [ht, htt]) E) fun st' ⟨E', r11', cf'⟩ => ?_)
     refine WP.ite (decide (selLen s < ts)) (by simp only [eval, cf']) (fun h => ?_) (fun h => ?_)
     · exact sealShort_wp hp Se ht (by simpa using lt_of_sel hp htt hs (by simpa using h)) st' E' r11'
     · exact copySplit_wp hp Sp (sub_lt_of_sel hp hts (by simpa using h)) E'.1 r11' E'.2.2.1 E'.2.2.2.1
@@ -154,7 +154,7 @@ def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (
     unfold copyShort
     refine RelCT.seq (R := fun (a b : State) => (E2 s₀ a ∧ a.gpr .r11 = W s₀ ∧ a.cf = some (decide (selLen s₀ < ts))) ∧
         (E2 s₀' b ∧ b.gpr .r11 = W s₀' ∧ b.cf = some (decide (selLen s₀' < ts))))
-      ((selTest_rel hp hp' pb (ts := ts) (by omega)).mono (fun a b h => by rw [h.1, h.2]; exact ⟨E₁, E₂⟩)
+      ((selTest_rel hp hp' pb (ts := ts) (by omega_using [ht, htt])).mono (fun a b h => by rw [h.1, h.2]; exact ⟨E₁, E₂⟩)
         fun _ _ h => h)
       (RelCT.ite (fun _ _ g => by simp only [eval, g.1.2.2, g.2.2.2, esel]) ?_ ?_)
     · refine StreamTo.RelCT.of_imp (selLen s₀ < ts) (fun _ _ g => by
@@ -180,7 +180,7 @@ def ShortFn.ofBoth {M : CtxMode} (Se : SealFn M) (Sp : SplitFn M) {t ts : Nat} (
     have s₁ := Sp.xd
     simp only [copyShort, selTest, lenTest, selLast, copySeal, copySplit, gatherCopy, copy, Code.x86_64Depth,
       X86_64.Instr.frameBytes, List.length_cons, List.length_nil, Nat.max_le]
-    omega
+    omega_using [s₀, s₁]
 
 section
 variable {M : CtxMode} (Sh : ShortFn M) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
@@ -210,7 +210,7 @@ theorem sealGather_xdepth (inl : Bool := false) : (sealGather Sh.quick Sh.fast S
   cases inl <;>
   simp only [sealGather, gatherRest, stream, text, slices, callOr, Bool.false_eq_true, ↓reduceIte, Code.x86_64Depth,
     X86_64.Instr.frameBytes, List.length_cons, List.length_nil, Nat.max_le] <;>
-  omega
+  omega_using [s₃, s₂, s₀, s₁, i, a, tt, f]
 
 theorem sealGather_correct (inl : Bool) (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
     ∃ tr s', Exec isa (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl) s tr s' ∧ abiPreserved s s' ∧
@@ -252,7 +252,7 @@ theorem withFront_xdepth (inl : Bool := false) :
   have s₀ := sealGather_xdepth Sh I A T F inl
   have s₁ := Sp.xd
   cases long <;> simp only [withFront, frontTest, frontCore, frontFast, Code.x86_64Depth, X86_64.Instr.frameBytes,
-    List.length_cons, List.length_nil, Nat.max_le, Bool.false_eq_true, ↓reduceIte] <;> omega
+    List.length_cons, List.length_nil, Nat.max_le, Bool.false_eq_true, ↓reduceIte] <;> omega_using [s₀, s₁]
 
 theorem withFront_correct (inl : Bool) (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
     ∃ tr s', Exec isa (withFront long Sp.fn (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn inl))
@@ -391,8 +391,8 @@ theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherScratchContract X86_64.ab
 /-- The key context at `0x1000` is below the stack arguments. -/
 theorem ctx_low {i : Nat} (hi : i < 128 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.ofNat 64 i : Addr).toNat) := by
   have h : (0x1000 : Addr).toNat = 4096 := rfl
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega), h]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega_using [hi]), h]
+  omega_using [hi]
 
 /-- `gatherSat`, with a key context of 1024 bytes. -/
 def gatherSatP : State :=

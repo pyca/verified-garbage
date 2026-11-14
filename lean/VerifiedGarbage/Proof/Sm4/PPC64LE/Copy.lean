@@ -39,8 +39,8 @@ theorem copyWord_ok (s : State) {d : Nat} (hd : d % 8 = 0 ∧ d < 32768)
   let s₁ := s.write t0 (s.mem.readW (s.gpr .r6 + BitVec.ofNat 64 d) 64)
   refine ⟨{ s₁ with mem := s₁.mem.writeW (s₁.gpr .r7 + BitVec.ofNat 64 d) (s₁.gpr t0) }, ?_, ?_, u.other,
     u.rd, u.wr⟩
-  · simp only [runBlock_cons, exec_load_d (show Reg.r6 ≠ .r0 by decide) ⟨hd.2, by omega⟩ hr, runStep_some,
-      exec_store_d (show Reg.r7 ≠ .r0 by decide) ⟨hd.2, by omega⟩ (by rw [h7]; exact hw), runBlock_nil, s₁]
+  · simp only [runBlock_cons, exec_load_d (show Reg.r6 ≠ .r0 by decide) ⟨hd.2, by omega_using [hd]⟩ hr, runStep_some,
+      exec_store_d (show Reg.r7 ≠ .r0 by decide) ⟨hd.2, by omega_using [hd]⟩ (by rw [h7]; exact hw), runBlock_nil, s₁]
   · show Mem.writeW _ _ _ = _
     rw [h7, u.gpr, u.mem]
 

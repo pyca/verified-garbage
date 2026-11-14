@@ -57,8 +57,8 @@ theorem vhPieces {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (hs : S
   obtain ⟨w1a, w1b, w1c⟩ := hF.w1
   refine ⟨fun pc hpc => ?_, pieceS hs rfl (show encodable (BitVec.ofNat 32 oCT) = true by decide)
     (show encodable (BitVec.ofNat 32 p.ctildeLen) = true by rcases hF.ct with e | e | e <;> rw [e] <;> decide)
-    (show 0 < p.ctildeLen by rcases hF.ct with e | e | e <;> omega)
-    (show oCT + p.ctildeLen < 2 ^ 32 by simp only [oCT]; rcases hF.ct with e | e | e <;> omega)
+    (show 0 < p.ctildeLen by rcases hF.ct with e | e | e <;> omega_using [e])
+    (show oCT + p.ctildeLen < 2 ^ 32 by simp only [oCT]; rcases hF.ct with e | e | e <;> omega_using [e])
     (by rcases hF.ct with e | e | e <;> vsep hF [hashLay, Lay.size, e]) (.inl rfl)
     fun _ => show ix Reg.r7 ∈ vWb by decide⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hpc
@@ -66,7 +66,7 @@ theorem vhPieces {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (hs : S
   · exact pieceS hs rfl (show encodable (BitVec.ofNat 32 0) = true by decide)
       (show encodable (BitVec.ofNat 32 64) = true by decide) (by decide) (by decide)
       (by vsep hF [hashLay, Lay.size]) (.inr rfl) fun h => absurd h (by decide)
-  · exact pieceS hs rfl (show encodable (BitVec.ofNat 32 oB) = true by decide) w1c w1b (by simp only [oB]; omega)
+  · exact pieceS hs rfl (show encodable (BitVec.ofNat 32 oB) = true by decide) w1c w1b (by simp only [oB]; omega_using [w1a])
       (by rcases hF.w1l with e | ⟨e, _⟩ <;> vsep hF [hashLay, Lay.size, e]) (.inl rfl) fun h => absurd h (by decide)
 
 theorem B_bytes {p : Params} {STK : Nat} {σ : State} {A' cc h R nz nc} {s : State}
@@ -83,7 +83,7 @@ theorem vhash_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ : State} {A' cc h 
   obtain ⟨hin, hq⟩ := vhPieces hF hs
   refine WP.mono (hashS hs kmu (rate := 136) (sfx := 0x1f) (by decide) (by decide) (by decide) (by decide)
     (by simp) hin hq) fun s' ⟨k', o'⟩ => ⟨A', cc, h, R, hk5.keep hF k' ?_, ?_⟩
-  · have : p.ctildeLen ≤ 64 := by rcases hF.ct with e | e | e <;> omega
+  · have : p.ctildeLen ≤ 64 := by rcases hF.ct with e | e | e <;> omega_using [e]
     k5chks hF (Nat.le_refl _)
   · have o₃ : bytesAt s'.mem ((vlay p STK σ).A 0 oCT) p.ctildeLen = _ := o'
     rw [o₃]

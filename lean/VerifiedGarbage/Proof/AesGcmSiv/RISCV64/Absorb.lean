@@ -53,20 +53,20 @@ theorem be64_byte (m : Mem) (S : Addr) (off : Nat) {i : Nat} (hi : i < 8) :
   have h5 := (m (S + BitVec.ofNat 64 (off + 5))).isLt
   have h6 := (m (S + BitVec.ofNat 64 (off + 6))).isLt
   have h7 := (m (S + BitVec.ofNat 64 (off + 7))).isLt
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.reduceMul, Nat.reducePow, Nat.reduceSub] <;> omega
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.reduceMul, Nat.reducePow, Nat.reduceSub] <;> omega_using []
 
 theorem writeW64_at (m : Mem) (P : Addr) (v : BitVec 64) {i : Nat} (hi : i < 8) :
     (m.writeW P v) (P + BitVec.ofNat 64 i) = v.extractLsb' (8 * i) 8 := by
   simp only [Mem.writeW, Mem.write, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]
-  simp [show i < 64 / 8 by omega, BitVec.setWidth_eq]
+  rw [Nat.mod_eq_of_lt (by omega_using [hi])]
+  simp [show i < 64 / 8 by omega_using [hi], BitVec.setWidth_eq]
 
 theorem writeW64_below (m : Mem) (P : Addr) (v : BitVec 64) {i : Nat} (hi : i < 8) :
     (m.writeW (P + BitVec.ofNat 64 8) v) (P + BitVec.ofNat 64 i) = m (P + BitVec.ofNat 64 i) := by
   simp only [Mem.writeW, Mem.write, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := P.isLt
-  rw [ite_eq_right_iff.mpr (fun h => absurd h (by omega))]
+  rw [ite_eq_right_iff.mpr (fun h => absurd h (by omega_using [hi]))]
 
 /-- The big-endian doubleword of bytes in the other order of a little-endian one. -/
 theorem be64_rev {m' m : Mem} {P Q : Addr} {off : Nat}
@@ -82,11 +82,11 @@ def revMem (m : Mem) (S P : Addr) : Mem :=
 theorem revMem_block (m : Mem) (S P : Addr) :
     Spec.Gcm.blockAt (revMem m S P) P = Spec.GcmSiv.ofBytes (Spec.Aes.bytesAt m S 16) := by
   have e₁ : ByteLoad.be64 (revMem m S P) P 0 = m.readW (S + BitVec.ofNat 64 8) 64 := be64_rev fun j hj => by
-    rw [Nat.zero_add, revMem, writeW64_below _ _ _ (by omega), writeW64_at _ _ _ (by omega), be64_byte _ _ _ (by omega),
-      Offset.add_add, show 8 + (7 - (7 - j)) = 8 + j by omega]
+    rw [Nat.zero_add, revMem, writeW64_below _ _ _ (by omega_using []), writeW64_at _ _ _ (by omega_using []), be64_byte _ _ _ (by omega_using []),
+      Offset.add_add, show 8 + (7 - (7 - j)) = 8 + j by omega_using [hj]]
   have e₂ : ByteLoad.be64 (revMem m S P) P 8 = m.readW S 64 := be64_rev fun j hj => by
-    rw [revMem, ← Offset.add_add, writeW64_at _ _ _ (by omega), be64_byte _ _ _ (by omega),
-      show 0 + (7 - (7 - j)) = j by omega]
+    rw [revMem, ← Offset.add_add, writeW64_at _ _ _ (by omega_using []), be64_byte _ _ _ (by omega_using []),
+      show 0 + (7 - (7 - j)) = j by omega_using [hj]]
   rw [Proof.Gcm.RISCV64.blockAt_hOf, Proof.GcmSiv.ofBytes_bytesAt, Proof.Gcm.RISCV64.hOf, e₁, e₂]
 
 theorem revMem_frame (m : Mem) (S P : Addr) : Frame [⟨P, 16⟩] m (revMem m S P) :=

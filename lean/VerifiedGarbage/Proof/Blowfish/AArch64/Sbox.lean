@@ -67,7 +67,7 @@ theorem lookup_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s)
       vbyte (s₃.v (qReg q)) e = vbyte (s₃.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q) := by
     intro q hq0 hq1 e he
     rw [X]
-    rcases (by omega : q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl
+    rcases (by omega_using [hq0, hq1] : q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl
     · rw [q1, vbyte_xor, hc.1 e he]; rfl
     · rw [q2, vbyte_xor, hc.2 e he]; rfl
     · rw [q3, vbyte_xor, vbyte_xor, hc.1 e he, hc.2 e he, BitVec.xor_assoc]; rfl
@@ -124,7 +124,7 @@ theorem lookup_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s)
     have i₂ : t₂.v (idxReg j) = s.v (idxReg j) := (o₂.2 _ (ni 2 (by decide))).trans i₁
     intro b hb e he
     have nob := out_notin
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
     · rw [o₃'.2 _ (nob 0 (by decide) 3 (by decide) (by decide)), o₂.2 _ (nob 0 (by decide) 2 (by decide) (by decide)),
         o₁.2 _ (nob 0 (by decide) 1 (by decide) (by decide)), v₀ e he, X]
     · rw [o₃'.2 _ (nob 1 (by decide) 3 (by decide) (by decide)), o₂.2 _ (nob 1 (by decide) 2 (by decide) (by decide)),

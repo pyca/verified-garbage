@@ -151,27 +151,27 @@ include hp
 
 theorem UPre.scrA {d : Nat} (hd : d < 2176) :
     State.addr (S s₀ + BitVec.ofNat 32 d) = State.addr (S s₀) + BitVec.ofNat 64 d :=
-  addr_add (by have := hp.scr_fit; have := (S s₀).isLt; omega)
+  addr_add (by have := hp.scr_fit; have := (S s₀).isLt; omega_arith)
 
 theorem UPre.dataA {k : Nat} (hk : k < N s₀) : State.addr (D32 s₀ k) = byt s₀ k :=
-  addr_add (by have := hp.data_fit; have := (Dp s₀).isLt; omega)
+  addr_add (by have := hp.data_fit; have := (Dp s₀).isLt; omega_arith)
 
 theorem UPre.arg1 : stackArgAddr s₀ 1 = stackArgAddr s₀ 0 + BitVec.ofNat 64 4 := by
   have := hp.sp_fit
   simp only [stackArgAddr]
-  rw [addr_add (by omega), addr_add (by omega)]
+  rw [addr_add (by omega_using [this]), addr_add (by omega_using [])]
   simp
 
 theorem UPre.arg_in {k : Nat} (hk : k < 2) : InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ k) 4 := by
   refine ⟨argsR s₀, by simp [hp.rd], ?_⟩
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
   · simpa using Offset.contains_base (stackArgAddr s₀ 0) (d := 0) (n := 4) (k := 8) (by decide) (by decide)
   · rw [hp.arg1]; exact Offset.contains_base _ (by decide) (by decide)
 
 theorem UPre.byt_disjoint {j k : Nat} (hj : j < N s₀) (hk : k < N s₀) (hjk : j ≠ k) :
     (⟨byt s₀ j, 1⟩ : Region).Disjoint ⟨byt s₀ k, 1⟩ := by
   have := hp.data_fit
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  exact Offset.disjoint _ (by omega_using [hjk]) (by omega_using [hj, this]) (by omega_using [hk, this])
 
 end
 
@@ -180,7 +180,7 @@ theorem UPre.scr_sub {s₀ : State} {d n : Nat} (h : d + n ≤ 2176) :
   Offset.sub_base _ h
 
 theorem UPre.data_sub {s₀ : State} {k : Nat} (hk : k < N s₀) : Region.Sub ⟨byt s₀ k, 1⟩ (dataR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hk])
 
 theorem UPre.arg_sub {s₀ : State} : Region.Sub ⟨stackArgAddr s₀ 0, 4⟩ (argsR s₀) :=
   Region.sub_prefix (by decide)
@@ -209,8 +209,8 @@ include hp
 
 theorem UPre.sched_bytes {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
     bytesAt m (State.addr (W s₀)) (16 * (R s₀ + 1)) = bytesAt s₀.mem (State.addr (W s₀)) (16 * (R s₀ + 1)) := by
-  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hR])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hp.sch_iv.sub_left (Region.sub_prefix hR)
@@ -241,9 +241,9 @@ theorem length_bs (s₀ : State) : (bs s₀).length = N s₀ := by simp [bytesAt
 theorem LInv.byte {enc : Bool} {s₀ : State} {k : Nat} {s : State} (h : LInv enc s₀ k s) (hk : k < N s₀) :
     s.mem (byt s₀ k) = (bs s₀)[k]'(by rw [length_bs]; exact hk) := by
   have hl : (outK s₀ enc k).length = k := by
-    rw [outK, length_cfb8, List.length_take, length_bs]; omega
+    rw [outK, length_cfb8, List.length_take, length_bs]; omega_using [hk]
   have := congrArg (·[k]?) h.data
-  simp only [List.getElem?_append_right (show (outK s₀ enc k).length ≤ k by omega), hl, Nat.sub_self,
+  simp only [List.getElem?_append_right (show (outK s₀ enc k).length ≤ k by omega_using [hl]), hl, Nat.sub_self,
     List.getElem?_drop, Nat.add_zero] at this
   rw [List.getElem?_eq_getElem (by simp [bytesAt]; exact hk),
     List.getElem?_eq_getElem (by rw [length_bs]; exact hk)] at this
@@ -265,7 +265,7 @@ theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
   refine Spill.saveList_ok saved s₁ _ (fun p hp' => ?_) fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
   · have hb := saved_bound p hp'
     rw [h12, u₁.wr, hp.wr]
-    exact ⟨by omega, by omega, ⟨scrR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩⟩
+    exact ⟨by omega_using [hb], by omega_using [hsc, hb], ⟨scrR s₀, by simp, Offset.contains_base _ (by omega_using [hb]) (by omega_using [hb])⟩⟩
   have hm₂ : s₂.mem = savedMem s₀ := by
     rw [m₂, u₁.mem, h12, savedMem]
     exact Spill.saveMem_congr _ _ _ fun p hp' => u₁.other _ (saved_ne_r12 p hp')
@@ -294,7 +294,7 @@ theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
   have dataS : bytesAt (savedMem s₀) (State.addr (Dp s₀)) (N s₀) = bs s₀ :=
     Proof.Cmac.bytesAt_frame f₀ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.data_scr.sub_right (Region.sub_prefix (by decide))) (by have := hp.data_fit; omega)
+      exact hp.data_scr.sub_right (Region.sub_prefix (by decide))) (by have := hp.data_fit; omega_using [this])
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp (disch := decide) only [f₉.gpr, u₈.other, u₇.other, u₆.other, u₅.other, u₄.other, u₃.gpr, g₂, u₁.other]
   · simp (disch := decide) only [f₉.gpr, u₈.other, u₇.other, u₆.other, u₅.other, u₄.gpr, u₃.other, g₂, u₁.other]
@@ -336,9 +336,9 @@ theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : St
   by_cases hz' : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz'], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_using [hk, hz']]
   · right
-    refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz'], h'⟩
 
 theorem mid_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
     (h : LInv enc s₀ 0 s₁) (hz : s₁.z = decide (N s₀ = 0)) :
@@ -349,7 +349,7 @@ theorem mid_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : Sta
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hb hp (by omega) h
+    exact loop_ok hb hp (by omega_using [hn]) h
 
 /-! ## The epilogue -/
 
@@ -361,10 +361,10 @@ theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
   hf.readW (r := ⟨State.addr (S s₀) + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact hp.iv_scr.symm.sub_left (UPre.scr_sub (by omega))
-    · exact hp.data_scr.symm.sub_left (UPre.scr_sub (by omega))
-    · exact Offset.disjoint_base _ h₁ (by have := hp.scr_fit; omega)
-    · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega))) (by decide)
+    · exact hp.iv_scr.symm.sub_left (UPre.scr_sub (by omega_using [h₂]))
+    · exact hp.data_scr.symm.sub_left (UPre.scr_sub (by omega_using [h₂]))
+    · exact Offset.disjoint_base _ h₁ (by have := hp.scr_fit; omega_using [h₂])
+    · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega_using [h₂]))) (by decide)
 
 theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv enc s₀ (N s₀) s) :
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ (cfb8Arm enc).post s₀ s' := by
@@ -372,7 +372,7 @@ theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h 
   have rdwr : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have inS : ∀ d, d + 4 ≤ 2176 → InRegions (s.rd ++ s.wr) (State.addr (S s₀) + BitVec.ofNat 64 d) 4 :=
-    fun d hd => by rw [rdwr]; exact ⟨scrR s₀, by simp, Offset.contains_base _ hd (by omega)⟩
+    fun d hd => by rw [rdwr]; exact ⟨scrR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩
   have sl : ∀ r d, (r, d) ∈ saved → s.mem.readW (State.addr (S s₀) + BitVec.ofNat 64 d) 32 = s₀.gpr r :=
     fun r d hrd => by
       have hb := saved_bound _ hrd
@@ -383,7 +383,7 @@ theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h 
   refine Spill.restoreBase_ok (by decide) (fun p hp' => ?_) fun s₂ ld ho m₁ _ _ sp₁ =>
     WP.block_nil ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_⟩
   · have hb := saved_bound p (by rw [saved_eq]; exact hp')
-    exact ⟨by omega, by rw [h.r10]; omega, by rw [h.r10]; exact inS _ (by omega)⟩
+    exact ⟨by omega_using [hb], by rw [h.r10]; omega_using [hsc, hb], by rw [h.r10]; exact inS _ (by omega_using [hb])⟩
   · by_cases hs : r ∈ saved.map Prod.fst
     · obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hs
       rw [ld p (by rw [← saved_eq]; exact hp'), h.r10, sl _ _ hp']

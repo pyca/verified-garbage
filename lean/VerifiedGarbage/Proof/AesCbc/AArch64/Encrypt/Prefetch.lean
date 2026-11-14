@@ -29,25 +29,25 @@ theorem prefetch_ok {s₀ s : State} {k : Nat} (hp : UPre s₀) (hk : k+1 ≤ N 
     WP isa (.ite (.zero .x .x3) (.block []) (.block Impl.AesCbc.AArch64.Encrypt.prefetch)) s
       fun t => Core s₀ k (k+1) t ∧ VFrame [.v0] s t ∧
         (k+1 < N s₀ → t.v .v0=s₀.mem.readW (blk s₀ (k+1)) 128 ^^^ t.v .v7) := by
-  have hev := zero_count (by have := hp.data_wrap; omega) h.count
+  have hev := zero_count (by have := hp.data_wrap; omega_using [this]) h.count
   by_cases he : k+1=N s₀
   · refine WP.ite true ?_ (fun _ => WP.block_nil ⟨h,VFrame.refl _ _,fun hc => by omega⟩)
       (fun hf => by cases hf)
     rw [hev,he,Nat.sub_self]; rfl
   · refine WP.ite false ?_ (fun hf => by cases hf) (fun _ => ?_)
-    · rw [hev,decide_eq_false (by omega)]
+    · rw [hev,decide_eq_false (by omega_using [hk, he])]
     · have ha : InRegions (s.rd++s.wr) (s.gpr .x2+BitVec.ofNat 64 16) 16 := by
-        rw [h.ptr,Offset.add_add_eq (Dp s₀) (show 16*k+16=16*(k+1) by omega),h.env.wr,hp.wr]
+        rw [h.ptr,Offset.add_add_eq (Dp s₀) (show 16*k+16=16*(k+1) by omega_using []),h.env.wr,hp.wr]
         exact ⟨dataR s₀,List.mem_append_right _ (by simp),
           Offset.contains_base (Dp s₀) (d:=16*(k+1)) (n:=16) (k:=16*N s₀)
-            (by omega) (by have := hp.data_wrap; omega)⟩
+            (by omega_using [hk, he]) (by have := hp.data_wrap; omega_using [hk, he, this])⟩
       refine WP.mono (load_ok s 16 (by decide) ha) fun t ht => ?_
       subst ht
       have hf := loaded_frame s 16
       refine ⟨h.vframe hf (by decide),hf,?_⟩
       intro _
       change s.mem.readW (s.gpr .x2+BitVec.ofNat 64 16) 128 ^^^ s.v .v7=_
-      rw [h.ptr,Offset.add_add_eq (Dp s₀) (show 16*k+16=16*(k+1) by omega),
-        original_read h.data (by omega) (by omega)]
+      rw [h.ptr,Offset.add_add_eq (Dp s₀) (show 16*k+16=16*(k+1) by omega_using []),
+        original_read h.data (by omega_using []) (by omega_using [hk, he])]
       rfl
 end VG.Proof.AesCbc.AArch64.Encrypt

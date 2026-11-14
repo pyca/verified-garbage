@@ -64,23 +64,23 @@ theorem firstMemStep_field {m : Mem} {p : Addr} {w : Poly} {u : Nat} {bound : In
   constructor
   · intro k hk
     by_cases hs : k/32=u
-    · have hi : (k%32)/4<8 := by omega
-      have he : 32*u+4*((k%32)/4)+k%4=k := by omega
-      have hx := firstMemStep_at m p hu ⟨(k%32)/4,hi⟩ (e := k%4) (by omega)
+    · have hi : (k%32)/4<8 := by omega_using []
+      have he : 32*u+4*((k%32)/4)+k%4=k := by omega_using [hs]
+      have hx := firstMemStep_at m p hu ⟨(k%32)/4,hi⟩ (e := k%4) (by omega_using [])
       rw [he] at hx
       rw [hx]
-      exact hb ⟨(k%32)/4,hi⟩ _ (by omega)
-    · rw [firstMemStep_outside m p hu hk (by omega)]
+      exact hb ⟨(k%32)/4,hi⟩ _ (by omega_using [])
+    · rw [firstMemStep_outside m p hu hk (by omega_using [hs])]
       exact h.bound k hk
   · intro k hk
     by_cases hs : k/32=u
-    · have hi : (k%32)/4<8 := by omega
-      have he : 32*u+4*((k%32)/4)+k%4=k := by omega
-      have hx := firstMemStep_at m p hu ⟨(k%32)/4,hi⟩ (e := k%4) (by omega)
+    · have hi : (k%32)/4<8 := by omega_using []
+      have he : 32*u+4*((k%32)/4)+k%4=k := by omega_using [hs]
+      have hx := firstMemStep_at m p hu ⟨(k%32)/4,hi⟩ (e := k%4) (by omega_using [])
       rw [he] at hx
       rw [hx]
-      simpa only [he] using hv ⟨(k%32)/4,hi⟩ (k%4) (by omega)
-    · rw [firstMemStep_outside m p hu hk (by omega),h.value k hk,
+      simpa only [he] using hv ⟨(k%32)/4,hi⟩ (k%4) (by omega_using [])
+    · rw [firstMemStep_outside m p hu hk (by omega_using [hs]),h.value k hk,
         InverseTraversal.run_outside _ _ _ (InverseTraversal.local_supported ⟨u,hu⟩) w hk hs]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse
@@ -102,17 +102,17 @@ theorem firstPass_field_prefix {m : Mem} {p : Addr} {w : Poly}
   induction u with
   | zero => exact h.mono (by decide) (by decide)
   | succ u ih =>
-    have hp := ih (by omega)
+    have hp := ih (by omega_using [hu])
     have hf : InnerBankField u
         (readBank (firstPassMem m p u) (coeffAddr p (32*u)) 16)
         (InverseTraversal.run ((List.range u).flatMap InverseTraversal.localSlice) w) := by
       intro i e he
       rw [readBank_coeff _ p (32*u) 4 i he]
-      exact hp.value _ (by change 32*u+4*i.val+e<256; omega)
+      exact hp.value _ (by change 32*u+4*i.val+e<256; omega_using [hu, he])
     have hb : BankBound (readBank (firstPassMem m p u) (coeffAddr p (32*u)) 16) 8380417 :=
-      fun i e he => firstPass_bank_bound (by omega) h.bound i he
-    have hs := fiveValues_field _ _ (by omega : u<8) hb hf
-    have hm := firstMemStep_field (by omega : u<8) hp hs.1 hs.2
+      fun i e he => firstPass_bank_bound (by omega_using [hu]) h.bound i he
+    have hs := fiveValues_field _ _ (by omega_using [hu] : u<8) hb hf
+    have hm := firstMemStep_field (by omega_using [hu] : u<8) hp hs.1 hs.2
     simpa only [firstPassMem_step,List.range_succ,List.flatMap_append,
       List.flatMap_singleton,InverseTraversal.run_append] using hm
 
@@ -150,7 +150,7 @@ theorem finalValues_field (v : Vector (BitVec 128) 8) (qv : BitVec 128) (w : Pol
   rw [finalValues,runValues_split_last]
   refine ⟨hc.1,hc.2.trans ?_⟩
   simpa only [← InverseTraversal.run_append,stridedOps_eq hu,
-    InverseTraversal.stridedLoc,show 32*i.val+4*u+e=4*u+32*i.val+e by omega,
+    InverseTraversal.stridedLoc,show 32*i.val+4*u+e=4*u+32*i.val+e by omega_using [],
     show ofInt (16382 : Int)=(16382 : Zq) by decide +kernel] using hl.2.2
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse
@@ -172,11 +172,11 @@ theorem finalPass_field {m : Mem} {p : Addr} {w : Poly} {qv : BitVec 128}
     finalValues_field (readBank m (coeffAddr p (4*u)) 128) qv w hu
       (fun j e he => by
         rw [readBank_coeff m p (4*u) 32 j he]
-        exact h.bound _ (by change 4*u+32*j.val+e<256; omega))
+        exact h.bound _ (by change 4*u+32*j.val+e<256; omega_using [hu, he]))
       (fun j e he => by
         rw [readBank_coeff m p (4*u) 32 j he]
         simpa only [Traversal.loc,Nat.add_comm,Nat.add_left_comm,Nat.add_assoc] using
-          h.value (4*u+32*j.val+e) (by change 4*u+32*j.val+e<256; omega)) hq i he
+          h.value (4*u+32*j.val+e) (by change 4*u+32*j.val+e<256; omega_using [hu, he])) hq i he
   exact finalPass_field_of_banks (fun u hu i e he => (bank u hu i e he).1)
     (fun u hu i e he => (bank u hu i e he).2)
 
@@ -196,7 +196,7 @@ theorem inverseMem_field {m : Mem} {p : Addr} {w : Poly} (h : PolyIs m p w) :
     rw [VG.Proof.MlDsa.AArch64.Optimized.canonicalWord_int _ (h.1 k hk)]
     have hb := h.1 k hk
     change (coeffAt m p k).toNat<8380417 at hb
-    omega
+    omega_using [hb]
   · intro k hk
     rw [VG.Proof.MlDsa.AArch64.Optimized.canonicalWord_field _ (h.1 k hk),← polyAt_get _ _ hk,h.2]
 

@@ -25,7 +25,7 @@ def SampleTested (len : Nat) (p : SamplePublic) (s : State) : Prop :=
 theorem sampleTest_state {len : Nat} {p : SamplePublic} {s : State} (h : SampleSized len p s) :
     WP isa Impl.Dsa.AArch64.Generation.testWitness s (SampleTested len p) :=
   WP.mono (testWitness_ok h.1 p.prime.exponentRoom p.prime.odd
-    (by rw [p.length]; have := p.prime.len2; omega) (by rw [p.length]; exact p.prime.lenWords))
+    (by rw [p.length]; have := p.prime.len2; omega_using [this]) (by rw [p.length]; exact p.prime.lenWords))
     (fun _ ⟨ht, _, _, hr, _, _⟩ => ⟨⟨ht, h.2⟩, hr⟩)
 
 theorem sampleWitness_ct (len : Nat) {hc : VG.Taint.Hint VG.AArch64.Taint.T}

@@ -97,7 +97,7 @@ structure RInv (inverse : Bool) (rs : List VReg) (s₀ : State) (nr j : Nat) (s 
   val : ∀ b ∈ rs, aesState (s.vpr b) = middle inverse nr (schedule nr s₀) (aesState (s₀.vpr b)) j
 
 theorem keyIndex_le (inverse : Bool) {nr j : Nat} (hj : j ≤ nr) : keyIndex inverse nr j ≤ nr := by
-  cases inverse <;> simp only [keyIndex, Bool.false_eq_true, ite_false, ite_true] <;> omega
+  cases inverse <;> simp only [keyIndex, Bool.false_eq_true, ite_false, ite_true] <;> omega_arith
 
 theorem pointer_step (inverse : Bool) (base : Addr) {nr j : Nat} (hj : j < nr) :
     (if inverse then (base + BitVec.ofNat 64 (16*keyIndex inverse nr j)) - 16
@@ -107,22 +107,22 @@ theorem pointer_step (inverse : Bool) (base : Addr) {nr j : Nat} (hj : j < nr) :
   · simp only [keyIndex, Bool.false_eq_true, ite_false]
     change base + BitVec.ofNat 64 (16*j) + BitVec.ofNat 64 16 = _
     rw [Offset.add_add]
-    exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega_using [])
   · simp only [keyIndex, ite_true]
     change base + BitVec.ofNat 64 (16*(nr-j)) - BitVec.ofNat 64 16 = _
-    rw [Offset.add_ofNat_sub base (by omega)]
-    exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega)
+    rw [Offset.add_ofNat_sub base (by omega_using [hj])]
+    exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega_using [])
 
 theorem pointer_next (inverse : Bool) (base : Addr) {nr j : Nat} (hj : j < nr-1) :
     (if inverse then (base + BitVec.ofNat 64 (16*keyIndex inverse nr (j+1))) - 16
       else (base + BitVec.ofNat 64 (16*keyIndex inverse nr (j+1))) + 16) =
       base + BitVec.ofNat 64 (16*keyIndex inverse nr (j+2)) :=
-  pointer_step inverse base (by omega)
+  pointer_step inverse base (by omega_using [hj])
 
 theorem middleBody_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key ∉ rs) (hm : mask ∉ rs)
     {s₀ s : State} {nr j : Nat} (hp : Inputs nr s₀) (hj : j < nr-1) (h : RInv inverse rs s₀ nr j s) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.middleBody inverse rs)) s (RInv inverse rs s₀ nr (j+1)) := by
-  have hidx : keyIndex inverse nr (j+1) ≤ nr := keyIndex_le inverse (by omega)
+  have hidx : keyIndex inverse nr (j+1) ≤ nr := keyIndex_le inverse (by omega_using [hj])
   have hz : s.gpr .r0 = 0 := (h.effects.keep.gpr (by decide)).trans hp.zero
   have hmask : s.vpr mask = byteMask := (h.effects.v mask (by simp [hm, key, mask])).trans hp.mask
   have hr : InRegions (s.rd ++ s.wr) (s.gpr .r9) 16 := by
@@ -130,7 +130,7 @@ theorem middleBody_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : ke
     exact hp.reads _ hidx
   have hkey : IsKey (rev128 (s.mem.read (s.gpr .r9) 16)) (roundKey (schedule nr s₀) (keyIndex inverse nr (j+1))) := by
     rw [h.effects.mem, h.ptr]
-    exact key_read s₀.mem (s₀.gpr .r3) (by omega)
+    exact key_read s₀.mem (s₀.gpr .r3) (by omega_using [hidx])
   rw [Impl.Aes.PPC64LE.Crypto.middleBody, WP.block_append_iff]
   refine WP.mono (round_ok inverse false rs s hn hk hz hmask hr) fun u ⟨hv, ho⟩ => ?_
   have hy : ∀ b ∈ rs, aesState (u.vpr b) = middle inverse nr (schedule nr s₀) (aesState (s₀.vpr b)) (j+1) := by
@@ -148,7 +148,7 @@ theorem middleBody_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : ke
     exact pointer_next inverse (s₀.gpr .r3) hj
   · simp only [RegUpd.gpr_write_self, ho.gpr, h.left]
     change BitVec.ofNat 64 (nr-1-j) - BitVec.ofNat 64 1 = _
-    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hj]), Nat.sub_sub]
   · simpa only [vpr_write] using hy
 
 
@@ -169,7 +169,7 @@ theorem initialBody_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : k
         BitVec.ofNat_mul_ofNat, Nat.mul_comm nr 16]
   have hr : InRegions ((s.write .r9 p).rd ++ (s.write .r9 p).wr) ((s.write .r9 p).gpr .r9) 16 := by
     rw [RegUpd.rd_write, RegUpd.wr_write, hpidx]
-    exact hp.reads _ (keyIndex_le inverse (by omega))
+    exact hp.reads _ (keyIndex_le inverse (by omega_using []))
   have hz : (s.write .r9 p).gpr .r0 = 0 := by
     simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hp.zero
   have hm : (s.write .r9 p).vpr mask = byteMask := by simpa only [vpr_write] using hp.mask
@@ -177,9 +177,9 @@ theorem initialBody_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : k
       (roundKey (schedule nr s) (keyIndex inverse nr 0)) := by
     rw [RegUpd.mem_write, hpidx]
     exact key_read s.mem (s.gpr .r3) (by
-      have hidx := keyIndex_le inverse (show 0 ≤ nr by omega)
+      have hidx := keyIndex_le inverse (show 0 ≤ nr by omega_using [])
       have := hp.max
-      omega)
+      omega_using [hidx])
   rw [← WP.block_append_iff]
   change WP isa (.block (Impl.Aes.PPC64LE.Crypto.load key .r9 ++ Impl.Aes.PPC64LE.Crypto.xorKey rs))
     (s.write .r9 p) _
@@ -200,11 +200,11 @@ theorem initialBody_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : k
     have hpvalue : p = s.gpr .r3 + BitVec.ofNat 64 (16*keyIndex inverse nr 0) :=
       (RegUpd.gpr_write_self s .r9 p).symm.trans hpidx
     rw [hpvalue]
-    exact pointer_step inverse (s.gpr .r3) (j := 0) (by have := hp.min; omega)
+    exact pointer_step inverse (s.gpr .r3) (j := 0) (by have := hp.min; omega_using [this])
   · simp only [RegUpd.gpr_write_self, ho.gpr, RegUpd.gpr_write, reduceCtorEq, ite_false, hp.rounds,
       Nat.sub_zero]
     change BitVec.ofNat 64 nr - BitVec.ofNat 64 1 = _
-    rw [Offset.ofNat_sub_ofNat (by have := hp.min; omega)]
+    rw [Offset.ofNat_sub_ofNat (by have := hp.min; omega_using [this])]
   · simpa only [vpr_write] using hy
 
 
@@ -228,12 +228,12 @@ theorem middleLoop_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : ke
       have hne : BitVec.ofNat 64 (nr-1-(j+1)) ≠ 0 := by
         intro hz
         have hzero := congrArg BitVec.toNat hz
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hp.max; omega)] at hzero
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hp.max; omega_using [this])] at hzero
         have h0 : (0 : BitVec 64).toNat = 0 := rfl
         rw [h0] at hzero
-        omega
-      exact ⟨he.trans (by simpa using hne), nr-1-(j+1), by omega, j+1, rfl, by omega, hu⟩
-  exact WP.loop (M := isa) I step (nr-1) s ⟨0, by omega, by have := hp.min; omega, h⟩
+        omega_using [hj, hl, hzero]
+      exact ⟨he.trans (by simpa using hne), nr-1-(j+1), by omega_using [hj], j+1, rfl, by omega_using [hj, hl], hu⟩
+  exact WP.loop (M := isa) I step (nr-1) s ⟨0, by omega_using [], by have := hp.min; omega_using [this], h⟩
 
 theorem last_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key ∉ rs) (hm : mask ∉ rs)
     {s₀ s : State} {nr : Nat} (hp : Inputs nr s₀) (h : RInv inverse rs s₀ nr (nr-1) s) :
@@ -242,7 +242,7 @@ theorem last_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key ∉ 
       Local [.r9, .r10] (key :: rs) s₀ t := by
   have hz : s.gpr .r0 = 0 := (h.effects.keep.gpr (by decide)).trans hp.zero
   have hmask : s.vpr mask = byteMask := (h.effects.v mask (by simp [hm, key, mask])).trans hp.mask
-  have he : nr-1+1 = nr := by have := hp.min; omega
+  have he : nr-1+1 = nr := by have := hp.min; omega_using [this]
   have hptr : s.gpr .r9 = s₀.gpr .r3 + BitVec.ofNat 64 (16*keyIndex inverse nr nr) := by
     simpa only [he] using h.ptr
   have hidx : keyIndex inverse nr nr ≤ nr := keyIndex_le inverse (Nat.le_refl _)
@@ -251,7 +251,7 @@ theorem last_ok (inverse : Bool) (rs : List VReg) (hn : rs.Nodup) (hk : key ∉ 
     exact hp.reads _ hidx
   have hkey : IsKey (rev128 (s.mem.read (s.gpr .r9) 16)) (roundKey (schedule nr s₀) (keyIndex inverse nr nr)) := by
     rw [h.effects.mem, hptr]
-    exact key_read s₀.mem (s₀.gpr .r3) (by omega)
+    exact key_read s₀.mem (s₀.gpr .r3) (by omega_using [hidx])
   refine WP.mono (round_ok inverse true rs s hn hk hz hmask hr) fun t ⟨hv, ho⟩ => ⟨?_, ?_⟩
   · intro b hb
     rw [hv b hb, vcipher_transform inverse true hkey, h.val b hb]

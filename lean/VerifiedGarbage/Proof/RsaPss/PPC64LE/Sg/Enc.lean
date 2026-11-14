@@ -68,43 +68,43 @@ theorem signEnc_ok (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) {t : State} (E : En
     rw [hS, hGh, hH.hashLen, hGl]
   unfold signMain
   -- `M'` and `H`.
-  refine WP.seq (WP.mono_syms (mPrime_ok P hGl.symm hD0 hD64 E.base (by omega)) fun t₁ ⟨b₁, _, m₁⟩ y₁ => ?_)
+  refine WP.seq (WP.mono_syms (mPrime_ok P hGl.symm hD0 hD64 E.base (by omega_using [hfit, hk2])) fun t₁ ⟨b₁, _, m₁⟩ y₁ => ?_)
   refine WP.seq (WP.mono (hashFixedG_ok F hH T hGl.symm (sl := (stackArg s 11).toNat)
-    (by show stackArg s 11 = _; rw [ofNat_toNat]) b₁ (y₁.trans sy) (by omega)) fun t₂ ⟨⟨b₂, _, _, d₂⟩, y₂⟩ => ?_)
+    (by show stackArg s 11 = _; rw [ofNat_toNat]) b₁ (y₁.trans sy) (by omega_using [hfit, hk2])) fun t₂ ⟨⟨b₂, _, _, d₂⟩, y₂⟩ => ?_)
   have hM : Spec.Sha256.bytesAt t₁.mem (off (Ss s) oY) (8 + Gs.len + (stackArg s 11).toNat) =
       Spec.RsaPss.zeros 8 ++ digB Gs.len s ++ saltB s := by
-    have := mPrime_bytes t.mem (Ss s) (digB Gs.len s) (saltB s) (bytesAt_length _ _ _) (by rw [hsalt]; omega)
+    have := mPrime_bytes t.mem (Ss s) (digB Gs.len s) (saltB s) (bytesAt_length _ _ _) (by rw [hsalt]; omega_using [hfit, hk2, hR, hY])
     rw [hsalt] at this
     rw [m₁]; exact this
   have hh : ∀ i < Gs.len, view t₂.mem (Ss s) (oDig + i) = (hS Gs s).getD i 0 := by
     intro i hi
     have := congrArg (fun l => l.getD i 0) d₂
     simp only [show Spec.Sha256.bytesAt t₂.mem (off (Ss s) oDig) H.FD = Spec.Rsa.bytesAt t₂.mem (off (Ss s) oDig) H.FD
-      from rfl, bytesAt_eq_view, map_range_getD' _ (show i < H.FD by omega), hM] at this
+      from rfl, bytesAt_eq_view, map_range_getD' _ (show i < H.FD by omega_using [hGl, hDF, hi]), hM] at this
     rw [this, hS, hGh, hH.hashTake]
-    simp [List.getD_eq_getElem?_getD, show i < H.D by omega]
+    simp [List.getD_eq_getElem?_getD, show i < H.D by omega_using [hGl, hi]]
   -- `EM` before masking.
   refine WP.seq (WP.mono_syms (clearEm_ok P b₂) fun t₃ ⟨b₃, _, m₃⟩ y₃ => ?_)
-  refine WP.seq (WP.mono_syms (putSalt_ok P hGl.symm hD64 b₃ (by omega)) fun t₄ ⟨b₄, _, m₄⟩ y₄ => ?_)
+  refine WP.seq (WP.mono_syms (putSalt_ok P hGl.symm hD64 b₃ (by omega_using [hfit])) fun t₄ ⟨b₄, _, m₄⟩ y₄ => ?_)
   have hdig : Spec.Rsa.bytesAt t₄.mem (off (Ss s) oDig) Gs.len = hS Gs s := by
     rw [bytesAt_eq_view]
     refine range_ext hhl fun i hi => ?_
-    rw [m₄, view_wb _ _ (by rw [hsalt]; omega) (by omega), ifn (by omega), view_w8 _ _ (by omega) (by omega),
-      ifn (by omega), m₃, view_wb _ _ (by simp; omega) (by omega), ifn (by simp only [List.length_replicate]; omega)]
-    exact hh i (by omega)
-  refine WP.seq (WP.mono_syms (putH_ok P hGl.symm hD0 hD64 b₄ (by omega)) fun t₅ ⟨b₅, _, m₅⟩ y₅ => ?_)
+    rw [m₄, view_wb _ _ (by rw [hsalt]; omega_using [hfit, hk2, hE, hR]) (by omega_using [hD64, hDg, hR, hi]), ifn (by omega_using [hfit, hk2, hE, hDg, hsalt]), view_w8 _ _ (by omega_using [hk2, hE, hR]) (by omega_using [hD64, hDg, hR, hi]),
+      ifn (by omega_using [hk2, hE, hDg]), m₃, view_wb _ _ (by simp; omega_using [hk2, hE, hR]) (by omega_using [hD64, hDg, hR, hi]), ifn (by simp only [List.length_replicate]; omega_using [hk2, hE, hDg])]
+    exact hh i (by omega_using [hi])
+  refine WP.seq (WP.mono_syms (putH_ok P hGl.symm hD0 hD64 b₄ (by omega_using [hfit])) fun t₅ ⟨b₅, _, m₅⟩ y₅ => ?_)
   have hpre : ∀ o < kk s, view t₅.mem (Ss s) o = emPre (kk s) Gs.len (stackArg s 11).toNat (saltB s) (hS Gs s) o :=
-    fun o ho => emPre_of hsalt hhl hk2 (by omega) m₃ m₄ (by rw [m₅, hdig]) ho
+    fun o ho => emPre_of hsalt hhl hk2 (by omega_using [hfit]) m₃ m₄ (by rw [m₅, hdig]) ho
   -- MGF1 and `clearTop`.
-  refine WP.seq (WP.mono_syms (dbArgs_ok P hGl.symm hD64 b₅ h0 (by omega)) fun t₆ ⟨b₆, v₆, x24, x25, x26, x27⟩ y₆ =>
+  refine WP.seq (WP.mono_syms (dbArgs_ok P hGl.symm hD64 b₅ h0 (by omega_using [hfit])) fun t₆ ⟨b₆, v₆, x24, x25, x26, x27⟩ y₆ =>
     ?_)
   have hsrc : srcB (view t₆.mem (Ss s)) (oEm + (kk s - Gs.len - 1)) Gs.len = hS Gs s := by
     refine range_ext hhl fun i hi => ?_
-    rw [v₆, hpre _ (by omega)]
+    rw [v₆, hpre _ (by omega_using [hfit, hE, hi])]
     simp only [emPre, hE, Nat.zero_add]
-    rw [ifn (by omega), ifp (by omega), show kk s - Gs.len - 1 + i - (kk s - Gs.len - 1) = i by omega]
+    rw [ifn (by omega_using [hfit, hi]), ifp (by omega_using []), show kk s - Gs.len - 1 + i - (kk s - Gs.len - 1) = i by omega_using []]
   refine WP.seq (WP.mono (mgfXorT_ok F hG Tg hGmh hGml hGmv (src := oEm + (kk s - Gs.len - 1)) (srcLen := Gs.len)
-    (dst := oEm + loN s) (dstLen := kk s - loN s - Gs.len - 1) ⟨by omega, by omega, .inr (by omega), by omega⟩
+    (dst := oEm + loN s) (dstLen := kk s - loN s - Gs.len - 1) ⟨by omega_using [hfit, hk2, hE], by omega_using [hfit, hk2, hE], .inr (by omega_using [hfit]), by omega_using [hfit]⟩
     b₆ (y₆.trans (y₅.trans (y₄.trans (y₃.trans y₂)))) x24 (by rw [x25]) x26 x27) fun t₇ ⟨⟨b₇, v₇⟩, y₇⟩ => ?_)
   refine WP.seq (WP.mono_syms (clearTop_ok P b₇ h0) fun t₈ ⟨b₈, m₈⟩ y₈ => ?_)
   refine k t₈ b₈ (y₈.trans y₇) ?_
@@ -112,13 +112,13 @@ theorem signEnc_ok (hGh : ∀ x, Gs.hash x = hH.SH.H.hash x) {t : State} (E : En
   unfold encEm
   refine List.map_congr_left fun o ho => ?_
   have ho := List.mem_range.mp ho
-  rw [m₈, view_w8 _ _ (by omega) (by omega), hE, Nat.zero_add, Nat.zero_add]
+  rw [m₈, view_w8 _ _ (by omega_using [hl1, hE, hR]) (by omega_using [hk2, hE, hR, ho]), hE, Nat.zero_add, Nat.zero_add]
   have e7 : ∀ x < kk s, view t₇.mem (Ss s) x = mixV (view t₆.mem (Ss s)) (Spec.Mgf1.mgf1 Gm (hS Gs s)
       (kk s - loN s - Gs.len - 1)) (loN s) (kk s - loN s - Gs.len - 1) x := fun x hx => by
-    rw [v₇ x (by omega), hsrc, hE, Nat.zero_add]
-  rw [e7 o ho, e7 (loN s) (by omega)]
+    rw [v₇ x (by omega_using [hk2, hSt, hx]), hsrc, hE, Nat.zero_add]
+  rw [e7 o ho, e7 (loN s) (by omega_using [hfit])]
   have := emT_of (saltB s) (hS Gs s) (Spec.Mgf1.mgf1 Gm (hS Gs s) (kk s - loN s - Gs.len - 1)) (cS s)
-    (k := kk s) (sl := (stackArg s 11).toNat) hhl hl1 rfl (by omega) (V := view t₆.mem (Ss s))
+    (k := kk s) (sl := (stackArg s 11).toNat) hhl hl1 rfl (by omega_using [hfit]) (V := view t₆.mem (Ss s))
     (fun x hx => by rw [v₆]; exact hpre x hx) ho
   by_cases hl : o = loN s
   · subst hl; rw [ifp rfl]; rw [ifp rfl] at this; exact this

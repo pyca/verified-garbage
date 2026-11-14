@@ -25,10 +25,10 @@ theorem loadTerm_ok {s : State} {base : Addr} (hs : Scr s base) {a b i j : Nat}
       t.gpr .x6 = word s.mem base (a + 8 * i) ∧
       t.gpr .x9 = word s.mem base (b + 8 * j) ∧
       t.mem = s.mem ∧ Keeps [.x6, .x9] s t := by
-  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega, by omega⟩
-  have be : (b + 8 * j) % 8 = 0 ∧ b + 8 * j < 32768 := ⟨by omega, by omega⟩
-  have al := hs.read (d := a + 8 * i) (n := 8) (by omega)
-  have bl := hs.read (d := b + 8 * j) (n := 8) (by omega)
+  have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := ⟨by omega_using [ha8], by omega_using [ha, hi]⟩
+  have be : (b + 8 * j) % 8 = 0 ∧ b + 8 * j < 32768 := ⟨by omega_using [hb8], by omega_using [hb, hj]⟩
+  have al := hs.read (d := a + 8 * i) (n := 8) (by omega_using [ha, hi])
+  have bl := hs.read (d := b + 8 * j) (n := 8) (by omega_using [hb, hj])
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, be, and_self, State.load, hs.x3, al, bl, ite_true, Option.map_some,
@@ -54,10 +54,10 @@ theorem zero_ok (s : State) :
 theorem store_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : k < 16) :
     WP isa (.block [st .x4 (ACC + 16 * k), st .x5 (ACC + 16 * k + 8)]) s fun t =>
       t.mem = putCoeff s.mem base ACC k (s.gpr .x4) (s.gpr .x5) ∧ Keeps [] s t := by
-  have ae : (ACC + 16 * k) % 8 = 0 ∧ ACC + 16 * k < 32768 := by simp only [ACC]; omega
-  have be : (ACC + 16 * k + 8) % 8 = 0 ∧ ACC + 16 * k + 8 < 32768 := by simp only [ACC]; omega
-  have aw := hs.write (d := ACC + 16 * k) (n := 8) (by simp only [ACC]; omega)
-  have bw := hs.write (d := ACC + 16 * k + 8) (n := 8) (by simp only [ACC]; omega)
+  have ae : (ACC + 16 * k) % 8 = 0 ∧ ACC + 16 * k < 32768 := by simp only [ACC]; omega_using [hk]
+  have be : (ACC + 16 * k + 8) % 8 = 0 ∧ ACC + 16 * k + 8 < 32768 := by simp only [ACC]; omega_using [hk]
+  have aw := hs.write (d := ACC + 16 * k) (n := 8) (by simp only [ACC]; omega_using [hk])
+  have bw := hs.write (d := ACC + 16 * k + 8) (n := 8) (by simp only [ACC]; omega_using [hk])
   apply WP.of_runBlock
   simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, be, and_self, State.read, State.store, hs.x3, aw, bw, ite_true,

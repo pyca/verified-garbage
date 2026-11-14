@@ -106,8 +106,8 @@ theorem crtCode_ct (W : Window) (M : Mont) (S : Selector) {C : List (Prog isa)} 
     have hk2 := hpre.k2
     have hZq := hpre.z
     have h8 := hdr_lt_slot ((p.m.k + 7) / 8) 8 (show 31 < 32 by decide)
-    have hZ : 8 * 32 ≤ p.m.Z := by unfold offQ at hZq; omega
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.m.B (8 * i)) 8 := fun i hi => hpre.scr.ld (by omega)
+    have hZ : 8 * 32 ≤ p.m.Z := by unfold offQ at hZq; omega_using [hZq, h8]
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.m.B (8 * i)) 8 := fun i hi => hpre.scr.ld (by omega_using [hZ, hi])
     refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t' => t'.gpr .x1 = p.m.op + BitVec.ofNat 64 0 ∧
         t'.gpr .x2 = BitVec.ofNat 64 p.m.k) (by
       brun [hpre.x0, hdr_enc (show Public.sOut < 32 by decide), hdr_enc (show Public.sK < 32 by decide),

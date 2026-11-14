@@ -26,12 +26,12 @@ open VG.Impl.Dsa.PPC64LE.Generation
 theorem hash_blk {N : Nat} (md : MdStream.Md 64 N 8) (iv : md.HV) {msg : List Byte} (h : msg.length < 56) :
     md.hash iv msg = md.digest (md.compress iv (md.parse fun t => (blk md msg).getD t 0)) := by
   have hp : md.pad msg = blk md msg := by
-    simp only [MdStream.Md.pad, blk, Nat.mod_eq_of_lt (show msg.length < 64 by omega)]
-    rw [show (2 * 64 - 8 - 1 - msg.length) % 64 = 55 - msg.length by omega]
+    simp only [MdStream.Md.pad, blk, Nat.mod_eq_of_lt (show msg.length < 64 by omega_using [h])]
+    rw [show (2 * 64 - 8 - 1 - msg.length) % 64 = 55 - msg.length by omega_using [h]]
   have hl : (blk md msg).length = 64 := by
     simp only [blk, List.length_append, List.length_cons, List.length_nil, List.length_replicate,
       md.lenBytes_length]
-    omega
+    omega_using [h]
   rw [MdStream.Md.hash, hp, hl, Nat.div_self (by decide), MdStream.Md.compressList_one]
 
 /-- SHA-256's compression function as the streaming code's callee. -/

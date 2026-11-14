@@ -25,10 +25,10 @@ theorem releaseArgs_ok (s : State) (fit : s.sp.toNat + 76 ≤ 2 ^ 32)
       t.mem = s.mem ∧ Rest [.r0, .r1, .r12, .lr] s t := by
   unfold releaseArgs
   refine wp_loadStack (a := off (State.addr s.sp) oOut) (by decide)
-    (addr_add (by simp only [oOut]; omega)) outRead fun u a => ?_
+    (addr_add (by simp only [oOut]; omega_using [fit])) outRead fun u a => ?_
   refine wp_stackAddr (by decide) fun v b => ?_
   refine wp_loadStack (a := off (State.addr s.sp) oK) (by decide)
-    (by rw [b.sp, a.sp]; exact addr_add (by simp only [oK]; omega))
+    (by rw [b.sp, a.sp]; exact addr_add (by simp only [oK]; omega_using [fit]))
     (by rw [b.rd, b.wr, a.rd, a.wr]; exact countRead) fun z c => ?_
   refine wp_mov (op2_imm (by decide)) fun t d => WP.block_nil ?_
   exact ⟨by rw [d.other .r0 (by decide), c.other .r0 (by decide), b.other .r0 (by decide), a.gpr],

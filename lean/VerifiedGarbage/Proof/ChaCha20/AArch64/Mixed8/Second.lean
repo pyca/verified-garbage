@@ -63,7 +63,7 @@ theorem reload_ok {s₀ s : State} (hp : CP s₀) (h : Spilled s₀ s) :
       a.mem.readW (s₀.gpr .x3 + BitVec.ofNat 64 (4 * k)) 32 =
         (block (ctr (source s₀) 6))[k] := by
     intro k hk
-    rw [hf.readW (r := lowBuf s₀) (Offset.contains_base _ (by omega) (by omega))
+    rw [hf.readW (r := lowBuf s₀) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
       (by intro r hr'; have he := List.mem_singleton.mp hr'; subst r
           exact hp.st_b.symm.sub_left (Region.sub_prefix (by decide : 64 ≤ 320))) (by decide)]
     exact h.words k hk
@@ -74,7 +74,7 @@ theorem reload_ok {s₀ s : State} (hp : CP s₀) (h : Spilled s₀ s) :
       rw [hr,hw,h.rd,h.wr,hg _ (by decide),hx0]; exact hp.read ⟨k,hk⟩
     · intro k hk
       change InRegions a.wr (a.gpr .x1 + BitVec.ofNat 64 (4 * k)) 4
-      rw [hw,h.wr,hg _ (by decide),h.x1]; exact hp.buffer _ _ (by omega)
+      rw [hw,h.wr,hg _ (by decide),h.x1]; exact hp.buffer _ _ (by omega_using [hk])
     · change (⟨a.gpr .x1,256⟩ : Region).Disjoint ⟨a.gpr .x0,64⟩
       rw [hg _ (by decide),h.x1,hg _ (by decide),hx0]
       exact hp.st_b.symm.sub_left (Region.sub_prefix (by decide : 256 ≤ 320))

@@ -96,8 +96,8 @@ theorem _root_.VG.Proof.MlKem.X86.Piece.seqs {Pre : State → Prop} {Pub : State
   | 0, _, _, hc => hc
   | n + 1, a, h, hc => by
     rw [List.range'_succ, List.map_cons, Impl.MlKem.X86.seqs]
-    exact .seq (h a (Nat.le_refl _) (by omega)) (Piece.seqs n (a + 1) (fun i h₁ h₂ => h i (by omega) (by omega))
-      (by rw [show a + 1 + n = a + (n + 1) by omega]; exact hc))
+    exact .seq (h a (Nat.le_refl _) (by omega_using [])) (Piece.seqs n (a + 1) (fun i h₁ h₂ => h i (by omega_using [h₁]) (by omega_using [h₂]))
+      (by rw [show a + 1 + n = a + (n + 1) by omega_using []]; exact hc))
 
 /-- `f 0`, …, `f (n - 1)`, then `c`. -/
 theorem _root_.VG.Proof.MlKem.X86.Piece.seqs0 {Pre : State → Prop} {Pub : State → State → Prop}
@@ -105,7 +105,7 @@ theorem _root_.VG.Proof.MlKem.X86.Piece.seqs0 {Pre : State → Prop} {Pub : Stat
     (h : ∀ i < n, Piece Pre Pub (P i) (P (i + 1)) (f i)) (hc : Piece Pre Pub (P n) Q c) :
     Piece Pre Pub (P 0) Q (seqs ((List.range n).map f) c) := by
   rw [List.range_eq_range']
-  exact Piece.seqs n 0 (fun i _ h₂ => h i (by omega)) (by rw [Nat.zero_add]; exact hc)
+  exact Piece.seqs n 0 (fun i _ h₂ => h i (by omega_using [h₂])) (by rw [Nat.zero_add]; exact hc)
 
 /-! ## Indices of a `k × k` matrix, row by row -/
 
@@ -113,7 +113,7 @@ theorem idx_mod {k i j : Nat} (hj : j < k) : (k * i + j) % k = j := by
   rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hj]
 
 theorem idx_div {k i j : Nat} (hj : j < k) : (k * i + j) / k = i := by
-  rw [Nat.mul_add_div (by omega), Nat.div_eq_of_lt hj, Nat.add_zero]
+  rw [Nat.mul_add_div (by omega_using [hj]), Nat.div_eq_of_lt hj, Nat.add_zero]
 
 theorem idx_lt {k i j : Nat} (hi : i < k) (hj : j < k) : k * i + j < k * k :=
   Nat.lt_of_lt_of_le (Nat.add_lt_add_left hj _) (by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi)
@@ -125,13 +125,13 @@ theorem catK_congr {f g : Nat → List Byte} : ∀ {k : Nat}, (∀ i < k, f i = 
   | 1, h => h 0 (by decide)
   | k + 2, h => by
     show KPke.catK f (k + 1) ++ f (k + 1) = KPke.catK g (k + 1) ++ g (k + 1)
-    rw [catK_congr fun i hi => h i (by omega), h (k + 1) (by omega)]
+    rw [catK_congr fun i hi => h i (by omega_using [hi]), h (k + 1) (by omega_using [])]
 
 /-- A part of a buffer within an argument is within it. -/
 theorem Lay.ok_sub {Y : Lay} {a o l o' l' : Nat} (h : Y.ok ⟨a, o, l⟩ = true) (h₀ : 0 < l')
     (h₂ : o' + l' ≤ o + l) : Y.ok ⟨a, o', l'⟩ = true := by
   simp only [Lay.ok, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
-  omega
+  omega_using [h₀, h₂, h]
 
 /-- The bytes of `n` parts of `c` bytes each. -/
 theorem bytes_catK {s₀ : State} (hp : TPre Y s₀) (m : Mem) {a o c : Nat} :
@@ -146,10 +146,10 @@ theorem bytes_catK {s₀ : State} (hp : TPre Y s₀) (m : Mem) {a o c : Nat} :
       exact Nat.pos_of_mul_pos_right h.1.2
     have e : c * (n + 2) = c * (n + 1) + c := Nat.mul_succ c (n + 1)
     rw [bytes_split hp m (o' := o + c * (n + 1)) (l₁ := c * (n + 1)) (l₂ := c) rfl e.symm
-      (Lay.ok_sub h (Nat.mul_pos hc (Nat.succ_pos _)) (by omega))
-      (Lay.ok_sub h hc (by omega)),
+      (Lay.ok_sub h (Nat.mul_pos hc (Nat.succ_pos _)) (by omega_using [e]))
+      (Lay.ok_sub h hc (by omega_using [e])),
       bytes_catK hp m (n := n + 1) (Lay.ok_sub h (Nat.mul_pos hc (Nat.succ_pos _))
-        (by omega))]
+        (by omega_using [e]))]
     rfl
 
 /-- `copyW_piece`, for `l = 4n` bytes. -/

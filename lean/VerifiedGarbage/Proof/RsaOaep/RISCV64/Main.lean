@@ -43,7 +43,7 @@ theorem sub_k {x : BitVec 64} {a : Nat} (h : a ≤ x.toNat) : x - BitVec.ofNat 6
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (a := x.toNat - a) (by omega)]; omega
+  rw [Nat.mod_eq_of_lt (a := a) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat - a) (by omega_using [])]; omega_using [h]
 
 section
 variable {D : Nat} {s : State} (P : PreO D s)
@@ -67,8 +67,8 @@ theorem em_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {f : Fns} (TL : TabS
   have hlh : Spec.Rsa.bytesAt t₂.mem (off (S s) oDig) D = Hs.hash (labB s) := by
     rw [hHh, ← d₂, ← hD]
   refine emAt_of hp hk P.k2 fun o ho => ?_
-  rw [m₃, view_wb _ _ (by rw [bytesAt_length]; omega) (by omega), bytesAt_length, hlh,
-    s₂ o (by omega) (by simp; omega)]
+  rw [m₃, view_wb _ _ (by rw [bytesAt_length]; omega) (by omega_using [hRs, ho]), bytesAt_length, hlh,
+    s₂ o (by omega_using [hRs, ho]) (by simp; omega_using [hSt, hDg, ho])]
 
 omit P in
 /-- The bytes at `S`, from the view. -/
@@ -93,28 +93,28 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns}
   have ek : kk s = (s.gpr .a3).toNat := rfl
   subst hD
   -- `DB` with MGF1 of the seed.
-  refine WP.seq (WP.of_syms (wp_addi (imm := oEm + 1) (h := by omega) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega)
-    fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₃ o₃ e₃ =>
-    wp_subi (imm := H.D + 1) (h := by omega) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_))
+  refine WP.seq (WP.of_syms (wp_addi (imm := oEm + 1) (h := by omega_using [hE]) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega_using [hD64])
+    fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1 + H.D) (h := by omega_using [hE, hD64]) fun t₃ o₃ e₃ =>
+    wp_subi (imm := H.D + 1) (h := by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_))
   have k₄ : Only [.s6, .s7, .s8, .s9] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have b₄ := h.only P.fits k₄
   refine WP.seq (WP.mono (mgfXorT_ok P.fits hG hF T hGh hGl hGv (src := 1) (srcLen := H.D) (dst := 1 + H.D)
-    (dstLen := kk s - H.D - 1) ⟨by omega, by omega, .inl (by omega), by omega⟩ b₄ (y₄.trans hsy)
+    (dstLen := kk s - H.D - 1) ⟨by omega_using [hD64], by omega_using [hk2, ek, hD64], .inl (by omega_using []), by omega_using [hk]⟩ b₄ (y₄.trans hsy)
     (by rw [o₄.get .s6, o₃.get .s6, o₂.get .s6, e₁, h.s0, hE])
     (by rw [o₄.get .s7, o₃.get .s7, e₂])
     (by rw [o₄.get .s8, e₃, o₂.get .s0, o₁.get .s0, h.s0, hE, Nat.zero_add])
-    (by rw [e₄, o₃.get .s1, o₂.get .s1, o₁.get .s1, h.s1, sub_k (by omega)]; congr 1))
+    (by rw [e₄, o₃.get .s1, o₂.get .s1, o₁.get .s1, h.s1, sub_k (by omega_using [ek, hk])]; congr 1))
     fun t₅ ⟨⟨b₅, v₅⟩, y₅⟩ => ?_)
   -- The seed with MGF1 of `maskedDB`.
-  refine WP.seq (WP.of_syms (wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₆ o₆ e₆ =>
-    wp_subi (imm := H.D + 1) (h := by omega) fun t₇ o₇ e₇ => wp_addi (imm := oEm + 1) (h := by omega)
-    fun t₈ o₈ e₈ => wp_li (imm := H.D) (by omega) fun t₉ o₉ e₉ => wp_nil fun y₉ => ?_))
+  refine WP.seq (WP.of_syms (wp_addi (imm := oEm + 1 + H.D) (h := by omega_using [hE, hD64]) fun t₆ o₆ e₆ =>
+    wp_subi (imm := H.D + 1) (h := by omega_using [hD64]) fun t₇ o₇ e₇ => wp_addi (imm := oEm + 1) (h := by omega_using [hE])
+    fun t₈ o₈ e₈ => wp_li (imm := H.D) (by omega_using [hD64]) fun t₉ o₉ e₉ => wp_nil fun y₉ => ?_))
   have k₉ : Only [.s6, .s7, .s8, .s9] t₅ t₉ := (o₆.trans (o₇.trans (o₈.trans o₉))).mono
   have b₉ := b₅.only P.fits k₉
   refine WP.seq (WP.mono (mgfXorT_ok P.fits hG hF T hGh hGl hGv (src := 1 + H.D) (srcLen := kk s - H.D - 1)
-    (dst := 1) (dstLen := H.D) ⟨by omega, by omega, .inr (by omega), by omega⟩ b₉ (y₉.trans y₅)
+    (dst := 1) (dstLen := H.D) ⟨by omega_using [hk2, ek, hD64], by omega_using [hD64], .inr (by omega_using []), by omega_using [hD0]⟩ b₉ (y₉.trans y₅)
     (by rw [o₉.get .s6, o₈.get .s6, o₇.get .s6, e₆, b₅.s0, hE, Nat.zero_add])
-    (by rw [o₉.get .s7, o₈.get .s7, e₇, o₆.get .s1, b₅.s1, sub_k (by omega)]; congr 1)
+    (by rw [o₉.get .s7, o₈.get .s7, e₇, o₆.get .s1, b₅.s1, sub_k (by omega_using [ek, hk])]; congr 1)
     (by rw [o₉.get .s8, e₈, o₇.get .s0, o₆.get .s0, b₅.s0, hE])
     (by rw [e₉]))
     fun t₁₀ ⟨⟨b₁₀, v₁₀⟩, _⟩ => k t₁₀ b₁₀ ?_)
@@ -122,7 +122,7 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns}
   have hdb := he.db hlh hm hk
   generalize hDB : lh ++ Spec.RsaOaep.zeros (kk s - mLen s - 2 * H.D - 2) ++ 0x01 :: m = db at hdb
   have hdbl : db.length = kk s - H.D - 1 := by
-    rw [← hDB]; simp [Spec.RsaOaep.zeros, hlh, hm]; omega
+    rw [← hDB]; simp [Spec.RsaOaep.zeros, hlh, hm]; omega_using [hk]
   have V4 : view t₄.mem (S s) = view t.mem (S s) := by rw [k₄.mem]
   have V9 : view t₉.mem (S s) = view t₅.mem (S s) := by rw [k₉.mem]
   rw [V4] at v₅
@@ -130,14 +130,14 @@ theorem mask_ok {H G : Hash} (hG : HashOK G) (hF : G.F ≤ 208) {f : Fns}
   have hsrc : srcB (view t₅.mem (S s)) (1 + H.D) (kk s - H.D - 1) =
       srcB (mixV (view t.mem (S s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (S s)) 1 H.D) (kk s - H.D - 1)) (1 + H.D)
         (kk s - H.D - 1)) (1 + H.D) (kk s - H.D - 1) :=
-    List.map_congr_left fun i hi => v₅ _ ⟨by have := List.mem_range.mp hi; omega, .inl (by have := List.mem_range.mp hi; omega)⟩
+    List.map_congr_left fun i hi => v₅ _ ⟨by have := List.mem_range.mp hi; omega_using [hRs, hk2, ek, this], .inl (by have := List.mem_range.mp hi; omega_using [hSt, hk2, ek, this])⟩
   rw [bytesAt_S]
-  refine (List.map_congr_left fun i hi => ?_).trans ((em_mask hGv (by omega) hsd hdbl he.z0 he.sd hdb).trans ?_)
+  refine (List.map_congr_left fun i hi => ?_).trans ((em_mask hGv (by omega_using [hk]) hsd hdbl he.z0 he.sd hdb).trans ?_)
   · have hi := List.mem_range.mp hi
-    rw [v₁₀ i ⟨by omega, .inl (by omega)⟩, hsrc, mixV, mixV]
+    rw [v₁₀ i ⟨by omega_using [hRs, hk2, ek, hi], .inl (by omega_using [hSt, hk2, ek, hi])⟩, hsrc, mixV, mixV]
     split
-    · rw [v₅ i ⟨by omega, .inl (by omega)⟩]
-    · rw [v₅ i ⟨by omega, .inl (by omega)⟩]
+    · rw [v₅ i ⟨by omega_arith, .inl (by omega_arith)⟩]
+    · rw [v₅ i ⟨by omega_using [hRs, hk2, ek, hi], .inl (by omega_using [hSt, hk2, ek, hi])⟩]
   · rw [← hDB]; rfl
 
 end

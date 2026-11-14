@@ -118,7 +118,7 @@ theorem loop_ct {N : Nat} (hN : 0 < N) :
       · have : t + 1 ≠ N := by
           have e' : (a.gpr .r6 != 0) = true := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨N - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨N - (t + 1), by omega_using [ht, hn], t + 1, by omega_using [ht, this], rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 
@@ -132,9 +132,9 @@ theorem rnTry_ct {N : Nat} (hN0 : 0 < N) (hN : N ≤ 336) :
   have eP := sp_eq h
   have hp₂' : SpOk (spOf σ₁) σ₂ := eP ▸ hp₂
   refine RelCT.seq (R := fun a b => (∃ x, J6 168 (3 * N) (spOf σ₁) σ₁ x a) ∧ (∃ y, J6 168 (3 * N) (spOf σ₁) σ₂ y b))
-    (relct_wp (sponge_ct hp₁ hp₂' h.sp (by decide) (by omega)) fun a b hab =>
-      ⟨WP.mono (sponge_ok hp₁ (by decide) (by omega) hab.1) fun _ x => ⟨_, x⟩,
-        WP.mono (sponge_ok hp₂' (by decide) (by omega) hab.2) fun _ x => ⟨_, x⟩⟩) ?_
+    (relct_wp (sponge_ct hp₁ hp₂' h.sp (by decide) (by omega_using [hN])) fun a b hab =>
+      ⟨WP.mono (sponge_ok hp₁ (by decide) (by omega_using [hN]) hab.1) fun _ x => ⟨_, x⟩,
+        WP.mono (sponge_ok hp₂' (by decide) (by omega_using [hN]) hab.2) fun _ x => ⟨_, x⟩⟩) ?_
   exact RelCT.seq (R := fun a b => LAt N σ₁ 0 a ∧ LAt N σ₂ 0 b)
     (relct_wp (relct_noMem rfl) fun a b ⟨⟨x, ha⟩, ⟨y, hb⟩⟩ =>
       ⟨lat0 hp₁ hN ha, lat0 hp₂ hN (by rw [eP]; exact hb)⟩) (loop_ct h hN0)

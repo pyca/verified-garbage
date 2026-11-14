@@ -24,9 +24,9 @@ theorem boundHead_ok {s : State} {B dom : Addr} {Z w k dl : Nat} {mi : BitVec 64
  have shift : BitVec.ofNat 64 k <<< 1=BitVec.ofNat 64 (2*k) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
-  omega
+  omega_using []
  have sub : BitVec.ofNat 64 dl-BitVec.ofNat 64 (2*k)=BitVec.ofNat 64 (dl-2*k) :=
-  BitVec.ofNat_sub_ofNat_of_le dl (2*k) (by omega) (by omega)
+  BitVec.ofNat_sub_ofNat_of_le dl (2*k) (by omega_using [size]) (by omega_using [shape])
  refine WP.keep [.x1,.x2,.x3,.x4] ?_ rfl rfl rfl
  brun [good.x0,hdr_enc (show sDom<32 by decide),hdr_enc (show sLen<32 by decide),hdr_enc (show sDL<32 by decide),
   header_read good room (show sDom<32 by decide),header_read good room (show sLen<32 by decide),

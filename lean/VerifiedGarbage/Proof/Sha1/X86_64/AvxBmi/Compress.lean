@@ -125,7 +125,7 @@ theorem rotl1_or (x : Word) : x <<< 1 ||| x >>> 31 = x.rotateLeft 1 := by
     BitVec.getLsbD_rotateLeft, decide_eq_true hi, Bool.true_and]
   rcases (by omega_arith : i < 1 ∨ 1 ≤ i) with h | h
   · simp only [h, decide_true, Bool.not_true, Bool.false_and, Bool.false_or, ite_true]
-  · simp only [show ¬ i < 1 by omega, decide_false, Bool.not_false, Bool.true_and, ite_false,
+  · simp only [show ¬ i < 1 by omega_using [h], decide_false, Bool.not_false, Bool.true_and, ite_false,
       BitVec.getLsbD_of_ge x (31 + i) (by omega_arith), Bool.or_false]
 
 theorem xor_rotl1 (x y : Word) : x ^^^ y >>> 31 ^^^ y <<< 1 = x ^^^ y.rotateLeft 1 := by
@@ -136,7 +136,7 @@ theorem xor_rotl1 (x y : Word) : x ^^^ y >>> 31 ^^^ y <<< 1 = x ^^^ y.rotateLeft
     decide_eq_true hi, Bool.true_and]
   rcases (by omega_arith : i < 1 ∨ 1 ≤ i) with h | h
   · simp [h]
-  · simp [show ¬ i < 1 by omega, BitVec.getLsbD_of_ge y (31 + i) (by omega_arith)]
+  · simp [show ¬ i < 1 by omega_using [h], BitVec.getLsbD_of_ge y (31 + i) (by omega_arith)]
 
 theorem rotl1_xor (x y : Word) : (x ^^^ y).rotateLeft 1 = x.rotateLeft 1 ^^^ y.rotateLeft 1 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi

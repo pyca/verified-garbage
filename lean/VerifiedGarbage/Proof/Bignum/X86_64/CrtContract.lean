@@ -135,6 +135,6 @@ def crtContractP : Contract isa where
 /-- Stack argument `j` is `8 j` bytes after the first. -/
 theorem stackArgAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
+  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega_using []]
 
 end VG.Proof.Bignum.X86_64

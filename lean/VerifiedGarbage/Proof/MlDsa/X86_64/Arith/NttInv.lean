@@ -52,9 +52,9 @@ theorem invLay_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) (len k : Nat)
     rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   rw [nttInvLayer_eq]
   exact vlay_ok vibfly_spec nttInvBlk_ok hlen (-4) (fun c => 256 / len - 1 - c) (by rw [hk]; rfl)
-    (fun c _ => by omega)
+    (fun c _ => by omega_using [hl])
     (fun c hc' => (congrArg (· + _) (congrArg (coeffAddr sP) (show 256 / len - 1 - c =
-      256 / len - 1 - (c + 1) + 1 by omega))).trans (step_bwd _ _ 1 (by decide)))
+      256 / len - 1 - (c + 1) + 1 by omega_using [hl, hc']))).trans (step_bwd _ _ 1 (by decide)))
     hc hdi hsi hS hT hwf hw hd
 
 theorem invLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : VConsts s)
@@ -64,9 +64,9 @@ theorem invLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s 
   have hs : ∀ e < 4, sel 0x05 e = 1 - e / 2 := by decide
   rw [nttInvLayer_eq, show 256 / 2 - 1 = 127 from rfl, show 128 / 2 = 64 from rfl]
   exact vlay2_ok vibfly_spec nttInvBlk_ok 126 0x05 (-8) (fun c => 127 - c) (fun i => 126 - 2 * i) rfl
-    (fun i _ => by omega) (fun i hi e he => by rw [hs e he]; omega)
+    (fun i _ => by omega_using []) (fun i hi e he => by rw [hs e he]; omega_using [hi, he])
     (fun i hi => (congrArg (· + _) (congrArg (coeffAddr sP) (show 126 - 2 * i = 126 - 2 * (i + 1) + 2 by
-      omega))).trans (step_bwd _ _ 2 (by decide))) hc hdi hsi hS hT hwf hw hd
+      omega_using [hi]))).trans (step_bwd _ _ 2 (by decide))) hc hdi hsi hS hT hwf hw hd
 
 theorem invLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : VConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
@@ -75,9 +75,9 @@ theorem invLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s 
   have hs : ∀ e < 4, sel 0x1B e = 3 - e := by decide
   rw [nttInvLayer_eq, show 256 / 1 - 1 = 255 from rfl, show 128 / 1 = 128 from rfl]
   exact vlay1_ok vibfly_spec nttInvBlk_ok 252 0x1B (-16) (fun c => 255 - c) (fun i => 252 - 4 * i) rfl
-    (fun i _ => by omega) (fun i hi e he => by rw [hs e he]; omega)
+    (fun i _ => by omega_using []) (fun i hi e he => by rw [hs e he]; omega_using [hi, he])
     (fun i hi => (congrArg (· + _) (congrArg (coeffAddr sP) (show 252 - 4 * i = 252 - 4 * (i + 1) + 4 by
-      omega))).trans (step_bwd _ _ 4 (by decide))) hc hdi hsi hS hT hwf hw hd
+      omega_using [hi]))).trans (step_bwd _ _ 4 (by decide))) hc hdi hsi hS hT hwf hw hd
 
 /-! ## The multiplication by `256⁻¹` -/
 
@@ -91,7 +91,7 @@ theorem scale_zlanes (x : BitVec 128) (hx : x = shufDwords ((0 : BitVec 64) ++ B
   subst hx
   refine ⟨fun i hi => ?_, fun j hj => ?_⟩
   · rcases cases4 hi with rfl | rfl | rfl | rfl <;> decide
-  · rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> decide
+  · rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> decide
 
 /-- The body of the loop of `vscale`. -/
 abbrev sbody : List Instr :=
@@ -117,11 +117,11 @@ theorem vscale_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 64) {s : State} (
         Frame [pR fP] s.mem s'.mem ∧ VConsts s' ∧ s'.xmm .xmm13 = s.xmm .xmm13 ∧
         s'.xmm .xmm12 = s.xmm .xmm12 ∧ Keep [.rdx, .rcx] s s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mxcsr = s.mxcsr := by
-  have j0 : 4 * i + 4 ≤ 256 := by omega
+  have j0 : 4 * i + 4 ≤ 256 := by omega_using [hi]
   have r0 : InRegions (s.rd ++ s.wr) (coeffAddr fP (4 * i)) 16 := f_in (List.mem_append_right _ hw) j0
   have w0 := f_in hw j0
   have hx : DLanes (s.mem.readW (coeffAddr fP (4 * i)) 128) (fun e => G[4 * i + e]!) := fun e he => by
-    rw [dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq, hS _ (by omega), ifn (by omega)]
+    rw [dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq, hS _ (by omega_using [hi, he]), ifn (by omega_using [])]
   rw [show sbody = [.movdquLoad .xmm3 (at_ .rdx 0)] ++ ((vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++
       vcsub .xmm3 .xmm2) ++ [.movdquStore (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 16), .alu .sub .rcx (.imm 1)])
     from rfl, WP.block_append_iff]
@@ -141,18 +141,18 @@ theorem vscale_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 64) {s : State} (
   refine ⟨fun k hk => ?_, by rw [show (16 : BitVec 64) = BitVec.ofNat 64 (4 * 4) from rfl, coeffAddr_add,
     Nat.mul_succ], (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (pR_contains fP j0), ⟨?_, ?_⟩, ?_, ?_,
     ⟨fun r hr => ?_, rfl, rfl⟩⟩
-  · rw [coeffAt_write128 _ _ j0 _ (by omega)]
+  · rw [coeffAt_write128 _ _ j0 _ (by omega_using [hk])]
     split
     · rename_i h
-      rw [ifp (by omega), ← hV, dword_csubV _ (by omega), mulZ (hx _ (by omega)) (hz _ (by omega))
-        (dword_montV ho (prod_lt hx hz) (by omega))]
+      rw [ifp (by omega_using [h]), ← hV, dword_csubV _ (by omega_using [h]), mulZ (hx _ (by omega_using [h])) (hz _ (by omega_using [h]))
+        (dword_montV ho (prod_lt hx hz) (by omega_using [h]))]
       dsimp only
-      rw [show 4 * i + (k - 4 * i) = k by omega, Fin.mul_comm]
+      rw [show 4 * i + (k - 4 * i) = k by omega_using [h], Fin.mul_comm]
     · rename_i h
       rw [hS k hk]
       by_cases h' : k < 4 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_using [h'])]
+      · rw [ifn h', ifn (by omega_using [h, h'])]
   · simp only [RegUpd.xmm_setReg, RegUpd.xmm_setFlags]; exact c2.q
   · simp only [RegUpd.xmm_setReg, RegUpd.xmm_setFlags]; exact c2.qinv
   · exact z2
@@ -181,7 +181,7 @@ theorem vscale_ok {fP sP : Addr} (_hd : (pR sP).Disjoint (pR fP)) {G : Poly} (s 
     (fun i u => Scaled u.mem fP G i ∧ u.gpr .rdx = coeffAddr fP (4 * i) ∧ VConsts u ∧
       u.xmm .xmm13 = w.xmm .xmm13 ∧ u.xmm .xmm12 = w.xmm .xmm12 ∧ Keep [.rcx, .rdx] w u ∧
       Frame [pR fP] w.mem u.mem ∧ u.mxcsr = w.mxcsr)
-    (fun u o _ => ⟨fun k hk => by rw [o.mem, mw, ifn (by omega)]; exact polyIs_toNat hS (by rw [n_eq]; exact hk),
+    (fun u o _ => ⟨fun k hk => by rw [o.mem, mw, ifn (by omega_using [])]; exact polyIs_toNat hS (by rw [n_eq]; exact hk),
       by rw [o.keep.gpr (by decide), hdx, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       gonly_vconsts o hcw, by rw [o.xmm], by rw [o.xmm], o.keep.mono (by simp), by rw [o.mem]; exact Frame.refl _ _,
       o.mxcsr⟩)
@@ -193,7 +193,7 @@ theorem vscale_ok {fP sP : Addr} (_hd : (pR sP).Disjoint (pR fP)) {G : Poly} (s 
   refine ⟨polyIs_of_toNat fun k hk => ?_, ⟨(kw.trans hk').mono (by simp), by rw [← mw]; exact hf', hc',
     by rw [hx', xw]⟩⟩
   rw [n_eq] at hk
-  rw [hS' k hk, ifp (by omega), map_mul_get _ _ (by rw [n_eq]; exact hk)]
+  rw [hS' k hk, ifp (by omega_using [hk]), map_mul_get _ _ (by rw [n_eq]; exact hk)]
 
 /-- Everything but `withMxcsr`, on any reduced `F` at `fP`, with the scratch at `sP`. -/
 theorem invBody_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)

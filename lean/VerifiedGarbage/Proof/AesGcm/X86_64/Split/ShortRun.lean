@@ -54,9 +54,9 @@ def withSrc (s₀ : State) (D S : Addr) (sl : Nat) : State :=
 theorem SplitCtx.oneCtx4 {s₀ : State} {Ctx W SP Np A D S T' : Addr} {nl al n sl : Nat}
     (C : SplitCtx s₀ Ctx W SP Np A D S T' nl al n sl) :
     OneCtx (withSrc s₀ D S sl) 4 Ctx W SP Np A D nl al n :=
-  ⟨C.lay, C.perm.of_eq rfl rfl, C.ww, fun i hi => C.args i (by omega),
-    C.dA.sub_left (Region.sub_prefix (by omega)), C.nonce.of_eq rfl rfl, C.aad.of_eq rfl rfl,
-    C.data.of_eq rfl rfl, C.rD, C.rW, C.dE, C.dAD.sub_left (Region.sub_prefix (by omega)), C.rounds, C.t_c,
+  ⟨C.lay, C.perm.of_eq rfl rfl, C.ww, fun i hi => C.args i (by omega_using [hi]),
+    C.dA.sub_left (Region.sub_prefix (by omega_using [])), C.nonce.of_eq rfl rfl, C.aad.of_eq rfl rfl,
+    C.data.of_eq rfl rfl, C.rD, C.rW, C.dE, C.dAD.sub_left (Region.sub_prefix (by omega_using [])), C.rounds, C.t_c,
     C.t_w, C.t_d, C.sp24⟩
 
 /-- `src`, `dst` and `src_len` into `rsi`, `rdi` and `rcx`. -/
@@ -109,14 +109,14 @@ theorem copyInto_ok {cp : Prog isa} (hsl : sl < 2 ^ 63)
     · rw [wr₃, E.wr]
       exact Covers.trans (Covers.of_sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨D, n⟩, List.mem_singleton_self _, 0, by simp, show 0 + sl ≤ n by omega⟩) C.data.wr
+        exact ⟨⟨D, n⟩, List.mem_singleton_self _, 0, by simp, show 0 + sl ≤ n by omega_using [hsl']⟩) C.data.wr
   refine WP.mono (hcp s₃ cp) fun s₄ ⟨m₄, g₄, rd₄, wr₄⟩ => ?_
   -- The copy writes only `D`'s first `sl` bytes, the bytes of `src` as at the entry.
   have hS : bytesAt s₃.mem S sl = bytesAt s₀.mem S sl := by
     rw [m₃]
     exact bytesAt_frame E.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact sW.sub_right (Lay.wSub (by decide))) (by have := C.sWrap; omega)
+      exact sW.sub_right (Lay.wSub (by decide))) (by have := C.sWrap; omega_using [hsl])
   rw [hS, m₃] at m₄
   have fD : Frame [⟨D, sl⟩] s.mem s₄.mem := by
     rw [m₄]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
@@ -145,7 +145,7 @@ theorem copyInto_ok {cp : Prog isa} (hsl : sl < 2 ^ 63)
 plaintext at `dst`. -/
 theorem copySrc_ok {s : State} (E : SEntry s₀ Ctx W SP A D S n sl s) (hn5 : n < 512) :
     WP isa SealSplit.copySrc s (OneEntry (withSrc s₀ D S sl) Ctx W SP A D n) :=
-  WP.mono (copyInto_ok C (by have := C.sl_le; omega) (fun _ h => Gather.copy_ok h) E) fun _ h => h.1
+  WP.mono (copyInto_ok C (by have := C.sl_le; omega_using [hn5, this]) (fun _ h => Gather.copy_ok h) E) fun _ h => h.1
 
 /-- The short path, after `cond`: `src` copied to `dst`, and the text sealed
 there. -/
@@ -170,13 +170,13 @@ theorem shortPath_ok (hF : ShortFacts) {s : State} (E : SEntry s₀ Ctx W SP A D
   have eH : ctxH (withSrc s₀ D S sl).mem Ctx = ctxH s₀.mem Ctx :=
     blockAt_frame f₀ (one (C.data.ctx.sub_left (Offset.sub_base _ (by decide))))
   have eN : bytesAt (withSrc s₀ D S sl).mem Np nl = bytesAt s₀.mem Np nl :=
-    bytesAt_frame f₀ (one C.nD) (by have := C.nonce.lt; omega)
+    bytesAt_frame f₀ (one C.nD) (by have := C.nonce.lt; omega_using [hnl])
   have eA : bytesAt (withSrc s₀ D S sl).mem A al = bytesAt s₀.mem A al :=
-    bytesAt_frame f₀ (one C.aD) (by have := C.aad.lt; omega)
+    bytesAt_frame f₀ (one C.aD) (by have := C.aad.lt; omega_using [hal])
   have eP : bytesAt (withSrc s₀ D S sl).mem D n = bytesAt s₀.mem S sl ++ (bytesAt s₀.mem D n).drop sl := by
     show bytesAt (writeBytes s₀.mem D (bytesAt s₀.mem S sl)) D n = _
-    rw [bytesAt_writeBytes_prefix _ _ _ (by rw [length_bytesAt]; omega) hn, length_bytesAt,
-      show n = sl + (n - sl) by omega, bytesAt_add, List.drop_left' (length_bytesAt _ _ _),
+    rw [bytesAt_writeBytes_prefix _ _ _ (by rw [length_bytesAt]; omega_using [hsl]) hn, length_bytesAt,
+      show n = sl + (n - sl) by omega_using [hsl], bytesAt_add, List.drop_left' (length_bytesAt _ _ _),
       Nat.add_sub_cancel_left]
   rw [eC, eH, eN, eP] at hC₅
   rw [eC, eH, eN, eA] at hT₅

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.Sym
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on AArch64: the NTT halfword by halfword, what the terms mean
@@ -32,13 +33,13 @@ theorem upd_def (w n i x : Nat) : upd w n i x = n - slot w n i * 2 ^ (w * i) + x
 /-- `u = A + P x + P M Q`. -/
 theorem div_parts {A P x M Q : Nat} (hA : A < P) (hx : x < M) :
     (A + P * x + P * M * Q) / P = x + M * Q ∧ (A + P * x + P * M * Q) / (P * M) = Q := by
-  have hP : 0 < P := by omega
-  have hM : 0 < M := by omega
+  have hP : 0 < P := by omega_using [hA]
+  have hM : 0 < M := by omega_using [hx]
   constructor
   · rw [Nat.add_assoc, Nat.mul_assoc, ← Nat.mul_add, Nat.add_mul_div_left _ _ hP, Nat.div_eq_of_lt hA,
       Nat.zero_add]
   · have hAx : A + P * x < P * M := by
-      calc A + P * x < P + P * x := by omega
+      calc A + P * x < P + P * x := by omega_using [hA]
         _ = P * (x + 1) := by rw [Nat.mul_add, Nat.mul_one, Nat.add_comm]
         _ ≤ P * M := Nat.mul_le_mul_left _ hx
     rw [Nat.add_mul_div_left _ _ (Nat.mul_pos hP hM), Nat.div_eq_of_lt hAx, Nat.zero_add]
@@ -58,7 +59,7 @@ theorem slot_parts {w i A x Q : Nat} (hA : A < 2 ^ (w * i)) (hx : x < 2 ^ w) (j 
     -- `2 ^ (w * i) = 2 ^ (w * j) * 2 ^ w * R`
     have e : 2 ^ (w * i) = 2 ^ (w * j) * (2 ^ w * 2 ^ (w * (i - (j + 1)))) := by
       rw [← Nat.pow_add, ← Nat.pow_add, show w + w * (i - (j + 1)) = w * (i - j) by
-        rw [show i - j = (i - (j + 1)) + 1 by omega, Nat.mul_succ, Nat.add_comm], ← Nat.mul_add,
+        rw [show i - j = (i - (j + 1)) + 1 by omega_using [hj], Nat.mul_succ, Nat.add_comm], ← Nat.mul_add,
         Nat.add_sub_cancel' (Nat.le_of_lt hj)]
     have hJ := Nat.two_pow_pos (w * j)
     rw [show A + 2 ^ (w * i) * x + 2 ^ (w * i) * 2 ^ w * Q = A + 2 ^ (w * j) * (2 ^ w * (2 ^ (w * (i - (j + 1)))
@@ -69,7 +70,7 @@ theorem slot_parts {w i A x Q : Nat} (hA : A < 2 ^ (w * i)) (hx : x < 2 ^ w) (j 
       subst hj
       rw [d1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hx]
     · rename_i h1 h2
-      rw [pow_split w (i + 1) j (by omega), show 2 ^ (w * (i + 1)) = 2 ^ (w * i) * 2 ^ w by
+      rw [pow_split w (i + 1) j (by omega_using [h1, h2]), show 2 ^ (w * (i + 1)) = 2 ^ (w * i) * 2 ^ w by
           rw [Nat.mul_succ, Nat.pow_add], ← Nat.div_div_eq_div_mul, d2]
       rfl
 
@@ -89,7 +90,7 @@ theorem upd_parts (w n i x : Nat) :
   generalize slot w n i = s at h ⊢
   generalize n / (2 ^ (w * i) * 2 ^ w) = Q at h ⊢
   rw [Nat.mul_comm s, Nat.mul_comm x]
-  omega
+  omega_using [h]
 
 theorem slot_upd (w n i x : Nat) (hx : x < 2 ^ w) (j : Nat) :
     slot w (upd w n i x) j = if j = i then x else slot w n j := by
@@ -98,7 +99,7 @@ theorem slot_upd (w n i x : Nat) (hx : x < 2 ^ w) (j : Nat) :
   rw [upd_parts, slot_parts hA hx]
   conv => rhs; rw [split_slot w n i, slot_parts hA hs]
   by_cases h : j < i
-  · simp [h, show j ≠ i by omega]
+  · simp [h, show j ≠ i by omega_using [h]]
   · by_cases h' : j = i
     · simp [h']
     · simp [h, h']
@@ -135,7 +136,7 @@ theorem get_ofFn (f : Nat → T) {e : Nat} (he : e < 8) : (Y.ofFn f).get e = f e
       slot_succ_cons (hm _), slot_succ_cons (hm _), slot_succ_cons (hm _), slot_lt' (hm _)]
 
 theorem cons_lt {m a r k : Nat} (ha : a < m) (hr : r < m ^ k) : a + m * r < m ^ (k + 1) :=
-  calc a + m * r < m + m * r := by omega
+  calc a + m * r < m + m * r := by omega_using [ha]
     _ = m * (r + 1) := by rw [Nat.mul_add, Nat.mul_one, Nat.add_comm]
     _ ≤ m * m ^ k := Nat.mul_le_mul_left _ hr
     _ = m ^ (k + 1) := by rw [Nat.pow_succ, Nat.mul_comm]
@@ -151,7 +152,7 @@ theorem upd_lt {w n i x k : Nat} (hn : n < 2 ^ (w * k)) (hx : x < 2 ^ w) (hi : i
   rw [upd_parts]
   have hA := Nat.mod_lt n (Nat.two_pow_pos (w * i))
   have e : 2 ^ (w * k) = 2 ^ (w * i) * 2 ^ w * 2 ^ (w * (k - (i + 1))) := by
-    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; rw [← Nat.mul_succ, ← Nat.mul_add]; congr 1; omega
+    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; rw [← Nat.mul_succ, ← Nat.mul_add]; congr 1; omega_using [hi]
   have hQ : n / (2 ^ (w * i) * 2 ^ w) < 2 ^ (w * (k - (i + 1))) := by
     rw [Nat.div_lt_iff_lt_mul (Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _)), Nat.mul_comm, ← e]
     exact hn
@@ -163,12 +164,12 @@ theorem upd_lt {w n i x k : Nat} (hn : n < 2 ^ (w * k)) (hx : x < 2 ^ w) (hi : i
   generalize 2 ^ w = M at hx ⊢
   generalize 2 ^ (w * (k - (i + 1))) = R at hQ ⊢
   have h1 : A + P * x < P * M := by
-    calc A + P * x < P + P * x := by omega
+    calc A + P * x < P + P * x := by omega_using [hA]
       _ = P * (x + 1) := by rw [Nat.mul_add, Nat.mul_one, Nat.add_comm]
       _ ≤ P * M := Nat.mul_le_mul_left _ hx
   have h2 : P * M * Q + P * M ≤ P * M * R := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hQ
-  omega
+  omega_using [h1, h2]
 
 theorem slot_zero (w i : Nat) : slot w 0 i = 0 := by
   rw [slot_def, Nat.zero_div, Nat.zero_mod]
@@ -176,7 +177,7 @@ theorem slot_zero (w i : Nat) : slot w 0 i = 0 := by
 /-- Slot `e` of slot `j` of `k` slots each. -/
 theorem slot_slot (w k n j e : Nat) (he : e < k) : slot w (slot (w * k) n j) e = slot w n (k * j + e) := by
   rw [slot_def, slot_def, slot_def]
-  obtain ⟨d, rfl⟩ : ∃ d, k = e + 1 + d := ⟨k - e - 1, by omega⟩
+  obtain ⟨d, rfl⟩ : ∃ d, k = e + 1 + d := ⟨k - e - 1, by omega_using [he]⟩
   have e1 : 2 ^ (w * (e + 1 + d)) = 2 ^ (w * e) * (2 ^ w * 2 ^ (w * d)) := by
     rw [← Nat.pow_add, ← Nat.pow_add, Nat.mul_add, Nat.mul_add, Nat.mul_one, Nat.add_assoc]
   rw [e1, Nat.mod_mul_right_div_self, Nat.mod_mul_right_mod, Nat.div_div_eq_div_mul, ← Nat.pow_add]
@@ -191,7 +192,7 @@ theorem slot_foldr {w : Nat} (f : Nat → Nat) (hf : ∀ h, f h < 2 ^ w) :
   | a :: _, 0, _ => slot_zero_cons (hf a)
   | a :: L, i + 1, h => by
     rw [List.foldr_cons, slot_succ_cons (hf a)]
-    exact slot_foldr f hf L i (by simp only [List.length_cons] at h; omega)
+    exact slot_foldr f hf L i (by simp only [List.length_cons] at h; omega_using [h])
 
 /-! ## Terms -/
 
@@ -203,7 +204,7 @@ theorem mk_eq (k : K) (st p z t : Nat) : @Eq Nat (mk k st p z t)
 theorem mk_lt (k : K) (st p z t : Nat) : @LT.lt Nat instLTNat (mk k st p z t) 35184372088832 := by
   have := code_lt k
   rw [mk_eq]
-  omega
+  omega_using [this]
 
 theorem kind_eq (a : Nat) : T.kind a = a % 16 := rfl
 theorem st_eq (a : Nat) : T.st a = a / 16 % 16 := rfl
@@ -216,7 +217,7 @@ theorem mk_fields (k : K) (st p z t : Nat) :
       (mk k st p z t).z = z % 4096 ∧ (mk k st p z t).t = t % 65536 := by
   have := code_lt k
   rw [kind_eq, st_eq, p_eq, z_eq, t_eq, mk_eq]
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> omega
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> omega_using [this]
 
 /-- The halfwords of `SQRDMULH`, `0` where it is undefined. -/
 def qdW (a b : BitVec 16) : BitVec 16 := (sqdmulhHLane true a b).getD 0
@@ -297,7 +298,7 @@ theorem Hd.junk (w : BitVec 16) : Hd L O junkT w := .inl rfl
 theorem Hd.of_eq {a : T} {w : BitVec 16} (h : w = a.eval L O) : Hd L O a w := .inr h
 
 theorem Hd.eq {a : T} {w : BitVec 16} (h : Hd L O a w) (hk : 1 ≤ a.kind) : w = a.eval L O :=
-  h.resolve_left (by omega)
+  h.resolve_left (by omega_using [hk])
 
 theorem eval_mk (k : K) (st p z t : Nat) :
     (mk k st p z t).eval L O = (match k with
@@ -335,54 +336,54 @@ theorem Hd.mk {k : K} (hk : k ≠ .junk) {st p z t : Nat} {w : BitVec 16} :
 
 /-- Facts about a term `a` holding of `x`, by its kind. -/
 theorem Hd.lv {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 1) : x = L a.st a.p := by
-  rw [h.eq (by omega)]; unfold T.eval; rw [ite_eq_left hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; rw [ite_eq_left hk]
 
 theorem Hd.c {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 3) : x = BitVec.ofNat 16 a.t := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.mulC {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 4) :
     x = L a.st a.p * BitVec.ofNat 16 a.z := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.qdC {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 5) :
     x = qdW (L a.st a.p) (BitVec.ofNat 16 a.t) := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.mulQ {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 6) :
     x = qdW (L a.st a.p) (BitVec.ofNat 16 a.t) * BitVec.ofNat 16 qN := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.mm {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 7) : x = mmW (L a.st a.p) a.z a.t := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.n1 {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 8) : x = n1W (L a.st a.p) := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.sraN {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 9) :
     x = (if a.z = 1 then L a.st a.p else n1W (L a.st a.p)).sshiftRight 15 := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.andN {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 10) :
     x = (if a.z = 1 then L a.st a.p else n1W (L a.st a.p)).sshiftRight 15 &&& BitVec.ofNat 16 qN := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.dif {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 11) : x = L a.st a.p - L a.st a.z := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.mulD {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 12) :
     x = (L a.st a.p - L a.st a.z) * BitVec.ofNat 16 a.t := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.qdD {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 13) :
     x = qdW (L a.st a.p - L a.st a.z) (BitVec.ofNat 16 a.t) := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.mulQD {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 14) :
     x = qdW (L a.st a.p - L a.st a.z) (BitVec.ofNat 16 a.t) * BitVec.ofNat 16 qN := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem Hd.sumR {a : T} {x : BitVec 16} (h : Hd L O a x) (hk : a.kind = 15) : x = sumW L a.st a.p a.t := by
-  rw [h.eq (by omega)]; unfold T.eval; simp [hk]
+  rw [h.eq (by omega_using [hk])]; unfold T.eval; simp [hk]
 
 theorem st_lt (a : T) : a.st < 16 := Nat.mod_lt _ (by decide)
 theorem p_lt (a : T) : a.p < 512 := Nat.mod_lt _ (by decide)
@@ -397,10 +398,10 @@ theorem invLen_pos {st : Nat} (h : 0 < invLen st) : st < 9 ∧ invRed st = false
   have h9 : st < 9 := by
     refine Nat.lt_of_not_le fun h9 => absurd h (Nat.not_lt.2 (Nat.le_of_eq ?_))
     unfold invLen
-    rw [show Nat.blt st 3 = false by rw [Bool.eq_false_iff, ne_eq, Nat.blt_eq]; omega,
-      show Nat.beq st 3 = false by rw [Bool.eq_false_iff, ne_eq, Nat.beq_eq]; omega,
-      show Nat.blt st 7 = false by rw [Bool.eq_false_iff, ne_eq, Nat.blt_eq]; omega,
-      show Nat.beq st 8 = false by rw [Bool.eq_false_iff, ne_eq, Nat.beq_eq]; omega]
+    rw [show Nat.blt st 3 = false by rw [Bool.eq_false_iff, ne_eq, Nat.blt_eq]; omega_using [h9],
+      show Nat.beq st 3 = false by rw [Bool.eq_false_iff, ne_eq, Nat.beq_eq]; omega_using [h9],
+      show Nat.blt st 7 = false by rw [Bool.eq_false_iff, ne_eq, Nat.blt_eq]; omega_using [h9],
+      show Nat.beq st 8 = false by rw [Bool.eq_false_iff, ne_eq, Nat.beq_eq]; omega_using [h9]]
     rfl
   exact ⟨h9, key st h9 h⟩
 
@@ -515,7 +516,7 @@ theorem addT₀_ok {R : Rules} (hM : Model L O R) (hf : R.fast = false) {a b : T
     obtain ⟨⟨⟨⟨hi, k1⟩, k7⟩, hs⟩, hb'⟩ := h₁
     have hl := bflyOk_st hb'
     refine (Hd.mk (by decide)).2 ?_
-    rw [eval_mk, ha.lv k1, hb.mm k7, hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by have := hM.layers; omega),
+    rw [eval_mk, ha.lv k1, hb.mm k7, hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by have := hM.layers; omega_using [hl, this]),
       Nat.mod_eq_of_lt (p_lt a), (hM.bfly hi hf _ _ _ _ _ hb').1]
   rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]
   by_cases h₂ : (!R.inv && Nat.beq a.kind 8 && Nat.beq b.kind 10 && Nat.beq b.z 0 && Nat.beq b.st a.st &&
@@ -535,7 +536,7 @@ theorem addT₀_ok {R : Rules} (hM : Model L O R) (hf : R.fast = false) {a b : T
     obtain ⟨⟨⟨⟨hi, k1⟩, k1'⟩, hs⟩, hg⟩ := h₃
     have := gsPair_st hg
     refine (Hd.mk (by decide)).2 ?_
-    rw [eval_mk, ha.lv k1, hb.lv k1', hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega),
+    rw [eval_mk, ha.lv k1, hb.lv k1', hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega_using [this]),
       Nat.mod_eq_of_lt (p_lt a), hM.gsAdd hi _ _ _ hg]
   rw [Bool.eq_false_iff.2 h₃, Bool.cond_false]
   by_cases h₄ : (R.inv && Nat.beq a.kind 1 && Nat.beq b.kind 10 && Nat.beq b.z 1 && Nat.beq b.st a.st &&
@@ -558,7 +559,7 @@ theorem subT₀_ok {R : Rules} (hM : Model L O R) (hf : R.fast = false) {a b : T
     obtain ⟨⟨⟨⟨hi, k1⟩, k7⟩, hs⟩, hb'⟩ := h₁
     have hl := bflyOk_st hb'
     refine (Hd.mk (by decide)).2 ?_
-    rw [eval_mk, ha.lv k1, hb.mm k7, hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by have := hM.layers; omega),
+    rw [eval_mk, ha.lv k1, hb.mm k7, hs, Nat.mod_eq_of_lt (show a.st + 1 < 16 by have := hM.layers; omega_using [hl, this]),
       Nat.mod_eq_of_lt (p_lt b), (hM.bfly hi hf _ _ _ _ _ hb').2]
   rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]
   by_cases h₂ : (Nat.beq a.kind 4 && Nat.beq b.kind 6 && Nat.beq b.st a.st && Nat.beq b.p a.p) = true
@@ -590,7 +591,7 @@ theorem subT₀_ok {R : Rules} (hM : Model L O R) (hf : R.fast = false) {a b : T
       simp only [Bool.and_eq_true] at h₅
       have := invRed_st h₅.2
       refine (Hd.mk (by decide)).2 ?_
-      rw [eval_mk, hv, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega), Nat.mod_eq_of_lt (p_lt a),
+      rw [eval_mk, hv, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega_using [this]), Nat.mod_eq_of_lt (p_lt a),
         hM.red h₅.1 _ _ h₅.2]
     · rw [Bool.eq_false_iff.2 h₅, Bool.cond_false]
       refine (Hd.mk (by decide)).2 ?_
@@ -612,7 +613,7 @@ theorem subT₀_ok {R : Rules} (hM : Model L O R) (hf : R.fast = false) {a b : T
     obtain ⟨⟨⟨⟨⟨⟨⟨hi, k12⟩, k14⟩, hs⟩, hp⟩, hz⟩, hg⟩, hgz⟩ := h₆
     have := gsPair_st hg
     refine (Hd.mk (by decide)).2 ?_
-    rw [eval_mk, ha.mulD k12, hb.mulQD k14, hs, hp, hz, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega),
+    rw [eval_mk, ha.mulD k12, hb.mulQD k14, hs, hp, hz, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega_using [this]),
       Nat.mod_eq_of_lt (p_lt a), hM.gsMul hi _ _ _ _ _ hg hgz, mmW]
   rw [Bool.eq_false_iff.2 h₆, Bool.cond_false]; exact Hd.junk _
 
@@ -632,7 +633,7 @@ theorem faddT_ok {R : Rules} (hM : Model L O R) (hf : R.fast = true) {a b : T} {
       simp only [sumW]; rfl
     · rw [Bool.eq_false_iff.2 hr, Bool.cond_false]
       refine (Hd.mk (by decide)).2 ?_
-      rw [eval_mk, hx, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega), Nat.mod_eq_of_lt (p_lt a),
+      rw [eval_mk, hx, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega_using [h7]), Nat.mod_eq_of_lt (p_lt a),
         hM.fSum hf _ _ _ hg (Bool.eq_false_iff.2 hr)]
   rw [Bool.eq_false_iff.2 h₁, Bool.cond_false]
   by_cases h₂ : (Nat.beq a.kind 8 && Nat.beq b.kind 10 && Nat.beq b.z 0 && Nat.beq b.st a.st &&
@@ -681,8 +682,8 @@ theorem fsubT_ok {R : Rules} (hM : Model L O R) (hf : R.fast = true) {a b : T} {
     obtain ⟨⟨⟨⟨⟨⟨k12, k14⟩, hs⟩, hp⟩, hz⟩, hg⟩, hgz⟩ := h₄
     obtain ⟨-, h7, -, -, hz256⟩ := fPair_eq hg
     refine (Hd.mk (by decide)).2 ?_
-    rw [eval_mk, ha.mulD k12, hb.mulQD k14, hs, hp, hz, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega),
-      Nat.mod_eq_of_lt (show a.z < 512 by omega), hM.fDif hf _ _ _ _ _ hg hgz, mmW]
+    rw [eval_mk, ha.mulD k12, hb.mulQD k14, hs, hp, hz, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega_using [h7]),
+      Nat.mod_eq_of_lt (show a.z < 512 by omega_using [hz256]), hM.fDif hf _ _ _ _ _ hg hgz, mmW]
   rw [Bool.eq_false_iff.2 h₄, Bool.cond_false]
   by_cases h₅ : (Nat.beq a.kind 15 && Nat.beq b.kind 15 && Nat.beq a.t 0 && Nat.beq b.t 2 && Nat.beq b.st a.st &&
       Nat.beq b.p a.p && fRed a.st a.p && fPair a.st a.p (a.p + fLen a.st)) = true
@@ -691,7 +692,7 @@ theorem fsubT_ok {R : Rules} (hM : Model L O R) (hf : R.fast = true) {a b : T} {
     obtain ⟨⟨⟨⟨⟨⟨⟨k15, k15'⟩, ht⟩, ht'⟩, hs⟩, hp⟩, hr⟩, hg⟩ := h₅
     obtain ⟨-, h7, -, -, -⟩ := fPair_eq hg
     refine (Hd.mk (by decide)).2 ?_
-    rw [eval_mk, ha.sumR k15, hb.sumR k15', ht, ht', hs, hp, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega),
+    rw [eval_mk, ha.sumR k15, hb.sumR k15', ht, ht', hs, hp, Nat.mod_eq_of_lt (show a.st + 1 < 16 by omega_using [h7]),
       Nat.mod_eq_of_lt (p_lt a), hM.fSumR hf _ _ _ hg hr]
     simp only [sumW]; rfl
   rw [Bool.eq_false_iff.2 h₅, Bool.cond_false]; exact Hd.junk _

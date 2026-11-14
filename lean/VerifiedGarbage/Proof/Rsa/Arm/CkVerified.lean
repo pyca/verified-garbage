@@ -77,7 +77,7 @@ theorem M1_upd {g : Geo} {A : Nat → Nat} (h : M1 g A) {o : Nat} (z : Nat) (h1 
 
 theorem stg_c16 {g : Geo} {σ s : State} {A : Nat → Nat} {L : List Nat} {c : Bool} (h : Stg g σ A L c s) :
     slot s.mem g.B 16 = g.w := by
-  simp only [slot, w32]; rw [h.cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.ws.wle; omega)]
+  simp only [slot, w32]; rw [h.cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.ws.wle; omega_using [this])]
 
 theorem StW.stg {g : Geo} {σ s : State} {L : List Nat} {M : (Nat → Nat) → Prop} (h : StW g σ L M s) :
     ∃ A live c, Stg g σ A live c s :=
@@ -105,8 +105,8 @@ theorem StW.divPre {g : Geo} {σ s : State} {L : List Nat} {Mi : (Nat → Nat) �
   obtain ⟨A, c, hs, hm0⟩ := h
   have hm := hMD A hm0
   refine ⟨hs.ws, stg_c16 hs, by rw [hs.arrs.get hv]; exact hm.2.1,
-    top_word_pos (k := g.w / 2 - 1) (n := g.w) (by omega) (hs.arrs.get hv)
-      (by rw [show g.w / 2 - 1 + 1 = g.w / 2 by omega]; exact hm.2.1) hm.2.2, ?_,
+    top_word_pos (k := g.w / 2 - 1) (n := g.w) (by omega_using [hw6]) (hs.arrs.get hv)
+      (by rw [show g.w / 2 - 1 + 1 = g.w / 2 by omega_using [hw6]]; exact hm.2.1) hm.2.2, ?_,
     by rw [hs.arrs.get ha]; exact hT A hm0⟩
   have := hs.arrs.get hz
   rw [hm.1.1.1] at this
@@ -169,7 +169,7 @@ theorem stw_chunkA {g : Geo} {σ s : State} (h : StW g σ (aVQ :: live0) (M0 g) 
       show aP ≠ aM1 by decide, show aQ ≠ aM2 by decide, show aQ ≠ aM1 by decide, show aM1 ≠ aM2 by decide,
       show aDP ≠ aM2 by decide, show aDP ≠ aM1 by decide, show aDQ ≠ aM2 by decide, show aDQ ≠ aM1 by decide,
       ↓reduceIte]
-    omega
+    omega_using [m0, mp, mq, md, me]
   exact WP.mono (h6.ltA_ok (a := aDP) (b := aM1) (by decide) (by decide) (by decide)) fun _ h7 =>
     ⟨_, _, h7, hA0 _ rfl⟩
 
@@ -184,7 +184,7 @@ theorem mulTop {w x y : Nat} (hy : y < Bd' w) :
   refine Nat.lt_of_le_of_lt (Nat.mod_le _ _) ?_
   have := Nat.mul_lt_mul_of_lt_of_le (Nat.mod_lt x (Nat.two_pow_pos (32 * 2))) (Nat.le_of_lt hy) (Nat.two_pow_pos _)
   rw [← Nat.pow_add] at this
-  rwa [show 32 * 2 + 32 * (w / 2) = 32 * (2 + w / 2) by omega] at this
+  rwa [show 32 * 2 + 32 * (w / 2) = 32 * (2 + w / 2) by omega_using []] at this
 
 /-- `[aVD] := fixT [d]`, the divisor of a division. -/
 theorem stw_divSet {g : Geo} {σ s : State} {L : List Nat} {E : (Nat → Nat) → Prop}
@@ -199,7 +199,7 @@ theorem stw_divSet {g : Geo} {σ s : State} {L : List Nat} {E : (Nat → Nat) �
   refine WP.mono (h1.fixTop_ok (m := aVD) (by simp) hD1 hw2) fun t2 h2 => ⟨_, _, h2, ?_, hE _ _ (hE _ _ he)⟩
   refine ⟨M1_upd (M1_upd hm _ (by decide) (by decide) (by decide) (by decide) (by decide)) _ (by decide)
     (by decide) (by decide) (by decide) (by decide), ?_, ?_⟩
-  · rw [upd_self, upd_self]; exact VG.Proof.Rsa.fixT_lt (by omega) (hD A hm)
+  · rw [upd_self, upd_self]; exact VG.Proof.Rsa.fixT_lt (by omega_using [hw2]) (hD A hm)
   · rw [upd_self, upd_self]; exact VG.Proof.Rsa.fixT_ge
 
 /-- `stw_divSet` with nothing more. -/
@@ -295,7 +295,7 @@ theorem mulPieceB {o x y : Nat} {n : Option Nat} {L : List Nat} {M M' : Geo → 
     (fun g => by
       by_cases hw : g.w % 2 = 0 ∧ 6 ≤ g.w
       · exact (VG.Proof.Rsa.Arm.KeyDiv.mulLo_ct T ho hxN hyN (by decide) hox hoy
-          ho0 hw.1 (by omega) (hn _ hw.2)).mono (fun _ _ h => ⟨h.1.2, h.2.2⟩) fun _ _ h => h
+          ho0 hw.1 (by omega_using [hw]) (hn _ hw.2)).mono (fun _ _ h => ⟨h.1.2, h.2.2⟩) fun _ _ h => h
       · exact RelCT.of_false fun _ _ h => hw h.1.1)
     (fun _ _ _ _ ⟨x', h⟩ => ⟨x'.2, h.mulPre hy hz (hM _)⟩)
     fun _ _ _ _ ⟨x', h⟩ => WP.mono (stw_mulLo h ho hx hy hz hox hoy ho0 hoV x'.2.1 (by omega)
@@ -361,7 +361,7 @@ theorem keyBodyW_ct : RelCT isa (LiftB Pub fun a σ v s => s = σ ∧ X a σ ∧
     fun a σ v s ⟨e, x, h, hw, hp, hq, hdp, hdq⟩ => by
       subst e
       have kb := h.kb
-      exact WP.mono (stw_start h hp hq hdp hdq) fun t ht => ⟨⟨x, hw, by simp only [Geo.w]; omega⟩, ht⟩) ?_
+      exact WP.mono (stw_start h hp hq hdp hdq) fun t ht => ⟨⟨x, hw, by simp only [Geo.w]; omega_using [kb]⟩, ht⟩) ?_
   refine RelCT.seq (mulPieceB hg X VG.Proof.Rsa.Arm.KeyCheck.mulVQ_taint (L := live0) (M := M0) (M' := M0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (fun _ _ => trivial) (fun _ _ h => ⟨h.1, h.2.2.1⟩)
@@ -371,31 +371,31 @@ theorem keyBodyW_ct : RelCT isa (LiftB Pub fun a σ v s => s = σ ∧ X a σ ∧
   -- `e dP mod (p - 1)`.
   refine RelCT.seq (mulPieceB hg X mulDP_taint (L := LA) (M := M1) (M' := MA) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ hw => ⟨by decide, by omega, by decide⟩) (fun _ _ h => ⟨h.1.1, h.1.2.2.2.1⟩)
+    (fun _ hw => ⟨by decide, by omega_using [hw], by decide⟩) (fun _ _ h => ⟨h.1.1, h.1.2.2.2.1⟩)
     fun _ _ h => ⟨M1_upd h _ (by decide) (by decide) (by decide) (by decide) (by decide),
       by rw [upd_self]; exact mulTop h.1.2.2.2.1⟩) ?_
   refine RelCT.seq (wPieceB hg X divSetM1_taint (L := aA :: LA) (M := MA) (L' := aVD :: aA :: LA) (M' := MDA)
     fun _ _ _ _ hw6 h => stw_divSet (E := fun A => A aA < 2 ^ (32 * (2 + _ / 2))) h
       (fun _ _ e => by rw [upd_ne _ _ (by decide)]; exact e) (d := aM1) (by decide) (by decide)
-      (fun _ h => h.2.1) (by omega)) ?_
+      (fun _ h => h.2.1) (by omega_using [hw6])) ?_
   refine RelCT.seq (divWPieceB hg X divA_taint (L := aVD :: aA :: LA) (Mi := MDA) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (fun _ _ h => h.1)
-    fun _ _ hw h => ⟨by decide, by omega, by decide, h.2⟩) ?_
+    fun _ _ hw h => ⟨by decide, by omega_using [hw], by decide, h.2⟩) ?_
   refine RelCT.seq (wPieceB hg X chunkB_taint (L := LB) (M := M1) (L' := LB) (M' := M1)
     fun _ _ _ _ _ h => stw_eqLt h (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
   -- `e dQ mod (q - 1)`.
   refine RelCT.seq (mulPieceB hg X mulDQ_taint (L := LB) (M := M1) (M' := MA) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ hw => ⟨by decide, by omega, by decide⟩) (fun _ _ h => ⟨h.1.1, h.1.2.2.2.2⟩)
+    (fun _ hw => ⟨by decide, by omega_using [hw], by decide⟩) (fun _ _ h => ⟨h.1.1, h.1.2.2.2.2⟩)
     fun _ _ h => ⟨M1_upd h _ (by decide) (by decide) (by decide) (by decide) (by decide),
       by rw [upd_self]; exact mulTop h.1.2.2.2.2⟩) ?_
   refine RelCT.seq (wPieceB hg X divSetM2_taint (L := aA :: LB) (M := MA) (L' := aVD :: aA :: LB) (M' := MDA)
     fun _ _ _ _ hw6 h => stw_divSet (E := fun A => A aA < 2 ^ (32 * (2 + _ / 2))) h
       (fun _ _ e => by rw [upd_ne _ _ (by decide)]; exact e) (d := aM2) (by decide) (by decide)
-      (fun _ h => h.2.2) (by omega)) ?_
+      (fun _ h => h.2.2) (by omega_using [hw6])) ?_
   refine RelCT.seq (divWPieceB hg X divA_taint (L := aVD :: aA :: LB) (Mi := MDA) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (fun _ _ h => h.1)
-    fun _ _ hw h => ⟨by decide, by omega, by decide, h.2⟩) ?_
+    fun _ _ hw h => ⟨by decide, by omega_using [hw], by decide, h.2⟩) ?_
   refine RelCT.seq (wPieceB hg X chunkC_taint (L := LC) (M := M1) (L' := LC) (M' := M1)
     fun _ _ _ _ _ h => stw_eqLt h (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
   -- `q qInv mod p`.
@@ -404,21 +404,21 @@ theorem keyBodyW_ct : RelCT isa (LiftB Pub fun a σ v s => s = σ ∧ X a σ ∧
     (fun _ _ => trivial) (fun _ _ h => ⟨h.1.1, h.1.2.2.1⟩)
     fun _ _ h => M1_upd h _ (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
   refine RelCT.seq (wPieceB hg X divSetP_taint (L := aT :: LC) (M := M1) (L' := aVD :: aT :: LC) (M' := MD)
-    fun _ _ _ _ hw6 h => stw_divSetD h (d := aP) (by decide) (by decide) (fun _ h => h.1.2.1) (by omega)) ?_
+    fun _ _ _ _ hw6 h => stw_divSetD h (d := aP) (by decide) (by decide) (fun _ h => h.1.2.1) (by omega_using [hw6])) ?_
   refine RelCT.seq (divWPieceB hg X divT_taint (L := aVD :: aT :: LC) (Mi := MD) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (fun _ _ h => h) fun _ _ _ _ => trivial) ?_
   refine RelCT.seq (wPieceB hg X chunk2_taint (L := L4) (M := M1) (L' := L4) (M' := M1)
     fun _ _ _ _ _ h => stw_eqLt h (by decide) (by decide) (by decide) (by decide) (by decide)) ?_
   -- `d mod (p - 1)`.
   refine RelCT.seq (wPieceB hg X divSetM1_taint (L := L4) (M := M1) (L' := aVD :: L4) (M' := MD)
-    fun _ _ _ _ hw6 h => stw_divSetD h (d := aM1) (by decide) (by decide) (fun _ h => h.2.1) (by omega)) ?_
+    fun _ _ _ _ hw6 h => stw_divSetD h (d := aM1) (by decide) (by decide) (fun _ h => h.2.1) (by omega_using [hw6])) ?_
   refine RelCT.seq (divWPieceB hg X divD_taint (L := aVD :: L4) (Mi := MD) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (fun _ _ h => h) fun _ _ _ _ => trivial) ?_
   refine RelCT.seq (wPieceB hg X chunk3_taint (L := L5) (M := M1) (L' := L5) (M' := M1)
     fun _ _ _ _ _ h => stw_eqA h (by decide) (by decide) (by decide)) ?_
   -- `d mod (q - 1)`.
   refine RelCT.seq (wPieceB hg X divSetM2_taint (L := L5) (M := M1) (L' := aVD :: L5) (M' := MD)
-    fun _ _ _ _ hw6 h => stw_divSetD h (d := aM2) (by decide) (by decide) (fun _ h => h.2.2) (by omega)) ?_
+    fun _ _ _ _ hw6 h => stw_divSetD h (d := aM2) (by decide) (by decide) (fun _ h => h.2.2) (by omega_using [hw6])) ?_
   refine RelCT.seq (divWPieceB hg X divD_taint (L := aVD :: L5) (Mi := MD) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (fun _ _ h => h) fun _ _ _ _ => trivial) ?_
   exact (wPieceB hg X chunk4_taint (L := L6) (M := M1) (L' := L6) (M' := M1)
@@ -456,8 +456,8 @@ theorem balanced_pub {a₁ a₂ : State} (p : PubF 14 a₁ a₂) : decide (Balan
 theorem balanced_lt {a : State} (h : Balanced 12 a) :
     (vK a).p < Bd (geo 12 a) ∧ (vK a).q < Bd (geo 12 a) ∧ (vK a).dP < Bd (geo 12 a) ∧ (vK a).dQ < Bd (geo 12 a) := by
   obtain ⟨lp, lq, ld, le, he⟩ := h
-  exact ⟨bytesV_lt (k := (stackArg a 3).toNat) (by omega), bytesV_lt (k := (stackArg a 5).toNat) (by omega),
-    bytesV_lt (k := (stackArg a 7).toNat) (by omega), bytesV_lt (k := (stackArg a 9).toNat) (by omega)⟩
+  exact ⟨bytesV_lt (k := (stackArg a 3).toNat) (by omega_using [lp, he]), bytesV_lt (k := (stackArg a 5).toNat) (by omega_using [lq, he]),
+    bytesV_lt (k := (stackArg a 7).toNat) (by omega_using [ld, he]), bytesV_lt (k := (stackArg a 9).toNat) (by omega_using [le, he])⟩
 
 /-- Where the checks started, before `shape`. -/
 abbrev XS (a t : State) : Prop := ∃ σ, FnBase 14 12 insK a σ ∧ Rest [.r0, .r1, .r2, .r3] σ t ∧ t.mem = σ.mem
@@ -515,7 +515,7 @@ theorem ck_contract_ct : ConstantTime isa (Spec.Rsa.checkKeyContract abi 0).pre
     | 0, _ => a0 | 1, _ => a1 | 2, _ => a2 | 3, _ => a3 | 4, _ => a4 | 5, _ => a5
     | 6, _ => a6 | 7, _ => a7 | 8, _ => a8 | 9, _ => a9 | 10, _ => a10 | 11, _ => a11
     | 12, _ => a12 | 13, _ => a13
-    | _ + 14, h => absurd h (by omega)
+    | _ + 14, h => absurd h (by omega_using [])
   rw [code_eq] at e1 e2
   exact (fn_ct (vf := vK) (by decide) (by decide) entry_taint restore_taint (fun σ _ => ck_hv σ)
     (fun _ h => ck_hA h) ck_bodyS_ct s t tr1 tr2 u v ⟨is, it, VG.Proof.Rsa.Arm.CheckCrtKey.pubF_of sp bytes p0 p1 p2 p3 args⟩ e1 e2).1

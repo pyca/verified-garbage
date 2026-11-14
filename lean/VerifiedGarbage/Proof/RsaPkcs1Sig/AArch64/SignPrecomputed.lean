@@ -77,24 +77,24 @@ theorem stackArgs_fifteen (s : State) :
 theorem satisfiablePre (K : Nat) (hK : K ≤ 2 ^ 20) :
     ∃ s, (Spec.RsaPkcs1Sig.signPrecomputedContract abi (stk K)).pre s := by
   refine ⟨preState, ?_⟩
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_using []
   rw [e]
   sig_pre [Spec.RsaPkcs1Sig.signPrecomputedContract, Spec.RsaPkcs1Sig.signPrecomputedSig, Spec.RsaPkcs1Sig.signSig,
     abi, argRegs, stackArgs_fifteen, List.append_eq]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩ := pre_args
-  have hS : frameBytes + K - 1 + 1 = 1152 + K := by unfold frameBytes; omega
+  have hS : frameBytes + K - 1 + 1 = 1152 + K := by unfold frameBytes; omega_using []
   have hsp : (0x10000000000 : BitVec 64).toNat = 2 ^ 40 := by decide
   have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (1152 + K)).toNat = 2 ^ 40 - (1152 + K) := by
-    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega_using [hK]
   have ha : stackArgAddr preState 0 = 0x10000000000 := by decide
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, hS, ha]
   have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
       Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1152 + K), 1152 + K⟩ ⟨b, n⟩ := fun b n h =>
-    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega)) (by dsimp only; rw [hkb]; omega)
-      (by dsimp only; omega)
+    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega_using [hK, h])) (by dsimp only; rw [hkb]; omega_using [hK])
+      (by dsimp only; omega_using [h])
   have kt : Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1152 + K), 1152 + K⟩ ⟨0x10000000000, 120⟩ :=
-    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega))
-      (by dsimp only; rw [hkb]; omega) (by dsimp only; rw [hsp]; omega)
+    Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega_using [hK]))
+      (by dsimp only; rw [hkb]; omega_using [hK]) (by dsimp only; rw [hsp]; omega_using [])
   sig_and_intros
   rotate_right
   · exact preState_key
@@ -103,7 +103,7 @@ theorem satisfiablePre (K : Nat) (hK : K ≤ 2 ^ 20) :
     | exact Region.disjoint_of_sep (by decide)
     | exact kd _ _ (by decide)
     | exact kt
-    | (rw [hsp]; omega)
+    | (rw [hsp]; omega_using [hK])
     | (simp only [Spec.Rsa.lenValid]; decide)
 
 /-! ## What the contract says of `pre` -/
@@ -136,7 +136,7 @@ theorem a104_sub (s : State) : Region.Sub (aR s) (aRP s) := by
 
 theorem preSP_of {K : Nat} {s : State}
     (h : (Spec.RsaPkcs1Sig.signPrecomputedContract abi (stk K)).pre s) : PreS K s ∧ PreX K s := by
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_using []
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.signPrecomputedContract, Spec.RsaPkcs1Sig.signPrecomputedSig,
     Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
@@ -156,10 +156,10 @@ theorem preSP_of {K : Nat} {s : State}
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     iterate 8 exact ⟨_, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
     exact ⟨⟨stackArgAddr s 0, 120⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
-  exact ⟨⟨sp1, by omega, hc, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, od, op, oq, odp, odq, oqi, os,
+  exact ⟨⟨sp1, by omega_using [sp2], hc, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, od, op, oq, odp, odq, oqi, os,
     oa.sub_right s104, ns, es, ds, ps, qs, dps, dqs, qis, sa.sub_right s104, ko, kn, ke, kd, kp, kq, kdp, kdq,
     kqi, ks, ka.sub_right s104, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, k1, k2, ol, e1, e2, p1, p2, q1, q2,
-    hdp, hqi, hdq, by unfold Spec.Rsa.scratchWords at hs; omega⟩,
+    hdp, hqi, hdq, by unfold Spec.Rsa.scratchWords at hs; omega_using [hs]⟩,
     ⟨sp2, by
       rw [hrd]
       refine Covers.of_mem fun r hr => ?_
@@ -169,8 +169,8 @@ theorem preSP_of {K : Nat} {s : State}
 
 theorem argsOkP {K : Nat} {s : State} (hx : PreX K s) : ArgsOk K s 15 :=
   ⟨fun j hj => hx.hrd _ _ ⟨aRP s, by simp, by
-      rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
-    fun j hj => hx.ka.sub_right (by rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega))⟩
+      rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩,
+    fun j hj => hx.ka.sub_right (by rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega_using [hj]))⟩
 
 /-- Words of the caller's, in memory changed only in the frame. -/
 theorem words_frame {K : Nat} {s : State} {m : Mem} (hf : Frame [⟨fb s, frameBytes⟩] s.mem m) {p : Addr}
@@ -179,7 +179,7 @@ theorem words_frame {K : Nat} {s : State} {m : Mem} (hf : Frame [⟨fb s, frameB
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW (r := ⟨p, n * 8⟩) (Offset.contains_base _ (by omega) (by omega)) (keep_of_frame hk) (by decide)
+  exact hf.readW (r := ⟨p, n * 8⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])) (keep_of_frame hk) (by decide)
 
 theorem a112_sub (K : Nat) (s : State) : Region.Sub ⟨fb s, 112⟩ (kR K s) :=
   fun a h => frame_sub0 K s a (Region.sub_prefix (by decide) a h)
@@ -266,7 +266,7 @@ theorem pubSP_of {S : Nat} {s₁ s₂ : State} (h : (Spec.RsaPkcs1Sig.signPrecom
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0.symm, h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h7.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
       i = 10 ∨ i = 11 ∨ i = 12) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm,
       a10.symm, a11.symm, a12.symm]
@@ -277,14 +277,14 @@ theorem preWords_call {K : Nat} {s t : State} (hx : PreX K s) {em : List Byte}
     Spec.Rsa.wordsAt t.mem (stackArg t 12) (Spec.Rsa.precomputedWords (t.gpr .x3).toNat) =
       Spec.Rsa.wordsAt s.mem (stackArg s 13) (Spec.Rsa.precomputedWords (s.gpr .x3).toNat) := by
   have hle : Spec.Rsa.precomputedWords (s.gpr .x3).toNat ≤ (stackArg s 14).toNat := by
-    rw [hx.prl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hx.prl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   have hpw := hx.wpr
   have h12 := he 12 (by decide)
   simp only [Nat.reduceAdd] at h12
   rw [h12, ha.x3]
   exact words_frame ha.mem (hx.kpr.sub_right (by
     simpa using Offset.sub_base (stackArg s 13) (d := 0) (n := Spec.Rsa.precomputedWords (s.gpr .x3).toNat * 8)
-      (k := (stackArg s 14).toNat * 8) (by omega))) (by omega)
+      (k := (stackArg s 14).toNat * 8) (by omega_using [hle]))) (by omega_using [hle, hpw])
 
 theorem callP_ct (c : PrivPChecked) :
     RelCT isa (Two (At c.stack (XP c.stack) (JC 14))) (.call c.name c.code) fun _ _ => True := by
@@ -305,14 +305,14 @@ theorem callP_ct (c : PrivPChecked) :
     · rw [c₁.x6, c₂.x6, h₁.fb, h₂.fb]
     · rw [c₁.x7, c₂.x7, e .x3 (by decide)]
   · rw [x₁ i hi, x₂ i hi]
-    rcases (by omega : i + 1 < 13 ∨ i = 12 ∨ i = 13) with h | rfl | rfl
+    rcases (by omega_using [hi] : i + 1 < 13 ∨ i = 12 ∨ i = 13) with h | rfl | rfl
     · rw [h₁.2.1.args (i + 1) h, h₂.2.1.args (i + 1) h]
     · exact h₁.2.2.2.1.trans h₂.2.2.2.1.symm
     · exact h₁.2.2.2.2.1.trans h₂.2.2.2.2.1.symm
-  · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, bytes_frame c₁.mem h₁.1.kn (by have := h₁.1.wn; omega),
-      bytes_frame c₂.mem h₂.1.kn (by have := h₂.1.wn; omega), h₁.2.1.bn, h₂.2.1.bn]
-  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_frame c₁.mem h₁.1.ke (by have := h₁.1.we; omega),
-      bytes_frame c₂.mem h₂.1.ke (by have := h₂.1.we; omega), h₁.2.1.be, h₂.2.1.be]
+  · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, bytes_frame c₁.mem h₁.1.kn (by have := h₁.1.wn; omega_using []),
+      bytes_frame c₂.mem h₂.1.kn (by have := h₂.1.wn; omega_using []), h₁.2.1.bn, h₂.2.1.bn]
+  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_frame c₁.mem h₁.1.ke (by have := h₁.1.we; omega_using []),
+      bytes_frame c₂.mem h₂.1.ke (by have := h₂.1.we; omega_using []), h₁.2.1.be, h₂.2.1.be]
   · rw [preWords_call h₁.2.2.1 c₁ x₁, preWords_call h₂.2.2.1 c₂ x₂]
     exact h₁.2.2.2.2.2.trans h₂.2.2.2.2.2.symm
 

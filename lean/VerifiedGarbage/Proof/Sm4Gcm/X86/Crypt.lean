@@ -51,7 +51,7 @@ theorem DataW.take {Ctx St W SP : BitVec 32} {K : Nat} {s : State} {D : BitVec 3
     (h : DataW Ctx St W SP K s D n) {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP K s D k :=
   ⟨h.ok.take hk, fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.wr a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩,
+    exact h.wr a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hk, hc]⟩,
    h.ctx.sub_right (Region.sub_prefix hk)⟩
 
 /-- The bytes `[j, j + k)`, writable and apart from the context. -/
@@ -64,7 +64,7 @@ theorem DataW.part {Ctx St W SP : BitVec 32} {K : Nat} {s : State} {D : BitVec 3
 /-- `[D, D + j)` and `[D + j, D + j + l)` are apart. -/
 theorem split_disj {D : Addr} {j l : Nat} (hn : j + l < 2 ^ 64) :
     (⟨D, j⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, l⟩ := by
-  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := l) (.inl (by omega)) (by omega) (by omega)
+  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := l) (.inl (by omega_using [])) (by omega_using [hn]) (by omega_using [hn])
   simpa using this
 
 /-- The bytes done so far and the next ones. -/
@@ -191,10 +191,10 @@ theorem CrAt.pslot {icb : Block} {D : BitVec 32} {n P : Nat} {m₀ : Mem} {j : N
   refine ⟨env_crFrame L h.data h.env (pslot_crFrame hf) hbp hsi hsp hrd hwr, h.le, h.nlt, h.data.of_eq hrd hwr,
     fun hc => (h.ctr hc).congr (blockAt_frame hf (pS (by decide))) (blockAt_frame hf (pS (by decide))),
     fun hc => ?_, ?_, h.whole, h.frame.trans (pslot_crFrame hf)⟩
-  · have := pD (a := 0) (k := j) (by have := h.le; omega)
+  · have := pD (a := 0) (k := j) (by have := h.le; omega_using [this])
     simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at this
-    rw [bytesAt_frame hf this (by have := h.le; have := h.nlt; omega)]; exact h.done hc
-  · rw [bytesAt_frame hf (pD (by have := h.le; omega)) (by have := h.nlt; omega)]; exact h.rest
+    rw [bytesAt_frame hf this (by have := h.le; have := h.nlt; omega_arith)]; exact h.done hc
+  · rw [bytesAt_frame hf (pD (by have := h.le; omega_using [this])) (by have := h.nlt; omega_using [this])]; exact h.rest
 
 end
 

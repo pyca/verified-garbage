@@ -37,7 +37,7 @@ open VG.Proof.Modes (blocksOf)
 def rsel (R : BitVec 32) : Nat := if R.toNat = 18 then 18 else 24
 
 theorem rsel_eq {R : BitVec 32} (h : R.toNat = 18 ∨ R.toNat = 24) : rsel R = R.toNat := by
-  unfold rsel; split <;> omega
+  unfold rsel; split <;> omega_arith
 
 /-- The cipher of a direction, on blocks as lists. -/
 def dirCipher : Dir → Spec.Camellia.Subkeys → Spec.Cbc.Cipher
@@ -86,7 +86,7 @@ def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
     rw [dReg_eq, nReg_eq] at wr kd bd fD
     sig_pre [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
-    exact ⟨stk, by have := s.sp.isLt; omega, rd, wr, kd, bk, bd, fK, fD, rr⟩
+    exact ⟨stk, by have := s.sp.isLt; omega_using [], rd, wr, kd, bk, bd, fK, fD, rr⟩
   post_of _ s s' hp h := by
     have rr := hp.rr rfl
     sig_post [Proof.Camellia.ecbContractSk, Spec.Camellia.ecbSig, Proof.Camellia.ecbPostSk, Arm.abi, Arm.argRegs,

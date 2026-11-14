@@ -327,8 +327,8 @@ theorem setLane_pair (v : BitVec 128) (a b : BitVec 64) :
   by_cases h : j < 64
   · simp only [h, decide_true, ite_true]
     simp
-  · simp only [h, decide_false, ite_false, show j - 64 < 64 by omega, show j - 64 < 128 by omega]
-    simp [show 64 ≤ j by omega]
+  · simp only [h, decide_false, ite_false, show j - 64 < 64 by omega_using [hj], show j - 64 < 128 by omega_using [hj]]
+    simp [show 64 ≤ j by omega_using [h]]
 
 theorem gpr_write_x (s : State) (d : Reg) (w : BitVec 64) (r : Reg) :
     (s.write .x d w).gpr r = if r = d then w else s.gpr r := by
@@ -416,7 +416,7 @@ theorem advance_ok (k : Nat) (hk : 16 * k < 4096) (s : State) :
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.AArch64.Pmull.advance, runBlock_cons, runStep_some, runBlock_nil,
-    exec_addImm hk, exec_subImm (show k < 4096 by omega), exec_lsr (show 3 < 64 by decide),
+    exec_addImm hk, exec_subImm (show k < 4096 by omega_using [hk]), exec_lsr (show 3 < 64 by decide),
     gpr_write_x, ite_true,
     ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, fun r h2 h3 h5 => by simp only [h2, h3, h5, ite_false], rfl, rfl, rfl, rfl⟩

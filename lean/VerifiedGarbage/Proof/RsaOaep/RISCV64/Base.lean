@@ -89,26 +89,26 @@ theorem cR_eq (s : State) : cR s = ⟨s.sp - BitVec.ofNat 64 stackBytes, 208⟩ 
 /-- A region of the frame is in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     Region.Sub ⟨fb s + BitVec.ofNat 64 d, n⟩ (kR s) := by
-  rw [fb_off]; exact Offset.sub_base _ (by simp only [frameBytes, stackBytes] at *; omega)
+  rw [fb_off]; exact Offset.sub_base _ (by simp only [frameBytes, stackBytes] at *; omega_using [h])
 
 theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     (kR s).Contains (fb s + BitVec.ofNat 64 d) n := by
   rw [fb_off]
-  exact Offset.contains_base _ (by simp only [frameBytes, stackBytes] at *; omega)
-    (by simp only [frameBytes] at h; omega)
+  exact Offset.contains_base _ (by simp only [frameBytes, stackBytes] at *; omega_using [h])
+    (by simp only [frameBytes] at h; omega_using [h])
 
 theorem fr_sub (s : State) : Region.Sub (fr s) (kR s) := by
-  have := frame_sub s (d := 0) (n := frameBytes) (by omega); rwa [BitVec.add_zero] at this
+  have := frame_sub s (d := 0) (n := frameBytes) (by omega_using []); rwa [BitVec.add_zero] at this
 
 theorem cR_sub (s : State) : Region.Sub (cR s) (kR s) := by
   have := Offset.sub_base (s.sp - BitVec.ofNat 64 stackBytes) (d := 0) (n := 208) (k := stackBytes)
-    (by unfold stackBytes; omega)
+    (by unfold stackBytes; omega_using [])
   rw [BitVec.add_zero] at this; rw [cR_eq]; exact this
 
 /-- The frame is writable. -/
 theorem in_fr (s : State) (rs : List Region) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (fr s :: rs) (fb s + BitVec.ofNat 64 d) n :=
-  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])⟩
 
 theorem in_fr' (s : State) (rd rs : List Region) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (rd ++ fr s :: rs) (fb s + BitVec.ofNat 64 d) n := by
@@ -182,7 +182,7 @@ theorem slR_sub (s : State) : Region.Sub (slR s) (kR s) := frame_sub s (by decid
 theorem slot_sub {p : Reg × Nat} (hp : p ∈ saved) (s : State) :
     Region.Sub ⟨fb s + BitVec.ofNat 64 p.2, 8⟩ (slR s) := by
   have := saved_offs p hp
-  exact Offset.sub _ (n := 8) this.1 (by unfold frameBytes oSv at *; omega)
+  exact Offset.sub _ (n := 8) this.1 (by unfold frameBytes oSv at *; omega_using [this])
 
 /-- `Saves` is kept by code keeping the stack pointer and the regions, and
 writing memory apart from the slots. -/
@@ -263,7 +263,7 @@ theorem sc_cov {o n : Nat} (h : o + n ≤ oRsa) : Covers [⟨off (S s) o, n⟩] 
   Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr]
     obtain ⟨R, hR, hb, hl⟩ := P.sc
-    exact ⟨R, List.mem_cons_of_mem _ hR, o, by rw [hb], by simp only; omega⟩
+    exact ⟨R, List.mem_cons_of_mem _ hR, o, by rw [hb], by simp only; omega_using [h, hl]⟩
 
 theorem sc_inR {o n : Nat} (h : o + n ≤ oRsa) (rd : List Region) :
     InRegions (rd ++ (fr s :: s.wr)) (off (S s) o) n :=
@@ -281,7 +281,7 @@ omit P in
 /-- Two ranges of our part of the working space that do not overlap. -/
 theorem sdis {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : a + n ≤ oRsa) (hb : b + k ≤ oRsa) :
     Region.Disjoint ⟨off (S s) a, n⟩ ⟨off (S s) b, k⟩ :=
-  Offset.disjoint _ h (by unfold oRsa at ha; omega) (by unfold oRsa at hb; omega)
+  Offset.disjoint _ h (by unfold oRsa at ha; omega_using [ha]) (by unfold oRsa at hb; omega_using [hb])
 
 /-- The 208 bytes below the frame and a range of our part of the working
 space. -/
@@ -290,11 +290,11 @@ theorem cR_dis {o n : Nat} (h : o + n ≤ oRsa) : (cR s).Disjoint ⟨off (S s) o
 
 theorem fb_al : (fb s).toNat % 16 = 0 := by
   have := P.sp1; have := P.sp16
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, stackBytes] at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, stackBytes] at *; omega_using [this]
 
 theorem fb_ge : 208 ≤ (fb s).toNat := by
   have := P.sp1
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, stackBytes] at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat, frameBytes, stackBytes] at *; omega_using [this]
 
 end
 
@@ -304,7 +304,7 @@ theorem cR_slR (s : State) : (cR s).Disjoint (slR s) := by
     simp only [slR]; rw [fb_off]
   rw [e]
   have := Offset.disjoint (s.sp - BitVec.ofNat 64 stackBytes) (d := 0) (n := 208) (e := 208 + oSv)
-    (k := frameBytes - oSv) (.inl (by omega)) (by omega) (by decide)
+    (k := frameBytes - oSv) (.inl (by omega_using [])) (by omega_using []) (by decide)
   rwa [BitVec.add_zero] at this
 
 /-! ## The state in the frame -/
@@ -396,7 +396,7 @@ theorem words_entry {A B : Region} {m m' : Mem} (hf : Frame [A, B] m m') {p : Ad
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => hf.readW (r := ⟨p, n * 8⟩) ?_ (fun r hr => ?_) (by decide)
   · have := List.mem_range.mp hi
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [this]) (by omega_using [hl, this])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ha.symm
@@ -408,13 +408,13 @@ theorem view_wb (m : Mem) {S : Addr} {d o : Nat} (xs : List Byte)
     (hd : d + xs.length ≤ oRsa) (ho : o < oRsa) :
     view (writeBytes m (off S d) xs) S o = if d ≤ o ∧ o < d + xs.length then xs.getD (o - d) 0 else view m S o := by
   simp only [view, writeBytes]
-  rw [Offset.sub_toNat' S (by unfold oRsa at *; omega) (by unfold oRsa at *; omega)]
+  rw [Offset.sub_toNat' S (by unfold oRsa at *; omega_using [hd]) (by unfold oRsa at *; omega_using [ho])]
   by_cases h : d ≤ o
   · rw [ifp h]
     by_cases h' : o - d < xs.length
-    · rw [ifp h', ifp ⟨h, by omega⟩]
-    · rw [ifn h', ifn (by omega)]
-  · rw [ifn h, ifn (by unfold oRsa at *; omega), ifn (by omega)]
+    · rw [ifp h', ifp ⟨h, by omega_using [h']⟩]
+    · rw [ifn h', ifn (by omega_using [h'])]
+  · rw [ifn h, ifn (by unfold oRsa at *; omega_using [hd]), ifn (by omega_using [h])]
 
 theorem view_w8 (m : Mem) {S : Addr} {d o : Nat} (b : Byte) (hd : d < oRsa)
     (ho : o < oRsa) : view (m.writeW (off S d) b) S o = if o = d then b else view m S o := by
@@ -422,7 +422,7 @@ theorem view_w8 (m : Mem) {S : Addr} {d o : Nat} (b : Byte) (hd : d < oRsa)
   rw [writeW8_apply]
   by_cases h : o = d
   · subst h; simp
-  · rw [ifn (Offset.add_ofNat_ne S (by unfold oRsa at *; omega) (by unfold oRsa at *; omega) h), ifn h]
+  · rw [ifn (Offset.add_ofNat_ne S (by unfold oRsa at *; omega_using [ho]) (by unfold oRsa at *; omega_using [hd]) h), ifn h]
 
 section
 variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
@@ -432,14 +432,14 @@ include P
 theorem sc_w {t : State} (ht : t.wr = fr s :: s.wr) {d n : Nat} (hd : d + n ≤ oRsa) :
     ∀ i < n, InRegions t.wr (off (S s) d + BitVec.ofNat 64 i) 1 := fun i hi => by
   show InRegions t.wr (off (off (S s) d) i) 1
-  rw [ht, off_off]; exact sc_inW P (by omega)
+  rw [ht, off_off]; exact sc_inW P (by omega_using [hd, hi])
 
 omit P in
 /-- Bytes of a caller's buffer are readable. -/
 theorem rd_in {t : State} (ht : t.rd = s.rd) {R : Region} (hR : R ∈ s.rd) (hw : R.base.toNat + R.len ≤ 2 ^ 64)
     {n : Nat} (hn : n ≤ R.len) : ∀ j < n, InRegions (t.rd ++ t.wr) (R.base + BitVec.ofNat 64 j) 1 := fun j hj => by
   rw [ht]
-  exact ⟨R, List.mem_append_left _ hR, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨R, List.mem_append_left _ hR, Offset.contains_base _ (by omega_using [hn, hj]) (by omega_using [hw, hn, hj])⟩
 
 omit P in
 /-- Bytes of two disjoint regions are at different addresses. -/
@@ -479,7 +479,7 @@ theorem offs : oEm = 0 ∧ oSt = 1024 ∧ oDig = 1280 ∧ oCtr = 1344 ∧ oRsa =
 /-- The sizes of a hash function's ranges in our part of the working space. -/
 theorem hfits {H : Hash} (hH : HashOK H) : H.S ≤ 192 ∧ H.D ≤ 64 := by
   have := hH.hN.2; have := hH.hD64
-  rcases hH.hB64 with h | h <;> simp only [Hash.S, h] <;> omega
+  rcases hH.hB64 with h | h <;> simp only [Hash.S, h] <;> omega_arith
 
 section
 variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
@@ -497,27 +497,27 @@ theorem same_of_frame {t t' : State} (hsp : t.sp = fb s) {rgs : List (Nat × Nat
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp h'
     have := hrg p hp
     rcases hr p hp with h₁ | h₁
-    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inl (by omega)) (by omega) (by omega) _
+    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inl (by omega_using [h₁])) (by omega_using [ho]) (by omega_using [this]) _
         (Region.contains_self _ _) hc
-    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inr (by omega)) (by omega) (by omega) _
+    · exact sdis (s := s) (a := o) (n := 1) (b := p.1) (k := p.2) (.inr (by omega_using [h₁])) (by omega_using [ho]) (by omega_using [this]) _
         (Region.contains_self _ _) hc
   · rw [List.mem_singleton.mp h', hsp] at hc
-    exact cR_dis P (o := o) (n := 1) (by omega) _ hc (Region.contains_self _ _)
+    exact cR_dis P (o := o) (n := 1) (by omega_using [ho]) _ hc (Region.contains_self _ _)
 
 theorem Base.al {t : State} (h : Base S vf s t) : t.sp.toNat % 16 = 0 := by rw [h.sp]; exact fb_al P
 
 theorem Base.spF {t : State} (h : Base S vf s t) {F : Nat} (hF : F ≤ 208) : F ≤ t.sp.toNat := by
-  rw [h.sp]; have := fb_ge P; omega
+  rw [h.sp]; have := fb_ge P; omega_using [hF, this]
 
 theorem Base.cRd {t : State} (h : Base S vf s t) {F : Nat} (hF : F ≤ 208) {o n : Nat} (ho : o + n ≤ oRsa) :
     (below t.sp F).Disjoint ⟨off (S s) o, n⟩ := by
   rw [h.sp]
-  exact (cR_dis P ho).sub_left (below_sub hF (by omega))
+  exact (cR_dis P ho).sub_left (below_sub hF (by omega_using []))
 
 omit P in
 theorem frame208 {F : Nat} (hF : F ≤ 208) {wr : List Region} {sp : Addr} {m m' : Mem}
     (h : Frame (wr ++ [below sp F]) m m') : Frame (wr ++ [below sp 208]) m m' :=
-  Frame.below_mono h hF (by omega)
+  Frame.below_mono h hF (by omega_using [])
 
 /-- A call of the streaming `init` on the state at `S + oSt`. -/
 theorem init_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {t : State} (h : Base S vf s t)
@@ -526,12 +526,12 @@ theorem init_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {t : State} (h : B
       Same (S s) t t' [(oSt, H.S)] ∧ hH.SH.Repr t'.mem (off (S s) oSt) [] := by
   have F := hfits hH
   obtain ⟨_, _, _, _, _⟩ := offs
-  have hc : Covers [⟨off (S s) oSt, H.S⟩] t.wr := by rw [h.wr]; exact sc_cov P (by omega)
+  have hc : Covers [⟨off (S s) oSt, H.S⟩] t.wr := by rw [h.wr]; exact sc_cov P (by omega_arith)
   refine hH.callInit_ok h0 (Covers.right hc) hc fun t' hrd hwr hsp hf hg hr => ?_
   have hf' := frame208 hF hf
   exact ⟨h.call P (R := [⟨off (S s) oSt, H.S⟩]) (fun r hr' => by
-      rw [List.mem_singleton.mp hr']; exact sc_in (by omega)) hrd hwr hsp hf' hg, hg,
-    same_of_frame P h.sp (rgs := [(oSt, H.S)]) (by simp; omega) hf', hr⟩
+      rw [List.mem_singleton.mp hr']; exact sc_in (by omega_arith)) hrd hwr hsp hf' hg, hg,
+    same_of_frame P h.sp (rgs := [(oSt, H.S)]) (by simp; omega_arith) hf', hr⟩
 
 /-- A call of the streaming `update` on the state at `S + oSt`, with the
 `len` bytes at `dat`. -/
@@ -545,14 +545,14 @@ theorem upd_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {t : State} (h : Ba
         hH.SH.Repr t'.mem (off (S s) oSt) (m ++ Spec.Sha256.bytesAt t.mem dat len) := by
   have F := hfits hH
   obtain ⟨_, _, _, _, _⟩ := offs
-  have hc : Covers [⟨off (S s) oSt, H.S⟩] t.wr := by rw [h.wr]; exact sc_cov P (by omega)
-  refine hH.callUpd_ok h0 h2 h3 hd₁ (h.al P) (h.spF P hF) (h.cRd P hF (by omega))
-    (by rw [h.sp]; exact hd₃.sub_left (below_sub hF (by omega)))
+  have hc : Covers [⟨off (S s) oSt, H.S⟩] t.wr := by rw [h.wr]; exact sc_cov P (by omega_arith)
+  refine hH.callUpd_ok h0 h2 h3 hd₁ (h.al P) (h.spF P hF) (h.cRd P hF (by omega_arith))
+    (by rw [h.sp]; exact hd₃.sub_left (below_sub hF (by omega_using [])))
     (Covers.append_left hdc (Covers.right hc)) hc fun t' hrd hwr hsp hf hg hr => ?_
   have hf' := frame208 hF hf
   exact ⟨h.call P (R := [⟨off (S s) oSt, H.S⟩]) (fun r hr' => by
-      rw [List.mem_singleton.mp hr']; exact sc_in (by omega)) hrd hwr hsp hf' hg, hg,
-    same_of_frame P h.sp (rgs := [(oSt, H.S)]) (by simp; omega) hf', hr⟩
+      rw [List.mem_singleton.mp hr']; exact sc_in (by omega_arith)) hrd hwr hsp hf' hg, hg,
+    same_of_frame P h.sp (rgs := [(oSt, H.S)]) (by simp; omega_arith) hf', hr⟩
 
 /-- A call of the streaming `finalize` on the state at `S + oSt`, its digest
 to `S + oDig`. -/
@@ -565,17 +565,17 @@ theorem fin_ok {H : Hash} (hH : HashOK H) (hF : H.F ≤ 208) {t : State} (h : Ba
   have F := hfits hH
   obtain ⟨_, _, _, _, _⟩ := offs
   have hc : Covers [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oDig, H.D⟩] t.wr := by
-    rw [h.wr]; exact Covers.pair (sc_cov P (by omega)) (sc_cov P (by omega))
-  refine hH.callFin_ok h0 h2 (sdis (.inl (by omega)) (by omega) (by omega)) (h.al P) (h.spF P hF)
-    (h.cRd P hF (by omega)) (h.cRd P hF (by omega)) (Covers.right hc) hc
+    rw [h.wr]; exact Covers.pair (sc_cov P (by omega_arith)) (sc_cov P (by omega_arith))
+  refine hH.callFin_ok h0 h2 (sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (h.al P) (h.spF P hF)
+    (h.cRd P hF (by omega_arith)) (h.cRd P hF (by omega_arith)) (Covers.right hc) hc
     fun t' hrd hwr hsp hf hg hr => ?_
   have hf' := frame208 hF hf
   exact ⟨h.call P (R := [⟨off (S s) oSt, H.S⟩, ⟨off (S s) oDig, H.D⟩]) (fun r hr' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl
-      · exact sc_in (by omega)
-      · exact sc_in (by omega)) hrd hwr hsp hf' hg, hg,
-    same_of_frame P h.sp (rgs := [(oSt, H.S), (oDig, H.D)]) (by simp; omega) hf', hr⟩
+      · exact sc_in (by omega_arith)
+      · exact sc_in (by omega_arith)) hrd hwr hsp hf' hg, hg,
+    same_of_frame P h.sp (rgs := [(oSt, H.S), (oDig, H.D)]) (by simp; omega_arith) hf', hr⟩
 
 end
 

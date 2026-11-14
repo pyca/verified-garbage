@@ -50,7 +50,7 @@ theorem recoverCandidate_ok {s : State} {base : Addr} (hs : Scr s base) :
   have kbr : CounterKeep base a b := ⟨kb.gpr, kb.rd, kb.wr, kb.sp, kb.mem.mono (by decide) (by decide)⟩
   have be : ∀ i : Slot, i.val < 14 → env b.mem base i = env a.mem base i := by
     intro i hi
-    exact Outside_F kb.mem (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega))
+    exact Outside_F kb.mem (by simp only [offset]; omega_using []) (Or.inl (by simp only [offset]; omega_using [hi]))
   refine WP.mono (fieldCode_ok recoverFinishOps (kbr.scr (ka.scr hs))) fun t ⟨kt, vt⟩ => ?_
   have ay := (recoverInit_eval (env s.mem base)).1
   have au := (recoverInit_eval (env s.mem base)).2.1

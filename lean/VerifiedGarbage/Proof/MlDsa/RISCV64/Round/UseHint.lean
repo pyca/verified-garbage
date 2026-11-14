@@ -77,7 +77,7 @@ def uhNat (g a : Nat) (b : Bool) : Nat :=
 theorem fixk2 {m : Nat} (hm : m < 64) (hm0 : 0 < m) {u : BitVec 64} (hu : u.toNat ≤ m + 1 ∨ u.toNat = 2 ^ 64 - 1) :
     (fixk (BitVec.ofNat 64 m) (fixk (BitVec.ofNat 64 m) u - BitVec.ofNat 64 m)).toNat =
       if u.toNat < m then u.toNat else if u.toNat ≤ m + 1 then u.toNat - m else m - 1 := by
-  have hM : (BitVec.ofNat 64 m).toNat = m := by rw [BitVec.toNat_ofNat]; omega
+  have hM : (BitVec.ofNat 64 m).toNat = m := by rw [BitVec.toNat_ofNat]; omega_using [hm]
   simp only [fixk_eq]
   generalize BitVec.ofNat 64 m = M at hM ⊢
   have h1 : u >>> 63 = 0 ∨ u >>> 63 = 1 := by bv_omega
@@ -91,21 +91,21 @@ theorem fixk2 {m : Nat} (hm : m < 64) (hm0 : 0 < m) {u : BitVec 64} (hu : u.toNa
 theorem fixk2_mod {m : Nat} (hm : m < 64) (hm1 : 1 < m) {u : BitVec 64} {x : Nat} (hx : x ≤ 2 * m + 1)
     (hu : u.toNat + m = x ∨ (u.toNat = 2 ^ 64 - 1 ∧ x = m - 1)) :
     (fixk (BitVec.ofNat 64 m) (fixk (BitVec.ofNat 64 m) u - BitVec.ofNat 64 m)).toNat = x % m := by
-  rw [fixk2 hm (by omega) (by omega)]
+  rw [fixk2 hm (by omega_using [hm1]) (by omega_using [hx, hu])]
   have m1 : ∀ y, m ≤ y → y < 2 * m → y % m = y - m := fun y h1 h2 => by
-    rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega_using [h2])]
   have m2 : ∀ y, 2 * m ≤ y → y < 3 * m → y % m = y - 2 * m := fun y h1 h2 => by
-    rw [Nat.mod_eq_sub_mod (by omega), m1 _ (by omega) (by omega)]; omega
+    rw [Nat.mod_eq_sub_mod (by omega_using [h1]), m1 _ (by omega_using [h1]) (by omega_using [h2])]; omega_using []
   rcases hu with hu | ⟨hu, rfl⟩
   · split
-    · rw [m1 _ (by omega) (by omega)]; omega
+    · rw [m1 _ (by omega_using [hu]) (by omega_arith)]; omega_using [hu]
     · split
-      · rw [m2 _ (by omega) (by omega)]; omega
-      · omega
-  · rw [Nat.mod_eq_of_lt (by omega)]
+      · rw [m2 _ (by omega_arith) (by omega_using [hm1, hx])]; omega_using [hu]
+      · omega_arith
+  · rw [Nat.mod_eq_of_lt (by omega_using [hm1])]
     split
-    · omega
-    · split <;> omega
+    · omega_arith
+    · split <;> omega_arith
 
 theorem uh_val {g : Nat} (hg : g ∈ gamma2s) {a w : BitVec 64} (ha : a.toNat < q) (hw : w.toNat < 2 ^ 32) :
     (uhv g a w).toNat = uhNat g a.toNat (decide (w.toNat ≠ 0)) := by
@@ -122,7 +122,7 @@ theorem uh_val {g : Nat} (hg : g ∈ gamma2s) {a w : BitVec 64} (ha : a.toNat < 
   have hF44 : F.toNat ≤ 44 := Nat.le_trans hF (by unfold dMod; split <;> decide)
   rw [VG.Proof.MlDsa.Round.q_eq] at ha
   have hP : (F * BitVec.ofNat 64 (2 * g)).toNat = F.toNat * (2 * g) := by
-    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 2 * g < 2 ^ 64)]
+    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hg2] : 2 * g < 2 ^ 64)]
     exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul hF44 hg2) (by decide))
   have hpf : F.toNat * (2 * g) ≤ 44 * 523776 := Nat.mul_le_mul hF44 hg2
   generalize F * BitVec.ofNat 64 (2 * g) = P at hP ⊢
@@ -132,10 +132,10 @@ theorem uh_val {g : Nat} (hg : g ∈ gamma2s) {a w : BitVec 64} (ha : a.toNat < 
   by_cases hw0 : w.toNat = 0 <;> by_cases hs : P.toNat < a.toNat <;>
     simp only [hw0, hs, ite_true, ite_false, decide_true, decide_false, ne_eq, not_true_eq_false,
       not_false_eq_true, Bool.false_eq_true]
-  · exact fixk2_mod m64 m1 (by omega) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega) (Or.inl (by bv_omega))
-  · exact fixk2_mod m64 m1 (by omega) (by bv_omega)
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (Or.inl (by bv_omega))
+  · exact fixk2_mod m64 m1 (by omega_using [hF]) (by bv_omega)
 
 /-! ## The loop body -/
 
@@ -224,7 +224,7 @@ theorem out_val {g : Nat} (hg : g ∈ gamma2s) {s₀ : State} (hp : Pre s₀) {i
       BitVec.ofNat 32 (outs s₀ g)[i]! := by
   obtain ⟨ea, ha⟩ := HighLow.load_toNat hp.red hi
   have hw : ((coeffAt s₀.mem (Hp s₀) i).setWidth 64).toNat = (coeffAt s₀.mem (Hp s₀) i).toNat := by
-    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (Hp s₀) i).isLt; omega)
+    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (Hp s₀) i).isLt; omega_using [])
   have e := uh_val hg ha (by rw [hw]; exact (coeffAt s₀.mem (Hp s₀) i).isLt)
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, e, BitVec.toNat_ofNat, outs, zipWith_get _ _ _ hi, useHint_eq hg,
@@ -266,7 +266,7 @@ theorem inv_step {g : Nat} (hg : g ∈ gamma2s) {s₀ : State} (hp : Pre s₀) {
     rw [m, hv, show O s₀ + BitVec.ofNat 64 (4 * i) = coeffAddr (O s₀) i from rfl, coeffAt_writeW _ _ hj hi]
     by_cases e : i = j
     · subst e; rw [ite_eq_left rfl]
-    · rw [ite_eq_right e]; exact h.coeff j hj (by omega)
+    · rw [ite_eq_right e]; exact h.coeff j hj (by omega_using [hji, e])
   · rw [r7, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
 /-! ## The function -/
@@ -292,7 +292,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa useHint s₀ (Post s₀)
     (fun _ h => h) ?_) fun s' h' => ⟨h'.pres, h'.sp, h'.lr, fun j hj => hG ▸ h'.coeff j hj hj⟩
   have e5 := loadImm_val b2
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hrd, hwr, hsp, ?_, fun r hr => ?_,
-    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega)⟩
+    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega_using [])⟩
   · simp [State.write, kgpr, hgpr, selGpr]
   · simp [State.write, kgpr, hgpr, selGpr]
   · simp [State.write, kgpr, hgpr, selGpr]

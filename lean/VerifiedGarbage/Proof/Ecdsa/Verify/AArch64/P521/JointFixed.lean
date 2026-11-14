@@ -51,7 +51,7 @@ theorem fixedDigit_using {s₀ s : State} {base T : Addr} {u v j : Nat} {C : Cur
  rw [P521Joint.fixedDigit]
  apply WP.seq
  refine WP.mono_syms (nafRead_ok (K:=P521Joint.KG) h.st.scr (by decide)
-   (by change 3304+j<8192; omega) h.x19 hbytes .x2) fun a ⟨a2,ka⟩ sa => ?_
+   (by change 3304+j<8192; omega_using [hj]) h.x19 hbytes .x2) fun a ⟨a2,ka⟩ sa => ?_
  have ia := (hi.of_keeps ka (by decide)).to_tmv
  have kpa : ProgKeep K.M base [] s a := keeps_prog ka (by decide)
  have srca := source.keep kpa sa (by simp) hi.mod.tmp

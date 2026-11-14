@@ -170,15 +170,15 @@ theorem in_of_facts {s : State}
     In (ep s ai au af T aiL auL afL TL) (entered frameBytes s) ∧
       XP (ep s ai au af T aiL auL afL TL) (arg s 25) (arg s 26).toNat (entered frameBytes s) := by
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
-    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega
+    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_using [hsp]
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 3608, 3608⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [Taint.sub_setWidth (by omega_using [hsp])]
+    exact Offset.sub_below _ (by omega_using []) (by omega_using [])
   have fr : ∀ {R : Region}, (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 3608, 3608⟩ : Region).Disjoint R →
       R.len ≤ 2 ^ 64 →
       Spec.Rsa.bytesAt (entered frameBytes s).mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len :=
@@ -186,22 +186,22 @@ theorem in_of_facts {s : State}
       simp only [List.mem_singleton] at hr; subst hr; exact (hk.sub_left below16).symm) hl
   have wf : Spec.Rsa.wordsAt (entered frameBytes s).mem ((arg s 25).setWidth 64) (arg s 26).toNat =
       Spec.Rsa.wordsAt s.mem ((arg s 25).setWidth 64) (arg s 26).toNat := by
-    refine Proof.Rsa.wordsAt_frame hpush (by omega) fun r hr => ?_
+    refine Proof.Rsa.wordsAt_frame hpush (by omega_using []) fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     rw [show 8 * (arg s 26).toNat = (arg s 26).toNat * 8 from Nat.mul_comm _ _]
     exact (kPre.sub_left below16).symm
   have nB : Spec.Rsa.bytesAt (entered frameBytes s).mem ((arg s 3).setWidth 64) (arg s 4).toNat =
       Spec.Rsa.bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat :=
-    fr (R := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩) kN (by show (arg s 4).toNat ≤ 2 ^ 64; omega)
+    fr (R := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩) kN (by show (arg s 4).toNat ≤ 2 ^ 64; omega_using [])
   have eB : Spec.Rsa.bytesAt (entered frameBytes s).mem ((arg s 5).setWidth 64) (arg s 6).toNat =
       Spec.Rsa.bytesAt s.mem ((arg s 5).setWidth 64) (arg s 6).toNat :=
-    fr (R := ⟨(arg s 5).setWidth 64, (arg s 6).toNat⟩) kE (by show (arg s 6).toNat ≤ 2 ^ 64; omega)
+    fr (R := ⟨(arg s 5).setWidth 64, (arg s 6).toNat⟩) kE (by show (arg s 6).toNat ≤ 2 ^ 64; omega_using [])
   have pB : Spec.Rsa.bytesAt (entered frameBytes s).mem ((arg s 7).setWidth 64) (arg s 8).toNat =
       Spec.Rsa.bytesAt s.mem ((arg s 7).setWidth 64) (arg s 8).toNat :=
-    fr (R := ⟨(arg s 7).setWidth 64, (arg s 8).toNat⟩) kP (by show (arg s 8).toNat ≤ 2 ^ 64; omega)
+    fr (R := ⟨(arg s 7).setWidth 64, (arg s 8).toNat⟩) kP (by show (arg s 8).toNat ≤ 2 ^ 64; omega_using [])
   have qB : Spec.Rsa.bytesAt (entered frameBytes s).mem ((arg s 9).setWidth 64) (arg s 10).toNat =
       Spec.Rsa.bytesAt s.mem ((arg s 9).setWidth 64) (arg s 10).toNat :=
-    fr (R := ⟨(arg s 9).setWidth 64, (arg s 10).toNat⟩) kQ (by show (arg s 10).toNat ≤ 2 ^ 64; omega)
+    fr (R := ⟨(arg s 9).setWidth 64, (arg s 10).toNat⟩) kQ (by show (arg s 10).toNat ≤ 2 ^ 64; omega_using [])
   refine ⟨⟨okBase okP, kv, el1, elK, pl1, plK, ql1, qlK, slK, (arg s 18).isLt, (arg s 22).isLt, nB, eB, hT, hTL⟩,
     okP, preLen, ?_⟩
   show Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat)
@@ -225,7 +225,7 @@ theorem in_of_preP {ts : List FnTable} {s : State} (h : (specP ts).pre s)
     sPre sTL sT sA preA tlA tA rO rM rN rE rP rQ rDP rDQ rQI rL rC rS rPre rTL rT rA kO kM kN kE kP kQ kDP kDQ
     kQI kL kC kS kPre kTL kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fPre fTL fT kv olk clk el1 elK pl1 plK
     ql1 qlK dpl qil dql slK preLen
-  exact in_of_facts okP (by simp only [stackBytes, frameBytes] at hsp; omega) kv el1 elK pl1 plK ql1 qlK slK
+  exact in_of_facts okP (by simp only [stackBytes, frameBytes] at hsp; omega_using [hsp]) kv el1 elK pl1 plK ql1 qlK slK
     kN kE kP kQ kPre preLen h hT hTL
 
 variable {vs : List TVar}
@@ -248,7 +248,7 @@ theorem entered_stateP (hc : Coh vs) {s s' : State} (hs : (specP (tables vs)).pr
   obtain ⟨-, -, hpw, hfitL, hfit⟩ := spec_tabP hs
   have hpw' := hpw.sublist (List.sublist_append_left _ _)
   obtain ⟨hsp0, -⟩ := spec_spP hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   have ok := (in_of_preP (ai := 0) (au := 0) (af := 0) (T := fun _ => True) (aiL := 0) (auL := 0) (afL := 0)
     (TL := fun _ => True) hs trivial trivial).1.ok
   rw [ep_lay] at ok
@@ -294,11 +294,11 @@ theorem code_okP (hc : Coh vs) (c : CrtImpl) (cw : CrtPImpl) {s : State} (hs : (
   have he := entered_stateP hc hs hw hw₁ hh hhL (s' := s) fun _ _ => rfl
   have hin := he.1.1.1
   obtain ⟨hsp0, hfit4⟩ := spec_spP hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   obtain ⟨ni, nu, nf⟩ := fnsOf_noSp vs
   have hb := (body_vpP w₁.g (epw (vs := vs) s w w₁) (arg s 25) (arg s 26).toNat w.g (fun _ x => x) (fun _ x => x)
     (fne_of hw) c cw).wp _ _ he
-  refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSpP ni nu nf c cw) hsp (by omega)
+  refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSpP ni nu nf c cw) hsp (by omega_using [hfit4])
     (W := (epw (vs := vs) s w w₁).lay.W)
     (Q := fun r m => Res w₁.g.G w.g.G (epw (vs := vs) s w w₁) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono hb fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩

@@ -49,7 +49,7 @@ theorem b0_bytes (m : Mem) (p : Addr) (w₀ w₁ w₂ x : BitVec 32) (f : Byte) 
       (p + BitVec.ofNat 64 12) x) p 16 = (f :: (le4 w₀).drop 1) ++ le4 w₁ ++ le4 w₂ ++ le4 x := by
   have dj : ∀ a n d k, a + n ≤ d ∨ d + k ≤ a → a + n ≤ 16 → d + k ≤ 16 →
       (⟨p + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 d, k⟩ :=
-    fun a n d k h ha hd => Offset.disjoint p h (by omega) (by omega)
+    fun a n d k h ha hd => Offset.disjoint p h (by omega_using [ha]) (by omega_using [hd])
   have d0 : ∀ d k, 4 ≤ d → d + k ≤ 16 → (⟨p, 4⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 d, k⟩ := fun d k h hd => by
     simpa using dj 0 4 d k (.inl h) (by decide) hd
   have d0' : ∀ a n, 1 ≤ a → a + n ≤ 16 → (⟨p + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p, 8 / 8⟩ := fun a n h ha => by
@@ -83,16 +83,16 @@ theorem ctrBlock_drop12_or {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : 
   · -- `q > 4`: the last 4 bytes are those of `[i]₈q`.
     simp only [List.drop_append, List.drop_eq_nil_of_le (show nonce.length ≤ 11 by omega),
       List.nil_append, be_zero]
-    rw [be_split (q := 4) (k := 15 - nonce.length) (by omega) (by omega), Spec.Ccm.zeros, Spec.Ccm.zeros,
+    rw [be_split (q := 4) (k := 15 - nonce.length) (by omega_using [h]) (by omega_using [hi32]), Spec.Ccm.zeros, Spec.Ccm.zeros,
       List.drop_append, List.drop_replicate, List.length_replicate, List.drop_replicate,
-      show 15 - nonce.length - 4 - (11 - nonce.length) = 0 by omega, List.replicate_zero, List.nil_append,
-      show 11 - nonce.length - (15 - nonce.length - 4) = 0 by omega, List.drop_zero,
-      show 15 - nonce.length - (11 - nonce.length) = 4 by omega]
+      show 15 - nonce.length - 4 - (11 - nonce.length) = 0 by omega_using [], List.replicate_zero, List.nil_append,
+      show 11 - nonce.length - (15 - nonce.length - 4) = 0 by omega_using [], List.drop_zero,
+      show 15 - nonce.length - (11 - nonce.length) = 4 by omega_using [h]]
     exact (zipWith_or_zeros_right _ (length_be 4 i)).symm
   · -- `q ≤ 4`: the nonce's last bytes, then `[i]₈q`.
     rw [List.drop_append_of_le_length h, List.drop_append_of_le_length h, be_zero,
-      be_split (q := 15 - nonce.length) (k := 4) (by omega) hi]
-    have hd : (nonce.drop 11).length = 4 - (15 - nonce.length) := by rw [List.length_drop]; omega
+      be_split (q := 15 - nonce.length) (k := 4) (by omega_using [h]) hi]
+    have hd : (nonce.drop 11).length = 4 - (15 - nonce.length) := by rw [List.length_drop]; omega_using [h13]
     rw [List.zipWith_append (by rw [hd]; simp [Spec.Ccm.zeros]), zipWith_or_zeros_left _ hd,
       zipWith_or_zeros_right _ (length_be _ _)]
 
@@ -103,11 +103,11 @@ theorem ctrBlock_take12 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : non
   rcases Nat.lt_or_ge nonce.length 11 with h | h
   · simp only [List.take_append, List.take_of_length_le (show nonce.length ≤ 11 by omega)]
     congr 1
-    rw [be_zero, be_split (q := 4) (k := 15 - nonce.length) (by omega) (by omega), Spec.Ccm.zeros, Spec.Ccm.zeros,
+    rw [be_zero, be_split (q := 4) (k := 15 - nonce.length) (by omega_using [h]) (by omega_using [hi32]), Spec.Ccm.zeros, Spec.Ccm.zeros,
       List.take_append, List.take_replicate, List.take_replicate, List.length_replicate,
-      show 11 - nonce.length - (15 - nonce.length - 4) = 0 by omega, List.take_zero, List.append_nil,
-      Nat.min_eq_left (show 11 - nonce.length ≤ 15 - nonce.length - 4 by omega),
-      Nat.min_eq_left (show 11 - nonce.length ≤ 15 - nonce.length by omega)]
+      show 11 - nonce.length - (15 - nonce.length - 4) = 0 by omega_using [], List.take_zero, List.append_nil,
+      Nat.min_eq_left (show 11 - nonce.length ≤ 15 - nonce.length - 4 by omega_using []),
+      Nat.min_eq_left (show 11 - nonce.length ≤ 15 - nonce.length by omega_using [])]
   · rw [List.take_append_of_le_length h, List.take_append_of_le_length h]
 
 /-- `Ctrᵢ`'s last word, from `Ctr₀`'s and `[i]₃₂`. -/
@@ -127,7 +127,7 @@ theorem le4_ushiftRight (x : BitVec 32) {k : Nat} (hk : k ≤ 4) :
   have hl : ((le4 x).drop k).length = 4 - k := by rw [List.length_drop, Proof.Cmac.length_le4]
   have hlen : (le4 (x >>> (8 * k))).length = ((le4 x).drop k ++ Spec.Ccm.zeros k).length := by
     rw [Proof.Cmac.length_le4, List.length_append, hl, Spec.Ccm.zeros, List.length_replicate]
-    omega
+    omega_using [hk]
   apply List.ext_getElem hlen
   intro i h₁ h₂
   have hi : i < 4 := by rwa [Proof.Cmac.length_le4] at h₁
@@ -137,13 +137,13 @@ theorem le4_ushiftRight (x : BitVec 32) {k : Nat} (hk : k ≤ 4) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul,
       ← Nat.pow_add]
-    rw [show 8 * k + 8 * i = 8 * (k + i) by omega]
-  · rw [List.getElem_append_right (by rw [hl]; omega)]
+    rw [show 8 * k + 8 * i = 8 * (k + i) by omega_using []]
+  · rw [List.getElem_append_right (by rw [hl]; omega_using [h])]
     simp only [Spec.Ccm.zeros, List.getElem_replicate, le4, List.getElem_map, List.getElem_range]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul,
       ← Nat.pow_add]
-    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega)))]
+    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega_using [h])))]
     rfl
 
 /-- `[a]₁₆`, from `[a]₃₂` shifted right by 16, followed by zeros. -/
@@ -151,7 +151,7 @@ theorem enc_lo32 {a : Nat} (h : a < 2 ^ 16 - 2 ^ 8) :
     le4 (byteRev32 (BitVec.ofNat 32 a) >>> 16) ++ Spec.Ccm.zeros 12 =
       Spec.Ccm.encodeLen a ++ Spec.Ccm.zeros (16 - hdrLen a) := by
   rw [show byteRev32 (BitVec.ofNat 32 a) >>> 16 = byteRev32 (BitVec.ofNat 32 a) >>> (8 * 2) from rfl,
-    le4_ushiftRight _ (by decide), le4_byteRev32_ofNat (by omega), be_split (q := 2) (by decide) (by omega),
+    le4_ushiftRight _ (by decide), le4_byteRev32_ofNat (by omega_using [h]), be_split (q := 2) (by decide) (by omega_using [h]),
     encodeLen_lo h, hdrLen_lo h]
   simp [Spec.Ccm.zeros]
 
@@ -179,6 +179,6 @@ theorem sub_low_byte32 {nl : Nat} (h : nl ≤ 14) :
     ((BitVec.ofNat 32 14 - BitVec.ofNat 32 nl).setWidth 8 : Byte) = BitVec.ofNat 8 (15 - nl - 1) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 end VG.Proof.AesCcm

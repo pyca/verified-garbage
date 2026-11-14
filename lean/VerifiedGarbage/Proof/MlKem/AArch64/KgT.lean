@@ -48,17 +48,17 @@ theorem TL.frame {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {i 
     (hf : Frame W s.mem s'.mem) (hW : ∀ r ∈ W, Apart P s₀ i r) : TL P s₀ mB v i s' := by
   have hw := hp.wf
   refine ⟨h.c.frame hk hx hf fun r hr => ⟨(hW r hr).1, (hW r hr).2.1,
-    (hW r hr).2.2.1.sub_left (R.sub2 (Nat.le_refl _) (by omega))⟩, fun j hj => ?_, fun j hj => ?_,
+    (hW r hr).2.2.1.sub_left (R.sub2 (Nat.le_refl _) (by omega_using []))⟩, fun j hj => ?_, fun j hj => ?_,
     fun i' hi' => ⟨?_, ?_⟩⟩
   · exact polyIs_frame hf (fun r hr => (hW r hr).2.2.1.sub_left (R.sub2 (by lom) (by lom))) (h.sp j hj)
-  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega)
-      (by have := mul_succ_le (a := 384) hj; omega))) (by decide)]
+  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega_using [])
+      (by have := mul_succ_le (a := 384) hj; omega_using [hj]))) (by decide)]
     exact h.dk j hj
-  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.1.sub_left (R.sub2 (by omega)
-      (by have := mul_succ_le (a := 384) hi'; omega))) (by decide)]
+  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.1.sub_left (R.sub2 (by omega_using [])
+      (by have := mul_succ_le (a := 384) hi'; omega_using [hi']))) (by decide)]
     exact (h.ek i' hi').1
-  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega)
-      (by have := mul_succ_le (a := 384) hi'; omega))) (by decide)]
+  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega_using [])
+      (by have := mul_succ_le (a := 384) hi'; omega_using [hi']))) (by decide)]
     exact (h.ek i' hi').2
 
 /-- A buffer of `scratch` past `ŝ`, or the NTT's working space. -/
@@ -90,7 +90,7 @@ theorem apart_ek {s₀ : State} (hp : Pre P s₀) {i : Nat} (hi : i < P.k) :
   refine ⟨hp.args.rdisj (by decide) (by decide) (by kl) f (.inl (by decide)),
     hp.args.rdisj (by decide) (by decide) (by kl) f (.inl (by decide)),
     hp.args.rdisj (by decide) (by decide) (by kl) f (.inl (by decide)),
-    hp.args.rdisj (by decide) (by decide) (by kl) f (.inr (.inl (by omega))),
+    hp.args.rdisj (by decide) (by decide) (by kl) f (.inr (.inl (by omega_using []))),
     hp.args.rdisj (by decide) (by decide) (by kl) f (.inl (by decide))⟩
 
 theorem apart_dk {s₀ : State} (hp : Pre P s₀) {i : Nat} (hi : i < P.k) :
@@ -100,7 +100,7 @@ theorem apart_dk {s₀ : State} (hp : Pre P s₀) {i : Nat} (hi : i < P.k) :
     hp.args.rdisj (by decide) (by decide) (by kl) f (.inl (by decide)),
     hp.args.rdisj (by decide) (by decide) (by kl) f (.inl (by decide)),
     hp.args.rdisj (by decide) (by decide) (by kl) f (.inl (by decide)),
-    hp.args.rdisj (by decide) (by decide) (by kl) f (.inr (.inl (by omega)))⟩
+    hp.args.rdisj (by decide) (by decide) (by kl) f (.inr (.inl (by omega_using [])))⟩
 
 theorem po_a (hP : P.Wf) {i j : Nat} (hi : i < P.k) (hj : j < P.k) : PolyOff P (aOff P i j) :=
   have := ij_lt hi hj; ⟨by lom, by lom⟩
@@ -201,7 +201,7 @@ theorem t_step {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {i : 
     (by kl) kb₈ tv₈.1) fun s₉ ⟨kb₉, f₉, b₉, x₉⟩ => ?_)
   have tl₉ := tl₈.frame hp kb₉ x₉ f₉ fun r hr => by rw [List.mem_singleton.mp hr]; exact apart_dk hp hi
   refine ⟨tl₉.c, tl₉.sp, tl₉.dk, fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact tl₉.ek i' hi'
   · refine ⟨?_, by rw [b₉, tv₈.2]⟩
     rw [bytesAt_frame f₉ (fun r hr => by

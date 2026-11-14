@@ -39,12 +39,12 @@ theorem at_zero {Φ : α → State → Prop} {F : List (Prog isa)} {a : α} {s :
 
 theorem take_split (F : List (Prog isa)) {n m : Nat} (hnm : n ≤ m) :
     F.take m = F.take n ++ (F.drop n).take (m - n) := by
-  rw [← List.take_add]; congr 1; omega
+  rw [← List.take_add]; congr 1; omega_using [hnm]
 
 theorem drop_split (F : List (Prog isa)) {n m : Nat} (hnm : n ≤ m) :
     F.drop n = (F.drop n).take (m - n) ++ F.drop m := by
   conv => lhs; rw [← List.take_append_drop (m - n) (F.drop n)]
-  rw [List.drop_drop]; congr 2; omega
+  rw [List.drop_drop]; congr 2; omega_using [hnm]
 
 theorem at_step {Φ : α → State → Prop} {F : List (Prog isa)}
     (hrun : ∀ a s, Φ a s → WP isa (Code.seqL F) s fun _ => True) {n m : Nat} (hnm : n ≤ m) {a : α}

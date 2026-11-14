@@ -27,9 +27,9 @@ theorem zero_ok {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) (hd : s
   have hk := h.k1
   have hk' := h.k2
   have hZ := h.hZ
-  refine WP.mono (zeroOut_ok h.scr hd (by omega) (by decide) (by decide)
+  refine WP.mono (zeroOut_ok h.scr hd (by omega_using [hZ]) (by decide) (by decide)
     (h.hdr (sY, p.yp) (by simp [GkP.headers]))
-    (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [GkP.headers])) (by omega) (by omega) h.y)
+    (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [GkP.headers])) (by omega_using [hk]) (by omega_using [hk']) h.y)
     fun t ⟨hz, hf, k⟩ => ?_
   have hout : Outside p.B p.Z (2 ^ 64 - p.Z) s.mem t.mem := by
     intro a ha
@@ -38,9 +38,9 @@ theorem zero_ok {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) (hd : s
     intro i hi he
     have := h.y.sep i hi
     rw [← he] at this
-    omega
+    omega_using [ha, ha64, this]
   have hh : ∀ d, d + 8 ≤ p.Z → word t.mem p.B d = word s.mem p.B d :=
-    fun d hd => hout.word (Or.inl hd) (by have := h.scr.nowrap; omega)
+    fun d hd => hout.word (Or.inl hd) (by have := h.scr.nowrap; omega_using [hd, this])
   have hdom : Src t p.B p.Z p.dp p.dom := ⟨fun i hi => by rw [k.2.1, k.2.2]; exact h.dom.rd i hi,
     fun i hi => by rw [hf _ (fun j hj => Ne.symm (h.yd j hj i (by rw [← h.doml]; exact hi)))]; exact h.dom.val i hi,
     h.dom.out⟩
@@ -55,7 +55,7 @@ theorem zero_ok {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) (hd : s
     rw [hh _ (by
       simp only [GkP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
       rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [sDom, sDomLen, sK, sY, sX, sRand, sFn] <;> omega)]
+        simp only [sDom, sDomLen, sK, sY, sX, sRand, sFn] <;> omega_using [hZ])]
     exact h.hdr e he
   · refine ⟨?_, ?_, ?_⟩
     · intro i hi

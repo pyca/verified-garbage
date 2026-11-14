@@ -65,11 +65,11 @@ theorem red_mul {a b : Zq} :
   have ha := val_lt a
   have hb := val_lt b
   have hp : (BitVec.ofNat 32 a.val * BitVec.ofNat 32 b.val).toNat = a.val * b.val := by
-    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a.val) (by omega),
-      Nat.mod_eq_of_lt (a := b.val) (by omega)]
-    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega)
+    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a.val) (by omega_using [ha]),
+      Nat.mod_eq_of_lt (a := b.val) (by omega_using [hb])]
+    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega_using [this])
   refine ofNat_val_eq ?_
-  rw [red_toNat (by rw [hp]; have := mul_lt_q2 ha hb; omega), hp, val_mul]
+  rw [red_toNat (by rw [hp]; have := mul_lt_q2 ha hb; omega_using [this]), hp, val_mul]
 
 /-! ## Tables -/
 
@@ -81,7 +81,7 @@ theorem gammaTable_eq : gammaTable = gammas := rfl
 theorem movw_val {v : Nat} (hv : v < 65536) : (BitVec.ofNat 16 v).setWidth 32 = BitVec.ofNat 32 v := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [hv])]
 
 /-- After the first `k` entries of a table at `b`. -/
 structure TabInv (T : List Nat) (b : Reg) (s₀ : State) (k : Nat) (s : State) : Prop where
@@ -110,17 +110,17 @@ theorem table_ok (T : List Nat) (hT : ∀ k < 128, T.getD k 0 < 65536) {b : Reg}
   refine wp_range_flatMap (M := isa) (TabInv T b s₀) (fun k s hk h => ?_) 128 (Nat.le_refl _) s₀
     ⟨fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
   have ea : State.addr (s₀.gpr b + BitVec.ofNat 32 (4 * k)) = State.addr (s₀.gpr b) + BitVec.ofNat 64 (4 * k) :=
-    addr_add (by omega)
-  refine WP.mono (tab_step (k := k) (by omega) (h.gpr b hb) (by rw [ea, h.wr]; exact hwr k hk) _ hb)
+    addr_add (by omega_using [hfit, hk])
+  refine WP.mono (tab_step (k := k) (by omega_using [hk]) (h.gpr b hb) (by rw [ea, h.wr]; exact hwr k hk) _ hb)
     fun s' ⟨g, rd, wr, sp, m⟩ => ⟨fun r hr => (g r hr).trans (h.gpr r hr), rd.trans h.rd, wr.trans h.wr,
       sp.trans h.sp, ?_, fun j hj => ?_⟩
   · rw [m, ea]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega) (by omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega_using [hk]) (by omega_using [hk]))
   · rw [m, ea, movw_val (hT k hk)]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.tab j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [e]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.tab j (by omega_using [hj, e])
 
 /-! ## Regions at offsets from a base -/
 
@@ -148,7 +148,7 @@ theorem ptr_add_add32 (p : BitVec 32) (a b : Nat) :
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
 
 theorem addr_toNat64 (a : BitVec 32) : (State.addr a).toNat + 2 ^ 32 ≤ 2 ^ 64 := by
-  rw [addr_toNat]; have := a.isLt; omega
+  rw [addr_toNat]; have := a.isLt; omega_using []
 
 /-- A pointer to `L ≤ 2³²` bytes, as a 64-bit address, does not wrap around. -/
 theorem addr_fit (a : BitVec 32) {L : Nat} (hL : L ≤ 2 ^ 32) : (State.addr a).toNat + L ≤ 2 ^ 64 :=
@@ -186,18 +186,18 @@ theorem saveRegs_ok (b : Reg) {off : Nat} (ho : off + 28 < 4096) {s₀ : State}
     ⟨rfl, rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
   have ea : State.addr (s.gpr b + BitVec.ofNat 32 (off + 4 * k)) =
       State.addr (s₀.gpr b) + BitVec.ofNat 64 off + BitVec.ofNat 64 (4 * k) := by
-    rw [h.gpr, addr_add (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
+    rw [h.gpr, addr_add (by omega_using [hfit, hk]), BitVec.add_assoc, ← BitVec.ofNat_add]
   apply WP.of_runBlock
-  rw [runBlock_cons, exec_str (by omega) (by rw [ea, h.wr]; exact hwr k hk), runStep_some, runBlock_nil]
+  rw [runBlock_cons, exec_str (by omega_using [ho, hk]) (by rw [ea, h.wr]; exact hwr k hk), runStep_some, runBlock_nil]
   refine ⟨_, rfl, h.gpr, h.rd, h.wr, h.sp, ?_, fun j hj => ?_⟩
   · rw [ea]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega) (by omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega_using [hk]) (by omega_using [hk]))
   · show (s.mem.writeW _ _).readW _ _ = _
     rw [ea, h.gpr]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.saved j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [e]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.saved j (by omega_using [hj, e])
 
 /-- After loading the first `k` registers from `A = b + off`. -/
 structure RestoreInv (g : Reg → BitVec 32) (s₀ : State) (k : Nat) (s : State) : Prop where
@@ -218,9 +218,9 @@ theorem restoreRegs_ok (b : Reg) (hb : b ∉ savedRegs) {off : Nat} (ho : off + 
     ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
   have ea : State.addr (s.gpr b + BitVec.ofNat 32 (off + 4 * k)) =
       State.addr (s₀.gpr b) + BitVec.ofNat 64 off + BitVec.ofNat 64 (4 * k) := by
-    rw [h.other b hb, addr_add (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
+    rw [h.other b hb, addr_add (by omega_using [hfit, hk]), BitVec.add_assoc, ← BitVec.ofNat_add]
   apply WP.of_runBlock
-  rw [runBlock_cons, exec_ldr (by omega) (by rw [ea, h.rd, h.wr]; exact hrd k hk), runStep_some,
+  rw [runBlock_cons, exec_ldr (by omega_using [ho, hk]) (by rw [ea, h.rd, h.wr]; exact hrd k hk), runStep_some,
     runBlock_nil]
   refine ⟨_, rfl, h.mem, h.rd, h.wr, h.sp, fun r hr => ?_, fun j hj => ?_⟩
   · show (s.setReg _ _).gpr r = _
@@ -230,8 +230,8 @@ theorem restoreRegs_ok (b : Reg) (hb : b ∉ savedRegs) {off : Nat} (ho : off + 
     simp only [State.setReg]
     by_cases e : j = k
     · subst e; rw [ite_eq_left rfl, ea, h.mem]; exact hs j hk
-    · rw [ite_eq_right (fun e' => e (savedRegs_nodup j (by omega) k hk e'))]
-      exact h.loaded j (by omega)
+    · rw [ite_eq_right (fun e' => e (savedRegs_nodup j (by omega_using [hk, hj]) k hk e'))]
+      exact h.loaded j (by omega_using [hj, e])
 
 /-- The callee-saved registers, restored. -/
 theorem preserved_of_restore {g : Reg → BitVec 32} {s₀ s : State} (h : RestoreInv g s₀ 8 s)

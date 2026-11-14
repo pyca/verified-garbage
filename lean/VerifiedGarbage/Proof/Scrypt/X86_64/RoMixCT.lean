@@ -282,7 +282,7 @@ theorem r_lt : 128 * rr s₀ < 2 ^ 64 := by
   have := v_lt hp
   have := NN_pos hp
   have : 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := Nat.le_mul_of_pos_right _ (by omega_using [this])
-  omega
+  omega_arith
 
 /-- `(V[i]'(by omega))` is in `v`. -/
 theorem vAt_sub {i : Nat} (hi : i < NN s₀) : Region.Sub ⟨vAt s₀ i, 128 * rr s₀⟩ (vR s₀) := by
@@ -291,7 +291,7 @@ theorem vAt_sub {i : Nat} (hi : i < NN s₀) : Region.Sub ⟨vAt s₀ i, 128 * r
   have : 128 * rr s₀ * i + 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
   show Region.Sub ⟨vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * i), 128 * rr s₀⟩ ⟨vP s₀, vl s₀ * 128⟩
-  exact Memory.sub_off (by rw [e]; omega_using [this]) (by omega)
+  exact Memory.sub_off (by rw [e]; omega_using [this]) (by omega_arith)
 
 theorem vAt_disj {i k : Nat} (hi : i < NN s₀) (hk : k < NN s₀) (hik : i ≠ k) :
     Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ ⟨vAt s₀ k, 128 * rr s₀⟩ := by
@@ -325,7 +325,7 @@ theorem t_w : Region.Disjoint ⟨tP s₀, 128 * rr s₀⟩ ⟨sc s₀, 128⟩ :=
   have := hp.s_nw
   have := hp.pos
   have := Memory.disj_off (sc s₀) (o₁ := 192) (n₁ := 128 * rr s₀) (o₂ := 0) (n₂ := 128) (by omega_using [])
-    (by omega_using []) (by omega_using []) (by omega) (by omega_using [])
+    (by omega_using []) (by omega_using []) (by omega_arith) (by omega_using [])
   simpa using this
 
 end
@@ -385,7 +385,7 @@ theorem keep_t : (keepR s₀).Disjoint ⟨tP s₀, 128 * rr s₀⟩ := by
   have := hp.s_nw
   have := hp.pos
   exact Memory.disj_off (sc s₀) (o₁ := 128) (n₁ := 56) (o₂ := 192) (n₂ := 128 * rr s₀) (by omega_using [])
-    (by omega_using []) (by omega_using []) (by omega_using []) (by omega)
+    (by omega_using []) (by omega_using []) (by omega_using []) (by omega_arith)
 
 omit hp in
 theorem b_sub' : Region.Sub ⟨bP s₀, 128 * rr s₀⟩ (bR s₀) := by
@@ -713,7 +713,7 @@ theorem vAt_nw {i : Nat} (hi : i < NN s₀) : (vAt s₀ i).toNat + 128 * rr s₀
   have e : vl s₀ * 128 = 128 * rr s₀ * NN s₀ := by rw [hp.vl_eq]; simp only [Nat.mul_comm, Nat.mul_left_comm]
   have : 128 * rr s₀ * i + 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-  rw [Memory.toNat_add_ofNat _ (by omega)]
+  rw [Memory.toNat_add_ofNat _ (by omega_arith)]
   omega_using [hv, e, this]
 
 theorem vAt_in {i : Nat} (hi : i < NN s₀) : InRegions s₀.wr (vAt s₀ i) (128 * rr s₀) := by
@@ -872,9 +872,9 @@ theorem jOf_eq {s₀ : State} (hp : Pre s₀) (m : Mem) :
   have he' : e ≤ 64 := by
     by_contra hc
     have : 2 ^ 64 < 2 ^ e := Nat.pow_lt_pow_right (by decide) (by omega_using [hc])
-    omega
+    omega_arith
   apply BitVec.eq_of_toNat_eq
-  rw [Memory.toNat_ofNat_lt (by have := jOf_lt hp m; omega), he, and_mask _ he', jOf, he,
+  rw [Memory.toNat_ofNat_lt (by have := jOf_lt hp m; omega_arith), he, and_mask _ he', jOf, he,
     integerify_mod _ _ hp.pos he']
 
 theorem t_word {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 8 * rr s₀) :

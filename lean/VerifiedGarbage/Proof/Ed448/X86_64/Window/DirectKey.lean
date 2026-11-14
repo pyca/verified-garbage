@@ -43,7 +43,7 @@ private theorem ea_key {s : State} {base : Addr} {d c i : Nat}
   simp only [State.ea, hb, hd, off, tabOffset, BitVec.ofInt_natCast]
   simp only [BitVec.mul_one, BitVec.add_assoc, ← BitVec.ofNat_add]
   congr 2
-  omega
+  omega_using []
 
 private theorem ea_key_set (s : State) (r : Reg) (v : BitVec 64) (c i : Nat)
     (h1 : r ≠ .rdi) (h2 : r ≠ .r15) :
@@ -57,7 +57,7 @@ theorem directKeyLoads_ok {s : State} {base : Addr} (hs : Scr s base) {d c : Nat
       .mov r (.mem { base := .rdi, index := some .r15, disp := ((TAB + 64 * c + 8 * i : Nat) : Int) }))) s
       fun u => rv u W = fe s.mem base (tabOffset d c) ∧ Keeps W s u := by
   have hread : ∀ i < 7, InRegions (s.rd ++ s.wr) (off base (tabOffset d c + 8 * i)) 8 :=
-    fun i hi => hs.read (by simp only [tabOffset, TAB]; omega)
+    fun i hi => hs.read (by simp only [tabOffset, TAB]; omega_using [hd, hc, hi])
   apply WP.of_runBlock
   simp (disch := decide) only [W, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
     List.zip_cons_cons, List.zip_nil_right, List.map_cons, List.map_nil,
@@ -80,17 +80,17 @@ theorem directKeyCoord_ok {s : State} {base : Addr} (hs : Scr s base)
     (hr : s.gpr .r15 = BitVec.ofNat 64 (192 * d)) :
     WP isa (.block (directKeyCoord c)) s fun u =>
       Keep base s u ∧ u.gpr .r15 = s.gpr .r15 ∧
-      E u.mem base = Function.update (E s.mem base) ⟨8 + c, by omega⟩ (F s.mem base (tabOffset d c)) := by
+      E u.mem base = Function.update (E s.mem base) ⟨8 + c, by omega_using [hc]⟩ (F s.mem base (tabOffset d c)) := by
   rw [directKeyCoord, WP.block_append_iff]
   refine WP.mono (directKeyLoads_ok hs hd hc hr) fun v ⟨ev, kv⟩ => ?_
-  refine WP.mono (stores_E (hs.of_keeps kv (by decide)) ⟨8 + c, by omega⟩ W rfl)
+  refine WP.mono (stores_E (hs.of_keeps kv (by decide)) ⟨8 + c, by omega_using [hc]⟩ W rfl)
     fun u ⟨eu, ou, gu, ru, wu⟩ => ?_
   refine ⟨⟨?_, ru.trans kv.2.2.1, wu.trans kv.2.2.2, ?_⟩,
     (gu _).trans (kv.1 _ (by decide)), ?_⟩
   · intro r h
     exact (gu r).trans (kv.1 r (fun hh => h ((show ∀ r ∈ W, r ∈ clob from by decide) r hh)))
   · rw [kv.2.1] at ou
-    exact ou.mono (by simp only [slot]; omega) (by simp only [slot]; omega)
+    exact ou.mono (by simp only [slot]; omega_using []) (by simp only [slot]; omega_using [hc])
   · rw [eu, ev, kv.2.1]
 
 end VG.Proof.Ed448.X86_64.Window

@@ -88,8 +88,8 @@ theorem ckMulPQ_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) (L : C
     WP isa (seqs mulPQ) s fun t =>
       CkS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧ I.av t.mem aA = I.av s.mem aX * I.av s.mem aR ∧
       ∀ i < 16, i ≠ aA → I.av t.mem i = I.av s.mem i :=
-  WP.mono (mulPQ_ok h.ws h.args.pl h.args.ql L.pl1 L.ql1 (by have := L.pcap; simp only [wk]; omega)
-    (by have := L.qcap; simp only [wk]; omega) rfl hX rfl hR) fun _ ⟨hv, o, k⟩ =>
+  WP.mono (mulPQ_ok h.ws h.args.pl h.args.ql L.pl1 L.ql1 (by have := L.pcap; simp only [wk]; omega_using [this])
+    (by have := L.qcap; simp only [wk]; omega_using [this]) rfl hX rfl hR) fun _ ⟨hv, o, k⟩ =>
     ⟨h.arr (by decide) (Nat.le_refl _) o k (by decide), mword_arr o, hv,
       fun _ hi hij => h.av_out o (Nat.le_refl _) hi hij⟩
 

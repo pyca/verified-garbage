@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Wide.Limbs
 public import VerifiedGarbage.Proof.X448.Limbs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Untrusted: the exact-value bridge between the old and wide limb layouts. -/
 
@@ -20,26 +21,26 @@ theorem paired_val (f : Nat → Nat) (n : Nat) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [show 2 * (n + 1) = (2 * n + 1) + 1 by omega,
+    rw [show 2 * (n + 1) = (2 * n + 1) + 1 by omega_using [],
       VG.Proof.X448.valN_succ, VG.Proof.X448.valN_succ, valN_succ, ih, paired,
       Nat.pow_succ, Nat.pow_mul, radix_pair, Nat.mul_add, Nat.add_assoc, Nat.mul_assoc]
 
 theorem paired_bound {f : Nat → Nat} (h : ∀ i < 16, f i < VG.Proof.X448.radix) :
     ∀ i < 8, paired f i < radix := by
   intro i hi
-  have h0 := h (2 * i) (by omega)
-  have h1 := h (2 * i + 1) (by omega)
+  have h0 := h (2 * i) (by omega_using [hi])
+  have h1 := h (2 * i + 1) (by omega_using [hi])
   simp only [paired, VG.Proof.X448.radix, radix] at *
-  omega
+  omega_using [h0, h1]
 
 /-- Split a normalized wide limb back into the existing field-slot layout. -/
 def unpacked (f : Nat → Nat) (i : Nat) : Nat :=
   if i % 2 = 0 then f (i / 2) % VG.Proof.X448.radix else f (i / 2) / VG.Proof.X448.radix
 
 theorem paired_unpacked (f : Nat → Nat) (i : Nat) : paired (unpacked f) i = f i := by
-  simp only [paired, unpacked, show (2 * i) % 2 = 0 by omega,
-    show (2 * i + 1) % 2 = 1 by omega, show (2 * i) / 2 = i by omega,
-    show (2 * i + 1) / 2 = i by omega, ite_true, ite_false, Nat.one_ne_zero]
+  simp only [paired, unpacked, show (2 * i) % 2 = 0 by omega_using [],
+    show (2 * i + 1) % 2 = 1 by omega_using [], show (2 * i) / 2 = i by omega_using [],
+    show (2 * i + 1) / 2 = i by omega_using [], ite_true, ite_false, Nat.one_ne_zero]
   exact Nat.mod_add_div _ _
 
 theorem unpacked_val (f : Nat → Nat) :
@@ -50,12 +51,12 @@ theorem unpacked_val (f : Nat → Nat) :
 theorem unpacked_bound {f : Nat → Nat} (h : ∀ i < 8, f i < radix) :
     ∀ i < 16, unpacked f i < VG.Proof.X448.radix := by
   intro i hi
-  have hf := h (i / 2) (by omega)
+  have hf := h (i / 2) (by omega_using [hi])
   simp only [unpacked]
   split
   · exact Nat.mod_lt _ (by decide)
   · simp only [radix] at hf
     simp only [VG.Proof.X448.radix]
-    omega
+    omega_using [hf]
 
 end VG.Proof.X448.Wide

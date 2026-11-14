@@ -99,7 +99,7 @@ theorem Ctx.tbl (hc : Ctx L g vec m₀ t) (hL : L.Ok) (hm : TblWords L.T m₀) :
   fun i hi => by
     have := hL.tbfit
     rw [← hm i hi]
-    refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, this])) ?_ (by decide)
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
     · exact hL.tbo
@@ -111,7 +111,7 @@ theorem Ctx.arg_word (hc : Ctx L g vec m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 3
     t.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 =
       m₀.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 := by
   refine hc.frame.readW (r := L.ARGS)
-    (Offset.contains _ (e := 256) (k := 48) (by omega) (by omega) (by decide)) ?_ (by decide)
+    (Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using [hj]) (by decide)) ?_ (by decide)
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
   · exact hL.ko.sub_left (args_sub L)
@@ -309,14 +309,14 @@ theorem entry_ctx {s p : State} (h : (pkLocalWith n post).pre s) (hp : Whole.Sav
 theorem entry_args {s p : State} (h : (pkLocalWith n post).pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
     Arguments (lay n s) p.mem := by
   refine ⟨fun j hj => ?_, fun i hi => ?_⟩
-  · have hw := Whole.saved_words hp (j := j) (by omega)
-    have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
+  · have hw := Whole.saved_words hp (j := j) (by omega_using [hj])
+    have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
     rcases he with rfl | rfl | rfl <;> exact hw
   · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2
     have hf := Whole.saved_frame hp
     rw [← held i hi]
     refine hf.readW (r := TBL (s.syms Impl.Ed25519.AArch64.combSym))
-      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, fit])) (fun r hr => ?_) (by decide)
     rw [List.mem_singleton.mp hr]
     exact (dj (below s.sp 352) (by simp)).sub_right (Whole.stk_sub s)
 

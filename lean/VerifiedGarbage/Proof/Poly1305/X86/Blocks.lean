@@ -856,13 +856,13 @@ theorem asum_lt {f b : Nat → Nat} {pad : Nat} (hf : ∀ k < 5, f k < 2 ^ 32) (
     (hp : pad < 2 ^ 32) : ∀ k < 5, asum f b pad k < 2 ^ 33 := by
   intro k hk
   induction k with
-  | zero => have := hf 0 (by decide); have := hb 0 (by decide); simp only [asum]; omega
+  | zero => have := hf 0 (by decide); have := hb 0 (by decide); simp only [asum]; omega_arith
   | succ k ih =>
     have := ih (by omega_using [hk]); have := hf (k + 1) hk
     simp only [asum]
     split
-    · omega
-    · have := hb (k + 1) (by omega); omega
+    · omega_arith
+    · have := hb (k + 1) (by omega_arith); omega_arith
 
 
 theorem Words.congr {m : Mem} {st : BitVec 32} {g g' : Nat → Nat} (h : Words m st g)
@@ -1144,7 +1144,7 @@ theorem csum_lt {G : Nat → Nat} {d4 : Nat} (hG : ∀ k < 4, G (25 + k) < 2 ^ 3
     simp only [csum]
     split
     · omega_using [this]
-    · have := hG (k + 1) (by omega); omega
+    · have := hG (k + 1) (by omega_arith); omega_arith
 
 theorem carry_eq : carry =
     ([.mov .eax (.reg .ebx), .shift .shr .eax 2, .mov .ecx (.reg .eax), .alu .add .eax (.reg .eax),
@@ -1424,7 +1424,7 @@ theorem gsum_lt {f : Nat → Nat} (hf : ∀ k < 5, f k < 2 ^ 32) : ∀ k < 5, gs
   intro k hk
   induction k with
   | zero => have := hf 0 (by decide); simp only [gsum]; omega_using [this]
-  | succ k ih => have := ih (by omega_using [hk]); have := hf (k + 1) hk; simp only [gsum]; omega
+  | succ k ih => have := ih (by omega_using [hk]); have := hf (k + 1) hk; simp only [gsum]; omega_arith
 
 theorem plus5_eq : plus5 =
     ([.mov .eax (.mem (at_ .edi (hOff 0))), .alu .add .eax (.imm 5), .store (at_ .edi (tOff 0)) .eax] : List Instr) ++
@@ -1648,7 +1648,7 @@ theorem reduce_ok {st : BitVec 32} {s : State} (hc : Ctx st s) {f : Nat → Nat}
   set g4 := (f 4 + gsum f 3 / 2 ^ 32) % 2 ^ 32
   have hlt := gsum_lt (f := f) (fun k hk => hf k (by omega_using [hk]))
   have hg4 : g4 ≤ 5 := by
-    have := hlt 3 (by decide); have := hf 4 (by decide); simp only [g4]; omega
+    have := hlt 3 (by decide); have := hf 4 (by decide); simp only [g4]; omega_arith
   have m₁' := m₁.trans (mask_of hg4 _ e₁)
   set b := decide (g4 / 4 = 1) with hb
   refine WP.block_append (WP.mono (selects_ok (A₁.ctx hc) A₁.words m₁' 4 (Nat.le_refl _)) fun s₂ A₂ => ?_)
@@ -2271,7 +2271,7 @@ theorem absorbFull_ok {st : BitVec 32} {s : State} (hc : Ctx st s) (hb : BlkIn s
       hw5 (words s'.mem st) % P =
         ((hw5 (words s.mem st) + blkv s.mem (s.gpr .esi) pad.toNat) * rval r0 q1 q2 q3) % P) :=
   absorbAtFull_ok hc (absorb_okList pad) (fun _ => hb) (by decide) (fun k _ => by rw [Nat.zero_add])
-    (fun k _ => hb (4 * k) (by omega)) (fun k hk => .inl (hd k hk)) hpad hC
+    (fun k _ => hb (4 * k) (by omega_arith)) (fun k hk => .inl (hd k hk)) hpad hC
 
 /-- The registers `reduce` writes. -/
 abbrev rRegs : List Reg := [.eax, .ecx, .edx, .ebp]

@@ -24,10 +24,10 @@ def RW (L : W8) (i : Nat) (s : State) : Prop :=
 def tileLayout (L : W8) (i : Nat) (hi : i < L.n) (hZ : slot L.ws.w 8 ≤ L.ws.Z) : TileLayout :=
   { B := L.ws.B, Z := L.ws.Z, w := L.ws.w, e := slot L.ws.w aAcc + 16 + 64 * i, n := L.n - 1
     hZ := hZ
-    hw := by have := L.hw; have := L.hn; omega
-    he := by unfold slot; omega
-    heZ := by have := L.hw; unfold slot aAcc at *; omega
-    sep := by unfold slot aN aAcc; omega }
+    hw := by have := L.hw; have := L.hn; omega_arith
+    he := by unfold slot; omega_using []
+    heZ := by have := L.hw; unfold slot aAcc at *; omega_using [hi, hZ, this]
+    sep := by unfold slot aN aAcc; omega_using [] }
 
 theorem outer_body_ct : RelCT isa
     (Two fun p : W8 × Nat => fun s => p.2 < p.1.n ∧ RW p.1 p.2 s)
@@ -44,19 +44,19 @@ theorem outer_fw (L : W8) (i : Nat) (s : State) (hi : i < L.n) (h : RW L i s) :
   let T := tileLayout L i hi hZ
   have hw := L.hw
   refine WP.mono (tile_ok (L := L.ws.w + 8) hg.scr hg.rdi hg.hdr hZ T.hw hc
-    T.he T.heZ (by omega) T.sep) fun t ⟨_, ct, zt, ot, kt⟩ => ?_
+    T.he T.heZ (by omega_using []) T.sep) fun t ⟨_, ct, zt, ot, kt⟩ => ?_
   have hr : RW L (i + 1) t := ⟨⟨mi, ⟨hg.scr.congr kt.2.2,
     (kt.gpr (by decide)).trans hg.rdi, hg.hdr.of_outside ot (by
-      have := T.he; change hdrBytes + 16 ≤ slot L.ws.w aAcc + 16 + 64 * i at this; omega)⟩, hZ⟩,
-    by rw [ct]; exact congrArg (off L.ws.B) (by omega)⟩
+      have := T.he; change hdrBytes + 16 ≤ slot L.ws.w aAcc + 16 + 64 * i at this; omega_using [this])⟩, hZ⟩,
+    by rw [ct]; exact congrArg (off L.ws.B) (by omega_using [])⟩
   refine ⟨?_, fun _ => hr, fun he => he ▸ hr⟩
   simp only [eval, zt, Option.map_some]
   have he : (slot L.ws.w aAcc + 16 + 64 * i + 64 = slot L.ws.w aTmp) ↔ i + 1 = L.n := by
-    unfold slot aAcc aTmp; omega
+    unfold slot aAcc aTmp; omega_using [hw]
   simp only [he]
   by_cases heq : i + 1 = L.n
   · simp [heq]
-  · simp [heq]; omega
+  · simp [heq]; omega_using [hi, heq]
 
 theorem outer_ct : RelCT isa (Two fun L s => RW L 0 s)
     (.loop AdxRotate8.tile .ne) (Two fun L s => RW L L.n s) := by

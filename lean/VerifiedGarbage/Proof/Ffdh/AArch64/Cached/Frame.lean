@@ -18,17 +18,17 @@ theorem outside_shift_iff (B x : Addr) {d n : Nat} (hd : d<2^64) (fit : d+n≤2^
  have bound : ofs B x<2^64 := (x-B).isLt
  change (ofs B x<d ∨ d+n≤ofs B x) ↔ n≤(2^64-d+ofs B x)%2^64
  by_cases before : ofs B x<d
- · rw [Nat.mod_eq_of_lt (by omega)]
-   omega
- · have eq : 2^64-d+ofs B x=2^64+(ofs B x-d) := by omega
-   rw [eq,Nat.add_mod_left,Nat.mod_eq_of_lt (by omega : ofs B x-d<2^64)]
-   omega
+ · rw [Nat.mod_eq_of_lt (by omega_using [hd, before])]
+   omega_using [fit, before]
+ · have eq : 2^64-d+ofs B x=2^64+(ofs B x-d) := by omega_using [hd, before]
+   rw [eq,Nat.add_mod_left,Nat.mod_eq_of_lt (by omega_using [bound] : ofs B x-d<2^64)]
+   omega_using [before]
 
 theorem outside_to_array {B : Addr} {d n : Nat} {m m' : Mem} (hd : d<2^64) (fit : d+n≤2^64)
  (frame : Outside B d n m m') : Outside (off B d) 0 n m m' := by
  intro x hx
  apply frame x
- exact (outside_shift_iff B x hd fit).mpr (by omega)
+ exact (outside_shift_iff B x hd fit).mpr (by omega_using [hx])
 
 theorem outside_to_workspace {B : Addr} {d n : Nat} {m m' : Mem} (hd : d<2^64) (fit : d+n≤2^64)
  (frame : Outside (off B d) 0 n m m') : Outside B d n m m' := by

@@ -24,14 +24,14 @@ open VG.Proof.MlKem.AArch64 (VChg wp_vop)
 /-- An accepted centered response needs only the conditional addition of q. -/
 theorem acceptedCanonical_bounds (x : BitVec 32)
     (hl : -8380417<x.toInt) (hh : x.toInt<8380417) : (signCorrected x).toNat<8380417 := by
-  have he := signCorrected_int x hl (by omega)
+  have he := signCorrected_int x hl (by omega_using [hh])
   have hn := BitVec.toInt_eq_toNat_cond (signCorrected x)
   split at he <;> omega
 
 theorem acceptedCanonical_mod (x : BitVec 32)
     (hl : -8380417<x.toInt) (hh : x.toInt<8380417) :
     ((signCorrected x).toNat : Int)=x.toInt%8380417 := by
-  have he := signCorrected_int x hl (by omega)
+  have he := signCorrected_int x hl (by omega_using [hh])
   have hn := BitVec.toInt_eq_toNat_cond (signCorrected x)
   have hb := acceptedCanonical_bounds x hl hh
   split at he <;> omega
@@ -121,8 +121,8 @@ theorem canonicalizeGroup_coeff (m : Mem) (p : Addr) {start k : Nat}
   rw [coeffAt_write16 _ _ hs _ hk]
   split
   · rename_i h
-    rw [canonicalizeVector,laneVector_word _ (by omega),VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ (by omega),coeffAddr_add]
-    rw [show start+(k-start)=k by omega]
+    rw [canonicalizeVector,laneVector_word _ (by omega_using [h]),VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ (by omega_using [h]),coeffAddr_add]
+    rw [show start+(k-start)=k by omega_using [h]]
     rfl
   · rfl
 
@@ -142,10 +142,10 @@ theorem canonicalizePrefix_step {initial current : Mem} {p : Addr} {done : Nat}
   intro k hk
   rw [canonicalizeGroup_coeff current p hd hk]
   by_cases before : k<done
-  · rw [ite_eq_right (by omega),h k hk,ite_eq_left before,ite_eq_left (by omega)]
+  · rw [ite_eq_right (by omega_using [before]),h k hk,ite_eq_left before,ite_eq_left (by omega_using [before])]
   · by_cases inside : k<done+4
-    · rw [ite_eq_left (by omega),h k hk,ite_eq_right before,ite_eq_left inside]
-    · rw [ite_eq_right (by omega),h k hk,ite_eq_right before,ite_eq_right inside]
+    · rw [ite_eq_left (by omega_using [before, inside]),h k hk,ite_eq_right before,ite_eq_left inside]
+    · rw [ite_eq_right (by omega_using [inside]),h k hk,ite_eq_right before,ite_eq_right inside]
 
 theorem canonicalizePrefix_complete {initial current : Mem} {p : Addr}
     (h : CanonicalizePrefix initial current p 256) {k : Nat} (hk : k<256) :
@@ -184,7 +184,7 @@ theorem canonicalizeBody_ok {s : State} {m : Mem} {p : Addr} {done : Nat}
       simpa only [hk.keep.wr,hk.keep.get .x0] using hw i hi
     have hqt : ∀e<4,vword (t.v .v16) e=8380417#32 := by
       rw [hk.vec .v16 (by decide)]; exact hq
-    have hg := canonicalizeGroup_ok (off := 16*i) (by omega) hrt hwt hqt
+    have hg := canonicalizeGroup_ok (off := 16*i) (by omega_using [hi]) hrt hwt hqt
       (rest := []) (Q := I (i+1))
     simp only [List.append_nil] at hg
     apply hg
@@ -192,8 +192,8 @@ theorem canonicalizeBody_ok {s : State} {m : Mem} {p : Addr} {done : Nat}
     apply WP.block_nil_iff.mpr
     refine ⟨(hk.trans hv).mono (by decide),?_⟩
     rw [hm,hk.keep.get .x0,haddr i hi]
-    have hs := canonicalizePrefix_step (by omega : done+4*i+4≤256) hprefix
-    simpa only [show done+4*(i+1)=done+4*i+4 by omega] using hs
+    have hs := canonicalizePrefix_step (by omega_using [hd, hi] : done+4*i+4≤256) hprefix
+    simpa only [show done+4*(i+1)=done+4*i+4 by omega_using []] using hs
   exact fourGroups_ok canonicalizeGroup I hinit hstep
 
 theorem canonicalizeAdvance_ok (s : State) : WP isa (.block (advance [.x0])) s fun t =>
@@ -218,22 +218,22 @@ theorem canonicalizeLoop_ok {s : State}
   apply VG.Proof.MlDsa.AArch64.Arith.wp_countdown (N := 16) (by decide) (by decide) I ?_ ?_ hc
   · intro u hu t ⟨hk,hqt,h0,hp⟩ _
     rw [WP.block_append_iff]
-    refine WP.mono (canonicalizeBody_ok (by omega : 16*u+16≤256) hp hqt ?_ ?_ ?_) fun v ⟨hv,hpv⟩ => ?_
+    refine WP.mono (canonicalizeBody_ok (by omega_using [hu] : 16*u+16≤256) hp hqt ?_ ?_ ?_) fun v ⟨hv,hpv⟩ => ?_
     · intro i hi
       simp only [h0,coeffAddr,BitVec.add_assoc,← BitVec.ofNat_add]
       congr 2
-      omega
+      omega_using []
     · intro i hi
       simp only [hk.rd,hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hr _ (by omega)
+      exact hr _ (by omega_using [hu, hi])
     · intro i hi
       simp only [hk.wr,h0,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hw _ (by omega)
+      exact hw _ (by omega_using [hu, hi])
     · refine WP.mono (canonicalizeAdvance_ok v) fun w ⟨⟨⟨hw0,hw10,hwm⟩,hkw⟩,hvw⟩ => ?_
       refine ⟨⟨((hk.trans hv.keep).trans hkw).mono,?_,?_,?_⟩,?_⟩
       · rw [hvw,hv.vec .v16 (by decide)]; exact hqt
-      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hwm,show 16*(u+1)=16*u+16 by omega]; exact hpv
+      · rw [hw0,hv.keep.get .x0,h0,show 64*(u+1)=64*u+64 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hwm,show 16*(u+1)=16*u+16 by omega_using []]; exact hpv
       · rw [hw10,hv.keep.get .x10]; rfl
   · exact ⟨Keep.refl _ _,hq,by simp,canonicalizePrefix_zero _ _⟩
 

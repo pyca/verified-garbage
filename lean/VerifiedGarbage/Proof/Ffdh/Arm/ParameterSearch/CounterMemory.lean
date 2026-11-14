@@ -31,7 +31,7 @@ theorem decrement_ok (s : State) {base : BitVec 32} {n : Nat} (h : Controller ba
     (counter : s.mem.readW (State.addr base) 64 = BitVec.ofNat 64 n) :
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.decrement) s fun t =>
       t.mem = s.mem.writeW (State.addr base) (BitVec.ofNat 64 (n - 1)) ∧ Rest [.r9, .r10, .r12] s t := by
-  have fits : n < 2 ^ 64 := by omega
+  have fits : n < 2 ^ 64 := by omega_using [bound]
   have lo : lowWord s.mem base 0 = BitVec.ofNat 32 n :=
     packedLow s.mem base 0 n fits (by simpa [off] using counter)
   have hi : s.mem.readW (off (State.addr base) 4) 32 = BitVec.ofNat 32 (n / 2 ^ 32) :=
@@ -55,7 +55,7 @@ theorem decrement_ok (s : State) {base : BitVec 32} {n : Nat} (h : Controller ba
     ffrun [controllerAddr context 0 (by decide), controllerAddr context 4 (by decide),
       context.space.write (off := 0) (by decide), context.space.write (off := 4) (by decide),
       lowV, highV, memV, memU]
-    simpa [off] using writeCounter s.mem base (n - 1) (by omega)
+    simpa [off] using writeCounter s.mem base (n - 1) (by omega_using [bound])
   exact WP.mono raw (fun _ post => ⟨post.1, restUV.trans (post.2.mono (by simp))⟩)
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

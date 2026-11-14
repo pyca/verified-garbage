@@ -106,7 +106,7 @@ theorem scanBody_ok {s t : State} {P : Addr} {k j : Nat} (hj : j < k)
     cases f <;> cases hc : (b != 0) <;> simp_all
 
 theorem sub1_ofNat {k : Nat} (hk : 1 ≤ k) : BitVec.ofNat 64 k - 1#64 = BitVec.ofNat 64 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, BitVec.ofNat_add, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_using [hk], BitVec.ofNat_add, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 /-- `scanSetup` and the scan of the `k` octets at `P` (`r12`): `r22` and `r14`
 are `lead` of them and its octet. -/
@@ -118,7 +118,7 @@ theorem scan_ok {s : State} {P : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k < 2 ^ 3
         t.gpr .r14 = ((Spec.Rsa.bytesAt s.mem P k).getD (lead (Spec.Rsa.bytesAt s.mem P k)) 0).setWidth 64 ∧
         t.mem = s.mem) ∧ Keep scanRegs s t := by
   have hlen : (Spec.Rsa.bytesAt s.mem P k).length = k := by simp [Spec.Rsa.bytesAt]
-  have hne : Spec.Rsa.bytesAt s.mem P k ≠ [] := fun h => by rw [h] at hlen; simp at hlen; omega
+  have hne : Spec.Rsa.bytesAt s.mem P k ≠ [] := fun h => by rw [h] at hlen; simp at hlen; omega_using [hk1, hlen]
   refine (WP.mono (WP.keep scanRegs (Q := fun u => u.gpr .r12 = off P 0 ∧ u.gpr .r4 = BitVec.ofNat 64 0 ∧
       u.gpr .r22 = BitVec.ofNat 64 (k - 1) ∧ u.gpr .r14 = BitVec.ofNat 64 0 ∧ u.gpr .r15 = BitVec.ofNat 64 0 ∧
       u.mem = s.mem ∧ u.gpr .r6 = BitVec.ofNat 64 k) ?_ (by decide)) fun u ⟨⟨u12, u4, u9, u14, u15, um, u6⟩, ku⟩ => ?_)
@@ -129,7 +129,7 @@ theorem scan_ok {s : State} {P : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k < 2 ^ 3
     · rw [u9, hlen]
     · rw [u14]; rfl
     · rw [u15]; exact (show mask false = 0#64 by decide).symm
-  refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega) (by omega) (ScanInv s P k)
+  refine WP.mono (wp_countdown (cnt := .r6) (N := k) (by omega_using [hk]) (by omega_using [hk1]) (ScanInv s P k)
     (fun j hj t ht _ => scanBody_ok hj (by rw [ht.2.2.2.2.2.2.rd, ht.2.2.2.2.2.2.wr]; exact hrd j hj) ht) h0 u6)
     fun t ⟨_, _, t9, t14, _, tm, kt⟩ => ?_
   have e := scanAt_length hne

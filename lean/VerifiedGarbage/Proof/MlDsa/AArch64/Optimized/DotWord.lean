@@ -34,8 +34,8 @@ theorem dotNat_congr (a b a' b' : Nat → BitVec 32) (n : Nat)
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [dotNat,dotNat,ih (fun j hj => ha j (by omega)) (fun j hj => hb j (by omega)),
-      ha n (by omega),hb n (by omega)]
+    rw [dotNat,dotNat,ih (fun j hj => ha j (by omega_using [hj])) (fun j hj => hb j (by omega_using [hj])),
+      ha n (by omega_using []),hb n (by omega_using [])]
 
 theorem centeredDot_congr (a b a' b' : Nat → BitVec 32) (n : Nat)
     (ha : ∀j<n,a j=a' j) (hb : ∀j<n,b j=b' j) : centeredDot a b n=centeredDot a' b' n := by
@@ -48,10 +48,10 @@ theorem dotNat_le (a b : Nat → BitVec 32) (n : Nat)
   induction n with
   | zero => simp only [dotNat,Nat.zero_mul,Nat.le_refl]
   | succ n ih =>
-    have hi := ih (fun j hj => ha j (by omega)) (fun j hj => hb j (by omega))
-    have hp := product_lt_nine_q2 (ha n (by omega)) (hb n (by omega))
+    have hi := ih (fun j hj => ha j (by omega_using [hj])) (fun j hj => hb j (by omega_using [hj]))
+    have hp := product_lt_nine_q2 (ha n (by omega_using [])) (hb n (by omega_using []))
     simp only [dotNat,Nat.succ_mul]
-    exact Nat.add_le_add hi (by omega)
+    exact Nat.add_le_add hi (by omega_using [hp])
 
 theorem dotNat_lt_qR (a b : Nat → BitVec 32) {n : Nat} (hn : n≤7)
     (ha : ∀j<n,(a j).toNat<3*q) (hb : ∀j<n,(b j).toNat<3*q) :
@@ -82,7 +82,7 @@ theorem centeredDot_bound (a b : Nat → BitVec 32) {n : Nat} (hn : n≤7)
     -(q : Int)≤(centeredDot a b n).toInt ∧ (centeredDot a b n).toInt<(q : Int) := by
   rw [centeredDot_int a b hn ha hb]
   have h := mont_lt (dotNat_lt_qR a b hn ha hb)
-  omega
+  omega_using [h]
 
 theorem centeredDot_scaled (a b : Nat → BitVec 32) {n : Nat} (hn : n≤7)
     (ha : ∀j<n,(a j).toNat<3*q) (hb : ∀j<n,(b j).toNat<3*q) :

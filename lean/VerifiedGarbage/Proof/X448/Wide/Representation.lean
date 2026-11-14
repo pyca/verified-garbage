@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X448.Wide.Limbs
 public import VerifiedGarbage.Proof.X448.Field
 import Batteries.Tactic.Init
 import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Headroom-aware X448 field representation
@@ -47,7 +48,7 @@ theorem difference_val {f g : Nat → Nat} (hg : Within weakBound g) :
     have h := hg i hi
     have b := bias_ge i
     simp only [difference]
-    omega
+    omega_using [h, b]
   rw [eq, valN_add, bias_val]
 
 /-- The second serial carry pass has at most one carry-out. -/
@@ -63,7 +64,7 @@ theorem second_carry {f : Nat → Nat} (h : Within (2 ^ 118) f) :
   by_contra hc
   have hb := Nat.mul_le_mul_left (half + 1) (Nat.le_of_lt c0)
   have hp := Nat.mul_le_mul_left full (show 2 ≤ carry (folded f) 8 from by omega)
-  omega
+  omega_using [v0, e1, small, hb, hp]
 
 /-- Two carry passes and folds suffice for a weak field representative. -/
 theorem twice_weak {f : Nat → Nat} (h : Within (2 ^ 118) f) :
@@ -72,7 +73,7 @@ theorem twice_weak {f : Nat → Nat} (h : Within (2 ^ 118) f) :
   intro i _
   have hd := digit_lt (folded f) i
   simp only [folded, weakBound]
-  split <;> omega
+  split <;> omega_arith
 
 theorem twice_mod (f : Nat → Nat) :
     valN (folded (folded f)) 8 % P = valN f 8 % P := by

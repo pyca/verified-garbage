@@ -28,9 +28,9 @@ theorem copyArg_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) 
   simp only [List.cons_append, List.nil_append]
   refine wp_movS (h.argSrc A hj) fun u₁ v₁ _ => ?_
   have h₁ := h.upd v₁ (by decide)
-  refine wp_slot h₁.rf (by unfold Random.frameBytes; omega) v₁.gpr fun u₂ f₂ m₂ g₂ r₂ w₂ _ _ => ?_
+  refine wp_slot h₁.rf (by unfold Random.frameBytes; omega_using [hi]) v₁.gpr fun u₂ f₂ m₂ g₂ r₂ w₂ _ _ => ?_
   refine k u₂ (h₁.congr (rs := []) ⟨fun r _ => by rw [g₂], r₂, w₂⟩
-    (by rw [m₂]; exact frame_store s₀ _ (by unfold Random.frameBytes; omega) _)) (by rw [m₂, v₁.mem])
+    (by rw [m₂]; exact frame_store s₀ _ (by unfold Random.frameBytes; omega_using [hi]) _)) (by rw [m₂, v₁.mem])
     (v₁.keeps.trans ⟨fun r _ => by rw [g₂], r₂, w₂⟩)
 
 /-- The memory after `callArgs`, from `m`, with the stack pointer `sp`. -/
@@ -60,7 +60,7 @@ theorem argsMem_outs (s₀ : State) (m : Mem) (sp : BitVec 32) : Outs (rBase s�
   unfold argsMem
   have e := fun {m : Mem} {d : Nat} (v : BitVec 32) (h : d + 4 ≤ 44) =>
     store_in (rBase s₀) m (rs := [(0, 44)]) (o := 0) (n := 44) (d := d) v (List.mem_singleton_self _)
-      (Nat.zero_le _) h (by omega)
+      (Nat.zero_le _) h (by omega_using [h])
   exact ((((((((((e _ (by decide)).trans (e _ (by decide))).trans (e _ (by decide))).trans
     (e _ (by decide))).trans (e _ (by decide))).trans (e _ (by decide))).trans
     (e _ (by decide))).trans (e _ (by decide))).trans (e _ (by decide))).trans

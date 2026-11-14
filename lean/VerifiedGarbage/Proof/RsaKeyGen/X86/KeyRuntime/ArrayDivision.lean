@@ -163,18 +163,18 @@ theorem arrayDivision_ok {s : State} {B : Addr} {Z n a d q r : Nat} (h : Ws s B 
   have input : DivisionInputs Z n (arr n a) (arr n d) := by
     refine ⟨?_, ?_, Or.inr (arr_mono pa), Or.inr (arr_mono pd)⟩
     · unfold S at fa
-      omega
+      omega_using [fa]
     · unfold S at fd
-      omega
+      omega_using [fd]
   have output : DivisionOutputs Z n (arr n q) (arr n r) := by
     refine ⟨?_, ?_, Or.inr (arr_mono pq), Or.inr (arr_mono pr), ?_⟩
     · unfold S at fq
-      omega
+      omega_using [fq]
     · unfold S at fr
-      omega
+      omega_using [fr]
     · have disj := arr_disj (w := n) qr
       unfold S at disj
-      omega
+      omega_using [disj]
   refine WP.mono (divisionFrom_ok h (by decide) (by decide)
     (show DivisionInputs Z (Width.modulus.words n)
       ((VG.Impl.RsaKeyGen.X86.KeyRuntime.arr a).offset n)
@@ -192,7 +192,7 @@ theorem arrayDivision_preserves_num {m m' : Mem} {B : Addr} {n q r j : Nat}
     (persistent : 4 ≤ j) (jq : j ≠ q) (jr : j ≠ r) (fit : arr n j + S n ≤ 2 ^ 64)
     (O : Outs B (arrayDivisionRanges n q r) m m') : num m' B n j = num m B n j := by
   change val32 m' B (arr n j) n = val32 m B (arr n j) n
-  apply O.val32 _ (by unfold S at fit; omega)
+  apply O.val32 _ (by unfold S at fit; omega_using [fit])
   intro region mem
   simp only [arrayDivisionRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl | rfl | rfl | rfl
@@ -202,10 +202,10 @@ theorem arrayDivision_preserves_num {m m' : Mem} {B : Addr} {n q r j : Nat}
   · have D := arr_disj (w := n) jq
     simp only at D ⊢
     unfold S at D
-    omega
+    omega_using [D]
   · have D := arr_disj (w := n) jr
     simp only at D ⊢
     unfold S at D
-    omega
+    omega_using [D]
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: `HintBitPack` and `HintBitUnpack` step by step, for every target
@@ -63,7 +64,7 @@ theorem count_mono (hi : Vector Bool n) {j j' : Nat} (h : j ≤ j') : count hi j
   | zero => rw [Nat.le_zero.mp h]; exact Nat.le_refl _
   | succ j' ih =>
     rcases Nat.lt_or_eq_of_le h with h | rfl
-    · rw [count_succ]; have := ih (by omega); omega
+    · rw [count_succ]; have := ih (by omega_using [h]); omega_using [this]
     · exact Nat.le_refl _
 
 theorem count_n (hi : Vector Bool n) : count hi n = (hi.toList.filter id).length := by
@@ -85,7 +86,7 @@ theorem hpSteps_idx (hi : Vector Bool n) (s : Array Byte × Nat) (j : Nat) :
   | zero => rfl
   | succ j ih =>
     rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, count_succ, hpStep_idx, ih]
-    omega
+    omega_using []
 
 theorem sum_range_mono (f : Nat → Nat) {a b : Nat} (h : a ≤ b) :
     ((List.range a).map f).sum ≤ ((List.range b).map f).sum := by
@@ -93,7 +94,7 @@ theorem sum_range_mono (f : Nat → Nat) {a b : Nat} (h : a ≤ b) :
   | zero => rw [Nat.le_zero.mp h]; exact Nat.le_refl _
   | succ b ih =>
     rcases Nat.lt_or_eq_of_le h with h | rfl
-    · rw [List.range_succ, List.map_append, List.sum_append]; have := ih (by omega); omega
+    · rw [List.range_succ, List.map_append, List.sum_append]; have := ih (by omega_using [h]); omega_using [this]
     · exact Nat.le_refl _
 
 theorem sum_range_succ (f : Nat → Nat) (a : Nat) :
@@ -119,7 +120,7 @@ theorem hpPolys_idx (ω : Nat) (h : List (Vector Bool n)) (s : Array Byte × Nat
     rw [sum_range_succ]
     have : count (h.getD (i + 1) noHint) 0 = 0 := rfl
     have : count (h.getD i noHint) 0 = 0 := rfl
-    omega
+    omega_arith
 
 theorem hintOnes_eq {h : List (Vector Bool n)} {k : Nat} (hk : h.length = k) :
     hintOnes h = ((List.range k).map fun t => count (h.getD t noHint) n).sum := by
@@ -135,12 +136,12 @@ theorem hpIdx_lt {h : List (Vector Bool n)} {k i j : Nat} (hk : h.length = k) (h
     (h1 : (h.getD i noHint)[j]! = true) : onesBefore h i j < hintOnes h := by
   rw [hintOnes_eq hk]
   have hc : count (h.getD i noHint) j < count (h.getD i noHint) n := by
-    have := count_mono (h.getD i noHint) (show j + 1 ≤ n by omega)
-    rw [count_succ, h1] at this; simp only [ite_true] at this; omega
-  have hs := sum_range_mono (fun t => count (h.getD t noHint) n) (show i + 1 ≤ k by omega)
+    have := count_mono (h.getD i noHint) (show j + 1 ≤ n by omega_using [hj])
+    rw [count_succ, h1] at this; simp only [ite_true] at this; omega_using [this]
+  have hs := sum_range_mono (fun t => count (h.getD t noHint) n) (show i + 1 ≤ k by omega_using [hi])
   rw [sum_range_succ] at hs
   unfold onesBefore
-  omega
+  omega_using [hc, hs]
 
 /-- The index after polynomial `i` is at most the number of 1s. -/
 theorem onesBefore_n_le {h : List (Vector Bool n)} {k i : Nat} (hk : h.length = k) (hi : i < k) :
@@ -148,7 +149,7 @@ theorem onesBefore_n_le {h : List (Vector Bool n)} {k i : Nat} (hk : h.length = 
   rw [hintOnes_eq hk]
   unfold onesBefore
   rw [← sum_range_succ (fun t => count (h.getD t noHint) n)]
-  exact sum_range_mono _ (by omega)
+  exact sum_range_mono _ (by omega_using [hi])
 
 /-! ## `HintBitUnpack` -/
 
@@ -305,7 +306,7 @@ theorem optFold_range_none {S : Type} (g : S → Nat → Option S) {t m : Nat} (
   | zero => rw [Nat.le_zero.mp h] at hn; exact hn
   | succ m ih =>
     rcases Nat.lt_or_eq_of_le h with h | rfl
-    · rw [optFold_range_succ, ih (by omega)]; rfl
+    · rw [optFold_range_succ, ih (by omega_using [h])]; rfl
     · exact hn
 
 theorem optFold_range'_none {S : Type} (g : S → Nat → Option S) (a : Nat) {t m : Nat} (h : t ≤ m) {st : S}
@@ -314,7 +315,7 @@ theorem optFold_range'_none {S : Type} (g : S → Nat → Option S) (a : Nat) {t
   | zero => rw [Nat.le_zero.mp h] at hn; exact hn
   | succ m ih =>
     rcases Nat.lt_or_eq_of_le h with h | rfl
-    · rw [optFold_range'_succ, ih (by omega)]; rfl
+    · rw [optFold_range'_succ, ih (by omega_using [h])]; rfl
     · exact hn
 
 theorem huSet_size (i b : Nat) (h : Array (Vector Bool n)) : (huSet i b h).size = h.size := by

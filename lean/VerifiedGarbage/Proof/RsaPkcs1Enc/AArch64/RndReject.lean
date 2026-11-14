@@ -65,7 +65,7 @@ theorem carry_sub (a b : BitVec 64) :
   rw [BitVec.toNat_not]
   have := b.isLt
   simp only [Bool.toNat_true]
-  exact decide_eq_decide.mpr (by omega)
+  exact decide_eq_decide.mpr (by omega_using [])
 
 theorem outcome_ok {t : State} {rl : BitVec 64}
     (ha : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 1120) 8)
@@ -128,8 +128,8 @@ theorem arg_mem {P : Nat} {s : State} (hp : RPre P s) {m : Mem} (hf : Frame [⟨
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_base (Q s) (d := 1104 + 8 * j) (n := 8) (k := 1104) (by omega) (by omega)
-      · exact fun x h₁ h₂ => hp.dOa x h₂ (hc.byte (by simp only [Region.Contains] at h₁; omega))) (by decide)
+      · exact Offset.disjoint_base (Q s) (d := 1104 + 8 * j) (n := 8) (k := 1104) (by omega_using []) (by omega_using [hj])
+      · exact fun x h₁ h₂ => hp.dOa x h₂ (hc.byte (by simp only [Region.Contains] at h₁; omega_using [h₁]))) (by decide)
   rw [h]
   show s.mem.read _ 8 = s.mem.readW (stackArgAddr s j) 64
   rw [stackArgAddr_Q]; rfl
@@ -152,19 +152,19 @@ theorem frame_tape {s : State} (m : Mem) (a b : BitVec 64) :
 theorem psLen_add {P : Nat} {s : State} (hp : RPre P s) :
     (BitVec.ofNat 64 (psLen s) + BitVec.ofNat 64 128).toNat = psLen s + 128 := by
   have := hp.ps
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show psLen s < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 128 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show psLen s < 2 ^ 64 by omega_using [this]),
+    Nat.mod_eq_of_lt (show 128 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (by omega_using [this])]
 
 theorem request_val {n L c : Nat} (hn : n < 2 ^ 32) (hL : L < 2 ^ 32) (hc : c ≤ n) :
     BitVec.ofNat 64 n + BitVec.ofNat 64 L - (BitVec.ofNat 64 n - BitVec.ofNat 64 (n - c)) =
       BitVec.ofNat 64 (n + L - c) := by
-  rw [sub_used (by omega) hc]
+  rw [sub_used (by omega_using [hn]) hc]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show L < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show n + L < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show n + L - c < 2 ^ 64 by omega),
-    show 2 ^ 64 - c + (n + L) = (n + L - c) + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [hn]), Nat.mod_eq_of_lt (show L < 2 ^ 64 by omega_using [hL]),
+    Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_using [hn, hc]), Nat.mod_eq_of_lt (show n + L < 2 ^ 64 by omega_using [hn, hL]),
+    Nat.mod_eq_of_lt (show n + L - c < 2 ^ 64 by omega_using [hn, hL]),
+    show 2 ^ 64 - c + (n + L) = (n + L - c) + 2 ^ 64 by omega_using [hn, hc], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hn, hL])]
 
 theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t₀)
     (hI : At s t₀ (stackArg s 2).toNat u) (hc : (kept s (stackArg s 2).toNat).length < psLen s) :
@@ -185,7 +185,7 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
     ⟨outR s, by rw [S₁.wr, hfu.wr, entered_wr, hp.hwr]; simp, by
       rw [outR, kOf, hp.hsi]; exact fun _ h => h⟩
   refine WP.mono (zloop_ok (rz := .x13) (rp := .x9) (rc := .x10) (by decide) (by decide) (by decide)
-    (p := s.gpr .x0) (n := kOf s) (by unfold kOf; omega) (by unfold kOf; omega) hR₁ h₁₃
+    (p := s.gpr .x0) (n := kOf s) (by unfold kOf; omega_using [hk1]) (by unfold kOf; omega_using []) hR₁ h₁₃
     (by rw [h₉]; exact keepS _ (by decide))
     (by rw [h₁₀, keepS _ (by decide)]; exact ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm))
     fun u₁ Z₁ => ?_
@@ -201,7 +201,7 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
   have hsp₂ : w₂.sp = Q s := S₂.sp.trans (Z₁.sp.trans (S₁.sp.trans hfu.sp))
   have hwr₂ : w₂.wr = (entered s).wr := S₂.wr.trans (Z₁.wr.trans (S₁.wr.trans hfu.wr))
   have hR₂ : ∃ R ∈ w₂.wr, Region.Sub (psR s) R :=
-    ⟨⟨Q s, frameBytes⟩, by rw [hwr₂, entered_wr]; simp, Offset.sub_base _ (by unfold oBuf frameBytes; omega)⟩
+    ⟨⟨Q s, frameBytes⟩, by rw [hwr₂, entered_wr]; simp, Offset.sub_base _ (by unfold oBuf frameBytes; omega_using [])⟩
   refine WP.mono (zloop_ok (rz := .x13) (rp := .x9) (rc := .x10) (by decide) (by decide) (by decide)
     (p := off (Q s) oBuf) (n := 1024) (by decide) (by decide) hR₂
     (by rw [S₂.keep _ (by decide), Z₁.keep _ (by decide)]; exact h₁₃)
@@ -213,7 +213,7 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
   have hrd₃ : u₂.rd = s.rd := S₂'.rd.trans (S₂.rd.trans (Z₁.rd.trans (S₁.rd.trans hfu.rd)))
   have hv₃ : u₂.v = s.v := S₂'.v.trans (S₂.v.trans (Z₁.v.trans (S₁.v.trans hfu.v)))
   have psS : Region.Sub (psR s) ⟨Q s, 1104⟩ := Offset.sub_base (Q s) (d := oBuf) (n := 1024) (k := 1104)
-    (by unfold oBuf; omega)
+    (by unfold oBuf; omega_using [])
   have oS : Region.Sub ⟨s.gpr .x0, kOf s⟩ (outR s) := by rw [outR, kOf, hp.hsi]; exact fun _ h => h
   -- memory: changed in the frame and `out`
   have F₀ : Frame [⟨Q s, 1104⟩, outR s] s.mem u₂.mem := by
@@ -259,7 +259,7 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact fun y h₁ h₂ => hp.dKo y (psR_sub s y h₂) (oS y h₁)
-      · exact (hp.dOt.sub_left oS)) (by unfold kOf; omega), zloop_bytes Z₁]
+      · exact (hp.dOt.sub_left oS)) (by unfold kOf; omega_using []), zloop_bytes Z₁]
   have fin : Fin P s x := by
     have k : Keeps [Reg.x0, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17] s x :=
       ((show Keeps _ s u₂ from g₂).trans Sx.keep).mono (by decide)
@@ -278,7 +278,7 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.dKo.sub_left (frame_sub s (by decide))
-      · exact Offset.disjoint _ (.inr (by unfold oBuf; omega)) (by omega) (by unfold oBuf; omega)
+      · exact Offset.disjoint _ (.inr (by unfold oBuf; omega_using [])) (by omega_using []) (by unfold oBuf; omega_using [])
     have hdt : ∀ r ∈ [tapeR s], Region.Disjoint ⟨off (Q s) 1088, 8⟩ r := fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hp.dKt.sub_left (frame_sub s (by decide))
     rw [Fx.readW (Region.contains_self _ _) hdt (by decide), F₁.readW (Region.contains_self _ _) hd (by decide)]
@@ -295,27 +295,27 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
     · rw [mx, rd_tape0]; exact hL
     · rw [mx, rd_tape1]; rfl
     · rw [hx0]; rfl
-  · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length, hcap]; omega)
+  · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length, hcap]; omega_using [hge])
     rw [ho, hu]
     simp only [hge, ite_false] at mx hx0
     have hv : BitVec.ofNat 64 (psLen s) + stackArg s 2 - (BitVec.ofNat 64 (psLen s) - BitVec.ofNat 64 (psLen s - c)) =
         BitVec.ofNat 64 (psLen s + (stackArg s 2).toNat - c) := by
-      have := request_val (n := psLen s) (L := (stackArg s 2).toNat) (c := c) (by omega) (by omega) (by omega)
+      have := request_val (n := psLen s) (L := (stackArg s 2).toNat) (c := c) (by omega_using [hP]) (by omega_using [hP, hrl]) (by omega_using [hc])
       rw [← hL] at this
       exact this
     have h11 : BitVec.ofNat 64 (psLen s) + 128#64 = BitVec.ofNat 64 (psLen s + 128) := by
-      apply BitVec.eq_of_toNat_eq; rw [psLen_add hp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      apply BitVec.eq_of_toNat_eq; rw [psLen_add hp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hP])]
     have hv' : (BitVec.ofNat 64 (psLen s + (stackArg s 2).toNat - c)).toNat = psLen s + (stackArg s 2).toNat - c := by
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hP, hrl])]
     rw [hv, hv', h11] at mx
     refine ⟨⟨min (psLen s + (stackArg s 2).toNat - c) (psLen s + 128), ?_, ?_, ?_⟩, ?_, outZ⟩
     · rw [mx, rd_tape0]; rfl
     · rw [mx, rd_tape1]
       by_cases hm : psLen s + (stackArg s 2).toNat - c ≤ psLen s + 128
       · simp only [hm, ite_true, Nat.min_eq_left hm]
-      · simp only [hm, ite_false, Nat.min_eq_right (show psLen s + 128 ≤ psLen s + (stackArg s 2).toNat - c by omega)]
+      · simp only [hm, ite_false, Nat.min_eq_right (show psLen s + 128 ≤ psLen s + (stackArg s 2).toNat - c by omega_using [hm])]
     · rw [randB_length, hcap]
-      exact ⟨by simp only [Nat.lt_min]; omega, Nat.min_le_right _ _⟩
+      exact ⟨by simp only [Nat.lt_min]; omega_using [hc, hge], Nat.min_le_right _ _⟩
     · rw [hx0]; rfl
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Rnd

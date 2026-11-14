@@ -137,7 +137,7 @@ theorem shape_source {s t : State} {B p : Addr} {Z : Nat} {bytes : List Byte} {r
   apply InScr.of_frm hf
   intro r hr
   simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> omega
+  rcases hr with rfl | rfl <;> omega_using [hZ]
 
 theorem shape_outside {mem mem' : Mem} {B : Addr} {d : Nat}
     (hf : Outside B d 8 mem mem') (hd : d = 176 ∨ d = 352 ∨ d = 360) :
@@ -146,7 +146,7 @@ theorem shape_outside {mem mem' : Mem} {B : Addr} {d : Nat}
   apply hf x
   have hfirst := hx (176, 8) (by simp [shapeRanges])
   have hsecond := hx (352, 16) (by simp [shapeRanges])
-  rcases hd with rfl | rfl | rfl <;> omega
+  rcases hd with rfl | rfl | rfl <;> omega_arith
 
 /-- Either of the check's word stores lies in the same small mutation frame. -/
 theorem shape_store {mem : Mem} {B : Addr} {d : Nat} (v : BitVec 64)
@@ -155,7 +155,7 @@ theorem shape_store {mem : Mem} {B : Addr} {d : Nat} (v : BitVec 64)
   apply writeW_outside mem B v (by rcases hd with rfl | rfl | rfl <;> decide) x
   have hfirst := hx (176, 8) (by simp [shapeRanges])
   have hsecond := hx (352, 16) (by simp [shapeRanges])
-  rcases hd with rfl | rfl | rfl <;> omega
+  rcases hd with rfl | rfl | rfl <;> omega_arith
 
 theorem shapeP_context {s : State} {B : Addr} {Z width : Nat} {head : Byte}
     (hs : Scr s B Z) (hdi : s.gpr .x0 = B) (hZ : pWorkspace ≤ Z)

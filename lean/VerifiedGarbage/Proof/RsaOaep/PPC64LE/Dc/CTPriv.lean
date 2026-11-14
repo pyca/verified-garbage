@@ -32,7 +32,7 @@ open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE VG.Impl.RsaOaep.PPC64LE.Dec
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Two Pins two_post two_alloc)
 
 theorem psa_pub {a s : State} (p : PubD a s) {i : Nat} (hi : i < 12) : psa s i = psa a i := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [psa, Sd, p.g .r10 (by decide), p.args _ (by decide : (0 : Nat) < 17),
       p.args _ (by decide : (1 : Nat) < 17), p.args _ (by decide : (2 : Nat) < 17),
@@ -72,16 +72,16 @@ theorem priv_facts {pc : Bool} {a s₁ s₂ u₁ u₂ : State} (P₁ : PreD pc s
     · rw [A₁.r9, A₂.r9, p₁.args 11 (by decide), p₂.args 11 (by decide)]
     · rw [A₁.r10, A₂.r10, p₁.g _ (by decide), p₂.g _ (by decide)]
   · rw [m, m, callE_gpr _ _ (r := .r5), callE_gpr _ _ (r := .r6), callE_gpr _ _ (r := .r5),
-      callE_gpr _ _ (r := .r6), A₁.r5, A₁.r6, A₂.r5, A₂.r6, hb A₁ P₁.kn (by have := P₁.wn; omega),
-      hb A₂ P₂.kn (by have := P₂.wn; omega), p₁.n, p₂.n]
+      callE_gpr _ _ (r := .r6), A₁.r5, A₁.r6, A₂.r5, A₂.r6, hb A₁ P₁.kn (by have := P₁.wn; omega_using []),
+      hb A₂ P₂.kn (by have := P₂.wn; omega_using []), p₁.n, p₂.n]
   · rw [m, m, callE_gpr _ _ (r := .r7), callE_gpr _ _ (r := .r8), callE_gpr _ _ (r := .r7),
-      callE_gpr _ _ (r := .r8), A₁.r7, A₁.r8, A₂.r7, A₂.r8, hb A₁ P₁.ke (by have := P₁.we; omega),
-      hb A₂ P₂.ke (by have := P₂.we; omega), p₁.e, p₂.e]
+      callE_gpr _ _ (r := .r8), A₁.r7, A₁.r8, A₂.r7, A₂.r8, hb A₁ P₁.ke (by have := P₁.we; omega_using []),
+      hb A₂ P₂.ke (by have := P₂.we; omega_using []), p₁.e, p₂.e]
 
 /-- With `pc`, the call's two more stack arguments, `pre` and `pre_len`, are
 the anchor's. -/
 theorem psa_pubP {a s : State} (x : PubP a s) {i : Nat} (hi : 12 ≤ i) (hi' : i < 14) : psa s i = psa a i := by
-  rcases (by omega : i = 12 ∨ i = 13) with rfl | rfl
+  rcases (by omega_using [hi, hi'] : i = 12 ∨ i = 13) with rfl | rfl
   · exact x.1
   · exact x.2.1
 
@@ -91,14 +91,14 @@ theorem pre_leak {s u : State} (X : PreXD s) (A : AtPriv true s u) :
         ((callE true s u).gpr .r6).toNat =
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 17) (s.gpr .r7).toNat := by
   have pwl : Spec.Rsa.precomputedWords (s.gpr .r7).toNat ≤ (stackArg s 18).toNat := by
-    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
     callE_gpr (pc := true) s u (r := .r6), A.r6]
   congr 1
   have subPre : Region.Sub ⟨stackArg s 17, 8 * Spec.Rsa.precomputedWords (s.gpr .r7).toNat⟩ (preR s) :=
-    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.PPC64LE.Priv.words_of_frame A.mem (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega_using [pwl, this])
 
 theorem call_ct (pc : Bool) : RelCT isa (Two (APriv pc)) (privCall pc) fun _ _ => True := by
   cases pc with
@@ -127,7 +127,7 @@ theorem call_ct (pc : Bool) : RelCT isa (Two (APriv pc)) (privCall pc) fun _ _ =
       (call_covers P₁ A₁).1, (call_covers P₁ A₁).2, (call_covers P₂ A₂).1, (call_covers P₂ A₂).2⟩
     by_cases h12 : i < 12
     · exact ha i h12
-    · rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, psa_pubP q₁ (by omega) hi, psa_pubP q₂ (by omega) hi]
+    · rw [callE_stackArg A₁ hi, callE_stackArg A₂ hi, psa_pubP q₁ (by omega_using [h12]) hi, psa_pubP q₂ (by omega_using [h12]) hi]
 
 /-- After the entry, from an entry state with `a`'s public data. -/
 def AEnt (pc : Bool) (a t : State) : Prop := ∃ s, PreD pc s ∧ PubD a s ∧ Entered s t ∧ XP pc a s

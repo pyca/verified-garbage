@@ -34,11 +34,11 @@ theorem loadWitness_ok {p : WitnessParams} {s : State}
     (by omega_using [hlen, hb.2.2.1]) (by omega_using [hlen, hb.2.2.2.1])
     (by omega_using [hw]) (by omega_using [hw]) hv
     (fun i hi => by
-      obtain ⟨r, hr, hc⟩ := ho.wr i (by omega)
+      obtain ⟨r, hr, hc⟩ := ho.wr i (by omega_using [hlen, hi])
       exact ⟨r, List.mem_append_right _ hr, hc⟩)
-    (fun i hi => bytesAt_read _ _ (by omega : i < p.len))
+    (fun i hi => bytesAt_read _ _ (by omega_using [hlen, hi] : i < p.len))
     (fun i hi => Or.inr (by
-      have hs := ho.sep i (by omega)
+      have hs := ho.sep i (by omega_using [hlen, hi])
       change p.IZ ≤ ofs p.I (off p.op i) at hs
       have hf := slot_le (w := p.w) (show aXm < 8 by decide)
       omega_using [hs, hf, hw, p.dims.z]))) fun t ⟨hv', hg, hf, k⟩ => ?_

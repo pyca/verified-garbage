@@ -62,7 +62,7 @@ theorem ofNat_bne_zero {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a != 0#64)
       intro e
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_ofNat] at this
-      omega
+      omega_using [ha, h, this]
     simp [this, h]
 
 theorem ofNat_beq_zero {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a == 0#64) = decide (a = 0) := by
@@ -84,7 +84,7 @@ theorem countLoop (body : Prog isa) (r : Reg) (I : Nat → State → Prop) (stop
     exact ⟨by simp, he ▸ h'⟩
   · right
     rw [eval_nonzero, hc]
-    exact ⟨by simp [he], stop - (j + 1), by omega, j + 1, by omega, rfl, h'⟩
+    exact ⟨by simp [he], stop - (j + 1), by omega_using [hj, hn], j + 1, by omega_using [hj, he], rfl, h'⟩
 
 theorem succ_ofNat (i : Nat) : BitVec.ofNat 64 i + 1 = BitVec.ofNat 64 (i + 1) := by
   rw [BitVec.ofNat_add]; rfl

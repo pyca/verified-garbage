@@ -54,17 +54,17 @@ theorem squareLoop_ct (M : Mont) :
    obtain ⟨E,power,counter⟩ := h
    have initial : SquareInv s q.p E (q.n-j) 0 s :=
     ⟨by simpa using power,by simpa using counter,Frm.refl _ _ _,VG.Proof.MlKem.AArch64.Keep.refl _ _⟩
-   refine WP.mono (precomputeSquareStep M (by have := q.fit;omega) (by omega : 0<q.n-j) initial) ?_
+   refine WP.mono (precomputeSquareStep M (by have := q.fit;omega_using [this]) (by omega_using [hj] : 0<q.n-j) initial) ?_
    rintro t ⟨state,branch⟩
    refine ⟨?_,fun _ =>⟨_,state.power,?_⟩,fun _ =>trivial⟩
    · rw [eval_nonzero,ne_zero_iff]
-     have eq : (0+1≠q.n-j) ↔ j+1<q.n := by omega
+     have eq : (0+1≠q.n-j) ↔ j+1<q.n := by omega_using [hj]
      by_cases nonzero : (t.gpr .x3).toNat≠0
      · rw [decide_eq_true nonzero,decide_eq_true ((branch.trans eq).mp nonzero)]
      · have last : ¬j+1<q.n := fun h =>nonzero ((branch.trans eq).mpr h)
        rw [decide_eq_false nonzero,decide_eq_false last]
    · change Counter q.p.B (q.n-(j+1)) t
-     have eq : q.n-j-(0+1)=q.n-(j+1) := by omega
+     have eq : q.n-j-(0+1)=q.n-(j+1) := by omega_using []
      simpa only [eq] using state.counter)
  exact loop.mono (fun _ _ ⟨q,hs,ht,sp⟩ =>⟨q,⟨q.positive,hs⟩,⟨q.positive,ht⟩,sp⟩) (fun _ _ _ =>trivial)
 

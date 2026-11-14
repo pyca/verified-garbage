@@ -65,7 +65,7 @@ theorem ppWords_bounds {k n w : Nat} (short : k < n) (hn : 64 ≤ n)
     2 ≤ ppWords k ∧ ppWords k ≤ w ∧ k ≤ 8 * ppWords k := by
   subst hw
   simp only [ppWords, Spec.Rsa.modulusWords] at *
-  omega
+  omega_using [short, hn]
 
 /-- The factor's limbs fit the narrow workspace, which the full width sizes. -/
 theorem CrtShared.pp_fits {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtShared g bs s)
@@ -79,12 +79,12 @@ theorem CrtShared.pp_fits {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byt
     · exact ⟨h.buffers.pPositive, h.buffers.pShort⟩
     · exact ⟨h.buffers.qPositive, h.buffers.qShort⟩
   obtain ⟨two, le, fit⟩ := ppWords_bounds (w := g.words) bounds.2 h.buffers.lengthValid.1 rfl
-  refine ⟨two, le, fit, bounds.1, by have := h.buffers.lengthValid.2; omega, ?_⟩
+  refine ⟨two, le, fit, bounds.1, by have := h.buffers.lengthValid.2; omega_using [bounds, this], ?_⟩
   have arrays := h.buffers.context.arraysFit
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arrays ⊢
   change _ ≤ g.words at le
   have := Nat.mul_le_mul_left 8 (Nat.add_le_add_right le 2)
-  omega
+  omega_using [arrays, le]
 
 /-- The width: `⌈k/8⌉`, and one more when that is one. -/
 theorem primeWidth_value {k : Nat} (positive : 0 < k) (small : k < 2 ^ 28) :
@@ -195,10 +195,10 @@ theorem pp_enterFactor_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j :
   have widthWP (s : State) {bs : Fin 7 → List Byte} (h : Addressed bs s) :
       WP isa (.block (primeWidth (56 + 8 * j.val + 4))) s (Sized bs) := by
     obtain ⟨_, _, _, pos, small, _⟩ := h.1.pp_fits j prime
-    refine WP.mono (primeWidth_ok s (slot := 56 + 8 * j.val + 4) (by omega)
-      (by have := h.1.stack.nowrap; omega) (h.1.stack.read (by omega))
-      (by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using h.1.stack.length j)
-      pos (by omega)) ?_
+    refine WP.mono (primeWidth_ok s (slot := 56 + 8 * j.val + 4) (by omega_using [])
+      (by have := h.1.stack.nowrap; omega_using [this]) (h.1.stack.read (by omega_using []))
+      (by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []] using h.1.stack.length j)
+      pos (by omega_using [small])) ?_
     rintro t ⟨width, zero, mem, rest⟩
     exact ⟨h.1.of_mem mem rest, (rest.gpr .r0 (by simp)).trans h.2, width, zero⟩
   have widthCT : RelCT isa (fun s t => Addressed bs1 s ∧ Addressed bs2 t ∧ s.sp = t.sp)
@@ -211,7 +211,7 @@ theorem pp_enterFactor_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j :
     obtain ⟨two, le, _, _, _, arrays⟩ := h.1.pp_fits j prime
     have words := (crt_width_valid h.1.buffers.lengthValid).2.1
     change _ ≤ Spec.Rsa.modulusWords g.length at le
-    exact (setup_frame_ok s h.1.buffers.context.narrow two (by omega) arrays h.2.1 h.2.2.1 h.2.2.2).mono
+    exact (setup_frame_ok s h.1.buffers.context.narrow two (by omega_using [words, le]) arrays h.2.1 h.2.2.1 h.2.2.2).mono
       fun _ _ => trivial
   have activate : RelCT isa (fun s t => True ∧ True ∧ s.sp = t.sp) (.block activateWorkspace) (fun _ _ => True) :=
     activateWorkspace_ct.mono (fun _ _ h => h.2.2) (fun _ _ _ => trivial)

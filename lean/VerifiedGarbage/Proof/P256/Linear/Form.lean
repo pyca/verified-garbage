@@ -38,7 +38,7 @@ theorem tripleA_ok {s : State} {base : Addr} {size a : Nat}
   refine ⟨?_,((k1.mono (by unfold aRegs; sub_regs)).trans
     (k2.mono (by unfold aRegs; sub_regs))).trans (k3.mono (by unfold aRegs; sub_regs))⟩
   rw [e3]
-  omega
+  omega_using [hA]
 
 def times12A (a : Nat) : List Instr := tripleA a++shift2
 
@@ -52,11 +52,11 @@ theorem times12A_ok {s : State} {base : Addr} {size a : Nat}
   have hA := wordsVal_lt s.mem base a 4
   have ht : (s1.gpr .x16).toNat<2^62 := by
     simp only [regsVal,Nat.mul_zero,Nat.add_zero] at e1
-    omega
+    omega_using [e1, hA]
   refine WP.mono (shift2_ok s1 ht) fun t ⟨e2,k2⟩ => ?_
   refine ⟨?_,k1.trans (k2.mono (by unfold aRegs; sub_regs))⟩
   rw [e2,e1]
-  omega
+  omega_using []
 
 def form38 (a b : Nat) : List Instr :=
   complement b++shift3++tripleA a++addAcc .x9 .x10 .x11 .x12 .x16
@@ -88,7 +88,7 @@ theorem form38_ok {s : State} {base : Addr} {size a b : Nat}
     (k3.mono (by unfold formRegs aRegs; sub_regs))).trans (k4.mono (by unfold formRegs; sub_regs))⟩
   · rw [e4]
     simp only [p_value] at hB ⊢
-    omega
+    omega_using [hA]
   · rw [k4.gpr _ (by decide),k3.gpr _ (by decide),k2.gpr _ (by decide),z1]
 
 def nineB (b : Nat) : List Instr :=
@@ -117,7 +117,7 @@ theorem nineB_ok {s : State} {base : Addr} {size b : Nat}
     (k2.mono (by unfold formRegs; sub_regs))).trans (k3.mono (by unfold formRegs; sub_regs))⟩
   rw [e3]
   simp only [p_value] at hB ⊢
-  omega
+  omega_using []
 
 def form129 (a b : Nat) : List Instr := nineB b++times12A a++addAcc .x1 .x2 .x8 .x13 .x16
 
@@ -143,7 +143,7 @@ theorem form129_ok {s : State} {base : Addr} {size a b : Nat}
     (k1.trans (k2.mono (by unfold formRegs aRegs; sub_regs))).trans (k3.mono (by unfold formRegs; sub_regs))⟩
   rw [e3]
   simp only [p_value] at hB ⊢
-  omega
+  omega_using [hA]
 
 
 end VG.Proof.P256.Linear

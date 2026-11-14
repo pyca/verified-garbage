@@ -42,7 +42,7 @@ theorem zero_ok {s : State} {p : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64)
   have hK' : RsaPkcs1Sig.PPC64LE.Keep [.r7, .r8] t s₃ := (m₁.keep.trans (o₂.keep.trans o₃.keep)).mono
   refine ⟨⟨(hK.trans hK').mono, ?_, ?_⟩, ?_⟩
   · rw [o₃.mem, o₂.mem, m₁.mem, hK.get .r0, h0, h7', BitVec.add_zero, hm, List.replicate_succ',
-      writeBytes_snoc _ _ _ _ (by simp; omega)]
+      writeBytes_snoc _ _ _ _ (by simp; omega_using [hn', hi])]
     simp
   · rw [o₃.get .r7, e₂, m₁.gpr, h7', ofNat_succ']
   · rw [e₃, o₂.get .r8, m₁.gpr]
@@ -53,7 +53,7 @@ theorem gpr_ofNat (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := by simp
 theorem out_in {s : State} (h : SPre pc s) {i : Nat} (hi : i < (s.gpr .r6).toNat) :
     InRegions (fr s :: s.wr) (s.gpr .r3 + BitVec.ofNat 64 i) 1 := by
   rw [h.hwr]
-  exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h4]; omega) (by have := h.wo; omega)⟩
+  exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h4]; omega_using [hi]) (by have := h.wo; omega_using [hi])⟩
 
 theorem Fr.fr2 {s t : State} (F : Fr s t) : Fr2 s t :=
   ⟨F.sp, F.rd, F.wr, F.hi, F.mem.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩,
@@ -71,7 +71,7 @@ theorem zeroOut_ok {s u : State} (h : SPre pc s) (A : AtAft s u) (h3 : u.gpr .r3
     fun w ⟨⟨w7, w8, w0, wm⟩, kw⟩ => ?_)
   · prun [A.r26, A.r28, BitVec.or_self, Impl.AesGcm.PPC64LE.mov]
     exact ⟨gpr_ofNat _, rfl⟩
-  refine WP.mono (zero_ok (by omega) (by omega) w7 w8 (by rw [w0]; rfl) fun i hi => by
+  refine WP.mono (zero_ok (by omega_using [hk1]) (by omega_using []) w7 w8 (by rw [w0]; rfl) fun i hi => by
     rw [kw.wr, A.wr]; exact out_in h hi) fun v ⟨kv, vm⟩ => ?_
   have hO : (oR s).Contains (s.gpr .r3) (List.replicate (s.gpr .r6).toNat (0 : Byte)).length := by
     rw [List.length_replicate, ← h.h4]; exact Region.contains_self _ _
@@ -81,14 +81,14 @@ theorem zeroOut_ok {s u : State} (h : SPre pc s) (A : AtAft s u) (h3 : u.gpr .r3
     (A.fr2.mem).trans (fo.sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩),
     A.sv.frame fo fun p hp r hr => by
-      rw [List.mem_singleton.mp hr]; exact h.ko.sub_left (frame_sub s (by have := saved_offs p hp; unfold oSave frameBytes at *; omega)),
+      rw [List.mem_singleton.mp hr]; exact h.ko.sub_left (frame_sub s (by have := saved_offs p hp; unfold oSave frameBytes at *; omega_using [this])),
     ?_⟩, ?_, ?_⟩
   · rw [fo.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact h.ko.sub_left (frame_sub s (by decide))) (by decide)]; exact A.ls
   · rw [kv.gpr _ (by decide), kw.gpr _ (by decide)]; exact h3
   · rw [vm, wm]
     have := Proof.RsaPkcs1Sig.bytesAt_writeBytes u.mem (s.gpr .r3) (List.replicate (s.gpr .r6).toNat (0 : Byte))
-      (by simp; omega)
+      (by simp; omega_using [])
     rwa [List.length_replicate] at this
 
 theorem wo_congr {m m' : Mem} {out : Addr} {k : Nat} {r : BitVec 32} {o : Spec.Rsa.Outcome}
@@ -109,7 +109,7 @@ theorem wipe_ok {s u : State} {em : List Byte} (h : SPre pc s) (R : AtRet s u em
   · prun [exec_addSp0, R.sp, R.r28, BitVec.or_self, Impl.AesGcm.PPC64LE.mov,
       exec_addi (show Reg.r12 ≠ .r0 by decide) c1]
     exact ⟨gpr_ofNat _, rfl⟩
-  refine WP.mono (zero_ok (by omega) (by omega) w7 w8 (by rw [w0]; rfl) fun i hi => by
+  refine WP.mono (zero_ok (by omega_using [hk1]) (by omega_using []) w7 w8 (by rw [w0]; rfl) fun i hi => by
     rw [kw.wr, R.wr]; exact em_in h _ hi) fun v ⟨kv, vm⟩ => ?_
   have hE : (emR s).Contains (fb s + BitVec.ofNat 64 oEM) (List.replicate (s.gpr .r6).toNat (0 : Byte)).length := by
     rw [List.length_replicate]; exact Region.contains_self _ _
@@ -118,12 +118,12 @@ theorem wipe_ok {s u : State} {em : List Byte} (h : SPre pc s) (R : AtRet s u em
     fun r hr => (kv.gpr r (by revert r; decide)).trans ((kw.gpr r (by revert r; decide)).trans (R.hi r hr)),
     R.mem.trans (fe.sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., em_sub h⟩),
-    R.sv.frame fe fun p hp r hr => below_em h (by have := saved_offs p hp; unfold oSave oEM at *; omega) hr, ?_⟩, ?_⟩
+    R.sv.frame fe fun p hp r hr => below_em h (by have := saved_offs p hp; unfold oSave oEM at *; omega_using [this]) hr, ?_⟩, ?_⟩
   · rw [fe.readW (Region.contains_self _ _) (fun r hr => below_em h (by decide) hr) (by decide)]; exact R.ls
   · have hb : Spec.Rsa.bytesAt v.mem (s.gpr .r3) (s.gpr .r6).toNat = Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r6).toNat :=
       bytes_of_frame (s := u) fe (fun r hr => by
         rw [List.mem_singleton.mp hr, show (⟨s.gpr .r3, (s.gpr .r6).toNat⟩ : Region) = oR s by simp only [oR, h.h4]]
-        exact (h.ko.sub_left (em_sub h)).symm) (by omega)
+        exact (h.ko.sub_left (em_sub h)).symm) (by omega_using [])
     show Spec.Rsa.writtenOutcome _ _ _ ((v.gpr .r3).setWidth 32) _
     rw [kv.gpr _ (by decide), kw.gpr _ (by decide)]
     exact wo_congr hb R.out
@@ -146,7 +146,7 @@ theorem restore_ok {s w : State} (F : Fr2 s w) :
       saved_ho (by decide) (fun p hp => by
         have := saved_offs p hp
         show InRegions (w.rd ++ w.wr) _ 8
-        rw [F.wr]; exact in_fr' s _ _ (by unfold oSave at this; omega) (by unfold oSave at this; unfold frameBytes; omega))
+        rw [F.wr]; exact in_fr' s _ _ (by unfold oSave at this; omega_using [this]) (by unfold oSave at this; unfold frameBytes; omega_using [this]))
       F.sv) fun v R => ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩
     · rcases preserved_split hr with hs | hs
       · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hs

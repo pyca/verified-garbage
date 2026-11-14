@@ -33,7 +33,7 @@ theorem rv_h0 {w : Nat} {x : Ref} (hx : x.half = 0) (n n' : Nat) : rv w x n = rv
 
 theorem offset_eq (w j : Nat) : VG.Impl.Rsa.X86.InvBatchRt.offset w j = arr w j := by
   simp only [VG.Impl.Rsa.X86.InvBatchRt.offset, arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr]
-  rw [show 4 * (w + 2) = 4 * w + 8 by omega]
+  rw [show 4 * (w + 2) = 4 * w + 8 by omega_using []]
 
 /-- The header words `init` fills: each cached array's address, and `4 n`. -/
 structure Slots (m : Mem) (B : Addr) (w : Nat) (n : Nat := w / 2) : Prop where
@@ -51,7 +51,7 @@ theorem slot_le {j d : Nat} (h : slot j = some d) : slotBase ≤ d ∧ d + 4 ≤
   obtain ⟨i, hi, rfl⟩ := h
   have := List.idxOf?_eq_some_iff.mp hi
   have hl : i < 11 := by simpa [cached] using this.1
-  simp only [slotBase, halfSlot]; omega
+  simp only [slotBase, halfSlot]; omega_using [hl]
 
 variable {L : Lay} {B : Addr} {Z len N w n : Nat} {is : List Instr} {s : State} {Q : State → Prop}
 
@@ -74,7 +74,7 @@ theorem addsReg_ok {r t : Reg} (hrt : r ≠ t) (j : Nat) :
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [Nat.succ_mul]
     generalize j * (s.gpr t).toNat = J
-    omega
+    omega_using []
 
 /-- `ptr r x t`: `r` at `x` (`r` may be `edi` only for a `Ref` with no `n`-word steps). -/
 theorem ptr_ok {r t : Reg} {x : Ref} (h : RtWs L s B Z len N) (hsl : Slots s.mem B (kw len) n)
@@ -100,7 +100,7 @@ theorem ptr_ok {r t : Reg} {x : Ref} (h : RtWs L s B Z len N) (hsl : Slots s.mem
     · next d hd =>
       have := slot_le hd
       rw [List.cons_append, List.nil_append]
-      refine wp_movS (readSrc_sc hs (d := d) (by omega)) fun v V _ => k' v (V.keeps.mono (by simp)) V.mem ?_
+      refine wp_movS (readSrc_sc hs (d := d) (by omega_using [hz, this])) fun v V _ => k' v (V.keeps.mono (by simp)) V.mem ?_
       rw [PtrAt, V.gpr, ← offset_eq]; exact hsl.addr _ _ hd
     · exact arrPtr_ok (lenSrc h) h.lenLe h.edi hrt hte ha fun v V m p _ => k' v V m p
   refine base fun v V mv pv => ?_
@@ -126,7 +126,7 @@ theorem ptr_ok {r t : Reg} {x : Ref} (h : RtWs L s B Z len N) (hsl : Slots s.mem
         k' u (V.trans ((V₁.keeps.mono (by simp)).trans (U.mono (by simp)))) (by rw [mu, V₁.mem, mv]) ?_
       rw [PtrAt, eu, BitVec.toNat_add, pv₁, BitVec.toNat_ofNat, tv]
       generalize x.half * (4 * n) = H
-      omega
+      omega_using []
   refine half fun u U mu pu => ?_
   split
   · next hb0 =>
@@ -140,7 +140,7 @@ theorem ptr_ok {r t : Reg} {x : Ref} (h : RtWs L s B Z len N) (hsl : Slots s.mem
     refine wp_addS rfl fun z Z' _ => k z (U.trans (Z'.keeps.mono (by simp))) (by rw [Z'.mem, mu]) ?_
     rw [PtrAt, Z'.gpr, BitVec.toNat_add, pu, rv, offset_eq, BitVec.toNat_ofNat]
     generalize x.half * (4 * n) = H at *
-    omega
+    omega_using []
 
 /-- `nBytes r e`: `r = 4 n + 4 e`, the bytes of `n + e` words. -/
 theorem nBytes_ok {r : Reg} {e : Nat} (hs : Scr s B Z) (hsl : Slots s.mem B w n) (hz : halfSlot + 4 ≤ Z)
@@ -151,8 +151,8 @@ theorem nBytes_ok {r : Reg} {e : Nat} (hs : Scr s B Z) (hsl : Slots s.mem B w n)
   refine wp_movS (readSrc_sc hs hz) fun u U _ => wp_addS rfl fun z Z' _ => ?_
   refine k z (U.keeps.trans Z'.keeps) (by rw [Z'.mem, U.mem]) ?_
   rw [Z'.gpr, BitVec.toNat_add, U.gpr, show (s.mem.readW (off B halfSlot) 32).toNat = 4 * n from hsl.half,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * e) (by omega)]
-  omega
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * e) (by omega_using [he])]
+  omega_using [hw, he]
 
 /-- `nBytesLess r`: `r = 4 n - 4`, the bytes of `n - 1` words. -/
 theorem nBytesLess_ok {r : Reg} (hs : Scr s B Z) (hsl : Slots s.mem B w n) (hz : halfSlot + 4 ≤ Z)
@@ -164,7 +164,7 @@ theorem nBytesLess_ok {r : Reg} (hs : Scr s B Z) (hsl : Slots s.mem B w n) (hz :
   refine k z (U.keeps.trans Z'.keeps) (by rw [Z'.mem, U.mem]) ?_
   rw [Z'.gpr, BitVec.toNat_sub, U.gpr, show (s.mem.readW (off B halfSlot) 32).toNat = 4 * n from hsl.half]
   simp only [show (4 : BitVec 32).toNat = 4 from rfl]
-  omega
+  omega_using [hw, h2]
 
 /-- `wBytes r`: `r = 8 n`, the bytes of `2 n` words. -/
 theorem wBytes_ok {r : Reg} (hs : Scr s B Z) (hsl : Slots s.mem B w n) (hz : halfSlot + 4 ≤ Z)
@@ -175,6 +175,6 @@ theorem wBytes_ok {r : Reg} (hs : Scr s B Z) (hsl : Slots s.mem B w n) (hz : hal
   refine wp_movS (readSrc_sc hs hz) fun u U _ => wp_addS rfl fun z Z' _ => ?_
   refine k z (U.keeps.trans Z'.keeps) (by rw [Z'.mem, U.mem]) ?_
   rw [Z'.gpr, BitVec.toNat_add, U.gpr, show (s.mem.readW (off B halfSlot) 32).toNat = 4 * n from hsl.half]
-  omega
+  omega_using [hw]
 
 end VG.Proof.Rsa.X86.InvBatchRt

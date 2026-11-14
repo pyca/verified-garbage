@@ -63,7 +63,7 @@ theorem mkP_eq {s t : State} (hs : CIn s) (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t
   by_cases hk : (t.gpr .r1).toNat ≤ (stackArg t 4).toNat
   · rw [VG.Proof.RsaKeyGen.ite_t hk, VG.Proof.RsaKeyGen.ite_t hk]
     rw [VG.Proof.RsaKeyGen.candidateLeak_eq, VG.Proof.RsaKeyGen.candidateLeak_eq] at hl
-    rw [VG.Proof.RsaKeyGen.schedOf_eq (by rw [← p1] at *; omega)
+    rw [VG.Proof.RsaKeyGen.schedOf_eq (by rw [← p1] at *; omega_using [hL])
       (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length, VG.Proof.Rsa.Arm.CrtValues.bytesAt_length])
       (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hk) hl]
   · rw [VG.Proof.RsaKeyGen.ite_f hk, VG.Proof.RsaKeyGen.ite_f hk]

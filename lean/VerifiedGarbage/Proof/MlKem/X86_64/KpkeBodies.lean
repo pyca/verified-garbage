@@ -152,7 +152,7 @@ theorem bodyCorrect {s₀ : State} (hp : mulK.pre s₀) :
     refine WP.mono (wp_rcxLoop (N := 16) (by decide) (by decide) (Inv s₀) (fun s g _ => ?_)
       fun i hi s hI => step hp hi hI) fun s5 hI => ⟨?_, hI.frame⟩
     · have k := k14.trans g.keep
-      refine ⟨?_, ?_, ?_, ?_, by rw [k.2.1], by rw [k.2.2], ?_, ?_, ?_, ?_, fun _ h => absurd h (by omega)⟩
+      refine ⟨?_, ?_, ?_, ?_, by rw [k.2.1], by rw [k.2.2], ?_, ?_, ?_, ?_, fun _ h => absurd h (by omega_using [])⟩
       · rw [k.gpr (by decide)]; exact (add_ofNat_zero _).symm
       · rw [k.gpr (by decide)]; exact (add_ofNat_zero _).symm
       · rw [k.gpr (by decide)]; exact (add_ofNat_zero _).symm
@@ -164,7 +164,7 @@ theorem bodyCorrect {s₀ : State} (hp : mulK.pre s₀) :
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
         exact .inr (pR_sub_tab _)
       · intro k hk; rw [g.mem, hm4]; exact ht k hk
-    · exact polyIs_of_toNat fun k hk => hI.done k (by rw [n_eq] at hk; omega)
+    · exact polyIs_of_toNat fun k hk => hI.done k (by rw [n_eq] at hk; omega_using [hk])
   obtain ⟨t, s', he, ⟨hP', hf⟩, hk⟩ :=
     WP.keep [.rax, .rcx, .rdx, .rdi, .rsi, .r8, .r9, .r10] hW (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he (gprPreserved_of hk (by decide) hf

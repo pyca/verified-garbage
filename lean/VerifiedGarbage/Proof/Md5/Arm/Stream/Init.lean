@@ -55,19 +55,19 @@ theorem init_correct {s₀ : State} (hp : Proof.Md5.initArm.pre s₀) :
     WP isa init s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Md5.initArm.post s₀ s' := by
   obtain ⟨-, hwr, hfit⟩ := hp
   have o : ∀ k, k < 4 → InRegions s₀.wr (State.addr (s₀.gpr .r0) + BitVec.ofNat 64 (4 * k)) 4 :=
-    fun k hk => ⟨⟨State.addr (s₀.gpr .r0), 80⟩, by simp [hwr], contains_offset (by omega) (by omega)⟩
+    fun k hk => ⟨⟨State.addr (s₀.gpr .r0), 80⟩, by simp [hwr], contains_offset (by omega_using [hk]) (by omega_using [hk])⟩
   rw [init_eq, ← List.append_nil (_ ++ word H0[3] 12)]
   simp only [List.append_assoc]
-  refine word_ok (by decide) (by omega) (o 0 (by omega)) fun s1 g1 _ wr1 sp1 m1 => ?_
+  refine word_ok (by decide) (by omega_using []) (o 0 (by omega_using [])) fun s1 g1 _ wr1 sp1 m1 => ?_
   have k1 : s1.gpr .r0 = s₀.gpr .r0 := g1 _ (by decide)
-  refine word_ok (by decide) (by rw [k1]; omega) (by rw [wr1, k1]; exact o 1 (by omega))
+  refine word_ok (by decide) (by rw [k1]; omega_using [hfit]) (by rw [wr1, k1]; exact o 1 (by omega_using []))
     fun s2 g2 _ wr2 sp2 m2 => ?_
   have k2 : s2.gpr .r0 = s₀.gpr .r0 := by rw [g2 _ (by decide), k1]
-  refine word_ok (by decide) (by rw [k2]; omega) (by rw [wr2, wr1, k2]; exact o 2 (by omega))
+  refine word_ok (by decide) (by rw [k2]; omega_using [hfit]) (by rw [wr2, wr1, k2]; exact o 2 (by omega_using []))
     fun s3 g3 _ wr3 sp3 m3 => ?_
   have k3 : s3.gpr .r0 = s₀.gpr .r0 := by rw [g3 _ (by decide), k2]
   have w3 : s3.wr = s₀.wr := by rw [wr3, wr2, wr1]
-  refine word_ok (by decide) (by rw [k3]; omega) (by rw [w3, k3]; exact o 3 (by omega))
+  refine word_ok (by decide) (by rw [k3]; omega_using [hfit]) (by rw [w3, k3]; exact o 3 (by omega_using []))
     fun s4 g4 _ _ sp4 m4 => WP.block_nil ?_
   have k4 : ∀ r, r ≠ .r12 → s4.gpr r = s₀.gpr r := fun r h => by
     rw [g4 r h, g3 r h, g2 r h, g1 r h]

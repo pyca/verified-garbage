@@ -127,13 +127,13 @@ theorem sat_pre (o : List Instr) {D : Nat} (hD : D ≤ 64) : OneShot.Pre (Po o) 
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
     OneShot.out, OneShot.sb, sat, e, VG.X86_64.below]
-  · exact d (by decide) (by simp; omega)
+  · exact d (by decide) (by simp; omega_using [hD])
   · exact d (by decide) (by decide)
-  · exact d (by simp; omega) (by decide)
-  · exact (d (by simp; omega) (by decide)).symm
+  · exact d (by simp; omega_using [hD]) (by decide)
+  · exact (d (by simp; omega_using [hD]) (by decide)).symm
   · exact (d (by decide) (by decide)).symm
   · exact (d (by decide) (by decide)).symm
-  · exact (d (by simp; omega) (by decide)).symm
+  · exact (d (by simp; omega_using [hD]) (by decide)).symm
   · exact (d (by decide) (by decide)).symm
 
 /-! ## The contracts -/
@@ -175,7 +175,7 @@ theorem implies (o : List Instr) {iv : Spec.Sha256.HashValue} {D : Nat} {digest 
     simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
       OneShot.out, OneShot.sb, sat, e, VG.X86_64.below] at d₁ d₂ d₃ d₄ d₅ d₆ d₇ d₈
     refine ⟨by decide, rfl, by rw [e], d₁, d₂, d₃, (Offset.disjoint_of_le (by decide) (by decide)).symm,
-      d₄, d₅, d₆, d₇, d₈, by decide, by simp; omega, by decide⟩
+      d₄, d₅, d₆, d₇, d₈, by decide, by simp; omega_using [hD], by decide⟩
 
 /-- SHA-256's digest is all of the final hash value. -/
 theorem hash_take (m : List Byte) : (md.hash Spec.Sha256.H0 m).take 32 = Spec.Sha256.hash m := by
@@ -300,7 +300,7 @@ theorem fitsS {so : Nat} (h : so = 0 ∨ so = 112) (o : List Instr) : OneShot.Fi
   ⟨by rw [scratchBytesS_eq h]; rcases h with rfl | rfl <;> decide⟩
 
 theorem dimsS {so : Nat} (h : so = 0 ∨ so = 112) (o : List Instr) : Dims (PoS so o) :=
-  ⟨Stream.dims.B, Stream.dims.N, Stream.dims.L, show so ≤ 2048 by omega⟩
+  ⟨Stream.dims.B, Stream.dims.N, Stream.dims.L, show so ≤ 2048 by omega_using [h]⟩
 
 /-- The one-shot digest's body, with `initWith iv`, given its scratch buffer. -/
 abbrev bodyS (so : Nat) (o : List Instr) (iv : Spec.Sha256.HashValue) (f : Callee) : Prog isa :=
@@ -331,14 +331,14 @@ theorem sat_preS {so : Nat} (h : so = 0 ∨ so = 112) (o : List Instr) {D : Nat}
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
     OneShot.out, OneShot.sb, satS, e, VG.X86_64.below]
-  · exact d (by decide) (by simp; omega)
-  · exact d (by decide) (by simp; omega)
-  · exact d (by simp; omega) (by simp; omega)
-  · exact (d (by simp; omega) (by decide)).symm
-  · exact (d (by simp; omega) (by decide)).symm
+  · exact d (by decide) (by simp; omega_using [hD])
+  · exact d (by decide) (by simp; omega_using [hw])
+  · exact d (by simp; omega_using [hD]) (by simp; omega_using [hw])
+  · exact (d (by simp; omega_using [hD]) (by decide)).symm
+  · exact (d (by simp; omega_using [hw]) (by decide)).symm
   · exact (d (by decide) (by decide)).symm
-  · exact (d (by simp; omega) (by decide)).symm
-  · exact (d (by simp; omega) (by decide)).symm
+  · exact (d (by simp; omega_using [hD]) (by decide)).symm
+  · exact (d (by simp; omega_using [hw]) (by decide)).symm
 
 /-- `vg_<alg>_digest`'s signature with its scratch buffer of `w` words as its
 last argument. -/
@@ -377,7 +377,7 @@ theorem impliesS {so : Nat} (h : so = 0 ∨ so = 112) (o : List Instr) {iv : Spe
     simp only [OneShot.dR, OneShot.oR, OneShot.wR, OneShot.retR, OneShot.stkR, OneShot.dp, OneShot.len,
       OneShot.out, OneShot.sb, satS, e, VG.X86_64.below] at d₁ d₂ d₃ d₄ d₅ d₆ d₇ d₈
     refine ⟨by first | decide | (simp; omega), rfl, by rw [e], d₁, d₂, d₃, (Offset.disjoint_of_le (by decide) (by decide)).symm,
-      d₄, d₅, d₆, d₇, d₈, by first | decide | (simp; omega), by simp; omega, by first | decide | (simp; omega)⟩
+      d₄, d₅, d₆, d₇, d₈, by first | decide | (simp; omega), by simp; omega_using [hD], by first | decide | (simp; omega_using [hw])⟩
 
 /-- What the generic proofs need of a member's one-shot digest made with `so`
 bytes for the compression function (`Member`). -/

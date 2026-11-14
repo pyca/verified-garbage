@@ -33,14 +33,14 @@ variable {P : CP} {σ : State}
 theorem res_eq (pre : In P σ) (hL : P.L ≤ P.rl) :
     res P σ = afterDraw (8 * P.L) P.e (Spec.RsaKeyGen.otherPrime (pB P σ)) (cv P σ) ((rB P σ).drop P.L) := by
   have := VG.Proof.RsaKeyGen.candidateStep_eq P.L P.e (Spec.RsaKeyGen.otherPrime (pB P σ)) (rB P σ)
-    (by have := pre.k1; omega)
+    (by have := pre.k1; omega_using [this])
   rw [rB_length, ite_t hL, ← xB_seg hL] at this
   exact this
 
 theorem res_none (pre : In P σ) (hl : P.rl < P.L) : res P σ = none := by
   have := VG.Proof.RsaKeyGen.candidateStep_eq P.L P.e (Spec.RsaKeyGen.otherPrime (pB P σ)) (rB P σ)
-    (by have := pre.k1; omega)
-  rw [rB_length, ite_f (by omega)] at this
+    (by have := pre.k1; omega_using [hl])
+  rw [rB_length, ite_f (by omega_using [hl])] at this
   exact this
 
 theorem res_close (pre : In P σ) (hL : P.L ≤ P.rl) (h : clv P σ = true) :

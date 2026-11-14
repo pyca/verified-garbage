@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on PPC64LE: bytes written
@@ -37,13 +38,13 @@ theorem byte_one {m m₀ : Mem} {O : Addr} {out : Nat → Byte} {a L : Nat} (ha 
     ∀ k < L, (m.writeW (O + BitVec.ofNat 64 a) v) (O + BitVec.ofNat 64 k) =
       if k < a + 1 then out k else m₀ (O + BitVec.ofNat 64 k) := by
   intro k hk
-  rw [byte_writeW8 _ _ (by omega) (by omega), h k hk]
+  rw [byte_writeW8 _ _ (by omega_using [ha, hL]) (by omega_using [hL, hk]), h k hk]
   by_cases e : k = a
   · subst e; rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self k), hv]
   · rw [ite_eq_right e]
     by_cases hk' : k < a
-    · rw [ite_eq_left hk', ite_eq_left (by omega)]
-    · rw [ite_eq_right hk', ite_eq_right (by omega)]
+    · rw [ite_eq_left hk', ite_eq_left (by omega_using [hk'])]
+    · rw [ite_eq_right hk', ite_eq_right (by omega_using [e, hk'])]
 
 /-- A byte zero-extended, as `lbz` loads it. -/
 theorem setWidth_zero_append (b : Byte) : (0#0 ++ b).setWidth 64 = b.setWidth 64 := by

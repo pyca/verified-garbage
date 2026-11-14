@@ -33,7 +33,7 @@ theorem callLoad_context {p : PowerCallPublic} {s : State} {a sp sl : Nat}
     WP isa (Arithmetic.load a sp sl) s (PowerCallPre p) := by
   have hlen : bs.length < 2 ^ 31 := by
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hfit, hw48]
   exact WP.mono (load_mod_ok h.1 h.2.1 p.lower p.fits p.upper ha han hsp hsl hp hl hs h1 hlen hfit)
     fun t ⟨hc, hm, _, _, hf, hk⟩ => ⟨hc, hm, h.2.2.frame h.1 hf hk⟩
 
@@ -50,7 +50,7 @@ theorem addCall_ct :
       hp, hl, hbl, hb, hbl ▸ p.basePositive, ?_, hbl ▸ p.baseFits⟩
     have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hbw, hw48]
   · intro p s h
     obtain ⟨bb, _, hp, hl, _, _, hbl, _, hb, _⟩ := h.2.2
     exact callLoad_context (by decide) (by decide) (by decide) (by decide)
@@ -63,7 +63,7 @@ theorem addCall_ct :
       hp, hl, hel, hb, hel ▸ p.expPositive, ?_, hel ▸ p.secondFits⟩
     have hbw : (eb.length + 7) / 8 ≤ p.x.wx := hel ▸ p.secondFits
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hbw, hw48]
   · intro p s h
     obtain ⟨_, eb, _, _, hp, hl, _, hel, _, hb⟩ := h.2.2
     exact callLoad_context (by decide) (by decide) (by decide) (by decide)

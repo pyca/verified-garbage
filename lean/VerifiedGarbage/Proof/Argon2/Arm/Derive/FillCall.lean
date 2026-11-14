@@ -99,7 +99,7 @@ theorem ccall_pre {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o :
   have hs := hp.scr_fits
   obtain ⟨⟨RX, hRX, oX, bX, lX⟩, fX, X_out, X_scr⟩ := hx.facts hp ho ho'
   obtain ⟨⟨RY, hRY, oY, bY, lY⟩, fY, Y_out, Y_scr⟩ := hy.facts hp ho ho'
-  have eO : State.addr (scrP s₀ + BitVec.ofNat 32 o) = scrB s₀ + BitVec.ofNat 64 o := scr_addr hp (by omega)
+  have eO : State.addr (scrP s₀ + BitVec.ofNat 32 o) = scrB s₀ + BitVec.ofNat 64 o := scr_addr hp (by omega_using [ho'])
   have memW : ∀ R ∈ [memR s₀, scrR s₀], R ∈ s.wr := fun R hR => by
     rw [h.wr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -120,13 +120,13 @@ theorem ccall_pre {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o :
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, 0, by simp, by simp⟩
   have O_W : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrB s₀, 4096⟩ :=
-    Offset.disjoint_base _ ho (by omega)
+    Offset.disjoint_base _ ho (by omega_using [ho'])
   refine ⟨?_, (Covers.pair cX cY).right.append_left (Covers.pair cO cW).right, Covers.pair cO cW⟩
   · simp only [compressArm, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide),
       State.callEntry_gpr _ (show Reg.r2 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide),
       h2, h3, eO]
-    refine ⟨trivial, trivial, O_W, X_out, X_scr, Y_out, Y_scr, fX, fY, by rw [add_nat (by omega)]; omega, by omega⟩
+    refine ⟨trivial, trivial, O_W, X_out, X_scr, Y_out, Y_scr, fX, fY, by rw [add_nat (by omega_using [ho', hs])]; omega_using [ho', hs], by omega_using [hs]⟩
 
 /-- A call of G from the body: `compress(r0, r1, r2, r3)`, to `scratch + o`. -/
 theorem ccall_ok {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o : Nat} (ho : 4096 ≤ o)
@@ -144,7 +144,7 @@ theorem ccall_ok {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o : 
   simp only [compressArm, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide),
     State.callEntry_gpr _ (show Reg.r2 ∉ linkRegs by decide), h2] at hpost
-  rw [Proof.Argon2.Arm.blockAt_eq (by rw [add_nat (by omega)]; omega), blk_shift] at hpost
+  rw [Proof.Argon2.Arm.blockAt_eq (by rw [add_nat (by omega_using [ho', hs])]; omega_using [ho', hs]), blk_shift] at hpost
   refine k t (h.step hsp (hcs .r11 (by decide) (by decide)) hrd hwr (hf.sub fun q hq => ?_)) hcs hf hpost
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl

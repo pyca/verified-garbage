@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The truth-table domain: bitwise circuits on all inputs at once
@@ -73,15 +74,15 @@ theorem testBit_tableOf (f : Nat → Bool) (n c : Nat) :
       · have : n ≠ c := Ne.symm h
         simp only [this, decide_false, Bool.or_false]
         by_cases h' : c < n
-        · simp [h', show c < n + 1 by omega]
-        · simp [h', show ¬ c < n + 1 by omega]
+        · simp [h', show c < n + 1 by omega_using [h']]
+        · simp [h', show ¬ c < n + 1 by omega_using [h, h']]
     · rename_i hf
       simp only [Nat.zero_testBit, Bool.or_false]
       by_cases h : c = n
       · subst h; simp [hf]
       · by_cases h' : c < n
-        · simp [h', show c < n + 1 by omega]
-        · simp [h', show ¬ c < n + 1 by omega]
+        · simp [h', show c < n + 1 by omega_using [h']]
+        · simp [h', show ¬ c < n + 1 by omega_using [h, h']]
 
 end VG.Bitslice
 
@@ -97,6 +98,6 @@ theorem getLsbD_ofBits (w : Nat) (f : Nat → Bool) (j : Nat) :
 
 theorem tableOf_lt (f : Nat → Bool) (n : Nat) : tableOf f n < 2 ^ n :=
   Nat.lt_pow_two_of_testBit _ fun c hc => by
-    rw [testBit_tableOf]; simp [show ¬ c < n by omega]
+    rw [testBit_tableOf]; simp [show ¬ c < n by omega_using [hc]]
 
 end VG.Bitslice

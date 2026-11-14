@@ -31,7 +31,7 @@ theorem random_signOutgoing_words (m : Mem) (B : Addr) :
   simp only [randomSignOutgoing, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl <;>
     simp only [randomSignOutgoing, randomSlotsMem, Random.oDigestLen, Random.oScratch, Random.oScratchLen] <;>
-    simp (disch := omega) only [word_writeW_self, random_word_write_other]
+    simp (disch := omega_using []) only [word_writeW_self, random_word_write_other]
 
 theorem random_signCallArgs_ok {s : State} {B : Addr}
     (hs : Scr s B Random.frameBytes) (hsp : s.sp = B) :

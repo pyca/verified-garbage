@@ -43,8 +43,8 @@ theorem body_ok {base : Addr} {m : Nat} [NeZero m]
         toM m (2^256) (wordsVal s.mem base cfg.base 4)^(m-2) := by
   have hodd : m%2=1 := by
     rcases Nat.even_or_odd m with ⟨k,hk⟩|⟨k,hk⟩
-    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k,by omega⟩; omega
-    · omega
+    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k,by omega_using [hk]⟩; omega_using [hm2, this]
+    · omega_using [hk]
   rw [body]
   apply WP.seq
   rw [WP.block_append_iff]
@@ -57,7 +57,7 @@ theorem body_ok {base : Addr} {m : Nat} [NeZero m]
   have ub' : Unch base batchMemory a.mem b.mem := ub.cover (by decide)
   have mb := mod_keep ha ma ub'
   have hx : wordsVal a.mem base cfg.base 4<m := by rw [ka.mem]; exact hX
-  refine WP.seq (WP.mono (packed_loop_ok hL hb mb hx hodd (by omega) ib b19 bz)
+  refine WP.seq (WP.mono (packed_loop_ok hL hb mb hx hodd (by omega_using [hm2]) ib b19 bz)
     fun c ⟨ic,kc,uc⟩ => ?_)
   have hc := hb.of_keepRegs kc (by decide)
   have mc := mod_keep hb mb uc

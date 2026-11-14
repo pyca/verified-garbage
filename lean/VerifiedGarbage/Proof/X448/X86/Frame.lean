@@ -23,15 +23,15 @@ theorem Outside.frame {base : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 n
   have := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at this
   change 0 + n ≤ (x - base).toNat
-  omega))
+  omega_using [this]))
 
 theorem FieldMem.whole {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m')
     (ho : o + 112 ≤ 8192) : Outside base 0 8192 m m' := fun p hp =>
-  h p (by omega) (by simp only [ACC]; omega)
+  h p (by omega_using [ho, hp]) (by simp only [ACC]; omega_using [hp])
 
 theorem Outside2.whole {base : Addr} {x nx y ny : Nat} {m m' : Mem}
     (h : Outside2 base x nx y ny m m') (hx : x + nx ≤ 8192) (hy : y + ny ≤ 8192) :
-    Outside base 0 8192 m m' := fun p hp => h p (by omega) (by omega)
+    Outside base 0 8192 m m' := fun p hp => h p (by omega_using [hx, hp]) (by omega_using [hy, hp])
 
 /-- What the code writes outside the working space: the result and the stack
 its calls use. -/

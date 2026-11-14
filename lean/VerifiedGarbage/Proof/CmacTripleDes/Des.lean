@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacTripleDes.Index
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # DES: the bits of the specification's permutations and round function
@@ -35,13 +36,13 @@ theorem getLsbD_permute_prefix {n m : Nat} (pos : Vector Nat m) (x : BitVec n) (
       BitVec.getLsbD_ushiftRight, getLsbD_one']
     rcases Nat.eq_zero_or_pos j with rfl | hj0
     · simp [hn, hj]
-    · rw [ih (j - 1) (by omega)]
-      simp only [hj, decide_true, Bool.true_and, show ¬ j < 1 by omega, decide_false,
-        Bool.not_false, show j ≠ 0 by omega, Bool.and_false, Bool.or_false]
+    · rw [ih (j - 1) (by omega_using [hj])]
+      simp only [hj, decide_true, Bool.true_and, show ¬ j < 1 by omega_using [hj0], decide_false,
+        Bool.not_false, show j ≠ 0 by omega_using [hj0], Bool.and_false, Bool.or_false]
       by_cases hk : j < k + 1
-      · rw [show k + 1 - 1 - j = k - 1 - (j - 1) by omega]
-        simp [hk, show j - 1 < k by omega]
-      · simp [hk, show ¬ j - 1 < k by omega]
+      · rw [show k + 1 - 1 - j = k - 1 - (j - 1) by omega_using [hj0]]
+        simp [hk, show j - 1 < k by omega_using [hj0, hk]]
+      · simp [hk, show ¬ j - 1 < k by omega_using [hk]]
 
 /-- Bit `j` of `permute pos x` is bit `n − pos[m − 1 − j]` of `x`. -/
 theorem getLsbD_permute {n m : Nat} (pos : Vector Nat m) (x : BitVec n) (hn : 0 < n)
@@ -62,15 +63,15 @@ theorem getLsbD_concat4_prefix (g : Nat → BitVec 4) (k q : Nat) (hq : q < 32) 
     rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, BitVec.getLsbD_or,
       BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
     by_cases h4 : q < 4
-    · simp [hq, h4, show q < 4 * (k + 1) by omega, Nat.div_eq_of_lt h4, Nat.mod_eq_of_lt h4]
-    · rw [ih (q - 4) (by omega)]
-      have e1 : (q - 4) / 4 = q / 4 - 1 := by omega
-      have e2 : (q - 4) % 4 = q % 4 := by omega
+    · simp [hq, h4, show q < 4 * (k + 1) by omega_using [h4], Nat.div_eq_of_lt h4, Nat.mod_eq_of_lt h4]
+    · rw [ih (q - 4) (by omega_using [hq])]
+      have e1 : (q - 4) / 4 = q / 4 - 1 := by omega_using []
+      have e2 : (q - 4) % 4 = q % 4 := by omega_using [h4]
       simp only [hq, decide_true, Bool.true_and, h4, decide_false, Bool.not_false, e1, e2,
-        BitVec.getLsbD_of_ge (g k) q (by omega), Bool.and_false, Bool.or_false]
+        BitVec.getLsbD_of_ge (g k) q (by omega_using [h4]), Bool.and_false, Bool.or_false]
       by_cases hk : q < 4 * (k + 1)
-      · simp [hk, show q - 4 < 4 * k by omega, show k - 1 - (q / 4 - 1) = k + 1 - 1 - q / 4 by omega]
-      · simp [hk, show ¬ q - 4 < 4 * k by omega]
+      · simp [hk, show q - 4 < 4 * k by omega_using [h4, hk], show k - 1 - (q / 4 - 1) = k + 1 - 1 - q / 4 by omega_using [h4]]
+      · simp [hk, show ¬ q - 4 < 4 * k by omega_using [hk]]
 
 /-- Box `i`'s input in the round with input `r` and round key `k`. -/
 def chunk (r : BitVec 32) (k : BitVec 48) (i : Nat) : BitVec 6 :=
@@ -96,7 +97,7 @@ theorem getLsbD_roundFunction (r : BitVec 32) (k : BitVec 48) {j : Nat} (hj : j 
   rw [getLsbD_permute _ _ (by decide) hj, getLsbD_concat4_prefix _ 8 _ (by exact hu)]
   simp only [show 32 - p.getD (32 - 1 - j) 1 = Impl.CmacTripleDes.pSrc j from rfl,
     show Impl.CmacTripleDes.pSrc j < 4 * 8 from hu, decide_true, Bool.true_and,
-    show 8 - 1 - Impl.CmacTripleDes.pSrc j / 4 = 7 - Impl.CmacTripleDes.pSrc j / 4 by omega]
+    show 8 - 1 - Impl.CmacTripleDes.pSrc j / 4 = 7 - Impl.CmacTripleDes.pSrc j / 4 by omega_using []]
   rfl
 
 end VG.Proof.CmacTripleDes

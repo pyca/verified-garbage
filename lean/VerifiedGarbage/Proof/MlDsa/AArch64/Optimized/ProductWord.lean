@@ -25,7 +25,7 @@ theorem centeredWord_int (x : BitVec 32) (hx : x.toNat < 16760834) :
   rw [BitVec.toInt_eq_toNat_cond, BitVec.toNat_sub]
   have hq : (8380417#32).toNat = 8380417 := rfl
   rw [hq]
-  split <;> omega
+  split <;> omega_arith
 
 theorem centeredProduct_int (x z : BitVec 32)
     (hx : x.toNat < 3*q) (hz : z.toNat < 3*q) :
@@ -56,7 +56,7 @@ theorem centeredMont_scaled (t : Nat) :
     simpa only [Int.natCast_mul, Int.natCast_add, hR, hq] using he
   change (((mont t : Int)-8380417)*4294967296)%8380417 = (t : Int)%8380417
   rw [Int.sub_mul]
-  omega
+  omega_using [he']
 
 theorem centeredProduct_scaled (x z : BitVec 32)
     (hx : x.toNat < 3*q) (hz : z.toNat < 3*q) :

@@ -14,8 +14,8 @@ theorem workspace_word {B : Addr} {Z d : Nat} {m m' : Mem}
  apply Mem.readW_congr
  intro i hi
  apply same
- rw [ofs_off B (by omega)]
- omega
+ rw [ofs_off B (by omega_using [size, inside, hi])]
+ omega_using [inside, hi]
 
 theorem workspace_array {p : Parameters} {s t : State} {j : Nat}
  (good : Good s p.B p.Z p.w p.mi) (same : ∀ x,ofs p.B x<p.Z→t.mem x=s.mem x) (inside : j<8) :
@@ -23,13 +23,13 @@ theorem workspace_array {p : Parameters} {s t : State} {j : Nat}
  have arrayRoom := Nat.le_trans (slot_le (w:=p.w) inside) p.room
  apply wv_congr
  intro i hi
- exact workspace_word (by have := good.scr.nowrap;omega) same (by omega)
+ exact workspace_word (by have := good.scr.nowrap;omega_using [this]) same (by omega_using [arrayRoom, hi])
 
 theorem ModState.after_workspace {p : Parameters} {s t : State} (h : ModState p s)
  (good : Good t p.B p.Z p.w p.mi) (same : ∀ x,ofs p.B x<p.Z→t.mem x=s.mem x) : ModState p t := by
  have inverseWord : word t.mem p.B (slot p.w 0)=word s.mem p.B (slot p.w 0) :=
-  workspace_word (by have := h.good.scr.nowrap;omega) same
-   (by have := slot_le (w:=p.w) (by decide : 0<8);have := p.room;have := p.positive;omega)
+  workspace_word (by have := h.good.scr.nowrap;omega_using [this]) same
+   (by have := slot_le (w:=p.w) (by decide : 0<8);have := p.room;have := p.positive;omega_arith)
  refine ⟨good,(workspace_array h.good same (by decide)).trans h.modulus,?_,
   (workspace_array h.good same (by decide)).trans h.one,(workspace_array h.good same (by decide)).trans h.r2⟩
  rw [inverseWord]
@@ -48,14 +48,14 @@ theorem Power.after_workspace {p : Parameters} {E : Nat} {s t : State} (h : Powe
 theorem Basis.after_header {p : Parameters} {E : Nat} {s t : State} {i : Nat}
  (h : Basis p E s) (good : Good t p.B p.Z p.w p.mi)
  (frame : Outside p.B (8*i) 8 s.mem t.mem) (hi : i<32) : Basis p E t := by
- have nowrap : slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega
+ have nowrap : slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega_arith
  have same : wv t.mem p.B (slot p.w 5) p.w=wv s.mem p.B (slot p.w 5) p.w :=
-  frame.wv (Or.inr (hdr_lt_slot _ _ hi)) (by have := slot_le (w:=p.w) (by decide : 5<8);omega)
+  frame.wv (Or.inr (hdr_lt_slot _ _ hi)) (by have := slot_le (w:=p.w) (by decide : 5<8);omega_using [nowrap, this])
  exact ⟨h.toModState.after_header good frame hi,by rw [same];exact h.bound,same.trans h.value⟩
 
 theorem workspace_header {p : Parameters} {s t : State} {i : Nat} (good : Good s p.B p.Z p.w p.mi)
  (same : ∀ x,ofs p.B x<p.Z→t.mem x=s.mem x) (inside : i<32) : word t.mem p.B (8*i)=word s.mem p.B (8*i) :=
- workspace_word (by have := good.scr.nowrap;omega) same (by have := hdr_lt_slot p.w 8 inside;have := p.room;omega)
+ workspace_word (by have := good.scr.nowrap;omega_using [this]) same (by have := hdr_lt_slot p.w 8 inside;have := p.room;omega_arith)
 
 
 end VG.Proof.Ffdh.AArch64.Cached

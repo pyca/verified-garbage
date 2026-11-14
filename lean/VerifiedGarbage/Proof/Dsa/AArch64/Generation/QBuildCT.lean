@@ -52,7 +52,7 @@ theorem qHash_ct (H : GenerationHashes) : RelCT isa (Two QHashState)
     obtain ⟨p, hs, ht, _⟩ := hp
     obtain ⟨Vs, Ws, Rs, As, _⟩ := hs.rep
     obtain ⟨Vt, Wt, Rt, At, _⟩ := ht.rep
-    exact seedHash_ct H.h1 H.h256 (by rcases p.width with h | h <;> omega) s t tr1 tr2 u v
+    exact seedHash_ct H.h1 H.h256 (by rcases p.width with h | h <;> omega_using [h]) s t tr1 tr2 u v
       ⟨⟨Vs, Ws, hs.layout, Rs, As⟩, ⟨Vt, Wt, ht.layout, Rt, At⟩⟩ e1 e2
   · intro p s h
     obtain ⟨V, W, R, A, hop⟩ := h.rep

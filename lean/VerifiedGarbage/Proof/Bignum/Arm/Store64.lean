@@ -21,7 +21,7 @@ theorem store64_ok (s : State) (lo hi ptr : Reg) (d : Nat) (a : Addr)
     WP isa (.block (store64 lo hi ptr d)) s fun t =>
       t.mem = s.mem.writeW a (s.gpr hi ++ s.gpr lo) ∧ Rest [] s t := by
   unfold store64
-  refine wp_str (a := a) (by omega) pa wa fun u h => ?_
+  refine wp_str (a := a) (by omega_using [hd]) pa wa fun u h => ?_
   refine wp_str (a := a + BitVec.ofNat 64 4) hd (by rw [h.gpr]; exact pb)
     (by rw [h.wr]; exact wb) fun t j => WP.block_nil ?_
   refine ⟨?_, (h.rest _).trans (j.rest _)⟩
@@ -33,7 +33,7 @@ theorem zero_high_addr (p : BitVec 32) : ((0 : BitVec 32) ++ p) = State.addr p :
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt p.isLt, Nat.shiftLeft_eq]
   rw [show (0 : BitVec 32).toNat = 0 from rfl, Nat.zero_mul, Nat.zero_add]
   simp only [State.addr, BitVec.toNat_setWidth]
-  have hp : p.toNat < 2 ^ 64 := by have := p.isLt; omega
+  have hp : p.toNat < 2 ^ 64 := by have := p.isLt; omega_using []
   exact (Nat.mod_eq_of_lt hp).symm
 
 end VG.Proof.Bignum.Arm

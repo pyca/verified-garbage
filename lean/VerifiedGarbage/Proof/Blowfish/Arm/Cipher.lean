@@ -51,8 +51,8 @@ theorem CipherEnv.look {s : State} (E : CipherEnv s) (h8 : s.gpr .r8 = BitVec.al
 theorem addr_P {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) {i : Nat} (hi : i < 16) :
     State.addr (S + BitVec.ofNat 32 (pBase up i) + BitVec.ofNat 32 (pAt up)) =
       State.addr S + BitVec.ofNat 64 (4096 + 4 * ord up i) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega)]
-  congr 2; cases up <;> simp [pBase, pAt, ord] <;> omega
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega_arith)]
+  congr 2; cases up <;> simp [pBase, pAt, ord] <;> omega_using [hi]
 
 /-- After `i` rounds from `s₀`. -/
 structure CInv (s₀ : State) (up : Bool) (i : Nat) (u : State) : Prop where
@@ -84,14 +84,14 @@ theorem round_tail (u : State) (up : Bool) (S : BitVec 32) {i : Nat} (hi : i < 1
   cases up
   · brun [h0, h12, pOff]
     simp only [pBase, Bool.false_eq_true, ite_false]
-    refine ⟨ofs_sub S (by omega), ?_⟩
-    rw [ofs_sub S (by omega), ofs_diff, ofNat_sub_beq (by omega) (by decide)]
-    congr 1; apply propext; omega
+    refine ⟨ofs_sub S (by omega_using [hi]), ?_⟩
+    rw [ofs_sub S (by omega_using [hi]), ofs_diff, ofNat_sub_beq (by omega_using []) (by decide)]
+    congr 1; apply propext; omega_using []
   · brun [h0, h12, pOff]
     simp only [pBase, ite_true]
     refine ⟨ofs_add S _ _, ?_⟩
-    rw [ofs_add, ofs_diff, ofNat_sub_beq (by omega) (by decide)]
-    congr 1; apply propext; omega
+    rw [ofs_add, ofs_diff, ofNat_sub_beq (by omega_using [hi]) (by decide)]
+    congr 1; apply propext; omega_using []
 
 theorem keep_reads {s t : State} {rs : List Reg} (k : Keep rs s t) : t.rd ++ t.wr = s.rd ++ s.wr := by
   rw [k.2.1, k.2.2.1]
@@ -100,13 +100,13 @@ theorem round_step {s₀ : State} (E : CipherEnv s₀) (up : Bool) {i : Nat} (hi
     (I : CInv s₀ up i u) :
     WP isa (round up) u fun u' => CInv s₀ up (i + 1) u' ∧ u'.z = decide (i + 1 = 16) := by
   have fit := E.fit
-  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega
+  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega_arith
   let K := scheduleAt s₀.mem (State.addr (s₀.gpr .r0))
   have u0 : u.gpr .r0 = s₀.gpr .r0 := I.keep.gpr (by decide)
   unfold round
   apply WP.seq
   refine WP.mono (WP.keep [.r1, .r9] (round_head u up (P := pEntry K (ord up i))
-    (by rw [I.p, addr_P fit up hi]) (by rw [keep_reads I.keep]; exact E.rd _ (by omega))
+    (by rw [I.p, addr_P fit up hi]) (by rw [keep_reads I.keep]; exact E.rd _ (by omega_using [ho]))
     (by rw [I.mem, pEntry_read _ _ ho])) (by cases up <;> decide)) fun v ⟨⟨v1, vm⟩, vk⟩ => ?_
   have kv : Keep cRegs s₀ v := I.keep.trans_sub vk (by decide)
   have Ev : LookEnv v := (E.keep kv (by decide)).look (by rw [vk.gpr (by decide), I.ones])
@@ -118,7 +118,7 @@ theorem round_step {s₀ : State} (E : CipherEnv s₀) (up : Bool) {i : Nat} (hi
   refine WP.mono (WP.keep [.r1, .r2, .r9, .r12] (round_tail w up _ hi w0 w12) (by
     cases up <;> decide)) fun x ⟨⟨x1, x2, x12, xz, xm⟩, xk⟩ => ?_
   have hK : scheduleAt v.mem (State.addr (v.gpr .r0)) = K := by rw [vm, I.mem, vk.gpr (by decide), u0]
-  refine ⟨⟨by omega, x12, ?_, ?_, (kv.trans_sub wk (by decide)).trans_sub xk (by decide),
+  refine ⟨⟨by omega_using [hi], x12, ?_, ?_, (kv.trans_sub wk (by decide)).trans_sub xk (by decide),
     by rw [xm, wm, vm, I.mem]⟩, xz⟩
   · have w1 : w.gpr .r1 = u.gpr .r1 ^^^ pEntry K (ord up i) := by rw [wk.gpr (by decide), v1]
     have w2 : w.gpr .r2 = u.gpr .r2 := by rw [wk.gpr (by decide), vk.gpr (by decide)]
@@ -148,7 +148,7 @@ theorem rounds_run {s : State} (E : CipherEnv s) (up : Bool) {u : State} (I : CI
   · left
     exact ⟨by rw [e]; rfl, e ▸ J'⟩
   · right
-    exact ⟨by simp [e], n - 1, by omega, i + 1, by omega, by omega, J'⟩
+    exact ⟨by simp [e], n - 1, by omega_using [hi, hn], i + 1, by omega_using [hi, e], by omega_using [hn], J'⟩
 
 /-- The addresses of the last P-array entries. -/
 theorem addr_last {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) :
@@ -157,7 +157,7 @@ theorem addr_last {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) 
       State.addr (S + BitVec.ofNat 32 (pBase up 16) + BitVec.ofNat 32 (4 - pAt up)) =
         State.addr S + BitVec.ofNat 64 (4096 + 4 * ord up 17) := by
   constructor <;>
-  · rw [ofs_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega)]
+  · rw [ofs_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega_using [fit])]
     congr 2; cases up <;> simp [pBase, pAt, ord]
 
 theorem cipher_end (u : State) (up : Bool) {P₁₆ P₁₇ : BitVec 32} {a b : Addr}

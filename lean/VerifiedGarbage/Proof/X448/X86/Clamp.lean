@@ -26,7 +26,7 @@ def clampMem (m : Mem) (base : Addr) : Mem :=
 theorem storeByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 4096) :
     WP isa (.block [.store8 (sc d) .dl]) s fun t =>
       t.mem = s.mem.writeW (off base d) ((s.gpr .edx).setWidth 8) ∧ Keeps [] s t := by
-  refine wp_store8 (hs.ea (d := d) (by omega)) (hs.write (d := d) (n := 1) (by omega))
+  refine wp_store8 (hs.ea (d := d) (by omega_using [hd])) (hs.write (d := d) (n := 1) (by omega_using [hd]))
     fun t ht => WP.block_nil ⟨ht.mem, (ht.rest _)⟩
 
 theorem putByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 4096)

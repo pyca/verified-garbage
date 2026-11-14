@@ -39,9 +39,9 @@ theorem table_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : Bit
   refine WP.loop (M:=isa) I ?_ 4 s ?_
   · intro k u hu
     obtain ⟨hk,bound,core,pow,tab,counter,header,frame,rest⟩ := hu
-    have prev : 5-k-1=4-k := by omega
+    have prev : 5-k-1=4-k := by omega_using []
     have pow' : Power5 p (2^((5-k-1)*Spec.Rsa.FixedBaseComb.rows (bits p))) u := by rw [prev];exact pow
-    refine WP.mono (basis_ok backend u core (by omega) (by omega) positive fits pow' tab counter) ?_
+    refine WP.mono (basis_ok backend u core (by omega_using [hk]) (by omega_using [bound]) positive fits pow' tab counter) ?_
     rintro t ⟨coreT,powT,tableT,countT,zero,headerT,frameT,restT⟩
     have headerAll : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
       refine ⟨?_⟩
@@ -54,13 +54,13 @@ theorem table_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : Bit
         simp only [zero,last,decide_true,Bool.not_true]
       · simpa only [last] using tableT
     · right
-      have ne : 5-k≠4 := by omega
-      refine ⟨?_,k-1,by omega,by omega,by omega,coreT,?_,?_,?_,headerAll,frame.trans frameT,rest.trans restT⟩
+      have ne : 5-k≠4 := by omega_using [last]
+      refine ⟨?_,k-1,by omega_using [hk],by omega_using [hk, last],by omega_using [bound],coreT,?_,?_,?_,headerAll,frame.trans frameT,rest.trans restT⟩
       · change some (!t.z)=some true
         simp only [zero,ne,decide_false,Bool.not_false]
-      · simpa only [show 4-(k-1)=5-k by omega] using powT
-      · simpa only [show 5-(k-1)=5-k+1 by omega] using tableT
-      · simpa only [show 5-(k-1)=5-k+1 by omega] using countT
+      · simpa only [show 4-(k-1)=5-k by omega_using [hk]] using powT
+      · simpa only [show 5-(k-1)=5-k+1 by omega_using [hk, bound]] using tableT
+      · simpa only [show 5-(k-1)=5-k+1 by omega_using [hk, bound]] using countT
   · refine ⟨by decide,by decide,h,?_,?_,?_,⟨fun _ _ _ => rfl⟩,Frame.refl _ _,Rest.refl _ _⟩
     · simpa only [Nat.sub_self,Nat.zero_mul,Nat.pow_zero] using power
     · exact table
@@ -94,14 +94,14 @@ theorem table_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 3
   have ctxV := coreU.memory.controlContextEq (by decide) frameV
   have tableV : TablePrefix p 2 v.mem := by
     intro digit hd
-    rw [ctxV.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega))]
+    rw [ctxV.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega_using [hd]))]
     exact tab digit hd
   refine WP.mono (table_loop_ok backend v coreV positive fits powerV tableV savedV) ?_
   rintro t ⟨coreT,tableT,headerT,frameT,restT⟩
   have header : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
     refine ⟨?_⟩
     intro d n hd
-    exact (headerT.read d n hd).trans ((ctxV.read d n (by have := bytes_eq p;omega)).trans (headerU.read d n hd))
+    exact (headerT.read d n hd).trans ((ctxV.read d n (by have := bytes_eq p;omega_using [hd, this])).trans (headerU.read d n hd))
   have wholeU : Frame (productWrites p sp) s.mem u.mem := frameU.mono (by
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

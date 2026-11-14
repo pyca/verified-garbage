@@ -20,8 +20,8 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .x4)
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r', r' ≠ r → r' ≠ .x4 → s'.gpr r' = s.gpr r') := by
-  have hleft : 64 - n < 64 := by omega
-  have hright : 28 - n < 64 := by omega
+  have hleft : 64 - n < 64 := by omega_using [hn]
+  have hright : 28 - n < 64 := by omega_using []
   refine ⟨_, by
     simp only [Key.rotate28, mask, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits, hleft, hright,

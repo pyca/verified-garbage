@@ -33,8 +33,8 @@ structure ArgContext (E : Environment) (s : State) : Prop where
 theorem ArgContext.address {E : Environment} (v : E.Valid) {s : State} (C : ArgContext E s) {i : Nat} (index : i < 5) :
     s.ea (Compact.arg i) = off (argsRegion E.p).base (4 * i) := by
   change addr (s.gpr .esp) (20 + 4 * i) = _
-  rw [C.sp, addr_eq (by have := v.argsFit; omega)]
-  have start : (E.p + 20#32).setWidth 64 = off (E.p.setWidth 64) 20 := addr_eq (by have := v.argsFit; omega)
+  rw [C.sp, addr_eq (by have := v.argsFit; omega_using [index, this])]
+  have start : (E.p + 20#32).setWidth 64 = off (E.p.setWidth 64) 20 := addr_eq (by have := v.argsFit; omega_using [this])
   change off (E.p.setWidth 64) (20 + 4 * i) = off ((E.p + 20#32).setWidth 64) (4 * i)
   rw [start]
   simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
@@ -49,7 +49,7 @@ theorem ArgContext.keep {E : Environment} (v : E.Valid) {s t : State} (C : ArgCo
   have memory : t.mem.readW (s.ea (Compact.arg i)) 32 = s.mem.readW (s.ea (Compact.arg i)) 32 := by
     rw [C.address v index]
     exact F.readW (r := argsRegion E.p)
-      (Offset.contains_base _ (by change 4 * i + 4 ≤ 20; omega) (by omega : 4 * i < 2 ^ 64))
+      (Offset.contains_base _ (by change 4 * i + 4 ≤ 20; omega_using [index]) (by omega_using [index] : 4 * i < 2 ^ 64))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.argsFar) (by decide)
   have same : readSrc t (.mem (Compact.arg i)) = readSrc s (.mem (Compact.arg i)) := by
     show t.load32 (t.ea (Compact.arg i)) = s.load32 (s.ea (Compact.arg i))
@@ -59,7 +59,7 @@ theorem ArgContext.keep {E : Environment} (v : E.Valid) {s t : State} (C : ArgCo
 theorem Environment.Valid.header {E : Environment} (v : E.Valid) : 256 ≤ E.size := by
   have := v.room
   unfold Environment.scratch scratchBytes VG.Impl.Bignum.X86.PublicContext.slot VG.Impl.Bignum.hdrBytes at this
-  omega
+  omega_using [this]
 
 /-- A store of EAX into header byte `d` changes only those four bytes. -/
 theorem store_ok {E : Environment} (v : E.Valid) {s : State} (C : ArgContext E s) {d : Nat} (fit : d + 4 ≤ 256) :
@@ -67,13 +67,13 @@ theorem store_ok {E : Environment} (v : E.Valid) {s : State} (C : ArgContext E s
       ArgContext E t ∧ t.mem.readW (off E.base d) 32 = s.gpr .eax ∧ Outside E.base d 4 s.mem t.mem ∧
       Keeps [] s t := by
   have header := v.header
-  refine wp_storeS (C.scratch.ea (by omega)) (C.scratch.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (C.scratch.ea (by omega_using [fit, header])) (C.scratch.write (by omega_using [fit, header])) fun t T => WP.block_nil ?_
   have O : Outside E.base d 4 s.mem t.mem := by
     rw [T.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [fit])
   have F : Frame [E.workspaceRegion] s.mem t.mem := workspaceGlobalFrame (g := E.geometry) (rs := [(d, 4)])
     (Outs.of_outside O (List.mem_singleton_self _))
-    (by intro r mem; obtain rfl := List.mem_singleton.mp mem; change d + 4 ≤ E.size; omega)
+    (by intro r mem; obtain rfl := List.mem_singleton.mp mem; change d + 4 ≤ E.size; omega_using [fit, header])
   exact ⟨C.keep v ((T.keeps []).mono (by decide)) F, by rw [T.mem, Mem.readW_writeW_self32], O, T.keeps []⟩
 
 theorem copy_ok {E : Environment} (v : E.Valid) {s : State} (C : ArgContext E s) {i d : Nat}
@@ -101,10 +101,10 @@ theorem Environment.Valid.baseNat {E : Environment} (_ : E.Valid) : E.base.toNat
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans E.workspace.isLt (by decide))]
 
 theorem Environment.Valid.stkOk {E : Environment} (v : E.Valid) : StkOk E.p E.base E.size := by
-  refine ⟨by have := v.low; omega, ?_⟩
+  refine ⟨by have := v.low; omega_using [this], ?_⟩
   rcases v.workspaceStack with h | h
   · exact Or.inl h
-  · exact Or.inr (by omega)
+  · exact Or.inr (by omega_using [h])
 
 /-- The header the entry writes. -/
 structure Header (E : Environment) (s : State) : Prop where
@@ -153,7 +153,7 @@ theorem enter_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte
   rw [G.mem] at Ot
   have keep (x : Nat) (o : Nat) {m m' : Mem} (O : Outside E.base o 4 m m') (small : x ≤ 256)
       (apart : x + 4 ≤ o ∨ o + 4 ≤ x) : m'.readW (off E.base x) 32 = m.readW (off E.base x) 32 :=
-    BitVec.eq_of_toNat_eq (O.w32 apart (by omega))
+    BitVec.eq_of_toNat_eq (O.w32 apart (by omega_using [small]))
   have all : Outside E.base 0 160 s.mem t.mem := by
     rw [A.mem] at Ob
     exact (((((Ob.mono (by decide) (by decide)).trans (Od.mono (by decide) (by decide))).trans
@@ -175,7 +175,7 @@ theorem enter_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte
   · unfold w32
     rw [keep 40 152 Ot (by decide) (by decide), keep 40 44 Of (by decide) (by decide), capE]
     change (BitVec.ofNat 32 E.capacity).toNat = E.capacity
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := v.workspaceFit; unfold Environment.size at this; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := v.workspaceFit; unfold Environment.size at this; omega_using [this])]
   · rw [keep 44 152 Ot (by decide) (by decide), usedF]
     rfl
   · unfold w32
@@ -184,15 +184,15 @@ theorem enter_raw {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte
 
 theorem Environment.Valid.scratchLow {E : Environment} (_ : E.Valid) : 256 ≤ E.scratch := by
   unfold Environment.scratch scratchBytes VG.Impl.Bignum.X86.PublicContext.slot VG.Impl.Bignum.hdrBytes
-  omega
+  omega_using []
 
 theorem Environment.Valid.tail_of_outside {E : Environment} (v : E.Valid) {o n : Nat} {m m' : Mem}
     (O : Outside E.base o n m m') (below : o + n ≤ E.scratch) : Tail E m m' := by
   intro i lo hi
   apply O
   have fit := v.workspaceFit
-  rw [ofs_off0 E.base (by omega)]
-  omega
+  rw [ofs_off0 E.base (by omega_using [hi, fit])]
+  omega_using [below, lo]
 
 theorem Environment.Valid.work_of_outside {E : Environment} (_ : E.Valid) {o n : Nat} {m m' : Mem}
     (O : Outside E.base o n m m') (fit : o + n ≤ E.size) : WorkFrame E m m' := by
@@ -207,8 +207,8 @@ theorem enter_ok {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte}
       Input E c entropy t ∧ w32 t.mem E.base 152 = 0 ∧ Outside E.base 0 160 s.mem t.mem ∧
       Keeps [.eax, .edi] s t := by
   refine WP.mono_syms (enter_raw v I) fun t ⟨H, O, K⟩ syms => ?_
-  have T := v.tail_of_outside O (by have := v.scratchLow; omega)
-  have W := v.work_of_outside O (by have := v.header; omega)
+  have T := v.tail_of_outside O (by have := v.scratchLow; omega_using [this])
+  have W := v.work_of_outside O (by have := v.header; omega_using [this])
   exact ⟨⟨H.scratch, H.stack, H.randPtr, H.randLength, H.capacity, H.usedPtr,
     I.memory.keep v K W T (by rw [syms])⟩, H.count, O, K⟩
 

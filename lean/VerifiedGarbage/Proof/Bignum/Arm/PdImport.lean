@@ -37,32 +37,32 @@ theorem pdImport_ok (s : State) {base pp : BitVec 32} {len w : Nat}
       numAt t.mem (State.addr base) w 4 = (s.mem.read (off (State.addr pp) (8 * w)) (8 * w)).toNat ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have hw : 2 ≤ w := h.ready.width ▸ h.ready.layout.1
   have nowrap := h.ready.workspace.nowrap
   let pp2 := pp + BitVec.ofNat 32 (8 * w)
-  have address : State.addr pp2 = off (State.addr pp) (8 * w) := addr_add (by have := h.sourceFit; omega)
+  have address : State.addr pp2 = off (State.addr pp) (8 * w) := addr_add (by have := h.sourceFit; omega_using [this])
   have secondFit : pp2.toNat + 8 * w ≤ 2 ^ 32 := by
     have sourceFit := h.sourceFit
     simp only [pp2, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : 8 * w < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : pp.toNat + 8 * w < 2 ^ 32)]
-    omega
+      Nat.mod_eq_of_lt (by omega_using [sourceFit] : 8 * w < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [sourceFit] : pp.toNat + 8 * w < 2 ^ 32)]
+    omega_using [sourceFit]
   have firstRead : InRegions (s.rd ++ s.wr) (State.addr pp) (8 * w) := by
-    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) h.read (by omega) (by omega)
+    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) h.read (by omega_using []) (by omega_using [secondFit])
   have secondRead : InRegions (s.rd ++ s.wr) (State.addr pp2) (8 * w) := by
-    rw [address]; exact CallLay.inRegions_sub h.read (by omega) (by omega)
-  have firstSep := h.separate.sub_right (Region.sub_prefix (show 8 * w ≤ 16 * w by omega))
+    rw [address]; exact CallLay.inRegions_sub h.read (by omega_using []) (by omega_using [secondFit])
+  have firstSep := h.separate.sub_right (Region.sub_prefix (show 8 * w ≤ 16 * w by omega_using []))
   have secondSep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr pp2, 8 * w⟩ := by
     apply h.separate.sub_right
-    rw [address]; exact Offset.sub_base _ (by omega)
+    rw [address]; exact Offset.sub_base _ (by omega_using [])
   rw [pdImport, WP.seq_iff]
   refine wp_mov (op2_imm (by decide)) fun u moved => WP.block_nil ?_
   have readyU := h.ready.of_mem moved.mem (moved.rest (by simp : Reg.r2 ∈ [.r2]))
     ((moved.other .r0 (by decide)).trans h.ready.ptr)
   rw [WP.seq_iff]
   refine WP.mono (importArrayLayout_ok u readyU (by decide : 0 < 8)
-    (by have := h.sourceFit; omega) (by rw [moved.rd, moved.wr]; exact firstRead) firstSep moved.gpr
+    (by have := h.sourceFit; omega_using [this]) (by rw [moved.rd, moved.wr]; exact firstRead) firstSep moved.gpr
     ((moved.other .r4 (by decide)).trans h.source)) ?_
   rintro v ⟨readyV, first, _, frameV, restV, sourceV⟩
   rw [moved.mem] at first frameV
@@ -70,7 +70,7 @@ theorem pdImport_ok (s : State) {base pp : BitVec 32} {len w : Nat}
   have header := nativeHeader_of_layout v.mem base nowrap (Nat.le_refl _) readyV.layout
   rw [readyV.width] at header
   rw [WP.seq_iff]
-  refine WP.mono (precomputeOutAdvance_ok v readyV.workspace (by omega) readyV.ptr header.count) ?_
+  refine WP.mono (precomputeOutAdvance_ok v readyV.workspace (by omega_using [size]) readyV.ptr header.count) ?_
   rintro z ⟨sourceZ, indexZ, memZ, restZ⟩
   have readyZ := readyV.of_mem memZ restZ ((restZ.gpr .r0 (by decide)).trans readyV.ptr)
   refine WP.mono (importArrayLayout_ok z readyZ (by decide : 4 < 8) secondFit
@@ -79,9 +79,9 @@ theorem pdImport_ok (s : State) {base pp : BitVec 32} {len w : Nat}
   rintro t ⟨readyT, second, keepsT, frameT, restT, _⟩
   rw [memZ, address] at second
   rw [memZ] at frameT
-  have publicEq := WorkspaceEq.of_frame (by have := h.sourceFit; omega : 16 * w < 2 ^ 64)
+  have publicEq := WorkspaceEq.of_frame (by have := h.sourceFit; omega_using [secondFit] : 16 * w < 2 ^ 64)
     frameV (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate.symm)
-  have unchanged := publicEq.read (8 * w) (8 * w) (by omega)
+  have unchanged := publicEq.read (8 * w) (8 * w) (by omega_using [])
   rw [unchanged] at second
   have firstT := keeps_array_num keepsT fits
     (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 4)

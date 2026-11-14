@@ -31,7 +31,7 @@ theorem ppRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) : E.Apart
   rcases List.mem_append.mp ho with h | h
   · exact paRanges_apart G v o h
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl <;> simp only [fCounter, fOffset, fOut, fWitLen, hdr] <;> omega
+    rcases h with rfl | rfl <;> simp only [fCounter, fOffset, fOut, fWitLen, hdr] <;> omega_using [sz]
 
 /-- What memory `m` holds after p's search with result `R`. -/
 def PRes (E : Env) (g : Geo) (Q : Nat) (m : Mem) : Option (Option Nat × Spec.RsaKeyGen.Rand) → Prop
@@ -51,11 +51,11 @@ theorem pcand_bounds {g : Geo} (G : GeoOk g) {E : Env} {k offset Q : Nat} :
   have hlen : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * g.qLen) bs).length = 8 * g.qLen := fun bs => by
     rw [← G.seedHash, G.hash.hash_length, G.N]
   unfold pcand
-  rw [pCandidate_shaped (by omega) hlen]
-  have sh := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * g.pLen) (by omega)
+  rw [pCandidate_shaped (by omega_using [bd]) hlen]
+  have sh := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := 8 * g.pLen) (by omega_using [bd])
     (contributions (8 * g.qLen) (pDigest (8 * g.qLen) (chunk E k) offset) ((8 * g.pLen - 1) / (8 * g.qLen) + 1))
   have := pReduction_le (q := Q) sh.1
-  exact ⟨by dsimp only; omega, pReduction_odd _ _⟩
+  exact ⟨by dsimp only; omega_using [sh, this], pReduction_odd _ _⟩
 
 /-- What p's search keeps. -/
 structure PKeep (E : Env) (g : Geo) (k Q : Nat) (s t : State) : Prop where
@@ -96,10 +96,10 @@ theorem PKeep.store {E : Env} {g : Geo} {k Q : Nat} {s t t' : State} (P : PKeep 
   refine ⟨P.base.keep v C (fun o ho => ppRanges_apart G v o (by simp only [List.mem_singleton] at ho; rw [ho]; exact hd))
     edi sp rd wr sy, ?_, ?_, P.chg.trans (C.widen fun o ho => ⟨o, by simp only [List.mem_singleton] at ho; rw [ho]; exact hd,
       Nat.le_refl _, Nat.le_refl _⟩), by rw [rd, P.rd], by rw [wr, P.wr], by rw [sy, P.syms]⟩
-  · rw [hm, word_store_other v _ (by simp only [fSeed, hdr]; omega) (by simp only [sState] at hdq; omega) (.inl hs),
+  · rw [hm, word_store_other v _ (by simp only [fSeed, hdr]; omega_using [sz]) (by simp only [sState] at hdq; omega_using [hdq, sz]) (.inl hs),
       P.seed]
-  · rw [Env.Chg.scratch v C (by simp only [sPk]; omega) fun o ho => by
-      simp only [List.mem_singleton] at ho; subst ho; simp only [sState, sPk] at hdq ⊢; omega, P.q]
+  · rw [Env.Chg.scratch v C (by simp only [sPk]; omega_using [sz, bd]) fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho; simp only [sState, sPk] at hdq ⊢; omega_using [hdq, sz], P.q]
 
 /-- One counter: the loop exits with p's result, or goes on to the next. -/
 theorem pBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) {k Q : Nat}
@@ -334,9 +334,9 @@ theorem pPart_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
   refine WP.loop (M := isa) (fun m t => ∃ c u, c + m = 4 * (8 * g.pLen) ∧ c < 4 * (8 * g.pLen) ∧
       PLoop E g k Q (Spec.Dsa.primeFromSeed (8 * g.pLen) (8 * g.qLen) Q (chunk E k) (E.witT.drop used)) s c u t)
     (fun m t ⟨c, u, hm, hc, L⟩ => WP.mono (pBody_ok G v hq hk hQ0 L hc) fun t' h => ?_) (4 * (8 * g.pLen)) t₃
-    ⟨0, used, by omega, by omega, L₀⟩
+    ⟨0, used, by omega_using [], by omega_using [bd], L₀⟩
   rcases h with ⟨z, K, res⟩ | ⟨z, hc', u', L'⟩
   · exact .inl ⟨z, K, res⟩
-  · exact .inr ⟨z, m - 1, by omega, c + 1, u', by omega, hc', L'⟩
+  · exact .inr ⟨z, m - 1, by omega_using [hm, hc], c + 1, u', by omega_using [hm, hc], hc', L'⟩
 
 end VG.Proof.Dsa.X86.Generation

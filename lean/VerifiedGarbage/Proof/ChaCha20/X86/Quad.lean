@@ -1039,7 +1039,7 @@ theorem finishRow_ok {r : Nat} (hr : r < 4) {s : State} (h : FI a b buf (blk vs 
       · have hs : s.mem (a + BitVec.ofNat 64 k) = s₀.mem (a + BitVec.ofNat 64 k) :=
           src_keep hW256 hal (by simpa using hsb) h.frame hk (by rw [h.data k hk, ite_eq_right (by omega_arith)])
         rw [ite_eq_left ⟨c, by omega_arith, cf⟩, hs, ite_eq_left ⟨by omega_arith, cf⟩]
-      · rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+      · rw [ite_eq_right (by omega), ite_eq_right (by omega_using [c]), ite_eq_right (by omega)]
     · rw [ite_eq_right (by omega_arith)]
       by_cases c' : k % 64 / 16 < r ∧ Full W k
       · rw [ite_eq_left c', ite_eq_left ⟨by omega, c'.2⟩]

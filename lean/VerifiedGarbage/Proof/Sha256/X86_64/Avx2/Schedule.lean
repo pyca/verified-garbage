@@ -43,13 +43,13 @@ theorem psrld_eq (a : BitVec 128) (n : BitVec 8) (h : n.toNat < 32) :
     XShiftOp.eval .psrld a n =
       ofDwords (dword a 0 >>> n.toNat) (dword a 1 >>> n.toNat) (dword a 2 >>> n.toNat)
         (dword a 3 >>> n.toNat) := by
-  simp only [XShiftOp.eval, show ¬ 31 < n.toNat by omega, ite_false]
+  simp only [XShiftOp.eval, show ¬ 31 < n.toNat by omega_using [h], ite_false]
 
 theorem pslld_eq (a : BitVec 128) (n : BitVec 8) (h : n.toNat < 32) :
     XShiftOp.eval .pslld a n =
       ofDwords (dword a 0 <<< n.toNat) (dword a 1 <<< n.toNat) (dword a 2 <<< n.toNat)
         (dword a 3 <<< n.toNat) := by
-  simp only [XShiftOp.eval, show ¬ 31 < n.toNat by omega, ite_false]
+  simp only [XShiftOp.eval, show ¬ 31 < n.toNat by omega_using [h], ite_false]
 
 theorem qword_ofDwords_0 (a c b d : BitVec 32) : qword (ofDwords a c b d) 0 = c ++ a := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -57,17 +57,17 @@ theorem qword_ofDwords_0 (a c b d : BitVec 32) : qword (ofDwords a c b d) 0 = c 
     Nat.zero_add, decide_eq_true hi, Bool.true_and]
   by_cases h : i < 32
   · simp only [h, ite_true]
-  · simp only [h, ite_false, show i - 32 < 32 by omega, ite_true]
+  · simp only [h, ite_false, show i - 32 < 32 by omega_using [hi], ite_true]
 
 theorem qword_ofDwords_1 (a c b d : BitVec 32) : qword (ofDwords a c b d) 1 = d ++ b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [qword, ofDwords, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, Nat.mul_one,
-    decide_eq_true hi, Bool.true_and, show ¬ 64 + i < 32 by omega, show ¬ 64 + i - 32 < 32 by omega,
+    decide_eq_true hi, Bool.true_and, show ¬ 64 + i < 32 by omega_using [], show ¬ 64 + i - 32 < 32 by omega_using [],
     ite_false]
   by_cases h : i < 32
-  · simp only [h, ite_true, show 64 + i - 32 - 32 = i by omega]
-  · simp only [h, show ¬ 64 + i - 32 - 32 < 32 by omega, ite_false,
-      show 64 + i - 32 - 32 - 32 = i - 32 by omega]
+  · simp only [h, ite_true, show 64 + i - 32 - 32 = i by omega_using []]
+  · simp only [h, show ¬ 64 + i - 32 - 32 < 32 by omega_using [h], ite_false,
+      show 64 + i - 32 - 32 - 32 = i - 32 by omega_using []]
 
 theorem shr_append (c a : BitVec 32) {m : Nat} (h : m < 32) :
     (c ++ a : BitVec 64) >>> m = (c >>> m) ++ (a >>> m ||| c <<< (32 - m)) := by
@@ -76,24 +76,24 @@ theorem shr_append (c a : BitVec 32) {m : Nat} (h : m < 32) :
     BitVec.getLsbD_shiftLeft]
   by_cases h1 : i < 32
   · by_cases h2 : m + i < 32
-    · simp only [h1, h2, ite_true, decide_true, show i < 32 - m by omega, Bool.not_true, Bool.true_and,
+    · simp only [h1, h2, ite_true, decide_true, show i < 32 - m by omega_using [h2], Bool.not_true, Bool.true_and,
         Bool.false_and, Bool.or_false]
-    · simp only [h1, h2, ite_true, ite_false, decide_true, show ¬ i < 32 - m by omega, decide_false,
-        Bool.not_false, Bool.true_and, BitVec.getLsbD_of_ge a (m + i) (by omega), Bool.false_or,
-        show i - (32 - m) = m + i - 32 by omega]
-  · simp only [h1, show ¬ m + i < 32 by omega, ite_false, show m + (i - 32) = m + i - 32 by omega]
+    · simp only [h1, h2, ite_true, ite_false, decide_true, show ¬ i < 32 - m by omega_using [h2], decide_false,
+        Bool.not_false, Bool.true_and, BitVec.getLsbD_of_ge a (m + i) (by omega_using [h2]), Bool.false_or,
+        show i - (32 - m) = m + i - 32 by omega_using [h]]
+  · simp only [h1, show ¬ m + i < 32 by omega_using [h1], ite_false, show m + (i - 32) = m + i - 32 by omega_using [h1]]
 
 theorem append_pairs (p q r s : BitVec 32) : (p ++ q) ++ (r ++ s) = ofDwords s r q p := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [ofDwords, BitVec.getLsbD_append]
   simp only [Nat.reduceAdd, Nat.sub_sub]
   by_cases h1 : i < 32
-  · simp only [h1, show i < 64 by omega, ite_true]
+  · simp only [h1, show i < 64 by omega_using [h1], ite_true]
   by_cases h2 : i < 64
-  · simp only [h1, h2, show i - 32 < 32 by omega, ite_true, ite_false]
+  · simp only [h1, h2, show i - 32 < 32 by omega_using [h2], ite_true, ite_false]
   by_cases h3 : i < 96
-  · simp only [h1, h2, show ¬ i - 32 < 32 by omega, show i - 64 < 32 by omega, ite_true, ite_false]
-  · simp only [h1, h2, show ¬ i - 32 < 32 by omega, show ¬ i - 64 < 32 by omega, ite_false]
+  · simp only [h1, h2, show ¬ i - 32 < 32 by omega_using [h2], show i - 64 < 32 by omega_using [h3], ite_true, ite_false]
+  · simp only [h1, h2, show ¬ i - 32 < 32 by omega_using [h2], show ¬ i - 64 < 32 by omega_using [h3], ite_false]
 
 /-- A quadword shift right, on doublewords: the high doubleword of each
 quadword shifts into the low one. -/
@@ -101,7 +101,7 @@ theorem psrlq_eq (a c b d : BitVec 32) (n : BitVec 8) (h : n.toNat < 32) :
     XShiftOp.eval .psrlq (ofDwords a c b d) n =
       ofDwords (a >>> n.toNat ||| c <<< (32 - n.toNat)) (c >>> n.toNat)
         (b >>> n.toNat ||| d <<< (32 - n.toNat)) (d >>> n.toNat) := by
-  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega, ite_false, qword_ofDwords_0,
+  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega_using [h], ite_false, qword_ofDwords_0,
     qword_ofDwords_1, shr_append _ _ h, append_pairs]
 
 theorem pshufb_BA_bytes (a : BitVec 128) :
@@ -122,9 +122,9 @@ theorem pshufb_BA (a : BitVec 128) :
   rw [pshufb_BA_bytes]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   obtain ⟨k, r, hk, hr, rfl⟩ : ∃ k r, k < 16 ∧ r < 8 ∧ i = 8 * k + r :=
-    ⟨i / 8, i % 8, by omega, by omega, by omega⟩
-  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega,
-    getLsbD_ofDwords_block _ _ _ _ (by omega) (by omega)]
+    ⟨i / 8, i % 8, by omega_using [hi], by omega_using [], by omega_using []⟩
+  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega_using [],
+    getLsbD_ofDwords_block _ _ _ _ (by omega_using [hk]) (by omega_using [hr])]
   match k, hk with
   | 0, _ => ?_
   | 1, _ => ?_
@@ -142,9 +142,9 @@ theorem pshufb_BA (a : BitVec 128) :
   | 13, _ => ?_
   | 14, _ => ?_
   | 15, _ => ?_
-  | _ + 16, h => exact absurd h (by omega)
+  | _ + 16, h => exact absurd h (by omega_using [])
   all_goals
-  simp (disch := omega) only [↓reduceIte, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
+  simp (disch := omega_using [hr]) only [↓reduceIte, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
     Nat.reduceAdd, Nat.reduceMul, Nat.reduceLT, ← Nat.add_assoc, byte, dword, BitVec.getLsbD_extractLsb',
     decide_eq_true, Bool.true_and] <;>
   simp
@@ -155,9 +155,9 @@ theorem pshufb_DC (a : BitVec 128) :
   rw [pshufb_DC_bytes]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   obtain ⟨k, r, hk, hr, rfl⟩ : ∃ k r, k < 16 ∧ r < 8 ∧ i = 8 * k + r :=
-    ⟨i / 8, i % 8, by omega, by omega, by omega⟩
-  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega,
-    getLsbD_ofDwords_block _ _ _ _ (by omega) (by omega)]
+    ⟨i / 8, i % 8, by omega_using [hi], by omega_using [], by omega_using []⟩
+  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega_using [],
+    getLsbD_ofDwords_block _ _ _ _ (by omega_using [hk]) (by omega_using [hr])]
   match k, hk with
   | 0, _ => ?_
   | 1, _ => ?_
@@ -175,9 +175,9 @@ theorem pshufb_DC (a : BitVec 128) :
   | 13, _ => ?_
   | 14, _ => ?_
   | 15, _ => ?_
-  | _ + 16, h => exact absurd h (by omega)
+  | _ + 16, h => exact absurd h (by omega_using [])
   all_goals
-  simp (disch := omega) only [↓reduceIte, Nat.reduceSub, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
+  simp (disch := omega_using [hr]) only [↓reduceIte, Nat.reduceSub, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
     Nat.reduceAdd, Nat.reduceMul, Nat.reduceLT, ← Nat.add_assoc, byte, dword, BitVec.getLsbD_extractLsb',
     decide_eq_true, Bool.true_and] <;>
   simp
@@ -235,19 +235,19 @@ theorem ssig0_shifts (x : Word) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [ssig0, BitVec.getLsbD_xor, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_rotateRight, Nat.reduceMod, Nat.reduceSub, decide_eq_true hi, Bool.true_and,
-    show 7 + (11 + i) = 18 + i by omega]
+    show 7 + (11 + i) = 18 + i by omega_using []]
   by_cases h14 : i < 14
-  · simp only [h14, show i < 25 by omega, show i - 11 < 32 by omega, show i - 11 < 14 by omega,
+  · simp only [h14, show i < 25 by omega_using [h14], show i - 11 < 32 by omega_using [hi], show i - 11 < 14 by omega_using [h14],
       decide_true, Bool.not_true, Bool.false_and, Bool.and_false, Bool.xor_false, ite_true]
     simp only [Bool.xor_comm, Bool.xor_assoc]
-  have h18 : x.getLsbD (18 + i) = false := BitVec.getLsbD_of_ge x _ (by omega)
+  have h18 : x.getLsbD (18 + i) = false := BitVec.getLsbD_of_ge x _ (by omega_using [h14])
   by_cases h25 : i < 25
-  · simp only [h14, h25, h18, show i - 11 < 32 by omega, show i - 11 < 14 by omega, decide_true,
+  · simp only [h14, h25, h18, show i - 11 < 32 by omega_using [hi], show i - 11 < 14 by omega_using [h25], decide_true,
       decide_false, Bool.not_true, Bool.not_false, Bool.true_and, Bool.false_and, Bool.and_false,
       Bool.xor_false, ite_true, ite_false]
     simp only [Bool.xor_comm, Bool.xor_assoc]
-  · simp only [h14, h25, h18, BitVec.getLsbD_of_ge x (7 + i) (by omega),
-      show ¬ i < 11 by omega, show i - 11 < 32 by omega, show ¬ i - 11 < 14 by omega, decide_true,
+  · simp only [h14, h25, h18, BitVec.getLsbD_of_ge x (7 + i) (by omega_using [h25]),
+      show ¬ i < 11 by omega_using [h14], show i - 11 < 32 by omega_using [hi], show ¬ i - 11 < 14 by omega_using [h25], decide_true,
       decide_false, Bool.not_false, Bool.true_and,
       Bool.xor_false, ite_false, Nat.sub_sub, Nat.reduceAdd]
     simp only [Bool.xor_comm, Bool.xor_assoc]
@@ -260,27 +260,27 @@ theorem ssig1_shifts (x : Word) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [ssig1, BitVec.getLsbD_xor, BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_rotateRight, Nat.reduceMod, Nat.reduceSub, decide_eq_true hi, Bool.true_and,
-    show 17 + (2 + i) = 19 + i by omega]
+    show 17 + (2 + i) = 19 + i by omega_using []]
   by_cases h13 : i < 13
-  · simp only [h13, show i < 15 by omega, show 2 + i < 15 by omega, show i < 30 by omega, decide_true,
+  · simp only [h13, show i < 15 by omega_using [h13], show 2 + i < 15 by omega_using [h13], show i < 30 by omega_using [h13], decide_true,
       Bool.not_true, Bool.false_and, Bool.and_false, Bool.or_false, ite_true]
     simp only [Bool.xor_comm, Bool.xor_assoc]
-  have h19 : x.getLsbD (19 + i) = false := BitVec.getLsbD_of_ge x _ (by omega)
+  have h19 : x.getLsbD (19 + i) = false := BitVec.getLsbD_of_ge x _ (by omega_using [h13])
   by_cases h15 : i < 15
-  · simp only [h13, h15, h19, show ¬ 2 + i < 15 by omega, show 2 + i < 32 by omega,
-      show i < 30 by omega, show 2 + i - 15 = i - 13 by omega, decide_true, decide_false,
+  · simp only [h13, h15, h19, show ¬ 2 + i < 15 by omega_using [h13], show 2 + i < 32 by omega_using [h15],
+      show i < 30 by omega_using [h15], show 2 + i - 15 = i - 13 by omega_using [], decide_true, decide_false,
       Bool.not_true, Bool.not_false, Bool.true_and, Bool.false_and, Bool.or_false,
       Bool.false_or, ite_true, ite_false]
     simp only [Bool.xor_comm, Bool.xor_left_comm]
-  have h17 : x.getLsbD (17 + i) = false := BitVec.getLsbD_of_ge x _ (by omega)
+  have h17 : x.getLsbD (17 + i) = false := BitVec.getLsbD_of_ge x _ (by omega_using [h15])
   by_cases h30 : i < 30
-  · simp only [h13, h15, h19, h17, h30, show ¬ 2 + i < 15 by omega, show 2 + i < 32 by omega,
-      show 2 + i - 15 = i - 13 by omega, decide_true, decide_false,
+  · simp only [h13, h15, h19, h17, h30, show ¬ 2 + i < 15 by omega_using [h13], show 2 + i < 32 by omega_using [h30],
+      show 2 + i - 15 = i - 13 by omega_using [], decide_true, decide_false,
       Bool.not_true, Bool.not_false, Bool.true_and, Bool.false_and, Bool.or_false,
       Bool.false_or, ite_false]
     simp only [Bool.xor_comm, Bool.xor_left_comm]
-  · simp only [h13, h15, h19, h17, h30, show ¬ 2 + i < 32 by omega, show 17 + (i - 30) = i - 13 by omega,
-      BitVec.getLsbD_of_ge x (10 + i) (by omega), decide_false,
+  · simp only [h13, h15, h19, h17, h30, show ¬ 2 + i < 32 by omega_using [h30], show 17 + (i - 30) = i - 13 by omega_using [h30],
+      BitVec.getLsbD_of_ge x (10 + i) (by omega_using [h30]), decide_false,
       Bool.not_false, Bool.true_and, Bool.false_and, Bool.or_false,
       Bool.false_or, Bool.false_xor, Bool.xor_false, ite_false]
 
@@ -345,7 +345,7 @@ theorem msg_nodup (n : Nat) :
       [msg c, msg (c + 1), msg (c + 2), msg (c + 3), t0, t1, t2, t3, mBA, mDC, mBswap, tmp].Nodup := by
     decide
   have e : ∀ k, msg (n + k) = msg (n % 4 + k) := fun k => by
-    simp only [msg]; rw [show (n % 4 + k) % 4 = (n + k) % 4 by omega]
+    simp only [msg]; rw [show (n % 4 + k) % 4 = (n + k) % 4 by omega_using []]
   rw [show msg n = msg (n % 4) by simp only [msg, Nat.mod_mod], e 1, e 2, e 3]
   exact key _ (Nat.mod_lt _ (by decide))
 

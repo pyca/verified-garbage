@@ -33,7 +33,7 @@ theorem toNat_vbyte_half (x : BitVec 128) (j : Nat) : (vbyte x (2 * j)).toNat = 
   rw [Cbd16.half_bytes, BitVec.toNat_append, Nat.shiftLeft_eq]
   have := (vbyte x (2 * j)).isLt
   rw [Nat.or_comm, or_shift this]
-  omega
+  omega_using []
 
 /-- The halfwords of UZP1 of words. -/
 theorem narrow_h {x y : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (hy : Lanes y fun e => f (4 + e))
@@ -41,10 +41,10 @@ theorem narrow_h {x y : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (hy : Lan
   rw [Ntt16.vhalf_perm_h8 _ _ _ hj]
   dsimp only
   split
-  · rw [toNat_vhalf_word, hx j (by omega)]
-  · rw [show 2 * j - 8 = 2 * (j - 4) by omega, toNat_vhalf_word, hy _ (by omega)]
+  · rw [toNat_vhalf_word, hx j (by omega_arith)]
+  · rw [show 2 * j - 8 = 2 * (j - 4) by omega_using [], toNat_vhalf_word, hy _ (by omega_using [hj])]
     dsimp only
-    rw [show 4 + (j - 4) = j by omega]
+    rw [show 4 + (j - 4) = j by omega_arith]
 
 /-- The bytes of UZP1 of halfwords. -/
 theorem narrow_b {x y : BitVec 128} {g : Nat → Nat} (hx : ∀ j < 8, (vhalf x j).toNat = g j)
@@ -52,9 +52,9 @@ theorem narrow_b {x y : BitVec 128} {g : Nat → Nat} (hx : ∀ j < 8, (vhalf x 
     (vbyte (VPermOp.eval .uzp1 .b16 x y) j).toNat = g j % 2 ^ 8 := by
   rw [Blowfish.AArch64.vbyte_uzp1 _ _ hj]
   split
-  · rw [toNat_vbyte_half, hx j (by omega)]
-  · rw [show 2 * j - 16 = 2 * (j - 8) by omega, toNat_vbyte_half, hy _ (by omega),
-      show 8 + (j - 8) = j by omega]
+  · rw [toNat_vbyte_half, hx j (by omega_arith)]
+  · rw [show 2 * j - 16 = 2 * (j - 8) by omega_using [], toNat_vbyte_half, hy _ (by omega_using [hj]),
+      show 8 + (j - 8) = j by omega_arith]
 
 /-- The bytes of four registers of words less than 256. -/
 theorem narrow4 {a b c d : BitVec 128} {f : Nat → Nat} (ha : Lanes a f) (hb : Lanes b fun e => f (4 + e))
@@ -66,12 +66,12 @@ theorem narrow4 {a b c d : BitVec 128} {f : Nat → Nat} (ha : Lanes a f) (hb : 
     (fun j hj => narrow_h (f := fun e => f (8 + e)) hc
       (hd.congr fun e _ => by rw [← Nat.add_assoc]) hj) hj]
   have := hf j hj
-  omega
+  omega_using [this]
 
 /-- The low halfwords of UZP1 of words, from the first source alone. -/
 theorem narrow_h_lo {x : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (y : BitVec 128) {j : Nat}
     (hj : j < 4) : (vhalf (VPermOp.eval .uzp1 .h8 x y) j).toNat = f j % 2 ^ 16 := by
-  rw [Ntt16.vhalf_perm_h8 _ _ _ (by omega)]
+  rw [Ntt16.vhalf_perm_h8 _ _ _ (by omega_using [hj])]
   dsimp only
   rw [ite_eq_left hj, toNat_vhalf_word, hx j hj]
 
@@ -79,7 +79,7 @@ theorem narrow_h_lo {x : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (y : Bit
 theorem narrow_b_lo {x : BitVec 128} {g : Nat → Nat} {n : Nat} (hn : n ≤ 8)
     (hx : ∀ j < n, (vhalf x j).toNat = g j) (y : BitVec 128) {j : Nat} (hj : j < n) :
     (vbyte (VPermOp.eval .uzp1 .b16 x y) j).toNat = g j % 2 ^ 8 := by
-  rw [Blowfish.AArch64.vbyte_uzp1 _ _ (by omega), ite_eq_left (by omega), toNat_vbyte_half, hx j hj]
+  rw [Blowfish.AArch64.vbyte_uzp1 _ _ (by omega_using [hn, hj]), ite_eq_left (by omega_using [hn, hj]), toNat_vbyte_half, hx j hj]
 
 /-- The bytes of one register of words less than 256. -/
 theorem narrow1 {x : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (hf : ∀ j < 4, f j < 256) {j : Nat}
@@ -88,6 +88,6 @@ theorem narrow1 {x : BitVec 128} {f : Nat → Nat} (hx : Lanes x f) (hf : ∀ j 
       f j := by
   rw [narrow_b_lo (n := 4) (g := fun j => f j % 2 ^ 16) (by decide) (fun j hj => narrow_h_lo hx x hj) _ hj]
   have := hf j hj
-  omega
+  omega_using [this]
 
 end VG.Proof.MlKem.AArch64.CodecV

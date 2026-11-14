@@ -59,10 +59,10 @@ theorem EPub.comp_eq (hq : EPub s₀ s₀' A N) {i : Nat} (hi : i < N) : comp s�
   have r {d : Nat} (hd : d + 8 ≤ N * 16) : s₀.mem.readW (A + BitVec.ofNat 64 d) 64 =
       s₀'.mem.readW (A + BitVec.ofNat 64 d) 64 := by
     have e := Mem.read_congr (m := s₀.mem) (m' := s₀'.mem) (a := A + BitVec.ofNat 64 d) (n := 64 / 8)
-      fun j hj => by rw [Offset.add_add]; exact hq.desc (d + j) (by omega)
+      fun j hj => by rw [Offset.add_add]; exact hq.desc (d + j) (by omega_using [hd, hj])
     simp only [Mem.readW, e]
   unfold comp
-  rw [r (d := 16 * i) (by omega), r (d := 16 * i + 8) (by omega)]
+  rw [r (d := 16 * i) (by omega_using [hi]), r (d := 16 * i + 8) (by omega_using [hi])]
 
 /-- The working space's address, from the stack. -/
 theorem argLoad_wp (h : EPre s₀ C A P W D R N L) :
@@ -236,7 +236,7 @@ theorem ads_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀
   · have he : i + 1 = N := by simpa [eval, za] using e
     subst he; exact ⟨ha, hb⟩
   · have he : i + 1 ≠ N := by simpa [eval, za] using e
-    exact ⟨N - (i + 1), by omega, i + 1, rfl, by omega, ha, hb⟩
+    exact ⟨N - (i + 1), by omega_using [hiN], i + 1, rfl, by omega_using [hiN, he], ha, hb⟩
 
 /-- S2V of the associated data in both runs. -/
 theorem encS2v_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)

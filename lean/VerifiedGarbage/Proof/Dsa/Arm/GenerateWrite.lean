@@ -47,11 +47,11 @@ theorem copyDst_of {s : State} {src O : BitVec 32} {L a n : Nat} (fit : O.toNat 
     (wr : ∀ i < L, InRegions s.wr (State.addr O + BitVec.ofNat 64 i) 1)
     (hd : Region.Disjoint ⟨State.addr src, n⟩ ⟨State.addr O, L⟩) (h : a + n ≤ L) (hn : 0 < n) :
     CopyDst s src (O + BitVec.ofNat 32 a) n := by
-  have e : State.addr (O + BitVec.ofNat 32 a) = State.addr O + BitVec.ofNat 64 a := VG.Arm.addr_add (by omega)
+  have e : State.addr (O + BitVec.ofNat 32 a) = State.addr O + BitVec.ofNat 64 a := VG.Arm.addr_add (by omega_using [fit, h, hn])
   refine ⟨?_, fun i hi => ?_, ?_⟩
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [e, Offset.add_add]; exact wr _ (by omega)
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a) (by omega_using [fit, h, hn]), Nat.mod_eq_of_lt (by omega_using [fit, h, hn])]
+    omega_using [fit, h]
+  · rw [e, Offset.add_add]; exact wr _ (by omega_using [h, hi])
   · rw [e]; exact hd.sub_right (Offset.sub_base _ h)
 
 /-- The bytes of a computed value. -/
@@ -61,11 +61,11 @@ theorem bytesIn_local {s : State} {base : Addr} {size o len : Nat} (hs : Ws s ba
   have nw := hs.nowrap
   have A := local_addr hs ho
   refine ⟨?_, fun i hi => ?_, fun i hi => ?_⟩
-  · rw [pointerValue, BitVec.toNat_add, BitVec.toNat_ofNat, hs.wb_toNat, Nat.mod_eq_of_lt (a := o) (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-    simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; omega
+  · rw [pointerValue, BitVec.toNat_add, BitVec.toNat_ofNat, hs.wb_toNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho, nw]),
+      Nat.mod_eq_of_lt (by omega_using [ho, nw])]
+    simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; omega_using [h, nw]
   · simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at hi
-    rw [A, off, Offset.add_add]; exact hs.read (by omega)
+    rw [A, off, Offset.add_add]; exact hs.read (by omega_using [h, hi])
   · simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
     rw [A]
 
@@ -77,17 +77,17 @@ theorem BytesIn.outside {s t : State} {p O : BitVec 32} {bs : List Byte} {L : Na
   refine Ot _ (.inr ?_)
   rw [Nat.zero_add]
   refine ofs_apart hd.symm ?_
-  have := ofs_off (State.addr p) (d := 0) (i := i) (by have := h.fit; omega)
+  have := ofs_off (State.addr p) (d := 0) (i := i) (by have := h.fit; omega_using [hi, this])
   rw [off, BitVec.add_zero, Nat.zero_add] at this
   rw [this]; exact hi
 
 /-- A part of a range that alone changed. -/
 theorem Outside.widen {P : Addr} {e l L : Nat} {m m' : Mem} (O : Outside (P + BitVec.ofNat 64 e) 0 l m m')
     (he : e + l ≤ L) (hL : L ≤ 2 ^ 64) : Outside P 0 L m m' := fun x hx => O x (.inr (by
-  have H := Offset.lt_iff x P (d := e) (n := l) (by omega)
-  have : ¬ (x - (P + BitVec.ofNat 64 e)).toNat < l := fun h => by have := H.mp h; simp only [ofs] at hx; omega
+  have H := Offset.lt_iff x P (d := e) (n := l) (by omega_using [he, hL])
+  have : ¬ (x - (P + BitVec.ofNat 64 e)).toNat < l := fun h => by have := H.mp h; simp only [ofs] at hx; omega_using [he, hx, H, h]
   simp only [ofs]
-  omega))
+  omega_using [this]))
 
 theorem copyFrom_ok {s : State} {src dst mask : BitVec 32} {bs : List Byte} {len : Nat}
     (r1 : s.gpr .r1 = src) (hin : BytesIn s src bs) (hlen : bs.length = len)

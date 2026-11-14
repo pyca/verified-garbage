@@ -43,7 +43,7 @@ theorem Stg.mulWide_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
       val32 t.mem g.B (arr g.w o) (2 * g.w) = A a * A b := by
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulWide_ok h.ws ho (h.live_lt a ha) (h.live_lt b hb)
     (hol a ha).1 (hol a ha).2 (hol b hb).1 (hol b hb).2) fun t ⟨ht, k, e, r⟩ => ⟨?_, ?_⟩
-  · refine h.next ht k (by simp; omega) (by decide) r wordRegs_body
+  · refine h.next ht k (by simp; omega_using [ho]) (by decide) r wordRegs_body
       (h.arrs_keep k (fun j hj => by simp [(hol j hj).1, (hol j hj).2]) (by decide)) h.live_lt
       (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
   · rw [e, h.arrs.get ha, h.arrs.get hb]
@@ -57,7 +57,7 @@ theorem Stg.mulHalf_if_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : Lis
         val32 t.mem g.B (arr g.w o) (2 * g.w) = A a * A b) := by
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulHalf_ok h.ws ho (h.live_lt a ha) (h.live_lt b hb)
     (hol a ha).1 (hol a ha).2 (hol b hb).1 (hol b hb).2) fun t ⟨ht, k, e, r⟩ => ⟨?_, fun hA hB => ?_⟩
-  · refine h.next ht k (by simp; omega) (by decide) r wordRegs_body
+  · refine h.next ht k (by simp; omega_using [ho]) (by decide) r wordRegs_body
       (h.arrs_keep k (fun j hj => by simp [(hol j hj).1, (hol j hj).2]) (by decide)) h.live_lt
       (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
   · have ea : val32 s.mem g.B (arr g.w a) g.w = A a := h.arrs.get ha
@@ -87,7 +87,7 @@ theorem Stg.mulShort_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
       (A b < 2 ^ 64 → val32 t.mem g.B (arr g.w o) (g.w + 2) = A a * A b) := by
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulShort_ok h.ws hw2 ho (h.live_lt a ha) (h.live_lt b hb)
     (hol a ha).1 (hol a ha).2 (hol b hb).1 (hol b hb).2) fun t ⟨ht, k, e, r⟩ => ⟨?_, ?_⟩
-  · refine h.next ht k (by simp; omega) (by decide) r wordRegs_body
+  · refine h.next ht k (by simp; omega_using [ho]) (by decide) r wordRegs_body
       (h.arrs_keep k (fun j hj => by simp [(hol j hj).1, (hol j hj).2]) (by decide)) h.live_lt
       (h.vd_keep k (by simp [hv.1, hv.2]) (by decide)) (h.mask_keep k (by decide))
   · intro hB
@@ -128,7 +128,7 @@ theorem Stg.ifBalanced_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : Lis
     (hW : P → ∀ u, Stg g s0 A live c u → WP isa W u Q) (hO : ¬P → ∀ u, Stg g s0 A live c u → WP isa O u Q) :
     WP isa (VG.Impl.Rsa.X86.WordModRt.ifBalanced sG W O) s Q := by
   unfold VG.Impl.Rsa.X86.WordModRt.ifBalanced
-  refine WP.seq (wp_movS (readSrc_sc h.ws.ws.workspace (by have := h.ws.ws.hdr_le; unfold sG hdr at *; omega))
+  refine WP.seq (wp_movS (readSrc_sc h.ws.ws.workspace (by have := h.ws.ws.hdr_le; unfold sG hdr at *; omega_using [this]))
     fun u U _ => wp_cmpi fun t T _ z => WP.block_nil ?_)
   have ht : Stg g s0 A live c t :=
     (h.regs U.keeps U.mem (by decide)).regs (T.keeps []) T.mem (by decide)
@@ -161,7 +161,7 @@ theorem Stg.wordMod_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     h4 hw htop) fun t ⟨ht, k, wk, wtop, wr, K⟩ => ⟨num t.mem g.B g.w m, num t.mem g.B g.w r, ?_, ?_⟩
   · intro ⟨lo, hi⟩
     have gm := h.arrs.get hmL
-    have hpos : 0 < wq ap := by omega
+    have hpos : 0 < wq ap := by omega_using [h4]
     -- `m`'s words from `W'` on are zero, its word `W' - 1` has its top bit set.
     have low : val32 s.mem g.B (arr g.w m) (wq ap) = A m := by
       rw [val32_low hw (by change num s.mem g.B g.w m < _; rw [gm]; exact hi)]; exact gm
@@ -170,11 +170,11 @@ theorem Stg.wordMod_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     have same : ∀ i, i < g.w + 2 → mw t.mem g.B g.w m i = mw s.mem g.B g.w m i := fun i hi' => by
       by_cases e : i = wq ap - 1
       · subst e
-        have key : ∀ T : Nat, 2 ^ 31 ≤ T → T < 2 ^ 32 → T % 2 ^ 31 + 2 ^ 31 = T := fun T a b => by omega
+        have key : ∀ T : Nat, 2 ^ 31 ≤ T → T < 2 ^ 32 → T % 2 ^ 31 + 2 ^ 31 = T := fun T a b => by omega_using [a, b]
         rw [wtop]; exact key _ topw tlt
       · exact wk i hi' e
     have numEq : ∀ n, n ≤ g.w → val32 t.mem g.B (arr g.w m) n = val32 s.mem g.B (arr g.w m) n :=
-      fun n hn => val32_congr (k := n) fun i (hi' : i < n) => same i (by omega)
+      fun n hn => val32_congr (k := n) fun i (hi' : i < n) => same i (by omega_using [hn, hi'])
     refine ⟨(numEq g.w (Nat.le_refl _)).trans gm, ?_⟩
     rw [wr, numEq _ hw, low]
   · refine h.next ht k (by

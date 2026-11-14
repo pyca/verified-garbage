@@ -70,11 +70,11 @@ theorem coreLoadSlot_ok {s : State} {base : Addr} {size len n m i : Nat} {p : Po
   have bound := slot_bound (n := n) hi
   have sep := slot_sep (n := n) hi0
   simp only [stride] at bound sep
-  refine WP.mono (coreLoad_ok h.scr hz (by have := h.size_le; omega) h4 hlen hw4 hr hd)
+  refine WP.mono (coreLoad_ok h.scr hz (by have := h.size_le; omega_using [bound, this]) h4 hlen hw4 hr hd)
     fun t ⟨V, K, O⟩ => ⟨?_, V, K, O⟩
   apply h.outside_keep K (by decide) (by decide) O
-  · omega
+  · omega_using [sep]
   · have := slot_header n i
-    omega
+    omega_using [this]
 
 end VG.Proof.Dsa.X86

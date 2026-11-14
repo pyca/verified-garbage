@@ -34,7 +34,7 @@ open VG.Proof.Bignum.PPC64LE (Keep)
 abbrev fr (s : State) : Region := ⟨fb s + BitVec.ofNat 64 32, frameBytes - 32⟩
 
 theorem fb_toNat {s : State} (h : frameBytes ≤ s.sp.toNat) : (fb s).toNat + frameBytes = s.sp.toNat := by
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega_using [h]
 
 /-- A region of the frame is in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
@@ -42,13 +42,13 @@ theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
 
 theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     (kR s).Contains (fb s + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by unfold frameBytes at h; omega)
+  Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])
 
 /-- The local variable space is writable. -/
 theorem in_fr (s : State) (rs : List Region) {d n : Nat} (h₁ : 32 ≤ d) (h : d + n ≤ frameBytes) :
     InRegions (fr s :: rs) (fb s + BitVec.ofNat 64 d) n :=
-  ⟨_, List.mem_cons_self .., Offset.contains _ h₁ (by unfold frameBytes at *; omega)
-    (by unfold frameBytes; omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.contains _ h₁ (by unfold frameBytes at *; omega_using [h])
+    (by unfold frameBytes; omega_using [])⟩
 
 theorem in_fr' (s : State) (rd rs : List Region) {d n : Nat} (h₁ : 32 ≤ d) (h : d + n ≤ frameBytes) :
     InRegions (rd ++ fr s :: rs) (fb s + BitVec.ofNat 64 d) n := by
@@ -59,21 +59,21 @@ theorem in_fr' (s : State) (rd rs : List Region) {d n : Nat} (h₁ : 32 ≤ d) (
 theorem stackArgAddr_fb (s : State) (j : Nat) :
     stackArgAddr s j = fb s + BitVec.ofNat 64 (arg j) := by
   have e : BitVec.ofNat 64 (arg j) = BitVec.ofNat 64 frameBytes + BitVec.ofNat 64 (32 + 8 * (8 + j)) := by
-    rw [BitVec.ofNat_add_ofNat]; unfold arg; congr 1; omega
+    rw [BitVec.ofNat_add_ofNat]; unfold arg; congr 1; omega_using []
   rw [stackArgAddr, e, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
 /-- A call's stack arguments, in the frame. -/
 theorem stackArgAddr_in (t : State) (j : Nat) :
     stackArgAddr t j = t.sp + BitVec.ofNat 64 (96 + 8 * j) := by
-  rw [stackArgAddr, show 32 + 8 * (8 + j) = 96 + 8 * j by omega]
+  rw [stackArgAddr, show 32 + 8 * (8 + j) = 96 + 8 * j by omega_using []]
 
 theorem stackArgAddr_eq (s : State) (j : Nat) :
     stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, Nat.add_zero]
-  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 32 + 8 * 8 + 8 * j = 32 + 8 * (8 + j) by omega]
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 32 + 8 * 8 + 8 * j = 32 + 8 * (8 + j) by omega_using []]
 
 theorem in_aR {s : State} {j : Nat} (hj : j < 12) : (aR pc s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; cases pc <;> exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega) (by omega)
+  rw [stackArgAddr_eq s j]; cases pc <;> exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [hj]) (by omega_using [hj])
 
 /-! ## The saves -/
 

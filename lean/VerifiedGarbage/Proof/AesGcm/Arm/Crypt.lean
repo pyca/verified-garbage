@@ -51,7 +51,7 @@ theorem DataW.of_eq {c st w sp k7 k8 : BitVec 32} {s s' : State} {D : BitVec 32}
 
 theorem DataW.sub {c st w sp k7 k8 : BitVec 32} {s : State} {D : BitVec 32} {n : Nat} (h : DataW c st w sp k7 k8 s D n)
     {j k : Nat} (hjk : j + k ≤ n) (hk : 0 < k) : DataW c st w sp k7 k8 s (D + BitVec.ofNat 32 j) k := by
-  have ha := h.ok.addr (j := j) (by omega)
+  have ha := h.ok.addr (j := j) (by omega_using [hjk, hk])
   have hs : Region.Sub ⟨State.addr D + BitVec.ofNat 64 j, k⟩ ⟨State.addr D, n⟩ := Offset.sub_base _ hjk
   exact ⟨h.ok.sub hjk hk, by rw [ha]; exact covers_off h.wr hjk h.ok.lt, by rw [ha]; exact h.ctx.sub_right hs⟩
 
@@ -179,14 +179,14 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
     ciphOf m' (State.addr c) R = ciphOf m (State.addr c) R := by
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   simp only [ciphOf]
-  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 end
 
 /-- `[D, D + j)` and `[D + j, D + n)` are apart. -/
 theorem split_disj {D : Addr} {j n : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64) :
     (⟨D, j⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, n - j⟩ := by
-  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega)) (by omega) (by omega)
+  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega_using [])) (by omega_using [hj, hn]) (by omega_using [hj, hn])
   simpa using this
 
 /-- The bytes done so far and the next ones, written to `T` from `S`. -/

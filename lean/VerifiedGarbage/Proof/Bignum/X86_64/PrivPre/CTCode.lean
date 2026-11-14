@@ -87,7 +87,7 @@ theorem entry_ct : RelCT isa (Two PRel) (.block PrivPre.entry) (Two C2) := by
   have hh : WP isa (.block PrivPre.entry) s (Cont s) :=
     WP.mono (WP.and (head_ok c) (entry_ok c)) fun t ⟨hw, hdi, _, hO, _, _, _, _, _, _, _, _, _, _, _, k⟩ =>
       ⟨hdi, k.gpr (by decide), c.hs.congr k.2.2, hO, WP.mono (WP.and hw (zeroPre_ok (c.hs.congr k.2.2) hdi
-        (by omega) (L := (s.gpr .rsi).toNat) (by omega) (by omega)
+        (by omega_using [hZ]) (L := (s.gpr .rsi).toNat) (by omega_using [hL]) (by omega_using [hL, hpl2, hql2, hk2])
         (by rw [k.gpr (by decide), ofNat_toNat_self]) hO (fun j hj => by rw [k.2.2]; exact c.hout j hj)))
         fun t₂ ⟨hr, _, _, k₂⟩ => ⟨(k₂.gpr (by decide)).trans hdi, hr⟩⟩
   rw [entry_split, WP.block_append_iff] at hh
@@ -133,7 +133,7 @@ theorem zero_ct : RelCT isa (Two C2) PrivPre.zeroPre (Two C3) := by
     Spec.Rsa.modulusWords] at hL
   unfold PrivPre.zeroPre at hw
   rw [WP.seq_iff] at hw
-  have hl : InRegions (t.rd ++ t.wr) (off (stackArg s 2) (8 * sOut)) 8 := hsc.ld (by unfold sOut sFn; omega)
+  have hl : InRegions (t.rd ++ t.wr) (off (stackArg s 2) (8 * sOut)) 8 := hsc.ld (by unfold sOut sFn; omega_using [hZ])
   refine WP.mono (WP.and hw (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = s.gpr .rdi ∧
       t'.gpr .rcx = BitVec.ofNat 64 ((s.gpr .rsi).toNat * 8))
     (by xrun [State.ea, hdr, hdi, hdrOff, hl, hO, hsi, eight_w _ (ofNat_toNat_self (s.gpr .rsi)).symm]) rfl))
@@ -187,7 +187,7 @@ theorem fail_ct : RelCT isa (Two fun P t => C5 P t ∧ isa.eval .ne t = some tru
   have hZ := c.hZ
   have hk1 := c.hk1
   have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (stackArg s 2) (8 * i)) 8 := fun i hi =>
-    hpre.scr.ld (by omega)
+    hpre.scr.ld (by omega_using [hZ, hi])
   refine WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t' => t'.gpr .rsi = s.gpr .rdi ∧
       t'.gpr .rcx = BitVec.ofNat 64 (s.gpr .rcx).toNat) (by
     xrun [State.ea, hdr, hpre.rdi, hdrOff, hl sOut (by decide), hl sK (by decide), hpre.hO, hpre.hK]) rfl)
@@ -211,7 +211,7 @@ theorem toSX {P : PCPub} {t : State} (h : C5 P t ∧ isa.eval .ne t = some false
   · rw [kk.2.2, ← hop, ← hL8]; exact c.hpreR
   · rw [← hop, ← hL8]; exact c.hwrap
   · rw [← hop, ← hL8, ← hB, ← hZ]; exact c.hS
-  · rw [← hL8, preWords c, CrtPub.w, ← hk, ← hpl, ← hql]; omega
+  · rw [← hL8, preWords c, CrtPub.w, ← hk, ← hpl, ← hql]; omega_using []
 
 /-- `vg_rsa_private_precompute` leaks the same in runs that agree on the
 public data. -/

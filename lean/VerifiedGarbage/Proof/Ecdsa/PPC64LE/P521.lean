@@ -24,7 +24,7 @@ theorem p521_nBits : Spec.Ecdsa.nBits p521.C = 521 := by
   have h₁ : 520 ≤ Spec.P521.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P521.curve.n.log2 < 521 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-- The 7 bits of a hash of `66` bytes past `n`'s 521 are dropped. -/
 theorem p521_sh : p521.sh = 7 := by

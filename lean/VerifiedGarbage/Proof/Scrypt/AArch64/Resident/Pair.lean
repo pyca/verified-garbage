@@ -36,7 +36,7 @@ theorem load_inv {s₀ : State} (hp : BlockMix.Pre s₀) {s : State} (h : BlockM
     rw [h.rd,h.wr,h.x24,hp.rd,hp.wr]
     simp only [BlockMix.xP,addr]
     rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (BlockMix.in_b hp (by have := hp.pos; omega))
+    exact InRegions.of_mem (by simp) (BlockMix.in_b hp (by have := hp.pos; omega_using [hj, this]))
   refine WP.mono (load_ok s hi) fun s' u => ?_
   have eq (r : Reg) (hr : r = .x19 ∨ r = .x20 ∨ r = .x21 ∨ r = .x22 ∨ r = .x23 ∨ r = .x24) :
       s'.gpr r = s.gpr r := u.keep r (pin_ne hr).1
@@ -66,27 +66,27 @@ theorem tail_holds {s : State} (hh : Holds (words s.mem (s.gpr .x21)) s) :
 
 theorem body_ok {s₀ : State} (hp : BlockMix.Pre s₀) {k : Nat} (hk : k < BlockMix.rr s₀)
     {s : State} (h : Inv s₀ k s) : WP isa VG.Impl.Scrypt.AArch64.Resident.body s (Inv s₀ (k+1)) := by
-  have oe : 64*k+64 ≤ 128*BlockMix.rr s₀ := by omega
-  have oo : 64*(BlockMix.rr s₀+k)+64 ≤ 128*BlockMix.rr s₀ := by omega
+  have oe : 64*k+64 ≤ 128*BlockMix.rr s₀ := by omega_using [hk]
+  have oo : 64*(BlockMix.rr s₀+k)+64 ≤ 128*BlockMix.rr s₀ := by omega_using [hk]
   have ib : ∀ j < 16, InRegions (s.rd ++ s.wr) (addr (BlockMix.bB s₀ k) j) 4 := by
     intro j hj
     rw [h.rd,h.wr,hp.rd,hp.wr]
     simp only [addr,BlockMix.bB]
     rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (BlockMix.in_b hp (by omega))
+    exact InRegions.of_mem (by simp) (BlockMix.in_b hp (by omega_using [hk, hj]))
   have ow : ∀ j < 16, InRegions s.wr (addr (BlockMix.yE s₀ k) j) 4 := by
     intro j hj
     rw [h.wr,hp.wr]
     simp only [addr,BlockMix.yE]
     rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (BlockMix.in_y hp (by omega))
+    exact InRegions.of_mem (by simp) (BlockMix.in_y hp (by omega_using [hk, hj]))
   refine WP.seq (WP.mono (step_ok (by simp) h.x19 h.x20
-    ((hp.b_y.sub_left (BlockMix.b_sub hp (by omega))).sub_right (BlockMix.y_sub hp oe)) ib ow h.holds)
+    ((hp.b_y.sub_left (BlockMix.b_sub hp (by omega_using [hk]))).sub_right (BlockMix.y_sub hp oe)) ib ow h.holds)
     fun a ⟨ma,ha,ba⟩ => ?_)
   refine WP.seq (wp_addImm (by decide) fun b ub => WP.block_nil ?_)
   have b19 : b.gpr .x19 = BlockMix.bP s₀ + BitVec.ofNat 64 (64*(2*k+1)) := by
     rw [ub.gpr,ma.pin (by simp),h.x19,add_ofNat]
-    congr 2; omega
+    congr 2; omega_using []
   have b21 : b.gpr .x21 = BlockMix.yO s₀ k := by rw [ub.other _ (by decide),ma.pin (by simp),h.x21]
   have hb : Holds (words b.mem (BlockMix.yE s₀ k)) b := by
     intro j hj
@@ -98,15 +98,15 @@ theorem body_ok {s₀ : State} (hp : BlockMix.Pre s₀) {k : Nat} (hk : k < Bloc
     rw [ub.rd,ub.wr,ma.rd,ma.wr,h.rd,h.wr,hp.rd,hp.wr]
     simp only [addr]
     rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (BlockMix.in_b hp (by omega))
+    exact InRegions.of_mem (by simp) (BlockMix.in_b hp (by omega_using [hk, hj]))
   have ow' : ∀ j < 16, InRegions b.wr (addr (BlockMix.yO s₀ k) j) 4 := by
     intro j hj
     rw [ub.wr,ma.wr,h.wr,hp.wr]
     simp only [addr,BlockMix.yO]
     rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (BlockMix.in_y hp (by omega))
+    exact InRegions.of_mem (by simp) (BlockMix.in_y hp (by omega_using [hk, hj]))
   refine WP.seq (WP.mono (step_ok (by simp) b19 b21
-    ((hp.b_y.sub_left (BlockMix.b_sub hp (by omega))).sub_right (BlockMix.y_sub hp oo)) ib' ow' hb)
+    ((hp.b_y.sub_left (BlockMix.b_sub hp (by omega_using [hk]))).sub_right (BlockMix.y_sub hp oo)) ib' ow' hb)
     fun c ⟨mc,hc,bc⟩ => ?_)
   have f1 : Frame [BlockMix.slot s₀ (64*k),⟨BlockMix.sc s₀,64⟩] s.mem a.mem := ma.frame.mono (by simp [BlockMix.slot])
   have f2 : Frame [BlockMix.slot s₀ (64*(BlockMix.rr s₀+k)),⟨BlockMix.sc s₀,64⟩] a.mem c.mem := by

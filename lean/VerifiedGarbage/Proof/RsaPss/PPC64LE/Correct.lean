@@ -298,8 +298,8 @@ theorem main_done {t : State} (B : Before Gs.len s t) (sy : t.syms = s.syms) (h0
     fun k hk r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (P.ktg.sub_right (tab_sub (n := 11) (by omega))).symm
-      · exact (P.stg.sub_right (tab_sub (n := 11) (by omega))).symm
+      · exact (P.ktg.sub_right (tab_sub (n := 11) (by omega_using [hk]))).symm
+      · exact (P.stg.sub_right (tab_sub (n := 11) (by omega_using [hk]))).symm
   have T' : MdTabS H cn cc dn dc f hArg Sp (reE s t₂.mem) (stackArg s 6) := T.transfer rfl rfl rfl hSC c₂.mem
     (hA 6 (by decide)) fun k hk r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -380,7 +380,7 @@ include P hH hGh hGl hHv hG Tg hGmh hGml hGmv T ok hl hN hB
 theorem verify_ok {i : Nat} (hidx : s.mem.readW (stackArg s 6 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 i)
     (hi : i ∈ idxs) (hD : (shapeOf i).1.D = H.D) (hP : (shapeOf i).2 = P') :
     WP isa (verifyPrecomputed f g) s (Post Gs Gm s) := by
-  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega
+  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega_using [hi]
   refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; omega_arith) ?_
   show WP isa (.seq (.block (tword .r11 hArg 5 ++ [])) _) _ _
   refine WP.seq (WP.of_syms (twordA_ok (j := 6) (k := 5) (p := stackArg s 6) (by decide) (by decide)
@@ -388,7 +388,7 @@ theorem verify_ok {i : Nat} (hidx : s.mem.readW (stackArg s 6 + BitVec.ofNat 64 
     ⟨tHR s, by rw [P.hrd]; simp, Offset.contains_base _ (by decide) (by decide)⟩
     (P.kth.sub_right (tab_sub (n := 11) (show 5 < 11 by decide))).symm fun u o e => wp_nil fun y => ?_))
   rw [show 8 * 5 = 40 from rfl, hidx] at e
-  refine byIdx_ok (D := i) (by omega)
+  refine byIdx_ok (D := i) (by omega_using [hi8])
     (F := fun u' => Only [.r11, .r12] (allocated frameBytes s) u' ∧ u'.syms = s.syms ∧
       u'.gpr .r11 = BitVec.ofNat 64 i)
     (fun _ h => h.2.2) (fun u₁ u₂ ⟨o₁, y₁, e₁⟩ o y => ⟨(o₁.trans o).mono, y.trans y₁, by rw [o.get .r11]; exact e₁⟩)

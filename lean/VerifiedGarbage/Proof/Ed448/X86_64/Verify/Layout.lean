@@ -46,7 +46,7 @@ theorem add_add (p : Addr) (a b : Nat) :
 theorem Within.trans {r R R' : Region} (h : Within r R) (h' : Within R R') : Within r R' := by
   obtain ⟨o, hb, hl⟩ := h
   obtain ⟨o', hb', hl'⟩ := h'
-  exact ⟨o' + o, by rw [hb, hb', add_add], by omega⟩
+  exact ⟨o' + o, by rw [hb, hb', add_add], by omega_using [hl, hl']⟩
 
 theorem within_off (p : Addr) {d n k : Nat} (h : d + n ≤ k) :
     Within ⟨p + BitVec.ofNat 64 d, n⟩ ⟨p, k⟩ := ⟨d, rfl, h⟩
@@ -81,7 +81,7 @@ theorem sx32 {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = Bi
 theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem gpr_ce (t : State) (rd wr : List Region) {r : Reg} (h : r ≠ .rsp) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := by
@@ -203,7 +203,7 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 16) :
     rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 16) (a := m) (b := 16) hm, BitVec.add_sub_cancel]
   show Region.Sub ⟨B + BitVec.ofNat 64 16 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hm])
 
 /-! ## Between the frame's push and pop -/
 
@@ -247,11 +247,11 @@ theorem congr (hc : Ctx L g mx m₀ t) {g' : Reg → BitVec 64} {mx' : BitVec 32
 /-- A word of the frame is readable. -/
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₂ : d + 8 ≤ 256) :
     InRegions (t.rd ++ t.wr) (L.SP + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega_using [h₂])⟩
 
 theorem inFrW (hc : Ctx L g mx m₀ t) {d n : Nat} (h₂ : d + n ≤ 256) :
     InRegions t.wr (L.SP + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ h₂ (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ h₂ (by omega_using [h₂])⟩
 
 /-- The return address of a call from the frame. -/
 theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
@@ -279,7 +279,7 @@ theorem ce_byte (t : State) {R : Region} (hd : (below (t.gpr .rsp) 8).Disjoint R
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
     t.callEntry.mem (R.base + BitVec.ofNat 64 i) = t.mem (R.base + BitVec.ofNat 64 i) :=
   Frame.bytes (rs := [below (t.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using [])))
     (by simpa using hd.symm) hR hi
 
 theorem ce_bytesAt (hc : Ctx L g mx m₀ t) {p : Addr} {n : Nat}
@@ -295,10 +295,10 @@ theorem slot_disj {L : Lay} (hL : L.Ok) {d : Nat} (h₁ : 200 ≤ d) (h₂ : d +
     Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, 8⟩ r := by
   rw [Lay.SP, add_add]
   rcases hr with hr | hr | rfl
-  · exact (hL.stk_r hL.kScr (d := 16 + d) (n := 8) (by omega)).sub_right hr.sub
-  · have := Offset.disjoint L.B (d := 16 + d) (n := 8) (e := 16) (k := 200) (by omega) (by omega) (by omega)
+  · exact (hL.stk_r hL.kScr (d := 16 + d) (n := 8) (by omega_using [h₂])).sub_right hr.sub
+  · have := Offset.disjoint L.B (d := 16 + d) (n := 8) (e := 16) (k := 200) (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
     exact this.sub_right (by simpa [Lay.DAT, Lay.SP] using hr.sub)
-  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h₂])
 
 /-- A state whose memory differs from that of a `Ctx` state only within
 `scratch`, `DAT` and the 16 bytes below the frame. -/
@@ -325,12 +325,12 @@ theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 
   · rcases hrs r hr with h | h
     · exact ⟨L.SCR, by simp, h.sub⟩
     · have hd : Region.Sub L.DAT L.STK := by
-        have := Offset.sub_base L.B (d := 16) (n := 200) (k := 272) (by omega)
+        have := Offset.sub_base L.B (d := 16) (n := 200) (k := 272) (by omega_using [])
         simpa [Lay.DAT, Lay.SP] using this
       exact ⟨L.STK, by simp, fun a ha => hd a (h.sub a ha)⟩
   · simp only [List.mem_singleton] at hr; subst hr
     refine ⟨L.STK, by simp, ?_⟩
-    have := Offset.sub_base L.B (d := 0) (n := 16) (k := 272) (by omega)
+    have := Offset.sub_base L.B (d := 0) (n := 16) (k := 272) (by omega_using [])
     simpa using this
 
 /-! ## Calls -/
@@ -364,7 +364,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
   have hcovw : Covers wr t.wr := by
     rw [hc.wr]
     exact covers_of_within hwX
-  refine WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
+  refine WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
   have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr

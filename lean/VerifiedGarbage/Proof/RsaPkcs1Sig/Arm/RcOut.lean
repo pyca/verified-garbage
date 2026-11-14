@@ -49,7 +49,7 @@ def C11 (P : EP) (σ s : State) : Prop := C0 P σ s ∧ Res P σ s.mem (s.gpr .r
 
 theorem copyArgs_wp {σ s : State} (h : C7 P σ s) : WP isa (.block copyArgs) s (C8 P σ) := by
   obtain ⟨⟨hs, hgl⟩, rr⟩ := h
-  have hol : P.ol ≤ P.K := by have := hs.1.ol64; have := hs.1.k64; omega
+  have hol : P.ol ≤ P.K := by have := hs.1.ol64; have := hs.1.k64; omega_arith
   show WP isa (.block (.addSp .r12 0 :: _)) s _
   refine Bignum.Arm.wp_stackAddr (by decide) fun t1 u1 => ?_
   have s1 : P.lay.St σ t1 := hs.2.of_rest (u1.rest (ws := [.r12]) (by simp)) u1.mem
@@ -79,21 +79,21 @@ theorem copy_wp {σ s : State} (h : C8 P σ s) : WP isa Impl.Bignum.Arm.copyByte
   have ok := hs.1.ok
   have hK := hs.1.k1024
   have h64 := hs.1.ol64
-  have hol : P.ol ≤ P.K := by have := hs.1.k64; omega
+  have hol : P.ol ≤ P.K := by have := hs.1.k64; omega_using [h64, this]
   have fit := ok.fit
   have hfo := ok.fits P.OUT (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hfo
   have e1 : State.addr (P.B + BitVec.ofNat 32 (oEM1 + (P.K - P.ol))) = P.lay.fr (oEM1 + (P.K - P.ol)) :=
-    ok.addrB (by show _ < frameBytes + 56 + 36; simp only [oEM1, frameBytes]; omega)
+    ok.addrB (by show _ < frameBytes + 56 + 36; simp only [oEM1, frameBytes]; omega_using [hK])
   have hsrc : (P.B + BitVec.ofNat 32 (oEM1 + (P.K - P.ol))).toNat + P.ol ≤ 2 ^ 32 := by
-    rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM1, frameBytes] at fit ⊢; omega),
+    rw [Proof.X25519.Arm.toNat_add_lt (by rw [BitVec.toNat_ofNat]; simp only [oEM1, frameBytes] at fit ⊢; omega_using [hK, fit]),
       BitVec.toNat_ofNat]
-    simp only [oEM1, frameBytes] at fit ⊢; omega
+    simp only [oEM1, frameBytes] at fit ⊢; omega_using [hK, h64, fit]
   have ctx := Bignum.Arm.copyCtx_of_regions s (P.B + BitVec.ofNat 32 (oEM1 + (P.K - P.ol))) P.out (n := P.ol)
-    (by omega) hsrc hfo
-    (by rw [e1]; exact hs.2.inFrR (by show oEM1 + (P.K - P.ol) + P.ol ≤ frameBytes; simp only [oEM1, frameBytes]; omega))
+    (by omega_using [h64]) hsrc hfo
+    (by rw [e1]; exact hs.2.inFrR (by show oEM1 + (P.K - P.ol) + P.ol ≤ frameBytes; simp only [oEM1, frameBytes]; omega_using [hK, h64]))
     ⟨P.OUT, by rw [hs.2.wr, ok.wr]; simp, Region.contains_self _ _⟩
-    (by rw [e1]; exact ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [oEM1, frameBytes]; omega))
+    (by rw [e1]; exact ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [oEM1, frameBytes]; omega_using [hK, h64]))
   refine WP.mono (Bignum.Arm.copyBytes_ok s ctx hs.1.ol_pos r1 r0 lr) fun t ht => ?_
   have fr := ht.frame hfo
   have st : P.lay.St σ t := hs.2.write fr (fun r hr => by
@@ -103,7 +103,7 @@ theorem copy_wp {σ s : State} (h : C8 P σ s) : WP isa Impl.Bignum.Arm.copyByte
   have hb : Spec.Rsa.bytesAt t.mem (State.addr P.out) P.ol = Tail P s.mem := by
     rw [bytesAt_of_read (ht.read hsrc hfo), e1]
     have hd := VG.Proof.RsaPkcs1Sig.bytesAt_drop s.mem (P.lay.fr oEM1) (P.K - P.ol) P.ol
-    rw [show P.K - P.ol + P.ol = P.K by omega, Offset.add_ofNat_add_ofNat] at hd
+    rw [show P.K - P.ol + P.ol = P.K by omega_using [hol], Offset.add_ofNat_add_ofNat] at hd
     exact hd.symm
   rw [RO, hb, ht.rest.gpr .r3 (by decide)]
   exact rr
@@ -155,7 +155,7 @@ theorem mask_wp {σ s : State} (h : C10 P σ s) : WP isa Impl.Bignum.Arm.maskByt
   have hfo := ok.fits P.OUT (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hfo
   have h64 := hs.1.ol64
-  refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.out) (n := P.ol) hs.1.ol_pos (by omega)
+  refine WP.mono (Bignum.Arm.maskBuffer_ok s (dst := P.out) (n := P.ol) hs.1.ol_pos (by omega_using [h64])
     hfo ⟨P.OUT, by rw [hs.2.wr, ok.wr]; simp, Region.contains_self _ _⟩ r0 lr) fun t ⟨hb, fr, rst⟩ => ?_
   have st : P.lay.St σ t := hs.2.write fr (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨P.OUT, by simp, fun _ h => h⟩) rst.rd rst.wr rst.sp

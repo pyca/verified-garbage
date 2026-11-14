@@ -59,7 +59,7 @@ theorem sqst_lt (hE : ∀ σ, E σ → In P σ) (h0 : ∀ σ, E σ → (st0 σ).
   have := (hE σ e).c3
   cases n with
   | zero => exact h0 σ e
-  | succ n => exact mm_lt (by omega)
+  | succ n => exact mm_lt (by omega_using [this])
 
 /-- One squaring. -/
 theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L) (hX : aX ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L)
@@ -80,7 +80,7 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
   have a1Y : ∀ σ, A1 σ aY = (sqst P q0 r st0 σ (q0 - (k + 1))).1 := fun σ => upd_self _ _ _
   have a2Y : ∀ σ, A2 σ aY = (sqst P q0 r st0 σ (q0 - k)).1 := fun σ => by
     show mm _ _ (A1 σ aY) (A1 σ aY) = _
-    rw [a1Y, show q0 - k = q0 - (k + 1) + 1 by omega]
+    rw [a1Y, show q0 - k = q0 - (k + 1) + 1 by omega_using [hk]]
     rfl
   have a2M : ∀ σ, E σ → A2 σ aM1 = mOf P σ := fun σ e => by
     show upd (upd (A σ) aY _) aY _ aM1 = _
@@ -113,9 +113,9 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
       show upd (upd (upd (V σ) sF _) sQ (k + 1)) sE2 _ sF = _
       rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), upd_self]
     refine (St.psqFlag (k := k) (List.mem_cons_of_mem _ hQ) (List.mem_cons_of_mem _ hR) List.mem_cons_self
-      (List.mem_cons_of_mem _ hF) vQ vR3 rl (by omega) vE vF).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
+      (List.mem_cons_of_mem _ hF) vQ vR3 rl (by omega_using [hq0, hk]) vE vF).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
     have stage : SqS P E A L V LS q0 r st0 k σ s := by
-      refine ⟨by omega, h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)⟩
+      refine ⟨by omega_using [hk], h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)⟩
       · rcases List.mem_cons.mp hi with rfl | hi'
         · rw [a2Y]; exact (upd_self _ _ _).symm
         · have : i ≠ aY := fun x => hYL (x ▸ hi')
@@ -124,9 +124,9 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
       · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hd))
       · have e : sqst P q0 r st0 σ (q0 - k) = msq (cOf P σ.mem) P.w (mOf P σ) (decide (r σ < k + 1))
             (sqst P q0 r st0 σ (q0 - (k + 1))) := by
-          rw [show q0 - k = q0 - (k + 1) + 1 by omega]
+          rw [show q0 - k = q0 - (k + 1) + 1 by omega_using [hk]]
           show msq _ _ _ (decide (r σ < q0 - (q0 - (k + 1)))) _ = _
-          rw [show q0 - (q0 - (k + 1)) = k + 1 by omega]
+          rw [show q0 - (q0 - (k + 1)) = k + 1 by omega_using [hk]]
         by_cases dQ : d = sQ
         · subst dQ; simp only [upd_self]
         · by_cases dF : d = sF
@@ -137,7 +137,7 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
     refine ⟨?_, fun h0 => h0 ▸ stage, fun _ => stage⟩
     show some (!s.z) = _
     rw [z]
-    by_cases h0 : k = 0 <;> simp [h0] <;> omega
+    by_cases h0 : k = 0 <;> simp [h0] <;> omega_using [h0]
 
 /-- The run. -/
 theorem sq_loop (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L) (hX : aX ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L)

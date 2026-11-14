@@ -27,9 +27,9 @@ theorem expByteHead_ok (s : State) {base ep : BitVec 32} {len w M x E : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   rw [expByteHead, WP.block_append_iff]
-  refine WP.mono (expByteLoad_ok s h.ready.workspace (by omega) h.ready.ptr pointer read) ?_
+  refine WP.mono (expByteLoad_ok s h.ready.workspace (by omega_using [size]) h.ready.ptr pointer read) ?_
   rintro u ⟨byte, mem, rest⟩
   have state := h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr)
   have value : u.gpr .r1 = BitVec.ofNat 32 (s.mem (State.addr ep)).toNat := by

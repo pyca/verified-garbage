@@ -49,12 +49,12 @@ theorem arrays_apart : ∀ k ∈ arrays, ∀ k' ∈ arrays, k ≠ k' → k + 8 �
 theorem lane_in {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) (s : State) :
     (scratchR s).Contains (laneA s k b) 4 := by
   have := arrays_bound k hk
-  exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)
+  exact Offset.contains_base _ (by unfold scratchSlots; omega_using [hb, this]) (by omega_using [hb, this])
 
 theorem lane_inArrays {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) (s : State) :
     (arraysR s).Contains (laneA s k b) 4 := by
   have := arrays_bound k hk
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Offset.contains _ (by omega_using [this]) (by omega_using [hb, this]) (by omega_using [])
 
 /-- Two different lanes do not overlap. -/
 theorem lane_sep {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16) (hk' : k' ∈ arrays)
@@ -65,9 +65,9 @@ theorem lane_sep {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16) (hk' : k' �
   by_cases hkk : k = k'
   · subst hkk
     have : b ≠ b' := by simpa using h
-    exact Offset.sep _ (by omega) (by omega) (by omega)
+    exact Offset.sep _ (by omega_using [h]) (by omega_using [hb, h1]) (by omega_using [hb', h1])
   · have := arrays_apart k hk k' hk' hkk
-    exact Offset.sep _ (by omega) (by omega) (by omega)
+    exact Offset.sep _ (by omega_using [hb, hb', this]) (by omega_using [hb, h1]) (by omega_using [hb', h2])
 
 theorem ea_lane (s : State) (base : Reg) (k b : Nat) :
     s.ea (lane base k b) = s.gpr base + BitVec.ofNat 64 (8 * k + 4 * b) := by
@@ -190,8 +190,8 @@ theorem lanes_ok {f : Nat → List Instr} {sp : LaneSpec} (hsp : ∀ kv ∈ sp, 
   induction n with
   | zero => exact ⟨s₀, runBlock_nil, h₀, fun k _ b _ => by simp, Frame.refl _ _, rfl, rfl, fun _ _ _ => rfl⟩
   | succ n ih =>
-    obtain ⟨s, hs, hPs, hv, hfr, hrd, hwr, hregs⟩ := ih (by omega)
-    obtain ⟨s', hs', hok⟩ := hf n (by omega) s hPs
+    obtain ⟨s, hs, hPs, hv, hfr, hrd, hwr, hregs⟩ := ih (by omega_using [hn])
+    obtain ⟨s', hs', hok⟩ := hf n (by omega_using [hn]) s hPs
     have hr9 : s.gpr .r9 = s₀.gpr .r9 := hregs _ (by decide) (by decide)
     have hr9' : s'.gpr .r9 = s.gpr .r9 := hok.regs _ (by decide) (by decide)
     refine ⟨s', ?_, hP n s s' hPs hok, fun k hk b hb => ?_, ?_, hok.rd.trans hrd, hok.wr.trans hwr,
@@ -200,16 +200,16 @@ theorem lanes_ok {f : Nat → List Instr} {sp : LaneSpec} (hsp : ∀ kv ∈ sp, 
         List.flatMap_singleton, hs']
     · have hl : lv s' k b = (laneWrites s sp n).readW (laneA s k b) 32 := by
         rw [lv, laneA, hr9', ← hok.mem]; rfl
-      rw [hl, lv_laneWrites hsp s hk hb (by omega)]
+      rw [hl, lv_laneWrites hsp s hk hb (by omega_using [hn])]
       have hx : newVal sp k (fun k' => lv s k' n) = newVal sp k (fun k' => lv s₀ k' n) :=
-        newVal_congr hd hk fun k' hk' => by rw [hv k' hk' n (by omega)]; simp
+        newVal_congr hd hk fun k' hk' => by rw [hv k' hk' n (by omega_using [hn])]; simp
       by_cases hbn : b = n
       · subst hbn; simp [hx]
       · rw [ite_eq_right hbn, hv k hk b hb]
         by_cases hbl : b < n
-        · simp [hbl, show b < n + 1 by omega]
-        · simp [hbl, show ¬ b < n + 1 by omega]
-    · have hfr' := laneWrites_frame hsp s (b := n) (by omega)
+        · simp [hbl, show b < n + 1 by omega_using [hbl]]
+        · simp [hbl, show ¬ b < n + 1 by omega_using [hbn, hbl]]
+    · have hfr' := laneWrites_frame hsp s (b := n) (by omega_using [hn])
       rw [← hok.mem] at hfr'
       refine hfr.trans ?_
       simpa [arraysR, hr9] using hfr'
@@ -252,7 +252,7 @@ theorem Room.wr {s : State} (h : Room s) {a : Addr} {k : Nat} (hc : (scratchR s)
   unfold scratchR Region.Contains at hc
   unfold Region.Contains
   simp only at hc ⊢
-  omega
+  omega_using [hc, hn]
 
 /-- An access within the scratch buffer is readable. -/
 theorem Room.rw {s : State} (h : Room s) {a : Addr} {k : Nat} (hc : (scratchR s).Contains a k) :

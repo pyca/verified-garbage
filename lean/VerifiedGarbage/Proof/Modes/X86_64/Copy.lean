@@ -65,25 +65,25 @@ theorem blockLoop_wp (body : List Instr) {T A : Addr} {n : Nat} (J : Nat → Sta
   refine WP.loop (M := isa) (fun m s => ∃ j, m = n - j ∧ j < n ∧ J j s ∧
       s.gpr .rax = T + BitVec.ofNat 64 (8 * c.bw * j) ∧ s.gpr .rbx = A + BitVec.ofNat 64 (8 * c.bw * j) ∧
       s.gpr .rcx = BitVec.ofNat 64 (n - j))
-    (fun m s hs => ?_) n s₀ ⟨0, by omega, hn, h0, by rw [ha]; simp, by rw [hb']; simp, by rw [hc, Nat.sub_zero]⟩
+    (fun m s hs => ?_) n s₀ ⟨0, by omega_using [], hn, h0, by rw [ha]; simp, by rw [hb']; simp, by rw [hc, Nat.sub_zero]⟩
   obtain ⟨j, rfl, hj, hJj, hax, hbx, hcx⟩ := hs
   rw [WP.block_append_iff]
   refine WP.mono (hb j hj s hJj hax hbx) fun s₁ ⟨hJ₁, a₁, b₁, c₁⟩ => ?_
   obtain ⟨s₂, e₂, a₂, b₂, c₂, z₂, o₂, m₂, rd₂, wr₂⟩ := nextBlock_ok (c := c) s₁ hL
   have hJ₂ : J (j + 1) s₂ := hJ _ _ _ hJ₁ m₂ rd₂ wr₂ o₂
   have ec : s₁.gpr .rcx - 1 = BitVec.ofNat 64 (n - (j + 1)) := by
-    rw [c₁, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega),
-      show n - j - 1 = n - (j + 1) by omega]
+    rw [c₁, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_using [hj]),
+      show n - j - 1 = n - (j + 1) by omega_using []]
   have hz : s₂.zf = some (decide (n - j = 1)) := by
     rw [z₂, c₁, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      VG.Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+      VG.Offset.ofNat_sub_ofNat_beq (by omega_using [hn64]) (by decide)]
   have hstep : ∀ (X : Addr), X + BitVec.ofNat 64 (8 * c.bw * j) + BitVec.ofNat 64 (8 * c.bw) =
       X + BitVec.ofNat 64 (8 * c.bw * (j + 1)) := fun X => by rw [addr_add, Nat.mul_succ]
   refine WP.of_runBlock ⟨s₂, e₂, ?_⟩
   by_cases hl : j + 1 = n
-  · refine .inl ⟨by simp [X86_64.eval, hz]; omega, by rw [← hl]; exact hJ₂, by rw [a₂, a₁, hax, hstep, hl],
+  · refine .inl ⟨by simp [X86_64.eval, hz]; omega_using [hl], by rw [← hl]; exact hJ₂, by rw [a₂, a₁, hax, hstep, hl],
       by rw [b₂, b₁, hbx, hstep, hl]⟩
-  · exact .inr ⟨by simp [X86_64.eval, hz]; omega, n - (j + 1), by omega, j + 1, rfl, by omega, hJ₂,
+  · exact .inr ⟨by simp [X86_64.eval, hz]; omega_using [hl], n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, hl], hJ₂,
       by rw [a₂, a₁, hax, hstep], by rw [b₂, b₁, hbx, hstep], by rw [c₂, ec]⟩
 
 /-- Copying, after `j` of `n` blocks of `bw` words from `S` to `T`. -/
@@ -101,25 +101,25 @@ theorem copyBlocks_wp {S T : Addr} {n : Nat} {s₀ : State} (hbw : 0 < c.bw) (hL
     (hsep : Region.Disjoint ⟨S, 8 * c.bw * n⟩ ⟨T, 8 * c.bw * n⟩) (ha : s₀.gpr .rax = T) (hb : s₀.gpr .rbx = S)
     (hc : s₀.gpr .rcx = BitVec.ofNat 64 n) :
     WP isa c.copyBlocks s₀ (CopyInv c S T n s₀ n) := by
-  have hn64 : n ≤ 8 * c.bw * n := Nat.le_mul_of_pos_left n (by omega)
-  refine WP.mono (blockLoop_wp (c := c) _ (CopyInv c S T n s₀) hL hn (by omega)
+  have hn64 : n ≤ 8 * c.bw * n := Nat.le_mul_of_pos_left n (by omega_using [hbw])
+  refine WP.mono (blockLoop_wp (c := c) _ (CopyInv c S T n s₀) hL hn (by omega_using [hfit, hn64])
     (fun j s s' h hm hrd hwr hg => ⟨fun t ht => by rw [hm]; exact h.copied t ht, by rw [hm]; exact h.frame,
       fun r h1 h2 h3 h4 => by rw [hg r h1 h2 h3, h.regs r h1 h2 h3 h4], by rw [hrd, h.rd], by rw [hwr, h.wr]⟩)
     (fun j hj s hi hax hbx => ?_) ⟨fun t ht => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩ ha hb hc)
     fun _ h => h.1
   have hlt := idx_lt (L := 8 * c.bw) hj
   have hw : ∀ w, 8 * c.bw * j + 8 * w = 8 * (c.bw * j + w) := fun w => by rw [Nat.mul_add, Nat.mul_assoc]
-  have hbj : ∀ w < c.bw, c.bw * j + w < c.bw * n := fun w hw' => by have := idx_lt (L := c.bw) hj; omega
+  have hbj : ∀ w < c.bw, c.bw * j + w < c.bw * n := fun w hw' => by have := idx_lt (L := c.bw) hj; omega_using [hw', this]
   have hSs : ∀ t < 8 * c.bw * n, s.mem (S + BitVec.ofNat 64 t) = s₀.mem (S + BitVec.ofNat 64 t) := fun t ht =>
     hi.frame.bytes (R := ⟨S, 8 * c.bw * n⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
-      (by simp only; omega) ht
+      (by simp only; omega_using [hfit]) ht
   have hPT : Region.Sub ⟨T + BitVec.ofNat 64 (8 * c.bw * j), 8 * c.bw⟩ ⟨T, 8 * c.bw * n⟩ :=
-    VG.Offset.sub_base T (by omega)
+    VG.Offset.sub_base T (by omega_using [hlt])
   refine WP.mono (copyN_wp (k := c.bw) (P := T + BitVec.ofNat 64 (8 * c.bw * j))
     (Q := S + BitVec.ofNat 64 (8 * c.bw * j)) ⟨by rw [hax]; simp, by rw [hbx]; simp,
     by decide, by decide, fun w hw' => by rw [hi.wr, addr_add, hw w]; exact hT _ (hbj w hw'),
     fun w hw' => by rw [hi.rd, hi.wr, addr_add, hw w]; exact hS _ (hbj w hw'),
-    (hsep.symm.sub_left hPT).sub_right (VG.Offset.sub_base S (by omega)), by omega⟩) fun s' h' => ?_
+    (hsep.symm.sub_left hPT).sub_right (VG.Offset.sub_base S (by omega_using [hlt])), by omega_using [hL]⟩) fun s' h' => ?_
   have hm : ∀ t < 8 * c.bw * n, s'.mem (T + BitVec.ofNat 64 t) =
       if 8 * c.bw * j ≤ t ∧ t < 8 * c.bw * j + 8 * c.bw then s.mem (S + BitVec.ofNat 64 t)
       else s.mem (T + BitVec.ofNat 64 t) := fun t ht => by
@@ -127,17 +127,17 @@ theorem copyBlocks_wp {S T : Addr} {n : Nat} {s₀ : State} (hbw : 0 < c.bw) (hL
     split
     · rename_i h1
       rw [show T + BitVec.ofNat 64 t = T + BitVec.ofNat 64 (8 * c.bw * j) + BitVec.ofNat 64 (t - 8 * c.bw * j) by
-        rw [addr_add, show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega], over_at (by omega) (by omega), addr_add,
-        show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega]
-    · exact over_out (off_sub_not T (by omega) (by omega) (by omega) (by omega))
+        rw [addr_add, show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega_using [h1]], over_at (by omega_using [h1]) (by omega_using [hL]), addr_add,
+        show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega_using [h1]]
+    · exact over_out (off_sub_not T (by omega_arith) (by omega_using [hfit, ht]) (by omega_using [hbw]) (by omega_using [hfit, hlt]))
   refine ⟨⟨fun t ht => ?_, hi.frame.trans fun x hx => ?_, fun r h1 h2 h3 h4 => by rw [h'.regs r h4, hi.regs r h1 h2 h3 h4],
     by rw [h'.rd, hi.rd], by rw [h'.wr, hi.wr]⟩, h'.regs _ (by decide), h'.regs _ (by decide), h'.regs _ (by decide)⟩
   · have : 8 * c.bw * (j + 1) = 8 * c.bw * j + 8 * c.bw := Nat.mul_succ _ _
-    rw [hm t (by omega)]
+    rw [hm t (by omega_using [hlt, ht, this])]
     split
-    · rw [hSs t (by omega)]
-    · exact hi.copied t (by omega)
+    · rw [hSs t (by omega_using [hlt, ht, this])]
+    · exact hi.copied t (by omega_arith)
   · rw [h'.mem]
-    exact over_out fun h => hx _ (List.mem_singleton_self _) (hPT x (by simp only [Region.Contains]; omega))
+    exact over_out fun h => hx _ (List.mem_singleton_self _) (hPT x (by simp only [Region.Contains]; omega_using [h]))
 
 end VG.Proof.Modes.X86_64

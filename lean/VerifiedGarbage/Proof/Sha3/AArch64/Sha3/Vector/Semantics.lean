@@ -52,7 +52,7 @@ theorem forall_lt_25 {P : Nat → Prop}
   | 14, _ => exact h14 | 15, _ => exact h15 | 16, _ => exact h16 | 17, _ => exact h17
   | 18, _ => exact h18 | 19, _ => exact h19 | 20, _ => exact h20 | 21, _ => exact h21
   | 22, _ => exact h22 | 23, _ => exact h23 | 24, _ => exact h24
-  | _ + 25, h => exact absurd h (by omega)
+  | _ + 25, h => exact absurd h (by omega_using [])
 
 def put (σ : Low) (d : VReg) (w : BitVec 64) : Low := fun r => if r = d then w else σ r
 

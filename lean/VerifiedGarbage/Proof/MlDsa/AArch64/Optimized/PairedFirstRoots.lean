@@ -24,7 +24,7 @@ theorem local_words {m : Mem} {p : Addr} (h : PairedTable.Words m p)
     exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (63-4*u-i.val)) (h.layer4 (u := u) (g := i.val) (e := e) hu hi he)
   · by_cases hj : i.val<6
     · simp only [localOffset,localRoot,localIndex,hi,hj,ite_false,ite_true,← Nat.add_assoc]
-      exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (31-2*u-(i.val-4))) (h.layer8 (u := u) (g := i.val-4) (e := e) hu (by omega) he)
+      exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (31-2*u-(i.val-4))) (h.layer8 (u := u) (g := i.val-4) (e := e) hu (by omega_using [hj]) he)
     · simp only [localOffset,localRoot,localIndex,hi,hj,ite_false]
       exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (15-u)) (h.layer16 (u := u) (e := e) hu he)
 
@@ -51,8 +51,8 @@ theorem packed_tableRoots {s : State} {p : Addr} {u : Nat} (hu : u<8)
   · intro g hg len hl b hb
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
     have ho : packedOffset g len≤224 := by
-      rcases hl with rfl | rfl <;> simp [packedOffset] <;> omega
-    exact hr _ (by rcases hb with rfl | rfl <;> omega)
+      rcases hl with rfl | rfl <;> simp [packedOffset] <;> omega_using [hg]
+    exact hr _ (by rcases hb with rfl | rfl <;> omega_using [hu, ho])
   · intro g hg len hl e he
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
     exact (packed_words h hu hg hl he).1
@@ -66,11 +66,11 @@ theorem local_tableReady {s : State} {p : Addr} {u : Nat} (hu : u<8)
     (hx : s.gpr .x1=p+BitVec.ofNat 64 (480*u)) (i : Fin 7) :
     RootReady s (localOffset i.val) (localRoot u i.val) := by
   have hb := localOffset_bound i
-  refine ⟨hb.2,by omega,?_,?_,fun e _ => localRoot_range u i e,?_,?_⟩
+  refine ⟨hb.2,by omega_using [hb],?_,?_,fun e _ => localRoot_range u i e,?_,?_⟩
   · rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact hr _ (by omega)
+    exact hr _ (by omega_using [hu, hb])
   · rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
-    exact hr _ (by omega)
+    exact hr _ (by omega_using [hu, hb])
   · intro e he
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
     exact (local_words h hu i he).1

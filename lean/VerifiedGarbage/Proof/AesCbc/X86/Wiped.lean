@@ -166,7 +166,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5) (j := 5)
     (encrypt_tail v) Proof.Zeroize.X86.verified
-    (by decide) rfl rfl (by decide) (Nat.le_trans v.encWrittenLe (by decide)) (by have := v.encWrittenLe; omega)
+    (by decide) rfl rfl (by decide) (Nat.le_trans v.encWrittenLe (by decide)) (by have := v.encWrittenLe; omega_using [this])
     (by decide) (encrypt_noSp _ v.encNosp) (encrypt_stack _ v.encStack) zeroize_noSp zeroize_stack (by decide)
     (pre_local 32) (tailZPost_local 32 _ (encPost_local 32))
     (tailZPost_out 32 (Nat.le_trans v.encWrittenLe (by decide)) (encPost_out 32)) (wipedTailZ 32 _ _) (sat _)
@@ -179,7 +179,7 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5) (j := 5)
     (decrypt_tail v) Proof.Zeroize.X86.verified
-    (by decide) rfl rfl (by decide) (Nat.le_trans v.decWrittenLe (by decide)) (by have := v.decWrittenLe; omega)
+    (by decide) rfl rfl (by decide) (Nat.le_trans v.decWrittenLe (by decide)) (by have := v.decWrittenLe; omega_using [this])
     (by decide) (decrypt_noSp _ v.decNosp) (decrypt_stack _ v.decStack) zeroize_noSp zeroize_stack (by decide)
     (pre_local 32) (tailZPost_local 32 _ (decPost_local 32))
     (tailZPost_out 32 (Nat.le_trans v.decWrittenLe (by decide)) (decPost_out 32)) (wipedTailZ 32 _ _) (sat _)

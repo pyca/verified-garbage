@@ -36,6 +36,6 @@ theorem freezeField_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (a : Slot) :
       exact sub_disj (by simp only [offset]; omega_using [fit, i.isLt, hk'])
         (by simp only [offset]; omega_using [fit, a.isLt]) (by omega_using [hs, hk'])
     · exact sub_disj (by simp only [offset]; omega_using [fit, i.isLt, hk'])
-        (by simp only [T]; omega_using [fit]) (Or.inl (by simp only [offset, T]; omega))
+        (by simp only [T]; omega_using [fit]) (Or.inl (by simp only [offset, T]; omega_using [hk']))
 
 end VG.Proof.Ed25519.X86

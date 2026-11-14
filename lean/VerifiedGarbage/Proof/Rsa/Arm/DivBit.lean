@@ -14,7 +14,7 @@ open VG.Proof.X25519.Arm
 
 theorem xorOne_nat (b : BitVec 32) (hb : b.toNat ≤ 1) : (b ^^^ 1).toNat = 1 - b.toNat := by
   have cases : b = 0 ∨ b = 1 := by
-    have : b.toNat = 0 ∨ b.toNat = 1 := by omega
+    have : b.toNat = 0 ∨ b.toNat = 1 := by omega_using [hb]
     rcases this with h | h
     · exact Or.inl (BitVec.eq_of_toNat_eq h)
     · exact Or.inr (BitVec.eq_of_toNat_eq h)
@@ -30,10 +30,10 @@ theorem quotientBit_raw {g : Geometry} {s : State} (h : Context g s) :
   refine h.loadPtr 0 (by decide) fun s1 u1 h1 => ?_
   have fits : g.offsets 0 + 4 ≤ g.size := by
     have f : g.offsets 0 + 4 * g.n ≤ g.size := h.fits 0
-    have := h.positive; omega
+    have := h.positive; omega_using [f, this]
   have addr : State.addr (s1.gpr .r0 + BitVec.ofNat 32 0) = off (State.addr g.base) (g.offsets 0) := by
     rw [u1.gpr, BitVec.add_zero]
-    exact VG.Arm.addr_add (by have := h.workspace.nowrap; omega)
+    exact VG.Arm.addr_add (by have := h.workspace.nowrap; omega_using [fits, this])
   refine wp_ldr (by decide) addr (h1.workspace.read fits) fun s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
@@ -65,10 +65,10 @@ theorem quotientBit_ok {g : Geometry} {s : State} (h : Context g s)
   have nowrap := h.workspace.nowrap
   have positive := h.positive
   have outside := writeW32_outside s.mem (State.addr g.base) (d := g.offsets 0)
-    (s.mem.readW (off (State.addr g.base) (g.offsets 0)) 32 + (s.gpr .r11 ^^^ 1)) (by omega)
+    (s.mem.readW (off (State.addr g.base) (g.offsets 0)) 32 + (s.gpr .r11 ^^^ 1)) (by omega_using [fits, nowrap])
   rw [← mem] at outside
   have frame : Outside (State.addr g.base) (g.offsets 0) (4 * g.n) s.mem t.mem :=
-    outside.mono (Nat.le_refl _) (by omega)
+    outside.mono (Nat.le_refl _) (by omega_using [positive])
   refine ⟨?_, count, zero,
     h.after (Outs.of_outside frame (by simp [Geometry.ranges])) rest.wr (rest.gpr .r8 (by simp)),
     frame, rest.mono (by simp [clobbers])⟩
@@ -76,18 +76,18 @@ theorem quotientBit_ok {g : Geometry} {s : State} (h : Context g s)
   have low (m : Mem) : g.value m 0 = w32 m (State.addr g.base) (g.offsets 0) +
       2 ^ 32 * val32 m (State.addr g.base) (g.offsets 0 + 4) (g.n - 1) := by
     change val32 _ _ _ g.n = _
-    conv => lhs; rw [show g.n = (g.n - 1) + 1 by omega]
+    conv => lhs; rw [show g.n = (g.n - 1) + 1 by omega_using [positive]]
     rfl
   rw [low s.mem] at even
   simp only [w32] at even
-  have lowEven : (s.mem.readW (off (State.addr g.base) (g.offsets 0)) 32).toNat % 2 = 0 := by omega
+  have lowEven : (s.mem.readW (off (State.addr g.base) (g.offsets 0)) 32).toNat % 2 = 0 := by omega_using [even]
   have wordBound := (s.mem.readW (off (State.addr g.base) (g.offsets 0)) 32).isLt
-  have high := outside.val32 (d := g.offsets 0 + 4) (k := g.n - 1) (by omega) (by omega)
+  have high := outside.val32 (d := g.offsets 0 + 4) (k := g.n - 1) (by omega_using []) (by omega_using [fits, nowrap])
   rw [low t.mem, low s.mem, high]
   have top : w32 t.mem (State.addr g.base) (g.offsets 0) =
       w32 s.mem (State.addr g.base) (g.offsets 0) + (1 - (s.gpr .r11).toNat) := by
-    rw [mem, w32_write_self, BitVec.toNat_add, xorOne_nat _ borrow, Nat.mod_eq_of_lt (by omega)]
+    rw [mem, w32_write_self, BitVec.toNat_add, xorOne_nat _ borrow, Nat.mod_eq_of_lt (by omega_using [even])]
   rw [top]
-  omega
+  omega_using [borrow]
 
 end VG.Proof.Rsa.Arm.Div

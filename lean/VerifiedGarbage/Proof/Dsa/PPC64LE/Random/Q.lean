@@ -39,7 +39,7 @@ theorem SE.Q.qs_val {E : SE} {qb : List Byte} (h : E.Q qb) :
 
 theorem SE.Q.W_pos {E : SE} {qb : List Byte} (h : E.Q qb) : 0 < E.W := by
   have := (Dsa.random_valid_scan qb).mp h.gt
-  rw [h.W]; omega
+  rw [h.W]; omega_using [this]
 
 /-- The draw as the nonce gets it. -/
 abbrev cpyList (bs : List Byte) (M W : Nat) : List Byte := (List.range W).map (cpy bs M)
@@ -63,7 +63,7 @@ theorem cpyList_cons (b : Byte) (bs : List Byte) (M : Nat) :
     | succ i =>
       simp only [Nat.add_one_ne_zero, ite_false, List.getElem_cons_succ]
       simp only [List.length_cons] at h₂
-      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega)]
+      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega_using [h₂])]
 
 /-- The copied draw decodes to the candidate. -/
 theorem SE.Q.cand {E : SE} {qb : List Byte} (h : E.Q qb) {bs : List Byte} (hl : E.W ≤ bs.length) :
@@ -78,7 +78,7 @@ theorem SE.Q.cand {E : SE} {qb : List Byte} (h : E.Q qb) {bs : List Byte} (hl : 
     | cons b rest => exact ⟨b, rest, rfl⟩
   have hrl : rest.length + 1 = E.W := by
     have := congrArg List.length he
-    rw [List.length_take, List.length_cons, Nat.min_eq_left hl] at this; omega
+    rw [List.length_take, List.length_cons, Nat.min_eq_left hl] at this; omega_using [this]
   rw [he, ← hrl, cpyList_cons, Dsa.random_candidate_mask qb b rest (by rw [hrl, h.W]), h.M]
 
 end VG.Proof.Dsa.PPC64LE.Rnd

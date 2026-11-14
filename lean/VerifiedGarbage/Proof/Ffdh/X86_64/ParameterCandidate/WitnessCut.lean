@@ -37,15 +37,15 @@ theorem witnessCut_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op bs.length) = Spec.Rsa.os2ip bs % 2 ^ bits ∧
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧
       Keep [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] s t := by
-  have hl1 : 2 ≤ bs.length := by omega
-  have hl2 : bs.length < 2 ^ 31 := by omega
+  have hl1 : 2 ≤ bs.length := by omega_using [hb1, hlen]
+  have hl2 : bs.length < 2 ^ 31 := by omega_using [hb2, hlen]
   have hj : (bits - 1) % 8 < 8 := Nat.mod_lt _ (by decide)
   have hne : bs ≠ [] := by intro he; simp [he] at hl1
   have hcut := cutOctets_length hne ((bits - 1) % 8)
-  have h0 : 0 < bs.length := by omega
+  have h0 : 0 < bs.length := by omega_using [hl1]
   unfold witnessCut
   simp only [seqs]
-  refine WP.seq (WP.mono (cutMasks_ok (by omega) (by omega) hbits) fun u₁ ⟨hm₁, hh₁, hmem₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (cutMasks_ok (by omega_using [hb1]) (by omega_using [hb2]) hbits) fun u₁ ⟨hm₁, hh₁, hmem₁, k₁⟩ => ?_)
   have hrd₁ : InRegions (u₁.rd ++ u₁.wr) rp 1 := by rw [k₁.2.1, k₁.2.2]; simpa [off] using hrd 0 h0
   have hwr₁ : InRegions u₁.wr op 1 := by rw [k₁.2.2]; simpa [off] using hwr 0 h0
   have hb₁ : u₁.mem rp = bs.getD 0 0 := by rw [hmem₁]; simpa [off] using hbytes 0 h0
@@ -77,7 +77,7 @@ theorem witnessCut_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       change t.mem (off op i) = (cutOctets bs ((bits - 1) % 8)).getD i 0 at hb
       simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hci, Option.getD_some] using hb
   refine ⟨he, ?_, ?_, (k12.trans ht.keep).mono (by decide)⟩
-  · rw [he, cutOctets_value (bits := bits) hne hj (by omega)]
+  · rw [he, cutOctets_value (bits := bits) hne hj (by omega_using [hb1, hlen])]
   · intro a ha
     have hx : a ≠ op := by simpa [off] using ha 0 h0
     rw [ht.frame a ha, hmem₂, WriteBytes.writeW8_apply, ite_eq_right hx, hmem₁]

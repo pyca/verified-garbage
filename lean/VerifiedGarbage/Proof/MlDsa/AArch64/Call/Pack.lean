@@ -72,7 +72,7 @@ theorem sbp_pre (hb : SbpOk b len) (hf : ∀ i < n, (coeffAt s.mem (pa s f) i).t
   obtain ⟨c1, c2, c3⟩ := rw_parts hc
   sig_pre [simpleBitPackContract, simpleBitPackSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.sp h1, Args.mem h1]
-  simp only [Arg.val, imm32 hb.hlt.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2; omega)]
+  simp only [Arg.val, imm32 hb.hlt.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2; omega_using [this])]
   cpre L
   exacts [hb.hb, hb.hlen, hf]
 
@@ -92,7 +92,7 @@ theorem sbpAt_ok {S : Nat} (hS : S < 2 ^ 64) {nm : String} {cd : Prog isa}
   sig_post [simpleBitPackContract, simpleBitPackSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.mem h1] at hq
   simp only [Arg.val, imm32 hb.hlt.1, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2; omega)] at hq
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2; omega_using [this])] at hq
   exact hq
 
 theorem sbpAt_tr {S : Nat} {nm : String} {cd : Prog isa} (C : CalleeOk S cd (simpleBitPackContract AArch64.abi S))
@@ -149,7 +149,7 @@ theorem bp_pre (hb : BpOk a b len) (hr : Reduced s.mem (pa s f)) (hf : BpRange s
   sig_pre [bitPackContract, bitPackSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.sp h1, Args.mem h1]
   simp only [Arg.val, imm32 hb.hlt.1, imm32 hb.hlt.2.1, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega)]
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega_using [this])]
   cpre L
   exacts [hb.hab, hb.hlen, hr, hf]
 
@@ -168,7 +168,7 @@ theorem bpAt_ok {S : Nat} (hS : S < 2 ^ 64) {nm : String} {cd : Prog isa} (C : C
   sig_post [bitPackContract, bitPackSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.mem h1] at hq
   simp only [Arg.val, imm32 hb.hlt.1, imm32 hb.hlt.2.1, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega)] at hq
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega_using [this])] at hq
   exact hq
 
 theorem bpAt_tr {S : Nat} {nm : String} {cd : Prog isa} (C : CalleeOk S cd (bitPackContract AArch64.abi S))
@@ -215,7 +215,7 @@ theorem bu_pre (hb : BpOk a b len) {s1 : State} (h1 : Args (buArgs v len a b f) 
   sig_pre [bitUnpackContract, bitUnpackSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.sp h1]
   simp only [Arg.val, imm32 hb.hlt.1, imm32 hb.hlt.2.1, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega)]
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega_using [this])]
   cpre L
   exacts [hb.hab, hb.hlen]
 
@@ -233,7 +233,7 @@ theorem buAt_ok {S : Nat} (hS : S < 2 ^ 64) {nm : String} {cd : Prog isa} (C : C
   sig_post [bitUnpackContract, bitUnpackSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.mem h1] at hq
   simp only [Arg.val, imm32 hb.hlt.1, imm32 hb.hlt.2.1, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega)] at hq
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.2.2; omega_using [this])] at hq
   exact hq
 
 theorem buAt_tr {S : Nat} {nm : String} {cd : Prog isa} (C : CalleeOk S cd (bitUnpackContract AArch64.abi S))

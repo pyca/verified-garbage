@@ -47,8 +47,8 @@ variable {s t : State}
 
 theorem res_c (h : CIn s) (mt : t.mem = (pcPushed s).mem.writeW (off (State.addr (mkP s).sp) 48) (s.gpr .r0)) :
     res (mkP s) t = resC s := by
-  have bP := h.bytesT mt (R := cP s) h.Fp (by have := h.fp; show (stackArg s 2).toNat ≤ _; omega)
-  have bR := h.bytesT mt (R := cR s) h.Fr (by have := h.fr; show (stackArg s 4).toNat ≤ _; omega)
+  have bP := h.bytesT mt (R := cP s) h.Fp (by have := h.fp; show (stackArg s 2).toNat ≤ _; omega_using [])
+  have bR := h.bytesT mt (R := cR s) h.Fr (by have := h.fr; show (stackArg s 4).toNat ≤ _; omega_using [])
   show Spec.RsaKeyGen.candidateOp _ _ (Spec.Rsa.bytesAt t.mem (cP s).base (cP s).len)
     (Spec.Rsa.bytesAt t.mem (cR s).base (cR s).len) = _
   rw [bP, bR]; rfl
@@ -97,19 +97,19 @@ theorem slot_disj {σ : State} (pre : In (mkP s) σ) {lo n : Nat} (h1 : 4 ≤ lo
   intro r hr
   simp only [CP.chg, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact pre.sF.symm.sub_left (Offset.sub_base _ (by omega))
-  · exact pre.oF.symm.sub_left (Offset.sub_base _ (by omega))
-  · exact pre.uF.symm.sub_left (Offset.sub_base _ (by omega))
-  · rw [pre.rC_eq]; exact Offset.disjoint_below _ (by omega)
-  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact pre.sF.symm.sub_left (Offset.sub_base _ (by omega_using [h2]))
+  · exact pre.oF.symm.sub_left (Offset.sub_base _ (by omega_using [h2]))
+  · exact pre.uF.symm.sub_left (Offset.sub_base _ (by omega_using [h2]))
+  · rw [pre.rC_eq]; exact Offset.disjoint_below _ (by omega_using [h2])
+  · exact Offset.disjoint_base _ (by omega_using [h1]) (by omega_using [h2])
 
 /-- A call's result. -/
 theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     WP isa (code v.name v.code) s fun t => abiPreserved s t ∧ CPost s t := by
   have spLo := h.spLo; have spHi := h.spHi
-  have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega)
+  have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [spLo])
   unfold code
-  refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega) (by decide) ?_
+  refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo]) (by decide) ?_
   rw [WP.seq_iff]
   obtain ⟨tr, w, t, run', -, pre, st, mt, ⟨_, bk, r0, outs, used⟩⟩ := body_wide v h
   refine WP.mono (Q := fun x => x = w.withRegions s.rd (pcPushed s).wr) ⟨tr, _, run', rfl⟩ ?_
@@ -121,19 +121,19 @@ theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
   have fr : Frame (⟨off (State.addr (mkP s).sp) 48, 4⟩ :: (mkP s).chg) (pcPushed s).mem w.mem :=
     (w48.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self).trans
       (bk.frame.mono fun r hr => List.mem_cons_of_mem _ hr)
-  have sv := pc_push_callee_saved s (by omega)
+  have sv := pc_push_callee_saved s (by omega_using [spLo])
   have s1 : Spill.Saved w.mem (State.addr (s.sp - 56)) s.gpr
       [(.r4, 16), (.r5, 20), (.r6, 24), (.r7, 28), (.r8, 32), (.r9, 36), (.r10, 40), (.r11, 44)] :=
     Spill.Saved.frame (lo := 16) (hi := 48) (fun p hp => sv p (by revert hp; revert p; decide)) (by decide) fr
       fun r hr => by
         rcases List.mem_cons.mp hr with rfl | hr
-        · exact Offset.disjoint _ (.inl (by decide)) (by omega) (by omega)
+        · exact Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using [])
         · exact slot_disj pre (by decide) (by decide) r hr
   have s2 : Spill.Saved w.mem (State.addr (s.sp - 56)) s.gpr [(.lr, 52)] :=
     Spill.Saved.frame (lo := 52) (hi := 56) (fun p hp => sv p (by revert hp; revert p; decide)) (by decide) fr
       fun r hr => by
         rcases List.mem_cons.mp hr with rfl | hr
-        · exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)
+        · exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
         · exact slot_disj pre (by decide) (by decide) r hr
   have saved : Spill.Saved w.mem (State.addr (s.sp - 56)) s.gpr pcCalleeSaved := fun p hp => by
     have hp' : p ∈ [(Reg.r4, 16), (.r5, 20), (.r6, 24), (.r7, 28), (.r8, 32), (.r9, 36), (.r10, 40), (.r11, 44)] ∨
@@ -141,7 +141,7 @@ theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     rcases hp' with hp' | hp'
     exacts [s1 p hp', s2 p hp']
   have fit : (w.withRegions s.rd (pcPushed s).wr).sp.toNat + 56 ≤ 2 ^ 32 := by
-    show w.sp.toNat + 56 ≤ _; rw [wsp, spN]; omega
+    show w.sp.toNat + 56 ≤ _; rw [wsp, spN]; omega_using []
   have read : InRegions ((w.withRegions s.rd (pcPushed s).wr).rd ++ (w.withRegions s.rd (pcPushed s).wr).wr)
       (State.addr (w.withRegions s.rd (pcPushed s).wr).sp) 56 := by
     have m : (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region) ∈ (w.withRegions s.rd (pcPushed s).wr).wr := by

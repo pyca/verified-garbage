@@ -139,12 +139,12 @@ theorem prepareM_relCT (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : S
   have iw₂ {o l : Nat} (h : o + l ≤ 2048) := Noise.inScratch hh₂.lay.scratch h (by decide)
   refine rel_seq (rel_seq initCT
     (Paired.init_ok (a := a) (b := b) (k := L.k) hss hsb h8b h₁.ptr h₁.seedPtr h₁.readable
-      (fun j hj => iw₁ (by omega)) (fun j hj => iw₁ (by omega))
+      (fun j hj => iw₁ (by omega_using [hj])) (fun j hj => iw₁ (by omega_using [hj]))
       (h₁.separate.sub_right (Offset.sub_base p (by decide)))
       (h₁.separate.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
       (Offset.disjoint_base p (by decide) (by decide)))
     (Paired.init_ok (a := a) (b := b) (k := L.k) hss hsb h8b h₂.ptr h₂.seedPtr h₂.readable
-      (fun j hj => iw₂ (by omega)) (fun j hj => iw₂ (by omega))
+      (fun j hj => iw₂ (by omega_using [hj])) (fun j hj => iw₂ (by omega_using [hj]))
       (h₂.separate.sub_right (Offset.sub_base p (by decide)))
       (h₂.separate.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
       (Offset.disjoint_base p (by decide) (by decide)))
@@ -171,10 +171,10 @@ theorem prepareM_relCT (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : S
         rw [List.mem_singleton.mp hr]; exact hh₂.lay.dSP), hash₂]
     have he₁ : bytesAt u₁.mem e S.len = E₁ := by
       rw [VG.Proof.MlKem.bytesAt_frame fi₁ (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact hh₁.lay.dEP) (by have := hS.lim; omega), hE₁]
+        rw [List.mem_singleton.mp hr]; exact hh₁.lay.dEP) (by have := hS.lim; omega_using [this]), hE₁]
     have he₂ : bytesAt u₂.mem e S.len = E₂ := by
       rw [VG.Proof.MlKem.bytesAt_frame fi₂ (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact hh₂.lay.dEP) (by have := hS.lim; omega), hE₂]
+        rw [List.mem_singleton.mp hr]; exact hh₂.lay.dEP) (by have := hS.lim; omega_using [this]), hE₂]
     exact squeezeM_relCT S hS hb (hh₁.lay.frame ku₁.rd ku₁.wr ku₁.sp) (hh₂.lay.frame ku₂.rd ku₂.wr ku₂.sp)
       (by rw [hS.keep ku₁ (by decide) (by decide)]; exact hh₁.h25) (by rw [ku₁.get .x28]; exact hh₁.h28)
       (by rw [hS.keep ku₂ (by decide) (by decide)]; exact hh₂.h25) (by rw [ku₂.get .x28]; exact hh₂.h28)

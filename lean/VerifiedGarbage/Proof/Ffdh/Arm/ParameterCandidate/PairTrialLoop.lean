@@ -56,7 +56,7 @@ theorem trialPairLoop_ok (s : State) {n divisor inverse initialA initialB : Nat}
       exact readable.advance keep (Nat.min_le_right 2 k)
     have kept : Rest regs s t := rest.trans keep
     by_cases last : k≤2
-    · have remZero : k-min 2 k=0 := by omega
+    · have remZero : k-min 2 k=0 := by omega_using [last]
       left
       refine ⟨?_,a',b',j+1,ab',bb',av',bv',?_,?_,?_,mem.trans memory,kept⟩
       · change some (!t.z)=some false
@@ -65,7 +65,7 @@ theorem trialPairLoop_ok (s : State) {n divisor inverse initialA initialB : Nat}
       · simpa only [remZero,trialValue,Nat.add_zero] using congruenceB
       · rw [cnt',remZero];rfl
     · right
-      refine ⟨?_,k-min 2 k,by omega,j+1,a',b',by omega,by omega,nextRead,cnt',ab',bb',av',bv',
+      refine ⟨?_,k-min 2 k,by omega_using [kp],j+1,a',b',by omega_using [last],by omega_using [kfit],nextRead,cnt',ab',bb',av',bv',
         congruenceA,congruenceB,mem.trans memory,kept⟩
       change some (!t.z)=some true
       simp only [flag,last,decide_false,Bool.not_false]

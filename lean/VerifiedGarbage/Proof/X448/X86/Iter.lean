@@ -56,12 +56,12 @@ theorem counter_zero {s : State} {n : Nat} (hn : n < 2 ^ 32)
   rw [hc]
   rcases Nat.eq_zero_or_pos n with rfl | h
   · rfl
-  · rw [decide_eq_false (by omega)]
+  · rw [decide_eq_false (by omega_using [h])]
     apply beq_false_of_ne
     intro he
     have := congrArg BitVec.toNat he
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-    exact absurd this (by simp; omega)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at this
+    exact absurd this (by simp; omega_using [h])
 
 /-- The complete loop invariant, including its memory frame. -/
 structure LInv (base : Addr) (k : Nat) (u : Spec.X448.Fe) (s₀ s : State) (n : Nat) : Prop where
@@ -87,15 +87,15 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
     WP isa stepBody s fun t => LInv base k u s₀ t n ∧ (t.gpr .esi == 0) = decide (n = 0) := by
   have hs := hi.scr
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
-      (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
-      (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS]; omega_using [hn])
+      (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS]; omega_using [])
+      (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS, ACC]; omega_using [hn])]
     exact hbits n hn
   rw [stepBody, WP.seq_iff,
     show stepHead = stepPre ++ (cswap X2 X3 ++ cswap Z2 Z3) by
       simp only [stepHead, stepPre, List.append_assoc], WP.block_append_iff]
-  refine WP.mono (stepPre_ok hs hn hi.esi (by have := bit_le k n; omega)
-    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega); omega) bitval hi.swap)
+  refine WP.mono (stepPre_ok hs hn hi.esi (by have := bit_le k n; omega_using [this])
+    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega_using [hn]); omega_using [this]) bitval hi.swap)
     fun s₁ ⟨b₁, c₁, g₁, rd₁, wr₁, m₁⟩ => ?_
   have hs₁ : Scr s₁ base := ⟨by rw [g₁ _ (by decide)]; exact hs.edi,
     wr₁ ▸ hs.wr, by rw [g₁ _ (by decide)]; exact hs.nowrap⟩
@@ -103,7 +103,7 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
     rw [m₁]; exact writeW_outside _ _ _ (by decide)
   have l₁ : ∀ i : Index, ∀ j < 28, limbs s₁.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := by
     intro i j hj
-    exact out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega))
+    exact out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega_using []))
       (Nat.le_trans (slot_bound i) (by decide)) hj
   have e₁ : E s₁.mem base = E s.mem base := by
     funext i; exact congrArg toFe (valN_congr (l₁ i))
@@ -121,7 +121,7 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
       (E s.mem base) := by rw [e₃, e₂, e₁]; rfl
   rw [← ladderAfter_step k u hn, ← e₄] at vals
   refine ⟨⟨core.scr hs₁, core.ctx hc₁, bb₃, ?_, b₃, ?_, vals.1, vals.2.1, vals.2.2.1,
-    vals.2.2.2.1, vals.2.2.2.2, ?_⟩, counter_zero (by omega) b₃⟩
+    vals.2.2.2.1, vals.2.2.2.2, ?_⟩, counter_zero (by omega_using [hn]) b₃⟩
   · refine hi.regs.trans ⟨?_, core.regs.2.1.trans rd₁, core.regs.2.2.trans wr₁⟩
     intro r hr
     have hwork : r ∉ workRegs := fun h => hr (List.mem_cons_of_mem _ h)
@@ -133,8 +133,8 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
     rw [core.regs.1 r hwork, g₁ r hpre]
   · refine hi.mem.trans ?_
     intro p h8 hp hq
-    rw [core.mem p h8 (by omega) hq, out₁ p (by simp only [SWAP]; omega)]
-  · rw [core.mem.word (by simp only [SWAP]; omega) (by simp only [SWAP, ACC]; omega) (by decide),
+    rw [core.mem p h8 (by omega_using [hp]) hq, out₁ p (by simp only [SWAP]; omega_using [hp])]
+  · rw [core.mem.word (by simp only [SWAP]; omega_using []) (by simp only [SWAP, ACC]; omega_using []) (by decide),
       m₁, ladderAfter_step k u hn]
     exact Mem.readW_writeW_self32 _ _ _
 

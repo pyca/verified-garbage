@@ -46,7 +46,7 @@ abbrev KPre (p : Params) (s₀ : State) : Prop := TPre (Y p) s₀ ∧ KeysPre p 
 theorem piece (F : PrimsOk P) (ps : PS p) (hsp : NoSp (body P p)) :
     Piece (KPre p) (SPub p) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Done p s₀) s₀ s') (sign P p) := by
   have hb := pre_pure (KeysPre p) (body_piece F ps)
-  exact Piece.leaf (W (Y p)) hsp (fun _ hp => ⟨hp.1.E0_big, by have := hp.1.sp'; omega⟩) (fun _ hp => hp.1.hW)
+  exact Piece.leaf (W (Y p)) hsp (fun _ hp => ⟨hp.1.E0_big, by have := hp.1.sp'; omega_using [this]⟩) (fun _ hp => hp.1.hW)
     (fun _ _ _ _ hq => hq.1.1) (hb.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h.2⟩)
 
 /-- `KEYS` as the contract says it. -/
@@ -71,19 +71,19 @@ theorem keysPre_of (ps : PS p) {s₀ : State} (hp : TPre (Y p) s₀)
   have sk : skOf p s₀ = bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.skLen := by
     simp only [skOf, bSk, addr0]
   refine .inr ⟨fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩
-  · have e := h j (by omega)
+  · have e := h j (by omega_using [hj])
     rw [PreparedKey.secret_s1 p _ hj, ← sk] at e
-    rw [slot_addr ps hp (by simp only [nS, s1B]; omega)]
+    rw [slot_addr ps hp (by simp only [nS, s1B]; omega_using [hj])]
     exact e
-  · have e := h (p.ℓ + j) (by omega)
+  · have e := h (p.ℓ + j) (by omega_using [hj])
     rw [PreparedKey.secret_s2 p _ hj, ← sk,
-      show 5 + 2 * p.k + 2 * p.ℓ + (p.ℓ + j) = s2B p + j by simp only [s2B]; omega] at e
-    rw [slot_addr ps hp (by simp only [nS, s2B]; omega)]
+      show 5 + 2 * p.k + 2 * p.ℓ + (p.ℓ + j) = s2B p + j by simp only [s2B]; omega_using []] at e
+    rw [slot_addr ps hp (by simp only [nS, s2B]; omega_using [hj])]
     exact e
-  · have e := h (p.ℓ + p.k + j) (by omega)
+  · have e := h (p.ℓ + p.k + j) (by omega_using [hj])
     rw [PreparedKey.secret_t0 p _ hj, ← sk,
-      show 5 + 2 * p.k + 2 * p.ℓ + (p.ℓ + p.k + j) = t0B p + j by simp only [t0B]; omega] at e
-    rw [slot_addr ps hp (by simp only [nS, t0B]; omega)]
+      show 5 + 2 * p.k + 2 * p.ℓ + (p.ℓ + p.k + j) = t0B p + j by simp only [t0B]; omega_using []] at e
+    rw [slot_addr ps hp (by simp only [nS, t0B]; omega_using [hj])]
     exact e
 
 theorem core_pub_of (ps : PS p) {s₀ s₀' : State} (hp : TPre (Y p) s₀) (hp' : TPre (Y p) s₀')
@@ -93,7 +93,7 @@ theorem core_pub_of (ps : PS p) {s₀ s₀' : State} (hp : TPre (Y p) s₀) (hp'
   simp only [List.cons.injEq] at e₂
   refine ⟨⟨e₁, fun i hi => ?_, ?_⟩, ?_⟩
   · rw [Y_n] at hi
-    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
     exacts [a0, a1, a2, a3, a4]
   · have e := e₂.1
     simp only [keysOf, keysW_eq ps hp, keysW_eq ps hp']

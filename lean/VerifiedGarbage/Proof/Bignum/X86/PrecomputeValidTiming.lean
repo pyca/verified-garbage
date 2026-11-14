@@ -92,9 +92,9 @@ theorem pcAt_of {s u : State} (h : PrecomputeInputs base bytes len args s)
   have esp : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   have a0 : pcArgs len args 0 = args 0 := by simp [pcArgs]
   have a2 : pcArgs len args 2 = args 2 := by simp [pcArgs]
-  have W : 2 * wb len = 16 * Spec.Rsa.modulusWords len := by simp only [wb]; omega
+  have W : 2 * wb len = 16 * Spec.Rsa.modulusWords len := by simp only [wb]; omega_using []
   have N : Spec.Rsa.bytesAt u.mem (byteAddr (args 2)) len = Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len := by
-    refine pcBytesAt_frame F (fun r hr => ?_) (by have := h.upper; omega)
+    refine pcBytesAt_frame F (fun r hr => ?_) (by have := h.upper; omega_using [this])
     rw [List.mem_singleton.mp hr]
     have := h.nArg
     simpa only [stackAddress] using this

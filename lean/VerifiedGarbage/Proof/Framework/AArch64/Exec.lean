@@ -50,10 +50,10 @@ theorem movz_movk (x : BitVec 32) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_extractLsb', BitVec.natCast_eq_ofNat,
     BitVec.getLsbD_ofNat, testBit_65535, hi, decide_true, Bool.true_and, Nat.zero_add]
-  rcases (by omega : i < 16 ∨ 16 ≤ i) with h | h <;>
+  rcases (by omega_using [] : i < 16 ∨ 16 ≤ i) with h | h <;>
   simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and,
     Bool.and_false, Bool.or_false, Bool.false_or, Bool.not_false, Bool.not_true, Bool.and_true]
-  all_goals exact congrArg _ (by omega)
+  all_goals exact congrArg _ (by omega_using [h])
 
 theorem exec_add {sz : Size} {s : State} {d n m : Reg} :
     exec (.add sz d n m) s = some (s.write sz d (s.read sz n + s.read sz m)) := rfl
@@ -120,10 +120,10 @@ theorem movz_movk' (x : BitVec 32) :
     BitVec.getLsbD_extractLsb', BitVec.getLsbD_not, BitVec.ofNat_eq_ofNat,
     BitVec.getLsbD_ofNat, testBit_65535, hi, decide_true, Bool.true_and, Nat.zero_add,
     Nat.reduceMul, Nat.sub_zero]
-  rcases (by omega : i < 16 ∨ 16 ≤ i) with h | h <;>
+  rcases (by omega_using [] : i < 16 ∨ 16 ≤ i) with h | h <;>
   simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and,
     Bool.and_false, Bool.or_false, Bool.false_or, Bool.not_false, Bool.not_true, Bool.and_true]
-  all_goals exact congrArg _ (by omega)
+  all_goals exact congrArg _ (by omega_using [h])
 
 theorem rev32_readW (m : Mem) (a : Addr) :
     rev32 (m.readW a 32) = (m a ++ m (a + 1) ++ m (a + 1 + 1) ++ m (a + 1 + 1 + 1) : BitVec 32) :=
@@ -167,10 +167,10 @@ theorem movz_movk64' (x : BitVec 64) :
     BitVec.getLsbD_extractLsb', BitVec.getLsbD_not, BitVec.ofNat_eq_ofNat,
     BitVec.getLsbD_ofNat, testBit_65535, hi, decide_true, Bool.true_and, Nat.zero_add,
     Nat.reduceMul, Nat.sub_zero]
-  rcases (by omega : i < 16 ∨ (16 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 48) ∨ 48 ≤ i) with h | h | h | h <;>
+  rcases (by omega_using [] : i < 16 ∨ (16 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 48) ∨ 48 ≤ i) with h | h | h | h <;>
   simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and,
     Bool.and_false, Bool.or_false, Bool.false_or, Bool.not_false, Bool.not_true, Bool.and_true] <;>
-  exact congrArg _ (by omega)
+  exact congrArg _ (by omega_using [h])
 
 /-- A 64-bit load followed by `rev` reads the eight bytes big-endian. -/
 theorem rev64_readW (m : Mem) (a : Addr) :

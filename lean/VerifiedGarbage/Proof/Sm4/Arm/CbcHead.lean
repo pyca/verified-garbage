@@ -39,7 +39,7 @@ theorem head_wp {s : State} {B I D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 :
     (h : HeadPre B I D n s) : WP isa groupHead s (HeadPost s n) := by
   have hgN : min n 8 ≤ n := Nat.min_le_left _ _
   have hg8 : min n 8 ≤ 8 := Nat.min_le_right _ _
-  have hg : 1 ≤ min n 8 := by omega
+  have hg : 1 ≤ min n 8 := by omega_using [hn]
   obtain ⟨K, hH⟩ := h.table
   refine WP.seq (WP.mono (count_wp h.left hn32) fun s₁ ⟨g₁, o₁, m₁, _, wr₁, _⟩ => ?_)
   have wd₁ : Covers [⟨State.addr D, 16 * min n 8⟩] s₁.wr := by
@@ -48,12 +48,12 @@ theorem head_wp {s : State} {B I D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 :
     apply Covers.of_sub
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 0, by rw [BitVec.add_zero], by change 0 + 16 * min n 8 ≤ 16 * n; omega⟩
+    exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 0, by rw [BitVec.add_zero], by change 0 + 16 * min n 8 ≤ 16 * n; omega_using []⟩
   have fp : CbcFill.Pre B I D (min n 8) s₁ := ⟨⟨(o₁ _ (by decide) (by decide)).trans h.base,
-    (o₁ _ (by decide) (by decide)).trans h.data, g₁, h.fitB, by have := h.fitD; omega,
-    by rw [wr₁]; exact h.hw, wd₁, h.db.sub_left (Region.sub_prefix (by omega))⟩,
+    (o₁ _ (by decide) (by decide)).trans h.data, g₁, h.fitB, by have := h.fitD; omega_using [this],
+    by rw [wr₁]; exact h.hw, wd₁, h.db.sub_left (Region.sub_prefix (by omega_using []))⟩,
     (o₁ _ (by decide) (by decide)).trans h.iv, h.fitI, by rw [wr₁]; exact h.hi,
-    h.id.sub_right (Region.sub_prefix (by omega)), h.ib⟩
+    h.id.sub_right (Region.sub_prefix (by omega_using [])), h.ib⟩
   have table₁ : Holds layout s₁.mem (State.addr B) K .decrypt := by rw [m₁]; exact hH
   refine WP.seq (WP.mono (CbcFill.fill_wp fp hg hg8) fun s₂ f => ?_)
   have b₂ : s₂.gpr sb = B := (f.kept.regs _ (by decide) (by decide)).trans fp.core.base
@@ -66,7 +66,7 @@ theorem head_wp {s : State} {B I D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (hn32 :
     rw [f.kept.wr, wr₁]
     simpa only [BitVec.add_zero] using workspace_part h.hw 0 (4 * slots) (by decide)
   refine WP.mono (BatchCalls.crypt_wp b₂
-    (by have := h.fitB; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega)
+    (by have := h.fitB; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this])
     wc table₂) fun s₃ ⟨c, _, _⟩ => ?_
   refine ⟨fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -84,7 +84,7 @@ theorem proHead_wp {s : State} (hp : BatchPrologue.Pre s) : WP isa proHead s fun
     rw [e.wr]
     simpa only [BitVec.add_zero] using workspace_part hw 0 (4 * slots) (by decide)
   refine WP.mono (CbcPrepare.prepare_wp e.key e.base hp.fitK
-    (by have := hp.fitB; change (Sc s).toNat + 1456 ≤ 2 ^ 32; change (Sc s).toNat + 1512 ≤ 2 ^ 32 at this; omega)
+    (by have := hp.fitB; change (Sc s).toNat + 1456 ≤ 2 ^ 32; change (Sc s).toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this])
     (hp.ks.sub_right (Region.sub_prefix (by decide)))
     (by rw [e.rd, e.wr]; exact hp.key) wc) fun s₂ ⟨p, _⟩ => ?_
   refine ⟨(p.regs _ (by decide) (by decide)).trans e.iv, ?_, (p.regs _ (by decide) (by decide)).trans e.base⟩
@@ -103,10 +103,10 @@ theorem loop_pre {s₀ s : State} {B I D : BitVec 32} {K : Spec.Sm4.Schedule} {t
     (sep : Region.Disjoint ⟨State.addr D, 16 * n⟩ ⟨State.addr B, 4 * BatchCtr.totalSlots⟩)
     (h : CbcLoop.LoopInv s₀ B I D K t n i s) : HeadPre B I (D + BitVec.ofNat 32 (16 * i)) (n - i) s := by
   let Di := D + BitVec.ofNat 32 (16 * i)
-  have diNat : Di.toNat = D.toNat + 16 * i := offset_nat _ _ (by omega)
-  have diAddr : State.addr Di = State.addr D + BitVec.ofNat 64 (16 * i) := addr_add (by omega)
+  have diNat : Di.toNat = D.toNat + 16 * i := offset_nat _ _ (by omega_using [hi, fitD])
+  have diAddr : State.addr Di = State.addr D + BitVec.ofNat 64 (16 * i) := addr_add (by omega_using [hi, fitD])
   have subD : Region.Sub ⟨State.addr Di, 16 * (n - i)⟩ ⟨State.addr D, 16 * n⟩ := by
-    rw [diAddr]; exact Offset.sub_base _ (by omega)
+    rw [diAddr]; exact Offset.sub_base _ (by omega_using [hi])
   have wdi : Covers [⟨State.addr Di, 16 * (n - i)⟩] s.wr := by
     rw [h.wr]
     apply Covers.trans (rs' := [⟨State.addr D, 16 * n⟩]) _ wd
@@ -114,9 +114,9 @@ theorem loop_pre {s₀ s : State} {B I D : BitVec 32} {K : Spec.Sm4.Schedule} {t
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 16 * i, diAddr,
-      by change 16 * i + 16 * (n - i) ≤ 16 * n; omega⟩
+      by change 16 * i + 16 * (n - i) ≤ 16 * n; omega_using [hi]⟩
   exact ⟨⟨(h.regs _ (by simp [sb])).trans hB, (h.regs _ (by simp)).trans hI, h.data, h.left,
-    fitB, fitI, by change Di.toNat + 16 * (n - i) ≤ 2 ^ 32; rw [diNat]; omega,
+    fitB, fitI, by change Di.toNat + 16 * (n - i) ≤ 2 ^ 32; rw [diNat]; omega_using [hi, fitD],
     by rw [h.wr]; exact hw, by rw [h.wr]; exact hiv, wdi,
     id.sub_right subD, ib, sep.sub_left subD⟩, ⟨K, h.table⟩⟩
 

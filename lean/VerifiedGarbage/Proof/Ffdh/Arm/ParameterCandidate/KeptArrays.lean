@@ -25,7 +25,7 @@ theorem operand_keeps_extended {m m' : Mem} {base : Addr} {capacity w o q d n : 
   intro i hi
   change m' (base + BitVec.ofNat 64 (arrAt w q + d) + BitVec.ofNat 64 i) = _
   rw [Offset.add_add]
-  apply keep (arrAt w q + d + i) (by omega)
+  apply keep (arrAt w q + d + i) (by omega_using [bytes, arrayFit, hi])
   intro a ha
   have different : q ≠ a := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
@@ -34,7 +34,7 @@ theorem operand_keeps_extended {m m' : Mem} {base : Addr} {capacity w o q d n : 
     · exact q3
     · exact qo
   have := array_sep (w := w) different
-  omega
+  omega_using [bytes, hi, this]
 
 theorem round_keeps_read {m m' : Mem} {base : Addr} {capacity w d n : Nat}
     (keep : KeepsLite base capacity w m m') (fit : d + n ≤ 8 * capacity)
@@ -45,44 +45,44 @@ theorem round_keeps_read {m m' : Mem} {base : Addr} {capacity w d n : Nat}
   intro i hi
   change m' (base + BitVec.ofNat 64 d + BitVec.ofNat 64 i) = _
   rw [Offset.add_add]
-  apply keep (d + i) (by omega)
+  apply keep (d + i) (by omega_using [fit, hi])
   · intro k hk
     have := header k hk
-    omega
+    omega_using [hi, this]
   · intro j hj
     have := arrays j hj
-    omega
+    omega_using [hi, this]
 
 theorem round_keeps_header {m m' : Mem} {base : Addr} {capacity w d bits : Nat}
     (keep : KeepsLite base capacity w m m') (size : 128 ≤ 8 * capacity) (fit : d + bits / 8 ≤ 128) :
     m'.readW (off base d) bits = m.readW (off base d) bits := by
   unfold Mem.readW
-  rw [round_keeps_read keep (by omega) (by
+  rw [round_keeps_read keep (by omega_using [size, fit]) (by
     intro k hk
     have bound : ∀ k ∈ [23, 26, 29, 30], 16 ≤ k := by decide
     have := bound k hk
     left
-    omega) (by
+    omega_using [fit, this]) (by
     intro j _
     left
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
-    omega)]
+    omega_using [fit])]
 
 theorem round_keeps_array {m m' : Mem} {base : Addr} {capacity w q d n : Nat}
     (keep : KeepsLite base capacity w m m') (fits : arrAt w 28 ≤ 8 * capacity) (bound : q < 28)
     (unwritten : q ∉ wJs) (bytes : d + n ≤ 8 * (w + 2)) :
     m'.read (off base (arrAt w q + d)) n = m.read (off base (arrAt w q + d)) n := by
   have arrayFit := Nat.le_trans (array_end_le bound) fits
-  refine round_keeps_read keep (by omega) ?_ ?_
+  refine round_keeps_read keep (by omega_using [bytes, arrayFit]) ?_ ?_
   · intro k hk
     have upper : ∀ k ∈ [23, 26, 29, 30], k ≤ 30 := by decide
     have := upper k hk
     right
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
-    omega
+    omega_using [this]
   · intro j hj
     have different : q ≠ j := fun same => unwritten (same ▸ hj)
     have := array_sep (w := w) different
-    omega
+    omega_using [bytes, this]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

@@ -98,7 +98,7 @@ def zoVal (ptr : Addr) (len : Nat) : Reg → BitVec 64
 theorem front_none_any {s t : State} (c : KCtx s) (h : Front s t) : WP isa finNone t fun _ => True := by
   have hZ := c.hZ
   have hk1 := c.k1
-  exact WP.mono (finNone_ok (up := s.gpr .x2) (c.hs.congr h.keep.wr) h.x0 (by omega) h.args.usedP
+  exact WP.mono (finNone_ok (up := s.gpr .x2) (c.hs.congr h.keep.wr) h.x0 (by omega_using [hZ, hk1]) h.args.usedP
     (c.ou.congr h.keep.wr).upw) fun _ _ => trivial
 
 /-- The end for too few octets. -/
@@ -120,7 +120,7 @@ theorem finNone_ct {Φ : FPub → State → Prop} (hΦ : ∀ q t, Φ q t → C3 
     have hn := hs.nowrap
     have hZ := k.hZ
     have hk1 := k.k1
-    have hl : InRegions (t.rd ++ t.wr) (off (stackArg s 1) (8 * kUsedP)) 8 := hs.ld (by simp only [kUsedP, sFn]; omega)
+    have hl : InRegions (t.rd ++ t.wr) (off (stackArg s 1) (8 * kUsedP)) 8 := hs.ld (by simp only [kUsedP, sFn]; omega_using [hZ, hk1])
     refine WP.mono (WP.keep [.x2, .x3] (Q := fun t' => t'.gpr .x2 = q.up) (by
       brun [f.x0, hdr_enc (show kUsedP < 32 by decide), hl, f.args.usedP, c.up]) (by decide) (by decide)
       (by decide +kernel)) fun t' ⟨h2, _⟩ r hr => ?_
@@ -158,7 +158,7 @@ theorem zeros_ct : RelCT isa (Two C2) (zeroOut kOut kLen) (Two C2') :=
       have hn := hs.nowrap
       have hZ := k.hZ
       have hk1 := k.k1
-      have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (stackArg s 1) (8 * i)) 8 := fun i hi => hs.ld (by omega)
+      have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (stackArg s 1) (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hk1, hi])
       refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t' => t'.gpr .x1 = q.op ∧
           t'.gpr .x2 = BitVec.ofNat 64 (8 * q.w)) (by
         brun [he.x0, hdr_enc (show kOut < 32 by decide), hdr_enc (show kLen < 32 by decide), hl kOut (by decide),
@@ -190,7 +190,7 @@ theorem C3.k0 {q : FPub} {t : State} (h : C3 q t) (hlt : 8 * q.w ≤ q.rl) : K0 
   rw [c.eB, c.B, c.Z, c.op, c.up, c.eP, c.pP, c.rP] at hm
   have hsch := c.sch hlt
   rw [c.pP, c.rP] at hsch
-  refine ⟨hf.keep.wr.trans c.wr, ⟨by have := hm.z; exact this, by omega, by omega, by rw [← c.rl]; exact (stackArg s 0).isLt,
+  refine ⟨hf.keep.wr.trans c.wr, ⟨by have := hm.z; exact this, by omega_using [hk1, hw], by omega_using [hk2, hw], by rw [← c.rl]; exact (stackArg s 0).isLt,
     hlt, ?_, ?_, ?_⟩, _, _, hm, by rw [bytesAt_length, c.pl], by rw [bytesAt_length, c.rl], hsch⟩
   · rw [← c.eB, bytesAt_length]; exact k.el1
   · rw [← c.eB, bytesAt_length]; exact k.el8
@@ -210,7 +210,7 @@ def cpubOf (s : State) : FPub :=
 
 theorem crel_self {s : State} (h : candPre s) : CRel (cpubOf s) s := by
   have := (kctx_of h).k8
-  exact ⟨h, rfl, rfl, by dsimp only [cpubOf]; omega, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ => rfl⟩
+  exact ⟨h, rfl, rfl, by dsimp only [cpubOf]; omega_using [this], rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ => rfl⟩
 
 /-- Runs that agree on the arguments and the leak agree on the public data. -/
 theorem crel_of {s₁ s₂ : State} (h₁ : candPre s₁) (h₂ : candPre s₂) (hp : candPub s₁ s₂) :
@@ -224,7 +224,7 @@ theorem crel_of {s₁ s₂ : State} (h₁ : candPre s₁) (h₂ : candPre s₂) 
   obtain ⟨he, hl'⟩ := List.append_inj hl (by simp only [List.length_map, bytesAt_length, r .x4 (by decide)])
   have heB := VG.Proof.RsaKeyGen.map_toNat_inj he
   refine ⟨h₂, (ha 1 (by decide)).symm, by rw [← ha 2 (by decide)]; rfl,
-    by dsimp only [cpubOf]; rw [r .x1 (by decide)]; omega, r .x0 (by decide), r .x2 (by decide), r .x3 (by decide),
+    by dsimp only [cpubOf]; rw [r .x1 (by decide)]; omega_using [hk8], r .x0 (by decide), r .x2 (by decide), r .x3 (by decide),
     heB.symm, r .x5 (by decide),
     by rw [r .x6 (by decide)]; rfl, r .x7 (by decide), by rw [← ha 0 (by decide)]; rfl, ?_, fun hk => ?_⟩
   · show s₂.wr = s₁.wr
@@ -234,8 +234,8 @@ theorem crel_of {s₁ s₂ : State} (h₁ : candPre s₁) (h₂ : candPre s₂) 
     rw [VG.Proof.RsaKeyGen.candidateLeak_eq, VG.Proof.RsaKeyGen.candidateLeak_eq] at hl'
     unfold Spec.RsaKeyGen.candidateOp at hl'
     rw [← heB, r .x1 (by decide)] at hl'
-    rw [show 8 * ((s₁.gpr .x1).toNat / 8) = (s₁.gpr .x1).toNat by omega] at hk ⊢
-    refine (VG.Proof.RsaKeyGen.schedOf_eq (by omega) (by rw [bytesAt_length, bytesAt_length, ha 0 (by decide)])
-      (by rw [bytesAt_length]; omega) hl').symm
+    rw [show 8 * ((s₁.gpr .x1).toNat / 8) = (s₁.gpr .x1).toNat by omega_using [hk8]] at hk ⊢
+    refine (VG.Proof.RsaKeyGen.schedOf_eq (by omega_using [hk1]) (by rw [bytesAt_length, bytesAt_length, ha 0 (by decide)])
+      (by rw [bytesAt_length]; omega_using [hk]) hl').symm
 
 end VG.Proof.RsaKeyGen.AArch64

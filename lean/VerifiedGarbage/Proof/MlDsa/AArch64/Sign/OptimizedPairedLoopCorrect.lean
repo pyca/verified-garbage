@@ -54,7 +54,7 @@ theorem pairedSignLoop_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     (fun n s ⟨t,hn,hs,rs⟩ => ?_) 814 a ⟨0,rfl,ha,ra⟩
   refine WP.mono (pairedIter_ok hP hp hb hcommit hball hchecks hs rs) fun u ⟨hu,ru⟩ => ?_
   rcases hu with ⟨hz,hi⟩ | ⟨hz,hx⟩
-  · exact .inr ⟨by rw [eval_x9]; simpa using hz,814-(t+1),by have := hs.t_lt; omega,t+1,rfl,hi,ru⟩
+  · exact .inr ⟨by rw [eval_x9]; simpa using hz,814-(t+1),by have := hs.t_lt; omega_using [hn, this],t+1,rfl,hi,ru⟩
   · exact .inl ⟨by rw [eval_x9,hz]; rfl,hx,ru⟩
 
 end VG.Proof.MlDsa.AArch64.Sign

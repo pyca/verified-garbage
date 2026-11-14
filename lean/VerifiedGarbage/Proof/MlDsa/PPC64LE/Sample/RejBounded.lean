@@ -111,10 +111,10 @@ theorem rbTry_ct {n : Nat} (hn0 : 0 < n) (hn : n ≤ 544) :
   -- the sponge
   refine RelCT.seq (R := fun (a b : State) => SJ n σ₁ a ∧
       ((∃ y, J6 136 n (spOf σ₁) σ₂ y b) ∧ b.gpr .r27 = zx (σ₁.gpr .r4)))
-    (relct_wp (RelCT.mono (sponge_ct hp₁ hp₂' h.sp (rate := 136) (outlen := n) (by decide) (by omega))
+    (relct_wp (RelCT.mono (sponge_ct hp₁ hp₂' h.sp (rate := 136) (outlen := n) (by decide) (by omega_using [hn]))
       (fun a b hab => ⟨hab.1.1, hab.2.1⟩) fun _ _ h => h) fun a b hab =>
-      ⟨WP.mono (sponge_ok hp₁ (by decide) (by omega) hab.1.1) fun _ x => ⟨⟨_, x⟩, (x.gp .r27 (by decide)).trans hab.1.2⟩,
-        WP.mono (sponge_ok hp₂' (by decide) (by omega) hab.2.1) fun _ x =>
+      ⟨WP.mono (sponge_ok hp₁ (by decide) (by omega_using [hn]) hab.1.1) fun _ x => ⟨⟨_, x⟩, (x.gp .r27 (by decide)).trans hab.1.2⟩,
+        WP.mono (sponge_ok hp₂' (by decide) (by omega_using [hn]) hab.2.1) fun _ x =>
           ⟨⟨_, x⟩, (x.gp .r27 (by decide)).trans hab.2.2⟩⟩) ?_
   -- the branch on `η`, and the loop
   refine RelCT.seq (R := fun (a b : State) => (SJ n σ₁ a ∧ a.gpr .r12 = zx (σ₁.gpr .r4) - BitVec.ofNat 64 2) ∧

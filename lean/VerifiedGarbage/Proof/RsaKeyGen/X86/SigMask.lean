@@ -19,7 +19,7 @@ theorem flip_mask (x : Nat) :
   by_cases h : x = 0
   · subst x
     rfl
-  · rw [decide_eq_false (show ¬ x < 1 by omega), decide_eq_true h]
+  · rw [decide_eq_false (show ¬ x < 1 by omega_using [h]), decide_eq_true h]
     rfl
 
 theorem code_ok {s : State} {base : Addr} {size marker j : Nat} (scratch : Scr s base size)
@@ -28,8 +28,8 @@ theorem code_ok {s : State} {base : Addr} {size marker j : Nat} (scratch : Scr s
       t.gpr .ecx = cmask (decide ((combined (word s.mem base marker) &&& constant j).toNat ≠ 0)) ∧
       t.mem = s.mem ∧ Keeps [.eax, .ecx] s t := by
   unfold code
-  refine wp_movS (readSrc_sc scratch (by omega)) fun a A _ => ?_
-  have upper := readSrc_sc (scratch.of_keeps A.keeps (by decide)) (d := marker + 4) (by omega)
+  refine wp_movS (readSrc_sc scratch (by omega_using [fit])) fun a A _ => ?_
+  have upper := readSrc_sc (scratch.of_keeps A.keeps (by decide)) (d := marker + 4) (by omega_using [fit])
   rw [A.mem] at upper
   refine wp_orS upper fun b B => wp_logicS (.inl rfl) rfl fun c C => ?_
   have V : c.gpr .eax = combined (word s.mem base marker) &&& constant j := by
@@ -53,7 +53,7 @@ theorem code_sig {s : State} {base : Addr} {size marker j k : Nat} (scratch : Sc
   rw [value] at V
   have compare : ((combined (BitVec.twoPow 64 k) &&& constant j).toNat ≠ 0) ↔
       j < VG.Proof.RsaKeyGen.sigOf k := by
-    rcases (show j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl
+    rcases (show j = 1 ∨ j = 2 ∨ j = 3 by omega_using [choice]) with rfl | rfl | rfl
     · exact mask1 k index
     · exact mask2 k index
     · exact mask3 k index

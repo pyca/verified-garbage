@@ -87,10 +87,10 @@ theorem projectivePrepare_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr 
   have hp := hc.p_ge
   have hpR := hc.p_lt
   have r2 : c.R * c.R % c.C.p < 2 ^ (64 * c.n) :=
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpR
+    Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) hpR
   have mont : c.mont c.C.n < 2 ^ (64 * c.n) :=
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpR
-  have sub : c.C.p - c.C.n < 2 ^ (64 * c.n) := by omega
+    Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) hpR
+  have sub : c.C.p - c.C.n < 2 ^ (64 * c.n) := by omega_using [hpR]
   rw [Impl.Ecdsa.Verify.X86.Cfg.projectivePrepare, List.append_assoc, WP.block_append_iff]
   refine WP.mono (setConst_ok hs (sl_le c hc.n10 (i := XM) (by decide)) r2) fun s₁ ⟨e₁,k₁,O₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
@@ -128,7 +128,7 @@ theorem projectiveArithmetic_ok (hc : CfgOk c) {s : State} {base : Addr}
   have M₁ : ModOkW c.MP' size c.C.p s₁.mem base := modP_of hc
     ((v₁ (i := MP) (by decide) (by decide)).trans hmp)
   refine WP.seq (WP.mono (slMul_ok (MP'_n c) hc.fp h7 hs₁ (o := XM) (a := K) (b := XM)
-    (by decide) (by decide) (by decide) (by rw [xm₁]; exact Nat.mod_lt _ (by omega)))
+    (by decide) (by decide) (by decide) (by rw [xm₁]; exact Nat.mod_lt _ (by omega_using [hrx])))
     fun s₂ ⟨k₂,lt₂,e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i :=
@@ -151,7 +151,7 @@ theorem projectiveArithmetic_ok (hc : CfgOk c) {s : State} {base : Addr}
     · exact lt₂
     · rw [v₂ (by decide) (by decide) (by decide), v₁ (by decide) (by decide)]; exact hrz
     · rw [v₂ (by decide) (by decide) (by decide), v₁ (by decide) (by decide)]; exact hrx
-    · rw [v₂ (by decide) (by decide) (by decide), acc₁]; exact Nat.mod_lt _ (by omega)
+    · rw [v₂ (by decide) (by decide) (by decide), acc₁]; exact Nat.mod_lt _ (by omega_using [hrx])
   have U₂ : Unch base (slWk c [XM, TMP]) s₁.mem s₂.mem := by simpa only [accLen_MP', MP'_n, show c.MP'.tmp = c.sl TMP from rfl, slWk, slW, List.map_cons, List.map_nil, List.cons_append, List.nil_append] using k₂.unch
   have U : Unch base (slWk c projectiveAllW) s.mem s₃.mem :=
     ((U₁.trans U₂).trans U₃).mono (by

@@ -24,7 +24,7 @@ theorem toMontValue_bound {t : Nat} (ht : t<fieldPrime) : toMontValue t<fieldPri
   have hrem := Nat.mod_lt t hpos
   have hdiv := Nat.mod_add_div t upperBase
   dsimp only [toMontValue,fieldPrime,rotateBase,upperBase] at *
-  omega
+  omega_using [ht]
 
 theorem fromMont_toMont {t : Nat} (ht : t<fieldPrime) : fromMontValue (toMontValue t)=t := by
   have h := Nat.mod_add_div t upperBase
@@ -32,15 +32,15 @@ theorem fromMont_toMont {t : Nat} (ht : t<fieldPrime) : fromMontValue (toMontVal
   have hrem := Nat.mod_lt t hpos
   have hq : t/upperBase<rotateBase := by
     dsimp only [fieldPrime,upperBase,rotateBase] at *
-    omega
+    omega_using [ht]
   dsimp only [fromMontValue,toMontValue]
   have hm : (rotateBase*(t%upperBase)+t/upperBase)%rotateBase=t/upperBase := by
     rw [Nat.mul_add_mod,Nat.mod_eq_of_lt hq]
   have hd : (rotateBase*(t%upperBase)+t/upperBase)/rotateBase=t%upperBase := by
     dsimp only [rotateBase] at hq ⊢
-    omega
+    omega_using [hq, hm]
   rw [hm,hd]
-  omega
+  omega_using [h]
 
 theorem toMontValue_mod {t : Nat} (ht : t<fieldPrime) :
     toMontValue t=t*montBase%fieldPrime := by

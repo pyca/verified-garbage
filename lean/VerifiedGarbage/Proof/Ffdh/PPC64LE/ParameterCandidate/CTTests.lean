@@ -65,7 +65,7 @@ theorem ME.passed {a : MrD} {t : State} (h : ME a t) (h1 : statOf a.res = 1) :
   · obtain ⟨-, u, hul, hr, hU⟩ := hsome true rest rfl
     have hul' : u ≤ a.q.r.length := hul
     have eu : a.q.r.length - (restOf (some (true, rest))).length = u := by
-      subst hr; show a.q.r.length - (a.q.r.drop u).length = u; rw [List.length_drop]; omega
+      subst hr; show a.q.r.length - (a.q.r.drop u).length = u; rw [List.length_drop]; omega_using [hul']
     exact ⟨sv, toc, M, by rw [eu]; exact hU, by rw [eu]; exact hul'⟩
 
 theorem pins_TE (E : TQD → MrD) {Φ : TQD → State → Prop} (h : ∀ d s, Φ d s → TE E d s) :
@@ -89,7 +89,7 @@ theorem stage_ct (E : TQD → MrD) {cont : Prog isa}
   have hs : RelCT isa (Two (TE E)) (.block [ldh .r3 hStat, .subi .r3 .r3 1])
       (Two fun d t => isa.eval (.zero .d .r3) t = some (decide (statOf (E d).res = 1)) ∧ TE E d t) :=
     two_post (two_taint _ (pins_TE E fun _ _ h => h) (by taint_decide)) fun d _ ⟨⟨sv, toc, hE⟩, hx⟩ =>
-      WP.mono (stat1_ok hE.1 (v := statOf (E d).res) (by have := statOf_le (E d).res; omega) hE.stat)
+      WP.mono (stat1_ok hE.1 (v := statOf (E d).res) (by have := statOf_le (E d).res; omega_using [this]) hE.stat)
         fun _ ⟨he, M, hm⟩ => ⟨he, ⟨sv, toc, hE.of_mem M hm⟩, hx⟩
   exact RelCT.seq hs (two_ite' (fun d => decide (statOf (E d).res = 1)) (fun _ _ h => h.1)
     (two_mono (fun _ _ h => ⟨h.1.2, of_decide_eq_true h.2⟩) hc) (two_map E (fun _ _ h => h.1.2.1) qResult_ct))

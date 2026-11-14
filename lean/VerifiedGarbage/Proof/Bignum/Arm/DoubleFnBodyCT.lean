@@ -41,11 +41,11 @@ theorem doubleBases_ready {base : BitVec 32} {len w o a b : Nat}
   obtain ⟨ctx, _⟩ := layout_context h.workspace hw fits ho ha hb
   have bound : 128 ≤ 8 * len := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   refine WP.mono (bases_ok s h.workspace bound header ho.1 ha.1 hb.1 h.ptr h.outIndex h.aIndex h.bIndex) ?_
   rintro t ⟨regs, mem, keep⟩
   refine ⟨⟨ctx.congr keep.wr, ⟨_, regs, ?_⟩, ?_⟩, ?_⟩
-  · rw [mem]; exact native_inverse s.mem (State.addr base) (by omega) h.inverse
+  · rw [mem]; exact native_inverse s.mem (State.addr base) (by omega_using [hw]) h.inverse
   · rw [mem, ← numAt_native, ← numAt_native]; exact h.operand
   · rw [mem]; exact ready.2
 

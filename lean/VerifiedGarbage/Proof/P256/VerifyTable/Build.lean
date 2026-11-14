@@ -71,14 +71,14 @@ theorem dst_slot {Sl : Nat → Prop} (hs : ∀ x∈buildSlots,Sl x) {m j : Nat} 
     (hj : j<5) : Sl (dst m j) := by
   apply hs
   have h : ∀ a<8,∀ j<5,dst (a+1) j∈buildSlots := by decide
-  have := h (m-1) (by omega) j hj
-  rwa [show m-1+1=m by omega] at this
+  have := h (m-1) (by omega_using [hm8]) j hj
+  rwa [show m-1+1=m by omega_using [hm]] at this
 
 theorem entries_obs {n : Nat} (hn : n≤9) {x : Nat} (hx : x∈entries n) (d : Bool) :
     ∀ i<4,observe d (x+8*i) := by
   obtain ⟨a,ha,j,hj,rfl⟩ := mem_entries.mp hx
   have h : ∀ d : Bool,∀ a<9,∀ j<5,∀ i<4,observe d (dst (a+1) j+8*i) := by decide
-  exact h d a (by omega) j hj
+  exact h d a (by omega_using [hn, ha]) j hj
 
 theorem store_frame {base : Addr} {s t : State} {m : Nat} (hm : 1≤m) (hm8 : m≤8)
     (k : KeepRegs [.x1,.x2,.x16] s t)
@@ -186,7 +186,7 @@ theorem zaddu_ok {base : Addr} {F : Nat → Fe C} {s : State} {k : Nat} (hk : k�
   simp only [Vl,List.mem_append] at hx
   rcases hx with (hx|hx)|hx
   · revert x; decide
-  · exact entries_obs (by omega) hx false
+  · exact entries_obs (by omega_using [hk]) hx false
   · revert x; decide
 
 omit aligned in
@@ -198,12 +198,12 @@ theorem store_ok {base : Addr} {F : Nat → Fe C} {s : State} {k : Nat} (hk : k�
       Inv M base 8192 C.p Sl (Vl (k+1)) (storeEnv (k+2) F) t := by
   have hW : ∀ x∈W,x∈Vl k := fun x hx => List.mem_append_left _ (List.mem_append_left _ hx)
   rw [WP.block_append_iff]
-  refine WP.mono (storeEntry_inv layout hi (m:=k+2) (by omega) (by omega) h19
-    (fun j hj => hW _ (by revert j; decide)) (fun j hj => dst_slot hs (by omega) (by omega) hj))
+  refine WP.mono (storeEntry_inv layout hi (m:=k+2) (by omega_using []) (by omega_using [hk]) h19
+    (fun j hj => hW _ (by revert j; decide)) (fun j hj => dst_slot hs (by omega_using []) (by omega_using [hk]) hj))
     fun d ⟨kd,ud,id⟩ => ?_
   refine WP.mono (test_ok d) fun t ⟨ct,kt⟩ => ?_
   have cd : d.gpr .x19=BitVec.ofNat 64 (k+2) := by rw [kd.gpr _ (by decide),h19]
-  refine ⟨(store_frame (by omega) (by omega) kd ud).trans ((AllocatedFrame.of_keeps kt).widenRegs (by decide)),
+  refine ⟨(store_frame (by omega_using []) (by omega_using [hk]) kd ud).trans ((AllocatedFrame.of_keeps kt).widenRegs (by decide)),
     by rw [kt.gpr _ (by decide),cd],by rw [ct,cd],(id.of_keeps kt (by decide)).sub ?_⟩
   intro x hx
   rw [Vl,entries_succ (k+1)] at hx
@@ -231,10 +231,10 @@ theorem loop_ok {base : Addr} {F : Nat → Fe C} {s : State}
     (fun n t => n≤6 ∧ AllocatedFrame regs base buildW s t ∧ t.gpr .x19=BitVec.ofNat 64 (7-n) ∧
       Inv M base 8192 C.p Sl (Vl (6-n)) (loopEnv (6-n) F) t)
     (fun n a ⟨hn,fa,ca,ia⟩ => ?_) 6 s ⟨by decide,AllocatedFrame.refl _ _ _ _,h19,hi⟩
-  refine WP.mono (step_ok layout aligned hs (k:=6-n) (by omega) ia (by rw [ca]; congr 1; omega))
+  refine WP.mono (step_ok layout aligned hs (k:=6-n) (by omega_using []) ia (by rw [ca]; congr 1; omega_using [hn]))
     fun t ⟨kt,ct,xt,it⟩ => ?_
-  have e : 6-n+1=7-n := by omega
-  have e2 : 6-n+2=8-n := by omega
+  have e : 6-n+1=7-n := by omega_using [hn]
+  have e2 : 6-n+2=8-n := by omega_using [hn]
   rw [e] at it
   rw [e2] at ct xt
   have hz : (t.read .x .x4 != 0)=decide (n≠0) := by
@@ -246,21 +246,21 @@ theorem loop_ok {base : Addr} {F : Nat → Fe C} {s : State}
       have hh : BitVec.ofNat 64 (8-n) = (8 : BitVec 64) := by bv_omega_arith
       have he' := congrArg BitVec.toNat hh
       simp only [BitVec.toNat_ofNat,show (8 : BitVec 64).toNat=8 from rfl,
-        Nat.mod_eq_of_lt (show 8-n<2^64 by omega)] at he'
-      omega
+        Nat.mod_eq_of_lt (show 8-n<2^64 by omega_using [])] at he'
+      omega_using [h, he']
   by_cases h : n=0
   · subst h
     refine Or.inl ⟨?_,fa.trans kt,?_⟩
     · show some (t.read .x .x4 != 0)=some false
       rw [hz]; rfl
     · exact it
-  · refine Or.inr ⟨?_,n-1,by omega,by omega,fa.trans kt,?_,?_⟩
+  · refine Or.inr ⟨?_,n-1,by omega_using [h],by omega_using [hn],fa.trans kt,?_,?_⟩
     · show some (t.read .x .x4 != 0)=some true
       rw [hz,decide_eq_true h]
-    · rw [ct]; congr 1; omega
-    · rw [show 6-(n-1)=7-n by omega]
+    · rw [ct]; congr 1; omega_using [h]
+    · rw [show 6-(n-1)=7-n by omega_using [h]]
       have : loopEnv (7-n) F=stepEnv (6-n+2) (loopEnv (6-n) F) := by
-        rw [show 7-n=(6-n)+1 by omega]; rfl
+        rw [show 7-n=(6-n)+1 by omega_using [hn]]; rfl
       rw [this]; exact it
 
 theorem finish_ok {base : Addr} {F : Nat → Fe C} {s : State}

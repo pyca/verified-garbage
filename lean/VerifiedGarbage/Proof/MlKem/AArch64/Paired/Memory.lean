@@ -27,7 +27,7 @@ theorem coeffs_frame {w16 : Bool} {m m' : Mem} {p : Addr} {L : List Zq} {rs : Li
     (h : Rej8.Scalar.CoeffsW w16 m p L) (hl : L.length≤256) (hf : Frame rs m m')
     (hd : ∀r∈rs,(polyRegion p).Disjoint r) : Rej8.Scalar.CoeffsW w16 m' p L := by
   intro i hi
-  rw [coeffAtW_frame hf hd (by omega)]
+  rw [coeffAtW_frame hf hd (by omega_using [hl, hi])]
   exact h i hi
 
 end VG.Proof.MlKem.AArch64.Paired
@@ -43,7 +43,7 @@ theorem EnvW.frame {w16 : Bool} {s u : State} {N : Nat} {B : Nat → Byte} {p a 
     EnvW w16 N B p a u := by
   refine ⟨⟨?_,?_,?_,h.disj,h.bound⟩,?_,?_,?_,?_,?_⟩
   · intro i hi
-    rw [hf.bytes (R := ⟨p,3*N+4⟩) hb (by change 3*N+4≤2^64; have := h.bound; omega) (by omega : i<3*N+4)]
+    rw [hf.bytes (R := ⟨p,3*N+4⟩) hb (by change 3*N+4≤2^64; have := h.bound; omega_using [this]) (by omega_using [hi] : i<3*N+4)]
     exact h.buf i hi
   · simpa only [hr,hw] using h.inb
   · simpa only [hw] using h.ina

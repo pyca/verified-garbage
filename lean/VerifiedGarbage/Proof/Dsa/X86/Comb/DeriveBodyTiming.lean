@@ -39,25 +39,25 @@ theorem deriveCompute_relCT (L : CallLayout)
     RelCT isa (fun s t => CallPair L s t ∧ ContextReady L s ∧ ContextReady L t)
       (deriveCompute L.pLen L.qLen) (CallPair L) := by
   have W := L.lengths
-  have nq : (L.qLen+7)/8≤48 := by omega
+  have nq : (L.qLen+7)/8≤48 := by omega_using [W]
   have Xop : CallOperand L (.input .nonce) L.qLen := .inl ⟨_,X,Nat.le_refl _⟩
   have Gop : CallOperand L (.input .g) L.pLen := .inl ⟨_,G,Nat.le_refl _⟩
-  have bound : t2+L.pLen≤usedBytes := by change 15328+L.pLen≤15712; omega
+  have bound : t2+L.pLen≤usedBytes := by change 15328+L.pLen≤15712; omega_using [W]
   have Y := CallOperand.localBuffer L t2 L.pLen (by decide) bound
   unfold deriveCompute Core.sequence
   dsimp only [List.foldr]
   refine RelCT.seq (R := fun s t => CallPair L s t ∧ ContextReady L s ∧ ContextReady L t) ?_
     (RelCT.seq ?_ (RelCT.seq
-      (callRange_relCT L L.pLen .p (.local t2) true P Y (by omega) (by omega) L.aligned.1)
+      (callRange_relCT L L.pLen .p (.local t2) true P Y (by omega_using [W]) (by omega_using [W]) L.aligned.1)
       (RelCT.block_nil (fun _ _ h => h))))
   · intro s t tr ur sf tf ⟨Pair,Cs,Ct⟩ E F
     have H := callRange_relCT L L.qLen .q (.input .nonce) false Q Xop
-      (by omega) (by omega) L.aligned.2 _ _ _ _ _ _ Pair E F
+      (by omega_using [W]) (by omega_using [W]) L.aligned.2 _ _ _ _ _ _ Pair E F
     have keep {u v : State} (R : CallReady L u) (C : ContextReady L u)
         {trace : List Leak} (Ev : Exec isa (Validate.range L.qLen .q (.input .nonce) false) u trace v) :
         ContextReady L v := by
       obtain ⟨_,K,O⟩ := wp_result (validateRange_ok R.moduli.scr L.saved rfl
-        (by omega) (by omega) L.aligned.2 R.moduli.qReady
+        (by omega_using [W]) (by omega_using [W]) L.aligned.2 R.moduli.qReady
         ((R.buffers _ X).ready (R.moduli.context nq)) false) Ev
       have Ex := (StageFrame.of_frame K (by decide) O nq).execution (.inr ⟨rfl,rfl⟩)
       unfold ContextReady
@@ -104,7 +104,7 @@ theorem deriveBody_relCT (L : CallLayout) (out : BitVec 32)
     have Et := (wp_result (deriveCompute_ok Pair.2.moduli (Pair.2.buffers _ G)
       (Pair.2.buffers _ X) rfl rfl Dt fits Ct) F).2.2.2
     exact ⟨H.1,H.2,S.keep Es,T.keep Et⟩
-  · apply (writeKey_relCT L.base L.size L.pLen L.qLen out L.saved ho (by omega) A).mono ?_ (fun _ _ h => h)
+  · apply (writeKey_relCT L.base L.size L.pLen L.qLen out L.saved ho (by omega_using [W]) A).mono ?_ (fun _ _ h => h)
     intro s t ⟨Pair,S,T⟩
     exact ⟨S.writeReady Pair.1 Params X A,T.writeReady Pair.2 Params X A,
       Pair.pointer (.inl ⟨_,P,Nat.le_refl _⟩),Pair.pointer (.inl ⟨_,X,Nat.le_refl _⟩)⟩

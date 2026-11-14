@@ -43,7 +43,7 @@ theorem sr_eq {o n : Nat} (ho : o < 8448) : sr P o n = sc P o n := by
 
 theorem sr_fit {o n : Nat} (ho : o < 8448) (hn : o + n ≤ 8448) :
     (P.scr + BitVec.ofNat 32 o).toNat + n ≤ 2 ^ 32 := by
-  rw [h.scr_toNat ho]; have := h.scr_fit; have := h.sl8; omega
+  rw [h.scr_toNat ho]; have := h.scr_fit; have := h.sl8; omega_arith
 
 theorem sr_sep {o n o' n' : Nat} (hs : o + n ≤ o' ∨ o' + n' ≤ o) (ho : o < 8448) (ho' : o' < 8448)
     (h₁ : o + n ≤ 8448) (h₂ : o' + n' ≤ 8448) : (sr P o n).Disjoint (sr P o' n') := by
@@ -108,7 +108,7 @@ theorem keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Nat} (h
     (hd : ∀ r ∈ ws, (sr P o n).Disjoint r) :
     Spec.Rsa.bytesAt t.mem (sr P o n).base n = Spec.Rsa.bytesAt s.mem (sr P o n).base n := by
   rw [hs.2.sp] at hf
-  refine Proof.RsaPkcs1Sig.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  refine Proof.RsaPkcs1Sig.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hn])
   rcases List.mem_append.mp hr with hr | hr
   · exact hd r hr
   · simp only [List.mem_singleton] at hr; subst hr; exact (hs.1.below_sr hk ho hn).symm
@@ -128,7 +128,7 @@ theorem repr_keep_sr {σ s t : State} (hs : S P σ s) {ws : List Region} {k : Na
   refine repr_keep hf (fun r hr => ?_) h
   rcases List.mem_append.mp hr with hr | hr
   · exact hd r hr
-  · simp only [List.mem_singleton] at hr; subst hr; exact (hs.1.below_sr hk (by omega) ho).symm
+  · simp only [List.mem_singleton] at hr; subst hr; exact (hs.1.below_sr hk (by omega_using [ho]) ho).symm
 
 /-! ## What a call leaves -/
 
@@ -230,19 +230,19 @@ theorem finA {t : Nat} {lo hi : BitVec 32} (ht₁ : 192 ≤ t) (ht₂ : t + 32 �
   { hst := edi, eax := eax, ecx := ecx, edx := edx, ebp := ebp, hr := by decide
     sp48 := by rw [hs.2.sp]; exact Nat.le_trans (by decide) hs.1.sp_toNat
     cw := Covers.cons (St.cov_sr hs (o := sSt) (n := 96) (by decide) (by decide))
-      (Covers.cons (St.cov_sr hs (o := t) (n := 32) (by omega) (by omega))
+      (Covers.cons (St.cov_sr hs (o := t) (n := 32) (by omega_using [ht₂]) (by omega_using [ht₂]))
         (St.cov_sr hs (o := sW) (n := 160) (by decide) (by decide)))
-    st_o := hs.1.sr_sep (o := sSt) (n := 96) (o' := t) (n' := 32) (by simp only [sSt]; omega) (by decide)
-      (by omega) (by decide) (by omega)
+    st_o := hs.1.sr_sep (o := sSt) (n := 96) (o' := t) (n' := 32) (by simp only [sSt]; omega_using [ht₁]) (by decide)
+      (by omega_using [ht₂]) (by decide) (by omega_using [ht₂])
     st_sc := hs.1.sr_sep (o := sSt) (n := 96) (o' := sW) (n' := 160) (by decide) (by decide) (by decide)
       (by decide) (by decide)
-    o_sc := hs.1.sr_sep (o := t) (n := 32) (o' := sW) (n' := 160) (by simp only [sW]; omega) (by omega)
-      (by decide) (by omega) (by decide)
+    o_sc := hs.1.sr_sep (o := t) (n := 32) (o' := sW) (n' := 160) (by simp only [sW]; omega_using [ht₂]) (by omega_using [ht₂])
+      (by decide) (by omega_using [ht₂]) (by decide)
     b_st := by rw [stk48 hs]; exact hs.1.below_sr (o := sSt) (n := 96) (by decide) (by decide) (by decide)
-    b_o := by rw [stk48 hs]; exact hs.1.below_sr (o := t) (n := 32) (by decide) (by omega) (by omega)
+    b_o := by rw [stk48 hs]; exact hs.1.below_sr (o := t) (n := 32) (by decide) (by omega_using [ht₂]) (by omega_using [ht₂])
     b_sc := by rw [stk48 hs]; exact hs.1.below_sr (o := sW) (n := 160) (by decide) (by decide) (by decide)
     nst := hs.1.sr_fit (o := sSt) (n := 96) (by decide) (by decide)
-    no := hs.1.sr_fit (o := t) (n := 32) (by omega) (by omega)
+    no := hs.1.sr_fit (o := t) (n := 32) (by omega_using [ht₂]) (by omega_using [ht₂])
     nsc := hs.1.sr_fit (o := sW) (n := 160) (by decide) (by decide) }
 
 /-- HMAC's `init` of the states at `scratch + sSt` and `scratch + sOuter`
@@ -255,31 +255,31 @@ theorem hiA {o kl : Nat} (ho₁ : 192 ≤ o) (ho₂ : o + kl ≤ 2576) (hkl : kl
       (P.scr + BitVec.ofNat 32 o) (P.scr + BitVec.ofNat 32 sW) kl :=
   { edi := edi, esi := esi, edx := edx, ecx := ecx, ebp := ebp
     klB := hkl
-    kl32 := by omega
+    kl32 := by omega_using [ho₂]
     sp := by rw [hs.2.sp]; exact Nat.le_trans (by decide) hs.1.sp_toNat
-    cr := Covers.right (St.cov_sr hs (o := o) (n := kl) (by omega) (by omega))
+    cr := Covers.right (St.cov_sr hs (o := o) (n := kl) (by omega_using [ho₂]) (by omega_using [ho₂]))
     cw := Covers.cons (St.cov_sr hs (o := sSt) (n := 96) (by decide) (by decide))
       (Covers.cons (St.cov_sr hs (o := sOuter) (n := 96) (by decide) (by decide))
         (St.cov_sr hs (o := sW) (n := 104 * 8) (by decide) (by decide)))
     i_o := hs.1.sr_sep (o := sSt) (n := 96) (o' := sOuter) (n' := 96) (by decide) (by decide) (by decide)
       (by decide) (by decide)
-    i_k := hs.1.sr_sep (o := sSt) (n := 96) (o' := o) (n' := kl) (by simp only [sSt]; omega) (by decide)
-      (by omega) (by decide) (by omega)
+    i_k := hs.1.sr_sep (o := sSt) (n := 96) (o' := o) (n' := kl) (by simp only [sSt]; omega_using [ho₁]) (by decide)
+      (by omega_using [ho₂]) (by decide) (by omega_using [ho₂])
     i_s := hs.1.sr_sep (o := sSt) (n := 96) (o' := sW) (n' := 104 * 8) (by decide) (by decide) (by decide)
       (by decide) (by decide)
-    o_k := hs.1.sr_sep (o := sOuter) (n := 96) (o' := o) (n' := kl) (by simp only [sOuter]; omega) (by decide)
-      (by omega) (by decide) (by omega)
+    o_k := hs.1.sr_sep (o := sOuter) (n := 96) (o' := o) (n' := kl) (by simp only [sOuter]; omega_using [ho₁]) (by decide)
+      (by omega_using [ho₂]) (by decide) (by omega_using [ho₂])
     o_s := hs.1.sr_sep (o := sOuter) (n := 96) (o' := sW) (n' := 104 * 8) (by decide) (by decide) (by decide)
       (by decide) (by decide)
-    k_s := hs.1.sr_sep (o := o) (n := kl) (o' := sW) (n' := 104 * 8) (by simp only [sW]; omega) (by omega)
-      (by decide) (by omega) (by decide)
+    k_s := hs.1.sr_sep (o := o) (n := kl) (o' := sW) (n' := 104 * 8) (by simp only [sW]; omega_using [ho₂]) (by omega_using [ho₂])
+      (by decide) (by omega_using [ho₂]) (by decide)
     b_i := by rw [stk76 hs]; exact hs.1.below_sr (o := sSt) (n := 96) (by decide) (by decide) (by decide)
     b_o := by rw [stk76 hs]; exact hs.1.below_sr (o := sOuter) (n := 96) (by decide) (by decide) (by decide)
-    b_k := by rw [stk76 hs]; exact hs.1.below_sr (o := o) (n := kl) (by decide) (by omega) (by omega)
+    b_k := by rw [stk76 hs]; exact hs.1.below_sr (o := o) (n := kl) (by decide) (by omega_using [ho₂]) (by omega_using [ho₂])
     b_s := by rw [stk76 hs]; exact hs.1.below_sr (o := sW) (n := 104 * 8) (by decide) (by decide) (by decide)
     ni := hs.1.sr_fit (o := sSt) (n := 96) (by decide) (by decide)
     no := hs.1.sr_fit (o := sOuter) (n := 96) (by decide) (by decide)
-    nk := hs.1.sr_fit (o := o) (n := kl) (by omega) (by omega)
+    nk := hs.1.sr_fit (o := o) (n := kl) (by omega_using [ho₂]) (by omega_using [ho₂])
     nsc := hs.1.sr_fit (o := sW) (n := 104 * 8) (by decide) (by decide) }
 
 /-- HMAC's `finalize` of the states at `scratch + sSt` and
@@ -294,27 +294,27 @@ theorem hfA {t : Nat} {lo hi : BitVec 32} (ht₁ : 192 ≤ t) (ht₂ : t + 32 �
     sp := by rw [hs.2.sp]; exact Nat.le_trans (by decide) hs.1.sp_toNat
     cr := Covers.right (St.cov_sr hs (o := sOuter) (n := 96) (by decide) (by decide))
     cw := Covers.cons (St.cov_sr hs (o := sSt) (n := 96) (by decide) (by decide))
-      (Covers.cons (St.cov_sr hs (o := t) (n := 32) (by omega) (by omega))
+      (Covers.cons (St.cov_sr hs (o := t) (n := 32) (by omega_using [ht₂]) (by omega_using [ht₂]))
         (St.cov_sr hs (o := sW) (n := 104 * 8) (by decide) (by decide)))
     i_u := hs.1.sr_sep (o := sSt) (n := 96) (o' := sOuter) (n' := 96) (by decide) (by decide) (by decide)
       (by decide) (by decide)
-    i_o := hs.1.sr_sep (o := sSt) (n := 96) (o' := t) (n' := 32) (by simp only [sSt]; omega) (by decide)
-      (by omega) (by decide) (by omega)
+    i_o := hs.1.sr_sep (o := sSt) (n := 96) (o' := t) (n' := 32) (by simp only [sSt]; omega_using [ht₁]) (by decide)
+      (by omega_using [ht₂]) (by decide) (by omega_using [ht₂])
     i_s := hs.1.sr_sep (o := sSt) (n := 96) (o' := sW) (n' := 104 * 8) (by decide) (by decide) (by decide)
       (by decide) (by decide)
-    u_o := hs.1.sr_sep (o := sOuter) (n := 96) (o' := t) (n' := 32) (by simp only [sOuter]; omega) (by decide)
-      (by omega) (by decide) (by omega)
+    u_o := hs.1.sr_sep (o := sOuter) (n := 96) (o' := t) (n' := 32) (by simp only [sOuter]; omega_using [ht₁]) (by decide)
+      (by omega_using [ht₂]) (by decide) (by omega_using [ht₂])
     u_s := hs.1.sr_sep (o := sOuter) (n := 96) (o' := sW) (n' := 104 * 8) (by decide) (by decide) (by decide)
       (by decide) (by decide)
-    o_s := hs.1.sr_sep (o := t) (n := 32) (o' := sW) (n' := 104 * 8) (by simp only [sW]; omega) (by omega)
-      (by decide) (by omega) (by decide)
+    o_s := hs.1.sr_sep (o := t) (n := 32) (o' := sW) (n' := 104 * 8) (by simp only [sW]; omega_using [ht₂]) (by omega_using [ht₂])
+      (by decide) (by omega_using [ht₂]) (by decide)
     b_i := by rw [stk76 hs]; exact hs.1.below_sr (o := sSt) (n := 96) (by decide) (by decide) (by decide)
     b_u := by rw [stk76 hs]; exact hs.1.below_sr (o := sOuter) (n := 96) (by decide) (by decide) (by decide)
-    b_o := by rw [stk76 hs]; exact hs.1.below_sr (o := t) (n := 32) (by decide) (by omega) (by omega)
+    b_o := by rw [stk76 hs]; exact hs.1.below_sr (o := t) (n := 32) (by decide) (by omega_using [ht₂]) (by omega_using [ht₂])
     b_s := by rw [stk76 hs]; exact hs.1.below_sr (o := sW) (n := 104 * 8) (by decide) (by decide) (by decide)
     ni := hs.1.sr_fit (o := sSt) (n := 96) (by decide) (by decide)
     nu := hs.1.sr_fit (o := sOuter) (n := 96) (by decide) (by decide)
-    no := hs.1.sr_fit (o := t) (n := 32) (by omega) (by omega)
+    no := hs.1.sr_fit (o := t) (n := 32) (by omega_using [ht₂]) (by omega_using [ht₂])
     nsc := hs.1.sr_fit (o := sW) (n := 104 * 8) (by decide) (by decide) }
 
 end Args

@@ -24,44 +24,44 @@ theorem metadataRowStep (s : State) {L j : Nat} (positive : 5≤L) (fit : L<2^63
   BitVec.ofNat_sub_ofNat_of_le L 5 (by decide) positive
  refine WP.keep [.x12,.x13,.x14] ?_ rfl rfl rfl
  unfold Policy.rowStep
- brun [remaining,count,sub,sign_sub (a:=L-5) (b:=5) (by omega) (by decide)]
+ brun [remaining,count,sub,sign_sub (a:=L-5) (b:=5) (by omega_using [fit]) (by decide)]
  constructor
  · exact (BitVec.ofNat_add _ _).symm
  · change ((BitVec.ofNat 64 (L-5)+ ~~~5#64+1#64) >>> 63)=_
    rw [BitVec.add_assoc,←BitVec.neg_eq_not_add,←BitVec.sub_eq_add_neg]
-   exact sign_sub (by omega) (by decide)
+   exact sign_sub (by omega_using [fit]) (by decide)
 
 theorem metadataRows_ok (s : State) {N : Nat} (positive : 0<N) (bound : N≤8192)
  (remaining : s.gpr .x12=BitVec.ofNat 64 (N+4)) (count : s.gpr .x13=0#64) :
  WP isa (.loop (.block Policy.rowStep) (.zero .x .x14)) s fun t =>
  t.gpr .x13=BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows N) ∧ t.mem=s.mem ∧ Keep [.x12,.x13,.x14] s t := by
  let d := (N+4)/5
- have dPositive : 0<d := by dsimp [d];omega
+ have dPositive : 0<d := by dsimp [d];omega_using [positive]
  let I := fun n t => ∃ j, n=d-j ∧ j<d ∧
   t.gpr .x12=BitVec.ofNat 64 (N+4-5*j) ∧ t.gpr .x13=BitVec.ofNat 64 j ∧
   t.mem=s.mem ∧ Keep [.x12,.x13,.x14] s t
  refine WP.loop (M:=isa) I ?_ d s ?_
  · intro n t h
    obtain ⟨j,rem,hj,left,countT,mem,keep⟩ := h
-   have enough : 5≤N+4-5*j := by dsimp [d] at hj;omega
-   refine WP.mono (metadataRowStep t enough (by omega) left countT) ?_
+   have enough : 5≤N+4-5*j := by dsimp [d] at hj;omega_using [hj]
+   refine WP.mono (metadataRowStep t enough (by omega_using [bound]) left countT) ?_
    rintro u ⟨⟨leftU,countU,flagU,memU⟩,keepU⟩
-   have same : N+4-5*j-5=N+4-5*(j+1) := by omega
-   have flag : (N+4-5*j-5<5) ↔ ¬j+1<d := by dsimp [d];omega
+   have same : N+4-5*j-5=N+4-5*(j+1) := by omega_using []
+   have flag : (N+4-5*j-5<5) ↔ ¬j+1<d := by dsimp [d];omega_using []
    by_cases more : j+1<d
    · right
-     refine ⟨?_,d-(j+1),by omega,j+1,rfl,more,?_,countU,memU.trans mem,(keep.trans keepU).mono (by decide)⟩
+     refine ⟨?_,d-(j+1),by omega_using [rem, hj],j+1,rfl,more,?_,countU,memU.trans mem,(keep.trans keepU).mono (by decide)⟩
      · rw [eval_zero,flagU,ite_eq_right (by rw [flag];exact not_not_intro more)]
        decide
      · rw [leftU,same]
    · left
-     have last : j+1=d := by omega
+     have last : j+1=d := by omega_using [hj, more]
      refine ⟨?_,?_,memU.trans mem,(keep.trans keepU).mono (by decide)⟩
      · rw [eval_zero,flagU,ite_eq_left (flag.mpr more)]
        decide
      · rw [countU,last]
        rfl
- · refine ⟨0,by omega,dPositive,?_,count,rfl,Keep.refl _ _⟩
+ · refine ⟨0,by omega_using [],dPositive,?_,count,rfl,Keep.refl _ _⟩
    simpa using remaining
 
 end VG.Proof.Ffdh.AArch64.Cached

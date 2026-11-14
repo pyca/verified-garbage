@@ -252,7 +252,7 @@ theorem hmacInitW_of (hs : ∃ s, (Proof.Hmac.initScratchContract I.S (initWords
   rw [← hSH] at hs ⊢
   refine hmacInit_verifiedW hH C K ?_ hs
   show 8 * ((H.P.so + 48) / 8) + 48 ≤ 8 * ((H.P.so + 48) / 8 + 6)
-  omega
+  omega_using []
 
 theorem hmacFin_of (hs : ∃ s, (Proof.Hmac.finalizeScratchContract I.S H.W X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacFin (Proof.Hmac.finalizeScratchContract I.S H.W X86_64.abi 16) := by
@@ -308,7 +308,7 @@ theorem hmacShortF_of (hsI : ∃ s, (Proof.Hmac.initScratchContract I.S (initWor
     (hsat : ∃ s, (I.initContract X86_64.abi (16 + initFrame H)).pre s) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
       (I.initContract X86_64.abi (16 + initFrame H)) :=
-  have : initWords H < 263 := by rw [initWords_eq]; have := hH.hso; omega
+  have : initWords H < 263 := by rw [initWords_eq]; have := hH.hso; omega_using [this]
   X86_64.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
     (n := initWords H) (pre := Spec.Hmac.initPre I.S X86_64.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S X86_64.abi.ptrBits) (wa := true) (stack := 16)
@@ -327,7 +327,7 @@ theorem hmacInitF_of (A : Any.AnyOK (core H))
   have : initWords H ≤ H.W := by
     have h := C.fitI
     change 8 * ((H.P.so + 48) / 8) + 48 ≤ 8 * H.W at h
-    rw [initWords_eq]; omega
+    rw [initWords_eq]; omega_using [h]
   initEntry_verified (hmacShortF_of hH C K hSH hsW hsIF)
     (hmacInitAnyF_of hH C K hSH A hsI hsA ha hR hsat) (by omega_arith)
     (by simp only [initFrame, anyFrame, anyWords]; omega_arith) hB hsat

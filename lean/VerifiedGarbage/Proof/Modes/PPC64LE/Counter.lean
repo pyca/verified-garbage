@@ -73,10 +73,10 @@ theorem nz_toNat (x : BitVec 64) : (nz x).toNat = if x.toNat = 0 then 0 else 1 :
   · rename_i h
     have hn : (0 - x).toNat = 2 ^ 64 - x.toNat := by
       have e0 : (0 : BitVec 64).toNat = 0 := rfl
-      rw [BitVec.toNat_sub, e0]; omega
+      rw [BitVec.toNat_sub, e0]; omega_using [h]
     have h1 : x.toNat ≤ ((0 - x) ||| x).toNat := by rw [BitVec.toNat_or]; exact Nat.right_le_or
     have h2 : (0 - x).toNat ≤ ((0 - x) ||| x).toNat := by rw [BitVec.toNat_or]; exact Nat.left_le_or
-    omega
+    omega_using [hn, h1, h2]
 
 /-- The memory after `incAt` on the block at `Q`. -/
 def incMem (m : Mem) (Q : Addr) : Mem :=
@@ -101,7 +101,7 @@ theorem inc_wp {base : Reg} {off : Nat} (hb : base ≠ .r0) (h8 : base ≠ .r8) 
       (VG.Offset.sep Q (d := 0) (n := 8) (e := 8) (k := 8) (by decide) (by decide) (by decide)) (by decide)
     simpa using this
   simp only [incAt, List.cons_append]
-  refine wp_li (by omega) fun s₁ u₁ => ?_
+  refine wp_li (by omega_using [ho]) fun s₁ u₁ => ?_
   refine wp_ldbrx (t := .r8) (a := base) (b := .r9) (ea := Q + BitVec.ofNat 64 8) hb (by rw [u₁.gpr, u₁.other _ h9]; exact a8) (by rw [u₁.rd, u₁.wr]; exact hr8)
     fun s₂ u₂ => ?_
   refine wp_addi (by decide) (by decide) fun s₃ u₃ => ?_
@@ -113,7 +113,7 @@ theorem inc_wp {base : Reg} {off : Nat} (hb : base ≠ .r0) (h8 : base ≠ .r8) 
   refine wp_sub fun s₆ u₆ => ?_
   refine wp_or fun s₇ u₇ => ?_
   refine wp_lsr (by decide) fun s₈ u₈ => ?_
-  refine wp_li (by omega) fun s₉ u₉ => ?_
+  refine wp_li (by omega_using [ho]) fun s₉ u₉ => ?_
   have gb : ∀ {t : State}, (∀ r, r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r) → t.gpr base = s.gpr base :=
     fun ht => ht _ h8 h9
   have g₉ : ∀ r, r ≠ .r8 → r ≠ .r9 → s₉.gpr r = s.gpr r := fun r a b => by
@@ -127,7 +127,7 @@ theorem inc_wp {base : Reg} {off : Nat} (hb : base ≠ .r0) (h8 : base ≠ .r8) 
       u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hr) fun s₁₀ u₁₀ => ?_
   refine wp_addi (by decide) (by decide) fun s₁₁ u₁₁ => ?_
   refine wp_sub fun s₁₂ u₁₂ => ?_
-  refine wp_li (by omega) fun s₁₃ u₁₃ => ?_
+  refine wp_li (by omega_using [ho]) fun s₁₃ u₁₃ => ?_
   have g₁₂ : ∀ r, r ≠ .r8 → r ≠ .r9 → s₁₂.gpr r = s.gpr r := fun r a b => by
     rw [u₁₂.other r a, u₁₁.other r a, u₁₀.other r a, g₉ r a b]
   refine wp_stdbrx (t := .r8) (a := base) (b := .r9) (ea := Q) hb (by rw [u₁₃.gpr, u₁₃.other _ h9, gb g₁₂]; exact ha)
@@ -157,7 +157,7 @@ theorem incMem_bytes (m : Mem) (Q : Addr) : bytesAt (incMem m Q) Q 16 = Spec.Ctr
     have hh := (AesCtr.rv64 (m.readW Q 64)).isLt
     have hl' := (AesCtr.rv64 (m.readW (Q + BitVec.ofNat 64 8) 64)).isLt
     rw [BitVec.toNat_sub, BitVec.toNat_add, e1, hz]
-    split <;> (simp only [Nat.reducePow] at *; omega)
+    split <;> (simp only [Nat.reducePow] at *; omega_arith)
 
 theorem incMem_frame (m : Mem) (Q : Addr) : Frame [⟨Q, 16⟩] m (incMem m Q) :=
   ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -181,7 +181,7 @@ theorem incMem_apply (m : Mem) (Q x : Addr) :
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at hc
-      omega)
+      omega_using [hi, hc])
 
 /-! ## GCM's `inc₃₂` -/
 
@@ -217,7 +217,7 @@ theorem setWidth_add_one (x : BitVec 32) : ((x.setWidth 64 + 1).setWidth 32) = x
   have e2 : (1 : BitVec 32).toNat = 1 := rfl
   rw [e1, e2]
   simp only [Nat.reducePow] at *
-  omega
+  omega_using []
 
 /-- The word `inc32At` writes: the big-endian number it held, plus 1,
 modulo 2³². -/
@@ -231,7 +231,7 @@ theorem inc32Mem_bytes (m : Mem) (Q : Addr) :
   have e₁ : (1 : BitVec 32).toNat = 1 := rfl
   rw [BitVec.toNat_add, e₁]
   simp only [Nat.reducePow]
-  omega
+  omega_using []
 
 theorem inc32Mem_frame (m : Mem) (Q : Addr) : Frame [⟨Q, 4⟩] m (inc32Mem m Q) :=
   (Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -256,6 +256,6 @@ theorem inc32Mem_apply (m : Mem) (Q x : Addr) :
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at hc
-      omega)
+      omega_using [hi, hc])
 
 end VG.Proof.Modes.PPC64LE.Counter

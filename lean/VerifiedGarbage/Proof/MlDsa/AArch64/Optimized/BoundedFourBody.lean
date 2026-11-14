@@ -157,12 +157,12 @@ theorem vectorBody_ok {η : Nat} (hη : η=2∨η=4) {s : State} {table p : Addr
   have hbvec (r : VReg) (hr : r∉bodyVecs) : b.v r=s.v r := by
     rw [hbv r hr,hav r (by intro he; subst r; exact hr (by decide))]
   rw [WP.block_append_iff]
-  refine WP.mono (storeAccepted_ok (s := b) (p := p) (L := L) (A := bodyValues η s) (by omega) hA (by rw [hbmem]; exact hS)
+  refine WP.mono (storeAccepted_ok (s := b) (p := p) (L := L) (A := bodyValues η s) (by omega_using [hL]) hA (by rw [hbmem]; exact hS)
     (by rw [hbk'.gpr .x3 (by decide)]; exact h3)
     (by rw [hbk'.wr]; exact hW) hvals) fun c ⟨hck,hcg,hcv,hcf,hcs⟩=>?_
   have hck' : Keep [.x6,.x7,.x13] s c:=(hbk'.trans hck).mono (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (advanceCore_ok (s := c) (c := (bodyValues η s).length) (r := 256-L.length) (n := bytes) hA (by omega) hN
+  refine WP.mono (advanceCore_ok (s := c) (c := (bodyValues η s).length) (r := 256-L.length) (n := bytes) hA (by omega_using [hL, hA]) hN
     (by rw [hcg]; exact hcount)
     (by rw [hck'.gpr .x4 (by decide)]; exact h4)
     (by rw [hck'.gpr .x5 (by decide)]; exact h5))
@@ -180,12 +180,12 @@ theorem vectorBody_ok {η : Nat} (hη : η=2∨η=4) {s : State} {table p : Addr
   · rw [htk.get .x3,hd3,hck'.gpr .x3 (by decide),h3,List.length_append]
     exact VG.Proof.MlDsa.Arith.coeffAddr_add p L.length (bodyValues η s).length
   · rw [htk.get .x4,hd4,List.length_append]
-    congr 1; omega
+    congr 1; omega_using []
   · rw [htk.get .x5,hd5]
-  · rw [ht8,hd4,hd5,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega),List.length_append]
+  · rw [ht8,hd4,hd5,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using []),List.length_append]
     by_cases he : L.length+(bodyValues η s).length≤252
-    · rw [ite_eq_left (by omega),ite_eq_left he]
-    · rw [ite_eq_right (by omega),ite_eq_right he]
+    · rw [ite_eq_left (by omega_using [he]),ite_eq_left he]
+    · rw [ite_eq_right (by omega_using [he]),ite_eq_right he]
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

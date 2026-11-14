@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Nat.Prime.Defs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Pratt certificates
@@ -50,14 +51,14 @@ theorem powMod_eq (m : Nat) (hm : 1 < m) (n b e : Nat) (he : e < 2 ^ n) : powMod
   | succ n ih =>
     by_cases h0 : e = 0
     · subst h0; simp [powMod_succ, Nat.mod_eq_of_lt hm]
-    have he2 : e / 2 < 2 ^ n := by rw [Nat.pow_succ] at he; omega
+    have he2 : e / 2 < 2 ^ n := by rw [Nat.pow_succ] at he; omega_using [he]
     have hsplit : b ^ e = (b * b) ^ (e / 2) * b ^ (e % 2) := by
-      rw [← Nat.pow_two, ← Nat.pow_mul, ← Nat.pow_add]; congr 1; omega
+      rw [← Nat.pow_two, ← Nat.pow_mul, ← Nat.pow_add]; congr 1; omega_using []
     by_cases h2 : e % 2 = 0
     · simp only [powMod_succ, h0, h2, ite_false, ite_true]
       rw [ih _ _ he2, hsplit, h2, Nat.pow_zero, Nat.mul_one, ← Nat.pow_mod]
     · simp only [powMod_succ, h0, h2, ite_false]
-      have h1 : e % 2 = 1 := by omega
+      have h1 : e % 2 = 1 := by omega_using [h2]
       rw [ih _ _ he2, hsplit, h1, Nat.pow_one, ← Nat.pow_mod, Nat.mul_mod_mod, Nat.mul_comm]
 
 theorem prime_of_dvd_prod {q : Nat} (hq : q.Prime) {fs : List Nat} (hfs : ∀ f ∈ fs, f.Prime)
@@ -82,7 +83,7 @@ theorem pow_add_mod {a e r p : Nat} (h : a ^ e % p = 1) : a ^ (e + r) % p = a ^ 
 /-- `a` is a unit modulo `p` if a positive power of it is 1. -/
 theorem coprime_of_pow {a e p : Nat} (he : 0 < e) (h : a ^ e % p = 1) : Nat.Coprime a p := by
   have h1 : Nat.gcd a p ∣ a ^ e := Nat.dvd_trans (Nat.gcd_dvd_left a p)
-    (Dvd.intro (a ^ (e - 1)) (by rw [← Nat.pow_succ']; congr 1; omega))
+    (Dvd.intro (a ^ (e - 1)) (by rw [← Nat.pow_succ']; congr 1; omega_using [he]))
   have h2 : Nat.gcd a p ∣ a ^ e % p :=
     (Nat.dvd_mod_iff (Nat.gcd_dvd_right a p)).mpr h1
   rw [h] at h2
@@ -91,7 +92,7 @@ theorem coprime_of_pow {a e p : Nat} (he : 0 < e) (h : a ^ e % p = 1) : Nat.Copr
 /-- `x % p = 1` if `p ∣ x - 1`, for `x ≥ 1` and `p > 1`. -/
 theorem mod_eq_one_of_dvd {x p : Nat} (hx : 1 ≤ x) (hp : 1 < p) (h : p ∣ x - 1) : x % p = 1 := by
   obtain ⟨t, ht⟩ := h
-  rw [show x = p * t + 1 by omega, Nat.mul_add_mod, Nat.mod_eq_of_lt hp]
+  rw [show x = p * t + 1 by omega_using [hx, ht], Nat.mul_add_mod, Nat.mod_eq_of_lt hp]
 
 /-- The least `k` with `P k`, from any `n` with `P n`. -/
 theorem exists_least {P : Nat → Prop} : ∀ n, P n → ∃ k, P k ∧ ∀ j < k, ¬ P j := by
@@ -109,21 +110,21 @@ theorem lucas {p a : Nat} (hp : 2 ≤ p) (ha : a ^ (p - 1) % p = 1)
     (hq : ∀ q, q.Prime → q ∣ p - 1 → a ^ ((p - 1) / q) % p ≠ 1) : p.Prime := by
   -- The order `k` of `a` modulo `p`.
   obtain ⟨k, hk, hmin⟩ : ∃ k, (0 < k ∧ a ^ k % p = 1) ∧ ∀ j, 0 < j → j < k → a ^ j % p ≠ 1 := by
-    obtain ⟨k, hk, hl⟩ := exists_least (P := fun k => 0 < k ∧ a ^ k % p = 1) (p - 1) ⟨by omega, ha⟩
+    obtain ⟨k, hk, hl⟩ := exists_least (P := fun k => 0 < k ∧ a ^ k % p = 1) (p - 1) ⟨by omega_using [hp], ha⟩
     exact ⟨k, hk, fun j hj hjk h => hl j hjk ⟨hj, h⟩⟩
   -- The order `k` divides `p - 1`.
   have hdvd : k ∣ p - 1 := by
     have e := Nat.div_add_mod (p - 1) k
     have hr : a ^ ((p - 1) % k) % p = 1 := by
-      rw [← pow_add_mod (pow_mul_mod_one (by omega) hk.2 ((p - 1) / k)), e]; exact ha
+      rw [← pow_add_mod (pow_mul_mod_one (by omega_using [hp]) hk.2 ((p - 1) / k)), e]; exact ha
     refine Nat.dvd_of_mod_eq_zero (Classical.byContradiction fun h0 => ?_)
     exact hmin _ (Nat.pos_of_ne_zero h0) (Nat.mod_lt _ hk.1) hr
   -- It is `p - 1`: else a prime factor `q` of `(p - 1) / k` has `k ∣ (p - 1) / q`.
   have hkp : k = p - 1 := by
     refine Classical.byContradiction fun hne => ?_
-    have hlt : k < p - 1 := Nat.lt_of_le_of_ne (Nat.le_of_dvd (by omega) hdvd) hne
+    have hlt : k < p - 1 := Nat.lt_of_le_of_ne (Nat.le_of_dvd (by omega_using [hp]) hdvd) hne
     obtain ⟨m, hm⟩ := hdvd
-    have hm1 : m ≠ 1 := fun h => by rw [h, Nat.mul_one] at hm; omega
+    have hm1 : m ≠ 1 := fun h => by rw [h, Nat.mul_one] at hm; omega_using [hne, hm]
     have hq' := Nat.minFac_prime hm1
     obtain ⟨r, hr⟩ := Nat.minFac_dvd m
     generalize m.minFac = q at hq' hr
@@ -133,11 +134,11 @@ theorem lucas {p a : Nat} (hp : 2 ≤ p) (ha : a ^ (p - 1) % p = 1)
       rw [hm, Nat.mul_left_comm, Nat.mul_div_cancel_left _ hq'.pos]
     have := hq _ hq' hqd
     rw [hdiv] at this
-    exact this (pow_mul_mod_one (by omega) hk.2 r)
+    exact this (pow_mul_mod_one (by omega_using [hp]) hk.2 r)
   subst hkp
   have hcop : Nat.Coprime a p := coprime_of_pow hk.1 hk.2
   have ha1 : 1 ≤ a := Nat.pos_of_ne_zero fun h => by
-    rw [h, Nat.coprime_zero_left] at hcop; omega
+    rw [h, Nat.coprime_zero_left] at hcop; omega_using [hp, hcop]
   -- The powers `a^i`, `i < p - 1`, are distinct modulo `p`.
   have hinj : ∀ i < p - 1, ∀ j < p - 1, i < j → a ^ i % p ≠ a ^ j % p := by
     intro i _ j hj hij h
@@ -146,15 +147,15 @@ theorem lucas {p a : Nat} (hp : 2 ≤ p) (ha : a ^ (p - 1) % p = 1)
       rwa [show a ^ j = a ^ (j - i) * a ^ i by rw [← Nat.pow_add, Nat.sub_add_cancel hij.le],
         ← Nat.sub_one_mul] at this
     have hd' := Nat.Coprime.dvd_of_dvd_mul_right (Nat.Coprime.pow_left i hcop).symm hd
-    exact hmin (j - i) (by omega) (by omega)
-      (mod_eq_one_of_dvd (Nat.one_le_pow _ _ ha1) (by omega) hd')
+    exact hmin (j - i) (by omega_using [hij]) (by omega_using [hj])
+      (mod_eq_one_of_dvd (Nat.one_le_pow _ _ ha1) (by omega_using [hp]) hd')
   -- So the units modulo `p` are all of `1, …, p - 1`, and `p` is prime: a
   -- divisor `m` of `p` other than `1` and `p` would leave only `p - 2` places
   -- for the `p - 1` distinct powers.
   refine Nat.prime_def.mpr ⟨hp, fun m hm => ?_⟩
   refine Classical.byContradiction fun hne => ?_
-  have hm0 : 0 < m := Nat.pos_of_dvd_of_pos hm (by omega)
-  have hmp : m < p := Nat.lt_of_le_of_ne (Nat.le_of_dvd (by omega) hm) (fun h => hne (Or.inr h))
+  have hm0 : 0 < m := Nat.pos_of_dvd_of_pos hm (by omega_using [hp])
+  have hmp : m < p := Nat.lt_of_le_of_ne (Nat.le_of_dvd (by omega_using [hp]) hm) (fun h => hne (Or.inr h))
   have hmc : ¬ Nat.Coprime m p := fun hc => by
     rw [Nat.Coprime, Nat.gcd_eq_left hm] at hc
     exact hne (Or.inl hc)
@@ -168,14 +169,14 @@ theorem lucas {p a : Nat} (hp : 2 ≤ p) (ha : a ^ (p - 1) % p = 1)
       rw [Nat.Coprime, ← Nat.gcd_rec, Nat.gcd_comm]
       exact Nat.Coprime.pow_left i hcop
     refine (List.mem_erase_of_ne fun (h : a ^ i % p = m) => hmc (h ▸ hc)).mpr
-      ((List.mem_erase_of_ne fun (h : a ^ i % p = 0) => ?_).mpr (List.mem_range.mpr (Nat.mod_lt _ (by omega))))
+      ((List.mem_erase_of_ne fun (h : a ^ i % p = 0) => ?_).mpr (List.mem_range.mpr (Nat.mod_lt _ (by omega_using [hp]))))
     rw [h, Nat.Coprime, Nat.gcd_zero_left] at hc
-    omega
+    omega_using [hp, hc]
   have := List.Nodup.length_le_of_subset hnd hsub
-  rw [List.length_erase_of_mem ((List.mem_erase_of_ne (by omega)).mpr (List.mem_range.mpr hmp)),
-    List.length_erase_of_mem (List.mem_range.mpr (by omega)), List.length_range, List.length_map,
+  rw [List.length_erase_of_mem ((List.mem_erase_of_ne (by omega_using [hm0])).mpr (List.mem_range.mpr hmp)),
+    List.length_erase_of_mem (List.mem_range.mpr (by omega_using [hp])), List.length_range, List.length_map,
     List.length_range] at this
-  omega
+  omega_using [hp, this]
 
 /-- Lucas's test, with the prime factors of `p - 1` listed (with multiplicity)
 and every power computed by `powMod` with `n`-bit exponents. -/
@@ -183,9 +184,9 @@ theorem prime_of_cert (p a n : Nat) (fs : List Nat) (hp : 2 ≤ p) (hn : p - 1 <
     (hfs : ∀ f ∈ fs, f.Prime) (hprod : fs.prod = p - 1)
     (ha : powMod p n a (p - 1) = 1)
     (hq : ∀ f ∈ fs, powMod p n a ((p - 1) / f) ≠ 1) : p.Prime := by
-  refine lucas hp (by rw [← powMod_eq p (by omega) n a _ hn]; exact ha) fun q hq' hd => ?_
+  refine lucas hp (by rw [← powMod_eq p (by omega_using [hp]) n a _ hn]; exact ha) fun q hq' hd => ?_
   have hm := prime_of_dvd_prod hq' hfs (hprod ▸ hd)
-  rw [← powMod_eq p (by omega) n a _ (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hn)]
+  rw [← powMod_eq p (by omega_using [hp]) n a _ (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hn)]
   exact hq q hm
 
 /-- Whether no `e` with `d ≤ e < d + k` and `e * e ≤ p` divides `p`, stopping at
@@ -202,7 +203,7 @@ theorem noDiv_succ (p k d : Nat) : noDiv p (k + 1) d =
 
 theorem noDiv_spec {p : Nat} : ∀ {k d : Nat}, noDiv p k d = true →
     ∀ e, d ≤ e → e < d + k → e * e ≤ p → p % e ≠ 0
-  | 0, _, _, _, _, h, _ => by omega
+  | 0, _, _, _, _, h, _ => by omega_arith
   | k + 1, d, hn, e, hd, hk, hp => by
     rw [noDiv_succ] at hn
     cases hlt : Nat.blt p (d * d)
@@ -211,11 +212,11 @@ theorem noDiv_spec {p : Nat} : ∀ {k d : Nat}, noDiv p k d = true →
       · rw [hb, Bool.cond_false] at hn
         rcases Nat.eq_or_lt_of_le hd with rfl | hd'
         · exact Nat.ne_of_beq_eq_false hb
-        · exact noDiv_spec hn e hd' (by omega) hp
+        · exact noDiv_spec hn e hd' (by omega_using [hk]) hp
       · rw [hb, Bool.cond_true] at hn; exact absurd hn Bool.false_ne_true
     · have := Nat.mul_le_mul hd hd
       simp only [Nat.blt_eq] at hlt
-      omega
+      omega_using [hp, this, hlt]
 
 /-- Whether `p < 2^16` has no divisor `d` with `2 ≤ d` and `d² ≤ p`, by trial
 division up to `255` (`noDiv`). -/
@@ -234,8 +235,8 @@ theorem prime_small (p : Nat) (h : smallPrime p = true) : p.Prime := by
   have hlt : p.minFac < 256 := by
     refine Nat.lt_of_not_le fun h => ?_
     have := Nat.mul_le_mul h h
-    omega
+    omega_using [hl, hsq, this]
   have hmod : p % p.minFac = 0 := Nat.mod_eq_zero_of_dvd (Nat.minFac_dvd p)
-  exact noDiv_spec hd _ h2 (by omega) hsq hmod
+  exact noDiv_spec hd _ h2 (by omega_using [hlt]) hsq hmod
 
 end VG.Proof.Pratt

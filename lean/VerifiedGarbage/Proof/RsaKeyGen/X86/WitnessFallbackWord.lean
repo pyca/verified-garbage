@@ -45,7 +45,7 @@ theorem low_ok {s : State} {base : Addr} {size src : Nat} (scratch : Scr s base 
   refine wp_orS load fun d D => ?_
   have Kd : Keeps [.ecx] s d := Kc.widen D.keeps
   have Sd := scratch.of_keeps Kd (by decide)
-  refine wp_storeS (Sd.ea (by omega)) (Sd.write fit) fun t T => WP.block_nil ?_
+  refine wp_storeS (Sd.ea (by omega_using [fit])) (Sd.write fit) fun t T => WP.block_nil ?_
   have V : d.gpr .ecx = (((cmask uniform ^^^ BitVec.allOnes 32) &&& 2#32) ||| s.mem.readW (off base src) 32) := by
     rw [D.gpr, C.gpr, B.gpr, A.gpr, mask]
     rfl
@@ -53,7 +53,7 @@ theorem low_ok {s : State} {base : Addr} {size src : Nat} (scratch : Scr s base 
   · rw [T.mem, w32_write_self, V]
     exact low_value _ _
   · rw [T.mem, D.mem, C.mem, B.mem, A.mem]
-    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [fit, this])
 
 theorem high_ok {s : State} {base : Addr} {size offset : Nat} (scratch : Scr s base size)
     (fit : offset + 4 ≤ size) {uniform : Bool} (mask : s.gpr .eax = cmask uniform) :
@@ -69,7 +69,7 @@ theorem high_ok {s : State} {base : Addr} {size offset : Nat} (scratch : Scr s b
   refine wp_logicS (.inl rfl) load fun e E => ?_
   have Ke : Keeps [.ecx] s e := Kd.widen E.keeps
   have Se := scratch.of_keeps Ke (by decide)
-  refine wp_storeS (Se.ea (by omega)) (Se.write fit) fun t T => WP.block_nil ?_
+  refine wp_storeS (Se.ea (by omega_using [fit])) (Se.write fit) fun t T => WP.block_nil ?_
   have V : e.gpr .ecx = ((((cmask uniform ^^^ BitVec.allOnes 32) &&& 0x80000000#32) ^^^
       BitVec.allOnes 32) &&& s.mem.readW (off base offset) 32) := by
     rw [E.gpr, D.gpr, C.gpr, B.gpr, A.gpr, mask]
@@ -78,6 +78,6 @@ theorem high_ok {s : State} {base : Addr} {size offset : Nat} (scratch : Scr s b
   · rw [T.mem, w32_write_self, V]
     exact high_value _ _
   · rw [T.mem, E.mem, D.mem, C.mem, B.mem, A.mem]
-    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [fit, this])
 
 end VG.Proof.RsaKeyGen.X86.WitnessFallback

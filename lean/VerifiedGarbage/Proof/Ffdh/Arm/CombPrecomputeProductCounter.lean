@@ -40,8 +40,8 @@ theorem productNext_raw (s : State) {base : BitVec 32} {len low high : Nat}
     WP isa (.block productNext) s fun t =>
       (t.mem=s.mem.writeW (off (State.addr s.sp) 40) (BitVec.ofNat 32 (low+1)) ∧
         t.z=decide (low+1=high)) ∧ Rest [.r2,.r3,.r12] s t := by
-  have a40 : State.addr (s.sp+BitVec.ofNat 32 40)=off (State.addr s.sp) 40 := addr_add (by have := locals.space.nowrap; omega)
-  have a36 : State.addr (s.sp+BitVec.ofNat 32 36)=off (State.addr s.sp) 36 := addr_add (by have := locals.space.nowrap; omega)
+  have a40 : State.addr (s.sp+BitVec.ofNat 32 40)=off (State.addr s.sp) 40 := addr_add (by have := locals.space.nowrap; omega_using [this])
+  have a36 : State.addr (s.sp+BitVec.ofNat 32 36)=off (State.addr s.sp) 36 := addr_add (by have := locals.space.nowrap; omega_using [this])
   have read40 := locals.read (d:=40) (by decide)
   have read36 := locals.read (d:=36) (by decide)
   have write := locals.space.write (off:=40) (by decide)
@@ -81,7 +81,7 @@ theorem basisNext_raw (s : State) {base : BitVec 32} {len high : Nat}
     WP isa (.block basisNext) s fun t =>
       (t.mem=s.mem.writeW (off (State.addr s.sp) 36) (BitVec.ofNat 32 (2*high)) ∧
         t.z=decide (2*high=32)) ∧ Rest [.r3,.r12] s t := by
-  have a36 : State.addr (s.sp+BitVec.ofNat 32 36)=off (State.addr s.sp) 36 := addr_add (by have := locals.space.nowrap; omega)
+  have a36 : State.addr (s.sp+BitVec.ofNat 32 36)=off (State.addr s.sp) 36 := addr_add (by have := locals.space.nowrap; omega_using [this])
   have read := locals.read (d:=36) (by decide)
   have write := locals.space.write (off:=36) (by decide)
   have add : BitVec.ofNat 32 high+BitVec.ofNat 32 high=BitVec.ofNat 32 (2*high) := by

@@ -35,7 +35,7 @@ theorem indexFrom_ok (s : State) {k j : Nat} (hk : k < 2^16) (hj : j ≤ k)
   · apply BitVec.eq_of_toNat_eq
     simp only [Nat.mul_zero,BitVec.shiftLeft_zero,BitVec.toNat_sub,BitVec.toNat_setWidth,
       BitVec.toNat_ofNat,show Size.x.bits = 64 from rfl]
-    omega
+    omega_using [hk, hj]
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_write,hr,ite_false]
 
@@ -63,18 +63,18 @@ theorem dest_ptr {s : State} {base : Addr} {size a : Nat} (hs : Scr s base size)
   st d hd := by
     rw [VG.Offset.add_add]
     exact ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
-  enc := by have := hs.enc; omega
+  enc := by have := hs.enc; omega_using [this]
   nowrap := by
     have := hs.nowrap
     unfold off
     rw [BitVec.toNat_add,BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
 
 theorem stR_out {s : State} {base : Addr} {size a : Nat} (hs : Scr s base size) (ha : a ≤ size)
     (hr : s.gpr .x16 = off base a) {d : Nat} (hd : a + d + 8 ≤ size) (hd8 : d % 8 = 0) (t : Reg) :
     WP isa (.block [.str .x t .x16 d]) s fun s' =>
       s'.mem = s.mem.writeW (off base (a+d)) (s.gpr t) ∧ KeepRegs [] s s' :=
-  WP.mono (stR_ok (dest_ptr hs ha hr) (d:=d) (by omega) hd8 t) fun s' e => by
+  WP.mono (stR_ok (dest_ptr hs ha hr) (d:=d) (by omega_using [hd]) hd8 t) fun s' e => by
     subst e
     refine ⟨?_,⟨fun _ _ => rfl,rfl,rfl,rfl⟩⟩
     show s.mem.writeW (off (off base a) d) _ = _
@@ -94,24 +94,24 @@ theorem copyTo_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {a dst 
   | n+1, s, base, a, dst, src, hs, hr, hd, hsrc, hd8, hs8, hsep => by
     have hn := hs.nowrap
     rw [copyTo,WP.block_append_iff,←List.singleton_append,WP.block_append_iff]
-    refine WP.mono (ld_ok hs (d:=src) (by omega) hs8 .x4) fun s₀ ⟨e₀,k₀,_⟩ => ?_
+    refine WP.mono (ld_ok hs (d:=src) (by omega_using [hsrc]) hs8 .x4) fun s₀ ⟨e₀,k₀,_⟩ => ?_
     have hs₀ := hs.of_keeps k₀ (by decide)
     have hr₀ : s₀.gpr .x16 = off base a := (k₀.gpr .x16 (by decide)).trans hr
-    refine WP.mono (stR_out hs₀ (by omega : a ≤ size) hr₀ (d:=dst) (by omega) hd8 .x4)
+    refine WP.mono (stR_out hs₀ (by omega_using [hd] : a ≤ size) hr₀ (d:=dst) (by omega_using [hd]) hd8 .x4)
       fun s₁ ⟨m₁,k₁⟩ => ?_
     rw [e₀,k₀.mem] at m₁
     have k₀₁ : KeepRegs [.x4] s s₁ := (Keeps.regs k₀).trans (k₁.mono (by simp))
     have hs₁ := hs.of_keepRegs k₀₁ (by decide)
     have O₁ : Outside base (a+dst) 8 s.mem s₁.mem := by
-      rw [m₁]; exact writeW_outside _ _ _ (by omega)
+      rw [m₁]; exact writeW_outside _ _ _ (by omega_using [hd, hn])
     have hr₁ : s₁.gpr .x16 = off base a := (k₀₁.gpr .x16 (by decide)).trans hr
     have e₁ : wordsVal s₁.mem base (src+8) n = wordsVal s.mem base (src+8) n :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_using [hsep]) (by omega_using [hsrc, hn])
     refine WP.mono (copyTo_ok n hs₁ hr₁ (dst:=dst+8) (src:=src+8)
-      (by omega) (by omega) (by omega) (by omega) (by omega)) fun s₂ ⟨e₂,k₂,O₂⟩ => ?_
-    rw [show a+(dst+8)=a+dst+8 by omega] at e₂ O₂
-    refine ⟨?_,k₀₁.trans k₂,fun x hx => by rw [O₂ x (by omega),O₁ x (by omega)]⟩
-    rw [wordsVal,O₂.word (by omega) (by omega),m₁,word_writeW_self,e₂,e₁,wordsVal]
+      (by omega_using [hd]) (by omega_using [hsrc]) (by omega_using [hd8]) (by omega_using [hs8]) (by omega_using [hsep])) fun s₂ ⟨e₂,k₂,O₂⟩ => ?_
+    rw [show a+(dst+8)=a+dst+8 by omega_using []] at e₂ O₂
+    refine ⟨?_,k₀₁.trans k₂,fun x hx => by rw [O₂ x (by omega_using [hx]),O₁ x (by omega_using [hx])]⟩
+    rw [wordsVal,O₂.word (by omega_using []) (by omega_using [hd, hn]),m₁,word_writeW_self,e₂,e₁,wordsVal]
 
 /-- Entry `d` of the table into the result, as `fetch_ok` into the entry. -/
 theorem load_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
@@ -125,7 +125,7 @@ theorem load_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
   have ha : (tablePt d).x+96 ≤ 8192 := by
     have hb := (htab (tablePt d).z (by simp)).2.1
     change _+32 ≤ 6720 at hb
-    dsimp only [tablePt] at hb ⊢; omega
+    dsimp only [tablePt] at hb ⊢; omega_using [hb]
   have hsep : ∀ e ∈ coordinates resultPt,e+32 ≤ (tablePt d).x := by
     have hh : ∀ e ∈ coordinates resultPt,e+32 ≤ tableAt := by decide
     intro e he; exact Nat.le_trans (hh e he) (htab _ (by simp)).1
@@ -138,35 +138,35 @@ theorem load_ok {base : Addr} {s : State} (hs : Scr s base 8192) {d : Nat}
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (copyFrom_ok 4 hs₁ p₁ (a:=(tablePt d).x) (src:=0) (dst:=resultPt.x)
-    (by decide) (by omega) (by decide) (by decide) (Or.inl (by omega)))
+    (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by omega_using [sepX])))
     fun s₂ ⟨x,k₂,u₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have p₂ := (k₂.gpr .x16 (by decide)).trans p₁
   rw [WP.block_append_iff]
   refine WP.mono (copyFrom_ok 4 hs₂ p₂ (a:=(tablePt d).x) (src:=32) (dst:=resultPt.y)
-    (by decide) (by omega) (by decide) (by decide) (Or.inl (by omega)))
+    (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by omega_using [sepY])))
     fun s₃ ⟨y,k₃,u₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have p₃ := (k₃.gpr .x16 (by decide)).trans p₂
   refine WP.mono (copyFrom_ok 4 hs₃ p₃ (a:=(tablePt d).x) (src:=64) (dst:=resultPt.z)
-    (by decide) (by omega) (by decide) (by decide) (Or.inl (by omega)))
+    (by decide) (by omega_using [ha]) (by decide) (by decide) (Or.inl (by omega_using [sepZ])))
     fun t ⟨z,k₄,u₄⟩ => ?_
   have dx : resultPt.x + 32 ≤ resultPt.y := by decide
   have dy : resultPt.y + 32 ≤ resultPt.z := by decide
   have e_x : num base t resultPt.x = num base s (tablePt d).x := by
     change wordsVal t.mem base resultPt.x 4 = wordsVal s.mem base (tablePt d).x 4
-    rw [u₄.wordsVal (by omega) (by omega),
-      u₃.wordsVal (by omega) (by omega),x,k₁.mem]
+    rw [u₄.wordsVal (by omega_using [dx, dy]) (by omega_using [ha, sepX]),
+      u₃.wordsVal (by omega_using [dx]) (by omega_using [ha, sepX]),x,k₁.mem]
     rfl
   have e_y : num base t resultPt.y = num base s (tablePt d).y := by
     change wordsVal t.mem base resultPt.y 4 = wordsVal s.mem base (tablePt d).y 4
-    rw [u₄.wordsVal (by omega) (by omega),y]
-    rw [u₂.wordsVal (Or.inr (by omega)) (by omega),k₁.mem]
+    rw [u₄.wordsVal (by omega_using [dy]) (by omega_using [ha, sepY]),y]
+    rw [u₂.wordsVal (Or.inr (by omega_using [sepX])) (by omega_using [ha]),k₁.mem]
     rfl
   have e_z : num base t resultPt.z = num base s (tablePt d).z := by
     change wordsVal t.mem base resultPt.z 4 = wordsVal s.mem base (tablePt d).z 4
-    rw [z,u₃.wordsVal (Or.inr (by omega)) (by omega),
-      u₂.wordsVal (Or.inr (by omega)) (by omega),k₁.mem]
+    rw [z,u₃.wordsVal (Or.inr (by omega_using [sepY])) (by omega_using [ha]),
+      u₂.wordsVal (Or.inr (by omega_using [sepX])) (by omega_using [ha]),k₁.mem]
     rfl
   have kt : KeepRegs [.x2,.x4,.x16,.x17] s t :=
     ((((Keeps.regs k₁).mono (by decide)).trans (k₂.mono (by decide))).trans
@@ -200,14 +200,14 @@ theorem storeEntry_ok {base : Addr} {s : State} (hs : Scr s base 8192) {j : Nat}
       Changes base ((coordinates (tablePt (15-j))).map (·,32)) s t ∧
       PointAt base t (tablePt (15-j)) P ∧ t.gpr .x19 = s.gpr .x19 := by
   have hn := hs.nowrap
-  have h1 : 1 ≤ 15-j := by omega
-  have h15 : 15-j ≤ 15 := by omega
+  have h1 : 1 ≤ 15-j := by omega_using [hj]
+  have h15 : 15-j ≤ 15 := by omega_using []
   have htab := table_coord_bounds h1 h15
   have hlo := (htab (tablePt (15-j)).x (by simp)).1
   have ha : (tablePt (15-j)).x+96 ≤ 8192 := by
     have hb := (htab (tablePt (15-j)).z (by simp)).2.1
     change _+32 ≤ 6720 at hb
-    dsimp only [tablePt] at hb ⊢; omega
+    dsimp only [tablePt] at hb ⊢; omega_using [hb]
   have ey : (tablePt (15-j)).y = (tablePt (15-j)).x + 32 := rfl
   have ez : (tablePt (15-j)).z = (tablePt (15-j)).x + 64 := rfl
   have hr : ∀ e ∈ coordinates resultPt,e+32 ≤ tableAt := by decide
@@ -217,39 +217,39 @@ theorem storeEntry_ok {base : Addr} {s : State} (hs : Scr s base 8192) {j : Nat}
   have hta : tableAt = 5280 := rfl
   simp only [storeEntry,List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (indexFrom_ok s (k:=15) (by decide) (by omega) h19) fun s₀ ⟨v₀,k₀⟩ => ?_
+  refine WP.mono (indexFrom_ok s (k:=15) (by decide) (by omega_using [hj]) h19) fun s₀ ⟨v₀,k₀⟩ => ?_
   have hs₀ := hs.of_keeps k₀ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (fetchHead_ok hs₀ h1 h15 v₀) fun s₁ ⟨p₁,k₁⟩ => ?_
   have hs₁ := hs₀.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (copyTo_ok 4 hs₁ p₁ (a:=(tablePt (15-j)).x) (dst:=0) (src:=resultPt.x)
-    (by omega) (by decide) (by decide) (by decide) (Or.inr (by omega)))
+    (by omega_using [ha]) (by decide) (by decide) (by decide) (Or.inr (by omega_using [hlo, sepX])))
     fun s₂ ⟨x,k₂,u₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have p₂ := (k₂.gpr .x16 (by decide)).trans p₁
   rw [WP.block_append_iff]
   refine WP.mono (copyTo_ok 4 hs₂ p₂ (a:=(tablePt (15-j)).x) (dst:=32) (src:=resultPt.y)
-    (by omega) (by decide) (by decide) (by decide) (Or.inr (by omega)))
+    (by omega_using [ha]) (by decide) (by decide) (by decide) (Or.inr (by omega_using [hlo, sepY])))
     fun s₃ ⟨y,k₃,u₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have p₃ := (k₃.gpr .x16 (by decide)).trans p₂
   refine WP.mono (copyTo_ok 4 hs₃ p₃ (a:=(tablePt (15-j)).x) (dst:=64) (src:=resultPt.z)
-    (by omega) (by decide) (by decide) (by decide) (Or.inr (by omega)))
+    (by omega_using [ha]) (by decide) (by decide) (by decide) (Or.inr (by omega_using [hlo, sepZ])))
     fun t ⟨z,k₄,u₄⟩ => ?_
   have m₁ : s₁.mem = s.mem := k₁.mem.trans k₀.mem
   have e_x : num base t (tablePt (15-j)).x = num base s resultPt.x := by
     change wordsVal t.mem base (tablePt (15-j)).x 4 = wordsVal s.mem base resultPt.x 4
-    rw [u₄.wordsVal (by omega) (by omega),u₃.wordsVal (by omega) (by omega)]
-    rw [show (tablePt (15-j)).x = (tablePt (15-j)).x + 0 by omega,x,m₁]
+    rw [u₄.wordsVal (by omega_using []) (by omega_using [ha]),u₃.wordsVal (by omega_using []) (by omega_using [ha])]
+    rw [show (tablePt (15-j)).x = (tablePt (15-j)).x + 0 by omega_using [],x,m₁]
   have e_y : num base t (tablePt (15-j)).y = num base s resultPt.y := by
     change wordsVal t.mem base (tablePt (15-j)).y 4 = wordsVal s.mem base resultPt.y 4
-    rw [ey,u₄.wordsVal (by omega) (by omega),y,
-      u₂.wordsVal (by omega) (by omega),m₁]
+    rw [ey,u₄.wordsVal (by omega_using []) (by omega_using [ha]),y,
+      u₂.wordsVal (by omega_using [hlo, sepY]) (by omega_using [sepY, hta]),m₁]
   have e_z : num base t (tablePt (15-j)).z = num base s resultPt.z := by
     change wordsVal t.mem base (tablePt (15-j)).z 4 = wordsVal s.mem base resultPt.z 4
-    rw [ez,z,u₃.wordsVal (by omega) (by omega),
-      u₂.wordsVal (by omega) (by omega),m₁]
+    rw [ez,z,u₃.wordsVal (by omega_using [hlo, sepZ]) (by omega_using [sepZ, hta]),
+      u₂.wordsVal (by omega_using [hlo, sepZ]) (by omega_using [sepZ, hta]),m₁]
   have kt : KeepRegs [.x2,.x4,.x16,.x17] s t :=
     (((((Keeps.regs k₀).mono (by decide)).trans ((Keeps.regs k₁).mono (by decide))).trans
       (k₂.mono (by decide))).trans (k₃.mono (by decide))).trans (k₄.mono (by decide))
@@ -286,17 +286,17 @@ theorem previousEntry_ok {base : Addr} {s : State} (hs : Scr s base 8192)
     WP isa (previousEntry k) s fun t =>
       Changes base resultWork s t ∧ PointAt base t resultPt A ∧ t.gpr .x19 = s.gpr .x19 := by
   rw [previousEntry]
-  refine WP.seq (WP.mono (indexFrom_ok s (k:=k) (by omega) hj h19) fun s₁ ⟨v₁,k₁⟩ => ?_)
+  refine WP.seq (WP.mono (indexFrom_ok s (k:=k) (by omega_using [hk]) hj h19) fun s₁ ⟨v₁,k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have W₁ : Changes base resultWork s s₁ := Changes.of_keeps k₁ (by decide)
   have c₁ : s₁.gpr .x19 = s.gpr .x19 := k₁.gpr _ (by decide)
-  refine WP.ite (decide (k-j=0)) (zero_test (by omega) v₁) (fun hz => ?_) (fun hn => ?_)
+  refine WP.ite (decide (k-j=0)) (zero_test (by omega_using [hk]) v₁) (fun hz => ?_) (fun hn => ?_)
   · have hz' : k-j=0 := of_decide_eq_true hz
     rw [hA hz']
     exact WP.mono (infinity_ok hs₁ hc hC) fun t ⟨k₂,R₂,c₂⟩ => ⟨W₁.trans k₂,R₂,c₂.trans c₁⟩
   · have hn' : k-j≠0 := of_decide_eq_false hn
     have hp := (ht hn').of_mem k₁.mem
-    exact WP.mono (load_ok hs₁ (by omega) (by omega) v₁ hp) fun t ⟨k₂,R₂,c₂⟩ =>
+    exact WP.mono (load_ok hs₁ (by omega_using [hn']) (by omega_using [hk]) v₁ hp) fun t ⟨k₂,R₂,c₂⟩ =>
       ⟨W₁.trans k₂,R₂,c₂.trans c₁⟩
 
 /-- The source `G` or `Q` into the addition's entry slots. -/
@@ -321,7 +321,7 @@ theorem buildStep_ok {base : Addr} {P Q : Point C} {s : State}
   rw [buildStep,←List.singleton_append]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (decCounter_ok s h1 (by omega) h19) fun s₀ ⟨c₀,k₀⟩ => ?_
+  refine WP.mono (decCounter_ok s h1 (by omega_using [h15]) h19) fun s₀ ⟨c₀,k₀⟩ => ?_
   refine WP.mono (rowTest_ok s₀ c₀) fun s₁ ⟨v₁,k₁⟩ => ?_
   have k₀₁ : Keeps [.x19,.x2,.x5] s s₁ := (k₀.mono (by decide)).trans (k₁.mono (by decide))
   have W₁ : Changes base arithmeticWork s s₁ := Changes.of_keeps k₀₁ (by decide)
@@ -330,7 +330,7 @@ theorem buildStep_ok {base : Addr} {P Q : Point C} {s : State}
   have T₁ : Table base P Q (15-j) s₁ := fun e he1 he => (ht e he1 he).of_mem k₀₁.mem
   let d := 15-(j-1)
   have hd1 : 1 ≤ d := by omega
-  have hd15 : d ≤ 15 := by omega
+  have hd15 : d ≤ 15 := by omega_using []
   let A := pair P Q ((previous d)%4) ((previous d)/4)
   have hpl := previous_lt hd1
   -- the source of the previous entry and `G` or `Q`, for either row case
@@ -344,21 +344,21 @@ theorem buildStep_ok {base : Addr} {P Q : Point C} {s : State}
       unfold previous
       by_cases hz : d%4=0
       · rw [decide_eq_true hz] at hb; subst hb
-        rw [ite_eq_left hz]; simp only [ite_true]; omega
+        rw [ite_eq_left hz]; simp only [ite_true]; omega_using []
       · rw [decide_eq_false hz] at hb; subst hb
-        rw [ite_eq_right hz]; simp only [Bool.false_eq_true,ite_false]; omega
+        rw [ite_eq_right hz]; simp only [Bool.false_eq_true,ite_false]; omega_using []
     have hk15 : (if b then 11 else 14) ≤ 15 := by cases b <;> decide
     have hjk : j-1 ≤ (if b then 11 else 14) := by
       cases b
-      · simp only [Bool.false_eq_true,ite_false]; omega
+      · simp only [Bool.false_eq_true,ite_false]; omega_using [h15]
       · simp only [ite_true]
         have hz : d%4=0 := of_decide_eq_true hb.symm
-        omega
+        omega_using [h15, hz]
     refine WP.seq (WP.mono (previousEntry_ok I₁.scr hc hC hk15 hjk c₁ (A:=A)
       (fun h0 => by dsimp only [A]; rw [hkj] at h0; rw [h0]; exact pair_zero P Q)
       (fun h0 => by
         rw [hkj] at h0 ⊢
-        exact T₁ _ (by omega) (by omega)))
+        exact T₁ _ (by omega_using [h0]) (by omega_using [hpl])))
       fun s₂ ⟨k₂,R₂,c₂⟩ => ?_)
     have W₂ := k₂.mono resultWork_sub
     have I₂ := I₁.unch (W₂.mono loopWork_sub)
@@ -373,7 +373,7 @@ theorem buildStep_ok {base : Addr} {P Q : Point C} {s : State}
   have hrow : isa.eval (.zero .x .x2) s₁ = some (decide (d%4=0)) := by
     change some (s₁.read .x .x2 == 0) = _
     rw [read_x,v₁]
-    have hz := rowVal_zero (j-1) (by omega)
+    have hz := rowVal_zero (j-1) (by omega_using [h15])
     by_cases h : (15-(j-1))%4=0
     · rw [decide_eq_true h,beq_iff_eq.mpr (hz ▸ h)]
     · rw [decide_eq_false h]
@@ -396,16 +396,16 @@ theorem buildStep_ok {base : Addr} {P Q : Point C} {s : State}
     have c₃' : s₃.gpr .x19 = BitVec.ofNat 64 (j-1) := c₃.trans (c₂.trans c₁)
     have e : add (if d%4=0 then Q else P) A = pair P Q (d%4) (d/4) := table_step hC hP hQ hd1
     rw [e] at R₃
-    refine WP.mono (storeEntry_ok I₃.scr (j:=j-1) (by omega) c₃' R₃) fun t ⟨k₄,R₄,c₄⟩ => ?_
+    refine WP.mono (storeEntry_ok I₃.scr (j:=j-1) (by omega_using [h15]) c₃' R₃) fun t ⟨k₄,R₄,c₄⟩ => ?_
     have W₄ := (W₃.mono loopWork_sub).trans (k₄.cover (tableWork_cover hd1 hd15))
     have W := W₁.trans W₄
     refine ⟨⟨W,hi.unch W,fun i hi1 hid => ?_⟩,c₄.trans c₃'⟩
     by_cases heq : i=d
     · subst i; exact R₄
-    · have hi' : i < d := by omega
-      have old := W₃.table I₁.scr hi1 (by omega) (T₁ i hi1 (by omega))
+    · have hi' : i < d := by omega_using [hid, heq]
+      have old := W₃.table I₁.scr hi1 (by omega_using [hid]) (T₁ i hi1 (by omega_using [hid, heq]))
       exact k₄.point I₃.scr old
-        (fun x hx => Nat.le_trans (table_coord_bounds hi1 (by omega) x hx).2.1 (by decide))
+        (fun x hx => Nat.le_trans (table_coord_bounds hi1 (by omega_using [hid]) x hx).2.1 (by decide))
         (earlier_table_apart hi1 hi')
   exact WP.seq (WP.ite (decide (d%4=0)) hrow
     (fun hb => WP.mono (src true hb.symm) cont)
@@ -423,7 +423,7 @@ theorem build_ok {base : Addr} {P Q : Point C} {s : State}
     Table base P Q (15-j) t) ∧ t.gpr .x19 = BitVec.ofNat 64 j
   refine countLoop_ok (Inv:=inv) (n:=15) (by decide) (fun j t h1 h15 ⟨⟨k,I,T⟩,c⟩ => ?_)
     (fun t ⟨⟨k,I,T⟩,_⟩ => ⟨k,I,T⟩) (by decide)
-    ⟨⟨W₁,hi.unch W₁,fun _ h1 h0 => False.elim (by omega)⟩,c₁⟩
+    ⟨⟨W₁,hi.unch W₁,fun _ h1 h0 => False.elim (by omega_using [h1, h0])⟩,c₁⟩
   exact WP.mono (buildStep_ok hc hC hP hQ h1 h15 I T c) fun u ⟨⟨k',I',T'⟩,c'⟩ =>
     ⟨⟨⟨k.trans k',I',T'⟩,c'⟩,c'⟩
 

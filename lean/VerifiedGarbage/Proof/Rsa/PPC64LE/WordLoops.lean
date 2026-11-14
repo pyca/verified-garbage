@@ -37,14 +37,14 @@ def AheadW (dO dA m : Nat) : Prop := dO ≤ dA ∨ dA + 8 * m ≤ dO
 
 theorem AheadW.outside {dO dA m i : Nat} (h : AheadW dO dA m) (hi : i < m) :
     dA + 8 * i + 8 ≤ dO ∨ dO + 8 * i ≤ dA + 8 * i := by
-  unfold AheadW at h; omega
+  unfold AheadW at h; omega_using [h, hi]
 
 theorem wordsVal_write_top (m : Mem) (B : Addr) (d i : Nat) (v : BitVec 64) (h : d + 8 * i + 8 ≤ 2 ^ 64) :
     wordsVal (m.writeW (off B (d + 8 * i)) v) B d (i + 1) = wordsVal m B d i + 2 ^ (64 * i) * v.toNat := by
-  rw [wordsVal_succ_top, (writeW_outside m B v h).wordsVal (by omega) (by omega), word_writeW_self]
+  rw [wordsVal_succ_top, (writeW_outside m B v h).wordsVal (by omega_using []) (by omega_using [h]), word_writeW_self]
 
 theorem pow64_mul (i : Nat) : 2 ^ 64 * 2 ^ (64 * i) = 2 ^ (64 * (i + 1)) := by
-  rw [← Nat.pow_add]; congr 1; omega
+  rw [← Nat.pow_add]; congr 1; omega_using []
 
 /-- A word of the subtraction: `a - b - (1 - c)`, its carry clear for a borrow. -/
 theorem subW_arith (a b c : Nat) (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) (hc : c ≤ 1) :
@@ -52,9 +52,9 @@ theorem subW_arith (a b c : Nat) (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) (hc : c ≤
       a + 2 ^ 64 * (1 - (decide (2 ^ 64 ≤ a + (2 ^ 64 - 1 - b) + c)).toNat) := by
   by_cases h : 2 ^ 64 ≤ a + (2 ^ 64 - 1 - b) + c
   · simp only [h, decide_true, Bool.toNat_true]
-    rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega_using [ha, hc])]; omega_using [hb, hc, h]
   · simp only [h, decide_false, Bool.toNat_false]
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [hb, hc]
 
 /-- `[o] := [a] - [b]` over `m` words (`countLoop .r8 subWBody`), from the
 carry `c` (clear for a borrow in): the difference and the carry out. -/
@@ -291,7 +291,7 @@ theorem halfWLoop_ok {s : State} {B : Addr} {Z dO m : Nat} (hs : Scr s B Z)
       rw [show dO + 8 * (i + 1) = dO + 8 * i + 8 by omega_arith]
       exact jout.w32 (by omega_arith) (by omega_arith)
     have lo : (word s.mem B (dO + 8 * i)).toNat % 2 = w32 s.mem B (dO + 8 * i) % 2 := by
-      rw [word_eq_w32]; omega
+      rw [word_eq_w32]; omega_using []
     have k := halfW_arith (word t.mem B (dO + 8 * i)) (t.mem.readW (off B (dO + 8 * i + 8)) 32)
     rw [lm, wordsVal_write_top _ _ _ _ _ (by omega_arith), wordsVal_succ_top s.mem B dO i, ← pow64_mul i, k]
     simp only [w32] at w1 lo jeq ⊢

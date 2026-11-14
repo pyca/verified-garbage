@@ -13,8 +13,8 @@ open VG VG.Proof.MlDsa.Pack
 theorem written_word (m : Mem) (out : Addr) (n : Nat) (v : BitVec (8*n)) :
     Written m (m.writeW out v) out n (fun j=>v.extractLsb' (8*j) 8) := by
   intro x
-  simp only [Mem.writeW,show 8*n/8=n by omega,Mem.write]
-  have h : 8*(8*n/8)=8*n := by omega
+  simp only [Mem.writeW,show 8*n/8=n by omega_using [],Mem.write]
+  have h : 8*(8*n/8)=8*n := by omega_using []
   rw [h,BitVec.setWidth_eq]
 
 theorem written_of_frame {m t : Mem} {out : Addr} {n : Nat} {v : Nat → Byte}
@@ -32,17 +32,17 @@ theorem written_of_frame {m t : Mem} {out : Addr} {n : Nat} {v : Nat → Byte}
     simp only [List.mem_singleton] at hr
     subst r
     simp only [Region.Contains]
-    omega
+    omega_using [h]
 
 theorem written_append {m a t : Mem} {out : Addr} {n k : Nat} {v : Nat → Byte}
     (h : Written m a out n v)
     (ht : Written a t (out+BitVec.ofNat 64 n) k (fun j=>v (n+j)))
     (hn : n+k<2^64) : Written m t out (n+k) v := by
   have hf : Frame [⟨out,n+k⟩] m a := h.frame (by
-    simpa only [BitVec.add_zero] using Offset.contains_base out (d:=0) (by omega : 0+n≤n+k) (by omega))
+    simpa only [BitVec.add_zero] using Offset.contains_base out (d:=0) (by omega_using [] : 0+n≤n+k) (by omega_using []))
   have hb : ∀j<n,a (out+BitVec.ofNat 64 j)=v j := by
     intro j hj
-    rw [h,Mem.sub_ofNat_toNat out (by omega),ite_eq_left hj]
+    rw [h,Mem.sub_ofNat_toNat out (by omega_using [hn, hj]),ite_eq_left hj]
   obtain ⟨hf',hb'⟩ := Written.step hf hb ht (Nat.le_refl _) hn
   exact written_of_frame hf' hb'
 

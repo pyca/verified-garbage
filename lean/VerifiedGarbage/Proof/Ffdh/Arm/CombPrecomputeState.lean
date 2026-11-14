@@ -58,7 +58,7 @@ theorem Memory.after_external {p : Inputs} {sp : BitVec 32} {s t : State}
     (by intro r hr; have eq := List.mem_singleton.mp hr; subst r; exact h.domainSeparate)
     (by
       intro d hd r hr
-      have fit : d+4 ≤ 72 := by simp only [slots, List.mem_cons, List.not_mem_nil, or_false] at hd; omega
+      have fit : d+4 ≤ 72 := by simp only [slots, List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd]
       exact (localSep r hr).sub_left (Offset.sub_base (State.addr s.sp) (d := d) (n := 4) (k := 72) fit))
   refine ⟨⟨context,ready,h.calls.after rest,rest.sp.trans h.fixed,h.output.after rest,
     h.workspaceSeparate,h.domainSeparate,h.localSeparate,h.callSeparate,?_,?_⟩,workspace⟩
@@ -85,7 +85,7 @@ theorem Memory.after_arithmetic {p : Inputs} {sp : BitVec 32} {s t : State}
   have context := h.context.after_call h.calls frame rest ready.ptr (by
     intro d hd
     simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at hd
-    omega)
+    omega_using [hd])
   refine ⟨context,ready,h.calls.after rest,rest.sp.trans h.fixed,h.output.after rest,
     h.workspaceSeparate,h.domainSeparate,h.localSeparate,h.callSeparate,?_,?_⟩
   · have word := localEq.word (d := 16) (bits := 32) (by decide)

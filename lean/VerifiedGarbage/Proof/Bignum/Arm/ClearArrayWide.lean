@@ -22,8 +22,8 @@ theorem outside_array_prefix_keeps {m m' : Mem} {base : Addr} {len w o n : Nat}
   apply outside
   change (base + BitVec.ofNat 64 i - base).toNat < arrAt w o ∨
     arrAt w o + n ≤ (base + BitVec.ofNat 64 i - base).toNat
-  rw [Mem.sub_ofNat_toNat _ (by omega)]
-  omega
+  rw [Mem.sub_ofNat_toNat _ (by omega_using [size, hi])]
+  omega_using [fits, sep]
 
 theorem clearArrayWide_ok (s : State) {base : BitVec 32} {len w o : Nat}
     (h : ArithmeticReady base len w s) (ho : o < 8) (ho0 : o ≠ 0) :
@@ -33,14 +33,14 @@ theorem clearArrayWide_ok (s : State) {base : BitVec 32} {len w o : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have bound := Nat.le_trans (array_end_le ho) fits
-  have small : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have small : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have nowrap := h.workspace.nowrap
   have header := nativeHeader_of_layout s.mem base nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
-  refine WP.mono (clearOperandBuffer_ok s h.workspace (by omega) (by omega) (by omega)
-    (by omega) h.ptr header.count (header.array o ho) h.stackRead h.stackSep h.saved) ?_
+  refine WP.mono (clearOperandBuffer_ok s h.workspace (by omega_using [small]) (by omega_using [ho, small]) (by omega_using [ho])
+    (by omega_using [bound]) h.ptr header.count (header.array o ho) h.stackRead h.stackSep h.saved) ?_
   rintro t ⟨zero, outside, frame, ptr, rest⟩
-  have keeps := outside_array_prefix_keeps outside (by omega : 8 * len < 2 ^ 64) (by omega)
+  have keeps := outside_array_prefix_keeps outside (by omega_using [nowrap] : 8 * len < 2 ^ 64) (by omega_using [])
   exact ⟨(h.after_array ho0 keeps frame rest ptr).1, zero, keeps, frame, rest⟩
 
 end VG.Proof.Bignum.Arm

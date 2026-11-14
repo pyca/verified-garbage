@@ -48,7 +48,7 @@ theorem table_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} (odd : p.
     have ctx := h.core.memory.controlContextEq (by decide) frame
     have table : TablePrefix p 2 t.mem := by
       intro digit hd
-      rw [ctx.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega))]
+      rw [ctx.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega_using [hd]))]
       exact h.table digit hd
     exact ⟨core,by simpa only [Nat.sub_self,Nat.zero_mul,Nat.pow_zero] using power,table,saved⟩
   unfold VG.Impl.Ffdh.Arm.CombPrecompute.table

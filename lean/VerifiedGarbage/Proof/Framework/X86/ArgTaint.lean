@@ -41,7 +41,7 @@ theorem agree_argTaint {rs : List Reg} {k : Nat} {s₁ s₂ : State} (h : ∀ r 
   · simp only [argTaint] at hj
     rw [show VG.X86.Taint.depth (argTaint rs (4 + 4 * k)).stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq hw₁.1 h4 hj, VG.X86.Taint.argByte_eq hw₂.1 h4 hj,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (hm _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (hm _ (by omega_using [h4, hj]))
 
 end VG.X86

@@ -12,6 +12,7 @@ import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
 public import Mathlib.Logic.Function.Iterate
 import Mathlib.Basic.IsEmpty.Defs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Halvings, windows and rows on naturals
@@ -41,7 +42,7 @@ theorem splitTwos_odd {m : Nat} (h : m % 2 = 1) : splitTwos m = (0, m) := by
 
 theorem splitTwos_even {m : Nat} (h0 : m ≠ 0) (h : m % 2 = 0) :
     splitTwos m = ((splitTwos (m / 2)).1 + 1, (splitTwos (m / 2)).2) := by
-  have h' : ¬ (m = 0 ∨ m % 2 = 1) := by omega
+  have h' : ¬ (m = 0 ∨ m % 2 = 1) := by omega_using [h0, h]
   rw [Spec.Rsa.splitTwos.eq_1]; simp only [h', ite_false]
 
 /-- `m = 2^t r` with `r` odd. -/
@@ -50,18 +51,18 @@ theorem splitTwos_spec {m : Nat} (hm : 0 < m) :
   induction m using Nat.strong_induction_on with
   | _ m ih =>
     rcases Nat.mod_two_eq_zero_or_one m with h | h
-    · obtain ⟨e1, e2⟩ := ih (m / 2) (by omega) (by omega)
-      rw [splitTwos_even (by omega) h]
+    · obtain ⟨e1, e2⟩ := ih (m / 2) (by omega_using [hm]) (by omega_using [hm, h])
+      rw [splitTwos_even (by omega_using [hm]) h]
       refine ⟨?_, e2⟩
       rw [Nat.pow_succ, Nat.mul_comm (2 ^ _) 2, Nat.mul_assoc, ← e1]
-      omega
+      omega_using [h]
     · rw [splitTwos_odd h]
       exact ⟨by simp, h⟩
 
 theorem splitTwos_lt {m K : Nat} (hm : 0 < m) (hK : m < 2 ^ K) : (splitTwos m).1 < K := by
   obtain ⟨e1, e2⟩ := splitTwos_spec hm
   have h1 : 2 ^ (splitTwos m).1 ≤ m :=
-    calc 2 ^ (splitTwos m).1 ≤ 2 ^ (splitTwos m).1 * (splitTwos m).2 := Nat.le_mul_of_pos_right _ (by omega)
+    calc 2 ^ (splitTwos m).1 ≤ 2 ^ (splitTwos m).1 * (splitTwos m).2 := Nat.le_mul_of_pos_right _ (by omega_using [e2])
       _ = m := e1.symm
   exact (Nat.pow_lt_pow_iff_right (by decide)).mp (Nat.lt_of_le_of_lt h1 hK)
 
@@ -70,19 +71,19 @@ theorem halve_iter {m : Nat} (hm : 0 < m) {K : Nat} (hK : (splitTwos m).1 ≤ K)
     halveStep^[K] (m, s) = ((splitTwos m).2, s + (splitTwos m).1) := by
   induction K generalizing m s with
   | zero =>
-    have h0 : (splitTwos m).1 = 0 := by omega
+    have h0 : (splitTwos m).1 = 0 := by omega_using [hK]
     have hodd : m % 2 = 1 := by
       have := (splitTwos_spec hm).1; rw [h0, Nat.pow_zero, Nat.one_mul] at this
-      have := (splitTwos_spec hm).2; omega
+      have := (splitTwos_spec hm).2; omega_arith
     rw [splitTwos_odd hodd]; rfl
   | succ K ih =>
     rw [Function.iterate_succ_apply]
     rcases Nat.mod_two_eq_zero_or_one m with h | h
-    · have e := splitTwos_even (by omega) h
+    · have e := splitTwos_even (by omega_using [hm]) h
       have hs : halveStep (m, s) = (m / 2, s + 1) := by simp [halveStep, h]
-      rw [hs, ih (by omega) (by rw [e] at hK; dsimp only at hK; omega), e]
+      rw [hs, ih (by omega_using [hm, h]) (by rw [e] at hK; dsimp only at hK; omega_using [hK]), e]
       simp only [Prod.mk.injEq, true_and]
-      omega
+      omega_using []
     · have hs : halveStep (m, s) = (m, s) := by simp [halveStep, h]
       rw [hs, ih hm (by rw [splitTwos_odd h]; exact Nat.zero_le _), splitTwos_odd h]
 
@@ -102,11 +103,11 @@ theorem window_split {T A W H P Q R : Nat} (hT : T = A + P * (W + Q * H)) (hlt :
     H = 0 ∧ W < R := by
   have h1 : P * (W + Q * H) < P * R := Nat.lt_of_le_of_lt (by rw [hT]; exact Nat.le_add_left _ _) hlt
   have h2 : W + Q * H < R := Nat.lt_of_mul_lt_mul_left h1
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_using [h2]⟩
   rcases Nat.eq_zero_or_pos H with h | h
   · exact h
   · have : Q ≤ Q * H := Nat.le_mul_of_pos_right _ h
-    omega
+    omega_using [hRQ, h2, this]
 
 theorem row_alg {A P W c D Ej Q : Nat} (hT : D * Ej = A + P * (W + Q * 0)) :
     A + P * (W + c * D + Q * 0) = D * (Ej + P * c) := by

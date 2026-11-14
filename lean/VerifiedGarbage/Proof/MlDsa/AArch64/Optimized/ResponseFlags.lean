@@ -26,9 +26,9 @@ theorem flagBad_false (bad : Nat → Nat → Bool) (j e : Nat) :
     · rintro ⟨h,hj⟩ i hi
       by_cases he : i=j
       · simpa only [he] using hj
-      · exact h i (by omega)
+      · exact h i (by omega_using [hi, he])
     · intro h
-      exact ⟨fun i hi => h i (by omega),h j (by omega)⟩
+      exact ⟨fun i hi => h i (by omega_using [hi]),h j (by omega_using [])⟩
 
 theorem finishValue_flags {v : BitVec 128} {bad : Nat → Nat → Bool} {j : Nat}
     (h : ∀e<4,vword v e=maskWord (flagBad bad j e)) :
@@ -38,14 +38,14 @@ theorem finishValue_flags {v : BitVec 128} {bad : Nat → Nat → Bool} {j : Nat
     apply vec_ext
     intro e he
     rw [h e he,vword_ofVWords _ _ _ _ he]
-    rcases (show e=0∨e=1∨e=2∨e=3 by omega) with rfl|rfl|rfl|rfl <;> rfl
+    rcases (show e=0∨e=1∨e=2∨e=3 by omega_using [he]) with rfl|rfl|rfl|rfl <;> rfl
   rw [hv,finishValue_masks]
   have he : (flagBad bad j 0 || flagBad bad j 1 || flagBad bad j 2 || flagBad bad j 3)=false ↔
       ∀i<j,∀e<4,bad i e=false := by
     simp only [Bool.or_eq_false_iff,flagBad_false]
     constructor
     · rintro ⟨⟨⟨h0,h1⟩,h2⟩,h3⟩ i hi e he
-      rcases (show e=0∨e=1∨e=2∨e=3 by omega) with rfl|rfl|rfl|rfl
+      rcases (show e=0∨e=1∨e=2∨e=3 by omega_using [he]) with rfl|rfl|rfl|rfl
       · exact h0 i hi
       · exact h1 i hi
       · exact h2 i hi
@@ -64,7 +64,7 @@ theorem finishValue_flags_range {v : BitVec 128} {bad : Nat → Nat → Bool} {j
     apply vec_ext
     intro e he
     rw [h e he,vword_ofVWords _ _ _ _ he]
-    rcases (show e=0∨e=1∨e=2∨e=3 by omega) with rfl|rfl|rfl|rfl <;> rfl
+    rcases (show e=0∨e=1∨e=2∨e=3 by omega_using [he]) with rfl|rfl|rfl|rfl <;> rfl
   rw [hv,finishValue_masks]
   split
   · exact Or.inl rfl

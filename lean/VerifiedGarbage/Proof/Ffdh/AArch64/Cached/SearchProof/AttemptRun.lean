@@ -52,13 +52,13 @@ theorem call_args {p : KeyPublic} {u : State} {m : Mem} (hu : u.sp = callSp p)
   have hw (j : Nat) (hj : j < 5) : stackArg u j = controllerValue (callValues p) j (word m (callSp p) (8 * j)) := by
     unfold stackArg stackArgAddr
     rw [hu, hm]
-    exact writeController_word _ _ _ (callValues_bound p) j (by omega)
+    exact writeController_word _ _ _ (callValues_bound p) j (by omega_using [hj])
   refine ⟨?_, ?_, ?_,?_,?_⟩ <;> [rw [hw 0 (by decide)]; rw [hw 1 (by decide)]; rw [hw 2 (by decide)];rw [hw 3 (by decide)];rw [hw 4 (by decide)]] <;>
     simp only [callValues, controllerValue, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
       ite_true, ite_false]
 
 theorem callSp_toNat {p : KeyPublic} (hf : 64 ≤ p.sp.toNat) : (callSp p).toNat = p.sp.toNat - 64 := by
-  rw [callSp_eq, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
+  rw [callSp_eq, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hf])]
   simp only [BitVec.toNat_ofNat]
 
 /-- What an attempt at `used` leaves: its status, and the key pair for 1,
@@ -194,14 +194,14 @@ theorem call_attempt_pre {p : KeyPublic} {original s : State} {used keys scalars
  obtain ⟨r0,r1,r2,r3,r4,r5,r6,r7⟩:=ha
  have hlen : (BitVec.ofNat 64 p.len).toNat=p.len :=by rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt hf.len64]
  have hdl : (BitVec.ofNat 64 p.dlen).toNat=p.dlen :=by rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt hf.dlen64]
- have hzw : (BitVec.ofNat 64 (p.Z/8)).toNat=p.Z/8 :=by rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have :=hf.ns;omega)]
+ have hzw : (BitVec.ofNat 64 (p.Z/8)).toNat=p.Z/8 :=by rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have :=hf.ns;omega_using [this])]
  have cx : (⟨p.ctx,p.ctxLen*8⟩ : Region)=inContext original :=by rw [←h.input.2];rfl
  have xx : rX p=inX original :=h.input.x_eq.symm
  have yy : rY p=inY original :=h.input.y_eq.symm
  have ss : rS p=inScr original :=by rw [←h.input.2];rfl
  have nc : p.ctx.toNat+p.ctxLen*8≤2^64 :=by
   have n:=h.input.nowrap (r:=inContext original) (by simp [inReads]);rw [←cx] at n;exact n
- have ctx64 : p.ctxLen<2^64 :=by omega
+ have ctx64 : p.ctxLen<2^64 :=by omega_using [nc]
  have hcl : (BitVec.ofNat 64 p.ctxLen).toNat=p.ctxLen :=by rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt ctx64]
  have xc : (rX p).Disjoint ⟨p.ctx,p.ctxLen*8⟩ :=by rw [xx,cx];exact h.input.write_disjoint (by simp [inWrites]) (by simp [inReads])
  have yc : (rY p).Disjoint ⟨p.ctx,p.ctxLen*8⟩ :=by rw [yy,cx];exact h.input.write_disjoint (by simp [inWrites]) (by simp [inReads])
@@ -223,7 +223,7 @@ theorem call_attempt_pre {p : KeyPublic} {original s : State} {used keys scalars
   call_gpr (by decide : Reg.x6∉linkRegs),call_gpr (by decide : Reg.x7∉linkRegs),
   call_stackArg,h0,h1,h2,h3,h4,r0,r1,r2,r3,r4,r5,r6,r7,hlen,hdl,hzw,hcl,hf.z8,
   State.withRegions_rd,State.withRegions_wr,stackArgAddr,State.withRegions_sp,State.callEntry_sp,hu,Nat.mul_zero,BitVec.add_zero]
- refine ⟨by omega,rfl,rfl,hf.xy,hf.xd,hf.xr,hf.xs,xc,hf.xa,hf.yd,hf.yr,hf.ys,yc,hf.ya,
+ refine ⟨by omega_using [hsp],rfl,rfl,hf.xy,hf.xd,hf.xr,hf.xs,xc,hf.xa,hf.yd,hf.yr,hf.ys,yc,hf.ya,
   hf.ds,hf.rs,sc,hf.sa,hf.nx,hf.ny,hf.nd,hf.nr,hf.ns,nc,hf.len,hf.dlen,True.intro,True.intro,True.intro,hf.scratch,?_,?_⟩
  · simpa only [call_gpr (by decide : Reg.x4∉linkRegs),call_gpr (by decide : Reg.x5∉linkRegs),r4,r5,hdl] using domainValid
  · simpa only [State.withRegions_mem,State.callEntry_mem] using contextValid
@@ -236,10 +236,10 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
   have hroom' : 48 ≤ s.sp.toNat := by
     have := hf.room
     have h16 : (p.sp - BitVec.ofNat 64 16).toNat = p.sp.toNat - 16 := by
-      rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
+      rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [this])]
       simp only [BitVec.toNat_ofNat]
     rw [h.sp, show (p.sp - 16 : Addr) = p.sp - BitVec.ofNat 64 16 from rfl, h16]
-    omega
+    omega_using [this]
   unfold attemptRun
   refine WP.alloc (by decide) hroom' ?_
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨⟨ha, hm⟩, k⟩ => ?_)

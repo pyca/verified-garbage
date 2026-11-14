@@ -55,7 +55,7 @@ theorem pdExponentArgs_ready (s : State) {base dst np ep xp : BitVec 32} {len k 
   rintro t ⟨pointer, count, mem, rest⟩
   have ht := h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
   have length := ht.buffers.exponent.length
-  exact ⟨ht, ⟨⟨by rw [length]; have := ht.buffers.exponentFits; have := ht.buffers.maxLength; omega,
+  exact ⟨ht, ⟨⟨by rw [length]; have := ht.buffers.exponentFits; have := ht.buffers.maxLength; omega_arith,
     by rw [length]; exact ht.buffers.exponent.fits,
     by rw [length]; exact ht.buffers.exponent.read, ht.buffers.exponent.byte⟩,
     pointer, by rw [length]; exact count⟩⟩

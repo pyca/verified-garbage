@@ -52,17 +52,17 @@ def nbOf (c L : Nat) : Nat := if leftOf c L = 0 then 0 else (leftOf c L - 1) / 8
 def restOf (c L : Nat) : Nat := leftOf c L - 8 * nbOf c L
 
 theorem f_le (c L : Nat) : fOf c L ≤ L ∧ fOf c L + held c ≤ 8 := by
-  have := held_le c; unfold fOf; omega
+  have := held_le c; unfold fOf; omega_using [this]
 
 theorem nb_le (c L : Nat) : fOf c L + 8 * nbOf c L + restOf c L = L := by
-  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega
+  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega_using [this]
 
 /-! ## Arithmetic on registers -/
 
 theorem shr_ofNat {n k : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> k = BitVec.ofNat 64 (n / 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by have := Nat.div_le_self n (2 ^ k); omega)]
+    Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by have := Nat.div_le_self n (2 ^ k); omega_using [hn, this])]
 
 /-- The sign of `m - k`, for `m` and `k` of at most 8. -/
 theorem lsr63 {m k : Nat} (hm : m ≤ 8) (hk : k ≤ 8) :
@@ -70,7 +70,7 @@ theorem lsr63 {m k : Nat} (hm : m ≤ 8) (hk : k ≤ 8) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  split <;> simp only [BitVec.toNat_ofNat] <;> omega
+  split <;> simp only [BitVec.toNat_ofNat] <;> omega_arith
 
 /-- `8 nb` for the data left `x > 0`, as `sub 1; and 7; sub` computes it. -/
 theorem nb8_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
@@ -78,9 +78,9 @@ theorem nb8_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
       BitVec.ofNat 64 (8 * ((x - 1) / 8)) := by
   apply BitVec.eq_of_toNat_eq
   have e : (BitVec.ofNat 64 x - BitVec.ofNat 64 1).toNat = x - 1 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hx, hx']
   rw [BitVec.toNat_sub, and7, e, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-! ## Saving and restoring the registers -/
 
@@ -164,14 +164,14 @@ theorem clamp_wp {s : State} {L : Nat} (hL : L < 2 ^ 64) (h22 : s.gpr .x22 = Bit
     refine ⟨_, rfl, by simp [gpr_write, State.read, h22, shr_ofNat hL], ?_⟩
     simp only [State.read, h22, BitVec.setWidth_eq, shr_ofNat hL]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have ev := eval_zero (s := s₁) (x := L / 8) (by omega) x10₁
+  have ev := eval_zero (s := s₁) (x := L / 8) (by omega_using [hL]) x10₁
   subst g₁
   by_cases hl : L < 8
-  · refine WP.ite true (by rw [ev]; simp; omega) (fun _ => ?_) (fun h => by cases h)
+  · refine WP.ite true (by rw [ev]; simp; omega_using [hl]) (fun _ => ?_) (fun h => by cases h)
     refine WP.of_runBlock ⟨_, rfl, ?_⟩
     refine ⟨?_, fun r h => by simp [gpr_write, h], rfl, rfl, rfl, rfl⟩
     simp [gpr_write, State.read, h22, Nat.min_eq_left (Nat.le_of_lt hl)]
-  · refine WP.ite false (by rw [ev]; simp; omega) (fun h => by cases h) fun _ => ?_
+  · refine WP.ite false (by rw [ev]; simp; omega_using [hl]) (fun h => by cases h) fun _ => ?_
     refine WP.of_runBlock ⟨_, rfl, ?_⟩
     refine ⟨?_, fun r h => by simp [gpr_write, h], rfl, rfl, rfl, rfl⟩
     simp only [gpr_write, ↓reduceIte, mz8, BitVec.setWidth_eq, Nat.min_eq_right (Nat.le_of_not_lt hl)]
@@ -199,13 +199,13 @@ theorem fill_wp {s : State} {St D : Addr} {c L : Nat} (hL : L < 2 ^ 64)
     · simp only [gpr_write, ↓reduceIte, reduceCtorEq, x10₁]
     · simp only [State.read, gpr_write, ↓reduceIte, reduceCtorEq, BitVec.setWidth_eq, mz8, x9₁, x10₁,
         Offset.ofNat_sub_ofNat hh]
-      exact lsr63 (by omega) (by omega)
+      exact lsr63 (by omega_using []) (by omega_using [])
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-  have hf : fOf c L = min (min L 8) (8 - held c) := by unfold fOf; omega
+  have hf : fOf c L = min (min L 8) (8 - held c) := by unfold fOf; omega_using []
   refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .x8 = BitVec.ofNat 64 (fOf c L) ∧
     (∀ r, r ≠ .x8 → s₃.gpr r = s₂.gpr r) ∧ s₃.sp = s₂.sp ∧ s₃.mem = s₂.mem ∧ s₃.rd = s₂.rd ∧
       s₃.wr = s₂.wr) ?_ fun s₃ h₃ => ?_)
-  · have ev := eval_zero (s := s₂) (x := if min L 8 < 8 - held c then 1 else 0) (by split <;> omega) x11₂
+  · have ev := eval_zero (s := s₂) (x := if min L 8 < 8 - held c then 1 else 0) (by split <;> omega_using []) x11₂
     by_cases hl : min L 8 < 8 - held c
     · refine WP.ite false (by rw [ev]; simp [hl]) (fun h => by cases h) fun _ => ?_
       refine WP.of_runBlock ⟨_, rfl, ?_⟩
@@ -254,7 +254,7 @@ theorem chain1_wp {s : State} {St D S : Addr} {f L : Nat} (hf : f ≤ L) (hL : L
   refine WP.seq (WP.mono (Q := fun (s₂ : State) => s₂.gpr .x3 = BitVec.ofNat 64 (if L - f = 0 then 0 else 1) ∧
     (∀ r, r ≠ .x3 → s₂.gpr r = s₁.gpr r) ∧ s₂.sp = s₁.sp ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧
       s₂.wr = s₁.wr) ?_ fun s₂ h₂ => ?_)
-  · have ev := eval_zero (s := s₁) (x := L - f) (by omega) x22₁
+  · have ev := eval_zero (s := s₁) (x := L - f) (by omega_using [hL]) x22₁
     by_cases h0 : L - f = 0
     · refine WP.ite true (by rw [ev]; simp [h0]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
       exact ⟨by rw [x3₁]; simp [h0], fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
@@ -308,14 +308,14 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h22 : s.gpr .x22 = Bi
       refine WP.of_runBlock ⟨_, rfl, ?_⟩
       refine ⟨?_, fun r a b => by simp [gpr_write, a, b], rfl, rfl, rfl, rfl⟩
       simp only [State.read, gpr_write, ↓reduceIte, reduceCtorEq, BitVec.setWidth_eq, mz7, h22, h0]
-      exact nb8_bv (by omega) hx
+      exact nb8_bv (by omega_using [h0]) hx
   · obtain ⟨x20₂, g₂, sp₂, m₂, rd₂, wr₂⟩ := h₂
     refine WP.of_runBlock ⟨_, rfl, ?_⟩
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr a => ?_, by simp only [sp_write, sp₂],
       by simp only [mem_write, m₂], by simp only [rd_write, rd₂], by simp only [wr_write, wr₂]⟩
     · simp [gpr_write, x20₂]
     · simp only [State.read, gpr_write, ↓reduceIte, reduceCtorEq, BitVec.setWidth_eq, x20₂]
-      exact (shr_ofNat (by split <;> omega)).trans (by congr 1; omega)
+      exact (shr_ofNat (by split <;> omega_arith)).trans (by congr 1; omega_using [])
     · simp [gpr_write, State.read, g₂ _ (by decide : Reg.x19 ≠ .x20) (by decide)]
     · simp [gpr_write, State.read, g₂ _ (by decide : Reg.x19 ≠ .x20) (by decide)]
     · simp [gpr_write, State.read, g₂ _ (by decide : Reg.x21 ≠ .x20) (by decide)]

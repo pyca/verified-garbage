@@ -66,13 +66,13 @@ theorem wordsAt_out {m : Mem} {D : Addr} {w wp wq : Nat} {M : Bool} {VN VR VP VQ
     Spec.Rsa.wordsAt m D (2 * w + wp + wq) = if M then
       Spec.Rsa.toWords VN w ++ Spec.Rsa.toWords VR w ++ Spec.Rsa.toWords VP wp ++ Spec.Rsa.toWords VQ wq
     else List.replicate (2 * w + wp + wq) 0 := by
-  rw [show 2 * w + wp + wq = w + w + wp + wq by omega, wordsAt_append, wordsAt_append, wordsAt_append]
+  rw [show 2 * w + wp + wq = w + w + wp + wq by omega_using [], wordsAt_append, wordsAt_append, wordsAt_append]
   have h0 : Spec.Rsa.wordsAt m D w = (List.range w).map fun i => BitVec.ofNat 64 (VN / 2 ^ (64 * i)) &&& mask M := by
     have := seg_eq (m := m) (D := D) (e := 0) (n := w) (f := fun i => BitVec.ofNat 64 (VN / 2 ^ (64 * i)) &&& mask M)
       (fun i hi => by rw [Nat.zero_add]; exact hN i hi)
     simpa using this
-  have eP : 8 * (w + w) = 16 * w := by omega
-  have eQ : 8 * (w + w + wp) = 16 * w + 8 * wp := by omega
+  have eP : 8 * (w + w) = 16 * w := by omega_using []
+  have eQ : 8 * (w + w + wp) = 16 * w + 8 * wp := by omega_using []
   rw [eP, eQ]
   rw [h0, seg_eq (f := fun i => BitVec.ofNat 64 (VR / 2 ^ (64 * i)) &&& mask M) hR,
     seg_eq (f := fun i => BitVec.ofNat 64 (VP / 2 ^ (64 * i)) &&& mask M) hP,
@@ -99,7 +99,7 @@ theorem wordsAt_zero {m : Mem} {D : Addr} {L : Nat} (h : ∀ j < L * 8, m (D + B
   refine readW_zero fun b hb => ?_
   have hi := List.mem_range.mp hi
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hb, hi])
 
 
 /-- The callee-saved registers and the return address, from the header the
@@ -135,9 +135,9 @@ theorem fail_post {s t₃ t₄ t : State} (c : PPCtx s) (h : PPHead s t₃) (hm 
   have hk1 := c.hk1
   have hk2 := c.hk2
   have hkL : (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat * 8 := by
-    rw [hL]; simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega
+    rw [hL]; simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega_using []
   refine ⟨gpr_of c h hm k hp.saved (hp.keep.gpr (by decide)) fun x hx hne => hp.frame x hx fun j hj he =>
-    hne j (by omega) he, ?_⟩
+    hne j (by omega_using [hkL, hj]) he, ?_⟩
   have hnone : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
       (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
       (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) = none := by
@@ -153,7 +153,7 @@ theorem fail_post {s t₃ t₄ t : State} (c : PPCtx s) (h : PPHead s t₃) (hm 
       ↓reduceIte, Option.map_some, Option.some.injEq] at this
     exact this
   · have := c.hwrap
-    rw [hp.frame _ (c.houts j hj) (fun j' hj' he => out_ne (by omega) (by omega) (show j ≠ j' by omega) he), hm]
+    rw [hp.frame _ (c.houts j hj) (fun j' hj' he => out_ne (by omega_using [hj, this]) (by omega_using [hj']) (show j ≠ j' by omega_using [hjk, hj']) he), hm]
     exact h.zero j hj
 
 /-- `pre`'s length in words: the four parts'. -/
@@ -183,7 +183,7 @@ theorem main_post {s t₃ t₄ t₆ u : State} (c : PPCtx s) (h : PPHead s t₃)
       (wsWords (stackArg s 1).toNat) ((s.gpr .rsi).toNat * 8) (offP (((s.gpr .rcx).toNat + 7) / 8))
       (offQ (((s.gpr .rcx).toNat + 7) / 8) (s.gpr .r9).toNat) Mk) :
     gprPreserved s u ∧ ppContract.post s u := by
-  refine ⟨gpr_of c h hm k (fun i hi => (ho.saved i hi).trans (hR.hfix i (by omega) (by simp [hFixed, hi])))
+  refine ⟨gpr_of c h hm k (fun i hi => (ho.saved i hi).trans (hR.hfix i (by omega_using [hi]) (by simp [hFixed, hi])))
     (ho.rsp.trans (hR.keep.gpr (by decide))) fun x hx hne => ?_, ?_⟩
   · rw [ho.frame x (Nat.le_of_not_lt fun h' => hne _ h' (eq_add_ofs _ x)), hR.iscr x hx]
   have hL := preWords c
@@ -200,8 +200,8 @@ theorem main_post {s t₃ t₄ t₆ u : State} (c : PPCtx s) (h : PPHead s t₃)
   have hMk' : Mk = decide (Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb = Spec.Rsa.os2ip nb) := by
     rw [hMk]
     by_cases hpq : Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb = Spec.Rsa.os2ip nb
-    · have : 0 < Spec.Rsa.os2ip pb := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.zero_mul] at hpq; omega
-      simp [keyMask, hpq, this, show 0 < Spec.Rsa.os2ip nb by omega]
+    · have : 0 < Spec.Rsa.os2ip pb := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.zero_mul] at hpq; omega_using [hN1, hpq]
+      simp [keyMask, hpq, this, show 0 < Spec.Rsa.os2ip nb by omega_using [hN1]]
     · simp [keyMask, hpq]
   have hw := wordsAt_out (m := u.mem) (D := s.gpr .rdi) (M := Mk) (VN := Spec.Rsa.os2ip nb)
     (VR := 2 ^ (128 * w) % Spec.Rsa.os2ip nb)
@@ -210,7 +210,7 @@ theorem main_post {s t₃ t₄ t₆ u : State} (c : PPCtx s) (h : PPHead s t₃)
     (fun i hi => by rw [ho.segN i hi, word_eq_ofNat _ _ _ w hi, hR.nv.n])
     (fun i hi => by
       have r2 := hR.nv.r2
-      rw [Nat.mod_eq_of_lt hR.nv.r2lt, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega] at r2
+      rw [Nat.mod_eq_of_lt hR.nv.r2lt, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []] at r2
       rw [ho.segR i hi, word_eq_ofNat _ _ _ w hi, r2])
     (fun i hi => by
       rw [ho.segP i hi]
@@ -260,7 +260,7 @@ theorem code_wp (M : Mont) {s : State} (c : PPCtx s) :
     (s.gpr .rcx).toNat) (by simp [eval, hz]) (fun hb => ?_) (fun hb => ?_)
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = false := by simpa using hb
-    exact WP.mono (fail_ok hpre.scr hpre.rdi (by omega) (by omega) (by omega) hpre.hO hpre.hK hpre.out
+    exact WP.mono (fail_ok hpre.scr hpre.rdi (by omega_using [hZ]) (by omega_using [hk1]) (by omega_using [hk2]) hpre.hO hpre.hK hpre.out
       hpre.outSep)
       fun t hp => fail_post c h₃ hm k hp hv
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
@@ -270,7 +270,7 @@ theorem code_wp (M : Mont) {s : State} (c : PPCtx s) :
     refine wp_seqs_append (by simp [Crt.nSetup]) (by simp [PrivPre.out]) (wp_seqs_append (by simp [Crt.nSetup])
       (by simp [PrivPre.r2Phase, PrivPre.r2At]) (WP.mono (front_ok M hpre hv) fun t₅ ⟨minv, mp, mq, hr⟩ =>
         WP.mono (r2Phase_ok M hpre hv hr rfl) fun t₆ hR => ?_))
-    refine WP.mono (out_ok hR (by omega) (by omega) (by omega) (by omega) hpre.z
+    refine WP.mono (out_ok hR (by omega_using [hk1]) (by omega_using [hk2]) (by omega_using [hk2, hpl2]) (by omega_using [hk2, hql2]) hpre.z
       ((hR.hfix sOut (by decide) (by decide)).trans hpre.hO) (by rw [preWords c, Nat.mul_comm]) c.hwrap
       (by rw [hR.keep.2.2, k.2.2, h₃.keep.2.2]; exact c.hpreR) c.hS) fun u ho => main_post c h₃ hm k hv hN1 hR rfl ho
 

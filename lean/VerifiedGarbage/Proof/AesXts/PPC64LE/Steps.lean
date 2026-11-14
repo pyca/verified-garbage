@@ -36,8 +36,8 @@ theorem ushr63 (x : BitVec 64) : x >>> 63 = if x.msb then (1 : BitVec 64) else 0
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.msb_eq_decide]
   have := x.isLt
   by_cases h : 2 ^ 63 ≤ x.toNat
-  · rw [decide_eq_true h]; show _ = 1; omega
-  · rw [decide_eq_false h]; show _ = 0; omega
+  · rw [decide_eq_true h]; show _ = 1; omega_using [h]
+  · rw [decide_eq_false h]; show _ = 0; omega_using [h]
 
 theorem mask_87 (x : BitVec 64) :
     (BitVec.ofNat 64 0 - x >>> 63) &&& BitVec.ofNat 64 0x87 = if x.msb then (0x87 : BitVec 64) else 0 := by

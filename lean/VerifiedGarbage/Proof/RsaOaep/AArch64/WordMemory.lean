@@ -28,18 +28,18 @@ theorem Rep.copy8 {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 
     (hd : dst + 8 ≤ oRsa) (hs : src + 8 ≤ oRsa) :
     Rep (m.writeW (off S dst) (m.readW (off S src) 64)) F S (copy8V V dst src) W where
   scr x hx := by
-    have hw : dst + 8 ≤ 2 ^ 64 := by unfold oRsa at hd; omega
+    have hw : dst + 8 ≤ 2 ^ 64 := by unfold oRsa at hd; omega_using [hd]
     have hrange : (off S x - off S dst).toNat < 8 ↔ dst ≤ x ∧ x < dst + 8 := by
-     rw [Offset.lt_iff _ S hw, Mem.sub_ofNat_toNat S (by unfold oRsa at hx; omega)]
+     rw [Offset.lt_iff _ S hw, Mem.sub_ofNat_toNat S (by unfold oRsa at hx; omega_using [hx])]
     change (if (off S x - off S dst).toNat < 8 then
      (m.read (off S src) 8).extractLsb' (8 * (off S x - off S dst).toNat) 8 else m (off S x)) = _
     unfold copy8V
     by_cases h : dst ≤ x ∧ x < dst + 8
-    · rw [ifp (hrange.mpr h), ifp h, Offset.sub_toNat S h.1 (by unfold oRsa at hx; omega),
-       Mem.extractLsb'_read m (off S src) (n := 8) (by omega)]
+    · rw [ifp (hrange.mpr h), ifp h, Offset.sub_toNat S h.1 (by unfold oRsa at hx; omega_using [hx]),
+       Mem.extractLsb'_read m (off S src) (n := 8) (by omega_using [h])]
       change m (off (off S src) (x - dst)) = _
       rw [off_off]
-      exact R.scr _ (by omega)
+      exact R.scr _ (by omega_using [hs, h])
     · rw [ifn (fun e => h (hrange.mp e)), ifn h, R.scr x hx]
   fr k hk := by
     rw [word, Mem.readW_writeW_sep (Region.Disjoint.sep G.dFS (G.cFw hk) (cS S hd)) (by decide)]

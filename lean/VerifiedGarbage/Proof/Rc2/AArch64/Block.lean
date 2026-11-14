@@ -50,7 +50,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have writes : ∀ i < 4, InRegions s.wr (s.gpr .x2 + BitVec.ofNat 64 (8 * i)) 8 := by
     intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .x2, 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x2, 256⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   simp only [blockCode, List.append_assoc]
   rw [WP.block_append_iff, save_eq]
   apply WP.mono (Spill.save_wp (by decide) (Spill.forall_slots writes))
@@ -103,13 +103,13 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     intro i hi
     rw [rd₄, wr₄, regs₄ .x2 (by decide), hrd, hwr]
     have bound := List.mem_range.mp hi
-    exact ⟨⟨s.gpr .x2, 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x2, 256⟩, by simp, Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])⟩
   have saved₄ : ∀ i ∈ List.range 4,
       s₄.mem.readW (s₄.gpr .x2 + BitVec.ofNat 64 (8 * i)) 64 = s.gpr (wordReg i) := by
     intro i hi
     have bound := List.mem_range.mp hi
     rw [mem₄, regs₄ .x2 (by decide), Mem.readW_writeW_sep
-      (dataSep.symm.sep (Offset.contains_base _ (by omega) (by omega)) (Region.contains_self _ _))
+      (dataSep.symm.sep (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])) (Region.contains_self _ _))
       (by decide), h₁.mem]
     exact Spill.saveMem_saved (l := Spill.slots wordReg 4) (by decide) s.mem (s.gpr .x2) s.gpr
       (wordReg i, 8 * i) (Spill.mem_slots bound)

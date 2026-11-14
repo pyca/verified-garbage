@@ -117,7 +117,7 @@ theorem vlay_ok {p : Params} {STK : Nat} {σ : State} (hp : VPre p STK σ) : OkW
   have es : (⟨σ.sp - BitVec.ofNat 64 STK, STK⟩ : Region) = below σ.sp STK := rfl
   refine ⟨fun i hi => ?_, fun i hi j hj hij hw => ?_⟩
   · simp only [vlay, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_c
     · show (σ.sp - BitVec.ofNat 64 STK).toNat + STK ≤ 2 ^ 64
       have := hp.stk; have := σ.sp.isLt; bv_omega
@@ -126,8 +126,8 @@ theorem vlay_ok {p : Params} {STK : Nat} {σ : State} (hp : VPre p STK σ) : OkW
     · exact hp.f_s
   · simp only [vlay, List.length_cons, List.length_nil] at hi hj
     simp only [vWb, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, vlay, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · rw [es]; exact hp.b_c.symm

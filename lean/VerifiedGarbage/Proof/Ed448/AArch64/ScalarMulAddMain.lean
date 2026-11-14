@@ -139,7 +139,7 @@ theorem scalarMulAdd_correct {s : State} (hs : scalarMulAddLocal.pre s) :
     rw [r₅]; rfl
   refine WP.mono (scalarLoop_ok s₅ c₅ (by decide) hi fun k hk => by
       rw [rdw₅, x1₅, x2₄, Offset.add_add]
-      exact ⟨_, List.mem_append_right _ hws, contains_sc (by simp only [ACC]; omega)⟩)
+      exact ⟨_, List.mem_append_right _ hws, contains_sc (by simp only [ACC]; omega_using [hk])⟩)
     fun s₆ ⟨v₆, k₆⟩ => ?_
   have x2₆ : s₆.gpr .x2 = base := by rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), x2₄]
   have g₆ : ∀ r, r ∉ mulAddClob → s₆.gpr r = s.gpr r := fun r hr' => by
@@ -151,8 +151,8 @@ theorem scalarMulAdd_correct {s : State} (hs : scalarMulAddLocal.pre s) :
   have sv₆ : Saved base s.gpr s₆.mem := by
     intro p hp
     have hl := (saved_ok p hp).2
-    rw [k₆.mem, m₅, Ed25519.AArch64.Outside.word o₃ (by simp only [ACC]; omega) (by omega),
-      Ed25519.AArch64.Outside.word o₂ (by simp only [XK]; omega) (by omega)]
+    rw [k₆.mem, m₅, Ed25519.AArch64.Outside.word o₃ (by simp only [ACC]; omega_using [hl]) (by omega_using [hl]),
+      Ed25519.AArch64.Outside.word o₂ (by simp only [XK]; omega_using [hl]) (by omega_using [hl])]
     exact sv₁ p hp
   refine WP.mono (finish_ok x2₆ (wr₆ ▸ hws) sv₆ x0₆ (wr₆ ▸ hwo)) fun t ⟨bt, rt, gt, spt⟩ => ?_
   refine ⟨⟨fun r hpres => ?_, spt.trans (k₆.sp.trans (k₅.sp.trans (k₄.sp.trans

@@ -109,7 +109,7 @@ theorem ok_layer {s : State} {b : Addr} {m : Nat} (hscr : (⟨b, 8 * slots⟩ : 
     (hal : b.toNat % 8 = 0) (hb : s.gpr sb = b) (hk : AtEntry s b m) (hm : m + 2 ≤ 34) :
     Ok layerCfg s where
   baseAl _ := by simp only [layerCfg]; rw [hb]; exact hal
-  extAl _ := by simp only [layerCfg]; rw [show s.gpr kp = _ from hk]; exact Spill.al8 hal (by omega)
+  extAl _ := by simp only [layerCfg]; rw [show s.gpr kp = _ from hk]; exact Spill.al8 hal (by omega_using [])
   slotIn k hk' := ⟨_, hscr, by
     simp only [layerCfg, savedSlot_eq] at hk'
     simp only [wordAddr, layerCfg, hb]
@@ -199,7 +199,7 @@ theorem addKp_ok (s : State) (n : Nat) (hn : n < 2048) :
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
   ⟨s.write kp (s.gpr kp + BitVec.ofNat 64 n), by
     simp only [runBlock_cons, exec_addi (show imm12 (OfNat.ofNat n : Int) by
-        show imm12 ((n : Nat) : Int); unfold imm12; omega), runStep_some, runBlock_nil]
+        show imm12 ((n : Nat) : Int); unfold imm12; omega_using [hn]), runStep_some, runBlock_nil]
     rw [show (OfNat.ofNat n : Int) = ((n : Nat) : Int) from rfl, Steps.ofInt_ofNat],
     RegUpd.gpr_write_self _ _ _,
     fun r hr => RegUpd.gpr_write_of_ne _ _ hr, rfl, rfl, rfl⟩
@@ -288,7 +288,7 @@ theorem both_ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
       obtain ⟨j, hj, rfl, rfl⟩ := hji
       refine ⟨by simp [layerCfg, d1Slot, savedSlot]; omega_arith, by omega_arith, ?_⟩
       simp [bothW, show ¬ 8 + j < 8 by omega_arith, show 8 + j < 24 by omega_arith]; rfl)
-    (fun kv hkv => ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega,
+    (fun kv hkv => ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this],
         hc.masks kv hkv⟩)
     (fun j hj => by
       simp only [layerCfg] at hj
@@ -335,7 +335,7 @@ theorem loadHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : 
     (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hh, fun k hk hk' => by
       simp only [slotW, hkeep sb (by decide), hc.base]; exact slot_above f' hk hk'⟩
   rw [hkp kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
-      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega)]
+      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega_using [this])]
   exact hc.masks kv hkv
 
 /-- `storeHalf d`, under `Ctx`. -/
@@ -371,7 +371,7 @@ theorem storeHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp :
     (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hs, hh, fun k hk hk' => by
       simp only [slotW, hkeep sb (by decide), hc.base]; exact slot_above f' hk hk'⟩
   rw [hkp kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
-      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega)]
+      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega_using [this])]
   exact hc.masks kv hkv
 
 /-- What FL reads, under `Ctx`. -/

@@ -128,7 +128,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   simp only [bit, List.cons_append, List.nil_append]
   refine wp_add fun s₁ u₁ c₁ => ?_
   have cb : decide (2 ^ 32 ≤ (s.gpr .ecx).toNat + (s.gpr .ecx).toNat) = decide (b = 1) := by
-    rw [hecx]; rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega
+    rw [hecx]; rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega_using [hD, hD2, hN, ha, hrlt, hc, hPP, hP, hPb, hqlt, hDv', N', st₁, st₂, res, hecx]
   have v₁ : (s₁.gpr .ecx).toNat = 2 * P + 2 * (N / D.toNat) := by
     rw [u₁.gpr, BitVec.toNat_add, hecx]
     rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl
@@ -139,7 +139,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   refine wp_adc (c := decide (b = 1)) (by rw [c₁, cb]) fun s₂ u₂ => ?_
   have v₂ : (s₂.gpr .eax).toNat = 2 * (N % D.toNat) + b := by
     rw [u₂.gpr, u₁.other _ (by decide), BitVec.toNat_add, BitVec.toNat_add, ha]
-    rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega
+    rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega_using [hD, hD2, hN, ha, hrlt, hc, hqlt, hDv', v₁, N', st₁, st₂, res, hecx]
   refine wp_subm (by rw [u₂.other _ (by decide), u₁.other _ (by decide), hb])
     (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin) fun s₃ u₃ c₃ => ?_
   rw [u₂.mem, u₁.mem, hDv] at u₃ c₃
@@ -189,9 +189,9 @@ theorem bits_ok {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31) {B :
   | 0, _, s, _, _, _, h, hq => hq s h (Keep.refl s)
   | k + 1, hk, s, hb, hin, hDv, h, hq => by
     simp only [bits, List.append_assoc]
-    refine bits_ok hD hD2 hn k (by omega) s hb hin hDv h fun t ht kt => ?_
+    refine bits_ok hD hD2 hn k (by omega_using [hk]) s hb hin hDv h fun t ht kt => ?_
     refine bit_ok hD hD2 (by rw [kt.other _ (by decide) (by decide) (by decide), hb])
-      (by rw [kt.rd, kt.wr]; exact hin) (by rw [kt.mem]; exact hDv) hn (by omega) ht
+      (by rw [kt.rd, kt.wr]; exact hin) (by rw [kt.mem]; exact hDv) hn (by omega_using [hk]) ht
       fun u hu ku => hq u hu (kt.trans ku)
 
 /-- The division: `ecx := n / D`, `eax := n mod D`. -/

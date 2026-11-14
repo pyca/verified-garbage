@@ -30,9 +30,9 @@ theorem constE {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
       (∀ j<8,word t.mem base (slot o.val+8*j)=limb v j) ∧
       Outside base (slot o.val) 64 s.mem t.mem ∧ Keeps [.x4] s t := by
   have ho:=o.isLt
-  refine WP.mono (constSlot_ok hs (by simp only [slot];omega) (by simp only [slot];omega) v)
+  refine WP.mono (constSlot_ok hs (by simp only [slot];omega_using []) (by simp only [slot];omega_using []) v)
     fun t ⟨tv,fo,kt⟩ => ?_
-  have fm:FieldMem base (slot o.val) s.mem t.mem:=FieldMem.output (fo.mono (Nat.le_refl _) (by omega))
+  have fm:FieldMem base (slot o.val) s.mem t.mem:=FieldMem.output (fo.mono (Nat.le_refl _) (by omega_using []))
   refine ⟨env_update hb fm (bnd_of_words tv),fieldMem_same fm,?_,tv,fo,kt⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm,F_of_words tv]
 

@@ -33,11 +33,11 @@ theorem metadataHead_ok {s : State} {B : Addr} {Z N : Nat}
  have shift : (BitVec.ofNat 64 N+7#64) >>> 3=BitVec.ofNat 64 ((N+7)/8) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight,BitVec.toNat_add,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [bound]
  refine WP.keep [.x10,.x11,.x12,.x13] ?_ rfl rfl rfl
  unfold Policy.metadataHead
  brun [base,hdr_enc (show sBits<32 by decide),hdr_enc (show sBytes<32 by decide),
-  scratch.ld (d:=8*sBits) (by unfold sBits;omega),scratch.st (d:=8*sBytes) (by unfold sBytes;omega),bits,shift]
+  scratch.ld (d:=8*sBits) (by unfold sBits;omega_using [room]),scratch.st (d:=8*sBytes) (by unfold sBytes;omega_using [room]),bits,shift]
  exact (BitVec.ofNat_add _ _).symm
 
 end VG.Proof.Ffdh.AArch64.Cached
@@ -72,7 +72,7 @@ theorem metadataTail_ok {s : State} {B ctx : Addr} {Z N bytes rows : Nat}
  refine WP.keep [.x8] ?_ rfl rfl rfl
  unfold Policy.metadataTail
  brun [base,hdr_enc (show sRows<32 by decide),hdr_enc (show sCtx<32 by decide),
-  scratch.ld (d:=8*sCtx) (by unfold sCtx;omega),scratch.st (d:=8*sRows) (by unfold sRows;omega),
+  scratch.ld (d:=8*sCtx) (by unfold sCtx;omega_using [room]),scratch.st (d:=8*sRows) (by unfold sRows;omega_using [room]),
   pointer,bits,width,count,
   (show InRegions s.wr ctx 8 by simpa [off] using output.st (d:=0) (by decide)),output.st (d:=8) (by decide),output.st (d:=16) (by decide)]
 

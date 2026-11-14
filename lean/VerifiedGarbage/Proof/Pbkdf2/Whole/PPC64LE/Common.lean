@@ -130,7 +130,7 @@ theorem layout : F.st0O = 48 + F.Wc ∧ F.st1O = 48 + F.Wc + F.H.S ∧
     F.tO = 48 + F.Wc + 3 * F.H.S + F.H.D ∧ F.intO = 48 + F.Wc + 3 * F.H.S + 2 * F.H.D ∧
     F.bytes = 48 + F.Wc + 3 * F.H.S + 2 * F.H.D + 4 := by
   dsimp only [Fns.st0O, Fns.st1O, Fns.stWO, Fns.uO, Fns.tO, Fns.intO, Fns.bytes, Fns.cO]
-  omega
+  omega_using []
 
 variable (hF : FnsOK F)
 include hF
@@ -165,12 +165,12 @@ theorem part_sub {o n : Nat} (h : o + n ≤ F.bytes) : Region.Sub (sR s₀ o n) 
 omit hp in
 theorem part_disj (hr : F.bytes ≤ 4096) {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ F.bytes)
     (hb : b + n ≤ F.bytes) : Region.Disjoint (sR s₀ a m) (sR s₀ b n) :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [hr, ha]) (by omega_using [hr, hb])
 
 omit hp in
 theorem part_contains (hr : F.bytes ≤ 4096) {o n : Nat} (h : o + n ≤ F.bytes) :
     (scR F s₀).Contains (sA s₀ o) n :=
-  Offset.contains_base _ h (by omega)
+  Offset.contains_base _ h (by omega_using [hr, h])
 
 theorem sc_wr {s : State} (hwr : s.wr = s₀.wr) : scR F s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
 
@@ -186,7 +186,7 @@ theorem in_sc' (hr : F.bytes ≤ 4096) {s : State} (hwr : s.wr = s₀.wr) {o n :
 
 /-- The stack below the stack pointer of the frame. -/
 theorem below_stk {n : Nat} (hn : n + 48 ≤ X + 144) : Region.Sub (below (s₀.sp - 48) n) (stk X s₀) :=
-  fun x hx => below_sub hn (by have := hp.sp; have := s₀.sp.isLt; omega) x (below_body s₀.sp n x hx)
+  fun x hx => below_sub hn (by have := hp.sp; have := s₀.sp.isLt; omega_arith) x (below_body s₀.sp n x hx)
 
 end
 
@@ -230,10 +230,10 @@ def Wk (F : Fns) (X : Nat) (s₀ : State) (r : Region) : Prop :=
 theorem Wk.ok (hp : Pre F X s₀) (hr : F.bytes ≤ 4096) {r : Region} (h : Wk F X s₀ r) :
     Region.Disjoint ⟨scr s₀ + BitVec.ofNat 64 0, 48⟩ r ∧ ∃ r' ∈ wrs F X s₀, Region.Sub r r' := by
   rcases h with ⟨o, n, rfl, h₁, h₂⟩ | ⟨n, rfl, hn⟩
-  · exact ⟨part_disj (s₀ := s₀) hr (.inl h₁) (by omega) h₂, _, by simp, part_sub (s₀ := s₀) h₂⟩
+  · exact ⟨part_disj (s₀ := s₀) hr (.inl h₁) (by omega_using [h₁, h₂]) h₂, _, by simp, part_sub (s₀ := s₀) h₂⟩
   · exact ⟨((hp.b_s.sub_left (below_stk hp hn)).sub_right (part_sub (s₀ := s₀) (o := 0) (n := 48) (by
       have := hr; simp only [Fns.bytes, Fns.intO, Fns.tO, Fns.uO, Fns.stWO, Fns.st1O, Fns.st0O,
-        Fns.cO]; omega))).symm, _, by simp, below_stk hp hn⟩
+        Fns.cO]; omega_using []))).symm, _, by simp, below_stk hp hn⟩
 
 /-- What a call leaves, writing parts of `scratch` after the save area and
 the stack below the frame. -/
@@ -255,7 +255,7 @@ theorem KR.pwBytes (hp : Pre F X s₀) {s : State} (hk : KR F X s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.pw_o
     · exact hp.pw_s
-    · exact hp.b_pw.symm) (by show (s₀.gpr .r4).toNat ≤ 2 ^ 64; have := (s₀.gpr .r4).isLt; omega)
+    · exact hp.b_pw.symm) (by show (s₀.gpr .r4).toNat ≤ 2 ^ 64; have := (s₀.gpr .r4).isLt; omega_using [])
 
 theorem KR.saltBytes (hp : Pre F X s₀) {s : State} (hk : KR F X s₀ s) :
     bytesAt s.mem (salt s₀) (sl s₀) = bytesAt s₀.mem (salt s₀) (sl s₀) :=
@@ -264,7 +264,7 @@ theorem KR.saltBytes (hp : Pre F X s₀) {s : State} (hk : KR F X s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.sa_o
     · exact hp.sa_s
-    · exact hp.b_sa.symm) (by show (s₀.gpr .r6).toNat ≤ 2 ^ 64; have := (s₀.gpr .r6).isLt; omega)
+    · exact hp.b_sa.symm) (by show (s₀.gpr .r6).toNat ≤ 2 ^ 64; have := (s₀.gpr .r6).isLt; omega_using [])
 
 end
 

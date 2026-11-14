@@ -35,7 +35,7 @@ theorem DS.len4 (h : DS s0 false A live V ls s) :
       u.gpr .r4 = BitVec.ofNat 64 (ww (kK s0) / 2) ∧ Keep [.r4] s u := by
   have := h.base.sz.w2
   have r29 : s.gpr .r29 = BitVec.ofNat 64 (ww (kK s0)) := h.ws.r29
-  exact h.reg [.r4] (by prun [r29, Recover.shr_ofNat (show ww (kK s0) < 2 ^ 64 by omega)]) (by decide)
+  exact h.reg [.r4] (by prun [r29, Recover.shr_ofNat (show ww (kK s0) < 2 ^ 64 by omega_using [this])]) (by decide)
 
 /-- The low `w` digits of a wide number. -/
 theorem val32_low_w {m : Mem} {B : Addr} {d w : Nat} :
@@ -52,20 +52,20 @@ theorem DS.mulW (h : DS s0 true A live V ls s) {o x y : Nat} (ho : o < vN true) 
         ((true, o) :: live') V ls t := by
   have w1 := h.base.sz.w1
   have eW : vw s0 true = 2 * ww (kK s0) + 2 := by rw [vw_wide, vw_false]
-  have ev : ww (kK s0) % 2 = 0 := by simp only [ww]; omega
+  have ev : ww (kK s0) % 2 = 0 := by simp only [ww]; omega_using []
   refine WP.mono (VG.Proof.Rsa.PPC64LE.Recover.mulW_ok (R := ww (kK s0) / 2) h.ws (vN_le true) ho (h.ix hx)
-    (h.ix hy) hox hoy (by rw [eW]; omega) c4 (by omega) (by rw [eW]; omega))
+    (h.ix hy) hox hoy (by rw [eW]; omega_using []) c4 (by omega_using [w1]) (by rw [eW]; omega_using []))
     fun t ⟨ws, k, v, kr⟩ => h.wr ws ho k ?_ hl kr
-  have e2 : 2 * (vw s0 true / 2) = vw s0 true := by rw [eW]; omega
-  have e64 : 64 * (vw s0 true / 2) = 32 * vw s0 true := by rw [eW]; omega
-  have ex : 2 * (ww (kK s0) / 2) = ww (kK s0) := by omega
+  have e2 : 2 * (vw s0 true / 2) = vw s0 true := by rw [eW]; omega_using []
+  have e64 : 64 * (vw s0 true / 2) = 32 * vw s0 true := by rw [eW]; omega_using []
+  have ex : 2 * (ww (kK s0) / 2) = ww (kK s0) := by omega_using [ev]
   have conv : ∀ m d, val32 m (rvB s0) d (vw s0 true) = wordsVal m (rvB s0) d (vw s0 true / 2) := fun m d => by
     rw [wordsVal_eq_val32, e2]
   show val32 t.mem _ _ (vw s0 true) = _
   have vy : val32 s.mem (rvB s0) (KeyWorkspace.arr (vw s0 true) y) (vw s0 true) = A true y := h.val hy
   have vx : val32 s.mem (rvB s0) (KeyWorkspace.arr (vw s0 true) x) (vw s0 true) = A true x := h.val hx
   rw [conv, v, e64, ← conv, wordsVal_eq_val32, ex, vy, val32_low_w,
-    show ww (kK s0) + (ww (kK s0) + 2) = vw s0 true by rw [eW]; omega, vx]
+    show ww (kK s0) + (ww (kK s0) + 2) = vw s0 true by rw [eW]; omega_using [], vx]
 
 /-- `a = gcd(u, x) 2^k x` modulo `2^(32 W)`, from the GCD in the wide `wY` and `2^k x` in `wX3`. -/
 theorem aProduct_ok (h : DS s0 false A [(true, 8), (true, 12), (true, 15), (true, 9), (false, 32)] V [sB1, sB0] s)

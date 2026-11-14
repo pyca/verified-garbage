@@ -58,13 +58,13 @@ theorem wordVals_withRegions (n : Nat) (s : State) (r w : List Region) :
     wordVals n (s.withRegions r w) = wordVals n s := rfl
 
 theorem argBytes_append2 (ws : List Nat) : argBytes (ws ++ [32, 32]) = argBytes ws + 8 := by
-  simp [argBytes, List.map_append, List.sum_append]; omega
+  simp [argBytes, List.map_append, List.sum_append]; omega_using []
 
 theorem argBytes_pos (ws : List Nat) (h : ∀ w ∈ ws, w = 32) (hne : 0 < ws.length) : 0 < argBytes ws := by
   obtain ⟨w, ws', rfl⟩ := List.exists_cons_of_length_pos hne
   have := h w (List.mem_cons_self ..)
   subst this
-  simp [argBytes]; omega
+  simp [argBytes]; omega_using []
 
 theorem words_withSlice_map (sig : Sig) (nm : String) (e : Elem) (ln : String) :
     ((sig.withSlice nm e ln).words 32).map (·.bits 32) = (sig.words 32).map (·.bits 32) ++ [32, 32] := by
@@ -73,15 +73,15 @@ theorem words_withSlice_map (sig : Sig) (nm : String) (e : Elem) (ln : String) :
 theorem abi_wf_append {ws : List Nat} {n : Nat} {s : State} (h : abi.wf (ws ++ [32, 32]) n s)
     (r w : List Region) : abi.wf ws n (s.withRegions r w) := by
   have := argBytes_append2 ws
-  cases n <;> simp only [abi, State.withRegions_gpr] at h ⊢ <;> omega
+  cases n <;> simp only [abi, State.withRegions_gpr] at h ⊢ <;> omega_using [this, h]
 
 theorem abi_area_append {ws : List Nat} (h : ∀ w ∈ ws, w = 32) (hne : 0 < ws.length) (s : State) :
     List.Forall₂ RegionBelow (abi.argArea ws s) (abi.argArea (ws ++ [32, 32]) s) := by
   have hp := argBytes_pos ws h hne
   have := argBytes_append2 ws
-  have h8 : argBytes ws + 8 ≠ 0 := by omega
+  have h8 : argBytes ws + 8 ≠ 0 := by omega_using []
   simp only [abi, Nat.pos_iff_ne_zero.mp hp, ↓reduceIte, this, h8]
-  exact .cons ⟨⟨rfl, by simp only; omega⟩, rfl⟩ .nil
+  exact .cons ⟨⟨rfl, by simp only; omega_using []⟩, rfl⟩ .nil
 
 /-- The words of `sig`'s arguments followed by a slice's two. -/
 abbrev sliceVals (n : Nat) (s : State) : List (BitVec 64) :=

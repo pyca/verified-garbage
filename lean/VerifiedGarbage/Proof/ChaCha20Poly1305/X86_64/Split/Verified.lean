@@ -139,11 +139,11 @@ theorem sealSplitFor_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : (sealSplitFor 
   have h₁ := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_xdepth v
   cases hb : v.poly with
   | avx512 => have := sealSplitBody_xdepth v .avx512
-              simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
+              simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega_using [this]
   | ifma => have := sealSplitBody_xdepth v .ifma
-            simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
-  | scalar => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
-  | avx2 => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega
+            simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega_using [this]
+  | scalar => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega_using [h₁]
+  | avx2 => rw [hb] at h₁; simp only [sealSplitFor, Code.x86_64Depth, head_xdepth, framed_xdepth, Nat.max_le]; omega_using [h₁]
 
 /-- A state satisfying the shared contract's precondition, without the
 working space. -/

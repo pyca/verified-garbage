@@ -78,7 +78,7 @@ theorem pSeedHash_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
   · have hfs : Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem v.mem := by
       intro a ha
       rw [hf a (fun i hi => fun he => ha ⟨op, len⟩ (by simp) (he ▸
-        Offset.contains_base op (by omega) (by omega))), hm]
+        Offset.contains_base op (by omega_using [hi]) (by omega_using [hlen, hi]))), hm]
     exact hfs.trans (hft.mono (by simp))
   · rw [hb, hv]
 

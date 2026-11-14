@@ -96,11 +96,11 @@ theorem preWords_eq {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS 
       Spec.Rsa.wordsAt s.mem (stackArg s 16) (Spec.Rsa.precomputedWords (s.gpr .x3).toNat) := by
   rw [ha.pre, ha.x3]
   have hle : Spec.Rsa.precomputedWords (s.gpr .x3).toNat ≤ (stackArg s 17).toNat := by
-    rw [hx.prl]; simp only [Spec.Rsa.privatePrecomputedWords]; omega
+    rw [hx.prl]; simp only [Spec.Rsa.privatePrecomputedWords]; omega_using []
   have hw := prl_le hp hx
   have sub : Region.Sub ⟨stackArg s 16, 8 * Spec.Rsa.precomputedWords (s.gpr .x3).toNat⟩ (prR s) :=
-    Region.sub_prefix (by omega)
-  exact VG.Proof.Rsa.wordsAt_frame ha.mem (by omega)
+    Region.sub_prefix (by omega_using [hle])
+  exact VG.Proof.Rsa.wordsAt_frame ha.mem (by omega_using [hle, hw])
     (wrS_disj (hx.kpr.sub_right sub) (hx.spr.sub_right sub).symm)
 
 theorem callP_ct (c : PrivPChecked) {tsH tsG : List FnTable} {K : Nat} (hcK : c.stack ≤ K) :
@@ -121,14 +121,14 @@ theorem callP_ct (c : PrivPChecked) {tsH tsG : List FnTable} {K : Nat} (hcK : c.
     · rw [c₁.x5, c₂.x5, e .x5 (by decide)]
     · rw [c₁.x6, c₂.x6, h₁.1.scr, h₂.1.scr]
     · rw [c₁.x7, c₂.x7, e .x3 (by decide)]
-  · rcases (by omega : i < 12 ∨ i = 12 ∨ i = 13) with h | rfl | rfl
+  · rcases (by omega_using [hi] : i < 12 ∨ i = 12 ∨ i = 13) with h | rfl | rfl
     · rw [c₁.args i h, c₂.args i h, h₁.1.argv, h₂.1.argv]
     · rw [c₁.pre, c₂.pre, h₁.2.2.1, h₂.2.2.1]
     · rw [c₁.prl, c₂.prl, h₁.2.2.2.1, h₂.2.2.2.1]
-  · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, bytes_wrS c₁.mem h₁.1.1.kn h₁.1.1.ns (by have := h₁.1.1.wn; omega),
-      bytes_wrS c₂.mem h₂.1.1.kn h₂.1.1.ns (by have := h₂.1.1.wn; omega), h₁.1.2.bn, h₂.1.2.bn]
-  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_wrS c₁.mem h₁.1.1.ke h₁.1.1.es (by have := h₁.1.1.we; omega),
-      bytes_wrS c₂.mem h₂.1.1.ke h₂.1.1.es (by have := h₂.1.1.we; omega), h₁.1.2.be, h₂.1.2.be]
+  · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, bytes_wrS c₁.mem h₁.1.1.kn h₁.1.1.ns (by have := h₁.1.1.wn; omega_using []),
+      bytes_wrS c₂.mem h₂.1.1.kn h₂.1.1.ns (by have := h₂.1.1.wn; omega_using []), h₁.1.2.bn, h₂.1.2.bn]
+  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_wrS c₁.mem h₁.1.1.ke h₁.1.1.es (by have := h₁.1.1.we; omega_using []),
+      bytes_wrS c₂.mem h₂.1.1.ke h₂.1.1.es (by have := h₂.1.1.we; omega_using []), h₁.1.2.be, h₂.1.2.be]
   · rw [preWords_eq h₁.1.1 h₁.2.1 c₁, preWords_eq h₂.1.1 h₂.2.1 c₂, h₁.2.2.2.2, h₂.2.2.2.2]
 
 section
@@ -193,7 +193,7 @@ theorem codeP_ct : RelCT isa (Two (ESP f g tsH tsG K i T Hs Gs)) (signCP f g c.n
   refine RelCT.seq (byIdx_ct (Q := Two fun a t => ∃ s, ESP f g tsH tsG K i T Hs Gs a s ∧ s.mem (s.gpr .x2) ≠ 0 ∧
       AfterEnc Hs Gs K s (ebS s) (elS s) (loS s) t) (fun _ => i) (fun a t t' ⟨s, h, z, j, y⟩ o sy => ⟨s, h, z, j.only9 o, sy.trans y⟩)
     (fun a t ⟨s, h, z, j, y⟩ => ⟨h.1.2.1.mem, j.x27.trans h.1.2.1.idx, rfl⟩)
-    (fun j hj => by unfold idxs at hj; simp at hj; omega) (fun j hj => ?_) (fun j hj => ?_)) ?_
+    (fun j hj => by unfold idxs at hj; simp at hj; omega_using [hj]) (fun j hj => ?_) (fun j hj => ?_)) ?_
   · unfold idxs at hj
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
@@ -205,7 +205,7 @@ theorem codeP_ct : RelCT isa (Two (ESP f g tsH tsG K i T Hs Gs)) (signCP f g c.n
       refine two_post ((enc_ct h624 hv hct).mono (fun _ _ => two_mono fun _ _ ⟨⟨s, h, z, j, y⟩, _⟩ =>
         ⟨s, h.1, z, j, y⟩) fun _ _ _ => trivial) fun a t ⟨⟨s, h, z, j, y⟩, _⟩ => ?_
       obtain ⟨b₁, b₂, l, -⟩ := eb_bounds h.1.1.1 z
-      exact WP.mono (encCall_ok h.1.1.1 h624 h.1.2.1 j y (by omega) rfl b₁ b₂) fun t' h' => ⟨s, h, z, h'⟩
+      exact WP.mono (encCall_ok h.1.1.1 h624 h.1.2.1 j y (by omega_using [l]) rfl b₁ b₂) fun t' h' => ⟨s, h, z, h'⟩
     · exact RelCT.of_false fun _ _ ⟨a, h₁, _⟩ => hij h₁.2
   -- `encode`'s result.
   refine two_ite (fun a t₁ t₂ ⟨s₁, h₁, _, j₁⟩ ⟨s₂, h₂, _, j₂⟩ => by

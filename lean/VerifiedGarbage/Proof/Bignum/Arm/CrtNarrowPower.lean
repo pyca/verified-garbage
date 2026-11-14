@@ -59,8 +59,8 @@ theorem CrtFactorMem.congr {m m' : Mem} {child : BitVec 32} {len w x : Nat}
   have fit0 := Nat.le_trans (array_end_le (w := w) (by decide : 0 < 8)) fit
   have fit6 := Nat.le_trans (array_end_le (w := w) (by decide : 6 < 8)) fit
   refine ⟨h.layout.congr eq, (eq.number fit (by decide)).trans h.input, ?_, ?_⟩
-  · rw [← read_eq_val32, eq.read _ _ (by omega), read_eq_val32]; exact h.cleared0
-  · rw [← read_eq_val32, eq.read _ _ (by omega), read_eq_val32]; exact h.cleared6
+  · rw [← read_eq_val32, eq.read _ _ (by omega_using [fit0]), read_eq_val32]; exact h.cleared0
+  · rw [← read_eq_val32, eq.read _ _ (by omega_using [fit6]), read_eq_val32]; exact h.cleared6
 
 theorem crt_factorInput_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32} {slot : Nat}
     (h : CrtShared g bs s) (kind : CrtChild g child slot) (i : Fin 6)
@@ -100,7 +100,7 @@ theorem crt_factorInput_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   · rw [keeps_array_num keepsT fits op1 (by decide), keeps_array_num keepsZ fits op1 (by decide)]; exact valueU
   · have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
     have e := keeps_array_read keepsT fits op0 (by decide : (0 : Nat) ≠ 6) (d := 0)
-      (n := 4 * (2 * g.words + 2)) (by omega)
+      (n := 4 * (2 * g.words + 2)) (by omega_using [])
     simp only [Nat.add_zero] at e
     rw [← read_eq_val32, e, read_eq_val32]
     exact cleared0
@@ -126,7 +126,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   have expI : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
   obtain ⟨two, le, kfit, kpos, _, arrays, half⟩ := h.narrow_fits j primeJ
   have words : g.words ≤ 128 := (crt_width_valid h.buffers.lengthValid).2.1
-  have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega
+  have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega_using [words]
   have hi := i.isLt
   have hj := j.isLt
   have fitsC : arrAt g.words 8 ≤ 8 * workspaceWords g.words := h.buffers.context.arraysFit
@@ -157,9 +157,9 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   -- The factor, prepared at the narrow width.
   have primeIn : NarrowPrimeInput (crtN g.base g.words) (g.source j.succ) (workspaceWords g.words) v
       (g.sourceLength j.succ) (56 + 8 * j.val) (bs j.succ) z := by
-    refine ⟨selectedZ, ?_, kpos, kfit, by have := sharedZ.stack.nowrap; omega, sharedZ.stack.read (by decide),
+    refine ⟨selectedZ, ?_, kpos, kfit, by have := sharedZ.stack.nowrap; omega_using [this], sharedZ.stack.read (by decide),
       by rw [flagSZ]; exact input.accepted.bit, ?_⟩
-    · simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using sharedZ.savedOperand j sharedZ.narrow_member
+    · simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []] using sharedZ.savedOperand j sharedZ.narrow_member
     · rw [flagSZ, ← prime]; exact input.accepted.valid
   rw [WP.seq_iff]
   refine WP.mono (st.primeOk j z primeJ hst ⟨sharedZ, primeIn⟩) ?_
@@ -179,9 +179,9 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rw [WP.seq_iff]
   refine WP.mono (crt_copyOut_ok y ctxY (j := 0) (a := 0) (by decide) (by decide)) ?_
   rintro x ⟨readyX, copied0, outside0, restX⟩
-  have frameXC := outside_workspace outside0 (size := 8 * workspaceWords g.words) (by omega)
-  have keepsX := outside_array_prefix_keeps outside0 (by omega : 8 * workspaceWords g.words < 2 ^ 64)
-    (by omega : 8 * v ≤ 8 * (g.words + 2))
+  have frameXC := outside_workspace outside0 (size := 8 * workspaceWords g.words) (by omega_using [le, end0])
+  have keepsX := outside_array_prefix_keeps outside0 (by omega_using [wsSmall] : 8 * workspaceWords g.words < 2 ^ 64)
+    (by omega_using [le] : 8 * v ≤ 8 * (g.words + 2))
   have layoutX : CrtLayoutState child (workspaceWords g.words) g.words x.mem := by
     have kl := keeps_layout memY.layout.layout (by rw [memY.layout.width]; exact keepsX)
     exact ⟨kl.2, kl.1.trans memY.layout.width⟩
@@ -198,11 +198,11 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   have modX := (eqNX.number fitsN (by decide)).trans modY
   have r2X := (eqNX.number fitsN (by decide)).trans r2Y
   have modCX : numAt x.mem (State.addr child) g.words 0 = M := by
-    rw [numAt_of_copied le memY.cleared0 outside0 (by omega), copied0]
+    rw [numAt_of_copied le memY.cleared0 outside0 (by omega_using [wsSmall, end0]), copied0]
     exact modY
   have inputX := (keeps_array_num keepsX fitsC (op 1 (by simp)) (by decide)).trans memY.input
   have cleared6X : val32 x.mem (State.addr child) (arrAt g.words 6) (2 * g.words + 2) = 0 := by
-    rw [outside0.val32 (Or.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)]
+    rw [outside0.val32 (Or.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using [le])) (by omega_using [wsSmall, end6])]
     exact memY.cleared6
   -- The input modulo the factor.
   have ctxX : CrtCopyCtx g bs child slot v x :=
@@ -220,18 +220,18 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   have expIn : NarrowExpInput (crtN g.base g.words) (g.source i.succ) (workspaceWords g.words)
       v M (Spec.Rsa.os2ip (bs 1) % M) (g.sourceLength i.succ) (56 + 8 * i.val) (bs i.succ) e := by
     have length := h.buffers.lengthValid.2
-    refine ⟨readyE, modE, oddY, inputE, r2E, by have := sharedE.stack.nowrap; omega, by omega,
-      sharedE.stack.read (by omega), sharedE.stack.read (by omega), sharedE.stack.pointer i, ?_,
+    refine ⟨readyE, modE, oddY, inputE, r2E, by have := sharedE.stack.nowrap; omega_using [this], by omega_using [],
+      sharedE.stack.read (by omega_using []), sharedE.stack.read (by omega_using []), sharedE.stack.pointer i, ?_,
       sharedE.buffers.source i.succ, (sharedE.buffers.sourceSeparate i.succ).sub_right
         (crt_region_sub_workspace sharedE.buffers.workspace sharedE.buffers.storageFits sharedE.narrow_member), ?_, ?_,
         ?_⟩
-    · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega] using sharedE.stack.length i
+    · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega_using []] using sharedE.stack.length i
     · rcases expI with rfl | rfl
       · exact h.buffers.pPositive
       · exact h.buffers.qPositive
     · rcases expI with rfl | rfl
-      · change g.pLength < _; have := h.buffers.pShort; omega
-      · change g.qLength < _; have := h.buffers.qShort; omega
+      · change g.pLength < _; have := h.buffers.pShort; omega_using [length, this]
+      · change g.qLength < _; have := h.buffers.qShort; omega_using [length, this]
     · exact table_fits le
   rw [WP.seq_iff]
   refine WP.mono ((crt_narrowExp_ok (kernel := kernel)) e expIn) ?_
@@ -248,9 +248,9 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
       (sharedR.child kind).2.2.2.2.2.2, le⟩
   refine WP.mono (crt_copyOut_ok r ctxR (j := 6) (a := 6) (by decide) (by decide)) ?_
   rintro t ⟨_, copied6, outside6, restT⟩
-  have frameTC := outside_workspace outside6 (size := 8 * workspaceWords g.words) (by omega)
-  have keepsT := outside_array_prefix_keeps outside6 (by omega : 8 * workspaceWords g.words < 2 ^ 64)
-    (by omega : 8 * v ≤ 8 * (g.words + 2))
+  have frameTC := outside_workspace outside6 (size := 8 * workspaceWords g.words) (by omega_using [le, end6])
+  have keepsT := outside_array_prefix_keeps outside6 (by omega_using [wsSmall] : 8 * workspaceWords g.words < 2 ^ 64)
+    (by omega_using [le] : 8 * v ≤ 8 * (g.words + 2))
   have layoutT : CrtLayoutState child (workspaceWords g.words) g.words t.mem := by
     have kl := keeps_layout layoutR.layout (by rw [layoutR.width]; exact keepsT)
     exact ⟨kl.2, kl.1.trans layoutR.width⟩
@@ -263,7 +263,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   have flagNT := sharedR.acceptance_after_workspace member frameTC restT
   have cleared6R : val32 r.mem (State.addr child) (arrAt g.words 6) (2 * g.words + 2) = 0 := by
     have f6 := Nat.le_trans (array_end_le (w := g.words) (by decide : 6 < 8)) fitsC
-    rw [← read_eq_val32, eqCR.read _ _ (by omega), eqCE.read _ _ (by omega), read_eq_val32]
+    rw [← read_eq_val32, eqCR.read _ _ (by omega_using [end6]), eqCE.read _ _ (by omega_using [end6]), read_eq_val32]
     exact cleared6X
   have modCT : numAt t.mem (State.addr child) g.words 0 = M := by
     rw [keeps_array_num keepsT fitsC (op 0 (by simp)) (by decide), eqCR.number fitsC (by decide),
@@ -271,7 +271,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     exact modCX
   have resultT : numAt t.mem (State.addr child) g.words 6 =
       Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs i.succ)) M := by
-    rw [numAt_of_copied le cleared6R outside6 (by omega), copied6]
+    rw [numAt_of_copied le cleared6R outside6 (by omega_using [wsSmall, end6]), copied6]
     exact valueR
   have restSU : Rest roundClobbers s u := restU
   have restAll : Rest roundClobbers s t :=

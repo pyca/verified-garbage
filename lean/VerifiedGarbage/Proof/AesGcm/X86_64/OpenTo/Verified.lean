@@ -116,7 +116,7 @@ theorem toPub_prepared {s₁ s₂ : State} (hp : (Proof.AesGcm.openToPreparedRou
   | 3, _ => exact a₃
   | 4, _ => exact a₄
   | 5, _ => exact a₅
-  | n + 6, h => exact absurd h (by omega)
+  | n + 6, h => exact absurd h (by omega_using [])
 
 theorem toPub_prepared16 {s₁ s₂ : State} (hp : (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2728).pub s₁ s₂) :
     toPub s₁ s₂ := by
@@ -132,7 +132,7 @@ theorem toPub_prepared16 {s₁ s₂ : State} (hp : (Proof.AesGcm.openToPrepared1
   | 3, _ => exact a₃
   | 4, _ => exact a₄
   | 5, _ => exact a₅
-  | n + 6, h => exact absurd h (by omega)
+  | n + 6, h => exact absurd h (by omega_using [])
 
 /-! ## Satisfiability -/
 
@@ -154,8 +154,8 @@ def toSat : State where
 /-- The key context at `0x1000` is below the stack arguments. -/
 theorem ctx_low {i : Nat} (hi : i < 128 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.ofNat 64 i : Addr).toNat) := by
   have h : (0x1000 : Addr).toNat = 4096 := rfl
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega), h]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega_using [hi]), h]
+  omega_using [hi]
 
 /-- `toSat`, with a key context of 1024 bytes. -/
 def toSatP : State :=
@@ -246,12 +246,12 @@ theorem toPub_flagged {t : Nat} {s₁ s₂ : State} (hp : (Proof.AesGcm.Flag.ope
   | 3, _ => exact a₃
   | 4, _ => exact a₄
   | 5, _ => exact a₅
-  | n + 6, h => exact absurd h (by omega)
+  | n + 6, h => exact absurd h (by omega_using [])
 
 theorem ctx_lowF {i : Nat} (hi : i < 129 * 8) : ¬ (0x9000 ≤ (0x1000 + BitVec.ofNat 64 i : Addr).toNat) := by
   have h : (0x1000 : Addr).toNat = 4096 := rfl
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega), h]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega_using [hi]), h]
+  omega_using [hi]
 
 /-- `toSat`, with a prepared key context of 1032 bytes. -/
 def toSatF : State :=

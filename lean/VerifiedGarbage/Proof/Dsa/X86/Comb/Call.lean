@@ -50,13 +50,13 @@ theorem call_ok {n e m size : Nat} {base : Addr} {s : State}
     have vals : ∀ d k, d+4*k≤size → val32 mem base d k=val32 s.mem base d k :=
       fun _ _ hd => Pow.frame_val32 room hs.nowrap F hd
     refine ⟨?_,?_,?_,?_⟩
-    · rw [wordsVal_eq_val32,vals _ _ (by omega),←wordsVal_eq_val32,hv]
+    · rw [wordsVal_eq_val32,vals _ _ (by omega_using [hz, bounds]),←wordsVal_eq_val32,hv]
     · rw [wordsVal_eq_val32,wordsVal_eq_val32]
-      exact vals _ _ (by omega)
-    · exact vals _ _ (by omega)
+      exact vals _ _ (by omega_using [hz, bounds])
+    · exact vals _ _ (by omega_using [hz, bounds])
     · intro hp
       unfold canonical
-      rw [wordsAt_canonical,wordsVal_eq_val32,vals _ _ (by omega),←wordsVal_eq_val32,←wordsAt_canonical]
+      rw [wordsAt_canonical,wordsVal_eq_val32,vals _ _ (by omega_using [hz, bounds]),←wordsVal_eq_val32,←wordsAt_canonical]
       exact H hp
   · intro v E _ ⟨M,G,X,C⟩
     refine WP.mono (body_wide_ok h prepare E hz M hm odd (by rw [G]; exact C)) fun w ⟨V,Cw,O,R,Rd,Wr⟩ => ?_

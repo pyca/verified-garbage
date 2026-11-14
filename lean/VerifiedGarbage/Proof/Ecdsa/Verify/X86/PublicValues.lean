@@ -76,7 +76,7 @@ theorem VInputEq.of_bytes {c : Cfg} {s t : State}
   rw [peer_bytes,peer_bytes] at hp
   obtain ⟨tag,xy⟩ := List.cons.inj hp
   have xy' := List.append_inj xy (by simp only [length_bytesAt])
-  rw [show 2*c.C.len=c.C.len+c.C.len by omega,bytesAt_add,bytesAt_add] at hs
+  rw [show 2*c.C.len=c.C.len+c.C.len by omega_using [],bytesAt_add,bytesAt_add] at hs
   have rs := List.append_inj hs (by simp only [length_bytesAt])
   exact ⟨tag,congrArg Spec.Weierstrass.ofBytes xy'.1,congrArg Spec.Weierstrass.ofBytes xy'.2,congrArg Spec.Weierstrass.ofBytes rs.1,congrArg Spec.Weierstrass.ofBytes rs.2⟩
 

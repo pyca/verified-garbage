@@ -37,16 +37,16 @@ theorem fieldValue_digits (m : Mem) (a : Addr) {d i : Nat} (hd : d=18 ∨ d=20) 
       BitVec.ofNat d (digits 8 ((bytesAt m a (32*d)).map (·.toNat)) / 2^(d*i)) := by
     apply BitVec.eq_of_getLsbD_eq
     intro j hj
-    have h24 : d*i%8+j<24 := by rcases hd with rfl | rfl <;> omega
-    have hlen : (j+d*i)/8<32*d := by rcases hd with rfl | rfl <;> omega
+    have h24 : d*i%8+j<24 := by rcases hd with rfl | rfl <;> omega_using [hj]
+    have hlen : (j+d*i)/8<32*d := by rcases hd with rfl | rfl <;> omega_using [hi, hj]
     simp only [BitVec.getLsbD_extractLsb',BitVec.getLsbD_setWidth,
-      show d*i%8+j<32 by omega,decide_true,Bool.true_and,
+      show d*i%8+j<32 by omega_using [hd, hj],decide_true,Bool.true_and,
       BitVec.getLsbD_ofNat,Nat.testBit_div_two_pow]
     rw [getLsbD_read m 3 _ _ h24]
     simp only [BitVec.getLsbD,Nat.testBit_eq_decide_div_mod_eq]
     rw [digits_bit (by decide) (map_bytes_lt _),getD_map_toNat,bytesAt_getD _ _ hlen,Offset.add_add]
-    have ha : d*i/8+(d*i%8+j)/8=(j+d*i)/8 := by omega
-    have hb : (d*i%8+j)%8=(j+d*i)%8 := by omega
+    have ha : d*i/8+(d*i%8+j)/8=(j+d*i)/8 := by omega_using []
+    have hb : (d*i%8+j)%8=(j+d*i)%8 := by omega_using []
     rw [ha,hb]
   exact congrArg BitVec.toNat hw
 
@@ -62,7 +62,7 @@ theorem Parsed.poly {m input : Mem} {o a : Addr} {d : Nat} (hd : d=18 ∨ d=20)
     rcases hd with rfl | rfl <;> decide
   have hy : digits 8 ((bytesAt input a (32*d)).map (·.toNat)) / 2^(d*i) % 2^d < Spec.MlDsa.q := by
     have hh := Nat.mod_lt (digits 8 ((bytesAt input a (32*d)).map (·.toNat)) / 2^(d*i)) (Nat.two_pow_pos d)
-    rcases hd with rfl | rfl <;> change _ < 8380417 <;> omega
+    rcases hd with rfl | rfl <;> change _ < 8380417 <;> omega_using []
   rw [Proof.MlDsa.coeffAt,h i hi,fieldValue_digits input a hd hi,Spec.MlDsa.toRq,Vector.getElem_map,
     VG.Proof.MlDsa.Pack.bitUnpack_get _ _ _ hi,hdlen,VG.Proof.MlDsa.Pack.ofInt_sub hy]
 
@@ -85,7 +85,7 @@ theorem stream_mask_bytes {m : Mem} {o : Addr} {Bs : List Byte} {d : Nat}
     (h : Resident.StreamOutput m o 8 5 (ResidentSeed66.A0 Bs)) :
     bytesAt m o (32*d)=Spec.MlDsa.H Bs (32*d) := by
   have hb : (32*d+136-1)/136=5 := by rcases hd with rfl | rfl <;> decide
-  have hc : 32*d≤136*5 := by omega
+  have hc : 32*d≤136*5 := by omega_using [hd]
   have he : Spec.MlDsa.H Bs (32*d) =
       (Spec.Sha3.squeezeBlocks 136 (Spec.Sha3.keccakF (ResidentSeed66.A0 Bs)) 5).take (32*d) := by
     change Spec.Sha3.squeeze 136 (VG.Proof.MlKem.padded 136 Spec.Sha3.shakeSuffix Bs) (32*d)=_
@@ -93,10 +93,10 @@ theorem stream_mask_bytes {m : Mem} {o : Addr} {Bs : List Byte} {d : Nat}
   rw [he]
   apply List.ext_getElem
   · rw [VG.Proof.MlKem.bytesAt_length,List.length_take,VG.Proof.Sha3.length_squeezeBlocks (by decide)]
-    omega
+    omega_using [hd]
   · intro j hj hj'
     rw [VG.Proof.MlKem.bytesAt_getElem,List.getElem_take]
-    exact h.byte (by decide) (by rw [VG.Proof.MlKem.bytesAt_length] at hj; omega)
+    exact h.byte (by decide) (by rw [VG.Proof.MlKem.bytesAt_length] at hj; omega_using [hd, hj])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 

@@ -23,7 +23,7 @@ theorem Entry.coreMath {s : State} (E : Entry s) : CoreMath (geometry s) (entryS
   refine ⟨odd, lt, ?_, Nat.mod_lt _ (by decide), E.marker⟩
   change initialValues s aOne < initialValues s 0
   rw [one]
-  exact Nat.mod_lt _ (by omega)
+  exact Nat.mod_lt _ (by omega_using [minimum])
 
 theorem Entry.base {s : State} (E : Entry s) :
     WP isa (.block [.mov .edi (.mem (at_ .esp 20))]) (entered s) fun t =>

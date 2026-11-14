@@ -31,7 +31,7 @@ open VG.Spec.Gcm (Block blockAt)
 
 theorem lane_ld12 {k : Nat} (hk : k < 8) :
     laneSseBlock (restV k .xmm12) = some (ldacc (decide (k = 0)) .xmm12) := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- The `k`-th pair of powers into `ymm12`, and blocks `2k` and `2k + 1` at
@@ -54,7 +54,7 @@ theorem ghLoad_ok {k : Nat} (hk : k < 8) (t : State) (h0 : ∀ l < 2, t.lane .xm
   have keep : ∀ r, r ≠ .xmm12 → ∀ l < 2, t₁.lane r l = t.lane r l := fun r hr l _ => by
     simp [t₁, State.lane_setV256, hr]
   have l12 : ∀ l < 2, t₁.lane .xmm12 l = t.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · simp [t₁, State.lane_setV256, v, load256_lo]
     · simp [t₁, State.lane_setV256, v, load256_hi]
   refine WP.mono (load_ok (lane_ld12 hk) (by decide) t₁ (fun l hl => by rw [keep _ (by decide) l hl]; exact h0 l hl)

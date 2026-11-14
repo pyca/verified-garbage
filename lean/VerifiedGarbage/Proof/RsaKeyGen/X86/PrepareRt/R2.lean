@@ -36,7 +36,7 @@ theorem r2_ok {mont : Prog isa} {name : String}
   have Wa : WorkspaceFrame g (phaseRanges g) s.mem a.mem :=
     (WorkspaceFrame.of_outs nowrap (Outs.of_outside Oa (List.mem_singleton_self _))).cover fun r mem => by
       obtain rfl := List.mem_singleton.mp mem
-      exact ⟨(g.array 6, 8 * g.w), by simp [phaseRanges], Nat.le_refl _, by dsimp only; omega⟩
+      exact ⟨(g.array 6, 8 * g.w), by simp [phaseRanges], Nat.le_refl _, by dsimp only; omega_using [words]⟩
   have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem a.mem :=
     (workspaceGlobalFrame (Outs.of_outside Oa (List.mem_singleton_self _)) fun r mem => by
       obtain rfl := List.mem_singleton.mp mem; exact fit6).mono fun r mem => List.mem_append_left _ mem

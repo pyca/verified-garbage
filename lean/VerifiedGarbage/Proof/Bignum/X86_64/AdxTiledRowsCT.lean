@@ -38,7 +38,7 @@ theorem init_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowSta
     intro x hx
     apply o x
     have := hx (8*sFn 12,32) (by simp [ranges])
-    simp only [sFn] at *; omega
+    simp only [sFn] at *; omega_using [this]
   have hh : Hdr t.mem L.B L.w mi := frame_hdr hg.hdr f
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i := by
     rw [o.word (by decide) (by decide)]; exact idx
@@ -54,7 +54,7 @@ theorem inner_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps
   simp only [Nat.mul_zero,Nat.add_zero] at jdx
   refine WP.mono (AdxRect8.row_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hi ha hb ha1 ha2 hb1 hb2
     L.hwN L.hn idx jdx (by rw [carry]; rfl)) fun t ht => ?_
-  have ptr := ht.endPtr.resolve_left (by have := L.hn; omega)
+  have ptr := ht.endPtr.resolve_left (by have := L.hn; omega_using [this])
   have wn := L.hwN
   rw [j0,Nat.add_zero] at ptr
   rw [j0,Nat.zero_add] at wn
@@ -124,10 +124,10 @@ theorem row_loop_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈
   intro s t ts tt s' t' ⟨⟨L,k⟩,⟨hk,mi,gs,vs,is⟩,⟨_,mj,gt,vt,it⟩⟩ es et
   dsimp only at hk
   have wn := L.hwN
-  let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,0,L.n,L.hZ,L.hw,by omega,by omega,L.hn⟩
+  let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,8*k,0,L.n,L.hZ,L.hw,by omega_using [hk, wn],by omega_using [wn],L.hn⟩
   apply row_ct pa pb ha hb ha1 ha2 hb1 hb2 hS s t ts tt s' t' ?_ es et
-  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is⟩,
-    ⟨L.n-k-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it⟩
+  exact ⟨R,⟨⟨L.n-k-1,by dsimp [R]; omega_using [hk, wn]⟩,rfl,⟨mi,gs⟩,vs,is⟩,
+    ⟨L.n-k-1,by dsimp [R]; omega_using [hk, wn]⟩,rfl,⟨mj,gt⟩,vt,it⟩
 
 theorem row_loop_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (ha : a<8) (hb : b<8)
@@ -139,18 +139,18 @@ theorem row_loop_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈
   obtain ⟨mi,hg,hv,idx⟩ := h
   have wn := L.hwN
   refine WP.mono (row_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hwN L.hn
-    (by omega : L.w=8*k+8+8*(L.n-k-1)) ha hb ha1 ha2 hb1 hb2 idx)
+    (by omega_using [hk, wn] : L.w=8*k+8+8*(L.n-k-1)) ha hb ha1 ha2 hb1 hb2 idx)
     fun t ⟨zt,it,_,ht,ft,kt⟩ => ?_
   have good : Good t L.B L.Z L.w mi := ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,ht⟩
   have hv' := frame_ops hv ft
   refine ⟨?_,fun _ => ⟨mi,good,hv',?_⟩,fun _ => ⟨⟨mi,good⟩,hv'⟩⟩
   · simp only [eval,zt,Option.map_some]
     by_cases he : k+1=L.n
-    · simp only [show 8*k+8=L.w by omega,decide_true,Bool.not_true,
-        show ¬(k+1<L.n) by omega,decide_false]
-    · simp only [show ¬(8*k+8=L.w) by omega,decide_false,Bool.not_false,
-        show k+1<L.n by omega,decide_true]
-  · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+    · simp only [show 8*k+8=L.w by omega_using [wn, he],decide_true,Bool.not_true,
+        show ¬(k+1<L.n) by omega_using [he],decide_false]
+    · simp only [show ¬(8*k+8=L.w) by omega_using [wn, he],decide_false,Bool.not_false,
+        show k+1<L.n by omega_using [hk, he],decide_true]
+  · simpa only [show 8*(k+1)=8*k+8 by omega_using []] using it
 
 theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : GoodV ps L s) :
     WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s
@@ -158,7 +158,7 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Good
   obtain ⟨⟨mi,hg⟩,hv⟩ := h
   have hZ := L.hZ
   have iZ : 8*sFn 12+8 ≤ L.Z := by
-    have := hdr_lt_slot L.w 8 (show sFn 12<32 by decide); omega
+    have := hdr_lt_slot L.w 8 (show sFn 12<32 by decide); omega_using [hZ, this]
   have nowrap := hg.scr.nowrap
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off L.B (8*sFn 12)) (0 : BitVec 64)) ?_ rfl)
     fun t ⟨mt,kt⟩ => ?_
@@ -167,7 +167,7 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Good
   have ft : Frm L.B (ranges L.w) s.mem t.mem := by
     intro x hx
     apply ot x
-    have := hx (8*sFn 12,32) (by simp [ranges]); omega
+    have := hx (8*sFn 12,32) (by simp [ranges]); omega_using [this]
   exact ⟨L.hn,mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr ft⟩,
     frame_ops hv ft,by rw [mt,word_writeW_self]; rfl⟩
 

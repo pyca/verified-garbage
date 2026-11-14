@@ -91,7 +91,7 @@ theorem dirCore_ka (d : Dir) : (dirCore d).ka = 2 := rfl
 theorem scrIn_of {s : State} {B : BitVec 32} {d : Dir}
     (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total) : ScrIn s.wr B :=
   have hf := hs.fit
-  ⟨⟨682, by rw [slots_eq]; decide, hf, hs.wr⟩, by rw [dirCore_total] at hf; rw [slots_eq]; omega⟩
+  ⟨⟨682, by rw [slots_eq]; decide, hf, hs.wr⟩, by rw [dirCore_total] at hf; rw [slots_eq]; omega_using [hf]⟩
 
 /-- Regions within the core's slots are within the modes' scratch buffer. -/
 theorem sub_scr {s : State} {B : BitVec 32} {d : Dir} (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)
@@ -108,20 +108,20 @@ theorem slot_keep_core {d : Dir} {B : BitVec 32} (hfit : B.toNat + 4 * (dirCore 
     m'.readW (wordAddr B k) 32 = m.readW (wordAddr B k) 32 := by
   rw [dirCore_total] at hfit
   rw [slots_eq] at hk2
-  rw [slot_addr (by omega)]
+  rw [slot_addr (by omega_using [hfit, hk2])]
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   rcases hd r hr with h | h
-  · exact h.symm.sub_right (VG.Offset.sub_base _ (by simp only [dirCore, slots_eq]; omega)) |>.symm
+  · exact h.symm.sub_right (VG.Offset.sub_base _ (by simp only [dirCore, slots_eq]; omega_using [hk2])) |>.symm
   · refine Region.Disjoint.sub_right ?_ h
-    exact VG.Offset.disjoint _ (.inr (by simp only [dirCore, tailSlot_eq] at hk1 ⊢; omega))
-      (by omega) (by simp only [dirCore, tailSlot_eq]; omega)
+    exact VG.Offset.disjoint _ (.inr (by simp only [dirCore, tailSlot_eq] at hk1 ⊢; omega_using [hk1]))
+      (by omega_using [hk2]) (by simp only [dirCore, tailSlot_eq]; omega_using [])
 
 theorem entry_keep {d : Dir} {B : BitVec 32} (hfit : B.toNat + 4 * (dirCore d).total ≤ 2 ^ 32)
     {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (blkRegion (dirCore d) B))
     {i : Nat} (hi : i < 34) {k : BitVec 64} (h : EntryOk m B i k) : EntryOk m' B i k :=
-  h.congr fun j hj => slot_keep_core hfit hf hd (by rw [keySlot_eq, tailSlot_eq]; omega)
-    (by rw [keySlot_eq, slots_eq]; omega)
+  h.congr fun j hj => slot_keep_core hfit hf hd (by rw [keySlot_eq, tailSlot_eq]; omega_using [])
+    (by rw [keySlot_eq, slots_eq]; omega_using [hi, hj])
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec 64)} (h : KeyArgs s rs k)
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) :
@@ -138,7 +138,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec
     simp only [schedWords]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega
+    have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hRv, hi]
     exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base _ hl)).symm
 
 /-- `cmpRounds`: Z when there are 18 rounds. -/
@@ -148,7 +148,7 @@ theorem cmpRounds_z {s : State} {R : Nat} (hR : R = 18 ∨ R = 24) (hin : InRegi
       (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s', e, z, o, m, rd, wr⟩ := cmpRounds_ok s hin
   refine ⟨s', e, ?_, o, m, rd, wr⟩
-  rw [z, hv, show (18 : BitVec 32) = BitVec.ofNat 32 18 from rfl, ofNat32_sub_beq (by omega) (by decide)]
+  rw [z, hv, show (18 : BitVec 32) = BitVec.ofNat 32 18 from rfl, ofNat32_sub_beq (by omega_using [hR]) (by decide)]
 
 theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k : Nat × List (BitVec 64)}
     (hB : s.gpr VG.Impl.Modes.X86.sb = B) (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)
@@ -177,12 +177,12 @@ theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k :
   show WP isa (.seq (.block cmpRounds) (.ite .e (keys d 3) (keys d 4))) s _
   refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
-  have hg : g = 3 ∨ g = 4 := by omega
+  have hg : g = 3 ∨ g = 4 := by omega_using [hRv, hgR]
   refine WP.mono (M := isa) (Q := KeysPost s₂ B p g (permOf d g))
     (WP.ite (decide (R = 18)) ((eval_e s₂).trans hz) (fun h => ?_) (fun h => ?_)) fun s₃ k₃ => ?_
-  · obtain rfl : g = 3 := by simp at h; omega
+  · obtain rfl : g = 3 := by simp at h; omega_using [hgR, h]
     exact keys_wp d (Or.inl rfl) hpre harg hparg
-  · obtain rfl : g = 4 := by simp at h; omega
+  · obtain rfl : g = 4 := by simp at h; omega_using [hRv, hgR, h]
     exact keys_wp d (Or.inr rfl) hpre harg hparg
   have b₃ : s₃.gpr sb = B := k₃.pre.base
   have esp₃ : s₃.gpr .esp = s.gpr .esp := by rw [k₃.regs _ (by decide) (by decide), esp₂]
@@ -196,7 +196,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k :
   · rw [hgR] at hi ⊢
     have hpl : permOf d g i < 8 * g + 2 := dirPerm_lt (specDir d) hi
     have hl : permOf d g i < Spec.Camellia.scheduleLength R := by
-      simp only [Spec.Camellia.scheduleLength]; omega
+      simp only [Spec.Camellia.scheduleLength]; omega_using [hgR, hpl]
     have := k₃.ent i hi
     rw [mem₂] at this
     rw [hws, schedWords_getD _ _ hl]
@@ -238,14 +238,14 @@ theorem holds_of_keeps {R : Nat} {m m' : Mem} {B : BitVec 32} {w : List (BitVec 
     (h : Proof.Camellia.Prepared.Holds layout m (B.setWidth 64) R w d)
     (hk : Proof.Camellia.Prepared.Keeps (B.setWidth 64) wsWords layout.cryptScratch m m') :
     Proof.Camellia.Prepared.Holds layout m' (B.setWidth 64) R w d := fun r hr i hi => by
-  have hg : R / 6 ≤ 4 := by omega
+  have hg : R / 6 ≤ 4 := by omega_using [hR]
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_singleton] at hr'; subst hr'
   dsimp only at hi ⊢
-  rw [hk (416 + i) (by simp only [wsWords, slots_eq]; omega) (by
+  rw [hk (416 + i) (by simp only [wsWords, slots_eq]; omega_using [hR, hi]) (by
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    rw [keySlot_eq, grpSlot_eq]; omega)]
+    rw [keySlot_eq, grpSlot_eq]; omega_using [hR, hi])]
   exact h _ hr i hi
 
 theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Nat × List (BitVec 64)}
@@ -266,9 +266,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Nat × List (BitVec 
   simp only at hRv he ha ⊢
   have hfB := hs.fit
   rw [dirCore_total] at hfB hst
-  have hfit' : B.toNat + 4 * slots ≤ 2 ^ 32 := by rw [slots_eq]; omega
+  have hfit' : B.toNat + 4 * slots ≤ 2 ^ 32 := by rw [slots_eq]; omega_using [hfB]
   have hst' : Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨B.setWidth 64, 4 * slots⟩ :=
-    hst.sub_right (Region.sub_prefix (by rw [slots_eq]; omega))
+    hst.sub_right (Region.sub_prefix (by rw [slots_eq]; omega_using []))
   have hH := holds_of_ready hfit' hRv he
   show WP isa cryptCall s _
   refine WP.mono (cryptCall_wp hB (scrIn_of hs) hRv he ha.1 ha.2.1 hst' hesp)
@@ -282,7 +282,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Nat × List (BitVec 
     · exact ha.2.1
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (ha.2.2 _ hs.wr).sub_right (Region.sub_prefix (by simp only [dirCore_total]; rw [slots_eq]; omega))
+      · exact (ha.2.2 _ hs.wr).sub_right (Region.sub_prefix (by simp only [dirCore_total]; rw [slots_eq]; omega_using []))
       · exact hsa.symm
   · have ha' : blkAddr (dirCore d) B j = B.setWidth 64 + BitVec.ofNat 64 (4 * tailSlot) + BitVec.ofNat 64 (16 * j) := rfl
     rw [dirCore_bw, show 4 * 4 = 16 from rfl, dirCipher_blockFn, bytesAt_eq_blockAt, ha', VG.Offset.add_add,
@@ -297,13 +297,13 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨B.setWidth 64, 4 * (dirCore d).total⟩ ∧
     Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨s.ea (argOp 1), 4⟩
   cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Camellia.cipher, Spec.Camellia.invCipher, dirCore]
-  layout := ⟨by simp only [dirCore]; decide, .inr rfl, by simp only [dirCore, slots_eq, tailSlot_eq]; omega,
-    by simp only [dirCore]; omega⟩
+  layout := ⟨by simp only [dirCore]; decide, .inr rfl, by simp only [dirCore, slots_eq, tailSlot_eq]; omega_using [],
+    by simp only [dirCore]; omega_using []⟩
   keyArgs_congr h e r w _ f := keyArgs_congr h e r w f
   ready_frame {_ _ _ k _} h e r w _ hf hs hd := by
     obtain ⟨⟨⟨hR, he⟩, ha⟩, hfit, hst, hsa⟩ := h
-    have hg4 : 8 * (k.1 / 6) + 2 ≤ 34 := by omega
-    exact ⟨⟨⟨hR, fun i hi => entry_keep hfit hf hd (by omega) (he i hi)⟩, ha.frame e r w hf hs⟩, hfit,
+    have hg4 : 8 * (k.1 / 6) + 2 ≤ 34 := by omega_using [hR]
+    exact ⟨⟨⟨hR, fun i hi => entry_keep hfit hf hd (by omega_using [hR, hi]) (he i hi)⟩, ha.frame e r w hf hs⟩, hfit,
       by rw [e]; exact hst, by rw [e, ea_arg e, ← ea_arg rfl]; exact hsa⟩
   prepare_wp {s _ _ _} hB hs hR hk _ := WP.mono (prepare_wp d hB hs hR hk) fun s' ⟨r, h⟩ => by
     obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hst, hsa⟩ := hk

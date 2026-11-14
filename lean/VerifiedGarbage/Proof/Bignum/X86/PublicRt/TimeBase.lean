@@ -57,7 +57,7 @@ theorem agreeA {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s₁ 
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (show arg s₁ _ = arg s₂ _ from
-      (h₁.stack _ (by omega)).value.trans (h₂.stack _ (by omega)).value.symm)
+      (h₁.stack _ (by omega_using [hk])).value.trans (h₂.stack _ (by omega_using [hk])).value.symm)
 
 theorem argByte_alloc {s : State} (low : 36 ≤ (s.gpr .esp).toNat) (k : Nat) :
     VG.X86.Taint.argByte (allocFrame 36 s) (36 + k) = VG.X86.Taint.argByte s k := by
@@ -71,14 +71,14 @@ theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
     rw [allocFrame_esp, sub_toNat low]
   refine ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨?_, fun r hr => ?_⟩, fun _ h => (List.not_mem_nil h).elim, ?_, fun p hp => ?_, fun h => absurd h (by decide)⟩
-  · show _ + 36 + 44 ≤ _; omega
+  · show _ + 36 + 44 ≤ _; omega_using [f, eN]
   · rw [show VG.X86.Taint.depth τF.stk = 36 + 0 from rfl, argByte_alloc low, VG.X86.Taint.argByte, BitVec.add_zero]
     rw [allocFrame_wr, List.mem_cons] at hr
     rcases hr with rfl | hr
     · rw [VG.X86.Taint.sub_setWidth low]
       exact (Offset.base_disjoint_below _ (by decide)).symm.symm
     · exact A.2 r hr
-  · show _ + 36 < _; omega
+  · show _ + 36 < _; omega_using [eN]
   · simp only [τF, VG.X86.Taint.frameList, List.mem_singleton] at hp
     subst hp
     simp only [allocFrame_wr, allocFrame_esp, List.getElem?_cons_zero, addr, BitVec.add_zero]

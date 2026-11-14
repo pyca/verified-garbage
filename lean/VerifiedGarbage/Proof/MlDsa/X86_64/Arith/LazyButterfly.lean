@@ -66,7 +66,7 @@ theorem bflyInv_ok : VBflyOkW bInvC vibflyLazy opInv := by
     rw [dword_paddd _ _ hi, BitVec.toNat_add, dword_psubd _ _ hi, BitVec.toNat_sub, hx i hi, hy i hi, hb]
     simp only [Fin.val_sub, Fin.val_add, show (1072693376 : Word).val = 1072693376 from rfl]
     have := (x i).isLt; have := (y i).isLt
-    omega
+    omega_using []
   refine ⟨?_, ?_, by xonly⟩
   · change DLanes (XBinOp.eval .paddd (s.xmm .xmm0) (s.xmm .xmm1)) _
     intro i hi

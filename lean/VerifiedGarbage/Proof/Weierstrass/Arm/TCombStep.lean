@@ -41,7 +41,7 @@ theorem step_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
   refine WP.seq (WP.mono_syms dec fun u ⟨gu,ku⟩ syu => ?_)
   have iu : CurveInputs K C tbl base T k u := i.keep h.layout h.bitsLow h.bitsHigh hd ku.keep
     (by decide) (by rw [ku.mem]; exact Unch.refl _ _ _) syu
-  refine WP.seq (WP.mono_syms (entry_ok K h hC iu (by omega) hk gu hd)
+  refine WP.seq (WP.mono_syms (entry_ok K h hC iu (by omega_using [hj, hJ]) hk gu hd)
     fun v ⟨kv,ov,rv,lv,pv⟩ syv => ?_)
   have iv : CurveInputs K C tbl base T k v := iu.keep h.layout h.bitsLow h.bitsHigh hd kv (by decide) ov syv
   have rlt : ∀ x ∈ [K.L.R.x,K.L.R.y,K.L.R.z],wordsVal v.mem base x K.L.M.n<C.p := by
@@ -64,7 +64,7 @@ theorem step_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
     fun a ⟨ka,oa,la,ea⟩ => ?_)
   have ga : a.gpr .r11=BitVec.ofNat 32 (j-1) := by
     rw [ka.gpr .r11 (by decide),kv.gpr .r11 (by decide),gu]
-  refine wp_testCounter (by have := h.J32; omega) ga fun t ft zt => WP.block_nil (fun syt => ?_)
+  refine wp_testCounter (by have := h.J32; omega_using [hJ, this]) ga fun t ft zt => WP.block_nil (fun syt => ?_)
   have keep : Rest powClob s t := (ku.keep.mono (by simp [powClob])).trans
     ((kv.mono (by simp [VG.Proof.Weierstrass.Arm.Mont.callClob,powClob,VG.Proof.Mont.Arm.clob])).trans
       ((ka.mono (by simp [powClob,VG.Proof.Mont.Arm.clob])).trans (ft.rest _)))
@@ -88,8 +88,8 @@ theorem step_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
     simp only [Eb,enc_9,enc_10]
     rw [iv.coeffA,iv.coeffB,toM_mont h.unit,toM_mont h.unit]
     simp only [rcbAddC,tmv,TCombCfg.Q,ptAt,enc_6,enc_7,enc_8,Bool.false_eq_true,↓reduceIte]
-  have eqj : j-1+1=j := by omega
-  have sum := combW_add hC hG (w := K.w) (k := k) (j := j-1) (J := K.J) (by omega)
+  have eqj : j-1+1=j := by omega_using [hj]
+  have sum := combW_add hC hG (w := K.w) (k := k) (j := j-1) (J := K.J) (by omega_using [hj, hJ])
   change Spec.Weierstrass.add _ (signedPtW C K.w k (j-1))=_ at sum
   rw [eqj] at sum
   rw [sum] at pa

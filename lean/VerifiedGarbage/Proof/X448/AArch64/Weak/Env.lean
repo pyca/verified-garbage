@@ -45,15 +45,15 @@ abbrev Keep := VG.Proof.X448.AArch64.Keep
 theorem slot_bound (i : Index) : Slot (slot i.val) := by
   simp only [Slot, slot, ACC]
   have := i.isLt
-  omega
+  omega_using []
 
 theorem slot_aligned (i : Index) : slot i.val % 8 = 0 := by
-  simp only [slot]; omega
+  simp only [slot]; omega_using []
 
 theorem slot_sep {i j : Index} (h : i ≠ j) : slot i.val + 128 ≤ slot j.val ∨ slot j.val + 128 ≤ slot i.val := by
   have hn : i.val ≠ j.val := fun he => h (Fin.ext he)
   simp only [slot]
-  omega
+  omega_using [hn]
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base (slot o.val) m m') :
     E m' base = Function.update (E m base) o (F m' base (slot o.val)) := by
@@ -63,7 +63,7 @@ theorem E_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base (slot
   · rw [Function.update_of_ne hi]
     simp only [E, F]
     exact congrArg toFe (valN_congr (fun j hj =>
-      h.limbs (slot_sep hi) (slot_bound i) (by omega : j < 16)))
+      h.limbs (slot_sep hi) (slot_bound i) (by omega_using [hj] : j < 16)))
 
 theorem bounded_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base (slot o.val) m m')
     (hm : BoundedEnv m base) (ho : Bounded m' base (slot o.val)) : BoundedEnv m' base := by
@@ -71,7 +71,7 @@ theorem bounded_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base
   by_cases hi : i = o
   · subst i; exact ho
   · intro j hj
-    rw [h.limbs (slot_sep hi) (slot_bound i) (by omega : j < 16)]
+    rw [h.limbs (slot_sep hi) (slot_bound i) (by omega_using [hj] : j < 16)]
     exact hm i j hj
 
 def opMul (o a b : Index) (e : Env) : Env := Function.update e o (e a * e b)
@@ -144,7 +144,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.me
     have ey := slot_sep hiy
     have hi := slot_bound i
     change (word t.mem base (slot i.val + 8 * j)).toNat = _
-    rw [tm.word (by omega) (by omega) (by change slot i.val + 128 ≤ 3584 at hi; omega)]
+    rw [tm.word (by omega_using [hj, ex]) (by omega_using [hj, ey]) (by change slot i.val + 128 ≤ 3584 at hi; omega_using [hj, hi])]
   have fx : E t.mem base x = if sw then E s.mem base y else E s.mem base x := by
     cases sw <;> apply congrArg toFe <;> apply valN_congr <;> exact tx
   have fy : E t.mem base y = if sw then E s.mem base x else E s.mem base y := by
@@ -156,7 +156,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.me
   · intro p hp _
     have hx := x.isLt
     have hy := y.isLt
-    apply tm p <;> simp only [slot] <;> omega
+    apply tm p <;> simp only [slot] <;> omega_using [hp]
   · intro i j hj
     by_cases hix : i = x
     · subst i; rw [tx j hj]; cases sw <;> exact hb _ j hj

@@ -33,16 +33,16 @@ theorem loadPrimeBytes_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : S
     (hvalue : Spec.Rsa.os2ip bs = P.N) (hsrc : Src s P.B P.Z cp bs) :
     WP isa (Impl.Dsa.X86_64.Generation.loadPadded 0 20 18) s fun t =>
       PrimeInput P mi used t ∧ Outside P.B (slot P.w 0) (8 * (P.w + 2)) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hZ : slot P.w 8 ≤ P.Z := Nat.le_trans (by unfold slot; omega) P.room
-  refine WP.mono (loadPadded_ok h.good hZ (by have := P.dims.w4; omega)
-    (by have := P.dims.w128; omega) (by decide : 0 < 8)
+  have hZ : slot P.w 8 ≤ P.Z := Nat.le_trans (by unfold slot; omega_using []) P.room
+  refine WP.mono (loadPadded_ok h.good hZ (by have := P.dims.w4; omega_using [this])
+    (by have := P.dims.w128; omega_using [this]) (by decide : 0 < 8)
     (by decide : 20 < 32) (by decide : 18 < 32) hptr
-    (by rw [hlen]; exact h.len) hsrc (by rw [hlen]; have := P.len2; omega)
-    (by rw [hlen]; have := P.lenDraw; have := P.drawMax; omega)
+    (by rw [hlen]; exact h.len) hsrc (by rw [hlen]; have := P.len2; omega_using [this])
+    (by rw [hlen]; have := P.lenDraw; have := P.drawMax; omega_arith)
     (by rw [hlen]; exact P.lenWords)) fun t ⟨ht, hn, hf, hk⟩ => ?_
   have hh : ∀ i < 32, word t.mem P.B (8 * i) = word s.mem P.B (8 * i) := by
     intro i hi
-    exact hf.word (Or.inl (by simp only [slot, hdrBytes]; omega)) (by omega)
+    exact hf.word (Or.inl (by simp only [slot, hdrBytes]; omega_using [hi])) (by omega_using [hi])
   refine ⟨⟨ht, hn.trans hvalue, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, hf, hk⟩
   · exact (hh kOut (by decide)).trans h.ptr
   · exact (hh kUsedP (by decide)).trans h.len
@@ -56,7 +56,7 @@ theorem loadPrimeBytes_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : S
     apply hf a
     right
     have hr : slot P.w 0 + 8 * (P.w + 2) ≤ P.Z := Nat.le_trans (slot_le (by decide : 0 < 8)) hZ
-    omega
+    omega_using [ha, hr]
   · intro i hi; rw [hk.2.2]; exact h.writable i hi
   · exact (hk.gpr (by decide)).trans h.stack
 

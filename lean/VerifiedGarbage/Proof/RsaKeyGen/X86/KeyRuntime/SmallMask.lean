@@ -31,10 +31,10 @@ theorem smallMask_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
     fun v ⟨hv, Ov, subtract, borrowBit, Kv⟩ => ?_)
   rw [Du, constant] at subtract
   have borrow := VG.Proof.Rsa.borrow_iff subtract (val32_lt _ _ _ _) borrowBit
-  have borrowOne : (v.gpr .ebx).toNat = 1 ↔ num s.mem B n aD ≤ 2 ^ (16 * n) := by omega
+  have borrowOne : (v.gpr .ebx).toNat = 1 ↔ num s.mem B n aD ≤ 2 ^ (16 * n) := by omega_using [borrowBit, borrow]
   have maskV : slot v.mem B kOk = slot s.mem B kOk :=
     (Ov.slot (by decide) (by simp)).trans (Ou.slot (by decide) (by simp))
-  refine wp_movS (readSrc_sc hv.old.workspace (by unfold kOk hdr at *; omega)) fun w W _ => ?_
+  refine wp_movS (readSrc_sc hv.old.workspace (by unfold kOk hdr at *; omega_using [head])) fun w W _ => ?_
   refine wp_logicS (.inl rfl) rfl fun a A => ?_
   refine wp_cmpS rfl fun t T flag => WP.block_nil ?_
   have Ktail : Keeps [.eax] v t := (W.keeps.trans A.keeps).trans (T.keeps _)

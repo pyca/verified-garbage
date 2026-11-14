@@ -65,7 +65,7 @@ theorem restore_noSp : NoSp (.block restoreRegs : Prog isa) := NoSp.of_all (by d
 /-- The word `i` of the push, read through `esp` after it. -/
 theorem push_word {s : State} (hsp : 16 ≤ (s.gpr .esp).toNat) {i : Nat} (hi : i < 4) :
     (pushed savedRegs s).mem.readW (addr ((pushed savedRegs s).gpr .esp) (4 * i)) 32 =
-      s.gpr (savedRegs[3 - i]'(by simp only [savedRegs, List.length_cons, List.length_nil]; omega)) :=
+      s.gpr (savedRegs[3 - i]'(by simp only [savedRegs, List.length_cons, List.length_nil]; omega_using [])) :=
   pushed_word pushRegs_noSp (by simpa [savedRegs] using hsp) (by simpa [savedRegs] using hi)
 
 theorem restore_ok (t : State) (hr : ∀ d < 12, d % 4 = 0 → InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) d) 4) :
@@ -108,7 +108,7 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {
     {W : List Region} (hW : ∀ r ∈ W, (saveRegion s).Disjoint r ∧ (retRegion s).Disjoint r) {Q : BitVec 32 → Mem → Prop}
     (hb : WP isa body (entered F s) fun u => Frame W (entered F s).mem u.mem ∧ Q (u.gpr .eax) u.mem) :
     WP isa (wrap F body) s fun t => abiPreserved s t ∧ Q (t.gpr .eax) t.mem := by
-  have h16 : 16 ≤ (s.gpr .esp).toNat := by omega
+  have h16 : 16 ≤ (s.gpr .esp).toNat := by omega_using [hsp]
   have pE : ((pushed savedRegs s).gpr .esp).toNat = (s.gpr .esp).toNat - 16 := by
     rw [pushed_esp]; exact sub_toNat (by simpa [savedRegs] using h16)
   have hinner : NoSp (.seq (.frame (.alloc F) body (.free F)) (.block restoreRegs) : Prog isa) := by
@@ -122,37 +122,37 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {
   unfold wrap
   refine WP.frame (by decide) pushRegs_noSp (by decide) (by simpa [savedRegs] using h16) hinner ?_
   refine WP.seq ?_
-  refine WP.frameAlloc hF.1 hF.2.1 hF.2.2 (by omega) hbs ?_
+  refine WP.frameAlloc hF.1 hF.2.1 hF.2.2 (by omega_using [hsp, pE]) hbs ?_
   refine WP.mono (WP.rdwrSp hbs hb) ?_
   rintro u ⟨⟨frame, result⟩, rdU, wrU, spU⟩
   have spF : (freed F u).gpr .esp = (pushed savedRegs s).gpr .esp := by
     rw [freed_esp, spU, allocFrame_esp]; exact BitVec.sub_add_cancel _ _
   have wrF : (freed F u).wr = (pushed savedRegs s).wr := by
     rw [freed_wr, wrU, allocFrame_wr]; rfl
-  have pfit : ((pushed savedRegs s).gpr .esp).toNat + 20 ≤ 2 ^ 32 := by omega
+  have pfit : ((pushed savedRegs s).gpr .esp).toNat + 20 ≤ 2 ^ 32 := by omega_using [hfit, pE]
   have top : (saveRegion s).base = ((pushed savedRegs s).gpr .esp).setWidth 64 := by
     rw [pushed_esp]; rfl
   have topAddr : ∀ d < 20, addr ((pushed savedRegs s).gpr .esp) d = (saveRegion s).base + BitVec.ofNat 64 d := by
-    intro d hd; rw [top]; exact addr_eq (by omega)
+    intro d hd; rw [top]; exact addr_eq (by omega_using [pfit, hd])
   have read : ∀ d < 12, d % 4 = 0 → InRegions ((freed F u).rd ++ (freed F u).wr) (addr ((freed F u).gpr .esp) d) 4 := by
     intro d hd _
-    rw [wrF, spF, pushed_wr, topAddr d (by omega)]
+    rw [wrF, spF, pushed_wr, topAddr d (by omega_using [hd])]
     refine ⟨_, List.mem_append_right _ List.mem_cons_self, ?_⟩
     have e : (s.gpr .esp - BitVec.ofNat 32 (4 * savedRegs.length)).setWidth 64 = (saveRegion s).base := rfl
     simp only [below, e]
-    exact Offset.contains_base _ (by simp only [savedRegs, List.length_cons, List.length_nil]; omega) (by omega)
+    exact Offset.contains_base _ (by simp only [savedRegs, List.length_cons, List.length_nil]; omega_using [hd]) (by omega_using [hd])
   have entW : ∀ d < 16, d % 4 = 0 → u.mem.readW (addr ((pushed savedRegs s).gpr .esp) d) 32 =
       (pushed savedRegs s).mem.readW (addr ((pushed savedRegs s).gpr .esp) d) 32 := by
     intro d hd _
-    rw [topAddr d (by omega)]
-    exact frame.readW (r := saveRegion s) (Offset.contains_base _ (by omega) (by omega))
+    rw [topAddr d (by omega_using [hd])]
+    exact frame.readW (r := saveRegion s) (Offset.contains_base _ (by omega_arith) (by omega_using [hd]))
       (fun r hr => (hW r hr).1) (by decide)
   refine WP.mono (restore_ok (freed F u) read) ?_
   rintro t ⟨edi, esi, ebp, spT, eaxT, memT, -, -⟩
   have words : ∀ i < 4, t.mem.readW (addr (t.gpr .esp) (4 * i)) 32 =
-      s.gpr (savedRegs[3 - i]'(by simp only [savedRegs, List.length_cons, List.length_nil]; omega)) := by
+      s.gpr (savedRegs[3 - i]'(by simp only [savedRegs, List.length_cons, List.length_nil]; omega_using [])) := by
     intro i hi
-    rw [memT, freed_mem, spT, spF, entW (4 * i) (by omega) (by omega)]
+    rw [memT, freed_mem, spT, spF, entW (4 * i) (by omega_using [hi]) (by omega_using [])]
     exact push_word h16 hi
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
@@ -175,8 +175,8 @@ theorem wrap_ok {F : Nat} (hF : FrameOk F) {body : Prog isa} (hbs : NoSp body) {
     intro q hq
     simp only [List.mem_singleton] at hq; subst hq
     simp only [below, savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.base_disjoint_below _ (n := 16) (k := 4) (by omega)
+    rw [Taint.sub_setWidth (by omega_using [hsp])]
+    exact Offset.base_disjoint_below _ (n := 16) (k := 4) (by omega_using [])
   · rw [popped_gpr _ _ _ (by decide) (by decide), popped_mem, eaxT, memT, freed_mem,
       freed_gpr _ _ (by decide)]
     exact result

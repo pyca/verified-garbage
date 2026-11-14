@@ -125,10 +125,10 @@ def ValidatingCall.shape (c : ValidatingCall) : ShapePublic where
   qBytes := c.input.components.q
   digestLen := 0
   extentBound := by decide
-  pPositive := by rw [c.input.components.pLength]; have := c.layout.widths; change 0 < c.layout.pLen; omega
-  qPositive := by rw [c.input.components.qLength]; have := c.layout.widths; change 0 < c.layout.qLen; omega
-  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega
-  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega
+  pPositive := by rw [c.input.components.pLength]; have := c.layout.widths; change 0 < c.layout.pLen; omega_using [this]
+  qPositive := by rw [c.input.components.qLength]; have := c.layout.widths; change 0 < c.layout.qLen; omega_using [this]
+  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega_using [this]
+  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega_using [this]
   digestBound := by decide
 
 theorem ValidatingAgrees.shape {reference c : ValidatingCall} (h : ValidatingAgrees reference c) :
@@ -151,7 +151,7 @@ theorem ValidatingEntered.context {reference : ValidatingCall} {s : State} (h : 
   have hqs : Src s c.input.base usedBytes (c.layout.fields .q) c.input.components.q := by
     change Src s c.input.base usedBytes (c.original.gpr .x0 + c.original.gpr .x2) c.input.components.q
     rw [c.pre.pLength]
-    exact source_slice hkey (by rw [c.input.keyLength]; omega)
+    exact source_slice hkey (by rw [c.input.keyLength]; omega_using [])
   refine ⟨c.pre.scratch.congr he.keep.wr, he.base, he.fields .p (by decide) (by decide),
     he.fields .q (by decide) (by decide), ?_, ?_, he.fields .digestLen (by decide) (by decide), hps, hqs⟩
   · change word s.mem c.input.base Field.pLen.offset = BitVec.ofNat 64 c.input.components.p.length
@@ -203,7 +203,7 @@ theorem ValidatingShaped.initialization {reference : ValidatingCall} {s : State}
   have hqs' : Src s c.layout.base usedBytes (c.layout.fields .q) c.input.components.q := by
     change Src s c.input.base usedBytes (c.original.gpr .x0 + c.original.gpr .x2) c.input.components.q
     rw [c.pre.pLength]
-    exact source_slice hkey (by rw [c.input.keyLength]; omega)
+    exact source_slice hkey (by rw [c.input.keyLength]; omega_using [])
   rw [hag.layout] at hf hr hscr hps' hqs'
   rw [hag.pb] at hps'
   rw [hag.qb] at hqs'

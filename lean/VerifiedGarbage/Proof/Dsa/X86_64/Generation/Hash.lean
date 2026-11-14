@@ -40,7 +40,7 @@ theorem hash_bytes_frame {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK
   have hd : G.D ≤ 64 := by
     have hh := hG.hDF
     have hh' := hG.hF
-    omega
+    omega_using [hh, hh']
   apply List.ext_getElem
   · rw [bytesAt_length, hsize]
   · intro i hi hi'
@@ -48,7 +48,7 @@ theorem hash_bytes_frame {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
     change t.mem (off S oDig + BitVec.ofNat 64 i) = _
     rw [show off S oDig + BitVec.ofNat 64 i = off S (oDig + i) by simp [off, BitVec.ofNat_add, BitVec.add_assoc],
-      Rt.scr _ (by unfold oDig oRsa; omega), hb i hiD]
+      Rt.scr _ (by unfold oDig oRsa; omega_using [hd, hiD]), hb i hiD]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi', Option.getD_some]
     rfl
 

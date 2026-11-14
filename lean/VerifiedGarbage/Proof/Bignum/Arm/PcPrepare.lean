@@ -50,11 +50,11 @@ theorem pcPrepare_frame_ready (s : State) {base dst src : BitVec 32} {len k : Na
   have rz : Rest roundClobbers s z := rv.trans (restZ.mono (by decide))
   have frameZ : Frame [⟨State.addr base, 8 * len⟩] s.mem z.mem := by rw [memZ]; exact frameV
   have stackZ := h.stack.after_workspace frameZ rz
-  have inputZ := rsa_bytes_frame frameZ (by have := h.maxLength; omega : k < 2 ^ 64)
+  have inputZ := rsa_bytes_frame frameZ (by have := h.maxLength; omega_using [this] : k < 2 ^ 64)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sourceSeparate)
   refine ⟨?_, frameZ⟩
   refine ⟨⟨⟨h.workspace.congr rz.wr, ?_, ?_, ?_, ?_, ?_, stackZ.savedBase⟩,
-    by have := h.minLength; omega, bytesFit, h.sourceFits, ?_, h.sourceSeparate, sourceZ, countZ, ?_, ?_⟩,
+    by have := h.minLength; omega_using [this], bytesFit, h.sourceFits, ?_, h.sourceSeparate, sourceZ, countZ, ?_, ?_⟩,
     h.toPcBuffers.congr rz, stackZ⟩
   · rw [memZ]; exact layoutV
   · rw [memZ]; exact widthV
@@ -76,7 +76,7 @@ theorem pcPrepare_public_ready (s : State) {base dst src : BitVec 32} {len k : N
       PcPrepared base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb := by
   refine WP.mono (pcPrepare_frame_ready s h) ?_
   rintro t ⟨prepared, frame⟩
-  exact ⟨prepared, (rsa_bytes_frame frame (by have := h.maxLength; omega : k < 2 ^ 64)
+  exact ⟨prepared, (rsa_bytes_frame frame (by have := h.maxLength; omega_using [this] : k < 2 ^ 64)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sourceSeparate)).trans bytes⟩
 
 end VG.Proof.Bignum.Arm

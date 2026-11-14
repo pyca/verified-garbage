@@ -122,8 +122,8 @@ theorem aesenc_st (v k : BitVec 128) (rk : List Byte) (hk : ∀ i < 16, byte k i
   rw [getD_st _ hi, getD_addRoundKey _ _ hi, getD_mixColumns _ hi, ← hk i hi]
   simp only [reduceXBinOpEval, byte_xor]
   rw [byte_mixColumns _ hi]
-  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
-  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega
+  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega_using [hi]
+  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega_using []
   simp only [byte_mapBytes _ _ (hr _), getD_shiftRows _ (hr _), byte_shiftRows _ (hr _), sbox_eq,
     mul_eq, mul_one', getD_subBytes _ (hs _), getD_st _ (hs _)]
 
@@ -133,7 +133,7 @@ theorem aesenclast_st (v k : BitVec 128) (rk : List Byte) (hk : ∀ i < 16, byte
   apply st_ext; intro i hi
   rw [getD_st _ hi, getD_addRoundKey _ _ hi, ← hk i hi]
   simp only [reduceXBinOpEval, byte_xor]
-  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega
+  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega_using []
   simp only [byte_mapBytes _ _ hi, getD_shiftRows _ hi, byte_shiftRows _ hi, sbox_eq,
     getD_subBytes _ (hs _), getD_st _ (hs _)]
 
@@ -161,7 +161,7 @@ theorem ofInt_natCast (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n 
 
 theorem roundKey_getD (m : Mem) (p : Addr) {L j i : Nat} (hi : i < 16) (hj : 16 * j + 16 ≤ L) :
     (roundKey (bytesAt m p L) j).getD i 0 = m (p + BitVec.ofNat 64 (16 * j + i)) := by
-  simp [roundKey, bytesAt, List.getD, hi, show 16 * j + i < L by omega]
+  simp [roundKey, bytesAt, List.getD, hi, show 16 * j + i < L by omega_using [hi, hj]]
 
 /-- Round key `j`, loaded from the schedule. -/
 theorem byte_roundKey (m : Mem) (p : Addr) {L j : Nat} (hj : 16 * j + 16 ≤ L) :
@@ -425,7 +425,7 @@ theorem round_ok (regs : List XReg) (hnd : regs.Nodup) (h8 : .xmm8 ∉ regs) {nr
   refine WP.mono (keyOp_ok regs .aesenc _ s hnd h8 (by rw [ea_at]; exact hK.keys _ hk))
     fun s' ⟨hv, hf⟩ => ⟨fun b hb => ?_, hf⟩
   rw [hv b hb, aesenc_st _ _ (roundKey w (k + 1)) (by
-    rw [hK.sched, ea_at]; exact byte_roundKey _ _ (by omega)), hI b hb, rnds_succ]
+    rw [hK.sched, ea_at]; exact byte_roundKey _ _ (by omega_using [hk])), hI b hb, rnds_succ]
 
 theorem rounds_ok (regs : List XReg) (hnd : regs.Nodup) (h8 : .xmm8 ∉ regs) {nr : Nat}
     {w : List Byte} {x : XReg → Spec.Aes.State} (k : Nat) (s : State) (hk : k ≤ nr)
@@ -436,9 +436,9 @@ theorem rounds_ok (regs : List XReg) (hnd : regs.Nodup) (h8 : .xmm8 ∉ regs) {n
   | zero => rw [List.range_zero, List.flatMap_nil]; exact WP.block_nil ⟨hI, XFrame.refl _ _⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun s₁ ⟨hI₁, hf₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    exact WP.mono (round_ok regs hnd h8 (k := k) (by omega) (hK.of_frame hf₁) hI₁)
+    exact WP.mono (round_ok regs hnd h8 (k := k) (by omega_using [hk]) (hK.of_frame hf₁) hI₁)
       fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
 
 /-- `cmp rsi, c` with `rsi = nr`. -/
@@ -457,18 +457,18 @@ theorem aes_ok (regs : List XReg) (hnd : regs.Nodup) (h8 : .xmm8 ∉ regs) {nr :
     WP isa (aes regs) s fun s' =>
       (∀ b ∈ regs, st (s'.xmm b) = cipher nr w (st (s.xmm b))) ∧ XFrame (.xmm8 :: regs) s s' := by
   let x : XReg → Spec.Aes.State := fun b => st (s.xmm b)
-  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega)
+  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega_using [])
   simp only [Nat.mul_zero] at k0
   -- `AddRoundKey` and rounds 1–9.
   have h₁ : WP isa (.block (keyOp regs .pxor (at_ .rdi 0) ++
       (List.range 9).flatMap fun j => round regs (j + 1))) s fun s' =>
       RInv regs w x 9 s' ∧ XFrame (.xmm8 :: regs) s s' := by
     rw [WP.block_append_iff]
-    refine WP.mono (keyOp_ok regs .pxor _ s hnd h8 (by rw [ea_at]; exact hK.keys 0 (by omega)))
+    refine WP.mono (keyOp_ok regs .pxor _ s hnd h8 (by rw [ea_at]; exact hK.keys 0 (by omega_using [])))
       fun s₁ ⟨hv₁, hf₁⟩ => ?_
     have hI₁ : RInv regs w x 0 s₁ := fun b hb => by
       rw [hv₁ b hb, pxor_st _ _ (roundKey w 0) (by rw [hK.sched, ea_at]; exact k0), rnds_zero]
-    exact WP.mono (rounds_ok regs hnd h8 9 s₁ (by omega) (hK.of_frame hf₁) hI₁)
+    exact WP.mono (rounds_ok regs hnd h8 9 s₁ (by omega_using [hnr]) (hK.of_frame hf₁) hI₁)
       fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
   -- Rounds 10 to `nr - 1`.
   have h₂ : ∀ s₁, RInv regs w x 9 s₁ → XFrame (.xmm8 :: regs) s s₁ →
@@ -487,8 +487,8 @@ theorem aes_ok (regs : List XReg) (hnd : regs.Nodup) (h8 : .xmm8 ∉ regs) {nr :
       refine WP.ite false (by simp [eval, hz₁]) (fun h => absurd h (by decide)) fun _ => ?_
       refine WP.seq ?_
       rw [WP.block_append_iff, WP.block_append_iff]
-      refine WP.mono (round_ok regs hnd h8 (k := 9) (by omega) hK₁ hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_
-      refine WP.mono (round_ok regs hnd h8 (k := 10) (by omega) (hK₁.of_frame hf₂) hI₂)
+      refine WP.mono (round_ok regs hnd h8 (k := 9) (by omega_using []) hK₁ hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_
+      refine WP.mono (round_ok regs hnd h8 (k := 10) (by omega_using []) (hK₁.of_frame hf₂) hI₂)
         fun s₃ ⟨hI₃, hf₃⟩ => ?_
       have hrsi₃ : s₃.gpr .rsi = s₁.gpr .rsi := by rw [hf₃.gpr, hf₂.gpr]
       refine WP.mono (cmpRsi_ok s₃ 12 _ (hrsi₃.trans hrsi₁)) fun s₄ ⟨hz₄, hf₄⟩ => ?_
@@ -500,8 +500,8 @@ theorem aes_ok (regs : List XReg) (hnd : regs.Nodup) (h8 : .xmm8 ∉ regs) {nr :
       rw [WP.block_append_iff]
       have hK₄ := hK₁.of_frame (hf₂.trans (hf₃.trans (hf₄.mono (by simp))))
       have hI₄ : RInv regs w x 11 s₄ := fun b hb => by rw [hf₄.xmm b (by simp)]; exact hI₃ b hb
-      refine WP.mono (round_ok regs hnd h8 (k := 11) (by omega) hK₄ hI₄) fun s₅ ⟨hI₅, hf₅⟩ => ?_
-      exact WP.mono (round_ok regs hnd h8 (k := 12) (by omega) (hK₄.of_frame hf₅) hI₅)
+      refine WP.mono (round_ok regs hnd h8 (k := 11) (by omega_using []) hK₄ hI₄) fun s₅ ⟨hI₅, hf₅⟩ => ?_
+      exact WP.mono (round_ok regs hnd h8 (k := 12) (by omega_using []) (hK₄.of_frame hf₅) hI₅)
         fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁₄.trans (hf₅.trans hf')⟩
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -516,4 +516,4 @@ theorem aes_ok (regs : List XReg) (hnd : regs.Nodup) (h8 : .xmm8 ∉ regs) {nr :
   refine WP.mono (keyOp_ok regs .aesenclast _ s₂ hnd h8 (by rw [hea]; exact hK₂.keys nr (Nat.le_refl _)))
     fun s' ⟨hv, hf'⟩ => ⟨fun b hb => ?_, hf₂.trans hf'⟩
   rw [hv b hb, aesenclast_st _ _ (roundKey w nr) (by
-    rw [hea, hK₂.sched]; exact byte_roundKey _ _ (by omega)), hI₂ b hb, cipher_eq]
+    rw [hea, hK₂.sched]; exact byte_roundKey _ _ (by omega_using [])), hI₂ b hb, cipher_eq]

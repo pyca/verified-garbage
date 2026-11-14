@@ -48,7 +48,7 @@ def BflyOk (code : Nat → List Instr) (op : Poly → Nat → Nat → Zq → Pol
 /-- A pointer to coefficient `j`, plus the offset of coefficient `j + k`. -/
 theorem addr_at {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {j k : Nat} (h : j + k < 256) :
     State.addr (p + BitVec.ofNat 32 (4 * j) + BitVec.ofNat 32 (4 * k)) = coeffAddr (State.addr p) (j + k) := by
-  rw [addr_ptr _ _ _ (by omega), ← Nat.mul_add]
+  rw [addr_ptr _ _ _ (by omega_using [hp, h]), ← Nat.mul_add]
 
 theorem addr_at0 {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {j : Nat} (h : j < 256) :
     State.addr (p + BitVec.ofNat 32 (4 * j) + BitVec.ofNat 32 0) = coeffAddr (State.addr p) j :=
@@ -126,11 +126,11 @@ theorem bfly_spec : BflyOk Impl.MlDsa.Arm.Arith.bfly VG.Proof.MlDsa.Arith.bfly :
   intro p len j hl hl' hj hp z G s h0 hz hG hw
   obtain ⟨z4, z5, z6, z7⟩ := hz
   have eB := addr_at hp hj (j := j) (k := len)
-  have eA := addr_at0 hp (j := j) (by omega)
+  have eA := addr_at0 hp (j := j) (by omega_using [hj])
   rw [bfly_split, WP.block_append_iff]
   have iB : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 (4 * len))) 4 := by
     rw [h0, eB]; exact rd_at hw hj
-  refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_ldr (by omega) iB, runStep_some, runBlock_nil], ?_⟩
+  refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_ldr (by omega_using [hl']) iB, runStep_some, runBlock_nil], ?_⟩
   rw [WP.block_append_iff]
   refine WP.mono (mulz_ok (s := s.setReg .r8 _) (b := s.mem.readW (State.addr (s.gpr .r0 + BitVec.ofNat 32 (4 * len))) 32)
     (z₂ := BitVec.ofNat 32 z.val >>> 14) (z₁ := BitVec.ofNat 32 z.val <<< 18 >>> 25)
@@ -140,23 +140,23 @@ theorem bfly_spec : BflyOk Impl.MlDsa.Arm.Arith.bfly VG.Proof.MlDsa.Arith.bfly :
   have g : ∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r12 → s₁.gpr r = s.gpr r := fun r a8 a9 a12 => by
     rw [eo r a9 a12]; simp [State.setReg, a8]
   have hw₁ : polyRegion (State.addr p) ∈ s₁.wr := by rw [wr₁]; exact hw
-  refine WP.mono (bflyRest_ok (s := s₁) (x := p + BitVec.ofNat 32 (4 * j)) (by omega)
+  refine WP.mono (bflyRest_ok (s := s₁) (x := p + BitVec.ofNat 32 (4 * j)) (by omega_using [hl'])
     ((g _ (by decide) (by decide) (by decide)).trans h0) rfl ((g _ (by decide) (by decide) (by decide)).trans z4)
-    e9 (by rw [eA]; exact rd_at hw₁ (by omega)) (by rw [eA]; exact wr_at hw₁ (by omega))
+    e9 (by rw [eA]; exact rd_at hw₁ (by omega_using [hj])) (by rw [eA]; exact wr_at hw₁ (by omega_using [hj]))
     (by rw [eB]; exact wr_at hw₁ hj)) fun s' ⟨hm, r0, r3, hzf, hk⟩ => ?_
   have nk : ∀ r ∈ bflyKeep, r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r12 := by decide
   have k₁ : Keep bflyKeep s s₁ := ⟨fun r hr => g r (nk r hr).1 (nk r hr).2.1 (nk r hr).2.2, rd₁, wr₁, sp₁⟩
   have e3 : s₁.gpr .r3 = s.gpr .r3 := g _ (by decide) (by decide) (by decide)
-  have hjn : j < n := by rw [n_eq]; omega
-  have hjl : j + len < n := by rw [n_eq]; omega
+  have hjn : j < n := by rw [n_eq]; omega_using [hj]
+  have hjl : j + len < n := by rw [n_eq]; omega_using [hj]
   refine ⟨?_, ?_, by rw [r0]; exact ptr_next p j, by rw [r3, e3], by rw [hzf, e3], k₁.trans hk⟩
   · rw [hm, m₁, eA, eB]
     simp only [State.setReg]
-    rw [h0, eB, word_val hG hj, word_val hG (by omega), mulz_val, sub_val, add_val]
+    rw [h0, eB, word_val hG hj, word_val hG (by omega_using [hj]), mulz_val, sub_val, add_val]
     have h1 := polyIs_writeW hG hj (G[j]! - z * G[j + len]!) (toNat_val _)
     have h2 := polyIs_writeW h1 hjn (G[j]! + z * G[j + len]!) (toNat_val _)
     simp only [VG.Proof.MlDsa.Arith.bfly]
-    rwa [getElem!_set!_ne _ hjn (by omega)]
+    rwa [getElem!_set!_ne _ hjn (by omega_using [hl])]
   · rw [hm, m₁, eA, eB]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hj)).writeW
       (List.mem_singleton_self _) _ (coeff_contains _ hjn)
@@ -223,20 +223,20 @@ theorem bflyInv_eq (G : Poly) {j len : Nat} (hl : 0 < len) (hj : j + len < n) (z
       (G.set! j (G[j]! + G[j + len]!)).set! (j + len) (z * (G[j]! - G[j + len]!)) := by
   refine ext_getElem! fun i hi => ?_
   rw [bflyInv_get _ hl hj _ hi]
-  rcases (by omega : i = j ∨ i = j + len ∨ (i ≠ j ∧ i ≠ j + len)) with rfl | rfl | ⟨h1, h2⟩
-  · rw [ite_eq_left rfl, getElem!_set!_ne _ hi (by omega), getElem!_set!_self _ hi]
-  · rw [ite_eq_right (by omega), ite_eq_left rfl, getElem!_set!_self _ hi]
+  rcases (by omega_using [] : i = j ∨ i = j + len ∨ (i ≠ j ∧ i ≠ j + len)) with rfl | rfl | ⟨h1, h2⟩
+  · rw [ite_eq_left rfl, getElem!_set!_ne _ hi (by omega_using [hl]), getElem!_set!_self _ hi]
+  · rw [ite_eq_right (by omega_using [hl]), ite_eq_left rfl, getElem!_set!_self _ hi]
   · rw [ite_eq_right h1, ite_eq_right h2, getElem!_set!_ne _ hi (Ne.symm h2), getElem!_set!_ne _ hi (Ne.symm h1)]
 
 theorem bflyInv_spec : BflyOk Impl.MlDsa.Arm.Arith.bflyInv VG.Proof.MlDsa.Arith.bflyInv := by
   intro p len j hl hl' hj hp z G s h0 hz hG hw
   obtain ⟨z4, z5, z6, z7⟩ := hz
   have eB := addr_at hp hj (j := j) (k := len)
-  have eA := addr_at0 hp (j := j) (by omega)
-  have hjn : j < n := by rw [n_eq]; omega
-  have hjl : j + len < n := by rw [n_eq]; omega
+  have eA := addr_at0 hp (j := j) (by omega_using [hj])
+  have hjn : j < n := by rw [n_eq]; omega_using [hj]
+  have hjl : j + len < n := by rw [n_eq]; omega_using [hj]
   rw [bflyInv_split, WP.block_append_iff]
-  refine WP.mono (bflyInvPre_ok (len := len) (by omega) h0 z4 (by rw [eA]; exact rd_at hw hjn)
+  refine WP.mono (bflyInvPre_ok (len := len) (by omega_using [hl']) h0 z4 (by rw [eA]; exact rd_at hw hjn)
     (by rw [eB]; exact rd_at hw hj) (by rw [eA]; exact wr_at hw hjn)) fun s₁ ⟨m₁, e8, e0, e3, k₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (mulz_ok (k₁.gpr .r4 (by decide) ▸ z4) (k₁.gpr .r5 (by decide) ▸ z5)
@@ -245,7 +245,7 @@ theorem bflyInv_spec : BflyOk Impl.MlDsa.Arm.Arith.bflyInv VG.Proof.MlDsa.Arith.
   have nk : ∀ r ∈ bflyKeep, r ≠ .r9 ∧ r ≠ .r12 := by decide
   have k₂ : Keep bflyKeep s₁ s₂ := ⟨fun r hr => eo r (nk r hr).1 (nk r hr).2, rd₂, wr₂, sp₂⟩
   have hw₂ : polyRegion (State.addr p) ∈ s₂.wr := by rw [k₂.wr, k₁.wr]; exact hw
-  refine WP.mono (bflyInvPost_ok (s := s₂) (x := p + BitVec.ofNat 32 (4 * j)) (len := len) (by omega)
+  refine WP.mono (bflyInvPost_ok (s := s₂) (x := p + BitVec.ofNat 32 (4 * j)) (len := len) (by omega_using [hl'])
     ((eo _ (by decide) (by decide)).trans e0) rfl ((k₁.trans k₂).gpr .r4 (by decide) ▸ z4) e9
     (by rw [eB]; exact wr_at hw₂ hj)) fun s' ⟨hm, r0, r3, hzf, k₃⟩ => ?_
   have e3' : s₂.gpr .r3 = s.gpr .r3 := (eo _ (by decide) (by decide)).trans e3

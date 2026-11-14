@@ -64,13 +64,13 @@ theorem total_eq : callCore.total = 418 := rfl
 theorem ws_covers {s : State} {B : Addr} (hs : ScrIn s B callCore.total) :
     Covers [⟨B, 8 * core.total⟩] s.wr := Covers.of_sub fun r hr => by
   simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨_, hs.wr, 0, by rw [BitVec.add_zero], by show 0 + 3344 ≤ 3344; omega⟩
+  exact ⟨_, hs.wr, 0, by rw [BitVec.add_zero], by show 0 + 3344 ≤ 3344; omega_using []⟩
 
 /-- What a call changed in the working space, within the core's slots. -/
 theorem frame_core {m m' : Mem} {B : Addr} {e n : Nat} (hf : Frame [⟨B, 8 * core.total⟩] m m')
     (hk : Keeps B core.total [(e, n)] m m') (he : e + n ≤ 8 * core.slots) :
     Frame [coreRegion callCore B] m m' :=
-  (frame_of_keeps hf hk (by show e + n ≤ 3344; have : 8 * core.slots = 3152 := rfl; omega) (by decide)).sub
+  (frame_of_keeps hf hk (by show e + n ≤ 3344; have : 8 * core.slots = 3152 := rfl; omega_using [he, this]) (by decide)).sub
     fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
       exact VG.Offset.sub_base B he⟩
@@ -148,7 +148,7 @@ theorem callPrepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × Lis
       · rw [State.withRegions_wr, g2, g3]; rfl
       · rw [g0, g2, g3]; exact hsep
       · rw [g0]; exact hfit
-      · rw [g2, g3]; omega
+      · rw [g2, g3]; omega_using [hfB]
       · rw [g1]; exact hRr
       · rw [g3, size_eq]
     · obtain ⟨hH, hK⟩ := hpost
@@ -241,7 +241,7 @@ theorem callCrypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : 
       (by lit_decide)
     · refine ⟨rfl, ?_, ?_, ?_, ?_, ?_⟩
       · rw [State.withRegions_wr, g1, g2]; rfl
-      · rw [g1, g2]; have := hs.fit; rw [total_eq] at this; omega
+      · rw [g1, g2]; have := hs.fit; rw [total_eq] at this; omega_using [this]
       · rw [g0]; exact hRr
       · rw [g2, size_eq]
       · rw [g0, g1, hm₀]; exact ⟨ws, hH⟩
@@ -282,7 +282,7 @@ theorem callCrypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : 
     exact fbuf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
       exact VG.Offset.sub_base B (by decide : 768 + 16 ≤ 8 * core.slots)⟩
-  · have hj0 : j = 0 := by change j < 1 at hj; omega
+  · have hj0 : j = 0 := by change j < 1 at hj; omega_using [hj]
     subst hj0
     rw [mem₇]
     exact blocks_of_ecb hE

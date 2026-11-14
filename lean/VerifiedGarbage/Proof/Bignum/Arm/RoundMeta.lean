@@ -40,6 +40,6 @@ theorem RoundMeta.of_outside {mem mem' : Mem} {base : BitVec 32}
     (h : RoundMeta mem base tmp a b mod acc n i inv) (outside : Outside (State.addr base) o len mem mem')
     (sep : tmp + 32 ≤ o ∨ o + len ≤ tmp) (fit : tmp + 32 ≤ 2 ^ 64) :
     RoundMeta mem' base tmp a b mod acc n i inv :=
-  h.congr fun d hd => outside_read32 outside (by omega) (by omega)
+  h.congr fun d hd => outside_read32 outside (by omega_using [sep, hd]) (by omega_using [fit, hd])
 
 end VG.Proof.Bignum.Arm

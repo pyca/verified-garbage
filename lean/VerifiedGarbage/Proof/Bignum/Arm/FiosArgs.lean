@@ -23,34 +23,34 @@ theorem args_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : Nat} 
   have ws := ctx.workspace
   have ht := ctx.tmpFits
   have ha := ctx.aFits
-  have haf : a+4*i+4≤size := by omega
+  have haf : a+4*i+4≤size := by omega_using [hi, ha]
   unfold VG.Impl.Bignum.Arm.Fios.args
-  refine wp_ldr (by decide) (ws.ea ptr (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (ws.ea ptr (by omega_using [ht])) (ws.read (by omega_using [ht])) fun s1 u1 => ?_
   have w1 := ws.congr u1.wr
   refine wp_ldr (a:=off (State.addr base) (a+4*i)) (by decide)
-    (w1.ea (off:=a+4*i) (imm:=0) (u1.gpr.trans hdr.aPtr) (by omega))
+    (w1.ea (off:=a+4*i) (imm:=0) (u1.gpr.trans hdr.aPtr) (by omega_using [hi, ha]))
     (w1.read haf) fun s2 u2 => ?_
   have k2 : Rest [.r1] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
   have p2 : s2.gpr .r0=base+BitVec.ofNat 32 tmp := (k2.gpr .r0 (by decide)).trans ptr
   have w2 := ws.congr k2.wr
-  refine wp_ldr (a:=off (State.addr base) tmp) (by decide) (w2.ea p2 (by omega))
-    (w2.read (by omega)) fun s3 u3 => ?_
+  refine wp_ldr (a:=off (State.addr base) tmp) (by decide) (w2.ea p2 (by omega_using [ht]))
+    (w2.read (by omega_using [ht])) fun s3 u3 => ?_
   have k3 : Rest [.r1,.lr] s s3 := (k2.mono (by simp_all)).trans (u3.rest (by decide))
   have p3 : s3.gpr .r0=base+BitVec.ofNat 32 tmp := (k3.gpr .r0 (by decide)).trans ptr
   have w3 := ws.congr k3.wr
-  refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
+  refine wp_ldr (by decide) (w3.ea p3 (by omega_using [ht])) (w3.read (by omega_using [ht])) fun s4 u4 => ?_
   have k4 : Rest [.r1,.lr,.r12] s s4 := (k3.mono (by simp_all)).trans (u4.rest (by decide))
   have p4 : s4.gpr .r0=base+BitVec.ofNat 32 tmp := (k4.gpr .r0 (by decide)).trans ptr
   have w4 := ws.congr k4.wr
-  refine wp_ldr (by decide) (w4.ea p4 (by omega)) (w4.read (by omega)) fun s5 u5 => ?_
+  refine wp_ldr (by decide) (w4.ea p4 (by omega_using [ht])) (w4.read (by omega_using [ht])) fun s5 u5 => ?_
   have k5 : Rest [.r1,.lr,.r12,.r4] s s5 := (k4.mono (by simp_all)).trans (u5.rest (by decide))
   have p5 : s5.gpr .r0=base+BitVec.ofNat 32 tmp := (k5.gpr .r0 (by decide)).trans ptr
   have w5 := ws.congr k5.wr
-  refine wp_ldr (by decide) (w5.ea p5 (by omega)) (w5.read (by omega)) fun s6 u6 => ?_
+  refine wp_ldr (by decide) (w5.ea p5 (by omega_using [ht])) (w5.read (by omega_using [ht])) fun s6 u6 => ?_
   have k6 : Rest [.r1,.lr,.r12,.r4,.r2] s s6 := (k5.mono (by simp_all)).trans (u6.rest (by decide))
   have p6 : s6.gpr .r0=base+BitVec.ofNat 32 tmp := (k6.gpr .r0 (by decide)).trans ptr
   have w6 := ws.congr k6.wr
-  refine wp_ldr (by decide) (w6.ea p6 (by omega)) (w6.read (by omega)) fun s7 u7 => ?_
+  refine wp_ldr (by decide) (w6.ea p6 (by omega_using [ht])) (w6.read (by omega_using [ht])) fun s7 u7 => ?_
   refine wp_mov (op2_imm (by decide)) fun s8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u9 => WP.block_nil ?_
   refine ⟨?_,?_,?_,?_,?_,?_,?_,u9.gpr,?_,?_⟩

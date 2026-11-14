@@ -49,8 +49,8 @@ theorem geometry {s : State} (h : pre s) : Geometry s := by
     Scr.of_mem (by rw [wr];simp) scratchWrap
   have room : 256≤(s.gpr .x4).toNat*8 := by
     unfold Spec.Rsa.scratchWords at length
-    omega
-  have src :=src_of_region (List.mem_append_left s.wr member) (by omega) disjoint
+    omega_using [length]
+  have src :=src_of_region (List.mem_append_left s.wr member) (by omega_using []) disjoint
   refine ⟨small,large,shape,scratch,room,src_source src,?_,policyConsts_table constants scratch room⟩
   intro i hi
   have bound :=src.out i hi
@@ -110,7 +110,7 @@ theorem recognize_ok {s : State} (g : Geometry s) :
   rw [WP.seq_iff]
   refine WP.mono (policyLoop_ok (g.scratch.congr restA.wr) g.room baseA sourceA recordsA
     (by simpa only [CheckDomain.cdDom,Spec.Rsa.bytesAt,List.length_map,List.length_range] using g.shape)
-    (by have :=g.small;omega) (by have :=g.large;omega)
+    (by have :=g.small;omega_using [this]) (by have :=g.large;omega_using [this])
     (by rw [memA];exact headers.1)
     (by rw [memA];simpa only [CheckDomain.cdDom,Spec.Rsa.bytesAt,List.length_map,List.length_range,ofNat_toNat64] using headers.2.1)
     (by rw [memA];simpa only [ofNat_toNat64] using headers.2.2.1)
@@ -121,7 +121,7 @@ theorem recognize_ok {s : State} (g : Geometry s) :
       word b.mem (s.gpr .x3) (8*i)=word a.mem (s.gpr .x3) (8*i) :=
     header_other frameB (by decide) hi different
   refine WP.mono (WP.keep [.x10] (Q:=fun t =>t.gpr .x10=BitVec.ofNat 64 (width s)-4095#64 ∧ t.mem=b.mem) ?_ rfl rfl rfl) ?_
-  · brun [baseB,hdr_enc (show sBits<32 by decide),((g.scratch.congr restA.wr).congr restB.wr).ld (d:=8*sBits) (by unfold sBits;have :=g.room;omega),
+  · brun [baseB,hdr_enc (show sBits<32 by decide),((g.scratch.congr restA.wr).congr restB.wr).ld (d:=8*sBits) (by unfold sBits;have :=g.room;omega_using [this]),
       bitsB,width]
   · rintro t ⟨⟨testT,memT⟩,restT⟩
     refine ⟨(restT.gpr .x0 (by simp)).trans baseB,testT,?_,?_,?_,?_,?_,?_⟩

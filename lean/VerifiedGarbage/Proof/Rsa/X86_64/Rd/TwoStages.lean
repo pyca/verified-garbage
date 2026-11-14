@@ -109,7 +109,7 @@ theorem testW_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (both : Boo
 /-- A word shifted left by `64 - b` is zero exactly when its low `b` bits are. -/
 theorem shl_zero_iff (y : BitVec 64) {b : Nat} (hb : b ≤ 64) : y <<< (64 - b) = 0 ↔ y.toNat % 2 ^ b = 0 := by
   rw [← BitVec.toNat_inj, BitVec.toNat_shiftLeft, show (0 : BitVec 64).toNat = 0 from rfl, Nat.shiftLeft_eq]
-  have hp : 2 ^ b * 2 ^ (64 - b) = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega
+  have hp : 2 ^ b * 2 ^ (64 - b) = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega_using [hb]
   rw [← hp, Nat.mul_mod_mul_right]
   constructor
   · intro h0

@@ -25,14 +25,14 @@ theorem exec_loadQ {s : State} {t : VReg} {b : Reg} {off : Nat}
     (ho : off % 16 = 0 ∧ off < 65536)
     (hi : InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 off) 16) :
     exec (.ldrq t b off) s = some (s.setV t (s.mem.readW (s.gpr b + BitVec.ofNat 64 off) 128)) := by
-  simp only [exec,VG.AArch64.addr,show off < 4096*16 by omega,ho,and_self,ite_true,
+  simp only [exec,VG.AArch64.addr,show off < 4096*16 by omega_using [ho],ho,and_self,ite_true,
     Option.bind_some,State.load,hi,Option.map_some,Mem.readW,BitVec.setWidth_eq]
 
 theorem exec_storeQ {s : State} {t : VReg} {b : Reg} {off : Nat}
     (ho : off % 16 = 0 ∧ off < 65536)
     (hi : InRegions s.wr (s.gpr b + BitVec.ofNat 64 off) 16) :
     exec (.strq t b off) s = some {s with mem := s.mem.writeW (s.gpr b + BitVec.ofNat 64 off) (s.v t)} := by
-  simp only [exec,VG.AArch64.addr,show off < 4096*16 by omega,ho,and_self,ite_true,
+  simp only [exec,VG.AArch64.addr,show off < 4096*16 by omega_using [ho],ho,and_self,ite_true,
     Option.bind_some,State.store,hi,Mem.writeW,BitVec.setWidth_eq]
 
 theorem exec_xorQ {s : State} {d n m : VReg} :
@@ -55,19 +55,19 @@ theorem load_step {s₀ s : State} {b : Reg} {v i : Nat} (hv : v = 0 ∨ v = 4) 
     rw [h.rd,h.wr,h.gpr]; exact hin i hi
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,
-    exec_loadQ (show 16*i % 16 = 0 ∧ 16*i < 65536 by omega) ir,
+    exec_loadQ (show 16*i % 16 = 0 ∧ 16*i < 65536 by omega_using [hi]) ir,
     isa,Option.some.injEq,exists_eq_left']
   refine ⟨h.gpr,h.mem,h.rd,h.wr,h.sp,?_,?_⟩
   · intro j hj hji
     rcases Nat.lt_succ_iff_lt_or_eq.mp hji with lt | rfl
-    · have ne : vr (v+j) ≠ vr (v+i) := vr_ne (by rcases hv with rfl | rfl <;> omega)
-        (by rcases hv with rfl | rfl <;> omega) (by omega)
+    · have ne : vr (v+j) ≠ vr (v+i) := vr_ne (by rcases hv with rfl | rfl <;> omega_using [hj])
+        (by rcases hv with rfl | rfl <;> omega_using [hi]) (by omega_using [lt])
       simp only [State.setV,ne,ite_false]
       exact h.loaded j hj lt
     · simp only [State.setV,ite_true,h.mem,h.gpr]
   · intro r hr
-    simp only [State.setV,hr i (by omega),ite_false]
-    exact h.keep r fun j hj => hr j (by omega)
+    simp only [State.setV,hr i (by omega_using []),ite_false]
+    exact h.keep r fun j hj => hr j (by omega_using [hj])
 
 theorem loads_ok {s₀ : State} {b : Reg} {v : Nat} (hv : v = 0 ∨ v = 4)
     (hin : ∀ j < 4, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr b + BitVec.ofNat 64 (16*j)) 16) :
@@ -77,7 +77,7 @@ theorem loads_ok {s₀ : State} {b : Reg} {v : Nat} (hv : v = 0 ∨ v = 4)
     rfl
   rw [eq]
   exact wp_range_flatMap (M := isa) (LI s₀ b v) (fun i s hi h => load_step hv hi hin h)
-    4 (by omega) s₀ ⟨rfl,rfl,rfl,rfl,rfl,fun _ _ h => by omega,fun _ _ => rfl⟩
+    4 (by omega_using []) s₀ ⟨rfl,rfl,rfl,rfl,rfl,fun _ _ h => by omega,fun _ _ => rfl⟩
 def writeQ4 (m : Mem) (d : Addr) (f : Nat → BitVec 128) : Mem :=
   (((m.writeW (d + BitVec.ofNat 64 (16*0)) (f 0)).writeW (d + BitVec.ofNat 64 (16*1)) (f 1)).writeW
     (d + BitVec.ofNat 64 (16*2)) (f 2)).writeW (d + BitVec.ofNat 64 (16*3)) (f 3)
@@ -97,10 +97,10 @@ theorem stores_ok (s₀ : State) (b : Reg)
   let s₂ : State := {s₁ with mem := s₁.mem.writeW (s₀.gpr b + BitVec.ofNat 64 16) (s₀.v (vr 1))}
   let s₃ : State := {s₂ with mem := s₂.mem.writeW (s₀.gpr b + BitVec.ofNat 64 32) (s₀.v (vr 2))}
   let s₄ : State := {s₃ with mem := s₃.mem.writeW (s₀.gpr b + BitVec.ofNat 64 48) (s₀.v (vr 3))}
-  refine WP.block_cons_iff.mpr ⟨s₁,exec_storeQ (s := s₀) (by decide) (hout 0 (by omega)),?_⟩
-  refine WP.block_cons_iff.mpr ⟨s₂,exec_storeQ (s := s₁) (by decide) (hout 1 (by omega)),?_⟩
-  refine WP.block_cons_iff.mpr ⟨s₃,exec_storeQ (s := s₂) (by decide) (hout 2 (by omega)),?_⟩
-  refine WP.block_cons_iff.mpr ⟨s₄,exec_storeQ (s := s₃) (by decide) (hout 3 (by omega)),?_⟩
+  refine WP.block_cons_iff.mpr ⟨s₁,exec_storeQ (s := s₀) (by decide) (hout 0 (by omega_using [])),?_⟩
+  refine WP.block_cons_iff.mpr ⟨s₂,exec_storeQ (s := s₁) (by decide) (hout 1 (by omega_using [])),?_⟩
+  refine WP.block_cons_iff.mpr ⟨s₃,exec_storeQ (s := s₂) (by decide) (hout 2 (by omega_using [])),?_⟩
+  refine WP.block_cons_iff.mpr ⟨s₄,exec_storeQ (s := s₃) (by decide) (hout 3 (by omega_using [])),?_⟩
   exact WP.block_nil ⟨rfl,rfl,rfl,rfl,rfl⟩
 
 theorem writeQ4_copy (m m' : Mem) (d a : Addr) :
@@ -117,8 +117,8 @@ theorem writeQ4_copy (m m' : Mem) (d a : Addr) :
     rw [VG.Proof.Scrypt.Memory.bytesAt_add]
     simpa only [VG.Proof.Scrypt.Memory.bytesAt_length] using
       VG.Proof.Sha256.Stream.writeBytes_append m d (bytesAt m' a n)
-        (bytesAt m' (a + BitVec.ofNat 64 n) 16) (by simp [bytesAt]; omega)
-  rw [join 16 (by omega),join 32 (by omega),join 48 (by omega)]
+        (bytesAt m' (a + BitVec.ofNat 64 n) 16) (by simp [bytesAt]; omega_using [hn])
+  rw [join 16 (by omega_using []),join 32 (by omega_using []),join 48 (by omega_using [])]
 
 theorem copyPacket_ok (s₀ : State)
     (hin : ∀ j < 4, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x9 + BitVec.ofNat 64 (16*j)) 16)
@@ -134,7 +134,7 @@ theorem copyPacket_ok (s₀ : State)
   have eq (j : Nat) (hj : j < 4) : a.v (vr j) = s₀.mem.readW (s₀.gpr .x9 + BitVec.ofNat 64 (16*j)) 128 := by
     simpa only [Nat.zero_add] using ha.loaded j hj hj
   simp only [writeQ4]
-  rw [eq 0 (by omega),eq 1 (by omega),eq 2 (by omega),eq 3 (by omega)]
+  rw [eq 0 (by omega_using []),eq 1 (by omega_using []),eq 2 (by omega_using []),eq 3 (by omega_using [])]
   exact writeQ4_copy _ _ _ _
 
 structure Xored (s₀ s : State) : Prop where
@@ -156,7 +156,7 @@ theorem xors_ok (s₀ : State) :
   refine WP.block_cons_iff.mpr ⟨_,exec_xorQ,?_⟩
   refine WP.block_nil ⟨rfl,rfl,rfl,rfl,rfl,?_⟩
   intro j hj
-  obtain rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
+  obtain rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega_using [hj]
   all_goals rfl
 
 theorem writeQ4_xor (m m' : Mem) (d a b : Addr) :
@@ -181,8 +181,8 @@ theorem writeQ4_xor (m m' : Mem) (d a b : Addr) :
       VG.Proof.Sha256.Stream.writeBytes_append m d
         (VG.Spec.Pbkdf2.xorBytes (bytesAt m' a n) (bytesAt m' b n))
         (VG.Spec.Pbkdf2.xorBytes (bytesAt m' (a + BitVec.ofNat 64 n) 16)
-          (bytesAt m' (b + BitVec.ofNat 64 n) 16)) (by simp [VG.Spec.Pbkdf2.xorBytes,bytesAt]; omega)
-  rw [join 16 (by omega),join 32 (by omega),join 48 (by omega)]
+          (bytesAt m' (b + BitVec.ofNat 64 n) 16)) (by simp [VG.Spec.Pbkdf2.xorBytes,bytesAt]; omega_using [hn])
+  rw [join 16 (by omega_using []),join 32 (by omega_using []),join 48 (by omega_using [])]
 
 theorem xorPacket_ok (s₀ : State)
     (hinx : ∀ j < 4, InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x9 + BitVec.ofNat 64 (16*j)) 16)
@@ -208,12 +208,12 @@ theorem xorPacket_ok (s₀ : State)
   have vals (j : Nat) (hj : j < 4) : c.v (vr j) =
       s₀.mem.readW (s₀.gpr .x9 + BitVec.ofNat 64 (16*j)) 128 ^^^
         s₀.mem.readW (s₀.gpr .x10 + BitVec.ofNat 64 (16*j)) 128 := by
-    rw [hc.words j hj,hb.keep (vr j) (by intro k hk; exact vr_ne (by omega) (by omega) (by omega))]
+    rw [hc.words j hj,hb.keep (vr j) (by intro k hk; exact vr_ne (by omega_using [hj]) (by omega_using [hk]) (by omega_using [hj]))]
     have he : a.v (vr j) = s₀.mem.readW (s₀.gpr .x9 + BitVec.ofNat 64 (16*j)) 128 := by
       simpa only [Nat.zero_add] using ha.loaded j hj hj
     rw [he,hb.loaded j hj hj,ha.mem,ha.gpr]
   simp only [writeQ4]
-  rw [vals 0 (by omega),vals 1 (by omega),vals 2 (by omega),vals 3 (by omega)]
+  rw [vals 0 (by omega_using []),vals 1 (by omega_using []),vals 2 (by omega_using []),vals 3 (by omega_using [])]
   exact writeQ4_xor _ _ _ _ _
 
 end VG.Proof.Scrypt.AArch64.Transfer

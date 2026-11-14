@@ -43,27 +43,27 @@ theorem passed_ok {s : State} {B : Addr} {Z w k u ch : Nat} (e : Env s B Z w)
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ Z := e.hZ
   refine WP.keep _ ?_ (by decide)
   have r176 : s.mem.readW (B + 176#64) 64 = BitVec.ofNat 64 k := hk
-  have o176 := writeW_outside s.mem B (BitVec.ofNat 64 (k + 1)) (d := 176) (by omega)
+  have o176 := writeW_outside s.mem B (BitVec.ofNat 64 (k + 1)) (d := 176) (by omega_using [])
   have r32 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (k + 1))).readW (B + 32#64) 64 = BitVec.ofNat 64 u :=
-    (o176.word (by omega) (by omega)).trans hu
+    (o176.word (by omega_using []) (by omega_using [])).trans hu
   have r168 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (k + 1))).readW (B + 168#64) 64 = BitVec.ofNat 64 ch :=
-    (o176.word (by omega) (by omega)).trans hch
+    (o176.word (by omega_using []) (by omega_using [])).trans hch
   have ek : BitVec.ofNat 64 k + 1#64 = BitVec.ofNat 64 (k + 1) := by rw [BitVec.ofNat_add]
   simp only [passed, geFlag, ldh, sth, hIdx, hUni, hChecks, hStat]
-  prun [e.h31, hs.ld (d := 176) (n := 8) (by omega), hs.st (d := 176) (n := 8) (by omega),
-    hs.ld (d := 32) (n := 8) (by omega), hs.ld (d := 168) (n := 8) (by omega), hs.st (d := 160) (n := 8) (by omega),
-    r176, ek, r32, r168, ge_val (show k + 1 < 2 ^ 64 by omega) (show 16 < 2 ^ 63 by decide),
-    ge_val (show u < 2 ^ 64 by omega) hch']
+  prun [e.h31, hs.ld (d := 176) (n := 8) (by omega_using [hZ]), hs.st (d := 176) (n := 8) (by omega_using [hZ]),
+    hs.ld (d := 32) (n := 8) (by omega_using [hZ]), hs.ld (d := 168) (n := 8) (by omega_using [hZ]), hs.st (d := 160) (n := 8) (by omega_using [hZ]),
+    r176, ek, r32, r168, ge_val (show k + 1 < 2 ^ 64 by omega_using [hk']) (show 16 < 2 ^ 63 by decide),
+    ge_val (show u < 2 ^ 64 by omega_using [hu']) hch']
   have hv : ∀ x : BitVec 64, (x = BitVec.ofNat 64 (if ch ≤ u then 1 else 0) &&& BitVec.ofNat 64 (if 15 ≤ k then 1 else 0)
       + 0#64) → 4#64 - x * 3#64 = BitVec.ofNat 64 (if 15 ≤ k ∧ ch ≤ u then 1 else 4) := by
     rintro x rfl
     by_cases h1 : ch ≤ u <;> by_cases h2 : 15 ≤ k <;> simp [h1, h2] <;> decide
   rw [hv _ rfl]
   refine ⟨?_, ?_, ?_⟩
-  · rw [show (B + 160#64 : Addr) = off B 160 from rfl, (writeW_outside _ _ _ (by omega)).word (by omega) (by omega),
+  · rw [show (B + 160#64 : Addr) = off B 160 from rfl, (writeW_outside _ _ _ (by omega_using [])).word (by omega_using []) (by omega_using []),
       show (B + 176#64 : Addr) = off B 176 from rfl, word_writeW_self]
   · rw [show (B + 160#64 : Addr) = off B 160 from rfl, word_writeW_self]
-  · exact Frm.trans (Frm.of_outside (o := 176) (n := 8) (writeW_outside _ _ _ (by omega)) (by simp))
-      (Frm.of_outside (o := 160) (n := 8) (writeW_outside _ _ _ (by omega)) (by simp))
+  · exact Frm.trans (Frm.of_outside (o := 176) (n := 8) (writeW_outside _ _ _ (by omega_using [])) (by simp))
+      (Frm.of_outside (o := 160) (n := 8) (writeW_outside _ _ _ (by omega_using [])) (by simp))
 
 end VG.Proof.MillerRabin.PPC64LE.Blinded

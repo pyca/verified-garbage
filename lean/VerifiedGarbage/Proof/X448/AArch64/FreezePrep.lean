@@ -27,7 +27,7 @@ theorem incrementStep_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
         Keeps [.x4] s s' := by
   have l := hs.read hd
   have w := hs.write hd
-  have enc : d % 8 = 0 ∧ d < 32768 := ⟨hd8, by omega⟩
+  have enc : d % 8 = 0 ∧ d < 32768 := ⟨hd8, by omega_using [hd]⟩
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     State.read, State.load, State.store, RegUpd.gpr_write, RegUpd.mem_write,
@@ -45,19 +45,19 @@ theorem incrementLimb_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (
       (∀ i < 16, limbs t.mem base TMP i =
         if i = k then limbs s.mem base TMP i + 1 else limbs s.mem base TMP i) ∧
       Outside base TMP 128 s.mem t.mem ∧ Keeps [.x4] s t := by
-  have hd : TMP + 8 * k + 8 ≤ 8192 := by simp only [TMP]; omega
-  refine WP.mono (incrementStep_ok hs hd (by simp only [TMP]; omega)) fun t ⟨hm, ht⟩ => ?_
+  have hd : TMP + 8 * k + 8 ≤ 8192 := by simp only [TMP]; omega_using [hk]
+  refine WP.mono (incrementStep_ok hs hd (by simp only [TMP]; omega_using [])) fun t ⟨hm, ht⟩ => ?_
   refine ⟨?_, ?_, ht⟩
   · intro i hi
     change (word t.mem base (TMP + 8 * i)).toNat = _
-    rw [hm, word_write s.mem base (by omega) (by simp only [TMP]; omega)]
+    rw [hm, word_write s.mem base (by omega_using [hd]) (by simp only [TMP]; omega_using [hi])]
     by_cases h : i = k
     · rw [ite_eq_left h, ite_eq_left h, h, BitVec.toNat_add]
       change (limbs s.mem base TMP k + 1) % 2 ^ 64 = _
       exact Nat.mod_eq_of_lt hb
     · rw [ite_eq_right h, ite_eq_right h]
   · rw [hm]
-    exact (writeW_outside _ _ _ hd).mono (by omega) (by omega)
+    exact (writeW_outside _ _ _ hd).mono (by omega_using []) (by omega_using [hk])
 
 
 theorem freezePrep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded s.mem base X2) :
@@ -69,7 +69,7 @@ theorem freezePrep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded 
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok hs (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨tf, tm, tk⟩ => ?_
   have bound : ∀ i < 16, limbs s.mem base X2 i + 1 < 2 ^ 64 := by
-    intro i hi; have h := hb i hi; simp only [radix] at h; omega
+    intro i hi; have h := hb i hi; simp only [radix] at h; omega_using [h]
   change WP isa (.block
     (([ld .x4 (TMP + 8 * 0), .addImm .x .x4 .x4 1,
        st .x4 (TMP + 8 * 0)] : List Instr) ++

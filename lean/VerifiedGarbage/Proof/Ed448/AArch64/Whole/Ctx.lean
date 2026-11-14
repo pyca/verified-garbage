@@ -112,7 +112,7 @@ theorem WCtx.tbl (hV : V.Ok) (h : WCtx V g vec m₀ t) (hm : TblWords V.T m₀ V
   fun i hi => by
     have := hV.tfit
     rw [← hm i hi]
-    refine h.1.frame.readW (r := TBL V.T V.words) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    refine h.1.frame.readW (r := TBL V.T V.words) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, this])) ?_ (by decide)
     intro r hr
     rcases List.mem_append.mp hr with hr | hr
     · exact hV.tout r hr
@@ -136,7 +136,7 @@ theorem wsetup_ok (hV : V.Ok) (hc : WCtx V g vec m₀ t) {args : List (Reg × Sr
     rw [ha]
     exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · intro d _ hd
-    exact hc.1.readable_frame (Offset.contains_base _ hd (by omega))
+    exact hc.1.readable_frame (Offset.contains_base _ hd (by omega_using [hd]))
   refine ⟨hc.regs ht.rd ht.wr ht.sp ?_ ht.vec ht.mem hsy, ht.mem, hvals⟩
   intro r hpres _
   apply ht.regs

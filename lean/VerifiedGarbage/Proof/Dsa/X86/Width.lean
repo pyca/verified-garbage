@@ -39,13 +39,13 @@ theorem widthMask_ok {s : State} {base : Addr} {size n a tmp bits : Nat}
     refine wp_logicS (.inl rfl) rfl fun y uy => ?_
     refine wp_movS rfl fun t ut _ => WP.block_nil ⟨?_, ((Kw.widen Kx).widen uy.keeps).widen ut.keeps, ?_⟩
     · rw [ut.gpr, uy.gpr, Vx, Kx.1 _ (by decide), Ew,
-        Ow.wordsVal hsep (by have := hs.nowrap; omega)]
+        Ow.wordsVal hsep (by have := hs.nowrap; omega_using [ha, this])]
       simp only [ite_true, mask32_and, and_comm]
     · rw [ut.mem, uy.mem]
       exact Ow.trans Ox
   · rw [ite_eq_right hsmall]
     refine wp_movS rfl fun t ut _ => WP.block_nil ⟨?_, Kw.widen ut.keeps, ut.mem ▸ Ow⟩
-    have eq : bits = 64 * n := by omega
+    have eq : bits = 64 * n := by omega_using [hbn, hsmall]
     rw [ut.gpr, Ew, eq]
     simp only [wordsVal_lt s.mem base a n, and_true]
 
@@ -72,8 +72,8 @@ theorem optionalWidth_ok {s : State} {base : Addr} {size n a tmp bits : Nat}
       intro h
       have lower := ((VG.Proof.Dsa.bitLength_iff_bounds hb).mp h).1
       have upper := wordsVal_lt s.mem base a n
-      have powers : 2 ^ (64 * n) ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-      omega
+      have powers : 2 ^ (64 * n) ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hbn])
+      omega_using [lower, upper, powers]
     refine wp_movS rfl fun t ut _ => WP.block_nil ⟨?_, ut.keeps.mono (by decide), ?_⟩
     · rw [ut.gpr, mask32, ite_eq_right hnot]
     · rw [ut.mem]

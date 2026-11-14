@@ -206,28 +206,28 @@ theorem prfLoop_ct {label : List Nat} {len count : List Instr} {dst : Nat} {N : 
       (isa.eval (.nonzero .d .r9) a = some true → ∃ m < n, Rel e (LI N nb m) a b) := by
     intro n
     by_cases hn' : 0 < n ∧ n ≤ N e.s₁
-    · have hi : N e.s₁ - n < N e.s₁ := by omega
-      refine (prfBody_ct (e := e) (i := N e.s₁ - n) (C := C) (by omega) hd1 (by omega) hdst hn ht₁
-        (hmsg _ (by omega)) ht₂ ht₃ ht₄ hcount).mono
+    · have hi : N e.s₁ - n < N e.s₁ := by omega_using [hn']
+      refine (prfBody_ct (e := e) (i := N e.s₁ - n) (C := C) (by omega_using [hN256, hn']) hd1 (by omega_using [hd2, hn']) hdst hn ht₁
+        (hmsg _ (by omega_using [hN256, hn'])) ht₂ ht₃ ht₄ hcount).mono
         (fun a b ⟨⟨_, _, ha⟩, _, _, hb⟩ => ⟨ha, by rw [hN]; exact hb⟩) fun a b ⟨⟨ha, sa, a9⟩, hb, sb, b9⟩ => ?_
       have ev : ∀ x : State, isa.eval (.nonzero .d .r9) x = some (x.gpr .r9 != 0) :=
         fun x => VG.Proof.Bignum.PPC64LE.eval_nonzero x .r9
       have a9' : a.gpr .r9 = BitVec.ofNat 64 (N e.s₁ - (N e.s₁ - n + 1)) := by rw [a9, hCv _ hi]
       have b9' : b.gpr .r9 = BitVec.ofNat 64 (N e.s₁ - (N e.s₁ - n + 1)) := by rw [b9, ← hCe, hCv _ hi]
       have hz : (BitVec.ofNat 64 (N e.s₁ - (N e.s₁ - n + 1)) != 0) = decide (n ≠ 1) := by
-        rw [VG.Proof.Bignum.PPC64LE.ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-        exact decide_eq_decide.mpr (by omega)
+        rw [VG.Proof.Bignum.PPC64LE.ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hN256])]
+        exact decide_eq_decide.mpr (by omega_using [hn'])
       refine ⟨by rw [ev, ev, a9', b9'], fun hf => ?_, fun ht => ?_⟩
       · rw [ev, a9', hz] at hf
         have : n = 1 := by simpa using hf
         subst this
-        exact ⟨⟨ha, by rw [show N e.s₁ - 1 + 1 = N e.s₁ by omega] at sa; exact sa⟩,
-          ⟨hb, by rw [show N e.s₁ - 1 + 1 = N e.s₁ by omega, hN] at sb; exact sb⟩⟩
+        exact ⟨⟨ha, by rw [show N e.s₁ - 1 + 1 = N e.s₁ by omega_using [hN0]] at sa; exact sa⟩,
+          ⟨hb, by rw [show N e.s₁ - 1 + 1 = N e.s₁ by omega_using [hN0], hN] at sb; exact sb⟩⟩
       · rw [ev, a9', hz] at ht
         have : n ≠ 1 := by simpa using ht
-        refine ⟨n - 1, by omega, ⟨by omega, by omega, ha, ?_⟩, ⟨by rw [← hN]; omega, by omega, hb, ?_⟩⟩
-        · rw [show N e.s₁ - (n - 1) = N e.s₁ - n + 1 by omega]; exact sa
-        · rw [← hN, show N e.s₁ - (n - 1) = N e.s₁ - n + 1 by omega]; exact sb
+        refine ⟨n - 1, by omega_using [hn'], ⟨by omega_using [hn'], by omega_using [hn', this], ha, ?_⟩, ⟨by rw [← hN]; omega_using [hn'], by omega_using [hn', this], hb, ?_⟩⟩
+        · rw [show N e.s₁ - (n - 1) = N e.s₁ - n + 1 by omega_using [hn']]; exact sa
+        · rw [← hN, show N e.s₁ - (n - 1) = N e.s₁ - n + 1 by omega_using [hn']]; exact sb
     · exact RelCT.of_false fun a b ⟨⟨h₁, h₂, _⟩, _⟩ => hn' ⟨h₂, h₁⟩
   exact (RelCT.loop (Q := Rel e fun s u => B0 (N s) nb s u) _ step (N e.s₁)).mono
     (fun a b ⟨ha, hb⟩ => ⟨⟨Nat.le_refl _, hN0, by rw [Nat.sub_self]; exact ha⟩,
@@ -243,7 +243,7 @@ theorem clLoop_ct : RelCT isa (Rel e PP) clLoop (Rel e fun s u => B0 8 nbOf s u)
   refine RelCT.seq (rel_step (P' := B0 0 nbOf) [] (by taint_decide) (fun a b ha hb => ⟨pp_sp ha hb, fun _ h => nomatch h⟩)
     fun s u h ⟨R, EM, hu⟩ => WP.mono (clStart_ok h hu) fun v ⟨hv, c, n, _⟩ => ⟨⟨_, _, hv⟩, c, n⟩) ?_
   exact prfLoop_ct (N := fun _ => 8) rfl (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    rfl (fun i hi => Offset.ofNat_sub_ofNat (by omega)) (by taint_decide)
+    rfl (fun i hi => Offset.ofNat_sub_ofNat (by omega_using [hi])) (by taint_decide)
     (fun i hi s u h hu x9 x11 _ => WP.mono (msgCL_ok x9 x11 hi (let ⟨_, _, hu⟩ := hu; hu.msgW h))
       fun w ⟨⟨F, _⟩, k⟩ => ⟨F, k⟩)
     (by taint_decide) (fun s u _ ⟨_, _, hu⟩ _ => incrCL_ok hu) (by taint_decide) (by taint_decide)
@@ -255,9 +255,9 @@ theorem amLoop_ct : RelCT isa (Rel e fun s u => B0 8 nbOf s u) amLoop (Rel e PP)
   refine RelCT.seq (rel_step (P' := B0 0 nbOf) [] (by taint_decide)
     (fun a b ha hb => ⟨b0_sp ha hb, fun _ h => nomatch h⟩)
     fun s u h ⟨⟨R, EM, hu⟩, _, hnb⟩ => WP.mono (amStart_ok h hu hnb) fun v ⟨hv, c, n, _⟩ => ⟨⟨_, _, hv⟩, c, n⟩) ?_
-  refine rel_mono (prfLoop_ct (N := fun s => ((s.gpr .r7).toNat + 31) / 32) (C := nbOf) (by rw [e.r]) (by omega)
-    (by omega) (by decide) (by unfold sAM scrBytes; omega) (by decide) (by decide)
-    (by show nbOf e.s₁ = nbOf e.s₂; rw [nbOf, nbOf, e.r]) (fun i hi => Offset.ofNat_sub_ofNat (by omega))
+  refine rel_mono (prfLoop_ct (N := fun s => ((s.gpr .r7).toNat + 31) / 32) (C := nbOf) (by rw [e.r]) (by omega_using [hk₁'])
+    (by omega_using [hk₁]) (by decide) (by unfold sAM scrBytes; omega_using [hk₁]) (by decide) (by decide)
+    (by show nbOf e.s₁ = nbOf e.s₂; rw [nbOf, nbOf, e.r]) (fun i hi => Offset.ofNat_sub_ofNat (by omega_using [hi]))
     (by taint_decide)
     (fun i hi s u h hu x9 x11 x8 => WP.mono (msgAM_ok x9 x11 x8 hi (DPre.k2 h) (let ⟨_, _, hu⟩ := hu; hu.msgW h))
       fun w ⟨⟨F, _⟩, k⟩ => ⟨F, k⟩)

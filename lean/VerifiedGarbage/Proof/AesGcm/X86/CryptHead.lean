@@ -83,20 +83,20 @@ theorem cHead3_ok (k : Nat) (hkn : k ≤ n) (hk1 : 1 ≤ k) (hbk : P % 16 + k �
     (h : CHead2 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (R := R) (D := D) (n := n) (P := P) k m₀ s) :
     WP isa xorLoop s (CrMid Ctx St W SP K R icb D n P m₀ k) := by
   have he := h.env
-  have eS := L.aS (o := 64 + P % 16) (by omega)
+  have eS := L.aS (o := 64 + P % 16) (by omega_using [])
   have dk := h.data.take hkn
   have xp : XorPre s (St + BitVec.ofNat 32 (64 + P % 16)) D k := by
-    refine ⟨h.edx, h.edi, h.ecx, hk1, by have := h.nlt; omega, ?_, dk.ok.fit, ?_, dk.wr, ?_⟩
-    · rw [L.nS (by omega)]; have := L.fs; omega
-    · rw [eS]; exact covers_left (he.stC (by omega))
-    · rw [eS]; exact (dk.ok.st.sub_right (Lay.stSub (by omega))).symm
+    refine ⟨h.edx, h.edi, h.ecx, hk1, by have := h.nlt; omega_using [hbk], ?_, dk.ok.fit, ?_, dk.wr, ?_⟩
+    · rw [L.nS (by omega_using [])]; have := L.fs; omega_using [hbk, this]
+    · rw [eS]; exact covers_left (he.stC (by omega_using [hbk]))
+    · rw [eS]; exact (dk.ok.st.sub_right (Lay.stSub (by omega_using [hbk]))).symm
   refine WP.mono (xorLoop_ok s xp) fun s' c => ?_
   have cm := c.mem
   rw [eS] at cm
   have hxl := length_xorBytes s.mem (w64 D) (w64 St + BitVec.ofNat 64 (64 + P % 16)) k
   have fw : Frame [⟨w64 D, k⟩] s.mem s'.mem := by rw [cm]; exact writeBytes_frame' _ hxl
   have fw' : Frame [⟨w64 D + BitVec.ofNat 64 0, k⟩] s.mem s'.mem := by simpa using fw
-  have hf₁ : Frame (crFrame St W SP K D n) s.mem s'.mem := part_crFrame (j := 0) (by omega) fw'
+  have hf₁ : Frame (crFrame St W SP K D n) s.mem s'.mem := part_crFrame (j := 0) (by omega_using [hkn]) fw'
   have hf : Frame (crFrame St W SP K D n) m₀ s'.mem := (pslot_crFrame h.fr).trans hf₁
   have hlt := h.nlt
   -- What the XOR writes is apart from the state and the slots.
@@ -117,7 +117,7 @@ theorem cHead3_ok (k : Nat) (hkn : k ≤ n) (hk1 : 1 ≤ k) (hbk : P % 16 + k �
       simp only [List.mem_singleton] at hr; subst hr
       exact (h.data.ok.w.sub_left (Offset.sub_base _ hal)).sub_right (Lay.wSub (by decide))
   have pD0 : ∀ r ∈ [pslotR W], (⟨w64 D, k⟩ : Region).Disjoint r := by
-    have := pD (a := 0) (l := k) (by omega); simpa using this
+    have := pD (a := 0) (l := k) (by omega_using [hkn]); simpa using this
   refine ⟨⟨env_crFrame L h.data he hf₁ (c.other _ (by decide) (by decide) (by decide) (by decide) (by decide))
       (c.other _ (by decide) (by decide) (by decide) (by decide) (by decide))
       (c.other _ (by decide) (by decide) (by decide) (by decide) (by decide)) c.rd c.wr, hkn, hlt,
@@ -127,18 +127,18 @@ theorem cHead3_ok (k : Nat) (hkn : k ≤ n) (hk1 : 1 ≤ k) (hbk : P % 16 + k �
     · rw [blockAt_frame fw (dS (by decide)), blockAt_frame h.fr (pS (by decide))]
     · rw [blockAt_frame fw (dS (by decide)), blockAt_frame h.fr (pS (by decide))]
   · have e := bytesAt_writeBytes_self s.mem (w64 D) (xorBytes s.mem (w64 D) (w64 St + BitVec.ofNat 64 (64 + P % 16)) k)
-      (by rw [hxl]; omega)
+      (by rw [hxl]; omega_using [hbk])
     rw [hxl] at e
-    rw [cm, e, xorBytes, bytesAt_frame h.fr pD0 (by omega), bytesAt_frame h.fr (pS (by omega)) (by omega)]
+    rw [cm, e, xorBytes, bytesAt_frame h.fr pD0 (by omega_using [hbk]), bytesAt_frame h.fr (pS (by omega_using [hbk])) (by omega_using [hbk])]
     have := Proof.Gcm.ctr_head hc hP (d := bytesAt m₀ (w64 D) k) (by rw [length_bytesAt]; exact hbk)
     rw [length_bytesAt, add_ofNat_assoc] at this
     exact this
   · rw [bytesAt_frame fw (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (split_disj (by omega)).symm) (by omega),
-      bytesAt_frame h.fr (pD (by omega)) (by omega)]
+      simp only [List.mem_singleton] at hr; subst hr; exact (split_disj (by omega_using [hkn, hlt])).symm) (by omega_using [hlt]),
+      bytesAt_frame h.fr (pD (by omega_using [hkn])) (by omega_using [hlt])]
   · rcases hw with hw | hw
-    · left; omega
-    · right; omega
+    · left; omega_using [hw]
+    · right; omega_using [hw]
   · rw [slotv_eq, slot_frame fw (dW (by decide))]; exact h.dO
   · rw [slotv_eq, slot_frame fw (dW (by decide))]; exact h.nO
 
@@ -147,14 +147,14 @@ theorem cryptHead_pc (hn0 : n ≠ 0) (hP : P % 16 ≠ 0) :
       (CrMid Ctx St W SP K R icb D n P · (min (16 - P % 16) n)) := by
   have hb16 : P % 16 < 16 := Nat.mod_lt _ (by decide)
   generalize hk : min (16 - P % 16) n = k
-  have hkn : k ≤ n := by omega
-  have hk1 : 1 ≤ k := by omega
-  have hbk : P % 16 + k ≤ 16 := by omega
-  have hw : k = n ∨ P % 16 + k = 16 := by omega
+  have hkn : k ≤ n := by omega_using [hk]
+  have hk1 : 1 ≤ k := by omega_using [hn0, hk]
+  have hbk : P % 16 + k ≤ 16 := by omega_using [hk]
+  have hw : k = n ∨ P % 16 + k = 16 := by omega_using [hk]
   refine Pc.seq (Q := fun m₀ s₁ => ∃ s, (CrIn Ctx St W SP K R D n P s ∧ s.mem = m₀) ∧ MinOut k s s₁)
     (hk ▸ Pc.of (I := CrIn Ctx St W SP K R D n P) (R := MinOut (min (16 - P % 16) n))
-      (fun s h => minLen_ok L h.env h.nO h.bO (by omega) h.nlt)
-      (minLen_ct fun s h => ⟨h.env.ebp, Ctx, St, SP, K, L, h.env, h.nO, h.bO, by omega, h.nlt⟩)
+      (fun s h => minLen_ok L h.env h.nO h.bO (by omega_using []) h.nlt)
+      (minLen_ct fun s h => ⟨h.env.ebp, Ctx, St, SP, K, L, h.env, h.nO, h.bO, by omega_using [], h.nlt⟩)
       _ fun _ _ h => h.1) ?_
   refine Pc.seq (Q := CHead2 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (R := R) (D := D) (n := n)
       (P := P) k)

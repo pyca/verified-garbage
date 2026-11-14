@@ -147,8 +147,8 @@ theorem lcmPart_ok {s : State} {B : Addr} {Z n k : Nat}
   let P := num s.mem B n aPm
   let Q := num s.mem B n aQm
   let T := VG.Proof.RsaKeyGen.halveIter (32 * n) (P, Q, P * Q)
-  have small : k ≤ n := by omega
-  have powBound : 2 ^ (32 * k) ≤ 2 ^ (32 * n) := Nat.pow_le_pow_right (by decide) (by omega)
+  have small : k ≤ n := by omega_using [width]
+  have powBound : 2 ^ (32 * k) ≤ 2 ^ (32 * n) := Nat.pow_le_pow_right (by decide) (by omega_using [width])
   have productLocal : num s.mem B n aPhi = P * Q := product
   have phiBound : P * Q < 2 ^ (32 * n) := by
     rw [← productLocal]
@@ -177,7 +177,7 @@ theorem lcmPart_ok {s : State} {B : Addr} {Z n k : Nat}
     rw [denominator]
     split
     · decide
-    · next notSmall => exact Nat.gcd_pos_of_pos_right _ (by omega)
+    · next notSmall => exact Nat.gcd_pos_of_pos_right _ (by omega_using [notSmall])
   refine WP.mono (arrayDivision_ok hv (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) denPositive)
     fun t ⟨ht, Ot, quotient, _, Kt⟩ => ?_

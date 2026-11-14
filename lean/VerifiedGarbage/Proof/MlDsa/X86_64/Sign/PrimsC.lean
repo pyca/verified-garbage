@@ -65,7 +65,7 @@ theorem bitsPre {Q : Nat → Poly → Mem → Addr → Prop} {S : Nat} (hS : S +
     (bitsC Q S).pre (s1.callEntry.withRegions [pR (pa s r)] [pR (pa s out)]) := by
   obtain ⟨_, i1, i2, d12, _⟩ := rwChk_spec hc
   obtain ⟨e1, e2, e3⟩ := argsIn3 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_using [hS]
   have hwf := ce_wfS (ws := [64, 32, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [pR (pa s r)] [pR (pa s out)]
   sig_pre [bitsSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [e1, e2, e3, Arg.val, sw32_ofNat (gamma2_lt hγ)]
@@ -80,7 +80,7 @@ theorem bitsAt_ok {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c :
     WP isa (callP n c [.ptr r, .imm γ, .ptr out]) s fun s' => PPostB D s s' [(out, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ Q γ (polyAt s.mem (pa s r)) s'.mem (pa s out) := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  have hD : 8 ≤ D := by have := C.hS; omega
+  have hD : 8 ≤ D := by have := C.hS; omega_using [this]
   refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm (bitsArgs_ok hγ hc)
     (fun s1 hA hm k => bitsPre C.hS (At.of L hm k) hγ hc hA hr)
     (Covers.append_left (L.cR i1) (Covers.right (L.cW w1))) (L.cW w1))
@@ -150,7 +150,7 @@ theorem normPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
   simp only [normChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨i1, _⟩, _⟩ := hc
   obtain ⟨e1, e2⟩ := argsIn2 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_using [hS]
   have hwf := ce_wfS (ws := [64, 32]) (by decide) hS (A.rsp ▸ A.L.sp) [pR (pa s f)] []
   sig_pre [normLtContract, normLtSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [e1, Arg.val]
@@ -171,7 +171,7 @@ theorem normCall_ok {nm : String} {P : Prims} (hP : PrimsOk P D) {s : State} (L 
       (s'.gpr .rax).setWidth 32 = if normRq [polyAt s.mem (pa s f)] < B then 1 else 0 := by
   have i1 : inB (rbs ++ wbs) f 1024 = true := by
     simp only [normChk, Bool.and_eq_true] at hc; exact hc.1.1
-  have hD : 8 ≤ D := by have := hP.normLt.hS; omega
+  have hD : 8 ≤ D := by have := hP.normLt.hS; omega_using [this]
   refine WP.mono (callP_ok hP.normLt.ver.1 hP.normLt.nosp hP.normLt.depth L.dsm (normArgs_ok hB hc)
     (fun s1 hA hm k => normPre hP.normLt.hS (At.of L hm k) hc hA hr)
     (Covers.append_left (L.cR i1) Covers.nil) Covers.nil)
@@ -231,7 +231,7 @@ theorem hintPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
     (makeHintContract X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s z), pR (pa s r)] [pR (pa s h)]) := by
   obtain ⟨_, i1, i2, i3, d13, d23, _⟩ := hintChk_spec hc
   obtain ⟨e1, e2, e3, e4⟩ := argsIn4 hA
-  have hD : 8 ≤ D := by omega
+  have hD : 8 ≤ D := by omega_using [hS]
   have hwf := ce_wfS (ws := [64, 64, 32, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [pR (pa s z), pR (pa s r)]
     [pR (pa s h)]
   sig_pre [makeHintContract, makeHintSig, X86_64.abi, VG.X86_64.argRegs]
@@ -251,7 +251,7 @@ theorem hintCall_ok {nm : String} {P : Prims} (hP : PrimsOk P D) {s : State} (L 
       ((s'.gpr .rax).setWidth 32).toNat =
         hintOnes [Vector.zipWith (makeHint γ) (polyAt s.mem (pa s z)) (polyAt s.mem (pa s r))] := by
   obtain ⟨w1, i1, i2, i3, _⟩ := hintChk_spec hc
-  have hD : 8 ≤ D := by have := hP.makeHint.hS; omega
+  have hD : 8 ≤ D := by have := hP.makeHint.hS; omega_using [this]
   refine WP.mono (callP_ok hP.makeHint.ver.1 hP.makeHint.nosp hP.makeHint.depth L.dsm (hintArgs_ok hγ hc)
     (fun s1 hA hm k => hintPre hP.makeHint.hS (At.of L hm k) hγ hc hA rz rr)
     (Covers.append_left (Covers.cons (L.cR i1) (L.cR i2)) (Covers.right (L.cW w1))) (L.cW w1))

@@ -32,12 +32,12 @@ theorem restore_ok (orig start : State) (hsave : SavedVector orig start) :
     fun s hs => ⟨hs.keep,hs.mem,hs.vec,fun r hr => ?_⟩
   · refine WP.cons (exec_umov_low s (savedReg i) (savedVec i)) (wp_nil ?_)
     refine ⟨⟨hs.keep.rd,hs.keep.wr,hs.keep.sp⟩,hs.mem,hs.vec,fun j hj => ?_⟩
-    simp only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,savedReg_inj j (by omega) i hi]
+    simp only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,savedReg_inj j (by omega_using [hi, hj]) i hi]
     split
     · rename_i h; subst j
       rw [hs.vec]
       exact hsave i hi
-    · exact hs.vals j (by omega)
+    · exact hs.vals j (by omega_arith)
   · have hall : ∀ r ∈ preserved, ∃ i : Fin 11, r = savedReg i.val := by decide
     obtain ⟨i,rfl⟩ := hall r hr
     exact hs.vals i.val i.isLt

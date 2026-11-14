@@ -5,6 +5,7 @@ public import Mathlib.Logic.Function.Iterate
 
 import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Prime recovery by SP 800-56B Rev. 2 Appendix C.2: the mathematics
@@ -40,10 +41,10 @@ theorem isqrt_spec (x : Nat) : isqrt x * isqrt x ≤ x ∧ x < (isqrt x + 1) * (
     split
     · rename_i h
       constructor
-      · rcases (show x = 0 ∨ x = 1 by omega) with rfl | rfl <;> decide
-      · rcases (show x = 0 ∨ x = 1 by omega) with rfl | rfl <;> decide
+      · rcases (show x = 0 ∨ x = 1 by omega_using [h]) with rfl | rfl <;> decide
+      · rcases (show x = 0 ∨ x = 1 by omega_using [h]) with rfl | rfl <;> decide
     · rename_i h
-      have h4 : x / 4 < x := by omega
+      have h4 : x / 4 < x := by omega_using [h]
       obtain ⟨lo, hi⟩ := ih (x / 4) h4
       dsimp only
       generalize isqrt (x / 4) = s at lo hi
@@ -56,9 +57,9 @@ theorem isqrt_spec (x : Nat) : isqrt x * isqrt x ≤ x ∧ x < (isqrt x + 1) * (
       split
       · rename_i c
         refine ⟨c, ?_⟩
-        omega
+        omega_using [hi, e3]
       · rename_i c
-        refine ⟨by omega, by omega⟩
+        refine ⟨by omega_using [lo, e1], by omega_using [c]⟩
 
 theorem isqrt_sq_le (x : Nat) : isqrt x * isqrt x ≤ x := (isqrt_spec x).1
 
@@ -68,11 +69,11 @@ theorem lt_succ_isqrt_sq (x : Nat) : x < (isqrt x + 1) * (isqrt x + 1) := (isqrt
 theorem isqrt_eq {x s : Nat} (lo : s * s ≤ x) (hi : x < (s + 1) * (s + 1)) : isqrt x = s := by
   obtain ⟨l, h⟩ := isqrt_spec x
   rcases Nat.lt_trichotomy (isqrt x) s with c | c | c
-  · have : (isqrt x + 1) * (isqrt x + 1) ≤ s * s := Nat.mul_self_le_mul_self (by omega)
-    omega
+  · have : (isqrt x + 1) * (isqrt x + 1) ≤ s * s := Nat.mul_self_le_mul_self (by omega_using [c])
+    omega_using [lo, h, this]
   · exact c
-  · have : (s + 1) * (s + 1) ≤ isqrt x * isqrt x := Nat.mul_self_le_mul_self (by omega)
-    omega
+  · have : (s + 1) * (s + 1) ≤ isqrt x * isqrt x := Nat.mul_self_le_mul_self (by omega_using [c])
+    omega_using [hi, l, this]
 
 /-- One step of the square root: from the root `y` of `t` and its remainder `r`, the root of
 `4 t + δ` is `2 y + 1` if `4 y + 1 ≤ 4 r + δ`, else `2 y`. -/
@@ -85,18 +86,18 @@ theorem sqrt_step {t y r δ : Nat} (hy : y = isqrt t) (hr : r + y * y = t) (hδ 
   have hi := lt_succ_isqrt_sq t
   rw [← hy] at hi
   have e1 : (y + 1) * (y + 1) = y * y + 2 * y + 1 := by grind
-  have hr2 : r ≤ 2 * y := by omega
+  have hr2 : r ≤ 2 * y := by omega_using [hr, hi, e1]
   have e2 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by grind
   have e3 : (2 * y + 1 + 1) * (2 * y + 1 + 1) = 4 * (y * y) + 8 * y + 4 := by grind
   have e4 : 2 * y * (2 * y) = 4 * (y * y) := by grind
   have e5 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by grind
   split
   · rename_i c
-    have e : isqrt (4 * t + δ) = 2 * y + 1 := isqrt_eq (by omega) (by omega)
-    refine ⟨e, ?_, ?_⟩ <;> rw [e] <;> omega
+    have e : isqrt (4 * t + δ) = 2 * y + 1 := isqrt_eq (by omega_using [hr, e2, c]) (by omega_arith)
+    refine ⟨e, ?_, ?_⟩ <;> rw [e] <;> omega_arith
   · rename_i c
-    have e : isqrt (4 * t + δ) = 2 * y := isqrt_eq (by omega) (by omega)
-    refine ⟨e, ?_, ?_⟩ <;> rw [e] <;> omega
+    have e : isqrt (4 * t + δ) = 2 * y := isqrt_eq (by omega_using [hr, e4]) (by omega_using [hr, e2, c])
+    refine ⟨e, ?_, ?_⟩ <;> rw [e] <;> omega_arith
 
 /-! ## The halvings -/
 
@@ -124,13 +125,13 @@ theorem twoInv_step {b N x i : Nat} {s : Nat × Nat × Nat} (h : TwoInv b N x i 
   · simp only [eu, ↓reduceIte]
     have hu' : u / 2 % 2 = 1 ∨ u / 2 * 2 ^ (i + 1) = N := by
       rcases hu with hu | hu
-      · omega
+      · omega_using [eu, hu]
       · right; rw [← hu, Nat.pow_succ]; have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero eu); grind
     by_cases ex : x2 % 2 = 0
     · simp only [ex, ↓reduceIte]
-      have e0 : e = 0 := by omega
+      have e0 : e = 0 := by omega_using [he, ex]
       subst e0
-      refine ⟨2 * g, 0, ?_, ?_, ?_, .inl rfl, hu', by simp only; omega⟩
+      refine ⟨2 * g, 0, ?_, ?_, ?_, .inl rfl, hu', by simp only; omega_using [hle]⟩
       · simp only; rw [← hx]; have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero ex); grind
       · simp only; rw [h3, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]; grind
       · simp only [Nat.pow_zero, Nat.mul_one] at hg ⊢
@@ -141,7 +142,7 @@ theorem twoInv_step {b N x i : Nat} {s : Nat × Nat × Nat} (h : TwoInv b N x i 
         rw [Nat.gcd_mul_right]
         grind
     · simp only [ex, ↓reduceIte]
-      refine ⟨g, e + 1, hx, h3, ?_, .inr (by simp only; omega), hu', by simp only; omega⟩
+      refine ⟨g, e + 1, hx, h3, ?_, .inr (by simp only; omega_using [ex]), hu', by simp only; omega_using [hle]⟩
       simp only
       rw [hg]
       have du := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero eu)
@@ -155,7 +156,7 @@ theorem twoInv_iter {b N x : Nat} : ∀ k i (s : Nat × Nat × Nat), TwoInv b N 
     TwoInv b N x (i + k) ((twoStep b)^[k] s)
   | 0, _, _, h => h
   | k + 1, i, s, h => by
-    rw [Function.iterate_succ_apply, show i + (k + 1) = (i + 1) + k by omega]
+    rw [Function.iterate_succ_apply, show i + (k + 1) = (i + 1) + k by omega_using []]
     exact twoInv_iter k (i + 1) _ (twoInv_step h)
 
 /-- After as many steps as `N` has bits, from `(N, x, x)`: `u` is odd, and
@@ -176,9 +177,9 @@ theorem twos_iter {b N x k : Nat} (pos : 0 < N) (hk : N < 2 ^ k) (hx : x < 2 ^ b
     · exact hu
     · exfalso
       rcases Nat.eq_zero_or_pos u with z | p
-      · rw [z, Nat.zero_mul] at hu; omega
+      · rw [z, Nat.zero_mul] at hu; omega_using [pos, hu]
       · have := Nat.mul_le_mul_right (2 ^ k) (show 1 ≤ u from p)
-        omega
+        omega_using [hk, hu, this]
   refine ⟨odd, hle, g, hx, h3, ?_⟩
   rw [hg]
   rcases he with rfl | he
@@ -260,7 +261,7 @@ theorem prod_iter (b y x : Nat) (hx : x < 2 ^ b) : ∀ k, (prodStep b)^[k] (y, x
       split
       · rename_i c; rw [c]; simp
       · rename_i c
-        have c1 : y / 2 ^ k % 2 = 1 := by omega
+        have c1 : y / 2 ^ k % 2 = 1 := by omega_using [c]
         have e : (y % 2 ^ k + 2 ^ k * 1) * x = y % 2 ^ k * x + x * 2 ^ k := by grind
         rw [c1, e, Nat.add_mod (y % 2 ^ k * x) (x * 2 ^ k)]
 
@@ -292,27 +293,27 @@ theorem two_bits {xs P : Nat} (hP : 0 < P) (hx : xs < 4 * P) :
     (Nat.div_add_mod' xs P).symm⟩
   have hq : q < 4 := by
     by_contra c
-    have := Nat.mul_le_mul_right P (show 4 ≤ q by omega)
-    omega
+    have := Nat.mul_le_mul_right P (show 4 ≤ q by omega_using [c])
+    omega_using [hx, this]
   have dP : (q * P + r) / P = q := by
     rw [Nat.add_comm, Nat.add_mul_div_right _ _ hP, Nat.div_eq_of_lt hr, Nat.zero_add]
   have mP : (q * P + r) % P = r := by
     rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hr]
   rw [dP, mP]
-  rcases (show q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 by omega_using [hq]) with rfl | rfl | rfl | rfl
   all_goals
     have d : ∀ a c, c * (4 * P) ≤ a → a < (c + 1) * (4 * P) → a / (4 * P) = c := fun a c h1 h2 =>
       Nat.div_eq_of_lt_le h1 h2
     have m : ∀ a c, c * (4 * P) ≤ a → a < (c + 1) * (4 * P) → a % (4 * P) = a - c * (4 * P) := fun a c h1 h2 => by
       rw [Nat.mod_eq_sub_mul_div, d a c h1 h2, Nat.mul_comm]
-  · rw [d _ 0 (by omega) (by omega), m _ 0 (by omega) (by omega), d _ 0 (by omega) (by omega),
-      m _ 0 (by omega) (by omega)]; omega
-  · rw [d _ 0 (by omega) (by omega), m _ 0 (by omega) (by omega), d _ 1 (by omega) (by omega),
-      m _ 1 (by omega) (by omega)]; omega
-  · rw [d _ 1 (by omega) (by omega), m _ 1 (by omega) (by omega), d _ 0 (by omega) (by omega),
-      m _ 0 (by omega) (by omega)]; omega
-  · rw [d _ 1 (by omega) (by omega), m _ 1 (by omega) (by omega), d _ 1 (by omega) (by omega),
-      m _ 1 (by omega) (by omega)]; omega
+  · rw [d _ 0 (by omega_using []) (by omega_using [hr]), m _ 0 (by omega_using []) (by omega_using [hr]), d _ 0 (by omega_using []) (by omega_using [hr]),
+      m _ 0 (by omega_using []) (by omega_using [hr])]; omega_using []
+  · rw [d _ 0 (by omega_using []) (by omega_using [hr]), m _ 0 (by omega_using []) (by omega_using [hr]), d _ 1 (by omega_using []) (by omega_using [hr]),
+      m _ 1 (by omega_using []) (by omega_using [hr])]; omega_using []
+  · rw [d _ 1 (by omega_using []) (by omega_using [hr]), m _ 1 (by omega_using []) (by omega_using [hr]), d _ 0 (by omega_using []) (by omega_using [hr]),
+      m _ 0 (by omega_using []) (by omega_using [hr])]; omega_using []
+  · rw [d _ 1 (by omega_using []) (by omega_using [hr]), m _ 1 (by omega_using []) (by omega_using [hr]), d _ 1 (by omega_using []) (by omega_using [hr]),
+      m _ 1 (by omega_using []) (by omega_using [hr])]; omega_using []
 
 /-- What the square root's loop keeps after `i` of its `K` steps: the radicand's low
 `2 (K - i)` bits at the top, and the root and remainder of the rest. -/
@@ -326,13 +327,13 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
   obtain ⟨xs, r, y⟩ := s
   obtain ⟨hx, hy, hr⟩ := h
   simp only at hx hy hr
-  obtain ⟨m, rfl⟩ : ∃ m, K = i + m + 1 := ⟨K - i - 1, by omega⟩
-  have km : i + m + 1 - i = m + 1 := by omega
-  have km' : i + m + 1 - (i + 1) = m := by omega
+  obtain ⟨m, rfl⟩ : ∃ m, K = i + m + 1 := ⟨K - i - 1, by omega_using [hi]⟩
+  have km : i + m + 1 - i = m + 1 := by omega_using []
+  have km' : i + m + 1 - (i + 1) = m := by omega_using []
   rw [km] at hx hy hr
   have pos4 : ∀ j, 0 < 4 ^ j := fun j => Nat.pow_pos (by decide)
   have wb : 2 ^ (2 * (i + m + 1)) = 4 * 4 ^ (m + i) := by
-    rw [Nat.pow_mul, show 2 ^ 2 = 4 by rfl, show i + m + 1 = (m + i) + 1 by omega, Nat.pow_succ,
+    rw [Nat.pow_mul, show 2 ^ 2 = 4 by rfl, show i + m + 1 = (m + i) + 1 by omega_using [], Nat.pow_succ,
       Nat.mul_comm]
   have eA : 4 ^ (m + 1) = 4 ^ m * 4 := by rw [Nat.pow_succ]
   have eAI : 4 ^ (m + i) = 4 ^ m * 4 ^ i := Nat.pow_add 4 m i
@@ -345,7 +346,7 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
   rw [eAI] at wb
   have xlt : xs < 4 * (A * I) := by
     rw [hx, ← Nat.mul_assoc, Nat.mul_comm 4 A]
-    exact Nat.mul_lt_mul_of_pos_right (Nat.mod_lt _ (by omega)) Ipos
+    exact Nat.mul_lt_mul_of_pos_right (Nat.mod_lt _ (by omega_using [Apos])) Ipos
   obtain ⟨bits, shifted, hb, lb⟩ := two_bits (Nat.mul_pos Apos Ipos) xlt
   have digit : xs / (A * I) = X / A % 4 := by
     rw [hx, Nat.mul_div_mul_right _ _ Ipos, Nat.mod_mul_right_div_self]
@@ -353,7 +354,7 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
     rw [hx, Nat.mul_mod_mul_right, Nat.mod_mul_right_mod]
     grind
   have next : X / A = 4 * (X / (A * 4)) + X / A % 4 := by
-    rw [← Nat.div_div_eq_div_mul]; omega
+    rw [← Nat.div_div_eq_div_mul]; omega_using []
   have yle : y ≤ isqrt X := by
     rw [hy]
     have := isqrt_spec (X / (A * 4)); have := isqrt_spec X
@@ -361,36 +362,36 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
     by_contra c
     have : (isqrt X + 1) * (isqrt X + 1) ≤ isqrt (X / (A * 4)) * isqrt (X / (A * 4)) :=
       Nat.mul_self_le_mul_self (by omega)
-    omega
+    omega_arith
   have hr2 : r ≤ 2 * y := by
     have := lt_succ_isqrt_sq (X / (A * 4)); rw [← hy] at this
     have e : (y + 1) * (y + 1) = y * y + 2 * y + 1 := by grind
-    omega
+    omega_using [hr, this, e]
   have M8 : 8 * (2 ^ nb / 8) ≤ 2 ^ nb := Nat.mul_div_le _ _
   generalize hd : X / A % 4 = δ at *
   have hδ : δ < 4 := by rw [← hd]; exact Nat.mod_lt _ (by decide)
   obtain ⟨e1, e2, _⟩ := sqrt_step (t := X / (A * 4)) (δ := δ) hy hr hδ
-  have m1 : 2 * r % 2 ^ nb = 2 * r := Nat.mod_eq_of_lt (by omega)
+  have m1 : 2 * r % 2 ^ nb = 2 * r := Nat.mod_eq_of_lt (by omega_arith)
   have m2 : 2 * (2 * r + 2 * xs / (4 * (A * I))) % 2 ^ nb =
-      2 * (2 * r + 2 * xs / (4 * (A * I))) := Nat.mod_eq_of_lt (by omega)
-  have m3 : 2 * y % 2 ^ nb = 2 * y := Nat.mod_eq_of_lt (by omega)
-  have m4 : 2 * (2 * y) % 2 ^ nb = 2 * (2 * y) := Nat.mod_eq_of_lt (by omega)
+      2 * (2 * r + 2 * xs / (4 * (A * I))) := Nat.mod_eq_of_lt (by omega_arith)
+  have m3 : 2 * y % 2 ^ nb = 2 * y := Nat.mod_eq_of_lt (by omega_using [small, hy, hr, hx, Apos, Ipos, xlt, bits, shifted, hb, lb, rest, yle, hr2, M8, hd, digit, next, e2, m1, m2])
+  have m4 : 2 * (2 * y) % 2 ^ nb = 2 * (2 * y) := Nat.mod_eq_of_lt (by omega_using [small, hy, hr, hx, Apos, Ipos, xlt, bits, shifted, hb, lb, rest, yle, hr2, M8, hd, digit, next, e2, m1, m2, m3])
   have R : 2 * (2 * r + 2 * xs / (4 * (A * I))) + 2 * (2 * xs % (4 * (A * I))) / (4 * (A * I)) =
-      4 * r + δ := by omega
+      4 * r + δ := by omega_arith
   have q1 : 2 * y * (2 * y) = 4 * (y * y) := by grind
   have q2 : (2 * y + 1) * (2 * y + 1) = 4 * (y * y) + 4 * y + 1 := by grind
   unfold sqrtStep SqrtInv
   simp only [wb, m1, m2, m3, m4, R, km', shifted, hA]
   rw [next]
   by_cases c : 4 * r + δ < 2 * (2 * y) + 1
-  · have c' : ¬(4 * y + 1 ≤ 4 * r + δ) := by omega
+  · have c' : ¬(4 * y + 1 ≤ 4 * r + δ) := by omega_arith
     simp only [c, c', ↓reduceIte] at e1 e2 ⊢
     refine ⟨by rw [rest, eI], e1.symm, ?_⟩
-    rw [e1] at e2; omega
-  · have c' : 4 * y + 1 ≤ 4 * r + δ := by omega
+    rw [e1] at e2; omega_arith
+  · have c' : 4 * y + 1 ≤ 4 * r + δ := by omega_arith
     simp only [c, c', ↓reduceIte] at e1 e2 ⊢
     refine ⟨by rw [rest, eI], e1.symm, ?_⟩
-    rw [e1] at e2; omega
+    rw [e1] at e2; omega_arith
 
 /-- The square root's loop: `K` steps from `X < 4^K` give `isqrt X` and its remainder, if
 the root has at most `nb - 3` bits. -/
@@ -407,7 +408,7 @@ theorem sqrt_iter {nb K X : Nat} (hX : X < 4 ^ K) (small : isqrt X < 2 ^ nb / 8)
     | succ i ih =>
       intro hi
       rw [Function.iterate_succ_apply']
-      exact sqrtInv_step (by omega) small (ih (by omega))
+      exact sqrtInv_step (by omega_using [hi]) small (ih (by omega_using [hi]))
   obtain ⟨_, hy, hr⟩ := go K (Nat.le_refl _)
   simp only [Nat.sub_self, Nat.pow_zero, Nat.div_one] at hy hr
   rw [← hy]

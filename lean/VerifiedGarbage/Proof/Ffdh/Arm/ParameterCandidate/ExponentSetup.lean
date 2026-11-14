@@ -162,9 +162,9 @@ private theorem local60_preserved {s t : State} {base : BitVec 32} {capacity : N
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+  · rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact separate.sub_left (Offset.sub_base _ (by decide : 60 + 4 ≤ 72))
-  · rw [VG.Arm.addr_add (by have := stack.nowrap; omega), VG.Arm.addr_add (by have := stack.nowrap; omega)]
+  · rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this]), VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact Offset.disjoint _ (.inl (by decide : 60 + 4 ≤ 64)) (by decide) (by decide)
 
 theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
@@ -219,7 +219,7 @@ theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
   have stackA : Workspace a a.sp 72 := by rw [restUA.sp]; exact stackU.congr restUA.wr
   have savedA : a.mem.readW (State.addr (a.sp + 64#32)) 32 = BitVec.ofNat 32 sigma := by
     have countSep : (⟨State.addr (v.sp + 64#32), 4⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩ := by
-      rw [restV.sp, VG.Arm.addr_add (by have := stackU.nowrap; omega)]
+      rw [restV.sp, VG.Arm.addr_add (by have := stackU.nowrap; omega_using [this])]
       exact separateU.sub_left (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))
     rw [restA.sp, frameA.readW (r := ⟨State.addr (v.sp + 64#32), 4⟩) (Region.contains_self _ _)
       (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact countSep) (by decide),
@@ -248,7 +248,7 @@ theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
   rw [memC, lowB] at exponentT
   have exponent : n / 2 ^ sigma = Proof.MillerRabin.Round.exponent n := by
     change _ = (n - 1) / 2 ^ sigma
-    exact (VG.Proof.Bignum.odd_div odd (by omega : 1 ≤ sigma)).symm
+    exact (VG.Proof.Bignum.odd_div odd (by omega_using [sigmaPositive] : 1 ≤ sigma)).symm
   have rest : Rest opRegs s t := restU.trans (restUB.trans
     ((restC.mono (by simp [opRegs])).trans (restT.mono (by simp [opRegs]))))
   have frameT := key_keep_workspace workspaceC readyC (by simp) keepT
@@ -266,6 +266,6 @@ theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
     have fit := readyU.arrayFit (j := 0) (by decide)
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
     rw [key_keep_header workspaceC readyC (by simp) bound keepT, memC, headerB d bound,
-      key_keep_header workspaceV readyV (by simp) bound keepA, equalV.word (bits := 64) (by omega), headerU d bound]
+      key_keep_header workspaceV readyV (by simp) bound keepA, equalV.word (bits := 64) (by omega_using [bound, fit]), headerU d bound]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

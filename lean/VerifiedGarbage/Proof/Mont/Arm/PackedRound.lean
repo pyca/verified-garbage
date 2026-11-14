@@ -41,8 +41,8 @@ abbrev roundClob : List Reg := [.r0, .r1, .r2, .r3, .r5, .r6, .r7, .r8, .r9]
   have hn := hs.nowrap
   have mlt : m < 2 ^ (32 * n) := by rw [← modulus]; exact val32_lt _ _ _ _
   simp only [round, hMn, List.cons_append, List.nil_append, List.append_assoc]
-  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using hs.ea_off (d := 0) pa (by omega))
-    (hs.read (d := a + 4 * i) (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using hs.ea_off (d := 0) pa (by omega_using [fa]))
+    (hs.read (d := a + 4 * i) (by omega_using [fa])) fun s1 u1 => ?_
   let x := s.mem.readW (off base (a + 4 * i)) 32
   have scalar : s1.gpr .r2 = x := u1.gpr
   have k1 : Rest rowClob s s1 := u1.rest (by simp)
@@ -58,8 +58,8 @@ abbrev roundClob : List Reg := [.r0, .r1, .r2, .r3, .r5, .r6, .r7, .r8, .r9]
   have h2 := hs.of_rest k12 (by decide)
   have v2' : val32 s2.mem base acc (n + 2) = val32 s.mem base acc (n + 2) + x.toNat * val32 s.mem base b n := by
     rw [v2, u1.mem, scalar]
-  have mo2 : val32 s2.mem base M.mo n = m := by rw [o2.val32 (by omega) (by omega), u1.mem]; exact modulus
-  refine wp_ldr (h2.off_lt (by omega)) (h2.ea (by omega)) (h2.read (by omega)) fun s3 u3 => ?_
+  have mo2 : val32 s2.mem base M.mo n = m := by rw [o2.val32 (by omega_using [sm]) (by omega_using [fm, hn]), u1.mem]; exact modulus
+  refine wp_ldr (h2.off_lt (by omega_using [ft])) (h2.ea (by omega_using [ft])) (h2.read (by omega_using [ft])) fun s3 u3 => ?_
   refine wp_movw fun s4 u4 => wp_movt fun s5 u5 => wp_mul fun s6 u6 => ?_
   have k6 : Rest rowClob s s6 := k12.trans ((u3.rest (by simp)).trans
     ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans (u6.rest (by simp)))))

@@ -25,18 +25,18 @@ def restoreDst (w:Nat) : Nat := VG.Impl.X448.AArch64.slot (3+w/8)+8*(w%8)
 private theorem restoreDst_bounds {w:Nat} (hw:w<24) :
     448≤restoreDst w ∧ restoreDst w+8≤832 ∧ restoreDst w%8=0 := by
   simp only [restoreDst,VG.Impl.X448.AArch64.slot]
-  omega
+  omega_using [hw]
 
 def restoreSpan (n:Nat) : Nat := if n≤16 then 192 else 384
 
 private theorem span_le (n:Nat) : restoreSpan n≤384 := by
   unfold restoreSpan
-  split <;> omega
+  split <;> omega_using []
 
 private theorem restoreDst_span {n w:Nat} (hn:n≤24) (hw:w<n) :
     448≤restoreDst w ∧ restoreDst w+8≤448+restoreSpan n := by
   simp only [restoreSpan,restoreDst,VG.Impl.X448.AArch64.slot]
-  split <;> omega
+  split <;> omega_arith
 
 def restoreWords (n a:Nat) : List Instr := (List.range n).flatMap fun w =>
   [.ldr .x .x4 .x3 (a+8*w),st .x4 (restoreDst w)]
@@ -50,9 +50,9 @@ private theorem restoreWord_ok {s:State} {base p:Addr} (hs:Scr s base)
   have ep:p=base:=hp.symm.trans hs.x3
   rw [ep] at hr ⊢
   obtain ⟨_,hd,hd8⟩:=restoreDst_bounds hw
-  have es:(a+8*w)%8=0 ∧ a+8*w<32768:=⟨by omega,ha'⟩
-  have ed:(restoreDst w)%8=0 ∧ restoreDst w<32768:=⟨hd8,by omega⟩
-  have wr:=hs.write (d:=restoreDst w) (n:=8) (by omega)
+  have es:(a+8*w)%8=0 ∧ a+8*w<32768:=⟨by omega_using [ha],ha'⟩
+  have ed:(restoreDst w)%8=0 ∧ restoreDst w<32768:=⟨hd8,by omega_using [hd]⟩
+  have wr:=hs.write (d:=restoreDst w) (n:=8) (by omega_using [hd])
   apply WP.of_runBlock
   simp only [st,runBlock_cons,runStep_some,runBlock_nil,exec,addr,Size.bytes,es,ed,and_self,
     ite_true,hs.x3,State.read,Size.bits,BitVec.setWidth_eq,State.load,State.store,hr,wr,
@@ -76,27 +76,27 @@ theorem restoreWords_ok {s:State} {base p:Addr} (hs:Scr s base) (hp:s.gpr .x3=p)
   refine wp_range_flatMap (M:=isa) (N:=n) inv (fun k t hk ⟨tv,fo,kt⟩ => ?_)
     n (Nat.le_refl _) s ⟨fun _ h => by omega,Outside.refl _ _ _ _,Keeps.refl _ _⟩
   have ht:=hs.of_keeps kt (by decide)
-  refine WP.mono (restoreWord_ok ht ((kt.1 _ (by decide)).trans hp) (by omega) ha (by omega)
+  refine WP.mono (restoreWord_ok ht ((kt.1 _ (by decide)).trans hp) (by omega_using [hn, hk]) ha (by omega_using [ha', hk])
     (by rw [kt.2.1,kt.2.2];exact hr k hk)) fun u ⟨um,ku⟩ => ?_
-  obtain ⟨dlo,dhi,dal⟩:=restoreDst_bounds (show k<24 by omega)
+  obtain ⟨dlo,dhi,dal⟩:=restoreDst_bounds (show k<24 by omega_using [hn, hk])
   have hsval:t.mem.readW (p+BitVec.ofNat 64 (a+8*k)) 64=
       s.mem.readW (p+BitVec.ofNat 64 (a+8*k)) 64 := by
     apply Mem.readW_congr
     intro j hj
-    exact fo _ (Or.inr (by have := span_le n;have := hfar k hk j hj;omega))
+    exact fo _ (Or.inr (by have := span_le n;have := hfar k hk j hj;omega_arith))
   refine ⟨fun w hw => ?_,?_,kt.trans ku⟩
-  · rw [um,hsval,word_write_aligned _ _ (d:=restoreDst k) (e:=restoreDst w) (by omega) (by have := restoreDst_bounds (show w<24 by omega);omega)
-      dal (restoreDst_bounds (by omega)).2.2]
+  · rw [um,hsval,word_write_aligned _ _ (d:=restoreDst k) (e:=restoreDst w) (by omega_using [dhi]) (by have := restoreDst_bounds (show w<24 by omega_using [hn, hk, hw]);omega_using [this])
+      dal (restoreDst_bounds (by omega_using [hn, hk, hw])).2.2]
     by_cases he:w=k
     · subst w
       rw [ite_eq_left rfl]
     · have hne:restoreDst w≠restoreDst k := by
         simp only [restoreDst,VG.Impl.X448.AArch64.slot]
-        omega
+        omega_using [he]
       rw [ite_eq_right hne]
-      exact tv w (by omega)
+      exact tv w (by omega_using [hw, he])
   · rw [um]
     have dh:=restoreDst_span hn hk
-    exact fo.trans ((VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega)).mono dh.1 dh.2)
+    exact fo.trans ((VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega_using [dhi])).mono dh.1 dh.2)
 
 end VG.Proof.Ed448.AArch64.Sparse

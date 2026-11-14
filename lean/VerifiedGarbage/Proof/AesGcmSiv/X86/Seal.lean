@@ -41,7 +41,7 @@ theorem exit_ok {p : Prm} (L : Lay p) {s₀ t : State} (E : Env p t) (hsp : p.SP
     WP isa (.block Impl.AesGcm.X86.restore) t fun s' => abiPreserved s₀ s' ∧ s'.mem = t.mem ∧
       s'.gpr .eax = t.gpr .eax :=
   WP.mono (Proof.AesGcm.X86.exit_ok E.ebp (by rw [E.esp, hsp]) (covers_left E.perm.w2560)
-    (by have := L.ww; omega) hs (by rw [← hsp]; exact hret)) fun _ ⟨a, m, r, _⟩ => ⟨a, m, r⟩
+    (by have := L.ww; omega_using [this]) hs (by rw [← hsp]; exact hret)) fun _ ⟨a, m, r, _⟩ => ⟨a, m, r⟩
 
 /-- What the entry wrote is in our caller's registers and the slots. -/
 theorem entered_mut {s : State} {p : Prm} {s₁ : State} (L : Lay p) (En : Entered s p s₁) :
@@ -56,15 +56,15 @@ theorem entered_mut {s : State} {p : Prm} {s₁ : State} (L : Lay p) (En : Enter
       ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 128, 48⟩ : Region)], (⟨P, k⟩ : Region).Disjoint r := fun h r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h.sub_right (Lay.wSub (by decide))
   refine ⟨Proof.AesGcm.X86.ret_kept f (d L.retW), ?_, Proof.AesGcm.X86.bytesAt_frame f (d L.n_w) (by decide),
-    Proof.AesGcm.X86.bytesAt_frame f (d L.a_w) (by have := L.al32; omega),
-    Proof.AesGcm.X86.bytesAt_frame f (d L.d_w) (by have := L.n32; omega),
+    Proof.AesGcm.X86.bytesAt_frame f (d L.a_w) (by have := L.al32; omega_using [this]),
+    Proof.AesGcm.X86.bytesAt_frame f (d L.d_w) (by have := L.n32; omega_using [this]),
     Proof.AesGcm.X86.bytesAt_frame f (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       simpa using Lay.w_w (W := p.W) (a := 0) (n := 16) (d := 128) (k := 48) (.inl (by decide)) (by decide)
         (by decide)) (by decide)⟩
   unfold Spec.GcmSiv.ctxCiph
   rw [Proof.AesGcm.X86.bytesAt_frame f (d (L.k_w.sub_left (Region.sub_prefix L.rounds_le)))
-    (by have := L.rounds_le; omega)]
+    (by have := L.rounds_le; omega_using [this])]
 
 /-- `vg_aes_gcm_siv_seal`. -/
 theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (hs : sealPre s) :
@@ -101,7 +101,7 @@ theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (hs : sealPre s) :
     rw [Proof.AesGcm.X86.ret_kept f₆ rT, ret_mut L f₂₅, ret₁]
   have d₆ : bytesAt s₆.mem (w64 (prmOf s).D) (prmOf s).n = bytesAt s₅.mem (w64 (prmOf s).D) (prmOf s).n :=
     Proof.AesGcm.X86.bytesAt_frame f₆ (fun q hq => by
-      simp only [List.mem_singleton] at hq; subst hq; exact L.t_d.symm) (by omega)
+      simp only [List.mem_singleton] at hq; subst hq; exact L.t_d.symm) (by omega_using [hn])
   -- `restore`.
   refine WP.mono (exit_ok L E₆ rfl sv₆ ret₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
   show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (w64 (prmOf s).K) (prmOf s).R)
@@ -124,7 +124,7 @@ theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (hs : sealPre s) :
     · exact L.d_w' (by decide)
     · exact L.bd.symm
   have d₂ : bytesAt s₂.mem (w64 (prmOf s).D) (prmOf s).n = bytesAt s.mem (w64 (prmOf s).D) (prmOf s).n := by
-    rw [Proof.AesGcm.X86.bytesAt_frame Ky.frame dk₂ (by omega), d₁]
+    rw [Proof.AesGcm.X86.bytesAt_frame Ky.frame dk₂ (by omega_using [hn]), d₁]
   have d₄ : bytesAt s₄.mem (w64 (prmOf s).D) (prmOf s).n = bytesAt s.mem (w64 (prmOf s).D) (prmOf s).n := by
     rw [Proof.AesGcm.X86.bytesAt_frame Tg.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -132,16 +132,16 @@ theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (hs : sealPre s) :
         · exact L.d_w' (by decide)
         · exact L.d_w' (by decide)
         · exact L.d_w' (by decide)
-        · exact L.bd.symm) (by omega),
+        · exact L.bd.symm) (by omega_using [hn]),
       Proof.AesGcm.X86.bytesAt_frame Po.frame (fun r hr => by
         rcases List.mem_cons.mp hr with rfl | hr
         · exact L.d_w' (by decide)
-        · exact absorbR_buf L.d_w L.bd r hr) (by omega), d₂]
+        · exact absorbR_buf L.d_w L.bd r hr) (by omega_using [hn]), d₂]
   have dS : ∀ {rs : List Region}, (∀ r ∈ rs, (⟨w64 (prmOf s).W + BitVec.ofNat 64 512, 240⟩ : Region).Disjoint r) →
       ∀ {m m' : Mem}, Frame rs m m' → Spec.GcmSiv.ctxCiph m' (w64 (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R =
         Spec.GcmSiv.ctxCiph m (w64 (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R := fun hd m m' hf => by
     unfold Spec.GcmSiv.ctxCiph
-    rw [Proof.AesGcm.X86.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+    rw [Proof.AesGcm.X86.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])]
   have key₃ : Spec.GcmSiv.ctxCiph s₃.mem (w64 (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s₂.mem (w64 (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R := by
     refine dS (fun r hr => ?_) Po.frame

@@ -147,44 +147,44 @@ theorem getLsbD_qword (x : BitVec 128) {q i : Nat} (hi : i < 64) :
 theorem qword_psrlw (a : BitVec 128) {n : BitVec 8} (hn : n.toNat ≤ 15) {q : Nat} (hq : q < 2) :
     qword (XShiftOp.eval .psrlw a n) q = (qword a q >>> n.toNat) &&& wordMaskR n.toNat := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [XShiftOp.eval, show ¬ 15 < n.toNat by omega, ite_false]
-  rw [getLsbD_qword _ hi, show 64 * q + i = 16 * (4 * q + i / 16) + i % 16 by omega,
-    getLsbD_ofWords _ (by omega) (Nat.mod_lt _ (by omega))]
+  simp only [XShiftOp.eval, show ¬ 15 < n.toNat by omega_using [hn], ite_false]
+  rw [getLsbD_qword _ hi, show 64 * q + i = 16 * (4 * q + i / 16) + i % 16 by omega_using [],
+    getLsbD_ofWords _ (by omega_using [hq, hi]) (Nat.mod_lt _ (by omega_using []))]
   simp only [BitVec.getLsbD_ushiftRight, getLsbD_word, BitVec.getLsbD_and, wordMaskR, getLsbD_ofBits,
     qword, BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and]
   by_cases h : n.toNat + i % 16 < 16
-  · simp only [h, decide_true, Bool.true_and, show n.toNat + i < 64 by omega,
-      show i % 16 + n.toNat < 16 by omega, Bool.and_true]
-    exact congrArg _ (by omega)
-  · simp [h, show ¬ i % 16 + n.toNat < 16 by omega]
+  · simp only [h, decide_true, Bool.true_and, show n.toNat + i < 64 by omega_using [hi, h],
+      show i % 16 + n.toNat < 16 by omega_using [h], Bool.and_true]
+    exact congrArg _ (by omega_using [])
+  · simp [h, show ¬ i % 16 + n.toNat < 16 by omega_using [h]]
 
 theorem qword_psllw (a : BitVec 128) {n : BitVec 8} (hn : n.toNat ≤ 15) {q : Nat} (hq : q < 2) :
     qword (XShiftOp.eval .psllw a n) q = (qword a q <<< n.toNat) &&& wordMaskL n.toNat := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [XShiftOp.eval, show ¬ 15 < n.toNat by omega, ite_false]
-  rw [getLsbD_qword _ hi, show 64 * q + i = 16 * (4 * q + i / 16) + i % 16 by omega,
-    getLsbD_ofWords _ (by omega) (Nat.mod_lt _ (by omega))]
+  simp only [XShiftOp.eval, show ¬ 15 < n.toNat by omega_using [hn], ite_false]
+  rw [getLsbD_qword _ hi, show 64 * q + i = 16 * (4 * q + i / 16) + i % 16 by omega_using [],
+    getLsbD_ofWords _ (by omega_using [hq, hi]) (Nat.mod_lt _ (by omega_using []))]
   simp only [BitVec.getLsbD_shiftLeft, getLsbD_word, BitVec.getLsbD_and, wordMaskL, getLsbD_ofBits,
-    qword, BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and, Nat.mod_lt _ (show 16 > 0 by omega)]
+    qword, BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and, Nat.mod_lt _ (show 16 > 0 by omega_using [])]
   by_cases h : n.toNat ≤ i % 16
-  · simp only [h, decide_true, Bool.and_true, show ¬ i % 16 < n.toNat by omega, show ¬ i < n.toNat by omega,
-      decide_false, Bool.not_false, Bool.true_and, show i % 16 - n.toNat < 16 by omega,
-      show i - n.toNat < 64 by omega]
-    exact congrArg _ (by omega)
-  · simp [h, show i % 16 < n.toNat by omega]
+  · simp only [h, decide_true, Bool.and_true, show ¬ i % 16 < n.toNat by omega_using [h], show ¬ i < n.toNat by omega_using [h],
+      decide_false, Bool.not_false, Bool.true_and, show i % 16 - n.toNat < 16 by omega_using [],
+      show i - n.toNat < 64 by omega_using [hi]]
+    exact congrArg _ (by omega_using [h])
+  · simp [h, show i % 16 < n.toNat by omega_using [h]]
 
 /-- `pshufd` with `1 0 3 2` rotates each quadword by 32 bits. -/
 theorem qword_pshufd_b1 (a : BitVec 128) {q : Nat} (hq : q < 2) :
     qword (shufDwords a 0xb1) q = (qword a q).rotateRight 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [getLsbD_qword _ hi, shufDwords_b1, getLsbD_ofDwords, BitVec.getLsbD_rotateRight_of_lt (by omega)]
+  rw [getLsbD_qword _ hi, shufDwords_b1, getLsbD_ofDwords, BitVec.getLsbD_rotateRight_of_lt (by omega_using [])]
   simp only [qword, BitVec.getLsbD_extractLsb', getLsbD_dword]
-  rcases (by omega : q = 0 ∨ q = 1) with rfl | rfl
+  rcases (by omega_using [hq] : q = 0 ∨ q = 1) with rfl | rfl
   all_goals
-    rcases (by omega : i < 32 ∨ 32 ≤ i) with h | h
+    rcases (by omega_using [] : i < 32 ∨ 32 ≤ i) with h | h
     all_goals
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
-      exact congrArg _ (by omega)
+      exact congrArg _ (by omega_using [])
 
 /-! ## Relating abstract and machine states -/
 
@@ -214,13 +214,13 @@ theorem slot_sep (b : Addr) {j k : Nat} (hj : 16 * j < 2 ^ 64) (hk : 16 * k < 2 
   intro x h₁ h₂
   simp only [xAddr, Offset.sub_add_eq, Offset.toNat_sub_ofNat] at h₁ h₂
   have := (x - b).isLt
-  omega
+  omega_using [hj, hk, h, h₁, h₂]
 
 theorem slot_contains (b : Addr) {n k : Nat} (hk : k < n) (hn : 16 * n < 2 ^ 64) :
     (⟨b, 16 * n⟩ : Region).Contains (xAddr b k) (128 / 8) := by
   simp only [Region.Contains, xAddr]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn])]
+  omega_using [hk]
 
 theorem loc_some {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some k) :
     m.base = c.base ∧ m.index = none ∧ m.disp = ((16 * k : Nat) : Int) ∧ k < c.slots := by
@@ -229,7 +229,7 @@ theorem loc_some {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some k) :
   · rename_i h1
     cases h
     obtain ⟨hi, hb, h0, hm, hlt⟩ := h1
-    exact ⟨hb, hi, by omega, hlt⟩
+    exact ⟨hb, hi, by omega_using [h0, hm], hlt⟩
   · cases h
 
 theorem ea_of {s : State} {m : MemOp} {b : Reg} {k : Nat} (hb : m.base = b) (hi : m.index = none)
@@ -376,13 +376,13 @@ theorem step_ok (hD : ∀ q < 2, D.Sound (R q)) {e e' : Env α} {s : State} (hok
           obtain ⟨b, hb, rfl⟩ := Option.map_eq_some_iff.mp h
           refine (post_setXmm hok hrel fun q hq => ?_).writes (fun r h => by simp [xdst, h])
             (fun _ h => h.elim)
-          rw [qword_psrlq _ (by omega) hq]
+          rw [qword_psrlq _ (by omega_using [hn]) hq]
           exact (hD q hq).shr (hrel.reg d a ha q hq) hb
         · rename_i a ha
           obtain ⟨b, hb, rfl⟩ := Option.map_eq_some_iff.mp h
           refine (post_setXmm hok hrel fun q hq => ?_).writes (fun r h => by simp [xdst, h])
             (fun _ h => h.elim)
-          rw [qword_psllq _ (by omega) hq, ← shl_eq _ hn.1 hn.2]
+          rw [qword_psllq _ (by omega_using [hn]) hq, ← shl_eq _ hn.1 hn.2]
           simp only [shl, Option.bind_eq_some_iff] at hb
           obtain ⟨t, ⟨o, ho, ht⟩, hc⟩ := hb
           exact (hD q hq).ror ((hD q hq).and (hrel.reg d a ha q hq) ((hD q hq).const ho) ht) hc
@@ -403,7 +403,7 @@ theorem step_ok (hD : ∀ q < 2, D.Sound (R q)) {e e' : Env α} {s : State} (hok
             obtain ⟨b, hb, rfl⟩ := Option.map_eq_some_iff.mp h
             refine (post_setXmm hok hrel fun q hq => ?_).writes (fun r h => by simp [xdst, h])
               (fun _ h => h.elim)
-            rw [qword_psllw _ h15 hq, ← shl_eq _ hn.1 (by omega)]
+            rw [qword_psllw _ h15 hq, ← shl_eq _ hn.1 (by omega_using [hn])]
             simp only [Option.bind_eq_some_iff] at hb
             obtain ⟨t, ht, o, ho, hc⟩ := hb
             simp only [shl, Option.bind_eq_some_iff] at ht
@@ -479,7 +479,7 @@ theorem step_ok (hD : ∀ q < 2, D.Sound (R q)) {e e' : Env α} {s : State} (hok
         by simp [exec, State.store128, hea, hin], ?_⟩
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (xAddr (s.gpr c.base) j) (128 / 8)
           (xAddr (s.gpr c.base) k) (128 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        slot_sep _ (by have := hok.slots; omega_using [hj, this]) (by have := hok.slots; omega_using [hlt, this]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_,
         fun r' w hw => hrel.gc r' w hw, fun r' w hw => hrel.xc r' w hw⟩,
         hok.congr rfl rfl, rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
@@ -562,8 +562,8 @@ theorem Ok.of_off {c : Cfg} {s : State} {r : Region} {off : Nat} (hr : r ∈ s.w
   slotIn k hk := ⟨r, hr, by
     simp only [Region.Contains, xAddr, hb]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
-    omega⟩
-  slots := by omega
+      Nat.mod_eq_of_lt (by omega_using [hlen, hn, hk])]
+    omega_using [hlen, hk]⟩
+  slots := by omega_using [hlen, hn]
 
 end VG.X86_64.StraightX

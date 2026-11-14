@@ -54,8 +54,8 @@ theorem oV_al (j : Nat) : (off (Sp s) (oV + 8 * j)).toNat % 8 = 0 := by
   have := L.al; have := L.F.wS
   have e : (off (Sp s) (oV + 8 * j)).toNat = (Sp s).toNat + (oV + 8 * j) % 2 ^ 64 ∨
       (off (Sp s) (oV + 8 * j)).toNat = ((Sp s).toNat + (oV + 8 * j) % 2 ^ 64) - 2 ^ 64 := by
-    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  unfold oV at *; omega
+    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []
+  unfold oV at *; omega_arith
 
 /-- `spill`: `c`, `salt_len` and the mode to `scratch + oV`. -/
 theorem spill_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
@@ -69,32 +69,32 @@ theorem spill_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
     fun hu hd => by rw [hu, h.wr]; exact sc_inW F hd
   simp only [spill]
   refine wp_sd (a := off (Sp s) oV) (by rw [h.s0]) (by have := oV_al L 0; simpa using this)
-    (w8 rfl (by unfold oV; omega)) fun t₁ m₁ => ?_
+    (w8 rfl (by unfold oV; omega_using [hRs])) fun t₁ m₁ => ?_
   refine wp_sd (a := off (Sp s) (oV + 8)) (by rw [m₁.gpr, h.s0]) (oV_al L 1)
-    (w8 m₁.wr (by unfold oV; omega)) fun t₂ m₂ => ?_
+    (w8 m₁.wr (by unfold oV; omega_using [hRs])) fun t₂ m₂ => ?_
   refine wp_sd (a := off (Sp s) (oV + 16)) (by rw [m₂.gpr, m₁.gpr, h.s0]) (oV_al L 2)
-    (w8 (m₂.wr.trans m₁.wr) (by unfold oV; omega)) fun w mw => wp_nil ?_
+    (w8 (m₂.wr.trans m₁.wr) (by unfold oV; omega_using [hRs])) fun w mw => wp_nil ?_
   have c8 : ∀ j < 3, Region.Contains ⟨off (Sp s) oV, 24⟩ (off (Sp s) (oV + 8 * j)) (64 / 8) := fun j hj => by
-    have := Offset.contains (Sp s) (d := oV + 8 * j) (e := oV) (n := 8) (k := 24) (by omega) (by omega)
-      (by unfold oV; omega)
+    have := Offset.contains (Sp s) (d := oV + 8 * j) (e := oV) (n := 8) (k := 24) (by omega_using []) (by omega_using [hj])
+      (by unfold oV; omega_using [])
     exact this
   have hf : Frame [⟨off (Sp s) oV, 24⟩] t.mem w.mem := by
     rw [mw.mem, m₂.mem, m₁.mem]
-    exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by simpa using c8 0 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c8 1 (by omega))).writeW (List.mem_singleton_self _) _ (c8 2 (by omega))
+    exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by simpa using c8 0 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (c8 1 (by omega_using []))).writeW (List.mem_singleton_self _) _ (c8 2 (by omega_using []))
   have hK : Kept [] t w := (m₁.keep.trans (m₂.keep.trans mw.keep)).mono
   have hd : ∀ o < oSt, ¬ Region.Contains ⟨off (Sp s) oV, 24⟩ (off (Sp s) o) 1 := fun o ho hc =>
-    Proof.RsaOaep.RISCV64.sdis (s := s) (S := Sp) (a := o) (n := 1) (b := oV) (k := 24) (.inl (by unfold oV; omega))
-      (by omega) (by unfold oV; omega) _ (Region.contains_self _ _) hc
+    Proof.RsaOaep.RISCV64.sdis (s := s) (S := Sp) (a := o) (n := 1) (b := oV) (k := 24) (.inl (by unfold oV; omega_using [hSt, ho]))
+      (by omega_using [hSt, hRs, ho]) (by unfold oV; omega_using [hRs]) _ (Region.contains_self _ _) hc
   refine ⟨h.keep F hK hf (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oV; omega))),
+      rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oV; omega_using [hRs]))),
     fun r => by rw [mw.gpr, m₂.gpr, m₁.gpr], fun o ho => ?_, ?_, ?_, ?_⟩
   · exact (hf _ fun r hr hc => by rw [List.mem_singleton.mp hr] at hc; exact hd o ho hc)
-  · rw [mw.mem, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oV; omega)) (by unfold oV; omega)
-      (by unfold oV; omega)) (by decide), m₂.mem, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oV; omega))
-      (by unfold oV; omega) (by unfold oV; omega)) (by decide), m₁.mem, Mem.readW_writeW_self64, x.s5]
-  · rw [mw.mem, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oV; omega)) (by unfold oV; omega)
-      (by unfold oV; omega)) (by decide), m₂.mem, Mem.readW_writeW_self64, m₁.gpr, x.s6]
+  · rw [mw.mem, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oV; omega_using [])) (by unfold oV; omega_using [])
+      (by unfold oV; omega_using [])) (by decide), m₂.mem, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oV; omega_using []))
+      (by unfold oV; omega_using []) (by unfold oV; omega_using [])) (by decide), m₁.mem, Mem.readW_writeW_self64, x.s5]
+  · rw [mw.mem, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oV; omega_using [])) (by unfold oV; omega_using [])
+      (by unfold oV; omega_using [])) (by decide), m₂.mem, Mem.readW_writeW_self64, m₁.gpr, x.s6]
   · rw [mw.mem, Mem.readW_writeW_self64, m₂.gpr, m₁.gpr, x.s7]
 
 /-- `reload`: `c`, `salt_len` and the mode back from `scratch + oV`. -/
@@ -109,11 +109,11 @@ theorem reload_ok {t : State} (h : Base Sp (vP D) s t) (h5 : t.mem.readW (off (S
     rw [hr, hw, h.wr]; exact sc_inR F hd _
   simp only [reload]
   refine wp_ld (a := off (Sp s) oV) (by rw [h.s0]) (by have := oV_al L 0; simpa using this)
-    (r8 rfl rfl (by unfold oV; omega)) fun t₁ o₁ e₁ => ?_
+    (r8 rfl rfl (by unfold oV; omega_using [hRs])) fun t₁ o₁ e₁ => ?_
   refine wp_ld (a := off (Sp s) (oV + 8)) (by rw [o₁.get .s0, h.s0]) (oV_al L 1)
-    (r8 o₁.rd o₁.wr (by unfold oV; omega)) fun t₂ o₂ e₂ => ?_
+    (r8 o₁.rd o₁.wr (by unfold oV; omega_using [hRs])) fun t₂ o₂ e₂ => ?_
   refine wp_ld (a := off (Sp s) (oV + 16)) (by rw [o₂.get .s0, o₁.get .s0, h.s0]) (oV_al L 2)
-    (r8 (o₂.rd.trans o₁.rd) (o₂.wr.trans o₁.wr) (by unfold oV; omega)) fun w ow ew => wp_nil ?_
+    (r8 (o₂.rd.trans o₁.rd) (o₂.wr.trans o₁.wr) (by unfold oV; omega_using [hRs])) fun w ow ew => wp_nil ?_
   have k : Only [.s5, .s6, .s7] t w := (o₁.trans (o₂.trans ow)).mono
   exact ⟨h.only F k, ⟨by rw [ow.get .s5, o₂.get .s5, e₁, h5], by rw [ow.get .s6, e₂, o₁.mem, h6],
     by rw [ew, o₂.mem, o₁.mem, h7]⟩, k⟩
@@ -127,7 +127,7 @@ theorem dbArgs_ok {H : Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t)
   have hD64 := L.D64
   subst hD
   refine wp_add fun t₁ o₁ e₁ => wp_mov fun t₂ o₂ e₂ => wp_add fun t₃ o₃ e₃ =>
-    wp_li (imm := H.D) (by omega) fun t₄ o₄ e₄ => wp_nil ?_
+    wp_li (imm := H.D) (by omega_using [hD64]) fun t₄ o₄ e₄ => wp_nil ?_
   have k₄ : Only [.s8, .s9, .s6, .s7] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
   have a8 : t₁.gpr .s8 = off (Sp s) lN := by rw [e₁, h.s0, h.plo, L.hlo]
   exact ⟨h.only F k₄, k₄,
@@ -145,9 +145,9 @@ theorem clearTop_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
     fun o e => by rw [e, h.s0, h.plo, L.hlo]
   refine wp_add fun t₆ o₆ e₆ => ?_
   refine wp_lbu (a := off (Sp s) lN) (by rw [a6 o₆ e₆, BitVec.add_zero])
-    (by rw [o₆.rd, o₆.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega) _) fun t₇ o₇ e₇ => ?_
+    (by rw [o₆.rd, o₆.wr, h.wr]; exact sc_inR F (by unfold oRsa; omega_using [hl]) _) fun t₇ o₇ e₇ => ?_
   refine wp_and fun t₈ o₈ e₈ => wp_sb (a := off (Sp s) lN) (by rw [o₈.get .a1, o₇.get .a1, a6 o₆ e₆,
-    BitVec.add_zero]) (by rw [o₈.wr, o₇.wr, o₆.wr, h.wr]; exact sc_inW F (by unfold oRsa; omega)) fun w mw => ?_
+    BitVec.add_zero]) (by rw [o₈.wr, o₇.wr, o₆.wr, h.wr]; exact sc_inW F (by unfold oRsa; omega_using [hl])) fun w mw => ?_
   have k₈ : Only [.a1, .a2] t t₈ := (o₆.trans (o₇.trans o₈)).mono
   have hK : Kept [.a1, .a2] t w := (k₈.keep.trans mw.keep).mono
   have hb : (t₈.gpr .a2).setWidth 8 = view t.mem (Sp s) lN &&& c := by
@@ -158,8 +158,8 @@ theorem clearTop_ok {t : State} (h : Base Sp (vP D) s t) (x : Xs s t) :
     rw [mw.mem, hb, k₈.mem]
   refine wp_nil ⟨h.keep F hK (R := [⟨off (Sp s) lN, 1⟩]) (by
       rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
-      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega))), hK, fun o ho => ?_⟩
-  rw [hm, view_w8 _ _ (by unfold oRsa; omega) (by unfold oSt oRsa at *; omega)]
+      (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (sc_in (by unfold oRsa; omega_using [hl]))), hK, fun o ho => ?_⟩
+  rw [hm, view_w8 _ _ (by unfold oRsa; omega_using [hl]) (by unfold oSt oRsa at *; omega_using [ho])]
 
 theorem unmask_ok {H : Hash} (hD : H.D = D) {G : Hash} (hG : HashOK G) (hGF : G.F ≤ 208) {g : Fns} {p : Addr}
     (T : TabS G g 7 Sp s p) {Gs : Spec.Mgf1.Hash}
@@ -176,29 +176,29 @@ theorem unmask_ok {H : Hash} (hD : H.D = D) {G : Hash} (hG : HashOK G) (hGF : G.
   refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (dbArgs_ok L hD b₁) fun t₄ ⟨b₄, k₄, x6, x7, x8, x9⟩ sy₄ => ?_))
   subst hD
   refine WP.seq (WP.mono (mgfXorT_ok F hG hGF T hGh hGl hGv (src := lN + dN) (srcLen := H.D) (dst := lN)
-    (dstLen := dN) ⟨by omega, by omega, .inr (by omega), by omega⟩ b₄ (sy₄.trans (sy₁.trans hsy)) x6 x7 x8 x9)
+    (dstLen := dN) ⟨by omega_using [hk2, hk], by omega_using [hk2, hk], .inr (by omega_using []), by omega_using [hd1]⟩ b₄ (sy₄.trans (sy₁.trans hsy)) x6 x7 x8 x9)
     fun t₅ ⟨⟨b₅, v₅⟩, sy₅⟩ => ?_)
   have V4 : view t₄.mem (Sp s) = view t₁.mem (Sp s) := by rw [k₄.mem]
   rw [V4] at v₅
   -- The saved words survive MGF1.
   have keepW : ∀ j < 3, t₅.mem.readW (off (Sp s) (oV + 8 * j)) 64 = t₁.mem.readW (off (Sp s) (oV + 8 * j)) 64 :=
     fun j hj => Mem.readW_congr fun i hi => by
-      have e := v₅ (oV + 8 * j + i) ⟨by unfold oV; omega, .inr (by unfold oV; omega)⟩
-      rw [mixV, ifn (by unfold oV; omega)] at e
+      have e := v₅ (oV + 8 * j + i) ⟨by unfold oV; omega_using [hRs, hj, hi], .inr (by unfold oV; omega_using [hCt])⟩
+      rw [mixV, ifn (by unfold oV; omega_using [hk2, hk])] at e
       simp only [view] at e
       show t₅.mem (off (off (Sp s) (oV + 8 * j)) i) = t₁.mem (off (off (Sp s) (oV + 8 * j)) i)
       rw [off_off]; exact e
-  have w5' : t₅.mem.readW (off (Sp s) oV) 64 = cm s := by have := keepW 0 (by omega); simp at this; rw [this, w5]
-  refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (reload_ok L b₅ w5' (by rw [keepW 1 (by omega), w6])
-    (by rw [keepW 2 (by omega), w7])) fun t₆ ⟨b₆, x₆, k₆⟩ sy₆ => ?_))
+  have w5' : t₅.mem.readW (off (Sp s) oV) 64 = cm s := by have := keepW 0 (by omega_using []); simp at this; rw [this, w5]
+  refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (reload_ok L b₅ w5' (by rw [keepW 1 (by omega_using []), w6])
+    (by rw [keepW 2 (by omega_using []), w7])) fun t₆ ⟨b₆, x₆, k₆⟩ sy₆ => ?_))
   refine WP.seq (VG.RISCV64.WP.of_syms (WP.mono (clearTop_ok L b₆ x₆) fun w ⟨b, kw, v⟩ syw => k w b (x₆.of fun r hr => kw.gpr r
     (by revert r; decide)) (syw.trans (sy₆.trans sy₅)) fun o ho => ?_))
   have V6 : view t₆.mem (Sp s) = view t₅.mem (Sp s) := by rw [k₆.mem]
   have hs : srcB (view t₁.mem (Sp s)) (lN + dN) H.D = srcB (view t.mem (Sp s)) (lN + dN) H.D :=
-    srcB_congr fun i hi => v₁ _ (by omega)
+    srcB_congr fun i hi => v₁ _ (by omega_using [hk2, hSt, hk, hi])
   have v5' : ∀ o < oSt, view t₅.mem (Sp s) o =
       mixV (view t.mem (Sp s)) (Spec.Mgf1.mgf1 Gs (srcB (view t.mem (Sp s)) (lN + dN) H.D) dN) lN dN o :=
-    fun o ho => by rw [v₅ o ⟨by omega, .inl ho⟩, hs, mixV, mixV, v₁ o ho]
+    fun o ho => by rw [v₅ o ⟨by omega_using [hSt, hRs, ho], .inl ho⟩, hs, mixV, mixV, v₁ o ho]
   rw [v o ho, V6, dbV]
   by_cases e : o = lN
   · subst e; rw [ifp rfl, ifp rfl, v5' _ ho]

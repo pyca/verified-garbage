@@ -170,7 +170,7 @@ theorem chooseLane_ok (s : State) (p : Spec.Argon2.Params) (pass lane slice inde
     (ready : Ready p pass lane slice index s) :
     WP isa chooseLane s (Chosen p pass lane slice index s) := by
   have lanesNat : (s.gpr .x1).toNat = p.lanes := by
-    rw [ready.lanes, word_nat _ (by have := ready.bounds.lanesBound; omega)]
+    rw [ready.lanes, word_nat _ (by have := ready.bounds.lanesBound; omega_using [this])]
   unfold chooseLane
   refine WP.seq ((ReferenceLane.code_ok s
     (by rw [lanesNat]; exact ready.bounds.lanesPositive)
@@ -194,10 +194,10 @@ theorem chooseLane_ok (s : State) (p : Spec.Argon2.Params) (pass lane slice inde
     exact ready.passWord
   have passZero : b.gpr .x5 = 0 ↔ pass = 0 := by
     rw [passWord]
-    exact word_zero _ (by have := ready.bounds.passBound; omega)
+    exact word_zero _ (by have := ready.bounds.passBound; omega_using [this])
   have sliceZero : b.gpr .x22 = 0 ↔ slice = 0 := by
     rw [pb.slice]
-    exact word_zero _ (by have := ready.bounds.sliceBound; omega)
+    exact word_zero _ (by have := ready.bounds.sliceBound; omega_using [this])
   refine (FirstLane.code_ok b).mono ?_
   rintro t ⟨out, kt⟩
   have kt' : Divide.Keeps changed b t := kt.mono (by decide)
@@ -229,6 +229,6 @@ theorem prepareLanes_ok (s : State) (p : Spec.Argon2.Params) (pass lane slice in
   refine ⟨laneOut.trans ha.selected, currentOut.trans ha.position.current, ?_,
     (kt.regs .x7 (by decide)).trans ha.original,
     ha.position.of_keeps kt', ha.keeps.trans kt'⟩
-  rw [kt.regs .x5 (by decide), ha.pass, word_nat _ (by have := ready.bounds.passBound; omega)]
+  rw [kt.regs .x5 (by decide), ha.pass, word_nat _ (by have := ready.bounds.passBound; omega_using [this])]
 
 end VG.Proof.Argon2.AArch64.ReferenceMap

@@ -292,10 +292,10 @@ theorem stores_sep {P : Par} {s₀ : State} {a : Addr}
       refine hs x ?_ ?_
       · simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat] at hx
         have := (x - a).isLt
-        omega
+        omega_using [hk, hx]
       · simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat] at hy ⊢
         have := (x - s₀.gpr .rdi).isLt
-        omega
+        omega_using [he0, hl0, hy]
 
 /-- A quadword of 32 bytes of the working space, after the stores. -/
 theorem stores_look {P : Par} {s₀ : State} (hw : P.win < 2 ^ 62) {o k : Nat} (ho : o % 32 = P.al)
@@ -310,12 +310,12 @@ theorem stores_look {P : Par} {s₀ : State} (hw : P.win < 2 ^ 62) {o k : Nat} (
     · rename_i heq
       subst heq
       have r1 := readW_writeW_inside (stores s₀ st) (s₀.gpr .rdi + BitVec.ofNat 64 e) (t.val s₀)
-        (k := 8 * k) (n := 8) (by omega) (by decide)
+        (k := 8 * k) (n := 8) (by omega_using [hk]) (by decide)
       rw [BitVec.add_assoc, ← BitVec.ofNat_add] at r1
-      rw [r1, ← qword256_val s₀ t hk, qword256, show 64 * k = 8 * (8 * k) by omega]
+      rw [r1, ← qword256_val s₀ t hk, qword256, show 64 * k = 8 * (8 * k) by omega_using []]
     · rename_i hne
       have r1 := readW_writeW_off (stores s₀ st) (s₀.gpr .rdi) (t.val s₀) (d := o + 8 * k) (e := e) (n := 8)
-        (by omega) (by simp only [Nat.reduceDiv]; omega) (by simp only [Nat.reduceDiv]; omega)
+        (by omega_using [hw, ho2, hk]) (by simp only [Nat.reduceDiv]; omega) (by simp only [Nat.reduceDiv]; omega)
       rw [r1]
       exact stores_look hw ho ho2 hk st fun x hx => he x (List.mem_cons_of_mem _ hx)
 
@@ -327,8 +327,8 @@ theorem litOf_eval {P : Par} {s₀ : State} (hc : Ctx P s₀) {o : Nat} {t : T} 
   case isFalse => cases h
   rename_i ho
   cases h
-  have e := hc.cst (o / 8 + k) (by omega)
-  rw [show 8 * (o / 8 + k) = o + 8 * k by omega] at e
+  have e := hc.cst (o / 8 + k) (by omega_using [hk, ho])
+  rw [show 8 * (o / 8 + k) = o + 8 * k by omega_using [ho]] at e
   rw [e]
   rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;> rfl
 
@@ -342,8 +342,8 @@ theorem src_ok {P : Par} {s₀ : State} (hc : Ctx P s₀) {σ : VSym} {s : State
   have ea : s.ea m = s₀.gpr b + BitVec.ofNat 64 o := by rw [baseOff_ok hbo, h.gpr]
   have hq (k : Nat) (hk : k < 4) : qword256 (s.mem.readW (s₀.gpr b + BitVec.ofNat 64 o) 256) k =
       s.mem.readW (s₀.gpr b + BitVec.ofNat 64 (o + 8 * k)) 64 := by
-    have r1 := readW_extract s.mem (s₀.gpr b + BitVec.ofNat 64 o) (w := 256) (k := 8 * k) (n := 8) (by omega)
-    rw [qword256, show 64 * k = 8 * (8 * k) by omega, r1, BitVec.add_assoc, ← BitVec.ofNat_add]
+    have r1 := readW_extract s.mem (s₀.gpr b + BitVec.ofNat 64 o) (w := 256) (k := 8 * k) (n := 8) (by omega_using [hk])
+    rw [qword256, show 64 * k = 8 * (8 * k) by omega_using [], r1, BitVec.add_assoc, ← BitVec.ofNat_add]
   rw [h.rd, h.wr, ea]
   dsimp only at e
   split at e
@@ -365,7 +365,7 @@ theorem src_ok {P : Par} {s₀ : State} (hc : Ctx P s₀) {σ : VSym} {s : State
       have hlen : o + 32 ≤ 8 * P.cst.length := by
         unfold litOf at e
         split at e
-        · rename_i ho; omega
+        · rename_i ho; omega_using [ho]
         · cases e
       refine ⟨hc.crd o hlen, fun k hk => ?_⟩
       rw [hq k hk, h.mem, BitVec.ofNat_add, ← BitVec.add_assoc,
@@ -411,7 +411,7 @@ theorem ternlogD8 (a b c : BitVec 128) : ternlog a b c 0xD8 = (c &&& b) ||| (~~~
 
 theorem qword_not (x : BitVec 128) {i : Nat} (hi : i < 2) : qword (~~~x) i = ~~~qword x i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp [qword, hj, show 64 * i + j < 128 by omega]
+  simp [qword, hj, show 64 * i + j < 128 by omega_using [hi, hj]]
 
 theorem qword_or' (x y : BitVec 128) (i : Nat) : qword (x ||| y) i = qword x i ||| qword y i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -429,8 +429,8 @@ theorem qword256_ternD8 (dv av bv : BitVec 256) {k : Nat} (hk : k < 4) :
 
 theorem qword_sraq (x : BitVec 128) {n : BitVec 8} (hn : n.toNat < 64) {i : Nat} (hi : i < 2) :
     qword (sraQwords x n) i = (qword x i).sshiftRight n.toNat := by
-  simp only [sraQwords, show min n.toNat 64 = n.toNat by omega]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  simp only [sraQwords, show min n.toNat 64 = n.toNat by omega_using [hn]]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · exact qword_app0 _ _
   · exact qword_app1 _ _
 
@@ -448,7 +448,7 @@ theorem bits4 {x y z u : Nat} (hx : x ≤ 1) (hy : y ≤ 1) (hz : z ≤ 1) (hu :
     (x + 2 * y + 4 * z + 8 * u).testBit k = decide (pick4 x y z u k = 1) := by
   rw [Nat.testBit_eq_decide_div_mod_eq]
   rcases VG.X86_64.cases4 hk with rfl | rfl | rfl | rfl <;>
-    simp only [pick4, decide_eq_decide, Nat.reducePow, Nat.div_one] <;> omega
+    simp only [pick4, decide_eq_decide, Nat.reducePow, Nat.div_one] <;> omega_arith
 
 theorem shrOf_eval (s₀ : State) (t : T) (n k : Nat) : (shrOf t n).eval s₀ k = t.eval s₀ k >>> n := by
   unfold shrOf

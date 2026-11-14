@@ -498,7 +498,7 @@ theorem pos_succ {r p c : Nat} (hr : 0 < r) :
   rw [← e]
   split
   · rw [Nat.add_assoc, ‹j + 1 = r›, ← Nat.mul_succ, Nat.mul_mod_right]
-  · rw [Nat.add_assoc, Nat.mul_add_mod, Nat.mod_eq_of_lt (by omega)]
+  · rw [Nat.add_assoc, Nat.mul_add_mod, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem body_ok {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < len s₀) {s : State} (hI : Inv s₀ c s) :
     WP isa absorbBody s fun s' =>

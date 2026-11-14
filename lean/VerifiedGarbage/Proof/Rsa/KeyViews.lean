@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.KeyArrays
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The key working space read with `w` and with `W = 2 w + 2` words
 
@@ -17,10 +18,10 @@ in array `2 j`, when the rest of the two arrays is zero (`numW_of`).
 namespace VG.Proof.Rsa.KeyWorkspace
 open VG VG.Proof.Mont
 
-theorem S_W (w : Nat) : S (2 * w + 2) = 2 * S w := by simp only [S]; omega
+theorem S_W (w : Nat) : S (2 * w + 2) = 2 * S w := by simp only [S]; omega_using []
 
 theorem arr_W (w j : Nat) : arr (2 * w + 2) j = arr w (2 * j) := by
-  simp only [arr, S]; rw [Nat.mul_comm 2 j, Nat.mul_assoc]; congr 2; omega
+  simp only [arr, S]; rw [Nat.mul_comm 2 j, Nat.mul_assoc]; congr 2; omega_using []
 
 end VG.Proof.Rsa.KeyWorkspace
 
@@ -37,12 +38,12 @@ theorem Keep.toW {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem} (k : Keep 
   rcases hr with ⟨j, hj, rfl⟩ | ⟨d, hd, rfl⟩
   · have := hx (arr (2 * w + 2) (j / 2), S (2 * w + 2)) (.inl ⟨j / 2, ⟨j, hj, rfl⟩, rfl⟩)
     rw [arr_W, S_W] at this
-    have e1 : arr w (2 * (j / 2)) ≤ arr w j := arr_mono (by omega)
+    have e1 : arr w (2 * (j / 2)) ≤ arr w j := arr_mono (by omega_using [])
     have e2 : arr w j + S w ≤ arr w (2 * (j / 2)) + 2 * S w := by
-      rw [← arr_succ, show 2 * S w = S w + S w by omega, ← Nat.add_assoc, ← arr_succ, ← arr_succ]
-      exact arr_mono (by omega)
+      rw [← arr_succ, show 2 * S w = S w + S w by omega_using [], ← Nat.add_assoc, ← arr_succ, ← arr_succ]
+      exact arr_mono (by omega_using [])
     dsimp only at this ⊢
-    omega
+    omega_using [this, e1, e2]
   · exact hx (d, 4) (.inr ⟨d, hd, rfl⟩)
 
 /-- A step that keeps the arrays read with `W` but `js` keeps the arrays
@@ -59,7 +60,7 @@ theorem Keep.ofW {B : Addr} {w : Nat} {js ds : List Nat} {m m' : Mem}
     rw [arr_W, S_W]
     rw [arr_succ] at h2
     dsimp only at h1 h2 ⊢
-    omega
+    omega_using [h1, h2]
   · exact hx (d, 4) (.inr ⟨d, hd, rfl⟩)
 
 /-- The arrays a step does not change keep their values, given that they
@@ -83,7 +84,7 @@ theorem numW (m : Mem) (B : Addr) (w j : Nat) :
     num m B (2 * w + 2) j = val32 m B (arr w (2 * j)) (w + 2) +
       2 ^ (32 * (w + 2)) * num m B w (2 * j + 1) := by
   simp only [num]
-  rw [arr_W, show 2 * w + 2 = (w + 2) + w by omega, val32_append, arr_succ]
+  rw [arr_W, show 2 * w + 2 = (w + 2) + w by omega_using [], val32_append, arr_succ]
 
 theorem numW_of {m : Mem} {B : Addr} {w j x : Nat}
     (h0 : val32 m B (arr w (2 * j)) (w + 2) = x) (h1 : num m B w (2 * j + 1) = 0) :

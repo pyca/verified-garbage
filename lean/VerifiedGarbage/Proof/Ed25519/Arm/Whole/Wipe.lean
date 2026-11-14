@@ -28,15 +28,15 @@ theorem zeroWord_ok {s : State} {E : BitVec 32} (he : s.sp = E)
     WP isa (.block (zeroWord k)) s fun t => WipeStep s t ∧
       t.mem = s.mem.writeW (State.addr E + BitVec.ofNat 64 (4 * k)) (0 : BitVec 32) := by
   have ae : State.addr (E + BitVec.ofNat 32 (4 * k)) = State.addr E + BitVec.ofNat 64 (4 * k) :=
-    addr_add (by omega)
+    addr_add (by omega_using [hf, hk])
   have dest : InRegions s.wr (State.addr E + BitVec.ofNat 64 (4 * k)) 4 :=
-    ⟨⟨State.addr E, 248⟩, hr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨State.addr E, 248⟩, hr, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   have ha {t : State} : exec (.addSp .r12 0) t = some (t.setReg .r12 t.sp) := by
     simp only [exec, show 0 < 256 from by decide, ite_true, BitVec.add_zero]
   have hz {t : State} : exec (.movw .r0 0) t = some (t.setReg .r0 0) := rfl
   apply WP.of_runBlock
   simp only [zeroWord, runBlock_cons, runStep_some, ha, hz]
-  rw [exec_str (by omega) (by
+  rw [exec_str (by omega_using [hk]) (by
     simpa only [RegUpd.wr_setReg, RegUpd.gpr_setReg, reduceCtorEq, ite_false, ite_true,
       he, ae] using dest)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
@@ -56,24 +56,24 @@ theorem zeroWords_ok {s : State} {E : BitVec 32} (he : s.sp = E)
   | 0, _ => WP.block_nil ⟨⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn => by
     rw [zeroWords, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (zeroWords_ok he hf hw start n (by omega)) fun u hu => ?_
-    refine WP.mono (zeroWord_ok (hu.step.sp.trans he) hf (hu.step.wr ▸ hw) (by omega : start + n < 62))
+    refine WP.mono (zeroWords_ok he hf hw start n (by omega_using [hn])) fun u hu => ?_
+    refine WP.mono (zeroWord_ok (hu.step.sp.trans he) hf (hu.step.wr ▸ hw) (by omega_using [hn] : start + n < 62))
       fun t ⟨kt, mt⟩ => ?_
     refine ⟨hu.step.trans kt, ?_, fun j hj => ?_⟩
     · rw [mt]
       have old : Frame [⟨State.addr E + BitVec.ofNat 64 (4 * start), 4 * (n + 1)⟩] s.mem u.mem :=
         Frame.sub hu.frame fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+          exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
       exact old.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (by omega) (by omega) (by omega))
+        (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hn]))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self32 _ _ _
       · rw [Mem.readW_writeW_sep (a := State.addr E + BitVec.ofNat 64 (4 * (start + j)))
           (b := State.addr E + BitVec.ofNat 64 (4 * (start + n))) ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjn])
+        · exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])
 
 theorem Ctx.zeroWords {E : BitVec 32} {g : Reg → BitVec 32}
     {m₀ : Mem} {rd wr : List Region} {s : State} (hc : Ctx E g m₀ rd wr s)
@@ -89,6 +89,6 @@ theorem Ctx.zeroWords {E : BitVec 32} {g : Reg → BitVec 32}
     · rintro rfl; simp [preserved] at hr
     · rintro rfl; simp [preserved] at hr
   · intro r hr; rw [List.mem_singleton.mp hr]
-    exact .inl (Offset.sub_base _ (by omega))
+    exact .inl (Offset.sub_base _ (by omega_using [hn]))
 
 end VG.Proof.Ed25519.Arm.Whole

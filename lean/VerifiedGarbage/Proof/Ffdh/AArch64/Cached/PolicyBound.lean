@@ -29,20 +29,20 @@ theorem policyBound_ok {s : State} {B dom : Addr} {Z k dl L : Nat} {bs : List By
  Keep [.x1,.x2,.x3,.x4,.x10] s t := by
  have bytePositive : 0<(bs.getD L 0).toNat := by
   have : (bs.getD L 0).toNat≠0 := fun eq => nonzero (BitVec.eq_of_toNat_eq eq)
-  omega
+  omega_using [this]
  have byteSize := (bs.getD L 0).isLt
  unfold Policy.boundBits
  rw [WP.seq_iff]
  refine WP.mono (policySource_ok scratch room base positive size shape pointer length domainLength) ?_
  rintro a ⟨⟨ptrA,lenA,zeroA,memA⟩,restA⟩
  rw [WP.seq_iff]
- refine WP.mono (policyScan_ok a (source.of_mem memA restA) (by omega) inside zeros nonzero ptrA (bsLength ▸ lenA)) ?_
+ refine WP.mono (policyScan_ok a (source.of_mem memA restA) (by omega_using [size, bsLength]) inside zeros nonzero ptrA (bsLength ▸ lenA)) ?_
  rintro b ⟨_,lenB,byteB,memB,restB⟩
  rw [WP.seq_iff]
  have shift : BitVec.ofNat 64 (bs.length-(L+1)) <<< 3=BitVec.ofNat 64 (8*(bs.length-L-1)) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
-  omega
+  omega_using []
  refine WP.mono (WP.keep [.x2] (Q:=fun c =>
   c.gpr .x2=BitVec.ofNat 64 (8*(bs.length-L-1)) ∧ c.mem=b.mem) ?_ rfl rfl rfl) ?_
  · brun [lenB,shift]
@@ -59,12 +59,12 @@ theorem policyBound_ok {s : State} {B dom : Addr} {Z k dl L : Nat} {bs : List By
     BitVec.ofNat 64 (8*(bs.length-L-1)+bitLength (bs.getD L 0).toNat) := by
     rw [countD,restD.gpr .x2 (by decide),lenC,←BitVec.ofNat_add]
     congr 1
-    omega
+    omega_using []
    refine WP.mono (WP.keep [.x10] (Q:=fun t =>
     t.mem=d.mem.writeW (off B (8*sBits)) (BitVec.ofNat 64 (8*(bs.length-L-1)+bitLength (bs.getD L 0).toNat)))
     ?_ rfl rfl rfl) ?_
    · brun [(rest.gpr .x0 (by decide)).trans base,hdr_enc (show sBits<32 by decide),value,
-      (scratch.congr rest.wr).st (d:=8*sBits) (by unfold sBits;omega)]
+      (scratch.congr rest.wr).st (d:=8*sBits) (by unfold sBits;omega_using [room])]
    · rintro t ⟨memT,restT⟩
      exact ⟨by rw [memT,mem],(rest.trans restT).mono (by decide)⟩
 

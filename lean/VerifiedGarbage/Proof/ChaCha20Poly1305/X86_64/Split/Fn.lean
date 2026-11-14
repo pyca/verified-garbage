@@ -44,7 +44,7 @@ theorem sealSplitBody_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1
   rcases hb with rfl | rfl <;> lit_decide
 
 theorem xorSplit_xdepth : Impl.ChaCha20.X86_64.Avx512.xorSplit.x86_64Depth ≤ 24 := by
-  rw [x86_64Depth_noSp xorSplit_nosp]; have := xorSplit_depth; omega
+  rw [x86_64Depth_noSp xorSplit_nosp]; have := xorSplit_depth; omega_using [this]
 
 theorem sealSplitBody_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) :
     (sealSplitBody v.callee b).x86_64Depth ≤ 24 := by
@@ -56,7 +56,7 @@ theorem sealSplitBody_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1
   simp only [sealSplitBody, bigCallee, Impl.ChaCha20.X86_64.Callee.inPlace, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, padCopy, padTail, cryptSplit, cryptBigSplit, cryptPre, xorKs, Bool.cond_false, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
     xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx hc ha ⊢
-  omega
+  omega_using [hx, hb, hs, hc, ha]
 
 /-! ## The frame -/
 
@@ -84,7 +84,7 @@ include hs
 
 theorem fB_lt : (fB s).toNat + 104 ≤ 2 ^ 64 := by
   have := hs.sp_lo; have := hs.sp_hi
-  rw [toNat_sub_ofNat (by omega)]; omega
+  rw [toNat_sub_ofNat (by omega_arith)]; omega_using [this]
 
 omit hs in
 /-- A part of the 64 bytes of stack is apart from a region apart from all of
@@ -98,7 +98,7 @@ theorem ret_stk {d n : Nat} (hd : d + n ≤ 64) :
     (eretR s).Disjoint ⟨fB s + BitVec.ofNat 64 d, n⟩ := by
   have := hs.fB_lt
   show (⟨s.gpr .rsp, 8⟩ : Region).Disjoint _
-  rw [rsp_eq s]; exact Offset.disjoint _ (.inr hd) (by omega) (by omega)
+  rw [rsp_eq s]; exact Offset.disjoint _ (.inr hd) (by omega_using []) (by omega_using [hd])
 
 end FPre
 
@@ -140,7 +140,7 @@ theorem body_ok {whole : Bool} {s h : State} (hs : FPre s) (hh : Headed whole s 
   have hsp : h.gpr .rsp = s.gpr .rsp :=
     hh.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have hB := hs.fB_lt
-  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by rw [hsp]; have := hs.sp_lo; simp; omega
+  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by rw [hsp]; have := hs.sp_lo; simp; omega_using [this]
   obtain ⟨pf, pw⟩ := pushRegs_mem h frameRegs (by decide) hn
   rw [hsp, rsp_eq s, add_ofNat_sub_ofNat' _ (by decide)] at pf
   rw [hsp, rsp_eq s] at pw
@@ -149,7 +149,7 @@ theorem body_ok {whole : Bool} {s h : State} (hs : FPre s) (hh : Headed whole s 
       (pushed frameRegs h).mem.readW (fB s + BitVec.ofNat 64 d) 64 = h.gpr frameRegs[j] := by
     intro j hj d hd
     have := pw j hj
-    rw [add_ofNat_sub_ofNat' _ (by omega), show 64 - 8 * (j + 1) = d by omega] at this
+    rw [add_ofNat_sub_ofNat' _ (by omega_using [hj]), show 64 - 8 * (j + 1) = d by omega_using [hd]] at this
     exact this
   have fH := hs.headM_frame (cntOf s whole) (FPre.cnt_le whole)
   have sp' := pushed_rsp' hsp
@@ -162,7 +162,7 @@ theorem body_ok {whole : Bool} {s h : State} (hs : FPre s) (hh : Headed whole s 
   have v₅₆ : (pushed frameRegs h).mem.readW (off (fB s + BitVec.ofNat 64 24) 56) 64 = stackArg s 1 := by
     rw [a16, pf.readW (r := eargR s) (w := 64) (FPre.arg_contains (j := 1) (by decide)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        rw [argR_eq s]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (by decide),
+        rw [argR_eq s]; exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using []) (by omega_using [])) (by decide),
       hh.mem]
     exact hs.arg_eq fH (j := 1) (by decide)
   apply WP.of_runBlock
@@ -293,7 +293,7 @@ theorem in_frame {d n : Nat} (h : 24 ≤ d) (h' : d + n ≤ 64) :
   Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨fB s + BitVec.ofNat 64 24, 40⟩, List.mem_append_right _ (by rw [hb.wr]; simp), d - 24,
-      by simp only; rw [Offset.add_ofNat_add_ofNat, Nat.add_sub_cancel' h], by simp only; omega⟩
+      by simp only; rw [Offset.add_ofNat_add_ofNat, Nat.add_sub_cancel' h], by simp only; omega_using [h, h']⟩
 
 theorem rdB_cov (hs : FPre s) : Covers (rdB u) (u.rd ++ u.wr) := by
   have eA := hb.addr 0
@@ -352,10 +352,10 @@ theorem framed_ok {whole : Bool} {c : Prog isa} {k : Contract isa}
   have hsp' : h.gpr .rsp = s.gpr .rsp :=
     hh.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have hB := hs.fB_lt
-  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by rw [hsp']; have := hs.sp_lo; simp; omega
+  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by rw [hsp']; have := hs.sp_lo; simp; omega_using [this]
   refine WP.frame (by decide) (by decide) (by decide) hn ?_
   refine WP.seq (WP.mono (body_ok hs hh) fun u hu => ?_)
-  refine WP.inlineF hv hsp (by omega) (hpre u hu)
+  refine WP.inlineF hv hsp (by omega_using [hd]) (hpre u hu)
     (Covers.append_left (Covers.append_left (hu.rdB_cov hs) (hmore u hu)) (hu.wrB_cov hs).right)
     (hu.wrB_cov hs)
     fun s₂ rd₂ wr₂ ab₂ f₂ _ post₂ => ?_
@@ -381,17 +381,17 @@ theorem FPre.headM_dst {s : State} (hs : FPre s) {n : Nat} (hn : n ≤ eSN s) {k
   have hL : eLn s < 2 ^ 64 := (stackArg s 1).isLt
   have nw : ∀ {x : Addr}, (∀ r ∈ [ewR s], ¬ r.Contains x 1) → stashM s x = s.mem x :=
     fun h => stashM_frame s _ h
-  simp only [headM, writeBytes, Offset.add_sub_cancel_left, toNat_ofNat_lt (show k < 2 ^ 64 by omega),
+  simp only [headM, writeBytes, Offset.add_sub_cancel_left, toNat_ofNat_lt (show k < 2 ^ 64 by omega_using [hk, hL]),
     Proof.AesGcm.X86_64.length_bytesAt]
   split
   · rename_i h
     rw [Gather.getD_bytesAt _ _ h]
     refine nw fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact hs.s_w _ (Offset.contains_base _ (by omega) (by have := hs.o_s; omega)) hc
+    exact hs.s_w _ (Offset.contains_base _ (by omega_using [hn, h]) (by have := hs.o_s; omega_using [hk, hL])) hc
   · refine nw fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact hs.d_w _ (Offset.contains_base _ hk (by have := hs.o_d; omega)) hc
+    exact hs.d_w _ (Offset.contains_base _ hk (by have := hs.o_d; omega_using [hk, hL])) hc
 
 namespace Body
 
@@ -419,7 +419,7 @@ theorem dst_byte {k : Nat} (hk : k < eLn s) : u.mem (eDst s + BitVec.ofNat 64 k)
   rw [hb.mem _ (fun r hr hc => by
       simp only [List.mem_singleton] at hr; subst hr
       exact FPre.stk_disj hs.b_d (d := 24) (n := 40) (by decide) _ hc
-        (Offset.contains_base _ hk (by have := hs.o_d; omega))),
+        (Offset.contains_base _ hk (by have := hs.o_d; omega_using [hk, this]))),
     hs.headM_dst (FPre.cnt_le whole) hk]
 
 /-- Bytes apart from the working space, the data and the stack. -/
@@ -441,7 +441,7 @@ abbrev inSplit (s : State) : List Byte :=
 
 theorem length_inSplit {s : State} (hs : FPre s) : (inSplit s).length = eLn s := by
   have := hs.le
-  simp only [inSplit, List.length_append, List.length_drop, VG.Proof.Poly1305.length_bytesAt]; omega
+  simp only [inSplit, List.length_append, List.length_drop, VG.Proof.Poly1305.length_bytesAt]; omega_using [this]
 
 theorem inSplit_getD {s : State} {k : Nat} (hk : k < eLn s) :
     (inSplit s).getD k 0 = if k < eSN s then s.mem (eSrc s + BitVec.ofNat 64 k) else s.mem (eDst s + BitVec.ofNat 64 k) := by
@@ -452,9 +452,9 @@ theorem inSplit_getD {s : State} {k : Nat} (hk : k < eLn s) :
 
 theorem eq_of_getD {xs ys : List Byte} {n : Nat} (hx : xs.length = n) (hy : ys.length = n)
     (h : ∀ k < n, xs.getD k 0 = ys.getD k 0) : xs = ys := by
-  apply List.ext_getElem (by omega)
+  apply List.ext_getElem (by omega_using [hx, hy])
   intro k h₁ h₂
-  have := h k (by omega)
+  have := h k (by omega_using [hx, h₁])
   rwa [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁, Option.getD_some,
     List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some] at this
 
@@ -566,8 +566,8 @@ theorem split_wp (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.B
     by_cases h₁ : k < eSN s
     · by_cases h₂ : mOf 960 1024 (eLn s) ≤ k
       · rw [ite_eq_left (show _ ∧ _ from ⟨h₂, h₁⟩), ite_eq_left h₁, hu.src_byte hs h₁]
-      · rw [ite_eq_right (fun h => h₂ h.1), ite_eq_left (show k < min _ _ by omega), ite_eq_left h₁]
-    · rw [ite_eq_right (fun h => h₁ h.2), ite_eq_right (show ¬ k < min _ _ by omega), ite_eq_right h₁]
+      · rw [ite_eq_right (fun h => h₂ h.1), ite_eq_left (show k < min _ _ by omega_using [h₁, h₂]), ite_eq_left h₁]
+    · rw [ite_eq_right (fun h => h₁ h.2), ite_eq_right (show ¬ k < min _ _ by omega_using [h₁]), ite_eq_right h₁]
   rw [hu.key_eq hs, hu.nonce_eq hs, hu.aad_eq hs, eP, hu.r8, hu.r9, hu.arg0, ← hm] at post'
   exact post'
 

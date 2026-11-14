@@ -51,8 +51,8 @@ theorem putByte_ok {s0 s : State} {k : Nat} {acc : List Byte}
   · rw [T.mem, V.mem, U.mem]
     change s.mem.writeW (byteAddr (s.gpr .edi)) ((u.gpr .eax).setWidth 8) = _
     rw [U.gpr, BitVec.setWidth_setWidth_of_le _ (by decide : 8 ≤ 32), BitVec.setWidth_eq]
-    rw [h.mem, h.cursor, byteAddr_add (by have := buf.fit; omega)]
-    exact (writeBytes_snoc _ _ _ _ (by have := buf.fit; omega)).symm
+    rw [h.mem, h.cursor, byteAddr_add (by have := buf.fit; omega_using [hl, this])]
+    exact (writeBytes_snoc _ _ _ _ (by have := buf.fit; omega_using [hl, this])).symm
   · rw [T.gpr, V.gpr, U.other .edi (by decide), h.cursor]
     simp only [List.length_append, List.length_singleton]
     rw [BitVec.add_assoc]
@@ -67,12 +67,12 @@ theorem putBytes_ok {s0 : State} {k : Nat} (buf : Buf s0 k) (bs : List Byte) :
   | cons b bs ih =>
     intro acc s bound h
     simp only [putBytes, List.flatMap_cons]
-    refine WP.block_append (WP.mono (putByte_ok buf (by simp only [List.length_cons] at bound; omega) b h)
+    refine WP.block_append (WP.mono (putByte_ok buf (by simp only [List.length_cons] at bound; omega_using [bound]) b h)
       fun u ⟨hu, ku⟩ => ?_)
     have next : (acc ++ [b]).length + bs.length ≤ k := by
       simp only [List.length_append, List.length_singleton]
       simp only [List.length_cons] at bound
-      omega
+      omega_using [bound]
     refine WP.mono (ih next hu) fun t ⟨ht, kt⟩ => ?_
     exact ⟨by simpa only [List.append_assoc, List.singleton_append] using ht, ku.trans kt⟩
 

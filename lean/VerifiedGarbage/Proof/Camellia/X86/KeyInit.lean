@@ -88,7 +88,7 @@ theorem mem_sigmaTable {e k : Nat} (he : e < 6) (hk : k < 16) :
 theorem sigmaTable_slot {x : Nat × BitVec 32} (hx : x ∈ sigmaTable) : keySlot ≤ x.1 ∧ x.1 < keySlot + 96 := by
   simp only [sigmaTable, List.mem_flatMap, List.mem_range, List.mem_map] at hx
   obtain ⟨e, he, k, hk, rfl⟩ := hx
-  simp only; omega
+  simp only; omega_using [he, hk]
 
 /-! ## The prologue -/
 
@@ -107,11 +107,11 @@ theorem ekPrologue_ok {s₀ : State} {b : BitVec 32} (hw : ScrIn s₀.wr b)
     (by rw [wr₁]; exact hw) hnd hlt
   have hout : ∀ k, k < keySlot ∨ keySlot + 96 ≤ k → k ∉ sigmaTable.map (·.1) := fun k hk h => by
     obtain ⟨x, hx, rfl⟩ := List.mem_map.mp h
-    have := sigmaTable_slot hx; omega
+    have := sigmaTable_slot hx; omega_using [hk, this]
   refine ⟨s₂, by rw [runBlock_app, e₁, Option.bind_some, sigmas_eq]; exact e₂, (g₂ _ (by decide)).trans b₁,
     fun r h1 h2 => by rw [g₂ r h1, g₁ r h1 h2], fun i hi => ?_, fun e he j hj => ?_, fun k hk h1 h2 => ?_,
     f₁.trans f₂, by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
-  · rw [k₂ _ (by rw [savedSlot_eq, slots_eq]; omega) (hout _ (.inr (by rw [savedSlot_eq, keySlot_eq]; omega)))]
+  · rw [k₂ _ (by rw [savedSlot_eq, slots_eq]; omega_using [hi]) (hout _ (.inr (by rw [savedSlot_eq, keySlot_eq]; omega_using [])))]
     exact sv₁ i hi
   · have := v₂ _ (mem_sigmaTable he hj)
     simp only at this

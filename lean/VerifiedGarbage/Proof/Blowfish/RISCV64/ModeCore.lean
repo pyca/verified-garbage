@@ -69,8 +69,8 @@ theorem copy_sub (up : Bool) (B : Addr) :
 
 theorem copy_blk (up : Bool) (B : Addr) :
     Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ (blkRegion (inlineCore up) B) :=
-  Offset.disjoint _ (.inr (by cases up <;> decide)) (by simp only [schOff, bufOff, bufSlot]; omega)
-    (by cases up <;> simp only [inlineCore, bufSlot] <;> omega)
+  Offset.disjoint _ (.inr (by cases up <;> decide)) (by simp only [schOff, bufOff, bufSlot]; omega_using [])
+    (by cases up <;> simp only [inlineCore, bufSlot] <;> omega_using [])
 
 theorem ready_frame (up : Bool) {s s' : State} {B : Addr} {ws : List Region} {k : Schedule}
     {rs : List Region} (h : Ready s B ws k) (hf : Frame rs s.mem s'.mem)
@@ -109,18 +109,18 @@ theorem prepare_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : Sc
     (by decide) (by decide) (by decide) (by decide) a (N := 4168) (by decide) (by decide) a4
     (fun i hi => by
       rw [a2, ak.2.1, ak.2.2]
-      exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨_, hin, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
     (fun i hi => by
       rw [a0, ak.2.2, Offset.add_add]
-      exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega)
-        (by simp only [schOff, bufOff, bufSlot]; omega)) (by
+      exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega_using [hi])
+        (by simp only [schOff, bufOff, bufSlot]; omega_using [])) (by
       rw [a0, a2]
       have hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨B, 8 * 528⟩ :=
-        Offset.sub_base _ (by simp only [schOff, bufOff, bufSlot]; omega)
+        Offset.sub_base _ (by simp only [schOff, bufOff, bufSlot]; omega_using [])
       have h : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨s.gpr .a0, 4168⟩ :=
         Region.Disjoint.sub_left (Region.Disjoint.symm dK) hs
       intro x hx hy
-      exact h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega))) fun t ⟨tc, tf, tk⟩ => ?_
+      exact h x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy]))) fun t ⟨tc, tf, tk⟩ => ?_
   rw [a0, a2, am] at tc
   rw [a0, am] at tf
   have K : Keep [.t0, .t2, .t4, .t1, .t2, .t0, .t4] s t := ak.trans tk
@@ -164,19 +164,19 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have E : LookEnv u₁ := by
     refine ⟨fun o ho ho' => ?_, fun o ho ho' => ?_, ?_, ?_⟩
     · rw [k₁.gpr (by decide), a7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 4 (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega)
-        (by simp only [schOff, bufOff, bufSlot]; omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 4 (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega_using [ho'])
+        (by simp only [schOff, bufOff, bufSlot]; omega_using [ho])
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [k₁.gpr (by decide), a7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 8 (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega)
-        (by simp only [schOff, bufOff, bufSlot]; omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 8 (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega_using [ho'])
+        (by simp only [schOff, bufOff, bufSlot]; omega_using [ho])
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [k₁.gpr (by decide), a7, BitVec.toNat_add, BitVec.toNat_ofNat]
       simp only [schOff, bufOff, bufSlot]
-      omega
+      omega_using [hal]
     · rw [k₁.gpr (by decide), a7, BitVec.toNat_add, BitVec.toNat_ofNat]
       simp only [schOff, bufOff, bufSlot]
-      omega
+      omega_using [hal]
   apply WP.seq
   refine WP.mono (cipher_run E up) fun u₂ ⟨c₂, k₂, m₂⟩ => ?_
   have K₂ : Keep cryptRegs s u₂ := (K₁.trans k₂).mono (by decide)
@@ -228,8 +228,8 @@ theorem copy2_sub (up : Bool) (B : Addr) :
 
 theorem copy2_blk (up : Bool) (B : Addr) :
     Region.Disjoint ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ (blkRegion (inlineCore2 up) B) :=
-  Offset.disjoint _ (.inr (by cases up <;> decide)) (by simp only [schOff2, bufOff, bufSlot]; omega)
-    (by cases up <;> simp only [inlineCore2, bufSlot] <;> omega)
+  Offset.disjoint _ (.inr (by cases up <;> decide)) (by simp only [schOff2, bufOff, bufSlot]; omega_using [])
+    (by cases up <;> simp only [inlineCore2, bufSlot] <;> omega_using [])
 
 theorem ready2_frame (up : Bool) {s s' : State} {B : Addr} {ws : List Region} {k : Schedule}
     {rs : List Region} (h : Ready2 s B ws k) (hf : Frame rs s.mem s'.mem)
@@ -268,18 +268,18 @@ theorem prepare2_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : S
     (by decide) (by decide) (by decide) (by decide) a (N := 4168) (by decide) (by decide) a4
     (fun i hi => by
       rw [a2, ak.2.1, ak.2.2]
-      exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨_, hin, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
     (fun i hi => by
       rw [a0, ak.2.2, Offset.add_add]
-      exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega)
-        (by simp only [schOff2, bufOff, bufSlot]; omega)) (by
+      exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega_using [hi])
+        (by simp only [schOff2, bufOff, bufSlot]; omega_using [])) (by
       rw [a0, a2]
       have hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ ⟨B, 8 * 540⟩ :=
-        Offset.sub_base _ (by simp only [schOff2, bufOff, bufSlot]; omega)
+        Offset.sub_base _ (by simp only [schOff2, bufOff, bufSlot]; omega_using [])
       have h : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ ⟨s.gpr .a0, 4168⟩ :=
         Region.Disjoint.sub_left (Region.Disjoint.symm dK) hs
       intro x hx hy
-      exact h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega))) fun t ⟨tc, tf, tk⟩ => ?_
+      exact h x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy]))) fun t ⟨tc, tf, tk⟩ => ?_
   rw [a0, a2, am] at tc
   rw [a0, am] at tf
   have K : Keep [.t0, .t2, .t4, .t1, .t2, .t0, .t4] s t := ak.trans tk
@@ -332,26 +332,26 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   let SA := B + BitVec.ofNat 64 4232
   have e64 : schOff2 = 64 := rfl
   have blkW : InRegions s.wr q 16 := hS.low _ _ (by cases up <;> decide)
-  have hSA : SA.toNat % 8 = 0 := Spill.al8 (by omega) (by decide)
+  have hSA : SA.toNat % 8 = 0 := Spill.al8 (by omega_using [hal]) (by decide)
   -- The save slots, the copy and the buffer, in the frame.
   have dSC : ∀ r ∈ [(⟨B + BitVec.ofNat 64 schOff2, 4168⟩ : Region)],
       Region.Disjoint ⟨SA + BitVec.ofNat 64 0, 80⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     rw [BitVec.add_zero, e64]
-    exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
   have dSq : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q, 16⟩ := by
     rw [BitVec.add_zero]
-    exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
   have e8 : q + 8#64 = B + BitVec.ofNat 64 56 := by
     rw [show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.add_add]
   have dSq₁ : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q, 8⟩ := by
     rw [BitVec.add_zero]
-    exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
   have dSq₂ : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q + 8#64, 8⟩ := by
     rw [e8, BitVec.add_zero]
-    exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
   have dCq : (⟨B + BitVec.ofNat 64 schOff2, 4168⟩ : Region).Disjoint ⟨q, 16⟩ := by
-    rw [e64]; exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)
+    rw [e64]; exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
   show WP isa (modeCrypt2 up) s _
   unfold modeCrypt2
   apply WP.seq
@@ -367,7 +367,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   · have := saved_in' p hp
     have h8 := (saved_ok' p hp).1
     rw [ak.2.2, a0, Offset.add_add]
-    exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2] <;> omega) (by omega)
+    exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2] <;> omega_using [this]) (by omega_using [h8])
   rw [a0]
   let Ms := Spill.saveMem a.mem SA a.gpr saved2
   have fs : Frame [⟨SA, 80⟩] s.mem Ms := by
@@ -389,7 +389,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   have hbq : ∀ o, o ≤ 8 → blockAt Ms (q + BitVec.ofNat 64 o) = blockAt s.mem (q + BitVec.ofNat 64 o) :=
     fun o ho => blockAt_frame fs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (dSq0.sub_right (r₂' := ⟨q + BitVec.ofNat 64 o, 8⟩) (Offset.sub_base _ (by omega))).symm
+      exact (dSq0.sub_right (r₂' := ⟨q + BitVec.ofNat 64 o, 8⟩) (Offset.sub_base _ (by omega_using [ho]))).symm
   have hbk : scheduleAt Ms (B + BitVec.ofNat 64 schOff2) = k := by
     rw [scheduleAt_eq_of_frame _ fs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -404,19 +404,19 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   have E : LookEnv u₁ := by
     refine ⟨fun o ho ho' => ?_, fun o ho ho' => ?_, ?_, ?_⟩
     · rw [u7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 4 (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega)
-        (by simp only [schOff2, bufOff, bufSlot]; omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 4 (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega_using [ho'])
+        (by simp only [schOff2, bufOff, bufSlot]; omega_using [ho])
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [u7, K₁.2.1, K₁.2.2, Offset.add_add]
-      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 8 (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega)
-        (by simp only [schOff2, bufOff, bufSlot]; omega)
+      obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 8 (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega_using [ho'])
+        (by simp only [schOff2, bufOff, bufSlot]; omega_using [ho])
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · rw [u7, BitVec.toNat_add, BitVec.toNat_ofNat]
       simp only [schOff2, bufOff, bufSlot]
-      omega
+      omega_using [hal]
     · rw [u7, BitVec.toNat_add, BitVec.toNat_ofNat]
       simp only [schOff2, bufOff, bufSlot]
-      omega
+      omega_using [hal]
   apply WP.seq
   refine WP.mono (cipher2_run E up) fun u₂ ⟨c₂, c₂', k₂, m₂⟩ => ?_
   have K₂ : Keep crypt2Regs s u₂ := (K₁.trans k₂).mono (by decide)
@@ -462,7 +462,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   · have := saved_in' p hp
     have h8 := (saved_ok' p hp).1
     rw [k₄.2.1, k₄.2.2, kv.2.1, kv.2.2, k₃.2.1, k₃.2.2, K₂.2.1, K₂.2.2, Offset.add_add]
-    obtain ⟨r, hr, hc⟩ := hS.wr (4232 + p.2) 8 (by decide) (by cases up <;> simp only [inlineCore2] <;> omega) (by omega)
+    obtain ⟨r, hr, hc⟩ := hS.wr (4232 + p.2) 8 (by decide) (by cases up <;> simp only [inlineCore2] <;> omega_using [this]) (by omega_using [h8])
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have Kt : Keep crypt2Regs s u₄ := (((K₂.trans k₃).trans kv).trans k₄).mono (by decide)
   have tg : ∀ r ∈ kept, t.gpr r = s.gpr r := fun r hr => by
@@ -484,7 +484,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
     · simp only [List.mem_singleton] at hr; subst hr
       exact dCq.sub_right (Region.sub_prefix (by decide))
     · simp only [List.mem_singleton] at hr; subst hr
-      rw [e8, e64]; exact Offset.disjoint _ (.inr (by decide)) (by omega) (by omega)
+      rw [e8, e64]; exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
   refine ⟨by rw [show sb = .s4 from rfl]; exact (tg .s4 (by decide)).trans hB', tg, ⟨by rw [R.mem]; exact hK4, hfit⟩,
     ?_, fun j hj => ?_, by rw [R.rd]; exact Kt.2.1, by rw [R.wr]; exact Kt.2.2⟩
   · rw [R.mem, mem₄]
@@ -500,7 +500,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   · have hj' : j < 2 := hj
     rw [R.mem, show 4 * (inlineCore2 up).bw = 8 from rfl]
     have u17 : u₁.gpr .a7 = B + BitVec.ofNat 64 schOff2 := u7
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+    rcases (by omega_using [hj'] : j = 0 ∨ j = 1) with rfl | rfl
     · have e1 := congrArg Prod.fst c₂
       have e2 := congrArg Prod.snd c₂
       simp only at e1 e2
@@ -508,7 +508,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
       have h0 := hbq 0 (by decide); rw [BitVec.add_zero] at h0
       rw [ea, bytesAt_eq, mem₄, blockAt_frame f₂ fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          rw [e8]; exact Offset.disjoint _ (.inl (by decide)) (by omega) (by omega),
+          rw [e8]; exact Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using []),
         stored_block, e1, e2, l₁, h₁, m₁, pm, u17, hbk, ← blockOut_eq, h0, dirCipher_bytes]
       cases up <;> rfl
     · have e1 := congrArg Prod.fst c₂'

@@ -104,14 +104,14 @@ theorem bytesAt_congr_of {m m' : Mem} {D : Addr} {n : Nat}
   List.map_congr_left fun i hi => by
     have := List.mem_range.mp hi
     rw [VG.Offset.add_add]
-    exact h _ (by omega)
+    exact h _ (by omega_using [hl, this])
 
 theorem chunksAt_congr_of {m m' : Mem} {D : Addr} {n : Nat}
     (h : ∀ i < n, m (D + BitVec.ofNat 64 i) = m' (D + BitVec.ofNat 64 i)) {L k : Nat} (hk : L * k ≤ n) :
     chunksAt L m D k = chunksAt L m' D k :=
   List.map_congr_left fun j hj => by
     have := VG.Proof.Modes.idx_lt (L := L) (List.mem_range.mp hj)
-    exact bytesAt_congr_of h (by omega)
+    exact bytesAt_congr_of h (by omega_using [hk, this])
 
 theorem chunksAt_one' (m : Mem) (p : Addr) (n : Nat) : chunksAt 1 m p n = bytesSteps (bytesAt m p n) := by
   simp [chunksAt, bytesSteps, bytesAt]
@@ -265,7 +265,7 @@ theorem xorLoop_wp {s₀ : State} {K R : Addr} {r : Nat} (hp : XPre s₀ K R r) 
   refine WP.mono (xorStep_wp hp hj) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨z, d⟩
-  · exact .inr ⟨z, r - (j + 1), by have := d.lt; have := hj.lt; omega, j + 1, rfl, d⟩
+  · exact .inr ⟨z, r - (j + 1), by have := d.lt; have := hj.lt; omega_arith, j + 1, rfl, d⟩
 
 /-- The bytes `over` leaves: those at `R` XORed with those at `K`. -/
 theorem bytesAt_over_xf (m : Mem) (K R : Addr) {r L : Nat} (hr : r ≤ L) (h64 : r ≤ 2 ^ 64) :
@@ -378,7 +378,7 @@ theorem done_whole {j : Nat} (hj : j = nF c s₀) {t : State} (hI : IL cs F s₀
   subst hj
   have hx : (xsF c s₀).take (nF c s₀) = xsF c s₀ := List.take_of_length_le (by rw [chunksAt_length])
   have hd : (xsF c s₀).drop (nF c s₀) = [] := List.drop_of_length_le (by rw [chunksAt_length])
-  have hN : 4 * c.bw * nF c s₀ = N s₀ := by have := nF_rF c s₀; omega
+  have hN : 4 * c.bw * nF c s₀ = N s₀ := by have := nF_rF c s₀; omega_using [hr, this]
   have data := hI.data
   rw [hx, hd, List.append_nil] at data
   refine ⟨hI.b, hI.keep, hI.rd, hI.wr, ?_, ?_, hI.frame.sub (big_sub (nF_le c s₀))⟩
@@ -402,7 +402,7 @@ theorem whole_seg (hM : FinalOk c M) (hcomp : Computes M (4 * c.bw) (cs.cipher k
   have hjn : j < nF c s₀ := by
     have := (Nat.le_div_iff_mul_le hL).mpr (show (j + 1) * (4 * c.bw) ≤ N s₀ by rw [Nat.mul_comm]; exact hj)
     show j < N s₀ / (4 * c.bw)
-    omega
+    omega_using [this]
   have hpre : ∀ o ∈ M.pre, o.InBounds (lens c (4 * c.bw) (4 * c.bw)) := by
     rw [hM.pre]
     exact fun o ho => (copyBlk_ok' (ws := allLocs) (mem_allLocs _) (by simp [lens]) (by simp [lens]) o ho).1
@@ -464,7 +464,7 @@ theorem tail_seg (hM : FinalOk c M)
     · simp only [List.take_zero, run, List.nil_append, List.drop_zero]
     · simp only [List.take_zero, run]
   have hwT : WordOk c false M (Fb s₀ c) (tailA c s₀) (rF c s₀) :=
-    ⟨by rw [hM.pre]; exact copyBlk_wordAl _ _ _, hM.postA, by have := hS.al; omega, fun h => nomatch h⟩
+    ⟨by rw [hM.pre]; exact copyBlk_wordAl _ _ _, hM.postA, by have := hS.al; omega_using [this], fun h => nomatch h⟩
   have hpreT : ∀ o ∈ M.pre, o.InBounds (lens c (rF c s₀) (4 * c.bw)) := by
     rw [hM.pre]
     exact fun o ho => (copyBlk_ok' (ws := allLocs) (mem_allLocs _) (by simp [lens]) (by simp [lens]) o ho).1
@@ -637,7 +637,7 @@ theorem segs_ok (hM : FinalOk c M) (hcomp : Computes M (4 * c.bw) (cs.cipher k) 
   have hb : ∀ i < N s₀, s₂.mem (Dp s₀ + BitVec.ofNat 64 i) = s₀.mem (Dp s₀ + BitVec.ofNat 64 i) :=
     fun i hi => byte_of_chunks1 hd0 hi
   have hw : WordOk c w M (Fb s₀ c) (Dp s₀) (4 * c.bw) :=
-    ⟨by rw [hM.pre]; exact copyBlk_wordAl _ _ _, hM.postA, by have := hfx.scr.al; omega,
+    ⟨by rw [hM.pre]; exact copyBlk_wordAl _ _ _, hM.postA, by have := hfx.scr.al; omega_using [this],
       fun h => by have := hD h; rw [hM.step] at this; exact this⟩
   have hnr := nF_rF c s₀
   unfold Core.segs
@@ -750,7 +750,7 @@ theorem ofbFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c
       Changes c byteMode s₀ s' :=
   WP.mono (seqFinal_wp cs (ofb_finalOk c) (ofb_computes (cs.cipher_len k)) hp hk)
     fun s' ⟨h1, h2, h3, h4⟩ => by
-      have hL0 : 0 < 4 * c.bw := by rcases hp.layout.bw with h | h <;> omega
+      have hL0 : 0 < 4 * c.bw := by rcases hp.layout.bw with h | h <;> omega_using [h]
       obtain ⟨e1, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (xsF c s₀)
       rw [chunksAt_length] at e2
       refine ⟨h1, ⟨?_, ?_⟩, h4⟩

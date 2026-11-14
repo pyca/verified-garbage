@@ -34,8 +34,8 @@ theorem prep_ok {s : State} {B : Addr} {L w c : Nat} (h : Env s B (8 * L) w) (hl
   have ow : ∀ d, d + 8 ≤ 56 ∨ (64 ≤ d ∧ d + 8 ≤ 256) → word t.mem B d = word s.mem B d := fun d hd =>
     o.word (fun x hx => by
       simp only [mpRanges, VG.Impl.MillerRabin.PPC64LE.aE, List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega) (by omega)
-  exact ⟨e, (ow 0 (by omega)).trans hl.len, (ow 48 (by omega)).trans hl.wW, (ow 224 (by omega)).trans hl.strideW,
-    fun j hj => (ow _ (by omega)).trans (hl.arrW j hj), n, h3, hodd, inv, r1, r9, r10, ee, l⟩
+      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega_using [hd]) (by omega_using [hd])
+  exact ⟨e, (ow 0 (by omega_using [])).trans hl.len, (ow 48 (by omega_using [])).trans hl.wW, (ow 224 (by omega_using [])).trans hl.strideW,
+    fun j hj => (ow _ (by omega_using [hj])).trans (hl.arrW j hj), n, h3, hodd, inv, r1, r9, r10, ee, l⟩
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

@@ -88,7 +88,7 @@ theorem ciph_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : Addr
     (hd : ∀ r ∈ rs, (⟨K, 240⟩ : Region).Disjoint r) (hR : 16 * (R + 1) ≤ 240) :
     Spec.GcmSiv.ctxCiph m' K R = Spec.GcmSiv.ctxCiph m K R := by
   unfold Spec.GcmSiv.ctxCiph
-  rw [bytesAt_keep hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega)]
+  rw [bytesAt_keep hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega_using [hR])]
 
 /-- The entry keeps a buffer missing `W`. -/
 theorem entry_buf {c : Cx} {s s₁ : State} (hf : Frame [entryR c.W] s.mem s₁.mem) {P : Addr} {len : Nat}
@@ -142,17 +142,17 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   -- What the pieces read.
   have hK₁ : Spec.GcmSiv.ctxCiph s₁.mem c.K c.R = Spec.GcmSiv.ctxCiph s.mem c.K c.R := by
     unfold Spec.GcmSiv.ctxCiph
-    rw [entry_buf En.frame (L.k_w.sub_left (Region.sub_prefix hRb)) (by omega)]
+    rw [entry_buf En.frame (L.k_w.sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])]
   have n₁ : bytesAt s₁.mem c.N 12 = bytesAt s.mem c.N 12 := entry_buf En.frame L.n_w (by decide)
   have n₂ : bytesAt s₂.mem c.N 12 = bytesAt s.mem c.N 12 := by
     rw [bytesAt_keep fK (buf_keep L.n_w (by decide)) (by decide), n₁]
   have a₂ : bytesAt s₂.mem c.A c.al = bytesAt s.mem c.A c.al := by
-    rw [bytesAt_keep fK (buf_keep L.a_w (by decide)) (by omega), entry_buf En.frame L.a_w (by omega)]
+    rw [bytesAt_keep fK (buf_keep L.a_w (by decide)) (by omega_using [hal]), entry_buf En.frame L.a_w (by omega_using [hal])]
   have d₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
-    rw [bytesAt_keep fK (buf_keep L.d_w (by decide)) (by omega), entry_buf En.frame L.d_w (by omega)]
+    rw [bytesAt_keep fK (buf_keep L.d_w (by decide)) (by omega_using [hn]), entry_buf En.frame L.d_w (by omega_using [hn])]
   have d₄ : bytesAt s₄.mem c.D c.n = bytesAt s.mem c.D c.n := by
-    rw [bytesAt_keep fT (buf_keep L.d_w (by decide)) (by omega),
-      bytesAt_keep fP (buf_keep L.d_w (by decide)) (by omega), d₂]
+    rw [bytesAt_keep fT (buf_keep L.d_w (by decide)) (by omega_using [hn]),
+      bytesAt_keep fP (buf_keep L.d_w (by decide)) (by omega_using [hn]), d₂]
   have key₃ : Spec.GcmSiv.ctxCiph s₃.mem (c.W + BitVec.ofNat 64 256) c.R =
       Spec.GcmSiv.ctxCiph s₂.mem (c.W + BitVec.ofNat 64 256) c.R :=
     ciph_keep fP (w_keep L (by decide) (by decide)) hRb
@@ -173,7 +173,7 @@ theorem seal_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   rw [BitVec.add_zero] at tg
   have d₆ : bytesAt s₆.mem c.D c.n = bytesAt s₅.mem c.D c.n :=
     bytesAt_keep fO (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by omega_using [hn])
   have tO : bytesAt s₆.mem c.T 16 = bytesAt s₅.mem c.W 16 := by rw [hm₆, copy2Mem_bytes]
   have au := Ky.auth
   have ci := Ky.ciph

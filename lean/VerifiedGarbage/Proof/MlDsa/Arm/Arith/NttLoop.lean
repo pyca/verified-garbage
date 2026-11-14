@@ -40,15 +40,15 @@ theorem tab_word {t : Nat → Nat} (ht : ∀ k < 256, t k < q) (i : Nat) (hi : i
   generalize t i = v at *
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.shiftRight_zero, Nat.mul_comm, ← Nat.two_pow_add_eq_or_of_lt (by omega)]
-  omega
+    BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.shiftRight_zero, Nat.mul_comm, ← Nat.two_pow_add_eq_or_of_lt (by omega_using [])]
+  omega_using []
 
 theorem tabStep_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < q) {i : Nat} (hi : i < 256) (s : State) {zB : BitVec 32}
     (h1 : s.gpr .r1 = zB) (hw : InRegions s.wr (State.addr (zB + BitVec.ofNat 32 (4 * i))) 4) :
     WP isa (.block (tabStep t i)) s fun s' =>
       s'.mem = s.mem.writeW (State.addr (zB + BitVec.ofNat 32 (4 * i))) (BitVec.ofNat 32 (t i)) ∧
         Keep [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] s s' := by
-  have ho : 4 * i < 4096 := by omega
+  have ho : 4 * i < 4096 := by omega_using [hi]
   run_block [tabStep, h1, hw, ho, tab_word ht i hi]
   refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -67,7 +67,7 @@ theorem storeTab_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < q) (s : State) {z
     ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s' ⟨hk, hf, ht'⟩ => ⟨ht', hf, hk⟩
   have e : State.addr (zB + BitVec.ofNat 32 (4 * k)) = coeffAddr (State.addr zB) k := by
-    have := addr_ptr zB (4 * k) 0 (by omega)
+    have := addr_ptr zB (4 * k) 0 (by omega_using [hfit, hk])
     simp only [Nat.add_zero, BitVec.add_zero] at this
     exact this
   have hk256 : k < n := by rw [n_eq]; exact hk
@@ -76,10 +76,10 @@ theorem storeTab_ok (t : Nat → Nat) (ht : ∀ k < 256, t k < q) (s : State) {z
     fun s'' ⟨hm', hk''⟩ => ⟨hk'.trans hk'', ?_, fun j hj => ?_⟩
   · rw [hm', e]
     exact hf.writeW (List.mem_singleton_self _) _ (coeff_contains _ hk256)
-  · rw [hm', e, coeffAt_writeW _ _ (show j < n by rw [n_eq]; omega) hk256]
+  · rw [hm', e, coeffAt_writeW _ _ (show j < n by rw [n_eq]; omega_using [hk, hj]) hk256]
     by_cases e' : k = j
     · subst e'; rw [ite_eq_left rfl]
-    · rw [ite_eq_right e']; exact ht' j (by omega)
+    · rw [ite_eq_right e']; exact ht' j (by omega_using [hj, e'])
 
 /-- Writes elsewhere keep the table. -/
 theorem Tab.frame {t : Nat → Nat} {m m' : Mem} {P : Addr} (h : Tab t m P) {rs : List Region}
@@ -109,12 +109,12 @@ theorem bflys_ok {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {len start : N
   obtain ⟨z4, z5, z6, z7⟩ := hz
   have hz' : ZetaIn z s' := ⟨(hk.gpr .r4 (by decide)).trans z4, (hk.gpr .r5 (by decide)).trans z5,
     (hk.gpr .r6 (by decide)).trans z6, (hk.gpr .r7 (by decide)).trans z7⟩
-  refine WP.mono (hb p len (start + t) hlen hl (by omega) hp z _ s' h0' hz' hP (by rw [hk.wr]; exact hw))
+  refine WP.mono (hb p len (start + t) hlen hl (by omega_using [hs, ht]) hp z _ s' h0' hz' hP (by rw [hk.wr]; exact hw))
     fun s'' ⟨hP', hf', h0'', h3'', hz'', hk'⟩ => ⟨⟨?_, hf.trans hf', ?_, ?_, hk.trans hk'⟩, ?_⟩
   · rw [blockN_succ]; exact hP'
   · rw [h0'', Nat.add_assoc]
   · rw [h3'', h3']; exact count_sub (k := 1) ht
-  · rw [hz'', h3']; exact count_z (k := 1) ht (by decide) (by omega)
+  · rw [hz'', h3']; exact count_z (k := 1) ht (by decide) (by omega_using [hl])
 
 omit hb in
 theorem blkPre_ok (len : Nat) (hl : len ≤ 128) (op : DpOp) (hop : op = .add ∨ op = .sub) (s : State)
@@ -128,7 +128,7 @@ theorem blkPre_ok (len : Nat) (hl : len ≤ 128) (op : DpOp) (hop : op = .add �
       s'.mem = s.mem ∧ Keep [.r0, .r2, .r4, .r11, .lr] s s' := by
   have he : encodable (BitVec.ofNat 32 len) = true := by
     have : ∀ l < 129, encodable (BitVec.ofNat 32 l) = true := by decide
-    exact this len (by omega)
+    exact this len (by omega_using [hl])
   rcases hop with rfl | rfl <;>
   · run_block [zPieces, h1, hi, he]
     keep_simp
@@ -140,7 +140,7 @@ theorem blkPost_ok (len : Nat) (hl : len ≤ 128) (s : State) :
         s'.z = (s.gpr .r2 - 1 == 0) ∧ s'.mem = s.mem ∧ Keep [.r1, .r4, .r5, .r6, .r7, .r11, .lr] s s' := by
   have he : encodable (BitVec.ofNat 32 (4 * len)) = true := by
     have : ∀ l < 129, encodable (BitVec.ofNat 32 (4 * l)) = true := by decide
-    exact this len (by omega)
+    exact this len (by omega_using [hl])
   run_block [he]
   keep_simp
 
@@ -174,7 +174,7 @@ theorem blk_ok {tab : Nat → Nat} {Z : Nat → Zq} (hZ : TabOf tab Z) {p zB : B
     (by rw [e3]; simp)) fun s₂ ⟨hP, hf, h0₂, k₂⟩ => ?_)
   refine WP.mono (blkPost_ok len hl s₂) fun s' ⟨h0', h2', hz', m', k₃⟩ => ⟨by rw [m']; exact hP,
     by rw [m', ← m₁]; exact hf, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [h0', h0₂, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+  · rw [h0', h0₂, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
   · rw [k₃.gpr .r1 (by decide), k₂.gpr .r1 (by decide), e1, h1]; rfl
   · rw [h2', k₂.gpr .r2 (by decide), k₁.gpr .r2 (by decide)]
   · rw [hz', k₂.gpr .r2 (by decide), k₁.gpr .r2 (by decide)]
@@ -187,7 +187,7 @@ theorem layPre_ok (c : Nat) (hc : c ≤ 128) (s : State) :
       s'.gpr .r2 = BitVec.ofNat 32 c ∧ s'.mem = s.mem ∧ Keep [.r0, .r1, .r4, .r11, .lr] s s' := by
   have he : encodable (BitVec.ofNat 32 c) = true := by
     have : ∀ l < 129, encodable (BitVec.ofNat 32 l) = true := by decide
-    exact this c (by omega)
+    exact this c (by omega_using [hc])
   run_block [he]
   keep_simp
 
@@ -233,8 +233,8 @@ theorem lay_ok {tab : Nat → Nat} {Z : Nat → Zq} (hZ : TabOf tab Z) {p zB : B
       ⟨by rw [m₁]; exact hF, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.gpr .r0 (by decide), h0]; simp,
         by rw [k₁.gpr .r1 (by decide), h1], by rw [e2]; simp, k₁.mono (by decide)⟩
     have hcm : 2 * len * c + 2 * len ≤ 256 := by
-      have : 2 * len * (c + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by omega)
-      rw [Nat.mul_succ] at this; omega
+      have : 2 * len * (c + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by omega_using [hc])
+      rw [Nat.mul_succ] at this; omega_using [hl2, this]
     refine WP.mono (blk_ok hb hZ hp hzf hl0 hl1 hcm (hzi c hc) dop hop _ s' h0' h1'
       ((hk.gpr .r4 (by decide)).trans h4) hP (by rw [hk.wr]; exact hw) (by rw [hk.rd, hk.wr]; exact hzw)
       (ht.frame hf hdd)) fun s'' ⟨hP', hf', h0'', h1'', h2'', hz'', hk'⟩ => ⟨⟨?_, hf.trans hf', ?_, ?_, ?_,
@@ -243,7 +243,7 @@ theorem lay_ok {tab : Nat → Nat} {Z : Nat → Zq} (hZ : TabOf tab Z) {p zB : B
     · rw [h0'', Nat.mul_succ]
     · rw [h1'', h1', hstep c hc]
     · rw [h2'', h2']; exact count_sub (k := 1) hc
-    · rw [hz'', h2']; exact count_z (k := 1) hc (by decide) (by omega)
+    · rw [hz'', h2']; exact count_z (k := 1) hc (by decide) (by omega_using [hl4])
   · refine WP.mono (layPost_ok s₂) fun s' ⟨h0', m', k₃⟩ => ⟨by rw [m']; exact hP, by rw [m']; exact hf, ?_,
       by rw [k₃.gpr .r1 (by decide), h1₂], k₂.trans (k₃.mono (by decide))⟩
     rw [h0', h0₂]

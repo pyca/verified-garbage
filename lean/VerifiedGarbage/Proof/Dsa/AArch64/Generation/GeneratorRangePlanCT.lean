@@ -17,7 +17,7 @@ def GeneratorPlan.rangeWorkspace (p : GeneratorPlan) (xb : List Byte) (hx : xb.l
     GeneratorWorkspacePublic where
   frame := {
     B := p.A, F := p.F, arena := p.B, hp := p.hp, Z := p.Z, w := p.len / 8
-    width := by rcases p.width with h | h | h <;> omega
+    width := by rcases p.width with h | h | h <;> omega_using [h]
     pb := p.pb, xb := xb
     pLength := by rw [p.pLength]; rcases p.width with h | h | h <;> rw [h] <;> decide
     xLength := hx.trans p.pLength.symm
@@ -34,7 +34,7 @@ theorem generatorRange_plan {p : GeneratorPlan} {W : Nat → BitVec 64} {s : Sta
     (src : Src s p.A p.Z (if result then VG.Proof.Bignum.off p.B g else p.hp) xb) :
     GeneratorWorkspaceBefore (p.len / 8) p.len result (p.rangeWorkspace xb hx) s := by
   obtain ⟨V, R⟩ := h.rep
-  exact ⟨⟨h.layout.sp, fun k hk => h.layout.ld (d := 8 * k) (n := 8) (by unfold frameBytes; omega),
+  exact ⟨⟨h.layout.sp, fun k hk => h.layout.ld (d := 8 * k) (n := 8) (by unfold frameBytes; omega_using [hk]),
     (R.fr 5 (by decide)).trans h.base, (R.fr 21 (by decide)).trans h.input,
     h.pArithmetic, src, fun _ => p.pOdd⟩, h.arithmetic, rfl, p.pLength⟩
 

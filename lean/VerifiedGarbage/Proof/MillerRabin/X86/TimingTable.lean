@@ -50,7 +50,7 @@ theorem tableStep_relCT {code : Prog isa} {name : String}
   refine private_attach ?_ ?_ (fun _ _ H => H.1.data.context)
   · apply RelCT.seq (Q := VG.X86.Taint.Agree (roundTaint [.edi]))
       ((mulY_relCT (p := p) verified noSp stack v length (by change 5 < 8 ∧ 5 ≠ 2 ∧ 5 ≠ 3; decide)).mono ?_ (fun _ _ H => H))
-    · exact (copy_relCT v (aTable + k + 2) aY (by unfold aTable; omega) (by decide)).mono
+    · exact (copy_relCT v (aTable + k + 2) aY (by unfold aTable; omega_using [index]) (by decide)).mono
         (fun _ _ H => H) (fun _ _ H => H.2.2)
     · intro s t ⟨P, ⟨σ, S, oddS, ltS⟩, ⟨ρ, T, oddT, ltT⟩⟩
       refine ⟨P, S.mulInput oddS (by simp [tableArrays, initialArrays]) ?_,

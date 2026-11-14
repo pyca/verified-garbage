@@ -48,7 +48,7 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
   have modulusU := eqU.number h.buffers.context.arraysFit (by decide : 0 < 8)
   have input : CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words g.length
       (g.sourceLength i.succ) (56 + 8 * i.val) (bs 1) (bs i.succ) u :=
-    ⟨⟨readyU, by have := sharedU.stack.nowrap; omega, sharedU.stack.read (by decide),
+    ⟨⟨readyU, by have := sharedU.stack.nowrap; omega_using [this], sharedU.stack.read (by decide),
       by rw [flagU]; exact bit, by rw [flagU, modulusU]; exact valid⟩,
       sharedU.power_sources i exponent member⟩
   rw [WP.seq_iff]

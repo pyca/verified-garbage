@@ -25,8 +25,8 @@ theorem KeyReady.arrayFit {s : State} {base : BitVec 32} {capacity w j : Nat}
   have native := h.arr_fit bound
   rw [keyView_stride] at native
   rw [← keyView_array w j]
-  have stridePositive : 16 ≤ 8 * (w + 2) := by omega
-  omega
+  have stridePositive : 16 ≤ 8 * (w + 2) := by omega_using []
+  omega_using [native]
 
 theorem KeyReady.arraysFit {s : State} {base : BitVec 32} {capacity w j : Nat}
     (h : KeyReady base capacity w s) (bound : j < 30) : arrAt w (j + 1) ≤ 8 * capacity := by
@@ -42,7 +42,7 @@ theorem KeyReady.baseShiftFits {s : State} {base : BitVec 32} {capacity w : Nat}
   have fit := h.arrayFit (j := 0) (by decide)
   have nowrap := workspace.nowrap
   simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
-  omega
+  omega_using [nowrap, fit]
 
 theorem key_keep_number {s : State} {base : BitVec 32} {capacity w j : Nat}
     {js : List Nat} {m' : Mem}
@@ -63,7 +63,7 @@ theorem key_keep_frame {s : State} {base : BitVec 32} {capacity w : Nat} {js : L
   have shiftFits : base.toNat + 96 < 2 ^ 32 := by
     have := workspace.nowrap
     simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at zeroFit
-    omega
+    omega_using [this, zeroFit]
   change Outs (State.addr (base + 96#32)) (VG.Proof.Rsa.KeyWorkspace.ranges (2 * w + 2) js []) m m' at keep
   have native := VG.Proof.Bignum.outs_frame keep (by
     intro r hr
@@ -98,8 +98,8 @@ theorem keyArrayRegions.header {s : State} {base : BitVec 32} {capacity w : Nat}
   apply Region.Disjoint.symm
   apply Offset.disjoint_base
   · simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes]
-    omega
-  · omega
+    omega_using []
+  · omega_using [fit, nowrap]
 
 theorem key_keep_workspace {s : State} {base : BitVec 32} {capacity w : Nat} {js : List Nat} {m' : Mem}
     (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
@@ -118,7 +118,7 @@ theorem key_keep_header {s : State} {base : BitVec 32} {capacity w d : Nat}
     (keep : VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) js [] s.mem m') :
     m'.readW (off (State.addr base) d) 64 = s.mem.readW (off (State.addr base) d) 64 := by
   refine (key_keep_frame workspace ready bounds keep).readW (r := ⟨State.addr base, 256⟩)
-    (Offset.contains_base _ fit (by omega)) ?_ (by decide)
+    (Offset.contains_base _ fit (by omega_using [fit])) ?_ (by decide)
   intro r hr
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
   have arrayFit := ready.arrayFit (bounds j hj)
@@ -126,8 +126,8 @@ theorem key_keep_header {s : State} {base : BitVec 32} {capacity w d : Nat}
   apply Region.Disjoint.symm
   apply Offset.disjoint_base
   · simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes]
-    omega
-  · omega
+    omega_using []
+  · omega_using [arrayFit, nowrap]
 
 theorem keyArrayRegions.modulus {s : State} {base : BitVec 32} {capacity w : Nat} {js : List Nat}
     (workspace : Workspace s base (8 * capacity)) (h : KeyReady base capacity w s)
@@ -139,12 +139,12 @@ theorem keyArrayRegions.modulus {s : State} {base : BitVec 32} {capacity w : Nat
   have fit := h.arrayFit (bounds j hj)
   have fit0 := h.arrayFit (j := 0) (by decide)
   have nowrap := workspace.nowrap
-  refine Offset.disjoint _ (.inl ?_) (by omega) (by omega)
-  have positive : 1 ≤ j := by have := nonzero j hj; omega
+  refine Offset.disjoint _ (.inl ?_) (by omega_using [fit0, nowrap]) (by omega_using [fit, nowrap])
+  have positive : 1 ≤ j := by have := nonzero j hj; omega_using [this]
   have scale := Nat.mul_le_mul_right (8 * (w + 2)) positive
   simp only [Nat.one_mul] at scale
   simp only [arrAt, VG.Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero]
-  omega
+  omega_using [scale]
 
 theorem MontData.after_key_keep {s : State} {base : BitVec 32} {capacity w : Nat}
     {js : List Nat} {m' : Mem}

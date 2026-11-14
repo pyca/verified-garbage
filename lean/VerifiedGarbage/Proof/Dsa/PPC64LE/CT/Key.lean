@@ -211,7 +211,7 @@ theorem top_div {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) :
     (word m B (d + 8 * (w - 1))).toNat = val32 m B d (2 * w) / 2 ^ (64 * (w - 1)) := by
   rw [val32_top m B d w hw]
   have hlo := val32_lt m B d (2 * (w - 1))
-  rw [show 32 * (2 * (w - 1)) = 64 * (w - 1) by omega] at hlo
+  rw [show 32 * (2 * (w - 1)) = 64 * (w - 1) by omega_using []] at hlo
   rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hlo, Nat.zero_add]
 
 theorem w_pre0 {v : VD} {s : State} (B : Base v s) (r2 : s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d)
@@ -340,7 +340,7 @@ theorem paramsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G 
     (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
     RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
       checkElem) rest fail)) fail) fail) Q := by
-  have hG := elem_rel ptrG (fun L => L.pl + L.ql) (G := G) (fun _ _ B _ => by have := B.kn; omega)
+  have hG := elem_rel ptrG (fun L => L.pl + L.ql) (G := G) (fun _ _ B _ => by have := B.kn; omega_using [this])
     (fun h => ptrG_ok h) t5 (K := KM) (fun _ => KM_p)
   unfold odds andThen
   refine RelCT.seq (two_postG (rel_pins pins_S5' t1) fun _ _ h => w_O1 h)
@@ -364,7 +364,7 @@ theorem oddsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : 
     RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
       checkElem) (andThen (.seq (.block ptrY) checkElem) rest fail) fail)) fail) fail) Q := by
   refine paramsTail_rel ?_ hfail
-  have hY := elem_rel ptrY (fun L => 2 * L.pl + L.ql) (G := G) (fun v s B g => by have := hy v s B g; omega)
+  have hY := elem_rel ptrY (fun L => 2 * L.pl + L.ql) (G := G) (fun v s B g => by have := hy v s B g; omega_using [this])
     (fun h => ptrY_ok h) t8 (K := fun v => KM v ∧ EOk (fun L => L.pl + L.ql) v) (fun _ h => KM_p h.1)
   unfold andThen
   refine RelCT.seq hY

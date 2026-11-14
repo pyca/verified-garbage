@@ -36,7 +36,7 @@ theorem xorRowTo_ok (s : State) (d : Reg) (r j : Fin 4)
       s'.mem = s.mem.write (s.gpr d + BitVec.ofNat 64 (64 * j + 16 * r)) 16
         (s.mem.read (s.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 ^^^
           s.v (vreg (rowWord r j))) ∧ StoreSame s s' := by
-  have ha : (64 * j.val + 16 * r.val) % 16 = 0 ∧ 64 * j.val + 16 * r.val < 4096 * 16 := by omega
+  have ha : (64 * j.val + 16 * r.val) % 16 = 0 ∧ 64 * j.val + 16 * r.val < 4096 * 16 := by omega_using []
   apply WP.of_runBlock
   simp only [xorRowTo, runBlock_cons, runBlock_nil, exec, addr, ha, and_self, ite_true, State.load, hin,
     Option.bind_some, Option.map_some, isa, runStep_some, RegUpd.gpr_setV, RegUpd.v_setV,
@@ -59,13 +59,13 @@ theorem byte_read16 (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   simp only [BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and]
-  rw [getLsbD_read m 16 p _ (by omega), show (8 * i + b) / 8 = i by omega,
-    show (8 * i + b) % 8 = b by omega]
+  rw [getLsbD_read m 16 p _ (by omega_using [hi, hb]), show (8 * i + b) / 8 = i by omega_using [hb],
+    show (8 * i + b) % 8 = b by omega_using [hb]]
 
 theorem xor_write_byte (m : Mem) (p : Addr) (v : BitVec 128) {i : Nat} (hi : i < 16) :
     (m.write p 16 (m.read p 16 ^^^ v)) (p + BitVec.ofNat 64 i) =
       m (p + BitVec.ofNat 64 i) ^^^ v.extractLsb' (8 * i) 8 := by
-  simp only [Mem.write, Mem.sub_ofNat_toNat p (by omega : i < 2 ^ 64), hi, ite_true,
+  simp only [Mem.write, Mem.sub_ofNat_toNat p (by omega_using [hi] : i < 2 ^ 64), hi, ite_true,
     BitVec.extractLsb'_xor, byte_read16 m p hi]
 
 theorem xor_write_apply (m : Mem) (p : Addr) (v : BitVec 128) (x : Addr) :
@@ -91,22 +91,22 @@ theorem Data.store {m₀ m : Mem} {p : Addr} {out : Nat → BitVec 128} {done : 
       (m.read (p + BitVec.ofNat 64 (16 * n)) 16 ^^^ out n)) p out (n :: done) := by
   intro x
   rw [xor_write_apply]
-  simp only [Offset.lt_iff x p (by omega : 16 * n + 16 ≤ 2 ^ 64)]
+  simp only [Offset.lt_iff x p (by omega_using [hn] : 16 * n + 16 ≤ 2 ^ 64)]
   rw [h x]
   have hx := (x - p).isLt
   by_cases he : (x - p).toNat / 16 = n ∧ (x - p).toNat < 256
   · obtain ⟨he, hb⟩ := he
-    have hd : 16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16 := by omega
+    have hd : 16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16 := by omega_using [he]
     have hs : (x - (p + BitVec.ofNat 64 (16 * n))).toNat = (x - p).toNat % 16 := by
-      rw [Offset.toNat_sub_add x p (by omega)]
-      have hh : 2 ^ 64 - 16 * n + (x - p).toNat = 2 ^ 64 + (x - p).toNat % 16 := by omega
-      rw [hh, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.toNat_sub_add x p (by omega_using [hn])]
+      have hh : 2 ^ 64 - 16 * n + (x - p).toNat = 2 ^ 64 + (x - p).toNat % 16 := by omega_using [he]
+      rw [hh, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [])]
     simp only [hd, and_self, ite_true, he, hfresh, false_and, ite_false, hs,
       List.mem_cons_self, hb]
-  · have hd : ¬(16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16) := by omega
+  · have hd : ¬(16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16) := by omega_using [hn, he]
     rw [ite_eq_right hd]
     by_cases hb : (x - p).toNat < 256
-    · have hn' : (x - p).toNat / 16 ≠ n := by omega
+    · have hn' : (x - p).toNat / 16 ≠ n := by omega_using [hn, he]
       simp only [List.mem_cons, hn', false_or]
     · simp only [hb, and_false, ite_false]
 
@@ -138,7 +138,7 @@ theorem DataTo.frame {m₀ m : Mem} {q p : Addr} {N : Nat} {out : Nat → BitVec
   have hn : ¬ (x - p).toNat < N := by
     have hh := hx ⟨p, N⟩ (List.mem_cons_self ..)
     simp only [Region.Contains] at hh
-    omega
+    omega_using [hh]
   rw [h x, ite_eq_right (fun h => hn h.2)]
 
 /-- Slot `n` of the source is as in `m₀`, if it is not written yet: in
@@ -151,12 +151,12 @@ theorem DataTo.src {m₀ m : Mem} {q p : Addr} {N : Nat} {out : Nat → BitVec 1
   rw [Offset.add_add, h]
   refine ite_eq_right fun ⟨hs, hlt⟩ => ?_
   rcases halias with rfl | hd
-  · rw [Mem.sub_ofNat_toNat _ (by omega)] at hs
-    exact hfresh (by rwa [show (16 * n + i) / 16 = n by omega] at hs)
+  · rw [Mem.sub_ofNat_toNat _ (by omega_using [hn, hN, hi])] at hs
+    exact hfresh (by rwa [show (16 * n + i) / 16 = n by omega_using [hi]] at hs)
   · have hx : (⟨q, N⟩ : Region).Contains (q + BitVec.ofNat 64 (16 * n + i)) 1 := by
       show (q + BitVec.ofNat 64 (16 * n + i) - q).toNat + 1 ≤ N
-      rw [Mem.sub_ofNat_toNat _ (by omega)]; omega
-    exact hd _ hx (show (q + BitVec.ofNat 64 (16 * n + i) - p).toNat + 1 ≤ N by omega)
+      rw [Mem.sub_ofNat_toNat _ (by omega_using [hn, hN, hi])]; omega_using [hn, hi]
+    exact hd _ hx (show (q + BitVec.ofNat 64 (16 * n + i) - p).toNat + 1 ≤ N by omega_using [hlt])
 
 theorem DataTo.store {m₀ m : Mem} {q p : Addr} {N : Nat} {out : Nat → BitVec 128} {done : List Nat}
     (h : DataTo m₀ m q p N out done) {n : Nat} (hn : 16 * n + 16 ≤ N) (hN : N ≤ 2 ^ 64)
@@ -165,33 +165,33 @@ theorem DataTo.store {m₀ m : Mem} {q p : Addr} {N : Nat} {out : Nat → BitVec
       (m.read (q + BitVec.ofNat 64 (16 * n)) 16 ^^^ out n)) q p N out (n :: done) := by
   intro x
   rw [xor_write_apply']
-  simp only [Offset.lt_iff x p (by omega : 16 * n + 16 ≤ 2 ^ 64)]
+  simp only [Offset.lt_iff x p (by omega_using [hn, hN] : 16 * n + 16 ≤ 2 ^ 64)]
   have hx := (x - p).isLt
   by_cases he : (x - p).toNat / 16 = n ∧ (x - p).toNat < N
   · obtain ⟨he, hb⟩ := he
-    have hd : 16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16 := by omega
+    have hd : 16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16 := by omega_using [he]
     have hs : (x - (p + BitVec.ofNat 64 (16 * n))).toNat = (x - p).toNat % 16 := by
-      rw [Offset.toNat_sub_add x p (by omega)]
-      have hh : 2 ^ 64 - 16 * n + (x - p).toNat = 2 ^ 64 + (x - p).toNat % 16 := by omega
-      rw [hh, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.toNat_sub_add x p (by omega_using [he])]
+      have hh : 2 ^ 64 - 16 * n + (x - p).toNat = 2 ^ 64 + (x - p).toNat % 16 := by omega_using [he]
+      rw [hh, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [])]
     have hq : q + BitVec.ofNat 64 (16 * n) + BitVec.ofNat 64 ((x - p).toNat % 16) = q + (x - p) := by
-      rw [Offset.add_add, show 16 * n + (x - p).toNat % 16 = (x - p).toNat by omega,
+      rw [Offset.add_add, show 16 * n + (x - p).toNat % 16 = (x - p).toNat by omega_using [he],
         BitVec.ofNat_toNat, BitVec.setWidth_eq]
     simp only [hd, and_self, ite_true, he, hb, List.mem_cons_self, hs, hsrc,
       byte_read16 _ _ (Nat.mod_lt _ (by decide) : (x - p).toNat % 16 < 16), hq]
-  · have hd : ¬(16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16) := by omega
+  · have hd : ¬(16 * n ≤ (x - p).toNat ∧ (x - p).toNat < 16 * n + 16) := by omega_using [hn, he]
     rw [ite_eq_right hd, h x]
     by_cases hb : (x - p).toNat < N
-    · have hn' : (x - p).toNat / 16 ≠ n := by omega
+    · have hn' : (x - p).toNat / 16 ≠ n := by omega_using [hn, he]
       simp only [List.mem_cons, hn', false_or]
     · simp only [hb, and_false, ite_false]
 
 def slot (r j : Fin 4) : Nat := 4 * j.val + r.val
 
-theorem slot_lt (r j : Fin 4) : slot r j < 16 := by unfold slot; omega
+theorem slot_lt (r j : Fin 4) : slot r j < 16 := by unfold slot; omega_using []
 
 theorem slot_inj (r i j : Fin 4) : slot r i = slot r j ↔ i = j := by
-  simp only [slot, Fin.ext_iff]; omega
+  simp only [slot, Fin.ext_iff]; omega_using []
 
 /-- Rows `r` of the blocks `js`, from the source at `x1` (`q`) to the destination
 at `d` (`p`), which is the source or apart from it in their first `N` bytes. -/
@@ -213,7 +213,7 @@ theorem xorListTo_ok (d : Reg) (r : Fin 4) (js : List (Fin 4)) (hn : js.Nodup)
       rw [hq]; exact hin j (List.mem_cons_self ..)
     have ho : InRegions s.wr (s.gpr d + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
       rw [hp]; exact hout j (List.mem_cons_self ..)
-    have he : 64 * j.val + 16 * r.val = 16 * slot r j := by unfold slot; omega
+    have he : 64 * j.val + 16 * r.val = 16 * slot r j := by unfold slot; omega_using []
     apply WP.block_append
     refine (xorRowTo_ok s d r j hi ho).mono fun s' ⟨hm, hs⟩ => ?_
     have hd' : DataTo m₀ s'.mem q p N out (slot r j :: done) := by

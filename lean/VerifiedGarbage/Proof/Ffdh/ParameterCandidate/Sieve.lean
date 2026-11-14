@@ -36,7 +36,7 @@ theorem primeShape_sieve {p : Nat} (hp : 8161 < p) (ho : p % 2 = 1) :
     intro s hs
     have hb := smallPrimes_lt (List.mem_of_mem_take hs)
     simp only [bne_iff_ne]
-    omega
+    omega_using [hp, hb]
   have ha : (VG.Spec.RsaKeyGen.smallPrimes.take 54).any (fun s => p % s == 0 && p != s) =
       (VG.Spec.RsaKeyGen.smallPrimes.take 54).any (fun s => p % s == 0) := by
     apply Bool.eq_iff_iff.mpr
@@ -48,7 +48,7 @@ theorem primeShape_sieve {p : Nat} (hp : 8161 < p) (ho : p % 2 = 1) :
       exact ⟨s, hs, hm, he s hs⟩
   unfold primeShape
   rw [ha, sieve_cons]
-  simp only [ show decide (p > 2) = true by simp; omega, ho, beq_self_eq_true,
+  simp only [ show decide (p > 2) = true by simp; omega_using [hp], ho, beq_self_eq_true,
     Bool.true_and, List.any_cons, List.any_map, show (1 == 0) = false from rfl, Bool.false_or]
   rfl
 

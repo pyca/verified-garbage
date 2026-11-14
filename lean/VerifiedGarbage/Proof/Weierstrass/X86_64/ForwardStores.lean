@@ -24,15 +24,15 @@ theorem valid_of_words {s : State} {base : Addr} {size o : Nat} {rs : List Reg}
     simp only [List.length_cons,wordsVal,regsVal] at he
     have hm := (word s.mem base o).isLt
     have hr := (s.gpr r).isLt
-    have hw : word s.mem base o=s.gpr r := BitVec.eq_of_toNat_eq (by omega)
-    have ht : wordsVal s.mem base (o+8) rs.length=regsVal s rs := by omega
-    have hl := load_sc hs (d := o) (by simp only [List.length_cons] at ho; omega)
+    have hw : word s.mem base o=s.gpr r := BitVec.eq_of_toNat_eq (by omega_using [he])
+    have ht : wordsVal s.mem base (o+8) rs.length=regsVal s rs := by omega_using [he]
+    have hl := load_sc hs (d := o) (by simp only [List.length_cons] at ho; omega_using [ho])
     rw [hw] at hl
     intro c hc
     simp only [ofStores,List.mem_cons] at hc
     rcases hc with rfl | hc
     · exact hl
-    · exact ih (by simp only [List.length_cons] at ho; omega) ht c hc
+    · exact ih (by simp only [List.length_cons] at ho; omega_using [ho]) ht c hc
 
 theorem stores_valid {s : State} {base : Addr} {size o : Nat} {rs : List Reg}
     (hs : Scr s base size) (ho : o+8*rs.length≤size) (hd : rs.Nodup) :

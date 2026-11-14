@@ -54,8 +54,8 @@ theorem trialDigit_ok (s : State) {n : Nat} (positive : 0 < n) (fits : n < 2 ^ 3
     change BitVec.ofNat 32 n - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive]
   have flag : u.z = decide (n = 1) := by
-    rw [zero, sub, ofNat_beq_zero (by omega : n - 1 < 2 ^ 32)]
-    simp only [show n - 1 = 0 ↔ n = 1 by omega]
+    rw [zero, sub, ofNat_beq_zero (by omega_using [fits] : n - 1 < 2 ^ 32)]
+    simp only [show n - 1 = 0 ↔ n = 1 by omega_using [positive]]
   have ptr2 : u.gpr .r0 - 1 = s.gpr .r0 - 2 := by
     rw [ptr, BitVec.sub_sub]; rfl
   by_cases last : n = 1
@@ -69,15 +69,15 @@ theorem trialDigit_ok (s : State) {n : Nat} (positive : 0 < n) (fits : n < 2 ^ 3
   · refine WP.ite false (by change some u.z = some false; simp only [flag, last, decide_false])
       (by intro h; cases h) ?_
     intro _
-    refine WP.mono (trialDigitHigh_ok u (by rw [rest.rd, rest.wr, ptr2]; exact readHigh (by omega))) ?_
+    refine WP.mono (trialDigitHigh_ok u (by rw [rest.rd, rest.wr, ptr2]; exact readHigh (by omega_using [positive, last]))) ?_
     rintro t ⟨⟨tptr, tcnt, tdigit, tmem⟩, trest⟩
     refine ⟨⟨?_, ?_, ?_, tmem.trans mem⟩, (rest.mono (by simp)).trans trest⟩
-    · rw [tptr, ptr2, Nat.min_eq_left (by omega : 2 ≤ n)]; rfl
+    · rw [tptr, ptr2, Nat.min_eq_left (by omega_using [positive, last] : 2 ≤ n)]; rfl
     · rw [tcnt, cnt, sub]
       change BitVec.ofNat 32 (n - 1) - BitVec.ofNat 32 1 = _
-      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [positive, last])]
       congr 1
-      omega
+      omega_using []
     · rw [tdigit, digit, ptr2, mem, ite_eq_right last]
 
 /-- A byte pair is a bounded digit for RSA's shared reducer. -/
@@ -87,10 +87,10 @@ theorem trialDigit_value (low high : Byte) :
     BitVec.toNat_setWidth, Nat.shiftLeft_eq]
   have lo := low.isLt
   have hi := high.isLt
-  rw [Nat.mod_eq_of_lt (by omega : low.toNat < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : high.toNat < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : high.toNat * 2 ^ 8 < 2 ^ 32)]
+  rw [Nat.mod_eq_of_lt (by omega_using [] : low.toNat < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [] : high.toNat < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [] : high.toNat * 2 ^ 8 < 2 ^ 32)]
   rw [Nat.or_comm, Nat.mul_comm high.toNat, ← Nat.two_pow_add_eq_or_of_lt lo high.toNat]
-  omega
+  omega_using []
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

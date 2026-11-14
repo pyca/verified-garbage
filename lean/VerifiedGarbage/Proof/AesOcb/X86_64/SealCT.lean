@@ -111,7 +111,7 @@ theorem nonce_nrun (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n
     · exact k_mut L Ar.data.k r hr
   have eK : ctxCiph s₁.mem K R = ctxCiph s.mem K R := by
     unfold ctxCiph
-    rw [bytesAt_frame P₁.frame (fun r hr => (dK r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+    rw [bytesAt_frame P₁.frame (fun r hr => (dK r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])]
   have eL : ctxLstar s₁.mem K = ctxLstar s.mem K :=
     blockAtMem_frame P₁.frame fun r hr => (dK r hr).sub_left (Lay.kSub (by decide))
   have eB : ∀ {P : Addr} {k : Nat}, Buf W SP s P k → (⟨P, k⟩ : Region).Disjoint ⟨D, n⟩ →
@@ -126,9 +126,9 @@ theorem nonce_nrun (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n
         · exact hP.w.sub_right (Lay.wSub (by decide))
         · exact hP.stk.symm
         · exact hPD
-        · exact hP.w.sub_right (Lay.wSub (by decide))) (by have := hP.lt; omega)
+        · exact hP.w.sub_right (Lay.wSub (by decide))) (by have := hP.lt; omega_using [this])
   refine WP.mono (nonce_ok v L P₁.env Ar.rounds P₁.slots.rounds P₁.slots.nonce P₁.slots.nlen P₁.slots.tl
-    Ar.n1 Ar.n15 (by have := Ar.t16; omega) (Ar.nonce.of_eq P₁.rd P₁.wr) Ar.data.k Ar.data.w) fun s₂ P₂ => ?_
+    Ar.n1 Ar.n15 (by have := Ar.t16; omega_using [this]) (Ar.nonce.of_eq P₁.rd P₁.wr) Ar.data.k Ar.data.w) fun s₂ P₂ => ?_
   have F₂ : Frame (mutR W SP D n) s₁.mem s₂.mem := nonceR_mut P₂.frame
   have S₂ := Slots.of_mut L Ar.data.w F₂ P₁.slots
   have c₂ : ctxCiph s₂.mem K R = ctxCiph s.mem K R := (ctxCiph_mut L Ar.data.k F₂ Ar.rounds).trans eK
@@ -265,7 +265,7 @@ theorem pre_rel (v : BlocksImpl) :
     (c := table) ⟨_, by taint_decide⟩).wp
     (F₁ := TRun K W SP N A D R nl al n tl s₀) (F₂ := TRun K W SP N A D R nl al n tl s₀')
     fun a b h => ⟨table_trun Tw.ar h.2.1, table_trun Tw.ar' h.2.2⟩
-  have nn := (nonce_rel v L Tw.ar.rounds hDW hn Tw.ar.n1 Tw.ar.n15 (by have := Tw.ar.t16; omega)
+  have nn := (nonce_rel v L Tw.ar.rounds hDW hn Tw.ar.n1 Tw.ar.n15 (by have := Tw.ar.t16; omega_using [this])
     (P := fun a b => True ∧ TRun K W SP N A D R nl al n tl s₀ a ∧ TRun K W SP N A D R nl al n tl s₀' b)
     fun a b h => ⟨⟨h.2.1.env, h.2.1.slots, h.2.1.wr.trans hw⟩, ⟨h.2.2.env, h.2.2.slots, h.2.2.wr.trans hw'⟩,
       Tw.ar.nonce.of_eq h.2.1.rd h.2.1.wr, Tw.ar'.nonce.of_eq h.2.2.rd h.2.2.wr⟩).wp

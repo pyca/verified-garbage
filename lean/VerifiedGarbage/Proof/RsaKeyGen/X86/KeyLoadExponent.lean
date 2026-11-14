@@ -23,13 +23,13 @@ theorem loadExponent_preserves_num {m m' : Mem} {B : Addr} {n j : Nat}
     (unchanged : j ≠ aE) (fit : arr n j + S n ≤ 2 ^ 64)
     (O : Outs B (loadExponentRanges n) m m') : num m' B n j = num m B n j := by
   change val32 m' B (arr n j) n = val32 m B (arr n j) n
-  apply O.val32 _ (by unfold S at fit; omega)
+  apply O.val32 _ (by unfold S at fit; omega_using [fit])
   intro r hr
   simp only [loadExponentRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact Or.inr (Nat.le_trans (by decide : kEv + 8 ≤ hdr) (Nat.le_add_right ..))
   · have D := arr_disj (w := n) unchanged
     unfold S at D ⊢
-    omega
+    omega_using [D]
 
 end VG.Proof.RsaKeyGen.X86.Key

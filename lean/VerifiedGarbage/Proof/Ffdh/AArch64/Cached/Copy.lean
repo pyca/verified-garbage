@@ -19,10 +19,10 @@ theorem copy_ok {s : State} {B : Addr} {Z w a b : Nat} {mi : BitVec 64}
  Arrays B w [a] s.mem t.mem ∧ Keep mmRegs s t := by
  have equality : VG.Impl.Ffdh.AArch64.Cached.copy a b=seqs (VG.Impl.Rsa.AArch64.Crt.copyArr a b) := rfl
  rw [equality]
- refine WP.mono (copyArr_ok good room (by omega) size ha hb different) ?_
+ refine WP.mono (copyArr_ok good room (by omega_using [positive]) size ha hb different) ?_
  rintro t ⟨value,outside,rest⟩
  have frame : Arrays B w [a] s.mem t.mem := Arrays.of_outside (j:=a) (by simp) outside
-  (by omega) (by have := good.scr.nowrap;have := slot_le (w:=w) ha;omega)
+  (by omega_using []) (by have := good.scr.nowrap;have := slot_le (w:=w) ha;omega_using [])
  exact ⟨good_after_arrays good frame rest ((rest.gpr .x0 (by simp [mmRegs])).trans good.x0),value,frame,rest⟩
 
 end VG.Proof.Ffdh.AArch64.Cached

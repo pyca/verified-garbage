@@ -49,7 +49,7 @@ theorem output_num {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s) 
   intro k hk
   have fits := (inputsRt h len).ws.arr_fit hj
   unfold S at fits
-  exact output_word h i f (by omega)
+  exact output_word h i f (by omega_using [hk, fits])
 
 theorem store_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) (i : Fin 3) {j : Nat}
     (hj : j < nArr) (hjz : j ≠ aZero) (zero : num s.mem g.base (kw (g.args 7).toNat) aZero = 0) (accept : Bool)
@@ -97,22 +97,22 @@ theorem store_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   have outScratch := h.outputScratch i
   simp only [CallGeometry.buffer] at positive bound outFit outWrite outScratch ⊢
   generalize hL : (g.args (2 * i.val + 1)).toNat = L at positive bound outFit outWrite outScratch ⊢
-  have Lw : L ≤ 4 * kw (g.args 7).toNat := by omega
+  have Lw : L ≤ 4 * kw (g.args 7).toNat := by omega_using [kwEq, bound]
   simp only [S] at fits
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   simp only [List.cons_append, List.nil_append]
-  refine wp_movS (inputsU.arguments (2 * i.val) (by omega)).readSrc fun u₁ U₁ _ => ?_
+  refine wp_movS (inputsU.arguments (2 * i.val) (by omega_using [])).readSrc fun u₁ U₁ _ => ?_
   have h₁ := inputsU.after U₁.keeps (by decide) (by decide) (by rw [U₁.mem]; exact Frame.refl _ _)
-  refine wp_movS (h₁.arguments (2 * i.val + 1) (by omega)).readSrc fun u₂ U₂ _ => ?_
+  refine wp_movS (h₁.arguments (2 * i.val + 1) (by omega_using [])).readSrc fun u₂ U₂ _ => ?_
   have K₂ : Keeps [.ebx, .ecx] u u₂ := (U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))
   have m₂ : u₂.mem = u.mem := by rw [U₂.mem, U₁.mem]
   have r₂ := ru.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _)
-  refine arrPtr_ok (lenSrc r₂) r₂.lenLe r₂.edi (by decide) (by decide) (by omega) fun v Kv mv pv _ => ?_
+  refine arrPtr_ok (lenSrc r₂) r₂.lenLe r₂.edi (by decide) (by decide) (by omega_using [fits, nw]) fun v Kv mv pv _ => ?_
   refine wp_addS rfl fun v₃ u₃ _ => wp_subS rfl fun v₄ u₄ _ => WP.block_nil ?_
   have srcAddr : byteAddr (v.gpr .esi) = off g.base (arr (kw (g.args 7).toNat) j) :=
-    VG.Proof.Bignum.X86.PublicRt.byteAddr_ptr pv (by omega)
+    VG.Proof.Bignum.X86.PublicRt.byteAddr_ptr pv (by omega_using [fits, nw])
   have srcNat : (v.gpr .esi).toNat = g.base.toNat + arr (kw (g.args 7).toNat) j := by
-    rw [pv, Nat.mod_eq_of_lt (by omega)]
+    rw [pv, Nat.mod_eq_of_lt (by omega_using [fits, nw])]
   have K₄ : Keeps [.ebx, .ecx, .edx, .esi] u v₄ :=
     ((K₂.mono (by decide)).trans (Kv.mono (by decide))).trans ((u₃.keeps.mono (by decide)).trans
       (u₄.keeps.mono (by decide)))
@@ -127,15 +127,15 @@ theorem store_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
       rw [Kv.1 _ (by decide), U₂.gpr, ← hL, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     rw [u₄.gpr, u₃.gpr, ecx]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [positive])]
   have keepU : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s v₄ := (rku.mono (by decide)).trans (K₄.mono (by decide))
   have hsub : Region.Sub ⟨off g.base (arr (kw (g.args 7).toNat) j), L⟩ ⟨g.base, g.size⟩ := by
     have := Offset.sub g.base (d := arr (kw (g.args 7).toNat) j) (n := L) (e := 0) (k := g.size) (Nat.zero_le _)
-      (by omega)
+      (by omega_using [fits, Lw])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
-  refine WP.mono (reverseBuffer_ok v₄ (src := v.gpr .esi) (dst := g.args (2 * i.val)) (n := L) (by omega)
-    (by omega) outFit (by omega)
-    (by rw [keepU.2.1, keepU.2.2, srcAddr]; exact r.ws.workspace.read (by omega))
+  refine WP.mono (reverseBuffer_ok v₄ (src := v.gpr .esi) (dst := g.args (2 * i.val)) (n := L) (by omega_using [positive])
+    (by omega_arith) outFit (by omega_using [hL])
+    (by rw [keepU.2.1, keepU.2.2, srcAddr]; exact r.ws.workspace.read (by omega_using [fits, Lw]))
     (by rw [keepU.2.2]; exact outWrite) (by rw [srcAddr]; exact outScratch.symm.sub_left hsub) ebx₄ esi₄ ecx₄)
     fun t ⟨V, F, _, T⟩ => ?_
   have F' : Frame [⟨byteAddr (g.args (2 * i.val)), L⟩] u.mem t.mem := by rw [← m₄]; exact F
@@ -145,7 +145,7 @@ theorem store_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
     frameU.trans (Fb.mono (by
       intro r hr
       obtain rfl := List.mem_singleton.mp hr
-      have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+      have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
       rcases cases with e | e | e <;> simp [CallGeometry.writes, e]))
   refine ⟨h.after all (by decide) (by decide) fullFrame, ?_, ?_, ?_, ?_, all⟩
   · rw [V, srcAddr, m₄, ← chosen]
@@ -155,7 +155,7 @@ theorem store_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   · exact (ownFrame.mono (by simp)).trans (F'.mono (by simp))
   · intro d hd
     change w32 t.mem g.base d = w32 s.mem g.base d
-    rw [output_word h i Fb (by have := r.ws.hdr_le; omega)]
+    rw [output_word h i Fb (by have := r.ws.hdr_le; omega_using [hd, this])]
     exact ku.slot hd (by simp)
   · intro k hk ne
     rw [output_num h len i Fb hk]
@@ -172,12 +172,12 @@ theorem storeFrame_body {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs 
   rcases hr with rfl | rfl
   · refine ⟨⟨off g.base 16, g.size - 16⟩, by simp [bodyWrites], Offset.sub g.base ?_ ?_⟩
     · have : hdr ≤ arr (kw (g.args 7).toNat) j := Nat.le_add_right _ _
-      unfold hdr at this; omega
+      unfold hdr at this; omega_using [this]
     · have := r.ws.arr_fit hj
       have := r.ws.hdr_le
-      unfold hdr at this; omega
+      unfold hdr at this; omega_arith
   · refine ⟨g.buffer (2 * i.val), ?_, fun _ hx => hx⟩
-    have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+    have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
     rcases cases with e | e | e <;> simp [bodyWrites, e]
 
 theorem output_preserved {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s) (len : Lengths g)
@@ -185,7 +185,7 @@ theorem output_preserved {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs
     (f : Frame [⟨off g.base (arr (kw (g.args 7).toNat) j), S (kw (g.args 7).toNat)⟩, g.buffer (2 * i.val)] m m') :
     Spec.Rsa.bytesAt m' (g.buffer (2 * k.val)).base (g.buffer (2 * k.val)).len =
       Spec.Rsa.bytesAt m (g.buffer (2 * k.val)).base (g.buffer (2 * k.val)).len := by
-  apply VG.Proof.Rsa.rsa_bytes_frame f (by have := h.outputBound k; have := h.upper; omega)
+  apply VG.Proof.Rsa.rsa_bytes_frame f (by have := h.outputBound k; have := h.upper; omega_arith)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -220,7 +220,7 @@ theorem stores_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths
   refine WP.mono (store_ok hv len 2 (j := 3) (by decide) (by decide) zeroV accept maskV)
     fun x ⟨hx, vx, fx, hxHeader, hxOther, rx⟩ => ?_
   have maskX : slot x.mem g.base sMask = if accept then 1 else 0 := by rw [hxHeader _ (by decide), maskV]
-  refine wp_movS (readSrc_sc hx.ws.workspace (by have := hx.ws.hdr_le; unfold sMask hdr at *; omega))
+  refine wp_movS (readSrc_sc hx.ws.workspace (by have := hx.ws.hdr_le; unfold sMask hdr at *; omega_using [this]))
     fun t T _ => WP.block_nil ?_
   have frame : Frame (bodyWrites g) s.mem t.mem := by
     rw [T.mem]

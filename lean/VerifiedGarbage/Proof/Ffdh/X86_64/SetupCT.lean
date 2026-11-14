@@ -103,68 +103,68 @@ theorem m1_m2 {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) (hspW : sp ≠ sWs) 
   have hroom := hO.room
   have hw28 := hO.w28
   have h8 := hdr_lt_slot a.w 8 (show 31 < 32 by decide)
-  have hi8 : 8 * 32 ≤ inner a.w := by simp only [inner, slot, hdrBytes]; omega
-  have hiZ : inner a.w + slot a.w 8 ≤ a.Z := by unfold tabBytes at hroom; omega
+  have hi8 : 8 * 32 ≤ inner a.w := by simp only [inner, slot, hdrBytes]; omega_using []
+  have hiZ : inner a.w + slot a.w 8 ≤ a.Z := by unfold tabBytes at hroom; omega_using [hroom]
   have eWs : sWs = 29 := rfl
   refine WP.mono (wsSetup_ok (len := a.len) hO hsl hslW hL h1 hlw) fun t ⟨hc, _, _, f, k⟩ => ?_
   have hb : ∀ i < 32, i ≠ sWs → word t.mem a.B (8 * i) = word s.mem a.B (8 * i) := fun i hi hne =>
     f.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [hi])
   exact ⟨_, bs, hc, by rw [hb _ hsl hslW]; exact hL, by rw [hb _ hsp hspW]; exact hP,
     hsrc.congrK (InScr.of_frm f fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega) k, hl, h1, hlw, hodd, hO.w2, hw28⟩
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith) k, hl, h1, hlw, hodd, hO.w2, hw28⟩
 
 theorem m2_lpre {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) (a : MPub) (s : State) (h : M2 sp sl a s) :
     LPre aN sp sl a.bp s := by
   obtain ⟨mi, bs, hc, hL, hP, hsrc, hl, h1, hlw, -, hw2', hw28⟩ := h
-  have hw2 : 2 ≤ a.wx := by unfold MPub.wx wsWords; omega
-  have hwx : a.wx ≤ a.w := by unfold MPub.wx wsWords; omega
-  exact ⟨mi, bs, hc, hw2, hwx, show a.w < 2 ^ 30 by omega, by decide, hsp, hsl, hP, by rw [hl]; exact hL, hl,
-    hsrc, by omega, by omega, show (bs.length + 7) / 8 ≤ a.wx by unfold MPub.wx wsWords; omega⟩
+  have hw2 : 2 ≤ a.wx := by unfold MPub.wx wsWords; omega_using []
+  have hwx : a.wx ≤ a.w := by unfold MPub.wx wsWords; omega_using [hlw, hw2']
+  exact ⟨mi, bs, hc, hw2, hwx, show a.w < 2 ^ 30 by omega_using [hw28], by decide, hsp, hsl, hP, by rw [hl]; exact hL, hl,
+    hsrc, by omega_using [hl, h1], by omega_using [hl, hlw, hw28], show (bs.length + 7) / 8 ≤ a.wx by unfold MPub.wx wsWords; omega_using [hl]⟩
 
 theorem m2_m3 {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) (a : MPub) (s : State) (h : M2 sp sl a s) :
     WP isa (seqs (loadArr aN sp sl)) s (M3 a) := by
   obtain ⟨mi, bs, hc, hL, hP, hsrc, hl, h1, hlw, hodd, hw2', hw28⟩ := h
-  have hw2 : 2 ≤ a.wx := by unfold MPub.wx wsWords; omega
-  have hwx : a.wx ≤ a.w := by unfold MPub.wx wsWords; omega
-  refine WP.mono (primeLoad_ok hc hw2 hwx (by omega) (show aN < 8 by decide) hsp hsl hP (by rw [hl]; exact hL)
-    hsrc (by omega) (by omega) (show (bs.length + 7) / 8 ≤ a.wx by unfold MPub.wx wsWords; omega))
+  have hw2 : 2 ≤ a.wx := by unfold MPub.wx wsWords; omega_using []
+  have hwx : a.wx ≤ a.w := by unfold MPub.wx wsWords; omega_using [hlw, hw2']
+  refine WP.mono (primeLoad_ok hc hw2 hwx (by omega_using [hw28]) (show aN < 8 by decide) hsp hsl hP (by rw [hl]; exact hL)
+    hsrc (by omega_using [hl, h1]) (by omega_using [hl, hlw, hw28]) (show (bs.length + 7) / 8 ≤ a.wx by unfold MPub.wx wsWords; omega_using [hl]))
     fun t ⟨hc₁, hX₁, _, _⟩ => ⟨mi, hc₁, ?_⟩
-  rw [← wv_mod64 _ _ _ (show 1 ≤ a.wx by omega), hX₁, Nat.mod_mod_of_dvd _ (by decide)]; exact hodd
+  rw [← wv_mod64 _ _ _ (show 1 ≤ a.wx by omega_using [hw2]), hX₁, Nat.mod_mod_of_dvd _ (by decide)]; exact hodd
 
 theorem sp0_sp1 (a : DPub) (s : State) (h : SetupP a s) : WP isa (.block VG.Impl.Rsa.X86_64.head) s (SP1 a) := by
   obtain ⟨pb, hs, h0, hk1, hk2, hZ, hD, hK, hsrc, hl, hodd⟩ := h
-  have ew : 8 * a.w ≤ a.k + 7 ∧ a.k ≤ 8 * a.w := by unfold DPub.w; omega
+  have ew : 8 * a.w ≤ a.k + 7 ∧ a.k ≤ 8 * a.w := by unfold DPub.w; omega_using []
   have hn := hs.nowrap
   have hroom := room_k hk1 hZ
   rw [show (a.k + 7) / 8 = a.w from rfl] at hroom
   have h8 := hdr_lt_slot a.w 8 (show 31 < 32 by decide)
   have eW6 : sW = 6 := rfl
   have eA8 : sArr 0 = 8 := rfl
-  have hi8 : 8 * 32 ≤ inner a.w := by simp only [inner, slot, hdrBytes]; omega
-  have hiZ : inner a.w + slot a.w 8 ≤ a.Z := by unfold tabBytes at hroom; omega
-  refine WP.mono (head_ok hs h0 (show slot a.w 8 ≤ a.Z by unfold inner tabBytes at hroom; omega) (by omega) hK)
+  have hi8 : 8 * 32 ≤ inner a.w := by simp only [inner, slot, hdrBytes]; omega_using []
+  have hiZ : inner a.w + slot a.w 8 ≤ a.Z := by unfold tabBytes at hroom; omega_using [hroom]
+  refine WP.mono (head_ok hs h0 (show slot a.w 8 ≤ a.Z by unfold inner tabBytes at hroom; omega_using [hroom]) (by omega_using [hk2]) hK)
     fun s₁ ⟨_, hW, hA, f₁, k₁⟩ => ?_
   have hr₁ : ∀ i < 32, i ≠ sW → (i < sArr 0 ∨ sArr 0 + 8 ≤ i) →
       word s₁.mem a.B (8 * i) = word s.mem a.B (8 * i) := fun i hi h1 h2 => f₁.word_eq (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
-  exact ⟨pb, ⟨hs.congr k₁.2.2, (k₁.gpr (by decide)).trans h0, hW, hA, hroom, by omega, by omega⟩, hk1, hk2, hZ,
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [hi])
+  exact ⟨pb, ⟨hs.congr k₁.2.2, (k₁.gpr (by decide)).trans h0, hW, hA, hroom, by omega_using [hk1, ew], by omega_using [hk2, ew]⟩, hk1, hk2, hZ,
     by rw [hr₁ _ (by decide) (by decide) (by decide)]; exact hD,
     by rw [hr₁ _ (by decide) (by decide) (by decide)]; exact hK,
     hsrc.congrK (InScr.of_frm f₁ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega) k₁, hl, hodd⟩
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith) k₁, hl, hodd⟩
 
 /-- p's workspace's public data. -/
 abbrev DPub.m (a : DPub) : MPub := ⟨a.B, a.Z, a.w, a.k, a.dp⟩
 
 theorem sp1_m1 (a : DPub) (s : State) (h : SP1 a s) : M1 sDom sK a.m s := by
   obtain ⟨pb, hO, hk1, hk2, hZ, hD, hK, hsrc, hl, hodd⟩ := h
-  have ew : 8 * a.w ≤ a.k + 7 ∧ a.k ≤ 8 * a.w := by unfold DPub.w; omega
-  exact ⟨pb, hO, hK, hD, hsrc, hl, show 1 ≤ a.k by omega, show a.k ≤ 8 * a.w by omega, hodd⟩
+  have ew : 8 * a.w ≤ a.k + 7 ∧ a.k ≤ 8 * a.w := by unfold DPub.w; omega_using []
+  exact ⟨pb, hO, hK, hD, hsrc, hl, show 1 ≤ a.k by omega_using [hk1], show a.k ≤ 8 * a.w by omega_using [ew], hodd⟩
 
 
 end VG.Proof.Ffdh.X86_64

@@ -43,7 +43,7 @@ theorem keyLoad2_ok {s : State} {d : Reg} (hd : d ≠ .r9) (hd3 : d ≠ .r3) {k 
   obtain ⟨s3, e3, u3⟩ := step_x s2 (.lsl .r9 .r9 32) .r9 (s2.gpr .r9 <<< 32) (exec_lsl (by decide))
   have r3₃ : s3.gpr .r3 = s.gpr .r3 := by rw [u3.other (by decide), u2.other (by decide), u1.other (by decide)]
   have m3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, u1.mem]
-  obtain ⟨s4, e4, u4⟩ := step_x s3 (.li d (k + 4)) d (BitVec.ofNat 64 (k + 4)) (exec_li (by omega))
+  obtain ⟨s4, e4, u4⟩ := step_x s3 (.li d (k + 4)) d (BitVec.ofNat 64 (k + 4)) (exec_li (by omega_using [hk]))
   have r3₄ : s4.gpr .r3 = s.gpr .r3 := by rw [u4.other (Ne.symm hd3), r3₃]
   have hr4 : InRegions (s4.rd ++ s4.wr) (s4.gpr .r3 + s4.gpr d) 4 := by
     rw [u4.self, r3₄, u4.rd, u4.wr, u3.rd, u3.wr, u2.rd, u2.wr, u1.rd, u1.wr]; exact hr'
@@ -55,7 +55,7 @@ theorem keyLoad2_ok {s : State} {d : Reg} (hd : d ≠ .r9) (hd3 : d ≠ .r3) {k 
       runStep_some, runBlock_cons, e4, runStep_some, runBlock_cons, e5, runStep_some, runBlock_cons, e6,
       runStep_some, runBlock_nil]
   · rw [u6.self, u5.self, u5.other (Ne.symm hd), u4.other (Ne.symm hd), u3.self, u2.self,
-      wordAt_blockAt _ _ (by omega), wordAt_blockAt _ _ (by omega), BitVec.or_comm,
+      wordAt_blockAt _ _ (by omega_using [hk]), wordAt_blockAt _ _ (by omega_using [hk]), BitVec.or_comm,
       show rev32 = byteRev32 from rfl]
     have := BitVec.setWidth_append_eq_shiftLeft_setWidth_or (w'' := 64) (b := byteRev32 W0) (b' := byteRev32 W1)
     rw [BitVec.setWidth_eq] at this

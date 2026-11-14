@@ -22,13 +22,13 @@ theorem crt_outputArgs_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       t.mem = s.mem ∧ Rest [.r1, .r4, .r6] s t := by
   unfold CrtFn.outputArgs
   refine wp_ldr (a := off (State.addr g.base) 232) (by decide)
-    (by rw [ptr]; exact addr_add (by have := h.buffers.context.main.nowrap; have := h.buffers.context.size; omega))
-    (h.buffers.context.main.read (by have := h.buffers.context.size; omega)) fun u a => ?_
+    (by rw [ptr]; exact addr_add (by have := h.buffers.context.main.nowrap; have := h.buffers.context.size; omega_arith))
+    (h.buffers.context.main.read (by have := h.buffers.context.size; omega_using [this])) fun u a => ?_
   refine wp_loadStack (a := off (State.addr s.sp) 4) (by decide)
-    (by rw [a.sp]; exact addr_add (by have := h.stack.nowrap; omega))
+    (by rw [a.sp]; exact addr_add (by have := h.stack.nowrap; omega_using [this]))
     (by rw [a.rd, a.wr]; exact h.stack.read (by decide)) fun v b => ?_
   refine wp_loadStack (a := off (State.addr s.sp) 12) (by decide)
-    (by rw [b.sp, a.sp]; exact addr_add (by have := h.stack.nowrap; omega))
+    (by rw [b.sp, a.sp]; exact addr_add (by have := h.stack.nowrap; omega_using [this]))
     (by rw [b.rd, b.wr, a.rd, a.wr]; exact h.stack.read (by decide)) fun t c => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, c.mem.trans (b.mem.trans a.mem),
     (a.rest (by simp)).trans ((b.rest (by simp)).trans (c.rest (by simp)))⟩

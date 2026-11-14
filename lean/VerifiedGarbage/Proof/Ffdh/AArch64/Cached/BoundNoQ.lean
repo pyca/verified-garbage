@@ -28,16 +28,16 @@ theorem boundNoQ_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
  have arrayRoom := Nat.le_trans (slot_le (w:=w) (show 5<8 by decide)) room
  refine WP.mono (WP.keep [.x8,.x3] (Q:=fun t =>t.mem=a.mem.writeW (off B (slot w 5)) (word a.mem B (slot w 5)-1#64)) ?_ rfl rfl rfl) ?_
  · brun [goodA.x0,hdr_enc (show sArr 5<32 by decide),header_read goodA room (show sArr 5<32 by decide),
-    goodA.hdr.harr 5 (by decide),goodA.scr.ld (d:=slot w 5) (by omega),goodA.scr.st (d:=slot w 5) (by omega)]
+    goodA.hdr.harr 5 (by decide),goodA.scr.ld (d:=slot w 5) (by omega_using [arrayRoom]),goodA.scr.st (d:=slot w 5) (by omega_using [arrayRoom])]
  · rintro t ⟨memT,restT⟩
-   have nowrap : slot w 5+8*w≤2^64 := by have := goodA.scr.nowrap;omega
+   have nowrap : slot w 5+8*w≤2^64 := by have := goodA.scr.nowrap;omega_using [arrayRoom, this]
    have value : wv t.mem B (slot w 5) w=wv s.mem B (slot w 0) w-1 := by
     rw [memT,wv_low_decrement _ _ positive nowrap (by rw [valueA];exact odd),valueA]
    have frameT : Arrays B w [5] a.mem t.mem := by
     apply Arrays.of_outside (j:=5) (by simp) (o:=slot w 5) (n:=8)
-    · rw [memT];exact writeW_outside _ _ _ (by omega)
-    · omega
-    · omega
+    · rw [memT];exact writeW_outside _ _ _ (by omega_using [positive, nowrap])
+    · omega_using []
+    · omega_using []
    have rest : Keep mmRegs s t := (restA.trans restT).mono (by simp [mmRegs])
    exact ⟨good_after_arrays goodA frameT restT ((restT.gpr .x0 (by decide)).trans goodA.x0),
     value,frameA.trans frameT,rest⟩

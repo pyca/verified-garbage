@@ -88,7 +88,7 @@ def LI (n : Nat) (ak : CD × Nat) (s : State) : Prop :=
 theorem candS_eq {s0 : State} (hp : CIn s0) (hav : oL s0 ≤ rL s0) : candS s0 = candOf s0 := by
   obtain ⟨hw, -, -⟩ := cw_facts hp
   unfold candS candOf rB
-  rw [take_bytesAt _ _ hav, hw, show 8 * (8 * cw s0) = 64 * cw s0 by omega]
+  rw [take_bytesAt _ _ hav, hw, show 8 * (8 * cw s0) = 64 * cw s0 by omega_using []]
 
 theorem LCtx.hav {a : CD} {s0 sL : State} (C : LCtx a s0 sL) : oL s0 ≤ rL s0 := by
   rw [C.t3.tc.hw]; exact C.t3.tc.h8
@@ -103,8 +103,8 @@ theorem shape_eq {a : CD} {s0 s0' sL sL' : State} (C : LCtx a s0 sL) (C' : LCtx 
   obtain ⟨hw, -, -⟩ := cw_facts hp
   obtain ⟨hw', -, -⟩ := cw_facts hp'
   have e := shape_agree C.krel C'.krel hav
-    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact C.ncl)
-    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact C.t3.noc)
+    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact C.ncl)
+    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact C.t3.noc)
     (by rw [candS_eq hp hav]; exact C.gcd)
   rwa [candS_eq hp hav, candS_eq hp' hav', hw, hw'] at e
 
@@ -124,10 +124,10 @@ theorem pass_agree {a : CD} {s0 s0' sL sL' : State} {k n : Nat} (C : LCtx a s0 s
   have hw : cw s0 = cw s0' := by simp only [cw, C.krel.oL_eq C'.krel]
   have hl : (rB s0).length = (rB s0').length := by rw [rB_len, rB_len, C.krel.rL_eq C'.krel]
   obtain ⟨-, hw4, -⟩ := cw_facts hp
-  obtain ⟨-, -, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega : 1 ≤ cw s0) C.t3.tc.shape
+  obtain ⟨-, -, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [hw4] : 1 ≤ cw s0) C.t3.tc.shape
   obtain ⟨-, -, hwb'⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega : 1 ≤ cw s0') C'.t3.tc.shape
   have p₁ := VG.Proof.RsaKeyGen.mr_pass (a := lA s0) (m := lM s0) (r := rB s0) (used := 8 * cw s0 * (k + 1))
-    ha.go hwb (by omega) hav
+    ha.go hwb (by omega_using [hw4]) hav
   have p₂ := VG.Proof.RsaKeyGen.mr_pass (a := lA s0') (m := lM s0') (r := rB s0') (used := 8 * cw s0' * (k + 1))
     ha'.go hwb' (by omega)
     (by rw [← hw, ← hl]; exact hav)

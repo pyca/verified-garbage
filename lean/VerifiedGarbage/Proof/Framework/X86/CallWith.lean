@@ -67,22 +67,22 @@ theorem callEntry_frame (hrs : Reg.esp ∉ rs) :
     Frame [below (s.gpr .esp) (4 * rs.length + 4)] s.mem (pushed rs s).callEntry.mem := by
   rw [State.callEntry_mem]
   have f₁ : Frame [below (s.gpr .esp) (4 * rs.length + 4)] s.mem (pushed rs s).mem :=
-    (pushed_frame hrs (by omega)).sub fun r hr => by
+    (pushed_frame hrs (by omega_using [hfit])).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, below_sub (by omega) hfit⟩
+      exact ⟨_, List.mem_singleton_self _, below_sub (by omega_using []) hfit⟩
   refine f₁.writeW (List.mem_singleton_self _) _ ?_
   rw [pushed_esp, show s.gpr .esp - BitVec.ofNat 32 (4 * rs.length) - 4 =
     s.gpr .esp - BitVec.ofNat 32 (4 * rs.length + 4) by rw [BitVec.ofNat_add, BitVec.sub_sub]; rfl]
-  exact below_top (Nat.le_refl _) hfit (by omega)
+  exact below_top (Nat.le_refl _) hfit (by omega_using [])
 
 /-- Argument `i` is the `i`-th register from the end of those pushed. -/
 theorem callEntry_arg (hrs : Reg.esp ∉ rs) {i : Nat} (hi : i < rs.length) :
     arg (pushed rs s).callEntry i = s.gpr rs[rs.length - 1 - i] := by
-  have hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega
+  have hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega_using [hfit]
   have e : ((pushed rs s).gpr .esp).toNat = (s.gpr .esp).toNat - 4 * rs.length := by
     rw [pushed_esp, sub_toNat hn]
   have := (s.gpr .esp).isLt
-  rw [arg_callEntry (by rw [e]; omega) (by rw [e]; omega)]
+  rw [arg_callEntry (by rw [e]; omega_using [hfit]) (by rw [e]; omega_using [hfit, hi])]
   exact pushed_word hrs hn hi
 
 end
@@ -120,11 +120,11 @@ theorem WP.callWith {rs : List Reg} {n : String} {c : Prog isa} {k : Contract is
       Frame (wr ++ [below (s.gpr .esp) (4 * rs.length + stackUse c + 4)]) s.mem s'.mem →
       (∃ s₂ : State, s₂.mem = s'.mem ∧ k.post ((pushed rs s).callEntry.withRegions rd wr) s₂) → Q s') :
     WP isa (.frame (.push rs) (.call n c) (.pop .eax rs.length)) s Q := by
-  have hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega
+  have hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega_using [hd]
   have e : ((pushed rs s).gpr .esp).toNat = (s.gpr .esp).toNat - 4 * rs.length := by
     rw [pushed_esp, sub_toNat hn]
   refine WP.frame hne hrs (by decide) hn (fun i hi => hsp i hi) ?_
-  refine WP.call hv hsp (by rw [e]; omega) hk.pre (by rw [pushed_rd, pushed_wr]; exact hk.cov)
+  refine WP.call hv hsp (by rw [e]; omega_using [hd]) hk.pre (by rw [pushed_rd, pushed_wr]; exact hk.cov)
     (by rw [pushed_wr]; exact hk.covw) fun s₂ rd₂ wr₂ cs₂ f₂ _ ⟨s₃, m₃, _, post₃⟩ => ?_
   refine hQ _ (by rw [popped_rd, rd₂, pushed_rd]) (by rw [popped_wr, wr₂, pushed_wr]; rfl) (fun r hr => ?_) ?_
     ⟨s₃, by rw [m₃, popped_mem], post₃⟩
@@ -137,12 +137,12 @@ theorem WP.callWith {rs : List Reg} {n : String} {c : Prog isa} {k : Contract is
   · rw [popped_mem]
     refine ((pushed_frame hrs hn).sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega) hd⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using []) hd⟩
     · rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
         refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
         rw [pushed_esp]
-        exact below_inner (by omega) hd
+        exact below_inner (by omega_using []) hd
 
 end VG.X86

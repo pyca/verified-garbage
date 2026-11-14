@@ -38,7 +38,7 @@ theorem p192_nBits : Spec.Ecdsa.nBits Spec.P192.curve = 192 := by
   show Spec.P192.curve.n.log2 + 1 = 192
   have h₁ : 191 ≤ Spec.P192.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P192.curve.n.log2 < 192 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-- P-192, with the group law `hL`. -/
 def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where

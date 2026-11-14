@@ -26,7 +26,7 @@ theorem scratch_input {m m' : Mem} {B : Addr} {w a : Nat}
   have sa := slot_le (w := w) ha
   have s1 := slot_sep (w := w) ha1
   have s2 := slot_sep (w := w) ha2
-  exact hf.wv (by unfold slot aAcc aTmp at *; omega) (by omega)
+  exact hf.wv (by unfold slot aAcc aTmp at *; omega_using [s1, s2]) (by omega_using [hZ, sa])
 
 theorem rawProduct_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
@@ -40,15 +40,15 @@ theorem rawProduct_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
       Outside B (slot w aAcc) (16*w+32) s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
   have pads := AdxHeader.pads_bound hZ
-  have rawZ : rawBase w+8*(2*w+2) ≤ Z := by unfold rawBase highPad at *; omega
-  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
+  have rawZ : rawBase w+8*(2*w+2) ≤ Z := by unfold rawBase highPad at *; omega_using [pads]
+  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
   unfold AdxTiledProduct.rawProduct
   refine WP.seq (WP.mono (adxSetupV_ok hs hd hh hZ (hvs.at pb) (hvs.lt pb)) fun u ⟨_,_,pu,wu,mu,ku⟩ => ?_)
-  refine WP.seq (WP.mono (zeroWin8_ok (hs.congr ku.2.2) pu wu hwN hn (by omega) rawZ)
+  refine WP.seq (WP.mono (zeroWin8_ok (hs.congr ku.2.2) pu wu hwN hn (by omega_using [hw]) rawZ)
     fun v ⟨zv,ov,kv⟩ => ?_)
   rw [mu] at ov
-  have ov' : Outside B (slot w aAcc) (16*w+32) s.mem v.mem := ov.mono (by omega) (by omega)
-  have hv : Hdr v.mem B w mi := hh.of_outside ov (by unfold slot; omega)
+  have ov' : Outside B (slot w aAcc) (16*w+32) s.mem v.mem := ov.mono (by omega_using []) (by omega_using [])
+  have hv : Hdr v.mem B w mi := hh.of_outside ov (by unfold slot; omega_using [])
   have kuv := ku.trans kv
   refine WP.seq (WP.mono (AdxHeader.save_ok (hs.congr kuv.2.2) ((kuv.gpr (by decide)).trans hd) hv hZ)
     fun x ⟨lo,hi,fx,kx⟩ => ?_)
@@ -57,32 +57,32 @@ theorem rawProduct_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
     apply fx p
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega
-  have hx : Hdr x.mem B w mi := hv.of_outside ox (by unfold slot; omega)
+    rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega_using [hp]
+  have hx : Hdr x.mem B w mi := hv.of_outside ox (by unfold slot; omega_using [])
   have zx : wv x.mem B (rawBase w) (2*w)=0 := by
     rw [fx.wv_eq (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,highPad] <;> omega) (by omega)]
-    exact wv_zero fun k hk => zv k (by omega)
+      rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,highPad] <;> omega_using []) (by omega_using [nowrap, rawZ])]
+    exact wv_zero fun k hk => zv k (by omega_using [hk])
   have kuvx := kuv.trans kx
   refine WP.seq (WP.mono (rows_ok (hs.congr kuvx.2.2) ((kuvx.gpr (by decide)).trans hd)
-    hx (hvs.of_outside (ov'.trans ox) (by unfold slot sFn hdrBytes; omega)) pa pb hZ hw hwN hn ha hb ha1 ha2 hb1 hb2 zx) fun y ⟨vy,hy,fy,ky⟩ => ?_)
+    hx (hvs.of_outside (ov'.trans ox) (by unfold slot sFn hdrBytes; omega_using [])) pa pb hZ hw hwN hn ha hb ha1 ha2 hb1 hb2 zx) fun y ⟨vy,hy,fy,ky⟩ => ?_)
   have kuvxy := kuvx.trans ky
   refine WP.mono (AdxHeader.restore_ok (hs.congr kuvxy.2.2) ((kuvxy.gpr (by decide)).trans hd) hy hZ)
     fun t ⟨lot,hit,zt,ft,kt⟩ => ?_
   have bodyFrame : Frm B [(slot w aAcc+16,16*w),(8*sFn 12,32)] x.mem y.mem := fy
-  have restored := AdxHeader.restored_frame (by omega : highPad w+16 ≤ 2^64) lo hi fx bodyFrame lot hit ft
+  have restored := AdxHeader.restored_frame (by omega_using [nowrap, pads] : highPad w+16 ≤ 2^64) lo hi fx bodyFrame lot hit ft
   have low : wv t.mem B (rawBase w) (2*w)=wv s.mem B (slot w a) w*wv s.mem B (slot w b) w := by
     rw [ft.wv_eq (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl <;> simp only [] <;>
-        simp only [rawBase,highPad,slot,hdrBytes,sFn] <;> omega) (by omega),vy,
+        simp only [rawBase,highPad,slot,hdrBytes,sFn] <;> omega_using []) (by omega_using [nowrap, rawZ]),vy,
       scratch_input ha ha1 ha2 Z64 (ov'.trans ox),scratch_input hb hb1 hb2 Z64 (ov'.trans ox)]
   refine ⟨?_,low,ov'.trans restored,(kuvxy.trans kt).mono (by decide)⟩
   have high : wv t.mem B (rawBase w+8*(2*w)) 2=0 := wv_zero fun k hk => by
-    rw [show rawBase w+8*(2*w)+8*k=highPad w+8*k by unfold rawBase highPad; omega]
+    rw [show rawBase w+8*(2*w)+8*k=highPad w+8*k by unfold rawBase highPad; omega_using []]
     exact zt k hk
   rw [wv_add,high,Nat.mul_zero,Nat.add_zero]; exact low
 
@@ -100,19 +100,19 @@ theorem rawProductBare_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 
       Outside B (slot w aAcc) (16*w+32) m t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
   have pads := AdxHeader.pads_bound hZ
-  have rawZ : rawBase w+8*(2*w+2) ≤ Z := by unfold rawBase highPad at *; omega
-  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
+  have rawZ : rawBase w+8*(2*w+2) ≤ Z := by unfold rawBase highPad at *; omega_using [pads]
+  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
   unfold AdxTiledProduct.rawProductBare
   refine WP.seq (WP.mono (adxSetupV_ok hs hd hh hZ (hvs.at pb) (hvs.lt pb)) fun u ⟨_,_,pu,wu,mu,ku⟩ => ?_)
-  refine WP.seq (WP.mono (zeroWin8_ok (hs.congr ku.2.2) pu wu hwN hn (by omega) rawZ)
+  refine WP.seq (WP.mono (zeroWin8_ok (hs.congr ku.2.2) pu wu hwN hn (by omega_using [hw]) rawZ)
     fun v ⟨zv,ov,kv⟩ => ?_)
   rw [mu] at ov
-  have ov' : Outside B (slot w aAcc) (16*w+32) s.mem v.mem := ov.mono (by omega) (by omega)
-  have hv : Hdr v.mem B w mi := hh.of_outside ov (by unfold slot; omega)
+  have ov' : Outside B (slot w aAcc) (16*w+32) s.mem v.mem := ov.mono (by omega_using []) (by omega_using [])
+  have hv : Hdr v.mem B w mi := hh.of_outside ov (by unfold slot; omega_using [])
   have kuv := ku.trans kv
-  have zv' : wv v.mem B (rawBase w) (2*w)=0 := wv_zero fun k hk => zv k (by omega)
+  have zv' : wv v.mem B (rawBase w) (2*w)=0 := wv_zero fun k hk => zv k (by omega_using [hk])
   refine WP.seq (WP.mono (rows_ok (hs.congr kuv.2.2) ((kuv.gpr (by decide)).trans hd)
-    hv (hvs.of_outside ov' (by unfold slot sFn hdrBytes; omega)) pa pb hZ hw hwN hn ha hb ha1 ha2 hb1 hb2 zv')
+    hv (hvs.of_outside ov' (by unfold slot sFn hdrBytes; omega_using [])) pa pb hZ hw hwN hn ha hb ha1 ha2 hb1 hb2 zv')
     fun y ⟨vy,hy,fy,ky⟩ => ?_)
   have kuvy := kuv.trans ky
   refine WP.mono (AdxHeader.clear_ok (hs.congr kuvy.2.2) ((kuvy.gpr (by decide)).trans hd) hy hZ)
@@ -122,13 +122,13 @@ theorem rawProductBare_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 
     have h1 := hx _ (List.mem_cons_self ..)
     have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     simp only [] at h1 h2
-    rw [ot x (by unfold highPad; omega),bodyFrame x fun r hr => by
+    rw [ot x (by unfold highPad; omega_using [h1]),bodyFrame x fun r hr => by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> omega]
+      rcases hr with rfl | rfl <;> simp only [] <;> omega_arith]
     exact ov' x h1
   obtain ⟨m₁,o₁,o₂⟩ := AdxHeader.frm_split fr
   refine ⟨m₁,o₁,?_,o₂,(kuvy.trans kt).mono (by decide)⟩
-  rw [ot.wv (by unfold rawBase highPad; omega) (by unfold rawBase highPad at *; omega),vy,
+  rw [ot.wv (by unfold rawBase highPad; omega_using []) (by unfold rawBase highPad at *; omega_using [nowrap, pads]),vy,
     scratch_input ha ha1 ha2 Z64 ov',scratch_input hb hb1 hb2 Z64 ov']
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

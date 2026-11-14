@@ -31,13 +31,13 @@ theorem toNat_vdword (x : BitVec 128) (e : Nat) : (vdword x e).toNat = x.toNat /
 /-- A 64-bit lane is its two words. -/
 theorem vdword_words (x : BitVec 128) (e : Nat) :
     (vdword x e).toNat = (vword x (2 * e)).toNat + 2 ^ 32 * (vword x (2 * e + 1)).toNat := by
-  rw [toNat_vdword, toNat_vword, toNat_vword, show 32 * (2 * e) = 64 * e by omega,
-    show 32 * (2 * e + 1) = 64 * e + 32 by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul]
+  rw [toNat_vdword, toNat_vword, toNat_vword, show 32 * (2 * e) = 64 * e by omega_using [],
+    show 32 * (2 * e + 1) = 64 * e + 32 by omega_using [], Nat.pow_add, ← Nat.div_div_eq_div_mul]
   generalize x.toNat / 2 ^ (64 * e) = n
-  omega
+  omega_using []
 
 theorem vword_lo (x : BitVec 128) (e : Nat) : (vword x (2 * e)).toNat = (vdword x e).toNat % 2 ^ 32 := by
-  rw [vdword_words]; have := (vword x (2 * e)).isLt; omega
+  rw [vdword_words]; have := (vword x (2 * e)).isLt; omega_using []
 
 /-! ## Permutations -/
 
@@ -85,42 +85,42 @@ def extv (n m : BitVec 128) : BitVec 128 := ((m ++ n) >>> (8 * 8)).extractLsb' 0
 theorem ext8_0 (n m : BitVec 128) : vword (extv n m) 0 = vword n 2 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have h1 : 32 * 0 + i < 128 := by omega
-  have h2 : 8 * 8 + (0 + (32 * 0 + i)) < 128 := by omega
+  have h1 : 32 * 0 + i < 128 := by omega_using [hi]
+  have h2 : 8 * 8 + (0 + (32 * 0 + i)) < 128 := by omega_using [hi]
   simp only [extv, vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append, hi,
     h1, h2, decide_true, Bool.true_and, ite_true]
   congr 1
-  omega
+  omega_using []
 
 theorem ext8_1 (n m : BitVec 128) : vword (extv n m) 1 = vword n 3 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have h1 : 32 * 1 + i < 128 := by omega
-  have h2 : 8 * 8 + (0 + (32 * 1 + i)) < 128 := by omega
+  have h1 : 32 * 1 + i < 128 := by omega_using [hi]
+  have h2 : 8 * 8 + (0 + (32 * 1 + i)) < 128 := by omega_using [hi]
   simp only [extv, vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append, hi,
     h1, h2, decide_true, Bool.true_and, ite_true]
   congr 1
-  omega
+  omega_using []
 
 theorem ext8_2 (n m : BitVec 128) : vword (extv n m) 2 = vword m 0 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [extv, vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append, hi,
     decide_true, Bool.true_and]
-  rw [decide_eq_true (by omega : 32 * 2 + i < 128), Bool.true_and]
+  rw [decide_eq_true (by omega_using [hi] : 32 * 2 + i < 128), Bool.true_and]
   split
   · omega
-  · exact congrArg m.getLsbD (by omega)
+  · exact congrArg m.getLsbD (by omega_using [])
 
 theorem ext8_3 (n m : BitVec 128) : vword (extv n m) 3 = vword m 1 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [extv, vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append, hi,
     decide_true, Bool.true_and]
-  rw [decide_eq_true (by omega : 32 * 3 + i < 128), Bool.true_and]
+  rw [decide_eq_true (by omega_using [hi] : 32 * 3 + i < 128), Bool.true_and]
   split
   · omega
-  · exact congrArg m.getLsbD (by omega)
+  · exact congrArg m.getLsbD (by omega_using [])
 
 theorem umlal_lane (acc n m : BitVec 128) (p e : Nat) :
     (vdword acc e + (vword n (p + e)).setWidth 64 * (vword m (p + e)).setWidth 64).toNat =
@@ -128,8 +128,8 @@ theorem umlal_lane (acc n m : BitVec 128) (p e : Nat) :
   have h1 := (vword n (p + e)).isLt
   have h2 := (vword m (p + e)).isLt
   rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (by omega : (vword n (p + e)).toNat < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : (vword m (p + e)).toNat < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [] : (vword n (p + e)).toNat < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [] : (vword m (p + e)).toNat < 2 ^ 64),
     Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' h1 h2) (Nat.le_of_eq (Nat.pow_add 2 32 32).symm))]
 
 theorem umull_lane (n m : BitVec 128) (p e : Nat) :
@@ -138,8 +138,8 @@ theorem umull_lane (n m : BitVec 128) (p e : Nat) :
   have h1 := (vword n (p + e)).isLt
   have h2 := (vword m (p + e)).isLt
   rw [BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (by omega : (vword n (p + e)).toNat < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : (vword m (p + e)).toNat < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [] : (vword n (p + e)).toNat < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [] : (vword m (p + e)).toNat < 2 ^ 64),
     Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' h1 h2) (Nat.le_of_eq (Nat.pow_add 2 32 32).symm))]
 
 /-! ## Memory -/
@@ -152,10 +152,10 @@ theorem write16_word (m : Mem) (a : Addr) (v : BitVec 128) {c : Nat} (hc : c < 4
   intro i hi
   rw [getLsbD_read _ 16 a i hi]
   simp only [Mem.write]
-  rw [BitVec.add_comm a, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i / 8 < 2 ^ 64),
-    ite_eq_left_iff.mpr fun h => absurd (by omega : i / 8 < 16) h, BitVec.getLsbD_extractLsb']
-  simp only [show i % 8 < 8 by omega, decide_true, Bool.true_and]
+  rw [BitVec.add_comm a, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi] : i / 8 < 2 ^ 64),
+    ite_eq_left_iff.mpr fun h => absurd (by omega_using [hi] : i / 8 < 16) h, BitVec.getLsbD_extractLsb']
+  simp only [show i % 8 < 8 by omega_using [], decide_true, Bool.true_and]
   congr 1
-  omega
+  omega_using []
 
 end VG.Proof.Curve448.AArch64.Neon

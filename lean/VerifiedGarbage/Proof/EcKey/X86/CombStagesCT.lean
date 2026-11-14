@@ -57,14 +57,14 @@ theorem pkKeep_arg {c : Cfg} {s₀ s : State} {extra : List Region}
   have he : argAddr s j = argAddr s₀ j := by simp only [argAddr, h.esp]
   change s.mem.readW (argAddr s j) 32 = _
   rw [he]
-  have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
+  have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_using [this]
   refine h.whole.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   rw [hp.wr] at hr
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.args_out.sub_left (arg_subN h3 hj)
   · exact hp.args_sc.sub_left (arg_subN h3 hj)
-  · exact (below_disjoint_args hp.sp_lo (k := 12) (by omega) (by decide)).symm.sub_left (arg_subN h3 hj)
+  · exact (below_disjoint_args hp.sp_lo (k := 12) (by omega_using [h3]) (by decide)).symm.sub_left (arg_subN h3 hj)
 
 /-- The public argument area is disjoint from every writable buffer. -/
 theorem pkArgWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
@@ -85,8 +85,8 @@ theorem pkArgWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
     refine ⟨hp.sp_fit, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 12) (by have := hp.sp_fit; omega) hp.ret_out hp.args_out
-    · exact VG.X86.Taint.frame_disjoint (n := 12) (by have := hp.sp_fit; omega) hp.ret_sc hp.args_sc
+    · exact VG.X86.Taint.frame_disjoint (n := 12) (by have := hp.sp_fit; omega_using [this]) hp.ret_out hp.args_out
+    · exact VG.X86.Taint.frame_disjoint (n := 12) (by have := hp.sp_fit; omega_using [this]) hp.ret_sc hp.args_sc
   · intro p h; cases h
 
 /-- The functional stage invariant restores public cdecl arguments. -/

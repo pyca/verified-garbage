@@ -71,7 +71,7 @@ structure GoodS (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (M : N
   v : val52 l m B (l.D * p + c) < 2 * M p
 
 theorem GoodS.good {m : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : GoodS l m B M c p)
-    (h : M p ≤ gb l (M p)) : Good l m B M c p := ⟨g.lt, by have := g.v; omega⟩
+    (h : M p ≤ gb l (M p)) : Good l m B M c p := ⟨g.lt, by have := g.v; omega_using [h, this]⟩
 
 theorem Good.strong {m : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : Good l m B M c p) (hz : l.z = false) :
     GoodS l m B M c p := ⟨g.lt, by have := g.v; rwa [gb_eq hz] at this⟩
@@ -85,7 +85,7 @@ theorem AmmOk.zcases (hl : AmmOk l) : l.z = false ∨ ZOk l := by
 theorem ZOk.z (hz : ZOk l) : l.z = true := by rw [hz]; rfl
 
 theorem D_mul {p : Nat} (hp : p < 2) : l.D * p = 0 ∨ l.D * p = l.D := by
-  rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> simp
+  rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl <;> simp
 
 /-- A word of a region outside the windows. -/
 theorem Out2.word_at (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
@@ -93,16 +93,16 @@ theorem Out2.word_at (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out
     word m' B (l.D * p + c) = word m B (l.D * p + c) := by
   have hD := hl.D_bounds
   refine (Mem.readW_congr fun i hi => (h _ fun p' hp' => ?_).symm).symm
-  rw [ofs_off B (by rcases D_mulN hl hp with h | h <;> omega)]
+  rw [ofs_off B (by rcases D_mulN hl hp with h | h <;> omega_using [hcD, hD, hi, h])]
   have : i < 8 := hi
-  rcases D_mulN hl hp with h1 | h1 <;> rcases D_mulN hl hp' with h2 | h2 <;> omega
+  rcases D_mulN hl hp with h1 | h1 <;> rcases D_mulN hl hp' with h2 | h2 <;> omega_arith
 
 theorem Out2.limb (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
     (hp : p < l.nl) (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D) (hoD : o + n ≤ l.D) {j : Nat}
     (hj : j < l.L) : limb l m' B (l.D * p + c) j = limb l m B (l.D * p + c) j := by
   have := off_ltN hl hj
   show (word m' B _).toNat = (word m B _).toNat
-  rw [Nat.add_assoc, h.word_at hl hp (by omega) (by omega) hoD]
+  rw [Nat.add_assoc, h.word_at hl hp (by omega_using [hc, this]) (by omega_using [hcD, this]) hoD]
 
 theorem Out2.val (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l B o n m m') {p c : Nat}
     (hp : p < l.nl) (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D) (hoD : o + n ≤ l.D) :
@@ -110,20 +110,20 @@ theorem Out2.val (hl : AmmOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l 
   unfold val52; exact lval_congr fun j hj => h.limb hl hp hc hcD hoD hj
 
 theorem oFin_le (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : l.oFin + l.NB ≤ l.D := by
-  simp only [Lay.D]; omega
+  simp only [Lay.D]; omega_using []
 
 theorem Ar0.of_out2 (hl : AmmOk l) {m m' : Mem} {B : Addr} {M k : Nat → Nat} (a : Ar0 l m B M k) {o n : Nat}
     (h : Out2 l B o n m m') (ho : l.oY ≤ o) (hoD : o + n ≤ l.D) : Ar0 l m' B M k := by
   have hD' := hl.D_ge
-  have hc : ∀ c, c + l.NB ≤ l.NB → c + l.NB ≤ o ∨ o + n ≤ c := fun c hc => .inl (by simp only [Lay.oY] at ho; omega)
+  have hc : ∀ c, c + l.NB ≤ l.NB → c + l.NB ≤ o ∨ o + n ≤ c := fun c hc => .inl (by simp only [Lay.oY] at ho; omega_using [ho, hc])
   refine ⟨fun p hp j hj => ?_, fun p hp => ?_, fun p hp t ht => ?_, a.klt, fun p hp => ?_, a.bnd⟩
-  · rw [h.limb hl hp (hc _ (by simp [oM])) (by simp only [oM]; omega) hoD hj]; exact a.mlt p hp j hj
-  · rw [h.val hl hp (hc _ (by simp [oM])) (by simp only [oM]; omega) hoD]; exact a.mv p hp
-  · rw [Nat.add_assoc, h.word_at hl hp (by simp only [Lay.oK0, Lay.oY] at *; omega)
-      (by simp only [Lay.oK0] at *; omega) hoD, ← Nat.add_assoc]
+  · rw [h.limb hl hp (hc _ (by simp [oM])) (by simp only [oM]; omega_using [hD']) hoD hj]; exact a.mlt p hp j hj
+  · rw [h.val hl hp (hc _ (by simp [oM])) (by simp only [oM]; omega_using [hD']) hoD]; exact a.mv p hp
+  · rw [Nat.add_assoc, h.word_at hl hp (by simp only [Lay.oK0, Lay.oY] at *; omega_using [ho, ht])
+      (by simp only [Lay.oK0] at *; omega_using [hD', ht]) hoD, ← Nat.add_assoc]
     exact a.kw p hp t ht
-  · rw [h.limb hl hp (hc _ (by simp [oM])) (by simp only [oM]; omega) hoD
-      (by have := hl.bounds; simp only [Lay.L]; omega)]
+  · rw [h.limb hl hp (hc _ (by simp [oM])) (by simp only [oM]; omega_using [hD']) hoD
+      (by have := hl.bounds; simp only [Lay.L]; omega_using [this])]
     exact a.k0 p hp
 
 theorem ArZ.of_out2 (hz : ZOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} (az : ArZ l m B M) {o n : Nat}
@@ -132,19 +132,19 @@ theorem ArZ.of_out2 (hz : ZOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} (az :
   have hM := hz.offs.1
   have hL := hz.L
   refine ⟨fun p hp j hj => ?_, fun p hp => ?_, fun p hp => ?_, fun p hp => ?_, fun p hp => ?_⟩
-  · rw [h.limb hl hp hcz (by omega) hoD hj]; exact az.lt p hp j hj
-  · rw [h.limb hl hp hcz (by omega) hoD (by omega), h.limb hl hp hcz (by omega) hoD (by omega)]
+  · rw [h.limb hl hp hcz (by omega_using [hM]) hoD hj]; exact az.lt p hp j hj
+  · rw [h.limb hl hp hcz (by omega_using [hM]) hoD (by omega_using [hL]), h.limb hl hp hcz (by omega_using [hM]) hoD (by omega_using [hL])]
     exact az.top p hp
-  · rw [h.val hl hp hcz (by omega) hoD]; exact az.pos p hp
-  · rw [h.val hl hp hcz (by omega) hoD]; exact az.dvd p hp
-  · rw [h.val hl hp hcz (by omega) hoD]; exact az.bnd p hp
+  · rw [h.val hl hp hcz (by omega_using [hM]) hoD]; exact az.pos p hp
+  · rw [h.val hl hp hcz (by omega_using [hM]) hoD]; exact az.dvd p hp
+  · rw [h.val hl hp hcz (by omega_using [hM]) hoD]; exact az.bnd p hp
 
 theorem Ar.of_out2 (hl : AmmOk l) {m m' : Mem} {B : Addr} {M k : Nat → Nat} (a : Ar l m B M k) {o n : Nat}
     (h : Out2 l B o n m m') (ho : l.oY ≤ o) (hoF : o + n ≤ l.oFin + l.NB) : Ar l m' B M k := by
   have hoD : o + n ≤ l.D := Nat.le_trans hoF (oFin_le l)
   refine ⟨a.toAr0.of_out2 hl h ho hoD, fun hz => ?_⟩
   have zk : ZOk l := by rcases hl.zcases with h0 | h0 <;> [exact absurd hz (by rw [h0]; decide); exact h0]
-  exact (a.zs hz).of_out2 zk h (.inr (by simp only [Lay.oMs]; omega)) hoD
+  exact (a.zs hz).of_out2 zk h (.inr (by simp only [Lay.oMs]; omega_using [hoF])) hoD
 
 theorem Good.of_out2 (hl : AmmOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : Good l m B M c p)
     (hp : p < l.nl) {o n : Nat} (h : Out2 l B o n m m') (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D)
@@ -192,7 +192,7 @@ theorem ammCoreZ2_ok (hz : ZOk l) {s : State} {B : Addr} {o a b : Nat} {M : Nat 
   refine WP.mono (ammCoreZSpec_ok hz hB h8 h9 h11 hs ho ha hb
     (fun p hp j hj => ⟨(hlt p hp j hj).1, (hlt p hp j hj).2, az.lt p hp j hj⟩) az.top)
     fun s' ⟨hv, rest⟩ => ⟨fun p hp => ⟨(hv p hp).1, fun hb' hfit =>
-      (hv p hp).2 _ (by have := az.pos p hp; omega) hb' hfit⟩, rest⟩
+      (hv p hp).2 _ (by have := az.pos p hp; omega_using [this]) hb' hfit⟩, rest⟩
 
 /-- `ammCoreZ2_ok` for `amm o a b`. -/
 theorem ammZ_ok (hz : ZOk l) {s : State} {B : Addr} {o a b : Nat} {M : Nat → Nat}
@@ -213,7 +213,7 @@ theorem ammZ_ok (hz : ZOk l) {s : State} {B : Addr} {o a b : Nat} {M : Nat → N
         s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   have hD := hz.offs.2.1
-  refine ammOps_ok hB (by omega) (by omega) (by omega) fun s₃ rbx₃ r8₃ r9₃ r11₃ m₃ rd₃ wr₃ x₃ g₃ => ?_
+  refine ammOps_ok hB (by omega_using [ho, hD]) (by omega_using [ha, hD]) (by omega_using [hb, hD]) fun s₃ rbx₃ r8₃ r9₃ r11₃ m₃ rd₃ wr₃ x₃ g₃ => ?_
   rw [← m₃] at az hlt ⊢
   refine WP.mono (ammCoreZ2_ok hz rbx₃ r8₃ r9₃ r11₃ (hs.congr wr₃) az ho ha hb hlt)
     fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ => ⟨hv, hf, fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => ?_,
@@ -242,11 +242,11 @@ theorem ammP_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat �
   have hD' := hl.D_ge
   have hnD := nlD hl
   have hnl := hl.nl_le
-  have hDn : l.D * (l.nl - 1) ≤ l.D := D_le hl (show l.nl - 1 < l.nl by omega)
-  refine ammOps_ok hB (by omega) (by omega) (by omega) fun s₃ rbx₃ r8₃ r9₃ r11₃ m₃ rd₃ wr₃ x₃ g₃ => ?_
+  have hDn : l.D * (l.nl - 1) ≤ l.D := D_le hl (show l.nl - 1 < l.nl by omega_using [hnl])
+  refine ammOps_ok hB (by omega_using [ho, hD]) (by omega_using [ha, hD]) (by omega_using [hb, hD]) fun s₃ rbx₃ r8₃ r9₃ r11₃ m₃ rd₃ wr₃ x₃ g₃ => ?_
   rw [← m₃] at ar hlt ⊢
-  refine WP.mono (ammCoreSpecN_eq hl (ammCore_core hl) rbx₃ r8₃ r9₃ r11₃ (hs.congr wr₃) (by omega) (by omega)
-    (by omega) (by omega) (by omega)
+  refine WP.mono (ammCoreSpecN_eq hl (ammCore_core hl) rbx₃ r8₃ r9₃ r11₃ (hs.congr wr₃) (by omega_using [hD', hnD]) (by omega_using [hD, hnD, hDn])
+    (by omega_using [ho, hnD]) (by omega_using [ha, hnD]) (by omega_using [hb, hnD])
     (fun p hp j hj => ⟨(hlt p hp j hj).1, (hlt p hp j hj).2, ar.mlt p hp j hj⟩) ar.kw ar.klt ar.k0)
     fun s' ⟨hv, hf, hg, _, hrd, hwr, hx⟩ => ⟨fun p hp => ⟨(hv p hp).1, fun hb' hfit => ?_⟩, hf.out2,
       fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => ?_, hrd.trans rd₃, hwr.trans wr₃, hx.trans x₃⟩
@@ -258,7 +258,7 @@ theorem ammP_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat �
 theorem zbound' {V A B X Q R H : Nat} (h : V * R = A * B + X * Q) (hQ : Q < R) (hAB : A * B < R * H) :
     V < H + X := by
   have h2 : X * Q ≤ X * R := Nat.mul_le_mul_left _ (Nat.le_of_lt hQ)
-  have h3 : R * V < R * (H + X) := by rw [Nat.mul_add, Nat.mul_comm R X, Nat.mul_comm R V]; omega
+  have h3 : R * V < R * (H + X) := by rw [Nat.mul_add, Nat.mul_comm R X, Nat.mul_comm R V]; omega_using [h, hAB, h2]
   exact Nat.lt_of_mul_lt_mul_left h3
 
 theorem zbound {V A B X Q R G H : Nat} (h : V * R = A * B + X * Q) (hQ : Q < R) (hA : A < G) (hB : B < G)
@@ -269,7 +269,7 @@ theorem zbound {V A B X Q R G H : Nat} (h : V * R = A * B + X * Q) (hQ : Q < R) 
 theorem zfit' {A B X R H T : Nat} (hAB : A * B < R * H) (hX : H + X ≤ T) : A * B + X * R < R * T := by
   have h2 : R * (H + X) ≤ R * T := Nat.mul_le_mul_left _ hX
   rw [Nat.mul_add, Nat.mul_comm R X] at h2
-  omega
+  omega_using [hAB, h2]
 
 theorem zfit {A B X R G H T : Nat} (hA : A < G) (hB : B < G) (hG : G * G ≤ R * H) (hX : H + X ≤ T) :
     A * B + X * R < R * T :=
@@ -301,9 +301,9 @@ theorem zgood (hz : ZOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} {o a b p : 
   have hX := az.bnd p hp
   have hpos := az.pos p hp
   obtain ⟨Q, hQ, he⟩ := hv (Nat.lt_of_lt_of_le gb'.v s3)
-    (zfit ga.v gb'.v s1 (Nat.le_trans (by omega) s4))
+    (zfit ga.v gb'.v s1 (Nat.le_trans (by omega_using [s2, hX]) s4))
   have hb := zbound he hQ ga.v gb'.v s1
-  refine ⟨⟨hlt, by omega⟩, ?_⟩
+  refine ⟨⟨hlt, by omega_using [s2, hX, hb]⟩, ?_⟩
   obtain ⟨c, hc⟩ := az.dvd p hp
   rw [he, hc, Nat.mul_assoc, Nat.add_mul_mod_self_left]
 
@@ -323,19 +323,19 @@ theorem amm2_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat �
   have ho : o + l.NB ≤ l.D := Nat.le_trans (Nat.add_le_add_right hoF _) (oFin_le l)
   rcases hl.zcases with hz | hz
   · have e := gb_eq (l := l) hz
-    refine WP.mono (amm_ok hl hz (k := k) hB hs (by omega) (by omega) (by omega)
+    refine WP.mono (amm_ok hl hz (k := k) hB hs (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb])
       (fun p hp j hj => ⟨(ga p hp).lt j hj, (gb' p hp).lt j hj, ar.mlt p hp j hj⟩) ar.kw ar.klt ar.k0
       (fun p hp => by rw [ar.mv p hp, ← e (M p)]; exact (ga p hp).v)
       (fun p hp => by rw [ar.mv p hp, ← e (M p)]; exact (gb' p hp).v)
       (fun p hp => by rw [ar.mv p hp]; exact ar.bnd p hp)) fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ =>
-        ⟨fun p hp => ?_, hf, ar.of_out2 hl hf ho' (by omega), hg, hrd, hwr, hx⟩
+        ⟨fun p hp => ?_, hf, ar.of_out2 hl hf ho' (by omega_using [hoF]), hg, hrd, hwr, hx⟩
     obtain ⟨lt, v, e'⟩ := hv p hp
     rw [ar.mv p hp] at v e'
     exact ⟨⟨lt, by rw [e]; exact v⟩, e'⟩
   · have az := ar.zs hz.z
     refine WP.mono (ammZ_ok hz hB hs az ho ha hb fun p hp j hj => ⟨(ga p hp).lt j hj, (gb' p hp).lt j hj⟩)
       fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ => ⟨fun p hp =>
-        zgood hz az hp (ga p hp) (gb' p hp) (hv p hp).1 (hv p hp).2, hf, ar.of_out2 hl hf ho' (by omega), hg, hrd, hwr, hx⟩
+        zgood hz az hp (ga p hp) (gb' p hp) (hv p hp).1 (hv p hp).2, hf, ar.of_out2 hl hf ho' (by omega_using [hoF]), hg, hrd, hwr, hx⟩
 
 /-- The layout's multiplication on good numbers, `r8`, `r9`, `r11` at `a`, `b`, `o`. -/
 theorem ammCore2_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
@@ -353,12 +353,12 @@ theorem ammCore2_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : N
   have ho : o + l.NB ≤ l.D := Nat.le_trans (Nat.add_le_add_right hoF _) (oFin_le l)
   rcases hl.zcases with hz | hz
   · have e := gb_eq (l := l) hz
-    refine WP.mono (ammCoreSpec_ok hl hz (k := k) hB h8 h9 h11 hs (by omega) (by omega) (by omega)
+    refine WP.mono (ammCoreSpec_ok hl hz (k := k) hB h8 h9 h11 hs (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb])
       (fun p hp j hj => ⟨(ga p hp).lt j hj, (gb' p hp).lt j hj, ar.mlt p hp j hj⟩) ar.kw ar.klt ar.k0
       (fun p hp => by rw [ar.mv p hp, ← e (M p)]; exact (ga p hp).v)
       (fun p hp => by rw [ar.mv p hp, ← e (M p)]; exact (gb' p hp).v)
       (fun p hp => by rw [ar.mv p hp]; exact ar.bnd p hp)) fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ =>
-        ⟨fun p hp => ?_, hf, ar.of_out2 hl hf ho' (by omega), hg, hrd, hwr, hx⟩
+        ⟨fun p hp => ?_, hf, ar.of_out2 hl hf ho' (by omega_using [hoF]), hg, hrd, hwr, hx⟩
     obtain ⟨lt, v, e'⟩ := hv p hp
     rw [ar.mv p hp] at v e'
     exact ⟨⟨lt, by rw [e]; exact v⟩, e'⟩
@@ -366,7 +366,7 @@ theorem ammCore2_ok (hl : AmmOk l) {s : State} {B : Addr} {o a b : Nat} {M k : N
     refine WP.mono (ammCoreZ2_ok hz hB h8 h9 h11 hs az ho ha hb
       fun p hp j hj => ⟨(ga p hp).lt j hj, (gb' p hp).lt j hj⟩)
       fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ => ⟨fun p hp =>
-        zgood hz az hp (ga p hp) (gb' p hp) (hv p hp).1 (hv p hp).2, hf, ar.of_out2 hl hf ho' (by omega), hg, hrd, hwr, hx⟩
+        zgood hz az hp (ga p hp) (gb' p hp) (hv p hp).1 (hv p hp).2, hf, ar.of_out2 hl hf ho' (by omega_using [hoF]), hg, hrd, hwr, hx⟩
 
 theorem GoodS.of_out2 (hl : AmmOk l) {m m' : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : GoodS l m B M c p)
     (hp : p < l.nl) {o n : Nat} (h : Out2 l B o n m m') (hc : c + l.NB ≤ o ∨ o + n ≤ c) (hcD : c + l.NB ≤ l.D)
@@ -388,6 +388,6 @@ theorem val52_of_limbs {m m' : Mem} {B : Addr} {d d' : Nat} (h : ∀ q < l.L, li
 
 theorem Out2.mono {B : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Out2 l B o n m m') (h1 : o' ≤ o)
     (h2 : o + n ≤ o' + n') : Out2 l B o' n' m m' := fun x hx => h x fun p hp => by
-  rcases hx p hp with h3 | h3 <;> omega
+  rcases hx p hp with h3 | h3 <;> omega_arith
 
 end VG.Proof.Bignum.X86_64.Ifma

@@ -101,7 +101,7 @@ theorem keygen_shared_post {extra : Nat} {s t : State} (h : GenerateKeyABI extra
   sig_post [Spec.Dsa.generateKeyContract, Spec.Dsa.generateKeySig, abi, argRegs, keygenStackArgs]
   have hb : (keygenResult s).status < 2 ^ 32 := by
     have := (keygen_result_bounds h).1
-    omega
+    omega_using [this]
   refine ⟨?_, ?_, ?_⟩
   · rw [hp.status]
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64),

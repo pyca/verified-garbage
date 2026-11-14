@@ -88,12 +88,12 @@ theorem jointFixedRead_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j 
   by_cases h9 : c.gw=9
   · rw [Joint.fixedRead,ite_eq_left h9]
     have hl : jointGLen c=2*(64*c.K.M.n+1) := by rw [jointGLen,ite_eq_left h9]
-    have g0 := h.stable.generator (2*j) (by omega)
-    have g1 := h.stable.generator (2*j+1) (by omega)
+    have g0 := h.stable.generator (2*j) (by omega_using [hj, hl])
+    have g1 := h.stable.generator (2*j+1) (by omega_using [hj, hl])
     rw [jointGByte,ite_eq_left h9,FastNaf.wbyte] at g0 g1
-    rw [show 2*j/2=j by omega,show 2*j%2=0 by omega,Nat.mul_zero] at g0
-    rw [show (2*j+1)/2=j by omega,show (2*j+1)%2=1 by omega,Nat.mul_one,← Nat.add_assoc] at g1
-    refine WP.mono (nafRead16_ok h.field.scr (by omega) hb g0 g1) fun a ⟨a8,az,ka⟩ => ⟨?_,?_,ka⟩
+    rw [show 2*j/2=j by omega_using [],show 2*j%2=0 by omega_using [],Nat.mul_zero] at g0
+    rw [show (2*j+1)/2=j by omega_using [],show (2*j+1)%2=1 by omega_using [],Nat.mul_one,← Nat.add_assoc] at g1
+    refine WP.mono (nafRead16_ok h.field.scr (by omega_using [hj, hh, hl]) hb g0 g1) fun a ⟨a8,az,ka⟩ => ⟨?_,?_,ka⟩
     · rw [a8,jointGCell,ite_eq_left h9]
     · rw [az,h9]
       congr 1
@@ -101,9 +101,9 @@ theorem jointFixedRead_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j 
   · have h7 : c.gw=7 := hL.gw.resolve_right h9
     rw [Joint.fixedRead,ite_eq_right h9]
     have hl : jointGLen c=64*c.K.M.n+1 := by rw [jointGLen,ite_eq_right h9]
-    have g := h.stable.generator j (by omega)
+    have g := h.stable.generator j (by omega_using [hj, hl])
     rw [jointGByte,ite_eq_right h9] at g
-    refine WP.mono (nafRead_ok (K:={c.K with bits:=c.gBits}) h.field.scr (by dsimp only; omega) hb g)
+    refine WP.mono (nafRead_ok (K:={c.K with bits:=c.gBits}) h.field.scr (by dsimp only; omega_using [hj, hh, hl]) hb g)
       fun a ⟨a8,az,ka⟩ => ⟨?_,?_,ka⟩
     · rw [a8,jointGCell,ite_eq_right h9]
     · rw [az,h7]

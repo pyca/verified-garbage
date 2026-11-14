@@ -34,7 +34,7 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_dp wp_mov wp_ldrb wp_strb op2_im
 abbrev farOff (d : Nat) : Nat := if d < 4096 then 0 else 4096
 
 theorem far_add {d : Nat} (hd : d < 8192) : farOff d + d % 4096 = d := by
-  unfold farOff; split <;> omega
+  unfold farOff; split <;> omega_arith
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}

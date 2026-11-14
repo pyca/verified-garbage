@@ -66,9 +66,9 @@ theorem covers_sub {o l : Nat} (h : o + l ≤ PB) {rs : List Region} (hm : reg P
 theorem fit_sub {o l : Nat} (h : o + l ≤ PB) (hl : 0 < l) (fP : P.toNat + PB ≤ 2 ^ 64) :
     (P + BitVec.ofNat 64 o).toNat + l ≤ 2 ^ 64 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  have : o < 2 ^ 64 := by omega
+  have : o < 2 ^ 64 := by omega_using [h, hl, fP]
   rw [Nat.mod_eq_of_lt this]
-  exact Nat.le_trans (Nat.add_le_add_right (Nat.mod_le _ _) _) (by omega)
+  exact Nat.le_trans (Nat.add_le_add_right (Nat.mod_le _ _) _) (by omega_using [h, fP])
 
 theorem view_ptr {as : List (Reg × Arg)} (hg : glueOk as = true) (hn : (as.map Prod.fst).Nodup) {d b : Reg}
     {o : Nat} (hm : (d, .ptr (b, o)) ∈ as) (hd : d ∉ linkRegs) (rd wr : List Region) :
@@ -83,7 +83,7 @@ theorem view_imm {as : List (Reg × Arg)} (hg : glueOk as = true) (hn : (as.map 
 end
 
 theorem below0 (sp : Addr) (r : Region) : (below sp 0).Disjoint r := fun _ h _ => by
-  simp only [Region.Contains] at h; omega
+  simp only [Region.Contains] at h; omega_using [h]
 
 /-! ### `vg_mldsa_bit_unpack` -/
 
@@ -101,7 +101,7 @@ structure BuArgs (PB o len a b q : Nat) : Prop where
 
 theorem BuArgs.hg {PB o len a b q : Nat} (m : BuArgs PB o len a b q) : glueOk (buAs o len a b q) = true := by
   obtain ⟨-, l1, l2, l3, l4⟩ := m.lt
-  have : o < 2 ^ 31 := by have := m.oq; omega
+  have : o < 2 ^ 31 := by have := m.oq; omega_using [l4, this]
   simp [glueOk, KeyGen.argReg, KeyGen.argOk, l1, l2, l3, l4, this]
 
 theorem bu_pre' {s : State} {P : Addr} {PB o len a b q : Nat} (h30 : s.gpr .r30 = P) (wP : reg P PB ∈ s.wr)
@@ -124,18 +124,18 @@ theorem bu_pre' {s : State} {P : Addr} {PB o len a b q : Nat} (h30 : s.gpr .r30 
     [reg (P + BitVec.ofNat 64 o) len] [reg (P + BitVec.ofNat 64 q) 1024]
   rw [h30] at g3 g7
   have hoq := m.oq; have hqb := m.qb
-  have hoP : o + len ≤ PB := by omega
+  have hoP : o + len ≤ PB := by omega_using [hoq, hqb]
   have e5 : ((KeyGen.view (glueSt s (buAs o len a b q)) [reg (P + BitVec.ofNat 64 o) len]
       [reg (P + BitVec.ofNat 64 q) 1024]).gpr .r5).setWidth 32 = BitVec.ofNat 32 a := by
-    rw [g5]; exact imm32 (by omega)
+    rw [g5]; exact imm32 (by omega_using [l2])
   have e6 : ((KeyGen.view (glueSt s (buAs o len a b q)) [reg (P + BitVec.ofNat 64 o) len]
       [reg (P + BitVec.ofNat 64 q) 1024]).gpr .r6).setWidth 32 = BitVec.ofNat 32 b := by
-    rw [g6]; exact imm32 (by omega)
-  have tl : (BitVec.ofNat 64 len).toNat = len := imm_toNat (by omega)
-  have ta : (BitVec.ofNat 32 a).toNat = a := imm32_toNat (by omega)
-  have tb : (BitVec.ofNat 32 b).toNat = b := imm32_toNat (by omega)
+    rw [g6]; exact imm32 (by omega_using [l3])
+  have tl : (BitVec.ofNat 64 len).toNat = len := imm_toNat (by omega_using [l1])
+  have ta : (BitVec.ofNat 32 a).toNat = a := imm32_toNat (by omega_using [l2])
+  have tb : (BitVec.ofNat 32 b).toNat = b := imm32_toNat (by omega_using [l3])
   refine ⟨KeyGen.bu_pre (stk := 0) g3 g4 e5 e6 g7 (by rw [State.withRegions_rd, tl]) rfl (Nat.zero_le _)
-    (by rw [tl]; exact Offset.disjoint _ (.inl hoq) (by omega) (by omega))
+    (by rw [tl]; exact Offset.disjoint _ (.inl hoq) (by omega_using [l4, hoq]) (by omega_using [l4]))
     (below0 _ _) (below0 _ _)
     (by rw [tl]; exact fit_sub hoP l0 fP) (fit_sub hqb (by decide) fP)
     (by rw [ta, tb]; exact m.ab) (by rw [tl, ta, tb]; exact m.hl), ?_, ?_⟩
@@ -167,8 +167,8 @@ theorem bu_post' {s s' : State} {P : Addr} {o len a b q : Nat} (h30 : s.gpr .r30
   obtain ⟨l0, l1, l2, l3, l4⟩ := m.lt
   obtain ⟨g3, g4, g5, g6, g7⟩ := m.vals (s := s) rd wr
   have := KeyGen.bu_post hp
-  rwa [State.withRegions_mem, g3, g4, g5, g6, g7, view_glue_mem, h30, imm32 (by omega), imm32 (by omega),
-    imm32_toNat (by omega), imm32_toNat (by omega), imm_toNat (by omega)] at this
+  rwa [State.withRegions_mem, g3, g4, g5, g6, g7, view_glue_mem, h30, imm32 (by omega_using [l2]), imm32 (by omega_using [l3]),
+    imm32_toNat (by omega_using [l2]), imm32_toNat (by omega_using [l3]), imm_toNat (by omega_using [l1])] at this
 
 theorem bu_pub' {x y : State} {o len a b q : Nat} {PB : Nat} (m : BuArgs PB o len a b q)
     (hsp : x.sp = y.sp) (h30 : x.gpr .r30 = y.gpr .r30) {rd wr rd' wr' : List Region} :
@@ -191,7 +191,7 @@ structure T1Args (PB o q : Nat) : Prop where
 
 theorem T1Args.hg {PB o q : Nat} (m : T1Args PB o q) : glueOk (t1As o q) = true := by
   have := m.lt; have := m.oq
-  have : o < 2 ^ 31 := by omega
+  have : o < 2 ^ 31 := by omega_arith
   simp [glueOk, KeyGen.argReg, KeyGen.argOk, m.lt, this]
 
 theorem T1Args.vals {s : State} {PB o q : Nat} (m : T1Args PB o q) (rd wr : List Region) :
@@ -211,12 +211,12 @@ theorem t1_pre' {s : State} {P : Addr} {PB o q : Nat} (h30 : s.gpr .r30 = P) (wP
   rw [h30] at g3 g4
   have hoq := m.oq; have hqb := m.qb
   refine ⟨KeyGen.t1_pre (stk := 0) g3 g4 rfl rfl (Nat.zero_le _)
-    (Offset.disjoint _ (.inl hoq) (by omega) (by omega)) (below0 _ _) (below0 _ _)
-    (fit_sub (by omega) (by decide) fP) (fit_sub hqb (by decide) fP), ?_, ?_⟩
+    (Offset.disjoint _ (.inl hoq) (by omega_using [fP, hoq, hqb]) (by omega_using [fP, hqb])) (below0 _ _) (below0 _ _)
+    (fit_sub (by omega_using [hoq, hqb]) (by decide) fP) (fit_sub hqb (by decide) fP), ?_, ?_⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨reg P PB, List.mem_append_right _ wP, o, rfl, by show o + 320 ≤ PB; omega⟩
+    · exact ⟨reg P PB, List.mem_append_right _ wP, o, rfl, by show o + 320 ≤ PB; omega_using [hoq, hqb]⟩
     · exact ⟨reg P PB, List.mem_append_right _ wP, q, rfl, hqb⟩
   · exact covers_sub hqb wP
 
@@ -344,12 +344,12 @@ theorem PI.keep (h : PI KL PB K vals σ i s) {rs : List Region} {s' : State} (hk
     by rw [hk.sp, h.sp], by rw [hk.rd, h.rd], by rw [hk.wr, h.wr],
     fun r hr a b => by rw [hk.cs r hr, h.pres r hr a b], ?_, fun j hj => ?_⟩
   · have hs : Region.Sub (reg (σ.gpr .r4) KL) (reg (σ.gpr .r4) (KL + 1024 * i)) := by
-      have := Offset.sub_base (σ.gpr .r4) (d := 0) (n := KL) (k := KL + 1024 * i) (by omega)
+      have := Offset.sub_base (σ.gpr .r4) (d := 0) (n := KL) (k := KL + 1024 * i) (by omega_using [])
       rwa [BitVec.add_zero] at this
-    rw [Proof.MlKem.bytesAt_frame hk.frame (fun r hr => (hd r hr).sub_left hs) (by omega)]
+    rw [Proof.MlKem.bytesAt_frame hk.frame (fun r hr => (hd r hr).sub_left hs) (by omega_using [hi, fp])]
     exact h.key
   · have hs : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r4 + BitVec.ofNat 64 (KL + 1024 * j)))
-        (reg (σ.gpr .r4) (KL + 1024 * i)) := Offset.sub_base _ (by omega)
+        (reg (σ.gpr .r4) (KL + 1024 * i)) := Offset.sub_base _ (by omega_using [hj])
     exact Proof.MlDsa.Verify.polyIs_frame hk.frame (fun r hr => (hd r hr).sub_left hs) (h.polys j hj)
 
 end
@@ -377,25 +377,25 @@ theorem transform_ok (h : PI KL PB K vals σ i s) (hK : 240 ≤ K) (hi : KL + 10
   have wP : reg (σ.gpr .r4) PB ∈ s.wr := by rw [h.wr, hp.wr]; simp
   have wC : reg (σ.gpr .r5) 1024 ∈ s.wr := by rw [h.wr, hp.wr]; simp
   have hsp : 96 ≤ s.sp.toNat := by rw [h.sp]; have := hp.stk; have := σ.sp.isLt; bv_omega
-  have b96 := h.below_sub (d := 96) (by omega)
+  have b96 := h.below_sub (d := 96) (by omega_using [hK])
   obtain ⟨pre, c1, c2⟩ := nt_pre' (q := KL + 1024 * i) h.r30 h.r31 wP wC hp.d_pc fp fc hi hq31 hsp
     (hp.b_p.sub_left b96) (hp.b_c.sub_left b96) hf.1
-  refine callV VNtt.verified.1 (by have := sdepth_ntt; omega) (ntAs_hg hq31) pre c1 c2 fun s' hk hpo => ?_
+  refine callV VNtt.verified.1 (by have := sdepth_ntt; omega_using [this]) (ntAs_hg hq31) pre c1 c2 fun s' hk hpo => ?_
   have hd : ∀ r ∈ [reg (σ.gpr .r4 + BitVec.ofNat 64 (KL + 1024 * i)) 1024, reg (σ.gpr .r5) 1024] ++
       [below s.sp (sdepth Impl.MlDsa.PPC64LE.VNtt.ntt)], (reg (σ.gpr .r4) (KL + 1024 * i)).Disjoint r := by
     intro r hr
     have sP : Region.Sub (reg (σ.gpr .r4) (KL + 1024 * i)) (reg (σ.gpr .r4) PB) := by
-      have := Offset.sub_base (σ.gpr .r4) (d := 0) (n := KL + 1024 * i) (k := PB) (by omega)
+      have := Offset.sub_base (σ.gpr .r4) (d := 0) (n := KL + 1024 * i) (k := PB) (by omega_using [hi])
       rwa [BitVec.add_zero] at this
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact slot_disj _ (by omega)
+    · exact slot_disj _ (by omega_using [hq31])
     · exact hp.d_pc.sub_left sP
     · exact (hp.b_p.sub_left ((h.below_sub (d := sdepth Impl.MlDsa.PPC64LE.VNtt.ntt)
-        (by have := sdepth_ntt; omega)))).symm.sub_left sP
-  have k := h.keep hk hd (by omega)
+        (by have := sdepth_ntt; omega_using [hK, this])))).symm.sub_left sP
+  have k := h.keep hk hd (by omega_using [hi])
   refine ⟨k.pre, k.r30, k.r31, k.sp, k.rd, k.wr, k.pres, k.key, fun j hj => ?_⟩
-  rcases (by omega : j < i ∨ j = i) with hj | rfl
+  rcases (by omega_using [hj] : j < i ∨ j = i) with hj | rfl
   · exact k.polys j hj
   · have := nt_post' h.r30 hq31 hpo
     rw [hf.2, ← hv] at this
@@ -410,13 +410,13 @@ theorem secret_val (p : Params) (sk : List Byte) {i : Nat} (hi : i < p.ℓ + 2 *
       (secretPiece p i).2.2.2)) = (preparedSecretPolys p sk)[i]! := by
   unfold secretPiece
   split
-  · rcases (by omega : i < p.ℓ ∨ p.ℓ ≤ i) with h | h
+  · rcases (by omega_using [] : i < p.ℓ ∨ p.ℓ ≤ i) with h | h
     · rw [Proof.MlDsa.PreparedKey.secret_s1 p sk h]; rfl
-    · obtain ⟨j, rfl⟩ : ∃ j, i = p.ℓ + j := ⟨i - p.ℓ, by omega⟩
-      rw [Proof.MlDsa.PreparedKey.secret_s2 p sk (by omega)]
+    · obtain ⟨j, rfl⟩ : ∃ j, i = p.ℓ + j := ⟨i - p.ℓ, by omega_using [h]⟩
+      rw [Proof.MlDsa.PreparedKey.secret_s2 p sk (by omega_arith)]
       simp only [Proof.MlDsa.Sign.s2F, Proof.MlDsa.Sign.lenS, secretLen, Nat.mul_add, Nat.add_assoc]
-  · obtain ⟨j, rfl⟩ : ∃ j, i = p.ℓ + p.k + j := ⟨i - p.ℓ - p.k, by omega⟩
-    rw [Proof.MlDsa.PreparedKey.secret_t0 p sk (by omega)]
+  · obtain ⟨j, rfl⟩ : ∃ j, i = p.ℓ + p.k + j := ⟨i - p.ℓ - p.k, by omega_arith⟩
+    rw [Proof.MlDsa.PreparedKey.secret_t0 p sk (by omega_using [hi])]
     simp only [Proof.MlDsa.Sign.t0F, Proof.MlDsa.Sign.lenS, secretLen, Nat.mul_add, Nat.add_assoc,
       Nat.add_sub_cancel_left]
     rfl
@@ -431,7 +431,7 @@ theorem secret_args {p : Params} (hF : Sign.SFacts p) {i : Nat} (hi : i < p.ℓ 
       (secretPiece p i).2.2.2 (p.skLen + 1024 * i) ∧ (secretPiece p i).1 + (secretPiece p i).2.1 ≤ p.skLen := by
   have hk := hF.k; have hl := hF.l; have hsk := hF.sk; have hlens := hF.lens
   have hPB : preparedSecretKeyBytes p = p.skLen + 1024 * (p.ℓ + 2 * p.k) := by
-    show _ + 4 * 256 * _ = _; omega
+    show _ + 4 * 256 * _ = _; omega_using []
   have hab : (p.η, p.η) ∈ bitPackParams ∧ secretLen p = 32 * bitlen (p.η + p.η) ∧ 0 < secretLen p ∧
       secretLen p < 2 ^ 31 ∧ p.η < 2 ^ 31 := by
     refine ⟨?_, by rw [← Nat.two_mul], ?_⟩
@@ -441,14 +441,14 @@ theorem secret_args {p : Params} (hF : Sign.SFacts p) {i : Nat} (hi : i < p.ℓ 
   have hsl : secretLen p = Impl.MlDsa.PPC64LE.Sign.sLen p := rfl
   unfold secretPiece
   split
-  · have hm : secretLen p * (i + 1) ≤ secretLen p * (p.ℓ + p.k) := Nat.mul_le_mul_left _ (by omega)
+  · have hm : secretLen p * (i + 1) ≤ secretLen p * (p.ℓ + p.k) := Nat.mul_le_mul_left _ (by omega_arith)
     rw [Nat.mul_add, Nat.mul_one] at hm
     dsimp only
     refine ⟨⟨?_, ?_, hab.1, hab.2.1, hab.2.2.1, hab.2.2.2.1, hab.2.2.2.2, hab.2.2.2.2, ?_⟩, ?_⟩ <;>
-      (try rw [hsl] at *) <;> omega
+      (try rw [hsl] at *) <;> omega_arith
   · dsimp only
     refine ⟨⟨?_, ?_, by decide, by decide, by decide, by decide, by decide, by decide, ?_⟩, ?_⟩ <;>
-      (try rw [hsl] at *) <;> omega
+      (try rw [hsl] at *) <;> omega_arith
 
 /-! ## The steps -/
 
@@ -465,7 +465,7 @@ theorem slot_keep {P : Addr} {KL i PB : Nat} {sp : Addr} (hi : KL + 1024 * i + 1
   intro r hr
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact slot_disj _ (by omega)
+  · exact slot_disj _ (by omega_using [hi, hf])
   · exact (below0 _ _).symm
 
 /-! ## The setup and the result -/
@@ -499,14 +499,14 @@ theorem copy_ok {KL PB K : Nat} {vals : State → Nat → Poly} {σ : State} (hp
     (hKL : KL % 8 = 0) (h8 : 8 ≤ KL) (hc : KL / 8 < 2 ^ 15) (hPB : KL ≤ PB) :
     WP isa Impl.Gather.PPC64LE.copyWords (movSt KL (f3St σ)) (PI KL PB K vals σ 0) := by
   have fk := hp.f_k; have fpp := hp.f_p
-  have e8 : 8 * (KL / 8) = KL := by omega
+  have e8 : 8 * (KL / 8) = KL := by omega_using [hKL]
   obtain ⟨g3, g9, g5, g30, g31⟩ := movSt_gpr (KL := KL) σ
   have g : ∀ r, r ≠ .r0 → (f3St σ).gpr r = σ.gpr r := fun r h => f3St_gpr σ h
   have sK : Region.Sub (reg (σ.gpr .r4) KL) (reg (σ.gpr .r4) PB) := by
-    have := Offset.sub_base (σ.gpr .r4) (d := 0) (n := KL) (k := PB) (by omega)
+    have := Offset.sub_base (σ.gpr .r4) (d := 0) (n := KL) (k := PB) (by omega_using [hPB])
     rwa [BitVec.add_zero] at this
   refine WP.mono (Gather.PPC64LE.copyWords_wp _ (S := σ.gpr .r3) (D := σ.gpr .r4) (k := KL / 8)
-    ⟨g3, g9, g5, by omega, by omega, ?_, ?_, ?_⟩) fun s' ⟨hm, _, _, _, kp⟩ => ?_
+    ⟨g3, g9, g5, by omega_using [h8], by omega_using [hc], ?_, ?_, ?_⟩) fun s' ⟨hm, _, _, _, kp⟩ => ?_
   · rw [e8]
     show Covers [reg (σ.gpr .r3) KL] (σ.rd ++ σ.wr)
     rw [hp.rd]; exact Covers.of_sub fun r hr => by
@@ -518,7 +518,7 @@ theorem copy_ok {KL PB K : Nat} {vals : State → Nat → Poly} {σ : State} (hp
   · rw [e8]; exact hp.d_kp.sub_right sK
   simp only [RegUpd.mem_write] at hm
   have b144 : Region.Sub (below σ.sp 144) (below σ.sp K) :=
-    below_sub (by omega) (by have := hp.stk; have := σ.sp.isLt; omega)
+    below_sub (by omega_using [hK]) (by have := hp.stk; have := σ.sp.isLt; omega_arith)
   refine ⟨hp, ?_, ?_, ?_, kp.rd, kp.wr, fun r hr a b => ?_, ?_, fun j hj => absurd hj (Nat.not_lt_zero _)⟩
   · rw [kp.gpr _ (by decide), g30]
   · rw [kp.gpr _ (by decide), g31]
@@ -532,12 +532,12 @@ theorem copy_ok {KL PB K : Nat} {vals : State → Nat → Poly} {σ : State} (hp
     have hl : (Spec.Aes.bytesAt (f3St σ).mem (σ.gpr .r3) (8 * (KL / 8))).length = KL := by
       simp [Spec.Aes.bytesAt, e8]
     have := bytesAt_writeBytes_self (f3St σ).mem (σ.gpr .r4) (Spec.Aes.bytesAt (f3St σ).mem (σ.gpr .r3) (8 * (KL / 8)))
-      (by rw [hl]; omega)
+      (by rw [hl]; omega_using [hc])
     rw [hl] at this
     rw [this, e8]
-    exact Proof.MlKem.bytesAt_frame (f3St_mem σ (by have := hp.stk; omega)) (fun r hr => by
+    exact Proof.MlKem.bytesAt_frame (f3St_mem σ (by have := hp.stk; omega_using [hK, this])) (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact (hp.b_k.sub_left b144).symm) (by omega)
+      exact (hp.b_k.sub_left b144).symm) (by omega_using [hc])
 
 theorem secret_final {p : Params} {PB K : Nat} {σ s : State}
     (h : PI p.skLen PB K (svals p) σ (p.ℓ + 2 * p.k) s) :
@@ -545,7 +545,7 @@ theorem secret_final {p : Params} {PB K : Nat} {σ s : State}
   ⟨h.key, fun i hi => by
     rw [h.key]
     have := h.polys i hi
-    rw [show p.skLen + 1024 * i = p.skLen + 4 * n * i by show _ = _ + 4 * 256 * i; omega] at this
+    rw [show p.skLen + 1024 * i = p.skLen + 4 * n * i by show _ = _ + 4 * 256 * i; omega_using []] at this
     exact Proof.MlDsa.polyStored_iff.mpr this⟩
 
 theorem public_final {p : Params} {PB K : Nat} {σ s : State}
@@ -554,7 +554,7 @@ theorem public_final {p : Params} {PB K : Nat} {σ s : State}
   ⟨h.key, fun i hi => by
     rw [h.key]
     have := h.polys i hi
-    rw [show p.pkLen + 1024 * i = p.pkLen + 4 * n * i by show _ = _ + 4 * 256 * i; omega] at this
+    rw [show p.pkLen + 1024 * i = p.pkLen + 4 * n * i by show _ = _ + 4 * 256 * i; omega_using []] at this
     exact Proof.MlDsa.polyStored_iff.mpr this⟩
 
 /-! ## Both runs -/
@@ -581,7 +581,7 @@ theorem PI.nt {σ s : State} {i : Nat} (h : PI KL PB K vals σ i s) (hK : 240 �
   have wP : reg (σ.gpr .r4) PB ∈ s.wr := by rw [h.wr, hp.wr]; simp
   have wC : reg (σ.gpr .r5) 1024 ∈ s.wr := by rw [h.wr, hp.wr]; simp
   have hsp : 96 ≤ s.sp.toNat := by rw [h.sp]; have := hp.stk; have := σ.sp.isLt; bv_omega
-  have b96 := h.below_sub (d := 96) (by omega)
+  have b96 := h.below_sub (d := 96) (by omega_using [hK])
   exact nt_pre' h.r30 h.r31 wP wC hp.d_pc fp fc hi hq31 hsp (hp.b_p.sub_left b96) (hp.b_c.sub_left b96) hr
 
 theorem transform_piece (hK : 240 ≤ K) {i : Nat} (hi : KL + 1024 * i + 1024 ≤ PB) (hq31 : KL + 1024 * i < 2 ^ 31) :
@@ -625,7 +625,7 @@ theorem body_piece (hK : 240 ≤ K) (hKL : KL % 8 = 0) (h8 : 8 ≤ KL) (hc : KL 
     KeyGen.Piece (PPre KL PB K) PPub (fun σ s => s = f3St σ) (fun σ s => PI KL PB K vals σ n s)
       (.seq (.block (movs KL)) (.seq Impl.Gather.PPC64LE.copyWords (seqR f 0 n))) := by
   have hl := KeyGen.Piece.seqR (Pre := PPre KL PB K) (Pub := PPub) (I := fun i σ s => PI KL PB K vals σ i s) n 0
-    fun k _ hk => hf k (by omega)
+    fun k _ hk => hf k (by omega_using [hk])
   rw [Nat.zero_add] at hl
   exact (movs_piece hc).seq ((copy_piece hK hKL h8 hc hPB).seq hl)
 
@@ -636,8 +636,8 @@ theorem frames_wp {n : Nat} {body : Prog isa}
     WP isa (frames3 body) σ fun s' => PPC64LE.target.abiPreserved σ s' ∧
       ∃ s, PI KL PB K vals σ n s ∧ s.mem = s'.mem := by
   have hs := hp.stk
-  have b144 : Region.Sub (below σ.sp 144) (below σ.sp K) := below_sub (by omega) (by have := σ.sp.isLt; omega)
-  refine frames3_wp (R := fun m => ∃ s, PI KL PB K vals σ n s ∧ s.mem = m) (by omega) (fun X hX => ?_) hn
+  have b144 : Region.Sub (below σ.sp 144) (below σ.sp K) := below_sub (by omega_using [hK]) (by have := σ.sp.isLt; omega_using [hs])
+  refine frames3_wp (R := fun m => ∃ s, PI KL PB K vals σ n s ∧ s.mem = m) (by omega_using [hK, hs]) (fun X hX => ?_) hn
     (WP.mono (hP.ok σ _ hp rfl) fun s' h => ⟨h.pres, s', h, rfl⟩)
   rw [hp.wr] at hX
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
@@ -656,8 +656,8 @@ theorem frames_tr {n : Nat} {body : Prog isa}
     · exact h.1
     · exact h.2.1
   have hs := hp.stk
-  have b144 : Region.Sub (below x.sp 144) (below x.sp K) := below_sub (by omega) (by have := x.sp.isLt; omega)
-  refine ⟨by omega, fun X hX => ?_, _, hP.ok x _ hp rfl⟩
+  have b144 : Region.Sub (below x.sp 144) (below x.sp K) := below_sub (by omega_using [hK]) (by have := x.sp.isLt; omega_using [hs])
+  refine ⟨by omega_using [hK, hs], fun X hX => ?_, _, hP.ok x _ hp rfl⟩
   rw [hp.wr] at hX
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hX
   rcases hX with rfl | rfl
@@ -680,7 +680,7 @@ theorem secret_unpack (hF : Sign.SFacts p) {i : Nat} (hi : i < p.ℓ + 2 * p.k) 
   obtain ⟨m, hle⟩ := secret_args hF hi
   have hlens := hF.lens; have hk := hF.k; have hl := hF.l
   have hPB : preparedSecretKeyBytes p = p.skLen + 1024 * (p.ℓ + 2 * p.k) := by
-    show _ + 4 * 256 * _ = _; omega
+    show _ + 4 * 256 * _ = _; omega_using []
   refine ⟨fun σ s _ h => ?_, ?_⟩
   · have hp := h.pre
     have fp := hp.f_p
@@ -688,7 +688,7 @@ theorem secret_unpack (hF : Sign.SFacts p) {i : Nat} (hi : i < p.ℓ + 2 * p.k) 
     obtain ⟨pre, c1, c2⟩ := bu_pre' h.r30 wP fp m
     refine callV Pack.bitUnpack_verified.1 (by rw [sdepth_bitUnpack]; decide) m.hg pre c1 c2 fun s₁ hk hpo => ?_
     rw [sdepth_bitUnpack] at hk
-    refine ⟨h.keep hk (slot_keep (by omega) fp) (by omega), _, bu_post' h.r30 m hpo, ?_⟩
+    refine ⟨h.keep hk (slot_keep (by omega_using [hi, hPB]) fp) (by omega_using [hi, hPB]), _, bu_post' h.r30 m hpo, ?_⟩
     rw [← Proof.MlKem.bytesAt_slice _ _ hle, h.key]
     exact (secret_val p _ hi).symm
   · refine callV_tr Pack.bitUnpack_verified.1 Pack.bitUnpack_verified.2.1 m.hg fun x y hxy => ?_
@@ -706,8 +706,8 @@ theorem secret_piece (hF : Sign.SFacts p) (hK : 240 ≤ K) {i : Nat} (hi : i < p
       (fun σ s => PI p.skLen (preparedSecretKeyBytes p) K (svals p) σ (i + 1) s) (secretPoly p i) := by
   have hlens := hF.lens; have hk := hF.k; have hl := hF.l
   have hPB : preparedSecretKeyBytes p = p.skLen + 1024 * (p.ℓ + 2 * p.k) := by
-    show _ + 4 * 256 * _ = _; omega
-  exact (secret_unpack hF hi).seq (transform_piece hK (by omega) (by omega))
+    show _ + 4 * 256 * _ = _; omega_using []
+  exact (secret_unpack hF hi).seq (transform_piece hK (by omega_using [hi, hPB]) (by omega_using [hi, hlens, hk, hl]))
 
 theorem public_unpack (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {i : Nat} (hi : i < p.k) :
     KeyGen.Piece (PPre p.pkLen (preparedPublicKeyBytes p) K) PPub
@@ -716,8 +716,8 @@ theorem public_unpack (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {i : N
       (callAt "vg_mldsa_unpack_t1" Impl.MlDsa.PPC64LE.Pack.unpackT1 (t1As (32 + 320 * i) (p.pkLen + 1024 * i))) := by
   have hpk : p.pkLen = 32 + 320 * p.k ∧ p.k ≤ 8 := by rcases hp3 with rfl | rfl | rfl <;> decide
   have hPB : preparedPublicKeyBytes p = p.pkLen + 1024 * p.k := by
-    show _ + 4 * 256 * _ = _; omega
-  have m : T1Args (preparedPublicKeyBytes p) (32 + 320 * i) (p.pkLen + 1024 * i) := ⟨by omega, by omega, by omega⟩
+    show _ + 4 * 256 * _ = _; omega_using []
+  have m : T1Args (preparedPublicKeyBytes p) (32 + 320 * i) (p.pkLen + 1024 * i) := ⟨by omega_using [hi, hpk], by omega_using [hi, hPB], by omega_using [hi, hpk]⟩
   refine ⟨fun σ s _ h => ?_, ?_⟩
   · have hp := h.pre
     have fp := hp.f_p
@@ -725,8 +725,8 @@ theorem public_unpack (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {i : N
     obtain ⟨pre, c1, c2⟩ := t1_pre' h.r30 wP fp m
     refine callV Pack.unpackT1_verified.1 (by rw [sdepth_unpackT1]; decide) m.hg pre c1 c2 fun s₁ hk hpo => ?_
     rw [sdepth_unpackT1] at hk
-    refine ⟨h.keep hk (slot_keep (by omega) fp) (by omega), _, t1_post' h.r30 m hpo, ?_⟩
-    rw [← Proof.MlKem.bytesAt_slice _ _ (show 32 + 320 * i + 320 ≤ p.pkLen by omega), h.key]
+    refine ⟨h.keep hk (slot_keep (by omega_using [hi, hPB]) fp) (by omega_using [hi, hPB]), _, t1_post' h.r30 m hpo, ?_⟩
+    rw [← Proof.MlKem.bytesAt_slice _ _ (show 32 + 320 * i + 320 ≤ p.pkLen by omega_using [hi, hpk]), h.key]
     exact (public_val p _ hi).symm
   · refine callV_tr Pack.unpackT1_verified.1 Pack.unpackT1_verified.2.1 m.hg fun x y hxy => ?_
     obtain ⟨σ₁, σ₂, -, -, ⟨e0, -, e4, -⟩, h₁, h₂⟩ := hxy
@@ -743,8 +743,8 @@ theorem public_piece (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (hK : 2
       (fun σ s => PI p.pkLen (preparedPublicKeyBytes p) K (pvals p) σ (i + 1) s) (publicPoly p i) := by
   have hpk : p.pkLen = 32 + 320 * p.k ∧ p.k ≤ 8 := by rcases hp3 with rfl | rfl | rfl <;> decide
   have hPB : preparedPublicKeyBytes p = p.pkLen + 1024 * p.k := by
-    show _ + 4 * 256 * _ = _; omega
-  exact (public_unpack hp3 hi).seq (transform_piece hK (by omega) (by omega))
+    show _ + 4 * 256 * _ = _; omega_using []
+  exact (public_unpack hp3 hi).seq (transform_piece hK (by omega_using [hi, hPB]) (by omega_using [hi, hpk]))
 
 end
 
@@ -802,14 +802,14 @@ theorem secret_body : KeyGen.Piece (PPre p.skLen (preparedSecretKeyBytes p) 240)
     (.seq (.block (movs p.skLen)) (.seq Impl.Gather.PPC64LE.copyWords (seqR (secretPoly p) 0 (p.ℓ + 2 * p.k)))) := by
   have hF := Sign.sfacts hp3
   have h : p.skLen % 8 = 0 ∧ 8 ≤ p.skLen ∧ p.skLen / 8 < 2 ^ 15 := by rcases hp3 with rfl | rfl | rfl <;> decide
-  exact body_piece (by decide) h.1 h.2.1 h.2.2 (by simp only [preparedSecretKeyBytes]; omega)
+  exact body_piece (by decide) h.1 h.2.1 h.2.2 (by simp only [preparedSecretKeyBytes]; omega_using [])
     fun i hi => secret_piece hF (by decide) hi
 
 theorem public_body : KeyGen.Piece (PPre p.pkLen (preparedPublicKeyBytes p) 240) PPub (fun σ s => s = f3St σ)
     (fun σ s => PI p.pkLen (preparedPublicKeyBytes p) 240 (pvals p) σ p.k s)
     (.seq (.block (movs p.pkLen)) (.seq Impl.Gather.PPC64LE.copyWords (seqR (publicPoly p) 0 p.k))) := by
   have h : p.pkLen % 8 = 0 ∧ 8 ≤ p.pkLen ∧ p.pkLen / 8 < 2 ^ 15 := by rcases hp3 with rfl | rfl | rfl <;> decide
-  exact body_piece (by decide) h.1 h.2.1 h.2.2 (by simp only [preparedPublicKeyBytes]; omega)
+  exact body_piece (by decide) h.1 h.2.1 h.2.2 (by simp only [preparedPublicKeyBytes]; omega_using [])
     fun i hi => public_piece hp3 (by decide) hi
 
 theorem secret_sat : (prepareSecretKeyContract p PPC64LE.abi 240).pre (prepSat p.skLen (p.ℓ + 2 * p.k)) := by
@@ -824,13 +824,13 @@ theorem prepareSecret_verified :
     Verified PPC64LE.target (prepareSecret p) (prepareSecretKeyContract p PPC64LE.abi 240) := by
   have hn := sdepth_body (KL := p.skLen) (sdepth_secretPoly p) (p.ℓ + 2 * p.k)
   refine ⟨fun σ hs => ?_, fun x y tx ty x' y' hx hy hpub ex ey => ?_, ?_⟩
-  · refine WP.mono (frames_wp (secret_body hp3) (by decide) (by omega) (secret_pre hs))
+  · refine WP.mono (frames_wp (secret_body hp3) (by decide) (by omega_using [hn]) (secret_pre hs))
       fun s' ⟨ha, s, h, hm⟩ => ⟨ha, ?_⟩
     sig_post [prepareSecretKeyContract, prepareSecretKeySig, PPC64LE.abi, PPC64LE.argRegs]
     rw [← hm]
     exact secret_final h
   · sig_pub [prepareSecretKeyContract, prepareSecretKeySig, PPC64LE.abi, PPC64LE.argRegs] at hpub
-    exact (frames_tr (secret_body hp3) (by decide) (by omega) _ _ _ _ _ _
+    exact (frames_tr (secret_body hp3) (by decide) (by omega_using [hn]) _ _ _ _ _ _
       ⟨secret_pre hx, secret_pre hy, hpub.1, hpub.2.1, hpub.2.2.1, hpub.2.2.2⟩ ex ey).1
   · exact ⟨_, secret_sat hp3⟩
 
@@ -838,13 +838,13 @@ theorem preparePublic_verified :
     Verified PPC64LE.target (preparePublic p) (preparePublicKeyContract p PPC64LE.abi 240) := by
   have hn := sdepth_body (KL := p.pkLen) (sdepth_publicPoly p) p.k
   refine ⟨fun σ hs => ?_, fun x y tx ty x' y' hx hy hpub ex ey => ?_, ?_⟩
-  · refine WP.mono (frames_wp (public_body hp3) (by decide) (by omega) (public_pre hs))
+  · refine WP.mono (frames_wp (public_body hp3) (by decide) (by omega_using [hn]) (public_pre hs))
       fun s' ⟨ha, s, h, hm⟩ => ⟨ha, ?_⟩
     sig_post [preparePublicKeyContract, preparePublicKeySig, PPC64LE.abi, PPC64LE.argRegs]
     rw [← hm]
     exact public_final h
   · sig_pub [preparePublicKeyContract, preparePublicKeySig, PPC64LE.abi, PPC64LE.argRegs] at hpub
-    exact (frames_tr (public_body hp3) (by decide) (by omega) _ _ _ _ _ _
+    exact (frames_tr (public_body hp3) (by decide) (by omega_using [hn]) _ _ _ _ _ _
       ⟨public_pre hx, public_pre hy, hpub.1, hpub.2.1, hpub.2.2.1, hpub.2.2.2⟩ ex ey).1
   · exact ⟨_, public_sat hp3⟩
 

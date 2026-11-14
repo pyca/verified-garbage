@@ -88,7 +88,7 @@ theorem pass_vp (hg : Geo L scr) {o d n : Nat} (hn : 0 < n) (hd : 0 < d) (ho : o
   have wD : InRegions s.wr (sa scr (o + j)) 1 := hg.wr hc.st (by omega_arith)
   have stj : s.mem (sa scr (o + d + j)) = m₀ (sa scr (o + d + j)) := by
     by_cases e : d + j < n
-    · rw [show o + d + j = o + (d + j) by omega, hp.sel _ e, ite_eq_right (fun h => by omega)]
+    · rw [show o + d + j = o + (d + j) by omega_using [], hp.sel _ e, ite_eq_right (fun h => by omega)]
     · exact hp.fr _ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Geo.sep (scr := scr) (o := o + d + j) (n := 1) (by omega_arith) (by omega_arith) (by omega_arith) _

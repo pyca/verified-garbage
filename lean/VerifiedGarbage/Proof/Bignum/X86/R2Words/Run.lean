@@ -101,10 +101,10 @@ theorem ptr_eq {s : State} {W : Addr} {r : Reg} {x : Nat} (hp : PtrAt s W r x) :
 theorem addr_off (W : Addr) {x d : Nat} (h : W.toNat + x + d < 2 ^ 32) :
     addr (BitVec.ofNat 32 (W.toNat + x)) d = off W (x + d) := by
   have := W.isLt
-  rw [addr_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega)]
+  rw [addr_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [h])]
   apply BitVec.eq_of_toNat_eq
   simp only [off, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  repeat rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  repeat rw [Nat.mod_eq_of_lt (by omega_arith)]
+  omega_using []
 
 end VG.Proof.Bignum.X86.R2Words

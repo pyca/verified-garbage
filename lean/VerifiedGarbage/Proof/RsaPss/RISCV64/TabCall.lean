@@ -115,8 +115,8 @@ theorem TabM.wA {k : Nat} (hk : k < 5) : (p + BitVec.ofNat 64 (8 * k)).toNat % 8
   have h₁ := T.pA
   have h₂ := T.pw
   have e : (p + BitVec.ofNat 64 (8 * k)).toNat = p.toNat + 8 * k := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  rw [e]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hk, h₂]
+  rw [e]; omega_using [h₁]
 
 /-- The table's word `k` into `d`, through our stack argument `j`. -/
 theorem wp_twordM {t : State} (h : Base S vf s t) {k : Nat} (hk : k < 5) {d : Reg} {is : List Instr}
@@ -132,7 +132,7 @@ theorem wp_twordM {t : State} (h : Base S vf s t) {k : Nat} (hk : k < 5) {d : Re
       (T.wA hk) (by rw [o₂.rd, o₁.rd, h.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₃ o₃ e₃ => kk u₃ ((o₁.trans (o₂.trans o₃)).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr) (by
-        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) (by omega))
+        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) (by omega_using [hk]))
 
 /-- The call of the table's function `k`, among `ts`, which reaches `n`, as
 the call of `n` from the state the load of its address leaves. -/
@@ -209,7 +209,7 @@ theorem compM_ok (hal : (S s).toNat % 8 = 0) {t : State} (h : Base S vf s t) (sy
   obtain ⟨_, hSt, _, _, hRs⟩ := offs
   have hn : n < 2 ^ 64 := by
     have : n ≤ H.B * n := Nat.le_mul_of_pos_left n (Nat.two_pow_pos _)
-    unfold oRsa at hon; omega
+    unfold oRsa at hon; omega_using [hon, this]
   refine tcallM_ok T h sy (k := 3) (by decide) T.ok.c (by rw [show 8 * 3 = 24 from rfl]; exact T.mem.2.2.2.1)
     fun t' oo sy' => WP.mono_syms ?_ fun t'' q sy'' => ⟨q, sy''.trans (sy'.trans sy)⟩
   have g0 : t'.gpr .a0 = off (S s) oSt := by rw [oo.get .a0]; exact h0
@@ -223,18 +223,18 @@ theorem compM_ok (hal : (S s).toNat % 8 = 0) {t : State} (h : Base S vf s t) (sy
   have c3 : t'.callEntry.gpr .a3 = off (S s) oCs := (State.callEntry_gpr _ (by decide)).trans g3
   have e2 : (BitVec.ofNat 64 n).toNat = n := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
   have hwc0 : Covers [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩] (Proof.RsaOaep.RISCV64.fr s :: s.wr) :=
-    Covers.pair (sc_cov P (by omega)) (sc_cov P (by omega))
+    Covers.pair (sc_cov P (by omega_using [hN, hSt, hRs])) (sc_cov P (by omega_using [ho, hon, hcs]))
   have hwc : Covers [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩] t'.wr := by rw [b'.wr]; exact hwc0
   refine WP.call (k := compK M.md M.cs) M.comp (rd := [⟨off (S s) o, H.B * n⟩])
     (wr := [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩]) ?_ ?_ hwc ?_ M.compNF
   · simp only [compK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, c0, c1, c2, c3, e2]
-    refine ⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega), sdis (.inr (by omega)) hon (by omega),
-      sdis (.inr (by omega)) hon (by omega), ?_⟩
+    refine ⟨trivial, trivial, sdis (.inl (by omega_using [hN, hY, hSt])) (by omega_using [hN, hSt, hRs]) (by omega_using [ho, hon, hcs]), sdis (.inr (by omega_using [ho, hN, hY, hSt])) hon (by omega_using [hN, hSt, hRs]),
+      sdis (.inr (by omega_using [ho, hcs])) hon (by omega_using [ho, hon, hcs]), ?_⟩
     have e : (off (S s) oCs).toNat = (S s).toNat + oCs := by
       have := P.wS
-      simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+      simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [ho, hon, this]
     show (off (S s) oCs).toNat % 8 = 0
-    rw [e]; omega
+    rw [e]; omega_using [hal, hY]
   · rw [b'.rd, b'.wr]
     exact Covers.append_left (Covers.right (sc_cov P hon)) (Covers.right hwc0)
   · intro s' hrd hwr hsp hf hcs' _ hpost
@@ -244,10 +244,10 @@ theorem compM_ok (hal : (S s).toNat % 8 = 0) {t : State} (h : Base S vf s t) (sy
     refine ⟨b'.call P (R := [⟨off (S s) oSt, H.N⟩, ⟨off (S s) oCs, M.cs⟩]) (fun r hr' => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         rcases hr' with rfl | rfl
-        · exact sc_in (by omega)
-        · exact sc_in (by omega)) hrd hwr hsp hf' hcs',
+        · exact sc_in (by omega_using [hN, hSt, hRs])
+        · exact sc_in (by omega_using [ho, hon, hcs])) hrd hwr hsp hf' hcs',
       fun q hq => (hcs' q hq).trans (oo.gpr q (not_t1 hq)),
-      (Same.of_mem oo.mem _).trans (same_of_frame P b'.sp (rgs := [(oSt, H.N), (oCs, M.cs)]) (by simp; omega) hf'),
+      (Same.of_mem oo.mem _).trans (same_of_frame P b'.sp (rgs := [(oSt, H.N), (oCs, M.cs)]) (by simp; omega_using [ho, hon, hN, hcs, hY, hSt]) hf'),
       by rw [← oo.mem]; exact hpost⟩
 
 /-- The digest through the table, of the hash value at `S + oSt` to
@@ -267,22 +267,22 @@ theorem digM_ok {t : State} (h : Base S vf s t) (sy : t.syms = s.syms)
   have b' := h.only P oo
   have c0 : t'.callEntry.gpr .a0 = off (S s) oSt := (State.callEntry_gpr _ (by decide)).trans g0
   have c1 : t'.callEntry.gpr .a1 = off (S s) oDig := (State.callEntry_gpr _ (by decide)).trans g1
-  have hwc0 : Covers [⟨off (S s) oDig, H.N⟩] (Proof.RsaOaep.RISCV64.fr s :: s.wr) := sc_cov P (by omega)
+  have hwc0 : Covers [⟨off (S s) oDig, H.N⟩] (Proof.RsaOaep.RISCV64.fr s :: s.wr) := sc_cov P (by omega_using [hN, hDg, hRs])
   have hwc : Covers [⟨off (S s) oDig, H.N⟩] t'.wr := by rw [b'.wr]; exact hwc0
   refine WP.call (k := digestK M.md) (MdHashTable.RISCV64.digest_ok M.outOk) (rd := [⟨off (S s) oSt, H.N⟩])
     (wr := [⟨off (S s) oDig, H.N⟩]) ?_ ?_ hwc ?_ rfl
   · simp only [digestK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, c0, c1]
-    exact ⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega)⟩
+    exact ⟨trivial, trivial, sdis (.inl (by omega_using [hN, hSt, hDg])) (by omega_using [hN, hSt, hRs]) (by omega_using [hN, hDg, hRs])⟩
   · rw [b'.rd, b'.wr]
-    exact Covers.append_left (Covers.right (sc_cov P (by omega))) (Covers.right hwc0)
+    exact Covers.append_left (Covers.right (sc_cov P (by omega_using [hN, hSt, hRs]))) (Covers.right hwc0)
   · intro s' hrd hwr hsp hf hcs' _ hpost
     simp only [digestK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c0, c1] at hpost
     have hf' : Frame ([⟨off (S s) oDig, H.N⟩] ++ [below t'.sp 208]) t'.mem s'.mem :=
       hf.mono fun r hr => List.mem_append_left _ hr
     refine ⟨b'.call P (R := [⟨off (S s) oDig, H.N⟩]) (fun r hr' => by
-        rw [List.mem_singleton.mp hr']; exact sc_in (by omega)) hrd hwr hsp hf' hcs',
+        rw [List.mem_singleton.mp hr']; exact sc_in (by omega_using [hN, hDg, hRs])) hrd hwr hsp hf' hcs',
       fun q hq => (hcs' q hq).trans (oo.gpr q (not_t1 hq)),
-      (Same.of_mem oo.mem _).trans (same_of_frame P b'.sp (rgs := [(oDig, H.N)]) (by simp; omega) hf'),
+      (Same.of_mem oo.mem _).trans (same_of_frame P b'.sp (rgs := [(oDig, H.N)]) (by simp; omega_using [hN, hDg, hRs]) hf'),
       by rw [hpost, oo.mem]⟩
 
 end

@@ -171,15 +171,15 @@ theorem openToResult_local {m₁ m₂ : Mem} {ctx rd nonce nl aad al src len tag
   have := Nat.mod_le al.toNat (2 ^ pb)
   have := Nat.mod_le len.toNat (2 ^ pb)
   have := Nat.mod_le tl.toNat (2 ^ pb)
-  rw [ctxCiph_congr (le15 hr) fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr (le15 hr) fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (p := nonce) (n := (nl.setWidth pb).toNat) fun i hi => hn i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := aad) (n := (al.setWidth pb).toNat) fun i hi => ha i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := src) (n := (len.setWidth pb).toNat) fun i hi => hs i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := tag) (n := (tl.setWidth pb).toNat) fun i hi => ht i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
 
 theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.openToPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs Proof.Gcm.openToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -221,7 +221,7 @@ theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.o
     (openToRoundsPost pb) _ m₂ m' r
   dsimp only [Curry.apply, openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
-  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
     (agree_of hb.2.2.2.2.2)]
   exact h hr
 
@@ -266,7 +266,7 @@ theorem openToLeak_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.openToPrecom
   dsimp only [Curry.apply, openToLeak, ArgWord.ofRaw, IntTy.bits]
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨ (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
       (agree_of hb.2.2.2.2.2)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]
@@ -325,7 +325,7 @@ theorem openToRoundsPostBase_local : ∀ vs m₁ m₂ m' r, vs.length = (openToS
     (openToRoundsPost pb) _ m₂ m' r
   dsimp only [Curry.apply, openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
-  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
     (agree_of hb.2.2.2.2.2)]
   exact h hr
 
@@ -370,7 +370,7 @@ theorem openToLeakBase_local : ∀ vs m₁ m₂, vs.length = (openToSig.words pb
   dsimp only [Curry.apply, openToLeak, ArgWord.ofRaw, IntTy.bits]
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨ (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
+    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
       (agree_of hb.2.2.2.2.2)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]
@@ -400,7 +400,7 @@ theorem openToWithPowersPre_local : ∀ vs m₁ m₂, vs.length = (openToWithPow
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb,
     ArgWord.addr] (openToWithPowersPre pb) _ m₂
   dsimp only [Curry.apply, openToWithPowersPre, openToPre, ArgWord.ofRaw] at h ⊢
-  rw [ctxH_congr fun i hi => hc i (by omega)]
+  rw [ctxH_congr fun i hi => hc i (by omega_using [hi])]
   exact ⟨h.1, powers8Repr_congr hp h.2⟩
 
 theorem openToWithPowersPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openToWithPowersSig.words pb).length →
@@ -426,7 +426,7 @@ theorem openToWithPowersPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openToW
     ArgWord.addr] (openToWithPowersRoundsPost pb) _ m₂ m' r
   dsimp only [Curry.apply, openToWithPowersRoundsPost, openToRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
-  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1) (agree_of hb.2.2.1)
+  rw [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1) (agree_of hb.2.2.1)
     (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.2.1)]
   exact h hr
 
@@ -454,7 +454,7 @@ theorem openToWithPowersLeak_local : ∀ vs m₁ m₂, vs.length = (openToWithPo
   dsimp only [Curry.apply, openToWithPowersLeak, openToLeak, ArgWord.ofRaw, IntTy.bits]
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨ (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1)
+    simp only [openToResult_local pb hr (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1)
       (agree_of hb.2.2.1) (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.2.1)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]

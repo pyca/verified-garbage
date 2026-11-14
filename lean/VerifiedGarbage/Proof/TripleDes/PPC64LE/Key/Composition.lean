@@ -55,7 +55,7 @@ theorem componentStep_ok (origin s : State) (c : Nat) (hc : c < 3)
     intro j hj
     rw [hs.wr, hs.reg .r5 (by decide), Offset.add_ofNat_add_ofNat]
     exact hp.writes _ (by omega_using [hc, hj])
-  apply WP.mono (component_ok s (8 * c) c hc (by omega) read write)
+  apply WP.mono (component_ok s (8 * c) c hc (by omega_using [hc]) read write)
   intro t ht
   have frame : Frame [⟨origin.gpr .r5 + BitVec.ofNat 64 (128 * c), 128⟩] s.mem t.mem := by
     have hf := ht.frame

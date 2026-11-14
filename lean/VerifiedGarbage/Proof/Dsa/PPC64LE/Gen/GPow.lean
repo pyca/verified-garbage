@@ -40,12 +40,12 @@ theorem le_ofs_off {S x : Addr} {a Z : Nat} (ha0 : a < 2 ^ 64) (ha : a + Z ≤ 2
     (h : (x - S).toNat < a ∨ a + Z ≤ (x - S).toNat) : Z ≤ VG.Proof.Bignum.ofs (off S a) x := by
   have hlt := (x - S).isLt
   simp only [VG.Proof.Bignum.ofs, off]
-  rw [Offset.toNat_sub_add x S (by omega)]
+  rw [Offset.toNat_sub_add x S (by omega_using [ha0])]
   rcases h with h | h
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
-  · rw [show 2 ^ 64 - a + (x - S).toNat = (x - S).toNat - a + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [ha]
+  · rw [show 2 ^ 64 - a + (x - S).toNat = (x - S).toNat - a + 2 ^ 64 by omega_using [h], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [h]
 
 /-- The P space's base. -/
 abbrev GP.pS (G : GP) : Addr := off G.scr pB
@@ -61,15 +61,15 @@ variable {G : GP} {STK : Nat} {σ : State} {V : Nat → BitVec 64} {LS : List Na
 theorem GI.pBig (h : GI G STK σ V LS s) : pB + pZ G.pLen ≤ G.scrLen * 8 ∧ pB ≤ kB G.pLen := by
   have := h.wBig; have := h.kBig
   have : pB ≤ kB G.pLen := by rcases h.lens3 with e | e | e <;> rw [e] <;> decide
-  exact ⟨by simp only [pZ]; omega, this⟩
+  exact ⟨by simp only [pZ]; omega_arith, this⟩
 
 /-- A range of `scratch` as a working space. -/
 theorem GI.scrAt (h : GI G STK σ V LS s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) (hn : 0 < n) : Scr s (off G.scr o) n := by
   have := h.scrFit
-  refine ⟨⟨G.scr, o, G.scrLen * 8, by rw [h.wr, h.pre.wr, h.hG]; simp, rfl, ho, by omega⟩, ?_⟩
+  refine ⟨⟨G.scr, o, G.scrLen * 8, by rw [h.wr, h.pre.wr, h.hG]; simp, rfl, ho, by omega_using [this]⟩, ?_⟩
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show o < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show o < 2 ^ 64 by omega_using [ho, hn, this]), Nat.mod_eq_of_lt (by omega_using [ho, hn, this])]
+  omega_using [ho, this]
 
 /-- The bytes of `scratch` at `a`, below the P space, as a source of a load into it. -/
 theorem GI.srcBelow (h : GI G STK σ V LS s) {a n : Nat} (ha : a + n ≤ pB) :
@@ -79,14 +79,14 @@ theorem GI.srcBelow (h : GI G STK σ V LS s) {a n : Nat} (ha : a + n ≤ pB) :
   have fit := h.scrFit
   refine ⟨fun i hi => ?_, fun i hi x hx e => ?_⟩
   · rw [show off (off G.scr a) i = G.sa (a + i) from G.sa_add a i]
-    exact h.inRdWr (by omega)
+    exact h.inRdWr (by omega_using [ha, pb, hi])
   · subst e
     have d : (off (off G.scr a) i - G.scr).toNat = a + i := by
       rw [show off (off G.scr a) i = G.scr + BitVec.ofNat 64 (a + i) from G.sa_add a i, Offset.add_sub_cancel_left,
-        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ha, pb, fit, hi])]
     have : pZ G.pLen ≤ VG.Proof.Bignum.ofs G.pS (off (off G.scr a) i) :=
-      le_ofs_off (S := G.scr) (a := pB) (by decide) (by omega) (.inl (by omega))
-    omega
+      le_ofs_off (S := G.scr) (a := pB) (by decide) (by omega_using [pb, fit]) (.inl (by omega_using [ha, hi, d]))
+    omega_using [hx, this]
 
 end
 
@@ -96,10 +96,10 @@ theorem src_apart {G : GP} {H : Addr} {n : Nat} (hd : Region.Disjoint ⟨H, n⟩
     ∀ i < n, ∀ x, VG.Proof.Bignum.ofs G.pS x < pZ G.pLen → off H i ≠ x := by
   intro i hi x hx e
   subst e
-  have := past_of_disjoint' hd (a := off H i) (Offset.contains_base _ (show i + 1 ≤ n by omega) (by omega))
+  have := past_of_disjoint' hd (a := off H i) (Offset.contains_base _ (show i + 1 ≤ n by omega_using [hi]) (by omega_using [hfit, hi]))
   have : pZ G.pLen ≤ VG.Proof.Bignum.ofs G.pS (off H i) :=
-    le_ofs_off (S := G.scr) (a := pB) (by decide) (by omega) (.inr (by omega))
-  omega
+    le_ofs_off (S := G.scr) (a := pB) (by decide) (by omega_using [hp, this]) (.inr (by omega_using [hp, this]))
+  omega_using [hx, this]
 
 section
 variable {G : GP} {c : Cfg} {X : State → Prop}
@@ -111,14 +111,14 @@ theorem SS.of_pspace {σ s t : State} {ws : List Reg} (h : SS G 176 σ c s) (k :
   have ⟨pb, pk⟩ := h.gi.pBig
   have hE := h.gi.hEnd_le
   have f0 : Frame [G.rs pB (pZ G.pLen)] s.mem t.mem :=
-    frame_of_outside (L := pZ G.pLen) (o.mono (Nat.zero_le _) (by omega))
+    frame_of_outside (L := pZ G.pLen) (o.mono (Nat.zero_le _) (by omega_using [hn]))
   have f : Frame (G.rss [(pB, pZ G.pLen)] ++ [rBelow σ 176]) s.mem t.mem :=
     f0.mono fun r hr => List.mem_append_left _ hr
   exact h.of_scrs (ws := ws) ⟨k.gpr, k.rd, k.wr⟩ k.sp (os := [(pB, pZ G.pLen)])
     (fun p hp => by
       rw [List.mem_singleton] at hp; subst hp
-      refine ⟨by simp only [hEnd, fSave, pB]; omega, .inl (by simp only [List.length_replicate, pZ]; omega),
-        by simp only [List.length_replicate]; omega⟩) f (cl' := c.cl)
+      refine ⟨by simp only [hEnd, fSave, pB]; omega_using [], .inl (by simp only [List.length_replicate, pZ]; omega_using [pk]),
+        by simp only [List.length_replicate]; omega_using [pb]⟩) f (cl' := c.cl)
     (fun x hx => .inl ⟨hx, fun p hp => by rw [List.mem_singleton] at hp; subst hp; exact hcl x hx⟩) h28
 
 /-- After `powA`: p in array 0, its word `w` zero, and `R² mod p` in array 1. -/
@@ -149,7 +149,7 @@ theorem powA_vp {pv : Nat} (hPc : (sPBE, Spec.Rsa.i2osp pv G.pLen) ∈ c.cl) (hp
   refine ⟨⟨h.of_pspace k o ?_ hcl, x⟩, en, a21, a23, v0, z0, v1⟩
   have hZ := pZ_eq l
   have e : ∀ j, slot (pw G.pLen) j = hdrBytes + j * (8 * (pw G.pLen + 2)) := fun _ => rfl
-  rw [← hZ, e, e]; simp only [hdrBytes]; omega
+  rw [← hZ, e, e]; simp only [hdrBytes]; omega_using []
 
 /-- After `h`'s pointer and its length. -/
 abbrev PE (G : GP) (c : Cfg) (X : State → Prop) (pv : Nat) (H : Addr) (σ s : State) : Prop :=
@@ -167,7 +167,7 @@ theorem hPtr_vp {pv : Nat} {H : Addr} (hH : fH ∈ c.LS) (hHv : c.V fH = H) :
   refine WP.cons (s' := s.write .r12 H) ?_ (WP.cons (s' := (s.write .r12 H).write .r6 (BitVec.ofNat 64 G.pLen))
     (exec_li p15) (WP.block_nil ?_))
   · rw [show ld .r12 fH = .load .d .r12 .r28 fH from rfl, exec_load_d (by decide) ⟨by decide, by decide⟩
-      (by rw [h.gi.r28]; exact h.gi.inRdWr (by simp only [hEnd, fSave, fH] at hE ⊢; omega)), h.gi.r28,
+      (by rw [h.gi.r28]; exact h.gi.inRdWr (by simp only [hEnd, fSave, fH] at hE ⊢; omega_using [hE])), h.gi.r28,
       show s.mem.readW (G.scr + BitVec.ofNat 64 fH) 64 = H from (h.gi.slotV hH).trans hHv]
   have k : BKeep [.r12, .r6] s ((s.write .r12 H).write .r6 (BitVec.ofNat 64 G.pLen)) :=
     (VG.Proof.Bignum.PPC64LE.Keep.write s .r12 H).trans (VG.Proof.Bignum.PPC64LE.Keep.write _ .r6 _)
@@ -220,7 +220,7 @@ theorem powC_vp {pv ev : Nat} {H : Addr} {hb : List Byte} (cert : CertC G.pLen G
   refine ⟨⟨h.of_pspace k o ?_ hcl, x⟩, en', v4, r0⟩
   have hZ := pZ_eq l3
   have e : ∀ j, slot (pw G.pLen) j = hdrBytes + j * (8 * (pw G.pLen + 2)) := fun _ => rfl
-  rw [← hZ, e, e]; simp only [hdrBytes]; omega
+  rw [← hZ, e, e]; simp only [hdrBytes]; omega_using []
 
 /-- `power`: `h^e mod p` into array 4 of the P space, for p at `sPBE`, `e`
 at `sE` and `h` at the header word `fH`, and `r0 = 0` exactly when it is
@@ -261,7 +261,7 @@ theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, A
   have k : BKeep [.r12, .r6] s ((s.write .r12 (off G.scr sG)).write .r6 (BitVec.ofNat 64 G.pLen)) :=
     (VG.Proof.Bignum.PPC64LE.Keep.write s .r12 _).trans (VG.Proof.Bignum.PPC64LE.Keep.write _ .r6 _)
   refine WP.mono (VG.Proof.Dsa.PPC64LE.storeBE_ok (j := 4) (O := off G.scr sG) (k := G.pLen)
-    (en.keep k (by decide)) (by decide) ((gi.scrAt (o := sG) (n := G.pLen) (by omega) hl.2.1).congr k.wr)
+    (en.keep k (by decide)) (by decide) ((gi.scrAt (o := sG) (n := G.pLen) (by omega_using [pb, hl]) hl.2.1).congr k.wr)
     (by rw [(Upd.write _ .r6 _).other .r12 (by decide), (Upd.write _ _ _).gpr]) (Upd.write _ _ _).gpr hl.2.1
     hl.2.2.1 ?_) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   · intro x hx
@@ -270,12 +270,12 @@ theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, A
     have hlt := (x - G.scr).isLt
     change (x - (G.scr + BitVec.ofNat 64 sG)).toNat < G.pLen at hx
     rw [e] at hx
-    exact le_ofs_off (by decide) (by omega) (.inl (by
+    exact le_ofs_off (by decide) (by omega_using [pb, fit]) (.inl (by
       by_cases hy : sG ≤ (x - G.scr).toNat
-      · rw [show 2 ^ 64 - sG + (x - G.scr).toNat = (x - G.scr).toNat - sG + 2 ^ 64 by omega, Nat.add_mod_right,
-          Nat.mod_eq_of_lt (by omega)] at hx
-        omega
-      · rw [Nat.mod_eq_of_lt (by omega)] at hx; omega))
+      · rw [show 2 ^ 64 - sG + (x - G.scr).toNat = (x - G.scr).toNat - sG + 2 ^ 64 by omega_using [hy], Nat.add_mod_right,
+          Nat.mod_eq_of_lt (by omega_using [])] at hx
+        omega_using [hl, hx]
+      · rw [Nat.mod_eq_of_lt (by omega_using [hy])] at hx; omega_using [hl, hx]))
   have kk := k.trans kt
   have bt : Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen = Spec.Rsa.i2osp g G.pLen := by
     have e1 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen) = g := by
@@ -289,13 +289,13 @@ theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, A
   refine ⟨h.of_scrs (ws := [.r12, .r6] ++ VG.Proof.Dsa.PPC64LE.storeRegs) ⟨kk.gpr, kk.rd, kk.wr⟩ kk.sp
     (os := [(sG, G.pLen)]) (fun p hp => by
       rw [List.mem_singleton] at hp; subst hp
-      refine ⟨by show hEnd ≤ sG; decide, .inl (by simp only [List.length_replicate]; omega),
-        by simp only [List.length_replicate]; omega⟩)
+      refine ⟨by show hEnd ≤ sG; decide, .inl (by simp only [List.length_replicate]; omega_using [pk, hl]),
+        by simp only [List.length_replicate]; omega_using [pb, hl]⟩)
     (f0.mono fun r hr => List.mem_append_left _ hr) (fun y hy => ?_), x⟩
   rcases List.mem_cons.mp hy with rfl | hy
   · refine .inr ⟨by simp only [VG.Proof.Rsa.i2osp_length]; exact bt, ?_⟩
-    refine ⟨by show hEnd ≤ sG; decide, .inl (by simp only [VG.Proof.Rsa.i2osp_length]; omega),
-      by simp only [VG.Proof.Rsa.i2osp_length]; omega⟩
+    refine ⟨by show hEnd ≤ sG; decide, .inl (by simp only [VG.Proof.Rsa.i2osp_length]; omega_using [pk, hl]),
+      by simp only [VG.Proof.Rsa.i2osp_length]; omega_using [pb, hl]⟩
   · exact .inl ⟨hy, fun p hp => by rw [List.mem_singleton] at hp; subst hp; exact hcl y hy⟩
 
 /-- `g` stored, and `fG` := 1. -/

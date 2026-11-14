@@ -185,6 +185,6 @@ theorem codeWith_ct {st : List Instr} (ck : SeedCkW st) (J : Nat → Nat)
 theorem code_ct {top : Option Nat} (ck : SeedCk top) (hk : ∀ (p : Pub) k, 6 ≤ p.W → top = some k → k ≤ p.W / 2) :
     RelCT isa (Two Pre) (code top) fun _ _ => True :=
   codeWith_ct ck (fun W => j0 W top) fun W hW hW' =>
-    start_startOk hW (by omega) fun k e => hk ⟨0, 0, W, 0⟩ k hW e
+    start_startOk hW (by omega_using [hW']) fun k e => hk ⟨0, 0, W, 0⟩ k hW e
 
 end VG.Proof.Rsa.X86_64.WordDivide

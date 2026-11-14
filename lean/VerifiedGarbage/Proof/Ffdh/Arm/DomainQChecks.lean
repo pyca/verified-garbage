@@ -42,7 +42,7 @@ theorem domainQChecks_ok (s : State) {p : Inputs} {slots : List Nat}
     intro _
     have contextV := contextU.of_mem memV restV ((restV.gpr .r0 (by simp)).trans contextU.ptr)
     rw [WP.seq_iff]
-    refine WP.mono (domainDivides_ok v contextV stable h0 h24 h32 h60 hasQ (by omega) qValid.2.2) ?_
+    refine WP.mono (domainDivides_ok v contextV stable h0 h24 h32 h60 hasQ (by omega_using [qValid]) qValid.2.2) ?_
     rintro w ⟨contextW, dividesW, frameW, restW⟩
     rw [VG.Impl.Ffdh.Arm.Domain.ifFlag, WP.seq_iff]
     refine WP.mono (testFlag_ok w) ?_
@@ -52,7 +52,7 @@ theorem domainQChecks_ok (s : State) {p : Inputs} {slots : List Nat}
       intro _
       have contextX := contextW.of_mem memX restX ((restX.gpr .r0 (by simp)).trans contextW.ptr)
       have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr x.sp, 72⟩ :=
-        contextX.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+        contextX.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
       rw [WP.seq_iff]
       refine WP.mono (prepareAt_ok x 24 contextX stable h24 h32 h0 contextX.pBytes p.pLength pStack large odd) ?_
       rintro y ⟨contextY, readyY, modY, r2Y, frameY, restY⟩

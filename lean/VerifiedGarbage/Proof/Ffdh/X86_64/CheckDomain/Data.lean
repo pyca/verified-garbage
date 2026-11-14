@@ -57,15 +57,15 @@ structure Base (p : CdP) (s : State) : Prop where
 
 theorem Base.plen {p : CdP} {s : State} (h : Base p s) : p.pb.length = p.k := by
   simp only [CdP.pb, List.length_take, h.doml]
-  rcases h.dl with hd | hd <;> rw [hd] <;> omega
+  rcases h.dl with hd | hd <;> rw [hd] <;> omega_using []
 
 theorem Base.glen {p : CdP} {s : State} (h : Base p s) : p.gb.length = p.k := by
   simp only [CdP.gb, List.length_take, List.length_drop, h.doml]
-  rcases h.dl with hd | hd <;> rw [hd] <;> omega
+  rcases h.dl with hd | hd <;> rw [hd] <;> omega_using []
 
 theorem Base.qlen {p : CdP} {s : State} (h : Base p s) (hq : p.dl = 3 * p.k) : p.qb.length = p.k := by
   simp only [CdP.qb, List.length_take, List.length_drop, h.doml, hq]
-  omega
+  omega_using []
 
 theorem Base.keep {p : CdP} {s t : State} {rs : List Reg} (h : Base p s)
     (hf : InScr p.B p.Z s.mem t.mem) (k : Keep rs s t)
@@ -81,15 +81,15 @@ theorem child_frame {s t : State} {B : Addr} {Z o w wx L : Nat} {mi : BitVec 64}
   have hn := hc.scr.nowrap
   have hlo := hc.lo
   have hi := hc.hi
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  have hLL : o + L ≤ 2 ^ 64 := by omega
-  refine ⟨fun d hd => hf.word_below hr hLL (by omega) hd, ?_⟩
-  refine InScr.of_frm (hf.rebase (by omega) (fun r he => by have := hr r he; omega)) ?_
+  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  have hLL : o + L ≤ 2 ^ 64 := by omega_using [hL, hn]
+  refine ⟨fun d hd => hf.word_below hr hLL (by omega_using [hn, hi, h256]) hd, ?_⟩
+  refine InScr.of_frm (hf.rebase (by omega_using [hn, hi, h256]) (fun r he => by have := hr r he; omega_using [hLL, this])) ?_
   simp only [shiftRanges, List.mem_map]
   rintro r ⟨r', hr', rfl⟩
   have := hr r' hr'
   simp only
-  omega
+  omega_using [hL, this]
 
 theorem Base.child {p : CdP} {s t : State} {wx L : Nat} {mi : BitVec 64} {rs : List (Nat × Nat)}
     {regs : List Reg} (h : Base p s) (hc : SubCtx s p.B p.Z (inner p.w) p.w wx mi)
@@ -98,8 +98,8 @@ theorem Base.child {p : CdP} {s t : State} {wx L : Nat} {mi : BitVec 64} {rs : L
     Base p t ∧ InScr p.B p.Z s.mem t.mem ∧
       (∀ i < 32, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) := by
   obtain ⟨hh, hi⟩ := child_frame hc hL hf hr
-  have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega
-  have hh' : ∀ i < 32, word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi => hh _ (by omega)
+  have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega_using []
+  have hh' : ∀ i < 32, word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi => hh _ (by omega_using [h256, hi])
   refine ⟨h.keep hi k ?_, hi, hh'⟩
   intro e he
   simp only [CdP.headers, List.mem_cons, List.not_mem_nil, or_false] at he

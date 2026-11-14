@@ -58,7 +58,7 @@ theorem batchChk_ok : ∀ p ∈ [mlDsa44,mlDsa65,mlDsa87],∀ g < p.k*p.ℓ/4,ba
 theorem pa_poly4 (s : State) (e k : Nat) : poly4 (pa s (pS e)) k = pa s (pS (e+k)) := by
   unfold poly4
   rw [pa_sc_add]
-  rw [show oP e+1024*k = oP (e+k) by simp only [oP]; omega]
+  rw [show oP e+1024*k = oP (e+k) by simp only [oP]; omega_using []]
 
 theorem batch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {g : Nat}
     (hc : batchChk p g = true) {s : State} (h : AS p D σ (4*g) 4 s) :
@@ -87,12 +87,12 @@ theorem batch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
     refine ⟨fun e' he' => ?_,fun e' he' => ?_⟩
     · by_cases hlt : e' < 4*g
       · exact ok e' hlt
-      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
-        rw [← aseeds_eq h (by omega)]; exact hmax hs.2 k (by omega)
+      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+        rw [← aseeds_eq h (by omega_using [he'])]; exact hmax hs.2 k (by omega_using [he'])
     · by_cases hlt : e' < 4*g
       · exact fm e' hlt
-      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
-        have hk : k < 4 := by omega
+      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+        have hk : k < 4 := by omega_using [he']
         have hm := hmax hs.2 k hk
         have hv : polyAt s1.mem (poly4 (pa s (pS (aBase p+4*g))) k) = aVal p σ (4*g+k) := by
           obtain ⟨_,hb⟩ | ⟨h0,_⟩ := hout
@@ -105,12 +105,12 @@ theorem batch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
         exact ⟨hred hs.2 k hk,hv⟩
   · rw [et'] at ht
     rcases h.ia.r01 with e0 | e0
-    · obtain ⟨e',he',hn⟩ := h.ia.bad e0; exact ⟨e',by omega,hn⟩
+    · obtain ⟨e',he',hn⟩ := h.ia.bad e0; exact ⟨e',by omega_using [he'],hn⟩
     · rcases hr with e1 | e1
       · rw [e0,e1] at ht; exact absurd ht (by decide)
       · rcases hout with ⟨h1,_⟩ | ⟨_,k,hk,hn⟩
         · exact absurd (e1.symm.trans h1) (by decide)
-        · exact ⟨4*g+k,by omega,by rw [← aseeds_eq h hk]; exact hn⟩
+        · exact ⟨4*g+k,by omega_using [hk],by rw [← aseeds_eq h hk]; exact hn⟩
 
 end VG.Proof.MlDsa.AArch64.Sign
 
@@ -126,7 +126,7 @@ theorem sample4_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : S
     WP isa (sample4 P p g) s (IA p D σ (4*g+4)) := by
   unfold sample4
   refine WP.seq (WP.mono (seqR_ok (I := AS p D σ (4*g)) 4 0
-    (fun j _ hj s h => WP.mono (slot4_ok (by omega) (hs j (by omega)) h) fun _ ht => ht.1)
+    (fun j _ hj s h => WP.mono (slot4_ok (by omega_using [hj]) (hs j (by omega_using [hj])) h) fun _ ht => ht.1)
     s ⟨h,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩) fun t ht => ?_)
   exact batch_ok hP hb (by simpa using ht)
 
@@ -139,11 +139,11 @@ theorem sampleAll_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 :
     exact hc.1.1.1
   unfold sampleAll
   refine WP.seq (WP.mono (seqR_ok (I := fun g => IA p D σ (4*g)) (p.k*p.ℓ/4) 0
-    (fun g _ hg s h => sample4_ok hP (batchChk_ok p hp g (by omega))
-      (fun j hj => slotChk_ok p hp (4*g) (by omega) j hj) h) s h) fun t ht => ?_)
+    (fun g _ hg s h => sample4_ok hP (batchChk_ok p hp g (by omega_using [hg]))
+      (fun j hj => slotChk_ok p hp (4*g) (by omega_using [hg]) j hj) h) s h) fun t ht => ?_)
   have htail := seqR_ok (I := IA p D σ) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
-    (fun e _ he' s h => sampleE_ok hP (he e (by omega)) h) t (by simpa only [Nat.zero_add] using ht)
-  have eqn : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega
+    (fun e _ he' s h => sampleE_ok hP (he e (by omega_using [he'])) h) t (by simpa only [Nat.zero_add] using ht)
+  have eqn : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega_using []
   simpa only [eqn] using htail
 
 theorem expandA_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) (hc : aChk p = true) {σ s : State}

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -16,8 +17,8 @@ theorem enough_iff (n rate : Nat) (hn : n < 2^64) (hr : rate ≤ 168) :
   rw [← BitVec.toNat_inj]
   simp only [BitVec.toNat_ushiftRight,BitVec.toNat_sub,BitVec.toNat_ofNat,
     show BitVec.toNat (0 : BitVec 64) = 0 from rfl,Nat.shiftRight_eq_div_pow,Nat.mod_eq_of_lt hn,
-    Nat.mod_eq_of_lt (by omega : rate < 2^64)]
-  omega
+    Nat.mod_eq_of_lt (by omega_using [hr] : rate < 2^64)]
+  omega_using [hn, hr]
 
 /-- A whole rate block is XORed into lanes before the next permutation. -/
 theorem xorAt_zero (A : Spec.Sha3.State) (bs : List Byte) :
@@ -34,7 +35,7 @@ theorem xorAt_zero (A : Spec.Sha3.State) (bs : List Byte) :
 theorem rep_whole {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200)
     (msg bs : List Byte) (ha : msg.length % rate = 0) (hb : bs.length = rate) :
     Rep rate (msg ++ bs) = keccakF (xorBytes (Rep rate msg) bs) := by
-  rw [rep_append hr hr' msg bs (by omega) (by omega),ha,hb]
+  rw [rep_append hr hr' msg bs (by omega_using [hr, hb]) (by omega_using [ha, hb]),ha,hb]
   simp only [Nat.zero_add,ite_true,xorAt_zero]
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector

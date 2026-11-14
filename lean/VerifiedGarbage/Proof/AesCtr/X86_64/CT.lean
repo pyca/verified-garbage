@@ -72,7 +72,7 @@ omit hq in
 theorem lo32_next_eq (k : Nat) : AesCtr.lo32 (next (iv0 s₀) k) = AesCtr.lo32 (next (iv0 s₀') k) := by
   rw [AesCtr.lo32_next (length_iv0 _), AesCtr.lo32_next (length_iv0 _)]
   unfold AesCtr.lo32 at hl
-  omega
+  omega_using [hl]
 
 theorem mOf_eq (k : Nat) : mOf s₀ k = mOf s₀' k := by
   have e := lo32_next_eq hl k
@@ -176,7 +176,7 @@ theorem loop_rel (v : Ctr32Impl) (hp : UPre s₀) (hp' : UPre s₀') (n : Nat) :
     exact ⟨h0 ▸ l₁, by rw [← hN, ← h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : k + mOf s₀ k ≠ N s₀ := by simpa using ht
-    exact ⟨N s₀ - (k + mOf s₀ k), by omega, k + mOf s₀ k, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + mOf s₀ k), by omega_using [hk, hm0], k + mOf s₀ k, rfl, by omega_using [hk, hle, h0], l₁, l₂⟩
 
 end
 

@@ -56,8 +56,8 @@ theorem comp_spec {d : Nat} (hd : d ∈ compressWidths) (is : List Instr) (s : S
     have hm : cmul d < 2 ^ 32 := by
       rcases mem_compressWidths hd with rfl | rfl | rfl <;> decide
     rw [Nat.mod_eq_of_lt hm, show (262080 : BitVec 32).toNat = compressAdd from rfl, cmul_eq,
-      Nat.mod_eq_of_lt (a := a * compressMul d) (by unfold compressAdd at hl; omega),
-      Nat.mod_eq_of_lt (a := a * compressMul d + compressAdd) (by omega)]
+      Nat.mod_eq_of_lt (a := a * compressMul d) (by unfold compressAdd at hl; omega_using [hl]),
+      Nat.mod_eq_of_lt (a := a * compressMul d + compressAdd) (by omega_using [hl])]
     rfl
 
 /-- Coefficient `i` from `esi`: at `[esi + 4i]`, readable, the integer `a < q`. -/
@@ -84,7 +84,7 @@ theorem ldComp_spec {d : Nat} (hd : d ∈ compressWidths) (j : Nat) (is : List I
 
 theorem ror_shl {A d : Nat} (hd0 : 0 < d) (hd : d < 32) (x : BitVec 32) (hx : x.toNat = A)
     (hA : A < 2 ^ (32 - d)) : (x.rotateRight (32 - d)).toNat = A * 2 ^ d := by
-  rw [rotr_small x (by omega) (by omega) (by rw [hx]; exact hA), hx, show 32 - (32 - d) = d by omega]
+  rw [rotr_small x (by omega_using [hd]) (by omega_using [hd0]) (by rw [hx]; exact hA), hx, show 32 - (32 - d) = d by omega_using [hd]]
 
 theorem accStep_spec {d : Nat} (hd : d ∈ compressWidths) (j : Nat) (is : List Instr) (s : State)
     (P : State → Prop) {a A : Nat} (hc : Coef s j a) (hA : (s.gpr .ebx).toNat = A)
@@ -99,7 +99,7 @@ theorem accStep_spec {d : Nat} (hd : d ∈ compressWidths) (j : Nat) (is : List 
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu,
     execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, 
-    Option.some.injEq, exists_eq_left', show 1 ≤ 32 - d by omega, show 32 - d ≤ 31 by omega, and_self]
+    Option.some.injEq, exists_eq_left', show 1 ≤ 32 - d by omega_using [hd'], show 32 - d ≤ 31 by omega_using [hd'], and_self]
   refine k _ ⟨fun r hr => ?_, o₁.mem, o₁.rd, o₁.wr⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.2.2, ite_false]
@@ -108,10 +108,10 @@ theorem accStep_spec {d : Nat} (hd : d ∈ compressWidths) (j : Nat) (is : List 
     have hb : (s₁.gpr .ebx).toNat = A := by rw [o₁.gpr _ (by decide), hA]
     have hc' := cf_lt d a
     have hp : A * 2 ^ d + 2 ^ d ≤ 2 ^ 32 := by
-      have := Nat.mul_le_mul_right (2 ^ d) (show A + 1 ≤ 2 ^ (32 - d) by omega)
-      rw [Nat.add_mul, Nat.one_mul, ← Nat.pow_add, Nat.sub_add_cancel (by omega)] at this
+      have := Nat.mul_le_mul_right (2 ^ d) (show A + 1 ≤ 2 ^ (32 - d) by omega_using [hAl])
+      rw [Nat.add_mul, Nat.one_mul, ← Nat.pow_add, Nat.sub_add_cancel (by omega_using [hd'])] at this
       exact this
-    rw [BitVec.toNat_add, ror_shl hd'.1 hd'.2 _ hb hAl, v₁, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, ror_shl hd'.1 hd'.2 _ hb hAl, v₁, Nat.mod_eq_of_lt (by omega_using [hc', hp])]
 
 /-- `Σ_{i<j} cv i · 2^(d i)`: the number whose base-`2ᵈ` digits are `cv 0 … cv (j - 1)`. -/
 def pk (d : Nat) (cv : Nat → Nat) : Nat → Nat
@@ -132,27 +132,27 @@ theorem accSteps_spec {d : Nat} (hd : d ∈ compressWidths) (a : Nat → Nat) :
       rw [← Nat.pow_add]; congr 1; rw [Nat.mul_succ, Nat.add_comm]
     have hAl : A < 2 ^ (32 - d) := by
       have h1 : (A + 1) * 2 ^ d ≤ 2 ^ (32 - d) * 2 ^ d := by
-        rw [← Nat.pow_add, Nat.sub_add_cancel (by omega)]
+        rw [← Nat.pow_add, Nat.sub_add_cancel (by omega_using [hd'])]
         refine Nat.le_trans ?_ hb
         rw [hsplit, ← Nat.mul_assoc]
         exact Nat.le_mul_of_pos_right _ hpj
       have := Nat.le_of_mul_le_mul_right h1 (Nat.two_pow_pos d)
-      omega
+      omega_using [this]
     rw [accSteps, List.append_assoc]
-    refine accStep_spec hd j _ s P (hc j (by omega)) hA hAl fun s₁ o₁ v₁ => ?_
-    refine accSteps_spec hd a j is s₁ P _ (fun i hi => (hc i (by omega)).of_only o₁ (by decide)) v₁ ?_
+    refine accStep_spec hd j _ s P (hc j (by omega_using [])) hA hAl fun s₁ o₁ v₁ => ?_
+    refine accSteps_spec hd a j is s₁ P _ (fun i hi => (hc i (by omega_using [hi])).of_only o₁ (by decide)) v₁ ?_
       fun s₂ o₂ v₂ => k s₂ ((o₁.trans o₂).mono fun r hr => by
         rcases List.mem_append.mp hr with h | h <;> exact h) ?_
     · have hc' := cf_lt d (a j)
-      have : A * 2 ^ d + cf d (a j) + 1 ≤ (A + 1) * 2 ^ d := by rw [Nat.add_mul]; omega
+      have : A * 2 ^ d + cf d (a j) + 1 ≤ (A + 1) * 2 ^ d := by rw [Nat.add_mul]; omega_using [hc']
       refine Nat.le_trans (Nat.mul_le_mul_right _ this) ?_
       rw [Nat.mul_assoc, ← hsplit]; exact hb
     · rw [v₂, pk, hsplit, Nat.add_mul, Nat.mul_assoc]
-      omega
+      omega_using []
 
 theorem pk_congr {d : Nat} {cv cv' : Nat → Nat} : ∀ {j : Nat}, (∀ i < j, cv i = cv' i) →
     pk d cv j = pk d cv' j
   | 0, _ => rfl
-  | j + 1, h => by rw [pk, pk, pk_congr (fun i hi => h i (by omega)), h j (by omega)]
+  | j + 1, h => by rw [pk, pk, pk_congr (fun i hi => h i (by omega_using [hi])), h j (by omega_using [])]
 
 end VG.Proof.MlKem.X86

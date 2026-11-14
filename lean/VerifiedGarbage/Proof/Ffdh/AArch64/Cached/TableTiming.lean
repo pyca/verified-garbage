@@ -47,7 +47,7 @@ theorem precomputeTable_ct (M : Mont) : RelCT isa (Two TableReady) (Precompute.t
    refine WP.mono (setControlNat_ok h.basis.good q.p.room (by decide : 16≤sD) (by decide : sD<32) (by decide : 2<2^16)) ?_
    rintro t ⟨good,index,frame,rest⟩
    have inscr : InScr q.p.B q.p.Z s.mem t.mem :=InScr.of_outside frame
-    (by have :=hdr_lt_slot q.p.w 8 (show sD<32 by decide);have :=q.p.room;omega)
+    (by have :=hdr_lt_slot q.p.w 8 (show sD<32 by decide);have :=q.p.room;omega_arith)
    refine ⟨⟨by decide,by decide⟩,q.bits,?_,h.space.after rest,
     (header_other frame (by decide) (by decide) (by decide)).trans h.context,index,
     (header_other frame (by decide) (by decide) (by decide)).trans h.rows,h.table.after_inscr h.space (by decide) inscr⟩

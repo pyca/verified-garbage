@@ -74,7 +74,7 @@ theorem ecbPre_of {s : State} {d : Spec.Seed.Direction} {n : Nat} (hn : 8 * Impl
           keyData := kd
           keyBuf := kb.sub_right sub
           dataBuf := db.sub_right sub
-          fit := by omega }
+          fit := by omega_using [fit] }
 
 /-- The registers ECB writes. -/
 def ecbWrites : List Reg :=

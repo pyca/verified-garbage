@@ -29,21 +29,21 @@ theorem loads_ok (s : State) (readable : InRegions (s.rd ++ s.wr) (s.gpr .x5) 25
       (∀ r < n, t.v (treg r) = s.mem.read (s.gpr .x5 + BitVec.ofNat 64 (16*r)) 16) ∧
       (∀ w, (∀ r < n, w ≠ treg r) → t.v w = s.v w) ∧ t = { s with v := t.v } := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, rfl⟩
+  | zero => exact WP.block_nil ⟨fun _ h => absurd h (by omega_using []), fun _ _ => rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ,List.map_append,List.map_singleton,WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun a ⟨arow,av,ae⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn])) fun a ⟨arow,av,ae⟩ => ?_
     have hin : InRegions (a.rd ++ a.wr) (a.gpr .x5 + BitVec.ofNat 64 (16*n)) 16 := by
       rw [ae]
-      exact CallLay.inRegions_sub readable (by omega) (by decide)
+      exact CallLay.inRegions_sub readable (by omega_using [hn]) (by decide)
     refine WP.of_runBlock ⟨_,by
-      rw [runBlock_cons,exec_load_vector _ _ _ _ ⟨by omega,by omega⟩ hin,runStep_some,runBlock_nil],
+      rw [runBlock_cons,exec_load_vector _ _ _ _ ⟨by omega_using [],by omega_using [hn]⟩ hin,runStep_some,runBlock_nil],
       fun r hr => ?_,fun w hw => ?_,?_⟩
     · have hmx : a.mem = s.mem ∧ a.gpr = s.gpr := by rw [ae]; exact ⟨rfl,rfl⟩
       by_cases he : r = n
       · subst he; rw [v_setV_self,hmx.1,hmx.2]
-      · rw [v_setV_of_ne _ _ (fun e => he (treg_inj r (by omega) n (by omega) e)),arow r (by omega)]
-    · rw [v_setV_of_ne _ _ (hw n (by omega)),av w (fun r hr => hw r (by omega))]
+      · rw [v_setV_of_ne _ _ (fun e => he (treg_inj r (by omega_using [hn, hr]) n (by omega_using [hn]) e)),arow r (by omega_using [hr, he])]
+    · rw [v_setV_of_ne _ _ (hw n (by omega_using [])),av w (fun r hr => hw r (by omega_using [hr]))]
     · rw [ae]; rfl
 
 theorem loadSbox_ok (s : State)
@@ -52,10 +52,10 @@ theorem loadSbox_ok (s : State)
     WP isa (.block loadSbox) s fun t => Table t ∧ t = { s with v := t.v } := by
   refine WP.mono (loads_ok s readable 16 (by decide)) fun t ⟨ht,_,he⟩ => ⟨?_,he⟩
   intro k hk
-  rw [tbyte,ht _ (by omega)]
+  rw [tbyte,ht _ (by omega_using [hk])]
   change (s.mem.read _ 16).extractLsb' (8*(k%16)) 8 = _
-  rw [Mem.extractLsb'_read s.mem _ (by omega),VG.Offset.add_add,
-    show 16*(k/16)+k%16 = k by omega]
+  rw [Mem.extractLsb'_read s.mem _ (by omega_using []),VG.Offset.add_add,
+    show 16*(k/16)+k%16 = k by omega_using []]
   exact bytes k hk
 
 end VG.Proof.Sm4.AArch64.Serial

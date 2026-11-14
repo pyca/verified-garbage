@@ -24,11 +24,11 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep wp_ld wp_mov wp_nil)
 
 /-- The stack arguments are in `aR`. -/
 theorem in_aR {pc : Bool} {s : State} {j : Nat} (hj : j < 17) : (aR pc s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by split <;> omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by split <;> omega_using [hj]) (by omega_using [hj])
 
 /-- With `pc`, our stack arguments 17 and 18 too. -/
 theorem in_aRP {s : State} {j : Nat} (hj : j < 19) : (aR true s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by simp only [↓reduceIte]; omega_using [hj]) (by omega_using [hj])
 
 theorem aR_mem {pc : Bool} {s : State} : aR pc s ∈ rdL pc s := by cases pc <;> simp
 

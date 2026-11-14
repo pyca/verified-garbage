@@ -27,10 +27,10 @@ theorem readBE (m : Mem) (p : Addr) : rev64 (m.readW p 64) = Spec.Camellia.wordA
   rw [show rev64 = byteRev64 from rfl,byteRev64_getLsbD _ hi,
     VG.Proof.Camellia.getLsbD_wordAt m p hi]
   simp only [Mem.readW,BitVec.getLsbD_setWidth,
-    show 8*(7-i/8)+i%8 < 64 by omega,decide_true,Bool.true_and]
-  rw [getLsbD_read m 8 p _ (by omega),
-    show (8*(7-i/8)+i%8)/8 = 7-i/8 by omega,
-    show (8*(7-i/8)+i%8)%8 = i%8 by omega]
+    show 8*(7-i/8)+i%8 < 64 by omega_using [],decide_true,Bool.true_and]
+  rw [getLsbD_read m 8 p _ (by omega_using []),
+    show (8*(7-i/8)+i%8)/8 = 7-i/8 by omega_using [],
+    show (8*(7-i/8)+i%8)%8 = i%8 by omega_using []]
 
 theorem Ready.frame {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs : List Region}
     (h : Ready s.mem B k) (hf : Frame rs s.mem s'.mem)
@@ -54,10 +54,10 @@ theorem Ready.frame {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs 
   · have hn : i < 34 := by
       have := h.rounds
       simp only [Spec.Camellia.scheduleLength] at hi
-      omega
+      omega_using [hi, this]
     rw [← readBE,← VG.Offset.add_add B 256 (8*i)]
     rw [hf.readW (w := 64) (VG.Offset.contains_base (B+BitVec.ofNat 64 256)
-      (d := 8*i) (n := 8) (k := 272) (by omega) (by omega)) keysDisjoint (by decide)]
+      (d := 8*i) (n := 8) (k := 272) (by omega_using [hn]) (by omega_using [hn])) keysDisjoint (by decide)]
     rw [VG.Offset.add_add,readBE]
     exact h.keys i hi
 

@@ -203,10 +203,10 @@ theorem encOne_rel {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : V₁ .r2
     RelCT isa (Eq2 σ₁ σ₂) (encOne d) TT :=
   callBlocks_rel L hV Proof.Aes.PPC64LE.encryptBlocks_correct Proof.Aes.PPC64LE.encryptBlocks_ct hR h28 E₁ E₂ []
     (fun _ h => absurd h List.not_mem_nil) hc
-    (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E₁.r31]) (by omega))
+    (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E₁.r31]) (by omega_using [hd]))
     (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E₂.r31, ← hV .r31 (by decide)])
-      (by omega))
-    (dstW L E₁.perm (by omega)) (dstW L (by rw [hV .r29 (by decide), hV .r31 (by decide)]; exact E₂.perm) (by omega))
+      (by omega_using [hd]))
+    (dstW L E₁.perm (by omega_using [hd])) (dstW L (by rw [hV .r29 (by decide), hV .r31 (by decide)]; exact E₂.perm) (by omega_using [hd]))
 
 end
 

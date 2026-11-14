@@ -42,9 +42,9 @@ theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p
   simp only [Region.Contains] at hc ⊢
   have e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
     rw [Offset.sub_add_eq]; exact (BitVec.sub_add_cancel _ _).symm
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hk]),
+    Nat.mod_eq_of_lt (by omega_using [hd, hk, hc])]
+  omega_using [hd, hc]
 
 theorem in_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hd : d + n ≤ k)
     (hk : k < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 d) n :=
@@ -54,7 +54,7 @@ theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨
     Covers [⟨p, n⟩] rs := by
   intro a m ⟨r, hr, hc⟩
   simp only [List.mem_singleton] at hr; subst hr
-  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 /-! ## The public values -/
 
@@ -175,13 +175,13 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨c.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 omit L in
 /-- `W` and a part of it. -/
 theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 2560) :
     (⟨c.W, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.base_disjoint _ h (by omega)
+  Offset.base_disjoint _ h (by omega_using [hd])
 
 theorem k_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
@@ -194,11 +194,11 @@ theorem a_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨c.A, c.al⟩ : Region).Disj
 
 theorem wrapW {d : Nat} (hd : d < 2560) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 /-- Doublewords of `W` are aligned. -/
 theorem alW {d : Nat} (hd : d % 8 = 0) (hlt : d < 2560) : (c.W + BitVec.ofNat 64 d).toNat % 8 = 0 := by
-  rw [L.wrapW hlt]; have := L.wal; omega
+  rw [L.wrapW hlt]; have := L.wal; omega_using [hd, this]
 
 theorem rb : 16 * (c.R + 1) ≤ 240 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
 
@@ -242,20 +242,20 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf c s' 
 
 /-- The bytes from `k` on. -/
 theorem drop {k : Nat} (hk : k ≤ len) : Buf c s (P + BitVec.ofNat 64 k) (len - k) where
-  rd := covers_off h.rd (by omega) h.lt
-  lt := by have := h.lt; omega
+  rd := covers_off h.rd (by omega_using [hk]) h.lt
+  lt := by have := h.lt; omega_using [this]
   wrap := by
     have := h.wrap
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega_using [hk, this])]
     have := Nat.mod_le (P.toNat + k) (2 ^ 64)
-    omega
-  w := h.w.sub_left (Offset.sub_base P (by omega))
+    omega_arith
+  w := h.w.sub_left (Offset.sub_base P (by omega_using [hk]))
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ len) : Buf c s P k where
   rd := covers_prefix h.rd hk
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
+  lt := by have := h.lt; omega_using [hk, this]
+  wrap := by have := h.wrap; omega_using [hk, this]
   w := h.w.sub_left (Region.sub_prefix hk)
 
 theorem wd {d k : Nat} (hd : d + k ≤ 2560) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
@@ -295,7 +295,7 @@ theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 112) :
 
 theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 2560) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨wHi c.W, by simp, Offset.sub _ h₁ (by omega)⟩
+  ⟨wHi c.W, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 
@@ -305,9 +305,9 @@ theorem kept_mut {c : Cx} (L : Lay c) {d k : Nat} (hd : 112 ≤ d ∧ d + k ≤ 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (Lay.w0_w (c := c) (n := 112) (d := d) (k := k) hd.1 (by omega)).symm
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.d_w' (by omega)).symm
+  · exact (Lay.w0_w (c := c) (n := 112) (d := d) (k := k) hd.1 (by omega_using [hd])).symm
+  · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact (L.d_w' (by omega_using [hd])).symm
 
 theorem k_mut {c : Cx} (L : Lay c) : ∀ r ∈ mutR c, (⟨c.K, 240⟩ : Region).Disjoint r := by
   intro r hr
@@ -333,17 +333,17 @@ theorem Slots.mut (S : Slots c m) : Slots c m' := by
   have k : ∀ d, 216 ≤ d → d + 8 ≤ 248 →
       m'.readW (c.W + BitVec.ofNat 64 d) 64 = m.readW (c.W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     hf.readW (r := ⟨c.W + BitVec.ofNat 64 d, 8⟩) (w := 64) (Region.contains_self _ _)
-      (kept_mut L ⟨by omega, by omega⟩) (by decide)
+      (kept_mut L ⟨by omega_using [h₁], by omega_using [h₂]⟩) (by decide)
   exact ⟨by rw [k 216 (by decide) (by decide)]; exact S.aad, by rw [k 224 (by decide) (by decide)]; exact S.alen,
     by rw [k 232 (by decide) (by decide)]; exact S.nlen, by rw [k 240 (by decide) (by decide)]; exact S.tag⟩
 
 theorem ciph_mut : Spec.Ccm.ctxCiph m' c.K c.R = Spec.Ccm.ctxCiph m c.K c.R := by
   unfold Spec.Ccm.ctxCiph
   rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (k_mut L r hr).sub_left (Region.sub_prefix L.rb))
-    (by have := L.rb; omega)]
+    (by have := L.rb; omega_using [this])]
 
 theorem aad_mut : bytesAt m' c.A c.al = bytesAt m c.A c.al :=
-  Proof.Cmac.bytesAt_frame hf (a_mut L) (by have := L.al_lt; omega)
+  Proof.Cmac.bytesAt_frame hf (a_mut L) (by have := L.al_lt; omega_using [this])
 
 theorem tag_mut : bytesAt m' c.T c.tl = bytesAt m c.T c.tl :=
   Proof.Cmac.bytesAt_frame hf (fun r hr => by
@@ -351,7 +351,7 @@ theorem tag_mut : bytesAt m' c.T c.tl = bytesAt m c.T c.tl :=
     rcases hr with rfl | rfl | rfl
     · exact L.t_w.sub_right (Region.sub_prefix (by decide))
     · exact L.t_w.sub_right (Lay.wSub (by decide))
-    · exact L.t_d) (by have := L.t16; omega)
+    · exact L.t_d) (by have := L.t16; omega_using [this])
 
 end
 

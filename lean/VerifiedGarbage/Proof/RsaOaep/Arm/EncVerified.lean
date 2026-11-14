@@ -67,7 +67,7 @@ theorem entered_state (hc : Coh vs) {s s' : State} (hs : (espec vs).pre s) {w w�
     Sy (S w₁.g (epw (vs := vs) s s' w w₁)) (entered frameBytes s) (entered frameBytes s) := by
   obtain ⟨-, -, hpw, hfitL, hfit⟩ := spec_tab hs
   have hpw' := hpw.sublist (List.sublist_append_left _ _)
-  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by have := spec_sp hs; simp only [stackBytes] at this; omega
+  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by have := spec_sp hs; simp only [stackBytes] at this; omega_using [this]
   have hHa := hashAt_tableOf hfitL (held_tableOf hfitL hhL).2.1
   have ok := (in_of_pre (ai := 0) (au := 0) (af := 0) (T := fun _ => True) (aiL := 0) (auL := 0) (afL := 0)
     (TL := fun _ => True) hs hHa trivial trivial).ok
@@ -93,8 +93,8 @@ theorem code_ok (hc : Coh vs) (c : PdImpl) {s : State} (hs : (espec vs).pre s) :
   have st := entered_state hc hs hw hw₁ hh hhL (s' := s) fun _ _ => rfl
   have hin := st.1.1
   have hsp := spec_sp hs
-  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hsp; omega
-  refine WP.mono (wrap_ok (by decide) (by omega) (W := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).W)
+  have hsp' : 56 + frameBytes ≤ s.sp.toNat := by simp only [stackBytes] at hsp; omega_using [hsp]
+  refine WP.mono (wrap_ok (by decide) (by omega_using [hsp']) (W := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).W)
     (Q := fun r m => Res w₁.g w.g (epw (vs := vs) s s w w₁) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono ((body_vp w₁.g (epw (vs := vs) s s w w₁) w.g (fun _ x => x) (fun _ x => x) (fne_of hw) c).wp _ _ st)
       fun u hu => ⟨hu.1.1.2.frame, hu.1.2⟩)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
@@ -161,7 +161,7 @@ theorem code_ct (hc : Coh vs) (c : PdImpl) : ConstantTime isa (espec vs).pre (es
       show State.addr (stackArg s₂ 10) = BitVec.setWidth 64 (stackArg s₂ 10) from rfl, hw']
   refine (wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b hh => by rw [hh.1, hh.2]; exact hsp)
-    (fun a b hh => by rw [hh.1]; simp only [stackBytes] at hsp1; omega) ?_
+    (fun a b hh => by rw [hh.1]; simp only [stackBytes] at hsp1; omega_using [hsp1]) ?_
     s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   refine (body_vp w₁.g (epw (vs := vs) s₁ s₁ w w₁) w.g (fun _ x => x) (fun _ x => x) (fne_of hw) c).ct.mono ?_
     fun _ _ _ => trivial

@@ -14,7 +14,7 @@ theorem maskWord (x : BitVec 64) : x &&& 65535 = (x.setWidth 16).setWidth 64 := 
   simp only [BitVec.toNat_and, BitVec.toNat_setWidth]
   change x.toNat &&& (2 ^ 16 - 1) = x.toNat % 65536 % 18446744073709551616
   rw [Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem maskWord_lit (x : BitVec 64) : x &&& 65535#64 = (x.setWidth 16).setWidth 64 :=
   maskWord x
@@ -28,15 +28,15 @@ theorem rotateWord (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
   intro j hj
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_rotateRight,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_rotateLeft]
-  have n64 : (64 - n) % 64 = 64 - n := Nat.mod_eq_of_lt (by omega)
+  have n64 : (64 - n) % 64 = 64 - n := Nat.mod_eq_of_lt (by omega_using [hn])
   have n16 : n % 16 = n := Nat.mod_eq_of_lt hn'
   rw [n64, n16]
-  rw [show 64 - (64 - n) = n by omega]
+  rw [show 64 - (64 - n) = n by omega_using [hn']]
   by_cases h : j < n
   · simp (disch := omega) [h, hj,
-      show j + (16 - n) < 64 by omega, BitVec.getLsbD_of_ge, Nat.add_comm]
-  · simp (disch := omega) [h, hj, show j < 64 by omega,
-      show j - n < 64 by omega, BitVec.getLsbD_of_ge]
+      show j + (16 - n) < 64 by omega_using [hj], BitVec.getLsbD_of_ge, Nat.add_comm]
+  · simp (disch := omega) [h, hj, show j < 64 by omega_using [hj],
+      show j - n < 64 by omega_using [hj], BitVec.getLsbD_of_ge]
 
 theorem mixWord (x k a b c : BitVec 16) :
     (x.setWidth 64 + k.setWidth 64 +
@@ -60,7 +60,7 @@ theorem rotateLeft_reverse (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 1
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   simp only [BitVec.getLsbD_rotateLeft, BitVec.getLsbD_rotateRight,
-    Nat.mod_eq_of_lt hn', Nat.mod_eq_of_lt (show 16 - n < 16 by omega),
-    show 16 - (16 - n) = n by omega]
+    Nat.mod_eq_of_lt hn', Nat.mod_eq_of_lt (show 16 - n < 16 by omega_using [hn]),
+    show 16 - (16 - n) = n by omega_using [hn']]
 
 end VG.Proof.Rc2

@@ -184,7 +184,7 @@ theorem kp_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
   refine WP.seq (WP.mono (body_ok M E R hpre) fun u ⟨hp, hd, hf, hs, k⟩ => ?_)
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (exit_ok (c.hs.congr k.2.2) hd (by omega) hs)
+  refine WP.mono (exit_ok (c.hs.congr k.2.2) hd (by omega_using [hZ]) hs)
     fun t ⟨hRestore, hm, kk⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · intro r hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr

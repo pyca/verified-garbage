@@ -63,14 +63,14 @@ theorem sqFinish_ct :
     · simp only [List.mem_singleton] at hr; subst hr; exact hs.2.trans ht.2.symm
     · obtain ⟨⟨sp, m0, inv, h⟩, p0⟩ := hs
       have := h.env.fits; have := h.env.header
-      exact WP.mono (sqFinishHeader_ok s h.env.workspace (by omega) p0 h.env.modNow h.env.metaNow)
+      exact WP.mono (sqFinishHeader_ok s h.env.workspace (by omega_arith) p0 h.env.modNow h.env.metaNow)
         fun t ⟨q12, q0, mem, rest⟩ => ⟨rStable s t ⟨sp, m0, inv, h⟩ mem rest, q0, q12⟩
   have S3 : RelCT isa (fun s t => P2 s ∧ P2 t) (.block sqFinishLoad) (fun s t => P3 s ∧ P3 t) := by
     refine seg sqFinishLoad_cert (fun s t hs ht r hr => ?_) (fun s hs => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; exact hs.2.1.trans ht.2.1.symm
     · obtain ⟨⟨sp, m0, inv, h⟩, p0, p12⟩ := hs
       have := h.env.fits
-      exact WP.mono (sqFinishLoad_ok s (n := n) (out := out) h.env.workspace (by omega) p0 h.md.count h.md.outPtr)
+      exact WP.mono (sqFinishLoad_ok s (n := n) (out := out) h.env.workspace (by omega_using [this]) p0 h.md.count h.md.outPtr)
         fun t ⟨g7, g9, _, g0, mem, rest⟩ => ⟨rStable s t ⟨sp, m0, inv, h⟩ mem rest, g0.trans p0,
           by rw [rest.gpr .r12 (by simp)]; exact p12, g7, g9⟩
   have S4 : RelCT isa (fun s t => P3 s ∧ P3 t) (.block sqFinishArgs) (fun s t => P4 s ∧ P4 t) := by
@@ -81,7 +81,7 @@ theorem sqFinish_ct :
       · exact hs.2.2.2.1.trans ht.2.2.2.1.symm
     · obtain ⟨⟨_, m0, inv, h⟩, p0, p12, p7, p9⟩ := hs
       have := h.env.fits
-      exact WP.mono (sqFinishArgs_ok s h.env.workspace (by omega) p0 p7)
+      exact WP.mono (sqFinishArgs_ok s h.env.workspace (by omega_using [this]) p0 p7)
         fun t ⟨_, g10, glr, _, rest⟩ => ⟨by rw [rest.gpr .r0 (by simp)]; exact p0,
           by rw [rest.gpr .r12 (by simp)]; exact p12, by rw [rest.gpr .r7 (by simp)]; exact p7,
           by rw [rest.gpr .r9 (by simp)]; exact p9, g10, glr⟩
@@ -125,11 +125,11 @@ theorem squareBases_ready {base : BitVec 32} {len w o a : Nat} (ho : Operand o) 
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   have bound : 128 ≤ 8 * len := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 ha.1 ptr po pa pb) ?_
   rintro u ⟨regs, mem, keep⟩
   have env := sqEnv_of_layout s u ws layout ho ha header
-    (native_inverse s.mem (State.addr base) (by omega) inverse) operand stackRead stackSep saved mem keep
+    (native_inverse s.mem (State.addr base) (by omega_using [hw]) inverse) operand stackRead stackSep saved mem keep
   exact ⟨keep.sp, ⟨_, env⟩, regs.accPtr, regs.count, regs.aPtr, regs.outPtr⟩
 
 theorem squareBody_ct {base : BitVec 32} {len w o a : Nat} (ho : Operand o) (ha : Operand a) :

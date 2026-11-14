@@ -22,14 +22,14 @@ theorem redc_ct : RelCT isa (Two fun L : W8 => GoodW L.ws) AdxRotate8.redc
     · intro L s ⟨mi, hg, hZ⟩
       refine WP.mono (setup_ok hg.scr hg.rdi hg.hdr hZ) fun t ⟨hc, _, ot, kt⟩ => ?_
       exact ⟨⟨mi, ⟨hg.scr.congr kt.2.2, (kt.gpr (by decide)).trans hg.rdi,
-        hg.hdr.of_outside ot (by unfold slot; omega)⟩, hZ⟩,
+        hg.hdr.of_outside ot (by unfold slot; omega_using [])⟩, hZ⟩,
         by simpa only [Nat.mul_zero, Nat.add_zero] using hc⟩
     refine RelCT.seq outer_ct ?_
     refine two_map W8.ws ?_ finish_ct
     intro L s ⟨hg, hc⟩
-    exact ⟨hg, by rw [hc]; congr 1; have := L.hw; unfold slot aAcc aTmp; omega⟩
+    exact ⟨hg, by rw [hc]; congr 1; have := L.hw; unfold slot aAcc aTmp; omega_using [this]⟩
   · intro L s ⟨mi, hg, hZ⟩
     refine WP.mono (redc_ok hg.scr hg.rdi hg.hdr hZ L.hw L.hn) fun t ⟨_, ot, kt⟩ => ?_
     exact ⟨mi, ⟨hg.scr.congr kt.2.2, (kt.gpr (by decide)).trans hg.rdi,
-      hg.hdr.of_outside ot (by unfold slot; omega)⟩, hZ⟩
+      hg.hdr.of_outside ot (by unfold slot; omega_using [])⟩, hZ⟩
 end VG.Proof.Bignum.X86_64.AdxRotate8

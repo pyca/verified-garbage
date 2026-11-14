@@ -40,7 +40,7 @@ theorem lane_vprorq256 (d a : XReg) (n : BitVec 8) (s : State) (r : XReg) (l : N
 
 theorem qword_rorQwords (x : BitVec 128) (n : BitVec 8) {i : Nat} (hi : i < 2) :
     qword (rorQwords x n) i = (qword x i).rotateRight (n.toNat % 64) := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [rorQwords, qword_app0, qword_app1]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp only [rorQwords, qword_app0, qword_app1]
 
 def xorRorOps (d a : XReg) (n : BitVec 8) : List VOp :=
   [.vbin .vpxor .l256 d d a, .vprorq .l256 d d n]

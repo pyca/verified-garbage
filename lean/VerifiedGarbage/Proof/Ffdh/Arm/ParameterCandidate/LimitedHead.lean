@@ -66,8 +66,8 @@ theorem limitedHead_ok {s : State} {p : CandidateParams} {used : Nat}
   have frame : Frame [⟨State.addr (u.sp + 44#32), 16⟩] u.mem t.mem := by
     rw [memory]
     refine (Frame.refl _ _).writeW (r := ⟨State.addr (u.sp + 44#32), 16⟩) (by simp) _ ?_
-    rw [VG.Arm.addr_add (by have := ctx.saved.space.nowrap; omega),
-      VG.Arm.addr_add (by have := ctx.saved.space.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := ctx.saved.space.nowrap; omega_using [this]),
+      VG.Arm.addr_add (by have := ctx.saved.space.nowrap; omega_using [this])]
     exact Offset.contains _ (by decide) (by decide) (by decide)
   have usedWord : t.mem.readW (State.addr (t.sp + 40#32)) 32 = BitVec.ofNat 32 used := by
     rw [restT.sp, memory, phaseStore_word _ _ ctx.saved.space.nowrap (by decide) (by decide) (by decide) _]

@@ -105,16 +105,16 @@ theorem loop {I : Nat → State → State → Prop} {body : Prog isa} {c : Cond}
     refine WP.mono ((hb m).wp σ u hu) fun u' ⟨he, hq, hi⟩ => ?_
     rcases Nat.eq_zero_or_pos m with h0 | hp
     · exact .inl ⟨by rw [he, h0]; rfl, hq h0⟩
-    · obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-      exact .inr ⟨by rw [he]; simp, k, by omega, hi hp⟩
+    · obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hp]⟩
+      exact .inr ⟨by rw [he]; simp, k, by omega_using [], hi hp⟩
   · refine RelCT.loop (M := isa) (fun m => Two (I (m + 1))) (fun m => ?_) n
     refine (hb m).ct.mono (fun _ _ h => h) fun s₁ s₂ ⟨σ₁, σ₂, ⟨e₁, q₁, i₁⟩, ⟨e₂, q₂, i₂⟩⟩ =>
       ⟨e₁.trans e₂.symm, fun hf => ?_, fun ht => ?_⟩
     · have h0 : m = 0 := by rw [e₁] at hf; simpa using hf
       exact ⟨σ₁, σ₂, q₁ h0, q₂ h0⟩
     · have hp : 0 < m := by rw [e₁] at ht; simpa using ht
-      obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-      exact ⟨k, by omega, σ₁, σ₂, i₁ hp, i₂ hp⟩
+      obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hp]⟩
+      exact ⟨k, by omega_using [], σ₁, σ₂, i₁ hp, i₂ hp⟩
 
 /-- A piece whose stages imply a fact about the public parameters. -/
 theorem of_imp {F G : State → State → Prop} {c : Prog isa} {p : Prop} (hp : ∀ σ s, F σ s → p)

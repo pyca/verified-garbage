@@ -20,7 +20,7 @@ open VG.Proof.Rsa.Mont (numAt)
 theorem montgomeryOutArgs_ok (s : State) {p : Inputs} {sp : BitVec 32} (h : Memory p sp s) :
     WP isa (.block [.ldrSp .r4 4,.dp .add .r4 .r4 (.imm 24)]) s fun t =>
       (t.gpr .r4 = p.output + BitVec.ofNat 32 24 ∧ t.gpr .r0 = p.base ∧ t.mem = s.mem) ∧ Rest roundClobbers s t := by
-  have addr : State.addr (s.sp+BitVec.ofNat 32 4) = off (State.addr s.sp) 4 := addr_add (by have := h.context.locals.space.nowrap; omega)
+  have addr : State.addr (s.sp+BitVec.ofNat 32 4) = off (State.addr s.sp) 4 := addr_add (by have := h.context.locals.space.nowrap; omega_using [this])
   have read := h.context.locals.read (d:=4) (by decide)
   have saved := h.context.saved 4 (by simp [slots])
   change s.mem.readW (off (State.addr s.sp) 4) 32 = p.output at saved
@@ -41,15 +41,15 @@ theorem montgomeryOut_ok (s : State) {p : Inputs} {sp : BitVec 32} (h : Memory p
     simp only [bytes,Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
     change 24+16*p.w ≤ 8*(3+(2*p.w+32*p.w))
-    omega
+    omega_using []
   have pos := p.width.1
-  have bounded : 24+16*p.w ≤ 2^32 := by have := h.output.fits; omega
+  have bounded : 24+16*p.w ≤ 2^32 := by have := h.output.fits; omega_using [size, this]
   have dstAddr : State.addr (p.output+BitVec.ofNat 32 24) = off (State.addr p.output) 24 :=
-    addr_add (by have := h.output.fits; omega)
+    addr_add (by have := h.output.fits; omega_using [size, pos, this])
   have dstNat : (p.output+BitVec.ofNat 32 24).toNat = p.output.toNat+24 := by
     rw [BitVec.toNat_add]
     change (p.output.toNat+24) % 2^32 = _
-    exact Nat.mod_eq_of_lt (by have := h.output.fits; omega)
+    exact Nat.mod_eq_of_lt (by have := h.output.fits; omega_using [size, pos, this])
   have prefixSub : (⟨off (State.addr p.output) 24,16*p.w⟩ : Region).Sub ⟨State.addr p.output,bytes p⟩ := Offset.sub_base _ size
   rw [VG.Impl.Ffdh.Arm.CombPrecompute.montgomeryOut,WP.seq_iff]
   refine WP.mono (montgomeryOutArgs_ok s h) ?_
@@ -57,8 +57,8 @@ theorem montgomeryOut_ok (s : State) {p : Inputs} {sp : BitVec 32} (h : Memory p
   rw [WP.seq_iff]
   refine WP.mono (precomputeOut_ok (w:=p.w) u (h.context.workspace.congr restU.wr)
     (by rw [memU]; exact h.ready.layout) (by simpa only [memU] using h.ready.width)
-    (by rw [dstNat]; have := h.output.fits; omega)
-    (by rw [restU.wr,dstAddr]; exact CallLay.inRegions_sub h.output.writable (by omega) (by have := h.output.fits; omega))
+    (by rw [dstNat]; have := h.output.fits; omega_using [size, this])
+    (by rw [restU.wr,dstAddr]; exact CallLay.inRegions_sub h.output.writable (by omega_using [size]) (by have := h.output.fits; omega_using [this]))
     (by rw [dstAddr]; exact h.workspaceSeparate.sub_right prefixSub) ptr dst) ?_
   rintro v ⟨_,value,frameV,restV⟩
   rw [memU,dstAddr] at value frameV
@@ -75,7 +75,7 @@ theorem montgomeryOut_ok (s : State) {p : Inputs} {sp : BitVec 32} (h : Memory p
   change s.mem.readW (off (State.addr s.sp) 0) 32 = p.base at saved0
   have incoming : IncomingWord p.base 0 v := by
     refine ⟨?_,?_,?_⟩
-    · rw [restSV.sp]; have := h.context.locals.space.nowrap; omega
+    · rw [restSV.sp]; have := h.context.locals.space.nowrap; omega_using [this]
     · rw [restSV.sp,restSV.rd,restSV.wr]; exact h.context.locals.read (by decide)
     · rw [restSV.sp,frameV.readW (r:=⟨off (State.addr s.sp) 0,4⟩) (Region.contains_self _ _) (by
         intro r hr
@@ -93,6 +93,6 @@ theorem montgomeryOut_ok (s : State) {p : Inputs} {sp : BitVec 32} (h : Memory p
   intro r hr
   have eq := List.mem_singleton.mp hr
   subst r
-  exact (Offset.disjoint_base _ (by decide) (by omega : 24+16*p.w ≤ 2^64)).symm
+  exact (Offset.disjoint_base _ (by decide) (by omega_using [bounded] : 24+16*p.w ≤ 2^64)).symm
 
 end VG.Proof.Ffdh.Arm.CombBuilder

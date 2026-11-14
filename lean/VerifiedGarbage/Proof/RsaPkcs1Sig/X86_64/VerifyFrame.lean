@@ -30,7 +30,7 @@ theorem ea_sp (t : State) (d : Nat) : t.ea (sp d) = t.gpr .rsp + BitVec.ofNat 64
 
 theorem stackArgAddr_eq (s : State) (j : Nat) :
     stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
-  simp only [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+  simp only [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
 
 /-! ## The precondition, by name -/
 
@@ -88,21 +88,21 @@ theorem fb_sub8 (s : State) : fb s - 8 = kb s := by
 theorem kb_toNat {s : State} (hp : PreV s) : (kb s).toNat + verStack + 48 ≤ 2 ^ 64 ∧
     (kb s).toNat + verStack = (s.gpr .rsp).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack at *; omega
+  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack at *; omega_arith
 
 theorem toNat_off {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) : (off p d).toNat = p.toNat + d := by
-  simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem fb_toNat {s : State} (hp : PreV s) : (fb s).toNat + frameBytes + 8 + 40 ≤ 2 ^ 64 ∧
     (fb s).toNat = (kb s).toNat + 8 := by
   have ⟨h1, h2⟩ := kb_toNat hp
-  rw [fb_eq, toNat_off (by unfold verStack at *; omega)]
-  unfold frameBytes verStack at *; omega
+  rw [fb_eq, toNat_off (by unfold verStack at *; omega_using [h1])]
+  unfold frameBytes verStack at *; omega_using [h1]
 
 /-- Bytes of the frame are in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) : Region.Sub ⟨off (fb s) d, n⟩ (stkR s) := by
   rw [fb_eq, off_off]
-  exact Offset.sub_base _ (by unfold frameBytes at h; unfold verStack; omega)
+  exact Offset.sub_base _ (by unfold frameBytes at h; unfold verStack; omega_using [h])
 
 /-- The return address of a call from the frame. -/
 theorem below_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
@@ -113,7 +113,7 @@ theorem below_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
 theorem ret_disjoint (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     (below (fb s) 8).Disjoint ⟨off (fb s) d, n⟩ := by
   rw [show below (fb s) 8 = ⟨kb s, 8⟩ by simp only [below]; rw [← fb_sub8]; rfl, fb_eq, off_off]
-  exact Offset.base_disjoint _ (by omega) (by unfold frameBytes at h; omega)
+  exact Offset.base_disjoint _ (by omega_using []) (by unfold frameBytes at h; omega_using [h])
 
 /-- A byte outside the stack the function uses is outside the frame. -/
 theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :
@@ -121,7 +121,7 @@ theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :
   by_contra hlt
   apply hx
   have hc : (⟨fb s, frameBytes⟩ : Region).Contains x 1 := by
-    simp only [Region.Contains, ofs] at hlt ⊢; omega
+    simp only [Region.Contains, ofs] at hlt ⊢; omega_using [hlt]
   have := frame_sub s (d := 0) (n := frameBytes) (by decide)
   simp only [off, BitVec.add_zero] at this
   exact this x hc
@@ -141,7 +141,7 @@ structure Env (s t : State) : Prop where
   sD : word t.mem (fb s) oD = s.gpr .r9
 
 theorem Env.scr {s t : State} (h : Env s t) (hp : PreV s) : Scr t (fb s) frameBytes :=
-  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega)
+  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega_using [this])
 
 /-- A buffer of the caller that the function does not write. -/
 theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, scrR s] s.mem m) {p : Addr} {len : Nat}
@@ -155,7 +155,7 @@ theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, scrR s] s.mem 
   · exact hs.symm
 
 theorem stackArgAddr_fb (s : State) (j : Nat) : stackArgAddr s j = off (fb s) (frameBytes + 8 + 8 * j) := by
-  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega, BitVec.ofNat_add,
+  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega_using [], BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rfl
 
@@ -170,13 +170,13 @@ theorem arg_outside {s : State} (hp : PreV s) {m : Mem} (h : Outside (fb s) 0 fr
   have := fb_toNat hp
   show m.readW _ 64 = s.mem.readW _ 64
   rw [stackArgAddr_fb]
-  exact h.word (.inr (by unfold frameBytes; omega)) (by unfold frameBytes at *; omega)
+  exact h.word (.inr (by unfold frameBytes; omega_using [])) (by unfold frameBytes at *; omega_using [hj])
 
 /-- A stack argument, in memory changed only where the function may write. -/
 theorem Env.arg {s t : State} (h : Env s t) (hp : PreV s) {j : Nat} (hj : j < 5) :
     t.mem.readW (stackArgAddr s j) 64 = stackArg s j := by
   refine h.mem.readW (r := ⟨stackArgAddr s 0, 40⟩) ?_ (fun r hr => ?_) (by decide)
-  · rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  · rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.dKa.symm
@@ -185,7 +185,7 @@ theorem Env.arg {s t : State} (h : Env s t) (hp : PreV s) {j : Nat} (hj : j < 5)
 /-- A word past a store to another word of the frame. -/
 theorem word_wo (m : Mem) (base : Addr) {d d' : Nat} (v : BitVec 64) (h : d + 8 ≤ d' ∨ d' + 8 ≤ d)
     (hd : d + 8 ≤ 4096) (hd' : d' + 8 ≤ 4096) : word (m.writeW (off base d) v) base d' = word m base d' :=
-  (writeW_outside m base v (by omega)).word (by omega) (by omega)
+  (writeW_outside m base v (by omega_using [hd])).word (by omega_using [h]) (by omega_using [hd'])
 
 theorem allocState_gpr (s : State) (r : Reg) :
     (allocState frameBytes s).gpr r = if r = .rsp then fb s else s.gpr r := rfl
@@ -196,7 +196,7 @@ theorem arg_in {s t : State} (hp : PreV s) (hrd : t.rd = s.rd) {j : Nat} (hj : j
   by
     rw [hrd]
     exact hp.hrd.left _ _ ⟨⟨stackArgAddr s 0, 40⟩, by simp,
-      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 theorem arg_ea {s t : State} (h : t.gpr .rsp = fb s) (j : Nat) :
     t.ea (arg j) = stackArgAddr s j := by

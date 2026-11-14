@@ -97,7 +97,7 @@ theorem sbox_ok (j : Nat) (hj : j < 8) {s : State} (hok : Ok sboxCfg s)
     · rename_i hr
       cases h; subst hr
       simp only [TableRel, getLsbD_qw _ hp, hones, BitVec.getLsbD_allOnes,
-        Nat.testBit_two_pow_sub_one, hc, decide_true, show 64 * q + p < 256 by omega]
+        Nat.testBit_two_pow_sub_one, hc, decide_true, show 64 * q + p < 256 by omega_using [hp, hq]]
     · simp only [Option.map_eq_some_iff] at h
       obtain ⟨k, hk, rfl⟩ := h
       have hqr := List.find?_some hk
@@ -122,7 +122,7 @@ theorem sbox_ok (j : Nat) (hj : j < 8) {s : State} (hok : Ok sboxCfg s)
       simp [h] at this), p₀.frame⟩
   obtain ⟨s'', hs'', p₁⟩ := key (P % 64) (Nat.mod_lt _ (by decide))
   obtain rfl := Straight.run_unique hs'' hs'
-  have h := p₁.rel.reg (outReg i) _ (hout i hi) (P / 64) (by omega)
+  have h := p₁.rel.reg (outReg i) _ (hout i hi) (P / 64) (by omega_using [hP])
   have eP : 64 * (P / 64) + P % 64 = P := Nat.div_add_mod P 64
   simp only [TableRel, outputTable, testBit_tableOf, (inputAt s _).isLt,
     decide_true, Bool.true_and, eP, getLsbD_qw _ (Nat.mod_lt _ (by decide) : P % 64 < 64)] at h

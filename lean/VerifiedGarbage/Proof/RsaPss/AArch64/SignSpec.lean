@@ -40,7 +40,7 @@ def signOut (Hs Gs : Spec.Mgf1.Hash) (s : State) : Spec.Rsa.Outcome :=
 
 theorem bytesAt_cons (m : Mem) (p : Addr) {k : Nat} (hk : 1 ≤ k) :
     Spec.Rsa.bytesAt m p k = m p :: Spec.Rsa.bytesAt m (p + 1) (k - 1) := by
-  obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega_using [hk]⟩
   simp only [Spec.Rsa.bytesAt, List.range_succ_eq_map, List.map_cons, List.map_map, Nat.add_sub_cancel]
   refine List.cons_eq_cons.mpr ⟨by simp, List.map_congr_left fun i _ => ?_⟩
   simp only [Function.comp, BitVec.add_assoc]
@@ -80,12 +80,12 @@ theorem signOut_enc {s : State} (hk : 1 ≤ (s.gpr .x3).toNat) (h0 : s.mem (s.gp
 theorem em_input {m : Mem} {S : Addr} {k lo el : Nat} {e : List Byte} (hlok : lo + el = k) (hlo : lo ≤ 1)
     (hz : lo = 1 → m (off S oEm) = 0) (he : Spec.Rsa.bytesAt m (off S (oEm + lo)) el = e) :
     Spec.Rsa.bytesAt m (off S oEm) k = Spec.RsaPss.zeros lo ++ e := by
-  rcases (by omega : lo = 0 ∨ lo = 1) with rfl | rfl
+  rcases (by omega_using [hlo] : lo = 0 ∨ lo = 1) with rfl | rfl
   · rw [Nat.add_zero] at he
-    rw [← he, show k = el by omega]
+    rw [← he, show k = el by omega_using [hlok]]
     rfl
-  · rw [bytesAt_cons _ _ (by omega), hz rfl, show off S oEm + 1 = off S (oEm + 1) from off_add S oEm 1,
-      show k - 1 = el by omega, he]
+  · rw [bytesAt_cons _ _ (by omega_using [hlok]), hz rfl, show off S oEm + 1 = off S (oEm + 1) from off_add S oEm 1,
+      show k - 1 = el by omega_using [hlok], he]
     rfl
 
 end VG.Proof.RsaPss.AArch64.Sgn

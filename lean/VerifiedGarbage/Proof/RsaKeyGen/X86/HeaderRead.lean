@@ -25,9 +25,9 @@ theorem pointers_read64 (indices : List Nat) {base : Addr} {p : BitVec 32} {w d 
     unfold pointerMemory
     apply read64_write _ fit
     · have := bound i (List.mem_cons_self ..)
-      omega
+      omega_using [this]
     · have := bound i (List.mem_cons_self ..)
-      omega
+      omega_using [apart, this]
 
 theorem header_width {base : Addr} {p : BitVec 32} {w : Nat} {m : Mem} :
     (headerMemory base p w m).readW (off base 48) 64 = 0#32 ++ BitVec.ofNat 32 w := by
@@ -60,10 +60,10 @@ theorem pointers_read64_at (indices : List Nat) {base : Addr} {p : BitVec 32} {w
       · simp only [List.mem_cons, same, false_or, tail, ite_false]
         unfold pointerMemory
         apply read64_write
-        · omega
-        · omega
+        · omega_using [same]
+        · omega_using [index]
         · have := bound i (List.mem_cons_self ..)
-          omega
+          omega_using [this]
 
 theorem header_pointer {base : Addr} {p : BitVec 32} {w j : Nat} {m : Mem} (index : j < 8) :
     (headerMemory base p w m).readW (off base (64 + 8 * j)) 64 =

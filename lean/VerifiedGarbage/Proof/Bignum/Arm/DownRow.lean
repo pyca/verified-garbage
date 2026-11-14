@@ -171,10 +171,10 @@ theorem loop_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
     WP isa VG.Impl.Bignum.Arm.DownRow.loop s (LoopInv s0 x base o b n n) := by
   let I := fun k t => ∃ j, j+k=n ∧ 0<k ∧ LoopInv s0 x base o b n j t
   unfold VG.Impl.Bignum.Arm.DownRow.loop
-  refine WP.loop (M:=isa) I ?_ (n-i) s ⟨i,by omega,by omega,inv⟩
+  refine WP.loop (M:=isa) I ?_ (n-i) s ⟨i,by omega_using [hi],by omega_using [hi],inv⟩
   intro k t h
   obtain ⟨j,hjk,hk,hj⟩ := h
-  refine WP.mono (body_ok ctx hj (by omega) h1 h10 h9) ?_
+  refine WP.mono (body_ok ctx hj (by omega_using [hjk, hk]) h1 h10 h9) ?_
   rintro u ⟨hu,hz⟩
   by_cases last : j+1=n
   · left
@@ -182,7 +182,7 @@ theorem loop_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
     change some (!u.z)=some false
     simp only [hz,last,decide_true,Bool.not_true]
   · right
-    refine ⟨?_,k-1,by omega,j+1,by omega,by omega,hu⟩
+    refine ⟨?_,k-1,by omega_using [hk],j+1,by omega_using [hjk, hk],by omega_using [hjk, hk, last],hu⟩
     change some (!u.z)=some true
     simp only [hz,last,decide_false,Bool.not_false]
 
@@ -199,7 +199,7 @@ theorem code_ok (s : State) {base : BitVec 32} {size o b n : Nat}
   have ctx1 : Ctx s1 base size o b n := { ctx with
     writable := by rw [rest1.wr]; exact ctx.writable }
   have inv1 : LoopInv s1 x base o b n 0 s1 := by
-    refine ⟨by omega,?_,?_,?_,Outside.refl _ _ _ _,?_,Rest.refl _ _⟩
+    refine ⟨by omega_using [],?_,?_,?_,Outside.refl _ _ _ _,?_,Rest.refl _ _⟩
     · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r0 (by decide)).trans hp0
     · simpa only [Nat.mul_zero,Nat.add_zero] using (rest1.gpr .r12 (by decide)).trans hp12
     · simpa only [Nat.sub_zero] using (rest1.gpr .lr (by decide)).trans hcount

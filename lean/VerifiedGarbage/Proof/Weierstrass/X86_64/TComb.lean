@@ -220,7 +220,7 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
     omega_using [h2]
   refine WP.mono (selectChoice_ok publicLookup K hs₁ hnn (by omega_using [hHle]) hL.tbl hexy hEy hEz (by
       have := ap (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)
-      have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega)
+      have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega_arith)
     (Nat.lt_trans hV.one_lt hpn) hx₁ m₁ hmag (by rw [sy₁]; exact hT) hreg) fun s₂ S₂ => ?_
   obtain ⟨ex₂, ey₂, ez₂, k₂, U₂⟩ := S₂
   rw [k₁.2.1] at ex₂ ey₂ U₂
@@ -456,7 +456,7 @@ theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
 theorem combW_bits {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {t : Nat} (ht : t < K.w * K.J) :
     ∀ w ∈ combW K.toComb, K.bits + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ K.bits + t := by
   have : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
-  intro w hw; have := hL.bits_w w hw; omega
+  intro w hw; have := hL.bits_w w hw; omega_arith
 
 /-- `o = a`, a point, for `o`'s slots apart from each other and from `a`'s. -/
 theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size) {o a : Pt}
@@ -622,7 +622,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
       (tmv C K.M.n base s₃ K.A.z) (mul (combEW K.w k K.J (j - 1)) (G C)) := fun h0 => by
     have hw : combWin K.w k (j - 1) = 2 ^ (K.w - 1) := by
       have e : K.H = 2 ^ (K.w - 1) := rfl
-      unfold magH at ha; rw [e] at ha; split at ha <;> omega
+      unfold magH at ha; rw [e] at ha; split at ha <;> omega_arith
     rw [← hadd, hw]
     simp only [Nat.le_refl, ↓reduceIte, Nat.sub_self]
     rw [show combPtW C K.w (j - 1) 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul], add_infinity]

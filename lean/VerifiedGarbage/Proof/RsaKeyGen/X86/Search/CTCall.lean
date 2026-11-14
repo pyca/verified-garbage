@@ -37,7 +37,7 @@ theorem args_eq {p : SearchPublic} {o₁ o₂ : State} (h₁ : SearchInput p o�
     (hi : i < 11) : arg o₁ i = arg o₂ i := by
   have e : searchOfState o₁ = searchOfState o₂ := h₁.2.trans h₂.2.symm
   have ofn : ∀ {x y : BitVec 32}, x.toNat = y.toNat → x = y := BitVec.eq_of_toNat_eq
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact congrArg SearchPublic.op e
   · exact ofn (congrArg SearchPublic.len e)
@@ -53,7 +53,7 @@ theorem args_eq {p : SearchPublic} {o₁ o₂ : State} (h₁ : SearchInput p o�
 
 theorem callArg_eq {p : SearchPublic} {o₁ o₂ : State} (h₁ : SearchInput p o₁) (h₂ : SearchInput p o₂)
     (used : Nat) {j : Nat} (hj : j < 11) : callArg o₁ used j = callArg o₂ used j := by
-  simp only [callArg, args_eq h₁ h₂ (i := 7) (by omega), args_eq h₁ h₂ (i := 8) (by omega), args_eq h₁ h₂ hj]
+  simp only [callArg, args_eq h₁ h₂ (i := 7) (by omega_using []), args_eq h₁ h₂ (i := 8) (by omega_using []), args_eq h₁ h₂ hj]
 
 /-- In the candidate's frame, with its arguments, at the loop point `q`. -/
 def CallCT (p : SearchPublic) (T : List Nat) (q : Pt) (t : State) : Prop :=
@@ -65,7 +65,7 @@ theorem used_lt {p : SearchPublic} {o : State} (h : SearchInput p o) {used : Nat
     used < (arg o 8).toNat := by
   have : p.randLen = (arg o 8).toNat := by rw [← h.2]; rfl
   have := h.len_valid
-  omega
+  omega_arith
 
 theorem callee_pub {p : SearchPublic} {T : List Nat} {q : Pt} {t₁ t₂ : State} (h₁ : CallCT p T q t₁)
     (h₂ : CallCT p T q t₂) (rd wr : List Region) :

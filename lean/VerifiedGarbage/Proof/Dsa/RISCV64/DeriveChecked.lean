@@ -69,7 +69,7 @@ theorem dcParams {s : State} (h : dcContract.pre s) : ParamsOk s.mem (dlayOf s) 
   obtain ⟨hd, hc⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hv, -, hpl, -, -, -⟩ := hd
   have e := checkParameters_spec (m := s.mem) (L := dlayOf s) (key := s.gpr .a2) hv
-  rw [show 2 * (dlayOf s).pl + (dlayOf s).ql = (s.gpr .a3).toNat by simp only [dlayOf] at hpl ⊢; omega] at e
+  rw [show 2 * (dlayOf s).pl + (dlayOf s).ql = (s.gpr .a3).toNat by simp only [dlayOf] at hpl ⊢; omega_using [hpl]] at e
   exact of_decide_eq_true (e.symm.trans hc)
 
 theorem deriveChecked_correct (s : State) (h : dcContract.pre s) :
@@ -79,9 +79,9 @@ theorem deriveChecked_correct (s : State) (h : dcContract.pre s) :
   exact deriveWith_ok (X := Prevalidated.setup) s h.1 fun Out hs hr hl hk hrest _ => by
     refine setupParams_ok (d := 0) hL hs hr hl (by decide) hk ?_ hrest
     simp only [ParamsOk, pOf, qOf, gOf] at hP ⊢
-    rw [(hk.take (k := (dlayOf s).pl) (by omega)).bytes Out (by omega),
-      (hk.sub (o := (dlayOf s).pl) (k := (dlayOf s).ql) (by omega)).bytes Out (by omega),
-      (hk.sub (o := (dlayOf s).pl + (dlayOf s).ql) (k := (dlayOf s).pl) (by omega)).bytes Out (by omega)]
+    rw [(hk.take (k := (dlayOf s).pl) (by omega_using [])).bytes Out (by omega_using []),
+      (hk.sub (o := (dlayOf s).pl) (k := (dlayOf s).ql) (by omega_using [])).bytes Out (by omega_using []),
+      (hk.sub (o := (dlayOf s).pl + (dlayOf s).ql) (k := (dlayOf s).pl) (by omega_using [])).bytes Out (by omega_using [])]
     exact hP
 
 end VG.Proof.Dsa.RISCV64

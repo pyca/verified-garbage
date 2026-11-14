@@ -69,8 +69,8 @@ theorem detW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : Geo} {s0 s : State} {A
           xOf (32 * g.w) (32 * g.W) n (bOf (32 * g.w) q) % 2 ^ (64 * wq a))) := by
   have up := h.upper
   have lo := h.lower
-  have wpos : 64 ≤ 32 * g.w := by change 64 ≤ 32 * (2 * g.n + 2); omega
-  have nbW : 2 * (32 * g.w) ≤ 32 * g.W := by change 2 * (32 * (2 * g.n + 2)) ≤ 32 * (2 * (2 * g.n + 2) + 2); omega
+  have wpos : 64 ≤ 32 * g.w := by change 64 ≤ 32 * (2 * g.n + 2); omega_using []
+  have nbW : 2 * (32 * g.w) ≤ 32 * g.W := by change 2 * (32 * (2 * g.n + 2)) ≤ 32 * (2 * (2 * g.n + 2) + 2); omega_using []
   unfold det
   simp only [seqs]
   -- `d e - 1`.
@@ -88,17 +88,17 @@ theorem detW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : Geo} {s0 s : State} {A
       (by simp [upd, aZ0, wX, VG.Impl.Rsa.X86.Recover.wZ, z1'])
       (by rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]; exact hn)
       (by simp [upd, aX2, wX, x1']) x1 three small
-      (Nat.lt_of_lt_of_le (VG.Proof.Bignum.ShiftStages.tz_lt (by omega) (Nat.lt_of_le_of_lt (Nat.sub_le n 1) hn'))
-        (by simp only [wq]; omega)))
+      (Nat.lt_of_lt_of_le (VG.Proof.Bignum.ShiftStages.tz_lt (by omega_using [three]) (Nat.lt_of_le_of_lt (Nat.sub_le n 1) hn'))
+        (by simp only [wq]; omega_using [ha1])))
     fun s2 ⟨A2, AW2, V2, h2, u2, x2, x32, n2, v2⟩ => ?_)
-  have nm1 : wsub (32 * g.w) n 1 = n - 1 := wsub_of_le small (by omega)
+  have nm1 : wsub (32 * g.w) n 1 = n - 1 := wsub_of_le small (by omega_using [odd])
   have tw : twosOut (32 * g.w) (32 * g.W) n de = ((n - 1) / 2 ^ VG.Proof.Bignum.ShiftStages.tz (n - 1),
       deX (32 * g.W) de % 2 ^ (32 * g.w) /
         2 ^ VG.Proof.Bignum.ShiftStages.tz (Nat.gcd (n - 1) (deX (32 * g.W) de % 2 ^ (32 * g.w))),
       deX (32 * g.W) de *
         2 ^ VG.Proof.Bignum.ShiftStages.tz (Nat.gcd (n - 1) (deX (32 * g.W) de % 2 ^ (32 * g.w))) %
         2 ^ (32 * g.W)) := by
-    unfold twosOut; rw [nm1]; exact twos_closed (by omega) (by omega) deXlt
+    unfold twosOut; rw [nm1]; exact twos_closed (by omega_using [three]) (by omega_using [small]) deXlt
   have tw1 := congrArg Prod.fst tw
   have tw2 := congrArg (fun p => p.2.1) tw
   have tw3 := congrArg (fun p => p.2.2) tw
@@ -107,18 +107,18 @@ theorem detW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : Geo} {s0 s : State} {A
   rw [← tw2] at x2
   rw [← tw3] at x32
   have uodd : (twosOut (32 * g.w) (32 * g.W) n de).1 % 2 = 1 := by
-    rw [tw]; exact (VG.Proof.Bignum.ShiftStages.tz_spec (n - 1) (by omega)).2
+    rw [tw]; exact (VG.Proof.Bignum.ShiftStages.tz_spec (n - 1) (by omega_using [three])).2
   have ule : (twosOut (32 * g.w) (32 * g.W) n de).1 ≤ n - 1 := by rw [tw]; exact Nat.div_le_self _ _
   have x3lt : (twosOut (32 * g.w) (32 * g.W) n de).2.2 < 2 ^ (32 * g.W) := by
     rw [tw]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
-  have pnb : 2 ^ (32 * g.w) ≤ 2 ^ (32 * g.W) := Nat.pow_le_pow_right (by decide) (by omega)
+  have pnb : 2 ^ (32 * g.w) ≤ 2 ^ (32 * g.W) := Nat.pow_le_pow_right (by decide) (by omega_using [nbW])
   have hA : aOf (32 * g.w) (32 * g.W) n de = Nat.gcd (twosOut (32 * g.w) (32 * g.W) n de).1
       (twosOut (32 * g.w) (32 * g.W) n de).2.1 * (twosOut (32 * g.w) (32 * g.W) n de).2.2 % 2 ^ (32 * g.W) := by
     have hg : Nat.gcd (twosOut (32 * g.w) (32 * g.W) n de).1 (twosOut (32 * g.w) (32 * g.W) n de).2.1 <
         2 ^ (32 * g.w) := by
       have := Nat.gcd_le_left (twosOut (32 * g.w) (32 * g.W) n de).2.1
-        (show 0 < (twosOut (32 * g.w) (32 * g.W) n de).1 by omega)
-      omega
+        (show 0 < (twosOut (32 * g.w) (32 * g.W) n de).1 by omega_using [uodd])
+      omega_using [small, ule, this]
     unfold aOf
     rw [prod_iter _ _ _ x3lt]
     simp only
@@ -142,11 +142,11 @@ theorem detW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : Geo} {s0 s : State} {A
       Q = dOf (32 * g.w) (32 * g.W) n de / m1Of (32 * g.w) (32 * g.W) n de ∧
       R = dOf (32 * g.w) (32 * g.W) n de % m1Of (32 * g.w) (32 * g.W) n de := fun hl _ => by
     have mlt : mOf (32 * g.w) (32 * g.W) n de < n := by simpa [ltOf] using hl
-    have rlt : rOf (32 * g.w) (32 * g.W) n de < n := Nat.mod_lt _ (by omega)
+    have rlt : rOf (32 * g.w) (32 * g.W) n de < n := Nat.mod_lt _ (by omega_using [odd])
     have hd : dOf (32 * g.w) (32 * g.W) n de = n - rOf (32 * g.w) (32 * g.W) n de := by
-      unfold dOf; rw [Nat.mod_eq_of_lt (by omega), wsub_of_le small (by omega)]
+      unfold dOf; rw [Nat.mod_eq_of_lt (by omega_using [small, rlt]), wsub_of_le small (by omega_using [rlt])]
     have hm1 : m1Of (32 * g.w) (32 * g.W) n de = mOf (32 * g.w) (32 * g.W) n de + 1 := by
-      unfold m1Of; rw [Nat.mod_eq_of_lt (a := mOf _ _ _ _) (by omega), Nat.mod_eq_of_lt (by omega)]
+      unfold m1Of; rw [Nat.mod_eq_of_lt (a := mOf _ _ _ _) (by omega_using [small, mlt]), Nat.mod_eq_of_lt (by omega_using [small, mlt])]
     rw [hd, hm1]
     exact cond7 mlt rlt
   -- `b` and `b²`.
@@ -154,10 +154,10 @@ theorem detW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : Geo} {s0 s : State} {A
   have bl : bOf (32 * g.w) Q < 2 ^ (32 * g.w) := Nat.mod_lt _ (Nat.two_pow_pos _)
   have bb : bOf (32 * g.w) Q * bOf (32 * g.w) Q < 2 ^ (32 * g.W) := by
     have : 2 ^ (32 * g.w) * 2 ^ (32 * g.w) ≤ 2 ^ (32 * g.W) := by
-      rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega)
+      rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega_using [nbW])
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' bl bl) this
   have hsq : sqOf (32 * g.w) (32 * g.W) (bOf (32 * g.w) Q) = bOf (32 * g.w) Q * bOf (32 * g.w) Q := by
-    unfold sqOf; rw [prod_iter _ _ _ (by omega)]; simp only
+    unfold sqOf; rw [prod_iter _ _ _ (by omega_using [pnb, bl])]; simp only
     rw [Nat.mod_eq_of_lt bl, Nat.mod_eq_of_lt bb]
   have sq8' : AW8 wA = sqOf (32 * g.w) (32 * g.W) (bOf (32 * g.w) Q) := by rw [hsq, sq8]; rfl
   -- `b² - 4 n`.
@@ -168,7 +168,7 @@ theorem detW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : Geo} {s0 s : State} {A
   have x9' : AW9 wR = xOf (32 * g.w) (32 * g.W) n (bOf (32 * g.w) Q) := x9
   have ok49' : V9 sOk4 = b2n (ok4Of (32 * g.w) (32 * g.W) n (bOf (32 * g.w) Q)) := ok49
   -- Its square root.
-  refine WP.seq (WP.mono (sqrt_ok h9 z8 x9' ha (by omega) haw ha1) fun s10 ⟨A10, AW10, h10, y10, d10, z10⟩ => ?_)
+  refine WP.seq (WP.mono (sqrt_ok h9 z8 x9' ha (by omega_using [ha0]) haw ha1) fun s10 ⟨A10, AW10, h10, y10, d10, z10⟩ => ?_)
   -- The factors and the mask.
   refine WP.mono (factorsW_ok h10 (b := bOf (32 * g.w) Q) (okde := okDE (32 * g.W) de) (lt := ltOf (32 * g.w) (32 * g.W) n de)
     (ex := decide (R = 0)) (ok4 := ok4Of (32 * g.w) (32 * g.W) n (bOf (32 * g.w) Q))
@@ -193,37 +193,37 @@ theorem xOf_lt_words {nb wb n de q W' : Nat} (three : 3 ≤ n) (hn : 8 * (n + 2)
     (hlt : ltOf nb wb n de = true) (hq : q = dOf nb wb n de / m1Of nb wb n de)
     (h4 : ok4Of nb wb n (bOf nb q) = true) (hW : n < 2 ^ (32 * W')) :
     xOf nb wb n (bOf nb q) < 2 ^ (64 * W') := by
-  have pnb : 2 ^ nb ≤ 2 ^ wb := Nat.pow_le_pow_right (by decide) (by omega)
-  have p2 : 2 ^ nb * 2 ^ nb ≤ 2 ^ wb := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega)
-  have rlt : rOf nb wb n de < n := Nat.mod_lt _ (by omega)
+  have pnb : 2 ^ nb ≤ 2 ^ wb := Nat.pow_le_pow_right (by decide) (by omega_using [hw])
+  have p2 : 2 ^ nb * 2 ^ nb ≤ 2 ^ wb := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega_using [hw])
+  have rlt : rOf nb wb n de < n := Nat.mod_lt _ (by omega_using [three])
   have dv : dOf nb wb n de = n - rOf nb wb n de := by
-    unfold dOf; rw [Nat.mod_eq_of_lt (by omega), wsub_of_le (by omega) (by omega)]
+    unfold dOf; rw [Nat.mod_eq_of_lt (by omega_using [hn, rlt]), wsub_of_le (by omega_using [hn]) (by omega_using [rlt])]
   have mlt : mOf nb wb n de < n := by simpa [ltOf] using hlt
   have m1 : m1Of nb wb n de = mOf nb wb n de + 1 := by
-    unfold m1Of; rw [Nat.mod_eq_of_lt (a := mOf nb wb n de) (by omega), Nat.mod_eq_of_lt (by omega)]
-  have qle : q ≤ n := by rw [hq, dv, m1]; exact Nat.le_trans (Nat.div_le_self _ _) (by omega)
-  have hb : bOf nb q = q + 1 := by unfold bOf; exact Nat.mod_eq_of_lt (by omega)
+    unfold m1Of; rw [Nat.mod_eq_of_lt (a := mOf nb wb n de) (by omega_using [hn, mlt]), Nat.mod_eq_of_lt (by omega_using [hn, mlt])]
+  have qle : q ≤ n := by rw [hq, dv, m1]; exact Nat.le_trans (Nat.div_le_self _ _) (by omega_using [])
+  have hb : bOf nb q = q + 1 := by unfold bOf; exact Nat.mod_eq_of_lt (by omega_using [hn, qle])
   rw [hb] at h4 ⊢
-  have hb1 : q + 1 ≤ n + 1 := by omega
+  have hb1 : q + 1 ≤ n + 1 := by omega_using [qle]
   generalize q + 1 = b at *
-  have blt : b < 2 ^ nb := by omega
+  have blt : b < 2 ^ nb := by omega_using [hn, hb1]
   have bb : b * b < 2 ^ wb := Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' blt blt) p2
   have sq : sqOf nb wb b = b * b := by
-    unfold sqOf; rw [prod_iter _ _ _ (by omega)]; simp only
+    unfold sqOf; rw [prod_iter _ _ _ (by omega_using [hn, pnb, hb1])]; simp only
     rw [Nat.mod_eq_of_lt blt, Nat.mod_eq_of_lt bb]
   have f4 : fourN wb n = 4 * n := by
     unfold fourN
-    rw [Nat.mod_eq_of_lt (a := 2 * n) (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (a := 2 * n) (by omega_using [hn, pnb]), Nat.mod_eq_of_lt (by omega_using [hn, pnb])]; omega_using []
   have big : ¬ (b * b < 4 * n) := by
     unfold ok4Of at h4; rw [sq, f4] at h4; simp only [Bool.not_eq_true', Bool.or_eq_false_iff,
       decide_eq_false_iff_not] at h4; exact h4.1
   have xv : xOf nb wb n b = b * b - 4 * n := by
-    unfold xOf; rw [sq, f4, wsub_of_le bb (by omega)]
+    unfold xOf; rw [sq, f4, wsub_of_le bb (by omega_using [big])]
   rw [xv]
-  have bW : b ≤ 2 ^ (32 * W') := by omega
+  have bW : b ≤ 2 ^ (32 * W') := by omega_using [hW, hb1]
   have : b * b ≤ 2 ^ (64 * W') := by
-    rw [show 64 * W' = 32 * W' + 32 * W' by omega, Nat.pow_add]; exact Nat.mul_le_mul bW bW
-  omega
+    rw [show 64 * W' = 32 * W' + 32 * W' by omega_using [], Nat.pow_add]; exact Nat.mul_le_mul bW bW
+  omega_using [three, big, this]
 
 end VG.Proof.Rsa.X86.Recover
 
@@ -283,10 +283,10 @@ theorem result_words {nb wb n de q rem W' : Nat} (three : 3 ≤ n) (hn : 8 * (n 
   by_cases c : (okDE wb de && (ltOf nb wb n de && (decide (rem = 0) && ok4Of nb wb n (bOf nb q)))) = true
   · simp only [Bool.and_eq_true] at c
     obtain ⟨hk, hl, hr, h4⟩ := c
-    have rlt : rOf nb wb n de < n := Nat.mod_lt _ (by omega)
+    have rlt : rOf nb wb n de < n := Nat.mod_lt _ (by omega_using [three])
     have mlt : mOf nb wb n de < n := by simpa [ltOf] using hl
     have m1pos : 0 < m1Of nb wb n de := by
-      unfold m1Of; rw [Nat.mod_eq_of_lt (a := mOf nb wb n de) (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+      unfold m1Of; rw [Nat.mod_eq_of_lt (a := mOf nb wb n de) (by omega_using [hn, mlt]), Nat.mod_eq_of_lt (by omega_using [hn, mlt])]; omega_using []
     have hq := (cond hl m1pos).1
     have xlt := xOf_lt_words three hn hw hl hq h4 hW
     obtain ⟨ry, rr, -⟩ := root_bridge three hn hw hwe hl hq h4
@@ -336,7 +336,7 @@ theorem det_facts {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths
     have lower := facts.1.1.2
     have power (k : Nat) (hk : 2 ≤ k) : 4 ≤ 2 ^ k := Nat.pow_le_pow_right (n := 2) (by decide) hk
     have bigger := power 511 (by decide)
-    omega
+    omega_using [facts]
   have plen : (inputBytes g s.mem 0).length = (g.args 5).toNat := by
     simp [inputBytes, Spec.Rsa.bytesAt, CallGeometry.buffer]
   have hlo := facts.2
@@ -344,15 +344,15 @@ theorem det_facts {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths
   have ab : (g.args 5).toNat ≤ 8 * g.n := by have := h.inputBound 0; exact this
   have nlt : inputValue g s.mem 0 < 2 ^ (8 * (g.args 5).toNat) := inputValue_lt g s.mem 0
   have nb : inputValue g s.mem 0 < 2 ^ (64 * g.n) :=
-    Nat.lt_of_lt_of_le nlt (Nat.pow_le_pow_right (by decide) (by omega))
+    Nat.lt_of_lt_of_le nlt (Nat.pow_le_pow_right (by decide) (by omega_using [ab]))
   refine ⟨odd, large, Nat.lt_of_lt_of_le nb (Nat.pow_le_pow_right (by decide)
-    (by change 64 * g.n ≤ 32 * (2 * g.n + 2); omega)),
+    (by change 64 * g.n ≤ 32 * (2 * g.n + 2); omega_using [])),
     by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl, len.lower, len.upper,
-    by simp only [wq, Geo.w, VG.Impl.Rsa.X86.Recover.width]; omega, ?_,
-    Nat.lt_of_lt_of_le nlt (Nat.pow_le_pow_right (by decide) (by simp only [wq]; omega))⟩
+    by simp only [wq, Geo.w, VG.Impl.Rsa.X86.Recover.width]; omega_using [ab], ?_,
+    Nat.lt_of_lt_of_le nlt (Nat.pow_le_pow_right (by decide) (by simp only [wq]; omega_using []))⟩
   refine Nat.le_trans ?_ hlo
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-  exact Nat.pow_le_pow_right (by decide) (by simp only [wq]; omega)
+  exact Nat.pow_le_pow_right (by decide) (by simp only [wq]; omega_using [])
 
 theorem sizedW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g)
     (valid : Spec.Rsa.modulusValid (inputValue g s.mem 0) (inputBytes g s.mem 0).length = true)
@@ -368,26 +368,26 @@ theorem sizedW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : CallGeometry} {s : S
     apply Nat.lt_of_lt_of_le (inputValue_lt g s.mem 0)
     apply Nat.pow_le_pow_right (by decide)
     have := h.inputBound 0
-    omega
+    omega_using [this]
   have p64 : 2 ^ (32 * g.toGeo.w) = 2 ^ (64 * g.n) * 2 ^ 64 := by
-    rw [← Nat.pow_add]; congr 1; change 32 * (2 * g.n + 2) = _; omega
+    rw [← Nat.pow_add]; congr 1; change 32 * (2 * g.n + 2) = _; omega_using []
   have hn8 : 8 * (inputValue g s.mem 0 + 2) ≤ 2 ^ (32 * g.toGeo.w) := by
     rw [p64]
     have : 8 * (inputValue g s.mem 0 + 2) ≤ 2 ^ (64 * g.n) * 16 := by
-      have := Nat.one_le_two_pow (n := 64 * g.n); omega
+      have := Nat.one_le_two_pow (n := 64 * g.n); omega_using [nb]
     exact Nat.le_trans this (Nat.mul_le_mul_left _ (by decide))
   have hde : inputValue g s.mem 2 * inputValue g s.mem 1 < 2 ^ (32 * g.toGeo.w) := by
     rw [p64]
     have dl := Nat.lt_of_lt_of_le (inputValue_lt g s.mem 2)
       (Nat.pow_le_pow_right (by decide) (show 8 * (g.buffer (4 + 2 * 2)).len ≤ 64 * g.n by
-        have := h.inputBound 2; change (g.buffer (4 + 2 * 2)).len ≤ 8 * g.n at this; omega))
+        have := h.inputBound 2; change (g.buffer (4 + 2 * 2)).len ≤ 8 * g.n at this; omega_using [this]))
     have el := Nat.lt_of_lt_of_le (inputValue_lt g s.mem 1)
       (Nat.pow_le_pow_right (by decide) (show 8 * (g.buffer (4 + 2 * 1)).len ≤ 64 by
-        change 8 * (g.buffer 6).len ≤ 64; omega))
+        change 8 * (g.buffer 6).len ≤ 64; omega_using [eSmall]))
     exact Nat.mul_lt_mul'' dl el
   have hw : 2 * (32 * g.toGeo.w) ≤ 32 * g.toGeo.W := by
-    change 2 * (32 * (2 * g.n + 2)) ≤ 32 * (2 * (2 * g.n + 2) + 2); omega
-  have hwe : 32 * g.toGeo.W % 2 = 0 := by change 32 * (2 * (2 * g.n + 2) + 2) % 2 = 0; omega
+    change 2 * (32 * (2 * g.n + 2)) ≤ 32 * (2 * (2 * g.n + 2) + 2); omega_using []
+  have hwe : 32 * g.toGeo.W % 2 = 0 := by change 32 * (2 * (2 * g.n + 2) + 2) % 2 = 0; omega_using []
   unfold VG.Impl.Rsa.X86.RecoverDetRt.sized
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
   refine WP.seq (WP.mono (loads_ok h len) fun s1 h1 => ?_)
@@ -453,15 +453,15 @@ theorem sizedW_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : CallGeometry} {s : S
     | true =>
       simp only [ite_true] at model
       have mul := recoverDet_mul model.symm
-      have npos : 0 < inputValue g s.mem 0 := by omega
-      have pq : 0 < Qf := Nat.pos_of_ne_zero (fun h0 => by rw [h0, Nat.mul_zero] at mul; omega)
-      have qp : 0 < P := Nat.pos_of_ne_zero (fun h0 => by rw [h0, Nat.zero_mul] at mul; omega)
+      have npos : 0 < inputValue g s.mem 0 := by omega_using [odd]
+      have pq : 0 < Qf := Nat.pos_of_ne_zero (fun h0 => by rw [h0, Nat.mul_zero] at mul; omega_using [pLen, qLen, eSmall, odd, large, small, up, ha, ha0, ha1, haw, hn0, hn', ha_def, nb, p64, hn8, hde, hw, hwe, z3, q3, zero3, hP, p3, hQ, q3', plen4, nlt4, m3, mask3, status, mul, npos, h0])
+      have qp : 0 < P := Nat.pos_of_ne_zero (fun h0 => by rw [h0, Nat.zero_mul] at mul; omega_using [pLen, qLen, eSmall, odd, large, small, up, ha, ha0, ha1, haw, hn0, hn', ha_def, nb, p64, hn8, hde, hw, hwe, z3, q3, zero3, hP, p3, hQ, q3', plen4, nlt4, m3, mask3, status, mul, npos, pq, h0])
       have ple : P ≤ inputValue g s.mem 0 := Nat.le_trans (Nat.le_mul_of_pos_right _ pq) (Nat.le_of_eq mul)
       have qle : Qf ≤ inputValue g s.mem 0 := Nat.le_trans (Nat.le_mul_of_pos_left _ qp) (Nat.le_of_eq mul)
       simp only [resultBytes, ite_true, h3.arrs 5 (by simp), h3.arrs 6 (by simp), p3, q3', Fin.val_zero,
         Fin.val_one, Nat.mul_zero, Nat.mul_one] at pb qb
-      rw [Nat.mod_eq_of_lt (by rw [pLen, plen4]; omega)] at pb
-      rw [Nat.mod_eq_of_lt (by rw [qLen, plen4]; omega)] at qb
+      rw [Nat.mod_eq_of_lt (by rw [pLen, plen4]; omega_using [nlt4, ple])] at pb
+      rw [Nat.mod_eq_of_lt (by rw [qLen, plen4]; omega_using [nlt4, qle])] at qb
       simp only [ite_true, Option.map_some]
       refine ⟨by rw [status]; rfl, ?_⟩
       simp only [outputBuffersD, List.map_cons, List.map_nil]

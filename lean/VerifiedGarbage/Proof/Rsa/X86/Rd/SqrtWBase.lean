@@ -78,7 +78,7 @@ theorem orEsiLoop_ok {s : State} {B : Addr} {Z x N : Nat} (hw : VG.Proof.Mont.X8
       ⟨m, e.trans (and_congr_right fun _ => (VG.Proof.Rsa.X86.WordRt.val32_zero_iff _ _ _ _).symm), K⟩
   rintro j t hj ⟨K, m, p, n, e⟩
   have ht := hw.of_keeps K
-  refine wp_orS (VG.Proof.Mont.X86.Rt.readSrc_ptr ht p (d := 0) (by omega)) fun s1 U1 =>
+  refine wp_orS (VG.Proof.Mont.X86.Rt.readSrc_ptr ht p (d := 0) (by omega_using [hx, hj])) fun s1 U1 =>
     wp_addS rfl fun s2 U2 _ => VG.Proof.Mont.X86.Rt.wp_subZ rfl fun s3 U3 z3 => WP.block_nil ?_
   have K3 : Keeps [.ecx, .edx, .esi] t s3 :=
     ((U1.keeps.mono (by decide)).trans (U2.keeps.mono (by decide))).trans (U3.keeps.mono (by decide))
@@ -96,8 +96,8 @@ theorem orEsiLoop_ok {s : State} {B : Addr} {Z x N : Nat} (hw : VG.Proof.Mont.X8
     · rintro ⟨⟨c0, old⟩, last⟩; refine ⟨c0, fun i hi => ?_⟩
       by_cases eq : i = j
       · subst eq; exact last
-      · exact old i (by omega)
-    · rintro ⟨c0, all⟩; exact ⟨⟨c0, fun i hi => all i (by omega)⟩, all j (by omega)⟩
+      · exact old i (by omega_using [hi, eq])
+    · rintro ⟨c0, all⟩; exact ⟨⟨c0, fun i hi => all i (by omega_using [hi])⟩, all j (by omega_using [])⟩
   · rw [z3, U2.other _ (by decide), U1.other _ (by decide), cz]
 
 open VG.Impl.Rsa.X86.KeyRt (arrPtr bytesB)
@@ -120,7 +120,7 @@ theorem KS.orAll {j : Nat} (h : KS g s0 A live AW liveW V ls s) (hj : j ∈ live
   refine WP.seq ?_
   rw [List.append_assoc]
   refine arrPtr_ok (lenSrc hr) hr.lenLe hr.edi (r := .esi) (t := .edx) (j := j) (by decide) (by decide)
-    (by omega) fun u₁ U₁ m₁ p₁ _ => ?_
+    (by omega_using [fit, nw]) fun u₁ U₁ m₁ p₁ _ => ?_
   have h₁ := hr.keep U₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _)
   refine bytesB_ok (lenSrc h₁) h₁.lenLe fun u₂ U₂ m₂ e₂ => ?_
   refine wp_movS (v := 0) rfl fun u₃ U₃ _ => WP.block_nil ?_
@@ -131,8 +131,8 @@ theorem KS.orAll {j : Nat} (h : KS g s0 A live AW liveW V ls s) (hj : j ∈ live
     rw [PtrAt, U₃.other _ (by decide), U₂.1 _ (by decide)]; exact p₁
   have n₃ : (u₃.gpr .edx).toNat = 4 * kw (16 * g.n + 24) := by rw [U₃.other _ (by decide)]; exact e₂
   have c₃ : u₃.gpr .ecx = 0 := by rw [U₃.gpr]
-  refine WP.mono (orEsiLoop_ok (hr.rt.of_keeps K₃) (by rw [kw_wid]; change 0 < 2 * (2 * g.n + 2) + 2; omega)
-    (by have := fit; omega) p₃ n₃) fun t ⟨mt, et, Kt⟩ => ?_
+  refine WP.mono (orEsiLoop_ok (hr.rt.of_keeps K₃) (by rw [kw_wid]; change 0 < 2 * (2 * g.n + 2) + 2; omega_using [])
+    (by have := fit; omega_using [fit]) p₃ n₃) fun t ⟨mt, et, Kt⟩ => ?_
   have K : Keeps opRegs s t := (K₃.mono (by decide)).trans (Kt.mono (by decide))
   refine ⟨h.of_rest K (fun x hx => hx) (by rw [mt, m₃]), K, ?_⟩
   rw [et, m₃, kw_wid]

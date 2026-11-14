@@ -49,7 +49,7 @@ theorem inspectP_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat}
     SameTrace isa (Shape.inspectP pLen) s₁ s₂ := by
   unfold Shape.inspectP Shape.loadWidths
   dsimp only
-  refine SameTrace.assoc_left (loadThen_trace (p := .input _) (Q := fun _ _ => True) hs₁ hs₂ (by omega) (by omega)
+  refine SameTrace.assoc_left (loadThen_trace (p := .input _) (Q := fun _ _ => True) hs₁ hs₂ (by omega_using [hz₁]) (by omega_using [hz₂])
     (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) he (relCT_T10 ?_))
   refine (RelCT.seq (threeWidths_relCT _ _ _ _ _)
     (erased_relCT (c := .block (Shape.saveParity ((pLen + 7) / 8))) (σ := T0) (c₀ := .block (Shape.saveParity 0)) (VG.Taint.hintOf taint T0 (.block (Shape.saveParity 0))) (by kernel_rfl)
@@ -60,7 +60,7 @@ theorem inspectQ_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ : Nat}
     SameTrace isa (Shape.inspectQ qLen) s₁ s₂ := by
   unfold Shape.inspectQ Shape.loadWidths
   dsimp only
-  refine SameTrace.assoc_left (loadThen_trace (p := .input _) (Q := fun _ _ => True) hs₁ hs₂ (by omega) (by omega)
+  refine SameTrace.assoc_left (loadThen_trace (p := .input _) (Q := fun _ _ => True) hs₁ hs₂ (by omega_using [hz₁]) (by omega_using [hz₂])
     (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) he (relCT_T10 ?_))
   refine (RelCT.seq (threeWidths_relCT _ _ _ _ _)
     (erased_relCT (c := .block (Shape.parity ((qLen + 7) / 8) ++ Shape.combine)) (σ := T0)

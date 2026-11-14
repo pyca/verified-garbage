@@ -34,7 +34,7 @@ theorem precomputeInverse_r2_ok (s : State) {base : BitVec 32} {len w : Nat}
   rintro u ⟨modptr, baseReg, mem, rest⟩
   refine WP.mono (initInverse_ready_r2 u (ws.congr rest.wr) (by rw [mem]; exact layout)
     (by rw [mem]; exact width) modptr baseReg
-    (by rw [mem]; exact numAt_low_odd s.mem _ (by omega) odd)
+    (by rw [mem]; exact numAt_low_odd s.mem _ (by omega_using [hw]) odd)
     (by rw [mem]; exact large)
     (by rw [rest.rd, rest.wr, rest.sp]; exact stackRead)
     (by rw [rest.sp]; exact stackSep) (by rw [mem, rest.sp]; exact saved)) ?_

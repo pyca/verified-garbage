@@ -30,9 +30,9 @@ theorem rotateRight_eq_shifts (x : Word) {n : Nat} (h0 : 0 < n) (h : n < 64) :
   by_cases hl : i < 64 - n
   · rw [Nat.mod_eq_of_lt (by omega), Nat.add_comm, decide_eq_true hl]
     simp only [Bool.not_true, Bool.false_and, Bool.xor_false]
-  · rw [BitVec.getLsbD_of_ge x (n + i) (by omega), decide_eq_false hl, Bool.not_false, Bool.true_and,
+  · rw [BitVec.getLsbD_of_ge x (n + i) (by omega_using [hl]), decide_eq_false hl, Bool.not_false, Bool.true_and,
       Bool.false_xor]
-    exact congrArg x.getLsbD (by omega)
+    exact congrArg x.getLsbD (by omega_using [h, hi, hl])
 
 /-- The five terms of `σ₀` or `σ₁` as chained shifts: right by `r₁`, `r₁ + r₂`,
 `r₁ + r₂ + r₃` and left by `l₁`, `l₁ + l₂`, in the order the code combines them. -/

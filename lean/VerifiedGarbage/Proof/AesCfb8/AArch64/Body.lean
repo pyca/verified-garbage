@@ -57,7 +57,7 @@ theorem LInv.wrs {enc : Bool} {k : Nat} {s : State} (h : LInv enc s₀ k s) :
 
 theorem UPre.cByt {k : Nat} (hk : k < N s₀) : (dataR s₀).Contains (byt s₀ k) 1 := by
   have := hp.data_wrap
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, this])
 
 theorem UPre.byt_iv {k : Nat} (hk : k < N s₀) : (⟨byt s₀ k, 1⟩ : Region).Disjoint (ivR s₀) :=
   hp.iv_data.symm.sub_left (UPre.data_sub hk)
@@ -69,13 +69,13 @@ theorem UPre.iv_sv : (ivR s₀).Disjoint ⟨Sv s₀, 16⟩ :=
   hp.iv_scr.sub_right (UPre.scr_sub (by decide))
 
 theorem UPre.sv_scr : (⟨Sv s₀, 16⟩ : Region).Disjoint ⟨S s₀, 2048⟩ :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])
 
 theorem UPre.sv_wrap : (Sv s₀).toNat + 16 ≤ 2 ^ 64 := by
   have := hp.scr_wrap
   rw [Sv, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2048) (by decide),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_using [this])]
+  omega_using [this]
 
 /-- The arguments of a call on the copy of the input block, with the
 working space at the start of the scratch buffer. -/
@@ -221,7 +221,7 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
       Proof.Cmac.bytesAt_frame a.frame (one _ _ _ (hp.iv_scr.sub_right (Region.sub_prefix (by decide))))
         (by decide), h.iv]
   have hl : (outK s₀ enc k).length = k := by
-    rw [outK, length_cfb8, List.length_take, length_bs]; omega
+    rw [outK, length_cfb8, List.length_take, length_bs]; omega_using [hk]
   have iv_ne : iv0 s₀ ≠ [] := by simp [iv0, bytesAt]
   refine ⟨?_, ?_, ?_, x22₅, x23₅, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [g .x19 (by simp [preserved]) (by decide) (by decide) (by decide), h.x19]

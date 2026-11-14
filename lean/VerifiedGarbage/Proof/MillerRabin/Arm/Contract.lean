@@ -75,7 +75,7 @@ variable {m m' : Mem} {ws : Addr} {len : Nat}
 
 theorem read_congr_on (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i))
     {d n : Nat} (hd : d + n ≤ 8 * len) : m'.read (ws + BitVec.ofNat 64 d) n = m.read (ws + BitVec.ofNat 64 d) n :=
-  Mem.read_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+  Mem.read_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega_using [hd, hi])
 
 theorem readW_congr_on (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i))
     {d : Nat} (hd : d + 8 ≤ 8 * len) : m'.readW (ws + BitVec.ofNat 64 d) 64 = m.readW (ws + BitVec.ofNat 64 d) 64 := by
@@ -85,13 +85,13 @@ theorem layout_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws +
     (hl : LayoutLite m ws len) : LayoutLite m' ws len ∧ wOf m' ws = wOf m ws := by
   obtain ⟨lay, w4, w128, fits⟩ := hl
   have h256 : 256 ≤ 8 * len := Nat.le_trans (Nat.le_add_right _ _) fits
-  have hw : wOf m' ws = wOf m ws := congrArg BitVec.toNat (readW_congr_on h (d := 8 * 6) (by omega))
+  have hw : wOf m' ws = wOf m ws := congrArg BitVec.toNat (readW_congr_on h (d := 8 * 6) (by omega_using [h256]))
   refine ⟨⟨?_, by rw [hw]; exact w4, by rw [hw]; exact w128, by rw [hw]; exact fits⟩, hw⟩
   unfold Proof.Rsa.Mont.Layout at lay ⊢
   rw [hw]
   refine ⟨lay.1, lay.2.1, lay.2.2.1, fun j hj => ?_⟩
   unfold wordAt
-  rw [readW_congr_on h (by simp only [Proof.Rsa.Mont.arrWord]; omega)]
+  rw [readW_congr_on h (by simp only [Proof.Rsa.Mont.arrWord]; omega_using [h256, hj])]
   exact lay.2.2.2 j hj
 
 theorem numAt_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i))
@@ -105,21 +105,21 @@ theorem prepared_congr (h : ∀ i < 8 * len, m' (ws + BitVec.ofNat 64 i) = m (ws
   have w4 := hl.2.1
   generalize hW : wOf m ws = w at fits w4
   have fit : ∀ j < 28, arrAt w j + 8 * (w + 2) ≤ 8 * len := fun j hj => by
-    have : j * (8 * (w + 2)) ≤ 27 * (8 * (w + 2)) := Nat.mul_le_mul_right _ (by omega)
+    have : j * (8 * (w + 2)) ≤ 27 * (8 * (w + 2)) := Nat.mul_le_mul_right _ (by omega_using [hj])
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes, nArr] at fits ⊢
     generalize 8 * (w + 2) = S at this fits ⊢
-    omega
+    omega_using [this, fits]
   unfold PreparedLite at hp ⊢
   simp only [hw, hW] at hp ⊢
-  rw [numAt_congr h (by have := fit 0 (by omega); omega), numAt_congr h (by have := fit 5 (by omega); omega),
-    numAt_congr h (by have := fit 9 (by omega); omega), numAt_congr h (by have := fit 10 (by omega); omega),
-    numAt_congr h (by have := fit 27 (by omega); omega),
-    readW_congr_on h (d := arrAt w 27 + 8 * w) (by have := fit 27 (by omega); omega)]
+  rw [numAt_congr h (by have := fit 0 (by omega_using []); omega_using [this]), numAt_congr h (by have := fit 5 (by omega_using []); omega_using [this]),
+    numAt_congr h (by have := fit 9 (by omega_using []); omega_using [this]), numAt_congr h (by have := fit 10 (by omega_using []); omega_using [this]),
+    numAt_congr h (by have := fit 27 (by omega_using []); omega_using [this]),
+    readW_congr_on h (d := arrAt w 27 + 8 * w) (by have := fit 27 (by omega_using []); omega_using [this])]
   refine ⟨hp.1, hp.2.1, ?_, hp.2.2.2⟩
   have e1 : m'.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64 = m.readW (ws + BitVec.ofNat 64 (arrAt w 0)) 64 :=
-    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this ⊢; omega)
+    readW_congr_on h (by have := fit 0 (by omega_using []); simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this ⊢; omega_using [this])
   have e2 : wordAt m' ws Proof.Rsa.Mont.minvWord = wordAt m ws Proof.Rsa.Mont.minvWord :=
-    readW_congr_on h (by have := fit 0 (by omega); simp only [arrAt, Proof.Rsa.Mont.hdrBytes, Proof.Rsa.Mont.minvWord] at this ⊢; omega)
+    readW_congr_on h (by have := fit 0 (by omega_using []); simp only [arrAt, Proof.Rsa.Mont.hdrBytes, Proof.Rsa.Mont.minvWord] at this ⊢; omega_using [this])
   rw [e1, e2]
   exact hp.2.2.1
 

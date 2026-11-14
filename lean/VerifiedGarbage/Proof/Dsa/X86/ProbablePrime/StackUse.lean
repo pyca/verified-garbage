@@ -18,7 +18,7 @@ theorem test_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : sta
   change max (stackUse (VG.Impl.RsaKeyGen.X86.CandidateTest.codeWith (bits - 1) (Spec.Dsa.primeChecks bits)
     (8 * ((bits + 63) / 64)) (bits / 32) (width bits) montName mont roundName round)) (stackUse finish) ≤ 136
   have : stackUse finish = 0 := rfl
-  omega
+  omega_using [bound, this]
 
 theorem sieved_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (bits : Nat) (montName roundName : String) : stackUse (sieved bits montName mont roundName round) ≤ 136 := by
@@ -28,19 +28,19 @@ theorem sieved_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : s
   change max (stackUse (VG.Impl.RsaKeyGen.X86.CandidateSieve.code (width bits)))
     (max 0 (max (stackUse (VG.Impl.RsaKeyGen.X86.CandidateFinish.used 2))
       (stackUse (test bits montName mont roundName round)))) ≤ 136
-  omega
+  omega_using [bound, sieve, used]
 
 theorem body_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (bits : Nat) (montName roundName : String) : stackUse (body bits montName mont roundName round) ≤ 136 := by
   have bound := sieved_stack Hm Hr bits montName roundName
   have loaded : stackUse (load (bits / 32) (width bits)) = 0 := rfl
   change max 0 (max (stackUse (load (bits / 32) (width bits))) (stackUse (sieved bits montName mont roundName round))) ≤ 136
-  omega
+  omega_using [bound, loaded]
 
 theorem code_stack {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (bits : Nat) (montName roundName : String) : stackUse (code bits montName mont roundName round) ≤ 152 := by
   have bound := body_stack Hm Hr bits montName roundName
   change max (stackUse (body bits montName mont roundName round)) 0 + 16 ≤ 152
-  omega
+  omega_using [bound]
 
 end VG.Proof.Dsa.X86.ProbablePrime

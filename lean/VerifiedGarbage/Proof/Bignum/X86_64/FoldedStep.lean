@@ -26,13 +26,13 @@ theorem squareStep_ok (M : Mont) {s : State} {B : Addr} {Z w N X x E n : Nat} {m
       word t.mem B (8*sI) = BitVec.ofNat 64 (n-1) ∧
       t.zf = some (decide (n-1 = 0)) ∧
       Frm B (expRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hbound : B.toNat + slot w 8 ≤ 2^64 := by have := hc.good.scr.nowrap; omega
+  have hbound : B.toNat + slot w 8 ≤ 2^64 := by have := hc.good.scr.nowrap; omega_using [hZ, this]
   unfold Folded.squareStep
   refine WP.seq (WP.mono (M.mm_ok hc.good hZ hw hw' (o := aY) (a := aY) (b := aY)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     hc.inv (by rw [hc.n]; exact hY)) fun a ⟨ga,ya,ea,fa,ka⟩ => ?_)
   rw [hc.n] at ya ea
-  have ca := hc.of_arrays ga hZ (by omega) fa
+  have ca := hc.of_arrays ga hZ (by omega_using [hw]) fa
   have va := VG.Proof.Bignum.mont_sq hR hy ea
   have countA : word a.mem B (8*sI) = BitVec.ofNat 64 n := by
     rw [fa.hslot (by decide)]; exact hcount
@@ -47,7 +47,7 @@ theorem squareStep_ok (M : Mont) {s : State} {B : Addr} {Z w N X x E n : Nat} {m
   · refine (Frm.of_arrays fa (by simp [expRanges,bitRanges])).trans ?_
     rw [mt]
     exact Frm.of_outside (writeW_outside a.mem B _ (d := 8*sI)
-      (by have := ga.scr.nowrap; have := hdr_lt_slot w 8 (show sI < 32 by decide); omega))
+      (by have := ga.scr.nowrap; have := hdr_lt_slot w 8 (show sI < 32 by decide); omega_using [hbound, this]))
       (by simp [expRanges])
 
 end VG.Proof.Bignum.X86_64.FoldedPublic

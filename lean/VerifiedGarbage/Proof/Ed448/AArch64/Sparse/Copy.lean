@@ -43,10 +43,10 @@ private theorem copyOne_ok {s:State} {base:Addr} (hs:Scr s base)
     WP isa (.block [.ldrb .x4 .x3 (BITS+i),.strb .x4 .x10 i]) s fun u =>
       u.mem=s.mem.writeW (off base (SDIG+i)) (s.mem (off base (BITS+i))) ∧
       Keeps [.x4] s u := by
-  have hr:=hs.read (d:=BITS+i) (n:=1) (by simp only [BITS];omega)
-  have hw:=hs.write (d:=SDIG+i) (n:=1) (by simp only [SDIG];omega)
-  have es:BITS+i<4096 := by simp only [BITS];omega
-  have ei:i<4096 := by omega
+  have hr:=hs.read (d:=BITS+i) (n:=1) (by simp only [BITS];omega_using [hi])
+  have hw:=hs.write (d:=SDIG+i) (n:=1) (by simp only [SDIG];omega_using [hi])
+  have es:BITS+i<4096 := by simp only [BITS];omega_using [hi]
+  have ei:i<4096 := by omega_using [hi]
   have ha:off base SDIG+BitVec.ofNat 64 i=off base (SDIG+i) := Offset.add_add _ _ _
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,State.read,Size.bits,addr,
@@ -68,24 +68,24 @@ private theorem copyLoop_ok {s:State} {base:Addr} (hs:Scr s base)
   | succ n ih =>
     rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨ht,fo,kt⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn])) fun t ⟨ht,fo,kt⟩ => ?_
     refine WP.mono (copyOne_ok (hs.of_keeps kt (by decide))
-      ((kt.1 _ (by decide)).trans hp) (by omega)) fun u ⟨um,ku⟩ => ?_
+      ((kt.1 _ (by decide)).trans hp) (by omega_using [hn])) fun u ⟨um,ku⟩ => ?_
     refine ⟨fun i hi => ?_,?_,kt.trans ku⟩
     · have hsrc:t.mem (off base (BITS+n))=s.mem (off base (BITS+n)) :=
-        fo _ (Or.inl (by rw [ofs_off' base (by simp only [BITS];omega)];simp only [BITS,SDIG];omega))
+        fo _ (Or.inl (by rw [ofs_off' base (by simp only [BITS];omega_using [hn])];simp only [BITS,SDIG];omega_using [hn]))
       rw [um,writeW8_apply]
       simp only [off_eq_iff base (d:=SDIG+i) (e:=SDIG+n)
-        (by simp only [SDIG];omega) (by simp only [SDIG];omega)]
+        (by simp only [SDIG];omega_using [hn, hi]) (by simp only [SDIG];omega_using [hn])]
       by_cases he:i=n
       · subst i
         rw [ite_eq_left rfl,hsrc]
-      · rw [ite_eq_right (by omega)]
-        exact ht i (by omega)
+      · rw [ite_eq_right (by omega_using [he])]
+        exact ht i (by omega_using [hi, he])
     · rw [um]
       refine fo.trans ?_
       intro x hx
-      exact writeW8_outside _ base _ (by simp only [SDIG];omega) (by omega)
+      exact writeW8_outside _ base _ (by simp only [SDIG];omega_using [hn]) (by omega_using [hn, hx])
 
 theorem copySignatureDigits_ok {s:State} {base:Addr} (hs:Scr s base) :
     WP isa (.block copySignatureDigits) s fun u =>

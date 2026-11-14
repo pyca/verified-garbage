@@ -40,11 +40,11 @@ theorem top_of_lt {m : Mem} {base : Addr} {d w : Nat} (h : val32 m base d (w + 2
     rcases Nat.eq_zero_or_pos (val32 m base (d + 4 * w) 2) with z | z
     · exact z
     · have : 2 ^ (32 * w) * 1 ≤ 2 ^ (32 * w) * val32 m base (d + 4 * w) 2 := Nat.mul_le_mul_left _ z
-      omega
+      omega_using [h, e, this]
   have e2 := val32_append m base (d + 4 * w) 1 1
   rw [show 1 + 1 = 2 from rfl, z] at e2
   simp only [val32, Nat.add_zero, Nat.mul_zero] at e2
-  omega
+  omega_using [e2]
 
 section
 variable {G : GP} {c : Cfg} {X : State → Prop}
@@ -79,17 +79,17 @@ theorem loadAt_vp {j n : Nat} {src : BitVec 32} {bs : List Byte} (cert : CertL j
   have nw := hw.nowrap
   have fa := hw.arr_fit hj
   have hS : S G.w = 4 * (G.w + 2) := rfl
-  have w96 : G.w ≤ 96 := by simp only [GP.w]; omega
+  have w96 : G.w ≤ 96 := by simp only [GP.w]; omega_using [l]
   have ad : State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)) = off (State.addr G.KB) (arr G.w j) :=
-    hw.addr (by omega)
+    hw.addr (by omega_using [fa, hS])
   have hrk : Region.Sub ⟨off (State.addr G.KB) (arr G.w j), 4 * (G.w + 2)⟩ G.rK :=
-    Offset.sub_base (State.addr G.KB) (by omega)
+    Offset.sub_base (State.addr G.KB) (by omega_using [fa, hS])
   refine h.ksWPr hR rfl (P := fun t =>
       val32 t.mem (State.addr (G.KB + BitVec.ofNat 32 (arr G.w j))) 0 (G.w + 2) = Spec.Rsa.os2ip bs ∧
       Frame [⟨State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)), 4 * (G.w + 2)⟩] s.mem t.mem ∧
       Rest [.r0, .r1, .r2, .r3, .r5, .lr] (s.withRegions (s.rd ++ [⟨State.addr src, n⟩]) [G.rK]) t) ?_ ?_
   · unfold VG.Impl.Rsa.Arm.CrtValues.load
-    refine WP.seq (ptr_ok hw (r := .r0) (by decide) (by simp only [nArrs] at hj; omega) fun s₃ p₃ R₃ m₃ hw₃ => ?_)
+    refine WP.seq (ptr_ok hw (r := .r0) (by decide) (by simp only [nArrs] at hj; omega_using [hj]) fun s₃ p₃ R₃ m₃ hw₃ => ?_)
     refine wp_mov (op2_reg _ _) fun s₄ u₄ => ?_
     refine wp_dp (op2_imm (by decide)) fun s₅ u₅ => ?_
     refine wp_mov (op2_imm (by decide)) fun s₆ u₆ => WP.block_nil ?_
@@ -99,11 +99,11 @@ theorem loadAt_vp {j n : Nat} {src : BitVec 32} {bs : List Byte} (cert : CertL j
     have p0 : s₆.gpr .r0 = G.KB + BitVec.ofNat 32 (arr G.w j) := by
       rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), p₃]
     refine WP.mono (VG.Proof.Bignum.Arm.loadBE_ok s₆ (src := src)
-      (dst := G.KB + BitVec.ofNat 32 (arr G.w j)) (n := G.w + 2) (k := n) hn0 (by omega) (by omega) sfit
-      (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega)
+      (dst := G.KB + BitVec.ofNat 32 (arr G.w j)) (n := G.w + 2) (k := n) hn0 (by omega_using [hnw]) (by omega_using [hnw, w96]) sfit
+      (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [nw, fa, hS]), BitVec.toNat_ofNat]; omega_using [nw, fa, hS])
       ⟨⟨State.addr src, n⟩, List.mem_append_left _ (by rw [R₆.rd]; simp), Region.contains_self _ _⟩
       ⟨G.rK, by rw [R₆.wr]; exact List.mem_singleton_self _, by
-        rw [ad]; exact Offset.contains_base (State.addr G.KB) (by omega) (by omega)⟩
+        rw [ad]; exact Offset.contains_base (State.addr G.KB) (by omega_using [fa, hS]) (by omega_using [nw, fa])⟩
       (by rw [ad]; exact sep.sub_right hrk)
       p0 (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), R₃.gpr _ (by decide)]; exact p4)
       (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, p₃])
@@ -118,14 +118,14 @@ theorem loadAt_vp {j n : Nat} {src : BitVec 32} {bs : List Byte} (cert : CertL j
   · intro t ⟨v, f, R⟩ hr hw' fK
     simp only [State.withRegions_mem] at v
     rw [ad] at v f
-    have k : Keep G.KB G.w [j] [] s.mem t.mem := VG.Proof.Rsa.Arm.CrtValues.Keep.of_frame_arr f (by omega)
+    have k : Keep G.KB G.w [j] [] s.mem t.mem := VG.Proof.Rsa.Arm.CrtValues.Keep.of_frame_arr f (by omega_using [nw, fa])
     rw [VG.Proof.Rsa.Arm.CrtValues.val32_off, Nat.add_zero] at v
     have lt : Spec.Rsa.os2ip bs < 2 ^ (32 * G.w) := by
       have := VG.Proof.Dsa.decodeBE_lt bs
       rw [hn, VG.Proof.Dsa.decodeBE_os2ip] at this
       refine Nat.lt_of_lt_of_le this ?_
       rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-      exact Nat.pow_le_pow_right (by decide) (by omega)
+      exact Nat.pow_le_pow_right (by decide) (by omega_using [hnw])
     have vw : num t.mem G.KB G.w j = Spec.Dsa.decodeBE bs := by
       rw [VG.Proof.Dsa.decodeBE_os2ip, ← v]
       exact VG.Proof.Rsa.Arm.CrtValues.val32_low2 (by rw [v]; exact lt)
@@ -146,29 +146,29 @@ theorem loadS_vp {L j o n : Nat} {bs : List Byte} (cert : CertL j) (hL : L = G.p
     fun σ s ⟨h, x⟩ => ?_) (loadAt_vp cert hj hn hn0 hnw fun σ s ⟨h, x⟩ => ?_)
   · have big := h.gi.scrBig
     have oK : o + n ≤ sK G.pLen := by have := h.clOk _ hbs; simpa [hn] using this
-    have w96 : G.w ≤ 96 := by have := h.lens; simp only [GP.w]; omega
-    refine scr_ok (d := .r4) (o := o) h.r8 rfl h.lens (by omega) fun s₁ v₁ R₁ M₁ => wp_movw fun s₂ u₂ =>
+    have w96 : G.w ≤ 96 := by have := h.lens; simp only [GP.w]; omega_using [this]
+    refine scr_ok (d := .r4) (o := o) h.r8 rfl h.lens (by omega_using [oK]) fun s₁ v₁ R₁ M₁ => wp_movw fun s₂ u₂ =>
       WP.block_nil ⟨⟨h.of_rest ((R₁.mono (by simp)).trans (u₂.rest (by simp)) : Rest [.r12, .r4, .r6] s s₂)
         (by rw [u₂.mem, M₁]), x⟩, by
-        rw [u₂.other _ (by decide), v₁], by rw [u₂.gpr, setWidth_ofNat16 (by omega)]⟩
+        rw [u₂.other _ (by decide), v₁], by rw [u₂.gpr, setWidth_ofNat16 (by omega_using [hnw, w96])]⟩
   · have gi := h.gi
     have big := gi.scrBig
     have fit := gi.scrFit
     have oK : o + n ≤ sK G.pLen := by have := h.clOk _ hbs; simpa [hn] using this
-    have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+    have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_using []
     have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
-    have as : State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := gi.saddr (by omega)
+    have as : State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := gi.saddr (by omega_using [hn0, big, oK])
     have b := h.sb _ hbs
     simp only [hn] at b
     rw [as]
     refine ⟨(Covers.of_sub (rs' := [G.rScr]) fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact ⟨G.rScr, List.mem_singleton_self _, o, rfl, show o + n ≤ G.scrLen * 8 by omega⟩).trans
+      exact ⟨G.rScr, List.mem_singleton_self _, o, rfl, show o + n ≤ G.scrLen * 8 by omega_using [big, oK]⟩).trans
       (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact List.mem_append_right _ inS),
       ?_, ?_, b⟩
     · show Region.Disjoint _ ⟨State.addr G.KB, _⟩
-      rw [gi.kaddr]; exact gi.sdisj (.inl oK) (by omega) big
-    · rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega
+      rw [gi.kaddr]; exact gi.sdisj (.inl oK) (by omega_using [big, oK]) big
+    · rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [hn0, big, fit, oK]), BitVec.toNat_ofNat]; omega_using [big, fit, oK]
 
 end
 

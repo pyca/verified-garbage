@@ -26,7 +26,7 @@ theorem deriveFailureHead_ok {s : State} {base : Addr} {size len : Nat}
       t.gpr .esi = pointerValue base s (.input .out) ∧ t.gpr .ecx = BitVec.ofNat 32 len ∧
       t.gpr .eax = 0 ∧ Keeps [.esi, .ecx, .eax] s t := by
   have bound : 8256 ≤ size := hz
-  refine wp_movS (readSrc_sc hs (by change 8228 ≤ size; omega)) fun s1 U1 _ => ?_
+  refine wp_movS (readSrc_sc hs (by change 8228 ≤ size; omega_using [bound])) fun s1 U1 _ => ?_
   refine wp_movS rfl fun s2 U2 _ => ?_
   refine wp_movS rfl fun s3 U3 _ => WP.block_nil ⟨?_, ?_, U3.gpr, ?_⟩
   · rw [U3.other _ (by decide), U2.other _ (by decide), U1.gpr]; rfl

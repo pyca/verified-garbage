@@ -132,8 +132,8 @@ theorem ofNat_toNat_eq {x : BitVec 64} {n : Nat} (h : x.toNat = n) : x = BitVec.
 
 theorem toNat_add_lt (p : Addr) {d k : Nat} (h : p.toNat + k ≤ 2 ^ 64) (hd : d < k) :
     (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64)]
-  exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hd] : d < 2 ^ 64)]
+  exact Nat.mod_eq_of_lt (by omega_using [h, hd])
 
 theorem and15 (x : BitVec 64) : (x &&& BitVec.ofInt 64 15).toNat = x.toNat % 16 := by
   rw [BitVec.toNat_and, show (BitVec.ofInt 64 15).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
@@ -143,12 +143,12 @@ open VG.Proof.Cmac.Stream (held held_pos) in
 theorem held_bv (c : BitVec 64) (h : c ≠ 0) :
     ((c - BitVec.ofNat 64 1) &&& BitVec.ofInt 64 15) + BitVec.ofNat 64 1 = BitVec.ofNat 64 (held c.toNat) := by
   have hc : c.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
-  rw [held_pos (by omega)]
+  rw [held_pos (by omega_using [hc])]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, and15, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat]
   have := c.isLt
-  omega
+  omega_using [hc]
 
 /-- The rounds, as `srli 2; addi 6` computes them from the key length. -/
 theorem rounds_bv {KL : Nat} (h : KL = 16 ∨ KL = 24 ∨ KL = 32) :
@@ -158,7 +158,7 @@ theorem rounds_bv {KL : Nat} (h : KL = 16 ∨ KL = 24 ∨ KL = 32) :
 theorem shr_ofNat {n k : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> k = BitVec.ofNat 64 (n / 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by have := Nat.div_le_self n (2 ^ k); omega)]
+    Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (by have := Nat.div_le_self n (2 ^ k); omega_using [hn, this])]
 
 theorem preserved_ne (r : Reg) (hr : r ∈ preserved) :
     r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2 ∧ r ≠ .t3 ∧ r ≠ .t4 ∧ r ≠ .t5 ∧ r ≠ .t6 ∧ r ≠ .ra ∧ r ≠ .a0 ∧
@@ -199,18 +199,18 @@ theorem sv2_add (S : Addr) (d : Nat) :
 /-- A slot at `sv2 S + d`, within the scratch buffer. -/
 theorem sv2_sub (S : Addr) {d n : Nat} (h : d + n ≤ 121) : Region.Sub ⟨sv2 S + BitVec.ofNat 64 d, n⟩ ⟨S, 2304⟩ := by
   have := Align.pad_lt (S + BitVec.ofNat 64 2176)
-  rw [sv2_add]; exact Offset.sub_base _ (by omega)
+  rw [sv2_add]; exact Offset.sub_base _ (by omega_using [h, this])
 
 theorem sv2_contains (S : Addr) {d n : Nat} (h : d + n ≤ 121) :
     (⟨S, 2304⟩ : Region).Contains (sv2 S + BitVec.ofNat 64 d) n := by
   have := Align.pad_lt (S + BitVec.ofNat 64 2176)
-  rw [sv2_add]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [sv2_add]; exact Offset.contains_base _ (by omega_using [h, this]) (by omega_using [h, this])
 
 /-- A slot at `sv2 S + d`, above the callees' working space. -/
 theorem sv2_ws (S : Addr) {d n : Nat} (h : d + n ≤ 121) :
     Region.Disjoint ⟨sv2 S + BitVec.ofNat 64 d, n⟩ ⟨S, 2176⟩ := by
   have := Align.pad_lt (S + BitVec.ofNat 64 2176)
-  rw [sv2_add]; exact Offset.disjoint_base _ (by omega) (by omega)
+  rw [sv2_add]; exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h, this])
 
 /-- Slots holding registers whose values agree hold either's. -/
 theorem saved_congr {B : Addr} {g g' : Reg → BitVec 64} {l : List (Reg × Nat)} {m : Mem}
@@ -274,7 +274,7 @@ structure UPost (s : State) (W C D S : Addr) (R n : Nat) (s' : State) : Prop whe
 theorem UArgs.pre {s : State} {W C D S : Addr} {R n : Nat} (h : UArgs s W C D S R n) :
     updateRISCV64.pre (s.callEntry.withRegions [⟨W, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨S, 2176⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_using [this])
   simp only [updateRISCV64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
     State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
@@ -285,7 +285,7 @@ theorem UArgs.pre {s : State} {W C D S : Addr} {R n : Nat} (h : UArgs s W C D S 
 theorem upd_call {s : State} {W C D S : Addr} {R n : Nat} (h : UArgs s W C D S R n) :
     WP isa Impl.CmacAes.Stream.RISCV64.updCall s (UPost s W C D S R n) := by
   have hR := toNat_rounds h.rounds
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_using [this])
   refine WP.call (k := updateRISCV64) Proof.CmacAes.RISCV64.update_correct h.pre h.reads h.writes ?_
     update_noFrames
   intro s' hrd hwr hsp hf hsaved _ hpost
@@ -416,7 +416,7 @@ structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop wh
 theorem FArgs.pre {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
     finalizeRISCV64.pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩] [⟨St, 16⟩, ⟨S, 2176⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   simp only [finalizeRISCV64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
     State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
@@ -428,7 +428,7 @@ theorem FArgs.pre {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P 
 theorem fin_call {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
     WP isa Impl.CmacAes.Stream.RISCV64.finCall s (FPost s K St P S L R) := by
   have hR := toNat_rounds h.rounds
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   refine WP.call (k := finalizeRISCV64) Proof.CmacAes.RISCV64.finalize_correct h.pre h.reads h.writes ?_
     finalize_noFrames
   intro s' hrd hwr hsp hf hsaved _ hpost
@@ -481,7 +481,7 @@ structure EPost (s : State) (Kp W S : Addr) (KL : Nat) (s' : State) : Prop where
 
 theorem EArgs.pre {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL) :
     Proof.Aes.expandKeyRISCV64.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨W, 240⟩, ⟨S, 512⟩]) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
   simp only [Proof.Aes.expandKeyRISCV64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs),
     State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a3 ∉ linkRegs),
@@ -490,7 +490,7 @@ theorem EArgs.pre {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL)
 
 theorem ek_call {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL) :
     WP isa Impl.CmacAes.Stream.RISCV64.ekCall s (EPost s Kp W S KL) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
   refine WP.call (k := Proof.Aes.expandKeyRISCV64) Proof.Aes.RISCV64.expandKey_correct h.pre h.reads
     h.writes ?_ expandKey_noFrames
   intro s' hrd hwr hsp hf hsaved _ hpost
@@ -527,19 +527,19 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} (h : xs.le
   apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
   intro i h1 _
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h1
-  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega : i < 2 ^ 64),
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega_arith : i < 2 ^ 64),
     h1, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
 
 /-- Bytes `[0, r)` from `p` stay, and the bytes `xs` follow them. -/
 theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : r + xs.length < 2 ^ 64) :
     Spec.Aes.bytesAt (writeBytes m (p + BitVec.ofNat 64 r) xs) p (r + xs.length) =
       Spec.Aes.bytesAt m p r ++ xs := by
-  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega)]
+  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega_using [h])]
   refine congrArg (· ++ xs) ?_
   simp only [Spec.Aes.bytesAt]
   apply List.map_congr_left
   intro i hi
-  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega)
+  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega_using [h])
 
 /-! ## Copying bytes -/
 
@@ -556,7 +556,7 @@ theorem writeBytes_of {m m' : Mem} {C : Addr} {xs : List Byte}
   · rename_i h
     exact hf a fun r hr hc' => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains] at hc'; omega
+      simp only [Region.Contains] at hc'; omega_using [h, hc']
 
 /-- What `copy` leaves. -/
 structure Copied (s : State) (C : Addr) (xs : List Byte) (s' : State) : Prop where
@@ -578,10 +578,10 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL : L < 2 ^ 64) (h6 : s.gpr
     exact ⟨by simp [Spec.Aes.bytesAt, writeBytes_nil], fun _ _ _ _ _ => rfl, rfl, rfl⟩
   refine WP.ite false (by rw [ev]; simp [hL0]) (fun h => by cases h) fun _ => ?_
   refine WP.mono (copyLoop_ok (tmp := .t3) (src := .t6) (dst := .t5) (cnt := .t2) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) s (N := L) (by omega) hL h2 (by rw [h6]; exact hr)
+    (by decide) (by decide) (by decide) (by decide) s (N := L) (by omega_using [hL0]) hL h2 (by rw [h6]; exact hr)
     (by rw [h5]; exact hw) (fun x h₁ h₂ => ?_)) ?_
   · rw [h5] at h₁; rw [h6] at h₂
-    exact hdis x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+    exact hdis x (by simp only [Region.Contains]; omega_using [h₂]) (by simp only [Region.Contains]; omega_using [h₁])
   rintro t ⟨hc, hf, hk⟩
   rw [h5, h6] at hc
   rw [h5] at hf

@@ -27,7 +27,7 @@ theorem GenerationGeometry.qDecode (p : GenerationGeometry) (seed : List Byte) :
   rw [← VG.Proof.Dsa.decodeBE_os2ip]
   apply VG.Proof.Dsa.decodeBE_encodeBE
   have h := (VG.Proof.Dsa.Generation.qCandidate_shape
-    (by rcases p.qWidth with hh | hh <;> omega : 2 ≤ 8 * p.qLen) seed).2.2
+    (by rcases p.qWidth with hh | hh <;> omega_using [hh] : 2 ≤ 8 * p.qLen) seed).2.2
   simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using h
 
 theorem seedPrime_ok (H : GenerationHashes) (T : PrimeTest)
@@ -76,7 +76,7 @@ theorem seedPrime_ok (H : GenerationHashes) (T : PrimeTest)
     intro k hk
     have he := mt.slots k hk
     change Wt k = searchWords p.geo.B W k at he
-    have hn : k ≠ 0 ∧ k ≠ 2 ∧ k ≠ 25 := by simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+    have hn : k ≠ 0 ∧ k ≠ 2 ∧ k ≠ 25 := by simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     simpa [searchWords, upd, hn.1, hn.2.1, hn.2.2] using he
   have mem := h.frame mt.layout mt.rep (fun k hk => slots k (by
     simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk

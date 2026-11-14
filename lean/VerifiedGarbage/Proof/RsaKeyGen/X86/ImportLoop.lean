@@ -19,7 +19,7 @@ theorem code_ok {g : Geometry} {s : State} (C : Context g s)
   unfold code
   refine WP.loop (M := isa) Inv ?_ g.count s ?_
   · rintro q t ⟨i, iq, positive, T⟩
-    refine WP.mono (T.step C (by omega)) fun u ⟨U, Z⟩ => ?_
+    refine WP.mono (T.step C (by omega_using [iq, positive])) fun u ⟨U, Z⟩ => ?_
     by_cases done : i + 1 = g.count
     · left
       refine ⟨?_, done ▸ U⟩
@@ -27,11 +27,11 @@ theorem code_ok {g : Geometry} {s : State} (C : Context g s)
       rw [Z, decide_eq_true done]
       rfl
     · right
-      refine ⟨?_, q - 1, by omega, i + 1, by omega, by omega, U⟩
+      refine ⟨?_, q - 1, by omega_using [positive], i + 1, by omega_using [iq, positive], by omega_using [iq, positive, done], U⟩
       change u.zf.map Bool.not = some true
       rw [Z, decide_eq_false done]
       rfl
-  · exact ⟨0, by omega, C.positive, by omega, source, destination,
+  · exact ⟨0, by omega_using [], C.positive, by omega_using [], source, destination,
       by simpa only [Nat.sub_zero] using count, by intro j h; omega, Frame.refl _ _, Keeps.refl _ _⟩
 
 end VG.Proof.RsaKeyGen.X86.Import

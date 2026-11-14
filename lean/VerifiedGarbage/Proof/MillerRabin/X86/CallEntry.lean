@@ -29,7 +29,7 @@ theorem mulEntry_arg {g : Geometry} {s : State} {capacity b : Nat}
     arg (mulEntry g s) i = BitVec.ofNat 32
       (if i = 0 then g.W.toNat else if i = 1 then capacity else if i = 4 then b else 6) := by
   rw [mulEntry, arg_withRegions, callEntry_arg (rs := mulArgs) (s := s) fit (by decide : Reg.esp ∉ mulArgs) index]
-  have casesI : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+  have casesI : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [index]
   rcases casesI with rfl | rfl | rfl | rfl | rfl <;>
     simp only [mulArgs, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceSub,
       List.getElem_cons_zero, List.getElem_cons_succ, ↓reduceIte, A.base, A.length, A.index, A.right] <;> rfl
@@ -46,7 +46,7 @@ theorem mulEntry_frame {g : Geometry} {s : State}
     exact far
   · have := nowrap
     change g.L ≤ 2 ^ 64
-    omega
+    omega_using [nowrap]
   · exact index
 
 end VG.Proof.MillerRabin.X86

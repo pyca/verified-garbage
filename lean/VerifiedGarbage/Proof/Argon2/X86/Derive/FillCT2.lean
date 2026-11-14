@@ -52,7 +52,7 @@ theorem slotsOkX {ex : List Nat} (hex : ∀ d ∈ ex, d % 4 = 0 ∧ d + 4 ≤ 14
   rcases hx with hx | ⟨d, hd, rfl⟩ | hx
   · exact (slotsOk0 rs).of_mem rfl (List.mem_append_left _ hx) (by
       simp only [sl0, List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl <;> decide)
-  · have := hex d hd; simp [τB]; omega
+  · have := hex d hd; simp [τB]; omega_using [this]
   · exact (slotsOk0 rs).of_mem rfl (List.mem_append_right _ hx) (by
       simp only [List.mem_singleton] at hx; subst hx; decide)
 
@@ -81,7 +81,7 @@ theorem leafX {P : State → State → Prop} {c : Prog isa} (rs : List Reg) (ex 
     · obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hx
       refine ⟨rfl, fun j hj => List.mem_append_right _ ?_⟩
       have := (hex d hd).1
-      rw [show 4 * ((d + j) / 4) = d by simp only at hj; omega]
+      rw [show 4 * ((d + j) / 4) = d by simp only at hj; omega_using [hj, this]]
       exact hd
 
 /-! ## The reference -/
@@ -166,10 +166,10 @@ theorem fillCompress_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillSt
   have hR₂ : R < blocksN s₀₂ := T.pb.blocksN_eq ▸ hR
   have L8 := laneLen_ge T.hp₁
   obtain ⟨cl, _⟩ := cell_fits T.hp₁ hl (col := (slice * (prm s₀₁).segmentLen + index + (prm s₀₁).laneLen - 1) %
-    (prm s₀₁).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀₁).laneLen) (Nat.mod_lt _ (by omega_using [L8]))
   have L8₂ := laneLen_ge T.hp₂
   obtain ⟨cl₂, _⟩ := cell_fits T.hp₂ hl₂ (col := (slice * (prm s₀₂).segmentLen + index + (prm s₀₂).laneLen - 1) %
-    (prm s₀₂).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀₂).laneLen) (Nat.mod_lt _ (by omega_using [L8₂]))
   unfold Impl.Argon2.X86.Derive.fillCompress
   refine RelCT.seq (HPrime.rel_wp ((T.prevPointer_rel hs hi).mono (fun _ _ h => ⟨h.1.1.w, h.2.1.w⟩)
       fun _ _ h => h)

@@ -107,7 +107,7 @@ theorem seqPre_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : S
   have eV : ivR s (dirCore d) = ⟨s.gpr .a1, 8⟩ := rfl
   refine ⟨al, sp, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp, by rw [e8]; exact fV,
     by rw [hwr, hstep]; simp, by rw [hstep]; exact fD, by rw [hstep, eS]; exact dSD.symm,
-    by rw [eV, eS]; exact dSV.symm, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e8]; omega⟩,
+    by rw [eV, eS]; exact dSV.symm, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega_using [hstep, hst], by rw [e8]; omega_using [hstep, hst8]⟩,
     layout d⟩
 
 theorem keyArgs_of {st : Nat} {post : State → State → Prop} {M : Mode} (d : Spec.TripleDes.Direction)

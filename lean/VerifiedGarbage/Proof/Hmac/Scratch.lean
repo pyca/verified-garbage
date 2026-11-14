@@ -81,7 +81,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = ((initSig S).words p
       have := Nat.mod_le kl.toNat (2 ^ pb)
       have := kl.isLt
       rw [BitVec.toNat_setWidth] at hi
-      exact (hb.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      exact (hb.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
   change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (initPost S pb) _ m₁ m' r
     at h
   change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (initPost S pb) _ m₂ m' r
@@ -108,7 +108,7 @@ theorem finalizePost_local (hR : ReprLocal S) (hS : S.stateBytes < 2 ^ 64) : ∀
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs : ∀ (p : Addr), (∀ a, Region.Contains ⟨p, S.stateBytes⟩ a 1 → m₁ a = m₂ a) →
       ∀ i < S.stateBytes, m₁ (p + BitVec.ofNat 64 i) = m₂ (p + BitVec.ofNat 64 i) :=
-    fun p hp i hi => hp _ (Offset.contains_base _ (by omega) (by omega))
+    fun p hp i hi => hp _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hS, hi]))
   intro k0 text h1 h2 hri hc hro
   exact h k0 text h1 h2 (hR (hs _ hb.1) hri) hc (hR (hs _ hb.2.1) hro)
 

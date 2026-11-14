@@ -45,12 +45,12 @@ theorem Keep.scr {base : Addr} {s t : State} (h : Keep base s t) (hs : Scr s bas
 theorem slot_bound (i : Index) : Slot (slot i.val) := by
   simp only [Slot, slot, ACC]
   have := i.isLt
-  omega
+  omega_using []
 
 theorem slot_sep {i j : Index} (h : i ≠ j) : slot i.val + 112 ≤ slot j.val ∨ slot j.val + 112 ≤ slot i.val := by
   have hn : i.val ≠ j.val := fun he => h (Fin.ext he)
   simp only [slot]
-  omega
+  omega_using [hn]
 
 theorem Op.keep {base : Addr} {o : Index} {s t : State} (h : Op base (slot o.val) s t) : Keep base s t := by
   refine ⟨h.keeps.mono (fun _ hr => List.mem_cons_of_mem _ hr), ?_⟩
@@ -58,7 +58,7 @@ theorem Op.keep {base : Addr} {o : Index} {s t : State} (h : Op base (slot o.val
   apply h.mem p _ hq
   have := o.isLt
   simp only [slot]
-  omega
+  omega_using [hp]
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base (slot o.val) m m') :
     E m' base = Function.update (E m base) o (F m' base (slot o.val)) := by
@@ -145,7 +145,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.me
     have ey := slot_sep hiy
     have hi := slot_bound i
     change (word t.mem base (slot i.val + 4 * j)).toNat = _
-    rw [tm.word (by omega) (by omega) (by change slot i.val + 112 ≤ 3584 at hi; omega)]
+    rw [tm.word (by omega_using [hj, ex]) (by omega_using [hj, ey]) (by change slot i.val + 112 ≤ 3584 at hi; omega_using [hj, hi])]
   have fx : E t.mem base x = if sw then E s.mem base y else E s.mem base x := by
     cases sw <;> apply congrArg toFe <;> apply valN_congr <;> exact tx
   have fy : E t.mem base y = if sw then E s.mem base x else E s.mem base y := by
@@ -157,7 +157,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.me
   · intro p hp _
     have hx := x.isLt
     have hy := y.isLt
-    apply tm p <;> simp only [slot] <;> omega
+    apply tm p <;> simp only [slot] <;> omega_using [hp]
   · intro i j hj
     by_cases hix : i = x
     · subst i; rw [tx j hj]; cases sw <;> exact hb _ j hj

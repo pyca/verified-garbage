@@ -35,8 +35,8 @@ theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
   have B : Prepare.Data g c capacity p b :=
     A.keepHeader v (d := 128) (bytes := 0) (by decide) (by decide)
       (by rw [memB]; exact Outside.refl _ _ _ _) Kb (by decide) (by decide)
-  refine wp_storeS (B.ready.scratch.ea (by have := v.headerFit; unfold statusOffset; omega))
-    (B.ready.scratch.write (by have := v.headerFit; unfold statusOffset; omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (B.ready.scratch.ea (by have := v.headerFit; unfold statusOffset; omega_using [this]))
+    (B.ready.scratch.write (by have := v.headerFit; unfold statusOffset; omega_using [this])) fun t T => WP.block_nil ?_
   have Ot : Outside g.W statusOffset 4 b.mem t.mem := by
     rw [T.mem]
     exact writeW32_outside _ _ _ (by unfold statusOffset; decide)

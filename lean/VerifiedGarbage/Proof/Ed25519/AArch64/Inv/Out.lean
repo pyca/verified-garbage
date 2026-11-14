@@ -43,7 +43,7 @@ theorem shift_arith (w0 w1 w2 w3 w4 : Nat) (h0 : w0 < 2 ^ 64) (h1 : w1 < 2 ^ 64)
         2 ^ 128 * ((w3 * 2 ^ 64 + w2) / 2 ^ 59 % 2 ^ 64) +
         2 ^ 192 * ((w4 * 2 ^ 64 + w3) / 2 ^ 59 % 2 ^ 64) =
       (w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 + 2 ^ 256 * w4) / 2 ^ 59 % 2 ^ 256 := by
-  omega
+  omega_using [h0, h1, h2]
 
 /-- The five words at `t` into `x1`–`x3`, `x8`, `x9`. -/
 theorem ld5_ok {s : State} {base : Addr} (hs : Scr s base large) {t : Nat}
@@ -58,11 +58,11 @@ theorem ld5_ok {s : State} {base : Addr} (hs : Scr s base large) {t : Nat}
   have w8 : Reg.x8 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    load_sc hs ht.1 (by omega), load_sc (hs.write w1 _) (d := t + 8) (by omega) (by omega),
-    load_sc ((hs.write w1 _).write w2 _) (d := t + 16) (by omega) (by omega),
-    load_sc (((hs.write w1 _).write w2 _).write w3 _) (d := t + 24) (by omega) (by omega),
-    load_sc ((((hs.write w1 _).write w2 _).write w3 _).write w8 _) (d := t + 32) (by omega)
-      (by omega), Option.some.injEq, exists_eq_left']
+    load_sc hs ht.1 (by omega_using [ht]), load_sc (hs.write w1 _) (d := t + 8) (by omega_using [ht]) (by omega_using [ht]),
+    load_sc ((hs.write w1 _).write w2 _) (d := t + 16) (by omega_using [ht]) (by omega_using [ht]),
+    load_sc (((hs.write w1 _).write w2 _).write w3 _) (d := t + 24) (by omega_using [ht]) (by omega_using [ht]),
+    load_sc ((((hs.write w1 _).write w2 _).write w3 _).write w8 _) (d := t + 32) (by omega_using [ht])
+      (by omega_using [ht]), Option.some.injEq, exists_eq_left']
   simp only [RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false,
     BitVec.setWidth_eq]
   refine ⟨trivial, trivial, trivial, trivial, trivial, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
@@ -76,10 +76,10 @@ theorem st4w_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat}
     WP isa (.block [st a o, st b (o + 8), st c (o + 16), st d (o + 24)]) s fun u =>
       u.mem = st4 s.mem base o (s.gpr a) (s.gpr b) (s.gpr c) (s.gpr d) ∧ KeepRegs [] s u := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, store_sc hs ho.1 (by omega),
-    store_sc (hs.setMem _) (d := o + 8) (by omega) (by omega),
-    store_sc ((hs.setMem _).setMem _) (d := o + 16) (by omega) (by omega),
-    store_sc (((hs.setMem _).setMem _).setMem _) (d := o + 24) (by omega) (by omega),
+  simp only [runBlock_cons, runStep_some, runBlock_nil, store_sc hs ho.1 (by omega_using [ho]),
+    store_sc (hs.setMem _) (d := o + 8) (by omega_using [ho]) (by omega_using [ho]),
+    store_sc ((hs.setMem _).setMem _) (d := o + 16) (by omega_using [ho]) (by omega_using [ho]),
+    store_sc (((hs.setMem _).setMem _).setMem _) (d := o + 24) (by omega_using [ho]) (by omega_using [ho]),
     Option.some.injEq, exists_eq_left']
   exact ⟨rfl, fun _ _ => rfl, rfl, rfl, rfl⟩
 
@@ -116,10 +116,10 @@ theorem shift_ok {s : State} {base : Addr} (hs : Scr s base large) {o t : Nat}
   have mb : b.mem = s.mem := by rw [kb.mem, ka.mem]
   refine ⟨?_, ?_, ⟨fun r hr => ?_, by rw [ku.rd, kb.rd, ka.rd], by rw [ku.wr, kb.wr, ka.wr],
     by rw [ku.sp, kb.sp, ka.sp]⟩⟩
-  · rw [mu, fe_st4 _ _ (by omega), b1, b2, b3, b8, a1, a2, a3, a8, a9]
+  · rw [mu, fe_st4 _ _ (by omega_using [ho, _hcap]), b1, b2, b3, b8, a1, a2, a3, a8, a9]
     simp only [val4, val5, fe, extr_toNat]
     exact shift_arith _ _ _ _ _ (BitVec.isLt _) (BitVec.isLt _) (BitVec.isLt _)
-  · rw [mu, mb]; exact st4_outside _ _ (by omega) _ _ _ _
+  · rw [mu, mb]; exact st4_outside _ _ (by omega_using [ho, _hcap]) _ _ _ _
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [ku.gpr r (by simp), kb.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1]),
       ka.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2])]
@@ -137,7 +137,7 @@ theorem add4_mod (a0 a1 a2 a3 b0 b1 b2 b3 : Word) :
     (addCarry a2 b2 (carryOut a1 b1 (carryOut a0 b0 false)))
     (addCarry a3 b3 (carryOut a2 b2 (carryOut a1 b1 (carryOut a0 b0 false))))
   rw [Bool.toNat_false, Nat.add_zero] at h
-  omega
+  omega_using [h, hl]
 
 /-- The four words `reduce` stores. -/
 def redW (w0 w1 w2 w3 w4 : Word) : Word × Word × Word × Word :=
@@ -213,8 +213,8 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base large) {o t : Nat}
   have mb : b.mem = s.mem := by rw [kb.mem, ka.mem]
   refine ⟨?_, ?_, ⟨fun r hr => ?_, by rw [ku.rd, kb.rd, ka.rd], by rw [ku.wr, kb.wr, ka.wr],
     by rw [ku.sp, kb.sp, ka.sp]⟩⟩
-  · rw [mu, fe_st4 _ _ (by omega), b1, b2, b3, b8, redW_val, a1, a2, a3, a8, a9]
-  · rw [mu, mb]; exact st4_outside _ _ (by omega) _ _ _ _
+  · rw [mu, fe_st4 _ _ (by omega_using [ho, _hcap]), b1, b2, b3, b8, redW_val, a1, a2, a3, a8, a9]
+  · rw [mu, mb]; exact st4_outside _ _ (by omega_using [ho, _hcap]) _ _ _ _
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [ku.gpr r (by simp), kb.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
         hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2]),

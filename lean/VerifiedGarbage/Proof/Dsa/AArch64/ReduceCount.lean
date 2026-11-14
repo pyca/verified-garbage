@@ -42,8 +42,8 @@ theorem reduceCount_ok {s : State} {B : Addr} {Z o w wx m n : Nat} {minv : BitVe
     t.gpr .x3 = BitVec.ofNat 64 (n - 1)) ?_ rfl rfl rfl) fun t ⟨⟨hmem, hz⟩, hk⟩ => ?_
   · unfold Arithmetic.reduceCount
     drun [hc.x0, hdr_enc (show Crt.sRem < 32 by decide), hn, hsub,
-      hc.good.scr.ld (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega),
-      hc.good.scr.st (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega)]
+      hc.good.scr.ld (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega_using [hslot]),
+      hc.good.scr.st (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega_using [hslot])]
     exact ⟨congrArg (s.mem.writeW (off (off B o) (8 * Crt.sRem))) hsub, hsub⟩
   have ho : Outside (off B o) (8 * Crt.sRem) 8 s.mem t.mem := by
     rw [hmem]; exact writeW_outside _ _ _ (by decide)
@@ -51,7 +51,7 @@ theorem reduceCount_ok {s : State} {B : Addr} {Z o w wx m n : Nat} {minv : BitVe
     intro x hx
     apply ho x
     have h := hx (136, slot wx 8 + tabBytes wx - 136) (List.mem_singleton_self _)
-    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
     unfold Crt.sRem sFn at *
     omega
   have ht := hc.of_frmT hf (workRanges_ok wx) hk.wr (hk.gpr .x0 (by decide))

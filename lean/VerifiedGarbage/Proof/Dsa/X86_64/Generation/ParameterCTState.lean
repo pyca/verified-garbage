@@ -144,11 +144,11 @@ def ValidationContext.plan (p : ValidationContext) : ValidatePublic where
   paramsStack := by
     change (below p.context.geo.F 8).Disjoint ⟨off p.context.geo.B packed, p.params.length⟩
     rw [p.length]
-    have pn : p.context.geo.pLen ≤ 384 := by rcases p.context.geo.width with h | h | h <;> omega
-    have qn : p.context.geo.qLen ≤ 32 := by rcases p.context.geo.qWidth with h | h <;> omega
+    have pn : p.context.geo.pLen ≤ 384 := by rcases p.context.geo.width with h | h | h <;> omega_using [h]
+    have qn : p.context.geo.qLen ≤ 32 := by rcases p.context.geo.qWidth with h | h <;> omega_using [h]
     exact (p.context.geo.stack_part (p.context.geo.small_bound (d := packed)
       (n := 2 * p.context.geo.pLen + p.context.geo.qLen) (by decide)
-      (by unfold arithmeticBytes; omega))).sub_left (below_sub (by decide) (by decide))
+      (by unfold arithmeticBytes; omega_using [pn, qn]))).sub_left (below_sub (by decide) (by decide))
 
 def SeedValidateBefore (pLen qLen : Nat) (p : ValidationContext) (s : State) : Prop :=
   GenerationMemoryBefore p.context s ∧
@@ -159,17 +159,17 @@ theorem seedValidate_before {pLen qLen : Nat} {p : ValidationContext} {s : State
     (h : SeedValidateBefore pLen qLen p s) : ValidateBefore pLen qLen p.plan s := by
   obtain ⟨⟨W, hm⟩, bytes, hp, hq⟩ := h
   obtain ⟨V, R⟩ := hm.rep
-  have pn : p.context.geo.pLen ≤ 384 := by rcases p.context.geo.width with hh | hh | hh <;> omega
-  have qn : p.context.geo.qLen ≤ 32 := by rcases p.context.geo.qWidth with hh | hh <;> omega
+  have pn : p.context.geo.pLen ≤ 384 := by rcases p.context.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.context.geo.qLen ≤ 32 := by rcases p.context.geo.qWidth with hh | hh <;> omega_using [hh]
   have packedBound := p.context.geo.small_bound (d := packed)
-    (n := 2 * p.context.geo.pLen + p.context.geo.qLen) (by decide) (by unfold arithmeticBytes; omega)
+    (n := 2 * p.context.geo.pLen + p.context.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   have sep := p.context.geo.parts_disjoint packedBound p.context.geo.validationRoom
-    (Or.inl (by unfold packed domainCheck; omega))
+    (Or.inl (by unfold packed domainCheck; omega_using [pn, qn]))
   have source : Src s (off p.context.geo.B domainCheck) Impl.Dsa.Layout.usedBytes
       (off p.context.geo.B packed) p.params := by
     apply arena_source hm.scratch
     · simpa only [p.length] using packedBound
-    · rw [p.length]; omega
+    · rw [p.length]; omega_using [pn, qn]
     · simpa only [p.length] using bytes
     · simpa only [p.length, GenerationGeometry.part] using sep
   exact ⟨hm.layout, ⟨V, W, R, (hm.slots 5 (by simp [generationSlots])).trans p.context.baseSlot⟩,
@@ -444,7 +444,7 @@ private theorem searchLoop_step (remaining : Nat) :
     have hb := (of_decide_eq_true cont).2
     rw [show p.plan.attempt.construct.len = pLen from next.2.2.2.2.2.1] at hb
     exact hb
-  refine ⟨32 * pLen - (p.counter + 1), by omega, p.next cont, ⟨rfl, next⟩, rfl, ht.2 cont⟩
+  refine ⟨32 * pLen - (p.counter + 1), by omega_using [hr, bound], p.next cont, ⟨rfl, next⟩, rfl, ht.2 cont⟩
 
 theorem pSearchLoop_ct : RelCT isa (Two (SearchBefore n pLen qLen))
     (.loop (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)

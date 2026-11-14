@@ -20,10 +20,10 @@ def deriveInvoke : DeriveInvoke keyInvariant where
   correct := by
     intro s₀ t A R C checked context
     obtain ⟨reads,writes⟩ := call_covers A R
-    have low : 112≤(t.gpr .esp).toNat := by have := esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega
+    have low : 112≤(t.gpr .esp).toNat := by have := esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega_arith
     let v := (allocated 4 t).withRegions (callRd s₀) (callWr s₀)
     have args (i : Nat) (hi : i<9) : arg v i=callVal s₀ (t.gpr .esp) i := by
-      rw [allocated_arg R (by omega)]
+      rw [allocated_arg R (by omega_using [hi])]
       exact C i hi
     have valid := derive_allocated_valid A R C checked
     have contextV := derive_allocated_context A R C context

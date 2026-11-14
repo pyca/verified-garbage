@@ -110,7 +110,7 @@ theorem cpQ_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {u : State} {B : Addr} 
     rw [e]
   · rw [hm]; exact hs₃.trans hi₄
   · intro i hi
-    rw [hm, hb₄ i (by omega), hw₃ i (by omega) (by unfold sEp sFn; omega) (by unfold sEl sFn; omega)]
+    rw [hm, hb₄ i (by omega_using [hi]), hw₃ i (by omega_using [hi]) (by unfold sEp sFn; omega_using [hi]) (by unfold sEl sFn; omega_using [hi])]
   · exact keep_trans (keep_trans K₃ (k₄.mono (by decide))) (k₅.mono (by decide))
 
 

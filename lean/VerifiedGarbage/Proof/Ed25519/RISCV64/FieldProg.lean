@@ -87,12 +87,12 @@ theorem slot_frame {b : Addr} {m m' : Mem} {o i : Slot} (hne : i ≠ o) {e k : N
   have hsep : offset i + 32 ≤ offset o ∨ offset o + 32 ≤ offset i := by
     have hv : i.val ≠ o.val := fun e => hne (Fin.ext e)
     simp only [offset]
-    omega
+    omega_using [hv]
   refine congrArg Proof.X25519.toFe (val32_congr (limb_frame hf fun r hr k hk => ?_))
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (by omega_using [hsep, hk]) (by omega_using [hi, hk]) (by omega_using [ho])
+  · exact Offset.disjoint _ (.inl (by omega_using [he, hi, hk])) (by omega_using [hi, hk]) (by omega_arith)
 
 theorem field_update {b : Addr} {m m' : Mem} (o : Slot) {e k : Nat} (he : 768 ≤ e) (hk : e + k ≤ 2048)
     (hf : Frame [⟨b + BitVec.ofNat 64 (offset o), 32⟩, ⟨b + BitVec.ofNat 64 e, k⟩] m m') :
@@ -110,8 +110,8 @@ theorem frame_FA {b : Addr} {o : Slot} {e k : Nat} (he : 64 ≤ e) (hk : e + k �
   refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.sub _ (by omega) (by omega)
-  · exact Offset.sub _ (by omega) (by omega)
+  · exact Offset.sub _ (by omega_using [ho]) (by omega_using [ho])
+  · exact Offset.sub _ (by omega_using [he]) (by omega_using [hk])
 
 theorem frame_o {b : Addr} {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 o, 32⟩] m m') :
     Frame (opFrame b o) m m' :=
@@ -123,7 +123,7 @@ theorem field_finish {b : Addr} {s t : State} (o : Slot) (hr : Rest fclob s t)
     Keep b s t ∧ env t.mem b = Function.update (env s.mem b) o v := by
   have hA := eACC_eq
   rw [← hv]
-  exact ⟨⟨hr, frame_FA (by omega) (by omega) hf⟩, field_update o (by omega) (by omega) hf⟩
+  exact ⟨⟨hr, frame_FA (by omega_using [hA]) (by omega_using [hA]) hf⟩, field_update o (by omega_using [hA]) (by omega_using [hA]) hf⟩
 
 /-! ## A call of the product -/
 
@@ -131,7 +131,7 @@ theorem field_finish {b : Addr} {s t : State} (o : Slot) (hr : Rest fclob s t)
 theorem valAt_slot (m : Mem) (b : Addr) (i : Slot) :
     Proof.X25519.Field32.valAt m b (BitVec.ofNat 32 (offset i)) = V m b (offset i) := by
   have := slot_range i
-  rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), V, V]
+  rw [valAt_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), V, V]
   exact val32_congr fun k _ => by rw [limb, limb, wd_shift, Nat.zero_add]
 
 /-- What a call of `vg_gf25519_r32_mul` asks of the function: the working space's first 4096
@@ -148,7 +148,7 @@ theorem fits_slot (i : Slot) : Proof.X25519.Field32.Fits (BitVec.ofNat 32 (offse
   have := slot_range i
   simp only [Proof.X25519.Field32.Fits, Proof.X25519.Field32.elemBytes, Proof.X25519.Field32.ownAt,
     BitVec.toNat_ofNat]
-  omega
+  omega_using [this]
 
 theorem mulK_ok {b : Addr} (o a c : Slot) :
     ∀ t, (mulK b o a c).pre t → ∃ tr t', VG.Exec isa mulFn t tr t' ∧ abiPreserved t t' ∧
@@ -159,18 +159,18 @@ theorem mulK_ok {b : Addr} (o a c : Slot) :
       (by rw [t3]; exact fits_slot c) (by rw [h0]; exact hal)) (by decide +kernel)
   refine ⟨tr, t', he, abiPreserved_of_keep he hk (by decide) (by decide), ?_⟩
   rw [h0, t1, t2, t3, valAt_slot, valAt_slot, valAt_slot] at hV
-  rw [h0, t1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hF
+  rw [h0, t1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho])] at hF
   have hF' : Frame [⟨b + BitVec.ofNat 64 (offset o), 32⟩, ⟨b + BitVec.ofNat 64 768, 256⟩] t.mem t'.mem :=
     hF.mono fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h <;> simp [h]
-  exact ⟨frame_FA (by omega) (by omega) hF',
-    (field_update o (by omega) (by omega) hF').trans (congrArg _ (Proof.X25519.toFe_mul hV))⟩
+  exact ⟨frame_FA (by omega_using []) (by omega_using []) hF',
+    (field_update o (by omega_using []) (by omega_using []) hF').trans (congrArg _ (Proof.X25519.toFe_mul hV))⟩
 
 theorem low_word (v : Nat) (hv : v < 2 ^ 32) : (BitVec.ofNat 64 v).setWidth 32 = BitVec.ofNat 32 v := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega), Nat.mod_eq_of_lt hv]
+    Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega_using [hv]), Nat.mod_eq_of_lt hv]
 
 /-- **A call of `vg_gf25519_r32_mul`**, as the inlined product. -/
 theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (hw : WS b s) (o a c : Slot) :
@@ -180,8 +180,8 @@ theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (hw : WS b s) (o a c : 
   have ha := slot_range a
   have hc' := slot_range c
   unfold mulCall
-  refine WP.seq (wp_mv fun s1 u1 => wp_li (by omega) fun s2 u2 =>
-    wp_li (by omega) fun s3 u3 => wp_li (by omega) fun s4 u4 => WP.block_nil ?_)
+  refine WP.seq (wp_mv fun s1 u1 => wp_li (by omega_using [ho]) fun s2 u2 =>
+    wp_li (by omega_using [ha]) fun s3 u3 => wp_li (by omega_using [hc']) fun s4 u4 => WP.block_nil ?_)
   have hr4 : Rest [.a0, .a1, .a2, .a3] s s4 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans (u4.rest (by decide))))
   have hm4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
@@ -196,9 +196,9 @@ theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (hw : WS b s) (o a c : 
   have hw4 : Covers [⟨b, 4096⟩] s4.wr := hw.of_rest hr4
   refine WP.seq (WP.call (k := mulK b o a c) (mulK_ok o a c) (rd := []) (wr := [⟨b, 4096⟩])
     ⟨rfl, rfl, by rw [g _ (by decide)]; exact e0, hc.al,
-      by rw [offArg, g _ (by decide), e1]; exact low_word _ (by omega),
-      by rw [offArg, g _ (by decide), e2]; exact low_word _ (by omega),
-      by rw [offArg, g _ (by decide), e3]; exact low_word _ (by omega)⟩
+      by rw [offArg, g _ (by decide), e1]; exact low_word _ (by omega_using [ho]),
+      by rw [offArg, g _ (by decide), e2]; exact low_word _ (by omega_using [ha]),
+      by rw [offArg, g _ (by decide), e3]; exact low_word _ (by omega_using [hc'])⟩
     (by rw [List.nil_append]; exact hw4.right) hw4 ?_ (by decide +kernel))
   intro t hrd hwr hsp _ _ hg ⟨hF, hV⟩
   simp only [State.withRegions_mem, State.callEntry_mem] at hF hV
@@ -234,24 +234,24 @@ theorem fieldOp_ok {b : Addr} {s : State} (hc : Ctx b s) (hw : WS b s) (op : Fie
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (R64.mulAt_ok (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc) fun t ⟨hr, hf, hv⟩ => ?_
+    refine WP.mono (R64.mulAt_ok (by omega_using [hA]) (by omega_using [hA]) (by omega_using [hA, ho]) (by omega_using [hA, ha]) (by omega_using [hA, hb])
+      (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) hc) fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) hf (Proof.X25519.toFe_mul hv)
   | mulc o a c => exact mulCall_ok hc hw o a c
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (R64.add_ok (by omega) (by omega) (by omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
+    refine WP.mono (R64.add_ok (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb])
+      (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_add hv)
   | sub o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (R64.sub_ok (by omega) (by omega) (by omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
+    refine WP.mono (R64.sub_ok (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb])
+      (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_sub hv)
 

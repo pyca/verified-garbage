@@ -71,7 +71,7 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
     obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bds₁, -, -, -, -, -, -, -, ods, -⟩ := p₁
     obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bds₂, -⟩ := p₂
     have hx : (dsR σ₁).Contains (State.addr (Src σ₁) + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ hj (by omega)
+      Offset.contains_base _ hj (by omega_using [hj, ods])
     have hx₂ : (dsR σ₂).Contains (State.addr (Src σ₁) + BitVec.ofNat 64 j) 1 := by
       simp only [dsR, Src, Cnt, ← a0, ← a1]; exact hx
     rw [he₁.mem, he₂.mem, h₁.keepE bds₁.symm hx, h₂.keepE bds₂.symm hx₂]
@@ -100,7 +100,7 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
       · rw [r2₁, r2₂, q2]
       · rw [r3₁, r3₂, q3]
       · simp only [State.withRegions_sp, State.callEntry_sp, hc₁.sp, hc₂.sp, hP]
-      · rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+      · rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
         · rw [s0₁, s0₂]; exact a2
         · rw [s1₁, s1₂]; exact a3
         · rw [s2₁, s2₂]; exact a4)

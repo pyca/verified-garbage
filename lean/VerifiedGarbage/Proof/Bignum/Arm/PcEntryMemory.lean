@@ -35,7 +35,7 @@ theorem pcEntry_memory {s t : State} {base : BitVec 32}
     change ¬ ((a - State.addr s.sp).toNat + 1 ≤ 8) at h
     right
     change 8 ≤ (a - State.addr s.sp).toNat
-    omega
+    omega_using [h]
 
 theorem pcEntry_callee_saved {s t : State} {base : BitVec 32} {g : Reg → BitVec 32}
     (saved : Spill.Saved s.mem (State.addr s.sp) g pcCalleeSaved)

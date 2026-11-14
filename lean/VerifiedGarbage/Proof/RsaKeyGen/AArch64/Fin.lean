@@ -30,8 +30,8 @@ theorem frm_up {B up : Addr} {Z : Nat} (hupZ : ∀ b < 8, Z ≤ ofs B (up + BitV
   have hx' : ofs B x < Z := by
     have := hx (Z, 2 ^ 64) (List.mem_singleton_self _)
     have : ofs B x < 2 ^ 64 := BitVec.isLt _
-    omega
-  exact writeW64_other v fun b hb he => by have := hupZ b hb; rw [← he] at this; omega
+    omega_arith
+  exact writeW64_other v fun b hb he => by have := hupZ b hb; rw [← he] at this; omega_using [hx', this]
 
 theorem KMut.past {Z : Nat} (h : 8 * 32 ≤ Z) (n : Nat) : KMut (Z, n) := Or.inl h
 
@@ -102,7 +102,7 @@ theorem mrResult_ok {s : State} {B : Addr} {Z w c : Nat} {op up : Addr} {r : Lis
   have hs := h.scr
   have hnw := hs.nowrap
   have h256 := h.h256
-  have hl : InRegions (s.rd ++ s.wr) (off B (8 * kStat)) 8 := hs.ld (by simp only [kStat, sFn]; omega)
+  have hl : InRegions (s.rd ++ s.wr) (off B (8 * kStat)) 8 := hs.ld (by simp only [kStat, sFn]; omega_using [h256])
   unfold mrResult
   have hfirst : ∀ v : Nat, word s.mem B (8 * kStat) = BitVec.ofNat 64 v →
       WP isa (.block [ldh .x3 kStat]) s fun t => (t.gpr .x3 = BitVec.ofNat 64 v ∧ t.mem = s.mem) ∧ Keep [.x3] s t :=

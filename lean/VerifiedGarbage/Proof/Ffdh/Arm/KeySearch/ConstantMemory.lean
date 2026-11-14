@@ -40,7 +40,7 @@ private theorem singleton_held_after_frame {name : String} {words : List (BitVec
   subst c
   dsimp only [Prod.snd] at hi
   rw [frame.readW (r := ⟨State.addr ptr, 8 * words.length⟩)
-    (Offset.contains_base _ (by omega) (by omega))
+    (Offset.contains_base _ (by omega_using [hi]) (by omega_using [size, hi]))
     (fun r hr => safe _ List.mem_cons_self r hr) (by decide)]
   exact h _ List.mem_cons_self i hi
 

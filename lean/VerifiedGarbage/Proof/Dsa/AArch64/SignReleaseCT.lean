@@ -61,25 +61,25 @@ theorem releaseScalar_ct (offset : Nat) (second : Bool) (ho : offset < 2 ^ 16)
       ((if second then p.output + BitVec.ofNat 64 p.width else p.output) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     cases second
-    · exact h.writable i (by omega)
+    · exact h.writable i (by omega_using [hi])
     · rw [ite_eq_left rfl, Offset.add_add]
-      exact h.writable _ (by omega)
+      exact h.writable _ (by omega_using [hi])
   have hsep : ∀ i < p.width, usedBytes ≤ ofs p.base
       ((if second then p.output + BitVec.ofNat 64 p.width else p.output) + BitVec.ofNat 64 i) := by
     intro i hi
     cases second
-    · exact h.separate i (by omega)
+    · exact h.separate i (by omega_using [hi])
     · rw [ite_eq_left rfl, Offset.add_add]
-      exact h.separate _ (by omega)
+      exact h.separate _ (by omega_using [hi])
   refine WP.mono (writeScalar_ok h.scratch h.x0 (by decide) ho h.out h.width hm second p.positive
-    (by have := p.bound; omega) (by have := p.bound; omega) hw hsep) fun t ⟨_, hf, hk⟩ => ?_
+    (by have := p.bound; omega_using [this]) (by have := p.bound; omega_using [hend, this]) hw hsep) fun t ⟨_, hf, hk⟩ => ?_
   have hword (f : Field) : word t.mem p.base f.offset = word s.mem p.base f.offset := by
     apply Mem.readW_congr
     intro i hi
     apply hf _
     intro j hj
-    exact scr_ne_out hsep (by have hb := (VG.Proof.Dsa.field_bounds f).2; change f.offset + 8 ≤ 3456 at hb; change f.offset + i < 15712; omega)
-      (by have := h.scratch.nowrap; omega) j hj
+    exact scr_ne_out hsep (by have hb := (VG.Proof.Dsa.field_bounds f).2; change f.offset + 8 ≤ 3456 at hb; change f.offset + i < 15712; omega_using [hi, hb])
+      (by have := h.scratch.nowrap; omega_using [this]) j hj
   exact ⟨h.scratch.congr hk.wr, (hk.gpr .x0 (by decide)).trans h.x0,
     (hword .out).trans h.out, (hword .qLen).trans h.width, ⟨valid, (hword .mask).trans hm⟩,
     fun i hi => by rw [hk.wr]; exact h.writable i hi, h.separate⟩

@@ -67,7 +67,7 @@ theorem rhs_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
     (VG.Impl.Weierstrass.X86.fprog c.SP (rhsTail.map (FOp.rename c.sl)))) s _
   refine WP.seq (WP.mono (slMul_ok (MP'_n c) hc.fp h7 hs (o := QXM) (a := E) (b := R2P)
     (by decide) (by decide) (by decide)
-    (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega)))
+    (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])))
     fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have hM₁ := hM.keepX86 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
@@ -97,10 +97,10 @@ theorem rhs_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
       · exact lt₁
       · show sv c base s₁ AP < _
         rw [a₁]
-        exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [lt₁])
       · show sv c base s₁ BP < _
         rw [b₁]
-        exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+        exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [lt₁])
   refine WP.mono (fprog_ok hL hW hpR _ I (fun op hop x hx => ?_)
     (readsOk_rename c.sl rhsTail_reads)) fun s₂ ⟨PK, I₂⟩ => ?_
   · obtain ⟨op₀, hop₀, rfl⟩ := List.mem_map.mp hop

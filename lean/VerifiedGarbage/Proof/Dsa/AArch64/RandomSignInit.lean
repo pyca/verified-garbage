@@ -65,8 +65,8 @@ theorem random_sign_init {extra : Nat} {s : State} (h : RandomSignABI extra s)
     apply htr.frame.word_eq
     · intro r hr
       simp only [randomWriteRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> dsimp only <;> omega
-    · omega
+      rcases hr with rfl | rfl <;> dsimp only <;> omega_using [hd]
+    · omega_using [hd]
   have hpf : InScr (randomBase s) Random.frameBytes u.mem t.mem := InScr.of_frm htr.frame (by
     intro r hr
     simp only [randomWriteRanges, List.mem_cons, List.not_mem_nil, or_false] at hr

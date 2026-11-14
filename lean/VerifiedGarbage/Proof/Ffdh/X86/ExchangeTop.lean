@@ -32,7 +32,7 @@ theorem wrapABI {s : State} (A : ExchangeABI s) : WrapABI Impl.Ffdh.X86.Exchange
   below := ⟨(fun _ h => by cases h; decide), by decide, by decide, by decide, (fun _ h => by cases h; decide),
     (fun _ h => by cases h; decide), by decide, (fun _ h => by cases h)⟩
   stackLow := A.stackLow
-  stackBound := by have := A.stackBound; omega
+  stackBound := by have := A.stackBound; omega_using [this]
   argsIn := by rw [A.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
   wsIn := by rw [A.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_self ..)
   scratchArgs := A.scratchArgs
@@ -85,13 +85,13 @@ theorem frame_geo {s : State} (A : ExchangeABI s) {sp : BitVec 32}
   have yR : (arg s 8).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.yLen
   have oR : (arg s 1).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.outLen
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
-  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
+  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
   have ofn : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have sub40 : Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
     simp only [below]
-    rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
+    rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
       ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
@@ -125,7 +125,7 @@ theorem frame_keep {s : State} (A : ExchangeABI s) {m : Mem}
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact frame_bytes Ft (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -153,17 +153,17 @@ theorem result_eq {len : Nat} {D : List Byte} {x y : Nat} {c : Bool} {m : Mem} {
   have mv := VG.Proof.Ffdh.domainValid_mod v
   unfold Spec.Rsa.modulusValid at mv
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at mv
-  have gt : 1 < (Spec.Ffdh.domainOf len D).p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega
+  have gt : 1 < (Spec.Ffdh.domainOf len D).p := by have := Nat.two_pow_pos 511; have := mv.1.1.2; omega_using [mv]
   have lo : 256 ^ (len - 1) ≤ (Spec.Ffdh.domainOf len D).p := by
     have := v; unfold Spec.Ffdh.domainValid at this
     simp only [Bool.and_eq_true, decide_eq_true_eq] at this
     exact this.2
   have hi : (Spec.Ffdh.domainOf len D).p < 256 ^ len := by
     have := VG.Proof.Bignum.os2ip_lt (D.take len)
-    rw [List.length_take, Nat.min_eq_left (by omega)] at this
+    rw [List.length_take, Nat.min_eq_left (by omega_using [hD])] at this
     exact this
-  rw [VG.Proof.Ffdh.exchangeOp_eq pv (by omega) (VG.Proof.Ffdh.octets_bitLength hl lo hi)]
-  rw [safeM_of gt mv.1.1.1, pm1_of (by omega)] at hc
+  rw [VG.Proof.Ffdh.exchangeOp_eq pv (by omega_using [mv]) (VG.Proof.Ffdh.octets_bitLength hl lo hi)]
+  rw [safeM_of gt mv.1.1.1, pm1_of (by omega_using [mv])] at hc
   rw [safeM_of gt mv.1.1.1] at hb
   generalize y ^ x % (Spec.Ffdh.domainOf len D).p = z at hc hb ⊢
   by_cases e : 1 < z ∧ z < (Spec.Ffdh.domainOf len D).p - 1
@@ -196,17 +196,17 @@ theorem frame_ok {s : State} (A : ExchangeABI s) (f : State)
   have yR : (arg s 8).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.yLen
   have oR : (arg s 1).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.outLen
   have D : domBytes f.mem (synth Impl.Ffdh.X86.Exchange.args (arg s)) (arg s 3).toNat = entryDom s :=
-    frame_keep A Ft A.domScratch A.belowDom (by have := A.domBound; omega)
+    frame_keep A Ft A.domScratch A.belowDom (by have := A.domBound; omega_using [])
   have Yv : yv f.mem (synth Impl.Ffdh.X86.Exchange.args (arg s)) (pLenOf Impl.Ffdh.X86.Exchange.args s) =
       Spec.Rsa.os2ip (entryY s) := by
     show Spec.Rsa.os2ip (Spec.Rsa.bytesAt f.mem (argumentPointer s 7) _) = _
     rw [← yR]
-    exact congrArg _ (frame_keep A Ft A.yScratch A.belowY (by have := A.yBound; omega))
+    exact congrArg _ (frame_keep A Ft A.yScratch A.belowY (by have := A.yBound; omega_using []))
   have Xv : xv f.mem (synth Impl.Ffdh.X86.Exchange.args (arg s)) (arg s 6).toNat = Spec.Rsa.os2ip (entryX s) :=
-    congrArg _ (frame_keep A Ft A.xScratch A.belowX (by have := A.xBound; omega))
+    congrArg _ (frame_keep A Ft A.xScratch A.belowX (by have := A.xBound; omega_using []))
   have Pv : comp f.mem (synth Impl.Ffdh.X86.Exchange.args (arg s)) (pLenOf Impl.Ffdh.X86.Exchange.args s) 0 =
       (Spec.Ffdh.domainOf (pLenOf Impl.Ffdh.X86.Exchange.args s) (entryDom s)).p := by
-    rw [comp_p f.mem _ (dlen := (arg s 3).toNat) (by have := G.dl; omega)]
+    rw [comp_p f.mem _ (dlen := (arg s 3).toNat) (by have := G.dl; omega_using [this])]
     exact congrArg (fun d => (Spec.Ffdh.domainOf _ d).p) D
   refine WP.mono (body_ok I G Y X O hy40 hx40) fun t ⟨E, B, F, K⟩ =>
     ⟨fun v pv => ?_, by rw [List.singleton_append, outR, oR]; exact F, K⟩
@@ -219,7 +219,7 @@ theorem frame_ok {s : State} (A : ExchangeABI s) (f : State)
   refine result_eq (len := (arg s 4).toNat) (D := entryDom s) (x := Spec.Rsa.os2ip (entryX s))
     (y := Spec.Rsa.os2ip (entryY s))
     (c := acc f.mem (synth Impl.Ffdh.X86.Exchange.args (arg s)) (pLenOf Impl.Ffdh.X86.Exchange.args s)
-      (arg s 6).toNat) (by have := A.pLen.1; omega)
+      (arg s 6).toNat) (by have := A.pLen.1; omega_using [this])
     (by have := A.dLen; simpa [Spec.Rsa.bytesAt, Spec.Ffdh.domainLenValid] using this) ?_ E ?_ v pv
   · rw [acc, Z, Pv]
     rfl

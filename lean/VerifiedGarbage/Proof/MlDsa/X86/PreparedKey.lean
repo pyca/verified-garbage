@@ -88,21 +88,21 @@ theorem start_piece (f : State → Nat → Poly) (hk : 0 < kl) (h4 : 4 * (kl / 4
       (YP kl pl).sep ⟨0, 0, 4 * (kl / 4)⟩ ⟨1, 0, 4 * (kl / 4)⟩) = true := by
     rw [h4]
     simp only [Bool.and_eq_true]
-    exact ⟨⟨okK (pl := pl) (o := 0) (l := kl) hk (by omega), okP (kl := kl) (o := 0) (l := kl) hk (by omega)⟩,
+    exact ⟨⟨okK (pl := pl) (o := 0) (l := kl) hk (by omega_using []), okP (kl := kl) (o := 0) (l := kl) hk (by omega_using [hkl])⟩,
       VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inr rfl⟩)⟩
-  refine copyW_piece (Y := YP kl pl) 0 0 1 0 (kl / 4) (by omega) hk30 hc (h₁ := .block []) (by kernel_rfl)
+  refine copyW_piece (Y := YP kl pl) 0 0 1 0 (kl / 4) (by omega_using [hk, h4]) hk30 hc (h₁ := .block []) (by kernel_rfl)
     (by native_taint_decide) (fun _ _ _ h => h) fun s₀ s s' hp h h' fr hb => ⟨h', ?_, fun j hj => absurd hj (Nat.not_lt_zero _)⟩
   rw [h4] at hb
   rw [hb]
-  exact h.roBytes hp (okK (o := 0) (l := kl) hk (by omega)) rfl
+  exact h.roBytes hp (okK (o := 0) (l := kl) hk (by omega_using [])) rfl
 
 /-- Slot `i`, and `prepared`'s other slots and copy of the key, apart. -/
 theorem slot_sep {i j : Nat} (h : i ≠ j) : (YP kl pl).sep (slot kl i) (slot kl j) = true :=
   VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl,
-    show kl + 1024 * i + 1024 ≤ kl + 1024 * j ∨ kl + 1024 * j + 1024 ≤ kl + 1024 * i by omega⟩)
+    show kl + 1024 * i + 1024 ≤ kl + 1024 * j ∨ kl + 1024 * j + 1024 ≤ kl + 1024 * i by omega_using [h]⟩)
 
 theorem key_slot_sep {i : Nat} : (YP kl pl).sep ⟨1, 0, kl⟩ (slot kl i) = true :=
-  VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, .inl (show 0 + kl ≤ kl + 1024 * i by omega)⟩)
+  VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inl ⟨rfl, .inl (show 0 + kl ≤ kl + 1024 * i by omega_using [])⟩)
 
 /-- A step that writes slot `i` and `scratch` keeps the copy of the key and the other slots. -/
 theorem PI.keep {f : State → Nat → Poly} {i : Nat} {s₀ s s' : State} (hp : TPre (YP kl pl) s₀) (hk : 0 < kl)
@@ -115,21 +115,21 @@ theorem PI.keep {f : State → Nat → Poly} {i : Nat} {s₀ s s' : State} (hp :
   refine ⟨h', ?_, fun j hj => ?_⟩
   · have hap : (YP kl pl).apart ⟨1, 0, kl⟩ [slot kl i, ⟨2, 0, 1024⟩] = true := by
       simp only [Lay.apart, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true]
-      exact ⟨(Lay.okW_iff.mp (okP (kl := kl) (o := 0) (l := kl) hk (by omega))).1, ⟨hsl, key_slot_sep⟩, hs,
+      exact ⟨(Lay.okW_iff.mp (okP (kl := kl) (o := 0) (l := kl) hk (by omega_using [hi]))).1, ⟨hsl, key_slot_sep⟩, hs,
         VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inr rfl⟩)⟩
     rw [keepBytes hp (N := 80) (by simp [YP]) hap fr]
     exact h.2.1
   · have hap : (YP kl pl).apart ⟨1, kl + 1024 * j, 1024⟩ [slot kl i, ⟨2, 0, 1024⟩] = true := by
       simp only [Lay.apart, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true]
-      exact ⟨(Lay.okW_iff.mp (okP (kl := kl) (o := kl + 1024 * j) (l := 1024) (by decide) (by rw [Nat.mul_succ, ← Nat.add_assoc] at hi; exact Nat.le_trans (by omega) hi))).1,
-        ⟨hsl, slot_sep (by omega)⟩, hs,
+      exact ⟨(Lay.okW_iff.mp (okP (kl := kl) (o := kl + 1024 * j) (l := 1024) (by decide) (by rw [Nat.mul_succ, ← Nat.add_assoc] at hi; exact Nat.le_trans (by omega_using [hj]) hi))).1,
+        ⟨hsl, slot_sep (by omega_using [hj])⟩, hs,
         VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inr rfl⟩)⟩
     exact keepPolyD hp (N := 80) (by simp [YP]) hap fr (h.2.2 j hj)
 
 /-- The bytes of the key at `o`, from the start. -/
 theorem key_slice {s₀ s : State} (hp : TPre (YP kl pl) s₀) (h : Ctx (YP kl pl) s₀ s) {o l : Nat} (hl : 0 < l)
     (hol : o + l ≤ kl) : bytesAt s.mem (Buf.addr s₀ ⟨0, o, l⟩) l = ((keyOf kl s₀).drop o).take l := by
-  have e := bytes_sub hp s₀.mem (a := 0) (o := 0) (k := o) (c := l) (L := kl) hol (okK (by omega) (by omega))
+  have e := bytes_sub hp s₀.mem (a := 0) (o := 0) (k := o) (c := l) (L := kl) hol (okK (by omega_using [hl, hol]) (by omega_using []))
     (by rw [Nat.zero_add]; exact okK hl hol)
   rw [Nat.zero_add] at e
   rw [h.roBytes hp (okK hl hol) rfl]
@@ -142,8 +142,8 @@ theorem publicPoly_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hpk : p.pkLe
     (hr : r < p.k) (hpl : p.pkLen + 1024 * p.k ≤ pl) :
     PP p.pkLen pl (PI (pl := pl) p.pkLen (fun s₀ j => Verify.t1Hat (keyOf p.pkLen s₀) j) r)
       (PI (pl := pl) p.pkLen (fun s₀ j => Verify.t1Hat (keyOf p.pkLen s₀) j) (r + 1)) (publicPoly P p r) := by
-  have hsl : (YP p.pkLen pl).okW (slot p.pkLen r) = true := okP (o := p.pkLen + 1024 * r) (l := 1024) (by decide) (by omega)
-  have hv : (YP p.pkLen pl).ok ⟨0, 32 + 320 * r, 320⟩ = true := okK (o := 32 + 320 * r) (l := 320) (by decide) (by omega)
+  have hsl : (YP p.pkLen pl).okW (slot p.pkLen r) = true := okP (o := p.pkLen + 1024 * r) (l := 1024) (by decide) (by omega_using [hr, hpl])
+  have hv : (YP p.pkLen pl).ok ⟨0, 32 + 320 * r, 320⟩ = true := okK (o := 32 + 320 * r) (l := 320) (by decide) (by omega_using [hpk, hr])
   unfold publicPoly
   refine Piece.seq (B := fun s₀ s => PI (pl := pl) p.pkLen (fun s₀ j => Verify.t1Hat (keyOf p.pkLen s₀) j) r s₀ s ∧
       PolyIs s.mem (Buf.addr s₀ (slot p.pkLen r)) ((Verify.vT1 (keyOf p.pkLen s₀) r).map fun c => ofInt (c * 2 ^ d : Nat)))
@@ -151,22 +151,22 @@ theorem publicPoly_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hpk : p.pkLe
       (by simp only [Bool.and_eq_true]
           exact ⟨⟨hv, hsl⟩, VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inr rfl⟩)⟩)
       (by simp [YP]) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
-      fun s₀ s s' hp h h' fr out => ⟨PI.keep hp (by omega) (by omega) h h' (fr.sub fun x hx => ?_), ?_⟩) ?_
+      fun s₀ s s' hp h h' fr out => ⟨PI.keep hp (by omega_using [hpk]) (by omega_using [hr, hpl]) h h' (fr.sub fun x hx => ?_), ?_⟩) ?_
   · simp only [FR, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons] at hx ⊢
     rcases hx with rfl | rfl | h
     · exact ⟨_, .inl rfl, fun _ h => h⟩
     · exact ⟨_, .inr (.inr (.inl rfl)), fun _ h => h⟩
     · exact absurd h List.not_mem_nil
-  · rw [key_slice hp h.1 (by decide) (by omega)] at out
+  · rw [key_slice hp h.1 (by decide) (by omega_using [hpk, hr])] at out
     exact out
   refine inPlace_piece (Y := YP p.pkLen pl) hP.ntt 1 (p.pkLen + 1024 * r) 2 0
     (by simp only [Bool.and_eq_true]
         exact ⟨⟨hsl, okS⟩, VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inl rfl⟩)⟩)
     (by simp [YP]) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => ⟨h.1.1, h.2.1⟩) fun s₀ s s' hp h h' fr out => ?_
-  have hk := PI.keep hp (by omega) (by omega) h.1 h' fr
+  have hk := PI.keep hp (by omega_using [hpk]) (by omega_using [hr, hpl]) h.1 h' fr
   refine ⟨hk.1, hk.2.1, fun j hj => ?_⟩
-  rcases (by omega : j < r ∨ j = r) with hj' | rfl
+  rcases (by omega_using [hj] : j < r ∨ j = r) with hj' | rfl
   · exact hk.2.2 j hj'
   · rw [h.2.2] at out; exact out
 
@@ -196,7 +196,7 @@ theorem tpre_of {s₀ : State} (h1 : 96 ≤ (s₀.gpr .esp).toNat)
     (f0 : (arg s₀ 0).toNat + kl ≤ 2 ^ 32) (f1 : (arg s₀ 1).toNat + pl ≤ 2 ^ 32)
     (f2 : (arg s₀ 2).toNat + 1024 ≤ 2 ^ 32) :
     TPre (YP kl pl) s₀ := by
-  have c3 : ∀ i, i < (YP kl pl).n → i = 0 ∨ i = 1 ∨ i = 2 := fun i hi => by rw [yp_n] at hi; omega
+  have c3 : ∀ i, i < (YP kl pl).n → i = 0 ∨ i = 1 ∨ i = 2 := fun i hi => by rw [yp_n] at hi; omega_using [hi]
   refine ⟨h1, by show 16 ≤ 96; decide, by rw [yp_n]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, sg, ?_, by show 2 < 3; decide⟩
   · intro i hi hw
     rw [h3]
@@ -261,7 +261,7 @@ theorem pub_pub_of {s₀ s₀' : State} (h : (preparePublicKeyContract p X86.abi
   obtain ⟨e₁, e₂, e₃, e₄⟩ := h
   refine ⟨e₁, fun i hi => ?_, rfl⟩
   rw [yp_n] at hi
-  obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
   exacts [e₂, e₃, e₄]
 
 theorem sec_pub_of {s₀ s₀' : State} (h : (prepareSecretKeyContract p X86.abi 96).pub s₀ s₀') :
@@ -270,7 +270,7 @@ theorem sec_pub_of {s₀ s₀' : State} (h : (prepareSecretKeyContract p X86.abi
   obtain ⟨e₁, e₂, e₃, e₄⟩ := h
   refine ⟨e₁, fun i hi => ?_, rfl⟩
   rw [yp_n] at hi
-  obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
   exacts [e₂, e₃, e₄]
 
 /-- Memory with the arguments `0`, `0x8000` and `0x20000` at `0x5004`. -/
@@ -288,15 +288,15 @@ theorem public_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
   have hF := Verify.vfacts hp3
   have hpk := hF.pk
   have hk := hF.k
-  have hpl : p.pkLen + 1024 * p.k ≤ preparedPublicKeyBytes p := by simp only [preparedPublicKeyBytes, n]; omega
+  have hpl : p.pkLen + 1024 * p.k ≤ preparedPublicKeyBytes p := by simp only [preparedPublicKeyBytes, n]; omega_using []
   have hb : PP p.pkLen (preparedPublicKeyBytes p) (fun s₀ s => s = P0 s₀)
       (fun s₀ s => Ctx (YP p.pkLen (preparedPublicKeyBytes p)) s₀ s ∧
         PI (pl := preparedPublicKeyBytes p) p.pkLen (fun s₀ j => Verify.t1Hat (keyOf p.pkLen s₀) j) p.k s₀ s)
       (.seq (start p.pkLen) (seqR (publicPoly P p) 0 p.k)) :=
-    (start_piece _ (by omega) (by omega) (by omega) (by omega)).seq
+    (start_piece _ (by omega_using [hpk]) (by omega_using [hpk]) (by omega_using [hpl]) (by omega_using [hpk, hk])).seq
       ((seqR_piece (I := fun r => PI (pl := preparedPublicKeyBytes p) p.pkLen
         (fun s₀ j => Verify.t1Hat (keyOf p.pkLen s₀) j) r) p.k 0
-        fun r _ hr => publicPoly_piece hP hpk (by omega) hpl).mono (fun _ _ _ h => h)
+        fun r _ hr => publicPoly_piece hP hpk (by omega_using [hr]) hpl).mono (fun _ _ _ h => h)
         fun _ _ _ h => ⟨h.1, by simpa using h⟩)
   have hsp : NoSp (.seq (start p.pkLen) (seqR (publicPoly P p) 0 p.k)) := by
     unfold start publicPoly nttSlot
@@ -311,7 +311,7 @@ theorem public_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
     have e1 : bytesAt s'.mem ((arg s₀ 1).setWidth 64) p.pkLen = bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.pkLen := by
       rw [hm]; simpa only [keyOf, paddr0] using hk'
     refine ⟨e1, fun i hi => ?_⟩
-    rw [e1, PreparedKey.public_poly p _ hi, ← slot_addr hp (by omega)]
+    rw [e1, PreparedKey.public_poly p _ hi, ← slot_addr hp (by omega_using [hpl, hi])]
     refine Proof.MlDsa.polyStored_iff.mpr ?_
     rw [hm]
     have := hpol i hi
@@ -336,19 +336,19 @@ theorem secret_val (key : List Byte) {i : Nat} (hi : i < p.ℓ + 2 * p.k) :
       (secretPiece p i).2.2.1 (secretPiece p i).2.2.2)) := by
   unfold secretPiece
   by_cases h1 : i < p.ℓ
-  · simp only [show i < p.ℓ + p.k from by omega, ↓reduceIte]
+  · simp only [show i < p.ℓ + p.k from by omega_using [h1], ↓reduceIte]
     rw [PreparedKey.secret_s1 p _ h1]; rfl
   by_cases h2 : i < p.ℓ + p.k
   · simp only [h2, ↓reduceIte]
-    have e := PreparedKey.secret_s2 p key (i := i - p.ℓ) (by omega)
-    rw [show p.ℓ + (i - p.ℓ) = i by omega] at e
+    have e := PreparedKey.secret_s2 p key (i := i - p.ℓ) (by omega_using [h1, h2])
+    rw [show p.ℓ + (i - p.ℓ) = i by omega_using [h1]] at e
     rw [e]
     unfold Sign.s2F
     rw [show 128 + Sign.lenS p * p.ℓ + Sign.lenS p * (i - p.ℓ) = 128 + sLen p * i by
-      rw [Nat.add_assoc, ← Nat.mul_add, Nat.add_sub_cancel' (by omega)]]
+      rw [Nat.add_assoc, ← Nat.mul_add, Nat.add_sub_cancel' (by omega_using [h1])]]
   · simp only [h2, ↓reduceIte]
-    have e := PreparedKey.secret_t0 p key (i := i - p.ℓ - p.k) (by omega)
-    rw [show p.ℓ + p.k + (i - p.ℓ - p.k) = i by omega] at e
+    have e := PreparedKey.secret_t0 p key (i := i - p.ℓ - p.k) (by omega_using [hi, h1])
+    rw [show p.ℓ + p.k + (i - p.ℓ - p.k) = i by omega_using [h2]] at e
     rw [e]
     unfold Sign.t0F
     rw [show 128 + Sign.lenS p * p.ℓ + Sign.lenS p * p.k + 32 * d * (i - p.ℓ - p.k) =
@@ -370,14 +370,14 @@ theorem piece_ok (ps : VG.Proof.MlDsa.X86.Sign.PS p) {i : Nat} (hi : i < p.ℓ +
   generalize VG.Impl.MlDsa.X86.Sign.sLen p = S at hsk hs hη2
   by_cases h2 : i < p.ℓ + p.k
   · simp only [h2, ↓reduceIte]
-    refine ⟨by rcases hs with h | h <;> omega, ?_, hη1, hη2⟩
+    refine ⟨by rcases hs with h | h <;> omega_using [h], ?_, hη1, hη2⟩
     have : S * i + S ≤ S * (p.ℓ + p.k) := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h2
     generalize S * (p.ℓ + p.k) = X at this hsk
-    omega
+    omega_using [this, hsk]
   · simp only [h2, ↓reduceIte]
     refine ⟨by decide, ?_, ps.ht0.1, ps.ht0.2⟩
     generalize S * (p.ℓ + p.k) = X at hsk ⊢
-    omega
+    omega_using [hi, hk, hsk]
 
 /-- Polynomial `i` of a prepared private key. -/
 theorem secretPoly_piece {pl : Nat} {P : Prims} (hP : PrimsOk P) (ps : VG.Proof.MlDsa.X86.Sign.PS p) {i : Nat}
@@ -386,9 +386,9 @@ theorem secretPoly_piece {pl : Nat} {P : Prims} (hP : PrimsOk P) (ps : VG.Proof.
       (PI (pl := pl) p.skLen (fun s₀ j => (preparedSecretPolys p (keyOf p.skLen s₀))[j]!) (i + 1))
       (secretPoly P p i) := by
   obtain ⟨hL0, hLk, hab, hL⟩ := piece_ok ps hi
-  have hsk : 0 < p.skLen := by have := ps.hskLen; omega
+  have hsk : 0 < p.skLen := by have := ps.hskLen; omega_using [this]
   have hsl : (YP p.skLen pl).okW (slot p.skLen i) = true :=
-    okP (o := p.skLen + 1024 * i) (l := 1024) (by decide) (by omega)
+    okP (o := p.skLen + 1024 * i) (l := 1024) (by decide) (by omega_using [hi, hpl])
   have hv : (YP p.skLen pl).ok ⟨0, (secretPiece p i).1, (secretPiece p i).2.1⟩ = true := okK hL0 hLk
   unfold secretPoly
   refine Piece.seq (B := fun s₀ s => PI (pl := pl) p.skLen (fun s₀ j => (preparedSecretPolys p (keyOf p.skLen s₀))[j]!) i s₀ s ∧
@@ -399,7 +399,7 @@ theorem secretPoly_piece {pl : Nat} {P : Prims} (hP : PrimsOk P) (ps : VG.Proof.
       (by simp only [Bool.and_eq_true]
           exact ⟨⟨hv, hsl⟩, VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inr rfl⟩)⟩)
       (by simp [YP]) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
-      fun s₀ s s' hp h h' fr out => ⟨PI.keep hp hsk (by omega) h h' (fr.sub fun x hx => ?_), ?_⟩) ?_
+      fun s₀ s s' hp h h' fr out => ⟨PI.keep hp hsk (by omega_using [hi, hpl]) h h' (fr.sub fun x hx => ?_), ?_⟩) ?_
   · simp only [FR, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons] at hx ⊢
     rcases hx with rfl | rfl | h
     · exact ⟨_, .inl rfl, fun _ h => h⟩
@@ -412,9 +412,9 @@ theorem secretPoly_piece {pl : Nat} {P : Prims} (hP : PrimsOk P) (ps : VG.Proof.
         exact ⟨⟨hsl, okS⟩, VG.Proof.MlDsa.X86.Sign.Lay.sep_iff.mpr (.inr ⟨by simp, .inl rfl⟩)⟩)
     (by simp [YP]) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => ⟨h.1.1, h.2.1⟩) fun s₀ s s' hp h h' fr out => ?_
-  have hk := PI.keep hp hsk (by omega) h.1 h' fr
+  have hk := PI.keep hp hsk (by omega_using [hi, hpl]) h.1 h' fr
   refine ⟨hk.1, hk.2.1, fun j hj => ?_⟩
-  rcases (by omega : j < i ∨ j = i) with hj' | rfl
+  rcases (by omega_using [hj] : j < i ∨ j = i) with hj' | rfl
   · exact hk.2.2 j hj'
   · rw [h.2.2] at out
     show PolyIs _ _ (preparedSecretPolys p (keyOf p.skLen s₀))[j]!
@@ -427,19 +427,19 @@ theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
   have ps := VG.Proof.MlDsa.X86.Sign.PS.of hp3
   have hk := ps.hk
   have hskl := ps.hskLen
-  have hsk : 0 < p.skLen := by omega
+  have hsk : 0 < p.skLen := by omega_using [hskl]
   have hpl : p.skLen + 1024 * (p.ℓ + 2 * p.k) ≤ preparedSecretKeyBytes p := by
-    simp only [preparedSecretKeyBytes, n]; omega
+    simp only [preparedSecretKeyBytes, n]; omega_using []
   have h4 : 4 * (p.skLen / 4) = p.skLen := by rcases hp3 with rfl | rfl | rfl <;> decide
   have hb : PP p.skLen (preparedSecretKeyBytes p) (fun s₀ s => s = P0 s₀)
       (fun s₀ s => Ctx (YP p.skLen (preparedSecretKeyBytes p)) s₀ s ∧
         PI (pl := preparedSecretKeyBytes p) p.skLen (fun s₀ j => (preparedSecretPolys p (keyOf p.skLen s₀))[j]!)
           (p.ℓ + 2 * p.k) s₀ s)
       (.seq (start p.skLen) (seqR (secretPoly P p) 0 (p.ℓ + 2 * p.k))) :=
-    (start_piece _ hsk h4 (by omega) (by rcases hp3 with rfl | rfl | rfl <;> decide)).seq
+    (start_piece _ hsk h4 (by omega_using [hpl]) (by rcases hp3 with rfl | rfl | rfl <;> decide)).seq
       ((seqR_piece (I := fun r => PI (pl := preparedSecretKeyBytes p) p.skLen
         (fun s₀ j => (preparedSecretPolys p (keyOf p.skLen s₀))[j]!) r) (p.ℓ + 2 * p.k) 0
-        fun r _ hr => secretPoly_piece hP ps (by omega) hpl).mono (fun _ _ _ h => h)
+        fun r _ hr => secretPoly_piece hP ps (by omega_using [hr]) hpl).mono (fun _ _ _ h => h)
         fun _ _ _ h => ⟨h.1, by simpa using h⟩)
   have hsp : NoSp (.seq (start p.skLen) (seqR (secretPoly P p) 0 (p.ℓ + 2 * p.k))) := by
     unfold start secretPoly nttSlot
@@ -454,7 +454,7 @@ theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
     have e1 : bytesAt s'.mem ((arg s₀ 1).setWidth 64) p.skLen = bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.skLen := by
       rw [hm]; simpa only [keyOf, paddr0] using hk'
     refine ⟨e1, fun i hi => ?_⟩
-    rw [e1, ← slot_addr hp (by omega)]
+    rw [e1, ← slot_addr hp (by omega_using [hpl, hi])]
     refine Proof.MlDsa.polyStored_iff.mpr ?_
     rw [hm]
     have := hpol i hi
@@ -480,44 +480,44 @@ theorem above_eq {a m : Mem} {i : Nat} (hi : i < 2 ^ 32) :
     above a m (0x8000 + BitVec.ofNat 64 i) = m (0x8000 + BitVec.ofNat 64 i) := by
   unfold above
   have e : (0x8000 + BitVec.ofNat 64 i : Addr).toNat = 0x8000 + i := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega_using [hi])]
     have : (32768 : BitVec 64).toNat = 32768 := rfl
     rw [this]
-    exact Nat.mod_eq_of_lt (by omega)
-  rw [e, ite_eq_right_iff.mpr fun h => absurd h (by omega)]
+    exact Nat.mod_eq_of_lt (by omega_using [hi])
+  rw [e, ite_eq_right_iff.mpr fun h => absurd h (by omega_using [])]
 
 theorem polyStored_congr {m m' : Mem} {a : Addr} {f : Poly}
     (hc : ∀ i < 1024, m' (a + BitVec.ofNat 64 i) = m (a + BitVec.ofNat 64 i)) (h : PolyStored m a f) :
     PolyStored m' a f := fun i hi => by
   rw [← h i hi, Mem.readW_congr fun j hj => ?_]
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact hc _ (by change i < 256 at hi; omega)
+  exact hc _ (by change i < 256 at hi; omega_using [hj, hi])
 
 theorem secret_congr {m m' : Mem} {key : Addr} (h : PreparedSecretKey p m key)
     (hc : ∀ i < preparedSecretKeyBytes p, m' (key + BitVec.ofNat 64 i) = m (key + BitVec.ofNat 64 i)) :
     PreparedSecretKey p m' key := fun i hi => by
   have hb : bytesAt m' key p.skLen = bytesAt m key p.skLen :=
-    Proof.MlKem.bytesAt_congr fun j hj => hc j (by simp only [preparedSecretKeyBytes]; omega)
+    Proof.MlKem.bytesAt_congr fun j hj => hc j (by simp only [preparedSecretKeyBytes]; omega_using [hj])
   rw [hb]
   refine polyStored_congr (fun j hj => ?_) (h i hi)
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   exact hc _ (by
     have : p.skLen + 4 * n * i + 1024 ≤ preparedSecretKeyBytes p := by
-      simp only [preparedSecretKeyBytes, n]; omega
-    omega)
+      simp only [preparedSecretKeyBytes, n]; omega_using [hi]
+    omega_using [hj, this])
 
 theorem public_congr {m m' : Mem} {key : Addr} (h : PreparedPublicKey p m key)
     (hc : ∀ i < preparedPublicKeyBytes p, m' (key + BitVec.ofNat 64 i) = m (key + BitVec.ofNat 64 i)) :
     PreparedPublicKey p m' key := fun i hi => by
   have hb : bytesAt m' key p.pkLen = bytesAt m key p.pkLen :=
-    Proof.MlKem.bytesAt_congr fun j hj => hc j (by simp only [preparedPublicKeyBytes]; omega)
+    Proof.MlKem.bytesAt_congr fun j hj => hc j (by simp only [preparedPublicKeyBytes]; omega_using [hj])
   rw [hb]
   refine polyStored_congr (fun j hj => ?_) (h i hi)
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   exact hc _ (by
     have : p.pkLen + 4 * n * i + 1024 ≤ preparedPublicKeyBytes p := by
-      simp only [preparedPublicKeyBytes, n]; omega
-    omega)
+      simp only [preparedPublicKeyBytes, n]; omega_using [hi]
+    omega_using [hj, this])
 
 /-- Memory with the arguments `0x8000`, `0x1000`, `0x2000`, `0x40000` and `0x50000` at `0x5004`. -/
 def satMemE : Mem := fun a =>
@@ -627,7 +627,7 @@ theorem t1In_of {m : Mem} {key t : Addr} (h : PreparedPublicKey p m key) (ht : t
     Verify.T1In p m t (bytesAt m key p.pkLen) := fun r hr => by
   have e := (Proof.MlDsa.preparedPublicKey_iff.mp h) r hr
   rw [ht, BitVec.add_assoc, ← BitVec.ofNat_add]
-  simpa only [n, show 4 * 256 * r = 1024 * r by omega] using e
+  simpa only [n, show 4 * 256 * r = 1024 * r by omega_using []] using e
 
 /-- `satMemE` with the fifth argument `t`, below `0x10000`. -/
 def satMemC (t : Nat) : Mem := fun a =>

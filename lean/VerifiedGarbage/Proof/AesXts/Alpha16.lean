@@ -58,13 +58,13 @@ theorem msb_step (v : BitVec 128) {k : Nat} (hk : k ≤ 120) :
     ((v <<< k) ^^^ P (v >>> (128 - k))).msb = v.getLsbD (127 - k) := by
   simp only [BitVec.msb_eq_getLsbD_last, P, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_ushiftRight]
-  have h1 : ¬ (128 - k + (127 - 1) < 128) := by omega
-  have h2 : ¬ (128 - k + (127 - 2) < 128) := by omega
-  have h7 : ¬ (128 - k + (127 - 7) < 128) := by omega
-  have h0 : ¬ (128 - k + 127 < 128) := by omega
-  simp [BitVec.getLsbD_of_ge, show 128 - k + 127 ≥ 128 by omega, show 128 - k + 126 ≥ 128 by omega,
-    show 128 - k + 125 ≥ 128 by omega, show 128 - k + 120 ≥ 128 by omega]
-  omega
+  have h1 : ¬ (128 - k + (127 - 1) < 128) := by omega_using [hk]
+  have h2 : ¬ (128 - k + (127 - 2) < 128) := by omega_using [hk]
+  have h7 : ¬ (128 - k + (127 - 7) < 128) := by omega_using [hk]
+  have h0 : ¬ (128 - k + 127 < 128) := by omega_using [hk]
+  simp [BitVec.getLsbD_of_ge, show 128 - k + 127 ≥ 128 by omega_using [hk], show 128 - k + 126 ≥ 128 by omega_using [hk],
+    show 128 - k + 125 ≥ 128 by omega_using [hk], show 128 - k + 120 ≥ 128 by omega_using [hk]]
+  omega_using [hk]
 
 /-- The bits shifted out after `k + 1` multiplications, from those after
 `k`. -/
@@ -73,10 +73,10 @@ theorem shr_step (v : BitVec 128) {k : Nat} (hk : k < 128) :
   ext i hi
   by_cases h0 : i = 0
   · subst h0
-    cases hb : v.getLsbD (127 - k) <;> simp [hb, show 128 - (k + 1) = 127 - k by omega]
+    cases hb : v.getLsbD (127 - k) <;> simp [hb, show 128 - (k + 1) = 127 - k by omega_using []]
   · cases hb : v.getLsbD (127 - k) <;>
-      simp [BitVec.getElem_ushiftRight, BitVec.getElem_shiftLeft, h0, show ¬ i < 1 by omega] <;>
-      (congr 1; omega)
+      simp [BitVec.getElem_ushiftRight, BitVec.getElem_shiftLeft, h0, show ¬ i < 1 by omega_using [h0]] <;>
+      (congr 1; omega_using [hk, h0])
 
 /-- `k ≤ 120` multiplications by `α`. -/
 theorem repeat_mulA128 (v : BitVec 128) : ∀ k, k ≤ 120 →
@@ -85,7 +85,7 @@ theorem repeat_mulA128 (v : BitVec 128) : ∀ k, k ≤ 120 →
     simp only [Nat.repeat, BitVec.shiftLeft_zero, Nat.sub_zero, BitVec.ushiftRight_eq_zero (Nat.le_refl 128)]
     rw [show P 0#128 = 0#128 from rfl, BitVec.xor_zero]
   | k + 1, hk => by
-    rw [Nat.repeat, repeat_mulA128 v k (by omega), mulA128, msb_step v (by omega), shr_step v (by omega), P_xor,
+    rw [Nat.repeat, repeat_mulA128 v k (by omega_using [hk]), mulA128, msb_step v (by omega_using [hk]), shr_step v (by omega_using [hk]), P_xor,
       P_bit, BitVec.shiftLeft_xor_distrib, P_shl, ← BitVec.shiftLeft_add]
     ac_rfl
 

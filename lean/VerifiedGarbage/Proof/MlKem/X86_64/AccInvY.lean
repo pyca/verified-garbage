@@ -31,8 +31,8 @@ theorem acc_word (m : Mem) (p : Addr) (j h l : Nat) {e : Nat} (he : e < 8) :
     word (m.readW (wAddr p j + BitVec.ofNat 64 (32 * h) + BitVec.ofNat 64 (16 * l)) 128) e =
       wordAt m p (j + 16 * h + 8 * l + e) := by
   rw [word_readW _ _ he, BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add,
-    show 32 * h + (16 * l + 2 * e) = 2 * (16 * h + 8 * l + e) by omega, wAddr_add, ← wordAt]
-  exact congrArg _ (by omega)
+    show 32 * h + (16 * l + 2 * e) = 2 * (16 * h + 8 * l + e) by omega_using [], wAddr_add, ← wordAt]
+  exact congrArg _ (by omega_using [])
 
 theorem nttInvAccY_correct (s : State) (hs : (invAccK accY).pre s) :
     ∃ t s', Exec isa nttInvAccY s t s' ∧ abiPreserved s s' ∧ (invAccK accY).post s s' := by

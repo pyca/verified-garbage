@@ -52,9 +52,9 @@ theorem fin_ok : ∀ s, (finG hH.SH (H.W + 48 + H.FD) 96).pre s → ∃ t s', Ex
 /-- `blockKey` of a key of at most a block is a block. -/
 theorem blockKey_length {key : List Byte} (h : key.length ≤ 64) :
     (Spec.Hmac.blockKey Spec.Hmac.sha256 key).length = 64 := by
-  have : ¬ (64 < key.length) := by omega
+  have : ¬ (64 < key.length) := by omega_using [h]
   simp only [Spec.Hmac.blockKey, Spec.Hmac.sha256, this, ite_false, List.length_append, List.length_replicate]
-  omega
+  omega_using [h]
 
 section
 variable {s : State} (h : DPre pc s) {R : BitVec 64} {EM : List Byte}
@@ -72,7 +72,7 @@ theorem macInit_call {t : State} (hc : Post s R EM t) {key : Nat} (hk₁ : 400 �
       Frame ([⟨scA s sSt, H.S⟩, ⟨scA s sOuter, H.S⟩, ⟨scA s sWork, H.W + 48⟩] ++ [below (fb s) 96]) t.mem u.mem →
       Q u) :
     WP isa macInitCall t Q := by
-  have hs : 96 ≤ t.sp.toNat := by rw [hc.sp]; have := fb_ge h; omega
+  have hs : 96 ≤ t.sp.toNat := by rw [hc.sp]; have := fb_ge h; omega_using [this]
   have e₁ : H.S = 96 := rfl
   have e₂ : H.W = 160 := rfl
   have e₃ : H.D = 32 := rfl
@@ -91,16 +91,16 @@ theorem macInit_call {t : State} (hc : Post s R EM t) {key : Nat} (hk₁ : 400 �
         (scCovR h hc.wr (a := sWork) (n := H.W + 48) (by decide)))))
     ((scCov h hc.wr (a := sSt) (n := H.S) (by decide)).cons ((scCov h hc.wr (a := sOuter) (n := H.S) (by decide)).cons
       (scCov h hc.wr (a := sWork) (n := H.W + 48) (by decide))))
-    (fun u hrd hwr hsp hf hcs hpost => ?_) (by have := init_fd; omega) init_pf
+    (fun u hrd hwr hsp hf hcs hpost => ?_) (by have := init_fd; omega_using [this]) init_pf
   · simp only [initG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c3, c4, c5, c6, c7, hH.hS]
     exact ⟨by decide, rfl, trivial, scD h (by decide) (by decide) (by decide), scD h (by decide) (by decide) (by decide),
-      scD h (by decide) (by decide) (by decide), scD h (.inr (by unfold sSt; omega)) hk₂ (by decide),
-      scD h (.inr (by unfold sOuter; omega)) hk₂ (by decide), scD h (.inr (by unfold sWork; omega)) hk₂ (by decide), hs,
+      scD h (by decide) (by decide) (by decide), scD h (.inr (by unfold sSt; omega_using [hk₁, e₁])) hk₂ (by decide),
+      scD h (.inr (by unfold sOuter; omega_using [hk₁, e₁])) hk₂ (by decide), scD h (.inr (by unfold sWork; omega_using [hk₁, e₂])) hk₂ (by decide), hs,
       hb (by decide), hb (by decide), hb hk₂, hb (by decide)⟩
   · simp only [initG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6] at hpost
     have hf' : Frame ([⟨scA s sSt, H.S⟩, ⟨scA s sOuter, H.S⟩, ⟨scA s sWork, H.W + 48⟩] ++ [below t.sp 96]) t.mem
-        u.mem := Frame.below_mono hf (by have := init_fd; omega) (by omega)
+        u.mem := Frame.below_mono hf (by have := init_fd; omega_using [this]) (by omega_using [])
     refine hQ u ?_ hpost.1 hpost.2 (by rw [← hc.sp]; exact hf')
     exact hc.call h hrd hwr hsp hcs (by decide) hf' fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -119,7 +119,7 @@ theorem macFin_call {t : State} (hc : Post s R EM t) {o : Nat} (ho₁ : 432 ≤ 
       Frame ([⟨scA s sSt, H.S⟩, ⟨scA s o, H.D⟩, ⟨scA s sWork, H.W + 48 + H.FD⟩] ++ [below (fb s) 96]) t.mem u.mem →
       Q u) :
     WP isa macFinCall t Q := by
-  have hs : 96 ≤ t.sp.toNat := by rw [hc.sp]; have := fb_ge h; omega
+  have hs : 96 ≤ t.sp.toNat := by rw [hc.sp]; have := fb_ge h; omega_using [this]
   have e₁ : H.S = 96 := rfl
   have e₂ : H.W = 160 := rfl
   have e₃ : H.D = 32 := rfl
@@ -138,16 +138,16 @@ theorem macFin_call {t : State} (hc : Post s R EM t) {o : Nat} (ho₁ : 432 ≤ 
         (scCovR h hc.wr (a := sWork) (n := H.W + 48 + H.FD) (by decide)))))
     ((scCov h hc.wr (a := sSt) (n := H.S) (by decide)).cons ((scCov h hc.wr (a := o) (n := H.D) ho₂).cons
       (scCov h hc.wr (a := sWork) (n := H.W + 48 + H.FD) (by decide))))
-    (fun u hrd hwr hsp hf hcs hpost => ?_) (by have := fin_fd; omega) fin_pf
+    (fun u hrd hwr hsp hf hcs hpost => ?_) (by have := fin_fd; omega_using [this]) fin_pf
   · simp only [finG, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c3, c4, c6, c7, hH.hS, hH.hD]
-    exact ⟨trivial, trivial, scD h (by decide) (by decide) (by decide), scD h (by unfold sSt; omega) (by decide) ho₂,
-      scD h (by decide) (by decide) (by decide), scD h (by unfold sOuter; omega) (by decide) ho₂,
-      scD h (by decide) (by decide) (by decide), scD h (.inr (by unfold sWork; omega)) ho₂ (by decide), hs,
+    exact ⟨trivial, trivial, scD h (by decide) (by decide) (by decide), scD h (by unfold sSt; omega_using [ho₁, e₁]) (by decide) ho₂,
+      scD h (by decide) (by decide) (by decide), scD h (by unfold sOuter; omega_using [ho₁, e₁]) (by decide) ho₂,
+      scD h (by decide) (by decide) (by decide), scD h (.inr (by unfold sWork; omega_using [ho₁, e₂, e₄])) ho₂ (by decide), hs,
       hb (by decide), hb (by decide), hb ho₂, hb (by decide)⟩
   · simp only [finG, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, c3, c4, c5, c6] at hpost
     have hf' : Frame ([⟨scA s sSt, H.S⟩, ⟨scA s o, H.D⟩, ⟨scA s sWork, H.W + 48 + H.FD⟩] ++ [below t.sp 96]) t.mem
-        u.mem := Frame.below_mono hf (by have := fin_fd; omega) (by omega)
+        u.mem := Frame.below_mono hf (by have := fin_fd; omega_using [this]) (by omega_using [])
     refine hQ u ?_ hpost (by rw [← hc.sp]; exact hf')
     exact hc.call h hrd hwr hsp hcs (by decide) hf' fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -166,7 +166,7 @@ theorem upd_call {t : State} (hc : Post s R EM t) {dat : Addr} {len : Nat} (h3 :
         hH.SH.Repr u.mem (scA s sSt) (m ++ Spec.Rsa.bytesAt t.mem dat len)) →
       Frame ([⟨scA s sSt, H.S⟩, ⟨scA s sWork, H.W⟩] ++ [below (fb s) 48]) t.mem u.mem → Q u) :
     WP isa updCall t Q := by
-  have hs : 48 ≤ t.sp.toNat := by rw [hc.sp]; have := fb_ge h; omega
+  have hs : 48 ≤ t.sp.toNat := by rw [hc.sp]; have := fb_ge h; omega_using [this]
   refine hH.callUpd_ok h3 h5 h6 h7 (scD h (by decide) (by decide) (by decide)) d₁ d₂ hs
     (by rw [hc.sp]; exact lowD h (by decide) (by decide)) (by rw [hc.sp]; exact d₃)
     (by rw [hc.sp]; exact lowD h (by decide) (by decide))

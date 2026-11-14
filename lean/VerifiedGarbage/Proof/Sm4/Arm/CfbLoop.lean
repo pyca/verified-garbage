@@ -36,11 +36,11 @@ theorem future_data {m m' : Mem} {B D : BitVec 32} {n i j : Nat}
   intro r hr
   simp only [batchRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (sep.sub_left (Offset.sub_base _ (by omega))).sub_right
-      (Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega))
-  · exact (sep.sub_left (Offset.sub_base _ (by omega))).sub_right
+  · exact (sep.sub_left (Offset.sub_base _ (by omega_using [hj]))).sub_right
+      (Region.sub_prefix (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega_using []))
+  · exact (sep.sub_left (Offset.sub_base _ (by omega_using [hj]))).sub_right
       (Offset.sub_base _ (by change 4 * BatchCtr.counterSlot + 16 ≤ 4 * BatchCtr.totalSlots; decide))
-  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact Offset.disjoint_base _ (by omega_using [hi]) (by omega_using [hn, hj])
 
 def chain (m : Mem) (D : BitVec 32) (t : List Byte) (i : Nat) : List Byte :=
   if i = 0 then t else bytesAt m (dataAddr D (i - 1)) 16
@@ -166,18 +166,18 @@ theorem loop_wp {s₀ : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {t : Li
     WP isa (.loop BatchCfb.group .ne) s₀ (LoopInv s₀ B D K t n n) := by
   have hi : LoopInv s₀ B D K t n 0 s₀ :=
     ⟨fun _ _ => rfl, by simpa only [Nat.mul_zero, BitVec.add_zero] using hD,
-      by simpa only [Nat.sub_zero] using hN, by omega, rfl, rfl, rfl, Frame.refl _ _, hH,
+      by simpa only [Nat.sub_zero] using hN, by omega_using [], rfl, rfl, rfl, Frame.refl _ _, hH,
       by change bytesAt s₀.mem (counterAddr B) 16 = t; exact hC, fun _ h => by omega⟩
   refine WP.loop (M := isa)
     (fun m s => ∃ i, m = n - i ∧ i < n ∧ LoopInv s₀ B D K t n i s)
-    (fun m s hs => ?_) n s₀ ⟨0, by omega, by omega, hi⟩
+    (fun m s hs => ?_) n s₀ ⟨0, by omega_using [], by omega_using [hn], hi⟩
   obtain ⟨i, rfl, hi, hs⟩ := hs
   refine WP.mono (loopInv_step hn32 hi hB fitB fitD hw wd sep hs) fun s' ⟨h', hz⟩ => ?_
   by_cases he : i + min (n - i) 8 = n
   · exact .inl ⟨by rw [fill_eval_ne, hz]; simp [he], by rw [he] at h'; exact h'⟩
   · exact .inr ⟨by rw [fill_eval_ne, hz]; simp only [he, decide_false, Bool.not_false],
-      n - (i + min (n - i) 8), by omega,
-      i + min (n - i) 8, rfl, by have := h'.bound; omega, h'⟩
+      n - (i + min (n - i) 8), by omega_using [hi],
+      i + min (n - i) 8, rfl, by have := h'.bound; omega_using [hi, he], h'⟩
 
 theorem loopOrEmpty_wp {s₀ : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {t : List Byte} {n : Nat}
     (hn32 : n < 2 ^ 32) (hB : s₀.gpr sb = B) (hD : s₀.gpr .r6 = D)
@@ -193,9 +193,9 @@ theorem loopOrEmpty_wp {s₀ : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} 
     subst hn
     exact WP.block_nil
       ⟨fun _ _ => rfl, by simpa only [Nat.mul_zero, BitVec.add_zero] using hD,
-        by simpa only [Nat.sub_zero] using hN, by omega, rfl, rfl, rfl, Frame.refl _ _, hH,
+        by simpa only [Nat.sub_zero] using hN, by omega_using [], rfl, rfl, rfl, Frame.refl _ _, hH,
         by change bytesAt s₀.mem (counterAddr B) 16 = t; exact hC, fun _ h => by omega⟩
-  · have hn : 1 ≤ n := by simp at hz; omega
+  · have hn : 1 ≤ n := by simp at hz; omega_using [hz]
     exact loop_wp hn hn32 hB hD hN fitB fitD hw wd sep hH hC
 
 /-- The shared recursive CFB decryption specification, by block index. -/
@@ -230,7 +230,7 @@ theorem loop_output {s₀ s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {
   by_cases he : j = 0
   · simp only [he, ↓reduceIte]
   · simp only [he, ↓reduceIte]
-    rw [blocks_getD (by omega)]
+    rw [blocks_getD (by omega_using [hjn])]
 
 theorem chain_next (m : Mem) (D : BitVec 32) (t : List Byte) (n : Nat) :
     chain m D t n = Spec.Cbc.next t (Spec.Cbc.blocksAt m (State.addr D) n) := by

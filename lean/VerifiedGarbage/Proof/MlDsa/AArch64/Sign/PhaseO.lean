@@ -41,7 +41,7 @@ theorem inRange_of_norm {m : Mem} {a : Addr} {f : Poly} (h : PolyIs m a f) {B γ
   rw [getElem!_pos f i hi] at this
   rw [coeff_val h hi]
   simp only [normZq] at this
-  omega
+  omega_using [hB, this]
 
 /-! ## The hint -/
 
@@ -58,7 +58,7 @@ theorem hintAt_of {m : Mem} {a : Addr} {k : Nat} {f : Nat → Vector Bool n}
   simp only [Nat.mul_zero, Nat.zero_add, List.getD_cons_zero] at e
   have ea : coeffAt m a (256 * i + j) = coeffAt m (a + BitVec.ofNat 64 (1024 * i)) j := by
     simp only [coeffAt]
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega_using []]
   rw [Vector.getElem_ofFn, ea, e, getElem!_pos (f i) j hj]
   cases (f i)[j] <;> decide
 
@@ -72,7 +72,7 @@ theorem hintOnes_map (k : Nat) (f : Nat → Vector Bool n) :
 theorem pS_hint (s : State) (i : Nat) :
     pa s (pS (5 + i)) = pa s (Impl.MlDsa.AArch64.Sign.hP 0) + BitVec.ofNat 64 (1024 * i) := by
   show s.gpr .x28 + BitVec.ofNat 64 (oP (5 + i)) = s.gpr .x28 + BitVec.ofNat 64 (oP (5 + 0)) + BitVec.ofNat 64 (1024 * i)
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show oP (5 + 0) + 1024 * i = oP (5 + i) by simp only [oP]; omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show oP (5 + 0) + 1024 * i = oP (5 + i) by simp only [oP]; omega_using []]
 
 theorem r14_bases (o : Nat) : ((.x23, o) : Ptr).1 ∈ keptRegs := by
   show Reg.x23 ∈ keptRegs; decide

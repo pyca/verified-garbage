@@ -51,7 +51,7 @@ theorem table_words {p : Parameters} {s : State} (table : TablePrefix p 32 s) (n
  | zero => simp [Spec.Rsa.wordsAt]
  | succ n ih =>
    conv_lhs => arg 3;rw [Nat.add_mul,Nat.one_mul]
-   rw [wordsAt_add,ih (by omega),List.range_succ,List.flatMap_append]
+   rw [wordsAt_add,ih (by omega_using [hn]),List.range_succ,List.flatMap_append]
    simp only [List.flatMap_singleton]
    congr 1
    have addr : off (off p.ctx (tableStart p.w)) (8*(n*p.w))=off p.ctx (entryOffset p.w n) := by
@@ -61,7 +61,7 @@ theorem table_words {p : Parameters} {s : State} (table : TablePrefix p 32 s) (n
     unfold tableStart entryOffset
     ring
    rw [addr]
-   exact wordsAt_of_wv (table n (by omega))
+   exact wordsAt_of_wv (table n (by omega_using [hn]))
 
 theorem canonical_words {p : Parameters} {s : State} {dom : List Byte}
  (words : p.w=Spec.Rsa.modulusWords p.k) (modulus : p.P=(Spec.Ffdh.domainOf p.k dom).p)
@@ -81,11 +81,11 @@ theorem canonical_words {p : Parameters} {s : State} {dom : List Byte}
   unfold off tableStart
   rw [BitVec.add_assoc,←BitVec.ofNat_add]
   congr 2
-  omega
- rw [addr,table_words table 32 (by omega)]
+  omega_using []
+ rw [addr,table_words table 32 (by omega_using [])]
  have mont : Spec.Rsa.wordsAt s.mem (off p.ctx 24) (2*p.w)=
    Spec.Rsa.toWords p.P p.w++Spec.Rsa.toWords (2^(128*p.w)%p.P) p.w := by
-  rw [show 2*p.w=p.w+p.w by omega,wordsAt_add,wordsAt_of_wv first]
+  rw [show 2*p.w=p.w+p.w by omega_using [],wordsAt_add,wordsAt_of_wv first]
   have addr2 : off (off p.ctx 24) (8*p.w)=off p.ctx (24+8*p.w) := by
    simp only [off,BitVec.add_assoc,BitVec.ofNat_add]
   rw [addr2,wordsAt_of_wv second]
@@ -115,7 +115,7 @@ theorem prefixWords_unchanged {p : Parameters} {s t : State} {n : Nat}
    simp only [Spec.Rsa.wordsAt,List.getElem_map,List.getElem_range]
    apply Mem.readW_congr
    intro b hb
-   simpa only [BitVec.ofNat_add,BitVec.add_assoc] using same (8*i+b) (by omega)
+   simpa only [BitVec.ofNat_add,BitVec.add_assoc] using same (8*i+b) (by omega_using [index, hb])
 
 theorem precomputeFinish_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Addr} {dom bs : List Byte}
  (field : FieldInitial p s) (space : ContextSpace p s)
@@ -140,12 +140,12 @@ theorem precomputeFinish_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
  have headerA : Spec.Rsa.wordsAt a.mem p.ctx 3=Spec.Rsa.wordsAt s.mem p.ctx 3 := by
   apply prefixWords_unchanged space
   intro i hi
-  exact frameA _ (Or.inl (by rw [show ofs p.ctx (p.ctx+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega)];omega))
+  exact frameA _ (Or.inl (by rw [show ofs p.ctx (p.ctx+BitVec.ofNat 64 i)=i from Mem.sub_ofNat_toNat _ (by omega_using [hi])];omega_using [hi]))
  have sourceA : GeneratorSource p (domPtr+BitVec.ofNat 64 p.k) bs a := by
   refine ⟨⟨?_,?_,source.source.out⟩,source.length,source.value,source.separate⟩
   · intro i hi;rw [restA.rd,restA.wr];exact source.source.rd i hi
   · intro i hi
-    exact (frameA _ (Or.inr (by have := source.separate i hi;omega))).trans (source.source.val i hi)
+    exact (frameA _ (Or.inr (by have := source.separate i hi;omega_using [this]))).trans (source.source.val i hi)
  have sameHeader (i : Nat) (hi : i<32) : word a.mem p.B (8*i)=word s.mem p.B (8*i) :=
   workspace_header field.good sameA hi
  rw [WP.seq_iff]
@@ -155,27 +155,27 @@ theorem precomputeFinish_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
  rintro b ⟨basisB,frameB,restB⟩
  have canonical : Spec.Rsa.wordsAt b.mem p.ctx (Spec.Ffdh.generationPrecomputedWords p.k)=VG.Proof.Ffdh.generationValues p.k dom := by
   apply canonical_words (by simpa only [Spec.Rsa.modulusWords] using words) modulus generator policy
-  · rw [prefixWords_unchanged spaceA (fun i hi => frameB.prefix spaceA (by unfold tableStart;omega)),headerA,header]
+  · rw [prefixWords_unchanged spaceA (fun i hi => frameB.prefix spaceA (by unfold tableStart;omega_using [hi])),headerA,header]
   · apply Eq.trans _ firstA
     apply wv_congr
     intro i hi
     apply Mem.readW_congr
     intro j hj
-    have same := frameB.prefix spaceA (i:=24+8*i+j) (by unfold tableStart;omega)
+    have same := frameB.prefix spaceA (i:=24+8*i+j) (by unfold tableStart;omega_using [hi, hj])
     simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using same
   · apply Eq.trans _ secondA
     apply wv_congr
     intro i hi
     apply Mem.readW_congr
     intro j hj
-    have same := frameB.prefix spaceA (i:=24+8*p.w+8*i+j) (by unfold tableStart;omega)
+    have same := frameB.prefix spaceA (i:=24+8*p.w+8*i+j) (by unfold tableStart;omega_using [hi, hj])
     simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using same
   · exact basisB.table
  refine WP.mono (WP.keep [.x0] (Q:=fun t =>t.gpr .x0=1#64 ∧ t.mem=b.mem) ?_ rfl rfl rfl) ?_
  · brun
  · rintro t ⟨⟨status,mem⟩,rest⟩
    exact ⟨status,by rw [mem];exact canonical,
-    by rw [mem];exact (PublicFrame.of_context frameA (by omega)).trans (PublicFrame.of_build frameB),
+    by rw [mem];exact (PublicFrame.of_context frameA (by omega_using [])).trans (PublicFrame.of_build frameB),
     ((restA.trans restB).trans rest).mono (by simp [mmRegs])⟩
 
 end VG.Proof.Ffdh.AArch64.Cached

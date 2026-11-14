@@ -32,7 +32,7 @@ theorem bytesAt_catK (m : Mem) (s : State) (r : Reg) (o c : Nat) (f : Nat → Li
   | 0, _ => rfl
   | k + 1, h => by
     rw [KPke.catK, KPke.foldK_succ List.nil_append, ← KPke.catK, Nat.mul_succ, bytesAt_split,
-      bytesAt_catK m s r o c f k fun i hi => h i (by omega), h k (by omega)]
+      bytesAt_catK m s r o c f k fun i hi => h i (by omega_using [hi]), h k (by omega_using [])]
 
 namespace KeyGen
 
@@ -93,7 +93,7 @@ theorem prfs_okK (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (ke
   simp only [prfsKChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   obtain ⟨⟨⟨⟨hpc, hkc⟩, kG⟩, kS⟩, kA⟩ := hc
   have L₀ := h.kc.lay W hp
-  refine WP.mono (v.prfs_ok L₀ (kgB_bases L) (by have := W.k; omega) hpc) fun s' ⟨hP, hb⟩ => ?_
+  refine WP.mono (v.prfs_ok L₀ (kgB_bases L) (by have := W.k; omega_using [this]) hpc) fun s' ⟨hP, hb⟩ => ?_
   have hσ : bytesAt s'.mem (pa s' sigP) 32 = bytesAt s.mem (pa s sigP) 32 := L₀.keepBytes hP.b kS
   refine ⟨h.kc.step W hp hP.b hkc, by rw [L₀.keepBytes hP.b kG]; exact h.rho, hσ.trans h.sig,
     by rw [hP.cs .r15 (by decide)]; exact h.r15, fun e he => L₀.keepPoly hP.b (kA e he) (h.mat e he), fun N hN => ?_,
@@ -115,7 +115,7 @@ theorem se_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} (
   have hk := h.keep W hp hP₁ hrc
   refine ⟨hk.kc, hk.rho, hk.sig, hk.r15, hk.mat, hk.prf, fun k hk' => ?_, fun _ h => absurd h (Nat.not_lt_zero _),
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  rcases (by omega : k < N ∨ k = N) with hk' | rfl
+  rcases (by omega_using [hk'] : k < N ∨ k = N) with hk' | rfl
   · exact hk.se k hk'
   · exact hp₁
 
@@ -150,7 +150,7 @@ theorem KRestT.keep {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ
 
 theorem pS_add (s : State) (a j : Nat) : pa s (pS a) + BitVec.ofNat 64 (1024 * j) = pa s (pS (a + j)) := by
   simp only [pa, oP]
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 4096 + 1024 * a + 1024 * j = 4096 + 1024 * (a + j) by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 4096 + 1024 * a + 1024 * j = 4096 + 1024 * (a + j) by omega_using []]
 
 /-- `t̂[i]`, from the polynomials in memory. -/
 theorem kgT_of {L : Kem} {σ : State} {m : Mem} {s : State} {i : Nat} (hi : i < L.k)
@@ -180,20 +180,20 @@ theorem kgm_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} 
     WP isa (L.kgMulAt A (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ)) s (KRestT L 0 0 σ) := by
   have L₀ := h.kc.lay W hp
   have redS : VecReduced s.mem (pa s (pS 0)) L.k := fun j hj => by
-    rw [pS_add, Nat.zero_add]; exact (h.se j (by omega)).1
+    rw [pS_add, Nat.zero_add]; exact (h.se j (by omega_using [hj])).1
   have redA : VecReduced s.mem (pa s (pS L.pA)) (L.k * L.k) := fun e he => by rw [pS_add]; exact (h.mat e he).1
-  have redE : VecReduced s.mem (pa s (pS L.k)) L.k := fun i hi => by rw [pS_add]; exact (h.se (L.k + i) (by omega)).1
+  have redE : VecReduced s.mem (pa s (pS L.k)) L.k := fun i hi => by rw [pS_add]; exact (h.se (L.k + i) (by omega_using [hi])).1
   refine WP.mono (kgMulAt_okL hA W.k34 L₀ rbx_na rbx_na rbx_na rbx_na W.km redS redA redE)
     fun s' ⟨hP, hS, hT⟩ => ⟨h.kc.step W hp hP.b W.kmK, by rw [L₀.keepBytes hP.b W.kmG]; exact h.rho,
       by rw [hP.cs .r15 (by decide)]; exact h.r15, fun j hj => ?_, fun i hi => ?_,
       fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩
   · have := hS.2 j hj
     rw [pS_add, Nat.zero_add, KgMul.getD_get _ (by rw [List.length_map, vecAt_length]; exact hj),
-      vecAt_map_get _ _ hj, pS_add, Nat.zero_add, (h.se j (by omega)).2] at this
+      vecAt_map_get _ _ hj, pS_add, Nat.zero_add, (h.se j (by omega_using [hj])).2] at this
     rw [hP.pa rbx_cs]; exact this
   · have := hT.2 i hi
-    rw [pS_add, kgT_of hi (fun j hj => (h.matIJ hi hj).2) (fun j hj => (h.se j (by omega)).2)
-        (h.se (L.k + i) (by omega)).2] at this
+    rw [pS_add, kgT_of hi (fun j hj => (h.matIJ hi hj).2) (fun j hj => (h.se j (by omega_using [hj])).2)
+        (h.se (L.k + i) (by omega_using [hi])).2] at this
     rw [hP.pa rbx_cs]; exact this
 
 /-! ## `t̂`, encoded to `ek` -/
@@ -207,7 +207,7 @@ theorem encT_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State}
   refine WP.mono (enc12At_okL hA L₀ r12_na hc.1 ht.1) fun s' ⟨hP, hb⟩ => ?_
   have hk := h.keep W hp hP hc.2
   refine ⟨hk.kc, hk.rho, hk.r15, hk.shat, hk.that, fun i' hi' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact hk.ek i' hi'
   · rw [hP.pa r12_cs, hb, ht.2]
 
@@ -223,7 +223,7 @@ theorem encS_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State}
   refine WP.mono (enc12At_okL hA L₀ r13_na hc.1 hs.1) fun s' ⟨hP, hb⟩ => ?_
   have hk := h.keep W hp hP hc.2
   refine ⟨hk.kc, hk.rho, hk.r15, hk.shat, hk.that, hk.ek, fun j' hj' => ?_⟩
-  rcases (by omega : j' < j ∨ j' = j) with hj' | rfl
+  rcases (by omega_using [hj'] : j' < j ∨ j' = j) with hj' | rfl
   · exact hk.dk j' hj'
   · rw [hP.pa r13_cs, hb, hs.2]
 
@@ -293,7 +293,7 @@ theorem fin_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) {s
       (by simp [calleeSaved])
     have hP' := PPost.app hP₃ hP₄ (by simp [calleeSaved])
     rw [show L.dkLen = 384 * L.k + L.ekLen + 32 + 32 by
-        simp only [Kem.k, Kem.dkLen, Kem.ekLen, Params.dkLen, Params.ekLen]; omega,
+        simp only [Kem.k, Kem.dkLen, Kem.ekLen, Params.dkLen, Params.ekLen]; omega_using [],
       bytesAt_split, bytesAt_split, bytesAt_split, Nat.zero_add, Nat.zero_add, Nat.zero_add]
     rw [hP₄.pa (p := (.r13, 384 * L.k + L.ekLen + 32)) r13_cs, hb₄,
       L₃.keepBytes hP₄.b W.dkH, hP₃.pa (p := (.r13, 384 * L.k + L.ekLen)) r13_cs, hb₃,

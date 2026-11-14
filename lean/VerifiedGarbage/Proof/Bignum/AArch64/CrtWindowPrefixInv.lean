@@ -29,7 +29,7 @@ theorem PrefixInv.source {s t : State} {P ep : Addr} {w i b : Nat} {mi : BitVec 
   rw [h.frm _ fun r hr => Or.inr (by
     have := (CrtWindowFive.crtExpRanges_ok w r hr).2
     have := hout j hj
-    omega)]
+    omega_arith)]
   exact hbytes j hj
 
 theorem win_header {m m' : Mem} {P : Addr} {w k : Nat}
@@ -37,7 +37,7 @@ theorem win_header {m m' : Mem} {P : Addr} {w k : Nat}
     (hk : k < 32) (h1 : k ≠ Crt.sV) (h2 : k ≠ Crt.sBit) (h3 : k ≠ Crt.sNib)
     (h4 : k ≠ Crt.sEnt) (h5 : k ≠ Crt.sJ) : word m' P (8*k) = word m P (8*k) :=
   hf.word_eq (crtWinRanges_hdr w hk h1 h2 h3 h4 h5) (by
-    omega)
+    omega_using [hk])
 
 theorem PrefixInv.keepMem {s t u : State} {P ep : Addr} {w i b : Nat} {mi : BitVec 64}
     {X Xc x : Nat} {Q : Prop} {bs : List Byte} {rs : List Reg}

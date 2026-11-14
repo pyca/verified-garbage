@@ -31,7 +31,7 @@ theorem redc_word {X s sv : Nat} (hX : X < 2 ^ 34) (hs : s < 2 ^ 14) :
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_mul, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.mod_mul_mod,
       show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 from rfl, Nat.mul_mod_mul_right,
-      Nat.mul_div_cancel _ (Nat.two_pow_pos 32), Nat.mod_eq_of_lt (show X < 2 ^ 32 * 2 ^ 32 by omega),
+      Nat.mul_div_cancel _ (Nat.two_pow_pos 32), Nat.mod_eq_of_lt (show X < 2 ^ 32 * 2 ^ 32 by omega_using [hX]),
       Nat.mul_mod, Nat.mod_mod_of_dvd _ (Nat.dvd_mul_right _ _), ← Nat.mul_mod]
   have hq' : X * sv % 2 ^ 32 < 2 ^ 32 := Nat.mod_lt _ (Nat.two_pow_pos _)
   have hqs : X * sv % 2 ^ 32 * s < 2 ^ 46 := by
@@ -40,9 +40,9 @@ theorem redc_word {X s sv : Nat} (hX : X < 2 ^ 34) (hs : s < 2 ^ 14) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_mul, hq, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt (show s < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show X < 2 ^ 64 by omega)]
+  rw [Nat.mod_eq_of_lt (show s < 2 ^ 64 by omega_using [hs]), Nat.mod_eq_of_lt (show X < 2 ^ 64 by omega_using [hX])]
   generalize X * sv % 2 ^ 32 * s = qs at hqs ⊢
-  omega
+  omega_using [hX, hqs]
 
 /-- The registers `digit` writes. -/
 def digitRegs : List Reg := [.r0, .r3, .r5, .r6]
@@ -63,16 +63,16 @@ theorem digit_ok {u : State} {B : Addr} {Z o j s sv acc : Nat} (hs : Scr u B Z)
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     simp only [w32]
-    omega
+    omega_using []
   simp only [digit]
   prun [h5, h3, h8, h9, hld, BitVec.add_zero]
-  rw [eX, redc_word (by omega) hs']
+  rw [eX, redc_word (by omega_using [hacc, hs', hx]) hs']
   obtain ⟨-, hlt, hcong⟩ := redc32_math (X := w32 u.mem B (o + 4 * j) + acc) hinv (by
     have : 2 ^ 32 + 2 * s ≤ s * 2 ^ 32 := by
       have : 2 * 2 ^ 32 ≤ s * 2 ^ 32 := Nat.mul_le_mul_right _ hs2
-      omega
-    omega)
+      omega_using [hs2]
+    omega_using [hacc, hs2, hx])
   refine ⟨⟨_, rfl, hlt, hcong⟩, ?_⟩
-  rw [show o + 4 * j + 4 = o + 4 * (j + 1) by omega]
+  rw [show o + 4 * j + 4 = o + 4 * (j + 1) by omega_using []]
 
 end VG.Proof.RsaKeyGen.PPC64LE.Trial

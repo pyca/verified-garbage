@@ -72,21 +72,21 @@ theorem copyInc_wp {s : State} {B : BitVec 32} {j : Nat} (hj : j < 8)
     (hw : Covers [⟨State.addr B, 4 * BatchCtr.totalSlots⟩] s.wr) :
     WP isa (.block copyIncCode) s (CopyIncPost s B j) := by
   have htail : 4 * tailSlot + 16 * j + 16 ≤ 4 * BatchCtr.totalSlots := by
-    rw [tailSlot, total_eq]; omega
+    rw [tailSlot, total_eq]; omega_using [hj]
   have hctr : 4 * BatchCtr.counterSlot + 16 ≤ 4 * BatchCtr.totalSlots := by decide
   have wt := workspace_part hw (4 * tailSlot + 16 * j) 16 htail
   have wc := workspace_part hw (4 * BatchCtr.counterSlot) 16 hctr
   have sep := buffer_counter_sep B hj
   have np : NPre 4 s .r0 sb 0 (4 * BatchCtr.counterSlot) (bufferAddr B j) (counterAddr B) :=
-    ⟨by rw [BitVec.add_zero, hp, addr_add (by omega)], by rw [hB],
-      by rw [hp, offset_nat B _ (by omega)]; omega,
-      by rw [hB]; omega, by decide, by decide, by decide, by decide, by decide, by decide,
+    ⟨by rw [BitVec.add_zero, hp, addr_add (by omega_using [fitB, htail])], by rw [hB],
+      by rw [hp, offset_nat B _ (by omega_using [fitB, htail])]; omega_using [fitB, htail],
+      by rw [hB]; omega_using [fitB, hctr], by decide, by decide, by decide, by decide, by decide, by decide,
       wt, Covers.right wc, sep⟩
   obtain ⟨t₁, s₁, he₁, h₁⟩ := copyN_wp np
   have b₁ : s₁.gpr sb = B := (h₁.regs _ (by decide) (by decide)).trans hB
   obtain ⟨s₂, e₂, g₂, sp₂, m₂, rd₂, wr₂⟩ := Counter32.incr32_ok s₁ (base := sb) (off := 4 * BatchCtr.counterSlot)
     (by decide) (by decide)
-    (by rw [b₁, addr_add (by omega), Offset.add_add])
+    (by rw [b₁, addr_add (by omega_using [fitB, hctr]), Offset.add_add])
     (by
       rw [h₁.rd, h₁.wr]
       exact Covers.right wc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by decide) (by decide)⟩)
@@ -157,10 +157,10 @@ theorem fillStep_wp {s : State} {B : BitVec 32} {j n : Nat} (hj : j < 8) (hn : 1
     constructor
     · intro h
       have hnat := congrArg BitVec.toNat h
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hnat
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn8])] at hnat
       have : (0 : BitVec 32).toNat = 0 := rfl
       rw [this] at hnat
-      omega
+      omega_using [hn, hnat]
     · intro h; subst h; rfl
 
 structure FillInv (s₀ : State) (B : BitVec 32) (g : Nat) (t : List Byte) (j : Nat) (s : State) : Prop where
@@ -182,38 +182,38 @@ theorem fillInv_step {s₀ s : State} {B : BitVec 32} {g j : Nat} {t : List Byte
     (h : FillInv s₀ B g t j s) :
     WP isa (.block BatchCtr32.fillBody) s fun s' => FillInv s₀ B g t (j + 1) s' ∧ s'.z = decide (j + 1 = g) := by
   have base : s.gpr sb = B := (h.regs _ (by decide) (by decide) (by decide) (by decide)).trans hB
-  refine WP.mono (fillStep_wp (by omega) (by omega) (by omega) base h.ptr h.left fitB
+  refine WP.mono (fillStep_wp (by omega_using [hg, hj]) (by omega_using [hj]) (by omega_using [hg]) base h.ptr h.left fitB
     (by rw [h.wr]; exact hw)) fun s' hs => ?_
   refine ⟨⟨fun r h9 h10 h0 h1 => (hs.regs r h9 h10 h0 h1).trans (h.regs r h9 h10 h0 h1), hs.ptr,
-    by rw [hs.left, show g - j - 1 = g - (j + 1) by omega], by omega,
+    by rw [hs.left, show g - j - 1 = g - (j + 1) by omega_using []], by omega_using [hj],
     hs.rd.trans h.rd, hs.wr.trans h.wr, hs.sp.trans h.sp, ?_, ?_, ?_⟩, ?_⟩
   · have old : Frame [⟨bufferAddr B 0, 16 * (j + 1)⟩, ⟨counterAddr B, 16⟩] s₀.mem s.mem :=
       h.frame.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by omega)⟩
+        · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by omega_using [])⟩
         · exact ⟨_, by simp, fun _ hi => hi⟩
     exact old.trans (hs.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_self, buffer_sub B (by omega) (by omega)⟩
+      · exact ⟨_, List.mem_cons_self, buffer_sub B (by omega_using []) (by omega_using [hg, hj])⟩
       · exact ⟨_, by simp, fun _ hi => hi⟩)
   · rw [hs.counter, h.counter, next32_succ]
   · intro k hk
     by_cases he : k = j
     · subst he; exact hs.lane.trans h.counter
-    · have hk' : k < j := by omega
+    · have hk' : k < j := by omega_using [hk, he]
       rw [bytes_frame hs.frame (fun r hr => ?_), h.lanes k hk']
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · apply Offset.disjoint (State.addr B)
-        · left; change 4 * tailSlot + 16 * k + 16 ≤ 4 * tailSlot + 16 * j; omega
-        · change 4 * tailSlot + 16 * k + 16 ≤ 2 ^ 64; rw [tailSlot]; omega
-        · change 4 * tailSlot + 16 * j + 16 ≤ 2 ^ 64; rw [tailSlot]; omega
-      · exact buffer_counter_sep B (by omega)
+        · left; change 4 * tailSlot + 16 * k + 16 ≤ 4 * tailSlot + 16 * j; omega_using [hk, he]
+        · change 4 * tailSlot + 16 * k + 16 ≤ 2 ^ 64; rw [tailSlot]; omega_using [hg, hj, hk]
+        · change 4 * tailSlot + 16 * j + 16 ≤ 2 ^ 64; rw [tailSlot]; omega_using [hg, hj]
+      · exact buffer_counter_sep B (by omega_using [hg, hj, hk])
   · rw [hs.z, Bool.eq_iff_iff]
     simp only [decide_eq_true_iff]
-    omega
+    omega_using []
 
 theorem fillLoop_wp {s₀ : State} {B : BitVec 32} {g : Nat} {t : List Byte}
     (hg : 1 ≤ g) (hg8 : g ≤ 8) (hB : s₀.gpr sb = B)
@@ -224,18 +224,18 @@ theorem fillLoop_wp {s₀ : State} {B : BitVec 32} {g : Nat} {t : List Byte}
     WP isa (.loop (.block BatchCtr32.fillBody) .ne) s₀ (FillInv s₀ B g t g) := by
   have hi : FillInv s₀ B g t 0 s₀ :=
     ⟨fun _ _ _ _ _ => rfl, by simpa only [Nat.mul_zero, Nat.add_zero] using hp,
-      by simpa only [Nat.sub_zero] using hN, by omega, rfl, rfl, rfl, Frame.refl _ _,
+      by simpa only [Nat.sub_zero] using hN, by omega_using [], rfl, rfl, rfl, Frame.refl _ _,
       by change bytesAt s₀.mem (counterAddr B) 16 = t; exact hC,
       fun _ h => by omega⟩
   refine WP.loop (M := isa)
     (fun m s => ∃ j, m = g - j ∧ j < g ∧ FillInv s₀ B g t j s)
-    (fun m s hs => ?_) g s₀ ⟨0, by omega, by omega, hi⟩
+    (fun m s hs => ?_) g s₀ ⟨0, by omega_using [], by omega_using [hg], hi⟩
   obtain ⟨j, rfl, hj, hs⟩ := hs
   refine WP.mono (fillInv_step hg8 hj hB fitB hw hs) fun s' ⟨h', hz⟩ => ?_
   by_cases he : j + 1 = g
   · exact .inl ⟨by rw [fill_eval_ne, hz]; simp [he], by rw [he] at h'; exact h'⟩
   · exact .inr ⟨by rw [fill_eval_ne, hz]; simp only [he, decide_false, Bool.not_false],
-      g - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+      g - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], h'⟩
 
 structure FillPost (s : State) (B : BitVec 32) (g : Nat) (s' : State) : Prop where
   regs : ∀ r, r ≠ .r9 → r ≠ .r10 → r ≠ .r0 → r ≠ .r1 → s'.gpr r = s.gpr r

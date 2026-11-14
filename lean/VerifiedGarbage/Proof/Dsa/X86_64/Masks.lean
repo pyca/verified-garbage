@@ -47,6 +47,6 @@ theorem accumulate_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z)
     fun t ⟨hm, hk⟩ => ?_
   · unfold Checks.accumulate Core.field
     xrun [State.ea, hdi, fieldAddress, hs.ld he, hs.st he, ha, hb, mask_intersect]
-  · exact ⟨by rw [hm, word_writeW_self], by rw [hm]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega), hk⟩
+  · exact ⟨by rw [hm, word_writeW_self], by rw [hm]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega_using [he, this]), hk⟩
 
 end VG.Proof.Dsa.X86_64

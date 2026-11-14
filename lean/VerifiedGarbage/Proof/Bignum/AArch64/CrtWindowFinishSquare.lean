@@ -40,10 +40,10 @@ theorem finishSquare_ok (M : Mont) {s : State} {P : Addr} {w b E : Nat}
   rw [← hm] at out
   have ft : Frm P (crtWinRanges w) u.mem t.mem := Frm.of_outside out (by simp [crtWinRanges])
   have ey : wv t.mem P (slot w aY) w = wv u.mem P (slot w aY) w :=
-    out.wv (by have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega) (by
+    out.wv (by have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega_using [this]) (by
       have := cu.good.scr.nowrap
       have := slot_le (w := w) (show aY < 8 by decide)
-      omega)
+      omega_arith)
   refine ⟨cu.of_win ft kt.wr (kt.gpr .x0 (by decide)),tu.of_win ft cu.scrT.nowrap,
     ey.symm ▸ yu,?_,?_,h3,fu.trans ft,(ku.trans kt).mono (by decide),?_⟩
   · intro hQ; rw [ey]; exact vu hQ
@@ -73,7 +73,7 @@ theorem finishSquares_ok (M : Mont) {s : State} {P : Addr} {w b E : Nat}
   apply count_loop (cr := .x3) (n := b) hb (FinishInv s P w mi X Xc Q x E b)
   · intro i hi u hu
     obtain ⟨cu,tu,yu,vu,bc,fu,ku,hh⟩ := hu
-    refine WP.mono (finishSquare_ok M cu tu hw hw' hR yu vu (by omega) bc)
+    refine WP.mono (finishSquare_ok M cu tu hw hw' hR yu vu (by omega_using [hi]) bc)
       fun t ⟨ct,tt,yt,vt,bt,h3,ft,kt,hh'⟩ => ⟨?_,?_⟩
     · refine ⟨ct,tt,yt,?_,?_,fu.trans ft,(ku.trans kt).mono (by decide),
         fun k hk he => (hh' k hk he).trans (hh k hk he)⟩
@@ -82,8 +82,8 @@ theorem finishSquares_ok (M : Mont) {s : State} {P : Addr} {w b E : Nat}
         congr 3
         simp only [Nat.pow_succ, Nat.mul_comm, Nat.mul_left_comm]
       · simpa only [Nat.sub_sub] using bt
-    · rw [h3,cnt_ne (by omega)]
-      omega
+    · rw [h3,cnt_ne (by omega_using [hb'])]
+      omega_using [hi]
   · exact ⟨hc,ht,hy,by simpa using hyv,by simpa using bc,Frm.refl _ _ _,Keep.refl _ _,fun _ _ _ => rfl⟩
 
 end VG.Proof.Bignum.AArch64.WindowFive

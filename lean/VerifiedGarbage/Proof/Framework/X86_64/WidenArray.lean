@@ -140,7 +140,7 @@ theorem Verified.widenFirstArray {c : Prog isa} {name : String} {e : Elem} {n n'
       rcases List.mem_cons.mp ha' with rfl | ha'
       · have := hb _ (List.mem_cons_self ..)
         have := Nat.mul_le_mul_right e.size hn
-        dsimp only at *; omega
+        dsimp only at *; omega_arith
       · exact hb a (List.mem_cons_of_mem _ ha')
     · exact hp.apply _ _ hpre
   · exact fun s _ _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)

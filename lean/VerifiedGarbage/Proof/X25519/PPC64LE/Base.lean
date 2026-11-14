@@ -80,7 +80,7 @@ private theorem clamp_facts : ∀ x : BitVec 8,
 /-- The clamped scalar's nibbles are the bytes' nibbles, clamped. -/
 theorem clamp_nib {kb : List Byte} (hk : kb.length = 32) {i : Nat} (hi : i < 64) :
     Proof.Ed25519.nib (Spec.X25519.decodeScalar25519 kb) i = clampN (nibL kb) i := by
-  rw [decode_clamp hk, nib_decodeLE, clampL_getD hk (by omega)]
+  rw [decode_clamp hk, nib_decodeLE, clampL_getD hk (by omega_using [hi])]
   have f0 := clamp_facts (kb.getD 0 0)
   have f31 := clamp_facts (kb.getD 31 0)
   unfold clampN nibL
@@ -96,7 +96,7 @@ theorem clamp_nib {kb : List Byte} (hk : kb.length = 32) {i : Nat} (hi : i < 64)
   by_cases h63 : i = 63
   · subst h63; simp only [show (63 : Nat) / 2 = 31 from rfl, show (63 : Nat) % 2 = 1 from rfl, ↓reduceIte]
     exact f31.2.2.2
-  rw [ite_eq_right (show i / 2 ≠ 31 by omega), ite_eq_right (show i / 2 ≠ 0 by omega), ite_eq_right h0,
+  rw [ite_eq_right (show i / 2 ≠ 31 by omega_using [h62, h63]), ite_eq_right (show i / 2 ≠ 0 by omega_using [h0, h1]), ite_eq_right h0,
     ite_eq_right h63]
 
 private theorem clamp_regs : ∀ x : BitVec 8,
@@ -112,14 +112,14 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
   let a : Nat → Addr := fun k => b + BitVec.ofNat 64 (SCAL + k)
   have ne : ∀ i k, i < 64 → k < 64 → i ≠ k → a i ≠ a k := fun i k hi hk hik he =>
     Offset.disjoint b (d := SCAL + i) (n := 1) (e := SCAL + k) (k := 1)
-      (by omega) (by omega) (by omega) _ (Region.contains_self _ _)
+      (by omega_using [hik]) (by omega_using [hS, hi]) (by omega_using [hS, hk]) _ (Region.contains_self _ _)
       (by change Region.Contains ⟨a k, 1⟩ (a i) 1; rw [he]; exact Region.contains_self _ _)
   unfold clampCopy
-  refine wp_lbz (a := a 0) (by decide) (by decide) (by rw [hc.r6]; rfl) (hc.inR (by omega)) fun s₁ u₁ => ?_
+  refine wp_lbz (a := a 0) (by decide) (by decide) (by rw [hc.r6]; rfl) (hc.inR (by omega_using [hS])) fun s₁ u₁ => ?_
   refine wp_li (by decide) fun s₂ u₂ => wp_and fun s₃ u₃ => ?_
   refine wp_stb (a := a 0) (by decide) (by decide)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hc.r6]; rfl)
-    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hc.inW (by omega)) fun s₄ u₄ => ?_
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hc.inW (by omega_using [hS])) fun s₄ u₄ => ?_
   have c0 := clamp_regs (s.mem (a 0))
   have m4 : s₄.mem = s.mem.writeW (a 0) (BitVec.ofNat 8 (nibC s.mem b 0 &&& 8)) := by
     rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
@@ -130,12 +130,12 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
     rfl
   have hc4 : Ctx8 b s₄ := hc.of_rest ((u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
     ((u₃.rest (by decide)).trans (u₄.rest [.r7, .r8])))) (by decide)
-  refine wp_lbz (a := a 63) (by decide) (by decide) (by rw [hc4.r6]) (hc4.inR (by omega)) fun s₅ u₅ => ?_
+  refine wp_lbz (a := a 63) (by decide) (by decide) (by rw [hc4.r6]) (hc4.inR (by omega_using [hS])) fun s₅ u₅ => ?_
   refine wp_li (by decide) fun s₆ u₆ => wp_and fun s₇ u₇ => wp_ori fun s₈ u₈ => ?_
   refine wp_stb (a := a 63) (by decide) (by decide)
     (by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       hc4.r6])
-    (by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr]; exact hc4.inW (by omega)) fun t u₉ => WP.block_nil ?_
+    (by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr]; exact hc4.inW (by omega_using [hS])) fun t u₉ => WP.block_nil ?_
   have v63 : s₄.mem (a 63) = s.mem (a 63) := by
     rw [m4, VG.WriteBytes.writeW8_apply, ite_eq_right (ne 63 0 (by decide) (by decide) (by decide))]
   have c63 := clamp_regs (s.mem (a 63))
@@ -154,9 +154,9 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
       ((u₈.rest (by decide)).trans (u₉.rest _)))))))), ?_, fun i hi => ?_⟩
   · rw [mt]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains _ (by omega) (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
-  · have lt8 : ∀ n, n < 16 → n < 2 ^ 8 := fun n h => by omega
+      (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hS]))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hS]))
+  · have lt8 : ∀ n, n < 16 → n < 2 ^ 8 := fun n h => by omega_using [h]
     unfold nibC clampN
     rw [mt, VG.WriteBytes.writeW8_apply, VG.WriteBytes.writeW8_apply]
     by_cases h63 : i = 63
@@ -189,7 +189,7 @@ theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519
   have hb1 : Spec.Ed25519.bytesAt s1.mem p 32 = Spec.Ed25519.bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
-    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd (by decide)
+    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])) hpd (by decide)
       (List.mem_range.mp hi)
   have hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
@@ -228,7 +228,7 @@ theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519
         (rt.mono (by decide)))))))
   · have fr : ∀ r ∈ ([⟨b + BitVec.ofNat 64 FR, 64⟩] : List Region), ∃ r' ∈ [FA b], r.Sub r' := fun r hr =>
       ⟨_, List.mem_singleton_self _, by
-        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)⟩
+        rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using [hF]) (by omega_using [hF])⟩
     exact (f1.mono (by simp)).trans ((fu.mono (by simp)).trans ((fv.mono (by simp)).trans
       ((fx.mono (by simp)).trans ((ky.frame.mono (by simp)).trans ((kz.frame.mono (by simp)).trans
         ((ft.sub fr).mono (by simp)))))))

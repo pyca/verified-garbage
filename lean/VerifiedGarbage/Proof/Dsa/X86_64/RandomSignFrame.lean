@@ -25,14 +25,14 @@ theorem randomBase_toNat {extra : Nat} {s : State} (h : RandomSignABI extra s) :
   have hl := h.stackLower
   simp only [randomBase, BitVec.toNat_sub, BitVec.toNat_ofNat, Random.frameBytes]
   have hb := (s.gpr .rsp).isLt
-  omega
+  omega_using [hl]
 
 theorem random_frame_sub {extra : Nat} {s : State} (h : RandomSignABI extra s) :
     Region.Sub ⟨randomBase s, Random.frameBytes⟩ (below (s.gpr .rsp) (extra + 256)) := by
-  apply below_sub (by unfold Random.frameBytes; omega)
+  apply below_sub (by unfold Random.frameBytes; omega_using [])
   have hl := h.stackLower
   have hb := (s.gpr .rsp).isLt
-  omega
+  omega_using [hl]
 
 theorem random_alloc_scr {extra : Nat} {s : State} (h : RandomSignABI extra s) :
     Scr (allocState Random.frameBytes s) (randomBase s) Random.frameBytes := by
@@ -40,12 +40,12 @@ theorem random_alloc_scr {extra : Nat} {s : State} (h : RandomSignABI extra s) :
   rw [randomBase_toNat h]
   have hb := (s.gpr .rsp).isLt
   unfold Random.frameBytes
-  omega
+  omega_using []
 
 theorem random_incoming_address (s : State) (j : Nat) :
     off (randomBase s) (256 + 8 * j) = stackArgAddr s j := by
   change s.gpr .rsp - BitVec.ofNat 64 248 + BitVec.ofNat 64 (256 + 8 * j) = _
-  rw [show 256 + 8 * j = 248 + 8 * (j + 1) by omega, BitVec.ofNat_add,
+  rw [show 256 + 8 * j = 248 + 8 * (j + 1) by omega_using [], BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rfl
 
@@ -63,7 +63,7 @@ theorem random_incoming_read {extra : Nat} {s : State} (h : RandomSignABI extra 
       simp only [List.mem_cons, List.not_mem_nil, or_false, or_true]
     · simp only [stackArgAddr]
       exact Offset.contains _ (d := 8 * (j + 1)) (n := 8) (e := 8) (k := 56)
-        (by omega) (by omega) (by decide)
+        (by omega_using []) (by omega_using [hj]) (by decide)
   simp only [RandomSign.incomingSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact hj 0 (by decide)
@@ -83,7 +83,7 @@ theorem random_frame_ok {extra : Nat} {s : State} (h : RandomSignABI extra s)
   have hl := h.stackLower
   have ha : isa.push (.alloc Random.frameBytes) s = some (allocState Random.frameBytes s) := by
     simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega⟩
+    exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
   have hf : isa.pop (.free Random.frameBytes) (allocState Random.frameBytes s) t = some (randomFreed t) := by
     simp only [isa, pop]
     exact ite_eq_left ⟨by decide, by decide, by decide, htsp, htwr, rfl⟩

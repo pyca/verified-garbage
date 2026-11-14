@@ -71,8 +71,8 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt 
   have room : used + p.len ≤ p.randLen := by
     have := of_decide_eq_false enough
     have := h.used_le
-    omega
-  have room' : p.len ≤ (keyRand p original).length - used := by rw [length]; omega
+    omega_arith
+  have room' : p.len ≤ (keyRand p original).length - used := by rw [length]; omega_using [room]
   refine WP.seq (WP.mono (runAttempt p original u used keys scalars live3 room) fun t ⟨live, post⟩ => ?_)
   refine WP.mono (classify live room (Nat.pos_of_ne_zero keysNonzero)
     (Nat.pos_of_ne_zero scalarsNonzero) post) fun q classified => ?_
@@ -83,13 +83,13 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt 
   · simp only [KeyClassified, h2, Nat.reduceEqDiff, ite_true, ite_false] at classified
     refine WP.mono (classified.1.loop_guard classified.2) fun z ⟨flag, state⟩ =>
       Or.inr ⟨flag, _, ?_, used + p.len, keys, scalars - 1, rfl, state, ?_, ?_⟩
-    · omega
+    · omega_using [measure, scalarsNonzero]
     · rw [outcome]; simp only [KeyPublic.tail, keyTail_scalar keysNonzero scalarsNonzero room' h2]
     · rw [count]; simp only [KeyPublic.tail, keyTail_scalar keysNonzero scalarsNonzero room' h2]
   · simp only [KeyClassified, h3, Nat.reduceEqDiff, ite_false] at classified
     refine WP.mono (classified.1.loop_guard classified.2) fun z ⟨flag, state⟩ =>
       Or.inr ⟨flag, _, ?_, used + p.len, keys - 1, 128, rfl, state, ?_, ?_⟩
-    · omega
+    · omega_using [measure, keysNonzero, scalarsNonzero]
     · rw [outcome]; simp only [KeyPublic.tail, keyTail_public keysNonzero scalarsNonzero room' h3]
     · rw [count]; simp only [KeyPublic.tail, keyTail_public keysNonzero scalarsNonzero room' h3]
 

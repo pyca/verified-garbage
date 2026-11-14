@@ -44,9 +44,9 @@ instance (ρ : List Byte) (n : Nat) : Decidable (okR P ρ n) := by unfold okR; i
 theorem okR_succ {ρ : List Byte} {k : Nat} :
     okR P ρ (k + 1) ↔ okR P ρ k ∧ (sampleNTT 280 (matSeed ρ (k / P.k) (k % P.k))).isSome := by
   constructor
-  · intro h; exact ⟨fun e he => h e (by omega), h k (by omega)⟩
+  · intro h; exact ⟨fun e he => h e (by omega_using [he]), h k (by omega_using [])⟩
   · rintro ⟨h, hk⟩ e he
-    rcases (by omega : e < k ∨ e = k) with he | rfl
+    rcases (by omega_using [he] : e < k ∨ e = k) with he | rfl
     · exact h e he
     · exact hk
 
@@ -130,12 +130,12 @@ theorem setup_ok {s₀ : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} 
       exact f₇ _ fun r hr hc => by
         rw [List.mem_singleton.mp hr] at hc
         exact sdisj hp (o₁ := SB + o) (l₁ := 1) (by lom) (by lom)
-          (by simp only [SB]; omega) _ (Region.contains_self _ _) hc
+          (by simp only [SB]; omega_using [ho]) _ (Region.contains_self _ _) hc
   have ae : ∀ {e : Nat}, e < P.k * i + j →
       ∀ r ∈ [R (kA s₀) L.sc (SB + 32) 2], (polyRegion (aP L s₀ e)).Disjoint r :=
     fun he r hr => by
       rw [List.mem_singleton.mp hr]
-      exact sdisj hp (by lom) (by lom) (by simp only [AH, SB]; omega)
+      exact sdisj hp (by lom) (by lom) (by simp only [AH, SB]; omega_using [])
   refine ⟨⟨kb₇, h.fr.trans (f₇.mono (by simp)), by rw [bytesAt_congr sd]; exact h.rho,
     by rw [k₇.get .x24]; exact h.acc, fun e he => reduced_frame f₇ (ae he) (h.red e he), fun e he => ?_⟩,
     ?_, ?_, ?_, ?_⟩
@@ -215,7 +215,7 @@ theorem call_ok {s₀ : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {
   refine ⟨kb₉, h.b.fr.trans (fr.sub fun r hr => ?_), ?_, ?_, fun e he => ?_, fun e he => ?_⟩
   · rcases mem3 hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..),
-        R.sub2 (by simp only [aOff]; omega) (by simp only [aOff]; omega)⟩
+        R.sub2 (by simp only [aOff]; omega_using []) (by simp only [aOff]; omega_using [hij])⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   · rw [bytesAt_frame fr (far (f (by decide)) (.inl (by lom)) (by decide)) (by decide)]
@@ -228,10 +228,10 @@ theorem call_ok {s₀ : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {
     · have hA' : ¬ (okR P ρ (P.k * i + j) ∧ (sampleNTT 280 (matSeed ρ i j)).isSome) := fun h' =>
         hA (okR_succ.mpr (by rw [hke.1, hke.2]; exact h'))
       rw [ite_eq_right hA', ite_eq_right hA]
-  · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
+  · rcases (by omega_using [he] : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
     · exact reduced_frame fr (ae he) (h.b.red e he)
     · rw [h₉.mem]; show Reduced _ _; simpa only [aOff] using r₈
-  · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
+  · rcases (by omega_using [he] : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
     · rw [polyAtW_frame fr (ae he)]; exact h.b.res e he
     · rw [hke.1, hke.2, h₉.mem]
       rcases o₈ with ⟨-, h2⟩ | ⟨-, h2⟩

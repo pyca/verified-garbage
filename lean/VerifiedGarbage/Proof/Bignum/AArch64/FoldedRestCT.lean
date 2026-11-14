@@ -28,7 +28,7 @@ theorem publicPhase_ct (M : Mont) : RelCT isa (Two DB)
     fun t ⟨gt,_,_,ft,kt⟩ => ?_
   exact ⟨xb,σ,g.step (ft.mono (pExpRanges_pdAll _)) kt
     (ft.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
-      (by unfold sMask sFn; omega)),gt⟩
+      (by unfold sMask sFn; omega_using [])),gt⟩
 
 theorem rest_ct (M : Mont) : RelCT isa (Two DRel) (Folded.rest M.mm) (fun _ _ => True) := by
   rw [rest_eq]

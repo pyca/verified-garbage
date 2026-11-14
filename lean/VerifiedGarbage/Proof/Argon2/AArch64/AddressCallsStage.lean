@@ -30,7 +30,7 @@ theorem pointer_ok (s : State) (offset : Nat) (bound : offset ≤ 8192)
   apply WP.block_append
   refine (Instructions.load_ok s .x0 .x19 248 (by decide) (by decide) hr).mono ?_
   rintro a ⟨value, keeps⟩
-  refine (Instructions.addi_ok a .x0 offset (by omega) (by decide) (by decide)).mono ?_
+  refine (Instructions.addi_ok a .x0 offset (by omega_using [bound]) (by decide) (by decide)).mono ?_
   rintro t ⟨out, kt⟩
   refine ⟨out.trans (congrArg (· + BitVec.ofNat 64 offset) value), ?_⟩
   exact (keeps.mono (by simp)).trans kt
@@ -48,13 +48,13 @@ theorem args_ok (s : State) (x y out : Nat) (hx : x ≤ 8192) (hy : y ≤ 8192) 
   rintro a ⟨scratch, ka⟩
   rw [← List.append_assoc (Instructions.mov .x0 .x3) (Instructions.addi .x0 x)]
   apply WP.block_append
-  refine (Instructions.pointer_ok a .x0 .x3 x (by omega) (by decide) (by decide)).mono ?_
+  refine (Instructions.pointer_ok a .x0 .x3 x (by omega_using [hx]) (by decide) (by decide)).mono ?_
   rintro b ⟨left, kb⟩
   rw [← List.append_assoc (Instructions.mov .x1 .x3) (Instructions.addi .x1 y)]
   apply WP.block_append
-  refine (Instructions.pointer_ok b .x1 .x3 y (by omega) (by decide) (by decide)).mono ?_
+  refine (Instructions.pointer_ok b .x1 .x3 y (by omega_using [hy]) (by decide) (by decide)).mono ?_
   rintro c ⟨right, kc⟩
-  refine (Instructions.pointer_ok c .x2 .x3 out (by omega) (by decide) (by decide)).mono ?_
+  refine (Instructions.pointer_ok c .x2 .x3 out (by omega_using [ho]) (by decide) (by decide)).mono ?_
   rintro t ⟨output, kt⟩
   have scrB := kb.regs .x3 (by decide)
   have scrC := kc.regs .x3 (by decide)
@@ -123,9 +123,9 @@ theorem args_call_ready (s a : State) (h : Ready s) (x y out : Nat)
   · rw [args.scratch, args.keeps.wr]
     simpa only [off, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
       using work_cover s h 0 4096 (by decide)
-  · rw [args.left, args.scratch]; exact Offset.disjoint_base _ hx (by omega)
-  · rw [args.right, args.scratch]; exact Offset.disjoint_base _ hy (by omega)
-  · rw [args.output, args.scratch]; exact Offset.disjoint_base _ ho (by omega)
+  · rw [args.left, args.scratch]; exact Offset.disjoint_base _ hx (by omega_using [bx])
+  · rw [args.right, args.scratch]; exact Offset.disjoint_base _ hy (by omega_using [by_])
+  · rw [args.output, args.scratch]; exact Offset.disjoint_base _ ho (by omega_using [bo])
   · rw [sp, args.left]; exact h.stackWork.sub_right (Offset.sub_base _ bx)
   · rw [sp, args.right]; exact h.stackWork.sub_right (Offset.sub_base _ by_)
   · rw [sp, args.output]; exact h.stackWork.sub_right (Offset.sub_base _ bo)
@@ -187,7 +187,7 @@ theorem stage_ok (s : State) (h : Ready s) (x y out : Nat)
     (bx : x + 1024 ≤ 8192) (by_ : y + 1024 ≤ 8192) (bo : out + 1024 ≤ 8192) :
     WP isa (stage x y out) s (StageDone s · x y out) := by
   unfold stage
-  refine WP.seq ((args_nat_ok s h x y out (by omega) (by omega) (by omega)).mono ?_)
+  refine WP.seq ((args_nat_ok s h x y out (by omega_using [bx]) (by omega_using [by_]) (by omega_using [bo])).mono ?_)
   intro a args
   have callReady := args_call_ready s a h x y out hx hy ho bx by_ bo args
   refine (FillCompress.call_ok _ a callReady).mono ?_

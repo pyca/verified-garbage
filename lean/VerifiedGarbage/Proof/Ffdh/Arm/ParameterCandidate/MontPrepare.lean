@@ -175,7 +175,7 @@ private theorem prepareHead_ok {s : State} {base src : BitVec 32} {capacity k : 
   simp only [off, BitVec.add_zero] at read0
   have read12 := h.stack.read (d := 12) (by decide)
   have addr12 : State.addr (s.sp + 12#32) = off (State.addr s.sp) 12 :=
-    VG.Arm.addr_add (by have := h.stack.nowrap; omega)
+    VG.Arm.addr_add (by have := h.stack.nowrap; omega_using [this])
   refine withRest_all [.r0, .r6] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, addr12, read0, read12, h.stack.savedBase, h.stack.savedCount]
 
@@ -216,7 +216,7 @@ theorem montPrep_ok {s : State} {base src : BitVec 32} {capacity k : Nat}
   refine WP.seq (WP.mono (montKeySetup_ok readyA.workspace (MontData.of_ready readyA)
     h.minLength h.maxLength space readyA.stackRead readyA.saved (by
       rw [nA, rA]
-      exact Nat.le_of_lt (Nat.mod_lt _ (by have := h.large; omega)))) ?_)
+      exact Nat.le_of_lt (Nat.mod_lt _ (by have := h.large; omega_using [this])))) ?_)
   rintro t ⟨readyT, dataT, nT, rT, minusT, numberT, strideT, arraysT, frameT, restT⟩
   rw [nA] at nT minusT numberT
   rw [rA] at rT minusT

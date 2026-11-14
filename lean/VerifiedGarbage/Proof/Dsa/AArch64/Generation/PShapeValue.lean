@@ -35,7 +35,7 @@ theorem hash_shaped_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
   have hsuf := VG.Proof.Dsa.Generation.bytesAt_suffix_value s.mem p.output ((p.count + 1) * p.len - plen) plen
   rw [Nat.sub_add_cancel hroom, hash_complete_value hs, VG.Proof.Bignum.pow256_eq] at hsuf
   change Spec.Ffdh.candidateOf (8 * plen) (Spec.Dsa.decodeBE _) = _
-  rw [← hsuf, VG.Proof.Dsa.Generation.candidateOf_mod_width (by omega) (Nat.le_refl _)]
+  rw [← hsuf, VG.Proof.Dsa.Generation.candidateOf_mod_width (by omega_using [hl]) (Nat.le_refl _)]
   rfl
 
 theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
@@ -48,7 +48,7 @@ theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
       Spec.Rsa.bytesAt t.mem op plen = Spec.Dsa.encodeBE plen (p.shapedValue H plen) := by
   obtain ⟨V, R⟩ := hs.rep
   unfold Impl.Dsa.AArch64.Generation.pShape
-  refine WP.seq (WP.mono (pShapeArgs_ok hs.layout R hop p.output_slot (by have hc := p.count_le; rcases p.width with h | h <;> rw [h] <;> omega) hlmax)
+  refine WP.seq (WP.mono (pShapeArgs_ok hs.layout R hop p.output_slot (by have hc := p.count_le; rcases p.width with h | h <;> rw [h] <;> omega_using [hc]) hlmax)
     fun u ⟨hdi, hsi, hcx, hm, hk⟩ => ?_)
   let rp := off p.output ((p.count + 1) * p.len - plen)
   let bs := Spec.Rsa.bytesAt s.mem rp plen
@@ -56,7 +56,7 @@ theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
   have hrd : ∀ i < bs.length, InRegions (u.rd ++ u.wr) (off rp i) 1 := by
     intro i hi
     rw [hbl] at hi
-    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega)
+    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega_using [hroom, hi])
     refine ⟨r, ?_, ?_⟩
     · rw [hk.rd, hk.wr]; exact List.mem_append_right _ hr
     · simpa only [rp, off_off] using hc
@@ -64,8 +64,8 @@ theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
     intro i hi
     rw [hm]
     simp only [bs, Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD]
-    simp [show i < plen by omega]
-  refine WP.mono (qShape_ok (by rw [hbl]; exact hl) (by rw [hbl]; omega)
+    simp [show i < plen by omega_using [hbl, hi]]
+  refine WP.mono (qShape_ok (by rw [hbl]; exact hl) (by rw [hbl]; omega_using [hlmax])
     hsi hdi (by rw [hbl]; exact hcx) hrd
     (fun i hi => by rw [hk.wr]; exact hout i (hbl ▸ hi)) hb
     (fun i hi j hj => hsep i (hbl ▸ hi) j (hbl ▸ hj)))
@@ -74,8 +74,8 @@ theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
       Spec.Ffdh.candidateOf (8 * plen) (Spec.Rsa.os2ip bs) := by
     rw [← hbl, houtbytes]
     exact VG.Proof.Ffdh.ParameterCandidate.shapedOctets_value
-      (by intro he; have := congrArg List.length he; simp only [List.length_nil, hbl] at this; omega)
-      (by decide : 7 < 8) (by rw [hbl]; omega)
+      (by intro he; have := congrArg List.length he; simp only [List.length_nil, hbl] at this; omega_using [hl, this])
+      (by decide : 7 < 8) (by rw [hbl]; omega_using [hl])
   have value : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem op plen) = p.shapedValue H plen := by
     change Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op plen) = _
     rw [hx]

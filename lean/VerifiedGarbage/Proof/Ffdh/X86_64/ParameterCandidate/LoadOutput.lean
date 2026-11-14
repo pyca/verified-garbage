@@ -39,7 +39,7 @@ theorem loadOutput_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s :
     have hz := (h.base.phase_dims q).z
     change 136 ≤ p.Z - 256
     unfold slot hdrBytes at hz
-    omega)
+    omega_using [hz])
   unfold loadOutput
   refine WP.seq (WP.mono (WP.keep [.rax, .rsi, .rcx] (Q := fun u =>
     u.gpr .rsi = p.op ∧ u.gpr .rcx = BitVec.ofNat 64 p.k ∧ u.mem = s.mem)
@@ -53,7 +53,7 @@ theorem loadOutput_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s :
     have hz := (h.base.phase_dims q).z
     have hw := (h.base.phase_load_widths q).2.1
     unfold slot aN at *
-    omega
+    omega_using [hz, hw]
   refine WP.mono (loadCandidate_ok (bs := bs) hgu (h.base.phase_dims q).z hsi
     (by rw [hlen]; exact hcx)
     (by omega_using [hlen, h.base.widths.1]) (by omega_using [hlen, h.base.widths.2])
@@ -81,7 +81,7 @@ theorem loadOutput_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s :
   have kk : Keep mmRegs s t := (ku.trans kt).mono (by decide)
   refine ⟨h.keep_inner hf' hrs kk (by decide), hgt,
     hp.of_inner h.base hf' hrs ?_, htv.trans hv,
-    fun j hj => h.base.inner_header hf' hrs j (by omega),
+    fun j hj => h.base.inner_header hf' hrs j (by omega_using [hj]),
     CandidateFrame.of_scr (h.base.inner_changes hf' hrs), kk,
     h.base.output_eq (h.base.inner_changes hf' hrs)⟩
   intro r hr
@@ -90,6 +90,6 @@ theorem loadOutput_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s :
   left
   change 136 ≤ slot (p.phaseWords q) aN
   unfold slot hdrBytes aN
-  omega
+  omega_using []
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

@@ -106,11 +106,11 @@ theorem run1Y_ct {K : Nat} (hK : K < 3) {z : Bool} {h₂ : VG.Taint.Hint X86_64.
   unfold run1
   split
   · rename_i hz
-    exact run1Z_ct hz.2 (by omega) (fun σ s _ h => ⟨h.sq.env, lbY1 hK h⟩)
+    exact run1Z_ct hz.2 (by omega_using [hK]) (fun σ s _ h => ⟨h.sq.env, lbY1 hK h⟩)
       (fun σ s₀ s hp h₀ hA => run1EndY_ok (preW_of hp) hK h₀ hA) c₂
-  · obtain ⟨⟨_, c₁⟩, _⟩ := setup_taint (by omega : K < 4) w16
-    exact run_ct (N := 21) (by omega) (by decide) (by decide) (by decide)
-      (fun σ s hp h => ⟨h.sq.env, setup_ok (preW_of hp) (by omega) (lbY1 hK h)⟩)
+  · obtain ⟨⟨_, c₁⟩, _⟩ := setup_taint (by omega_using [hK] : K < 4) w16
+    exact run_ct (N := 21) (by omega_using [hK]) (by decide) (by decide) (by decide)
+      (fun σ s hp h => ⟨h.sq.env, setup_ok (preW_of hp) (by omega_using [hK]) (lbY1 hK h)⟩)
       (fun σ s₀ s hp h₀ hA => run1EndY_ok (preW_of hp) hK h₀ hA) c₁ c₂
 
 theorem run2Y_ct {K : Nat} (hK : K < 3) {z : Bool} {h₂ : VG.Taint.Hint X86_64.Taint.T}
@@ -120,13 +120,13 @@ theorem run2Y_ct {K : Nat} (hK : K < 3) {z : Bool} {h₂ : VG.Taint.Hint X86_64.
   unfold run2
   split
   · rename_i hz
-    exact run2Z_ct hz.2 (by omega) (fun σ s _ h => ⟨h.sq.env, lbY2 hK h, by rw [h.j K hK, ite_eq_right (by omega)],
-        by have := h.st K hK; rwa [ite_eq_right (by omega)] at this⟩)
+    exact run2Z_ct hz.2 (by omega_using [hK]) (fun σ s _ h => ⟨h.sq.env, lbY2 hK h, by rw [h.j K hK, ite_eq_right (by omega_using [])],
+        by have := h.st K hK; rwa [ite_eq_right (by omega_using [])] at this⟩)
       (fun σ s₀ s hp h₀ hA => run2EndY_ok (preW_of hp) hK h₀ hA) c₂
-  · obtain ⟨_, ⟨_, c₁⟩⟩ := setup_taint (by omega : K < 4) w16
-    exact run_ct (N := 14) (by omega) (by decide) (by decide) (by decide)
-      (fun σ s hp h => ⟨h.sq.env, contSetup_ok (preW_of hp) (by omega) (lbY2 hK h)
-        (by rw [h.j K hK, ite_eq_right (by omega)]) (by have := h.st K hK; rwa [ite_eq_right (by omega)] at this)⟩)
+  · obtain ⟨_, ⟨_, c₁⟩⟩ := setup_taint (by omega_using [hK] : K < 4) w16
+    exact run_ct (N := 14) (by omega_using [hK]) (by decide) (by decide) (by decide)
+      (fun σ s hp h => ⟨h.sq.env, contSetup_ok (preW_of hp) (by omega_using [hK]) (lbY2 hK h)
+        (by rw [h.j K hK, ite_eq_right (by omega_using [])]) (by have := h.st K hK; rwa [ite_eq_right (by omega_using [])] at this)⟩)
       (fun σ s₀ s hp h₀ hA => run2EndY_ok (preW_of hp) hK h₀ hA) c₁ c₂
 
 theorem pub_allFull3 {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) (t : Nat) : allFull3 σ₁ t = allFull3 σ₂ t := by

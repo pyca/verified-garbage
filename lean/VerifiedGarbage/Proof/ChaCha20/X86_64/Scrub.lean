@@ -62,12 +62,12 @@ theorem applyOut (stack : Nat) : PostOut (applyContract X86_64.abi stack) (apply
   simp only [applySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
   have hs : ∀ i < 136, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   have hd : Spec.ChaCha20.bytesAt m₂ dt ln.toNat = Spec.ChaCha20.bytesAt m₁ dt ln.toNat := by
     simp only [Spec.ChaCha20.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have := List.mem_range.mp hi
-    exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this]) (by omega_using [this]))).symm
   obtain ⟨k, rs, -⟩ := stream_congr hs
   show keyAt m₂ st = _ ∧ _
   obtain ⟨h1, h2⟩ := h
@@ -105,7 +105,7 @@ theorem pubOk (stack : Nat) : PubOk (applyContract X86_64.abi stack) applyPubs :
   have e : ∀ (m : Mem) (p : Addr), m (p + BitVec.ofNat 64 j) =
       (m.readW (p + 128) 64).extractLsb' (8 * (j - 128)) 8 := fun m p => by
     show _ = ((m.read (p + 128) 8).setWidth 64).extractLsb' (8 * (j - 128)) 8
-    rw [BitVec.setWidth_eq, Mem.extractLsb'_read m _ (by omega),
+    rw [BitVec.setWidth_eq, Mem.extractLsb'_read m _ (by omega_using [hj₂]),
       show (p + 128 : Addr) = p + BitVec.ofNat 64 128 from rfl, Offset.add_add, Nat.add_sub_cancel' hj₁]
   rw [e s₁.mem, e s₂.mem, hw]
 

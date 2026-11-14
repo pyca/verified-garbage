@@ -40,7 +40,7 @@ private theorem finishTail_ok {s : State} {B : Addr} {w : Nat} {b : Byte} {m : B
   have hu9 := (hku.gpr .x9 (by decide)).trans h11
   have hu10 := (hku.gpr .x10 (by decide)).trans h9
   have hb : (b.setWidth 64).toNat = b.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
   refine WP.mono (WP.keep [.x0, .x3, .x4] (Q := fun t =>
     t.gpr .x0 = BitVec.ofNat 64 (if w < 2 ∧ b.toNat < 2 then 0 else 1) ∧ t.mem = u.mem)
     ?_ rfl rfl rfl) fun t ⟨⟨hta, htm⟩, hkt⟩ =>
@@ -64,7 +64,7 @@ theorem random_prepareFinish_ok {s : State} {B : Addr} {w : Nat} {b : Byte}
   refine WP.seq (WP.mono (random_mask_ok u) fun v ⟨hv8, hvm, hkv⟩ => ?_)
   have hua := (hku.gpr .x0 (by decide)).trans ha
   have hb : (b.setWidth 64).toNat = b.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
   rw [hua, hb] at hv8
   have hk := hku.trans hkv
   refine WP.mono (finishTail_ok (hs.congr hk.wr) (hk.sp.trans hsp)

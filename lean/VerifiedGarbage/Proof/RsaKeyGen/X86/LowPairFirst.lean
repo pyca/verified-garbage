@@ -29,7 +29,7 @@ theorem first_hit (m : Mem) (base : Addr) (src start count index : Nat)
     by_cases same : start = index
     · subst start
       exact first_keep m base src (index + 1) count _ (fun ⟨a, b⟩ => hit (Prod.ext a b))
-    · rw [below start (Nat.le_refl _) (by omega)]
-      exact ih (start + 1) (by omega) (by omega) (fun j hj lt => below j (by omega) lt)
+    · rw [below start (Nat.le_refl _) (by omega_using [lo, same])]
+      exact ih (start + 1) (by omega_using [lo, same]) (by omega_using [hi]) (fun j hj lt => below j (by omega_using [hj]) lt)
 
 end VG.Proof.RsaKeyGen.X86.LowPair

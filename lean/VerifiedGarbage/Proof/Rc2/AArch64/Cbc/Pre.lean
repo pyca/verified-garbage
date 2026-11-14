@@ -82,10 +82,10 @@ theorem StepPre.writeIv {s : State} (hp : StepPre s) : InRegions s.wr (s.gpr .x2
 
 theorem StepPre.readBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 i) 8 :=
-  hp.reads _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.reads _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
 
 theorem StepPre.writeBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions s.wr (s.gpr .x2 + BitVec.ofNat 64 i) 8 :=
-  hp.writes _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.writes _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
 
 end VG.Proof.Rc2.AArch64.Cbc

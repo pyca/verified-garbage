@@ -44,22 +44,22 @@ theorem sampleCut_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List
   have lead := l.lead_lt
   have bounds := p.maxLength
   have prefixSub : (⟨State.addr p.privateValue, l.lead⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ :=
-    Region.sub_prefix (by omega)
+    Region.sub_prefix (by omega_using [lead])
   have suffixSub : (sampleSuffix p l).Sub ⟨State.addr p.privateValue, p.k⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_using [lead])
   have firstAddr : State.addr l.start = off (State.addr p.privateValue) l.lead :=
-    VG.Arm.addr_add (by have := output.fits; omega)
+    VG.Arm.addr_add (by have := output.fits; omega_using [lead, this])
   have firstSub : (⟨State.addr l.start, 1⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ := by
     rw [firstAddr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [lead])
   have prefixFirst : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint ⟨State.addr l.start, 1⟩ := by
     rw [firstAddr]
-    exact (Offset.disjoint_base _ (by omega) (by omega)).symm
+    exact (Offset.disjoint_base _ (by omega_using []) (by omega_using [lead, bounds])).symm
   have prefixSuffix : (⟨State.addr p.privateValue, l.lead⟩ : Region).Disjoint (sampleSuffix p l) :=
-    (Offset.disjoint_base _ (by omega) (by omega)).symm
+    (Offset.disjoint_base _ (by omega_using []) (by omega_using [lead, bounds])).symm
   have firstSuffix : (⟨State.addr l.start, 1⟩ : Region).Disjoint (sampleSuffix p l) := by
     rw [firstAddr]
-    exact Offset.disjoint _ (Or.inl (by omega)) (by omega) (by omega)
+    exact Offset.disjoint _ (Or.inl (by omega_using [])) (by omega_using [lead, bounds]) (by omega_using [lead, bounds])
   rw [VG.Impl.Ffdh.Arm.Domain.GenerateKey.cutEntropy, WP.seq_iff]
   refine WP.mono (samplePrefix_ok s h saved output domainSep stackSep source dest count zero) ?_
   rintro u ⟨contextU, bytesU, ptrU, srcU, frameU, restU⟩
@@ -75,16 +75,16 @@ theorem sampleCut_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : List
     domainSep (by rw [restV.sp, restU.sp]; exact stackSep) entropySep srcV ptrV suffixCount) ?_
   rintro t ⟨contextT, entropyT, suffix, frameT, restT⟩
   have prefixV : Spec.Rsa.bytesAt v.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
-    rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameV (by omega) (by simpa using prefixFirst)]
+    rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameV (by omega_using [lead, bounds]) (by simpa using prefixFirst)]
     exact bytesU
   have prefixT : Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 := by
-    rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameT (by omega) (by simpa using prefixSuffix)]
+    rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frameT (by omega_using [lead, bounds]) (by simpa using prefixSuffix)]
     exact prefixV
   have byteT : t.mem (State.addr l.start) = rb.getD l.lead 0 &&& l.mask.setWidth 8 := by
     have same := frameT.bytes (R := ⟨State.addr l.start, 1⟩) (by simpa using firstSuffix) (by change 1 ≤ 2 ^ 64; decide) (i := 0) (by change 0 < 1; decide)
     simp only [BitVec.add_zero] at same
     exact same.trans byteV
-  have encoded := keyCutEncoding (by omega : l.lead < rb.length) prefixT (by rw [← firstAddr]; exact byteT)
+  have encoded := keyCutEncoding (by omega_using [size, lead] : l.lead < rb.length) prefixT (by rw [← firstAddr]; exact byteT)
     (by simpa only [size, sampleSuffix] using suffix)
   have fullU : Frame [⟨State.addr p.privateValue, p.k⟩] s.mem u.mem :=
     frameU.sub (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact ⟨_, by simp, prefixSub⟩)

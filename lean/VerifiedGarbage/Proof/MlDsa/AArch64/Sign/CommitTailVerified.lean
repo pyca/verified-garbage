@@ -38,21 +38,21 @@ theorem shared_pre {s : State} {wlen olen : Nat} (hw : wlen=768 ∨ wlen=1024)
   have hwr : s.wr=[⟨s.gpr .x2,olen⟩,⟨s.gpr .x3,2048⟩,⟨s.gpr .x6,1024⟩] := by with_reducible assumption
   refine ⟨⟨hw,?_,?_,?_,?_,?_,?_,?_⟩,ho,?_,?_,?_,?_,?_,?_⟩
   · intro d n hn
-    exact ⟨⟨s.gpr .x0,64⟩,by rw [hrd]; simp,Offset.contains_base _ hn (by omega)⟩
+    exact ⟨⟨s.gpr .x0,64⟩,by rw [hrd]; simp,Offset.contains_base _ hn (by omega_using [hn])⟩
   · intro d n hn
-    exact ⟨⟨s.gpr .x1,wlen⟩,by rw [hrd]; simp,Offset.contains_base _ hn (by rcases hw with rfl|rfl <;> omega)⟩
+    exact ⟨⟨s.gpr .x1,wlen⟩,by rw [hrd]; simp,Offset.contains_base _ hn (by rcases hw with rfl|rfl <;> omega_using [hn])⟩
   · intro d n hn
-    exact ⟨⟨s.gpr .x4,64⟩,by rw [hrd]; simp,Offset.contains_base _ hn (by omega)⟩
+    exact ⟨⟨s.gpr .x4,64⟩,by rw [hrd]; simp,Offset.contains_base _ hn (by omega_using [hn])⟩
   · intro d n hn
-    exact ⟨⟨s.gpr .x3,2048⟩,by rw [hwr]; simp,Offset.contains_base _ hn (by omega)⟩
+    exact ⟨⟨s.gpr .x3,2048⟩,by rw [hwr]; simp,Offset.contains_base _ hn (by omega_using [hn])⟩
   · with_reducible assumption
   · with_reducible assumption
   · exact Region.Disjoint.symm (by with_reducible assumption)
   · intro d n hn
-    exact ⟨⟨s.gpr .x2,olen⟩,by rw [hwr]; simp,Offset.contains_base _ hn (by rcases ho with rfl|rfl <;> omega)⟩
+    exact ⟨⟨s.gpr .x2,olen⟩,by rw [hwr]; simp,Offset.contains_base _ hn (by rcases ho with rfl|rfl <;> omega_using [hn])⟩
   · exact ⟨⟨s.gpr .x6,1024⟩,by rw [hwr]; simp,by simp [Region.Contains]⟩
   · intro d n hn
-    exact ⟨⟨s.gpr .x3,2048⟩,by rw [hwr]; simp,Offset.contains_base _ hn (by omega)⟩
+    exact ⟨⟨s.gpr .x3,2048⟩,by rw [hwr]; simp,Offset.contains_base _ hn (by omega_using [hn])⟩
   · with_reducible assumption
   · exact Region.Disjoint.symm (by with_reducible assumption)
   · with_reducible assumption

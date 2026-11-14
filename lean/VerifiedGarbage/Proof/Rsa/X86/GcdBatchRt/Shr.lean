@@ -49,7 +49,7 @@ theorem shrLast_ok {s : State} {W : Addr} {Z sp dp : Nat} (hw : Ws s W Z)
       .mov .eax (.mem (at_ .ebp 0)), .mov .ebx (.reg .ecx), .shift .shr .eax 30, .alu .add .ebx (.reg .ebx),
       .alu .add .ebx (.reg .ebx), .alu .add .eax (.reg .ebx), .store (at_ .edi 0) .eax] : List Instr) ++ is))) s Q := by
   have hn := hw.nowrap
-  refine shrWord_ok hw ps pd (d := 0) (by omega) (by omega) fun v₁ W₁ K₁ O₁ => ?_
+  refine shrWord_ok hw ps pd (d := 0) (by omega_using [hs]) (by omega_using [hd]) fun v₁ W₁ K₁ O₁ => ?_
   simp only [List.cons_append, List.nil_append]
   refine wp_addS rfl fun v₂ U₂ _ => wp_addS rfl fun v₃ U₃ _ => ?_
   have K₃ : Keeps [.eax, .ebx, .ebp, .edi] s v₃ :=
@@ -62,14 +62,14 @@ theorem shrLast_ok {s : State} {W : Addr} {Z sp dp : Nat} (hw : Ws s W Z)
     rw [PtrAt, U₃.gpr, U₂.other _ (by decide), K₁.1 _ (by decide), ptr_add pd,
       show (4 : BitVec 32).toNat = 4 from rfl]
   have T : w32 v₃.mem W (sp + 4) = w32 s.mem W (sp + 4) := by
-    rw [m₃]; exact O₁.w32 (by omega) (by omega)
-  refine shrTop_ok (hw.of_keeps K₃) pe₃ pi₃ (by omega) (by omega) fun v Wv Kv Ov => ?_
+    rw [m₃]; exact O₁.w32 (by omega_using [sep]) (by omega_using [hs, hn])
+  refine shrTop_ok (hw.of_keeps K₃) pe₃ pi₃ (by omega_using [hs]) (by omega_using [hd]) fun v Wv Kv Ov => ?_
   rw [T] at Wv
   refine k v ?_ Wv ((K₃.mono (by decide)).trans (Kv.mono (by decide))) ?_
-  · rw [Ov.w32 (d := dp) (.inl (Nat.le_refl _)) (by omega), m₃]
+  · rw [Ov.w32 (d := dp) (.inl (Nat.le_refl _)) (by omega_using [hd, hn]), m₃]
     simpa only [Nat.add_zero] using W₁
   · rw [m₃] at Ov
-    exact (O₁.mono (Nat.le_refl _) (by omega)).trans (Ov.mono (by omega) (by omega))
+    exact (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (Ov.mono (by omega_using []) (by omega_using []))
 
 /-- The value of the shifted number from its low `k` words, one more and the top word. -/
 theorem shr_close {m₀ m : Mem} {W : Addr} {dst src k : Nat}
@@ -81,9 +81,9 @@ theorem shr_close {m₀ m : Mem} {W : Addr} {dst src k : Nat}
     val32 m W dst (k + 2) = sext32 m₀ W src (k + 2) / 2 ^ 30 % 2 ^ (32 * (k + 2)) := by
   have V₁ : val32 m W dst (k + 1) = val32 m₀ W src (k + 2) / 2 ^ 30 % 2 ^ (32 * (k + 1)) :=
     shr_succ V Wd rfl
-  rw [val32_succ m W dst (k + 1), V₁, show dst + 4 * (k + 1) = dst + 4 * k + 4 by omega, Wt]
-  simp only [sext32, show k + 2 - 1 = k + 1 by omega, show k + 2 = k + 1 + 1 by omega]
-  rw [show src + 4 * k + 4 = src + 4 * (k + 1) by omega]
+  rw [val32_succ m W dst (k + 1), V₁, show dst + 4 * (k + 1) = dst + 4 * k + 4 by omega_using [], Wt]
+  simp only [sext32, show k + 2 - 1 = k + 1 by omega_using [], show k + 2 = k + 1 + 1 by omega_using []]
+  rw [show src + 4 * k + 4 = src + 4 * (k + 1) by omega_using []]
   generalize k + 1 = n
   rw [val32_succ m₀ W src n, pow32_succ, Nat.mul_comm (2 ^ 32) (2 ^ (32 * n))]
   have := VG.Proof.Weierstrass.X86.Inv.shr_arith32 n (val32 m₀ W src n) (w32 m₀ W (src + 4 * n))
@@ -124,7 +124,7 @@ theorem shr30o_ok {s : State} (h : Bx L s B Z len N) {dst src : Ref} (hdh : dst.
   have hwu := h.ws.rt.of_keeps K
   refine WP.seq (WP.mono (shrPairs_ok hwu (sp := rv (kw len) src) (dp := rv (kw len) dst) (n := nw len - 1) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     (by omega_arith) (by rw [PtrAt, K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁) p₃
-    (by rw [K₃.1 _ (by decide), c₂]; omega)) fun t ⟨Kt, pe, pi, _, Ot, Vt⟩ => ?_)
+    (by rw [K₃.1 _ (by decide), c₂]; omega_using [ke])) fun t ⟨Kt, pe, pi, _, Ot, Vt⟩ => ?_)
   rw [show 2 * ((nw len - 1) / 2) = nw len - 1 by omega_arith, show 8 * ((nw len - 1) / 2) = 4 * (nw len - 1) by omega_arith,
     show nw len - 1 + 1 = nw len by omega_arith] at *
   have ht := hwu.of_keeps Kt
@@ -173,7 +173,7 @@ theorem shrSignedO_ok {s : State} (h : Bx L s B Z len N) {dst src : Ref} (hdh : 
       Keeps wordClob s u ∧ Outside B (rv (kw len) dst) (4 * (nw len + 1)) s.mem u.mem := by
   refine WP.mono (shr30o_ok h hdh hodd h3 hsz hdz sep) fun u ⟨Bu, V, K, O⟩ => ⟨Bu, ?_, K, O⟩
   have Q : 2 ^ (32 * (nw len + 1)) = 2 * (2 ^ (32 * nw len) * 2 ^ 31) := by
-    rw [pow32_succ]; omega
+    rw [pow32_succ]; omega_using []
   simp only [sext32, Nat.add_sub_cancel, VG.Proof.Weierstrass.X86.Inv.sign32, Q] at V
   rw [Q] at hy ⊢
   exact Divstep.W32.shr_nat (c := 2 ^ 30) (B := 2 ^ 32) rfl rfl
@@ -203,9 +203,9 @@ theorem fgRowO_ok {s : State} (h : Bx L s B Z len N) (hodd : nw len % 2 = 1) (h3
   have ke := kw_eq len
   have r4 := rv_a len 4; have r5 := rv_a len 5; have r11 := rv_a len 11; have r12 := rv_a len 12
   have rj := rv_a len j
-  have hjb := Nat.mul_le_mul_right (8 * nw len + 8) (show j ≤ 10 by omega)
+  have hjb := Nat.mul_le_mul_right (8 * nw len + 8) (show j ≤ 10 by omega_using [hj])
   refine WP.seq (WP.mono (linear_ok h (e := 1) (tmp := a 12) hu4 hv4 (by decide) rfl rfl rfl
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega))
+    (by omega_using [hf16, r11]) (by omega_using [hf16, r4]) (by omega_using [hf16, r5]) (by omega_using [hf16, r12]) (by omega_using [r4, r11]) (by omega_using [r5, r11]) (by omega_using [hodd, r11, r12]) (by omega_using [r4, r12]) (by omega_using [r5, r12]))
     fun s₁ ⟨H₁, U₁, K₁, V₁⟩ => ?_)
   rw [hu, hv, Divstep.W32.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
     Divstep.W32.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv),
@@ -219,7 +219,7 @@ theorem fgRowO_ok {s : State} (h : Bx L s B Z len N) (hodd : nw len % 2 = 1) (h3
     rw [cap]; have := neg_abs_le (cu * f + cv * g); linarith
   have hi : cu * f + cv * g < ((2 ^ (32 * nw len) * 2 ^ 31 : Nat) : Int) := by
     rw [cap]; have := le_abs_self (cu * f + cv * g); linarith
-  refine WP.mono (shrSignedO_ok H₁ (dst := a j) (src := a 11) rfl hodd h3 (by omega) (by omega) (by omega)
+  refine WP.mono (shrSignedO_ok H₁ (dst := a j) (src := a 11) rfl hodd h3 (by omega_using [hf16, r11]) (by omega_using [hf16, rj, hjb]) (by omega_using [r11, rj, hjb])
     (by exact_mod_cast V₁) lo hi (Int.mul_ediv_cancel' hdiv).symm)
     fun z ⟨Hz, V, K, O⟩ => ⟨Hz, by exact_mod_cast V, (K₁.mono (by decide)).trans (K.mono (by decide)), ?_⟩
   intro x hx

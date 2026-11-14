@@ -14,7 +14,7 @@ open VG.Proof.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
 private theorem wv_low {m : Mem} {B : Addr} {d w : Nat} (hw : 0 < w) :
     wv m B d w = (word m B d).toNat + 2 ^ 64 * wv m B (d + 8) (w - 1) := by
   have he := wv_add m B d 1 (w - 1)
-  rw [show 1 + (w - 1) = w by omega] at he
+  rw [show 1 + (w - 1) = w by omega_using [hw]] at he
   simpa only [wv, Nat.zero_mul, Nat.add_zero, Nat.mul_zero, Nat.zero_add, Nat.pow_zero, Nat.mul_one, Nat.one_mul] using he
 
 theorem decrementOdd_ok {s : State} {B : Addr} {Z w j : Nat}
@@ -27,21 +27,21 @@ theorem decrementOdd_ok {s : State} {B : Addr} {Z w j : Nat}
   have hw := h.w1
   refine WP.mono (decA_ok h hj) fun t ⟨hm, hk⟩ => ?_
   have hf : Outside B (slot w j) 8 s.mem t.mem := by
-    rw [hm]; exact writeW_outside _ _ _ (by omega)
+    rw [hm]; exact writeW_outside _ _ _ (by omega_using [room, nowrap])
   have ff : Frm B [(slot w j, 8)] s.mem t.mem := Frm.of_outside hf (by simp)
   refine ⟨h.congr ff (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact Mut.ofSlot _ _ _)
     hk (by decide), ?_, hf, hk⟩
   have upper : wv t.mem B (slot w j + 8) (w - 1) = wv s.mem B (slot w j + 8) (w - 1) :=
-    hf.wv (Or.inr (by omega)) (by omega)
+    hf.wv (Or.inr (by omega_using [])) (by omega_using [room, nowrap])
   have low : word t.mem B (slot w j) = word s.mem B (slot w j) - 1 := by
     rw [hm, word_writeW_self]
   have odd : (word s.mem B (slot w j)).toNat % 2 = 1 := by
-    rw [wv_low (by omega : 0 < w)] at ho
-    omega
+    rw [wv_low (by omega_using [hw] : 0 < w)] at ho
+    omega_using [ho]
   have sub : (word s.mem B (slot w j) - 1).toNat = (word s.mem B (slot w j)).toNat - 1 := by
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simp; omega)]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simp; omega_using [odd])]
     rfl
-  rw [wv_low (by omega : 0 < w), upper, low, sub, wv_low (m := s.mem) (by omega : 0 < w)]
-  omega
+  rw [wv_low (by omega_using [hw] : 0 < w), upper, low, sub, wv_low (m := s.mem) (by omega_using [hw] : 0 < w)]
+  omega_using [odd]
 
 end VG.Proof.Dsa.AArch64.Generation

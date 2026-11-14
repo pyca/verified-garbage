@@ -54,7 +54,7 @@ def LoopPublic.seedPub (P : LoopPublic) (room : P.start + P.ctx.geo.qLen ≤ P.c
   seed := P.ctx.rand.slice P.start P.ctx.geo.qLen room
   length := by
     show ((P.ctx.rand.bytes.drop P.start).take P.ctx.geo.qLen).length = P.ctx.geo.qLen
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [List.length_take, List.length_drop]; omega_using [room]
   used := P.start + P.ctx.geo.qLen
   seedCursor := 0
   bound := room
@@ -87,7 +87,7 @@ theorem head_ready {n pLen qLen : Nat} {P : LoopPublic} {s : State} (h : RefillL
   have h2 : (s.mem.writeW (off P.ctx.geo.F 320) (BitVec.ofNat 64 P.start)).readW (off P.ctx.geo.F 312) 64 =
       BitVec.ofNat 64 P.left := by
     rw [← c2]; exact Refill.ctlWord_write_other s.mem _ (j := 2) (k := 3) (by decide) (by decide) (by decide) _
-  have ln : P.left < 2 ^ 64 := by have := P.leftBound; unfold Spec.Dsa.parameterSeeds at this; omega
+  have ln : P.left < 2 ^ 64 := by have := P.leftBound; unfold Spec.Dsa.parameterSeeds at this; omega_using [this]
   refine WP.mono (Refill.iterStart_ok hm.layout R cw P.ok.bound h16 ln h2) fun t ⟨rax, zf, mt, kt⟩ => ?_
   have fr : Frame [Refill.ctlRegion P.ctx.geo.F] s.mem t.mem := by
     rw [mt]; exact Refill.ctl_write s.mem _ (k := 3) (by decide) _
@@ -105,7 +105,7 @@ theorem stopped_ready {n pLen qLen m : Nat} {P : LoopPublic} {t : State} (h : Be
     WP isa (.block (Impl.Dsa.X86_64.Generation.stackStatus status)) t
       (LoopMid n pLen qLen m (.inr (P.stop (BitVec.ofNat 64 status)))) := by
   obtain ⟨⟨⟨W, hm, _, _⟩, ⟨c0, c1, c2, cw⟩, hf, hw, hp, hq⟩, c3, _⟩ := h
-  refine WP.mono (Refill.statusMem_ok hm status (by omega)) fun u ⟨mu, fu, ku⟩ => ?_
+  refine WP.mono (Refill.statusMem_ok hm status (by omega_using [hs])) fun u ⟨mu, fu, ku⟩ => ?_
   have cwd : ∀ k < 4, Refill.ctlWord u.mem P.ctx.geo.F k = Refill.ctlWord t.mem P.ctx.geo.F k :=
     fun k hk => P.ok.word fu hk
   refine ⟨⟨_, mu, by simp [upd, LoopPublic.stop], fun h1 => ?_⟩,
@@ -138,7 +138,7 @@ theorem seedStart_ready {n pLen qLen : Nat} {P : LoopPublic} {t : State} (h : Ro
   obtain ⟨⟨⟨⟨W, hm, _, h10⟩, ⟨c0, c1, c2, cw⟩, hf, hw, hp, hq⟩, c3, rax⟩, ne, hc⟩ := h
   have room : P.start + P.ctx.geo.qLen ≤ P.ctx.rand.bytes.length := by
     have h1 := hc.symm.trans hb; have := P.startBound
-    simp only [Option.some.injEq, decide_eq_false_iff_not, Nat.not_lt] at h1; omega
+    simp only [Option.some.injEq, decide_eq_false_iff_not, Nat.not_lt] at h1; omega_using [this, h1]
   obtain ⟨V, R⟩ := hm.rep
   have h13 : W 13 = P.ctx.rand.ptr :=
     (hm.slots 13 (by simp [generationSlots])).trans (P.ctx.withHs P.hs).randSlot
@@ -189,11 +189,11 @@ theorem outcome_public {P : LoopPublic} {W : Nat → BitVec 64} {used : Nat} {t 
   · refine ⟨by rw [h19]; simp [LoopPublic.status, hr], fun _ => ?_⟩
     simp only [LoopPublic.after, hr]
     change used = P.ctx.rand.bytes.length - (P.ctx.rand.bytes.drop used).length
-    rw [List.length_drop]; omega
+    rw [List.length_drop]; omega_using [hu]
   · refine ⟨by rw [h19]; simp [LoopPublic.status, hr], fun _ => ?_⟩
     simp only [LoopPublic.after, hr]
     change used = P.ctx.rand.bytes.length - (P.ctx.rand.bytes.drop used).length
-    rw [List.length_drop]; omega
+    rw [List.length_drop]; omega_using [hu]
 
 theorem attempted_keep {n pLen qLen : Nat} {P : LoopPublic} {s t : State} (h : Attempted n pLen qLen P s)
     (hm : t.mem = s.mem) (hk : Keep [.rax] s t) : Attempted n pLen qLen P t := by
@@ -224,7 +224,7 @@ theorem reject_ready {n pLen qLen m : Nat} {P : LoopPublic} {t : State} (h : Tes
     have := hs.symm.trans he; simpa using this
   obtain ⟨h19, hafter⟩ := outcome_public outcome hu
   have uafter := hafter (by rw [s3]; decide)
-  have ln : P.left - 1 + 1 < 2 ^ 64 := by have := P.leftBound; unfold Spec.Dsa.parameterSeeds at this; omega
+  have ln : P.left - 1 + 1 < 2 ^ 64 := by have := P.leftBound; unfold Spec.Dsa.parameterSeeds at this; omega_using [this]
   have h2 : t.mem.readW (off P.ctx.geo.F 312) 64 = BitVec.ofNat 64 (P.left - 1 + 1) := by
     rw [Nat.sub_add_cancel (Nat.pos_of_ne_zero ne)]; exact c2
   refine WP.mono (Refill.rejected_ok hm.layout.rsp cw P.ok.bound ln h2) fun u ⟨mu, ku⟩ => ?_
@@ -236,7 +236,7 @@ theorem reject_ready {n pLen qLen m : Nat} {P : LoopPublic} {t : State} (h : Tes
   · rw [mu]; exact (Refill.ctlWord_write_other t.mem _ (j := 0) (k := 2) (by decide) (by decide) (by decide) _).trans c0
   · rw [mu]; exact (Refill.ctlWord_write_other t.mem _ (j := 1) (k := 2) (by decide) (by decide) (by decide) _).trans c1
   · rw [mu]; exact Refill.ctlWord_write_self t.mem _ 2 _
-  · show P.left - 1 < m; omega
+  · show P.left - 1 < m; omega_using [hl, ne]
 
 theorem stop_ready {n pLen qLen m : Nat} {P : LoopPublic} {t : State} (h : Tested n pLen qLen P t)
     (he : isa.eval .e t = some false) :

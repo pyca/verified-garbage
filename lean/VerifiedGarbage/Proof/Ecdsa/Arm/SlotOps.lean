@@ -35,7 +35,7 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
     sv c base s' i = sv c base s i := by
   have hl := sl_le c h7 hi
   have hk := sl_below_wk c h7 hi
-  refine h.unchOne.wordsVal (fun w hw => ?_) (by omega)
+  refine h.unchOne.wordsVal (fun w hw => ?_) (by omega_using [hn, hl])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl
   · rw [hMn]; exact sl_apart c hio
@@ -103,9 +103,9 @@ theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size
   have := sl_apart c hoa
   have := sl_le c hc.n10 ho
   have := sl_le c hc.n10 ha
-  refine WP.mono (copy_ok (2 * c.n) hs (by omega) (by omega) (by omega)) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
+  refine WP.mono (copy_ok (2 * c.n) hs (by omega_arith) (by omega_using [this]) (by omega_arith)) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
   · show wordsVal _ _ _ _ = wordsVal _ _ _ _
     rw [wordsVal_eq_val32, wordsVal_eq_val32, e]
-  · rw [show 8 * c.n = 4 * (2 * c.n) by omega]; exact O
+  · rw [show 8 * c.n = 4 * (2 * c.n) by omega_using []]; exact O
 
 end VG.Proof.Ecdsa.Arm

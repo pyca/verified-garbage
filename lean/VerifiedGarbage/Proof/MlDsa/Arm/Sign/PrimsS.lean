@@ -69,9 +69,9 @@ theorem rejCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs
         (polyAt s'.mem (pa s a)) ∧
       (s'.gpr .r0 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (pa s (sc oRS)) 34)).isSome) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rejChk_spec hc
-  refine WP.mono (callR_ok (hv_with hP.rejNTT.ver.1 hP.rejMax) (by have := hP.rejNTT.su; have := hP.rejNTT.hS; omega)
+  refine WP.mono (callR_ok (hv_with hP.rejNTT.ver.1 hP.rejMax) (by have := hP.rejNTT.su; have := hP.rejNTT.hS; omega_arith)
     ok L.sp (rd := [⟨pa s (sc oRS), 34⟩]) (wr := [pR (pa s a), ⟨pa s (sc oPS), 2048⟩])
-    (fun s1 hA k => rejPre (ent_R L k (by have := hP.rejNTT.hS; omega) _ _) hc
+    (fun s1 hA k => rejPre (ent_R L k (by have := hP.rejNTT.hS; omega_using [this]) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn3 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn3 hA).2.1)
       (by rw [vR _ _ _ nl2]; exact (argsIn3 hA).2.2) rfl rfl)
     (Covers.append_left (L.cR i1) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
@@ -89,7 +89,7 @@ theorem rejCall_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChk (rbs ++
       (callR "vg_mldsa_rej_ntt_poly" P.rejNTT [.ptr (sc oRS), .ptr a, .ptr (sc oPS)])
       fun x y => x.gpr .r0 = y.gpr .r0 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rejChk_spec hc
-  have hS : hP.rejNTT.S ≤ D := by have := hP.rejNTT.hS; omega
+  have hS : hP.rejNTT.S ≤ D := by have := hP.rejNTT.hS; omega_using [this]
   refine callRRet_tr hP.rejNTT.ver.1 hP.rejRet ok
     fun x y x1 y1 ⟨R, hb⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, rejPre (ent_R R.lx kx hS [⟨pa x (sc oRS), 34⟩] [pR (pa x a), ⟨pa x (sc oPS), 2048⟩]) hc
@@ -132,7 +132,7 @@ theorem maskPre {S : Nat} {s E : State} (En : Ent D rbs wbs s S E) {γ : Nat} {a
     (hrd : E.rd = [⟨pa s (sc oMS), 66⟩]) (hwr : E.wr = [pR (pa s a), ⟨pa s (sc oPS), 2048⟩]) :
     (expandMaskContract Arm.abi S).pre E := by
   obtain ⟨_, _, i1, i2, i3, d12, d13, d23, _⟩ := maskChk_spec hc
-  have hγ' : γ < 2 ^ 32 := by omega
+  have hγ' : γ < 2 ^ 32 := by omega_arith
   sig_pre [expandMaskContract, expandMaskSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [g0, g1, g2, g3, En.L.w (p := sc oMS) i1 (by decide), En.L.w i2 (by decide),
     En.L.w (p := sc oPS) i3 (by decide), toNat32 hγ']
@@ -150,10 +150,10 @@ theorem maskAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs 
       PolyIs s'.mem (pa s a) (toRq (bitUnpack (H (bytesAt s.mem (pa s (sc oMS)) 66) (32 * (1 + bitlen (γ - 1))))
         (γ - 1) γ)) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1⟩ := maskChk_spec hc
-  have hγ' : γ < 2 ^ 32 := by omega
-  refine WP.mono (callR_ok hP.expandMask.ver.1 (by have := hP.expandMask.su; have := hP.expandMask.hS; omega)
+  have hγ' : γ < 2 ^ 32 := by omega_arith
+  refine WP.mono (callR_ok hP.expandMask.ver.1 (by have := hP.expandMask.su; have := hP.expandMask.hS; omega_arith)
     (maskArgs_ok b1) L.sp (rd := [⟨pa s (sc oMS), 66⟩]) (wr := [pR (pa s a), ⟨pa s (sc oPS), 2048⟩])
-    (fun s1 hA k => maskPre (ent_R L k (by have := hP.expandMask.hS; omega) _ _) hγ hc
+    (fun s1 hA k => maskPre (ent_R L k (by have := hP.expandMask.hS; omega_using [this]) _ _) hγ hc
       (by rw [vR _ _ _ nl0]; exact (argsIn4 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn4 hA).2.1)
       (by rw [vR _ _ _ nl2]; exact (argsIn4 hA).2.2.1) (by rw [vR _ _ _ nl3]; exact (argsIn4 hA).2.2.2) rfl rfl)
     (Covers.append_left (L.cR i1) (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
@@ -167,7 +167,7 @@ theorem maskAt_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a : Ptr} (hγ : γ 
     (hc : maskChk (rbs ++ wbs) wbs a = true) :
     RelCT isa (LRel D rbs wbs) (maskAt P γ a) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1⟩ := maskChk_spec hc
-  have hS : hP.expandMask.S ≤ D := by have := hP.expandMask.hS; omega
+  have hS : hP.expandMask.S ≤ D := by have := hP.expandMask.hS; omega_using [this]
   refine callR_tr hP.expandMask.ver.1 hP.expandMask.ver.2.1 (maskArgs_ok b1)
     fun x y x1 y1 R ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, maskPre (ent_R R.lx kx hS [⟨pa x (sc oMS), 66⟩] [pR (pa x a), ⟨pa x (sc oPS), 2048⟩]) hγ hc
@@ -206,7 +206,7 @@ theorem ballArgs_ok {len tau : Nat} {c : Ptr} (b1 : c.1 ∈ bases) :
   simp [Arg.ok, b1]
 
 theorem ballParams_lt {len tau : Nat} (hp : (len, tau) ∈ ballParams) : 0 < len ∧ len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-  simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega
+  simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega_using [hp]
 
 theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s E : State} (En : Ent D rbs wbs s S E) {len tau : Nat} {c : Ptr}
     (hp : (len, tau) ∈ ballParams) (hc : ballChk (rbs ++ wbs) wbs len c = true)
@@ -218,16 +218,16 @@ theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s E : State} (En : Ent D rbs wbs s
     (sampleInBallContract Arm.abi S).pre E := by
   obtain ⟨_, _, i1, i2, i3, d12, d13, d23, _⟩ := ballChk_spec hc
   obtain ⟨l0, l1, l2⟩ := ballParams_lt hp
-  have h8 : 8 ≤ s.sp.toNat := by have := En.L.sp; omega
+  have h8 : 8 ≤ s.sp.toNat := by have := En.L.sp; omega_using [hS, this]
   have e8 : E.sp.toNat = s.sp.toNat - 8 := by rw [hsp, sp_sub8 h8]
   sig_pre [sampleInBallContract, sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  simp only [g0, g1, g2, g3, ha, hv, En.L.w (p := sc oCT) i1 (by omega), En.L.w i2 (by decide),
+  simp only [g0, g1, g2, g3, ha, hv, En.L.w (p := sc oCT) i1 (by omega_using [l0]), En.L.w i2 (by decide),
     En.L.w (p := sc oPS) i3 (by decide), toNat32 l1, toNat32 l2]
-  have hD : 8 ≤ D := by omega
-  refine ⟨wf4 En.wf (by have := s.sp.isLt; omega), hrd, hwr, En.L.disj d12, En.L.disj d13, En.L.disj d23,
+  have hD : 8 ≤ D := by omega_using [hS]
+  refine ⟨wf4 En.wf (by have := s.sp.isLt; omega_using [e8]), hrd, hwr, En.L.disj d12, En.L.disj d13, En.L.disj d23,
     (argR_disj En.L hD i2).symm, (argR_disj (p := sc oPS) En.L hD i3).symm,
     conj_stk [⟨pa s (sc oCT), len⟩, pR (pa s c), ⟨pa s (sc oPS), 2048⟩, argR s] ?_,
-    En.L.fit (p := sc oCT) i1 (by omega), En.L.fit i2 (by decide), En.L.fit (p := sc oPS) i3 (by decide), hp⟩
+    En.L.fit (p := sc oCT) i1 (by omega_using [l0]), En.L.fit i2 (by decide), En.L.fit (p := sc oPS) i3 (by decide), hp⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨En.stk _ _ i1, En.stk _ _ i2, En.stk _ _ i3, hsp ▸ argR_stk En.L hS⟩
 
@@ -242,7 +242,7 @@ theorem ballPre' {P : Prims} (hP : PrimsOk P D) {s s1 : State} (L : Lay D rbs wb
       ((pushed [.r12, .lr] s1).callEntry.withRegions (ballRd s len ++ [argR s]) (ballWr s c)) := by
   obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
   have hS := hP.ball.hS
-  obtain ⟨ha, hv⟩ := stk_arg L k (by omega) (ballRd s len ++ [argR s]) (ballWr s c)
+  obtain ⟨ha, hv⟩ := stk_arg L k (by omega_using [hS]) (ballRd s len ++ [argR s]) (ballWr s c)
   exact ballPre hS (ent_S L k hS _ _) hp hc (by rw [State.withRegions_sp, State.callEntry_sp, pushed_sp8, k.sp]) ha
     (by rw [hv, e4]; rfl) (by rw [vS _ _ _ nl0, e0]; rfl) (by rw [vS _ _ _ nl1, e1]; rfl)
     (by rw [vS _ _ _ nl2, e2]; rfl) (by rw [vS _ _ _ nl3, e3]; rfl) rfl rfl
@@ -259,7 +259,7 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
       (s'.gpr .r0 = 1 → (sampleInBall tau maxBounds.ball (bytesAt s.mem (pa s (sc oCT)) len)).isSome) := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1⟩ := ballChk_spec hc
   obtain ⟨l0, l1, l2⟩ := ballParams_lt hp
-  refine WP.mono (callS_ok (hv_with hP.ball.ver.1 hP.ballMax) (by have := hP.ball.su; have := hP.ball.hS; omega)
+  refine WP.mono (callS_ok (hv_with hP.ball.ver.1 hP.ballMax) (by have := hP.ball.su; have := hP.ball.hS; omega_arith)
     (ballArgs_ok b1) L.sp (rd := ballRd s len) (wr := ballWr s c)
     (fun s1 hA k => ballPre' hP L k hp hc hA) (L.cR i1) (Covers.cons (L.cW w1) (L.cW w2)))
     fun s' ⟨hpost, hcs, s1, hA, k, s₂, hm₂, hg₂, hq, hx⟩ => ⟨hpost, hcs, ?_⟩
@@ -277,9 +277,9 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
   clear_value E
   sig_post [sampleInBallContract, sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hq
   simp only [g0, g1, g2, g3, hm₂, er, setWidth_append32, toNat32 l1, toNat32 l2,
-    L.w (p := sc oCT) i1 (by omega), L.w i2 (by decide), eb] at hq
+    L.w (p := sc oCT) i1 (by omega_using [l0]), L.w i2 (by decide), eb] at hq
   simp only [State.withRegions_gpr, g0, g1, g2, er, toNat32 l1, toNat32 l2, State.addr,
-    L.w (p := sc oCT) i1 (by omega), eb] at hx
+    L.w (p := sc oCT) i1 (by omega_using [l0]), eb] at hx
   exact ⟨hq.1, hq.2, hx⟩
 
 theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams)
@@ -296,8 +296,8 @@ theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp
     obtain ⟨hy0, hy1, hy2, hy3, hy4⟩ := argsIn5 hAy
     have Ex := ent_S (S := hP.ball.S) R.lx kx hS (ballRd x len ++ [argR x]) (ballWr x c)
     have Ey := ent_S (S := hP.ball.S) R.ly ky hS (ballRd y len ++ [argR y]) (ballWr y c)
-    obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega) (ballRd x len ++ [argR x]) (ballWr x c)
-    obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega) (ballRd y len ++ [argR y]) (ballWr y c)
+    obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega_using [hS]) (ballRd x len ++ [argR x]) (ballWr x c)
+    obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega_using [hS]) (ballRd y len ++ [argR y]) (ballWr y c)
     let X := (pushed [.r12, .lr] x1).callEntry.withRegions (ballRd x len ++ [argR x]) (ballWr x c)
     try rewrite [show (pushed [.r12, .lr] x1).callEntry.withRegions (ballRd x len ++ [argR x]) (ballWr x c) = X from rfl] at *
     have hX : X = (pushed [.r12, .lr] x1).callEntry.withRegions (ballRd x len ++ [argR x]) (ballWr x c) := rfl
@@ -317,12 +317,12 @@ theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp
     simp only [gx .r0 (by decide), gx .r1 (by decide), gx .r2 (by decide), gx .r3 (by decide),
       gy .r0 (by decide), gy .r1 (by decide), gy .r2 (by decide), gy .r3 (by decide), sx, sy,
       hx0, hx1, hx2, hx3, hy0, hy1, hy2, hy3, vx, vy, hx4, hy4, Arg.val, toNat32 l1]
-    rw [R.lx.w (p := sc oCT) i1 (by omega), R.ly.w (p := sc oCT) i1 (by omega), bx, bY, hb]
+    rw [R.lx.w (p := sc oCT) i1 (by omega_using [l0]), R.ly.w (p := sc oCT) i1 (by omega_using [l0]), bx, bY, hb]
     simp only [R.eq i1, R.eq i2, R.sp, and_self]
-  · exact (cov_S R.lx kx (by omega) (R.lx.cR i1) (Covers.cons (R.lx.cW w1) (R.lx.cW w2))).1
-  · exact (cov_S R.lx kx (by omega) (R.lx.cR i1) (Covers.cons (R.lx.cW w1) (R.lx.cW w2))).2
-  · exact (cov_S R.ly ky (by omega) (R.ly.cR i1) (Covers.cons (R.ly.cW w1) (R.ly.cW w2))).1
-  · exact (cov_S R.ly ky (by omega) (R.ly.cR i1) (Covers.cons (R.ly.cW w1) (R.ly.cW w2))).2
+  · exact (cov_S R.lx kx (by omega_using [hS]) (R.lx.cR i1) (Covers.cons (R.lx.cW w1) (R.lx.cW w2))).1
+  · exact (cov_S R.lx kx (by omega_using [hS]) (R.lx.cR i1) (Covers.cons (R.lx.cW w1) (R.lx.cW w2))).2
+  · exact (cov_S R.ly ky (by omega_using [hS]) (R.ly.cR i1) (Covers.cons (R.ly.cW w1) (R.ly.cW w2))).1
+  · exact (cov_S R.ly ky (by omega_using [hS]) (R.ly.cR i1) (Covers.cons (R.ly.cW w1) (R.ly.cW w2))).2
 
 end
 

@@ -70,7 +70,7 @@ theorem pubV_of {S : Nat} {s₁ s₂ : State}
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h8.symm, h9.symm, h10.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm]
 
 /-- An entry state with the anchor's public data. -/
@@ -110,8 +110,8 @@ theorem call_ct :
   · rw [c₁.a1, c₂.a1, arg_eq h₁ h₂]
   · rw [c₁.g5, c₂.g5, c₁.g6, c₂.g6, words_of_frame c₁.mem h₁.1.kp h₁.1.sp h₁.1.wp,
       words_of_frame c₂.mem h₂.1.kp h₂.1.sp h₂.1.wp, h₁.2.w, h₂.2.w]
-  · rw [c₁.g7, c₂.g7, c₁.g8, c₂.g8, bytes_of_frame c₁.mem h₁.1.ke h₁.1.es.symm (by have := h₁.1.we; omega),
-      bytes_of_frame c₂.mem h₂.1.ke h₂.1.es.symm (by have := h₂.1.we; omega), h₁.2.be, h₂.2.be]
+  · rw [c₁.g7, c₂.g7, c₁.g8, c₂.g8, bytes_of_frame c₁.mem h₁.1.ke h₁.1.es.symm (by have := h₁.1.we; omega_using []),
+      bytes_of_frame c₂.mem h₂.1.ke h₂.1.es.symm (by have := h₂.1.we; omega_using []), h₁.2.be, h₂.2.be]
 
 theorem code_ct : RelCT isa (Two E) code fun _ _ => True := by
   unfold code

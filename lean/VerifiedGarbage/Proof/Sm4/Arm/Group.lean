@@ -69,13 +69,13 @@ theorem groupCount_wp {s : State} {v : Nat} (hn : s.gpr .r2 = BitVec.ofNat 32 v)
   unfold groupCount
   refine WP.seq (WP.of_runBlock ⟨s₃, e₂₃, ?_⟩)
   refine WP.ite (decide (8 ≤ v)) ((eval_ne s₃).trans (by
-      rw [z₃, lsr3_beq hv]; by_cases h : v < 8 <;> simp [h] <;> omega)) (fun h => ?_) (fun h => ?_)
+      rw [z₃, lsr3_beq hv]; by_cases h : v < 8 <;> simp [h] <;> omega_using [h])) (fun h => ?_) (fun h => ?_)
   · obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄, sp₄⟩ := movImm_ok s₃ .r3 8 (by decide)
     refine WP.of_runBlock ⟨s₄, e₄, ?_, fun r h1 h2 => by rw [o₄ r h1, o₃ r h2], m₄, rd₄, wr₄, sp₄⟩
-    rw [r₄, Nat.min_eq_right (by simp at h; omega)]; rfl
+    rw [r₄, Nat.min_eq_right (by simp at h; omega_using [h])]; rfl
   · obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄, sp₄⟩ := movR_ok s₃ .r3 .r2
     refine WP.of_runBlock ⟨s₄, e₄, ?_, fun r h1 h2 => by rw [o₄ r h1, o₃ r h2], m₄, rd₄, wr₄, sp₄⟩
-    rw [r₄, r2₃, Nat.min_eq_left (by simp at h; omega)]
+    rw [r₄, r2₃, Nat.min_eq_left (by simp at h; omega_using [h])]
 
 /-- `subs d, n, m`. -/
 theorem subsR_ok (s : State) (d n m : Reg) :
@@ -90,7 +90,7 @@ theorem subsR_ok (s : State) (d n m : Reg) :
 
 theorem toNat_add32 (D : BitVec 32) {d : Nat} (h : D.toNat + d < 2 ^ 32) :
     (D + BitVec.ofNat 32 d).toNat = D.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h] : d < 2 ^ 32), Nat.mod_eq_of_lt h]
 
 /-! ## The scratch buffer's contents -/
 
@@ -104,8 +104,8 @@ theorem slot_keep {rs : List Region} {m m' : Mem} {b : BitVec 32} (hfit : b.toNa
     {k : Nat} (hk1 : lo ≤ k) (hk2 : k < hi) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
   rw [slots_eq] at hfit hhi
-  rw [slot_addr (by omega)]
-  exact hf.readW (VG.Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)
+  rw [slot_addr (by omega_using [hfit, hhi, hk2])]
+  exact hf.readW (VG.Offset.contains _ (by omega_using [hk1]) (by omega_using [hk2]) (by omega_using [hhi, hk1, hk2])) hd (by decide)
 
 /-- What the data loop keeps in the scratch buffer: the table and the saved
 registers, in the slots from `tableSlot` to `dSlot`. -/
@@ -117,10 +117,10 @@ theorem ScrOk.frame {s₀ : State} {b : BitVec 32} {E : Nat → Spec.Sm4.Word} {
     (h : ScrOk s₀ b E m) (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (slotsRegion b tableSlot dSlot).Disjoint r) : ScrOk s₀ b E m' := by
   refine ⟨fun e he => (h.keys e he).congr fun j hj => ?_, fun i hi => ?_⟩
-  · exact slot_keep hfit (by decide) hf hd (by omega) (by rw [dSlot_eq, tableSlot_eq]; omega)
+  · exact slot_keep hfit (by decide) hf hd (by omega_using []) (by rw [dSlot_eq, tableSlot_eq]; omega_using [he, hj])
   · rw [← h.saved i hi]
-    exact slot_keep hfit (by decide) hf hd (by rw [savedSlot_eq, tableSlot_eq]; omega)
-      (by rw [savedSlot_eq, dSlot_eq]; omega)
+    exact slot_keep hfit (by decide) hf hd (by rw [savedSlot_eq, tableSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq, dSlot_eq]; omega_using [hi])
 
 /-! ## The data loop -/
 

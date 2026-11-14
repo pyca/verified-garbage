@@ -29,7 +29,7 @@ private theorem decode_wordBytes (x : Nat) (fit : x<2^32) :
  simp only [Policy.wordBytes,List.range_succ,List.range_zero,List.map_append,List.map_cons,
   List.map_nil,List.nil_append,Nat.reduceMul,Nat.reducePow,Nat.div_one]
  simp only [List.cons_append,List.nil_append,VG.Proof.X25519.leNum,BitVec.toNat_ofNat,Nat.mul_zero,Nat.add_zero]
- omega
+ omega_using [fit]
 
 private theorem read_wordBytes {m : Mem} {p : Addr} {x : Nat}
  (fit : x<2^32) (bytes : Spec.Rsa.bytesAt m p 4=Policy.wordBytes x) :
@@ -68,15 +68,15 @@ theorem policyRecordOfBytes {s : State} {B p : Addr} {g : Policy.Group}
   VG.CallLay.inRegions_sub read part fit
  have view : Spec.Rsa.bytesAt s.mem (off p 8) g.domain.length=g.domain := by
   rw [policyDomain_length]
-  exact (slice 8 (3*g.len) (by omega)).trans domain
- refine ⟨positive,lenFit,bitsFit,?_,reads 4 4 (by omega),?_,?_,?_,fun b hb => separate b (by omega)⟩
- · simpa only [off,BitVec.add_zero] using reads 0 4 (by omega)
+  exact (slice 8 (3*g.len) (by omega_using [length])).trans domain
+ refine ⟨positive,lenFit,bitsFit,?_,reads 4 4 (by omega_using [length]),?_,?_,?_,fun b hb => separate b (by omega_using [length, hb])⟩
+ · simpa only [off,BitVec.add_zero] using reads 0 4 (by omega_using [length])
  · apply read_wordBytes lenFit
-   simpa only [off,BitVec.add_zero,headLen] using slice 0 4 (by omega)
- · exact read_wordBytes bitsFit ((slice 4 4 (by omega)).trans headBits)
+   simpa only [off,BitVec.add_zero,headLen] using slice 0 4 (by omega_using [length])
+ · exact read_wordBytes bitsFit ((slice 4 4 (by omega_using [length])).trans headBits)
  · constructor
    · intro i hi
-     have rd := reads (8+i) 1 (by rw [policyDomain_length] at hi;omega)
+     have rd := reads (8+i) 1 (by rw [policyDomain_length] at hi;omega_using [length, hi])
      simpa only [off,BitVec.add_assoc,BitVec.ofNat_add] using rd
    · intro i hi
      have byte := congrArg (fun xs : List Byte => xs[i]?) view
@@ -121,20 +121,20 @@ theorem policyTableOfBytes {s : State} {B p : Addr} {gs : List Policy.Group}
      Spec.Rsa.bytesAt s.mem (off p d) n=(((g::gs).flatMap Policy.Group.bytes).drop d).take n := by
     rw [←VG.Proof.Dsa.bytesAt_slice s.mem p part,bytes]
    have headRead : InRegions (s.rd++s.wr) p g.bytes.length := by
-    simpa only [off,BitVec.add_zero] using subRead 0 g.bytes.length (by omega)
+    simpa only [off,BitVec.add_zero] using subRead 0 g.bytes.length (by omega_using [total])
    have headBytes : Spec.Rsa.bytesAt s.mem p g.bytes.length=g.bytes := by
     simpa only [off,BitVec.add_zero,List.drop_zero,List.flatMap_cons,List.take_left] using
-     subBytes 0 g.bytes.length (by omega)
-   have head := policyRecordOfBytes vg.1 vg.2.1 vg.2.2 (by omega) headRead headBytes
-    (fun b hb => safe b (by omega))
+     subBytes 0 g.bytes.length (by omega_using [total])
+   have head := policyRecordOfBytes vg.1 vg.2.1 vg.2.2 (by omega_using [vg, length]) headRead headBytes
+    (fun b hb => safe b (by omega_using [total, hb]))
    refine ⟨head,?_⟩
-   have tailRead := subRead g.bytes.length (gs.flatMap Policy.Group.bytes).length (by omega)
-   have tailBytes := subBytes g.bytes.length (gs.flatMap Policy.Group.bytes).length (by omega)
+   have tailRead := subRead g.bytes.length (gs.flatMap Policy.Group.bytes).length (by omega_using [total])
+   have tailBytes := subBytes g.bytes.length (gs.flatMap Policy.Group.bytes).length (by omega_using [total])
    simp only [List.flatMap_cons,List.drop_left,List.take_length] at tailBytes
    rw [length] at tailRead tailBytes
    refine ih (by omega) tailRead tailBytes (fun a ha => valid a (by simp [ha])) ?_
    intro i hi
-   have outside := safe (g.bytes.length+i) (by omega)
+   have outside := safe (g.bytes.length+i) (by omega_using [total, hi])
    rw [length] at outside
    simpa only [off,BitVec.add_assoc,BitVec.ofNat_add] using outside
 
@@ -195,15 +195,15 @@ theorem policyConsts_table {s : State} {B : Addr} {Z st : Nat}
  have safe : ∀ i<Policy.tableBytes.length,8*VG.Impl.Ffdh.AArch64.Cached.sBits+8≤
     ofs B (s.syms Policy.tableSym+BitVec.ofNat 64 i) := by
   intro i hi
-  obtain ⟨r,hr,contains⟩ := scratch.region (d:=0) (n:=Z) (by omega) (by omega)
+  obtain ⟨r,hr,contains⟩ := scratch.region (d:=0) (n:=Z) (by omega_using []) (by omega_using [room])
   have containsB : r.Contains B Z := by simpa only [off,BitVec.add_zero] using contains
   have outside : Z≤ofs B (s.syms Policy.tableSym+BitVec.ofNat 64 i) := by
    by_contra no
-   have within : ofs B (s.syms Policy.tableSym+BitVec.ofNat 64 i)<Z := by omega
-   exact (region.2 r hr) _ (Offset.contains_base _ (by rw [wordLength];rw [length] at hi;omega)
-    (by rw [length] at hi;omega)) (containsB.byte within)
+   have within : ofs B (s.syms Policy.tableSym+BitVec.ofNat 64 i)<Z := by omega_using [no]
+   exact (region.2 r hr) _ (Offset.contains_base _ (by rw [wordLength];rw [length] at hi;omega_using [hi])
+    (by rw [length] at hi;omega_using [hi])) (containsB.byte within)
   unfold VG.Impl.Ffdh.AArch64.Cached.sBits
-  omega
+  omega_using [room, outside]
  refine policyTableOfBytes (by rw [←show Policy.tableBytes=Policy.groups.flatMap Policy.Group.bytes from rfl,length];decide)
   readable bytes ?_ safe
  intro g hg

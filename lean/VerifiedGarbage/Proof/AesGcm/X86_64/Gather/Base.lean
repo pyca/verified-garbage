@@ -171,7 +171,7 @@ theorem Kept.frame {s : State} {ap : BitVec 64} {i : Nat} {m m' : Mem} (h : Kept
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (kpR s).Disjoint r) :
     Kept s ap i m' := by
   have k : ∀ d, d + 8 ≤ 104 → m'.readW (W s + BitVec.ofNat 64 d) 64 = m.readW (W s + BitVec.ofNat 64 d) 64 :=
-    fun d hd' => hf.readW (Offset.contains_base _ hd' (by omega)) hd (by decide)
+    fun d hd' => hf.readW (Offset.contains_base _ hd' (by omega_using [hd'])) hd (by decide)
   exact ⟨by rw [k 0 (by decide)]; exact h.ctx, by rw [k 8 (by decide)]; exact h.rounds,
     by rw [k 16 (by decide)]; exact h.aad, by rw [k 24 (by decide)]; exact h.alen,
     by rw [k 32 (by decide)]; exact h.dst, by rw [k 40 (by decide)]; exact h.len,
@@ -192,7 +192,7 @@ theorem w_in' {d k : Nat} (h : d + k ≤ 184) : InRegions (s.rd ++ s.wr) (W s + 
 
 /-- The stack argument `i` (of six) is readable. -/
 theorem a_in {i : Nat} (hi : i < 6) : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 (8 * (i + 1))) 8 :=
-  ⟨argR s, by rw [hp.rd]; simp, Offset.contains _ (by omega) (by omega) (by have := hp.w_sp'; omega)⟩
+  ⟨argR s, by rw [hp.rd]; simp, Offset.contains _ (by omega_using []) (by omega_using [hi]) (by have := hp.w_sp'; omega_using [])⟩
 
 omit hp in
 theorem kpR_sub : (kpR s).Sub (wkR s) := Region.sub_prefix (by decide)
@@ -209,15 +209,15 @@ theorem keep_a {m m' : Mem} (hf : Frame (wR s ++ [tR s]) m m') {i : Nat} (hi : i
   hf.readW (r := ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _) (fun r hr => by
     have hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (argR s) := by
       have e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-      rw [e]; exact Offset.sub_base _ (by omega)
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+      rw [e]; exact Offset.sub_base _ (by omega_using [hi])
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
     · exact hp.d_a.symm.sub_left hs
     · exact hp.t_a.symm.sub_left hs
     · exact hp.w_a.symm.sub_left hs
     · exact (Offset.disjoint_below (SP s) (n := 4888) (d := 8 * (i + 1)) (k := 8)
-        (by have := hp.w_sp'; omega)).sub_left (fun _ h => h)) (by decide)
+        (by have := hp.w_sp'; omega_using [hi])).sub_left (fun _ h => h)) (by decide)
 
 omit hp in
 theorem arg_eq (i : Nat) : s.mem.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 = stackArg s i := rfl
@@ -227,7 +227,7 @@ theorem ret_disj : ∀ r ∈ wR s ++ [tR s], (⟨SP s, 8⟩ : Region).Disjoint r
   intro r hr
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (rfl | rfl | rfl) | rfl
-  exacts [hp.r_d, hp.r_t, hp.r_w, Offset.base_disjoint_below _ (by have := hp.w_sp'; omega)]
+  exacts [hp.r_d, hp.r_t, hp.r_w, Offset.base_disjoint_below _ (by have := hp.w_sp'; omega_using [])]
 
 /-- `work`, from the stack, through a frame of the regions written and the stack. -/
 theorem keep_w {m : Mem} (hf : Frame (wR s ++ [tR s]) s.mem m) :
@@ -260,7 +260,7 @@ theorem entry1_ok {st : State} (hs : Same s st) : WP isa (.block entry1) st fun 
     Frame [kpR s] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
   have sp : st.gpr .rsp = s.gpr .rsp := hs.gpr _ (by decide) (by decide) (by decide)
   have w : ∀ d, d + 8 ≤ 104 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => by
-    rw [hs.wr]; exact w_in hp (by omega)
+    rw [hs.wr]; exact w_in hp (by omega_using [h])
   have a₀ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 8) 8 := by
     rw [hs.rd, hs.wr, sp]; exact a_in hp (i := 0) (by decide)
   have a₁ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 16) 8 := by
@@ -287,7 +287,7 @@ theorem entry1_ok {st : State} (hs : Same s st) : WP isa (.block entry1) st fun 
   all_goals try simp (disch := decide) only [gpr_setReg, ite_true, reduceCtorEq, ↓reduceIte,
     Mem.readW_writeW_self64, readW_writeW_off]
   · have c : ∀ d, d + 8 ≤ 104 → (kpR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₂ => Offset.contains_base _ h₂ (by omega)
+      fun d h₂ => Offset.contains_base _ h₂ (by omega_using [h₂])
     exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 16 (by decide))).writeW
@@ -317,7 +317,7 @@ theorem entry2_ok {s₁ : State} (h11 : s₁.gpr .r11 = W s)
       s₂.gpr .r11 = W s ∧ s₂.gpr .rsp = SP s ∧ (∀ r ∈ calleeSaved, s₂.gpr r = s.gpr r) ∧
       s₂.rd = s.rd ∧ s₂.wr = s.wr := by
   have w : ∀ d, d + 8 ≤ 104 → InRegions s₁.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => by
-    rw [hwr]; exact w_in hp (by omega)
+    rw [hwr]; exact w_in hp (by omega_using [h])
   have hsp : s₁.gpr .rsp = SP s := hg _ (by decide) (by decide) (by decide)
   have aIn : ∀ i, i < 6 → InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1))) 8 :=
     fun i hi => by rw [hrd, hwr, hsp]; exact a_in hp hi
@@ -328,8 +328,8 @@ theorem entry2_ok {s₁ : State} (h11 : s₁.gpr .r11 = W s)
         (fun r hr => ?_) (by decide)).trans (arg_eq i)
       simp only [List.mem_singleton] at hr; subst hr
       have e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-      exact (hp.w_a.symm.sub_left (by rw [e]; exact Offset.sub_base _ (by omega))).sub_right kpR_sub
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+      exact (hp.w_a.symm.sub_left (by rw [e]; exact Offset.sub_base _ (by omega_using [hi]))).sub_right kpR_sub
   have a₂ := aIn 2 (by decide)
   have a₃ := aIn 3 (by decide)
   have a₄ := aIn 4 (by decide)
@@ -359,7 +359,7 @@ theorem entry2_ok {s₁ : State} (h11 : s₁.gpr .r11 = W s)
   · rfl
   · rfl
   · have c : ∀ d, d + 8 ≤ 104 → (kpR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₂ => Offset.contains_base _ h₂ (by omega)
+      fun d h₂ => Offset.contains_base _ h₂ (by omega_using [h₂])
     exact (((((((hf.writeW (List.mem_singleton_self _) _ (c 32 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 40 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 48 (by decide))).writeW

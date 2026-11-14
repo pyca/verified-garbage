@@ -106,16 +106,16 @@ theorem tArgs_ok (s : State) :
 theorem shr4 (x : BitVec 64) : x >>> 4 = BitVec.ofNat 64 (x.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+    Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 theorem shr4_shl4 (x : BitVec 64) : (x >>> 4) <<< 4 = BitVec.ofNat 64 (16 * (x.toNat / 16)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     BitVec.toNat_ofNat]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
   simp only [Nat.reducePow]
-  omega
+  omega_using []
 
 theorem argsAll_ok (s : State) :
     ∃ s', runBlock isa argsAll s = some s' ∧
@@ -182,9 +182,9 @@ theorem split_ok (s : State) :
       BitVec.ofNat 64 ((s.gpr .r13).toNat % 16) := by
     apply BitVec.eq_of_toNat_eq
     have := (s.gpr .r13).isLt
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * _) (by omega),
-      Nat.mod_eq_of_lt (a := _ % 16) (by omega)]
-    omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * _) (by omega_using []),
+      Nat.mod_eq_of_lt (a := _ % 16) (by omega_using [])]
+    omega_using []
   refine ⟨_, by
     simp only [split, runBlock_cons, runStep_some, exec, readSrc, execShift,
       Option.map_some, show 1 ≤ 4 ∧ 4 ≤ 63 from by decide]
@@ -194,7 +194,7 @@ theorem split_ok (s : State) :
   · simp only [gpr_setReg, gpr_setFlags, reduceCtorEq, ↓reduceIte, shr4_shl4, e]
   · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_setFlags, reduceCtorEq, ↓reduceIte,
       shr4_shl4, e]
-    rw [beq_zero64 (by omega)]
+    rw [beq_zero64 (by omega_using [])]
   · intro r h₁ h₂; simp [gpr_setReg, gpr_setFlags, h₁, h₂]
 
 theorem lastAddr_ok (s : State) :
@@ -280,23 +280,23 @@ theorem swap_ok (s : State) {L : Addr} {b : Nat} (hb₀ : 0 < b) (hb : b < 16) (
   rintro n t ⟨k, rfl, hk, rcx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', rcx', zf', g', rd', wr'⟩ := swapStep_ok t (k := k) (b := b)
     (by rw [g _ (by decide) (by decide) (by decide), hd]) rcx (by rw [g _ (by decide) (by decide) (by decide), h8])
-    (by rw [wr]; exact hw k (by omega)) (by rw [wr]; exact hw (16 + k) (by omega))
+    (by rw [wr]; exact hw k (by omega_using [hk])) (by rw [wr]; exact hw (16 + k) (by omega_using [hk]))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hmem : t'.mem = swapMem s.mem L (k + 1) := by
-    rw [mem', mem, swapMem_lo _ _ (Nat.le_refl k) (by omega), swapMem_hi _ _ (Nat.le_refl k) (by omega),
-      swapMem_step _ _ (by omega)]
+    rw [mem', mem, swapMem_lo _ _ (Nat.le_refl k) (by omega_using [hb, hk]), swapMem_hi _ _ (Nat.le_refl k) (by omega_using [hb, hk]),
+      swapMem_step _ _ (by omega_using [hb, hk])]
   have hz : t'.zf = some (decide (k + 1 = b)) := by
-    rw [zf', Offset.add_one_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', Offset.add_one_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb, hk]),
+      Offset.ofNat_sub_ofNat_beq (by omega_using [hb, hk]) (by omega_using [hb])]
   have gg : ∀ r, r ≠ .rax → r ≠ .r9 → r ≠ .rcx → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
     rw [g' r h₁ h₂ h₃, g r h₁ h₂ h₃]
   by_cases he : k + 1 = b
   · left
     refine ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by simp [eval, hz, he], b - (k + 1), by omega, k + 1, rfl, by omega, ?_, hmem, gg,
+    refine ⟨by simp [eval, hz, he], b - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, he], ?_, hmem, gg,
       by rw [rd', rd], by rw [wr', wr]⟩
-    rw [rcx', Offset.add_one_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [rcx', Offset.add_one_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb, hk])]
 
 /-! ## The next tweak -/
 

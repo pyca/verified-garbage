@@ -29,7 +29,7 @@ theorem random_sign_alloc {extra : Nat} {s : State} (h : RandomSignABI extra s) 
     isa.push (.alloc Random.frameBytes) s = some (allocState Random.frameBytes s) := by
   have hl := h.stackLower
   simp only [isa, push, allocState]
-  exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega⟩
+  exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
 
 theorem random_sign_constantTime (S : Signer) :
     ConstantTime isa (fun s => (randomSignCheckedContract abi (S.stack + 256)).pre s ∧ RandomValid S s)

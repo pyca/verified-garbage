@@ -43,7 +43,7 @@ variable {p : Params} {K : KeyArg}
 theorem p0_bytes {s₀ : State} {N : Nat} (hN : 16 ≤ N) (hN' : N ≤ (s₀.gpr .esp).toNat) {a : Addr} {n : Nat}
     (hk : (sStk s₀ N).Disjoint ⟨a, n⟩) (hn : n ≤ 2 ^ 64) :
     bytesAt (P0 s₀).mem a n = bytesAt s₀.mem a n := by
-  have hf := pushed_frame (rs := Impl.MlKem.X86.saveRegs) (s := s₀) (by decide) (by show 16 ≤ _; omega)
+  have hf := pushed_frame (rs := Impl.MlKem.X86.saveRegs) (s := s₀) (by decide) (by show 16 ≤ _; omega_using [hN, hN'])
   exact Proof.MlKem.bytesAt_congr fun _ hi => hf.bytes (R := ⟨a, n⟩) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ((stk_eq hN' ▸ hk).sub_left (below_sub hN hN')).symm) hn hi
@@ -58,9 +58,9 @@ theorem sMu_eq {s₀ : State} (h₀ : SPre p K s₀) (hK : K.Ok p.skLen) :
   have := hK.le
   have := hK.ge
   simp only [messageRep, skTr, Proof.MlKem.bytesAt_length]
-  rw [Proof.MlKem.bytesAt_slice _ _ (by omega)]
+  rw [Proof.MlKem.bytesAt_slice _ _ (by omega_using [this])]
   simp only [sMu, hdrBytes, slay, List.append_assoc]
-  rw [Proof.MlKem.X86.ea_off (by omega)]
+  rw [Proof.MlKem.X86.ea_off (by omega_arith)]
 
 /-- `μ`, then the call of the signing function on it. -/
 theorem signRest_piece (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : SignFn p K f) :
@@ -78,28 +78,28 @@ theorem signRest_piece (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : Sig
   · have hL := hc.ok
     have := h₀.nSk
     have wtr : Within ⟨(arg s₀ 0 + BitVec.ofNat 32 64).setWidth 64, 64⟩ (slay p K s₀).KEY := by
-      rw [Proof.MlKem.X86.ea_off (by omega)]; exact within_off _ (show 64 + 64 ≤ K.len by omega)
+      rw [Proof.MlKem.X86.ea_off (by omega_using [hk, hk', this])]; exact within_off _ (show 64 + 64 ≤ K.len by omega_using [hk, hk'])
     rw [hc.ctx.bytesAt_eq (hL.xKey.sub_right wtr.sub) (hL.kKey.sub_right wtr.sub) (by decide)]
     exact p0_bytes (by decide) h₀.sp (h₀.kSk.sub_right wtr.sub) (by decide)
   · have := h₀.nSk
     have := hK.ge
     have := hK.le
     have wtr : Within ⟨(arg s₀ 0 + BitVec.ofNat 32 64).setWidth 64, 64⟩ (slay p K s₀).KEY := by
-      rw [Proof.MlKem.X86.ea_off (by omega)]; exact within_off _ (show 64 + 64 ≤ K.len by omega)
+      rw [Proof.MlKem.X86.ea_off (by omega_arith)]; exact within_off _ (show 64 + 64 ≤ K.len by omega_using [hk, hk'])
     have hst : Region.Sub ⟨(slay p K s₀).ST, 200⟩ (slay p K s₀).SC := by
-      have := hL.sub_sc (e := 0) (k := 200) (by omega)
+      have := hL.sub_sc (e := 0) (k := 200) (by omega_using [])
       simpa only [x0] using this
     refine ⟨?_, ⟨_, List.mem_append_left _ hL.inKey, wtr⟩, (hL.xKey.symm.sub_left wtr.sub).sub_right hst,
-      (hL.xKey.symm.sub_left wtr.sub).sub_right (hL.sub_sc (by omega : 200 + 640 ≤ 1024)),
+      (hL.xKey.symm.sub_left wtr.sub).sub_right (hL.sub_sc (by omega_using [] : 200 + 640 ≤ 1024)),
       hL.kKey.sub_right wtr.sub⟩
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · rw [hm]
     simp only [ctxB, msgB]
     rw [p0_bytes (a := (slay p K s₀).ctx.setWidth 64) (n := (slay p K s₀).ctxLen.toNat) (by decide) h₀.sp h₀.kCtx
-        (by have := (arg s₀ 4).isLt; show (arg s₀ 4).toNat ≤ _; omega),
+        (by have := (arg s₀ 4).isLt; show (arg s₀ 4).toNat ≤ _; omega_using []),
       p0_bytes (a := (slay p K s₀).msg.setWidth 64) (n := (slay p K s₀).len.toNat) (by decide) h₀.sp h₀.kMsg
-        (by have := (arg s₀ 2).isLt; show (arg s₀ 2).toNat ≤ _; omega)]
+        (by have := (arg s₀ 2).isLt; show (arg s₀ 2).toNat ≤ _; omega_using [])]
     rfl
 
 
@@ -111,8 +111,8 @@ theorem sign_hW : ∀ s₀, SPre p K s₀ → ∀ r ∈ sW p K s₀, (frameR s�
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨h₀.kScr.sub_left fr, h₀.rScr⟩
-  · exact ⟨Proof.MlKem.X86.Top.below_adj (sp := s₀.gpr .esp) (a := 16) (b := 176 - 16) (by omega),
-      (Proof.MlKem.X86.Top.ret_below hsp).sub_right (below_inner (a := 176 - 16) (k := 16) (by omega) hsp)⟩
+  · exact ⟨Proof.MlKem.X86.Top.below_adj (sp := s₀.gpr .esp) (a := 16) (b := 176 - 16) (by omega_using [hsp]),
+      (Proof.MlKem.X86.Top.ret_below hsp).sub_right (below_inner (a := 176 - 16) (k := 16) (by omega_using []) hsp)⟩
   · exact ⟨h₀.kSig.sub_left fr, h₀.rSig⟩
 
 theorem nosp_seq {a b : Prog isa} (ha : NoSp a) (hb : NoSp b) : NoSp (.seq a b) := fun i hi => by

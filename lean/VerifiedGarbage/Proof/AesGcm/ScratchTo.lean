@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM streaming encryption out of place: the conditions read only the buffers
@@ -94,11 +95,11 @@ theorem streamEncryptToPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamEn
   intro hn iv a p hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 theorem streamEncryptToPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamEncryptToPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs streamEncryptToPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -135,10 +136,10 @@ theorem streamEncryptToPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length 
   intro hn iv a p hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 end VG.Proof.AesGcm

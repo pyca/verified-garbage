@@ -125,7 +125,7 @@ theorem fastArgs_ok {p : BitVec 32} {w : Nat} {s : State} {base : Addr} {size : 
   unfold fastArgs
   refine savedPtr_ok S header len (by decide) (by decide) (by decide) fun a Ka Ma eaxA => ?_
   have Sa := S.of_keeps Ka (by decide)
-  refine wp_movS (readSrc_sc Sa (by omega)) fun b B _ => ?_
+  refine wp_movS (readSrc_sc Sa (by omega_using [header])) fun b B _ => ?_
   have Kb : Keeps [.eax, .ecx, .edx] s b := (Ka.mono (by decide)).trans (B.keeps.mono (by decide))
   have Cb := C.keep Kb (by decide)
   refine wp_storeS (Cb.address 0 (by decide)) (ws_write Cb.ws (by decide)) fun c D => ?_
@@ -166,16 +166,16 @@ theorem fast_ok {s : State} {base : Addr} {size w candidate : Nat}
       Frame [below (s.gpr .esp) 20] s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   let p := s.gpr .edi + BitVec.ofNat 32 (slot w 5)
-  have slotBound : slot w 5 + 8 * w ≤ 2 ^ 32 := Nat.le_trans space (by have := S.nowrap; omega)
-  have pbase : p.setWidth 64 = off base (slot w 5) := S.ea (d := slot w 5) (by omega)
+  have slotBound : slot w 5 + 8 * w ≤ 2 ^ 32 := Nat.le_trans space (by have := S.nowrap; omega_using [this])
+  have pbase : p.setWidth 64 = off base (slot w 5) := S.ea (d := slot w 5) (by omega_using [width, space])
   have pnat : p.toNat = base.toNat + slot w 5 := by
     change (s.gpr .edi + BitVec.ofNat 32 (slot w 5)).toNat = base.toNat + slot w 5
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, S.edi_toNat]
-    rw [Nat.mod_eq_of_lt (a := slot w 5) (by omega),
-      Nat.mod_eq_of_lt (by have := S.nowrap; omega)]
+    rw [Nat.mod_eq_of_lt (a := slot w 5) (by omega_using [width, slotBound]),
+      Nat.mod_eq_of_lt (by have := S.nowrap; omega_using [width, space, this])]
   have far : (⟨base, size⟩ : Region).Disjoint (below (s.gpr .esp) 20) :=
-    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by omega) S.nowrap
-      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega))
+    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_apart (by omega_using [fit]) S.nowrap
+      (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
   have sourceFar : (⟨p.setWidth 64, 8 * w⟩ : Region).Disjoint (below (s.gpr .esp) 20) := by
     apply Region.Disjoint.sub_left far
     intro x hx
@@ -184,15 +184,15 @@ theorem fast_ok {s : State} {base : Addr} {size w candidate : Nat}
   have sourceRead : ∀ i < 2 * w, InRegions (s.rd ++ s.wr) (off (p.setWidth 64) (4 * i)) 4 := by
     intro i index
     rw [pbase]
-    simpa only [off, BitVec.add_assoc, ← BitVec.ofNat_add] using S.read (d := slot w 5 + 4 * i) (n := 4) (by omega)
+    simpa only [off, BitVec.add_assoc, ← BitVec.ofNat_add] using S.read (d := slot w 5 + 4 * i) (n := 4) (by omega_using [space, index])
   unfold fast
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [fit]) (NoSp.of_all (by rfl)) ?_
   let initial := allocFrame 20 s
   have C : VG.Proof.RsaKeyGen.X86.Sieve.StackContext (s.gpr .esp - 20#32) initial :=
-    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by omega)
-  have Si : Scr initial base size := VG.Proof.RsaKeyGen.X86.FilterStack.allocated_scratch S (by omega)
-    (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega))
-  refine WP.seq (WP.mono (fastArgs_ok (w := w) C Si (by omega) (by rw [allocFrame_mem]; exact len))
+    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by omega_using [fit])
+  have Si : Scr initial base size := VG.Proof.RsaKeyGen.X86.FilterStack.allocated_scratch S (by omega_using [fit])
+    (by rcases separate with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
+  refine WP.seq (WP.mono (fastArgs_ok (w := w) C Si (by omega_using [width, space]) (by rw [allocFrame_mem]; exact len))
     fun a ⟨ptrA, endA, savedA, Oa, Ka⟩ => ?_)
   have ptr : a.gpr .edi = p := by rw [ptrA, allocFrame_gpr _ _ (by decide)]
   have Ca := C.keep Ka (by decide)
@@ -203,10 +203,10 @@ theorem fast_ok {s : State} {base : Addr} {size w candidate : Nat}
     apply val32_congr
     intro i index
     exact congrArg BitVec.toNat (frameA.readW (r := ⟨p.setWidth 64, 8 * w⟩)
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [index]) (by omega_using [widthBound, index]))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact sourceFar) (by decide))
-  refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.X86.FermatExponent.code_ok a p w 4 (by omega) (by omega)
-    (by rw [pnat]; have := S.nowrap; omega)
+  refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.X86.FermatExponent.code_ok a p w 4 (by omega_using [width]) (by omega_using [widthBound])
+    (by rw [pnat]; have := S.nowrap; omega_using [space, this])
     (by
       intro i index
       rw [Ka.2.1, Ka.2.2]
@@ -218,7 +218,7 @@ theorem fast_ok {s : State} {base : Addr} {size w candidate : Nat}
     (Ca.access 4 (by decide)) (by
       change a.mem.readW (a.ea (VG.Impl.RsaKeyGen.X86.Sieve.slot 4)) 32 = _
       rw [Ca.address 4 (by decide), endA, allocFrame_gpr _ _ (by decide)]
-      rw [show 4 * (2 * w) = 8 * w by omega]) ptr) fun b ⟨result, Mb, Kb⟩ => ?_)
+      rw [show 4 * (2 * w) = 8 * w by omega_using []]) ptr) fun b ⟨result, Mb, Kb⟩ => ?_)
   have Cb := Ca.keep Kb (by decide)
   refine wp_movS (v := initial.gpr .edi) (by
     change readSrc b (.mem (VG.Impl.RsaKeyGen.X86.Sieve.slot 0)) = some (initial.gpr .edi)

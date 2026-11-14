@@ -103,7 +103,7 @@ theorem PreR2.congrArgs {i p : Nat} {args' : Nat → BitVec 32} (P : PreR2 s bas
     (e : ∀ j < 20, args' j = args j) : PreR2 s base bytes len args' i p := by
   have hi := P.hi
   have a7 := e 7 (by decide)
-  have ai : args' (7 + 2 * i) = args (7 + 2 * i) := e _ (by omega)
+  have ai : args' (7 + 2 * i) = args (7 + 2 * i) := e _ (by omega_using [hi])
   have aw : preW args' i = preW args i := by simp only [preW, ai]
   have ao : preOff args' i = preOff args i := by simp only [preOff, a7]
   have ap : args' preArg = args preArg := e _ (by decide)
@@ -116,7 +116,7 @@ theorem PreOut.congrArgs {i : Nat} {args' : Nat → BitVec 32} (O : PreOut s arg
     (e : ∀ j < 20, args' j = args j) : PreOut s args' len i := by
   have a0 := e 0 (by decide)
   have a7 := e 7 (by decide)
-  have ai : args' (7 + 2 * i) = args (7 + 2 * i) := e _ (by omega)
+  have ai : args' (7 + 2 * i) = args (7 + 2 * i) := e _ (by omega_using [hi])
   have aw : preW args' i = preW args i := by simp only [preW, ai]
   have ao : preOff args' i = preOff args i := by simp only [preOff, a7]
   have ap : args' preArg = args preArg := e _ (by decide)
@@ -124,14 +124,14 @@ theorem PreOut.congrArgs {i : Nat} {args' : Nat → BitVec 32} (O : PreOut s arg
 
 theorem componentValue_congr {m : Mem} {args' : Nat → BitVec 32} {i : Nat} (e : ∀ j < 20, args' j = args j)
     (hi : i + 1 < 20) : componentValue m args' i = componentValue m args i := by
-  unfold componentValue; rw [e i (by omega), e (i + 1) hi]
+  unfold componentValue; rw [e i (by omega_using [hi]), e (i + 1) hi]
 
 theorem SideP.congrArgs {args' : Nat → BitVec 32} (S : SideP base bytes len args sp s)
     (e : ∀ j < 20, args' j = args j) : SideP base bytes len args' sp s := by
   obtain ⟨⟨h, esp, d0, d1⟩, pq, P0, P1, O0, O1⟩ := S
   have c : ∀ i, i + 1 < 20 → componentValue s.mem args' i = componentValue s.mem args i :=
     fun i hi => componentValue_congr e hi
-  refine ⟨⟨In.ofInputs (h.crt.argsEq fun i hi => (e i (by omega)).symm) h.need
+  refine ⟨⟨In.ofInputs (h.crt.argsEq fun i hi => (e i (by omega_using [hi])).symm) h.need
       (by rw [e 16 (by decide)]; exact h.hbase) (by rw [e 17 (by decide)]; exact h.hbytes), esp,
       by rw [e 0 (by decide)]; exact d0, d1⟩, ?_, ?_, ?_, O0.congrArgs (by decide) e, O1.congrArgs (by decide) e⟩
   · rw [c 6 (by decide), c 8 (by decide), c 2 (by decide)]; exact pq
@@ -149,7 +149,7 @@ theorem argumentsP {s t : State} (H : (privateCrtPrecomputedContract abi 96).pub
   · assumption
   · intro i hi
     have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨
-      i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 := by omega
+      i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> with_reducible assumption
 
@@ -172,13 +172,13 @@ theorem sideP_entry {s u : State} (A : CrtABIP s)
   have need := need_le A.lengths.1 A.scratchLength
   have hb : (arg s 16).toNat = (argumentPointer s 16).toNat := (setWidth_toNat _).symm
   have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
-  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega
+  have high : (arg s 17).toNat * 8 ≤ 2 ^ 64 := by have := A.scratchBound; omega_using []
   have sub72 := pre_sub 72 80 (by decide) (argAddr s 0)
-  have bound : (s.gpr .esp).toNat + 4 + 72 ≤ 2 ^ 32 := by have := A.stackBound; omega
+  have bound : (s.gpr .esp).toNat + 4 + 72 ≤ 2 ^ 32 := by have := A.stackBound; omega_using [this]
   have B (i : Nat) (hi : i ∈ Crt.componentArguments) :
       Spec.Rsa.bytesAt u.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat =
         Spec.Rsa.bytesAt s.mem (byteAddr (arg s i)) (arg s (i + 1)).toNat := by
-    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega)
+    apply VG.Proof.Bignum.scratch_bytes O (by have := (arg s (i + 1)).isLt; omega_using [])
     simp only [Crt.componentArguments, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact A.nScratch
@@ -192,7 +192,7 @@ theorem sideP_entry {s u : State} (A : CrtABIP s)
       componentValue u.mem (arg s) i = componentValue s.mem (arg s) i := by
     unfold componentValue; rw [B i hi]
   have Fe : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩] s.mem u.mem := by
-    have F := VG.Proof.Bignum.outside_frame O (by omega)
+    have F := VG.Proof.Bignum.outside_frame O (by omega_using [])
     simpa only [off, BitVec.add_zero] using F
   have keepP : ∀ {i p : Nat}, PreR2 s (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) i p →
       PreR2 u (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) i p := fun P =>
@@ -227,7 +227,7 @@ theorem operationP_trace {s t : State} (A : CrtABIP s) (B : CrtABIP t)
       obtain ⟨Is, _, Ks, Os⟩ := wp_result (Crt.installedG_ok A.res) E1
       obtain ⟨It, _, Kt, Ot⟩ := wp_result (Crt.installedG_ok B.res) F1
       have Iv : Crt.Inputs (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) v := by
-        have J := It.argsEq (fun i hi => (args i (by omega)).symm)
+        have J := It.argsEq (fun i hi => (args i (by omega_using [hi])).symm)
         simpa only [argumentPointer, ← A8, ← A9, ← A3] using J
       have Ov : VG.Proof.Mont.Outside (argumentPointer s 16) 0 ((arg s 17).toNat * 8) t.mem v.mem := by
         simpa only [argumentPointer, ← A8, ← A9] using Ot
@@ -235,8 +235,8 @@ theorem operationP_trace {s t : State} (A : CrtABIP s) (B : CrtABIP t)
       have Sv : SideP (argumentPointer s 16) ((arg s 17).toNat * 8) (arg s 3).toNat (arg s) (s.gpr .esp) v := by
         have S := (sideP_entry B It Kt Ot).congrArgs (args' := arg s) args
         simpa only [argumentPointer, ← A8, ← A9, ← A3, ← SP] using S
-      have Ns := scratch_bytes Os (by have := A.lengths.2; omega) (Is.apart 2 (by decide))
-      have Nt := scratch_bytes Ov (by have := A.lengths.2; omega) (Iv.apart 2 (by decide))
+      have Ns := scratch_bytes Os (by have := A.lengths.2; omega_using []) (Is.apart 2 (by decide))
+      have Nt := scratch_bytes Ov (by have := A.lengths.2; omega_using []) (Iv.apart 2 (by decide))
       have NN : Spec.Rsa.bytesAt u.mem (byteAddr (arg s 2)) (arg s 3).toNat =
           Spec.Rsa.bytesAt v.mem (byteAddr (arg s 2)) (arg s 3).toNat := by
         rw [Ns, Nt]

@@ -26,7 +26,7 @@ theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} (hn : 32 ≤ n)
   simp only [Spec.X25519.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have := List.mem_range.mp hi
-  exact (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+  exact (h _ (Offset.contains_base _ (by omega_using [hn, this]) (by omega_using [this]))).symm
 
 theorem baseOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
     PostOut (Spec.X25519.x25519BaseContract (X86_64.abi.withConsts cs) stack) (Spec.X25519.x25519BaseSig.retBits 64) :=
@@ -40,7 +40,7 @@ theorem baseOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
     simp only [Spec.X25519.x25519BaseSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
     show Spec.X25519.bytesAt m₂ o 32 = _
-    rw [bytesAt_of (by simp only [Elem.size]; omega) hb.1]; exact h
+    rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
 theorem exchangeOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
     PostOut (Spec.X25519.exchangeContract (X86_64.abi.withConsts cs) stack) (Spec.X25519.exchangeSig.retBits 64) :=
@@ -56,6 +56,6 @@ theorem exchangeOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
     simp only [Spec.X25519.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
     show Spec.X25519.bytesAt m₂ o 32 = _ ∧ _
-    rw [bytesAt_of (by simp only [Elem.size]; omega) hb.1]; exact h
+    rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
 end VG.Proof.X25519.X86_64.Scrub

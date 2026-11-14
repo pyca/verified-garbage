@@ -42,10 +42,10 @@ theorem swapField_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (a b : Slot) (ha
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     refine ⟨sub x 64 864, List.mem_singleton_self _, ?_⟩
     rcases hr with rfl | rfl
-    · exact sub_sub hc.fit (by simp only [offset]; omega) (by simp only [offset]; omega)
-        (by simp only [offset]; omega)
-    · exact sub_sub hc.fit (by simp only [offset]; omega) (by simp only [offset]; omega)
-        (by simp only [offset]; omega)
+    · exact sub_sub hc.fit (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using [])
+        (by simp only [offset]; omega_using [])
+    · exact sub_sub hc.fit (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using [])
+        (by simp only [offset]; omega_using [])
   refine ⟨⟨hk, wide⟩, hm', ?_⟩
   have hfit := hc.fit
   funext i
@@ -120,12 +120,12 @@ theorem bit_frame {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
-      (Or.inr (by omega)) : (sub x (7168 + i) 1).Disjoint (sub x 64 960)) _ (Region.contains_self _ _)
-  · exact stk_apart hc (d := 7168 + i) (n := 1) (by omega) (by decide) _ (Region.contains_self _ _)
+      (Or.inr (by omega_using [])) : (sub x (7168 + i) 1).Disjoint (sub x 64 960)) _ (Region.contains_self _ _)
+  · exact stk_apart hc (d := 7168 + i) (n := 1) (by omega_using [hi]) (by decide) _ (Region.contains_self _ _)
 
 theorem IKeep.word {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
     (o : Nat) (ho : o + 4 ≤ 64) : wd t.mem x o = wd s.mem x o :=
-  wd_frame1s hc h.frame (by decide) (by omega) (Or.inl ho)
+  wd_frame1s hc h.frame (by decide) (by omega_using [ho]) (Or.inl ho)
 
 theorem IKeep.bit {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
     (i : Nat) (hi : i < 512) : t.mem (addr x (7168 + i)) = s.mem (addr x (7168 + i)) :=

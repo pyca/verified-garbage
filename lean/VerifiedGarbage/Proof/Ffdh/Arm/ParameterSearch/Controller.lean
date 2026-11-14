@@ -15,6 +15,6 @@ theorem controllerAddr {base : BitVec 32} {s : State} (h : Controller base s)
     (d : Nat) (bound : d + 4 ≤ 128) :
     State.addr (s.gpr .r4 + BitVec.ofNat 32 d) = off (State.addr base) d := by
   rw [h.ptr]
-  exact VG.Arm.addr_add (by have := h.space.nowrap; omega)
+  exact VG.Arm.addr_add (by have := h.space.nowrap; omega_using [bound, this])
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

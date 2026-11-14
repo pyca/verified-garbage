@@ -21,8 +21,8 @@ def rename (n : Nat) (S : RcbSlots) (p q o : Pt) (dst i : Nat) : Nat :=
 theorem rename_inj {n : Nat} {S : RcbSlots} {p q o : Pt} {dst : Nat}
     (hA : RcbApart S p q o) (h2 : dst∉rcbW S o) (h3 : dst+8*n∉rcbW S o)
     {w : Nat} (hw : w<9) (y : Nat) (he : rename n S p q o dst y=rename n S p q o dst w) : y=w := by
-  have hn17 : w≠17 := by omega
-  have hn18 : w≠18 := by omega
+  have hn17 : w≠17 := by omega_using [hw]
+  have hn18 : w≠18 := by omega_using [hw]
   simp only [rename,hn17,hn18,ite_false] at he
   split at he
   · exact False.elim (h2 (he.symm ▸ rcbσ_out S p q o hw))
@@ -38,7 +38,7 @@ theorem tail_eq (n : Nat) (S : RcbSlots) (p q o : Pt) (dst : Nat) :
 
 theorem rename_out (n : Nat) (S : RcbSlots) (p q o : Pt) (dst i : Nat) (hi : i<9) :
     rename n S p q o dst i∈rcbW S o := by
-  simp only [rename,show i≠17 from by omega,show i≠18 from by omega,ite_false]
+  simp only [rename,show i≠17 from by omega_using [hi],show i≠18 from by omega_using [hi],ite_false]
   exact rcbσ_out S p q o hi
 
 theorem rename_mem (n : Nat) (S : RcbSlots) (p q o : Pt) (dst i : Nat) :

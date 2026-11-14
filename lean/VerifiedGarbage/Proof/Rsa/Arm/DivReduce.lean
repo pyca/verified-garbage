@@ -42,8 +42,8 @@ theorem reduce_ok {g : Geometry} {s : State} (h : Context g s) :
   have sub : SubCtx u g.base g.size (g.offsets 3) (g.offsets 1) (g.offsets 2) (g.n + 1) :=
     ⟨h.workspace.nowrap, f3, f1, f2, sep31, sep32, ctx.workspace.writable⟩
   have sel : SelectCtx u g.base g.size (g.offsets 1) (g.offsets 3) (g.offsets 1) (g.n + 1) :=
-    ⟨h.workspace.nowrap, f1, f3, f1, by omega, Or.inr (Or.inr rfl), ctx.workspace.writable⟩
-  refine WP.mono (subtractIfGe_ok u sub sel (by omega) p0 p10 p12 p9 count c7 carry) ?_
+    ⟨h.workspace.nowrap, f1, f3, f1, by omega_using [sep31], Or.inr (Or.inr rfl), ctx.workspace.writable⟩
+  refine WP.mono (subtractIfGe_ok u sub sel (by omega_using []) p0 p10 p12 p9 count c7 carry) ?_
   rintro t ⟨value, bit, frame, keep⟩
   have finalFrame : Outs (State.addr g.base) g.ranges s.mem t.mem := by
     rw [← mem]
@@ -62,7 +62,7 @@ theorem Context.divisor_frame {g : Geometry} {s t : State} (h : Context g s)
   have f2 : g.offsets 2 + 4 * (g.n + 1) ≤ g.size := h.fits 2
   have nowrap := h.workspace.nowrap
   change val32 _ _ _ (g.n + 1) = val32 _ _ _ (g.n + 1)
-  refine frame.val32 ?_ (by omega)
+  refine frame.val32 ?_ (by omega_using [f2, nowrap])
   intro r hr
   simp only [Geometry.ranges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl

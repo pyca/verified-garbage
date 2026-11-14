@@ -62,7 +62,7 @@ theorem montCallInvoke_ok (name : String) (callee : Prog isa)
   have coversWr : Covers wr s.wr := Covers.one ⟨_, h.workspace.writable, Region.contains_self _ _⟩
   have coversRd : Covers rd (s.rd ++ s.wr) := Covers.one h.argRead
   refine WP.callF (k := k) correct pre
-    (Covers.append_left coversRd (Covers.right coversWr)) coversWr (by have := h.stackFit; omega) ?_
+    (Covers.append_left coversRd (Covers.right coversWr)) coversWr (by have := h.stackFit; omega_using [stack, this]) ?_
   intro t rdEq wrEq spEq frame _ result
   refine ⟨result, FrameStack.Frame.belowA_mono frame stack h.stackFit, ?_⟩
   exact ⟨by intro r hr; exact False.elim (hr (by cases r <;> simp [roundClobbers])),
@@ -90,11 +90,11 @@ theorem ArithmeticReady.after_call {s t : State} {base : BitVec 32} {len w o : N
     ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have kl := keeps_layout h.layout (by rw [h.width]; exact keeps)
   have oldM := keeps_array_num keeps fits op0 (Ne.symm ho)
-  have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits op0 (Ne.symm ho) (by omega)
+  have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits op0 (Ne.symm ho) (by omega_using [])
   simp only [Nat.add_zero] at oldLow
   refine ⟨⟨h.workspace.congr rest.wr, kl.2, kl.1.trans h.width, ptr, ?_, ?_, ?_, ?_, ?_⟩, oldM⟩
   · change ((t.mem.readW (off (State.addr base) (arrAt w 0)) 64).toNat *
@@ -142,10 +142,10 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
       Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩, belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have endM := array_end_le (w := w) (j := 0) (k := 8) (by decide)
   let A := allocated 8 s
-  have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega
+  have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega_using [this]
   have argSub : Region.Sub ⟨State.addr A.sp, 4⟩ (belowA s.sp 48) :=
     fun x hx => belowA_sub (a := 8) (by decide) cs.fit x (Region.sub_prefix (by decide) x hx)
   have argSep : Region.Disjoint ⟨State.addr A.sp, 4⟩ ⟨State.addr base, 8 * len⟩ :=
@@ -156,16 +156,16 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
     ⟨⟨State.addr A.sp, 8⟩, List.mem_cons_self, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide⟩
   have argsFit : A.sp.toNat + 8 ≤ 2 ^ 32 := by
     change (s.sp - BitVec.ofNat 32 8).toNat + 8 ≤ 2 ^ 32
-    rw [sub_toNat' fit8]; have := s.sp.isLt; omega
+    rw [sub_toNat' fit8]; have := s.sp.isLt; omega_using []
   unfold MontCall.op
   rw [WP.seq_iff]
   apply WP.alloc (by decide) fit8
   rw [WP.seq_iff]
-  refine WP.mono (montCallArgs_ok A argsWs (by omega) h.ptr argsFit argsWrite ho.1 ha.1 hb.1) ?_
+  refine WP.mono (montCallArgs_ok A argsWs (by omega_using [size]) h.ptr argsFit argsWrite ho.1 ha.1 hb.1) ?_
   rintro u ⟨ptrU, outU, aU, memU, frameU, restU⟩
   change u.mem = s.mem.writeW (State.addr A.sp) (BitVec.ofNat 32 b) at memU
   change Frame [⟨State.addr A.sp, 4⟩] s.mem u.mem at frameU
-  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega : 8 * len < 2 ^ 64)
+  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega_using [this] : 8 * len < 2 ^ 64)
     frameU (by intro r hr; have er := List.mem_singleton.mp hr; subst r; exact argSep.symm)
   have input := montCallArgs_input s u h cs hb operand eq ptrU outU aU memU restU
   refine WP.mono (montCallInvoke_ok name callee correct stack u input) ?_
@@ -189,7 +189,7 @@ theorem montCallOp_ok (name : String) (callee : Prog isa)
     intro i hi separate
     exact (keeps i hi separate).trans (frameU.bytes (R := ⟨State.addr base, 8 * len⟩)
       (by intro r hr; have er := List.mem_singleton.mp hr; subst r; exact argSep.symm)
-      (by change 8 * len ≤ 2 ^ 64; have := h.workspace.nowrap; omega) hi)
+      (by change 8 * len ≤ 2 ^ 64; have := h.workspace.nowrap; omega_using [this]) hi)
   rw [eq.number fits (by decide : 0 < 8)] at bound value
   rw [eq.number fits ha.1, eq.number fits hb.1] at value
   have freeRest : Rest roundClobbers s (freed 8 v) := by

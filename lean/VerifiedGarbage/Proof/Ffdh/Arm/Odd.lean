@@ -26,20 +26,20 @@ theorem odd_ok (s : State) {base : BitVec 32} {len w a : Nat}
   have bound := array_end_le (w := w) ha
   have size : 64 + 8 * a + 4 ≤ 8 * len := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [ha, fits]
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have ptrAddr : State.addr (base + BitVec.ofNat 32 (arrAt w a)) = off (State.addr base) (arrAt w a) :=
-    VG.Arm.addr_add (by have := h.workspace.nowrap; omega)
+    VG.Arm.addr_add (by have := h.workspace.nowrap; omega_using [fits, bound, this])
   unfold VG.Impl.Ffdh.Arm.odd
-  refine wp_ldr (a := off (State.addr base) (64 + 8 * a)) (by omega)
-    (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega))
+  refine wp_ldr (a := off (State.addr base) (64 + 8 * a)) (by omega_using [ha])
+    (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, this]))
     (h.workspace.read size) fun u loaded => ?_
   have ptrU : u.gpr .r4 = base + BitVec.ofNat 32 (arrAt w a) := loaded.gpr.trans (header.array a ha)
   have read : InRegions (u.rd ++ u.wr) (off (State.addr base) (arrAt w a)) 1 := by
     rw [loaded.rd, loaded.wr]
     refine ⟨⟨State.addr base, 8 * len⟩, List.mem_append_right _ h.workspace.writable, ?_⟩
-    exact Offset.contains_base _ (by omega) (by have := h.workspace.nowrap; omega)
+    exact Offset.contains_base _ (by omega_using [fits, bound]) (by have := h.workspace.nowrap; omega_using [fits, bound, this])
   refine wp_ldrb (a := off (State.addr base) (arrAt w a)) (by decide)
     (by rw [ptrU, BitVec.add_zero, ptrAddr]) read fun v byte => ?_
   refine wp_dp (op2_imm (by decide : encodable (1 : BitVec 32) = true)) fun t masked => WP.block_nil ?_
@@ -47,6 +47,6 @@ theorem odd_ok (s : State) {base : BitVec 32} {len w a : Nat}
   have mem : t.mem = s.mem := masked.mem.trans (byte.mem.trans loaded.mem)
   refine ⟨h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr), ?_, mem, rest⟩
   rw [masked.gpr, dpVal, byte.gpr, loaded.mem]
-  exact numAt_parity_word s.mem (State.addr base) (by omega)
+  exact numAt_parity_word s.mem (State.addr base) (by omega_using [hw])
 
 end VG.Proof.Ffdh.Arm

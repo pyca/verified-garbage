@@ -391,10 +391,10 @@ theorem lineOps_words (x : Nat → Word) {a b d k t : Nat} (ha : a < 16) (hb : b
     words (stepAll x (lineOps t (a, b, d, k))) = qline (words x) a b d k := by
   apply Vector.ext
   intro m hm
-  have hta : t ≠ a := by omega
-  have htb : t ≠ b := by omega
-  have htd : t ≠ d := by omega
-  have hmt : m ≠ t := by omega
+  have hta : t ≠ a := by omega_using [ha, ht]
+  have htb : t ≠ b := by omega_using [hb, ht]
+  have htd : t ≠ d := by omega_using [hd, ht]
+  have hmt : m ≠ t := by omega_using [ht, hm]
   have hda : d ≠ a := Ne.symm had
   rw [qline_get _ ha hb hd had m hm]
   simp only [words, stepAll, lineOps, List.foldl_cons, List.foldl_nil, Op.step, Op.dst, Op.val, Vector.getElem_ofFn]
@@ -432,7 +432,7 @@ theorem linesOps_words : ∀ (l : List (Nat × Nat × Nat × Nat)) (x : Nat → 
     simp only [List.all_cons, Bool.and_eq_true, decide_eq_true_eq] at h
     obtain ⟨⟨ha, hb, hd, had, hk⟩, hl⟩ := h
     rw [linesOps, List.flatMap_cons, stepAll, List.foldl_append, ← stepAll, ← stepAll, ← linesOps,
-      linesOps_words l _ hl, lineOps_words _ ha hb hd had (by omega) hk]
+      linesOps_words l _ hl, lineOps_words _ ha hb hd had (by omega_using []) hk]
     simp only [qlines, List.foldl_cons]
 
 theorem roundOps_fold (x : Nat → Word) :
@@ -462,7 +462,7 @@ theorem doubleRound_ok {v : CState} {s₀ s : State} (h : RI v s₀ s) :
       have := congrArg (·[k]'hk) (roundOps_fold (slots s))
       simpa only [words, Vector.getElem_ofFn] using this
     rw [innerBlock_code, ← hw, ← e, ← sreg_word hk]
-    exact h'.holds k (by omega)
+    exact h'.holds k (by omega_using [hk])
   · refine (h'.keep r fun i hi e => hr ?_).trans (h.keep r hr)
     by_cases hi16 : i < 16
     · exact .inl ⟨i, hi16, by rw [e, sreg_word hi16]⟩
@@ -506,9 +506,9 @@ theorem rounds_ok {v : CState} {s₀ : State} (h : Holds v s₀) :
     subst ec
     have hcc : (b.write U (b.gpr U - (1#64))).gpr U = BitVec.ofNat 64 (n - 1) := by
       rw [RegUpd.gpr_write_self, hcb]
-      exact Offset.ofNat_sub_ofNat (k := n) (d := 1) (by omega)
+      exact Offset.ofNat_sub_ofNat (k := n) (d := 1) (by omega_using [hn])
     have hv' : Holds (Nat.repeat innerBlock (10 - (n - 1)) v) (b.write U (b.gpr U - (1#64))) := by
-      rw [show 10 - (n - 1) = (10 - n) + 1 by omega]
+      rw [show 10 - (n - 1) = (10 - n) + 1 by omega_using [hn, hle]]
       intro k hlt
       rw [RegUpd.gpr_write_of_ne _ _ (fun e => counter_not_words (.inl ⟨k, hlt, e.symm⟩))]
       exact hb.holds k hlt
@@ -516,16 +516,16 @@ theorem rounds_ok {v : CState} {s₀ : State} (h : Holds v s₀) :
         (b.write U (b.gpr U - (1#64))).gpr r = s₀.gpr r := by
       intro r hwr hru
       rw [RegUpd.gpr_write_of_ne _ _ hru, hb.keep r hwr, hk r hwr hru]
-    have he := Steps.eval_nonzero_ofNat (b.write U (b.gpr U - (1#64))) U (by omega) hcc
+    have he := Steps.eval_nonzero_ofNat (b.write U (b.gpr U - (1#64))) U (by omega_using [hle]) hcc
     by_cases hz : n = 1
     · left
       refine ⟨?_, ?_, hb.mem.trans hm, hb.rd.trans hr, hb.wr.trans hw, hk'⟩
       · simpa only [hz, Nat.sub_self, ne_eq, not_true_eq_false, decide_false] using he
       · simpa only [hz, Nat.sub_self, Nat.sub_zero] using hv'
     · right
-      refine ⟨?_, n - 1, by omega, by omega, by omega, hcc, hv', hb.mem.trans hm,
+      refine ⟨?_, n - 1, by omega_using [hn], by omega_using [hn, hz], by omega_using [hle], hcc, hv', hb.mem.trans hm,
         hb.rd.trans hr, hb.wr.trans hw, hk'⟩
-      simpa only [decide_eq_true (by omega : n - 1 ≠ 0)] using he
+      simpa only [decide_eq_true (by omega_using [hn, hz] : n - 1 ≠ 0)] using he
   · refine ⟨by decide, by decide, RegUpd.gpr_write_self .., ?_, rfl, rfl, rfl,
       fun r _ hru => RegUpd.gpr_write_of_ne _ _ hru⟩
     intro k hk

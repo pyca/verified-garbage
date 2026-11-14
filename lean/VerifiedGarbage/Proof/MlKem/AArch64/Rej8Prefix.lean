@@ -51,13 +51,13 @@ theorem batch_prefixW (w16 : Bool) (s : State) {p : Addr} {L : List Zq}
   have hn : acceptedCount s≤8 := accepted_length (maskAt s)
   have hlen : i<L.length+acceptedCount s := by
     simpa only [List.length_append,acceptedValues_length] using hi
-  have hi256 : i<256 := by omega
+  have hi256 : i<256 := by omega_using [hroom, hn, hlen]
   apply BitVec.eq_of_toNat_eq
   rw [coeffAtW_updatedMem w16 s h3 hroom hi256 hz]
   by_cases hbefore : i<L.length
-  · rw [ite_eq_right (by omega),hp i hbefore,append_cvW_left hbefore]
-  · have hk : i-L.length<acceptedCount s := by omega
-    rw [ite_eq_left ⟨by omega,by omega⟩,ite_eq_left hk,append_cvW (by omega)]
+  · rw [ite_eq_right (by omega_using [hbefore]),hp i hbefore,append_cvW_left hbefore]
+  · have hk : i-L.length<acceptedCount s := by omega_using [hlen, hbefore]
+    rw [ite_eq_left ⟨by omega_using [hbefore],by omega_using [hn, hlen]⟩,ite_eq_left hk,append_cvW (by omega_using [hbefore])]
     have hv := accepted_value_lt s hk
     have he : (acceptedValues s).getD (i-L.length) 0 =
         ofNat (vhalf (candidatesAt s) ((acceptedLanes (maskAt s)).getD (i-L.length) 0)).toNat := by
@@ -66,6 +66,6 @@ theorem batch_prefixW (w16 : Bool) (s : State) {p : Addr} {L : List Zq}
         Option.map_some,Option.getD_some]
     have hq : q = 3329 := rfl
     simp only [Sample.cvW,he,BitVec.toNat_ofNat,val_ofNat]
-    cases w16 <;> simp only [cw,Bool.false_eq_true,ite_false,ite_true,Nat.reducePow,hq] <;> omega
+    cases w16 <;> simp only [cw,Bool.false_eq_true,ite_false,ite_true,Nat.reducePow,hq] <;> omega_using [hv]
 
 end VG.Proof.MlKem.AArch64.Rej8

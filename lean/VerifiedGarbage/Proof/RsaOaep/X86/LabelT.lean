@@ -45,7 +45,7 @@ theorem tcallG_vp (hg : Geo L scr) {g : OHash} {f : Fns} {p ai au af : BitVec 32
     (h : VP (fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms)
       (.frame (.push rs) (.call n cn) (.pop .eax rs.length)) G) :
     VP (fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms) (tcall k ts rs) G := by
-  have hk : 4 * k + 4 ≤ 44 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega_using [hk3]
   obtain ⟨tR, tRo, tC⟩ := tbl
   let F : State → State → Prop := fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms
   have keepF : ∀ σ s t v, F σ s → Upd s t .esi v → F σ t := fun σ s t v ⟨⟨hc, hm, hx⟩, sy⟩ u =>
@@ -121,7 +121,7 @@ theorem labelT_vp (hg : Geo L scr) (h : OHash) {f : Fns} {p ai au af : BitVec 32
     have c4 : Ctx L scr σ t4 := (((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).upd u3
       (by decide) (by decide)).upd u4 (by decide) (by decide)
     have m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
-    refine c4.wp_arg hg (by omega) (by decide) (by decide) fun t5 c5 u5 =>
+    refine c4.wp_arg hg (by omega_using [hj]) (by decide) (by decide) fun t5 c5 u5 =>
       c5.wp_arg hg hj (by decide) (by decide) fun t6 c6 u6 => WP.block_nil ?_
     have m6 : t6.mem = s.mem := by rw [u6.mem, u5.mem, m4]
     refine ⟨c6, m6 ▸ hi, m6 ▸ rp, rfl, hbytes σ t6 c6, ⟨?_, ?_, ?_, ?_, ?_⟩⟩
@@ -159,7 +159,7 @@ theorem labelT_vp (hg : Geo L scr) (h : OHash) {f : Fns} {p ai au af : BitVec 32
       ([] ++ labB σ).length = ll ∧ FArgs scr o ll s)
     (fun _ _ _ _ ⟨r, l, fa⟩ u => ⟨u.mem ▸ r, l, fa.esi u⟩) (k := 2) (by decide) fne.2.2 (a := af)
     (fun σ T => ⟨T.mem.2.2.trans T.af, T.af, T.ok.f⟩)
-    (VP.syms (fin_vp hg h.H h.ok (o := o) (c := ll) (msg := fun σ => [] ++ labB σ) (Inv := Inv) (.inr (by omega))
+    (VP.syms (fin_vp hg h.H h.ok (o := o) (c := ll) (msg := fun σ => [] ++ labB σ) (Inv := Inv) (.inr (by omega_arith))
       (by oomega) (by oomega) hll32 fun σ m m' hm hf => hI σ m m' hm (hf.mono (by simp))))
   refine hfin.mono (fun _ _ hh => hh) ?_
   rintro σ s ⟨⟨hc, hi, hd⟩, sy⟩
@@ -167,7 +167,7 @@ theorem labelT_vp (hg : Geo L scr) (h : OHash) {f : Fns} {p ai au af : BitVec 32
   have e := congrArg (fun l => l.getD i 0) hd
   simp only [List.nil_append] at e
   rw [h.hash, ← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi', Spec.Sha256.bytesAt,
-    List.getElem?_map, List.getElem?_range (by omega)]
+    List.getElem?_map, List.getElem?_range (by omega_using [this, hi'])]
   simp only [Option.map_some, Option.getD_some, sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-! ## The branch on the digest length -/

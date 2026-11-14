@@ -141,7 +141,7 @@ theorem tailLoad_ok {s : State} {p : Addr} {rest : List Instr} {Q : State → Pr
     change vword (s.mem.read ((p+BitVec.ofNat 64 3840)+BitVec.ofNat 64 (16*j.val)) 16) e=_ ∧
       vword (s.mem.read ((p+BitVec.ofNat 64 3840)+BitVec.ofNat 64 (32+16*j.val)) 16) e=_
     rw [BitVec.add_assoc,← BitVec.ofNat_add,BitVec.add_assoc,← BitVec.ofNat_add]
-    rw [show 3840+(32+16*j.val)=3872+16*j.val by omega]
+    rw [show 3840+(32+16*j.val)=3872+16*j.val by omega_using []]
     exact h
 
 
@@ -164,9 +164,9 @@ theorem hoisted_source_value (i : Nat) (hi : i<6) :
   unfold finalZ finalValue sourceGroup sourceLane
   by_cases h : i<4
   · simp only [h,ite_true]
-    rw [show 4*0+i=i by omega]
+    rw [show 4*0+i=i by omega_using []]
   · simp only [h,hi,ite_false,ite_true]
-    rw [show 7-(4*1+(i-4))=3-(i-4) by omega]
+    rw [show 7-(4*1+(i-4))=3-(i-4) by omega_using []]
 
 theorem Hoisted.finalRoots {s : State} (h : Hoisted s)
     (hc : s.v .v30=scaleVector) (hq : ∀ e<4, vword (s.v .v31) e=8380417#32) : FinalRoots s := by
@@ -178,7 +178,7 @@ theorem Hoisted.finalRoots {s : State} (h : Hoisted s)
     · obtain ⟨hj,he,hr,hb,hl,hl'⟩ := hoisted_source_geometry i hi
       rw [hr,hb,hl,hl',hoisted_source_value i.val hi]
       exact h ⟨sourceGroup i.val,hj⟩ (sourceLane i.val) he
-    · have he : i.val=6 := by omega
+    · have he : i.val=6 := by omega_using [hi]
       simp only [he]
       exact hs
   exact ⟨fun i => (hpair i).1,fun i => (hpair i).2,hq⟩

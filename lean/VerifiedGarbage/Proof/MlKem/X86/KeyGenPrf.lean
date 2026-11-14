@@ -94,7 +94,7 @@ theorem prf_piece (N : Nat) (hN : N < 2 * L.p.k) :
   · exact h.keep hp (M := 0) (by rdecide) b₁ b₂ b₃ (fun j hj => a₂ j hj) (m' ▸ frW8 (Y := Y L)) h'
   · rw [m']
     refine bytesAt_eq (L := [BitVec.ofNat 8 N]) rfl fun i hi => ?_
-    obtain rfl : i = 0 := by omega
+    obtain rfl : i = 0 := by omega_using [hi]
     simp only [BitVec.add_zero, writeW8_apply, List.getElem_cons_zero]
     refine (ite_eq_left (rfl : Buf.addr s₀ (bNB L) = Buf.addr s₀ ⟨(Y L).sc, L.kgRS + 64, 1⟩)).trans ?_
     rw [BitVec.setWidth_ofNat_of_le (by decide)]

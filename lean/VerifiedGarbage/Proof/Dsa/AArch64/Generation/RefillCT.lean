@@ -169,7 +169,7 @@ theorem Entered.congr {E : EntryPub} {v t : State} (he : Entered E v) (hm : t.me
 theorem Entered.lengths {E : EntryPub} {v : State} (he : Entered E v) :
     E.pBytes = 128 ∨ E.pBytes = 256 ∨ E.pBytes = 384 := by
   obtain ⟨s₀, h, -⟩ := he
-  have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+  have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
 
 theorem tested128_wp {E : EntryPub} {u : State} (he : Entered E u) :
     WP isa (.block [.ldrSp .x3 136, .subImm .x .x4 .x3 128]) u fun t =>

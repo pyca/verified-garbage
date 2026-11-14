@@ -43,10 +43,10 @@ theorem row_bounds {L : Ws} {s : State} {j : Nat} (h : FastW L s) (hj : j < bloc
   obtain ⟨mi, hg, hz⟩ := h.1
   have h16 := h.2.1
   have hm := h.2.2
-  have he : 8 * blocks L = L.w := by dsimp [blocks]; omega
+  have he : 8 * blocks L = L.w := by dsimp [blocks]; omega_using [hm]
   dsimp [rowBase, rawBase, modBase, slot, hdrBytes, aAcc, aN] at hz ⊢
   dsimp [blocks] at *
-  omega
+  omega_using [hj, hw, hz, h16]
 
 def rowPrefix : List Instr := VG.Impl.Bignum.AArch64.BlockedRedc.asLoad ++
   [ldh .x17 (sArr aN), ldh .x15 sMinv]
@@ -68,9 +68,9 @@ theorem prefix_ctx (p : Ws × Nat) (s : State) (h : p.2 < blocks p.1 ∧ LoopCtx
   obtain ⟨hk, _, hHdr, hSize, _⟩ := row_bounds h.2.fast h.1
   unfold rowPrefix
   apply WP.block_append
-  refine WP.mono (asLoad_ok hg.scr h.2.ptr (by omega)) fun a ⟨⟨_, ham, _⟩, ka⟩ => ?_
+  refine WP.mono (asLoad_ok hg.scr h.2.ptr (by omega_using [hSize])) fun a ⟨⟨_, ham, _⟩, ka⟩ => ?_
   refine WP.mono (startHeader_ok (hg.scr.congr ka.wr) ((ka.gpr .x0 (by decide)).trans hg.x0)
-    (by omega)) fun t ⟨⟨ht17, _, htm⟩, kt⟩ => ?_
+    (by omega_using [hHdr, hSize])) fun t ⟨⟨ht17, _, htm⟩, kt⟩ => ?_
   have km := ka.trans kt
   have hm := htm.trans ham
   have hG : GoodW p.1 t := ⟨mi, ⟨hg.scr.congr km.wr, (km.gpr .x0 (by decide)).trans hg.x0,
@@ -87,20 +87,20 @@ theorem firstBlock_ctx (p : Ws × Nat) (s : State) (h : p.2 < blocks p.1 ∧ Loo
   obtain ⟨mi, hg, hz⟩ := h.2.fast.1
   obtain ⟨hk, hkw, hHdr, hSize, hNQ⟩ := row_bounds h.2.fast h.1
   have hn := hg.scr.nowrap
-  have he : 8 * blocks p.1 = p.1.w := by have := h.2.fast.2.2; dsimp [blocks]; omega
+  have he : 8 * blocks p.1 = p.1.w := by have := h.2.fast.2.2; dsimp [blocks]; omega_using [this]
   have heCode : rowPrefix ++ rowMiddle = startBlock ++ columnSetup := by
     simp only [rowPrefix, rowMiddle, startBlock, List.append_assoc]
   rewrite [heCode]
   apply WP.block_append
-  refine WP.mono (startBlock_ok (eN := modBase p.1) hg.scr hg.x0 h.2.ptr h.2.zero (by omega)
-    (by omega) (by omega) (by omega) (hg.hdr.harr aN (by decide)) hg.hdr.hminv)
+  refine WP.mono (startBlock_ok (eN := modBase p.1) hg.scr hg.x0 h.2.ptr h.2.zero (by omega_using [hHdr, hSize])
+    (by omega_using [hSize]) (by omega_using [hSize, hNQ]) (by omega_using [hk, hNQ]) (hg.hdr.harr aN (by decide)) hg.hdr.hminv)
     fun a ⟨_, hao, ha17, ka⟩ => ?_
   have hHA := (Square.scratch_arrays (hao.mono (o' := rawBase p.1)
-    (n' := 8 * (2 * p.1.w + 2)) (by dsimp [rowBase]; omega)
+    (n' := 8 * (2 * p.1.w + 2)) (by dsimp [rowBase]; omega_using [])
     (by dsimp [rowBase]; omega))).hdr hg.hdr
   have hW := hHA.hw.trans (congrArg (BitVec.ofNat 64) he.symm)
   refine WP.mono (columnSetup_ok (hg.scr.congr ka.wr) ((ka.gpr .x0 (by decide)).trans hg.x0)
-    ((ka.gpr .x8 (by decide)).trans h.2.ptr) ha17 (by omega) hW hk hkw)
+    ((ka.gpr .x8 (by decide)).trans h.2.ptr) ha17 (by omega_using [hHdr, hSize]) hW hk hkw)
     fun t ⟨⟨ht16, ht17, ht15, htm⟩, kt⟩ => ?_
   have km := ka.trans kt
   have hG : GoodW p.1 t := ⟨mi, ⟨hg.scr.congr km.wr, (km.gpr .x0 (by decide)).trans hg.x0,

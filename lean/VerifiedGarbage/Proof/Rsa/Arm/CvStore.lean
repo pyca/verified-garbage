@@ -27,18 +27,18 @@ open VG.Proof.X25519.Arm
 /-- The low `k` bytes of an array. -/
 theorem read_low (m : Mem) (base : Addr) {d n k : Nat} (hk : k ≤ 4 * n) :
     (m.read (off base d) k).toNat = val32 m base d n % 2 ^ (8 * k) := by
-  rw [← read_eq_val32 m base n d, show 4 * n = (4 * n - k) + k by omega, VG.Proof.Mont.read_toNat_add]
+  rw [← read_eq_val32 m base n d, show 4 * n = (4 * n - k) + k by omega_using [hk], VG.Proof.Mont.read_toNat_add]
   have := (m.read (off base d) k).isLt
   rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt this]
 
 theorem add_ofNat_sub_one (x : BitVec 32) {k : Nat} (hk : 1 ≤ k) :
     x + BitVec.ofNat 32 k - 1 = x + BitVec.ofNat 32 (k - 1) := by
-  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, show k = (k - 1) + 1 by omega, BitVec.ofNat_add,
-    ← BitVec.add_assoc, BitVec.add_sub_cancel, show k - 1 + 1 - 1 = k - 1 by omega]
+  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, show k = (k - 1) + 1 by omega_using [hk], BitVec.ofNat_add,
+    ← BitVec.add_assoc, BitVec.add_sub_cancel, show k - 1 + 1 - 1 = k - 1 by omega_using []]
 
 theorem mask_slot {m : Nat} (hm : m ≤ 1) :
     (0 - BitVec.ofNat 32 m) = -BitVec.ofNat 32 (decide (m = 1)).toNat := by
-  rcases (by omega : m = 0 ∨ m = 1) with rfl | rfl <;> decide
+  rcases (by omega_using [hm] : m = 0 ∨ m = 1) with rfl | rfl <;> decide
 
 theorem store_ok {s0 s : State} (h : Done s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cvW s0) nArr) {j : Nat}
     (hj : j < nArr) {R : Region} (hR : R = rDp s0 ∨ R = rDq s0 ∨ R = rQi s0) {dst : BitVec 32} {k : Nat}
@@ -64,7 +64,7 @@ theorem store_ok {s0 s : State} (h : Done s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cv
   have hRw : R ∈ s.wr := by rw [h.wr, pre.wr]; rcases hR with rfl | rfl | rfl <;> simp
   unfold store
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega_using [hj]) fun s1 p1 r1 m1 h1 => ?_
   refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
@@ -74,19 +74,19 @@ theorem store_ok {s0 s : State} (h : Done s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cv
   have M5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, u2.mem, m1]
   have d5 := h.of_rest R5 M5
   have ad : State.addr (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) = off (State.addr (cvB s0)) (arr (cvW s0) j) :=
-    hw.addr (by omega)
+    hw.addr (by omega_using [fa, hS])
   have srcFit : (cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)).toNat + k ≤ 2 ^ 32 := by
-    rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [fa, nw, hS]), BitVec.toNat_ofNat]; omega_using [hkw, fa, nw, hS]
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (reverseBuffer_ok s5 (src := cvB s0 + BitVec.ofNat 32 (arr (cvW s0) j)) (dst := dst) (n := k)
-    hk srcFit fit (by omega)
+    hk srcFit fit (by omega_using [hkw, w16])
     ⟨rS s0, List.mem_append_right _ (by rw [d5.wr, pre.wr]; simp),
-      by rw [ad]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [ad]; exact Offset.contains_base _ (by omega_using [hkw, fa, hS, eZ]) (by omega_using [fa, nw])⟩
     ⟨R, by rw [d5.wr]; exact h.wr ▸ hRw, by rw [hb]; exact Region.contains_self _ _⟩
     (fun a ha hb' => hRS a (by rw [hb]; exact hb') (by
       rw [ad] at ha
       exact Region.Contains.byte (r := rS s0) (b := off (State.addr (cvB s0)) (arr (cvW s0) j)) (n := k)
-        (Offset.contains_base _ (by omega) (by omega)) (by simp only [Region.Contains] at ha; omega)))
+        (Offset.contains_base _ (by omega_using [hkw, fa, hS, eZ]) (by omega_using [fa, nw])) (by simp only [Region.Contains] at ha; omega_using [ha])))
     (by rw [u5.other _ (by decide), u4.gpr, u3.other _ (by decide), u2.other _ (by decide), r1.gpr _ (by decide),
       p10])
     (by rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, dpVal, u2.gpr, dpVal, p1,
@@ -109,13 +109,13 @@ theorem store_ok {s0 s : State} (h : Done s0 s) (hw : Ws s (cvB s0) (cvZ s0) (cv
     ((u9.rest (by simp)).trans ((u10.rest (by simp)).trans (u11.rest (by simp)))))
   have M11 : s11.mem = t6.mem := by rw [u11.mem, u10.mem, u9.mem, u8.mem, u7.mem]
   have sm : t6.mem.readW (off (State.addr (cvB s0)) sMask) 32 = BitVec.ofNat 32 (slot s.mem (cvB s0) sMask) := by
-    have hz : 136 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) pre.fits
-    rw [f6.readW (r := rS s0) (Offset.contains_base _ (by simp only [sMask]; omega) (by simp only [sMask]; omega))
+    have hz : 136 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) pre.fits
+    rw [f6.readW (r := rS s0) (Offset.contains_base _ (by simp only [sMask]; omega) (by simp only [sMask]; omega_using []))
       (by simpa using hRS.symm) (by decide), M5]
     simp
   have r2v : s11.gpr .r2 = -BitVec.ofNat 32 (decide (slot s.mem (cvB s0) sMask = 1)).toNat := by
     rw [u11.gpr, dpVal, u10.gpr, u10.other _ (by decide), u9.gpr, u8.mem, u7.mem, sm, mask_slot mb]
-  refine WP.mono (maskBuffer_ok s11 hk (by omega) fit ⟨R, by rw [R11.wr, d6.wr, pre.wr]; rcases hR with rfl | rfl | rfl <;> simp,
+  refine WP.mono (maskBuffer_ok s11 hk (by omega_using [hkw, w16]) fit ⟨R, by rw [R11.wr, d6.wr, pre.wr]; rcases hR with rfl | rfl | rfl <;> simp,
       by rw [hb]; exact Region.contains_self _ _⟩
     (by rw [u11.other _ (by decide), u10.other _ (by decide), u9.other _ (by decide), u8.other _ (by decide),
       u7.gpr, r6.gpr _ (by decide), R5.gpr _ (by decide), p10])

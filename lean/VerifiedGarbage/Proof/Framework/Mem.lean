@@ -29,10 +29,10 @@ theorem read_congr {m m' : Mem} {a : Addr} {n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0, ih fun i hi => ?_]
-    have := h (i + 1) (by omega)
+    have := h (i + 1) (by omega_using [hi])
     rwa [Offset.add_ofNat_succ] at this
 
 theorem readW_congr {m m' : Mem} {a : Addr} {w : Nat}
@@ -55,7 +55,7 @@ theorem sub_ofNat_toNat (a : Addr) {i : Nat} (hi : i < 2 ^ 64) :
 
 theorem read_write_sep {m : Mem} {a b : Addr} {n k : Nat} {v : BitVec (8 * k)} (h : Sep a n b k)
     (hn : n < 2 ^ 64) : (m.write b k v).read a n = m.read a n :=
-  read_congr fun i hi => write_apply (h _ (by rw [sub_ofNat_toNat a (by omega)]; exact hi))
+  read_congr fun i hi => write_apply (h _ (by rw [sub_ofNat_toNat a (by omega_using [hn, hi])]; exact hi))
 
 theorem readW_writeW_sep {m : Mem} {a b : Addr} {w w' : Nat} {v : BitVec w'}
     (h : Sep a (w / 8) b (w' / 8)) (hn : w / 8 < 2 ^ 64) :
@@ -71,28 +71,28 @@ theorem read_eq_of_bytes {m : Mem} {a : Addr} {n : Nat} {v : BitVec (8 * n)}
     have hv : ∀ i < n, m (a + 1 + BitVec.ofNat 64 i) =
         (v.extractLsb' 8 (8 * n)).extractLsb' (8 * i) 8 := by
       intro i hi
-      rw [← Offset.add_ofNat_succ, h (i + 1) (by omega)]
+      rw [← Offset.add_ofNat_succ, h (i + 1) (by omega_using [hi])]
       ext j hj
       simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_extractLsb']
-      simp only [show 8 * i + j < 8 * n by omega, decide_true, Bool.true_and]
-      congr 1; omega
+      simp only [show 8 * i + j < 8 * n by omega_using [hi, hj], decide_true, Bool.true_and]
+      congr 1; omega_using []
     rw [ih hv]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0]
     ext j hj
     simp only [BitVec.getElem_append, BitVec.getElem_extractLsb']
     split
     · rw [Nat.mul_zero, Nat.zero_add]; exact BitVec.getLsbD_eq_getElem hj
-    · rw [← BitVec.getLsbD_eq_getElem hj]; congr 1; omega
+    · rw [← BitVec.getLsbD_eq_getElem hj]; congr 1; omega_arith
 
 theorem readW_writeW_self (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) (hn : n < 2 ^ 64) :
     (m.writeW a v).readW a (8 * n) = v := by
   simp only [readW, writeW]
-  rw [show 8 * n / 8 = n by omega]
+  rw [show 8 * n / 8 = n by omega_using []]
   simp only [BitVec.setWidth_eq]
   refine read_eq_of_bytes fun i hi => ?_
-  simp only [write, sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi, ite_true]
+  simp only [write, sub_ofNat_toNat a (show i < 2 ^ 64 by omega_using [hn, hi]), hi, ite_true]
 
 /-- Byte `j` of a little-endian read. -/
 theorem extractLsb'_read (m : Mem) (a : Addr) {n j : Nat} (hj : j < n) :
@@ -109,11 +109,11 @@ theorem extractLsb'_read (m : Mem) (a : Addr) {n j : Nat} (hj : j < n) :
       simp [hi]
     | succ j =>
       rw [Offset.add_ofNat_succ,
-        ← ih (a := a + 1) (by omega)]
+        ← ih (a := a + 1) (by omega_using [hj])]
       ext i hi
       simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append,
-        show ¬ (8 * (j + 1) + i < 8) by omega, ite_false]
-      congr 1; omega
+        show ¬ (8 * (j + 1) + i < 8) by omega_using [], ite_false]
+      congr 1; omega_using []
 
 /-- Byte `i` of a little-endian word. -/
 theorem readW_byte (m : Mem) (a : Addr) {i : Nat} (hi : i < 4) :
@@ -140,7 +140,7 @@ theorem Contains.byte {r : Region} {b x : Addr} {n : Nat} (h : r.Contains b n)
   have : (x - r.base).toNat ≤ (x - b).toNat + (b - r.base).toNat := by
     rw [← Offset.sub_add_sub_cancel x b r.base, BitVec.toNat_add]
     exact Nat.mod_le _ _
-  omega
+  omega_using [h, hx, this]
 
 theorem Disjoint.sep {r₁ r₂ : Region} (h : r₁.Disjoint r₂) {a b : Addr} {n k : Nat}
     (ha : r₁.Contains a n) (hb : r₂.Contains b k) : Mem.Sep a n b k :=
@@ -162,7 +162,7 @@ theorem Region.Disjoint.sub_left {r₁ r₁' r₂ : Region} (h : r₁.Disjoint r
 
 theorem Region.sub_prefix {base : Addr} {len len' : Nat} (h : len ≤ len') :
     Region.Sub ⟨base, len⟩ ⟨base, len'⟩ := fun a ha => by
-  simp only [Region.Contains] at *; omega
+  simp only [Region.Contains] at *; omega_using [h, ha]
 
 /-- `r'` extends `r`: the same base, at least as long. -/
 def Region.Prefix (r r' : Region) : Prop := r.base = r'.base ∧ r.len ≤ r'.len
@@ -182,7 +182,7 @@ theorem InRegions.of_prefix {rs rs' : List Region} (h : List.Forall₂ Region.Pr
     rcases List.mem_cons.mp hq with rfl | hq
     · obtain ⟨hb, hl⟩ := hp
       refine ⟨r', List.mem_cons_self .., ?_⟩
-      simp only [Region.Contains, ← hb] at hc ⊢; omega
+      simp only [Region.Contains, ← hb] at hc ⊢; omega_using [hc, hl]
     · obtain ⟨q', hq', hc'⟩ := ih ⟨q, hq, hc⟩
       exact ⟨q', List.mem_cons_of_mem _ hq', hc'⟩
 
@@ -235,7 +235,7 @@ theorem read {rs : List Region} {m m' : Mem} (h : Frame rs m m') {r : Region} {a
     (ha : r.Contains a n) (hd : ∀ r' ∈ rs, r.Disjoint r') (hn : n < 2 ^ 64) :
     m'.read a n = m.read a n :=
   Mem.read_congr fun i hi => h _ fun r' hr' =>
-    hd r' hr' _ (ha.byte (by rw [Mem.sub_ofNat_toNat a (by omega)]; exact hi))
+    hd r' hr' _ (ha.byte (by rw [Mem.sub_ofNat_toNat a (by omega_using [hn, hi])]; exact hi))
 
 theorem sub {rs rs' : List Region} {m m' : Mem} (h : Frame rs m m')
     (hs : ∀ r ∈ rs, ∃ r' ∈ rs', Region.Sub r r') : Frame rs' m m' := fun x hx =>
@@ -253,8 +253,8 @@ theorem bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Region}
   refine hf _ fun r hr hc => hd r hr _ ?_ hc
   simp only [Region.Contains]
   rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_using [hR, hi])]
+  omega_using [hi]
 
 end Frame
 

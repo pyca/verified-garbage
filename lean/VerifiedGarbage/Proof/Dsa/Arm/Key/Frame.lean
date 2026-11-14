@@ -40,15 +40,15 @@ theorem RF.toNat {s : State} {B : Addr} (h : RF s B) : (s.gpr .r11).toNat = B.to
 /-- `[r11 + d]`. -/
 theorem RF.ea {s : State} {B : Addr} (h : RF s B) {d : Nat} (hd : d < frameBytes + 28) :
     State.addr (s.gpr .r11 + BitVec.ofNat 32 d) = off B d := by
-  rw [VG.Arm.addr_add (by have := h.nowrap; have := h.toNat; omega), h.base]
+  rw [VG.Arm.addr_add (by have := h.nowrap; have := h.toNat; omega_arith), h.base]
 
 theorem RF.read {s : State} {B : Addr} (h : RF s B) {d n : Nat} (hd : d + n ≤ frameBytes) :
     InRegions (s.rd ++ s.wr) (off B d) n :=
-  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold frameBytes at *; omega)⟩
+  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold frameBytes at *; omega_using [hd])⟩
 
 theorem RF.write {s : State} {B : Addr} (h : RF s B) {d n : Nat} (hd : d + n ≤ frameBytes) :
     InRegions s.wr (off B d) n :=
-  ⟨_, h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold frameBytes at *; omega)⟩
+  ⟨_, h.wr, Offset.contains_base B hd (by have := h.nowrap; unfold frameBytes at *; omega_using [hd])⟩
 
 theorem RF.readArg {s : State} {B : Addr} (h : RF s B) {j : Nat} (hj : j < 7) :
     InRegions (s.rd ++ s.wr) (off B (Random.arg j)) 4 := by
@@ -56,7 +56,7 @@ theorem RF.readArg {s : State} {B : Addr} (h : RF s B) {j : Nat} (hj : j < 7) :
   have e : off B (Random.arg j) = off B frameBytes + BitVec.ofNat 64 (4 * j) := by
     rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; rfl
   rw [e]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem RF.of_rest {ws : List Reg} {s s' : State} {B : Addr} (h : RF s B) (R : Rest ws s s')
     (h11 : .r11 ∉ ws) : RF s' B :=
@@ -92,26 +92,26 @@ theorem rLow_toNat : (rLow s₀).toNat = s₀.sp.toNat - 144 := by
   have := A.stackLow
   rw [rLow, BitVec.toNat_sub, VG.Proof.X25519.Arm.addr_toNat, show (144#64).toNat = 144 from rfl]
   have := s₀.sp.isLt
-  omega
+  omega_arith
 
 theorem off_rLow_toNat {d : Nat} (hd : d ≤ 180) : (off (rLow s₀) d).toNat = (rLow s₀).toNat + d := by
   have := A.stackBound
   have := rLow_toNat A
-  rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]),
+    Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem rBase_toNat : (rBase s₀).toNat = s₀.sp.toNat - 112 := by
-  rw [rBase, off_rLow_toNat A (by decide), rLow_toNat A]; have := A.stackLow; omega
+  rw [rBase, off_rLow_toNat A (by decide), rLow_toNat A]; have := A.stackLow; omega_using [this]
 
 /-- The caller's stack argument `j`. -/
 theorem rBase_arg {j : Nat} (hj : j < 7) : off (rBase s₀) (Random.arg j) = stackArgAddr s₀ j := by
   apply BitVec.eq_of_toNat_eq
   have := A.stackBound
   have := A.stackLow
-  rw [rBase_off, off_rLow_toNat A (by unfold Random.arg frameBytes; omega), rLow_toNat A, stackArgAddr,
-    VG.Proof.X25519.Arm.addr_toNat, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * j) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  unfold Random.arg frameBytes; omega
+  rw [rBase_off, off_rLow_toNat A (by unfold Random.arg frameBytes; omega_using [hj]), rLow_toNat A, stackArgAddr,
+    VG.Proof.X25519.Arm.addr_toNat, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * j) (by omega_using [hj]),
+    Nat.mod_eq_of_lt (by omega_arith)]
+  unfold Random.arg frameBytes; omega_using [this]
 
 theorem rBase_args : off (rBase s₀) frameBytes = State.addr s₀.sp := by
   have := rBase_arg A (j := 0) (by decide)
@@ -123,7 +123,7 @@ theorem alloc_base : State.addr (s₀.sp - BitVec.ofNat 32 frameBytes) = rBase s
   have := A.stackLow
   rw [rBase_toNat A, VG.Proof.X25519.Arm.addr_toNat, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := s₀.sp.isLt
-  unfold frameBytes; omega
+  unfold frameBytes; omega_arith
 
 /-- The arguments' 36 bytes are apart from where the body writes. -/
 theorem rArgs_apart : ∀ r ∈ rWrites s₀, Region.Disjoint (rArgs s₀) r := by
@@ -166,7 +166,7 @@ theorem frame_store (s₀ : State) (m : Mem) {d : Nat} {w : Nat} (hd : d + w / 8
     (v : BitVec w) : Frame [rStack s₀] m (m.writeW (off (rBase s₀) d) v) := by
   refine Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) v ?_
   rw [rBase_off]
-  exact Offset.contains_base _ (by unfold frameBytes at hd; omega) (by unfold frameBytes at hd; omega)
+  exact Offset.contains_base _ (by unfold frameBytes at hd; omega_using [hd]) (by unfold frameBytes at hd; omega_using [hd])
 
 theorem RReady.mupd {s₀ t t' : State} {d w : Nat} {v : BitVec w} (h : RReady s₀ t)
     (u : Mupd t t' (t.mem.writeW (off (rBase s₀) d) v)) (hd : d + w / 8 ≤ frameBytes) : RReady s₀ t' :=
@@ -177,8 +177,8 @@ theorem RReady.arg {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) {j : N
     slot t.mem (rBase s₀) (Random.arg j) = stackArg s₀ j := by
   rw [slot, rBase_arg A hj, stackArg]
   refine h.frame.readW (r := rArgs s₀) ?_ (rArgs_apart A) (by decide)
-  rw [stackArgAddr, VG.Arm.addr_add (by have := A.stackBound; omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr, VG.Arm.addr_add (by have := A.stackBound; omega_using [hj, this])]
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-! ## Slots apart from what changed -/
 
@@ -197,7 +197,7 @@ theorem slot_outs {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B r
   Mem.readW_congr fun i hi => h _ fun r hr => by
     have := hd r hr
     have hi' : i < 4 := hi
-    rw [ofs_off B (show d + i < 2 ^ 64 by omega)]; omega
+    rw [ofs_off B (show d + i < 2 ^ 64 by omega_using [hd', hi])]; omega_using [hi, this]
 
 /-! ## Loads and stores of the frame -/
 
@@ -208,28 +208,28 @@ variable {s₀ t : State} {is : List Instr} {Q : State → Prop}
 theorem wp_ld (h : RReady s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
     (k : ∀ u, Upd t u r (slot t.mem (rBase s₀) d) → WP isa (.block is) u Q) :
     WP isa (.block (ld r d :: is)) t Q :=
-  wp_ldr (by unfold frameBytes at hd; omega) (h.rf.ea (by omega)) (h.rf.read hd) k
+  wp_ldr (by unfold frameBytes at hd; omega_using [hd]) (h.rf.ea (by omega_using [hd])) (h.rf.read hd) k
 
 /-- `ldr r, [r11, #arg j]`, the caller's stack argument `j`. -/
 theorem wp_ldArg (A : KeyABI s₀) (h : RReady s₀ t) {r : Reg} {j : Nat} (hj : j < 7)
     (k : ∀ u, Upd t u r (stackArg s₀ j) → WP isa (.block is) u Q) :
     WP isa (.block (ld r (Random.arg j) :: is)) t Q :=
-  wp_ldr (by unfold Random.arg frameBytes; omega) (h.rf.ea (by unfold Random.arg; omega)) (h.rf.readArg hj)
+  wp_ldr (by unfold Random.arg frameBytes; omega_using [hj]) (h.rf.ea (by unfold Random.arg; omega_using [hj])) (h.rf.readArg hj)
     fun u v => k u (by rw [← h.arg A hj]; exact v)
 
 /-- `str r, [r11, #d]`, a slot of the frame. -/
 theorem wp_st (h : RReady s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
     (k : ∀ u, Mupd t u (t.mem.writeW (off (rBase s₀) d) (t.gpr r)) → RReady s₀ u → WP isa (.block is) u Q) :
     WP isa (.block (st r d :: is)) t Q :=
-  wp_str (by unfold frameBytes at hd; omega) (h.rf.ea (by omega)) (h.rf.write hd) fun u v => k u v (h.mupd v hd)
+  wp_str (by unfold frameBytes at hd; omega_using [hd]) (h.rf.ea (by omega_using [hd])) (h.rf.write hd) fun u v => k u v (h.mupd v hd)
 
 /-- `str r, [r11, #d]`, keeping the flags. -/
 theorem wp_stF (h : RReady s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
     (k : ∀ u, Mupd t u (t.mem.writeW (off (rBase s₀) d) (t.gpr r)) → RReady s₀ u → u.z = t.z → u.c = t.c →
       WP isa (.block is) u Q) :
     WP isa (.block (st r d :: is)) t Q := by
-  have e := h.rf.ea (d := d) (by omega)
-  refine VG.Proof.X25519.Arm.WP.cons (exec_str (by unfold frameBytes at hd; omega) (by rw [e]; exact h.rf.write hd)) ?_
+  have e := h.rf.ea (d := d) (by omega_using [hd])
+  refine VG.Proof.X25519.Arm.WP.cons (exec_str (by unfold frameBytes at hd; omega_using [hd]) (by rw [e]; exact h.rf.write hd)) ?_
   rw [e]
   exact k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ (h.mupd ⟨rfl, rfl, rfl, rfl, rfl⟩ hd) rfl rfl
 
@@ -248,23 +248,23 @@ theorem BytesIn.drop {s : State} {p : BitVec 32} {bs : List Byte} (h : BytesIn s
   have hfit := h.fit
   have e : ∀ i, j + i < bs.length → State.addr (p + BitVec.ofNat 32 j) + BitVec.ofNat 64 i =
       State.addr p + BitVec.ofNat 64 (j + i) := fun i hi => by
-    rw [VG.Arm.addr_add (by omega), Offset.add_add]
+    rw [VG.Arm.addr_add (by omega_using [hfit, hi]), Offset.add_add]
   refine ⟨?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [List.length_drop]
     by_cases hjl : j = bs.length
     · rw [hjl, Nat.sub_self, Nat.add_zero]; exact Nat.le_of_lt (BitVec.isLt _)
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega),
-        Nat.mod_eq_of_lt (by omega)]; omega
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega_using [hj, hfit, hjl]),
+        Nat.mod_eq_of_lt (by omega_using [hj, hfit, hjl])]; omega_using [hj, hfit]
   · rw [List.length_drop] at hi
-    rw [e i (by omega)]; exact h.rd _ (by omega)
+    rw [e i (by omega_using [hi])]; exact h.rd _ (by omega_using [hi])
   · rw [List.length_drop] at hi
-    rw [e i (by omega), h.val _ (by omega), List.getElem_drop]
+    rw [e i (by omega_using [hi]), h.val _ (by omega_using [hi]), List.getElem_drop]
 
 theorem BytesIn.take {s : State} {p : BitVec 32} {bs : List Byte} (h : BytesIn s p bs) (n : Nat) :
     BytesIn s p (bs.take n) := by
-  refine ⟨by rw [List.length_take]; have := h.fit; omega, fun i hi => ?_, fun i hi => ?_⟩
-  · rw [List.length_take] at hi; exact h.rd i (by omega)
-  · rw [List.length_take] at hi; rw [List.getElem_take]; exact h.val i (by omega)
+  refine ⟨by rw [List.length_take]; have := h.fit; omega_using [this], fun i hi => ?_, fun i hi => ?_⟩
+  · rw [List.length_take] at hi; exact h.rd i (by omega_using [hi])
+  · rw [List.length_take] at hi; rw [List.getElem_take]; exact h.val i (by omega_using [hi])
 
 theorem BytesIn.congr {s t : State} {p : BitVec 32} {bs : List Byte} (h : BytesIn s p bs)
     (hm : t.mem = s.mem) (hr : t.rd = s.rd) (hw : t.wr = s.wr) : BytesIn t p bs :=
@@ -277,10 +277,10 @@ theorem RReady.bytes {s₀ t : State} (h : RReady s₀ t) {p : BitVec 32} {n : N
     BytesIn t p (Spec.Rsa.bytesAt s₀.mem (State.addr p) n) := by
   refine ⟨by rw [rBytes_length]; exact hfit, fun i hi => ?_, fun i hi => ?_⟩
   · rw [rBytes_length] at hi
-    exact ⟨_, List.mem_append_left _ (h.rd ▸ hr), Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ (h.rd ▸ hr), Offset.contains_base _ (by omega_using [hi]) (by omega_using [hfit, hi])⟩
   · rw [rBytes_length] at hi
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
-    exact h.frame.bytes (R := ⟨State.addr p, n⟩) hd (show n ≤ 2 ^ 64 by omega) hi
+    exact h.frame.bytes (R := ⟨State.addr p, n⟩) hd (show n ≤ 2 ^ 64 by omega_using [hfit]) hi
 
 theorem RReady.rand {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) :
     BytesIn t (stackArg s₀ 3) (rInput s₀).rand := by
@@ -305,7 +305,7 @@ theorem RReady.key {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) :
 theorem RReady.q {s₀ t : State} (A : KeyABI s₀) (h : RReady s₀ t) : BytesIn t (rQ s₀) (rQBytes s₀) := by
   have hk := h.key A
   have hp : (stackArg s₀ 1).toNat ≤ (rInput s₀).key.length := by
-    simp only [rInput, rBytes_length, A.keyLength]; omega
+    simp only [rInput, rBytes_length, A.keyLength]; omega_using []
   have := (hk.drop _ hp).take (rInput s₀).qLen
   simpa only [rQ, rQBytes, rInput, BitVec.ofNat_toNat, BitVec.setWidth_eq] using this
 

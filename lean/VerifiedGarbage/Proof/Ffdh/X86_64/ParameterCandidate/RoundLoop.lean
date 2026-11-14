@@ -71,7 +71,7 @@ theorem roundsLoop_ok (M : Mont) (K : Kernel)
               simp [checkWitnesses, hdraw, hm, htail]
             rw [hcheck]
             simpa only [List.drop_drop] using hr
-        · have hn0 : n = 0 := by omega
+        · have hn0 : n = 0 := by omega_using [hn]
           subst hn0
           have hlast : ¬i + 1 < checks := by omega_using [hcount]
           have hstatus1 : passStatus i checks = 1 := by simp only [passStatus, ite_eq_right hlast]

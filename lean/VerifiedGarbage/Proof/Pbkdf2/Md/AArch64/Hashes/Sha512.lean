@@ -109,9 +109,9 @@ def streamOK (hR : I.S.Repr = Spec.Sha512.Repr iv)
   hS := hS
   hD := hDs
   hB := hB
-  hDF := by show D ≤ 64; omega
+  hDF := by show D ≤ 64; omega_using [hD]
   hF := Nat.le_refl 64
-  hD0 := by show 0 < D; omega
+  hD0 := by show 0 < D; omega_using [hD]
   hS0 := show 0 < 192 by decide
   hSB := show 192 ≤ 256 by decide
   hB0 := show 0 < 128 by decide
@@ -155,7 +155,7 @@ def ok (hR : I.S.Repr = Spec.Sha512.Repr iv)
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha512.md, Spec.Sha512.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega_using [hj])
   lenOk _ h := h
   stream := streamOK v hR hh hB hS hDs hD hiv
   iv := iv
@@ -168,8 +168,8 @@ def ok (hR : I.S.Repr = Spec.Sha512.Repr iv)
     exact ⟨⟨by decide, by decide, by decide, by decide⟩, by decide, by decide, by decide, by decide, by decide, by decide,
       by decide, by decide, by decide, by decide⟩
   L := by show 0 < Impl.Sha512.AArch64.Stream.params.L ∧ Impl.Sha512.AArch64.Stream.params.L ≤ 16; decide
-  W := by show I.scratch ≤ 256; omega
-  hPad := by show 16 * (D / 16 + 1) + 16 ≤ 128; omega
+  W := by show I.scratch ≤ 256; omega_using [hW]
+  hPad := by show 16 * (D / 16 + 1) + 16 ≤ 128; omega_using [hD]
   L816 := by show Impl.Sha512.AArch64.Stream.params.L = 8 ∨ Impl.Sha512.AArch64.Stream.params.L = 16; decide
 
 end

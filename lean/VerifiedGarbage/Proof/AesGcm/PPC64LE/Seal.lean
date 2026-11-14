@@ -35,8 +35,8 @@ theorem oneLay {c W : Addr} (fc : c.toNat + 256 ≤ 2 ^ 64) (fW : W.toNat + 2560
     (dcW : (⟨c, 256⟩ : Region).Disjoint ⟨W, 2560⟩) : Lay c (W + BitVec.ofNat 64 16) W := by
   have sw : (W + BitVec.ofNat 64 16).toNat + 80 ≤ 2 ^ 64 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide),
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+      Nat.mod_eq_of_lt (by omega_using [fW])]
+    omega_using [fW]
   have sa : (⟨W + BitVec.ofNat 64 16, 80⟩ : Region).Disjoint ⟨W, 16⟩ := by
     simpa using Lay.w_w (w := W) (a := 16) (n := 80) (d := 0) (k := 16) (.inr (by decide)) (by decide)
       (by decide)
@@ -49,7 +49,7 @@ theorem stackArgAddr_0 (s : State) : stackArgAddr s 0 = s.sp + BitVec.ofNat 64 9
 /-- The stack arguments, in a state that may read them. -/
 theorem args_in {s : State} {n : Nat} (h : Covers [args s n] (s.rd ++ s.wr)) (hn : n ≤ 3) {i : Nat}
     (hi : i < n) : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (96 + 8 * i)) 8 := by
-  have := in_off h (d := 8 * i) (n := 8) (by omega) (by omega)
+  have := in_off h (d := 8 * i) (n := 8) (by omega_using [hi]) (by omega_using [hn])
   rwa [stackArgAddr_0, add_ofNat_assoc] at this
 
 /-- After the entry, the environment. -/
@@ -71,7 +71,7 @@ theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st 
   rcases hr with rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 48) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by omega) (.inl (by omega))
+  · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
   · exact saved_w (by decide) (.inr (by decide))
 
 end
@@ -254,12 +254,12 @@ theorem sealStages_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
   have hiv : bytesAt s₁.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat = bytesAt s₀.mem (s₀.gpr .r5) (s₀.gpr .r6).toNat :=
     bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dnW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .r6).isLt; omega)
+      (by have := (s₀.gpr .r6).isLt; omega_using [])
   have haad : bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat = bytesAt s₀.mem (s₀.gpr .r7) (s₀.gpr .r8).toNat := by
     rw [h1.r21, h1.r22]
     exact bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .r8).isLt; omega)
+      (by have := (s₀.gpr .r8).isLt; omega_using [])
   have hD₄ := bo.ciphertext
   have hcb₂ := oa.cb
   change blockAt s₂.mem (s₁.gpr .r30+48)=_ at hcb₂
@@ -268,7 +268,7 @@ theorem sealStages_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
       bytesAt s₄.mem (s₀.gpr .r9) (s₀.gpr .r10).toNat :=
     bytesAt_frame hf₅ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]; exact ddt)
-      (by have := (s₀.gpr .r10).isLt; omega)
+      (by have := (s₀.gpr .r10).isLt; omega_using [])
   have hH₂ : ctxH s₂.mem (s₁.gpr .r29)=ctxH s₀.mem (s₀.gpr .r3) := by
     rw [ctxH_eq]; exact oa.hH
   have ho := bo.tag
@@ -299,7 +299,7 @@ theorem sealBody_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {sealBody : Prog isa}
       exact bytesAt_frame hf (fun r hr => by
         rw [List.mem_singleton] at hr
         subst r
-        exact ddW) (by have := (s₀.gpr .r10).isLt; omega)
+        exact ddW) (by have := (s₀.gpr .r10).isLt; omega_using [])
     change SealFused.BodyOutWith _ _ _ _ _ _ _ _ at bo
     simpa only [hp] using bo)
 

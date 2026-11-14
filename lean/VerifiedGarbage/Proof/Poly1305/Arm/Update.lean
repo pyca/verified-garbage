@@ -94,7 +94,7 @@ theorem nf_facts (s₀ : State) :
       (0 < kb s₀ → kb s₀ + nf s₀ < 16 → nf s₀ = dl s₀) := by
   have := kb_lt s₀
   simp only [nf]
-  split <;> omega
+  split <;> omega_arith
 
 /-! ## What holds throughout -/
 

@@ -51,7 +51,7 @@ theorem low8 (x : BitVec 64) : (x <<< 56) >>> 56 = x &&& BitVec.ofNat 64 255 := 
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_and, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
     show (255 % 2 ^ 64 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem read_sixteen (m : Mem) (a : Addr) : m.read a 16 = m.readW a 128 := by
   simp only [Mem.readW, BitVec.setWidth_eq]
@@ -69,14 +69,14 @@ theorem vbyte_xor (a b : BitVec 128) (i : Nat) : vbyte (a ^^^ b) i = vbyte a i ^
 
 theorem vbyte_not0 (a : BitVec 128) : vbyte (~~~a) 0 = ~~~vbyte a 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro r hr
-  simp [vbyte, hr, show 8 * (15 - 0) + r < 128 by omega]
+  simp [vbyte, hr, show 8 * (15 - 0) + r < 128 by omega_using [hr]]
 
 /-- Byte `i` (of the first eight) of a vector, from its first doubleword. -/
 theorem vbyte_hi (x u : BitVec 64) {i : Nat} (hi : i < 8) : vbyte (x ++ u) i = x.extractLsb' (8 * (7 - i)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro r hr
   simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hr, decide_true, Bool.true_and,
-    show ¬ 8 * (15 - i) + r < 64 by omega, ite_false]
-  exact congrArg x.getLsbD (by omega)
+    show ¬ 8 * (15 - i) + r < 64 by omega_using [hi], ite_false]
+  exact congrArg x.getLsbD (by omega_using [hi])
 
 /-- `0 - ((q << (63 - c)) >> 63)`: all ones if bit `c` of `q` is set. -/
 theorem bitMask_eq (q : BitVec 64) {c : Nat} (hc : c < 64) :
@@ -87,12 +87,12 @@ theorem bitMask_eq (q : BitVec 64) {c : Nat} (hc : c < 64) :
     · subst h0
       simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
         show (63 : Nat) < 64 by decide, decide_true, Bool.true_and,
-        show ¬ (63 < 63 - c) by omega, decide_false, Bool.not_false,
-        show 63 - (63 - c) = c by omega]
+        show ¬ (63 < 63 - c) by omega_using [], decide_false, Bool.not_false,
+        show 63 - (63 - c) = c by omega_using [hc]]
       cases q.getLsbD c <;> rfl
     · have : (q <<< (63 - c) >>> 63).getLsbD i = false := by
         simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
-        simp only [show ¬ (63 + i < 64) by omega, decide_false, Bool.false_and]
+        simp only [show ¬ (63 + i < 64) by omega_using [h0], decide_false, Bool.false_and]
       rw [this]
       cases q.getLsbD c
       · simp
@@ -120,7 +120,7 @@ theorem vbyte_load (m : Mem) (a : Addr) {k : Nat} (hk : k < 16) :
     vbyte (swapDwords (m.readW a 128)) k = m (a + BitVec.ofNat 64 (k ^^^ 7)) := by
   have e : ∀ k < 16, 15 - (if k < 8 then k + 8 else k - 8) = k ^^^ 7 := by decide
   rw [vbyte_swapDwords _ hk, vbyte, Mem.readW, BitVec.setWidth_eq, ← e k hk]
-  exact Mem.extractLsb'_read m a (n := 16) (by split <;> omega)
+  exact Mem.extractLsb'_read m a (n := 16) (by split <;> omega_using [])
 
 /-- `vperm`'s byte `x XOR 7` of a 32-byte chunk loaded by `lxvd2x`: its byte
 `x`. -/
@@ -133,15 +133,15 @@ theorem pick (m : Mem) (a : Addr) {x : Nat} (hx : x < 32) :
   by_cases h : x < 16
   · obtain ⟨l1, l2⟩ := lo x h
     rw [ite_eq_left l1, vbyte_load _ _ l1, l2]
-  · obtain ⟨l1, l2, l3⟩ := hi x hx (by omega)
+  · obtain ⟨l1, l2, l3⟩ := hi x hx (by omega_using [h])
     rw [ite_eq_right l1, vbyte_load _ _ l2, show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add, l3]
 
 theorem top0 (X : BitVec 128) : vdword X 0 >>> 56 = (vbyte X 0).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [vdword, vbyte, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
   by_cases h : i < 8
-  · simp [h, show 56 + i < 64 by omega, show i < 64 by omega]; congr 1; omega
-  · simp [h, show ¬ 56 + i < 64 by omega]
+  · simp [h, show 56 + i < 64 by omega_using [h], show i < 64 by omega_using [hi]]; congr 1; omega_using []
+  · simp [h, show ¬ 56 + i < 64 by omega_using [h]]
 
 theorem xor7_mod (x : Byte) : (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by
   have : ∀ x : Byte, (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by decide
@@ -149,7 +149,7 @@ theorem xor7_mod (x : Byte) : (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := b
 
 theorem ctl0 (x : BitVec 64) : (x <<< 56).extractLsb' (8 * (7 - 0)) 8 = x.setWidth 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [hi, show 56 + i < 64 by omega, show i < 64 by omega]
+  simp [hi, show 56 + i < 64 by omega_using [hi], show i < 64 by omega_using [hi]]
 
 /-- The chunk the bits 5, 6 and 7 of `q` name. -/
 theorem tree_sel {α : Type} (e : Nat → α) (q : BitVec 64) :
@@ -165,7 +165,7 @@ theorem tree_sel {α : Type} (e : Nat → α) (q : BitVec 64) :
     tb 0 (by decide), tb 1 (by decide), tb 2 (by decide)]
   have : q.toNat / 32 % 8 < 8 := Nat.mod_lt _ (by decide)
   generalize q.toNat / 32 % 8 = r at this ⊢
-  rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7) with
+  rcases (by omega_using [this] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- The address of chunk `i` of the table at `T`, as the code makes it. -/
@@ -189,7 +189,7 @@ theorem lookup_core (s : State) (idx : Byte) (h9 : s.gpr .r9 = idx.setWidth 64)
   have rc : ∀ i < 8, InRegions (s.rd ++ s.wr) (ch T i) 16 ∧ InRegions (s.rd ++ s.wr) (ch T i + 16#64) 16 :=
     fun i hi => by
       rw [ch_eq, show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add, ← hT]
-      exact ⟨region_offset _ _ _ _ _ (by omega) (by omega) hr, region_offset _ _ _ _ _ (by omega) (by omega) hr⟩
+      exact ⟨region_offset _ _ _ _ _ (by omega_using [hi]) (by omega_using [hi]) hr, region_offset _ _ _ _ _ (by omega_using [hi]) (by omega_using [hi]) hr⟩
   have a0 := rc 0 (by decide); have a1 := rc 1 (by decide); have a2 := rc 2 (by decide)
   have a3 := rc 3 (by decide); have a4 := rc 4 (by decide); have a5 := rc 5 (by decide)
   have a6 := rc 6 (by decide); have a7 := rc 7 (by decide)
@@ -198,13 +198,13 @@ theorem lookup_core (s : State) (idx : Byte) (h9 : s.gpr .r9 = idx.setWidth 64)
   rrun [reduceVOpEval, vCtl, vBit, vLo, vHi, vPick, vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
     ↓read_sixteen, addrX, BitVec.or_self, hT, h8, a0.1, a0.2, a1.1, a1.2, a2.1, a2.2, a3.1, a3.2, a4.1, a4.2,
     a5.1, a5.2, a6.1, a6.2, a7.1, a7.2]
-  have hx : (s.gpr .r9).toNat = idx.toNat := by rw [h9, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+  have hx : (s.gpr .r9).toNat = idx.toNat := by rw [h9, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_using [])
   have hq : idx.toNat < 256 := idx.isLt
   generalize idx.toNat = x at hx hq ⊢
   have hc : ((s.gpr .r9 ^^^ 7#64).setWidth 8).toNat % 32 = (x % 32) ^^^ 7 := by
     rw [show (s.gpr .r9 ^^^ 7#64).setWidth 8 = (s.gpr .r9).setWidth 8 ^^^ 7#8 by
       apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi], xor7_mod, BitVec.toNat_setWidth, hx,
-      Nat.mod_eq_of_lt (show x < 2 ^ 8 by omega)]
+      Nat.mod_eq_of_lt (show x < 2 ^ 8 by omega_using [hq])]
   rw [top0]
   simp only [vbyte_or, vbyte_and, vbyte_not0, vbyte_mask _ _ (show 5 < 64 by decide) (show 0 < 8 by decide),
     vbyte_mask _ _ (show 6 < 64 by decide) (show 0 < 8 by decide),
@@ -214,6 +214,6 @@ theorem lookup_core (s : State) (idx : Byte) (h9 : s.gpr .r9 = idx.setWidth 64)
   refine (congrArg (BitVec.setWidth 64) (tree_sel (fun t =>
     if x % 32 ^^^ 7 < 16 then vbyte (swapDwords (s.mem.readW (ch T t) 128)) (x % 32 ^^^ 7)
     else vbyte (swapDwords (s.mem.readW (ch T t + 16#64) 128)) ((x % 32 ^^^ 7) - 16)) (s.gpr .r9))).trans ?_
-  rw [pick _ _ hx32, ch_eq, Offset.add_add, hx, show 32 * (x / 32 % 8) + x % 32 = x by omega]
+  rw [pick _ _ hx32, ch_eq, Offset.add_add, hx, show 32 * (x / 32 % 8) + x % 32 = x by omega_using [hq]]
 
 end VG.Proof.Rc4.PPC64LE

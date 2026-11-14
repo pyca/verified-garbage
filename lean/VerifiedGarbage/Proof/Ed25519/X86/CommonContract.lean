@@ -41,9 +41,9 @@ theorem ScratchPre.args_stk {s : State} {scidx argc : Nat} (hp : ScratchPre s sc
   have hf := hp.sp_fit
   have hi := hp.index
   have e : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-    addr_eq (x := s.gpr .esp) (k := 4) (by omega)
+    addr_eq (x := s.gpr .esp) (k := 4) (by omega_using [hf, hi])
   rw [hp.callStk_eq, e]
-  exact Offset.disjoint_below _ (by omega)
+  exact Offset.disjoint_below _ (by omega_using [hf])
 
 theorem ScratchPre.arg_contains {s : State} {scidx argc i : Nat} (hp : ScratchPre s scidx argc)
     (hi : i < argc) : (⟨argAddr s 0, 4 * argc⟩ : Region).Contains

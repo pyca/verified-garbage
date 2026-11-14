@@ -31,7 +31,7 @@ theorem coordinates (hc : CfgOk p384)
     (Nat.lt_trans (mont_lt hc _) (by decide +kernel)) (Nat.lt_trans (mont_lt hc _) (by decide +kernel))
   simp only [Nat.zero_mul,BitVec.add_zero,Nat.reduceMul] at he
   rw [wordsVal_addr,wordsVal_addr,Nat.add_zero]
-  rw [show 192*(a-1)=96*(2*a-2) from by omega]
+  rw [show 192*(a-1)=96*(2*a-2) from by omega_using []]
   exact he
 
 theorem of_table (hc : CfgOk p384) (hC : Law p384.C)
@@ -47,12 +47,12 @@ theorem of_table (hc : CfgOk p384) (hC : Law p384.C)
   · intro a ha ha32 i hi
     rw [Offset.add_add]
     obtain ⟨r,hr,hreg⟩ := ht.rd
-    exact ⟨r,hr,Region.contains_off hreg (by rw [hlen]; omega)⟩
+    exact ⟨r,hr,Region.contains_off hreg (by rw [hlen]; omega_using [ha32, hi])⟩
   · intro a ha ha32 i hi b hb
     rw [Offset.add_add T (192*(a-1)) (8*i)]
-    have hd : 192*(a-1)+8*i=8*(24*(a-1)+i) := by omega
+    have hd : 192*(a-1)+8*i=8*(24*(a-1)+i) := by omega_using []
     rw [hd]
-    exact hout _ (by rw [hlen]; omega) b hb
+    exact hout _ (by rw [hlen]; omega_using [ha32, hi]) b hb
   · intro a ha ha32
     rw [(coordinates hc hT ht a ha ha32).1,(coordinates hc hT ht a ha ha32).2]
     exact ⟨mont_lt hc _,mont_lt hc _⟩
@@ -63,8 +63,8 @@ theorem of_table (hc : CfgOk p384) (hC : Law p384.C)
     have radix : (2^(64*p384.n):Nat)=(@HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@instPowNat Nat instNatPowNat)) 2 (64*6)) := by decide +kernel
     rw [radix] at hx hy
     rw [hx,hy]
-    have hp := hT.entry 0 (by decide) (2*a-2) (by omega)
-    simp only [Nat.mul_zero,Nat.pow_zero,Nat.mul_one,show 2*a-2+1=2*a-1 from by omega] at hp
+    have hp := hT.entry 0 (by decide) (2*a-2) (by omega_using [ha32])
+    simp only [Nat.mul_zero,Nat.pow_zero,Nat.mul_one,show 2*a-2+1=2*a-1 from by omega_using [ha]] at hp
     rw [hp]
     exact InvJ.affine hC _ _
 

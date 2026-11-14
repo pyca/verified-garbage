@@ -46,7 +46,7 @@ theorem copyTag_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
       s₁.zf = some (decide (n = 16)) ∧ s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
     · rw [zf_arithFlags, h.rcx]
-      exact congrArg some (Offset.ofNat_sub_ofNat_beq (by have := h.lt; omega) (by decide))
+      exact congrArg some (Offset.ofNat_sub_ofNat_beq (by have := h.lt; omega_using [this]) (by decide))
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.ite (decide (n = 16)) hz₁ (fun he => ?_) (fun _ => ?_)

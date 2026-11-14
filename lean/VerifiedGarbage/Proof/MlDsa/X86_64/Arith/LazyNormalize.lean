@@ -35,7 +35,7 @@ theorem normalize_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State
       Normalized s'.mem fP G (i + 1) ∧ s'.gpr .rdx = coeffAddr fP (8 * (i + 1)) ∧
         Frame [pR fP] s.mem s'.mem ∧ YConsts s' ∧ Keep [.rdx, .rcx] s s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mxcsr = s.mxcsr := by
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_using [hi]
   have r0 : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 0) 32 := by
     rw [hdx, add_ofNat_zero]; exact f_in32 (List.mem_append_right _ hw) j0
   rw [reduceBody, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -46,8 +46,8 @@ theorem normalize_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State
     fun l hl => reduce_ok (yonly_yconsts o1 hc (by decide) (by decide) (by decide) l hl).toVConsts
       (fun e he => by
         rw [State.proj_xmm, L1 l hl, hdx, add_ofNat_zero, dword_readW _ _ he, lane_load,
-          coeffAddr_add, ← coeffAt_eq, hS _ (by omega), ifn (by omega)])
-      (fun e he => hb _ (by omega))) fun s2 ⟨V2, o2⟩ => ?_
+          coeffAddr_add, ← coeffAt_eq, hS _ (by omega_using [hi, hl, he]), ifn (by omega_using [])])
+      (fun e he => hb _ (by omega_using [hi, hl, he]))) fun s2 ⟨V2, o2⟩ => ?_
   have o12 := o1.trans o2
   have hv : ∀ l < 2, ∀ e < 4, (dword (s2.lane .xmm0 l) e).toNat = (residue G[8 * i + 4 * l + e]!).val :=
     fun l hl e he => V2 l hl e he
@@ -60,19 +60,19 @@ theorem normalize_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State
   · rw [coeffAt_write256 _ _ j0 _ hk]
     split
     · rename_i h
-      rw [ifp (show k < 8 * (i + 1) by omega), State.ymm, extract_ymm _ _ (by omega)]
+      rw [ifp (show k < 8 * (i + 1) by omega_using [h]), State.ymm, extract_ymm _ _ (by omega_using [h])]
       split
-      · have := hv 0 (by decide) (k - 8 * i) (by omega)
-        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega] at this; exact this
-      · have := hv 1 (by decide) (k - 8 * i - 4) (by omega)
-        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega] at this; exact this
+      · have := hv 0 (by decide) (k - 8 * i) (by omega_arith)
+        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega_using [h]] at this; exact this
+      · have := hv 1 (by decide) (k - 8 * i - 4) (by omega_using [h])
+        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega_arith] at this; exact this
     · rename_i h
       rw [hS k hk]
       by_cases h' : k < 8 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_using [h'])]
+      · rw [ifn h', ifn (by omega_using [h, h'])]
   · rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add,
-      show 8 * i + 8 = 8 * (i + 1) by omega]
+      show 8 * i + 8 = 8 * (i + 1) by omega_using []]
   · exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (pR_contains32 fP j0)
   · exact ylanes_gpr (s := s2) (fun r l => by simp only [lane_setReg, lane_setFlags, State.setMem_lane]) o12 hc
       (by decide) (by decide)
@@ -98,7 +98,7 @@ theorem normalize_ok {fP : Addr} {G : Poly} {f : VG.Spec.MlDsa.Poly}
     (fun i u => Normalized u.mem fP G i ∧ u.gpr .rdx = coeffAddr fP (8 * i) ∧ YConsts u ∧
       Keep [.rcx, .rdx] w u ∧ Frame [pR fP] w.mem u.mem ∧ u.mxcsr = w.mxcsr)
     (fun u o hu _ => ⟨fun k hk => by
-        rw [o.mem, og.mem, ifn (by omega)]; exact polyIs_toNat hS hk,
+        rw [o.mem, og.mem, ifn (by omega_using [])]; exact polyIs_toNat hS hk,
       by rw [o.keep.gpr (by decide), hdx, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       ylanes_gpr (s := w) (o.lane hu) (YOnly.refl [] w) cw (by decide) (by decide),
       o.keep.mono (by simp), by rw [o.mem]; exact Frame.refl _ _, o.mxcsr⟩)

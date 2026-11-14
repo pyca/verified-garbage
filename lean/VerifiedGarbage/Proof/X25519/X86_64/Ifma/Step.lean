@@ -37,35 +37,35 @@ theorem VFrame.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : VFrame base m�
     VFrame base m₁ m₃ := fun x hx => (h₂ x hx).trans (h₁ x hx)
 
 theorem VFrame.of_slots {base : Addr} {m m' : Mem} (h : Outside base 1024 480 m m') : VFrame base m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_using [hx])
 
 theorem VFrame.of_swap {base : Addr} {m m' : Mem} (h : Outside base 640 8 m m') : VFrame base m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_using [hx])
 
 theorem Consts.of_word {m m' : Mem} {base : Addr} {x1 : Nat → Nat} (hk : Consts m base x1)
     (w : ∀ d, 1504 ≤ d → d + 8 ≤ 2208 → mq m' base d = mq m base d) : Consts m' base x1 := by
   refine ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun i hi l hl => ?_,
     fun i hi l hl => ?_, hk.x1, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_,
     fun l hl => ?_⟩
-  · rw [w _ (by simp only [KM]; omega) (by simp only [KM]; omega)]; exact hk.km l hl
-  · rw [w _ (by simp only [K19]; omega) (by simp only [K19]; omega)]; exact hk.k19 l hl
-  · rw [w _ (by simp only [KB0]; omega) (by simp only [KB0]; omega)]; exact hk.kb0 l hl
-  · rw [w _ (by simp only [KB1]; omega) (by simp only [KB1]; omega)]; exact hk.kb1 l hl
-  · rw [slotv, w _ (by simp only [KA24]; omega) (by simp only [KA24]; omega)]; exact hk.a24 i hi l hl
-  · rw [slotv, w _ (by simp only [KX1]; omega) (by simp only [KX1]; omega)]; exact hk.kx1 i hi l hl
-  · rw [w _ (by simp only [K13]; omega) (by simp only [K13]; omega)]; exact hk.k13 l hl
-  · rw [w _ (by simp only [K26]; omega) (by simp only [K26]; omega)]; exact hk.k26 l hl
-  · rw [w _ (by simp only [K39]; omega) (by simp only [K39]; omega)]; exact hk.k39 l hl
-  · rw [w _ (by simp only [K4D]; omega) (by simp only [K4D]; omega)]; exact hk.k4d l hl
-  · rw [w _ (by simp only [KIU]; omega) (by simp only [KIU]; omega)]; exact hk.kiu l hl
-  · rw [w _ (by simp only [KIV]; omega) (by simp only [KIV]; omega)]; exact hk.kiv l hl
+  · rw [w _ (by simp only [KM]; omega_using []) (by simp only [KM]; omega_using [hl])]; exact hk.km l hl
+  · rw [w _ (by simp only [K19]; omega_using []) (by simp only [K19]; omega_using [hl])]; exact hk.k19 l hl
+  · rw [w _ (by simp only [KB0]; omega_using []) (by simp only [KB0]; omega_using [hl])]; exact hk.kb0 l hl
+  · rw [w _ (by simp only [KB1]; omega_using []) (by simp only [KB1]; omega_using [hl])]; exact hk.kb1 l hl
+  · rw [slotv, w _ (by simp only [KA24]; omega_using []) (by simp only [KA24]; omega_using [hi, hl])]; exact hk.a24 i hi l hl
+  · rw [slotv, w _ (by simp only [KX1]; omega_using []) (by simp only [KX1]; omega_using [hi, hl])]; exact hk.kx1 i hi l hl
+  · rw [w _ (by simp only [K13]; omega_using []) (by simp only [K13]; omega_using [hl])]; exact hk.k13 l hl
+  · rw [w _ (by simp only [K26]; omega_using []) (by simp only [K26]; omega_using [hl])]; exact hk.k26 l hl
+  · rw [w _ (by simp only [K39]; omega_using []) (by simp only [K39]; omega_using [hl])]; exact hk.k39 l hl
+  · rw [w _ (by simp only [K4D]; omega_using []) (by simp only [K4D]; omega_using [hl])]; exact hk.k4d l hl
+  · rw [w _ (by simp only [KIU]; omega_using []) (by simp only [KIU]; omega_using [hl])]; exact hk.kiu l hl
+  · rw [w _ (by simp only [KIV]; omega_using []) (by simp only [KIV]; omega_using [hl])]; exact hk.kiv l hl
 
 theorem Consts.of_frame {m m' : Mem} {base : Addr} {x1 : Nat → Nat} (hk : Consts m base x1)
     (h : VFrame base m m') : Consts m' base x1 :=
   hk.of_word fun d h1 h2 => by
     rw [mq_eq_word, mq_eq_word]
     exact (Mem.readW_congr fun i hi => (h _ (by
-      right; right; rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega)).symm).symm
+      right; right; rw [VG.Proof.X25519.X86_64.ofs_off base (by omega_using [h2, hi])]; omega_using [h1])).symm).symm
 
 /-- The loop invariant, with the counter `rbx = n`. -/
 structure VInv (base : Addr) (k : Nat) (u : Fe) (x1 : Nat → Nat) (s₀ s : State) (n : Nat) : Prop where
@@ -102,22 +102,22 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Fe} {x1 : Nat →
     WP isa (.block vstep) s fun s' => VInv base k u x1 s₀ s' n ∧ s'.zf = some (decide (n = 0)) := by
   have hs := hi.scr
   have hbit : s.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS]; omega_using [hn])]
     exact hbits n hn
-  have hsw := ladderAfter_swap_le k u (n := n + 1) (by omega)
+  have hsw := ladderAfter_swap_le k u (n := n + 1) (by omega_using [hn])
   rw [vstep_eq, WP.block_append_iff]
-  refine WP.mono (stepPre_ok hs hn hi.rbx (by have := bit_le k n; omega) (by omega) hbit hi.swap)
+  refine WP.mono (stepPre_ok hs hn hi.rbx (by have := bit_le k n; omega_using [this]) (by omega_using [hsw]) hbit hi.swap)
     fun s₁ ⟨b₁, m₁, g₁, rd₁, wr₁, mem₁, x₁, y₁⟩ => ?_
   have hs₁ : Scr s₁ base := ⟨(g₁ _ (by decide)).trans hs.rdi, wr₁ ▸ hs.wr, hs.nowrap⟩
   have o₁ : Outside base 640 8 s.mem s₁.mem := by
-    rw [mem₁]; exact writeW_outside _ _ _ (by omega)
+    rw [mem₁]; exact writeW_outside _ _ _ (by omega_using [])
   have hk₁ := hi.consts.of_frame (VFrame.of_swap o₁)
   rw [WP.block_append_iff]
   refine WP.mono (mk_wp (scr_ctx hs₁)) fun s₂ ⟨v₂, mm₂, u₂, k₂⟩ => ?_
   have hs₂ := scr_of hs₁ (vm_gpr v₂) (vm_wr v₂)
   have hk₂ : Consts s₂.mem base x1 := by rw [mm₂]; exact hk₁
   have e₂ : ∀ l < 4, ∀ i < 5, lanes s₂ 0 l i = lanes s 0 l i := fun l hl i hi' => by
-    rw [lanes_keep (s := s₁) (s' := s₂) (r0 := 0) (fun r _ _ h2 l hl => k₂ r (by omega) l hl) (by decide) l hl i hi']
+    rw [lanes_keep (s := s₁) (s' := s₂) (r0 := 0) (fun r _ _ h2 l hl => k₂ r (by omega_using [h2]) l hl) (by decide) l hl i hi']
     exact lanes_of_vec x₁ y₁ 0 l i
   have lim₂ : ∀ l < 4, ∀ i < 5, lanes s₂ 0 l i < 2 ^ 61 := fun l hl i hi' => by
     rw [e₂ l hl i hi']; exact hi.lim l hl i hi'
@@ -140,12 +140,12 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Fe} {x1 : Nat →
     rw [BitVec.and_self]
     rcases Nat.eq_zero_or_pos n with rfl | h
     · rfl
-    · rw [decide_eq_false (by omega)]
+    · rw [decide_eq_false (by omega_using [h])]
       apply beq_false_of_ne
       intro h'
       have := congrArg BitVec.toNat h'
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      exact absurd this (by simp; omega)
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at this
+      exact absurd this (by simp; omega_using [h])
   -- the field elements
   have fsw : ∀ l < 4, fe5 (lanes s₂ 0 (swl (decide ((ladderAfter k u (n + 1)).swap ^^^ bit k n = 1)) l)) =
       fe5 (lanes s 0 (if decide ((ladderAfter k u (n + 1)).swap ^^^ bit k n = 1) then l ^^^ 2 else l)) :=
@@ -185,7 +185,7 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Fe} {x1 : Nat →
   · rw [RegUpd.mem_arithFlags]
     have w₁ : word s₅.mem base SWAP = word s₁.mem base SWAP := by
       have O : Outside base 1024 480 s₂.mem s₅.mem := (K₃.mem.trans K₄.mem).trans K₅.mem
-      rw [O.word (by simp only [SWAP]; omega) (by simp only [SWAP]; omega), mm₂]
+      rw [O.word (by simp only [SWAP]; omega_using []) (by simp only [SWAP]; omega_using []), mm₂]
     rw [w₁, mem₁, L]
     simp only [VG.Proof.X25519.X86_64.word, Mem.readW_writeW_self64]
     rfl

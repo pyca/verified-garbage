@@ -43,7 +43,7 @@ theorem kSel_ok {s : State} {B : Addr} {Z W : Nat} (hw : Ws s B Z W) {K c : Nat}
     hw.scr.st (d := 8 * sB2) (by unfold sB2 sFn; omega_arith), hk, sx_ofNat hc, decide_lt_one']
   have e : (BitVec.ofNat 64 K &&& BitVec.ofNat 64 c = 0) ↔ K &&& c = 0 := by
     rw [← BitVec.toNat_inj, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show K < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show K < 2 ^ 64 by omega_using [hK]), Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_using [hc])]
     rfl
   rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool (decide (BitVec.ofNat 64 K &&& BitVec.ofNat 64 c = 0)))) =
     mask (decide (BitVec.ofNat 64 K &&& BitVec.ofNat 64 c = 0)) from rfl, decide_eq_decide.mpr e]
@@ -177,7 +177,7 @@ theorem rnF_val {W K : Nat} (hKW : K + 4 ≤ W) : ∀ (k V : Nat), rnF W K V (po
     simp only [pows, rnF, Nat.and_one_is_mod, Nat.zero_add, Nat.pow_one]
     rcases Nat.mod_two_eq_zero_or_one K with h | h
     · simp [h]
-    · simp only [h, show 1 + 4 ≤ W by omega, ne_eq, Nat.one_ne_zero, not_false_eq_true, and_self, ↓reduceIte,
+    · simp only [h, show 1 + 4 ≤ W by omega_using [hKW, h], ne_eq, Nat.one_ne_zero, not_false_eq_true, and_self, ↓reduceIte,
         Nat.mul_one]
   | k + 1, V => by
     rw [pows, rnF, rnF_val hKW k, Nat.mod_pow_succ (k := k + 1)]
@@ -188,10 +188,10 @@ theorem rnF_val {W K : Nat} (hKW : K + 4 ≤ W) : ∀ (k V : Nat), rnF W K V (po
             (Nat.pos_of_ne_zero fun h => by rw [h] at hb; simp at hb)
         rw [Nat.one_mul] at h1
         generalize 2 ^ (k + 1) = P at h1 ⊢
-        omega
+        omega_using [hKW, h1]
       simp only [hc, and_pow_ne.mpr hb, ne_eq, not_false_eq_true, and_self, ↓reduceIte, hb, Nat.mul_one,
         Nat.div_div_eq_div_mul, ← Nat.pow_add]
-      congr 2; omega
+      congr 2; omega_using []
     · have hb0 : K / 2 ^ (k + 1) % 2 = 0 := by
         rcases Nat.mod_two_eq_zero_or_one (K / 2 ^ (k + 1)) with h | h
         · exact h
@@ -218,15 +218,15 @@ theorem kBlk_ok {s : State} {B : Addr} {Z W : Nat} (hw : Ws s B Z W) {K z : Nat}
   have e1 : BitVec.ofNat 64 K >>> 1 = BitVec.ofNat 64 (K / 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [hK]
   have e2 : BitVec.ofNat 64 z >>> 1 + (BitVec.ofNat 64 K &&& 1) <<< 5 =
       BitVec.ofNat 64 (z / 2 + 32 * (K % 2)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_and, BitVec.toNat_ofNat,
       Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-    rw [show BitVec.toNat (1 : BitVec 64) = 1 from rfl, Nat.and_one_is_mod, Nat.mod_eq_of_lt (show K < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show z < 2 ^ 64 by omega)]
-    omega
+    rw [show BitVec.toNat (1 : BitVec 64) = 1 from rfl, Nat.and_one_is_mod, Nat.mod_eq_of_lt (show K < 2 ^ 64 by omega_using [hK]),
+      Nat.mod_eq_of_lt (show z < 2 ^ 64 by omega_using [hz])]
+    omega_using []
   xrun [State.ea, hdr, hw.rdi, hdrOff, hw.scr.ld (d := 8 * sK2) (by unfold sK2 sFn; omega_arith),
     hw.scr.st (d := 8 * sK2) (by unfold sK2 sFn; omega_arith), hk, shv1, shv5, e1,
     hw.scr.ld (d := 8 * sC) (by unfold sC sFn; omega_arith), hw.scr.st (d := 8 * sC) (by unfold sC sFn; omega_arith), hc,
@@ -321,7 +321,7 @@ theorem finishX_ok {t₀ t : State} {B : Addr} {Z W h X C z : Nat} {c b : Bool} 
     fun t₄ ⟨v4, o4, k4⟩ => ?_)
   have h₄ := h₃.congrO o4 (by omega_arith) k4 (by simp)
   rw [o3.wv (by omega_arith) (by omega_arith), o₂.wv (by omega_arith) (by omega_arith), hd,
-    show 2 * s / 2 = s by omega] at v4
+    show 2 * s / 2 = s by omega_using []] at v4
   have Rtop₄ : word t₄.mem B (slot W sqR + 8 * W) = 0 := by
     rw [o4.word (by omega_arith) (by omega_arith)]; exact (wv_eq_zero_iff _ _ _ _).mp z3 W (by omega_arith)
   -- `K := K / 2`, `sC := z / 2 + 32 (K mod 2)`.
@@ -442,7 +442,7 @@ theorem sqrt_ok {s : State} {B : Addr} {Z W h X : Nat} {c : Bool} (hw : Ws s B Z
       .loop stepX .ne] : List (Prog isa)) ++ finishX =
     normX ++ ((firstX ++ [.block (ws ++ hOf ++ ([.alu .sub .r12 (.imm 1), .store (hdr sCt) .r12] : List Instr))]) ++
       ([.loop stepX .ne] ++ finishX)) by simp]
-  refine wp_seqs_append (by simp [normX]) (by simp [firstX]) (WP.mono (normX_ok hw hwh (by omega) hh hX)
+  refine wp_seqs_append (by simp [normX]) (by simp [firstX]) (WP.mono (normX_ok hw hwh (by omega_using [h2]) hh hX)
     fun t₁ ⟨C, z, hz2, hz64, hC, X₁, hlo, hhi, K₁, Z₁, S₁, F₁, k₁, h₁⟩ => ?_)
   refine wp_seqs_append (by simp [firstX]) (by simp) (WP.mono (sqInit_ok h₁ hwh h2 X₁ hlo hhi)
     fun t₂ ⟨I₂, F₂, k₂⟩ => ?_)
@@ -450,21 +450,21 @@ theorem sqrt_ok {s : State} {B : Addr} {Z W h X : Nat} {c : Bool} (hw : Ws s B Z
     fun t₃ I₃ => ?_)
   -- The header's words, through `firstX` and the loop.
   have keepH : ∀ d, d + 8 ≤ 256 → (d + 8 ≤ 200 ∨ 216 ≤ d) → word t₃.mem B d = word t₁.mem B d := fun d a1 a2 => by
-    rw [I₃.frm.word_eq (fun y h1 h2 hy => by unfold SqLP at hy; simp only [sCt, sU, sFn] at hy; omega) (by omega),
-      F₂.word_eq (fun y h1 h2 hy => by unfold SqLP at hy; simp only [sCt, sU, sFn] at hy; omega) (by omega)]
+    rw [I₃.frm.word_eq (fun y h1 h2 hy => by unfold SqLP at hy; simp only [sCt, sU, sFn] at hy; omega_arith) (by omega_using [a1]),
+      F₂.word_eq (fun y h1 h2 hy => by unfold SqLP at hy; simp only [sCt, sU, sFn] at hy; omega_arith) (by omega_using [a1])]
   -- The normalized number's root.
   generalize hX0 : X % 2 ^ (64 * (2 * h)) = X0 at S₁ ⊢
   have hXn : Xn X h = if X0 = 0 then 1 else X0 := by unfold Xn; rw [hX0]
   have e4 : Xn X h * 2 ^ (64 * C) * 2 ^ z = 4 ^ (32 * C + z / 2) * Xn X h := by
     rw [VG.Proof.Bignum.SqrtRem.four_pow, ← Nat.pow_add, Nat.mul_assoc, ← Nat.pow_add, Nat.mul_comm]
-    congr 2; omega
+    congr 2; omega_using [hz2]
   have nsq := VG.Proof.Bignum.SqrtRem.norm_sqrt (32 * C + z / 2) (Xn X h)
   have nsq2 := VG.Proof.Bignum.SqrtRem.norm_square (32 * C + z / 2) (Xn X h)
   rw [← e4] at nsq nsq2
-  refine WP.mono (finishX_ok (c := c) (b := decide (X0 = 0)) hwh (by omega) hh I₃ (by rw [keepH _ (by omega) (by omega), K₁])
-    hC (by rw [keepH _ (by omega) (by omega), Z₁]) hz64 (by rw [keepH _ (by omega) (by omega), S₁])
-    (by unfold mw; rw [keepH _ (by omega) (by omega), F₁.word_eq (fun y h1 h2 hy => by unfold NxP at hy; omega)
-      (by omega)]; exact hm)
+  refine WP.mono (finishX_ok (c := c) (b := decide (X0 = 0)) hwh (by omega_using [h2]) hh I₃ (by rw [keepH _ (by omega_using [hsk]) (by omega_using [hsk]), K₁])
+    hC (by rw [keepH _ (by omega_using [hsc]) (by omega_using [hsc]), Z₁]) hz64 (by rw [keepH _ (by omega_using [hsz]) (by omega_using [hsz]), S₁])
+    (by unfold mw; rw [keepH _ (by omega_using [hsm]) (by omega_using [hsm]), F₁.word_eq (fun y h1 h2 hy => by unfold NxP at hy; omega_arith)
+      (by omega_using [hsm])]; exact hm)
     (fun hb => by rw [nsq, hXn]; simp only [of_decide_eq_true hb, ↓reduceIte, isqrt_one])) fun t ⟨R, M, F₄, k₄, h₄⟩ => ?_
   refine ⟨?_, ?_, ?_, (((k₁.trans k₂).trans I₃.keep).trans k₄).mono (by simp [mmRegs]), h₄⟩
   · rw [R, nsq, hXn]
@@ -477,7 +477,7 @@ theorem sqrt_ok {s : State} {B : Addr} {Z W h X : Nat} {c : Bool} (hw : Ws s B Z
     rw [show Xn X h * 2 ^ (64 * C) * 2 ^ z - isqrt (Xn X h * 2 ^ (64 * C) * 2 ^ z) *
         isqrt (Xn X h * 2 ^ (64 * C) * 2 ^ z) = 0 ↔
       isqrt (Xn X h * 2 ^ (64 * C) * 2 ^ z) * isqrt (Xn X h * 2 ^ (64 * C) * 2 ^ z) = Xn X h * 2 ^ (64 * C) * 2 ^ z by
-      have := VG.Proof.Rsa.RecoverDet.isqrt_sq_le (Xn X h * 2 ^ (64 * C) * 2 ^ z); omega, nsq2, hXn]
+      have := VG.Proof.Rsa.RecoverDet.isqrt_sq_le (Xn X h * 2 ^ (64 * C) * 2 ^ z); omega_using [this], nsq2, hXn]
     by_cases h0 : X0 = 0
     · simp only [h0, ↓reduceIte, isqrt_one, isqrt_zero]
     · simp only [h0, ↓reduceIte]

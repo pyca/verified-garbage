@@ -27,9 +27,9 @@ theorem combTableArgs_raw_ok (s : State) {base ctx : BitVec 32} {len w digit : N
         t.gpr .r0 = base ∧ t.mem = s.mem) ∧ Rest roundClobbers s t := by
   apply withAllRest
   have stackAddr : State.addr (s.sp + BitVec.ofNat 32 4) = off (State.addr s.sp) 4 :=
-    addr_add (by have := locals.space.nowrap; omega)
+    addr_add (by have := locals.space.nowrap; omega_using [this])
   have baseAddr : State.addr (base + BitVec.ofNat 32 48) = off (State.addr base) 48 :=
-    addr_add (by have := ws.nowrap; omega)
+    addr_add (by have := ws.nowrap; omega_using [fit, this])
   have stackRead := locals.read (d := 4) (by decide)
   have baseRead := ws.read fit
   unfold CombPrecompute.tableArgs

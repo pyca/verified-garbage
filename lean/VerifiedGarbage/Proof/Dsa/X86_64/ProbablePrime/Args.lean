@@ -37,9 +37,9 @@ theorem argList_fits {bits : Nat} (hb : bits ≤ 3072) : ∀ a ∈ argList bits,
   rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals dsimp only [argumentFits]
   · decide
-  · refine ⟨by decide, by decide, ?_⟩; unfold draw; split <;> omega
-  · refine ⟨by decide, by decide, ?_⟩; unfold len; omega
-  · refine ⟨by decide, by decide, ?_⟩; unfold checks; split <;> omega
+  · refine ⟨by decide, by decide, ?_⟩; unfold draw; split <;> omega_arith
+  · refine ⟨by decide, by decide, ?_⟩; unfold len; omega_using [hb]
+  · refine ⟨by decide, by decide, ?_⟩; unfold checks; split <;> omega_using []
   · refine ⟨by decide, by decide, by decide, ?_⟩; unfold candidate; split <;> decide
   · decide
   · decide

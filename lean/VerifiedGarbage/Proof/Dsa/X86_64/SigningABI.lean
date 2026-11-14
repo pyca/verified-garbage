@@ -64,6 +64,6 @@ theorem SigningABI.used {s : State} (h : SigningABI s) : usedBytes ≤ (stackArg
   unfold Spec.Dsa.lengthsValid at hl
   unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
-  omega
+  omega_using [hl, hs]
 
 end VG.Proof.Dsa.X86_64

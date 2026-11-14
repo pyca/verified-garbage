@@ -37,13 +37,13 @@ theorem lastIndex_bounds (p : Params) (positive : 0 < p.lanes) (minimum : 2 ≤ 
     (lane : Nat) (active : lane < p.lanes) : 0 < lastIndex p lane ∧ lastIndex p lane < p.blocks := by
   have q : 8 ≤ p.laneLen := by
     have eq := laneLen_segments p positive
-    omega
+    omega_using [minimum, eq]
   have total := blocks_lanes p positive
-  have product : (lane + 1) * p.laneLen ≤ p.lanes * p.laneLen := Nat.mul_le_mul_right _ (by omega)
+  have product : (lane + 1) * p.laneLen ≤ p.lanes * p.laneLen := Nat.mul_le_mul_right _ (by omega_using [active])
   have low : p.laneLen ≤ (lane + 1) * p.laneLen := by
-    simpa only [Nat.one_mul] using Nat.mul_le_mul_right p.laneLen (show 1 ≤ lane + 1 by omega)
+    simpa only [Nat.one_mul] using Nat.mul_le_mul_right p.laneLen (show 1 ≤ lane + 1 by omega_using [])
   unfold lastIndex
-  omega
+  omega_using [q, total, product, low]
 
 theorem xorBlock_comm (a b : Block) : xorBlock a b = xorBlock b a := by
   apply Vector.ext

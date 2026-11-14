@@ -29,7 +29,7 @@ theorem exhausted_again_ok {P : Parameters} (v : P.Valid) {s : State} {k n : Nat
       (by simp [WitnessStep.ranges, WitnessCount.ranges, VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset]))
   have F : Frame ([⟨P.g.W, P.g.L⟩] ++ [below P.p 108]) s.mem t.mem :=
     (workspaceGlobalFrame (Outs.of_outside Ot (List.mem_singleton_self _))
-      (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.geometry.headerFit; omega)).mono
+      (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.geometry.headerFit; omega_using [this])).mono
       (fun r mem => List.mem_append_left _ mem)
   refine ⟨T, Or.inl ⟨?_, failed.1, ?_⟩, W, F, K⟩
   · change t.zf = some false

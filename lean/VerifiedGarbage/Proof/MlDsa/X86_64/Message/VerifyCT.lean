@@ -97,11 +97,11 @@ theorem verifyCall_tr {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p �
     obtain ⟨ek, -, ec, es⟩ := verifyI_eq hi
     obtain ⟨-, em, -, -⟩ := verifyI_eq hi
     refine ⟨?_, ?_, ?_⟩
-    · rw [ce c₁ f₁ dk (by omega), ce c₂ f₂ dk (by omega), c₁.bytesAt_eq xK kK (by omega),
-        c₂.bytesAt_eq xK kK (by omega), ek]
+    · rw [ce c₁ f₁ dk (by omega_using [hkl, hk]), ce c₂ f₂ dk (by omega_using [hkl, hk]), c₁.bytesAt_eq xK kK (by omega_using [hkl, hk]),
+        c₂.bytesAt_eq xK kK (by omega_using [hkl, hk]), ek]
     · rw [ce c₁ f₁ dμ (by decide), ce c₂ f₂ dμ (by decide), φ₁.2, φ₂.2, ek, ec, em]
-    · rw [ce c₁ f₁ ds (by omega), ce c₂ f₂ ds (by omega), c₁.bytesAt_eq hsx F.kSig (by omega),
-        c₂.bytesAt_eq hsx F.kSig (by omega), es]
+    · rw [ce c₁ f₁ ds (by omega_using [ns]), ce c₂ f₂ ds (by omega_using [ns]), c₁.bytesAt_eq hsx F.kSig (by omega_using [ns]),
+        c₂.bytesAt_eq hsx F.kSig (by omega_using [ns]), es]
   · have F := hφ.1.facts
     refine ⟨fun r hr => ?_, fun r hr => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -55,7 +55,7 @@ theorem prefixJP (hash : FixedHash.HashFn)
   have hw := hp.wf
   have scratch0 : Covers [⟨kA s₀ (deL P).sc,P.scl⟩] s₀.wr := by
     have hh := cov_w₀ hp (b:=(deL P).sc) (o:=0) (l:=P.scl) ⟨hp.scw,hp.scb⟩
-      (by rw [hp.scl]; omega)
+      (by rw [hp.scl]; omega_using [])
     simpa only [R,ptr_zero] using hh
   refine WP.seq (WP.mono_syms (WP.tablesDepth (Decaps.start_using_ok hash hG hp hc tables.transforms tables.gamma
     tables.gammaRead (Optimized.apart_of_covers tables.gammaApart scratch0)) tables depthA) fun uA ⟨hA,ta⟩ syA=>?_)
@@ -101,7 +101,7 @@ theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
     · exact hpub.1.2.2.2.1
   have ptr : ∀ i < 4, kA s ((deL P).slot i) = kA u ((deL P).slot i) := by
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
       exact rs _ (by simp [deL, argReg])
   have sp : s.sp = u.sp := hpub.1.2.2.2.2.1
   have rho : rhoD P s = rhoD P u := map_toNat_inj hpub.1.2.2.2.2.2

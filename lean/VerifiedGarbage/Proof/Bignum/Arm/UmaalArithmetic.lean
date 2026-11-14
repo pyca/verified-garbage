@@ -27,11 +27,11 @@ theorem armStack_downRows (c : Prog isa) :
   | seq a b iha ihb =>
     simp only [Code.subst]; split
     · simp [DownRowUmaal.codeU_stack]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iha, ihb]
   | ite _ t e iht ihe =>
     simp only [Code.subst]; split
     · simp [DownRowUmaal.codeU_stack]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iht, ihe]
   | loop b _ ih =>
     simp only [Code.subst]; split
     · simp [DownRowUmaal.codeU_stack]
@@ -47,7 +47,7 @@ theorem armStack_downRows (c : Prog isa) :
   | frame i b j ih =>
     simp only [Code.subst]; split
     · simp [DownRowUmaal.codeU_stack]
-    · cases i <;> simp only [FrameStack.armStack] <;> omega
+    · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
 
 theorem armStack_umaalArithmetic (c : Prog isa) :
     FrameStack.armStack (umaalArithmetic c) ≤ FrameStack.armStack c :=

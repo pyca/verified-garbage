@@ -24,12 +24,12 @@ def hFixed (i : Nat) : Bool :=
 /-- A range that keeps the arguments' slots. -/
 def KeepsHdr (r : Nat × Nat) : Prop := ∀ i < 32, hFixed i = true → 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i
 
-theorem keepsHdr_ge {r : Nat × Nat} (h : 8 * 32 ≤ r.1) : KeepsHdr r := fun _ hi _ => Or.inl (by omega)
+theorem keepsHdr_ge {r : Nat × Nat} (h : 8 * 32 ≤ r.1) : KeepsHdr r := fun _ hi _ => Or.inl (by omega_using [h, hi])
 
 theorem keepsHdr_slot {j : Nat} (hj : j < 32) (hf : hFixed j = false) : KeepsHdr (8 * j, 8) := by
   intro i _ hfi
   have : i ≠ j := by rintro rfl; rw [hf] at hfi; exact absurd hfi (by decide)
-  simp only; omega
+  simp only; omega_using [this]
 
 /-- The arguments' slots, unchanged. -/
 def HFix (B : Addr) (m m' : Mem) : Prop := ∀ i < 32, hFixed i = true → word m' B (8 * i) = word m B (8 * i)
@@ -39,7 +39,7 @@ theorem HFix.trans {B : Addr} {m₁ m₂ m₃ : Mem} (h₁ : HFix B m₁ m₂) (
 
 theorem HFix.of_frm {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
     (hr : ∀ r ∈ rs, KeepsHdr r) : HFix B m m' := fun i hi hf =>
-  h.word_eq (fun r hr' => hr r hr' i hi hf) (by omega)
+  h.word_eq (fun r hr' => hr r hr' i hi hf) (by omega_using [hi])
 
 theorem keepsHdr_setupRanges (w : Nat) : ∀ r ∈ setupRanges w, KeepsHdr r := by
   have := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
@@ -50,11 +50,11 @@ theorem keepsHdr_setupRanges (w : Nat) : ∀ r ∈ setupRanges w, KeepsHdr r := 
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl)
   · exact keepsHdr_slot (by decide) (by decide)
   · intro i _ hf; simp only [hFixed, sArr] at hf ⊢; revert hf; revert i; decide
-  · exact keepsHdr_ge (by simp only; omega)
-  · exact keepsHdr_ge (by simp only; omega)
+  · exact keepsHdr_ge (by simp only; omega_arith)
+  · exact keepsHdr_ge (by simp only; omega_arith)
   · exact keepsHdr_slot (by decide) (by decide)
   · exact keepsHdr_slot (by decide) (by decide)
-  · exact keepsHdr_ge (by simp only; omega)
+  · exact keepsHdr_ge (by simp only; omega_using [this])
 
 theorem keepsHdr_r2Ranges (w : Nat) : ∀ r ∈ r2Ranges w, KeepsHdr r := by
   have := hdr_lt_slot w Public.aAcc (show 31 < 32 by decide)
@@ -62,9 +62,9 @@ theorem keepsHdr_r2Ranges (w : Nat) : ∀ r ∈ r2Ranges w, KeepsHdr r := by
   have := hdr_lt_slot w Public.aR2 (show 31 < 32 by decide)
   simp only [r2Ranges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl)
-  · exact keepsHdr_ge (by simp only; omega)
-  · exact keepsHdr_ge (by simp only; omega)
-  · exact keepsHdr_ge (by simp only; omega)
+  · exact keepsHdr_ge (by simp only; omega_arith)
+  · exact keepsHdr_ge (by simp only; omega_arith)
+  · exact keepsHdr_ge (by simp only; omega_using [this])
   · exact keepsHdr_slot (by decide) (by decide)
 
 end VG.Proof.Bignum

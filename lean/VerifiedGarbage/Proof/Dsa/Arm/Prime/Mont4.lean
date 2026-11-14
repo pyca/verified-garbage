@@ -65,9 +65,9 @@ theorem montSet_vp {E : State → Prop} : VP (SX P E) (.block montSet) (SB P E) 
     · exact h.of_rest ((r1.mono (by simp)).trans (u2.rest (ws := [.r0]) (by simp))) (u2.mem.trans m1)
     · exact hw1.of_upd u2 (by decide) (by decide) (by decide)
     · have e := pre.oM_eq
-      have hm : arr P.W mBase - 256 = P.oM := by omega
+      have hm : arr P.W mBase - 256 = P.oM := by omega_using [e]
       rw [u2.gpr, dpVal, p1, show (256 : BitVec 32) = BitVec.ofNat 32 256 from rfl,
-        VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega), hm]
+        VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega_using [e]), hm]
   · refine VP.stk (by decide) (by decide) (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨⟨e, h, hw⟩, r0⟩ => ?_
     · rw [h₁.1.2.1.sp, h₁.1.2.1.pre.sp, h₂.1.2.1.sp, h₂.1.2.1.pre.sp]
     have pre := h.pre
@@ -94,7 +94,7 @@ theorem montSet_vp {E : State → Prop} : VP (SX P E) (.block montSet) (SB P E) 
       apply BitVec.eq_of_toNat_eq
       have := pre.k2
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      simp only [CP.w]; omega
+      simp only [CP.w]; omega_using [this]
 
 /-- `setup`. -/
 theorem setup_vp {E : State → Prop} : VP (SB P E) VG.Impl.Bignum.Arm.setup (SC P E) := by
@@ -103,13 +103,13 @@ theorem setup_vp {E : State → Prop} : VP (SB P E) VG.Impl.Bignum.Arm.setup (SC
     fun σ s ⟨⟨e, h⟩, r0, r7, r3, sv⟩ => ?_
   have pre := h.pre
   have hw := pre.w4
-  refine WP.mono (setup_ok s (pre.workspaceM h.wr) (by omega) (by omega)
-    (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega) r0 r7 r3)
+  refine WP.mono (setup_ok s (pre.workspaceM h.wr) (by omega_using [hw]) (by omega_using [hw])
+    (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega_using []) r0 r7 r3)
     fun t ⟨lay, wd, t0, outs, rest⟩ => ⟨⟨e, ?_⟩, lay, wd, t0, ?_⟩
   · have f := frame_of_outs (n := 256) outs (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;> decide)
     have k := keep_of_frameH pre f
-    refine h.core k (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega) (by simp) rest.sp rest.rd
+    refine h.core k (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega_using [hj]) (by simp) rest.sp rest.rd
       rest.wr (h.arrs_keep k (fun j hj hj' => by
         simp only [List.mem_range'_1] at hj'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
@@ -123,7 +123,7 @@ theorem setup_vp {E : State → Prop} : VP (SB P E) VG.Impl.Bignum.Arm.setup (SC
     simp only [List.mem_singleton] at hr; subst hr
     refine pre.rW0_rM.sub_right ?_
     show Region.Sub ⟨State.addr P.M0, 256⟩ ⟨State.addr P.M0, 8 * P.lenM⟩
-    have := Offset.sub_base (State.addr P.M0) (d := 0) (n := 256) (k := 8 * P.lenM) (by simp only [CP.lenM]; omega)
+    have := Offset.sub_base (State.addr P.M0) (d := 0) (n := 256) (k := 8 * P.lenM) (by simp only [CP.lenM]; omega_using [])
     simpa only [BitVec.add_zero] using this
 
 end

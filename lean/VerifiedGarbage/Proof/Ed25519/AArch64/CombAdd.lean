@@ -33,7 +33,7 @@ def AccBel (m : Mem) (base : Addr) : Prop := ∀ i : Slot, i.val < 4 → fe m ba
 theorem _root_.VG.Proof.X25519.AArch64.Alt.AltOp.keep {base : Addr} {o : Slot} {s t : State} (h : AltOp base (offset o) s t)
     (ho : o.val ≤ 13) : Keep base s t :=
   ⟨fun r hr => h.gpr r (fun hm => hr (altClob_sub r hm)), h.rd, h.wr, h.sp,
-    h.mem.mono (by simp only [offset]; omega) (by simp only [offset]; omega)⟩
+    h.mem.mono (by simp only [offset]; omega) (by simp only [offset]; omega_using [])⟩
 
 theorem _root_.VG.Proof.X25519.AArch64.Alt.AltOp.x17 {base : Addr} {o : Nat} {s t : State} (h : AltOp base o s t)
     (hz : s.gpr .x17 = 0) : t.gpr .x17 = 0 :=
@@ -180,7 +180,7 @@ theorem combAdd_ok {s : State} {base : Addr} (hs : Scr s base large) (hb : AccBe
     rfl
   · intro i hi
     have n : ∀ o : Slot, (o.val < 4 ∨ (7 ≤ o.val ∧ o.val ≤ 12)) → i ≠ o :=
-      fun o ho e => by have := congrArg Fin.val e; omega
+      fun o ho e => by have := congrArg Fin.val e; omega_using [za, z1, z2, z3, l4, z4, l5, z5, l6, z6, l10, z7, z8, l8, l9, z9, z10, l11, z11, l12, z12, l13, z13, l14, hi, ho, this]
     rw [fr h14 i (n 3 (by decide)), fr h13 i (n 1 (by decide)), fr h12 i (n 0 (by decide)),
       fr h11 i (n 2 (by decide)), fr h10 i (n 8 (by decide)), fr h9 i (n 12 (by decide)),
       fr h8 i (n 7 (by decide)), fr h7 i (n 11 (by decide)), fr h6 i (n 9 (by decide)),

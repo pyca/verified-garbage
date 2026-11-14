@@ -48,18 +48,18 @@ theorem mask_bit {v : Nat} (hv : v < 2 ^ 32) : 0 - (BitVec.ofNat 32 v &&& 1) = m
   have e : BitVec.ofNat 32 v &&& 1 = BitVec.ofNat 32 (v % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]
-    rw [show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]; omega
+    rw [show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]; omega_using []
   rw [e]; unfold maskOf
   rcases Nat.mod_two_eq_zero_or_one v with e' | e' <;> rw [e'] <;> decide
 
 theorem pzF_lt {P : EP} {τ : State} (hdb : 1 ≤ dbN h P) : pzF h P τ < dbN h P := by
-  unfold pzF pzJ; split <;> omega
+  unfold pzF pzJ; split <;> omega_arith
 
 /-- The bounds a pass needs. -/
 theorem shB {P : EP} {σ : State} (hi : In h.D P σ) (hf : fits h P) :
     lo P ≤ 1 ∧ 1 ≤ dbN h P ∧ dbN h P + h.D ≤ 1023 ∧ h.D ≤ 64 ∧ 0 < h.D := by
   obtain ⟨hlo, hdb, hsum, hK, hD, hD0, hK0⟩ := fitB h hi hf
-  exact ⟨hlo, by omega, by omega, hD, hD0⟩
+  exact ⟨hlo, by omega_using [hdb], by omega_using [hsum, hK], hD, hD0⟩
 
 /-- A pass's registers. -/
 theorem passSet_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
@@ -74,9 +74,9 @@ theorem passSet_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
   refine VP.taint [.esp, .ebp] h.certs.passSet (sp_bp fun _ _ h => h.1) fun τ s ⟨hc, hk, hs⟩ => ?_
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hk.1.1 hk.1.2.1
   have hpz := pzF_lt h (τ := τ) hdb
-  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
-  have haV : aV h P τ < 1024 := by show pzF h P τ + 1 < 1024; omega
-  have hav : aV h P τ / 2 ^ p < 2 ^ 32 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega)
+  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hp])
+  have haV : aV h P τ < 1024 := by show pzF h P τ + 1 < 1024; omega_using [hdD, hpz]
+  have hav : aV h P τ / 2 ^ p < 2 ^ 32 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_using [haV])
   simp only [passSet, atS, addSlot, addi, ld, mi, Impl.RsaPkcs1Sig.X86.stk, List.cons_append, List.nil_append]
   refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => wp_mov fun t3 u3 => ?_
   have c3 : Ctx (P.lay h.D) P.scr τ t3 :=
@@ -129,38 +129,38 @@ theorem passMid_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hi₀ hf
   have e2 : oRsa = 8192 := rfl
   have e3 : oY = 2048 := rfl
-  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hp])
   have hp0 : 0 < 2 ^ p := Nat.two_pow_pos p
   have e1 : oEm = 1024 := rfl
-  refine (pass_vp hg (o := oY + 8 + h.D) (d := 2 ^ p) (n := dbN h P) (by omega) hp0 (by omega)
+  refine (pass_vp hg (o := oY + 8 + h.D) (d := 2 ^ p) (n := dbN h P) (by omega_using [hdb]) hp0 (by omega_using [hdD, e2, e3, hp9])
     (c := fun τ => aV h P τ / 2 ^ p % 2 = 1) (X := fun τ m => Kq h P τ m ∧ SH h P τ p m)).mono
     (fun τ s ⟨⟨hc, hk, hs⟩, si, di, cx, dx⟩ => ⟨hc, ⟨hk, hs⟩, si, di, cx, dx⟩)
     fun τ s ⟨hc, m₀, ⟨hk, hs⟩, fr, hsel⟩ => ?_
   have away : ∀ r ∈ [sR P.scr (oY + 8 + h.D) (dbN h P)], Away2 (P.lay h.D) P.scr r := fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact away2_scr hg (by omega) (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact away2_scr hg (by omega_using [hdD, e2, e3]) (by omega_using [e3, e1])
   have ks : ∀ d, d + 4 ≤ frameBytes → s.mem.readW ((P.lay h.D).fr d) 32 = m₀.readW ((P.lay h.D).fr d) 32 :=
     fun d hd => slot_keep (v := m₀.readW ((P.lay h.D).fr d) 32) fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hg.slot ok (by omega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega)) rfl
-  refine ⟨hc, ⟨K2.keep h hk.1 fr away, sbytes_keep fr (fun r hr => ?_) (by omega) hk.2⟩,
+      exact hg.slot ok (by omega_using [hdD, e2, e3]) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])) rfl
+  refine ⟨hc, ⟨K2.keep h hk.1 fr away, sbytes_keep fr (fun r hr => ?_) (by omega_using [hdD, e3]) hk.2⟩,
     by rw [ks _ (by decide)]; exact hs.1, by rw [ks _ (by decide)]; exact hs.2.1,
     by rw [ks _ (by decide)]; exact hs.2.2.1, fun j hj => ?_⟩
-  · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega) (by omega) (by omega)
+  · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega_using []) (by omega_using [hdD, e2, e3]) (by omega_using [hdD, e2, e3])
   have ms := mod_succ (aV h P τ) p
   by_cases e : j < dbN h P
   · rw [hsel j e]
     by_cases hc' : aV h P τ / 2 ^ p % 2 = 1
-    · rw [ite_eq_left hc', show oY + 8 + h.D + 2 ^ p + j = oY + 8 + h.D + (2 ^ p + j) by omega,
-        hs.2.2.2 _ (by omega)]
-      congr 1; rw [ms, hc']; omega
+    · rw [ite_eq_left hc', show oY + 8 + h.D + 2 ^ p + j = oY + 8 + h.D + (2 ^ p + j) by omega_using [],
+        hs.2.2.2 _ (by omega_using [hdD, hp9, e])]
+      congr 1; rw [ms, hc']; omega_using []
     · rw [ite_eq_right hc', hs.2.2.2 _ hj]
-      congr 1; rw [ms, show aV h P τ / 2 ^ p % 2 = 0 by omega]; omega
+      congr 1; rw [ms, show aV h P τ / 2 ^ p % 2 = 0 by omega_using [hc']]; omega_using []
   · have hm : s.mem (sa P.scr (oY + 8 + h.D + j)) = m₀ (sa P.scr (oY + 8 + h.D + j)) :=
       fr _ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Geo.sep (scr := P.scr) (o := oY + 8 + h.D + j) (n := 1) (by omega) (by omega) (by omega) _
+        exact Geo.sep (scr := P.scr) (o := oY + 8 + h.D + j) (n := 1) (by omega_using [e]) (by omega_using [e2, e3, hj]) (by omega_using [hdD, e2, e3]) _
           (Region.contains_self _ _)
-    rw [hm, hs.2.2.2 j hj]; unfold Dp; rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [hm, hs.2.2.2 j hj]; unfold Dp; rw [ite_eq_right (by omega_using [e]), ite_eq_right (by omega_using [e])]
 
 /-- The bytes and the slots after a pass. -/
 theorem keep3 (P : EP) (hg : Geo (P.lay h.D) P.scr) {τ : State} {m m' : Mem}
@@ -169,14 +169,14 @@ theorem keep3 (P : EP) (hg : Geo (P.lay h.D) P.scr) {τ : State} {m m' : Mem}
     Kq h P τ m' ∧ ∀ j < 2040 - h.D, m' (sa P.scr (oY + 8 + h.D + j)) = f j := by
   obtain ⟨σ', ok⟩ := hg.ok
   have e3 : oY = 2048 := rfl
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have aw : ∀ o n, o + n ≤ oRsa → ∀ r ∈ [slotR (P.lay h.D) sA, slotR (P.lay h.D) sD, slotR (P.lay h.D) sPc],
       Region.Disjoint (sR P.scr o n) r := fun o n hon r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact (hg.slot ok hon (by rw [hg.F]; decide)).symm
   have e2 : oRsa = 8192 := rfl
-  refine ⟨⟨K2.keep h hk.1 hf fun r hr => ?_, sbytes_keep hf (aw _ _ (by omega)) (by omega) hk.2⟩,
-    sbytes_keep hf (aw _ _ (by omega)) (by omega) hy⟩
+  refine ⟨⟨K2.keep h hk.1 hf fun r hr => ?_, sbytes_keep hf (aw _ _ (by omega_using [e3, hD, e2])) (by omega_using [e3, hD]) hk.2⟩,
+    sbytes_keep hf (aw _ _ (by omega_using [e3, hD, e2])) (by omega_using [e3, hD]) hy⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> exact away2_slot hg (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide)
@@ -208,15 +208,15 @@ theorem passNext_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) 
   refine VP.taint [.esp, .ebp] passNext_taint (sp_bp fun _ _ h => h.1) fun τ s ⟨hc, hk, hs⟩ => ?_
   obtain ⟨hlo, hdb, hdD, hD, hD0⟩ := shB h hk.1.1 hk.1.2.1
   have hpz := pzF_lt h (τ := τ) hdb
-  have haV : aV h P τ < 1024 := by show pzF h P τ + 1 < 1024; omega
-  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+  have haV : aV h P τ < 1024 := by show pzF h P τ + 1 < 1024; omega_using [hdD, hpz]
+  have hp9 : 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hp])
   have ea : BitVec.ofNat 32 (aV h P τ / 2 ^ p) >>> 1 = BitVec.ofNat 32 (aV h P τ / 2 ^ (p + 1)) := by
-    rw [ofNat_shr (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega)), Nat.div_div_eq_div_mul,
+    rw [ofNat_shr (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_using [haV])), Nat.div_div_eq_div_mul,
       Nat.pow_one, ← Nat.pow_succ]
   have ed : BitVec.ofNat 32 (2 ^ p) + BitVec.ofNat 32 (2 ^ p) = BitVec.ofNat 32 (2 ^ (p + 1)) := by
-    rw [BitVec.ofNat_add_ofNat, Nat.pow_succ]; congr 1; omega
+    rw [BitVec.ofNat_add_ofNat, Nat.pow_succ]; congr 1; omega_using []
   have ec : BitVec.ofNat 32 (10 - p) - 1 = BitVec.ofNat 32 (10 - (p + 1)) := by
-    rw [ofNat_pred (by omega), Nat.sub_sub]
+    rw [ofNat_pred (by omega_using [hp]), Nat.sub_sub]
   simp only [passNext, ld, st]
   refine hc.wp_slot hg (d := sA) (by decide) (by decide) (by decide) fun t1 c1 u1 => ?_
   refine wp_shr (by decide) fun t2 u2 _ => ?_
@@ -245,7 +245,7 @@ theorem passNext_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) 
   rw [← mm] at r1 r2 r3
   refine ⟨⟨c9, hk', r1, r2, r3, hy'⟩, ?_⟩
   rw [m9.zf, z8, u7.gpr, m6.mem, u5.mem, u4.mem, m3', Lay.readW_fr_other _ _ _ (by decide) (by decide) (by decide),
-    Lay.readW_fr_other _ _ _ (by decide) (by decide) (by decide), hs.2.2.1, ec, ofNat_beq_zero (by omega)]
+    Lay.readW_fr_other _ _ _ (by decide) (by decide) (by decide), hs.2.2.1, ec, ofNat_beq_zero (by omega_using [])]
 
 /-- A pass. -/
 theorem onePass_vp (P : EP) (hP : ∃ σ, In h.D P σ) {p : Nat} (hp : p < 10) :
@@ -292,21 +292,21 @@ theorem shift_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   refine (shInit_vp h P hP).seq ?_
   let I : Nat → State → State → Prop := fun k τ s => k ≤ 10 ∧ Ctx (P.lay h.D) P.scr τ s ∧ Kq h P τ s.mem ∧
     SH h P τ (10 - k) s.mem
-  refine (VP.loop (I := I) (fun k => ?_) 9).mono (fun τ s ⟨hc, hk, hs⟩ => ⟨by omega, hc, hk, hs⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun k => ?_) 9).mono (fun τ s ⟨hc, hk, hs⟩ => ⟨by omega_using [], hc, hk, hs⟩) fun _ _ h => h
   by_cases hk : k ≤ 9
   swap
-  · exact VP.empty fun τ s h' => hk (by have := h'.1; omega)
-  refine (onePass_vp h P hP (p := 9 - k) (by omega)).mono
-    (fun τ s ⟨_, hc, hq, hs⟩ => ⟨hc, hq, by rw [show 9 - k = 10 - (k + 1) by omega]; exact hs⟩)
-    fun τ s ⟨⟨hc, hq, hs⟩, z⟩ => ⟨?_, fun h0 => ⟨hc, hq, fun j hj => ?_⟩, fun hpos => ⟨by omega, hc, hq, ?_⟩⟩
+  · exact VP.empty fun τ s h' => hk (by have := h'.1; omega_using [this])
+  refine (onePass_vp h P hP (p := 9 - k) (by omega_using [])).mono
+    (fun τ s ⟨_, hc, hq, hs⟩ => ⟨hc, hq, by rw [show 9 - k = 10 - (k + 1) by omega_using []]; exact hs⟩)
+    fun τ s ⟨⟨hc, hq, hs⟩, z⟩ => ⟨?_, fun h0 => ⟨hc, hq, fun j hj => ?_⟩, fun hpos => ⟨by omega_using [hk], hc, hq, ?_⟩⟩
   · show eval .ne s = _
-    simp only [eval, z, show 10 - (9 - k + 1) = k by omega]
-    by_cases h0 : k = 0 <;> simp [h0] <;> omega
+    simp only [eval, z, show 10 - (9 - k + 1) = k by omega_using [hk]]
+    by_cases h0 : k = 0 <;> simp [h0] <;> omega_using [h0]
   · subst h0
     have hb := shB h hq.1.1 hq.1.2.1
     have hpz := pzF_lt h (τ := τ) hb.2.1
     rw [hs.2.2.2 j hj, Nat.mod_eq_of_lt (show aV h P τ < 2 ^ (9 - 0 + 1) by
-      show pzF h P τ + 1 < 1024; omega)]
-  · rw [show 10 - k = 9 - k + 1 by omega]; exact hs
+      show pzF h P τ + 1 < 1024; omega_using [hb, hpz])]
+  · rw [show 10 - k = 9 - k + 1 by omega_using [hk]]; exact hs
 
 end VG.Proof.RsaPss.X86.Vf

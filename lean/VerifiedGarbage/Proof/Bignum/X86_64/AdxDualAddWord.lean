@@ -26,6 +26,6 @@ theorem word_ok (s : State) {dst : Reg} {a b : Src} {va vb : BitVec 64} {c o : B
     WP.block_append_iff]
   refine WP.mono (adcx_ok s ha hia hc) fun u ⟨cu,hcu,hou,eu,ku⟩ => ?_
   refine WP.mono (adox_ok u (hb u ku) hib (hou.trans ho)) fun t ⟨ot,hot,hct,et,kt⟩ => ?_
-  exact ⟨cu,ot,hct.trans hcu,hot,by omega,(ku.trans kt).mono (by simp)⟩
+  exact ⟨cu,ot,hct.trans hcu,hot,by omega_using [eu, et],(ku.trans kt).mono (by simp)⟩
 
 end VG.Proof.Bignum.X86_64.AdxDualAdd

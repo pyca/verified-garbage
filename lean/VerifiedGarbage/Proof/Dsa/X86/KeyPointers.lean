@@ -33,7 +33,7 @@ theorem keyPointers_ok {s : State} {base : Addr} {size : Nat} {key plen qlen : B
   have B := VG.Proof.Dsa.X86.Layout.field_bounds .p
   unfold Entry.keyPointers
   simp only [List.append_assoc, List.singleton_append]
-  refine wp_movS (readSrc_sc hs (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_using [hz, B])) fun u U _ => ?_
   have hu := hs.of_keeps U.keeps (by decide)
   refine WP.block_append (WP.mono (addPointer_ok .pLen .q hu hz) fun s1 ⟨A1, V1, K1, O1⟩ => ?_)
   have P0 : pointerValue base u (.input .pLen) = plen := by simpa only [pointerValue, U.mem] using hpl

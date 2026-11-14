@@ -49,10 +49,10 @@ theorem CrtCallStack.after_outside {g : CrtGeometry} {s t : State} {rs : List Re
   · rw [rest.sp, kept (d := 4) (by decide)]; exact h.output
   · rw [rest.sp, kept (d := 12) (by decide)]; exact h.count
   · intro i
-    rw [rest.sp, kept (d := 56 + 8 * i.val) (by have := i.isLt; omega)]
+    rw [rest.sp, kept (d := 56 + 8 * i.val) (by have := i.isLt; omega_using [])]
     exact h.pointer i
   · intro i
-    rw [rest.sp, kept (d := 60 + 8 * i.val) (by have := i.isLt; omega)]
+    rw [rest.sp, kept (d := 60 + 8 * i.val) (by have := i.isLt; omega_using [])]
     exact h.length i
 
 /-- Writes outside the CRT storage, the frame and the sources keep the shared state. -/
@@ -67,7 +67,7 @@ theorem CrtShared.after_outside {s t : State} {g : CrtGeometry} {bs : Fin 7 → 
   have eq (base : BitVec 32) (wsB : Workspace s base (8 * workspaceWords g.words))
       (member : (⟨State.addr base, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words) :
       WorkspaceEq (State.addr base) (8 * workspaceWords g.words) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := wsB.nowrap; omega) frame
+    WorkspaceEq.of_frame (by have := wsB.nowrap; omega_using [this]) frame
       (fun r hr => (ws r hr).sub_left (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member))
   have mainEq := eq g.base h.buffers.context.main (by simp [crtRegions])
   refine ⟨h.buffers.after_frame frame rest sources r2, h.stack.after_outside frame rest stack,
@@ -123,9 +123,9 @@ theorem pp_phase_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
   rintro z ⟨sharedZ, selectedZ, flagZ, frameZ, restZ⟩
   have primeIn : NarrowPrimeInput (crtN g.base g.words) (g.source j.succ) (workspaceWords g.words) v
       (g.sourceLength j.succ) (56 + 8 * j.val) (bs j.succ) z := by
-    refine ⟨selectedZ, ?_, kpos, kfit, by have := sharedZ.stack.nowrap; omega, sharedZ.stack.read (by decide),
+    refine ⟨selectedZ, ?_, kpos, kfit, by have := sharedZ.stack.nowrap; omega_using [this], sharedZ.stack.read (by decide),
       by rw [flagZ]; exact bit, by rw [flagZ]; exact valid⟩
-    simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using sharedZ.savedOperand j sharedZ.narrow_member
+    simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []] using sharedZ.savedOperand j sharedZ.narrow_member
   have sepP := (h.child (child := crtP g.base g.words) (slot := 224) (Or.inl ⟨rfl, rfl⟩)).2.2.2.1
   have childZ : numAt z.mem (State.addr (crtP g.base g.words)) g.words 4 =
       numAt s.mem (State.addr (crtP g.base g.words)) g.words 4 :=

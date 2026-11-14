@@ -47,17 +47,17 @@ theorem comp_agree' {a : CD} {s0 s0' : State} (h : GOk a s0) (h' : GOk a s0') (h
   obtain ⟨hw, -, -⟩ := cw_facts h.krel.1
   obtain ⟨hw', -, -⟩ := cw_facts h'.krel.1
   have e := comp_agree h.krel h'.krel hav
-    (by rw [h.candS hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact h.ncl)
-  rwa [h.candS hav, h'.candS hav', hw, hw', show 8 * (8 * cw s0) = 64 * cw s0 by omega,
-    show 8 * (8 * cw s0') = 64 * cw s0' by omega] at e
+    (by rw [h.candS hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact h.ncl)
+  rwa [h.candS hav, h'.candS hav', hw, hw', show 8 * (8 * cw s0) = 64 * cw s0 by omega_using [],
+    show 8 * (8 * cw s0') = 64 * cw s0' by omega_using []] at e
 
 theorem comp_same' {a : CD} {s0 s0' : State} (h : GOk a s0) (h' : GOk a s0') (hav : oL s0 ≤ rL s0)
     (ho : Spec.RsaKeyGen.obviouslyComposite (64 * cw s0) (candOf s0) = true) : candOf s0 = candOf s0' := by
   have hav' : oL s0' ≤ rL s0' := by rw [← h.krel.oL_eq h'.krel, ← h.krel.rL_eq h'.krel]; exact hav
   obtain ⟨hw, -, -⟩ := cw_facts h.krel.1
   have e := comp_same h.krel h'.krel hav
-    (by rw [h.candS hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact h.ncl)
-    (by rw [h.candS hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact ho)
+    (by rw [h.candS hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact h.ncl)
+    (by rw [h.candS hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact ho)
   rwa [h.candS hav, h'.candS hav'] at e
 
 /-! ## Trial division -/
@@ -104,14 +104,14 @@ theorem TD.divIn {a : CD} {s : State} (h : TD a s) :
   have hnw := e.hs.nowrap
   have hZ := e.hZ
   rw [slot_lin] at hZ
-  have d1 := h1.divIn.write (s1.gpr .r23) (d := 24) (by omega) (by simp only [hTrial]; omega) h1.tabDj
-  have d2 := d1.write (s1.gpr .r24) (d := 40) (by omega) (by simp only [hTrial]; omega) h1.tabDj
+  have d1 := h1.divIn.write (s1.gpr .r23) (d := 24) (by omega_using []) (by simp only [hTrial]; omega_using []) h1.tabDj
+  have d2 := d1.write (s1.gpr .r24) (d := 40) (by omega_using []) (by simp only [hTrial]; omega_using []) h1.tabDj
   refine ⟨s0, g, d2, ?_, h1.syms, by rw [h1.tc.hw]; exact h1.tc.h8⟩
-  have o := ((writeW_outside s1.mem (sB s0) (d := 24) (s1.gpr .r23) (by omega)).mono (o' := 24) (n' := 24) (by omega)
-    (by omega)).trans ((writeW_outside (s1.mem.writeW (off (sB s0) 24) (s1.gpr .r23)) (sB s0) (d := 40)
-      (s1.gpr .r24) (by omega)).mono (o' := 24) (n' := 24) (by omega) (by omega))
+  have o := ((writeW_outside s1.mem (sB s0) (d := 24) (s1.gpr .r23) (by omega_using [])).mono (o' := 24) (n' := 24) (by omega_using [])
+    (by omega_using [])).trans ((writeW_outside (s1.mem.writeW (off (sB s0) 24) (s1.gpr .r23)) (sB s0) (d := 40)
+      (s1.gpr .r24) (by omega_using [])).mono (o' := 24) (n' := 24) (by omega_using []) (by omega_using []))
   rw [← h1.arr0]
-  exact o.val32 (by rw [slot_lin]; omega) (by rw [slot_lin]; omega)
+  exact o.val32 (by rw [slot_lin]; omega_using []) (by rw [slot_lin]; omega_using [hnw, hZ])
 
 /-- Candidates the table divides alike. -/
 theorem div_agree {a : CD} {s₁ s₂ : State} (h₁ : TD a s₁) (h₂ : TD a s₂) (hsp : s₁.sp = s₂.sp) : DivRel s₁ s₂ := by
@@ -127,11 +127,11 @@ theorem div_agree {a : CD} {s₁ s₂ : State} (h₁ : TD a s₁) (h₂ : TD a s
     by rw [sy, sy']; exact g.krel.sym g'.krel, fun i hi => ?_⟩
   rw [a0, a0']
   have c8 : ∀ {t : State}, GOk a t → 4 ≤ cw t → 8161 < candOf t := fun {t} gt h4 => by
-    have := (VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * cw t) (by omega)
+    have := (VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * cw t) (by omega_using [h4])
       (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (t.gpr .r10) (8 * cw t)))).2.1
-    have : 2 ^ 14 ≤ 2 ^ (64 * cw t - 2) := Nat.pow_le_pow_right (by decide) (by omega)
+    have : 2 ^ 14 ≤ 2 ^ (64 * cw t - 2) := Nat.pow_le_pow_right (by decide) (by omega_using [h4])
     show 8161 < Spec.RsaKeyGen.candidate (64 * cw t) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (t.gpr .r10) (8 * cw t)))
-    omega
+    omega_arith
   cases ho : Spec.RsaKeyGen.obviouslyComposite (64 * cw s0) (candOf s0)
   · have ho' := (comp_agree' g g' hav).symm.trans ho
     have none : ∀ {t : State}, GOk a t → 4 ≤ cw t →
@@ -164,7 +164,7 @@ theorem trialDiv_ct {trial : Prog isa} (D : DivOk trial) :
     have hst : WP isa (.block [sth .r23 hOut, sth .r24 hOutLen]) s fun u =>
         u = { s with mem := (s.mem.writeW (off (sB s0) 24) (s.gpr .r23)).writeW (off (sB s0) 40) (s.gpr .r24) } := by
       simp only [sth, hOut, hOutLen]
-      prun [e.h31, hs.st (d := 24) (n := 8) (by omega), hs.st (d := 40) (n := 8) (by omega)]
+      prun [e.h31, hs.st (d := 24) (n := 8) (by omega_using [hZ]), hs.st (d := 40) (n := 8) (by omega_using [hZ])]
     exact WP.mono hst fun u hu => ⟨s0, s, g, h, hu⟩
   · obtain ⟨s0, g, d, -, -, -⟩ := hd.divIn
     obtain ⟨s0', g', h31⟩ := pins_TD_r31 hd
@@ -264,12 +264,12 @@ theorem result_ct : RelCT isa (Two TR) testResult fun _ _ => True := by
     exact WP.mono (WP.keep [.r28, .r3] (Q := fun t => t.gpr .r3 = word s.mem (sB s0) (8 * hStat) ∧
       t.mem = s.mem) (by
         simp only [ldh, hUsed, hStat]
-        prun [e.h31, hs.ld (d := 152) (n := 8) (by omega), hs.ld (d := 160) (n := 8) (by omega)]) (by decide))
+        prun [e.h31, hs.ld (d := 152) (n := 8) (by omega_using [hZ]), hs.ld (d := 160) (n := 8) (by omega_using [hZ])]) (by decide))
       fun t ⟨⟨a3, m⟩, k⟩ => ⟨s0, ⟨q, C⟩, h.ctx.keep k m, (k.gpr _ (by decide)).trans e.h31, a3.trans h.stat⟩
   · rintro a s₁ s₂ ⟨s0, ⟨q, C⟩, -, -, h3⟩ ⟨s0', ⟨q', C'⟩, -, -, h3'⟩
     have := stOf_lt s0
     have := stOf_lt s0'
-    rw [eval_zero_ofNat _ _ (by omega) h3, eval_zero_ofNat _ _ (by omega) h3', stOf_eq C C']
+    rw [eval_zero_ofNat _ _ (by omega_arith) h3, eval_zero_ofNat _ _ (by omega_using [this]) h3', stOf_eq C C']
   · exact WP.mono (WP.keep [.r3] (Q := fun t => t.gpr .r3 = BitVec.ofNat 64 (stOf s0) - BitVec.ofNat 64 1 ∧
       t.mem = s.mem) (by prun [h3]) (by decide))
       fun t ⟨⟨a3, m⟩, k⟩ => ⟨s0, CC, c.keep k m, (k.gpr _ (by decide)).trans h31, a3⟩

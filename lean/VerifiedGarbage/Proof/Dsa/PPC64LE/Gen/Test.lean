@@ -89,8 +89,8 @@ theorem targs_vp {u : Nat} (hu : u ≤ G.witLen) (hU : fUsed ∈ c.LS) (hUv : c.
     · rw [u₈.other .r5 (by decide), u₇.other .r5 (by decide), u₆.gpr, u₅.other .r5 (by decide),
         u₅.other .r9 (by decide), u₄.gpr, u₄.other .r9 (by decide), u₃.gpr]
     · rw [u₈.other .r6 (by decide), u₇.gpr, u₆.other .r6 (by decide), u₆.other .r9 (by decide), u₅.gpr,
-        u₅.other .r9 (by decide), u₄.other .r9 (by decide), u₃.gpr, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega)
-        (by omega)]
+        u₅.other .r9 (by decide), u₄.other .r9 (by decide), u₃.gpr, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hu, wl])
+        (by omega_using [hu])]
     · rw [u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
         u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), gi.r28]
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2.2.2.2.1, h₂.2.2.2.2.1]) ?_ ?_
@@ -98,8 +98,8 @@ theorem targs_vp {u : Nat} (hu : u ≤ G.witLen) (hU : fUsed ∈ c.LS) (hUv : c.
       ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28]) (.block [ld .r5 fWit]), rfl⟩
       (fun _ _ _ _ _ _ _ h => absurd h (by simp)) fun σ s ⟨⟨⟨h, x⟩, r3, r4, r5, r6, r7⟩, e⟩ => ?_
     have wl := h.gi.witLt
-    rw [eval_zero, r6, ofNat_beq_zero (by omega)] at e
-    have hu' : u = G.witLen := by simp at e; omega
+    rw [eval_zero, r6, ofNat_beq_zero (by omega_using [wl])] at e
+    have hu' : u = G.witLen := by simp at e; omega_using [hu, e]
     refine WP.sp_eq (h.ldK (o := fWit) (by decide) (by decide) (h.gi.fixedV (v := G.wit) (by simp [fixedWords]))
       (by decide) fun t ht ut => WP.block_nil fun sp => ⟨⟨ht, x⟩, ?_, ?_, ?_, ?_, ?_⟩)
     · rw [ut.other _ (by decide), r3]
@@ -109,8 +109,8 @@ theorem targs_vp {u : Nat} (hu : u ≤ G.witLen) (hU : fUsed ∈ c.LS) (hUv : c.
     · rw [ut.other _ (by decide), r7]
   · refine VP.block_nil fun σ s ⟨⟨hx, r3, r4, r5, r6, r7⟩, e⟩ => ⟨hx, r3, r4, ?_, r6, r7⟩
     have wl := hx.1.gi.witLt
-    rw [eval_zero, r6, ofNat_beq_zero (by omega)] at e
-    have hu' : u ≠ G.witLen := by simp at e; omega
+    rw [eval_zero, r6, ofNat_beq_zero (by omega_using [wl])] at e
+    have hu' : u ≠ G.witLen := by simp at e; omega_using [e]
     rw [r5, GP.randP, ite_eq_right hu']
 
 /-! ## The call -/
@@ -176,7 +176,7 @@ theorem primeCall_vp {L : Impl.Dsa.ProbablePrime.Layout} {code : Prog isa} {name
       rw [eg _ (by simp), eg _ (by simp), a3, b3, bytes _ _ h₁, bytes _ _ h₂]
     · have wl := h₁.gi.witLt
       have e6 : (BitVec.ofNat 64 (G.witLen - u)).toNat = G.witLen - u := by
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [wl])]
       simp only [State.withRegions_mem, State.callEntry_mem]
       rw [eg _ (by simp), eg _ (by simp), eg _ (by simp), eg _ (by simp), a5, a6, b5, b6, e6, h₁.gi.randBytes hu,
         h₂.gi.randBytes hu]
@@ -200,7 +200,7 @@ theorem primeCall_vp {L : Impl.Dsa.ProbablePrime.Layout} {code : Prog isa} {name
           · exact ⟨rBelow σ 176, List.mem_append_right _ (by simp), fun _ h => h⟩) fun y hy => ⟨(hcl y hy).1, fun p hp => ?_⟩
     · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
       have := hL q hq
-      refine ⟨by simp only [hEnd, wB, kB, pB, fSave] at hE ⊢; omega, .inr (by omega), by simp; omega⟩
+      refine ⟨by simp only [hEnd, wB, kB, pB, fSave] at hE ⊢; omega_using [], .inr (by omega_using []), by simp; omega_using [big, this]⟩
     · simp only [List.mem_singleton] at ho; subst ho; exact ⟨varOk_fUsedOut, hU'⟩
     · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
       exact (hcl y hy).2 q hq
@@ -248,7 +248,7 @@ theorem testTail_vp {cl' : Claims} {u cand : Nat} (hU : fUsed ∈ c.LS) (hUv : c
   generalize hres : Spec.Dsa.probablePrime cand (G.witB.drop u) = res
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_
   · refine VP.block_nil fun σ s ⟨⟨⟨h, x⟩, r3⟩, z⟩ => ?_
-    rw [eval_zero, r3, ofNat_beq_zero (by have := status_lt res; omega)] at z
+    rw [eval_zero, r3, ofNat_beq_zero (by have := status_lt res; omega_using [this])] at z
     rcases res with _ | ⟨b, rest⟩
     · exact ⟨h, x⟩
     · cases b <;> simp [Proof.Dsa.ProbablePrime.status] at z
@@ -281,7 +281,7 @@ theorem testTail_vp {cl' : Claims} {u cand : Nat} (hU : fUsed ∈ c.LS) (hUv : c
   have v5 : s₃.gpr .r5 = BitVec.ofNat 64 (G.witLen - rest.length) := by
     rw [u₃.gpr, u₂.gpr, u₂.other _ (by decide), u₁.gpr]
     show BitVec.ofNat 64 u + BitVec.ofNat 64 (G.witLen - u - rest.length) = _
-    rw [← BitVec.ofNat_add, show u + (G.witLen - u - rest.length) = G.witLen - rest.length by omega]
+    rw [← BitVec.ofNat_add, show u + (G.witLen - u - rest.length) = G.witLen - rest.length by omega_using [hu, rl]]
   rw [v5] at ht
   refine ht.mono (fun o ho => ?_) (fun x hx => hx) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
   simp only [testCfg, c6, Cfg.setV, List.mem_cons] at ho ⊢
@@ -318,18 +318,18 @@ theorem test_vp {L : Impl.Dsa.ProbablePrime.Layout} {code : Prog isa} {name : St
     VP (St G c X) (test G.pLen L.candidate src cb.length name code)
       (St G (testCfg c cl' G.witLen (tRes G cb u)) X) := by
   have hc0 : ∀ σ s, St G c X σ s → wB G.pLen + L.candidate + cb.length ≤ G.scrLen * 8 := fun σ s ⟨h, _⟩ => by
-    have := h.gi.wBig; omega
+    have := h.gi.wBig; omega_using [hcand, hcbl, this]
   refine VP.seq (G := St G (candCfg G c L.candidate cb) X)
     (copyS_vp (c := fun _ => c) (fun σ s h => h.1) hn0 hn15 hcand15 hs15
-      (fun σ s h => ⟨by have := h.1.gi.kBig; simp only [hEnd, wB, kB, pB, fSave] at this ⊢; omega, by
-        simp only [List.length_replicate]; exact .inr (by omega), by simp only [List.length_replicate]; exact hc0 σ s h⟩)
+      (fun σ s h => ⟨by have := h.1.gi.kBig; simp only [hEnd, wB, kB, pB, fSave] at this ⊢; omega_using [], by
+        simp only [List.length_replicate]; exact .inr (by omega_using []), by simp only [List.length_replicate]; exact hc0 σ s h⟩)
       (fun σ s h => by have := (h.1.clOk _ hsrc).2.2; exact this)
-      (.inr (by have := (show kB G.pLen ≤ wB G.pLen by simp only [wB]; omega); omega))
+      (.inr (by have := (show kB G.pLen ≤ wB G.pLen by simp only [wB]; omega_using []); omega_using [hsrcK, this]))
       fun σ s t ⟨h, x⟩ h' _ b => ⟨?_, x⟩) ?_
   · refine ⟨h'.gi, h'.sb.cons (by rw [b]; have := h.sb _ hsrc; rw [this]), fun y hy => ?_, h'.arrs, h'.liveOk,
       h'.ksl, h'.kslOk⟩
     rcases List.mem_cons.mp hy with rfl | hy
-    · exact ⟨by have := h.gi.kBig; simp only [hEnd, wB, kB, pB, fSave] at this ⊢; omega, .inr (by omega),
+    · exact ⟨by have := h.gi.kBig; simp only [hEnd, wB, kB, pB, fSave] at this ⊢; omega_using [], .inr (by omega_using []),
         hc0 σ s ⟨h, x⟩⟩
     · exact h'.clOk y hy
   refine VP.assoc (VP.seq (targs_vp (c := candCfg G c L.candidate cb) hu hU hUv)

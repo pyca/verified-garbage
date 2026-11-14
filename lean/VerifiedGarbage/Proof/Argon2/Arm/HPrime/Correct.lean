@@ -33,7 +33,7 @@ theorem arg_in : InRegions (s₀.rd ++ s₀.wr) (State.addr (s₀.sp + BitVec.of
   simp [stackArgAddr, Region.Contains]
 
 theorem scr_w {d : Nat} (hd : d + 4 ≤ 16384) : InRegions s₀.wr (P s₀ + BitVec.ofNat 64 d) 4 :=
-  ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ hd (by omega)⟩
+  ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ hd (by omega_using [hd])⟩
 
 /-- The state after `setup`. -/
 theorem setup_ok : WP isa (.block setup) s₀ fun t => Body s₀ t ∧ Out s₀ t [] ∧
@@ -43,8 +43,8 @@ theorem setup_ok : WP isa (.block setup) s₀ fun t => Body s₀ t ∧ Out s₀ 
   simp only [List.cons_append, List.nil_append]
   refine wp_ldrSp (by decide) rfl (arg_in hp) fun s₁ u₁ => ?_
   have e₁ : s₁.gpr .r12 = scr s₀ := by rw [u₁.gpr]; rfl
-  refine Spill.save_slots_ok (b := .r12) saveList_slots (by rw [e₁]; omega)
-    (fun d h₁ h₂ => by rw [e₁, u₁.wr]; exact scr_w hp (by omega)) ?_
+  refine Spill.save_slots_ok (b := .r12) saveList_slots (by rw [e₁]; omega_using [hs])
+    (fun d h₁ h₂ => by rw [e₁, u₁.wr]; exact scr_w hp (by omega_using [h₂])) ?_
   refine wp_mov (op2_reg _ _) fun s₂ u₂ => wp_mov (op2_reg _ _) fun s₃ u₃ => wp_mov (op2_reg _ _) fun s₄ u₄ =>
     wp_mov (op2_reg _ _) fun s₅ u₅ => wp_mov (op2_reg _ _) fun s₆ u₆ => ?_
   have r4₆ : s₆.gpr .r4 = scr s₀ := by
@@ -71,7 +71,7 @@ theorem setup_ok : WP isa (.block setup) s₀ fun t => Body s₀ t ∧ Out s₀ 
     rw [mt]
     exact (Spill.saveMem_frame_of _ _ (List.mem_singleton_self (scrR s₀)) _ _ fun p hpm => by
       have := saveList_slots.bound hpm
-      exact Offset.contains_base _ (by omega) (by omega)).writeW (List.mem_singleton_self _) _
+      exact Offset.contains_base _ (by omega_using [this]) (by omega_using [this])).writeW (List.mem_singleton_self _) _
         (Offset.contains_base _ (by decide) (by decide))
   have gt : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → r ≠ .r12 → t.gpr r = s₀.gpr r :=
     fun r h4 h5 h6 h7 h8 h12 => by rw [u.gpr, g₆ r h4 h5 h6 h7 h8, u₁.other _ h12]
@@ -85,7 +85,7 @@ theorem setup_ok : WP isa (.block setup) s₀ fun t => Body s₀ t ∧ Out s₀ 
   · rw [u.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   · rw [u.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
   · have hb := saveList_slots.bound hq
-    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (by simp only [pfxOff]; omega) (by omega) (by decide)) (by decide)]
+    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (by simp only [pfxOff]; omega_using [hb]) (by omega_using [hb]) (by decide)) (by decide)]
     exact Spill.saveMem_saved _ _ _ _ saveList_slots q hq
   · rw [← Proof.Blake2.wordBytes_readW (w := 32) _ _ (.inl rfl), mt,
       show P s₀ + 832 = P s₀ + BitVec.ofNat 64 pfxOff from rfl, Mem.readW_writeW_self32, Spec.Argon2.le32,
@@ -103,7 +103,7 @@ theorem correct : WP isa Impl.Argon2.Arm.HPrime.code s₀ fun t =>
   refine WP.seq ((setup_ok hp).mono fun s₁ ⟨b₁, o₁, F₁⟩ => ?_)
   have hin : bytesAt s₁.mem (State.addr (inp s₀)) (inl s₀) = bytesAt s₀.mem (State.addr (inp s₀)) (inl s₀) :=
     Proof.Blake2.bytesAt_congr fun i hi => F₁.bytes (R := inR s₀) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega) hi
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega_using [hif]) hi
   refine WP.seq ((first_ok hp ⟨b₁, o₁, hin⟩).mono fun s₂ ⟨⟨b₂, o₂, _⟩, d₂⟩ => ?_)
   refine WP.seq ((finish_ok hp b₂ o₂ d₂).mono fun s₃ ⟨b₃, _, h₃⟩ => ?_)
   unfold restore
@@ -117,8 +117,8 @@ theorem correct : WP isa Impl.Argon2.Arm.HPrime.code s₀ fun t =>
       · exact List.mem_cons_of_mem _ hpm
       · exact List.mem_cons_self)
   refine Spill.restoreBase_slots_ok (lo := 840) (hi := 876) (by decide) (by decide) (g := s₀.gpr)
-    (by rw [b₃.r4]; omega)
-    (fun d h₁ h₂ => by rw [b₃.r4, b₃.rd, b₃.wr]; exact VG.Proof.Sha512.Arm.mem_rd (scr_w hp (by omega))) sv
+    (by rw [b₃.r4]; omega_using [hs])
+    (fun d h₁ h₂ => by rw [b₃.r4, b₃.rd, b₃.wr]; exact VG.Proof.Sha512.Arm.mem_rd (scr_w hp (by omega_using [h₂]))) sv
     fun t ht ho hm hrd hwr hsp => WP.block_nil ⟨fun r hr => ?_, hsp.trans b₃.sp, ?_⟩
   · exact Spill.restored_of ht (by decide) r hr
   · show bytesAt t.mem _ _ = _

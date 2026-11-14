@@ -130,36 +130,36 @@ def R64 (x : BitVec 64) (X : Int) : Prop := x.toNat = (X % 2 ^ 64).toNat
 theorem R64.toInt (x : BitVec 64) : R64 x x.toInt := by
   have := x.isLt
   rw [R64, BitVec.toInt_eq_toNat_cond]
-  split <;> omega
+  split <;> omega_using []
 
 theorem R64.toNat (x : BitVec 64) : R64 x (x.toNat : Int) := by
   have := x.isLt
-  rw [R64]; omega
+  rw [R64]; omega_using []
 
 theorem R64.ofNat (w : Nat) : R64 (BitVec.ofNat 64 w) (w : Int) := by
-  rw [R64, BitVec.toNat_ofNat]; omega
+  rw [R64, BitVec.toNat_ofNat]; omega_using []
 
 theorem R64.add {x y : BitVec 64} {X Y : Int} (hx : R64 x X) (hy : R64 y Y) : R64 (x + y) (X + Y) := by
-  rw [R64] at *; rw [BitVec.toNat_add]; omega
+  rw [R64] at *; rw [BitVec.toNat_add]; omega_using [hx, hy]
 
 theorem R64.sub {x y : BitVec 64} {X Y : Int} (hx : R64 x X) (hy : R64 y Y) : R64 (x - y) (X - Y) := by
   have := y.isLt
-  rw [R64] at *; rw [BitVec.toNat_sub]; omega
+  rw [R64] at *; rw [BitVec.toNat_sub]; omega_using [hx, hy]
 
 /-- A number in `[0, 2⁶⁴)` is its quadword's. -/
 theorem R64.nat {x : BitVec 64} {X : Int} (hx : R64 x X) (h0 : 0 ≤ X) (h1 : X < 2 ^ 64) : (x.toNat : Int) = X := by
-  rw [R64] at hx; omega
+  rw [R64] at hx; omega_using [hx, h0, h1]
 
 /-- A number in `[-2⁶³, 2⁶³)` is its quadword's, signed. -/
 theorem R64.int {x : BitVec 64} {X : Int} (hx : R64 x X) (h0 : -2 ^ 63 ≤ X) (h1 : X < 2 ^ 63) : x.toInt = X := by
   have := x.isLt
   rw [R64] at hx
   rw [BitVec.toInt_eq_toNat_cond]
-  split <;> omega
+  split <;> omega_arith
 
 theorem emod_mul_pow (X : Int) (q : Int) : (X % 2 ^ 64 * q) % 2 ^ 64 = (X * q) % 2 ^ 64 := by
   have e : X * q = X % 2 ^ 64 * q + 2 ^ 64 * (X / 2 ^ 64 * q) := by
-    have : X = X % 2 ^ 64 + 2 ^ 64 * (X / 2 ^ 64) := by omega
+    have : X = X % 2 ^ 64 + 2 ^ 64 * (X / 2 ^ 64) := by omega_using []
     grind
   rw [e, Int.add_mul_emod_self_left]
 
@@ -169,7 +169,7 @@ theorem R64.shl {x : BitVec 64} {X : Int} (hx : R64 x X) (n : Nat) : R64 (x <<< 
   have h0 : 0 ≤ X % 2 ^ 64 := Int.emod_nonneg _ (by decide)
   obtain ⟨N, hN⟩ := Int.eq_ofNat_of_zero_le h0
   rw [hN, Int.toNat_natCast, show ((N : Int) * 2 ^ n) = ((N * 2 ^ n : Nat) : Int) by push_cast; rfl]
-  omega
+  omega_using []
 
 theorem R64.shr {x : BitVec 64} {X : Int} (hx : R64 x X) (h0 : 0 ≤ X) (h1 : X < 2 ^ 64) (n : Nat) :
     R64 (x >>> n) (X / 2 ^ n) := by
@@ -179,7 +179,7 @@ theorem R64.shr {x : BitVec 64} {X : Int} (hx : R64 x X) (h0 : 0 ≤ X) (h1 : X 
   have := Nat.div_le_self x.toNat (2 ^ n)
   have := x.isLt
   generalize x.toNat / 2 ^ n = K at *
-  omega
+  omega_using [this]
 
 theorem R64.sra {x : BitVec 64} {X : Int} (hx : R64 x X) (h0 : -2 ^ 63 ≤ X) (h1 : X < 2 ^ 63) (n : Nat) :
     R64 (x.sshiftRight n) (X / 2 ^ n) := by
@@ -193,23 +193,23 @@ theorem R64.mask {x : BitVec 64} {X : Int} (hx : R64 x X) {j : Nat} (hj : j ≤ 
   have hp : 2 ^ j ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) hj
   have hp0 : 0 < 2 ^ j := Nat.pos_of_ne_zero (by simp)
   have e : (x &&& BitVec.ofNat 64 (2 ^ j - 1)).toNat = x.toNat % 2 ^ j := by
-    rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.and_two_pow_sub_one_eq_mod]
+    rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hp]), Nat.and_two_pow_sub_one_eq_mod]
   rw [R64] at *
   rw [e]
   split
   · rename_i h64
-    have : j = 64 := by omega
+    have : j = 64 := by omega_using [hj, h64]
     subst this
     have := x.isLt
-    omega
+    omega_using [hx]
   · have h0 : 0 ≤ X % 2 ^ 64 := Int.emod_nonneg _ (by decide)
     obtain ⟨N, hN⟩ := Int.eq_ofNat_of_zero_le h0
-    have d : ((2 : Int) ^ j) ∣ 2 ^ 64 := ⟨2 ^ (64 - j), by rw [← Int.pow_add]; congr 1; omega⟩
+    have d : ((2 : Int) ^ j) ∣ 2 ^ 64 := ⟨2 ^ (64 - j), by rw [← Int.pow_add]; congr 1; omega_using [hj]⟩
     have e2 : X % 2 ^ j = ((N % 2 ^ j : Nat) : Int) := by
       rw [← Int.emod_emod_of_dvd X d, hN]; push_cast; rfl
     rw [hx, hN, Int.toNat_natCast, e2]
     have := Nat.mod_lt N hp0
-    omega
+    omega_using [hp]
 
 theorem R64.mad {c a b : BitVec 64} {C A B : Int} (hc : R64 c C) (ha : R64 a A) (hb : R64 b B) (h : Bool) :
     R64 (mad52 h c a b) (C + (if h then A % 2 ^ 52 * (B % 2 ^ 52) / 2 ^ 52 else A % 2 ^ 52 * (B % 2 ^ 52) % 2 ^ 52)) := by
@@ -217,12 +217,12 @@ theorem R64.mad {c a b : BitVec 64} {C A B : Int} (hc : R64 c C) (ha : R64 a A) 
   have b0 : 0 ≤ B % 2 ^ 52 := Int.emod_nonneg _ (by decide)
   obtain ⟨M, hM⟩ := Int.eq_ofNat_of_zero_le a0
   obtain ⟨N, hN⟩ := Int.eq_ofNat_of_zero_le b0
-  have ea : a.toNat % 2 ^ 52 = M := by rw [R64] at ha; omega
-  have eb : b.toNat % 2 ^ 52 = N := by rw [R64] at hb; omega
+  have ea : a.toNat % 2 ^ 52 = M := by rw [R64] at ha; omega_using [ha, hM]
+  have eb : b.toNat % 2 ^ 52 = N := by rw [R64] at hb; omega_using [hb, hN]
   rw [R64] at *
   rw [mad52_toNat, ea, eb, hM, hN, show ((M : Int) * (N : Int)) = ((M * N : Nat) : Int) by push_cast; rfl]
   generalize M * N = Q
-  cases h <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega
+  cases h <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega_using [hc]
 
 theorem R64.slr {x : BitVec 64} {X : Int} (hx : R64 x X) (n j : Nat) :
     R64 ((x <<< n) >>> j) (X * 2 ^ n % 2 ^ 64 / 2 ^ j) := by
@@ -241,7 +241,7 @@ theorem R64.sel {c a b : BitVec 64} {C A B : Int} (hc : R64 c C) (ha : R64 a A) 
     subst e
     rw [BitVec.zero_and, BitVec.zero_or, BitVec.not_zero, BitVec.allOnes_and]
     simpa using ha
-  · have hC1 : C = -1 := by omega
+  · have hC1 : C = -1 := by omega_using [h0, h1, hC]
     subst hC1
     have e : c = BitVec.allOnes 64 := BitVec.eq_of_toNat_eq (by rw [R64] at hc; rw [hc]; rfl)
     subst e
@@ -254,9 +254,9 @@ theorem cap_ge {X : Int} {x : Int × Int} (h1 : x.1 ≤ X) (h2 : X ≤ x.2) : X 
   unfold cap
   split
   · rename_i h
-    rw [Int.emod_eq_of_lt (by omega) (by omega)]; exact h2
+    rw [Int.emod_eq_of_lt (by omega_using [h1, h]) (by omega_using [h2, h])]; exact h2
   · have := Int.emod_lt_of_pos X (show (0 : Int) < 2 ^ 52 by decide)
-    omega
+    omega_using []
 
 theorem cap_nonneg {X : Int} {x : Int × Int} (h1 : x.1 ≤ X) (h2 : X ≤ x.2) : 0 ≤ cap x :=
   Int.le_trans (Int.emod_nonneg _ (by decide)) (cap_ge h1 h2)
@@ -318,7 +318,7 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
     rename_i hr
     cases h
     obtain ⟨ra, la, ua⟩ := iha k x hk hx
-    exact ⟨ra.shr (by omega) (by omega) n, Int.ediv_le_ediv (pow_pos' n) la, Int.ediv_le_ediv (pow_pos' n) ua⟩
+    exact ⟨ra.shr (by omega_using [hr, la]) (by omega_using [hr, ua]) n, Int.ediv_le_ediv (pow_pos' n) la, Int.ediv_le_ediv (pow_pos' n) ua⟩
   | sra a n iha =>
     intro k iv hk h
     simp only [T.iv, Option.bind_eq_some_iff] at h
@@ -328,7 +328,7 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
     rename_i hr
     cases h
     obtain ⟨ra, la, ua⟩ := iha k x hk hx
-    exact ⟨ra.sra (by omega) (by omega) n, Int.ediv_le_ediv (pow_pos' n) la, Int.ediv_le_ediv (pow_pos' n) ua⟩
+    exact ⟨ra.sra (by omega_using [hr, la]) (by omega_using [hr, ua]) n, Int.ediv_le_ediv (pow_pos' n) la, Int.ediv_le_ediv (pow_pos' n) ua⟩
   | mask a j0 j1 j2 j3 iha =>
     intro k iv hk h
     simp only [T.iv, Option.bind_eq_some_iff] at h
@@ -339,7 +339,7 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
     split at h
     case isTrue => cases h
     rename_i hj
-    refine ⟨ra.mask (by omega), ?_⟩
+    refine ⟨ra.mask (by omega_using [hj]), ?_⟩
     split at h
     · rename_i h64
       cases h
@@ -349,10 +349,10 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
       split at h
       · rename_i hr
         cases h
-        rw [Int.emod_eq_of_lt (by omega) (by omega)]; exact ⟨la, ua⟩
+        rw [Int.emod_eq_of_lt (by omega_using [la, hr]) (by omega_using [ua, hr])]; exact ⟨la, ua⟩
       · cases h
         have := Int.emod_lt_of_pos (a.int (envOf s₀) k) (pow_pos' j)
-        exact ⟨Int.emod_nonneg _ (Int.ne_of_gt (pow_pos' j)), by omega⟩
+        exact ⟨Int.emod_nonneg _ (Int.ne_of_gt (pow_pos' j)), by omega_using []⟩
   | blend a b m iha ihb =>
     intro k iv hk h
     simp only [T.iv] at h
@@ -375,10 +375,10 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
       refine ⟨rc.mad ra rb false, ?_, ?_⟩
       · have := Int.emod_nonneg (a.int (envOf s₀) k % 2 ^ 52 * (b.int (envOf s₀) k % 2 ^ 52))
           (show (2 : Int) ^ 52 ≠ 0 by decide)
-        simp only [T.int]; omega
+        simp only [T.int]; omega_using [lc]
       · have := Int.emod_lt_of_pos (a.int (envOf s₀) k % 2 ^ 52 * (b.int (envOf s₀) k % 2 ^ 52))
           (show (0 : Int) < 2 ^ 52 by decide)
-        simp only [T.int]; omega
+        simp only [T.int]; omega_using [uc]
     | true =>
       simp only [T.iv, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨x, hx, y, hy, z, hz, rfl⟩ := h
@@ -391,9 +391,9 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
         Int.mul_le_mul (cap_ge la ua) (cap_ge lb ub) b0 (cap_nonneg la ua)
       refine ⟨rc.mad ra rb true, ?_, ?_⟩
       · have := Int.ediv_nonneg (Int.mul_nonneg a0 b0) (show (0 : Int) ≤ 2 ^ 52 by decide)
-        simp only [T.int]; omega
+        simp only [T.int]; omega_using [lc, this]
       · have := Int.ediv_le_ediv (show (0 : Int) < 2 ^ 52 by decide) hp
-        simp only [T.int]; omega
+        simp only [T.int]; omega_using [uc, hp]
   | slr a n j iha =>
     intro k iv hk h
     simp only [T.iv, Option.map_eq_some_iff] at h
@@ -402,7 +402,7 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
     have h0 : 0 ≤ a.int (envOf s₀) k * 2 ^ n % 2 ^ 64 := Int.emod_nonneg _ (by decide)
     have h1 : a.int (envOf s₀) k * 2 ^ n % 2 ^ 64 ≤ 2 ^ 64 - 1 := by
       have := Int.emod_lt_of_pos (a.int (envOf s₀) k * 2 ^ n) (show (0 : Int) < 2 ^ 64 by decide)
-      omega
+      omega_using []
     exact ⟨ra.slr n j, Int.ediv_nonneg h0 (Int.le_of_lt (pow_pos' j)), Int.ediv_le_ediv (pow_pos' j) h1⟩
   | sel c a b ihc iha ihb =>
     intro k iv hk h
@@ -415,9 +415,9 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
     obtain ⟨rc, lc, uc⟩ := ihc k x hk hx
     obtain ⟨ra, la, ua⟩ := iha k y hk hy
     obtain ⟨rb, lb, ub⟩ := ihb k z hk hz
-    refine ⟨rc.sel ra rb (by omega) (by omega), ?_⟩
+    refine ⟨rc.sel ra rb (by omega_using [hr, lc]) (by omega_using [hr, uc]), ?_⟩
     simp only [T.int]
-    split <;> omega
+    split <;> omega_arith
 
 end
 
@@ -515,7 +515,7 @@ def chkStage (pieces : List (List Instr)) (locs : List (List Loc)) (segs : List 
   chkSeg (pieces.getD j []) i (segs.getD j (fun _ => pure [])) o
 
 theorem slotOff_mod (i : Nat) : slotOff i % 32 = 0 := by
-  simp only [slotOff, cfg]; omega
+  simp only [slotOff, cfg]; omega_using []
 
 /-- A place after a run holds its term. -/
 theorem termAt_ok {σ : VSym} {s₀ s : State} (h : SRel par σ s₀ s) {l : Loc} (hl : locOk l = true) {k : Nat}
@@ -548,7 +548,7 @@ theorem stores_unch_hi (s₀ : State) (lo hi : Nat) :
       have := (x - s₀.gpr .rdi).isLt
       have hw : par.win = 5920 := rfl
       simp only [VG.Proof.Mont.ofs] at h1
-      omega
+      omega_using [he0, h1, hw]
 
 /-- Stores change nothing outside the part of the working space they are to. -/
 theorem stores_unchP {P : Par} (hw : P.win < 2 ^ 62) (s₀ : State) :
@@ -565,7 +565,7 @@ theorem stores_unchP {P : Par} (hw : P.win < 2 ^ 62) (s₀ : State) :
     · simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.reduceDiv]
       have := (x - s₀.gpr .rdi).isLt
       simp only [VG.Proof.Mont.ofs] at h1
-      omega
+      omega_using [hw, he0, h1]
 
 /-- What a piece does: every quadword of every place of its results is its
 term, of the state before; nothing else of the state changes but vector
@@ -611,6 +611,6 @@ theorem stage_int {w : Nat} {c : List Instr} {ins : List (F5 T)} {seg : Seg Id T
   refine WP.mono (stage_wp h hc) fun s ⟨hσ, hu, hs⟩ => ⟨hσ, hu, fun j l t hl ht k hk iv hiv h0 h1 => ?_⟩
   obtain ⟨r, lo, hi⟩ := iv_ok hB t k iv hk hiv
   rw [ints, hs j l t hl ht k hk]
-  exact ⟨r.int (by omega) (by omega), lo, hi⟩
+  exact ⟨r.int (by omega_using [h0, lo]) (by omega_using [h1, hi]), lo, hi⟩
 
 end VG.Proof.P256.X86_64.Ifma

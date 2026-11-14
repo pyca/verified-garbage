@@ -126,8 +126,8 @@ theorem held_words {m₁ m₂ : Mem} {p : Addr} {a b : State} {T : FnTable} (h11
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi : i < 11 := List.mem_range.mp hi
-  have e₁ := h₁ i (by omega)
-  have e₂ := h₂ i (by omega)
+  have e₁ := h₁ i (by omega_using [hl, hi])
+  have e₂ := h₂ i (by omega_using [hl, hi])
   simp only [Nat.reduceDiv] at e₁ e₂
   rw [e₁, e₂]
 

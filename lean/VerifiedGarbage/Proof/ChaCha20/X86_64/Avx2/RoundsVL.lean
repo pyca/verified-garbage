@@ -148,7 +148,7 @@ theorem loadV_ok {buf : Addr} {vs : Nat → CState} {s : State} (h : Holds buf f
     State.setV_rd, State.setV_wr]
   refine ⟨fun k hk l q hl hq => ?_, trivial, trivial, trivial, trivial⟩
   have old := h k hk l q hl hq
-  rcases (by omega : k = 10 ∨ k = 11 ∨ (k ≠ 10 ∧ k ≠ 11)) with rfl | rfl | ⟨h10, h11⟩
+  rcases (by omega_using [] : k = 10 ∨ k = 11 ∨ (k ≠ 10 ∧ k ≠ 11)) with rfl | rfl | ⟨h10, h11⟩
   · simp only [inReg, Bool.not_false] at old
     simp only [vw, vregV, State.lane_setV256, show (XReg.xmm14 = .xmm15) = False by decide,
       ite_false, ite_true]
@@ -195,8 +195,8 @@ theorem storeV_ok {buf : Addr} {vs : Nat → CState} {s₀ s : State} (h : RV vs
     ymm_withMem]
   refine ⟨fun k hk l q hl hq => ?_, fun l => ?_, fr, hg, hrd, hwr⟩
   · have x := hh k hk l q hl hq
-    have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega
-    rcases (by omega : k = 10 ∨ k = 11 ∨ (k ≠ 10 ∧ k ≠ 11)) with rfl | rfl | ⟨h10, h11⟩
+    have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega_using [hl, hq]
+    rcases (by omega_using [] : k = 10 ∨ k = 11 ∨ (k ≠ 10 ∧ k ≠ 11)) with rfl | rfl | ⟨h10, h11⟩
     · simp only [inReg10, Bool.false_eq_true, ite_false, State.setV_mem]
       rw [W2_first _ _ (by decide) _ _ hx, extract_ymm s _ hl hq]; exact x
     · simp only [inReg11, Bool.false_eq_true, ite_false, e11, State.setV_mem]

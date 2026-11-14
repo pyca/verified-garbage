@@ -45,7 +45,7 @@ theorem anyC_eq (s : State) : anyC s = 0 ↔ (s.gpr .x5).setWidth 32 = 0 := by
     simp only [anyC, BitVec.toNat_setWidth] at this ⊢
     rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
     rw [show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_using [this]
   · intro h; unfold anyC; rw [h]; rfl
 
 theorem expected_eq (s : State) : Spec.RsaPss.expectedSaltLen (s.gpr .x4) ((s.gpr .x5).setWidth 32) =
@@ -93,7 +93,7 @@ theorem body_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG s)
       .ite (.nonzero .x .x10) ret0 (chkMain f H g)])) u fun t =>
         MidC s t ∧ (t.gpr .x0).setWidth 32 = if chkOut H.D Hs Gs s then 1 else 0 := by
   have hk1 := hp.k1; have hk2 := hp.k2
-  have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega
+  have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
   have hel := hp.hel
   have hshort : (s.gpr .x2).toNat < Hs.len +
       (Spec.RsaPss.expectedSaltLen (s.gpr .x4) ((s.gpr .x5).setWidth 32)).getD 0 + 2 → chkOut H.D Hs Gs s = false :=
@@ -102,12 +102,12 @@ theorem body_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG s)
       exact ite_eq_left_of_eq_true _ _ (eq_true (Or.inr (Or.inr (by rw [← hel]; exact h)))) |>.trans rfl
   refine WP.ite _ (eval_nonzero _ _) (fun hb => ?_) (fun hb => ?_)
   · rw [h10, decide_eq_true_eq] at hb
-    exact ret0_ok hu.e.toMid (hshort (by rw [hHl]; omega))
+    exact ret0_ok hu.e.toMid (hshort (by rw [hHl]; omega_using [hb]))
   rw [h10, decide_eq_false_iff_not] at hb
   have L := lay_of hp hu.e.sp hu.e.x20 hu.e.wr
   unfold seqs seqs
   refine WP.seq (WP.mono_syms (expLen_ok L hu.e.fr.any hu.e.fr.sl) fun u₁ ⟨O₁, x12₁⟩ sy₁ => ?_)
-  refine WP.seq (WP.mono_syms (saltFitsR_ok H hD (a := (s.gpr .x2).toNat) (by omega) (by omega)
+  refine WP.seq (WP.mono_syms (saltFitsR_ok H hD (a := (s.gpr .x2).toNat) (by omega_using [hb]) (by omega_using [hk2])
     (by rw [O₁.get .x9, h9]) x12₁) fun u₂ ⟨O₂, x9₂, x10₂⟩ sy₂ => ?_)
   have hu₂ := (hu.only O₁ sy₁).only O₂ sy₂
   have hsv : (if anyC s = 0 then s.gpr .x4 else 0).toNat =
@@ -116,15 +116,15 @@ theorem body_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG s)
   rw [hsv] at x10₂
   refine WP.ite _ (eval_nonzero _ _) (fun hb₂ => ?_) (fun hb₂ => ?_)
   · rw [x10₂, decide_eq_true_eq] at hb₂
-    exact ret0_ok hu₂.e.toMid (hshort (by rw [hHl]; omega))
+    exact ret0_ok hu₂.e.toMid (hshort (by rw [hHl]; omega_using [hb₂]))
   rw [x10₂, decide_eq_false_iff_not] at hb₂
   have hs : anyC s = 0 → (s.gpr .x4).toNat < (s.gpr .x2).toNat - H.D - 1 := fun ha => by
     rw [expected_eq, ite_eq_left ha, Option.getD_some] at hb₂
-    omega
+    omega_using [hb, hb₂]
   refine WP.mono (chkMain_ok hH hGm hHs hHl hHv hGh hGl hGv hdo hp ht hu₂
-    (fun i hi => by rw [O₂.mem, O₁.mem]; exact hem i hi) x9₂ (by omega) hs) fun t ⟨m, r⟩ => ⟨m, ?_⟩
+    (fun i hi => by rw [O₂.mem, O₁.mem]; exact hem i hi) x9₂ (by omega_using [hb]) hs) fun t ⟨m, r⟩ => ⟨m, ?_⟩
   have hfit : Hs.len + (Spec.RsaPss.expectedSaltLen (s.gpr .x4) ((s.gpr .x5).setWidth 32)).getD 0 + 2 ≤
-      Spec.RsaPss.emLength (s.gpr .x3).toNat := by rw [← hel, hHl]; omega
+      Spec.RsaPss.emLength (s.gpr .x3).toNat := by rw [← hel, hHl]; omega_using [hb, hb₂]
   rw [r (chkOut H.D Hs Gs s) ?_]
   · split <;> rfl
   rw [chkOut, ← hHl, RsaPss.verifyEncoding_bytes₂ Gs Hs hGv (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _)
@@ -135,10 +135,10 @@ include hH hHs hHl hHv hGh hGl hGv hdo in
 theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreC H.D tsH tsG s)
     (ht : TabsAt H dn f Gm g (stackArg s 0) (stackArg s 1) s) :
     WP isa (checkEncoding f H g) s (Post H.D Hs Gs s) := by
-  have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega
+  have hD : H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
   have hk2 := hp.k2
   unfold checkEncoding
-  refine WP.alloc (by decide) (by have := fb_toNat hp; omega) ?_
+  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold chkBody seqs seqs seqs seqs
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -148,7 +148,7 @@ theorem code_ok {tsH tsG : List FnTable} {s : State} (hp : PreC H.D tsH tsG s)
   refine WP.seq (WP.mono_syms (copyIn_okC hp hu₀.e) fun u₁ ⟨hu₁, hem, hf₁⟩ sy₁ => ?_)
   have hu₁' : AtCT s u₁ := hu₀.of hp hu₁ hf₁ sy₁
   refine WP.seq (WP.mono_syms (fitH_ok H hD (k := (s.gpr .x2).toNat)
-    (by rw [hu₁.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega)) fun u₂ ⟨O₂, x9₂, x10₂⟩ sy₂ => ?_)
+    (by rw [hu₁.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk2])) fun u₂ ⟨O₂, x9₂, x10₂⟩ sy₂ => ?_)
   refine WP.seq (WP.mono (body_ok hH hGm hHs hHl hHv hGh hGl hGv hdo hp ht (hu₁'.only O₂ sy₂)
     (fun i hi => by rw [O₂.mem]; exact hem i hi) x9₂ x10₂) fun t ⟨m, r⟩ => ?_)
   exact WP.mono (restore_frame_ok m.sp m.wr m.v m.fr.sv) fun w ⟨habi, hx0, _⟩ =>

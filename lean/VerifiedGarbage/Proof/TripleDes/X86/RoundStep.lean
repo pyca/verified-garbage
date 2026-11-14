@@ -205,7 +205,7 @@ theorem roundKeyPtr_frame {s s' : State} (pre : BoxPre s)
     (fun q hq => ?_) (by decide)
   obtain rfl := List.mem_singleton.mp hq
   change (⟨addr (s.gpr .ebp) 16, 4⟩ : Region).Disjoint (spillRegion s)
-  rw [addr_eq (by have h := pre.scratch.fit; change (s.gpr .ebp).toNat + 512 ≤ _ at h; omega)]
+  rw [addr_eq (by have h := pre.scratch.fit; change (s.gpr .ebp).toNat + 512 ≤ _ at h; omega_using [h])]
   exact Offset.disjoint _ (by decide) (by decide) (by decide)
 
 theorem BoxPre.frame {s s' : State} (pre : BoxPre s)
@@ -314,7 +314,7 @@ def advanceMem (d : Spec.TripleDes.Direction) (s : State) : Mem :=
 theorem counter_ptr_sep (s : State) (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32) :
     Mem.Sep (wordAddr (s.gpr .ebp) 5) 4 (wordAddr (s.gpr .ebp) 4) 4 := by
   change Mem.Sep (addr (s.gpr .ebp) 20) 4 (addr (s.gpr .ebp) 16) 4
-  rw [addr_eq (by omega), addr_eq (by omega)]
+  rw [addr_eq (by omega_using [fit]), addr_eq (by omega_using [fit])]
   exact Offset.sep _ (by decide) (by decide) (by decide)
 
 theorem roundAdvance_ok (d : Spec.TripleDes.Direction) (s : State) (hok : Ok sboxCfg s) :
@@ -367,7 +367,7 @@ theorem spill_sub_work (s : State) : Region.Sub (spillRegion s) (workRegion s) :
 theorem count_spill_disjoint (s : State) (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32) :
     (⟨wordAddr (s.gpr .ebp) 5, 4⟩ : Region).Disjoint (spillRegion s) := by
   change (⟨addr (s.gpr .ebp) 20, 4⟩ : Region).Disjoint (spillRegion s)
-  rw [addr_eq (by omega)]
+  rw [addr_eq (by omega_using [fit])]
   exact Offset.disjoint _ (by decide) (by decide) (by decide)
 
 theorem advance_frame (d : Spec.TripleDes.Direction) (s : State)
@@ -375,11 +375,11 @@ theorem advance_frame (d : Spec.TripleDes.Direction) (s : State)
     Frame [workRegion s] s.mem (advanceMem d s) := by
   have h4 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 4) 4 := by
     change (workRegion s).Contains (addr (s.gpr .ebp) 16) 4
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_using [fit])]
     exact Offset.contains _ (by decide) (by decide) (by decide)
   have h5 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 5) 4 := by
     change (workRegion s).Contains (addr (s.gpr .ebp) 20) 4
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_using [fit])]
     exact Offset.contains _ (by decide) (by decide) (by decide)
   exact ((Frame.refl [workRegion s] s.mem).writeW (List.mem_singleton_self _) _ h4).writeW
     (List.mem_singleton_self _) _ h5

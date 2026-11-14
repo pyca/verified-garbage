@@ -30,7 +30,7 @@ open VG VG.Proof.Bignum
 theorem testBit_and_mask {x : BitVec 64} {b : Nat} (i : Nat) (hb : b ≤ 64) :
     (x &&& BitVec.ofNat 64 (2 ^ b - 1)).toNat.testBit i = (x.toNat.testBit i && decide (i < b)) := by
   rw [BitVec.toNat_and, Nat.testBit_and, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show 2 ^ b - 1 < 2 ^ 64 from by have := Nat.pow_le_pow_right (n := 2) (by decide) hb; omega),
+    Nat.mod_eq_of_lt (show 2 ^ b - 1 < 2 ^ 64 from by have := Nat.pow_le_pow_right (n := 2) (by decide) hb; omega_using [this]),
     Nat.testBit_two_pow_sub_one]
 
 theorem wv_bits_high {m : Mem} {p : Addr} {d n i : Nat} (hi : 64 * n ≤ i) : (wv m p d n).testBit i = false :=
@@ -50,15 +50,15 @@ theorem wv_cut {m m' : Mem} {p : Addr} {d n t b : Nat} (hb : b ≤ 64)
     by_cases hj : i / 64 = t
     · rw [hj, top, testBit_and_mask _ hb, Bool.and_comm]
       congr 1
-      exact decide_eq_decide.mpr (by omega)
-    · rw [rest (i / 64) (by omega) hj]
+      exact decide_eq_decide.mpr (by omega_using [hj])
+    · rw [rest (i / 64) (by omega_using [hi]) hj]
       by_cases hlt : i / 64 < t
-      · simp only [show i < 64 * t + b by omega, decide_true, Bool.true_and]
+      · simp only [show i < 64 * t + b by omega_using [hlt], decide_true, Bool.true_and]
       · have hz : (wv m p d n).testBit i = false :=
-          Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hV (Nat.pow_le_pow_right (by decide) (by omega)))
+          Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hV (Nat.pow_le_pow_right (by decide) (by omega_using [hj, hlt])))
         rw [testBit_wv m p d n i hi] at hz
         rw [hz, Bool.and_false]
-  · rw [wv_bits_high (by omega), wv_bits_high (by omega), Bool.and_false]
+  · rw [wv_bits_high (by omega_using [hi]), wv_bits_high (by omega_using [hi]), Bool.and_false]
 
 /-- The low word or'ed with 1, of a copy at `d` of the number at `d'`. -/
 theorem wv_or_one {m m' : Mem} {p : Addr} {d d' n : Nat} (hn : 1 ≤ n)
@@ -72,9 +72,9 @@ theorem wv_or_one {m m' : Mem} {p : Addr} {d d' n : Nat} (hn : 1 ≤ n)
   · rw [testBit_wv m' p d n i hi, testBit_wv m p d' n i hi]
     by_cases hj : i / 64 = 0
     · rw [hj, Nat.mul_zero, Nat.add_zero, Nat.add_zero, low, BitVec.toNat_or, Nat.testBit_or,
-        show (1#64 : BitVec 64).toNat = 1 from rfl, show i % 64 = i by omega]
-    · rw [rest (i / 64) (by omega) hj, testBit_one_ne (show i ≠ 0 by omega), Bool.or_false]
-  · rw [wv_bits_high (by omega), wv_bits_high (by omega), testBit_one_ne (show i ≠ 0 by omega)]
+        show (1#64 : BitVec 64).toNat = 1 from rfl, show i % 64 = i by omega_using [hj]]
+    · rw [rest (i / 64) (by omega_using [hi]) hj, testBit_one_ne (show i ≠ 0 by omega_using [hj]), Bool.or_false]
+  · rw [wv_bits_high (by omega_using [hi]), wv_bits_high (by omega_using [hi]), testBit_one_ne (show i ≠ 0 by omega_using [hn, hi])]
     rfl
 
 /-- The fallback: the low word or'ed with 2 and the top word (`t > 0`)
@@ -93,21 +93,21 @@ theorem wv_fallback {m m' : Mem} {p : Addr} {d n t b : Nat} (ht0 : 0 < t) (ht : 
   · rw [testBit_wv m' p d n i hi, testBit_wv m p d n i hi]
     by_cases hj0 : i / 64 = 0
     · rw [hj0, Nat.mul_zero, Nat.add_zero, low, BitVec.toNat_or, Nat.testBit_or,
-        show (2#64 : BitVec 64).toNat = 2 from rfl, testBit_two, show i % 64 = i by omega]
-      simp only [show i < 64 * t + b - 1 by omega, decide_true, Bool.true_and]
+        show (2#64 : BitVec 64).toNat = 2 from rfl, testBit_two, show i % 64 = i by omega_using [hj0]]
+      simp only [show i < 64 * t + b - 1 by omega_using [ht0, hb1, hj0], decide_true, Bool.true_and]
     · by_cases hjt : i / 64 = t
-      · rw [hjt, top, testBit_and_mask _ (by omega), decide_eq_false (by omega : i ≠ 1),
+      · rw [hjt, top, testBit_and_mask _ (by omega_using [hb]), decide_eq_false (by omega_using [hj0] : i ≠ 1),
           Bool.or_false, Bool.and_comm]
         congr 1
-        exact decide_eq_decide.mpr (by omega)
-      · rw [rest (i / 64) (by omega) hj0 hjt, decide_eq_false (by omega : i ≠ 1), Bool.or_false]
+        exact decide_eq_decide.mpr (by omega_using [hjt])
+      · rw [rest (i / 64) (by omega_using [hi]) hj0 hjt, decide_eq_false (by omega_using [hj0] : i ≠ 1), Bool.or_false]
         by_cases hlt : i / 64 < t
-        · simp only [show i < 64 * t + b - 1 by omega, decide_true, Bool.true_and]
+        · simp only [show i < 64 * t + b - 1 by omega_using [hb1, hlt], decide_true, Bool.true_and]
         · have hz : (wv m p d n).testBit i = false :=
-            Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hV (Nat.pow_le_pow_right (by decide) (by omega)))
+            Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hV (Nat.pow_le_pow_right (by decide) (by omega_using [hb, hjt, hlt])))
           rw [testBit_wv m p d n i hi] at hz
           rw [hz, Bool.and_false]
-  · rw [wv_bits_high (by omega), wv_bits_high (by omega), decide_eq_false (by omega : i ≠ 1), Bool.or_false,
+  · rw [wv_bits_high (by omega_using [hi]), wv_bits_high (by omega_using [hi]), decide_eq_false (by omega_using [ht, hi] : i ≠ 1), Bool.or_false,
       Bool.and_false]
 
 /-- For odd `c`, `(x | 1) < c` exactly when `x < c − 1`. -/
@@ -118,16 +118,16 @@ theorem or_one_lt_iff {x c : Nat} (hc : c % 2 = 1) : x ||| 1 < c ↔ x < c - 1 :
     rw [Nat.testBit_or]
     rcases i with _ | i
     · simp [Nat.testBit_zero]
-    · rw [testBit_one_ne (by omega), Bool.or_false, Nat.testBit_succ, Nat.testBit_succ,
-        show (2 * (x / 2) + 1) / 2 = x / 2 by omega]
+    · rw [testBit_one_ne (by omega_using []), Bool.or_false, Nat.testBit_succ, Nat.testBit_succ,
+        show (2 * (x / 2) + 1) / 2 = x / 2 by omega_using []]
   rw [e]
-  omega
+  omega_using [hc]
 
 /-- Below 2 exactly when the low word is and the others are zero. -/
 theorem wv_lt_two_iff (m : Mem) (p : Addr) (d : Nat) {n : Nat} (hn : 1 ≤ n) :
     wv m p d n < 2 ↔ (word m p d).toNat < 2 ∧ ∀ j, 1 ≤ j → j < n → word m p (d + 8 * j) = 0 := by
   have e := wv_add m p d 1 (n - 1)
-  rw [show 1 + (n - 1) = n by omega] at e
+  rw [show 1 + (n - 1) = n by omega_using [hn]] at e
   have e1 : wv m p d 1 = (word m p d).toNat := by simp [wv]
   rw [e, e1]
   have hz := wv_eq_zero_iff m p (d + 8 * 1) (n - 1)
@@ -137,13 +137,13 @@ theorem wv_lt_two_iff (m : Mem) (p : Addr) (d : Nat) {n : Nat} (hn : 1 ≤ n) :
       rcases Nat.eq_zero_or_pos (wv m p (d + 8 * 1) (n - 1)) with h0 | h0
       · exact h0
       · have : 2 ^ (64 * 1) * wv m p (d + 8 * 1) (n - 1) ≥ 2 ^ 64 := Nat.le_mul_of_pos_right _ h0
-        omega
-    refine ⟨by omega, fun j hj hjn => ?_⟩
-    have := hz.mp h0 (j - 1) (by omega)
-    rwa [show d + 8 * 1 + 8 * (j - 1) = d + 8 * j by omega] at this
+        omega_using [h]
+    refine ⟨by omega_using [h], fun j hj hjn => ?_⟩
+    have := hz.mp h0 (j - 1) (by omega_using [hj, hjn])
+    rwa [show d + 8 * 1 + 8 * (j - 1) = d + 8 * j by omega_using [hj]] at this
   · rintro ⟨h0, hr⟩
     have : wv m p (d + 8 * 1) (n - 1) = 0 := hz.mpr fun q hq => by
-      rw [show d + 8 * 1 + 8 * q = d + 8 * (q + 1) by omega]; exact hr (q + 1) (by omega) (by omega)
+      rw [show d + 8 * 1 + 8 * q = d + 8 * (q + 1) by omega_using []]; exact hr (q + 1) (by omega_using []) (by omega_using [hq])
     rw [this, Nat.mul_zero, Nat.add_zero]; exact h0
 
 end VG.Proof.RsaKeyGen

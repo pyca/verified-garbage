@@ -70,7 +70,7 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl) ht)]
       exact hS.t₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_))
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_using [this])) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_))
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>

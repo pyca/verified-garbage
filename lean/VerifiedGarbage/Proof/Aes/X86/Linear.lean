@@ -68,7 +68,7 @@ theorem q_linear {k xb : Nat} {c : Cfg} {is : List Instr} {g : Nat → Nat → L
   obtain ⟨s', hs', hout, hrd, hwr, hoth, hfr⟩ := linear_ok hchk hok W (fun j i hji _ => by
     simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
     obtain ⟨i, hi, rfl, rfl⟩ := hji
-    exact ⟨by omega, by rw [hW i hi, hcb]⟩) hext
+    exact ⟨by omega_using [hk, hi], by rw [hW i hi, hcb]⟩) hext
   have hmem : ∀ j < 8, (j, g j) ∈ qOuts g := fun j hj => by
     simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩
   have hsb : s'.gpr sb = s.gpr sb := hoth sb (keeps_rest hw sb (by decide))
@@ -87,7 +87,7 @@ theorem toBs_ok {s : State} (hok : Ok linCfg s) :
     (by decide +kernel) hok (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, toBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by omega)]
+    bitOf_word _ _ _ (by omega_using [hj])]
 
 theorem fromBs_ok {s : State} (hok : Ok linCfg s) :
     ∃ s', runBlock isa ortho s = some s' ∧
@@ -98,7 +98,7 @@ theorem fromBs_ok {s : State} (hok : Ok linCfg s) :
     (by decide +kernel) hok (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by simp only [pos]; omega)]
+    bitOf_word _ _ _ (by simp only [pos]; omega_using [hj, hp])]
 
 theorem shiftRows_ok {s : State} (hok : Ok linCfg s) :
     ∃ s', runBlock isa shiftRows s = some s' ∧
@@ -109,7 +109,7 @@ theorem shiftRows_ok {s : State} (hok : Ok linCfg s) :
     (by decide +kernel) hok (Q s) (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, srG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by simp only [srSrc]; omega)]
+    bitOf_word _ _ _ (by simp only [srSrc]; omega_using [hp])]
 
 theorem mixColumns_ok {s : State} (hok : Ok linCfg s) :
     ∃ s', runBlock isa mixColumns s = some s' ∧
@@ -137,11 +137,11 @@ theorem addRoundKey_ok {s : State} (hok : Ok arkCfg s) :
     (by decide +kernel) hok W
     (fun i hi => by simp [W, hi]) (fun j hj => by
       simp only [arkCfg] at hj ⊢
-      refine ⟨by omega, ?_⟩
-      simp [W, show ¬ 8 + j < 8 by omega])
+      refine ⟨by omega_using [hj], ?_⟩
+      simp [W, show ¬ 8 + j < 8 by omega_using []])
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, arkG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false,
     bitOf_word _ _ _ hp, bitOf_word _ _ _ hp]
-  simp [W, hj, show ¬ 8 + j < 8 by omega]
+  simp [W, hj, show ¬ 8 + j < 8 by omega_using []]
 
 end VG.Proof.Aes.X86

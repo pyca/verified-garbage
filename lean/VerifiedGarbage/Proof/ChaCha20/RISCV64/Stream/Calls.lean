@@ -43,7 +43,7 @@ theorem al4_of_al8 {p : Addr} (h : p.toNat % 8 = 0) {d : Nat} (hd : d % 4 = 0) :
     (p + BitVec.ofNat 64 d).toNat % 4 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   have := p.isLt
-  omega
+  omega_using [h, hd]
 
 theorem block_call {s : State} {S B : Addr} (ha0 : s.gpr .a0 = S) (ha1 : s.gpr .a1 = B)
     (hdj : (⟨B, 256⟩ : Region).Disjoint ⟨S, 64⟩) (hSa : S.toNat % 4 = 0) (hBa : B.toNat % 4 = 0)

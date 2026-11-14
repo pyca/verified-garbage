@@ -35,7 +35,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
     (hl : len ≤ 2 ^ 64) : ∀ d, d + 8 ≤ len → InRegions rs (p + BitVec.ofNat 64 d) 8 :=
-  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega)⟩
+  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega_using [hl, hd])⟩
 
 /-- `t = byteRev64 [r + e]`, through `t`. -/
 theorem ldRev_ok (s : State) {r t : Reg} {e : Nat} (he : e % 8 = 0 ∧ e < 32768)

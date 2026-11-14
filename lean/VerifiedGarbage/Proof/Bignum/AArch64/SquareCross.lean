@@ -42,26 +42,26 @@ theorem crossStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
   have hn := hI.scr.nowrap
   have kp := hI.keep
   refine WP.mono (crossRow_ok hI.scr hI.x5 hI.x11 ((kp.gpr .x9 (by decide)).trans h9)
-    hI.x13 ((kp.gpr .x7 (by decide)).trans h7) (by omega) (by omega) (by omega) (by omega))
+    hI.x13 ((kp.gpr .x7 (by decide)).trans h7) (by omega_using [hw, hi]) (by omega_using [hi, hA]) (by omega_using [hi, hb]) (by omega_using [hi, sb]))
     fun t' ⟨hv, ho, h5', h11', h13', h6', kt⟩ => ⟨?_, h6'⟩
-  have rB : wv t.mem B eb i = wv s₀.mem B eb i := hI.out.wv (by omega) (by omega)
-  have rX : word t.mem B (eb+8*i) = word s₀.mem B (eb+8*i) := hI.out.word (by omega) (by omega)
+  have rB : wv t.mem B eb i = wv s₀.mem B eb i := hI.out.wv (by omega_using [hi, sb]) (by omega_using [hi, hb, hn])
+  have rX : word t.mem B (eb+8*i) = word s₀.mem B (eb+8*i) := hI.out.word (by omega_using [hi, sb]) (by omega_using [hi, hb, hn])
   have z : word t.mem B (A+8*i+8*i) = 0 := by
-    rw [show A+8*i+8*i = A+8*(2*i) by omega]
-    exact hI.zero _ (Nat.le_refl _) (by omega)
+    rw [show A+8*i+8*i = A+8*(2*i) by omega_using []]
+    exact hI.zero _ (Nat.le_refl _) (by omega_using [hi])
   have old : wv t.mem B (A+8*i) (i+1) = wv t.mem B (A+8*i) i := by
     rw [wv, z]; simp
   rw [rB, rX, ← old] at hv
-  have global := wv_change_window (n := 2*w+2) (by omega) (by omega) ho hv
+  have global := wv_change_window (n := 2*w+2) (by omega_using [hi]) (by omega_using [hA, hn]) ho hv
   rw [hI.val] at global
   refine ⟨hI.scr.congr kt.wr, (kp.trans kt).mono (by decide), ?_, h11', h13',
-    hI.out.trans (ho.mono (o' := A) (n' := 8*(2*w+2)) (by omega) (by omega)), ?_, ?_⟩
+    hI.out.trans (ho.mono (o' := A) (n' := 8*(2*w+2)) (by omega_using []) (by omega_using [hi])), ?_, ?_⟩
   · rw [h5']; congr 1
   · rw [global, crossValue_succ]
     grind
   · intro k hk hk'
-    rw [ho.word (by omega) (by omega)]
-    exact hI.zero k (by omega) hk'
+    rw [ho.word (by omega_using [hk]) (by omega_using [hA, hn, hk'])]
+    exact hI.zero k (by omega_using [hk]) hk'
 
 /-- Every off-diagonal product is accumulated once within the existing scratch. -/
 theorem cross_ok {s : State} {B : Addr} {Z A eb w : Nat}
@@ -99,19 +99,19 @@ theorem cross_ok {s : State} {B : Addr} {Z A eb w : Nat}
     · intro k _ hk
       rw [hm]
       exact (wv_eq_zero_iff u.mem B A (2*w+2)).mp hz k hk
-  refine WP.mono (wp_countdown (N := w-1) (by omega) (by omega)
+  refine WP.mono (wp_countdown (N := w-1) (by omega_using [hw]) (by omega_using [hw1])
     (fun j => CrossInv v B Z A eb w (j+1))
     (fun j hj t hI _ => by
-      simpa only [Nat.add_assoc] using (crossStep_ok v9 v7 hw (show j+1 < w by omega) hA hb sb hI))
+      simpa only [Nat.add_assoc] using (crossStep_ok v9 v7 hw (show j+1 < w by omega_using [hj]) hA hb sb hI))
     h0 h6) fun t ht => ?_
-  have heq : w-1+1 = w := by omega
+  have heq : w-1+1 = w := by omega_using [hw1]
   rw [heq] at ht
   refine ⟨?_, ?_, ht.zero, (kAll.trans ht.keep).mono (by decide)⟩
   · rw [ht.val]
     apply crossValue_congr
     intro j hj
     rw [hm]
-    exact ho.word (by omega) (by omega)
+    exact ho.word (by omega_using [sb, hj]) (by omega_using [hb, hn, hj])
   · have ho' := ht.out
     rw [hm] at ho'
     exact ho.trans ho'

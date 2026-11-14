@@ -29,7 +29,7 @@ theorem widePrefix_length (v : VReg → BitVec 128) (L : List Zq) (n : Nat) :
     (widePrefix v L n).length=L.length+4*n := by
   induction n with
   | zero => rfl
-  | succ n ih => simp only [widePrefix,List.length_append,fourValues,List.length_cons,List.length_nil,ih]; omega
+  | succ n ih => simp only [widePrefix,List.length_append,fourValues,List.length_cons,List.length_nil,ih]; omega_using []
 
 /-- The four vector writes preserve the accepted prefix and append precisely
 sixteen candidates, without changing pointers until all stores are complete. -/
@@ -45,24 +45,24 @@ theorem wideStores_ok (n : Nat) (hn : n≤4) {s : State} {p : Addr} {L : List Zq
   | zero => exact WP.block_nil_iff.mpr ⟨Keep.refl _ _,rfl,Frame.refl _ _,hst⟩
   | succ n ih =>
     rw [List.range_succ,List.map_append,List.map_cons,List.map_nil,WP.block_append_iff]
-    refine WP.mono (ih (by omega) (by omega) (fun j hj => hv j (by omega))
-      (fun j hj => hw j (by omega))) fun a ⟨ha,hav,haf,has⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn]) (by omega_using [hsize]) (fun j hj => hv j (by omega_using [hj]))
+      (fun j hj => hw j (by omega_using [hj]))) fun a ⟨ha,hav,haf,has⟩ => ?_
     have hp : a.gpr .x3+BitVec.ofNat 64 (16*n)=coeffAddr p (widePrefix s.v L n).length := by
       rw [ha.get .x3,h3,widePrefix_length,coeffAddr,coeffAddr,Offset.add_add]
-      congr 2 <;> omega
+      congr 2 <;> omega_using []
     refine wp_strq (a := coeffAddr p (widePrefix s.v L n).length)
-      (by constructor <;> omega) hp (by rw [←hp,ha.wr,ha.get .x3]; exact hw n (by omega))
+      (by constructor <;> omega_arith) hp (by rw [←hp,ha.wr,ha.get .x3]; exact hw n (by omega_using []))
       fun t ht => wp_nil ?_
     refine ⟨(ha.trans ht.keep).mono (by simp),?_,?_,?_⟩
     · rw [ht.v,hav]
     · rw [ht.mem]
       exact haf.write (List.mem_singleton_self _) _ (Offset.contains_base p
-        (by rw [widePrefix_length]; omega) (by rw [widePrefix_length]; omega))
+        (by rw [widePrefix_length]; omega_using [hsize]) (by rw [widePrefix_length]; omega_using [hsize]))
     · rw [ht.mem,widePrefix,hav]
-      apply stored_append_four has (by rw [widePrefix_length]; omega) rfl
+      apply stored_append_four has (by rw [widePrefix_length]; omega_using [hsize]) rfl
       intro e he
-      have hh := hv n (by omega) e he
-      rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl
+      have hh := hv n (by omega_using []) e he
+      rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl
       all_goals exact (Nat.mod_eq_of_lt hh).symm
 
 /-- Pointer updates following the four stores agree with sixteen accepted
@@ -95,7 +95,7 @@ theorem wideAccept_ok {s : State} {p : Addr} {L : List Zq}
     · rw [et,hb.get .x4,ha.get .x4,BitVec.toNat_sub]
       simp only [BitVec.toNat_ofNat]
       rw [h4,widePrefix_length]
-      omega
+      omega_using [hsize]
     · rw [ht.mem,hb.mem]; exact has
   · intro t ⟨⟨hk,hf,hp,hc,hs⟩,hv'⟩
     exact ⟨hk,hv'.trans hav,hf,hp,hc,hs⟩
@@ -123,7 +123,7 @@ theorem wideLanes_mem {r : VReg} {e : Nat} (h : (r,e)∈wideLanes) :
   obtain ⟨k,hk,he⟩ := List.mem_map.mp h
   have hk16 := List.mem_range.mp hk
   cases he
-  exact ⟨k/4,by omega,rfl,by omega⟩
+  exact ⟨k/4,by omega_using [hk16],rfl,by omega_using []⟩
 
 theorem wideLanes_all {v : VReg → BitVec 128} {L : List Zq}
     (h : ∀j<4,∀e<4,(vword (v wideRegs[j]!) e).toNat<q) :

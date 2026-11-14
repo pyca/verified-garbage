@@ -129,18 +129,18 @@ theorem cx_al (s₀ : State) {d : Nat} (hd : d % 8 = 0) : (off (cx s₀) d).toNa
 
 theorem sub_work (s₀ : State) {k n : Nat} (h : k + n ≤ 616) : Region.Sub (sub s₀ k n) (wR s₀) := by
   have := pad_lt' s₀
-  simp only [sub]; rw [cx_off]; exact Offset.sub_base _ (by omega)
+  simp only [sub]; rw [cx_off]; exact Offset.sub_base _ (by omega_using [h, this])
 
 theorem sub_disj (s₀ : State) {a n b m : Nat} (h : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ 616)
     (hb : b + m ≤ 616) : (sub s₀ a n).Disjoint (sub s₀ b m) :=
-  Offset.disjoint (cx s₀) h (by omega) (by omega)
+  Offset.disjoint (cx s₀) h (by omega_using [ha]) (by omega_using [hb])
 
 theorem contains_sub (s₀ : State) {k n a w : Nat} (h₁ : k ≤ a) (h₂ : a + w ≤ k + n) (h₃ : k + n ≤ 616) :
-    (sub s₀ k n).Contains (off (cx s₀) a) w := Offset.contains (cx s₀) h₁ h₂ (by omega)
+    (sub s₀ k n).Contains (off (cx s₀) a) w := Offset.contains (cx s₀) h₁ h₂ (by omega_using [h₃])
 
 theorem contains_work (s₀ : State) {a w : Nat} (h : a + w ≤ 616) : (wR s₀).Contains (off (cx s₀) a) w := by
   have := pad_lt' s₀
-  rw [cx_off]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [cx_off]; exact Offset.contains_base _ (by omega_using [h, this]) (by omega_using [h, this])
 
 namespace APre
 variable {s₀ : State} (hp : APre e s₀)
@@ -176,7 +176,7 @@ structure Saved (s₀ : State) (m : Mem) : Prop where
 theorem Saved.frame {s₀ : State} {rs : List Region} {m m' : Mem} (h : Saved s₀ m)
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (sub s₀ savOff 56).Disjoint r) : Saved s₀ m' := by
   have c : ∀ k, k + 8 ≤ 56 → (sub s₀ savOff 56).Contains (off (cx s₀) (savOff + k)) (64 / 8) :=
-    fun k hk => contains_sub s₀ (by omega) (by simp only [savOff]; omega) (by decide)
+    fun k hk => contains_sub s₀ (by omega_using []) (by simp only [savOff]; omega_using [hk]) (by decide)
   have c0 : (sub s₀ savOff 56).Contains (off (cx s₀) savOff) (64 / 8) := by
     simpa using c 0 (by decide)
   exact ⟨by rw [hf.readW c0 hd (by decide), h.s7], by rw [hf.readW (c 8 (by decide)) hd (by decide), h.s8],
@@ -262,11 +262,11 @@ theorem Inv.step1 {s₀ s s' : State} (h : Inv s₀ s) {k n : Nat} (hk : Step [s
     (h₂ : k + n ≤ savOff) : Inv s₀ s' :=
   h.step hk (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨wR s₀, by simp, sub_work s₀ (by simp only [savOff] at h₂ ⊢; omega)⟩)
+      exact ⟨wR s₀, by simp, sub_work s₀ (by simp only [savOff] at h₂ ⊢; omega_using [h₂])⟩)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact sub_disj s₀ (by simp only [savOff] at h₂ ⊢; omega) (by decide)
-        (by simp only [savOff] at h₂ ⊢; omega))
+      exact sub_disj s₀ (by simp only [savOff] at h₂ ⊢; omega_using [h₂]) (by decide)
+        (by simp only [savOff] at h₂ ⊢; omega_using [h₂]))
 
 theorem Inv.step2 {s₀ s s' : State} (h : Inv s₀ s) {k n k' n' : Nat}
     (hk : Step [sub s₀ k n, sub s₀ k' n'] s s') (h₂ : k + n ≤ savOff) (h₃ : k' + n' ≤ savOff) :
@@ -274,15 +274,15 @@ theorem Inv.step2 {s₀ s s' : State} (h : Inv s₀ s) {k n k' n' : Nat}
   h.step hk (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨wR s₀, by simp, sub_work s₀ (by simp only [savOff] at h₂ ⊢; omega)⟩
-      · exact ⟨wR s₀, by simp, sub_work s₀ (by simp only [savOff] at h₃ ⊢; omega)⟩)
+      · exact ⟨wR s₀, by simp, sub_work s₀ (by simp only [savOff] at h₂ ⊢; omega_using [h₂])⟩
+      · exact ⟨wR s₀, by simp, sub_work s₀ (by simp only [savOff] at h₃ ⊢; omega_using [h₃])⟩)
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact sub_disj s₀ (by simp only [savOff] at h₂ ⊢; omega) (by decide)
-          (by simp only [savOff] at h₂ ⊢; omega)
-      · exact sub_disj s₀ (by simp only [savOff] at h₃ ⊢; omega) (by decide)
-          (by simp only [savOff] at h₃ ⊢; omega))
+      · exact sub_disj s₀ (by simp only [savOff] at h₂ ⊢; omega_using [h₂]) (by decide)
+          (by simp only [savOff] at h₂ ⊢; omega_using [h₂])
+      · exact sub_disj s₀ (by simp only [savOff] at h₃ ⊢; omega_using [h₃]) (by decide)
+          (by simp only [savOff] at h₃ ⊢; omega_using [h₃]))
 
 /-! ## Memory through frames -/
 
@@ -300,7 +300,7 @@ theorem stateAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   apply Vector.ext
   intro i hi
   simp only [stateAt, Vector.getElem_ofFn]
-  exact hf.readW (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+  exact hf.readW (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])) hd (by decide)
 
 /-- A Poly1305 state with its buffer outside a frame is unchanged. -/
 theorem Buffered.frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {P : Addr}
@@ -317,8 +317,8 @@ theorem Buffered.frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {P :
       (by decide)]
     exact h3
   · rw [show (P + 56 : Addr) = P + BitVec.ofNat 64 56 from rfl,
-      bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Offset.sub_base P (d := 56) (by omega)))
-      (by omega)]
+      bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Offset.sub_base P (d := 56) (by omega_using [])))
+      (by omega_using [])]
     exact h4
 
 end VG.Proof.ChaCha20Poly1305.RISCV64

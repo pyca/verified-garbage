@@ -38,7 +38,7 @@ theorem keyStore_ok (k : Nat) (hk : k ≤ 16) {s : State} (h : Room s)
       Frame [outR s k] s.mem t.mem
   | 0, _ => ⟨s, runBlock_nil, fun w hw => by omega, fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | n + 1, hn => by
-    obtain ⟨t, ht, hv, hg, hrd, hwr, hsp, hf⟩ := keyStore_ok k hk h hw hsep n (by omega)
+    obtain ⟨t, ht, hv, hg, hrd, hwr, hsp, hf⟩ := keyStore_ok k hk h hw hsep n (by omega_using [hn])
     have sbt : t.gpr sb = s.gpr sb := hg _ (by decide) (by decide)
     have a1t : t.gpr .a1 = s.gpr .a1 := hg _ (by decide) (by decide)
     have room : Room t := room_congr h sbt hwr
@@ -50,14 +50,14 @@ theorem keyStore_ok (k : Nat) (hk : k ≤ 16) {s : State} (h : Room s)
       simp only [List.mem_singleton] at hr; subst hr
       refine (hsep.sub_right ?_).symm
       show Region.Sub ⟨s.gpr sb + BitVec.ofNat 64 (8 * tSlot 0 + 4 * n), 4⟩ ⟨s.gpr sb, 8 * scratchSlots⟩
-      exact Offset.sub_base _ (by unfold scratchSlots tSlot; omega)
+      exact Offset.sub_base _ (by unfold scratchSlots tSlot; omega_using [hn])
     let t1 := t.write .t0 ((lv t (tSlot 0) n).setWidth 64)
-    have e1 : exec (ldW .t0 (tSlot 0) n) t = some t1 := exec_ldW_lane room mem_tA (by omega) .t0
+    have e1 : exec (ldW .t0 (tSlot 0) n) t = some t1 := exec_ldW_lane room mem_tA (by omega_using [hn]) .t0
     have hw1 : InRegions t1.wr (t1.gpr .a1 + BitVec.ofNat 64 (4 * (k + n))) 4 := by
       simp only [t1, wr_write, gpr_write_of_ne _ _ (show ¬ Reg.a1 = .t0 by decide), hwr, a1t]
-      exact hw n (by omega)
+      exact hw n (by omega_using [hn])
     obtain ⟨t2, e2, h2⟩ := run_of_wp (ByteLoad.storeLE32_ok (s := t1) (v := .t0) (tmp := .t1) (n := .a1)
-      (off := 4 * (k + n)) (by decide) (by decide) (by omega) hw1)
+      (off := 4 * (k + n)) (by decide) (by decide) (by omega_using [hk, hn]) hw1)
     have m2 : t2.mem = t.mem.writeW (s.gpr .a1 + BitVec.ofNat 64 (4 * (k + n))) (lv s (tSlot 0) n) := by
       rw [h2, mem_write]
       show t1.mem.writeW _ _ = _
@@ -70,13 +70,13 @@ theorem keyStore_ok (k : Nat) (hk : k ≤ 16) {s : State} (h : Room s)
     · rw [m2]
       by_cases hwn : w = n
       · subst hwn; rw [Mem.readW_writeW_self32]
-      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-        exact hv w (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hwn]) (by omega_using [hk, hn, hw']) (by omega_using [hk, hn])) (by decide)]
+        exact hv w (by omega_using [hw', hwn])
     · rw [h2, gpr_write_of_ne _ _ h2']
       show t1.gpr r = s.gpr r
       simp only [t1, gpr_write_of_ne _ _ h1]; exact hg r h1 h2'
     · rw [m2]
-      exact hf.writeW List.mem_cons_self _ (Offset.contains _ (by omega) (by omega) (by omega))
+      exact hf.writeW List.mem_cons_self _ (Offset.contains _ (by omega_using []) (by omega_using [hn]) (by omega_using [hk]))
 
 /-- Moving lane `b` of `uSlot` to `G`'s words. -/
 def spMove : LaneSpec := [(tSlot 0, fun x => x uSlot)]

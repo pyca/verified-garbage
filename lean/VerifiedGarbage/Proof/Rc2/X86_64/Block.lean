@@ -49,7 +49,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have writes : ∀ i < 4, InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 (8 * i)) 8 := by
     intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .rdx, 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdx, 256⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   simp only [blockCode, List.append_assoc]
   rw [WP.block_append_iff]
   apply WP.mono (saveCode_ok s .rdx wordReg 4 writes)
@@ -73,12 +73,12 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have read₂ : ∀ i < 128, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .rdi + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [h₂.2.rd, h₂.2.wr, h₂.2.reg .rdi (by decide), h₁.1, h₁.2.1, h₁.2.2.1, hrd, hwr]
-    exact ⟨⟨s.gpr .rdi, 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdi, 128⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have scans₂ : ScanMemory s₂ := by
     refine ⟨read₂, ?_, ?_⟩
     · intro i hi
       rw [h₂.2.rd, h₂.2.wr, h₂.2.reg .rdi (by decide), h₁.1, h₁.2.1, h₁.2.2.1, hrd, hwr]
-      exact ⟨⟨s.gpr .rdi, 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨s.gpr .rdi, 128⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
     · rw [h₂.2.wr, h₂.2.reg .rdx (by decide), h₁.1, h₁.2.2.1, hwr]
       exact ⟨⟨s.gpr .rdx, 256⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩
   rw [WP.block_append_iff]
@@ -110,13 +110,13 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     intro i hi
     rw [rd₄, wr₄, regs₄ .rdx (by decide), hrd, hwr]
     have bound := List.mem_range.mp hi
-    exact ⟨⟨s.gpr .rdx, 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdx, 256⟩, by simp, Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])⟩
   have saved₄ : ∀ i ∈ List.range 4,
       s₄.mem.readW (s₄.gpr .rdx + BitVec.ofNat 64 (8 * i)) 64 = s.gpr (wordReg i) := by
     intro i hi
     have bound := List.mem_range.mp hi
     rw [mem₄, regs₄ .rdx (by decide), Mem.readW_writeW_sep
-      (dataSep.symm.sep (Offset.contains_base _ (by omega) (by omega)) (Region.contains_self _ _))
+      (dataSep.symm.sep (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])) (Region.contains_self _ _))
       (by decide), h₁.2.2.2]
     exact saveMem_read _ _ _ 4 (by decide) i bound
   apply WP.mono (restoreCode_ok s₄ .rdx wordReg (List.range 4) s.gpr

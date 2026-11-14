@@ -134,7 +134,7 @@ theorem Exec.vecKeep0 {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevel = 0) {
     (h : Exec isa c s t s') : vk0 s' = vk0 s :=
   Exec.keep (fun s : State => vk0 s) (ok := fun i : Instr => i.vecLevel = 0)
     (fun {i s s'} hi he => by
-      have k := exec_vkeep (by omega) he
+      have k := exec_vkeep (by omega_using [hi]) he
       rw [hi] at k
       simp only [vk0, k.1, k.2.1, k.2.2.1, (k.2.2.2 rfl).1, (k.2.2.2 rfl).2])
     (fun _ hp hq hb => by rw [pop_vk0 hq, hb, push_vk0 hp]) hc
@@ -205,7 +205,7 @@ theorem vecLevel_of_loads {i : Instr} (h : loadsMxcsr i = true) : i.vecLevel = 2
   obtain ⟨m, rfl⟩ := loadsMxcsr_eq h; rfl
 
 theorem vecLevelR_le (i : Instr) : i.vecLevelR ≤ i.vecLevel := by
-  unfold Instr.vecLevelR; split <;> omega
+  unfold Instr.vecLevelR; split <;> omega_using []
 
 /-- An instruction of level at most 1 does not load MXCSR. -/
 theorem noLoad_of_vecLevel {i : Instr} (h : i.vecLevel ≤ 1) : loadsMxcsr i = false := by
@@ -246,7 +246,7 @@ theorem Exec.vecKeep0R {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevelR = 0)
     (h : Exec isa c s t s') : vk0R s' = vk0R s :=
   Exec.keep (fun s : State => vk0R s) (ok := fun i : Instr => i.vecLevelR = 0)
     (fun {i s s'} hi he => by
-      have k := exec_vkeepR (by omega) he
+      have k := exec_vkeepR (by omega_using [hi]) he
       simp only [vk0R, k.1, k.2.1, (k.2.2 hi).1, (k.2.2 hi).2])
     (fun _ hp hq hb => by rw [vk0R_of_vk0 (pop_vk0 hq), hb, vk0R_of_vk0 (push_vk0 hp)]) hc
     (.inr fun _ _ _ _ hc hr hb => by

@@ -118,8 +118,8 @@ theorem bl_after {a s t : State} (P : PreT Z Gs.len s) (p : PubT Z a s) (c : Aft
   have Tg' : TabS Z.G Z.g gArg Sp (reE s t.mem) (stackArg s 7) := P.2.1.transfer rfl rfl rfl hSC c.mem (hA 7 (by decide)) fun k hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (P.1.ktg.sub_right (tab_sub (n := 11) (by omega))).symm
-    · exact (P.1.stg.sub_right (tab_sub (n := 11) (by omega))).symm
+    · exact (P.1.ktg.sub_right (tab_sub (n := 11) (by omega_using [hk]))).symm
+    · exact (P.1.stg.sub_right (tab_sub (n := 11) (by omega_using [hk]))).symm
   have T' : MdTabS Z.H Z.cn Z.cc Z.dn Z.dc Z.f hArg Sp (reE s t.mem) (stackArg s 6) := P.2.2.transfer rfl rfl rfl hSC c.mem (hA 6 (by decide)) fun k hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -248,7 +248,7 @@ theorem code_ct {i : Nat} (hi : i ∈ idxs) (hD : (shapeOf i).1.D = Z.H.D) (hP :
     RelCT isa (Two fun a s => (PreT Z Gs.len s ∧ PubT Z a s) ∧
       s.mem.readW (stackArg s 6 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 i)
       (verifyPrecomputed Z.f Z.g) fun _ _ => True := by
-  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega
+  have hi8 : i < 8 := by simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at hi; omega_using [hi]
   refine two_alloc (R := fun _ _ => True) (fun a s₁ s₂ h₁ h₂ =>
     ⟨h₁.1.2.1.1.sp.trans h₂.1.2.1.1.sp.symm, fun _ h => nomatch h⟩) ?_
   let A0 := fun (a s : State) => (PreT Z Gs.len s ∧ PubT Z a s) ∧
@@ -275,7 +275,7 @@ theorem code_ct {i : Nat} (hi : i ∈ idxs) (hD : (shapeOf i).1.D = Z.H.D) (hP :
     exact WP.of_syms ((wordA_ok o e (by decide) ⟨tHR s, by rw [P.hrd]; simp, Offset.contains_base _ (by decide)
       (by decide)⟩ (P.kth.sub_right (tab_sub (n := 11) (show 5 < 11 by decide))).symm).mono fun u' ⟨o', e'⟩ y' =>
         ⟨s, h, o', y'.trans y, by rw [e']; exact h.2⟩)
-  refine byIdx_ct (D := i) (by omega) (Φ := Ix Z Gs.len i)
+  refine byIdx_ct (D := i) (by omega_using [hi8]) (Φ := Ix Z Gs.len i)
     (fun _ _ ⟨_, _, _, _, e⟩ => e) (fun a u₁ u₂ ⟨s₁, h₁, o₁, _⟩ ⟨s₂, h₂, o₂, _⟩ => by
       rw [o₁.sp, o₂.sp, allocated_sp, allocated_sp, h₁.2.1.1.sp, h₂.2.1.1.sp])
     (fun a u u' ⟨s, h, o, y, e⟩ o' y' => ⟨s, h, (o.trans o').mono, y'.trans y, by rw [o'.get .r11]; exact e⟩)

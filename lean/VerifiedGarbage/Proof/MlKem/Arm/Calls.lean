@@ -45,7 +45,7 @@ abbrev Lay.buf (L : Lay) (i : Nat) : Region := ⟨State.addr (L.ptr i), L.size i
 theorem Lay.ptr_ok {L : Lay} (hL : L.Ok) {i o l : Nat} (hb : i < L.sizes.length ∧ o + l ≤ L.sizes.getD i 0)
     (hl : 0 < l) :
     State.addr (L.ptr i + BitVec.ofNat 32 o) = L.A i o ∧ (L.ptr i + BitVec.ofNat 32 o).toNat + l ≤ 2 ^ 32 :=
-  ⟨Lay.addr_off hL hb.1 (by have := hb.2; simp only [Lay.size]; omega), Lay.fit_off hL hb.1 hb.2 hl⟩
+  ⟨Lay.addr_off hL hb.1 (by have := hb.2; simp only [Lay.size]; omega_using [hb, hl]), Lay.fit_off hL hb.1 hb.2 hl⟩
 
 theorem view_r0 (s : State) (rd wr : List Region) : (view s rd wr).gpr .r0 = s.gpr .r0 := view_gpr' _ _ _ (by decide)
 theorem view_r1 (s : State) (rd wr : List Region) : (view s rd wr).gpr .r1 = s.gpr .r1 := view_gpr' _ _ _ (by decide)
@@ -189,7 +189,7 @@ theorem kCbd_ok : ∀ s, kCbd.pre s → ∃ t s', Exec isa Impl.MlKem.Arm.cbd2 s
     kCbd.post s s' :=
   mkK_ok fun s₀ hp => WP.mono (Cbd2.loop_ok hp) fun _ h => ⟨h.pres, h.sp,
     polyIs_of_coeffAt (p := Cbd2.F s₀) fun j hj => by
-      rw [h.coeff j hj, ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega)]; rfl⟩
+      rw [h.coeff j hj, ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega_using [hj])]; rfl⟩
 
 def kDec : Contract isa := mkK Decode12.Pre (fun s₀ s => PolyIs s.mem (Decode12.F s₀) (Decode12.D s₀))
   (regsEq [.r0, .r1])
@@ -198,7 +198,7 @@ theorem kDec_ok : ∀ s, kDec.pre s → ∃ t s', Exec isa Impl.MlKem.Arm.decode
     kDec.post s s' :=
   mkK_ok fun s₀ hp => WP.mono (Decode12.loop_ok hp) fun _ h => ⟨h.pres, h.sp,
     polyIs_of_coeffAt (p := Decode12.F s₀) fun j hj => by
-      rw [h.coeff j hj, ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega)]; rfl⟩
+      rw [h.coeff j hj, ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at hj; omega_using [hj])]; rfl⟩
 
 def kEnc : Contract isa := mkK Encode12.Pre (fun s₀ s => bytesAt s.mem (Encode12.O s₀) 384 = Encode12.E s₀)
   (regsEq [.r0, .r1])
@@ -207,7 +207,7 @@ theorem kEnc_ok : ∀ s, kEnc.pre s → ∃ t s', Exec isa Impl.MlKem.Arm.encode
     kEnc.post s s' :=
   mkK_ok fun s₀ hp => WP.mono (Encode12.loop_ok hp) fun _ h => ⟨h.pres, h.sp,
     bytesAt_eq! (p := Encode12.O s₀) (encode12_length _) fun k hk => by
-      rw [h.bytes k hk, ite_eq_left (by omega)]⟩
+      rw [h.bytes k hk, ite_eq_left (by omega_using [hk])]⟩
 
 /-- `SamplePolyCBD₂` of the 128 bytes at `(i, o)` into the polynomial at `(j, o')`. -/
 theorem cbd2L {L : Lay} {s : State} (hL : L.Ok) {i o j o' : Nat}

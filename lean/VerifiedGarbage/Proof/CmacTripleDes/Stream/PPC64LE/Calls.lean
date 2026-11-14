@@ -80,12 +80,12 @@ theorem encCall_wp {s : State} {S B : Addr} (h3 : s.gpr .r3 = S) (h4 : s.gpr .r4
   have cw : VG.Covers [⟨s.gpr .r4, 8⟩, ⟨s.gpr .r5, 512⟩] s.wr := VG.Covers.of_sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨⟨B, L⟩, hB, 512, h4, by show 512 + 8 ≤ L; omega⟩
-    · exact ⟨⟨B, L⟩, hB, 0, by simp [h5], by show 0 + 512 ≤ L; omega⟩
+    · exact ⟨⟨B, L⟩, hB, 512, h4, by show 512 + 8 ≤ L; omega_using [hL]⟩
+    · exact ⟨⟨B, L⟩, hB, 0, by simp [h5], by show 0 + 512 ≤ L; omega_using [hL]⟩
   have hp : Proof.TripleDes.PPC64LE.Ecb.CallPre s :=
     ⟨VG.Covers.cons (by rw [h3]; exact VG.Covers.one hkey) (VG.Covers.right cw), cw,
       by rw [h3, h5]; exact hd.sub_right scrIn,
-      by rw [h4, h5]; exact VG.Offset.disjoint_base _ (by decide) (by omega)⟩
+      by rw [h4, h5]; exact VG.Offset.disjoint_base _ (by decide) (by omega_using [])⟩
   refine WP.mono (Proof.TripleDes.PPC64LE.Ecb.call_ok .encrypt s hp) fun s' h' => ?_
   have sub : ∀ r ∈ [(⟨s.gpr .r4, 8⟩ : Region), ⟨s.gpr .r5, 512⟩], ∃ r' ∈ [(⟨B, 520⟩ : Region)], Region.Sub r r' :=
     fun r hr => by

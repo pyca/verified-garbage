@@ -32,7 +32,7 @@ theorem pdExponentiate_ok (s : State) {base dst pp ep xp : BitVec 32} {len k eLe
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (ConditionalExp.expPhase_ok s phase) ?_
   rintro t ⟨ready, value, frame, rest⟩
-  have positive : 0 < N := by have := h.ready.modulus; rw [h.modulus] at this; omega
+  have positive : 0 < N := by have := h.ready.modulus; rw [h.modulus] at this; omega_using [this]
   exact ⟨⟨h.buffers.after_workspace frame rest, h.stack.after_workspace frame rest, ready, positive, value,
     (h.stack.keep_acceptance frame rest).trans h.flag⟩, frame, rest⟩
 

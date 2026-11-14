@@ -97,11 +97,11 @@ theorem tcW_init : ∀ x∈tcW, x∈jointInitWork publicJoint := by decide +kern
 theorem tbl_sl : ∀ a, 1≤a → a≤9 → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈jointSlots publicJoint := by
   have h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈jointSlots publicJoint := by
     decide +kernel
-  exact fun a h1 h9 => h a (by omega) h1
+  exact fun a h1 h9 => h a (by omega_using [h9]) h1
 
 theorem tbl_w : ∀ a, 1≤a → a≤9 → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈tcW := by
   have h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈tcW := by decide +kernel
-  exact fun a h1 h9 => h a (by omega) h1
+  exact fun a h1 h9 => h a (by omega_using [h9]) h1
 
 /-- The writes of a cached addition's body, apart from the fixed slots but `R`
 and from the table's entries. -/
@@ -115,18 +115,18 @@ theorem addW_fixed : ∀ x∈tcFixed, x∉jacCoords publicJoint.K.R → x∉addW
 
 theorem addW_tbl : ∀ a, 1≤a → a≤9 → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∉addW := by
   have h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∉addW := by decide +kernel
-  exact fun a h1 h9 => h a (by omega) h1
+  exact fun a h1 h9 => h a (by omega_using [h9]) h1
 
 /-- Distinct entries are apart. -/
 theorem tbl_tbl : ∀ a b, 1≤a → a≤9 → 1≤b → b≤9 → a≠b →
     ∀ x∈jacCoords (publicJoint.K.tblPt a), x∉jacCoords (publicJoint.K.tblPt b) := by
   intro a b h1 h9 g1 g9 hne x hx hy
   simp only [jacCoords,WinCfg.tblPt,k_n,List.mem_cons,List.not_mem_nil,or_false] at hx hy
-  omega
+  omega_using [h1, g1, hne, hx, hy]
 
 theorem fixed_tbl : ∀ a, 1≤a → a≤8 → ∀ x∈tcFixed, x∉jacCoords (publicJoint.K.tblPt a) := by
   have h : ∀ a<9, 1≤a → ∀ x∈tcFixed, x∉jacCoords (publicJoint.K.tblPt a) := by decide +kernel
-  exact fun a h1 h8 => h a (by omega) h1
+  exact fun a h1 h8 => h a (by omega_using [h8]) h1
 
 theorem mem_tcLive_fixed {m x : Nat} (h : x∈tcFixed) : x∈tcLive m := List.mem_append_left _ h
 
@@ -187,7 +187,7 @@ theorem tcLive_next (m : Nat) :
         (List.mem_map.mpr ⟨i,List.mem_range.mpr h,rfl⟩))
     · apply List.mem_append_left
       simp only [jacCoords,WinCfg.tblPt,k_n,List.mem_cons,List.not_mem_nil,or_false]
-      omega
+      omega_using [hi, h]
 
 theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoint.K.M.n)))
     (hC : Law C) (hd : JDblOk C dblJ0) (hOne : publicJoint.K.one<C.p) (hQ : onCurve C Q=true)
@@ -226,7 +226,7 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
       hx.keep.trans (JointLoopKeep.of_prog (kw.mono addW_w)),?_,
       invJ_keep kw hs addW_sl (by decide +kernel) (by decide +kernel) hx.e,?_,?_,
       invJ_keep kw hs addW_sl (by decide +kernel) (by decide +kernel) hx.twice,
-      fun a h1 ha => invJ_keep kw hs addW_sl (tbl_sl a h1 (by omega)) (addW_tbl a h1 (by omega))
+      fun a h1 ha => invJ_keep kw hs addW_sl (tbl_sl a h1 (by omega_using [hm7, ha])) (addW_tbl a h1 (by omega_using [hm7, ha]))
         (hx.table a h1 ha),?_,?_⟩
     · have jr : InvJ C (E'' publicJoint.K.R.x) (E'' publicJoint.K.R.y) (E'' publicJoint.K.R.z)
           (add (mul (2*m-1) Q) (mul 2 Q)) := by
@@ -234,7 +234,7 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
         rw [vu.1,vu.2.1,vu.2.2]
         exact jd
       have jt := iu.point_tmv (fun _ hz => List.mem_append_left _ hz) jr
-      rw [hC.add_mul_mul hQ,show 2*m-1+2=2*m+1 by omega] at jt
+      rw [hC.add_mul_mul hQ,show 2*m-1+2=2*m+1 by omega_using [hm1]] at jt
       exact jt
     · rw [tmv_keep kw hs addW_sl (by decide +kernel) (by decide +kernel),
         tmv_keep kw hs addW_sl (by decide +kernel) (by decide +kernel)]
@@ -252,18 +252,18 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
   refine WP.mono call fun u ⟨_,hu⟩ => ?_
   rw [WP.block_append_iff]
   have hs := hu.field.scr
-  refine WP.mono (nafTableFields_ok lay (Or.inl rfl) rfl rfl hu.field (j:=m) (by omega) hu.counter
-    (by decide) (by decide) (tbl_sl (m+1) (by omega) (by omega))
+  refine WP.mono (nafTableFields_ok lay (Or.inl rfl) rfl rfl hu.field (j:=m) (by omega_using [hm7]) hu.counter
+    (by decide) (by decide) (tbl_sl (m+1) (by omega_using []) (by omega_using [hm7]))
     (fun z hz => mem_tcLive_fixed (R_fixed z hz)) (by decide)) fun v ⟨kv,iv⟩ => ?_
   have hsv : Scr v base 8192 := kv.scr hs
-  refine WP.mono (nafTable_advance_ok (m:=m) (by omega)
+  refine WP.mono (nafTable_advance_ok (m:=m) (by omega_using [hm7])
     (by rw [kv.gpr _ (rbx_not_clob _)]; exact hu.counter)) fun w ⟨cw,cf,kk⟩ => ⟨?_,cf⟩
   have hmw : w.mem = v.mem := kk.2.1
   have tw : ∀ z, tmv C 4 base w z = tmv C 4 base v z := fun z => by unfold tmv; rw [hmw]
   have hW : ∀ z∈jacCoords (publicJoint.K.tblPt (m+1)), z∈jointSlots publicJoint :=
-    tbl_sl (m+1) (by omega) (by omega)
+    tbl_sl (m+1) (by omega_using []) (by omega_using [hm7])
   have keepF : ∀ z∈tcFixed, tmv C 4 base w z = tmv C 4 base u z := fun z hz =>
-    (tw z).trans (tmv_keep kv hs hW (fixed_sl z hz) (fixed_tbl (m+1) (by omega) (by omega) z hz))
+    (tw z).trans (tmv_keep kv hs hW (fixed_sl z hz) (fixed_tbl (m+1) (by omega_using []) (by omega_using [hm7]) z hz))
   have keepJ : ∀ {p : Pt}, (∀ z∈jacCoords p, z∈tcFixed) → ∀ {P : Point C},
       InvJ C (tmv C 4 base u p.x) (tmv C 4 base u p.y) (tmv C 4 base u p.z) P →
       InvJ C (tmv C 4 base w p.x) (tmv C 4 base w p.y) (tmv C 4 base w p.z) P := by
@@ -272,10 +272,10 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
       keepF _ (hp _ (by simp [jacCoords]))]
     exact hP
   refine ⟨((iv.of_keeps kk (by decide)).to_tmv).sub (tcLive_next m),
-    hu.keep.trans ((JointLoopKeep.of_prog (kv.mono (tbl_w (m+1) (by omega) (by omega)))).trans
+    hu.keep.trans ((JointLoopKeep.of_prog (kv.mono (tbl_w (m+1) (by omega_using []) (by omega_using [hm7])))).trans
       (JointLoopKeep.of_keeps kk)),?_,keepJ (by decide +kernel) hu.e,?_,?_,
     keepJ (by decide +kernel) hu.twice,?_,cw,?_⟩
-  · rw [show 2*(m+1)-1=2*m+1 by omega]
+  · rw [show 2*(m+1)-1=2*m+1 by omega_using []]
     exact keepJ (by decide +kernel) hu.point
   · rw [keepF _ (by decide +kernel),keepF _ (by decide +kernel)]
     exact hu.c2
@@ -288,21 +288,21 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
           tmv C 4 base w z = pointTransferEnv (tmv C 4 base u) (publicJoint.K.tblPt (m+1))
             publicJoint.K.R z := fun z hz => (tw z).trans (iv.val z (List.mem_append_left _ hz))
       have ne1 : (publicJoint.K.tblPt (m+1)).y≠(publicJoint.K.tblPt (m+1)).x := by
-        simp only [WinCfg.tblPt,k_n]; omega
+        simp only [WinCfg.tblPt,k_n]; omega_using []
       have ne2 : (publicJoint.K.tblPt (m+1)).z≠(publicJoint.K.tblPt (m+1)).x := by
-        simp only [WinCfg.tblPt,k_n]; omega
+        simp only [WinCfg.tblPt,k_n]; omega_using []
       have ne3 : (publicJoint.K.tblPt (m+1)).z≠(publicJoint.K.tblPt (m+1)).y := by
-        simp only [WinCfg.tblPt,k_n]; omega
+        simp only [WinCfg.tblPt,k_n]; omega_using []
       rw [nv _ (by simp [jacCoords]),nv _ (by simp [jacCoords]),nv _ (by simp [jacCoords])]
       simp only [pointTransferEnv,ne1,ne2,ne3,↓reduceIte]
-      rw [show 2*(m+1)-1=2*m+1 by omega]
+      rw [show 2*(m+1)-1=2*m+1 by omega_using []]
       exact hu.point
-    · have ham : a≤m := by omega
+    · have ham : a≤m := by omega_using [ha, he]
       have hn : ∀ z∈jacCoords (publicJoint.K.tblPt a), z∉jacCoords (publicJoint.K.tblPt (m+1)) :=
-        tbl_tbl a (m+1) h1 (by omega) (by omega) (by omega) he
+        tbl_tbl a (m+1) h1 (by omega_using [hm7, ha]) (by omega_using []) (by omega_using [hm7]) he
       have ht := hu.table a h1 ham
       have eqa : ∀ z∈jacCoords (publicJoint.K.tblPt a), tmv C 4 base w z = tmv C 4 base u z :=
-        fun z hz => (tw z).trans (tmv_keep kv hs hW (tbl_sl a h1 (by omega) z hz) (hn z hz))
+        fun z hz => (tw z).trans (tmv_keep kv hs hW (tbl_sl a h1 (by omega_using [hm7, ha]) z hz) (hn z hz))
       rw [eqa _ (by simp [jacCoords]),eqa _ (by simp [jacCoords]),eqa _ (by simp [jacCoords])]
       exact ht
   · intro z hz
@@ -555,7 +555,7 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
         simp only [nafTableSlots,List.mem_map,List.mem_range] at hz
         obtain ⟨i,hi,rfl⟩ := hz
         simp only [jacCoords,WinCfg.tblPt,k_n,List.mem_cons,List.not_mem_nil,or_false]
-        omega
+        omega_using [hi]
     · exact (JointLoopKeep.of_prog (kAll.mono kAllW)).trans
         ((JointLoopKeep.of_prog (kg.mono (by decide +kernel))).trans (JointLoopKeep.of_keeps kt))
     · rw [mul_one_pt]
@@ -570,7 +570,7 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
     · rw [keepEd _ (by decide +kernel),keepEd _ (by decide +kernel),keepEd _ (by decide +kernel)]
       exact jTd
     · intro a h1 ha
-      obtain rfl : a=1 := by omega
+      obtain rfl : a=1 := by omega_using [h1, ha]
       rw [show 2*1-1=1 from rfl,mul_one_pt]
       have kt1 : ∀ z∈jacCoords (publicJoint.K.tblPt 1), tmv C 4 base t₀ z = tmv C 4 base f z :=
         fun z hz => (tt z).trans (tmv_keep kg hsf (by decide +kernel)
@@ -581,14 +581,14 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
       exact (tt z).trans ((roK (by decide +kernel) kg hsf z hz).trans (roK kAllW kAll hs z hz))
   refine WP.loop (M:=isa) (fun j t => 1≤j ∧ j≤7 ∧ TC C base Q s t (8-j) (2*(8-j)-1))
     (fun j u ⟨hj,hj7,hu⟩ => ?_) 7 t₀ ⟨by decide,by decide,init⟩
-  refine WP.mono (table_step_ok hm hC hd hOne hQ (by omega) (by omega) hu) fun t ⟨it,cf⟩ => ?_
+  refine WP.mono (table_step_ok hm hC hd hOne hQ (by omega_using [hj7]) (by omega_using [hj]) hu) fun t ⟨it,cf⟩ => ?_
   by_cases hj1 : j=1
   · subst j
     exact Or.inl ⟨cf,it.post⟩
-  · refine Or.inr ⟨?_,j-1,by omega,by omega,by omega,?_⟩
+  · refine Or.inr ⟨?_,j-1,by omega_using [hj],by omega_using [hj, hj1],by omega_using [hj7],?_⟩
     · change t.cf=some true
-      rw [cf]; congr 1; exact decide_eq_true (by omega)
-    · rw [show 8-(j-1)=8-j+1 from by omega]
+      rw [cf]; congr 1; exact decide_eq_true (by omega_using [hj, hj1])
+    · rw [show 8-(j-1)=8-j+1 from by omega_using [hj, hj7]]
       exact it
 
 /-! ## Timing -/
@@ -631,7 +631,7 @@ theorem table_step_ct {C : Curve} {base : Addr} {size m : Nat} (hL : JointInitLa
   intro e
   apply RelCT.block_append
   apply RelCT.seq (nafTableStore_relCT (base:=base) (j:=m) (E:=e) hL.layout.lay (Or.inl rfl) rfl rfl hm8
-    hL.tableSmall (by have := hL.naf.table_le; omega) (tbl_sl (m+1) (by omega) (by omega))
+    hL.tableSmall (by have := hL.naf.table_le; omega_using [this]) (tbl_sl (m+1) (by omega_using []) (by omega_using [hm8]))
     (fun _ hx => List.mem_append_left _ hx) (by decide) tableStore_ct)
   have adv := keepsField_relCT (M:=publicJoint.K.M) (base:=base) (size:=size) (m:=C.p)
     (Sl:=(·∈jointSlots publicJoint))
@@ -665,19 +665,19 @@ theorem table_call_ct : JointTableCallCT publicJoint Impl.Weierstrass.PointOps.s
     intro j
     by_cases hj : 1≤j
     · by_cases hj7 : j≤7
-      · refine (table_step_ct hL hm hOne (m:=8-j) (by omega)).mono
+      · refine (table_step_ct hL hm hOne (m:=8-j) (by omega_using [hj])).mono
           (P':=I j) (fun _ _ h => h.2.2) ?_
         intro s t ⟨hp,cs,ct⟩
         refine ⟨cs.trans ct.symm,fun he => ?_,fun he => ?_⟩
         · change s.cf=some false at he
           have hn := of_decide_eq_false (Option.some.inj (cs.symm.trans he))
-          have hj1 : j=1 := by omega
+          have hj1 : j=1 := by omega_using [hj, hn]
           subst j
           exact hp
         · change s.cf=some true at he
           have hy := of_decide_eq_true (Option.some.inj (cs.symm.trans he))
-          refine ⟨j-1,by omega,by omega,by omega,?_⟩
-          rw [show 8-(j-1)=8-j+1 from by omega]
+          refine ⟨j-1,by omega_using [hj],by omega_using [hy],by omega_using [hj7],?_⟩
+          rw [show 8-(j-1)=8-j+1 from by omega_using [hj, hj7]]
           exact hp
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)

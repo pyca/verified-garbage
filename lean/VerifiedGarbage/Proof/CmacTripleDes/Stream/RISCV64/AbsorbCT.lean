@@ -97,7 +97,7 @@ theorem loop_ct (hp : APre s₀ St D S n L) (hp' : APre s₀' St D S n L) (qsp :
     RelCT isa (LRel s₀ s₀' St D S h L m) (.loop chainBody (.nonzero .s5))
       fun s₁ s₂ => (∃ e, CInv s₀ St D S h L e (nbOf L (8 - h)) s₁) ∧
         ∃ e, CInv s₀' St D S h L e (nbOf L (8 - h)) s₂ := by
-  have hN : nbOf L (8 - h) < 2 ^ 64 := by have := hp.hL; unfold nbOf; omega
+  have hN : nbOf L (8 - h) < 2 ^ 64 := by have := hp.hL; unfold nbOf; omega_using [this]
   refine RelCT.loop (M := isa) (LRel s₀ s₀' St D S h L) (fun m => ?_) m
   refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (hh : LRel s₀ s₀' St D S h L m s₁ s₂) => hh) fun _ _ h => h
   by_cases hm : m = nbOf L (8 - h) - k
@@ -108,18 +108,18 @@ theorem loop_ct (hp : APre s₀ St D S n L) (hp' : APre s₀' St D S n L) (qsp :
   swap
   · exact RelCT.of_false fun _ _ h => hk h.2.1
   refine (body_ct hp hp' qsp k).mono (fun _ _ h => h.2) fun s₁ s₂ ⟨⟨e₁, l₁⟩, ⟨e₂, l₂⟩⟩ => ?_
-  have bd : nbOf L (8 - h) - (k + 1) < 2 ^ 64 := by omega
+  have bd : nbOf L (8 - h) - (k + 1) < 2 ^ 64 := by omega_using [hN]
   have v₁ := Steps.eval_nonzero_ofNat s₁ .s5 bd l₁.s5
   have v₂ := Steps.eval_nonzero_ofNat s₂ .s5 bd l₂.s5
   refine ⟨by rw [v₁, v₂], fun hf => ?_, fun ht => ?_⟩
   · rw [v₁] at hf
     have h0 : nbOf L (8 - h) = k + 1 := by
       have : nbOf L (8 - h) - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_using [hk, this]
     exact ⟨⟨e₁, h0 ▸ l₁⟩, ⟨e₂, h0 ▸ l₂⟩⟩
   · rw [v₁] at ht
     have h0 : nbOf L (8 - h) - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨nbOf L (8 - h) - (k + 1), by omega, k + 1, rfl, by omega, ⟨e₁, l₁⟩, ⟨e₂, l₂⟩⟩
+    exact ⟨nbOf L (8 - h) - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [h0], ⟨e₁, l₁⟩, ⟨e₂, l₂⟩⟩
 
 end
 
@@ -142,7 +142,7 @@ theorem chain_ct {s₀ s₀' : State} {St D S : Addr} {n L : Nat} (hp : APre s�
     (hp' : APre s₀' St D S n L) (qsp : s₀.sp = s₀'.sp) :
     RelCT isa (fun a b => (HF s₀ St D S n L a ∧ HF s₀' St D S n L b) ∧ isa.eval (.nonzero .t2) a = some true)
       chainPath fun _ _ => True := by
-  have hN : nbOf L (8 - held n) < 2 ^ 64 := by have := hp.hL; unfold nbOf; omega
+  have hN : nbOf L (8 - held n) < 2 ^ 64 := by have := hp.hL; unfold nbOf; omega_using [this]
   have hl : ∀ {a : State}, HF s₀ St D S n L a → isa.eval (.nonzero .t2) a = some true → 8 - held n < L :=
     fun {a} ⟨_, _, hu⟩ he => by
       rw [eval_nonzero, hu.t2] at he; split at he <;> simp_all
@@ -210,7 +210,7 @@ theorem chain_ct {s₀ s₀' : State} {St D S : Addr} {n L : Nat} (hp : APre s�
       WP.mono (ecb_call x₂.args) fun _ y => ie x₂ y⟩
   have ev {t e s : State} (hi : CInv t St D S (held n) L e 0 s) :
       isa.eval (.zero .s5) s = some (decide (nbOf L (8 - held n) = 0)) := by
-    have := Steps.eval_zero_ofNat s .s5 (k := nbOf L (8 - held n) - 0) (by omega) hi.s5
+    have := Steps.eval_zero_ofNat s .s5 (k := nbOf L (8 - held n) - 0) (by omega_using [hN]) hi.s5
     rwa [Nat.sub_zero] at this
   have e : RelCT isa (fun a b => CInv s₀ St D S (held n) L a 0 a ∧ CInv s₀' St D S (held n) L b 0 b) chainLoop
       fun a b => (∃ e, CInv s₀ St D S (held n) L e (nbOf L (8 - held n)) a) ∧
@@ -229,7 +229,7 @@ theorem chain_ct {s₀ s₀' : State} {St D S : Addr} {n L : Nat} (hp : APre s�
         (fun a b hh => ⟨0, rfl, ?_, ⟨a, hh.1.1⟩, ⟨b, hh.1.2⟩⟩) fun _ _ h => h)
       have := hh.2; rw [ev hh.1.1] at this
       have : nbOf L (8 - held n) ≠ 0 := by simpa using this
-      omega
+      omega_using [this]
   have f := (taintRegs (P := fun a b => (∃ e, CInv s₀ St D S (held n) L e (nbOf L (8 - held n)) a) ∧
       ∃ e, CInv s₀' St D S (held n) L e (nbOf L (8 - held n)) b) [.s1, .s3, .s4]
     (fun a b ⟨⟨_, x₁⟩, ⟨_, x₂⟩⟩ => ⟨by rw [x₁.sp, x₂.sp, qsp], fun r hr => by

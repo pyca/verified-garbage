@@ -89,7 +89,7 @@ theorem store_step (hsize : size≤2^64) (hs : Scr s base cap) (he : Rel v base 
     {r : Reg} {a : α} (hr : e.reg r=some a) {off : Nat} (ha : off%8=0) (hb : off+8≤size) (hcap : off+8≤cap) :
     ∃ t,exec (.str .x r .x0 off) s=some t ∧ Rel v base size (e.setSlot off a) t ∧
       Scr t base cap ∧ KeepRegs [] s t ∧ Unch base [(off,8)] s.mem t.mem := by
-  have hw := writeW_outside s.mem base (s.gpr r) (by have := hs.nowrap; omega : off+8≤2^64)
+  have hw := writeW_outside s.mem base (s.gpr r) (by have := hs.nowrap; omega_using [hsize, hb] : off+8≤2^64)
   refine ⟨{s with mem:=s.mem.writeW (VG.Proof.Mont.off base off) (s.gpr r)},
     exec_st hs hcap ha r,⟨he.reg,?_,he.carry⟩,⟨hs.x0,hs.wr,hs.nowrap,hs.enc⟩,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,hw.unch⟩
   intro j hj hjb
@@ -100,8 +100,8 @@ theorem store_step (hsize : size≤2^64) (hs : Scr s base cap) (he : Rel v base 
     rw [word_writeW_self]
     exact he.reg r a hr
   · rename_i ne
-    have hsep : j+8≤off ∨ off+8≤j := by omega
-    have hj64 : j+8≤2^64 := by have := hs.nowrap; omega
+    have hsep : j+8≤off ∨ off+8≤j := by omega_using [ha, hj, ne]
+    have hj64 : j+8≤2^64 := by have := hs.nowrap; omega_using [hsize, hjb]
     change (v (e.slot j)).1=word _ base j
     rw [hw.word hsep hj64]
     exact he.slot j hj hjb

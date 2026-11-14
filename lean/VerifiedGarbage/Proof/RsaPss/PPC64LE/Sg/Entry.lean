@@ -28,10 +28,10 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_ld wp_mov wp_nil wp_lbz wp
 /-- The stack arguments are in `aR`. -/
 theorem in_aR {s : State} {j : Nat} (hj : j < 16) : (aR pc s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]
-  cases pc <;> exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega) (by omega)
+  cases pc <;> exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [hj]) (by omega_using [hj])
 
 theorem in_aR_sub {s : State} {j : Nat} (hj : j < 16) : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR pc s) := by
-  rw [stackArgAddr_eq s j]; cases pc <;> exact Offset.sub_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega)
+  rw [stackArgAddr_eq s j]; cases pc <;> exact Offset.sub_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [hj])
 
 /-- The modulus' first byte. -/
 abbrev n0 (s : State) : BitVec 64 := (s.mem (s.gpr .r5)).setWidth 64
@@ -60,7 +60,7 @@ theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → 
       · exact (P.sa.sub_left (sc_sub P)).symm) (by decide)]
 
 theorem n_contains : (nR s).Contains (s.gpr .r5) 1 := by
-  have := Offset.contains_base (s.gpr .r5) (d := 0) (n := 1) (k := (s.gpr .r6).toNat) (by have := P.k1; omega)
+  have := Offset.contains_base (s.gpr .r5) (d := 0) (n := 1) (k := (s.gpr .r6).toNat) (by have := P.k1; omega_using [this])
     (by decide)
   rwa [BitVec.add_zero] at this
 

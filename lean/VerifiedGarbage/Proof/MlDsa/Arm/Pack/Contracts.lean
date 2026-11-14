@@ -137,9 +137,9 @@ theorem addr_sub {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
   apply BitVec.eq_of_toNat_eq
   have := sp.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := n) (by omega), Nat.mod_eq_of_lt (a := n) (by omega),
-    Nat.mod_eq_of_lt (a := sp.toNat) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := n) (by omega_using [h]), Nat.mod_eq_of_lt (a := n) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := sp.toNat) (by omega_using [])]
+  omega_using [h]
 
 theorem pushed4_sp (s : State) : (pushed [.r4] s).sp = s.sp - 4 := rfl
 
@@ -151,7 +151,7 @@ theorem pushed4_mem {s : State} (hsp : 4 ≤ s.sp.toNat) :
 theorem pushed4_frame {s : State} (hsp : 4 ≤ s.sp.toNat) : Frame [below4 s] s.mem (pushed [.r4] s).mem := by
   rw [pushed4_mem hsp]
   refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
 
 /-- What the pop of the frame restores: `r4`, from the frame, which the body
 left as the push wrote it, and the stack pointer. -/

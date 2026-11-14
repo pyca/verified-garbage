@@ -221,7 +221,7 @@ theorem random_sign_single (S : Signer) {s t : State} {h : RandomSignABI S.stack
   have hqbound : (stackArg s 0).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   have hkey : Spec.Rsa.bytesAt a.mem (s.gpr .rcx) (s.gpr .r8).toNat = (randomInput s).key := by
     simpa only [randomInput, bytesAt_length] using FoldedPublic.src_bytesAt hkeyA
   have hres : randomCallResult s a = randomSingleResult s k := by
@@ -229,7 +229,7 @@ theorem random_sign_single (S : Signer) {s t : State} {h : RandomSignABI S.stack
     have hdigest : Spec.Rsa.bytesAt a.mem (stackArg s 1) (stackArg s 2).toNat = (randomInput s).digest := by
       simpa only [randomInput, bytesAt_length] using FoldedPublic.src_bytesAt hdigestA
     have hnonceA := (random_outside_bytes hargs
-      (show Random.oNonce + (stackArg s 0).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega)
+      (show Random.oNonce + (stackArg s 0).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega_using [hqbound])
       (Or.inr (show 0 + 40 ≤ Random.oNonce by decide))).trans hnonce
     rw [hkey, hdigest, hnonceA]
     rfl

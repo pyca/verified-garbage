@@ -33,7 +33,7 @@ theorem squeeze_ok {sc : Reg} {st wk rate : Nat} (ps : List Piece) :
     intro s pos hs hp sep sa pa sf of fit
     have pp := hp p (by simp)
     have num := of p (by simp)
-    have fitp : pos+p.len≤rate := by simp only [List.map_cons,List.sum_cons] at fit; omega
+    have fitp : pos+p.len≤rate := by simp only [List.map_cons,List.sum_cons] at fit; omega_using [fit]
     change WP isa (.block (squeezePieceCode sc st pos p ++ squeezeCode sc st (pos+p.len) ps)) s _
     rw [WP.block_append_iff]
     refine WP.mono (squeezePiece_ok hs pp sa pa sf num.1 num.2 fitp) fun a ha=>?_
@@ -49,7 +49,7 @@ theorem squeeze_ok {sc : Reg} {st wk rate : Nat} (ps : List Piece) :
       apply Proof.Sha3.stateAt_congr
       exact bytes_frame ha.2.1 (fun r hr=>by rw [List.mem_singleton.mp hr]; exact pp.dst.symm) (by decide)
     refine WP.mono (ih (hsetup_copy hs ha.1) (fun q hq=>piece_copy hs (hp' q hq) ha.1) sepa
-      sa (by omega) sf (fun q hq=>of q (by simp [hq]))
+      sa (by omega_using [pa, num]) sf (fun q hq=>of q (by simp [hq]))
       (by simpa only [List.map_cons,List.sum_cons,Nat.add_assoc] using fit)) fun t ht=>?_
     have frame : Frame (ps.map (preg s)) a.mem t.mem := by simpa only [maps] using ht.2.1
     refine ⟨(ha.1.trans ht.1).mono (by simp),?_,?_,?_⟩
@@ -57,7 +57,7 @@ theorem squeeze_ok {sc : Reg} {st wk rate : Nat} (ps : List Piece) :
         (frame.mono (by intro r hr; exact List.mem_cons_of_mem _ hr))
     · rw [bytesAt_frame frame (fun r hr=>by
           obtain ⟨q,hq,rfl⟩:=List.mem_map.mp hr
-          exact (List.pairwise_cons.mp sep).1 q hq ) (by have := pp.len; omega)]
+          exact (List.pairwise_cons.mp sep).1 q hq ) (by have := pp.len; omega_using [num])]
       exact ha.2.2
     · have out := ht.2.2
       rw [state] at out

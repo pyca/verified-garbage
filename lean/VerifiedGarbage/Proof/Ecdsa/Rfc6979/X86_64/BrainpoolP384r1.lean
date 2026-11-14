@@ -63,7 +63,7 @@ tables). -/
 theorem brainpoolp384r1SatMem_held : ∀ i < brainpoolp384r1W.length,
     brainpoolp384r1SatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = brainpoolp384r1W.getD i 0 := by
   unfold brainpoolp384r1SatMem
-  exact constMem_held _ _ (by rw [brainpoolp384r1W_length]; omega)
+  exact constMem_held _ _ (by rw [brainpoolp384r1W_length]; omega_using [])
 
 /-! ## The curve's blocks -/
 

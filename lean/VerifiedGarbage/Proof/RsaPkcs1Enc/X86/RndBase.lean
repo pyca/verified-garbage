@@ -119,8 +119,8 @@ include h
 
 theorem k64 : 64 ≤ P.K := h.kv.1
 theorem k1024 : P.K ≤ 1024 := h.kv.2
-theorem pl8 : 8 ≤ P.pl := by have := h.mlK; simp only [RP.pl]; omega
-theorem pl1021 : P.pl ≤ 1021 := by have := h.kv.2; simp only [RP.pl]; omega
+theorem pl8 : 8 ≤ P.pl := by have := h.mlK; simp only [RP.pl]; omega_using [this]
+theorem pl1021 : P.pl ≤ 1021 := by have := h.kv.2; simp only [RP.pl]; omega_using [this]
 
 end In
 
@@ -170,36 +170,36 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   have a1 : arg s 1 = arg s 4 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oT oN oE oM oR oS oQ oA xO kO fO
   have h16 : 4 * Impl.RsaPkcs1Sig.X86.savedRegs.length ≤ (s.gpr .esp).toNat := by
-    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega
+    simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_using [hsp]
   have hpush : Frame [below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length)] s.mem
       (entered frameBytes s).mem :=
     pushed_frame (by decide) h16
   have below16 : Region.Sub (below (s.gpr .esp) (4 * Impl.RsaPkcs1Sig.X86.savedRegs.length))
       ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 2296, 2296⟩ := by
     simp only [below, Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.sub_below _ (by omega) (by omega)
+    rw [Taint.sub_setWidth (by omega_using [hsp])]
+    exact Offset.sub_below _ (by omega_using []) (by omega_using [])
   have sl32 : (arg s 12).toNat < 2 ^ 32 := (arg s 12).isLt
   refine
     { ok := ?_
       kv := kv, el1 := el1, elK := elK, mlK := mlK, lenC := lenC, slK := slK, sl32 := sl32, rlK := rlK
       nB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kN.sub_left below16).symm)
-        (by show (arg s 4).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 4).toNat ≤ 2 ^ 64; omega_using [])
       eB := Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below16).symm)
-        (by show (arg s 6).toNat ≤ 2 ^ 64; omega)
+        (by show (arg s 6).toNat ≤ 2 ^ 64; omega_using [])
       pw := Proof.RsaPkcs1Sig.wordsAt_frame' hpush (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (kQ.sub_left below16).symm)
-        (by show (arg s 14).toNat * 8 ≤ 2 ^ 64; have := (arg s 14).isLt; omega)
+        (by show (arg s 14).toNat * 8 ≤ 2 ^ 64; have := (arg s 14).isLt; omega_using [])
       mask := by
         show (Spec.RsaPkcs1Enc.padSearch _ (Spec.Rsa.bytesAt (entered frameBytes s).mem _ _)).trace = _
         rw [Proof.RsaPkcs1Sig.bytesAt_frame hpush (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact (kR.sub_left below16).symm)
-          (by show (arg s 10).toNat ≤ 2 ^ 64; omega)]
+          (by show (arg s 10).toNat ≤ 2 ^ 64; omega_using [])]
         rfl }
   rw [ep_lay]
-  refine ok_entered (S := 2296) rfl (by decide) hsp (by simp) (by simp; omega) hrd
+  refine ok_entered (S := 2296) rfl (by decide) hsp (by simp) (by simp; omega_using [hsa]) hrd
     (by rw [hwr]; rfl) ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     simp only [RP.ro, RP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -224,7 +224,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [ep, BitVec.toNat_setWidth]
     all_goals first
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 3).isLt; omega)]; omega)
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 3).isLt; omega_using [])]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 5).isLt; omega)]; omega)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 7).isLt; omega)]; omega)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 9).isLt; omega)]; omega)
@@ -234,7 +234,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega)]; omega)
   · intro j hj
     have : j < 15 := hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+    rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
         j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1]
 

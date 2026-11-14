@@ -33,7 +33,7 @@ theorem maskOutputArgs_ok (s : State) {p : Inputs} {flag : BitVec 32} (h : MaskO
       Rest [.r0, .r2, .r3, .lr] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have r4 := h.locals.read (d := 4) (by decide)
   have r32 := h.locals.read (d := 32) (by decide)
   have r64 := h.locals.read (d := 64) (by decide)
@@ -50,14 +50,14 @@ theorem maskOutput_ok (s : State) {p : Inputs} {flag : BitVec 32} (h : MaskOutpu
   refine WP.mono (maskOutputArgs_ok s h) ?_
   rintro u ⟨⟨ptr, count, mask, memU⟩, restU⟩
   rw [WP.seq_iff]
-  refine WP.mono (maskBuffer_ok u (by have := p.minLength; omega) (by have := p.maxLength; omega)
+  refine WP.mono (maskBuffer_ok u (by have := p.minLength; omega_using [this]) (by have := p.maxLength; omega_using [this])
     h.output.fits (by rw [restU.wr]; exact h.output.writable) ptr count) ?_
   rintro v ⟨bytes, frameV, restV⟩
   have rest : Rest roundClobbers s v := (restU.mono (by simp [roundClobbers])).trans
     (restV.mono (by simp [roundClobbers]))
   have localV := h.locals.after rest
   have addr : State.addr (v.sp + BitVec.ofNat 32 64) = off (State.addr v.sp) 64 :=
-    VG.Arm.addr_add (by have := localV.space.nowrap; omega)
+    VG.Arm.addr_add (by have := localV.space.nowrap; omega_using [this])
   have kept := frameV.readW (w := 32) (r := ⟨off (State.addr s.sp) 64, 4⟩) (Region.contains_self _ _) (by
     intro r hr
     rw [List.mem_singleton] at hr

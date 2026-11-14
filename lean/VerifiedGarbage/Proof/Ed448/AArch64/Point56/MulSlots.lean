@@ -51,7 +51,7 @@ theorem mulCallE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
   refine WP.mono (mulCall_ok hs (slot_64 o) (slot_64 a) (slot_64 b) (slot_sep64 hob) (hb a) (hb b))
     fun t ⟨tv, tm, tk, tsp, tV⟩ => ?_
   have fm : FieldMem base (slot o.val) s.mem t.mem := fun x h1 h2 =>
-    tm x (by omega) (by have : VG.Impl.Curve448.AArch64.Fast.KA = 3584 := rfl; omega)
+    tm x (by omega_using [h1]) (by have : VG.Impl.Curve448.AArch64.Fast.KA = 3584 := rfl; omega_using [hA, h2, this])
   have bo : Bnd Mb t.mem base (slot o.val) := fun i hi => by
     rw [tv i hi]; exact VG.Proof.Curve448.AArch64.Fast.prod_bound (hb a) (hb b) i hi
   refine ⟨tk, tsp, tV, tm, env_update hb fm (fun i hi =>
@@ -129,7 +129,7 @@ theorem mulCallKE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
   refine WP.mono (mulCallK_ok hs (slot_64 o) (slot_64 a) (slot_64 b) (slot_sep64 hob) (hb a) (hb b))
     fun t ⟨tv, tm, tk, _, _⟩ => ?_
   have fm : FieldMem base (slot o.val) s.mem t.mem := fun x h1 h2 =>
-    tm x (by omega) (by have : VG.Impl.Curve448.AArch64.Fast.KA = 3584 := rfl; omega)
+    tm x (by omega_using [h1]) (by have : VG.Impl.Curve448.AArch64.Fast.KA = 3584 := rfl; omega_using [hA, h2, this])
   have bo : Bnd Mb t.mem base (slot o.val) := fun i hi => by
     rw [tv i hi]; exact VG.Proof.Curve448.AArch64.Fast.prod_bound (hb a) (hb b) i hi
   refine ⟨⟨tk, VG.Proof.X448.AArch64.Fast.fieldMem_outside2 fm⟩, env_update hb fm (fun i hi =>
@@ -217,7 +217,7 @@ theorem outside2_of_rootOk {base : Addr} {m m' : Mem}
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
   simp only [ofs] at h1 h2
   have : (a - base).toNat < 2 ^ 64 := (a - base).isLt
-  omega
+  omega_using [h1, h2, hd]
 
 /-- An inlined chain that stores only where `rootOk` allows. -/
 theorem PSpec.of_ispec {base : Addr} {c : Prog isa} {f : Env → Env} (h : ISpec base c f)
@@ -236,7 +236,7 @@ theorem mulCallP (base : Addr) (o a b : Index) (hob : o ≠ b) (ho : 14 ≤ o.va
         · exact .inr (.inl h)
         · exact .inl h
         · exact .inr (.inr h),
-      tb, te, fun p h1 h2 => tm p (by have := o.isLt; simp only [slot]; omega)
-        (by simp only [ACC] at h2 ⊢; omega)⟩
+      tb, te, fun p h1 h2 => tm p (by have := o.isLt; simp only [slot]; omega_using [ho, h1])
+        (by simp only [ACC] at h2 ⊢; omega_using [h2])⟩
 
 end VG.Proof.Ed448.AArch64.Point56

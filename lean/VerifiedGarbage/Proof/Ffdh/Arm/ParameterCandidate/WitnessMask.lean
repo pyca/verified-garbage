@@ -123,11 +123,11 @@ theorem witnessMask_ok {s : State} {base : BitVec 32} {capacity w bits : Nat}
   rw [maskV, memV, memU] at memT
   have outside := writeW32_outside s.mem (State.addr base)
     (s.mem.readW (off (State.addr base) (arrAt w 1 + 4 * j)) 32 &&& BitVec.ofNat 32 (2 ^ k - 1))
-    (d := arrAt w 1 + 4 * j) (by omega)
+    (d := arrAt w 1 + 4 * j) (by omega_using [bound, fit, nowrap])
   rw [← memT] at outside
-  have wide := outside.mono (o' := arrAt w 1) (n' := 8 * w) (by omega) (by omega)
-  have keeps := outside_array_keeps wide (len := capacity) (by omega)
-  have frame := outside_workspace wide (size := 8 * capacity) (by omega)
+  have wide := outside.mono (o' := arrAt w 1) (n' := 8 * w) (by omega_using []) (by omega_using [geometry])
+  have keeps := outside_array_keeps wide (len := capacity) (by omega_using [nowrap])
+  have frame := outside_workspace wide (size := 8 * capacity) (by omega_using [fit])
   have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans
     ((restV.mono (by simp [roundClobbers])).trans (restT.mono (by simp [roundClobbers])))
   have value : numAt t.mem (State.addr base) w 1 = numAt s.mem (State.addr base) w 1 % 2 ^ bits := by
@@ -138,7 +138,7 @@ theorem witnessMask_ok {s : State} {base : BitVec 32} {capacity w bits : Nat}
     · intro i bound different
       rw [memT, Mem.readW_writeW_sep (w := 32) (w' := 32)
         (Offset.sep _ (d := arrAt w 1 + 4 * i) (n := 4) (e := arrAt w 1 + 4 * j) (k := 4)
-          (by omega) (by omega) (by omega)) (by decide)]
+          (by omega_using [different]) (by omega_using [fit, nowrap, bound]) (by omega_arith)) (by decide)]
   exact WP.block_nil ⟨(ready.after_array (by decide) keeps frame rest ptrT).1, value, keeps, frame, rest⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

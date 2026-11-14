@@ -187,10 +187,10 @@ theorem Site.alS {q : Ptr} (hq : AlS q) : (lpa L q).toNat % 8 = 0 := by
   have := h.al0
   simp only [lpa, Lay.A, e, ix]
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [ho, this]
 
 theorem Site.alS4 {q : Ptr} (hq : AlS q) : (lpa L q).toNat % 4 = 0 := by
-  have := h.alS hq; omega
+  have := h.alS hq; omega_using [this]
 
 /-- The stack pointer is 16-byte aligned. -/
 theorem Site.alSp {x : State} (hx : x.sp = s.sp) : x.sp.toNat % 16 = 0 := by rw [hx]; exact h.al

@@ -32,7 +32,7 @@ def exponentRegs (p : PrimeParams) : Reg → BitVec 64
 
 theorem lowWord_registers {p : PrimeParams} {s : State} (h : ExponentBefore p s) :
     WP isa (seqs lowWord) s fun t => ∀ r ∈ [Reg.x0, .x12, .x11], t.gpr r = exponentRegs p r :=
-  WP.mono (lowWord_ok h.1 h.2 p.odd (by have := p.n3; omega)) fun t ⟨_, _, _, _, h11, h12, hk⟩ r hr => by
+  WP.mono (lowWord_ok h.1 h.2 p.odd (by have := p.n3; omega_using [this])) fun t ⟨_, _, _, _, h11, h12, hk⟩ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact (hk.gpr .x0 (by decide)).trans h.1.x0

@@ -51,7 +51,7 @@ theorem τEcb_wf {up : Bool} {s : State} (h : (ecbArm up).pre (stripConsts ecbCo
   refine ⟨fun _ => ⟨by simp [hwr, τEcb], by simpa [hwr] using dDS, ?_⟩, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨hsp, ?_⟩, ?_⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [toNat_addr] <;> omega
+    rintro r (rfl | rfl) <;> simp only [toNat_addr] <;> omega_arith
   · have e : (⟨State.addr s.sp, 4⟩ : Region) = ⟨stackArgAddr s 0, 4⟩ := by simp [stackArgAddr]
     simp only [τEcb, e, hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
@@ -149,9 +149,9 @@ theorem ecbSatMem_held : ∀ i < s1234.length,
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
-      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
     unfold ecbSatMem
-    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega)]
+    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega_using [hi, hj])]
   exact hm.trans (constMem_held 0x100000 s1234 (by rw [hl]; decide) i (by rw [hl]; exact hi))
 
 /-- A state satisfying the precondition with the table. -/
@@ -166,7 +166,7 @@ theorem ecbSatC_arg : stackArg ecbSatC 0 = 0x3000 := by
     change ecbSatMem _ = _
     unfold ecbSatMem
     have : ∀ b < 4, ¬ (stackArgAddr ecbSatC 0 + BitVec.ofNat 64 b - 0x100000).toNat < 4096 := by decide
-    rw [ite_eq_right (this b (by omega))]
+    rw [ite_eq_right (this b (by omega_using [hb]))]
     rfl
   rw [e]; decide
 

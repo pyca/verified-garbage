@@ -107,7 +107,7 @@ theorem sa_fin {s₀ s₂ : State} (h : streamAadArm.pre s₀) {x : List Byte} (
   have hd : bytesAt s₁.mem (State.addr (arg s₀ 0)) (arg s₀ 1).toNat =
       bytesAt s₀.mem (State.addr (arg s₀ 0)) (arg s₀ 1).toNat :=
     bytesAt_frame h1.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dDW.sub_right (Lay.wSub (by decide))) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact dDW.sub_right (Lay.wSub (by decide))) (by omega_using [])
   have hab := ho.abs
   rw [hd] at hab
   have dS : ∀ {d : Nat}, d + 16 ≤ 80 → ∀ r ∈ [savedR (arg s₀ 2)],
@@ -118,14 +118,14 @@ theorem sa_fin {s₀ s₂ : State} (h : streamAadArm.pre s₀) {x : List Byte} (
       (⟨State.addr (s₀.gpr .r1) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Lay.st_st (by omega) (by omega) (by decide)
-    · exact Lay.st_st (by omega) (by omega) (by decide)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact (L.stk_st (by omega)).symm
+    · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+    · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+    · exact L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+    · exact (L.stk_st (by omega_using [hd])).symm
   have keep : ∀ {d : Nat}, (d = 0 ∨ d = 48 ∨ d = 64) →
       blockAt s'.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 d) =
         blockAt s₀.mem (State.addr (s₀.gpr .r1) + BitVec.ofNat 64 d) := fun hd => by
-    rw [hm, blockAt_frame ho.frame (dA hd), blockAt_frame h1.frame (dS (by omega))]
+    rw [hm, blockAt_frame ho.frame (dA hd), blockAt_frame h1.frame (dS (by omega_using [hd]))]
   rw [Proof.Gcm.streamRepr_iff] at hs ⊢
   obtain ⟨hj, ha, hc⟩ := hs
   simp only [ofNat_lit] at hj ha hc ⊢
@@ -134,8 +134,8 @@ theorem sa_fin {s₀ s₂ : State} (h : streamAadArm.pre s₀) {x : List Byte} (
     refine hab (ha.congr ?_ ?_)
     · rw [blockAt_frame h1.frame (dS (by decide))]
     · rw [bytesAt_frame h1.frame (fun r hr => (dS (d := 32) (by decide) r hr).sub_left
-        (Region.sub_prefix (by have := Nat.mod_lt (Spec.Gcm.ghashInput x []).length (show 16 > 0 by decide); omega)))
-        (by have := Nat.mod_lt (Spec.Gcm.ghashInput x []).length (show 16 > 0 by decide); omega)]
+        (Region.sub_prefix (by have := Nat.mod_lt (Spec.Gcm.ghashInput x []).length (show 16 > 0 by decide); omega_using [])))
+        (by have := Nat.mod_lt (Spec.Gcm.ghashInput x []).length (show 16 > 0 by decide); omega_using [])]
   · exact hc.congr (keep (.inr (.inl rfl))) (keep (.inr (.inr rfl)))
 
 theorem sa_run {s₀ : State} (h : streamAadArm.pre s₀) {x : List Byte} (hx : x.length % 16 = (s₀.gpr .r2).toNat % 16) :

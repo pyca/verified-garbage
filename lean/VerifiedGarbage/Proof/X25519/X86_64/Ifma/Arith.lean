@@ -165,7 +165,7 @@ theorem mulNat_col (a b : Nat → Nat) (k : Nat) :
     mulNat a b k = colR (2 ^ 51) (fun i => a i % 2 ^ 52) (fun j => b j % 2 ^ 52) k +
       19 * colR (2 ^ 51) (fun i => a i % 2 ^ 52) (fun j => b j % 2 ^ 52) (k + 5) := by
   simp only [mulNat, colR, accLo_eq, accHi_eq]
-  omega
+  omega_using []
 
 /-- `mul4`'s limbs stand for the product of the low 52 bits of the limbs, modulo `p`. -/
 theorem mulNat_mod (a b : Nat → Nat) :
@@ -174,15 +174,15 @@ theorem mulNat_mod (a b : Nat → Nat) :
   rw [lv_eq, lv_eq, lv_eq, ← e, show (2 ^ 51 : Nat) ^ 5 = 2 ^ 255 by rfl, fold255]
   simp only [lvR, mulNat_col, Nat.zero_add, Nat.reduceAdd]
   congr 1
-  omega
+  omega_using []
 
 /-- `mulG`'s limbs are `mul4`'s, summed in another order, plus what it starts from. -/
 theorem mulNatG_eq (p : Nat) (a b : Nat → Nat) : ∀ k < 5, mulNatG p a b k = p + mulNat a b k := by
   intro k hk
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [mulNatG, gColH, gLoN, gHiN, mulNat, accLo, accHi, List.range, List.range.loop, List.foldl,
       Nat.zero_add, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceLT, Nat.reduceAdd, and_self, and_true, and_false,
       false_and, ↓reduceIte] <;>
-    omega
+    omega_using []
 
 end VG.Proof.X25519.X86_64.Ifma

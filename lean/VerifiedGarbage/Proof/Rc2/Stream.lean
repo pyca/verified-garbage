@@ -59,7 +59,7 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (h : xs.le
   · simp [Spec.Rc2.bytesAt]
   · intro i h₁ h₂
     simp only [Spec.Rc2.bytesAt, List.getElem_map, List.getElem_range, WriteBytes.writeBytes,
-      Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), h₂, ite_true]
+      Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [h, h₂]), h₂, ite_true]
     rw [getD_of_lt _ _ h₂]
 
 theorem bytesAt_eight (m : Mem) (p : Addr) :
@@ -140,7 +140,7 @@ theorem init_post {m m' : Mem} {key iv ctx : Addr} {keyLen effectiveBits ivLen :
   apply Vector.ext
   intro i hi
   simp only [Spec.Rc2.blockAt, Vector.getElem_ofFn, Spec.Rc2.bytesAt]
-  rw [getD_of_lt _ _ (by simp; omega), List.getElem_map, List.getElem_range]
+  rw [getD_of_lt _ _ (by simp; omega_using [hi]), List.getElem_map, List.getElem_range]
 
 /-- The error `init` returns for invalid lengths, in order. -/
 theorem init_post_error {m m' : Mem} {key iv ctx : Addr} {keyLen effectiveBits ivLen : Nat} {r : BitVec 32}

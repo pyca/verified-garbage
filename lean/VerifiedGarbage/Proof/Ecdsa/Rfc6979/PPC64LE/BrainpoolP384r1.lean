@@ -42,7 +42,7 @@ theorem brainpoolp384r1_nBits : Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 38
   show Spec.BrainpoolP384r1.curve.n.log2 + 1 = 384
   have h₁ : 383 ≤ Spec.BrainpoolP384r1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.BrainpoolP384r1.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-! ## The curve's blocks, and the signature with the HMAC of a table -/
 

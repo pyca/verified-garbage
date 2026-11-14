@@ -21,15 +21,15 @@ theorem callSignStart_relCT (L : CallLayout)
     (G : CallOperand L (.input .g) L.pLen) (K : CallOperand L (.input .nonce) L.qLen) :
     RelCT isa (CallPair L) (Core.signStart L.pLen L.qLen) (CallPair L) := by
   have W := L.lengths
-  have T := CallOperand.localBuffer L t L.pLen (by decide) (by change 14944 + L.pLen ≤ 15712; omega)
-  have E := CallOperand.localBuffer L qMinusTwo L.qLen (by decide) (by change 14912 + L.qLen ≤ 15712; omega)
+  have T := CallOperand.localBuffer L t L.pLen (by decide) (by change 14944 + L.pLen ≤ 15712; omega_using [W])
+  have E := CallOperand.localBuffer L qMinusTwo L.qLen (by decide) (by change 14912 + L.qLen ≤ 15712; omega_using [W])
   exact RelCT.seq (callPowerP_relCT L (.input .g) (.input .nonce) t P G K (by decide)
-    (by change 14944 + L.pLen ≤ 15712; omega))
-    (RelCT.seq (callReduce_relCT (hl := fun _ _ => by have := L.lengths; omega) L (.local t) (.imm (BitVec.ofNat 32 L.pLen)) L.pLen r (.inl ⟨_, rfl⟩)
-      (fun s _ => LenOperand.imm _ _ _ s _) Q T (by omega) (by decide)
-      (by change 14720 + L.qLen ≤ 15712; omega))
+    (by change 14944 + L.pLen ≤ 15712; omega_using [W]))
+    (RelCT.seq (callReduce_relCT (hl := fun _ _ => by have := L.lengths; omega_using [W]) L (.local t) (.imm (BitVec.ofNat 32 L.pLen)) L.pLen r (.inl ⟨_, rfl⟩)
+      (fun s _ => LenOperand.imm _ _ _ s _) Q T (by omega_using [W]) (by decide)
+      (by change 14720 + L.qLen ≤ 15712; omega_using [W]))
     (RelCT.seq (callPowerQ_relCT L (.input .nonce) (.local qMinusTwo) inverse Q K E (by decide)
-      (by change 14784 + L.qLen ≤ 15712; omega)) (RelCT.block_nil (fun _ _ h => h))))
+      (by change 14784 + L.qLen ≤ 15712; omega_using [W])) (RelCT.block_nil (fun _ _ h => h))))
 
 theorem callSign_relCT (L : CallLayout)
     (P : CallOperand L (.input .p) L.pLen) (Q : CallOperand L (.input .q) L.qLen)
@@ -46,14 +46,14 @@ theorem callSignCompute_relCT (L : CallLayout)
     (D : CallOperand L (.input .digest) L.digestPrefix) (hd : L.digestPrefix < 2 ^ 32) :
     RelCT isa (CallPair L) (SignVerify.signCompute L.pLen L.qLen) (CallPair L) := by
   have W := L.lengths
-  have R := CallOperand.localBuffer L r L.qLen (by decide) (by change 14720 + L.qLen ≤ 15712; omega)
-  have S := CallOperand.localBuffer L s L.qLen (by decide) (by change 14752 + L.qLen ≤ 15712; omega)
+  have R := CallOperand.localBuffer L r L.qLen (by decide) (by change 14720 + L.qLen ≤ 15712; omega_using [W])
+  have S := CallOperand.localBuffer L s L.qLen (by decide) (by change 14752 + L.qLen ≤ 15712; omega_using [W])
   exact RelCT.seq (callPublicKey_relCT L P Q G Y)
     (RelCT.seq (callPrivateKey_relCT L P Q G Y X K)
     (RelCT.seq (callSign_relCT L P Q G K X D hd)
     (RelCT.seq (RelCT.seq
-      (callZero_relCT L L.qLen (.local r) true R (by omega) (by omega) L.aligned.2)
-      (callZero_relCT L L.qLen (.local s) true S (by omega) (by omega) L.aligned.2))
+      (callZero_relCT L L.qLen (.local r) true R (by omega_using [W]) (by omega_using [W]) L.aligned.2)
+      (callZero_relCT L L.qLen (.local s) true S (by omega_using [W]) (by omega_using [W]) L.aligned.2))
       (RelCT.block_nil (fun _ _ h => h)))))
 
 end VG.Proof.Dsa.X86

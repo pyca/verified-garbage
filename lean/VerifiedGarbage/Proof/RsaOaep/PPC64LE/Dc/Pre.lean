@@ -202,7 +202,7 @@ theorem preD_of {ts : List FnTable} {s : State} (h : (decSpec ts).pre s) : PreD 
     mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa, ko,
     kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc,
     wtl, wt, ⟨k1, k2⟩, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs⟩ := h
-  exact ⟨sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp, mlq,
+  exact ⟨sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [sp2], hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp, mlq,
     mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa, ko, kml, kn,
     ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, wtl, wt,
     k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs⟩
@@ -251,7 +251,7 @@ variable {pc : Bool} {s : State} (P : PreD pc s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 14).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC (SD s) s) (scR s) := Region.sub_prefix (scLen P)
 
@@ -260,13 +260,13 @@ theorem kR_sub : Region.Sub (kR s) (kD s) := below_sub (by rw [stackBytes_eq]; d
 
 /-- `Fits` for any state with the entry's stack pointer and regions. -/
 theorem fits {s' : State} (hsp : s'.sp = s.sp) (hwr : s'.wr = s.wr) : Fits (SD s) s' where
-  sp1 := by rw [hsp]; have := P.sp1; rw [stackBytes_eq] at this; omega
+  sp1 := by rw [hsp]; have := P.sp1; rw [stackBytes_eq] at this; omega_using [this]
   sc := ⟨scR s, by rw [hwr, P.hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
     rfl, scLen P⟩
   ksc := by
     have e : kR s' = kR s := by simp only [kR, hsp]
     rw [e]; exact (P.ks.sub_left kR_sub).sub_right (sc_sub P)
-  wS := by show (stackArg s 13).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 13).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 

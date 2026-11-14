@@ -38,7 +38,7 @@ theorem hstate_zero (E : List Byte) {d : Byte} : hstate E 0 d = Spec.Sha3.zero :
 
 theorem hstate_done {E : List Byte} {b : Nat} {d : Byte} (h : E.length < 136 * b) :
     hstate E b d = absorb 136 (pad 136 d E) := by
-  simp only [hstate, ite_eq_right (show ¬136 * b ≤ E.length by omega)]
+  simp only [hstate, ite_eq_right (show ¬136 * b ≤ E.length by omega_using [h])]
 
 theorem xorAt_nil (A : State) (j : Nat) : xorAt A j [] = A := rfl
 
@@ -61,31 +61,31 @@ theorem xorAt_zeros (A : State) (j : Nat) : ∀ n, xorAt A j (List.replicate n 0
 /-- A whole block. -/
 theorem hstate_full {E : List Byte} {b : Nat} {d : Byte} (h : 136 * b + 136 ≤ E.length) :
     keccakF (xorAt (hstate E b d) 0 ((E.drop (136 * b)).take 136)) = hstate E (b + 1) d := by
-  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega)
+  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega_using [h])
   have hbs : ((E.drop (136 * b)).take 136).length = 136 := by
-    rw [List.length_take, List.length_drop]; omega
+    rw [List.length_take, List.length_drop]; omega_using [h]
   have ra := Proof.Sha3.rep_append (rate := 136) (by decide) (by decide) (E.take (136 * b))
-    ((E.drop (136 * b)).take 136) (by omega) (by rw [hl, hbs]; omega)
-  rw [hl, hbs, show 136 * b % 136 = 0 by omega, ite_eq_left (by decide)] at ra
+    ((E.drop (136 * b)).take 136) (by omega_using [hbs]) (by rw [hl, hbs]; omega_using [])
+  rw [hl, hbs, show 136 * b % 136 = 0 by omega_using [], ite_eq_left (by decide)] at ra
   have ht : E.take (136 * (b + 1)) = E.take (136 * b) ++ (E.drop (136 * b)).take 136 := by
-    rw [show 136 * (b + 1) = 136 * b + 136 by omega, List.take_add]
-  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega),
-    ite_eq_left (show 136 * (b + 1) ≤ E.length by omega), ht, ra]
+    rw [show 136 * (b + 1) = 136 * b + 136 by omega_using [], List.take_add]
+  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega_using [h]),
+    ite_eq_left (show 136 * (b + 1) ≤ E.length by omega_using [h]), ht, ra]
 
 /-- The last, partial block, and the padding. -/
 theorem hstate_last {E : List Byte} {b : Nat} {d : Byte} (hlo : 136 * b < E.length)
     (hhi : E.length < 136 * b + 136) :
     keccakF (xorByte (xorByte (xorAt (hstate E b d) 0 (E.drop (136 * b))) (E.length - 136 * b) d) 135 128) =
       hstate E (b + 1) d := by
-  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega)
+  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega_using [hlo])
   have hbs : (E.drop (136 * b)).length = E.length - 136 * b := List.length_drop
   have ra := Proof.Sha3.rep_append (rate := 136) (by decide) (by decide) (E.take (136 * b))
-    (E.drop (136 * b)) (by omega) (by rw [hl, hbs]; omega)
-  rw [hl, hbs, show 136 * b % 136 = 0 by omega, ite_eq_right (show ¬0 + (E.length - 136 * b) = 136 by omega),
+    (E.drop (136 * b)) (by omega_using [hlo, hbs]) (by rw [hl, hbs]; omega_using [hhi])
+  rw [hl, hbs, show 136 * b % 136 = 0 by omega_using [], ite_eq_right (show ¬0 + (E.length - 136 * b) = 136 by omega_using [hhi]),
     List.take_append_drop] at ra
-  rw [hstate_done (show E.length < 136 * (b + 1) by omega),
-    Proof.Sha3.absorb_pad (by decide) (by decide), show E.length % 136 = E.length - 136 * b by omega]
-  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega), ← ra]
+  rw [hstate_done (show E.length < 136 * (b + 1) by omega_using [hhi]),
+    Proof.Sha3.absorb_pad (by decide) (by decide), show E.length % 136 = E.length - 136 * b by omega_using [hlo, hhi]]
+  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega_using [hlo]), ← ra]
 
 /-- The last block of `pad(E)`, of 136 bytes: `E`'s rest `X`, the suffix `d` (`0x06` by default), zeros,
 and `0x80`. -/
@@ -97,15 +97,15 @@ theorem xorAt_padBlock (A : State) {X : List Byte} {d : Byte} (h : X.length ≤ 
   rw [padBlock, xorAt_append, xorAt_append, xorAt_append, xorAt_zeros, Proof.Sha3.xorAt_single,
     Proof.Sha3.xorAt_single]
   simp only [Nat.zero_add, List.length_append, List.length_singleton, List.length_replicate,
-    show X.length + 1 + (134 - X.length) = 135 by omega]
+    show X.length + 1 + (134 - X.length) = 135 by omega_using [h]]
   rfl
 
 /-- The last, partial block, as bytes of the padded block. -/
 theorem hstate_padBlock {E : List Byte} {b : Nat} {d : Byte} (hlo : 136 * b < E.length)
     (hhi : E.length < 136 * b + 135) :
     keccakF (xorAt (hstate E b d) 0 (padBlock (E.drop (136 * b)) d)) = hstate E (b + 1) d := by
-  rw [xorAt_padBlock _ (by rw [List.length_drop]; omega), List.length_drop]
-  exact hstate_last hlo (by omega)
+  rw [xorAt_padBlock _ (by rw [List.length_drop]; omega_using [hhi]), List.length_drop]
+  exact hstate_last hlo (by omega_using [hhi])
 
 /-- `H(E)`, from the state after the last block. -/
 theorem H_of_hstate {E : List Byte} {b : Nat} (h : E.length < 136 * b) :
@@ -127,7 +127,7 @@ theorem J_of_hstate {E : List Byte} {b : Nat} (h : E.length < 136 * b) :
 theorem bytesAt_stateAt (m : Mem) (p : Addr) : bytesAt m p 32 = (toBytes (stateAt m p)).take 32 := by
   refine List.ext_getElem (by simp [bytesAt, Proof.Sha3.length_toBytes]) fun i h₁ h₂ => ?_
   simp only [bytesAt, List.length_map, List.length_range] at h₁
-  rw [List.getElem_take, Proof.Sha3.toBytes_getElem _ (by omega), Proof.Sha3.byteOf_stateAt _ _ (by omega)]
+  rw [List.getElem_take, Proof.Sha3.toBytes_getElem _ (by omega_using [h₁]), Proof.Sha3.byteOf_stateAt _ _ (by omega_using [h₁])]
   simp [bytesAt]
 
 end VG.Proof.MlKem.HSponge

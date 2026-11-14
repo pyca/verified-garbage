@@ -27,7 +27,7 @@ variable {c : Cfg}
 
 theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = j := by
   rw [sl_eq, sl_eq] at h
-  exact Nat.eq_of_mul_eq_mul_left (by omega : 0 < 8 * c.n) (by omega)
+  exact Nat.eq_of_mul_eq_mul_left (by omega_using [hn] : 0 < 8 * c.n) (by omega_using [h])
 
 theorem sl_mem_map (hn : 0 < c.n) {i : Nat} {l : List Nat} : c.sl i ∈ l.map c.sl ↔ i ∈ l := by
   constructor
@@ -72,7 +72,7 @@ theorem sl_below_pt (h3 : 3 ≤ c.n) (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 h6
   have := sl_lt c hi
   rw [sl_eq c 45] at this
-  omega
+  omega_using [h6, h1, h2, he, hb3, ha, hq, hp, hoo, this]
 
 /-- The ladder of `c`, from the point at `gx`, `gy`, `ONEP`. -/
 abbrev ladderAt (c : Cfg) (gx gy : Nat) : LadderCfg := { c.ladderCfg with G := c.pt gx gy ONEP }
@@ -112,10 +112,10 @@ theorem ladLayI (hc : CfgOk c) {gx gy : Nat} (hgx : gx < 45) (hgy : gy < 45) (hg
     ⟨fun h => absurd (sl_inj c hn h) (by decide), fun h => absurd (sl_inj c hn h) (by decide),
       fun h => absurd (sl_inj c hn h) (by decide)⟩,
     map_sl_disj hn (l₁ := [RX, RY, RZ]) (l₂ := [DX, DY, DZ, TX, TY, TZ]) (by decide),
-    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega,
-      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega⟩,
+    ⟨show 1 ≤ 8 * c.C.len by have := hc.len8; omega_using [this],
+      show 8 * c.C.len < 2 ^ 16 by have := hc.len_hi; omega_using [h7, this]⟩,
     (by have := bitsAt_le c h7 (j := 0) (by decide); have := hc.len_hi;
-        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega), ?_⟩, ?_, ?_, ?_⟩
+        change bitsAt c.n 0 + 8 * c.C.len ≤ 8192; omega_arith), ?_⟩, ?_, ?_, ?_⟩
   · rw [ladSlots_eq]
     refine lay_map hc rfl rfl rfl ?_
     simp only [List.forall_mem_cons]
@@ -147,9 +147,9 @@ theorem ladLayI (hc : CfgOk c) {gx gy : Nat} (hgx : gx < 45) (hgy : gy < 45) (hg
     intro x hx
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     exact sl_al c i
-  · show 4096 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega
+  · show 4096 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega_using []
   · show 8 * c.C.len < 2 ^ 15
-    have := hc.len_hi; omega
+    have := hc.len_hi; omega_using [h7, this]
 
 /-- A slot the ladder does not write apart from what it writes. -/
 theorem apart_ladWp (h3 : 3 ≤ c.n) (h7 : c.n < 10) {gx gy i : Nat} (hi : i < 45) (hr : i ∉ ladIx) :
@@ -182,12 +182,12 @@ theorem ladWp_le (h3 : 3 ≤ c.n) (h7 : c.n < 10) (gx gy : Nat) :
   rcases hw with (hw | hw) | hw
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     have := sl_le c h7 (i := i) ((by decide : ∀ i ∈ ladIx, i < 45) i hi)
-    dsimp only; omega
-  · rw [List.mem_singleton.mp hw]; have := own_eq c.n; dsimp only; omega
+    dsimp only; omega_using [hsz, this]
+  · rw [List.mem_singleton.mp hw]; have := own_eq c.n; dsimp only; omega_using [h7, hsz, this]
   · split at hw
     · rw [List.mem_singleton.mp hw]
       obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 ‹_›
-      dsimp only; omega
+      dsimp only; omega_using [hsz, h1, h2, hb3, ha, hq, hp, hoo]
     · simp at hw
 
 theorem tbl_apart_ladWp (h3 : 3 ≤ c.n) (h7 : c.n < 10) (gx gy j t : Nat) :
@@ -201,12 +201,12 @@ theorem tbl_apart_ladWp (h3 : 3 ≤ c.n) (h7 : c.n < 10) (gx gy j t : Nat) :
     exact Or.inr this
   · rw [List.mem_singleton.mp hw]
     have := own_below_bits c h7 j
-    exact Or.inr (by dsimp only; omega)
+    exact Or.inr (by dsimp only; omega_using [this])
   · split at hw
     · rw [List.mem_singleton.mp hw]
       obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, -, -⟩ := VG.Proof.Weierstrass.PPC64LE.Point.lay_nums h3 ‹_›
       have hb := bitsAt_eq c j
-      exact Or.inr (by dsimp only; omega)
+      exact Or.inr (by dsimp only; omega_using [h1, h2, hb3, ha, hq, hp, hoo, hb])
     · simp at hw
 
 end VG.Proof.Ecdsa.PPC64LE

@@ -88,16 +88,16 @@ theorem sharedAvI_r0 {p : SharedLPub × Nat} {s : State} (h : SharedAvI p s) (hb
   simp only [eval, hcf, Option.some.injEq, decide_eq_false_iff_not, Nat.not_lt] at hb
   obtain ⟨bm, hc⟩ := hI.ctx
   have hw4 := hd.w4
-  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [hw4]) hsh
   have hiu := hI.iu
   have hul := hI.ul
-  have hi : 32 * (p.2 + 1) ≤ 8 * p.1.p.w * (p.2 + 1) := Nat.mul_le_mul_right _ (by omega)
-  have hj : p.2 + 1 < 2 ^ 59 := by omega
+  have hi : 32 * (p.2 + 1) ≤ 8 * p.1.p.w * (p.2 + 1) := Nat.mul_le_mul_right _ (by omega_using [hw4])
+  have hj : p.2 + 1 < 2 ^ 59 := by omega_using [hrl, hb, hiu, hi]
   have hun := hI.unii
   refine ⟨⟨hk, hp, hd, mi, c, bm, r, uni, hc, hI.ex, hI.r2, hc1, hsh, hI.src, hrlen, by rw [hrlen]; exact hb, hI.kuni,
-    show p.2 + 1 < 2 ^ 61 by omega, by omega, hch, ?_⟩, p.1.z28, hI.env⟩
+    show p.2 + 1 < 2 ^ 61 by omega_using [hj], by omega_using [hj, hun], hch, ?_⟩, p.1.z28, hI.env⟩
   rw [← hS, ← hI.rest, ← hrlen]
-  exact (VG.Proof.RsaKeyGen.mr_pass hI.go hwb (by omega) (by rw [hrlen]; exact hb)).symm
+  exact (VG.Proof.RsaKeyGen.mr_pass hI.go hwb (by omega_using [hw4]) (by rw [hrlen]; exact hb)).symm
 
 /-- Where the loop ends. -/
 def SharedLoopEnd (a : SharedLPub) (s : State) : Prop :=
@@ -127,7 +127,7 @@ theorem sharedMrLoop_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc 
       obtain ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hl0, hw, hit⟩ := h'
       obtain ⟨bm, hc⟩ := hI.ctx
       refine WP.mono (availCmp_ok hc.good hd.z (hI.rlen.trans (by rw [hrlen])) hI.kused hI.len (by rw [← hrlen]; exact hI.ul)
-        hrl (by have := hd.w128; omega)) fun t ⟨hcf, hm, k⟩ =>
+        hrl (by have := hd.w128; omega_using [this])) fun t ⟨hcf, hm, k⟩ =>
           ⟨⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI.congr hd hm k (by decide), hS, hrlen, hc1, hsh, ho, hu, hl0, hw,
             hit⟩, hcf⟩
     · exact kt_ct (fun p : SharedLPub × Nat => p.1.p.B) (fun p => p.1.p.wr) [] (fun _ => []) [] (by decide)
@@ -146,25 +146,25 @@ theorem sharedMrLoop_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc 
         fun t ⟨⟨_, hc'⟩, _, _, _, _, _, _, k⟩ => ⟨hk, hc'.good.rdi, k.2.2.trans hp.wr, fun _ he => absurd he (List.not_mem_nil)⟩
   · rintro a j s hj ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hl0, hw, hit⟩
     have hw4 := hd.w4
-    obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
-    refine WP.mono (sharedMrIter_ok M hmc R hd a.z28 hc1 hsh (by omega) hch s hI) fun t ht => ?_
+    obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [hw4]) hsh
+    refine WP.mono (sharedMrIter_ok M hmc R hd a.z28 hc1 hsh (by omega_using [hrl, hrlen]) hch s hI) fun t ht => ?_
     rcases ht with ⟨he, hend, hnone, hsome⟩ | ⟨he, uni', hI'⟩
     · have h1 : itersOf (8 * a.p.w) a.p.rl a.S (a.u j) = 1 := by
         rcases hres : res with _ | ⟨b, rest⟩
-        · rw [← hS, hres]; exact VG.Proof.RsaKeyGen.iters_end_none (by omega) (by rw [← hrlen]; exact hnone hres)
+        · rw [← hS, hres]; exact VG.Proof.RsaKeyGen.iters_end_none (by omega_using [hw4]) (by rw [← hrlen]; exact hnone hres)
         · rw [← hS, hres]
-          exact VG.Proof.RsaKeyGen.iters_end_some (by omega) (by rw [← hrlen]; exact hsome b rest hres)
+          exact VG.Proof.RsaKeyGen.iters_end_some (by omega_using [hw4]) (by rw [← hrlen]; exact hsome b rest hres)
       refine ⟨by rw [he]; simp only [Option.some.injEq, Bool.false_eq, decide_eq_false_iff_not, Nat.not_lt]; omega,
         fun h => absurd h (by omega), fun _ => ⟨hk, hd, mi, c, r, s₀, res, hend, hS, hrlen, ho, hu, hl0, hw, hI.env.back hI.keep (by decide)⟩⟩
     · have hu' : a.u (j + 1) = a.u j + 8 * a.p.w := by simp only [SharedLPub.u, LPub.u]; rw [Nat.mul_add, Nat.mul_one, Nat.add_assoc]
       have hc := VG.Proof.RsaKeyGen.iters_cont (L := 8 * a.p.w) (r := r) (a := (Spec.Rsa.splitTwos (c - 1)).1)
-        (m := (Spec.Rsa.splitTwos (c - 1)).2) hI'.go hwb (by omega) (by omega) hI'.ul
+        (m := (Spec.Rsa.splitTwos (c - 1)).2) hI'.go hwb (by omega_using [hw4]) (by omega_using []) hI'.ul
       have hr' : Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep c a.p.ch (Spec.Rsa.splitTwos (c - 1)).1
           (Spec.Rsa.splitTwos (c - 1)).2) (j + 1 + 1, uni') (List.drop (a.u j + 8 * a.p.w) r) = res := hI'.rest
-      rw [show a.u j + 8 * a.p.w - 8 * a.p.w = a.u j by omega, hr', hS, hrlen] at hc
+      rw [show a.u j + 8 * a.p.w - 8 * a.p.w = a.u j by omega_using [], hr', hS, hrlen] at hc
       refine ⟨by rw [he]; exact congrArg some (decide_eq_true (by omega)).symm, fun _ => ?_, fun h => absurd h (by omega)⟩
       rw [← hu'] at hI'
-      exact ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, ho, hu, hl0, hw, by rw [hu']; omega⟩
+      exact ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, ho, hu, hl0, hw, by rw [hu']; omega_using [hit, hc]⟩
 
 /-- What `millerRabinWith` needs, for the shape
 of its result. -/
@@ -190,10 +190,10 @@ theorem sharedMillerRabin_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} 
   rintro a s ⟨hk, hp, hd, hch, hrl, mi, c, bm, r, hc, hE, hr2, hc1, hsh, ho, hup, hR, hK, hRL, hrlen, hC, hsrc, hU, hu1,
     hu2, hS, henv⟩
   have hw4 := hd.w4
-  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [hw4]) hsh
   have hN : 1 ≤ a.N := by
     have := (VG.Proof.RsaKeyGen.iters_cont (L := 8 * a.p.w) (r := r) (a := (Spec.Rsa.splitTwos (c - 1)).1)
-      (m := (Spec.Rsa.splitTwos (c - 1)).2) (ch := a.p.ch) (i := 1) (uni := 0) (Or.inl (by decide)) hwb (by omega) hu1
+      (m := (Spec.Rsa.splitTwos (c - 1)).2) (ch := a.p.ch) (i := 1) (uni := 0) (Or.inl (by decide)) hwb (by omega_using [hw4]) hu1
       hu2).2
     have hr' : Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep c a.p.ch (Spec.Rsa.splitTwos (c - 1)).1
         (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) (List.drop a.u0 r) = mrRest c a.p.ch r 1 0 a.u0 := rfl

@@ -110,7 +110,7 @@ theorem encodable_of_lt {v : BitVec 32} (h : v.toNat < 256) : encodable v = true
     simpa only [h0, decide_eq_true_eq] using h⟩
 
 theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
-  encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega)
+  encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [h])
 
 /-- The code's immediates that need a rotation. -/
 theorem encodable_768 : encodable (BitVec.ofNat 32 768) = true := by decide
@@ -145,7 +145,7 @@ theorem ofs_sub (S : BitVec 32) {a b : Nat} (h : b ≤ a) :
     S + BitVec.ofNat 32 a - BitVec.ofNat 32 b = S + BitVec.ofNat 32 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem ofs_diff (S : BitVec 32) (a : Nat) : S + BitVec.ofNat 32 a - S = BitVec.ofNat 32 a := by
   rw [BitVec.add_comm, BitVec.add_sub_cancel]
@@ -158,7 +158,7 @@ theorem ofNat_sub_beq {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32) :
       intro e
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at this
-      omega
+      omega_using [ha, hc, h, this]
     simp [this, h]
 
 /-- The branch conditions. -/

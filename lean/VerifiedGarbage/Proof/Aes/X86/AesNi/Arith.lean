@@ -117,8 +117,8 @@ theorem aesenc_st (v k : BitVec 128) (rk : List Byte) (hk : ∀ i < 16, byte k i
   rw [getD_st _ hi, getD_addRoundKey _ _ hi, getD_mixColumns _ hi, ← hk i hi]
   simp only [XBinOp.eval, byte_xor]
   rw [byte_mixColumns _ hi]
-  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
-  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega
+  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega_using [hi]
+  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega_using []
   simp only [byte_mapBytes _ _ (hr _), getD_shiftRows _ (hr _), byte_shiftRows _ (hr _), sbox_eq,
     mul_eq, mul_one', getD_subBytes _ (hs _), getD_st _ (hs _)]
 
@@ -128,7 +128,7 @@ theorem aesenclast_st (v k : BitVec 128) (rk : List Byte) (hk : ∀ i < 16, byte
   apply st_ext; intro i hi
   rw [getD_st _ hi, getD_addRoundKey _ _ hi, ← hk i hi]
   simp only [XBinOp.eval, byte_xor]
-  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega
+  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega_using []
   simp only [byte_mapBytes _ _ hi, getD_shiftRows _ hi, byte_shiftRows _ hi, sbox_eq,
     getD_subBytes _ (hs _), getD_st _ (hs _)]
 
@@ -156,7 +156,7 @@ theorem ofInt_natCast (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n 
 
 theorem roundKey_getD (m : Mem) (p : Addr) {L j i : Nat} (hi : i < 16) (hj : 16 * j + 16 ≤ L) :
     (roundKey (bytesAt m p L) j).getD i 0 = m (p + BitVec.ofNat 64 (16 * j + i)) := by
-  simp [roundKey, bytesAt, List.getD, hi, show 16 * j + i < L by omega]
+  simp [roundKey, bytesAt, List.getD, hi, show 16 * j + i < L by omega_using [hi, hj]]
 
 /-- Round key `j`, loaded from the schedule. -/
 theorem byte_roundKey (m : Mem) (p : Addr) {L j : Nat} (hj : 16 * j + 16 ≤ L) :

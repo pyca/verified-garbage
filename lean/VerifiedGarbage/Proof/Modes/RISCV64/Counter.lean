@@ -40,11 +40,11 @@ theorem foldl_lt : ∀ (l : List Byte) {acc j : Nat}, acc < 256 ^ j →
     l.foldl (fun a b => 256 * a + b.toNat) acc < 256 ^ (j + l.length)
   | [], _, _, h => by simpa using h
   | b :: l, acc, j, h => by
-    rw [List.foldl_cons, List.length_cons, show j + (l.length + 1) = (j + 1) + l.length by omega]
+    rw [List.foldl_cons, List.length_cons, show j + (l.length + 1) = (j + 1) + l.length by omega_using []]
     refine foldl_lt l ?_
     have := b.isLt
     have : 256 * acc + 256 ≤ 256 * 256 ^ j := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h
-    rw [Nat.pow_succ]; omega
+    rw [Nat.pow_succ]; omega_using [h]
 
 theorem toNat_lt (l : List Byte) : toNat l < 256 ^ l.length := by
   have := foldl_lt l (acc := 0) (j := 0) (by decide)
@@ -62,12 +62,12 @@ def carry (B : List Byte) (w k : Nat) : Nat := (toNat (B.drop (w - k)) + 1) / 25
 
 theorem carry_le (B : List Byte) {w k : Nat} (hB : B.length = w) (hk : k ≤ w) : carry B w k ≤ 1 := by
   have h := toNat_lt (B.drop (w - k))
-  rw [List.length_drop, hB, show w - (w - k) = k by omega] at h
+  rw [List.length_drop, hB, show w - (w - k) = k by omega_using [hk]] at h
   unfold carry
   have hp : 0 < 256 ^ k := Nat.pow_pos (by decide)
-  have : toNat (B.drop (w - k)) + 1 < 2 * 256 ^ k := by omega
+  have : toNat (B.drop (w - k)) + 1 < 2 * 256 ^ k := by omega_using [h]
   have := (Nat.div_lt_iff_lt_mul hp).mpr this
-  omega
+  omega_using [this]
 
 theorem stepBytes_zero (B : List Byte) {w : Nat} (hB : B.length = w) : stepBytes B w 0 = B := by
   simp [stepBytes, ofNat, ← hB]
@@ -78,48 +78,48 @@ theorem stepBytes_full (B : List Byte) (w : Nat) :
 
 theorem stepBytes_length (B : List Byte) {w k : Nat} (hB : B.length = w) (hk : k ≤ w) :
     (stepBytes B w k).length = w := by
-  simp [stepBytes, VG.Proof.AesCtr.length_ofNat, hB]; omega
+  simp [stepBytes, VG.Proof.AesCtr.length_ofNat, hB]; omega_using [hk]
 
 /-- The next byte: byte `w - 1 - k` plus the carry. -/
 theorem stepBytes_succ (B : List Byte) {w k : Nat} (hB : B.length = w) (hk : k < w) :
     stepBytes B w (k + 1) = (stepBytes B w k).set (w - 1 - k)
-      (BitVec.ofNat 8 ((B[w - 1 - k]'(by omega)).toNat + carry B w k)) := by
-  have e1 : B.take (w - k) = B.take (w - 1 - k) ++ [B[w - 1 - k]'(by omega)] := by
-    rw [show w - k = w - 1 - k + 1 by omega, List.take_add_one, List.getElem?_eq_getElem (by omega)]
+      (BitVec.ofNat 8 ((B[w - 1 - k]'(by omega_using [hB, hk])).toNat + carry B w k)) := by
+  have e1 : B.take (w - k) = B.take (w - 1 - k) ++ [B[w - 1 - k]'(by omega_using [hB, hk])] := by
+    rw [show w - k = w - 1 - k + 1 by omega_using [hk], List.take_add_one, List.getElem?_eq_getElem (by omega_using [hB, hk])]
     rfl
-  have e2 : B.drop (w - (k + 1)) = B[w - 1 - k]'(by omega) :: B.drop (w - k) := by
-    rw [show w - (k + 1) = w - 1 - k by omega, List.drop_eq_getElem_cons (by omega),
-      show w - 1 - k + 1 = w - k by omega]
-  have hlen : (B.drop (w - k)).length = k := by rw [List.length_drop, hB]; omega
+  have e2 : B.drop (w - (k + 1)) = B[w - 1 - k]'(by omega_using [hB, hk]) :: B.drop (w - k) := by
+    rw [show w - (k + 1) = w - 1 - k by omega_using [], List.drop_eq_getElem_cons (by omega_using [hB, hk]),
+      show w - 1 - k + 1 = w - k by omega_using [hk]]
+  have hlen : (B.drop (w - k)).length = k := by rw [List.length_drop, hB]; omega_using [hk]
   have ht : toNat (B.drop (w - (k + 1))) =
-      (B[w - 1 - k]'(by omega)).toNat * 256 ^ k + toNat (B.drop (w - k)) := by
-    rw [e2, show (B[w - 1 - k]'(by omega)) :: B.drop (w - k) = [B[w - 1 - k]'(by omega)] ++ B.drop (w - k)
+      (B[w - 1 - k]'(by omega_using [hB, hk])).toNat * 256 ^ k + toNat (B.drop (w - k)) := by
+    rw [e2, show (B[w - 1 - k]'(by omega_using [hB, hk])) :: B.drop (w - k) = [B[w - 1 - k]'(by omega_using [hB, hk])] ++ B.drop (w - k)
       from rfl, VG.Proof.AesCtr.toNat_append, toNat_singleton, hlen]
   have hp : 0 < 256 ^ k := Nat.pow_pos (by decide)
   unfold stepBytes
-  rw [e1, ht, show w - (k + 1) = w - 1 - k by omega, Nat.add_comm k 1, VG.Proof.AesCtr.ofNat_add, ofNat_one]
-  have hd : ((B[w - 1 - k]'(by omega)).toNat * 256 ^ k + toNat (B.drop (w - k)) + 1) / 256 ^ k =
-      (B[w - 1 - k]'(by omega)).toNat + carry B w k := by
+  rw [e1, ht, show w - (k + 1) = w - 1 - k by omega_using [], Nat.add_comm k 1, VG.Proof.AesCtr.ofNat_add, ofNat_one]
+  have hd : ((B[w - 1 - k]'(by omega_using [hB, hk])).toNat * 256 ^ k + toNat (B.drop (w - k)) + 1) / 256 ^ k =
+      (B[w - 1 - k]'(by omega_using [hB, hk])).toNat + carry B w k := by
     unfold carry
     rw [Nat.add_assoc, Nat.add_comm, Nat.add_mul_div_right _ _ hp, Nat.add_comm]
-  have hm : ofNat ((B[w - 1 - k]'(by omega)).toNat * 256 ^ k + toNat (B.drop (w - k)) + 1) k =
+  have hm : ofNat ((B[w - 1 - k]'(by omega_using [hB, hk])).toNat * 256 ^ k + toNat (B.drop (w - k)) + 1) k =
       ofNat (toNat (B.drop (w - k)) + 1) k := by
     apply VG.Proof.AesCtr.ofNat_congr
     rw [Nat.add_assoc, Nat.mul_comm, Nat.mul_add_mod]
   rw [hd, hm]
-  have hl : (B.take (w - 1 - k)).length = w - 1 - k := by rw [List.length_take, hB]; omega
-  rw [List.append_assoc, List.set_append_right _ _ (by omega), hl, Nat.sub_self]
+  have hl : (B.take (w - 1 - k)).length = w - 1 - k := by rw [List.length_take, hB]; omega_using []
+  rw [List.append_assoc, List.set_append_right _ _ (by omega_using [hl]), hl, Nat.sub_self]
   rfl
 
 theorem carry_succ (B : List Byte) {w k : Nat} (hB : B.length = w) (hk : k < w) :
-    carry B w (k + 1) = ((B[w - 1 - k]'(by omega)).toNat + carry B w k) / 256 := by
-  have e2 : B.drop (w - (k + 1)) = B[w - 1 - k]'(by omega) :: B.drop (w - k) := by
-    rw [show w - (k + 1) = w - 1 - k by omega, List.drop_eq_getElem_cons (by omega),
-      show w - 1 - k + 1 = w - k by omega]
-  have hlen : (B.drop (w - k)).length = k := by rw [List.length_drop, hB]; omega
+    carry B w (k + 1) = ((B[w - 1 - k]'(by omega_using [hB, hk])).toNat + carry B w k) / 256 := by
+  have e2 : B.drop (w - (k + 1)) = B[w - 1 - k]'(by omega_using [hB, hk]) :: B.drop (w - k) := by
+    rw [show w - (k + 1) = w - 1 - k by omega_using [], List.drop_eq_getElem_cons (by omega_using [hB, hk]),
+      show w - 1 - k + 1 = w - k by omega_using [hk]]
+  have hlen : (B.drop (w - k)).length = k := by rw [List.length_drop, hB]; omega_using [hk]
   have hp : 0 < 256 ^ k := Nat.pow_pos (by decide)
   unfold carry
-  rw [e2, show (B[w - 1 - k]'(by omega)) :: B.drop (w - k) = [B[w - 1 - k]'(by omega)] ++ B.drop (w - k)
+  rw [e2, show (B[w - 1 - k]'(by omega_using [hB, hk])) :: B.drop (w - k) = [B[w - 1 - k]'(by omega_using [hB, hk])] ++ B.drop (w - k)
     from rfl, VG.Proof.AesCtr.toNat_append, toNat_singleton, hlen, Nat.pow_succ, ← Nat.div_div_eq_div_mul,
     Nat.add_assoc, Nat.add_comm, Nat.add_mul_div_right _ _ hp, Nat.add_comm]
 
@@ -137,7 +137,7 @@ theorem write1_apply (m : Mem) (a x : Addr) (v : BitVec 8) :
     apply BitVec.eq_of_getLsbD_eq; intro i hi; simp [hi]
   · rw [ite_eq_right h]
     exact Mem.write_apply fun h' => h (by
-      have : (x - a).toNat = 0 := by omega
+      have : (x - a).toNat = 0 := by omega_using [h']
       have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [this]; rfl)
       calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
         _ = a := by rw [h0]; simp)
@@ -155,14 +155,14 @@ theorem incByte_run {base : Reg} (h0 : base ≠ .t0) (_h1 : base ≠ .t1) {off :
   have hb := (u.mem (u.gpr base + BitVec.ofNat 64 off)).isLt
   have hs : ((u.mem (u.gpr base + BitVec.ofNat 64 off)).setWidth 64 + u.gpr .t1).toNat =
       (u.mem (u.gpr base + BitVec.ofNat 64 off)).toNat + (u.gpr .t1).toNat := by
-    rw [BitVec.toNat_add, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [hc]), Nat.mod_eq_of_lt (by omega_using [])]
   refine ⟨?_, ?_, fun r hr0 hr1 => by simp [hr0, hr1]⟩
   · congr 1
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, hs, BitVec.toNat_ofNat]
   · apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, hs, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using [])]
 
 /-! ## The increment -/
 
@@ -189,39 +189,39 @@ theorem incSteps_run {base : Reg} (h0 : base ≠ .t0) (h1 : base ≠ .t1) {off w
   | 0, _ => WP.block_nil I
   | k + 1, hk => by
     rw [flatMap_range_succ, WP.block_append_iff]
-    refine WP.mono (incSteps_run h0 h1 hw ho ha hr hW I k (by omega)) fun v J => ?_
+    refine WP.mono (incSteps_run h0 h1 hw ho ha hr hW I k (by omega_using [hk])) fun v J => ?_
     have hB : (bytesAt s.mem Q w).length = w := by simp [bytesAt]
-    have hp : w - 1 - k < w := by omega
+    have hp : w - 1 - k < w := by omega_using [hk]
     have hav : v.gpr base + BitVec.ofNat 64 (off + (w - 1 - k)) = Q + BitVec.ofNat 64 (w - 1 - k) := by
       rw [J.gpr _ h0 h1, ← ha, Offset.add_add]
     have hsub : (Q + BitVec.ofNat 64 (w - 1 - k) - Q).toNat = w - 1 - k := by
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]
     -- The byte read is the original one.
-    have hbyte : v.mem (Q + BitVec.ofNat 64 (w - 1 - k)) = (bytesAt s.mem Q w)[w - 1 - k]'(by omega) := by
-      rw [J.mem, hsub, ite_eq_left hp, getD_of_lt (by rw [stepBytes_length _ hB (by omega)]; exact hp)]
-      simp only [stepBytes, List.getElem_append_left (by rw [List.length_take, hB]; omega : w - 1 - k <
+    have hbyte : v.mem (Q + BitVec.ofNat 64 (w - 1 - k)) = (bytesAt s.mem Q w)[w - 1 - k]'(by omega_using [hk, hB]) := by
+      rw [J.mem, hsub, ite_eq_left hp, getD_of_lt (by rw [stepBytes_length _ hB (by omega_using [hk])]; exact hp)]
+      simp only [stepBytes, List.getElem_append_left (by rw [List.length_take, hB]; omega_using [hk] : w - 1 - k <
         (List.take (w - k) (bytesAt s.mem Q w)).length), List.getElem_take]
-    have hc := carry_le (bytesAt s.mem Q w) hB (k := k) (by omega)
-    refine WP.mono (incByte_run h0 h1 (by omega) v hav (by rw [J.rd, J.wr]; exact hr _ hp)
-      (by rw [J.wr]; exact hW _ hp) (by rw [J.t1, BitVec.toNat_ofNat]; omega))
+    have hc := carry_le (bytesAt s.mem Q w) hB (k := k) (by omega_using [hk])
+    refine WP.mono (incByte_run h0 h1 (by omega_using [ho, hk]) v hav (by rw [J.rd, J.wr]; exact hr _ hp)
+      (by rw [J.wr]; exact hW _ hp) (by rw [J.t1, BitVec.toNat_ofNat]; omega_using [hc]))
       fun t ⟨tm, t1, tg, trd, twr⟩ => ⟨fun x => ?_, ?_, fun r r0 r1 => by rw [tg r r0 r1, J.gpr r r0 r1],
         by rw [trd, J.rd], by rw [twr, J.wr]⟩
-    · rw [tm, write1_apply, hbyte, J.t1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-        stepBytes_succ _ hB (by omega)]
+    · rw [tm, write1_apply, hbyte, J.t1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc]),
+        stepBytes_succ _ hB (by omega_using [hk])]
       by_cases hx : x = Q + BitVec.ofNat 64 (w - 1 - k)
       · subst hx
         rw [ite_eq_left rfl, hsub, ite_eq_left hp, getD_of_lt (by
-          rw [List.length_set, stepBytes_length _ hB (by omega)]; exact hp), List.getElem_set_self]
+          rw [List.length_set, stepBytes_length _ hB (by omega_using [hk])]; exact hp), List.getElem_set_self]
       · rw [ite_eq_right hx, J.mem]
         split
         · rename_i hxl
           have hne : (x - Q).toNat ≠ w - 1 - k := fun e => hx (by
             rw [← e]; apply BitVec.eq_of_toNat_eq
             rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (x - Q).isLt]
-            simp [BitVec.toNat_sub]; omega)
+            simp [BitVec.toNat_sub]; omega_using [])
           simp only [List.getD_eq_getElem?_getD, List.getElem?_set_ne (Ne.symm hne)]
         · rfl
-    · rw [t1, hbyte, J.t1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), carry_succ _ hB (by omega)]
+    · rw [t1, hbyte, J.t1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc]), carry_succ _ hB (by omega_using [hk])]
 
 theorem incBE_wp {base : Reg} (h0 : base ≠ .t0) (h1 : base ≠ .t1) {off w : Nat} (hw : w ≤ 16)
     (ho : off + w ≤ 2048) {s : State} {Q : Addr} (ha : s.gpr base + BitVec.ofNat 64 off = Q)
@@ -246,10 +246,10 @@ theorem incBE_wp {base : Reg} (h0 : base ≠ .t0) (h1 : base ≠ .t1) {off w : N
         congr 1
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (x - Q).isLt]
-        simp [BitVec.toNat_sub]; omega
+        simp [BitVec.toNat_sub]; omega_using []
       · rfl
     · show BitVec.ofNat 64 1 = BitVec.ofNat 64 (carry _ w 0)
-      rw [carry, List.drop_eq_nil_of_le (by omega), Nat.pow_zero, Nat.div_one]
+      rw [carry, List.drop_eq_nil_of_le (by omega_using [hB]), Nat.pow_zero, Nat.div_one]
       rfl
   refine WP.mono (incSteps_run h0 h1 hw ho ha hr hW I w (Nat.le_refl _))
     fun v J => k v (funext fun x => ?_) (fun r r0 r1 => J.gpr r r0 r1)

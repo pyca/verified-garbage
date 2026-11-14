@@ -47,7 +47,7 @@ theorem shr61 (hi lo : BitVec 32) : (hi ++ lo) >>> 61 = (0 : BitVec 32) ++ hi >>
     ← Nat.shiftLeft_add_eq_or_of_lt lo.isLt, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow,
     Nat.shiftRight_eq_div_pow]
   have := lo.isLt
-  omega
+  omega_using []
 
 /-- The length field: `count >> 61`, then `8 count`, big-endian. -/
 theorem lenOf_eq (hi lo : BitVec 32) :
@@ -83,28 +83,28 @@ theorem len_ok (s : State) (hfit : (s.gpr .ebx).toNat + (params.N + params.B) �
   have hb₂ : s₂.gpr .ebx = s.gpr .ebx := g₂ _ (by decide) (by decide)
   simp only [List.cons_append, List.nil_append]
   refine wp_movi fun s₃ u₃ => wp_store (a := addr (s.gpr .ebx) 176)
-    (by show addr (s₃.gpr .ebx) 176 = _; rw [u₃.other _ (by decide), hb₂]) (by rw [u₃.wr, wr₂]; exact ho' 176 (by omega) (by omega))
+    (by show addr (s₃.gpr .ebx) 176 = _; rw [u₃.other _ (by decide), hb₂]) (by rw [u₃.wr, wr₂]; exact ho' 176 (by omega_using []) (by omega_using []))
     fun s₄ u₄ => ?_
   refine wp_mov fun s₅ u₅ => wp_shr (by decide) fun s₆ u₆ => wp_bswap fun s₇ u₇ => ?_
   have g₇ : ∀ r, r ≠ .edx → s₇.gpr r = s₂.gpr r := fun r h => by
     rw [u₇.other r h, u₆.other r h, u₅.other r h, u₄.gpr, u₃.other r h]
   refine wp_store (a := addr (s.gpr .ebx) 180) (by show addr (s₇.gpr .ebx) 180 = _; rw [g₇ _ (by decide), hb₂])
-    (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, wr₂]; exact ho' 180 (by omega) (by omega)) fun s₈ u₈ => ?_
+    (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, wr₂]; exact ho' 180 (by omega_using []) (by omega_using [])) fun s₈ u₈ => ?_
   have g₈ : ∀ r, r ≠ .edx → s₈.gpr r = s₂.gpr r := fun r h => by rw [u₈.gpr, g₇ r h]
   have wr₈ : s₈.wr = s.wr := by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, wr₂]
-  refine (len64Of_ok (d := 184) (be := true) (hi := hi) (lo := lo) (by rw [g₈ _ (by decide), hb₂]; omega)
+  refine (len64Of_ok (d := 184) (be := true) (hi := hi) (lo := lo) (by rw [g₈ _ (by decide), hb₂]; omega_using [hfit'])
     (by rw [g₈ _ (by decide), ha]) (by rw [g₈ _ (by decide), hc])
-    (by rw [wr₈, g₈ _ (by decide), hb₂]; exact ho' 184 (by omega) (by omega))
-    (by rw [wr₈, g₈ _ (by decide), hb₂]; exact ho' 188 (by omega) (by omega))).mono
+    (by rw [wr₈, g₈ _ (by decide), hb₂]; exact ho' 184 (by omega_using []) (by omega_using []))
+    (by rw [wr₈, g₈ _ (by decide), hb₂]; exact ho' 188 (by omega_using []) (by omega_using []))).mono
     fun s' ⟨g', rd', wr', m'⟩ => ⟨fun r h1 h2 h3 => by rw [g' r h1 h2 h3, g₈ r h3, g₂ r h1 h2],
       by rw [rd', u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, rd₂], by rw [wr', wr₈], ?_⟩
   have v₃ : s₃.gpr .edx = bswap 0 := by rw [u₃.gpr]; decide
   have v₇ : s₇.gpr .edx = bswap (hi >>> 29) := by rw [u₇.gpr, u₆.gpr, u₅.gpr, u₄.gpr, u₃.other _ (by decide), hc]
   have w := fun (m : Mem) (a : Addr) (x : BitVec 32) => writeW32 m a true x
   simp only [ite_true] at w
-  have e₀ : addr (s.gpr .ebx) 176 = (s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 176 := addr_eq (by omega)
+  have e₀ : addr (s.gpr .ebx) 176 = (s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 176 := addr_eq (by omega_using [hfit'])
   have e₁ : addr (s.gpr .ebx) 180 = (s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 176 +
-      BitVec.ofNat 64 (bytes32 true 0).length := by rw [addr_eq (by omega), bytes32_length, add_ofNat]
+      BitVec.ofNat 64 (bytes32 true 0).length := by rw [addr_eq (by omega_using [hfit']), bytes32_length, add_ofNat]
   have e₂ : (s₈.gpr .ebx).setWidth 64 + BitVec.ofNat 64 184 = (s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 176 +
       BitVec.ofNat 64 (bytes32 true 0 ++ bytes32 true (hi >>> 29)).length := by
     rw [g₈ _ (by decide), hb₂, List.length_append, bytes32_length, bytes32_length, add_ofNat]

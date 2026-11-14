@@ -250,7 +250,7 @@ theorem divChecks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
     rw [f2.word (i := wOf s0) (by omega_arith) (by simp) (by cvx) (fit _ (by cvx))]; exact z1
   have hl : t2.gpr .s4 = BitVec.ofNat 64 (pL s0) := c2.s4.trans (toNat_ofNat_eq _)
   refine WP.mono (divL_ok w2' (q := aDQ) (r := aDR) (d := aDD) (by cvx) (by cvx) (by cvx) (by decide)
-    (by cvx) (by cvx) (by cvx) hl h.p1 (by have := h.p2; simp only [wOf, kOf, pL] at *; omega) z2
+    (by cvx) (by cvx) (by cvx) hl h.p1 (by have := h.p2; simp only [wOf, kOf, pL] at *; omega_using [this]) z2
     (by rw [dd2]; exact pv_lt s0))
     fun t3 ⟨w3, f3, k3, _, v3⟩ => ?_
   have c3 := c2.step h f3 (by cvx) (by simp) k3
@@ -297,7 +297,7 @@ theorem pq_bits {P Q N R : Nat} (hR : P * Q < R) :
       P % 2 * (if N / P = Q then 1 else 0) * (if N % P = 0 then 1 else 0) := by
   rcases Nat.mod_two_eq_zero_or_one P with e | e
   · simp [e]
-  have hP : 0 < P := by omega
+  have hP : 0 < P := by omega_using [e]
   rw [Nat.mod_eq_of_lt hR]
   by_cases hq : P * Q = N
   · subst hq
@@ -329,10 +329,10 @@ theorem lenTest_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
   by_cases hc : BitVec.ofNat 64 (wOf s0) <<< 3 < stackArg s0 1 + stackArg s0 3
   · have := hlt.mp hc
     simp only [hc, ↓reduceIte]
-    exact ⟨fun e => absurd e (by decide), fun e => by omega⟩
+    exact ⟨fun e => absurd e (by decide), fun e => by omega_using [this, e]⟩
   · have := mt hlt.mpr hc
     simp only [hc, ↓reduceIte]
-    exact ⟨fun _ => by omega, fun _ => trivial⟩
+    exact ⟨fun _ => by omega_using [this], fun _ => trivial⟩
 
 /-- `a2`, `a3`, `a6` into `s0`, `s7`, `a5`. -/
 theorem save3_ok (s : State) :
@@ -366,15 +366,15 @@ theorem pqProduct_ok {s0 s : State} (h : PreC s0) (ws : Ws s (bOf s0) (zOf s0) (
   unfold pqProduct
   rw [WP.seq_iff]
   refine WP.mono (shape_ok (pl := pL s0) (ql := qL s0) (w := wOf s0) (by rw [r4]; simp) (by rw [r6]; simp) ws.s9
-    lp lq (by omega)) fun u ⟨⟨hiff, mu⟩, ku⟩ => ?_
+    lp lq (by omega_using [w2])) fun u ⟨⟨hiff, mu⟩, ku⟩ => ?_
   have ku' : Keep VG.Proof.Rsa.RISCV64.Keys.mulRegs s u := ku.mono (by decide)
   have wu := ws.of_keep ku'
   have zu : num u.mem (bOf s0) (wOf s0) aDR = 0 := by rw [mu]; exact z
   refine WP.ite _ (Steps.eval_zero u .t0) (fun hz => ?_) (fun _ => ?_)
   · obtain ⟨g8, g4w, gpq, g32⟩ := hiff.mp (by simpa using hz)
-    have e32 : 64 * (wOf s0 / 2) = 8 * pL s0 := by omega
+    have e32 : 64 * (wOf s0 / 2) = 8 * pL s0 := by omega_using [g8, g4w]
     refine WP.mono (mulHalf_ok wu (o := aDR) (y := aP) (x := aQ) (by cvx) (by cvx) (by cvx) (by decide) (by cvx)
-      (by cvx) (by omega) zu (by rw [mu, hp, e32]; exact pv_lt s0)
+      (by cvx) (by omega_using [g4w, e32]) zu (by rw [mu, hp, e32]; exact pv_lt s0)
       (by rw [mu, hq, e32, gpq]; exact qv_lt s0)) fun t ⟨wt, ft, _, vt, kt⟩ =>
         ⟨wt, by rw [mu] at ft; exact ft, by rw [vt, mu], Keep.trans' ku' kt⟩
   · refine WP.mono (mulLow_ok wu (o := aDR) (y := aP) (x := aQ) (by cvx) (by cvx) (by cvx) (by decide) (by cvx)

@@ -76,7 +76,7 @@ theorem random_signer_call (S : Signer) {s : State} {rd wr : List Region}
       t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
   have hd := S.depth
   have hb := S.stackBound
-  exact WP.call_sp_mx S.verified.1 (SpSafe.of_all S.sp) (by omega) hp hr hw
+  exact WP.call_sp_mx S.verified.1 (SpSafe.of_all S.sp) (by omega_using [hd, hb]) hp hr hw
     (fun _ hrd hwr hcs hf _ hpost hmx => ⟨hrd, hwr, hcs, hf, hpost, hmx⟩)
 
 end VG.Proof.Dsa.X86_64

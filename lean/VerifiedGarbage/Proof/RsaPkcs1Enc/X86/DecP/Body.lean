@@ -167,15 +167,15 @@ theorem copySlotP {σ s : State} {i j : Nat} (h : SP P pre L σ s) (hs : SlotsP 
     (hj : j < 25) (hv : (P.argvP pre L).getD j 0 = (outvP P pre L).getD i 0) {is : List Instr}
     {Q : State → Prop} (kk : ∀ t, SP P pre L σ t → SlotsP P pre L t.mem (i + 1) → WP isa (.block is) t Q) :
     WP isa (.block (copyArg j i ++ is)) s Q := by
-  refine h.2.wp_arg (j := j) (by simp only [EP.argvP, List.length_cons, List.length_nil]; omega)
+  refine h.2.wp_arg (j := j) (by simp only [EP.argvP, List.length_cons, List.length_nil]; omega_using [hj])
     (by decide) fun t1 s1 u1 => ?_
-  refine s1.wp_strFr (d := 4 * i) (by show 4 * i + 4 ≤ frameBytes; simp only [frameBytes]; omega)
+  refine s1.wp_strFr (d := 4 * i) (by show 4 * i + 4 ≤ frameBytes; simp only [frameBytes]; omega_using [hi])
     fun t2 s2 m2 => kk t2 ⟨h.1, s2⟩ ?_
   intro k hk
   rw [m2.mem]
-  rcases (by omega : k = i ∨ k < i) with rfl | hki
+  rcases (by omega_using [hk] : k = i ∨ k < i) with rfl | hki
   · rw [Mem.readW_writeW_self32, u1.gpr, hv]
-  · rw [Lay.readW_fr_other _ _ _ (by omega) (by omega) (by omega), u1.mem]
+  · rw [Lay.readW_fr_other _ _ _ (by omega_using [hki]) (by omega_using [hi, hk]) (by omega_using [hi]), u1.mem]
     exact hs k hki
 
 theorem privArgsP_eq : privArgsP = copyArg 0 0 ++ copyArg 4 1 ++ copyArg 3 2 ++ copyArg 4 3 ++ copyArg 5 4 ++ copyArg 6 5 ++ copyArg 9 6 ++ copyArg 4 7 ++ copyArg 11 8 ++ copyArg 12 9 ++ copyArg 13 10 ++ copyArg 14 11 ++ copyArg 15 12 ++ copyArg 16 13 ++ copyArg 17 14 ++ copyArg 18 15 ++ copyArg 19 16 ++ copyArg 20 17 ++ copyArg 21 18 ++ copyArg 22 19 ++ copyArg 23 20 ++ copyArg 24 21 := by decide
@@ -222,7 +222,7 @@ theorem privArgsP_vp : VP (SP P pre L) (.block privArgsP) (R1P P pre L) :=
 theorem InP.fit {σ : State} (h : InP P pre L σ) : P.B.toNat + 224 ≤ 2 ^ 32 := by
   have := h.ok.fit
   simp only [Lay.A, EP.argvP, List.length_cons, List.length_nil, frameBytes] at this
-  omega
+  omega_using [this]
 
 theorem InP.BC {σ : State} (h : InP P pre L σ) : 3448 ≤ P.B.toNat := h.ok.BC
 
@@ -234,14 +234,14 @@ theorem SP.callWords {σ s : State} (hs : SP P pre L σ s) :
     Spec.Rsa.wordsAt s.callEntry.mem (pre.setWidth 64) L = Spec.Rsa.wordsAt σ.mem (pre.setWidth 64) L := by
   have fit : (pre.setWidth 64).toNat + 8 * L ≤ 2 ^ 32 := by
     have := hs.1.ok.fits (preR pre L) (List.mem_append_left _ (by simp))
-    simp only at this; omega
+    simp only at this; omega_using [this]
   have sep : ∀ r ∈ (P.layP pre L).W, (⟨pre.setWidth 64, 8 * L⟩ : Region).Disjoint r := by
     rw [show 8 * L = L * 8 from Nat.mul_comm _ _]
     exact lay_ro_apart hs.1.ok (R := preR pre L) (by simp)
-  rw [Proof.Rsa.wordsAt_frame (hs.2.callEntry_frame (by show (4 : Nat) ≤ 3448; decide)) (by omega) (by
+  rw [Proof.Rsa.wordsAt_frame (hs.2.callEntry_frame (by show (4 : Nat) ≤ 3448; decide)) (by omega_using [fit]) (by
       intro r hr; obtain rfl := List.mem_singleton.mp hr
       exact sep _ (by simp [Lay.W])),
-    Proof.Rsa.wordsAt_frame hs.2.frame (by omega) sep]
+    Proof.Rsa.wordsAt_frame hs.2.frame (by omega_using [fit]) sep]
 
 theorem R1P.privArgsP {σ s : State} (h : R1P P pre L σ s) :
     PrivArgsP s P.out P.n P.e P.inp P.p P.q P.dp P.dq P.qinv P.scr pre P.K P.el P.pl P.ql P.sl L := by
@@ -254,7 +254,7 @@ theorem R1P.privArgsP {σ s : State} (h : R1P P pre L σ s) :
   have argsP : ∀ i < 22, s.mem.readW (addr (s.gpr .esp) (4 * i)) 32 = (outvP P pre L).getD i 0 := by
     intro i hi
     have hd : 4 * i < (P.layP pre L).F + 20 + (P.layP pre L).A := by
-      simp only [Lay.A, EP.argvP, List.length_cons, List.length_nil, frameBytes]; omega
+      simp only [Lay.A, EP.argvP, List.length_cons, List.length_nil, frameBytes]; omega_using [hi]
     rw [hsp, ok.addrB hd]
     exact sl i hi
   have key : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt σ.mem (P.n.setWidth 64) P.K)
@@ -268,11 +268,11 @@ theorem R1P.privArgsP {σ s : State} (h : R1P P pre L σ s) :
     ← hs.2.callEntry_ro (R := P.QQ) c4 (by simp), ← hs.callWords] at key
   refine ⟨⟨fun i hi => ?_, ?_, ?_, base.kv, base.el1, base.elK, base.pl1, base.plK, base.ql1, base.qlK, base.slK,
     base.sl32⟩, argsP, ?_, hs.1.lenEq, key⟩
-  · rw [argsP i (by omega)]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  · rw [argsP i (by omega_using [hi])]
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   · rw [hsp]; exact bc
-  · rw [hsp]; omega
-  · rw [hsp]; omega
+  · rw [hsp]; omega_using [fit]
+  · rw [hsp]; omega_using [fit]
 
 /-- `privNameP`: `vg_rsa_private_checked_precomputed` over `c`. -/
 def privNameP (c : CrtImpl) : String := "vg_rsa_private_checked_precomputed" ++ c.suffix
@@ -304,15 +304,15 @@ theorem call_vpP (c : CrtImpl) (w : CrtPImpl) :
       rcases hw with rfl | rfl | rfl
       · exact ok.rw_ro (w := P.OUT) (by simp) hr'
       · exact ok.rw_ro (w := P.SCR) (by simp) hr'
-      · rw [args0]; exact ok.stk_fr (.inl hr') (by simp only [frameBytes]; omega)
+      · rw [args0]; exact ok.stk_fr (.inl hr') (by simp only [frameBytes]; omega_using [])
     · simp only [privWrP, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
         forall_eq, List.Pairwise.nil, and_true]
       have ww := ok.wrw
       simp only [EP.rw, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at ww
       refine ⟨⟨ww.1.2, ?_⟩, ?_, fun _ h => h.elim⟩
-      · rw [args0]; exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [frameBytes]; omega)).symm
-      · rw [args0]; exact (ok.stk_fr (R := P.SCR) (.inr (by simp)) (by simp only [frameBytes]; omega)).symm
+      · rw [args0]; exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [frameBytes]; omega_using [])).symm
+      · rw [args0]; exact (ok.stk_fr (R := P.SCR) (.inr (by simp)) (by simp only [frameBytes]; omega_using [])).symm
     · intro r hr
       rw [hsp, ← show (P.layP pre L).B = P.B from rfl, ok.low_eq]
       simp only [privWrP, privRdP, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -320,7 +320,7 @@ theorem call_vpP (c : CrtImpl) (w : CrtPImpl) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact ok.low_buf (R := P.OUT) (.inr (by simp))
       · exact ok.low_buf (R := P.SCR) (.inr (by simp))
-      · rw [args0]; exact (Lay.fr_low (by omega) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [args0]; exact (Lay.fr_low (by omega_using []) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).symm
       all_goals exact ok.low_buf (.inl (by simp))
     · intro r hr
       simp only [privWrP, privRdP, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -330,8 +330,8 @@ theorem call_vpP (c : CrtImpl) (w : CrtPImpl) :
       · exact ok.fits P.SCR (by simp)
       · rw [hsp]
         show (P.B.setWidth 64).toNat + 88 ≤ 2 ^ 32
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := P.B.isLt; omega)]
-        omega
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := P.B.isLt; omega_using [])]
+        omega_using [fit]
       all_goals exact ok.fits _ (by simp)
   · -- What the callee is given is ours.
     have hs := h.1
@@ -340,7 +340,7 @@ theorem call_vpP (c : CrtImpl) (w : CrtPImpl) :
     have hrw : ∀ R ∈ (P.layP pre L).rw, Covers [R] s.wr := fun R hR =>
       Covers.of_mem fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs.2.inRw hR
     have hA : Covers [⟨P.B.setWidth 64, 88⟩] s.wr := by
-      have := hs.2.inFr (d := 0) (n := 88) (by simp only [frameBytes]; omega)
+      have := hs.2.inFr (d := 0) (n := 88) (by simp only [frameBytes]; omega_using [])
       simp only [Lay.fr, BitVec.add_zero] at this
       exact Covers.one this
     have wr : Covers (privWrP P.B P.out P.scr P.K P.sl) s.wr :=
@@ -352,7 +352,7 @@ theorem call_vpP (c : CrtImpl) (w : CrtPImpl) :
   · rw [show s.gpr .esp = P.B from h.1.2.sp]
     have := h.1.1.BC
     simp only [Proof.Rsa.X86.PrivChecked.stackBytes] at hst
-    omega
+    omega_using [hst, this]
   · have k₁ := h₁.privArgsP.key
     have k₂ := h₂.privArgsP.key
     rw [h₁.1.callN] at k₁
@@ -379,7 +379,7 @@ theorem call_vpP (c : CrtImpl) (w : CrtPImpl) :
         (P.layP pre L).LOW := by
       rw [hsp, ← show (P.layP pre L).B = P.B from rfl, ← ok.low_eq]
       simp only [Proof.Rsa.X86.PrivChecked.stackBytes] at hst
-      exact below_sub (by simp only; omega) ok.BC
+      exact below_sub (by simp only; omega_using [hst]) ok.BC
     have st : (P.layP pre L).St σ s' := hs.2.write fr (fun r hr => by
       simp only [privWrP, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -387,7 +387,7 @@ theorem call_vpP (c : CrtImpl) (w : CrtPImpl) :
       · exact ⟨P.SCR, by simp, fun _ h => h⟩
       · refine ⟨(P.layP pre L).FR, by simp, ?_⟩
         have : (⟨P.B.setWidth 64, 88⟩ : Region) = ⟨(P.layP pre L).fr 0, 88⟩ := by simp
-        rw [this]; exact Offset.sub_base _ (by simp only [frameBytes]; omega)
+        rw [this]; exact Offset.sub_base _ (by simp only [frameBytes]; omega_using [])
       · exact ⟨(P.layP pre L).LOW, by simp, low⟩) rd wr (cs .esp (by simp [calleeSaved]))
     refine ⟨⟨hs.1, st⟩, ?_⟩
     obtain ⟨s₂, m₂, g₂, po⟩ := po

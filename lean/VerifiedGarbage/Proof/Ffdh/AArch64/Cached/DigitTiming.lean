@@ -40,7 +40,7 @@ theorem digit_ct : RelCT isa (Two DigitReady) Comb.digit (fun _ _ => True) := by
    subst r
    exact hs.power.good.x0.trans ht.power.good.x0.symm
  · rintro q s ⟨bs,E,h⟩
-   refine WP.mono (digitArgs_ok h.power.good q.p.room h.controls h.counter (by have := q.positions;omega)) ?_
+   refine WP.mono (digitArgs_ok h.power.good q.p.room h.controls h.counter (by have := q.positions;omega_using [this])) ?_
    rintro t ⟨⟨ptr,len,row,spacing,width,zero,mem⟩,rest⟩
    refine ⟨(rest.gpr .x0 (by decide)).trans h.power.good.x0,?_,bs,h.reads.source.of_mem mem rest,h.reads.length,zero⟩
    exact ⟨ptr,h.reads.length ▸ len,row,spacing,width⟩

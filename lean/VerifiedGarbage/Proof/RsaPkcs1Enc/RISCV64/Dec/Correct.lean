@@ -49,7 +49,7 @@ abbrev lenOf (s : State) (EM : List Byte) (kd : List Byte) : Nat :=
 
 theorem sep_lt (EM : List Byte) {k : Nat} (hk : 0 < k) : (firstZero EM k).getD 0 < k := by
   cases h : firstZero EM k with
-  | none => simp; omega
+  | none => simp; omega_using [hk]
   | some i => exact (Proof.RsaPkcs1Enc.firstZero_some h).2.1
 
 /-- At the end of the body: the output and `*msg_len` written, the result in
@@ -95,17 +95,17 @@ theorem selPart_ok {EM kd : List Byte} {t : State} (hs : SCN s R EM kd t)
     WP isa selPart t (Fin s R EM (amOf s kd) (vOfEM s EM) (decide (R ^^^ BitVec.ofNat 64 1 = 0)) (lenOf s EM kd)) := by
   have hk := h.k2
   have hk64 := h.k1
-  have hsep := sep_lt EM (k := (s.gpr .a4).toNat) (by omega)
+  have hsep := sep_lt EM (k := (s.gpr .a4).toNat) (by omega_using [hk64])
   have hal := Proof.RsaPkcs1Enc.altLength_le (s.gpr .a4).toNat (clOf kd)
-  have o0 := outIn h hs.toPost (i := 0) (by omega)
+  have o0 := outIn h hs.toPost (i := 0) (by omega_using [hk64])
   rw [BitVec.add_zero] at o0
   unfold selPart
-  refine WP.seq (WP.mono (validBlock_ok hs.toPost o0 (outIn h hs.toPost (by omega)) hs.a4 hs.a5 hs.al hs.a6 hs.a7
-    (by omega) hR) fun t₁ ⟨O₁, x1, x2, x4, x3, x6, x5⟩ => ?_)
+  refine WP.seq (WP.mono (validBlock_ok hs.toPost o0 (outIn h hs.toPost (by omega_using [hk64])) hs.a4 hs.a5 hs.al hs.a6 hs.a7
+    (by omega_using [hk, hsep]) hR) fun t₁ ⟨O₁, x1, x2, x4, x3, x6, x5⟩ => ?_)
   -- The values the block computed.
   have e0 : t.mem (s.gpr .a0) = EM.getD 0 1 := by
-    rw [← hs.em, bytes_getD' _ _ (by omega), BitVec.add_zero]
-  have e1 : t.mem (s.gpr .a0 + BitVec.ofNat 64 1) = EM.getD 1 1 := by rw [← hs.em, bytes_getD' _ _ (by omega)]
+    rw [← hs.em, bytes_getD' _ _ (by omega_using [hk64]), BitVec.add_zero]
+  have e1 : t.mem (s.gpr .a0 + BitVec.ofNat 64 1) = EM.getD 1 1 := by rw [← hs.em, bytes_getD' _ _ (by omega_using [hk64])]
   have eL : (if Proof.RsaPkcs1Enc.vOf (EM.getD 0 1) (EM.getD 1 1) (firstZero EM (s.gpr .a4).toNat).isSome
       ((firstZero EM (s.gpr .a4).toNat).getD 0) then s.gpr .a4 - BitVec.ofNat 64 ((firstZero EM (s.gpr .a4).toNat).getD 0) -
         BitVec.ofNat 64 1 else BitVec.ofNat 64 (Spec.RsaPkcs1Enc.altLength (s.gpr .a4).toNat (clOf kd))) =
@@ -114,20 +114,20 @@ theorem selPart_ok {EM kd : List Byte} {t : State} (hs : SCN s R EM kd t)
     split
     · apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, BitVec.toNat_sub_of_le
-          (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega),
-        BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
+          (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsep]), BitVec.toNat_ofNat]; omega_using [hsep]),
+        BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsep]), BitVec.toNat_ofNat,
         BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_using [hsep]
     · rfl
   have hlen : lenOf s EM kd ≤ (s.gpr .a4).toNat := by
-    simp only [lenOf, Proof.RsaPkcs1Enc.lselOf]; split <;> omega
+    simp only [lenOf, Proof.RsaPkcs1Enc.lselOf]; split <;> omega_arith
   simp only [e0, e1] at x4 x6 x5
   rw [eL] at x6 x5
   rw [show s.gpr .a4 - BitVec.ofNat 64 (lenOf s EM kd) = BitVec.ofNat 64 ((s.gpr .a4).toNat - lenOf s EM kd) by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hlen]), BitVec.toNat_ofNat,
       BitVec.toNat_ofNat]
-    omega] at x5
+    omega_using [hlen]] at x5
   have hc₁ : Fr3 s R t₁ := hs.toPost.fr3.only O₁
   -- `*msg_len`.
   refine WP.seq (WP.mono (outInit_ok h hc₁) fun t₂ ⟨hc₂, m₂, x0, xa1, K₂⟩ => ?_)
@@ -152,15 +152,15 @@ theorem selPart_ok {EM kd : List Byte} {t : State} (hs : SCN s R EM kd t)
       a7 := by rw [K₂.gpr _ (by decide), O₁.get .a7, hs.a7]
       done := fun j hj => absurd hj (Nat.not_lt_zero _)
       todo := fun j _ hj => by
-        rw [show s.gpr .a0 = (oR s).base from rfl, bk (oR s) h.om (by show (s.gpr .a1).toNat ≤ 2 ^ 64; omega) j
-          (by show j < (s.gpr .a1).toNat; omega), show (oR s).base = s.gpr .a0 from rfl, ← hs.em, bytes_getD' _ _ hj]
+        rw [show s.gpr .a0 = (oR s).base from rfl, bk (oR s) h.om (by show (s.gpr .a1).toNat ≤ 2 ^ 64; omega_using []) j
+          (by show j < (s.gpr .a1).toNat; omega_using [h4, hj]), show (oR s).base = s.gpr .a0 from rfl, ← hs.em, bytes_getD' _ _ hj]
       am := fun j hj => by
         rw [show scA s sAM = (⟨scA s sAM, (s.gpr .a4).toNat⟩ : Region).base from rfl,
-          bk ⟨scA s sAM, (s.gpr .a4).toNat⟩ ((h.ms.symm.sub_left (scSub h (by unfold sAM scrBytes; omega))))
-            (by show (s.gpr .a4).toNat ≤ 2 ^ 64; omega) j hj]
+          bk ⟨scA s sAM, (s.gpr .a4).toNat⟩ ((h.ms.symm.sub_left (scSub h (by unfold sAM scrBytes; omega_using [hk]))))
+            (by show (s.gpr .a4).toNat ≤ 2 ^ 64; omega_using []) j hj]
         have ham : Spec.Rsa.bytesAt t.mem (scA s sAM) (s.gpr .a4).toNat = amOf s kd := hs.am
         rw [← ham, bytes_getD' _ _ hj] }
-  refine WP.seq (WP.mono (selLoop_ok h (by omega) h0 (by rw [K₂.gpr _ (by decide), x2])) fun t₃ h₃ => ?_)
+  refine WP.seq (WP.mono (selLoop_ok h (by omega_using [hk]) h0 (by rw [K₂.gpr _ (by decide), x2])) fun t₃ h₃ => ?_)
   refine WP.mono (finish_ok h h₃.toFr3) fun u ⟨ua, u0, um⟩ => ⟨ua, u0, fun i hi => ?_, ?_⟩
   · rw [um]; exact h₃.done i hi
   · rw [um]; exact h₃.ml
@@ -190,7 +190,7 @@ def fnPost (s s' : State) : Prop :=
 theorem zx_setWidth (x : BitVec 64) : (zx x).setWidth 32 = x.setWidth 32 := by
   apply BitVec.eq_of_toNat_eq
   simp only [zx, BitVec.toNat_setWidth]
-  omega
+  omega_using []
 
 theorem zx_one (x : BitVec 64) : decide (zx x ^^^ BitVec.ofNat 64 1 = 0) = decide (x.setWidth 32 = 1) := by
   have : zx x ^^^ BitVec.ofNat 64 1 = 0 ↔ x.setWidth 32 = 1 := by
@@ -202,7 +202,7 @@ theorem zx_one (x : BitVec 64) : decide (zx x ^^^ BitVec.ofNat 64 1 = 0) = decid
 
 theorem zx_lt (x : BitVec 64) : (zx x ^^^ BitVec.ofNat 64 1).toNat < 2 ^ 63 := by
   rw [BitVec.toNat_xor, BitVec.toNat_ofNat]
-  have : (zx x).toNat < 2 ^ 32 := by simp only [zx, BitVec.toNat_setWidth]; omega
+  have : (zx x).toNat < 2 ^ 32 := by simp only [zx, BitVec.toNat_setWidth]; omega_using []
   exact Nat.lt_of_lt_of_le (Nat.xor_lt_two_pow (n := 32) this (by decide)) (by decide)
 
 /-- RSADP, as the specification calls the private-key operation. -/
@@ -246,11 +246,11 @@ theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : St
     rw [hO] at hres
     obtain ⟨hr, hb⟩ := hres
     have hok : decide (zx x ^^^ BitVec.ofNat 64 1 = 0) = true := by rw [zx_one, hr]; rfl
-    rw [Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by rw [hn]; omega) hO]
+    rw [Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by rw [hn]; omega_using [hk]) hO]
     subst hb
     have hEMl := Proof.Rsa.bytesAt_length' mc (s.gpr .a0) (s.gpr .a4).toNat
     have hal := Proof.RsaPkcs1Enc.altLength_le (s.gpr .a4).toNat (clOf kd)
-    obtain ⟨hL1, hmap⟩ := Proof.RsaPkcs1Enc.sel_eq hEMl hAM (by omega) hal
+    obtain ⟨hL1, hmap⟩ := Proof.RsaPkcs1Enc.sel_eq hEMl hAM (by omega_using [hk]) hal
     have hM : Spec.RsaPkcs1Enc.implicitDecode (dBytes s) (cOf s) (Spec.Rsa.bytesAt mc (s.gpr .a0) (s.gpr .a4).toNat) =
         (if Spec.RsaPkcs1Enc.valid (Spec.Rsa.bytesAt mc (s.gpr .a0) (s.gpr .a4).toNat) then
           Spec.RsaPkcs1Enc.lastN (Spec.RsaPkcs1Enc.msgLength (Spec.Rsa.bytesAt mc (s.gpr .a0) (s.gpr .a4).toNat))
@@ -276,7 +276,7 @@ theorem result_ok {s : State} (h : DPre pc s) {x : BitVec 64} {mc : Mem} {t : St
     rw [hO] at hres
     obtain ⟨hr, -⟩ := hres
     have hok : decide (zx x ^^^ BitVec.ofNat 64 1 = 0) = false := by rw [zx_one, hr]; rfl
-    rw [Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by rw [hn]; omega) hO]
+    rw [Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by rw [hn]; omega_using [hk]) hO]
     refine ⟨by rw [hx, zx_setWidth, hr], ?_, ?_⟩
     · rw [hbytes, List.map_congr_left (g := fun _ => (0 : Byte)) fun i hi => by
         rw [hout i (List.mem_range.mp hi), hok, Proof.RsaPkcs1Enc.outByte_false]]
@@ -288,7 +288,7 @@ theorem codeG_correct (s : State) (h : DPre pc s) (X : pc = true → PreX s) :
   show WP isa (codeG pc) s fun t => abiPreserved s t ∧ fnPost s t
   have hk := h.k2
   unfold codeG
-  refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega) ?_
+  refine WP.allocLe ⟨by decide, by decide, by decide⟩ (by have := h.sp1; unfold stackBytes at this; omega_using [this]) ?_
   unfold body
   refine WP.seq (WP.mono (setup_ok h) fun t₁ A => ?_)
   refine WP.seq (call_ok h X A fun t₂ A₂ => ?_)

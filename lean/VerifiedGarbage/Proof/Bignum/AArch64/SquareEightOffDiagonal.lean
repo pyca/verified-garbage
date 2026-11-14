@@ -14,7 +14,7 @@ private theorem pending_power (i j : Nat) :
     2 ^ (64*i) * 2 ^ (64*i) * (2 ^ 64) ^ j = 2 ^ (64*(2*i+j)) := by
   rw [← Nat.pow_mul, ← Nat.pow_add, ← Nat.pow_add]
   congr 1
-  omega
+  omega_using []
 
 private theorem pending_scale {w r p c a b term : Nat}
     (hp : w*w*r = p) (hl : a+w*(w*r*c) = b+w*term+w*0) : a+p*c = b+w*term := by
@@ -44,7 +44,7 @@ theorem offDiagonal_ok {s : State} {B : Addr} {Z eQ eT eN k : Nat}
   · refine WP.ite true (by
       rw [eval_nonzero, h15, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk]
       simp [hz]) (fun _ => ?_) (by simp)
-    exact productColumns_ok hs h8 h7 h10 h16 h17 h15 hQ hT hN hQT hNT (by omega) hk
+    exact productColumns_ok hs h8 h7 h10 h16 h17 h15 hQ hT hN hQT hNT (by omega_using [hz]) hk
 
 /-- Lift the off-diagonal products and their pending carry to the full
 square buffer, including every untouched word. -/
@@ -61,12 +61,12 @@ theorem offDiagonal_full {s : State} {B : Addr} {Z eQ eT eN i n : Nat}
         wv s.mem B eT n + 2 ^ (64*(8*i))*(wv s.mem B eQ 8 * wv s.mem B eN (8*i)) ∧
       Outside B (eT+64*i) (64*(i+1)) s.mem t.mem ∧ Keep productColumnRegs s t := by
   have hn := hs.nowrap
-  refine WP.mono (offDiagonal_ok hs h8 h7 h10 h16 h17 h15 hQ (by omega) hN
-    (by omega) (by omega) hi) fun t ht => ?_
+  refine WP.mono (offDiagonal_ok hs h8 h7 h10 h16 h17 h15 hQ (by omega_using [hT, hin]) hN
+    (by omega_using [hQT, hin]) (by omega_using [hNT, hin]) hi) fun t ht => ?_
   have hf := ProductEight.wv_window_delta (n := n) (j := 8*i) (k := 8*(i+1))
-    (by omega : eT+8*n ≤ 2 ^ 64) (by omega)
-    (by simpa only [show 8*(8*i) = 64*i by omega, show 8*(8*(i+1)) = 64*(i+1) by omega] using ht.frame)
-  simp only [show 8*(8*i) = 64*i by omega] at hf
+    (by omega_using [hT, hn] : eT+8*n ≤ 2 ^ 64) (by omega_using [hin])
+    (by simpa only [show 8*(8*i) = 64*i by omega_using [], show 8*(8*(i+1)) = 64*(i+1) by omega_using []] using ht.frame)
+  simp only [show 8*(8*i) = 64*i by omega_using []] at hf
   have hv := ht.value
   have heq : wv t.mem B (eT+64*i) (8*(i+1)) +
       (2 ^ (64*(8*i)) * (2 ^ 64) ^ 8) * (t.gpr .x10).toNat =
@@ -74,7 +74,7 @@ theorem offDiagonal_full {s : State} {B : Addr} {Z eQ eT eN i n : Nat}
     hv.trans (Nat.add_zero _).symm
   have hl := ProductEight.window_lift hf heq
   have hp : (2 ^ (64*(8*i)) * 2 ^ (64*(8*i))) * (2 ^ 64) ^ 8 = 2 ^ (64*(16*i+8)) := by
-    simpa only [show 2*(8*i) = 16*i by omega] using pending_power (8*i) 8
+    simpa only [show 2*(8*i) = 16*i by omega_using []] using pending_power (8*i) 8
   exact ⟨pending_scale hp hl, ht.frame, ht.keep⟩
 
 end VG.Proof.Bignum.AArch64.SquareEight

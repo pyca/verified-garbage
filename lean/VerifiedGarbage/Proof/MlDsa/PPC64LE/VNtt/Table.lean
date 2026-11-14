@@ -98,7 +98,7 @@ theorem zeta_lt (m : Nat) : zeta m < Spec.MlDsa.q := Nat.mod_lt _ (by decide)
 theorem shoup_lt {z : Nat} (hz : z < Spec.MlDsa.q) : shoup z < 2 ^ 32 := by
   unfold shoup q
   have : z * 2 ^ 32 < 8380417 * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hz (by decide)
-  omega
+  omega_using [this]
 
 /-- Multiplying by `c` with an inverse `d` modulo `q` keeps a residue nonzero. -/
 theorem mul_mod_ne {c d x : Nat} (hcd : c * d % 8380417 = 1) (hx : x % 8380417 ≠ 0) : c * x % 8380417 ≠ 0 := by
@@ -122,38 +122,38 @@ theorem zeta_nz (k : Nat) : zeta k * 2 ^ 32 % 8380417 ≠ 0 := by
 /-- `z` from `z'`: `⌊z' · q / 2³²⌋ + 1`. -/
 theorem zrec {z : Nat} (hnz : z * 2 ^ 32 % 8380417 ≠ 0) : shoup z * 8380417 / 2 ^ 32 + 1 = z := by
   unfold shoup q
-  omega
+  omega_using [hnz]
 
 /-! ## Positions -/
 
 theorem flip_eq {e : Nat} (he : e < 4) : swap1 e = e ^^^ 1 := by
-  rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [he] : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;> rfl
 
-theorem flip_lt {e : Nat} (he : e < 4) : swap1 e < 4 := by unfold swap1; split <;> omega
+theorem flip_lt {e : Nat} (he : e < 4) : swap1 e < 4 := by unfold swap1; split <;> omega_arith
 
 theorem scrK_wide {k : Nat} (h : k < 64) : scrK k = k := by
   unfold scrK; rw [ite_eq_left h]
 
 theorem scrK_two {g r : Nat} (hg : g < 16) (hr : r < 4) : scrK (64 + 4 * g + swap1 r) = 64 + 4 * g + r := by
   unfold scrK swap1
-  rw [ite_eq_right (by split <;> omega), ite_eq_left (by split <;> omega)]
-  split <;> split <;> omega
+  rw [ite_eq_right (by split <;> omega_using []), ite_eq_left (by split <;> omega_arith)]
+  split <;> split <;> omega_arith
 
 theorem scrK_even {g r : Nat} (hg : g < 16) (hr : r < 4) :
     scrK (128 + 8 * g + swap1 r) = 128 + 8 * g + 2 * r := by
   unfold scrK swap1
-  rw [ite_eq_right (by split <;> omega), ite_eq_right (by split <;> omega), ite_eq_left (by split <;> omega)]
-  split <;> split <;> omega
+  rw [ite_eq_right (by split <;> omega_using []), ite_eq_right (by split <;> omega_using []), ite_eq_left (by split <;> omega_arith)]
+  split <;> split <;> omega_arith
 
 theorem scrK_odd {g r : Nat} (hg : g < 16) (hr : r < 4) :
     scrK (132 + 8 * g + swap1 r) = 128 + 8 * g + 2 * r + 1 := by
   unfold scrK swap1
-  rw [ite_eq_right (by split <;> omega), ite_eq_right (by split <;> omega), ite_eq_right (by split <;> omega)]
-  split <;> split <;> omega
+  rw [ite_eq_right (by split <;> omega_using []), ite_eq_right (by split <;> omega_using []), ite_eq_right (by split <;> omega_arith)]
+  split <;> split <;> omega_arith
 
 theorem scrK_lt {p : Nat} (hp : p < 256) : scrK p < 256 := by
   unfold scrK swap1; repeat' split
-  all_goals omega
+  all_goals omega_arith
 
 /-! ## Storing the table -/
 
@@ -162,10 +162,10 @@ theorem loadImm_lo_bits (a b : BitVec 16) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_signExtend, BitVec.getLsbD_append, hi,
-    decide_true, Bool.true_and, show i < 64 by omega]
+    decide_true, Bool.true_and, show i < 64 by omega_using [hi]]
   by_cases h : i < 16
   · simp [h]
-  · simp [h, BitVec.getLsbD_of_ge b i (by omega)]
+  · simp [h, BitVec.getLsbD_of_ge b i (by omega_using [h])]
 
 theorem loadImm_lo {v : Nat} (hv : v < 2 ^ 32) :
     ((BitVec.ofNat 16 (v / 65536) ++ (0 : BitVec 16)).signExtend 64 |||
@@ -193,7 +193,7 @@ structure FillInv (K : Nat → Nat) (s₀ : State) (k : Nat) (s : State) : Prop 
 theorem fill_ok (K : Nat → Nat) {s₀ : State} (hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 4) :
     WP isa (.block (fillK K)) s₀ (FillInv K s₀ 255) := by
   refine wp_range_flatMap (M := isa) (FillInv K s₀) (fun k s hk h => ?_) 255 (Nat.le_refl _) s₀
-    ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun p hp hp' => absurd hp' (by omega)⟩
+    ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun p hp hp' => absurd hp' (by omega_using [hp])⟩
   have hv := shoup_lt (zeta_lt (K (k + 1)))
   let s₁ := s.write .r12 ((BitVec.ofNat 16 (shoup (zeta (K (k + 1))) / 65536) ++ (0 : BitVec 16)).signExtend 64)
   let s₂ := s₁.write .r12 (s₁.gpr .r12 ||| (BitVec.ofNat 16 (shoup (zeta (K (k + 1))) % 65536)).setWidth 64)
@@ -201,19 +201,19 @@ theorem fill_ok (K : Nat → Nat) {s₀ : State} (hwr : ∀ p < 256, InRegions s
     simp only [s₂, s₁, State.write, ite_true]; exact loadImm_lo hv
   have e : s₂.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1)) = s₀.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1)) := by
     simp only [s₂, s₁, State.write, reduceCtorEq, ite_false, h.gpr .r4 (by decide)]
-  refine WP.cons exec_lis (WP.cons exec_ori (WP.cons (exec_store_w (by decide) (show 4 * (k + 1) < 2 ^ 15 by omega)
-    (by show InRegions s₂.wr _ 4; rw [e]; exact h.wr ▸ hwr (k + 1) (by omega))) (wp_nil ?_)))
+  refine WP.cons exec_lis (WP.cons exec_ori (WP.cons (exec_store_w (by decide) (show 4 * (k + 1) < 2 ^ 15 by omega_using [hk])
+    (by show InRegions s₂.wr _ 4; rw [e]; exact h.wr ▸ hwr (k + 1) (by omega_using [hk]))) (wp_nil ?_)))
   show FillInv K s₀ (k + 1)
     { s₂ with mem := (s₂.mem.writeW (s₂.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1))) ((s₂.gpr .r12).setWidth 32)) }
   rw [e, v2]
   refine ⟨fun r hr => ?_, h.vpr, h.rd, h.wr, h.sp, h.lr, h.syms, ?_, fun p hp hp' => ?_⟩
   · simp only [s₂, s₁, State.write, hr, ite_false]; exact h.gpr r hr
-  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   · show (s.mem.writeW _ _).readW _ 32 = _
     by_cases ep : p = k + 1
     · subst ep; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.tab p hp (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [ep]) (by omega_using [hk, hp']) (by omega_using [hk])) (by decide)]
+      exact h.tab p hp (by omega_using [hp', ep])
 
 /-! ## The constants -/
 
@@ -251,7 +251,7 @@ theorem vword_append (x y : BitVec 64) :
   · apply BitVec.eq_of_getLsbD_eq
     intro r hr
     simp only [vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hr, decide_true, Bool.true_and]
-    split <;> first | omega | exact congrArg _ (by omega)
+    split <;> first | omega | exact congrArg _ (by omega_using [])
 
 /-- The state the constants leave. -/
 structure ConstsOut (u t : State) : Prop where
@@ -346,8 +346,8 @@ theorem zcalc_run (u : State) (hq : ∀ i < 4, (vword (u.vpr .v4) i).toNat = Spe
     have hs : shoup (z i) * Spec.MlDsa.q / 2 ^ 32 < 2 ^ 32 - 1 := by
       generalize shoup (z i) = x at h1 ⊢
       show x * 8380417 / 2 ^ 32 < 2 ^ 32 - 1
-      omega
-    rw [show (BitVec.ofInt 32 1).toNat = 1 from rfl, Nat.mod_eq_of_lt (by omega)]
+      omega_using [h1]
+    rw [show (BitVec.ofInt 32 1).toNat = 1 from rfl, Nat.mod_eq_of_lt (by omega_using [hs])]
     exact zrec (hz i hi)
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2, ite_false]

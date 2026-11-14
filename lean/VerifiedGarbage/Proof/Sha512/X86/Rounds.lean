@@ -157,9 +157,9 @@ theorem wp_ld {l h : Reg} {B : BitVec 32} {off N : Nat} (hl : l ≠ .esi) (hlh :
     (k : ∀ s', Only [l, h] s s' → Pair s' l h (rd64 s.mem B off) → WP isa (.block rest) s' Q) :
     WP isa (.block (ld l h off ++ rest)) s Q := by
   simp only [ld, sc, List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_mem hb (mem_rd (hA off (by omega)))) fun s₁ u₁ => ?_
+  refine wp_movS (readSrc_mem hb (mem_rd (hA off (by omega_using [ho])))) fun s₁ u₁ => ?_
   refine wp_movS (readSrc_mem (by rw [u₁.other _ (Ne.symm hl), hb])
-    (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA (off + 4) (by omega)))) fun s₂ u₂ =>
+    (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA (off + 4) (by omega_using [ho])))) fun s₂ u₂ =>
     k s₂ ((Only.of_upd u₁).trans (Only.of_upd u₂)) ⟨?_, ?_⟩
   · rw [u₂.other l hlh, u₁.gpr, lo_rd64]
   · rw [u₂.gpr, u₁.mem, hi_rd64]
@@ -169,8 +169,8 @@ theorem wp_st {l h : Reg} {B : BitVec 32} {off N : Nat} {x : BitVec 64}
     (k : ∀ s', Mupd s s' (write64 s.mem B off x) → WP isa (.block rest) s' Q) :
     WP isa (.block (st l h off ++ rest)) s Q := by
   simp only [st, List.cons_append, List.nil_append]
-  refine wp_store (ea_of hb _) (hA off (by omega)) fun s₁ u₁ => ?_
-  refine wp_store (ea_of (by rw [u₁.gpr, hb]) _) (by rw [u₁.wr]; exact hA (off + 4) (by omega))
+  refine wp_store (ea_of hb _) (hA off (by omega_using [ho])) fun s₁ u₁ => ?_
+  refine wp_store (ea_of (by rw [u₁.gpr, hb]) _) (by rw [u₁.wr]; exact hA (off + 4) (by omega_using [ho]))
     fun s₂ u₂ => k s₂ ⟨u₂.gpr.trans u₁.gpr, ?_, u₂.rd.trans u₁.rd, u₂.wr.trans u₁.wr⟩
   rw [u₂.mem, u₁.mem, u₁.gpr, hp.1, hp.2]; rfl
 
@@ -190,9 +190,9 @@ theorem wp_add64m {dl dh : Reg} {x : BitVec 64} {B : BitVec 32} {off N : Nat} (h
     (k : ∀ s', Only [dl, dh] s s' → Pair s' dl dh (x + rd64 s.mem B off) → WP isa (.block rest) s' Q) :
     WP isa (.block (add64m dl dh off ++ rest)) s Q := by
   simp only [add64m, sc, List.cons_append, List.nil_append]
-  refine wp_addS (readSrc_mem hb (mem_rd (hA off (by omega)))) fun s₁ u₁ hc => ?_
+  refine wp_addS (readSrc_mem hb (mem_rd (hA off (by omega_using [ho])))) fun s₁ u₁ hc => ?_
   refine wp_adcS (readSrc_mem (by rw [u₁.other _ (Ne.symm h₂), hb])
-    (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA (off + 4) (by omega)))) hc fun s₂ u₂ =>
+    (by rw [u₁.rd, u₁.wr]; exact mem_rd (hA (off + 4) (by omega_using [ho])))) hc fun s₂ u₂ =>
     k s₂ ((Only.of_upd u₁).trans (Only.of_upd u₂)) ⟨?_, ?_⟩
   · rw [u₂.other dl h₁, u₁.gpr, px.1, lo_add, lo_rd64]
   · rw [u₂.gpr, carry_eq, u₁.other dh (Ne.symm h₁), u₁.mem, px.1, px.2, hi_add, lo_rd64, hi_rd64]
@@ -205,7 +205,7 @@ open VG.Proof.Sha256.X86.Stream (readW_writeW_addr) in
 theorem rd64_write64_self (m : Mem) {b : BitVec 32} {o : Nat} (x : BitVec 64)
     (h : b.toNat + o + 8 ≤ 2 ^ 32) : rd64 (write64 m b o x) b o = x := by
   simp only [rd64, write64]
-  rw [Mem.readW_writeW_self32, readW_writeW_addr _ _ (by omega) (by omega) (by omega),
+  rw [Mem.readW_writeW_self32, readW_writeW_addr _ _ (by omega_using [h]) (by omega_using [h]) (by omega_using []),
     Mem.readW_writeW_self32, hi_append_lo]
 
 open VG.Proof.Sha256.X86.Stream (readW_writeW_addr) in
@@ -213,10 +213,10 @@ theorem rd64_write64_ne (m : Mem) {b : BitVec 32} {o o' : Nat} (x : BitVec 64)
     (h : b.toNat + o + 8 ≤ 2 ^ 32) (h' : b.toNat + o' + 8 ≤ 2 ^ 32) (hs : o + 8 ≤ o' ∨ o' + 8 ≤ o) :
     rd64 (write64 m b o x) b o' = rd64 m b o' := by
   simp only [rd64, write64]
-  rw [readW_writeW_addr _ _ (by omega) (by omega) (by omega),
-    readW_writeW_addr _ _ (by omega) (by omega) (by omega),
-    readW_writeW_addr _ _ (by omega) (by omega) (by omega),
-    readW_writeW_addr _ _ (by omega) (by omega) (by omega)]
+  rw [readW_writeW_addr _ _ (by omega_using [h']) (by omega_using [h]) (by omega_using [hs]),
+    readW_writeW_addr _ _ (by omega_using [h']) (by omega_using [h]) (by omega_using [hs]),
+    readW_writeW_addr _ _ (by omega_using [h']) (by omega_using [h]) (by omega_using [hs]),
+    readW_writeW_addr _ _ (by omega_using [h']) (by omega_using [h]) (by omega_using [hs])]
 
 /-! ## The message schedule -/
 
@@ -249,18 +249,18 @@ open VG.Proof.Sha256.X86.Stream (contains_addr)
 theorem frame_write64 {rs : List Region} {m m' : Mem} (h : Frame rs m m') {b : BitVec 32} {N o : Nat}
     (hr : ⟨b.setWidth 64, N⟩ ∈ rs) (hfit : b.toNat + N ≤ 2 ^ 32) (ho : o + 8 ≤ N) (x : BitVec 64) :
     Frame rs m (write64 m' b o x) :=
-  (h.writeW hr _ (contains_addr (by omega) (by omega) hfit)).writeW hr _
-    (contains_addr (by omega) (by omega) hfit)
+  (h.writeW hr _ (contains_addr (by omega_using [ho]) (by omega_using []) hfit)).writeW hr _
+    (contains_addr (by omega_using [ho]) (by omega_using []) hfit)
 
 theorem Acc.of_mem {wr : List Region} {B : BitVec 32} {N : Nat} (h : ⟨B.setWidth 64, N⟩ ∈ wr)
     (hfit : B.toNat + N ≤ 2 ^ 32) : Acc wr B N :=
-  fun _ ho => ⟨_, h, contains_addr ho (by omega) hfit⟩
+  fun _ ho => ⟨_, h, contains_addr ho (by omega_using []) hfit⟩
 
 theorem rd64_frame {rs : List Region} {m m' : Mem} (h : Frame rs m m') {b : BitVec 32} {N o : Nat}
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨b.setWidth 64, N⟩ r) (hfit : b.toNat + N ≤ 2 ^ 32) (ho : o + 8 ≤ N) :
     rd64 m' b o = rd64 m b o := by
   simp only [rd64]
-  rw [h.readW (contains_addr (by omega) (by omega) hfit) hd (by decide),
-    h.readW (contains_addr (by omega) (by omega) hfit) hd (by decide)]
+  rw [h.readW (contains_addr (by omega_using [ho]) (by omega_using []) hfit) hd (by decide),
+    h.readW (contains_addr (by omega_using [ho]) (by omega_using []) hfit) hd (by decide)]
 
 end VG.Proof.Sha512.X86

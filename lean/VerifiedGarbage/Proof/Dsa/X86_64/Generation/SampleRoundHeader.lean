@@ -16,22 +16,22 @@ entire iteration. Counters and the result status are intentionally omitted. -/
 theorem sampleRound_header_ranges {w k : Nat}
     (hk : k = 16 ∨ k = 17 ∨ k = 18 ∨ k = 19 ∨ k = 23 ∨ k = 24 ∨ k = 25) :
     ∀ r ∈ sampleRoundRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  have hsmall : k < 32 := by omega
-  have hne : k ≠ 22 ∧ k ≠ 26 ∧ k ≠ 27 ∧ k ≠ 28 ∧ k ≠ 31 := by omega
+  have hsmall : k < 32 := by omega_using [hk]
+  have hne : k ≠ 22 ∧ k ≠ 26 ∧ k ≠ 27 ∧ k ≠ 28 ∧ k ≠ 31 := by omega_using [hk]
   intro r hr
   simp only [sampleRoundRanges, List.mem_append] at hr
   rcases hr with (hr | hr) | hr
   · simp only [testRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · left; simp only [slot, hdrBytes]; omega
-    · left; simp only [slot, hdrBytes]; omega
-    · left; change 8 * k + 8 ≤ 240; omega
+    · left; simp only [slot, hdrBytes]; omega_using [hk]
+    · left; simp only [slot, hdrBytes]; omega_using [hk]
+    · left; change 8 * k + 8 ≤ 240; omega_using [hk]
   · exact round_header_ranges hsmall hne r hr
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
       dsimp only [VG.Impl.RsaKeyGen.X86_64.Candidate.kI, VG.Impl.RsaKeyGen.X86_64.Candidate.kElen,
         VG.Impl.RsaKeyGen.X86_64.Candidate.kUni, VG.Impl.RsaKeyGen.X86_64.Candidate.kP,
-        VG.Impl.RsaKeyGen.X86_64.Candidate.kStat, sFn] <;> omega
+        VG.Impl.RsaKeyGen.X86_64.Candidate.kStat, sFn] <;> omega_using [hk]
 
 open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.MillerRabin VG.Proof.MillerRabin.X86_64
 open VG.Proof.Ffdh.X86_64.ParameterCandidate
@@ -42,6 +42,6 @@ theorem sampleRoundRanges_le (w : Nat) : ∀ r ∈ sampleRoundRanges w, r.1 + r.
     List.nil_append, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
     Caller.pad, slot, hdrBytes, aR1, aAcc, aTmp, aXm, kU, kI, kUni, kStat,
     kElen, kP, sFn, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
-  and_intros <;> omega
+  and_intros <;> omega_using []
 
 end VG.Proof.Dsa.X86_64.Generation

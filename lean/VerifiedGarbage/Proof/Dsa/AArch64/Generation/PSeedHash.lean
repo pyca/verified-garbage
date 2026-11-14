@@ -69,7 +69,7 @@ theorem pSeedHash_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.st
   have hfs : Frame [⟨op, len⟩, ⟨S, oRsa⟩, retR F] s.mem v.mem := by
     intro a ha
     rw [hf a (fun i hi => fun he => ha ⟨op, len⟩ (by simp) (he ▸
-      Offset.contains_base op (by omega) (by omega))), hm]
+      Offset.contains_base op (by omega_using [hi]) (by omega_using [hlen, hi]))), hm]
   have hfinal := hfs.trans (hft.mono (by simp))
   have k := ku.trans kv
   refine ⟨Lt, ⟨step.rd.trans k.rd, step.wr.trans k.wr, step.sp.trans k.sp, ?_,

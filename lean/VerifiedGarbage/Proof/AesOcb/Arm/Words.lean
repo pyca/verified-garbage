@@ -121,7 +121,7 @@ theorem copy16_wp {sO dO : Nat} {t : State} {W : Addr} (h11 : State.addr (t.gpr 
     WP isa (.block (copy16 sO dO)) t (Ran [.r0, .r1, .r2, .r3]
       (copyMem t.mem (W + BitVec.ofNat 64 sO) (W + BitVec.ofNat 64 dO)) t) := by
   have ea : ∀ k, k < 2560 → State.addr (t.gpr .r11 + BitVec.ofNat 32 k) = W + BitVec.ofNat 64 k := fun k hk => by
-    rw [addr_add (by omega), h11]
+    rw [addr_add (by omega_using [fw, hk]), h11]
   have r₀ : InRegions (t.rd ++ t.wr) (W + BitVec.ofNat 64 sO) 4 := Proof.CmacAes.Arm.in_word0 rS
   have r₁ := Proof.CmacAes.Arm.in_word rS (i := 4) (by decide)
   have r₂ := Proof.CmacAes.Arm.in_word rS (i := 8) (by decide)
@@ -132,18 +132,18 @@ theorem copy16_wp {sO dO : Nat} {t : State} {W : Addr} (h11 : State.addr (t.gpr 
   have w₂ := Proof.CmacAes.Arm.in_word wD (i := 8) (by decide)
   have w₃ := Proof.CmacAes.Arm.in_word wD (i := 12) (by decide)
   rw [Offset.add_add] at w₁ w₂ w₃
-  have o₀ : sO < 4096 := by omega
-  have o₁ : sO + 4 < 4096 := by omega
-  have o₂ : sO + 8 < 4096 := by omega
-  have o₃ : sO + 12 < 4096 := by omega
-  have d₀ : dO < 4096 := by omega
-  have d₁ : dO + 4 < 4096 := by omega
-  have d₂ : dO + 8 < 4096 := by omega
-  have d₃ : dO + 12 < 4096 := by omega
+  have o₀ : sO < 4096 := by omega_using [hs]
+  have o₁ : sO + 4 < 4096 := by omega_using [hs]
+  have o₂ : sO + 8 < 4096 := by omega_using [hs]
+  have o₃ : sO + 12 < 4096 := by omega_using [hs]
+  have d₀ : dO < 4096 := by omega_using [hd]
+  have d₁ : dO + 4 < 4096 := by omega_using [hd]
+  have d₂ : dO + 8 < 4096 := by omega_using [hd]
+  have d₃ : dO + 12 < 4096 := by omega_using [hd]
   refine WP.of_runBlock ⟨_, by
     simp only [copy16]
-    orun [o₀, o₁, o₂, o₃, d₀, d₁, d₂, d₃, ea sO (by omega), ea (sO + 4) (by omega), ea (sO + 8) (by omega), ea (sO + 12) (by omega), ea dO (by omega),
-      ea (dO + 4) (by omega), ea (dO + 8) (by omega), ea (dO + 12) (by omega), r₀, r₁, r₂, r₃, w₀, w₁, w₂,
+    orun [o₀, o₁, o₂, o₃, d₀, d₁, d₂, d₃, ea sO (by omega_using [hs']), ea (sO + 4) (by omega_using [hs']), ea (sO + 8) (by omega_using [hs']), ea (sO + 12) (by omega_using [hs']), ea dO (by omega_using [hd']),
+      ea (dO + 4) (by omega_using [hd']), ea (dO + 8) (by omega_using [hd']), ea (dO + 12) (by omega_using [hd']), r₀, r₁, r₂, r₃, w₀, w₁, w₂,
       w₃, hs, hd], ⟨?_, by others_tac, by rfl, by rfl, by rfl⟩⟩
   simp only [mem_setReg, mem_store, copyMem, Proof.Cmac.store4, Offset.add_add]
 
@@ -178,8 +178,8 @@ theorem mask_eq (b : BitVec 32) :
       ((0 : BitVec 32) - (b >>> 31)) &&& 0x87 := by
   have h : b >>> 31 = 0 ∨ b >>> 31 = 1 := by
     have : (b >>> 31).toNat < 2 := by
-      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := b.isLt; omega
-    rcases (show (b >>> 31).toNat = 0 ∨ (b >>> 31).toNat = 1 by omega) with h | h
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := b.isLt; omega_using []
+    rcases (show (b >>> 31).toNat = 0 ∨ (b >>> 31).toNat = 1 by omega_using [this]) with h | h
     · exact .inl (BitVec.eq_of_toNat_eq h)
     · exact .inr (BitVec.eq_of_toNat_eq h)
   rcases h with h | h <;> rw [h] <;> decide
@@ -196,9 +196,9 @@ theorem dbl_wp {b : Reg} {sO dO : Nat} {t : State} {P W : Addr} (hb : b ≠ .r0 
       (dblMem t.mem (P + BitVec.ofNat 64 sO) (W + BitVec.ofNat 64 dO)) t) := by
   obtain ⟨b0, b1, b2⟩ := hb
   have eb : ∀ k, k ≤ sO + 12 → State.addr (t.gpr b + BitVec.ofNat 32 k) = P + BitVec.ofNat 64 k := fun k hk => by
-    rw [addr_add (by omega), hP]
+    rw [addr_add (by omega_using [fb, hk]), hP]
   have ew : ∀ k, k ≤ dO + 12 → State.addr (t.gpr .r11 + BitVec.ofNat 32 k) = W + BitVec.ofNat 64 k := fun k hk => by
-    rw [addr_add (by omega), h11]
+    rw [addr_add (by omega_using [fw, hk]), h11]
   have r₀ : InRegions (t.rd ++ t.wr) (P + BitVec.ofNat 64 sO) 4 := Proof.CmacAes.Arm.in_word0 rS
   have r₁ := Proof.CmacAes.Arm.in_word rS (i := 4) (by decide)
   have r₂ := Proof.CmacAes.Arm.in_word rS (i := 8) (by decide)
@@ -209,18 +209,18 @@ theorem dbl_wp {b : Reg} {sO dO : Nat} {t : State} {P W : Addr} (hb : b ≠ .r0 
   have w₂ := Proof.CmacAes.Arm.in_word wD (i := 8) (by decide)
   have w₃ := Proof.CmacAes.Arm.in_word wD (i := 12) (by decide)
   rw [Offset.add_add] at w₁ w₂ w₃
-  have o₀ : sO < 4096 := by omega
-  have o₁ : sO + 4 < 4096 := by omega
-  have o₂ : sO + 8 < 4096 := by omega
-  have o₃ : sO + 12 < 4096 := by omega
-  have d₀ : dO < 4096 := by omega
-  have d₁ : dO + 4 < 4096 := by omega
-  have d₂ : dO + 8 < 4096 := by omega
-  have d₃ : dO + 12 < 4096 := by omega
+  have o₀ : sO < 4096 := by omega_using [hs]
+  have o₁ : sO + 4 < 4096 := by omega_using [hs]
+  have o₂ : sO + 8 < 4096 := by omega_using [hs]
+  have o₃ : sO + 12 < 4096 := by omega_using [hs]
+  have d₀ : dO < 4096 := by omega_using [hd]
+  have d₁ : dO + 4 < 4096 := by omega_using [hd]
+  have d₂ : dO + 8 < 4096 := by omega_using [hd]
+  have d₃ : dO + 12 < 4096 := by omega_using [hd]
   refine WP.of_runBlock ⟨_, by
     simp only [dbl]
-    orun [o₀, o₁, o₂, o₃, d₀, d₁, d₂, d₃, b0, b1, b2, eb sO (by omega), eb (sO + 4) (by omega), eb (sO + 8) (by omega), eb (sO + 12) (by omega),
-      ew dO (by omega), ew (dO + 4) (by omega), ew (dO + 8) (by omega), ew (dO + 12) (by omega),
+    orun [o₀, o₁, o₂, o₃, d₀, d₁, d₂, d₃, b0, b1, b2, eb sO (by omega_using []), eb (sO + 4) (by omega_using []), eb (sO + 8) (by omega_using []), eb (sO + 12) (by omega_using []),
+      ew dO (by omega_using []), ew (dO + 4) (by omega_using []), ew (dO + 8) (by omega_using []), ew (dO + 12) (by omega_using []),
       r₀, r₁, r₂, r₃, w₀, w₁, w₂, w₃, hs, hd], ⟨?_, by others_tac, by rfl, by rfl, by rfl⟩⟩
   simp only [mem_setReg, mem_store, dblMem, Proof.Cmac.store4, rev_eq, mask_eq, gpr_setReg, ite_true, ite_false,
     reduceCtorEq, b0, b1, b2, Offset.add_add]

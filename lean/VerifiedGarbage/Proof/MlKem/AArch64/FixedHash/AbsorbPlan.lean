@@ -30,7 +30,7 @@ theorem remaining_step (s : State) (p : Piece) (ps : List Piece) {i n : Nat}
  (hn : i+n≤p.len) : remainingBytes s (p::ps) i=
  chunkBytes s p i n ++ remainingBytes s (p::ps) (i+n) := by
  simp only [remainingBytes,chunkBytes]
- rw [show p.len-i=n+(p.len-(i+n)) by omega,
+ rw [show p.len-i=n+(p.len-(i+n)) by omega_using [hn],
    Proof.Sha3.AArch64.Stream.Absorb.bytesAt_add,List.append_assoc,
    BitVec.add_assoc,←BitVec.ofNat_add,Nat.add_assoc]
 
@@ -47,7 +47,7 @@ theorem chunkBytes_frame {s₀ s : State} {sc : Reg} {st wk : Nat} {p : Piece} {
    rcases mem2' hr with rfl|rfl
    · exact hp.dst.sub_left sub
    · exact hp.dwk.sub_left sub
- · have:=hp.len; omega
+ · have:=hp.len; omega_using [hn, this]
 
 theorem action_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat} {p : Piece} {w : Bool}
  (hS : HSetup sc st wk rate s₀) (hp : PieceOk sc st wk s₀ false p) (hg : Rg s₀ s)
@@ -58,11 +58,11 @@ theorem action_piece_ok {s₀ s : State} {sc : Reg} {st wk rate pos i : Nat} {p 
  xorAt (stateAt s.mem (s₀.gpr sc+BitVec.ofNat 64 st)) pos (chunkBytes s p i (width w)) := by
  have gb := hg.cs p.base hp.base.1 hp.base.2
  cases w <;> simp only [actionCode,action,width,Bool.false_eq_true,ite_false,ite_true,chunkBytes] at * <;> simp only [gb]
- · exact absorbByte_piece_ok (s₀:=s₀) (s:=s) (sc:=sc) (st:=st) (wk:=wk) (rate:=rate) (pos:=pos) (i:=i) (p:=p) hS hp hg hi (by omega) hpos
-     (by omega)
+ · exact absorbByte_piece_ok (s₀:=s₀) (s:=s) (sc:=sc) (st:=st) (wk:=wk) (rate:=rate) (pos:=pos) (i:=i) (p:=p) hS hp hg hi (by omega_using [ho, hi]) hpos
+     (by omega_using [hb, hpos])
  · have hw' : i%8=0 ∧ pos%8=0 := by simpa using hw
    have hm := hw'.2
-   apply absorbWord_piece_ok (s₀:=s₀) (s:=s) (sc:=sc) (st:=st) (wk:=wk) (rate:=rate) (pos:=pos) (i:=i) (p:=p) hS hp hg hi (by omega) hpos
-   exact ⟨by omega,by omega⟩
+   apply absorbWord_piece_ok (s₀:=s₀) (s:=s) (sc:=sc) (st:=st) (wk:=wk) (rate:=rate) (pos:=pos) (i:=i) (p:=p) hS hp hg hi (by omega_using [ho, hi]) hpos
+   exact ⟨by omega_using [ha, hw'],by omega_using [hb, hpos]⟩
 
 end VG.Proof.MlKem.AArch64.FixedHash

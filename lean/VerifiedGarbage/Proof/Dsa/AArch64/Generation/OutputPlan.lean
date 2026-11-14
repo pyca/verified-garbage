@@ -40,10 +40,10 @@ theorem OutputPlan.apart {p : GenerationContext} (o : OutputPlan p) :
 
 theorem OutputPlan.packed {p : GenerationContext} (o : OutputPlan p) :
     (p.geo.part packed (2 * p.geo.pLen + p.geo.qLen)).Disjoint ⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩ := by
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with h | h | h <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with h | h <;> omega
+  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with h | h | h <;> omega_using [h]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with h | h <;> omega_using [h]
   exact ((o.separate _ (by simp [GenerationContext.changed])).sub_right
-    (p.geo.part_sub (p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega)))).symm
+    (p.geo.part_sub (p.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])))).symm
 
 theorem output_copy_context {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (o : OutputPlan p)
@@ -53,14 +53,14 @@ theorem output_copy_context {p : GenerationContext} {W : Nat → BitVec 64} {s :
     WP isa Impl.Dsa.AArch64.Generation.outputCopy s fun t =>
       t.gpr .x0 = 1 ∧ Spec.Rsa.bytesAt t.mem (p.saved 6) (2 * p.geo.pLen + p.geo.qLen) = bs ∧
       Frame [⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩] s.mem t.mem ∧ Keep (.x0 :: mmRegs) s t := by
-  have pn : 2 ≤ p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : 2 ≤ p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   have bound := p.geo.small_bound (d := packed) (n := 2 * p.geo.pLen + p.geo.qLen)
-    (by decide) (by unfold arithmeticBytes; omega)
+    (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   have source : Src s (p.saved 6) (2 * p.geo.pLen + p.geo.qLen) (VG.Proof.Bignum.off p.geo.B packed) bs := by
     apply arena_source h.scratch
     · simpa only [hlen] using bound
-    · rw [hlen]; omega
+    · rw [hlen]; omega_using [pn, qn]
     · simpa only [hlen] using bytes
     · simpa only [hlen, GenerationGeometry.part] using o.packed
   have h5 := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
@@ -68,17 +68,17 @@ theorem output_copy_context {p : GenerationContext} {W : Nat → BitVec 64} {s :
   have h7 := (h.slots 7 (by simp [generationSlots])).trans o.lengthSlot
   obtain ⟨V, R⟩ := h.rep
   have call := outputCopy_ok h.layout R (by simpa only [hlen] using h7)
-    (show 2 ≤ bs.length ∧ bs.length ≤ 1024 by rw [hlen]; omega)
+    (show 2 ≤ bs.length ∧ bs.length ≤ 1024 by rw [hlen]; omega_using [pn, qn])
   rw [h5, h6, hlen] at call
   apply call
   · intro i hi; exact source.rd i (hlen ▸ hi)
-  · intro i hi; exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+  · intro i hi; exact ⟨_, hw, Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, qn, hi])⟩
   · intro i hi
     simpa only [VG.Proof.Bignum.off, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (hlen ▸ hi), Option.getD_some] using source.val i (hlen ▸ hi)
   · intro i hi j hj he
     apply o.packed (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.geo.B packed) i)
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, qn, hi]))
     rw [he]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [pn, qn, hj])
 
 end VG.Proof.Dsa.AArch64.Generation

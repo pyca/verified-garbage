@@ -28,7 +28,7 @@ theorem field_liftB {s : State} {base : Addr} (hs : Scratch s base) (code : List
     WP isa (.block code) s fun t => Keep base s t ∧ env t.mem base = f (env s.mem base) ∧
       Post t.mem := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_using [this]⟩
   obtain ⟨tr, t, he, hk, hv, hp⟩ := correct narrow hn hpre
   have cw : Covers [⟨base, 4096⟩] s.wr := by
     apply Covers.of_sub

@@ -82,7 +82,7 @@ theorem Ctx.step {s0 s t : State} (h : Ctx s0 s) (sp : t.sp = s.sp) (rd : t.rd =
   have bF : below (off (cB s0) 176) 176 = ⟨cB s0, 176⟩ := by
     simp only [below, off, BitVec.add_sub_cancel]
   refine ⟨h.bx.step sp rd wr (f.mono (by simp)) r2, r23.trans h.r23, r24.trans h.r24, r25.trans h.r25, ?_⟩
-  rw [bytes_keep f (by have := oL_lt hp; omega) (fun ρ hρ => ?_)]
+  rw [bytes_keep f (by have := oL_lt hp; omega_using [this]) (fun ρ hρ => ?_)]
   · exact h.zero
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hρ
   rcases hρ with rfl | rfl
@@ -105,8 +105,8 @@ theorem fin_ok (k : Nat) (hk : k < 2 ^ 15) {s0 u : State} (hc : Ctx s0 u)
   have fu : Frame [cU s0] u.mem t.mem := by
     rw [tm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hc.bx.step kt.sp kt.rd kt.wr (fu.mono (by simp)) (kt.gpr _ (by decide)), ?_, ?_, ?_⟩
-  · rw [t3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hst]
-  · rw [bytes_keep fu (by have := oL_lt hp; omega) (fun ρ hρ => by
+  · rw [t3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk]), hst]
+  · rw [bytes_keep fu (by have := oL_lt hp; omega_using [this]) (fun ρ hρ => by
       simp only [List.mem_singleton] at hρ; subst hρ; exact hp.oU), hc.zero, hout]
   · rw [tm, hus]; exact wordsAt_one _ _ _
 
@@ -121,7 +121,7 @@ theorem finNone_post {s0 u : State} (hc : Ctx s0 u) (hres : cOp s0 = none) :
     rw [tm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hc.bx.step kt.sp kt.rd kt.wr (fu.mono (by simp)) (kt.gpr _ (by decide)), ?_, ?_, ?_⟩
   · rw [t3, hres]; rfl
-  · rw [bytes_keep fu (by have := oL_lt hp; omega) (fun ρ hρ => by
+  · rw [bytes_keep fu (by have := oL_lt hp; omega_using [this]) (fun ρ hρ => by
       simp only [List.mem_singleton] at hρ; subst hρ; exact hp.oU), hc.zero, outOf, hres]
   · rw [tm, usedOf, hres]; exact wordsAt_one _ _ _
 
@@ -138,19 +138,19 @@ theorem finPrime_post {s0 u : State} {B : Addr} {Z w c : Nat} {rest : Spec.RsaKe
   have hL := oL_lt hp
   simp only [oL] at hL hZ hw
   have hO : ∀ i < (s0.gpr .r4).toNat, InRegions u.wr (off (s0.gpr .r3) i) 1 := fun i hi =>
-    ⟨cO s0, by rw [hc.bx.wr, bodyWr, hp.wr]; simp, Offset.contains_base _ (d := i) (by omega) (by omega)⟩
+    ⟨cO s0, by rw [hc.bx.wr, bodyWr, hp.wr]; simp, Offset.contains_base _ (d := i) (by omega_using [hi]) (by omega_using [hi])⟩
   have hsep : ∀ i < (s0.gpr .r4).toNat, ∀ x, ofs B x < Z → off (s0.gpr .r3) i ≠ x := fun i hi x hx e => by
-    refine hd _ (Offset.contains_base _ (d := i) (by omega) (by omega)) ?_
+    refine hd _ (Offset.contains_base _ (d := i) (by omega_using [hi]) (by omega_using [hi])) ?_
     show Region.Contains _ (off (s0.gpr .r3) i) 1
-    rw [e]; simp only [Region.Contains]; simp only [ofs] at hx; omega
+    rw [e]; simp only [Region.Contains]; simp only [ofs] at hx; omega_using [hx]
   unfold finPrime
-  have cp := copyOut_ok hs h31 hc.r23 (by rw [hc.r24]; simp) (by omega) hZ hO (by omega) hsep
+  have cp := copyOut_ok hs h31 hc.r23 (by rw [hc.r24]; simp) (by omega_using [hw, hw1]) hZ hO (by omega_using [hfo]) hsep
   rw [WP.seq_iff] at cp
   rw [WP.seq_iff]
   refine WP.mono cp fun t₁ h₁ => ?_
   rw [WP.seq_iff]
   refine WP.mono h₁ fun t₂ ⟨hb, ho, k₂⟩ => ?_
-  have fo : Frame [cO s0] u.mem t₂.mem := frame_of_outside ho (by omega)
+  have fo : Frame [cO s0] u.mem t₂.mem := frame_of_outside ho (by omega_using [])
   have b₂ := hc.bx.step k₂.sp k₂.rd k₂.wr (fo.mono (by simp)) (k₂.gpr _ (by decide))
   have hU : InRegions t₂.wr (s0.gpr .r5) 8 :=
     ⟨cU s0, by rw [b₂.wr, bodyWr, hp.wr]; simp, Region.contains_self _ _⟩
@@ -159,7 +159,7 @@ theorem finPrime_post {s0 u : State} {B : Addr} {Z w c : Nat} {rest : Spec.RsaKe
     rw [tm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨b₂.step kt.sp kt.rd kt.wr (fu.mono (by simp)) (kt.gpr _ (by decide)), ?_, ?_, ?_⟩
   · rw [t3, hres]; rfl
-  · rw [bytes_keep fu (by simp only [oL]; omega) (fun ρ hρ => by
+  · rw [bytes_keep fu (by simp only [oL]; omega_using []) (fun ρ hρ => by
       simp only [List.mem_singleton] at hρ; subst hρ; exact hp.oU), bytes_of_copy hw hb, hval, outOf, hres]
   · rw [tm, (k₂.gpr _ (by decide)).trans hus, usedOf, hres]; exact wordsAt_one _ _ _
 

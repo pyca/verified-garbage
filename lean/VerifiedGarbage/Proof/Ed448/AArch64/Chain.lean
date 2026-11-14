@@ -45,7 +45,7 @@ theorem rv_lt (s : State) : ∀ rs : List Reg, rv s rs < 2 ^ (64 * rs.length)
     generalize 2 ^ (64 * rs.length) = Q at h2 ⊢
     have : 2 ^ 64 * rv s rs + 2 ^ 64 ≤ 2 ^ 64 * Q := by
       rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h2
-    omega
+    omega_using [h2]
 
 theorem rv_congr {s t : State} : ∀ {rs : List Reg}, (∀ r ∈ rs, t.gpr r = s.gpr r) → rv t rs = rv s rs
   | [], _ => rfl
@@ -114,7 +114,7 @@ theorem adcs_ok : ∀ (ts : List (Reg × Reg × Reg)) (s : State), ChainOk ts = 
       simp only [dsts, lhs, rhs] at e
       generalize 2 ^ (64 * ts.length) * t.c.toNat = Y at e ⊢
       generalize (s.gpr n + s.gpr m + BitVec.ofNat 64 s.c.toNat).toNat = D at v1 ⊢
-      omega
+      omega_using [e, v1]
     · simp only [dsts, List.map_cons, List.mem_cons, not_or] at hr
       rw [k.gpr r hr.2, k1 r hr.1]
 

@@ -40,8 +40,8 @@ theorem signFailure_ok {s : State} {B : Addr} {Z k q : Nat} {op : Addr} (hs : Sc
       hs.ld (Nat.le_trans (VG.Proof.Dsa.field_bounds .out).2 hZ),
       hs.ld (Nat.le_trans (VG.Proof.Dsa.field_bounds .qLen).2 hZ), hO, hK]
     rw [BitVec.ofNat_add_ofNat, hkq, Nat.two_mul]) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h1, h2, h3, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega) (by omega) (BInv s₁ op)
-    (fun j hj t hI _ => bStep_ok (by omega) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
+  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega_using [hk']) (by omega_using [hk1]) (BInv s₁ op)
+    (fun j hj t hI _ => bStep_ok (by omega_using [hk']) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
     ⟨Keep.refl _ _, h1, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ _ => rfl⟩ h2) fun t₂ hI => ?_)
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = 0 ∧ t.mem = t₂.mem) (by brun) (by decide) (by decide)
     (by decide +kernel)) fun t ⟨⟨hx, hm⟩, k₃⟩ => ⟨?_, hx, fun x hx' => ?_, ((k₁.trans hI.keep).trans k₃).mono

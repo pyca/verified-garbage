@@ -127,9 +127,9 @@ theorem codesI_ok (hn : M.n = 4) (hL : Lay M size Sl) (hm : UnitMod m (2 ^ (64 *
       fun s₁ ⟨⟨⟨k₁, I₁⟩, x₁, y₁, sy₁⟩, c₁⟩ => ?_
     have hS₁ := hstab i op.out s s₁ (hW op (List.mem_cons_self ..)) hS k₁ x₁ y₁ sy₁
     apply WP.block_append
-    refine WP.mono (hside i s₁ (by rw [List.length_cons] at hN; omega) hS₁) fun s₂ ⟨hS₂, k₂⟩ => ?_
+    refine WP.mono (hside i s₁ (by rw [List.length_cons] at hN; omega_using [hN]) hS₁) fun s₂ ⟨hS₂, k₂⟩ => ?_
     have c₂ := valid_side (ofStores_ne (outputRegs_ne_rdx hn op) op.out) c₁ k₂
-    refine WP.mono (codesI_ok hn hL hm hside hstab ops (i + 1) (by rw [List.length_cons] at hN; omega)
+    refine WP.mono (codesI_ok hn hL hm hside hstab ops (i + 1) (by rw [List.length_cons] at hN; omega_using [hN])
       (fun op' h => hW op' (List.mem_cons_of_mem _ h)) (fun op' h => hsc op' (List.mem_cons_of_mem _ h))
       (I₁.of_side k₂.side) hS₂ (fun op' h => hSl op' (List.mem_cons_of_mem _ h)) hR.2 c₂)
       fun s₃ ⟨k₃, I₃, hS₃⟩ =>
@@ -157,8 +157,8 @@ theorem plainI_ok (hL : Lay M size Sl) (hm : UnitMod m (2 ^ (64 * M.n)))
       (plainOp_ok hL hm hI (hSl op (List.mem_cons_self ..)) hR.1)) fun s₁ ⟨⟨k₁, I₁⟩, x₁, y₁⟩ sy₁ => ?_)
     have hS₁ := hstab i op.out s s₁ (hW op (List.mem_cons_self ..)) hS k₁ x₁ y₁
       sy₁
-    refine WP.seq (WP.mono (hside i s₁ (by rw [List.length_cons] at hN; omega) hS₁) fun s₂ ⟨hS₂, k₂⟩ => ?_)
-    refine WP.mono (plainI_ok hL hm hside hstab ops (i + 1) (by rw [List.length_cons] at hN; omega)
+    refine WP.seq (WP.mono (hside i s₁ (by rw [List.length_cons] at hN; omega_using [hN]) hS₁) fun s₂ ⟨hS₂, k₂⟩ => ?_)
+    refine WP.mono (plainI_ok hL hm hside hstab ops (i + 1) (by rw [List.length_cons] at hN; omega_using [hN])
       (fun op' h => hW op' (List.mem_cons_of_mem _ h)) (fun op' h => hsc op' (List.mem_cons_of_mem _ h))
       (I₁.of_side k₂.side) hS₂ (fun op' h => hSl op' (List.mem_cons_of_mem _ h)) hR.2)
       fun s₃ ⟨k₃, I₃, hS₃⟩ =>
@@ -185,9 +185,9 @@ theorem programBI_ok (hL : Lay M size Sl) (hm : UnitMod m (2 ^ (64 * M.n)))
   · rename_i h
     rw [Code.inline_of_noCalls (blocks_noCalls _)]
     apply (blocks_wp _).mpr
-    refine WP.mono (codesI_ok h.2 hL hm hside hstab ops 0 (by omega) hW (fun op hop => (hsc op hop).1) hI hS hSl hR
+    refine WP.mono (codesI_ok h.2 hL hm hside hstab ops 0 (by omega_using [hN]) hW (fun op hop => (hsc op hop).1) hI hS hSl hR
       (fun _ h => by cases h)) fun t ⟨k, I, S⟩ => ⟨k, I, by rw [Nat.zero_add] at S; exact S⟩
-  · refine WP.mono (plainI_ok hL hm hside hstab ops 0 (by omega) hW (fun op hop => (hsc op hop).2) hI hS hSl hR)
+  · refine WP.mono (plainI_ok hL hm hside hstab ops 0 (by omega_using [hN]) hW (fun op hop => (hsc op hop).2) hI hS hSl hR)
       fun t ⟨k, I, S⟩ => ⟨k, I, by rw [Nat.zero_add] at S; exact S⟩
 
 end

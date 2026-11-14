@@ -27,15 +27,15 @@ theorem modulusCheck_ok (s : State) {k : Nat}
       t.mem = s.mem ∧ Keeps [.eax, .ebx, .edx, .ebp] s t := by
   unfold modulusCheck
   rw [List.append_assoc]
-  refine WP.block_append (WP.mono (modulusRead_ok s (by omega) fit read count)
+  refine WP.block_append (WP.mono (modulusRead_ok s (by omega_using [hk]) fit read count)
     fun u ⟨first, last, M, K⟩ => ?_)
   have byteNat (b : Byte) : (b.setWidth 32).toNat = b.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
   have firstNat : (u.gpr .eax).toNat = (s.mem (byteAddr (s.gpr .esi))).toNat := by rw [first, byteNat]
   have lastNat : (u.gpr .edx).toNat =
       (s.mem (byteAddr (s.gpr .esi) + BitVec.ofNat 64 (k - 1))).toNat := by rw [last, byteNat]
   have countNat : (u.gpr .ecx).toNat = k := by
-    rw [K.1 .ecx (by decide), count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [K.1 .ecx (by decide), count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk'])]
   refine WP.block_append (WP.mono (modulusBounds_ok u (by rw [countNat]; exact hk)
     (by rw [countNat]; exact hk')) fun v ⟨low, top, Mv, Kv⟩ => ?_)
   refine WP.mono (modulusFinish_ok v) fun t ⟨Z, Mt, Kt⟩ => ?_

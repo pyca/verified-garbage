@@ -36,15 +36,15 @@ theorem entry_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
   have hl := lay_nums h.layout.n3 h.layout.n6
   simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq] at lo
   obtain ⟨rx,ry,rz,zlo,nlo⟩ := lo
-  refine WP.seq (WP.mono_syms (digit_ok K i.scr i.far h.w9 hj (by have := h.J32; omega)
+  refine WP.seq (WP.mono_syms (digit_ok K i.scr i.far h.w9 hj (by have := h.J32; omega_using [this])
     h.encLast h.startBits h.coverBits h.bitsFit h.windowFit h.bitsHigh hk gj i.bits)
     fun u ⟨gu,ku⟩ syu => ?_)
   have iu : CurveInputs K C tbl base T k u := i.keep h.layout h.bitsLow h.bitsHigh hd ku.keep
     (by decide) (by rw [ku.mem]; exact Unch.refl _ _ _) syu
   refine WP.seq (WP.mono_syms (selectTable_ok K iu.scr
-    (by simp only [TCombCfg.Q,ptAt]; omega) (by omega)
+    (by simp only [TCombCfg.Q,ptAt]; omega_using [hl]) (by omega_using [hl, zlo])
     (.inl (Nat.le_trans zlo (oAt_le_qAt _))) (Nat.lt_of_lt_of_le h.one_lt hfit) iu.zero
-    (by have := h.layout.n3; omega) h.halfBound (h.magnitude k j) gu
+    (by have := h.layout.n3; omega_using [this]) h.halfBound (h.magnitude k j) gu
     (by rw [ku.keep.gpr .r11 (by decide),gj]) iu.table iu.symbol h.tables.len h.tables.lenH hj hp hfit hd
     h.encRow h.encEntry h.encH) fun v ⟨xv,yv,zv,kv,ov⟩ syv => ?_)
   have ouv := ov.unch.cover h.layout.q_cover
@@ -56,20 +56,20 @@ theorem entry_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
     have lowx := h.layout.low x (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
       rcases hx with rfl|rfl|rfl <;> simp)
-    rw [ov.wordsVal (.inl (Nat.le_trans lowx (oAt_le_qAt _))) (by have := i.scr.nowrap; omega),ku.mem]
+    rw [ov.wordsVal (.inl (Nat.le_trans lowx (oAt_le_qAt _))) (by have := i.scr.nowrap; omega_using [hl, lowx]),ku.mem]
   have mask : ∀ a, Rest VG.Proof.Weierstrass.Arm.Mont.callClob v a →
       Unch base [(K.neg,8*K.L.M.n),(VG.Impl.Weierstrass.Arm.Mont.own K.L.M.n,64*K.L.M.n)] v.mem a.mem →
       WP isa K.signMask a fun b =>
         b.gpr .r10=(if K.H≤combWin K.w k j then 0 else BitVec.allOnes 32) ∧ RegOnly [.r4,.r10] a b := by
     intro a keep mem
     apply signMask_ok K (iv.scr.of_rest keep (by decide)) (iv.far.of_rest keep)
-      ⟨h.w1,h.w9⟩ hj (by have := h.J32; omega) h.encLast h.startBits h.coverBits h.bitsFit
+      ⟨h.w1,h.w9⟩ hj (by have := h.J32; omega_using [this]) h.encLast h.startBits h.coverBits h.bitsFit
       h.windowFit h.bitsHigh hk
       (by rw [keep.gpr .r11 (by decide),kv.gpr .r11 (by decide),ku.keep.gpr .r11 (by decide),gj])
     intro b hb
     have mem' := (mem.cover h.layout.sub_cover).cover h.layout.loop_cover
-    rw [mem'.byte (fun w hw => .inr (by have := h.layout.bounded w hw; have := h.bitsLow; omega))
-      (by have := h.bitsHigh; omega),iv.bits b hb]
+    rw [mem'.byte (fun w hw => .inr (by have := h.layout.bounded w hw; have := h.bitsLow; omega_arith))
+      (by have := h.bitsHigh; omega_using [hb, this]),iv.bits b hb]
   refine WP.mono (negate_ok K (K.H≤combWin K.w k j) h.layout iv.scr iv.far
     h.fieldM h.fieldK h.modulus iv.zero ylt mask) fun t ⟨kt,ot,rt,xt,yt,zt⟩ => ?_
   have ku' : Rest VG.Proof.Weierstrass.Arm.Mont.callClob s u := ku.keep.mono (by

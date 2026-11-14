@@ -75,7 +75,7 @@ theorem body_ok {s : State} {x y c : BitVec 64} (h3 : s.gpr .r3 = x) (h4 : s.gpr
 /-! ## The values -/
 
 theorem byte64 (b : Byte) : (b.setWidth 64).toNat = b.toNat := by
-  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := b.isLt; omega)
+  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])
 
 theorem pc_toNat (b : Byte) {k : Nat} (hk : k = 0 ∨ k = 2 ∨ k = 4 ∨ k = 6) :
     (pc b k).toNat = b.toNat / 2 ^ k % 2 + b.toNat / 2 ^ k / 2 % 2 := by
@@ -83,21 +83,21 @@ theorem pc_toNat (b : Byte) {k : Nat} (hk : k = 0 ∨ k = 2 ∨ k = 4 ∨ k = 6)
   have e : ((b.setWidth 64 <<< (62 - k)) >>> 62).toNat = b.toNat / 2 ^ k % 4 := by
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, byte64, Nat.shiftRight_eq_div_pow,
       Nat.shiftLeft_eq]
-    rcases hk with rfl | rfl | rfl | rfl <;> simp only [Nat.reduceSub, Nat.reducePow] <;> omega
+    rcases hk with rfl | rfl | rfl | rfl <;> simp only [Nat.reduceSub, Nat.reducePow] <;> omega_using []
   unfold pc
   rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, e, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 theorem coef_toNat (b : Byte) {k : Nat} (hk : k = 0 ∨ k = 4) :
     (coef b k).toNat = (cbdX (b.toNat / 2 ^ k) + q - cbdY (b.toNat / 2 ^ k)) % q := by
-  have ex := pc_toNat b (k := k) (by omega)
-  have ey := pc_toNat b (k := k + 2) (by omega)
+  have ex := pc_toNat b (k := k) (by omega_using [hk])
+  have ey := pc_toNat b (k := k + 2) (by omega_using [hk])
   have hb := b.isLt
   unfold coef
-  rw [fixq_sub (by rw [ex, q_eq]; omega) (by rw [ey, q_eq]; omega), ex, ey, cbdX, cbdY, Nat.pow_add]
+  rw [fixq_sub (by rw [ex, q_eq]; omega_using []) (by rw [ey, q_eq]; omega_using []), ex, ey, cbdX, cbdY, Nat.pow_add]
   rw [← Nat.div_div_eq_div_mul, show (2 : Nat) ^ 2 = 4 from rfl]
   congr 1
-  omega
+  omega_using []
 
 /-! ## The loop -/
 
@@ -140,18 +140,18 @@ theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State}
   have fF := hp.fitF
   have eb : B s₀ + BitVec.ofNat 64 (1 * i) = B s₀ + BitVec.ofNat 64 i := by rw [Nat.one_mul]
   have e0 : F s₀ + BitVec.ofNat 64 (8 * i) = coeffAddr (F s₀) (2 * i) := by
-    rw [show 8 * i = 4 * (2 * i) by omega]
+    rw [show 8 * i = 4 * (2 * i) by omega_using []]
   have e1 : F s₀ + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4 = coeffAddr (F s₀) (2 * i + 1) := by
-    rw [ptr_add, show 8 * i + 4 = 4 * (2 * i + 1) by omega]
+    rw [ptr_add, show 8 * i + 4 = 4 * (2 * i + 1) by omega_using []]
   have hrw : s.rd ++ s.wr = [inR s₀, polyRegion (F s₀)] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have hw : s.wr = [polyRegion (F s₀)] := by rw [h.wr, hp.wr]
-  have c0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega)
-  have c1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega)
-  have cb : (inR s₀).Contains (B s₀ + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega) (by omega)
+  have c0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_using [hi])
+  have c1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_using [hi])
+  have cb : (inR s₀).Contains (B s₀ + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   have rb : s.mem (B s₀ + BitVec.ofNat 64 i) = (bytesAt s₀.mem (B s₀) 128).getD i 0 := by
-    rw [bytesAt_getD _ _ (by omega)]
+    rw [bytesAt_getD _ _ (by omega_using [hi])]
     exact h.frame.bytes (R := inR s₀) (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj)
-      (by show 128 ≤ 2 ^ 64; decide) (show i < 128 by omega)
+      (by show 128 ≤ 2 ^ 64; decide) (show i < 128 by omega_using [hi])
   refine WP.mono (body_ok h.r3 h.r4 h.r5 h.r8 ?_ ?_ ?_ ?_)
     fun s' ⟨r3, r4, r5, r8, m, rd, wr, sp, lr, pres⟩ =>
     ⟨⟨?_, ?_, ?_, r8.trans h.r8, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp, lr.trans h.lr,
@@ -169,14 +169,14 @@ theorem step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 128) {s : State}
     exact (h.frame.writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c1
   · have v0 : (coef ((bytesAt s₀.mem (B s₀) 128).getD i 0) 0).setWidth 32 = out s₀ (2 * i) := by
       refine setWidth32_ofNat ?_ (by have := val_lt (D s₀)[2 * i]!; omega)
-      rw [coef_toNat _ (.inl rfl), samplePolyCBD2_val _ (by rw [n_eq]; omega), nibble,
-        show 2 * i / 2 = i by omega, show 2 * i % 2 = 0 by omega]
+      rw [coef_toNat _ (.inl rfl), samplePolyCBD2_val _ (by rw [n_eq]; omega_using [hi]), nibble,
+        show 2 * i / 2 = i by omega_using [], show 2 * i % 2 = 0 by omega_using []]
     have v1 : (coef ((bytesAt s₀.mem (B s₀) 128).getD i 0) 4).setWidth 32 = out s₀ (2 * i + 1) := by
       refine setWidth32_ofNat ?_ (by have := val_lt (D s₀)[2 * i + 1]!; omega)
-      rw [coef_toNat _ (.inr rfl), samplePolyCBD2_val _ (by rw [n_eq]; omega), nibble,
-        show (2 * i + 1) / 2 = i by omega, show (2 * i + 1) % 2 = 1 by omega]
-    rw [m, e1, e0, eb, rb, v0, v1, show 2 * (i + 1) = 2 * i + 1 + 1 by omega]
-    exact coeff_one (by omega) (coeff_one (by omega) h.coeff rfl) rfl
+      rw [coef_toNat _ (.inr rfl), samplePolyCBD2_val _ (by rw [n_eq]; omega_using [hi]), nibble,
+        show (2 * i + 1) / 2 = i by omega_using [], show (2 * i + 1) % 2 = 1 by omega_using []]
+    rw [m, e1, e0, eb, rb, v0, v1, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_using []]
+    exact coeff_one (by omega_using [hi]) (coeff_one (by omega_using [hi]) h.coeff rfl) rfl
   · rw [r5, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]
     exact count_nz hi (by decide)
 

@@ -262,10 +262,10 @@ theorem margs_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     slot_keep fr (sl sLo (by decide)) hk.2.2.1.2.1, slot_keep fr (sl sDb (by decide)) hk.2.2.1.2.2.1,
     slot_keep fr (sl sAny (by decide)) hk.2.2.1.2.2.2⟩
   have he' : ∀ i < P.K, t10.mem (sa P.scr (oEm + i)) = emv P τ i := fun i hi =>
-    by rw [sbytes_keep (o := oEm) (n := P.K) fr (dis _ _ (by omega)) (by omega) he i hi]
+    by rw [sbytes_keep (o := oEm) (n := P.K) fr (dis _ _ (by omega_using [hK, e1, e2])) (by omega_using [hK, e1]) he i hi]
   refine ⟨c, ⟨⟨hk.1, hk.2.1, kb, slot_keep fr sa' hk.2.2.2⟩, r1, r2, r3, r4⟩, fun i hi => ?_, fun i hi => ?_⟩
-  · rw [Nat.add_assoc, he' _ (by omega)]
-  · rw [Nat.add_assoc, Nat.add_assoc, he' _ (by omega)]
+  · rw [Nat.add_assoc, he' _ (by omega_using [hsum, hi])]
+  · rw [Nat.add_assoc, Nat.add_assoc, he' _ (by omega_using [hsum, hi])]
     simp [hi, Nat.add_assoc]
 
 /-- `DB`'s first byte's top bits cleared. -/
@@ -365,14 +365,14 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) {fG : Impl.RsaOaep.X86.Fns
       Ka h P τ m' := fun τ m m' ⟨hi, hf', hb, ha⟩ hfr => by
     have k : ∀ d, d + 4 ≤ 104 → ∀ r ∈ Proof.RsaOaep.X86.mgfW P.g (P.lay h.D) P.scr (oEm + lo P) (dbN h P),
         (slotR (P.lay h.D) d).Disjoint r := fun d hd =>
-      Proof.RsaOaep.X86.mgfW_slot P.g hg (by omega) (Nat.le_trans hd (by decide)) (.inl (Nat.le_trans hd (by decide)))
+      Proof.RsaOaep.X86.mgfW_slot P.g hg (by omega_using [hsum, hK, e1, e5]) (Nat.le_trans hd (by decide)) (.inl (Nat.le_trans hd (by decide)))
         (.inl (Nat.le_trans hd (by decide)))
     exact ⟨hi, hf', ⟨slot_keep hfr (k sC (by decide)) hb.1, slot_keep hfr (k sLo (by decide)) hb.2.1,
       slot_keep hfr (k sDb (by decide)) hb.2.2.1, slot_keep hfr (k sAny (by decide)) hb.2.2.2⟩,
-      slot_keep hfr (Proof.RsaOaep.X86.mgfW_slot P.g hg (by omega) (by decide) (.inr (by decide))
+      slot_keep hfr (Proof.RsaOaep.X86.mgfW_slot P.g hg (by omega_using [hsum, hK, e1, e5]) (by decide) (.inr (by decide))
         (.inl (by decide))) ha⟩
   have mp := Proof.RsaOaep.X86.mpOf P.g hg (so := oEm + lo P + dbN h P) (sl := h.D) (dOff := oEm + lo P)
-    (dl := dbN h P) hD0 (by omega) (by omega) (by omega) (by omega) (by omega) (.inr (Nat.le_refl _))
+    (dl := dbN h P) hD0 (by omega_using [hdb]) (by omega_using []) (by omega_using []) (by omega_using [hsum, hK, e1, e5]) (by omega_using [hsum, hK, e1, e5]) (.inr (Nat.le_refl _))
     (seed := seedV h P) (fun τ => by simp) hX (vf_arg h (j := 15) (by decide)) hi₀.tbl
     Proof.RsaOaep.X86.tabArg15_taint (fun τ m hk => hT τ hk.1.tabT) fne
   exact (Proof.RsaOaep.X86.VP.syms (margs_vp h P ⟨σ₀, hi₀⟩)).seq (((Proof.RsaOaep.X86.mgf_vp P.g mp

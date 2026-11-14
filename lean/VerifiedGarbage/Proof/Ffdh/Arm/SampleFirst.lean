@@ -26,7 +26,7 @@ theorem sampleFirst_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : Li
         t.gpr .lr = BitVec.ofNat 32 l.width - 1) ∧ Rest [.r0, .r1, .r2, .r3, .lr] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have r20 := h.locals.read (d := 20) (by decide)
   have r68 := h.locals.read (d := 68) (by decide)
   refine withRest_all [.r0, .r1, .r2, .r3, .lr] ?_ (by rfl) (by rfl)

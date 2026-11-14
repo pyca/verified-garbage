@@ -36,8 +36,8 @@ theorem inverseDotLoads_ok {n : Nat} (hn : 0<n) (hn7 : n≤7) {s : State} (hc : 
     cases h
     have hj' := List.mem_range.mp hj
     intro k hk
-    refine ⟨?_,by omega,hr j hj' k hk⟩
-    omega
+    refine ⟨?_,by omega_using [hn7, hj', hk],hr j hj' k hk⟩
+    omega_using []
   have eqcode : inverseProductOps.flatMap (fun p => dotLoad n p.1 p.2)=inverseDotLoads n := by
     simp only [inverseProductOps,inverseDotLoads,List.flatMap_map]
   rw [← eqcode]

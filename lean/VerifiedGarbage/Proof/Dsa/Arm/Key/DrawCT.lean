@@ -207,6 +207,6 @@ theorem draw_ct : RelCT isa (Two fun a => At (DrawPre a) a.pub) KeyRandom.draw f
     have := D.smp.usedBound
     show a.used + rWidth s₀ ≤ (rInput s₀).rand.length
     rw [eval_eq, c, Option.some.injEq, decide_eq_false_iff_not] at hb
-    omega
+    omega_using [hb, this]
 
 end VG.Proof.Dsa.Arm.Key

@@ -33,22 +33,22 @@ theorem store_words_ok (s₀ : VG.AArch64.State) (A : Spec.Sha3.State)
   rw [show (List.range 25).map (fun i => Instr.str .x (laneReg i) .x30 (8*i)) =
     (List.range 25).flatMap (fun i => [Instr.str .x (laneReg i) .x30 (8*i)]) by rfl]
   refine wp_range_flatMap (M := isa) (StoreInv s₀ (s₀.gpr .x30) A) (fun i s hi hs => ?_)
-    25 (Nat.le_refl _) s₀ ⟨Keep.refl _,rfl,rfl,Frame.refl _ _,fun _ h => absurd h (by omega)⟩
-  refine WP.cons (exec_str_x ⟨by omega,by omega⟩ ?_) (wp_nil ?_)
+    25 (Nat.le_refl _) s₀ ⟨Keep.refl _,rfl,rfl,Frame.refl _ _,fun _ h => absurd h (by omega_using [])⟩
+  refine WP.cons (exec_str_x ⟨by omega_using [],by omega_using [hi]⟩ ?_) (wp_nil ?_)
   · rw [hs.keep.wr,hs.gpr]
     exact hin i hi
   · refine ⟨⟨hs.keep.rd,hs.keep.wr,hs.keep.sp⟩,hs.gpr,hs.vec,?_,fun j hj h25 => ?_⟩
     · change Frame _ _ (s.mem.writeW _ _)
       rw [hs.gpr]
-      exact hs.frame.writeW (r := ⟨s₀.gpr .x30,200⟩) (by simp) _ (Offset.contains_base _ (by omega) (by omega))
+      exact hs.frame.writeW (r := ⟨s₀.gpr .x30,200⟩) (by simp) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
     · change (s.mem.writeW _ _).readW _ 64 = _
       rw [hs.gpr]
       by_cases he : j = i
       · subst j
         rw [Mem.readW_writeW_self64]
         exact hA i hi
-      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-        exact hs.vals j (by omega) h25
+      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [he]) (by omega_using [h25]) (by omega_using [hi])) (by decide)]
+        exact hs.vals j (by omega_using [hj, he]) h25
 
 theorem store_ok (s₀ : VG.AArch64.State) (p : Addr) (A : Spec.Sha3.State)
     (hA : Lanes s₀ A) (hptr : vdword (s₀.v .v30) 0 = p)

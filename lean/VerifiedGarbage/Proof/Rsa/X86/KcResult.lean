@@ -52,12 +52,12 @@ theorem Stg.productsP_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool}
         ((((((c && decide (v.dP < 2 * (v.p / 2))) && decide (R₁ = 1)) && decide (v.dQ < 2 * (v.q / 2))) &&
           decide (R₂ = 1)) && decide (v.qI < v.p)) && decide (R₃ = 1)) t := by
   obtain ⟨qa, qa1, qa2, qlt, qarg⟩ := hq
-  refine WP.mono (h.products_ok ⟨by decide, by decide, rfl, rfl, by decide⟩ (by decide) qarg qa1 (by omega))
+  refine WP.mono (h.products_ok ⟨by decide, by decide, rfl, rfl, by decide⟩ (by decide) qarg qa1 (by omega_using [qa2]))
     fun t ⟨R₁, R₂, R₃, p₁, p₂, p₃, ht⟩ => ⟨R₁, R₂, R₃, fun he hp hq' _ => ⟨fun hlt => ?_, fun hlt => ?_, fun hlt => ?_⟩, ht⟩
-  · refine (p₁ hlt (by change 2 * (2 * (v.p / 2)) ≤ _; omega)).trans ?_
+  · refine (p₁ hlt (by change 2 * (2 * (v.p / 2)) ≤ _; omega_using [hp])).trans ?_
     change v.e % 2 ^ 33 * v.dP % (2 * (v.p / 2)) = _
     rw [Nat.mod_eq_of_lt he]
-  · refine (p₂ hlt (by change 2 * (2 * (v.q / 2)) ≤ _; omega)).trans ?_
+  · refine (p₂ hlt (by change 2 * (2 * (v.q / 2)) ≤ _; omega_using [hq'])).trans ?_
     change v.e % 2 ^ 33 * v.dQ % (2 * (v.q / 2)) = _
     rw [Nat.mod_eq_of_lt he]
   · refine (p₃ hlt hp).trans ?_
@@ -159,7 +159,7 @@ theorem keyBody_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) : WP isa 
   · rw [wp_seqs_cons (List.cons_ne_nil _ _)]
     refine WP.mono (ht.wordProducts_ok wo) fun t1 ⟨M₁, M₂, M₃, R₁, R₂, R₃, eM, hR, h1⟩ => ?_
     rw [seqs_one]
-    refine WP.mono (h1.dWords_ok wo.len wo.four (by have := wo.room; omega) (by decide) (by decide))
+    refine WP.mono (h1.dWords_ok wo.len wo.four (by have := wo.room; omega_using [this]) (by decide) (by decide))
       fun t2 ⟨Y₁, Y₂, eY₁, eY₂, A, live, h2⟩ =>
         ⟨R₁, R₂, R₃, Y₁, Y₂, fun he _ _ hpq => hR he hpq, fun hpq _ _ => ?_, A, live, h2⟩
     obtain ⟨m1, m2, -⟩ := eM hpq

@@ -31,10 +31,10 @@ theorem choose_wp (f : Nat → Prog isa) {Q : State → Prop} :
     ∀ m,m ≤ 15 → ∀ {j : Nat} {s : State},1 ≤ j → j ≤ m →
       s.gpr .x19=BitVec.ofNat 64 j →
       (∀ t,Keeps [.x2] s t → WP isa (f j) t Q) → WP isa (choose f m) s Q
-  | 0,_,_,_,hj,hjm,_,_ => False.elim (by omega)
+  | 0,_,_,_,hj,hjm,_,_ => False.elim (by omega_using [hj, hjm])
   | m+1,hm,j,s,hj,hjm,h19,h => by
     rw [choose]
-    refine WP.seq (WP.mono (choose_sub s (m:=m+1) (by omega)) fun t ⟨v,k⟩ => ?_)
+    refine WP.seq (WP.mono (choose_sub s (m:=m+1) (by omega_using [hm])) fun t ⟨v,k⟩ => ?_)
     have z : (t.read .x .x2 == 0)=decide (j=m+1) := by
       rw [read_x,v,h19]
       by_cases e : j=m+1
@@ -45,10 +45,10 @@ theorem choose_wp (f : Nat → Prog isa) {Q : State → Prop} :
         intro hz
         have hh := congrArg BitVec.toNat hz
         rw [BitVec.toNat_sub,BitVec.toNat_ofNat,BitVec.toNat_ofNat,
-          Nat.mod_eq_of_lt (by omega : j < 2^64),
-          Nat.mod_eq_of_lt (by omega : m+1 < 2^64)] at hh
+          Nat.mod_eq_of_lt (by omega_using [hm, hjm] : j < 2^64),
+          Nat.mod_eq_of_lt (by omega_using [hm] : m+1 < 2^64)] at hh
         change (2^64-(m+1)+j)%(2^64)=0 at hh
-        omega
+        omega_using [hm, hjm, e, hh]
     apply WP.ite (decide (j=m+1)) (by change some (t.read .x .x2 == 0)=_; rw [z])
     · intro e
       rw [decide_eq_true_eq] at e
@@ -56,6 +56,6 @@ theorem choose_wp (f : Nat → Prog isa) {Q : State → Prop} :
       exact h t k
     · intro e
       rw [decide_eq_false_iff_not] at e
-      exact choose_wp f m (by omega) hj (by omega) ((k.gpr _ (by decide)).trans h19)
+      exact choose_wp f m (by omega_using [hm]) hj (by omega_using [hjm, e]) ((k.gpr _ (by decide)).trans h19)
         fun u ku => h u (k.trans ku)
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint

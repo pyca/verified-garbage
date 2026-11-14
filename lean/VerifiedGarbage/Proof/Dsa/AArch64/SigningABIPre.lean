@@ -20,7 +20,7 @@ theorem SigningABI.pre {s : State} (h : SigningABI s) : SigningPre h.input s := 
   refine ⟨scratch_prefix hs h.used (by decide), ?_, ?_, ?_, ?_, rfl, ?_, rfl, ?_, ?_, ?_, ?_, ?_⟩
   · exact (ofNat_toNat64 _).symm
   · intro j hj
-    exact stackWord_read (count := 3) hargs (by omega) (by decide)
+    exact stackWord_read (count := 3) hargs (by omega_using [hj]) (by decide)
   · intro i hi
     simpa only [Nat.mul_zero, off_zero, SigningABI.input] using Nat.le_trans h.used (stackWord_separate (count := 3) (j := 0) h.scratchArgs (by decide) (by decide) i hi)
   · exact (ofNat_toNat64 _).symm

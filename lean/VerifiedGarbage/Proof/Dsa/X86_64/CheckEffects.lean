@@ -31,7 +31,7 @@ theorem checkFrame_outside {B : Addr} {o wx : Nat} {mem mem' : Mem}
     (hf : Frm B (localCallRanges o wx Field.mask.offset 8) mem mem')
     (ho : pWorkspace ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ activeBytes) :
     Outside B 128 (activeBytes - 128) mem mem' := by
-  have hslot : 136 ≤ slot wx 8 + tabBytes wx := by unfold slot hdrBytes; omega
+  have hslot : 136 ≤ slot wx 8 + tabBytes wx := by unfold slot hdrBytes; omega_using []
   have hlo : 128 ≤ pWorkspace := by decide
   have hma : Field.mask.offset + 8 ≤ activeBytes := by decide
   have hml : 128 ≤ Field.mask.offset := by decide
@@ -39,7 +39,7 @@ theorem checkFrame_outside {B : Addr} {o wx : Nat} {mem mem' : Mem}
   apply hf x
   intro range hr
   simp only [localCallRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> simp only at * <;> omega
+  rcases hr with rfl | rfl | rfl <;> simp only at * <;> omega_arith
 
 theorem readyRange_ok {L : ExecutionLayout} {s : State} (h : Ready L s) (side : ModulusSide)
     (a : Operand) (ha : pointerFits a.pointer) {bytes : List Byte}
@@ -104,7 +104,7 @@ theorem readyMinus_ok {L : ExecutionLayout} {s : State} (h : Ready L s) (side : 
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 31
     have : usedBytes < 2 ^ 31 := by decide
-    omega
+    omega_using [hend, this]
   refine WP.mono (modulusMinus_ok h.parent (h.child side) (by decide) hlo hhi ho hw2
     (Nat.lt_of_le_of_lt hw48 (by decide)) ha ham ⟨.local d, side.lengthField⟩ hdp
     (h.length side) hk1 hk31 rfl (h.local_write hend) (h.local_out hd hend)) ?_

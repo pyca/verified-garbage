@@ -27,7 +27,7 @@ theorem val32_cons_eq (m : Mem) (W : Addr) (a b n : Nat) :
   have lowB : w32 m W b < 2 ^ 32 := (m.readW (off W b) 32).isLt
   change w32 m W a + 2 ^ 32 * val32 m W (a + 4) n =
     w32 m W b + 2 ^ 32 * val32 m W (b + 4) n ↔ _
-  omega
+  omega_using [lowA, lowB]
 
 theorem xorWords_zero (m : Mem) (W : Addr) (a b n : Nat) :
     xorWords m W a b n = 0#32 ↔ val32 m W a n = val32 m W b n := by
@@ -52,8 +52,8 @@ theorem xorWords_succ (m : Mem) (W : Addr) (a b n : Nat) :
       ((m.readW (off W a) 32 ^^^ m.readW (off W b) 32) ||| xorWords m W (a + 4) (b + 4) n) |||
         (m.readW (off W (a + 4 * (n + 1))) 32 ^^^ m.readW (off W (b + 4 * (n + 1))) 32)
     rw [ih (a + 4) (b + 4), BitVec.or_assoc]
-    rw [show a + 4 + 4 * n = a + 4 * (n + 1) by omega,
-      show b + 4 + 4 * n = b + 4 * (n + 1) by omega]
+    rw [show a + 4 + 4 * n = a + 4 * (n + 1) by omega_using [],
+      show b + 4 + 4 * n = b + 4 * (n + 1) by omega_using []]
 
 end VG.Proof.MillerRabin
 end
@@ -86,9 +86,9 @@ theorem equalLoop_ok {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
   rintro i t index ⟨K, bp, cx, countI, M, V⟩
   have ht := hw.of_keeps K
   unfold equalBody
-  refine wp_movS (readSrc_ptr ht bp (d := 0) (by omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_ptr ht bp (d := 0) (by omega_using [aFit, index])) fun a A _ => ?_
   have cxA : PtrAt a W .ecx (y + 4 * i) := by rw [PtrAt, A.other .ecx (by decide)]; exact cx
-  refine wp_logicS (.inr rfl) (readSrc_ptr (ht.of_keeps A.keeps) cxA (d := 0) (by omega)) fun b B => ?_
+  refine wp_logicS (.inr rfl) (readSrc_ptr (ht.of_keeps A.keeps) cxA (d := 0) (by omega_using [bFit, index])) fun b B => ?_
   refine wp_orS rfl fun c C => ?_
   refine wp_addS rfl fun d D _ => wp_addS rfl fun e E _ => wp_subZ rfl fun u U Z => WP.block_nil ?_
   have esiE : e.gpr .esi = t.gpr .esi := by

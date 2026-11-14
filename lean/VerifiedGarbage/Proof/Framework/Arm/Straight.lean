@@ -201,7 +201,7 @@ theorem toNat_addr (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
 /-- Word `k` from `b`, when it does not wrap around. -/
 theorem wordAddr_toNat (b : BitVec 32) {k : Nat} (h : b.toNat + 4 * k < 2 ^ 32) :
     (wordAddr b k).toNat = b.toNat + 4 * k := by
-  rw [wordAddr, toNat_addr, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * k) (by omega),
+  rw [wordAddr, toNat_addr, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * k) (by omega_using [h]),
     Nat.mod_eq_of_lt h]
 
 theorem slot_sep (b : BitVec 32) {j k : Nat} (hj : b.toNat + 4 * j < 2 ^ 32)
@@ -212,19 +212,19 @@ theorem slot_sep (b : BitVec 32) {j k : Nat} (hj : b.toNat + 4 * j < 2 ^ 32)
   have e2 := wordAddr_toNat b hk
   generalize wordAddr b j = A at h₁ e1
   generalize wordAddr b k = B at h₂ e2
-  have : j < k ∨ k < j := by omega
+  have : j < k ∨ k < j := by omega_using [h]
   rcases this with h' | h' <;> bv_omega
 
 theorem slot_contains (b : BitVec 32) {n k : Nat} (hk : k < n) (hn : b.toNat + 4 * n ≤ 2 ^ 32) :
     (⟨State.addr b, 4 * n⟩ : Region).Contains (wordAddr b k) (32 / 8) := by
   simp only [Region.Contains]
-  have e1 := wordAddr_toNat b (k := k) (by omega)
+  have e1 := wordAddr_toNat b (k := k) (by omega_using [hk, hn])
   have e2 := toNat_addr b
   generalize wordAddr b k = A at e1
   generalize State.addr b = B at e2
   rw [show (32 : Nat) / 8 = 4 from rfl]
   have : (A - B).toNat = 4 * k := by bv_omega
-  omega
+  omega_using [hk, this]
 
 theorem loc_some_slot {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some (.slot k)) :
     n = c.base ∧ off = 4 * k ∧ k < c.slots ∧ off < 4096 := by
@@ -234,7 +234,7 @@ theorem loc_some_slot {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some 
     split at h
     · rename_i h2
       cases h
-      exact ⟨h2.1, by omega, h2.2, h1.2⟩
+      exact ⟨h2.1, by omega_using [h1], h2.2, h1.2⟩
     · split at h <;> cases h
   · cases h
 
@@ -248,7 +248,7 @@ theorem loc_some_ext {c : Cfg} {n : Reg} {off k : Nat} (h : c.loc n off = some (
     · split at h
       · rename_i h2
         cases h
-        exact ⟨h2.1, by omega, h2.2, h1.2⟩
+        exact ⟨h2.1, by omega_using [h1], h2.2, h1.2⟩
       · cases h
   · cases h
 
@@ -470,7 +470,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       refine ⟨_, exec_str h32 hin, ?_⟩
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (32 / 8)
           (wordAddr (s.gpr c.base) k) (32 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        slot_sep _ (by have := hok.slots; omega_using [hj, this]) (by have := hok.slots; omega_using [hlt, this]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_, fun j b hj hjb => ?_,
           fun r v h => hrel.cst r v h⟩,
         hok.congr rfl rfl rfl rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
@@ -540,10 +540,10 @@ theorem add_ofNat_ofNat (b : BitVec 32) (x y : Nat) :
 theorem contains_off {b : BitVec 32} {len off n : Nat} (hfit : b.toNat + len ≤ 2 ^ 32)
     (h : off + n ≤ len) (hn : 0 < n) :
     (⟨State.addr b, len⟩ : Region).Contains (State.addr (b + BitVec.ofNat 32 off)) n := by
-  rw [addr_add (by omega)]
+  rw [addr_add (by omega_using [hfit, h, hn])]
   simp only [Region.Contains]
   rw [show State.addr b + BitVec.ofNat 64 off - State.addr b = BitVec.ofNat 64 off by bv_omega,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hfit, h])]
   exact h
 
 theorem in_off {rs : List Region} {b : BitVec 32} {len off n : Nat}
@@ -557,13 +557,13 @@ theorem Ok.of_off {c : Cfg} {s : State} {b : BitVec 32} {len off : Nat}
     (hb : s.gpr c.base = b + BitVec.ofNat 32 off) (hlen : off + 4 * c.slots ≤ len)
     (he : c.exts = 0) : Ok c s where
   slotIn k hk := by
-    rw [hb, wordAddr, add_ofNat_ofNat]; exact in_off hr hfit (by omega) (by omega)
+    rw [hb, wordAddr, add_ofNat_ofNat]; exact in_off hr hfit (by omega_using [hlen, hk]) (by omega_using [])
   extIn k hk := by omega
   slots := by
     rcases Nat.eq_zero_or_pos c.slots with h0 | h0
-    · rw [h0]; have := (s.gpr c.base).isLt; omega
-    · rw [hb, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega),
-        Nat.mod_eq_of_lt (by omega)]; omega
+    · rw [h0]; have := (s.gpr c.base).isLt; omega_using []
+    · rw [hb, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [hfit, hlen, h0]),
+        Nat.mod_eq_of_lt (by omega_using [hfit, hlen, h0])]; omega_using [hfit, hlen]
   sep k _ j hj := by omega
 
 /-- `Ok` for external words at offset `off` of a readable region, and no slots. -/
@@ -573,8 +573,8 @@ theorem Ok.of_ext {c : Cfg} {s : State} {b : BitVec 32} {len off : Nat}
     (hs : c.slots = 0) : Ok c s where
   slotIn k hk := by omega
   extIn k hk := by
-    rw [he, wordAddr, add_ofNat_ofNat]; exact in_off hr hfit (by omega) (by omega)
-  slots := by rw [hs]; have := (s.gpr c.base).isLt; omega
+    rw [he, wordAddr, add_ofNat_ofNat]; exact in_off hr hfit (by omega_using [hlen, hk]) (by omega_using [])
+  slots := by rw [hs]; have := (s.gpr c.base).isLt; omega_using []
   sep k hk := by omega
 
 end VG.Arm.Straight

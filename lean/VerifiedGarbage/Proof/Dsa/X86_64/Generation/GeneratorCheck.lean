@@ -46,10 +46,10 @@ theorem generatorCheck_ok {s : State} {B F : Addr} {Z w len : Nat} {W : Nat → 
     cases result with
     | false =>
       exact generatorRange_ok hu up (by rw [hp]; exact upl) ux (by rw [hx]; exact uxl)
-        spu sxu (by omega) (by omega) (by omega) (by omega) (hodd rfl)
+        spu sxu (by omega_using [hp, hpos]) (by omega_using [hp, hfit]) (by omega_using [hx, hpos]) (by omega_using [hx, hfit]) (hodd rfl)
     | true =>
       exact generatorResult_ok hu up (by rw [hp]; exact upl) ux (by rw [hx]; exact uxl)
-        spu sxu (by omega) (by omega) (by omega) (by omega) (hresult rfl)
+        spu sxu (by omega_using [hp, hpos]) (by omega_using [hp, hfit]) (by omega_using [hx, hpos]) (by omega_using [hx, hfit]) (hresult rfl)
   exact WP.mono check fun t ⟨hm, ht, ft, kt⟩ =>
     ⟨hm, ht, (ff.mono (by simp)).trans (ft.mono (fun r hr => List.mem_cons_of_mem _ hr)),
       (ku.trans kt).mono (by decide)⟩

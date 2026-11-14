@@ -28,22 +28,22 @@ theorem shapeModuli_ok {s : State} {base : Addr} {size pLen qLen p q : Nat}
       Keeps shapeClob s t ∧ Outs base shapeRanges s.mem t.mem := by
   have L : 128 ≤ pLen ∧ pLen ≤ 384 ∧ 20 ≤ qLen ∧ qLen ≤ 32 := by
     unfold Spec.Dsa.lengthsValid at widths
-    omega
+    omega_using [widths]
   have sz : 15712 ≤ size := extent
-  have ctx : contextBytes 48 ≤ size := by change 7048 ≤ size; omega
+  have ctx : contextBytes 48 ≤ size := by change 7048 ≤ size; omega_using [sz]
   have A : pLen % 4 = 0 ∧ qLen % 4 = 0 := by
     unfold Spec.Dsa.lengthsValid at widths
-    omega
-  refine WP.mono (shape_ok hs (by change 8256 ≤ size; omega)
-    (by omega) (by omega) (by omega) (by omega) A.1 A.2 (P.ready ctx) (Q.ready ctx) hp hq)
+    omega_using [widths]
+  refine WP.mono (shape_ok hs (by change 8256 ≤ size; omega_using [sz])
+    (by omega_using [L]) (by omega_using [L]) (by omega_using [L]) (by omega_using [L]) A.1 A.2 (P.ready ctx) (Q.ready ctx) hp hq)
     fun t ⟨F, Z, D, K, O⟩ => ?_
   refine ⟨F, Z, ?_, K, O⟩
   intro valid
   have B := VG.Proof.Dsa.supported_bounds valid.1
   refine ⟨⟨hs.of_keeps K (by decide), extent, widths,
     P.keep_shape O K (by decide) (by decide), Q.keep_shape O K (by decide) (by decide),
-    (P.value_keep_shape O K (by decide) (by decide) (by omega)).trans hp,
-    (Q.value_keep_shape O K (by decide) (by decide) (by omega)).trans hq,
+    (P.value_keep_shape O K (by decide) (by decide) (by omega_using [sz])).trans hp,
+    (Q.value_keep_shape O K (by decide) (by decide) (by omega_using [sz])).trans hq,
     B.1, B.2.1, valid.2.2, valid.2.1⟩, D valid⟩
 
 end VG.Proof.Dsa.X86

@@ -158,11 +158,11 @@ theorem dotTerms_ok (n : Nat) {s : State} {off : Nat}
   | zero => exact next s (VChg.refl _ _) (by simp) (by simp)
   | succ n ih =>
     rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,List.append_assoc]
-    refine ih (fun k hk => ho k (by omega)) (fun k hk => hr k (by omega)) fun a ha e18 e19 => ?_
+    refine ih (fun k hk => ho k (by omega_using [hk])) (fun k hk => hr k (by omega_using [hk])) fun a ha e18 e19 => ?_
     have hr' : InRegions (a.rd++a.wr) (a.gpr .x13+BitVec.ofNat 64 (1024*n+off)) 16 ∧
         InRegions (a.rd++a.wr) (a.gpr .x14+BitVec.ofNat 64 (1024*n+off)) 16 := by
-      rw [ha.rd,ha.wr,ha.gpr]; exact hr n (by omega)
-    refine dotTerm_ok (ho n (by omega)) hr'.1 hr'.2 ?_ ?_ fun t ht a18 a19 => ?_
+      rw [ha.rd,ha.wr,ha.gpr]; exact hr n (by omega_using [])
+    refine dotTerm_ok (ho n (by omega_using [])) hr'.1 hr'.2 ?_ ?_ fun t ht a18 a19 => ?_
     · rw [dotAccum_chg ha]; exact e18
     · rw [dotAccum_chg ha]; exact e19
     · refine next t ((ha.trans ht).mono (by simp)) (fun _ => ?_) (fun _ => ?_)
@@ -183,7 +183,7 @@ theorem dotLoad_ok {n : Nat} (hn : 0<n) {d : VReg} (h30 : d≠.v30) (h31 : d≠.
   rw [List.append_assoc]
   refine dotTerms_ok n ho hr fun a ha e18 e19 => ?_
   have ca := hc.chg ha (by decide) (by decide)
-  refine dotReduce_ok h31 (dotAccum s off n) (e18 (by omega)) (e19 (by omega)) ca.qv ca.qiv
+  refine dotReduce_ok h31 (dotAccum s off n) (e18 (by omega_using [hn])) (e19 (by omega_using [hn])) ca.qv ca.qiv
     fun t ht ev => ?_
   have h : VChg [.v16,.v17,.v18,.v19,.v20,d] s t := (ha.trans ht).mono (by
     simp (config := { contextual := true }) only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc, true_or, or_true, implies_true, and_self, forall_eq_or_imp])

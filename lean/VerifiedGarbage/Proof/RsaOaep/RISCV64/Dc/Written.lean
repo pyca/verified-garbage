@@ -34,7 +34,7 @@ theorem andB_ones (b : Byte) : andB b (BitVec.allOnes 64) = b := by
   simp only [andB, BitVec.and_allOnes]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
-  rw [Nat.mod_eq_of_lt (by have := b.isLt; omega), Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [Nat.mod_eq_of_lt (by have := b.isLt; omega_using []), Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 theorem andB_zero (b : Byte) : andB b 0 = 0 := by
   simp only [andB]; rw [show BitVec.setWidth 64 b &&& 0 = 0 from BitVec.and_zero]; rfl
@@ -47,7 +47,7 @@ theorem accG_congr (b : Byte) {f f' g g' : Nat → Byte} : ∀ n, (∀ i < n, f 
   | 0, _, _ => rfl
   | n + 1, hf, hg => by
     simp only [accG]
-    rw [accG_congr b n (fun i hi => hf i (by omega)) (fun i hi => hg i (by omega)), hf n (by omega), hg n (by omega)]
+    rw [accG_congr b n (fun i hi => hf i (by omega_using [hi])) (fun i hi => hg i (by omega_using [hi])), hf n (by omega_using []), hg n (by omega_using [])]
 
 section
 variable {Hs Gs : Spec.Mgf1.Hash} {D k : Nat} {lab : List Byte} {V0 V1 lh : Nat → Byte}
@@ -120,15 +120,15 @@ theorem dec_written (hGv : Proof.Mgf1.Valid Gs) (hHv : Proof.Mgf1.Valid Hs) (hHl
       have hij : idx = j₀ := by
         have := hidx.symm.trans hsj
         have := congrArg BitVec.toNat this
-        rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-          Nat.mod_eq_of_lt (by omega)] at this
+        rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk2, hidx']),
+          Nat.mod_eq_of_lt (by omega_using [hk2, hTl, hj₀])] at this
       subst hij
       rw [hdw, show (1 : Byte) = 1#8 from rfl]
       simp only []
       have hV0 : V1 0 = V0 0 := by
-        rw [h5 0 (by omega), mixV, ifn (by omega), mixV, ifn (by omega)]
+        rw [h5 0 (by omega_using [hk]), mixV, ifn (by omega_using []), mixV, ifn (by omega_using [])]
       have htake : ((List.range k).map V0).take 1 = [V0 0] := by
-        rw [show k = (k - 1) + 1 by omega, List.range_succ_eq_map]; simp
+        rw [show k = (k - 1) + 1 by omega_using [hk], List.range_succ_eq_map]; simp
       by_cases hc : ((List.range k).map V0).take 1 = [0x00] ∧ srcB V1 (1 + D) D = Hs.hash lab
       · rw [ifp hc]
         have hacc0 : sc.2.2 ||| sc.1 = 0 := hacc.mpr ⟨by
@@ -137,10 +137,10 @@ theorem dec_written (hGv : Proof.Mgf1.Valid Gs) (hHv : Proof.Mgf1.Valid Hs) (hHl
             show V1 (1 + D + i) = lh i
             rw [hlh i hi, ← hc.2, srcB, map_range_getD' _ hi]⟩, hfd.2, hfd.1⟩
         rw [mk_true hacc0] at hout hml hr
-        refine ⟨by rw [hr]; decide, out_list (by omega) hj₀ fun i hi => by rw [hout i hi, andB_ones], ?_⟩
-        rw [hml, BitVec.and_allOnes, VG.Offset.ofNat_sub_ofNat (by omega), VG.Offset.ofNat_sub_ofNat (by omega),
+        refine ⟨by rw [hr]; decide, out_list (by omega_using [hTl]) hj₀ fun i hi => by rw [hout i hi, andB_ones], ?_⟩
+        rw [hml, BitVec.and_allOnes, VG.Offset.ofNat_sub_ofNat (by omega_using [hk]), VG.Offset.ofNat_sub_ofNat (by omega_using [hidx']),
           List.length_drop]
-        congr 1; omega
+        congr 1; omega_using [hTl]
       · rw [ifn hc]
         have hne : sc.2.2 ||| sc.1 ≠ 0 := fun h0 => by
           have e := (accG_eq_zero _ _ _ D).mp (hc₀ ▸ (hacc.mp h0).1)

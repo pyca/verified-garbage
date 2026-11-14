@@ -11,6 +11,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Scalar clamping and the Edwards-to-Montgomery map, shared by fixed-base implementations. -/
 
@@ -30,7 +31,7 @@ theorem clamped_bit {kb : List Byte} (hk : kb.length = 32) {q : Nat} (hq : q < 2
   by_cases h255 : q = 255
   · subst h255
     rw [Edwards.decodeScalar25519_shift hk]; rfl
-  · have hb := X25519.scalar_bit hk (t := q) (by omega)
+  · have hb := X25519.scalar_bit hk (t := q) (by omega_using [hq, h255])
     simp only [X25519.bit] at hb
     rw [hb, Proof.Ed25519.decodeLE_eq, X25519.leNum_bit]
     by_cases h3 : q < 3

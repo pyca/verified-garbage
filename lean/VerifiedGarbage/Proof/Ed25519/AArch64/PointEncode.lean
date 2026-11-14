@@ -71,9 +71,9 @@ theorem sign_word (w : BitVec 64) :
   have he : w &&& 1 = BitVec.ofNat 64 (w.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, show (1 : BitVec 64).toNat = 1 from rfl,
-      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 64 by omega)]
+      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 64 by omega_using [])]
   rw [he]
-  have h : w.toNat % 2 = 0 ∨ w.toNat % 2 = 1 := by omega
+  have h : w.toNat % 2 = 0 ∨ w.toNat % 2 = 1 := by omega_using []
   rcases h with h | h <;> rw [h] <;> decide
 
 theorem pointSign_ok (s : State) :
@@ -81,7 +81,7 @@ theorem pointSign_ok (s : State) :
       t.gpr .x19 = BitVec.ofNat 64 ((val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) % 2) * 2 ^ 63) ∧
       Keeps [.x19, .x9] s t := by
   have hv : val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) % 2 = (s.gpr .x4).toNat % 2 := by
-    simp only [val4]; omega
+    simp only [val4]; omega_using []
   apply WP.of_runBlock
   simp only [pointSign, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     show 16 * 0 < Size.w.bits from by decide, show (63 : Nat) < Size.x.bits from by decide,
@@ -98,16 +98,16 @@ theorem encodeSign_ok (s : State) (x y : Nat) (hy : y < 2 ^ 255)
     WP isa (.block [.add .x .x7 .x7 .x19]) s fun t =>
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) = y + (x % 2) * 2 ^ 255 ∧
       Keeps [.x7] s t := by
-  have hb : (s.gpr .x7).toNat < 2 ^ 63 := by simp only [val4] at hv; omega
-  have hm : ((x % 2) * 2 ^ 63) < 2 ^ 64 := by omega
+  have hb : (s.gpr .x7).toNat < 2 ^ 63 := by simp only [val4] at hv; omega_using [hy, hv]
+  have hm : ((x % 2) * 2 ^ 63) < 2 ^ 64 := by omega_using []
   have ha : (s.gpr .x7 + s.gpr .x19).toNat = (s.gpr .x7).toNat + (x % 2) * 2 ^ 63 := by
-    rw [hs, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (by omega)]
+    rw [hs, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (by omega_using [hb])]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     RegUpd.gpr_write, BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  · simp only [val4, ha] at hv ⊢; omega
+  · simp only [val4, ha] at hv ⊢; omega_using [hv]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
 

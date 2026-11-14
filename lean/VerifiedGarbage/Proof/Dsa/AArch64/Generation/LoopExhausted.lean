@@ -23,16 +23,16 @@ theorem loopExhausted_ok {P : PrimeParams} {s₀ s : State}
       (.block [ldh .x3 kStat, .subImm .x .x3 .x3 4])) s fun t =>
         isa.eval (.zero .x .x3) t = some false ∧ PrimeLoopEnd P s₀ res t := by
   have hr := VG.Proof.RsaKeyGen.mrLoop_step P.N P.checks (Spec.Rsa.splitTwos (P.N - 1)).1
-    (Spec.Rsa.splitTwos (P.N - 1)).2 P.drawBytes P.rand i uni used h.go P.drawWidth (by have := P.drawMin; omega)
+    (Spec.Rsa.splitTwos (P.N - 1)).2 P.drawBytes P.rand i uni used h.go P.drawWidth (by have := P.drawMin; omega_using [this])
   have hnone : res = none := by
     rw [← h.rest]
     change Spec.RsaKeyGen.loop _ _ _ = _
-    rw [hr, ite_eq_right (by omega)]
+    rw [hr, ite_eq_right (by omega_using [hshort])]
   have h256 := h.state.ready.ws.h256
   refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun u =>
       u.mem = s.mem.writeW (off P.B (8 * kStat)) (BitVec.ofNat 64 0)) (by
       brun [h.state.ready.ws.x0, hdr_enc (show kStat < 32 by decide),
-        h.state.ready.ws.scr.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega)]
+        h.state.ready.ws.scr.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using [h256])]
       rfl) rfl rfl rfl) fun u ⟨hm, ku⟩ => ?_)
   have hf : Frm P.B [(8 * kStat, 8)] s.mem u.mem := by
     rw [hm]

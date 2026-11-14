@@ -17,7 +17,7 @@ def fastNextIndex (w k j : Nat) : Nat := j+if FastNaf.residual w k j%2=0 then 1 
 
 theorem fastNextIndex_gt {w : Nat} (hw : FastNaf.Width w) (k j : Nat) : j<fastNextIndex w k j := by
   unfold fastNextIndex
-  split <;> rcases hw with rfl | rfl <;> omega
+  split <;> rcases hw with rfl | rfl <;> omega_using []
 
 theorem fastTest_ok (s : State) (h13 : s.gpr .x13=1) :
     WP isa (.block [.logic .and .x .x1 .x5 .x13]) s fun t =>
@@ -37,7 +37,7 @@ theorem fastLow_even {s : State} {w k j : Nat}
   change (s.gpr .x5).toNat &&& 1=0 ↔ _
   rw [Nat.and_one_is_mod]
   dsimp only [nafVal5] at hv
-  omega
+  omega_using [hv]
 
 theorem fastStep_ok {s : State} {base : Addr} {size bits w k j : Nat}
     (hI : FastPrepState base size bits w k j s) (hw : FastNaf.Width w)
@@ -83,7 +83,7 @@ theorem fastPrepPost_of_zero {s : State} {base : Addr} {size bits w k j : Nat}
   split
   · rfl
   · have hv := FastNaf.residual_of_zero w k j hz (i-j)
-    rw [show j+(i-j)=i from by omega] at hv
+    rw [show j+(i-j)=i from by omega_arith] at hv
     exact (FastNaf.byte_of_zero w k i hv).symm
 
 theorem fastLoop_ok {s : State} {base : Addr} {size bits w k j : Nat}
@@ -96,8 +96,8 @@ theorem fastLoop_ok {s : State} {base : Addr} {size bits w k j : Nat}
   apply WP.loop I (n:=257-j)
   · intro n a ⟨i,hi,hn,ia,ka,oa⟩
     have hv : FastNaf.residual w k i≤2^256 :=
-      Nat.le_trans (FastNaf.residual_bound w (Nat.le_of_lt hk) (j:=i) (by omega))
-        (Nat.pow_le_pow_right (by decide) (by omega))
+      Nat.le_trans (FastNaf.residual_bound w (Nat.le_of_lt hk) (j:=i) (by omega_using [hi]))
+        (Nat.pow_le_pow_right (by decide) (by omega_using []))
     refine WP.mono (fastStep_ok ia hw hb hi hv) fun t ⟨it,kt,ot,et⟩ => ?_
     by_cases hz : FastNaf.residual w k (fastNextIndex w k i)=0
     · refine Or.inl ⟨?_,fastPrepPost_of_zero it hz,ka.trans kt,oa.trans ot⟩
@@ -105,11 +105,11 @@ theorem fastLoop_ok {s : State} {base : Addr} {size bits w k j : Nat}
       rfl
     · have hj' : fastNextIndex w k i<257 := by
         by_contra h
-        exact hz (FastNaf.residual_zero_ge hk (by omega))
+        exact hz (FastNaf.residual_zero_ge hk (by omega_using [h]))
       refine Or.inr ⟨?_,257-fastNextIndex w k i,?_,fastNextIndex w k i,hj',rfl,it,ka.trans kt,oa.trans ot⟩
       · simp only [eval,read_x,Size.bits,Option.some.injEq,bne_iff_ne]
         exact fun h => hz (et.mp h)
-      · have := fastNextIndex_gt hw k i; omega
+      · have := fastNextIndex_gt hw k i; omega_using [hn, hj', this]
   · exact ⟨j,hj,rfl,hI,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,Outside.refl _ _ _ _⟩
 
 end VG.Proof.Weierstrass.AArch64

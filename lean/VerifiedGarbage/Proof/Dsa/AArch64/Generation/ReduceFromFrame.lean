@@ -123,10 +123,10 @@ theorem reduceFromFrame_ok {s : State} {B F S : Addr} {Z w pLen qLen : Nat}
   have hz : 256 ≤ Z := Nat.le_trans (Nat.le_add_right 256 _) hZ
   have hb : ∀ r ∈ workspaceRanges, r.1 + r.2 ≤ Z := by
     simp only [workspaceRanges, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only <;> omega
-  refine WP.mono (candidateFromFrame_ok hv hpLen hqLen (by omega)
+    rintro r (rfl | rfl | rfl) <;> simp only <;> omega_using [hz]
+  refine WP.mono (candidateFromFrame_ok hv hpLen hqLen (by omega_using [hw48, hpLen])
     (kv.sp.trans (ku.sp.trans L.sp))
-    (fun k hk => by rw [kv.rd, kv.wr, ku.rd, ku.wr]; exact L.ld (d := 8 * k) (n := 8) (by unfold VG.Impl.RsaOaep.AArch64.frameBytes; omega))
+    (fun k hk => by rw [kv.rd, kv.wr, ku.rd, ku.wr]; exact L.ld (d := 8 * k) (n := 8) (by unfold VG.Impl.RsaOaep.AArch64.frameBytes; omega_using [hk]))
     (fun k hk => (frame_word_of_workspace fv hb (hframe k hk)).trans (by rw [hm]; exact R.fr k hk))
     hsep (sxu.congrK (InScr.of_frm fv hb) kv) (squ.congrK (InScr.of_frm fv hb) kv)
     hx hq hqposlen hqpos hqfit
@@ -139,7 +139,7 @@ theorem reduceFromFrame_ok {s : State} {B F S : Addr} {Z w pLen qLen : Nat}
     rw [fv a (fun r hr => Or.inr (Nat.le_trans (hb r hr) (by
       have hn := ha ⟨B, Z⟩ (by simp)
       change ¬ ofs B a < Z at hn
-      omega))), hm]
+      omega_using [hn]))), hm]
   exact fs.trans ft
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -345,14 +345,14 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
       refine saved₅.frame_in savedOffs_range pf fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_base _ (by omega) (by omega)
-      · exact (h.dataBuf.sub_right (Offset.sub_base _ (by unfold scratchSlots; omega))).symm
+      · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
+      · exact (h.dataBuf.sub_right (Offset.sub_base _ (by unfold scratchSlots; omega_using []))).symm
     rw [seedRestore_eq]
     refine WP.mono (Spill.restore_wp (B := X) (by rw [← sb₆]; exact room₆.1) sb₆ savedOffs_ho
       savedOffs_restorable (fun q hq => room₆.rw ?_) sv₆) fun s' R => ?_
     · rw [← sb₆]
       have := savedOffs_range q hq
-      exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)
+      exact Offset.contains_base _ (by unfold scratchSlots; omega_using [this]) (by omega_using [this])
     have frame : Frame [⟨X, 8 * scratchSlots⟩, ⟨D, 16 * n⟩] s.mem s'.mem := by
       rw [R.mem]
       refine (f₅.mono (by simp)).trans (pf.sub fun r hr => ?_)

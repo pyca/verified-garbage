@@ -74,11 +74,11 @@ theorem ValidatingABI.used {s : State} (A : ValidatingABI s) : usedBytes ≤ (ar
   unfold Spec.Dsa.lengthsValid at L
   unfold Spec.Dsa.scratchWords at H
   change 15712 ≤ _
-  omega
+  omega_using [L, H]
 
 theorem ValidatingABI.stackArgument {s : State} (A : ValidatingABI s) {i : Nat} (hi : i < 6) :
     StackArgument s (argumentPointer s 4) ((arg s 5).toNat * 8) i := by
-  apply stackArgument_of (count := 6) (by have := A.stackBound; omega) hi
+  apply stackArgument_of (count := 6) (by have := A.stackBound; omega_using [this]) hi
   · rw [A.rd, A.wr]; simp
   · exact A.scratchArgs.symm
 
@@ -88,19 +88,19 @@ theorem ValidatingABI.stack {s : State} (A : ValidatingABI s) :
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth,
       Nat.mod_eq_of_lt (Nat.lt_trans (arg s 4).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
-  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   · exact A.belowScratch
 
 theorem ValidatingABI.room {s : State} (A : ValidatingABI s) :
     Pow.Room (s.gpr .esp) (argumentPointer s 4) ((arg s 5).toNat * 8) := by
   apply room_of A.stackLow
-  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   · exact A.belowScratch
 
 theorem validatingEntry_ok {s : State} (A : ValidatingABI s) :
     WP isa (.block Generate.checkEntry) s fun t =>
       Installed (argumentPointer s 4) ((arg s 5).toNat * 8) Generate.checkArguments 0 2 3 s t := by
-  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   apply WP.mono (installArguments_ok Generate.checkArguments (scratchArg := 4)
     (keyArg := 0) (pLenArg := 2) (qLenArg := 3)
     (A.stackArgument (by decide : 4 < 6)).readSrc rfl A.scratchBound sz
@@ -130,7 +130,7 @@ theorem validatingSized_spec {base : Addr} {size pLen qLen p q g y : Nat}
       Keeps powerClob s sf ∧ StackOutside (s.gpr .esp) base usedBytes s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
+  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
   have value := VG.Proof.Dsa.validatePublicKeyBytes_eq widths keyLen keyValue
   unfold Generate.checkSizedWith
   refine WP.seq (WP.mono (shapeModuli_ok scr extent widths P Q hp hq) fun t ⟨F, Z, M, K, O⟩ => ?_)
@@ -154,7 +154,7 @@ theorem validatingSized_spec {base : Addr} {size pLen qLen p q g y : Nat}
     · rw [Of]
       intro a ha hstack
       exact (execution_outside E a ha (by rw [K.1 .esp (by decide)]; exact hstack)).trans
-        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega)))
+        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega_using [ha])))
     · intro regs saved
       rw [Of]
       exact E.saved (shapeFrame_saved O saved)
@@ -167,7 +167,7 @@ theorem validatingSized_spec {base : Addr} {size pLen qLen p q g y : Nat}
       rfl
     · rw [Of]
       intro a ha _
-      exact (shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega))
+      exact (shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega_using [ha]))
     · intro regs saved
       rw [Of]
       exact shapeFrame_saved O saved
@@ -181,13 +181,13 @@ theorem validatingInstalled_spec {s t : State} (A : ValidatingABI s)
       ∀ regs, VG.X86.Spill.Saved t.mem (off (argumentPointer s 4)) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 4)) regs Entry.savedRegisters := by
   have L : 0 < (arg s 2).toNat ∧ 0 < (arg s 3).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Key, Bytes⟩ := I.input (by decide : (0, .p) ∈ Generate.checkArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Qptr, Gptr, Yptr, _⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Y, Value⟩ := publicKey_buffers Key L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr Yptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr Yptr
   exact validatingSized_spec I.scr A.used A.lengths P Q G Y rfl rfl rfl rfl
     (by simpa only [Spec.Rsa.bytesAt, List.length_map, List.length_range] using A.keyLength) Value
 
@@ -198,11 +198,11 @@ theorem validatingOperation_spec {s : State} (A : ValidatingABI s) :
       abiPreserved s sf ∧
       StackOutside (s.gpr .esp) (argumentPointer s 4) ((arg s 5).toNat * 8) s.mem sf.mem ∧
       sf.rd = s.rd ∧ sf.wr = s.wr := by
-  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   unfold Prevalidated.validate Generate.checkParametersWith Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (validatingEntry_ok A) fun t I => ?_)
-  refine WP.seq (generationDispatch_ok _ _ I.scr (by change 8256 ≤ _; omega)
+  refine WP.seq (generationDispatch_ok _ _ I.scr (by change 8256 ≤ _; omega_using [sz])
     (supportedWidths_member A.lengths) (by decide)
     (congrArg BitVec.toNat (I.arguments (2, .pLen) (by decide)))
     (congrArg BitVec.toNat (I.arguments (3, .qLen) (by decide))) ?_)
@@ -210,7 +210,7 @@ theorem validatingOperation_spec {s : State} (A : ValidatingABI s) :
   have J := I.compare Ku Ou
   refine WP.mono (validatingInstalled_spec A J) fun v ⟨Value, K, O, Saved⟩ => ?_
   have Ov : StackOutside (s.gpr .esp) (argumentPointer s 4) ((arg s 5).toNat * 8) s.mem v.mem :=
-    fun a ha hstack => (O a (by have := A.used; omega)
+    fun a ha hstack => (O a (by have := A.used; omega_using [ha, this])
       (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans
         (J.outside a (.inr (by simpa only [Nat.zero_add] using ha)))
   have Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.keeps.1 _ (by decide))

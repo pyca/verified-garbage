@@ -154,14 +154,14 @@ theorem store_ok' {base : Addr} {s₀ s : State} {G Q : Point W} {L : List Nat} 
     WP isa (.block (Cfg.storePt p192 e p)) s fun s' => BS base s₀ s' G Q (e :: L) ∧
       ∀ d, d + 32 ≤ 2048 → wordsVal s'.mem base d 4 = wordsVal s.mem base d 4 := by
   have hn := h.ws.nowrap
-  refine WP.mono (storePt_ok p192 h.ws (e := e) (by decide) (by show 2048 + 96 * e + 96 ≤ 8192; omega)
-    (by show 96 * e + 96 ≤ 4095; omega) ⟨hx.1, by show _ + 32 ≤ 4095; omega, by show _ + 32 ≤ 2048; omega⟩
-    ⟨hy.1, by show _ + 32 ≤ 4095; omega, by show _ + 32 ≤ 2048; omega⟩
-    ⟨hz.1, by show _ + 32 ≤ 4095; omega, by show _ + 32 ≤ 2048; omega⟩) fun s' ⟨ex, ey, ez, r, O⟩ => ?_
+  refine WP.mono (storePt_ok p192 h.ws (e := e) (by decide) (by show 2048 + 96 * e + 96 ≤ 8192; omega_using [he])
+    (by show 96 * e + 96 ≤ 4095; omega_using [he]) ⟨hx.1, by show _ + 32 ≤ 4095; omega_using [hx], by show _ + 32 ≤ 2048; omega_using [hx]⟩
+    ⟨hy.1, by show _ + 32 ≤ 4095; omega_using [hy], by show _ + 32 ≤ 2048; omega_using [hy]⟩
+    ⟨hz.1, by show _ + 32 ≤ 4095; omega_using [hz], by show _ + 32 ≤ 2048; omega_using [hz]⟩) fun s' ⟨ex, ey, ez, r, O⟩ => ?_
   simp only [show p192.jt = 2048 from rfl, show Cfg.jb p192 = 96 from rfl, show p192.n = 4 from rfl,
     Nat.reduceMul] at ex ey ez O
   have hd : ∀ d, d + 32 ≤ 2048 → wordsVal s'.mem base d 4 = wordsVal s.mem base d 4 := fun d hd =>
-    O.wordsVal (by omega) (by omega)
+    O.wordsVal (by omega_using [hd]) (by omega_using [hd])
   refine ⟨⟨h.ws.of_rest r, h.kp.trans (Kp.of_rest r), ?_, ?_, ?_, ?_⟩, hd⟩
   · refine (h.unch.trans O.unch).cover fun w hw => ?_
     rcases List.mem_append.mp hw with hw | hw
@@ -169,9 +169,9 @@ theorem store_ok' {base : Addr} {s₀ s : State} {G Q : Point W} {L : List Nat} 
     · rw [List.mem_singleton] at hw
       subst hw
       exact ⟨(2048, 1536), List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self),
-        by show 2048 ≤ 2048 + 96 * e; omega, by show 2048 + 96 * e + 96 ≤ 2048 + 1536; omega⟩
-  · rw [hd (p192.sl AP) (by show 256 + 32 ≤ 2048; omega)]; exact h.ap
-  · rw [hd (p192.sl BP) (by show 1344 + 32 ≤ 2048; omega)]; exact h.bp
+        by show 2048 ≤ 2048 + 96 * e; omega_using [], by show 2048 + 96 * e + 96 ≤ 2048 + 1536; omega_using [he]⟩
+  · rw [hd (p192.sl AP) (by show 256 + 32 ≤ 2048; omega_using [])]; exact h.ap
+  · rw [hd (p192.sl BP) (by show 1344 + 32 ≤ 2048; omega_using [])]; exact h.bp
   · intro e' he'
     simp only [List.mem_cons] at he'
     rcases he' with rfl | he'
@@ -180,11 +180,11 @@ theorem store_ok' {base : Addr} {s₀ s : State} {G Q : Point W} {L : List Nat} 
       by_cases hee : e' = e
       · subst hee
         exact ⟨hlt, hp.move ex ey ez⟩
-      · have h1 : e' < e ∨ e < e' := by omega
+      · have h1 : e' < e ∨ e < e' := by omega_using [hee]
         refine ⟨hlt, hok.of_eq ?_ ?_ ?_⟩
-        · exact O.wordsVal (d := 2048 + 96 * e') (by rcases h1 with h1 | h1 <;> omega) (by omega)
-        · exact O.wordsVal (d := 2048 + 96 * e' + 32) (by rcases h1 with h1 | h1 <;> omega) (by omega)
-        · exact O.wordsVal (d := 2048 + 96 * e' + 64) (by rcases h1 with h1 | h1 <;> omega) (by omega)
+        · exact O.wordsVal (d := 2048 + 96 * e') (by rcases h1 with h1 | h1 <;> omega_using [hee]) (by omega_using [hlt])
+        · exact O.wordsVal (d := 2048 + 96 * e' + 32) (by rcases h1 with h1 | h1 <;> omega_using [hee]) (by omega_using [hlt])
+        · exact O.wordsVal (d := 2048 + 96 * e' + 64) (by rcases h1 with h1 | h1 <;> omega_using [hee]) (by omega_using [hlt])
 
 /-- `o = p + q`, for `o` among the slots the construction writes: the
 entries are kept. -/
@@ -199,7 +199,7 @@ theorem add_ok' (hL : Law W) {base : Addr} {s₀ s : State} {G Q : Point W} {L :
   have hn := h.ws.nowrap
   refine WP.mono (addPt_ok hL h.ws h.ap h.bp hA hsl hP hP' hp hq) fun s' ⟨K, U, ok⟩ => ?_
   have hd : ∀ d, (∀ w ∈ addW o, d + 32 ≤ w.1 ∨ w.1 + w.2 ≤ d) → d + 32 ≤ 8192 →
-      wordsVal s'.mem base d 4 = wordsVal s.mem base d 4 := fun d h1 h2 => U.wordsVal h1 (by omega)
+      wordsVal s'.mem base d 4 = wordsVal s.mem base d 4 := fun d h1 h2 => U.wordsVal h1 (by omega_using [h2])
   have hfar : ∀ d, 2048 ≤ d → d + 32 ≤ 3840 → ∀ w ∈ addW o, d + 32 ≤ w.1 ∨ w.1 + w.2 ≤ d := by
     intro d h1 h2 w hw
     obtain ⟨w', hw', l1, l2⟩ := hW w hw
@@ -207,8 +207,8 @@ theorem add_ok' (hL : Law W) {base : Addr} {s₀ s : State} {G Q : Point W} {L :
       (by decide : ∀ x ∈ jSl, x + 32 ≤ 2048) x (hsl x (List.mem_append_left _ hx))
     simp only [addW, List.mem_append, List.mem_map, List.mem_singleton] at hw
     rcases hw with ⟨x, hx, rfl⟩ | rfl
-    · have := hsl' x hx; right; simp only; omega
-    · left; show d + 32 ≤ 3840; omega
+    · have := hsl' x hx; right; simp only; omega_using [h1, this]
+    · left; show d + 32 ≤ 3840; omega_using [h2]
   refine ⟨⟨h.ws.of_kp K, h.kp.trans K, (h.unch.trans U).cover fun w hw => ?_, ?_, ?_, ?_⟩, ok, U⟩
   · rcases List.mem_append.mp hw with hw | hw
     · exact ⟨w, hw, Nat.le_refl _, Nat.le_refl _⟩
@@ -218,30 +218,30 @@ theorem add_ok' (hL : Law W) {base : Addr} {s₀ s : State} {G Q : Point W} {L :
       have : 704 ≤ w'.1 := by
         simp only [buildW, List.mem_cons, List.not_mem_nil, or_false] at hw'
         rcases hw' with rfl | rfl | rfl | rfl <;> decide
-      omega
-    rw [hd (p192.sl AP) (fun w hw => .inl (by have := hlow w hw; show 256 + 32 ≤ w.1; omega))
-      (by show 256 + 32 ≤ 8192; omega)]
+      omega_using [l1, this]
+    rw [hd (p192.sl AP) (fun w hw => .inl (by have := hlow w hw; show 256 + 32 ≤ w.1; omega_using [this]))
+      (by show 256 + 32 ≤ 8192; omega_using [])]
     exact h.ap
   · have hlow : ∀ w ∈ addW o, 704 ≤ w.1 := fun w hw => by
       obtain ⟨w', hw', l1, l2⟩ := hW w hw
       have : 704 ≤ w'.1 := by
         simp only [buildW, List.mem_cons, List.not_mem_nil, or_false] at hw'
         rcases hw' with rfl | rfl | rfl | rfl <;> decide
-      omega
+      omega_using [l1, this]
     have hfarB : ∀ w ∈ addW o, p192.sl BP + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ p192.sl BP := fun w hw => by
       obtain ⟨w', hw', l1, l2⟩ := hW w hw
       have : 1344 + 32 ≤ w'.1 ∨ w'.1 + w'.2 ≤ 1344 := by
         simp only [buildW, List.mem_cons, List.not_mem_nil, or_false] at hw'
         rcases hw' with rfl | rfl | rfl | rfl <;> decide
       show 1344 + 32 ≤ w.1 ∨ w.1 + w.2 ≤ 1344
-      omega
-    rw [hd (p192.sl BP) hfarB (by show 1344 + 32 ≤ 8192; omega)]
+      omega_using [l1, l2, this]
+    rw [hd (p192.sl BP) hfarB (by show 1344 + 32 ≤ 8192; omega_using [])]
     exact h.bp
   · intro e he
     obtain ⟨hlt, hok⟩ := h.ents e he
-    exact ⟨hlt, hok.of_eq (hd (2048 + 96 * e) (hfar _ (by omega) (by omega)) (by omega))
-      (hd (2048 + 96 * e + 32) (hfar _ (by omega) (by omega)) (by omega))
-      (hd (2048 + 96 * e + 64) (hfar _ (by omega) (by omega)) (by omega))⟩
+    exact ⟨hlt, hok.of_eq (hd (2048 + 96 * e) (hfar _ (by omega_using []) (by omega_using [hlt])) (by omega_using [hlt]))
+      (hd (2048 + 96 * e + 32) (hfar _ (by omega_using []) (by omega_using [hlt])) (by omega_using [hlt]))
+      (hd (2048 + 96 * e + 64) (hfar _ (by omega_using []) (by omega_using [hlt])) (by omega_using [hlt]))⟩
 
 /-! ## The table's construction -/
 
@@ -308,7 +308,7 @@ theorem keep_addT {base : Addr} {m m' : Mem} (U : Unch base (addW (p192.pt TX TY
     ∀ d ∈ gqSl, wordsVal m' base d 4 = wordsVal m base d 4 := by
   have h : ∀ d ∈ gqSl, ∀ w ∈ addW (p192.pt TX TY TZ), d + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ d := by decide
   intro d hd
-  exact U.wordsVal (h d hd) (by have : d < 2048 := (by decide : ∀ d ∈ gqSl, d < 2048) d hd; omega)
+  exact U.wordsVal (h d hd) (by have : d < 2048 := (by decide : ∀ d ∈ gqSl, d < 2048) d hd; omega_using [this])
 
 theorem apart_mixed' : ∀ a ∈ [1, 2, 3], ∀ b ∈ [1, 2, 3],
     ((rcbW (Cfg.rcb3Slots p192) (p192.pt TX TY TZ)).Nodup ∧
@@ -333,14 +333,14 @@ theorem mixed_ok (hL : Law W) {base : Addr} {s₀ s : State} {G Q : Point W} (hG
       ∀ d ∈ gqSl, wordsVal s'.mem base d 4 = wordsVal s.mem base d 4 := by
   obtain ⟨hA, hsl⟩ := apart_mixed ha hb
   have hab : a < 4 ∧ b < 4 := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at ha hb; omega
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ha hb; omega_using [ha, hb]
   rw [Cfg.mixed]
   refine WP.seq (WP.mono (add_ok' hL h hA hsl (by decide) (hL.onCurve_mul hG _) (hL.onCurve_mul hQ _) hpa hpb)
     fun s₁ ⟨h₁, ok₁, U₁⟩ => ?_)
   have k₁ := keep_addT U₁
   have e₁ : ent G Q ((4 * a + b) / 4) ((4 * a + b) % 4) = Spec.Weierstrass.add (mul a G) (mul b Q) := by
-    rw [show (4 * a + b) / 4 = a by omega, show (4 * a + b) % 4 = b by omega]; rfl
-  refine WP.mono (store_ok' h₁ (e := 4 * a + b) (by omega) (slots_mixed _ (by decide))
+    rw [show (4 * a + b) / 4 = a by omega_using [hab], show (4 * a + b) % 4 = b by omega_using [hab]]; rfl
+  refine WP.mono (store_ok' h₁ (e := 4 * a + b) (by omega_using [hab]) (slots_mixed _ (by decide))
     (slots_mixed _ (by decide)) (slots_mixed _ (by decide)) (e₁ ▸ ok₁)) fun s₂ ⟨h₂, k₂⟩ => ⟨h₂, fun d hd => ?_⟩
   rw [k₂ d (by have := (by decide : ∀ d ∈ gqSl, d + 32 ≤ 2048) d hd; exact this), k₁ d hd]
 
@@ -378,7 +378,7 @@ abbrev JTab (base : Addr) (s : State) (G Q : Point W) : Prop := ∀ e < 16, EntO
 theorem keepU {base : Addr} {Wl : List (Nat × Nat)} {m m' : Mem} (U : Unch base Wl m m') {D : List Nat}
     (hD : ∀ d ∈ D, (∀ w ∈ Wl, d + 8 * 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) ∧ d + 32 ≤ 2048) :
     ∀ d ∈ D, wordsVal m' base d 4 = wordsVal m base d 4 := fun d hd =>
-  U.wordsVal (hD d hd).1 (by have := (hD d hd).2; omega)
+  U.wordsVal (hD d hd).1 (by have := (hD d hd).2; omega_using [this])
 
 /-- `O`, `G` and `Q` to entries 0, 4 and 1. -/
 theorem first3_ok {base : Addr} {s₀ s : State} {G Q : Point W} (h : BS base s₀ s G Q [])
@@ -559,26 +559,26 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
     rw [u₄.gpr, r₂.gpr _ (by decide), r₁.gpr _ (by decide), hw.s0]
   have hm : ∀ c < 4, s₄.gpr (maskReg c) = maskOf ((4 * a + b).testBit c) := fun c hc => by
     rw [r₄.gpr _ (by
-      have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 := by omega
+      have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 := by omega_using [hc]
       rcases this with rfl | rfl | rfl | rfl <;> decide), v₂ c hc, v₁, BitVec.getLsbD_ofNat]
-    simp [show c < 64 by omega]
+    simp [show c < 64 by omega_using [hc]]
   refine WP.mono (WP.rdwr (scansJ_ok p192 (by decide) (by decide) (by decide) (by decide) (by decide) 12
     (Nat.le_refl _) hw₄ h0 hm)) fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_
   simp only [show p192.jt = 2048 from rfl, show p192.sl p192.EX = 1920 from rfl, show p192.n = 4 from rfl,
     Nat.reduceMul] at v₅ O₅
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, m₂, m₁]
   rw [m₄] at v₅ O₅
-  have ht : (4 * a + b) % 16 = 4 * a + b := Nat.mod_eq_of_lt (by omega)
+  have ht : (4 * a + b) % 16 = 4 * a + b := Nat.mod_eq_of_lt (by omega_using [ha, hb])
   rw [ht] at v₅
-  have he : PtOk base s (entPt (4 * a + b)) (ent G Q ((4 * a + b) / 4) ((4 * a + b) % 4)) := hT (4 * a + b) (by omega)
-  have e₁ : (4 * a + b) / 4 = a := by omega
-  have e₂ : (4 * a + b) % 4 = b := by omega
+  have he : PtOk base s (entPt (4 * a + b)) (ent G Q ((4 * a + b) / 4) ((4 * a + b) % 4)) := hT (4 * a + b) (by omega_using [ha, hb])
+  have e₁ : (4 * a + b) / 4 = a := by omega_using [hb]
+  have e₂ : (4 * a + b) % 4 = b := by omega_using [hb]
   rw [e₁, e₂] at he
   have wv : ∀ c < 3, wordsVal s₅.mem base (1920 + 32 * c) 4 = wordsVal s.mem base (2048 + 96 * (4 * a + b) + 32 * c) 4 :=
     fun c hc => wordsVal_of_words 4 fun q hq => by
-      rw [show 1920 + 32 * c + 8 * q = 1920 + 8 * (4 * c + q) by omega, v₅ _ (by omega)]
-      congr 1; omega
-  refine ⟨he.move (wv 0 (by decide)) (wv 1 (by decide)) (wv 2 (by decide)), O₅.mono (Nat.le_refl _) (by omega), ?_⟩
+      rw [show 1920 + 32 * c + 8 * q = 1920 + 8 * (4 * c + q) by omega_using [], v₅ _ (by omega_using [hc, hq])]
+      congr 1; omega_using []
+  refine ⟨he.move (wv 0 (by decide)) (wv 1 (by decide)) (wv 2 (by decide)), O₅.mono (Nat.le_refl _) (by omega_using []), ?_⟩
   exact ((r₁.mono (by decide)).trans ((r₂.mono (by decide)).trans ((r₄.mono (by decide)).trans
     ⟨fun r hr => k₅.1 r (fun h => hr ((by decide : ∀ r ∈ treeRegs, r ∈ selRegs) r h)),
       rd₅, wr₅, sp₅⟩)))
@@ -588,7 +588,7 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
 /-- The table, kept by memory unchanged there. -/
 theorem JTab.of_eq {base : Addr} {s s' : State} {G Q : Point W} (h : JTab base s G Q)
     (he : ∀ d, 2048 ≤ d → d + 32 ≤ 3584 → wordsVal s'.mem base d 4 = wordsVal s.mem base d 4) : JTab base s' G Q :=
-  fun e hlt => (h e hlt).of_eq (he (2048 + 96 * e) (by omega) (by omega)) (he (2048 + 96 * e + 32) (by omega) (by omega))
-    (he (2048 + 96 * e + 64) (by omega) (by omega))
+  fun e hlt => (h e hlt).of_eq (he (2048 + 96 * e) (by omega_using []) (by omega_using [hlt])) (he (2048 + 96 * e + 32) (by omega_using []) (by omega_using [hlt]))
+    (he (2048 + 96 * e + 64) (by omega_using []) (by omega_using [hlt]))
 
 end VG.Proof.Ecdsa.RISCV64.P192.Joint

@@ -46,10 +46,10 @@ theorem tab_le (hl : AmmOk l) {i : Nat} (hi : i < l.T) : l.NB * i + l.NB ≤ l.T
   rw [Nat.mul_comm l.T, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
 
 /-- An entry below 16 is in the table, and not its last. -/
-theorem T_gt (hl : AmmOk l) {i : Nat} (h : i < 16) : i < l.T := by have := hl.T_bounds; omega
+theorem T_gt (hl : AmmOk l) {i : Nat} (h : i < 16) : i < l.T := by have := hl.T_bounds; omega_using [h, this]
 
 theorem dec_T (hl : AmmOk l) {i : Nat} (h : i + 1 < 16) : decide (i + 1 = l.T) = false := by
-  have := hl.T_bounds; exact decide_eq_false (by omega)
+  have := hl.T_bounds; exact decide_eq_false (by omega_using [h, this])
 
 /-- Entries of the table at the same offset are the same. -/
 theorem nb_mul_inj (hl : AmmOk l) {i j : Nat} (h : l.NB * i = l.NB * j) : i = j := by
@@ -189,9 +189,9 @@ theorem cmp13_ok (s : State) {n k : Nat} (h13 : s.gpr .r13 = BitVec.ofNat 64 n) 
       t.zf = some (decide (n = k)) ∧ t.cf = some (decide (n < k)) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
   xrun [h13, se_ofNat hk]
-  refine ⟨ofNat_sub_beq (j := n) (N := k) (by omega) (by omega), ?_, rfl⟩
-  simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega)]
+  refine ⟨ofNat_sub_beq (j := n) (N := k) (by omega_using [hn]) (by omega_using [hk]), ?_, rfl⟩
+  simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [hn]),
+    Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_using [hk])]
 
 /-- The operands of entry `i < 2`: `Y` or `X`, in place, and `K1`. -/
 theorem convSetup_ok (hl : AmmOk l) {s : State} {B : Addr} {i : Nat}

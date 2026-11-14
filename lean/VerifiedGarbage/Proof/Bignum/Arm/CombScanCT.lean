@@ -73,10 +73,10 @@ theorem loop_ct {base table : BitVec 32} {len w M g N d1 d2 : Nat} :
       (isa.eval .ne u=some true → ∃ m<k, I m u v) := by
     intro k s t tr1 tr2 u v h e1 e2
     obtain ⟨j,total,positive,left,right,sp⟩ := h
-    obtain ⟨trace,sp'⟩ := relCT_keep_sp (body_ct (by omega : j<32)) (fun _ _ h => h.2.2)
+    obtain ⟨trace,sp'⟩ := relCT_keep_sp (body_ct (by omega_using [total, positive] : j<32)) (fun _ _ h => h.2.2)
       s t tr1 tr2 u v ⟨left,right,sp⟩ e1 e2
-    obtain ⟨_,_,run1,next1,zero1,_,_,_,_⟩ := body_ok s left (by omega)
-    obtain ⟨_,_,run2,next2,zero2,_,_,_,_⟩ := body_ok t right (by omega)
+    obtain ⟨_,_,run1,next1,zero1,_,_,_,_⟩ := body_ok s left (by omega_using [total, positive])
+    obtain ⟨_,_,run2,next2,zero2,_,_,_,_⟩ := body_ok t right (by omega_using [total, positive])
     obtain ⟨_,rfl⟩ := Exec.det e1 run1
     obtain ⟨_,rfl⟩ := Exec.det e2 run2
     refine ⟨trace,?_,fun _ => trivial,?_⟩
@@ -87,7 +87,7 @@ theorem loop_ct {base table : BitVec 32} {len w M g N d1 d2 : Nat} :
         intro last
         change some (!u.z)=some true at again
         simp only [zero1,last,decide_true,Bool.not_true,Option.some.injEq,Bool.false_eq_true] at again
-      exact ⟨k-1,by omega,j+1,by omega,by omega,next1,next2,sp'⟩
+      exact ⟨k-1,by omega_using [positive],j+1,by omega_using [total, positive],by omega_using [total, positive, notLast],next1,next2,sp'⟩
   exact (RelCT.loop I step 32).mono (fun _ _ h => ⟨0,rfl,by decide,h.1,h.2.1,h.2.2⟩) (fun _ _ h => h)
 
 structure Input (base table : BitVec 32) (len w M g N digit : Nat) (s : State) : Prop where

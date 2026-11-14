@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Bitsliced
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced SM4 on 32-bit planes
@@ -53,7 +54,7 @@ theorem tau_rel {X S : Nat → BitVec 32} {v : Nat → Word} (hX : WordRel X v)
     (hS : ∀ j < 8, ∀ p < 32, (S j).getLsbD p = (sboxB (bsByte X p)).getLsbD j) :
     WordRel S (fun b => tau (v b)) := by
   intro b hb i hi j hj
-  rw [hS j hj _ (by omega), getLsbD_tau _ hi hj]
+  rw [hS j hj _ (by omega_using [hb, hi]), getLsbD_tau _ hi hj]
   congr 2
   refine byte_ext fun k hk => ?_
   rw [getLsbD_bsByte _ _ hk, hX b hb i hi k hk, getLsbD_byteAt _ hi hk]
@@ -68,7 +69,7 @@ def termsXor (Q : Nat → BitVec 32) (l : List (Nat × Nat)) : Bool :=
   l.foldr (fun wk acc => (Q wk.1).getLsbD wk.2 ^^ acc) false
 
 theorem rotP_pos {i b m : Nat} (hb : b < 8) (_hi : i < 4) : rotP (8 * i + b) m = 8 * ((i + m) % 4) + b := by
-  simp only [rotP]; omega
+  simp only [rotP]; omega_using [hb]
 
 theorem termsXor_rel {S : Nat → BitVec 32} {u : Nat → Word} (hS : WordRel S u) {b i : Nat} (hb : b < 8)
     (hi : i < 4) (l : List (Nat × Nat)) (hl : ∀ sm ∈ l, sm.1 < 8) :
@@ -85,7 +86,7 @@ theorem lin_rel (l : Lin) {S Y : Nat → BitVec 32} {u : Nat → Word} (hS : Wor
     (hY : ∀ j < 8, ∀ p < 32, (Y j).getLsbD p = termsXor S ((l.terms j).map fun sm => (sm.1, rotP p sm.2))) :
     WordRel Y (fun b => l.fn (u b)) := by
   intro b hb i hi j hj
-  rw [hY j hj _ (by omega), termsXor_rel hS hb hi _ (terms_lt l j hj), getLsbD_fn l _ (by omega),
+  rw [hY j hj _ (by omega_using [hb, hi]), termsXor_rel hS hb hi _ (terms_lt l j hj), getLsbD_fn l _ (by omega_using [hj]),
     idxXor_perm _ (terms_perm l i hi j hj)]
 
 /-! ## A round -/
@@ -102,7 +103,7 @@ theorem round_rel (l : Lin) {A B C D K X S A' : Nat → BitVec 32} {xa xb xc xd 
     WordRel A' (fun b => xa b ^^^ l.t (xb b ^^^ xc b ^^^ xd b ^^^ k)) := by
   have hx : WordRel X (fun b => xb b ^^^ xc b ^^^ xd b ^^^ k) := by
     intro b hb i hi j hj
-    rw [hX j hj _ (by omega), hB b hb i hi j hj, hC b hb i hi j hj, hD b hb i hi j hj,
+    rw [hX j hj _ (by omega_using [hb, hi]), hB b hb i hi j hj, hC b hb i hi j hj, hD b hb i hi j hj,
       hK b hb i hi j hj]
     simp only [BitVec.getLsbD_xor]
   have hy := lin_rel l (tau_rel hx hS) (Y := fun j => A j ^^^ A' j) fun j hj p hp => by

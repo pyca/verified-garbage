@@ -20,9 +20,9 @@ theorem shl5_stride {w : Nat} (hw : w < 2 ^ 30) :
     BitVec.ofNat 64 (8 * (w + 2)) <<< 5 = BitVec.ofNat 64 (32 * (8 * (w + 2))) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (show 8 * (w + 2) < 2 ^ 64 by omega)]
+    Nat.mod_eq_of_lt (show 8 * (w + 2) < 2 ^ 64 by omega_using [hw])]
   congr 1
-  omega
+  omega_using []
 
 theorem finish_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hw : w < 2 ^ 30)

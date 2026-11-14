@@ -90,7 +90,7 @@ theorem priv_pub' {L : Lay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂
     rcases i with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | i
     exacts [c0.trans b0.symm, c1.trans b1.symm, c2.trans b2.symm, c3.trans b3.symm, c4.trans b4.symm,
       c5.trans b5.symm, c6.trans b6.symm, c7.trans b7.symm, c8.trans b8.symm, c9.trans b9.symm,
-      c10.trans b10.symm, c11.trans b11.symm, absurd hi (by omega)]
+      c10.trans b10.symm, c11.trans b11.symm, absurd hi (by omega_using [])]
   · rw [ha.1.bytes_ro hL (ro_N L), hb.1.bytes_ro hL (ro_N L)]; exact hk.1
   · rw [ha.1.bytes_ro hL (ro_E L), hb.1.bytes_ro hL (ro_E L)]; exact hk.2
 

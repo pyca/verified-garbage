@@ -45,7 +45,7 @@ theorem releaseBuffer_ok (s : State) {src dst : BitVec 32} {n : Nat} {accepted :
     intro j hj
     have hj' : j < n := List.mem_range.mp hj
     have value := inv.copied j hj'
-    rw [addr_add (by omega), addr_add (by omega)] at value
+    rw [addr_add (by omega_using [dstFit, hj']), addr_add (by omega_using [srcFit, hj'])] at value
     exact value
   rw [mask, acceptance_bytes_mask] at bytes
   have length : (Spec.Rsa.bytesAt s.mem (State.addr src) n).length = n := by
@@ -59,17 +59,17 @@ theorem releaseBuffer_ok (s : State) {src dst : BitVec 32} {n : Nat} {accepted :
       intro j hj
       have hj' : j < n := List.mem_range.mp hj
       have value := inv.cleared j hj'
-      rw [addr_add (by omega)] at value
+      rw [addr_add (by omega_using [srcFit, hj'])] at value
       exact value
     rw [cleared, List.map_const', List.length_range]
   · intro a ha
     apply inv.outside a
     · intro j hj he
       apply ha ⟨State.addr dst, n⟩ (by simp)
-      rw [he, addr_add (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega)
+      rw [he, addr_add (by omega_using [dstFit, hj])]
+      exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn', hj])
     · intro j hj he
       apply ha ⟨State.addr src, n⟩ (by simp)
-      rw [he, addr_add (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega)
+      rw [he, addr_add (by omega_using [srcFit, hj])]
+      exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn', hj])
 end VG.Proof.Rsa.Arm

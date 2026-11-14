@@ -3,6 +3,7 @@ public import VerifiedGarbage.Spec.Rsa
 
 import VerifiedGarbage.Proof.Rsa.KeyParts
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA: the key checks from a division and products modulo `p - 1`
@@ -65,11 +66,11 @@ theorem crtKeyValid_bits {k n e p q dP dQ qInv : Nat} (hm : modulusValid n k = t
     have q2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := odd_factor hpq hodd
     have qodd := odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    obtain ⟨e1, e2⟩ := hX (by omega)
-    have eq1 : X₁ = q := by rw [e1, ← hpq, Nat.mul_div_cancel_left _ (by omega)]
+    obtain ⟨e1, e2⟩ := hX (by omega_using [p2])
+    have eq1 : X₁ = q := by rw [e1, ← hpq, Nat.mul_div_cancel_left _ (by omega_using [p2])]
     have eq2 : X₂ = 0 := by rw [e2, ← hpq, Nat.mul_mod_right]
-    have mp : 2 * (p / 2) = p - 1 := by omega
-    have mq : 2 * (q / 2) = q - 1 := by omega
+    have mp : 2 * (p / 2) = p - 1 := by omega_using [podd]
+    have mq : 2 * (q / 2) = q - 1 := by omega_using [qodd]
     rw [mp] at hR₁ ⊢
     rw [mq] at hR₂ ⊢
     constructor
@@ -82,7 +83,7 @@ theorem crtKeyValid_bits {k n e p q dP dQ qInv : Nat} (hm : modulusValid n k = t
   · constructor
     · rintro ⟨h, -⟩; exact absurd h hpq
     · rintro ⟨podd, h1, h2, -⟩
-      obtain ⟨e1, e2⟩ := hX (by omega)
+      obtain ⟨e1, e2⟩ := hX (by omega_using [podd])
       exact absurd (mul_of_div (by rw [← e1, h1]) (by rw [← e2, h2])) hpq
 
 /-- With `dP` the inverse of `e` modulo `M`, `d e ≡ 1 (mod M)` is `d mod M = dP`. -/
@@ -137,7 +138,7 @@ theorem keyValid_bits {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = tr
     have q2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := odd_factor hpq hodd
     have qodd := odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    rw [hY₁ (by omega), hY₂ (by omega), show 2 * (p / 2) = p - 1 by omega, show 2 * (q / 2) = q - 1 by omega]
+    rw [hY₁ (by omega_using [p2]), hY₂ (by omega_using [q2]), show 2 * (p / 2) = p - 1 by omega_using [podd], show 2 * (q / 2) = q - 1 by omega_using [qodd]]
   · simp only [Bool.not_eq_true] at hc
     simp only [hc, Bool.false_and]
 
@@ -163,7 +164,7 @@ theorem crtBitsP_div {n p q dP dQ qInv R₁ R₂ R₃ : Nat} (hn : n % 2 = 1) :
   have key : p % 2 = 1 → (p * q = n ↔ n / p = q ∧ n % p = 0) := fun hp => by
     constructor
     · rintro rfl
-      exact ⟨Nat.mul_div_cancel_left _ (by omega), Nat.mul_mod_right _ _⟩
+      exact ⟨Nat.mul_div_cancel_left _ (by omega_using [hp]), Nat.mul_mod_right _ _⟩
     · rintro ⟨h1, h2⟩; exact mul_of_div h1 h2
   constructor
   · rintro ⟨hp, hpq, rest⟩; exact ⟨hp, (key hp).1 hpq |>.1, (key hp).1 hpq |>.2, rest⟩
@@ -199,8 +200,8 @@ theorem keyValid_bitsP {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = t
     have q2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := odd_factor hpq hodd
     have qodd := odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    obtain ⟨e1, e2⟩ := hY hpq (by omega) (by omega)
-    rw [e1, e2, show 2 * (p / 2) = p - 1 by omega, show 2 * (q / 2) = q - 1 by omega]
+    obtain ⟨e1, e2⟩ := hY hpq (by omega_using [p2]) (by omega_using [q2])
+    rw [e1, e2, show 2 * (p / 2) = p - 1 by omega_using [podd], show 2 * (q / 2) = q - 1 by omega_using [qodd]]
   · simp [crtBitsP, hpq]
 
 end VG.Proof.Rsa

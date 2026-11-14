@@ -17,10 +17,10 @@ theorem lane (x : BitVec 64) {i : Nat} (hi : i < 4) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
   by_cases h : j < 16
-  · simp only [h, hj, decide_true, Bool.true_and, show 48 + j < 64 by omega, show ¬48 + j < 48 - 16 * i by omega,
+  · simp only [h, hj, decide_true, Bool.true_and, show 48 + j < 64 by omega_using [h], show ¬48 + j < 48 - 16 * i by omega_using [],
       decide_false, Bool.not_false]
-    rw [show 48 + j - (48 - 16 * i) = 16 * i + j by omega]
-  · simp only [h, show ¬48 + j < 64 by omega, decide_false, Bool.false_and, Bool.and_false]
+    rw [show 48 + j - (48 - 16 * i) = 16 * i + j by omega_using [hi]]
+  · simp only [h, show ¬48 + j < 64 by omega_using [h], decide_false, Bool.false_and, Bool.and_false]
 
 theorem lane3 (x : BitVec 64) : x >>> 48 = ((x >>> (16 * 3)).setWidth 16).setWidth 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -28,7 +28,7 @@ theorem lane3 (x : BitVec 64) : x >>> 48 = ((x >>> (16 * 3)).setWidth 16).setWid
   by_cases h : j < 16
   · simp [h, hj]
   · simp only [h, decide_false, Bool.false_and]
-    rw [BitVec.getLsbD_of_ge x (48 + j) (by omega)]
+    rw [BitVec.getLsbD_of_ge x (48 + j) (by omega_using [h])]
     simp
 
 theorem blockLoad_run (u : State) (hr : InRegions (u.rd ++ u.wr) (u.gpr .r4) 8) :
@@ -42,7 +42,7 @@ theorem blockLoad_run (u : State) (hr : InRegions (u.rd ++ u.wr) (u.gpr .r4) 8) 
   rrun [hr]
   intro i hi
   rw [decode_read64 _ _ _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   · exact lane _ (i := 0) (by decide)
   · exact lane _ (i := 1) (by decide)
   · exact lane _ (i := 2) (by decide)
@@ -54,15 +54,15 @@ theorem pack_or (v : Spec.Rc2.State) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [pack, BitVec.getLsbD_append, BitVec.getLsbD_or, BitVec.getLsbD_setWidth, BitVec.getLsbD_shiftLeft]
   by_cases h₁ : j < 16
-  · simp (disch := omega) [h₁, hj, show j < 32 by omega, show j < 48 by omega]
+  · simp (disch := omega_arith) [h₁, hj, show j < 32 by omega_using [h₁], show j < 48 by omega_using [h₁]]
   · by_cases h₂ : j < 32
-    · simp (disch := omega) [h₁, h₂, hj, show j < 48 by omega, show j - 16 < 64 by omega, show j - 16 < 16 by omega,
+    · simp (disch := omega) [h₁, h₂, hj, show j < 48 by omega_using [h₂], show j - 16 < 64 by omega_using [hj], show j - 16 < 16 by omega_using [h₂],
         BitVec.getLsbD_of_ge]
     · by_cases h₃ : j < 48
-      · simp (disch := omega) [h₁, h₂, h₃, hj, show j - 32 < 64 by omega, show ¬j - 16 < 16 by omega,
-          show j - 16 - 16 = j - 32 by omega, show j - 32 < 16 by omega, BitVec.getLsbD_of_ge]
-      · simp (disch := omega) [h₁, h₂, h₃, hj, show j - 48 < 64 by omega, show ¬j - 16 < 16 by omega,
-          show j - 16 - 16 = j - 32 by omega, show ¬j - 32 < 16 by omega, show j - 32 - 16 = j - 48 by omega,
+      · simp (disch := omega) [h₁, h₂, h₃, hj, show j - 32 < 64 by omega_using [hj], show ¬j - 16 < 16 by omega_using [h₂],
+          show j - 16 - 16 = j - 32 by omega_using [], show j - 32 < 16 by omega_using [h₃], BitVec.getLsbD_of_ge]
+      · simp (disch := omega) [h₁, h₂, h₃, hj, show j - 48 < 64 by omega_using [hj], show ¬j - 16 < 16 by omega_using [h₂],
+          show j - 16 - 16 = j - 32 by omega_using [], show ¬j - 32 < 16 by omega_using [h₃], show j - 32 - 16 = j - 48 by omega_using [],
           BitVec.getLsbD_of_ge]
 
 theorem blockStore_run (u : State) {v : Spec.Rc2.State} (H : Holds v u) (hw : InRegions u.wr (u.gpr .r4) 8) :

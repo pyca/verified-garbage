@@ -208,7 +208,7 @@ theorem wordEnd_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : Nat} {W : B
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (j + 1 = w)) ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, hg₂.rdi, hdrOff, hl, hB.words, BitVec.and_self,
       ofNat64_beq_zero (show w - j - 1 < 2 ^ 64 by omega_arith)]
-    exact decide_eq_decide.mpr (by omega)) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨hz, ?_⟩
+    exact decide_eq_decide.mpr (by omega_using [hj])) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨hz, ?_⟩
   have e : 16 * (w - (w - j)) + 16 = 16 * (j + 1) := by omega_arith
   have hft : Frm B [] s.mem t.mem := by rw [hm]; exact Frm.refl _ _ _
   refine ⟨hB.ctx.of_frm hd hft (hg₂.scr.congr k.2.2) ((k.gpr (by decide)).trans hg₂.rdi) (by simp) (by simp) (by simp)

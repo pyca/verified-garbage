@@ -91,7 +91,7 @@ theorem pubP_of {tsH tsG : List FnTable} {s₁ s₂ : State} (h : (verSpec tsH t
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0.symm, h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm]
-  · rcases (by omega : i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl
+  · rcases (by omega_using [h2, hi] : i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm]
 
 section
@@ -111,7 +111,7 @@ theorem PubP.pAny : anyL s = anyL a := by
     have := x.isLt
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, Nat.shiftLeft_eq,
       Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
   unfold anyL; rw [e, e, p.a1]
 
 theorem PubP.pN0 (hk : 1 ≤ kk s) : n0 s = n0 a := by rw [n0, n0, p.byte hk]
@@ -176,8 +176,8 @@ theorem call_ct : RelCT isa (Two fun a t => ∃ s, PreP D s ∧ PubK a s ∧ AtC
   · rw [c₁.g2, c₂.g2, c₁.g3, c₂.g3, words_entry c₁.base.mem P₁.kp ((P₁.sp).sub_left (sc_sub P₁)) P₁.wp,
       words_entry c₂.base.mem P₂.kp ((P₂.sp).sub_left (sc_sub P₂)) P₂.wp, p₁.1.w, p₂.1.w]
   · rw [c₁.g4, c₂.g4, c₁.g5, c₂.g5,
-      bytes_entry c₁.base.mem P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega),
-      bytes_entry c₂.base.mem P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega), p₁.1.e, p₂.1.e]
+      bytes_entry c₁.base.mem P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega_using []),
+      bytes_entry c₂.base.mem P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega_using []), p₁.1.e, p₂.1.e]
 
 end
 
@@ -226,7 +226,7 @@ theorem bl_after {a s t : State} (P : PreT Hs.len W s) (p : PubT W a s) (c : Aft
   have hk2 : kk s ≤ 1024 := P.1.k2
   have e4 : dbLen Hs.len s = dbLen Hs.len a := g.ag.v .s4 (by decide)
   have hdb : (dbLen Hs.len (reE s t.mem)).toNat = kk s - loN s - Hs.len - 1 := by
-    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [L.hdb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk2])]
   have e : dbLen Hs.len (reE s t.mem) = dbLen Hs.len s := by
     unfold dbLen; rw [reE_lo P.1 c.mem]; rfl
   rw [← e4, ← e, hdb, ← p.1.1.a0]
@@ -279,7 +279,7 @@ theorem checks_ct : RelCT isa (Two (En Hs.len W)) (checks W.H W.M.be W.f W.g) fu
       isa.eval (.nonzero .a0) t = some false → E2 a t := fun {a t} ⟨⟨⟨s, P, p, E, y, h0⟩, c⟩, hc⟩ => by
     rw [eval_nonzero, c] at hc
     have : ¬ kk a - loN a < Hs.len + 2 := by simpa using hc
-    exact ⟨s, P, p, E, y, h0, by rw [p.1.1.pKk, p.1.1.pLoN p.1.2]; omega⟩
+    exact ⟨s, P, p, E, y, h0, by rw [p.1.1.pKk, p.1.1.pLoN p.1.2]; omega_using [this]⟩
   -- The salt length expected.
   let E3 := fun (a t : State) => E2 a t ∧ t.gpr .a1 = if anyL a = 0 then stackArg a 0 else 0
   have pin7 : Pins (fun (a t : State) => (E1 a t ∧ (t.gpr .a0 != 0) = decide (kk a - loN a < Hs.len + 2)) ∧
@@ -309,7 +309,7 @@ theorem checks_ct : RelCT isa (Two (En Hs.len W)) (checks W.H W.M.be W.f W.g) fu
     have hn : ¬ kk a - loN a - (Hs.len + 2) < (if anyL a = 0 then stackArg a 0 else 0).toNat := by simpa using hc
     refine ⟨s, P, p, E.before, y, h0, hem, fun ha => ?_⟩
     rw [← p.1.1.pAny, ifp ha, ← p.1.1.a0, ← p.1.1.pKk, ← p.1.1.pLoN p.1.2] at hn
-    omega
+    omega_using [hem, hn]
   exact (main_ct cH hF hHl hG cG hFG hGh hGl hGv).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, e4 h₁, e4 h₂⟩)
     fun _ _ h => h
 

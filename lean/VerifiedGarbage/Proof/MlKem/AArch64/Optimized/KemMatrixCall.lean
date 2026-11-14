@@ -75,7 +75,7 @@ theorem paired_step {w16 : Bool} {s₀ s : State} (hp : Pre P L s₀) {mA : Mem}
       · rw [ite_eq_left hh]; exact Or.inr rfl
       · rw [ite_eq_right hh]; exact Or.inl rfl)) fun t ht sy => ?_
   · rw [ptr_add]
-    exact in_R (cov_sr hp h.kb (o := SB) (l := 32) (by lom)) (k := 8*j) (by omega) (by omega)
+    exact in_R (cov_sr hp h.kb (o := SB) (l := 32) (by lom)) (k := 8*j) (by omega_using [hj]) (by omega_using [])
   · have post := ht.outcome (by lom) (by lom)
     have seed {i : Nat} : Paired.seedBytes s.mem (sA L s₀ SB) i P.k=matSeed ρ (i/P.k) (i%P.k) := by
       simp only [Paired.seedBytes,h.rho,matSeed]
@@ -96,7 +96,7 @@ theorem singleton_step {w16 : Bool} {s₀ s : State} (hp : Pre P L s₀) {mA : M
       · rw [ite_eq_left hh]; exact Or.inr rfl
       · rw [ite_eq_right hh]; exact Or.inl rfl)) fun t ht sy => ?_
   · rw [ptr_add]
-    exact in_R (cov_sr hp h.kb (o := SB) (l := 32) (by lom)) (k := 8*j) (by omega) (by omega)
+    exact in_R (cov_sr hp h.kb (o := SB) (l := 32) (by lom)) (k := 8*j) (by omega_using [hj]) (by omega_using [])
   · have post := ht.outcome
     have seed : Paired.seedBytes s.mem (sA L s₀ SB) e P.k=matSeed ρ (e/P.k) (e%P.k) := by
       simp only [Paired.seedBytes,h.rho,matSeed]

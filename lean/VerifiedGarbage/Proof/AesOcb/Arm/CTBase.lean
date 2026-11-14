@@ -182,11 +182,11 @@ theorem rel_env {c : Prog isa} {p : Prm} {τ₁ τ₂ : State} (E₁ : Env p τ�
 
 theorem argByte_eq {p : Prm} (L : Lay p) {s₁ s₂ : State} (E₁ : Env p s₁) (E₂ : Env p s₂) (A₁ : Args p s₁.mem)
     (A₂ : Args p s₂.mem) : ∀ k < 24, s₁.mem (VG.Arm.Taint.argByte s₁ k) = s₂.mem (VG.Arm.Taint.argByte s₂ k) := by
-  refine argMem_of (j := 6) (E₁.sp_eq E₂) (by rw [E₁.sp]; have := L.spf; omega) fun i hi => ?_
+  refine argMem_of (j := 6) (E₁.sp_eq E₂) (by rw [E₁.sp]; have := L.spf; omega_using [this]) fun i hi => ?_
   have e : ∀ {s : State}, Env p s → Args p s.mem → stackArg s i =
       [p.A, BitVec.ofNat 32 p.al, p.D, BitVec.ofNat 32 p.n, p.T, BitVec.ofNat 32 p.tl].getD i 0 := fun {s} E A => by
     rw [Proof.AesGcm.Arm.stackArg_eq, E.sp]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
     · exact A.a0
     · exact A.a4
     · exact A.a8
@@ -206,7 +206,7 @@ theorem rel_envArg {c : Prog isa} {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E
   have spf := L.spf
   have hw : ∀ {τ : State}, Env p τ →
       τ.sp.toNat + 24 ≤ 2 ^ 32 ∧ ∀ r ∈ τ.wr, Region.Disjoint ⟨State.addr τ.sp, 24⟩ r := fun E =>
-    ⟨by rw [E.sp]; omega, fun r hr => by rw [E.sp]; exact (E.perm.argw r hr).sub_left (Region.sub_prefix (by decide))⟩
+    ⟨by rw [E.sp]; omega_using [spf], fun r hr => by rw [E.sp]; exact (E.perm.argw r hr).sub_left (Region.sub_prefix (by decide))⟩
   exact rel_arg (pubRegs rs) 24 (fun r h => by
     rcases List.mem_append.mp h with h | h
     · exact E₁.agree E₂ r h
@@ -275,16 +275,16 @@ theorem encOne_pre {p : Prm} (L : Lay p) {τ : State} (E : Env p τ) {d : Nat} (
     WP isa (.block (callArgs ++ ([addI .r2 .r11 d, .mov .r3 (imm 1)] : List Instr))) τ fun t =>
       BlkCall t p.K (p.W + BitVec.ofNat 32 d) (p.W + BitVec.ofNat 32 scrO) p.R 1 ∧ Env p t := by
   have fw := L.ww
-  have ed : State.addr (p.W + BitVec.ofNat 32 d) = State.addr p.W + BitVec.ofNat 64 d := L.wA (by omega)
+  have ed : State.addr (p.W + BitVec.ofNat 32 d) = State.addr p.W + BitVec.ofNat 64 d := L.wA (by omega_using [hd])
   refine WP.of_runBlock ⟨_, by orun [callArgs, E.r9, E.r10, E.r11, he], ?_⟩
   have E' := E.of_others (s' := ((((τ.setReg .r0 p.K).setReg .r1 (BitVec.ofNat 32 p.R)).setReg .r12
     (p.W + BitVec.ofNat 32 scrO)).setReg .r2 (p.W + BitVec.ofNat 32 d)).setReg .r3 (BitVec.ofNat 32 1))
     (rs := [.r0, .r1, .r2, .r3, .r12]) (by others_tac) (by rfl) (by rfl) (by rfl)
   exact ⟨blkCall_of L E' (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by simp [gpr_setReg])
-    (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by rw [L.wN (by omega)]; omega)
-    (by rw [ed]; exact E.perm.wC (by omega)) (by rw [ed]; exact L.k_w' (by omega))
-    (by rw [ed]; exact L.w_w (.inl (by simp only [scrO]; omega)) (by omega) (by decide))
-    (by rw [ed]; exact L.bw' (by omega)), E'⟩
+    (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by rw [L.wN (by omega_using [hd])]; omega_using [hd, fw])
+    (by rw [ed]; exact E.perm.wC (by omega_using [hd])) (by rw [ed]; exact L.k_w' (by omega_using [hd]))
+    (by rw [ed]; exact L.w_w (.inl (by simp only [scrO]; omega_using [hd])) (by omega_using [hd]) (by decide))
+    (by rw [ed]; exact L.bw' (by omega_using [hd])), E'⟩
 
 theorem encOneA_check {d : Nat} (hd : d = tmpO ∨ d = bufO) : ∃ h, (VG.Taint.check VG.Arm.taint
     (VG.Arm.Taint.ofRegs (pubRegs [])) (.block (callArgs ++ ([addI .r2 .r11 d, .mov .r3 (imm 1)] : List Instr))) h).isSome

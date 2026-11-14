@@ -32,7 +32,7 @@ theorem powerTwo_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have vv : wordsVal v.mem base out M.n = 1 := by rw [uv.mem, V]
   have mv : Modulus M size m v.mem base := by
     refine ⟨hm.n0, hm.mo, hm.tmp, hm.sep, ?_⟩
-    rw [uv.mem, wordsVal_eq_val32, O.val32 (by omega) (by have := hs.nowrap; have := hm.mo; omega),
+    rw [uv.mem, wordsVal_eq_val32, O.val32 (by omega_using [ho]) (by have := hs.nowrap; have := hm.mo; omega_arith),
       ← wordsVal_eq_val32, hm.val]
   refine WP.mono (doubleLoop_ok hv mv hl ho (by rw [vv]; exact hm1) hb hb32 uv.gpr) fun t I => ?_
   refine ⟨?_, I.lt, I.modulus, ?_, kv.trans I.keeps⟩

@@ -44,7 +44,7 @@ theorem storeAll_ok (r : Reg) (hr : r ≠ sb) : ∀ (ks : List Nat) {s : State} 
   | k :: ks, s, b, hb, hw, hk => by
     have hk0 : k < slots := hk k List.mem_cons_self
     obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := stReg_ok (k := k) r hb ⟨_, hw, by
-      rw [wordAddr]; exact VG.Offset.contains_base b (by omega) (by rw [slots_eq] at hk0; omega)⟩
+      rw [wordAddr]; exact VG.Offset.contains_base b (by omega_using [hk0]) (by rw [slots_eq] at hk0; omega_using [hk0])⟩
     obtain ⟨s', e', v', o', g', rd', wr', f'⟩ := storeAll_ok r hr ks (s := s₁) (by rw [g₁, hb])
       (by rw [wr₁]; exact hw) fun k h => hk k (List.mem_cons_of_mem _ h)
     have hslot : ∀ j < slots, slotW s₁ j = if j = k then s.gpr r else slotW s j := fun j hj => by
@@ -64,7 +64,7 @@ theorem storeAll_ok (r : Reg) (hr : r ≠ sb) : ∀ (ks : List Nat) {s : State} 
       rw [m₁]
       simp only [Mem.writeW, Mem.write, wordAddr]
       exact ite_eq_right fun h => hx _ (List.mem_singleton_self _) (VG.Offset.sub_base b
-        (show 8 * k + 8 ≤ 8 * slots by omega) _ (by simp only [Region.Contains]; omega))
+        (show 8 * k + 8 ≤ 8 * slots by omega_using [hk0]) _ (by simp only [Region.Contains]; omega_using [h]))
 
 /-! ## `MK ⊕ FK` -/
 
@@ -104,7 +104,7 @@ theorem keyWord_ok (s : State) (h : Nat) (hr : InRegions (s.rd ++ s.wr) (s.gpr .
   · rw [v₃, o₂ _ (by decide), v₁, v₂]
 
 theorem tailAt_lt {b h : Nat} (hb : b < 16) (hh : h < 2) : tailAt b h < slots := by
-  simp only [tailAt, tailSlot_eq, slots_eq]; omega
+  simp only [tailAt, tailSlot_eq, slots_eq]; omega_using [hb, hh]
 
 /-- Half `h` of the key, XOR `FK`, to the sixteen blocks. -/
 theorem loadHalf_ok {s : State} {b : Addr} (h : Nat) (hh : h < 2) (hb : s.gpr sb = b)

@@ -31,15 +31,15 @@ theorem startCount_ok {base source table : BitVec 32} {len w bytes N M g E : Nat
   have size : 256≤8*len := by
     have fits := h.ready.width ▸ h.ready.layout.2.2.1
     simp only [arrAt,Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   have address (d : Nat) (hd : d<256) : State.addr (s.gpr .r0+BitVec.ofNat 32 d)=off (State.addr base) d := by
     rw [h.ready.ptr]
-    exact addr_add (by have := h.ready.workspace.nowrap; omega)
+    exact addr_add (by have := h.ready.workspace.nowrap; omega_using [size, hd, this])
   refine wp_ldr (a:=off (State.addr base) 204) (by decide) (address 204 (by decide))
-    (h.ready.workspace.read (by omega)) fun u first => ?_
+    (h.ready.workspace.read (by omega_using [size])) fun u first => ?_
   refine wp_str (a:=off (State.addr base) 192) (by decide)
     (by rw [first.other .r0 (by decide)]; exact address 192 (by decide))
-    (by rw [first.wr]; exact h.ready.workspace.write (by omega)) fun t last => WP.block_nil ?_
+    (by rw [first.wr]; exact h.ready.workspace.write (by omega_using [size])) fun t last => WP.block_nil ?_
   have mem : t.mem=s.mem.writeW (off (State.addr base) 192) (BitVec.ofNat 32 (Spec.Rsa.FixedBaseComb.rows N)) := by
     rw [last.mem,first.mem,first.gpr,controls.spacing]
   have rest : Rest [.r1] s t := (first.rest (by decide)).trans (last.rest _)
@@ -80,7 +80,7 @@ theorem initial_ok {base source table : BitVec 32} {len w bytes N M g : Nat}
   have coprime := coprime_pow2 odd (64*w)
   have encodedOne : numAt v.mem (State.addr base) w 6%M=2^(64*w)%M := by
     apply mont_cancel coprime
-    rw [valueV,Nat.mod_mod,←Nat.pow_add,show 64*w+64*w=128*w by omega]
+    rw [valueV,Nat.mod_mod,←Nat.pow_add,show 64*w+64*w=128*w by omega_using []]
   have power : Power base len w M g 0 v := by
     refine ⟨readyV,modV,coprime,boundV,?_,?_,?_⟩
     · simpa only [Nat.pow_zero,Nat.one_mul] using encodedOne

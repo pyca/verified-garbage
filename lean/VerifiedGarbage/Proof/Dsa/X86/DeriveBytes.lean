@@ -152,16 +152,16 @@ theorem deriveBytesWith_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : Sta
       Spec.Rsa.bytesAt t.mem ((pointerValue base t (.input f)).setWidth 64) len =
         Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input f)).setWidth 64) len := by
     rw [ptr f stable]
-    exact runFrame_bytes E.mem M.extent (by have := B.fits; omega) B.apart B.stack
-  have partP := (E.buffer Params (by decide)).keyPart (by omega) (by rw [ptr .p (by decide)]; exact pa)
-  have partX := (E.buffer X (by decide)).keyPart (by omega) (by rw [ptr .nonce (by decide)]; exact xa)
-  have partY := localKeyPart Mt.scr (by omega : 0 < pLen)
+    exact runFrame_bytes E.mem M.extent (by have := B.fits; omega_using [this]) B.apart B.stack
+  have partP := (E.buffer Params (by decide)).keyPart (by omega_using [L]) (by rw [ptr .p (by decide)]; exact pa)
+  have partX := (E.buffer X (by decide)).keyPart (by omega_using [L]) (by rw [ptr .nonce (by decide)]; exact xa)
+  have partY := localKeyPart Mt.scr (by omega_using [L] : 0 < pLen)
     (Nat.le_trans (Mt.wideFit (d := t2) (by decide)) Mt.extent) ha
   refine WP.mono (writeKey_ok Mt.scr Mt.saved accepted (by rw [F, mask, BitVec.allOnes_and])
     ((ptr .out (by decide)).trans hp)
     (by intro part member; simp only [List.mem_cons, List.not_mem_nil, or_false] at member
         rcases member with rfl | rfl | rfl; exact partP; exact partY; exact partX)
-    hf (by omega) ha (by rw [E.keeps.2.2]; exact hw)) fun sf ⟨V, B, O, K⟩ => ?_
+    hf (by omega_using [L]) ha (by rw [E.keeps.2.2]; exact hw)) fun sf ⟨V, B, O, K⟩ => ?_
   have keyBytes : keyPartsBytes t base [(.input .p, 2 * pLen + qLen), (.local t2, pLen), (.input .nonce, qLen)] =
       Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .p)).setWidth 64) (2 * pLen + qLen) ++
         Spec.Dsa.encodeBE pLen (g ^ x % p) ++
@@ -176,13 +176,13 @@ theorem deriveBytesWith_ok {base : Addr} {size pLen qLen p q g x : Nat} {s : Sta
   refine ⟨V, ?_, E.keeps.trans (K.mono (by decide)), ?_, ?_⟩
   · rw [B, maskedBytes, keyBytes]
     split_ifs <;> simp only [List.length_append, Spec.Rsa.bytesAt, List.length_map, List.length_range, encodeBE_length]
-    congr 1; omega
+    congr 1; omega_using []
   · intro a hb ho hstack
-    exact (O a (.inr (by omega))).trans ((execution_outside E) a hb hstack)
+    exact (O a (.inr (by omega_using [ho]))).trans ((execution_outside E) a hb hstack)
   · intro regs saved
     have O' : OutputFrame base (out.setWidth 64) 0 (3 * pLen + 2 * qLen) t.mem sf.mem :=
-      fun a _ h => O a (.inr (by omega))
-    exact O'.saved ha (by decide) (by have H : 15712 ≤ size := Mt.extent; omega)
-      (by have := Mt.scr.nowrap; omega) (E.saved saved)
+      fun a _ h => O a (.inr (by omega_using [h]))
+    exact O'.saved ha (by decide) (by have H : 15712 ≤ size := Mt.extent; omega_using [H])
+      (by have := Mt.scr.nowrap; omega_using [this]) (E.saved saved)
 
 end VG.Proof.Dsa.X86

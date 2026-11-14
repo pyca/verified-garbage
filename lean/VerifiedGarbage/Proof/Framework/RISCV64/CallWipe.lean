@@ -364,15 +364,15 @@ theorem lui_hiOf {n : Nat} (hn : n < 2 ^ 31 - 2048) :
   have hh : hiOf n < 2 ^ 19 := by unfold hiOf; omega_using [hn]
   have e : BitVec.ofNat 20 (hiOf n) ++ (0 : BitVec 12) = BitVec.ofNat 32 (4096 * hiOf n) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-    simp [Nat.shiftLeft_eq]; omega
+    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hh]),
+      Nat.mod_eq_of_lt (by omega_using [hh])]
+    simp [Nat.shiftLeft_eq]; omega_using []
   have hm : (BitVec.ofNat 32 (4096 * hiOf n)).msb = false := by
-    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; simp; omega
+    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hh])]; simp; omega_using [hh]
   rw [e, sext32, BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+    Nat.mod_eq_of_lt (by omega_using [hh]), Nat.mod_eq_of_lt (by omega_using [hh])]
 
 /-- `4096 * hiOf n` plus `loOf n` is `n`. -/
 theorem lui_addi_loOf {n : Nat} :
@@ -380,7 +380,7 @@ theorem lui_addi_loOf {n : Nat} :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_ofInt, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   unfold loOf hiOf
-  omega
+  omega_using []
 
 theorem lenArg_run (n : Nat) (hn : n < 2 ^ 31 - 2048) (X : State) :
     execBlock isa (lenArg n) X = some (X.write .a1 (lenVal n), []) := by
@@ -402,7 +402,7 @@ theorem lenArg_run (n : Nat) (hn : n < 2 ^ 31 - 2048) (X : State) :
         simp only [execBlock, isa, exec_lui, lui_hiOf hn, hv, Option.map_some, addrs, List.map_nil,
           List.nil_append]
       · simp only [execBlock, isa, exec_lui, lui_hiOf hn,
-          exec_addi (show imm12 (loOf n) by unfold imm12 loOf hiOf; omega), Option.map_some,
+          exec_addi (show imm12 (loOf n) by unfold imm12 loOf hiOf; omega_using []), Option.map_some,
           addrs, List.map_nil, List.nil_append, RegUpd.gpr_write_self, RegUpd.write_write,
           lui_addi_loOf]
 
@@ -881,9 +881,9 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     show (sig.params.flatMap fun p => p.2.words 64).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
+    omega_using []
   have hiL : (ps₁.flatMap fun p => p.2.words 64).length < (sig.words abi.ptrBits).length := by
-    rw [hL]; omega
+    rw [hL]; omega_using []
   have hr : argRegs.getD (ps₁.flatMap fun p => p.2.words 64).length .a0 ≠ .t0 := argRegs_getD_ne_t0 _
   generalize hr' : argRegs.getD (ps₁.flatMap fun p => p.2.words 64).length .a0 = r at hr
   have hget : ∀ s : State, (regArgs sig s).getD (ps₁.flatMap fun p => p.2.words 64).length 0 = s.gpr r :=
@@ -892,7 +892,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
   have harr : ∀ s : State, (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s) := by
     intro s
     rw [← hget s, hps]
-    exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega)
+    exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega_using [])
   -- Its address is public.
   have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + 32) leak).pub s₁ s₂ → s₁.gpr r = s₂.gpr r := by
     intro s₁ s₂ hp

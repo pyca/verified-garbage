@@ -30,8 +30,8 @@ def clampMem (m : Mem) (base : Addr) : Mem :=
 theorem storeByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 4096) :
     WP isa (.block [.strb .x4 .x3 d]) s fun t =>
       t.mem = s.mem.writeW (off base d) ((s.gpr .x4).setWidth 8) ∧ Keeps [] s t := by
-  have w := hs.write (d := d) (n := 1) (by omega)
-  have enc : d % 1 = 0 ∧ d < 4096 := ⟨by omega, hd⟩
+  have w := hs.write (d := d) (n := 1) (by omega_using [hd])
+  have enc : d % 1 = 0 ∧ d < 4096 := ⟨by omega_using [], hd⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, enc, and_self,
     hs.x3, State.store, w, State.read, ite_true, Option.bind_some,
@@ -41,7 +41,7 @@ theorem storeByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd :
   apply congrArg (s.mem.writeW (off base d))
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, Size.bits]
-  omega
+  omega_using []
 
 theorem putByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 4096)
     (v : BitVec 16) :
@@ -67,7 +67,7 @@ theorem putByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := v.isLt
-  omega
+  omega_using []
 
 theorem clamp_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block clamp) s fun t => t.mem = clampMem s.mem base ∧ Keeps [.x4] s t := by

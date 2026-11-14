@@ -94,9 +94,9 @@ theorem random_rangeLoop_ok {s : State} {p q : Addr} {as bs : List Byte}
   refine WP.mono (wp_countdown (N := as.length) hbound hpos (RandomRangeInv s p q as bs) ?_ ?_ hn) fun t ht => ?_
   · intro j hj t ht hcount
     let i := as.length - (j + 1)
-    have hi : i < as.length := by dsimp only [i]; omega
-    have hib : i < bs.length := by omega
-    have hij : i + 1 = as.length - j := by dsimp only [i]; omega
+    have hi : i < as.length := by dsimp only [i]; omega_using [hpos]
+    have hib : i < bs.length := by omega_using [hlen, hpos]
+    have hij : i + 1 = as.length - j := by dsimp only [i]; omega_using [hj]
     have hpa : t.gpr .x2 = (p + BitVec.ofNat 64 i) + 1#64 := by
       change _ = _ + BitVec.ofNat 64 1
       rw [ht.ptrA, BitVec.add_assoc, BitVec.ofNat_add_ofNat, hij]
@@ -107,13 +107,13 @@ theorem random_rangeLoop_ok {s : State} {p q : Addr} {as bs : List Byte}
         (VG.Proof.Dsa.randomBorrow (as.drop (as.length - j)) (bs.drop (as.length - j))) := by
       rw [← ht.borrow, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     refine WP.mono (random_rangeByte_ok (a := as[i]) (b := bs[i]) hpa hpb ht.count ht8 (VG.Proof.Dsa.randomBorrow_le _ _)
-      (by omega) (by omega)
+      (by omega_using [hj]) (by omega_using [hbound])
       (by rw [ht.keep.rd, ht.keep.wr]; exact hra i hi)
       (by rw [ht.keep.rd, ht.keep.wr]; exact hrb i hi)
       (by rw [ht.mem]; exact hva i hi) (by rw [ht.mem]; exact hvb i hib))
       fun u ⟨hup, huq, hun, hub, hua, hum, hku⟩ => ?_
     refine ⟨⟨(ht.keep.trans hku).mono (by decide), hup, huq, ?_, ?_, ?_, hum.trans ht.mem⟩, ?_⟩
-    · rw [hun, show as.length - j - 1 = as.length - (j + 1) by omega]
+    · rw [hun, show as.length - j - 1 = as.length - (j + 1) by omega_using []]
     · change (u.gpr .x8).toNat = VG.Proof.Dsa.randomBorrow (as.drop i) (bs.drop i)
       rw [List.drop_eq_getElem_cons hi, List.drop_eq_getElem_cons hib, VG.Proof.Dsa.randomBorrow, hij]
       exact hub
@@ -122,7 +122,7 @@ theorem random_rangeLoop_ok {s : State} {p q : Addr} {as bs : List Byte}
     · rw [hun, hcount]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_using [hj]
   · refine ⟨Keep.refl _ _, by simpa using hp, by simpa using hq, by simpa using hn, ?_, ?_, rfl⟩
     · rw [Nat.sub_zero, List.drop_length, hlen, List.drop_length, h8]
       rfl
@@ -144,6 +144,6 @@ theorem random_rangeFinish_ok {s : State} {a b : Nat}
   unfold Random.rangeFinish
   brun [exec_tst_x, exec_cselc_x, CondCode.holds, State.write, h9, h8]
   by_cases hz : a = 0 <;> by_cases hl : a < b <;> simp [hz, hl]
-  rw [ite_eq_left (show 0 < a by omega)]
+  rw [ite_eq_left (show 0 < a by omega_using [hz])]
 
 end VG.Proof.Dsa.AArch64

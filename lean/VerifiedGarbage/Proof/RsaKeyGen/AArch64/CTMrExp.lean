@@ -47,10 +47,10 @@ theorem eval_cnt (r : Reg) {t : State} {j c : Nat} (hj : j < c) (h : (t.gpr r).t
   congr 1
   by_cases hc : j + 1 < c
   · have hne : t.gpr r ≠ 0 := fun e => by
-      rw [e] at h; exact absurd (h.mpr (by omega)) (by simp)
+      rw [e] at h; exact absurd (h.mpr (by omega_using [hc])) (by simp)
     rw [bne_iff_ne.mpr hne, decide_eq_true hc]
   · have he : t.gpr r = 0 := BitVec.eq_of_toNat_eq (by
-      by_contra hne; exact (h.mp (by simpa using hne)) (by omega))
+      by_contra hne; exact (h.mp (by simpa using hne)) (by omega_using [hj, hc]))
     rw [he, decide_eq_false hc]; rfl
 
 /-- Before the exponentiation (`mrExpLoop_ok`'s hypotheses). -/
@@ -75,7 +75,7 @@ theorem tab_lt {m : Mem} {B : Addr} {w c b : Nat} (h : TabOK m B w c b) (hc : 0 
 
 theorem winP_ww {p : WsP × Nat} {i : Nat} {s : State} (h : WinP p i s) : WW p.1 s := by
   obtain ⟨h4, h128, hEZ, -, c, bm, b, s₀, W, hI, -, -, hodd, hc1⟩ := h
-  exact ⟨h4, h128, hEZ, c, bm, hI.ctx, hodd, hc1, tab_lt hI.tab (by omega), by rw [hI.y]; exact Nat.mod_lt _ (by omega)⟩
+  exact ⟨h4, h128, hEZ, c, bm, hI.ctx, hodd, hc1, tab_lt hI.tab (by omega_using [hodd]), by rw [hI.y]; exact Nat.mod_lt _ (by omega_using [hodd])⟩
 
 /-- The registers pinned before a word's load. -/
 def whVal (p : WsP × Nat) : Reg → BitVec 64
@@ -100,10 +100,10 @@ theorem wordPre_ok {p : WsP × Nat} {s : State} (h : p.2 < p.1.w ∧ WI p.1 p.2 
   have hs₂ := hs.congr k12.wr
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 (p.1.w - p.2 - 1)) (by
     brun [(k12.gpr .x0 (by decide)).trans hw.x0, hdr_enc (show kWords < 32 by decide),
-      hs₂.ld (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega),
-      hs₂.st (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega),
+      hs₂.ld (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega_using [h256]),
+      hs₂.st (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega_using [h256]),
       (by rw [m₂, m₁]; exact hI.words : word s₂.mem p.1.B (8 * kWords) = BitVec.ofNat 64 (p.1.w - p.2)),
-      ofNat64_pred (show 1 ≤ p.1.w - p.2 by omega) (by omega)])
+      ofNat64_pred (show 1 ≤ p.1.w - p.2 by omega_using [hj]) (by omega_using [h128])])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨h3, k⟩ r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -129,7 +129,7 @@ theorem wordHead_ct : RelCT isa (Two fun (p : WsP × Nat) s => p.2 < p.1.w ∧ W
       have hW : (wordE s.mem p.1.B p.1.w p.2).toNat = mrE c / 2 ^ (64 * (p.1.w - p.2 - 1)) % 2 ^ 64 := by
         have hE' : ECtx s.mem p.1.B p.1.w c :=
           hE.of_low hI.frm (expRanges_low p.1.w) hEZ hI.ctx.ws.scr.nowrap
-        rw [← hE'.e]; exact word_of_wv s.mem p.1.B (slot p.1.w aE) p.1.w (by omega)
+        rw [← hE'.e]; exact word_of_wv s.mem p.1.B (slot p.1.w aE) p.1.w (by omega_using [hj])
       exact WP.mono (wordStart_ok hEZ hj hI) fun t hB =>
         ⟨by decide, h4, h128, hEZ, hj, c, bm, b, s₀, _, hB, hW, hE, hodd, hc1⟩
 
@@ -139,7 +139,7 @@ theorem wordWins_ct (M : Mont) : RelCT isa (Two fun (p : WsP × Nat) s => 0 < 16
   refine two_loop (Φ := WinP) (fun _ => 16) (two_map (fun q : (WsP × Nat) × Nat => q.1.1)
     (fun _ _ h => winP_ww h.2) (mrWin_ct M)) ?_
   rintro p i s hi ⟨h4, h128, hEZ, hj, c, bm, b, s₀, W, hI, hW, hE, hodd, hc1⟩
-  exact WP.mono (mrWinStep_ok M h128 hEZ hodd hc1 (by omega) (by omega) hW hi hI) fun t ⟨hI', hz⟩ =>
+  exact WP.mono (mrWinStep_ok M h128 hEZ hodd hc1 (by omega_using [hj]) (by omega_using []) hW hi hI) fun t ⟨hI', hz⟩ =>
     ⟨eval_cnt .x3 hi hz, fun _ => ⟨h4, h128, hEZ, hj, c, bm, b, s₀, W, hI', hW, hE, hodd, hc1⟩,
       fun e => e ▸ ⟨h4, h128, hEZ, hj, c, bm, b, s₀, W, hI', hW, hE, hodd, hc1⟩⟩
 
@@ -162,14 +162,14 @@ theorem mrExpLoop_ct (M : Mont) : RelCT isa (Two E0) (seqs (mrExpLoop M.mm)) fun
     (pins_ws' (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w)
       fun _ _ ⟨_, _, _, _, _, _, hc, _⟩ => hc.ws) (by taint_decide)
     fun L s ⟨h4, h128, hEZ, c, bm, b, hc, hT, hE, hodd, hc1, hY⟩ => WP.mono (expStart_ok hEZ hc hT hY) fun t hI =>
-      ⟨by omega, h4, h128, hEZ, c, bm, b, s, hI, hE, hodd, hc1⟩) ?_
+      ⟨by omega_using [h4], h4, h128, hEZ, c, bm, b, s, hI, hE, hodd, hc1⟩) ?_
   refine two_loop (Φ := WI) (Ψ := WLast) (fun L => L.w) (word_ct M) ?_
   rintro L j s hj ⟨h4, h128, hEZ, c, bm, b, s₀, hI, hE, hodd, hc1⟩
   refine WP.mono (mrWord_ok M h128 hEZ (hE.of_low hI.frm (expRanges_low L.w) hEZ hI.ctx.ws.scr.nowrap) hodd hc1 hj hI)
     fun t ⟨hI', hz⟩ => ⟨eval_cnt .x3 hj hz, fun _ => ⟨h4, h128, hEZ, c, bm, b, s₀, hI', hE, hodd, hc1⟩, fun _ => ?_⟩
   have hn := hI'.ctx.ws.scr.nowrap
-  refine ⟨⟨h4, h128, hEZ, c, bm, hI'.ctx, hodd, hc1, tab_lt hI'.tab (by omega),
-    by rw [hI'.y]; exact Nat.mod_lt _ (by omega)⟩, by rw [hI'.ctx.n]; exact hE.of_low hI'.frm (expRanges_low L.w) hEZ hn,
+  refine ⟨⟨h4, h128, hEZ, c, bm, hI'.ctx, hodd, hc1, tab_lt hI'.tab (by omega_using [hodd]),
+    by rw [hI'.y]; exact Nat.mod_lt _ (by omega_using [hodd])⟩, by rw [hI'.ctx.n]; exact hE.of_low hI'.frm (expRanges_low L.w) hEZ hn,
     _, hI'.flag⟩
 
 end VG.Proof.RsaKeyGen.AArch64

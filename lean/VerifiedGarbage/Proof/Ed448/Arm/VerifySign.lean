@@ -40,14 +40,14 @@ theorem orLimbs_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded s.m
     refine ⟨?_, ?_, hu.mem, rest_keeps (hu.rest (by decide))⟩
     · rw [hu.gpr]; exact hb 0 (by decide)
     · rw [hu.gpr]
-      exact ⟨fun h i hi => by rw [show i = 0 by omega]; exact congrArg BitVec.toNat h,
+      exact ⟨fun h i hi => by rw [show i = 0 by omega_using [hi]]; exact congrArg BitVec.toNat h,
         fun h => BitVec.eq_of_toNat_eq (h 0 (by decide))⟩
   refine wp_range_flatMap (M := isa) (N := 27) inv (fun n t hn ⟨tb, tz, tm, tk⟩ => ?_) 27 (by decide) u h0
-  refine load_ok (hs.of_keeps tk (by decide)) (by simp only [X2, slot]; omega) fun v hv => ?_
+  refine load_ok (hs.of_keeps tk (by decide)) (by simp only [X2, slot]; omega_using [hn]) fun v hv => ?_
   refine wp_dp (op2_reg _ _) fun w hw => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · rw [hw.gpr]; change (v.gpr .r2 ||| v.gpr .r3).toNat < _
     rw [hv.other _ (by decide), hv.gpr, BitVec.toNat_or, tm]
-    exact Nat.or_lt_two_pow (n := 16) tb (hb (n + 1) (by omega))
+    exact Nat.or_lt_two_pow (n := 16) tb (hb (n + 1) (by omega_using [hn]))
   · rw [hw.gpr]; change v.gpr .r2 ||| v.gpr .r3 = 0 ↔ _
     rw [hv.other _ (by decide), hv.gpr, tm]
     refine BitVec.or_eq_zero_iff.trans ((and_congr_left fun _ => tz).trans ?_)
@@ -57,7 +57,7 @@ theorem orLimbs_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded s.m
       · exact h1 i hi
       · exact congrArg BitVec.toNat h2
     · intro h
-      exact ⟨fun i hi => h i (by omega), BitVec.eq_of_toNat_eq (h (n + 1) (by omega))⟩
+      exact ⟨fun i hi => h i (by omega_using [hi]), BitVec.eq_of_toNat_eq (h (n + 1) (by omega_using []))⟩
   · rw [hw.mem, hv.mem, tm]
   · exact tk.trans (rest_keeps ((hv.rest (by decide)).trans (hw.rest (by decide))))
 
@@ -70,7 +70,7 @@ theorem isZero16 (x : BitVec 32) (h : x.toNat < 65536) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
     change (2 ^ 32 - 1 + x.toNat) % 2 ^ 32 / 2 ^ 31 = 0
-    omega
+    omega_using [h, hx']
 
 theorem zeroSign : ∀ z : Bool, ∀ sb < 2,
     (((if z then 1 else 0 : BitVec 32) &&& BitVec.ofNat 32 sb) = 0 ↔ ¬(z = true ∧ sb = 1)) ∧
@@ -82,7 +82,7 @@ theorem negMask : ∀ a < 2, ∀ sb < 2,
 theorem and1 (w : BitVec 32) : w &&& 1 = BitVec.ofNat 32 (w.toNat % 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (1 : BitVec 32).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := w.toNat % 2) (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := w.toNat % 2) (by omega_using [])]
 
 /-- After the `x = 0` check (`r2`, 0 exactly when `Z`): `BAD |= 0` exactly when
 not both `Z` and the sign bit, and `r5` the mask of the low bit `l₀` differing
@@ -167,8 +167,8 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedE
   have s1x : slot xo.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot xo.val := by rw [hX2]; exact slot_sep hx1
   unfold decodeSign
   simp only [List.append_assoc]
-  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs (o := X2) (a := slot xo.val) (by decide) (by omega)
-    (Or.inr (by omega))) fun s1 ⟨f1, m1, k1⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs (o := X2) (a := slot xo.val) (by decide) (by omega_using [sx])
+    (Or.inr (by omega_using [s1x]))) fun s1 ⟨f1, m1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   have bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb xo i hi
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs1 bd1) fun s2 ⟨b2, v2, m2, k2⟩ => ?_
@@ -181,8 +181,8 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedE
   have zero : (∀ i < 28, limbs s2.mem base X2 i = 0) ↔ E s.mem base xo = 0 := by
     rw [fe_zero_iff b2, fx]; exact Fin.val_eq_zero_iff
   have sign3 : word s3.mem base SIGN = BitVec.ofNat 32 sb := by
-    rw [m3, m2.word (Or.inl (by simp only [SIGN]; omega)) (by decide),
-      m1.word (Or.inl (by simp only [SIGN]; omega)) (by decide), hsign]
+    rw [m3, m2.word (Or.inl (by simp only [SIGN]; omega_using [hX2v])) (by decide),
+      m1.word (Or.inl (by simp only [SIGN]; omega_using [hX2v])) (by decide), hsign]
   rw [zero] at r3z
   refine VG.Proof.X25519.Arm.WP.append (signTail_ok hs3 r3b r3z hsb sign3) fun s4 ⟨b4, c4, m4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by decide)
@@ -192,14 +192,14 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedE
     · subst i; rw [m4, m3]; exact b2 j hj
     · have si := slot_range i
       have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep h1
-      rw [m4, m3, m2.limbs s1i (by omega) hj, m1.limbs (by omega) (by omega) hj]; exact hb i j hj
+      rw [m4, m3, m2.limbs s1i (by omega_using [hA, si]) hj, m1.limbs (by omega_using [s1i]) (by omega_using [si]) hj]; exact hb i j hj
   refine WP.mono (cswapE hs4 bd4 xo 12 hx12 c4) fun t ⟨kt, bt, _, et⟩ => ?_
   have e4 : ∀ i : Index, i ≠ 1 → E s4.mem base i = E s.mem base i := by
     intro i h1
     have si := slot_range i
     have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep h1
     simp only [E, F]
-    rw [m4, m3, m2.fe s1i (by omega), m1.fe (by omega) (by omega)]
+    rw [m4, m3, m2.fe s1i (by omega_using [hA, si]), m1.fe (by omega_using [s1i]) (by omega_using [si])]
   have l0 : limbs s3.mem base X2 0 % 2 = (E s.mem base xo).val % 2 := by
     rw [m3, ← fe_mod2, fx]
   refine ⟨⟨?_, ?_⟩, bt, ?_, ?_, fun i h1 h12 hx => ?_⟩

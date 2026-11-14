@@ -103,7 +103,7 @@ theorem AtPoint.keyStatus (h : AtPoint q original st)
     keyResultStatus (keyFromPrimes (16 * q.inputs.L) (Spec.Rsa.os2ip q.inputs.eB) (Spec.Rsa.os2ip pB)
       (Spec.Rsa.os2ip (Spec.Rsa.i2osp c q.inputs.L))) = q.key := by
   have hrest : (rOf q.inputs original q.used st).used ≤ ((genRand original).drop q.used).length := by
-    rw [List.length_drop, hrl]; omega
+    rw [List.length_drop, hrl]; omega_using [hle]
   obtain ⟨rest, hr⟩ := keySearch_trace_key (L := q.inputs.L) (eB := q.inputs.eB) ho (drop_lt hpos hrest) hph
   rw [GenPoint.key, ← h.2.2.2, tailOf, hr, primeEntry_key]
 
@@ -129,7 +129,7 @@ theorem continues_iff (h : AtPoint q original st) (hl : GenFrame q.inputs origin
     · cases hp : st.phase with
       | p => simp [h0, phaseWord]
       | q pB =>
-        have hk := h.keyStatus (rOf_used_le hl) (genRand_length hl) ho (by omega) hp
+        have hk := h.keyStatus (rOf_used_le hl) (genRand_length hl) ho (by omega_using [h0]) hp
         rw [← hk]
         simp [h0, phaseWord, keyResultStatus_two]
 
@@ -177,8 +177,8 @@ theorem gen_ct_step [Key.KeyProof] (v : RoundImpl) (q : GenPoint) (s : State) (h
       .inl ⟨(continues_iff ha hl.toGenFrame).mp hcs, hx, o', st', ha', ⟨hl'.toGenFrame.keep hmem k.2.1 k.2.2
         (fun r hr => k.gpr (by revert r; decide)), by rw [hmem]; exact hl'.key⟩, by rw [hmem]; exact hr'⟩
   · have hlt := keyStatus_lt ((tailOf q.inputs o q.used st).consume q.used [])
-    refine WP.mono (status_guard hd.1 hd.2.1 (by omega)) fun x ⟨⟨hx, _⟩, _⟩ =>
+    refine WP.mono (status_guard hd.1 hd.2.1 (by omega_using [hlt])) fun x ⟨⟨hx, _⟩, _⟩ =>
       .inr ⟨fun h => hcs ((continues_iff ha hl.toGenFrame).mpr h), ?_⟩
-    rw [hx]; congr 1; simp only [decide_eq_false_iff_not]; omega
+    rw [hx]; congr 1; simp only [decide_eq_false_iff_not]; omega_using [hlt]
 
 end VG.Proof.RsaKeyGen.X86_64.Generate

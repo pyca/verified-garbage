@@ -45,7 +45,7 @@ theorem mont_lanes {d z : VReg}
   have hm (i : Nat) (hi : i < 4) :
       (redc (product (vword (s.v d) i) (vword (s.v z) i))).toNat = mont (A i * Z i) := by
     rw [mont_word_nat _ _ (by rw [hzv i hi]; exact hzlt i hi), ha i hi, hzv i hi]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
     exact hm _ (by decide)
 
 theorem bfly_ok (hc : VConsts s) {A B Z : Nat → Nat}
@@ -70,24 +70,24 @@ theorem bfly_ok (hc : VConsts s) {A B Z : Nat → Nat}
   have sum : Lanes (s₄.v .v0) (fun e => A e + mont (B e*Z e)%q) := by
     rw [h₄.v]
     exact (lanes_add a₃ t₃).congr fun e he => Nat.mod_eq_of_lt (by
-      have ha' := halt e he; have ht' := tlt e; rw [q_eq] at ha' ht' ⊢; omega)
+      have ha' := halt e he; have ht' := tlt e; rw [q_eq] at ha' ht' ⊢; omega_using [ha'])
   refine csub_ok (by decide) (c₂.chg (h₃.chg.trans h₄.chg)).lanes_q sum
-    (fun e he => by have := halt e he; have := tlt e; omega) fun s₅ h₅ l₅ => ?_
+    (fun e he => by have := halt e he; have := tlt e; omega_arith) fun s₅ h₅ l₅ => ?_
   refine wp_vop (d := .v5) rfl fun s₆ h₆ => wp_vop (d := .v5) rfl fun s₇ h₇ => ?_
   have a₅ : Lanes (s₅.v .v5) A := by rw [h₅.get .v5, h₄.get .v5]; exact a₃5
   have c₅ := c₂.chg ((h₃.chg.trans h₄.chg).trans h₅)
   have a₆ : Lanes (s₆.v .v5) (fun e => A e + q) := by
     rw [h₆.v]
     exact (lanes_add a₅ c₅.lanes_q).congr fun e he => Nat.mod_eq_of_lt (by
-      have := halt e he; change A e < 8380417 at this; change A e + 8380417 < 2^32; omega)
+      have := halt e he; change A e < 8380417 at this; change A e + 8380417 < 2^32; omega_using [this])
   have t₆ : Lanes (s₆.v .v1) (fun e => mont (B e*Z e)%q) := by
     rw [h₆.get .v1, h₅.get .v1, h₄.get .v1, h₃.get .v1]; exact l₂
   have diff : Lanes (s₇.v .v5) (fun e => A e + q - mont (B e*Z e)%q) := by
     rw [h₇.v]
     exact (lanes_sub a₆ t₆).congr fun e he => by
-      have := halt e he; have := tlt e; rw [q_eq] at *; omega
+      have := halt e he; have := tlt e; rw [q_eq] at *; omega_arith
   refine csub_ok (by decide) (c₅.chg (h₆.chg.trans h₇.chg)).lanes_q diff
-    (fun e he => by have := halt e he; have := tlt e; omega) fun s₈ h₈ l₈ => k s₈
+    (fun e he => by have := halt e he; have := tlt e; omega_arith) fun s₈ h₈ l₈ => k s₈
       (((((((h₁.trans h₂).trans h₃.chg).trans h₄.chg).trans h₅).trans h₆.chg).trans h₇.chg).trans h₈).mono ?_ l₈
   rw [h₈.get .v0, h₇.get .v0, h₆.get .v0]; exact l₅
 
@@ -103,21 +103,21 @@ theorem bflyInv_ok (hc : VConsts s) {A B Z : Nat → Nat}
   have a₁ : Lanes (s₁.v .v5) (fun e => A e + q) := by
     rw [h₁.v]
     exact (lanes_add ha hc.lanes_q).congr fun e he => Nat.mod_eq_of_lt (by
-      have ha' := halt e he; rw [q_eq] at ha' ⊢; omega)
+      have ha' := halt e he; rw [q_eq] at ha' ⊢; omega_using [ha'])
   have b₁ : Lanes (s₁.v .v1) B := by rw [h₁.get .v1]; exact hb
   have diff : Lanes (s₂.v .v5) (fun e => A e + q - B e) := by
     rw [h₂.v]
     exact (lanes_sub a₁ b₁).congr fun e he => by
-      have ha' := halt e he; have hb' := hblt e he; rw [q_eq] at ha' hb' ⊢; omega
+      have ha' := halt e he; have hb' := hblt e he; rw [q_eq] at ha' hb' ⊢; omega_using [ha', hb']
   have c₂ := hc.chg (h₁.chg.trans h₂.chg)
   refine wp_vop (d := .v0) rfl fun s₃ h₃ => ?_
   have sum : Lanes (s₃.v .v0) (fun e => A e + B e) := by
     rw [h₃.v]
     exact (lanes_add (by rw [h₂.get .v0, h₁.get .v0]; exact ha)
       (by rw [h₂.get .v1, h₁.get .v1]; exact hb)).congr fun e he => Nat.mod_eq_of_lt (by
-        have ha' := halt e he; have hb' := hblt e he; rw [q_eq] at ha' hb'; omega)
+        have ha' := halt e he; have hb' := hblt e he; rw [q_eq] at ha' hb'; omega_using [ha', hb'])
   refine csub_ok (by decide) (c₂.chg h₃.chg).lanes_q sum
-    (fun e he => by have := halt e he; have := hblt e he; omega) fun s₄ h₄ l₄ => ?_
+    (fun e he => by have := halt e he; have := hblt e he; omega_arith) fun s₄ h₄ l₄ => ?_
   have c₄ := c₂.chg (h₃.chg.trans h₄)
   have diff₄ : Lanes (s₄.v .v5) (fun e => A e + q - B e) := by
     rw [h₄.get .v5, h₃.get .v5]; exact diff

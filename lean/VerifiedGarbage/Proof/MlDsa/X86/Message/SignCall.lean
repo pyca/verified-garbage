@@ -185,7 +185,7 @@ theorem sign_bSk {s₀ s s₁ : State} (hK : K.Ok p.skLen) (h₀ : SPre p K s₀
       bytesAt s₀.mem ((arg s₀ 0).setWidth 64) l := by
   have w : Region.Sub ⟨(arg s₀ 0).setWidth 64, l⟩ ⟨(arg s₀ 0).setWidth 64, K.len⟩ := (within_base _ hl).sub
   have := hK.lt
-  exact sign_bytes (R := ⟨_, l⟩) h₀ hc hs (h₀.kSk.sub_right w) (hc.ok.xKey.sub_right w) (by show l ≤ 2 ^ 64; omega)
+  exact sign_bytes (R := ⟨_, l⟩) h₀ hc hs (h₀.kSk.sub_right w) (hc.ok.xKey.sub_right w) (by show l ≤ 2 ^ 64; omega_using [hl, this])
 
 /-- The callee's precondition. -/
 theorem sign_callPre {s₀ s s₁ : State} (hK : K.Ok p.skLen) (h₀ : SPre p K s₀) (hc : CtxO (slay p K) s₀ s)

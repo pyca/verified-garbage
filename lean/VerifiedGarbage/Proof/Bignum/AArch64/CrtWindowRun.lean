@@ -29,7 +29,7 @@ theorem expRun_ok (W : Window) (M : Mont) (S : Selector) {s t : State} {P ep : A
       Frm P (CrtWindowFive.crtExpRanges w) s.mem u.mem ∧ Keep mmRegs s u := by
   unfold expRun
   refine WP.seq (WP.mono (expGroups_ok W hw hw' hR hL hread hbytes hout h) fun a ha => ?_)
-  refine WP.seq (WP.mono (expTail_ok W hw hw' hR hL (by omega) hread hbytes hout ha) fun b hb => ?_)
+  refine WP.seq (WP.mono (expTail_ok W hw hw' hR hL (by omega_using []) hread hbytes hout ha) fun b hb => ?_)
   refine WP.mono (finish_ok M S hb.ctx hb.tab hw hw' hR hb.pending)
     fun u ⟨cu,tu,yu,vu,fu,ku⟩ => ?_
   exact ⟨cu,tu,yu,by simpa only [pre_len] using vu,

@@ -20,9 +20,9 @@ theorem geFlag_ok (s : State) :
   refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.geFlag
   by_cases ge : (s.gpr .r2).toNat ≤ (s.gpr .r1).toNat
-  · have lt : ¬ (s.gpr .r1).toNat < (s.gpr .r2).toNat := by omega
+  · have lt : ¬ (s.gpr .r1).toNat < (s.gpr .r2).toNat := by omega_using [ge]
     ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
-  · have lt : (s.gpr .r1).toNat < (s.gpr .r2).toNat := by omega
+  · have lt : (s.gpr .r1).toNat < (s.gpr .r2).toNat := by omega_using [ge]
     ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
 
 private theorem initialHead_ok {s : State} {length width : Nat} (stack : Workspace s s.sp 72)
@@ -32,7 +32,7 @@ private theorem initialHead_ok {s : State} {length width : Nat} (stack : Workspa
       (t.gpr .r1 = BitVec.ofNat 32 length ∧ t.gpr .r2 = BitVec.ofNat 32 width ∧ t.mem = s.mem) ∧
       Rest [.r1, .r2] s t := by
   have reads (d : Nat) (fit : d + 4 ≤ 72) : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])]
     exact stack.read fit
   refine withRest_all [.r1, .r2] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, reads 20 (by decide), reads 12 (by decide), savedLength, savedWidth]
@@ -61,10 +61,10 @@ private theorem witnessHead_ok {s : State} {length used width : Nat} (stack : Wo
       (t.gpr .r1 = BitVec.ofNat 32 (length - used) ∧ t.gpr .r2 = BitVec.ofNat 32 width ∧ t.mem = s.mem) ∧
       Rest [.r1, .r2] s t := by
   have reads (d : Nat) (fit : d + 4 ≤ 72) : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])]
     exact stack.read fit
   have subtract : BitVec.ofNat 32 length - BitVec.ofNat 32 used = BitVec.ofNat 32 (length - used) := by
-    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) enough
+    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [lengthBound, enough]) enough
   refine withRest_all [.r1, .r2] ?_ (by rfl) (by rfl)
   ffrun [BitVec.add_zero, reads 20 (by decide), reads 40 (by decide), reads 48 (by decide),
     savedLength, savedUsed, savedWidth, subtract]
@@ -81,7 +81,7 @@ theorem witnessRoom_ok {s : State} {length used width : Nat} (stack : Workspace 
   rintro u ⟨⟨lenU, widthU, memU⟩, restU⟩
   refine WP.mono (geFlag_ok u) ?_
   rintro t ⟨⟨zeroT, memT⟩, restT⟩
-  rw [lenU, widthU, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : length - used < 2 ^ 32),
+  rw [lenU, widthU, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [lengthBound] : length - used < 2 ^ 32),
     Nat.mod_eq_of_lt widthBound] at zeroT
   exact ⟨⟨zeroT, memT.trans memU⟩, (restU.mono (by simp)).trans (restT.mono (by simp))⟩
 

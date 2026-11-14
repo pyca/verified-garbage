@@ -25,26 +25,26 @@ def cachedTablePtr (p : Inputs) : BitVec 32 := p.cachedContext+BitVec.ofNat 32 (
 theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenerationContext p s) :
     CombTable (cachedTablePtr p) p.w p.P p.G
       (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom)) s := by
-  have wPos : 0<p.w := by have := p.width.1; omega
+  have wPos : 0<p.w := by have := p.width.1; omega_using [this]
   have wordsCount : p.cachedWords=3+34*p.w := by
     rw [h.canonical.1]
     simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Inputs.w]
-    omega
-  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega
+    omega_using []
+  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
   have ptrAddr : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
     unfold cachedTablePtr
-    exact addr_add (by have := h.fit; omega)
+    exact addr_add (by have := h.fit; omega_using [wPos, size, this])
   have ptrNat : (cachedTablePtr p).toNat=p.cachedContext.toNat+(24+16*p.w) := by
     simp only [cachedTablePtr,BitVec.toNat_add,BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by have := h.fit; omega : 24+16*p.w<2^32)]
-    exact Nat.mod_eq_of_lt (by have := h.fit; omega)
+    rw [Nat.mod_eq_of_lt (by have := h.fit; omega_using [wordsCount, this] : 24+16*p.w<2^32)]
+    exact Nat.mod_eq_of_lt (by have := h.fit; omega_using [wPos, size, this])
   refine ⟨wPos,?_,?_,?_⟩
   · rw [ptrNat]
     have := h.fit
-    omega
+    omega_using [size, this]
   · rw [ptrAddr]
-    exact CallLay.inRegions_sub h.readable (by omega) (by omega)
+    exact CallLay.inRegions_sub h.readable (by omega_using [wordsCount]) (by omega_using [wordsCount, ptrNat])
   · intro a ha
     let E := Spec.Rsa.powMod p.G
       (Spec.Rsa.FixedBaseComb.exponent (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom)) a) p.P *
@@ -54,14 +54,14 @@ theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenera
     have pBound : p.P<2^(64*p.w) := by
       have v := os2ip_lt (p.dom.take p.k)
       rw [p.pLength,pow256_eq] at v
-      exact Nat.lt_of_lt_of_le v (Nat.pow_le_pow_right (by decide) (by have := p.width.2.2.2.1; omega))
+      exact Nat.lt_of_lt_of_le v (Nat.pow_le_pow_right (by decide) (by have := p.width.2.2.2.1; omega_using [this]))
     have eBound : E<2^(64*p.w) := Nat.lt_trans (Nat.mod_lt _ pPos) pBound
     have limb (i : Nat) (hi : i<p.w) :
         s.mem.readW (VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w+8*p.w*a+8*i)) 64 =
           BitVec.ofNat 64 (E/2^(64*i)) := by
       let index := 3+(2+a)*p.w+i
-      have mulA : (2+a)*p.w≤33*p.w := Nat.mul_le_mul_right _ (by omega)
-      have indexFit : index<p.cachedWords := by dsimp [index]; omega
+      have mulA : (2+a)*p.w≤33*p.w := Nat.mul_le_mul_right _ (by omega_using [ha])
+      have indexFit : index<p.cachedWords := by dsimp [index]; omega_using [wordsCount, hi, mulA]
       have entries := VG.Proof.Ffdh.generationValues_entry p.k p.dom a ha
       have entry := congrArg (fun xs : List (BitVec 64) => xs[i]?) entries
       have hik : i<Spec.Rsa.modulusWords p.k := hi
@@ -81,7 +81,7 @@ theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenera
       intro i hi
       change (s.mem.readW (VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w+8*p.w*a+8*i)) 64).toNat=_
       rw [limb i hi,BitVec.toNat_ofNat]
-    rw [← read_eq_val32,show 4*(2*p.w)=8*p.w by omega,ptrAddr]
+    rw [← read_eq_val32,show 4*(2*p.w)=8*p.w by omega_using [],ptrAddr]
     simp only [VG.Proof.Mont.off,Offset.add_add]
     change (s.mem.read (VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w+8*p.w*a)) (8*p.w)).toNat=E
     rw [read_eq_wv]
@@ -90,19 +90,19 @@ theorem CachedGenerationContext.table {p : Inputs} {s : State} (h : CachedGenera
 theorem CachedGenerationContext.tableSeparate {p : Inputs} {s : State}
     (h : CachedGenerationContext p s) : ∀ r∈keyCallWrites p s,
       (⟨State.addr (cachedTablePtr p),32*(8*p.w)⟩ : Region).Disjoint r := by
-  have wPos : 0<p.w := by have := p.width.1; omega
+  have wPos : 0<p.w := by have := p.width.1; omega_using [this]
   have wordsCount : p.cachedWords=3+34*p.w := by
     rw [h.canonical.1]
     simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Inputs.w]
-    omega
-  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega
+    omega_using []
+  have size : 8*p.cachedWords=24+272*p.w := by rw [wordsCount]; omega_using []
   have address : State.addr (cachedTablePtr p)=VG.Proof.Mont.off (State.addr p.cachedContext) (24+16*p.w) := by
     unfold cachedTablePtr
-    exact addr_add (by have := h.fit; omega)
+    exact addr_add (by have := h.fit; omega_using [wPos, size, this])
   have sub : (⟨State.addr (cachedTablePtr p),32*(8*p.w)⟩ : Region).Sub (cachedRegion p) := by
     rw [address]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [wordsCount])
   intro r hr
   exact (h.separate r hr).sub_left sub
 

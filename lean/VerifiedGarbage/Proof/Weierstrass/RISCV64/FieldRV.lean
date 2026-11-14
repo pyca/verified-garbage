@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The functions of `Proof/Weierstrass/MontContract.lean` on RISC-V, by register
@@ -42,7 +43,7 @@ theorem rvOwn_cases (k : Nat) :
   simp only [rvOwn, rvOwnEnd, ownAt, ownBytes, wsBytes]
   by_cases h : k ≤ 6
   · exact .inl ⟨h, by simp only [h, ↓reduceIte], by simp only [h, ↓reduceIte]⟩
-  · exact .inr ⟨by omega, by simp only [h, ↓reduceIte], by simp only [h, ↓reduceIte]⟩
+  · exact .inr ⟨by omega_using [h], by simp only [h, ↓reduceIte], by simp only [h, ↓reduceIte]⟩
 
 theorem rvOwn_le {k : Nat} (h : k ≤ 6) : rvOwn k = ownAt k := by simp only [rvOwn, h, ↓reduceIte]
 

@@ -28,7 +28,7 @@ theorem canonical_ok {s : State} {B : Addr} {Z w o : Nat} {minv : BitVec 64}
         wv s.mem B (slot w aAcc+16) (2*w) % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc,aTmp,o] s.mem t.mem ∧ Keep WindowRaw.regs s t := by
   have hn := hs.nowrap
-  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc+16 := by unfold slot aN aAcc; omega
+  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc+16 := by unfold slot aN aAcc; omega_using []
   have hnz := slot_le (w := w) (show aN < 8 by decide)
   have htz := slot_le (w := w) (show aTmp < 8 by decide)
   have hoz := slot_le (w := w) ho
@@ -37,10 +37,10 @@ theorem canonical_ok {s : State} {B : Addr} {Z w o : Nat} {minv : BitVec 64}
   unfold VG.Impl.Bignum.AArch64.WindowArithmetic.reduce
   simp only [Bool.false_eq_true, ite_false]
   refine WP.seq (WP.mono (BlockedRedc.redc_layout_ok hs h0 hH hZ h8 h12 h7 hw
-    (by omega) hmod) fun r ⟨hrValue,hrOut,hr8,hr10,hr12,hr7,kr⟩ => ?_)
+    (by omega_using [hw']) hmod) fun r ⟨hrValue,hrOut,hr8,hr10,hr12,hr7,kr⟩ => ?_)
   obtain ⟨q,hq,heq⟩ := hrValue hinv
   have hNR : wv r.mem B (slot w aN) w = wv s.mem B (slot w aN) w :=
-    hrOut.wv (by omega) (by omega)
+    hrOut.wv (by omega_using [hsep]) (by omega_using [hZ, hn, hnz])
   have hHR := (Square.scratch_arrays hrOut).hdr hH
   have hlt : wv r.mem B (slot w aTmp) (w+2) < 2*wv s.mem B (slot w aN) w :=
     Square.redc_lt hmpos hq hprod heq
@@ -50,7 +50,7 @@ theorem canonical_ok {s : State} {B : Addr} {Z w o : Nat} {minv : BitVec 64}
   have hp := FastFinish.finish_ok (hs.congr kw.wr) hZ
     ((kc.gpr .x8 (by decide)).trans hr8) ((kc.gpr .x10 (by decide)).trans hr10) hc6 hc5
     ((kc.gpr .x12 (by decide)).trans hr12) ((kc.gpr .x7 (by decide)).trans hr7)
-    (by omega) hw' (by omega) ho ho1 ho2
+    (by omega_using [hw]) hw' (by omega_using [hmod]) ho ho1 ho2
     (by simpa only [hcm,hNR] using hmpos) (by simpa only [hcm,hNR] using hlt)
   simp only [hcm,hNR] at hp
   refine WP.mono hp fun t ⟨hv,ho',kt⟩ => ⟨?_,?_,?_,(kw.trans kt).mono (by decide)⟩

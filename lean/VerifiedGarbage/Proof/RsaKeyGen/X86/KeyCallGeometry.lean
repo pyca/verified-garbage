@@ -23,13 +23,13 @@ open VG VG.X86 VG.Proof.Mont.X86
 def callSp (s : State) : BitVec 32 := s.gpr .esp - 16#32
 
 theorem CallLayout.privateNat {s : State} (A : CallLayout s) :
-    (callSp s).toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by have := A.low; omega)
+    (callSp s).toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by have := A.low; omega_using [this])
 
 theorem CallLayout.reservedNat {s : State} (A : CallLayout s) :
     (reservedRegion s).base.toNat = (s.gpr .esp).toNat - 68 := by
   change ((s.gpr .esp).setWidth 64 - 68#64).toNat = _
   rw [← Taint.sub_setWidth A.low, BitVec.toNat_setWidth, sub_toNat A.low,
-    Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+    Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])]
 
 theorem workspace_stack {s : State} (h : contract.pre s) :
     StkOk (callSp s) (callEnvironment s).base (callEnvironment s).size := by
@@ -39,7 +39,7 @@ theorem workspace_stack {s : State} (h : contract.pre s) :
   have bank := v.bankFit
   have positive : 0 < (callEnvironment s).size := by
     unfold VG.Proof.Rsa.X86.Keys.arr VG.Impl.Rsa.X86.Keys.hdr at bank
-    omega
+    omega_using [bank]
   have bounds := disjoint_bounds positive (by decide : 0 < 68) D.stackWorkspace
   change (callEnvironment s).base.toNat + (callEnvironment s).size ≤ (reservedRegion s).base.toNat ∨
     (reservedRegion s).base.toNat + 68 ≤ (callEnvironment s).base.toNat at bounds
@@ -49,7 +49,7 @@ theorem workspace_stack {s : State} (h : contract.pre s) :
       (callEnvironment s).base.toNat + (callEnvironment s).size + 20 ≤ (callSp s).toNat)
   rw [A.privateNat]
   have := A.low
-  omega
+  omega_using [bounds, this]
 
 theorem workspace_deep {s : State} (h : contract.pre s) :
     KeyArgs.DeepStk (callSp s) (callEnvironment s).base (callEnvironment s).size := by
@@ -59,7 +59,7 @@ theorem workspace_deep {s : State} (h : contract.pre s) :
   have bank := v.bankFit
   have positive : 0 < (callEnvironment s).size := by
     unfold VG.Proof.Rsa.X86.Keys.arr VG.Impl.Rsa.X86.Keys.hdr at bank
-    omega
+    omega_using [bank]
   have bounds := disjoint_bounds positive (by decide : 0 < 68) D.stackWorkspace
   change (callEnvironment s).base.toNat + (callEnvironment s).size ≤ (reservedRegion s).base.toNat ∨
     (reservedRegion s).base.toNat + 68 ≤ (callEnvironment s).base.toNat at bounds
@@ -70,7 +70,7 @@ theorem workspace_deep {s : State} (h : contract.pre s) :
   rw [A.privateNat]
   have := A.low
   have := A.argsFit
-  omega
+  omega_arith
 
 theorem CallLayout.savedSub {s : State} (A : CallLayout s) :
     (⟨(callSp s).setWidth 64, 16⟩ : Region).Sub (reservedRegion s) := by

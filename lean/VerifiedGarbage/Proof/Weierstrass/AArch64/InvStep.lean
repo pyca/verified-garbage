@@ -37,22 +37,22 @@ theorem msb_word (x : BitVec 64) : x >>> 63 = if x.msb then 1 else 0 := by
   by_cases h : 2 ^ 63 ≤ x.toNat
   · simp only [show 2 ^ (64 - 1) ≤ x.toNat by simpa using h, decide_true, ↓reduceIte]
     show x.toNat / 2 ^ 63 = 1
-    omega
+    omega_using [h]
   · simp only [show ¬ 2 ^ (64 - 1) ≤ x.toNat by simpa using h, decide_false, Bool.false_eq_true, ↓reduceIte]
     show x.toNat / 2 ^ 63 = 0
-    omega
+    omega_using [h]
 
 theorem add_not0_one (x : BitVec 64) : x + ~~~(BitVec.ofNat 64 0) + BitVec.ofNat 64 1 = x := by
   rw [BitVec.add_assoc, show ~~~(BitVec.ofNat 64 0) + BitVec.ofNat 64 1 = 0 from by decide]; simp
 
 theorem add_not0_one' (x : BitVec 64) : x + ~~~(0#64) + 1 = x := add_not0_one x
 
-theorem int_m1p1 (a : Int) : a + -1 + 1 = a := by omega
+theorem int_m1p1 (a : Int) : a + -1 + 1 = a := by omega_using []
 
 theorem toInt_not0 : (~~~(BitVec.ofNat 64 0)).toInt = -1 := by
   rw [BitVec.toInt_eq_toNat_cond, BitVec.toNat_not, BitVec.toNat_ofNat]
   simp only [Nat.zero_mod, Nat.sub_zero]
-  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
-  omega
+  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))]
+  omega_using []
 
 end VG.Proof.Weierstrass.AArch64

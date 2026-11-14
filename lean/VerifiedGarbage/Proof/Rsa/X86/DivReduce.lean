@@ -45,17 +45,17 @@ theorem reduce_ok {s : State} {base : Addr} {size n rem divisor tmp : Nat} (hs :
       t.gpr .ebx = (if val32 s.mem base rem (n + 1) < val32 s.mem base divisor (n + 1) then 0 else 1) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
   unfold reduce
-  refine WP.seq (WP.mono (chainSubW_ok hs (by omega) htmp hrem hdiv sr sd) ?_)
+  refine WP.seq (WP.mono (chainSubW_ok hs (by omega_using []) htmp hrem hdiv sr sd) ?_)
   rintro u ⟨frameU, ⟨c, carry, value⟩, restU⟩
   refine WP.seq (WP.mono (selectMask_ok u c carry) ?_)
   rintro w ⟨mask, bit, memW, restW⟩
   have hw := (hs.of_keeps restU (by decide)).of_keeps restW (by decide)
-  refine WP.mono (selectsW_ok hw (!c) mask (by omega) hrem htmp hrem (.inl rfl) (by omega)) ?_
+  refine WP.mono (selectsW_ok hw (!c) mask (by omega_using []) hrem htmp hrem (.inl rfl) (by omega_using [sr])) ?_
   rintro t ⟨frameT, valueT, restT⟩
   have nowrap := hs.nowrap
   have same : val32 w.mem base rem (n + 1) = val32 s.mem base rem (n + 1) := by
     rw [memW]
-    exact frameU.val32 (by omega) (by omega)
+    exact frameU.val32 (by omega_using [sr]) (by omega_using [hrem, nowrap])
   have ub := val32_lt u.mem base tmp (n + 1)
   have rb := val32_lt s.mem base rem (n + 1)
   have db := val32_lt s.mem base divisor (n + 1)
@@ -67,13 +67,13 @@ theorem reduce_ok {s : State} {base : Addr} {size n rem divisor tmp : Nat} (hs :
     cases c with
     | false =>
       simp only [Bool.not_false, ite_true, memW, Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at *
-      rw [ite_eq_right (by omega)]
-      omega
+      rw [ite_eq_right (by omega_using [value])]
+      omega_using [value]
     | true =>
       simp only [Bool.not_true, Bool.false_eq_true, ite_false, Bool.toNat_true, Nat.mul_one] at *
-      rw [same, ite_eq_left (by omega)]
+      rw [same, ite_eq_left (by omega_using [ub, value])]
   · rw [restT.1 .ebx (by decide), bit]
     cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at value
-    · rw [ite_eq_right (by omega)]; rfl
-    · rw [ite_eq_left (by omega)]; rfl
+    · rw [ite_eq_right (by omega_using [value])]; rfl
+    · rw [ite_eq_left (by omega_using [ub, value])]; rfl
 end VG.Proof.Rsa.X86.Div

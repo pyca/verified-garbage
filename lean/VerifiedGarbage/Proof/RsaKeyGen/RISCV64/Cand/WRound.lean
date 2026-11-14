@@ -49,21 +49,21 @@ theorem passed_ok {s : State} {B : Addr} {Z w I U ch : Nat} (e : Env s B Z w)
   have hZ : 256 + 28 * (8 * (w + 2)) ≤ Z := e.hZ
   refine WP.keep _ ?_ (by rfl) (by rfl)
   have r176 : s.mem.readW (B + 176#64) 64 = BitVec.ofNat 64 I := hk
-  have o176 := writeW_outside s.mem B (BitVec.ofNat 64 (I + 1)) (d := 176) (by omega)
+  have o176 := writeW_outside s.mem B (BitVec.ofNat 64 (I + 1)) (d := 176) (by omega_using [])
   have r16 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (I + 1))).readW (B + 16#64) 64 = BitVec.ofNat 64 U :=
-    (o176.word (by omega) (by omega)).trans hu
+    (o176.word (by omega_using []) (by omega_using [])).trans hu
   have r168 : (s.mem.writeW (B + 176#64) (BitVec.ofNat 64 (I + 1))).readW (B + 168#64) 64 = BitVec.ofNat 64 ch :=
-    (o176.word (by omega) (by omega)).trans hch
+    (o176.word (by omega_using []) (by omega_using [])).trans hch
   have ek : BitVec.ofNat 64 I + 1#64 = BitVec.ofNat 64 (I + 1) := by rw [← BitVec.ofNat_add]
   have g1 := ge_val (BitVec.ofNat 64 (I + 1)) (BitVec.ofNat 64 17)
   have g2 := ge_val (BitVec.ofNat 64 U) (BitVec.ofNat 64 ch)
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at g1
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at g2
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hk'])] at g1
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hch']), Nat.mod_eq_of_lt (by omega_using [hu'])] at g2
   simp only [passed, geFlag, ldh, sth, hIdx, hUni, hChecks, hStat]
-  brun [e.s6, hs.ld (d := 176) (n := 8) (by omega), hs.al8 (d := 176) (by omega) (by decide),
-    hs.st (d := 176) (n := 8) (by omega), hs.ld (d := 16) (n := 8) (by omega), hs.al8 (d := 16) (by omega) (by decide),
-    hs.ld (d := 168) (n := 8) (by omega), hs.al8 (d := 168) (by omega) (by decide),
-    hs.st (d := 160) (n := 8) (by omega), hs.al8 (d := 160) (by omega) (by decide),
+  brun [e.s6, hs.ld (d := 176) (n := 8) (by omega_using [hZ]), hs.al8 (d := 176) (by omega_using [hZ]) (by decide),
+    hs.st (d := 176) (n := 8) (by omega_using [hZ]), hs.ld (d := 16) (n := 8) (by omega_using [hZ]), hs.al8 (d := 16) (by omega_using [hZ]) (by decide),
+    hs.ld (d := 168) (n := 8) (by omega_using [hZ]), hs.al8 (d := 168) (by omega_using [hZ]) (by decide),
+    hs.st (d := 160) (n := 8) (by omega_using [hZ]), hs.al8 (d := 160) (by omega_using [hZ]) (by decide),
     r176, exec_li (show imm12 17 by decide), exec_li (show imm12 3 by decide),
     exec_li (show imm12 4 by decide)]
   simp only [ek, r16, r168]
@@ -106,7 +106,7 @@ theorem frame_of_low {B : Addr} {L e : Nat} {m m' : Mem} (h : ∀ x, e ≤ ofs B
   intro x hx
   have hb := hx _ (List.mem_cons_self ..)
   simp only [Region.Contains, Nat.not_le] at hb
-  exact h x (by show e ≤ (x - B).toNat; omega)
+  exact h x (by show e ≤ (x - B).toNat; omega_using [he, hb])
 
 /-- Array `j ≤ 27` of the working space lies past the header and inside its
 `8 L` bytes. -/
@@ -115,7 +115,7 @@ theorem slot_bounds {w L j : Nat} (hL : 256 + 28 * (8 * (w + 2)) ≤ 8 * L) (hj 
   have e : slot w j = 256 + j * (8 * (w + 2)) := rfl
   have hm : j * (8 * (w + 2)) ≤ 27 * (8 * (w + 2)) := Nat.mul_le_mul_right _ hj
   rw [e]
-  omega
+  omega_using [hL, hm]
 
 theorem ofs_byte (B : Addr) {i : Nat} (hi : i < 2 ^ 64) : ofs B (B + BitVec.ofNat 64 i) = i := by
   simp only [VG.Proof.Bignum.ofs]
@@ -146,61 +146,61 @@ theorem round_ok (R : RoundImpl) {s : State} {B : Addr} {L w c a I U ch : Nat} (
     intro t hb et ht1
     have wq : ∀ d, d + 8 ≤ 8 * L → (d + 8 ≤ 160 ∨ 168 ≤ d) → (d + 8 ≤ 176 ∨ 184 ≤ d) →
         word t.mem B d = word u.mem B d := fun d hd h1 h2 =>
-      Mem.readW_congr fun i hi => hb _ (by rw [VG.Proof.Bignum.ofs_off B (by omega_arith)]; omega)
-        (by rw [VG.Proof.Bignum.ofs_off B (by omega_arith)]; omega)
+      Mem.readW_congr fun i hi => hb _ (by rw [VG.Proof.Bignum.ofs_off B (by omega_arith)]; omega_using [h1, hi])
+        (by rw [VG.Proof.Bignum.ofs_off B (by omega_arith)]; omega_using [h2, hi])
     refine ⟨hu.prep.keep et (hu.prep.t1_of ht1) (fun d hd => ?_) (fun j hj => ?_), fun i hi hk => ?_, ?_⟩
     · obtain ⟨s0, s0'⟩ := slot_bounds (j := 0) hL (by decide)
       obtain ⟨s27', s27⟩ := slot_bounds (j := 27) hL (by decide)
       rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl
-      all_goals exact wq _ (by omega) (by omega) (by omega)
+      all_goals exact wq _ (by omega_arith) (by omega_arith) (by omega_arith)
     · simp only [A, VG.Proof.Bignum.RISCV64.Pre.wordsVal_eq_wv]
       obtain ⟨sj, sj'⟩ := slot_bounds (j := j) hL (by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide)
-      exact VG.Proof.Bignum.wv_congr fun i hi => wq _ (by omega) (by omega) (by omega)
+      exact VG.Proof.Bignum.wv_congr fun i hi => wq _ (by omega_using [sj', hi]) (by omega_using [sj]) (by omega_using [sj])
     · have h20 := hk.2 20 (by simp)
       have h22 := hk.2 22 (by simp)
       have hi' : i < 2 ^ 64 := by omega_arith
-      rw [hb _ (by rw [ofs_byte B hi']; omega) (by rw [ofs_byte B hi']; omega)]
+      rw [hb _ (by rw [ofs_byte B hi']; omega_using [h20]) (by rw [ofs_byte B hi']; omega_using [h22])]
       exact keeps_byte hu.keeps hi hk.1
-    · exact hu.frame.trans (frame_of_low (e := 184) (fun x hx => hb x (by omega) (by omega)) (by omega) _)
+    · exact hu.frame.trans (frame_of_low (e := 184) (fun x hx => hb x (by omega_using [hx]) (by omega_using [hx])) (by omega_using [hZ]) _)
   refine WP.ite _ (Steps.eval_zero_ofNat _ _ (by split <;> decide) hu.a0) (fun hz => ?_) (fun hz => ?_)
   · have hr : Proof.MillerRabin.Round.round c a = false := by
       by_contra hc; simp [hc] at hz
-    have st := hsu.st (d := 160) (n := 8) (by omega)
+    have st := hsu.st (d := 160) (n := 8) (by omega_using [hZ])
     refine WP.mono (WP.rdwr <| WP.keep [.t2] (Q := fun t => t.mem = u.mem.writeW (off B (8 * hStat)) (BitVec.ofNat 64 2)) (by
       simp only [sth, hStat]
-      brun [hu.prep.env.s6, st, hsu.al8 (d := 160) (by omega) (by decide), exec_li (show imm12 2 by decide)])
+      brun [hu.prep.env.s6, st, hsu.al8 (d := 160) (by omega_using [hZ]) (by decide), exec_li (show imm12 2 by decide)])
       (by decide)) fun t ⟨⟨tm, kt⟩, trd, twr, tsp⟩ => ?_
     have et := hu.prep.env.keep kt (by decide)
-    have wo := writeW_outside u.mem B (d := 8 * hStat) (BitVec.ofNat 64 2) (by simp only [hStat]; omega)
+    have wo := writeW_outside u.mem B (d := 8 * hStat) (BitVec.ofNat 64 2) (by simp only [hStat]; omega_using [])
     obtain ⟨p, kk, fr⟩ := keepP t (fun x h1 _ => by rw [tm]; exact wo x (by simpa only [hStat] using h1)) et
       (kt.gpr (by decide))
     refine ⟨p, ?_, ?_, kk, fr, trd.trans hu.rd, twr.trans hu.wr, tsp.trans hu.sp, fun r hr h1 h2 => ?_⟩
     · rw [tm, hr]; exact word_writeW_self _ _ _ _
-    · rw [tm, hr, (writeW_outside _ _ _ (by simp only [hStat]; omega)).word (by simp only [hStat, hIdx]; omega)
-        (by simp only [hIdx]; omega), kw _ (by simp only [hIdx]; omega) (by simp only [hIdx]; kept_tac), hI]
+    · rw [tm, hr, (writeW_outside _ _ _ (by simp only [hStat]; omega_using [])).word (by simp only [hStat, hIdx]; omega_using [])
+        (by simp only [hIdx]; omega_using []), kw _ (by simp only [hIdx]; omega_using []) (by simp only [hIdx]; kept_tac), hI]
       rfl
     · rw [kt.gpr (fun hm => h2 (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hm; subst hm; decide)),
         hu.cs r hr h1]
   · have hr : Proof.MillerRabin.Round.round c a = true := by
       by_contra hc; simp [hc] at hz
     have kI : word u.mem B (8 * hIdx) = BitVec.ofNat 64 I := by
-      rw [kw _ (by simp only [hIdx]; omega) (by simp only [hIdx]; kept_tac), hI]
+      rw [kw _ (by simp only [hIdx]; omega_using []) (by simp only [hIdx]; kept_tac), hI]
     have kU : word u.mem B (8 * hUni) = BitVec.ofNat 64 U := by
-      rw [kw _ (by simp only [hUni]; omega) (by simp only [hUni]; kept_tac), hU]
+      rw [kw _ (by simp only [hUni]; omega_using []) (by simp only [hUni]; kept_tac), hU]
     have kC : word u.mem B (8 * hChecks) = BitVec.ofNat 64 ch := by
-      rw [kw _ (by simp only [hChecks]; omega) (by simp only [hChecks]; kept_tac), hch]
+      rw [kw _ (by simp only [hChecks]; omega_using []) (by simp only [hChecks]; kept_tac), hch]
     refine WP.mono (WP.rdwr (passed_ok hu.prep.env kI kU kC hI' hU' hch')) fun t ⟨⟨tm, kt⟩, trd, twr, tsp⟩ => ?_
     have et := hu.prep.env.keep kt (by decide)
-    have wo1 := writeW_outside u.mem B (d := 8 * hIdx) (BitVec.ofNat 64 (I + 1)) (by simp only [hIdx]; omega)
+    have wo1 := writeW_outside u.mem B (d := 8 * hIdx) (BitVec.ofNat 64 (I + 1)) (by simp only [hIdx]; omega_using [])
     have wo2 := writeW_outside (u.mem.writeW (off B (8 * hIdx)) (BitVec.ofNat 64 (I + 1))) B (d := 8 * hStat)
-      (BitVec.ofNat 64 (statOf I U ch)) (by simp only [hStat]; omega)
+      (BitVec.ofNat 64 (statOf I U ch)) (by simp only [hStat]; omega_using [])
     obtain ⟨p, kk, fr⟩ := keepP t (fun x h1 h2 => by
       rw [tm]; exact (wo2 x (by simpa only [hStat] using h1)).trans (wo1 x (by simpa only [hIdx] using h2))) et
       (kt.gpr (by decide))
     refine ⟨p, ?_, ?_, kk, fr, trd.trans hu.rd, twr.trans hu.wr, tsp.trans hu.sp, fun r hr h1 h2 => ?_⟩
     · rw [tm, hr]; exact word_writeW_self _ _ _ _
-    · rw [tm, hr, (writeW_outside _ _ _ (by simp only [hStat]; omega)).word (by simp only [hStat, hIdx]; omega)
-        (by simp only [hIdx]; omega)]
+    · rw [tm, hr, (writeW_outside _ _ _ (by simp only [hStat]; omega_using [])).word (by simp only [hStat, hIdx]; omega_using [])
+        (by simp only [hIdx]; omega_using [])]
       exact word_writeW_self _ _ _ _
     · rw [kt.gpr h2, hu.cs r hr h1]
 

@@ -31,14 +31,14 @@ theorem zip1_d2 (x y : BitVec 128) :
   simp only [Nat.reduceMul, Nat.zero_add]
   by_cases h : i < 64
   · by_cases h' : i < 32
-    · simp (disch := omega) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
+    · simp (disch := omega_arith) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
     · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
-      congr 1 <;> omega
+      congr 1 <;> omega_using [h']
   · by_cases h' : i < 96
     · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
-    · simp (disch := omega) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
-      congr 1 <;> omega
+    · simp (disch := omega_arith) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
+      congr 1 <;> omega_using [h']
 
 theorem zip2_d2 (x y : BitVec 128) :
     VPermOp.eval .zip2 .d2 x y = ofVWords (vword x 2) (vword x 3) (vword y 2) (vword y 3) := by
@@ -50,17 +50,17 @@ theorem zip2_d2 (x y : BitVec 128) :
   simp only [Nat.reduceMul]
   by_cases h : i < 64
   · by_cases h' : i < 32
-    · simp (disch := omega) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
+    · simp (disch := omega_arith) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
     · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
-      congr 1 <;> omega
+      congr 1 <;> omega_using [h']
   · by_cases h' : i < 96
     · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
-    · simp (disch := omega) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
-      congr 1 <;> omega
+    · simp (disch := omega_arith) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
+      congr 1 <;> omega_using [h']
 
 theorem rowWord_inj (r i j : Fin 4) : rowWord r i = rowWord r j ↔ i = j := by
-  simp only [rowWord, Fin.ext_iff]; omega
+  simp only [rowWord, Fin.ext_iff]; omega_using []
 
 theorem vreg_scratch (k : Fin 16) :
     vreg k ≠ .v24 ∧ vreg k ≠ .v25 ∧ vreg k ≠ .v26 ∧ vreg k ≠ .v27 :=
@@ -121,14 +121,14 @@ theorem transposeEnd_ok {s₀ s : State} {r : Fin 4} (h : TPrep s₀ r s) :
   · simp only [RegUpd.sp_setV, h.same.sp]
   · intro j
     rcases j with ⟨j, hj⟩
-    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;>
       simp only [vreg_inj, rowWord_inj] <;>
       simp (config := {decide := true}) only [Fin.ext_iff,
         ite_true, ite_false, zip1_s4, zip2_s4, zip1_d2, zip2_d2,
         vword_ofVWords_0, vword_ofVWords_1, vword_ofVWords_2, vword_ofVWords_3, transposed]
   · intro k hk
     have hne (j : Fin 4) : k ≠ rowWord r j := by
-      intro e; subst k; simp only [rowWord] at hk; omega
+      intro e; subst k; simp only [rowWord] at hk; omega_using [hk]
     simp only [vreg_inj, hne, ite_false, h.keep]
 
 theorem transpose_ok (s : State) (r : Fin 4) :

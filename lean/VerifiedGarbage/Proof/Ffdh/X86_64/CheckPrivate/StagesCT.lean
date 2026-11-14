@@ -70,7 +70,7 @@ theorem entry_ct : RelCT isa (Two CR) (.block VG.Impl.Ffdh.X86_64.Domain.CheckPr
 theorem e1_dhp (p : KpP) (s : State) (h : E1 p s) : DHP p.d s := by
   obtain ⟨xb, hb, hd⟩ := h
   have := hb.hZ
-  exact ⟨hb.scr, hd, by change 256 ≤ p.Z; omega, hb.hdr (sDom, p.dp) (by simp [KpP.headers]),
+  exact ⟨hb.scr, hd, by change 256 ≤ p.Z; omega_using [this], hb.hdr (sDom, p.dp) (by simp [KpP.headers]),
     hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])⟩
 
 theorem e1_ce (p : KpP) (s : State) (h : E1 p s) : WP isa (.block domHead) s (CE p) := by
@@ -126,12 +126,12 @@ theorem beforeX_load (p : KpP) (s : State) (h : BeforeX p s) : LPre aXm sX sXl p
   have hk := hb.k1
   have hk' := hb.k2
   have hxl := hb.xl2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  exact ⟨mi, xb, hc, show 2 ≤ p.w by omega, Nat.le_refl _, show p.w < 2 ^ 30 by omega,
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  exact ⟨mi, xb, hc, show 2 ≤ p.w by omega_using [hk, ew], Nat.le_refl _, show p.w < 2 ^ 30 by omega_using [hk', ew],
     by decide, by decide, by decide, hb.hdr (sX, p.xp) (by simp [KpP.headers]),
     by rw [hb.xlen]; exact hb.hdr (sXl, BitVec.ofNat 64 p.xl) (by simp [KpP.headers]), hb.xlen,
-    hb.x, by rw [hb.xlen]; exact hb.xl1, by rw [hb.xlen]; omega,
-    by change (xb.length + 7) / 8 ≤ p.w; rw [hb.xlen]; omega⟩
+    hb.x, by rw [hb.xlen]; exact hb.xl1, by rw [hb.xlen]; omega_using [hk', hxl],
+    by change (xb.length + 7) / 8 ≤ p.w; rw [hb.xlen]; omega_using [hxl, ew]⟩
 
 theorem beforeX_inner (p : KpP) (s : State) (h : BeforeX p s) :
     WP isa (seqs (VG.Impl.Rsa.X86_64.Crt.loadArr aXm sX sXl)) s (Inner p) := h.choose_spec.choose_spec.2.2

@@ -33,10 +33,10 @@ theorem combSatMem_held : ∀ i < p256W.length,
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
-      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hl, hj])]
     unfold combSatMem
-    rw [e, ite_eq_left (show 8 * i + j < 151552 by omega)]
-  exact hm.trans (constMem_held 0x100000 p256W (by omega) i hi)
+    rw [e, ite_eq_left (show 8 * i + j < 151552 by omega_using [hi, hl, hj])]
+  exact hm.trans (constMem_held 0x100000 p256W (by omega_using [hl]) i hi)
 
 def combSatState : State := { satState with
   mem := combSatMem
@@ -51,6 +51,6 @@ theorem combSat_arg (j : Nat) (hj : j < 5) : arg combSatState j = arg satState j
   intro b hb
   change combSatMem (argAddr satState j + BitVec.ofNat 64 b) = satMem (argAddr satState j + BitVec.ofNat 64 b)
   unfold combSatMem
-  rw [ite_eq_right (by have := outside j hj b (by omega); omega)]
+  rw [ite_eq_right (by have := outside j hj b (by omega_using [hb]); omega_using [this])]
 
 end VG.Proof.Ecdsa.X86

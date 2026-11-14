@@ -210,12 +210,12 @@ theorem mkPre {σ : State} {C A P W T : Addr} {R N L : Nat} (hR : R = 10 ∨ R =
   have sd : Region.Sub ⟨W + BitVec.ofNat 64 dOff, 16⟩ ⟨W, 2576⟩ := Offset.sub_base _ (by decide)
   have dw := Offset.disjoint_base W (d := dOff) (n := 16) (k := 2560) (by decide) (by decide)
   have wD : (W + BitVec.ofNat 64 dOff).toNat + 16 ≤ 2 ^ 64 := by
-    rw [toNat_add_lt _ wrW (show dOff < 2576 by decide)]; simp only [dOff]; omega
+    rw [toNat_add_lt _ wrW (show dOff < 2576 by decide)]; simp only [dOff]; omega_using [wrW]
   have inR {r : Region} (h : r ∈ σ.wr) : r ∈ σ.rd ++ σ.wr := List.mem_append_right _ h
   have env (Q : Addr) (n : Nat) (hQ : (⟨Q, n⟩ : Region) ∈ σ.rd ++ σ.wr) (qW : (⟨Q, n⟩ : Region).Disjoint ⟨W, 2576⟩)
       (wQ : Q.toNat + n ≤ 2 ^ 64) (hn : n < 2 ^ 64) : Env σ C (W + BitVec.ofNat 64 dOff) Q W R n :=
     ⟨hR, rfl, inC, inR inD, hQ, inW, cW.sub_right sw, (qW.sub_right sd).symm, dw, qW.sub_right sw, wrC, wD, wQ,
-      by omega, hn⟩
+      by omega_using [wrW], hn⟩
   exact ⟨⟨env P L (inR inP) pW wrP hL, cW.sub_right sd, cP, inP, inD, x0, x1, x2, x3, x4, x5, x7, inA,
     wA.symm.sub_right sw, wA.symm.sub_right sd, wrA,
     fun r hr => env r.base r.len (inL r hr) (wL r hr).symm (wrL r hr) (listed_len hr)⟩,

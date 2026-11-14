@@ -23,14 +23,14 @@ theorem diagonal_finish_ok {s : State} {B : Addr} {Z A eb k : Nat}
       wv t.mem B A (16*k) = wv s.mem B eb (8*k) * wv s.mem B eb (8*k) ∧
       Outside B A (8*(16*k+2)) s.mem t.mem ∧ Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x11, .x14, .x16] s t := by
   have hsmall : Square.crossValue s.mem B eb (8*k) < 2 ^ (64*(16*k)) := by
-    simpa only [show 128*(8*k) = 64*(16*k) by omega] using cross_words_lt_full s.mem B eb (8*k)
+    simpa only [show 128*(8*k) = 64*(16*k) by omega_using []] using cross_words_lt_full s.mem B eb (8*k)
   have hlo := ProductEight.low_value hv hsmall
   have h12' : s.gpr .x12 = BitVec.ofNat 64 (4*(2*k)) := by
-    simpa only [show 4*(2*k) = 8*k by omega] using h12
-  refine WP.mono (WideLoops.diagonal_ok hs h8 h9 h12' h7 (by omega) (by omega)
-    (by omega) (by omega) (by omega)) fun t ⟨htv, hto, _, kt⟩ => ?_
-  have hlen : 2*(8*k) = 16*k := by omega
-  have hw : 4*(2*k) = 8*k := by omega
+    simpa only [show 4*(2*k) = 8*k by omega_using []] using h12
+  refine WP.mono (WideLoops.diagonal_ok hs h8 h9 h12' h7 (by omega_using [hk]) (by omega_using [hk'])
+    (by omega_using [hA]) (by omega_using [hb]) (by omega_using [sep])) fun t ⟨htv, hto, _, kt⟩ => ?_
+  have hlen : 2*(8*k) = 16*k := by omega_using []
+  have hw : 4*(2*k) = 8*k := by omega_using []
   simp only [hw, hlen] at htv hto
   rw [hlo] at htv
   have hprod := htv.trans (Square.square_decomposition s.mem B eb (8*k))
@@ -38,8 +38,8 @@ theorem diagonal_finish_ok {s : State} {B : Addr} {Z A eb k : Nat}
   have hp : 2 ^ (64*(8*k)) * 2 ^ (64*(8*k)) = 2 ^ (64*(16*k)) := by
     rw [← Nat.pow_add]
     congr 1
-    omega
+    omega_using []
   rw [hp] at hbnd
-  exact ⟨ProductEight.low_value hprod hbnd, hto.mono (by omega) (by omega), kt⟩
+  exact ⟨ProductEight.low_value hprod hbnd, hto.mono (by omega_using []) (by omega_using []), kt⟩
 
 end VG.Proof.Bignum.AArch64.SquareEight

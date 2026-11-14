@@ -531,7 +531,7 @@ theorem mulLow_ok {s : State} {B : Addr} {Z w N o y x : Nat} (h : Ws s B Z w N)
 theorem srl1_ofNat {w : Nat} (hw : w < 2 ^ 64) : BitVec.ofNat 64 w >>> 1 = BitVec.ofNat 64 (w / 2) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt hw, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt hw, Nat.mod_eq_of_lt (by omega_using [hw])]
 
 /-- A row of `mulHalf`: `y_i` (the word at `a2`) times the low `v = w / 2` words of `[x]` added to the
 `v` words of `[o]` from word `i` (at `a3`), the carry stored to word `i + v`. -/

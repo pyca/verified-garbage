@@ -27,13 +27,13 @@ theorem contributions_lt (n : Nat) (v : Nat → Nat) (k : Nat)
   induction k with
   | zero => simp [contributions_zero]
   | succ k ih =>
-    have hlo := ih (fun j hj => hv j (by omega))
-    have hhi := hv k (by omega)
-    have hmul := Nat.mul_le_mul_right (2 ^ (k * n)) (show v k + 1 ≤ 2 ^ n by omega)
+    have hlo := ih (fun j hj => hv j (by omega_using [hj]))
+    have hhi := hv k (by omega_using [])
+    have hmul := Nat.mul_le_mul_right (2 ^ (k * n)) (show v k + 1 ≤ 2 ^ n by omega_using [hhi])
     rw [Nat.add_mul, Nat.one_mul] at hmul
     rw [contributions_succ, Nat.add_mul, Nat.one_mul, Nat.pow_add]
     have hcomm : 2 ^ (k * n) * 2 ^ n = 2 ^ n * 2 ^ (k * n) := Nat.mul_comm _ _
-    omega
+    omega_using [hlo, hmul, hcomm]
 
 /-- The range fold can change its function outside the visited indices. -/
 theorem contribution_fold_congr (xs : List Nat) (f g : Nat → Nat)
@@ -60,7 +60,7 @@ theorem contributions_cut (n b count : Nat) (v : Nat → Nat)
     apply contribution_fold_congr
     intro j hj
     have hj := List.mem_range.mp hj
-    simp only [beq_eq_false_iff_ne.mpr (by omega : j ≠ count), Bool.false_eq_true, ite_false]
+    simp only [beq_eq_false_iff_ne.mpr (by omega_using [hj] : j ≠ count), Bool.false_eq_true, ite_false]
   rw [hp, contributions_succ, radix_join_mod (contributions_lt n v count hv)]
 
 end VG.Proof.Dsa.Generation

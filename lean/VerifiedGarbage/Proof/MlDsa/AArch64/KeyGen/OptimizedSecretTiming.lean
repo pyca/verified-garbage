@@ -34,7 +34,7 @@ theorem seeds_leak {p : Params} {S r n : Nat} (hn : n=3∨n=4) (hr : r+n≤p.ℓ
   intro i hi
   have hi4:=List.mem_range.mp hi
   rw [sc_add,sc_add,hs.done i hi4,ht.done i hi4]
-  exact rej_pub pub (by have:=secretLane_lt (i := i) hn; omega)
+  exact rej_pub pub (by have:=secretLane_lt (i := i) hn; omega_using [hr, this])
 
 theorem group_tr (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
     {S r n : Nat} (hn : n=3∨n=4) (hr : r+n≤p.ℓ+p.k) :
@@ -43,8 +43,8 @@ theorem group_tr (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
   have hη : p.η=2∨p.η=4 := by rcases hF.eta with h|h; exact Or.inl h.1; exact Or.inr h.1
   unfold groupCode
   refine RelCT.seq (relInv
-    (fun _ _ hp hs=>secretSeeds_ok hF hp (by omega)
-      (fun i hi=>by have:=secretLane_lt (i := i) hn; omega) hs)
+    (fun _ _ hp hs=>secretSeeds_ok hF hp (by omega_using [hr])
+      (fun i hi=>by have:=secretLane_lt (i := i) hn; omega_using [hr, hl, hk, this]) hs)
     (secretSeeds_tr hF _)) ?_
   have hseed : inB (kgR++kgW p) (sc 1408) 264=true := by layd
   have hout : inB (kgR++kgW p) (sP p r) 4096=true := by lay
@@ -57,7 +57,7 @@ theorem group_tr (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
     (ptr_ok (ptr_kept (kgOk p) hwork)) ?_) ?_
   · intro s t ⟨σ,τ,hp,hq,pub,hs,ht⟩
     have H:=kc_two hF hp hq pub hs.ks.k1.kc ht.ks.k1.kc
-    exact ⟨boundedReady hF H.lx (by omega),boundedReady hF H.ly (by omega),
+    exact ⟨boundedReady hF H.lx (by omega_using [hn, hr]),boundedReady hF H.ly (by omega_using [hn, hr]),
       H.same.pa hb0,H.same.pa hb1,H.same.pa hb2,H.same.2,seeds_leak hn hr pub hs ht⟩
   · exact block_nomem_tr (fun i hi _=>by
       simp only [and24,List.mem_singleton] at hi; subst i; rfl)

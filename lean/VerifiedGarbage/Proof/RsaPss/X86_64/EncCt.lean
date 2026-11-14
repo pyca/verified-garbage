@@ -104,8 +104,8 @@ theorem hsl_ct : RelCT isa (Two (At T (EJa T.H))) (.block (hSlots ++ ([.mov .r11
   · simp [upd, sw]
   all_goals
     simp only [upd]
-    rw [ifn (by omega), ifn (by omega), ifn (by omega)]
-    exact hw _ (by simp only [KS0, List.mem_cons, List.not_mem_nil, or_false]; omega)
+    rw [ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h])]
+    exact hw _ (by simp only [KS0, List.mem_cons, List.not_mem_nil, or_false]; omega_using [h])
 
 theorem gsl_ct : RelCT isa (Two (At T (EJb T.H))) (.block gSlots) (Two (At T (EJ1 T.H))) := by
   obtain ⟨_, hc⟩ := eFixed.gSl
@@ -129,8 +129,8 @@ theorem gsl_ct : RelCT isa (Two (At T (EJb T.H))) (.block gSlots) (Two (At T (EJ
   · simp [upd, sw]
   all_goals
     simp only [upd]
-    rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
-    exact hw _ (by simp only [KS1, List.mem_cons, List.not_mem_nil, or_false]; omega)
+    rw [ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h])]
+    exact hw _ (by simp only [KS1, List.mem_cons, List.not_mem_nil, or_false]; omega_using [h])
 
 theorem fit_ct (hc : HashChecks T.H.P T.H.D 2) (hH : HashOK T.H) :
     RelCT isa (Two (At T (EJ1 T.H))) (.block (fitH T.H)) (Two (At T (EJ2 T.H))) := by
@@ -142,9 +142,9 @@ theorem fit_ct (hc : HashChecks T.H.P T.H.D 2) (hH : HashOK T.H) :
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hk2 := S.ps.k2
   have hDN := hH.hDN; have hN := hH.N_le
-  refine X86_64.WP.mono_syms (fitH_ok (H := T.H) (by omega) v.L R (k := seml s)
+  refine X86_64.WP.mono_syms (fitH_ok (H := T.H) (by omega_using [hDN, hN]) v.L R (k := seml s)
     (by rw [hw 17 (by decide)]; show s.gpr .rsi = _; rw [seml, BitVec.ofNat_toNat, BitVec.setWidth_eq])
-    (by unfold seml; omega)) fun t' ⟨k', hm, hax, hcf⟩ sy =>
+    (by unfold seml; omega_using [hk2])) fun t' ⟨k', hm, hax, hcf⟩ sy =>
     ⟨s, S, ⟨v.keep k' hm (by decide) (fun _ hp => by cases hp) sy, k'.2.1.trans hrd, hm ▸ hM⟩, hax, hcf⟩
 
 /-- A refusal: 0. -/
@@ -170,7 +170,7 @@ theorem salt_ct (hc : SignChecks T.H.P T.H.D) (hH : HashOK T.H) :
   obtain ⟨⟨v, hrd, hM⟩, hax, hcf⟩ := h
   have hok : T.H.D + 2 ≤ seml s := by
     rw [show isa.eval .b t = t.cf from rfl, hcf] at hb
-    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega
+    simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega_using [hb]
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
   have hk2 := hp.k2
@@ -182,8 +182,8 @@ theorem salt_ct (hc : SignChecks T.H.P T.H.D) (hH : HashOK T.H) :
   · xrun [ea_sp, L.rsp, L.ld (d := sSaltLen) (by decide), R.rd (d := sSaltLen) 40 rfl (by decide),
       hw 40 (by decide)]
     rfl
-  refine X86_64.WP.mono_syms (saltFits_ok (H := T.H) (by omega) t5 (a := seml s) (b := s.gpr .r8) hok
-    (by unfold seml; omega) (by rw [k5.gpr (by decide)]; exact hax) hdx5) fun t6 ⟨k6, hm6, hax6, hc6⟩ sy6 => ?_
+  refine X86_64.WP.mono_syms (saltFits_ok (H := T.H) (by omega_using [hDN, hN]) t5 (a := seml s) (b := s.gpr .r8) hok
+    (by unfold seml; omega_using [hk2]) (by rw [k5.gpr (by decide)]; exact hax) hdx5) fun t6 ⟨k6, hm6, hax6, hc6⟩ sy6 => ?_
   have hm : t6.mem = t.mem := by rw [hm6, hm5]
   exact ⟨s, S, (v.keep (k5.trans k6) hm (by decide) (fun _ hp => by cases hp) (sy6.trans sy5)).sub (by decide) []
     (fun _ hp => by cases hp) fun _ _ x => x, k6.2.1.trans (k5.2.1.trans hrd), hm ▸ hM, hax6, hc6, hok⟩
@@ -197,7 +197,7 @@ theorem copyOut_ct :
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
   exact X86_64.WP.mono_syms (copyOut_ok hp v.L R v.wr (hw 16 (by decide)) (hw 17 (by decide))
-    (by unfold seml at hok; omega))
+    (by unfold seml at hok; omega_using [hok]))
     fun u ⟨L', k', R', _⟩ sy => ⟨s, S, v.next L' k'.2.2 R' (fun _ hk => by cases hk) trivial sy⟩
 
 theorem ret1_ct : RelCT isa (Two (At T (EJR T.H))) (.block [.mov32 .rax (.imm 1)]) (Two (At T (EJR T.H))) := by

@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 
 /-!
@@ -19,22 +20,22 @@ namespace VG.Proof.Bignum
 /-- A round keeps the accumulator below `m + b`, for any `b`. -/
 theorem round_lt_add {T T' a b u m : Nat} (h : 2 ^ 64 * T' = T + a * b + u * m) (hT : T < m + b)
     (ha : a < 2 ^ 64) (hu : u < 2 ^ 64) : T' < m + b := by
-  have h1 : a * b ≤ (2 ^ 64 - 1) * b := Nat.mul_le_mul_right _ (by omega)
-  have h2 : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right _ (by omega)
+  have h1 : a * b ≤ (2 ^ 64 - 1) * b := Nat.mul_le_mul_right _ (by omega_using [ha])
+  have h2 : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right _ (by omega_using [hu])
   rw [Nat.sub_mul, Nat.one_mul] at h1 h2
   have : 2 ^ 64 * T' < 2 ^ 64 * (m + b) := by
-    rw [h, Nat.mul_add]; omega
+    rw [h, Nat.mul_add]; omega_using [hT, h1, h2]
   exact Nat.lt_of_mul_lt_mul_left this
 
 /-- The reduction `(X + q m) / R` of `X < R R`, for `q < R`, is below `R + m`. -/
 theorem redc_lt_add {R T X q m : Nat} (hq : q < R) (hX : X < R * R) (he : R * T = X + q * m) :
     T < R + m := by
-  have hqm : q * m ≤ (R - 1) * m := Nat.mul_le_mul_right _ (by omega)
+  have hqm : q * m ≤ (R - 1) * m := Nat.mul_le_mul_right _ (by omega_using [hq])
   have : R * T < R * (R + m) := by
     rw [he, Nat.mul_add]
     have : (R - 1) * m + m = R * m := by
-      rw [Nat.sub_mul, Nat.one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left _ (by omega))]
-    omega
+      rw [Nat.sub_mul, Nat.one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left _ (by omega_using [hq]))]
+    omega_using [hX, hqm, this]
   exact Nat.lt_of_mul_lt_mul_left this
 
 /-- `csub_result` for `T < m + R`: what `subMod` and `selectAcc` leave is
@@ -43,47 +44,47 @@ theorem csub_lazy {Tl Tw Tw1 D m R c : Nat} (hm : m < R) (hD : D < R) (hc : c �
     (hTl : Tl < R) (hT : Tl + R * (Tw + 2 ^ 64 * Tw1) < m + R) (hsub : D + m = Tl + R * c) :
     (if Tw < c then Tl else D) < R ∧
       (if Tw < c then Tl else D) % m = (Tl + R * (Tw + 2 ^ 64 * Tw1)) % m := by
-  have hR : 0 < R := by omega
+  have hR : 0 < R := by omega_using [hm]
   have h1 : Tw1 = 0 := by
     rcases Nat.eq_zero_or_pos Tw1 with h | h
     · exact h
     · have : R * 2 ^ 64 ≤ R * (Tw + 2 ^ 64 * Tw1) := Nat.mul_le_mul_left _ (by
-        have := Nat.mul_le_mul_left (2 ^ 64) h; omega)
+        have := Nat.mul_le_mul_left (2 ^ 64) h; omega_using [h])
       have : R * 2 ^ 64 ≥ 2 * R := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by decide)
-      omega
+      omega_arith
   subst h1
   simp only [Nat.mul_zero, Nat.add_zero] at hT ⊢
   rcases Nat.lt_or_ge Tw 1 with hw | hw
-  · have hw0 : Tw = 0 := by omega
+  · have hw0 : Tw = 0 := by omega_using [hw]
     subst hw0
     simp only [Nat.mul_zero, Nat.add_zero] at hT ⊢
     rcases Nat.lt_or_ge c 1 with hc0 | hc1
-    · have : c = 0 := by omega
+    · have : c = 0 := by omega_using [hc0]
       subst this
       simp only [Nat.lt_irrefl, ite_false]
       simp only [Nat.mul_zero, Nat.add_zero] at hsub
       refine ⟨hD, ?_⟩
-      rw [show Tl = D + m by omega, Nat.add_mod_right]
-    · have : c = 1 := by omega
+      rw [show Tl = D + m by omega_using [hsub], Nat.add_mod_right]
+    · have : c = 1 := by omega_using [hc, hc1]
       subst this
       simp only [Nat.zero_lt_one, ite_true]
       exact ⟨hTl, trivial⟩
   · have : R * 1 ≤ R * Tw := Nat.mul_le_mul_left _ hw
     have hw1 : Tw = 1 := by
       rcases Nat.lt_or_ge Tw 2 with h | h
-      · omega
+      · omega_using [hw, h]
       · have : R * 2 ≤ R * Tw := Nat.mul_le_mul_left _ h
-        omega
+        omega_using [hm, hT, this]
     subst hw1
     have hc1 : c = 1 := by
       rcases Nat.lt_or_ge c 1 with h | h
-      · have : c = 0 := by omega
-        subst this; omega
-      · omega
+      · have : c = 0 := by omega_using [h]
+        subst this; omega_using [hT, hsub]
+      · omega_using [hc, h]
     subst hc1
     simp only [Nat.lt_irrefl, ite_false, Nat.mul_one] at hsub ⊢
     refine ⟨hD, ?_⟩
-    rw [show Tl + R = D + m by omega, Nat.add_mod_right]
+    rw [show Tl + R = D + m by omega_using [hsub], Nat.add_mod_right]
 
 /-- The masked subtraction: for `T = T_l + R T_w < R + m` (`T_l < R`,
 `T_w ≤ 1`) and `o + (T_w m) = T_l + R c` (`o < R`, `c` the borrow), `o` is
@@ -92,26 +93,26 @@ theorem lazy_sub {Tl Tw o m R c : Nat} (ho : o < R) (hc : c ≤ 1)
     (hTw : Tw ≤ 1) (hT : Tl + R * Tw < R + m) (hsub : o + Tw * m = Tl + R * c) :
     o % m = (Tl + R * Tw) % m := by
   rcases Nat.lt_or_ge Tw 1 with hw | hw
-  · have : Tw = 0 := by omega
+  · have : Tw = 0 := by omega_using [hw]
     subst this
     simp only [Nat.zero_mul, Nat.add_zero, Nat.mul_zero] at hsub ⊢
     rcases Nat.lt_or_ge c 1 with hc0 | hc1
-    · have : c = 0 := by omega
+    · have : c = 0 := by omega_using [hc0]
       subst this
       simp only [Nat.mul_zero, Nat.add_zero] at hsub
       rw [hsub]
     · have : R * 1 ≤ R * c := Nat.mul_le_mul_left _ hc1
-      omega
-  · have : Tw = 1 := by omega
+      omega_using [ho, hsub, this]
+  · have : Tw = 1 := by omega_using [hTw, hw]
     subst this
     simp only [Nat.one_mul, Nat.mul_one] at hsub hT ⊢
     rcases Nat.lt_or_ge c 1 with hc0 | hc1
-    · have : c = 0 := by omega
+    · have : c = 0 := by omega_using [hc0]
       subst this
-      omega
-    · have : c = 1 := by omega
+      omega_using [hT, hsub]
+    · have : c = 1 := by omega_using [hc, hc1]
       subst this
       simp only [Nat.mul_one] at hsub
-      rw [show Tl + R = o + m by omega, Nat.add_mod_right]
+      rw [show Tl + R = o + m by omega_using [hsub], Nat.add_mod_right]
 
 end VG.Proof.Bignum

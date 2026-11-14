@@ -29,14 +29,14 @@ theorem doubleProduct_ok (s : State) {base : BitVec 32} {size out tmp a b mod ac
   have nowrap := ctx.workspace.nowrap
   obtain ⟨inverse, header, hinv⟩ := ready.round.secret
   rw [doubleProduct, WP.seq_iff]
-  refine WP.mono (productStage_ok s ctx header (by omega) ready.round.ptr
+  refine WP.mono (productStage_ok s ctx header (by omega_using [hn]) ready.round.ptr
     ready.round.bound ready.round.operand) ?_
   rintro u ⟨value, hdr, ptr, outside, rest⟩
   refine wp_dp (op2_imm (by decide)) fun t h => WP.block_nil ?_
   have mem := h.mem
   have kept : Rest roundClobbers s t := rest.trans (h.rest (by decide))
   have out : u.mem.readW (off (State.addr base) (tmp + 24)) 32 = base + BitVec.ofNat 32 out := by
-    rw [outside_read32 outside (d := tmp + 24) (by omega) (by omega)]
+    rw [outside_read32 outside (d := tmp + 24) (by omega_using [layout]) (by omega_using [ht, nowrap])]
     exact ready.outPtr
   refine ⟨?_, ?_, ?_, kept⟩
   · rw [mem, value, ready.zero]
@@ -44,7 +44,7 @@ theorem doubleProduct_ok (s : State) {base : BitVec 32} {size out tmp a b mod ac
   · refine ⟨ctx.workspace.congr kept.wr, ?_, ?_, ?_, ?_, ?_⟩
     · rw [h.gpr, dpVal, ptr]
       change base + BitVec.ofNat 32 (acc + 4 * n) + BitVec.ofNat 32 16 = _
-      rw [Offset.add_add, show acc + 4 * n + 16 = tmp by omega]
+      rw [Offset.add_add, show acc + 4 * n + 16 = tmp by omega_using [layout]]
     · rw [mem]; exact hdr.count
     · rw [mem]; exact out
     · rw [mem]; exact hdr.accPtr

@@ -49,8 +49,8 @@ theorem vword_dword (x : BitVec 128) (j : Nat) (hj : j < 4) :
     vword x j = (vdword x (j/2)).extractLsb' (32*(1-j%2)) 32 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have hb : 32*(1-j%2)+i < 64 := by omega
-  have he : 32*(3-j)+i = 64*(1-j/2)+(32*(1-j%2)+i) := by omega
+  have hb : 32*(1-j%2)+i < 64 := by omega_using [hi]
+  have he : 32*(3-j)+i = 64*(1-j/2)+(32*(1-j%2)+i) := by omega_using [hj]
   simp only [vword, vdword, BitVec.getLsbD_extractLsb', hi, hb, decide_true,
     Bool.true_and, he]
 
@@ -91,13 +91,13 @@ theorem vvar_succ (t k : Nat) (hk : k < 7) : vvar (t + 1) (k + 1) = vvar t k := 
   simp only [vvar]; congr 1; omega
 
 theorem vvar_succ_zero (t : Nat) : vvar (t + 1) 0 = vvar t 7 := by
-  simp only [vvar]; congr 1; omega
+  simp only [vvar]; congr 1; omega_using []
 
 theorem vround_nodup (t : Nat) :
     ([vvar t 0, vvar t 1, vvar t 2, vvar t 3, vvar t 4, vvar t 5, vvar t 6, vvar t 7,
       .v12, .v13, .v14, .v15] : List VReg).Nodup := by
   simp only [vvar]
-  have := Nat.mod_lt t (show 8 > 0 by omega)
+  have := Nat.mod_lt t (show 8 > 0 by omega_using [])
   generalize t % 8 = c at *
   revert this; revert c; decide
 
@@ -136,7 +136,7 @@ theorem kWords_get (j : Nat) (hj : j ≤ 64) :
   · simp only [kWords, roundBias, K, List.getD_eq_getElem?_getD,
       List.getElem?_append, List.length_map, ks_length, h, ite_true]
     exact map_widen_getD Spec.Sha256.Ks j
-  · have he : j = 64 := by omega
+  · have he : j = 64 := by omega_using [hj, h]
     subst j
     simp only [kWords, roundBias, List.getD_eq_getElem?_getD, List.getElem?_append,
       List.length_map, ks_length, Nat.lt_irrefl, ite_false, Nat.sub_self,
@@ -154,10 +154,10 @@ theorem exec_kld (d : VReg) (j : Nat) (s : State) (hj : j ≤ 64)
       some (s.writeV d ((roundBias j).setWidth 64 ++ kWords.getD (j+1) 0)) := by
   have hin : (s.gpr .r19).toNat = 8*j := by
     rw [hi, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [hj])
   simp only [reduceExec]
-  rw [ite_eq_left ⟨by decide, hb, by rw [hin]; omega, by rw [hin, kWords_length]; omega⟩]
-  rw [hin, show (8*j)/8 = j by omega, kWords_get j hj]
+  rw [ite_eq_left ⟨by decide, hb, by rw [hin]; omega_using [], by rw [hin, kWords_length]; omega_using [hj]⟩]
+  rw [hin, show (8*j)/8 = j by omega_using [], kWords_get j hj]
 
 theorem high64_append (a b : BitVec 64) : (a ++ b).extractLsb' 64 64 = a :=
   BitVec.extractLsb'_append_eq_left
@@ -180,10 +180,10 @@ theorem round_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (w : Word)
   have hpairs := round_pairs_frame t
   have hs := vround_nodup t
   have hs' := List.nodup_reverse.mpr hs
-  simp only [Vars, vvar_succ_zero, vvar_succ t _ (show 0 < 7 by omega),
-    vvar_succ t _ (show 1 < 7 by omega), vvar_succ t _ (show 2 < 7 by omega),
-    vvar_succ t _ (show 3 < 7 by omega), vvar_succ t _ (show 4 < 7 by omega),
-    vvar_succ t _ (show 5 < 7 by omega), vvar_succ t _ (show 6 < 7 by omega)] at hv ⊢
+  simp only [Vars, vvar_succ_zero, vvar_succ t _ (show 0 < 7 by omega_using []),
+    vvar_succ t _ (show 1 < 7 by omega_using []), vvar_succ t _ (show 2 < 7 by omega_using []),
+    vvar_succ t _ (show 3 < 7 by omega_using []), vvar_succ t _ (show 4 < 7 by omega_using []),
+    vvar_succ t _ (show 5 < 7 by omega_using []), vvar_succ t _ (show 6 < 7 by omega_using [])] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
   simp only [Impl.Sha256.PPC64LE.round, Impl.Sha2.PPC64LE.round]
@@ -200,7 +200,7 @@ theorem round_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (w : Word)
     List.nodup_nil, and_true] at hs hs'
   simp only [vdword, Nat.sub_zero, Nat.mul_one] at h0 h1 h2 h3 h4 h5 h6 h7
   simp only [vdword, Nat.sub_zero, Nat.mul_one] at hw
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_kld .v14 (t+1) s (by omega) hb hi,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_kld .v14 (t+1) s (by omega_using [ht]) hb hi,
     exec_addi (n := .r19) (imm := 8) (by decide) (by decide), reduceExec, reduceVOpEval,
     Option.map_some, ↓vpr_writeV, ↓vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
     vdword, Nat.sub_zero, Nat.mul_one, ↓high64_append, choice_select, BitVec.extractLsb'_xor,
@@ -265,9 +265,9 @@ theorem pairPost_win {n : Nat} {M : Block} {s u : State}
   by_cases he : j = n
   · subst j; exact hp.1
   · have hn : preg j ≠ preg n := by
-      simp only [ne_eq, preg_eq_iff]; omega
+      simp only [ne_eq, preg_eq_iff]; omega_using [hj, hj', he]
     rw [hp.2.1 _ (preg_mem j) hn]
-    exact h j (by omega) (by omega)
+    exact h j (by omega_using [hj, he]) (by omega_using [hj'])
 
 theorem pair_work_disjoint : ∀ r ∈ vwork, ∀ p ∈ pairs,
     r ≠ p ∧ r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 := by decide
@@ -279,12 +279,12 @@ theorem pair_load_ok (n : Nat) (hn : n < 8) (M : Block) (s : State) (bp : Addr)
     (hin : ∀ j < 16, InRegions (s.rd ++ s.wr) (bp + BitVec.ofNat 64 (4*j)) 4)
     (hblk : ∀ j < 16, rev32 (s.mem.readW (bp + BitVec.ofNat 64 (4*j)) 32) = W M j) :
     WP isa (.block (schedulePair n)) s (PairPost n M s) := by
-  have i0 := hin (2*n) (by omega)
-  have i1 := hin (2*n+1) (by omega)
-  have b0 := hblk (2*n) (by omega)
-  have b1 := hblk (2*n+1) (by omega)
-  have he0 : 4*(2*n) = 8*n := by omega
-  have he1 : 4*(2*n+1) = 8*n+4 := by omega
+  have i0 := hin (2*n) (by omega_using [hn])
+  have i1 := hin (2*n+1) (by omega_using [hn])
+  have b0 := hblk (2*n) (by omega_using [hn])
+  have b1 := hblk (2*n+1) (by omega_using [hn])
+  have he0 : 4*(2*n) = 8*n := by omega_using []
+  have he1 : 4*(2*n+1) = 8*n+4 := by omega_using []
   rw [he0] at i0 b0
   rw [he1] at i1 b1
   have hp := pair_temps_disjoint _ (preg_mem n)
@@ -294,7 +294,7 @@ theorem pair_load_ok (n : Nat) (hn : n < 8) (M : Block) (s : State) (bp : Addr)
   apply WP.of_runBlock
   simp only [schedulePair, Impl.Sha2.PPC64LE.schedulePair, hn, ite_true, Bool.false_eq_true, ite_false, T0, T1, PairPost]
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    exec_li (show 8*n < 2^15 by omega), exec_li (show 8*n+4 < 2^15 by omega),
+    exec_li (show 8*n < 2^15 by omega_using [hn]), exec_li (show 8*n+4 < 2^15 by omega_using [hn]),
     exec_loadRev_w (show (Reg.r4 : Reg) ≠ .r0 by decide), exec_sldoi8, reduceExec, isa,
     vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
     RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
@@ -312,10 +312,10 @@ theorem pair_load_ok (n : Nat) (hn : n < 8) (M : Block) (s : State) (bp : Addr)
 
 theorem pair_regs_nodup (n : Nat) :
     ([preg n, preg (n+1), preg (n+4), preg (n+5), preg (n+7), .v12, .v13, .v14] : List VReg).Nodup := by
-  have h1 : (n+1)%8 = (n%8+1)%8 := by omega
-  have h4 : (n+4)%8 = (n%8+4)%8 := by omega
-  have h5 : (n+5)%8 = (n%8+5)%8 := by omega
-  have h7 : (n+7)%8 = (n%8+7)%8 := by omega
+  have h1 : (n+1)%8 = (n%8+1)%8 := by omega_using []
+  have h4 : (n+4)%8 = (n%8+4)%8 := by omega_using []
+  have h5 : (n+5)%8 = (n%8+5)%8 := by omega_using []
+  have h7 : (n+7)%8 = (n%8+7)%8 := by omega_using []
   simp only [preg, h1,h4,h5,h7]
   clear h1 h4 h5 h7
   have h := Nat.mod_lt n (show 8 > 0 by decide)
@@ -333,23 +333,23 @@ theorem low64_four (a b c d : BitVec 32) :
 theorem pair_compute_ok (n : Nat) (hn : 8 ≤ n) (M : Block) (s : State)
     (hwin : PairWin n s M) :
     WP isa (.block (schedulePair n)) s (PairPost n M s) := by
-  have e0 := hwin (n-8) (by omega) (by omega)
-  have e1 := hwin (n-7) (by omega) (by omega)
-  have e4 := hwin (n-4) (by omega) (by omega)
-  have e5 := hwin (n-3) (by omega) (by omega)
-  have e7 := hwin (n-1) (by omega) (by omega)
-  rw [show preg (n-8) = preg n by apply (preg_eq_iff _ _).mpr; omega] at e0
-  rw [show preg (n-7) = preg (n+1) by apply (preg_eq_iff _ _).mpr; omega] at e1
-  rw [show preg (n-4) = preg (n+4) by apply (preg_eq_iff _ _).mpr; omega] at e4
-  rw [show preg (n-3) = preg (n+5) by apply (preg_eq_iff _ _).mpr; omega] at e5
-  rw [show preg (n-1) = preg (n+7) by apply (preg_eq_iff _ _).mpr; omega] at e7
+  have e0 := hwin (n-8) (by omega_using [hn]) (by omega_using [])
+  have e1 := hwin (n-7) (by omega_using [hn]) (by omega_using [])
+  have e4 := hwin (n-4) (by omega_using [hn]) (by omega_using [])
+  have e5 := hwin (n-3) (by omega_using [hn]) (by omega_using [])
+  have e7 := hwin (n-1) (by omega_using [hn]) (by omega_using [])
+  rw [show preg (n-8) = preg n by apply (preg_eq_iff _ _).mpr; omega_using [hn]] at e0
+  rw [show preg (n-7) = preg (n+1) by apply (preg_eq_iff _ _).mpr; omega_using [hn]] at e1
+  rw [show preg (n-4) = preg (n+4) by apply (preg_eq_iff _ _).mpr; omega_using [hn]] at e4
+  rw [show preg (n-3) = preg (n+5) by apply (preg_eq_iff _ _).mpr; omega_using [hn]] at e5
+  rw [show preg (n-1) = preg (n+7) by apply (preg_eq_iff _ _).mpr; omega_using [hn]] at e7
   have hs := pair_regs_nodup n
   have hs' := List.nodup_reverse.mpr hs
   have hw : ∀ r ∈ vwork, r ≠ preg n ∧ r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 :=
     fun r hr => pair_work_disjoint r hr _ (preg_mem n)
   have hp : ∀ r ∈ pairs, r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 := pair_temps_disjoint
   apply WP.of_runBlock
-  simp only [schedulePair, Impl.Sha2.PPC64LE.schedulePair, show ¬n < 8 by omega, ite_false, Bool.false_eq_true, PairPost]
+  simp only [schedulePair, Impl.Sha2.PPC64LE.schedulePair, show ¬n < 8 by omega_using [hn], ite_false, Bool.false_eq_true, PairPost]
   generalize preg n = a at *
   generalize preg (n+1) = b at *
   generalize preg (n+4) = c at *
@@ -371,21 +371,21 @@ theorem pair_compute_ok (n : Nat) (hn : 8 ≤ n) (M : Block) (s : State)
     Option.some.injEq, exists_eq_left', Nat.reduceSub, Nat.reduceLT,
     Bool.false_eq_true, ↓reduceIte, and_self]
   refine ⟨?_, ?_, ?_⟩
-  · rw [W_ge M (t := 2*n) (by omega), W_ge M (t := 2*n+1) (by omega)]
+  · rw [W_ge M (t := 2*n) (by omega_using [hn]), W_ge M (t := 2*n+1) (by omega_using [hn])]
     simp only [VG.PPC64LE.sigma256, Bool.false_eq_true, ite_true, ite_false]
-    have a0 : 2*(n-1) = 2*n-2 := by omega
-    have a1 : 2*(n-1)+1 = 2*n-1 := by omega
-    have a2 : 2*(n-8) = 2*n-16 := by omega
-    have a3 : 2*(n-8)+1 = 2*n-15 := by omega
-    have a4 : 2*(n-7) = 2*n-14 := by omega
-    have a5 : 2*(n-4)+1 = 2*n-7 := by omega
-    have a6 : 2*(n-3) = 2*n-6 := by omega
-    have b0 : 2*n+1-2 = 2*n-1 := by omega
-    have b1 : 2*n+1-7 = 2*n-6 := by omega
-    have b2 : 2*n+1-15 = 2*n-14 := by omega
-    have b3 : 2*n+1-16 = 2*n-15 := by omega
+    have a0 : 2*(n-1) = 2*n-2 := by omega_using []
+    have a1 : 2*(n-1)+1 = 2*n-1 := by omega_using [hn]
+    have a2 : 2*(n-8) = 2*n-16 := by omega_using []
+    have a3 : 2*(n-8)+1 = 2*n-15 := by omega_using [hn]
+    have a4 : 2*(n-7) = 2*n-14 := by omega_using []
+    have a5 : 2*(n-4)+1 = 2*n-7 := by omega_using [hn]
+    have a6 : 2*(n-3) = 2*n-6 := by omega_using []
+    have b0 : 2*n+1-2 = 2*n-1 := by omega_using []
+    have b1 : 2*n+1-7 = 2*n-6 := by omega_using []
+    have b2 : 2*n+1-15 = 2*n-14 := by omega_using []
+    have b3 : 2*n+1-16 = 2*n-15 := by omega_using []
     simp only [a0,a2,a4,a5,a6,b0,b1,b2,b3,ssig0,ssig1,
-      show 2*n-16+1 = 2*n-15 by omega, show 2*n-2+1 = 2*n-1 by omega]
+      show 2*n-16+1 = 2*n-15 by omega_using [hn], show 2*n-2+1 = 2*n-1 by omega_using [hn]]
     apply congrArg₂ (· ++ ·) <;> apply congrArg (fun w : Word => (0#32) ++ w) <;> ac_rfl
   · intro r hr hne
     obtain ⟨h0,h1,h2⟩ := hp r hr
@@ -407,14 +407,14 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp : Addr)
   have hp15 : ∀ r ∈ pairs, r ≠ .v15 := by decide
   have hw15 : ∀ r ∈ vwork, r ≠ .v15 := by decide
   by_cases ht : t % 2 = 0
-  · have hr : (t+1)/2 = t/2 := by omega
-    have hr' : (t+2)/2 = t/2+1 := by omega
-    have he : 2*(t/2) = t := by omega
+  · have hr : (t+1)/2 = t/2 := by omega_using [ht]
+    have hr' : (t+2)/2 = t/2+1 := by omega_using []
+    have he : 2*(t/2) = t := by omega_using [ht]
     rw [hr] at hwin
     have hp : WP isa (.block (schedulePair (t/2))) s (PairPost (t/2) M s) := by
       by_cases hn : t/2 < 8
       · exact pair_load_ok _ hn M s bp hr4 hin hblk
-      · exact pair_compute_ok _ (by omega) M s hwin
+      · exact pair_compute_ok _ (by omega_using [hn]) M s hwin
     simp only [schedule, ht, ite_true]
     rw [WP.block_append_iff]
     refine WP.mono hp fun v hv => ?_
@@ -431,11 +431,11 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp : Addr)
       exact hw r hr
     · intro j hj hj'
       simp only [vpr_writeV, hp15 _ (preg_mem j), ite_false]
-      exact hwin' j (by omega) (by omega)
-  · have hr : (t+1)/2 = t/2+1 := by omega
-    have hr' : (t+2)/2 = (t+1)/2 := by omega
-    have he : 2*(t/2)+1 = t := by omega
-    have hp := hwin (t/2) (by omega) (by omega)
+      exact hwin' j (by omega_using [hj]) (by omega_using [hj'])
+  · have hr : (t+1)/2 = t/2+1 := by omega_using [ht]
+    have hr' : (t+2)/2 = (t+1)/2 := by omega_using [ht]
+    have he : 2*(t/2)+1 = t := by omega_using [ht]
+    have hp := hwin (t/2) (by omega_using [ht]) (by omega_using [])
     have hn := (pair_temps_disjoint _ (preg_mem (t/2))).1
     simp only [schedule, ht, ite_false]
     apply WP.of_runBlock
@@ -448,7 +448,7 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp : Addr)
       simp only [hw15 r hr, ite_false]
     · intro j hj hj'
       simp only [vpr_writeV, hp15 _ (preg_mem j), ite_false]
-      exact hwin j (by omega) (by omega)
+      exact hwin j (by omega_using [ht, hj]) (by omega_using [hj'])
 
 /-! ## The 64 rounds -/
 
@@ -470,25 +470,25 @@ structure RInv (H : HashValue) (M : Block) (scr : Addr) (sB : State) (t : Nat) (
 theorem vvar_add16 (t k : Nat) : vvar (t+16) k = vvar t k := by
   simp only [vvar]
   congr 1
-  omega
+  omega_using []
 
 theorem preg_add8 (n : Nat) : preg (n+8) = preg n := by
   simp only [preg]
   congr 1
-  omega
+  omega_using []
 
 theorem schedulePair_add8 (n : Nat) (hn : 8 ≤ n) : schedulePair (n+8) = schedulePair n := by
   have he (j : Nat) : preg (n+8+j) = preg (n+j) := by
     simp only [preg]
     congr 1
-    omega
-  simp only [schedulePair, Impl.Sha2.PPC64LE.schedulePair, show ¬ n+8 < 8 by omega,
-    show ¬ n < 8 by omega, ite_false, he, preg_add8]
+    omega_using []
+  simp only [schedulePair, Impl.Sha2.PPC64LE.schedulePair, show ¬ n+8 < 8 by omega_using [],
+    show ¬ n < 8 by omega_using [hn], ite_false, he, preg_add8]
 
 theorem schedule_add16 (t : Nat) (ht : 16 ≤ t) : schedule (t+16) = schedule t := by
-  have he : (t+16)%2 = t%2 := by omega
-  have hd : (t+16)/2 = t/2+8 := by omega
-  simp only [schedule, he, hd, schedulePair_add8 _ (by omega : 8 ≤ t/2), preg_add8]
+  have he : (t+16)%2 = t%2 := by omega_using []
+  have hd : (t+16)/2 = t/2+8 := by omega_using []
+  simp only [schedule, he, hd, schedulePair_add8 _ (by omega_using [ht] : 8 ≤ t/2), preg_add8]
 
 theorem round_add16 (t : Nat) : round (t+16) = round t := by
   simp only [Impl.Sha256.PPC64LE.round, Impl.Sha2.PPC64LE.round, vvar_add16]
@@ -497,15 +497,15 @@ theorem roundRange_add16 (t n : Nat) (ht : 16 ≤ t) : roundRange (t+16) n = rou
   induction n with
   | zero => rfl
   | succ n ih =>
-    simp only [roundRange, ih, show t+16+n = (t+n)+16 by omega,
-      schedule_add16 _ (by omega : 16 ≤ t+n), round_add16]
+    simp only [roundRange, ih, show t+16+n = (t+n)+16 by omega_using [],
+      schedule_add16 _ (by omega_using [ht] : 16 ≤ t+n), round_add16]
 
 theorem chunk_period (j : Nat) : roundRange (16+16*j) 16 = computedChunk := by
   induction j with
   | zero => rfl
   | succ j ih =>
-    rw [show 16+16*(j+1) = (16+16*j)+16 by omega,
-      roundRange_add16 _ _ (by omega), ih]
+    rw [show 16+16*(j+1) = (16+16*j)+16 by omega_using [],
+      roundRange_add16 _ _ (by omega_using []), ih]
 
 private theorem chunk_counter : ∀ i ∈ instrs computedChunk, dstOf i ≠ some Reg.r14 := by
   have h : (instrs computedChunk).all (fun i => decide (dstOf i ≠ some Reg.r14)) = true := by
@@ -537,7 +537,7 @@ theorem round_step_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
     exact hb
   have hi₁ : s₁.gpr .r19 = kIndex t := by
     rw [hr₁ .r19 (by decide) (by decide) (by decide), hs.index]
-  refine WP.mono_syms (round_ok t (by omega) s₁ _ _ hb₁ hi₁ hv₁ hT0)
+  refine WP.mono_syms (round_ok t (by omega_using [ht]) s₁ _ _ hb₁ hi₁ hv₁ hT0)
     fun s₂ ⟨hv₂, hm₂, hrd₂, hwr₂, hr₂, hp₂, hi₂⟩ hsy₂ => ?_
   refine ⟨?_, fun r hr => ?_, by rw [hrd₂, hrd₁, hs.rd],
     by rw [hwr₂, hwr₁, hs.wr], ?_, ?_, hsy₂.trans (hsy₁.trans hs.syms), hi₂, ?_⟩
@@ -564,8 +564,8 @@ theorem roundRange_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
   induction n with
   | zero => exact WP.block_nil hs
   | succ n ih =>
-    exact WP.seq (WP.mono (ih (by omega)) fun u hu =>
-      round_step_ok H M bp scr sB hrsi hbin hblk hb (start+n) (by omega) u hu)
+    exact WP.seq (WP.mono (ih (by omega_using [hn])) fun u hu =>
+      round_step_ok H M bp scr sB hrsi hbin hblk hb (start+n) (by omega_using [hn]) u hu)
 
 theorem RInv.write_counter {H : HashValue} {M : Block} {scr : Addr} {sB s : State} {t : Nat}
     (h : RInv H M scr sB t s) (x : BitVec 64) : RInv H M scr sB t (s.write .r14 x) := by
@@ -609,8 +609,8 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
     · rw [rounds_zero]; exact h0
     · intro j hj _; omega
   | succ t ih =>
-    exact WP.seq (WP.mono (ih (by omega)) fun s hs =>
-      round_step_ok H M bp scr sB hrsi hbin hblk hb t (by omega) s hs)
+    exact WP.seq (WP.mono (ih (by omega_using [ht])) fun s hs =>
+      round_step_ok H M bp scr sB hrsi hbin hblk hb t (by omega_using [ht]) s hs)
 
 theorem roundsLoop_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
     (hrsi : sB.gpr .r4 = bp) (hrcx : sB.gpr .r6 = scr)
@@ -630,9 +630,9 @@ theorem roundsLoop_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
         (eval (.nonzero .d .r14) s' = some true ∧ ∃ m' < m, Inv m' s')) := by
     intro m s ⟨hm, hm3, hR, hc⟩
     have he : roundRange (64-16*m) 16 = computedChunk := by
-      rw [show 64-16*m = 16+16*(3-m) by omega]
+      rw [show 64-16*m = 16+16*(3-m) by omega_using [hm3]]
       exact chunk_period _
-    have hw := WP.gpr (roundRange_ok H M bp scr sB hrsi hbin hblk hb _ s hR 16 (by omega))
+    have hw := WP.gpr (roundRange_ok H M bp scr sB hrsi hbin hblk hb _ s hR 16 (by omega_using [hm]))
       (r := .r14) (by rw [he]; exact chunk_counter)
     rw [he] at hw
     refine WP.seq (WP.mono hw fun u ⟨hU, hctr⟩ => ?_)
@@ -641,8 +641,8 @@ theorem roundsLoop_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
     · simp only [runBlock_cons, exec_subi (show Reg.r14 ≠ .r0 by decide) (show 1 ≤ 2^15 by decide),
         runStep_some, runBlock_nil, hctr, hc, BitVec.ofNat_sub_ofNat_of_le (w := 64) m 1 (by decide) hm]
     · have hV : RInv H M scr sB (64-16*(m-1)) (u.write .r14 (BitVec.ofNat 64 (m-1))) := by
-        simpa only [show 64-16*m+16 = 64-16*(m-1) by omega] using hU.write_counter (BitVec.ofNat 64 (m-1))
-      have hev := counter_eval (m-1) (by omega) u
+        simpa only [show 64-16*m+16 = 64-16*(m-1) by omega_using [hm, hm3]] using hU.write_counter (BitVec.ofNat 64 (m-1))
+      have hev := counter_eval (m-1) (by omega_using [hm3]) u
       by_cases hlast : m = 1
       · left
         refine ⟨?_, ?_⟩
@@ -650,10 +650,10 @@ theorem roundsLoop_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
           simp only [hlast, Nat.sub_self, ne_eq, not_true_eq_false, decide_false]
         · simpa only [hlast, Nat.sub_self, Nat.mul_zero, Nat.sub_zero] using hV
       · right
-        refine ⟨?_, m-1, by omega, by omega, by omega, hV, ?_⟩
+        refine ⟨?_, m-1, by omega_using [hm], by omega_using [hm, hlast], by omega_using [hm3], hV, ?_⟩
         · rw [hev]
           simp only [Option.some.injEq, decide_eq_true_eq]
-          omega
+          omega_using [hm, hlast]
         · exact RegUpd.gpr_write_self _ _ _
   refine WP.seq (WP.mono (rounds_ok H M bp scr sB hrsi hrcx hin hout hbin hblk h0 hb hi 16 (by decide))
     fun s16 h16 => ?_)

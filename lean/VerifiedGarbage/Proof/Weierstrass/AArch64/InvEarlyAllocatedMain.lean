@@ -64,9 +64,9 @@ theorem invAllocated_tail_ok {base : Addr} {size X : Nat} [NeZero invAllocatedMo
   have hmi : ((invAllocatedModulus : Int)*(invAllocatedCfg.M.minv.toNat : Int)+1)%2^64=0 := by exact_mod_cast hM.inv
   obtain ⟨bd,bf1,bf,bg,ba0,ba1,bb0,bb1⟩ := Divstep.invRun_bounds (N:=59) (by decide)
     (p:=invAllocatedModulus) (m:=invAllocatedCfg.M.minv.toNat) (x:=X)
-    (by exact_mod_cast hm2') (by exact_mod_cast hpr.one_lt) hmi (by omega) (by exact_mod_cast hX) 9
+    (by exact_mod_cast hm2') (by exact_mod_cast hpr.one_lt) hmi (by omega_using []) (by exact_mod_cast hX) 9
   rw [invAllocatedTail]
-  refine WP.seq (WP.mono (earlyCheck_ok hs (n:=5) (a:=2312) (by decide) (by omega) (by decide))
+  refine WP.seq (WP.mono (earlyCheck_ok hs (n:=5) (a:=2312) (by decide) (by omega_using [hsize]) (by decide))
     fun a ⟨az,ka⟩ => ?_)
   have ha := hs.of_keeps ka (by decide)
   have ia := hI.of_keeps ka (by decide)
@@ -84,7 +84,7 @@ theorem invAllocated_tail_ok {base : Addr} {size X : Nat} [NeZero invAllocatedMo
     have hb := ha.of_keeps kb (by decide)
     have ib := ia.of_keeps kb (by decide)
     have mb : ModOkA invAllocatedCfg.M size invAllocatedModulus b.mem base := by rw [kb.mem]; exact ma
-    refine WP.seq (WP.mono (invAllocated_batch_ok hsize hL hb mb ib (by norm_num at bd ⊢; omega)
+    refine WP.seq (WP.mono (invAllocated_batch_ok hsize hL hb mb ib (by norm_num at bd ⊢; omega_using [bd])
       bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le) (by rw [abs_of_nonneg bb0]; exact bb1.le)
       (j:=1) (by decide) (by decide) b19) fun c ⟨ic,_,kc,uc⟩ => ?_)
     have ic' : IInv invAllocatedCfg base
@@ -92,7 +92,7 @@ theorem invAllocated_tail_ok {base : Addr} {size X : Nat} [NeZero invAllocatedMo
     have done : (Divstep.invRun 59 invAllocatedModulus invAllocatedCfg.M.minv.toNat X 10).g=0 := by
       have hd := (Divstep.invRun_dfg (N:=59) (p:=(invAllocatedModulus:Int))
         (m:=invAllocatedCfg.M.minv.toNat) (x:=X) (by exact_mod_cast hm2') 10).1
-      have hz := (Divstep.divsteps_590 (by exact_mod_cast hm2') (by omega : (0:Int)≤X)
+      have hz := (Divstep.divsteps_590 (by exact_mod_cast hm2') (by omega_using [] : (0:Int)≤X)
         (by exact_mod_cast hX.le) (by decide : (invAllocatedModulus:Int)≤2^256) (by decide : 590≤59*10)).1
       rw [←hd] at hz
       exact hz

@@ -30,7 +30,7 @@ theorem crtPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {d a b : Nat} (hd
     WP isa (seqs crtPart) s fun t => KS I s₀ t ∧ KF I.B I.W csC s.mem t.mem ∧
       av I t.mem aX₁ = d % dv a ∧ av I t.mem aV = d % dv b := by
   have hZ := h.hZ
-  have hdv : ∀ x, 0 < dv x := fun x => by unfold dv; split <;> omega
+  have hdv : ∀ x, 0 < dv x := fun x => by unfold dv; split <;> omega_arith
   unfold crtPart
   simp only [List.append_assoc]
   -- `dP`.
@@ -57,7 +57,7 @@ theorem crtPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {d a b : Nat} (hd
   have vM₁W : dv a < 2 ^ (64 * I.W) := by rw [← v₁]; exact wv_lt _ _ _ _
   have vX₆ : av I s₆.mem aX₁ = d % dv a := by
     rw [v₆, f₅.av (by decide) (by decide) (by decide) hZ, ← hR]
-    exact wv_low_of_lt (by omega) (by rw [hR]; omega)
+    exact wv_low_of_lt (by omega_using []) (by rw [hR]; omega_using [hlt, vM₁W])
   have hok4 : [Rc.arr aU, Rc.arr aV, Rc.arr aT].all Rc.ok = true := by decide
   have pres6 : ∀ j, j < 16 → j ≠ aU → j ≠ aV → j ≠ aT → j ≠ aX₁ → av I s₆.mem j = av I s₁.mem j :=
     fun j hj h1 h2 h3 h4 => by
@@ -93,6 +93,6 @@ theorem crtPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {d a b : Nat} (hd
   · rw [f₁₀.av hok4 (by decide) (by decide) hZ, f₉.av (by decide) (by decide) (by decide) hZ,
       f₈.av (by decide) (by decide) (by decide) hZ, vX₇]
   · rw [← hR']
-    exact wv_low_of_lt (by omega) (by rw [hR']; exact Nat.lt_trans (Nat.mod_lt _ (hdv b)) vMb)
+    exact wv_low_of_lt (by omega_using []) (by rw [hR']; exact Nat.lt_trans (Nat.mod_lt _ (hdv b)) vMb)
 
 end VG.Proof.RsaKeyGen.AArch64.Key

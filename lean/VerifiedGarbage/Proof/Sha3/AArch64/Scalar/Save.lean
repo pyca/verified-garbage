@@ -31,11 +31,11 @@ theorem save_vectors_ok (orig : State) :
     11 (Nat.le_refl _) orig ⟨Keep.refl _,rfl,rfl,fun _ h => by omega,fun _ _ => rfl⟩
   refine WP.cons rfl (wp_nil ?_)
   refine ⟨⟨hs.keep.rd,hs.keep.wr,hs.keep.sp⟩,hs.gpr,hs.mem,fun j hj => ?_,fun r hr => ?_⟩
-  · simp only [RegUpd.v_setV,savedVec_inj j (by omega) i hi]
+  · simp only [RegUpd.v_setV,savedVec_inj j (by omega_using [hi, hj]) i hi]
     split
     · rename_i h; subst j
       simp only [vdword_ofVDwords_0,hs.gpr]
-    · exact hs.vals j (by omega)
+    · exact hs.vals j (by omega_arith)
   · simp only [RegUpd.v_setV,savedVec_not_preserved i hi r hr,ite_false]
     exact hs.vec r hr
 

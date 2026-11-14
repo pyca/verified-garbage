@@ -56,8 +56,8 @@ theorem xorPad_ok {K W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [
   unfold xorPad
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have pre : Proof.AesGcm.AArch64.LoopPre s₁ (W + BitVec.ofNat 64 112) P r :=
-    ⟨by omega, by rw [rd₁, wr₁]; exact Proof.AesGcm.AArch64.covers_left (covers_off hw (by omega) (by decide)),
-      by rw [wr₁]; exact hP.wr, (hP.w.sub_right (Lay.wSub (W := W) (d := 112) (n := r) (by omega))).symm⟩
+    ⟨by omega_using [hr'], by rw [rd₁, wr₁]; exact Proof.AesGcm.AArch64.covers_left (covers_off hw (by omega_using [hr']) (by decide)),
+      by rw [wr₁]; exact hP.wr, (hP.w.sub_right (Lay.wSub (W := W) (d := 112) (n := r) (by omega_using [hr']))).symm⟩
   refine WP.mono (xorLoop_ok s₁ x11₁ x12₁ x13₁ hr pre) fun t ⟨mt, gt, spt, rdt, wrt⟩ => ?_
   refine ⟨by rw [mt, m₁]; rfl, fun q hq => ?_, by rw [spt, sp₁], by rw [rdt, rd₁], by rw [wrt, wr₁]⟩
   simp only [xpRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hq

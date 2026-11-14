@@ -57,22 +57,22 @@ theorem advanceWindow_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g
       w32 t.mem g.W sWindows = q - 1 ∧ t.zf = some (decide (q = 1)) ∧
       Outs g.W [(sValue, 4), (sWindows, 4)] s.mem t.mem ∧ Keeps [.eax] s t ∧ Context g t := by
   have header := v.headerFit
-  have fitV : sValue + 4 ≤ g.L := by unfold sValue; omega
+  have fitV : sValue + 4 ≤ g.L := by unfold sValue; omega_using [header]
   change WP isa (.block ([.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
     .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax)] ++
     [.store (slot sValue) .eax, .mov .eax (.mem (slot sWindows)),
       .alu .sub .eax (.imm 1), .store (slot sWindows) .eax])) s _
   refine WP.block_append (WP.mono (doubleFour_ok s) fun a ⟨AX, Ma, Ka⟩ => ?_)
   have Ca := C.keepMem Ka (by decide) Ma
-  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := sValue) (by omega))
-    (ws_write Ca.ws (y := 0 + sValue) (n := 4) (by omega)) fun b B => ?_
+  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := sValue) (by omega_using [fitV]))
+    (ws_write Ca.ws (y := 0 + sValue) (n := 4) (by omega_using [fitV])) fun b B => ?_
   have Ov : Outside g.W sValue 4 a.mem b.mem := by
     rw [B.mem, Nat.zero_add]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega_using [fitV, this])
   have Cb := Ca.keepScalar (B.keeps []) (by decide) Ov (by unfold scratchWord sValue; simp)
   have oldCount : b.mem.readW (off g.W sWindows) 32 = BitVec.ofNat 32 q := by
     have unchanged := BitVec.eq_of_toNat_eq (Ov.w32 (d := sWindows)
-      (by unfold sValue sWindows; omega) (by unfold sWindows; decide))
+      (by unfold sValue sWindows; omega_using []) (by unfold sWindows; decide))
     rw [unchanged, Ma, count]
   refine WP.mono (counterDown_ok v Cb sWindows q (by unfold scratchWord sWindows; simp)
     positive bound oldCount) fun t ⟨Count, Z, Ow, Kw, Ct⟩ => ?_
@@ -82,7 +82,7 @@ theorem advanceWindow_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g
   refine ⟨?_, Count, Z, O₁.trans (Outs.of_outside Ow (by simp)),
     (Ka.widen (B.keeps [])).trans Kw, Ct⟩
   have unchanged := BitVec.eq_of_toNat_eq (Ow.w32 (d := sValue)
-    (by unfold sValue sWindows; omega) (by unfold sValue; decide))
+    (by unfold sValue sWindows; omega_using []) (by unfold sValue; decide))
   rw [unchanged, B.mem, Nat.zero_add, Mem.readW_writeW_self32, AX]
 
 end VG.Proof.MillerRabin.X86

@@ -34,7 +34,7 @@ theorem bitTest_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
   WP.mono (WP.keep [.rax] (Q := fun t' => t'.zf = some (decide (V / 128 % 2 = 0)) ∧ t'.mem = t.mem) (by
     unfold bitTest
     xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sV)
-      (by have := hdr_lt_slot w 8 (show sV < 32 by decide); omega), hV, bit7 V hV']) rfl)
+      (by have := hdr_lt_slot w 8 (show sV < 32 by decide); omega_using [hZ, this]), hV, bit7 V hV']) rfl)
     fun t' ⟨⟨h1, h2⟩, k⟩ => ⟨h1, h2, k⟩
 
 /-- The public data of a bit: the working space, the bit's byte (shifted) `V`. -/
@@ -71,7 +71,7 @@ theorem mm_mid (M : Mont) {L : Lay} {t : State} {o a b : Nat} (hg : GoodL L t) (
 /-- `expBit` leaks the same in two runs that agree on the bit. -/
 theorem expBit_ct : RelCT isa (Two BitPre) expBit fun _ _ => True := by
   have hn : ∀ {L : Lay} {t : State}, GoodL L t → L.B.toNat + slot L.w 8 ≤ 2 ^ 64 := fun hg => by
-    have := hg.1.scr.nowrap; have := hg.2; omega
+    have := hg.1.scr.nowrap; have := hg.2; omega_arith
   unfold expBit
   -- The squaring.
   refine RelCT.seq (two_post (Ψ := BitPre) (two_map (·.L) (fun _ _ h => h.1)
@@ -83,7 +83,7 @@ theorem expBit_ct : RelCT isa (Two BitPre) expBit fun _ _ => True := by
         by rw [n, ar.wv_of_not_mem (by decide) (by decide) (hn h.1)]; exact h.2.2.2.2.2.2.2⟩) ?_
   -- The bit.
   refine RelCT.seq (two_piece (Ψ := BitTested) _ pins_bitPre (by taint_decide) fun p t h =>
-    WP.mono (bitTest_ok h.1.1 h.1.2 h.2.1 (by have := h.2.2.1; omega)) fun t' ⟨hz, hm, k⟩ =>
+    WP.mono (bitTest_ok h.1.1 h.1.2 h.2.1 (by have := h.2.2.1; omega_using [this])) fun t' ⟨hz, hm, k⟩ =>
       ⟨⟨⟨⟨h.1.1.scr.congr k.2.2, (k.gpr (by decide)).trans h.1.1.rdi, hm ▸ h.1.1.hdr⟩, h.1.2⟩,
         hm ▸ h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, hm ▸ h.2.2.2.2.2.1, hm ▸ h.2.2.2.2.2.2.1,
         hm ▸ h.2.2.2.2.2.2.2⟩, hz⟩) ?_
@@ -105,7 +105,7 @@ theorem eval_ne_count {s : State} {j n : Nat} (hj : j < n) (hz : s.zf = some (de
   simp only [eval, hz, Option.map_some, Option.some.injEq]
   by_cases h : j + 1 = n
   · simp [h]
-  · simp only [h, decide_false, Bool.not_false]; exact (decide_eq_true (by omega)).symm
+  · simp only [h, decide_false, Bool.not_false]; exact (decide_eq_true (by omega_using [hj, h])).symm
 
 /-! ## The bits of a byte -/
 
@@ -127,8 +127,8 @@ theorem bitsInv_pre {p : BitsPub} {j : Nat} {s : State} (hj : j < 8) (h : BitsIn
     BitPre ⟨p.L, p.v * 2 ^ j⟩ s := by
   obtain ⟨t₀, X, x, hI, hZ, hw, hw', -, hXN, -, hv⟩ := h
   obtain ⟨Y, hY, hYN, -⟩ := hI.y
-  have hp : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
-  exact ⟨⟨hI.ctx.good, hZ⟩, hI.v, show p.v * 2 ^ j < 2 ^ 62 by have := Nat.mul_le_mul_left p.v hp; omega, hw, hw', hI.ctx.inv,
+  have hp : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
+  exact ⟨⟨hI.ctx.good, hZ⟩, hI.v, show p.v * 2 ^ j < 2 ^ 62 by have := Nat.mul_le_mul_left p.v hp; omega_using [hv, this], hw, hw', hI.ctx.inv,
     by rw [hY, hI.ctx.n]; exact hYN, by rw [hI.ctx.x, hI.ctx.n]; exact hXN⟩
 
 /-- The eight bits of a byte leak the same in runs that agree on it. -/
@@ -171,8 +171,8 @@ def BytesInv (a : EPub) (i : Nat) (s : State) : Prop :=
     EFacts a X x ∧ ESrc a t₀
 
 theorem ESrc.bytes {a : EPub} {t₀ : State} (h : ESrc a t₀) :
-    ∀ i (hi : i < a.len), t₀.mem (a.ep + BitVec.ofNat 64 i) = a.eb[i]'(by have := h.1; omega) :=
-  fun i hi => by rw [h.2.2.2.1 i hi]; simp [List.getD_eq_getElem?_getD, show i < a.eb.length by have := h.1; omega]
+    ∀ i (hi : i < a.len), t₀.mem (a.ep + BitVec.ofNat 64 i) = a.eb[i]'(by have := h.1; omega_using [hi, this]) :=
+  fun i hi => by rw [h.2.2.2.1 i hi]; simp [List.getD_eq_getElem?_getD, show i < a.eb.length by have := h.1; omega_using [hi, this]]
 
 /-- After `byteHead`'s loads. -/
 def HeadMid (q : EPub × Nat) (s : State) : Prop :=
@@ -211,7 +211,7 @@ theorem byteBody_ct : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len �
       fun t ⟨_, _, hB⟩ => ⟨by decide, t, X, x, ?_, hf.1, hf.2.1, hf.2.2.1, hf.2.2.2.1, hf.2.2.2.2.1,
         hf.2.2.2.2.2, ?_⟩
     · simp only [bitsPub, List.getD_eq_getElem?_getD,
-        List.getElem?_eq_getElem (show q.2 < q.1.eb.length by have := hsrc.1; omega), Option.getD_some]
+        List.getElem?_eq_getElem (show q.2 < q.1.eb.length by have := hsrc.1; omega_using [hi, this]), Option.getD_some]
       exact hB
     · simp only [bitsPub]; exact (List.getD q.1.eb q.2 0).isLt
   have h₁ : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len ∧ BytesInv q.1 q.2 s)
@@ -274,9 +274,9 @@ def EPhase1 (a : EPub) (s : State) : Prop :=
 
 theorem src_esrc {a : EPub} {s : State} (h : Src s a.L.B a.L.Z a.ep a.eb) (hl : a.eb.length = a.len)
     (hl' : a.len < 2 ^ 31) : ESrc a s :=
-  ⟨hl, hl', fun i hi => h.rd i (by omega), fun i hi => by
-    rw [h.val i (by omega)]; simp [List.getD_eq_getElem?_getD, show i < a.eb.length by omega],
-    fun i hi => h.out i (by omega)⟩
+  ⟨hl, hl', fun i hi => h.rd i (by omega_using [hl, hi]), fun i hi => by
+    rw [h.val i (by omega_using [hl, hi])]; simp [List.getD_eq_getElem?_getD, show i < a.eb.length by omega_using [hl, hi]],
+    fun i hi => h.out i (by omega_using [hl, hi])⟩
 
 /-- The exponentiation phase leaks the same in runs that agree on `e`. -/
 theorem expPhase_ct : RelCT isa (Two EPhasePre) (seqs expSteps) fun _ _ => True := by
@@ -301,7 +301,7 @@ theorem expPhase_ct : RelCT isa (Two EPhasePre) (seqs expSteps) fun _ _ => True 
       ⟨hg, hσ.choose_spec.2.1⟩) (mmct (by decide) (by decide) (by decide) (by taint_decide))) ?_) ?_
   · rintro a s ⟨X, σ, ⟨X', hg, hZ, hw, hw', hodd, hN1, hn, hinv, hX', hone, hlt2, hr2, he, hlen, hL, hL1, hL',
       heb⟩, hg₁, hX, hn₁, hinv₁, hlt₁, hY₁, f₁, k₁⟩
-    have hn' : a.L.B.toNat + slot a.L.w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+    have hn' : a.L.B.toNat + slot a.L.w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
     have hR : Nat.Coprime (2 ^ (64 * a.L.w)) a.N := VG.Proof.Bignum.coprime_pow2 hodd _
     refine WP.mono (mmN_ok Mont.base (o := aXm) (a := aX) (b := aR2) hg₁ hZ hw hw' (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hn₁ hinv₁

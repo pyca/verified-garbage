@@ -32,9 +32,9 @@ theorem crt_setupP_ct {base : BitVec 32} {len w : Nat} (fit : 256 ≤ 8 * len) :
   have input (s : State) (h : P s) : CrtSetupPrimeInput base (crtP base w) len 224 w s :=
     ⟨⟨h.context.main, h.ptr, h.main.toCrtLayoutState.nativeCount h.context.main, h.main.p⟩, h.context.p⟩
   have ct := (crt_setupPrime_ct (base := base) (child := crtP base w) (len := len) (slot := 224) (w := w)
-    (by omega) (by omega) (by decide)).mono (P' := fun s t => P s ∧ P t)
+    (by omega_using [fit]) (by omega_using [fit]) (by decide)).mono (P' := fun s t => P s ∧ P t)
     (fun s t h => ⟨input s h.1, input t h.2⟩) (fun _ _ _ => trivial)
-  exact pair_posts ct (fun s h => crt_setupPrime_ready s h h.context.p (by omega) (by decide) h.context.sepMP h.main.p)
+  exact pair_posts ct (fun s h => crt_setupPrime_ready s h h.context.p (by omega_using [fit]) (by decide) h.context.sepMP h.main.p)
 
 theorem crt_setupQ_ct {base : BitVec 32} {len w : Nat} (fit : 256 ≤ 8 * len) :
     RelCT isa (fun s t => CrtAtMain base len w s ∧ CrtAtMain base len w t) (setupPrime 228)
@@ -43,9 +43,9 @@ theorem crt_setupQ_ct {base : BitVec 32} {len w : Nat} (fit : 256 ≤ 8 * len) :
   have input (s : State) (h : P s) : CrtSetupPrimeInput base (crtQ base w) len 228 w s :=
     ⟨⟨h.context.main, h.ptr, h.main.toCrtLayoutState.nativeCount h.context.main, h.main.q⟩, h.context.q⟩
   have ct := (crt_setupPrime_ct (base := base) (child := crtQ base w) (len := len) (slot := 228) (w := w)
-    (by omega) (by omega) (by decide)).mono (P' := fun s t => P s ∧ P t)
+    (by omega_using [fit]) (by omega_using [fit]) (by decide)).mono (P' := fun s t => P s ∧ P t)
     (fun s t h => ⟨input s h.1, input t h.2⟩) (fun _ _ _ => trivial)
-  exact pair_posts ct (fun s h => crt_setupPrime_ready s h h.context.q (by omega) (by decide) h.context.sepMQ h.main.q)
+  exact pair_posts ct (fun s h => crt_setupPrime_ready s h h.context.q (by omega_using [fit]) (by decide) h.context.sepMQ h.main.q)
 
 theorem crt_leavePrime_ct {base child : BitVec 32} {len w : Nat} :
     RelCT isa (fun s t => CrtAtPrime base child len w s ∧ CrtAtPrime base child len w t) (.block leavePrime)
@@ -64,7 +64,7 @@ theorem crt_leavePrime_ct {base child : BitVec 32} {len w : Nat} :
 theorem crt_setupAll_ct {base : BitVec 32} {len w : Nat} (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     (fits : arrAt w 8 ≤ 8 * len) :
     RelCT isa (fun s t => CrtSetupInput base len w s ∧ CrtSetupInput base len w t) setupAll (fun _ _ => True) := by
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have first := (crt_setupMain_ct (base := base) hw hw' fits).mono
     (P' := fun s t => CrtSetupInput base len w s ∧ CrtSetupInput base len w t)
     (fun _ _ h => ⟨⟨h.1.context.main, h.1.ptr, h.1.count, h.1.zero⟩,

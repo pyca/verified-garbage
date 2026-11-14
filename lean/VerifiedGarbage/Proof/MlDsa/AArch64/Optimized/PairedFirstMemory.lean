@@ -69,10 +69,10 @@ theorem firstPass_frame {m : Mem} {p a b : Addr} {u : Nat} (hu : u≤8) :
   | zero => exact Frame.refl _ _
   | succ u ih =>
     simp only [firstPassMem]
-    refine writePair_frame _ _ _ (r:=⟨p,2048⟩) (by simp) ?_ (ih (by omega))
+    refine writePair_frame _ _ _ (r:=⟨p,2048⟩) (by simp) ?_ (ih (by omega_using [hu]))
     intro poly j
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact Offset.contains_base p (by omega) (by omega)
+    exact Offset.contains_base p (by omega_using [hu]) (by omega_using [hu])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

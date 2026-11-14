@@ -790,7 +790,7 @@ theorem pbk_verified :
       (Proof.Pbkdf2.Md.X86_64.Sha256.callees c) (Proof.Pbkdf2.Md.X86_64.Sha256.satI hw)
       (Proof.Pbkdf2.Md.X86_64.Sha256.satF hw) (Proof.Pbkdf2.Md.X86_64.Sha256.satT hw)
       (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ (Proof.Pbkdf2.Md.X86_64.Sha256.satP hw)).sat_left)
-    (by show (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).W + 96 ≤ 200; rcases hw with h | h | h <;> omega)
+    (by show (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).W + 96 ≤ 200; rcases hw with h | h | h <;> omega_using [h])
     (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ pbk_sat200).sat_left).of_implies
     (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ pbk_sat200)
 
@@ -873,8 +873,8 @@ theorem scrypt_postOut (stack : Nat) :
       unfold Spec.Scrypt.bytesAt
       refine List.map_congr_left fun i hi => ?_
       have := List.mem_range.mp hi
-      exact (hb.2.2.2.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega)
-        (by have := outLen.isLt; omega))).symm
+      exact (hb.2.2.2.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this])
+        (by have := outLen.isLt; omega_arith))).symm
     replace h : Spec.Scrypt.scrypt (Spec.Scrypt.bytesAt m pw pwLen.toNat) (Spec.Scrypt.bytesAt m salt saltLen.toNat)
         (vlen.toNat / r.toNat) r.toNat (blen.toNat / r.toNat) outLen.toNat =
         some (Spec.Scrypt.bytesAt m₁ out outLen.toNat) := h

@@ -79,11 +79,11 @@ theorem init_vp (hg : Geo L scr) {f : MdFns} {dn : String} {j : Nat} {ai ac ad :
   · prun [initArgs, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, Ctx.setReg_iff, hc, hi, ht,
       movw_val (show oSt < 2 ^ 16 by decide), VG.Arm.RegUpd.syms_setReg, sy, F₁]
   have fitS : (scr + BitVec.ofNat 32 oSt).toNat + h.H.md.st.S ≤ 2 ^ 32 := by
-    rw [hg.scr_lt (by decide), hS]; unfold oSt oRsa at *; omega
+    rw [hg.scr_lt (by decide), hS]; unfold oSt oRsa at *; omega_using [hN, hBl, fit]
   have cov : ∀ σ s, Ctx L scr σ s → Covers [⟨State.addr (scr + BitVec.ofNat 32 oSt), h.H.md.st.S⟩] s.wr :=
     fun σ s hc => by
       rw [hg.addr (by decide)]; refine Covers.one ?_
-      rw [hS]; exact hg.wr hc.st (by unfold oSt oRsa; omega)
+      rw [hS]; exact hg.wr hc.st (by unfold oSt oRsa; omega_using [hN, hBl])
   refine htcall_vp hg (F := F₁) (fun σ s hs => ⟨hs.1.1, hs.2, hs.1.2.1.2⟩)
     (fun σ s v ⟨⟨hc, hi, r0⟩, sy⟩ => ⟨⟨Ctx.setReg_iff.mpr hc, hi, by
       simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte]; exact r0⟩, sy⟩) hR (k := 0) (by decide) hne
@@ -104,16 +104,16 @@ theorem init_vp (hg : Geo L scr) {f : MdFns} {dn : String} {j : Nat} {ai ac ad :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> simp), slot_keep fr (fun r hr => ?_) ht⟩, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hg.inW (by unfold oSt oRsa; omega)
+    · exact hg.inW (by unfold oSt oRsa; omega_using [hN, hBl])
     · exact ⟨L.LOW, by simp [Lay.W], fun _ h => h⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hg.slot ok (by unfold oSt oRsa; omega) (by rw [hg.F]; decide)
-    · exact Lay.fr_low (by decide) (by have := hc.st.ok.B56; have := L.B.isLt; omega)
+    · exact hg.slot ok (by unfold oSt oRsa; omega_using [hN, hBl]) (by rw [hg.F]; decide)
+    · exact Lay.fr_low (by decide) (by have := hc.st.ok.B56; have := L.B.isLt; omega_arith)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact sTab_sep hg (by unfold oSt oRsa; omega)
-    · exact Lay.fr_low (by decide) (by have := hc.st.ok.B56; have := L.B.isLt; omega)
+    · exact sTab_sep hg (by unfold oSt oRsa; omega_using [hN, hBl])
+    · exact Lay.fr_low (by decide) (by have := hc.st.ok.B56; have := L.B.isLt; omega_arith)
   · obtain ⟨e, -⟩ := h.ok.repr _ _ _ (by rw [hg.addr (by decide)] at rp; exact rp)
     rw [e, List.length_nil, Nat.zero_div, MdStream.Md.compressList_zero]
 

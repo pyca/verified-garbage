@@ -26,7 +26,7 @@ theorem random_call_key_source {extra : Nat} {s t : State} (h : RandomSignABI ex
     randomCallPublicKey s t = Spec.Dsa.publicBytesLeak (randomInput s).pLen (randomInput s).qLen (randomInput s).key := by
   have hsub : Region.Sub ⟨randomBase s - 8, 8⟩ (below (s.gpr .rsp) (extra + 256)) := by
     rw [random_callBase extra s]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [])
   have hm := random_callEntry_bytes hsp
     (((h.stackKey.sub_left hsub).symm).sep (Region.contains_self _ _) (Region.contains_self _ _)) (s.gpr .r8).isLt
   unfold randomCallPublicKey
@@ -69,7 +69,7 @@ theorem random_callArgs_observe (S : Signer) {s t : State} {h : RandomSignABI S.
   have hqbound : (stackArg s 0).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   have hkeyA' : Spec.Rsa.bytesAt a.mem (s.gpr .rcx) (s.gpr .r8).toNat = (randomInput s).key := by
     simpa only [randomInput, bytesAt_length] using FoldedPublic.src_bytesAt hkeyA
   have hres : randomCallResult s a = randomSingleResult s k := by
@@ -78,7 +78,7 @@ theorem random_callArgs_observe (S : Signer) {s t : State} {h : RandomSignABI S.
     have hdigest : Spec.Rsa.bytesAt a.mem (stackArg s 1) (stackArg s 2).toNat = (randomInput s).digest := by
       simpa only [randomInput, bytesAt_length] using FoldedPublic.src_bytesAt hdigestA
     have hnonceA := (random_outside_bytes hargs
-      (show Random.oNonce + (stackArg s 0).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega)
+      (show Random.oNonce + (stackArg s 0).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega_using [hqbound])
       (Or.inr (show 0 + 40 ≤ Random.oNonce by decide))).trans hnonce
     rw [hkey, hdigest, hnonceA]
     rfl

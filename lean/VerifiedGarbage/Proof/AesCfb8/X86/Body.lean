@@ -59,13 +59,13 @@ include hp
 
 theorem UPre.scrN {d : Nat} (hd : d < 2176) : (S s₀ + BitVec.ofNat 32 d).toNat = (S s₀).toNat + d := by
   have := hp.scr_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
-theorem UPre.sv : (Sv32 s₀).setWidth 64 = Sv s₀ := addr_eq (by have := hp.scr_fit; omega)
+theorem UPre.sv : (Sv32 s₀).setWidth 64 = Sv s₀ := addr_eq (by have := hp.scr_fit; omega_using [this])
 
 theorem UPre.cByt {k : Nat} (hk : k < N s₀) : (dataR s₀).Contains (byt s₀ k) 1 := by
   have := hp.data_fit
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, this])
 
 theorem UPre.byt_iv {k : Nat} (hk : k < N s₀) : (⟨byt s₀ k, 1⟩ : Region).Disjoint (ivR s₀) :=
   hp.iv_data.symm.sub_left (UPre.data_sub hk)
@@ -80,7 +80,7 @@ theorem UPre.byt_stk {k : Nat} (hk : k < N s₀) : (⟨byt s₀ k, 1⟩ : Region
 theorem UPre.iv_sv : (ivR s₀).Disjoint ⟨Sv s₀, 16⟩ := hp.iv_scr.sub_right (UPre.scr_sub (by decide))
 
 theorem UPre.sv_scr : (⟨Sv s₀, 16⟩ : Region).Disjoint ⟨(S s₀).setWidth 64, 2048⟩ :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_fit; omega_using [])
 
 /-- The stack arguments, in a state whose memory differs only within `Big`. -/
 theorem UPre.args_of {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
@@ -98,11 +98,11 @@ theorem UPre.blkPre {s : State}
   refine ⟨eax, by rw [ecx]; exact arg_ofNat s₀ 1, ebx, edi, ebp, hp.rounds, by rw [esp]; exact hp.esp24,
     ?_, hp.sch_scr.sub_right (Region.sub_prefix (by decide)), ?_, by rw [hb]; exact hp.b_sch, ?_,
     by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), hp.sch_fit, ?_,
-    by have := hp.scr_fit; omega, ?_, ?_⟩
+    by have := hp.scr_fit; omega_using [this], ?_, ?_⟩
   · rw [hd]; exact hp.sch_scr.sub_right (UPre.scr_sub (by decide))
   · rw [hd]; exact hp.sv_scr
   · rw [hb, hd]; exact hp.b_scr.sub_right (UPre.scr_sub (by decide))
-  · rw [hp.scrN (by decide)]; have := hp.scr_fit; omega
+  · rw [hp.scrN (by decide)]; have := hp.scr_fit; omega_using [this]
   · rw [hrd, hwr, hp.rd, hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -146,14 +146,14 @@ theorem pre_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State
   have p₂ : s₂.gpr .ebp = S s₀ := by rw [u₂.other _ (by decide), u₁.gpr]
   have b₂ : s₂.gpr .ebx = Iv s₀ := u₂.gpr
   have w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₂.wr, u₁.wr, h.wr, hp.wr]
-  refine zero4_ok (by decide) (by rw [p₂]; unfold cOff; omega) (by rw [p₂, w₂]; exact covSv (by simp))
+  refine zero4_ok (by decide) (by rw [p₂]; unfold cOff; omega_using [hsc]) (by rw [p₂, w₂]; exact covSv (by simp))
     fun s₃ g₃ m₃ rd₃ wr₃ => ?_
   have p₃ : s₃.gpr .ebp = S s₀ := by rw [g₃ _ (by decide), p₂]
   have b₃ : s₃.gpr .ebx = Iv s₀ := by rw [g₃ _ (by decide), b₂]
   have rw₃ : s₃.rd ++ s₃.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rd₃, wr₃, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr, hp.rd, hp.wr]; rfl
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [p₃]; unfold cOff; omega) (by rw [b₃]; omega) (by rw [p₃]; unfold cOff; omega)
+    (by rw [p₃]; unfold cOff; omega_using [hsc]) (by rw [b₃]; omega_using [hiv]) (by rw [p₃]; unfold cOff; omega_using [hsc])
     (by rw [p₃, rw₃]; exact covSv (by simp))
     (by rw [b₃, add0, rw₃]; exact covIv (by simp))
     (by rw [p₃, wr₃, w₂]; exact covSv (by simp)) fun s₄ g₄ => ?_
@@ -281,8 +281,8 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
   have wl : s₄.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₄.wr, wr₃, a.wr, h.wr, hp.wr]
   obtain ⟨s₅, run₅, g₅, mem₅, rd₅, wr₅⟩ :=
     shift_ok s₄ (Q := (Iv s₀).setWidth 64) (by rw [u₄.gpr]) (by rw [u₄.gpr]; omega)
-      (fun d n hd => by rw [rl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega)⟩)
-      (fun d n hd => by rw [wl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega)⟩)
+      (fun d n hd => by rw [rl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩)
+      (fun d n hd => by rw [wl]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   have fStep : Frame [⟨byt s₀ k, 1⟩, ivR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] s.mem s₅.mem := by
@@ -312,7 +312,7 @@ theorem finish_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k
         · exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))
         · exact hp.b_iv.symm) (by decide), h.iv]
   have hl : (outK s₀ enc k).length = k := by
-    rw [outK, length_cfb8, List.length_take, length_bs]; omega
+    rw [outK, length_cfb8, List.length_take, length_bs]; omega_using [hk]
   have iv_ne : iv0 s₀ ≠ [] := by simp [iv0, bytesAt]
   have eax₄ : (s₄.gpr .eax).setWidth 8 = if enc then v else (bs s₀)[k]'(by rw [length_bs]; exact hk) := by
     rw [u₄.other _ (by decide), hc]

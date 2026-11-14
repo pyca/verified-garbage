@@ -49,15 +49,15 @@ theorem topBit_vp {L pv : Nat} (hL : L = G.pLen) (hc : (sPBE, Spec.Rsa.i2osp pv 
   have gi := h.gi
   have big := gi.scrBig
   have l := h.lens
-  have hsK : sPBE + G.pLen ≤ sK G.pLen := by simp only [sPBE, sK, sA, wa]; omega
-  refine scr_ok (d := .r0) (o := sPBE) h.r8 rfl l (by omega) fun s₁ v₁ R₁ M₁ => ?_
+  have hsK : sPBE + G.pLen ≤ sK G.pLen := by simp only [sPBE, sK, sA, wa]; omega_using []
+  refine scr_ok (d := .r0) (o := sPBE) h.r8 rfl l (by omega_using [hsK]) fun s₁ v₁ R₁ M₁ => ?_
   have a0 : State.addr (s₁.gpr .r0 + BitVec.ofNat 32 0) = G.sa sPBE := by
-    rw [BitVec.add_zero, v₁]; exact h.addr (by omega) (by omega)
+    rw [BitVec.add_zero, v₁]; exact h.addr (by omega) (by omega_using [l])
   have c0 : (G.rs sPBE G.pLen).Contains (G.sa sPBE) 1 := by
     show (_ - _ : Addr).toNat + 1 ≤ G.pLen
-    rw [BitVec.sub_self, BitVec.toNat_zero]; omega
+    rw [BitVec.sub_self, BitVec.toNat_zero]; omega_using [l]
   have w0 : InRegions (s.rd ++ s.wr) (G.sa sPBE) 1 :=
-    let ⟨r, hr, hcn⟩ := Covers.one (gi.inScr (o := sPBE) (n := G.pLen) (by omega)) _ _
+    let ⟨r, hr, hcn⟩ := Covers.one (gi.inScr (o := sPBE) (n := G.pLen) (by omega_using [big, hsK])) _ _
       ⟨_, List.mem_singleton_self _, c0⟩
     ⟨r, List.mem_append_right _ hr, hcn⟩
   refine wp_ldrb (by decide) a0 (by rw [R₁.rd, R₁.wr]; exact w0) fun s₂ u₂ => ?_
@@ -70,12 +70,12 @@ theorem topBit_vp {L pv : Nat} (hL : L = G.pLen) (hc : (sPBE, Spec.Rsa.i2osp pv 
   simp only at b
   rw [VG.Proof.Rsa.i2osp_length] at b
   have byte : s.mem (G.sa sPBE) = (Spec.Rsa.i2osp pv G.pLen).getD 0 0 := by
-    rw [← b]; simp [Spec.Rsa.bytesAt, show 0 < G.pLen by omega]
+    rw [← b]; simp [Spec.Rsa.bytesAt, show 0 < G.pLen by omega_using [l]]
   rw [eval_eq, z, u₃.gpr, dpVal, u₂.gpr, M₁, byte]
   congr 1
   rw [Bool.eq_iff_iff, decide_eq_true_iff, top_bit,
     ← VG.Proof.Dsa.encodeBE_i2osp]
-  exact VG.Proof.Dsa.Generation.candidate_firstByte (by omega) hpv
+  exact VG.Proof.Dsa.Generation.candidate_firstByte (by omega_using [l]) hpv
 
 theorem varOk_fP : VarOk G fP := varOk_of (by decide)
 

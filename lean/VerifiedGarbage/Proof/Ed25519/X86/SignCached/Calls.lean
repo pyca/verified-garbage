@@ -18,10 +18,10 @@ variable {L : Lay}
 
 theorem fp_addr (hL : L.Ok) {d : Nat} (hd : d ≤ 256) :
     (fp L d).setWidth 64 = L.E.setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := hL.top; omega)
+  addr_eq (by have := hL.top; omega_using [hd, this])
 
 theorem fieldWithin (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) : Whole.Within (field L d) L.FR :=
-  ⟨d, fp_addr hL (by omega), by exact hd⟩
+  ⟨d, fp_addr hL (by omega_using [hd]), by exact hd⟩
 
 theorem field_sub (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) : Region.Sub (field L d) L.STK :=
   fun p hp => Whole.frame_sub L.E p ((fieldWithin hL hd).sub p hp)
@@ -29,8 +29,8 @@ theorem field_sub (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) : Region.Sub (fiel
 theorem field_fit (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) : (fp L d).toNat + 32 ≤ 2 ^ 32 := by
   have he := hL.top
   simp only [fp, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, he])]
+  omega_using [hd, he]
 
 theorem field_ce {g : Reg → BitVec 32} {m₀ : Mem} {s : State} (hc : Ctx L g m₀ s)
     (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) :
@@ -38,8 +38,8 @@ theorem field_ce {g : Reg → BitVec 32} {m₀ : Mem} {s : State} (hc : Ctx L g 
       Spec.Ed25519.bytesAt s.mem ((fp L d).setWidth 64) 32 := by
   apply Whole.callEntry_bytes (r := field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   change Region.Disjoint ⟨(fp L d).setWidth 64, 32⟩ ⟨(s.gpr .esp - BitVec.ofNat 32 4).setWidth 64, 4⟩
-  rw [hc.esp, fp_addr hL (by omega), Taint.sub_setWidth (m := 4) (by have := hL.below; omega)]
-  exact Offset.disjoint_below _ (n := 4) (d := d) (k := 32) (by omega)
+  rw [hc.esp, fp_addr hL (by omega_using [hd]), Taint.sub_setWidth (m := 4) (by have := hL.below; omega_using [this])]
+  exact Offset.disjoint_below _ (n := 4) (d := d) (k := 32) (by omega_using [hd])
 
 theorem field_setup {m m' : Mem} (hL : L.Ok) (hf : Frame [⟨L.E.setWidth 64, 24⟩] m m')
     {d : Nat} (hd : 24 ≤ d) (hb : d + 32 ≤ 256) :
@@ -49,8 +49,8 @@ theorem field_setup {m m' : Mem} (hL : L.Ok) (hf : Frame [⟨L.E.setWidth 64, 24
   refine hf.bytes (R := field L d) ?_ (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
   rintro r hr; rw [List.mem_singleton.mp hr]
   change Region.Disjoint ⟨(fp L d).setWidth 64, 32⟩ _
-  rw [fp_addr hL (by omega)]
-  exact Offset.disjoint_base _ (d := d) (n := 32) (k := 24) hd (by omega)
+  rw [fp_addr hL (by omega_using [hb])]
+  exact Offset.disjoint_base _ (d := d) (n := 32) (k := 24) hd (by omega_using [hb])
 
 def primitiveWrites (L : Lay) (out : Region) : List Region :=
   [out, L.SCR, ⟨L.E.setWidth 64, 24⟩, below L.E 24]

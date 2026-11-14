@@ -46,7 +46,7 @@ structure StepIn (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s : State) (i : Nat) (L a
 /-- Limb `kk + R t` of lane `t` of role `kk` is one of the `4 R`. -/
 theorem idx_lt {kk t : Nat} (hk : kk < l.R) (ht : t < 4) : kk + l.R * t < l.L := by
   have := Nat.mul_le_mul_left l.R (Nat.le_of_lt_succ ht)
-  simp only [Lay.L]; omega
+  simp only [Lay.L]; omega_using [hk, this]
 
 section
 variable {s : State} {i : Nat} {L a m : Nat → Nat → Nat} {k b : Nat → Nat}
@@ -59,24 +59,24 @@ theorem a1T_eval (h : StepIn l s i L a m k b) {p kk t : Nat} (hp : p < l.nl) (hk
     (a1T l p kk i).eval s t = BitVec.ofNat 64 (L p (kk + l.R * t) + lo (a p (kk + l.R * t)) (b p)) := by
   have hl := h.lt p hp (kk + l.R * t) (idx_lt hk ht)
   simp only [a1T, T.eval]
-  rw [h.lanes p hp kk hk t ht, bT_eval h hp, h.ina p hp kk hk t ht, mad_lo (by omega)]
+  rw [h.lanes p hp kk hk t ht, bT_eval h hp, h.ina p hp kk hk t ht, mad_lo (by omega_using [hl])]
 
 theorem uT_eval (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p : Nat} (hp : p < l.nl) (t : Nat) :
     (uT l p i).eval s t = BitVec.ofNat 64 (stepU (ops a m k p) (L p) (b p)) := by
-  have hl := h.lt p hp 0 (by simp only [Lay.L]; omega)
+  have hl := h.lt p hp 0 (by simp only [Lay.L]; omega_using [hR])
   have := lo_lt (a p 0) (b p)
   simp only [uT, T.eval]
-  rw [a1T_eval h hp (by omega) (by decide), show (0 : Nat) + l.R * 0 = 0 by omega,
+  rw [a1T_eval h hp (by omega_using [hR]) (by decide), show (0 : Nat) + l.R * 0 = 0 by omega_using [],
     h.ink p hp 0 (by decide),
-    show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by omega), Nat.zero_add, lo_comm]
+    show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by omega_using []), Nat.zero_add, lo_comm]
   rfl
 
 theorem a2T_eval0 (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p t : Nat} (hp : p < l.nl) (ht : t < 4) :
     (a2T l p 0 i).eval s t = BitVec.ofNat 64 (low (ops a m k p) (L p) (b p) (0 + l.R * t)) := by
-  have hl := h.lt p hp (0 + l.R * t) (idx_lt (by omega) ht)
+  have hl := h.lt p hp (0 + l.R * t) (idx_lt (by omega_using [hR]) ht)
   have := lo_lt (a p (0 + l.R * t)) (b p)
   simp only [a2T, a1hT, ite_true, T.eval]
-  rw [a1T_eval h hp (by omega) ht, uT_eval h hR hp, h.inm p hp 0 (by omega) t ht, mad_lo (by omega)]
+  rw [a1T_eval h hp (by omega_using [hR]) ht, uT_eval h hR hp, h.inm p hp 0 (by omega_using [hR]) t ht, mad_lo (by omega_using [hl, this])]
   simp only [low, ops]
 
 /-- Role `kk + 1` after the low halves: plus the high halves of role `kk` of `a b`. -/
@@ -89,9 +89,9 @@ theorem a2T_evalS (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p kk t : Nat} (
   have := hi_lt (a p (kk + l.R * t)) (b p)
   have := lo_lt (m p (kk + 1 + l.R * t)) (stepU (ops a m k p) (L p) (b p))
   simp only [a2T, a1hT, Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, T.eval]
-  rw [a1T_eval h hp hk ht, bT_eval h hp, h.ina p hp kk (by omega) t ht, mad_hi (by omega), uT_eval h hR hp,
-    h.inm p hp (kk + 1) hk t ht, mad_lo (by omega)]
-  exact congrArg (BitVec.ofNat 64) (by simp only [low, ops]; omega)
+  rw [a1T_eval h hp hk ht, bT_eval h hp, h.ina p hp kk (by omega_using [hk]) t ht, mad_hi (by omega_arith), uT_eval h hR hp,
+    h.inm p hp (kk + 1) hk t ht, mad_lo (by omega_arith)]
+  exact congrArg (BitVec.ofNat 64) (by simp only [low, ops]; omega_using [])
 
 theorem low_lt (h : StepIn l s i L a m k b) {p j : Nat} (hp : p < l.nl) (hj : j < l.L) :
     low (ops a m k p) (L p) (b p) j < 2 ^ 63 + 2 ^ 53 := by
@@ -99,17 +99,17 @@ theorem low_lt (h : StepIn l s i L a m k b) {p j : Nat} (hp : p < l.nl) (hj : j 
   have := lo_lt (a p j) (b p)
   have := lo_lt (m p j) (stepU (ops a m k p) (L p) (b p))
   show L p j + lo (a p j) (b p) + lo (m p j) (stepU (ops a m k p) (L p) (b p)) < _
-  omega
+  omega_arith
 
 theorem cT_eval (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p t : Nat} (hp : p < l.nl) (ht : t < 4) :
     (cT l p i).eval s t =
       BitVec.ofNat 64 (if t = 0 then low (ops a m k p) (L p) (b p) 0 / 2 ^ 52 else 0) := by
-  have h0 := low_lt h hp (j := 0) (by simp only [Lay.L]; omega)
+  have h0 := low_lt h hp (j := 0) (by simp only [Lay.L]; omega_using [hR])
   simp only [cT, T.eval]
   by_cases t0 : t = 0
   · subst t0
     simp only [ite_true]
-    rw [a2T_eval0 h hR hp (by decide), show (0 : Nat) + l.R * 0 = 0 by omega, shr_ofNat (by omega)]
+    rw [a2T_eval0 h hR hp (by decide), show (0 : Nat) + l.R * 0 = 0 by omega_using [], shr_ofNat (by omega_using [h0])]
   · simp only [t0, ite_false]; rfl
 
 /-- Role `kk` after the shift: for `kk < R - 1`, with the high halves of role `kk` of `a b`. -/
@@ -124,39 +124,39 @@ theorem nT_eval (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p kk t : Nat} (hp
     by_cases t3 : t + 1 < 4
     · simp only [t3, ite_true]
       rw [a2T_eval0 h hR hp t3]
-      have := Nat.mul_le_mul_left l.R (show t ≤ 2 by omega)
-      simp only [Amm52N.shifted, Lay.L, show l.R - 1 + l.R * t + 1 < 4 * l.R by omega,
-        show l.R - 1 + l.R * t ≠ 0 by omega, ite_false, Nat.add_zero]
-      exact congrArg _ (congrArg _ (by rw [Nat.mul_add, Nat.mul_one]; omega))
+      have := Nat.mul_le_mul_left l.R (show t ≤ 2 by omega_using [t3])
+      simp only [Amm52N.shifted, Lay.L, show l.R - 1 + l.R * t + 1 < 4 * l.R by omega_using [hR, this],
+        show l.R - 1 + l.R * t ≠ 0 by omega_using [hR], ite_false, Nat.add_zero]
+      exact congrArg _ (congrArg _ (by rw [Nat.mul_add, Nat.mul_one]; omega_using [hR]))
     · simp only [t3, ite_false]
-      rw [show t + 1 - 4 = 0 by omega, show (vreg (zN l)) = vreg (zN l) from rfl]
+      rw [show t + 1 - 4 = 0 by omega_using [ht], show (vreg (zN l)) = vreg (zN l) from rfl]
       rw [h.z 0 (by decide)]
-      obtain rfl : t = 3 := by omega
-      simp only [Amm52N.shifted, Lay.L, show ¬ (l.R - 1 + l.R * 3 + 1 < 4 * l.R) by omega, ite_false]
+      obtain rfl : t = 3 := by omega_using [ht, t3]
+      simp only [Amm52N.shifted, Lay.L, show ¬ (l.R - 1 + l.R * 3 + 1 < 4 * l.R) by omega_using [], ite_false]
       rfl
   · simp only [nT, hl, ite_false]
     by_cases h0 : kk = 0
     · subst h0
       simp only [ite_true, T.eval]
-      rw [a2T_evalS (kk := 0) h hR hp (by omega) ht, cT_eval h hR hp ht]
-      have h1 := low_lt h hp (j := 0 + 1 + l.R * t) (idx_lt (by omega) ht)
-      have h2 := low_lt h hp (j := 0) (by simp only [Lay.L]; omega)
+      rw [a2T_evalS (kk := 0) h hR hp (by omega_using [hR]) ht, cT_eval h hR hp ht]
+      have h1 := low_lt h hp (j := 0 + 1 + l.R * t) (idx_lt (by omega_using [hR]) ht)
+      have h2 := low_lt h hp (j := 0) (by simp only [Lay.L]; omega_using [hR])
       have := hi_lt (a p (0 + l.R * t)) (b p)
-      have hc : low (ops a m k p) (L p) (b p) 0 / 2 ^ 52 < 2 ^ 12 := Nat.div_lt_of_lt_mul (by omega)
-      rw [add_ofNat (by split <;> omega)]
-      simp only [Amm52N.shifted, Lay.L, show 0 + l.R * t + 1 = 0 + 1 + l.R * t by omega,
-        show 0 + 1 + l.R * t < 4 * l.R by omega, ite_true]
+      have hc : low (ops a m k p) (L p) (b p) 0 / 2 ^ 52 < 2 ^ 12 := Nat.div_lt_of_lt_mul (by omega_using [h2])
+      rw [add_ofNat (by split <;> omega_arith)]
+      simp only [Amm52N.shifted, Lay.L, show 0 + l.R * t + 1 = 0 + 1 + l.R * t by omega_using [],
+        show 0 + 1 + l.R * t < 4 * l.R by omega_using [hR, hRt], ite_true]
       refine congrArg (BitVec.ofNat 64) ?_
       by_cases t0 : t = 0
-      · subst t0; simp only [Nat.mul_zero, ite_true]; omega
+      · subst t0; simp only [Nat.mul_zero, ite_true]; omega_using []
       · simp only [t0, ite_false, show 0 + l.R * t ≠ 0 by
-          have := Nat.mul_le_mul_left l.R (show 1 ≤ t by omega); omega]
-        omega
+          have := Nat.mul_le_mul_left l.R (show 1 ≤ t by omega_using [t0]); omega_using [hR, this]]
+        omega_using []
     · simp only [h0, ite_false]
-      obtain ⟨kk', rfl⟩ : ∃ kk', kk = kk' + 1 := ⟨kk - 1, by omega⟩
-      rw [a2T_evalS h hR hp (by omega) ht]
-      simp only [Amm52N.shifted, Lay.L, show kk' + 1 + l.R * t + 1 < 4 * l.R by omega,
-        show kk' + 1 + 1 + l.R * t = kk' + 1 + l.R * t + 1 by omega, show kk' + 1 + l.R * t ≠ 0 by omega,
+      obtain ⟨kk', rfl⟩ : ∃ kk', kk = kk' + 1 := ⟨kk - 1, by omega_using [h0]⟩
+      rw [a2T_evalS h hR hp (by omega_using [hk, hl]) ht]
+      simp only [Amm52N.shifted, Lay.L, show kk' + 1 + l.R * t + 1 < 4 * l.R by omega_using [hRt, hk, hl],
+        show kk' + 1 + 1 + l.R * t = kk' + 1 + l.R * t + 1 by omega_using [], show kk' + 1 + l.R * t ≠ 0 by omega_using [],
         ite_true, ite_false, Nat.add_zero]
 
 theorem hT_eval (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p kk t : Nat} (hp : p < l.nl) (hk : kk < l.R)
@@ -165,14 +165,14 @@ theorem hT_eval (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p kk t : Nat} (hp
   have hs : Amm52N.shifted l.L (low (ops a m k p) (L p) (b p)) (kk + l.R * t) < 2 ^ 63 + 2 ^ 54 := by
     unfold Amm52N.shifted
     split
-    · have := low_lt h hp (j := kk + l.R * t + 1) (by omega)
-      have := low_lt h hp (j := 0) (by simp only [Lay.L]; omega)
+    · have := low_lt h hp (j := kk + l.R * t + 1) (by omega_arith)
+      have := low_lt h hp (j := 0) (by simp only [Lay.L]; omega_using [hR])
       have := Nat.div_le_self (low (ops a m k p) (L p) (b p) 0) (2 ^ 52)
       split
-      · have hc : low (ops a m k p) (L p) (b p) 0 / 2 ^ 52 < 2 ^ 12 := Nat.div_lt_of_lt_mul (by omega)
-        omega
-      · omega
-    · omega
+      · have hc : low (ops a m k p) (L p) (b p) 0 / 2 ^ 52 < 2 ^ 12 := Nat.div_lt_of_lt_mul (by omega_arith)
+        omega_arith
+      · omega_arith
+    · omega_using []
   have := hi_lt (a p (kk + l.R * t)) (b p)
   have := hi_lt (m p (kk + l.R * t)) (stepU (ops a m k p) (L p) (b p))
   by_cases hl : kk = l.R - 1
@@ -184,12 +184,12 @@ theorem hT_eval (h : StepIn l s i L a m k b) (hR : 2 ≤ l.R) {p kk t : Nat} (hp
         BitVec.ofNat 64 (m p (l.R - 1 + l.R * t)) := h.inm p hp (l.R - 1) hk t ht
     rw [nT_eval h hR hp hk ht]
     simp only [↓reduceIte, Nat.add_zero]
-    rw [bT_eval h hp, ha, mad_hi (by omega), uT_eval h hR hp, hm, mad_hi (by omega)]
+    rw [bT_eval h hp, ha, mad_hi (by omega_using [hs]), uT_eval h hR hp, hm, mad_hi (by omega_arith)]
     rfl
   · simp only [hT, hl, ite_false, T.eval]
     rw [nT_eval h hR hp hk ht]
     simp only [hl, ite_false]
-    rw [uT_eval h hR hp, h.inm p hp kk hk t ht, mad_hi (by omega)]
+    rw [uT_eval h hR hp, h.inm p hp kk hk t ht, mad_hi (by omega_arith)]
     rfl
 
 end

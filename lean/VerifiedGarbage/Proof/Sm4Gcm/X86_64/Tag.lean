@@ -79,7 +79,7 @@ theorem tagMid_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (
         .mov .rsi (.reg .r14)] : List Instr) ++ ptr .rdx .r15 o ++ ([.mov32 .rcx (imm 1)] : List Instr)))) s
       (TagMid Ctx St W SP o H (blockAt s.mem (St + BitVec.ofNat 64 16)) J
         (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem) := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 2560) := by omega_using [ho]
   have La := L.lay
   refine WP.seq (WP.mono (lens_ok v La (yo := 16) (.inr rfl) he hH) fun s₁ ⟨he₁, hH₁, hY₁, f₁⟩ => ?_)
   have h13 := he₁.r13; have h14 := he₁.r14; have h15 := he₁.r15
@@ -101,11 +101,11 @@ theorem tagMid_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (
     · exact La.kc.symm)
   have r₁ := he₁.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₂ := he₁.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have w₁ := he₁.perm.wW (show o + 8 ≤ 2560 by omega)
-  have w₂ := he₁.perm.wW (show o + 8 + 8 ≤ 2560 by omega)
+  have w₁ := he₁.perm.wW (show o + 8 ≤ 2560 by omega_using [ho])
+  have w₂ := he₁.perm.wW (show o + 8 + 8 ≤ 2560 by omega_using [ho])
   have dsep : (⟨W + BitVec.ofNat 64 o, 8⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8, 8⟩ := by
     rw [add_ofNat_assoc]
-    exact (La.st_w (a := 24) (n := 8) (by decide) (by omega)).symm
+    exact (La.st_w (a := 24) (n := 8) (by decide) (by omega_using [ho])).symm
   obtain ⟨s₂, run₂, hm₂, hdi, hsi, hdx, hcx, hg₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
       ([.mov .rax (.mem (at_ .r14 16)), .store (at_ .r15 o) .rax, .mov .rax (.mem (at_ .r14 24)),
         .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13), .mov .rsi (.reg .r14)] ++ ptr .rdx .r15 o ++
@@ -145,22 +145,22 @@ theorem tagMid_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (
     rw [blockAt_frame f₂ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo, hJ₁]
   have hc₂ : ciphOf s₂.mem Ctx = ciphOf s.mem Ctx := by
     rw [ciph_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact La.cw'.sub_right (Lay.wSub (by omega))), hc₁]
+      simp only [List.mem_singleton] at hr; subst hr; exact La.cw'.sub_right (Lay.wSub (by omega_using [ho]))), hc₁]
   have hcall : CtrCall s₂ Ctx St (W + BitVec.ofNat 64 o) 1 := by
-    refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := La.cw; omega, by have := La.sw; omega,
-      by have := La.ww; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega,
+    refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := La.cw; omega_using [this], by have := La.sw; omega_using [this],
+      by have := La.ww; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [ho, this],
       by simpa using (La.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (d := 0) (n := 16) (by decide)),
-      (La.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega)),
+      (La.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_using [ho])),
       dJo, ?_, ?_, ?_, ?_, ?_⟩
     · rw [hk]; exact L.kc.sub_right (Region.sub_prefix (by decide))
     · rw [hk]; simpa using L.ks.sub_right (Lay.stSub (d := 0) (n := 16) (by decide))
-    · rw [hk]; exact L.kw.sub_right (Lay.wSub (by omega))
-    · refine covers_cons ?_ (covers_cons ?_ (covers_left (he₂.perm.wC (by omega))))
+    · rw [hk]; exact L.kw.sub_right (Lay.wSub (by omega_using [ho]))
+    · refine covers_cons ?_ (covers_cons ?_ (covers_left (he₂.perm.wC (by omega_using [ho]))))
       · exact fun a m' ⟨r, hr, hc'⟩ => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact he₂.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega⟩
+          exact he₂.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega_using [hc']⟩
       · simpa using covers_left (he₂.perm.stC (d := 0) (n := 16) (by decide))
-    · exact covers_cons (by simpa using he₂.perm.stC (d := 0) (n := 16) (by decide)) (he₂.perm.wC (by omega))
+    · exact covers_cons (by simpa using he₂.perm.stC (d := 0) (n := 16) (by decide)) (he₂.perm.wC (by omega_using [ho]))
   refine ⟨he₂, hcall, hc₂, hJ₂, ?_, ?_⟩
   · rw [blockAt, hT, ← blockAt, hY₁]
   · have fA : Frame (tagFrame St W SP o) s.mem s₁.mem := f₁.sub fun r hr => by
@@ -169,7 +169,7 @@ theorem tagMid_ok {o : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (
       · exact ⟨_, List.mem_cons_self .., by simpa using Offset.sub_base St (show 16 + 16 ≤ 32 by decide)⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
       · exact ⟨⟨W + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, below_stk _ (by have := stkN_eq; omega)⟩
+      · exact ⟨_, by simp, below_stk _ (by have := stkN_eq; omega_using [])⟩
     exact fA.trans (f₂.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)
 

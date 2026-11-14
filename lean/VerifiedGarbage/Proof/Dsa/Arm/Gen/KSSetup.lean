@@ -45,10 +45,10 @@ theorem ksSetup_vp :
   have hw := h.ws
   have l := h.lens
   have nw := hw.nowrap
-  have wl : G.w ≤ 96 := by simp only [GP.w]; omega
-  have w1 : 1 ≤ G.w := by simp only [GP.w]; omega
+  have wl : G.w ≤ 96 := by simp only [GP.w]; omega_using [l]
+  have w1 : 1 ≤ G.w := by simp only [GP.w]; omega_using [l]
   have fits : hdr + 4 * (nArrs * (G.w + 2)) ≤ kz G.pLen := by
-    simp only [hdr, nArrs, kz, GP.w]; omega
+    simp only [hdr, nArrs, kz, GP.w]; omega_using [l]
   refine h.ksWP rfl (P := fun t => Arrs t.mem G.KB G.w A0 allArrs ∧ slot t.mem G.KB 16 = G.w ∧
       Rest VG.Proof.Rsa.Arm.Keys.opRegs (G.ksState s) t) ?_
     fun t ⟨a, sl, R⟩ hr hw' f => ⟨?_, x⟩
@@ -84,21 +84,21 @@ theorem ksSetup_vp :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_mul, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     simp only [nArrs, S]
-    rw [Nat.mod_eq_of_lt (a := 15) (by decide), Nat.mod_eq_of_lt (a := 4 * (G.w + 2)) (by omega),
-      Nat.mod_eq_of_lt (a := 15 * (4 * (G.w + 2))) (by omega), Nat.mod_eq_of_lt (a := 15 * (G.w + 2)) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := 15) (by decide), Nat.mod_eq_of_lt (a := 4 * (G.w + 2)) (by omega_using [wl]),
+      Nat.mod_eq_of_lt (a := 15 * (4 * (G.w + 2))) (by omega_using [wl]), Nat.mod_eq_of_lt (a := 15 * (G.w + 2)) (by omega_using [wl])]
+    omega_using []
   have p3 : s₆.gpr .r3 = 0 := u₆.gpr
   -- Zero, then 1.
   refine WP.seq (WP.mono (zero_ok s₆ (base := G.KB) (size := kz G.pLen) (o := hdr) (n := nArrs * (G.w + 2))
     ⟨nw, fits, ⟨G.rK, by rw [R₆.wr, u₁.wr]; exact List.mem_singleton_self _, Region.contains_self _ _⟩⟩
-    (by simp only [nArrs]; omega) p0 plr p3) fun s₇ z => ?_)
+    (by simp only [nArrs]; omega_using []) p0 plr p3) fun s₇ z => ?_)
   have hw₇ := hw₆.rest z.rest
   rw [← List.append_nil (setOne aOne)]
   refine setOne_ok hw₇ (j := aOne) (by decide) (by decide) fun t w₈ k₈ v₈ R₈ => WP.block_nil ?_
   have zv : ∀ j < nArrs, num s₇.mem G.KB G.w j = 0 := fun j hj => by
     have := VG.Proof.Rsa.KeyWorkspace.val32_zero_part z.value (a := j * (G.w + 2)) (c := G.w) (by
-      have := Nat.mul_le_mul_right (G.w + 2) (show j + 1 ≤ nArrs by omega)
-      rw [Nat.succ_mul] at this; omega)
+      have := Nat.mul_le_mul_right (G.w + 2) (show j + 1 ≤ nArrs by omega_using [hj])
+      rw [Nat.succ_mul] at this; omega_using [this])
     simpa only [arr, S, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using this
   refine ⟨fun j hj => ?_, ?_, ?_⟩
   · show num t.mem G.KB G.w j = KU (fun _ => 0) aOne 1 j
@@ -109,11 +109,11 @@ theorem ksSetup_vp :
         (hw₇.fit64 (allArrs_lt j hj)), zv _ (allArrs_lt j hj)]
   · rw [k₈.slot (by decide) (by simp)]
     show w32 s₇.mem _ 16 = G.w
-    rw [z.outside.w32 (d := 16) (by simp only [hdr]; omega) (by decide), m₆]
+    rw [z.outside.w32 (d := 16) (by simp only [hdr]; omega_using []) (by decide), m₆]
     show (s₁.mem.readW (off (State.addr G.KB) 16) 32).toNat = G.w
     rw [u₁.mem, Mem.readW_writeW_self32, show (G.ksState s).gpr .r9 = s.gpr .r9 from rfl, h.r9,
       BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [wl])
   · exact (u₁.rest ..).trans (R₆.mono (by simp) |>.trans ((z.rest.mono (by simp)).trans (R₈.mono (by simp))))
 
 end

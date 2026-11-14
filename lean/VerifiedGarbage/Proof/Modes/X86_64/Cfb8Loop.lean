@@ -85,7 +85,7 @@ theorem headD_eq_getD (l : List Byte) : l.headD 0 = l.getD 0 0 := by cases l <;>
 
 theorem writeW8_frame (m : Mem) (A : Addr) (b : Byte) : Frame [⟨A, 1⟩] m (m.writeW A b) := fun x hx => by
   rw [writeW8_apply, ite_eq_right (fun h => hx _ List.mem_cons_self (by
-    subst h; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega))]
+    subst h; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []))]
 
 theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem} {B D P : Addr} {n : Nat} {k : cs.Key}
     {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : C8Pre c s₀ B D P n) (hsc : KeepsIv c.crypt)
@@ -345,6 +345,6 @@ theorem cfb8Loop_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem} 
   refine WP.mono (cfb8Block_wp cs enc hiv hp hsc hj) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨by simp [X86_64.eval, z], d⟩
-  · exact .inr ⟨by simp [X86_64.eval, z], n - (j + 1), by have := d.lt; have := hj.lt; omega, j + 1, rfl, d⟩
+  · exact .inr ⟨by simp [X86_64.eval, z], n - (j + 1), by have := d.lt; have := hj.lt; omega_arith, j + 1, rfl, d⟩
 
 end VG.Proof.Modes.X86_64

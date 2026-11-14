@@ -44,10 +44,10 @@ theorem prune_words (d0 d1 d2 d3 d4 d5 d6 d7 : BitVec 32) :
   have c₂ : (2 ^ 30 - 1) % 2 ^ 32 = 2 ^ 30 - 1 := by decide
   have c₃ : (2 ^ 30) % 2 ^ 32 = 2 ^ 30 := by decide
   rw [BitVec.toNat_or, BitVec.toNat_and, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 32 (by omega), and_sub8 _ 254 (by omega),
-    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega)), or_two_pow (by omega)]
+    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 32 (by omega_using []), and_sub8 _ 254 (by omega_using []),
+    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega_using [])), or_two_pow (by omega_using [])]
   simp only [show (2 : Nat) ^ (254 - 3) = 2 ^ 251 from rfl, show (2 : Nat) ^ (32 - 3) = 2 ^ 29 from rfl]
-  omega
+  omega_using []
 
 end VG.Proof.Ed25519.Arm.PublicKey
 end
@@ -81,8 +81,8 @@ theorem pruneWord_ok {s : State} {E : BitVec 32} {k : Nat} (he : s.sp = E) (hk :
       t.mem = s.mem.writeW (addr E (24 + 4 * k))
         (pruneValue k (s.mem.readW (addr E (184 + 4 * k)) 32)) := by
   simp only [addr] at hr hw ⊢
-  have h184 : 184 + 4 * k < 4096 := by omega
-  have h4 : 4 * k < 4096 := by omega
+  have h184 : 184 + 4 * k < 4096 := by omega_using [hk]
+  have h4 : 4 * k < 4096 := by omega_using [hk]
   have ha : BitVec.ofNat 32 24 + BitVec.ofNat 32 (4 * k) = BitVec.ofNat 32 (24 + 4 * k) :=
     (BitVec.ofNat_add 24 (4 * k)).symm
   by_cases h0 : k = 0

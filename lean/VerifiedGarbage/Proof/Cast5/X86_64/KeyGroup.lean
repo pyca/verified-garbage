@@ -47,7 +47,7 @@ theorem KS.heldNow {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec
   intro i hi
   have hl : s5678.length = 512 := table_length _ _ _ _
   rw [hl] at hi
-  rw [h.mem.fr.readW (Offset.contains_base _ (by omega) (by omega)) h.dT (by decide)]
+  rw [h.mem.fr.readW (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) h.dT (by decide)]
   exact h.held i (by rw [hl]; exact hi)
 
 /-- The same state, later: other registers, memory and flags. -/
@@ -79,7 +79,7 @@ theorem extras_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.
       u.syms = s.syms ∧ Keep [.rax, .r9, .r10, .r11] s u := by
   have hw : InRegions s.wr (s.gpr .rcx) 64 := by rw [h.rc]; exact h.wS
   have hin (q : Pos) (hq : q.2 < 16) : InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 (srcOff q)) 1 :=
-    scr_rw hw (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega)
+    scr_rw hw (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega_using [hq, this])
   unfold extras
   refine WP.seq (WP.mono_syms (WP.keep [.rax, .r9, .r10] (gather_ok s (hin _ ha) (hin _ hb) (hin _ hc)
     (hin _ hd)) (by rfl)) fun u ⟨⟨u0, um, urd, uwr⟩, uk⟩ usy => ?_)
@@ -143,7 +143,7 @@ theorem lineS_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.C
   have hw : InRegions s.wr (s.gpr .rcx) 64 := by rw [h.rc]; exact h.wS
   have hm : HoldsXZ s.mem (s.gpr .rcx) st := by rw [h.rc]; exact h.mem.xz
   have hx' : s.mem.readW (s.gpr .rcx + BitVec.ofNat 64 (extraOff + 4 * (8 - l.extra.1))) 32 =
-      sbox l.extra.1 (st.get l.extra.2) := by rw [h.rc, hE _ (by omega), hx]
+      sbox l.extra.1 (st.get l.extra.2) := by rw [h.rc, hE _ (by omega_using [he]), hx]
   refine WP.mono (line_ok s st l hl hw hm h.tab h.heldNow hx') fun u ⟨uax, ⟨w, um⟩, urd, uwr, usy, uk⟩ => ?_
   rw [h.rc] at um
   have hm0 := h.mem.write h.dKS h.len (d := 0) w (by decide) (.inl (by decide))
@@ -163,11 +163,11 @@ theorem lineQ_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.C
   refine WP.mono (lineS_ok h hE hl hx) fun u ⟨uax, hu, uE, usy, uk⟩ => ?_
   have := off_lt a
   have hw : InRegions u.wr (u.gpr .rcx + BitVec.ofNat 64 (off a + 4 * q)) 4 := by
-    rw [hu.rc]; exact scr_w hu.wS (by omega)
+    rw [hu.rc]; exact scr_w hu.wS (by omega_using [hq, this])
   refine WP.mono (storeQuad_ok u a q uax hw) fun v ⟨vm, vg, vrd, vwr, vsy⟩ => ?_
   rw [hu.rc] at vm
   refine ⟨hu.update (vg _ (by decide)) (by rw [vm]; exact hu.mem.quad hu.dKS hu.len a hq _) hu.len vrd vwr vsy,
-    by rw [vm]; exact uE.write _ (by unfold extraOff; omega), by rw [vsy, usy],
+    by rw [vm]; exact uE.write _ (by unfold extraOff; omega_using [hq, this]), by rw [vsy, usy],
     ⟨fun r hr => by rw [vg r (fun e => hr (e ▸ List.mem_cons_self)), uk.1 r hr], by rw [vrd, uk.2.1],
       by rw [vwr, uk.2.2]⟩⟩
 
@@ -183,13 +183,13 @@ theorem lineK_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.C
   have hadr : u.gpr .rdx + BitVec.ofNat 64 (4 * k) = K + BitVec.ofNat 64 (4 * ws.length) := by
     rw [uk.1 _ (by decide), hdx, Proof.Cast5.add_ofNat_add, hb]
   have hw : InRegions u.wr (u.gpr .rdx + BitVec.ofNat 64 (4 * k)) 4 := by
-    rw [hadr]; exact CallLay.inRegions_sub hu.wK (by omega) (by decide)
+    rw [hadr]; exact CallLay.inRegions_sub hu.wK (by omega_using [hlen]) (by decide)
   refine WP.mono (storeKey_ok u k uax hw) fun v ⟨vm, vg, vrd, vwr, vsy⟩ => ?_
   rw [hadr] at vm
   have hd : Region.Disjoint ⟨c, 64⟩ ⟨K + BitVec.ofNat 64 (4 * ws.length), 32 / 8⟩ :=
-    (hu.dKS.sub_left (Offset.sub_base K (by omega))).symm
+    (hu.dKS.sub_left (Offset.sub_base K (by omega_using [hlen]))).symm
   refine ⟨hu.update (by rw [vg]) (by rw [vm]; exact hu.mem.key hu.dKS hlen _)
-      (by rw [List.length_append, List.length_singleton]; omega) vrd vwr vsy,
+      (by rw [List.length_append, List.length_singleton]; omega_using [hlen]) vrd vwr vsy,
     by rw [vm]; exact uE.write_disj _ hd, by rw [vsy, usy],
     ⟨fun r hr => by rw [vg, uk.1 r hr], by rw [vrd, uk.2.1], by rw [vwr, uk.2.2]⟩⟩
 
@@ -246,9 +246,9 @@ theorem groupK_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.
   obtain ⟨hok, hex, _⟩ := hg.1 k hk
   have he := lineOk_extra hok
   have hl : (ws ++ (keys4 ls st).take k).length = ws.length + k := by
-    rw [List.length_append, List.length_take, show (keys4 ls st).length = 4 from rfl, Nat.min_eq_left (by omega)]
+    rw [List.length_append, List.length_take, show (keys4 ls st).length = 4 from rfl, Nat.min_eq_left (by omega_using [hk])]
   refine WP.mono (lineK_ok hu uE hok ?_ (k := b + k) (b := 64 * hh) (by rw [uk.1 _ (by decide), hdx])
-      (by rw [hl, hlen]; omega) (by rw [hl]; omega)) fun v hv => WP.mono hv fun w ⟨hw, wE, wsy, wk⟩ => ?_
+      (by rw [hl, hlen]; omega_using []) (by rw [hl]; omega_using [hle, hk])) fun v hv => WP.mono hv fun w ⟨hw, wE, wsy, wk⟩ => ?_
   · rw [exVal_sbox _ _ he.1 he.2, hex]
   · rw [take_keys4 _ _ hk, ← List.append_assoc]
     exact ⟨hw, wE, by rw [wsy, usy], keep_same uk wk⟩

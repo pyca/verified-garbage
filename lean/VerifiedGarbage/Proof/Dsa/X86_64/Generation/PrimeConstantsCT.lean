@@ -24,17 +24,17 @@ def PrimeR2Ready (p : PrimeParams) (s : State) : Prop :=
 theorem primeR2_ready (M : Mont) {p : PrimeParams} {s : State} (h : PrimeSetupBefore p s) :
     WP isa (Impl.Dsa.X86_64.Generation.primeR2 M.mm) s (PrimeR2Ready p) := by
   obtain ⟨mi, hg⟩ := h.1
-  exact WP.mono (primeR2_ok M hg p.dims.z (by have := p.dims.w4; omega) h.2.2 h.2.1 p.odd
-    (by have := p.n3; omega)) fun _ ⟨mi', ht, hi, hn, hone, hr2, _⟩ =>
+  exact WP.mono (primeR2_ok M hg p.dims.z (by have := p.dims.w4; omega_using [this]) h.2.2 h.2.1 p.odd
+    (by have := p.n3; omega_using [this])) fun _ ⟨mi', ht, hi, hn, hone, hr2, _⟩ =>
       ⟨mi', ⟨ht, hn, hi⟩, hone, hr2⟩
 
 theorem primeMontOne_good (M : Mont) {p : PrimeParams} {s : State} (h : PrimeR2Ready p s) :
     WP isa (M.mm aY aR2 aOne) s (PrimeGood p) := by
   obtain ⟨mi, h, hone, _⟩ := h
-  exact WP.mono (M.mm_ok h.good p.dims.z (by have := p.dims.w4; omega)
-    (by have := p.dims.w128; omega) (o := aY) (a := aR2) (b := aOne)
+  exact WP.mono (M.mm_ok h.good p.dims.z (by have := p.dims.w4; omega_using [this])
+    (by have := p.dims.w128; omega_using [this]) (o := aY) (a := aR2) (b := aOne)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    h.inverse (by rw [hone, h.modulus]; have := p.n3; omega)) fun _ ht => ⟨mi, ht.1⟩
+    h.inverse (by rw [hone, h.modulus]; have := p.n3; omega_using [this])) fun _ ht => ⟨mi, ht.1⟩
 
 theorem primeConstants_ct (M : Mont) : RelCT isa (Two PrimeR2Ready)
     (Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants M.mm) (fun _ _ => True) := by

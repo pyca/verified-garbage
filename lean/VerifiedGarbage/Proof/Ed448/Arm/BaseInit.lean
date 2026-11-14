@@ -39,14 +39,14 @@ theorem initStep_ok {s : State} {base : Addr} (hs : Scr s base) (h4 : s.gpr .r4 
     WP isa (.block (initStep i k)) s fun t =>
       t.mem = s.mem.writeW (off base (slot i + 4 * k)) (BitVec.ofNat 32 (initLimb i k)) ∧
         Keeps [.r3] s t := by
-  have hsl : slot i + 4 * k + 4 ≤ 4096 := by simp only [slot]; omega
+  have hsl : slot i + 4 * k + 4 ≤ 4096 := by simp only [slot]; omega_using [hi, hk]
   unfold initStep
   split
   · rename_i h0
-    refine store_ok hs (by omega) fun t ht => WP.block_nil ⟨?_, ⟨fun r _ => by rw [ht.gpr], ht.rd, ht.wr⟩⟩
+    refine store_ok hs (by omega_using [hsl]) fun t ht => WP.block_nil ⟨?_, ⟨fun r _ => by rw [ht.gpr], ht.rd, ht.wr⟩⟩
     rw [ht.mem, h4, h0]; rfl
   · refine VG.Proof.X25519.Arm.wp_movw fun u hu => ?_
-    refine store_ok (hs.of_upd hu (by decide) (by decide)) (by omega) fun t ht => WP.block_nil ⟨?_, ?_⟩
+    refine store_ok (hs.of_upd hu (by decide) (by decide)) (by omega_using [hsl]) fun t ht => WP.block_nil ⟨?_, ?_⟩
     · rw [ht.mem, hu.mem, hu.gpr]
       congr 1
       apply BitVec.eq_of_toNat_eq
@@ -60,7 +60,7 @@ theorem initSlot_ok {s : State} {base : Addr} (hs : Scr s base) (h4 : s.gpr .r4 
     WP isa (.block (initSlot i)) s fun t =>
       (∀ k < 28, limbs t.mem base (slot i) k = initLimb i k) ∧
         Outside base (slot i) 112 s.mem t.mem ∧ Keeps [.r3] s t := by
-  have hsl : slot i + 112 ≤ 4096 := by simp only [slot]; omega
+  have hsl : slot i + 112 ≤ 4096 := by simp only [slot]; omega_using [hi]
   let inv := fun n (t : State) => (∀ k < n, limbs t.mem base (slot i) k = initLimb i k) ∧
     Outside base (slot i) 112 s.mem t.mem ∧ Keeps [.r3] s t
   refine wp_range_flatMap (M := isa) (N := 28) inv (fun n t hn ⟨tf, tm, tk⟩ => ?_) 28 (by decide) s
@@ -68,11 +68,11 @@ theorem initSlot_ok {s : State} {base : Addr} (hs : Scr s base) (h4 : s.gpr .r4 
   refine WP.mono (initStep_ok (hs.of_keeps tk (by decide)) ((tk.1 _ (by decide)).trans h4) hi hn)
     fun u ⟨um, uk⟩ => ⟨fun k hk => ?_, tm.trans ?_, tk.trans uk⟩
   · change (word u.mem base (slot i + 4 * k)).toNat = _
-    rw [um, word_write t.mem base (by omega) (by omega)]
+    rw [um, word_write t.mem base (by omega_using [hsl, hn]) (by omega_using [hsl, hn, hk])]
     by_cases h : k = n
-    · rw [ite_eq_left h, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := initLimb_lt i n; omega)]
-    · rw [ite_eq_right h]; exact tf k (by omega)
-  · rw [um]; exact (writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)
+    · rw [ite_eq_left h, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := initLimb_lt i n; omega_using [this])]
+    · rw [ite_eq_right h]; exact tf k (by omega_using [hk, h])
+  · rw [um]; exact (writeW_outside _ _ _ (by omega_using [hsl, hn])).mono (by omega_using []) (by omega_using [hn])
 
 theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block initSlots) s fun t =>
@@ -88,12 +88,12 @@ theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
     (by decide) u ⟨fun _ h => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩)
     fun t ⟨tf, tm, tk⟩ => ⟨tf, by rw [← hu.mem]; exact tm, ku.trans (tk.mono (by simp))⟩
   refine WP.mono (initSlot_ok (hsu.of_keeps tk (by decide)) ((tk.1 _ (by decide)).trans hu.gpr) hn)
-    fun v ⟨vf, vm, vk⟩ => ⟨fun i hi k hk => ?_, tm.trans (vm.mono (by simp only [slot]; omega)
-      (by simp only [slot]; omega)), tk.trans vk⟩
+    fun v ⟨vf, vm, vk⟩ => ⟨fun i hi k hk => ?_, tm.trans (vm.mono (by simp only [slot]; omega_using [])
+      (by simp only [slot]; omega_using [hn])), tk.trans vk⟩
   by_cases h : i = n
   · subst h; exact vf k hk
-  · rw [vm.limbs (by simp only [slot]; omega) (by simp only [slot]; omega) hk]
-    exact tf i (by omega) k hk
+  · rw [vm.limbs (by simp only [slot]; omega_using [h]) (by simp only [slot]; omega_using [hn, hi]) hk]
+    exact tf i (by omega_using [hi, h]) k hk
 
 /-- The slots' values. -/
 theorem initSlots_E {m : Mem} {base : Addr}

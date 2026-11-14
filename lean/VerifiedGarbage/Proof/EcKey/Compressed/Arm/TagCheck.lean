@@ -28,7 +28,7 @@ theorem decompressTag_ok {c : Cfg} {s : State} {base : Addr} {q : BitVec 32}
   unfold Impl.EcKey.Compressed.Arm.decompressTag
   refine wp_ldrb (by decide) (a := State.addr q) (by rw [hq]; simp) hin fun s₁ u₁ => ?_
   have hs₁ := hs.of_rest (u₁.rest (ws := [.r4]) (by simp)) (by decide)
-  refine wp_str (hs₁.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.write hD) fun s₂ m₂ => ?_
+  refine wp_str (hs₁.off_lt (by omega_using [hD])) (hs₁.ea (by omega_using [hD])) (hs₁.write hD) fun s₂ m₂ => ?_
   refine wp_dp (op2_imm (by decide)) fun s₃ u₃ => ?_
   refine wp_dp (op2_imm (by decide)) fun s₄ u₄ => ?_
   refine wp_dp (op2_imm (by decide)) fun s₅ u₅ => ?_
@@ -46,6 +46,6 @@ theorem decompressTag_ok {c : Cfg} {s : State} {base : Addr} {q : BitVec 32}
       ((u₄.rest (by simp)).trans ((u₅.rest (by simp)).trans ((u₆.rest (by simp)).trans
       ((u₇.rest (by simp)).trans (u₈.rest (by simp))))))))
   · rw [hm]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hD, this])
 
 end VG.Proof.EcKey.Compressed.Arm

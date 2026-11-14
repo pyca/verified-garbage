@@ -84,8 +84,8 @@ theorem key_iteration (v : RoundImpl) {p : KeyPublic} {original s : State}
       simp only [KeyPublic.tail, keyTail_short hk hs hr]
   intro hlong
   have hroom : used + p.len ≤ p.randLen := by
-    have := of_decide_eq_false hlong; have := h.used_le; omega
-  have hr : p.len ≤ (keyRand original).length - used := by rw [hlen]; omega
+    have := of_decide_eq_false hlong; have := h.used_le; omega_arith
+  have hr : p.len ≤ (keyRand original).length - used := by rw [hlen]; omega_using [hroom]
   refine WP.seq (WP.mono (key_attempt_run v hu3 hroom) fun t ⟨ht, hp⟩ => ?_)
   refine WP.mono (key_classify ht hroom (Nat.pos_of_ne_zero hk) (Nat.pos_of_ne_zero hs) hp)
     fun q hq => ?_

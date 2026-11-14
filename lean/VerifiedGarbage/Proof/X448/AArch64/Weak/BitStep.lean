@@ -44,10 +44,10 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
   have hb' : s.gpr .x19 - BitVec.ofNat 64 1 = BitVec.ofNat 64 t := by
     rw [hb, BitVec.ofNat_add, BitVec.add_sub_cancel]
   have hin : InRegions (s.rd ++ s.wr) (off base (BITS + t)) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega)⟩
-  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [BITS]; omega_using [ht])⟩
+  have hw : InRegions s.wr (off base SWAP) 8 := ⟨_, hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   have hr : InRegions (s.rd ++ s.wr) (off base SWAP) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, contains_sc (by simp only [SWAP]; omega_using [])⟩
   have enc : BITS % 1 = 0 ∧ BITS < 4096 * 1 := by decide
   have encSwap : SWAP % 8 = 0 ∧ SWAP < 4096 * 8 := by decide
   have hswap' : s.mem.readW (off base SWAP) 64 = BitVec.ofNat 64 sw0 := hswap
@@ -63,10 +63,10 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
   have e0 : BitVec.setWidth 64 (0 : BitVec 16) = 0 := rfl
   have ext : (BitVec.setWidth 32 (BitVec.ofNat 8 kt)).setWidth 64 =
       (BitVec.ofNat 8 kt).setWidth 64 := by
-    rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hk] : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   simp only [ext]
   have ek : BitVec.setWidth 64 (BitVec.ofNat 8 kt) = BitVec.ofNat 64 kt := by
-    rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hk] : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   refine ⟨trivial, by rw [e0]; exact mask_xor sw0 hsw kt hk, fun r hr => ?_, trivial, trivial,
     by rw [ek]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

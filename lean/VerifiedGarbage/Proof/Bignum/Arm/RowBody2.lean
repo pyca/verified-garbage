@@ -22,7 +22,7 @@ theorem row_addr_at {s0 s : State} {base : BitVec 32} {size o b n d k : Nat}
     (hr : s.gpr r = base + BitVec.ofNat 32 d) (hd : d + k < size) :
     State.addr (s.gpr r + BitVec.ofNat 32 k) = off (State.addr base) (d + k) := by
   rw [hr, Offset.add_add]
-  exact VG.Arm.addr_add (by have := ctx.nowrap; omega)
+  exact VG.Arm.addr_add (by have := ctx.nowrap; omega_using [hd, this])
 
 theorem rowBody2_ok {s0 s : State} {x base : BitVec 32} {size o b n i : Nat}
     (ctx : RowCtx s0 base size o b n) (inv : RowLoopInv s0 x base o b n i s) (hi : i + 2 ≤ n)

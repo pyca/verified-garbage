@@ -172,13 +172,13 @@ section
 variable {s : State} (hp : UPre s)
 include hp
 
-theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega
+theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega_using [this]
 
 theorem UPre.m_lt : M s < 2 ^ 21 := by
-  have := hp.len_hi; simp only [M, Spec.Xts.maxBlocks] at *; omega
+  have := hp.len_hi; simp only [M, Spec.Xts.maxBlocks] at *; omega_using [this]
 
 omit hp in
-theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega
+theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega_using []
 
 /-- `dst`, as long as `src`. -/
 theorem UPre.dstR_eq : dstR s = ⟨D s, Len s⟩ := by rw [dstR, hp.dlen]
@@ -200,21 +200,21 @@ omit hp in
 theorem wk_sub : Region.Sub (wkR s) (scrR s) := Region.sub_prefix (by decide)
 
 theorem UPre.t_wk : (tR s).Disjoint (wkR s) :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.tO]; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.tO]; omega_using [])
 
 theorem UPre.z_wk : (zR s).Disjoint (wkR s) :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.zO]; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.zO]; omega_using [])
 
 theorem UPre.t_z : (tR s).Disjoint (zR s) :=
-  Offset.disjoint _ (by simp only [Impl.AesXts.X86_64Unit.tO, Impl.AesXts.X86_64Unit.zO]; omega)
-    (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.tO]; omega)
-    (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.zO]; omega)
+  Offset.disjoint _ (by simp only [Impl.AesXts.X86_64Unit.tO, Impl.AesXts.X86_64Unit.zO]; omega_using [])
+    (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.tO]; omega_using [])
+    (by have := hp.scr_wrap; simp only [Impl.AesXts.X86_64Unit.zO]; omega_using [])
 
 omit hp in
 /-- The slots of the saved registers. -/
 theorem slot_sub (d : Nat) (h₁ : 2208 ≤ d) (h₂ : d + 8 ≤ 2256) :
     Region.Sub ⟨S s + BitVec.ofNat 64 d, 8⟩ ⟨S s + BitVec.ofNat 64 2208, 48⟩ :=
-  Offset.sub _ h₁ (by omega)
+  Offset.sub _ h₁ (by omega_using [h₂])
 
 /-- Everything the code writes but the slots lies within `dst`, the first
 2208 bytes of the scratch buffer, or the stack below. -/
@@ -224,7 +224,7 @@ theorem UPre.slots_disj {r : Region}
   have slot : Region.Sub ⟨S s + BitVec.ofNat 64 2208, 48⟩ (scrR s) := scr_sub (by decide)
   rcases hr with h | h | h
   · exact (hp.dst_scr.symm.sub_left slot).sub_right h
-  · exact (Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)).sub_right h
+  · exact (Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])).sub_right h
   · exact (hp.stk_scr.symm.sub_left slot).sub_right h
 
 omit hp in
@@ -235,38 +235,38 @@ omit hp in
 theorem s_sub : Region.Sub ⟨S s, 2208⟩ (scrR s) := Region.sub_prefix (by decide)
 
 theorem UPre.wrapD : (D s).toNat + 16 * M s + B s ≤ 2 ^ 64 := by
-  have := hp.dst_wrap'; have := len_eq s; omega
+  have := hp.dst_wrap'; have := len_eq s; omega_arith
 
 theorem UPre.l_sub : Region.Sub ⟨L s, 16⟩ (dstR s) :=
-  hp.dst_sub (by have := len_eq s; have := hp.m_pos; omega)
+  hp.dst_sub (by have := len_eq s; have := hp.m_pos; omega_arith)
 
 theorem UPre.l_wrap : (L s).toNat + 16 ≤ 2 ^ 64 := by
   have := hp.dst_wrap'; have := len_eq s; have := hp.m_pos
   rw [L, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (M s - 1)) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 theorem UPre.blocks_sub {N : Nat} (h : N ≤ M s) : Region.Sub ⟨D s, 16 * N⟩ (dstR s) :=
-  by rw [hp.dstR_eq]; exact Region.sub_prefix (by have := len_eq s; omega)
+  by rw [hp.dstR_eq]; exact Region.sub_prefix (by have := len_eq s; omega_using [h, this])
 
 theorem UPre.lb_sub : Region.Sub ⟨L s, 16 + B s⟩ (dstR s) :=
-  hp.dst_sub (by have := len_eq s; have := hp.m_pos; omega)
+  hp.dst_sub (by have := len_eq s; have := hp.m_pos; omega_arith)
 
 theorem UPre.tl_eq : L s + 16 = D s + BitVec.ofNat 64 (16 * M s) := by
-  rw [L, Proof.AesXts.Unit.add16, show 16 * (M s - 1) + 16 = 16 * M s by have := hp.m_pos; omega]
+  rw [L, Proof.AesXts.Unit.add16, show 16 * (M s - 1) + 16 = 16 * M s by have := hp.m_pos; omega_using [this]]
 
 theorem UPre.tl_sub : Region.Sub ⟨L s + 16, B s⟩ (dstR s) := by
-  rw [hp.tl_eq]; exact hp.dst_sub (by have := len_eq s; omega)
+  rw [hp.tl_eq]; exact hp.dst_sub (by have := len_eq s; omega_using [this])
 
 theorem UPre.hd_lb : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s, 16 + B s⟩ :=
-  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.wrapD; have := hp.m_pos; omega)
+  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.wrapD; have := hp.m_pos; omega_arith)
 
 theorem UPre.hd_l : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s, 16⟩ :=
-  hp.hd_lb.sub_right (Region.sub_prefix (by omega))
+  hp.hd_lb.sub_right (Region.sub_prefix (by omega_using []))
 
 omit hp in
 theorem tl_l : (⟨L s + 16, B s⟩ : Region).Disjoint ⟨L s, 16⟩ :=
-  Offset.disjoint_base (L s) (d := 16) (n := B s) (k := 16) (Nat.le_refl _) (by simp only [B]; omega)
+  Offset.disjoint_base (L s) (d := 16) (n := B s) (k := 16) (Nat.le_refl _) (by simp only [B]; omega_using [])
 
 end
 
@@ -353,7 +353,7 @@ variable {s₀ : State} (hp : UPre s₀)
 include hp
 
 theorem UPre.cS' {d n : Nat} (h : d + n ≤ 2432) : (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by have := hp.scr_wrap; omega)
+  Offset.contains_base _ h (by have := hp.scr_wrap; omega_using [h])
 
 /-- `Inv` across code that keeps the pinned registers and writes only
 within `rs`, each in `dst`, the first 2208 bytes of the scratch buffer or
@@ -420,7 +420,7 @@ theorem UPre.inArg {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {d 
     InRegions (s.rd ++ s.wr) (stackArgAddr s₀ 0 + BitVec.ofNat 64 d) 8 := by
   rw [hp.rdwr hrd hwr]
   exact in_rw (r := argR s₀) (by simp) (Offset.contains_base _ hd (by
-    omega))
+    omega_using [hd]))
 
 omit hp in
 theorem arg_add (s : State) (d : Nat) :
@@ -494,7 +494,7 @@ theorem xpre_tweak {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hs
   stkS := (hp.stk_scr.sub_right wk_sub).sub_left (stk_sub3 hsp)
   wrapT := Unit.wrap_off _ hp.scr_wrap (by decide)
   wrapD := Unit.wrap_off _ hp.scr_wrap (by decide)
-  wrapS := by have := hp.scr_wrap; omega
+  wrapS := by have := hp.scr_wrap; omega_using [this]
   reads := by
     rw [hp.rdwr hrd hwr]
     refine Covers.of_sub fun r hr => ?_
@@ -519,7 +519,7 @@ theorem pro_wp : WP isa (.block proTo) (s₀.setReg .rax (S s₀)) (ProPost s₀
   refine Unit.save_wp _ (fun p hp' => ?_) fun s₂ gpr₂ rd₂ wr₂ mem₂ => ?_
   · have := saved_bound p hp'
     rw [wr_setReg, hp.wr, gpr_setReg_self]
-    exact in_rw (r := scrR s₀) (by simp) (hp.cS' (by omega))
+    exact in_rw (r := scrR s₀) (by simp) (hp.cS' (by omega_using [this]))
   rw [WP.block_append_iff]
   have rsp₂ : s₂.gpr .rsp = s₀.gpr .rsp := by rw [gpr₂]; exact g₁ _ (by decide)
   obtain ⟨s₃, run₃, r15₃, rbx₃, rbp₃, r12₃, r13₃, r14₃, g₃, mem₃', rd₃', wr₃'⟩ := setup_ok s₂ (by
@@ -636,8 +636,8 @@ structure TwPost (s₀ s : State) : Prop where
 theorem UPre.sched_frame {s : State} {rs : List Region} (hf : Frame rs s₀.mem s.mem)
     (hd : ∀ r ∈ rs, Region.Sub r (dstR s₀) ∨ r = scrR s₀ ∨ Region.Sub r (stk3 s₀)) :
     bytesAt s.mem (W s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)) := by
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hRb])
   rcases hd r hr with h | rfl | h
   · exact (hp.sch_dst.sub_left (Region.sub_prefix hRb)).sub_right h
   · exact hp.sch_scr.sub_left (Region.sub_prefix hRb)
@@ -649,11 +649,11 @@ theorem tcall_wp {n : String} {c : Prog isa}
     (nosp : NoSp c) (depth : c.depth ≤ 1) {s₂ : State} (h₂ : ProPost s₀ s₂) :
     WP isa (.call n c) s₂ (TwPost s₀) := by
   refine WP.mono (xts_call true ok nosp depth h₂.pre) fun s₃ c => ?_
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have eK : bytesAt s₂.mem (K s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (K s₀) (16 * (R s₀ + 1)) :=
     Proof.Cmac.bytesAt_frame h₂.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.tsch_scr.sub_left (Region.sub_prefix hRb)) (by omega)
+      exact hp.tsch_scr.sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])
   refine ⟨Inv.call hp h₂.inv z_sub (.inr t_sub) c, ?_, ?_⟩
   · refine ((h₂.frame.mono (by simp)).trans (c.frame.sub fun r hr => ?_))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -711,7 +711,7 @@ theorem xtpre_blocks {N : Nat} (hN : 16 * N ≤ Len s₀) {s : State} (hrd : s.r
     r9 := r9
     r10 := r10
     rounds := hp.rounds
-    n := by have := hp.len_hi; simp only [Spec.Xts.maxBlocks] at this; omega
+    n := by have := hp.len_hi; simp only [Spec.Xts.maxBlocks] at this; omega_using [hN, this]
     wt := hp.sch_scr.sub_right tS
     wd := hp.sch_dst.sub_right dS
     ws := hp.sch_scr.sub_right wk_sub
@@ -727,11 +727,11 @@ theorem xtpre_blocks {N : Nat} (hN : 16 * N ≤ Len s₀) {s : State} (hrd : s.r
     stkD := by rw [stk]; exact hp.stk_dst.sub_right dS
     stkS := by rw [stk]; exact hp.stk_scr.sub_right wk_sub
     wrapT := Unit.wrap_off _ hp.scr_wrap (by decide)
-    wrapR := by have := hp.src_wrap; omega
-    wrapD := by have := hp.dst_wrap'; omega
-    wrapS := by have := hp.scr_wrap; omega
+    wrapR := by have := hp.src_wrap; omega_using [hN, this]
+    wrapD := by have := hp.dst_wrap'; omega_using [hN, this]
+    wrapS := by have := hp.scr_wrap; omega_using [this]
     rsp_lo := by rw [hsp]; exact hp.rsp_lo
-    rsp_hi := by rw [hsp]; have := hp.rsp_hi; omega
+    rsp_hi := by rw [hsp]; have := hp.rsp_hi; omega_using [this]
     reads := by
       rw [hp.rdwr hrd hwr]
       refine Covers.of_sub fun r hr => ?_
@@ -772,7 +772,7 @@ theorem blocks_call (enc : Bool) {n : String} {c : Prog isa}
       rcases hr with rfl | rfl | rfl
       · exact hp.src_dst.sub_left sS
       · exact hp.src_scr.sub_left sS
-      · exact hp.stk_src.symm.sub_left sS) (by have := hp.src_wrap; omega)
+      · exact hp.stk_src.symm.sub_left sS) (by have := hp.src_wrap; omega_using [hN, this])
   refine ⟨Inv.callTo hp h.inv t_sub dS x, ?_, ?_, ?_⟩
   · rw [x.out, eW, h.t, eS]
   · rw [x.tw, h.t]
@@ -794,7 +794,7 @@ theorem fin_wp {s : State} (h : Inv s₀ s) :
       ⟨⟨Spill.calleeSaved_ok g₁ g₂ (by decide) h.rsp, ?_⟩, mem'⟩
   · have := saved_bound p hp'
     rw [hp.rdwr h.rd h.wr, h.r15]
-    exact in_rw (r := scrR s₀) (by simp) (hp.cS' (by omega))
+    exact in_rw (r := scrR s₀) (by simp) (hp.cS' (by omega_using [this]))
   · rw [mem']
     refine h.frame.readW (r := retR s₀) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -813,15 +813,15 @@ theorem copyRest_wp {hh : Nat} (hh16 : 16 * hh ≤ Len s₀) {s : State} (hi : I
         (bytesAt s₀.mem (Sr s₀ + BitVec.ofNat 64 (16 * hh)) (Len s₀ - 16 * hh)) := by
   have hl := hp.len_hi
   simp only [Spec.Xts.maxBlocks] at hl
-  have sS : Region.Sub ⟨Sr s₀ + BitVec.ofNat 64 (16 * hh), Len s₀ - 16 * hh⟩ (srcR s₀) := src_sub (by omega)
-  have dS : Region.Sub ⟨D s₀ + BitVec.ofNat 64 (16 * hh), Len s₀ - 16 * hh⟩ (dstR s₀) := hp.dst_sub (by omega)
+  have sS : Region.Sub ⟨Sr s₀ + BitVec.ofNat 64 (16 * hh), Len s₀ - 16 * hh⟩ (srcR s₀) := src_sub (by omega_using [hh16])
+  have dS : Region.Sub ⟨D s₀ + BitVec.ofNat 64 (16 * hh), Len s₀ - 16 * hh⟩ (dstR s₀) := hp.dst_sub (by omega_using [hh16])
   refine WP.seq (WP.of_runBlock ⟨_, by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       Option.bind_some, Option.map_some]
     rfl, ?_⟩)
   refine WP.mono (Proof.ChaCha20Poly1305.X86_64.Gather.copyBytes_ok (S := Sr s₀ + BitVec.ofNat 64 (16 * hh))
     (D := D s₀ + BitVec.ofNat 64 (16 * hh)) (n := Len s₀ - 16 * hh) ?_ .x16) fun s' ⟨m', g', rd', wr'⟩ => ?_
-  · refine ⟨?_, ?_, ?_, by omega, ?_, ?_, (hp.src_dst.sub_left sS).sub_right dS⟩
+  · refine ⟨?_, ?_, ?_, by omega_using [hl], ?_, ?_, (hp.src_dst.sub_left sS).sub_right dS⟩
     · simp [gpr_setReg, hi.r14, hrax]
     · simp [gpr_setReg, hi.r12, hrax]
     · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, hi.r13, hrax]
@@ -831,12 +831,12 @@ theorem copyRest_wp {hh : Nat} (hh16 : 16 * hh ≤ Len s₀) {s : State} (hi : I
       rw [hp.rdwr hi.rd hi.wr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨srcR s₀, by simp, 16 * hh, rfl, by simp; omega⟩
+      exact ⟨srcR s₀, by simp, 16 * hh, rfl, by simp; omega_using [hh16]⟩
     · simp only [wr_setReg, arithFlags, State.setFlags]
       rw [hp.wr' hi.wr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨dstR s₀, by simp, 16 * hh, rfl, by simp [hp.dlen]; omega⟩
+      exact ⟨dstR s₀, by simp, 16 * hh, rfl, by simp [hp.dlen]; omega_using [hh16]⟩
   · have mS : bytesAt s.mem (Sr s₀ + BitVec.ofNat 64 (16 * hh)) (Len s₀ - 16 * hh) =
         bytesAt s₀.mem (Sr s₀ + BitVec.ofNat 64 (16 * hh)) (Len s₀ - 16 * hh) :=
       Proof.Cmac.bytesAt_frame hi.frame (fun r hr => by
@@ -844,7 +844,7 @@ theorem copyRest_wp {hh : Nat} (hh16 : 16 * hh ≤ Len s₀) {s : State} (hi : I
         rcases hr with rfl | rfl | rfl
         · exact hp.src_dst.sub_left sS
         · exact hp.src_scr.sub_left sS
-        · exact hp.stk_src.symm.sub_left sS) (by omega)
+        · exact hp.stk_src.symm.sub_left sS) (by omega_using [hl])
     simp only [mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags] at m' rd' wr'
     rw [mS] at m'
     refine ⟨Inv.step hp hi (rs := [⟨D s₀ + BitVec.ofNat 64 (16 * hh), Len s₀ - 16 * hh⟩])
@@ -861,18 +861,18 @@ theorem vmem_bytes0 {n : Nat} (hn : n ≤ Len s₀) : bytesAt (vmem s₀) (D s�
   have hl := hp.len_hi
   simp only [Spec.Xts.maxBlocks] at hl
   have hL : bytesAt (vmem s₀) (D s₀) (Len s₀) = bytesAt s₀.mem (Sr s₀) (Len s₀) := by
-    rw [vmem, Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [Proof.AesXts.Unit.length_bytesAt]) (by omega),
+    rw [vmem, Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [Proof.AesXts.Unit.length_bytesAt]) (by omega_using [hl]),
       Proof.AesXts.Unit.length_bytesAt, List.drop_eq_nil_of_le (by rw [Proof.AesXts.Unit.length_bytesAt]),
       List.append_nil]
   rw [← Proof.AesXts.Unit.bytesAt_take _ _ hn, hL, Proof.AesXts.Unit.bytesAt_take _ _ hn]
 
 theorem vmem_bytes {a n : Nat} (h : a + n ≤ Len s₀) :
     bytesAt (vmem s₀) (D s₀ + BitVec.ofNat 64 a) n = bytesAt s₀.mem (Sr s₀ + BitVec.ofNat 64 a) n := by
-  have e₁ := Proof.AesXts.Unit.bytesAt_drop (vmem s₀) (D s₀) (show a ≤ Len s₀ by omega)
-  have e₂ := Proof.AesXts.Unit.bytesAt_drop s₀.mem (Sr s₀) (show a ≤ Len s₀ by omega)
+  have e₁ := Proof.AesXts.Unit.bytesAt_drop (vmem s₀) (D s₀) (show a ≤ Len s₀ by omega_using [h])
+  have e₂ := Proof.AesXts.Unit.bytesAt_drop s₀.mem (Sr s₀) (show a ≤ Len s₀ by omega_using [h])
   rw [vmem_bytes0 hp (Nat.le_refl _)] at e₁
-  rw [← Proof.AesXts.Unit.bytesAt_take (vmem s₀) _ (show n ≤ Len s₀ - a by omega), ← e₁, e₂,
-    Proof.AesXts.Unit.bytesAt_take _ _ (show n ≤ Len s₀ - a by omega)]
+  rw [← Proof.AesXts.Unit.bytesAt_take (vmem s₀) _ (show n ≤ Len s₀ - a by omega_using [h]), ← e₁, e₂,
+    Proof.AesXts.Unit.bytesAt_take _ _ (show n ≤ Len s₀ - a by omega_using [h])]
 
 theorem vmem_blocks {N : Nat} (hN : 16 * N ≤ Len s₀) :
     Spec.Cbc.blocksAt (vmem s₀) (D s₀) N = Spec.Cbc.blocksAt s₀.mem (Sr s₀) N := by
@@ -949,9 +949,9 @@ structure Fin (enc : Bool) (s₀ s : State) : Prop where
 /-- The bytes at `p + a` from those at `p`. -/
 theorem bytesAt_sub {m m' : Mem} {p : Addr} {k a n : Nat} (h : bytesAt m p k = bytesAt m' p k)
     (ha : a + n ≤ k) : bytesAt m (p + BitVec.ofNat 64 a) n = bytesAt m' (p + BitVec.ofNat 64 a) n := by
-  rw [← Proof.AesXts.Unit.bytesAt_take m _ (show n ≤ k - a by omega), ← Proof.AesXts.Unit.bytesAt_drop m p
-    (show a ≤ k by omega), h, Proof.AesXts.Unit.bytesAt_drop m' p (show a ≤ k by omega),
-    Proof.AesXts.Unit.bytesAt_take _ _ (show n ≤ k - a by omega)]
+  rw [← Proof.AesXts.Unit.bytesAt_take m _ (show n ≤ k - a by omega_using [ha]), ← Proof.AesXts.Unit.bytesAt_drop m p
+    (show a ≤ k by omega_using [ha]), h, Proof.AesXts.Unit.bytesAt_drop m' p (show a ≤ k by omega_using [ha]),
+    Proof.AesXts.Unit.bytesAt_take _ _ (show n ≤ k - a by omega_using [ha])]
 
 /-- The memory after the first `N` whole blocks and the bytes after them:
 the blocks XTS's, the tweak the one after them, and the rest of `dst` that
@@ -975,8 +975,8 @@ omit hp in
 theorem AllMem.rest {enc : Bool} {N : Nat} {m : Mem} (h : AllMem enc s₀ N m) {a n : Nat} (ha : 16 * N ≤ a)
     (hn : a + n ≤ Len s₀) :
     bytesAt m (D s₀ + BitVec.ofNat 64 a) n = bytesAt (vmem s₀) (D s₀ + BitVec.ofNat 64 a) n := by
-  have e := bytesAt_sub (a := a - 16 * N) (n := n) h.2.2 (by omega)
-  rwa [Offset.add_add, show 16 * N + (a - 16 * N) = a by omega] at e
+  have e := bytesAt_sub (a := a - 16 * N) (n := n) h.2.2 (by omega_using [ha, hn])
+  rwa [Offset.add_add, show 16 * N + (a - 16 * N) = a by omega_using [ha]] at e
 
 omit hp in
 /-- The arguments of the out-of-place call on all the whole blocks. -/
@@ -1038,7 +1038,7 @@ structure BlocksReady (s₀ : State) (N : Nat) (s : State) : Prop where
 theorem argsAll_wp {s : State} (h : TwPost s₀ s) : WP isa (.block argsAllTo) s (BlocksReady s₀ (M s₀)) := by
   obtain ⟨s₂, run₂, rdi₂, rsi₂, rdx₂, rcx₂, r8₂, r9₂, r10₂, cs₂, mem₂, rd₂, wr₂⟩ := argsAllTo_ok s
   have h₂ := TwPost.keep hp h cs₂ mem₂ rd₂ wr₂
-  exact WP.of_runBlock ⟨s₂, run₂, h₂, xtpre_blocks hp (N := M s₀) (by rw [len_eq s₀]; omega) h₂.inv.rd h₂.inv.wr
+  exact WP.of_runBlock ⟨s₂, run₂, h₂, xtpre_blocks hp (N := M s₀) (by rw [len_eq s₀]; omega_using []) h₂.inv.rd h₂.inv.wr
     h₂.inv.rsp (by rw [rdi₂, h.inv.rbx]) (by rw [rsi₂, h.inv.rbp, rsi_ofNat]) (by rw [rdx₂, h.inv.r15])
     (by rw [rcx₂, h.inv.r14]) (by rw [r8₂, h.inv.r13]) (by rw [r9₂, h.inv.r15]) (by rw [r10₂, h.inv.r12])⟩
 
@@ -1047,7 +1047,7 @@ theorem argsHead_wp {s : State} (h : TwPost s₀ s) : WP isa (.block argsHeadTo)
   obtain ⟨s₂, run₂, rdi₂, rsi₂, rdx₂, rcx₂, r8₂, r9₂, r10₂, cs₂, mem₂, rd₂, wr₂⟩ :=
     argsHeadTo_ok s (by rw [h.inv.r13]; exact hm)
   have h₂ := TwPost.keep hp h cs₂ mem₂ rd₂ wr₂
-  exact WP.of_runBlock ⟨s₂, run₂, h₂, xtpre_blocks hp (N := M s₀ - 1) (by rw [len_eq s₀]; omega) h₂.inv.rd
+  exact WP.of_runBlock ⟨s₂, run₂, h₂, xtpre_blocks hp (N := M s₀ - 1) (by rw [len_eq s₀]; omega_using []) h₂.inv.rd
     h₂.inv.wr h₂.inv.rsp (by rw [rdi₂, h.inv.rbx]) (by rw [rsi₂, h.inv.rbp, rsi_ofNat]) (by rw [rdx₂, h.inv.r15])
     (by rw [rcx₂, h.inv.r14]) (by rw [r8₂, h.inv.r13]) (by rw [r9₂, h.inv.r15]) (by rw [r10₂, h.inv.r12])⟩
 
@@ -1057,20 +1057,20 @@ theorem copied_wp {enc : Bool} {N : Nat} (hN : 16 * N ≤ Len s₀) {s : State} 
   have hl := hp.len_hi
   simp only [Spec.Xts.maxBlocks] at hl
   refine WP.mono (copyRest_wp hp hN h.inv hrax) fun s' ⟨inv', m'⟩ => ⟨inv', ?_, ?_, ?_⟩
-  · have dS : Region.Sub ⟨D s₀, 16 * N⟩ (dstR s₀) := hp.blocks_sub (by simp only [M]; omega)
+  · have dS : Region.Sub ⟨D s₀, 16 * N⟩ (dstR s₀) := hp.blocks_sub (by simp only [M]; omega_using [hN])
     rw [m', Unit.blocksAt_frame (Proof.AesGcm.X86_64.writeBytes_frame' _ (Proof.AesXts.Unit.length_bytesAt _ _ _))
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.dst_wrap'; omega)) (by omega),
+        exact Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.dst_wrap'; omega_using [hN, hl])) (by omega_using [hN, hl]),
       h.out, vmem_blocks hp hN]
   · rw [m', Proof.Cmac.bytesAt_frame (Proof.AesGcm.X86_64.writeBytes_frame' _
       (Proof.AesXts.Unit.length_bytesAt _ _ _)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (hp.dst_scr.symm.sub_left (Unit.sub_trans t_sub s_sub)).sub_right (hp.dst_sub (by omega)))
+        exact (hp.dst_scr.symm.sub_left (Unit.sub_trans t_sub s_sub)).sub_right (hp.dst_sub (by omega_using [hN])))
       (by decide), h.tw]
-  · rw [m', Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [Proof.AesXts.Unit.length_bytesAt]) (by omega),
+  · rw [m', Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [Proof.AesXts.Unit.length_bytesAt]) (by omega_using [hl]),
       Proof.AesXts.Unit.length_bytesAt, List.drop_eq_nil_of_le (by rw [Proof.AesXts.Unit.length_bytesAt]),
-      List.append_nil, vmem_bytes hp (by omega)]
+      List.append_nil, vmem_bytes hp (by omega_using [hN])]
 
 omit hp in
 theorem wholeBytes_ok (s : State) :
@@ -1090,7 +1090,7 @@ theorem copiedAll_wp {enc : Bool} {s : State} (h : AllPost enc s₀ (M s₀) s) 
     WP isa (.seq (.block wholeBytes) copyRest) s (Copied enc s₀ (M s₀)) := by
   obtain ⟨s₁, run₁, rax₁, g₁, m₁, rd₁, wr₁⟩ := wholeBytes_ok s
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine copied_wp hp (by rw [len_eq s₀]; omega)
+  refine copied_wp hp (by rw [len_eq s₀]; omega_using [])
     ⟨Inv.step hp h.inv (rs := []) (fun _ h => by simp at h) (by rw [m₁]; exact Frame.refl _ _)
       (fun r hr => g₁ r (pinned_ne hr).1) rd₁ wr₁, by rw [m₁]; exact h.out, by rw [m₁]; exact h.tw,
       by rw [m₁]; exact h.frame⟩ (by rw [rax₁, h.inv.r13])
@@ -1107,7 +1107,7 @@ theorem headBytes_ok (s : State) (hm : 1 ≤ (s.gpr .r13).toNat / 16) :
     rfl, ?_⟩
   refine ⟨?_, fun r h => ?_, mem₁, rd₁, wr₁⟩
   · simp only [gpr_setReg, ite_true, rax₁]
-    rw [show BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 16 from rfl, Offset.ofNat_sub_ofNat (by omega),
+    rw [show BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 16 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hm]),
       Nat.mul_sub_one]
   · simp [gpr_setReg, h, g₁ r h]
 
@@ -1117,7 +1117,7 @@ theorem copiedHead_wp {enc : Bool} {s : State} (h : AllPost enc s₀ (M s₀ - 1
   have hm := hp.m_pos
   obtain ⟨s₁, run₁, rax₁, g₁, m₁, rd₁, wr₁⟩ := headBytes_ok s (by rw [h.inv.r13]; exact hm)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine copied_wp hp (by rw [len_eq s₀]; omega)
+  refine copied_wp hp (by rw [len_eq s₀]; omega_using [])
     ⟨Inv.step hp h.inv (rs := []) (fun _ h => by simp at h) (by rw [m₁]; exact Frame.refl _ _)
       (fun r hr => g₁ r (pinned_ne hr).1) rd₁ wr₁, by rw [m₁]; exact h.out, by rw [m₁]; exact h.tw,
       by rw [m₁]; exact h.frame⟩ (by rw [rax₁, h.inv.r13])
@@ -1147,7 +1147,7 @@ theorem stealPre_wp {s : State} (hr12 : s.gpr .r12 = D s₀) (hrax : s.gpr .rax 
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some, State.setReg32], ?_⟩⟩
   refine h _ ?_ (by simp [gpr_setReg]) (fun r h₁ h₂ => ?_) (by rw [mem_setReg, mem₁]) (by rw [rd_setReg, rd₁])
     (by rw [wr_setReg, wr₁])
-  · rw [gpr_setReg_of_ne _ _ (by decide), rdx₁, hr12, hrax, last_eq _ hp.m_pos (by have := hp.m_lt; omega)]
+  · rw [gpr_setReg_of_ne _ _ (by decide), rdx₁, hr12, hrax, last_eq _ hp.m_pos (by have := hp.m_lt; omega_using [this])]
   · rw [gpr_setReg_of_ne _ _ h₂, g₁ r h₁]
 
 /-- After `split`, following the copy. -/
@@ -1199,7 +1199,7 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) {s : State} (hrd : s.rd = s
   have lS : Region.Sub ⟨L s₀, 16 * 1⟩ (dstR s₀) := hp.l_sub
   have stk := stk_sub3 hsp
   have hL : 16 * (M s₀ - 1) + 16 ≤ DLen s₀ := by
-    rw [hp.dlen]; have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega
+    rw [hp.dlen]; have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega_using [this]
   exact {
     rdi := rdi
     rsi := rsi
@@ -1221,7 +1221,7 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) {s : State} (hrd : s.rd = s
     stkS := (hp.stk_scr.sub_right wk_sub).sub_left stk
     wrapT := Unit.wrap_off _ hp.scr_wrap ol
     wrapD := hp.l_wrap
-    wrapS := by have := hp.scr_wrap; omega
+    wrapS := by have := hp.scr_wrap; omega_using [this]
     reads := by
       rw [hp.rdwr hrd hwr]
       refine Covers.of_sub fun r hr => ?_
@@ -1263,11 +1263,11 @@ theorem encLastCall_wp (v : UnitImpl) {s : State} (h : EncLast s₀ s) (hB : B s
       Proof.Cmac.bytesAt_frame sw (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.dst_scr.symm.sub_left tS).sub_right hp.lb_sub) (by decide), htw]
-  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (hp.blocks_sub (by omega)) hp.hd_l tS h.inv.rsp c
-      (by dsimp only; have := hp.wrapD; omega), m₂]
+  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (hp.blocks_sub (by omega_using [])) hp.hd_l tS h.inv.rsp c
+      (by dsimp only; have := hp.wrapD; omega_using [this]), m₂]
     exact Proof.Cmac.bytesAt_frame sw (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega)
-  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l tS h.inv.rsp c (by dsimp only; omega), m₂]
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega_using [this])
+  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l tS h.inv.rsp c (by dsimp only; omega_using [hb]), m₂]
 
 theorem encLast_wp {s : State} (h : SplitPost true s₀ (M s₀) s) (hB : B s₀ ≠ 0) :
     WP isa (.seq (.seq (.block stealPre) swap) (.block (argsL tO))) s (EncLast s₀) := by
@@ -1278,7 +1278,7 @@ theorem encLast_wp {s : State} (h : SplitPost true s₀ (M s₀) s) (hB : B s₀
     (by rw [g₁ _ (by decide) (by decide), h.r8]) (fun i hi => by
       rw [wr₁']
       exact in_rw (r := dstR s₀) (by simp)
-        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega) (by omega)))))
+        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega_using [hi]) (by omega_using [hb, hi])))))
     fun s₂ ⟨mem₂, g₂, rd₂, wr₂⟩ => ?_
   obtain ⟨s₃, run₃, rdi₃, rsi₃, rdx₃, rcx₃, r8₃, r9₃, cs₃, mem₃, rd₃, wr₃⟩ := argsL_ok s₂ (o := tO) rfl
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
@@ -1330,7 +1330,7 @@ theorem encrypt_wp (v : UnitImpl) :
     WP isa (encryptTo v.x.xts v.xt) s₀ fun s' => gprPreserved s₀ s' ∧ (unitToX86_64 true).post s₀ s' := by
   refine WP.seq (WP.mono (tweak_wp hp v.x.encOk v.x.encNosp v.x.encDepth) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (argsAll_wp hp h₁) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (blocks_call hp true v.encToOk v.encToNosp v.encToDepth (by rw [len_eq s₀]; omega)
+  refine WP.seq (WP.mono (blocks_call hp true v.encToOk v.encToNosp v.encToDepth (by rw [len_eq s₀]; omega_using [])
     h₂.tw h₂.pre) fun s₃ h₃ => ?_)
   refine WP.seq (WP.mono (copiedAll_wp hp h₃) fun s₄ h₄ => ?_)
   refine WP.seq (WP.mono (splitCopied_wp hp h₄) fun s₅ h₅ => ?_)
@@ -1407,7 +1407,7 @@ theorem decL1_wp {s₂ : State} (h₂ : Copied false s₀ (M s₀ - 1) s₂) :
     (by rw [rsi₆, g₅ _ (by decide), g₄ _ (by decide) (by decide), inv₃.rbp, rsi_ofNat])
     (by rw [rdx₆, g₅ _ (by decide), g₄ _ (by decide) (by decide), inv₃.r15])
     (by rw [rcx₆, rdx₅, g₄ _ (by decide) (by decide), rax₄, inv₃.r12,
-      last_eq _ hm (by have := hp.m_lt; omega)]) r8₆
+      last_eq _ hm (by have := hp.m_lt; omega_using [this])]) r8₆
     (by rw [r9₆, g₅ _ (by decide), g₄ _ (by decide) (by decide), inv₃.r15]),
     ⟨s₂.mem, h₂.mem, by rw [m₆]; exact f₃, by rw [m₆]; exact z₃⟩⟩
 
@@ -1432,15 +1432,15 @@ theorem decL2_wp (v : UnitImpl) {s : State} (h : DecL1 s₀ s) :
       Proof.Cmac.bytesAt_frame f₃ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.dst_scr.sub_left hp.l_sub).sub_right zL) (by decide)]
-  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (hp.blocks_sub (by omega)) hp.hd_l zL h.inv.rsp c₇
-      (by dsimp only; have := hp.wrapD; omega)]
+  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (hp.blocks_sub (by omega_using [])) hp.hd_l zL h.inv.rsp c₇
+      (by dsimp only; have := hp.wrapD; omega_using [this])]
     exact Proof.Cmac.bytesAt_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hp.dst_scr.sub_left (hp.blocks_sub (by omega))).sub_right zL) (by dsimp only; have := hp.wrapD; omega)
-  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l zL h.inv.rsp c₇ (by dsimp only; omega)]
+      exact (hp.dst_scr.sub_left (hp.blocks_sub (by omega_using []))).sub_right zL) (by dsimp only; have := hp.wrapD; omega_using [this])
+  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l zL h.inv.rsp c₇ (by dsimp only; omega_using [hb])]
     exact Proof.Cmac.bytesAt_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hp.dst_scr.sub_left hp.tl_sub).sub_right zL) (by dsimp only; omega)
+      exact (hp.dst_scr.sub_left hp.tl_sub).sub_right zL) (by dsimp only; omega_using [hb])
   · rw [Proof.Cmac.bytesAt_frame c₇.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -1472,17 +1472,17 @@ theorem decLast_wp (v : UnitImpl) {s : State} (h : DecL3 s₀ s) (hB : B s₀ �
   rw [len_eq s₀]
   refine Proof.AesXts.Unit.dec_steal (m₀ := vmem s₀) (m₃ := m) (m₅ := m₅) hm (Nat.pos_of_ne_zero hB) hb hout
     ⟨?_, ?_⟩ ⟨h5L, h5H, h5T⟩ ⟨?_, ?_, ?_⟩
-  · exact am.rest (a := 16 * (M s₀ - 1)) (n := 16) (Nat.le_refl _) (by simp only [M] at *; omega)
-  · rw [hp.tl_eq]; exact am.rest (a := 16 * M s₀) (n := B s₀) (by omega) (by rw [len_eq s₀])
+  · exact am.rest (a := 16 * (M s₀ - 1)) (n := 16) (Nat.le_refl _) (by simp only [M] at *; omega_using [hm])
+  · rw [hp.tl_eq]; exact am.rest (a := 16 * M s₀) (n := B s₀) (by omega_using []) (by rw [len_eq s₀])
   · rw [Proof.AesXts.Unit.crypt_one_of c₁₂.out, eW', m₁₀,
       Proof.Cmac.bytesAt_frame sw (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (hp.dst_scr.symm.sub_left tL).sub_right hp.lb_sub) (by decide), tw₅]
-  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (hp.blocks_sub (by omega)) hp.hd_l tL h.inv.rsp c₁₂
-      (by dsimp only; have := hp.wrapD; omega), m₁₀]
+  · rw [call_keeps hp (X := ⟨D s₀, 16 * (M s₀ - 1)⟩) (hp.blocks_sub (by omega_using [])) hp.hd_l tL h.inv.rsp c₁₂
+      (by dsimp only; have := hp.wrapD; omega_using [this]), m₁₀]
     exact Proof.Cmac.bytesAt_frame sw (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega)
-  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l tL h.inv.rsp c₁₂ (by dsimp only; omega), m₁₀]
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.hd_lb) (by dsimp only; have := hp.wrapD; omega_using [this])
+  · rw [call_keeps hp (X := ⟨L s₀ + 16, B s₀⟩) hp.tl_sub tl_l tL h.inv.rsp c₁₂ (by dsimp only; omega_using [hb]), m₁₀]
 
 /-- `Pₘ` and `CC` swapped into place, and the arguments of the call on the
 last whole block from the tweak of block `M - 1`. -/
@@ -1499,7 +1499,7 @@ theorem decL3_wp {s : State} (h : DecL2 s₀ s) (hB : B s₀ ≠ 0) :
     (by rw [g₉ _ (by decide) (by decide), r8₈]) (fun i hi => by
       rw [wr₉']
       exact in_rw (r := dstR s₀) (by simp)
-        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega) (by omega)))))
+        (hp.lb_sub _ (Offset.contains_base (L s₀) (d := i) (n := 1) (k := 16 + B s₀) (by omega_using [hi]) (by omega_using [hb, hi])))))
     fun s₁₀ ⟨mem₁₀, g₁₀, rd₁₀, wr₁₀⟩ => ?_
   obtain ⟨s₁₁, run₁₁, rdi₁₁, rsi₁₁, rdx₁₁, rcx₁₁, r8₁₁, r9₁₁, cs₁₁, mem₁₁, rd₁₁, wr₁₁⟩ := argsL_ok s₁₀ (o := tO) rfl
   refine WP.of_runBlock ⟨s₁₁, run₁₁, ?_⟩
@@ -1532,8 +1532,8 @@ theorem split_tw_wp {s : State} (h : TwPost s₀ s) :
 
 /-- The data unit of whole blocks, after the out-of-place call on all of them. -/
 theorem allPost_fin {enc : Bool} {s : State} (h : AllPost enc s₀ (M s₀) s) (hb : B s₀ = 0) : Fin enc s₀ s :=
-  whole_fin ⟨h.inv, by rw [vmem_blocks hp (by rw [len_eq s₀]; omega)]; exact h.out, h.tw, by
-    rw [show Len s₀ - 16 * M s₀ = 0 by rw [len_eq s₀, hb]; omega]; rfl⟩ hb
+  whole_fin ⟨h.inv, by rw [vmem_blocks hp (by rw [len_eq s₀]; omega_using [])]; exact h.out, h.tw, by
+    rw [show Len s₀ - 16 * M s₀ = 0 by rw [len_eq s₀, hb]; omega_using []]; rfl⟩ hb
 
 theorem decrypt_wp (v : UnitImpl) :
     WP isa (decryptTo v.x.xts v.xt) s₀ fun s' => gprPreserved s₀ s' ∧ (unitToX86_64 false).post s₀ s' := by
@@ -1542,10 +1542,10 @@ theorem decrypt_wp (v : UnitImpl) :
   refine WP.seq (WP.mono (WP.ite (Q := Fin false s₀) (decide (B s₀ = 0)) zf₂ (fun hb => ?_) (fun hb => ?_))
     fun s₅ h₅ => ?_)
   · refine WP.seq (WP.mono (argsAll_wp hp h₂) fun s₃ h₃ => ?_)
-    exact WP.mono (blocks_call hp false v.decToOk v.decToNosp v.decToDepth (by rw [len_eq s₀]; omega) h₃.tw h₃.pre)
+    exact WP.mono (blocks_call hp false v.decToOk v.decToNosp v.decToDepth (by rw [len_eq s₀]; omega_using []) h₃.tw h₃.pre)
       fun s₄ h₄ => allPost_fin hp h₄ (by simpa using hb)
   · refine WP.seq (WP.mono (argsHead_wp hp h₂) fun s₃ h₃ => ?_)
-    refine WP.seq (WP.mono (blocks_call hp false v.decToOk v.decToNosp v.decToDepth (by rw [len_eq s₀]; omega)
+    refine WP.seq (WP.mono (blocks_call hp false v.decToOk v.decToNosp v.decToDepth (by rw [len_eq s₀]; omega_using [])
       h₃.tw h₃.pre) fun s₄ h₄ => ?_)
     exact WP.seq (WP.mono (copiedHead_wp hp h₄) fun s₆ h₆ => decStealTail_wp hp v h₆ (by simpa using hb))
   · exact WP.mono (fin_wp hp h₅.inv) fun s' ⟨g, m⟩ => ⟨g, unit_post hp (by rw [m]; exact h₅.data)⟩

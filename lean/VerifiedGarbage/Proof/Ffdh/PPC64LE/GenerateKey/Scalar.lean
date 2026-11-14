@@ -58,7 +58,7 @@ theorem ptrs_ok {s : State} {B X R : Addr} {Z : Nat} (hs : Scr s B Z) (hZ : 96 �
       (t.gpr .r24 = off R 0 ∧ t.gpr .r25 = off X 0 ∧ t.mem = s.mem) ∧ Keep [.r24, .r25] s t := by
   refine WP.keep _ ?_ (by decide)
   unfold ptrs
-  prun [h23, hs.ld (d := 88) (n := 8) (by omega), hs.ld (d := 64) (n := 8) (by omega), BitVec.add_zero, hX, hR]
+  prun [h23, hs.ld (d := 88) (n := 8) (by omega_using [hZ]), hs.ld (d := 64) (n := 8) (by omega_using [hZ]), BitVec.add_zero, hX, hR]
 
 theorem status_mask : ∀ n < 4, 1 ≤ n →
     (0#64 - (BitVec.ofNat 64 n - 1#64) ||| BitVec.ofNat 64 n - 1#64) >>> 63 - 1#64 = mask (decide (n = 1)) := by
@@ -76,7 +76,7 @@ theorem maskX_ok {s : State} {B X : Addr} {Z k st : Nat} (hs : Scr s B Z) (hZ : 
   refine WP.seq (WP.mono (WP.keep [.r0, .r6, .r12, .r17, .r25] (Q := fun t => t.gpr .r25 = off X 0 ∧
       t.gpr .r17 = mask (decide (st = 1)) ∧ t.gpr .r6 = BitVec.ofNat 64 k ∧ t.mem = s.mem) (by
     unfold statusMask
-    prun [h3, h23, h28, hs.ld (d := 64) (n := 8) (by omega), hX, BitVec.add_zero, status_mask st hst hst1])
+    prun [h3, h23, h28, hs.ld (d := 64) (n := 8) (by omega_using [hZ]), hX, BitVec.add_zero, status_mask st hst hst1])
     (by decide)) fun u ⟨⟨u25, u17, u6, um⟩, ku⟩ => ?_)
   refine WP.mono (masked_ok hk1 hk (hx.congr ku.wr) u25 u17 u6) fun t ⟨⟨tb, tout⟩, kt⟩ => ?_
   rw [um] at tout tb

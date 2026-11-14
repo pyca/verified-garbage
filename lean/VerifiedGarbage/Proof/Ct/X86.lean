@@ -61,7 +61,7 @@ theorem reads_args (s₀ s : State) (hp : Pre s₀)
 theorem reads_byte {rs : List Region} {p : Addr} {n i : Nat} (h : InRegions rs p n)
     (hi : i < n) (hn : n < 2^64) : InRegions rs (p+BitVec.ofNat 64 i) 1 := by
   obtain ⟨r,hr,hc⟩ := h
-  exact ⟨r,hr,hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hi)⟩
+  exact ⟨r,hr,hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hn])]; exact hi)⟩
 
 theorem step_ok (s₀ s : State) (hp : Pre s₀) (hlen : K s₀ = N s₀)
     (i : Nat) (hi : i < (N s₀).toNat) (h : Inv s₀ i s) :
@@ -72,13 +72,13 @@ theorem step_ok (s₀ s : State) (hp : Pre s₀) (hlen : K s₀ = N s₀)
   obtain ⟨hrn,_⟩ := reads_args s₀ s hp hk hm 2 (by decide) (by decide)
   obtain ⟨hrb,_⟩ := reads_args s₀ s hp hk hm 3 (by decide) (by decide)
   have hn := (N s₀).isLt
-  have hreadA := reads_byte hp.2.1 hi (by omega)
-  have hreadB := reads_byte hp.2.2.1 (by rw [hlen]; exact hi) (by rw [hlen]; omega)
+  have hreadA := reads_byte hp.2.1 hi (by omega_using [])
+  have hreadB := reads_byte hp.2.2.1 (by rw [hlen]; exact hi) (by rw [hlen]; omega_using [])
   rw [← hk.2.1, ← hk.2.2] at hreadA hreadB
   have ha : (A s₀ + BitVec.ofNat 32 i).setWidth 64 = (A s₀).setWidth 64 + BitVec.ofNat 64 i :=
-    VG.Proof.MlKem.X86.ea_off (by have := hp.2.2.2.1; omega)
+    VG.Proof.MlKem.X86.ea_off (by have := hp.2.2.2.1; omega_using [hi, this])
   have hb : (B s₀ + BitVec.ofNat 32 i).setWidth 64 = (B s₀).setWidth 64 + BitVec.ofNat 64 i :=
-    VG.Proof.MlKem.X86.ea_off (by have := hp.2.2.2.2; rw [hlen] at this; omega)
+    VG.Proof.MlKem.X86.ea_off (by have := hp.2.2.2.2; rw [hlen] at this; omega_using [hi, this])
   have hadd : BitVec.ofNat 32 i + 1 = BitVec.ofNat 32 (i+1) := by rw [BitVec.ofNat_add]; rfl
   unfold step
   refine WP.mono (WP.keep [.eax,.ecx,.edx,.ebx] (Q := fun t => t.mem = s₀.mem ∧
@@ -111,7 +111,7 @@ theorem loop_ok (s₀ s : State) (hp : Pre s₀) (hlen : K s₀ = N s₀)
       dsimp [n] at hj he
       bv_omega
     exact .inr ⟨by simp only [eval,hz,beq_eq_false_iff_ne.mpr hne,Option.map_some]; rfl,
-      n-(j+1),by omega,j+1,by omega,rfl,hu⟩
+      n-(j+1),by omega_using [hj, hr],j+1,by omega_using [hj, he],rfl,hu⟩
 
 theorem finish_ok (s : State) (d : Byte) (h : s.gpr .ebx = d.setWidth 32) :
     WP isa finish s fun t => t.mem=s.mem ∧ t.gpr .eax = if d=0 then 1 else 0 := by
@@ -196,18 +196,18 @@ theorem arg_shift_addr (s : State) (k : Nat) :
     argAddr (pushed [.ebx] s) (k+1) = argAddr s k := by
   unfold argAddr
   rw [pushed_esp]
-  have hn : 4+4*(k+1) = 4+(4+4*k) := by omega
+  have hn : 4+4*(k+1) = 4+(4+4*k) := by omega_using []
   rw [hn,BitVec.ofNat_add,← BitVec.add_assoc]
   rw [show 4*([Reg.ebx] : List Reg).length = 4 from rfl, BitVec.sub_add_cancel]
 
 theorem arg_addr (s : State) (hn : (s.gpr .esp).toNat+20 ≤ 2^32) (k : Nat) (hk : k<4) :
     argAddr s k = (s.gpr .esp).setWidth 64+BitVec.ofNat 64 (4+4*k) :=
-  VG.Proof.MlKem.X86.ea_off (by omega)
+  VG.Proof.MlKem.X86.ea_off (by omega_using [hn, hk])
 
 theorem arg_contains (s : State) (hp : contract.pre s) (k : Nat) (hk : k<4) :
     (⟨argAddr s 0,16⟩ : Region).Contains (argAddr s k) 4 := by
   rw [arg_addr s hp.2.2.2.2.2.1 0 (by decide),arg_addr s hp.2.2.2.2.2.1 k hk]
-  exact Offset.contains _ (by omega) (by omega) (by decide)
+  exact Offset.contains _ (by omega_using []) (by omega_using [hk]) (by decide)
 
 theorem arg_frame_disjoint (s : State) (hp : contract.pre s) :
     Region.Disjoint ⟨argAddr s 0,16⟩ (frameR s) := by
@@ -231,10 +231,10 @@ theorem pushed_pre (s : State) (hp : contract.pre s) : Pre (pushed [.ebx] s) := 
   rw [ha,hn,hb,hk]
   refine ⟨?_,?_,?_,hp.2.2.1,hp.2.2.2.1⟩
   · intro k h1 h4
-    have he : k=(k-1)+1 := by omega
+    have he : k=(k-1)+1 := by omega_using [h1]
     rw [he,arg_shift_addr]
     exact ⟨⟨argAddr s 0,16⟩,by rw [pushed_rd,hp.1]; simp,
-      arg_contains s hp (k-1) (by omega)⟩
+      arg_contains s hp (k-1) (by omega_using [h4])⟩
   · exact ⟨_,by rw [pushed_rd,hp.1]; simp,Region.contains_self _ _⟩
   · exact ⟨_,by rw [pushed_rd,hp.1]; simp,Region.contains_self _ _⟩
 
@@ -284,8 +284,8 @@ theorem correct (s : State) (hp : contract.pre s) :
     unfold Post A N B K at ho
     rw [arg_shift s hp 0 (by decide),arg_shift s hp 1 (by decide),arg_shift s hp 2 (by decide),
       arg_shift s hp 3 (by decide)] at ho
-    rw [push_bytes s hp _ _ hp.2.2.2.2.2.2.1 (by have := (arg s 1).isLt; omega),
-      push_bytes s hp _ _ hp.2.2.2.2.2.2.2 (by have := (arg s 3).isLt; omega)] at ho
+    rw [push_bytes s hp _ _ hp.2.2.2.2.2.2.1 (by have := (arg s 1).isLt; omega_using []),
+      push_bytes s hp _ _ hp.2.2.2.2.2.2.2 (by have := (arg s 3).isLt; omega_using [])] at ho
     exact ho
 
 -- The body sees the original public arguments above the saved EBX word.
@@ -308,7 +308,7 @@ theorem body_wf (s : State) (hp : contract.pre s) : Taint.Wf bodyTaint (pushed [
       change (s.gpr .esp-4#32).toNat+4+20 ≤ 2^32
       rw [sub_toNat hp.2.2.2.2.1]
       have := hp.2.2.2.2.2.1
-      omega
+      omega_using [this]
     · change ∀ r ∈ (pushed [.ebx] s).wr, Region.Disjoint ⟨Taint.argByte (pushed [.ebx] s) (4+0),20⟩ r
       rw [pushed_argByte s hp,pushed_wr,hp.2.1]
       intro r hr
@@ -321,7 +321,7 @@ theorem body_wf (s : State) (hp : contract.pre s) : Taint.Wf bodyTaint (pushed [
     change (s.gpr .esp-4#32).toNat+4 < 2^32
     rw [sub_toNat hp.2.2.2.2.1]
     have := (s.gpr .esp).isLt
-    omega
+    omega_using []
   · intro p hp'
     obtain rfl := List.mem_singleton.mp hp'
     change (pushed [.ebx] s).wr[0]? = some ⟨((pushed [.ebx] s).gpr .esp+0#32).setWidth 64,4⟩
@@ -349,7 +349,7 @@ theorem body_agree (s t : State) (hs : contract.pre s) (ht : contract.pre t)
       intro r hr
       obtain rfl := List.mem_singleton.mp hr
       exact (Offset.disjoint_below (u.gpr .esp |>.setWidth 64) (n := 4) (d := k) (k := 1)
-        (by change k<20 at hk; omega)) _ (Region.contains_self _ _)
+        (by change k<20 at hk; omega_using [hk])) _ (Region.contains_self _ _)
     rw [read s hs,read t ht]
     have ha := agree_argTaint (k := 4) (rs := []) (s₁ := s) (s₂ := t)
       (fun _ h => nomatch h) hp.1

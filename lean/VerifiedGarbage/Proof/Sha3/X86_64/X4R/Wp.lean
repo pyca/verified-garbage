@@ -33,8 +33,8 @@ theorem qword256_eq (x : BitVec 256) (k : Nat) :
     qword256 x k = qword (x.extractLsb' (128 * (k / 2)) 128) (k % 2) := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword256, qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 64 * (k % 2) + j < 128 by omega)]
-  congr 1; omega
+    decide_eq_true (show 64 * (k % 2) + j < 128 by omega_using [hj])]
+  congr 1; omega_using []
 
 theorem lane_app0 (x y : BitVec 128) : (x ++ y).extractLsb' 0 128 = y := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -72,9 +72,9 @@ theorem qword256_lanes256 (f : BitVec 128 → BitVec 128 → BitVec 128) (a b : 
 theorem qword_lane (v : BitVec 256) {k : Nat} (_hk : k < 4) : qword (lane256 v (k / 2)) (k % 2) = qword256 v k := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword256, qword, lane256, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
-  have : 64 * (k % 2) + j < 128 := by omega
+  have : 64 * (k % 2) + j < 128 := by omega_using [hj]
   simp only [this, decide_true, Bool.true_and]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem qword_xor (x y : BitVec 128) (i : Nat) : qword (x ^^^ y) i = qword x i ^^^ qword y i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [qword, hj]
@@ -106,12 +106,12 @@ theorem qword_ternD2 (a b c : BitVec 128) {i : Nat} (hi : i < 2) :
   have e : (0xffffffffffffffff : BitVec 64).getLsbD j = true := by
     rw [show (0xffffffffffffffff : BitVec 64) = BitVec.allOnes 64 from rfl, BitVec.getLsbD_allOnes]; simp [hj]
   simp only [qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_xor,
-    BitVec.getLsbD_and, BitVec.getLsbD_not, e, show 64 * i + j < 128 by omega]
+    BitVec.getLsbD_and, BitVec.getLsbD_not, e, show 64 * i + j < 128 by omega_using [hi, hj]]
   cases b.getLsbD (64 * i + j) <;> rfl
 
 theorem qword_ror (x : BitVec 128) (n : BitVec 8) {i : Nat} (hi : i < 2) :
     qword (rorQwords x n) i = (qword x i).rotateRight (n.toNat % 64) := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [rorQwords, VG.Proof.Sha3.X86_64.X4.qword_app0,
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp [rorQwords, VG.Proof.Sha3.X86_64.X4.qword_app0,
     VG.Proof.Sha3.X86_64.X4.qword_app1]
 
 /-! ## The machine -/
@@ -131,7 +131,7 @@ theorem qy_setVy (s : State) (d r : VReg) (v : BitVec 256) (k : Nat) :
         rw [BitVec.getLsbD_append]
         by_cases h' : j < 128
         · simp [h']
-        · simp [h', show j - 128 < 128 by omega, show 128 + (j - 128) = j by omega]
+        · simp [h', show j - 128 < 128 by omega_using [hj], show 128 + (j - 128) = j by omega_using [h']]
       · simp only [h, ite_false, State.ymm, State.setV]
     | hi r => simp only [qy, State.vy, State.setVy, reduceCtorEq, ite_false]; rfl
   | hi d =>
@@ -199,15 +199,15 @@ theorem wp_ternD2 {d a b : VReg}
       WP isa (.block is) s' Q) :
     WP isa (.block (tern d a b 0xD2 :: is)) s Q :=
   WP.cons rfl (k _ (YUpd.setVy _ _ _ fun i hi => by
-    rw [qword256_lanes3 (fun x y z => ternlog x y z 0xD2) _ _ _ hi, qword_ternD2 _ _ _ (by omega), qword_lane _ hi,
+    rw [qword256_lanes3 (fun x y z => ternlog x y z 0xD2) _ _ _ hi, qword_ternD2 _ _ _ (by omega_using []), qword_lane _ hi,
       qword_lane _ hi, qword_lane _ hi]; rfl))
 
 theorem wp_eror {d a : VReg} {n : Nat} (hn : n < 64)
     (k : ∀ s', YUpd s s' d (fun i => (qy s a i).rotateRight n) → WP isa (.block is) s' Q) :
     WP isa (.block (ror d a n :: is)) s Q := by
-  have en : (BitVec.ofNat 8 n).toNat % 64 = n := by rw [BitVec.toNat_ofNat]; omega
+  have en : (BitVec.ofNat 8 n).toNat % 64 = n := by rw [BitVec.toNat_ofNat]; omega_using [hn]
   exact WP.cons rfl (k _ (YUpd.setVy _ _ _ fun i hi => by
-    rw [qword256_lanes256 _ _ _ hi, qword_ror _ _ (by omega), en, qword_lane _ hi]; rfl))
+    rw [qword256_lanes256 _ _ _ hi, qword_ror _ _ (by omega_using []), en, qword_lane _ hi]; rfl))
 
 theorem wp_evld {d : VReg} {m : MemOp} {a : Addr} (ha : s.ea m = a) (hin : InRegions (s.rd ++ s.wr) a 32)
     (k : ∀ s', YUpd s s' d (fun i => s.mem.readW (a + BitVec.ofNat 64 (8 * i)) 64) → WP isa (.block is) s' Q) :
@@ -215,8 +215,8 @@ theorem wp_evld {d : VReg} {m : MemOp} {a : Addr} (ha : s.ea m = a) (hin : InReg
   WP.cons (s' := s.setVy d (s.mem.readW a 256))
     (by simp only [exec, ha, State.load256, hin, ite_true, Option.map_some])
     (k _ (YUpd.setVy _ _ _ fun i hi => by
-      rw [qword256, show 64 * i = 8 * (8 * i) by omega]
-      exact readW_extract _ _ (k := 8 * i) (n := 8) (by omega)))
+      rw [qword256, show 64 * i = 8 * (8 * i) by omega_using []]
+      exact readW_extract _ _ (k := 8 * i) (n := 8) (by omega_using [hi])))
 
 theorem wp_evst {m : MemOp} {r : VReg} {a : Addr} (ha : s.ea m = a) (hout : InRegions s.wr a 32)
     (k : WP isa (.block is) { s with mem := s.mem.writeW a (s.vy r) } Q) :
@@ -228,8 +228,8 @@ end
 /-- Element `k` of a stored register, read back. -/
 theorem readW_evst (m : Mem) (a : Addr) (s : State) (r : VReg) {k : Nat} (hk : k < 4) :
     (m.writeW a (s.vy r)).readW (a + BitVec.ofNat 64 (8 * k)) 64 = qy s r k := by
-  have e := readW_writeW_inside m a (s.vy r) (k := 8 * k) (n := 8) (by omega) (by decide)
-  rw [show 8 * (8 * k) = 64 * k by omega] at e
+  have e := readW_writeW_inside m a (s.vy r) (k := 8 * k) (n := 8) (by omega_using [hk]) (by decide)
+  rw [show 8 * (8 * k) = 64 * k by omega_using []] at e
   exact e
 
 end VG.Proof.Sha3.X86_64.X4R

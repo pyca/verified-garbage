@@ -72,11 +72,11 @@ theorem blockN_bfly_get' (op : Word → Word → Zq → Word × Word) (w : Poly)
       else w[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [blockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [blockN_zero, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   | succ t ih =>
-    rw [blockN_succ, bfly_get op _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega) (by omega), ih (by omega) (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [blockN_succ, bfly_get op _ hlen (by omega_using [hs]) _ hi, ih (i := start + t) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]),
+      ih (i := start + t + len) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]), ih (by omega_using [ht]) (by omega_using [hs]) hi]
+    rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]

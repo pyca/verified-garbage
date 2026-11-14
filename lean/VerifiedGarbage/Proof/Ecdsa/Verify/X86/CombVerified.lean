@@ -95,7 +95,7 @@ theorem vComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
     have key := (List.append_inj parts.1 (by simp only [Weierstrass.length_bytesAt])).1
     refine ⟨he,?_,hy,?_,?_⟩
     · intro j hj
-      have hj' : j=0 ∨ j=1 ∨ j=2 ∨ j=3 := by omega
+      have hj' : j=0 ∨ j=1 ∨ j=2 ∨ j=3 := by omega_using [hj]
       rcases hj' with rfl|rfl|rfl|rfl
       · exact a0
       · exact a1

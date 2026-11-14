@@ -163,7 +163,7 @@ private theorem pk_args {s a : State} (hp : PkPre s) (h : PkL s a) :
   have hFw : (⟨s.gpr .r6, 160⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
   refine prune_ok (f := .r24) (o := 0) (q := s.gpr .r6) (by decide) (by decide) (by decide)
     (by rw [hg _ (by decide)]; exact BitVec.add_zero _)
-    (fun j hj => by rw [hwr]; exact in_base hFw (by omega) (by omega)) fun u _ usp urd uwr ug => ?_
+    (fun j hj => by rw [hwr]; exact in_base hFw (by omega_using [hj]) (by omega_using [hj])) fun u _ usp urd uwr ug => ?_
   unfold mov
   refine wp_addi (by decide) (by decide) fun v₁ e₁ => wp_addi (by decide) (by decide) fun v₂ e₂ =>
     wp_addi (by decide) (by decide) fun t₃ e₃ => WP.block_nil ?_

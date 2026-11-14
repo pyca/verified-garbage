@@ -24,7 +24,7 @@ theorem src_take {s : VG.AArch64.State} {B ptr : Addr} {Z : Nat} {bs : List Byte
  · intro i hi
    simpa only [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem hi,Option.getD_some] using view.bytes i hi
  · intro i hi
-   exact source.out i (by rw [List.length_take] at hi;omega)
+   exact source.out i (by rw [List.length_take] at hi;omega_using [hi])
 
 theorem src_drop {s : VG.AArch64.State} {B ptr : Addr} {Z : Nat} {bs : List Byte}
  (source : Src s B Z ptr bs) (n : Nat) : Src s B Z (ptr+BitVec.ofNat 64 n) (bs.drop n) := by
@@ -33,7 +33,7 @@ theorem src_drop {s : VG.AArch64.State} {B ptr : Addr} {Z : Nat} {bs : List Byte
  · intro i hi
    simpa only [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem hi,Option.getD_some] using view.bytes i hi
  · intro i hi
-   have bound : n+i<bs.length := by rw [List.length_drop] at hi;omega
+   have bound : n+i<bs.length := by rw [List.length_drop] at hi;omega_using [hi]
    simpa only [BitVec.ofNat_add,BitVec.add_assoc] using source.out (n+i) bound
 
 theorem src_after_output {s t : VG.AArch64.State} {B ptr out : Addr} {Z k : Nat} {bs : List Byte} {rs : List VG.AArch64.Reg}
@@ -49,9 +49,9 @@ theorem src_after_output {s t : VG.AArch64.State} {B ptr out : Addr} {Z k : Nat}
    rcases hr with rfl|rfl
    · have sep := source.out i hi
      change ¬ofs B (ptr+BitVec.ofNat 64 i)+1≤Z
-     omega
+     omega_using [sep]
    · have sep := outside i hi
      change ¬ofs out (ptr+BitVec.ofNat 64 i)+1≤k
-     omega
+     omega_using [sep]
 
 end VG.Proof.Ffdh.AArch64.Cached

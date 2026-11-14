@@ -40,7 +40,7 @@ theorem bswap_eq (a : BitVec 32) : bswap a = byteRev32 a := rfl
 theorem add_self_shl (x : BitVec 32) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  congr 1; omega
+  congr 1; omega_using []
 
 /-- The memory `dbl` leaves: the block at `A + s` doubled into `B + d`. -/
 def dblMem (m : Mem) (A : Addr) (s : Nat) (B : Addr) (d : Nat) : Mem :=
@@ -87,8 +87,8 @@ theorem readW_KW {p : Prm} (L : Lay p) (m : Mem) (v : BitVec 32) {a b : Nat} (ha
     (hb : b + 4 ≤ 2560) :
     (m.writeW (w64 p.W + BitVec.ofNat 64 b) v).readW (w64 p.K + BitVec.ofNat 64 a) 32 =
       m.readW (w64 p.K + BitVec.ofNat 64 a) 32 :=
-  Mem.readW_writeW_sep (L.k_w.sep (Offset.contains_base _ ha (by have := L.kw; omega))
-    (Offset.contains_base _ hb (by have := L.ww; omega))) (by decide)
+  Mem.readW_writeW_sep (L.k_w.sep (Offset.contains_base _ ha (by have := L.kw; omega_using [ha]))
+    (Offset.contains_base _ hb (by have := L.ww; omega_using [hb]))) (by decide)
 
 /-- `dbl` from the key context (`ebx`) at `K + s` to `W + d`. -/
 theorem dblK_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (hb : t.gpr .ebx = p.K) {s d : Nat}

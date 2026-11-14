@@ -139,7 +139,7 @@ theorem dig : (∀ j < D, InRegions (u.rd ++ u.wr) (a.gpr .x0 + BitVec.ofNat 64 
   rw [← e.gpr (r := .x0) (by decide), ← e.scr]
   refine ⟨fun j hj => ?_, hp.ds.sub_right (rsa_sub hp)⟩
   rw [hrd, hp.hrd]
-  exact ⟨dgR T.H.D s, by simp, Offset.contains_base _ (by omega) (by have := hp.wd; omega)⟩
+  exact ⟨dgR T.H.D s, by simp, Offset.contains_base _ (by omega_using [hj]) (by have := hp.wd; omega_using [hj, this])⟩
 
 /-- The addresses of the tables' functions are the anchor's. -/
 theorem names : ∀ n ∈ T.names, u.syms n = a.syms n := by
@@ -245,7 +245,7 @@ theorem VOk.db {a : State} (h : VOk D a) :
   have := h.fit; have := h.k2; have := h.lo
   show kV a - loA a - D - 1 + D + 1 + loA a = kV a ∧ 1 ≤ kV a - loA a - D - 1 ∧ kV a - loA a - D - 1 ≤ 1024 ∧
     kV a ≤ 1024 ∧ loA a ≤ 1
-  omega
+  omega_arith
 
 end
 
@@ -263,7 +263,7 @@ theorem acc0_vct {T : Tabs} {D : Nat} :
       simp at hr; rcases hr with rfl | rfl | rfl <;> simp [vregs]) (by taint_decide))
     fun a u h => by
       have ok := h.ok; have := ok.k1; have := ok.k2
-      exact WP.mono_syms (acc0_ok h.L (fun _ _ => rfl) (k := kV a) (lo := loA a) (by omega) ok.k2 ok.lo h.x23 h.x24
+      exact WP.mono_syms (acc0_ok h.L (fun _ _ => rfl) (k := kV a) (lo := loA a) (by omega_arith) ok.k2 ok.lo h.x23 h.x24
         h.slo h.sc) fun _ ⟨O, _⟩ sy => h.only O (nk_of (by decide)) (by decide) sy
 
 
@@ -273,7 +273,7 @@ theorem clearTop_vct {T : Tabs} {D : Nat} :
     fun a u h => by
       have := h.ok.lo
       exact WP.mono_syms (clearTop_ok h.L (fun _ _ => rfl) (e := oEm + loA a) (c := cbA a) h.x24
-        (by unfold oEm oRsa; omega) h.sc) fun _ ⟨k, f, _⟩ sy =>
+        (by unfold oEm oRsa; omega_using [this]) h.sc) fun _ ⟨k, f, _⟩ sy =>
           h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L) sy
 
 theorem posScan_vct {T : Tabs} {D : Nat} :
@@ -284,8 +284,8 @@ theorem posScan_vct {T : Tabs} {D : Nat} :
     fun a u h => by
       have := h.ok.db; have := h.ok.lo
       exact WP.mono_syms (posScan_ok h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA D a)
-        (by unfold oEm oRsa; omega) (by omega) h.x24 h.x25) fun _ ⟨O, _, x14, _⟩ sy =>
-          ⟨h.only O (nk_of (by decide)) (by decide) sy, _, nz_lt (by omega), x14⟩
+        (by unfold oEm oRsa; omega_arith) (by omega_arith) h.x24 h.x25) fun _ ⟨O, _, x14, _⟩ sy =>
+          ⟨h.only O (nk_of (by decide)) (by decide) sy, _, nz_lt (by omega_arith), x14⟩
 
 theorem posCheck_vct {T : Tabs} {D : Nat} :
     RelCT isa (Two fun a u => VR T D (vregs D) vslots a u ∧ ∃ pos, pos < dbA D a ∧ u.gpr .x14 = BitVec.ofNat 64 pos)
@@ -315,7 +315,7 @@ theorem clearY_vct {T : Tabs} {D : Nat} :
   two_post (two_taint [.x20] (VR.pins fun r hr => by simp at hr; exact .inl hr) (by taint_decide))
     fun a u ⟨h, p⟩ => WP.mono_syms (clearY_ok h.L (fun _ _ => rfl)) fun _ ⟨k, f, R⟩ sy =>
       ⟨h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L) sy, p.keep h.L rfl f, fun i _ hi => by
-        rw [R _ (by unfold oY oRsa; omega)]; unfold clr; exact ite_eq_left ⟨by omega, by omega⟩⟩
+        rw [R _ (by unfold oY oRsa; omega_using [hi])]; unfold clr; exact ite_eq_left ⟨by omega_using [], by omega_using [hi]⟩⟩
 
 section
 variable {T : Tabs} {H : Hash} (hH : HashOK H)
@@ -332,8 +332,8 @@ theorem copyDigest_vct :
     exact WP.mono_syms (copyDigest_ok hH h.L (fun _ _ => rfl) (dig := a.gpr .x0)
       h.sdig h.dig.1 h.dig.2) fun _ ⟨k, f, R⟩ sy =>
         ⟨h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L) sy, p.keep h.L rfl f, fun i hi hi' => by
-          rw [R _ (by unfold oY oRsa; omega)]; unfold updL
-          rw [ite_eq_right (by rw [bytesAt_length]; omega)]; exact z i (by omega) hi'⟩
+          rw [R _ (by unfold oY oRsa; omega_using [hi'])]; unfold updL
+          rw [ite_eq_right (by rw [bytesAt_length]; omega_using [hi])]; exact z i (by omega_using []) hi'⟩
   unfold copyDigest
   refine RelCT.seq_block_append (M := isa) (l₁ := [ld .x11 sDig]) ?_
   refine two_step (Ψ := fun a u => VR T H.D (vregs H.D ++ [(.x11, fun a => a.gpr .x0)]) vslots a u)
@@ -362,12 +362,12 @@ theorem copyDb_vct :
     (c' := Code.eraseOff (copyDb zH)) rfl (by taint_decide))
     fun a u ⟨h, p, z⟩ => by
       have := h.ok.db; have := h.ok.lo
-      exact WP.mono_syms (copyDb_ok hH h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA H.D a) (by omega)
-        (by unfold oEm oY; omega) h.x24 h.x25) fun _ ⟨k, f, R⟩ sy =>
+      exact WP.mono_syms (copyDb_ok hH h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA H.D a) (by omega_arith)
+        (by unfold oEm oY; omega_arith) h.x24 h.x25) fun _ ⟨k, f, R⟩ sy =>
           ⟨h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L) sy, p.keep h.L rfl f, fun i hi hi' => by
             have hDN := hH.sizes.DN; have hN := hH.N_le
-            rw [R _ (by unfold oY oRsa; omega)]; unfold updL
-            rw [ite_eq_right (by rw [List.length_map, List.length_range]; omega)]; exact z i (by omega) hi'⟩
+            rw [R _ (by unfold oY oRsa; omega_using [hi'])]; unfold updL
+            rw [ite_eq_right (by rw [List.length_map, List.length_range]; omega_using [hi])]; exact z i (by omega_using [hi]) hi'⟩
 
 /-- The length of `M'`, at most `8 + hLen + dbLen - 1`. -/
 def LX (D : Nat) (a u : State) : Prop := ∃ ℓ, u.gpr .x22 = BitVec.ofNat 64 ℓ ∧ ℓ ≤ 7 + D + dbA D a
@@ -381,16 +381,16 @@ theorem shift_vct :
     (c' := Code.eraseOff (shift zH)) rfl (by taint_decide))
     fun a u ⟨h, ⟨pos, hpos, hP⟩, z⟩ => by
       have := h.ok.db; have hDN := hH.sizes.DN; have hN := hH.N_le
-      refine WP.mono_syms (shift_ok H (by omega) h.L (fun _ _ => rfl)
-        (W := fun m => u.mem (off (scr a) (oY + 8 + H.D + m))) hpos (by omega) (by unfold oY oRsa; omega)
+      refine WP.mono_syms (shift_ok H (by omega_using [hDN, hN]) h.L (fun _ _ => rfl)
+        (W := fun m => u.mem (off (scr a) (oY + 8 + H.D + m))) hpos (by omega_using [this]) (by unfold oY oRsa; omega_using [this])
         (fun m hm => ?_) h.x25 hP) fun _ ⟨k, f, _, x22⟩ sy =>
-          ⟨h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L) sy, _, x22, by omega⟩
+          ⟨h.keep k (nk_of (by decide)) (by decide) f (vslots_S h.L) sy, _, x22, by omega_using [hpos]⟩
       unfold zf
       by_cases hm' : m < dbA H.D a
       · rw [ite_eq_left hm']
       · rw [ite_eq_right hm']
-        have := z (8 + H.D + m) (by omega) (by omega)
-        rwa [show oY + (8 + H.D + m) = oY + 8 + H.D + m by omega] at this
+        have := z (8 + H.D + m) (by omega_using [hm']) (by omega_using [this, hm])
+        rwa [show oY + (8 + H.D + m) = oY + 8 + H.D + m by omega_using []] at this
 
 include hH in
 theorem verifyNb_vct :
@@ -401,7 +401,7 @@ theorem verifyNb_vct :
     (c' := Code.eraseOff (.block (verifyNb zH))) rfl (by taint_decide))
     fun a u ⟨h, ℓ, x22, hℓ⟩ => by
       have := h.ok.db
-      refine WP.mono_syms (verifyNb_ok hH h.L (db := dbA H.D a) (by omega) h.x25) fun u' ⟨k, m⟩ sy =>
+      refine WP.mono_syms (verifyNb_ok hH h.L (db := dbA H.D a) (by omega_using [this]) h.x25) fun u' ⟨k, m⟩ sy =>
         ⟨h.congr k.sp k.rd k.wr (k.get .x20) (fun q hq => ?_) (fun q hq => ?_) sy
           (by rw [m]; exact (frame_slot _ _ sNb _).mono (by simp [mgfWr])), ℓ, by rw [k.get .x22]; exact x22, hℓ⟩
       · rw [k.get q.1 (nk_of (by decide) q hq)]; exact h.r q hq
@@ -418,7 +418,7 @@ theorem cmpH_vct :
     fun a u h => by
       have := h.ok.db; have := h.ok.lo; have hDN := hH.sizes.DN; have hN := hH.N_le
       exact WP.mono (cmpH_ok hH h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA H.D a) (acc := u.gpr .x26)
-        (by unfold oEm oY; omega) h.x21 h.x24 h.x25 rfl) fun _ ⟨O, _⟩ => by rw [O.sp, h.L.sp]
+        (by unfold oEm oY; omega_arith) h.x21 h.x24 h.x25 rfl) fun _ ⟨O, _⟩ => by rw [O.sp, h.L.sp]
 
 end
 
@@ -429,7 +429,7 @@ theorem mgfXor_vct {T : Tabs} {Gs : Spec.Mgf1.Hash} (hGm : VG.Proof.Pbkdf2.Md.AA
   have c2 : oY = 3584 := rfl
   have hd : ∀ a : State, VOk T.H.D a → DbAt T.H.D (oEm + loA a) (dbA T.H.D a) := fun a ok => by
     have := ok.db
-    exact ⟨by omega, by omega, by omega⟩
+    exact ⟨by omega_using [], by omega_using [this], by omega_using [c1, c2, this]⟩
   refine two_post (two_map (fun a => (⟨fb a, scr a, oEm + loA a, dbA T.H.D a, stackArg a 1, a.syms T.G.initN,
       a.syms T.G.updN, a.syms T.G.finN⟩ : MA))
     (fun a u h => ⟨h.L, hd a h.ok, h.x24, h.x25, h.env, h.names _ (by simp [Tabs.names]),
@@ -468,7 +468,7 @@ theorem ctHash_vct {T : Tabs} (hH : HashOK T.H) (hc : PssChecks T.H.P T.H.D) (hd
         (dbA T.H.D a + 7 + T.H.D + T.H.P.L) / T.H.P.B * T.H.P.B + T.H.P.B := Nat.succ_mul _ _
     show _ ≤ ((dbA T.H.D a + 7 + T.H.D + T.H.P.L) / T.H.P.B + 1) * T.H.P.B ∧
       ((dbA T.H.D a + 7 + T.H.D + T.H.P.L) / T.H.P.B + 1) * T.H.P.B ≤ 2048
-    rw [hnbB]; omega
+    rw [hnbB]; omega_arith
   have nb : ∀ {a u : State}, VR T T.H.D (vregs T.H.D) (vslots ++ [(sNb, fun a => BitVec.ofNat 64 (nbA T.H a))]) a u →
       u.mem.readW (off (fb a) sNb) 64 = BitVec.ofNat 64 (nbA T.H a) := fun h =>
     h.sl (sNb, fun a => BitVec.ofNat 64 (nbA T.H a)) (by simp)
@@ -487,7 +487,7 @@ theorem ctHash_vct {T : Tabs} (hH : HashOK T.H) (hc : PssChecks T.H.P T.H.D) (hd
   have hs := hb a h.ok.db.2.2.1 ℓ hℓ
   refine WP.mono_syms (ctHashWith_out hH (pad80 T.H) h.L (fun _ _ => rfl) h.x19 h.x21 x22 (nb h) hs.1 hs.2
     (fun L' R' h22' hNb' => ?_) h.ht hdo) fun u' O sy => ?_
-  · exact WP.mono (pad80_ok T.H L' R' hlg.1 hlg.2 (by omega) hs.2 (by have := hs.1; omega) h22' hNb')
+  · exact WP.mono (pad80_ok T.H L' R' hlg.1 hlg.2 (by omega_using [hs]) hs.2 (by have := hs.1; omega_using [hs]) h22' hNb')
       fun _ ⟨k, f, r⟩ => ⟨k.mono, f, r⟩
   refine h.congr O.sp O.rd O.wr (O.cs .x20 (by decide)) (fun q hq => ?_) (fun q hq => ?_) sy
     (O.fr.mono (by simp [mgfWr]))

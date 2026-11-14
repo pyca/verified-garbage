@@ -173,14 +173,14 @@ theorem toNat_hi {lo hi : BitVec 32} {v : Nat} (h : lo.toNat + hi.toNat * 2 ^ 32
   have := lo.isLt
   have := hi.isLt
   rw [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem toNat_lo {lo hi : BitVec 32} {v : Nat} (h : lo.toNat + hi.toNat * 2 ^ 32 = v) :
     lo = BitVec.ofNat 32 v := by
   apply BitVec.eq_of_toNat_eq
   have := lo.isLt
   rw [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem seq_inv {a b : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa (.seq a b) s t s') :
     ∃ s₁ t₁ t₂, Exec isa a s t₁ s₁ ∧ Exec isa b s₁ t₂ s' ∧ t = t₁ ++ t₂ := by
@@ -196,10 +196,10 @@ theorem rowMac_ok (s : State)
           (s.gpr .r11).toNat) ∧
       MacFrame [.r3, .r4, .r11] s t := by
   apply WP.block_append_iff.mpr
-  refine WP.mono (addWord_ok s .r5 (by omega)) ?_
+  refine WP.mono (addWord_ok s .r5 (by omega_using [h])) ?_
   rintro u ⟨sum, fu⟩
   have c11 : u.gpr .r11 = s.gpr .r11 := fu.regs .r11 (by decide)
-  refine WP.mono (addCarry_ok u (by rw [sum, c11]; omega)) ?_
+  refine WP.mono (addCarry_ok u (by rw [sum, c11]; omega_using [h])) ?_
   rintro t ⟨sum', ft⟩
   have r4 : t.gpr .r4 = u.gpr .r4 := ft.regs .r4 (by decide)
   refine ⟨⟨u.gpr .r3, by rw [r4, sum], by rw [sum', r4, c11]⟩, ?_⟩
@@ -250,7 +250,7 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
     simp only [s₃, gpr_setReg, reduceCtorEq, ↓reduceIte]
     rw [prod, Nat.mul_comm]; simp only [gpr_setReg, ↓reduceIte]
   have hb := mac_bound (inW k s) x (accW k s) (s.gpr .r11)
-  obtain ⟨_, _, w₄, ⟨lo, sumA, sumC⟩, f₄⟩ := rowMac_ok s₃ (by rw [p3, a3, c3]; omega)
+  obtain ⟨_, _, w₄, ⟨lo, sumA, sumC⟩, f₄⟩ := rowMac_ok s₃ (by rw [p3, a3, c3]; omega_using [hb])
   rw [(Exec.det w₄ e₄).2] at sumA sumC f₄
   have t₄0 : t₄ = [] := execBlock_noMem (by decide) (Exec.block_iff.mp e₄)
   subst t₄0
@@ -259,10 +259,10 @@ theorem rowStepAt_fwd {k : Nat} (hk : k < 4096) {x : BitVec 32} {s s' : State} {
   obtain ⟨hw₅, rfl, rfl⟩ := str_block hk e₅
   have lo3 : s₄.gpr .r3 = BitVec.ofNat 32 (stepSum k x s) := by
     refine toNat_lo (hi := s₄.gpr .r11) ?_
-    rw [sumC, sumA, p3, a3, c3, stepSum]; omega
+    rw [sumC, sumA, p3, a3, c3, stepSum]; omega_using []
   have hi11 : s₄.gpr .r11 = BitVec.ofNat 32 (stepSum k x s / 2 ^ 32) := by
     refine toNat_hi (lo := s₄.gpr .r3) ?_
-    rw [sumC, sumA, p3, a3, c3, stepSum]; omega
+    rw [sumC, sumA, p3, a3, c3, stepSum]; omega_using []
   have hi4 : s₄.gpr .r4 = BitVec.ofNat 32
       (((inW k s).toNat * x.toNat + (0 : BitVec 32).toNat + (accW k s).toNat) / 2 ^ 32) := by
     refine toNat_hi (lo := lo) ?_
@@ -582,11 +582,11 @@ theorem armStack_umaalRows (c : Prog isa) :
   | seq a b iha ihb =>
     simp only [Code.subst]; split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iha, ihb]
   | ite _ t e iht ihe =>
     simp only [Code.subst]; split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · simp only [FrameStack.armStack]; omega
+    · simp only [FrameStack.armStack]; omega_using [iht, ihe]
   | loop b _ ih =>
     simp only [Code.subst]; split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
@@ -602,6 +602,6 @@ theorem armStack_umaalRows (c : Prog isa) :
   | frame i b j ih =>
     simp only [Code.subst]; split
     · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · cases i <;> simp only [FrameStack.armStack] <;> omega
+    · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
 
 end VG.Proof.Bignum.Arm

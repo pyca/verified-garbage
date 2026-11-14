@@ -135,7 +135,7 @@ theorem decMain_ok {s t : State} (hp : DPre s) (he : EnvD s t) (hsy : t.syms = s
     (mW_args _ _ _ _ _ _))) fun t3 ⟨⟨L3, rd3, wr3, cs3, V3, W3, R3, hW3, hV3⟩, sp3, mx3, f3⟩ sy3 => ?_)
   have he3 : EnvD s t3 := he2.step rd3 wr3 sp3 (fun r hr _ => cs3 r hr) mx3 f3
   have W3e : ∀ k, (k < 15 ∨ (18 < k ∧ k < 35)) → k < nW → k ≠ 19 → k ≠ 20 → W3 k = W k := fun k h1 h2 h3 h4 =>
-    (hW3 k h2 h3 h4 (by omega) (by omega)).trans (mW_other (by omega))
+    (hW3 k h2 h3 h4 (by omega_using [h1]) (by omega_using [h1])).trans (mW_other (by omega_using [h1]))
   -- `DB` unmasked.
   refine WP.seq (WP.mono_syms (wp_good (dbArgs_good _) (dbArgs_ok (H := Hl.stream) L3 R3
     ((W3e 23 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w23') (by omega_using [hz])
@@ -149,7 +149,7 @@ theorem decMain_ok {s t : State} (hp : DPre s) (he : EnvD s t) (hsy : t.syms = s
     (mW_args _ _ _ _ _ _))) fun t5 ⟨⟨L5, rd5, wr5, cs5, V5, W5, R5, hW5, hV5⟩, sp5, mx5, f5⟩ => ?_)
   have he5 : EnvD s t5 := he4.step rd5 wr5 sp5 (fun r hr _ => cs5 r hr) mx5 f5
   have W5e : ∀ k, (k < 15 ∨ (18 < k ∧ k < 35)) → k < nW → k ≠ 19 → k ≠ 20 → W5 k = W k := fun k h1 h2 h3 h4 =>
-    (hW5 k h2 h3 h4 (by omega) (by omega)).trans ((mW_other (by omega)).trans (W3e k h1 h2 h3 h4))
+    (hW5 k h2 h3 h4 (by omega_using [h1]) (by omega_using [h1])).trans ((mW_other (by omega_using [h1])).trans (W3e k h1 h2 h3 h4))
   have w5k : W5 23 = BitVec.ofNat 64 (s.gpr .r8).toNat :=
     (W5e 23 (by omega_using []) (by decide) (by omega_using []) (by omega_using [])).trans w23'
   -- `lHash'` against `lHash`.

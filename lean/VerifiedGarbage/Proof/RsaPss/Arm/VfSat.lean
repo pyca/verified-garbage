@@ -81,7 +81,7 @@ theorem verify_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : Stat
   have g3 : s.gpr .r3 = 1 := by rw [hg]; rfl
   have sp0 : s.sp = 0x8000 := hsp
   have e0 : stackArgAddr s 0 = 0x8000 := by simp only [stackArgAddr, sp0]; decide
-  have hD' : (BitVec.ofNat 32 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega
+  have hD' : (BitVec.ofNat 32 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
     Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify, Loc.val]
@@ -110,7 +110,7 @@ theorem verify_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : Stat
     | (rw [hD']; exact Sg.dig_disj hD (Region.disjoint_of_sep (by decide)))
     | (rw [hD']; exact (Sg.dig_disj hD (Region.disjoint_of_sep (by decide))).symm)
     | (rw [hD']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
-    | (rw [hD']; simp; omega)
+    | (rw [hD']; simp; omega_using [hD])
     | skip
 
 theorem verify_sat_of {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg ∈ vs)
@@ -128,7 +128,7 @@ theorem verify_sat_of {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} 
       rw [e3] at hA
       rw [hA, Option.some.injEq] at hH
       subst hH
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hlen]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD]), hlen]
 
 /-- Verification's contract, with the tables of `mvs` and `vs`, is satisfiable. -/
 theorem verify_sat {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg ∈ vs)

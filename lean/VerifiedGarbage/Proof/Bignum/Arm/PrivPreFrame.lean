@@ -57,8 +57,8 @@ theorem pp_push_separate {s : State} {r : Region} (fit : 56 ≤ s.sp.toNat)
     rw [← public_push_argAddr fit]
     change (a - (State.addr (pcPushed s).sp + BitVec.ofNat 64 56)).toNat + 1 ≤ 56
     have inside := (Offset.lt_iff a (State.addr (pcPushed s).sp) (d := 56) (n := 56) (by decide)).mpr
-      ⟨by omega, by change (a - State.addr (pcPushed s).sp).toNat + 1 ≤ 112 at ha; omega⟩
-    omega
+      ⟨by omega_using [low], by change (a - State.addr (pcPushed s).sp).toNat + 1 ≤ 112 at ha; omega_using [ha]⟩
+    omega_using [inside]
 
 /-- The saved callee registers survive the body's writes. -/
 theorem pp_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 32}
@@ -86,9 +86,9 @@ theorem pp_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 3
       simp only [crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with (rfl | rfl | rfl | rfl) | rfl
       · exact workspace.sub_left sub
-      · exact Offset.disjoint_base _ (by omega) (by omega)
-      · exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by decide)
-      · exact Offset.disjoint _ gap (by omega) (by decide)
+      · exact Offset.disjoint_base _ (by omega_using [low]) (by omega_using [fit])
+      · exact Offset.disjoint _ (Or.inr (by omega_using [low])) (by omega_using [fit]) (by decide)
+      · exact Offset.disjoint _ gap (by omega_using [fit]) (by decide)
       · exact output.sub_left sub) (by decide : 32 / 8 < 2 ^ 64)
   exact keep.trans (saved p hp)
 
@@ -112,7 +112,7 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
     · rw [restU.wr]; obtain ⟨r, hr, hc⟩ := pre.write; exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
     · rw [spU]; exact pp_push_separate h.stackFit pre.below pre.args
   have clearedU : Spec.Rsa.wordsAt u.mem (State.addr g.output) (ppPreWords g) = List.replicate (ppPreWords g) 0 := by
-    rw [Proof.Rsa.wordsAt_frame frameU (by have := pre.fit; omega)
+    rw [Proof.Rsa.wordsAt_frame frameU (by have := pre.fit; omega_using [this])
       (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact pre.below.symm)]
     exact pre.cleared
   rw [WP.seq_iff]
@@ -133,7 +133,7 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
-    omega
+    omega_using []
   have read : InRegions (v.rd ++ v.wr) (State.addr v.sp) 56 := by
     refine ⟨⟨State.addr v.sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
     rw [wrV, spV]

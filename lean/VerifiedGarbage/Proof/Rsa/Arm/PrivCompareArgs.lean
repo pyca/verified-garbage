@@ -30,10 +30,10 @@ theorem cmpArgs_ok (s : State) (ws : Workspace s s.sp frameBytes) :
   have fit := ws.nowrap
   unfold cmpArgs
   refine wp_loadStack (a := off (State.addr s.sp) oR1) (by decide)
-    (addr_add (by simp only [oR1, frameBytes] at *; omega)) (ws.read (by decide)) fun s1 u1 => ?_
+    (addr_add (by simp only [oR1, frameBytes] at *; omega_using [fit])) (ws.read (by decide)) fun s1 u1 => ?_
   refine wp_dp (op2_reg _ _) fun s2 u2 => ?_
   refine wp_loadStack (a := off (State.addr s.sp) oR3) (by decide)
-    (by rw [u2.sp, u1.sp]; exact addr_add (by simp only [oR3, frameBytes] at *; omega))
+    (by rw [u2.sp, u1.sp]; exact addr_add (by simp only [oR3, frameBytes] at *; omega_using [fit]))
     (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by decide)) fun s3 u3 => ?_
   refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
   refine wp_dp (op2_imm (by decide)) fun s5 u5 => ?_
@@ -46,13 +46,13 @@ theorem cmpArgs_ok (s : State) (ws : Workspace s s.sp frameBytes) :
     ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans (u5.rest (by simp)))))
   have mem5 : s5.mem = s.mem := u5.mem.trans (u4.mem.trans (u3.mem.trans (u2.mem.trans u1.mem)))
   refine wp_loadStack (a := off (State.addr s.sp) oOut) (by decide)
-    (by rw [keep5.sp]; exact addr_add (by simp only [oOut, frameBytes] at *; omega))
+    (by rw [keep5.sp]; exact addr_add (by simp only [oOut, frameBytes] at *; omega_using [fit]))
     (by rw [keep5.rd, keep5.wr]; exact ws.read (by decide)) fun s6 u6 => ?_
   refine wp_loadStack (a := off (State.addr s.sp) oIn) (by decide)
-    (by rw [u6.sp, keep5.sp]; exact addr_add (by simp only [oIn, frameBytes] at *; omega))
+    (by rw [u6.sp, keep5.sp]; exact addr_add (by simp only [oIn, frameBytes] at *; omega_using [fit]))
     (by rw [u6.rd, u6.wr, keep5.rd, keep5.wr]; exact ws.read (by decide)) fun s7 u7 => ?_
   refine wp_loadStack (a := off (State.addr s.sp) oK) (by decide)
-    (by rw [u7.sp, u6.sp, keep5.sp]; exact addr_add (by simp only [oK, frameBytes] at *; omega))
+    (by rw [u7.sp, u6.sp, keep5.sp]; exact addr_add (by simp only [oK, frameBytes] at *; omega_using [fit]))
     (by rw [u7.rd, u7.wr, u6.rd, u6.wr, keep5.rd, keep5.wr]; exact ws.read (by decide)) fun s8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u9 => WP.block_nil ?_
   exact ⟨by rw [u9.other .r0 (by decide), u8.other .r0 (by decide), u7.other .r0 (by decide), u6.gpr, mem5],

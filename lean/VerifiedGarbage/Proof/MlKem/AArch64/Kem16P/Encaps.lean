@@ -95,10 +95,10 @@ theorem gStep_ok (hash : FixedHash.HashFn)
     have : (ekE P s₀).length = P.ekLen := bytesAt_length _ _ _
     simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks, ekM,
       Impl.MlKem.AArch64.Hybrid.ekSrc]
-    omega)] at hst
+    omega_using [h3, this])] at hst
   refine WP.mono_syms (tailHN_ok hash hG hp (by
       have := ho.pairs
-      simp only [ekM]; omega) hu.b hm hst) fun v ⟨hv, fv⟩ sv => ?_
+      simp only [ekM]; omega_using [this]) hu.b hm hst) fun v ⟨hv, fv⟩ sv => ?_
   -- The rejection table is apart from what `G` writes.
   have key : (Region.mk (u.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint
       ⟨kA s₀ ((enL P).slot 1) + BitVec.ofNat 64 0, 32⟩ := by
@@ -158,7 +158,7 @@ theorem using_correctP (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) pr
   have hprf : ∀ N < min (Impl.MlKem.AArch64.Kem16P.placed P
       (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Hybrid.ekSrc P))) (Impl.MlKem.AArch64.Kem16P.prfs P),
       PrfAt P (enL P) s₀ uB.mem uB.mem N := fun N hN => by
-    have pr := hB.prf N (by simp only [ekM] at hfin ⊢; rw [hfin]; omega)
+    have pr := hB.prf N (by simp only [ekM] at hfin ⊢; rw [hfin]; omega_using [hN])
     show Noise.Rate128 _ _ _
     rw [seed_mA hp hk hB.fr]
     exact pr
@@ -179,8 +179,8 @@ theorem using_correctP (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) pr
     · exact key_scr hp (hp.fs (by lom))
     · refine key_scr hp ?_
       show _ ≤ P.scl
-      have := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega)
-      simp only [Impl.MlKem.AArch64.Noise.noiseOff] at this ⊢; have := hw.facts; omega
+      have := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega_using [this])
+      simp only [Impl.MlKem.AArch64.Noise.noiseOff] at this ⊢; have := hw.facts; omega_arith
   · rw [hm]
     exact ct_at (U := fun i => compressEncode P.du (KPke.encU P.params (aMW true P (enL P) s₀ uB.mem) (gE P s₀).2 i))
       (fun i hi => by have := e₁.u i hi; rwa [Nat.zero_add] at this) (by rwa [Nat.zero_add] at v₁)

@@ -26,19 +26,19 @@ theorem BInvW.paired {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) {mA : M
     exact h.rho
   · have hall : okR P ρ (e+2) ↔ (okR P ρ e ∧ (sampleNTT 280 (matSeed ρ (e/P.k) (e%P.k))).isSome) ∧
         (sampleNTT 280 (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))).isSome := by
-      rw [show e+2=(e+1)+1 by omega,okR_succ,okR_succ]
+      rw [show e+2=(e+1)+1 by omega_using [],okR_succ,okR_succ]
     rw [ht.status,h.acc]
     by_cases ha : okR P ρ e <;>
       by_cases hb : (sampleNTT 280 (matSeed ρ (e/P.k) (e%P.k))).isSome <;>
       by_cases hc : (sampleNTT 280 (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))).isSome <;>
       simp [hall,ha,hb,hc]
   · intro i hi
-    rcases (by omega : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
+    rcases (by omega_using [hi] : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
     · exact reducedW_frame fr (old hi) (h.red i hi)
     · exact ht.reducedLeft
     · exact ht.reducedRight
   · intro i hi
-    rcases (by omega : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
+    rcases (by omega_using [hi] : i<e ∨ i=e ∨ i=e+1) with hi|rfl|rfl
     · rw [polyAtW_frame fr (old hi)]; exact h.res i hi
     · exact ht.left
     · exact ht.right
@@ -59,11 +59,11 @@ theorem BInvW.singleton {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) {mA 
       by_cases hb : (sampleNTT 280 (matSeed ρ (e/P.k) (e%P.k))).isSome <;>
       simp [okR_succ,ha,hb]
   · intro i hi
-    rcases (by omega : i<e ∨ i=e) with hi|rfl
+    rcases (by omega_using [hi] : i<e ∨ i=e) with hi|rfl
     · exact reducedW_frame fr (old hi) (h.red i hi)
     · exact ht.reduced
   · intro i hi
-    rcases (by omega : i<e ∨ i=e) with hi|rfl
+    rcases (by omega_using [hi] : i<e ∨ i=e) with hi|rfl
     · rw [polyAtW_frame fr (old hi)]; exact h.res i hi
     · exact ht.result
 

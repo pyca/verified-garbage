@@ -69,9 +69,9 @@ theorem b1_gctr {m₀ m : Mem} {B : Addr} {R c n : Nat} {w : List Byte} {icb : B
   rw [Proof.AesCcm.length_bytesAt] at hk
   rw [Proof.Gcm.getD_xorKs _ _ _ _ (by rw [hPl]; exact hk), Nat.zero_add, ← hP, Proof.Gcm.getD_bytesAt' _ _ hk,
     Proof.Gcm.getD_bytesAt' _ _ hk, Offset.add_add,
-    show 16 * (7 - c) + k = 16 * (7 - c + k / 16) + k % 16 by omega,
-    hks _ (by omega) _ (Nat.mod_lt _ (by decide)), keyStream_ks,
-    show 16 * (2 ^ 32 + c - 7 + (7 - c + k / 16)) + k % 16 = 16 * 2 ^ 32 + k by omega, Proof.Gcm.ksByte_wrap,
+    show 16 * (7 - c) + k = 16 * (7 - c + k / 16) + k % 16 by omega_using [],
+    hks _ (by omega_using [hn, hc6, hk]) _ (Nat.mod_lt _ (by decide)), keyStream_ks,
+    show 16 * (2 ^ 32 + c - 7 + (7 - c + k / 16)) + k % 16 = 16 * 2 ^ 32 + k by omega_using [hc6], Proof.Gcm.ksByte_wrap,
     BitVec.xor_comm]
 
 /-- Block `6 − c` of `B₁`, zero before: `CIPH(J)`, for the keystream from `inc₃₂(J)`. -/
@@ -86,9 +86,9 @@ theorem b1_j0 {m₀ m : Mem} {B : Addr} {R c : Nat} {w : List Byte} {J : Block} 
     simp only [Proof.Gcm.getD_bytesAt' _ _ ht, Offset.add_add] at this
     rw [this]
     simp only [zeros, List.getD_eq_getElem?_getD, List.getElem?_replicate, ht, ite_true, Option.getD_some]
-  rw [Proof.Aes.toBytes_blockAt _ _ ht, Offset.add_add, hks _ (by omega) _ ht, h0,
+  rw [Proof.Aes.toBytes_blockAt _ _ ht, Offset.add_add, hks _ (by omega_using []) _ ht, h0,
     show ∀ x : Byte, x ^^^ 0 = x from fun _ => BitVec.xor_zero,
-    keyStream_ks, show 2 ^ 32 + c - 7 + (6 - c) = 2 ^ 32 - 1 by omega, Proof.Gcm.ksByte_pred _ _ ht]
+    keyStream_ks, show 2 ^ 32 + c - 7 + (6 - c) = 2 ^ 32 - 1 by omega_using [hc6], Proof.Gcm.ksByte_pred _ _ ht]
 
 /-- What `B₂` (at `G`) holds: zeroed, then, after writes elsewhere, the `16 c`
 bytes `Q` at block `7 − c`, 16 zeros after their first `n`, the additional
@@ -119,21 +119,21 @@ theorem b2_layout {G : Addr} {c n : Nat} {Q A lens : List Byte} {mZ mY mL : Mem}
       show o + xs.length = (l₁ ++ l₂).length by simp [h₁, h₂], ← List.append_assoc l₁ l₂ l₃, dk _ _ _ rfl]
   -- `B₂` before the writes.
   have L0 : bytesAt mY G 128 = zeros (112 - 16 * c) ++ zeros (16 * c) ++ zeros 16 := by
-    rw [bytesAt_frame fY hrs (by decide), hZ, Z, Z]; congr 1; omega
-  have L1 := wr _ (112 - 16 * c) Q (by rw [hQ]; omega) _ _ _ L0 (lz _) (by rw [lz, hQ])
+    rw [bytesAt_frame fY hrs (by decide), hZ, Z, Z]; congr 1; omega_using [hc6]
+  have L1 := wr _ (112 - 16 * c) Q (by rw [hQ]; omega_using [hc6]) _ _ _ L0 (lz _) (by rw [lz, hQ])
   rw [← List.take_append_drop n Q,
-    show zeros 16 = zeros (16 - (16 * c - n)) ++ zeros (16 * c - n) by rw [Z]; congr 1; omega] at L1
-  have L2 := wr _ (112 - 16 * c + n) (List.replicate 16 0) (by simp; omega)
+    show zeros 16 = zeros (16 - (16 * c - n)) ++ zeros (16 * c - n) by rw [Z]; congr 1; omega_using [hn']] at L1
+  have L2 := wr _ (112 - 16 * c + n) (List.replicate 16 0) (by simp; omega_using [hc6, hn])
     (zeros (112 - 16 * c) ++ Q.take n) (Q.drop n ++ zeros (16 - (16 * c - n))) (zeros (16 * c - n))
-    (by rw [L1]; simp only [List.append_assoc]) (by simp [lz]; omega) (by simp [lz]; omega)
+    (by rw [L1]; simp only [List.append_assoc]) (by simp [lz]; omega_using [hn, hQ]) (by simp [lz]; omega_using [hn', hQ])
   have L2' : bytesAt (writeBytes (writeBytes mY (G + BitVec.ofNat 64 (112 - 16 * c)) (List.take n Q ++ List.drop n Q))
       (G + BitVec.ofNat 64 (112 - 16 * c + n)) (List.replicate 16 0)) G 128 =
       zeros (96 - 16 * c) ++ zeros A.length ++
         (zeros (16 - A.length) ++ Q.take n ++ zeros 16 ++ zeros (16 * c - n)) := by
     rw [L2, show zeros (112 - 16 * c) = zeros (96 - 16 * c) ++ zeros A.length ++ zeros (16 - A.length) by
-      rw [Z, Z]; congr 1; omega]
+      rw [Z, Z]; congr 1; omega_using [hc6, hA]]
     simp only [List.append_assoc]; rfl
-  have L3 := wr _ (96 - 16 * c) A (by omega) _ _ _ L2' (lz _) (lz _)
+  have L3 := wr _ (96 - 16 * c) A (by omega_using [hA]) _ _ _ L2' (lz _) (lz _)
   rw [List.take_append_drop] at L3
   have e128 : (128 : Nat) = 112 + 16 := rfl
   rw [e128, bytesAt_add, hL, bytesAt_frame fL (fun r hr => by
@@ -141,8 +141,8 @@ theorem b2_layout {G : Addr} {c n : Nat} {Q A lens : List Byte} {mZ mY mL : Mem}
       (by decide), Proof.AesCcm.bytesAt_prefix _ _ (show 112 ≤ 128 by decide), L3]
   simp only [List.append_assoc]
   rw [show zeros 16 ++ zeros (16 * c - n) = zeros (16 * c - n) ++ zeros 16 by rw [Z, Z, Nat.add_comm],
-    show 16 * (6 - c) = 96 - 16 * c by omega]
+    show 16 * (6 - c) = 96 - 16 * c by omega_using []]
   simp only [← List.append_assoc]
-  rw [tk _ _ _ (by simp only [List.length_append, lz, List.length_take, hQ]; omega)]
+  rw [tk _ _ _ (by simp only [List.length_append, lz, List.length_take, hQ]; omega_using [hc6, hA])]
 
 end VG.Proof.AesGcm.AArch64.Stitch

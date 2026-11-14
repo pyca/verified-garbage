@@ -66,7 +66,7 @@ private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (n
     refine ⟨(nextPoint q).remaining + 1, ?_, nextPoint q, rfl, hs.2, ht.2, sp⟩
     have positive := again.1
     change q.remaining - 1 + 1 < n
-    omega
+    omega_using [measure, positive]
   · simp only [CTStep, again, ite_false] at hs ht
     exact ⟨hs.trans ht.symm, fun _ => trivial, fun next => absurd (next.symm.trans hs) (by decide)⟩
 

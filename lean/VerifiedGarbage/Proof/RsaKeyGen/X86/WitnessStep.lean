@@ -55,25 +55,25 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
       WorkspaceFrame g (ranges g) s.mem t.mem ∧
       Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem t.mem ∧ Keeps clob s t := by
   unfold codeAt
-  refine WP.seq (WP.mono (WitnessAdvance.codeAt_ok (step := draw) v S source consumed (by omega))
+  refine WP.seq (WP.mono (WitnessAdvance.codeAt_ok (step := draw) v S source consumed (by omega_using [randLenFit, enough]))
     fun a ⟨A, sourceA, usedA, Oa, Ka⟩ => ?_)
   let input := WitnessInput.geometryAt g rand used (draw / 4)
   have readA : InRegions (a.rd ++ a.wr) (rand.setWidth 64) randLen := by
     rw [Ka.2.1, Ka.2.2]; exact readable
-  have C := WitnessInput.context_okAt (used := used) (count := draw / 4) v A.ready.scratch randFit (by omega)
-    (by unfold Geometry.words; omega) (by omega) readA separate
+  have C := WitnessInput.context_okAt (used := used) (count := draw / 4) v A.ready.scratch randFit (by omega_using [two, narrow])
+    (by unfold Geometry.words; omega_using [wide]) (by omega_using [enough]) readA separate
   have inputSource : input.src.setWidth 64 = off (rand.setWidth 64) used :=
-    WitnessInput.source_address (by omega)
+    WitnessInput.source_address (by omega_using [two, narrow, randFit, enough])
   have bytesA : Spec.Rsa.bytesAt a.mem (input.src.setWidth 64) draw =
       Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) draw := by
     rw [inputSource]
     apply VG.Proof.Bignum.scratch_bytes
-      (Oa.mono (o' := 0) (n' := g.L) (by decide) (by have := v.headerFit; unfold VG.Impl.RsaKeyGen.X86.WitnessAdvance.usedOffset; omega))
-      (by have := randLenFit; omega)
+      (Oa.mono (o' := 0) (n' := g.L) (by decide) (by have := v.headerFit; unfold VG.Impl.RsaKeyGen.X86.WitnessAdvance.usedOffset; omega_using [this]))
+      (by have := randLenFit; omega_using [randFit, enough])
     exact separate.sub_left (Offset.sub_base _ enough)
   refine WP.seq (WP.mono (WitnessRound.codeAt_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v length A
-    C (by change 4 * (draw / 4) = draw; omega) two (by change k ≤ draw / 4; omega)
-    (by change draw / 4 ≤ g.words; unfold Geometry.words; omega) sourceA
+    C (by change 4 * (draw / 4) = draw; omega_using [four]) two (by change k ≤ draw / 4; omega_using [narrow])
+    (by change draw / 4 ≤ g.words; unfold Geometry.words; omega_using [wide]) sourceA
     (WitnessInput.destination_pointer v A.ready.scratch).symm odd large shape fit far lengthFar)
     fun b ⟨B, resultB, uniformB, Wb, Fb, Kb⟩ => ?_)
   rw [bytesA] at resultB uniformB
@@ -92,7 +92,7 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     exact flag_value resultB
   refine WP.mono (WitnessCount.code_ok v B flagB uniformB (by change w32 b.mem g.W 176 + 1 < 2 ^ 32; rw [roundB]; exact roundsFit)
     (by change w32 b.mem g.W 192 + _ < 2 ^ 32; rw [uniB]; have := Bool.toNat_le (Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip
-      (Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) draw))).2; omega))
+      (Spec.Rsa.bytesAt s.mem (off (rand.setWidth 64) used) draw))).2; omega_using [uniformFit, this]))
     fun t ⟨T, countT, uniT, statusT, Ot, Kt⟩ => ?_
   dsimp only [VG.Impl.RsaKeyGen.X86.WitnessCount.roundsOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset,
     VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.checksOffset] at countT uniT statusT
@@ -102,7 +102,7 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
   have usedB := (WitnessRound.header32 v Wb (d := 152) (by unfold WitnessRound.safeHeader; decide)).trans usedA
   have usedT : w32 t.mem g.W 152 = used + draw := by
     have same := (WorkspaceFrame.of_outs B.ready.scratch.nowrap Ot).read32
-      (d := 152) (by have := v.headerFit; omega) (by
+      (d := 152) (by have := v.headerFit; omega_using [this]) (by
         intro r mem
         simp only [WitnessCount.ranges, WitnessCount.nextRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
         rcases mem with (rfl | rfl) | rfl <;> left <;> decide)
@@ -115,14 +115,14 @@ theorem codeAt_ok {mont round : Prog isa} {montName roundName : String}
     (Ot.mono (fun r mem => List.mem_append_right _ mem))
   have Fa : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) s.mem a.mem :=
     (workspaceGlobalFrame (Outs.of_outside Oa (List.mem_singleton_self _))
-      (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; unfold VG.Impl.RsaKeyGen.X86.WitnessAdvance.usedOffset; omega)).mono
+      (fun r mem => by obtain rfl := List.mem_singleton.mp mem; have := v.headerFit; unfold VG.Impl.RsaKeyGen.X86.WitnessAdvance.usedOffset; omega_using [this])).mono
       (fun r mem => List.mem_append_left _ mem)
   have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 108]) b.mem t.mem :=
     (workspaceGlobalFrame Ot (fun r mem => by
       simp only [WitnessCount.ranges, WitnessCount.nextRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with (rfl | rfl) | rfl <;> have := v.headerFit <;>
         simp only [VG.Impl.RsaKeyGen.X86.WitnessCount.roundsOffset, VG.Impl.RsaKeyGen.X86.WitnessCount.uniformOffset,
-          VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset] <;> omega)).mono
+          VG.Impl.RsaKeyGen.X86.WitnessCount.statusOffset] <;> omega_using [this])).mono
       (fun r mem => List.mem_append_left _ mem)
   exact ⟨T, usedT, countT, uniT, statusT, (Wa.trans Wb').trans Wt, (Fa.trans Fb).trans Ft,
     ((Ka.mono (by unfold clob; decide)).widen Kb).widen Kt⟩

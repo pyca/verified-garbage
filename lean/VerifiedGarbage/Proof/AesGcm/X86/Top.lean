@@ -61,23 +61,23 @@ theorem pubSw_eq {n i : Nat} (hi : i < n) {s₁ s₂ : State} (h : pubN n s₁ s
   simp only [pubSw, h₁, Prod.mk.injEq, true_and]
   funext k
   split
-  · next hk => exact h₂ _ (by split <;> (try split) <;> omega)
+  · next hk => exact h₂ _ (by split <;> (try split) <;> omega_arith)
   · rfl
 
 theorem pubSw_arg {n i : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (h : pubSw n i s = p) {k : Nat}
     (hk : k < n) (hi : k ≠ i) (hn : k + 1 ≠ n) : arg s k = p.2 k := by
-  rw [← h]; simp only [pubSw, hk, hi, show k ≠ n - 1 by omega, ↓reduceIte]
+  rw [← h]; simp only [pubSw, hk, hi, show k ≠ n - 1 by omega_using [hk, hn], ↓reduceIte]
 
 /-- `W`, at `i`. -/
 theorem pubSw_W {n i m : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (h : pubSw n i s = p)
     (hi : i < n) (hm : n = m + 1) : arg s m = p.2 i := by
-  rw [← h]; simp only [pubSw, hi, ↓reduceIte, show n - 1 = m by omega]
+  rw [← h]; simp only [pubSw, hi, ↓reduceIte, show n - 1 = m by omega_using [hm]]
 
 /-- The argument `i`, at `n - 1`. -/
 theorem pubSw_last {n i m : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (h : pubSw n i s = p)
     (hi : i < n) (hm : n = m + 1) : arg s i = p.2 m := by
   rw [← h]
-  simp only [pubSw, show m < n by omega, show n - 1 = m by omega, ↓reduceIte]
+  simp only [pubSw, show m < n by omega_using [hm], show n - 1 = m by omega_using [hm], ↓reduceIte]
   by_cases e : m = i
   · subst e; simp
   · simp [e]
@@ -107,7 +107,7 @@ theorem below_eq {SP : BitVec 32} {k : Nat} (h : k ≤ SP.toNat) :
   simp only [below]; rw [Taint.sub_setWidth h]
 
 theorem ret_below {SP : BitVec 32} {k : Nat} (h : k ≤ SP.toNat) : (⟨w64 SP, 4⟩ : Region).Disjoint (below SP k) := by
-  rw [← below_eq h]; exact Offset.base_disjoint_below _ (by omega)
+  rw [← below_eq h]; exact Offset.base_disjoint_below _ (by omega_using [h])
 
 /-- The return address stays where it is, outside a frame. -/
 theorem ret_kept {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {SP : BitVec 32}
@@ -157,7 +157,7 @@ theorem streamRepr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p
   have e0 := blockAt_frame hf (sub (d := 0) (k := 16) (by decide))
   simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at e0
   refine ⟨by rw [e0, hj], ha.congr (blockAt_frame hf (sub (by decide)))
-    (bytesAt_frame hf (sub (d := 32) (k := (Spec.Gcm.ghashInput a c).length % 16) (by omega)) (by omega)),
+    (bytesAt_frame hf (sub (d := 32) (k := (Spec.Gcm.ghashInput a c).length % 16) (by omega_using [])) (by omega_using [])),
     hc.congr (blockAt_frame hf (sub (by decide))) (blockAt_frame hf (sub (by decide)))⟩
 
 end VG.Proof.AesGcm.X86

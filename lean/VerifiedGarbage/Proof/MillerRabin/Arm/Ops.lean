@@ -102,7 +102,7 @@ theorem KS.str {d : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.W nArr
     WP isa (.block (.str r .r8 d :: rest)) s Q :=
   wp_strSlot hw (wDs_hdr d hd) fun t m => by
     have kt : Keep P.B P.W [] [d] s.mem t.mem := by
-      rw [m.mem]; exact keep_write _ _ (by simp) (by have := wDs_hdr d hd; simp only [hdr] at this; omega)
+      rw [m.mem]; exact keep_write _ _ (by simp) (by have := wDs_hdr d hd; simp only [hdr] at this; omega_using [this])
     exact k t (h.slot1 kt hd m.sp m.rd m.wr (by rw [m.mem, slot_write_self])) (hw.of_mupd m) m
 
 /-- `ldr t, [r8, #d]` of a header word the stage holds. -/
@@ -132,7 +132,7 @@ theorem KS.clrTop_ok {o : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.
     (k : ∀ t, KS P σ (upd A o (val32 s.mem (State.addr P.B) (arr P.W o) (2 * P.w))) (o :: live) V ls t →
       Ws t P.B P.Z P.W nArr → Rest opRegs s t → WP isa (.block rest) t Q) :
     WP isa (.block (Impl.Rsa.Arm.Recover.clrTop o ++ rest)) s Q :=
-  VG.Proof.Rsa.Arm.Recover.clrTop_ok hw (wJs_lt o ho).2 (by decide) (by simp only [MP.W]; omega)
+  VG.Proof.Rsa.Arm.Recover.clrTop_ok hw (wJs_lt o ho).2 (by decide) (by simp only [MP.W]; omega_using [])
     fun t ht k' e r => k t (h.write1 k' ho (by simp) r.sp r.rd r.wr (by rw [e]; rfl) (by simp)) ht r
 
 /-- `copy o a` and `clrTop o`: the number of the working space's array `a`. -/

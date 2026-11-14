@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Inverse
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -68,7 +69,7 @@ theorem layer1_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
       layoutAt (120*u.val+8*g.val+e.val+4) = (255-16*u.val-4*g.val-e.val,true) := by
     decide +kernel
   intro u g e
-  rw [layout_get (by omega), layout_get (by omega)]
+  rw [layout_get (by omega_using []), layout_get (by omega_using [])]
   exact h u g e
 
 theorem layer2_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
@@ -79,7 +80,7 @@ theorem layer2_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
       layoutAt (120*u.val+32+8*g.val+e.val+4) = (127-8*u.val-2*g.val-e.val/2,true) := by
     decide +kernel
   intro u g e
-  rw [layout_get (by omega), layout_get (by omega)]
+  rw [layout_get (by omega_using []), layout_get (by omega_using [])]
   exact h u g e
 
 theorem layer4_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
@@ -90,7 +91,7 @@ theorem layer4_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
       layoutAt (120*u.val+64+8*g.val+e.val+4) = (63-4*u.val-g.val,true) := by
     decide +kernel
   intro u g e
-  rw [layout_get (by omega), layout_get (by omega)]
+  rw [layout_get (by omega_using []), layout_get (by omega_using [])]
   exact h u g e
 
 theorem layer8_layout : ∀ u : Fin 8, ∀ g : Fin 2, ∀ e : Fin 4,
@@ -101,7 +102,7 @@ theorem layer8_layout : ∀ u : Fin 8, ∀ g : Fin 2, ∀ e : Fin 4,
       layoutAt (120*u.val+96+8*g.val+e.val+4) = (31-2*u.val-g.val,true) := by
     decide +kernel
   intro u g e
-  rw [layout_get (by omega), layout_get (by omega)]
+  rw [layout_get (by omega_using []), layout_get (by omega_using [])]
   exact h u g e
 
 theorem layer16_layout : ∀ u : Fin 8, ∀ e : Fin 4,
@@ -112,7 +113,7 @@ theorem layer16_layout : ∀ u : Fin 8, ∀ e : Fin 4,
       layoutAt (120*u.val+112+e.val+4) = (15-u.val,true) := by
     decide +kernel
   intro u e
-  rw [layout_get (by omega), layout_get (by omega)]
+  rw [layout_get (by omega_using []), layout_get (by omega_using [])]
   exact h u e
 
 theorem tail_layout : ∀ j : Fin 8,
@@ -121,7 +122,7 @@ theorem tail_layout : ∀ j : Fin 8,
       layoutAt (960+j.val) = (7-j.val,false) ∧ layoutAt (968+j.val) = (7-j.val,true) := by
     decide +kernel
   intro j
-  rw [layout_get (by omega), layout_get (by omega)]
+  rw [layout_get (by omega_using []), layout_get (by omega_using [])]
   exact h j
 
 end VG.Proof.MlDsa.AArch64.Optimized.InverseTable

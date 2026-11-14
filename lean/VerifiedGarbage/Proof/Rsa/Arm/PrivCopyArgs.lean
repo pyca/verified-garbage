@@ -21,21 +21,21 @@ theorem copyArgs_prefix_ok (n : Nat) (hn : n ≤ 14) (s : State) {g : PrivGeomet
   | zero => exact WP.block_nil ⟨h, slots, by intro j hj; omega, Frame.refl _ _, Rest.refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h slots ptr) ?_
+    refine WP.mono (ih (by omega_using [hn]) s h slots ptr) ?_
     rintro u ⟨hu, slotsU, copied, frameU, restU⟩
-    refine WP.mono (copyArg_context u hu slotsU (by omega : n < 14)
+    refine WP.mono (copyArg_context u hu slotsU (by omega_using [hn] : n < 14)
       ((restU.gpr .r12 (by simp)).trans ptr)) ?_
     rintro t ⟨ht, slotsT, mem, restT⟩
     refine ⟨ht, slotsT, ?_, ?_, restU.trans restT⟩
     · intro j hj
       by_cases same : j = n
       · subst j; rw [mem, Mem.readW_writeW_self32]
-      · have outside := writeW32_outside u.mem (State.addr g.stack) (d := 4 * n) (g.argument (n + 2)) (by omega)
-        rw [mem, outside_read32 outside (d := 4 * j) (by omega) (by omega)]
-        exact copied j (by omega)
+      · have outside := writeW32_outside u.mem (State.addr g.stack) (d := 4 * n) (g.argument (n + 2)) (by omega_using [hn])
+        rw [mem, outside_read32 outside (d := 4 * j) (by omega_using [same]) (by omega_using [hn, hj])]
+        exact copied j (by omega_using [hj, same])
     · apply frameU.trans
       rw [mem]
-      exact outgoing_frame (by omega)
+      exact outgoing_frame (by omega_using [hn])
 
 theorem copyArgs_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
     (h : PrivContext g bs s) (slots : PrivSlots g s.mem) (ptr : s.gpr .r12 = g.stack) :

@@ -31,7 +31,7 @@ def clampMem (m : Mem) (base : Addr) : Mem :=
 theorem storeByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 4096) :
     WP isa (.block [.strb .r3 .r0 d]) s fun t =>
       t.mem = s.mem.writeW (off base d) ((s.gpr .r3).setWidth 8) ∧ Keeps [] s t := by
-  refine VG.Proof.X25519.Arm.wp_strb hd (hs.ea (by omega)) (hs.write (by omega))
+  refine VG.Proof.X25519.Arm.wp_strb hd (hs.ea (by omega_using [hd])) (hs.write (by omega_using [hd]))
     fun t ht => WP.block_nil ⟨ht.mem, rest_keeps (ht.rest _)⟩
 
 theorem putByte_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 4096)

@@ -72,13 +72,13 @@ theorem vec_cons {s₀ : State} (hp : UPre s₀) {c : Nat} {s : State} (hc : Con
     WP isa vec s fun t => Cons s₀ (c + 64 * ((dl s₀ - c) / 64)) t ∧ VPres s t := by
   have hdl := dl_lt s₀
   have hcl := hc.c_le
-  have hx3 : (s.gpr .x3).toNat = dl s₀ - c := by rw [hc.x3, BitVec.toNat_ofNat]; omega
+  have hx3 : (s.gpr .x3).toNat = dl s₀ - c := by rw [hc.x3, BitVec.toNat_ofNat]; omega_using [hdl]
   have hst : s.gpr .x0 = st s₀ := hc.x0
-  refine WP.mono (vec_ok hc.keys (by omega) (fun k hk => by
-      rw [hc.wr, hst]; exact ⟨sR (st s₀), hp.wr, contains_off (by omega) (by omega)⟩)
+  refine WP.mono (vec_ok hc.keys (by omega_using [h128, hx3]) (fun k hk => by
+      rw [hc.wr, hst]; exact ⟨sR (st s₀), hp.wr, contains_off (by omega_using [hk]) (by omega_using [hk])⟩)
     (fun d hd => by
       rw [hc.rd, hc.wr, hp.rd, hc.x2, BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact ⟨dR s₀, List.mem_append_left _ (List.mem_singleton_self _), contains_off (by omega) (by omega)⟩))
+      exact ⟨dR s₀, List.mem_append_left _ (List.mem_singleton_self _), contains_off (by omega_using [hx3, hd]) (by omega_using [hdl, hx3, hd])⟩))
     fun t ⟨M, hS, hE⟩ => ⟨?_, ?_⟩
   · have hq : nq s = (dl s₀ - c) / 64 := by simp only [nq, hx3]
     have hF : Frame [wR (st s₀)] s₀.mem M := hc.frame.trans (by
@@ -95,12 +95,12 @@ theorem vec_cons {s₀ : State} (hp : UPre s₀) {c : Nat} {s : State} (hc : Con
              rd := by rw [hE.rd, hc.rd]
              wr := by rw [hE.wr, hc.wr]
              frame := by rw [hE.mem]; exact hF
-             c_le := by omega
-             whole := by have := hc.whole; omega
+             c_le := by omega_using [h128]
+             whole := by have := hc.whole; omega_using [this]
              x2 := by rw [hE.x2, hc.x2, BitVec.add_assoc, ← BitVec.ofNat_add, hq]
              x3 := by
                apply BitVec.eq_of_toNat_eq
-               rw [hE.x3, hx3, BitVec.toNat_ofNat]; omega
+               rw [hE.x3, hx3, BitVec.toNat_ofNat]; omega_using []
              acc := fun hA => ?_ }
     obtain ⟨hv, hb⟩ := hc.acc hA
     obtain ⟨ev, eb⟩ := hE.acc hb
@@ -109,9 +109,9 @@ theorem vec_cons {s₀ : State} (hp : UPre s₀) {c : Nat} {s : State} (hc : Con
       simp only [List.length_append, Bf, Dt, Poly1305.length_bytesAt]; exact hc.whole
     have hV : bytesAt M (s.gpr .x2) (64 * nq s) = bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 c) (64 * nq s) := by
       rw [hc.x2]
-      refine Poly1305.bytesAt_frame hF (fun r hr => ?_) (by omega)
+      refine Poly1305.bytesAt_frame hF (fun r hr => ?_) (by omega_using [hdl, hq])
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hp.st_d.symm.sub_left (Offset.sub_base _ (by simp only [nq] at *; omega))).sub_right
+      exact (hp.st_d.symm.sub_left (Offset.sub_base _ (by simp only [nq] at *; omega_using [h128, hx3]))).sub_right
         (sub_sR _ (by decide))
     rw [ev, hV, show Dt s₀ (c + 64 * ((dl s₀ - c) / 64)) = Dt s₀ c ++
         bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 c) (64 * nq s) by rw [Dt, Dt, Poly1305.bytesAt_add, hq],
@@ -158,12 +158,12 @@ theorem vwhole_ok {s₀ : State} (hp : UPre s₀) {s : State}
       rw [h9, hc.x3]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt (by omega_using [hdl]), Nat.mod_eq_of_lt (by omega_using [hdl])]
     refine WP.seq (WP.ite (decide ((dl s₀ - c) / 128 = 0))
-      (by rw [eval_zero, h9', Poly1305.ofNat_beq_zero (by omega)]) (fun _ => ?_) (fun hnz => ?_))
+      (by rw [eval_zero, h9', Poly1305.ofNat_beq_zero (by omega_using [hdl])]) (fun _ => ?_) (fun hnz => ?_))
     · exact WP.block_nil (tail s1 (.inl ⟨c, hc1⟩) (VPres.of_v hv))
     · simp only [decide_eq_false_iff_not] at hnz
-      exact WP.mono (vec_cons hp hc1 (by omega)) fun s2 ⟨hc2, v2⟩ =>
+      exact WP.mono (vec_cons hp hc1 (by omega_using [hnz])) fun s2 ⟨hc2, v2⟩ =>
         tail s2 (.inl ⟨_, hc2⟩) ((VPres.of_v hv).trans v2)
   · have h90 : s1.gpr .x9 = 0 := by rw [h9, hz]; rfl
     refine WP.seq (WP.ite true (by rw [eval_zero, h90]; rfl) (fun _ => ?_) (fun h => absurd h (by decide)))
@@ -192,7 +192,7 @@ theorem update_correct {s₀ : State} (hp : UPre s₀) :
     (Q := fun s : State => (∃ c, Cons s₀ c s) ∨ (Done s₀ s ∧ s.gpr .x3 = 0)) ?_ fill_keepsV)
     fun s₂ ⟨h₂, v₂⟩ => ?_)
   · refine WP.ite (decide (kb s₀ = 0))
-      (by rw [eval_zero, h₁.x9, Poly1305.ofNat_beq_zero (by have := Radix64.kb_lt s₀; omega)]) (fun h => ?_)
+      (by rw [eval_zero, h₁.x9, Poly1305.ofNat_beq_zero (by have := Radix64.kb_lt s₀; omega_using [this])]) (fun h => ?_)
       (fun _ => Radix64.fill_ok hp h₁)
     simp only [decide_eq_true_eq] at h
     exact WP.block_nil (.inl ⟨0, h₁.cons h⟩)

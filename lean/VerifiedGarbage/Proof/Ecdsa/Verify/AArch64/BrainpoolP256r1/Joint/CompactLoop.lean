@@ -50,7 +50,7 @@ theorem tableLoopStep_ok {base : Addr} {P Q : Point C} {s : State}
     fun b ⟨W',R',c'⟩ => ?_)
   have K := W.trans (W'.mono addWork_sub)
   have I' := hi.unch (K.mono loopWork_sub)
-  have T : Table base P Q (d-1) b := fun j hj hjm => K.table hi.scr hj (by omega) (ht j hj hjm)
+  have T : Table base P Q (d-1) b := fun j hj hjm => K.table hi.scr hj (by omega_using [h15, hjm]) (ht j hj hjm)
   rw [table_step hC hP hQ h1] at R'
   refine WP.seq (WP.mono (storeChoice_ok h1 h15 I' T R' (c'.trans (c.trans h19)))
     fun u ⟨⟨L,Iu,Tu⟩,cu⟩ => ?_)
@@ -72,15 +72,15 @@ theorem buildTable_ok {base : Addr} {P Q : Point C} {s : State}
   refine WP.loop (M:=isa) (fun j t => 1 ≤ j ∧ j ≤ 15 ∧ Inv j t)
     (fun j t ⟨h1,h15,ht⟩ => ?_) 15 a ⟨by decide,by decide,Wa,hi.unch Wa,?_,ca⟩
   · obtain ⟨W,I,T,c⟩ := ht
-    have T' : Table base P Q ((16-j)-1) t := by simpa only [show 16-j-1=15-j by omega] using T
-    refine WP.mono (tableLoopStep_ok hc hC hP hQ (by omega) (by omega) I T' c)
+    have T' : Table base P Q ((16-j)-1) t := by simpa only [show 16-j-1=15-j by omega_using []] using T
+    refine WP.mono (tableLoopStep_ok hc hC hP hQ (by omega_using [h15]) (by omega_using [h1]) I T' c)
       fun u ⟨L,Iu,Tu,cu,fu⟩ => ?_
     by_cases e : j=1
     · subst j
       refine Or.inl ⟨?_,W.trans L,Iu,Tu⟩
       change some (u.read .x .x6 != 0)=some false
       rw [read_x,fu]; rfl
-    · refine Or.inr ⟨?_,j-1,by omega,by omega,by omega,W.trans L,Iu,?_,?_⟩
+    · refine Or.inr ⟨?_,j-1,by omega_using [h1],by omega_using [h1, e],by omega_using [h15],W.trans L,Iu,?_,?_⟩
       · change some (u.read .x .x6 != 0)=some true
         rw [read_x,fu]
         apply congrArg some
@@ -89,9 +89,9 @@ theorem buildTable_ok {base : Addr} {P Q : Point C} {s : State}
         have hh := congrArg BitVec.toNat hz
         rw [BitVec.toNat_sub,BitVec.toNat_ofNat] at hh
         change (2^64-16+((16-j+1)%(2^64)))%(2^64)=0 at hh
-        rw [Nat.mod_eq_of_lt (by omega : 16-j+1 < 2^64)] at hh
-        omega
-      · simpa only [show 15-(j-1)=16-j by omega] using Tu
-      · simpa only [show 16-(j-1)=16-j+1 by omega] using cu
+        rw [Nat.mod_eq_of_lt (by omega_using [] : 16-j+1 < 2^64)] at hh
+        omega_using [e, hh]
+      · simpa only [show 15-(j-1)=16-j by omega_using [h1]] using Tu
+      · simpa only [show 16-(j-1)=16-j+1 by omega_using [h1, h15]] using cu
   · intro j hj h0; omega
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint

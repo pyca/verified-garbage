@@ -28,8 +28,8 @@ theorem ContextSpace.entry_write {p : Parameters} {s : State} (h : ContextSpace 
  InRegions s.wr (off p.ctx (entryOffset p.w j+8*i)) 8 := by
  rw [entry_index]
  apply h.writable
- have multiple := Nat.mul_le_mul_right p.w (show 2+j≤33 by omega)
- omega
+ have multiple := Nat.mul_le_mul_right p.w (show 2+j≤33 by omega_using [hj])
+ omega_using [hi, multiple]
 
 theorem ContextSpace.entry_read {p : Parameters} {s : State} (h : ContextSpace p s)
  {j i : Nat} (hj : j<32) (hi : i<p.w) :
@@ -40,22 +40,22 @@ theorem ContextSpace.entry_read {p : Parameters} {s : State} (h : ContextSpace p
 theorem ContextSpace.entry_outside {p : Parameters} {s : State} (h : ContextSpace p s)
  {j i : Nat} (hj : j<32) (hi : i<8*p.w) :
  p.Z≤ofs p.B (off p.ctx (entryOffset p.w j)+BitVec.ofNat 64 i) := by
- have multiple := Nat.mul_le_mul_left (8*p.w) (show 2+j≤33 by omega)
- have bound : entryOffset p.w j+i<8*(3+34*p.w) := by unfold entryOffset;omega
+ have multiple := Nat.mul_le_mul_left (8*p.w) (show 2+j≤33 by omega_using [hj])
+ have bound : entryOffset p.w j+i<8*(3+34*p.w) := by unfold entryOffset;omega_using [hi, multiple]
  have outside := h.outside (entryOffset p.w j+i) bound
  simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using outside
 
 theorem entry_within (p : Parameters) {j : Nat} (hj : j<32) :
  entryOffset p.w j+8*p.w≤8*(3+34*p.w) := by
- have multiple := Nat.mul_le_mul_left (8*p.w) (show 2+j≤33 by omega)
+ have multiple := Nat.mul_le_mul_left (8*p.w) (show 2+j≤33 by omega_using [hj])
  unfold entryOffset
- omega
+ omega_using [multiple]
 
 theorem entry_fit (p : Parameters) {j : Nat} (hj : j<32) : entryOffset p.w j+8*p.w≤2^64 := by
- have multiple := Nat.mul_le_mul_left (8*p.w) (show 2+j≤33 by omega)
+ have multiple := Nat.mul_le_mul_left (8*p.w) (show 2+j≤33 by omega_using [hj])
  have := p.width
  unfold entryOffset
- omega
+ omega_using [multiple, this]
 
 def entryValue (p : Parameters) (j : Nat) : Nat :=
  Spec.Rsa.powMod p.G (Spec.Rsa.FixedBaseComb.exponent p.N j) p.P*2^(64*p.w)%p.P
@@ -68,7 +68,7 @@ theorem TablePrefix.after_inscr {p : Parameters} {n : Nat} {s t : State}
  (frame : InScr p.B p.Z s.mem t.mem) : TablePrefix p n t := by
  intro j hj
  apply Eq.trans (wv_congr fun i hi => Mem.readW_congr fun b hb => frame _ ?_) (h j hj)
- have outside := space.entry_outside (j:=j) (i:=8*i+b) (by omega) (by omega)
+ have outside := space.entry_outside (j:=j) (i:=8*i+b) (by omega_using [limit, hj]) (by omega_using [hi, hb])
  have same : off p.ctx (entryOffset p.w j+8*i)+BitVec.ofNat 64 b=
   off p.ctx (entryOffset p.w j)+BitVec.ofNat 64 (8*i+b) := by simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
  rw [same]
@@ -80,11 +80,11 @@ theorem TablePrefix.extend {p : Parameters} {n : Nat} {s t : State}
  intro j hj
  by_cases same : j=n
  · simpa only [same] using value
- · have old : j<n := by omega
-   have multiple := Nat.mul_le_mul_left (8*p.w) (show j+1≤n by omega)
-   have leftEq : entryOffset p.w j+8*p.w=24+16*p.w+(8*p.w)*(j+1) := by unfold entryOffset;simp only [Nat.mul_add,Nat.add_mul,Nat.mul_comm,Nat.mul_left_comm] <;>omega
-   have rightEq : entryOffset p.w n=24+16*p.w+(8*p.w)*n := by unfold entryOffset;simp only [Nat.mul_add,Nat.add_mul,Nat.mul_comm,Nat.mul_left_comm] <;>omega
-   have separate : entryOffset p.w j+8*p.w≤entryOffset p.w n := by rw [leftEq,rightEq];omega
-   exact (frame.wv (Or.inl separate) (by have := entry_fit p limit;omega)).trans (h j old)
+ · have old : j<n := by omega_using [hj, same]
+   have multiple := Nat.mul_le_mul_left (8*p.w) (show j+1≤n by omega_using [hj, same])
+   have leftEq : entryOffset p.w j+8*p.w=24+16*p.w+(8*p.w)*(j+1) := by unfold entryOffset;simp only [Nat.mul_add,Nat.add_mul,Nat.mul_comm,Nat.mul_left_comm] <;>omega_using []
+   have rightEq : entryOffset p.w n=24+16*p.w+(8*p.w)*n := by unfold entryOffset;simp only [Nat.mul_add,Nat.add_mul,Nat.mul_comm,Nat.mul_left_comm] <;>omega_using []
+   have separate : entryOffset p.w j+8*p.w≤entryOffset p.w n := by rw [leftEq,rightEq];omega_using [multiple]
+   exact (frame.wv (Or.inl separate) (by have := entry_fit p limit;omega_using [separate, this])).trans (h j old)
 
 end VG.Proof.Ffdh.AArch64.Cached

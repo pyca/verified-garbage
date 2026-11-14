@@ -43,32 +43,32 @@ theorem addr_sub' {x : BitVec 32} {k : Nat} (hk : k ≤ x.toNat) :
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
   simp only [State.addr, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := k) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat) (by omega),
-    show 2 ^ 32 - k + x.toNat = 2 ^ 32 + (x.toNat - k) by omega, Nat.add_mod_left,
-    show 2 ^ 64 - k + x.toNat = 2 ^ 64 + (x.toNat - k) by omega, Nat.add_mod_left]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_using [hk]), Nat.mod_eq_of_lt (a := k) (by omega_using [hk]),
+    Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []),
+    show 2 ^ 32 - k + x.toNat = 2 ^ 32 + (x.toNat - k) by omega_using [hk], Nat.add_mod_left,
+    show 2 ^ 64 - k + x.toNat = 2 ^ 64 + (x.toNat - k) by omega_using [hk], Nat.add_mod_left]
+  omega_using []
 
 theorem sub_toNat' {sp : BitVec 32} {k : Nat} (h : k ≤ sp.toNat) :
     (sp - BitVec.ofNat 32 k).toNat = sp.toNat - k := by
   have := sp.isLt
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega)]
-  rw [show 2 ^ 32 - k + sp.toNat = (sp.toNat - k) + 2 ^ 32 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_using [h])]
+  rw [show 2 ^ 32 - k + sp.toNat = (sp.toNat - k) + 2 ^ 32 by omega_using [h], Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_using [])]
 
 /-- The `a` bytes below `sp - k` are among the `b` bytes below `sp`. -/
 theorem belowA_inner {sp : BitVec 32} {a b k : Nat} (h : a + k ≤ b) (hb : b ≤ sp.toNat) :
     Region.Sub (belowA (sp - BitVec.ofNat 32 k) a) (belowA sp b) := by
-  have hk : a ≤ (sp - BitVec.ofNat 32 k).toNat := by rw [sub_toNat' (by omega)]; omega
+  have hk : a ≤ (sp - BitVec.ofNat 32 k).toNat := by rw [sub_toNat' (by omega_using [h, hb])]; omega_using [h, hb]
   show Region.Sub ⟨State.addr (sp - BitVec.ofNat 32 k - BitVec.ofNat 32 a), a⟩
     ⟨State.addr (sp - BitVec.ofNat 32 b), b⟩
-  rw [addr_sub' hk, addr_sub' hb, addr_sub' (k := k) (by omega), BitVec.sub_sub, ← BitVec.ofNat_add]
-  exact fun x hx => Offset.below_mono _ (a := k + a) (by omega) (by omega) x
-    (Region.sub_prefix (by omega) x hx)
+  rw [addr_sub' hk, addr_sub' hb, addr_sub' (k := k) (by omega_using [h, hb]), BitVec.sub_sub, ← BitVec.ofNat_add]
+  exact fun x hx => Offset.below_mono _ (a := k + a) (by omega_using [h]) (by omega_using [hb]) x
+    (Region.sub_prefix (by omega_using []) x hx)
 
 theorem belowA_sub {sp : BitVec 32} {a b : Nat} (h : a ≤ b) (hb : b ≤ sp.toNat) :
     Region.Sub (belowA sp a) (belowA sp b) := by
-  have := belowA_inner (sp := sp) (a := a) (k := 0) (by omega) hb
+  have := belowA_inner (sp := sp) (a := a) (k := 0) (by omega_using [h]) hb
   simpa using this
 
 theorem Frame.belowA_mono {wr : List Region} {sp : BitVec 32} {a b : Nat} {m m' : Mem}
@@ -85,25 +85,25 @@ theorem storeWords_frame : ∀ (vs : List (BitVec 32)) (m : Mem) (a : BitVec 32)
     a.toNat + 4 * vs.length ≤ 2 ^ 32 → Frame [⟨State.addr a, 4 * vs.length⟩] m (storeWords m a vs)
   | [], m, _, _ => Frame.refl _ _
   | [v], m, a, _ => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
-      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, List.length_cons, List.length_nil]; omega)
+      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, List.length_cons, List.length_nil]; omega_using [])
   | v :: w :: vs, m, a, h => by
     simp only [List.length_cons] at h
-    have h4 : a.toNat + 4 < 2 ^ 32 := by omega
+    have h4 : a.toNat + 4 < 2 ^ 32 := by omega_using [h]
     have ih := storeWords_frame (w :: vs) (m.writeW (State.addr a) v) (a + 4) (by
       rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.toNat_add, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (a := 4) (by omega), Nat.mod_eq_of_lt h4]; simp only [List.length_cons]; omega)
+        Nat.mod_eq_of_lt (a := 4) (by omega_using []), Nat.mod_eq_of_lt h4]; simp only [List.length_cons]; omega_using [h])
     have e : State.addr (a + 4) = State.addr a + BitVec.ofNat 64 4 := addr_add (k := 4) h4
     rw [e] at ih
     refine Frame.trans ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_) (Frame.sub ih fun r hr => ?_)
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, List.length_cons]; omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, List.length_cons]; omega_using []
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by simp only [List.length_cons]; omega)⟩
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by simp only [List.length_cons]; omega_using [])⟩
 
 /-- A frame's push changes memory only in the frame. -/
 theorem pushed_frameA {rs : List Reg} {s : State} (hn : 4 * rs.length ≤ s.sp.toNat) :
     Frame [belowA s.sp (4 * rs.length)] s.mem (pushed rs s).mem := by
   have := storeWords_frame (rs.map s.gpr) s.mem (s.sp - BitVec.ofNat 32 (4 * rs.length)) (by
-    rw [List.length_map, sub_toNat' hn]; have := s.sp.isLt; omega)
+    rw [List.length_map, sub_toNat' hn]; have := s.sp.isLt; omega_using [hn])
   rwa [List.length_map] at this
 
 theorem pop_memA {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') : s'.mem = s₂.mem := by
@@ -121,27 +121,27 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     simp only [armStack] at hd ⊢
     obtain ⟨-, w₁, p₁, m₁, -⟩ := call_eq hc
     rw [ret_eq hr]
-    have := ih (by rw [p₁]; omega)
+    have := ih (by rw [p₁]; omega_using [hd])
     rw [w₁, p₁, m₁] at this
-    exact Frame.belowA_mono this (by omega) hd
+    exact Frame.belowA_mono this (by omega_using []) hd
   | icallNext _ _ _ ih =>
     simp only [armStack] at hd ⊢
-    exact Frame.belowA_mono (ih (by simp only [armStack]; omega)) (by simp only [armStack]; omega) hd
+    exact Frame.belowA_mono (ih (by simp only [armStack]; omega_using [hd])) (by simp only [armStack]; omega_using []) hd
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [armStack] at hd ⊢
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
-    have f₁ := Frame.belowA_mono (ih₁ (by omega)) (b := max (armStack c₁) (armStack c₂)) (by omega) hd
-    have f₂ := Frame.belowA_mono (ih₂ (by rw [p₁]; omega)) (b := max (armStack c₁) (armStack c₂))
-      (by omega) (by rw [p₁]; exact hd)
+    have f₁ := Frame.belowA_mono (ih₁ (by omega_using [hd])) (b := max (armStack c₁) (armStack c₂)) (by omega_using []) hd
+    have f₂ := Frame.belowA_mono (ih₂ (by rw [p₁]; omega_using [hd])) (b := max (armStack c₁) (armStack c₂))
+      (by omega_using []) (by rw [p₁]; exact hd)
     rw [w₁, p₁] at f₂
     exact Frame.trans f₁ f₂
   | iteT _ _ ih =>
     simp only [armStack] at hd ⊢
-    exact Frame.belowA_mono (ih (by omega)) (by omega) hd
+    exact Frame.belowA_mono (ih (by omega_using [hd])) (by omega_using []) hd
   | iteF _ _ ih =>
     simp only [armStack] at hd ⊢
-    exact Frame.belowA_mono (ih (by omega)) (by omega) hd
+    exact Frame.belowA_mono (ih (by omega_using [hd])) (by omega_using []) hd
   | loopExit _ _ ih => exact ih hd
   | loopNext h₁ _ _ ih₁ ih₂ =>
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
@@ -163,33 +163,33 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       simp only [armStack] at hd ⊢
       have hn := hc.2
       have f₁ := ih (by show armStack b ≤ (s₀.sp - BitVec.ofNat 32 (4 * rs.length)).toNat
-                        rw [sub_toNat' hn]; omega)
+                        rw [sub_toNat' hn]; omega_using [hd])
       simp only at f₁
       refine Frame.trans (Frame.sub (pushed_frameA (rs := rs) (s := s₀) hn) fun r hr => ?_)
         (Frame.sub f₁ fun r hr => ?_)
       · simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega) hd⟩
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_sub (by omega_using []) hd⟩
       · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | hr | rfl
         · refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-          exact belowA_sub (sp := s₀.sp) (a := 4 * rs.length) (by omega) hd
+          exact belowA_sub (sp := s₀.sp) (a := 4 * rs.length) (by omega_using []) hd
         · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
-        · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_inner (by omega) hd⟩
+        · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_inner (by omega_using []) hd⟩
     case alloc bytes =>
       split at hp <;> [rename_i hc; cases hp]
       cases hp
       simp only [armStack] at hd ⊢
       have hn := hc.2.2.2.2
       have f₁ := ih (by show armStack b ≤ (s₀.sp - BitVec.ofNat 32 bytes).toNat
-                        rw [sub_toNat' hn]; omega)
+                        rw [sub_toNat' hn]; omega_using [hd])
       simp only at f₁
       refine Frame.sub f₁ fun r hr => ?_
       simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | hr | rfl
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-          belowA_sub (sp := s₀.sp) (a := bytes) (by omega) hd⟩
+          belowA_sub (sp := s₀.sp) (a := bytes) (by omega_using []) hd⟩
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
-      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_inner (by omega) hd⟩
+      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), belowA_inner (by omega_using []) hd⟩
 
 /-- Calling verified code that may have frames: as `WP.callCalls`, but the
 callee may also change the `armStack` bytes below the stack pointer. -/

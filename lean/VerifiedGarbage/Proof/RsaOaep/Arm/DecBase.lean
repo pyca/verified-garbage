@@ -146,7 +146,7 @@ theorem geo : Geo P.lay P.scr := by
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
-  exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
+  exact ⟨rfl, by unfold oRsa; omega_using [hs, hf], ⟨P.scl * 8, by unfold oRsa; omega_using [hs], by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
 
 end In
 

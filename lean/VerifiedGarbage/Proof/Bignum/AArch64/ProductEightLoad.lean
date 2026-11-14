@@ -21,16 +21,16 @@ theorem loadAccumulator_ok {s : State} {B : Addr} {Z eT : Nat}
        t.mem = s.mem ∧ t.c = s.c) ∧
       Keep VG.Impl.Bignum.AArch64.BlockedRedc.aa s t := by
   have hld : ∀ i < 8, InRegions (s.rd ++ s.wr) (off B (eT + 8 * i)) 8 :=
-    fun i hi => hs.ld (by omega)
+    fun i hi => hs.ld (by omega_using [hT, hi])
   refine WP.keep VG.Impl.Bignum.AArch64.BlockedRedc.aa ?_ (by decide) (by decide) (by decide)
   have hcode : loadAccumulator =
     [ld .x19 .x16 0, ld .x20 .x16 8, ld .x21 .x16 16, ld .x22 .x16 24,
      ld .x23 .x16 32, ld .x24 .x16 40, ld .x25 .x16 48, ld .x26 .x16 56] := rfl
-  brun [hcode, h16, hs.ld (show eT + 8 ≤ Z by omega), hld 0 (by decide),
+  brun [hcode, h16, hs.ld (show eT + 8 ≤ Z by omega_using [hT]), hld 0 (by decide),
     hld 1 (by decide), hld 2 (by decide), hld 3 (by decide), hld 4 (by decide),
     hld 5 (by decide), hld 6 (by decide), hld 7 (by decide)]
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals rfl
 

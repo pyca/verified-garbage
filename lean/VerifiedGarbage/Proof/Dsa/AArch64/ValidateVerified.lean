@@ -60,7 +60,7 @@ theorem ValidatingABI.used {s : State} (h : ValidatingABI s) : usedBytes ≤ (s.
   unfold Spec.Dsa.lengthsValid at hl
   unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
-  omega
+  omega_using [hl, hs]
 
 theorem ValidatingABI.pre {s : State} (h : ValidatingABI s) : ValidatingPre h.input s := by
   have hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8) := Scr.of_mem (by rw [h.wr]; simp) h.scratchBound

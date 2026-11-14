@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.ModArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A canonical Montgomery word represents an ordinary witness
 
@@ -29,7 +30,7 @@ theorem round_eq_of_mont {c R b b' : Nat} (hc : 0 < c) (hR : Nat.Coprime R c)
 
 theorem witness_exists {c R x : Nat} (hR : Nat.Coprime R c) (hx : x < c) :
     ∃ b, b < c ∧ x = b % c * R % c := by
-  obtain ⟨b, hb, h⟩ := VG.ModArith.exists_mul_mod_eq hR (by omega) x
+  obtain ⟨b, hb, h⟩ := VG.ModArith.exists_mul_mod_eq hR (by omega_using [hx]) x
   exact ⟨b, hb, by rw [Nat.mod_eq_of_lt hb, h, Nat.mod_eq_of_lt hx]⟩
 
 end VG.Proof.MillerRabin

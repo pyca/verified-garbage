@@ -42,7 +42,7 @@ theorem setup_field_bytes {m n : Mem} (hf : Frame [slots L] m n)
       Spec.Ed25519.bytesAt m (State.addr L.E + BitVec.ofNat 64 d) 32 := by
   apply frame_bytes hf (field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   rintro r hr; rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint_base _ hmin (by omega)
+  exact Offset.disjoint_base _ hmin (by omega_using [hd])
 
 theorem setup_repr {m n : Mem} (hL : L.Ok) (hf : Frame [slots L] m n) {msg : List Byte}
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 m (State.addr L.scr) msg) :
@@ -61,9 +61,9 @@ theorem hash_field_bytes {m n : Mem} (hL : L.Ok) (hf : Frame (hashWrites L) m n)
   apply frame_bytes hf (field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   simp only [hashWrites, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact field_scr hL (by omega)
-  · exact Offset.disjoint_base _ (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by decide)
+  · exact field_scr hL (by omega_using [hd])
+  · exact Offset.disjoint_base _ (by omega_using [hmin]) (by omega_using [hd])
+  · exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by decide)
 
 theorem hash_out_bytes {m n : Mem} (hL : L.Ok) (hf : Frame (hashWrites L) m n) :
     Spec.Ed25519.bytesAt n (State.addr L.out) 32 = Spec.Ed25519.bytesAt m (State.addr L.out) 32 := by

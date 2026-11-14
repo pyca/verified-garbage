@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
 import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Sparse signed nine-bit recoding of a public scalar, its digits (`±1 … ±255`)
 stored in sixteen bits (`word`). -/
@@ -35,25 +36,25 @@ theorem residual_zero (k : Nat) : residual k 0 = k := rfl
 
 theorem residual_succ (k j : Nat) : residual k (j+1)=next (residual k j) := rfl
 
-theorem mod512_parity (n : Nat) : n % 512 % 2 = n % 2 := by omega
+theorem mod512_parity (n : Nat) : n % 512 % 2 = n % 2 := by omega_using []
 
 theorem magnitude_le (k j : Nat) : magnitude k j ≤ 255 := by
   have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
   have hp := mod512_parity (residual k j)
   dsimp only [magnitude]
-  split <;> (try split) <;> omega
+  split <;> (try split) <;> omega_arith
 
 theorem magnitude_odd_or_zero (k j : Nat) : magnitude k j=0 ∨ magnitude k j%2=1 := by
   have hp := mod512_parity (residual k j)
   have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
   dsimp only [magnitude]
-  split <;> (try split) <;> omega
+  split <;> (try split) <;> omega_arith
 
 theorem magnitude_zero_iff (k j : Nat) : magnitude k j=0 ↔ residual k j%2=0 := by
   have hp := mod512_parity (residual k j)
   have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
   dsimp only [magnitude]
-  split <;> (try split) <;> omega
+  split <;> (try split) <;> omega_arith
 
 theorem recurrence (k j : Nat) :
     if negative k j then residual k j + magnitude k j = 2*residual k (j+1)
@@ -64,14 +65,14 @@ theorem recurrence (k j : Nat) :
   simp only [negative,magnitude,residual_succ,next]
   by_cases he : residual k j%2=0
   · simp only [he,ne_eq,not_true_eq_false,false_and,decide_false,Bool.false_eq_true,ite_false,ite_true]
-    omega
+    omega_using [he]
   · simp only [he,ne_eq,not_false_eq_true,true_and,ite_false,decide_eq_true_eq]
-    split <;> split <;> omega
+    split <;> split <;> omega_arith
 
 theorem negative_magnitude_pos (k j : Nat) (h : negative k j=true) : 0<magnitude k j := by
   have hz := magnitude_zero_iff k j
   simp only [negative,decide_eq_true_eq] at h
-  omega
+  omega_using [hz, h]
 
 theorem word_toNat (k j : Nat) :
     (word k j).toNat = if negative k j then 65536-magnitude k j else magnitude k j := by
@@ -81,26 +82,26 @@ theorem word_toNat (k j : Nat) :
   cases hn : negative k j
   · simp only [Bool.false_eq_true,ite_false]
     change ((magnitude k j : Int)%65536).toNat=magnitude k j
-    omega
+    omega_using [hb]
   · have hp := hp hn
     simp only [ite_true]
     change ((-(magnitude k j : Int))%65536).toNat=65536-magnitude k j
-    omega
+    omega_using [hb, hp]
 
 theorem word_magnitude (k j : Nat) :
     (if (word k j).toNat<256 then (word k j).toNat else 65536-(word k j).toNat)=magnitude k j := by
   have hb := magnitude_le k j
   have hp := negative_magnitude_pos k j
   rw [word_toNat]
-  cases hn : negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at * <;> split <;> omega
+  cases hn : negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at * <;> split <;> omega_arith
 
 theorem word_negative (k j : Nat) : decide (256≤(word k j).toNat)=negative k j := by
   have hb := magnitude_le k j
   have hp := negative_magnitude_pos k j
   rw [word_toNat]
   cases hn : negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at *
-  · exact decide_eq_false (by omega)
-  · exact decide_eq_true (by omega)
+  · exact decide_eq_false (by omega_using [hb])
+  · exact decide_eq_true (by omega_using [hb])
 
 theorem word_zero_iff (k j : Nat) : word k j=0 ↔ magnitude k j=0 := by
   have hb := magnitude_le k j
@@ -111,7 +112,7 @@ theorem word_zero_iff (k j : Nat) : word k j=0 ↔ magnitude k j=0 := by
   · simp only [Bool.false_eq_true,ite_false]
   · have hp := negative_magnitude_pos k j hn
     simp only [ite_true]
-    omega
+    omega_using [hb, hp]
 
 def byte (k j : Nat) : BitVec 8 := BitVec.ofInt 8 (digit k j)
 
@@ -123,11 +124,11 @@ theorem byte_toNat (k j : Nat) :
   cases hn : negative k j
   · simp only [Bool.false_eq_true,ite_false]
     change ((magnitude k j : Int)%256).toNat=magnitude k j
-    omega
+    omega_using [hb]
   · have hp := hp hn
     simp only [ite_true]
     change ((-(magnitude k j : Int))%256).toNat=256-magnitude k j
-    omega
+    omega_using [hb, hp]
 
 theorem byte_zero_iff (k j : Nat) : byte k j=0 ↔ magnitude k j=0 := by
   have hb := magnitude_le k j
@@ -138,31 +139,31 @@ theorem byte_zero_iff (k j : Nat) : byte k j=0 ↔ magnitude k j=0 := by
   · simp only [Bool.false_eq_true,ite_false]
   · have hp := negative_magnitude_pos k j hn
     simp only [ite_true]
-    omega
+    omega_using [hb, hp]
 
 theorem digit_mod512 (k j : Nat) : digit k j =
     if residual k j%512%2=0 then 0 else if residual k j%512<256 then (residual k j%512:Int) else (residual k j%512:Int)-512 := by
   have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
   rw [mod512_parity]
   simp only [digit,negative,magnitude,decide_eq_true_eq]
-  split <;> split <;> (try split) <;> omega
+  split <;> split <;> (try split) <;> omega_arith
 
 /-- One recoding step halves any power-of-two bound. -/
 theorem next_pow_bound {n e : Nat} (hn : n≤2^(e+1)) : next n≤2^e := by
   by_cases he : n%2=0
-  · rw [next,ite_eq_left he,Nat.pow_succ] at *; omega
+  · rw [next,ite_eq_left he,Nat.pow_succ] at *; omega_using [hn]
   · rw [next,ite_eq_right he]
     by_cases h8 : e<8
-    · rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 ∨ e=4 ∨ e=5 ∨ e=6 ∨ e=7 by omega) with
+    · rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 ∨ e=4 ∨ e=5 ∨ e=6 ∨ e=7 by omega_using [h8]) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [Nat.reduceAdd,Nat.reducePow] at hn ⊢ <;> omega
+        simp only [Nat.reduceAdd,Nat.reducePow] at hn ⊢ <;> omega_arith
     · have hp : 2^(e+1)=512*2^(e-8) := by
-        rw [show 512=2^9 from rfl,←Nat.pow_add]; congr 1; omega
+        rw [show 512=2^9 from rfl,←Nat.pow_add]; congr 1; omega_using [h8]
       have hq : 2^e=256*2^(e-8) := by
-        rw [show 256=2^8 from rfl,←Nat.pow_add]; congr 1; omega
+        rw [show 256=2^8 from rfl,←Nat.pow_add]; congr 1; omega_using [h8]
       rw [hp] at hn
       rw [hq]
-      omega
+      omega_using [hn]
 
 /-- The residual of a scalar of `B` bits after `j` digits has `B - j` bits. -/
 theorem residual_boundB {B k : Nat} (hk : k≤2^B) {j : Nat} (hj : j≤B) :
@@ -170,18 +171,18 @@ theorem residual_boundB {B k : Nat} (hk : k≤2^B) {j : Nat} (hj : j≤B) :
   induction j with
   | zero => exact hk
   | succ j ih =>
-    have hp := ih (by omega)
-    have he : B-j=(B-(j+1))+1 := by omega
+    have hp := ih (by omega_using [hj])
+    have he : B-j=(B-(j+1))+1 := by omega_using [hj]
     rw [he] at hp
     exact next_pow_bound hp
 
 /-- A scalar of `B` bits has `B + 1` digits. -/
 theorem residual_zero_top {B k : Nat} (hk : k<2^B) : residual k (B+1)=0 := by
-  have h := residual_boundB (Nat.le_of_lt hk) (j:=B) (by omega)
+  have h := residual_boundB (Nat.le_of_lt hk) (j:=B) (by omega_using [])
   simp only [Nat.sub_self,Nat.pow_zero] at h
   change next (residual k B)=0
   unfold next
-  split <;> omega
+  split <;> omega_using [h]
 
 def point (C : Curve) (P : Point C) (k j : Nat) : Point C :=
   if negative k j then negPt (mul (magnitude k j) P) else mul (magnitude k j) P
@@ -193,11 +194,11 @@ theorem add_step {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) 
   | false =>
     simp only [point,he,Bool.false_eq_true,ite_false] at hs ⊢
     rw [hC.add_mul_mul hP]
-    congr 1; omega
+    congr 1; omega_using [hs]
   | true =>
     simp only [point,he,ite_true] at hs ⊢
-    rw [hC.add_mul_neg hP (by omega)]
-    congr 1; omega
+    rw [hC.add_mul_neg hP (by omega_using [hs])]
+    congr 1; omega_using [hs]
 
 theorem onCurve_point {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) (k j : Nat) :
     onCurve C (point C P k j)=true := by

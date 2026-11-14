@@ -101,7 +101,7 @@ theorem entry_ok {s : State} {x : BitVec 32} (h : Entry s x) :
   refine WP.mono (save_ok h) fun t ⟨hc, esp, rd, wr, hf, hsv⟩ => ?_
   refine WP.mono (copy_ok hc below_AC below_aAt (.inr (.inl (by decide)))) fun u ⟨k, fu, eu⟩ => ?_
   have k₁ : ∀ d, SAVE ≤ d → d + 4 ≤ SAVE + 16 → wd u.mem x d = wd t.mem x d := fun d h₁ h₂ =>
-    wd_frame1 fu hfit (by decide) (by simp only [SAVE] at h₂; omega) (.inr (by simp only [SAVE, AC] at *; omega))
+    wd_frame1 fu hfit (by decide) (by simp only [SAVE] at h₂; omega_using [h₂]) (.inr (by simp only [SAVE, AC] at *; omega_using [h₁]))
   refine ⟨k.ctx hc, by rw [k.esp, esp], by rw [k.rd, rd], by rw [k.wr, wr],
     (hf.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..).trans
       (fu.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp),
@@ -149,7 +149,7 @@ theorem pow250Fn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
   refine WP.seq (WP.mono (chain_spec x t hc) fun u ⟨ku, eu⟩ => ?_)
   have hsv' : Saved x s.gpr u.mem := by
     have k : ∀ d, SAVE ≤ d → d + 4 ≤ SAVE + 16 → wd u.mem x d = wd t.mem x d := fun d h₁ h₂ =>
-      wd_frame1 ku.frame hfit (by decide) (by simp only [SAVE] at h₂; omega) (.inr (by simp only [SAVE] at h₁; omega))
+      wd_frame1 ku.frame hfit (by decide) (by simp only [SAVE] at h₂; omega_using [h₂]) (.inr (by simp only [SAVE] at h₁; omega_using [h₁]))
     exact ⟨(k _ (by decide) (by decide)).trans hsv.ebx, (k _ (by decide) (by decide)).trans hsv.esi,
       (k _ (by decide) (by decide)).trans hsv.edi, (k _ (by decide) (by decide)).trans hsv.ebp⟩
   refine WP.mono (exit_ok (ku.ctx hc) hsv') fun v ⟨rb, rs, ri, rp, re, rr, rw', rm⟩ => ?_

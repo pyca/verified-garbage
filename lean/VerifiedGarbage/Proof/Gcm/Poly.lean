@@ -8,6 +8,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # GCM: the field GF(2¹²⁸) as polynomials
@@ -75,9 +76,9 @@ theorem gp_append {n m : Nat} (a : BitVec n) (b : BitVec m) : gp (a ++ b) = gp a
   ext k
   simp only [coeff_add, coeff_gp, coeff_X_pow_mul', BitVec.getMsbD_append]
   by_cases h : k < n
-  · have : ¬ n ≤ k := by omega
+  · have : ¬ n ≤ k := by omega_using [h]
     simp only [this, ite_false, add_zero]
-  · have : n ≤ k := by omega
+  · have : n ≤ k := by omega_using [h]
     simp only [this, ite_true]
     have e : a.getMsbD k = false := by simp only [BitVec.getMsbD, h, decide_false, Bool.false_and]
     rw [e]; simp only [bit, Bool.false_eq_true, ↓reduceIte, zero_add]
@@ -86,7 +87,7 @@ theorem degree_gp_lt {n : Nat} (v : BitVec n) : (gp v).degree < n := by
   rw [degree_lt_iff_coeff_zero]
   intro m hm
   rw [coeff_gp]
-  have e : v.getMsbD m = false := by simp only [BitVec.getMsbD, Bool.and_eq_false_imp, decide_eq_true_eq]; omega
+  have e : v.getMsbD m = false := by simp only [BitVec.getMsbD, Bool.and_eq_false_imp, decide_eq_true_eq]; omega_using [hm]
   rw [e]; rfl
 
 /-! ## The field -/
@@ -151,16 +152,16 @@ theorem gp_R : gp Spec.Gcm.R = X ^ 7 + X ^ 2 + X + 1 := by
   simp only [coeff_add, coeff_X_pow, coeff_X, coeff_one]
   by_cases hd : d < 128
   · rw [hb d hd]
-    rcases (by omega : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 7 ∨ (d ≠ 0 ∧ d ≠ 1 ∧ d ≠ 2 ∧ d ≠ 7)) with
+    rcases (by omega_using [] : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 7 ∨ (d ≠ 0 ∧ d ≠ 1 ∧ d ≠ 2 ∧ d ≠ 7)) with
       rfl | rfl | rfl | rfl | ⟨h0, h1, h2, h7⟩
     · decide
     · decide
     · decide
     · decide
     · simp only [bit, h0, decide_false, h1, Bool.or_self, h2, h7, Bool.false_eq_true, ↓reduceIte, add_zero, show (1 : Nat) ≠ d from fun h => h1 h.symm]
-  · have e : Spec.Gcm.R.getMsbD d = false := by simp only [BitVec.getMsbD, Nat.add_one_sub_one, Bool.and_eq_false_imp, decide_eq_true_eq]; omega
+  · have e : Spec.Gcm.R.getMsbD d = false := by simp only [BitVec.getMsbD, Nat.add_one_sub_one, Bool.and_eq_false_imp, decide_eq_true_eq]; omega_using [hd]
     rw [e]
-    simp only [show d ≠ 7 by omega, show d ≠ 2 by omega, show 1 ≠ d by omega, show d ≠ 0 by omega,
+    simp only [show d ≠ 7 by omega_using [hd], show d ≠ 2 by omega_using [hd], show 1 ≠ d by omega_using [hd], show d ≠ 0 by omega_using [hd],
       ite_false]
     rfl
 
@@ -183,9 +184,9 @@ theorem gp_shr1 (v : BitVec 128) :
     · have e : (v >>> 1).getMsbD (d + 1) = v.getMsbD d := by
         simp only [BitVec.getMsbD, BitVec.getLsbD_ushiftRight]
         by_cases h : d < 128
-        · simp only [show d + 1 < 128 by omega, h, decide_true, Bool.true_and]
-          congr 1; omega
-        · simp only [show ¬ d + 1 < 128 by omega, h, decide_false, Bool.false_and]
+        · simp only [show d + 1 < 128 by omega_using [hd, h], h, decide_true, Bool.true_and]
+          congr 1; omega_using [hd, h]
+        · simp only [show ¬ d + 1 < 128 by omega_using [h], h, decide_false, Bool.false_and]
       rw [e]
       split_ifs <;> simp [coeff_X_pow, hd]
 

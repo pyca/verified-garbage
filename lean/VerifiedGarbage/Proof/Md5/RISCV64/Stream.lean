@@ -92,7 +92,7 @@ theorem writeLE64 (m : Mem) (a : Addr) (x : BitVec 64) :
   simp only [MdStream.bytes32, List.range_succ, List.range_zero, List.map, Bool.false_eq_true, ite_false,
     List.cons_append, List.nil_append, List.cons.injEq, and_true]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> ext i hi <;> simp <;>
-    first | (intro; omega) | (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+    first | (intro; omega_using [hi]) | (rw [decide_eq_true (by omega_using [hi]), Bool.true_and]; congr 1; omega_using [])
 
 /-- An access at an offset within an access. -/
 theorem contains_add {r : Region} {a : Addr} {n d m : Nat} (h : r.Contains a n) (hd : d + m ≤ n) :
@@ -100,16 +100,16 @@ theorem contains_add {r : Region} {a : Addr} {n d m : Nat} (h : r.Contains a n) 
   simp only [Region.Contains] at h ⊢
   rw [show a + BitVec.ofNat 64 d - r.base = (a - r.base) + BitVec.ofNat 64 d by
     rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg]; ac_rfl, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h, hd]
 
 theorem in_split {rs : List Region} {a : Addr} (h : InRegions rs a 8) :
     InRegions rs a 4 ∧ InRegions rs (a + BitVec.ofNat 64 4) 4 := by
   obtain ⟨r, hr, hc⟩ := h
-  refine ⟨⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega⟩, ⟨r, hr, ?_⟩⟩
+  refine ⟨⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega_using [hc]⟩, ⟨r, hr, ?_⟩⟩
   simp only [Region.Contains] at hc ⊢
   rw [show a + BitVec.ofNat 64 4 - r.base = (a - r.base) + BitVec.ofNat 64 4 by
     rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg]; ac_rfl, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hc]
 
 theorem len_ok (s : State) (hout : InRegions s.wr (s.gpr .s1 + BitVec.ofNat 64 (params.N + 56)) 8) :
     WP isa (.block params.len) s fun s' => (∀ r, r ≠ .t1 → r ≠ .t3 → s'.gpr r = s.gpr r) ∧
@@ -145,13 +145,13 @@ theorem flat_length (f : Nat → BitVec 32) (k : Nat) :
   | zero => rfl
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.length_append, ih]
-    simp [MdStream.bytes32]; omega
+    simp [MdStream.bytes32]; omega_using []
 
 /-- A word written after `4 k` bytes. -/
 theorem writeBytes_word (m : Mem) (q : Addr) (xs : List Byte) (w : BitVec 32) {k : Nat} (hk : k < 4)
     (hx : xs.length = 4 * k) :
     (writeBytes m q xs).writeW (q + BitVec.ofNat 64 (4 * k)) w = writeBytes m q (xs ++ MdStream.bytes32 false w) := by
-  rw [writeW32_eq, ← hx, writeBytes_append _ _ _ _ (by simp [MdStream.bytes32]; omega)]
+  rw [writeW32_eq, ← hx, writeBytes_append _ _ _ _ (by simp [MdStream.bytes32]; omega_using [hk, hx])]
 
 theorem out_step {s₀ : State} (hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .s1) 16)
     (hout : InRegions s₀.wr (s₀.gpr .s3) 16) (hd : Region.Disjoint ⟨s₀.gpr .s1, 16⟩ ⟨s₀.gpr .s3, 16⟩)
@@ -164,13 +164,13 @@ theorem out_step {s₀ : State} (hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr 
   have hP := flat_length (fun j => s₀.mem.readW (s₀.gpr .s1 + BitVec.ofNat 64 (4 * j)) 32) k
   unfold outW
   rw [WP.block_append_iff]
-  refine WP.mono (loadLE32_ok (by decide) (by decide) (by decide) (by omega)
-    ⟨Rin, by rw [h.rd, h.wr]; exact hRin, by rw [h1]; exact contains_add cin (by omega)⟩) fun s₁ e₁ => ?_
+  refine WP.mono (loadLE32_ok (by decide) (by decide) (by decide) (by omega_using [hk])
+    ⟨Rin, by rw [h.rd, h.wr]; exact hRin, by rw [h1]; exact contains_add cin (by omega_using [hk])⟩) fun s₁ e₁ => ?_
   subst e₁
-  refine WP.mono (storeLE32_ok (by decide) (by decide) (by omega)
+  refine WP.mono (storeLE32_ok (by decide) (by decide) (by omega_using [hk])
     ⟨Rout, by rw [RegUpd.wr_write, RegUpd.wr_write, h.wr]; exact hRout, by
       rw [RegUpd.gpr_write_of_ne _ _ (by decide), RegUpd.gpr_write_of_ne _ _ (by decide), h3]
-      exact contains_add cout (by omega)⟩) fun s₂ e₂ => ?_
+      exact contains_add cout (by omega_using [hk])⟩) fun s₂ e₂ => ?_
   subst e₂
   -- The word read is the one of the initial memory: the output is elsewhere.
   have hread : s.mem.readW (s₀.gpr .s1 + BitVec.ofNat 64 (4 * k)) 32 =
@@ -178,11 +178,11 @@ theorem out_step {s₀ : State} (hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr 
     rw [h.mem]
     refine (writeBytes_frame (R := ⟨s₀.gpr .s3, 16⟩) _ _ _ ?_).readW
       (r := ⟨s₀.gpr .s1 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) ?_ (by decide)
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hP]; omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hP]; omega_using [hk]
     · intro r' hr'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       subst hr'
-      exact hd.sub_left (Offset.sub_base _ (by omega))
+      exact hd.sub_left (Offset.sub_base _ (by omega_using [hk]))
   refine ⟨fun r h1' h2' => ?_, h.rd, h.wr, h.sp, ?_⟩
   · simp only [RegUpd.gpr_write, h1', h2', ite_false]
     exact h.keep r h1' h2'

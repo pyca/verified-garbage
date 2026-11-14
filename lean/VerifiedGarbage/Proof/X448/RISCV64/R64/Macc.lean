@@ -28,7 +28,7 @@ variable {s : State}
 
 /-- The high word of a product of words is at most `2⁶⁴ - 2`. -/
 theorem nat_mulhi_lt {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) : a * b / 2 ^ 64 < 2 ^ 64 - 1 := by
-  have : a * b ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+  have : a * b ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_using [ha]) (by omega_using [hb])
   have h2 : (2 ^ 64 - 1) * (2 ^ 64 - 1) / 2 ^ 64 < 2 ^ 64 - 1 := by decide
   exact Nat.lt_of_le_of_lt (Nat.div_le_div_right this) h2
 
@@ -57,7 +57,7 @@ theorem acc_ok {l h t : Reg} (hlh : l ≠ h) (hlt : l ≠ t) (hht : h ≠ t)
     have l₀ := Wide.carry_le (s.gpr l + s.gpr .a7 < s.gpr .a7)
     generalize (if s.gpr l + s.gpr .a7 < s.gpr .a7 then (1 : BitVec 64) else 0) = k₀ at *
     have e₁ : (s.gpr .t0 + k₀).toNat = (s.gpr .t0).toNat + k₀.toNat := by
-      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_using [hb, c₀])]
     have c₁ := Wide.carry (s.gpr h) (s.gpr .t0 + k₀)
     have l₁ := Wide.carry_le (s.gpr h + (s.gpr .t0 + k₀) < s.gpr .t0 + k₀)
     generalize (if s.gpr h + (s.gpr .t0 + k₀) < s.gpr .t0 + k₀ then (1 : BitVec 64) else 0) = k₁ at *
@@ -93,8 +93,8 @@ theorem macc_ok {l h t x y : Reg} (hlh : l ≠ h) (hlt : l ≠ t) (hht : h ≠ t
       have := mulhi_lt (s.gpr x) (s.gpr y)
       have hlo := (s₁.gpr .a7).isLt
       have : (s₁.gpr .t0).toNat ≤ (s.gpr x).toNat * (s.gpr y).toNat / 2 ^ 64 :=
-        (Nat.le_div_iff_mul_le (by decide)).mpr (by rw [← e₁]; omega)
-      omega
+        (Nat.le_div_iff_mul_le (by decide)).mpr (by rw [← e₁]; omega_using [])
+      omega_arith
     rw [e₂ ht, hv, e₁, Nat.mod_eq_of_lt hb]
   · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with (h | h) | (h | h | h | h | h) <;> simp only [h, true_or, or_true]

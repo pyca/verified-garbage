@@ -108,7 +108,7 @@ theorem pbkImp (h : ∃ s, (Proof.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76).p
         simp only [argVal32] at h
         obtain ⟨e, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
         refine ⟨e, fun i hi => ?_⟩
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
           rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
         · exact setWidth_inj32 a0
         · exact setWidth_inj32 a1

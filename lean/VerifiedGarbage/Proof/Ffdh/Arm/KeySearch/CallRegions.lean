@@ -39,7 +39,7 @@ theorem covers_reads (h : KeyLive p original used keys scalars s) (room : used +
   intro r hr
   simp only [callRd, callRdPlain, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with (((rfl | rfl) | context) | args) | constant
-  · refine ⟨rDomain p, ?_, 0, by rw [BitVec.add_zero], by omega⟩
+  · refine ⟨rDomain p, ?_, 0, by rw [BitVec.add_zero], by omega_using []⟩
     rw [rd]
     apply List.mem_append_left
     change rDomain p ∈ s.rd
@@ -51,7 +51,7 @@ theorem covers_reads (h : KeyLive p original used keys scalars s) (room : used +
     change rRandom p ∈ s.rd
     rw [h.rd, h.input.read_regions]
     simp
-  · refine ⟨r, ?_, 0, by rw [BitVec.add_zero], by omega⟩
+  · refine ⟨r, ?_, 0, by rw [BitVec.add_zero], by omega_using []⟩
     rw [rd]
     apply List.mem_append_left
     change r ∈ s.rd
@@ -59,13 +59,13 @@ theorem covers_reads (h : KeyLive p original used keys scalars s) (room : used +
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
     exact Or.inl (Or.inl (Or.inr context))
   · obtain rfl := args
-    refine ⟨rArguments p, ?_, 0, by rw [BitVec.add_zero], by change 0 + (sampling.argumentBytes - 4) ≤ sampling.argumentBytes; omega⟩
+    refine ⟨rArguments p, ?_, 0, by rw [BitVec.add_zero], by change 0 + (sampling.argumentBytes - 4) ≤ sampling.argumentBytes; omega_using []⟩
     rw [wr]
     apply List.mem_append_right
     change rArguments p ∈ ⟨State.addr (allocated sampling.argumentBytes s).sp, sampling.argumentBytes⟩ :: s.wr
     rw [h.call_sp]
     exact List.mem_cons_self
-  · refine ⟨r, ?_, 0, by rw [BitVec.add_zero], by omega⟩
+  · refine ⟨r, ?_, 0, by rw [BitVec.add_zero], by omega_using []⟩
     rw [rd]
     apply List.mem_append_left
     change r ∈ s.rd
@@ -94,8 +94,8 @@ theorem attempt_frame (h : KeyLive p original used keys scalars s) {u t : State}
     have fit := h.input.bounds.stackFits
     change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit
     change 176 ≤ (p.sp - BitVec.ofNat 32 (24 + sampling.argumentBytes)).toNat
-    rw [FrameStack.sub_toNat' (by omega : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
-    omega
+    rw [FrameStack.sub_toNat' (by omega_using [fit] : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
+    omega_using [fit]
 
 
 end KeyLive

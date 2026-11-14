@@ -31,8 +31,8 @@ theorem constMem_held (T : Addr) (W : List (BitVec 64)) (hW : 8 * W.length ≤ 2
   rw [Mem.read_eq_of_bytes (n := 8) (v := W.getD i 0) fun j hj => ?_]
   · exact BitVec.setWidth_eq _
   · have e : (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - T).toNat = 8 * i + j := by
-      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    simp only [constMem, e, show 8 * i + j < 8 * W.length by omega, ↓reduceIte,
-        show (8 * i + j) / 8 = i by omega, show (8 * i + j) % 8 = j by omega]
+      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hW, hi, hj])]
+    simp only [constMem, e, show 8 * i + j < 8 * W.length by omega_using [hi, hj], ↓reduceIte,
+        show (8 * i + j) / 8 = i by omega_using [hj], show (8 * i + j) % 8 = j by omega_using [hj]]
 
 end VG

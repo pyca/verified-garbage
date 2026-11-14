@@ -28,8 +28,8 @@ theorem suffix_word {mem mem' : Mem} {B out : Addr} {Z k d : Nat}
   apply hf
   intro j hj heq
   have hs := hout j hj
-  rw [← heq, ofs_off B (by omega)] at hs
-  omega
+  rw [← heq, ofs_off B (by omega_using [hZ, hd, hi])] at hs
+  omega_using [hd, hi, hs]
 
 /-- Storing in the scratch suffix preserves both the parent and child
 headers, every arithmetic array and the linked child context. -/
@@ -50,33 +50,33 @@ theorem storeSuffix_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64
   have hn := hc.scr.nowrap
   have hhi := hc.hi
   have hlo := hc.lo
-  have hroot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
-  have hchild : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hroot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  have hchild : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have hsep : ∀ j < k, slot wx 8 ≤ ofs (off B o) (out + BitVec.ofNat 64 j) := by
     intro j hj
     have hp := hprefix j hj
-    rcases ofs_rebase B (out + BitVec.ofNat 64 j) (o := o) (by omega) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega
+    rcases ofs_rebase B (out + BitVec.ofNat 64 j) (o := o) (by omega_using [hn, hhi, hchild]) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega_arith
   refine WP.mono (store_ok hc ha hsp hsl hp hl hk1 hk' hkw hout hsep)
     fun t ⟨hv, hf, hk⟩ => ?_
   have hwrd : ∀ d, d + 8 ≤ Z → word t.mem B d = word s.mem B d :=
-    fun d hd => suffix_word hf hprefix (by omega) hd
+    fun d hd => suffix_word hf hprefix (by omega_using [hn]) hd
   have hcword : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := by
     intro i hi
     rw [word_off, word_off]
-    exact hwrd _ (by omega)
+    exact hwrd _ (by omega_using [hhi, hchild, hi])
   have hctx : SubCtx t B Z o w wx minv :=
     ⟨hc.scr.congr hk.wr, (hk.gpr .x0 (by decide)).trans hc.x0,
       ⟨(hcword _ (by decide)).trans hc.hdr.hw, (hcword _ (by decide)).trans hc.hdr.hminv,
-        fun j hj => (hcword _ (by unfold sArr; omega)).trans (hc.hdr.harr j hj)⟩,
+        fun j hj => (hcword _ (by unfold sArr; omega_using [hj])).trans (hc.hdr.harr j hj)⟩,
       (hcword _ (by decide)).trans hc.link,
-      (hwrd _ (by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega)).trans hc.nw,
-      fun j hj => (hwrd _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega); omega)).trans (hc.narr j hj),
+      (hwrd _ (by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hhi, hlo, this])).trans hc.nw,
+      fun j hj => (hwrd _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega_using [hj]); omega_using [hhi, hlo, this])).trans (hc.narr j hj),
       hlo, hhi⟩
   refine ⟨hctx, hv, hwrd, ?_, hf, hk⟩
   intro j hj
   apply wv_congr
   intro i hi
   rw [word_off, word_off]
-  exact hwrd _ (by have := slot_le (w := wx) hj; omega)
+  exact hwrd _ (by have := slot_le (w := wx) hj; omega_using [hhi, hi, this])
 
 end VG.Proof.Dsa.AArch64

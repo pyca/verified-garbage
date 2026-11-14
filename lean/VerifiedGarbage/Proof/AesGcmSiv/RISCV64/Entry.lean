@@ -135,7 +135,7 @@ theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 128) :
 
 theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 3840) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨⟨c.W + BitVec.ofNat 64 240, 3600⟩, by simp, Offset.sub _ h₁ (by omega)⟩
+  ⟨⟨c.W + BitVec.ofNat 64 240, 3600⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 
@@ -195,7 +195,7 @@ theorem entry_wp {c : Cx} {s : State} (Ar : Args c s) : WP isa (.block entry) s 
   rw [List.append_assoc, List.append_assoc]
   refine WP.block_append (wp_addSp (imm := 0) (by decide) fun s₁ u₁ => ?_)
   refine wp_ld (a := stackArgAddr s 0) (by decide) (by rw [u₁.gpr, stackArgAddr, Nat.mul_zero, BitVec.add_zero, BitVec.add_zero])
-    (by rw [stackArgAddr, Ar.sp]; exact Spill.al8 (by have := L.spal; omega) (by decide))
+    (by rw [stackArgAddr, Ar.sp]; exact Spill.al8 (by have := L.spal; omega_using [this]) (by decide))
     (by rw [u₁.rd, u₁.wr]; simpa using in_off Ar.argsC (d := 0) (n := 8) (by decide) (by decide))
     fun s₂ u₂ => WP.block_nil ?_
   have W₂ : s₂.gpr .t1 = c.W := by rw [u₂.gpr, u₁.mem, ← Ar.w]; rfl

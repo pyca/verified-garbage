@@ -47,9 +47,9 @@ theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p
   simp only [Region.Contains] at hc ⊢
   have e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
     rw [Offset.sub_add_eq]; exact (BitVec.sub_add_cancel _ _).symm
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hk]),
+    Nat.mod_eq_of_lt (by omega_using [hd, hk, hc])]
+  omega_using [hd, hc]
 
 theorem in_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hd : d + n ≤ k)
     (hk : k < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 d) n :=
@@ -69,7 +69,7 @@ theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨
     Covers [⟨p, n⟩] rs := by
   intro a m ⟨r, hr, hc⟩
   simp only [List.mem_singleton] at hr; subst hr
-  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
@@ -170,7 +170,7 @@ theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + Bit
 
 theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 2560) :
     Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
-  Offset.sub _ h₁ (by omega)
+  Offset.sub _ h₁ (by omega_using [h₂])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
@@ -197,13 +197,13 @@ omit L in
 /-- Parts of the state are disjoint. -/
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
     (⟨st + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨st + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 omit L in
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨w + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 end Lay
 
@@ -256,21 +256,21 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataOk st
 
 theorem toNat_add {j : Nat} (hj : j < n) : (D + BitVec.ofNat 64 j).toNat = D.toNat + j := by
   have := h.fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega_using [hj, this]), Nat.mod_eq_of_lt (by omega_using [hj, this])]
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ n) : DataOk st w s D k where
   rd := covers_prefix h.rd hk
-  lt := by have := h.lt; omega
-  fit := by have := h.fit; omega
+  lt := by have := h.lt; omega_using [hk, this]
+  fit := by have := h.fit; omega_using [hk, this]
   st := h.st.sub_left (Region.sub_prefix hk)
   w := h.w.sub_left (Region.sub_prefix hk)
 
 /-- The `k` (at least one) bytes from `j` on. -/
 theorem sub {j k : Nat} (hjk : j + k ≤ n) (hk : 0 < k) : DataOk st w s (D + BitVec.ofNat 64 j) k := by
   have hs : Region.Sub ⟨D + BitVec.ofNat 64 j, k⟩ ⟨D, n⟩ := Offset.sub_base _ hjk
-  refine ⟨covers_off h.rd hjk h.lt, by have := h.lt; omega, ?_, h.st.sub_left hs, h.w.sub_left hs⟩
-  rw [h.toNat_add (by omega)]; have := h.fit; omega
+  refine ⟨covers_off h.rd hjk h.lt, by have := h.lt; omega_using [hjk, this], ?_, h.st.sub_left hs, h.w.sub_left hs⟩
+  rw [h.toNat_add (by omega_using [hjk, hk])]; have := h.fit; omega_using [hjk, this]
 
 end DataOk
 
@@ -293,17 +293,17 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (o : Nat) (xs : List Byte) (h : 
   · simp only [bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    exact writeBytes_before m p xs hi (by omega)
+    exact writeBytes_before m p xs hi (by omega_using [h])
   · apply List.ext_getElem (by simp [bytesAt])
     intro i h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
     simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes, Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), h₁, ite_true,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [h, h₂]), h₁, ite_true,
       List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁, Option.getD_some]
 
 theorem bytesAt_writeBytes_self (m : Mem) (p : Addr) (xs : List Byte) (h : xs.length < 2 ^ 64) :
     bytesAt (writeBytes m p xs) p xs.length = xs := by
-  have := bytesAt_writeBytes m p 0 xs (by omega)
+  have := bytesAt_writeBytes m p 0 xs (by omega_using [h])
   simp only [Nat.zero_add, BitVec.add_zero] at this
   rw [this]; rfl
 
@@ -314,16 +314,16 @@ theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length =
 theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat} (hn : xs.length ≤ n)
     (h : n < 2 ^ 64) :
     bytesAt (writeBytes m p xs) p n = xs ++ bytesAt m (p + BitVec.ofNat 64 xs.length) (n - xs.length) := by
-  rw [show n = xs.length + (n - xs.length) by omega, bytesAt_add, bytesAt_writeBytes_self _ _ _ (by omega),
+  rw [show n = xs.length + (n - xs.length) by omega_using [hn], bytesAt_add, bytesAt_writeBytes_self _ _ _ (by omega_using [hn, h]),
     Nat.add_sub_cancel_left]
   congr 1
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   simp only [writeBytes, BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := xs.length) (by omega), Nat.mod_eq_of_lt (a := i) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  simp [show ¬ (xs.length + i < xs.length) by omega]
+  rw [Nat.mod_eq_of_lt (a := xs.length) (by omega_using [hn, h]), Nat.mod_eq_of_lt (a := i) (by omega_using [h, hi]),
+    Nat.mod_eq_of_lt (by omega_using [h, hi])]
+  simp [show ¬ (xs.length + i < xs.length) by omega_using []]
 
 /-- A write of `xs` at `q`, within `R`, keeps everything outside `R`. -/
 theorem writeBytes_frame' (m : Mem) {q : Addr} {xs : List Byte} {n : Nat} (hn : xs.length = n) :
@@ -339,8 +339,8 @@ theorem ofNat_sub64 {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := b) (by omega_using [h, ha]), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega_using [ha])]
+  omega_using [h, ha]
 
 theorem ofNat_add64 (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) :=
   (BitVec.ofNat_add a b).symm
@@ -349,12 +349,12 @@ theorem and15 (x : BitVec 64) : x &&& BitVec.ofNat 64 15 = BitVec.ofNat 64 (x.to
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 15) (by decide),
     show (15 : Nat) = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem shr4 {n : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 = BitVec.ofNat 64 (n / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hn])]
 
 theorem ofNat_eq_zero {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n = 0) ↔ n = 0 := by
   constructor

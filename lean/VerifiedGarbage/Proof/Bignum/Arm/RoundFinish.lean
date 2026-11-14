@@ -27,20 +27,20 @@ theorem roundFinish_ok (s : State) {base : BitVec 32} {size top tmp : Nat}
   have hn := ws.nowrap
   rw [roundFinish, List.append_assoc]
   apply WP.block_append_iff.mpr
-  refine WP.mono (clearTop_ok s ws (by omega) ptr) ?_
+  refine WP.mono (clearTop_ok s ws (by omega_using [fit, htmp]) ptr) ?_
   rintro u ⟨mem1, ptr1, keep1⟩
   rw [← htmp] at ptr1
   have wr1 := writeW32_outside s.mem (State.addr base) (d := top) (0 : BitVec 32) (by omega)
   rw [← mem1] at wr1
-  have oldPtr := outside_read32 wr1 (d := tmp + 16) (by omega) (by omega)
-  have oldCount := outside_read32 wr1 (d := tmp + 20) (by omega) (by omega)
+  have oldPtr := outside_read32 wr1 (d := tmp + 16) (by omega_using [htmp]) (by omega_using [fit, hn])
+  have oldCount := outside_read32 wr1 (d := tmp + 20) (by omega_using [htmp]) (by omega_using [fit, hn])
   apply WP.block_append_iff.mpr
-  refine WP.mono (advanceOperand_ok u (ws.congr keep1.wr) (by omega) ptr1) ?_
+  refine WP.mono (advanceOperand_ok u (ws.congr keep1.wr) (by omega_using [fit]) ptr1) ?_
   rintro v ⟨mem2, keep2⟩
   have wr2 := writeW32_outside u.mem (State.addr base) (d := tmp + 16)
-    (u.mem.readW (off (State.addr base) (tmp + 16)) 32 + 4) (by omega)
+    (u.mem.readW (off (State.addr base) (tmp + 16)) 32 + 4) (by omega_using [fit, hn])
   rw [← mem2] at wr2
-  have oldCount2 := (outside_read32 wr2 (d := tmp + 20) (by omega) (by omega)).trans oldCount
+  have oldCount2 := (outside_read32 wr2 (d := tmp + 20) (by omega_using []) (by omega_using [fit, hn])).trans oldCount
   refine WP.mono (decrementRounds_ok v ((ws.congr keep1.wr).congr keep2.wr) fit
     ((keep2.gpr .r0 (by simp)).trans ptr1)) ?_
   rintro t ⟨mem3, zero, keep3⟩

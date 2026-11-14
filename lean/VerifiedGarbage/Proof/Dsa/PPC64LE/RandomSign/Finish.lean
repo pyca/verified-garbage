@@ -51,7 +51,7 @@ theorem callFinish_ok {s : State} {a st : Nat} (h26 : s.gpr .r26 = BitVec.ofNat 
   · simp only [decide_eq_true_eq] at hz
     refine WP.seq (WP.mono (WP.keep [.r26] (Q := fun t => t.mem = s.mem ∧ t.gpr .r26 = BitVec.ofNat 64 (a - 1))
       (by prun [h26, VG.Offset.ofNat_sub_ofNat ha]) (by decide)) fun t₁ ⟨⟨m1, a26⟩, k1⟩ => ?_)
-    refine WP.ite (decide (a - 1 ≠ 0)) (eval_nonzero_ofNat' _ _ (by omega) a26) (fun hn => ?_) (fun hn => ?_)
+    refine WP.ite (decide (a - 1 ≠ 0)) (eval_nonzero_ofNat' _ _ (by omega_using [ha']) a26) (fun hn => ?_) (fun hn => ?_)
     · simp only [decide_eq_true_eq] at hn
       refine WP.mono (WP.keep [.r31] (Q := fun t => t.mem = t₁.mem ∧ t.gpr .r31 = BitVec.ofNat 64 4) (by prun)
         (by decide)) fun t ⟨⟨tm, t31⟩, k2⟩ => ⟨tm.trans m1, (k1.trans k2).mono (by decide), fun h => absurd hz h,

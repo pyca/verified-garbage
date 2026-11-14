@@ -49,7 +49,7 @@ theorem reject_mask (p : GkP) (s : State) (h : CB p s ∧ isa.eval .e s = some t
   have hZ : 128 * p.k + 256 ≤ p.Z := hw.base.hZ
   have hk : p.k ≤ 1024 := hw.base.k2
   refine WP.mono (leave_ok (hw.mem.ctx hd)) fun t ⟨hdt, hm, k⟩ => ?_
-  refine ⟨hw.base.scr.congr k.2.2, hdt, by omega, by omega, hb.ld, ?_, ?_, ?_,
+  refine ⟨hw.base.scr.congr k.2.2, hdt, by omega_using [hZ], by omega_using [hk], hb.ld, ?_, ?_, ?_,
     ⟨fun i hi => by rw [k.2.2]; exact hb.ox.wr i hi, hb.ox.sep⟩, decide (p.sv = true), ?_⟩
   · rw [hm]
     exact hw.base.hdr (sX, off p.xp p.ld) (by simp [CheckPrivate.KpP.headers, GkP.kp])

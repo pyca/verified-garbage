@@ -24,20 +24,20 @@ theorem fusedReductionStage_relCT {base : BitVec 32} {size tmp a b mod acc n i :
     obtain ⟨ct, ⟨it, ht⟩, pt⟩ := h.2
     have layout := cs.layout
     have fits := cs.tmpFits
-    apply reductionArgs_ct (base := base) (size := size) (top := acc + 4 * n) (acc := acc) (by omega) s t tr1 tr2 u v ?_ e1 e2
+    apply reductionArgs_ct (base := base) (size := size) (top := acc + 4 * n) (acc := acc) (by omega_using [layout, fits]) s t tr1 tr2 u v ?_ e1 e2
     refine ⟨cs.workspace, ct.workspace, ps, pt, ?_, ?_⟩
-    · simpa only [show acc + 4 * n + 44 = tmp + 28 by omega] using hs.accPtr
-    · simpa only [show acc + 4 * n + 44 = tmp + 28 by omega] using ht.accPtr
+    · simpa only [show acc + 4 * n + 44 = tmp + 28 by omega_using [layout]] using hs.accPtr
+    · simpa only [show acc + 4 * n + 44 = tmp + 28 by omega_using [layout]] using ht.accPtr
   have wp (s : State) (h : P s) : WP isa (.block reductionArgs) s Q := by
     obtain ⟨ctx, ⟨inv, hdr⟩, ptr⟩ := h
     have layout := ctx.layout
     have fits := ctx.tmpFits
     refine WP.mono (reductionArgs_ok s (acc := acc) (mod := mod) (n := n) inv ctx.workspace
-      (by omega) (by omega) ptr ?_ ?_ ?_ ?_) (fun _ h => ⟨h.2.1, h.2.2.1, h.2.2.2.1⟩)
-    · simpa only [show acc + 4 * n + 16 = tmp by omega] using hdr.count
-    · simpa only [show acc + 4 * n + 24 = tmp + 8 by omega] using hdr.mPtr
-    · simpa only [show acc + 4 * n + 28 = tmp + 12 by omega] using hdr.inverse
-    · simpa only [show acc + 4 * n + 44 = tmp + 28 by omega] using hdr.accPtr
+      (by omega_using [layout, fits]) (by omega_using [layout, fits]) ptr ?_ ?_ ?_ ?_) (fun _ h => ⟨h.2.1, h.2.2.1, h.2.2.2.1⟩)
+    · simpa only [show acc + 4 * n + 16 = tmp by omega_using [layout]] using hdr.count
+    · simpa only [show acc + 4 * n + 24 = tmp + 8 by omega_using [layout]] using hdr.mPtr
+    · simpa only [show acc + 4 * n + 28 = tmp + 12 by omega_using [layout]] using hdr.inverse
+    · simpa only [show acc + 4 * n + 44 = tmp + 28 by omega_using [layout]] using hdr.accPtr
   unfold fusedReductionStage
   refine (pair_posts ct wp).seq ?_
   intro s t tr1 tr2 u v h e1 e2

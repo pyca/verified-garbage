@@ -31,7 +31,7 @@ theorem state_frame {rs : List Region} {s u : State} {p : Addr}
   apply Vector.ext
   intro k hk
   simp only [Spec.Sha3.stateAt,Vector.getElem_ofFn]
-  exact hf.readW (r := ⟨p,200⟩) (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨p,200⟩) (Offset.contains_base p (by omega_using [hk]) (by omega_using [hk])) hd (by decide)
 
 theorem env_saved {P : Sp} {σ s u : State} (hp : SpOk P σ) (he : Env P σ s)
     (hk : Keep [] s u) (hf : Frame (parserSaves P.scr) s.mem u.mem) : Env P σ u :=

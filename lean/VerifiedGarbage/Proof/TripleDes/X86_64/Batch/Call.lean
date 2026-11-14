@@ -207,7 +207,7 @@ structure EcbCallPost (d : Direction) (s : State) (K D : Addr) (n : Nat) (s' : S
 theorem EcbCallPre.pre {d : Direction} {s : State} {K D : Addr} {n : Nat} (h : EcbCallPre s K D n) :
     (Spec.TripleDes.ecbContract X86_64.abi d 1040).pre
       (s.callEntry.withRegions [⟨K, 384⟩] [⟨D, 8 * n⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   have ⟨rR, rS⟩ := reserved_stk (s.gpr .rsp)
   sig_pre [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, X86_64.abi, X86_64.argRegs]
   simp only [h.rdi, h.rsi, h.rdx, hn, Nat.mul_comm n 8]
@@ -215,7 +215,7 @@ theorem EcbCallPre.pre {d : Direction} {s : State} {K D : Addr} {n : Nat} (h : E
   have hN : stkN = 1048 := rfl
   refine ⟨?_, trivial, trivial, h.kd, (h.stkK.sub_left rR), (h.stkD.sub_left rR),
     (h.stkK.sub_left rS), (h.stkD.sub_left rS), h.kw, h.wrap⟩
-  rw [BitVec.toNat_sub, show (8 : Addr).toNat = 8 from rfl]; omega
+  rw [BitVec.toNat_sub, show (8 : Addr).toNat = 8 from rfl]; omega_using [hsp, hN]
 
 /-- The ECB postcondition, byte by byte. -/
 theorem ecb_bytes {d : Direction} {k : Spec.TripleDes.Schedule} {m m' : Mem} {D : Addr} {n : Nat}
@@ -257,13 +257,13 @@ theorem scheduleAt_congr {m m' : Mem} {p : Addr}
     | cons j l ih =>
       intro init
       simp only [List.foldl_cons]
-      rw [h _ (by have := hl j List.mem_cons_self; omega)]
+      rw [h _ (by have := hl j List.mem_cons_self; omega_using [hi, this])]
       exact ih (fun x hx => hl x (List.mem_cons_of_mem _ hx)) _
   exact this _ (fun j hj => List.mem_range.mp hj) 0
 
 theorem ecb_call (v : EcbImpl) (d : Direction) {s : State} {K D : Addr} {n : Nat} (h : EcbCallPre s K D n) :
     WP isa (.call (v.name d) (v.code d)) s (EcbCallPost d s K D n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.callF (k := Spec.TripleDes.ecbContract X86_64.abi d 1040) (v.verified d).1 (v.spSafe d)
     (Nat.lt_of_le_of_lt (Nat.add_le_add_right (v.depth d) 16) (by decide))
     (rd := [⟨K, 384⟩]) (wr := [⟨D, 8 * n⟩]) h.pre h.reads h.writes ?_
@@ -283,12 +283,12 @@ theorem ecb_call (v : EcbImpl) (d : Direction) {s : State} {K D : Addr} {n : Nat
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-    · exact ⟨below (s.gpr .rsp) stkN, by simp, Offset.sub_below _ (by have := v.depth d; omega)
-        (by have := v.depth d; omega)⟩
+    · exact ⟨below (s.gpr .rsp) stkN, by simp, Offset.sub_below _ (by have := v.depth d; omega_using [hN, this])
+        (by have := v.depth d; omega_using [hN, this])⟩
   · rw [out j hj u hu, eK]
     rw [Proof.TripleDes.bytesAt_eq_of_frame _ 8 fE (by decide) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ((h.stkD.sub_right (Offset.sub_base D (by omega))).sub_left s8).symm)]
+      exact ((h.stkD.sub_right (Offset.sub_base D (by omega_using [hj]))).sub_left s8).symm)]
 
 /-- Calls of an ECB function, with the same arguments in both runs, are
 constant time. -/

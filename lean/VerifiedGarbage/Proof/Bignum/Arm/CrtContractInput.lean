@@ -206,7 +206,7 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
     pPositive := pPositive, pShort := pShort, qPositive := qPositive, qShort := qShort,
     r2 := ?_,
     source := ?_, sourceSeparate := ?_, outputFits := outFit, write := ?_, outputSeparate := ?_,
-    output := rfl, modulus := rfl, count := ?_, stackFit := stackFit, argFit := by omega,
+    output := rfl, modulus := rfl, count := ?_, stackFit := stackFit, argFit := by omega_using [argFit],
     argRead := ?_, pointer := ?_, length := ?_, workspaceArg := argRead 12 (by decide),
     stackWorkspace := ?_, argsWorkspace := ?_, stackSource := ?_, stackOutput := ?_, stackArgs := ?_ }
   · simpa only [crtCallGeometryP, crtCallGeometry, Nat.mul_comm] using wsFit
@@ -311,7 +311,7 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
       Offset.sub_base _ (by decide)
     have args : InRegions (s.rd ++ s.wr) (State.addr s.sp) 64 :=
       ⟨⟨State.addr s.sp, 64⟩, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
-    refine ⟨by omega, VG.CallLay.inRegions_sub args (by decide : 56 + 4 ≤ 64) (by decide),
+    refine ⟨by omega_using [argFit], VG.CallLay.inRegions_sub args (by decide : 56 + 4 ≤ 64) (by decide),
       argRead 14 (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · exact (by simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using wsArgs.symm : Region.Disjoint _ _).sub_left slotSub
     · exact (by simpa only [crtCallGeometryP, crtCallGeometry, State.addr] using outArgs.symm : Region.Disjoint _ _).sub_left slotSub
@@ -321,7 +321,7 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
     · rw [words]; simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using wsR2.symm
     · rw [words, frame]; simpa only [State.addr] using stackR2
     · rw [words]; simpa only [crtCallGeometryP, crtCallGeometry, State.addr] using outR2.symm
-    · rw [show (crtCallGeometryP s).r2Words = (stackArg s 15).toNat by omega]
+    · rw [show (crtCallGeometryP s).r2Words = (stackArg s 15).toNat by omega_using [words]]
       exact r2Words
 
 theorem crt_contract_pqP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre s) :

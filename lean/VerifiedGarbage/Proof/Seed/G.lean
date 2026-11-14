@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 
 /-!
@@ -41,13 +42,13 @@ theorem getLsbD_append4 (z3 z2 z1 z0 : Byte) {tb : Nat} (ht : tb < 8) :
     (z3 ++ z2 ++ z1 ++ z0).getLsbD (8 * 2 + tb) = z2.getLsbD tb ∧
     (z3 ++ z2 ++ z1 ++ z0).getLsbD (8 * 3 + tb) = z3.getLsbD tb := by
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [BitVec.getLsbD_append, ite_eq_left (by omega), Nat.mul_zero, Nat.zero_add]
-  · rw [BitVec.getLsbD_append, ite_eq_right (by omega), BitVec.getLsbD_append, ite_eq_left (by omega),
-      show 8 * 1 + tb - 8 = tb by omega]
-  · rw [BitVec.getLsbD_append, ite_eq_right (by omega), BitVec.getLsbD_append, ite_eq_right (by omega),
-      BitVec.getLsbD_append, ite_eq_left (by omega), show 8 * 2 + tb - 8 - 8 = tb by omega]
-  · rw [BitVec.getLsbD_append, ite_eq_right (by omega), BitVec.getLsbD_append, ite_eq_right (by omega),
-      BitVec.getLsbD_append, ite_eq_right (by omega), show 8 * 3 + tb - 8 - 8 - 8 = tb by omega]
+  · rw [BitVec.getLsbD_append, ite_eq_left (by omega_using [ht]), Nat.mul_zero, Nat.zero_add]
+  · rw [BitVec.getLsbD_append, ite_eq_right (by omega_using []), BitVec.getLsbD_append, ite_eq_left (by omega_using [ht]),
+      show 8 * 1 + tb - 8 = tb by omega_using []]
+  · rw [BitVec.getLsbD_append, ite_eq_right (by omega_using []), BitVec.getLsbD_append, ite_eq_right (by omega_using []),
+      BitVec.getLsbD_append, ite_eq_left (by omega_using [ht]), show 8 * 2 + tb - 8 - 8 = tb by omega_using []]
+  · rw [BitVec.getLsbD_append, ite_eq_right (by omega_using []), BitVec.getLsbD_append, ite_eq_right (by omega_using []),
+      BitVec.getLsbD_append, ite_eq_right (by omega_using []), show 8 * 3 + tb - 8 - 8 - 8 = tb by omega_using []]
 
 theorem getLsbD_g (x : Word) {a' tb : Nat} (ha : a' < 4) (ht : tb < 8) :
     (g x).getLsbD (8 * a' + tb) =
@@ -58,7 +59,7 @@ theorem getLsbD_g (x : Word) {a' tb : Nat} (ha : a' < 4) (ht : tb < 8) :
   have e3 : (x >>> 24).setWidth 8 = byteOf x 3 := rfl
   have h4 := getLsbD_append4 (tb := tb)
   simp only [g, e0, e1, e2, e3, xor4, sOf, sTable]
-  rcases (show a' = 0 ∨ a' = 1 ∨ a' = 2 ∨ a' = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show a' = 0 ∨ a' = 1 ∨ a' = 2 ∨ a' = 3 by omega_using [ha]) with rfl | rfl | rfl | rfl
   · rw [(h4 _ _ _ _ ht).1]; simp [maskOf]
   · rw [(h4 _ _ _ _ ht).2.1]; simp [maskOf]
   · rw [(h4 _ _ _ _ ht).2.2.1]; simp [maskOf]

@@ -78,7 +78,7 @@ theorem cryptWhole_ct {D : Addr} {n q j : Nat} :
       (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr, hs.data.of_eq hk₁.rd hk₁.wr, hs.le,
       by rw [hk₁.wr]; exact hs.xw, hs.dx, h5, by rw [h6, hnb]⟩
   · refine CT.ite (decide (nb = 0)) (fun s ⟨_, _, _, _, _, _, hd, _, _, _, _, h6⟩ =>
-      eval_zero h6 (by have := hd.ok.lt; omega)) (fun _ => CT.skip) fun hb => ?_
+      eval_zero h6 (by have := hd.ok.lt; omega_using [hnb, this])) (fun _ => CT.skip) fun hb => ?_
     have h0 : nb ≠ 0 := by simpa using hb
     let J₂ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r28 = x ∧
       Env V sp s ∧ DataW (V .r29) (V .r30) (V .r31) s D n ∧ j ≤ n ∧ Covers [xR (V .r28)] s.wr ∧
@@ -100,10 +100,10 @@ theorem cryptWhole_ct {D : Addr} {n q j : Nat} :
     · refine CT.ctr fun s₁ s₂ ⟨V₁, a29, a30, a31, a28, he₁, hd₁, hj₁, ax, adx, a3, a4, a5, a6, a7⟩
         ⟨V₂, b29, b30, b31, b28, he₂, hd₂, _, bx, bdx, b3, b4, b5, b6, b7⟩ => ?_
       have hn₁ := hd₁.ok.lt
-      have g₁ := ctrWhole_mk (L.v a29 a30 a31) (by rw [a29, a30, a31, a28]; exact X) he₁ a3 a4 a5 a6 a7 (by omega)
-        (hd₁.sub (j := j) (k := 16 * nb) (by omega) (by omega)) ax (adx.sub_left (VG.Offset.sub_base _ (by omega)))
-      have g₂ := ctrWhole_mk (L.v b29 b30 b31) (by rw [b29, b30, b31, b28]; exact X) he₂ b3 b4 b5 b6 b7 (by omega)
-        (hd₂.sub (j := j) (k := 16 * nb) (by omega) (by omega)) bx (bdx.sub_left (VG.Offset.sub_base _ (by omega)))
+      have g₁ := ctrWhole_mk (L.v a29 a30 a31) (by rw [a29, a30, a31, a28]; exact X) he₁ a3 a4 a5 a6 a7 (by omega_using [hnb, hn₁])
+        (hd₁.sub (j := j) (k := 16 * nb) (by omega_using [hnb, h0]) (by omega_using [h0])) ax (adx.sub_left (VG.Offset.sub_base _ (by omega_using [hnb, h0])))
+      have g₂ := ctrWhole_mk (L.v b29 b30 b31) (by rw [b29, b30, b31, b28]; exact X) he₂ b3 b4 b5 b6 b7 (by omega_using [hnb, hn₁])
+        (hd₂.sub (j := j) (k := 16 * nb) (by omega_using [hnb, h0]) (by omega_using [h0])) bx (bdx.sub_left (VG.Offset.sub_base _ (by omega_using [hnb, h0])))
       rw [a29, a30, a28] at g₁
       rw [b29, b30, b28] at g₂
       exact ⟨_, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
@@ -111,7 +111,7 @@ theorem cryptWhole_ct {D : Addr} {n q j : Nat} :
 theorem cryptTail_ct {D : Addr} {n q j : Nat} :
     CT (CrM c st w x sp D n q j) cryptTail := by
   refine CT.ite (decide (n - j = 0)) (fun s ⟨_, _, _, _, _, _, _, _, _, hs⟩ =>
-    eval_zero hs.r25 (by have := hs.data.ok.lt; omega)) (fun _ => CT.skip) fun _ => ?_
+    eval_zero hs.r25 (by have := hs.data.ok.lt; omega_using [this])) (fun _ => CT.skip) fun _ => ?_
   let J₁ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧ V .r28 = x ∧
     Env V sp s ∧ Covers [xR (V .r28)] s.wr ∧ s.gpr .r3 = V .r29 ∧
     s.gpr .r4 = V .r30 + BitVec.ofNat 64 48 ∧ s.gpr .r5 = V .r30 + BitVec.ofNat 64 64 ∧

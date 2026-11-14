@@ -33,7 +33,7 @@ theorem codeAt_ok {s : State} {base : Addr} {size w k src modulus c x : Nat} (sc
   have parts {lo hi v : Nat} (h : v = lo + 2 ^ (32 * k) * hi) (hv : v < 2 ^ (32 * k)) : lo = v ∧ hi = 0 := by
     rcases Nat.eq_zero_or_pos hi with e | e
     · subst e; rw [Nat.mul_zero, Nat.add_zero] at h; exact ⟨h.symm, rfl⟩
-    · have := Nat.le_mul_of_pos_right (2 ^ (32 * k)) e; omega
+    · have := Nat.le_mul_of_pos_right (2 ^ (32 * k)) e; omega_using [h, hv, this]
   have lowX : val32 s.mem base src k = x ∧ val32 s.mem base (src + 4 * k) (2 * w - k) = 0 :=
     parts (by rw [← witness]; exact split s.mem) bound
   unfold codeAt
@@ -43,14 +43,14 @@ theorem codeAt_ok {s : State} {base : Addr} {size w k src modulus c x : Nat} (sc
   have lowA : val32 a.mem base src k = x ∧ val32 a.mem base (src + 4 * k) (2 * w - k) = 0 :=
     parts (by rw [← (Va.trans witness)]; exact split a.mem) bound
   refine WP.mono (WitnessFallback.codeAt_ok (uniform := decide (2 ≤ x ∧ x < c - 1))
-    (scratch.of_keeps Ka (by unfold WitnessUniform.clob; decide)) two (by omega) uniform)
+    (scratch.of_keeps Ka (by unfold WitnessUniform.clob; decide)) two (by omega_using [narrow, srcFit]) uniform)
     fun t ⟨V, Ot, Kt⟩ => ?_
   have high : val32 t.mem base (src + 4 * k) (2 * w - k) = 0 := by
     rw [← lowA.2]
     apply val32_congr
     intro j hj
-    exact Ot.w32 (by omega) (by have := scratch.nowrap; omega)
-  refine ⟨?_, ?_, (Oa.mono (by omega) (by omega)).trans (Ot.mono (by omega) (by omega)), ?_⟩
+    exact Ot.w32 (by omega_using []) (by have := scratch.nowrap; omega_using [srcFit, hj, this])
+  refine ⟨?_, ?_, (Oa.mono (by omega_using []) (by omega_using [positive])).trans (Ot.mono (by omega_using []) (by omega_using [narrow])), ?_⟩
   · rw [split t.mem, high, Nat.mul_zero, Nat.add_zero, V, lowA.1, sample]
   · rw [Kt.1 .eax (by decide), uniform, sample]
   · exact (Ka.mono (by unfold clob WitnessUniform.clob; decide)).widen Kt

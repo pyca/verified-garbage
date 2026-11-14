@@ -36,7 +36,7 @@ variable {s₀ : State}
 theorem loc_in {s : State} (h : Inv s₀ s) {d n : Nat} (h₂ : d + n ≤ 320) :
     InRegions s.wr (E s₀ + BitVec.ofNat 64 d) n := by
   rw [h.wr, entry_wr]
-  exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega) (by omega) (by omega)⟩
+  exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega_using []) (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem loc_in' {s : State} (h : Inv s₀ s) {d n : Nat} (h₂ : d + n ≤ 320) :
     InRegions (s.rd ++ s.wr) (E s₀ + BitVec.ofNat 64 d) n :=
@@ -57,8 +57,8 @@ theorem Inv.loc_al {s : State} (h : Inv s₀ s) {d k : Nat} (hk : k ∣ 16) (hd 
 theorem var_in {d : Nat} (hd : VarOff d) :
     ∃ r ∈ bodyW s₀, r.Contains (E s₀ + BitVec.ofNat 64 d) 8 := by
   rcases hd.1 with h | h
-  · exact ⟨inR s₀, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
-  · exact ⟨varR s₀, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+  · exact ⟨inR s₀, by simp, Offset.contains _ (by omega_using []) (by omega_using [h]) (by omega_using [])⟩
+  · exact ⟨varR s₀, by simp, Offset.contains _ (by omega_using [h]) (by omega_using [h]) (by omega_using [])⟩
 
 /-- `sd r, d(s3)` -/
 theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : VarOff d) {r : Reg} {is : List Instr}
@@ -72,7 +72,7 @@ theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : VarOff d) {r : Reg
     (h.loc_al (by decide) hd.2) (loc_in h (by omega))
     fun t u => k t (h.mupd u ((Frame.refl _ _).writeW hR _ hc))
     (by rw [lw, u.mem, Mem.readW_writeW_self64]) (fun e he he' => ?_) u.gpr u.mem
-  rw [lw, lw, u.mem, Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+  rw [lw, lw, u.mem, Mem.readW_writeW_sep (Offset.sep _ (by omega_using [he']) (by omega_using [he]) (by omega)) (by decide)]
 
 /-- `ld r, d(s3)` -/
 theorem wp_ldloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : LocOff d) {r : Reg} {is : List Instr}
@@ -90,14 +90,14 @@ include hp
 theorem Inv.arg_in {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) {n : Nat} (hn : n ≤ 8) :
     InRegions (s.rd ++ s.wr) (E s₀ + BitVec.ofNat 64 (argOff i)) n := by
   by_cases h8 : i < 8
-  · refine loc_in' h ?_; simp only [argOff, locals, h8, ite_true]; omega
+  · refine loc_in' h ?_; simp only [argOff, locals, h8, ite_true]; omega_using [hi, hn]
   · have e : argOff i = 320 + 8 * (i - 8) := by
-      simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega)]
+      simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega_using [h8])]
     have hE := E_hi hp
     rw [h.rd, e, hp.rd]
     refine ⟨argR s₀, List.mem_append_left _ (by simp), ?_⟩
     rw [argR_eq]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hi, hn]) (by omega_using [])
 
 /-- `ld r, (argOff i)(s3)`: a 64-bit argument. -/
 theorem wp_lda {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) {r : Reg} {is : List Instr}
@@ -111,7 +111,7 @@ theorem wp_ldw {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) {r : Reg} {i
     {Q : State → Prop} (k : ∀ t, Upd s t r ((arg32 s₀ i).setWidth 64) → WP isa (.block is) t Q) :
     WP isa (.block (ldw r i :: is)) s Q :=
   wp_lwu (argOff_lt hi).1 (by rw [h.s3])
-    (h.loc_al (by decide) (by have := (argOff_lt hi).2; omega)) (h.arg_in hp hi (by decide))
+    (h.loc_al (by decide) (by have := (argOff_lt hi).2; omega_using [this])) (h.arg_in hp hi (by decide))
     fun t u => k t (by rw [h.arg32 hp hi] at u; exact u)
 
 /-- The frame's doublewords are outside the buffers. -/
@@ -139,14 +139,14 @@ theorem saveMem_congr {m : Mem} {b : Addr} {g g' : Reg → BitVec 64} :
 /-- `scratch`, from the stack, after the setup. -/
 theorem setupMem_arg (s₀ : State) {i : Nat} (h₁ : 8 ≤ i) (h₂ : i < 18) :
     (setupMem s₀).readW (E s₀ + BitVec.ofNat 64 (argOff i)) 64 = arg s₀ i := by
-  obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega_using [h₁]⟩
   have e : argOff (8 + k) = 320 + 8 * k := by
-    simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega)]; omega
+    simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega_using [])]; omega_using []
   rw [e, (setupMem_frame s₀).readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide),
+      exact Offset.disjoint _ (by omega_using []) (by omega_using [h₂]) (by omega_using [])) (by decide),
     show E s₀ + BitVec.ofNat 64 (320 + 8 * k) = stackArgAddr s₀ k from (stackArg_eq s₀ k).symm,
-    show 8 + k = k + 8 by omega]
+    show 8 + k = k + 8 by omega_using []]
   rfl
 
 /-- The body's first instructions: the return address, the caller's
@@ -165,13 +165,13 @@ theorem setup_ok {s₀ : State} (hp : DPre s₀) {is : List Instr} {Q : State �
   have inE : ∀ d n, d + n ≤ 320 → InRegions c.wr (E s₀ + BitVec.ofNat 64 d) n :=
     fun d n h₂ => by
       rw [cwr, entry_wr]
-      exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega) (by omega) (by omega)⟩
+      exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega_using []) (by omega_using [h₂]) (by omega_using [])⟩
   rw [show (savedSlots ++ argSlots).map (fun (r, d) => Instr.store .d r .t0 d) =
     Spill.saveCode .t0 (savedSlots ++ argSlots) from rfl]
-  refine Spill.save_ok (by rw [c0]; omega) (fun p hp => slots_fits.1 p hp) (fun p hp => by
+  refine Spill.save_ok (by rw [c0]; omega_using [eal]) (fun p hp => slots_fits.1 p hp) (fun p hp => by
     rw [c0]
     have := slots_in p hp
-    exact inE _ _ (by omega)) ?_
+    exact inE _ _ (by omega_using [this])) ?_
   refine wp_mv fun f uf => ?_
   have f3 : f.gpr .s3 = E s₀ := by rw [uf.gpr]; exact c0
   have fmem : f.mem = setupMem s₀ := by
@@ -184,9 +184,9 @@ theorem setup_ok {s₀ : State} (hp : DPre s₀) {is : List Instr} {Q : State �
     have hE := E_hi hp
     refine ⟨argR s₀, List.mem_append_left _ (by rw [frd, hp.rd]; simp), ?_⟩
     rw [argR_eq, show argOff 15 = 376 by decide]
-    exact Offset.contains _ (by decide) (by decide) (by omega)
+    exact Offset.contains _ (by decide) (by decide) (by omega_using [])
   refine wp_ld (a := E s₀ + BitVec.ofNat 64 (argOff 15)) (by decide) (by rw [f3]; rfl)
-    (by rw [show argOff 15 = 376 by decide]; exact Spill.al8 (by omega) (by decide)) fin
+    (by rw [show argOff 15 = 376 by decide]; exact Spill.al8 (by omega_using [eal]) (by decide)) fin
     fun g ug => ?_
   rw [fmem, setupMem_arg s₀ (by decide) (by decide)] at ug
   refine wp_addi (imm := 1024) (by decide) fun h₁ uh => wp_addi (imm := 1024) (by decide) fun t ut => ?_

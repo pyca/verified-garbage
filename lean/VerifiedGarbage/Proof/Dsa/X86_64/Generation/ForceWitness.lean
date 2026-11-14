@@ -36,16 +36,16 @@ theorem forceWitness_ok {s : State} {op : Addr} {len : Nat}
       simpa only [off, Offset.add_sub_cancel_left, BitVec.sub_self] using he'
     have := congrArg BitVec.toNat hv
     change (len - 1) % 2 ^ 64 = 0 at this
-    omega
+    omega_using [hlen, hmax, this]
   have hlast : op + BitVec.ofNat 64 len * BitVec.ofNat 64 1 + BitVec.ofInt 64 (-1) = off op (len - 1) := by
     have h1 : BitVec.ofNat 64 len = BitVec.ofNat 64 (len - 1) + BitVec.ofNat 64 1 := by
-      rw [BitVec.ofNat_add_ofNat, Nat.sub_add_cancel (by omega)]
+      rw [BitVec.ofNat_add_ofNat, Nat.sub_add_cancel (by omega_using [hlen])]
     rw [BitVec.mul_one, BitVec.add_assoc, h1, BitVec.add_assoc,
       show BitVec.ofNat 64 1 + BitVec.ofInt 64 (-1) = 0#64 by decide, BitVec.add_zero]
-  have hr0 := hrd 0 (by omega)
-  have hw0 := hwr 0 (by omega)
-  have hrn := hrd (len - 1) (by omega)
-  have hwn := hwr (len - 1) (by omega)
+  have hr0 := hrd 0 (by omega_using [hlen])
+  have hw0 := hwr 0 (by omega_using [hlen])
+  have hrn := hrd (len - 1) (by omega_using [hlen])
+  have hwn := hwr (len - 1) (by omega_using [hlen])
   simp only [off, BitVec.add_zero] at hr0 hw0 hrn hwn hne hlast
   refine WP.keep [.rax] ?_ rfl
   xrun [Impl.Dsa.X86_64.Generation.forceWitness, State.ea, hop, hcx, hlast, off,

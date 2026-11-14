@@ -90,10 +90,10 @@ theorem keyParts_relCT (parts : List (Pointer × Nat)) (base : Addr) (size : Nat
   | cons part tail ih =>
     obtain ⟨input, len⟩ := part
     have total : keyPartsSize ((input, len) :: tail) = len + keyPartsSize tail := rfl
-    have lenBound : len ≤ keyPartsSize ((input, len) :: tail) := by rw [total]; omega
+    have lenBound : len ≤ keyPartsSize ((input, len) :: tail) := by rw [total]; omega_using []
     have firstSub : Region.Sub ⟨out.setWidth 64, len⟩
         ⟨out.setWidth 64, keyPartsSize ((input, len) :: tail)⟩ := by
-      simpa only [BitVec.add_zero] using Offset.sub_base (out.setWidth 64) (d := 0) (by omega : 0 + len ≤ _)
+      simpa only [BitVec.add_zero] using Offset.sub_base (out.setWidth 64) (d := 0) (by omega_using [total] : 0 + len ≤ _)
     let R := fun s t => KeyPartsCall base size out ((input, len) :: tail) s ∧
       KeyPartsCall base size out ((input, len) :: tail) t ∧
       ∀ part ∈ (input, len) :: tail, pointerValue base s part.1 = pointerValue base t part.1
@@ -118,8 +118,8 @@ theorem keyParts_relCT (parts : List (Pointer × Nat)) (base : Addr) (size : Nat
         keyCopyPart_ok S.scr hz
           (show KeyPartReady s base (out.setWidth 64) len (input, len) from
             ⟨B.positive, B.fits, B.read, B.apart.sub_right firstSub⟩)
-          (by omega : len < 2 ^ 32) (by omega : out.toNat + len ≤ 2 ^ 32) S.dest rfl
-          (fun i hi => S.write i (by omega))
+          (by omega_using [small, total] : len < 2 ^ 32) (by omega_using [ho, lenBound] : out.toNat + len ≤ 2 ^ 32) S.dest rfl
+          (fun i hi => S.write i (by omega_using [total, hi]))
       exact ⟨Trace, s, t, ⟨S, T, P⟩, wp_result (one S) E, wp_result (one T) F⟩
     unfold Generate.copyParts
     refine RelCT.seq first ?_
@@ -137,12 +137,12 @@ theorem keyParts_relCT (parts : List (Pointer × Nat)) (base : Addr) (size : Nat
       have positive : 0 < keyPartsSize (next :: remaining) := by
         have H := (S.ready next (List.mem_cons_of_mem _ List.mem_cons_self)).positive
         change 0 < next.2 + keyPartsSize remaining
-        omega
+        omega_using [H]
       let nextOut := out + BitVec.ofNat 32 len
-      have nextAddr : nextOut.setWidth 64 = off (out.setWidth 64) len := addr_eq (by rw [total] at ho; omega)
+      have nextAddr : nextOut.setWidth 64 = off (out.setWidth 64) len := addr_eq (by rw [total] at ho; omega_using [ho, positive])
       have nextNat : nextOut.toNat = out.toNat + len := by
         simp only [nextOut, BitVec.toNat_add, BitVec.toNat_ofNat,
-          Nat.mod_eq_of_lt (by omega : len < 2 ^ 32), Nat.mod_eq_of_lt (by rw [total] at ho; omega : out.toNat + len < 2 ^ 32)]
+          Nat.mod_eq_of_lt (by omega_using [small, total] : len < 2 ^ 32), Nat.mod_eq_of_lt (by rw [total] at ho; omega_using [ho, positive] : out.toNat + len < 2 ^ 32)]
       have tailSub : Region.Sub ⟨nextOut.setWidth 64, keyPartsSize (next :: remaining)⟩
           ⟨out.setWidth 64, keyPartsSize ((input, len) :: next :: remaining)⟩ := by
         rw [nextAddr]; exact Offset.sub_base _ (by rw [total])
@@ -152,12 +152,12 @@ theorem keyParts_relCT (parts : List (Pointer × Nat)) (base : Addr) (size : Nat
         refine ⟨C.scr.of_keeps K (by decide), ?_, D, ?_⟩
         · intro part member
           have B := (C.ready part (List.mem_cons_of_mem _ member)).keep C.scr hz
-            (O.mono (Nat.le_refl _) (by omega)) A K
+            (O.mono (Nat.le_refl _) (by omega_using [total])) A K
           exact ⟨B.positive, B.fits, B.read, B.apart.sub_right tailSub⟩
         · intro i hi
           rw [K.2.2, nextAddr, off, off, Offset.add_add]
-          exact C.write (len + i) (by rw [total]; omega)
-      apply ih nextOut (by rw [nextNat]; rw [total] at ho; omega) (by rw [total] at small; omega)
+          exact C.write (len + i) (by rw [total]; omega_using [hi])
+      apply ih nextOut (by rw [nextNat]; rw [total] at ho; omega_using [ho]) (by rw [total] at small; omega_using [small])
         (A.sub_right tailSub) _ _ _ _ _ _ ⟨keep S Ds Os Ks, keep T Dt Ot Kt, ?_⟩ E F
       intro part member
       rw [external_pointer S.scr hz Os (A.sub_right firstSub) Ks part.1,

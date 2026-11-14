@@ -14,7 +14,7 @@ open VG.Impl.Dsa.X86_64
 theorem random_saved_outgoing {s : State} {m : Mem} (h : RandomSaved s m) :
     ∀ i < 5, word (randomSlotsMem (randomBase s) m randomSignOutgoing) (randomBase s) (8 * i) = randomCallArg s i := by
   intro i hi
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
   rcases cases with rfl | rfl | rfl | rfl | rfl
   · exact (random_signOutgoing_words m _ (88, 0) (by decide)).trans
       (h (88, stackArg s 0) (by simp [randomSavedValues]))
@@ -44,6 +44,6 @@ theorem random_callArgs_saved {s t : State} (hs : Scr t (randomBase s) Random.fr
     hcx.trans (hv (72, s.gpr .r8) (by simp [randomSavedValues])),
     h8.trans (hv (80, s.gpr .r9) (by simp [randomSavedValues])), h9,
     fun i hi => by rw [hm]; exact random_saved_outgoing hv i hi,
-    hv.congr (fun d hd hd' => hf.word (Or.inr hd) (by omega)), hf, hk⟩
+    hv.congr (fun d hd hd' => hf.word (Or.inr hd) (by omega_using [hd'])), hf, hk⟩
 
 end VG.Proof.Dsa.X86_64

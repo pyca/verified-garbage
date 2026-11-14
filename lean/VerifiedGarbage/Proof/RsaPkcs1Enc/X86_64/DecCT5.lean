@@ -49,15 +49,15 @@ theorem valid_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
   have hs := hc.frm hp
   have hsep : (firstZero EM (kOf s)).getD 0 < kOf s := by
     cases hf : firstZero EM (kOf s) with
-    | none => simp; omega
+    | none => simp; omega_using [hkk1]
     | some i => have := firstZero_some hf; simpa using this.2.1
   have hR : t.mem.readW (fb s + BitVec.ofNat 64 oR) 64 = R := hc.sR
   have hio : ∀ i n, i + n ≤ kOf s → InRegions (t.rd ++ t.wr) (off (s.gpr .rdi) i) n := fun i n h' =>
     let ⟨r, hr, hcr⟩ := hc.outIn hp h'; ⟨r, List.mem_append_right _ hr, hcr⟩
   exact WP.mono (validBlock_run (p := s.gpr .rdi) (F := fb s) (b0 := EM.getD 0 1) (b1 := EM.getD 1 1)
-    h.rdi (by rw [← hc.em (i := 0) (by omega)]; exact (congrArg t.mem (off_zero _)).symm)
-    (hc.em (by omega)) (by have := hio 0 1 (by omega); rwa [off_zero] at this) (hio 1 1 (by omega)) h.rdx h.r10 h.r11
-    h.r9 hc.rsp hR (hs.ld (d := oR) (by decide)) hsep (by omega))
+    h.rdi (by rw [← hc.em (i := 0) (by omega_using [hkk1])]; exact (congrArg t.mem (off_zero _)).symm)
+    (hc.em (by omega_using [hkk1])) (by have := hio 0 1 (by omega_using [hkk1]); rwa [off_zero] at this) (hio 1 1 (by omega_using [hkk1])) h.rdx h.r10 h.r11
+    h.r9 hc.rsp hR (hs.ld (d := oR) (by decide)) hsep (by omega_using [hkk]))
     fun _ ⟨⟨hm₁, _⟩, k₁⟩ => ⟨⟨R, EM, hc.regs hp hm₁ k₁ (by decide)⟩, (k₁.gpr (by decide)).trans h.rdi,
       (k₁.gpr (by decide)).trans h.r9⟩
 

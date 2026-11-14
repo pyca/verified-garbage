@@ -46,7 +46,7 @@ theorem schedulePow_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List
     refine WP.mono (readyPow_ok M Sq hs.1 side (p.greater side) (p.odd side) a b ha hb has hbs
       (hbl ▸ ha1 p) (hbl ▸ haw p) (hel ▸ hb1 p) (hel ▸ hb1024 p) d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_⟩
-    exact h.reduced (VG.Proof.Dsa.powMod_lt _ _ (by have := p.greater side; omega)) (p.fits side)
+    exact h.reduced (VG.Proof.Dsa.powMod_lt _ _ (by have := p.greater side; omega_using [this])) (p.fits side)
 
 theorem scheduleProduct_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
@@ -66,7 +66,7 @@ theorem scheduleProduct_ct (M : Mont) (inputs : SchedulePublic → List (Operand
     have := hbw p
     have := (side.bounds p.layout).2.1
     change side.words p.layout ≤ 48 at this
-    omega
+    omega_arith
   let pub (p : SchedulePublic) : ReadyProductPublic side d :=
     { scheduleCallPublic side d an bn ha1 haw hb1 hb1024 hd hend p with secondFits := hbw p }
   refine two_post (two_map pub ?_ (readyProduct_ct M side d a b ha hb hpa hpb hd31 hT)) ?_
@@ -76,6 +76,6 @@ theorem scheduleProduct_ct (M : Mont) (inputs : SchedulePublic → List (Operand
     refine WP.mono (readyProduct_ok M hs.1 side (p.greater side) (p.odd side) a b ha hb has hbs
       (hbl ▸ ha1 p) (hbl ▸ haw p) (hel ▸ hb1 p) (hel ▸ hbw p) d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_⟩
-    exact h.reduced (Nat.mod_lt _ (by have := p.greater side; omega)) (p.fits side)
+    exact h.reduced (Nat.mod_lt _ (by have := p.greater side; omega_using [this])) (p.fits side)
 
 end VG.Proof.Dsa.X86_64

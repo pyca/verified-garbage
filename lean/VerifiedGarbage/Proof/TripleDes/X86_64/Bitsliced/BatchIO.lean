@@ -109,7 +109,7 @@ theorem batchSize_ok {s : State} (h : Room s) :
     refine finish t₁ ht₁ ?_ sl₁ c₁ sp₁ rd₁ wr₁ f₁
     rw [rax₁]
     have : m.toNat < 64 := by simpa using hlt
-    rw [Nat.min_eq_left (by omega), BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    rw [Nat.min_eq_left (by omega_using [this]), BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · intro hge
     have : ¬ m.toNat < 64 := by simpa using hge
     have e := exec_movImm t₁ .rax 64
@@ -119,7 +119,7 @@ theorem batchSize_ok {s : State} (h : Room s) :
       (fun x hx => by simp only [t₂, sl_setReg _ (by decide : Reg.rax ≠ .rcx)]; exact sl₁ x hx)
       (by simp [t₂, gpr_setReg, c₁]) (by simp [t₂, gpr_setReg, sp₁]) (by simp [t₂, rd_setReg, rd₁])
       (by simp [t₂, wr_setReg, wr₁]) (by simp only [t₂, mem_setReg]; exact f₁)
-    rw [Nat.min_eq_right (by omega)]
+    rw [Nat.min_eq_right (by omega_using [this])]
     simp [t₂, gpr_setReg]
 
 /-! ## Copying the batch in and out -/
@@ -129,7 +129,7 @@ abbrev stateA (s : State) : Addr := wAt (s.gpr .rcx) 8
 
 theorem wAt_stateA (c : Addr) (j : Nat) : wAt (wAt c 8) j = wordAddr c (stSlot j) := by
   simp only [wAt, wordAddr, stSlot, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  congr 2; omega
+  congr 2; omega_using []
 
 /-- What the prologue of the copies leaves: the public words in `r8`–`r11`,
 the data pointer in `rsi`, the state's in `rdi`, the count in `rdx`. -/
@@ -202,7 +202,7 @@ structure DataOk (s : State) (D : Addr) (k : Nat) : Prop where
 theorem state_in (s : State) {k : Nat} (hk : k ≤ 64) :
     Region.Sub ⟨stateA s, 8 * k⟩ (scratchR s) := by
   simp only [stateA, wAt, scratchR]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hk])
 
 theorem copyIn_ok {s : State} (h : Room s) {k : Nat} (hk : sl s batchSlot = BitVec.ofNat 64 k)
     (h1 : 1 ≤ k) (h64 : k ≤ 64) (hd : DataOk s (sl s dataSlot) k) :
@@ -217,10 +217,10 @@ theorem copyIn_ok {s : State} (h : Room s) {k : Nat} (hk : sl s batchSlot = BitV
     refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, hd.fit⟩
     · rw [kp.rd, kp.wr]; exact hd.read i hi
     · rw [kp.wr, stateA, wAt_stateA]
-      exact ⟨scratchR s, h.scratch, slot_in_scratch s (by unfold stSlot; omega)⟩
+      exact ⟨scratchR s, h.scratch, slot_in_scratch s (by unfold stSlot; omega_using [h64, hi])⟩
     · exact (hd.sep.sub_right (state_in s h64))
   have inv : CopyInv .rsi .rdi (sl s dataSlot) (stateA s) k t 0 t := by
-    refine ⟨by omega, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
+    refine ⟨by omega_using [h1], ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
     · rw [kp.rsi, wAt_zero]
     · rw [kp.rdi, wAt_zero]
     · rw [kp.rdx, hk]; simp
@@ -250,7 +250,7 @@ theorem copyIn_ok {s : State} (h : Room s) {k : Nat} (hk : sl s batchSlot = BitV
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     simp only [stateA, wAt, wordAddr]
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_using [h64, hl]) (by omega_using [hx]) (by omega_using [h64])
   have wu : ∀ j < k, words u j = s.mem.readW (wAt (sl s dataSlot) j) 64 := by
     intro j hj
     have e := pu.copied j hj
@@ -266,9 +266,9 @@ theorem copyIn_ok {s : State} (h : Room s) {k : Nat} (hk : sl s batchSlot = BitV
   have cu : u.gpr .rcx = s.gpr .rcx := rcx.trans kp.rcx
   refine ⟨fun j hj => ?_, fun x hx hl => ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [words]
-    rw [keepv _ (by unfold stSlot; omega) (notIn _ (by unfold stSlot schedSlot; omega)
-      (by unfold stSlot dataSlot; omega) (by unfold stSlot leftSlot; omega)
-      (by unfold stSlot batchSlot; omega))]
+    rw [keepv _ (by unfold stSlot; omega_using [h64, hj]) (notIn _ (by unfold stSlot schedSlot; omega_using [h64, hj])
+      (by unfold stSlot dataSlot; omega_using [h64, hj]) (by unfold stSlot leftSlot; omega_using [h64, hj])
+      (by unfold stSlot batchSlot; omega_using [h64, hj]))]
     exact wu j hj
   · by_cases a : x = schedSlot
     · subst a; rw [setv (schedSlot, .r8) (by simp), r8, kp.r8]
@@ -308,11 +308,11 @@ theorem copyOut_ok {s : State} (h : Room s) {k : Nat} (hk : sl s batchSlot = Bit
   have pre : CopyPre (stateA s) (sl s dataSlot) k t := by
     refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, hd.fit⟩
     · rw [kp.rd, kp.wr, stateA, wAt_stateA]
-      exact ⟨scratchR s, List.mem_append_right _ h.scratch, slot_in_scratch s (by unfold stSlot; omega)⟩
+      exact ⟨scratchR s, List.mem_append_right _ h.scratch, slot_in_scratch s (by unfold stSlot; omega_using [h64, hi])⟩
     · rw [kp.wr]; exact hd.write i hi
     · exact (hd.sep.sub_right (state_in s h64)).symm
   have inv : CopyInv .rdi .rsi (stateA s) (sl s dataSlot) k t 0 t := by
-    refine ⟨by omega, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
+    refine ⟨by omega_using [h1], ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
     · rw [kp.rdi, wAt_zero]
     · rw [kp.rsi, wAt_zero]
     · rw [kp.rdx, hk]; simp
@@ -327,7 +327,7 @@ theorem copyOut_ok {s : State} (h : Room s) {k : Nat} (hk : sl s batchSlot = Bit
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact (hd.sep.sub_right (Offset.sub_base (s.gpr .rcx) (d := 8 * x) (n := 8) (k := 1024)
-      (by omega))).symm
+      (by omega_using [hx]))).symm
   · rw [pu.regs .r8 (by decide) (by decide) (by decide) (by decide), kp.r8]
   · rw [pu.regs .r10 (by decide) (by decide) (by decide) (by decide), kp.r10]
   · rw [pu.regs .r11 (by decide) (by decide) (by decide) (by decide), kp.r11]

@@ -117,7 +117,7 @@ theorem icorrect {s₀ : State} (hp : Pre s₀) :
   unfold nttInv
   have hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 4 := fun p hp' => by
     rw [hp.wr]
-    exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega) (by omega)⟩
+    exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega_using [hp']) (by omega_using [hp'])⟩
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (fill_ok invK hwr) fun u hu => WP.mono (consts_run u) fun t ht => ?_

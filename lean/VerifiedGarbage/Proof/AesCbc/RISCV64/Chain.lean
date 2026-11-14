@@ -114,28 +114,28 @@ theorem chMem_frame (s₀ : State) : Frame [chSlots s₀] s₀.mem (chMem s₀) 
 
 theorem chSlots_scr (s₀ : State) : Region.Sub (chSlots s₀) (scrR s₀) := by
   have := q_lt s₀
-  rw [chSlots, sv_add]; exact UPre.scr_sub (by omega)
+  rw [chSlots, sv_add]; exact UPre.scr_sub (by omega_using [this])
 
 theorem slot_scr (s₀ : State) {p : Reg × Nat} (hp : p ∈ chSaved) :
     Region.Sub ⟨sv s₀ + BitVec.ofNat 64 p.2, 8⟩ (scrR s₀) := by
   have := q_lt s₀
   have := chSaved_bound p hp
-  rw [sv_add]; exact UPre.scr_sub (by omega)
+  rw [sv_add]; exact UPre.scr_sub (by omega_arith)
 
 theorem slot_ws {s₀ : State} {p : Reg × Nat} (hp : p ∈ chSaved) :
     Region.Disjoint ⟨sv s₀ + BitVec.ofNat 64 p.2, 8⟩ (wsR s₀) := by
   have := q_lt s₀
   have := chSaved_bound p hp
-  rw [sv_add]; exact Offset.disjoint_base _ (by omega) (by omega)
+  rw [sv_add]; exact Offset.disjoint_base _ (by omega_using []) (by omega_arith)
 
 /-- The blocks at `p`, unchanged by writes elsewhere. -/
 theorem blocksAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ rs, (⟨p, 16 * n⟩ : Region).Disjoint r) :
     Spec.Cmac.blocksAt m' p 16 n = Spec.Cmac.blocksAt m p 16 n := by
   simp only [Spec.Cmac.blocksAt]
-  refine List.map_congr_left fun i hi => Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  refine List.map_congr_left fun i hi => Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega_using [])
   rw [List.mem_range] at hi
-  exact (hd r hr).sub_left (Offset.sub_base _ (by omega))
+  exact (hd r hr).sub_left (Offset.sub_base _ (by omega_using [hi]))
 
 theorem cov_self {r : Region} {rs : List Region} (h : r ∈ rs) :
     ∃ r' ∈ rs, ∃ off, r.base = r'.base + BitVec.ofNat 64 off ∧ off + r.len ≤ r'.len :=
@@ -186,16 +186,16 @@ theorem WPre.sch_eq : bytesAt (chMem s₀) (s₀.gpr .a0) (16 * ((s₀.gpr .a1).
     bytesAt s₀.mem (s₀.gpr .a0) (16 * ((s₀.gpr .a1).toNat + 1)) := by
   have hRb : 16 * ((s₀.gpr .a1).toNat + 1) ≤ 240 := by
     have hr : (s₀.gpr .a1).toNat = 10 ∨ (s₀.gpr .a1).toNat = 12 ∨ (s₀.gpr .a1).toNat = 14 := h.rounds
-    omega
+    omega_using [hr]
   exact Proof.Cmac.bytesAt_frame (chMem_frame s₀) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (h.sch_scr.sub_right (chSlots_scr s₀)).sub_left (Region.sub_prefix hRb)) (by omega)
+    exact (h.sch_scr.sub_right (chSlots_scr s₀)).sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])
 
 /-- The chaining value, unchanged by the saves. -/
 theorem WPre.iv_eq : bytesAt (chMem s₀) (s₀.gpr .a2) 16 = bytesAt s₀.mem (s₀.gpr .a2) 16 :=
   Proof.Cmac.bytesAt_frame (chMem_frame s₀) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.iv_scr.sub_right (chSlots_scr s₀)) (by omega)
+    exact h.iv_scr.sub_right (chSlots_scr s₀)) (by omega_using [])
 
 /-- The data, unchanged by the saves. -/
 theorem WPre.data_eq : bytesAt (chMem s₀) (s₀.gpr .a3) (len (s₀.gpr .a4).toNat) =
@@ -204,7 +204,7 @@ theorem WPre.data_eq : bytesAt (chMem s₀) (s₀.gpr .a3) (len (s₀.gpr .a4).t
     simp only [List.mem_singleton] at hr; subst hr
     exact h.data_scr.sub_right (chSlots_scr s₀)) (by
       have : (s₀.gpr .a3).toNat + len (s₀.gpr .a4).toNat ≤ 2 ^ 64 := h.data_wrap
-      omega)
+      omega_using [this])
 
 end
 
@@ -246,7 +246,7 @@ theorem save_wp {out : Bool} {len : Nat → Nat} {s₀ : State} (h : WPre out le
     have := q_lt s₀
     have := chSaved_bound p hp
     have := h.scr_wrap
-    exact in_rw h.scr_mem (by rw [sv_add]; exact Offset.contains_base _ (by omega) (by omega))
+    exact in_rw h.scr_mem (by rw [sv_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
   generalize ht : ({ (s₀.write .t0 (sv s₀)) with
     mem := Spill.saveMem (s₀.write .t0 (sv s₀)).mem ((s₀.write .t0 (sv s₀)).gpr .t0)
       (s₀.write .t0 (sv s₀)).gpr chSaved } : State) = t
@@ -324,7 +324,7 @@ theorem wrap_wp {name : String} {s₀ : State} (h : WPre out len s₀) :
     have := chSaved_bound p hp
     have := h.scr_wrap
     exact in_rw (List.mem_append_right _ h.scr_mem)
-      (by rw [sv_add]; exact Offset.contains_base _ (by omega) (by omega))
+      (by rw [sv_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
   have g₀ (r : Reg) (hr : r ≠ .t0) : saveG s₀ r = s₀.gpr r := RegUpd.gpr_write_of_ne _ _ hr
   refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
   · have h0 := preserved_ne hr

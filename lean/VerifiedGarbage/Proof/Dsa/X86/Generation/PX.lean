@@ -73,11 +73,11 @@ theorem digits_value (m : Mem) (p : Addr) (T q : Nat) (v : Nat → Nat) (c : Nat
     simp only [Nat.zero_add, Nat.one_mul, Nat.zero_mul, Nat.pow_zero, Nat.mul_one]
   | succ c ih =>
     have e₁ : (c + 1 + 1) * q = q + (c + 1) * q := by rw [Nat.succ_mul, Nat.add_comm]
-    have e₂ : T - (c + 1 + 1) * q + q = T - (c + 1) * q := by rw [e₁] at hc ⊢; omega
+    have e₂ : T - (c + 1 + 1) * q + q = T - (c + 1) * q := by rw [e₁] at hc ⊢; omega_using [hc]
     have ho : VG.Proof.Bignum.off (off p (T - (q + (c + 1) * q))) q = off p (T - (q + (c + 1) * q) + q) :=
       off_add_ofNat p _ q
     rw [e₁, bytesAt_append, ho, ← e₁, e₂, e₁, decodeBE_append, VG.Proof.Bignum.bytesAt_length,
-      ih (by rw [e₁] at hc; omega) (fun j hj => hv j (by omega)), ← e₁, hv (c + 1) (Nat.le_refl _),
+      ih (by rw [e₁] at hc; omega_using [hc]) (fun j hj => hv j (by omega_using [hj])), ← e₁, hv (c + 1) (Nat.le_refl _),
       contributions_succ (k := c + 1), Nat.add_comm (v (c + 1) * _)]
     congr 2
     rw [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul, Nat.mul_comm 8, Nat.mul_assoc, Nat.mul_comm q 8]
@@ -88,7 +88,7 @@ theorem chunk_length {E : Env} (v : E.Valid) {s : State} (B : Base E s) {k : Nat
   have hl : E.seedT.length = E.seedsLen := by rw [← B.seeds v, VG.Proof.Bignum.bytesAt_length]
   rw [Nat.succ_mul] at hk
   simp only [chunk, List.length_take, List.length_drop, hl]
-  omega
+  omega_using [hk]
 
 /-- After `X`: its value, A.1.1.2's shaped hashes. -/
 structure XPost (E : Env) (g : Geo) (k offset : Nat) (s t : State) : Prop where

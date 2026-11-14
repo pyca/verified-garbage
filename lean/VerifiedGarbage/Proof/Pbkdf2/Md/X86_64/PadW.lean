@@ -55,13 +55,13 @@ theorem zst_ok (A : Nat) (c : Nat) :
   | succ c ih =>
     intro rest s Q p hbp hx hout hlt k
     rw [List.range_succ, List.map_append, List.map_singleton, List.append_assoc]
-    refine ih _ s Q p hbp hx (fun j hj => hout j (by omega)) (by omega) fun s₁ g₁ rd₁ wr₁ x₁ m₁ => ?_
+    refine ih _ s Q p hbp hx (fun j hj => hout j (by omega_using [hj])) (by omega_using [hlt]) fun s₁ g₁ rd₁ wr₁ x₁ m₁ => ?_
     simp only [List.cons_append, List.nil_append]
     refine MdStream.X86_64.wp_movdquStoreX (a := p + BitVec.ofNat 64 (A + 16 * c)) (by rw [ea_at, g₁, hbp, ofInt_natCast])
-      (by rw [wr₁]; exact hout c (by omega)) fun s₂ g₂ m₂ rd₂ wr₂ x₂ => k s₂ (by rw [g₂, g₁])
+      (by rw [wr₁]; exact hout c (by omega_using [])) fun s₂ g₂ m₂ rd₂ wr₂ x₂ => k s₂ (by rw [g₂, g₁])
         (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) (by rw [x₂, x₁]) ?_
     rw [m₂, m₁, x₁, hx, writeW128,
-      Pbkdf2.Memory.writeBytes_append' _ _ _ (by rw [List.length_replicate, add_ofNat]) (by simp [vbytes_length]; omega),
+      Pbkdf2.Memory.writeBytes_append' _ _ _ (by rw [List.length_replicate, add_ofNat]) (by simp [vbytes_length]; omega_using [hlt]),
       show vbytes 0 = List.replicate 16 0 from by decide, List.replicate_append_replicate, Nat.mul_succ]
 
 /-- `padW` writes the rest of the block at `p` (`rbp`) after its first `D`
@@ -168,6 +168,6 @@ theorem padSel_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.
   unfold Hash.padSel
   split
   · exact padW_ok hs hok hD4 hB16 hL hA hB hbp hw k
-  · exact Pbkdf2.X86_64.padLen_ok hs hok hD4 hL4 (by omega) hpad hB hbp hbx hw k
+  · exact Pbkdf2.X86_64.padLen_ok hs hok hD4 hL4 (by omega_using [hB16]) hpad hB hbp hbx hw k
 
 end VG.Proof.Pbkdf2.Md.X86_64

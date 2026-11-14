@@ -56,7 +56,7 @@ theorem copyOut_check :
 
 theorem sep_of_disjoint {a b : Addr} {n k : Nat} (h : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) :
     Mem.Sep a n b k := fun x h₁ h₂ =>
-  h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+  h x (by simp only [Region.Contains]; omega_using [h₁]) (by simp only [Region.Contains]; omega_using [h₂])
 
 /-- A copy of the 64 words at `src` to `dst`, apart, that evaluation checks. -/
 theorem copy64_run {src dst : Reg} {is : List Instr} {s : State}
@@ -70,7 +70,7 @@ theorem copy64_run {src dst : Reg} {is : List Instr} {s : State}
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk.1
   let V : Nat → BitVec 64 := fun k => s.mem.readW (wordAddr (s.gpr src) k) 64
   have wsub : ∀ (p : Addr) k, k < 64 → Region.Sub ⟨wordAddr p k, 8⟩ ⟨p, 512⟩ := fun p k hk =>
-    VG.Offset.sub_base _ (by omega)
+    VG.Offset.sub_base _ (by omega_using [hk])
   have hok : Ok (copyCfg src dst) s := {
     slotIn := fun k hk => hout _ _ ⟨_, List.mem_singleton_self _, slot_contains _ (n := 64) hk (by decide)⟩
     extIn := fun k hk => hin _ _ ⟨_, List.mem_singleton_self _, slot_contains _ (n := 64) hk (by decide)⟩
@@ -155,7 +155,7 @@ theorem ecb64_wp (d : Direction) {s : State} (h : Ecb64Pre s) :
     rw [this]
     exact (q.frame.readW (Region.contains_self _ 8) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.dataBuf.sub_left (VG.Offset.sub_base _ (by omega)))) (by decide))
+      exact (h.dataBuf.sub_left (VG.Offset.sub_base _ (by omega_using [hb])))) (by decide))
   have hs₂ : Sched s₂ :=
     ⟨by rw [hc₂ .r7 (by decide), q.r7, rd₂, wr₂, rd₁, wr₁, q.rd, q.wr]; exact h.key,
       by simp only [frameR, hc₂ .r7 (by decide), q.r7, s10₂']; exact h.keyBuf⟩
@@ -212,20 +212,20 @@ theorem ecb64_wp (d : Direction) {s : State} (h : Ecb64Pre s) :
       simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_of_mem _ List.mem_cons_self))
   have saved₅ : Spill.Saved B s.gpr savedL s₅.mem := by
     have sv₄ := q.saved.frame_in (lo := 560) (n := 152) (fun p hp => ⟨(savedL_le p hp).1, by
-      have := (savedL_le p hp).2; omega⟩) fs₄ fun r hr => by
+      have := (savedL_le p hp).2; omega_using [this]⟩) fs₄ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact VG.Offset.disjoint_base _ (by omega) (by omega)
+        exact VG.Offset.disjoint_base _ (by omega_using []) (by omega_using [])
     exact sv₄.frame_in (lo := 560) (n := 152) (fun p hp => ⟨(savedL_le p hp).1, by
-      have := (savedL_le p hp).2; omega⟩) f₅' fun r hr => by
+      have := (savedL_le p hp).2; omega_using [this]⟩) f₅' fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (h.dataBuf.sub_right (VG.Offset.sub_base _ (by omega))).symm
+        exact (h.dataBuf.sub_right (VG.Offset.sub_base _ (by omega_using []))).symm
   rw [finish_eq]
   refine WP.mono (Spill.restore_wp (b := .r10) (by decide) s10₅ savedL_fits.1 savedL_restorable
     (fun p hp => ?_) saved₅) fun y r => ⟨fun q' hq => r.gpr_of (.inl (preserved_saved q' hq)), ?_, ?_, ?_,
       by rw [r.mem]; exact fs₅, fun b hb => ?_⟩
   · rw [rd₅, wr₅, rd₄', wr₄']
     exact covers_rdwr (covers_of_in h.buf) _ _ ⟨_, List.mem_singleton_self _,
-      VG.Offset.contains_base _ (by have := (savedL_le p hp).2; omega) (by have := (savedL_le p hp).2; omega)⟩
+      VG.Offset.contains_base _ (by have := (savedL_le p hp).2; omega_using [this]) (by have := (savedL_le p hp).2; omega_using [this])⟩
   · rw [r.lr, lr₅, lr₄, lr₃, lr₂, lr₁, q.lr]
   · rw [r.other _ (by decide), s10₅]
   · rw [r.other _ (by decide), g₅ _ (by decide), hc₄ .r7 (by decide), q.r7]

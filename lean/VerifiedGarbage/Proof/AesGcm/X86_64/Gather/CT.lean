@@ -132,7 +132,7 @@ theorem Pub.of {s₀ s₀' : State} (h : Proof.AesGcm.sealGatherPub s₀ s₀') 
   obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := h
   refine ⟨q₁.symm, q₂.symm, q₃.symm, q₄.symm, q₅.symm, q₆.symm, q₇.symm, fun i hi => ?_,
     fun j hj => (hd j hj).symm⟩
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   exacts [a₀.symm, a₁.symm, a₂.symm, a₃.symm, a₄.symm, a₅.symm]
 
 section
@@ -152,21 +152,21 @@ theorem Pub.st : St s₀' = St s₀ := by simp only [St, pb.w]
 theorem Pub.descW {j : Nat} (hj : j + 8 ≤ Cnt s₀ * 16) :
     s₀'.mem.readW (Src s₀ + BitVec.ofNat 64 j) 64 = s₀.mem.readW (Src s₀ + BitVec.ofNat 64 j) 64 :=
   (Mem.readW_congr fun k hk => by
-    rw [BitVec.add_assoc, ofNat_add_ofNat]; exact (pb.desc _ (by omega)).symm).symm
+    rw [BitVec.add_assoc, ofNat_add_ofNat]; exact (pb.desc _ (by omega_using [hj, hk])).symm).symm
 
 theorem Pub.sb {i : Nat} (hi : i < Cnt s₀) : sb s₀' i = sb s₀ i := by
   show s₀'.mem.readW (Src s₀' + BitVec.ofNat 64 (16 * i)) 64 = s₀.mem.readW (Src s₀ + BitVec.ofNat 64 (16 * i)) 64
-  rw [pb.src]; exact pb.descW (by omega)
+  rw [pb.src]; exact pb.descW (by omega_using [hi])
 
 theorem Pub.sl {i : Nat} (hi : i < Cnt s₀) : sl s₀' i = sl s₀ i := by
   show (s₀'.mem.readW (Src s₀' + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 8) 64).toNat =
     (s₀.mem.readW (Src s₀ + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 8) 64).toNat
-  rw [pb.src, BitVec.add_assoc, ofNat_add_ofNat, pb.descW (by omega)]
+  rw [pb.src, BitVec.add_assoc, ofNat_add_ofNat, pb.descW (by omega_using [hi])]
 
 theorem Pub.gl {i : Nat} (hi : i ≤ Cnt s₀) : gl s₀' i = gl s₀ i := by
   induction i with
   | zero => rw [gl_zero, gl_zero]
-  | succ i ih => rw [gl_succ, gl_succ, ih (by omega), pb.sl (by omega)]
+  | succ i ih => rw [gl_succ, gl_succ, ih (by omega_using [hi]), pb.sl (by omega_using [hi])]
 
 end
 
@@ -407,10 +407,10 @@ theorem pad_facts {M : CtxMode} {s : State} (hp : SG M s) :
   have hw := hp.w_w
   have hpl : pl s = 16 - (AL s).toNat % 16 := rfl
   have wd : (W s + BitVec.ofNat 64 88).toNat = (W s).toNat + 88 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 88) (by decide)]; omega
-  exact ⟨Offset.disjoint _ (.inr (by omega)) (by decide) (by omega), hp.b_w.sub_right (Offset.sub_base _ (by omega)),
-    covers_left (by rw [hp.wr]; exact StreamTo.covers_off (k := 184) (d := 88) (by simp) (by omega) (by decide)),
-    by rw [wd]; omega, by omega⟩
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 88) (by decide)]; omega_using [hw]
+  exact ⟨Offset.disjoint _ (.inr (by omega_using [hpl])) (by decide) (by omega_using [hpl]), hp.b_w.sub_right (Offset.sub_base _ (by omega_using [hpl])),
+    covers_left (by rw [hp.wr]; exact StreamTo.covers_off (k := 184) (d := 88) (by simp) (by omega_using [hpl]) (by decide)),
+    by rw [wd]; omega_using [hw, hpl], by omega_using [hpl]⟩
 
 section
 variable {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀')
@@ -487,7 +487,7 @@ theorem slices_rel (T : ToFn M) {ap ap' : BitVec 64} {A A' : List Byte} (hap : a
     have hC' : Cnt s₀' = 0 := by rw [pb.cnt]; exact hC
     exact ⟨hC ▸ h.1.1.1, hC' ▸ h.1.2.1⟩
   refine StreamTo.RelCT.of_imp (0 < Cnt s₀) (fun _ _ h => by
-    have e := h.2; simp only [eval, h.1.1.2] at e; simp at e; omega) fun hC => ?_
+    have e := h.2; simp only [eval, h.1.1.2] at e; simp at e; omega_using [e]) fun hC => ?_
   refine (RelCT.loop (fun n s₁ s₂ => ∃ i, i < Cnt s₀ ∧ n = Cnt s₀ - i ∧ Mid s₀ ap i A s₁ ∧ Mid s₀' ap' i A' s₂)
     (fun n => RelCT.exists_ fun i => StreamTo.RelCT.of_imp (i < Cnt s₀ ∧ n = Cnt s₀ - i)
       (fun _ _ h => ⟨h.1, h.2.1⟩) fun ⟨hi, hn⟩ => ((slice_rel hp hp' pb T hap hap' hpp hi).mono
@@ -497,10 +497,10 @@ theorem slices_rel (T : ToFn M) {ap ap' : BitVec 64} {A A' : List Byte} (hap : a
   rw [pb.cnt] at z₂
   refine ⟨by simp only [eval, z₁, z₂], fun e => ?_, fun e => ?_⟩
   · have : Cnt s₀ - (i + 1) = 0 := by simp only [eval, z₁] at e; simpa using e
-    have e₁ : i + 1 = Cnt s₀ := by omega
+    have e₁ : i + 1 = Cnt s₀ := by omega_arith
     exact ⟨e₁ ▸ M₁, by rw [pb.cnt]; exact e₁ ▸ M₂⟩
   · have : Cnt s₀ - (i + 1) ≠ 0 := by simp only [eval, z₁] at e; simpa using e
-    exact ⟨Cnt s₀ - (i + 1), by omega, i + 1, by omega, rfl, M₁, M₂⟩
+    exact ⟨Cnt s₀ - (i + 1), by omega_arith, i + 1, by omega_using [this], rfl, M₁, M₂⟩
 
 /-- The text, in two runs. -/
 theorem text_rel (inl : Bool) (A : AadFn) (T : ToFn M) :

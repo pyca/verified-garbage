@@ -42,7 +42,7 @@ theorem scalar_ok {p : KpP} {xb : List Byte} {mi : BitVec 64} {s : State} (h : W
   refine WP.seq (WP.mono (leaveQ_ok (hw₂.mem.ctx hd₂)
     (hb₂.hdr (sDomLen, BitVec.ofNat 64 p.dl) (by simp [KpP.headers]))
     (hb₂.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers]))
-    (by rcases hdl with h | h <;> omega) (by rcases hdl with h | h <;> omega))
+    (by rcases hdl with h | h <;> omega_using [h]) (by rcases hdl with h | h <;> omega_using [hk', h]))
     fun u₃ ⟨hd₃, _, hz₃, hm₃, k₃⟩ => ?_)
   have hw₃ := hw₂.keep hm₃ k₃
   have hF₃ : word u₃.mem (off p.B (inner p.w)) (8 * sF) = bit (0 < Spec.Rsa.os2ip xb) := by

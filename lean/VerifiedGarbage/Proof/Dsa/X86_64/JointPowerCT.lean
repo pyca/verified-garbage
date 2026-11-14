@@ -25,9 +25,9 @@ theorem JointScalars.frame {p : JointPublic} {s t : State} (h : JointScalars p s
   refine ⟨eb, fb, work_source hc hf hk he, work_source hc hf hk hfb, hL, hF, ?_⟩
   have hnow := hc.scr.nowrap
   have hhi := hc.hi
-  have hsmall : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega
+  have hsmall : 256 ≤ slot p.x.wx 8 := by unfold slot hdrBytes; omega_using []
   rw [hf.word_below (fun r hr => (workRanges_ok p.x.wx r hr).2)
-    (by omega) (by omega) (show Field.qLen.offset + 8 ≤ p.x.o from p.parentSpace)]
+    (by omega_using [hnow, hhi]) (by omega_using [hnow, hhi, hsmall]) (show Field.qLen.offset + 8 ≤ p.x.o from p.parentSpace)]
   exact hl
 
 theorem jointPower_ct (M : Mont) (Sq : MontS) : RelCT isa (Two JointPowerPre) (Joint.power Sq.mm M.mm) (fun _ _ => True) := by

@@ -32,7 +32,7 @@ theorem decodeLE_57 (bs : List Byte) (h : bs.length = 57) :
     · intro i h1 h2
       simp only [List.length_drop, h] at h1
       simp only [List.getElem_drop, List.length_singleton] at h2 ⊢
-      have : i = 0 := by omega
+      have : i = 0 := by omega_using [h2]
       subst this
       simp [List.getD_eq_getElem?_getD, h]
   conv => lhs; rw [e]
@@ -58,14 +58,14 @@ theorem decodePoint_bytes (bs : List Byte) (h : bs.length = 57) :
   simp only [bne_self_eq_false, Bool.false_eq_true, ite_false]
   rw [e455]
   generalize (256 : Nat) ^ 56 = M at *
-  have hM : 0 < M := by omega
+  have hM : 0 < M := by omega_using [hP]
   have em : (y0 + M * b) % (M * 128) = y0 + M * (b % 128) := by
     rw [Nat.add_mod, show M * b % (M * 128) = M * (b % 128) from Nat.mul_mod_mul_left M b 128]
-    rw [Nat.mod_eq_of_lt (by omega : y0 < M * 128)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hy0] : y0 < M * 128)]
     have : b % 128 < 128 := Nat.mod_lt _ (by decide)
     rw [Nat.mod_eq_of_lt]
-    have : M * (b % 128) ≤ M * 127 := Nat.mul_le_mul_left M (by omega)
-    omega
+    have : M * (b % 128) ≤ M * 127 := Nat.mul_le_mul_left M (by omega_using [])
+    omega_using [hy0, this]
   have ed : (y0 + M * b) / (M * 128) = b / 128 := by
     rw [← Nat.div_div_eq_div_mul, Nat.add_mul_div_left _ _ hM, Nat.div_eq_of_lt hy0, Nat.zero_add]
   by_cases hc : b % 128 = 0 ∧ y0 < Spec.X448.P
@@ -87,7 +87,7 @@ theorem decodePoint_bytes (bs : List Byte) (h : bs.length = 57) :
       rcases Nat.eq_zero_or_pos (b % 128) with h0 | h0
       · rw [h0, Nat.mul_zero, Nat.add_zero] at h'; exact ⟨h0, h'⟩
       · have : M ≤ M * (b % 128) := Nat.le_mul_of_pos_right M h0
-        omega
+        omega_using [hP, h', this]
     rw [dite_eq_right hl]
 
 end VG.Proof.Ed448

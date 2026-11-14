@@ -19,9 +19,9 @@ def jointInitRanges : List (Nat × Nat) :=
 
 theorem jointInit_ranges (w : Nat) : ∀ r ∈ jointInitRanges,
     136 ≤ r.1 ∧ r.1 + r.2 ≤ 256 ∧ r.1 + r.2 ≤ slot w 8 + tabBytes w := by
-  have h : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have h : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   simp only [jointInitRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [Crt.sExp, Joint.sExp2, Crt.sRem, Crt.sExpLen, Crt.sI, sFn] <;> omega
+  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [Crt.sExp, Joint.sExp2, Crt.sRem, Crt.sExpLen, Crt.sI, sFn] <;> omega_using [h]
 
 /-- The memory after `expInit`. -/
 def jointInitMem (m : Mem) (B : Addr) (o L : Nat) : Mem :=
@@ -78,23 +78,23 @@ theorem jointInit_ok {s : State} {B : Addr} {Z o w wx L n g y : Nat} {minv : Bit
   have harr : ∀ j < 24, wv t.mem (off B o) (slot wx j) wx =
       wv s.mem (off B o) (slot wx j) wx := by
     intro j hj
-    have lo : 256 ≤ slot wx j := by unfold slot hdrBytes; omega
+    have lo : 256 ≤ slot wx j := by unfold slot hdrBytes; omega_using []
     have hi : slot wx j + 8 * (wx + 2) ≤ slot wx 8 + tabBytes wx := by
       by_cases hj8 : j < 8
-      · have := slot_le (w := wx) hj8; omega
-      · have := ent_le wx (show j - 8 < 16 by omega)
-        rw [show 8 + (j - 8) = j by omega] at this
+      · have := slot_le (w := wx) hj8; omega_using [this]
+      · have := ent_le wx (show j - 8 < 16 by omega_using [hj])
+        rw [show 8 + (j - 8) = j by omega_using [hj8]] at this
         exact this
-    exact hf.wv_eq (fun r h => Or.inr (by have := hr r h; omega)) (by omega)
+    exact hf.wv_eq (fun r h => Or.inr (by have := hr r h; omega_using [lo, this])) (by omega_using [hnow, hi])
   have hct := hc.of_frmT hf (fun r h => ⟨(hr r h).1, (hr r h).2.2⟩) hk.wr (hk.gpr .x0 (by decide))
   have hinv : ((word t.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hf.word_eq (fun r h => Or.inr (by have := hr r h; unfold slot hdrBytes; omega)) (by
-      have := slot_le (w := wx) (show aN < 8 by decide); omega)]
+    rw [hf.word_eq (fun r h => Or.inr (by have := hr r h; unfold slot hdrBytes; omega_using [this])) (by
+      have := slot_le (w := wx) (show aN < 8 by decide); omega_using [hnow, this])]
     exact hmctx.mod.inverse
   refine ⟨hct, ⟨⟨hct.good, (harr aN (by decide)).trans hmctx.mod.modulus, hinv⟩, hct.scrT⟩,
-    ⟨?_, fun j hj => (harr (8 + j) (by omega)).symm ▸ htab.lt j hj,
-      fun j hj => (harr (8 + j) (by omega)).symm ▸ htab.val j hj⟩,
-    fun j hj => harr j (by omega), ?_, ?_, ?_, ?_, ?_, hk.mono (by decide)⟩
+    ⟨?_, fun j hj => (harr (8 + j) (by omega_using [hj])).symm ▸ htab.lt j hj,
+      fun j hj => (harr (8 + j) (by omega_using [hj])).symm ▸ htab.val j hj⟩,
+    fun j hj => harr j (by omega_using [hj]), ?_, ?_, ?_, ?_, ?_, hk.mono (by decide)⟩
   · rw [hf.word_eq (by simp [jointInitRanges, Crt.sExp, Joint.sExp2, Crt.sRem, Crt.sExpLen,
       Crt.sI, Crt.sTab, sFn]) (by decide)]
     exact htab.tab
@@ -110,7 +110,7 @@ theorem jointInit_ok {s : State} {B : Addr} {Z o w wx L n g y : Nat} {minv : Bit
     intro r h
     have := hr r h
     have := hx (136, slot wx 8 + tabBytes wx - 136) (List.mem_singleton_self _)
-    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-    omega
+    have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+    omega_arith
 
 end VG.Proof.Dsa.AArch64

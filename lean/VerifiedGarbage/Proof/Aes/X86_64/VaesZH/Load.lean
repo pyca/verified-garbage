@@ -47,9 +47,9 @@ theorem loadNext_ok {nr : Nat} {w : List Byte} (j : Nat) (s : State)
   · subst hij
     simp only [ite_true, pick4]
     split <;> (try split) <;> (try split) <;> rfl
-  · have hreg : keyReg i ≠ keyReg j := fun he => hij (keyReg_inj i (by omega) j h14 he)
+  · have hreg : keyReg i ≠ keyReg j := fun he => hij (keyReg_inj i (by omega_using [h14, hi]) j h14 he)
     simp only [hreg, ite_false]
-    exact hL i (by omega) l hl
+    exact hL i (by omega_using [hi, hij]) l hl
 
 theorem loadPrefix_ok {nr : Nat} {w : List Byte} (n : Nat) (s : State)
     (hk : MemKeys nr w s) (hn : n ≤ nr) (h14 : n ≤ 14) :
@@ -59,8 +59,8 @@ theorem loadPrefix_ok {nr : Nat} {w : List Byte} (n : Nat) (s : State)
   | zero => exact WP.block_nil ⟨fun _ h => by omega, hk, ZFrame.refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega) (by omega)) fun t ⟨hL, hk', hf⟩ => ?_
-    exact WP.mono (loadNext_ok n t hk' (by omega) (by omega) hL)
+    refine WP.mono (ih (by omega_using [hn]) (by omega_using [h14])) fun t ⟨hL, hk', hf⟩ => ?_
+    exact WP.mono (loadNext_ok n t hk' (by omega_using [hn]) (by omega_using [h14]) hL)
       fun u ⟨hL', hk'', hf'⟩ => ⟨hL', hk'', hf.trans hf'⟩
 
 theorem loadTwo_ok {nr : Nat} {w : List Byte} (j : Nat) (s : State)
@@ -69,8 +69,8 @@ theorem loadTwo_ok {nr : Nat} {w : List Byte} (j : Nat) (s : State)
       Loaded (j + 2) t ∧ MemKeys nr w t ∧ ZFrame [] s t := by
   change WP isa (.block ([loadKey j] ++ [loadKey (j + 1)])) s _
   rw [WP.block_append_iff]
-  refine WP.mono (loadNext_ok j s hk (by omega) (by omega) hL) fun t ⟨hL', hk', hf⟩ => ?_
-  exact WP.mono (loadNext_ok (j + 1) t hk' (by omega) (by omega) hL')
+  refine WP.mono (loadNext_ok j s hk (by omega_using [hj]) (by omega_using [h14]) hL) fun t ⟨hL', hk', hf⟩ => ?_
+  exact WP.mono (loadNext_ok (j + 1) t hk' (by omega_using [hj]) (by omega_using [h14]) hL')
     fun u ⟨hL'', hk'', hf'⟩ => ⟨hL'', hk'', hf.trans hf'⟩
 
 theorem loadLast_ok {nr : Nat} {w : List Byte} (s : State) (hk : MemKeys nr w s)
@@ -101,7 +101,7 @@ theorem loadKeys_ok {nr : Nat} {w : List Byte} (s : State) (hk : MemKeys nr w s)
     (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14) (hrsi : s.gpr .rsi = BitVec.ofNat 64 nr)
     (hr10 : s.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr)) :
     WP isa loadKeys s fun t => Keys nr w t ∧ ZFrame [] s t := by
-  have hnr10 : 10 ≤ nr := by rcases hnr with h | h | h <;> omega
+  have hnr10 : 10 ≤ nr := by rcases hnr with h | h | h <;> omega_using [h]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (loadPrefix_ok 10 s hk hnr10 (by decide)) fun t ⟨hL, hk', hf⟩ => ?_

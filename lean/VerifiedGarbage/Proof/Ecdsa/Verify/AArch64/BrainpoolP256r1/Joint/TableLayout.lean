@@ -39,15 +39,15 @@ theorem store_layout {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15) : CopyLayout (tab
   · intro x hx y hy hne
     rcases List.mem_append.mp hy with hy | hy
     · simp only [coordinates,tablePt,tableAt,List.mem_cons,List.not_mem_nil,or_false] at hx hy
-      rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> omega
+      rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> omega_arith
     · have hh : ∀ x ∈ coordinates resultPt,x+32 ≤ tableAt := by decide
       exact Or.inr (Nat.le_trans (hh y hy) (table_coord_bounds h1 h15 x hx).1)
 
   · intro x hx hy
     have hb := (table_coord_bounds h1 h15 x hx).1
     have hc : ∀ x ∈ coordinates resultPt,x < tableAt := by decide
-    have := hc x hy; omega
-  · simp only [tablePt]; exact ⟨by omega,by omega,by omega⟩
+    have := hc x hy; omega_using [hb, this]
+  · simp only [tablePt]; exact ⟨by omega_using [],by omega_using [],by omega_using []⟩
 
 theorem load_layout {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15) : CopyLayout resultPt (tablePt d) := by
   have hs := store_layout h1 h15
@@ -92,5 +92,5 @@ theorem earlier_table_apart {j d : Nat} (hj : 1 ≤ j) (hjd : j < d) :
   intro x hx w hw
   obtain ⟨y,hy,rfl⟩ := List.mem_map.mp hw
   simp only [coordinates,tablePt,tableAt,List.mem_cons,List.not_mem_nil,or_false] at hx hy
-  rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> exact Or.inl (by omega)
+  rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;> exact Or.inl (by omega_arith)
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint

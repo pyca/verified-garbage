@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The bytes of 64-bit words, shifted, and moved into SSE registers
@@ -30,10 +31,10 @@ theorem qbyte_shr (x : BitVec 64) (k i : Nat) :
   by_cases h : i + k < 8
   · simp only [h, ite_true, qbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, hj, decide_true,
       Bool.true_and]
-    rw [show 8 * k + (8 * i + j) = 8 * (i + k) + j by omega]
+    rw [show 8 * k + (8 * i + j) = 8 * (i + k) + j by omega_using []]
   · simp only [h, ite_false, qbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, hj, decide_true,
       Bool.true_and]
-    rw [BitVec.getLsbD_of_ge x _ (by omega)]
+    rw [BitVec.getLsbD_of_ge x _ (by omega_using [h])]
     simp
 
 theorem qbyte_or (a b : BitVec 64) (i : Nat) : qbyte (a ||| b) i = qbyte a i ||| qbyte b i :=
@@ -51,9 +52,9 @@ theorem byte_movq (x : BitVec 64) (i : Nat) :
   intro j hj
   by_cases h : i < 8
   · simp only [h, ite_true, byte, qbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
-      Bool.true_and, show 8 * i + j < 64 by omega]
+      Bool.true_and, show 8 * i + j < 64 by omega_using [hj, h]]
   · simp only [h, ite_false, byte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
-      Bool.true_and, show ¬ 8 * i + j < 64 by omega]
+      Bool.true_and, show ¬ 8 * i + j < 64 by omega_using [h]]
     simp
 
 /-- Two words moved into SSE registers, interleaved (`punpcklqdq`): the
@@ -72,9 +73,9 @@ theorem byte_punpcklqdq (a b : BitVec 64) (i : Nat) :
   intro j hj
   by_cases h : i < 8
   · simp only [h, ite_true, byte, qbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
-      Bool.true_and, show 8 * i + j < 64 by omega]
+      Bool.true_and, show 8 * i + j < 64 by omega_using [hj, h]]
   · simp only [h, ite_false, byte, qbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
-      Bool.true_and, show ¬ 8 * i + j < 64 by omega]
-    rw [show 8 * i + j - 64 = 8 * (i - 8) + j by omega]
+      Bool.true_and, show ¬ 8 * i + j < 64 by omega_using [h]]
+    rw [show 8 * i + j - 64 = 8 * (i - 8) + j by omega_using [h]]
 
 end VG.Proof.MdStream.X86_64

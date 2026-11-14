@@ -40,7 +40,7 @@ theorem CandidateBase.phase_dims {p : CandidateP} {s : State} (h : CandidateBase
 
 theorem phase_width64 (p : CandidateP) (q : Bool) : p.phaseWords q = (p.phaseBits q + 63) / 64 := by
   unfold CandidateP.phaseWords CandidateP.phaseLen
-  omega
+  omega_using []
 
 theorem CandidateBase.phase_wordshape {p : CandidateP} {s : State} (h : CandidateBase p s) (q : Bool) :
     2 ^ (64 * (p.phaseWords q - 1)) ≤ p.phaseValue q ∧ p.phaseValue q < 2 ^ (64 * p.phaseWords q) := by

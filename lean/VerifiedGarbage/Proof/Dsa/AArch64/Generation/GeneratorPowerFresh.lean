@@ -67,7 +67,7 @@ theorem generatorPowerFresh_ok (M : Mont) {s : State} {B hp : Addr}
     right
     have hn := ha ⟨B, activeBytes⟩ (by simp)
     change ¬ ofs B a < activeBytes at hn
-    exact Nat.le_trans (bounds r hr) (by omega)
+    exact Nat.le_trans (bounds r hr) (by omega_using [hn])
   exact ⟨result, ff.trans (generator_power_frame hl ft), (ku.trans kt).mono (by decide)⟩
 
 end VG.Proof.Dsa.AArch64.Generation

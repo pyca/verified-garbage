@@ -50,19 +50,19 @@ theorem otk8_eq {s₀ : State} {m : Mem}
       VG.Proof.ChaCha20.length_serialize]
   · intro i h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
-    simp only [bytesAt, List.getElem_map, List.getElem_range, h i (by omega), ks8,
-      VG.Proof.ChaCha20.keystream_getD _ (show i < 512 by omega), show i / 64 = 0 by omega,
-      show i % 64 = i by omega, VG.Proof.ChaCha20.ctr_zero,
+    simp only [bytesAt, List.getElem_map, List.getElem_range, h i (by omega_using [h₁]), ks8,
+      VG.Proof.ChaCha20.keystream_getD _ (show i < 512 by omega_using [h₁]), show i / 64 = 0 by omega_using [h₁],
+      show i % 64 = i by omega_using [h₁], VG.Proof.ChaCha20.ctr_zero,
       Spec.ChaCha20Poly1305.polyKeyGen, Spec.ChaCha20.chacha20Block, List.getElem_take]
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by
-      rw [VG.Proof.ChaCha20.length_serialize]; omega), Option.getD_some]
+      rw [VG.Proof.ChaCha20.length_serialize]; omega_using [h₁]), Option.getD_some]
 
 /-- After the first block, the keystream of the data from counter 1. -/
 theorem ks8_eq (s₀ : State) {i n : Nat} (hi : i < n) (h448 : i < 448) :
     ks8 s₀ (64 + i) = (keystream (initState (K s₀) 1 (N s₀)) n).getD i 0 := by
-  rw [ks8, VG.Proof.ChaCha20.keystream_getD _ (show 64 + i < 512 by omega),
-    VG.Proof.ChaCha20.keystream_getD _ hi, show (64 + i) / 64 = i / 64 + 1 by omega,
-    show (64 + i) % 64 = i % 64 by omega, VG.Proof.ChaCha20Poly1305.ctr_initState,
+  rw [ks8, VG.Proof.ChaCha20.keystream_getD _ (show 64 + i < 512 by omega_using [h448]),
+    VG.Proof.ChaCha20.keystream_getD _ hi, show (64 + i) / 64 = i / 64 + 1 by omega_using [],
+    show (64 + i) % 64 = i % 64 by omega_using [], VG.Proof.ChaCha20Poly1305.ctr_initState,
     VG.Proof.ChaCha20Poly1305.ctr_initState]
   congr 4
   rw [BitVec.ofNat_add, BitVec.add_comm]
@@ -120,9 +120,9 @@ theorem keyed_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre 
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 640, rfl, by show 640 + 64 ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 768, rfl, by show 768 + 512 ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega⟩
+    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 640, rfl, by show 640 + 64 ≤ 1280; omega_using []⟩
+    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 768, rfl, by show 768 + 512 ≤ 1280; omega_using []⟩
+    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega_using []⟩
   -- The stream on the zeros.
   have wc := hp.wrap_c
   refine WP.seq (xor_call v x0₄ x1₄ x2₄ x3₄ (by decide)
@@ -151,7 +151,7 @@ theorem keyed_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre 
     have z : s₄.mem (off (cx s₀) 768 + BitVec.ofNat 64 k) = 0 := by
       rw [k₄.frame _ (fun r hr => absurd hr List.not_mem_nil),
         show off (cx s₀) 768 + BitVec.ofNat 64 k = cx s₀ + BitVec.ofNat 64 (768 + k) from off_off _ _ _]
-      exact z₃.byte (k := k) (by omega) (by decide)
+      exact z₃.byte (k := k) (by omega_using [hk]) (by decide)
     rw [z]; simp
   -- Poly1305 initialized with the key.
   refine WP.seq (WP.mono (WP.preservedV (ptrs2_ok (a := 448) (b := 768) (by lit_omega) (by lit_omega) s₅)

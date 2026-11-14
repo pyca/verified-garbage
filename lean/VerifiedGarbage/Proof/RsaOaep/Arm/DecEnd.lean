@@ -40,7 +40,7 @@ theorem mlV_eq {P : EP} {σ : State} (ht : 0 < tN h P) :
   unfold mlV okW maskOf
   by_cases hc : okP h g P σ
   · rw [ifp hc, ifp hc, BitVec.and_allOnes, Offset.ofNat_sub_ofNat (w := 32) (by omega),
-      Offset.ofNat_sub_ofNat (w := 32) (by omega)]
+      Offset.ofNat_sub_ofNat (w := 32) (by omega_using [hl, htN])]
   · rw [ifn hc, ifn hc]; exact BitVec.and_zero
 
 theorem okW_one (P : EP) (σ : State) : okW h g P σ &&& 1 = if okP h g P σ then 1 else 0 := by
@@ -53,7 +53,7 @@ theorem Bp_getD (P : EP) (σ : State) (j : Nat) : Bp h g P σ j = (sL (tN h P) (
   unfold Bp
   by_cases e : j < tN h P
   · rw [ifp e, sL_getD e]
-  · rw [ifn e, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [sL_length]; omega)]; rfl
+  · rw [ifn e, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [sL_length]; omega_using [e])]; rfl
 
 /-- `msg_len` in `r1`, the length in `r3`, zero in `r2`. -/
 abbrev O4 (P : EP) (σ s : State) : Prop :=
@@ -68,7 +68,7 @@ abbrev O5 (P : EP) (σ s : State) : Prop :=
     s.mem.readW (State.addr P.ml) 64 = BitVec.ofNat 64 (mlV h g P σ)
 
 theorem mlV_lt (P : EP) (σ : State) (hK : P.K ≤ 1024) : mlV h g P σ < 2 ^ 32 := by
-  unfold mlV; split <;> omega
+  unfold mlV; split <;> omega_arith
 
 theorem end_vp (P : EP) :
     VP (O3 h g P) (.seq (.block (mlSet h.H)) (.seq (.block mlStore) (.block decRet))) (Fin h.G g.G P) := by
@@ -86,8 +86,8 @@ theorem end_vp (P : EP) :
     have hw : WP isa (.block (mlSet h.H)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r1 = P.ml ∧ t.gpr .r3 = BitVec.ofNat 32 (mlV h g P σ) ∧ t.gpr .r2 = 0 := by
       prun [mlSet, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, a2, r2, v2, a4, r4, v4, arg_lt, hk.2.1, hk.2.2,
-        sOk_lt, movw_val (show 2 * h.H.D + 2 < 2 ^ 16 by omega), movw_val (show 0 < 2 ^ 16 by decide), dpVal,
-        mlV_eq h g (P := P) (σ := σ) (show 0 < tN h P by show 0 < P.K - (2 * h.H.D + 1); omega)]
+        sOk_lt, movw_val (show 2 * h.H.D + 2 < 2 ^ 16 by omega_using [hD]), movw_val (show 0 < 2 ^ 16 by decide), dpVal,
+        mlV_eq h g (P := P) (σ := σ) (show 0 < tN h P by show 0 < P.K - (2 * h.H.D + 1); omega_using [hfit])]
       rfl
     exact WP.mono hw fun t ⟨m, rd, wr, sp, t1, t3, t2⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk, m ▸ hb⟩, t1, t3, t2⟩
   refine VP.seq (G := O5 h g P) (mlStore_vp P (fun σ s hs => ⟨⟨hs.1.2.1.1.1, hs.1.1.st⟩, hs.2.1⟩)
@@ -123,7 +123,7 @@ theorem end_vp (P : EP) :
   have ec : (ctB P σ).length = P.nB.length := by rw [ctB_length, nB_length hi]
   have hfv : faultV (rV P σ) = if rV P σ = 2 then 2 else 0 := faultV_r (oc P σ)
   have htN : tN h P = P.K - (2 * h.H.D + 1) := rfl
-  have ht : 0 < tN h P := by omega
+  have ht : 0 < tN h P := by omega_using [hfit, htN]
   have hil := idx_lt h g (P := P) (σ := σ) ht
   rw [Res, Proof.RsaOaep.decrypt_eq ec, decOut_eq h g P σ hfit hk.1.2.2.2, hfv]
   have hz : ¬ okP h g P σ → Spec.Rsa.bytesAt s.mem (State.addr P.out) P.K = Spec.RsaOaep.zeros P.K :=
@@ -138,10 +138,10 @@ theorem end_vp (P : EP) :
       rw [ifp ha, ifp hc]
       refine ⟨by decide, ?_, ?_⟩
       · refine Proof.RsaOaep.out_list (T := sL (tN h P) (T h g P σ)) (idx := idx h g P σ)
-          (by rw [sL_length]; omega) (by rw [sL_length]; exact hil) fun i hi' => ?_
+          (by rw [sL_length]; omega_using [htN]) (by rw [sL_length]; exact hil) fun i hi' => ?_
         rw [← byteAt, hb i hi', ifp hc, Bp_getD]
       · rw [hml, mlV, ifp hc, List.length_drop, sL_length]
-        congr 1; show P.K - (2 * h.H.D + 2) - idx h g P σ = P.K - (2 * h.H.D + 1) - (idx h g P σ + 1); omega
+        congr 1; show P.K - (2 * h.H.D + 2) - idx h g P σ = P.K - (2 * h.H.D + 1) - (idx h g P σ + 1); omega_using []
     · have hn : ¬ okP h g P σ := fun e => ha e.2
       rw [ifn ha, ifn hn]
       exact ⟨by decide, hz hn, hm0 hn⟩

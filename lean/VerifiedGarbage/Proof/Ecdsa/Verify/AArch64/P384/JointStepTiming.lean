@@ -195,9 +195,9 @@ theorem fixedDigit_relCT {C : Curve} {base T : Addr} {G : Point C} {u j : Nat}
      FixedInput C base T G u j s ∧ FixedInput C base T G u j t) := by
    intro s t ts tt s' t' ⟨hp,ps,pt⟩ es et
    obtain ⟨_,_,xs,vs,_,vs3,ks⟩ := fixedRead9_ok cfg_gw hp.left.scr (by decide)
-     (by change 3152+2*j+2≤8192; omega) ps.x19 ps.bytes.lo ps.bytes.hi
+     (by change 3152+2*j+2≤8192; omega_using [hj]) ps.x19 ps.bytes.lo ps.bytes.hi
    obtain ⟨_,_,xt,vt,_,vt3,kt⟩ := fixedRead9_ok cfg_gw hp.right.scr (by decide)
-     (by change 3152+2*j+2≤8192; omega) pt.x19 pt.bytes.lo pt.bytes.hi
+     (by change 3152+2*j+2≤8192; omega_using [hj]) pt.x19 pt.bytes.lo pt.bytes.hi
    obtain ⟨_,rfl⟩ := Exec.det es xs
    obtain ⟨_,rfl⟩ := Exec.det et xt
    have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by
@@ -270,7 +270,7 @@ theorem GeneratorInput.rebase {C : Curve} {base T : Addr} {G : Point C} {u : Nat
  refine ⟨h.source.unch hu (by decide) hr hw hy,?_,?_⟩
  · intro j hj
    have hb : P384Joint.KG.bits=3152 := rfl
-   rw [hu.byte (by intro w hw; have ha:=generator_apart w hw; omega) (by omega)]
+   rw [hu.byte (by intro w hw; have ha:=generator_apart w hw; omega_using [hj, ha]) (by omega_using [hj, hb])]
    exact h.bytes j hj
  · unfold tmv
    rw [hu.wordsVal (by decide) (by decide)]
@@ -323,19 +323,19 @@ theorem jointStep_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
            | seq pt gt =>
             have eps : Exec isa (PubNaf.stepD P384Joint.K P384Joint.double) _ _ _ := .seq ds (.seq dbs ps)
             have ept : Exec isa (PubNaf.stepD P384Joint.K P384Joint.double) _ _ _ := .seq dt (.seq dbt pt)
-            obtain ⟨he,E,hpair⟩:=stepDRaw_relCT hL hp hone checks hD hct hF₁ hF₂ (j:=j) (by change j<385; omega)
+            obtain ⟨he,E,hpair⟩:=stepDRaw_relCT hL hp hone checks hD hct hF₁ hF₂ (j:=j) (by change j<385; omega_using [hj])
              _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ eps ept
             have hcA:=jointPoint_curve hC hG hP u v (j+1) 9
             obtain ⟨_,_,e1,h1⟩:=peerStepD_ok hL hp hC hM3 hone hP hcA hD hF₁ hj hs
             obtain ⟨_,_,e2,h2⟩:=peerStepD_ok hL hp hC hM3 hone hP hcA hD hF₂ hj ht
             obtain ⟨_,rfl⟩:=Exec.det eps e1
             obtain ⟨_,rfl⟩:=Exec.det ept e2
-            have a:=g₁.current (by omega) ((Exec.syms eps).trans sys) h1
-            have b:=g₂.current (by omega) ((Exec.syms ept).trans syt) h2
+            have a:=g₁.current (by omega_using [hj]) ((Exec.syms eps).trans sys) h1
+            have b:=g₂.current (by omega_using [hj]) ((Exec.syms ept).trans syt) h2
             have ev : E (p384.sl ONEP)=1 := by
              rw [←hpair.left.val _ (by decide)]
              exact a.2
-            obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev (by omega) mixed
+            obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev (by omega_using [hj]) mixed
              _ _ _ _ _ _ ⟨hpair,a.1,b.1⟩ gs gt
             exact ⟨by simpa only [List.append_assoc] using congrArg₂ (·++·) he hg,res⟩
  exact ⟨result.1,result.2,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩

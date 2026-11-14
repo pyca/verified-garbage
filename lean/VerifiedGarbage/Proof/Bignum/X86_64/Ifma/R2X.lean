@@ -70,14 +70,14 @@ theorem r2XBlk_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {k 
   cases q
   · unfold r2XBlk Crt.preArg Crt.stk
     simp only [List.cons_append, List.nil_append, Bool.false_eq_true, ↓reduceIte, List.append_nil]
-    xrun [State.ea, hdr, hg.rdi, hdrOff, e104, hp.arg, hA, hl sW (by decide), hg.hdr.hw, hl (sArr j) (by unfold sArr; omega),
+    xrun [State.ea, hdr, hg.rdi, hdrOff, e104, hp.arg, hA, hl sW (by decide), hg.hdr.hw, hl (sArr j) (by unfold sArr; omega_using [hj]),
       hg.hdr.harr j hj, BitVec.ofNat_add_ofNat]
-    rw [hoff]; congr 1; simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega
+    rw [hoff]; congr 1; simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega_using []
   · unfold r2XBlk Crt.preArg Crt.stk
     simp only [List.cons_append, List.nil_append, ↓reduceIte]
-    xrun [State.ea, hdr, hg.rdi, hdrOff, e104, hp.arg, hA, hl sW (by decide), hg.hdr.hw, hl (sArr j) (by unfold sArr; omega),
+    xrun [State.ea, hdr, hg.rdi, hdrOff, e104, hp.arg, hA, hl sW (by decide), hg.hdr.hw, hl (sArr j) (by unfold sArr; omega_using [hj]),
       hg.hdr.harr j hj, BitVec.ofNat_add_ofNat]
-    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, hoff]; congr 1; simp only [r2XOff, ↓reduceIte]; omega
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, hoff]; congr 1; simp only [r2XOff, ↓reduceIte]; omega_using []
 
 /-- `r2X q j`: `[j] := c ? V : 1`, `V` the value of `pre`'s `w_X` words from
 `r2XOff q w_X`, `c` the prime's mask. Only the array changes. -/

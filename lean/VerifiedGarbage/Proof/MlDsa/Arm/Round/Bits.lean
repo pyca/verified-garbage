@@ -56,7 +56,7 @@ def blb (g : Nat) (a : BitVec 32) : BitVec 32 := fixS (a - bhb g a * w2g g)
 theorem blb_lowBits {g : Nat} (hg : G2 g) (r : Zq) :
     (blb g (BitVec.ofNat 32 r.val)).toNat = (ofInt (lowBits g r)).val := by
   have hr : r.val < 8380417 := r.isLt
-  have e : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega
+  have e : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega_using [hr]
   have hb := bhb_toNat hg (a := BitVec.ofNat 32 r.val) (by rw [e]; exact r.isLt)
   rw [e] at hb
   have hm := hbM_mul hg.mem
@@ -72,8 +72,8 @@ theorem blb_lowBits {g : Nat} (hg : G2 g) (r : Zq) :
   generalize r.val = v at *
   rw [q_eq] at hX ⊢
   have hBm : (B * BitVec.ofNat 32 (2 * g)).toNat = f * (2 * g) := by
-    rw [BitVec.toNat_mul, hb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_mul, hb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega_using [hg'])]
+    exact Nat.mod_eq_of_lt (by omega_using [hX])
   generalize B * BitVec.ofNat 32 (2 * g) = X at hBm
   generalize f * (2 * g) = x at hBm hX
   split <;> bv_omega

@@ -203,7 +203,7 @@ theorem body_rel (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env V₁ sp σ₁) (
   refine RelCT.assoc (rel_seq ?_ W₁ W₂ fun τ₁ τ₂ ⟨F₁, _⟩ ⟨F₂, _⟩ => ?_)
   · refine rel_seq (rel_env E₁ E₂ hV [] (by agree_ppc []) ⟨_, by taint_decide⟩) (bodyHead_ok E₁ hn h23)
       (bodyHead_ok E₂ hn h23₂) fun u₁ u₂ ⟨r3₁, U₁, rd₁, wr₁⟩ ⟨r3₂, U₂, rd₂, wr₂⟩ => ?_
-    refine rel_ite (eval_zero r3₁ (by omega)) (eval_zero r3₂ (by omega)) (fun _ => rel_skip) fun _ => ?_
+    refine rel_ite (eval_zero r3₁ (by omega_using [hn])) (eval_zero r3₂ (by omega_using [hn])) (fun _ => rel_skip) fun _ => ?_
     cases enc <;> simp only [Bool.false_eq_true, ↓reduceIte]
     · exact whole_rel L hV hR h28 Proof.Aes.PPC64LE.decryptBlocks_correct Proof.Aes.PPC64LE.decryptBlocks_ct
         decryptBlocks_noFrames [.r0, .r3, .r4, .r5, .r6, .r12, .r24, .r25, .r26] ⟨_, by taint_decide⟩
@@ -215,7 +215,7 @@ theorem body_rel (enc : Bool) {σ₁ σ₂ : State} (E₁ : Env V₁ sp σ₁) (
         (hD₁.of_eq rd₁ wr₁) (hD₂.of_eq rd₂ wr₂)
   refine rel_seq (rel_env F₁ F₂ hV [] (by agree_ppc []) ⟨_, by taint_decide⟩) (bodyTail_ok F₁ hn h23)
     (bodyTail_ok F₂ hn h23₂) fun w₁ w₂ ⟨r24₁, r25₁, g₁, k₁⟩ ⟨r24₂, r25₂, g₂, k₂⟩ => ?_
-  exact rel_ite (eval_zero r25₁ (by omega)) (eval_zero r25₂ (by omega)) (fun _ => rel_skip) fun _ =>
+  exact rel_ite (eval_zero r25₁ (by omega_using [])) (eval_zero r25₂ (by omega_using [])) (fun _ => rel_skip) fun _ =>
     rest_rel L hV hR h28 enc (F₁.others g₁ k₁.sp k₁.rd k₁.wr) (F₂.others g₂ k₂.sp k₂.rd k₂.wr)
       (by rw [r24₁, r24₂, hV .r27 (by decide)]) (by rw [r25₁, r25₂])
 

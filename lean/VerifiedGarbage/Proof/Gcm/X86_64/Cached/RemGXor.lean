@@ -123,21 +123,21 @@ theorem xorK1_ok (src : Reg) (b : XReg) (d : Nat) (s : State) {c : Nat} (hc : c 
     rfl, WP.block_nil ?_⟩
   have z₂ : ∀ l < c, s₂.zlane b l = s.zlane b l ^^^ s.mem.readW (as + BitVec.ofNat 64 (16 * l)) 128 :=
     fun l hl => by
-      simp only [s₂, zlane_zbin _ _ _ _ _ _ (show l < 4 by omega), ite_true, ZBinOp.sse]
-      rw [zlane_setZv _ _ _ (by omega), lv l (by omega), ite_eq_left hl, State.zlane_setZ_ne _ hb _ _ _ _ (by omega)]
+      simp only [s₂, zlane_zbin _ _ _ _ _ _ (show l < 4 by omega_using [hc, hl]), ite_true, ZBinOp.sse]
+      rw [zlane_setZv _ _ _ (by omega_using [hc, hl]), lv l (by omega_using [hc, hl]), ite_eq_left hl, State.zlane_setZ_ne _ hb _ _ _ _ (by omega_using [hc, hl])]
       simp only [VG.Proof.Aes.X86_64.AesNi.eval_pxor]
   have bD : ∀ l < c, blockAt m₃ (a + BitVec.ofNat 64 (16 * l)) =
       XBinOp.eval .pshufb (s₂.zlane b l) revMask := fun l hl => by
     rw [blockAt_eq]
     have e := readW_writeW_inside s.mem a ((s₂.zmm b).setWidth (128 * c)) (k := 16 * l) (n := 16)
-      (by omega) (by omega)
+      (by omega_using [hl]) (by omega_using [hc])
     rw [show 8 * 16 = 128 by rfl] at e
-    rw [e, show 8 * (16 * l) = 128 * l by omega]
+    rw [e, show 8 * (16 * l) = 128 * l by omega_using []]
     have e2 : ((s₂.zmm b).setWidth (128 * c)).extractLsb' (128 * l) 128 = (s₂.zmm b).extractLsb' (128 * l) 128 := by
       apply BitVec.eq_of_getLsbD_eq; intro i hi
       simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hi, decide_true, Bool.true_and]
-      rw [decide_eq_true (show 128 * l + i < 128 * c by omega), Bool.true_and]
-    rw [e2, zmm_lane _ _ (by omega)]
+      rw [decide_eq_true (show 128 * l + i < 128 * c by omega_using [hl, hi]), Bool.true_and]
+    rw [e2, zmm_lane _ _ (by omega_using [hc, hl])]
   refine ⟨⟨_, rfl⟩, fun l hl => ?_, fun l hl => ?_, by simp [s₂, s₁], by simp [s₂, s₁], by simp [s₂, s₁],
     fun r h1 h2 l hl => ?_⟩
   · show blockAt m₃ _ = _

@@ -33,7 +33,7 @@ theorem bytesAt_of {m₁ m₂ : Mem} {q : Addr} {N n : Nat} (hn : n ≤ N)
   have hi := List.mem_range.mp hi
   simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
   have := Nat.mod_le i (2 ^ 64)
-  omega
+  omega_using [hn, hi]
 
 variable (p : Params) (stack : Nat)
 

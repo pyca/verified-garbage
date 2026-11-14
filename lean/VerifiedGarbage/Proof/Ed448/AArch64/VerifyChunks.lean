@@ -95,10 +95,10 @@ theorem bytes7_ok {s : State} {rp : Reg} {p : Addr} (hp : s.gpr rp = p) (h4 : rp
     have ub : (u.gpr .x4).toNat < 2 ^ 48 := by
       rw [uv]
       have h := VG.Proof.X448.suffix_bound s.mem (p + BitVec.ofNat 64 o) 0 n
-      have hpow : 256 ^ n ≤ 256 ^ 6 := Nat.pow_le_pow_right (by decide) (by omega)
+      have hpow : 256 ^ n ≤ 256 ^ 6 := Nat.pow_le_pow_right (by decide) (by omega_using [hn])
       exact Nat.lt_of_lt_of_le h hpow
     have ur : InRegions (u.rd ++ u.wr) (p + BitVec.ofNat 64 (o + (6 - n))) 1 := by
-      rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2]; exact hr _ (by omega)
+      rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2]; exact hr _ (by omega_using [])
     refine WP.mono (byte7_ok up h4 ho hn ub ur) fun v ⟨vv, vm, vk⟩ => ⟨?_, vm.trans um, uk.trans vk⟩
     rw [vv, uv, um, VG.Proof.X448.suffix_succ _ _ _ hn, Offset.add_add]
     simp only [Nat.mul_zero, Nat.zero_add]
@@ -119,17 +119,17 @@ theorem carryStep_ok {s : State} {a k c : Nat} (ha : (s.gpr .x4).toNat = a) (hk 
     ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
   refine ⟨?_, trivial, (fun r hr => ?_), rfl, rfl⟩
   · simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, ha, hk, hc, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (by omega : a + k < 2 ^ 64), Nat.mod_eq_of_lt (by omega : a + k + c < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_using [ha', hk'] : a + k < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [ha', hk', hc'] : a + k + c < 2 ^ 64)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
 theorem carry_div (A a k n : Nat) :
     (A + 2 ^ (56 * n) * (a + k)) / 2 ^ (56 * (n + 1)) = (a + k + A / 2 ^ (56 * n)) / 2 ^ 56 := by
-  rw [show 56 * (n + 1) = 56 * n + 56 by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+  rw [show 56 * (n + 1) = 56 * n + 56 by omega_using [], Nat.pow_add, ← Nat.div_div_eq_div_mul,
     Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.add_comm (A / _)]
 
 theorem pow256 (n : Nat) : (256 : Nat) ^ (7 * n) = 2 ^ (56 * n) := by
-  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, show 8 * (7 * n) = 56 * n by omega]
+  rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, show 8 * (7 * n) = 56 * n by omega_using []]
 
 /-- The carry after one more chunk. -/
 theorem carry_next (A B a k n : Nat) :
@@ -139,12 +139,12 @@ theorem carry_next (A B a k n : Nat) :
 
 theorem mod_succ56 (K n : Nat) :
     K % 2 ^ (56 * (n + 1)) = K % 2 ^ (56 * n) + 2 ^ (56 * n) * ((K >>> (56 * n)) % 2 ^ 56) := by
-  rw [show 56 * (n + 1) = 56 * n + 56 by omega, Nat.pow_add, Nat.mod_mul, Nat.shiftRight_eq_div_pow]
+  rw [show 56 * (n + 1) = 56 * n + 56 by omega_using [], Nat.pow_add, Nat.mod_mul, Nat.shiftRight_eq_div_pow]
 
 theorem leNum_chunks (m : Mem) (q : Addr) (n : Nat) :
     leNum (Spec.X448.bytesAt m q (7 * (n + 1))) =
       leNum (Spec.X448.bytesAt m q (7 * n)) + 2 ^ (56 * n) * chunk7 m (q + BitVec.ofNat 64 (7 * n)) := by
-  rw [show 7 * (n + 1) = 7 * n + 7 by omega, VG.Proof.X448.bytesAt_add, leNum_append,
+  rw [show 7 * (n + 1) = 7 * n + 7 by omega_using [], VG.Proof.X448.bytesAt_add, leNum_append,
     VG.Proof.X448.length_bytesAt, pow256]
 
 /-- `carryK rp o K`: `x5` is the carry out of the 56 bytes at `rp + o` plus `K`. -/
@@ -183,10 +183,10 @@ theorem carryK_ok {s : State} {rp : Reg} {p : Addr} (hp : s.gpr rp = p)
       have h1 := leNum_lt (Spec.X448.bytesAt s.mem q (7 * n))
       rw [VG.Proof.X448.length_bytesAt, pow256] at h1
       have h2 := Nat.mod_lt K (Nat.two_pow_pos (56 * n))
-      exact Nat.le_of_lt_succ ((Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr (by omega))
+      exact Nat.le_of_lt_succ ((Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr (by omega_using [h1]))
     rw [List.append_assoc, WP.block_append_iff]
-    refine WP.mono (bytes7_ok up h4 h7 (o := o + 7 * n) (by omega) (fun j hj => by
-      rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2, Nat.add_assoc]; exact hr (7 * n + j) (by omega)))
+    refine WP.mono (bytes7_ok up h4 h7 (o := o + 7 * n) (by omega_using [ho, hn]) (fun j hj => by
+      rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2, Nat.add_assoc]; exact hr (7 * n + j) (by omega_using [hn, hj])))
       fun v ⟨v4, vm, vk⟩ => ?_
     rw [WP.block_append_iff]
     refine WP.mono (VG.AArch64.Tbl.const64_ok v .x6 (BitVec.ofNat 64 ((K >>> (56 * n)) % 2 ^ 56)))
@@ -197,8 +197,8 @@ theorem carryK_ok {s : State} {rp : Reg} {p : Addr} (hp : s.gpr rp = p)
       rw [wg _ (by decide), vk.1 _ (by decide)]
     have kl : (K >>> (56 * n)) % 2 ^ 56 < 2 ^ 56 := Nat.mod_lt _ (by decide)
     have w6' : (w.gpr .x6).toNat = (K >>> (56 * n)) % 2 ^ 56 := by
-      rw [w6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    refine WP.mono (carryStep_ok w4 w6' w5 (chunk7_lt _ _) kl (by omega)) fun x ⟨x5, xm, xk⟩ => ?_
+      rw [w6, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
+    refine WP.mono (carryStep_ok w4 w6' w5 (chunk7_lt _ _) kl (by omega_using [cb])) fun x ⟨x5, xm, xk⟩ => ?_
     refine ⟨?_, ?_, ?_⟩
     · rw [x5, uv, leNum_chunks, mod_succ56]
       exact carry_next _ _ _ _ _

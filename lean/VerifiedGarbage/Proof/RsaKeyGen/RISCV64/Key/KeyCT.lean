@@ -311,7 +311,7 @@ theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : C
   have hpw : Spec.Rsa.os2ip (pB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
   have hqw : Spec.Rsa.os2ip (qB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
   have hew : Spec.Rsa.os2ip (eB s0) < 2 ^ 64 :=
-    Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega))
+    Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega_using [this]))
   unfold pre
   simp only [seqs]
   refine WP.seq (WP.mono (setup_ok h c ha7) fun t1 ⟨c1, a71⟩ => ?_)
@@ -330,10 +330,10 @@ theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : C
     have hq0 : nm s0 t3.mem aQ0 = Spec.Rsa.os2ip (qB s0) := (o3 aQ0 (by decide) (by decide)).trans q2
     rw [p4, q4, hp0, hq0]
     constructor <;> split <;> with_reducible assumption
-  have hpm : nm s0 t4.mem aPm < 2 ^ (8 * pLen s0) := by rw [pm4]; have := pq4.1; omega
-  have hqm : nm s0 t4.mem aQm < 2 ^ (8 * pLen s0) := by rw [qm4]; have := pq4.2; omega
+  have hpm : nm s0 t4.mem aPm < 2 ^ (8 * pLen s0) := by rw [pm4]; have := pq4.1; omega_using [pq4]
+  have hqm : nm s0 t4.mem aQm < 2 ^ (8 * pLen s0) := by rw [qm4]; have := pq4.2; omega_using [pq4]
   have hdv : word t4.mem (bOf s0) (arr (wOf s0) aDv + 8 * wOf s0) = 0 :=
-    c4.word_zero (j := aDv) (by decide) (by decide) (by omega)
+    c4.word_zero (j := aDv) (by decide) (by decide) (by omega_using [])
   refine WP.seq (WP.mono (lcmPart_ok h c4 one4 two4 three4 zero4 hpm hqm hdv) fun t5 ⟨c5, o5, _, dv5⟩ => ?_)
   have e5 := KE.of_st c5 dv5
   have v5 : ∀ j, j < nArr → j ∉ lcmArrs → j ∉ primesArrs → j ∉ constArrs →
@@ -357,8 +357,8 @@ theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : C
     fun t7 ⟨V7, F7, e7, o7, p7, _, _, _, _, x6⟩ => ?_)
   have one7 : V7 aOne = 1 := by rw [o7 _ (by decide) (by decide), o6 _ (by decide)]; exact one5
   have b4 : F7 X4 ≤ 1 := by
-    rw [p7 X4 (by decide) (by decide) (by decide) (by decide), x4]; split <;> omega
-  have b6 : F7 X6 ≤ 1 := by rw [x6]; split <;> omega
+    rw [p7 X4 (by decide) (by decide) (by decide) (by decide), x4]; split <;> omega_using []
+  have b6 : F7 X6 ≤ 1 := by rw [x6]; split <;> omega_using []
   refine WP.mono (dOne_ok e7 one7 b4 b6) fun t ⟨V8, F8, e8, _, p8, _, _⟩ => ⟨V8, F8, e8, ?_⟩
   rw [p8 X3 (by decide) (by decide) (by decide), p7 X3 (by decide) (by decide) (by decide) (by decide), x3]
   exact congrArg (· % 2) ve5

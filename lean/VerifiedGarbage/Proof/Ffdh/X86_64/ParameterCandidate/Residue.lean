@@ -33,10 +33,10 @@ theorem endAround_bv (a b : BitVec 64) :
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat
   · simp only [h, decide_true, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofBool,
       Bool.toNat_true]
-    omega
+    omega_using [h]
   · simp only [h, decide_false, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofBool,
       Bool.toNat_false]
-    omega
+    omega_using [h]
 
 /-- One word of `fold`: word `w − 1 − j` into RSI, modulo 2^64 − 1. -/
 theorem foldWord_ok {s : State} {B : Addr} {Z d w j : Nat} (hs : Scr s B Z) (h8 : s.gpr .r8 = off B d)
@@ -94,7 +94,7 @@ theorem foldWords_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z) (h8 :
       show w - (j + 1) + 1 = w - j by omega_using [hj], show w - 1 - j = w - (j + 1) by omega_using []]
     generalize hiw s.mem B d w (w - j) = H
     generalize (word s.mem B (d + 8 * (w - (j + 1)))).toNat = W
-    omega
+    omega_using []
   · rw [hI.val, Nat.sub_self]; unfold hiw; simp only [Nat.mul_zero, Nat.add_zero, Nat.sub_zero]
 
 /-! ## Membership of a small remainder -/
@@ -154,7 +154,7 @@ private theorem and_mask (x : BitVec 64) (k : Nat) (hk : k < 31) :
     have := Nat.pow_lt_pow_right (a := 2) (by decide) hk; omega
   rw [sx_ofNat h1, BitVec.toNat_and, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by have : (2 : Nat) ^ 31 < 2 ^ 64 := by decide
-                         omega),
+                         omega_using [h1]),
     Nat.and_two_pow_sub_one_eq_mod]
 
 /-- `lowCheck (2 ^ k - 1)`: ZF is whether RAX is 1 and the low word at R8 is 3
@@ -194,7 +194,7 @@ theorem foldStep_ok (k : Nat) (hk : k = 8 ∨ k = 16 ∨ k = 32) (s : State) :
   unfold foldStep
   rcases hk with rfl | rfl | rfl <;> xrun <;>
     simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq,
-      Nat.shiftRight_eq_div_pow] <;> omega
+      Nat.shiftRight_eq_div_pow] <;> omega_using []
 
 /-- `reduce255`: RSI := RSI mod 255. -/
 theorem reduce255_ok (s : State) :
@@ -210,7 +210,7 @@ theorem reduce255_ok (s : State) :
   have hv : (u₄.gpr .rsi).toNat % 255 = (s.gpr .rsi).toNat % 255 ∧ (u₄.gpr .rsi).toNat < 264 := by
     rw [h₄, h₃, h₂, h₁]
     generalize (s.gpr .rsi).toNat = x at hx ⊢
-    omega
+    omega_using [hx]
   refine WP.mono (WP.keep [.rdx, .rsi] (Q := fun t =>
     (t.gpr .rsi).toNat = (s.gpr .rsi).toNat % 255 ∧ t.mem = u₄.mem) ?_ rfl)
     fun t ⟨⟨h, hm⟩, kk⟩ => ⟨h, hm.trans (m₄.trans (m₃.trans (m₂.trans m₁))),
@@ -223,11 +223,11 @@ theorem reduce255_ok (s : State) :
   by_cases h : y.toNat < 255
   · have hd : decide (y.toNat < (BitVec.ofNat 64 255).toNat) = true := by rw [hc]; exact decide_eq_true h
     xrun [hu, h255, execCmov, eval, hd]
-    omega
+    omega_using [hmod, h]
   · have hd : decide (y.toNat < (BitVec.ofNat 64 255).toNat) = false := by rw [hc]; exact decide_eq_false h
     xrun [hu, h255, execCmov, eval, hd]
     rw [BitVec.toNat_sub, hc]
-    omega
+    omega_using [hmod, hlt, h]
 
 /-- The candidate in aN, its words folded modulo 2^64 − 1, in RSI; R8 is
 aN's base. -/
@@ -262,7 +262,7 @@ theorem allowed5_lt : ∀ v ∈ allowed5, v < 2 ^ 31 := by decide +kernel
 
 private theorem low_mod {m : Mem} {p : Addr} {d n k : Nat} (hn : 1 ≤ n) (hk : k ≤ 64) :
     (m.readW (off p d) 64).toNat % 2 ^ k = wv m p d n % 2 ^ k := by
-  obtain ⟨n, rfl⟩ : ∃ n', n = 1 + n' := ⟨n - 1, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n', n = 1 + n' := ⟨n - 1, by omega_using [hn]⟩
   rw [wv_add]
   simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero, Nat.mul_one]
   have hd : 2 ^ k ∣ 2 ^ 64 := Nat.pow_dvd_pow 2 hk
@@ -293,7 +293,7 @@ theorem generatorCode_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {
     exact hg.scr.ld (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)
   refine WP.mono (lowCheck_ok k hk hk' hrd hva) fun t ⟨hz, htm, kt⟩ =>
     ⟨?_, htm.trans (hvm.trans hm), ((k₁.trans kv).trans kt).mono (by decide)⟩
-  rw [hz, kv.gpr (by decide), h8, hvm, hm, low_mod hw (by omega)]
+  rw [hz, kv.gpr (by decide), h8, hvm, hm, low_mod hw (by omega_using [hk'])]
 
 private theorem allowed2_shape : ∀ r < 255, r ∈ allowed2 → r % 3 = 2 := by decide +kernel
 private theorem allowed5_shape : ∀ r < 255, r ∈ allowed5 → r % 5 = 2 ∨ r % 5 = 3 := by decide +kernel

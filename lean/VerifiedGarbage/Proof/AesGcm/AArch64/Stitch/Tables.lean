@@ -51,7 +51,7 @@ theorem pwTbl_ok {Ctx St W SP : Addr} {H : Block} {pw : Addr} {k : Nat} (hk : k 
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   refine WP.mono (loadPws_ok (u := s₁) (H := H) (by rw [m₁, x5₁]; exact hrep) (fun j h1 h8 => by
       rw [rd₁, wr₁, x5₁]
-      exact in_off hin (by unfold Impl.Gcm.AArch64.Pmull.pwOff; split <;> omega) (by omega)) 8 (Nat.le_refl _))
+      exact in_off hin (by unfold Impl.Gcm.AArch64.Pmull.pwOff; split <;> omega_arith) (by omega_using [])) 8 (Nat.le_refl _))
     fun s₂ ⟨hI₂, g₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
   have hw : InRegions s₂.wr (s₂.gpr .x19 + BitVec.ofNat 64 512) 192 := by
     rw [wr₂, g₂, wr₁, g₁ _ (by decide), he.x19]; exact he.perm.wW (by decide)

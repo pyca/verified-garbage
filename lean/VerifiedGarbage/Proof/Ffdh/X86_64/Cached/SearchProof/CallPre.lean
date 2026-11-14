@@ -41,7 +41,7 @@ private theorem readW_writeW_off64 (m : Mem) (p : Addr) (v : BitVec 64) {d e : N
 private theorem readW_writeW_base64 (m : Mem) (p : Addr) (v : BitVec 64) {d : Nat}
     (h : 8 ≤ d) (hd : d + 8 < 2 ^ 63) :
     (m.writeW p v).readW (p + BitVec.ofNat 64 d) 64 = m.readW (p + BitVec.ofNat 64 d) 64 := by
-  have := readW_writeW_off64 m p v (d := d) (e := 0) (.inr (by omega)) hd (by decide)
+  have := readW_writeW_off64 m p v (d := d) (e := 0) (.inr (by omega_using [h])) hd (by decide)
   simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 /-- The attempt's register arguments. -/
@@ -164,14 +164,14 @@ theorem call_arg {p : KeyPublic} {used : Nat} {s u : State} (hu : u.gpr .rsp = p
       (word s.mem (p.sp - 56) (8 * j)) := by
   have ha : stackArgAddr (callState p used u) j = p.sp - 56 + BitVec.ofNat 64 (8 * j) := by
     simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hu]
-    rw [show 8 * (j + 1) = 8 + 8 * j by omega, BitVec.ofNat_add, ← BitVec.add_assoc,
+    rw [show 8 * (j + 1) = 8 + 8 * j by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc,
       show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.sub_add_cancel]
   have e1 : p.sp - 56 - 8 + BitVec.ofNat 64 (8 + 8 * j) = p.sp - 56 + BitVec.ofNat 64 (8 * j) := by
     rw [BitVec.ofNat_add, ← BitVec.add_assoc, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl,
       BitVec.sub_add_cancel]
   have sep : Mem.Sep (p.sp - 56 + BitVec.ofNat 64 (8 * j)) (64 / 8) (p.sp - 56 - 8) (64 / 8) := by
     have := Offset.sep (p.sp - 56 - 8) (d := 8 + 8 * j) (n := 8) (e := 0) (k := 8)
-      (.inr (by omega)) (by omega_using [hj]) (by decide)
+      (.inr (by omega_using [])) (by omega_using [hj]) (by decide)
     rw [e1, BitVec.add_zero] at this
     exact this
   unfold stackArg

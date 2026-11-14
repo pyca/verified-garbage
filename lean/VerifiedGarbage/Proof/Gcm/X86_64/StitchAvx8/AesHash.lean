@@ -59,12 +59,12 @@ theorem fixedRounds_ok (regs : List XReg) (hnd : regs.Nodup) (h1 : .xmm1 ∉ reg
     exact WP.block_nil ⟨hI, hQ⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s₁ ⟨hI₁, hQ₁⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun s₁ ⟨hI₁, hQ₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (roundL_ok .l128 .xmm1 regs hnd h1 (k := k) (by omega)
+    refine WP.mono (roundL_ok .l128 .xmm1 regs hnd h1 (k := k) (by omega_using [hk])
       (hkeys _ _ hQ₁) hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_
-    refine WP.mono (hg (k + 1) (by omega) hk s₂ (hq _ _ _ hQ₁ hf₂))
+    refine WP.mono (hg (k + 1) (by omega_using []) hk s₂ (hq _ _ _ hQ₁ hf₂))
       fun s' ⟨hQ', he⟩ => ⟨fun b hb l hl => ?_, hQ'⟩
     rw [he b hb l hl]
     exact hI₂ b hb l hl
@@ -85,19 +85,19 @@ theorem aesFixed_ok (nr : Nat) (hnr : 0 < nr) (regs : List XReg)
         st (s'.lane b l) = cipher nr w (st (s.lane b l))) ∧ Q nr s' := by
   let x : XReg → Nat → Spec.Aes.State := fun b l => st (s.lane b l)
   have hK := hkeys _ _ hQ
-  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega)
+  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega_using [])
   simp only [Nat.mul_zero] at k0
   rw [aesFixed, List.append_assoc, WP.block_append_iff]
   refine WP.mono (keyOpL_ok .l128 .xmm1 regs .vpxor _ s hnd h1
-    (by rw [ea_at]; exact hK.keys 0 (by omega))) fun s₁ ⟨hv₁, hf₁⟩ => ?_
+    (by rw [ea_at]; exact hK.keys 0 (by omega_using []))) fun s₁ ⟨hv₁, hf₁⟩ => ?_
   have hI₁ : RInv .l128 regs w x 0 s₁ := fun b hb l hl => by
     rw [hv₁ b hb l hl]
     show st (XBinOp.eval .pxor _ _) = _
     rw [pxor_st _ _ (roundKey w 0) (by rw [hK.sched, ea_at]; exact k0), rnds_zero]
   rw [WP.block_append_iff]
   refine WP.mono (fixedRounds_ok regs hnd h1 g Q hkeys hg hq (nr - 1) s₁
-    (by omega) hI₁ (hq _ _ _ hQ hf₁)) fun s₂ ⟨hI₂, hQ₂⟩ => ?_
-  have hn : nr - 1 + 1 = nr := by omega
+    (by omega_using [hnr]) hI₁ (hq _ _ _ hQ hf₁)) fun s₂ ⟨hI₂, hQ₂⟩ => ?_
+  have hn : nr - 1 + 1 = nr := by omega_using [hnr]
   rw [hn] at hQ₂
   have hK₂ := hkeys _ _ hQ₂
   have hea := hlast _ hQ₂
@@ -107,7 +107,7 @@ theorem aesFixed_ok (nr : Nat) (hnr : 0 < nr) (regs : List XReg)
   rw [hv b hb l hl]
   show st (XBinOp.eval .aesenclast _ _) = _
   rw [aesenclast_st _ _ (roundKey w nr) (by
-    rw [hea, hK₂.sched]; exact byte_roundKey _ _ (by omega)), hI₂ b hb l hl, cipher_eq]
+    rw [hea, hK₂.sched]; exact byte_roundKey _ _ (by omega_using [])), hI₂ b hb l hl, cipher_eq]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -145,7 +145,7 @@ private theorem liftPure (is ss : List Instr) (rs : List XReg)
   refine WP.mono (WP.lane0 hcode h) fun s' ⟨⟨hp, ho⟩, hi, hg⟩ => ?_
   refine ⟨hp, hg hgp, by simpa using ho.mem, by simpa using ho.rd,
     by simpa using ho.wr, fun r hr l hl => ?_⟩
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
   · simpa using ho.xmm r hr
   · exact hi r (hdst r hr)
 
@@ -405,7 +405,7 @@ theorem hashSteps_ok (s : State) (d : Nat)
   | zero => exact WP.block_nil ⟨rfl, YFrame.refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨hacc, hf⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn])) fun t ⟨hacc, hf⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     refine WP.mono (gh8_ok t d ((n + 1) % 8) false (by
       rw [hf.rd, hf.wr]; simp only [State.ea, hf.gpr]; exact hp _ (Nat.mod_lt _ (by decide))) (by
@@ -417,7 +417,7 @@ theorem hashSteps_ok (s : State) (d : Nat)
     by_cases hz : n = 0
     · subst n
       simp only [Nat.zero_add, Nat.reduceMod, ite_true, accN, List.range_zero, List.foldl_nil]
-    · have hm : (n + 1) % 8 ≠ 1 := by omega
+    · have hm : (n + 1) % 8 ≠ 1 := by omega_using [hn, hz]
       rw [ite_eq_right hm, hacc, ite_eq_right hz]
 
 /-- One complete GHASH batch and its final reduction. -/
@@ -473,10 +473,10 @@ theorem loadCounters_ok (s : State)
   | zero => exact WP.block_nil ⟨fun i hi => absurd hi (Nat.not_lt_zero _), YFrame.refl _ _⟩
   | succ n ih =>
     rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨hv, hf⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn])) fun t ⟨hv, hf⟩ => ?_
     simp only [List.map_cons, List.map_nil]
     have hi : InRegions (t.rd ++ t.wr) (t.ea (at_ .r11 (640 + 16 * n))) 16 := by
-      simpa only [hf.rd, hf.wr, State.ea, hf.gpr] using hin n (by omega)
+      simpa only [hf.rd, hf.wr, State.ea, hf.gpr] using hin n (by omega_using [hn])
     rw [WP.block_cons_iff]
     refine ⟨t.setV .l128 (aregs.getD n .xmm3)
       (t.mem.readW (t.ea (at_ .r11 (640 + 16 * n))) 128) 0,
@@ -488,12 +488,12 @@ theorem loadCounters_ok (s : State)
       · subst i
         simp only [ite_true, hf.mem, State.ea, hf.gpr]
       · have hr : aregs.getD i .xmm3 ≠ aregs.getD n .xmm3 :=
-          fun h => he (aregs_distinct i (by omega) n (by omega) h)
+          fun h => he (aregs_distinct i (by omega_using [hn, hi]) n (by omega_using [hn]) h)
         rw [ite_eq_right hr]
-        exact hv i (by omega)
+        exact hv i (by omega_using [hi, he])
     · refine hf.trans ⟨rfl, rfl, rfl, rfl, ?_⟩
       intro r hr l hl
-      have he : r ≠ aregs.getD n .xmm3 := fun h => hr (h ▸ aregs_member n (by omega))
+      have he : r ≠ aregs.getD n .xmm3 := fun h => hr (h ▸ aregs_member n (by omega_using [hn]))
       simp only [State.lane, xmm_setV, ymmHi_setV_128, he, ite_false]
 
 
@@ -540,12 +540,12 @@ private theorem incs_ok (C : BitVec 128) (k : Nat) (hk : k ≤ 7) (s : State)
       ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl⟩, rfl⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨t11, tr, t0, t12, tf, t7⟩ => ?_
-    obtain ⟨n0, n11, n12, n7⟩ := aregs_succ_ne k (by omega)
+    refine WP.mono (ih (by omega_using [hk])) fun t ⟨t11, tr, t0, t12, tf, t7⟩ => ?_
+    obtain ⟨n0, n11, n12, n7⟩ := aregs_succ_ne k (by omega_using [hk])
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
-    have hm : aregs.getD (k + 1) .xmm3 ∈ aregs := aregs_member (k + 1) (by omega)
+    have hm : aregs.getD (k + 1) .xmm3 ∈ aregs := aregs_member (k + 1) (by omega_using [hk])
     refine ⟨?_, fun i hi => ?_, ?_, ?_, ?_, ?_⟩
     · simp only [lane_vbin128, Ne.symm n11, ite_false, ite_true, reduceVBinOpSse, t11, t12, paddd_one]; rfl
     · simp only [lane_vbin128, reduceVBinOpSse]
@@ -553,10 +553,10 @@ private theorem incs_ok (C : BitVec 128) (k : Nat) (hk : k ≤ 7) (s : State)
       · subst he
         simp only [ite_true, t11, t12, t0, paddd_one]; rfl
       · have hne : aregs.getD (i + 1) .xmm3 ≠ aregs.getD (k + 1) .xmm3 := fun h =>
-          he (by have := aregs_distinct (i + 1) (by omega) (k + 1) (by omega) h; omega)
-        have hne' : aregs.getD (i + 1) .xmm3 ≠ .xmm11 := (aregs_succ_ne i (by omega)).2.1
+          he (by have := aregs_distinct (i + 1) (by omega_using [hk, hi]) (k + 1) (by omega_using [hk]) h; omega_using [this])
+        have hne' : aregs.getD (i + 1) .xmm3 ≠ .xmm11 := (aregs_succ_ne i (by omega_using [hk, hi])).2.1
         simp only [hne, hne', ite_false]
-        exact tr i (by omega)
+        exact tr i (by omega_using [hi, he])
     · simp only [lane_vbin128, Ne.symm n0, ite_false, show XReg.xmm0 ≠ .xmm11 by decide, t0]
     · simp only [lane_vbin128, Ne.symm n12, ite_false, show XReg.xmm12 ≠ .xmm11 by decide, t12]
     · refine tf.trans ⟨fun r _ => rfl, rfl, rfl, rfl, fun r hr l hl => ?_⟩
@@ -605,9 +605,9 @@ theorem regCounters_ok (s : State) (h0 : s.lane .xmm0 0 = revMask) :
     · simp only [lane_vbin128, ite_true, reduceVBinOpSse, x7]
       show XBinOp.eval .por _ _ = _
       simp only [XBinOp.eval, BitVec.or_self]; rfl
-    · have hne := (aregs_succ_ne i (by omega)).1
+    · have hne := (aregs_succ_ne i (by omega_using [hi])).1
       simp only [lane_vbin128, hne, ite_false]
-      exact tr i (by omega)
+      exact tr i (by omega_using [hi])
   · have h0' : r ≠ .xmm0 := fun h => hr (h ▸ by decide)
     simp only [lane_vbin128, h0', ite_false]
 

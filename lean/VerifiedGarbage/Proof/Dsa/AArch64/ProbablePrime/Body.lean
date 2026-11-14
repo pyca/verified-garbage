@@ -218,16 +218,16 @@ def BodyPost (bits : Nat) (s t : State) : Prop :=
 theorem frame_toNat {bits : Nat} {s : State} (A : PrimeABI bits s) :
     (frameBase s).toNat + 272 = s.sp.toNat := by
   have h : 272 ≤ s.sp.toNat := A.stackLower
-  have hle : BitVec.ofNat 64 272 ≤ s.sp := by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega
+  have hle : BitVec.ofNat 64 272 ≤ s.sp := by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [h]
   rw [frameBase, BitVec.toNat_sub_of_le hle, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem frame_sub (s : State) : Region.Sub ⟨frameBase s, 272⟩ (below s.sp 272) :=
   fun _ h => h
 
 theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ 272) :
     (⟨frameBase s, 272⟩ : Region).Contains (off (frameBase s) d) n :=
-  Offset.contains_base _ h (by omega)
+  Offset.contains_base _ h (by omega_using [h])
 
 /-- The frame's region. -/
 abbrev frameRegion (s : State) : Region := ⟨frameBase s, 272⟩
@@ -289,7 +289,7 @@ theorem prepared {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bi
     have h0 : Scr u2 (s.gpr .x0) ((s.gpr .x1).toNat * 8) :=
       Scr.of_mem (by rw [wr2]; exact List.mem_cons_of_mem _ hws) A.wsBound
     exact h0.sub (o := arithmetic) (n := arithmeticBytes)
-      (by have := A.size; have : arithmetic + arithmeticBytes = domainCheck := rfl; omega) (by decide)
+      (by have := A.size; have : arithmetic + arithmeticBytes = domainCheck := rfl; omega_arith) (by decide)
   have D0 : Region.Disjoint ⟨frameBase s, 272⟩ ⟨(params hb A).B, (params hb A).Z⟩ :=
     fws (e := arithmetic) (k := arithmeticBytes) (by decide)
   have candOut : ∀ i < len bits, ¬ (⟨frameBase s, 272⟩ : Region).Contains
@@ -297,24 +297,24 @@ theorem prepared {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bi
     intro i hi hc
     have hd := fws (e := candidate bits) (k := len bits)
       (by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
-    exact hd _ hc (contains_byte _ hi (by omega))
+    exact hd _ hc (contains_byte _ hi (by omega_using [hlen]))
   have randOut : ∀ i < (s.gpr .x3).toNat, ¬ (⟨frameBase s, 272⟩ : Region).Contains
       (s.gpr .x2 + BitVec.ofNat 64 i) 1 := by
     intro i hi hc
-    exact frand _ hc (contains_byte _ hi (by have := A.randBound; omega))
+    exact frand _ hc (contains_byte _ hi (by have := A.randBound; omega_using []))
   have htape : Src u2 (params hb A).B (params hb A).Z (params hb A).rp (params hb A).rand := by
     change Src u2 (off (s.gpr .x0) arithmetic) arithmeticBytes (s.gpr .x2)
       (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
     refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
     · rw [bytesAt_length] at hi
       refine ⟨_, List.mem_append_left _ (by rw [rd2, A.rd]; exact List.mem_cons_self), ?_⟩
-      exact contains_byte _ hi (by have := A.randBound; omega)
+      exact contains_byte _ hi (by have := A.randBound; omega_using [])
     · have hi' : i < (s.gpr .x3).toNat := by rw [bytesAt_length] at hi; exact hi
       rw [F02 _ (by simpa only [List.mem_singleton, forall_eq] using randOut i hi')]
       simp only [bytesAt_eq, List.getElem_map, List.getElem_range]
     · have hi' : i < (s.gpr .x3).toNat := by rw [bytesAt_length] at hi; exact hi
       exact out_scr ((A.wsRand.symm).sub_right (ws_sub A (by decide)))
-        (contains_byte _ hi' (by have := A.randBound; omega))
+        (contains_byte _ hi' (by have := A.randBound; omega_using []))
   have hsrc : Src u2 (params hb A).B (params hb A).Z
       (word u2.mem (frameBase s) (8 * 5) + BitVec.ofNat 64 (candidate bits))
       (Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) (candidate bits)) (len bits)) := by
@@ -328,16 +328,16 @@ theorem prepared {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bi
       refine ⟨_, List.mem_append_right _ (by rw [wr2]; exact List.mem_cons_of_mem _ hws), ?_⟩
       rw [show off (s.gpr .x0) (candidate bits) + BitVec.ofNat 64 i = off (s.gpr .x0) (candidate bits + i) by
         simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-      exact Offset.contains_base _ (by have := A.size; have : witness ≤ domainCheck := (by decide); omega)
-        (by have : witness < 2 ^ 64 := (by decide); omega)
+      exact Offset.contains_base _ (by have := A.size; have : witness ≤ domainCheck := (by decide); omega_arith)
+        (by have : witness < 2 ^ 64 := (by decide); omega_using [hcand, hi, this])
     · have hi' : i < len bits := by rw [bytesAt_length] at hi; exact hi
       rw [F02 _ (by simpa only [List.mem_singleton, forall_eq] using candOut i hi')]
       simp only [bytesAt_eq, List.getElem_map, List.getElem_range]
     · have hi' : i < len bits := by rw [bytesAt_length] at hi; exact hi
       refine out_scr (r := ⟨off (s.gpr .x0) (candidate bits), len bits⟩) ?_
-        (contains_byte _ hi' (by omega))
-      exact Offset.disjoint (s.gpr .x0) (Or.inl (by have : witness ≤ arithmetic := (by decide); omega))
-        (by have : witness < 2 ^ 64 := (by decide); omega) (by decide)
+        (contains_byte _ hi' (by omega_using [hlen]))
+      exact Offset.disjoint (s.gpr .x0) (Or.inl (by have : witness ≤ arithmetic := (by decide); omega_using [hcand, this]))
+        (by have : witness < 2 ^ 64 := (by decide); omega_using [hcand, this]) (by decide)
   refine ⟨hB, x02.trans (by rw [g0]; rfl), sp2, wr2, rd2, F02, k2, by rw [m2]; exact ew.1, by rw [m2]; exact ew.2.1,
     by rw [m2]; exact ew.2.2.1, by rw [m2]; exact ew.2.2.2.1, by rw [m2]; exact ew.2.2.2.2, htape, ?_⟩
   have h := hsrc
@@ -381,12 +381,12 @@ theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact D0
-    · exact fws (by have : witness + 384 ≤ domainCheck := (by decide); omega)
+    · exact fws (by have : witness + 384 ≤ domainCheck := (by decide); omega_using [hlen, this])
   have inFrame : ∀ {d n : Nat}, d + n ≤ 272 → ∀ r ∈ [(⟨(params hb A).B, arithmeticBytes⟩ : Region),
       ⟨(params hb A).p, len bits⟩], Region.Disjoint ⟨off (frameBase s) d, n⟩ r :=
     fun h r hr => (frameOut r hr).sub_left (Offset.sub_base _ h)
   unfold test
-  have hlow := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
+  have hlow := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
   -- The test.
   refine WP.mono (VG.Proof.Dsa.AArch64.Generation.checkPrime_ok M K (P := params hb A) (s := u2)
     (used := 0) (candidate := candidate bits) (W := fun k => word u2.mem (frameBase s) (8 * k))
@@ -395,13 +395,13 @@ theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
     (by change checks bits < _; rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
     P.sp
     (fun k hk => ⟨_, List.mem_append_right _ (by rw [P.wr]; exact List.mem_cons_self),
-      frame_contains s (by omega)⟩)
+      frame_contains s (by omega_using [hk])⟩)
     (fun _ _ => rfl)
-    (fun k hk j hj => D0.sep (frame_contains s (by omega))
-      (Offset.contains_base _ (by change 8 * j + 8 ≤ arithmeticBytes; unfold arithmeticBytes; omega) (by omega)))
+    (fun k hk j hj => D0.sep (frame_contains s (by omega_using [hk]))
+      (Offset.contains_base _ (by change 8 * j + 8 ≤ arithmeticBytes; unfold arithmeticBytes; omega_using [hj]) (by omega_using [hj])))
     (fun k hk i hi => by
       rw [off_off]
-      exact out_scr D0 (frame_contains s (by omega)))
+      exact out_scr D0 (frame_contains s (by omega_using [hk, hi])))
     (by rw [show 8 * 5 = 40 from rfl, P.arena]; rfl)
     (by rw [show 8 * 14 = 112 from rfl, P.tapePtr]; rfl)
     (by
@@ -414,14 +414,14 @@ theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
       refine ⟨_, by rw [P.wr]; exact List.mem_cons_of_mem _ hws, ?_⟩
       change (wsRegion s).Contains (off (off (s.gpr .x0) witness) i) 1
       rw [off_off]
-      exact Offset.contains_base _ (by have := A.size; have : witness + 384 ≤ domainCheck := (by decide); change i < len bits at hi; omega)
-        (by have : witness + 384 < 2 ^ 64 := (by decide); change i < len bits at hi; omega))
+      exact Offset.contains_base _ (by have := A.size; have : witness + 384 ≤ domainCheck := (by decide); change i < len bits at hi; omega_arith)
+        (by have : witness + 384 < 2 ^ 64 := (by decide); change i < len bits at hi; omega_using [hlen, this, hi]))
     (bytesAt_length _ _ _) rfl (by rw [show 8 * 5 = 40 from rfl, P.arena]; exact P.source) (Nat.zero_le _) hw48
     (by change Bignum.slot (words bits) aTab + 2048 ≤ arithmeticBytes
         rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by
       change 8161 < candidateOf bits s
-      have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega)
+      have h2 : 2 ^ 159 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega_using [this])
       have : (8161 : Nat) < 2 ^ 159 := by decide
       exact Nat.lt_of_lt_of_le this (Nat.le_trans h2 hlow))
     (by
@@ -466,7 +466,7 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI b
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact D0
-    · exact fws (by have : witness + 384 ≤ domainCheck := (by decide); omega)
+    · exact fws (by have : witness + 384 ≤ domainCheck := (by decide); omega_using [hlen, this])
   have inFrame : ∀ {d n : Nat}, d + n ≤ 272 → ∀ r ∈ [(⟨(params hb A).B, arithmeticBytes⟩ : Region),
       ⟨(params hb A).p, len bits⟩], Region.Disjoint ⟨off (frameBase s) d, n⟩ r :=
     fun h r hr => (frameOut r hr).sub_left (Offset.sub_base _ h)
@@ -475,8 +475,8 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI b
   refine WP.mono (exit_ok (u := u3) (B := (params hb A).B) (F := frameBase s) (U := s.gpr .x4)
     (used := BitVec.ofNat 64 used') (st := word u3.mem (params hb A).B (8 * kStat))
     inp.ws.x0 sp3
-    (inp.ws.scr.ld (d := 216) (by have := inp.ws.h256; omega))
-    (inp.ws.scr.ld (d := 248) (by have := inp.ws.h256; omega))
+    (inp.ws.scr.ld (d := 216) (by have := inp.ws.h256; omega_using [this]))
+    (inp.ws.scr.ld (d := 248) (by have := inp.ws.h256; omega_using [this]))
     ⟨_, List.mem_append_right _ (by rw [wr3]; exact List.mem_cons_self), frame_contains s (by decide)⟩
     ⟨⟨s.gpr .x4, 8⟩, by rw [wr3]; exact List.mem_cons_of_mem _ hU, Region.contains_self _ _⟩
     hU3 inp.used rfl

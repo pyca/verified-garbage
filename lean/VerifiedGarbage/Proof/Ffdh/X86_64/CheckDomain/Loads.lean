@@ -30,11 +30,11 @@ theorem load_component {p : CdP} {mi : BitVec 64} {s : State} {j : Nat} {bp : Ad
   have hc := h.mem.ctx hd
   have hk := h.base.k1
   have hk' := h.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
-  refine WP.mono (primeLoad_ok hc (by omega) (Nat.le_refl _) (by omega) (show aXm < 8 by decide)
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  refine WP.mono (primeLoad_ok hc (by omega_using [hk, ew]) (Nat.le_refl _) (by omega_using [hk', ew]) (show aXm < 8 by decide)
     hj (show sK < 32 by decide) hp
     (by rw [hl]; exact h.base.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers])) hs
-    (by rw [hl]; omega) (by rw [hl]; omega) (by rw [hl])) fun t ⟨hc', hx, ho, k⟩ => ?_
+    (by rw [hl]; omega_using [hk]) (by rw [hl]; omega_using [hk']) (by rw [hl])) fun t ⟨hc', hx, ho, k⟩ => ?_
   have hf : Frm (off p.B (inner p.w)) [(slot p.w aXm, 8 * (p.w + 2))] s.mem t.mem :=
     Frm.of_outside ho (by simp)
   have hXm := slot_le (w := p.w) (show aXm < 8 by decide)

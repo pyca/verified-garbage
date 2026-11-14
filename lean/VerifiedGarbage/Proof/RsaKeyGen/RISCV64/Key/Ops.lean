@@ -128,7 +128,7 @@ theorem selS_ok {s : State} {B : Addr} {Z w N d a b c : Nat} (h : Ws s B Z w N)
 
 theorem exec_li_small {s : State} {d : Reg} {x : Nat} (hx : x < 2048) :
     exec (.li d (x : Int)) s = some (s.write d (BitVec.ofNat 64 x)) := by
-  rw [exec_li (by simp only [imm12]; omega)]
+  rw [exec_li (by simp only [imm12]; omega_using [hx])]
   congr 2
 
 /-- The low word of `[j]` := `x` (a small constant). -/
@@ -141,7 +141,7 @@ theorem setLow_ok {s : State} {B : Addr} {Z w N j x : Nat} (h : Ws s B Z w N) (h
   have nw := h.nowrap
   have hS : S w = 8 * (w + 2) := rfl
   refine WP.mono (low_ok h hj hN (f := fun _ => BitVec.ofNat 64 x) fun s₀ e0 em ew er => ?_)
-    fun t ⟨a, b, c, d⟩ => ⟨a, b, by rw [c, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)], d⟩
+    fun t ⟨a, b, c, d⟩ => ⟨a, b, by rw [c, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hx])], d⟩
   refine WP.keep _ ?_ (by rfl) (by rfl)
   brun [e0, em, exec_li_small (d := .t5) hx, (h.scr.congr ew).st (d := arr w j) (n := 8) (by omega_arith),
     (h.scr.congr ew).al8 (d := arr w j) (by omega_arith) (arr_al _ _)]
@@ -192,12 +192,12 @@ theorem invOf_ok [InvLaw] {s : State} {B : Addr} {Z w N a m n : Nat} {k : List I
         (num s.mem B w m : Int) ∣ (num t.mem B w 3 : Int) * num s.mem B w a - num t.mem B w 1 ∧
         num t.mem B w 3 < num s.mem B w m) := by
   have fit : ∀ j < N, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
-  have h0 : 0 < N := by omega
-  have h8 : 8 < N := by omega
-  have hN' : N ≤ 2048 := by omega
-  have ha0 : a ≠ 0 := by omega
-  have hm8 : m ≠ 8 := by omega
-  have hm0 : m ≠ 0 := by omega
+  have h0 : 0 < N := by omega_using [hN15]
+  have h8 : 8 < N := by omega_using [hN15]
+  have hN' : N ≤ 2048 := by omega_using [hN]
+  have ha0 : a ≠ 0 := by omega_using [ha15]
+  have hm8 : m ≠ 8 := by omega_using [hm15]
+  have hm0 : m ≠ 0 := by omega_using [hm15]
   have e : Impl.RsaKeyGen.RISCV64.Key.invOf a m k =
       seqs [copy VG.Impl.Rsa.RISCV64.InvBatch.aX a, copy VG.Impl.Rsa.RISCV64.InvBatch.aMin m, .block k,
         VG.Impl.Rsa.RISCV64.InvBatch.inverse] := rfl

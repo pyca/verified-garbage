@@ -98,7 +98,7 @@ theorem roundZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉
   rw [hv b hb l hl]
   show st (XBinOp.eval .aesenc _ _) = _
   rw [aesenc_st _ _ (roundKey w (k + 1)) (by
-    rw [hK.sched, ea_at]; exact byte_roundKey _ _ (by omega)), hI b hb l hl, rnds_succ]
+    rw [hK.sched, ea_at]; exact byte_roundKey _ _ (by omega_using [hk])), hI b hb l hl, rnds_succ]
 
 theorem mem_kr_l {kr r : XReg} {regs G : List XReg} (h : r ∈ kr :: regs) : r ∈ kr :: (regs ++ G) := by
   rcases List.mem_cons.mp h with h | h
@@ -124,12 +124,12 @@ theorem roundsZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr �
     rw [List.range_zero, List.flatMap_nil]; exact WP.block_nil ⟨hI, hQ, ZFrame.refl _ _⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s₁ ⟨hI₁, hQ₁, hf₁⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun s₁ ⟨hI₁, hQ₁, hf₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (roundZ_ok kr regs hnd h8 (k := k) (by omega) (ZFrame.of_keys hK hf₁) hI₁)
+    refine WP.mono (roundZ_ok kr regs hnd h8 (k := k) (by omega_using [hnr, hk]) (ZFrame.of_keys hK hf₁) hI₁)
       fun s₂ ⟨hI₂, hf₂⟩ => ?_
-    refine WP.mono (hg (k + 1) (by omega) (by omega) s₂ (ZFrame.of_keys (ZFrame.of_keys hK hf₁) hf₂)
+    refine WP.mono (hg (k + 1) (by omega_using []) (by omega_using [hk]) s₂ (ZFrame.of_keys (ZFrame.of_keys hK hf₁) hf₂)
       (hq _ _ _ hQ₁ hf₂)) fun s' ⟨hQ', hf'⟩ => ⟨fun b hb l hl => ?_, hQ', ?_⟩
     · rw [hf'.zlane b (fun h => hG b h hb) l hl]; exact hI₂ b hb l hl
     · exact hf₁.trans ((hf₂.mono fun _ => mem_kr_l).trans
@@ -156,20 +156,20 @@ theorem aesZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ r
       (∀ b ∈ regs, ∀ l < 4, st (s'.zlane b l) = cipher nr w (st (s.zlane b l))) ∧ Q 10 s' ∧
       ZFrame (kr :: (regs ++ G)) s s' := by
   let x : XReg → Nat → Spec.Aes.State := fun b l => st (s.zlane b l)
-  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega)
+  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega_using [])
   simp only [Nat.mul_zero] at k0
   -- `AddRoundKey` and rounds 1–9.
   have h₁ : WP isa (.block (keyOpZ kr regs .vpxord (at_ .rdi 0) ++
       (List.range 9).flatMap fun j => roundZ kr regs (j + 1) ++ g (j + 1))) s fun s' =>
       RInv regs w x 9 s' ∧ Q 10 s' ∧ ZFrame (kr :: (regs ++ G)) s s' := by
     rw [WP.block_append_iff]
-    refine WP.mono (keyOpZ_ok kr regs .vpxord _ s hnd h8 (by rw [ea_at]; exact hK.keys 0 (by omega)))
+    refine WP.mono (keyOpZ_ok kr regs .vpxord _ s hnd h8 (by rw [ea_at]; exact hK.keys 0 (by omega_using [])))
       fun s₁ ⟨hv₁, hf₁⟩ => ?_
     have hI₁ : RInv regs w x 0 s₁ := fun b hb l hl => by
       rw [hv₁ b hb l hl]
       show st (XBinOp.eval .pxor _ _) = _
       rw [pxor_st _ _ (roundKey w 0) (by rw [hK.sched, ea_at]; exact k0), rnds_zero]
-    exact WP.mono (roundsZ_ok kr regs hnd h8 g G hG Q hg hq 9 s₁ (by omega) (by omega)
+    exact WP.mono (roundsZ_ok kr regs hnd h8 g G hG Q hg hq 9 s₁ (by omega_using []) (by omega_using [hnr])
         (ZFrame.of_keys hK hf₁) hI₁ (hq _ _ _ hQ hf₁))
       fun s' ⟨hI', hQ', hf'⟩ => ⟨hI', hQ', (hf₁.mono fun _ => mem_kr_l).trans hf'⟩
   have keep : ∀ {s₁ s₂ : State} {k : Nat}, RInv regs w x k s₁ → ZFrame [] s₁ s₂ →
@@ -194,8 +194,8 @@ theorem aesZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ r
       refine WP.ite false (by simp [eval, hz₁]) (fun h => absurd h (by decide)) fun _ => ?_
       refine WP.seq ?_
       rw [WP.block_append_iff, WP.block_append_iff]
-      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 9) (by omega) hK₁ hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_
-      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 10) (by omega) (ZFrame.of_keys hK₁ hf₂) hI₂)
+      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 9) (by omega_using []) hK₁ hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_
+      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 10) (by omega_using []) (ZFrame.of_keys hK₁ hf₂) hI₂)
         fun s₃ ⟨hI₃, hf₃⟩ => ?_
       have hrsi₃ : s₃.gpr .rsi = s₁.gpr .rsi := by rw [hf₃.gpr, hf₂.gpr]
       refine WP.mono (cmpRsiZ_ok s₃ 12 _ (hrsi₃.trans hrsi₁)) fun s₄ ⟨hz₄, hf₄⟩ => ?_
@@ -207,9 +207,9 @@ theorem aesZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ r
     · refine WP.ite false (by simp [eval, hz₄]) (fun h => absurd h (by decide)) fun _ => ?_
       rw [WP.block_append_iff]
       have hK₄ := ZFrame.of_keys hK₁ (hf₂.trans (hf₃.trans (hf₄.mono (by simp))))
-      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 11) (by omega) hK₄ (keep hI₃ hf₄))
+      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 11) (by omega_using []) hK₄ (keep hI₃ hf₄))
         fun s₅ ⟨hI₅, hf₅⟩ => ?_
-      exact WP.mono (roundZ_ok kr regs hnd h8 (k := 12) (by omega) (ZFrame.of_keys hK₄ hf₅) hI₅)
+      exact WP.mono (roundZ_ok kr regs hnd h8 (k := 12) (by omega_using []) (ZFrame.of_keys hK₄ hf₅) hI₅)
         fun s' ⟨hI', hf'⟩ => ⟨hI', keepQ (keepQ hQ₄ hf₅) hf', hf₁₄.trans ((hf₅.trans hf').mono fun _ => mem_kr_l)⟩
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -226,6 +226,6 @@ theorem aesZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ r
   rw [hv b hb l hl]
   show st (XBinOp.eval .aesenclast _ _) = _
   rw [aesenclast_st _ _ (roundKey w nr) (by
-    rw [hea, hK₂.sched]; exact byte_roundKey _ _ (by omega)), hI₂ b hb l hl, cipher_eq]
+    rw [hea, hK₂.sched]; exact byte_roundKey _ _ (by omega_using [])), hI₂ b hb l hl, cipher_eq]
 
 end VG.Proof.Aes.X86_64.VaesZ

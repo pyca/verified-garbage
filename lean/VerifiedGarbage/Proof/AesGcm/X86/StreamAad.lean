@@ -94,13 +94,13 @@ theorem aadEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
     have aw : (argsR (s₀.gpr .esp) 7).Disjoint ⟨w64 (arg s₀ 6), 2560⟩ := by rw [argsR_eq]; exact d_wa.symm
     refine entry_ok aadKeeps aadTail (by decide) (by decide) (by decide) (by decide) rfl rfl wW rA aw
-      (by omega) fw fun s₂ e => ?_
+      (by omega_using [fa]) fw fun s₂ e => ?_
     have he : Env (arg s₀ 0) (arg s₀ 1) (arg s₀ 6) (s₀.gpr .esp) s₂ :=
       ⟨e.ebp, e.esi, e.esp, by rw [e.rd, e.wr, hrd]; exact covers_of_mem (by simp),
         by rw [e.wr, hwr]; exact covers_of_mem (by simp), by rw [e.wr]; exact wW,
         e.slots (0, ctxO) (by simp)⟩
     have i₂ : InRegions (s₂.rd ++ s₂.wr) (argA (s₀.gpr .esp) 2) 4 := by
-      rw [e.rd, e.wr]; exact argIn_of rA (by omega) (by decide)
+      rw [e.rd, e.wr]; exact argIn_of rA (by omega_using [fa]) (by decide)
     have v₂ := e.args 2 (by decide)
     have hand := and15 (arg s₀ 2)
     refine ⟨_, by xrun [e.esp, i₂, v₂, he.ebp, L.aW, he.wIn], ?_⟩
@@ -110,7 +110,7 @@ theorem aadEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     have sl : ∀ {o}, 128 ≤ o → o + 4 ≤ 280 → slotv (s₂.mem.writeW (w64 (arg s₀ 6) + BitVec.ofNat 64 bO)
         (arg s₀ 2 &&& BitVec.ofNat 32 15)) (arg s₀ 6) o = slotv s₂.mem (arg s₀ 6) o := fun h₁ h₂ =>
       slot_frame hf fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega)) (by omega_using [h₂]) (by decide)
     refine ⟨hpre, hpub, ?_, ?_, ?_, by mems [e.rd], by mems [e.wr]⟩
     rotate_left
     · rw [← a 6 (by decide)]
@@ -155,7 +155,7 @@ theorem aadEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     clear hp
     have rA : Covers [argsR (s₀.gpr .esp) 7] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
-    exact WP.mono (arg0_ok (argIn_of rA (by omega) (by decide))) fun s' ⟨ax, sp⟩ =>
+    exact WP.mono (arg0_ok (argIn_of rA (by omega_using [fa]) (by decide))) fun s' ⟨ax, sp⟩ =>
       ⟨by rw [ax]; exact pubOf_arg hpub (by decide), by rw [sp]; exact pubOf_esp hpub⟩
 
 /-- The facts of the precondition the exit needs, in terms of the public data. -/
@@ -202,10 +202,10 @@ theorem streamAad_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       (⟨w64 (p.2 1) + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Lay.st_st (by omega) (by omega) (by decide)
-    · exact Lay.st_st (by omega) (by omega) (by decide)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact (L.stk_st (by omega)).symm
+    · exact Lay.st_st (by omega_using [hk]) (by omega_using [hk]) (by decide)
+    · exact Lay.st_st (by omega_using [hk]) (by omega_using [hk]) (by decide)
+    · exact L.st_w (by omega_using [hk]) (.inr ⟨by decide, by decide⟩)
+    · exact (L.stk_st (by omega_using [hk])).symm
   have hsv : SavedAt s.mem (p.2 6) s₀ := h₁.saved.frame fA fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -246,7 +246,7 @@ theorem streamAad_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
   have hD : bytesAt s₁.mem (w64 (p.2 4)) (p.2 5).toNat = bytesAt s₀.mem (w64 (p.2 4)) (p.2 5).toNat :=
     bytesAt_frame (p := w64 (p.2 4)) (n := (p.2 5).toNat) fE (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact d_dw.sub_right (Lay.wSub (d := 128) (n := 2432) (by decide))) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact d_dw.sub_right (Lay.wSub (d := 128) (n := 2432) (by decide))) (by omega_using [])
   have hx : x.length % 16 = (p.2 2).toNat % 16 := by rw [← a 2 (by decide), lo_mod16 hl]
   rw [Proof.Gcm.ghashInput_nil] at ha ⊢
   rw [m']
@@ -259,7 +259,7 @@ theorem streamAad_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   · have ha₁ : Absorbed s₁.mem (w64 (p.2 1) + BitVec.ofNat 64 16) (w64 (p.2 1) + BitVec.ofNat 64 32)
         (Hk s₁.mem (p.2 0)) x := by
       rw [hH]
-      exact ha.congr (blockAt_frame fE (dE (by decide))) (bytesAt_frame fE (dE (d := 32) (k := x.length % 16) (by omega)) (by omega))
+      exact ha.congr (blockAt_frame fE (dE (by decide))) (bytesAt_frame fE (dE (d := 32) (k := x.length % 16) (by omega_using [])) (by omega_using []))
     have := ho.abs x hx ha₁
     rwa [hH, hD] at this
   · exact hc.congr (by rw [blockAt_frame fA (dA (.inr ⟨by decide, by decide⟩)),

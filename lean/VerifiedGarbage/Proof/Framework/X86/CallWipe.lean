@@ -216,16 +216,16 @@ theorem sub_add_ofNat (E : BitVec 32) (b d : Nat) :
   rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
 theorem frameSize_ge (m : Nat) : 4 * m + 8 ≤ frameSize m ∧ 16 ≤ frameSize m := by
-  simp only [frameSize, argWords]; omega
+  simp only [frameSize, argWords]; omega_using []
 
 /-- The frame holds the argument slots and the two words of the result. -/
 theorem frameSize_args (m : Nat) : 4 * argWords m + 8 ≤ frameSize m := by
-  simp only [frameSize, argWords]; omega
+  simp only [frameSize, argWords]; omega_using []
 
 /-- The frame and a return address take a multiple of 16 bytes, so each
 callee is entered with `esp` as aligned as `callWipe` was. -/
 theorem frameSize_align (m : Nat) : (frameSize m + 4) % 16 = 0 := by
-  simp only [frameSize, argWords]; omega
+  simp only [frameSize, argWords]; omega_using []
 
 /-- The arguments of `sig`, from slots that agree. -/
 theorem stackArgs_congr (sig : Sig) {s s' : State} (h : ∀ k < slots sig, arg s' k = arg s k) :
@@ -306,7 +306,7 @@ theorem cw_res (hl : Sig.noLists sig.params = true) {s : State}
   obtain ⟨-, -, -, -, hres, -, -⟩ := hs
   intro a ha
   refine ⟨hres _ (List.mem_cons_self ..) a ha, hres _ (List.mem_cons_of_mem _ ?_) a ha⟩
-  rw [show stack + frameSize (slots sig) + 4 = (stack + frameSize (slots sig) + 3) + 1 by omega]
+  rw [show stack + frameSize (slots sig) + 4 = (stack + frameSize (slots sig) + 3) + 1 by omega_using []]
   exact List.mem_singleton_self _
 
 /-- Each of the caller's regions is one it may access. -/
@@ -352,7 +352,7 @@ theorem cwW_mem (hl : Sig.noLists sig.params = true) {s : State}
     fun d hd => addr_eq (by rw [hE]; omega_using [hsb, hfit, hd])
   have hsrc : ∀ k, addr (s.gpr .esp - BitVec.ofNat 32 (frameSize (slots sig)))
       (frameSize (slots sig) + 4 + 4 * k) = argAddr s k := fun k => by
-    rw [addr, argAddr, show frameSize (slots sig) + 4 + 4 * k = frameSize (slots sig) + (4 + 4 * k) by omega,
+    rw [addr, argAddr, show frameSize (slots sig) + 4 + 4 * k = frameSize (slots sig) + (4 + 4 * k) by omega_using [],
       sub_add_ofNat]
   have hargA : ∀ k < slots sig, argAddr s k = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * k) :=
     fun k hk => addr_eq (x := s.gpr .esp) (by omega_using [hfit, hk])
@@ -708,7 +708,7 @@ theorem cwZeroMem_reads {m j n : Nat} {c : State} (hj : j < m)
       (cwZeroMem m j n c).readW (addr (c.gpr .esp) (4 * argWords m)) 32 = c.gpr .eax ∧
       (cwZeroMem m j n c).readW (addr (c.gpr .esp) (4 * argWords m + 4)) 32 = c.gpr .edx := by
   have hB := frameSize_ge m
-  have hW : 2 ≤ argWords m := by simp only [argWords]; omega
+  have hW : 2 ≤ argWords m := by simp only [argWords]; omega_using []
   have hFs : 4 * argWords m + 8 ≤ frameSize m := frameSize_args _
   have hA : ∀ d, d < frameSize m + 4 + 4 * m → addr (c.gpr .esp) d =
       (c.gpr .esp).setWidth 64 + BitVec.ofNat 64 d := fun d hd => addr_eq (by omega_using [hfit, hd])
@@ -811,7 +811,7 @@ theorem cw_in (hl : Sig.noLists sig.params = true) {s t : State}
       rcases List.mem_append.mp (hreg _ (argArea_mem (wa := wa) h0)).1 with h | h
       · exact .inl h
       · exact .inr (.inr h)
-    · rw [hsp, addr, show frameSize (slots sig) + 4 + 4 * k = frameSize (slots sig) + (4 + 4 * k) by omega,
+    · rw [hsp, addr, show frameSize (slots sig) + 4 + 4 * k = frameSize (slots sig) + (4 + 4 * k) by omega_using [],
         sub_add_ofNat, ← addr, argAddr, ← addr, addr_eq (by omega_using [hfit, hk]),
         addr_eq (x := s.gpr .esp) (by omega_using [hfit, hk])]
       exact Offset.contains _ (by omega_using []) (by omega_using [hk]) (by omega_using [hfit])
@@ -885,7 +885,7 @@ theorem cw_zeroArgs (hl : Sig.noLists sig.params = true) {s c : State}
   obtain ⟨r0, r1, -, -⟩ := cwZeroMem_reads (m := slots sig) (j := j) (n := n) (c := c) hj
     (by rw [hspc, hE]; omega_using [hsb, hfit])
   have hsrc : addr (c.gpr .esp) (frameSize (slots sig) + 4 + 4 * j) = argAddr s j := by
-    rw [hspc, addr, show frameSize (slots sig) + 4 + 4 * j = frameSize (slots sig) + (4 + 4 * j) by omega,
+    rw [hspc, addr, show frameSize (slots sig) + 4 + 4 * j = frameSize (slots sig) + (4 + 4 * j) by omega_using [],
       sub_add_ofNat]; rfl
   have harg' : ∀ q, arg (cwZEntry sig j n s c) q =
       (cwZeroSt (slots sig) j n c).mem.readW (addr (c.gpr .esp) (4 * q)) 32 ∨ q > 1 := by
@@ -1209,7 +1209,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   have hE := (s.gpr .esp).isLt
   have hlow := cw_low hl hs
   have hres := cw_res hl hs
-  refine WP.frameAlloc (by omega_using [hB']) hB (by simp only [frameSize]; omega) (by omega_using [hsb])
+  refine WP.frameAlloc (by omega_using [hB']) hB (by simp only [frameSize]; omega_using []) (by omega_using [hsb])
     (cw_main_noSp hsp hzsp) ?_
   refine WP.seq (WP.block ⟨_, (cwW_mem hl hs).1, ?_⟩)
   refine WP.seq (WP.mono (cw_body_wp h hl hsp hd hpre hpost hs) fun c hc => ?_)
@@ -1345,13 +1345,13 @@ theorem Verified.callWipeTail' {post' : sig.Post abi.ptrBits} {name zname : Stri
     show (sig.params.flatMap fun p => p.2.words 32).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
+    omega_using []
   generalize hI : (ps₁.flatMap fun p => p.2.words 32).length = I at hL hpostOut hwiped ⊢
   have hwl : (widths sig).length = (sig.words abi.ptrBits).length := List.length_map _
   have hal : (argSlots (widths sig) 0).length = (sig.words abi.ptrBits).length := by
     rw [argSlots_length, hwl]
-  have hiw : I < (widths sig).length := by rw [hwl, hL]; omega
-  have hia : I < (argSlots (widths sig) 0).length := by rw [hal, hL]; omega
+  have hiw : I < (widths sig).length := by rw [hwl, hL]; omega_using []
+  have hia : I < (argSlots (widths sig) 0).length := by rw [hal, hL]; omega_using []
   have hW : (widths sig).getD I 64 = 32 := by
     show ((sig.params.flatMap fun p => p.2.words 32).map (·.bits 32)).getD _ 64 = 32
     rw [hps, ← hI]; exact (Sig.pub_array (pb := 32) ps₁ ps₂).2
@@ -1360,7 +1360,7 @@ theorem Verified.callWipeTail' {post' : sig.Post abi.ptrBits} {name zname : Stri
   generalize hJ : (argSlots (widths sig) 0).getD I 0 = j
   have hJ' : (argSlots (widths sig) 0)[I] = j := by
     rw [← hJ, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hia, Option.getD_some]
-  have hlz : I < ((widths sig).zip (argSlots (widths sig) 0)).length := by rw [List.length_zip]; omega
+  have hlz : I < ((widths sig).zip (argSlots (widths sig) 0)).length := by rw [List.length_zip]; omega_using [hwl, hal, hiw]
   have hzip : ((widths sig).zip (argSlots (widths sig) 0))[I]'hlz = (32, j) := by
     rw [List.getElem_zip, hW', hJ']
   have hjs : j < slots sig := by
@@ -1378,7 +1378,7 @@ theorem Verified.callWipeTail' {post' : sig.Post abi.ptrBits} {name zname : Stri
     intro s
     rw [← hget s, hps, ← hI]
     exact Sig.bufs_mem_array (pb := 32) ps₂ ps₁ (stackArgs sig s)
-      (by rw [stackArgs_length, hI]; show _ < (sig.words abi.ptrBits).length; rw [hL]; omega)
+      (by rw [stackArgs_length, hI]; show _ < (sig.words abi.ptrBits).length; rw [hL]; omega_using [])
   -- Its address is public.
   have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + frameSize (slots sig) + 4) leak).pub s₁ s₂ →
       arg s₁ j = arg s₂ j := by
@@ -1387,8 +1387,8 @@ theorem Verified.callWipeTail' {post' : sig.Post abi.ptrBits} {name zname : Stri
       rw [hps, ← hI]; exact (Sig.pub_array (pb := 32) ps₁ ps₂).1
     have h2 := congrArg BitVec.toNat (((pubL_stack hl).mp hp).2 _ hP)
     rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, hW, hget, hget, BitVec.toNat_setWidth,
-      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (a := (arg s₁ j).toNat) (by have := (arg s₁ j).isLt; omega),
-      Nat.mod_eq_of_lt (a := (arg s₂ j).toNat) (by have := (arg s₂ j).isLt; omega),
+      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (a := (arg s₁ j).toNat) (by have := (arg s₁ j).isLt; omega_using []),
+      Nat.mod_eq_of_lt (a := (arg s₂ j).toNat) (by have := (arg s₂ j).isLt; omega_using []),
       Nat.mod_eq_of_lt (arg s₁ j).isLt, Nat.mod_eq_of_lt (arg s₂ j).isLt] at h2
     exact BitVec.eq_of_toNat_eq h2
   -- The postcondition reads the memory on return only within the buffers apart from the

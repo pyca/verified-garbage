@@ -41,11 +41,11 @@ theorem scratchSource {s : State} {B : Addr} {capacity active offset : Nat}
     have hp : off B offset + BitVec.ofNat 64 i = off B (offset + i) :=
       Offset.add_add B offset i
     rw [hp]
-    obtain ⟨r, hr, hc⟩ := hs.region (show offset + i + 1 ≤ capacity by omega) (by decide)
+    obtain ⟨r, hr, hc⟩ := hs.region (show offset + i + 1 ≤ capacity by omega_using [hfit, hi]) (by decide)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   · intro i hi
-    rw [ofs_off B (by have := hs.nowrap; omega)]
-    omega
+    rw [ofs_off B (by have := hs.nowrap; omega_using [hfit, hi, this])]
+    omega_using [hactive]
 
 /-- DSA modular exponentiation in Montgomery representation. The exponent
 is a nonempty byte string outside the scratch workspace; leading zeroes

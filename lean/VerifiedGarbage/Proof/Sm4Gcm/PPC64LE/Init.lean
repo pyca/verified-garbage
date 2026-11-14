@@ -71,7 +71,7 @@ theorem init_kc {s₀ s₁ : State} (h : initPPC64LE.pre s₀) (h1 : IS1 s₀ s�
   refine ⟨h1.r3, h1.r4, h1.r5, dkc.sub_right (Region.sub_prefix (by decide)),
     dkx.sub_right (Region.sub_prefix (by decide)),
     (dcx.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)), fk,
-    by omega, by simp only [xBytes, kBytes] at fx ⊢; omega, ?_, ?_⟩
+    by omega_using [fc], by simp only [xBytes, kBytes] at fx ⊢; omega_using [fx], ?_, ?_⟩
   · rw [h1.keeps.rd, h1.keeps.wr, hrd]
     exact Covers.cons (Covers.left (covers_mem (by simp))) (Covers.cons
       (Covers.right (covers_prefix hC (by decide))) (Covers.cons (Covers.right (covers_prefix hX
@@ -111,7 +111,7 @@ theorem init_cc {C W X : Addr} {s : State} (dcs : (⟨C, 256⟩ : Region).Disjoi
     (a7 : s.gpr .r7 = X) :
     CtrCall s C (W + BitVec.ofNat 64 96) (C + BitVec.ofNat 64 240) X 1 := by
   have fs' : W.toNat + 2560 ≤ 2 ^ 64 := fs
-  refine ⟨a3, a4, a5, a6, a7, by decide, ?_, ?_, ?_, ?_, ?_, ?_, by omega, ?_, ?_, fx, ?_, ?_⟩
+  refine ⟨a3, a4, a5, a6, a7, by decide, ?_, ?_, ?_, ?_, ?_, ?_, by omega_using [fc], ?_, ?_, fx, ?_, ?_⟩
   · exact (dcs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
   · simpa using Offset.disjoint C (d := 0) (n := 128) (e := 240) (k := 16) (.inl (by decide))
       (by decide) (by decide)
@@ -120,9 +120,9 @@ theorem init_cc {C W X : Addr} {s : State} (dcs : (⟨C, 256⟩ : Region).Disjoi
   · exact dsx.sub_left (Offset.sub_base _ (by decide))
   · exact dcx.sub_left (Offset.sub_base _ (by decide))
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 96) (by decide),
-      Nat.mod_eq_of_lt (by omega)]; omega
+      Nat.mod_eq_of_lt (by omega_using [fs'])]; omega_using [fs']
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 240) (by decide),
-      Nat.mod_eq_of_lt (by omega)]; omega
+      Nat.mod_eq_of_lt (by omega_using [fc])]; omega_using [fc]
   · exact Covers.cons (Covers.right (covers_prefix hC (by decide))) (Covers.cons
       (Covers.right (covers_off hW (by decide) (by decide))) (Covers.cons
         (Covers.right (covers_off hC (by decide) (by decide))) (Covers.cons
@@ -143,7 +143,7 @@ theorem init_wp {s₀ : State} (h : initPPC64LE.pre s₀) :
   -- Regions apart from the saved slots, and from the key schedule.
   have sW : ∀ {d k : Nat}, d + k ≤ scrBytes → (d + k ≤ 128 ∨ 248 ≤ d) →
       (savedR (s₀.gpr .r5)).Disjoint ⟨s₀.gpr .r5 + BitVec.ofNat 64 d, k⟩ := fun h₁ h₂ =>
-    Offset.disjoint _ (by omega) (by decide) (by simp only [scrBytes] at h₁; omega)
+    Offset.disjoint _ (by omega_using [h₂]) (by decide) (by simp only [scrBytes] at h₁; omega_using [h₁])
   have sC : ∀ {d k : Nat}, d + k ≤ 256 → (savedR (s₀.gpr .r5)).Disjoint ⟨s₀.gpr .r4 + BitVec.ofNat 64 d, k⟩ :=
     fun h₁ => ((dcs.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ (by decide))).symm
   have sC0 : (savedR (s₀.gpr .r5)).Disjoint ⟨s₀.gpr .r4, 128⟩ :=

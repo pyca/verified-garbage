@@ -51,7 +51,7 @@ theorem crt_narrowAddress_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
   have wp (s : State) {bs : Fin 7 → List Byte} (h : CrtShared g bs s) :
       WP isa (.block [.ldrSp .r1 8]) s (fun t => t.gpr .r1 = g.base) := by
     refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide)
-      (addr_add (by have := h.stack.nowrap; omega)) (h.stack.read (by decide)) fun t a => WP.block_nil ?_
+      (addr_add (by have := h.stack.nowrap; omega_using [this])) (h.stack.read (by decide)) fun t a => WP.block_nil ?_
     exact a.gpr.trans h.savedMain
   have first := load.wp (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
   have second : RelCT isa (fun s t => True ∧ s.gpr .r1 = g.base ∧ t.gpr .r1 = g.base)
@@ -94,10 +94,10 @@ theorem crt_enterNarrow_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j 
       WP isa (.block (narrowWidth (56 + 8 * j.val + 4))) s (Sized bs) := by
     obtain ⟨_, _, _, _, small, _, _⟩ := h.1.narrow_fits j prime
     have words : g.words ≤ 128 := (crt_width_valid h.1.buffers.lengthValid).2.1
-    refine WP.mono (crt_narrowWidth_ok s (slot := 56 + 8 * j.val + 4) (by omega)
-      (by have := h.1.stack.nowrap; omega) (h.1.stack.read (by omega))
-      (by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega] using h.1.stack.length j)
-      h.2.2 (by omega) (by omega)) ?_
+    refine WP.mono (crt_narrowWidth_ok s (slot := 56 + 8 * j.val + 4) (by omega_using [])
+      (by have := h.1.stack.nowrap; omega_using [this]) (h.1.stack.read (by omega_using []))
+      (by simpa only [show 56 + 8 * j.val + 4 = 60 + 8 * j.val by omega_using []] using h.1.stack.length j)
+      h.2.2 (by omega_using [small]) (by omega_using [words])) ?_
     rintro t ⟨width, zero, mem, rest⟩
     exact ⟨h.1.of_mem mem rest, (rest.gpr .r0 (by simp)).trans h.2.1, width, zero⟩
   have widthCT : RelCT isa (fun s t => Addressed bs1 s ∧ Addressed bs2 t ∧ s.sp = t.sp)
@@ -110,7 +110,7 @@ theorem crt_enterNarrow_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j 
     obtain ⟨two, le, _, _, _, arrays, _⟩ := h.1.narrow_fits j prime
     have words := (crt_width_valid h.1.buffers.lengthValid).2.1
     change _ ≤ Spec.Rsa.modulusWords g.length at le
-    exact (setup_frame_ok s h.1.buffers.context.narrow two (by omega) arrays h.2.1 h.2.2.1 h.2.2.2).mono
+    exact (setup_frame_ok s h.1.buffers.context.narrow two (by omega_using [words, le]) arrays h.2.1 h.2.2.1 h.2.2.2).mono
       fun _ _ => trivial
   have activate : RelCT isa (fun s t => True ∧ True ∧ s.sp = t.sp) (.block activateWorkspace) (fun _ _ => True) :=
     activateWorkspace_ct.mono (fun _ _ h => h.2.2) (fun _ _ _ => trivial)

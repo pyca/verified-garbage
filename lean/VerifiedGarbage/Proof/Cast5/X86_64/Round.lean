@@ -35,7 +35,7 @@ theorem rotateStep_ok (s : State) {b : Nat} (hb : b < 5) {a kb : BitVec 32}
       t.gpr .r9 = (if b < 4 then kb >>> 1 else kb).setWidth 64 ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.xmm = s.xmm := by
   have hn : 1 ≤ 32 - 2 ^ b ∧ 32 - 2 ^ b ≤ 31 := by
-    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
+    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_using [hb]) with h | h | h | h | h <;>
       subst h <;> decide
   unfold rotateStep
   by_cases h4 : b < 4
@@ -78,7 +78,7 @@ theorem idx_lt (i : BitVec 32) {k : Nat} (hk : k < 4) : (idx i k).toNat < 256 :=
   · simp only [idx, BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
   · simp only [idx, BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
   · simp only [idx, BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-  · simp only [idx, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := i.isLt; omega
+  · simp only [idx, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := i.isLt; omega_using []
 
 theorem idx_byte (i : BitVec 32) {k : Nat} (hk : k < 4) :
     BitVec.ofNat 8 (idx i k).toNat = Spec.Cast5.byte i (3 - k) := by
@@ -88,7 +88,7 @@ theorem idx_byte (i : BitVec 32) {k : Nat} (hk : k < 4) :
   rcases cases4 hk with rfl | rfl | rfl | rfl <;>
     simp only [idx, BitVec.toNat_and, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
       show (255 : BitVec 32).toNat = 255 from rfl, Nat.and_two_pow_sub_one_eq_mod _ 8] <;>
-    omega
+    omega_using []
 
 theorem lanes_eq (a b c d : BitVec 32) :
     XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (a.setWidth 64 ||| b.setWidth 64 <<< 32))
@@ -96,7 +96,7 @@ theorem lanes_eq (a b c d : BitVec 32) :
   rw [punpcklqdq_eq]
   have lo (x y : BitVec 32) : dword ((0 : BitVec 64) ++ (x.setWidth 64 ||| y.setWidth 64 <<< 32)) 0 = x := by
     apply BitVec.eq_of_getLsbD_eq; intro j hj
-    simp (disch := omega) only [dword, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and,
+    simp (disch := omega_using [hj]) only [dword, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and,
       BitVec.getLsbD_append, ite_eq_left, BitVec.getLsbD_or, BitVec.getLsbD_setWidth,
       BitVec.getLsbD_shiftLeft, Nat.mul_zero, Nat.zero_add, decide_eq_true, Bool.not_true,
       Bool.false_and, Bool.or_false]
@@ -105,7 +105,7 @@ theorem lanes_eq (a b c d : BitVec 32) :
     simp (disch := omega) only [dword, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and,
       BitVec.getLsbD_append, ite_eq_left, BitVec.getLsbD_or, BitVec.getLsbD_setWidth,
       BitVec.getLsbD_shiftLeft, Nat.mul_one, decide_eq_true, Nat.add_sub_cancel_left]
-    rw [BitVec.getLsbD_of_ge x _ (by omega), Bool.false_or, decide_eq_false (by omega), Bool.not_false,
+    rw [BitVec.getLsbD_of_ge x _ (by omega_using []), Bool.false_or, decide_eq_false (by omega_using []), Bool.not_false,
       Bool.true_and]
   rw [lo, hi, lo, hi]
 
@@ -158,7 +158,7 @@ theorem post_ok (s : State) {t : Nat} (ht : t = 1 ∨ t = 2 ∨ t = 3) (up : Boo
   have hc (k : Nat) (hk : k < 4) :
       InRegions (s.rd ++ s.wr) (s.gpr .r8 + BitVec.ofNat 64 (4 * k)) 4 := by
     obtain ⟨g, hg, hgc⟩ := hw
-    exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hgc⟩ (by omega) (by decide)
+    exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hgc⟩ (by omega_using [hk]) (by decide)
   have e0 : InRegions (s.rd ++ s.wr) (s.gpr .r8) 4 := by
     have := hc 0 (by decide); rwa [BitVec.add_zero] at this
   have e1 : InRegions (s.rd ++ s.wr) (s.gpr .r8 + BitVec.ofNat 64 4) 4 := hc 1 (by decide)

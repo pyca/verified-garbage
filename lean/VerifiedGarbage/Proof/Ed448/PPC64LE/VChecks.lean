@@ -36,7 +36,7 @@ def orw (f : Nat → Nat) : Nat → Nat
 
 theorem orw_lt {f : Nat → Nat} : ∀ {n : Nat}, (∀ k < n, f k < 2 ^ 32) → orw f n < 2 ^ 32
   | 0, _ => Nat.two_pow_pos 32
-  | n + 1, h => Nat.or_lt_two_pow (orw_lt fun k hk => h k (by omega)) (h n (by omega))
+  | n + 1, h => Nat.or_lt_two_pow (orw_lt fun k hk => h k (by omega_using [hk])) (h n (by omega_using []))
 
 theorem orw_eq_zero {f : Nat → Nat} : ∀ {n : Nat}, orw f n = 0 ↔ ∀ k < n, f k = 0
   | 0 => by simp [orw]
@@ -48,7 +48,7 @@ theorem orw_eq_zero {f : Nat → Nat} : ∀ {n : Nat}, orw f n = 0 ↔ ∀ k < n
       · exact h1 k hk
       · exact h2
     · intro h
-      exact ⟨fun k hk => h k (by omega), h n (by omega)⟩
+      exact ⟨fun k hk => h k (by omega_using [hk]), h n (by omega_using [])⟩
 
 theorem val32_eq_zero {f : Nat → Nat} : ∀ {n : Nat}, val32 f n = 0 ↔ ∀ k < n, f k = 0
   | 0 => by simp [val32]
@@ -59,17 +59,17 @@ theorem val32_eq_zero {f : Nat → Nat} : ∀ {n : Nat}, val32 f n = 0 ↔ ∀ k
     · rintro ⟨h1, h2⟩ k hk
       rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
       · exact h1 k hk
-      · exact h2.resolve_left (by omega)
+      · exact h2.resolve_left (by omega_using [this])
     · intro h
-      exact ⟨fun k hk => h k (by omega), .inr (h n (by omega))⟩
+      exact ⟨fun k hk => h k (by omega_using [hk]), .inr (h n (by omega_using []))⟩
 
 theorem val32_inj {f g : Nat → Nat} : ∀ {n : Nat}, (∀ k < n, f k < 2 ^ 32) → (∀ k < n, g k < 2 ^ 32) →
     (val32 f n = val32 g n ↔ ∀ k < n, f k = g k)
   | 0, _, _ => by simp [val32]
   | n + 1, hf, hg => by
-    have hf' := val32_lt (f := f) (n := n) fun k hk => hf k (by omega)
-    have hg' := val32_lt (f := g) (n := n) fun k hk => hg k (by omega)
-    have ih := val32_inj (n := n) (fun k hk => hf k (by omega)) (fun k hk => hg k (by omega))
+    have hf' := val32_lt (f := f) (n := n) fun k hk => hf k (by omega_using [hk])
+    have hg' := val32_lt (f := g) (n := n) fun k hk => hg k (by omega_using [hk])
+    have ih := val32_inj (n := n) (fun k hk => hf k (by omega_using [hk])) (fun k hk => hg k (by omega_using [hk]))
     rw [val32_succ, val32_succ]
     generalize hM : 2 ^ (32 * n) = M at hf' hg'
     have hM0 : 0 < M := by rw [← hM]; exact Nat.two_pow_pos _
@@ -89,7 +89,7 @@ theorem val32_inj {f g : Nat → Nat} : ∀ {n : Nat}, (∀ k < n, f k < 2 ^ 32)
       · exact ih.mp e1 k hk
       · exact e2
     · intro h
-      rw [ih.mpr fun k hk => h k (by omega), h n (by omega)]
+      rw [ih.mpr fun k hk => h k (by omega_using [hk]), h n (by omega_using [])]
 
 theorem xor_eq_zero {x y : Nat} : x ^^^ y = 0 ↔ x = y := by
   constructor
@@ -125,11 +125,11 @@ theorem VCtx.of_rest {s s' : State} {ws : List Reg} (h : VCtx b s) (hr : Rest ws
 
 theorem VCtx.inW {s : State} (h : VCtx b s) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions s.wr (b + BitVec.ofNat 64 d) n :=
-  in_base h.ws hd (by omega)
+  in_base h.ws hd (by omega_using [hd])
 
 theorem VCtx.inR {s : State} (h : VCtx b s) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions (s.rd ++ s.wr) (b + BitVec.ofNat 64 d) n :=
-  in_base (List.mem_append_right _ h.ws) hd (by omega)
+  in_base (List.mem_append_right _ h.ws) hd (by omega_using [hd])
 
 /-- `ld t, off(n)`. -/
 theorem wp_ldd {s : State} {is : List Instr} {Q : State → Prop} {t n : Reg} {off : Nat} {a : Addr}
@@ -156,7 +156,7 @@ theorem wp_or {is : List Instr} {s : State} {Q : State → Prop} {d n m : Reg}
 theorem fs_lo {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hrs : ∀ r ∈ rs, Region.Disjoint ⟨b, 1064⟩ r)
     {q : Nat} (hq : q + 56 ≤ 1064) : FS m' b q = FS m b q := by
   have e : ∀ k < 14, limb m' b q k = limb m b q k :=
-    limb_frame hf fun r hr k hk => (hrs r hr).sub_left (Offset.sub_base _ (by omega))
+    limb_frame hf fun r hr k hk => (hrs r hr).sub_left (Offset.sub_base _ (by omega_using [hq, hk]))
   rw [FS, V, val32_congr e]; rfl
 
 theorem SlotsOk.lo {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
@@ -169,7 +169,7 @@ theorem SlotsOk.lo {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
 /-- The regions above the field area: `[1064, 8192)` of the working space. -/
 theorem disj_hi {d n : Nat} (hd : 1064 ≤ d) (hn : d + n ≤ 8192) :
     Region.Disjoint ⟨b, 1064⟩ ⟨b + BitVec.ofNat 64 d, n⟩ :=
-  (Offset.disjoint_base b (d := d) (n := n) (k := 1064) hd (by omega)).symm
+  (Offset.disjoint_base b (d := d) (n := n) (k := 1064) hd (by omega_using [hn])).symm
 
 /-- `BAD |= r`. -/
 theorem orBad_ok {s : State} (hc : VCtx b s) {r : Reg} (hr : r ≠ .r9) :
@@ -202,9 +202,9 @@ theorem outOr_ok {s : State} (hc : VCtx b s) :
     (OrInv (b + BitVec.ofNat 64 OUT) (fun k => wd s.mem (b + BitVec.ofNat 64 OUT) (4 * k)) s)
     (fun k t hk h => ?_) 14 (Nat.le_refl _) s1
     ⟨u1.rest (by decide), u1.mem, by rw [u1.gpr]; rfl⟩) fun t h => ⟨h.rest, h.mem, h.val⟩
-  refine wp_lw (a := b + BitVec.ofNat 64 (OUT + 4 * k)) (by decide) (by omega)
+  refine wp_lw (a := b + BitVec.ofNat 64 (OUT + 4 * k)) (by decide) (by omega_using [hk])
     (by rw [h.rest.gpr _ (by decide), hc.r3, Offset.add_add])
-    (by rw [h.rest.rd, h.rest.wr]; exact hc.inR (by unfold OUT; omega)) fun t1 v1 => wp_or fun t2 v2 => ?_
+    (by rw [h.rest.rd, h.rest.wr]; exact hc.inR (by unfold OUT; omega_using [hk])) fun t1 v1 => wp_or fun t2 v2 => ?_
   refine WP.block_nil ⟨h.rest.trans ((v1.rest (by decide)).trans (v2.rest (by decide))), by
     rw [v2.mem, v1.mem, h.mem], ?_⟩
   rw [v2.gpr, BitVec.toNat_or, v1.other _ (by decide), h.val, v1.gpr, toNat_ext32, h.mem, orw, wd,
@@ -225,12 +225,12 @@ theorem outSame_ok {s : State} (hc : VCtx b s) {p : Nat} (hp : p + 56 ≤ 4096) 
     (fun k t hk h => ?_) 14 (Nat.le_refl _) s1
     ⟨u1.rest (by decide), u1.mem, by rw [u1.gpr]; rfl⟩) fun t ⟨hr, hm, hv⟩ => ?_
   · obtain ⟨hr, hm, hv⟩ := h
-    refine wp_lw (a := b + BitVec.ofNat 64 (OUT + 4 * k)) (by decide) (by omega)
+    refine wp_lw (a := b + BitVec.ofNat 64 (OUT + 4 * k)) (by decide) (by omega_using [hk])
       (by rw [hr.gpr _ (by decide), hc.r3, Offset.add_add])
-      (by rw [hr.rd, hr.wr]; exact hc.inR (by unfold OUT; omega)) fun t1 v1 => ?_
-    refine wp_lw (a := b + BitVec.ofNat 64 (p + 4 * k)) (by decide) (by omega)
+      (by rw [hr.rd, hr.wr]; exact hc.inR (by unfold OUT; omega_using [hk])) fun t1 v1 => ?_
+    refine wp_lw (a := b + BitVec.ofNat 64 (p + 4 * k)) (by decide) (by omega_using [hp, hk])
       (by rw [v1.other _ (by decide), hr.gpr _ (by decide), hc.ctx.r6])
-      (by rw [v1.rd, v1.wr, hr.rd, hr.wr]; exact hc.inR (by omega)) fun t2 v2 => ?_
+      (by rw [v1.rd, v1.wr, hr.rd, hr.wr]; exact hc.inR (by omega_using [hp, hk])) fun t2 v2 => ?_
     refine wp_xor fun t3 v3 => wp_or fun t4 v4 => WP.block_nil ⟨?_, ?_, ?_⟩
     · exact hr.trans ((v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
         (v4.rest (by decide)))))

@@ -51,11 +51,11 @@ theorem candidateArguments_ok {s : State} {B F : Addr} {Z w pLen qLen : Nat} {W 
       argumentWords W (fun j => word s.mem B (8 * j)) (candidateArguments pLen qLen) k := by
     rw [hm]; exact argumentWrites_word _ _ _ _ fits hk32
   have hh (d : Nat) (hd : d + 8 ≤ 128) : word t.mem B d = word s.mem B d :=
-    hf.word (Or.inl hd) (by omega)
+    hf.word (Or.inl hd) (by omega_using [hd])
   have stride : word t.mem B 224 = word s.mem B 224 := by
     exact wh 28 (by decide)
   have ht : Ws t B Z w := ⟨h.scr.congr hk.2.2, (hk.gpr (by decide)).trans h.rdi,
-    (hh 48 (by decide)).trans h.hw, stride.trans h.hS, fun j hj => (hh (8 * sArr j) (by unfold sArr; omega)).trans (h.harr j hj),
+    (hh 48 (by decide)).trans h.hw, stride.trans h.hS, fun j hj => (hh (8 * sArr j) (by unfold sArr; omega_using [hj])).trans (h.harr j hj),
     h.hZ, h.w1, h.w2⟩
   refine ⟨ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hf, hk⟩
   · exact wh 16 (by decide)

@@ -65,8 +65,8 @@ theorem noiseW_cov {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h :
   have hw := hp.wf
   refine Covers.cons (cov_s hp h (by lom)) (Covers.cons (cov_s hp h (by lom)) (Covers.cons ?_ Covers.nil))
   refine cov_w hp h ⟨hp.scw, hp.scb⟩ ?_
-  rw [hp.scl]; have := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega)
-  simp only [Impl.MlKem.AArch64.Noise.noiseOff] at this ⊢; have := hw.facts; omega
+  rw [hp.scl]; have := Noise.noise_fits (P := P) hr (i := P.k - 1) (by have := hw.facts; omega_using [this])
+  simp only [Impl.MlKem.AArch64.Noise.noiseOff] at this ⊢; have := hw.facts; omega_arith
 
 /-- **The noise, `u` and `v`**, the first `n ≥ 2k` PRF outputs in their buffers. -/
 theorem encrypt_restP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P)
@@ -89,7 +89,7 @@ theorem encrypt_restP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L
   have hk := hw.facts
   refine WP.seq (WP.mono (noiseP_ok (prf := prf) hp hr h.kb htr hn h.r hprf) fun t nt => ?_)
   have hcnt : 2 * P.k ≤ min n (Impl.MlKem.AArch64.Kem16P.prfs P) := by
-    simp only [Impl.MlKem.AArch64.Kem16P.prfs]; omega
+    simp only [Impl.MlKem.AArch64.Kem16P.prfs]; omega_using [hn]
   have far : ∀ {o l : Nat}, o + l ≤ SV P + 48 →
       (o + l ≤ NS ∨ (NS + 1024 ≤ o ∧ o + l ≤ YH P) ∨ TP P ≤ o) →
       ∀ r ∈ noiseW P L s₀, (R (kA s₀) L.sc o l).Disjoint r := fun hf ho => noiseW_far hp hr hf ho
@@ -101,21 +101,21 @@ theorem encrypt_restP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L
     · have := ij_lt hi hj
       have fa := far (o := aOff P i j) (l := 1024) (by lom) (.inr (.inl ⟨by lom, by lom⟩))
       exact ⟨reducedW_frame nt.fr fa (h.a i hi j hj).1, (polyAtW_frame nt.fr fa).trans (h.a i hi j hj).2⟩
-    · have d := nt.done j (by omega)
+    · have d := nt.done j (by omega_using [hcnt, hj])
       simp only [Impl.MlKem.AArch64.Kem16P.target, tPoly, ite_eq_left hj] at d
       exact d
   have er : ErrorsW P L s₀ rv t := by
     intro j hj
-    have d := nt.done (P.k + j) (by omega)
-    simp only [Impl.MlKem.AArch64.Kem16P.target, tPoly, ite_eq_right (show ¬ P.k + j < P.k by omega),
-      ite_eq_left (show P.k + j < 2 * P.k by omega), Nat.add_sub_cancel_left] at d
+    have d := nt.done (P.k + j) (by omega_using [hcnt, hj])
+    simp only [Impl.MlKem.AArch64.Kem16P.target, tPoly, ite_eq_right (show ¬ P.k + j < P.k by omega_using []),
+      ite_eq_left (show P.k + j < 2 * P.k by omega_using [hj]), Nat.add_sub_cancel_left] at d
     exact d
   have hE : decide (Impl.MlKem.AArch64.Kem16P.prfs P ≤ n) = true →
       PolyIsW 16 t.mem (sA L s₀ (EP P)) (cbd rv (2 * P.k)) := by
     intro he
     have he' : Impl.MlKem.AArch64.Kem16P.prfs P ≤ n := of_decide_eq_true he
-    have d := nt.done (2 * P.k) (by simp only [Impl.MlKem.AArch64.Kem16P.prfs] at he' ⊢; omega)
-    simp only [Impl.MlKem.AArch64.Kem16P.target, tPoly, ite_eq_right (show ¬ 2 * P.k < P.k by omega),
+    have d := nt.done (2 * P.k) (by simp only [Impl.MlKem.AArch64.Kem16P.prfs] at he' ⊢; omega_using [he'])
+    simp only [Impl.MlKem.AArch64.Kem16P.target, tPoly, ite_eq_right (show ¬ 2 * P.k < P.k by omega_using []),
       Nat.lt_irrefl, ite_false] at d
     exact d
   have gt : Dot.GammaArtifact t.mem (t.syms "VG_MLKEM_GAMMA") := by

@@ -18,7 +18,7 @@ open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layou
  theorem GenerationGeometry.qShape (p : GenerationGeometry) (seed : List Byte) :
     (Spec.Dsa.qCandidate (8 * p.qLen) seed) % 2 = 1 ∧
       3 ≤ Spec.Dsa.qCandidate (8 * p.qLen) seed := by
-  have hn : 2 ≤ 8 * p.qLen := by rcases p.qWidth with h | h <;> omega
+  have hn : 2 ≤ 8 * p.qLen := by rcases p.qWidth with h | h <;> omega_using [h]
   have shape := VG.Proof.Dsa.Generation.qCandidate_shape hn seed
   refine ⟨shape.1, Nat.le_trans ?_ shape.2.1⟩
   rcases p.qWidth with h | h <;> rw [h] <;> decide
@@ -38,24 +38,24 @@ def GenerationGeometry.qPrime (p : GenerationGeometry) (rand : GenerationTape p)
   rand := rand.bytes
   dims := by constructor <;> decide
   room := by decide
-  len2 := by rcases p.qWidth with h | h <;> omega
+  len2 := by rcases p.qWidth with h | h <;> omega_using [h]
   lenDraw := by rcases p.qWidth with h | h <;> rw [h] <;> decide
   drawMax := by split <;> decide
   drawMin := by split <;> decide
   lenWords := by rcases p.qWidth with h | h <;> rw [h] <;> decide
   predBits := VG.Proof.Dsa.Generation.predecessor_bits
-    (by rcases p.qWidth with h | h <;> omega) (p.qShape seed).1
-    (VG.Proof.Dsa.Generation.qCandidate_bitLength (by rcases p.qWidth with h | h <;> omega) seed)
+    (by rcases p.qWidth with h | h <;> omega_using [h]) (p.qShape seed).1
+    (VG.Proof.Dsa.Generation.qCandidate_bitLength (by rcases p.qWidth with h | h <;> omega_using [h]) seed)
   drawWidth := by
     rw [VG.Proof.Dsa.Generation.witness_width
-      (by rcases p.qWidth with h | h <;> omega) (p.qShape seed).1
-      (VG.Proof.Dsa.Generation.qCandidate_bitLength (by rcases p.qWidth with h | h <;> omega) seed)]
+      (by rcases p.qWidth with h | h <;> omega_using [h]) (p.qShape seed).1
+      (VG.Proof.Dsa.Generation.qCandidate_bitLength (by rcases p.qWidth with h | h <;> omega_using [h]) seed)]
     rcases p.qWidth with h | h <;> rw [h] <;> decide
   odd := (p.qShape seed).1
   n3 := (p.qShape seed).2
   checksMax := by decide
   randMax := rand.size
-  stackSize := by have := p.stackSize; omega
+  stackSize := by have := p.stackSize; omega_using [this]
   stackSeparate := (p.stack_part (d := arithmetic) (n := arithmeticBytes) (by
     rcases p.width with h | h | h <;> rw [h] <;> decide)).symm.sub_right (below_sub (by decide) (by decide))
   bufferSeparate := p.parts_disjoint
@@ -68,7 +68,7 @@ def GenerationGeometry.qPrime (p : GenerationGeometry) (rand : GenerationTape p)
       (by rcases p.lengths with ⟨h1,h2⟩ | ⟨h1,h2⟩ | ⟨h1,h2⟩ <;> rw [h1,h2] <;> decide)
       (by rcases p.width with h | h | h <;> rw [h] <;> decide)
       (by left; rcases p.qWidth with h | h <;> rw [h] <;> decide))
-    exact Offset.contains_base _ (by omega) (by rcases p.qWidth with h | h <;> omega)
+    exact Offset.contains_base _ (by omega_using [hi]) (by rcases p.qWidth with h | h <;> omega_using [hi, h])
   tapeBuffer := rand.part (by rcases p.lengths with ⟨h1,h2⟩ | ⟨h1,h2⟩ | ⟨h1,h2⟩ <;> rw [h1,h2] <;> decide)
   tapeStack := rand.stack.sub_right (below_sub (by decide) (by decide))
 

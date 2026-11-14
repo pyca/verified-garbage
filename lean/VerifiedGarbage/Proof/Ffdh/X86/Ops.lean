@@ -39,15 +39,15 @@ theorem fR_widen {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F : Fra
     (hw : ∀ p ∈ ws, InF len p) : Frame (frameR base sp (fR len)) m m' :=
   frameR_widen F fun p hp => by
     rcases hw p hp with e | e
-    · exact ⟨(0, 32), by simp, by omega, by omega⟩
-    · exact ⟨(48, CrtRt.need len - 48), by simp, by dsimp only; omega, by dsimp only; omega⟩
+    · exact ⟨(0, 32), by simp, by omega_using [], by omega_using [e]⟩
+    · exact ⟨(48, CrtRt.need len - 48), by simp, by dsimp only; omega_using [e], by dsimp only; omega_using [e]⟩
 
 theorem fR_fit (h : In Ex base bytes len args s) : ∀ p ∈ fR len, p.1 + p.2 ≤ bytes := by
   have := h.need
-  have : 48 ≤ CrtRt.need len := by simp only [CrtRt.need, numBase]; omega
+  have : 48 ≤ CrtRt.need len := by simp only [CrtRt.need, numBase]; omega_using []
   intro p hp
   simp only [fR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
 
 theorem fR_of_outside (h : In Ex base bytes len args s) {sp : BitVec 32} {a n : Nat} {m m' : Mem}
     (O : Outside base a n m m') (hw : InF len (a, n)) : Frame (frameR base sp (fR len)) m m' := by
@@ -55,9 +55,9 @@ theorem fR_of_outside (h : In Ex base bytes len args s) {sp : BitVec 32} {a n : 
   have bl := h.bytes_lt
   have : a + n ≤ bytes := by
     rcases hw with e | e
-    · have := this (0, 32) (by simp); dsimp only at *; omega
-    · have := this (48, CrtRt.need len - 48) (by simp); dsimp only at *; omega
-  exact fR_widen (frameR_of_outside O (by omega) (List.mem_singleton_self _))
+    · have := this (0, 32) (by simp); dsimp only at *; omega_using [e, this]
+    · have := this (48, CrtRt.need len - 48) (by simp); dsimp only at *; omega_using [e, this]
+  exact fR_widen (frameR_of_outside O (by omega_using [bl, this]) (List.mem_singleton_self _))
     fun p hp => by rw [List.mem_singleton.mp hp]; exact hw
 
 /-- The ranges of the operations of a context, within `fR`. -/
@@ -69,7 +69,7 @@ theorem stR_inF (h : In Ex base bytes len args s) : ∀ p ∈ stR len 0, InF len
   have nb : numBase = 3336 := rfl
   have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl
-  have t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega
+  have t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega_using []
   have e28 : lo len (.slot .wide 28) = numBase + 28 * st len .wide := rfl
   have := h.slot_fit .wide (j := 27) (by decide)
   intro p hp
@@ -84,9 +84,9 @@ theorem hi_fit {j : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 19) :
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
   have e20 : lo len (.slot .wide 20) = numBase + 20 * st len .wide := rfl
   have := Nat.mul_le_mul_right (st len .wide) hj9
-  have := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 20 by omega)
+  have := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 20 by omega_using [hj])
   rw [Nat.succ_mul] at this
-  omega
+  omega_arith
 
 /-- The operations of a context keep the wide slots 9 to 19 and the header's words from 8 on. -/
 theorem opsKeep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
@@ -100,11 +100,11 @@ theorem opsKeep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have nb : numBase = 3336 := rfl
-  have t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega
-  refine frameR_val32 F R h.scratch.nowrap (by omega) ?_ (stR_fit h (by decide))
+  have t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega_using []
+  refine frameR_val32 F R h.scratch.nowrap (by omega_using [hd, T, e20, t0, t16]) ?_ (stR_fit h (by decide))
   intro q hq
   simp only [stR, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
 
 /-- The value of a wide slot from 9 to 19 after the operations of a context. -/
 theorem opsKeep_sv (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
@@ -113,14 +113,14 @@ theorem opsKeep_sv (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Me
   have := hi_fit (len := len) hj9 hj
   have bw := bc_eq_cwc len .wide
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  exact opsKeep h F R (.inl ⟨this.1, by omega⟩)
+  exact opsKeep h F R (.inl ⟨this.1, by omega_using [this, bw, est]⟩)
 
 /-- A header word from 8 on after the operations of a context. -/
 theorem opsKeep_w32 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (stR len 0)) m m') (R : CallRoom sp base bytes) {d : Nat} (hd : 8 ≤ d)
     (hd' : d + 4 ≤ numBase) : w32 m' base d = w32 m base d := by
   rw [← w32_val32_one, ← w32_val32_one]
-  exact opsKeep h F R (.inr ⟨hd, by omega⟩)
+  exact opsKeep h F R (.inr ⟨hd, by omega_using [hd']⟩)
 
 /-- A number written into one wide slot keeps another. -/
 theorem slotKeep (h : In Ex base bytes len args s) {m m' : Mem} {a b : Nat} (hb : b ≤ 19)
@@ -128,7 +128,7 @@ theorem slotKeep (h : In Ex base bytes len args s) {m m' : Mem} {a b : Nat} (hb 
     sv m' base len .wide b = sv m base len .wide b := by
   have bw := bc_eq_cwc len .wide
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
-  exact wide_keep h hb hab (by omega) (by omega) O
+  exact wide_keep h hb hab (by omega_using [est]) (by omega_using [bw, est]) O
 
 /-- A number written into a wide slot keeps the header. -/
 theorem slotKeep_w32 (h : In Ex base bytes len args s) {m m' : Mem} {a d : Nat}
@@ -137,13 +137,13 @@ theorem slotKeep_w32 (h : In Ex base bytes len args s) {m m' : Mem} {a d : Nat}
   have e : lo len (.slot .wide a) = numBase + a * st len .wide := rfl
   have nb : numBase = 3336 := rfl
   have bl := h.bytes_lt
-  exact O.w32 (.inl (by omega)) (by omega)
+  exact O.w32 (.inl (by omega_using [hd, e])) (by omega_using [hd, nb])
 
 /-- A wide slot written, within `fR`. -/
 theorem slot_inF {a n : Nat} (ha : a ≤ 27) (hn : n ≤ st len .wide) :
     InF len (lo len (.slot .wide a), n) := by
   have e : lo len (.slot .wide a) = numBase + a * st len .wide := rfl
-  have := Nat.mul_le_mul_right (st len .wide) (show a + 1 ≤ 28 by omega)
+  have := Nat.mul_le_mul_right (st len .wide) (show a + 1 ≤ 28 by omega_using [ha])
   rw [Nat.succ_mul] at this
   have nb : numBase = 3336 := rfl
   have en : CrtRt.need len = numBase + 28 * st len .wide := rfl

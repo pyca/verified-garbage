@@ -66,8 +66,8 @@ theorem inWord_rel {k : Nat} (W : Nat → BitVec 32) {i : Nat} (hi : 32 * i + 32
     LaneRel k (assign W (2 ^ k)) (inWord i) (W i) := by
   refine ⟨Nat.two_pow_pos _, fun q hq => ?_⟩
   simp only [inWord, inWordW_eq_mk, Nat.zero_testBit, Bool.false_xor]
-  rw [par_mk hq (Nat.le_refl _) _ (fun q' hq' a ha => by simp at ha; omega), xorA_assign W
-    (by intro a ha; simp at ha; omega)]
+  rw [par_mk hq (Nat.le_refl _) _ (fun q' hq' a ha => by simp at ha; omega_using [hi, hq', ha]), xorA_assign W
+    (by intro a ha; simp at ha; omega_using [hi, hq, ha])]
   simp [hq, bitOf_word W i q hq]
 
 theorem outWord_rel {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {x : BitVec 32}
@@ -96,7 +96,7 @@ theorem outWord_rel_of_lt {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Na
     ← decide_eq_true hp, ← par_mk hp (Nat.le_refl _) _ hM, par_high hb hp]
   refine par_congr_assign fun a ha => ?_
   simp only [assign, testBit_tableOf, ha, decide_true, Bool.true_and,
-    show a < 2 ^ k + (((List.range 32).flatMap g).sum + 1) by omega]
+    show a < 2 ^ k + (((List.range 32).flatMap g).sum + 1) by omega_using [ha]]
 
 /-- The value `v` is `outWord g`, below `2 ^ (32 2 ^ k)` (`outWord_rel_of_lt`),
 with `g` evaluated once (as `Bitslice.outOkW`). -/

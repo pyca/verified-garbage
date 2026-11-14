@@ -354,17 +354,17 @@ theorem SearchLive.step (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
       have width := p.width_bounds
       unfold Spec.Ffdh.parameterEntropy
       change p.c.bytes.length - used < 32769 * p.c.length
-      omega
+      omega_using [short']
     refine WP.mono live.short_request ?_
     rintro t ⟨done, restT⟩
     refine ⟨?_, (rest.mono (by simp [searchClobbers])).trans restT⟩
     simpa only [Classified, noCandidate, p.tail_short positive noCandidate,
-      ite_eq_right (by omega : ¬ Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.bytes.length - used), requestResult] using done
+      ite_eq_right (by omega_using [entropy] : ¬ Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.bytes.length - used), requestResult] using done
   · intro enough
     have room : used + p.c.length ≤ p.c.bytes.length := by
       have := of_decide_eq_false enough
       have := h.usedBound
-      omega
+      omega_arith
     refine WP.seq (WP.mono (candidateRun_ok backend live room) fun v ⟨⟨liveV, post⟩, restV⟩ => ?_)
     refine WP.mono (liveV.classify positive post) ?_
     rintro t ⟨data, restT⟩

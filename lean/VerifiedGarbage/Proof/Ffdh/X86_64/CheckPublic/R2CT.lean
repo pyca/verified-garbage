@@ -36,9 +36,9 @@ private theorem c6h_two_r2 {s₁ s₂ : State} (h : Two C6H s₁ s₂) : Two R2P
   obtain ⟨⟨mi₂, hI₂, _, _⟩, h12₂, h10₂⟩ := h₂
   have c := hI₁.1.ctx
   obtain ⟨hodd, _⟩ := valid_facts hm c.k1
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_using []
   have hk := c.k1
-  obtain rfl := xvals_minv (show 1 ≤ p.w by omega) hodd hI₁.2.2.1 hI₂.2.2.1
+  obtain rfl := xvals_minv (show 1 ≤ p.w by omega_using [ew, hk]) hodd hI₁.2.2.1 hI₂.2.2.1
   exact ⟨_, c6_r2 hI₁ hm h12₁ h10₁, c6_r2 hI₂ hm h12₂ h10₂⟩
 
 theorem c6_r2_ct (M : Mont) (R : R2Impl M) :

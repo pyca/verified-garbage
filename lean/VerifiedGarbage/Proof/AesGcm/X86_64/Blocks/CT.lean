@@ -121,7 +121,7 @@ theorem ctrCall_ready (c : Ctr32Impl) {q : Nat} {st : State} (h : Ready s q st) 
   WP.seq (WP.mono (ctrArgs_ok hp h hq) fun st₂ ⟨hc, R₂, _, _⟩ => WP.mono (ctr_call c hc) fun st₃ g => by
     have f₃ := g.frame
     rw [R₂.rsp] at f₃
-    exact R₂.frame f₃ (fun r hr => (apart_kR' hp (q := q) (by omega)).ctr r hr) (fun r hr => (apart_a hp (q := q) (by omega)).ctr r hr)
+    exact R₂.frame f₃ (fun r hr => (apart_kR' hp (q := q) (by omega_using [hq])).ctr r hr) (fun r hr => (apart_a hp (q := q) (by omega_using [hq])).ctr r hr)
       (g.saved _ (by decide)) g.rd g.wr)
 
 /-- `Ready` after `ghCall`. -/
@@ -130,7 +130,7 @@ theorem ghCall_ready (g : GhashImpl) {q : Nat} {st : State} (h : Ready s q st) (
   WP.seq (WP.mono (ghArgs_ok hp h hq) fun st₂ ⟨hc, R₂, _, _⟩ => WP.mono (gh_call g hc) fun st₃ g' => by
     have f₃ := g'.frame
     rw [R₂.rsp] at f₃
-    exact R₂.frame f₃ (fun r hr => (apart_kR' hp (q := q) (by omega)).gh r hr) (fun r hr => (apart_a hp (q := q) (by omega)).gh r hr)
+    exact R₂.frame f₃ (fun r hr => (apart_kR' hp (q := q) (by omega_using [hq])).gh r hr) (fun r hr => (apart_a hp (q := q) (by omega_using [hq])).gh r hr)
       (g'.saved _ (by decide)) g'.rd g'.wr)
 
 end
@@ -278,7 +278,7 @@ theorem tail_rel {first second : Prog isa}
       have e := h.1.2.1.2
       rw [h.2] at e
       simp only [Option.some.injEq, Bool.false_eq, decide_eq_false_iff_not] at e
-      exact absurd (by omega) e
+      exact absurd (by omega_using [hlt]) e
 
 /-- What the entry leaves. -/
 def EntryPost (s₀ s₁ : State) : Prop :=
@@ -372,7 +372,7 @@ theorem fullBody_rel (aligned small small4 dec : Bool) (p first second : Prog is
       (fun _ _ h => ready_hS hp hp' pb (h.2.2.1.ready hp) (h.2.2.2.ready hp')) rest_check)
       (F₁ := fun t => n s₀ < 16 ∧ Mid s₀ 0 0 (ys s₀ 0) t) (F₂ := fun t => n s₀' < 16 ∧ Mid s₀' 0 0 (ys s₀' 0) t)
       (fun _ _ h => ⟨⟨h.2.1, h.2.2.1⟩, by rw [pb.en]; exact h.2.1, h.2.2.2⟩)
-      (fun _ h => rest_ok hp (by have := h.1; omega) h.2) (fun _ h => rest_ok hp' (by have := h.1; omega) h.2)
+      (fun _ h => rest_ok hp (by have := h.1; omega_using [this]) h.2) (fun _ h => rest_ok hp' (by have := h.1; omega_using [this]) h.2)
     refine (RelCT.seq b (htail.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)).mono (fun s₁ s₂ h => ?_)
       fun _ _ h => h
     obtain ⟨hr, h16, ⟨-, b₁, c₁, d₁, e₁, f₁⟩, ⟨-, b₂, c₂, d₂, e₂, f₂⟩⟩ := h

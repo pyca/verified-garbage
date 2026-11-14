@@ -46,20 +46,20 @@ theorem readW_sepw {m : Mem} {a b : Addr} {w : Nat} {v : BitVec 32} (hw : w / 8 
 
 theorem toNat_add_lit {p : Addr} {k : Nat} (h : p.toNat + k < 2 ^ 64) :
     (p + BitVec.ofNat 64 k).toNat = p.toNat + k := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt h]
 
 /-- The words `put6w` writes. -/
 theorem put6w_read {m : Mem} {p : Addr} (hp : p.toNat + 24 ≤ 2 ^ 64) (w₀ w₁ w₂ w₃ w₄ w₅ : BitVec 32) :
     ∀ i < 6, (put6w m p w₀ w₁ w₂ w₃ w₄ w₅).readW (p + BitVec.ofNat 64 (4 * i)) 32 = [w₀, w₁, w₂, w₃, w₄, w₅].getD i 0 := by
   intro i hi
-  have t : ∀ k ≤ 20, (p + BitVec.ofNat 64 k).toNat = p.toNat + k := fun k hk => toNat_add_lit (by omega)
+  have t : ∀ k ≤ 20, (p + BitVec.ofNat 64 k).toNat = p.toNat + k := fun k hk => toNat_add_lit (by omega_using [hp, hk])
   have s : ∀ i j, i < 6 → j < 6 → i ≠ j → ∀ v : BitVec 32, ∀ m : Mem,
       (m.writeW (p + BitVec.ofNat 64 (4 * j)) v).readW (p + BitVec.ofNat 64 (4 * i)) 32 =
         m.readW (p + BitVec.ofNat 64 (4 * i)) 32 := fun i j hi hj hij v m => by
-    refine readW_sepw (by decide) ?_ ?_ ?_ <;> simp only [Nat.reduceDiv, t (4 * i) (by omega), t (4 * j) (by omega)] <;>
-      omega
+    refine readW_sepw (by decide) ?_ ?_ ?_ <;> simp only [Nat.reduceDiv, t (4 * i) (by omega_using [hi]), t (4 * j) (by omega_using [hj])] <;>
+      omega_arith
   simp only [put6w]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   · rw [s 0 5 (by decide) (by decide) (by decide), s 0 4 (by decide) (by decide) (by decide),
       s 0 3 (by decide) (by decide) (by decide), s 0 2 (by decide) (by decide) (by decide),
       s 0 1 (by decide) (by decide) (by decide), Mem.readW_writeW_self32]; rfl
@@ -77,12 +77,12 @@ theorem put6w_read {m : Mem} {p : Addr} (hp : p.toNat + 24 ≤ 2 ^ 64) (w₀ w�
 theorem put6w_out {m : Mem} {p a : Addr} {w : Nat} (hw : w / 8 < 2 ^ 64) (hp : p.toNat + 24 ≤ 2 ^ 64)
     (ha : a.toNat + w / 8 ≤ p.toNat ∨ p.toNat + 24 ≤ a.toNat) (ha' : a.toNat + w / 8 ≤ 2 ^ 64)
     (w₀ w₁ w₂ w₃ w₄ w₅ : BitVec 32) : (put6w m p w₀ w₁ w₂ w₃ w₄ w₅).readW a w = m.readW a w := by
-  have t : ∀ k ≤ 20, (p + BitVec.ofNat 64 k).toNat = p.toNat + k := fun k hk => toNat_add_lit (by omega)
+  have t : ∀ k ≤ 20, (p + BitVec.ofNat 64 k).toNat = p.toNat + k := fun k hk => toNat_add_lit (by omega_using [hp, hk])
   simp only [put6w]
   rw [readW_sepw hw, readW_sepw hw, readW_sepw hw, readW_sepw hw, readW_sepw hw, readW_sepw hw]
-  all_goals first | (simp only [t 0 (by omega), t 4 (by omega), t 8 (by omega), t 12 (by omega), t 16 (by omega),
-    t 20 (by omega), show 4 * 0 = 0 from rfl, show 4 * 1 = 4 from rfl, show 4 * 2 = 8 from rfl,
-    show 4 * 3 = 12 from rfl, show 4 * 4 = 16 from rfl, show 4 * 5 = 20 from rfl]; omega) | omega
+  all_goals first | (simp only [t 0 (by omega_using []), t 4 (by omega_using []), t 8 (by omega_using []), t 12 (by omega_using []), t 16 (by omega_using []),
+    t 20 (by omega_using []), show 4 * 0 = 0 from rfl, show 4 * 1 = 4 from rfl, show 4 * 2 = 8 from rfl,
+    show 4 * 3 = 12 from rfl, show 4 * 4 = 16 from rfl, show 4 * 5 = 20 from rfl]; omega_arith) | omega_using [ha']
 
 /-- The functions of `vs` at distinct addresses, and every other symbol at `0x100000`. -/
 def symT (vs : List HVar) (n : String) : BitVec 32 :=
@@ -114,20 +114,20 @@ theorem satT_held (vs : List HVar) (w : HVar) (m₀ : Mem) (Q : Nat) (Tr : List 
   have hl : (FnTable.words isa (satT vs w m₀ Q Tr) (tableOf w)).length = 6 := rfl
   rw [hl] at hi
   exact put6w_read (p := 0x300000) (by decide) _ _ _ _ _ _ i hi |>.trans (by
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl)
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl)
 
 theorem satT_arg (vs : List HVar) (w : HVar) (m₀ : Mem) (Q : Nat) (Tr : List Region) :
     ∀ i < 6, arg (satT vs w m₀ Q Tr) i = [0x1000, 0x2000, 0x3000, BitVec.ofNat 32 w.F.H.D, 0x8000, 0x300000].getD i 0 := by
   intro i hi
   have ha : argAddr (satT vs w m₀ Q Tr) i = 0x20004 + BitVec.ofNat 64 (4 * i) := by
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   show (satT vs w m₀ Q Tr).mem.readW (argAddr (satT vs w m₀ Q Tr) i) 32 = _
   have h4 : (0x20004 : Addr).toNat = 0x20004 := rfl
   rw [ha]
   simp only [satT]
   rw [put6w_out (by decide) (by decide) (by
     rw [toNat_add_lit (by omega)]
-    show 0x20004 + 4 * i + 32 / 8 ≤ 0x300000 ∨ _; omega) (by rw [toNat_add_lit (by omega)]; omega)]
+    show 0x20004 + 4 * i + 32 / 8 ≤ 0x300000 ∨ _; omega_using [hi]) (by rw [toNat_add_lit (by omega)]; omega)]
   exact put6w_read (p := 0x20004) (by decide) _ _ _ _ _ _ i hi
 
 theorem symT_distinct {vs : List HVar} (hl : (names vs).length < 2 ^ 24) :
@@ -154,7 +154,7 @@ theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} (hO : OK
   refine ⟨satT vs w (fun _ => 0) T.ecdsa.curve.len [], ?_⟩
   have hD : w.F.H.D ≤ 64 := by
     have := hw.2.1; simp only [shapes, List.mem_cons, List.not_mem_nil, or_false] at this
-    rcases this with h | h | h | h | h | h | h | h <;> rw [Prod.mk.injEq] at h <;> omega
+    rcases this with h | h | h | h | h | h | h | h <;> rw [Prod.mk.injEq] at h <;> omega_using [h]
   have a := satT_arg vs w (fun _ => 0) T.ecdsa.curve.len []
   have a0 := a 0 (by decide); have a1 := a 1 (by decide); have a2 := a 2 (by decide)
   have a3 := a 3 (by decide); have a4 := a 4 (by decide); have a5 := a 5 (by decide)
@@ -180,8 +180,8 @@ theorem sat_nil {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} (hO : OK
     | (rw [List.append_eq, List.append_nil]; exact symT_distinct hO.2.1)
     | (intro H hH
        obtain rfl := Option.some.inj (hH.symm.trans hG)
-       exact ⟨by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), w.glen], by rw [hw.hmac]; rfl⟩)
-    | (rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; rfl)
+       exact ⟨by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD]), w.glen], by rw [hw.hmac]; rfl⟩)
+    | (rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD])]; rfl)
 
 theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} (hO : OK vs) {n : String}
     {W : List (BitVec 64)} (m₀ : Mem) (hna : n ∉ names vs) (hW : 8 * W.length ≤ 0x100000)
@@ -192,7 +192,7 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} (hO : OK
   refine ⟨satT vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩], ?_⟩
   have hD : w.F.H.D ≤ 64 := by
     have := hw.2.1; simp only [shapes, List.mem_cons, List.not_mem_nil, or_false] at this
-    rcases this with h | h | h | h | h | h | h | h <;> rw [Prod.mk.injEq] at h <;> omega
+    rcases this with h | h | h | h | h | h | h | h <;> rw [Prod.mk.injEq] at h <;> omega_using [h]
   have a := satT_arg vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩]
   have a0 := a 0 (by decide); have a1 := a 1 (by decide); have a2 := a 2 (by decide)
   have a3 := a 3 (by decide); have a4 := a 4 (by decide); have a5 := a 5 (by decide)
@@ -208,10 +208,10 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} (hO : OK
     have l2 : (0x20004 : Addr).toNat = 0x20004 := rfl
     have l3 : (0x300000 : Addr).toNat = 0x300000 := rfl
     have h1 : (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat = 0x100000 + 8 * i :=
-      toNat_add_lit (by rw [l1]; omega)
+      toNat_add_lit (by rw [l1]; omega_using [hW, hi])
     simp only [satT, argsMem]
-    rw [put6w_out (by decide) (by decide) (by rw [h1, l3]; simp only [Nat.reduceDiv]; omega) (by rw [h1]; omega),
-      put6w_out (by decide) (by decide) (by rw [h1, l2]; simp only [Nat.reduceDiv]; omega) (by rw [h1]; omega)]
+    rw [put6w_out (by decide) (by decide) (by rw [h1, l3]; simp only [Nat.reduceDiv]; omega_using [hW, hi]) (by rw [h1]; omega_using [h1]),
+      put6w_out (by decide) (by decide) (by rw [h1, l2]; simp only [Nat.reduceDiv]; omega_using []) (by rw [h1]; omega_using [h1])]
     exact hm i hi
   have hrd : (satT vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W.length⟩]).rd =
       [⟨0x2000, T.ecdsa.curve.len⟩, ⟨0x3000, w.F.H.D⟩, ⟨0x300000, 24⟩] ++ [⟨0x100000, 8 * W.length⟩] := rfl
@@ -233,8 +233,8 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} (hO : OK
     | (rw [List.append_eq, List.append_nil]; exact symT_distinct hO.2.1)
     | (intro H hH
        obtain rfl := Option.some.inj (hH.symm.trans hG)
-       exact ⟨by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), w.glen], by rw [hw.hmac]; rfl⟩)
-    | (rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; rfl)
+       exact ⟨by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD]), w.glen], by rw [hw.hmac]; rfl⟩)
+    | (rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hD])]; rfl)
     | exact (constRegions_symT vs n W hna).symm
     | (intro i hi; dsimp only at hi ⊢; rw [hsym]; exact hc i hi)
     | (refine ⟨by bv_omega, ?_, ?_, ?_⟩ <;> first

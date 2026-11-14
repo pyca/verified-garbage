@@ -180,7 +180,7 @@ theorem ctl_and (v : BitVec 32) : ctl (BitVec.setWidth 32 (BitVec.setWidth 64 (v
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_and, hi, decide_true,
     Bool.true_and]
-  rw [decide_eq_true (by omega), decide_eq_true (by omega), Bool.true_and,
+  rw [decide_eq_true (by omega_using [hi]), decide_eq_true (by omega_using [hi]), Bool.true_and,
     show (0xFFFF : BitVec 32).getLsbD (6 + i) = true by revert i; decide, Bool.and_true, Bool.true_and]
 
 theorem execBlock_ctl {is : List Instr} (hc : (is.all fun i => !loadsMxcsr i) = true)

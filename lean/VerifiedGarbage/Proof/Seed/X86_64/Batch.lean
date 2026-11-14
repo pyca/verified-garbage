@@ -39,14 +39,14 @@ theorem batchSize_ok (s : State) :
   refine WP.ite c (by show s₁.cf = some c; rfl) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · rw [hc] at hb
     have hlt := of_decide_eq_true hb
-    refine ⟨by rw [g₁, gpr_setReg_self, Nat.min_eq_left (by omega), BitVec.ofNat_toNat, BitVec.setWidth_eq],
+    refine ⟨by rw [g₁, gpr_setReg_self, Nat.min_eq_left (by omega_using [hlt]), BitVec.ofNat_toNat, BitVec.setWidth_eq],
       fun r hr => by rw [g₁, gpr_setReg_of_ne (s := s) _ hr], rfl, rfl, rfl⟩
   · rw [hc] at hb
     have hge := of_decide_eq_false hb
     let s₂ := s₁.setReg .rcx ((16 : BitVec 32).signExtend 64)
     refine WP.of_runBlock ⟨s₂, rfl, ?_⟩
     refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
-    · rw [gpr_setReg_self, Nat.min_eq_right (by omega)]; rfl
+    · rw [gpr_setReg_self, Nat.min_eq_right (by omega_using [hge])]; rfl
     · rw [gpr_setReg_of_ne (s := s₁) _ hr, g₁, gpr_setReg_of_ne (s := s) _ hr]
 
 /-! ## Small steps -/
@@ -85,9 +85,9 @@ theorem encodeSwapped_get (t : State) (b : Nat) {i : Nat} (hi : i < 16) :
   have hk : ∀ w < 4, (#v[(quad t b).2.2.1, (quad t b).2.2.2, (quad t b).1, (quad t b).2.1] :
       Vector Spec.Seed.Word 4).getD w 0 = lv t (arrSlot ((w + 2) % 4)) b := by
     intro w hw
-    rcases (show w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 by omega_using [hw]) with rfl | rfl | rfl | rfl <;> rfl
   simp only [encodeSwapped, Vector.getElem_ofFn, outByte]
-  rw [hk _ (by omega)]
+  rw [hk _ (by omega_using [hi])]
 
 theorem blockAt_of_bytes {m : Mem} {q : Addr} {v : Spec.Seed.Block}
     (h : ∀ i (hi : i < 16), m (q + BitVec.ofNat 64 i) = v[i]) : Spec.Seed.blockAt m q = v := by
@@ -109,7 +109,7 @@ theorem masks_of_frame {s s' : State} {R : Region} (hm : MasksIn s) (hr9 : s'.gp
   simp only [List.mem_singleton] at hr; subst hr
   refine (hd.sub_right ?_).symm
   show Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 (8 * kv.1), 8⟩ ⟨s.gpr .r9, 8 * scratchSlots⟩
-  exact Offset.sub_base _ (by unfold scratchSlots; omega)
+  exact Offset.sub_base _ (by unfold scratchSlots; omega_using [hlt])
 
 /-! ## The batch -/
 
@@ -141,11 +141,11 @@ structure BatchPost (d : Spec.Seed.Direction) (s s' : State) : Prop where
 
 theorem arraysR_sub_scratch (s : State) : Region.Sub (arraysR s) (scratchR s) := by
   show Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 (8 * 61), 8 * 64⟩ ⟨s.gpr .r9, 8 * scratchSlots⟩
-  exact Offset.sub_base _ (by unfold scratchSlots; omega)
+  exact Offset.sub_base _ (by unfold scratchSlots; omega_using [])
 
 theorem arraysR_sub_work (s : State) : Region.Sub (arraysR s) (workR s) := by
   show Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 (8 * 61), 8 * 64⟩ ⟨s.gpr .r9, 8 * 125⟩
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     WP isa (batch d) s (BatchPost d s) := by
@@ -153,7 +153,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
   let k := min n 16
   let p := s.gpr .rsi
   have hk1 : 1 ≤ k := by have := h.pos; omega
-  have hk16 : k ≤ 16 := by omega
+  have hk16 : k ≤ 16 := by omega_using []
   have hpos := h.pos
   -- the copy in
   apply WP.seq
@@ -174,7 +174,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
       exact ⟨r, by rw [rd₂, wr₂, rd₁, wr₁]; exact List.mem_append_right _ hr, hc⟩
     · rw [arr₂]; exact h.dataSep.sub_right (arraysR_sub_scratch s)
   have inv₂ : CopyInInv s₂ p k (k - k) s₂ := by
-    refine ⟨by omega, ?_, ?_, ?_, fun w _ b hb => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
+    refine ⟨by omega_using [], ?_, ?_, ?_, fun w _ b hb => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
     · rw [r10₂, Nat.sub_self, Nat.mul_zero, ofNat_zero_add, g₁ _ (by decide)]
     · rw [Nat.sub_self, Nat.mul_zero, ofNat_zero_add, rbx₂, g₂ _ (by decide) (by decide)]
     · rw [Nat.sub_self, Nat.sub_zero, g₂ _ (by decide) (by decide), c₁]
@@ -211,7 +211,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     congr 1
     · exact f₃.readW (contains_prefix (by decide)) hd (by decide)
     · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
-      exact f₃.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega) (by omega)) hd (by decide)
+      exact f₃.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_using []) (by omega_using [])) hd (by decide)
   -- the blocks, in the lanes
   have hq₃ : ∀ b < k, quad s₃ b = decodeQ (Spec.Seed.blockAt s.mem (p + BitVec.ofNat 64 (16 * b))) := by
     intro b hb
@@ -233,7 +233,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
   have hq₄ : ∀ b < k, quad s₄ b = roundsN (keysAt d s.mem (s.gpr .rdi)) 16
       (decodeQ (Spec.Seed.blockAt s.mem (p + BitVec.ofNat 64 (16 * b)))) := by
     intro b hb
-    rw [q₄ b (by omega), hq₃ b hb]
+    rw [q₄ b (by omega_using [hb]), hq₃ b hb]
     exact roundsN_congr 16 _ hkeys
   -- the copy out
   apply WP.seq
@@ -254,7 +254,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     · rw [wr₆]; exact h.data b hb w hw
     · rw [arr₆]; exact h.dataSep.sub_right (arraysR_sub_scratch s)
   have inv₆ : CopyOutInv s₆ p k (k - k) s₆ := by
-    refine ⟨by omega, ?_, ?_, ?_, fun b hb => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
+    refine ⟨by omega_using [], ?_, ?_, ?_, fun b hb => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩
     · rw [r10₆, Nat.sub_self, Nat.mul_zero, ofNat_zero_add, g₅ _ (by decide), rsi₄]
     · rw [Nat.sub_self, Nat.mul_zero, ofNat_zero_add, rbx₆, g₆ _ (by decide) (by decide)]
     · rw [Nat.sub_self, Nat.sub_zero, g₆ _ (by decide) (by decide), c₅, rdx₄]

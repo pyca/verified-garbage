@@ -156,7 +156,7 @@ theorem outW {t : State} (hwr : t.wr = fr s :: s.wr) {i : Nat} (hi : i < (s.gpr 
   have := h.wo; rw [h.h4] at this
   exact ⟨oR s, by rw [hwr, h.hwr]; simp, by
     rw [show oR s = ⟨s.gpr .r3, (s.gpr .r7).toNat⟩ by simp only [oR, h.h4]]
-    exact Offset.contains_base _ (by omega) (by omega)⟩
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
 
 theorem selLoop_ok {R MLV : BitVec 64} {EM AM : List Byte} {v ok : Bool} {kl : Nat}
     (hkl : kl < 2 ^ 63) {t : State} (h0 : OInv s R MLV EM AM v ok kl 0 t) (h7 : t.gpr .r7 = s.gpr .r7) :
@@ -166,7 +166,7 @@ theorem selLoop_ok {R MLV : BitVec 64} {EM AM : List Byte} {v ok : Bool} {kl : N
   have hwo := h.wo
   rw [h.h4] at hwo
   have := h.ws; have := scr_le h
-  refine VG.Proof.Bignum.PPC64LE.wp_countdown (cnt := .r7) (by omega) (by omega) (OInv s R MLV EM AM v ok kl)
+  refine VG.Proof.Bignum.PPC64LE.wp_countdown (cnt := .r7) (by omega_using []) (by omega_using [hk64]) (OInv s R MLV EM AM v ok kl)
     (fun i hi u hu _ => ?_) h0 (by rw [h7, BitVec.ofNat_toNat, BitVec.setWidth_eq])
   have hc := hu.fr
   have he : InRegions (u.rd ++ u.wr) (u.gpr .r11 + BitVec.ofNat 64 0) 1 := by
@@ -175,7 +175,7 @@ theorem selLoop_ok {R MLV : BitVec 64} {EM AM : List Byte} {v ok : Bool} {kl : N
     exact ⟨r, List.mem_append_right _ hr, hcr⟩
   have ha : InRegions (u.rd ++ u.wr) (u.gpr .r10 + BitVec.ofNat 64 0) 1 := by
     rw [hu.r10, BitVec.add_zero, Offset.add_add]
-    exact scInR h hc.wr (a := sAM + i) (n := 1) (by unfold sAM scrBytes; omega)
+    exact scInR h hc.wr (a := sAM + i) (n := 1) (by unfold sAM scrBytes; omega_using [hk, hi])
   rw [selBody_eq, WP.block_append_iff]
   refine WP.mono (selA_ok he ha hu.r0) fun w ⟨⟨wm, w6⟩, kw⟩ => ?_
   have hw : InRegions w.wr (w.gpr .r11 + BitVec.ofNat 64 0) 1 := by
@@ -183,14 +183,14 @@ theorem selLoop_ok {R MLV : BitVec 64} {EM AM : List Byte} {v ok : Bool} {kl : N
   refine WP.mono (selB_ok hw) fun x ⟨⟨xm, x9, x11, x10, x7⟩, kx⟩ => ⟨?_, ?_⟩
   · have hb : (w.gpr .r6).setWidth 8 = outByte v ok kl i (EM.getD i 1) (AM.getD i 0) := by
       rw [w6, hu.r5, hu.r4, hu.r9, hu.r3, hu.r8, hu.r11, hu.r10, BitVec.add_zero, BitVec.add_zero,
-        hu.todo i (Nat.le_refl _) hi, hu.am i hi, outB_eq _ _ hkl (by omega)]
+        hu.todo i (Nat.le_refl _) hi, hu.am i hi, outB_eq _ _ hkl (by omega_using [hk, hi])]
     rw [hb, kw.gpr _ (by decide), hu.r11, BitVec.add_zero, wm] at xm
     have hf : Frame [⟨s.gpr .r3 + BitVec.ofNat 64 i, 1⟩] u.mem x.mem := by
       rw [xm]; exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
     have hsub : Region.Sub ⟨s.gpr .r3 + BitVec.ofNat 64 i, 1⟩ (oR s) := by
-      rw [show oR s = ⟨s.gpr .r3, (s.gpr .r7).toNat⟩ by simp only [oR, h.h4]]; exact Offset.sub_base _ (by omega)
+      rw [show oR s = ⟨s.gpr .r3, (s.gpr .r7).toNat⟩ by simp only [oR, h.h4]]; exact Offset.sub_base _ (by omega_using [hi])
     have hne : ∀ j, j ≠ i → j < (s.gpr .r7).toNat → s.gpr .r3 + BitVec.ofNat 64 j ≠ s.gpr .r3 + BitVec.ofNat 64 i :=
-      fun j hj hjk => Offset.add_ofNat_ne _ (by omega) (by omega) hj
+      fun j hj hjk => Offset.add_ofNat_ne _ (by omega_using [hjk]) (by omega_using [hi]) hj
     have kk : Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] u x :=
       (kw.mono (by decide)).trans' (kx.mono (by decide))
     have g : ∀ r, r ∉ [Reg.r9, .r11, .r10, .r7] → r ∉ [Reg.r6, .r12] → x.gpr r = u.gpr r := fun r h₁ h₂ =>
@@ -210,15 +210,15 @@ theorem selLoop_ok {R MLV : BitVec 64} {EM AM : List Byte} {v ok : Bool} {kl : N
     · intro j hj
       rw [xm]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · rw [write1_ne' _ _ (hne j (by omega) (by omega)), hu.done j hj]
+      · rw [write1_ne' _ _ (hne j (by omega_using [hj]) (by omega_arith)), hu.done j hj]
       · exact VG.Proof.Bignum.PPC64LE.write1_self _ _ _
     · intro j hj hjk
-      rw [xm, write1_ne' _ _ (hne j (by omega) hjk), hu.todo j (by omega) hjk]
+      rw [xm, write1_ne' _ _ (hne j (by omega_using [hj]) hjk), hu.todo j (by omega_using [hj]) hjk]
     · intro j hj
       rw [hf.bytes (R := ⟨scA s sAM, (s.gpr .r7).toNat⟩) (fun X hX => by
         rw [List.mem_singleton.mp hX]
-        exact ((h.os.sub_left hsub).sub_right (sc_sub h)).symm.sub_left (scSub (by unfold sAM scrBytes; omega)))
-        (by show (s.gpr .r7).toNat ≤ 2 ^ 64; omega) hj, hu.am j hj]
+        exact ((h.os.sub_left hsub).sub_right (sc_sub h)).symm.sub_left (scSub (by unfold sAM scrBytes; omega_using [hk])))
+        (by show (s.gpr .r7).toNat ≤ 2 ^ 64; omega_using []) hj, hu.am j hj]
   · rw [x7, kw.gpr _ (by decide)]
 
 end

@@ -72,16 +72,16 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
   generalize gOf s₀.mem L key = g at eg
   unfold body
   -- y.
-  refine WP.seq (WP.mono (yValue_ok hL scr regs ip hk hx p0 (by omega) hpo p8) fun s₁ ⟨⟨vy, my, ip1, b1, oq1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (yValue_ok hL scr regs ip hk hx p0 (by omega_using [B]) hpo p8) fun s₁ ⟨⟨vy, my, ip1, b1, oq1⟩, k1⟩ => ?_)
   rw [eg, ex] at vy my
   generalize hy : g ^ kOf s₀.mem L x % p = y at vy my
-  have hyp : y < p := by rw [← hy]; exact Nat.mod_lt _ (by omega)
+  have hyp : y < p := by rw [← hy]; exact Nat.mod_lt _ (by omega_using [hpo])
   have hr1 := regs.keep k1
   -- x's range.
   refine WP.seq (WP.mono (xRange_ok hL (scr.congr k1.wr) hr1 (hx.keep k1.rd k1.wr) my) fun s₂ ⟨⟨m2, Q2, qa2⟩, k2⟩ => ?_)
   have aq : arrQ s₁.mem L 0 = q := by
     rw [← q0]
-    exact Outside.val32 oq1 (Or.inl (by simp only [slot_eq]; omega)) (by simp only [slot_eq]; omega)
+    exact Outside.val32 oq1 (Or.inl (by simp only [slot_eq]; omega_using [])) (by simp only [slot_eq]; omega_using [])
   have ex1 : kOf s₁.mem L x = kOf s₀.mem L x := by
     rw [kOf, kOf, hx.kept (Kept.ofBody hL b1).out, exb]
   rw [aq, ex1] at m2
@@ -94,14 +94,14 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
     unfold DeriveOk; rw [hy]
   have hc : (decide (y ≠ 0) && decide (y ≠ 1) && decide (0 < kOf s₀.mem L x ∧ kOf s₀.mem L x < q)) =
       decide (1 < y ∧ 0 < kOf s₀.mem L x ∧ kOf s₀.mem L x < q) := by
-    by_cases h0 : y = 0 <;> by_cases h1 : y = 1 <;> simp [h0, h1] <;> omega
+    by_cases h0 : y = 0 <;> by_cases h1 : y = 1 <;> simp [h0, h1] <;> omega_using [h0, h1]
   rw [hc] at vt t3
   have eb : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Dsa.encodeBE L.pl y := by
     have hb : L.Buf = off L.Q 1600 := by simp only [Lay.Buf, Lay.Q, Lay.bOff, off_off]
     have hb2 : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Rsa.bytesAt s₁.mem L.Buf L.pl := by
-      rw [hb]; exact part_kept qa2 (Or.inr (by simp only [slot_eq]; omega)) (by omega)
+      rw [hb]; exact part_kept qa2 (Or.inr (by simp only [slot_eq]; omega_using [])) (by omega_using [hpl])
     rw [hb2]
-    exact ((VG.Proof.Dsa.encodeBE_eq_bytes (VG.Proof.Bignum.bytesAt_length _ _ _) (by omega)).mpr vy.symm).symm
+    exact ((VG.Proof.Dsa.encodeBE_eq_bytes (VG.Proof.Bignum.bytesAt_length _ _ _) (by omega_using [hplt, hyp])).mpr vy.symm).symm
   have kall := k12.trans kt
   have K2 := Kept.ofBody hL b12
   rw [eb, hk.kept K2.out, hx.kept K2.out, ekey, exb] at vt

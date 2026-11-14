@@ -29,7 +29,7 @@ open VG.Impl.X448.X86 (slot X2 ACC sc)
 
 theorem rd_sc {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 4 ≤ 8192) :
     readSrc s (.mem (sc d)) = some (word s.mem base d) := by
-  simp only [readSrc, hs.ea (d := d) (by omega), State.load32, hs.read (d := d) (n := 4) hd, ite_true]
+  simp only [readSrc, hs.ea (d := d) (by omega_using [hd]), State.load32, hs.read (d := d) (n := 4) hd, ite_true]
 
 /-! ## Field programs -/
 
@@ -128,7 +128,7 @@ theorem VKeep.ctx {base : Addr} {s t : State} (h : VKeep base s t) (hc : CallCtx
 
 theorem WsOut2.widen {base : Addr} {m m' : Mem} (h : WsOut2 base 64 2816 ACC 512 m m') :
     WsOut2 base 16 2864 ACC 512 m m' :=
-  fun p h8 h1 h2 => h p h8 (by rcases h1 with h1 | h1 <;> [exact Or.inl (by omega); exact Or.inr (by omega)]) h2
+  fun p h8 h1 h2 => h p h8 (by rcases h1 with h1 | h1 <;> [exact Or.inl (by omega_using [h1]); exact Or.inr (by omega_using [h1])]) h2
 
 theorem IKeep.toV {base : Addr} {s t : State} (h : IKeep base s t) : VKeep base s t :=
   ⟨h.regs, WsOut2.widen h.mem⟩
@@ -138,13 +138,13 @@ theorem Keep.toV {base : Addr} {s t : State} (h : Keep base s t) : VKeep base s 
 theorem slot_range (i : Index) : 64 ≤ slot i.val ∧ slot i.val + 112 ≤ 2880 := by
   have := i.isLt
   simp only [slot]
-  omega
+  omega_using []
 
 theorem outV {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : 16 ≤ o)
-    (h2 : o + n ≤ 2880) : WsOut2 base 16 2864 ACC 512 m m' := fun p _ hp _ => h p (by omega)
+    (h2 : o + n ≤ 2880) : WsOut2 base 16 2864 ACC 512 m m' := fun p _ hp _ => h p (by omega_using [h1, h2, hp])
 
 theorem fmV {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') (h1 : 16 ≤ o)
-    (h2 : o + 112 ≤ 2880) : WsOut2 base 16 2864 ACC 512 m m' := fun p _ hp hq => h p (by omega) hq
+    (h2 : o + 112 ≤ 2880) : WsOut2 base 16 2864 ACC 512 m m' := fun p _ hp hq => h p (by omega_using [h1, h2, hp]) hq
 
 /-- The point in slots `i`, `j`, `k`, from equal slots. -/
 theorem pt_congr' {e e' : Env} {a b c : Index} (ha : e' a = e a) (hb : e' b = e b) (hc : e' c = e c) :

@@ -72,17 +72,17 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op bs.length) = VG.Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip bs) ∧
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧
       Keep [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] s t := by
-  have hl1 : 2 ≤ bs.length := by omega
-  have hl2 : bs.length < 2 ^ 31 := by omega
+  have hl1 : 2 ≤ bs.length := by omega_using [hb1, hlen]
+  have hl2 : bs.length < 2 ^ 31 := by omega_using [hb2, hlen]
   have hj : (bits - 1) % 8 < 8 := Nat.mod_lt _ (by decide)
   have hne : bs ≠ [] := by intro he; simp [he] at hl1
   have htop := topCut_length hne ((bits - 1) % 8)
   have hshaped := (lastOne_length (bs := topCut bs ((bits - 1) % 8)) (by simp [topCut])).trans htop
-  have h0 : 0 < bs.length := by omega
-  have hlast : bs.length - 1 < bs.length := by omega
+  have h0 : 0 < bs.length := by omega_using [hl1]
+  have hlast : bs.length - 1 < bs.length := by omega_using [hl1]
   unfold shape
   simp only [seqs]
-  refine WP.seq (WP.mono (shapeMasks_ok (by omega) (by omega) hbits) fun u₁ ⟨hm₁, hh₁, hmem₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (shapeMasks_ok (by omega_using [hb1]) (by omega_using [hb2]) hbits) fun u₁ ⟨hm₁, hh₁, hmem₁, k₁⟩ => ?_)
   have hrd₁ : InRegions (u₁.rd ++ u₁.wr) rp 1 := by rw [k₁.2.1, k₁.2.2]; simpa [off] using hrd 0 h0
   have hwr₁ : InRegions u₁.wr op 1 := by rw [k₁.2.2]; simpa [off] using hwr 0 h0
   have hb₁ : u₁.mem rp = bs.getD 0 0 := by rw [hmem₁]; simpa [off] using hbytes 0 h0
@@ -106,7 +106,7 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
     rw [ht.keep.2.2]; exact hwrs _ hlast
   have hrd₃ : InRegions (u₃.rd ++ u₃.wr) (off op (bs.length - 1)) 1 :=
     let ⟨r, hr, hc⟩ := hwr₃; ⟨r, List.mem_append_right _ hr, hc⟩
-  refine WP.mono (setLow_ok (by omega) hl2 ht.ptrO hrd₃ hwr₃ (ht.bytes _ hlast))
+  refine WP.mono (setLow_ok (by omega_using [hl1]) hl2 ht.ptrO hrd₃ hwr₃ (ht.bytes _ hlast))
     fun t ⟨hmem, k⟩ => ?_
   have he : Spec.Rsa.bytesAt t.mem op bs.length = shapedOctets bs ((bits - 1) % 8) := by
     apply List.ext_getElem
@@ -120,14 +120,14 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       change t.mem (off op i) = _
       rw [← hg, shapedOctets, lastOne_getD hit, htop, hmem, WriteBytes.writeW8_apply]
       by_cases hx : i + 1 = bs.length
-      · have hi0 : i = bs.length - 1 := by omega
+      · have hi0 : i = bs.length - 1 := by omega_using [hx]
         rw [ite_eq_left hx, hi0, ite_eq_left rfl]
         rfl
-      · have hni : i ≠ bs.length - 1 := by omega
-        rw [ite_eq_right hx, ite_eq_right (out_ne (by omega) (by omega) hni)]
+      · have hni : i ≠ bs.length - 1 := by omega_using [hl1, hx]
+        rw [ite_eq_right hx, ite_eq_right (out_ne (by omega_using [hl2, hil]) (by omega_using [hl2]) hni)]
         exact ht.bytes i hil
   refine ⟨he, ?_, ?_, (k12.trans (ht.keep.trans k)).mono (by decide)⟩
-  · rw [he, shapedOctets_value (bits := bits) hne hj (by omega)]
+  · rw [he, shapedOctets_value (bits := bits) hne hj (by omega_using [hb1, hlen])]
   · intro a ha
     have hx : a ≠ op := by simpa [off] using ha 0 h0
     rw [hmem, WriteBytes.writeW8_apply, ite_eq_right (ha _ hlast), ht.frame a ha,

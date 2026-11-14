@@ -69,7 +69,7 @@ theorem drawWitness_ok {p : WitnessParams} {rp : Addr} {used : Nat} {bs : List B
     · simp only [ite_eq_right havail] at hstep
       obtain ⟨hu, hz, hstatus⟩ := hstep
       have hspec' : Spec.Ffdh.drawWitness p.N bs = none := by simpa only [ite_eq_right havail] using hspec
-      refine ⟨_, u, Exec.loopExit he (by simp only [eval, hz]), 0, by omega, ?_, ?_, hz, hs, hf, k⟩
+      refine ⟨_, u, Exec.loopExit he (by simp only [eval, hz]), 0, by omega_using [], ?_, ?_, hz, hs, hf, k⟩
       · simpa [off] using hu
       · rw [hspec']; exact hstatus
 

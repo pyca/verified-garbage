@@ -28,19 +28,19 @@ theorem rowSetup_ok {s : State} {B : Addr} {Z k i a b : Nat} {minv : BitVec 64}
        t.gpr .x17 = off B (slot (8 * k) b) ∧ t.gpr .x15 = BitVec.ofNat 64 k ∧
        t.gpr .x10 = 0 ∧ t.mem = s.mem) ∧ Keep [.x13, .x16, .x17, .x15, .x10] s t := by
   have hl : ∀ j < 32, InRegions (s.rd ++ s.wr) (off B (8 * j)) 8 :=
-    fun j hj => hs.ld (by have := hdr_lt_slot (8 * k) 8 hj; omega)
-  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega
+    fun j hj => hs.ld (by have := hdr_lt_slot (8 * k) 8 hj; omega_using [hZ, this])
+  have sa : ∀ j < 8, sArr j < 32 := fun j hj => by unfold sArr; omega_using [hj]
   refine WP.keep [.x13, .x16, .x17, .x15, .x10] ?_ rfl rfl rfl
   unfold VG.Impl.Bignum.AArch64.ProductEight.rowSetup VG.Impl.Bignum.AArch64.ProductEight.outputPtr
   brun [h0, h8, hdr_enc (sa a ha), hdr_enc (sa b hb),
     hl _ (sa a ha), hl _ (sa b hb), hl _ (sa Public.aAcc (by decide)), hl sW (by decide),
     hH.harr a ha, hH.harr b hb, hH.harr Public.aAcc (by decide), hH.hw,
-    offset_difference, Square.shr3_ofNat (show 8 * k < 2 ^ 64 by omega)]
+    offset_difference, Square.shr3_ofNat (show 8 * k < 2 ^ 64 by omega_using [hk])]
   constructor
   · simp only [off, BitVec.ofNat_add]
     ac_rfl
   · congr 1
-    omega
+    omega_using []
 
 theorem start_ok {s : State} {B : Addr} {Z k a : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (h0 : s.gpr .x0 = B) (hH : Hdr s.mem B (8 * k) minv)
@@ -49,14 +49,14 @@ theorem start_ok {s : State} {B : Addr} {Z k a : Nat} {minv : BitVec 64}
     WP isa (.block [ldh .x8 (sArr a), .lsr .x .x12 .x12 3]) s fun t =>
       (t.gpr .x8 = off B (slot (8 * k) a) ∧ t.gpr .x12 = BitVec.ofNat 64 k ∧
         t.mem = s.mem ∧ ∀ v, t.v v = s.v v) ∧ Keep [.x8, .x12] s t := by
-  have ha' : sArr a < 32 := by unfold sArr; omega
+  have ha' : sArr a < 32 := by unfold sArr; omega_using [ha]
   refine WP.keep [.x8, .x12] ?_ rfl rfl rfl
   brun [h0, h12, hdr_enc ha', hs.ld (show 8 * sArr a + 8 ≤ Z by
-    have := hdr_lt_slot (8 * k) 8 ha'; omega), hH.harr a ha,
-    Square.shr3_ofNat (show 8 * k < 2 ^ 64 by omega)]
+    have := hdr_lt_slot (8 * k) 8 ha'; omega_using [hZ, this]), hH.harr a ha,
+    Square.shr3_ofNat (show 8 * k < 2 ^ 64 by omega_using [hk])]
   constructor
   · congr 1
-    omega
+    omega_using []
   · intro v
     rfl
 

@@ -38,11 +38,11 @@ theorem witnessStep_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used pas
     simpa only [witnessValues] using h.saved.saved 48 (by simp [witnessSlots])
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (witnessRoom_ok h.saved.space h.tapeCount
-    (by have := h.bitsBound; omega) h.usedBound lengthWord usedWord widthWord) ?_)
+    (by have := h.bitsBound; omega_using [this]) h.usedBound lengthWord usedWord widthWord) ?_)
   rintro u ⟨⟨zero, memory⟩, rest⟩
   have ctx := h.after_memory memory rest
   by_cases enough : used + (p.bits + 7) / 8 ≤ p.bytes.length
-  · have available : ¬ p.bytes.length - used < (p.bits + 7) / 8 := by omega
+  · have available : ¬ p.bytes.length - used < (p.bits + 7) / 8 := by omega_using [enough]
     refine WP.seq (WP.ite false (by change some u.z = some false; rw [zero, decide_eq_false available])
       (by intro h; cases h) ?_)
     intro _
@@ -55,7 +55,7 @@ theorem witnessStep_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used pas
         t.gpr .r3 = BitVec.ofNat 32 (drawStatus p passed used) ∧ t.z = decide (drawStatus p passed used = 4) ∧
         Frame (witnessRegions p s.sp) s.mem t.mem ∧ Rest roundClobbers s t from
         ⟨stateT, statusT, zeroT, frameT, (rest.mono (by simp [roundClobbers])).trans restT⟩)
-  · have short : p.bytes.length - used < (p.bits + 7) / 8 := by have := h.usedBound; omega
+  · have short : p.bytes.length - used < (p.bits + 7) / 8 := by have := h.usedBound; omega_using [enough, this]
     refine WP.seq (WP.ite true (by change some u.z = some true; rw [zero, decide_eq_true short])
       ?_ (by intro h; cases h))
     intro _

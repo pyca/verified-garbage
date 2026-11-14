@@ -370,8 +370,8 @@ theorem ld_slot {m : Mem} {B : Addr} {d v : Nat} (h : slot m B d = v) :
   apply BitVec.eq_of_toNat_eq
   have := (m.readW (B + BitVec.ofNat 64 d) 32).isLt
   simp only [slot, w32, off] at h
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), h]
-  rw [← h]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), h]
+  rw [← h]; omega_using []
 
 /-- A flag as a word. -/
 abbrev b64 (b : Bool) : BitVec 64 := BitVec.ofNat 64 (b2n b)
@@ -515,7 +515,7 @@ theorem W_val (w : Nat) :
     BitVec.ofNat 64 w <<< 1 + BitVec.ofNat 64 2 = BitVec.ofNat 64 (2 * w + 2) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem w_val (w : Nat) (hw : w ≤ 1024) :
     (BitVec.ofNat 64 (2 * w + 2) - 2#64) >>> 1 = BitVec.ofNat 64 w := by
@@ -523,9 +523,9 @@ theorem w_val (w : Nat) (hw : w ≤ 1024) :
   have e : BitVec.ofNat 64 (2 * w + 2) - 2#64 = BitVec.ofNat 64 (2 * w) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   rw [e, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hw]
 
 /-- `ctxW`: `W = 2 w + 2` and its stride. -/
 theorem ctxW_ok {s : State} {B : Addr} {Z w N N' : Nat} (h : Ws s B Z w N) (hW : 2 * w + 2 ≤ 1024)
@@ -535,7 +535,7 @@ theorem ctxW_ok {s : State} {B : Addr} {Z w N N' : Nat} (h : Ws s B Z w N) (hW :
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r29, .r30] (Q := fun t => t.gpr .r29 = BitVec.ofNat 64 (2 * w + 2) ∧
     t.gpr .r30 = BitVec.ofNat 64 (S (2 * w + 2)) ∧ t.mem = s.mem) ?_ (by decide)) fun t ⟨⟨t29, t30, tm⟩, kt⟩ =>
-      k t ⟨h.scr.congr kt.wr, fits, by omega, hW, t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
+      k t ⟨h.scr.congr kt.wr, fits, by omega_using [], hW, t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
   have := h.wle
   prun [ctxW, VG.Impl.Rsa.PPC64LE.Keys.stride, h.r29, W_val, stride_val]
 
@@ -547,9 +547,9 @@ theorem ctxw_ok {s : State} {B : Addr} {Z w N N' : Nat} (h : Ws s B Z (2 * w + 2
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r29, .r30] (Q := fun t => t.gpr .r29 = BitVec.ofNat 64 w ∧
     t.gpr .r30 = BitVec.ofNat 64 (S w) ∧ t.mem = s.mem) ?_ (by decide)) fun t ⟨⟨t29, t30, tm⟩, kt⟩ =>
-      k t ⟨h.scr.congr kt.wr, fits, hw, by have := h.wle; omega, t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
+      k t ⟨h.scr.congr kt.wr, fits, hw, by have := h.wle; omega_using [this], t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
   have := h.wle
-  prun [ctxw, VG.Impl.Rsa.PPC64LE.Keys.stride, h.r29, w_val w (by omega), stride_val]
+  prun [ctxw, VG.Impl.Rsa.PPC64LE.Keys.stride, h.r29, w_val w (by omega_using [this]), stride_val]
 
 theorem digits_val (w : Nat) (hw : w ≤ 1024) :
     (BitVec.ofNat 64 44 * BitVec.ofNat 64 (S w)) >>> 2 = BitVec.ofNat 64 (nArr * (w + 2)) := by
@@ -557,9 +557,9 @@ theorem digits_val (w : Nat) (hw : w ≤ 1024) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   simp only [S, nArr]
-  rw [Nat.mod_eq_of_lt (show 44 * (4 * (w + 2)) < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 44 * (w + 2) < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show 44 * (4 * (w + 2)) < 2 ^ 64 by omega_using [hw]),
+    Nat.mod_eq_of_lt (show 44 * (w + 2) < 2 ^ 64 by omega_using [hw])]
+  omega_using []
 
 /-- `zeroAll`: the digits of the arrays `0`–`nArr - 1` := 0. -/
 theorem zeroAll_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (fits : arr w nArr ≤ Z) :
@@ -568,8 +568,8 @@ theorem zeroAll_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (fits
   have := h.wle
   rw [zeroAll, WP.seq_iff]
   refine WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = BitVec.ofNat 64 (nArr * (w + 2)) ∧ t.mem = s.mem)
-    (by prun [nArr, h.r30, digits_val w (by omega)]) (by decide)) fun u ⟨⟨u8, um⟩, ku⟩ => ?_
-  refine WP.mono (zeroArrays_ok (h.of_keep ku) u8 (by simp only [nArr]; omega) (by simp only [nArr]; omega)
+    (by prun [nArr, h.r30, digits_val w (by omega_using [this])]) (by decide)) fun u ⟨⟨u8, um⟩, ku⟩ => ?_
+  refine WP.mono (zeroArrays_ok (h.of_keep ku) u8 (by simp only [nArr]; omega_using []) (by simp only [nArr]; omega_using [this])
     (by
       have e : 160 + 4 * (nArr * (w + 2)) = arr w nArr := by
         simp only [arr, S, VG.Proof.Rsa.KeyWorkspace.hdr]; rw [Nat.mul_left_comm]
@@ -614,7 +614,7 @@ theorem nc1_ok {s0 s : State} (b : RBase s0 s) (a : RArgs s0 s) :
   have b3 := b.of_regs k3 m3
   have wn' : (s0.gpr .r7).toNat + kK s0 ≤ 2 ^ 64 := wn
   have hc : ∀ i < kK s0, (⟨s0.gpr .r7, kK s0⟩ : Region).Contains (off (s0.gpr .r7) i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
   have h10 : t3.gpr .r10 = BitVec.ofNat 64 (kK s0) := by rw [u10, a.r25]; exact CrtValues.ofNat_toNat64 _
   refine WP.mono (CrtValues.check1_ok (N := s0.gpr .r7) (k := kK s0) (nb := nB0 s0)
     (by rw [u9, a.r24]; simp [off]) h10 hk (len_nB0 _)
@@ -622,8 +622,8 @@ theorem nc1_ok {s0 s : State} (b : RBase s0 s) (a : RArgs s0 s) :
     (fun i hi => by
       rw [b3.frame _ (CrtValues.past_of_disjoint dn (hc i hi))]; simp [Spec.Rsa.bytesAt, off]))
     fun t4 ⟨⟨i0, i11, im⟩, k4⟩ => ⟨⟨b3.of_regs k4 im, (a.of_keep k3).of_keep k4, by rw [k4.gpr _ (by decide), h10],
-      by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega)],
-      by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega)]⟩,
+      by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega_using [hk])],
+      by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega_using [hk])]⟩,
       im.trans m3, (k3.trans k4).mono⟩
 
 theorem nc2_ok {s0 s : State} (h : NC1 s0 s) :
@@ -631,8 +631,8 @@ theorem nc2_ok {s0 s : State} (h : NC1 s0 s) :
   obtain ⟨b, a, h10, i0, i11⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, -⟩ := id b.pre
   refine WP.mono (CrtValues.check2_ok h10 hk hk' (len_nB0 _)
-    (by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega)])
-    (by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega)]))
+    (by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega_using [hk])])
+    (by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega_using [hk])]))
     fun t ⟨hv, tm, kt⟩ => ⟨⟨b.of_regs kt tm, a.of_keep kt, hv⟩, tm, kt.mono⟩
 
 theorem nCheck_ok {s0 s : State} (b : RBase s0 s) (a : RArgs s0 s) :

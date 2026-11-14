@@ -19,15 +19,15 @@ open VG.Spec.Sha256 (HashValue Block stateAt compressBlocks)
 theorem Pre.scr_vec {s₀ : State} (hp : Pre s₀) {d : Nat} (hd : d + 16 ≤ 112) :
     InRegions s₀.wr (addr (scr s₀) d) 16 :=
   ⟨scrR s₀, by simp [hp.wr],
-    contains_sub hd (by omega) (hp.scr_eq (by omega))⟩
+    contains_sub hd (by omega_using [hd]) (hp.scr_eq (by omega_using [hd]))⟩
 
 theorem Pre.blk_fit {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) :
     (blkAddr s₀ i).toNat + 64 ≤ 2 ^ 32 := by
   have hb := hp.blk_fits
   simp only [blkAddr, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show 64 * i < 2 ^ 32 by omega),
-    Nat.mod_eq_of_lt (show (bp s₀).toNat + 64 * i < 2 ^ 32 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show 64 * i < 2 ^ 32 by omega_using [hi, hb]),
+    Nat.mod_eq_of_lt (show (bp s₀).toNat + 64 * i < 2 ^ 32 by omega_using [hi, hb])]
+  omega_using [hi, hb]
 
 theorem Pre.blk_vec {s₀ : State} (hp : Pre s₀) {i n : Nat}
     (hi : i < nb s₀) (hn : n < 4) :
@@ -35,17 +35,17 @@ theorem Pre.blk_vec {s₀ : State} (hp : Pre s₀) {i n : Nat}
   have he : (blkAddr s₀ i).setWidth 64 =
       (bp s₀).setWidth 64 + BitVec.ofNat 64 (64 * i) := by
     simpa only [blkAddr, addr] using addr_eq (x := bp s₀) (k := 64 * i)
-      (by have := hp.blk_fits; omega)
+      (by have := hp.blk_fits; omega_using [hi, this])
   refine ⟨blR s₀, by simp only [hp.rd, List.mem_append, List.mem_cons, true_or], ?_⟩
   rw [he, Offset.add_add]
-  exact Offset.contains_base _ (by omega) (by have := hp.blk_fits; omega)
+  exact Offset.contains_base _ (by omega_using [hi, hn]) (by have := hp.blk_fits; omega_using [hi, hn, this])
 
 theorem work_write128 (p : BitVec 32) (hfit : p.toNat + 112 ≤ 2 ^ 32)
     (m : Mem) (v : BitVec 128) {d : Nat} (hd : d + 16 ≤ 96) :
     Frame [workRegion p] m (m.writeW (addr p d) v) := by
   refine (Frame.refl _ _).writeW (List.mem_singleton_self _) v ?_
-  rw [addr_eq (by omega)]
-  exact Offset.contains_base _ hd (by omega)
+  rw [addr_eq (by omega_using [hfit, hd])]
+  exact Offset.contains_base _ hd (by omega_using [hd])
 
 theorem saveHash_frame (s : State) (hfit : (s.gpr .esi).toNat + 112 ≤ 2 ^ 32) :
     Frame [workRegion (s.gpr .esi)] s.mem
@@ -78,8 +78,8 @@ theorem saveHash_reads (p : BitVec 32) (hfit : p.toNat + 112 ≤ 2 ^ 32)
   have sep : ∀ d e : Nat, d + 16 ≤ 112 → e + 16 ≤ 112 →
       d + 16 ≤ e ∨ e + 16 ≤ d → Mem.Sep (addr p d) 16 (addr p e) 16 := by
     intro d e hd he hde
-    rw [addr_eq (by omega), addr_eq (by omega)]
-    exact Offset.sep _ hde (by omega) (by omega)
+    rw [addr_eq (by omega_using [hfit, hd]), addr_eq (by omega_using [hfit, he])]
+    exact Offset.sep _ hde (by omega_using [hd]) (by omega_using [he])
   dsimp only
   rw [Mem.readW_writeW_sep (sep 32 48 (by decide) (by decide) (by decide)) (by decide),
     Mem.readW_writeW_self m _ 16 x (by decide), Mem.readW_writeW_self _ _ 16 y (by decide),
@@ -120,7 +120,7 @@ theorem body_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s
     rw [hm₁, hL.esi]
     exact ⟨savedValues.1, savedValues.2.1, savedValues.2.2.trans hL.mask⟩
   refine WP.seq (WP.mono (rounds_ok _ (blk s₀ i) (blkAddr s₀ i) (scr s₀) s₁ hdi₁ hsi₁
-    (Pre.blk_fit hp hi) (by have := hp.scr_fits; omega)
+    (Pre.blk_fit hp hi) (by have := hp.scr_fits; omega_using [this])
     (fun n hn => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact Pre.blk_vec hp hi hn)
     (by rw [hrd₁, hwr₁, hL.rd, hL.wr, ← hp.scr_eq (by decide)];
         exact in_read_of_write (Pre.scr_vec hp (d := 16) (by decide)))
@@ -128,7 +128,7 @@ theorem body_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s
     (fun t ht => by
       have ea : addr (blkAddr s₀ i) (4 * t) =
           (blkAddr s₀ i).setWidth 64 + BitVec.ofNat 64 (4 * t) :=
-        addr_eq (by have := Pre.blk_fit hp hi; omega)
+        addr_eq (by have := Pre.blk_fit hp hi; omega_using [ht, this])
       rw [← ea, hf.readW (hp.blk_contains hi ht) (by simpa using ⟨hp.blk_st, hp.blk_scr⟩) (by decide)]
       exact blk_word hp hi ht)
     (by rw [hx₁]; exact hL.x1) (by rw [hx₁]; exact hL.x2) 16 (Nat.le_refl _))
@@ -148,7 +148,7 @@ theorem body_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s
   have ebp : s₂.gpr .ebp - 1 = BitVec.ofNat 32 (nb s₀ - (i + 1)) := by
     rw [hg₂ _ (by decide), hL.ebp,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+      Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fbp.trans ebp, ?_⟩
   · rw [f1, compressBlocks_succ]
   · rw [f2, compressBlocks_succ]
@@ -162,7 +162,7 @@ theorem body_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s
   · rw [mem]; exact vals.2.2
   · rw [fdi, hg₂ _ (by decide), hL.edi, blkAddr, blkAddr, BitVec.add_assoc]
     rw [show (64 : BitVec 32) = BitVec.ofNat 32 64 from rfl, ← BitVec.ofNat_add]
-    exact congrArg (fun n => bp s₀ + BitVec.ofNat 32 n) (by omega)
+    exact congrArg (fun n => bp s₀ + BitVec.ofNat 32 n) (by omega_using [])
   · rw [fzf, ebp]
 
 theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
@@ -175,14 +175,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     simp only [eval, hz, Option.map_some]
   by_cases hlast : i + 1 = nb s₀
   · exact .inl ⟨by rw [hev, hlast]; simp, hlast ▸ hc⟩
-  · have hne : nb s₀ - (i + 1) ≠ 0 := by omega
+  · have hne : nb s₀ - (i + 1) ≠ 0 := by omega_using [hi, hlast]
     have h0 : BitVec.ofNat 32 (nb s₀ - (i + 1)) ≠ 0 := by
       intro h
       have h' := congrArg BitVec.toNat h
       have hn : nb s₀ < 2 ^ 32 := (arg s₀ 2).isLt
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hn)] at h'
       exact hne h'
-    exact .inr ⟨by rw [hev]; simpa using h0, by omega, { hc with edi := hdi, ebp := hbp }⟩
+    exact .inr ⟨by rw [hev]; simpa using h0, by omega_using [hi, hlast], { hc with edi := hdi, ebp := hbp }⟩
 
 theorem loop_ok {s₀ : State} (hp : Pre s₀) (hpos : 0 < nb s₀) {s : State}
     (hL : LInv s₀ 0 s) :
@@ -195,7 +195,7 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) (hpos : 0 < nb s₀) {s : State}
     refine WP.mono (body_ok hp hi hL) fun s' h => ?_
     rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
     · exact .inl ⟨he, hc⟩
-    · exact .inr ⟨he, nb s₀ - (i + 1), by omega, i + 1, rfl, hi', hL'⟩
+    · exact .inr ⟨he, nb s₀ - (i + 1), by omega_using [hi], i + 1, rfl, hi', hL'⟩
   exact WP.loop (M := isa) Inv hstep (nb s₀) s ⟨0, rfl, hpos, hL⟩
 
 end VG.Proof.Sha256.X86.ShaNi

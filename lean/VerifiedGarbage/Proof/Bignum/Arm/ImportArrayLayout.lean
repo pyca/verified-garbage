@@ -34,9 +34,9 @@ theorem importArrayLayout_ok (s : State) {base src : BitVec 32} {len w o : Nat}
   have bound := Nat.le_trans (array_end_le ho) arraysFit
   refine WP.mono (importArray_ok s h.workspace h.layout h.width ho sourceFit read sep h.ptr index source) ?_
   rintro t ⟨value, frameT, ptr, sourceT, rest⟩
-  have outside := frame_array_outside (by omega : arrAt w o + 8 * w < 2 ^ 64) frameT
-  have frame := outside_workspace outside (size := 8 * len) (by omega)
-  have keeps := outside_array_prefix_keeps outside (by omega : 8 * len < 2 ^ 64) (by omega : 8 * w ≤ 8 * (w + 2))
+  have outside := frame_array_outside (by omega_using [nowrap, bound] : arrAt w o + 8 * w < 2 ^ 64) frameT
+  have frame := outside_workspace outside (size := 8 * len) (by omega_using [bound])
+  have keeps := outside_array_prefix_keeps outside (by omega_using [nowrap] : 8 * len < 2 ^ 64) (by omega_using [] : 8 * w ≤ 8 * (w + 2))
   exact ⟨h.after_array keeps frame rest ptr, congrArg BitVec.toNat value, keeps, frame, rest, sourceT⟩
 
 end VG.Proof.Bignum.Arm

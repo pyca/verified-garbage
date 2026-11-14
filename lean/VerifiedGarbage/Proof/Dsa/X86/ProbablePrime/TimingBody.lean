@@ -42,7 +42,7 @@ theorem sieve_pair {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byt
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
   intro s t tr ur u z P A B
   have trace := (CandidateSieve.code_trace v.sieve_valid (c := c) (d := c) (fun _ _ => rfl) rfl
-    (by change 4 ≤ (E.p - 20#32).toNat; rw [sub_toNat (by have := v.low; omega)]; have := v.low; omega)
+    (by change 4 ≤ (E.p - 20#32).toNat; rw [sub_toNat (by have := v.low; omega_using [this])]; have := v.low; omega_using [this])
     ((workspaceFar.sub_left v.sieveCandidateSub).sub_right privateSub) (tableFar.sub_right privateSub)
     _ _ _ _ _ _ ⟨sieve_entry v P.1, sieve_entry v P.2⟩ A B).1
   obtain ⟨LU, flagU, _, _, _⟩ := wp_result (sieve_ok v P.1 large) A
@@ -65,20 +65,20 @@ theorem sieved_trace {mont round : Prog isa} {montName roundName : String}
     (length : Spec.Dsa.bitLength c = E.bits) :
     RelCT isa (LoadedPair E c entropy)
       (VG.Impl.Dsa.X86.ProbablePrime.sieved E.bits montName mont roundName round) (fun _ _ => True) := by
-  have shape := candidate_shape odd length (by have := v.bits.low; omega)
-  have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega)
-  have space : 156 ≤ E.size := by have := v.header; omega
+  have shape := candidate_shape odd length (by have := v.bits.low; omega_using [this])
+  have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega_using [this])
+  have space : 156 ≤ E.size := by have := v.header; omega_using [this]
   have finishPair {s t : State} (P : LoadedPair E c entropy s t) : CandidateFinish.FinishPair E.base E.size s t :=
     ⟨P.1.input.scratch, P.2.input.scratch, P.1.input.usedPtr.trans P.2.input.usedPtr.symm⟩
   unfold VG.Impl.Dsa.X86.ProbablePrime.sieved
   cases composite : Spec.RsaKeyGen.obviouslyComposite (64 * E.width) c
-  · have initial := sieve_pair v (c := c) (entropy := entropy) (by omega)
+  · have initial := sieve_pair v (c := c) (entropy := entropy) (by omega_using [shape, big])
     rw [composite] at initial
     refine RelCT.seq initial (RelCT.seq ((Candidate.cmp_flag_trace false
       (fun _ _ _ _ P U Z => P.keepFlags v U Z)).mono (fun _ _ P => P) (fun _ _ P => P.2)) ?_)
     exact Candidate.branch_false (test_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack
       v odd length)
-  · have initial := sieve_pair v (c := c) (entropy := entropy) (by omega)
+  · have initial := sieve_pair v (c := c) (entropy := entropy) (by omega_using [shape, big])
     rw [composite] at initial
     refine RelCT.seq initial (RelCT.seq ((Candidate.cmp_flag_trace true
       (fun _ _ _ _ P U Z => P.keepFlags v U Z)).mono (fun _ _ P => P) (fun _ _ P => P.2)) ?_)

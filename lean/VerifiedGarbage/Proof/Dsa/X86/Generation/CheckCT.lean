@@ -52,7 +52,7 @@ theorem chkCall_regs {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLe
   have spT : t.gpr .esp = E.sp := by
     rw [A.other _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), B.sp]
   exact WP.of_syms (WP.callWithReturn G.cv.1 G.cNoSp (by decide) (by decide)
-    (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega) (chk_callPre G v hp hq B A)
+    (by rw [spT]; simp only [List.length_cons, List.length_nil]; omega_using [low, cs]) (chk_callPre G v hp hq B A)
     fun u _ _ csu _ _ _ => ⟨csu .esp (by decide), csu .edi (by decide)⟩)
 
 /-- What the check sees: its arguments and p||q||g. -/
@@ -73,7 +73,7 @@ theorem chkEntry_facts {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t : St
   have low := v.low
   have spT : t.gpr .esp = E.sp := by
     rw [A.other _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), B.sp]
-  have fitT : 28 ≤ (t.gpr .esp).toNat := by rw [spT]; omega
+  have fitT : 28 ≤ (t.gpr .esp).toNat := by rw [spT]; omega_using [low]
   obtain ⟨e0, e1, e2, e3, e4, e5⟩ := chkEntry_arg (E := E) (s := t) fitT
   have Fm := chkEntry_mem (E := E) (s := t) fitT
   simp only [chkEntry, chkWr_sp spT] at e0 e1 e2 e3 e4 e5 Fm
@@ -81,16 +81,16 @@ theorem chkEntry_facts {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s t : St
   refine ⟨?_, e0, e1, e2, e3, e4, e5, ?_⟩
   · change (pushed chkRegs t).callEntry.gpr .esp = _
     rw [callEntry_esp' chkRegs t, spT]; rfl
-  · have pW := Scr.wide B.scr (d := sPk) (by simp only [sPk]; omega)
+  · have pW := Scr.wide B.scr (d := sPk) (by simp only [sPk]; omega_using [sz])
     rw [pW, ← A.mem]
     rw [spT] at Fm
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     simp only [List.mem_range] at hi
-    refine Frame.bytes Fm (R := ⟨off E.base sPk, 2 * g.pLen + g.qLen⟩) ?_ (by show 2 * g.pLen + g.qLen ≤ 2 ^ 64; omega) hi
+    refine Frame.bytes Fm (R := ⟨off E.base sPk, 2 * g.pLen + g.qLen⟩) ?_ (by show 2 * g.pLen + g.qLen ≤ 2 ^ 64; omega_using [bd]) hi
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact (v.scratchStack.sub_left (Offset.sub_base _ (by simp only [sPk]; omega))).sub_right
-      (below_sub (by decide) (by omega))
+    exact (v.scratchStack.sub_left (Offset.sub_base _ (by simp only [sPk]; omega_using [sz, bd]))).sub_right
+      (below_sub (by decide) (by omega_using [low]))
 
 theorem check_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) (hq : E.qLen = g.qLen) :
     RelCT isa (Both (CIn E g)) (check g.pLen g.qLen (16 * g.pLen) g.checkName g.checkCode) fun _ _ => True := by
@@ -135,7 +135,7 @@ theorem check_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
         sig_pub [chkContract, Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argSlots, argVal,
           argBytes]
         have l1 : (BitVec.ofNat 32 (2 * g.pLen + g.qLen)).toNat = 2 * g.pLen + g.qLen := by
-          have := G.bounds; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+          have := G.bounds; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]
         refine ⟨by rw [esp₁, esp₂], ?_, by rw [a0₁, a0₂, h₁.1.edi, h₂.1.edi], by rw [a1₁, a1₂],
           by rw [a2₁, a2₂], by rw [a3₁, a3₂], by rw [a4₁, a4₂, h₁.1.edi, h₂.1.edi], by rw [a5₁, a5₂]⟩
         rw [a0₁, a1₁, l1, by₁, a0₂, a1₂, l1, by₂, h₁.2, h₂.2]

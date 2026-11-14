@@ -44,7 +44,7 @@ theorem bytes_concat (H : BitVec 64) :
   intro t ht
   simp only [Camellia.byteOf, BitVec.getLsbD_append, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight]
   repeat' split
-  all_goals (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+  all_goals (rw [decide_eq_true (by omega_arith), Bool.true_and]; congr 1; omega_arith)
 
 /-- The bytes of such a word, read big-endian, are the half. -/
 theorem be64_of_wordOf {m : Mem} {p : Addr} {off : Nat} {H : BitVec 64}
@@ -61,11 +61,11 @@ theorem be64_of_wordOf {m : Mem} {p : Addr} {off : Nat} {H : BitVec 64}
 /-- Byte `j` of a word stored big-endian is byte `j` of the word, the most significant first. -/
 theorem writeBytes_be_byte (m : Mem) (a : Addr) (w : BitVec 64) {j : Nat} (hj : j < 8) :
     writeBytes m a (ByteLoad.beBytes 8 w) (a + BitVec.ofNat 64 j) = Camellia.byteOf w j := by
-  simp only [writeBytes, ByteLoad.beBytes_length, Mem.sub_ofNat_toNat a (show j < 2 ^ 64 by omega), hj,
+  simp only [writeBytes, ByteLoad.beBytes_length, Mem.sub_ofNat_toNat a (show j < 2 ^ 64 by omega_using [hj]), hj,
     ↓reduceIte]
   simp only [ByteLoad.beBytes, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj,
     Option.map_some, Option.getD_some, Camellia.byteOf]
-  rw [show 8 * (8 - 1 - j) = 56 - 8 * j by omega]
+  rw [show 8 * (8 - 1 - j) = 56 - 8 * j by omega_using []]
 
 /-! ## Single instructions -/
 

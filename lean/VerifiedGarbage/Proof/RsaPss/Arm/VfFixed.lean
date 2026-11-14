@@ -41,7 +41,7 @@ abbrev Yf (P : EP) (τ : State) (m : Mem) : Prop := ∀ i < 2048, m (sa P.scr (o
 
 theorem Mf_length (P : EP) (τ : State) : (Mf h P τ).length = P.slt + (8 + h.D) := by
   simp only [Mf, List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.Arm.bytesAt_length, sltB,
-    List.length_map, List.length_range]; omega
+    List.length_map, List.length_range]; omega_using []
 
 /-- What the fixed path starts from. -/
 abbrev F0 (P : EP) (τ s : State) : Prop := Ctx (P.lay h.D) P.scr τ s ∧ (K2 h P τ s.mem ∧ P.any = 0) ∧ Y1 h P τ s.mem
@@ -131,7 +131,7 @@ theorem lenF_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   refine VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, ⟨hk, ha⟩, hy⟩ => ?_
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_ge
   have hsl := hk.1.slt32
@@ -140,15 +140,15 @@ theorem lenF_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   obtain ⟨a7, r7, v7⟩ := argAt hk.1 hc.st (j := 8) (by decide)
   replace v7 : s.mem.readW ((P.lay h.D).fr (arg 8)) 32 = BitVec.ofNat 32 P.slt := v7
   have e1 : BitVec.ofNat 32 (P.slt + (8 + h.D) + h.L) >>> lgB h.sh = BitVec.ofNat 32 ((P.slt + (8 + h.D) + h.L) / h.B) := by
-    rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega), h.pow_lg]
+    rw [VG.Proof.MdStream.Arm.ofNat_shr (by omega_using [hL, hdb, hsum, hK, es]), h.pow_lg]
   have hw : WP isa (.block (lenSet h.sh 8)) s fun t =>
       t.mem = (s.mem.writeW ((P.lay h.D).fr sL) (BitVec.ofNat 32 (P.slt + (8 + h.D)))).writeW ((P.lay h.D).fr sNb)
         (BitVec.ofNat 32 (nbF h P)) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
     prun [lenSet, sp0, ld, st, mw, hc.st.sp, a7, r7, v7, arg_lt, slotAt hk.1 (d := sL) (by decide),
       slotAt hk.1 (d := sNb) (by decide), hc.st.inFr (d := sL) (n := 4) (by show sL + 4 ≤ frameBytes; decide),
       hc.st.inFr (d := sNb) (n := 4) (by show sNb + 4 ≤ frameBytes; decide),
-      movw_val (show 8 + dig h.sh < 2 ^ 16 by show 8 + h.D < 2 ^ 16; omega),
-      movw_val (show lenL h.sh < 2 ^ 16 by show h.L < 2 ^ 16; omega), BitVec.ofNat_add_ofNat, e1, h.lg_range,
+      movw_val (show 8 + dig h.sh < 2 ^ 16 by show 8 + h.D < 2 ^ 16; omega_using [hD]),
+      movw_val (show lenL h.sh < 2 ^ 16 by show h.L < 2 ^ 16; omega_using [hL]), BitVec.ofNat_add_ofNat, e1, h.lg_range,
       VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, dpVal]
   refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
   have fr : Frame [slotR (P.lay h.D) sL, slotR (P.lay h.D) sNb] s.mem t.mem := by
@@ -182,23 +182,23 @@ theorem fixed_vp {g : RsaOaep.Arm.OHash} {f : MdFns} {fg : Impl.RsaOaep.Arm.Fns}
   · exact VP.empty fun σ s h' => hf ⟨h'.1.2.1.2.1, h'.1.2.2⟩
   obtain ⟨hf, ha⟩ := hf
   have hg := hi₀.geo
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_le
-  have hB0 : 0 < h.B := by have := h.B_ge; omega
+  have hB0 : 0 < h.B := by have := h.B_ge; omega_using [this]
   obtain ⟨hlo, hdb, hsum, hK, hD', hD0, hK0⟩ := fitB h hi₀ hf
   have es : eLen P = P.slt := by simp only [eLen, ha, ite_true]
   have q1 := Nat.lt_mul_div_succ (P.slt + (8 + h.D) + h.L) hB0
   have q2 := Nat.mul_div_le (P.slt + (8 + h.D) + h.L) h.B
   have hT : nbF h P * h.B ≤ 2048 := by
     show ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B ≤ 2048
-    rw [Nat.succ_mul, Nat.mul_comm]; omega
+    rw [Nat.succ_mul, Nat.mul_comm]; omega_using [hD, hL, hB, hB0, hlo, hdb, hsum, hK, hD', hD0, hK0, es, q1, q2]
   show VP _ (.seq (yDig h.sh 4) (.seq (.block (fxSalt h.sh)) (.seq (.ite .eq (.block []) Impl.Bignum.Arm.copyBytes)
     (.seq (.block (lenSet h.sh 8)) (.seq (ctHash f h.sh 14) (cmpH h.sh)))))) _
   refine (VP.syms (yDig_vf h P ⟨σ₀, hi₀⟩ (P.any = 0))).seq ?_
   refine VP.assoc ((VP.syms (fxSalt_vp h P ⟨σ₀, hi₀⟩)).seq ((VP.syms (lenF_vp h P ⟨σ₀, hi₀⟩)).seq ?_))
   exact (tail_vp h P Q ⟨σ₀, hi₀⟩ hT (Nat.succ_pos _) (msg := Mf h P) fun τ => by
-      rw [Mf_length]; show _ ≤ ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega).mono
-    (fun τ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega)⟩, sy⟩) fun _ _ h' => h'
+      rw [Mf_length]; show _ ≤ ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega_using [q1]).mono
+    (fun τ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega_using [hT, hi])⟩, sy⟩) fun _ _ h' => h'
 
 end VG.Proof.RsaPss.Arm.Vf

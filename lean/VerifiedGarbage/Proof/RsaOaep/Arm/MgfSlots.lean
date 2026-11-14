@@ -34,7 +34,7 @@ theorem mgfW_slot (hg : Geo L scr) {dOff dl d : Nat} (hfd : dOff + dl ≤ oBuf) 
     ∀ r ∈ mgfW g L scr dOff dl, (slotR L d).Disjoint r := by
   have := g.S_le; have := g.Wb_le; have := g.F_le
   obtain ⟨σ', ok⟩ := hg.ok
-  have hF : d + 4 ≤ L.F + 56 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega
+  have hF : d + 4 ≤ L.F + 56 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd]
   intro r hr
   simp only [mgfW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -42,12 +42,12 @@ theorem mgfW_slot (hg : Geo L scr) {dOff dl d : Nat} (hfd : dOff + dl ≤ oBuf) 
   · exact hg.slot ok (by oomega) hF
   · exact hg.slot ok (by oomega) hF
   · exact hg.slot ok (by oomega) hF
-  · exact Lay.fr_low (by unfold frameBytes at hd; omega) (by have := ok.B56; have := L.B.isLt; omega)
+  · exact Lay.fr_low (by unfold frameBytes at hd; omega_using [hd]) (by have := ok.B56; have := L.B.isLt; omega_arith)
   · exact hg.slot ok (by oomega) hF
-  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega)
-  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega)
-  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega)
-  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega)
+  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega_using [h₁])
+  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega_using [h₁])
+  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega_using [h₂])
+  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega_using [h₂])
 
 /-- A byte of our part of `scratch` before `oBuf`, outside `dst`, misses what
 `mgfXor` writes. -/

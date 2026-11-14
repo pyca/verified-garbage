@@ -47,7 +47,7 @@ theorem nafCopyStore_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     have hx := hL.tbl K.R.x (List.mem_append_right _ (rr _ (by simp [jacCoords])))
     have hz := hL.tbl K.R.z (List.mem_append_right _ (rr _ (by simp [jacCoords])))
     rw [hL.rxz] at hz
-    omega
+    omega_using [hz]
   rw [WP.block_append_iff]
   refine WP.mono (copyPointFields_ok hL.lay hN hqa rs hI hV) fun a ⟨ea,ka,ia,va⟩ => ?_
   have ja : InvJ C (tmv C K.M.n base a K.R.x) (tmv C K.M.n base a K.R.y) (tmv C K.M.n base a K.R.z) P := by
@@ -56,9 +56,9 @@ theorem nafCopyStore_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     rw [va.1,va.2.1,va.2.2]
     exact hp
   have ca : a.gpr .rbx=BitVec.ofNat 64 m := (ka.gpr _ (rbx_not_clob _)).trans hc
-  have ts := nafTblPt_mem K (a:=m+1) (by omega) (by omega)
+  have ts := nafTblPt_mem K (a:=m+1) (by omega_using []) (by omega_using [hm])
   refine WP.mono (nafTablePoint_ok hL.lay hL.n hL.rxy hL.rxz ia.to_tmv hm ca ht
-    (by have := hL.table_le; omega) ts (fun _ hx => List.mem_append_left _ hx) sep ja)
+    (by have := hL.table_le; omega_using [this]) ts (fun _ hx => List.mem_append_left _ hx) sep ja)
     fun t ⟨kt,it,jt⟩ => ?_
   refine ⟨(ka.mono (fun _ hx => List.mem_append_left _ hx)).trans
       (kt.mono (fun _ hx => List.mem_append_right _ hx)),?_,?_,jt⟩
@@ -70,6 +70,6 @@ theorem nafCopyStore_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       or_false] at hy
     have := hL.n
     have := entry_end_le (24*K.M.n) hm
-    omega
+    omega_arith
 
 end VG.Proof.Weierstrass.X86_64

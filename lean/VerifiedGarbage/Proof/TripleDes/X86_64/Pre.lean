@@ -19,13 +19,13 @@ open VG.Spec.TripleDes (Direction)
 def selectedRound (d : Direction) (j : Nat) : Nat := if d = .encrypt then j else 15 - j
 
 theorem selectedRound_bound (d : Direction) (j : Nat) (hj : j < 16) : selectedRound d j < 16 := by
-  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega
+  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega_arith
 
 theorem keyAddr_component (base : Addr) (c : Nat) (d : Direction) (j : Nat) :
     keyAddr (componentBase base c) d j = base + BitVec.ofNat 64 (8 * (16 * c + selectedRound d j)) := by
   unfold keyAddr componentBase selectedRound
   rw [Offset.add_ofNat_add_ofNat]
-  exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega)
+  exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega_using [])
 
 /-- The block function's precondition, from its 512 bytes of scratch at
 `rdx` writable, the schedule at `rdi` readable and the block at `rsi`
@@ -51,16 +51,16 @@ theorem headPre_of (s : State)
     intro c hc direction j hj
     rw [keyAddr_component]
     have hindex := selectedRound_bound direction j hj
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [hc, hindex])
   have workSub : Region.Sub (workRegion s) ⟨s.gpr .rdx, 512⟩ := Offset.sub_base _ (by decide)
   have saveSub : Region.Sub (saveRegion s) ⟨s.gpr .rdx, 512⟩ := Region.sub_prefix (by decide)
-  refine ⟨spills, rfl, (fun i hi => scratchReads i (by omega)),
-    (fun i hi => scratchWrites i (by omega)), scratchReads 7 (by decide),
+  refine ⟨spills, rfl, (fun i hi => scratchReads i (by omega_using [hi])),
+    (fun i hi => scratchWrites i (by omega_using [hi])), scratchReads 7 (by decide),
     scratchWrites 7 (by decide), scratchWrites 56 (by decide), scratchReads 57 (by decide),
     scratchWrites 57 (by decide), inRd dataWrite, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
   · intro c hc direction j hj
     rw [keyAddr_component]
-    exact keyReads _ (by have := selectedRound_bound direction j hj; omega)
+    exact keyReads _ (by have := selectedRound_bound direction j hj; omega_using [hc, this])
   · intro c hc direction j hj
     exact (keySep.sub_left (keySub c hc direction j hj)).sub_right workSub
   · intro c hc direction j hj

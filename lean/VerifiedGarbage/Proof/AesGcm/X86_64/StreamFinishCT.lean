@@ -42,7 +42,7 @@ theorem fin_lay {N : Nat} {s : State} (hp : Proof.AesGcm.finPre N s) (hN : 208 �
   simp only [Proof.AesGcm.finPre, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, Proof.AesGcm.args,
     Proof.AesGcm.arg] at hp
   obtain ⟨hrd, hwr, d_cs, d_cw, d_sw, -, -, -, -, -, k_c, k_s, -, k_w, wc, ws, -, ww, hR⟩ := hp
-  exact ⟨Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega) hN',
+  exact ⟨Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega_using [hN]) hN',
     ⟨by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)),
       by rw [hwr]; exact covers_of_mem (List.mem_cons_self ..),
       by rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))⟩,

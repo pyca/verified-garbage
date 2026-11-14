@@ -151,7 +151,7 @@ theorem SignedFam.snoc {s : State} {b m : Nat} {f : Nat → Poly} {lo hi : Int}
     (h : SignedFam s b m f lo hi) (ht : SignedPl s (b+m) (f m) lo hi) :
     SignedFam s b (m+1) f lo hi := by
   intro j hj
-  rcases (by omega : j<m ∨ j=m) with hj | rfl
+  rcases (by omega_using [hj] : j<m ∨ j=m) with hj | rfl
   · exact h j hj
   · exact ht
 

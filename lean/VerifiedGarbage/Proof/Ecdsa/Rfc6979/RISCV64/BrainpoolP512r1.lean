@@ -49,7 +49,7 @@ theorem nBits_brainpoolp512r1 : Spec.Ecdsa.nBits Spec.BrainpoolP512r1.curve = 51
   show Spec.BrainpoolP512r1.curve.n.log2 + 1 = 512
   have h₁ : 511 ≤ Spec.BrainpoolP512r1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.BrainpoolP512r1.curve.n.log2 < 512 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 theorem coreArgs_pre {s : State} {o d g k w : Addr} (h : CoreArgs 64 [] s o d g k w) :
     signRV.pre (s.callEntry.withRegions [⟨d, 64⟩, ⟨g, 64⟩, ⟨k, 64⟩] [⟨o, 128⟩, ⟨w, 8192⟩]) := by

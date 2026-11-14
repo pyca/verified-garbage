@@ -188,10 +188,10 @@ theorem LocalRel.round {env : Nat → Word} {f : ES} {v : CState} (h : LocalRel 
 end Symbolic
 
 def pack (blocks : Nat → CState) : Nat → Rows := fun j => Vector.ofFn fun k : Fin 24 =>
-  (blocks (k.val / 4))[4 * (k.val % 4) + j % 4]'(by omega)
+  (blocks (k.val / 4))[4 * (k.val % 4) + j % 4]'(by omega_using [])
 
 theorem pack_get (blocks : Nat → CState) (j : Nat) (k : Fin 24) :
-    (pack blocks j)[k] = (blocks (k.val / 4))[4 * (k.val % 4) + j % 4]'(by omega) := by
+    (pack blocks j)[k] = (blocks (k.val / 4))[4 * (k.val % 4) + j % 4]'(by omega_using []) := by
   simp only [pack, Fin.getElem_fin, Vector.getElem_ofFn]
 
 def env (blocks : Nat → CState) (k : Nat) : Word :=
@@ -199,16 +199,16 @@ def env (blocks : Nat → CState) (k : Nat) : Word :=
 
 theorem env_block (blocks : Nat → CState) (b w : Nat) (hw : w < 16) :
     env blocks (16 * b + w) = (blocks b)[w]'hw := by
-  have hd : (16 * b + w) / 16 = b := by omega
-  have hm : (16 * b + w) % 16 = w := by omega
+  have hd : (16 * b + w) / 16 = b := by omega_using [hw]
+  have hm : (16 * b + w) % 16 = w := by omega_using [hw]
   simp only [env, hd, hm]
 
 theorem vars_rel (blocks : Nat → CState) : Symbolic.Rel (env blocks) Symbolic.vars (pack blocks) := by
   intro k j hj
   simp only [Symbolic.vars, Symbolic.eval, pack_get]
   rw [show 16 * (k.val / 4) + 4 * (k.val % 4) + j =
-    16 * (k.val / 4) + (4 * (k.val % 4) + j) by omega,
-    env_block blocks _ _ (by omega)]
+    16 * (k.val / 4) + (4 * (k.val % 4) + j) by omega_using [],
+    env_block blocks _ _ (by omega_using [hj])]
   simp only [Nat.mod_eq_of_lt hj]
 
 theorem target_rel (blocks : Nat → CState) :
@@ -216,7 +216,7 @@ theorem target_rel (blocks : Nat → CState) :
   intro k j hj
   have h : Symbolic.LocalRel (env blocks) (fun w => .var (16 * (k.val / 4) + w))
       (blocks (k.val / 4)) := fun w hw => env_block blocks _ w hw
-  have hr := h.round (4 * (k.val % 4) + j) (by omega)
+  have hr := h.round (4 * (k.val % 4) + j) (by omega_using [hj])
   simp only [Symbolic.target, pack_get, Nat.mod_eq_of_lt hj]
   exact hr
 

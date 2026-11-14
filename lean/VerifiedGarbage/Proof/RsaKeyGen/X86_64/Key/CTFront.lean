@@ -539,8 +539,8 @@ theorem inverseHalf_ct [InvLaw] {F : KIn → State → Prop} {iU iV iX₂ iM : N
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block kHalf) (inverseN iU iV iX₂ iM)) hc).isSome = true) :
     RelCT isa (Two (KG F)) (inverseK kHalf iU iV iX₂ iM) (Two (KG F)) :=
-  inverseK_ct (n := fun I => I.W / 2) (fun _ _ h12 hw => kHalf_ok h12 (by omega))
-    (fun I L => by have := L.pl1; dsimp only [KIn.W]; omega) (fun _ _ => Nat.div_le_self _ _) hU hV hX₂ hM dVX₂ hF ht
+  inverseK_ct (n := fun I => I.W / 2) (fun _ _ h12 hw => kHalf_ok h12 (by omega_using [hw]))
+    (fun I L => by have := L.pl1; dsimp only [KIn.W]; omega_using [this]) (fun _ _ => Nat.div_le_self _ _) hU hV hX₂ hM dVX₂ hF ht
 
 /-- `inverseK kOne`: at one word. -/
 theorem inverseOne_ct [InvLaw] {F : KIn → State → Prop} {iU iV iX₂ iM : Nat}
@@ -550,7 +550,7 @@ theorem inverseOne_ct [InvLaw] {F : KIn → State → Prop} {iU iV iX₂ iM : Na
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block kOne) (inverseN iU iV iX₂ iM)) hc).isSome = true) :
     RelCT isa (Two (KG F)) (inverseK kOne iU iV iX₂ iM) (Two (KG F)) :=
   inverseK_ct (n := fun _ => 1) (fun _ _ _ _ => kOne_ok) (fun _ _ => Nat.le_refl _)
-    (fun I L => by have := L.pl1; dsimp only [KIn.W]; omega) hU hV hX₂ hM dVX₂ hF ht
+    (fun I L => by have := L.pl1; dsimp only [KIn.W]; omega_using [this]) hU hV hX₂ hM dVX₂ hF ht
 
 end VG.Proof.RsaKeyGen.X86_64.Key
 

@@ -22,7 +22,7 @@ open VG.Impl.Dsa.X86 VG.Impl.Dsa.X86.Random VG.Impl.Dsa.X86.RandomSign
 
 theorem drop_take_prefix {α : Type} (xs : List α) {p q n : Nat} (h : p + q ≤ n) :
     (xs.drop p).take q = ((xs.take n).drop p).take q := by
-  rw [List.drop_take, List.take_take, Nat.min_eq_left (by omega)]
+  rw [List.drop_take, List.take_take, Nat.min_eq_left (by omega_using [h])]
 
 /-- Two entries with the same public data: the same arguments, q, public
 key bytes, status and trace. -/
@@ -44,7 +44,7 @@ theorem random_public {s t : State} (H : (randomSignCheckedContract abi 232).pub
   have hargs : ∀ i < 13, X86.arg s i = X86.arg t i := by
     intro i hi
     have c : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
-      i = 11 ∨ i = 12 := by omega
+      i = 11 ∨ i = 12 := by omega_using [hi]
     rcases c with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12]
   have hkey : (rInput s).key.take (3 * (rInput s).pLen + (rInput s).qLen) =
@@ -55,12 +55,12 @@ theorem random_public {s t : State} (H : (randomSignCheckedContract abi 232).pub
   simp only [pubOf, Pub.mk.injEq]
   refine ⟨hsp, List.map_congr_left fun i hi => hargs i (List.mem_range.mp hi), ?_⟩
   unfold rQBytes
-  rw [drop_take_prefix _ (n := 3 * (rInput s).pLen + (rInput s).qLen) (by omega), hkey,
-    drop_take_prefix (rInput t).key (n := 3 * (rInput t).pLen + (rInput t).qLen) (by omega), hp, hq]
+  rw [drop_take_prefix _ (n := 3 * (rInput s).pLen + (rInput s).qLen) (by omega_using []), hkey,
+    drop_take_prefix (rInput t).key (n := 3 * (rInput t).pLen + (rInput t).qLen) (by omega_using []), hp, hq]
 
 theorem alloc_push {s₀ : State} (A : RandomSignABI s₀) :
     isa.push (.alloc Random.frameBytes) s₀ = some (allocated Random.frameBytes s₀) := by
-  have hsp : Random.frameBytes ≤ (s₀.gpr .esp).toNat := by have := A.stackLow; unfold Random.frameBytes; omega
+  have hsp : Random.frameBytes ≤ (s₀.gpr .esp).toNat := by have := A.stackLow; unfold Random.frameBytes; omega_using [this]
   have hn : 0 < Random.frameBytes ∧ Random.frameBytes < 4096 ∧ Random.frameBytes % 4 = 0 := by decide
   simp only [isa, push, hn.1, hn.2.1, hn.2.2, hsp, and_self, ite_true]
   rfl

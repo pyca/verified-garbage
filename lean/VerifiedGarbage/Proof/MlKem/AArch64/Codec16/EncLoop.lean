@@ -33,7 +33,7 @@ structure EncInv (s0 : State) (k : Nat) (s : State) : Prop where
 
 theorem low_byte (v : BitVec 128) {j : Nat} (hj : j<8) :
     (v.extractLsb' 0 64).extractLsb' (8*j) 8 = vbyte v j := by
-  rw [BitVec.extractLsb'_extractLsb'_of_le (by omega)]
+  rw [BitVec.extractLsb'_extractLsb'_of_le (by omega_using [hj])]
   rfl
 
 theorem high_byte (v : BitVec 128) {j : Nat} (hj : j<4) :
@@ -41,22 +41,22 @@ theorem high_byte (v : BitVec 128) {j : Nat} (hj : j<4) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [vbyte,BitVec.getLsbD_extractLsb',BitVec.getLsbD_setWidth,hi,decide_true,
-    Bool.true_and,show 8*j+i<32 by omega,show 8*j+i<64 by omega]
-  exact congrArg _ (by omega)
+    Bool.true_and,show 8*j+i<32 by omega_using [hj, hi],show 8*j+i<64 by omega_using [hj, hi]]
+  exact congrArg _ (by omega_using [])
 
 theorem enc_step {s0 : State} (hp : Encode12.Pre s0) {k : Nat} (hk : k<32)
     {s : State} (h : EncInv s0 k s) : WP isa (.block encBody) s fun t =>
       EncInv s0 (k+1) t ∧ ((t.gpr .x11).toNat ≠ 0 ↔ k+1 ≠ 32) := by
   have hin : ∀ j, j+4≤256 → InRegions (s.rd++s.wr) (coeffAddr (Encode12.fP s0) j) 16 := by
     intro j hj; rw [h.rd,h.wr,hp.rd,hp.wr]
-    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hj]) (by decide)))
   unfold encBody
   simp only [List.cons_append,List.nil_append]
   refine wp_ldrq (a := coeffAddr (Encode12.fP s0) (8*k)) (by decide)
-    (by rw [h.x0,ptr_zero]) (hin _ (by omega)) fun s1 h1 => ?_
+    (by rw [h.x0,ptr_zero]) (hin _ (by omega_using [hk])) fun s1 h1 => ?_
   refine wp_ldrq (a := coeffAddr (Encode12.fP s0) (8*k+4)) (by decide)
     (by rw [h1.gpr,h.x0]; exact coeffAddr_step _ _)
-    (by rw [h1.rd,h1.wr]; exact hin _ (by omega)) fun s2 h2 => ?_
+    (by rw [h1.rd,h1.wr]; exact hin _ (by omega_using [hk])) fun s2 h2 => ?_
   rw [WP.block_append_iff]
   refine WP.mono (math_ok s2 (by rw [h2.get .v16,h1.get .v16]; exact h.mask)) ?_
   intro s3 ⟨x9,x10,m3,rd3,wr3,sp3,g3,v3⟩
@@ -65,9 +65,9 @@ theorem enc_step {s0 : State} (hp : Encode12.Pre s0) {k : Nat} (hk : k<32)
     intro j hj
     apply enc_spec (Encode12.P s0) hk (j:=j) _ _ hj
     · rw [h2.get .v0,h1.v]
-      exact lanes_coeffs fun e he => hp.coeff h.frame (by omega)
+      exact lanes_coeffs fun e he => hp.coeff h.frame (by omega_using [hk, he])
     · rw [h2.v,h1.mem]
-      exact (lanes_coeffs (j:=8*k+4) (fun e he => hp.coeff h.frame (by omega))).congr
+      exact (lanes_coeffs (j:=8*k+4) (fun e he => hp.coeff h.frame (by omega_using [hk, he]))).congr
         (fun e _ => by rw [Nat.add_assoc])
   have g30 : s3.gpr .x0 = s.gpr .x0 := by rw [g3 .x0 (by decide) (by decide),h2.gpr,h1.gpr]
   have g31 : s3.gpr .x1 = s.gpr .x1 := by rw [g3 .x1 (by decide) (by decide),h2.gpr,h1.gpr]
@@ -84,11 +84,11 @@ theorem enc_step {s0 : State} (hp : Encode12.Pre s0) {k : Nat} (hk : k<32)
     refine wp_strx (a:=Encode12.oP s0+BitVec.ofNat 64 (12*k)) (by decide)
       (by rw [g31,h.x1,ptr_zero]) ?_ fun s4 h4 => ?_
     · rw [wrs3,h.wr,hp.wr]
-      exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))
+      exact in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hk]) (by decide))
     refine wp_strw (a:=Encode12.oP s0+BitVec.ofNat 64 (12*k+8)) (by decide)
       (by rw [h4.gpr,g31,h.x1,ptr_add]) ?_ fun s5 h5 => ?_
     · rw [h4.wr,wrs3,h.wr,hp.wr]
-      exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))
+      exact in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hk]) (by decide))
     refine wp_addImm (by decide) fun s6 h6 e6 => wp_addImm (by decide) fun s7 h7 e7 =>
       wp_subImm (by decide) fun s8 h8 e8 => wp_nil ?_
     have keep := (((h4.keep.trans h5.keep).trans h6.keep).trans h7.keep).trans h8.keep
@@ -97,25 +97,25 @@ theorem enc_step {s0 : State} (hp : Encode12.Pre s0) {k : Nat} (hk : k<32)
     · rw [h8.get .x1,e7,h6.get .x1,h5.gpr,h4.gpr]; rfl
     · have c : (s7.gpr .x11).toNat=32-k := by
         rw [h7.get .x11,h6.get .x11,h5.gpr,h4.gpr,g311,h.count]
-      rw [e8,toNat_sub_n (by rw [c]; simp; omega),c]; simp; omega
+      rw [e8,toNat_sub_n (by rw [c]; simp; omega_using [hk]),c]; simp; omega_using []
     · rw [h8.mem,h7.mem,h6.mem,h5.mem,h4.mem,h4.gpr,x9,x10]
       rfl
   refine WP.mono (WP.keepV (by decide) scalar) ?_
   intro t ⟨⟨rd,wr,sp,p0,p1,ct,mt⟩,vt⟩
   refine ⟨⟨rd.trans (rd3.trans (h2.rd.trans (h1.rd.trans h.rd))),
     wr.trans (wrs3.trans h.wr),sp.trans (sp3.trans (h2.sp.trans (h1.sp.trans h.sp))),?_,?_,ct,?_,?_,?_⟩,
-    by rw [ct]; omega⟩
+    by rw [ct]; omega_using [hk]⟩
   · rw [p0,g30,h.x0,coeffAddr,show (32:BitVec 64)=BitVec.ofNat 64 32 from rfl,ptr_add,coeffAddr]; congr 2
   · rw [p1,g31,h.x1,show (12:BitVec 64)=BitVec.ofNat 64 12 from rfl,ptr_add]; congr 2
   · rw [vt,v3,h2.get .v16,h1.get .v16,h.mask]
-  · rw [mt,mem3,show 12*(k+1)=12*k+8+4 by omega]
-    refine bytes_write (bytes_write h.out (by omega) ?_) (by omega) ?_
-    · intro j hj; rw [low_byte _ hj]; exact bytes j (by omega)
+  · rw [mt,mem3,show 12*(k+1)=12*k+8+4 by omega_using []]
+    refine bytes_write (bytes_write h.out (by omega_using [hk]) ?_) (by omega_using [hk]) ?_
+    · intro j hj; rw [low_byte _ hj]; exact bytes j (by omega_using [hj])
     · intro j hj; rw [high_byte _ hj]
-      simpa only [Nat.add_assoc] using bytes (8+j) (by omega)
+      simpa only [Nat.add_assoc] using bytes (8+j) (by omega_using [hj])
   · rw [mt,mem3]
-    exact (h.frame.write (n:=8) (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))).write
-      (n:=4) (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))
+    exact (h.frame.write (n:=8) (List.mem_singleton_self _) _ (contains_off (by omega_using [hk]) (by decide))).write
+      (n:=4) (List.mem_singleton_self _) _ (contains_off (by omega_using [hk]) (by decide))
 
 
 theorem encMask_value : encMask = 0xffffffff0e0d0c0a0908060504020100#128 := by

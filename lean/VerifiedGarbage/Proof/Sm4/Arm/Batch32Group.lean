@@ -64,9 +64,9 @@ theorem batch_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {g : Nat}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · apply Offset.disjoint (State.addr B)
-      · right; change 4 * tailSlot + 16 * 0 + 16 * g ≤ 384; rw [tailSlot]; omega
+      · right; change 4 * tailSlot + 16 * 0 + 16 * g ≤ 384; rw [tailSlot]; omega_using [hg8]
       · decide
-      · change 4 * tailSlot + 16 * 0 + 16 * g ≤ 2 ^ 64; rw [tailSlot]; omega
+      · change 4 * tailSlot + 16 * 0 + 16 * g ≤ 2 ^ 64; rw [tailSlot]; omega_using [hg8]
     · apply Offset.disjoint (State.addr B)
       · left; change 384 + 1024 ≤ 4 * BatchCtr.counterSlot; decide
       · decide
@@ -76,19 +76,19 @@ theorem batch_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {g : Nat}
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨State.addr B, 4 * BatchCtr.totalSlots⟩, List.mem_singleton_self _,
-          Offset.sub_base _ (by rw [tailSlot, total_eq]; omega)⟩
+          Offset.sub_base _ (by rw [tailSlot, total_eq]; omega_using [hg8])⟩
       · exact ⟨⟨State.addr B, 4 * BatchCtr.totalSlots⟩, List.mem_singleton_self _,
           Offset.sub_base _ (by decide)⟩
   have f₁batch : Frame (batchRegions B D g) s.mem s₁.mem := f₁.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨⟨State.addr B, 4 * slots⟩, List.mem_cons_self,
-        Offset.sub_base _ (by rw [tailSlot, slots_eq]; omega)⟩
+        Offset.sub_base _ (by rw [tailSlot, slots_eq]; omega_using [hg8])⟩
     · exact ⟨⟨counterAddr B, 16⟩, by simp [batchRegions], fun _ h => h⟩
   have wc₁ : Covers [⟨State.addr B, 4 * slots⟩] s₁.wr := by
     rw [f₁.wr]
-    simpa only [BitVec.add_zero] using workspace_part hw 0 (4 * slots) (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega)
-  refine WP.seq (WP.mono (BatchCalls.crypt_wp sb₁ (by rw [total_eq] at fitB; rw [slots_eq]; omega) wc₁ hH₁)
+    simpa only [BitVec.add_zero] using workspace_part hw 0 (4 * slots) (by change 4 * slots ≤ 4 * BatchCtr.totalSlots; rw [slots_eq, total_eq]; omega_using [])
+  refine WP.seq (WP.mono (BatchCalls.crypt_wp sb₁ (by rw [total_eq] at fitB; rw [slots_eq]; omega_using [fitB]) wc₁ hH₁)
     fun s₂ ⟨c₂, table₂, ecb₂⟩ => ?_)
   have sb₂ : s₂.gpr sb = B := (c₂.regs _ (by decide) (by decide)).trans sb₁
   have r6₂ : s₂.gpr .r6 = D := (c₂.regs _ (by decide) (by decide)).trans r6₁
@@ -97,29 +97,29 @@ theorem batch_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {g : Nat}
     c₂.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨State.addr B, 4 * BatchCtr.totalSlots⟩, List.mem_singleton_self _,
-        Region.sub_prefix (by rw [slots_eq, total_eq]; omega)⟩
+        Region.sub_prefix (by rw [slots_eq, total_eq]; omega_using [])⟩
   have c₂batch : Frame (batchRegions B D g) s₁.mem s₂.mem :=
     c₂.frame.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self
   have phaseFrame := f₁wide.trans c₂wide
   have counter₂ : bytesAt s₂.mem (counterAddr B) 16 = next32 (bytesAt s.mem (counterAddr B) 16) g := by
     rw [bytes_frame c₂.frame (fun r hr => ?_), f₁.counter]
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint_base _ (by rw [slots_eq, counter_eq]; omega) (by decide)
+    exact Offset.disjoint_base _ (by rw [slots_eq, counter_eq]; omega_using []) (by decide)
   have cipher₂ : ∀ k < g, bytesAt s₂.mem (bufferAddr B k) 16 =
       Spec.Sm4.cipher K (next32 (bytesAt s.mem (counterAddr B) 16) k) := by
     intro k hk
-    rw [encrypted_lane ecb₂ (by omega), f₁.lanes k hk]
+    rw [encrypted_lane ecb₂ (by omega_using [hg8, hk]), f₁.lanes k hk]
   have plain₂ : ∀ k < g, bytesAt s₂.mem (dataAddr D k) 16 = bytesAt s.mem (dataAddr D k) 16 := by
     intro k hk
     apply bytes_frame phaseFrame
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
-    exact sep.sub_left (Offset.sub_base _ (by omega))
+    exact sep.sub_left (Offset.sub_base _ (by omega_using [hk]))
   refine WP.mono (xor_wp hg hg8 sb₂ r6₂ r11₂ fitB fitD
     (by rw [c₂.wr, f₁.wr]; exact hw) (by rw [c₂.wr, f₁.wr]; exact wd) sep) fun s₃ x₃ => ?_
   have table₃ : Holds layout s₃.mem (State.addr B) K .encrypt := table_frame table₂ x₃.frame fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact sep.symm.sub_left (Offset.sub_base _ (by change 384 + 1024 ≤ 4 * BatchCtr.totalSlots; rw [total_eq]; omega))
+    exact sep.symm.sub_left (Offset.sub_base _ (by change 384 + 1024 ≤ 4 * BatchCtr.totalSlots; rw [total_eq]; omega_using []))
   have counter₃ : bytesAt s₃.mem (counterAddr B) 16 = bytesAt s₂.mem (counterAddr B) 16 := by
     apply bytes_frame x₃.frame
     intro r hr
@@ -162,7 +162,7 @@ theorem group_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {n : Nat}
     WP isa BatchCtr32.group s (GroupPost s B D K n) := by
   have hgN : min n 8 ≤ n := Nat.min_le_left _ _
   have hg8 : min n 8 ≤ 8 := Nat.min_le_right _ _
-  have hg : 1 ≤ min n 8 := by omega
+  have hg : 1 ≤ min n 8 := by omega_using [hn]
   refine WP.seq (WP.mono (count_wp hN hn32) fun s₁ ⟨g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ => ?_)
   have b₁ : s₁.gpr sb = B := (o₁ _ (by decide) (by decide)).trans hB
   have d₁ : s₁.gpr .r6 = D := (o₁ _ (by decide) (by decide)).trans hD
@@ -174,9 +174,9 @@ theorem group_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {n : Nat}
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 0, by rw [BitVec.add_zero],
-      by change 0 + 16 * min n 8 ≤ 16 * n; omega⟩
-  refine WP.seq (WP.mono (batch_wp hg hg8 b₁ d₁ g₁ fitB (by omega)
-    (by rw [wr₁]; exact hw) wd₁ (sep.sub_left (Region.sub_prefix (by omega)))
+      by change 0 + 16 * min n 8 ≤ 16 * n; omega_using []⟩
+  refine WP.seq (WP.mono (batch_wp hg hg8 b₁ d₁ g₁ fitB (by omega_using [fitD])
+    (by rw [wr₁]; exact hw) wd₁ (sep.sub_left (Region.sub_prefix (by omega_using [])))
     (by rw [m₁]; exact hH)) fun s₂ b₂ => ?_)
   have n₂ : s₂.gpr .r7 = BitVec.ofNat 32 n := (b₂.regs _ (by simp)).trans n₁
   have g₂ : s₂.gpr .r11 = BitVec.ofNat 32 (min n 8) := (b₂.regs _ (by simp)).trans g₁

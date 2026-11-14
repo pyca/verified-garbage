@@ -23,14 +23,14 @@ theorem field_initial_power (M : Mont) {p : Parameters} {s : State} (h : FieldIn
  WP isa (.seq (const 7 1) (M.mm 6 4 7)) s fun t =>
  Power p 0 t ∧ Arrays p.B p.w [7,2,3,6] s.mem t.mem ∧ Keep mmRegs s t := by
  rw [WP.seq_iff]
- refine WP.mono (const_ok h.good p.room (by have := p.positive;omega) p.width
+ refine WP.mono (const_ok h.good p.room (by have := p.positive;omega_using [this]) p.width
   (by decide : 7<8) (by decide : 1<2^16)) ?_
  rintro u ⟨goodU,oneU,frameU,keepU⟩
- have arraysU : Arrays p.B p.w [7] s.mem u.mem := Arrays.of_outside (j:=7) (by simp) frameU (by omega) (by omega)
- have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega
+ have arraysU : Arrays p.B p.w [7] s.mem u.mem := Arrays.of_outside (j:=7) (by simp) frameU (by omega_using []) (by omega_using [])
+ have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := h.good.scr.nowrap;have := p.room;omega_arith
  have modU : ModState p u := by
   refine ⟨goodU,(arraysU.wv_of_not_mem (by decide) (by decide) nowrap).trans h.modulus,?_,oneU,?_⟩
-  · rw [arraysU.word0_of_not_mem (by decide) (by decide) nowrap (by have := p.positive;omega)]
+  · rw [arraysU.word0_of_not_mem (by decide) (by decide) nowrap (by have := p.positive;omega_using [this])]
     exact h.inverse
   · exact (arraysU.wv_of_not_mem (by decide) (by decide) nowrap).trans h.r2
  have bound7 : wv u.mem p.B (slot p.w 7) p.w<p.P := by rw [oneU];exact p.modulusPositive
@@ -42,7 +42,7 @@ theorem field_initial_power (M : Mont) {p : Parameters} {s : State} (h : FieldIn
  have r2Eq : 2^(128*p.w)=2^(64*p.w)*2^(64*p.w) := by
   rw [←Nat.pow_add]
   congr 1
-  omega
+  omega_using []
  have eq : wv t.mem p.B (slot p.w 6) p.w*2^(64*p.w)%p.P=
   2^(64*p.w)*2^(64*p.w)%p.P := by
   simpa only [modU.r2,modU.one,Nat.mul_one,Nat.mod_mod,r2Eq] using productT

@@ -41,24 +41,24 @@ theorem divisionStore_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {quoti
   have sepQ : quotient.offset n + 4 * w.words n ≤ (Loc.array w 0).offset n ∨
       (Loc.array w 0).offset n + 4 * w.words n ≤ quotient.offset n := by
     simp only [offset_array, arr, S] at *
-    omega
+    omega_using [qSep]
   have sepR : remainder.offset n + 4 * w.words n ≤ (Loc.array w 1).offset n ∨
       (Loc.array w 1).offset n + 4 * w.words n ≤ remainder.offset n := by
     simp only [offset_array, arr, S] at *
-    omega
+    omega_using [rSep]
   unfold divisionStore
   refine WP.seq (WP.mono (copy_loc_ok h w quotient (.array w 0) qBound
-    (by rw [offset_array]; unfold S at f0; omega) sepQ) fun u ⟨hu, Ou, Q, Ku⟩ => ?_)
+    (by rw [offset_array]; unfold S at f0; omega_using [f0]) sepQ) fun u ⟨hu, Ou, Q, Ku⟩ => ?_)
   rw [offset_array] at Q
   have R : val32 u.mem B (Loc.array w 1 |>.offset n) (w.words n) = num s.mem B (w.words n) 1 := by
     rw [offset_array]
-    exact Ou.val32 (by simp only [arr, S] at qSep; unfold arr S; omega)
-      (by unfold S at f1; omega)
+    exact Ou.val32 (by simp only [arr, S] at qSep; unfold arr S; omega_using [qSep])
+      (by unfold S at f1; omega_using [hn, f1])
   refine WP.mono (copy_loc_ok hu w remainder (.array w 1) rBound
-    (by rw [offset_array]; unfold S at f1; omega) sepR) fun t ⟨ht, Ot, V, Kt⟩ => ?_
+    (by rw [offset_array]; unfold S at f1; omega_using [f1]) sepR) fun t ⟨ht, Ot, V, Kt⟩ => ?_
   refine ⟨ht, (Outs.of_outside Ou (by simp)).trans (Outs.of_outside Ot (by simp)),
     ?_, V.trans R, Ku.trans Kt⟩
-  rw [Ot.val32 sep (by omega)]
+  rw [Ot.val32 sep (by omega_using [hn, qBound])]
   exact Q
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

@@ -147,23 +147,23 @@ theorem open_wp' {s₀ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact Ar.tag.w
-      · exact Ar.td) (by omega)
+      · exact Ar.td) (by omega_using [hTn])
   have t2₆ : bytesAt s₆.mem (W + BitVec.ofNat 64 t2O) tl = bytesAt s₅.mem (W + BitVec.ofNat 64 t2O) tl :=
     Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint W (.inr (by simp only [tagO, t2O]; omega))
-        (by have := Ar.t16; simp only [t2O]; omega) (by decide)) (by omega)
+      exact Offset.disjoint W (.inr (by simp only [tagO, t2O]; omega_using []))
+        (by have := Ar.t16; simp only [t2O]; omega_using [this]) (by decide)) (by omega_using [hTn])
   have tagv := T₅.val
   rw [hW₁, hK₁, hck, hofs, ld₄, sum₄, cK₄] at tagv
   have d₉ : bytesAt s₉.mem D n = if c then bytesAt s₄.mem D n else zeros n := by
     have d₇ : bytesAt s₇.mem D n = bytesAt s₄.mem D n := by
       rw [Proof.Cmac.bytesAt_frame f₇ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by decide)))
-          (by omega),
+          (by omega_using [hn]),
         Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by decide)))
-          (by omega),
-        Proof.Cmac.bytesAt_frame Tf (tag_data Ar.data.w (by decide)) (by omega)]
+          (by omega_using [hn]),
+        Proof.Cmac.bytesAt_frame Tf (tag_data Ar.data.w (by decide)) (by omega_using [hn])]
     rw [m₉, m₈, Proof.Ocb.bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) hn, length_mask,
       List.drop_of_length_le (by rw [length_bytesAt]), List.append_nil, d₇]
   rw [r3₉', d₉, hout, Proof.Ocb.decryptWith_eq]
@@ -172,17 +172,17 @@ theorem open_wp' {s₀ : State} {K W N A D T : Addr} {R nl al n tl : Nat}
       (c = true ↔ (Spec.Ocb.toBytes x).take tl = bytesAt s₀.mem T tl) := fun x hx => by
     show decide (_ = _) = true ↔ _
     rw [decide_eq_true_iff, b₆, t2₆, recv, hx,
-      padded_eq (length_bytesAt _ _ _) (by rw [List.length_take, Proof.Ocb.toBytes_length]; have := Ar.t16; omega),
+      padded_eq (length_bytesAt _ _ _) (by rw [List.length_take, Proof.Ocb.toBytes_length]; have := Ar.t16; omega_using [this]),
       eq_comm]
   by_cases hr : 0 < n % 16
-  · have h' : n - 16 * (n / 16) > 0 := by omega
+  · have h' : n - 16 * (n / 16) > 0 := by omega_using [hr]
     simp only [h', hr, ↓reduceIte] at tagv ⊢
     rw [bytesAt_take_block _ _ Ar.t16, tagv] at hc
     have hc := hc _ rfl
     by_cases hk : c = true
     · simp only [hc.mp hk, hk, ↓reduceIte]; exact ⟨by decide, trivial⟩
     · simp only [mt hc.mpr hk, hk, ↓reduceIte, Bool.false_eq_true]; exact ⟨by decide, trivial⟩
-  · have h' : ¬ (n - 16 * (n / 16) > 0) := by omega
+  · have h' : ¬ (n - 16 * (n / 16) > 0) := by omega_using [hr]
     simp only [h', hr, ↓reduceIte] at tagv ⊢
     rw [bytesAt_take_block _ _ Ar.t16, tagv] at hc
     have hc := hc _ rfl

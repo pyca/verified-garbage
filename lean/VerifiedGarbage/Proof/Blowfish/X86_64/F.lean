@@ -67,7 +67,7 @@ theorem fstep {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j : Nat}
   refine WP.of_runBlock ⟨(combineX j).exec u, runXops [combineX j] u, ?_, ?_⟩
   · have hf' : 0 < j → dword (u.xmm fReg) 0 = fAcc (scheduleAt s.mem S) (dword (s.xmm xL) 0) (j - 1) :=
       fun h => by rw [L.xmm _ (by decide)]; exact hf h
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
     · simp only [combineX_0, XOp.exec, xmm_setXmm_self, eval_movdqa]; exact hu
     · simp only [combineX_1, XOp.exec, xmm_setXmm_self, XBinOp.eval, dword_ofDwords_0]
       rw [hf' (by decide), hu]; rfl
@@ -76,7 +76,7 @@ theorem fstep {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j : Nat}
     · simp only [combineX_3, XOp.exec, xmm_setXmm_self, XBinOp.eval, dword_ofDwords_0]
       rw [hf' (by decide), hu]; rfl
   · have hx : ((combineX j).exec u) = u.setXmm fReg (((combineX j).exec u).xmm fReg) := by
-      rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+      rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
         simp only [combineX_0, combineX_1, combineX_2, combineX_3, XOp.exec, xmm_setXmm_self] <;> rfl
     refine ⟨fun d hd => ?_, fun g h8 h9 h11 => ?_, ?_⟩
     · have n : d ≠ fReg := fun e => hd (by rw [e]; decide)

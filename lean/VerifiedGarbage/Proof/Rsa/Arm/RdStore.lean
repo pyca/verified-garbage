@@ -66,7 +66,7 @@ theorem storePD_vp {E : State → Prop} (pv qv : State → Nat) (ok : State → 
   have vM : slot s.mem P.B sMask = b2n (ok σ) := by rw [h.sl sMask (by simp)]; simp [upd]
   have vM' : slot s.mem P.B VG.Impl.Rsa.Arm.CrtValues.sMask = b2n (ok σ) := vM
   refine WP.mono (store_ok' hw (Z := P.Z) (w := P.w) (dst := P.pP) (k := P.K) (j := 5) (R := P.rP) (by decide) (by decide) pre.sP.symm
-    (by rw [h.bs.wr, pre.wr]; simp) rfl (by have := pre.k1; omega) (by omega) pre.fP p10 p11
+    (by rw [h.bs.wr, pre.wr]; simp) rfl (by have := pre.k1; omega_using [this]) (by omega_using [kw]) pre.fP p10 p11
     (by rw [vM']; exact VG.Proof.Rsa.b2n_le _) (Nat.le_trans (by decide) (hdr_Z sz)))
     fun t ⟨hwt, bt, ft, rt⟩ => ⟨e, ⟨pre, rt.sp.trans h.bs.sp, rt.rd.trans h.bs.rd, rt.wr.trans h.bs.wr,
       (h.bs.frame.mono (by simp)).trans (ft.mono (by simp))⟩, hwt, ?_, ?_, ?_⟩
@@ -101,13 +101,13 @@ theorem storeQD_vp {E : State → Prop} (pv qv : State → Nat) (ok : State → 
   have kw := sz.kw
   have vM' : slot s.mem P.B VG.Impl.Rsa.Arm.CrtValues.sMask = b2n (ok σ) := vM
   refine WP.mono (store_ok' hw (Z := P.Z) (w := P.w) (dst := P.qP) (k := P.K) (j := 6) (R := P.rQ) (by decide) (by decide)
-    pre.sQ.symm (by rw [h.wr, pre.wr]; simp) rfl (by have := pre.k1; omega) (by omega) pre.fQ p10 p11
+    pre.sQ.symm (by rw [h.wr, pre.wr]; simp) rfl (by have := pre.k1; omega_using [this]) (by omega_using [kw]) pre.fQ p10 p11
     (by rw [vM']; exact VG.Proof.Rsa.b2n_le _) (Nat.le_trans (by decide) (hdr_Z sz)))
     fun t ⟨hwt, bt, ft, rt⟩ => ⟨e, ⟨pre, rt.sp.trans h.sp, rt.rd.trans h.rd, rt.wr.trans h.wr,
       h.frame.trans (ft.mono (by simp))⟩, hwt, ?_, ?_, ?_⟩
   · rw [← vM]; exact w32_frame ft pre.sQ.symm (Z_64 sz) (Nat.le_trans (by decide) (hdr_Z sz))
   · rw [VG.Proof.Rsa.Arm.CrtValues.bytes_frame ft (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact pre.pQ) (by have := pre.k2; omega), bp]
+      simp only [List.mem_singleton] at hr; subst hr; exact pre.pQ) (by have := pre.k2; omega_using [this]), bp]
   · rw [bt, vM', v6]
     simp only [outQD]
     cases hok : ok σ
@@ -145,7 +145,7 @@ theorem storesD_vp {E : State → Prop} (pv qv : State → Nat) (ok : State → 
       by rw [u.mem]; exact bq, ?_⟩
     rw [u.gpr]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le (ok σ); omega), ← vM]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le (ok σ); omega_using [this]), ← vM]
 
 end
 

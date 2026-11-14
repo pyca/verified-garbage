@@ -130,15 +130,15 @@ theorem hashLabel_frame_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH
   refine WP.mono (fin_frame_ok hG L5 R5 (o := o) (Or.inr hoo) hdi5 hdx5 hcx5) fun u6 ⟨L6, rd6, wr6, cs6, R6, hF6, hr6⟩ => ?_
   have hlb : (Spec.Rsa.bytesAt u2.mem lab labLen).length = labLen := by
     simp [Spec.Rsa.bytesAt]
-  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega) (by rw [hsi5, hlb])
+  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega_using [hlen]) (by rw [hsi5, hlb])
   have hlab : Spec.Rsa.bytesAt u2.mem lab labLen = Spec.Rsa.bytesAt u.mem lab labLen := by
     rw [← hm1]
     simp only [Spec.Rsa.bytesAt]
-    refine List.map_congr_left fun i hi => hF2.bytes (R := ⟨lab, labLen⟩) (fun r hr => ?_) (by show labLen ≤ 2 ^ 64; omega)
+    refine List.map_congr_left fun i hi => hF2.bytes (R := ⟨lab, labLen⟩) (fun r hr => ?_) (by show labLen ≤ 2 ^ 64; omega_using [hlen])
       (List.mem_range.mp hi)
     rcases List.mem_append.mp hr with hr | hr
     · simp only [regs, List.map_cons, List.map_nil, List.mem_singleton] at hr; subst hr
-      have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+      have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hzS]
       have hs : Region.Sub ⟨off S oSt, G.S⟩ ⟨S, oRsa⟩ := Offset.sub_base S h1
       exact A.dS.sub_right hs
     · rw [List.mem_singleton.mp hr]; exact A.dK.symm
@@ -150,12 +150,12 @@ theorem hashLabel_frame_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH
     omega) hF2
   have frame4 := hash_frame_large (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> dsimp only [oSt, oW, oRsa] <;> omega) hF4
+    rintro r (rfl | rfl) <;> dsimp only [oSt, oW, oRsa] <;> omega_arith) hF4
   have frame6 := hash_frame_large (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · unfold oSt oRsa; omega
-    · rcases ho with rfl | rfl <;> dsimp only [oDig, oLh, oRsa] <;> omega
+    · rcases ho with rfl | rfl <;> dsimp only [oDig, oLh, oRsa] <;> omega_using [hzF]
     · unfold oW oRsa; omega) hF6
   rw [hm1] at frame2
   rw [hm3] at frame4
@@ -166,9 +166,9 @@ theorem hashLabel_frame_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH
   · rw [cs6 r hr, keep_cs' k5 (cs_disj _ (by decide)) r hr, cs4 r hr, keep_cs' k3 (cs_disj _ (by decide)) r hr,
       cs2 r hr, keep_cs' k1 (cs_disj _ (by decide)) r hr]
   · simp only [labR, inR_cons, inR_nil, or_false] at hx
-    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega)]
-  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega), hdig i hi, hHh, hlab]
+    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzF, hzW, hx]),
+      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzW, hx]),
+      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hx])]
+  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzDF, hi]), hdig i hi, hHh, hlab]
 
 end VG.Proof.RsaOaep.X86_64

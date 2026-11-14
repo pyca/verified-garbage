@@ -48,7 +48,7 @@ theorem baseOut : PostOut (Spec.X448.x448BaseContract X86_64.abi 8) (Spec.X448.x
       simp only [Spec.X448.bytesAt]
       refine List.map_congr_left fun i hi => ?_
       have := List.mem_range.mp hi
-      exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this]) (by omega_using [this]))).symm
     rw [this]; exact h
 
 theorem exchangeOut (stack : Nat) :
@@ -69,7 +69,7 @@ theorem exchangeOut (stack : Nat) :
       simp only [Spec.X448.bytesAt]
       refine List.map_congr_left fun i hi => ?_
       have := List.mem_range.mp hi
-      exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      exact (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this]) (by omega_using [this]))).symm
     rw [this]; exact h
 
 def baseScalarKs : List Nat := keep_for% Spec.X448.x448BaseApi.sig 8 Impl.X448.X86_64.x448Base []

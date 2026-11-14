@@ -49,12 +49,12 @@ theorem mulBaseBody_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : 
   have hsz : bitsAt c.n 0 + 64 * c.n ≤ size := bitsAt_le c h7 (j := 0) (by decide)
   show WP isa (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) c.gMulK.inline) s _
   -- The table of `k`'s bits.
-  refine WP.seq (WP.mono_syms (bits_ok hs h0 (by omega) (sl_le c h7 (i := K) (by decide)) hsz
-    (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0 (.inl (by decide)); omega)))
+  refine WP.seq (WP.mono_syms (bits_ok hs h0 (by omega_using [h7]) (sl_le c h7 (i := K) (by decide)) hsz
+    (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0 (.inl (by decide)); omega_using [this])))
     fun s₁ ⟨b₁, k₁, O₁⟩ sy₁ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n + 8)] s.mem s₁.mem := fun x hx =>
-    O₁ x (by have := hx _ (List.mem_singleton_self _); dsimp only at this; omega)
+    O₁ x (by have := hx _ (List.mem_singleton_self _); dsimp only at this; omega_using [this])
   have hap : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n + 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_pad hi
   have hmp₁ : wordsVal s₁.mem base (c.sl MP) c.n = c.C.p :=
@@ -64,7 +64,7 @@ theorem mulBaseBody_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : 
   have hTM₁ : TblMem s₁ (s.syms d.tsym) (c.combWords d) :=
     hTM.of_unch (by rw [k₁.rd, k₁.wr]) U₁ (fun w hw => by
       rw [List.mem_singleton.mp hw]; have := bitsAt_le c h7 (j := 1) (by decide)
-      rw [bitsAt_eq] at this ⊢; dsimp only; omega) hout
+      rw [bitsAt_eq] at this ⊢; dsimp only; omega_using [this]) hout
   have hG : WP isa c.gMulK.inline s₁ fun s' => KeepRegs (powClob c.n) s₁ s' ∧ Unch base (gW c) s₁.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem base ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
@@ -78,7 +78,7 @@ theorem mulBaseBody_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : 
       exact gMulComb_ok' hc hcd hs₁ hmp₁ hz₁ (wordsVal_lt _ _ _ _) b₁ (by rw [sy₁]; exact hTM₁)
         (by rw [sy₁]; exact hout) fun s₂ hs₂ hM₂ hF =>
           tcombJ_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1)
-            hc.p_lt (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega) ((hT d hcd).2 hj)
+            hc.p_lt (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega_using []) ((hT d hcd).2 hj)
             (wordsVal_lt _ _ _ _) hs₂ hM₂ hF
     · unfold Cfg.gMul
       rw [hcd]
@@ -97,7 +97,7 @@ theorem mulBaseBody_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : 
 
 theorem mulBaseSlots_sub {i : Nat} (h : i ∈ c.mulBaseSlots) : i = ACC ∨ i = TT := by
   unfold Cfg.mulBaseSlots at h
-  split at h <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at h <;> omega
+  split at h <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at h <;> omega_using [h]
 
 /-- What `gMulKC` may write: `gMulK`'s, and the slots where
 `vg_<curve>_mul_base` keeps the callee-saved registers. -/
@@ -119,9 +119,9 @@ theorem mulBaseSaved_slots (h3 : 3 ≤ c.n) :
     intro d hd h8
     by_cases h : d < 8 * c.n
     · simp only [h, ↓reduceIte]
-      exact ⟨ACC, hA, by omega, by omega⟩
+      exact ⟨ACC, hA, by omega_using [], by omega_using [h8, h]⟩
     · simp only [h, ↓reduceIte]
-      exact ⟨TT, hT (by omega), by omega, by omega⟩
+      exact ⟨TT, hT (by omega_using [hd, h]), by omega_using [], by omega_using [h3, hd]⟩
   intro p hp
   simp only [Cfg.mulBaseSaved, Cfg.saved, List.map_cons, List.map_nil, List.mem_cons,
     List.not_mem_nil, or_false] at hp
@@ -166,12 +166,12 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : Co
   · rw [hs.rdi]
     obtain ⟨i, hi, -, h₂⟩ := hsl p hp
     have := hle i hi
-    exact ⟨_, hs.wr, Offset.contains_base base (by omega) (by omega)⟩
+    exact ⟨_, hs.wr, Offset.contains_base base (by omega_using [h₂, this]) (by omega_using [hn, h₂, this])⟩
   rw [hs.rdi] at m₁
   have U₁ : Unch base (slW c c.mulBaseSlots) s.mem s₁.mem := m₁ ▸ saveMem_unch_of _ _ _ _ _ fun p hp => by
     obtain ⟨i, hi, h₁, h₂⟩ := hsl p hp
     have := hle i hi
-    exact ⟨_, List.mem_map_of_mem hi, h₁, h₂, by dsimp only; omega⟩
+    exact ⟨_, List.mem_map_of_mem hi, h₁, h₂, by dsimp only; omega_using [hsz, this]⟩
   have sv₁ : Spill.Saved s₁.mem base s.gpr c.mulBaseSaved :=
     m₁ ▸ Spill.saveMem_saved _ _ _ _ (mulBaseSaved_spill hc h3)
   have hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hn⟩
@@ -185,7 +185,7 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : Co
     rw [sy₁]
     exact hTM.of_unch (by rw [rd₁, wr₁]) U₁ (fun w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have := hle i hi; dsimp only; omega) hout
+      have := hle i hi; dsimp only; omega_using [this]) hout
   -- The body.
   refine WP.seq (WP.mono_syms (mulBaseBody_ok hc hC hT hcd hs₁ hmp₁ hz₁ hTM₁
     (by rw [sy₁]; exact hout)) fun s₂ ⟨K₂, U₂, M₂, L₂, R₂⟩ sy₂ => ?_)
@@ -193,12 +193,12 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : Co
   have sv₂ : Spill.Saved s₂.mem base s.gpr c.mulBaseSaved := fun p hp => by
     obtain ⟨i, hi, h₁, h₂⟩ := hsl p hp
     have := hle i hi
-    refine (U₂.word (d := p.2) (fun w hw => ?_) (by omega)).trans (sv₁ p hp)
+    refine (U₂.word (d := p.2) (fun w hw => ?_) (by omega_using [hn, h₂, this])).trans (sv₁ p hp)
     have ap : c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
       rcases mulBaseSlots_sub hi with rfl | rfl
       · exact apart_gW (c := c) (i := ACC) (by decide) (by decide) w hw
       · exact apart_gW (c := c) (i := TT) (by decide) (by decide) w hw
-    rcases ap with h | h <;> [left; right] <;> omega
+    rcases ap with h | h <;> [left; right] <;> omega_arith
   have rdi₂ : s₂.gpr .rdi = base := by rw [K₂.gpr _ (rdi_not_powClob _), g₁, hs.rdi]
   -- Restore.
   refine WP.mono_syms (Spill.restore_ok .rdi c.mulBaseSaved s.gpr s₂ (by
@@ -207,7 +207,7 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : Co
   · rw [rdi₂, K₂.wr, wr₁]
     obtain ⟨i, hi, -, h₂⟩ := hsl p hp
     have := hle i hi
-    exact ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base base (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base base (by omega_using [h₂, this]) (by omega_using [hn, h₂, this])⟩
   have hsv : c.mulBaseSaved.map Prod.fst = Cfg.saved.map Prod.fst := by
     simp [Cfg.mulBaseSaved, Cfg.saved]
   rw [hsv] at gs go
@@ -258,9 +258,9 @@ theorem flag_unch_gWA {base : Addr} {m m' : Mem} (hu : Unch base (gWA c) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine hu.word (fun w hw => ?_) (by omega)
+  refine hu.word (fun w hw => ?_) (by omega_using [h0, hn, hF])
   rcases apart_gWA (c := c) (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_using [h0, h])
   · exact Or.inr h
 
 end VG.Proof.Ecdsa.X86_64

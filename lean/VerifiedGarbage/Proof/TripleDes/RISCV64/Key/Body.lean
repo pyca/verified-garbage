@@ -66,7 +66,7 @@ theorem componentStep_ok (origin s : State) (c : Nat) (hc : c < 3)
     intro j hj
     rw [hs.wr, hs.reg .a2 (by decide), Offset.add_ofNat_add_ofNat]
     exact hp.writes _ (by omega_using [hc, hj])
-  apply WP.mono (component_ok s (8 * c) c hc (by omega) read write)
+  apply WP.mono (component_ok s (8 * c) c hc (by omega_using [hc]) read write)
   intro t ht
   have frame : Frame [⟨origin.gpr .a2 + BitVec.ofNat 64 (128 * c), 128⟩] s.mem t.mem := by
     have hf := ht.frame
@@ -127,14 +127,14 @@ theorem copyThird_ok (origin s : State) (hp : Permissions origin)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) u₃ (N := 128)
     (by decide) (by decide) h₃.gpr (fun i hi => by
       rw [rd₃, wr₃, src₃]
-      obtain ⟨r, hr, hc⟩ := CallLay.inRegions_sub (hp.writes (8 * (i / 8)) (by omega))
-        (off := i % 8) (l := 1) (by omega) (by decide)
+      obtain ⟨r, hr, hc⟩ := CallLay.inRegions_sub (hp.writes (8 * (i / 8)) (by omega_using [hi]))
+        (off := i % 8) (l := 1) (by omega_using []) (by decide)
       refine ⟨r, List.mem_append_right _ hr, ?_⟩
-      rwa [Offset.add_ofNat_add_ofNat, show 8 * (i / 8) + i % 8 = i by omega] at hc) (fun i hi => by
+      rwa [Offset.add_ofNat_add_ofNat, show 8 * (i / 8) + i % 8 = i by omega_using []] at hc) (fun i hi => by
       rw [wr₃, dst₃, Offset.add_ofNat_add_ofNat]
-      have h := CallLay.inRegions_sub (hp.writes (8 * ((256 + i) / 8)) (by omega))
-        (off := (256 + i) % 8) (l := 1) (by omega) (by decide)
-      rwa [Offset.add_ofNat_add_ofNat, show 8 * ((256 + i) / 8) + (256 + i) % 8 = 256 + i by omega]
+      have h := CallLay.inRegions_sub (hp.writes (8 * ((256 + i) / 8)) (by omega_using [hi]))
+        (off := (256 + i) % 8) (l := 1) (by omega_using []) (by decide)
+      rwa [Offset.add_ofNat_add_ofNat, show 8 * ((256 + i) / 8) + (256 + i) % 8 = 256 + i by omega_using []]
         at h) (by
       rw [dst₃, src₃]
       exact fun x h₁ h₂ => Offset.sep (origin.gpr .a2) (d := 256) (n := 128) (e := 0) (k := 128)
@@ -155,11 +155,11 @@ theorem copyThird_ok (origin s : State) (hp : Permissions origin)
       have first := hs.keys 0 (by decide) j hj
       refine Eq.trans (Bytes.dword_ext fun i hi => ?_) first
       rw [Bytes.readW64_byte _ _ hi, Bytes.readW64_byte _ _ hi]
-      have h := hcopy (8 * j + i) (by omega)
+      have h := hcopy (8 * j + i) (by omega_using [hj, hi])
       rw [Offset.add_ofNat_add_ofNat] at h
       simp only [slot, Offset.add_ofNat_add_ofNat]
-      rw [show 128 * 2 + 8 * j + i = 256 + (8 * j + i) by omega,
-        show 128 * 0 + 8 * j + i = 8 * j + i by omega, h]
+      rw [show 128 * 2 + 8 * j + i = 256 + (8 * j + i) by omega_using [],
+        show 128 * 0 + 8 * j + i = 8 * j + i by omega_using [], h]
     · have before : c < 2 := by omega_using [hc, he]
       have sep : (Region.mk (slot (origin.gpr .a2) c j) 8).Disjoint
           ⟨origin.gpr .a2 + BitVec.ofNat 64 256, 128⟩ :=

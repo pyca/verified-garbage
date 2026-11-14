@@ -60,20 +60,20 @@ theorem pairBody_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n i : 
   have modf := ctx.mFits
   have ws := ctx.workspace.congr inv.rest.wr
   rw [VG.Impl.Bignum.Arm.Fios.pairBody,WP.seq_iff]
-  refine WP.mono (pair_ok s ws (by omega) (by omega) (by omega)
-    (by rcases ctx.accM with h|h <;> omega) inv.bPtr inv.mPtr inv.outPtr) ?_
+  refine WP.mono (pair_ok s ws (by omega_using [hi, inf]) (by omega_using [hi, modf]) (by omega_using [hi, outf])
+    (by rcases ctx.accM with h|h <;> omega_arith) inv.bPtr inv.mPtr inv.outPtr) ?_
   rintro u ⟨value,mem,rest⟩
   rw [inv.scalar,inv.quotient] at value
-  have oldT := inv.outside.val32 (d:=acc+4*(i+1)) (k:=2) (by omega) (by omega)
+  have oldT := inv.outside.val32 (d:=acc+4*(i+1)) (k:=2) (by omega_using []) (by omega_using [hi, nowrap, outf])
   have oldB := inv.outside.val32 (d:=b+4*(i+1)) (k:=2)
-    (by rcases ctx.accB with h|h <;> omega) (by omega)
+    (by rcases ctx.accB with h|h <;> omega_arith) (by omega_using [hi, nowrap, inf])
   have oldM := inv.outside.val32 (d:=mod+4*(i+1)) (k:=2)
-    (by rcases ctx.accM with h|h <;> omega) (by omega)
+    (by rcases ctx.accM with h|h <;> omega_arith) (by omega_using [hi, nowrap, modf])
   have nowrap' : (State.addr base).toNat+size≤2^32 := by
     simpa only [VG.Proof.X25519.Arm.addr_toNat] using nowrap
-  obtain ⟨writes,stored⟩ := pair_memory nowrap' (by omega) mem
+  obtain ⟨writes,stored⟩ := pair_memory nowrap' (by omega_using [hi, outf]) mem
   have outside : Outside (State.addr base) acc (4*(i+2)) s0.mem u.mem :=
-    (inv.outside.mono (Nat.le_refl _) (by omega)).trans (writes.mono (by omega) (by omega))
+    (inv.outside.mono (Nat.le_refl _) (by omega_using [])).trans (writes.mono (by omega_using []) (by omega_using []))
   have segment : ((u.gpr .r6).toNat+2^32*(u.gpr .r10).toNat)+
       2^(32*2)*((u.gpr .r7).toNat+(u.gpr .r8).toNat)=
       val32 s.mem (State.addr base) (acc+4*(i+1)) 2+
@@ -81,11 +81,11 @@ theorem pairBody_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n i : 
       q.toNat*val32 s.mem (State.addr base) (mod+4*(i+1)) 2+
       ((s.gpr .r7).toNat+(s.gpr .r8).toNat) := by
     simp only [val32,Nat.mul_zero,Nat.add_zero]
-    rw [show acc+4*(i+1)=acc+4*i+4 by omega,
-      show acc+4*i+4+4=acc+4*i+8 by omega]
-    omega
+    rw [show acc+4*(i+1)=acc+4*i+4 by omega_using [],
+      show acc+4*i+4+4=acc+4*i+8 by omega_using []]
+    omega_using [value]
   rw [oldT,oldB,oldM] at segment
-  exact advance_inv ctx inv (Or.inr rfl) (by omega) rest outside
+  exact advance_inv ctx inv (Or.inr rfl) (by omega_using [hi]) rest outside
     (prefix_extend inv.value segment stored)
 
 end VG.Proof.Bignum.Arm.Fios

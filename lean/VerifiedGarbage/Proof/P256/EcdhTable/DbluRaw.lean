@@ -55,7 +55,7 @@ open Spec.Weierstrass
   have hv : ∀i<5,tmv C 4 base t (selectedSlot i)=r (8+i) ∧
       wordsVal t.mem base (selectedSlot i) 4<C.p := by
     intro i hi
-    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega
+    have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega_using [hi]
     rcases this with rfl|rfl|rfl|rfl|rfl
     · exact v8
     · exact v9

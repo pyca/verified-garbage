@@ -101,7 +101,7 @@ theorem mul_run (d a b : Reg) (hb : b ≠ .r8) (s : State) (hm : MaskOk s) :
     show (2 ^ 32 - 1 + _ % 2 ^ 32) % 2 ^ 32 = _
     have := Nat.le_trans hp (show 2 ^ 16 * 2 ^ 16 ≤ 2 ^ 32 by decide)
     have := Nat.le_trans (show 1 ≤ 1 * 1 by decide) hp₀
-    omega
+    omega_using [hp₀, hp]
   · keep_tac
 
 end VG.Proof.Idea.Arm

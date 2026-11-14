@@ -99,7 +99,7 @@ namespace HashOK
 variable {H : Hash} (hH : HashOK H)
 
 include hH in
-theorem B_le : H.P.B ≤ 128 := by rcases hH.dims.B with h | h <;> omega
+theorem B_le : H.P.B ≤ 128 := by rcases hH.dims.B with h | h <;> omega_using [h]
 
 include hH in
 theorem B_pos : 0 < H.P.B := hH.dims.pos
@@ -112,9 +112,9 @@ theorem md_reloc {m m' : Mem} {p q : Addr} {msg : List Byte} {iv : hH.md.HV}
     (h : ∀ i < H.P.N + H.P.B, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i))
     (hr : hH.md.Repr iv m p msg) : hH.md.Repr iv m' q msg := by
   have hB := hH.B_pos
-  refine ⟨by rw [hH.reloc m m' p q fun i hi => h i (by omega)]; exact hr.1, ?_⟩
+  refine ⟨by rw [hH.reloc m m' p q fun i hi => h i (by omega_using [hi])]; exact hr.1, ?_⟩
   rw [← hr.2]
-  exact bytesAt_reloc h (o := H.P.N) (k := msg.length % H.P.B) (by have := Nat.mod_lt msg.length hB; omega)
+  exact bytesAt_reloc h (o := H.P.N) (k := msg.length % H.P.B) (by have := Nat.mod_lt msg.length hB; omega_using [this])
 
 theorem sh_reloc (m m' : Mem) (p q : Addr) (msg : List Byte)
     (h : ∀ i < H.P.N + H.P.B, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i))
@@ -153,12 +153,12 @@ def stream : Calls.StreamOK H.stream where
   hDF := hH.hDN
   hF := hH.N_le
   hD0 := hH.hD0
-  hS0 := by show 0 < H.P.N + H.P.B; have := hH.B_pos; omega
-  hSB := by show H.P.N + H.P.B ≤ 256; have := hH.B_le; have := hH.N_le; omega
+  hS0 := by show 0 < H.P.N + H.P.B; have := hH.B_pos; omega_using [this]
+  hSB := by show H.P.N + H.P.B ≤ 256; have := hH.B_le; have := hH.N_le; omega_arith
   hB0 := hH.B_pos
   hBB := hH.B_le
-  hWb := by show H.P.so + 48 ≤ 8 * ((H.P.so + 48) / 8); have := hH.hso; omega
-  hW := by show (H.P.so + 48) / 8 ≤ 256; have := hH.hso; omega
+  hWb := by show H.P.so + 48 ≤ 8 * ((H.P.so + 48) / 8); have := hH.hso; omega_using [this]
+  hW := by show (H.P.so + 48) / 8 ≤ 256; have := hH.hso; omega_using [this]
   repr := hH.sh_reloc
   init := hH.init
   upd := hH.upd
@@ -187,7 +187,7 @@ structure Sizes (H : Hash) : Prop where
   fits : H.P.so + 48 + H.P.N + H.P.B ≤ 8 * H.W
   W : H.W ≤ 256
 
-theorem Sizes.B_le {H : Hash} (hz : Sizes H) : H.P.B ≤ 128 := by rcases hz.B with h | h <;> omega
+theorem Sizes.B_le {H : Hash} (hz : Sizes H) : H.P.B ≤ 128 := by rcases hz.B with h | h <;> omega_using [h]
 
 theorem HashOK.sizes {H : Hash} (hH : HashOK H) : Sizes H :=
   ⟨hH.dims.B, hH.dims.N, hH.dims.L, ⟨hH.hD0, hH.hDN, hH.hD4, hH.hDL⟩, hH.hN4, hH.hL4, hH.hNL,
@@ -197,13 +197,13 @@ theorem HashOK.sizes {H : Hash} (hH : HashOK H) : Sizes H :=
 needs of the hash function, with `W` words of scratch space. -/
 theorem HashOK.iterOk {H : Hash} (hH : HashOK H) :
     Pbkdf2.X86_64.HashOk H.P H.D H.W hH.SH hH.md hH.iv where
-  sizes := ⟨hH.dims, hH.hN4, hH.hD4, hH.hL4, hH.hD0, hH.hDN, hH.hNL, by have := hH.hDL; omega, hH.fits,
-    by have := hH.hW; omega⟩
+  sizes := ⟨hH.dims, hH.hN4, hH.hD4, hH.hL4, hH.hD0, hH.hDN, hH.hNL, by have := hH.hDL; omega_using [this], hH.fits,
+    by have := hH.hW; omega_using [this]⟩
   shape := hH.shape
   reloc := hH.reloc
-  lenOk := hH.lenOk _ (by have := hH.B_le; have := hH.hDN; have := hH.N_le; omega)
+  lenOk := hH.lenOk _ (by have := hH.B_le; have := hH.hDN; have := hH.N_le; omega_arith)
   link := ⟨hH.hB, hH.hS, hH.hD, fun m p x h => (hH.repr m p x).1 h, hH.hash, hH.hDN,
-    by have := hH.hDL; omega⟩
+    by have := hH.hDL; omega_using [this]⟩
 
 /-- The hash functions of `MdHash`'s variants, as RSA's padding takes them. -/
 def mdHashes : List Spec.Mgf1.Hash :=

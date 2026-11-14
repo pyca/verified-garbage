@@ -46,14 +46,14 @@ theorem xw_lt (P : CP) (σ : State) (k : Nat) : xw P σ k < 2 ^ (8 * P.len) := b
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
   have hl : (VG.Proof.RsaKeyGen.seg (rB P σ) (wo P k) P.len).length ≤ P.len := by
     simp [VG.Proof.RsaKeyGen.seg, Nat.min_le_left]
-  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+  exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [hl]))
 
 /-- The witness's octets. -/
 theorem xw_bytes {σ : State} (pre : In P σ) {u : Nat} (hu : u + P.len ≤ P.rl) :
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt σ.mem (State.addr (P.nP + BitVec.ofNat 32 u)) P.len) =
       Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg (rB P σ) u P.len) := by
   have := pre.fR; have := pre.sizes
-  rw [addr_add (by omega), seg_bytesAt _ _ hu]
+  rw [addr_add (by omega_arith), seg_bytesAt _ _ hu]
 
 /-- The witness's octets are in `rand`. -/
 theorem In.witIn {σ : State} (pre : In P σ) {u : Nat} (hu : u + P.len ≤ P.rl) :
@@ -61,9 +61,9 @@ theorem In.witIn {σ : State} (pre : In P σ) {u : Nat} (hu : u + P.len ≤ P.rl
       (∀ r ∈ P.chg, Region.Disjoint ⟨State.addr (P.nP + BitVec.ofNat 32 u), P.len⟩ r) ∧
       (P.nP + BitVec.ofNat 32 u).toNat + P.len ≤ 2 ^ 32 ∧ 0 < P.len ∧ P.len ≤ P.L := by
   have fR := pre.fR; have sz := pre.sizes; have rlt := pre.rlt
-  have ea : State.addr (P.nP + BitVec.ofNat 32 u) = State.addr P.nP + BitVec.ofNat 64 u := addr_add (by omega)
-  refine ⟨?_, ?_, ?_, by omega, sz.2.2.2.1⟩
-  · rw [ea]; exact CallLay.inRegions_sub (off := u) (l := P.len) pre.rdR hu (by omega)
+  have ea : State.addr (P.nP + BitVec.ofNat 32 u) = State.addr P.nP + BitVec.ofNat 64 u := addr_add (by omega_using [hu, fR, sz])
+  refine ⟨?_, ?_, ?_, by omega_using [sz], sz.2.2.2.1⟩
+  · rw [ea]; exact CallLay.inRegions_sub (off := u) (l := P.len) pre.rdR hu (by omega_using [fR])
   · have sub : Region.Sub ⟨State.addr (P.nP + BitVec.ofNat 32 u), P.len⟩ P.rR := by
       rw [ea]; exact Offset.sub_base (State.addr P.nP) (d := u) (n := P.len) (k := P.rl) hu
     intro r hr
@@ -74,8 +74,8 @@ theorem In.witIn {σ : State} (pre : In P σ) {u : Nat} (hu : u + P.len ≤ P.rl
     · exact pre.rC.sub_left sub
     · exact (pre.rF.sub_right (Offset.sub_base _ (d := 0) (n := 4) (k := 56) (by decide) |> fun s => by
         simpa only [BitVec.add_zero] using s)).sub_left sub
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := u) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := u) (by omega_using [hu, fR, sz]), Nat.mod_eq_of_lt (by omega_using [hu, fR, sz])]
+    omega_using [hu, fR]
 
 theorem wlBlock_eq : ([.ldrSp .r4 aoR, .ldr .r1 .r8 sUsed, .dp .add .r4 .r4 (.reg .r1), .ldrSp .r6 aoPl,
     .dp .add .r4 .r4 (.reg .r6), .dp .add .r1 .r1 (.reg .r6), .str .r1 .r8 sUsed, .ldrSp .r6 aoEl,
@@ -136,8 +136,8 @@ theorem witnessLoad_vp {E : State → Prop} {k : Nat} (hE : ∀ σ, E σ → In 
     have r := u.rest (ws := [.r1]) (by simp)
     have v1 : (t.gpr .r1).toNat = P.D * k + P.D := by
       rw [u.gpr, dpVal, u0.other _ (by decide), u0.other _ (by decide), p1, p6, BitVec.toNat_add,
-        BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := P.D * k) (by omega),
-        Nat.mod_eq_of_lt (a := P.D) (by omega), Nat.mod_eq_of_lt (by omega)]
+        BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := P.D * k) (by omega_using [hu, rlt]),
+        Nat.mod_eq_of_lt (a := P.D) (by omega_using [hu, rlt]), Nat.mod_eq_of_lt (by omega_using [hu, rlt])]
     have v4 : t.gpr .r4 = P.nP + BitVec.ofNat 32 (P.D * k + P.D) := by
       rw [u.other _ (by decide), u0.gpr, dpVal, p4, p6, BitVec.add_assoc, BitVec.ofNat_add]
     have h0 := (h.of_rest r0 u0.mem).of_rest r (by rw [u.mem])
@@ -158,23 +158,23 @@ theorem witnessLoad_vp {E : State → Prop} {k : Nat} (hE : ∀ σ, E σ → In 
     refine wp_dp (op2_reg _ _) fun t u => WP.block_nil ?_
     have r := u.rest (ws := [.r4]) (by simp)
     refine ⟨⟨⟨e, h.of_rest r u.mem, hw.rest r⟩, m.of_upd u⟩, ?_, by rw [u.other _ (by decide), p6]⟩
-    rw [u.gpr, dpVal, p4, p6, show P.D * k + P.D = wo P k + P.len by simp only [wo]; omega,
+    rw [u.gpr, dpVal, p4, p6, show P.D * k + P.D = wo P k + P.len by simp only [wo]; omega_using [sz],
       BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.add_sub_cancel]
   · refine ((VP.withMS (P := P) (St.pload (E := E) (A := AB2 P) (L := LB2)
       (V := fun σ => upd (VI P k σ) sUsed (P.D * k + P.D)) (LS := sUsed :: LSI)
       (src := fun P => P.nP + BitVec.ofNat 32 (wo P k)) (k := fun P => P.len) loadX_taint (by decide)
-      fun σ e pre => pre.witIn (by have := (hE σ e).2; have := pre.sizes; simp only [wo]; omega))
+      fun σ e pre => pre.witIn (by have := (hE σ e).2; have := pre.sizes; simp only [wo]; omega_arith))
       (fun σ s h => h.1.inSp) ?_).mono
       (fun σ s ⟨⟨h, m⟩, p4, p6⟩ => ⟨⟨h, p4, p6⟩, m⟩) fun σ s ⟨h, m⟩ => ⟨h.mono ?_ fun d hd => ⟨hd, rfl⟩, m⟩)
     · intro σ s ⟨⟨e, h, hw⟩, p4, p6⟩
       obtain ⟨rd, sC, fit, hk, hkL⟩ := h.pre.witIn (u := wo P k)
-        (by have := (hE σ e).2; have := h.pre.sizes; simp only [wo]; omega)
+        (by have := (hE σ e).2; have := h.pre.sizes; simp only [wo]; omega_arith)
       exact WP.mono (load_okC h.bk hw (by decide) rd sC fit hk hkL p4 p6) fun t ⟨_, _, kp, _, r⟩ =>
         ⟨[aX], [], kp, by simp only [List.mem_singleton, forall_eq]; decide, by simp, r.sp, r.rd, r.wr⟩
     · intro j hj
       refine ⟨hj, ?_⟩
       show upd (AB2 P σ) aX _ j = upd (AB2 P σ) aX _ j
-      rw [xw_bytes h.2.1.pre (by have := (hE σ h.1).2; have := h.2.1.pre.sizes; simp only [wo]; omega)]
+      rw [xw_bytes h.2.1.pre (by have := (hE σ h.1).2; have := h.2.1.pre.sizes; simp only [wo]; omega_arith)]
       rfl
 
 end

@@ -43,15 +43,15 @@ theorem encodedPower_ct (M : Mont) (Sq : MontS) : RelCT isa (Two EncodedPre)
     refine ⟨p.1.minv, p.1.modulus, x, 1, hc, p.1.lower, p.1.fits, p.1.upper,
       hm.modulus, hm.inverse, p.1.odd, ?_, ?_, ?_, ?_, by decide, by decide,
       hp, hl, hlen, h1, h2, hs⟩
-    · rw [hx]; exact Nat.mod_lt _ (by have := p.1.greater; omega)
+    · rw [hx]; exact Nat.mod_lt _ (by have := p.1.greater; omega_using [this])
     · rw [hx, Nat.mod_mod]
-    · rw [hy]; exact Nat.mod_lt _ (by have := p.1.greater; omega)
+    · rw [hy]; exact Nat.mod_lt _ (by have := p.1.greater; omega_using [this])
     · rw [hy, Nat.mod_mod, Nat.one_mul]
   · intro p s ⟨x, ⟨hc, hm, _, hp, hl, _, h1, h2, hs⟩, hx, hy⟩
     refine WP.mono (expLoop_ok M Sq (x := x) hc p.1.lower p.1.fits p.1.upper hm.modulus hm.inverse p.1.odd
-      (by rw [hx]; exact Nat.mod_lt _ (by have := p.1.greater; omega))
+      (by rw [hx]; exact Nat.mod_lt _ (by have := p.1.greater; omega_using [this]))
       (by rw [hx, Nat.mod_mod])
-      (by rw [hy]; exact Nat.mod_lt _ (by have := p.1.greater; omega))
+      (by rw [hy]; exact Nat.mod_lt _ (by have := p.1.greater; omega_using [this]))
       (by rw [hy, Nat.mod_mod]) (by decide) (by decide) hp hl h1 h2 hs)
       fun t ⟨ht, _⟩ => ⟨p.1.minv, ht.good, Nat.le_refl _⟩
 
@@ -75,13 +75,13 @@ theorem powerCore_ct (M : Mont) (Sq : MontS) : RelCT isa (Two PowerCorePre)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl
     · dsimp only [PowerPublic.product]
-      rw [hr2]; exact Nat.mod_lt _ (by have := p.1.greater; omega)
+      rw [hr2]; exact Nat.mod_lt _ (by have := p.1.greater; omega_using [this])
     · dsimp only [PowerPublic.product]
       rw [hone]; exact p.1.greater
   · intro p s ⟨⟨hc, hm, hone, hp, hl, hlen, h1, h2, hs⟩, hr2⟩
-    rw [show 128 * p.1.bytes.x.wx = 64 * p.1.bytes.x.wx + 64 * p.1.bytes.x.wx by omega, Nat.pow_add] at hr2
+    rw [show 128 * p.1.bytes.x.wx = 64 * p.1.bytes.x.wx + 64 * p.1.bytes.x.wx by omega_using [], Nat.pow_add] at hr2
     refine WP.mono (encodePower_ok M hm (Nat.le_refl _) p.1.lower
-      (by have := p.1.fits; have := p.1.upper; omega) p.1.greater p.1.odd rfl hr2 hone)
+      (by have := p.1.fits; have := p.1.upper; omega_arith) p.1.greater p.1.odd rfl hr2 hone)
       fun t ⟨hmt, hx, hy, htone, hf, hk⟩ => ?_
     have hct := arrays_context hc hf (by decide) hk
     have hfw := arrays_work hf (by decide)

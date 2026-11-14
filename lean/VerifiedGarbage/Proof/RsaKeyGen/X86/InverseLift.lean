@@ -94,14 +94,14 @@ theorem code_ok (s : State) :
 
 theorem highCarry_toNat (a x : BitVec 32) :
     (highCarry a x).toNat = (a.toNat * x.toNat + 1) / 2 ^ 32 := by
-  have product := Nat.mul_le_mul (show a.toNat ≤ 2 ^ 32 - 1 by have := a.isLt; omega)
-    (show x.toNat ≤ 2 ^ 32 - 1 by have := x.isLt; omega)
+  have product := Nat.mul_le_mul (show a.toNat ≤ 2 ^ 32 - 1 by have := a.isLt; omega_using [])
+    (show x.toNat ≤ 2 ^ 32 - 1 by have := x.isLt; omega_using [])
   have split := Nat.div_add_mod (a.toNat * x.toNat) (2 ^ 32)
   have remainder := Nat.mod_lt (a.toNat * x.toNat) (by decide : 0 < 2 ^ 32)
   unfold highCarry
   rw [BitVec.toNat_add, Trial.carryWord_toNat, Trial.carry_toNat]
   simp only [BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
-  omega
+  omega_using [product]
 
 theorem upper_toNat (a b x : BitVec 32) :
     (upper a b x).toNat =
@@ -110,7 +110,7 @@ theorem upper_toNat (a b x : BitVec 32) :
   rw [BitVec.toNat_ofNat, BitVec.toNat_add, BitVec.toNat_ofNat, highCarry_toNat]
   rw [Nat.mod_add_mod, Nat.mul_mod_mod]
   congr 2
-  omega
+  omega_using []
 
 theorem upper_inverse (a b x : BitVec 32)
     (inverse : (a.toNat * x.toNat + 1) % 2 ^ 32 = 0) :

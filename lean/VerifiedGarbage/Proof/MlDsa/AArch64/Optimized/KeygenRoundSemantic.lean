@@ -13,7 +13,7 @@ open VG.Proof.MlDsa.AArch64.Arith.Neon (coeffAt_write16 vword_read16 vector_cont
 
 theorem readWord (m : Mem) (p : Addr) (j : Nat) {e : Nat} (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (16*j)) 16) e=coeffAt m p (4*j+e) := by
-  rw [show 16*j=4*(4*j) by omega]
+  rw [show 16*j=4*(4*j) by omega_using []]
   change vword (m.read (coeffAddr p (4*j)) 16) e=_
   rw [VG.AArch64.vword_read16 _ _ he,coeffAddr_add]
   rfl
@@ -22,8 +22,8 @@ theorem writeOther {m : Mem} {p o : Addr} {j k : Nat} {v : BitVec 128}
     (hd : (pR p).Disjoint (pR o)) (hj : j<64) (hk : k<256) :
     coeffAt (m.write (o+BitVec.ofNat 64 (16*j)) 16 v) p k=coeffAt m p k := by
   have hf : Frame [pR o] m (m.write (o+BitVec.ofNat 64 (16*j)) 16 v) := by
-    rw [show 16*j=4*(4*j) by omega]
-    exact (Frame.refl _ _).write (by simp) _ (vector_contains o (by omega))
+    rw [show 16*j=4*(4*j) by omega_using []]
+    exact (Frame.refl _ _).write (by simp) _ (vector_contains o (by omega_using [hj]))
   exact coeffAt_frame hf (by simpa using hd) hk
 
 theorem roundStep_high {m : Mem} {input high low : Addr} {j k : Nat}
@@ -31,15 +31,15 @@ theorem roundStep_high {m : Mem} {input high low : Addr} {j k : Nat}
     coeffAt (roundStep input high low j m) high k=
       if 4*j≤k ∧ k<4*j+4 then highWord (coeffAt m input k) else coeffAt m high k := by
   unfold roundStep
-  rw [writeOther hd hj hk,show 16*j=4*(4*j) by omega]
+  rw [writeOther hd hj hk,show 16*j=4*(4*j) by omega_using []]
   change coeffAt (m.write (coeffAddr high (4*j)) 16 _) high k=_
-  rw [coeffAt_write16 _ _ (by omega) _ hk]
+  rw [coeffAt_write16 _ _ (by omega_using [hj]) _ hk]
   split
   · rename_i h
     change vword (wordVector _) (k-4*j)=_
-    rw [wordVector_word _ (by omega)]
-    have hr := readWord m input j (e:=k-4*j) (by omega)
-    rw [show 16*j=4*(4*j) by omega,show 4*j+(k-4*j)=k by omega] at hr
+    rw [wordVector_word _ (by omega_using [h])]
+    have hr := readWord m input j (e:=k-4*j) (by omega_using [h])
+    rw [show 16*j=4*(4*j) by omega_using [],show 4*j+(k-4*j)=k by omega_using [h]] at hr
     rw [hr]
   · rfl
 
@@ -48,16 +48,16 @@ theorem roundStep_low {m : Mem} {input high low : Addr} {j k : Nat}
     coeffAt (roundStep input high low j m) low k=
       if 4*j≤k ∧ k<4*j+4 then lowWord (coeffAt m input k) else coeffAt m low k := by
   unfold roundStep
-  rw [show 16*j=4*(4*j) by omega]
-  rw [coeffAt_write16 _ _ (by omega) _ hk]
+  rw [show 16*j=4*(4*j) by omega_using []]
+  rw [coeffAt_write16 _ _ (by omega_using [hj]) _ hk]
   split
   · rename_i h
     change vword (wordVector _) (k-4*j)=_
-    rw [wordVector_word _ (by omega)]
-    have hr := readWord m input j (e:=k-4*j) (by omega)
-    rw [show 16*j=4*(4*j) by omega,show 4*j+(k-4*j)=k by omega] at hr
+    rw [wordVector_word _ (by omega_using [h])]
+    have hr := readWord m input j (e:=k-4*j) (by omega_using [h])
+    rw [show 16*j=4*(4*j) by omega_using [],show 4*j+(k-4*j)=k by omega_using [h]] at hr
     rw [hr]
-  · simpa only [show 16*j=4*(4*j) by omega] using
+  · simpa only [show 16*j=4*(4*j) by omega_using []] using
       (writeOther (m:=m) (p:=low) (o:=high) (j:=j) (k:=k)
         (v:=highVector (m.read (input+BitVec.ofNat 64 (4*(4*j))) 16)) hd.symm hj hk)
 
@@ -68,9 +68,9 @@ theorem roundRun_frame (m : Mem) (input high low : Addr) {j : Nat} (hj : j≤64)
   | succ j ih =>
     rw [roundRun_next]
     unfold roundStep
-    rw [show 16*j=4*(4*j) by omega]
-    exact ((ih (by omega)).write (by simp) _ (vector_contains high (by omega))).write
-      (by simp) _ (vector_contains low (by omega))
+    rw [show 16*j=4*(4*j) by omega_using []]
+    exact ((ih (by omega_using [hj])).write (by simp) _ (vector_contains high (by omega_using [hj]))).write
+      (by simp) _ (vector_contains low (by omega_using [hj]))
 
 theorem roundRun_prefix (m : Mem) (input high low : Addr)
     (hih : (pR input).Disjoint (pR high)) (hil : (pR input).Disjoint (pR low))
@@ -81,21 +81,21 @@ theorem roundRun_prefix (m : Mem) (input high low : Addr)
   induction j with
   | zero => intro k hk; simp [roundRun]
   | succ j ih =>
-    have hp := ih (by omega)
+    have hp := ih (by omega_using [hj])
     have input_kept : ∀k<256,coeffAt (roundRun m input high low j) input k=coeffAt m input k := by
       intro k hk
-      exact coeffAt_frame (roundRun_frame m input high low (by omega))
+      exact coeffAt_frame (roundRun_frame m input high low (by omega_using [hj]))
         (by intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl|rfl; exact hih; exact hil) hk
     intro k hk
-    rw [roundRun_next,roundStep_high hhl (by omega) hk,roundStep_low hhl (by omega) hk]
+    rw [roundRun_next,roundStep_high hhl (by omega_using [hj]) hk,roundStep_low hhl (by omega_using [hj]) hk]
     rw [(hp k hk).1,(hp k hk).2,input_kept k hk]
     by_cases before : k<4*j
-    · simp only [ite_eq_right (by omega : ¬(4*j≤k ∧ k<4*j+4)),ite_eq_left before,ite_eq_left (by omega : k<4*(j+1))]
+    · simp only [ite_eq_right (by omega_using [before] : ¬(4*j≤k ∧ k<4*j+4)),ite_eq_left before,ite_eq_left (by omega_using [before] : k<4*(j+1))]
       exact ⟨trivial,trivial⟩
     · by_cases inside : k<4*j+4
-      · simp only [ite_eq_left (by omega : 4*j≤k ∧ k<4*j+4),ite_eq_left (by omega : k<4*(j+1))]
+      · simp only [ite_eq_left (by omega_using [before, inside] : 4*j≤k ∧ k<4*j+4),ite_eq_left (by omega_using [inside] : k<4*(j+1))]
         exact ⟨trivial,trivial⟩
-      · simp only [ite_eq_right (by omega : ¬(4*j≤k ∧ k<4*j+4)),ite_eq_right before,ite_eq_right (by omega : ¬k<4*(j+1))]
+      · simp only [ite_eq_right (by omega_using [inside] : ¬(4*j≤k ∧ k<4*j+4)),ite_eq_right before,ite_eq_right (by omega_using [inside] : ¬k<4*(j+1))]
         exact ⟨trivial,trivial⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenRound

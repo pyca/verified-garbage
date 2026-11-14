@@ -20,7 +20,7 @@ theorem signedMask (x : BitVec 32) :
     x.sshiftRight 31=if x.toInt<0 then -1 else 0 := by
   rw [ResidentMask.signMask32]
   have hx := BitVec.toInt_eq_toNat_cond x
-  split <;> split <;> first | rfl | omega
+  split <;> split <;> first | rfl | omega_arith
 
 theorem hintWord_value {g : Nat} (hg : 1≤g) (hg' : g≤524288)
     (t high : BitVec 32) (hl : -8380417<t.toInt) (hh : t.toInt<8380417) :
@@ -28,13 +28,13 @@ theorem hintWord_value {g : Nat} (hg : 1≤g) (hg' : g≤524288)
       if hintPredicate g t.toInt high.toInt then 1 else 0 := by
   have gi : (BitVec.ofNat 32 g).toInt=(g:Int) := by
     change (BitVec.ofInt 32 (g:Int)).toInt=(g:Int)
-    apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega
+    apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega_arith
   have gn : (-(BitVec.ofNat 32 g)).toInt= -(g:Int) := by
     change (-BitVec.ofInt 32 (g:Int)).toInt= -(g:Int)
     rw [←BitVec.ofInt_neg]
-    apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega
-  have l := subWord_int (BitVec.ofNat 32 g) t (by rw [gi]; omega) (by rw [gi]; omega)
-  have r := subWord_int t (-(BitVec.ofNat 32 g)) (by rw [gn]; omega) (by rw [gn]; omega)
+    apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega_arith
+  have l := subWord_int (BitVec.ofNat 32 g) t (by rw [gi]; omega_using [hh]) (by rw [gi]; omega_using [hg', hl])
+  have r := subWord_int t (-(BitVec.ofNat 32 g)) (by rw [gn]; omega_using [hl]) (by rw [gn]; omega_using [hg', hh])
   have te : t= -(BitVec.ofNat 32 g) ↔ t.toInt= -(g:Int) := by
     constructor
     · intro h; rw [h,gn]

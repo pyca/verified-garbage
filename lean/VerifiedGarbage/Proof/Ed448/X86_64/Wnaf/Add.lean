@@ -73,7 +73,7 @@ theorem addBase_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base 
     (hc : E s.mem base 11 = Spec.Ed448.d) :
     WP isa (addBase P) s fun u => Keep base s u ∧ E u.mem base 11 = Spec.Ed448.d ∧
       pt (E u.mem base) 0 1 2 = maybeAdd d (pt (E s.mem base) 0 1 2) (Proof.X448.basePt (baseEntry d)) := by
-  refine WP.seq (WP.mono (getDigit_ok hs (by simp only [SDIG]; omega) hd hr hm) fun a ⟨ar, az, ak⟩ => ?_)
+  refine WP.seq (WP.mono (getDigit_ok hs (by simp only [SDIG]; omega_using [ht]) hd hr hm) fun a ⟨ar, az, ak⟩ => ?_)
   have ka : Keep base s a := keeps_keep (ak.mono (by decide))
   refine WP.ite (!decide (d = 0)) (by simp only [eval, az, Option.map_some]) (fun hz => ?_) (fun hz => ?_)
   · have hn : d ≠ 0 := by simpa only [Bool.not_eq_true', decide_eq_false_iff_not] using hz
@@ -94,7 +94,7 @@ theorem addKey_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F)
     WP isa (addKey F P) s fun u => Keep base s u ∧ E u.mem base 11 = Spec.Ed448.d ∧
       pt (E u.mem base) 0 1 2 = maybeAdd d (pt (E s.mem base) 0 1 2)
         (SignedWindow.signedPoint (decide (d < 0)) (tablePoint s.mem base d.natAbs)) := by
-  refine WP.seq (WP.mono (getDigit_ok hs (by simp only [KDIG]; omega) hd hr hm) fun a ⟨ar, az, ak⟩ => ?_)
+  refine WP.seq (WP.mono (getDigit_ok hs (by simp only [KDIG]; omega_using [ht]) hd hr hm) fun a ⟨ar, az, ak⟩ => ?_)
   have ka : Keep base s a := keeps_keep (ak.mono (by decide))
   refine WP.ite (!decide (d = 0)) (by simp only [eval, az, Option.map_some]) (fun hz => ?_) (fun hz => ?_)
   · have hn : d ≠ 0 := by simpa only [Bool.not_eq_true', decide_eq_false_iff_not] using hz

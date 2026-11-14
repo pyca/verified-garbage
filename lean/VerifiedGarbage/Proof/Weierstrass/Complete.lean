@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.Affine
 public import VerifiedGarbage.Proof.Weierstrass.Field
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The complete formulas compute the specification's group law
@@ -42,7 +43,7 @@ structure Good (C : Curve) : Prop where
 
 variable {C : Curve}
 
-theorem Good.two_lt (hC : Good C) : 2 < C.p := by have := hC.gt3; omega
+theorem Good.two_lt (hC : Good C) : 2 < C.p := by have := hC.gt3; omega_using [this]
 
 theorem onCurve_affine {x y : Fe C} : onCurve C (.affine x y) = true ↔
     toF y ^ 2 = toF x ^ 3 + (C.a : ZMod C.p) * toF x + (C.b : ZMod C.p) := by
@@ -168,7 +169,7 @@ theorem ZRep.y_ne_zero (hC : Good C) {X Y Z : ZMod C.p} {P : Point C}
 
 theorem mul_pow_sub_two {Z : ZMod C.p} (hZ : Z ≠ 0) : Z * Z ^ (C.p - 2) = 1 := by
   have h2 := (Fact.out : C.p.Prime).two_le
-  rw [← pow_succ', show C.p - 2 + 1 = C.p - 1 by omega, ZMod.pow_card_sub_one_eq_one hZ]
+  rw [← pow_succ', show C.p - 2 + 1 = C.p - 1 by omega_using [h2], ZMod.pow_card_sub_one_eq_one hZ]
 
 /-- The affine `x` of a representative: `X / Z`, with the inverse by Fermat. -/
 theorem ZRep.x_eq {X Y Z : ZMod C.p} {x y : Fe C} (h : ZRep C X Y Z (.affine x y)) :

@@ -32,11 +32,11 @@ theorem WsM.hdr_le {s : State} {B : BitVec 32} {Z w N : Nat} (h : WsM s B Z w N)
 
 theorem WsM.addr {s : State} {B : BitVec 32} {Z w N d : Nat} (h : WsM s B Z w N) (hd : d < Z) :
     State.addr (B + BitVec.ofNat 32 d) = off (State.addr B) d :=
-  VG.Arm.addr_add (by have := h.nowrap; omega)
+  VG.Arm.addr_add (by have := h.nowrap; omega_using [hd, this])
 
 theorem WsM.write {s : State} {B : BitVec 32} {Z w N d : Nat} (h : WsM s B Z w N) (hd : d + 4 ≤ Z) :
     InRegions s.wr (off (State.addr B) d) 4 :=
-  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega)⟩
+  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega_using [hd, this])⟩
 
 theorem WsM.read {s : State} {B : BitVec 32} {Z w N d : Nat} (h : WsM s B Z w N) (hd : d + 4 ≤ Z) :
     InRegions (s.rd ++ s.wr) (off (State.addr B) d) 4 := by
@@ -71,20 +71,20 @@ theorem topWords_ok {s : State} {B : BitVec 32} {Z w N X : Nat} (h : Ws s B Z w 
   generalize ey2 : w32 s.mem (State.addr B) (X + 8) = y2 at k
   generalize ey3 : w32 s.mem (State.addr B) (X + 12) = y3 at k
   generalize eP : slot s.mem B sP = P at k
-  have a0 : State.addr (B + BitVec.ofNat 32 X) = off (State.addr B) X := h.addr (by omega)
+  have a0 : State.addr (B + BitVec.ofNat 32 X) = off (State.addr B) X := h.addr (by omega_using [hXZ])
   have a4 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 4) = off (State.addr B) (X + 4) := by
-    rw [add_ofNat_assoc]; exact h.addr (by omega)
+    rw [add_ofNat_assoc]; exact h.addr (by omega_using [hXZ])
   have a8 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 8) = off (State.addr B) (X + 8) := by
-    rw [add_ofNat_assoc]; exact h.addr (by omega)
+    rw [add_ofNat_assoc]; exact h.addr (by omega_using [hXZ])
   have a12 : State.addr (B + BitVec.ofNat 32 X + BitVec.ofNat 32 12) = off (State.addr B) (X + 12) := by
-    rw [add_ofNat_assoc]; exact h.addr (by omega)
-  have aP := h.addr (d := sP) (by simp only [sP, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega)
-  have r0 : InRegions (s.rd ++ s.wr) (off (State.addr B) X) 4 := h.read (by omega)
-  have r4 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 4)) 4 := h.read (by omega)
-  have r8 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 8)) 4 := h.read (by omega)
-  have r12 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 12)) 4 := h.read (by omega)
+    rw [add_ofNat_assoc]; exact h.addr (by omega_using [hXZ])
+  have aP := h.addr (d := sP) (by simp only [sP, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
+  have r0 : InRegions (s.rd ++ s.wr) (off (State.addr B) X) 4 := h.read (by omega_using [hXZ])
+  have r4 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 4)) 4 := h.read (by omega_using [hXZ])
+  have r8 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 8)) 4 := h.read (by omega_using [hXZ])
+  have r12 : InRegions (s.rd ++ s.wr) (off (State.addr B) (X + 12)) 4 := h.read (by omega_using [hXZ])
   have rP : InRegions (s.rd ++ s.wr) (off (State.addr B) sP) 4 :=
-    h.read (by simp only [sP, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega)
+    h.read (by simp only [sP, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
   have v0 : s.mem.readW (off (State.addr B) X) 32 = BitVec.ofNat 32 y0 := by rw [← ey0]; exact (ofNat_toNat32 _).symm
   have v4 : s.mem.readW (off (State.addr B) (X + 4)) 32 = BitVec.ofNat 32 y1 := by
     rw [← ey1]; exact (ofNat_toNat32 _).symm
@@ -118,8 +118,8 @@ theorem topWords_ok {s : State} {B : BitVec 32} {Z w N X : Nat} (h : Ws s B Z w 
   rw [i3, tn hy1, (k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans p1), tn hP] at e4
   obtain ⟨lo4, hi4⟩ := wide_lo_hi (BitVec.isLt _) e4
   have wU0 : InRegions v4.wr (off (State.addr B) sU0) 4 := by
-    rw [P4.wr, k3.wr, P2.wr, k1.wr]; exact h.write (by simp only [sU0, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega)
-  have aU0 := h.addr (d := sU0) (by simp only [sU0, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega)
+    rw [P4.wr, k3.wr, P2.wr, k1.wr]; exact h.write (by simp only [sU0, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
+  have aU0 := h.addr (d := sU0) (by simp only [sU0, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
   have b4 : v4.gpr .r12 = B := (P4.regs _ (by decide)).trans ((k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans b1))
   have l4 : v4.gpr .lr = BitVec.ofNat 32 y2 :=
     (P4.regs _ (by decide)).trans ((k3.gpr _ (by decide)).trans ((P2.regs _ (by decide)).trans l1))
@@ -150,10 +150,10 @@ theorem topWords_ok {s : State} {B : BitVec 32} {Z w N X : Nat} (h : Ws s B Z w 
   have b8 : v8.gpr .r12 = B :=
     (P8.regs _ (by decide)).trans ((k7.gpr _ (by decide)).trans ((P6.regs _ (by decide)).trans
       ((k5.gpr _ (by decide)).trans b4)))
-  have aU2 := h.addr (d := sU2) (by simp only [sU2, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega)
+  have aU2 := h.addr (d := sU2) (by simp only [sU2, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
   have wU2 : InRegions v8.wr (off (State.addr B) sU2) 4 := by
     rw [P8.wr, k7.wr, P6.wr, k5.wr, P4.wr, k3.wr, P2.wr, k1.wr]
-    exact h.write (by simp only [sU2, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega)
+    exact h.write (by simp only [sU2, VG.Impl.Rsa.Arm.Keys.hdr] at hz ⊢; omega_using [hz])
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.r3] (Q := fun v =>
       v.mem = v8.mem.writeW (off (State.addr B) sU2) (v8.gpr .r3 + v6.gpr .r4) ∧ v.gpr .r11 = v8.gpr .r11 ∧
       v.gpr .r12 = B) (by
@@ -162,12 +162,12 @@ theorem topWords_ok {s : State} {B : BitVec 32} {Z w N X : Nat} (h : Ws s B Z w 
   · rw [m9, P8.mem, m7, P6.mem, m5, P4.mem, m3, P2.mem, m1]
     congr 2
     · apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_add, lo4, hi2, BitVec.toNat_ofNat]; simp only [wordP]; omega
+      rw [BitVec.toNat_add, lo4, hi2, BitVec.toNat_ofNat]; simp only [wordP]; omega_using []
     · apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_add, lo8, hi6, BitVec.toNat_ofNat]; simp only [wordP]; omega
+      rw [BitVec.toNat_add, lo8, hi6, BitVec.toNat_ofNat]; simp only [wordP]; omega_using []
   · rw [u9, P8.regs _ (by decide), u7]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_add, lo6, hi4, BitVec.toNat_ofNat]; simp only [wordP]; omega
+    rw [BitVec.toNat_add, lo6, hi4, BitVec.toNat_ofNat]; simp only [wordP]; omega_using []
   · exact (((k1.mono (by decide)).trans (Preserves.toRest P2 |>.mono (by decide))).trans
       ((k3.mono (by decide)).trans (Preserves.toRest P4 |>.mono (by decide)))).trans
       ((((k5.mono (by decide)).trans (Preserves.toRest P6 |>.mono (by decide))).trans

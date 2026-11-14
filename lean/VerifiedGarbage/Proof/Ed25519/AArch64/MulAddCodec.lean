@@ -43,12 +43,12 @@ theorem scratchFrame {base : Addr} {o n : Nat} {m m' : Mem}
   have hn' := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hn'
   simp only [ofs]
-  omega
+  omega_using [hn, hn']
 
 theorem fe_frame {base p : Addr} {m m' : Mem} (hf : Frame [⟨base, 8192⟩] m m')
     (hp : (⟨p, 32⟩ : Region).Disjoint ⟨base, 8192⟩) : fe m' p 0 = fe m p 0 := by
   have h : ∀ d, d + 8 ≤ 32 → m'.readW (off p d) 64 = m.readW (off p d) 64 := fun d hd =>
-    hf.readW (r := ⟨p, 32⟩) (Offset.contains_base _ hd (by omega))
+    hf.readW (r := ⟨p, 32⟩) (Offset.contains_base _ hd (by omega_using [hd]))
       (by simpa only [List.mem_singleton, forall_eq]) (by decide)
   simp only [fe, val4, word, h 0 (by decide), h 8 (by decide), h 16 (by decide), h 24 (by decide)]
 

@@ -114,11 +114,11 @@ theorem ld_eq (k : Nat) (p : XReg) : ld k p = .vmovdquLoad .l256 .xmm7 (at_ .rdx
 
 theorem lane_load {k : Nat} (hk : k < 4) :
     laneSseBlock (restV k (preg k)) = some (ldacc (decide (k = 0)) (preg k)) := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem lane_load16 {k : Nat} (hk : k < 8) :
     laneSseBlock (restV k (preg16 k)) = some (ldacc (decide (k = 0)) (preg16 k)) := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- A register of powers: none the loads write, nor the mask, the reduction
@@ -150,7 +150,7 @@ theorem load_ok {k : Nat} {p : XReg} (hl : laneSseBlock (restV k p) = some (ldac
   rw [ld_eq, WP.block_cons_iff]
   refine ⟨s₁, by simp only [isa, exec, State.load256, ea_at, hin, ite_true, Option.map_some]; rfl, ?_⟩
   have l7 : ∀ l < 2, s₁.lane .xmm7 l = s.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · simp [s₁, State.lane_setV256, v, load256_lo]
     · simp [s₁, State.lane_setV256, v, load256_hi]
   have keep : ∀ r, r ≠ .xmm7 → ∀ l < 2, s₁.lane r l = s.lane r l := fun r hr l _ => by
@@ -190,7 +190,7 @@ theorem combine_ok (s : State) :
   refine ⟨by simp [VBinOp.sse, Pclmul.eval_pxor, VOp.exec, State.setV, State.lane], by simp, by simp,
     by simp, by simp, by simp, fun r hr l hl => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
     simp [hr.1, hr.2, VOp.exec, State.setV, State.lane]
 
 /-- The end of the eight-block body: `add rdx, 128`, `sub rcx, 8`, `cmp rcx, 8`. -/

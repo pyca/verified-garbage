@@ -77,7 +77,7 @@ theorem readW128 (m : Mem) (a : Addr) :
     simp only [Mem.readW, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (m.read b 8).isLt
   rw [e1, BitVec.toNat_append, e2, e2, h, ← Nat.shiftLeft_add_eq_or_of_lt (m.read a 8).isLt,
     Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-! ## The contract -/
 
@@ -112,12 +112,12 @@ theorem pwOff_le (k : Nat) (h1 : 1 ≤ k) (h8 : k ≤ 8) : pwOff k + 16 ≤ 128 
   simp only [pwOff]; split <;> omega
 
 theorem pwOff_mod (k : Nat) : pwOff k % 8 = 0 := by
-  simp only [pwOff]; split <;> omega
+  simp only [pwOff]; split <;> omega_using []
 
 /-- Distinct powers are 16 bytes apart. -/
 theorem pwOff_sep (j k : Nat) (hj : 1 ≤ j) (hj8 : j ≤ 8) (hk : 1 ≤ k) (hk8 : k ≤ 8) (hjk : j ≠ k) :
     pwOff j + 16 ≤ pwOff k ∨ pwOff k + 16 ≤ pwOff j := by
-  simp only [pwOff]; split <;> split <;> omega
+  simp only [pwOff]; split <;> split <;> omega_arith
 
 /-! ## Loading `H` -/
 
@@ -163,7 +163,7 @@ theorem keyLoad_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
 /-- `pw + d` is in the powers' buffer for 8 bytes. -/
 theorem out_pw {s₀ : State} (hp : keyPowersAArch64.pre s₀) {d : Nat} (hd : d + 8 ≤ 128) :
     InRegions s₀.wr (s₀.gpr .x1 + BitVec.ofNat 64 d) 8 :=
-  ⟨⟨s₀.gpr .x1, 128⟩, by simp [hp.2.1], contains_offset hd (by omega)⟩
+  ⟨⟨s₀.gpr .x1, 128⟩, by simp [hp.2.1], contains_offset hd (by omega_using [hd])⟩
 
 /-- `preparedPower(Z)` stored at `pw + off`, from `Z = zh ++ zl`, as two
 writes. -/
@@ -176,11 +176,11 @@ theorem storeEnc_run {s₀ : State} (hp : keyPowersAArch64.pre s₀) {H : Block}
         (s₀.gpr .x1 + BitVec.ofNat 64 (off + 8))
           ((s.gpr ZH <<< 1 ||| s.gpr ZL >>> 63) ^^^ (cHigh &&& ((0 : BitVec 64) - s.gpr ZH >>> 63))) := by
   have o0 : InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 off) 8 := by
-    rw [hS.wr, hS.x1]; exact out_pw hp (by omega)
+    rw [hS.wr, hS.x1]; exact out_pw hp (by omega_using [hle])
   have o8 : InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 (off + 8)) 8 := by
-    rw [hS.wr, hS.x1]; exact out_pw hp (by omega)
-  have a0 : off % 8 = 0 ∧ off < 4096 * 8 := ⟨ho, by omega⟩
-  have a8 : (off + 8) % 8 = 0 ∧ off + 8 < 4096 * 8 := ⟨by omega, by omega⟩
+    rw [hS.wr, hS.x1]; exact out_pw hp (by omega_using [hle])
+  have a0 : off % 8 = 0 ∧ off < 4096 * 8 := ⟨ho, by omega_using [hle]⟩
+  have a8 : (off + 8) % 8 = 0 ∧ off + 8 < 4096 * 8 := ⟨by omega_using [ho], by omega_using [hle]⟩
   have hz := hS.zero
   simp only [ZERO] at hz
   apply WP.of_runBlock
@@ -203,21 +203,21 @@ theorem storeEnc_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) {H : Block} 
     (hst : Stored s₀ H K s.mem) :
     WP isa (.block (storeEnc (pwOff (K + 1)))) s fun s' =>
       St s₀ H s' ∧ s'.gpr ZH ++ s'.gpr ZL = hpow H (K + 1) ∧ Stored s₀ H (K + 1) s'.mem := by
-  have hle := pwOff_le (K + 1) (by omega) hK8
+  have hle := pwOff_le (K + 1) (by omega_using []) hK8
   refine WP.mono (storeEnc_run hp hS (pwOff_mod _) hle) fun s' ⟨h₁, z₁, z₂, hm⟩ =>
     ⟨h₁, by rw [z₁, z₂, hz], fun j hj hjK => ?_⟩
   have hsep8 : Mem.Sep (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff (K + 1))) (64 / 8)
       (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff (K + 1) + 8)) (64 / 8) :=
-    Offset.sep _ (by omega) (by omega) (by omega)
+    Offset.sep _ (by omega_using []) (by omega_using [hle]) (by omega_using [hle])
   rw [hm]
-  rcases (by omega : j = K + 1 ∨ j ≤ K) with rfl | hjK'
+  rcases (by omega_using [hjK] : j = K + 1 ∨ j ≤ K) with rfl | hjK'
   · rw [readW128, Offset.add_add, Mem.readW_writeW_self64, Mem.readW_writeW_sep hsep8 (by decide),
       Mem.readW_writeW_self64, enc_eq, hz]
-  · have hj8 : j ≤ 8 := by omega
+  · have hj8 : j ≤ 8 := by omega_using [hK8, hjK]
     have hlj := pwOff_le j hj hj8
-    have hs := pwOff_sep j (K + 1) hj hj8 (by omega) hK8 (by omega)
-    rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
+    have hs := pwOff_sep j (K + 1) hj hj8 (by omega_using []) hK8 (by omega_using [hjK'])
+    rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hs]) (by omega_using [hlj]) (by omega_using [hle])) (by decide),
+      Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hs]) (by omega_using [hlj]) (by omega_using [hle])) (by decide),
       hst j hj hjK']
 
 /-! ## Multiplying by `H` -/
@@ -287,7 +287,7 @@ theorem keyPowers_post {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
     WP isa keyPowers s₀ (keyPowersAArch64.post s₀) := by
   refine WP.seq (WP.mono (keyLoad_ok hp) fun s₁ ⟨h₁, z₁⟩ => ?_)
   have st₀ : Stored s₀ (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0)) 0 s₁.mem :=
-    fun _ h1 h0 => absurd h0 (by omega)
+    fun _ h1 h0 => absurd h0 (by omega_using [h1])
   rw [← hpow_one (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0))] at z₁
   refine round_then (K := 0) hp (by decide) h₁ z₁ st₀ fun s₂ h₂ z₂ st₂ => ?_
   refine round_then (K := 1) hp (by decide) h₂ z₂ st₂ fun s₃ h₃ z₃ st₃ => ?_
@@ -299,13 +299,13 @@ theorem keyPowers_post {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
   refine WP.mono (storeEnc_ok (K := 7) hp (by decide) h₈ z₈ st₈) fun s' ⟨_, _, st'⟩ => ?_
   intro j hj
   refine ⟨?_, ?_⟩
-  · have := st' (2 * j + 2) (by omega) (by omega)
+  · have := st' (2 * j + 2) (by omega_using []) (by omega_using [hj])
     rw [show pwOff (2 * j + 2) = 32 * j by
-      simp only [pwOff, show (2 * j + 2) % 2 = 0 by omega, ↓reduceIte]; omega] at this
+      simp only [pwOff, show (2 * j + 2) % 2 = 0 by omega_using [], ↓reduceIte]; omega_using []] at this
     exact this
-  · have := st' (2 * j + 1) (by omega) (by omega)
+  · have := st' (2 * j + 1) (by omega_using []) (by omega_using [hj])
     rw [show pwOff (2 * j + 1) = 16 + 32 * j by
-      simp only [pwOff, show (2 * j + 1) % 2 = 1 by omega, Nat.one_ne_zero, ↓reduceIte]; omega] at this
+      simp only [pwOff, show (2 * j + 1) % 2 = 1 by omega_using [], Nat.one_ne_zero, ↓reduceIte]; omega_using []] at this
     exact this
 
 theorem keyPowers_correct (s : State) (hs : keyPowersAArch64.pre s) :

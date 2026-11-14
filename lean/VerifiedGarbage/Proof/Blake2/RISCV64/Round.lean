@@ -99,7 +99,7 @@ theorem al (z : Size) {p : Addr} (hp : p.toNat % 8 = 0) {d : Nat} (hd : d % zB z
     (p + BitVec.ofNat 64 d).toNat % zB z = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   have := p.isLt
-  cases z <;> simp only [zB, Width.bytes] at hd ⊢ <;> omega
+  cases z <;> simp only [zB, Width.bytes] at hd ⊢ <;> omega_using [hp, hd]
 
 theorem exec_ld {z : Size} {s : State} {t n : Reg} {off : Nat} (ho : off < 2048)
     (ha : (s.gpr n + BitVec.ofNat 64 off).toNat % zB z = 0)
@@ -183,7 +183,7 @@ variable {z : Size} (P : Params z.bits)
 
 /-- The work vector `v` is in the low `z.bits` bits of its registers. -/
 def Vars (s : State) (v : Work z.bits) : Prop :=
-  ∀ k (hk : k < 16), (s.gpr (wreg k)).setWidth z.bits = (v[k]'(by omega))
+  ∀ k (hk : k < 16), (s.gpr (wreg k)).setWidth z.bits = (v[k]'(by omega_using [hk]))
 
 /-- The rounds invariant, relative to the state `sB` at their start: the work
 vector `v` is in its registers, and nothing else has changed but `T` and `RT`. -/
@@ -208,7 +208,7 @@ theorem Msg.of_RI {M : Block z.bits} {p : Addr} {sB s : State} {v : Work z.bits}
     by rw [hr.rd, hr.wr]; exact h.inr, by rw [hr.mem]; exact h.word⟩
 
 theorem mOff_al (z : Size) (j : Nat) : (mOff + zB z * j) % zB z = 0 := by
-  cases z <;> simp only [mOff, zB, Width.bytes] <;> omega
+  cases z <;> simp only [mOff, zB, Width.bytes] <;> omega_using []
 
 /-! ## Lines: half of a `G` on the work vector
 
@@ -475,14 +475,14 @@ theorem SB_ne_sreg : ∀ i < 18, SB ≠ sreg i := by decide
 theorem ob (z : Size) {j : Nat} (hj : j < 16) : mOff + ws z.bits * j < 2048 := by
   rw [ws_bits]; have := zB_le z
   have := Nat.mul_le_mul this (Nat.le_of_lt_succ hj)
-  simp only [mOff]; omega
+  simp only [mOff]; omega_using [this]
 
 theorem op_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} (op : Op) (hv : op.Valid = true)
     {x : Nat → BitVec z.bits} {s : State} (hm : Msg M p s) (h : Holds18 x s) :
     WP isa (.block [op.code P r]) s (OpPost (op.step P r M x) s) := by
-  have hd : op.dst < 18 := by cases op <;> simp_all [Op.Valid, Op.dst] <;> omega
+  have hd : op.dst < 18 := by cases op <;> simp_all [Op.Valid, Op.dst] <;> omega_using [hv]
   have hs : ∀ i ∈ op.srcs, i < 18 := by
-    cases op <;> simp_all [Op.Valid, Op.srcs] <;> omega
+    cases op <;> simp_all [Op.Valid, Op.srcs] <;> omega_using [hv]
   -- The instruction writes the value of `op` into its slot's register, and nothing else.
   have hw : ∃ v : BitVec 64, exec (op.code P r) s = some (s.write (sreg op.dst) v) ∧
       v.setWidth z.bits = op.val P r M x := by
@@ -491,7 +491,7 @@ theorem op_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} (op : Op) (hv
       exact ⟨_, exec_add, by
         simp only [lo_add, h a (hs a (by simp [Op.srcs])), h b (hs b (by simp [Op.srcs])), Op.val]⟩
     | ld n =>
-      have hn : n ≠ 0 := by simp only [Op.Valid, decide_eq_true_eq] at hv; omega
+      have hn : n ≠ 0 := by simp only [Op.Valid, decide_eq_true_eq] at hv; omega_using [hv]
       have sj := (Spec.Blake2.sigmaAt r (n - 1)).isLt
       refine ⟨_, exec_ld (ob z sj) (by rw [hm.sb, ws_bits]; exact al z hm.al (mOff_al z _))
         (by rw [hm.sb, ws_bits]; exact hm.inr _ sj), ?_⟩
@@ -508,7 +508,7 @@ theorem op_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} (op : Op) (hv
       have hk : k < 4 := by simp only [Op.Valid, decide_eq_true_eq] at hv; exact hv.2
       have := rotOf_ok P hR hk
       obtain ⟨v, he, hv'⟩ := exec_sll_z (z := z) (s := s) (d := sreg d) (n := sreg d)
-        (show z.bits - rotOf P k < z.bits by omega)
+        (show z.bits - rotOf P k < z.bits by omega_using [this])
       exact ⟨v, he, by rw [hv', h d (hs d (by simp [Op.srcs]))]; rfl⟩
     | or d =>
       exact ⟨_, exec_logic, by
@@ -631,12 +631,12 @@ theorem lineOps_words (hR : ROk P) (r : Nat) (M : Block z.bits) (x : Nat → Bit
   apply Vector.ext
   intro m hm
   have hda : d ≠ a := Ne.symm had
-  have h16a : (16 : Nat) ≠ a := by omega
-  have h16d : (16 : Nat) ≠ d := by omega
-  have h17d : (17 : Nat) ≠ d := by omega
-  have h17a : (17 : Nat) ≠ a := by omega
-  have hm16 : m ≠ 16 := by omega
-  have hm17 : m ≠ 17 := by omega
+  have h16a : (16 : Nat) ≠ a := by omega_using [ha]
+  have h16d : (16 : Nat) ≠ d := by omega_using [hd]
+  have h17d : (17 : Nat) ≠ d := by omega_using [hd]
+  have h17a : (17 : Nat) ≠ a := by omega_using [ha]
+  have hm16 : m ≠ 16 := by omega_using [hm]
+  have hm17 : m ≠ 17 := by omega_using [hm]
   rw [bline_get P r M _ n k ha hb hd had m hm]
   by_cases hn : n = 0
   · subst hn
@@ -719,7 +719,7 @@ theorem round_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} {sB s : St
       have := congrArg (·[k]'hk) (roundOps_fold P hR r M (slots s))
       simpa only [words, Vector.getElem_ofFn] using this
     rw [round_lines, ← hw, ← e, ← sreg_word hk]
-    exact h'.holds k (by omega)
+    exact h'.holds k (by omega_using [hk])
   · refine (h'.keep q fun i hi e => ?_).trans (h.other q hq hT hRT)
     by_cases hi16 : i < 16
     · exact ne_wreg hq hi16 (by rw [e, sreg_word hi16])

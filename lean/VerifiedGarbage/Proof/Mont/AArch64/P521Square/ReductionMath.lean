@@ -27,9 +27,9 @@ theorem fold_sum_bound {u : Nat} (hu : u < fieldPrime*fieldPrime) :
   have hq : u/fieldBase < fieldPrime := by
     have he := Nat.mod_add_div u fieldBase
     dsimp only [fieldBase,fieldPrime] at *
-    omega
+    omega_using [hu]
   dsimp only [fieldBase,fieldPrime] at *
-  omega
+  omega_using [hu]
 
 /-- Folding at bit 521 preserves the residue. -/
 theorem fold_value_mod (u : Nat) :
@@ -38,7 +38,7 @@ theorem fold_value_mod (u : Nat) :
   have he : u = s + fieldPrime * (u/fieldBase) := by
     have h := Nat.mod_add_div u fieldBase
     dsimp only [s,fieldBase,fieldPrime] at *
-    omega
+    omega_using []
   change u%fieldPrime=s%fieldPrime
   rw [he,Nat.add_mod,Nat.mul_mod,Nat.mod_self,Nat.zero_mul,Nat.zero_mod,Nat.add_zero,Nat.mod_mod]
 
@@ -48,13 +48,13 @@ theorem canonical_sum {s : Nat} (hs : s<2*fieldPrime) :
     (if fieldBase≤s+1 then s+1-fieldBase else s)=s%fieldPrime := by
   by_cases h : fieldBase≤s+1
   · rw [ite_eq_left h]
-    have hp : fieldPrime≤s := by dsimp only [fieldBase,fieldPrime] at *; omega
-    have ht : s-fieldPrime<fieldPrime := by omega
-    have he : s-fieldPrime=s+1-fieldBase := by dsimp only [fieldBase,fieldPrime] at *; omega
+    have hp : fieldPrime≤s := by dsimp only [fieldBase,fieldPrime] at *; omega_using [h]
+    have ht : s-fieldPrime<fieldPrime := by omega_using [hs]
+    have he : s-fieldPrime=s+1-fieldBase := by dsimp only [fieldBase,fieldPrime] at *; omega_using []
     have hm : s%fieldPrime=s-fieldPrime := (Nat.mod_eq_sub_mod hp).trans (Nat.mod_eq_of_lt ht)
     exact ⟨by rw [←he]; exact ht,he ▸ hm.symm⟩
   · rw [ite_eq_right h]
-    have ht : s<fieldPrime := by dsimp only [fieldBase,fieldPrime] at *; omega
+    have ht : s<fieldPrime := by dsimp only [fieldBase,fieldPrime] at *; omega_using [h]
     exact ⟨ht,(Nat.mod_eq_of_lt ht).symm⟩
 
 /-- The fold followed by one subtraction is the canonical residue. -/
@@ -70,18 +70,18 @@ theorem carry_correction {s v w c b : Nat} (hs : s<2*fieldPrime)
     (ev : v+montBase*c = s+1+montBase-fieldBase)
     (ew : w+1 = v+c+montBase*b) :
     w%fieldBase = (if fieldBase≤s+1 then s+1-fieldBase else s) ∧ w%fieldBase<fieldPrime := by
-  have hcb : c=0 ∨ c=1 := by omega
+  have hcb : c=0 ∨ c=1 := by omega_using [hc]
   rcases hcb with rfl | rfl
-  · have hs' : s+1<fieldBase := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega
-    have he : w = fieldBase*(2^55-1)+s := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega
-    have ht : s<fieldPrime := by dsimp only [fieldBase,fieldPrime] at *; omega
-    have ht' : s<fieldBase := by dsimp only [fieldBase,fieldPrime] at *; omega
-    rw [ite_eq_right (by omega),he,Nat.add_mod,Nat.mul_mod,Nat.mod_self,Nat.zero_mul,Nat.zero_mod,Nat.zero_add,Nat.mod_mod,Nat.mod_eq_of_lt ht']
+  · have hs' : s+1<fieldBase := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega_using [hv, ev]
+    have he : w = fieldBase*(2^55-1)+s := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega_using [hw, ev, ew]
+    have ht : s<fieldPrime := by dsimp only [fieldBase,fieldPrime] at *; omega_using [hs']
+    have ht' : s<fieldBase := by dsimp only [fieldBase,fieldPrime] at *; omega_using [hs']
+    rw [ite_eq_right (by omega_using [hs']),he,Nat.add_mod,Nat.mul_mod,Nat.mod_self,Nat.zero_mul,Nat.zero_mod,Nat.zero_add,Nat.mod_mod,Nat.mod_eq_of_lt ht']
     exact ⟨rfl,ht⟩
-  · have hs' : fieldBase≤s+1 := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega
-    have he : w = s+1-fieldBase := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega
-    have ht : w<fieldPrime := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega
-    have ht' : w<fieldBase := by dsimp only [fieldBase,fieldPrime] at *; omega
+  · have hs' : fieldBase≤s+1 := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega_using [ev]
+    have he : w = s+1-fieldBase := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega_using [hw, ev, ew]
+    have ht : w<fieldPrime := by dsimp only [fieldBase,montBase,fieldPrime] at *; omega_using [hs, hw, ev, ew]
+    have ht' : w<fieldBase := by dsimp only [fieldBase,fieldPrime] at *; omega_using [ht]
     rw [Nat.mod_eq_of_lt ht',ite_eq_left hs']
     exact ⟨he,ht⟩
 
@@ -93,10 +93,10 @@ theorem rotation_mod {t : Nat} (ht : t<fieldPrime) :
   have hdiv := Nat.mod_add_div t rotateBase
   have hsmall : t/rotateBase+upperBase*(t%rotateBase) < fieldPrime := by
     dsimp only [fieldPrime,rotateBase,upperBase] at *
-    omega
+    omega_using [ht]
   have hmul : (t/rotateBase+upperBase*(t%rotateBase))*rotateBase = t+fieldPrime*(t%rotateBase) := by
     dsimp only [fieldPrime,rotateBase,upperBase] at *
-    omega
+    omega_using []
   have hR : montBase = rotateBase + fieldPrime*rotateBase := by decide
   refine ⟨hsmall,?_⟩
   rw [hR,Nat.mul_add,Nat.add_mod]

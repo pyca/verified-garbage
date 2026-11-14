@@ -37,12 +37,12 @@ theorem wordsVal_low {m : Mem} {B : Addr} {d h k : Nat} (hlt : val32 m B d (2 * 
     wordsVal m B d h = val32 m B d (2 * (h + k)) := by
   rw [wordsVal_eq_val32]
   have e := val32_append m B d (2 * h) (2 * k)
-  rw [show 2 * h + 2 * k = 2 * (h + k) by omega, show 32 * (2 * h) = 64 * h by omega] at e
+  rw [show 2 * h + 2 * k = 2 * (h + k) by omega_using [], show 32 * (2 * h) = 64 * h by omega_using []] at e
   rw [e] at hlt ⊢
   have : val32 m B (d + 4 * (2 * h)) (2 * k) = 0 := by
     rcases Nat.eq_zero_or_pos (val32 m B (d + 4 * (2 * h)) (2 * k)) with z | z
     · exact z
-    · have := Nat.le_mul_of_pos_right (2 ^ (64 * h)) z; omega
+    · have := Nat.le_mul_of_pos_right (2 ^ (64 * h)) z; omega_using [hlt, this]
   rw [this, Nat.mul_zero, Nat.add_zero]
 
 /-- A number's low words. -/
@@ -50,9 +50,9 @@ theorem wordsVal_mod_low (m : Mem) (B : Addr) (d h k : Nat) :
     wordsVal m B d h = val32 m B d (2 * (h + k)) % 2 ^ (64 * h) := by
   rw [wordsVal_eq_val32]
   have e := val32_append m B d (2 * h) (2 * k)
-  rw [show 2 * h + 2 * k = 2 * (h + k) by omega, show 32 * (2 * h) = 64 * h by omega] at e
+  rw [show 2 * h + 2 * k = 2 * (h + k) by omega_using [], show 32 * (2 * h) = 64 * h by omega_using []] at e
   rw [e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt]
-  rw [← show 32 * (2 * h) = 64 * h by omega]; exact val32_lt _ _ _ _
+  rw [← show 32 * (2 * h) = 64 * h by omega_using []]; exact val32_lt _ _ _ _
 
 /-- The word division on the wide view (`KeyDiv.divQ`): `[a] := ⌊[a] / [m]⌋`
 and `[r] := [a] mod [m]`, for `[m] < 2^(64 h)` with its top word not zero,
@@ -76,15 +76,15 @@ theorem DS.divQW (h : DS s0 true A live V ls s) {a r m t sv : Nat}
   have hmN := h.live_lt _ hn
   simp only at haN hmN
   generalize ehh : (kK s0 + 7) / 8 = hh at top ⊢
-  have eww : ww (kK s0) = 2 * hh + 2 := by simp only [ww]; omega
-  have eW : vw s0 true = 2 * (2 * hh + 3) := by rw [vw_true]; simp only [wW]; omega
+  have eww : ww (kK s0) = 2 * hh + 2 := by simp only [ww]; omega_using [ehh]
+  have eW : vw s0 true = 2 * (2 * hh + 3) := by rw [vw_true]; simp only [wW]; omega_using [eww]
   have ws := h.ws
   have fa := ws.arr_fit haN
   simp only [S] at fa
   have dj : ∀ {x y : Nat}, x ≠ y → arr (vw s0 true) x + 8 * (2 * hh + 3) ≤ arr (vw s0 true) y ∨
       arr (vw s0 true) y + S (vw s0 true) ≤ arr (vw s0 true) x := fun hxy => by
     have := arr_disj (w := vw s0 true) hxy
-    simp only [S] at this ⊢; omega
+    simp only [S] at this ⊢; omega_using [eW, this]
   -- `r11 := 2 h` and `r4 := 2 h + 3` from `r29 = W`.
   have hdw : ∀ u : State, Ws u (rvB s0) (rvZ s0) (vw s0 true) (vN true) →
       WP isa (.block [.subi .r11 .r29 6, .lsr .d .r11 .r11 1]) u fun u' =>
@@ -105,12 +105,12 @@ theorem DS.divQW (h : DS s0 true A live V ls s) {a r m t sv : Nat}
       (by prun [exec_lsr_d (show 1 < 64 by decide), hu.r29, e]) (by decide)) fun _ ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
   -- The divisor: `[m]`'s low `h` words.
   have hM : wordsVal s.mem (rvB s0) (arr (vw s0 true) m) hh = A true m % 2 ^ (64 * hh) := by
-    rw [wordsVal_mod_low _ _ _ hh (hh + 3), ← h.val hn, show 2 * (hh + (hh + 3)) = vw s0 true by rw [eW]; omega]
+    rw [wordsVal_mod_low _ _ _ hh (hh + 3), ← h.val hn, show 2 * (hh + (hh + 3)) = vw s0 true by rw [eW]; omega_using []]
   have hX : wordsVal s.mem (rvB s0) (arr (vw s0 true) a) (2 * hh + 3) = A true a := by
     rw [← h.val ha, wordsVal_eq_val32, eW]
   refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divG_ok true (a := a) (r := r) (m := m) (t := t) (sv := sv)
     (D := hh) (A := 2 * hh + 3) (v := 2 * hh + 3) ws hr hmN ht hsv hrm hrt hrsv hmt hmsv htsv
-    (vN_le true) eW (by omega) (by omega) (by omega) (by omega) (by omega) haN (by omega)
+    (vN_le true) eW (by omega) (by omega) (by omega_using []) (by omega_using []) (by omega) haN (by omega_using [eW, fa])
     (dj har) (fun _ => dj ham) (dj hat) (dj hasv)
     hdw haw (by rw [hM]; exact top)) fun u ⟨ur, uq, wu, kr, uo⟩ => ⟨?_, kr⟩
   rw [hX, hM] at ur
@@ -124,7 +124,7 @@ theorem DS.divQW (h : DS s0 true A live V ls s) {a r m t sv : Nat}
     · exact ⟨_, by simp [KeyWorkspace.ranges], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp [KeyWorkspace.ranges], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨(arr (vw s0 true) a, S (vw s0 true)), by simp [KeyWorkspace.ranges], Nat.le_refl _,
-        by simp only [S]; omega⟩
+        by simp only [S]; omega_using [eW]⟩
   have hu := h.wrs wu (js := [r, t, sv, a]) (fun j hj => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl <;> with_reducible assumption) k hl kr
@@ -181,7 +181,7 @@ theorem fixTop_ok {s : State} {B : Addr} {Z w N j H : Nat} (h : Ws s B Z w N) (h
   have e11 : (BitVec.ofNat 64 w - BitVec.ofNat 64 6) <<< 1 = BitVec.ofNat 64 (8 * H) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using [hw]
   unfold VG.Impl.Rsa.PPC64LE.RecoverDet.fixTop
   refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
   have h' := h.of_keep (Keep.write s .r5 (off B (arr w j)))
@@ -206,7 +206,7 @@ theorem wordsVal_mid (m : Mem) (B : Addr) {d k a : Nat} (ha : a < k) :
     wordsVal m B d k = wordsVal m B d a + 2 ^ (64 * a) * (word m B (d + 8 * a)).toNat +
       2 ^ (64 * a) * 2 ^ 64 * wordsVal m B (d + 8 * a + 8) (k - a - 1) := by
   have e := VG.Proof.Rsa.PPC64LE.RdShift.wordsVal_append m B d a (k - a)
-  rw [Nat.add_sub_cancel' (Nat.le_of_lt ha), show k - a = (k - a - 1) + 1 by omega,
+  rw [Nat.add_sub_cancel' (Nat.le_of_lt ha), show k - a = (k - a - 1) + 1 by omega_using [ha],
     VG.Proof.Rsa.PPC64LE.RdShift.wordsVal_succ_low] at e
   rw [e, Nat.mul_add, Nat.mul_assoc]; exact (Nat.add_assoc _ _ _).symm
 
@@ -233,7 +233,7 @@ theorem top_fix (X a : Nat) :
       _ = X % P + P * (X / P % K + K * (X / P / K)) := by rw [Nat.mod_add_div (X / P) K]
       _ = _ := by rw [Nat.mul_add, ← Nat.mul_assoc, ← Nat.add_assoc]
   have hlo : X % P < P := Nat.mod_lt _ hP
-  have hy : X / P % K < K := Nat.mod_lt _ (by omega)
+  have hy : X / P % K < K := Nat.mod_lt _ (by omega_using [hK])
   generalize X / P % K = y at e1 hy ⊢
   rw [e1]
   generalize X % P = lo at hlo
@@ -242,16 +242,16 @@ theorem top_fix (X a : Nat) :
   by_cases y0 : y = 0
   · subst y0
     simp only [↓reduceIte, Nat.mul_zero, Nat.add_zero]
-    rw [show lo + P * K * q + P = lo + P + P * K * q by omega, Nat.add_mul_mod_self_left,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [show lo + P * K * q + P = lo + P + P * K * q by omega_using [], Nat.add_mul_mod_self_left,
+      Nat.mod_eq_of_lt (by omega_using [hlo, h2])]
+    omega_using []
   · simp only [y0, ↓reduceIte]
     rw [Nat.add_zero]
     have hy1 : P * (y + 1) ≤ P * K := Nat.mul_le_mul_left P hy
     rw [Nat.mul_succ] at hy1
-    rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
-    have : P * 1 ≤ P * y := Nat.mul_le_mul_left P (by omega)
-    omega
+    rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega_using [hlo, hy1])]
+    have : P * 1 ≤ P * y := Nat.mul_le_mul_left P (by omega_using [y0])
+    omega_using [this]
 
 /-- `fixTop j` on the wide view: word `h - 1` of `[j]` set to one if it is zero. -/
 theorem DS.fixTopW (h : DS s0 true A live V ls s) {j : Nat} (hj : (true, j) ∈ live) {live' : List (Bool × Nat)}
@@ -264,9 +264,9 @@ theorem DS.fixTopW (h : DS s0 true A live V ls s) {j : Nat} (hj : (true, j) ∈ 
   have hjN := h.live_lt _ hj
   simp only at hjN
   generalize ehh : (kK s0 + 7) / 8 = H
-  have eww : ww (kK s0) = 2 * H + 2 := by simp only [ww]; omega
-  have eW : vw s0 true = 4 * H + 6 := by rw [vw_true]; simp only [wW]; omega
-  have eL : vw s0 true = 2 * (2 * H + 3) := by omega
+  have eww : ww (kK s0) = 2 * H + 2 := by simp only [ww]; omega_using [ehh]
+  have eW : vw s0 true = 4 * H + 6 := by rw [vw_true]; simp only [wW]; omega_using [eww]
+  have eL : vw s0 true = 2 * (2 * H + 3) := by omega_using [eW]
   have fj := h.ws.arr_fit hjN
   have hnw := h.ws.nowrap
   simp only [S] at fj
@@ -274,15 +274,15 @@ theorem DS.fixTopW (h : DS s0 true A live V ls s) {j : Nat} (hj : (true, j) ∈ 
   have k : KeyWorkspace.Keep (rvB s0) (vw s0 true) [j] [] s.mem t.mem := by
     rw [tm]
     exact KeyWorkspace.Keep.of_arr (d := 8 * (H - 1)) (writeW_outside _ _ _ (by omega_arith))
-      (by simp only [S]; omega) (by simp)
+      (by simp only [S]; omega_using [eW]) (by simp)
   refine h.wr (h.ws.of_keep kt) hjN k ?_ hl kt
   have ex : A true j = wordsVal s.mem (rvB s0) (arr (vw s0 true) j) (2 * H + 3) := by
     rw [← h.val hj, VG.Proof.Rsa.PPC64LE.RdShift.num_words _ _ _ eL]
   have hy : A true j / 2 ^ (64 * (H - 1)) % 2 ^ 64 = (word s.mem (rvB s0) (arr (vw s0 true) j + 8 * (H - 1))).toNat := by
-    rw [ex, wordsVal_word (by omega)]
+    rw [ex, wordsVal_word (by omega_using [])]
   rw [hy, VG.Proof.Rsa.PPC64LE.RdShift.num_words _ _ _ eL, tm,
-    wordsVal_write_mid _ _ (show H - 1 < 2 * H + 3 by omega) _ (by omega_arith), ex,
-    wordsVal_mid _ _ (show H - 1 < 2 * H + 3 by omega)]
+    wordsVal_write_mid _ _ (show H - 1 < 2 * H + 3 by omega_using []) _ (by omega_arith), ex,
+    wordsVal_mid _ _ (show H - 1 < 2 * H + 3 by omega_using [])]
   generalize word s.mem (rvB s0) (arr (vw s0 true) j + 8 * (H - 1)) = y
   generalize wordsVal s.mem (rvB s0) (arr (vw s0 true) j) (H - 1) = lo
   generalize wordsVal s.mem (rvB s0) (arr (vw s0 true) j + 8 * (H - 1) + 8) (2 * H + 3 - (H - 1) - 1) = hi
@@ -293,7 +293,7 @@ theorem DS.fixTopW (h : DS s0 true A live V ls s) {j : Nat} (hj : (true, j) ∈ 
     have e1 : (0#64 ||| BitVec.ofNat 64 (if (0#64 : BitVec 64) = 0#64 then 1 else 0)).toNat = 1 := by decide
     rw [e1, show (0#64 : BitVec 64).toNat = 0 from rfl]
     simp only [↓reduceIte]
-    omega
+    omega_using []
   · have hyt : y.toNat ≠ 0 := fun e => hy0 (BitVec.eq_of_toNat_eq e)
     have e1 : (y ||| BitVec.ofNat 64 (if y = 0#64 then 1 else 0)) = y := by
       simp only [hy0, ↓reduceIte]; exact BitVec.or_zero
@@ -312,26 +312,26 @@ theorem divB_arith {H c M1 D bw : Nat} (hc : RdShift.ClzOf M1 H c) (m0 : M1 ≠ 
   have cH : c < H := by
     refine Nat.lt_of_le_of_ne cle fun e => ?_
     rw [e, Nat.sub_self, Nat.mul_zero, Nat.pow_zero] at hi
-    omega
+    omega_using [m0, hi]
   have e1 : 2 ^ (64 * (H - c - 1)) * 2 ^ (64 * c) = 2 ^ (64 * (H - 1)) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using [cH]
   have e2 : 2 ^ (64 * (H - c)) * 2 ^ (64 * c) = 2 ^ (64 * H) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using [cle]
   have e3 : 2 ^ 64 * 2 ^ (64 * (H - 1)) = 2 ^ (64 * H) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using [cH]
   have pc := Nat.two_pow_pos (64 * c)
   have mlo : 2 ^ (64 * (H - 1)) ≤ M1 * 2 ^ (64 * c) := e1 ▸ Nat.mul_le_mul_right _ lo
   have mhi : M1 * 2 ^ (64 * c) < 2 ^ (64 * H) := e2 ▸ Nat.mul_lt_mul_of_pos_right hi pc
-  have hW : 2 ^ (64 * H) ≤ 2 ^ bw := Nat.pow_le_pow_right (by decide) (by omega)
+  have hW : 2 ^ (64 * H) ≤ 2 ^ bw := Nat.pow_le_pow_right (by decide) (by omega_using [hbw])
   have dhi : D * 2 ^ (64 * c) < 2 ^ bw := by
     have : D * 2 ^ (64 * c) < 2 ^ (64 * H) * 2 ^ (64 * c) := Nat.mul_lt_mul_of_pos_right dlt pc
     rw [← Nat.pow_add] at this
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
+    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega_using [hbw, cle]))
   refine ⟨Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le mhi hW), mhi, ?_, Nat.mod_eq_of_lt dhi⟩
   have hp := Nat.two_pow_pos (64 * (H - 1))
-  have q1 : 1 ≤ M1 * 2 ^ (64 * c) / 2 ^ (64 * (H - 1)) := (Nat.le_div_iff_mul_le hp).mpr (by omega)
+  have q1 : 1 ≤ M1 * 2 ^ (64 * c) / 2 ^ (64 * (H - 1)) := (Nat.le_div_iff_mul_le hp).mpr (by omega_using [mlo])
   have q2 : M1 * 2 ^ (64 * c) / 2 ^ (64 * (H - 1)) < 2 ^ 64 := (Nat.div_lt_iff_lt_mul hp).mpr (by rw [e3]; exact mhi)
-  rw [Nat.mod_eq_of_lt q2]; omega
+  rw [Nat.mod_eq_of_lt q2]; omega_using [m0, hb, lo, hi, e1, e2, e3, pc, mlo, mhi, dhi, hp, q1, q2]
 
 theorem DS.named {b : Bool} (h : DS s0 b A live V ls s) : ∃ A', A' = A ∧ DS s0 b A' live V ls s :=
   ⟨A, rfl, h⟩
@@ -349,10 +349,10 @@ theorem divB_ok (h : DS s0 true A [(true, 17), (true, 18), (true, 19), (true, 15
       A' true 15 = 0 ∧ A' true 9 = A true 9 ∧ A' false 32 = A false 32 ∧
       V' sExact = b2n (decide (R = 0)) ∧ V' sLt = V sLt ∧ V' sB0 = V sB0 ∧ V' sB1 = V sB1 := by
   have w1 := h.base.sz.w1
-  have P1 : 1 < 2 ^ (32 * ww (kK s0)) := Nat.one_lt_two_pow (by omega)
-  have hHw : (kK s0 + 7) / 8 < vw s0 false + 1 := by rw [vw_false]; simp only [ww]; omega
-  have hnb : 32 * ww (kK s0) = 64 * ((kK s0 + 7) / 8) + 64 := by simp only [ww]; omega
-  have hbw : 64 * (2 * ((kK s0 + 7) / 8)) ≤ 32 * vw s0 true := by rw [vw_true]; simp only [wW, ww]; omega
+  have P1 : 1 < 2 ^ (32 * ww (kK s0)) := Nat.one_lt_two_pow (by omega_using [w1])
+  have hHw : (kK s0 + 7) / 8 < vw s0 false + 1 := by rw [vw_false]; simp only [ww]; omega_using []
+  have hnb : 32 * ww (kK s0) = 64 * ((kK s0 + 7) / 8) + 64 := by simp only [ww]; omega_using []
+  have hbw : 64 * (2 * ((kK s0 + 7) / 8)) ≤ 32 * vw s0 true := by rw [vw_true]; simp only [wW, ww]; omega_using []
   unfold divB
   simp only [seqs]
   refine WP.seq (WP.mono h.toNB fun s1 ⟨h1, _⟩ => ?_)
@@ -417,14 +417,14 @@ theorem divB_ok (h : DS s0 true A [(true, 17), (true, 18), (true, 19), (true, 15
   -- `m + 1` and `n - r` shifted up by `c` words; the divisor's word `h - 1` not zero.
   have vc : updV V sCz c sCz = c := by rd_simp [sCz]
   refine WP.seq (WP.mono (RdShift.DS.shlByW false h14 (j := 4) (sw := sCz) (sb := sCz) (by decide) (by decide)
-    (by decide) (by rw [vc]; omega) (fun e => absurd e (by decide))
+    (by decide) (by rw [vc]; omega_using [hHw, cH]) (fun e => absurd e (by decide))
     (live' := [(true, 5), (false, 23), (false, 30), (true, 19), (true, 15), (true, 9), (false, 32)]) (by decide))
     fun s15 ⟨h15, _⟩ => ?_)
   refine WP.seq (WP.mono (DS.fixTopW h15 (j := 4) (by decide)
     (live' := [(true, 5), (false, 23), (false, 30), (true, 19), (true, 15), (true, 9), (false, 32)]) (by decide))
     fun s16 ⟨h16, _⟩ => ?_)
   refine WP.seq (WP.mono (RdShift.DS.shlByW false h16 (j := 5) (sw := sCz) (sb := sCz) (by decide) (by decide)
-    (by decide) (by rw [vc]; omega) (fun e => absurd e (by decide))
+    (by decide) (by rw [vc]; omega_using [hHw, cH]) (fun e => absurd e (by decide))
     (live' := [(true, 4), (false, 23), (false, 30), (true, 19), (true, 15), (true, 9), (false, 32)]) (by decide))
     fun s17 ⟨h17, _⟩ => ?_)
   obtain ⟨A17, eA17, h17⟩ := h17.named
@@ -437,7 +437,7 @@ theorem divB_ok (h : DS s0 true A [(true, 17), (true, 18), (true, 19), (true, 15
     rw [eA17]; rd_simp [vc, b5]
   have topF : 2 ^ (64 * ((kK s0 + 7) / 8 - 1)) ≤ F % 2 ^ (64 * ((kK s0 + 7) / 8)) := by
     have := top_fix X ((kK s0 + 7) / 8 - 1)
-    rw [show (kK s0 + 7) / 8 - 1 + 1 = (kK s0 + 7) / 8 by omega, eF] at this
+    rw [show (kK s0 + 7) / 8 - 1 + 1 = (kK s0 + 7) / 8 by omega_using [w1, hnb], eF] at this
     exact this
   -- The division.
   refine WP.seq (WP.mono (h17.divQW (a := 5) (r := 6) (m := 4) (t := 7) (sv := 3) (by rw [c4]; exact topF)
@@ -463,13 +463,13 @@ theorem divB_ok (h : DS s0 true A [(true, 17), (true, 18), (true, 19), (true, 15
       F % 2 ^ (64 * ((kK s0 + 7) / 8)) = M1 * 2 ^ (64 * c) ∧
       D * 2 ^ (64 * c) % 2 ^ (32 * vw s0 true) = D * 2 ^ (64 * c) ∧ M1 ≠ 0 ∧ D < 2 ^ (64 * ((kK s0 + 7) / 8)) := by
     intro hm hr
-    have hp : 2 ^ (64 * ((kK s0 + 7) / 8)) ≤ 2 ^ (32 * ww (kK s0)) := Nat.pow_le_pow_right (by decide) (by omega)
-    have eM1 : M1 = A true 17 % 2 ^ (32 * ww (kK s0)) + 1 := by rw [← eM]; exact Nat.mod_eq_of_lt (by omega)
+    have hp : 2 ^ (64 * ((kK s0 + 7) / 8)) ≤ 2 ^ (32 * ww (kK s0)) := Nat.pow_le_pow_right (by decide) (by omega_using [hnb])
+    have eM1 : M1 = A true 17 % 2 ^ (32 * ww (kK s0)) + 1 := by rw [← eM]; exact Nat.mod_eq_of_lt (by omega_using [nlt, hm, hp])
     have eD' : D = A false 32 - A true 18 % 2 ^ (32 * ww (kK s0)) := by
-      rw [← eD]; exact wsub_of_le (by omega) (Nat.le_of_lt hr)
-    have M1lt : M1 < 2 ^ (64 * ((kK s0 + 7) / 8)) := by omega
-    have m0 : M1 ≠ 0 := by omega
-    have dlt : D < 2 ^ (64 * ((kK s0 + 7) / 8)) := by omega
+      rw [← eD]; exact wsub_of_le (by omega_using [nlt, hp]) (Nat.le_of_lt hr)
+    have M1lt : M1 < 2 ^ (64 * ((kK s0 + 7) / 8)) := by omega_using [nlt, hm, eM1]
+    have m0 : M1 ≠ 0 := by omega_using [eM1]
+    have dlt : D < 2 ^ (64 * ((kK s0 + 7) / 8)) := by omega_using [nlt, eD']
     rw [Nat.mod_eq_of_lt M1lt] at hc
     obtain ⟨x1, x2, x3, x4⟩ := divB_arith hc m0 dlt hbw
     have eX' : X = M1 * 2 ^ (64 * c) := by rw [← eX, x1]
@@ -504,9 +504,9 @@ theorem divB_ok (h : DS s0 true A [(true, 17), (true, 18), (true, 19), (true, 15
   · rd_simp [sCz]
   · obtain ⟨eF', eN, m0, dlt⟩ := hv hm hr
     refine ⟨?_, by simp only [hm, hr, and_self, ↓reduceIte]⟩
-    have hp : 2 ^ (64 * ((kK s0 + 7) / 8)) ≤ 2 ^ (32 * ww (kK s0)) := Nat.pow_le_pow_right (by decide) (by omega)
+    have hp : 2 ^ (64 * ((kK s0 + 7) / 8)) ≤ 2 ^ (32 * ww (kK s0)) := Nat.pow_le_pow_right (by decide) (by omega_using [hnb])
     rw [e25, d5, eF', eN, Nat.mul_div_mul_right _ _ (Nat.two_pow_pos _),
-      Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega))]
+      Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_using [hv, hm, hr, hp]))]
 
 
 end

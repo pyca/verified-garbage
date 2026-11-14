@@ -70,9 +70,9 @@ theorem prep_ok {s : State} {B : Addr} {L w c : Nat} (h : Env s B (8 * L) w) (hl
       VG.Proof.Bignum.word t.mem B d = VG.Proof.Bignum.word s.mem B d := fun d hd =>
     (show VG.Proof.Bignum.Frm B (mpRanges w) s.mem t.mem from o).word_eq (fun x hx => by
       simp only [mpRanges, VG.Impl.MillerRabin.RISCV64.aE, List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [es] <;> omega) (by omega)
-  exact ⟨e, (ow 0 (by omega)).trans hl.len, (ow 48 (by omega)).trans hl.wW, (ow 224 (by omega)).trans hl.strideW,
-    fun j hj => (ow _ (by omega)).trans (hl.arrW j hj), n, h3, hodd, inv, t1, r1, r9, r10, ee, l⟩
+      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [es] <;> omega_using [hd]) (by omega_using [hd])
+  exact ⟨e, (ow 0 (by omega_using [])).trans hl.len, (ow 48 (by omega_using [])).trans hl.wW, (ow 224 (by omega_using [])).trans hl.strideW,
+    fun j hj => (ow _ (by omega_using [hj])).trans (hl.arrW j hj), n, h3, hodd, inv, t1, r1, r9, r10, ee, l⟩
 
 end
 
@@ -112,7 +112,7 @@ theorem cw_facts (hp : CIn s0) : oL s0 = 8 * cw s0 ∧ 4 ≤ cw s0 ∧ cw s0 ≤
   have hv := hp.valid
   simp only [Spec.RsaKeyGen.primeLenValid] at hv
   simp only [cw, oL]
-  omega
+  omega_using [hv]
 
 /-- What the contract asks, from the candidate in the first `8 w` octets. -/
 theorem cOp_cand (hp : CIn s0) (hav : oL s0 ≤ rL s0) :
@@ -120,17 +120,17 @@ theorem cOp_cand (hp : CIn s0) (hav : oL s0 ≤ rL s0) :
       ((rB s0).drop (8 * cw s0)) := by
   obtain ⟨hw, hw4, _⟩ := cw_facts hp
   unfold cOp Spec.RsaKeyGen.candidateOp
-  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega), show 8 * (8 * cw s0) = 64 * cw s0 by omega,
-    VG.Proof.RsaKeyGen.ite_t (by rw [bytesAt_len]; omega)]
+  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hw4]), show 8 * (8 * cw s0) = 64 * cw s0 by omega_using [],
+    VG.Proof.RsaKeyGen.ite_t (by rw [bytesAt_len]; omega_using [hav, hw])]
   unfold VG.Proof.RsaKeyGen.seg
-  rw [List.drop_zero, take_bytesAt _ _ (by omega)]
+  rw [List.drop_zero, take_bytesAt _ _ (by omega_using [hav, hw])]
 
 /-- Too few octets for a candidate. -/
 theorem cOp_none (hp : CIn s0) (h : ¬ oL s0 ≤ rL s0) : cOp s0 = none := by
   obtain ⟨hw, hw4, _⟩ := cw_facts hp
   unfold cOp Spec.RsaKeyGen.candidateOp
-  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega),
-    VG.Proof.RsaKeyGen.ite_f (by rw [bytesAt_len]; omega)]
+  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hw4]),
+    VG.Proof.RsaKeyGen.ite_f (by rw [bytesAt_len]; omega_using [h, hw])]
 
 theorem hlen_drop (w : Nat) : ((rB s0).drop (8 * w)).length = rL s0 - 8 * w := by
   rw [List.length_drop, bytesAt_len]
@@ -150,7 +150,7 @@ structure TabOk (s0 : State) : Prop where
 theorem TabOk.held_at (h : TabOk s0) {s : State} (hf : Fr s0 s) {i : Nat} (hi : i < 1024) :
     s.mem.readW (s0.syms TrialTable32.symbol + BitVec.ofNat 64 (8 * i)) 64 = TrialTable32.packed.getD i 0 := by
   rw [hf.out.readW (r := ⟨s0.syms TrialTable32.symbol, 8 * 1024⟩)
-    (Offset.contains_base _ (by omega) (by have := h.fit; omega)) h.dj (by decide)]
+    (Offset.contains_base _ (by omega_using [hi]) (by have := h.fit; omega_using [hi])) h.dj (by decide)]
   exact h.held i hi
 
 /-! ## Keeping the body's state -/
@@ -223,13 +223,13 @@ theorem loadCS {s : State} (h : M1 s0 s) : WP isa loadC s (M2 s0) := by
   simp only [nArr, slot_lin] at hZ
   refine WP.mono_syms (loadC_ok h.ctx h.env hw h.hav) fun t ⟨⟨c₂, e₂, v₂, r₂, ow⟩, _⟩ sy => ?_
   have ow' : ∀ d, d + 8 ≤ 256 → word t.mem (stackArg s0 1) d = word s.mem (stackArg s0 1) d := fun d hd =>
-    ow d (by omega) (.inl (by rw [slot_lin]; omega))
-  refine ⟨c₂, e₂, ⟨(ow' 0 (by omega)).trans h.lay.len, (ow' 48 (by omega)).trans h.lay.wW,
-      (ow' 224 (by omega)).trans h.lay.strideW, fun j hj => (ow' _ (by omega)).trans (h.lay.arrW j hj)⟩,
+    ow d (by omega_using [hZ, hd]) (.inl (by rw [slot_lin]; omega_using [hd]))
+  refine ⟨c₂, e₂, ⟨(ow' 0 (by omega_using [])).trans h.lay.len, (ow' 48 (by omega_using [])).trans h.lay.wW,
+      (ow' 224 (by omega_using [])).trans h.lay.strideW, fun j hj => (ow' _ (by omega_using [hj])).trans (h.lay.arrW j hj)⟩,
     fun i h1 h2 => ?_, v₂, r₂, h.hav, sy.trans h.syms, h.tab⟩
   have h2' := h2
   simp only [nArr] at h2'
-  rw [ow _ (by omega) (.inr (by rw [slot_lin]; omega)), h.zs i h2]
+  rw [ow _ (by omega_using [hZ, h2']) (.inr (by rw [slot_lin]; omega_using [h1])), h.zs i h2]
 
 /-- After `closeCheck`. -/
 structure M3 (s0 s : State) : Prop where
@@ -251,23 +251,23 @@ theorem closeS {s : State} (h : M2 s0 s) : WP isa closeCheck s (M3 s0) := by
   have hnw := h.env.hs.nowrap
   simp only [nArr, slot_lin] at hZ
   refine WP.mono_syms (WP.rdwr (closeCheck_ok h.ctx h.env hw h.v
-    (by rw [show slot (cw s0) 0 + 8 * cw s0 = 256 + 8 * cw s0 by rw [slot_lin]; omega]
-        exact h.zs (cw s0) (by omega) (by simp only [nArr]; omega))
+    (by rw [show slot (cw s0) 0 + 8 * cw s0 = 256 + 8 * cw s0 by rw [slot_lin]; omega_using []]
+        exact h.zs (cw s0) (by omega_using []) (by simp only [nArr]; omega_using []))
     (by rw [show slot (cw s0) aP + 8 * cw s0 = 256 + 8 * (28 * (cw s0 + 2) + cw s0) by
-          simp only [aP, slot_lin]; omega]
-        exact h.zs _ (by omega) (by simp only [nArr]; omega))
+          simp only [aP, slot_lin]; omega_using []]
+        exact h.zs _ (by omega_using []) (by simp only [nArr]; omega_using []))
     (fun i hi => by
-      rw [show slot (cw s0) aBnd + 8 * i = 256 + 8 * (32 * (cw s0 + 2) + i) by simp only [aBnd, slot_lin]; omega]
-      exact h.zs _ (by omega) (by simp only [nArr]; omega))))
+      rw [show slot (cw s0) aBnd + 8 * i = 256 + 8 * (32 * (cw s0 + 2) + i) by simp only [aBnd, slot_lin]; omega_using []]
+      exact h.zs _ (by omega_using []) (by simp only [nArr]; omega_using [hi]))))
     fun t ⟨⟨⟨c₃, e₃, f₃, o₃⟩, _⟩, _, _, _⟩ sy => ?_
-  have fS := out_frame (by simp only [aP, slot_lin]; omega) o₃
+  have fS := out_frame (by simp only [aP, slot_lin]; omega_using [hZ]) o₃
   have ow : ∀ d, d + 8 ≤ 256 → word t.mem (stackArg s0 1) d = word s.mem (stackArg s0 1) d := fun d hd =>
-    o₃.word (.inl (by simp only [aP, slot_lin]; omega)) (by omega)
-  refine ⟨c₃, e₃, ⟨(ow 0 (by omega)).trans h.lay.len, (ow 48 (by omega)).trans h.lay.wW,
-      (ow 224 (by omega)).trans h.lay.strideW, fun j hj => (ow _ (by omega)).trans (h.lay.arrW j hj)⟩,
+    o₃.word (.inl (by simp only [aP, slot_lin]; omega_using [hd])) (by omega_using [hd])
+  refine ⟨c₃, e₃, ⟨(ow 0 (by omega_using [])).trans h.lay.len, (ow 48 (by omega_using [])).trans h.lay.wW,
+      (ow 224 (by omega_using [])).trans h.lay.strideW, fun j hj => (ow _ (by omega_using [hj])).trans (h.lay.arrW j hj)⟩,
     ?_, f₃, (rd_keep hp fS).trans h.rd8, h.hav, sy.trans h.syms, h.tab⟩
   rw [← h.v]
-  exact o₃.wordsVal (.inl (by simp only [aP, slot_lin]; omega)) (by rw [slot_lin]; omega)
+  exact o₃.wordsVal (.inl (by simp only [aP, slot_lin]; omega_using [])) (by rw [slot_lin]; omega_using [hw64])
 
 /-- An end with the octets of the candidate read. -/
 theorem drawnFin (k : Nat) (hk : k < 2048) {s : State} (hc : Ctx s0 s)
@@ -279,7 +279,7 @@ theorem drawnFin (k : Nat) (hk : k < 2048) {s : State} (hc : Ctx s0 s)
   refine fin_ok k hk hc hst hout ?_
   rw [r8, usedOf, hop]
   simp only [hlen_drop]
-  congr 1; omega
+  congr 1; omega_using [hav, hw]
 
 /-- Too close to `p`. -/
 theorem closeFin {s : State} (h : M3 s0 s)
@@ -313,18 +313,18 @@ theorem gcdS {s : State} (h : M3 s0 s)
   have hnw := h.env.hs.nowrap
   simp only [nArr, slot_lin] at hZ'
   have hshape : VG.Proof.RsaKeyGen.PrimeShape (64 * cw s0) (candOf s0) :=
-    VG.Proof.RsaKeyGen.candidate_shape (by omega) _
+    VG.Proof.RsaKeyGen.candidate_shape (by omega_using [hw4]) _
   refine WP.mono_syms (WP.rdwr (gcdCheck_ok h.ctx.fr h.env hZ h.v hshape.1))
     fun t ⟨⟨⟨g₄, o₄⟩, k₄⟩, _, _, sp₄⟩ sy => ?_
-  have fS := out_frame (by simp only [aCm1, slot_lin]; omega) o₄
+  have fS := out_frame (by simp only [aCm1, slot_lin]; omega_using [hZ']) o₄
   have ow : ∀ d, d + 8 ≤ 256 → word t.mem (stackArg s0 1) d = word s.mem (stackArg s0 1) d := fun d hd =>
-    o₄.word (.inl (by simp only [aCm1, slot_lin]; omega)) (by omega)
+    o₄.word (.inl (by simp only [aCm1, slot_lin]; omega_using [hd])) (by omega_using [hd])
   refine ⟨h.ctx.step sp₄ k₄.2.1 k₄.2.2 (k₄.gpr (by decide)) (frame4 fS), h.env.keep k₄ (by decide),
-    ⟨(ow 0 (by omega)).trans h.lay.len, (ow 48 (by omega)).trans h.lay.wW,
-      (ow 224 (by omega)).trans h.lay.strideW, fun j hj => (ow _ (by omega)).trans (h.lay.arrW j hj)⟩,
+    ⟨(ow 0 (by omega_using [])).trans h.lay.len, (ow 48 (by omega_using [])).trans h.lay.wW,
+      (ow 224 (by omega_using [])).trans h.lay.strideW, fun j hj => (ow _ (by omega_using [hj])).trans (h.lay.arrW j hj)⟩,
     ?_, hncl, g₄, (rd_keep hp fS).trans h.rd8, h.hav, sy.trans h.syms, h.tab⟩
   rw [← h.v]
-  exact o₄.wordsVal (.inl (by simp only [aCm1, slot_lin]; omega)) (by rw [slot_lin]; omega)
+  exact o₄.wordsVal (.inl (by simp only [aCm1, slot_lin]; omega_using [])) (by rw [slot_lin]; omega_using [hw64])
 
 /-- `gcd(c − 1, e) ≠ 1`. -/
 theorem gcdFin {s : State} (h : M4 s0 s) (hg : ¬ Nat.gcd (candOf s0 - 1) (eV s0) = 1) :
@@ -361,8 +361,8 @@ structure TC (s0 : State) (w c : Nat) : Prop where
 
 theorem TC.c8 {w c : Nat} (h : TC s0 w c) : 8161 < c := by
   have := h.shape.2.1
-  have : 2 ^ 14 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by have := h.hw4; omega)
-  omega
+  have : 2 ^ 14 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by have := h.hw4; omega_using [this])
+  omega_arith
 
 /-- The facts once `gcd(c − 1, e) = 1`. -/
 structure TIn (s0 s : State) (w c : Nat) : Prop where
@@ -384,11 +384,11 @@ structure THdr (s0 : State) (w : Nat) (m : Mem) : Prop where
 
 theorem THdr.keep {w : Nat} {m m' : Mem} (h : THdr s0 w m)
     (ow : ∀ d, 128 ≤ d → d + 8 ≤ 224 → word m' (stackArg s0 1) d = word m (stackArg s0 1) d) : THdr s0 w m' :=
-  ⟨(ow _ (by simp only [hRand]; omega) (by simp only [hRand]; omega)).trans h.rand,
-    (ow _ (by simp only [hRandLen]; omega) (by simp only [hRandLen]; omega)).trans h.randLen,
-    (ow _ (by simp only [hUsed]; omega) (by simp only [hUsed]; omega)).trans h.used,
-    (ow _ (by simp only [hK]; omega) (by simp only [hK]; omega)).trans h.kk,
-    (ow _ (by simp only [hChecks]; omega) (by simp only [hChecks]; omega)).trans h.checks⟩
+  ⟨(ow _ (by simp only [hRand]; omega_using []) (by simp only [hRand]; omega_using [])).trans h.rand,
+    (ow _ (by simp only [hRandLen]; omega_using []) (by simp only [hRandLen]; omega_using [])).trans h.randLen,
+    (ow _ (by simp only [hUsed]; omega_using []) (by simp only [hUsed]; omega_using [])).trans h.used,
+    (ow _ (by simp only [hK]; omega_using []) (by simp only [hK]; omega_using [])).trans h.kk,
+    (ow _ (by simp only [hChecks]; omega_using []) (by simp only [hChecks]; omega_using [])).trans h.checks⟩
 
 /-- After `testArgs`. -/
 structure T1 (s0 : State) (w c : Nat) (s : State) : Prop where
@@ -409,20 +409,20 @@ theorem argsS {s : State} {w c : Nat} (h : TIn s0 s w c) : WP isa (.block testAr
   have hnw := h.env.hs.nowrap
   simp only [nArr, slot_lin] at hZ
   refine WP.mono_syms (WP.rdwr (testArgs_ok hf h.env)) fun t ⟨⟨⟨ao, o₁⟩, k₁⟩, _, _, sp₁⟩ sy => ?_
-  have fS := out_frame (by omega) o₁
+  have fS := out_frame (by omega_using [hZ]) o₁
   have ow : ∀ d, d + 8 ≤ 128 ∨ 224 ≤ d → d + 8 ≤ 8 * sL s0 →
       word t.mem (stackArg s0 1) d = word s.mem (stackArg s0 1) d :=
-    fun d hd hd' => o₁.word hd (by omega)
+    fun d hd hd' => o₁.word hd (by omega_using [hnw, hd'])
   refine ⟨h.ctx.step sp₁ k₁.2.1 k₁.2.2 (k₁.gpr (by decide)) (frame4 fS), h.env.keep k₁ (by decide),
-    ⟨(ow 0 (by omega) (by omega)).trans h.lay.len, (ow 48 (by omega) (by omega)).trans h.lay.wW,
-      (ow 224 (by omega) (by omega)).trans h.lay.strideW,
-      fun j hj => (ow _ (by omega) (by omega)).trans (h.lay.arrW j hj)⟩, ?_,
+    ⟨(ow 0 (by omega_using []) (by omega_using [hZ])).trans h.lay.len, (ow 48 (by omega_using []) (by omega_using [hZ])).trans h.lay.wW,
+      (ow 224 (by omega_using []) (by omega_using [hZ])).trans h.lay.strideW,
+      fun j hj => (ow _ (by omega_using [hj]) (by omega_using [hZ, hj])).trans (h.lay.arrW j hj)⟩, ?_,
     ⟨ao.rand.trans hf.wRand, ao.randLen.trans (hf.rl.trans (bv_ofNat_toNat _).symm), ao.used.trans h.rd8,
       ao.k.trans (hf.wOutLen.trans (by rw [← h.tc.hw]; exact (bv_ofNat_toNat _).symm)),
       ao.checks⟩, ao.trial, (rd_keep hp fS).trans h.rd8, sy.trans h.syms, h.tc⟩
   rw [← h.arr0]
-  exact (show VG.Proof.Mont.Outside _ _ _ s.mem t.mem from o₁).wordsVal (.inr (by rw [slot_lin]; omega))
-    (by rw [slot_lin]; omega)
+  exact (show VG.Proof.Mont.Outside _ _ _ s.mem t.mem from o₁).wordsVal (.inr (by rw [slot_lin]; omega_using []))
+    (by rw [slot_lin]; omega_using [hnw, hZ])
 
 /-- Trial division's start. -/
 theorem T1.divIn {s : State} {w c : Nat} (h : T1 s0 w c s) : DivIn s (stackArg s0 1) (8 * sL s0) w (nTrial w) :=
@@ -463,7 +463,7 @@ theorem compFin {s : State} {w c : Nat} (h : T2 s0 w c s)
   refine fin_ok 3 (by decide) h.ctx (by rw [hop]; rfl) (by rw [outOf, hop]) ?_
   rw [h.rd8, usedOf, hop]
   simp only [hlen_drop]
-  congr 1; omega
+  congr 1; omega_using [h8]
 
 /-- The working space prepared. -/
 structure T3 (s0 : State) (w c : Nat) (s : State) : Prop where
@@ -484,27 +484,27 @@ theorem prepS {s : State} {w c : Nat} (h : T2 s0 w c s)
   have hw64 := h.tc.hw64
   simp only [nArr, slot_lin] at hZ
   have hfS := hp.fS
-  refine WP.mono (WP.rdwr (prep_ok h.env h.lay h.arr0 h.tc.shape.1 (by have := h.tc.c8; omega) (by
+  refine WP.mono (WP.rdwr (prep_ok h.env h.lay h.arr0 h.tc.shape.1 (by have := h.tc.c8; omega_using [this]) (by
     have := h.tc.shape.2.1
-    have : 2 ^ (64 * (w - 1)) < 2 ^ (64 * w - 2) := Nat.pow_lt_pow_right (by decide) (by omega)
-    omega))) fun t ⟨⟨⟨p₃, o₃⟩, k₃⟩, rd₃, wr₃, sp₃⟩ => ?_
+    have : 2 ^ (64 * (w - 1)) < 2 ^ (64 * w - 2) := Nat.pow_lt_pow_right (by decide) (by omega_using [hw4])
+    omega_arith))) fun t ⟨⟨⟨p₃, o₃⟩, k₃⟩, rd₃, wr₃, sp₃⟩ => ?_
   have hr : ∀ x ∈ VG.Proof.MillerRabin.RISCV64.Search.mpRanges w, x.1 + x.2 ≤ 8 * sL s0 := fun x hx => by
     simp only [VG.Proof.MillerRabin.RISCV64.Search.mpRanges, VG.Impl.MillerRabin.RISCV64.aE, List.mem_cons,
       List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega
+    rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega_using [hZ]
   have fS : Frame [cS s0] s.mem t.mem := fun x hx => o₃ x fun r hr' => .inr (by
     have := hx _ List.mem_cons_self
     have := hr r hr'
     simp only [Region.Contains, cS, sL, ofs] at *
-    omega)
+    omega_arith)
   have c₃ := h.ctx.step sp₃ k₃.2.1 k₃.2.2 (k₃.gpr (by decide)) (frame4 fS)
   have ow₃ : ∀ d, 64 ≤ d → d + 8 ≤ 256 → word t.mem (stackArg s0 1) d = word s.mem (stackArg s0 1) d :=
     fun d h1 h3 => (show VG.Proof.Bignum.Frm _ (VG.Proof.MillerRabin.RISCV64.Search.mpRanges w) s.mem t.mem
       from o₃).word_eq (fun x hx => by
       simp only [VG.Proof.MillerRabin.RISCV64.Search.mpRanges, VG.Impl.MillerRabin.RISCV64.aE, List.mem_cons,
         List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega) (by omega)
-  have hd := h.hdr.keep (m' := t.mem) fun d h1 h2 => ow₃ d (by omega) (by omega)
+      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp only [slot_lin] <;> omega_arith) (by omega_using [h3])
+  have hd := h.hdr.keep (m' := t.mem) fun d h1 h2 => ow₃ d (by omega_using [h1]) (by omega_using [h2])
   have hrl : rL s0 < 2 ^ 64 := (stackArg s0 0).isLt
   have hfr := hp.fr
   have sp₃' : t.sp = fb s0 := sp₃.trans hf.sp
@@ -513,20 +513,20 @@ theorem prepS {s : State} {w c : Nat} (h : T2 s0 w c s)
   have hsp16 := hp.sp16
   have hspLo := hp.spLo
   refine ⟨c₃, ⟨p₃, hd.rand, hd.randLen, hd.kk, hd.checks,
-    (VG.Proof.RsaKeyGen.cand_bits (by omega) h.tc.shape).2.1,
-    by have := VG.Proof.RsaKeyGen.checksW_le w; omega, hrl,
+    (VG.Proof.RsaKeyGen.cand_bits (by omega_using [hw4]) h.tc.shape).2.1,
+    by have := VG.Proof.RsaKeyGen.checksW_le w; omega_using [this], hrl,
     fun i hi => ⟨cR s0, List.mem_append_left _ (by rw [rd₃, hf.rd]; exact hp.rR),
-      Offset.contains_base _ (by simp only [rL] at hi; omega) (by omega)⟩,
-    fun i hi x hx e => ?_, by rw [sp₃', spN]; omega, by rw [sp₃', spN]; omega,
+      Offset.contains_base _ (by simp only [rL] at hi; omega_using [hi]) (by omega_using [hrl, hi])⟩,
+    fun i hi x hx e => ?_, by rw [sp₃', spN]; omega_using [hsp16], by rw [sp₃', spN]; omega_using [hspLo],
     by rw [hbF, ← cS_eq]; exact hp.FS.sub_left (rF_sub s0), fun i hi hc => ?_⟩, hd.used, h.tc, hoc⟩
-  · refine hp.rS _ (Offset.contains_base _ (d := i) (by simp only [rL] at hi; omega) (by omega)) ?_
+  · refine hp.rS _ (Offset.contains_base _ (d := i) (by simp only [rL] at hi; omega_using [hi]) (by omega_using [hrl, hi])) ?_
     show Region.Contains _ (s0.gpr .a7 + BitVec.ofNat 64 i) 1
     rw [e]
     show (x - stackArg s0 1).toNat + 1 ≤ (stackArg s0 2).toNat * 8
     have : (x - stackArg s0 1).toNat < 8 * (stackArg s0 2).toNat := hx
-    omega
+    omega_using [this]
   · rw [hbF] at hc
-    exact hp.Fr _ ((rF_sub s0) _ hc) (Offset.contains_base _ (d := i) (by simp only [rL] at hi; omega) (by omega))
+    exact hp.Fr _ ((rF_sub s0) _ hc) (Offset.contains_base _ (d := i) (by simp only [rL] at hi; omega_using [hi]) (by omega_using [hrl, hi]))
 
 /-- After the witnesses. -/
 structure T4 (s0 : State) (w c : Nat) (s : State) : Prop where
@@ -551,8 +551,8 @@ theorem mrStage {s : State} {w c : Nat} (R : RoundImpl) (h : T3 s0 w c s) :
     · exact hp.uR.symm
     · exact hp.rS
     · exact hp.Fr.symm
-  have hpt := VG.Proof.RsaKeyGen.primalityTest_cand (by have := h.tc.hw4; omega) h.tc.shape ((rB s0).drop (8 * w))
-  rw [VG.Proof.RsaKeyGen.checksW_eq w (by have := h.tc.hw64; omega) h.tc.hw4] at hpt
+  have hpt := VG.Proof.RsaKeyGen.primalityTest_cand (by have := h.tc.hw4; omega_using [this]) h.tc.shape ((rB s0).drop (8 * w))
+  rw [VG.Proof.RsaKeyGen.checksW_eq w (by have := h.tc.hw64; omega_using [this]) h.tc.hw4] at hpt
   refine WP.mono (millerRabin_ok R h.kc h.hu0 htape h.tc.h8 hpt) fun t ⟨lk, res⟩ => ?_
   have hbF : VG.RISCV64.below s.sp 96 = rF s0 := by rw [hf.sp]; exact below_fb s0
   have f₄ : Frame [cU s0, cS s0, rF s0, rdW s0] s.mem t.mem := by
@@ -595,7 +595,7 @@ theorem toTIn {s : State} (h : M4 s0 s) (hg : Nat.gcd (candOf s0 - 1) (eV s0) = 
   rw [VG.Proof.RsaKeyGen.afterDraw, h.ncl] at hop
   simp only [hgb, Bool.and_true, Bool.false_eq_true, ↓reduceIte] at hop
   refine ⟨h.ctx, h.env, h.lay, h.v, h.rd8, h.syms,
-    ⟨h35_of hp hw, VG.Proof.RsaKeyGen.candidate_shape (by omega) _, hw, hw4, hw64, by have := h.hav; omega, h.tab,
+    ⟨h35_of hp hw, VG.Proof.RsaKeyGen.candidate_shape (by omega_using [hw4]) _, hw, hw4, hw64, by have := h.hav; omega_using [hw, this], h.tab,
       ?_⟩⟩
   rw [hop]
   cases Spec.RsaKeyGen.obviouslyComposite (64 * cw s0) (candOf s0) <;> rfl

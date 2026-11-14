@@ -152,12 +152,12 @@ theorem fullStart_ok {s initial : State} {p seed : Addr} {sb ss a k : Nat}
     · exact Offset.disjoint_base p (by decide) (by decide))
   refine WP.mono (single_ok h19 h20 (by rw [h22]; rfl) pair
     (fun i hi => by
-      rw [ku.rd,ku.wr]; obtain ⟨r,hr,hh⟩ := iw (by omega : 16*i+8≤2048)
+      rw [ku.rd,ku.wr]; obtain ⟨r,hr,hh⟩ := iw (by omega_using [hi] : 16*i+8≤2048)
       exact ⟨r,List.mem_append_right _ hr,hh⟩)
     (fun j hj i hi => by
       rw [ku.wr]; change InRegions s.wr ((p+BitVec.ofNat 64 400+BitVec.ofNat 64 (168*j))+BitVec.ofNat 64 (8*i)) 8
       rw [BitVec.add_assoc,BitVec.add_assoc,← BitVec.ofNat_add,← BitVec.ofNat_add]
-      exact iw (by omega))
+      exact iw (by omega_using [hj, hi]))
     (Offset.base_disjoint p (by decide) (by decide))
     (Offset.disjoint p (by decide) (by decide) (by decide))
     (Offset.base_disjoint p (by decide) (by decide))

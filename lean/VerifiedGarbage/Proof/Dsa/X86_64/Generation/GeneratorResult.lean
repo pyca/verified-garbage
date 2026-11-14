@@ -27,7 +27,7 @@ theorem generatorResult_ok {s : State} {B pp gp : Addr} {Z w : Nat} {pb gb : Lis
   unfold Impl.Dsa.X86_64.Generation.generatorResult
   refine WP.seq (WP.mono (generatorLoadPair_ok h hptr hlen xptr xlen sp sx hp1 hpw hx1 hxw)
     fun u ⟨hu, up, ug, fu, ku⟩ => ?_)
-  refine WP.mono (VG.Proof.Dsa.X86_64.rangeMask_ok hu.good.1 hu.good.2 h.w1 (by have := h.w2; omega) true)
+  refine WP.mono (VG.Proof.Dsa.X86_64.rangeMask_ok hu.good.1 hu.good.2 h.w1 (by have := h.w2; omega_using [this]) true)
     fun t ⟨htmask, hm, kt⟩ => ?_
   refine ⟨?_, hu.congr (by rw [hm]; exact Frm.refl B [] _) (by simp) kt (by decide),
     hm ▸ fu, (ku.trans kt).mono (by decide)⟩

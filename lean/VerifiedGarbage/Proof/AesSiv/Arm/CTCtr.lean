@@ -71,7 +71,7 @@ theorem CtrI.arg {c w sp D : BitVec 32} {R n : Nat} {s : State} (h : CtrI c w sp
   have hsp := h.env.sp
   refine ⟨?_, ?_⟩
   · rw [stackArg, stackArgAddr, hsp, show 4 * 0 = 0 from rfl, BitVec.add_zero, h.m0]
-  · rw [stackArg, stackArgAddr, hsp, addr_add (by have := h.afit; omega), h.m1]
+  · rw [stackArg, stackArgAddr, hsp, addr_add (by have := h.afit; omega_using [this]), h.m1]
 
 section
 variable {c w sp : BitVec 32} {R : Nat} (L : Lay c w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -177,11 +177,11 @@ theorem ctr_ct {D : BitVec 32} {n : Nat} (hn : n < 2 ^ 32) : CT (CtrI c w sp R D
   refine CT.seq (J := CI c w sp R D n)
     (CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ => env_regs h₁.env h₂.env)
       (fun s₁ s₂ h₁ h₂ => by rw [h₁.env.sp, h₂.env.sp])
-      (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega, fun r hr => by
+      (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega_using [this], fun r hr => by
         rw [h.env.sp]; exact (h.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
-      (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega)
+      (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega_using [this])
         fun i hi => by
-          rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+          rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
           · rw [h₁.arg.1, h₂.arg.1]
           · rw [h₁.arg.2, h₂.arg.2]) hA)
     (fun s h => WP.mono (ctrPre_ok L h.env h.dat h.afit h.args h.args_w h.m0 h.m1)

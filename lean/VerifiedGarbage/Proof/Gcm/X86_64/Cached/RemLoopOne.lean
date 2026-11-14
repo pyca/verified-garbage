@@ -47,8 +47,8 @@ theorem accR_congr {X X' : Nat → Block} {T T' : Nat → BitVec 128} (y : Block
   | 0, _, _ => rfl
   | n + 1, hX, hT => by
     simp only [accR]
-    rw [accR_congr y n (fun j hj => hX j (by omega)) (fun j hj => hT j (by omega)), hX n (by omega),
-      hT n (by omega)]
+    rw [accR_congr y n (fun j hj => hX j (by omega_using [hj])) (fun j hj => hT j (by omega_using [hj])), hX n (by omega_using []),
+      hT n (by omega_using [])]
 
 /-- What the loop does not change: the `r` blocks at `S` (read through
 `src`), written to `A`, the working space at `P` (the keystream at
@@ -134,14 +134,14 @@ theorem remStep_ok {E : REnv} (hE : E.Ok) {i : Nat} (hi : i < E.r) {t : State} (
   have eK : t.gpr .r11 + t.gpr .r10 + BitVec.ofInt 64 ((768 : Nat) : Int) = E.aK i := by rw [gP, hI.r10, addr768]
   have eD : t.gpr .rdx + t.gpr .r10 + BitVec.ofInt 64 ((0 : Nat) : Int) = E.aD i := by rw [gA, hI.r10, addr0]
   have eW : t.gpr .rax + t.gpr .r10 + BitVec.ofInt 64 ((0 : Nat) : Int) = E.aW i := by rw [gW, hI.r10, addr0]
-  have dD : ∀ j < E.r, Region.Sub ⟨E.aD j, 16⟩ ⟨E.A, 16 * E.r⟩ := fun j hj => Offset.sub_base _ (by omega)
+  have dD : ∀ j < E.r, Region.Sub ⟨E.aD j, 16⟩ ⟨E.A, 16 * E.r⟩ := fun j hj => Offset.sub_base _ (by omega_using [hj])
   have dDW : Region.Disjoint ⟨E.aD i, 16⟩ ⟨E.aW i, 16⟩ := (hE.dW i hi).symm.sub_left (dD i hi)
   have sDW : Mem.Sep (E.aD i) 16 (E.aW i) 16 := dDW.sep (Region.contains_self _ _) (Region.contains_self _ _)
   -- What the loop reads, as it was before it.
   have fA : ∀ (R : Region), R.Disjoint ⟨E.A, 16 * E.r⟩ → ∀ r' ∈ [(⟨E.A, 16 * i⟩ : Region)], R.Disjoint r' :=
     fun R hR r' hr' => by
       simp only [List.mem_singleton] at hr'; subst hr'
-      exact hR.sub_right (Region.sub_prefix (by omega))
+      exact hR.sub_right (Region.sub_prefix (by omega_using [hi]))
   have bS : blockAt t.mem (E.aS i) = blockAt E.m (E.aS i) := blockAt_frame hI.frame fun r' hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'; exact hE.dS i hi i (Nat.le_refl _)
   have bK : blockAt t.mem (E.aK i) = blockAt E.m (E.aK i) := blockAt_frame hI.frame (fA _ (hE.dK i hi))
@@ -156,24 +156,24 @@ theorem remStep_ok {E : REnv} (hE : E.Ok) {i : Nat} (hi : i < E.r) {t : State} (
   rw [eS, eK, eW] at p₁
   have hX : XBinOp.eval .pshufb (t.mem.readW (E.aS i) 128 ^^^ t.mem.readW (E.aK i) 128) revMask = E.X i := by
     rw [pshufb_rev_xor, ← blockAt_eq, ← blockAt_eq, bS, bK]
-  refine WP.mono (remNext_ok t₁ (m := E.r - i) (i := i) (by omega) (by omega) (by rw [g₁, hI.r9])
+  refine WP.mono (remNext_ok t₁ (m := E.r - i) (i := i) (by omega_using [hi]) (by omega_using [r15]) (by rw [g₁, hI.r9])
     (by rw [g₁, hI.r10])) fun t' ⟨a10, a9, z, gg, ln, mm, rd', wr'⟩ => ⟨?_, z⟩
   have m' : t'.mem = t.mem.writeW (E.aD i) (t.mem.readW (E.aS i) 128 ^^^ t.mem.readW (E.aK i) 128) := by
     rw [mm, m₁]
-  refine ⟨by omega, a10, by rw [a9, show E.r - i - 1 = E.r - (i + 1) by omega],
+  refine ⟨by omega_using [hi], a10, by rw [a9, show E.r - i - 1 = E.r - (i + 1) by omega_using []],
     fun q h9 h10 => by rw [gg q h9 h10, g₁]; exact hI.gpr q h9 h10, by rw [rd', rd₁, hI.rd],
     by rw [wr', wr₁, hI.wr], ?_, fun j hj => ?_, ?_, ?_, ?_, ?_⟩
   · rw [m']
     exact (hI.frame.sub fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩).writeW (List.mem_singleton_self _) _
+      (Offset.contains_base _ (by omega_using []) (by omega_using [hi, r15]))
   · rw [m']
     by_cases hji : j < i
     · rw [show E.aD i = (⟨E.aD i, 16⟩ : Region).base from rfl,
-        blockAt_writeW_sep' (Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) rfl]
+        blockAt_writeW_sep' (Offset.disjoint _ (.inl (by omega_using [hji])) (by omega_using [hi, r15, hj]) (by omega_using [hi, r15])) rfl]
       exact hI.ct j hji
-    · obtain rfl : j = i := by omega
+    · obtain rfl : j = i := by omega_using [hj, hji]
       rw [blockAt_eq, Mem.readW_writeW_self _ _ 16 _ (by decide), hX]
   · have e : prod (t'.proj 0) = prod (t₁.proj 0) := by simp only [prod, State.proj_xmm, ln]
     rw [e, p₁, hI.prod, hX, rW, hI.y]
@@ -192,8 +192,8 @@ theorem remLoop_ok {E : REnv} (hE : E.Ok) {t : State} (hI : RInv E 0 t) :
   refine WP.mono (remStep_ok hE hi hIs) fun s' ⟨hI', hz⟩ => ?_
   by_cases h1 : E.r - i = 1
   · refine .inl ⟨by simp only [eval, hz, h1, decide_true, Option.map_some, Bool.not_true], ?_⟩
-    rwa [show E.r = i + 1 by omega]
+    rwa [show E.r = i + 1 by omega_using [h1]]
   · exact .inr ⟨by simp only [eval, hz, h1, decide_false, Option.map_some, Bool.not_false],
-      E.r - (i + 1), by omega, i + 1, rfl, by omega, hI'⟩
+      E.r - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, h1], hI'⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH

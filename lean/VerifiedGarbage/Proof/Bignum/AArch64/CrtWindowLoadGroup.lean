@@ -18,7 +18,7 @@ theorem loadGroup_ok {s : State} {P src : Addr} {w i : Nat} {mi : BitVec 64} {X 
     (hp : word s.mem P (8 * Crt.sExp) = src)
     (hi : word s.mem P (8 * Crt.sI) = BitVec.ofNat 64 i)
     (hld : ∀ j < 5, InRegions (s.rd ++ s.wr) ((src + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) 1)
-    (hb : ∀ j (hj : j < 5), s.mem ((src + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) = bs[j]'(by omega)) :
+    (hb : ∀ j (hj : j < 5), s.mem ((src + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) = bs[j]'(by omega_using [hbs, hj])) :
     WP isa (.block loadGroup) s fun t =>
       t.mem = s.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (pre bs 5)) ∧
       Keep [.x3,.x4,.x5] s t := by

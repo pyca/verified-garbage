@@ -41,8 +41,8 @@ theorem invLay_ok {sP : Addr} (len k : Nat) (hlen : len ∈ [8, 16, 32, 64, 128]
     rcases hlen with rfl | rfl | rfl | rfl | rfl <;> decide
   rw [nttInvLayer_eq]
   exact vlay_ok vibfly_spec nttInvBlk_ok hlen (-2) (fun c => 256 / len - 1 - c) (by rw [hk]; rfl)
-    (fun c _ => by omega)
-    (fun c hc' => step_bwd (zi := fun c => 256 / len - 1 - c) (dz := -2) _ 1 (by decide) (by omega))
+    (fun c _ => by omega_using [hl])
+    (fun c hc' => step_bwd (zi := fun c => 256 / len - 1 - c) (dz := -2) _ 1 (by decide) (by omega_using [hl, hc']))
     hc hsi hS hT hw
 
 theorem invLay4_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.gpr .rsi = sP)
@@ -51,7 +51,7 @@ theorem invLay4_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.
   rw [nttInvLayer_eq, show 256 / 4 - 1 = 63 from rfl, show 128 / 4 = 32 from rfl]
   exact vlay4_ok vibfly_spec nttInvBlk_ok 62 0x05 (-4) (fun c => 63 - c) (fun i => 62 - 2 * i) rfl (by decide)
     (by decide)
-    (fun i hi => step_bwd (zi := fun i => 62 - 2 * i) (dz := -4) _ 2 (by decide) (by omega))
+    (fun i hi => step_bwd (zi := fun i => 62 - 2 * i) (dz := -4) _ 2 (by decide) (by omega_using [hi]))
     hc hsi hS hT hw
 
 theorem invLay2_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.gpr .rsi = sP)
@@ -60,7 +60,7 @@ theorem invLay2_ok {sP : Addr} {F : Poly} (s : State) (hc : VConsts s) (hsi : s.
   rw [nttInvLayer_eq, show 256 / 2 - 1 = 127 from rfl, show 128 / 2 = 64 from rfl]
   exact vlay2_ok vibfly_spec nttInvBlk_ok 124 0x1B (-8) (fun c => 127 - c) (fun i => 124 - 4 * i) rfl
     (by decide) (by decide)
-    (fun i hi => step_bwd (zi := fun i => 124 - 4 * i) (dz := -8) _ 4 (by decide) (by omega))
+    (fun i hi => step_bwd (zi := fun i => 124 - 4 * i) (dz := -8) _ 4 (by decide) (by omega_using [hi]))
     hc hsi hS hT hw
 
 theorem nttInv_correct (s : State) (hs : (inPlaceK nttInv).pre s) :

@@ -42,7 +42,7 @@ theorem scan_ct {base src sp table : BitVec 32} {k : Nat} {dom : List Byte}
     let H := fun s : State => P s ∧
       s.zf = some (decide (g.len = k ∧ dom = g.domain.take dom.length))
     have stepWP (s : State) (h : P s) : WP isa (record g offset) s H := by
-      refine WP.mono (record_ok h.1 g h.2.1 (by rw [total] at fit; omega)) ?_
+      refine WP.mono (record_ok h.1 g h.2.1 (by rw [total] at fit; omega_using [fit])) ?_
       rintro t ⟨zero, mem, rest⟩
       exact ⟨⟨h.1.after mem rest, h.2.after mem rest⟩, zero⟩
     have stepCT := (record_ct (base := base) (src := src) (sp := sp) (table := table) (k := k) (dom := dom)
@@ -60,8 +60,8 @@ theorem scan_ct {base src sp table : BitVec 32} {k : Nat} {dom : List Byte}
             byteAddr table + BitVec.ofNat 64 (offset + 8 + 3 * g.len) := by
           rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
           congr 2
-          omega
-        exact (ih (offset + 8 + 3 * g.len) (by rw [total] at fit; omega)
+          omega_using []
+        exact (ih (offset + 8 + 3 * g.len) (by rw [total] at fit; omega_using [fit])
           (fun x hx => valid x (by simp [hx]))).mono
           (fun s t h => ⟨⟨h.1.1.1.1, by rw [← ptr]; exact h.1.1.1.2.2⟩,
             ⟨h.1.2.1.1, by rw [← ptr]; exact h.1.2.1.2.2⟩⟩)

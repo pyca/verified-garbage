@@ -151,15 +151,15 @@ theorem agreeF {s₁ s₂ : State} (h₁ : Inv s₀₁ s₁) (h₂ : Inv s₀₂
     rcases hbit with hbit | hbit
     · obtain ⟨d, hd, h₁d, h₂d⟩ := slotsOf_testBit hbit
       rw [e h₁d h₁, e h₁d h₂]
-      exact byte_of_lw (hw d hd) (by omega)
+      exact byte_of_lw (hw d hd) (by omega_using [h₂d])
     · obtain ⟨i, hi, h₁d, h₂d⟩ := argSlots_testBit hbit
       rw [e h₁d h₁, e h₁d h₂]
       by_cases hn : i ∈ intArgs
       · simp only [argWidth, hn, ite_true] at h₂d
-        refine byte_of_lw32 ?_ (by omega)
+        refine byte_of_lw32 ?_ (by omega_using [h₂d])
         rw [h₁.arg32 T.hp₁ hi, h₂.arg32 T.hp₂ hi, T.pb.arg32_eq hi]
       · simp only [argWidth, hn, ite_false] at h₂d
-        refine byte_of_lw ?_ (by omega)
+        refine byte_of_lw ?_ (by omega_using [h₂d])
         rw [h₁.arg T.hp₁ hi, h₂.arg T.hp₂ hi, T.pb.arg_eq hi hn]
 
 /-- A piece the taint analysis proves, from the doublewords at `ws`, which

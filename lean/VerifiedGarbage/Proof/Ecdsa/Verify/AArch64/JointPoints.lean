@@ -72,8 +72,8 @@ theorem apart_jointPrep {i : Nat} (hi : i<45) :
   intro w hw
   simp only [jointPrepRanges,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with rfl | rfl
-  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤2112; omega
-  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤1824; omega
+  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤2112; omega_using [hi]
+  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤1824; omega_using [hi]
 
 theorem jointPrepStage_ok (hc : CfgOk p256) (hC : Law p256.C) {base : Addr} {s : State}
     (hs : Scr s base size) {g : Reg → BitVec 64} (F : Fixed p256 base g s.mem) {P : Point p256.C}
@@ -84,7 +84,7 @@ theorem jointPrepStage_ok (hc : CfgOk p256) (hC : Law p256.C) {base : Addr} {s :
   have h7 := hc.n10
   have hn := hs.nowrap
   have hp3 := hc.p_ge
-  have hmont : ∀ x,p256.mont x<p256.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x,p256.mont x<p256.C.p := fun x => Nat.mod_lt _ (by omega_using [hpx])
   refine WP.mono_syms (Weierstrass.AArch64.jointPrep_ok P256Joint.cfg hs
     (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -101,10 +101,10 @@ theorem jointPrepStage_ok (hc : CfgOk p256) (hC : Law p256.C) {base : Addr} {s :
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₂.ap (hmont _)
     · exact lt_of_eq_of_lt F₂.bm (hmont _)
-    · exact lt_of_eq_of_lt F₂.zero (by omega)
+    · exact lt_of_eq_of_lt F₂.zero (by omega_using [hpx])
     · exact lt_of_eq_of_lt (e₂ (i:=PX) (by decide)) hpx
     · exact lt_of_eq_of_lt (e₂ (i:=PY) (by decide)) hpy
-    · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega))
+    · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega_using [hpx]))
   have hI : Inv (P256Joint.cfg.K).M base size p256.C.p (·∈jacWinSlots (P256Joint.cfg.K))
       (winRo (P256Joint.cfg.K)) (tmv p256.C p256.n base s₂) s₂ :=
     ⟨hs₂,hM₂,fun _ hx => List.mem_append_left _ (List.mem_append_left _ hx),hlt,fun _ _ => rfl⟩

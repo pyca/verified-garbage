@@ -30,9 +30,9 @@ variable (a : Arena)
 def part (d n : Nat) : Region := ⟨off a.B d, n⟩
 
 theorem small {d n : Nat} (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) : d + n ≤ usedBytes a.pLen := by
-  rcases a.width with h | h | h <;> rw [h] <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega
+  rcases a.width with h | h | h <;> rw [h] <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega_using [hd, hn]
 
-theorem pLe : a.pLen ≤ 384 := by rcases a.width with h | h | h <;> omega
+theorem pLe : a.pLen ≤ 384 := by rcases a.width with h | h | h <;> omega_using [h]
 
 theorem parentRoom : Impl.Dsa.Layout.activeBytes ≤ usedBytes a.pLen := by
   rcases a.width with h | h | h <;> rw [h] <;> decide
@@ -42,7 +42,7 @@ theorem part_sub {d n : Nat} (h : d + n ≤ usedBytes a.pLen) : Region.Sub (a.pa
 
 theorem parts_disjoint {d n e k : Nat} (hd : d + n ≤ usedBytes a.pLen) (he : e + k ≤ usedBytes a.pLen)
     (h : d + n ≤ e ∨ e + k ≤ d) : (a.part d n).Disjoint (a.part e k) :=
-  Offset.disjoint a.B h (by have := a.arenaBound; omega) (by have := a.arenaBound; omega)
+  Offset.disjoint a.B h (by have := a.arenaBound; omega_using [hd, this]) (by have := a.arenaBound; omega_using [he, this])
 
 theorem frame_part {d n : Nat} (h : d + n ≤ usedBytes a.pLen) : (⟨a.F, frameBytes⟩ : Region).Disjoint (a.part d n) :=
   a.frameArena.sub_right (a.part_sub h)
@@ -57,15 +57,15 @@ def gWork : List Region :=
 
 theorem gWork_separate {d n : Nat} (hd : q ≤ d) (hn : d + n ≤ g) : ∀ r ∈ a.gWork, (a.part d n).Disjoint r := by
   have pn := a.pLe
-  have hb : d + n ≤ usedBytes a.pLen := by have := a.small (d := g) (n := 0) (by decide) (by decide); omega
+  have hb : d + n ≤ usedBytes a.pLen := by have := a.small (d := g) (n := 0) (by decide) (by decide); omega_using [hn, this]
   have ha := a.small (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
-  have hg := a.small (d := g) (n := a.pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hg := a.small (d := g) (n := a.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
   intro r hr
   simp only [gWork, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact a.parts_disjoint hb ha (Or.inl (by unfold g arithmetic at *; omega))
+  · exact a.parts_disjoint hb ha (Or.inl (by unfold g arithmetic at *; omega_using [hn]))
   · rw [a.parent_eq]
-    exact a.parts_disjoint hb (by simpa using a.parentRoom) (Or.inr (by unfold q Impl.Dsa.Layout.activeBytes at *; omega))
+    exact a.parts_disjoint hb (by simpa using a.parentRoom) (Or.inr (by unfold q Impl.Dsa.Layout.activeBytes at *; omega_using [hd]))
   · exact a.parts_disjoint hb hg (Or.inl hn)
   · exact (a.frame_part hb).symm
 
@@ -76,14 +76,14 @@ def generatorPlan (pb eb : List Byte) (hp : pb.length = a.pLen) (he : eb.length 
   have pn := a.pLe
   have ha := a.small (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
   have hh := a.small (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  have hg := a.small (d := g) (n := a.pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hg := a.small (d := g) (n := a.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
   have parent : 0 + Impl.Dsa.Layout.activeBytes ≤ usedBytes a.pLen := by simpa using a.parentRoom
   have gp : (a.part g a.pLen).Disjoint ⟨a.B, Impl.Dsa.Layout.activeBytes⟩ := by
     rw [a.parent_eq]; exact a.parts_disjoint hg parent (Or.inr (by decide))
-  have ga := a.parts_disjoint hg ha (Or.inl (by unfold g arithmetic; omega))
+  have ga := a.parts_disjoint hg ha (Or.inl (by unfold g arithmetic; omega_using [pn]))
   have ps := a.gWork_separate (d := VG.Impl.Dsa.Generation.Layout.p) (n := a.pLen)
-    (by decide) (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega)
-  have es := a.gWork_separate (d := exponent) (n := a.pLen) (by decide) (by unfold exponent g; omega)
+    (by decide) (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega_using [pn])
+  have es := a.gWork_separate (d := exponent) (n := a.pLen) (by decide) (by unfold exponent g; omega_using [pn])
   have fa := a.frame_part ha
   refine {
     B := a.B
@@ -104,19 +104,19 @@ def generatorPlan (pb eb : List Byte) (hp : pb.length = a.pLen) (he : eb.length 
     eLength := he
     pPositive := positive
     pOdd := odd
-    frameHeaders := fun k hk j hj => fa.sep (Offset.contains_base _ (by unfold frameBytes; omega) (by omega))
-      (Offset.contains_base _ (by unfold arithmeticBytes; omega) (by omega))
+    frameHeaders := fun k hk j hj => fa.sep (Offset.contains_base _ (by unfold frameBytes; omega_using [hk]) (by omega_using [hk]))
+      (Offset.contains_base _ (by unfold arithmeticBytes; omega_using [hj]) (by omega_using [hj]))
     frameOutside := fun k hk i hi => by
       rw [off_off]
-      exact out_scr fa (Offset.contains_base _ (by unfold frameBytes; omega) (by omega))
+      exact out_scr fa (Offset.contains_base _ (by unfold frameBytes; omega_using [hk, hi]) (by omega_using [hk, hi]))
     frameSeparate := ?_
     hashSeparate := ?_
     pSeparate := ps
     hSeparate := ps
     eSeparate := es
     gArithmeticSeparate := ga
-    gParentOutside := fun i hi => out_scr gp (Offset.contains_base _ (by omega) (by omega))
-    gArithmeticOutside := fun i hi => out_scr ga (Offset.contains_base _ (by omega) (by omega)) }
+    gParentOutside := fun i hi => out_scr gp (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
+    gArithmeticOutside := fun i hi => out_scr ga (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi])) }
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

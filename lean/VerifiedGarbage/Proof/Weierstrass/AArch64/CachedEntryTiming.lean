@@ -30,8 +30,8 @@ theorem entry_relCT {C : Curve} {base : Addr} {size u v j : Nat}
       (CachedJac.entry K)
       (fun s t => ∃ E', FieldPair K.M base size C.p (·∈jointSlots cfg) (entryLive (jointLive cfg)) E' s t) := by
   let a := (nafMagnitude (FastNaf.byte 5 v j)+1)/2
-  have ha : 1≤a := by dsimp [a]; omega
-  have ha8 : a≤8 := by dsimp [a]; omega
+  have ha : 1≤a := by dsimp [a]; omega_using [hmag]
+  have ha8 : a≤8 := by dsimp [a]; omega_using [hmag15]
   have hD := entry_slots
   have hT := entrySources_live ha ha8
   have load := lookup_relCT (base:=base) (E:=E) (b:=FastNaf.byte 5 v j)
@@ -51,8 +51,8 @@ theorem entry_relCT {C : Curve} {base : Addr} {size u v j : Nat}
     obtain ⟨_,rfl⟩ := Exec.det es xs
     obtain ⟨_,rfl⟩ := Exec.det et xt
     exact ⟨he,E',pair,
-      ss.keep (ks.mono entry_work) (fun r hr => by have := hL.stableBounds r hr; have := hp.left.scr.nowrap; omega) hL.stableSep,
-      st.keep (kt.mono entry_work) (fun r hr => by have := hL.stableBounds r hr; have := hp.right.scr.nowrap; omega) hL.stableSep,
+      ss.keep (ks.mono entry_work) (fun r hr => by have := hL.stableBounds r hr; have := hp.left.scr.nowrap; omega_arith) hL.stableSep,
+      st.keep (kt.mono entry_work) (fun r hr => by have := hL.stableBounds r hr; have := hp.right.scr.nowrap; omega_arith) hL.stableSep,
       (ks.gpr _ (x19_not_clob _)).trans s19,(kt.gpr _ (x19_not_clob _)).trans t19⟩
   rw [CachedJac.entry]
   apply RelCT.seq load'
@@ -66,8 +66,8 @@ theorem entry_relCT {C : Curve} {base : Addr} {size u v j : Nat}
         s.gpr .x3=BitVec.ofNat 64 (nafNegative (FastNaf.byte 5 v j)).toNat ∧
         t.gpr .x3=BitVec.ofNat 64 (nafNegative (FastNaf.byte 5 v j)).toNat) := by
     intro s t ts tt s' t' ⟨hp,ss,st,s19,t19⟩ es et
-    obtain ⟨_,_,xs,vs,ks⟩ := nafSignRead_ok hp.left.scr (by decide) (by change 1824+j<size; omega) s19 (ss.peer.bits j hj)
-    obtain ⟨_,_,xt,vt,kt⟩ := nafSignRead_ok hp.right.scr (by decide) (by change 1824+j<size; omega) t19 (st.peer.bits j hj)
+    obtain ⟨_,_,xs,vs,ks⟩ := nafSignRead_ok hp.left.scr (by decide) (by change 1824+j<size; omega_using [hsize, hj]) s19 (ss.peer.bits j hj)
+    obtain ⟨_,_,xt,vt,kt⟩ := nafSignRead_ok hp.right.scr (by decide) (by change 1824+j<size; omega_using [hsize, hj]) t19 (st.peer.bits j hj)
     obtain ⟨_,rfl⟩ := Exec.det es xs
     obtain ⟨_,rfl⟩ := Exec.det et xt
     have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by

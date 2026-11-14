@@ -92,7 +92,7 @@ theorem ct : ConstantTime isa (hintBitUnpackContract PPC64LE.abi).pre (hintBitUn
           simp only [uhR, uH, ← p6, ← p7] at hc'
           exact hxy hc')]
       have hb : bytesAt x.mem (uY x) (uLen x) = bytesAt y.mem (uY y) (uLen y) := map_toNat_inj hleak
-      have hlt : (a - uY x).toNat < uLen x := by simp only [Region.Contains] at hc; omega
+      have hlt : (a - uY x).toNat < uLen x := by simp only [Region.Contains] at hc; omega_using [hc]
       have fY := px.fitY
       have ea : a = uY x + BitVec.ofNat 64 (a - uY x).toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
@@ -103,9 +103,9 @@ theorem ct : ConstantTime isa (hintBitUnpackContract PPC64LE.abi).pre (hintBitUn
     · -- `h`: zeros.
       have hl := px.hlen
       have h₁ := byte_of_zero_words (m := x'.mem) (p := uH x) (N := (x.gpr .r7).toNat)
-        (fun t ht => fx.zero t (by omega)) hc
+        (fun t ht => fx.zero t (by omega_using [hl, ht])) hc
       have h₂ := byte_of_zero_words (m := y'.mem) (p := uH y) (N := (y.gpr .r7).toNat)
-        (fun t ht => fy.zero t (by have := py.hlen; omega)) (by simpa only [uhR, uH, ← p6, ← p7] using hc)
+        (fun t ht => fy.zero t (by have := py.hlen; omega_using [ht, this])) (by simpa only [uhR, uH, ← p6, ← p7] using hc)
       rw [h₁, h₂]
 
 /-- A state satisfying the precondition. -/

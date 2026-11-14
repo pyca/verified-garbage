@@ -88,13 +88,13 @@ theorem step {i : Nat} (hi : i < 32) {s : State}
     WP isa (.block (yaccBody op fix ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv s₀ (fun k => L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)) (i + 1) s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_using [hi]
   have hw : pR (s₀.gpr .rdi) ∈ s.wr := by rw [hI.wr, hp.2.1]; simp
   have hr : pR (s₀.gpr .rsi) ∈ s.rd ++ s.wr := by rw [hI.rd, hI.wr, hp.1]; simp
   have e1 : s.gpr .rdi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rdi) (8 * i) := by
-    rw [add_ofNat_zero, hI.rdi]; congr 2; omega
+    rw [add_ofNat_zero, hI.rdi]; congr 2; omega_using []
   have e2 : s.gpr .rsi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rsi) (8 * i) := by
-    rw [add_ofNat_zero, hI.rsi]; congr 2; omega
+    rw [add_ofNat_zero, hI.rsi]; congr 2; omega_using []
   rw [yaccBody, List.append_assoc, List.append_assoc, WP.block_append_iff,
     show ∀ a b : Instr, [a, b] = [a] ++ [b] from fun _ _ => rfl, WP.block_append_iff]
   refine WP.mono (yld_ok (by rw [e1]; exact f_in32 (List.mem_append_right _ hw) j0)) fun s1 ⟨L1, o1⟩ => ?_
@@ -125,29 +125,29 @@ theorem step {i : Nat} (hi : i < 32) {s : State}
     rw [g3, o13.mem, coeffAt_write256 _ _ j0 _ hk]
     split
     · rename_i h
-      rw [ifp (show k < 8 * (i + 1) by omega), State.ymm, extract_ymm _ _ (by omega)]
+      rw [ifp (show k < 8 * (i + 1) by omega_using [h]), State.ymm, extract_ymm _ _ (by omega_using [h])]
       have hc : ∀ l < 2, ∀ e < 4, dword (s3.lane .xmm0 l) e =
           L (coeffAt s₀.mem (s₀.gpr .rdi) (8 * i + 4 * l + e)) (coeffAt s₀.mem (s₀.gpr .rsi) (8 * i + 4 * l + e)) :=
         fun l hl e he => by
           rw [← State.proj_xmm, B3 l hl, hL _ _ _ he, State.proj_xmm, State.proj_xmm,
             o2.lane _ (by decide) l hl, L1 l hl, L2 l hl, o1.gpr, o1.mem, e1, e2, dword_readW _ _ he,
             dword_readW _ _ he, lane_load, lane_load, coeffAddr_add, coeffAddr_add, ← coeffAt_eq, ← coeffAt_eq,
-            hI.coeff _ (by omega), ifn (by omega),
-            coeffAt_frame hI.frame (by simpa using hp.2.2.1.symm) (by rw [n_eq]; omega)]
+            hI.coeff _ (by omega_using [hi, hl, he]), ifn (by omega_using []),
+            coeffAt_frame hI.frame (by simpa using hp.2.2.1.symm) (by rw [n_eq]; omega_using [hi, hl, he])]
       split
       · rename_i h4
         have := hc 0 (by decide) (k - 8 * i) h4
-        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega] at this
+        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega_using [h]] at this
         exact this
       · rename_i h4
-        have := hc 1 (by decide) (k - 8 * i - 4) (by omega)
-        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega] at this
+        have := hc 1 (by decide) (k - 8 * i - 4) (by omega_using [h])
+        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega_using [h4]] at this
         exact this
     · rename_i h
       rw [hI.coeff k hk]
       by_cases h' : k < 8 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_using [h'])]
+      · rw [ifn h', ifn (by omega_using [h, h'])]
   · exact ⟨by rw [o13.gpr], by rw [o13.gpr]⟩
 
 /-- The whole function, from its precondition. -/
@@ -171,11 +171,11 @@ theorem fn_ok (hv : ∀ k < 256, (L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffA
         by rw [o.keep.2.1, k1.2.1], by rw [o.keep.2.2, k1.2.2],
         fun l hl => by
           rw [show u.lane .xmm15 l = w.lane .xmm15 l by simp only [State.lane]; rw [o.xmm, hy], lq l hl]; decide,
-        by rw [o.mem, m1]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, ifn (by omega)]⟩)
+        by rw [o.mem, m1]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, ifn (by omega_using [])]⟩)
       fun i hi u hI => step hp hF hY hL hi hI) fun u hI => ?_)
     refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem) (by simp only [yepi]; vrund; rfl) fun u' hm' => ?_
     rw [hm']
-    exact ⟨hI.frame, fun k hk => by rw [hI.coeff k hk, ifp (by omega)]⟩
+    exact ⟨hI.frame, fun k hk => by rw [hI.coeff k hk, ifp (by omega_using [hk])]⟩
   obtain ⟨tr, s', he, ⟨hf, hco⟩, hk⟩ := WP.keep _ hW (writesOnly_of hc)
   refine ⟨tr, s', he, abiPreserved_of_exec hm he (gprPreserved_of hk (by decide) hf ?_),
     polyIs_of_toNat fun k hk => ?_⟩

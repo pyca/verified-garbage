@@ -29,7 +29,7 @@ variable {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
 theorem _root_.VG.Proof.Bignum.Arrays.mask_eq {m m' : Mem} {js : List Nat} (ha : Arrays B w js m m') (hn : B.toNat + Z ≤ 2 ^ 64)
     (hZ : slot w 8 ≤ Z) : word m' B (8 * sMask) = word m B (8 * sMask) :=
   ha.word_eq (fun j _ => .inl (hdr_lt_slot w j (by decide)))
-    (by have := hdr_lt_slot w 8 (show sMask < 32 by decide); omega)
+    (by have := hdr_lt_slot w 8 (show sMask < 32 by decide); omega_using [hn, hZ, this])
 
 theorem loadK (h : KCtx s t B Z w minv N) {j : Nat} (hj : j < 8) (hjN : j ≠ aN) (hj1 : j ≠ aOne)
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) (hsp' : sp ≠ sMask) (hsl' : sl ≠ sMask) {p : Addr}
@@ -60,7 +60,7 @@ theorem decK (h : KCtx s t B Z w minv N) :
       (0 < wv t.mem B (slot w aM) w → wv t'.mem B (slot w aM) w + 1 = wv t.mem B (slot w aM) w) ∧
       Arrays B w [aM] t.mem t'.mem :=
   WP.mono (decM_ok h.good h.hZ h.w1 h.w2) fun _ ⟨hv, ho, hk⟩ =>
-    have ha : Arrays B w [aM] t.mem _ := Arrays.of_outside (by simp) ho (Nat.le_refl _) (by omega)
+    have ha : Arrays B w [aM] t.mem _ := Arrays.of_outside (by simp) ho (Nat.le_refl _) (by omega_using [])
     ⟨h.arr ha (by decide) (by decide) (by decide) hk, hv, ha⟩
 
 theorem mulEK (h : KCtx s t B Z w minv N) :

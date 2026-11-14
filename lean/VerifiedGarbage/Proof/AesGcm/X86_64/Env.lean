@@ -44,9 +44,9 @@ theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p
   simp only [Region.Contains] at hc ⊢
   have e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
     rw [Offset.sub_add_eq]; exact (BitVec.sub_add_cancel _ _).symm
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hk]),
+    Nat.mod_eq_of_lt (by omega_using [hd, hk, hc])]
+  omega_using [hd, hc]
 
 theorem in_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hd : d + n ≤ k)
     (hk : k < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 d) n :=
@@ -146,7 +146,7 @@ theorem wSub {W : Addr} {d n N : Nat} (h : d + n ≤ N) : Region.Sub ⟨W + BitV
 
 theorem bSub {W : Addr} {d n N : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ N) :
     Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, N - 96⟩ :=
-  Offset.sub _ h₁ (by omega)
+  Offset.sub _ h₁ (by omega_using [h₂])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
@@ -188,18 +188,18 @@ theorem leN {m k : Nat} (hN : m ≤ N) (h : k ≤ m := by decide) : k ≤ N := N
 /-- Parts of the state are disjoint. -/
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
     (⟨St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.sw; omega) (by have := L.sw; omega)
+  Offset.disjoint _ h (by have := L.sw; omega_using [ha]) (by have := L.sw; omega_using [hd])
 
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ N) (hd : d + k ≤ N) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha, this]) (by have := L.ww; omega_using [hd, this])
 
 /-! ### `vg_ghash`'s working space: `g` bytes at `W + 512`, `0` or within `W` -/
 
 omit L in
 theorem disj_empty {r : Region} {a : Addr} : r.Disjoint ⟨a, 0⟩ := fun _ _ h => by
-  simp only [Region.Contains] at h; omega
+  simp only [Region.Contains] at h; omega_using [h]
 
 omit L in
 theorem ghSub {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) : Region.Sub ⟨W + BitVec.ofNat 64 512, g⟩ ⟨W, N⟩ := by
@@ -238,13 +238,13 @@ theorem gh_hi {g : Nat} (hg : g = 0 ∨ 512 + g ≤ N) :
     Region.Sub ⟨W + BitVec.ofNat 64 512, g⟩ ⟨W + BitVec.ofNat 64 512, N - 512⟩ := by
   rcases hg with rfl | h
   · intro a ha; simp only [Region.Contains] at ha; omega
-  · exact Region.sub_prefix (by omega)
+  · exact Region.sub_prefix (by omega_using [h])
 
 omit L in
 /-- The part of `W` from 512 on (none if `W` is shorter) is within `W`. -/
 theorem hiSub : Region.Sub ⟨W + BitVec.ofNat 64 512, N - 512⟩ ⟨W, N⟩ := by
   by_cases h5 : 512 ≤ N
-  · exact wSub (by omega)
+  · exact wSub (by omega_using [h5])
   · intro a ha; simp only [Region.Contains] at ha; omega
 
 /-- Parts of `W` before 512 are apart from the part from 512 on (none if
@@ -252,8 +252,8 @@ theorem hiSub : Region.Sub ⟨W + BitVec.ofNat 64 512, N - 512⟩ ⟨W, N⟩ := 
 theorem w_hi {d k : Nat} (h : d + k ≤ 512) (hk : d + k ≤ N) :
     (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, N - 512⟩ := by
   by_cases h5 : 512 ≤ N
-  · exact L.w_w (.inl h) hk (by omega)
-  · rw [show N - 512 = 0 by omega]; exact disj_empty
+  · exact L.w_w (.inl h) hk (by omega_using [h5])
+  · rw [show N - 512 = 0 by omega_using [h5]]; exact disj_empty
 
 end Lay
 

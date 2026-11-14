@@ -40,7 +40,7 @@ theorem var_succ (t k : Nat) (hk : k < 7) : var (t + 1) (k + 1) = var t k := by
   simp only [var]; congr 1; omega
 
 theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 7 := by
-  simp only [var]; congr 1; omega
+  simp only [var]; congr 1; omega_using []
 
 /-- The registers of a round are all different. -/
 theorem round_nodup (t : Nat) :
@@ -50,8 +50,8 @@ theorem round_nodup (t : Nat) :
     simp only [carry]; split <;> split <;> first | rfl | omega
   rw [e]
   simp only [var, carry]
-  have h8 := Nat.mod_lt t (show 8 > 0 by omega)
-  rw [show t % 2 = t % 8 % 2 by omega]
+  have h8 := Nat.mod_lt t (show 8 > 0 by omega_using [])
+  rw [show t % 2 = t % 8 % 2 by omega_using []]
   generalize t % 8 = c at *
   revert h8; revert c; decide +kernel
 

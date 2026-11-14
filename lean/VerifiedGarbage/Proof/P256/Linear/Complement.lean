@@ -38,7 +38,7 @@ private theorem comp_value (a b c d : Word) (h : val4 a b c d<complementP) :
   change compValue a b c d<2^256 at hl
   have hb := Bool.toNat_le (carryOut 0xffffffff00000001 (~~~d)
     (carryOut 0 (~~~c) (carryOut 0xffffffff (~~~b) (carryOut (-1) (~~~a) true))))
-  omega
+  omega_using [h, he, hl]
 
 private theorem complement_core {s : State} {base : Addr} {size b : Nat}
     (hs : Scr s base size) (hb : b+32≤size) (hb8 : b%8=0)
@@ -48,14 +48,14 @@ private theorem complement_core {s : State} {base : Addr} {size b : Nat}
         compWords (VG.Proof.Mont.word s.mem base b) (VG.Proof.Mont.word s.mem base (b+8))
           (VG.Proof.Mont.word s.mem base (b+16)) (VG.Proof.Mont.word s.mem base (b+24)) ∧
       t.gpr .x17=0 ∧ Keeps [.x2,.x9,.x10,.x11,.x12,.x17] s t := by
-  have h0 := hs.enc8 (d:=b) (by omega) hb8
-  have h8 := hs.enc8 (d:=b+8) (by omega) (by omega)
-  have h16 := hs.enc8 (d:=b+16) (by omega) (by omega)
-  have h24 := hs.enc8 (d:=b+24) (by omega) (by omega)
-  have l0 := hs.ld (d:=b) (by omega)
-  have l8 := hs.ld (d:=b+8) (by omega)
-  have l16 := hs.ld (d:=b+16) (by omega)
-  have l24 := hs.ld (d:=b+24) (by omega)
+  have h0 := hs.enc8 (d:=b) (by omega_using [hb]) hb8
+  have h8 := hs.enc8 (d:=b+8) (by omega_using [hb]) (by omega_using [hb8])
+  have h16 := hs.enc8 (d:=b+16) (by omega_using [hb]) (by omega_using [hb8])
+  have h24 := hs.enc8 (d:=b+24) (by omega_using [hb]) (by omega_using [hb8])
+  have l0 := hs.ld (d:=b) (by omega_using [hb])
+  have l8 := hs.ld (d:=b+8) (by omega_using [hb])
+  have l16 := hs.ld (d:=b+16) (by omega_using [hb])
+  have l24 := hs.ld (d:=b+24) (by omega_using [hb])
   rw [hs.x0] at l0 l8 l16 l24
   apply WP.of_runBlock
   simp only [complement,Impl.P256.Linear.linear129,List.take_succ_cons,List.take_zero,

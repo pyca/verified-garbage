@@ -146,7 +146,7 @@ theorem check_args {s0 s : State} (h : EP s0 s) :
     -⟩ := id b.pre
   have wn' : (s0.gpr .r9).toNat + cvK s0 ≤ 2 ^ 64 := wn
   have hc : ∀ i < cvK s0, (⟨s0.gpr .r9, cvK s0⟩ : Region).Contains (off (s0.gpr .r9) i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
   refine ⟨by rw [k.gpr _ (by decide)]; simp [off], by rw [k.gpr _ (by decide)]; exact ofNat_toNat64 _,
     fun i hi => ⟨_, List.mem_append_left _ (by rw [b.rd, hrd]; simp), hc i hi⟩,
     fun i hi => by rw [b.frame _ (past_of_disjoint dn (hc i hi))]; simp [Spec.Rsa.bytesAt, off]⟩
@@ -171,7 +171,7 @@ theorem C1_of {d : CvD} {s : State} (h : E2 d s) : WP isa (.block check1) s (C1 
   obtain ⟨h9, h10, hrd, hb⟩ := check_args he
   obtain ⟨-, -, -, hk, -⟩ := pre_scr hs.1
   refine WP.mono (check1_ok h9 h10 hk (len_nb s0) hrd hb) fun t ⟨⟨i0, i11, im⟩, k⟩ =>
-    ⟨s0, s, hs, he, by rw [i0, getD_of_lt (by rw [len_nb]; omega)], by rw [i11, getD_of_lt (by rw [len_nb]; omega)],
+    ⟨s0, s, hs, he, by rw [i0, getD_of_lt (by rw [len_nb]; omega_using [hk])], by rw [i11, getD_of_lt (by rw [len_nb]; omega_using [hk])],
       im, k⟩
 
 theorem C2_of {d : CvD} {s : State} (h : C1 d s) : WP isa check2 s (C2 d) := by
@@ -179,8 +179,8 @@ theorem C2_of {d : CvD} {s : State} (h : C1 d s) : WP isa check2 s (C2 d) := by
   obtain ⟨-, -, -, hk, hk'⟩ := pre_scr hs.1
   have h10 : s.gpr .r10 = BitVec.ofNat 64 (cvK s0) := by
     rw [ku.gpr _ (by decide), k.gpr _ (by decide)]; exact ofNat_toNat64 _
-  refine WP.mono (check2_ok h10 hk hk' (len_nb s0) (by rw [i0, getD_of_lt (by rw [len_nb]; omega)])
-    (by rw [i11, getD_of_lt (by rw [len_nb]; omega)])) fun t ⟨hv, tm, kt⟩ =>
+  refine WP.mono (check2_ok h10 hk hk' (len_nb s0) (by rw [i0, getD_of_lt (by rw [len_nb]; omega_using [hk])])
+    (by rw [i11, getD_of_lt (by rw [len_nb]; omega_using [hk])])) fun t ⟨hv, tm, kt⟩ =>
     ⟨s0, hs, (b.of_regs ku im).of_regs kt tm, (a.of_keep ku).of_keep kt, hv⟩
 
 theorem check_ct : RelCT isa (Two E2) check (Two C2) :=

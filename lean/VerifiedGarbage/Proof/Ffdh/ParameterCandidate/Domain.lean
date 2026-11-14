@@ -15,12 +15,12 @@ open VG VG.Spec.Ffdh
 theorem candidate_parametersValid {bits generator : Nat} (hlo : 512 ≤ bits) (hhi : bits ≤ 8192)
     (hg : generator = 2 ∨ generator = 5) (x : Nat) :
     parametersValid ⟨candidateOf bits x, generator, none⟩ = true := by
-  obtain ⟨ho, hl, _⟩ := candidate_shape (bits := bits) (by omega) x
-  have hbits := (candidate_bitLength (bits := bits) (by omega) x).1
+  obtain ⟨ho, hl, _⟩ := candidate_shape (bits := bits) (by omega_using [hlo]) x
+  have hbits := (candidate_bitLength (bits := bits) (by omega_using [hlo]) x).1
   have hlarge : 16 ≤ candidateOf bits x := by
-    have hpow : 2 ^ 4 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+    have hpow : 2 ^ 4 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hlo])
     exact Nat.le_trans hpow hl
   simp only [parametersValid, hbits, ho, beq_self_eq_true, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-  rcases hg with rfl | rfl <;> omega
+  rcases hg with rfl | rfl <;> omega_using [hlo, hhi, hlarge]
 
 end VG.Proof.Ffdh.ParameterCandidate

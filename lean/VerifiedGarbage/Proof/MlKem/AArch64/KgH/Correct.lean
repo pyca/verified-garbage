@@ -33,7 +33,7 @@ theorem matrixRows_ne_nil (P : KemLay) (hk3 : 3 ≤ P.k) : Impl.MlKem.AArch64.Ke
   have h2 := (List.append_eq_nil_iff.mp (List.append_eq_nil_iff.mp h).1).2
   have hp : 0 < P.k * P.k / 2 - 2 := by
     have := Nat.mul_le_mul hk3 hk3
-    omega
+    omega_using [this]
   exact List.cons_ne_nil _ _ (List.flatMap_eq_nil_iff.mp h2 0 (List.mem_range.mpr hp))
 
 /-- **The key generation computing the first PRF outputs in the matrix is correct.** -/

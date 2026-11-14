@@ -71,8 +71,8 @@ theorem sample_tr {e : Nat} (he : e < K.L.k * K.L.k) (he' : 4 * (K.L.k * K.L.k /
   have hc := W.kb e he he'
   simp only [kbChk, Bool.and_eq_true] at hc
   have hk := W.k
-  exact rel2_of (sampleIJ16_tr (kgB_bases K.L) rbx_na rbx_na (by have := div_lt_k he; omega)
-      (by have := mod_lt_k he; omega) hc.1 (W.ijT e he))
+  exact rel2_of (sampleIJ16_tr (kgB_bases K.L) rbx_na rbx_na (by have := div_lt_k he; omega_using [hk, this])
+      (by have := mod_lt_k he; omega_using [hk, this]) hc.1 (W.ijT e he))
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.a.kc h₂.a.kc, by rw [h₁.a.sb, h₂.a.sb]; exact rho_pub pub⟩
 
 theorem quad_tr {n : String} {c : Prog isa} (v : S16Ok c) {q : Nat} (hq : q < K.L.k * K.L.k / 4) :
@@ -82,9 +82,9 @@ theorem quad_tr {n : String} {c : Prog isa} (v : S16Ok c) {q : Nat} (hq : q < K.
   simp only [kqChk, Bool.and_eq_true] at hc
   have hk := W.k
   have h16 : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul hk.2 hk.2
-  exact rel2_of (RelCT.exists_ fun ρ => quad16_tr (ρ := ρ) v (kgB_bases K.L) (by omega)
-      (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < K.L.k * K.L.k by omega); omega,
-        by have := mod_lt_k (show 4 * q + t < K.L.k * K.L.k by omega); omega⟩) hc.1)
+  exact rel2_of (RelCT.exists_ fun ρ => quad16_tr (ρ := ρ) v (kgB_bases K.L) (by omega_using [hq, h16])
+      (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < K.L.k * K.L.k by omega_using [hq, ht]); omega_using [hk, this],
+        by have := mod_lt_k (show 4 * q + t < K.L.k * K.L.k by omega_using [hq, ht]); omega_using [hk, this]⟩) hc.1)
     fun σ₁ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨KPke.kgRho K.L.p (kgD σ₁), kc_lrel W p₁ p₂ pub h₁.a.kc h₂.a.kc,
       ⟨h₁.a.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩,
       ⟨h₂.a.sb.trans (rho_pub pub).symm, fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
@@ -99,7 +99,7 @@ theorem prfs_tr (v : Sample4Impl) :
     RelCT isa (R K.L (KR0 K)) (v.callee.prfs 0 (2 * K.L.k) K.oPR (K.oW / 32)) fun _ _ => True := by
   have hc := W.pr
   simp only [prChk, Bool.and_eq_true] at hc
-  exact rel2_of (v.prfs_tr (kgB_bases K.L) (by have := W.k; omega) hc.1.1.1.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+  exact rel2_of (v.prfs_tr (kgB_bases K.L) (by have := W.k; omega_using [this]) hc.1.1.1.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
     kc_lrel W p₁ p₂ pub h₁.kc h₂.kc
 
 theorem se_tr {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 2 * K.L.k) :
@@ -116,8 +116,8 @@ theorem rest_tr (hK : KpkeOk K.L) (v : Sample4Impl) :
     (RelCT.seq (R := R K.L fun σ s => KRest16 K 0 σ s ∧ allOk K.L.k (rhoK K.L σ) (K.L.k * K.L.k))
       (relInvC (fun σ s hp hs => prfs_ok W hp v hs) (prfs_tr W v)) ?_) ?_
   · have := seqR_tr (R := fun k => R K.L fun σ s => KRest16 K k σ s ∧ allOk K.L.k (rhoK K.L σ) (K.L.k * K.L.k))
-      (2 * K.L.k) 0 fun k _ hk => relInvC (fun σ s hp hs => se_ok W hp v.arith (by omega) hs)
-        (se_tr W v.arith (by omega))
+      (2 * K.L.k) 0 fun k _ hk => relInvC (fun σ s hp hs => se_ok W hp v.arith (by omega_using [hk]) hs)
+        (se_tr W v.arith (by omega_using [hk]))
     rwa [Nat.zero_add] at this
   · exact relInvC (fun σ s hp hs => tail_ok W hp hK hs) (tail_tr hK W)
 

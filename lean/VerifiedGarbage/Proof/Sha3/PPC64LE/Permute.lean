@@ -76,10 +76,10 @@ theorem stR_in : stR s₀ ∈ s₀.wr := by rw [h.wr]; simp
 
 theorem scr_in {d : Nat} (hd : d + 8 ≤ 512) :
     InRegions s₀.wr (scr s₀ + BitVec.ofNat 64 d) 8 := by
-  rw [h.wr]; exact ⟨scrR s₀, by simp, Offset.contains_base _ hd (by omega)⟩
+  rw [h.wr]; exact ⟨scrR s₀, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩
 
 theorem slot_in : ∀ k < 4, InRegions s₀.wr (scr s₀ + BitVec.ofNat 64 (8 * k)) 8 :=
-  fun _ hk => h.scr_in (by omega)
+  fun _ hk => h.scr_in (by omega_using [hk])
 
 theorem in_all {a : Addr} {n : Nat} (hw : InRegions s₀.wr a n) : InRegions (s₀.rd ++ s₀.wr) a n := by
   rw [h.rd]; exact hw
@@ -108,8 +108,8 @@ theorem saved_frame {s₀ : State} (hp : Pre s₀) {m m' : Mem}
   refine h.frame_in saved_bound hf fun r hr => ?_
   rw [List.mem_singleton.mp hr]
   rcases hR with rfl | rfl
-  · exact Offset.disjoint_base _ (by omega) (by omega)
-  · exact (hp.st_off (by omega)).symm
+  · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
+  · exact (hp.st_off (by omega_using [])).symm
 
 /-! ## The rounds -/
 
@@ -148,10 +148,10 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
     WP isa (.block (setup ++ loadLanes)) s₀ (RInv s₀ 0) := by
   rw [setup_eq, List.append_assoc, WP.block_append_iff]
   refine WP.mono (Spill.save_wp (by decide) saved_fits fun p hp' => hp.scr_in (by
-    have := saved_bound p hp'; omega)) fun s₁ ⟨g₁, rd₁, wr₁, _, _, m₁⟩ => ?_
+    have := saved_bound p hp'; omega_using [this])) fun s₁ ⟨g₁, rd₁, wr₁, _, _, m₁⟩ => ?_
   have v₁ := m₁ ▸ Spill.saveMem_saved (by decide) s₀.mem (scr s₀) s₀.gpr (l := saved)
   have f₁ : Frame [⟨scr s₀ + BitVec.ofNat 64 32, 152⟩] s₀.mem s₁.mem :=
-    m₁ ▸ Spill.saveMem_frame saved_bound (by omega) _ _ _
+    m₁ ▸ Spill.saveMem_frame saved_bound (by omega_using []) _ _ _
   have h4 : s₁.gpr .r4 = scr s₀ := by rw [g₁]
   suffices key : ∀ s₂ : State, (∀ r, r ≠ T0 → s₂.gpr r = s₁.gpr r) → s₂.gpr T0 = BitVec.allOnes 64 →
       s₂.mem = s₁.mem.writeW (scr s₀ + BitVec.ofNat 64 24) (BitVec.allOnes 64) → s₂.rd = s₀.rd →
@@ -160,7 +160,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
     refine MdStream.PPC64LE.WP.cons exec_lis (MdStream.PPC64LE.WP.cons exec_ori
       (MdStream.PPC64LE.WP.cons (exec_store_d (by decide) (by decide) ?_) (key _ ?_ ?_ ?_ rd₁ wr₁)))
     · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ T0 by decide), h4, RegUpd.wr_write, wr₁]
-      exact hp.scr_in (by omega)
+      exact hp.scr_in (by omega_using [])
     · intro r hr; simp only [RegUpd.gpr_write_of_ne _ _ hr]
     · simp only [RegUpd.gpr_write_self]; exact ones_eq
     · simp only [RegUpd.gpr_write_of_ne _ _ (show Reg.r4 ≠ T0 by decide), h4, RegUpd.gpr_write_self,
@@ -173,13 +173,13 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
   have f₂ : Frame [⟨scr s₀ + BitVec.ofNat 64 24, 8⟩] s₁.mem s₂.mem := by
     rw [mem₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hA : Lanes s₂.mem (st s₀) (A₀ s₀) := fun i hi => by
-    rw [f₂.readW (lane_contains _ hi) (by simpa using hp.st_off (d := 24) (n := 8) (by omega))
-      (by decide), f₁.readW (lane_contains _ hi) (by simpa using hp.st_off (d := 32) (n := 152) (by omega))
+    rw [f₂.readW (lane_contains _ hi) (by simpa using hp.st_off (d := 24) (n := 8) (by omega_using []))
+      (by decide), f₁.readW (lane_contains _ hi) (by simpa using hp.st_off (d := 32) (n := 152) (by omega_using []))
       (by decide)]
     exact lanes₀ s₀ i hi
   have hsv : Spill.Saved (scr s₀) s₀.gpr saved s₂.mem :=
     v₁.frame_in saved_bound f₂ fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
   have hones : s₂.mem.readW (scr s₀ + BitVec.ofNat 64 24) 64 = BitVec.allOnes 64 := by
     rw [mem₂, Mem.readW_writeW_self64]
   obtain ⟨s₃, hs₃, hl₃, m₃, rd₃, wr₃, _, _, r3₃, r4₃⟩ := Round.load_ok (M := A₀ s₀) o₂
@@ -199,13 +199,13 @@ theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : RInv s₀ 2
   obtain ⟨s₁, hs₁, hl₁, hf₁, rd₁, wr₁, _, _, r3₁, r4₁⟩ := Round.store_ok (M := keccakF (A₀ s₀)) hI.r3
     (by rw [hI.r4]; exact hI.ones) (by rw [hI.wr]; exact hp.stR_in)
     (fun k hk => by rw [hI.rd, hI.wr, hI.r4]; exact hp.in_all (hp.slot_in k hk))
-    (by rw [hI.r4]; simpa using hp.st_off (d := 0) (n := 32) (by omega)) hI.lanes
+    (by rw [hI.r4]; simpa using hp.st_off (d := 0) (n := 32) (by omega_using [])) hI.lanes
   refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
   have hsv := saved_frame hp hI.saved (.inr rfl) hf₁
   refine WP.mono (Spill.restore_wp (by decide) (b := .r4) (B := scr s₀) (by rw [r4₁, hI.r4])
     saved_fits (by decide) (fun p hp' => ?_) hsv) fun s' h => ⟨fun r hr => ?_, ?_⟩
   · rw [rd₁, wr₁, hI.rd, hI.wr]
-    exact hp.in_all (hp.scr_in (by have := saved_bound p hp'; omega))
+    exact hp.in_all (hp.scr_in (by have := saved_bound p hp'; omega_using [this]))
   · exact h.gpr_of (.inl (preserved_saved r hr))
   · refine ⟨?_, by rw [h.other _ (by decide), r3₁, hI.r3], by rw [h.other _ (by decide), r4₁, hI.r4]⟩
     show stateAt s'.mem (st s₀) = keccakF (A₀ s₀)

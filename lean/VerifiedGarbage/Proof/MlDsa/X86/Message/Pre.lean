@@ -40,7 +40,7 @@ def params : List Params := [mlDsa44, mlDsa65, mlDsa87]
 abbrev mScrLen (p : Params) : Nat := messageScratchWords p * 8
 
 theorem mScr_eq (p : Params) : mScrLen p = oE p + 1024 := by
-  simp only [mScrLen, messageScratchWords, oE]; omega
+  simp only [mScrLen, messageScratchWords, oE]; omega_using []
 
 theorem skLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.skLen ∧ p.skLen < 2 ^ 16 := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -265,8 +265,8 @@ def slay (p : Params) (K : KeyArg) (s : State) : Lay where
 theorem slay_ok {p : Params} {K : KeyArg} (hK : K.Ok p.skLen) {s : State} (h : SPre p K s) (h8 : (arg s 4).toNat < 256) :
     (slay p K s).Ok := by
   have hk := stk_eq (s := s) (n := 176) h.sp
-  refine ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], ⟨show 128 ≤ K.len by have := hK.ge; have := hK.le; omega, hK.lt⟩, by show 56 ≤ 176; decide, h.sp,
-    by show (s.gpr .esp).toNat + 4 + 4 * 8 ≤ _; have := h.spA; omega, h.nScr, by simp [slay, h.wr], by simp [slay, h.rd],
+  refine ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], ⟨show 128 ≤ K.len by have := hK.ge; have := hK.le; omega_arith, hK.lt⟩, by show 56 ≤ 176; decide, h.sp,
+    by show (s.gpr .esp).toNat + 4 + 4 * 8 ≤ _; have := h.spA; omega_using [this], h.nScr, by simp [slay, h.wr], by simp [slay, h.rd],
     by simp [slay, h.rd], by simp [slay, h.rd], h.skScr.symm, h.msgScr.symm, h.ctxScr.symm, ?_, ?_,
     h.scrArgs.symm, by show _ ∈ s.wr; rw [h.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
     rfl, by show 8 ≤ 8; decide, by show 5 ≤ 8; decide, rfl, rfl, rfl, rfl, rfl, h.nSk, h.nMsg, h.nCtx⟩
@@ -369,12 +369,12 @@ theorem vlay_ok {p : Params} {K : KeyArg} (hK : K.Ok p.pkLen) {n : Nat} {T : Sta
     (h : VPre p K n T s) (h8 : (arg s 4).toNat < 256) : (vlay p K n s).Ok := by
   have hk := stk_eq (s := s) (n := 172) h.sp
   have hn := h.hn
-  refine ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], ⟨show 128 ≤ K.len by have := hK.ge; have := hK.le; omega, hK.lt⟩, by show 56 ≤ 172; decide, h.sp,
-    by show (s.gpr .esp).toNat + 4 + 4 * n ≤ _; have := h.spA; omega, h.nScr, by simp [vlay, h.wr], by simp [vlay, h.rd],
+  refine ⟨h8, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq], ⟨show 128 ≤ K.len by have := hK.ge; have := hK.le; omega_arith, hK.lt⟩, by show 56 ≤ 172; decide, h.sp,
+    by show (s.gpr .esp).toNat + 4 + 4 * n ≤ _; have := h.spA; omega_using [this], h.nScr, by simp [vlay, h.wr], by simp [vlay, h.rd],
     by simp [vlay, h.rd], by simp [vlay, h.rd], h.pkScr.symm, h.msgScr.symm, h.ctxScr.symm, ?_, ?_,
     h.scrArgs.symm, by show _ ∈ s.wr; rw [h.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _),
-    by simp only [vlay, List.length_append, List.length_cons, List.length_nil, List.length_map, List.length_range]; omega,
-    by show n ≤ 8; omega, by show 5 ≤ n; omega, rfl, rfl, rfl, rfl, rfl, h.nPk, h.nMsg, h.nCtx⟩
+    by simp only [vlay, List.length_append, List.length_cons, List.length_nil, List.length_map, List.length_range]; omega_using [hn],
+    by show n ≤ 8; omega_using [hn], by show 5 ≤ n; omega_using [hn], rfl, rfl, rfl, rfl, rfl, h.nPk, h.nMsg, h.nCtx⟩
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     show (below (s.gpr .esp) 172).Disjoint r

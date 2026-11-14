@@ -33,7 +33,7 @@ theorem blockAt_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
   · simp only [eq, ite_false]
     change (m.writeW (off p (8 * i.val)) v).readW (off p (8 * j)) 64 =
       m.readW (off p (8 * j)) 64
-    exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep p (by omega_using [eq]) (by omega_using [hj]) (by omega_using [])) (by decide)
 
 theorem blockAt_write_nat (m : Mem) (p : Addr) (i : Nat) (hi : i < 128) (v : Word) :
     blockAt (m.writeW (off p (8 * i)) v) p = (blockAt m p).set i v hi :=

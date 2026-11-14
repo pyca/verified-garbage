@@ -40,8 +40,8 @@ theorem domainBody_ok (s : State) {p : Inputs} {slots : List Nat}
       rw [Bool.true_and, Bool.true_and, stable]
     have gStack : Region.Disjoint ⟨State.addr p.g, ((p.dom.drop p.k).take p.k).length⟩ ⟨State.addr u.sp, 72⟩ := by
       rw [p.gLength]
-      exact contextU.toArgumentMemory.domainSliceStack (by have := p.minLength; omega)
-        (by rw [p.domainLength]; split <;> omega)
+      exact contextU.toArgumentMemory.domainSliceStack (by have := p.minLength; omega_using [this])
+        (by rw [p.domainLength]; split <;> omega_using [])
     refine WP.mono (domainMain_ok u contextU stableU (by simp [h0]) (by simp [h24]) (by simp [h28])
       (by simp [h32]) (by simp) (by simp) facts.2.1 facts.1 contextU.gBytes p.gLength gStack) ?_
     rintro t ⟨result, frameT⟩

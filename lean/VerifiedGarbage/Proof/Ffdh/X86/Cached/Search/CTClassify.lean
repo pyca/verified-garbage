@@ -63,7 +63,7 @@ theorem never {k : Ap} {s : State} (h : CmpAt 3 k s ∧ isa.eval .e s = some fal
   obtain ⟨⟨_, hk, _, he⟩, hf⟩ := h
   rw [he] at hf
   simp only [Option.some.injEq, decide_eq_false_iff_not] at hf
-  omega
+  omega_using [h1, h2, hk, hf]
 
 theorem classify_ct : RelCT isa (Two ClsAt) classify fun _ _ => True := by
   unfold classify

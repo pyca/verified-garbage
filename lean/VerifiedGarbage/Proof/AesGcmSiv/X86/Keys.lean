@@ -110,7 +110,7 @@ def hkeyMem (m : Mem) (W : Addr) : Mem :=
 
 theorem hkeyMem_frame (m : Mem) (W : Addr) : Frame [⟨W + BitVec.ofNat 64 64, 32⟩] m (hkeyMem m W) := by
   have c : ∀ d, 64 ≤ d → d + 4 ≤ 96 → (⟨W + BitVec.ofNat 64 64, 32⟩ : Region).Contains (W + BitVec.ofNat 64 d)
-      (32 / 8) := fun d h₁ h₂ => Offset.contains W (by omega) (by omega) (by omega)
+      (32 / 8) := fun d h₁ h₂ => Offset.contains W (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
   have m₀ : (⟨W + BitVec.ofNat 64 64, 32⟩ : Region) ∈ [(⟨W + BitVec.ofNat 64 64, 32⟩ : Region)] :=
     List.mem_singleton_self _
   exact (((((Frame.refl _ _).writeW m₀ _ (c 76 (by decide) (by decide))).writeW m₀ _
@@ -218,9 +218,9 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
       (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact (L.bw' (by omega)).symm
+    · exact Lay.w_w (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)
+    · exact Lay.w_w (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)
+    · exact (L.bw' (by omega_using [h₁])).symm
   have f₃ : Frame (keyR p) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -233,7 +233,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
     exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
   have dH : ∀ {d k : Nat}, d + k ≤ 64 → ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl h) (by omega) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl h) (by omega_using [h]) (by decide)
   have dH' : ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨w64 p.W + BitVec.ofNat 64 512, 240⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
@@ -251,7 +251,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
     rw [hk.2, ← X.ciph]
     unfold Spec.GcmSiv.ctxCiph
     rw [Proof.AesGcm.X86.bytesAt_frame f₄' (fun r hr =>
-      (dH' r hr).sub_left (Region.sub_prefix L.rounds_le)) (by omega)]
+      (dH' r hr).sub_left (Region.sub_prefix L.rounds_le)) (by omega_using [hR])]
   · rw [hm₄, hkeyMem_key, ← hm₄, a₄]
   · rw [hm₄]; exact hkeyMem_acc _ _
 

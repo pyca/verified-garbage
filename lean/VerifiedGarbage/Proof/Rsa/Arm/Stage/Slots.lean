@@ -47,13 +47,13 @@ theorem KS.strSlot {d : Nat} {r : Reg} {v N : Nat} (h : KS P σ A live AW liveW 
     WP isa (.block (.str r .r8 d :: rest)) s Q := by
   have hz := hdr_Z h.sizes
   have hin : InRegions s.wr (State.addr (s.gpr .r8 + BitVec.ofNat 32 d)) 4 := by
-    rw [slot_addr hv (by have := hd.1; omega)]; exact hv.write (by have := hd.1; omega)
-  refine WP.cons (exec_str (by have := hd.1; simp only [hdr] at this; omega) hin) ?_
+    rw [slot_addr hv (by have := hd.1; omega_using [hz, this])]; exact hv.write (by have := hd.1; omega_using [hz, this])
+  refine WP.cons (exec_str (by have := hd.1; simp only [hdr] at this; omega_using [this]) hin) ?_
   have u : Mupd s { s with mem := s.mem.writeW (State.addr (s.gpr .r8 + BitVec.ofNat 32 d)) (s.gpr r) }
       (s.mem.writeW (off (State.addr P.B) d) (s.gpr r)) :=
-    ⟨rfl, by rw [slot_addr hv (by have := hd.1; omega)], rfl, rfl, rfl⟩
+    ⟨rfl, by rw [slot_addr hv (by have := hd.1; omega_using [hz, this])], rfl, rfl, rfl⟩
   have kt : Keep P.B v [] [d] s.mem (s.mem.writeW (off (State.addr P.B) d) (s.gpr r)) :=
-    keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega)
+    keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega_using [this])
   rw [← u.mem] at kt
   exact k _ (h.slot1 kt hd (by rw [u.gpr, h.r8]) u.sp u.rd u.wr (by rw [u.mem, slot_write_self]))
     (hv.of_mupd u) u.gpr rfl

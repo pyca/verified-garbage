@@ -55,25 +55,25 @@ theorem ivAt_ok {p : BitVec 32} {R : Region} : ∀ (iv : List (BitVec 32)) (n : 
     refine wp_movw fun s₁ u₁ => wp_movt fun s₂ u₂ => ?_
     have e0 : s₂.gpr .r0 = p := by rw [u₂.other _ (by decide), u₁.other _ (by decide), h0]
     have ea : State.addr (s₂.gpr .r0 + BitVec.ofNat 32 (4 * n)) = State.addr p + BitVec.ofNat 64 (4 * n) := by
-      rw [e0]; exact addr_add (by omega)
-    have hc0 := hc 0 (by omega)
+      rw [e0]; exact addr_add (by omega_using [hf])
+    have hc0 := hc 0 (by omega_using [])
     rw [Nat.add_zero] at hc0
-    refine wp_str (by omega) ea ⟨R, by rw [u₂.wr, u₁.wr]; exact hR, hc0⟩ fun s₃ m₃ => ?_
+    refine wp_str (by omega_using [hn]) ea ⟨R, by rw [u₂.wr, u₁.wr]; exact hR, hc0⟩ fun s₃ m₃ => ?_
     have v₂ : s₂.gpr .r1 = v := by rw [u₂.gpr, u₁.gpr]; exact VG.Arm.movw_movt v
-    refine ivAt_ok vs (n + 1) s₃ rest Q (by rw [m₃.gpr, e0]) (by omega) (by omega)
+    refine ivAt_ok vs (n + 1) s₃ rest Q (by rw [m₃.gpr, e0]) (by omega_using [hn]) (by omega_using [hf])
       (by rw [m₃.wr, u₂.wr, u₁.wr]; exact hR)
-      (fun j hj => by rw [show n + 1 + j = n + (j + 1) by omega]; exact hc (j + 1) (by omega))
+      (fun j hj => by rw [show n + 1 + j = n + (j + 1) by omega_using []]; exact hc (j + 1) (by omega_using [hj]))
       fun t R' F' W' => ?_
     have base : Region.Sub ⟨State.addr p + BitVec.ofNat 64 (4 * (n + 1)), 4 * vs.length⟩
         ⟨State.addr p + BitVec.ofNat 64 (4 * n), 4 * (vs.length + 1)⟩ := by
-      rw [show 4 * (n + 1) = 4 * n + 4 by omega, ← Offset.add_add]
-      exact Offset.sub_base _ (by omega)
+      rw [show 4 * (n + 1) = 4 * n + 4 by omega_using [], ← Offset.add_add]
+      exact Offset.sub_base _ (by omega_using [])
     refine k t (((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans ((m₃.rest _).trans R')) ?_ fun j hj => ?_
     · have f₃ : Frame [⟨State.addr p + BitVec.ofNat 64 (4 * n), 4 * (vs.length + 1)⟩] s.mem s₃.mem := by
         rw [m₃.mem, u₂.mem, u₁.mem]
         refine Frame.writeW (Frame.refl _ s.mem) List.mem_cons_self (w := 32) (s₂.gpr .r1) ?_
         show (_ - _ : Addr).toNat + 4 ≤ _
-        rw [BitVec.sub_self, BitVec.toNat_zero]; show 0 + 4 ≤ 4 * (vs.length + 1); omega
+        rw [BitVec.sub_self, BitVec.toNat_zero]; show 0 + 4 ≤ 4 * (vs.length + 1); omega_using []
       exact f₃.trans (F'.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, base⟩)
     · cases j with
@@ -81,14 +81,14 @@ theorem ivAt_ok {p : BitVec 32} {R : Region} : ∀ (iv : List (BitVec 32)) (n : 
         rw [Nat.add_zero]
         have d : Region.Disjoint ⟨State.addr p + BitVec.ofNat 64 (4 * n), 4⟩
             ⟨State.addr p + BitVec.ofNat 64 (4 * (n + 1)), 4 * vs.length⟩ := by
-          rw [show 4 * (n + 1) = 4 * n + 4 by omega, ← Offset.add_add]
-          exact (Offset.disjoint_base _ (Nat.le_refl 4) (by omega)).symm
+          rw [show 4 * (n + 1) = 4 * n + 4 by omega_using [], ← Offset.add_add]
+          exact (Offset.disjoint_base _ (Nat.le_refl 4) (by omega_using [hn])).symm
         rw [F'.readW (Region.contains_self _ _) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact d) (by decide), m₃.mem, Mem.readW_writeW_self32, v₂]
         rfl
       | succ j =>
-        have := W' j (by simp at hj; omega)
-        rw [show n + (j + 1) = n + 1 + j by omega]
+        have := W' j (by simp at hj; omega_using [hj])
+        rw [show n + (j + 1) = n + 1 + j by omega_using []]
         exact this
 
 /-! ## What the proof needs of the hash function -/

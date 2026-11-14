@@ -40,23 +40,23 @@ theorem store_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
   have hg := hc.good
   have hlo := hc.lo
   have hhi := hc.hi
-  have h256 : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have h256 : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   have hsmall : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off B o) (8 * i)) 8 :=
-    fun i hi => hg.scr.ld (by have := hdr_lt_slot wx 8 hi; omega)
+    fun i hi => hg.scr.ld (by have := hdr_lt_slot wx 8 hi; omega_using [this])
   have hlarge : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 :=
-    fun i hi => hc.scr.ld (by omega)
+    fun i hi => hc.scr.ld (by omega_using [hlo, hhi, h256, hi])
   unfold Arithmetic.store seqs
   refine WP.seq (WP.mono (WP.keep [.x5, .x1, .x9, .x8, .x15]
     (Q := fun u => u.gpr .x1 = out + BitVec.ofNat 64 k ∧ u.gpr .x9 = BitVec.ofNat 64 k ∧
       u.gpr .x8 = off (off B o) (slot wx a) ∧ u.gpr .x15 = mask true ∧ u.mem = s.mem) ?_ rfl rfl rfl)
     fun u ⟨⟨huout, huk, hua, humask, hum⟩, hku⟩ => ?_)
   · drun [Crt.ldw, hc.x0, hdr_enc hsp, hdr_enc hsl, hdr_enc (show Crt.sLink < 32 by decide),
-      hdr_enc (show sArr a < 32 by unfold sArr; omega), hsmall Crt.sLink (by decide), hc.link,
+      hdr_enc (show sArr a < 32 by unfold sArr; omega_using [ha]), hsmall Crt.sLink (by decide), hc.link,
       hlarge sp hsp, hp, hlarge sl hsl, hl,
-      hsmall (sArr a) (by unfold sArr; omega), hc.hdr.harr a ha]
+      hsmall (sArr a) (by unfold sArr; omega_using [ha]), hc.hdr.harr a ha]
     rfl
   refine WP.mono (storeBE_ok (hg.scr.congr hku.wr) hua huout huk humask hk1 hk' hkw
-    (by have := slot_le (w := wx) ha; omega)
+    (by have := slot_le (w := wx) ha; omega_using [this])
     (fun j hj => by rw [hku.wr]; exact hout j hj) hsep) fun t ⟨hv, hf, _, _, hk⟩ => ?_
   refine ⟨?_, ?_, (hku.trans hk).mono (by decide)⟩
   · rw [encodeBE_i2osp]

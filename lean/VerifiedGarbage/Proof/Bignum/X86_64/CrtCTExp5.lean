@@ -37,7 +37,7 @@ def ExpCT5S (M : Mont) (Sq : MontS) (S : CrtSel 32) (sp sl : Nat) : Prop :=
 def K5 (a : BPub) : Nat := (padBits a.len + 8 * a.len) / 5
 
 theorem K5_mul (a : BPub) : 5 * K5 a = padBits a.len + 8 * a.len := by
-  have := win5_dvd a.len; unfold K5; omega
+  have := win5_dvd a.len; unfold K5; omega_using [this]
 
 /-! ## A window -/
 
@@ -66,7 +66,7 @@ theorem pins_w5Ld : Pins W5Ld [.rdi, .rax, .rcx] := by
   rcases hr with rfl | rfl | rfl
   · rw [d₁, d₂]
   · rw [a₁, a₂]
-  · have : i₁ = i₂ := by omega
+  · have : i₁ = i₂ := by omega_using [h₁, hb₁, h₂, hb₂]
     rw [c₁, c₂, this]
 
 theorem refill_eq : Crt.refill = ([.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI))] : List Instr) ++
@@ -96,14 +96,14 @@ theorem fill_ct : RelCT isa (Two fun (q : BPub × Nat) s => q.2 < K5 q.1 ∧ Win
     (pins_rdi (fun q : BPub × Nat => off q.1.x.B q.1.x.o)
       fun _ _ ⟨_, _, _, _, _, _, ⟨_, _, _, _, _, hI⟩, _⟩ => hI.ctx.good.rdi) (by taint_decide)
     fun q s ⟨hj, t₀, minv, X, Xc, eb, ⟨i, b, hib, hb, hiL, hI⟩, _, _, _, hL, _⟩ => ?_) ?_
-  · exact WP.mono (bitCmp_ok hI.ctx hI.bit (by omega)) fun t ⟨hcf, hm, k⟩ =>
+  · exact WP.mono (bitCmp_ok hI.ctx hI.bit (by omega_using [hb])) fun t ⟨hcf, hm, k⟩ =>
       ⟨hj, t₀, minv, X, Xc, eb, i, b, hL, hib, hb, hiL, hcf, hI.of_mem hm k (by decide) (k.gpr (by decide))⟩
   refine two_ite (fun q s₁ s₂ h₁ h₂ => ?_) ?_ ?_
   · obtain ⟨_, _, _, _, _, eb₁, i₁, b₁, hL₁, h₁, hb₁, _, c₁, _⟩ := h₁
     obtain ⟨_, _, _, _, _, eb₂, i₂, b₂, hL₂, h₂, hb₂, _, c₂, _⟩ := h₂
     rw [hL₁] at h₁
     rw [hL₂] at h₂
-    have : b₁ = b₂ := by omega
+    have : b₁ = b₂ := by omega_using [h₁, hb₁, h₂, hb₂]
     simp only [eval, c₁, c₂, this]
   · -- The byte, at its pointer plus its index.
     rw [refill_eq]
@@ -167,7 +167,7 @@ theorem takeWin_sel {p : XPub} {s : State} {bd : Nat → Nat → Nat} (h : WQ5 p
   have hc' := hc.of_frm5 f k.2.2 (k.gpr (by decide))
   have hv32 : r / 2 ^ (b - 5) < 32 := by
     rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), show (32 : Nat) = 2 ^ 5 from rfl, ← Nat.pow_add,
-      show 5 + (b - 5) = b by omega]
+      show 5 + (b - 5) = b by omega_using [hb5]]
     exact hr
   refine ⟨⟨minv, X, Xc, _, hc', hw, hw', hv32, ?_, ?_⟩, minv, X, Xc, hc', ?_⟩
   · rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
@@ -192,7 +192,7 @@ theorem crtWin5_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) :
     refine WP.mono (fill_ok rfl he.rd he.val hout hb hiL (fun h5 => by
       rcases Nat.lt_or_ge i eb.length with h | h
       · exact h
-      · omega) hI) fun t ⟨i', b', hb5, hb12, _, _, hI'⟩ => ?_
+      · omega_using [hj, hib, hK, h5]) hI) fun t ⟨i', b', hb5, hb12, _, _, hI'⟩ => ?_
     have hXR : X ≤ 2 ^ (64 * q.1.x.wx) := by rw [← hI'.ctx.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
     exact ⟨minv, X, Xc, b', _, hI'.ctx, hI'.tab, Nat.lt_of_lt_of_le hI'.ylt (Sq.le hXR), hI'.pow, hI'.v, hI'.bit,
       hb5, hb12, Nat.mod_lt _ (Nat.two_pow_pos b'), hw, hw', hR⟩

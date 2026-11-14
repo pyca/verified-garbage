@@ -24,7 +24,7 @@ theorem encode_digit {d : Int} (hd : -127≤d ∧ d≤127) :
   have hc : ∀ (n : Nat), n<255 → (BitVec.ofInt 64 ((n : Int)-127)).setWidth 8 =
       BitVec.ofInt 8 ((n : Int)-127) := by decide +kernel
   obtain ⟨n,hn,he⟩ : ∃ (n : Nat), n<255 ∧ d=(n : Int)-127 := by
-    refine ⟨(d+127).toNat,?_,?_⟩ <;> omega
+    refine ⟨(d+127).toNat,?_,?_⟩ <;> omega_using [hd]
   rw [he]
   exact hc n hn
 
@@ -37,8 +37,8 @@ theorem writeDigit_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat}
   have ea : off base i + BitVec.ofNat 64 BITS=off base (BITS+i) := by
     rw [off,off,Offset.add_add]
     congr 2
-    omega
-  have hw := hs.write (d:=BITS+i) (n:=1) (by simp only [BITS];omega)
+    omega_using []
+  have hw := hs.write (d:=BITS+i) (n:=1) (by simp only [BITS];omega_using [hi])
   apply WP.of_runBlock
   simp only [writeDigit,runBlock_cons,runStep_some,runBlock_nil,exec,addr,enc,and_self,
     hp,ea,State.store,State.read,Size.bits,BitVec.setWidth_setWidth_of_le _ (by decide : 8≤32),

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.CrtPRanges
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFrameWide
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with the CRT: what `p`'s phase changes
@@ -27,11 +28,11 @@ theorem pxR_bound {w o wx : Nat} (hlo : slot w 8 ≤ o) :
   have := slot_le (w := w) (show Public.aTmp < 8 by decide)
   have := slot_le (w := w) (show Public.aY < 8 by decide)
   have := slot_le (w := w) (show Public.aX < 8 by decide)
-  have : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   intro r hr
   simp only [pRanges, gRanges, xRange32, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith
 
 theorem px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange32 o wx]) m m')
     (hlo : slot w 8 ≤ o) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD) (h2 : i ≠ Public.sCnt) :
@@ -45,20 +46,20 @@ theorem px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ 
   simp only [pRanges, gRanges, xRange32, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
   · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
-    unfold Crt.sD sFn at h1 ⊢; omega
+    unfold Crt.sD sFn at h1 ⊢; omega_using [h1]
   · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
-    unfold Public.sCnt sFn at h2 ⊢; omega
-  · exact Or.inl (by omega)
-  · exact Or.inl (by simp only at hb ⊢; omega)) (by omega)
+    unfold Public.sCnt sFn at h2 ⊢; omega_using [h2]
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by simp only at hb ⊢; omega_arith)) (by omega_using [hi])
 
 theorem px_above {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange32 o wx]) m m')
     (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 + tabBytes32 wx ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
     word m' B d = word m B d :=
-  hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega)) hd'
+  hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega_using [hd, this])) hd'
 
 theorem px_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange32 o wx]) m m')
     (hlo : slot w 8 ≤ o) (hz : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc)
@@ -69,10 +70,10 @@ theorem px_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [
   have s2 := slot_sep (w := w) h2
   have s3 := slot_sep (w := w) h3
   have s4 := slot_sep (w := w) h4
-  refine hf.wv_eq (fun r hr => ?_) (by omega)
+  refine hf.wv_eq (fun r hr => ?_) (by omega_arith)
   have hb := pxR_bound hlo r hr
   simp only [pRanges, gRanges, xRange32, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at hb ⊢ <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at hb ⊢ <;> omega_arith
 
 end VG.Proof.Bignum.CrtWindowFive

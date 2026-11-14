@@ -159,7 +159,7 @@ theorem Input.ck {p n : Addr} (hL : L.Ok) (hi : Input L p n) : L.CK.Disjoint ⟨
   rcases hi.cover with ⟨off, hb, hl⟩ | ⟨R, hR, hw⟩
   · simp only at hb hl
     rw [hb]
-    exact Whole.ck_frame (by change off + n.toNat ≤ 256 at hl; omega)
+    exact Whole.ck_frame (by change off + n.toNat ≤ 256 at hl; omega_using [hl])
   · refine Region.Disjoint.sub_right ?_ hw.sub
     simp only [Lay.outputs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with hR | rfl | rfl
@@ -237,7 +237,7 @@ theorem finalize_step (v : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : 
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro x (rfl | rfl | rfl | rfl)
     · decide
-    · cases b <;> simp [Whole.valid] <;> omega
+    · cases b <;> simp [Whole.valid] <;> omega_using [hn]
     · decide
     · decide
   refine WP.seq (WP.mono (args_ok hc hL ha (by simp) hv (by simp [preserved]))
@@ -300,9 +300,9 @@ theorem hash_field_bytes {m n : Mem} (hL : L.Ok) (hf : Frame (hashWrites L) m n)
   apply frame_bytes hf (field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   simp only [hashWrites, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact field_scr hL (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by decide)
-  · exact (Whole.ck_frame (by omega)).symm
+  · exact field_scr hL (by omega_using [hd])
+  · exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact (Whole.ck_frame (by omega_using [hd])).symm
 
 theorem hash_out_bytes {m n : Mem} (hL : L.Ok) (hf : Frame (hashWrites L) m n) :
     Spec.Ed25519.bytesAt n L.out 32 = Spec.Ed25519.bytesAt m L.out 32 := by
@@ -389,9 +389,9 @@ theorem hashNonce_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : A
   refine WP.mono (finalize_step b hw hL ha 32 (by decide) true ?_ ?_ rw')
     fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans (fw.trans ft)), hd⟩
   · rw [List.length_append, bytes_length, bytes_length]
-    have := hL.message_bound; omega
+    have := hL.message_bound; omega_using [this]
   · rw [List.length_append, bytes_length, bytes_length]
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_using []
 
 theorem hashChallenge_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (hashChallenge b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
@@ -415,9 +415,9 @@ theorem hashChallenge_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha
   refine WP.mono (finalize_step b hz hL ha 64 (by decide) true ?_ ?_ rz)
     fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans (fw.trans (fz.trans ft))), hd⟩
   · rw [List.length_append, List.length_append, bytes_length, bytes_length, bytes_length]
-    have := hL.message_bound; omega
+    have := hL.message_bound; omega_using [this]
   · rw [List.length_append, List.length_append, bytes_length, bytes_length, bytes_length]
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_using []
 
 end VG.Proof.Ed25519.AArch64.SignCached
 end
@@ -478,7 +478,7 @@ theorem reduce_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
         Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (L.E + 192) 64) := by
   refine WP.seq (WP.mono (args_ok hc hL ha
     (args := [(.x0, .frame d), (.x1, .frame 192), (.x2, .caller 5 0)])
-    (by simp) (by simp [Whole.valid]; omega) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by simp) (by simp [Whole.valid]; omega_using [hd]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.x0, .frame d) (by simp)
   have a1 := hs (.x1, .frame 192) (by simp)
   have a2 := hs (.x2, .caller 5 0) (by simp)
@@ -669,7 +669,7 @@ theorem single_frame_bytes {d e k : Nat} (hf : Frame [⟨L.E + BitVec.ofNat 64 e
       Spec.Ed25519.bytesAt m (L.E + BitVec.ofNat 64 d) 32 := by
   apply frame_bytes hf (field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   rintro r hr; rw [List.mem_singleton.mp hr]
-  exact Offset.disjoint _ hs (by omega) (by omega)
+  exact Offset.disjoint _ hs (by omega_using [hd]) (by omega_using [he])
 
 theorem reduce_field_bytes (hL : L.Ok) {d out : Nat} (hf : Frame (reduceWr L out) m n)
     (hd : d + 32 ≤ 256) (ho : out + 32 ≤ 256) (hs : d + 32 ≤ out ∨ out + 32 ≤ d) :
@@ -678,7 +678,7 @@ theorem reduce_field_bytes (hL : L.Ok) {d out : Nat} (hf : Frame (reduceWr L out
   apply frame_bytes hf (field L d) _ (by change 32 ≤ 2 ^ 64; decide)
   simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact Offset.disjoint _ hs (by omega) (by omega)
+  · exact Offset.disjoint _ hs (by omega_using [hd]) (by omega_using [ho])
   · exact field_scr hL hd
 
 theorem base_field_bytes (hL : L.Ok) (hf : Frame (baseWr L) m n) {d : Nat} (hd : d + 32 ≤ 256) :

@@ -137,19 +137,19 @@ theorem lowPass_flag_zero_iff (g : Nat) (work out aux : Addr) (c : LowConstants)
   induction n with
   | zero => simp only [lowPassData,Nat.not_lt_zero,false_implies,forall_const,and_true]
   | succ n ih =>
-    rw [lowPass_step g work out aux c d (by omega) ho ha]
+    rw [lowPass_step g work out aux c d (by omega_using [hn]) ho ha]
     have hshift : (⟨out+BitVec.ofNat 64 (16*n),2048⟩ : Region).Disjoint
         ⟨aux+BitVec.ofNat 64 (16*n),2048⟩ := by
       intro a hx hy
       exact hd (a-BitVec.ofNat 64 (16*n)) (by
         simpa only [Region.Contains,BitVec.sub_sub,BitVec.add_comm] using hx)
         (by simpa only [Region.Contains,BitVec.sub_sub,BitVec.add_comm] using hy)
-    rw [lowRun_flag_zero_iff _ _ _ _ _ _ _ allLow_nodup hshift he,ih (by omega)]
+    rw [lowRun_flag_zero_iff _ _ _ _ _ _ _ allLow_nodup hshift he,ih (by omega_using [hn])]
     have ht : (∀i∈allLow,lowPairAccept g
         (fun p => Inverse.rawFinalValues (readPair d.mem (work+BitVec.ofNat 64 (16*n)) 128 p))
         (out+BitVec.ofNat 64 (16*n)) c (lowPassData g work out aux c d n).mem e i) ↔
         ∀i,lowPassAccept g work out c d.mem e n i := by
-      have hp (i : LowIndex) := lowPass_read_future g work out aux c d (Nat.le_refl n) (by omega : n<8) i
+      have hp (i : LowIndex) := lowPass_read_future g work out aux c d (Nat.le_refl n) (by omega_using [hn] : n<8) i
       have heq (i : LowIndex) : lowPairAccept g
           (fun p => Inverse.rawFinalValues (readPair d.mem (work+BitVec.ofNat 64 (16*n)) 128 p))
           (out+BitVec.ofNat 64 (16*n)) c (lowPassData g work out aux c d n).mem e i ↔
@@ -166,11 +166,11 @@ theorem lowPass_flag_zero_iff (g : Nat) (work out aux : Addr) (c : LowConstants)
       refine ⟨h0,fun k hk i => ?_⟩
       by_cases hkn : k<n
       · exact hprev k hkn i
-      · have heq : k=n := by omega
+      · have heq : k=n := by omega_using [hk, hkn]
         subst k
         exact hlast i
     · rintro ⟨h0,hall⟩
-      exact ⟨⟨h0,fun k hk => hall k (by omega)⟩,hall n (by omega)⟩
+      exact ⟨⟨h0,fun k hk => hall k (by omega_using [hk])⟩,hall n (by omega_using [])⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
@@ -297,7 +297,7 @@ theorem lowLoop_ok {g : Nat} (hg : IsG g) {s : State} {table : Addr}
     have hm := congrArg CheckData.mem hdata
     have fm : Frame [⟨s.gpr .x15,2048⟩,⟨s.gpr .x16,2048⟩] s.mem t.mem := by
       change Frame _ _ (dataAt t).mem
-      rw [hdata]; exact lowPass_frame _ _ _ _ _ _ (by omega)
+      rw [hdata]; exact lowPass_frame _ _ _ _ _ _ (by omega_using [hu])
     have ht' := tableWords_frame ht fm (by intro r hr; rcases List.mem_cons.mp hr with rfl | hr; exact hd; have he := List.mem_singleton.mp hr; subst r; exact hda)
     have rt : ∀off,off+16≤4096 → InRegions (t.rd++t.wr) (table+BitVec.ofNat 64 off) 16 := by
       simpa only [hf.rd,hf.wr] using hrt
@@ -310,9 +310,9 @@ theorem lowLoop_ok {g : Nat} (hg : IsG g) {s : State} {table : Addr}
       have hab := (CallFrame.ofStep ha).trans (CallFrame.ofKeep hbk hbv)
       have hsb : CallFrame finalGprs lowRunRegs s b := (hf.trans hab).mono (by simp [finalGprs]) (by simp)
       refine ⟨⟨hsb,?_,?_,?_,?_⟩,?_⟩
-      · rw [hb2,ha.gpr,h2,show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hb15,ha.gpr,h15,show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
-      · rw [hb16,ha.gpr,h16,show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hb2,ha.gpr,h2,show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hb15,ha.gpr,h15,show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
+      · rw [hb16,ha.gpr,h16,show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · have hba : dataAt b=dataAt a := by unfold dataAt; rw [hbm,hbv]
         rw [hba,had]
         unfold finalLowData rawPairAt

@@ -42,17 +42,17 @@ theorem copyWords64_ok {src dst : Reg} (hs : src ≠ .rax) (hd : dst ≠ .rax) (
     intro rest s Q hin hout hsep hlt k
     unfold copyWords64
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih _ s Q (fun j hj => hin j (by omega)) (fun j hj => hout j (by omega))
-      (fun x hx hy => hsep x (by omega) (by omega)) (by omega) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
+    refine ih _ s Q (fun j hj => hin j (by omega_using [hj])) (fun j hj => hout j (by omega_using [hj]))
+      (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) (by omega_using [hlt]) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
     simp only [copyWord64, List.cons_append, List.nil_append]
     refine wp_movm (a := s.gpr src + BitVec.ofNat 64 so + BitVec.ofNat 64 (8 * n))
-      (by rw [ea_off, g₁ _ hs]) (by rw [rd₁, wr₁]; exact hin n (by omega)) fun s₂ u₂ => ?_
+      (by rw [ea_off, g₁ _ hs]) (by rw [rd₁, wr₁]; exact hin n (by omega_using [])) fun s₂ u₂ => ?_
     refine wp_store (a := s.gpr dst + BitVec.ofNat 64 doff + BitVec.ofNat 64 (8 * n))
-      (by rw [ea_off, u₂.other _ hd, g₁ _ hd]) (by rw [u₂.wr, wr₁]; exact hout n (by omega))
+      (by rw [ea_off, u₂.other _ hd, g₁ _ hd]) (by rw [u₂.wr, wr₁]; exact hout n (by omega_using []))
       fun s₃ g₃ m₃ rd₃ wr₃ => k s₃ (fun r hr => by rw [g₃, u₂.other r hr, g₁ r hr])
         (by rw [rd₃, u₂.rd, rd₁]) (by rw [wr₃, u₂.wr, wr₁]) ?_
     rw [m₃, u₂.gpr, u₂.mem, m₁, Nat.mul_succ]
-    exact copy_mem s.mem _ _ n 8 (by rwa [← Nat.mul_succ]) (by omega)
+    exact copy_mem s.mem _ _ n 8 (by rwa [← Nat.mul_succ]) (by omega_using [hlt])
 
 /-- The same copy, within PSS's working space, expressed in its byte view. -/
 theorem copyScratchWords_ok {u : State} {F S : Addr} (L : Lay u F S)
@@ -66,13 +66,13 @@ theorem copyScratchWords_ok {u : State} {F S : Addr} (L : Lay u F S)
       Rep t.mem F S (cpV V (fun i => V (a + i)) b (8 * n)) W := by
   rw [← List.append_nil (copyWords64 src dst 0 0 n)]
   refine copyWords64_ok hs hd 0 0 n [] u _ (fun k hk => ?_) (fun k hk => ?_) ?_
-    (by unfold oRsa at ha; omega) fun t g rd wr hm => ?_
+    (by unfold oRsa at ha; omega_using [ha]) fun t g rd wr hm => ?_
   · simp only [hsrc, BitVec.add_zero, off_plus]
-    exact L.sld (by omega)
+    exact L.sld (by omega_using [ha, hk])
   · simp only [hdst, BitVec.add_zero, off_plus]
-    exact L.sst (by omega)
+    exact L.sst (by omega_using [hb, hk])
   · simp only [hsrc, hdst, BitVec.add_zero]
-    exact Offset.sep S hsep (by unfold oRsa at ha; omega) (by unfold oRsa at hb; omega)
+    exact Offset.sep S hsep (by unfold oRsa at ha; omega_using [ha]) (by unfold oRsa at hb; omega_using [hb])
   · simp only [hsrc, hdst, BitVec.add_zero] at hm
     have R' := R.wbs L.geo (xs := bytesAt u.mem (off S a) (8 * n)) (by simp [bytesAt]; exact hb)
     rw [← hm] at R'
@@ -81,9 +81,9 @@ theorem copyScratchWords_ok {u : State} {F S : Addr} (L : Lay u F S)
       simp only [bytesAt, List.length_map, List.length_range, cpV]
       split
       · rename_i hx
-        rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega)]
+        rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega_using [hx])]
         simp only [Option.map_some, Option.getD_some, off_plus]
-        exact R.scr _ (by omega)
+        exact R.scr _ (by omega_using [ha, hx])
       · rfl
     have k : Keep [.rax] u t := ⟨fun r hr => g r (by simpa using hr), rd, wr⟩
     exact WP.block_nil ⟨L.of_rep R R'' (k.gpr (by decide)) wr, k, R''⟩
@@ -104,17 +104,17 @@ theorem copyScratchBytes_ok {u : State} {F S : Addr} (L : Lay u F S)
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have Rv : Rep v.mem F S V W := hm ▸ R
   refine WP.mono (copy_ok Lv Rv (d := .rcx) (by decide) (p := off S a) (o := b) (disp := 0) (n := n)
-    (stepI_ok (by unfold oRsa at ha; omega) v [.rax, .r8]) hn hb
+    (stepI_ok (by unfold oRsa at ha; omega_using [ha]) v [.rax, .r8]) hn hb
     ((hk.gpr (by decide)).trans hsrc) ((hk.gpr (by decide)).trans hdst) h8
-    (fun i hi => by rw [off_plus]; exact Lv.sld8 (by omega))
+    (fun i hi => by rw [off_plus]; exact Lv.sld8 (by omega_using [ha, hi]))
     (fun i hi j hj => by
-      rw [off_plus]; exact Offset.add_ofNat_ne S (by unfold oRsa at ha; omega)
-        (by unfold oRsa at hb; omega) (by omega))) fun t ⟨Lt, kt, Rt⟩ => ?_
+      rw [off_plus]; exact Offset.add_ofNat_ne S (by unfold oRsa at ha; omega_using [ha, hi])
+        (by unfold oRsa at hb; omega_using [hb, hj]) (by omega_using [hsep, hi, hj]))) fun t ⟨Lt, kt, Rt⟩ => ?_
   refine ⟨Lt, (hk.trans kt).mono (by decide), ?_⟩
   refine (congrArg (fun V' => Rep t.mem F S V' W) (funext fun x => ?_)).mp Rt
   simp only [cpV, Nat.add_zero]
   split
-  · rw [off_plus, Rv.scr _ (by omega)]
+  · rw [off_plus, Rv.scr _ (by omega_arith)]
   · rfl
 
 end VG.Proof.RsaPss.X86_64

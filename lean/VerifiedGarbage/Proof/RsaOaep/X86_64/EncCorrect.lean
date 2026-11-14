@@ -69,7 +69,7 @@ theorem encEnd_ok {H : Spec.Mgf1.Hash} {s s₂ : State} (hp : EPre H s) (he : En
     refine Frame.readW he.fr (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := Offset.disjoint_below (s.gpr .rsp) (n := encStack) (d := 0) (k := 8) (by unfold encStack; omega)
+    · have := Offset.disjoint_below (s.gpr .rsp) (n := encStack) (d := 0) (k := 8) (by unfold encStack; omega_using [])
       simpa only [stkR, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
     · exact hp.d_ret_out
     · exact hp.d_ret_scr
@@ -83,9 +83,9 @@ theorem encFail_ok {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s) (he : EnvE
   have hk1 := hp.k1; have hk2 := hp.k2; have hsi := hp.hsi
   have hout : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region) = outR s := by simp [outR, hsi]
   refine WP.mono (wp_good zeroOut_good (zeroOut_ok L R w21 (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq])
-    (by omega) hk2 (by rw [hout, he.wr]; simp) (by rw [← hsi]; exact hp.wO)
+    (by omega_using [hk1]) hk2 (by rw [hout, he.wr]; simp) (by rw [← hsi]; exact hp.wO)
     ⟨by rw [hout]; exact (hp.d_stk_out.sub_left (frame_sub s)),
-      by rw [hout]; exact (hp.d_out_scr.symm.sub_left (Region.sub_prefix (by unfold oRsa; have := hp.hsl; omega))),
+      by rw [hout]; exact (hp.d_out_scr.symm.sub_left (Region.sub_prefix (by unfold oRsa; have := hp.hsl; omega_using [this]))),
       by rw [hout]; exact hp.d_stk_out.sub_left (ret_sub s)⟩))
     fun t' ⟨⟨L', k', R', hax, hz, _⟩, sp', mx', f'⟩ => ⟨he.step k'.2.1 k'.2.2 sp' (keep_cs3 k' (by decide)) mx' f', ?_, hz⟩
   rw [hax]; rfl
@@ -99,8 +99,8 @@ theorem chkK_ok {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {u : State} {F S : Addr} (L 
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem ∧ u'.gpr .rax = BitVec.ofNat 64 k ∧
     u'.cf = some (decide (k < 2 * Hm.D + 2))) ?_ rfl) fun u' ⟨⟨a, b, c⟩, kk⟩ => ⟨kk, a, b, c⟩
   xrun [chkK, im, ea_sp, L.rsp, L.ld (d := sK) (by decide), R.slot (d := sK) (k := 23) rfl (by decide) hk,
-    VG.Proof.MlKem.X86_64.sx_ofNat (show 2 * Hm.D + 2 < 2 ^ 31 by omega)]
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    VG.Proof.MlKem.X86_64.sx_ofNat (show 2 * Hm.D + 2 < 2 ^ 31 by omega_using [hD])]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk1]), Nat.mod_eq_of_lt (by omega_using [hD])]
 
 /-- `msg_len` against `k - 2 hLen - 2`, from `rax = k`. -/
 theorem chkMsg_ok {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
@@ -112,9 +112,9 @@ theorem chkMsg_ok {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {u : State} {F S : Addr} (
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem ∧
     u'.cf = some (decide (k - (2 * Hm.D + 2) < mLen))) ?_ rfl) fun u' ⟨⟨a, b⟩, kk⟩ => ⟨kk, a, b⟩
   xrun [chkMsg, im, ea_sp, L.rsp, L.ld (d := sMsgLen) (by decide), R.slot (d := sMsgLen) (k := 30) rfl (by decide) hml,
-    hax, VG.Proof.MlKem.X86_64.sx_ofNat (show 2 * Hm.D + 2 < 2 ^ 31 by omega),
-    VG.Offset.ofNat_sub_ofNat (show 2 * Hm.D + 2 ≤ k by omega)]
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    hax, VG.Proof.MlKem.X86_64.sx_ofNat (show 2 * Hm.D + 2 < 2 ^ 31 by omega_using [hD']),
+    VG.Offset.ofNat_sub_ofNat (show 2 * Hm.D + 2 ≤ k by omega_using [hD])]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk1]), Nat.mod_eq_of_lt (by omega_using [hm])]
 
 /-- The prologue: in the frame, with the argument slots. -/
 theorem encHead_ok {H : Spec.Mgf1.Hash} {s : State} (hp : EPre H s) :
@@ -141,7 +141,7 @@ theorem encChecks_D {G G' : Impl.Pbkdf2.Md.X86_64.Stream} (h : G.D = G'.D) (main
   simp only [encChecks, chkK, chkMsg, h]
 
 theorem ArgsW_35 {s : State} {p : Addr} : ArgsW s (upd (encW s) 35 p) := fun k hk => by
-  simp only [upd]; rw [ifn (by omega)]
+  simp only [upd]; rw [ifn (by omega_using [hk])]
 
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
@@ -190,27 +190,27 @@ theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {f : Impl.Mgf1.X86_64.Table.Fns} {m
   unfold encChecks seqs seqs seqs
   have w23' : upd (encW s) 35 (stackArg s 10) 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
     rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (chkK_ok (Hm := Hl.stream) L1' R1' w23' (by omega)
-      (by omega)))
+  refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (chkK_ok (Hm := Hl.stream) L1' R1' w23' (by omega_using [hk2])
+      (by omega_using [hDN, hN, hsD])))
     fun t2 ⟨⟨k2, hm2, hax2, hcf2⟩, sp2, mx2, f2⟩ sy2 => ?_)
   have he2 : EnvE s t2 := he1'.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide)) mx2 f2
   have L2 : Lay t2 (fb s) (stackArg s 6) := L1'.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2])
   have R2 := hm2 ▸ R1'
   refine WP.ite (M := isa) _ (show isa.eval .b t2 = _ from hcf2) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
-    exact WP.mono (encFail_ok hp he2 L2 R2 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
+    exact WP.mono (encFail_ok hp he2 L2 R2 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega_using [hsD, hb])
   · rw [decide_eq_false_iff_not] at hb
     refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (chkMsg_ok (Hm := Hl.stream) L2 R2 (k := (s.gpr .rcx).toNat)
-      (mLen := (stackArg s 3).toNat) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hax2 (by omega)
-      (by omega) (stackArg s 3).isLt (by omega)))
+      (mLen := (stackArg s 3).toNat) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hax2 (by omega_using [hk2])
+      (by omega_using [hb]) (stackArg s 3).isLt (by omega_using [hk2, hb])))
       fun t3 ⟨⟨k3, hm3, hcf3⟩, sp3, mx3, f3⟩ sy3 => ?_)
     have he3 : EnvE s t3 := he2.step k3.2.1 k3.2.2 sp3 (keep_cs3 k3 (by decide)) mx3 f3
     have L3 : Lay t3 (fb s) (stackArg s 6) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
     have R3 := hm3 ▸ R2
     refine WP.ite (M := isa) _ (show isa.eval .b t3 = _ from hcf3) (fun hb' => ?_) (fun hb' => ?_)
     · rw [decide_eq_true_eq] at hb'
-      exact WP.mono (encFail_ok hp he3 L3 R3 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
+      exact WP.mono (encFail_ok hp he3 L3 R3 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega_using [hsD, hb'])
     · rw [decide_eq_false_iff_not] at hb'
-      exact hmain t3 he3 (sy3.trans (sy2.trans sy1')) L3 R3 (by omega)
+      exact hmain t3 he3 (sy3.trans (sy2.trans sy1')) L3 R3 (by omega_using [hsD, hb, hb'])
 
 end VG.Proof.RsaOaep.X86_64

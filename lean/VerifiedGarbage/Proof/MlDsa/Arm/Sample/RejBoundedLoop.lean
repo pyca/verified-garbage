@@ -82,7 +82,7 @@ theorem halfByteOk_eq {η : Nat} (hη : η = 2 ∨ η = 4) (b : Nat) :
 theorem bound_congr {η : Nat} (hη : η = 2 ∨ η = 4) {b₁ b₂ : Nat} (h : halfByteOk η b₁ = halfByteOk η b₂) :
     decide (rbBound η ≤ b₁) = decide (rbBound η ≤ b₂) := by
   rw [halfByteOk_eq hη, halfByteOk_eq hη] at h
-  by_cases h₁ : b₁ < rbBound η <;> by_cases h₂ : b₂ < rbBound η <;> simp [h₁, h₂] at h ⊢ <;> omega
+  by_cases h₁ : b₁ < rbBound η <;> by_cases h₂ : b₂ < rbBound η <;> simp [h₁, h₂] at h ⊢ <;> omega_using [h₁, h₂]
 
 theorem rbBound_le {η : Nat} (hη : η = 2 ∨ η = 4) : rbBound η ≤ 15 := by
   rcases hη with rfl | rfl <;> decide
@@ -144,12 +144,12 @@ theorem tsgn_ok {η : Nat} (hη : η = 2 ∨ η = 4) {P : Sp} {σ : State} {X : 
     (h8 : s.gpr .r8 = v) :
     WP isa (.block [.dp .sub .r11 .r9 (.imm (BitVec.ofNat 32 (rbBound η))), .mov .r11 (.shifted .r11 .lsr 31),
       .cmp .r11 (.imm 0)]) s (TS η P σ X t L b v) := by
-  have e9 : (s.gpr .r9).toNat = b := by rw [h9, toNat_ofNat32 (by omega)]
+  have e9 : (s.gpr .r9).toNat = b := by rw [h9, toNat_ofNat32 (by omega_using [hb])]
   have hB := rbBound_le hη
   refine WP.mono (sgn_ok s .r9 (.imm (BitVec.ofNat 32 (rbBound η))) (y := BitVec.ofNat 32 (rbBound η))
-    (by simp only [Op2.eval, rbBound_enc hη, ite_true]) (by omega) (by rw [toNat_ofNat32 (by omega)]; omega))
+    (by simp only [Op2.eval, rbBound_enc hη, ite_true]) (by omega_using [hb, e9]) (by rw [toNat_ofNat32 (by omega_using [hB])]; omega_using [hB]))
     fun s' ⟨hz, hg, hm, hrd, hwr, hsp⟩ => ⟨h.regs (fun r _ _ _ h11 => hg r h11) hm hrd hwr hsp,
-      by rw [hg .r9 (by decide), h9], by rw [hg .r8 (by decide), h8], by rw [hz, e9, toNat_ofNat32 (by omega)]⟩
+      by rw [hg .r9 (by decide), h9], by rw [hg .r8 (by decide), h8], by rw [hz, e9, toNat_ofNat32 (by omega_using [hB])]⟩
 
 section
 variable {P : Sp} {σ : State} (hp : SpOk P σ)
@@ -157,7 +157,7 @@ include hp
 
 /-- The XOF output is apart from the output polynomial. -/
 theorem out_disj : (⟨P.at' 840, 544⟩ : Region).Disjoint P.aR :=
-  (hp.a_scr.sub_right (sub_scr (a := 840) (n := 544) (by omega))).symm
+  (hp.a_scr.sub_right (sub_scr (a := 840) (n := 544) (by omega_using []))).symm
 
 /-- An accepted half-byte: its coefficient stored. -/
 theorem acc_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} {L : List Zq} {b : Nat} {v : BitVec 32}
@@ -170,11 +170,11 @@ theorem acc_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} {L
   refine WP.mono (storeJ_stored hp b1.env (v := .r10) (by decide) b1.r2 hL b1.st (x := ofInt (rbC η b))
     (by rw [h10, h.r9, rbF_eq hη hb])) fun s2 ⟨hst, h2, hg2, _, he2, hf⟩ => ⟨⟨he2, ?_, ?_, ?_, h2, ?_, hst⟩, ?_⟩
   · rw [MlKem.bytesAt_frame hf (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact out_disj hp) (by omega)]
+      rw [List.mem_singleton] at hr; subst hr; exact out_disj hp) (by omega_using [])]
     exact b1.out
   · rw [hg2 .r0 (by decide) (by decide)]; exact b1.r0
   · rw [hg2 .r3 (by decide) (by decide)]; exact b1.r3
-  · rw [List.length_append, List.length_singleton]; omega
+  · rw [List.length_append, List.length_singleton]; omega_using [hL]
   · rw [hg2 .r8 (by decide) (by decide), hg .r8 (by decide) (by decide) (by decide)]; exact h.r8
 
 end
@@ -188,10 +188,10 @@ theorem try_ok {P : Sp} {σ : State} (hp : SpOk P σ) {η : Nat} (hη : η = 2 �
   rw [hbTry_eq hη]
   refine WP.ite (decide (rbBound η ≤ b)) (by show some s1.z = _; rw [h1.z]) (fun hr => ?_) (fun hr => ?_)
   · simp only [decide_eq_true_eq] at hr
-    rw [ifF (by omega)]
+    rw [ifF (by omega_using [hr])]
     exact WP.block_nil ⟨h1.base, h1.r8⟩
   · simp only [decide_eq_false_iff_not] at hr
-    rw [ifT (by omega)]
-    exact acc_ok hp hη h1 hL (by omega)
+    rw [ifT (by omega_using [hr])]
+    exact acc_ok hp hη h1 hL (by omega_using [hr])
 
 end VG.Proof.MlDsa.Arm.Sample.RejBounded

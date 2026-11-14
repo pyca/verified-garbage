@@ -58,7 +58,7 @@ theorem read_one (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
   simp only [Mem.read]
   ext i hi
   rw [BitVec.getElem_append]
-  simp only [show i < 8 by omega, dite_true]
+  simp only [show i < 8 by omega_using [hi], dite_true]
 
 theorem WP.cons {i : Instr} {is : List Instr} {s s' : State} {Q : State → Prop}
     (h : exec i s = some s') (k : WP isa (.block is) s' Q) : WP isa (.block (i :: is)) s Q :=

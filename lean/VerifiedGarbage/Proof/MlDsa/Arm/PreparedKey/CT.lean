@@ -99,9 +99,9 @@ theorem public_rel (C1 : Callee (fun S => unpackT1Contract Arm.abi S) 0 D Impl.M
     RelCT isa (Rel D p.pkLen p.k) (.seq (copy (.r8, 0) (.r4, 0) p.pkLen) (seqR (publicPoly P p) 0 p.k))
       (Rel D p.pkLen p.k) := by
   have hpk := pk_eq hp
-  refine RelCT.seq (copy_rel (by omega)) ?_
+  refine RelCT.seq (copy_rel (by omega_using [hpk])) ?_
   have := seqR_tr (f := publicPoly P p) (R := fun _ => Rel D p.pkLen p.k) p.k 0 fun i _ hi => by
-    obtain ⟨hc, hi'⟩ := public_checks hp (i := i) (by omega)
+    obtain ⟨hc, hi'⟩ := public_checks hp (i := i) (by omega_using [hi])
     exact publicPoly_rel C1 hP hc hi'
   exact this
 
@@ -113,14 +113,14 @@ theorem secret_rel {p : Params} (hp : Ok3 p) :
   refine RelCT.seq (copy_rel hsk) ?_
   have := seqR_tr (f := secretPoly P p) (R := fun _ => Rel D p.skLen (p.ℓ + 2 * p.k)) (p.ℓ + 2 * p.k) 0
     fun i _ hi => by
-      have hi' : i < p.ℓ + 2 * p.k := by omega
+      have hi' : i < p.ℓ + 2 * p.k := by omega_using [hi]
       obtain ⟨src, len, a, b, he⟩ : ∃ src len a b, secretPiece p i = (src, len, a, b) := by
         rcases secretPiece p i with ⟨src, len, a, b⟩
         exact ⟨src, len, a, b, rfl⟩
       have hchecks := secret_checks hp hi'
       rw [he] at hchecks
       obtain ⟨hc, hab, hl⟩ := hchecks
-      exact secretPoly_rel hP he hab hl hc (ip_check _ _ (by omega))
+      exact secretPoly_rel hP he hab hl hc (ip_check _ _ (by omega_using [hi]))
   exact this
 
 end

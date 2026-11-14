@@ -75,7 +75,7 @@ theorem loadA_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen <
 /-- The four loads. -/
 theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Impl.Bignum.X86_64.Public.sN Impl.Bignum.X86_64.Public.sK ++
     (loadA aP sP sPl ++ (loadA aQ sQ sQl ++ loadA aD sD sDl)))) (Two GA) := by
-  have k8 : ∀ {k : Nat}, k ≤ 8 * wk k := fun {k} => by unfold wk; omega
+  have k8 : ∀ {k : Nat}, k ≤ 8 * wk k := fun {k} => by unfold wk; omega_using []
   refine ct_app (by simp [loadA]) (by simp [loadA]) (loadA_ct (by decide) (by decide) (by decide) CvP.pN CvP.k
     (fun p s h => ?_) (by taint_decide) (by taint_decide)) (ct_app (by simp [loadA]) (by simp [loadA])
     (loadA_ct (by decide) (by decide) (by decide) CvP.pP CvP.pl (fun p s h => ?_) (by taint_decide) (by taint_decide))
@@ -87,10 +87,10 @@ theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Impl.Bignum.X86_64.Public.
     obtain ⟨I, m₀, c, rfl, h, L, -⟩ := h
     dsimp only [CvIn.pub]
     have := L.k1
-  · exact ⟨h.args.n, h.args.k, ⟨_, h.n, L.nl⟩, by omega, k8⟩
-  · exact ⟨h.args.p, h.args.pl, ⟨_, h.p, L.pbl⟩, L.pl1, by have := L.pl2; have := @k8 I.k; omega⟩
-  · exact ⟨h.args.q, h.args.ql, ⟨_, h.q, L.qbl⟩, L.ql1, by have := L.ql2; have := @k8 I.k; omega⟩
-  · exact ⟨h.args.d, h.args.dl, ⟨_, h.d, L.dbl⟩, L.dl1, by have := L.dl2; have := @k8 I.k; omega⟩
+  · exact ⟨h.args.n, h.args.k, ⟨_, h.n, L.nl⟩, by omega_using [this], k8⟩
+  · exact ⟨h.args.p, h.args.pl, ⟨_, h.p, L.pbl⟩, L.pl1, by have := L.pl2; have := @k8 I.k; omega_arith⟩
+  · exact ⟨h.args.q, h.args.ql, ⟨_, h.q, L.qbl⟩, L.ql1, by have := L.ql2; have := @k8 I.k; omega_arith⟩
+  · exact ⟨h.args.d, h.args.dl, ⟨_, h.d, L.dbl⟩, L.dl1, by have := L.dl2; have := @k8 I.k; omega_arith⟩
 
 /-- `GA` with `p` and `q` below their lengths' bounds. -/
 def GB (p : CvP) (s : State) : Prop :=
@@ -130,15 +130,15 @@ theorem GB.product {p : CvP} {s t : State} (h : GB p s)
   have sP := hw.sl (show aP < 16 by decide)
   have sQ := hw.sl (show aQ < 16 by decide)
   refine ⟨h.1.product ho hk hr, ?_, ?_⟩
-  · rw [ho.wv (by simp [slot, aU, aP]; omega) (by omega)]; exact h.2.1
-  · rw [ho.wv (by simp [slot, aU, aQ]; omega) (by omega)]; exact h.2.2
+  · rw [ho.wv (by simp [slot, aU, aP]; omega_using []) (by omega_using [hn, sP])]; exact h.2.1
+  · rw [ho.wv (by simp [slot, aU, aQ]; omega_using []) (by omega_using [hn, sQ])]; exact h.2.2
 
 /-- The product's zeroing uses only the public workspace dimensions. -/
 theorem productZero_ct : RelCT isa (Two GB) (seqs Impl.Rsa.X86_64.Crt.zeroAccs) (Two GZ) := by
   refine two_post (two_map (fun p : CvP => (⟨p.B, p.Z, wk p.k⟩ : VG.Proof.Bignum.X86_64.Ws))
     (fun _ _ h => ⟨_, h.1.ws.good⟩) zeroAccs_ct) fun p s h => ?_
   have hw := h.1.ws.w2
-  exact WP.mono (zeroAccs_ok h.1.ws.good.1 h.1.ws.good.2 (by omega)) fun t ⟨hz, ho, hk⟩ =>
+  exact WP.mono (zeroAccs_ok h.1.ws.good.1 h.1.ws.good.2 (by omega_using [hw])) fun t ⟨hz, ho, hk⟩ =>
     ⟨h.product ho hk (by decide), wv_zero hz⟩
 
 /-- The registers `mulRows` needs pinned. -/
@@ -160,13 +160,13 @@ theorem product_ct : RelCT isa (Two GZ)
   all_goals
     obtain ⟨⟨⟨I, m₀, c, rfl, h', L, O, hm⟩, bP, bQ⟩, hz⟩ := id h
     have := L.pl2; have := L.ql2; have := L.k2
-  · refine WP.mono (productSetup_ok h'.ws h'.args.pl h'.args.ql (by omega) (by omega))
+  · refine WP.mono (productSetup_ok h'.ws h'.args.pl h'.args.ql (by omega_arith) (by omega_arith))
       fun t ⟨h11, h9, h8, h10, h12, _, k⟩ r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     · exact (k.gpr (by decide)).trans h'.ws.rdi
     all_goals assumption
-  · exact WP.mono (product_ok h'.ws h'.args.pl h'.args.ql L.pl1 L.ql1 (by unfold wk; omega) (by unfold wk; omega)
+  · exact WP.mono (product_ok h'.ws h'.args.pl h'.args.ql L.pl1 L.ql1 (by unfold wk; omega_arith) (by unfold wk; omega_arith)
       bP bQ hz) fun t ⟨_, ho, hk⟩ => GA.product ⟨I, m₀, c, rfl, h', L, O, hm⟩ ho hk (by decide)
 
 /-- The public registers the full-product comparison reads. -/
@@ -189,7 +189,7 @@ theorem productEq_ct : RelCT isa (Two GA) (seqs Impl.Rsa.X86_64.Crt.eqCheck) fun
         · exact h.2.2.2) (by taint_decide))
   have hw := h.ws
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    hw.scr.ld (by have := hw.h256; omega)
+    hw.scr.ld (by have := hw.h256; omega_using [hi, this])
   exact WP.mono (WP.keep [.r12, .rbx, .r10, .rbp] (Q := fun t =>
     t.gpr .r12 = BitVec.ofNat 64 (wk p.k) ∧ t.gpr .rbx = off p.B (slot (wk p.k) aU) ∧
     t.gpr .r10 = off p.B (slot (wk p.k) aN)) (by
@@ -255,7 +255,7 @@ theorem storeBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr 
           have hdi₃ : s₃.gpr .rdi = B := ((k₂.trans k₃).gpr (by decide)).trans h.rdi
           have hs₃ := h.scr.congr (k₂.trans k₃).2.2
           have hl₃ : ∀ i < 32, InRegions (s₃.rd ++ s₃.wr) (off B (8 * i)) 8 := fun i hi =>
-            hs₃.ld (by have := h.h256; omega)
+            hs₃.ld (by have := h.h256; omega_using [hi, this])
           xrun [State.ea, hdr, hdi₃, hdrOff, m₃, m₂, hl₃ sPtr hP, hl₃ sLen hL,
             hl₃ Impl.Bignum.X86_64.Public.sMask (by decide), hp, hl]) rfl)
       fun _ ⟨⟨hsi, hcx⟩, k₄⟩ => ⟨(k₄.gpr (by decide)).trans hbx, hsi, hcx,
@@ -291,8 +291,8 @@ theorem storeA_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen 
       refine WP.mono (storeA_ws hw hj hP hL hp hl hm hl1 hlw (fun i hi => by rw [hW]; exact hwr i hi) hsep)
         fun t ⟨_, _, ht, hf, k⟩ => ?_
       have fw : ∀ i < 32, Bignum.word t.mem I.B (8 * i) = Bignum.word s.mem I.B (8 * i) :=
-        fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
-      exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold argSlot at hi; omega), k.2.2.trans hW, L, O,
+        fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
+      exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold argSlot at hi; omega_using [hi]), k.2.2.trans hW, L, O,
         (fw _ (by decide)).trans hm⟩
 
 theorem retMask_ct : RelCT isa (Two GS) (.block retMask) fun _ _ => True :=
@@ -302,7 +302,7 @@ theorem retMask_ct : RelCT isa (Two GS) (.block retMask) fun _ _ => True :=
 theorem stores_ct : RelCT isa (Two GS) (seqs (storeA aX₂ sQi sPl Impl.Bignum.X86_64.Public.sMask ++
     (storeA aX₁ sDp sPl Impl.Bignum.X86_64.Public.sMask ++ (storeA aV sDq sQl Impl.Bignum.X86_64.Public.sMask ++
       ([.block retMask] : List (Prog isa)))))) (Two fun (_ : CvP) (_ : State) => True) := by
-  have k8 : ∀ {k l : Nat}, l < k → l ≤ 8 * wk k := fun {k l} h => by unfold wk; omega
+  have k8 : ∀ {k l : Nat}, l < k → l ≤ 8 * wk k := fun {k l} h => by unfold wk; omega_using [h]
   refine (ct_app (by simp [storeA]) (by simp [storeA])
     (storeA_ct (by decide) (by decide) (by decide) CvP.pQi CvP.pl (fun p s h => ?_) (by taint_decide))
     (ct_app (by simp [storeA]) (by simp [storeA])

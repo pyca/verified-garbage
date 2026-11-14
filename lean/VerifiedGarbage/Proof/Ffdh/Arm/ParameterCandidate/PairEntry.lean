@@ -24,17 +24,17 @@ theorem pairEntry_ok {s : State} {dst base : BitVec 32} {n i : Nat}
         t.mem = s.mem) ∧
         Rest [.r7] s t := by
   have limitBound := trialCount_bound n
-  have indexBound : i < 1024 := by omega
+  have indexBound : i < 1024 := by omega_using [bound, limitBound]
   have read := h.tableReadable i indexBound
   have word : s.mem.readW (off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i)) 32 =
       BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry i) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := tableEntry_small indexBound; omega :
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := tableEntry_small indexBound; omega_using [this] :
       VG.Impl.RsaKeyGen.tabEntry i < 2 ^ 32)]
     exact h.table i indexBound
   have address : State.addr (base + BitVec.ofNat 32 (arrAt ((n + 7) / 8) 34 + 4 * i)) =
       off (State.addr base) (arrAt ((n + 7) / 8) 34 + 4 * i) :=
-    VG.Arm.addr_add (by have := h.tableFits; omega)
+    VG.Arm.addr_add (by have := h.tableFits; omega_using [indexBound, this])
   refine withRest_all [.r7] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.pairEntry
   ffrun [BitVec.add_zero, cursor, address, read, word]

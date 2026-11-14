@@ -86,7 +86,7 @@ theorem addrI {b i p : Addr} {e j k : Nat} {d : Int} (hb : b = off p e) (hi : i 
   subst hb hi
   have h8 : BitVec.ofNat 64 (8 * j) + BitVec.ofInt 64 d = BitVec.ofNat 64 (8 * k) := by
     rw [← BitVec.ofInt_natCast, ← BitVec.ofInt_add,
-      show ((8 * j : Nat) : Int) + d = ((8 * k : Nat) : Int) by push_cast; omega, BitVec.ofInt_natCast]
+      show ((8 * j : Nat) : Int) + d = ((8 * k : Nat) : Int) by push_cast; omega_using [hk], BitVec.ofInt_natCast]
   rw [ofNat_mul8, off, BitVec.add_assoc, BitVec.add_assoc, h8, ← BitVec.ofNat_add]
 
 /-- The halving's word: `(a 2^64 + b) / 2` modulo `2^64`. -/
@@ -98,7 +98,7 @@ theorem hv_toNat (a b : BitVec 64) : (hv a b).toNat = a.toNat % 2 * 2 ^ 63 + b.t
     exact Nat.mul_mod_left _ _
   have h2 : (b >>> (64 - 63)).toNat < 2 ^ 63 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    have := b.isLt; omega
+    have := b.isLt; omega_using []
   unfold hv
   rw [or_disj _ _ h1 h2, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ushiftRight,
     Nat.shiftRight_eq_div_pow, show (2 : Nat) ^ 64 = 2 * 2 ^ 63 by decide, Nat.mul_mod_mul_right]
@@ -113,19 +113,19 @@ theorem half_ok {t : State} {B : Addr} {Z ex et L k o : Nat} {x tr : Reg} {a oi 
       Keep [.rax, .rdx] t t' := by
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t' => t'.mem = t.mem.writeW (off B (et + 8 * o))
     (hv (word t.mem B (ex + 8 * (k + 1))) (word t.mem B (ex + 8 * k)))) ?_ rfl) fun t' ⟨h, k'⟩ => ⟨h, k'⟩
-  have a1 := addrI (d := 8 * (a + 1)) (k := k + 1) hx h12 (by omega)
-  have a0 := addrI (d := 8 * a) (k := k) hx h12 (by omega)
+  have a1 := addrI (d := 8 * (a + 1)) (k := k + 1) hx h12 (by omega_using [hk])
+  have a0 := addrI (d := 8 * a) (k := k) hx h12 (by omega_using [hk])
   have hat := show t.gpr tr + BitVec.ofInt 64 (8 * oi) = off B (et + 8 * o) by
     rw [htr, ho, show (8 * (o : Int)) = ((8 * o : Nat) : Int) by push_cast; rfl, BitVec.ofInt_natCast, off_addN]
   have shv : (1 ≤ 63 ∧ 63 ≤ 63) = True := eq_true ⟨by decide, by decide⟩
   unfold half
-  xrun [State.ea, ix, a1, a0, hat, execShld, shv, hs.ld (d := ex + 8 * (k + 1)) (by omega), hs.ld (d := ex + 8 * k) (by omega),
-    hs.st (d := et + 8 * o) (by omega), hxr, htra, htrd]
+  xrun [State.ea, ix, a1, a0, hat, execShld, shv, hs.ld (d := ex + 8 * (k + 1)) (by omega_using [hX]), hs.ld (d := ex + 8 * k) (by omega_using [hX]),
+    hs.st (d := et + 8 * o) (by omega_using [hT]), hxr, htra, htrd]
   rfl
 
 theorem word_wW {m : Mem} {B : Addr} {d d' : Nat} (v : BitVec 64) (hsep : d' + 8 ≤ d ∨ d + 8 ≤ d')
     (hd : d + 8 ≤ 2 ^ 64) (hd' : d' + 8 ≤ 2 ^ 64) : word (m.writeW (off B d) v) B d' = word m B d' :=
-  (writeW_outside m B v hd).word (by omega) hd'
+  (writeW_outside m B v hd).word (by omega_using [hsep]) hd'
 
 /-- The estimate: the halved remainder's top three words into the scratch `[5]`,
 the root's top two into words 1 and 2 of `[1]` (whose word 0 is the reciprocal
@@ -312,7 +312,7 @@ theorem dec2 (a b : BitVec 64) :
   generalize a.toNat = x at *
   generalize b.toNat = y at *
   cases h1 : decide (2 ^ 64 ≤ x + x) <;> cases h2 : decide ((x + x) % 2 ^ 64 < 1) <;>
-    simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.toNat_true, Bool.toNat_false] at h1 h2 ⊢ <;> omega
+    simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.toNat_true, Bool.toNat_false] at h1 h2 ⊢ <;> omega_arith
 
 /-- `toE`'s arithmetic: `(rdx, rax) := (hi, 2 lo) - 1` modulo `2^128`. -/
 theorem toE_ok {s : State} {B : Addr} {Z W h c : Nat} (hw : Ws s B Z W) (hwh : W = 2 * h + 4)
@@ -357,11 +357,11 @@ theorem sub2 (a b : BitVec 64) (c : Bool) :
   generalize b.toNat = y at *
   cases c
   · simp only [Bool.toNat_false, Nat.mul_zero, Nat.not_lt_zero, decide_false, Nat.sub_zero]
-    omega
+    omega_using [ha]
   · simp only [Bool.toNat_true, Nat.mul_one]
     by_cases h2 : x < 2
-    · simp only [h2, decide_true, Bool.toNat_true]; omega
-    · simp only [h2, decide_false, Bool.toNat_false]; omega
+    · simp only [h2, decide_true, Bool.toNat_true]; omega_using [h2]
+    · simp only [h2, decide_false, Bool.toNat_false]; omega_using [ha, h2]
 
 /-- `(b, a) + 1` modulo `2^128`, as `add 1`, `adc 0` compute it. -/
 theorem inc2 (a b : BitVec 64) :
@@ -372,7 +372,7 @@ theorem inc2 (a b : BitVec 64) :
   generalize a.toNat = x at *
   generalize b.toNat = y at *
   cases h1 : decide (2 ^ 64 ≤ x + 1) <;>
-    simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.toNat_true, Bool.toNat_false] at h1 ⊢ <;> omega
+    simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.toNat_true, Bool.toNat_false] at h1 ⊢ <;> omega_arith
 
 /-- `updX`: `D`'s low two words plus one, modulo `2^128`. -/
 theorem updX_ok {s : State} {B : Addr} {Z W h c : Nat} (hw : Ws s B Z W) (hwh : W = 2 * h + 4)
@@ -443,7 +443,7 @@ theorem fixX_ok {s : State} {B : Addr} {Z W h c : Nat} (hw : Ws s B Z W) (hwh : 
       apply decide_eq_decide.mpr
       show _ ↔ 2 ^ 63 ≤ (word s.mem B (slot W sqZ + 16 * (c - 1) + 8 * (h - (c - 1) + 2 - 1))).toNat
       unfold Bignum.word
-      omega) rfl) fun s₂ ⟨⟨a15, abp, m₂⟩, k₂⟩ => ?_)))
+      omega_using []) rfl) fun s₂ ⟨⟨a15, abp, m₂⟩, k₂⟩ => ?_)))
   have k12 := k₁.trans k₂
   have hs₂ := hw.scr.congr k12.2.2
   refine WP.mono (addM_ok (c := neg) (N := h - (c - 1) + 2) hs₂ ((k₂.gpr (by decide)).trans hbx)

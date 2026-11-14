@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The arithmetic of ARMv7 Montgomery squaring
 
@@ -30,12 +31,12 @@ theorem sq_split (m : Mem) (base : Addr) (a n : Nat) : ∀ k, k ≤ n →
   | 0, _ => by simp only [diagSum, sqCross, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul,
       Nat.zero_add, Nat.sub_zero]
   | k + 1, hk => by
-    rw [sq_split m base a n k (by omega)]
-    have e : n - k = (n - 1 - k) + 1 := by omega
-    rw [e, val32, show a + 4 * k + 4 = a + 4 * (k + 1) by omega, show n - (k + 1) = n - 1 - k by omega]
+    rw [sq_split m base a n k (by omega_using [hk])]
+    have e : n - k = (n - 1 - k) + 1 := by omega_using [hk]
+    rw [e, val32, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_using [], show n - (k + 1) = n - 1 - k by omega_using []]
     simp only [diagSum, sqCross]
     have e1 : 2 ^ (32 * (2 * k + 1)) = 2 ^ (64 * k) * 2 ^ 32 := by
-      rw [← Nat.pow_add]; congr 1 <;> omega
+      rw [← Nat.pow_add]; congr 1 <;> omega_using []
     have e2 : 2 ^ (64 * (k + 1)) = 2 ^ (64 * k) * 2 ^ 32 * 2 ^ 32 := by
       rw [← Nat.pow_add, ← Nat.pow_add]; congr 1 <;> omega
     rw [e1, e2]
@@ -53,7 +54,7 @@ theorem sq_eq (m : Mem) (base : Addr) (a n : Nat) :
 /-- The last row is empty. -/
 theorem sqCross_last (m : Mem) (base : Addr) (a n : Nat) (hn : 0 < n) :
     sqCross m base a n n = sqCross m base a n (n - 1) := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [hn]⟩
   simp only [sqCross, Nat.add_sub_cancel, Nat.sub_self, val32, Nat.mul_zero, Nat.add_zero]
 
 /-- Replacing the middle `j` words of `i + j + k`. -/
@@ -75,7 +76,7 @@ theorem sq_red_bound {x M Q H R : Nat} (hx : x < M) (hM : M ≤ R) (hQ : Q < R)
   have h3 : Q * M ≤ R * M := Nat.mul_le_mul_right _ (Nat.le_of_lt hQ)
   have h4 : R * H < R * (2 * M) := by
     rw [h, Nat.mul_comm 2 M, ← Nat.mul_assoc, Nat.mul_two]
-    omega
+    omega_using [h1, h2, h3]
   exact Nat.lt_of_mul_lt_mul_left h4
 
 end VG.Proof.Bignum.Arm

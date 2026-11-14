@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Modes.Cbc
 import VerifiedGarbage.Proof.AesOfb.Spec
 import VerifiedGarbage.Proof.Modes.CbcEnc
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # OFB's and CFB's results on a message's last piece, for any block cipher and target
@@ -61,7 +62,7 @@ theorem bytesAt_drop (m : Mem) (D : Addr) (len a : Nat) :
 
 theorem bytesAt_take (m : Mem) (D : Addr) {len k : Nat} (h : k ≤ len) :
     (bytesAt m D len).take k = bytesAt m D k := by
-  apply List.ext_getElem (by simp [bytesAt]; omega)
+  apply List.ext_getElem (by simp [bytesAt]; omega_using [h])
   intro i _ _
   simp only [bytesAt, List.getElem_take, List.getElem_map, List.getElem_range]
 
@@ -86,7 +87,7 @@ theorem segments_bytesAt {L : Nat} (m : Mem) (D : Addr) (len : Nat) :
     have := Nat.mul_le_mul_left L (Nat.succ_le_of_lt hi)
     rw [Nat.mul_succ] at this
     exact Nat.le_trans this (Nat.mul_div_le len L)
-  rw [bytesAt_drop, bytesAt_take _ _ (by omega)]
+  rw [bytesAt_drop, bytesAt_take _ _ (by omega_using [hle])]
 
 /-- The partial last segment of the `len` bytes at `D`: its last `len % L`
 bytes. -/
@@ -188,13 +189,13 @@ theorem fbFinal_tail (hL : 0 < L) (hc : ∀ b, (ciph b).length = L)
         (ciph (fbIn mo L ciph m₀ D iv (len / L))) := by
   have hr : len % L < L := Nat.mod_lt _ hL
   have hlen : L * (len / L) + len % L = len := Nat.div_add_mod _ _
-  apply List.ext_getElem (by simp [bytesAt, Spec.Cbc.xor, hc]; omega)
+  apply List.ext_getElem (by simp [bytesAt, Spec.Cbc.xor, hc]; omega_using [hr])
   intro q h1 h2
   have hq : q < len % L := by simpa [bytesAt] using h1
-  rw [List.getElem_eq_getD 0, List.getElem_eq_getD 0, xor_getD (by simpa [bytesAt] using hq) (by rw [hc]; omega)]
+  rw [List.getElem_eq_getD 0, List.getElem_eq_getD 0, xor_getD (by simpa [bytesAt] using hq) (by rw [hc]; omega_using [hr, hq])]
   simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range, hq, Option.map_some,
     Option.getD_some, VG.Offset.add_add]
-  rw [h _ (by omega), idx_div (by omega), idx_mod (by omega), fbOut_getD mo hc m₀ D iv _ (by omega),
+  rw [h _ (by omega_using [hlen, hq]), idx_div (by omega_using [hr, hq]), idx_mod (by omega_using [hr, hq]), fbOut_getD mo hc m₀ D iv _ (by omega_using [hr, hq]),
     List.getD_eq_getElem?_getD]
 
 end
@@ -237,9 +238,9 @@ theorem blockCount_eq {L : Nat} (hL : 0 < L) (len : Nat) :
   subst hd
   split
   · subst r
-    rw [Nat.add_zero, Nat.add_sub_assoc (by omega), Nat.mul_add_div hL, Nat.div_eq_of_lt (by omega), Nat.add_zero]
-  · rw [Nat.add_assoc, Nat.add_sub_assoc (by omega), Nat.mul_add_div hL,
-      Nat.div_eq_of_lt_le (k := 1) (by omega) (by omega)]
+    rw [Nat.add_zero, Nat.add_sub_assoc (by omega_using [hL]), Nat.mul_add_div hL, Nat.div_eq_of_lt (by omega_using [hL]), Nat.add_zero]
+  · rw [Nat.add_assoc, Nat.add_sub_assoc (by omega_using [hL]), Nat.mul_add_div hL,
+      Nat.div_eq_of_lt_le (k := 1) (by omega_arith) (by omega_using [hr])]
 
 theorem length_flatten_outputs {L : Nat} {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = L) :
     ∀ (n : Nat) (iv : List Byte), (Spec.Ofb.outputs ciph iv n).flatten.length = L * n

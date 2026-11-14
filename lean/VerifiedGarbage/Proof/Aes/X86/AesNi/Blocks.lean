@@ -96,32 +96,32 @@ theorem blocks_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : L
   have hlen := (regs_len rs hrs).1
   have haddr : ∀ k, c + k < bN s₀ →
       addr (s.gpr .esi) (16 * (0 + k)) = bAddr s₀ (c + k) := fun k hk => by
-    rw [hI.esi, addr_add, addr_eq (by omega), show 16 * c + 16 * (0 + k) = 16 * (c + k) by omega]
+    rw [hI.esi, addr_add, addr_eq (by omega_using [hw, hk]), show 16 * c + 16 * (0 + k) = 16 * (c + k) by omega_using []]
   have hout : ∀ k, c + k < bN s₀ → InRegions s.wr (bAddr s₀ (c + k)) 16 := fun k hk =>
-    ⟨bDatR s₀, by rw [hI.wr, hp.wr]; exact List.mem_cons_self .., Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨bDatR s₀, by rw [hI.wr, hp.wr]; exact List.mem_cons_self .., Offset.contains_base _ (by omega_using [hk]) (by omega_using [hw, hk])⟩
   refine WP.seq (WP.mono (loadData_ok .esi rs 0 s hnd fun k hk => by
-      rw [haddr k (by omega)]; exact in_rd (hout k (by omega))) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, x₁⟩ => ?_)
+      rw [haddr k (by omega_using [hc, hk])]; exact in_rd (hout k (by omega_using [hc, hk]))) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, x₁⟩ => ?_)
   have hkp₁ : KP s₁ := hst s s₁ hI.kp (fun r _ _ => by rw [g₁]) rd₁ wr₁ (by rw [m₁]; exact Frame.refl _ _)
   refine WP.seq (WP.mono (hf rs hrs s₁ hkp₁) fun s₂ ⟨e₂, f₂⟩ => ?_)
   have ek : ∀ k (h : k < rs.length), st (s₂.xmm rs[k]) = F (orig s₀ (c + k)) := fun k h => by
-    rw [e₂ _ (List.getElem_mem h), e₁ k h, haddr k (by omega), hI.blocks _ (by omega)]
-    simp only [show ¬ c + k < c by omega, ite_false]
+    rw [e₂ _ (List.getElem_mem h), e₁ k h, haddr k (by omega_using [hc, h]), hI.blocks _ (by omega_using [hc, h])]
+    simp only [show ¬ c + k < c by omega_using [], ite_false]
   have hesi₂ : s₂.gpr .esi = s.gpr .esi := by rw [f₂.gpr, g₁]
   rw [WP.block_append_iff]
   refine WP.mono (storeData_ok .esi rs 0 s₂ (fun k hk => by
-      rw [hesi₂, haddr k (by omega), f₂.wr, wr₁]; exact hout k (by omega))
-      (by rw [hesi₂, hI.esi, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-        Nat.mod_eq_of_lt (by omega)]; omega))
+      rw [hesi₂, haddr k (by omega_using [hc, hk]), f₂.wr, wr₁]; exact hout k (by omega_using [hc, hk]))
+      (by rw [hesi₂, hI.esi, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc, hw, hlen]),
+        Nat.mod_eq_of_lt (by omega_using [hc, hw, hlen])]; omega_using [hc, hw]))
     fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, _⟩ => hQ s₃ ?_
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, m₁]
-  rw [hm₂, hesi₂, show 16 * 0 = 16 * (0 + 0) by rfl, haddr 0 (by omega), Nat.add_zero] at fr₃
+  rw [hm₂, hesi₂, show 16 * 0 = 16 * (0 + 0) by rfl, haddr 0 (by omega_using [hc, hlen]), Nat.add_zero] at fr₃
   rw [hesi₂] at b₃
   have fr₃' : Frame [bDatR s₀] s.mem s₃.mem :=
     fr₃.sub fun r hr => ⟨bDatR s₀, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.sub_base _ (by omega)⟩
+      exact Offset.sub_base _ (by omega_using [hc])⟩
   have g₃' : ∀ r, s₃.gpr r = s.gpr r := fun r => by rw [g₃, f₂.gpr, g₁]
-  refine ⟨Nat.le_trans (by omega) hc, hst s s₃ hI.kp (fun r _ _ => g₃' r) (by rw [rd₃, f₂.rd, rd₁])
+  refine ⟨Nat.le_trans (by omega_using []) hc, hst s s₃ hI.kp (fun r _ _ => g₃' r) (by rw [rd₃, f₂.rd, rd₁])
     (by rw [wr₃, f₂.wr, wr₁]) fr₃', fun r h1 h2 => by rw [g₃', hI.gpr r h1 h2],
     by rw [g₃', hI.esi], by rw [g₃', hI.edi], hI.frame.trans fr₃', ?_,
     by rw [rd₃, f₂.rd, rd₁, hI.rd], by rw [wr₃, f₂.wr, wr₁, hI.wr]⟩
@@ -133,16 +133,16 @@ theorem blocks_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : L
       exact congrArg st <| fr₃.readW (r := ⟨bAddr s₀ k, 16⟩) (w := 128) (Region.contains_self _ _)
         (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide)
+          exact Offset.disjoint _ (by omega_using [hn]) (by omega_using [hw, hk]) (by omega_using [hc, hw])) (by decide)
   by_cases hlo : k < c
-  · rw [out (by omega), hI.blocks k hk]
-    simp only [hlo, show k < c + rs.length by omega, ite_true]
+  · rw [out (by omega_using [hlo]), hI.blocks k hk]
+    simp only [hlo, show k < c + rs.length by omega_using [hlo], ite_true]
   · by_cases hhi : k < c + rs.length
-    · obtain ⟨j, rfl⟩ : ∃ j, k = c + j := ⟨k - c, by omega⟩
-      have hj : j < rs.length := by omega
-      rw [← haddr j (by omega), b₃ j hj, ek j hj]
+    · obtain ⟨j, rfl⟩ : ∃ j, k = c + j := ⟨k - c, by omega_using [hlo]⟩
+      have hj : j < rs.length := by omega_using [hhi]
+      rw [← haddr j (by omega_using [hk]), b₃ j hj, ek j hj]
       simp only [hhi, ite_true]
-    · rw [out (by omega), hI.blocks k hk]
+    · rw [out (by omega_using [hhi]), hI.blocks k hk]
       simp only [hlo, hhi, ite_false]
 
 omit hf in
@@ -162,14 +162,14 @@ theorem advance_ok {rest : List Instr} {c m : Nat} (hc : c + m ≤ bN s₀) {s :
       ?_, ?_, by rw [u₂.mem, u₁.mem]; exact hI.frame, by rw [u₂.mem, u₁.mem]; exact hI.blocks,
       by rw [u₂.rd, u₁.rd, hI.rd], by rw [u₂.wr, u₁.wr, hI.wr]⟩
     · rw [u₂.other _ (by decide), u₁.gpr, hI.esi, BitVec.add_assoc, ← BitVec.ofNat_add]
-      congr 2; omega
+      congr 2; omega_using []
     · rw [u₂.gpr, u₁.other _ (by decide), hI.edi]
-      have : bN s₀ < 2 ^ 32 := by omega
+      have : bN s₀ < 2 ^ 32 := by omega_using [hw]
       bv_omega
-  · have hn : bN s₀ < 2 ^ 32 := by omega
+  · have hn : bN s₀ < 2 ^ 32 := by omega_using [hw]
     have e : BitVec.ofNat 32 (bN s₀ - c) - BitVec.ofNat 32 m = BitVec.ofNat 32 (bN s₀ - (c + m)) := by
       bv_omega
-    rw [hz, u₁.other _ (by decide), hI.edi, e, ofNat_beq_zero (by omega)]
+    rw [hz, u₁.other _ (by decide), hI.edi, e, ofNat_beq_zero (by omega_using [hw])]
 
 /-- The six-block body. -/
 theorem body6_ok {c : Nat} (hc : c + 6 ≤ bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c s) :
@@ -188,7 +188,7 @@ theorem body6_ok {c : Nat} (hc : c + 6 ≤ bN s₀) {s : State} (hI : Inv KP F s
       blocks := by rw [u₃.mem]; exact hI₂.blocks
       rd := by rw [u₃.rd, hI₂.rd]
       wr := by rw [u₃.wr, hI₂.wr] }
-  · rw [hcf, hI₂.edi, toNat_ofNat_lt (by omega)]; rfl
+  · rw [hcf, hI₂.edi, toNat_ofNat_lt (by omega_using [hw])]; rfl
 
 /-- The one-block body. -/
 theorem body1_ok {c : Nat} (hc : c < bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c s) :
@@ -213,7 +213,7 @@ theorem test_ok {c : Nat} {s : State} (hI : Inv KP F s₀ g m₁ c c s) :
       blocks := by rw [u.mem]; exact hI.blocks
       rd := by rw [u.rd, hI.rd]
       wr := by rw [u.wr, hI.wr] }
-  · rw [hz, hI.edi, BitVec.and_self, ofNat_beq_zero (by omega)]
+  · rw [hz, hI.edi, BitVec.and_self, ofNat_beq_zero (by omega_using [hw])]
 
 /-- The blocks left after `c₀`, six and then one at a time. -/
 theorem tail_ok {c₀ : Nat} {s₁ : State} (hI₁ : Inv KP F s₀ g m₁ c₀ c₀ s₁)
@@ -231,11 +231,11 @@ theorem tail_ok {c₀ : Nat} {s₁ : State} (hI₁ : Inv KP F s₀ g m₁ c₀ c
         refine WP.mono (body6_ok hp hst hf hc hI) fun s' ⟨hI', hcf'⟩ => ?_
         by_cases hlt : bN s₀ - (c + 6) < 6
         · exact .inl ⟨by simp [eval, hcf', hlt], c + 6, hlt, hI'⟩
-        · exact .inr ⟨by simp [eval, hcf', hlt], bN s₀ - (c + 6), by omega, c + 6, rfl, by omega, hI'⟩
-      exact WP.loop (M := isa) I6 hstep (bN s₀ - c₀) s₁ ⟨c₀, rfl, by simp at h; omega, hI₁⟩
+        · exact .inr ⟨by simp [eval, hcf', hlt], bN s₀ - (c + 6), by omega_using [hc], c + 6, rfl, by omega_using [hlt], hI'⟩
+      exact WP.loop (M := isa) I6 hstep (bN s₀ - c₀) s₁ ⟨c₀, rfl, by simp at h; omega_using [h], hI₁⟩
   refine WP.seq (WP.mono (test_ok hp hst hI₂) fun s₃ ⟨hI₃, hzf⟩ => ?_)
   refine WP.ite (decide (bN s₀ - c = 0)) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
-  · have : c = bN s₀ := by have := hI₃.le; simp at h; omega
+  · have : c = bN s₀ := by have := hI₃.le; simp at h; omega_using [this, h]
     exact WP.block_nil (this ▸ hI₃)
   · let I1 : Nat → State → Prop := fun m s => ∃ c, m = bN s₀ - c ∧ c < bN s₀ ∧ Inv KP F s₀ g m₁ c c s
     have hstep : ∀ m s, I1 m s → WP isa (blocks1 f) s (fun s' =>
@@ -244,10 +244,10 @@ theorem tail_ok {c₀ : Nat} {s₁ : State} (hI₁ : Inv KP F s₀ g m₁ c₀ c
       rintro m s ⟨c, rfl, hc, hI⟩
       refine WP.mono (body1_ok hp hst hf hc hI) fun s' ⟨hI', hzf'⟩ => ?_
       by_cases hlast : bN s₀ - (c + 1) = 0
-      · have : c + 1 = bN s₀ := by omega
+      · have : c + 1 = bN s₀ := by omega_using [hc, hlast]
         exact .inl ⟨by simp [eval, hzf', hlast], this ▸ hI'⟩
-      · exact .inr ⟨by simp [eval, hzf', hlast], bN s₀ - (c + 1), by omega, c + 1, rfl, by omega, hI'⟩
-    have hlt : c < bN s₀ := by have := hI₃.le; simp at h; omega
+      · exact .inr ⟨by simp [eval, hzf', hlast], bN s₀ - (c + 1), by omega_using [hc], c + 1, rfl, by omega_using [hlast], hI'⟩
+    have hlt : c < bN s₀ := by have := hI₃.le; simp at h; omega_using [h]
     exact WP.loop (M := isa) I1 hstep (bN s₀ - c) s₃ ⟨c, rfl, hlt, hI₃⟩
 
 end Loops

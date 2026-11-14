@@ -48,17 +48,17 @@ theorem half_ok {s₀ s : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀)
   · rw [rd, wr, hp.rd, hp.wr]
     refine ⟨bR s₀, by simp, ?_⟩
     simp only [bB, Memory.add_ofNat]
-    exact in_b hp (by cases odd <;> simp <;> omega)
+    exact in_b hp (by cases odd <;> simp <;> omega_using [hk])
   · rw [wr, hp.wr]
     refine ⟨yR s₀, by simp, ?_⟩
-    cases odd <;> exact in_y hp (by omega)
+    cases odd <;> exact in_y hp (by omega_using [hk])
   · rw [wr, hp.wr]
     exact ⟨scR s₀, by simp, by simpa only [BitVec.add_zero] using in_s s₀ (o := 0) (n := 64) (by decide)⟩
-  · cases odd <;> exact slot_s hp (by omega)
+  · cases odd <;> exact slot_s hp (by omega_using [hk])
   · simp only [bB, Memory.add_ofNat]
-    cases odd <;> exact (yb_disj hp (by omega) (by simp; omega)).symm
+    cases odd <;> exact (yb_disj hp (by omega_using [hk]) (by simp; omega_using [hk])).symm
   · simp only [bB, Memory.add_ofNat]
-    exact (hp.b_s.sub_left (b_sub hp (by cases odd <;> simp <;> omega))).sub_right
+    exact (hp.b_s.sub_left (b_sub hp (by cases odd <;> simp <;> omega_using [hk]))).sub_right
       (Region.sub_prefix (by decide))
 
 theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s : State} (h : Inv s₀ k s) :
@@ -72,12 +72,12 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s :
   obtain ⟨wb, bb, fb, mb, rb, wrb, spb⟩ := hb
   simp only [ite_true] at wb bb fb
   have baddr : bB s₀ k + BitVec.ofNat 64 64 = bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1)) := by
-    rw [bB, Memory.add_ofNat]; congr 2; omega
+    rw [bB, Memory.add_ofNat]; congr 2; omega_using []
   rw [baddr] at bb
   obtain ⟨ff, saved, done⟩ := mem_ok hp hk h.toLogical.old (core_frame fa) ba (core_frame fb) bb
   have logical : Logical s₀ (k + 1) b :=
-    ⟨by omega, rb.trans (ra.trans h.rd), wrb.trans (wra.trans h.wr), spb.trans (spa.trans h.rsp),
-      ff, saved, done, by show bytesAt b.mem (yO s₀ k) 64 = _; rw [(done k (by omega)).2]; rfl⟩
+    ⟨by omega_using [hk], rb.trans (ra.trans h.rd), wrb.trans (wra.trans h.wr), spb.trans (spa.trans h.rsp),
+      ff, saved, done, by show bytesAt b.mem (yO s₀ k) 64 = _; rw [(done k (by omega_using [])).2]; rfl⟩
   have hs : InRegions b.wr (sc s₀) 64 := by
     rw [logical.wr, hp.wr]; exact ⟨scR s₀, by simp, by simpa only [BitVec.add_zero] using in_s s₀ (o := 0) (n := 64) (by decide)⟩
   refine WP.mono (Retained.tail_ok wb.rsi hs mb) fun t ⟨ht, mt, hz⟩ => ?_
@@ -93,13 +93,13 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s :
     rw [Memory.add_ofNat]; congr 2
   have nextc : BitVec.ofNat 64 (rr s₀ - k) - 1 = BitVec.ofNat 64 (rr s₀ - (k + 1)) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub, Memory.toNat_ofNat_lt (by omega), Memory.toNat_ofNat_lt (by omega),
+    rw [BitVec.toNat_sub, Memory.toNat_ofNat_lt (by omega_using [lt]), Memory.toNat_ofNat_lt (by omega_using [lt]),
       show (1 : BitVec 64).toNat = 1 from rfl]
-    omega
+    omega_using [hk, lt]
   rw [nextb, nexte, nexto, nextc] at mt
   refine ⟨⟨logical.scratch hp ht.scratch ht.rd ht.wr (ht.keep _ (by decide)), ?_, mt⟩, hz⟩
   have mw := memWords_frame ht.scratch (p := yO s₀ k) (fun R hR => by
-    simp only [List.mem_singleton] at hR; subst R; exact slot_s hp (by omega))
+    simp only [List.mem_singleton] at hR; subst R; exact slot_s hp (by omega_using [hk]))
   change Words (sc s₀) (memWords t.mem (yO s₀ k)) t
   rw [mw]; exact wb.tail ht
 end VG.Proof.Scrypt.X86_64.BlockMix.Fused

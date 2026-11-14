@@ -143,7 +143,7 @@ theorem tagArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho
     · exact inMut_tagWr p ho _ (by simp))
   have hD : Dst p t₁ (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 o) (16 * 1) :=
     dstW L E₁.perm (q := o) (by rcases ho with rfl | rfl | rfl <;> decide)
-      (by rw [L.aW (by decide)]; exact Lay.w_w (.inr (by omega)) (by decide) (by omega))
+      (by rw [L.aW (by decide)]; exact Lay.w_w (.inr (by omega)) (by decide) (by omega_using [o₁]))
   exact ⟨t₁, run₁, hm₁, eax, ecx, edx, ebx, edi, si₁, rd₁, wr₁, f₁, E₁, hD⟩
 
 theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho : TagO o) :
@@ -152,7 +152,7 @@ theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o 
   have o₁ : o + 16 ≤ 2816 := by omega
   obtain ⟨t₁, run₁, ⟨hm₁, eax, ecx, edx, ebx, edi, si₁, rd₁, wr₁, f₁, E₁, hD⟩⟩ := tagArgs_ok L E ho
   have dO : (⟨w64 p.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 112, 16⟩ :=
-    Lay.w_w (by omega) (by omega) (by decide)
+    Lay.w_w (by omega) (by omega_using [o₁]) (by decide)
   have hb₁ : bytesAt t₁.mem (w64 p.W + BitVec.ofNat 64 112) 16 = bytesAt t.mem (w64 p.W + BitVec.ofNat 64 96) 16 := by
     rw [hm₁, Proof.Cmac.zero4, Proof.AesGcm.X86.bytesAt_frame (Proof.Cmac.frame_store4 _ _ _ _ _) (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact dO.symm) (by decide), copyMem_bytes]
@@ -164,14 +164,14 @@ theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl
       · exact (Lay.w_w (.inr (by decide)) (by decide) (by decide)).sub_left (Region.sub_prefix L.rounds_le)
-      · exact (Lay.w_w (.inr (by omega)) (by decide) (by omega)).sub_left (Region.sub_prefix L.rounds_le))
-      (by have := L.rounds_le; omega)]
+      · exact (Lay.w_w (.inr (by omega)) (by decide) (by omega_using [o₁])).sub_left (Region.sub_prefix L.rounds_le))
+      (by have := L.rounds_le; omega_using [this])]
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (callCtr_ok v L E₁ (keyS L E₁.perm) hD
-    (by rw [L.aW (by omega)]; exact inMut_tagWr p ho _ (by simp)) eax ecx edx ebx edi) fun t₂ P => ?_
+    (by rw [L.aW (by omega_using [o₁])]; exact inMut_tagWr p ho _ (by simp)) eax ecx edx ebx edi) fun t₂ P => ?_
   have fc := P.frame
   have hout := P.out
-  rw [L.aW (by omega)] at fc hout
+  rw [L.aW (by omega_using [o₁])] at fc hout
   refine ⟨P.env, by rw [P.rd, rd₁], by rw [P.wr, wr₁], by rw [P.saved _ (by decide), si₁],
     (f₁.mono fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq

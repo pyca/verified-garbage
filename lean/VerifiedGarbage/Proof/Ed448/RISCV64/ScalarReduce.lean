@@ -70,15 +70,15 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
   have e14 : s3.gpr .t3 = s.gpr .a1 := by
     rw [u3.gpr, hr2.gpr _ (by decide), u1.other _ (by decide)]
   have hwb : ∀ i < 114, ¬ (⟨s.gpr .a2, 8192⟩ : Region).Contains (s.gpr .a1 + BitVec.ofNat 64 i) 1 :=
-    fun i hi => hp.wide_ws _ (Offset.contains_base _ (by omega) (by omega))
+    fun i hi => hp.wide_ws _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   refine WP.seq (WP.mono (engine_ok rem_SR (N := 114) (by decide) (by decide) hc3 e14
-    (fun i hi => by rw [hr3.rd, hr3.wr]; exact in_base (List.mem_append_left _ hwide) (by omega) (by omega))
+    (fun i hi => by rw [hr3.rd, hr3.wr]; exact in_base (List.mem_append_left _ hwide) (by omega_using [hi]) (by omega_using [hi]))
     (fun i hi r hr => by
       simp only [RD, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact not_in_base (by omega) (hwb i hi))) fun s4 ⟨hr4, _, hv4⟩ => ?_)
+      rcases hr with rfl | rfl <;> exact not_in_base (by omega_arith) (hwb i hi))) fun s4 ⟨hr4, _, hv4⟩ => ?_)
   rw [hm3] at hv4
   refine WP.mono (finish_ok (hc3.of_rest hr4 (by decide)) (by rw [hr4.gpr _ (by decide), hr3.gpr _ (by decide)])
-    (by rw [hr4.wr, hr3.wr]; exact hout) (hp.out_ws.sub_right (base_sub _ (by omega))))
+    (by rw [hr4.wr, hr3.wr]; exact hout) (hp.out_ws.sub_right (base_sub _ (by omega_using [hS]))))
     fun t ⟨_, _, hb⟩ => by rw [hb, hv4]; rfl
 
 end VG.Proof.Ed448.RISCV64

@@ -160,7 +160,7 @@ theorem sext_cong {M V B : Nat} {t : Int} (hM : 0 < M) (hV : V < 2 * M)
     (hVt : (V : Int) % (2 * (M : Int)) = t % (2 * (M : Int)))
     (ht1 : -(M : Int) ≤ t) (ht2 : t < M) (hB : 1 ≤ B) :
     ((V + 2 * M * (if M ≤ V then B - 1 else 0) : Nat) : Int) % (2 * (M : Int) * B) = t % (2 * (M : Int) * B) := by
-  have e := Divstep.tc_eq (H := (M : Int)) (x := t) (W := V) (by omega) ht1 ht2 (by omega) (by omega) hVt
+  have e := Divstep.tc_eq (H := (M : Int)) (x := t) (W := V) (by omega_using [hM]) ht1 ht2 (by omega_using []) (by omega_using [hV]) hVt
   have sg := Divstep.tc_neg ht1 ht2 e
   by_cases h : t < 0
   · have hc : M ≤ V := by exact_mod_cast sg.mpr h
@@ -178,13 +178,13 @@ theorem lin_term_ext (m : Mem) (p : Addr) (d N : Nat) (hd : d + 8 * N + 8 ≤ 2 
     ((u.natAbs * (wvM m p d (mask (decide (u < 0))) N + 2 ^ (64 * N) * (S ^^^ mask (decide (u < 0))).toNat) +
         (if u < 0 then u.natAbs else 0) : Nat) : Int) % 2 ^ (64 * (N + 1)) =
       (u * (wv m p d N + 2 ^ (64 * N) * S.toNat : Nat)) % 2 ^ (64 * (N + 1)) := by
-  have o := writeW_outside m p S (d := d + 8 * N) (by omega)
+  have o := writeW_outside m p S (d := d + 8 * N) (by omega_using [hd])
   have e1 : wvM (m.writeW (off p (d + 8 * N)) S) p d (mask (decide (u < 0))) (N + 1) =
       wvM m p d (mask (decide (u < 0))) N + 2 ^ (64 * N) * (S ^^^ mask (decide (u < 0))).toNat := by
     simp only [wvM]
-    rw [word_writeW_self, wvM_congr fun i hi => o.word (by omega) (by omega)]
+    rw [word_writeW_self, wvM_congr fun i hi => o.word (by omega_using [hi]) (by omega_using [hd, hi])]
   have e2 : wv (m.writeW (off p (d + 8 * N)) S) p d (N + 1) = wv m p d N + 2 ^ (64 * N) * S.toNat :=
-    wv_writeW_top _ _ _ _ _ (by omega)
+    wv_writeW_top _ _ _ _ _ (by omega_using [hd])
   rw [← e1, ← e2]
   exact lin_term _ _ _ _ _
 
@@ -193,9 +193,9 @@ theorem ones_toNat {u v : Int} (hu : u.natAbs < 2 ^ 63) (hv : v.natAbs < 2 ^ 63)
     ((BitVec.ofNat 64 u.natAbs &&& mask (decide (u < 0))) + (BitVec.ofNat 64 v.natAbs &&& mask (decide (v < 0)))).toNat =
       (if u < 0 then u.natAbs else 0) + (if v < 0 then v.natAbs else 0) := by
   rw [BitVec.toNat_add, and_mask_toNat, and_mask_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show u.natAbs < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show v.natAbs < 2 ^ 64 by omega)]
+    Nat.mod_eq_of_lt (show u.natAbs < 2 ^ 64 by omega_using [hu]), Nat.mod_eq_of_lt (show v.natAbs < 2 ^ 64 by omega_using [hv])]
   simp only [decide_eq_true_eq]
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-- A row's sum, for the window holding `|u|`, `|v|` and their signs' masks: `u X + v Y` modulo
 `2^(64 N)`. -/
@@ -206,7 +206,7 @@ theorem sum_cong {R : Rw} {c₁ m₁ c₂ m₂ : Nat} {u v : Int} (h₁ : R.c c�
       (u * wv R.m R.B R.eA N + v * wv R.m R.B (R.eA + R.S) N) % 2 ^ (64 * N) := by
   unfold Rw.sum
   rw [h₁, h₂, hm₁, hm₂, ones_toNat hu hv, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show u.natAbs < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show v.natAbs < 2 ^ 64 by omega)]
+    Nat.mod_eq_of_lt (show u.natAbs < 2 ^ 64 by omega_using [hu]), Nat.mod_eq_of_lt (show v.natAbs < 2 ^ 64 by omega_using [hv])]
   have e1 := lin_term R.m R.B R.eA N u
   have e2 := lin_term R.m R.B (R.eA + R.S) N v
   have key : ((u.natAbs * wvM R.m R.B R.eA (mask (decide (u < 0))) N +
@@ -248,7 +248,7 @@ theorem sum_mod64 (R : Rw) (c₁ m₁ c₂ m₂ : Nat) : ∀ j, 1 ≤ j →
   | 0, h => absurd h (by decide)
   | 1, _ => rfl
   | j + 2, _ => by
-    rw [Rw.sum_succ, ← sum_mod64 R c₁ m₁ c₂ m₂ (j + 1) (by omega), pow64_succ, Nat.mul_assoc,
+    rw [Rw.sum_succ, ← sum_mod64 R c₁ m₁ c₂ m₂ (j + 1) (by omega_using []), pow64_succ, Nat.mul_assoc,
       Nat.mul_left_comm, Nat.add_mul_mod_self_left]
 
 /-- A number of `n + 1` words with its sign word above it: congruent to `x` modulo `2^(64 (n + 2))`
@@ -284,10 +284,10 @@ theorem sg_cong {R : Rw} {c₁ m₁ c₂ m₂ : Nat} {u v : Int} (h₁ : R.c c�
         2 ^ (64 * (R.n + 1 + 1)) := by
   unfold Rw.sum Rw.sg
   rw [h₁, h₂, hm₁, hm₂, ones_toNat hu hv, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show u.natAbs < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show v.natAbs < 2 ^ 64 by omega)]
-  have e1 := lin_term_ext R.m R.B R.eA (R.n + 1) (by omega) u
+    Nat.mod_eq_of_lt (show u.natAbs < 2 ^ 64 by omega_using [hu]), Nat.mod_eq_of_lt (show v.natAbs < 2 ^ 64 by omega_using [hv])]
+  have e1 := lin_term_ext R.m R.B R.eA (R.n + 1) (by omega_using [hz]) u
     (BitVec.setWidth 64 (0 : BitVec 32) - word R.m R.B (R.eA + 8 * R.n) >>> 63)
-  have e2 := lin_term_ext R.m R.B (R.eA + R.S) (R.n + 1) (by omega) v
+  have e2 := lin_term_ext R.m R.B (R.eA + R.S) (R.n + 1) (by omega_using [hz]) v
     (BitVec.setWidth 64 (0 : BitVec 32) - word R.m R.B (R.eA + R.S + 8 * R.n) >>> 63)
   have key : ((u.natAbs * wvM R.m R.B R.eA (mask (decide (u < 0))) (R.n + 1) +
       v.natAbs * wvM R.m R.B (R.eA + R.S) (mask (decide (v < 0))) (R.n + 1) +
@@ -335,7 +335,7 @@ theorem ab_val {R : Rw} {c₁ m₁ c₂ m₂ D p mi : Nat} {u v a b : Int}
     exact Divstep.cong_comb ha hb
   have hk : R.kv c₁ m₁ c₂ m₂ = W % 2 ^ 64 * mi % 2 ^ 64 := by
     rw [Rw.kv, hmi, hW, Nat.mod_mod_of_dvd _ (by rw [eAB]; exact Nat.dvd_mul_left _ _), hS,
-      sum_mod64 _ _ _ _ _ (R.n + 1) (by omega)]
+      sum_mod64 _ _ _ _ _ (R.n + 1) (by omega_using [])]
   -- `D = E / 2^64`
   have hDE : D = (W + 2 ^ (64 * R.n) * 2 ^ 64 * (if 2 ^ (64 * R.n) * 2 ^ 63 ≤ W then 2 ^ 64 - 1 else 0) +
       R.kv c₁ m₁ c₂ m₂ * p) % (2 ^ (64 * R.n) * 2 ^ 64 * 2 ^ 64) / 2 ^ 64 := by
@@ -542,24 +542,24 @@ theorem abs4_ok {s : State} {B : Addr} {Z eW : Nat} (hs : Scr s B Z) (hdi : s.gp
       Frm B [(eW, 96)] s.mem t.mem ∧ Keep [.rax, .rcx, .rdx] s t := by
   have hN := hs.nowrap
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (absS_ok hs hdi (by unfold oU; omega) (by unfold oMu; omega)) fun s₁ ⟨m₁, k₁⟩ => ?_
-  refine WP.mono (absS_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) (by unfold oV; omega)
-    (by unfold oMv; omega)) fun s₂ ⟨m₂, k₂⟩ => ?_
+  refine WP.mono (absS_ok hs hdi (by unfold oU; omega_using [hW]) (by unfold oMu; omega_using [hW])) fun s₁ ⟨m₁, k₁⟩ => ?_
+  refine WP.mono (absS_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) (by unfold oV; omega_using [hW])
+    (by unfold oMv; omega_using [hW])) fun s₂ ⟨m₂, k₂⟩ => ?_
   refine WP.mono (absS_ok (hs.congr (k₂.2.2.trans k₁.2.2)) (((k₁.trans k₂).gpr (by decide)).trans hdi)
-    (by unfold oQ; omega) (by unfold oMq; omega)) fun s₃ ⟨m₃, k₃⟩ => ?_
+    (by unfold oQ; omega_using [hW]) (by unfold oMq; omega_using [hW])) fun s₃ ⟨m₃, k₃⟩ => ?_
   refine WP.mono (absS_ok (hs.congr ((k₁.trans k₂).trans k₃).2.2) ((((k₁.trans k₂).trans k₃).gpr (by decide)).trans hdi)
-    (by unfold oR; omega) (by unfold oMr; omega)) fun t ⟨m₄, k₄⟩ => ?_
+    (by unfold oR; omega_using [hW]) (by unfold oMr; omega_using [hW])) fun t ⟨m₄, k₄⟩ => ?_
   rw [m₄, m₃, m₂, m₁]
   simp only [oU, oV, oQ, oR, oMu, oMv, oMq, oMr, oD, oMi] at *
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ((k₁.trans k₂).trans (k₃.trans k₄)).mono (by decide)⟩
   all_goals first
     | (intro x hx
        simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq] at hx
-       rw [writeW_outside _ B _ (d := eW + 56) (by omega) x (by omega), writeW_outside _ B _ (d := eW + 8) (by omega) x (by omega),
-         writeW_outside _ B _ (d := eW + 48) (by omega) x (by omega), writeW_outside _ B _ (d := eW + 0) (by omega) x (by omega),
-         writeW_outside _ B _ (d := eW + 40) (by omega) x (by omega), writeW_outside _ B _ (d := eW + 72) (by omega) x (by omega),
-         writeW_outside _ B _ (d := eW + 32) (by omega) x (by omega), writeW_outside _ B _ (d := eW + 64) (by omega) x (by omega)])
-    | (simp (disch := omega) only [word_writeW_self, wW] <;> rfl)
+       rw [writeW_outside _ B _ (d := eW + 56) (by omega_using [hW, hN]) x (by omega_using [hx]), writeW_outside _ B _ (d := eW + 8) (by omega_using [hW, hN]) x (by omega_using [hx]),
+         writeW_outside _ B _ (d := eW + 48) (by omega_using [hW, hN]) x (by omega_using [hx]), writeW_outside _ B _ (d := eW + 0) (by omega_using [hW, hN]) x (by omega_using [hx]),
+         writeW_outside _ B _ (d := eW + 40) (by omega_using [hW, hN]) x (by omega_using [hx]), writeW_outside _ B _ (d := eW + 72) (by omega_using [hW, hN]) x (by omega_using [hx]),
+         writeW_outside _ B _ (d := eW + 32) (by omega_using [hW, hN]) x (by omega_using [hx]), writeW_outside _ B _ (d := eW + 64) (by omega_using [hW, hN]) x (by omega_using [hx])])
+    | (simp (disch := omega_arith) only [word_writeW_self, wW] <;> rfl)
 
 /-- A batch's first block: the divsteps, then the coefficients' magnitudes and masks. -/
 theorem first_ok {s : State} {B : Addr} {Z w n p mi : Nat} (L : Lay B Z w n) {I : Divstep.IState}
@@ -641,7 +641,7 @@ theorem Win.R59 {B : Addr} {w : Nat} {u v q r : Int} {s : State} (h : Win B w u 
   have := abs_nonneg q; linarith [h.hqr]
 
 theorem tN {x : Int} (h : |x| ≤ 2 ^ 59) : (BitVec.ofNat 64 x.natAbs).toNat = x.natAbs := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := natAbs_lt h; omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := natAbs_lt h; omega_using [this])]
 
 /-- `fgRow` in a batch: `(f, g) := (u f + v g, q f + r g) / 2^59`. -/
 theorem fgPart_ok {s : State} {B : Addr} {Z w n : Nat} (L : Lay B Z w n) (hs : Scr s B Z)

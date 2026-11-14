@@ -34,7 +34,7 @@ theorem prepared_step {s t : State} (A : KeyABI s) (h : Ready s t) (hc : checked
   refine ⟨⟨(slot v.mem (rBase s) oDraws).toNat, ?_⟩, ?_⟩
   · exact ⟨hv, by rw [fv.mem]; exact prepared.q, by rw [fv.mem]; exact prepared.width,
       by rw [fv.mem]; exact prepared.mask, usedV, by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      fun i hi => by rw [fv.mem]; exact prepared.nonce i (by omega), Nat.zero_le _⟩
+      fun i hi => by rw [fv.mem]; exact prepared.nonce i (by omega_using [hql, hi]), Nat.zero_le _⟩
   · rw [z]; rfl
 
 theorem generateWith_ct {I : State → Mem → Prop} (F : DeriveInvoke I)

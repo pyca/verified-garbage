@@ -69,7 +69,7 @@ theorem witness_ok {s : State} {B : Addr} {Z w c u : Nat} (h : Env s B Z w)
     rw [← hx, ← Pre.val32_eq_wv, ← Pre.val32_eq_wv]
     exact o₁.val32 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> rw [slot_lin, slot_lin] <;> omega) (by rw [slot_lin]; omega)
+      rcases hr with rfl | rfl <;> simp only [] <;> rw [slot_lin, slot_lin] <;> omega_using []) (by rw [slot_lin]; omega_using [hw128])
   refine WP.seq (WP.mono (forced_ok e₁) fun t₂ ⟨⟨f3, z3, o₂, e₂⟩, k₂⟩ => ?_)
   rw [hx₁] at f3
   have r21₂ : t₂.gpr .r21 = BitVec.ofNat 64 (if P then 1 else 0) := by
@@ -87,32 +87,32 @@ theorem witness_ok {s : State} {B : Addr} {Z w c u : Nat} (h : Env s B Z w)
   have e₅ := e₄.keep k₅ (by decide)
   have r21₅ : t₅.gpr .r21 = BitVec.ofNat 64 (if P then 1 else 0) := by
     rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), r21₂]
-  have s3 : 256 ≤ slot w 3 := by rw [slot_lin]; omega
-  have s4 : 256 ≤ slot w 4 := by rw [slot_lin]; omega
-  have s6 : 256 ≤ slot w 6 := by rw [slot_lin]; omega
+  have s3 : 256 ≤ slot w 3 := by rw [slot_lin]; omega_using []
+  have s4 : 256 ≤ slot w 4 := by rw [slot_lin]; omega_using []
+  have s6 : 256 ≤ slot w 6 := by rw [slot_lin]; omega_using []
   have u₅ : VG.Proof.Mont.word t₅.mem B (8 * hUni) = BitVec.ofNat 64 u := by
     simp only [hUni] at hu ⊢
-    rw [o₅.word (by omega) (by omega), o₄.word (by omega) (by omega), m₃, o₂.word (by omega) (by omega),
+    rw [o₅.word (by omega_using [s4]) (by omega_using []), o₄.word (by omega_using [s6]) (by omega_using []), m₃, o₂.word (by omega_using [s3]) (by omega_using []),
       VG.Proof.Mont.Outs.word o₁ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> simp only [] <;> omega) (by omega), hu]
+        rcases hr with rfl | rfl <;> simp only [] <;> omega_arith) (by omega_using []), hu]
   have hs₅ := e₅.hs
   refine WP.mono (WP.keep [.r3] (Q := fun t => t.mem = t₅.mem.writeW (VG.Proof.Mont.off B (8 * hUni))
       (BitVec.ofNat 64 (u + if P then 1 else 0))) (by
     simp only [ldh, sth, hUni] at u₅ ⊢
-    prun [e₅.h31, u₅, r21₅, hs₅.ld (d := 16) (n := 8) (by omega), hs₅.st (d := 16) (n := 8) (by omega),
+    prun [e₅.h31, u₅, r21₅, hs₅.ld (d := 16) (n := 8) (by omega_using [hZ]), hs₅.st (d := 16) (n := 8) (by omega_using [hZ]),
       BitVec.ofNat_add_ofNat]) (by decide)) fun t ⟨tm, kt⟩ => ?_
   have K := ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans kt
   have hm4 : VG.Proof.Mont.val32 t₃.mem B (slot w 4) (2 * w) = x := by
     rw [m₃, Pre.val32_eq_wv, ← hx₁, ← Pre.val32_eq_wv, ← Pre.val32_eq_wv]
-    exact o₂.val32 (by rw [slot_lin, slot_lin]; omega) (by rw [slot_lin]; omega)
+    exact o₂.val32 (by rw [slot_lin, slot_lin]; omega_using []) (by rw [slot_lin]; omega_using [hw128])
   have hm3 : VG.Proof.Mont.val32 t₃.mem B (slot w 3) (2 * w) = (x ||| 2) % 2 ^ (64 * w - 1) := by
     rw [m₃, Pre.val32_eq_wv, f3]
   refine ⟨⟨?_, ?_, e₅.keep kt (by decide), ?_⟩, K.mono (by simp [witRegs, uniRegs, fdRegs,
     VG.Proof.MillerRabin.PPC64LE.selRegs, VG.Proof.MillerRabin.PPC64LE.copyRegs])⟩
   · show VG.Proof.Mont.val32 t.mem B (slot w 4) (2 * w) = _
-    rw [tm, (VG.Proof.Mont.writeW_outside t₅.mem B (d := 8 * hUni) _ (by simp only [hUni]; omega)).val32
-      (by simp only [hUni]; omega) (by rw [slot_lin]; omega)]
+    rw [tm, (VG.Proof.Mont.writeW_outside t₅.mem B (d := 8 * hUni) _ (by simp only [hUni]; omega_using [])).val32
+      (by simp only [hUni]; omega_using [s4]) (by rw [slot_lin]; omega_using [hw128])]
     show arr t₅.mem B w 4 = _
     rw [v₅]; show VG.Proof.Mont.val32 t₄.mem B (slot w 6) (2 * w) = _
     rw [v₄, hm4, hm3]
@@ -120,10 +120,10 @@ theorem witness_ok {s : State} {B : Addr} {Z w c u : Nat} (h : Env s B Z w)
   · intro y hy
     simp only [witRanges, hUni, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hy
     obtain ⟨y1, y3, y4, y6⟩ := hy
-    rw [tm, VG.Proof.Mont.writeW_outside t₅.mem B (d := 8 * hUni) _ (by simp only [hUni]; omega) y
-      (by simp only [hUni]; omega), o₅ y y4, o₄ y y6, m₃,
-      o₂ y (by omega), o₁ y (fun r hr => by
+    rw [tm, VG.Proof.Mont.writeW_outside t₅.mem B (d := 8 * hUni) _ (by simp only [hUni]; omega_using []) y
+      (by simp only [hUni]; omega_using [y1]), o₅ y y4, o₄ y y6, m₃,
+      o₂ y (by omega_using [y3]), o₁ y (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> simp only [] <;> omega)]
+        rcases hr with rfl | rfl <;> simp only [] <;> omega_arith)]
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

@@ -137,9 +137,9 @@ theorem addA_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {f
   have w (x : State) (h : MidRun R₀ base kp sp T A fA fB top p x) : WP isa (.block (digitAt 0)) x fun u =>
       u.gpr .rdi = base ∧ u.gpr .rbx = BitVec.ofNat 64 (fA p) ∧ u.zf = some (decide (fA p = 0)) := by
     obtain ⟨_, _, h⟩ := h
-    refine WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter)
+    refine WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega_using [hp, this]) (by decide) h.counter)
       fun u ⟨ub, uz, ku⟩ => ?_
-    rw [(h.digits p (by have := hdg.top; omega)).1] at ub uz
+    rw [(h.digits p (by have := hdg.top; omega_using [hp, this])).1] at ub uz
     exact ⟨(ku.1 _ (by decide)).trans h.ctx.scratch.rdi, ub, uz⟩
   refine seq_same (digitAt_ct 0 (by decide) fun x h => by obtain ⟨_, _, h⟩ := h; exact ⟨h.ctx.scratch, h.counter⟩) w ?_
   rw [addDigit]
@@ -158,9 +158,9 @@ theorem addB_ct {badd : Prog isa}
   have w (x : State) (h : HalfRun R₀ base kp sp T A fA fB top p x) : WP isa (.block (digitAt 1)) x
       (BasePre base T (fB p)) := by
     obtain ⟨_, _, h⟩ := h
-    refine WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter)
+    refine WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega_using [hp, this]) (by decide) h.counter)
       fun u ⟨ub, uz, ku⟩ => ?_
-    rw [(h.digits p (by have := hdg.top; omega)).2] at ub uz
+    rw [(h.digits p (by have := hdg.top; omega_using [hp, this])).2] at ub uz
     have kw : WinKeep base x u := WinKeep.of_keeps ku (by decide)
     have hu := h.ctx.of_keep kw
     exact ⟨hu.scratch, hu.bHeader, ub, uz, hdg.b p⟩
@@ -177,9 +177,9 @@ theorem addsAt_ct {badd : Prog isa}
   have w (x : State) (h : MidRun R₀ base kp sp T A fA fB top p x) : WP isa (.block (digitAt 1)) x fun u =>
       u.zf = some (decide (fB p = 0)) ∧ MidRun R₀ base kp sp T A fA fB top p u := by
     obtain ⟨s₀, r₀, h⟩ := h
-    refine WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter)
+    refine WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega_using [hp, this]) (by decide) h.counter)
       fun u ⟨_, uz, ku⟩ => ?_
-    rw [(h.digits p (by have := hdg.top; omega)).2] at uz
+    rw [(h.digits p (by have := hdg.top; omega_using [hp, this])).2] at uz
     exact ⟨uz, s₀, r₀, h.of_byte (ByteKeep.of_keeps ku (by decide)) (fun i _ => by rw [ku.2.1])
       (by rw [ku.2.1])⟩
   refine VG.RelCT.seq (R := fun (x y : State) => (x.zf = some (decide (fB p = 0)) ∧
@@ -206,8 +206,8 @@ theorem dblAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {
   have w (x : State) (h : AtRun R₀ base kp sp T A fA fB (winVal A fA fB top (p + 1)) p x) :
       WP isa (.block digitsAt) x fun u => u.gpr .rdi = base ∧ u.zf = some (decide (fA p = 0 ∧ fB p = 0)) := by
     obtain ⟨_, _, h⟩ := h
-    refine WP.mono (digitsAt_ok h.ctx.scratch (by have := hdg.top; omega) h.counter) fun u ⟨uz, ku⟩ => ?_
-    rw [(h.digits p (by have := hdg.top; omega)).1, (h.digits p (by have := hdg.top; omega)).2] at uz
+    refine WP.mono (digitsAt_ok h.ctx.scratch (by have := hdg.top; omega_using [hp, this]) h.counter) fun u ⟨uz, ku⟩ => ?_
+    rw [(h.digits p (by have := hdg.top; omega_using [hp, this])).1, (h.digits p (by have := hdg.top; omega_using [hp, this])).2] at uz
     exact ⟨(ku.1 _ (by decide)).trans h.ctx.scratch.rdi, uz⟩
   rw [dblAt]
   refine seq_same (digitsAt_ct fun x h => by obtain ⟨_, _, h⟩ := h; exact ⟨h.ctx.scratch, h.counter⟩) w ?_
@@ -247,8 +247,8 @@ theorem skipTop_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
     rw [WP.block_append_iff]
     refine WP.mono (batchBegin_ok hl.ctx.scratch p hl.counter) fun a ⟨_, ac, ag, ar, aw, am⟩ => ?_
     have ka : ByteKeep base x a := ⟨fun r _ hb _ => ag r hb, ar, aw, am.mono (by decide) (by decide)⟩
-    refine WP.mono (digitsAt_ok (ka.scratch hl.ctx.scratch) (by have := hdg.top; omega) ac) fun u ⟨uz, ku⟩ => ?_
-    have hd := hl.digits.of_byte ka.mem p (by have := hdg.top; omega)
+    refine WP.mono (digitsAt_ok (ka.scratch hl.ctx.scratch) (by have := hdg.top; omega_using [hle, this]) ac) fun u ⟨uz, ku⟩ => ?_
+    have hd := hl.digits.of_byte ka.mem p (by have := hdg.top; omega_using [hle, this])
     rw [hd.1, hd.2] at uz
     exact ⟨(ku.1 _ (by decide)).trans (ka.scratch hl.ctx.scratch).rdi, uz⟩
   rw [skipTop]
@@ -278,7 +278,7 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
       obtain ⟨s₀, r₀, h⟩ := h
       have hle := h.le
       exact WP.mono (skipTop_ok hdg h) fun u ⟨uz, ut, uf⟩ =>
-        ⟨uz, fun ht => ⟨⟨s₀, r₀, ut ht⟩, by omega⟩, fun hf => ⟨s₀, r₀, uf hf⟩⟩
+        ⟨uz, fun ht => ⟨⟨s₀, r₀, ut ht⟩, by omega_using [hle]⟩, fun hf => ⟨s₀, r₀, uf hf⟩⟩
     refine (VG.RelCT.wp (skipTop_ct (p := p) hdg) fun x y h => ⟨hw x h.1, hw y h.2⟩).mono (fun _ _ h => h) ?_
     intro x y ⟨_, ⟨xz, xt, xf⟩, ⟨yz, yt, yf⟩⟩
     have ex : isa.eval .ne x = some (!skipStops fA fB p) := by
@@ -291,7 +291,7 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
       exact ⟨p, (xt hs).2, (xt hs).1, (yt hs).1⟩
     · have hs : skipStops fA fB p = false := by
         rw [ex] at he; simpa using he
-      exact ⟨p, by omega, xf hs, yf hs⟩
+      exact ⟨p, by omega_using [], xf hs, yf hs⟩
   -- From the position the skipping stopped at.
   refine VG.RelCT.exists_ fun p => ?_
   refine (VG.RelCT.exists_ (P := fun (_ : p ≤ top) x y => MidRun R₀ base kp sp T A fA fB top p x ∧
@@ -301,7 +301,7 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
   have wt (x : State) (h : LoopRun R₀ base kp sp T A fA fB top p x) : WP isa (.block batchTest) x fun u =>
       u.zf = some (decide (p = 0)) ∧ LoopRun R₀ base kp sp T A fA fB top p u := by
     obtain ⟨s₀, r₀, hb⟩ := h
-    refine WP.mono (counterTest_ok hb.ctx.scratch (by have := hdg.top; omega) hb.counter) fun c ⟨cz, kc⟩ => ?_
+    refine WP.mono (counterTest_ok hb.ctx.scratch (by have := hdg.top; omega_using [hp, this]) hb.counter) fun c ⟨cz, kc⟩ => ?_
     have kc' := ByteKeep.of_keeps (base := base) kc (by decide)
     exact ⟨cz, s₀, r₀, hb.ctx.of_byte kc', by rw [kc.2.1]; exact hb.d, by rw [kc.2.1]; exact hb.counter,
       by rw [kc.2.1]; exact hb.digits, by rw [kc.2.1]; exact hb.value, hb.keep.trans kc'⟩
@@ -316,7 +316,7 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
     rw [ec x h.1.1.1] at h
     have := h.2
     simp only [Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at this
-    omega
+    omega_using [this]
   refine (VG.RelCT.loop (M := isa) (fun n x y => LoopRun R₀ base kp sp T A fA fB top n x ∧
     LoopRun R₀ base kp sp T A fA fB top n y ∧ 0 < n ∧ n ≤ top) ?_ p).mono
     (fun x y h => ⟨h.1.1.2, h.1.2.2, hp0 x y h, hp⟩) (fun _ _ h => h)
@@ -329,16 +329,16 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
   have ws (x : State) (h : LoopRun R₀ base kp sp T A fA fB top (m + 1) x) : WP isa (stepAt fld (Point64.bodies fld)) x fun u =>
       u.zf = some (decide (m = 0)) ∧ LoopRun R₀ base kp sp T A fA fB top m u := by
     obtain ⟨s₀, r₀, h⟩ := h
-    exact WP.mono (stepAt_ok hdg (by omega) h) fun u ⟨uz, hu⟩ => ⟨uz, s₀, r₀, hu⟩
-  refine (VG.RelCT.wp (stepAt_ct hdg (by omega)) fun x y h => ⟨ws x h.1, ws y h.2⟩).mono
+    exact WP.mono (stepAt_ok hdg (by omega_using [hm]) h) fun u ⟨uz, hu⟩ => ⟨uz, s₀, r₀, hu⟩
+  refine (VG.RelCT.wp (stepAt_ct hdg (by omega_using [hm])) fun x y h => ⟨ws x h.1, ws y h.2⟩).mono
     (fun x y h => ⟨h.1, h.2.1⟩) ?_
   have em (x : State) (h : x.zf = some (decide (m = 0))) : isa.eval .ne x = some (!decide (m = 0)) := by
     show eval .ne x = _; simp only [eval, h, Option.map_some]
   intro x y ⟨_, ⟨xz, xl⟩, ⟨yz, yl⟩⟩
-  refine ⟨(em x xz).trans (em y yz).symm, fun _ => trivial, fun he => ⟨m, by omega, xl, yl, ?_, by omega⟩⟩
+  refine ⟨(em x xz).trans (em y yz).symm, fun _ => trivial, fun he => ⟨m, by omega_using [], xl, yl, ?_, by omega_using [hm]⟩⟩
   rw [em x xz] at he
   simp only [Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at he
-  omega
+  omega_using [he]
 
 instance : EdWindows (windowsWith fld (Point64.bodies fld)) where
   ok hdg h := windows_ok hdg h

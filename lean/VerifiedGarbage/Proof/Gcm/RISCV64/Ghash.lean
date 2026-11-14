@@ -78,7 +78,7 @@ theorem be8 (z : BitVec 64) :
   simp only [Proof.Gcm.toNat_append, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight,
     Nat.shiftRight_eq_div_pow]
   have := z.isLt
-  omega
+  omega_using []
 
 /-- A block, as the two words `loadBE64` reads. -/
 theorem blockAt_hOf (m : Mem) (p : Addr) : blockAt m p = hOf m p := by
@@ -100,7 +100,7 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {zs : List Byte} {n : Nat} 
   subst hn
   refine List.ext_getElem (by simp [Spec.Aes.bytesAt]) fun i h₁ h₂ => ?_
   simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-    Mem.sub_ofNat_toNat q (show i < 2 ^ 64 by simp [Spec.Aes.bytesAt] at h₁; omega)]
+    Mem.sub_ofNat_toNat q (show i < 2 ^ 64 by simp [Spec.Aes.bytesAt] at h₁; omega_using [h, h₂])]
   simp [Spec.Aes.bytesAt] at h₁
   simp [h₁, List.getD_eq_getElem?_getD]
 

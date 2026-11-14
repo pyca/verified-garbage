@@ -74,7 +74,7 @@ theorem zx_shift (x : BitVec 64) : x <<< 32 >>> 32 = zx x := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
     Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem and24_ok (s : State) :
     WP isa (.block and24) s fun s' => s'.gpr .a0 = zx (s.gpr .a0) ∧ s'.gpr .s4 = s.gpr .s4 &&& zx (s.gpr .a0) ∧

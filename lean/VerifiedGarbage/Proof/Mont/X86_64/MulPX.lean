@@ -219,7 +219,7 @@ theorem PtrC.of_store {s s' : State} {r : Reg} {base : Addr} {size c : Nat} (hp 
 theorem ScrC.toPtr {s : State} {base : Addr} {size c : Nat} (hs : ScrC s base size c) :
     PtrC s .rdi base size c :=
   ⟨hs.rdi, ⟨_, List.mem_append_right _ hs.wr, fun _ hd =>
-    Offset.contains_base base hd (by have := hs.nowrap; omega)⟩, hs.nowrap, Or.inl rfl⟩
+    Offset.contains_base base hd (by have := hs.nowrap; omega_using [hd, this])⟩, hs.nowrap, Or.inl rfl⟩
 
 theorem ea_rcR {s : State} {r : Reg} {base : Addr} {size c : Nat} (hp : PtrC s r base size c) (d : Nat) :
     s.ea (rcR r c d) = off base d := by
@@ -480,7 +480,7 @@ theorem xRowR_ok {s : State} {base bB : Addr} {size zB c₀ : Nat} (hs : ScrC s 
   have hnw := hs.nowrap
   obtain ⟨hia, hic, hid, hii, -⟩ := xAcc_ne i
   obtain ⟨hja, hjc, hjd, hji, -⟩ := xAcc_ne (i + 1)
-  have hij : xAcc i ≠ xAcc (i + 1) := xAcc_ne_of (by omega) (by omega)
+  have hij : xAcc i ≠ xAcc (i + 1) := xAcc_ne_of (by omega_using []) (by omega_using [])
   rw [xRowR, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
   have d₁ : s.gpr .rdx = v := hdx
   have k₁ : Keeps [.rdx] s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
@@ -620,7 +620,7 @@ theorem xRowR_inv {s₀ s : State} {base bA bB : Addr} {size zB c₀ : Nat} (hsS
     have hnw := hsS.nowrap
     have hA : (word s.mem bA (a + 8 * n)) = word s₀.mem bA (a + 8 * n) :=
       O.word' hat
-    have hBv : wordsVal s.mem bB b 9 = wordsVal s₀.mem bB b 9 := O.wordsVal' (hbt.mono (Nat.le_refl _) (by omega))
+    have hBv : wordsVal s.mem bB b 9 = wordsVal s₀.mem bB b 9 := O.wordsVal' (hbt.mono (Nat.le_refl _) (by omega_using [hn]))
     have hAn : wordsVal s₀.mem bA a n < (2 ^ 64) ^ n := by
       rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ _
     have hBlt : wordsVal s₀.mem bB b 9 < (2 ^ 64) ^ 9 := by
@@ -644,11 +644,11 @@ theorem xRowR_inv {s₀ s : State} {base bA bB : Addr} {size zB c₀ : Nat} (hsS
             2 ^ 64 * wordsVal s₀.mem bB b 9 := by
           rw [← Nat.succ_mul]
         rw [this, show (2 ^ 64) ^ 10 = 2 ^ 64 * (2 ^ 64) ^ 9 by rw [pow64_succ']]
-        have := Nat.mul_le_mul_left (2 ^ 64) (show wordsVal s₀.mem bB b 9 + 1 ≤ (2 ^ 64) ^ 9 by omega)
-        omega
-      omega
-    refine WP.mono (xRowR_ok hsS hpb n (hdx.trans hA.symm) (by omega) (by omega) (hbt.mono (by omega) (by omega)) hrow)
-      fun s' ⟨e', k', O'⟩ => ⟨k', (O.mono (Nat.le_refl _) (by omega)).trans (O'.mono (by omega) (by omega)), ?_⟩
+        have := Nat.mul_le_mul_left (2 ^ 64) (show wordsVal s₀.mem bB b 9 + 1 ≤ (2 ^ 64) ^ 9 by omega_using [hBlt])
+        omega_using [hBlt]
+      omega_arith
+    refine WP.mono (xRowR_ok hsS hpb n (hdx.trans hA.symm) (by omega_using [hb]) (by omega_using [ht, hn]) (hbt.mono (by omega_using []) (by omega_using [hn])) hrow)
+      fun s' ⟨e', k', O'⟩ => ⟨k', (O.mono (Nat.le_refl _) (by omega_using [])).trans (O'.mono (by omega_using []) (by omega_using [])), ?_⟩
     rw [hA, hBv] at e'
     rw [wordsVal_succ_last s'.mem, wordsVal_succ_last s₀.mem bA a, O'.wordsVal (by omega_arith) (by omega_arith),
       pow64_succ', Nat.mul_comm (2 ^ 64), Nat.mul_assoc, Nat.add_assoc, ← Nat.mul_add, e',
@@ -674,7 +674,7 @@ theorem xRow_inv {s₀ s : State} {base bA bB : Addr} {size zA zB c₀ : Nat} (h
     have hA : (word s.mem bA (a + 8 * n)) = word s₀.mem bA (a + 8 * n) :=
       O.word' hat
     rw [xRow_eq, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (movRdx_ok s (readSrc_rcR (hpa.of_keepRegs k (by rows_sub)) (d := a + 8 * n) (by omega)))
+    refine WP.mono (movRdx_ok s (readSrc_rcR (hpa.of_keepRegs k (by rows_sub)) (d := a + 8 * n) (by omega_using [ha, hn])))
       fun s₁ ⟨d₁, _, _, k₁⟩ => ?_
     have hx : ∀ c, xg s₁ c = xg s c := fun c => by
       simp only [xg]; rw [k₁.1 _ (by simpa using (xAcc_ne c).2.2.1)]
@@ -1176,15 +1176,15 @@ theorem xRows_ok {s₀ : State} {base bA bB : Addr} {size zA zB c₀ : Nat} (hs 
         wordsVal s₀.mem bA a (n + 1) * wordsVal s₀.mem bB b 9
   | 0, _ => by
     rw [show (List.range (0 + 1)).flatMap (xRowV M ra rb c₀ a b) = xRow0 M ra rb c₀ a b by simp [xRowV]]
-    refine WP.mono (xRow0_ok hs hpa hpb (by omega) hb (by omega) (hbt.mono (by omega) (by omega)))
+    refine WP.mono (xRow0_ok hs hpa hpb (by omega_using [ha]) hb (by omega_using [ht]) (hbt.mono (by omega_using []) (by omega_using [])))
       fun s ⟨e, k, O⟩ => ⟨k, O, ?_⟩
     simp only [wordsVal, Nat.mul_zero, Nat.add_zero, Nat.pow_one, Nat.zero_add]
     exact e
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (xRows_ok hs hpa hpb ha hb ht hat hbt n (by omega)) fun s ⟨k, O, e⟩ => ?_
-    rw [xRowV, ite_eq_right_iff.mpr (fun h => absurd h (by omega))]
-    exact xRow_inv hs hpa hpb ha hb ht hbt (by omega) (hat (n + 1) (by omega)) k O e
+    refine WP.mono (xRows_ok hs hpa hpb ha hb ht hat hbt n (by omega_using [hn])) fun s ⟨k, O, e⟩ => ?_
+    rw [xRowV, ite_eq_right_iff.mpr (fun h => absurd h (by omega_using []))]
+    exact xRow_inv hs hpa hpb ha hb ht hbt (by omega_using [hn]) (hat (n + 1) (by omega_using [hn])) k O e
 
 /-- The words `10 … 17` of the accumulator. -/
 def xHi : List Reg := (List.range 8).map fun k => xAcc (10 + k)
@@ -1329,10 +1329,10 @@ theorem mulPX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [WP.block_append_iff]
   refine WP.mono (rdiAdd_ok hs (cOf_lt b)) fun s₁ ⟨hs₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (xRows_ok hs₁ hs₁.toPtr hs₁.toPtr (M := M) (a := a) (b := b) (by omega) (by omega)
-    (by omega) (fun n hn => (((Apart.of_sep base (by omega) (by omega) : Apart base a 72 base M.tmp 72).sub
-      (by omega) (by omega)).mono (Nat.le_refl _) (by omega)))
-    (Apart.of_sep base (by omega) (by omega)) 8 (Nat.le_refl _)) fun s₁' ⟨k₂, O₂, e₂⟩ => ?_
+  refine WP.mono (xRows_ok hs₁ hs₁.toPtr hs₁.toPtr (M := M) (a := a) (b := b) (by omega_using [ha]) (by omega_using [hb])
+    (by omega_using [htmp]) (fun n hn => (((Apart.of_sep base (by omega_using [haT]) (by omega_using [ha, hnw]) : Apart base a 72 base M.tmp 72).sub
+      (by omega_using []) (by omega_using [hn])).mono (Nat.le_refl _) (by omega_using [hn])))
+    (Apart.of_sep base (by omega_using [hbT]) (by omega_using [hb, hnw])) 8 (Nat.le_refl _)) fun s₁' ⟨k₂, O₂, e₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (rdiMove_ok (hs₁.of_keepRegs k₂ (by decide)) (cOf_lt b) (cOf_lt M.tmp))
     fun s₂ ⟨hs₂, k₂'⟩ => ?_

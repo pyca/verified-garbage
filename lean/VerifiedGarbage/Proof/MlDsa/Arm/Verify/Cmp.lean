@@ -140,10 +140,10 @@ theorem cmp_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : KF p
     refine ⟨rfl, ?_⟩; rcases hct with e | e | e <;> vsep hF [e]
   have pb : PtrIn (vlay p STK σ) (.r6, 0) p.ctildeLen := by
     refine ⟨rfl, ?_⟩; have := hF.sig; have := hF.hint; vsep hF
-  refine WP.mono (cmpAnd_okS hk5.vc.site pa pb (by omega) (by omega))
+  refine WP.mono (cmpAnd_okS hk5.vc.site pa pb (by omega_using [hct]) (by omega_using [hct]))
     fun s' ⟨r11, rs, m, rd, wr, sp⟩ => ⟨A', cc, hh, R, hk5.vc.congr rs m sp rd wr, hk5.hh, hk5.hint.1, hk5.gd, ?_⟩
   have e4 : bytesAt s.mem (lpa (vlay p STK σ) (.r6, 0)) p.ctildeLen = Proof.MlDsa.Verify.vCt p (sgOf p σ) := by
-    have := sig_slice hk5.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega)
+    have := sig_slice hk5.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega_arith)
     rw [List.drop_zero] at this
     exact this
   have e0 : bytesAt s.mem (lpa (vlay p STK σ) (sc oCT)) p.ctildeLen = _ := hb

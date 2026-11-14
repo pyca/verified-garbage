@@ -94,7 +94,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     subst hqk
     simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
       BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8]
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega)
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_using [])
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, p₀.sp, fun r hr => p₀.other r ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'

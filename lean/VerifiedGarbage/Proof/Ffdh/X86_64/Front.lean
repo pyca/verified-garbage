@@ -236,18 +236,18 @@ theorem SubMem.of_child {s t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 6
     SubMem t B Z o w wx mi := by
   have hn := h.scr.nowrap
   have hi := h.hi
-  have hL : o + slot wx 8 ≤ 2 ^ 64 := by omega
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hL : o + slot wx 8 ≤ 2 ^ 64 := by omega_using [hn, hi]
+  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega)) (by omega)
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_using [hi', this])) (by omega_using [hi'])
   have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    hf.word_below (fun r hr' => (hr r hr').2) hL (by omega)
-      (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega)
+    hf.word_below (fun r hr' => (hr r hr').2) hL (by omega_using [hn, hi, h256])
+      (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega_arith)
   exact ⟨h.scr.congr hwr,
     ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
-      fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩,
+      fun j hj => (hh _ (by unfold sArr; omega_using [hj])).trans (h.hdr.harr j hj)⟩,
     (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
-    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
+    fun j hj => (hb _ (by unfold sArr; omega_using [hj])).trans (h.narr j hj), h.lo, h.hi⟩
 
 /-- `-m⁻¹` of the same odd modulus is the same. -/
 theorem xvals_minv {s t : State} {B : Addr} {o w : Nat} {mi₁ mi₂ : BitVec 64} {X : Nat} (hw : 1 ≤ w)

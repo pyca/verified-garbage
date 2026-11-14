@@ -199,7 +199,7 @@ theorem jacComb_finish_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat}
       Rep C (tmv C K.M.n base t K.A.x) (tmv C K.M.n base t K.A.y)
         (tmv C K.M.n base t K.A.z) P := by
   have hn := hs.nowrap
-  have hn0 : 0 < K.M.n := by omega
+  have hn0 : 0 < K.M.n := by omega_using [hn4]
   let W : WinCfg := {Jacobian.combWinCfg K with E := K.A}
   have hy : K.A.y ∈ combSlots K.toComb := by tcomb_mem
   have hz' : K.A.z ∈ combSlots K.toComb := by tcomb_mem
@@ -232,10 +232,10 @@ theorem jacComb_finish_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat}
   have zy := hL.apart₂ az ay (by nd_find hnd)
   have ex : wordsVal t.mem base K.A.x K.M.n = wordsVal u.mem base K.A.x K.M.n :=
     uy.wordsVal (by simpa only [List.mem_singleton] using fun w (hw : w=(K.A.y,8*K.M.n)) => hw ▸ xy)
-      (by have hxl : K.A.x+8*K.M.n ≤ size := hL.lay.le _ (combWs_slots _ _ ax); omega)
+      (by have hxl : K.A.x+8*K.M.n ≤ size := hL.lay.le _ (combWs_slots _ _ ax); omega_using [hn, hxl])
   have ez : wordsVal t.mem base K.A.z K.M.n = wordsVal u.mem base K.A.z K.M.n :=
     uy.wordsVal (by simpa only [List.mem_singleton] using fun w (hw : w=(K.A.y,8*K.M.n)) => hw ▸ zy)
-      (by omega)
+      (by omega_using [hn, hzs])
   have uysub : Unch base (combW K.toComb) u.mem t.mem := uy.mono (by
     intro w hw
     rw [List.mem_singleton.mp hw]
@@ -248,7 +248,7 @@ theorem jacComb_finish_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat}
   refine ⟨?_,ut',hM.unch ut' (combW_mo hL hM) hn,?_,?_⟩
   · exact (hu.keep.mono (fun r hr => combClob_tcombClob _
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ hr))))).trans
-      (ky.mono (fun r hr => tcombClob_sub K.M.n (by omega) r (by
+      (ky.mono (fun r hr => tcombClob_sub K.M.n (by omega_using [hn4]) r (by
         simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp)))
   · intro x hx

@@ -64,8 +64,8 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
   refine WP.ite _ (eval_zero _ _) (fun ht => ?_) (fun hf => ?_)
   · have ha : any = 0 := by rw [h9] at ht; exact beq_iff_eq.mp ht
     have hslt := hFits ha
-    have hp' : db - sl - 1 < db := by omega
-    have hrev : db - (db - sl - 1) - 1 = sl := by omega
+    have hp' : db - sl - 1 < db := by omega_using [hpos]
+    have hrev : db - (db - sl - 1) - 1 = sl := by omega_using [hslt]
     refine WP.mono (finish_ok hH Lv hEmv he hfit hp' hdb h19v h21v h24v h25v h26v
       (by rw [O.mem, hrev, hSl]) hdgv hrv hd hTv hdo) fun t ⟨sp, rd, wr, cs, vs, fr, result⟩ => ?_
     refine ⟨sp.trans O.sp, rd.trans O.rd, wr.trans O.wr, ?_, ?_, O.mem ▸ fr, ?_⟩
@@ -74,7 +74,7 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     · intro r hr; rw [vs r hr, O.vcs r hr]
     · rw [result, O.mem]
       by_cases hz : acc = 0
-      · have heq : db - sl - 1 = pos := by have := hMatch ha hz; omega
+      · have heq : db - sl - 1 = pos := by have := hMatch ha hz; omega_using [hpos, this]
         rw [heq]
       · rw [resV_nonzero hAcc hz, resV_nonzero hAcc hz]
   · refine WP.mono (b2_ok hH Lv hEmv he hfit hpos hdb h19v h21v h24v h25v h26v

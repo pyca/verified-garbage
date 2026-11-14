@@ -40,16 +40,16 @@ theorem pxRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) : E.Apart
   have b := G.bounds
   intro o ho
   simp only [pxRanges, List.mem_singleton] at ho; subst ho
-  simp only [sState, sX, fOut, fWitLen, hdr]; omega
+  simp only [sState, sX, fOut, fWitLen, hdr]; omega_using [sz, b]
 
 theorem hRanges_apart {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {j : Nat} (hj : j ≤ g.count) :
     E.Apart (hRanges g j) := by
   have sz := v.size_ge
   have b := G.bounds
-  have hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega)
+  have hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega_using [hj])
   intro o ho
   simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-  rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOut, fWitLen, hdr] <;> omega
+  rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOut, fWitLen, hdr] <;> omega_arith
 
 theorem pHash_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen)
     {s : State} (B : Base E s) {k : Nat} (hk : (k + 1) * E.qLen ≤ E.seedsLen)

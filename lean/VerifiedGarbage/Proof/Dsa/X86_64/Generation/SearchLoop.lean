@@ -61,7 +61,7 @@ theorem searchIteration_ok {body : Prog isa} {B : Addr} {limit stride counter : 
     have ht := hw.congr hmt kt
     by_cases hlt : counter + 1 < limit
     · exact Or.inr ⟨by simp [eval, hzt, next, hlt], hit, ht, hlt⟩
-    · have he : counter + 1 = limit := by omega
+    · have he : counter + 1 = limit := by omega_using [hc, hlt]
       refine Or.inl ⟨by simp [eval, hzt, next, hlt], ?_⟩
       apply done t (he ▸ hit) (he ▸ ht)
       rw [hmt, hstatus, ite_eq_right hlt]
@@ -93,7 +93,7 @@ theorem searchLoop_ok {body : Prog isa} {B : Addr} {limit stride : Nat}
     (fun n t ⟨c, hn, hc, hi, hctrl⟩ =>
       WP.mono (searchIteration_ok hl hs stable finish done body_ok hc hi hctrl)
         fun t' ht => ht.imp (fun h => h) fun ⟨hz, hi', hc', hlt⟩ =>
-          ⟨hz, limit - (c + 1), by omega, c + 1, rfl, hlt, hi', hc'⟩)
+          ⟨hz, limit - (c + 1), by omega_using [hn, hc], c + 1, rfl, hlt, hi', hc'⟩)
     (limit - counter) s ⟨counter, rfl, hc, hi, h⟩
 
 /-- Initialization and the bounded search compose without any host loop. -/

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Checking a comb's tables without indexing
@@ -60,7 +61,7 @@ theorem chordsF_getD {p x0 y0 : Nat} :
     cases m with
     | zero => exact hc.1
     | succ m =>
-      have := chordsF_getD hc.2 m (by simp at hm ⊢; omega)
+      have := chordsF_getD hc.2 m (by simp at hm ⊢; omega_using [hm])
       simpa only [List.getD_cons_succ] using this
 
 theorem linksF_getD {p a H : Nat} :
@@ -74,7 +75,7 @@ theorem linksF_getD {p a H : Nat} :
     cases j with
     | zero => exact hc.1
     | succ j =>
-      have := linksF_getD hc.2 j (by simp at hj ⊢; omega)
+      have := linksF_getD hc.2 j (by simp at hj ⊢; omega_using [hj])
       simpa only [combAt, List.getD_cons_succ] using this
 
 theorem sumsF_getD {p H : Nat} :
@@ -92,7 +93,7 @@ theorem sumsF_getD {p H : Nat} :
     cases j with
     | zero => exact ⟨hc.1.1.1, hc.1.1.2, hc.1.2⟩
     | succ j =>
-      have := sumsF_getD hc.2 j (by simp at hj ⊢; omega) (by simp at hr ⊢; omega)
+      have := sumsF_getD hc.2 j (by simp at hj ⊢; omega_using [hj]) (by simp at hr ⊢; omega_using [hr])
       simpa only [List.getD_cons_succ] using this
 
 theorem getD_mem_of_lt {α : Type} {l : List α} {j : Nat} {d : α} (h : j < l.length) :
@@ -108,7 +109,7 @@ theorem combChecksW_of_fast {p a : Nat} {g : Nat × Nat} {H J : Nat}
   simp only [combChecksF, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.all_eq_true] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hlen, hJ⟩, hH⟩, hS⟩, hrows⟩, hg⟩, hlinks⟩, hs0⟩, hsums⟩, hlast⟩ := h
   have hrow : ∀ j < J, rowF p a H (tbl.getD j []) = true := fun j hj =>
-    hrows _ (getD_mem_of_lt (by omega))
+    hrows _ (getD_mem_of_lt (by omega_using [hlen, hj]))
   simp only [combChecksW, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.all_eq_true,
     List.mem_range, Bool.or_eq_true]
   refine ⟨⟨⟨⟨⟨⟨⟨⟨hlen, hJ⟩, hH⟩, (fun j hj => ?_)⟩, hg⟩, (fun j hj => ?_)⟩, hs0⟩, (fun j hj => ?_)⟩, hlast⟩
@@ -121,10 +122,10 @@ theorem combChecksW_of_fast {p a : Nat} {g : Nat × Nat} {H J : Nat}
     refine ⟨⟨?_, ht⟩, fun m hm => ?_⟩
     · cases j with
       | zero => exact .inl rfl
-      | succ j => exact .inr (linksF_getD hlinks j (by omega))
-    · have := chordsF_getD hc m (by rw [List.length_tail]; omega)
+      | succ j => exact .inr (linksF_getD hlinks j (by omega_using [hlen, hj]))
+    · have := chordsF_getD hc m (by rw [List.length_tail]; omega_using [hl, hm])
       simpa only [combAt, List.getD_eq_getElem?_getD, List.getElem?_tail] using this
-  · have := sumsF_getD hsums j (by omega) (by rw [List.length_tail]; omega)
+  · have := sumsF_getD hsums j (by omega_using [hS, hj]) (by rw [List.length_tail]; omega_using [hlen, hj])
     simpa only [combAt, List.getD_eq_getElem?_getD, List.getElem?_tail, and_assoc] using this
 
 end VG.Proof.Weierstrass

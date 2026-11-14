@@ -40,7 +40,7 @@ theorem limb_val (v : Spec.X448.Fe) : VG.Proof.X448.Wide.valN (fun i => (limb v 
   rw [limb_valN]
   refine Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le v.isLt ?_)
   rw [show VG.Proof.X448.Wide.radix ^ 8 = VG.Proof.X448.Wide.full from rfl, VG.Proof.X448.Wide.full_eq]
-  omega
+  omega_using []
 
 theorem limb_lt (v : Spec.X448.Fe) (w : Nat) : (limb v w).toNat < 2 ^ 56 := by
   simp only [limb, BitVec.toNat_ofNat]
@@ -62,13 +62,13 @@ theorem constSlot_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho :
     have kt : Keeps [.x4] t a := ⟨fun r hr => ka r (by simpa using hr), by rw [ea], by rw [ea]⟩
     have ha : Scr a base := (hs.of_keeps tk (by decide)).of_keeps kt (by decide)
     have am : a.mem = t.mem := by rw [ea]
-    refine WP.mono (store_ok ha (by omega) (by omega) .x4) fun u ⟨um, uk⟩ => ⟨fun w hw => ?_, ?_, ?_⟩
-    · rw [um, VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega) (by omega) (by omega) (by omega)]
+    refine WP.mono (store_ok ha (by omega_using [ho, hn]) (by omega_using [ho8]) .x4) fun u ⟨um, uk⟩ => ⟨fun w hw => ?_, ?_, ?_⟩
+    · rw [um, VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega_using [ho, hn]) (by omega_using [ho, hn, hw]) (by omega_using [ho8]) (by omega_using [ho8])]
       by_cases h : w = n
       · subst h; rw [ite_eq_left rfl, a4]
-      · rw [ite_eq_right (by omega), am]; exact tv w (by omega)
+      · rw [ite_eq_right (by omega_using [h]), am]; exact tv w (by omega_using [hw, h])
     · intro x hx
-      rw [um, VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega) x (by omega), am]
+      rw [um, VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega_using [ho, hn]) x (by omega_using [hn, hx]), am]
       exact tm x hx
     · exact (tk.trans kt).trans (uk.mono (by simp))
   have := wp_range_flatMap (M := isa) (N := 8) inv step 8 (Nat.le_refl _) s

@@ -42,13 +42,13 @@ open VG.Proof.AesGcm.PPC64LE (in_left in_off)
 theorem bit_v {v : Nat} (hv : v < 64) (k : Nat) :
     (BitVec.ofNat 64 v >>> k) &&& BitVec.ofNat 64 1 = if v.testBit k then 1 else 0 := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv]),
     show (BitVec.ofNat 64 1).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.testBit_eq_decide_div_mod_eq,
     Nat.shiftRight_eq_div_pow]
   have h2 : v / 2 ^ k % 2 < 2 := Nat.mod_lt _ (by decide)
   by_cases h : v / 2 ^ k % 2 = 1
   · simp [h]
-  · simp [h]; omega
+  · simp [h]; omega_using [h]
 
 theorem sel_mask0 (x x' : BitVec 64) (b : Bool) :
     x ^^^ ((x' ^^^ x) &&& (BitVec.ofNat 64 0 - (if b = true then 1 else 0))) = if b then x' else x :=
@@ -70,7 +70,7 @@ theorem stageMask_ok (s : State) {k v : Nat} (hk6 : k < 64) (hv : v < 64) (h6 : 
     · simp [gpr_write, a, b, c]
     all_goals rfl
   · refine ⟨_, by
-        simp only [stageMask, show k ≠ 0 by omega, ↓reduceIte, List.cons_append, List.nil_append, runBlock_cons,
+        simp only [stageMask, show k ≠ 0 by omega_using [hk], ↓reduceIte, List.cons_append, List.nil_append, runBlock_cons,
           runStep_some, runBlock_nil, exec_lsr_d hk6, exec_li (show 1 < 2 ^ 15 by decide),
           exec_li (show 0 < 2 ^ 15 by decide), exec_logic, exec_sub] <;> rfl, ?_, fun r a b c => ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_write, ↓reduceIte, reduceCtorEq, h6]
@@ -86,7 +86,7 @@ theorem stage_ok (s : State) {k a v : Nat} (hk6 : k < 64) (ha : 0 < a) (ha' : a 
       (∀ r, r ∉ [.r0, .r3, .r4, .r5, .r7, .r8, .r9] → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.sp = s.sp ∧ s'.lr = s.lr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, run₁, r7₁, g₁, m₁, sp₁, lr₁, rd₁, wr₁⟩ := stageMask_ok s hk6 hv h6
-  have c1 : 64 - a < 64 := by omega
+  have c1 : 64 - a < 64 := by omega_using [ha]
   have r3₁ := g₁ .r3 (by decide) (by decide) (by decide)
   have r4₁ := g₁ .r4 (by decide) (by decide) (by decide)
   have r5₁ := g₁ .r5 (by decide) (by decide) (by decide)
@@ -121,7 +121,7 @@ theorem top2 (x y z : BitVec 64) : (x ++ y ++ z).extractLsb' 64 128 = x ++ y := 
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    show ¬ 64 + i < 64 by omega, ↓reduceIte, show 64 + i - 64 = i by omega]
+    show ¬ 64 + i < 64 by omega_using [], ↓reduceIte, show 64 + i - 64 = i by omega_using []]
 
 /-- `Stretch`. -/
 def stretch (ktop : Block) : BitVec 192 := ktop ++ (ktop.extractLsb' 64 64 ^^^ ktop.extractLsb' 56 64)
@@ -197,7 +197,7 @@ theorem offset0_ok {K W : Addr} (L : Lay K W) {s : State} (h31 : s.gpr .r31 = W)
     rw [w₇, w₆, w₅, w₄, w₃, w₂, w₁, Proof.Ocb.shl_stages _ hv]
   have hO : s₇.gpr .r3 ++ s₇.gpr .r4 =
       (stretch (blockAtMem s.mem (W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128 := by
-    rw [← top2 _ _ (s₇.gpr .r5), hw7, Proof.Ocb.offset_shl _ (by omega)]
+    rw [← top2 _ _ (s₇.gpr .r5), hw7, Proof.Ocb.offset_shl _ (by omega_using [hv])]
   have hm₇ : s₇.mem = s.mem := by rw [m₇, m₆, m₅, m₄, m₃, m₂, m₁]
   have hsp₇ : s₇.sp = s.sp := by rw [sp₇, sp₆, sp₅, sp₄, sp₃, sp₂, sp₁]
   have hlr₇ : s₇.lr = s.lr := by rw [lr₇, lr₆, lr₅, lr₄, lr₃, lr₂, lr₁]

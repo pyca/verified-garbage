@@ -38,7 +38,7 @@ theorem pd_push_separate {s : State} {base dst np ep xp : BitVec 32} {len k eLen
     rw [← public_push_argAddr h.stackFit]
     change (a - (State.addr (pcPushed s).sp + BitVec.ofNat 64 56)).toNat + 1 ≤ 24
     have inside := (Offset.lt_iff a (State.addr (pcPushed s).sp) (d := 56) (n := 24) (by decide)).mpr
-      ⟨by omega, by change (a - State.addr (pcPushed s).sp).toNat + 1 ≤ 80 at ha; omega⟩
-    omega
+      ⟨by omega_using [low], by change (a - State.addr (pcPushed s).sp).toNat + 1 ≤ 80 at ha; omega_using [ha]⟩
+    omega_using [inside]
 
 end VG.Proof.Bignum.Arm

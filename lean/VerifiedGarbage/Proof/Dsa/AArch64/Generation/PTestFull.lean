@@ -40,7 +40,7 @@ theorem pTest_full_ok (T : PrimeTest) {p : PrimeCallPlan} {used : Nat} {s : Stat
           used' = p.prime.rand.length - rest.length) ∧
         Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold Impl.Dsa.AArch64.Generation.pTest
-  refine WP.seq (WP.mono (candidateWidth_ok h hptr (by have := p.prime.len2; omega)
+  refine WP.seq (WP.mono (candidateWidth_ok h hptr (by have := p.prime.len2; omega_using [this])
     hbound hbytes hrd) fun u ⟨hcf, hm, ku⟩ => ?_)
   have Ru : Rep u.mem p.F p.hash V p.W := hm ▸ R
   have Lu := lay_of_rep L R Ru rfl ku.sp ku.wr

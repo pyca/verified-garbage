@@ -28,7 +28,7 @@ theorem normalizeKey_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem bas
       Same base [6,20] s.mem t.mem ∧ slotPt t.mem base=slotPt s.mem base := by
   unfold normalizeKey
   refine WP.seq (WP.mono (constE hs hb 20 1) fun a ⟨ab,asm,ae,_,ao,ak⟩ => ?_)
-  have af:FKeep base s a:=⟨ak.mono (by decide),fun x hx _ => ao x (by simp only [slot] at hx ⊢;omega)⟩
+  have af:FKeep base s a:=⟨ak.mono (by decide),fun x hx _ => ao x (by simp only [slot] at hx ⊢;omega_using [hx])⟩
   refine Point56.mulOpK (af.scr hs) ab 6 6 20 (Or.inr (by decide))
     fun t tk tb tm tsm te => WP.block_nil ?_
   refine ⟨af.trans tk,tb,tm,?_,?_⟩

@@ -76,21 +76,21 @@ theorem sealWithSh_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmu
   · refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
     simp only [ite_true]
     refine WP.seq (WP.mono (shortThr_ok (n := (s.gpr .x7).toNat) s₂ (by rw [hx₂ .x7 (by simp), ofNat_toNat'])
-      (by omega)) fun s₃ ⟨x9₃, r₃⟩ => ?_)
+      (by omega_using [hnb])) fun s₃ ⟨x9₃, r₃⟩ => ?_)
     have h₃ := SealEntry.of_regs h₂ r₃
     have hx₃ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₃.gpr r = s.gpr r := fun r hr => by
       rw [r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₂ r hr]
-    refine WP.ite _ (eval_zero x9₃ (by omega)) (fun hz => ?_) (fun _ => ?_)
+    refine WP.ite _ (eval_zero x9₃ (by omega_using [])) (fun hz => ?_) (fun _ => ?_)
     · refine WP.seq (WP.mono (shortMin_ok (n := (s.gpr .x7).toNat) s₃ (by rw [hx₃ .x7 (by simp), ofNat_toNat'])
-        (by omega)) fun s₄ ⟨x9₄, r₄⟩ => ?_)
+        (by omega_using [hnb])) fun s₄ ⟨x9₄, r₄⟩ => ?_)
       have h₄ := SealEntry.of_regs h₃ r₄
       have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by
         rw [r₄.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx₃ r hr]
-      refine WP.ite _ (eval_zero x9₄ (by omega)) (fun _ => ?_) (fun hz' => ?_)
+      refine WP.ite _ (eval_zero x9₄ (by omega_using [])) (fun _ => ?_) (fun hz' => ?_)
       · exact runWithP_ok v cl hMK hs hgh h₄ hx₄ hc.2 hc.1
       · have h₁ := of_decide_eq_true hz
         have h₂ := of_decide_eq_false hz'
-        exact sealShort_ok gh hs htb h₄ hx₄ hc.2 hc.1 (by omega) (by omega)
+        exact sealShort_ok gh hs htb h₄ hx₄ hc.2 hc.1 (by omega_using [h₂]) (by omega_using [h₁])
     · refine WP.seq (WP.mono (Stitch.thr_ok s₃) fun s₄ ⟨_, r₄⟩ => ?_)
       have h₄ := SealEntry.of_regs h₃ r₄
       have hx₄ : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₄.gpr r = s.gpr r := fun r hr => by

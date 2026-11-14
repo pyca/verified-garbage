@@ -43,15 +43,15 @@ def After (p : Params) (A : State → State → Prop) (as : List Arg) (s₀ s₁
 abbrev ent (n : Nat) (s : State) : State := (pushed (argPush n) s).callEntry
 
 theorem ctx_fit {p : Params} {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx (Y p) s₀ s) {N : Nat} (hN : N ≤ 80) :
-    N ≤ (s.gpr .esp).toNat := ctx_E hp h (N := N) (by show N + 16 ≤ 96; omega)
+    N ≤ (s.gpr .esp).toNat := ctx_E hp h (N := N) (by show N + 16 ≤ 96; omega_using [hN])
 
 theorem E1_big {p : Params} {s₀ : State} (hp : TPre (Y p) s₀) : 80 ≤ (E1 s₀).toNat := by
-  rw [E1_nat s₀ hp.E0_big]; have := hp.sp; simp only [Y, STK] at this; omega
+  rw [E1_nat s₀ hp.E0_big]; have := hp.sp; simp only [Y, STK] at this; omega_using [this]
 
 theorem ent_arg {p : Params} {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx (Y p) s₀ s) {as : List Arg}
     (hn : as.length ≤ 5) (ha : ArgsAre s₀ s as) {i : Nat} (hi : i < as.length) :
     arg (ent as.length s) i = argV s₀ (as.getD i (.imm 0)) := by
-  rw [argPush_arg hn (ctx_fit hp h (by omega)) hi]; exact ha i hi
+  rw [argPush_arg hn (ctx_fit hp h (by omega_using [hn])) hi]; exact ha i hi
 
 theorem ent_esp {p : Params} {s₀ s : State} (h : Ctx (Y p) s₀ s) {n : Nat} (hn : n ≤ 5) :
     (ent n s).gpr .esp = E1 s₀ - BitVec.ofNat 32 (4 * n + 4) := by
@@ -63,7 +63,7 @@ theorem ent_arg0 {p : Params} {s₀ s : State} (h : Ctx (Y p) s₀ s) {n : Nat} 
 
 theorem ent_frame {p : Params} {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx (Y p) s₀ s) {n : Nat} (hn : n ≤ 5) :
     Frame [below (E1 s₀) (4 * n + 4)] s.mem (ent n s).mem := by
-  have := callEntry_frame (rs := argPush n) (s := s) (by rw [argPush_len hn]; exact ctx_fit hp h (by omega))
+  have := callEntry_frame (rs := argPush n) (s := s) (by rw [argPush_len hn]; exact ctx_fit hp h (by omega_using [hn]))
     (esp_nmem_argPush n)
   rw [argPush_len hn, h.esp] at this; exact this
 
@@ -73,14 +73,14 @@ theorem ent_rgn {p : Params} {s₀ : State} (hp : TPre (Y p) s₀) {b : Buf} (hb
     (b.rgn s₀).Disjoint (below (E1 s₀) (4 * n)) ∧
       (⟨(E1 s₀ - BitVec.ofNat 32 (4 * n + 4)).setWidth 64, 4⟩ : Region).Disjoint (b.rgn s₀) ∧
       (⟨(E1 s₀ - BitVec.ofNat 32 (4 * n + 4)).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint (b.rgn s₀) :=
-  entry_regions (by have := E1_big hp; omega) (Buf.stkD hp hb (N := 4 * n + 4 + K) (by show _ + 16 ≤ 96; omega))
+  entry_regions (by have := E1_big hp; omega_using [hK, this]) (Buf.stkD hp hb (N := 4 * n + 4 + K) (by show _ + 16 ≤ 96; omega_using [hK]))
 
 /-- The callee's regions of the stack, apart from its arguments. -/
 theorem ent_self {p : Params} {s₀ : State} (hp : TPre (Y p) s₀) {n K : Nat} (hK : 4 * n + 4 + K ≤ 80) :
     (⟨(E1 s₀ - BitVec.ofNat 32 (4 * n + 4)).setWidth 64, 4⟩ : Region).Disjoint (below (E1 s₀) (4 * n)) ∧
       (⟨(E1 s₀ - BitVec.ofNat 32 (4 * n + 4)).setWidth 64 - BitVec.ofNat 64 K, K⟩ : Region).Disjoint
         (below (E1 s₀) (4 * n)) :=
-  entry_self (by have := E1_big hp; omega)
+  entry_self (by have := E1_big hp; omega_using [hK, this])
 
 /-- The bytes of a buffer, as the callee sees them. -/
 theorem ent_bytes {p : Params} {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx (Y p) s₀ s) {n : Nat} (hn : n ≤ 5)
@@ -89,13 +89,13 @@ theorem ent_bytes {p : Params} {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx 
   fun _ hi => (ent_frame hp h hn).bytes (R := b.rgn s₀)
     (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact (Buf.stkD hp hb (N := 4 * n + 4) (by show _ + 16 ≤ 96; omega)).symm)
-    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega) hi
+      exact (Buf.stkD hp hb (N := 4 * n + 4) (by show _ + 16 ≤ 96; omega_using [hn])).symm)
+    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_using [this]) hi
 
 /-- The regions a call writes, and the stack its frame and calls use, within `W`. -/
 theorem stk_W {p : Params} {s₀ : State} (hp : TPre (Y p) s₀) {N : Nat} (hN : N ≤ 80) :
     ∃ r' ∈ W (Y p) s₀, Region.Sub (below (E1 s₀) N) r' :=
-  ⟨cR (Y p) s₀, TPre.cW, stk_sub hp hN (by show 80 + 16 ≤ 96; omega)⟩
+  ⟨cR (Y p) s₀, TPre.cW, stk_sub hp hN (by show 80 + 16 ≤ 96; omega_using [])⟩
 
 /-- The callee's regions, within the caller's, for a callee that only reads its arguments. -/
 theorem covers_ro {s : State} {n : Nat} {rd : List Region}
@@ -134,7 +134,7 @@ theorem callP_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verifi
   have hl := argPush_len hn
   refine Piece.seq (setup_piece' as hn hok hA) ?_
   refine Piece.callWith hv.1 hv.2.1 ok.nosp (argPush_ne hn0) (esp_nmem_argPush _) rd wr
-    (fun s₀ s₁ hp ⟨_, _, h, _⟩ => by rw [hl]; have := ok.stk; exact ctx_fit hp h (by omega))
+    (fun s₀ s₁ hp ⟨_, _, h, _⟩ => by rw [hl]; have := ok.stk; exact ctx_fit hp h (by omega_using [hn, this]))
     (fun s₀ s₁ hp ha => hk s₀ s₁ hp ha)
     (fun s₀ s₀' s₁ s₁' hp hp' hq ha ha' => by
       obtain ⟨e₁, e₂, e₃⟩ := hpub s₀ s₀' s₁ s₁' hp hp' hq ha ha'
@@ -147,7 +147,7 @@ theorem callP_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verifi
   refine hQ s₀ s₁ s' hp ha (h.call e₁ e₂ e₃ fr fun r hr => ?_) fr post
   rcases List.mem_append.mp hr with hr | hr
   · exact hW s₀ hp r hr
-  · rw [List.mem_singleton] at hr; subst hr; have := ok.stk; exact stk_W hp (by omega)
+  · rw [List.mem_singleton] at hr; subst hr; have := ok.stk; exact stk_W hp (by omega_using [hn, this])
 
 /-- `callP_piece`, for a call that returns a value in `eax`. -/
 theorem callPR_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verified X86.target c k) (ok : COk c)
@@ -168,7 +168,7 @@ theorem callPR_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verif
   have hl := argPush_len hn
   refine Piece.seq (setup_piece' as hn hok hA) ?_
   refine Piece.callRet hv.1 hv.2.1 ok.nosp (argPush_ne hn0) (esp_nmem_argPush _) rd wr
-    (fun s₀ s₁ hp ⟨_, _, h, _⟩ => by rw [hl]; have := ok.stk; exact ctx_fit hp h (by omega))
+    (fun s₀ s₁ hp ⟨_, _, h, _⟩ => by rw [hl]; have := ok.stk; exact ctx_fit hp h (by omega_using [hn, this]))
     (fun s₀ s₁ hp ha => hk s₀ s₁ hp ha)
     (fun s₀ s₀' s₁ s₁' hp hp' hq ha ha' => by
       obtain ⟨e₁, e₂, e₃⟩ := hpub s₀ s₀' s₁ s₁' hp hp' hq ha ha'
@@ -181,7 +181,7 @@ theorem callPR_piece (as : List Arg) (n : Nat) (hn' : as.length = n) (hv : Verif
   refine hQ s₀ s₁ s' hp ha (h.call e₁ e₂ e₃ fr fun r hr => ?_) fr post
   rcases List.mem_append.mp hr with hr | hr
   · exact hW s₀ hp r hr
-  · rw [List.mem_singleton] at hr; subst hr; have := ok.stk; exact stk_W hp (by omega)
+  · rw [List.mem_singleton] at hr; subst hr; have := ok.stk; exact stk_W hp (by omega_using [hn, this])
 
 end
 

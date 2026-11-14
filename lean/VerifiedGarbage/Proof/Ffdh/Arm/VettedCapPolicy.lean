@@ -31,10 +31,10 @@ theorem vetted_layout_width {p : Inputs} {bits : Nat}
     (recognized : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf p.k p.dom) = some bits) :
     (ScalarLayout.vetted p).width = VG.Proof.Ffdh.ScalarWidth.width bits := by
   have uncapped := VG.Proof.Ffdh.VettedPolicy.bits_of_recognized_uncapped recognized
-  have fit := VG.Proof.Ffdh.ScalarWidth.width_le (by have := p.minLength; omega)
+  have fit := VG.Proof.Ffdh.ScalarWidth.width_le (by have := p.minLength; omega_using [this])
     (Nat.le_trans (VG.Proof.Ffdh.VettedPolicy.recognized_le_bound recognized) p.scalarBound_bits_fit)
   simp only [ScalarLayout.width, ScalarLayout.vetted, uncapped]
-  omega
+  omega_using [fit]
 
 theorem vetted_layout_mask {p : Inputs} {bits : Nat}
     (recognized : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf p.k p.dom) = some bits) :

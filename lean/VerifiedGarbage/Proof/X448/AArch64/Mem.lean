@@ -58,11 +58,11 @@ theorem Scr.of_keeps {rs : List Reg} {s s' : State} {base : Addr} (hs : Scr s ba
 
 theorem addr_word (s : State) (r : Reg) {d : Nat} (hd : d + 8 ≤ 8192) (ha : d % 8 = 0) :
     addr s 8 r d = some (off (s.gpr r) d) := by
-  rw [addr, ite_eq_left ⟨ha, by omega⟩]
+  rw [addr, ite_eq_left ⟨ha, by omega_using [hd]⟩]
 
 theorem contains_sc {base : Addr} {d n : Nat} (h : d + n ≤ 8192) :
     (⟨base, 8192⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by omega)
+  Offset.contains_base base h (by omega_using [h])
 
 theorem Scr.read {s : State} {base : Addr} (hs : Scr s base) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions (s.rd ++ s.wr) (off base d) n :=
@@ -99,7 +99,7 @@ theorem Outside.trans {base : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : O
 
 theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside base o n m m')
     (hl : o' ≤ o) (hr : o + n ≤ o' + n') : Outside base o' n' m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_using [hl, hr, hx])
 
 theorem ofs_off (base : Addr) {d i : Nat} (h : d + i < 2 ^ 64) :
     ofs base (off base d + BitVec.ofNat 64 i) = d + i := by
@@ -108,21 +108,21 @@ theorem ofs_off (base : Addr) {d i : Nat} (h : d + i < 2 ^ 64) :
 
 theorem Outside.word {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 8 ≤ o ∨ o + n ≤ d) (hd' : d + 8 ≤ 8192) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_using [hd', hi])]; omega_using [hd, hi])).symm).symm
 
 theorem Outside.limbs {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 128 ≤ o ∨ o + n ≤ d) (hd' : d + 128 ≤ 8192) {i : Nat} (hi : i < 16) :
     limbs m' base d i = limbs m base d i :=
-  congrArg BitVec.toNat (h.word (by omega) (by omega))
+  congrArg BitVec.toNat (h.word (by omega_using [hd, hi]) (by omega_using [hd', hi]))
 
 theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : d + 8 ≤ 8192) :
     Outside base d 8 m (m.writeW (off base d) v) := by
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_using [h])]
   simp only [ofs] at hx
-  omega
+  omega_using [hx]
 
 theorem word_write (m : Mem) (base : Addr) {o i j : Nat} (ho : o + 8 * (i + 1) ≤ 8192)
     (hj : o + 8 * (j + 1) ≤ 8192) (v : BitVec 64) :
@@ -131,7 +131,7 @@ theorem word_write (m : Mem) (base : Addr) {o i j : Nat} (ho : o + 8 * (i + 1) �
   by_cases h : j = i
   · rw [ite_eq_left h, h, word, Mem.readW_writeW_self64]
   · rw [ite_eq_right h]
-    exact Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep base (by omega_using [h]) (by omega_using [hj]) (by omega_using [ho])) (by decide)
 
 /-- A field operation writes its result and its temporary coefficients. -/
 def FieldMem (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
@@ -151,13 +151,13 @@ theorem FieldMem.work {base : Addr} {o d n : Nat} {m m' : Mem} (h : Outside base
 
 theorem FieldMem.word {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') {d : Nat}
     (hd : d + 8 ≤ o ∨ o + 128 ≤ d) (hw : d + 8 ≤ ACC) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by simp only [ACC] at hw; omega)]; omega)
-    (Or.inl (by rw [ofs_off base (by simp only [ACC] at hw; omega)]; omega))).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by simp only [ACC] at hw; omega_using [hw, hi])]; omega_using [hd, hi])
+    (Or.inl (by rw [ofs_off base (by simp only [ACC] at hw; omega_using [hw, hi])]; omega_using [hw, hi]))).symm).symm
 
 theorem FieldMem.limbs {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') {d : Nat}
     (hd : d + 128 ≤ o ∨ o + 128 ≤ d) (hw : d + 128 ≤ ACC) {i : Nat} (hi : i < 16) :
     limbs m' base d i = limbs m base d i :=
-  congrArg BitVec.toNat (h.word (by omega) (by omega))
+  congrArg BitVec.toNat (h.word (by omega_using [hd, hi]) (by omega_using [hw, hi]))
 
 /-- Memory outside two ranges, used by the conditional swap. -/
 def Outside2 (base : Addr) (x nx y ny : Nat) (m m' : Mem) : Prop :=
@@ -173,13 +173,13 @@ theorem Outside2.trans {base : Addr} {x nx y ny : Nat} {m₁ m₂ m₃ : Mem}
 
 theorem Outside2.mono {base : Addr} {x nx y ny nx' ny' : Nat} {m m' : Mem}
     (h : Outside2 base x nx y ny m m') (hx : nx ≤ nx') (hy : ny ≤ ny') :
-    Outside2 base x nx' y ny' m m' := fun p hp hq => h p (by omega) (by omega)
+    Outside2 base x nx' y ny' m m' := fun p hp hq => h p (by omega_using [hx, hp]) (by omega_using [hy, hq])
 
 theorem Outside2.word {base : Addr} {x nx y ny : Nat} {m m' : Mem} (h : Outside2 base x nx y ny m m')
     {d : Nat} (hx : d + 8 ≤ x ∨ x + nx ≤ d) (hy : d + 8 ≤ y ∨ y + ny ≤ d) (hd : d + 8 ≤ 8192) :
     word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)
-    (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_using [hd, hi])]; omega_using [hx, hi])
+    (by rw [ofs_off base (by omega_using [hd, hi])]; omega_using [hy, hi])).symm).symm
 
 /-- Aligned word stores read back as an update at one byte offset. -/
 theorem word_write_aligned (m : Mem) (base : Addr) {d e : Nat} (hd : d + 8 ≤ 8192)
@@ -188,6 +188,6 @@ theorem word_write_aligned (m : Mem) (base : Addr) {d e : Nat} (hd : d + 8 ≤ 8
   by_cases h : e = d
   · rw [ite_eq_left h, h, word, Mem.readW_writeW_self64]
   · rw [ite_eq_right h]
-    exact Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep base (by omega_using [hdm, hem, h]) (by omega_using [he]) (by omega_using [hd])) (by decide)
 
 end VG.Proof.X448.AArch64

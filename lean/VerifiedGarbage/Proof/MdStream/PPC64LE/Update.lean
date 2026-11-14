@@ -810,7 +810,7 @@ theorem prologue_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) :
   refine save_ok hd (by decide) (fun d hd₁ hd₂ => ⟨scR P s₀, by simp [hp.wr], contains_offset hd₂ (by omega_arith)⟩)
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
   refine wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ =>
-    wp_li (by have := hd.B_lt; omega) fun s₆ u₆ => wp_and fun s₇ u₇ => WP.block_nil ?_
+    wp_li (by have := hd.B_lt; omega_using [hd_B]) fun s₆ u₆ => wp_and fun s₇ u₇ => WP.block_nil ?_
   have hm₇ : s₇.mem = saveMem P s₀.mem (scr s₀) s₀.gpr := by
     rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
   refine ⟨⟨Nat.zero_le _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fun iv m hm => ?_⟩

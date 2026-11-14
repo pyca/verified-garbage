@@ -32,7 +32,7 @@ theorem bank_not_clob {j : Fin 8} {js : List (Fin 8)} (hj : j∉js) {p : Nat} (h
     vr (8*p+j.val)∉productClobs js := by
   intro h
   rcases List.mem_append.mp h with h | h
-  · have hb := bank_safe (j := 8*p+j.val) (by omega)
+  · have hb := bank_safe (j := 8*p+j.val) (by omega_using [hp])
     apply hb
     simp only [productTemps,List.mem_cons,List.not_mem_nil,or_false] at *
     grind only
@@ -41,10 +41,10 @@ theorem bank_not_clob {j : Fin 8} {js : List (Fin 8)} (hj : j∉js) {p : Nat} (h
     have he : j=i := by
       apply Fin.ext
       rcases h with h | h
-      · have hx := bank_injective (by omega) (by omega) h
-        omega
-      · have hx := bank_injective (by omega) (by omega) h
-        omega
+      · have hx := bank_injective (by omega_using [hp]) (by omega_using []) h
+        omega_using [hx]
+      · have hx := bank_injective (by omega_using [hp]) (by omega_using []) h
+        omega_using [hx]
     exact hj (he ▸ hi)
 
 theorem productBank_ok (js : List (Fin 8)) (hn : js.Nodup)
@@ -100,7 +100,7 @@ def inputValues (s : State) : Values := fun p => Vector.ofFn fun j =>
 theorem inputValues_word (s : State) (p : Fin 2) (j : Fin 8) {e : Nat} (he : e<4) :
     vword ((inputValues s p)[j.val]) e=productInput s j.val p.val e := by
   simp only [inputValues,Vector.getElem_ofFn]
-  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
     simp only [vword_ofVWords_0,vword_ofVWords_1,vword_ofVWords_2,vword_ofVWords_3]
 
 /-- Exact sixteen-vector initial state of the selected paired transform. -/
@@ -189,7 +189,7 @@ theorem first_ok (u : Nat) {s : State} {rest : List Instr} {Q : State → Prop}
     WP isa (.block (firstCode++rest)) s Q := by
   simp only [firstCode,List.append_assoc]
   refine productFive_ok hc hp hl hr fun a ha va => ?_
-  refine storePair_ok 16 .x0 (by intro p j; constructor <;> omega) va ?_ fun t ht => ?_
+  refine storePair_ok 16 .x0 (by intro p j; constructor <;> omega_using []) va ?_ fun t ht => ?_
   · intro p j
     simpa only [ha.wr,ha.gpr] using hw p j
   · refine k t ⟨a,ha,?_⟩

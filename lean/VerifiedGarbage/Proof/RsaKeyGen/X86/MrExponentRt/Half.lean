@@ -28,7 +28,7 @@ theorem ptr_edi {t : State} {W : Addr} {L x : Nat} (S : Scr t W L) {r : Reg} (P 
   apply BitVec.eq_of_toNat_eq
   have nowrap := S.nowrap
   rw [P, BitVec.toNat_add, BitVec.toNat_ofNat, S.edi_toNat]
-  omega
+  omega_using []
 
 /-- One word of an in-place pass, at `ebp`, and `esi` down one. -/
 theorem halfStep_ok {t : State} {W : Addr} {L x : Nat} (S : Scr t W L) (bp : PtrAt t W .ebp x)
@@ -38,12 +38,12 @@ theorem halfStep_ok {t : State} {W : Addr} {L x : Nat} (S : Scr t W L) (bp : Ptr
       w32 u.mem W x = (if choice then w32 t.mem W x / 2 + 2 ^ 31 * (w32 t.mem W (x + 4) % 2) else w32 t.mem W x) ∧
       PtrAt u W .ebp (x + 4) ∧ u.gpr .esi = t.gpr .esi - 1 ∧ u.zf = some (t.gpr .esi - 1 == 0) ∧
       Keeps [.eax, .ebx, .edx, .ebp, .esi] t u := by
-  have index : 0 + 4 * (x / 4) = x := by omega
+  have index : 0 + 4 * (x / 4) = x := by omega_using [aligned]
   have pointer : t.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 (4 * (x / 4)) := by
-    rw [ptr_edi S bp (by omega)]; congr 2; omega
+    rw [ptr_edi S bp (by omega_using [fit])]; congr 2; omega_using [aligned]
   unfold halfStep
   refine WP.block_append (WP.mono (VG.Proof.RsaKeyGen.X86.HalfPass.step_ok (src := 0) (out := 0) S pointer
-    (by omega) (by omega) mask) fun a ⟨O, V, K⟩ => ?_)
+    (by omega_using [fit]) (by omega_using [fit]) mask) fun a ⟨O, V, K⟩ => ?_)
   refine wp_addS rfl fun b B _ => wp_subZ rfl fun u U Z => WP.block_nil ?_
   rw [index] at O V
   have esiB : b.gpr .esi = t.gpr .esi := by rw [B.other .esi (by decide), K.1 .esi (by decide)]
@@ -70,17 +70,17 @@ theorem halfLoop_ok {t₀ : State} {W : Addr} {L x N : Nat} (S : Scr t₀ W L) (
       by simpa using count⟩) ?_
   · rintro j t index ⟨K, O, V, P, esi⟩
     have St := S.of_keeps K (by decide)
-    refine WP.mono (halfStep_ok (choice := choice) St P (by omega) (by omega) (by rw [K.1 .ecx (by decide)]; exact mask))
+    refine WP.mono (halfStep_ok (choice := choice) St P (by omega_using [aligned]) (by omega_using [fit, index]) (by rw [K.1 .ecx (by decide)]; exact mask))
       fun u ⟨Ou, value, Pu, esiU, Z, Ku⟩ => ?_
     obtain ⟨next, last⟩ := VG.Proof.Bignum.X86.PublicRt.count1_zf esi index
-    have sameLo : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) := O.w32 (by omega) (by omega)
-    have sameHi : w32 t.mem W (x + 4 * j + 4) = w32 t₀.mem W (x + 4 * j + 4) := O.w32 (by omega) (by omega)
-    refine ⟨⟨K.trans Ku, (O.mono (by omega) (by omega)).trans (Ou.mono (by omega) (by omega)), ?_,
-      by rw [show x + 4 * (j + 1) = x + 4 * j + 4 by omega]; exact Pu, by rw [esiU]; exact next⟩,
+    have sameLo : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) := O.w32 (by omega_using []) (by omega_using [fit, nowrap, index])
+    have sameHi : w32 t.mem W (x + 4 * j + 4) = w32 t₀.mem W (x + 4 * j + 4) := O.w32 (by omega_using []) (by omega_using [fit, nowrap, index])
+    refine ⟨⟨K.trans Ku, (O.mono (by omega_using []) (by omega_using [])).trans (Ou.mono (by omega_using []) (by omega_using [])), ?_,
+      by rw [show x + 4 * (j + 1) = x + 4 * j + 4 by omega_using []]; exact Pu, by rw [esiU]; exact next⟩,
       by rw [Z, last]⟩
     intro i hi
     rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hi) with before | rfl
-    · rw [Ou.w32 (by omega) (by omega)]
+    · rw [Ou.w32 (by omega_using [before]) (by omega_using [fit, nowrap, index, hi])]
       exact V i before
     · rw [value, sameLo, sameHi]
   · rintro u ⟨K, O, V, P, _⟩
@@ -89,7 +89,7 @@ theorem halfLoop_ok {t₀ : State} {W : Addr} {L x N : Nat} (S : Scr t₀ W L) (
     · exact val32_congr_at t₀.mem u.mem W N x x V
     · apply val32_halve_at t₀.mem u.mem W N x x
       intro i hi
-      rw [V i hi, show x + 4 * i + 4 = x + 4 * (i + 1) by omega]
+      rw [V i hi, show x + 4 * i + 4 = x + 4 * (i + 1) by omega_using []]
       by_cases last : i + 1 = N
       · rw [ite_eq_left last, last, top]
         rfl
@@ -114,9 +114,9 @@ theorem half_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) (S : 
   have K : Keeps [.edx, .ebp, .esi] s b := (Ka.mono (by decide)).widen Kb
   have Pb : PtrAt b g.W .ebp (g.array 27) := by rw [PtrAt, Kb.1 .ebp (by decide)]; exact P
   have M : b.mem = s.mem := Mb.trans Ma
-  refine WP.mono (halfLoop_ok (choice := choice) (S.of_keeps K (by decide)) (by unfold Geometry.words; omega)
-    (by simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega)
-    (by unfold Geometry.words; omega) (by rw [M]; exact top) Pb count
+  refine WP.mono (halfLoop_ok (choice := choice) (S.of_keeps K (by decide)) (by unfold Geometry.words; omega_using [positive])
+    (by simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using [])
+    (by unfold Geometry.words; omega_using [fit]) (by rw [M]; exact top) Pb count
     (by rw [K.1 .ecx (by decide)]; exact mask)) fun t ⟨O, V, Pt, Kt⟩ => ?_
   rw [M] at O V
   exact ⟨O, V, Pt, (K.mono (by decide)).trans Kt⟩

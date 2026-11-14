@@ -72,7 +72,7 @@ theorem setText_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   have kP : ∀ r ∈ [pslotR (p.2 8)], (keptR (p.2 8)).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   refine ⟨h.env.keep bp si sp rd wr (slot_frame fr fun r hr => (kP r hr).sub_left (Offset.sub _ (by decide)
-    (by decide))), d, n, by rw [b, append_toNat32]; congr 1; omega, (p.2 7).isLt,
+    (by decide))), d, n, by rw [b, append_toNat32]; congr 1; omega_using [], (p.2 7).isLt,
     cr_dataW hc h.pre h.pub (by rw [wr, h.wr])⟩
 
 /-- The streaming state's regions are apart from what `crypt` and `textAbsorb` write, but their own. -/
@@ -83,10 +83,10 @@ theorem st_crFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {d k :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (hc.dst.sub_right (Lay.stSub (by omega))).symm
-  · exact Lay.st_st (.inl (by omega)) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (L.stk_st (by omega)).symm
+  · exact (hc.dst.sub_right (Lay.stSub (by omega_using [hk]))).symm
+  · exact Lay.st_st (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)
+  · exact L.st_w (by omega_using [hk]) (.inr ⟨by decide, by decide⟩)
+  · exact (L.stk_st (by omega_using [hk])).symm
 
 theorem st_taFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {d k : Nat}
     (hk : d + k ≤ 16 ∨ (48 ≤ d ∧ d + k ≤ 80)) :
@@ -95,10 +95,10 @@ theorem st_taFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {d k :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (L.lay.stk_st (by omega)).symm
+  · exact Lay.st_st (by omega_using [hk]) (by omega_using [hk]) (by decide)
+  · exact L.st_w (by omega_using [hk]) (.inr ⟨by decide, by decide⟩)
+  · exact L.st_w (by omega_using [hk]) (.inr ⟨by decide, by decide⟩)
+  · exact (L.lay.stk_st (by omega_using [hk])).symm
 
 theorem ret_crFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) :
     ∀ r ∈ crFrame (p.2 1) (p.2 8) p.1 1536 (p.2 6) (p.2 7).toNat, (⟨w64 p.1, 4⟩ : Region).Disjoint r := by
@@ -118,7 +118,7 @@ theorem ret_taFrame {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) :
   · exact hc.r_s.sub_right (Lay.stSub (by decide))
   · exact hc.r_w.sub_right (Lay.wSub (by decide))
   · exact hc.r_w.sub_right (Lay.wSub (by decide))
-  · exact ret_below (by have := hc.sp; omega)
+  · exact ret_below (by have := hc.sp; omega_using [this])
 
 /-- The entry's and `setText`'s writes, within `W`. -/
 theorem cset_frame {p : BitVec 32 × (Nat → BitVec 32)} {s₀ s₁ s : State} (h₁ : CEnt p s₀ s₁)
@@ -222,7 +222,7 @@ theorem streamEncrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   have hfit := hd.ok.fit
   have hD2 : bytesAt s₂.mem (w64 (p.2 6)) (p.2 7).toNat = bytesAt s₀.mem (w64 (p.2 6)) (p.2 7).toNat :=
     bytesAt_frame fW (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hc.dw.sub_right (Lay.wSub (by decide))) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hc.dw.sub_right (Lay.wSub (by decide))) (by omega_using [])
   rw [hD2] at hout
   have hH3 : Hk s₃.mem (p.2 0) = H := by
     rw [← hH2]; exact blockAt_frame hco.frame fun r hr =>
@@ -231,8 +231,8 @@ theorem streamEncrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       (Hk s₃.mem (p.2 0)) (Spec.Gcm.ghashInput a (gctr ciph (inc32 (j0 H iv)) pt)) := by
     rw [hH3]
     exact ha.congr (blockAt_frame hco.frame (st_crFrame hc (by decide)))
-      (bytesAt_frame hco.frame (st_crFrame hc (d := 32) (k := (Spec.Gcm.ghashInput a _).length % 16) (by omega))
-        (by omega))
+      (bytesAt_frame hco.frame (st_crFrame hc (d := 32) (k := (Spec.Gcm.ghashInput a _).length % 16) (by omega_using []))
+        (by omega_using []))
   have hab := ta.abs a (gctr ciph (inc32 (j0 H iv)) pt) ⟨hl, by rw [Proof.Gcm.length_gctr, hpt]⟩ ha₃
   rw [hout, hH3] at hab
   have hcnew : gctr ciph (inc32 (j0 H iv)) (pt ++ bytesAt s₀.mem (w64 (p.2 6)) (p.2 7).toNat) =
@@ -250,7 +250,7 @@ theorem streamEncrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     · rw [List.length_append, Proof.Gcm.length_gctr, Proof.Gcm.length_xorKs, length_bytesAt, ← hpt]
       exact hct₃.congr (blockAt_frame ta.frame (st_taFrame hc (.inr ⟨by decide, by decide⟩)))
         (blockAt_frame ta.frame (st_taFrame hc (.inr ⟨by decide, by decide⟩)))
-  · rw [bytesAt_frame ta.frame dT (by omega), hout, hcnew,
+  · rw [bytesAt_frame ta.frame dT (by omega_using []), hout, hcnew,
       List.drop_left' (by rw [Proof.Gcm.length_gctr])]
 
 theorem streamEncrypt_correct (s : State) (hs : streamEncryptX86.pre s) :

@@ -136,7 +136,7 @@ theorem p2_tail (L : Lay c st w) {s : State} (hs : P2 c st w sp R A S N D s) :
 theorem tail_ei (L : Lay c st w) {s : State} (hs : P2 c st w sp R A S N D s) :
     WP isa (cryptTailWith true) s (EI c st w sp R A S N) := by
   obtain ⟨V, s₀, s₁, a, b, d, e, f, g, h, hw, p⟩ := hs
-  have hk : (V .r23).toNat - 16 * Q V < 16 := by show _ - 16 * ((V .r23).toNat / 16) < 16; omega
+  have hk : (V .r23).toNat - 16 * Q V < 16 := by show _ - 16 * ((V .r23).toNat / 16) < 16; omega_using []
   refine WP.mono (WP.with_rdwr (cryptTailWith_ok (L.v a b d) (tail_in (L.v a b d) h hw p) hk))
     fun t ⟨o, rd, wr, _⟩ => ⟨V, a, b, d, h.r28, e, f, g, o.env, ?_⟩
   rw [← b, ← d, ← f, ← g]
@@ -150,8 +150,8 @@ theorem tailSetup_abs {s : State} (hs : EI c st w sp R A S N s) :
   refine WP.mono (SealFused.tailSetup_ok he) fun t ⟨h24, h25, h26, hg, hk⟩ => ?_
   have het := he.keep (fun r hr => hg r (by revert r; decide) (by revert r; decide)
     (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk.sp hk.rd hk.wr
-  have hds := hd.drop (j := 16 * (N.toNat / 16)) (by omega)
-  rw [show N.toNat - 16 * (N.toNat / 16) = N.toNat % 16 by omega] at hds
+  have hds := hd.drop (j := 16 * (N.toNat / 16)) (by omega_using [])
+  rw [show N.toNat - 16 * (N.toNat / 16) = N.toNat % 16 by omega_using []] at hds
   refine ⟨⟨V, blockAt t.mem (V .r29 + BitVec.ofNat 64 240), [], a, b, d, rfl,
     ⟨het, by rw [h24, g, i], by rw [h25, i], h26, by rw [b, d]; exact hds.of_eq hk.rd hk.wr, rfl⟩⟩,
     ⟨V, a, b, d, e, f, g, i, het, hd.of_eq hk.rd hk.wr⟩⟩

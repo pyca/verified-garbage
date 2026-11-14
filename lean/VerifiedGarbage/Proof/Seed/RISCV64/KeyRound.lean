@@ -85,7 +85,7 @@ theorem rot_run (s : State) (x : Reg) (hx : x ≠ .t0) (r : Nat) (hr : 0 < r) (h
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   obtain ⟨s1, e1, u1⟩ := step_x s (shrI .t0 x r) .t0 (s.gpr x >>> r) (exec_shr _ _ _ _ hr')
   obtain ⟨s2, e2, u2⟩ := step_x s1 (shlI x x (64 - r)) x (s1.gpr x <<< (64 - r))
-    (exec_shl _ _ _ _ (by omega))
+    (exec_shl _ _ _ _ (by omega_using [hr]))
   obtain ⟨s3, e3, u3⟩ := step_x s2 (.logic .or x x .t0) x (s2.gpr x ||| s2.gpr .t0) exec_logic
   refine ⟨s3, ?_, ?_, fun y a b => ?_, by rw [u3.mem, u2.mem, u1.mem], by rw [u3.rd, u2.rd, u1.rd],
     by rw [u3.wr, u2.wr, u1.wr], by rw [u3.sp, u2.sp, u1.sp]⟩
@@ -108,7 +108,7 @@ theorem keyRound_ok {j : Nat} (hj : j < 16) {s : State} (h : Room s) :
   have hb0 : 2 * j % 16 < 16 := Nat.mod_lt _ (by decide)
   have hb1 : (2 * j + 1) % 16 < 16 := Nat.mod_lt _ (by decide)
   have hd : gSlot (2 * j + 1) ≠ gSlot (2 * j) ∨ (2 * j + 1) % 16 ≠ 2 * j % 16 :=
-    gIn_apart _ (by omega) _ (by omega) (by omega)
+    gIn_apart _ (by omega_using [hj]) _ (by omega_using [hj]) (by omega_using [])
   let c := kcs.getD j 0
   obtain ⟨s1, e1, u1⟩ := step_x s (shrI .t0 .t5 32) .t0 (s.gpr .t5 >>> 32) (exec_shr _ _ _ _ (by decide))
   obtain ⟨s2, e2, u2⟩ := step_x s1 (shrI .t1 .t6 32) .t1 (s1.gpr .t6 >>> 32) (exec_shr _ _ _ _ (by decide))

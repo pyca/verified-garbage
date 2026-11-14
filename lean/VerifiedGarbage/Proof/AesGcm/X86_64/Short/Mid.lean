@@ -61,14 +61,14 @@ theorem wk_disj {W D : Addr} {n d k : Nat} (dD : (⟨D, n⟩ : Region).Disjoint 
     {r : Region} (hr : Wk W D n r) : (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   rcases hr with hr | hr | hr | hr | hr | hr
   · refine Region.Disjoint.sub_right ?_ hr
-    have := Offset.disjoint W (d := d) (n := k) (e := 0) (k := 16) (.inr (by omega)) (by omega) (by omega)
+    have := Offset.disjoint W (d := d) (n := k) (e := 0) (k := 16) (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by omega_using [])
     simpa using this
-  · exact (Offset.disjoint W (d := d) (n := k) (e := 512) (k := 1536) (.inl (by omega)) (by omega)
-      (by omega)).sub_right hr
-  · exact (dD.symm.sub_left (Lay.wSub (by omega))).sub_right hr
-  · exact (Offset.disjoint W (d := d) (n := k) (e := 112) (k := 16) (by omega) (by omega) (by omega)).sub_right hr
-  · exact (Offset.disjoint W (d := d) (n := k) (e := 216) (k := 8) (by omega) (by omega) (by omega)).sub_right hr
-  · exact (Offset.disjoint W (d := d) (n := k) (e := 240) (k := 32) (by omega) (by omega) (by omega)).sub_right hr
+  · exact (Offset.disjoint W (d := d) (n := k) (e := 512) (k := 1536) (.inl (by omega_using [h₂])) (by omega_using [h₂])
+      (by omega_using [])).sub_right hr
+  · exact (dD.symm.sub_left (Lay.wSub (by omega_using [h₂]))).sub_right hr
+  · exact (Offset.disjoint W (d := d) (n := k) (e := 112) (k := 16) (by omega_using [h₃]) (by omega_using [h₂]) (by omega_using [])).sub_right hr
+  · exact (Offset.disjoint W (d := d) (n := k) (e := 216) (k := 8) (by omega_using [h₄]) (by omega_using [h₂]) (by omega_using [])).sub_right hr
+  · exact (Offset.disjoint W (d := d) (n := k) (e := 240) (k := 32) (by omega_using [h₅]) (by omega_using [h₂]) (by omega_using [])).sub_right hr
 
 /-- A step that writes only in the work regions and keeps `r13`–`r15` and
 `rsp`. -/
@@ -111,11 +111,11 @@ theorem j0f_disj {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact Offset.disjoint W (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint W (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (.inl (by omega)) (by omega) (by omega)
-  · exact (L.kw.sub_right (Lay.wSub (by omega))).symm
+  · exact Offset.disjoint W (.inr (by omega_using [h₁])) (by omega_using [h₃]) (by omega_using [])
+  · exact Offset.disjoint W (.inr (by omega_using [h₁])) (by omega_using [h₃]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h₂]) (by omega_using [h₃]) (by omega_using [])
+  · exact Offset.disjoint W (.inl (by omega_using [h₃])) (by omega_using [h₃]) (by omega_using [])
+  · exact (L.kw.sub_right (Lay.wSub (by omega_using [h₃]))).symm
 
 /-- The short path's start: `J₀` of the 12-byte nonce and the counts. -/
 theorem shortStart_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
@@ -153,8 +153,8 @@ theorem shortStart_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ h₃ => by
     rw [f₃.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint W (.inl (by omega)) (by have := L.ww; omega) (by have := L.ww; omega)) (by decide),
-      kp d h₁ h₂ (by omega)]
+      exact Offset.disjoint W (.inl (by omega_using [h₃])) (by have := L.ww; omega_using [h₃]) (by have := L.ww; omega_using [])) (by decide),
+      kp d h₁ h₂ (by omega_using [h₃])]
   have f₃' : Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 24] s₂.mem s₃.mem :=
     f₃.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
@@ -181,15 +181,15 @@ theorem shortStart_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide) (by decide) (by decide) (by decide)
   · rw [blockAt_frame f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint W (.inl (by decide)) (by have := L.ww; omega) (by have := L.ww; omega)]
+      exact Offset.disjoint W (.inl (by decide)) (by have := L.ww; omega_using []) (by have := L.ww; omega_using [])]
     exact J.j0
   · exact (E.saved.frame J.frame (saved_j0Frame L (by decide) (.inr (by decide)))).frame f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint W (.inl (by decide)) (by have := L.ww; omega) (by have := L.ww; omega)
+      exact Offset.disjoint W (.inl (by decide)) (by have := L.ww; omega_using []) (by have := L.ww; omega_using [])
 
   · have hl := C.aad.lt
     rw [bytesAt_frame f₃ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact C.aad.w.sub_right (Lay.wSub (by decide))) (by omega),
+        simp only [List.mem_singleton] at hr; subst hr; exact C.aad.w.sub_right (Lay.wSub (by decide))) (by omega_using [hal]),
       bytesAt_frame J.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -197,11 +197,11 @@ theorem shortStart_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl
         · exact C.aad.w.sub_right (Lay.wSub (by decide))
         · exact C.aad.w.sub_right (Lay.wSub (by decide))
         · exact C.aad.w.sub_right (Lay.wSub (by decide))
-        · exact C.aad.stk.symm) (by omega),
-      bytesAt_frame E.frame (dW _ _ C.aad.w) (by omega)]
+        · exact C.aad.stk.symm) (by omega_using [hal]),
+      bytesAt_frame E.frame (dW _ _ C.aad.w) (by omega_using [hal])]
   · have hl := C.data.ok.lt
     rw [bytesAt_frame f₃ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact C.dE.sub_right (Lay.wSub (by decide))) (by omega),
+        simp only [List.mem_singleton] at hr; subst hr; exact C.dE.sub_right (Lay.wSub (by decide))) (by omega_using [hn5]),
       bytesAt_frame J.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -209,7 +209,7 @@ theorem shortStart_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl
         · exact C.dE.sub_right (Lay.wSub (by decide))
         · exact C.dE.sub_right (Lay.wSub (by decide))
         · exact C.dE.sub_right (Lay.wSub (by decide))
-        · exact C.data.ok.stk.symm) (by omega),
-      bytesAt_frame E.frame (dW _ _ C.dE) (by omega)]
+        · exact C.data.ok.stk.symm) (by omega_using [hn5]),
+      bytesAt_frame E.frame (dW _ _ C.dE) (by omega_using [hn5])]
 
 end VG.Proof.AesGcm.X86_64.Short

@@ -38,9 +38,9 @@ theorem putWs_out {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)},
   | _, [], _, _, _ => rfl
   | p, w :: ws, h, hp, ha => by
     simp only [List.length_cons] at h hp
-    have h8 := add8_toNat (p := p) (by omega)
+    have h8 := add8_toNat (p := p) (by omega_using [hp])
     simp only [putWs]
-    rw [putWs_out (by rw [h8]; omega) (by rw [h8]; omega) ha, readW_sep64 (by omega) ha (by omega)]
+    rw [putWs_out (by rw [h8]; omega_using [h]) (by rw [h8]; omega_using [hp]) ha, readW_sep64 (by omega_using [h]) ha (by omega_using [hp])]
 
 /-- The words `putWs` writes. -/
 theorem putWs_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat + 8 * ws.length < 2 ^ 64 →
@@ -48,19 +48,19 @@ theorem putWs_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat +
   | _, [], _ => fun i hi => absurd hi (Nat.not_lt_zero _)
   | p, w :: ws, hp => by
     simp only [List.length_cons] at hp
-    have h8 := add8_toNat (p := p) (by omega)
+    have h8 := add8_toNat (p := p) (by omega_using [hp])
     intro i hi
     simp only [putWs]
     cases i with
     | zero =>
       rw [show p + BitVec.ofNat 64 (64 / 8 * 0) = p from BitVec.add_zero p,
-        putWs_out (.inl (by rw [h8])) (by rw [h8]; omega) (by omega), Mem.readW_writeW_self64]
+        putWs_out (.inl (by rw [h8])) (by rw [h8]; omega_using [hp]) (by omega_using [hp]), Mem.readW_writeW_self64]
       simp
     | succ i =>
-      have := putWs_held (m := m.writeW p w) (p := p + 8) (ws := ws) (by rw [h8]; omega) i
-        (by simp at hi; omega)
+      have := putWs_held (m := m.writeW p w) (p := p + 8) (ws := ws) (by rw [h8]; omega_using [hp]) i
+        (by simp at hi; omega_using [hi])
       rw [show p + BitVec.ofNat 64 (64 / 8 * (i + 1)) = p + 8 + BitVec.ofNat 64 (64 / 8 * i) by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega]
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []]
       simpa using this
 
 /-- The words of a table, its functions at the addresses `symsOf ns`. -/
@@ -86,7 +86,7 @@ theorem withTabs_arg (s : State) (vs : List MdHash) (w : MdHash) {j : Nat}
   show (tabMem s.mem vs w).readW (stackArgAddr s j) 64 = s.mem.readW (stackArgAddr s j) 64
   refine Mem.readW_congr fun i hi => ?_
   have : (stackArgAddr s j + BitVec.ofNat 64 i).toNat < 0x300000 := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hj, hi]
   simp only [tabMem, Nat.blt_eq.mpr this, Bool.cond_true]
 
 /-- Above `0x300000`, the tables' memory. -/
@@ -99,7 +99,7 @@ theorem tabMem_above {m : Mem} {vs : List MdHash} {w : MdHash} {p : Addr} {ws : 
   rw [← h i hi]
   refine Mem.readW_congr fun k hk => ?_
   have : ¬ (p + BitVec.ofNat 64 (64 / 8 * i) + BitVec.ofNat 64 k).toNat < 0x300000 := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hp, hl, hi, hk]
   have hb : Nat.blt (p + BitVec.ofNat 64 (64 / 8 * i) + BitVec.ofNat 64 k).toNat 0x300000 = false := by
     rw [Bool.eq_false_iff]; intro hc; exact this (Nat.blt_eq.mp hc)
   simp only [tabMem, hb, Bool.cond_false]
@@ -114,7 +114,7 @@ theorem withTabs_heldH (s : State) (vs : List MdHash) (w : MdHash) :
   refine tabMem_above (by rw [c1]) (by simp [FnTable.words, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf,
     Spec.HashTable.dataOf]) fun i hi => ?_
   have hi' : i < 11 := by
-    simp [FnTable.words, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf] at hi; omega
+    simp [FnTable.words, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf] at hi; omega_using [hi]
   rw [putWs_out (.inl (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega))
     (by simp [tw, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]) (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
   exact putWs_held (by rw [hl]; decide) i (by rw [hl]; exact hi')
@@ -177,7 +177,7 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, verifyStack, chkStack, stackArgs_ten, List.append_eq, Sig.tableRegion]
   have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
-  have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
+  have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega_using [hdl]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * (j + 1)) := fun j => by
     simp only [stackArgAddr, hsp]
   simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),
@@ -199,8 +199,8 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     | exact hd
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (rw [hdl']; rfl)
-    | (rw [hdl']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
-    | (rw [hdl']; simp; omega)
+    | (rw [hdl']; apply Region.disjoint_of_sep; simp [Region.sep]; omega_using [hdl])
+    | (rw [hdl']; simp; omega_using [hdl])
     | skip
 
 theorem verify_sat_of {w : MdHash} (hw : w ∈ vs) (hl : (allNames vs).length < 2 ^ 32) {dl : Nat} (hdl : dl ≤ 64)
@@ -213,7 +213,7 @@ theorem verify_sat_of {w : MdHash} (hw : w ∈ vs) (hl : (allNames vs).length < 
       have hA := MdHashTable.X86_64.hashAt_tableOf
         (MdHashTable.X86_64.held_tableOf (withTabs_heldH (verifySatBase dl) vs w)).2.2.2.1
       cases hH.symm.trans hA
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), hlen]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hdl]), hlen]
 
 theorem verifySat_b16 : ∀ j < 10, stackArg (verifySatBase 16) j = verifyArgs j := by decide
 theorem verifySat_b20 : ∀ j < 10, stackArg (verifySatBase 20) j = verifyArgs j := by decide

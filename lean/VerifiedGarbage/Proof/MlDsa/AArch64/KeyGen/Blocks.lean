@@ -48,7 +48,7 @@ theorem coeffAt_writeW32 (m : Mem) (q : Addr) {i j : Nat} (hi : i < 256) (hj : j
   unfold coeffAt
   split
   · subst j; exact Mem.readW_writeW_self32 m _ v
-  · exact Mem.readW_writeW_sep (Offset.sep q (by omega) (by omega) (by omega)) (by decide)
+  · exact Mem.readW_writeW_sep (Offset.sep q (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 /-- The coefficients after masking with the 32 bits `r`, 0 or 1. -/
 theorem and_mask {r : BitVec 32} (hr : r = 0 ∨ r = 1) (x : BitVec 32) :
@@ -86,7 +86,7 @@ theorem ofNat_sub1 {i : Nat} (h : i < 256) : BitVec.ofNat 64 (256 - i) - BitVec.
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem mask_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {a : Ptr}
     (hw : inB wbs a 1024 = true) (hin : inB (rbs ++ wbs) a 1024 = true)
@@ -119,16 +119,16 @@ theorem mask_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S r
       fun j _ => by rw [Proof.MlDsa.KeyGen.ifn (Nat.not_lt_zero j), m₄]⟩)
     fun s' ⟨_, _, _, kk, hf, hc⟩ => ⟨postB_of_keep kk (by decide) hf, kk, fun j hj => ?_⟩
   · have hc4 : (⟨pa s a, 1024⟩ : Region).Contains (pa s a + BitVec.ofNat 64 (4 * i)) 4 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
     have hinw : InRegions s'.wr (s'.gpr .x1) 4 := by
-      rw [kk.wr, e1]; exact inRegions_sub hW (by omega) (by omega)
+      rw [kk.wr, e1]; exact inRegions_sub hW (by omega_using [hi]) (by omega_using [])
     have hin0 : InRegions (s'.rd ++ s'.wr) (s'.gpr .x1) 4 := VG.Proof.MlKem.AArch64.in_rd_wr hinw
     refine WP.mono (maskBody_ok s' hin0 hinw) fun s'' ⟨⟨hm, e1', e2'⟩, k'⟩ => ⟨⟨?_, ?_, by rw [k'.get .x8, e8],
       (kk.trans k').mono (by simp), ?_, fun j hj => ?_⟩, ?_⟩
     · rw [e1', e1, off_add4]
     · rw [e2', e2, ofNat_sub1 hi]
     · rw [hm, e1]; exact hf.writeW (List.mem_singleton_self _) _ hc4
-    · rw [hm, e1, coeffAt_writeW32 _ _ hj (by omega), e8]
+    · rw [hm, e1, coeffAt_writeW32 _ _ hj (by omega_using [hi]), e8]
       by_cases e : i = j
       · subst e
         rw [Proof.MlDsa.KeyGen.ifp rfl, Proof.MlDsa.KeyGen.ifp (Nat.lt_succ_self _)]
@@ -137,10 +137,10 @@ theorem mask_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S r
         rw [← this]; rfl
       · rw [Proof.MlDsa.KeyGen.ifn e, hc j hj]
         by_cases hji : j < i
-        · rw [Proof.MlDsa.KeyGen.ifp hji, Proof.MlDsa.KeyGen.ifp (by omega)]
-        · rw [Proof.MlDsa.KeyGen.ifn hji, Proof.MlDsa.KeyGen.ifn (by omega)]
-    · rw [e2', e2, ofNat_sub1 hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+        · rw [Proof.MlDsa.KeyGen.ifp hji, Proof.MlDsa.KeyGen.ifp (by omega_using [hji])]
+        · rw [Proof.MlDsa.KeyGen.ifn hji, Proof.MlDsa.KeyGen.ifn (by omega_using [e, hji])]
+    · rw [e2', e2, ofNat_sub1 hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
+      omega_using [hi]
   · rw [hc j hj, Proof.MlDsa.KeyGen.ifp hj, x8, and_mask hr]
 
 /-! ## After a sampler -/

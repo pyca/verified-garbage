@@ -87,7 +87,7 @@ theorem ldf_then {α : Type} {Φ : α → State → Prop} {rest : List Instr} {r
   · obtain ⟨h19, hin, hv⟩ := hld a s h
     have he : exec (ldf r j) s = some (s.write .x r (v a)) := by
       show exec (.ldr .x r .x19 (8 * j)) s = _
-      rw [exec_ldr_x' (by omega) (by rw [h19]; exact hin), h19, hv]
+      rw [exec_ldr_x' (by omega_using [hj]) (by rw [h19]; exact hin), h19, hv]
     brun [he]
     exact ⟨s, h, rfl⟩
   · rintro a _ _ ⟨s₁, h₁, rfl⟩ ⟨s₂, h₂, rfl⟩ x hx
@@ -142,7 +142,7 @@ theorem callS_state {p : GenPublic} {original s u : State} {used : Nat} {st : Ke
   obtain ⟨-, -, -, a3⟩ := callS_args (used := used) (st := st) hu hm
   obtain ⟨-, -, -, r3, r4, -⟩ := ha
   have hword (d : Nat) (hd : d + 8 ≤ 56) : word (callS p used st u).mem p.stp d = word s.mem p.stp d :=
-    hfr.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega))
+    hfr.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega_using [hd]))
       (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact sT) (by decide)
   refine ⟨?_, ?_⟩
   · simp only [Search.searchE, callS_gpr (by decide : Reg.x3 ∉ linkRegs), callS_gpr (by decide : Reg.x4 ∉ linkRegs),
@@ -180,10 +180,10 @@ theorem search_call_ct (v : RoundImpl) : RelCT isa (Two CallSCT) (searchCall v) 
   obtain ⟨e₂, ws₂⟩ := callS_state l₂ hu₂ r₂ m₂
   have hlen₁ : Search.searchLen (callS q.inputs q.used st₁ u₁) = q.inputs.L := by
     simp only [Search.searchLen, callS_gpr (by decide : Reg.x1 ∉ linkRegs), r₁.2.1]
-    exact toNat_ofNat_lt (by have := l₁.input.cfacts.len.2.1; omega)
+    exact toNat_ofNat_lt (by have := l₁.input.cfacts.len.2.1; omega_using [this])
   have hlen₂ : Search.searchLen (callS q.inputs q.used st₂ u₂) = q.inputs.L := by
     simp only [Search.searchLen, callS_gpr (by decide : Reg.x1 ∉ linkRegs), r₂.2.1]
-    exact toNat_ofNat_lt (by have := l₂.input.cfacts.len.2.1; omega)
+    exact toNat_ofNat_lt (by have := l₂.input.cfacts.len.2.1; omega_using [this])
   obtain ⟨b0, b1, b2, b3⟩ := callS_args (used := q.used) (st := st₁) hu₁ m₁
   obtain ⟨c0, c1, c2, c3⟩ := callS_args (used := q.used) (st := st₂) hu₂ m₂
   refine ⟨sReads q.inputs q.used st₁, sWrites q.inputs st₁, sReads q.inputs q.used st₂, sWrites q.inputs st₂,

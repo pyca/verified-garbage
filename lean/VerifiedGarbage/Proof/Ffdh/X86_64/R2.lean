@@ -30,8 +30,8 @@ theorem r2Head_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   have hN := hdr_lt_slot w 8 (show sArr aN < 32 by decide)
   exact WP.mono (WP.keep [.r12, .r10] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .r10 = off B (slot w aN) ∧ t.mem = s.mem)
-    (by unfold r2Head; xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.ld (d := 8 * sW) (by omega),
-      h.scr.ld (d := 8 * sArr aN) (by omega), h.hdr.hw, h.hdr.harr aN (by decide)]) rfl)
+    (by unfold r2Head; xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.ld (d := 8 * sW) (by omega_using [hZ, hW]),
+      h.scr.ld (d := 8 * sArr aN) (by omega_using [hZ, hN]), h.hdr.hw, h.hdr.harr aN (by decide)]) rfl)
     fun _ ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
 
 /-- R² for p, using any verified RSA precomputation implementation. -/
@@ -50,7 +50,7 @@ theorem r2_ctx (M : Mont) (R : R2Impl M) {s : State} {B : Addr} {Z k : Nat} {mi 
   refine WP.seq (WP.mono (r2Head_ok hc.good (Nat.le_refl _)) fun s₁ ⟨h12, h10, hm, k₁⟩ => ?_)
   have hg₁ : Good s₁ (off B (inner ((k + 7) / 8))) (slot ((k + 7) / 8) 8) ((k + 7) / 8) mi :=
     ⟨hc.good.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hc.rdi, by rw [hm]; exact hc.hdr⟩
-  refine WP.mono (R.ok hg₁ (Nat.le_refl _) (by omega) (by omega)
+  refine WP.mono (R.ok hg₁ (Nat.le_refl _) (by omega_using [hk1]) (by omega_using [hk2])
     (by rw [hm]; exact hv.n) (by rw [hm]; exact hv.inv) h12 h10 hodd hlo)
     fun t ⟨_, hlt, hr, f, kk⟩ => ?_
   have f' : Frm (off B (inner ((k + 7) / 8))) (r2Ranges ((k + 7) / 8)) s.mem t.mem := by rw [hm] at f; exact f
@@ -58,10 +58,10 @@ theorem r2_ctx (M : Mont) (R : R2Impl M) {s : State} {B : Addr} {Z k : Nat} {mi 
   have hr' : ∀ r ∈ r2Ranges ((k + 7) / 8), 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot ((k + 7) / 8) 8 := fun r hr' => by
     refine ⟨?_, r2Ranges_le ((k + 7) / 8) r hr'⟩
     simp only [r2Ranges, List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes, aAcc, aTmp, aR2, sCnt, sFn] <;> omega
+    rcases hr' with rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes, aAcc, aTmp, aR2, sCnt, sFn] <;> omega_using []
   refine ⟨⟨hc.of_frm f' hr' K.2.2 (K.gpr (by decide)),
-    hv.of_frmA hGn (by omega) f' (fun r hr'' => ⟨?_, ?_⟩), hlt, hr, hodd, h1,
-    by unfold inner at hroom ⊢; omega, by omega, by omega⟩, f', K⟩
+    hv.of_frmA hGn (by omega_using [hk1]) f' (fun r hr'' => ⟨?_, ?_⟩), hlt, hr, hodd, h1,
+    by unfold inner at hroom ⊢; omega_using [hroom], by omega_using [hk1], by omega_using [hk2]⟩, f', K⟩
   · exact (r2Ranges_arr _ (j := aN) (by decide) (by decide) (by decide) r hr'').symm
   · exact (r2Ranges_arr _ (j := aOne) (by decide) (by decide) (by decide) r hr'').symm
 

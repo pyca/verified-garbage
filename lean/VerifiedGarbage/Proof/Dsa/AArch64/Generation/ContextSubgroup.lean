@@ -25,11 +25,11 @@ theorem GenerationMemory.subgroupState {p : GenerationContext} {W : Nat → BitV
     (hseed : GenerationTapeMemory seed s) (h0 : W 0 = VG.Proof.Bignum.off p.geo.B q)
     (h25 : W 25 = seed.ptr) {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used)
     (hu : used ≤ p.rand.bytes.length) : SubgroupState (h.subgroupPlan seed hlen h0) used s := by
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   have ha := p.geo.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
   have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  have hq := p.geo.small_bound (d := q) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega)
-  have hw := p.geo.small_bound (d := witness) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hq := p.geo.small_bound (d := q) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
+  have hw := p.geo.small_bound (d := witness) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
   refine {
     layout := h.layout
     rep := h.rep
@@ -43,13 +43,13 @@ theorem GenerationMemory.subgroupState {p : GenerationContext} {W : Nat → BitV
     usedBound := hu
     arena := (by
       have hb := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
-      have := h.scratch.sub (o := 0) (n := domainCheck) (by unfold usedBytes; omega) (by decide)
+      have := h.scratch.sub (o := 0) (n := domainCheck) (by unfold usedBytes; omega_using []) (by decide)
       simp only [VG.Proof.Bignum.off, BitVec.add_zero] at this
       change Scr s (W 5) domainCheck
       rw [hb]; exact this)
     tapeCover := h.rand.cover }
   · change LabAt s p.geo.F p.geo.hash W seed.ptr p.geo.qLen
-    refine ⟨h25, (h.slots 26 (by simp [generationSlots])).trans p.hashLenSlot, by omega, ?_, ?_, ?_, ?_⟩
+    refine ⟨h25, (h.slots 26 (by simp [generationSlots])).trans p.hashLenSlot, by omega_using [qn], ?_, ?_, ?_, ?_⟩
     · simpa only [hlen] using hseed.cover
     · simpa only [hlen, GenerationGeometry.part, GenerationGeometry.hash] using seed.part hh
     · simpa only [hlen] using seed.frame
@@ -60,10 +60,10 @@ theorem GenerationMemory.subgroupState {p : GenerationContext} {W : Nat → BitV
   · change ∀ i < p.geo.qLen, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.geo.B q) i) 1
     intro i hi
     rw [VG.Proof.Bignum.off_off]
-    exact h.scratch.region (by omega) (by decide)
+    exact h.scratch.region (by omega_using [hq, hi]) (by decide)
   · change ∀ i < p.geo.qLen, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.geo.B witness) i) 1
     intro i hi
     rw [VG.Proof.Bignum.off_off]
-    exact h.scratch.region (by omega) (by decide)
+    exact h.scratch.region (by omega_using [hw, hi]) (by decide)
 
 end VG.Proof.Dsa.AArch64.Generation

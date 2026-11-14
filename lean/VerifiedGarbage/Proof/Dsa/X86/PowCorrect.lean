@@ -20,6 +20,6 @@ theorem scratch_fits {n size : Nat} (h : contextBytes n ≤ size) :
     ∀ r ∈ scratch n, r.1 + r.2 ≤ size := by
   intro r hr
   simp only [scratch, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> simp only [contextBytes, slot, stride] at * <;> omega
+  rcases hr with rfl | rfl <;> simp only [contextBytes, slot, stride] at * <;> omega_using [h]
 
 end VG.Proof.Dsa.X86.Pow

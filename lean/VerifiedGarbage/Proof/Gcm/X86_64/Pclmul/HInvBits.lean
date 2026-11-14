@@ -31,23 +31,23 @@ theorem shl1 (h : BitVec 128) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_append, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_ushiftRight, qword, BitVec.getLsbD_extractLsb']
-  rcases (by omega : i = 0 ∨ (1 ≤ i ∧ i < 64) ∨ i = 64 ∨ 64 < i) with h | h | h | h
+  rcases (by omega_using [] : i = 0 ∨ (1 ≤ i ∧ i < 64) ∨ i = 64 ∨ 64 < i) with h | h | h | h
   · subst h; simp
   · simp (disch := omega) only [↓ite_eq_left, decide_eq_true, decide_eq_false, Bool.true_and,
       Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true, Bool.not_true]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
   · subst h; simp
   · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, decide_eq_false,
       Bool.true_and, Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [h])
 
 theorem shr31 (y : BitVec 32) : y >>> 31 = if y.msb then 1#32 else 0#32 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.msb_eq_decide, Nat.shiftRight_eq_div_pow]
   have := y.isLt
   by_cases h : 2 ^ (32 - 1) ≤ y.toNat
-  · simp only [h, decide_true, ite_true, BitVec.toNat_ofNat]; omega
-  · simp only [h, decide_false, Bool.false_eq_true, ite_false, BitVec.toNat_ofNat]; omega
+  · simp only [h, decide_true, ite_true, BitVec.toNat_ofNat]; omega_using [h]
+  · simp only [h, decide_false, Bool.false_eq_true, ite_false, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem msb_dword3 (h : BitVec 128) : dword h 3 >>> 31 = if h.getMsbD 0 then 1#32 else 0#32 := by
   have e : (dword h 3).msb = h.getMsbD 0 := by

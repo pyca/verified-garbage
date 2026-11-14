@@ -100,14 +100,14 @@ structure LineResult (i j k : XReg) (n : Nat) (s t : State) : Prop extends F s t
 theorem line_result (i j k : XReg) (hi : Safe i) (hj : Safe j) (hk : k≠.xmm4)
     {n : Nat} (hn : n<32) (hpos : 0<n) (s : State) :
  LineResult i j k n s (run (line i j k n) s) := by
- have e1 : (BitVec.ofNat 8 n).toNat = n := by simp only [BitVec.toNat_ofNat]; omega
- have e2 : (BitVec.ofNat 8 (32-n)).toNat = 32-n := by simp only [BitVec.toNat_ofNat]; omega
+ have e1 : (BitVec.ofNat 8 n).toNat = n := by simp only [BitVec.toNat_ofNat]; omega_using [hn]
+ have e2 : (BitVec.ofNat 8 (32-n)).toNat = 32-n := by simp only [BitVec.toNat_ofNat]; omega_using []
  refine ⟨run_frame _ _, ?_, ?_⟩
  · intro q hq
    simp only [dw,line,run,List.map_cons,List.map_nil,xmm_bin,xmm_shift,hi.1,hi.2,hj.1,hj.2,hk,↓reduceIte,reduceCtorEq,
        eval_movdqa,dword_pxor,dword_por,dword_paddd _ _ hq,
        dword_pslld _ _ (by rw [e1]; exact hn) hq,
-       dword_psrld _ _ (by rw [e2]; omega) hq,e1,e2,rol_shifts _ hn]
+       dword_psrld _ _ (by rw [e2]; omega_using [hpos]) hq,e1,e2,rol_shifts _ hn]
    exact congrArg (fun x => dword (s.xmm i) q ^^^ x.rotateLeft n) (BitVec.add_comm _ _)
  · intro r hr h4 h5
    simp only [line,run,List.map_cons,List.map_nil,xmm_bin,xmm_shift,hr,h4,h5,↓reduceIte]
@@ -196,7 +196,7 @@ theorem unpack_eq (s : State) :
    shuffle39,shuffle93,shuffle4e,dword_ofDwords_0,dword_ofDwords_1,dword_ofDwords_2,dword_ofDwords_3,dw,and_self]
 
 def Natural (regs : Nat → XReg) (v : Vector Word 16) (s : State) : Prop :=
- ∀ r (hr : r<4) q (hq : q<4), dw s (regs r) q = v[4*r+q]'(by omega)
+ ∀ r (hr : r<4) q (hq : q<4), dw s (regs r) q = v[4*r+q]'(by omega_using [hr, hq])
 
 def PackedValues (regs : Nat → XReg) (v : Vector Word 16) (s : State) : Prop :=
  ∀ r (_hr : r<4) q (_hq : q<4), dw s (regs r) q = v[index r q]'(Nat.mod_lt _ (by decide))

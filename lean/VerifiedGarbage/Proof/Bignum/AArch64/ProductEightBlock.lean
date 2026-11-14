@@ -52,7 +52,7 @@ theorem lowBlock_ok {s : State} {B : Addr} {Z eQ eT eN : Nat}
   refine WP.mono (tailTile_ok (hs.congr kabc.wr)
     ((kabc.gpr .x8 (by decide)).trans h8) ((kabc.gpr .x16 (by decide)).trans h16)
     ((kabc.gpr .x17 (by decide)).trans h17) ((kabc.gpr .x7 (by decide)).trans h7)
-    hQ hT (by omega) hQT (by omega) hin (by decide)
+    hQ hT (by omega_using [hN]) hQT (by omega_using [hNT]) hin (by decide)
     (Nat.lt_of_lt_of_le (wv_lt s.mem B eT 8) (Nat.le_of_eq hr))) fun t ⟨hI, hc⟩ => ?_
   have hn : blockValue (operand c (word c.mem B eN)) = wv s.mem B eN 8 := by
     rw [keep_operand kc (by decide), hcm]

@@ -105,10 +105,10 @@ theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.of
   rw [PublicKey.sub8']
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 264) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 theorem inFrW (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 264) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
 theorem ea_fr (hc : Ctx L g mx m₀ t) (d : Nat) :
     t.ea (Impl.Ed25519.X86_64.stk d) = L.B + BitVec.ofNat 64 (16 + d) := by
   rw [PublicKey.ea_stk, hc.rsp, PublicKey.add_add]
@@ -149,7 +149,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
       exact ⟨L.FR, by simp, off, hb, by exact Nat.le_trans hn (by show 192 ≤ 248; decide)⟩
     · exact ⟨L.OUT, by simp, h⟩
     · exact ⟨L.SCR, by simp, h⟩
-  refine WP.of_syms (WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
+  refine WP.of_syms (WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
   have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -164,19 +164,19 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     rcases List.mem_append.mp hr with hr | hr
     · rcases hwsub r hr with h | h | h
       · exact (Offset.disjoint L.B (d := d) (n := 8) (e := 16) (k := 192)
-          (by omega) (by omega) (by omega)).sub_right h.sub
-      · exact (hL.ko.sub_left (Offset.sub_base _ (by omega))).sub_right h.sub
-      · exact (hL.kc.sub_left (Offset.sub_base _ (by omega))).sub_right h.sub
+          (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])).sub_right h.sub
+      · exact (hL.ko.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right h.sub
+      · exact (hL.kc.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right h.sub
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base _ (by omega) (by omega)
+      exact Offset.disjoint_base _ (by omega_using [h₁]) (by omega_using [h₂])
   have keep : ∀ d, 216 ≤ d → d + 8 ≤ 264 →
       s'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf'.readW (Region.contains_self _ _) (hdisj d h₁ h₂) (by decide)
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, ?_, fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'),
-    hmx.trans hc.mx, (keep 216 (by omega) (by omega)).trans hc.pScr,
-    (keep 224 (by omega) (by omega)).trans hc.pLen, (keep 232 (by omega) (by omega)).trans hc.pMsg,
-    (keep 240 (by omega) (by omega)).trans hc.pPk, (keep 248 (by omega) (by omega)).trans hc.pSeed,
-    (keep 256 (by omega) (by omega)).trans hc.pOut,
+    hmx.trans hc.mx, (keep 216 (by omega_using []) (by omega_using [])).trans hc.pScr,
+    (keep 224 (by omega_using []) (by omega_using [])).trans hc.pLen, (keep 232 (by omega_using []) (by omega_using [])).trans hc.pMsg,
+    (keep 240 (by omega_using []) (by omega_using [])).trans hc.pPk, (keep 248 (by omega_using []) (by omega_using [])).trans hc.pSeed,
+    (keep 256 (by omega_using []) (by omega_using [])).trans hc.pOut,
     hc.frame.trans (Frame.sub hf' fun r hr => ?_), hsy.symm ▸ hc.sym, hc.held⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
   · rcases List.mem_append.mp hr with hr | hr
@@ -186,7 +186,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
       · exact ⟨L.SCR, by simp, h.sub⟩
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨L.STK, by simp, ?_⟩
-      have := Offset.sub_base L.B (d := 0) (n := 16) (k := 264) (by omega)
+      have := Offset.sub_base L.B (d := 0) (n := 16) (k := 264) (by omega_using [])
       simpa using this
 
 end VG.Proof.Ed25519.X86_64.SignCached

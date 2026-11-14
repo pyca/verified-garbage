@@ -75,13 +75,13 @@ def outR (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
 theorem kb_toNat {s : State} (hp : PreR s) : (kb s).toNat + verStack + 48 ≤ 2 ^ 64 ∧
     (kb s).toNat + verStack = (s.gpr .rsp).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack at *; omega
+  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack at *; omega_arith
 
 theorem fb_toNat {s : State} (hp : PreR s) : (fb s).toNat + frameBytes + 8 + 40 ≤ 2 ^ 64 ∧
     (fb s).toNat = (kb s).toNat + 8 := by
   have ⟨h1, h2⟩ := kb_toNat hp
-  rw [fb_eq, toNat_off (by unfold verStack at *; omega)]
-  unfold frameBytes verStack at *; omega
+  rw [fb_eq, toNat_off (by unfold verStack at *; omega_using [h1])]
+  unfold frameBytes verStack at *; omega_using [h1]
 
 /-- In the frame, from the entry state `s`: with the arguments kept in
 their slots, memory changed only where the function may write. -/
@@ -98,7 +98,7 @@ structure Env (s t : State) : Prop where
   sEl : word t.mem (fb s) oEl = s.gpr .r9
 
 theorem Env.scr {s t : State} (h : Env s t) (hp : PreR s) : Scr t (fb s) frameBytes :=
-  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega)
+  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega_using [this])
 
 /-- A buffer of the caller that the function does not write. -/
 theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, outR s, scrR s] s.mem m) {p : Addr} {len : Nat}
@@ -123,13 +123,13 @@ theorem arg_outside {s : State} (hp : PreR s) {m : Mem} (h : Outside (fb s) 0 fr
   have := fb_toNat hp
   show m.readW _ 64 = s.mem.readW _ 64
   rw [stackArgAddr_fb]
-  exact h.word (.inr (by unfold frameBytes; omega)) (by unfold frameBytes at *; omega)
+  exact h.word (.inr (by unfold frameBytes; omega_using [])) (by unfold frameBytes at *; omega_using [hj])
 
 /-- A stack argument, in memory changed only where the function may write. -/
 theorem Env.arg {s t : State} (h : Env s t) (hp : PreR s) {j : Nat} (hj : j < 5) :
     t.mem.readW (stackArgAddr s j) 64 = stackArg s j := by
   refine h.mem.readW (r := ⟨stackArgAddr s 0, 40⟩) ?_ (fun r hr => ?_) (by decide)
-  · rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  · rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hp.dKa.symm
@@ -142,6 +142,6 @@ theorem arg_in {s t : State} (hp : PreR s) (hrd : t.rd = s.rd) {j : Nat} (hj : j
   by
     rw [hrd]
     exact hp.hrd.left _ _ ⟨⟨stackArgAddr s 0, 40⟩, by simp,
-      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Rec

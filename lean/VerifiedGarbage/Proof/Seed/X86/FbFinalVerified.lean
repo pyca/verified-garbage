@@ -157,19 +157,19 @@ theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (finalX86
     sS, sA, sE⟩ := hp
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [fbTaint]; omega, ?_⟩, ?_⟩ fun _ => ⟨sE, ?_⟩
+    fun _ => ⟨by simp only [fbTaint]; omega_using [fE], ?_⟩, ?_⟩ fun _ => ⟨sE, ?_⟩
   · rw [hwr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
       List.Pairwise.nil, and_true]
     exact ⟨⟨dVD.symm, dDS⟩, dVS, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRD dAD
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRV dAV
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) dRS dAS
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [fE]) dRD dAD
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [fE]) dRV dAV
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [fE]) dRS dAS
   · intro p hp'
     simp only [fbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -190,12 +190,12 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
     fun k h4 hk => ?_⟩
   · simp only [fbTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
-  · rw [hwr₁, hwr₂, ha 1 (by omega), ha 2 (by omega), ha 3 (by omega), ha 4 (by omega)]
+  · rw [hwr₁, hwr₂, ha 1 (by omega_using []), ha 2 (by omega_using []), ha 3 (by omega_using []), ha 4 (by omega_using [])]
   · simp only [fbTaint] at hk
     rw [show VG.X86.Taint.depth fbTaint.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 24) fE₁ h4 hk, VG.X86.Taint.argByte_eq (n := 24) fE₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 theorem cfbEncryptFinal_ct : ConstantTime isa (finalX86 encPost).pre (finalX86 encPost).pub cfbEncryptFinal :=
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)

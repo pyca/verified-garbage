@@ -23,7 +23,7 @@ the high digit. This is the truncation of p's final hash contribution. -/
 theorem radix_join_mod {lo base : Nat} (hlo : lo < base) (hi cut : Nat) :
     (lo + hi * base) % (base * cut) = lo + (hi % cut) * base := by
   rw [Nat.mod_mul]
-  rw [Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hlo, Nat.add_mul_div_right _ _ (by omega),
+  rw [Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hlo, Nat.add_mul_div_right _ _ (by omega_using [hlo]),
     Nat.div_eq_of_lt hlo, Nat.zero_add]
   rw [Nat.mul_comm]
 

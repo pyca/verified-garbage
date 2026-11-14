@@ -52,7 +52,7 @@ theorem scOps_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ :
   have hn3 := hc.n_ge
   have hone : sv c base s ONE = 1 := K₀.fixed.one
   have hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n := K₀.fixed.r2n
-  have hr2lt : 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n < c.C.n := Nat.mod_lt _ (by omega)
+  have hr2lt : 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n < c.C.n := Nat.mod_lt _ (by omega_using [hn3])
   -- `RM = RR · R²`.
   refine WP.seq (WP.mono (slMul_ok hc.fn hc.fnk hc.fnm h7 K₀.ws (o := RM) (a := RR) (b := R2N) (by decide)
     (by decide) (by decide) (by rw [hr2]; exact hr2lt)) fun s₁ ⟨k₁, U₁, _, e₁⟩ => ?_)
@@ -88,12 +88,12 @@ theorem scOps_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ :
   -- `TT = TT + EM`.
   have em₄ : sv c base s₄ EM = sv c base s₃ EM := v₄ (by decide) (by decide)
   refine WP.seq (WP.mono (slAdd_ok hc.fn hc.fnk hc.fnm h7 K₄.ws (o := TT) (a := TT) (b := EM) (by decide)
-    (by decide) (by decide) (by rw [em₄]; omega)) fun s₅ ⟨k₅, U₅, e₅⟩ => ?_)
+    (by decide) (by decide) (by rw [em₄]; omega_using [lt₃, lt₄])) fun s₅ ⟨k₅, U₅, e₅⟩ => ?_)
   obtain ⟨K₅, f₅, -, v₅⟩ := K₄.call h0 h7 (o := TT) (by decide) (by decide) (by decide) k₅ U₅
   have tt₅ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₅ TT) =
       Fin.ofNat c.C.n (sv c base s RR) * Fin.ofNat c.C.n (sv c base s D) + Fin.ofNat c.C.n (sv c base s E) := by
     rw [e₅, toM_add, tt₄, em₄, em₃]
-  have tt₅lt : sv c base s₅ TT < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega)
+  have tt₅lt : sv c base s₅ TT < c.C.n := by rw [e₅]; exact Nat.mod_lt _ (by omega_using [hn3])
   -- `SM = ACC · TT`.
   refine WP.seq (WP.mono (slMul_ok hc.fn hc.fnk hc.fnm h7 K₅.ws (o := SM) (a := ACC) (b := TT) (by decide)
     (by decide) (by decide) tt₅lt) fun s₆ ⟨k₆, U₆, _, e₆⟩ => ?_)
@@ -108,7 +108,7 @@ theorem scOps_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ :
   -- `SS = SM · 1`.
   have one₆ : sv c base s₆ ONE = 1 := by rw [v₆ (by decide) (by decide), b₅ (by decide) (by decide), hone]
   refine WP.seq (WP.mono (slMul_ok hc.fn hc.fnk hc.fnm h7 K₆.ws (o := SS) (a := SM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [one₆]; omega)) fun s₇ ⟨k₇, U₇, lt₇, e₇⟩ => h s₇ ?_)
+    (by decide) (by decide) (by rw [one₆]; omega_arith)) fun s₇ ⟨k₇, U₇, lt₇, e₇⟩ => h s₇ ?_)
   obtain ⟨K₇, f₇, -, v₇⟩ := K₆.call h0 h7 (o := SS) (by decide) (by decide) (by decide) k₇ U₇
   refine ⟨K₇, fun hi hl => ?_, by rw [f₇, f₆, f₅, f₄, f₃, f₂, f₁], lt₇, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hl

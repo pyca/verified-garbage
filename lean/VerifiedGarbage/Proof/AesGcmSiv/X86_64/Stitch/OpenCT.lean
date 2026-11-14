@@ -106,8 +106,8 @@ theorem dec_bufs {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk 
   have hn := hB.data.lt
   have hp := spre_of L hR hB.one.env hB.data hB.dw h256 G.rdi G.rsi G.rdx G.rcx G.r8 G.r11 G.r12 G.r9
   have hnb : Stitch.nb t = 16 * (n / 256) := by
-    show (t.gpr .r9).toNat = _; rw [G.r9, toNat_ofNat_of_lt (by omega)]
-  refine WP.mono (hlp.dec hp (by rw [hnb]; omega)) fun t' Dp => ?_
+    show (t.gpr .r9).toNat = _; rw [G.r9, toNat_ofNat_of_lt (by omega_using [hn])]
+  refine WP.mono (hlp.dec hp (by rw [hnb]; omega_using [])) fun t' Dp => ?_
   have Fd : Frame [⟨W + BitVec.ofNat 64 96, 16⟩, ⟨W + BitVec.ofNat 64 80, 16⟩, ⟨D, 16 * (16 * (n / 256))⟩,
       ⟨W + BitVec.ofNat 64 1768, 256⟩] t.mem t'.mem := by
     have h := Dp.frame
@@ -122,7 +122,7 @@ theorem dec_bufs {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk 
   rcases hq with rfl | rfl | rfl | rfl
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact (hB.data.w.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide)) |>.symm
+  · exact (hB.data.w.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Lay.wSub (by decide)) |>.symm
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
 /-- `stitched`'s head keeps `Bufs`, and gives `absorb` the additional data. -/
@@ -194,12 +194,12 @@ theorem blksFrom_rel (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K 
       refine (ctrChunk_rel eb wide L hR hDW hn hb hj).mono (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩)
         fun t₁ t₂ ⟨⟨I₁, z₁⟩, ⟨I₂, z₂⟩⟩ => ⟨by rw [eval_ne z₁, eval_ne z₂], fun hc => ?_, fun hc => ?_⟩
       · rw [eval_ne z₁] at hc
-        have he : j + min 64 (b - j) = b := by simp at hc; omega
+        have he : j + min 64 (b - j) = b := by simp at hc; omega_using [hj, hc]
         rw [he] at I₁ I₂
         exact ⟨I₁, I₂⟩
       · rw [eval_ne z₁] at hc
         have he : b - (j + min 64 (b - j)) ≠ 0 := by simpa using hc
-        exact ⟨b - (j + min 64 (b - j)), by omega, j + min 64 (b - j), rfl, by omega, I₁, I₂⟩
+        exact ⟨b - (j + min 64 (b - j)), by omega_using [hj], j + min 64 (b - j), rfl, by omega_using [he], I₁, I₂⟩
     · exact RelCT.of_false fun _ _ h => hm h.1
   · exact RelCT.of_false fun _ _ h => hj h.2.1
 
@@ -215,12 +215,12 @@ theorem split_cinv {K W SP : Addr} {R : Nat} {N A D : Addr} {al n j₀ : Nat} (h
     WP isa (.block [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) t
       fun t₁ => CInv K W SP R N A D al n (n / 16) j₀ t₁ ∧ t₁.zf = some (decide ((n - 16 * j₀) / 16 = 0)) := by
   have hn := I.buf.lt
-  obtain ⟨t₁, run₁, hbx₁, hbp₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ := split16_ok (m := n - 16 * j₀) (by omega) I.rbp
+  obtain ⟨t₁, run₁, hbx₁, hbp₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ := split16_ok (m := n - 16 * j₀) (by omega_using [hn]) I.rbp
   refine WP.of_runBlock ⟨t₁, run₁, ⟨⟨I.one.env.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁, by rw [hm₁]; exact I.one.sl,
     hwr₁.trans I.one.wr⟩, I.buf.of_eq hrd₁ hwr₁, by rw [hg₁ _ (by decide) (by decide), I.r12],
-    by rw [hbx₁]; congr 1; omega, by rw [hbp₁]; congr 1; omega⟩, hzf₁⟩
+    by rw [hbx₁]; congr 1; omega_using [], by rw [hbp₁]; congr 1; omega_using [hj₀]⟩, hzf₁⟩
 
 /-- Counter mode from block `j₀`, in two runs. -/
 theorem cryptRest_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
@@ -249,14 +249,14 @@ theorem cryptRest_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Ad
       have h0 : (n - 16 * j₀) / 16 = 0 := by have := h.2; rw [eval_e h.1.2.1.2] at this; simpa using this
       have a := h.1.2.1.1
       have b := h.1.2.2.1
-      rw [show j₀ = n / 16 by omega] at a b
+      rw [show j₀ = n / 16 by omega_using [hj₀, h0]] at a b
       exact ⟨a, b⟩
     · by_cases h0 : (n - 16 * j₀) / 16 = 0
       · refine RelCT.of_false fun t₁ t₂ h => ?_
         have := h.2
         rw [eval_e h.1.2.1.2] at this
         simp [h0] at this
-      · exact (blksFrom_rel eb wide L hR hDW hn (b := n / 16) (by omega) (by omega)).mono
+      · exact (blksFrom_rel eb wide L hR hDW hn (b := n / 16) (by omega_using []) (by omega_using [h0])).mono
           (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
   have r₃ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ => CInv K W SP R N A D al n (n / 16) (n / 16) t₁ ∧
       CInv K W SP R N A D al n (n / 16) (n / 16) t₂) hDW hn (fun t₁ t₂ h => h.1.agree h.2) test_check).wp
@@ -331,22 +331,22 @@ theorem stitched_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.Loop
   have restIn : ∀ {t : State}, (Bufs K W SP R N A D al n t ∧
       t.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧ t.gpr .rbp = BitVec.ofNat 64 (n % 256)) →
       RestIn K W SP R N A D al n (16 * (n / 256)) t := fun h =>
-    ⟨h.1.one, h.1.data, by rw [h.2.1, show 256 * (n / 256) = 16 * (16 * (n / 256)) by omega],
-      by rw [h.2.2, show n % 256 = n - 16 * (16 * (n / 256)) by omega]⟩
-  have r₆ := (cryptRest_rel v eb wide L hR hDW hn (j₀ := 16 * (n / 256)) (by omega) (P := fun t₁ t₂ => True ∧
+    ⟨h.1.one, h.1.data, by rw [h.2.1, show 256 * (n / 256) = 16 * (16 * (n / 256)) by omega_using []],
+      by rw [h.2.2, show n % 256 = n - 16 * (16 * (n / 256)) by omega_using []]⟩
+  have r₆ := (cryptRest_rel v eb wide L hR hDW hn (j₀ := 16 * (n / 256)) (by omega_using []) (P := fun t₁ t₂ => True ∧
       (Bufs K W SP R N A D al n t₁ ∧ t₁.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧
         t₁.gpr .rbp = BitVec.ofNat 64 (n % 256)) ∧
       (Bufs K W SP R N A D al n t₂ ∧ t₂.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧
         t₂.gpr .rbp = BitVec.ofNat 64 (n % 256)))
     fun t₁ t₂ h => ⟨restIn h.2.1, restIn h.2.2⟩).wp
     (F₁ := Bufs K W SP R N A D al n) (F₂ := Bufs K W SP R N A D al n)
-    fun t₁ t₂ h => ⟨cryptRest_bufs v eb wide L hR h.2.1.1 (by omega) (restIn h.2.1).r12 (restIn h.2.1).rbp,
-      cryptRest_bufs v eb wide L hR h.2.2.1 (by omega) (restIn h.2.2).r12 (restIn h.2.2).rbp⟩
+    fun t₁ t₂ h => ⟨cryptRest_bufs v eb wide L hR h.2.1.1 (by omega_using []) (restIn h.2.1).r12 (restIn h.2.1).rbp,
+      cryptRest_bufs v eb wide L hR h.2.2.1 (by omega_using []) (restIn h.2.2).r12 (restIn h.2.2).rbp⟩
   have absIn : ∀ {t : State}, (Bufs K W SP R N A D al n t ∧
       t.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧ t.gpr .rbp = BitVec.ofNat 64 (n % 256)) →
       AbsIn K W SP R N A D al n (D + BitVec.ofNat 64 (256 * (n / 256))) (n % 256) t ∧
         Bufs K W SP R N A D al n t := fun h =>
-    ⟨⟨h.1.one, h.1.data.slice (by omega), h.2.1, h.2.2⟩, h.1⟩
+    ⟨⟨h.1.one, h.1.data.slice (by omega_using []), h.2.1, h.2.2⟩, h.1⟩
   have r₇ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂)
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.one, h.2.2.one, fun _ h => nomatch h⟩) rest_check).wp
     (F₁ := fun (t : State) =>
@@ -447,7 +447,7 @@ theorem openSBody_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.Loo
       · exact stitched_rel hlp v eb wide L hR hDW hn hal hn' hn256 fun t₁ t₂ h =>
           ⟨h.1.2.1.1.1.bufs, h.1.2.2.1.1.bufs⟩
       · refine RelCT.of_false fun _ _ h => hn256 ?_
-        have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega
+        have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega_using [this]
   have r₃ := i₃.wp (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨mid_st hlp v eb wide L hR hND hAD h.2.1, mid_st hlp v eb wide L hR hND hAD h.2.2⟩
   have r₄ := (tag_rel v L hR hDW hn (o := bO) (by decide) (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧

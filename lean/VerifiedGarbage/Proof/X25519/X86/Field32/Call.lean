@@ -90,7 +90,7 @@ theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (h
   have fstk : ∀ q, q + 32 ≤ 4096 → F e.mem x q = F s.mem x q := fun q hq =>
     congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame fs fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact dis4.sub_left (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega) (by omega)))
+      exact dis4.sub_left (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega_using [hq, hk]) (by omega_using [hq, hk])))
   refine ⟨⟨hcs .esi (by decide), hcs .edi (by decide), hcs .esp (by decide), hrd, hwr⟩, ?_, ?_, ?_⟩
   · rw [← hm2]
     exact (fs.mono fun r hr => by

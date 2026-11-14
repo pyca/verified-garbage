@@ -23,7 +23,7 @@ theorem spread_step (s : State) (idx c : Byte) {j : Nat} (hj : j < 4)
     (h7 : s.gpr .r7 = c.setWidth 32) (h8 : s.gpr .r8 = spread c (idx.toNat % 4) (j + 1)) :
     WP isa (.block (spreadStep j)) s fun t =>
       t.gpr .r8 = spread c (idx.toNat % 4) j ∧ t.mem = s.mem := by
-  have he : encodable (BitVec.ofNat 32 j) = true := encodable_lt (by omega)
+  have he : encodable (BitVec.ofNat 32 j) = true := encodable_lt (by omega_using [hj])
   unfold spreadStep laneMask
   arun [h6, h10, h7, h8, he]
   rw [lane_mask idx hj, spread_succ c (Nat.mod_lt _ (by decide))]
@@ -42,10 +42,10 @@ theorem spread_steps (s₀ : State) (idx c : Byte) (h6 : s₀.gpr .r6 = idx.setW
     rw [List.range_succ, List.reverse_append, List.reverse_cons, List.reverse_nil,
       List.nil_append, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (WP.keep [.r8, .r9] (spread_step s idx c (by omega)
+    refine WP.mono (WP.keep [.r8, .r9] (spread_step s idx c (by omega_using [hn])
       ((hk.gpr (by decide)).trans h6) ((hk.gpr (by decide)).trans h10)
       ((hk.gpr (by decide)).trans h7) h8) rfl) fun t ⟨⟨t8, tm⟩, tk⟩ => ?_
-    exact ih (by omega) t t8 ((hk.trans tk).mono (by decide)) (tm.trans hm)
+    exact ih (by omega_using [hn]) t t8 ((hk.trans tk).mono (by decide)) (tm.trans hm)
 
 theorem lanesDown_eq : lanesDown = (List.range 4).reverse := rfl
 
@@ -59,8 +59,8 @@ theorem scatter_step (s : State) (idx : Byte) {k : Nat} (hk : k < 64)
       t.mem = s.mem.writeW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k))
         ((if idx.toNat / 4 = k then s.gpr .r8 else 0) ^^^
           s.mem.readW (State.addr (s.gpr .r12) + BitVec.ofNat 64 (4 * k)) 32) := by
-  have he : encodable (BitVec.ofNat 32 (4 * k)) = true := encodable_lt (by omega)
-  have ho : 4 * k < 4096 := by omega
+  have he : encodable (BitVec.ofNat 32 (4 * k)) = true := encodable_lt (by omega_using [hk])
+  have ho : 4 * k < 4096 := by omega_using [hk]
   have hr := region_in (rs := s.rd) hw
   rw [← row_addr hfit hk] at hw hr
   unfold scatterStep rowMask
@@ -81,12 +81,12 @@ theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 32) (h : TableEnv 
   | succ n ih =>
     intro s h8 hk hm
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h8 hk hm) fun t ⟨tm, t8, tk⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h8 hk hm) fun t ⟨tm, t8, tk⟩ => ?_
     have t12 : t.gpr .r12 = s₀.gpr .r12 := tk.gpr (by decide)
     have hq : InRegions t.wr (State.addr (t.gpr .r12) + BitVec.ofNat 64 (4 * n)) 4 := by
       rw [tk.2.2.1, t12]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) h.table
-    refine WP.mono (WP.keep [.r9, .r11] (scatter_step t idx (by omega)
+      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) h.table
+    refine WP.mono (WP.keep [.r9, .r11] (scatter_step t idx (by omega_using [hn])
       ((tk.gpr (by decide)).trans h.idx) ((tk.gpr (by decide)).trans h.ones)
       (by rw [t12]; exact h.fit) hq) rfl) fun u ⟨um, uk⟩ => ?_
     refine ⟨?_, (uk.gpr (by decide)).trans t8, (tk.trans uk).mono (by decide)⟩
@@ -102,7 +102,7 @@ theorem loadI_ok (s : State) (ii : Byte) (h4 : s.gpr .r4 = ii.setWidth 32)
       Keep [.r9, .r11] s t ∧ t.mem = s.mem := by
   have hi : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r12 + ii.setWidth 32 + BitVec.ofNat 32 0)) 1 := by
     rw [idx_addr hfit ii]
-    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega) (by have := ii.isLt; omega) hr
+    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) hr
   refine WP.mono (WP.keep (Q := fun t =>
       t.gpr .r11 = (s.mem (State.addr (s.gpr .r12) + BitVec.ofNat 64 ii.toNat)).setWidth 32 ∧
       t.mem = s.mem) [.r9, .r11] ?_ (by decide)) fun t ⟨h, hk⟩ => ⟨h.1, hk, h.2⟩
@@ -141,7 +141,7 @@ theorem replace_core (s : State) (idx ii : Byte) (h : TableEnv s idx)
   rw [WP.block_append_iff]
   have hsp := spread_steps u idx (b ^^^ v) ((k₁.gpr (by decide)).trans h.idx)
     ((k₁.gpr (by decide)).trans h.ones) u7 4 (by decide) u
-    (by rw [u8]; unfold spread; rw [ite_eq_right (by omega)]) (Keep.refl _ _) rfl
+    (by rw [u8]; unfold spread; rw [ite_eq_right (by omega_using [])]) (Keep.refl _ _) rfl
   rw [← lanesDown_eq] at hsp
   refine WP.mono hsp fun w ⟨w8, wk, wm⟩ => ?_
   have w11 : w.gpr .r11 = v.setWidth 32 :=
@@ -163,7 +163,7 @@ theorem replace_core (s : State) (idx ii : Byte) (h : TableEnv s idx)
   refine ⟨(yk.gpr (by decide)).trans x7, ?_, (k₂.trans yk).mono (by decide)⟩
   rw [ym, xm, x12]
   unfold scatter spread
-  rw [ite_eq_left (by omega), ite_eq_left (Nat.zero_le _), Nat.sub_zero, writeW_byte32,
+  rw [ite_eq_left (by omega_using []), ite_eq_left (Nat.zero_le _), Nat.sub_zero, writeW_byte32,
     ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 end VG.Proof.Rc4.Arm

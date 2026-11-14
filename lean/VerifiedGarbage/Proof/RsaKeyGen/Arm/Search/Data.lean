@@ -131,7 +131,7 @@ theorem read_disjoint (h : SearchInput p s) {r : Region} (hr : r ∈ inReads s) 
 theorem reads_len (h : SearchInput p s) {r : Region} (hr : r ∈ inReads s) : r.len ≤ 2 ^ 64 := by
   obtain ⟨-, -, -, -, -, -, -, -, -, hfe, hfp, hfr, -, -, -⟩ := h.1
   simp only [inReads, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> simp only [inE, inP, inRand, inArgs] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl <;> simp only [inE, inP, inRand, inArgs] <;> omega_using []
 
 theorem bytes_frame (h : SearchInput p s) {r : Region} (hr : r ∈ inReads s) {m m' : Mem}
     (hf : Frame (changes s) m m') : Spec.Rsa.bytesAt m' r.base r.len = Spec.Rsa.bytesAt m r.base r.len := by
@@ -161,9 +161,9 @@ theorem arg_frame (h : SearchInput p s) {m m' : Mem} (hf : Frame (changes s) m m
   have hc : (inArgs s).Contains (stackArgAddr s j) 4 := by
     have e : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (4 * j) := by
       simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
-      exact VG.Arm.addr_add (by omega)
+      exact VG.Arm.addr_add (by omega_using [hj, hsp])
     rw [e]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   exact hf.readW hc (h.read_disjoint (by simp [inReads])) (by decide)
 
 end SearchInput

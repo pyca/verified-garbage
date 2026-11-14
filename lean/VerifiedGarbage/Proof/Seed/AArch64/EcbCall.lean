@@ -107,7 +107,7 @@ theorem call_correct {d : Spec.Seed.Direction} {name : String} {c : Prog isa}
     have hsch := Proof.Seed.scheduleAt_frame hfr (p := s₀.gpr .x0) fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact sK.symm
     have hblk := Proof.Seed.blocksAt_frame hfr (p := s₀.gpr .x1) (n := (s₀.gpr .x2).toNat) (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega)
+      rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega_using [fitD])
     refine ⟨⟨fun r hr => ?_, rfl, fun r hr => hvv r hr⟩, ?_⟩
     · show (s'.write .x .x30 (s₀.gpr .x30)).gpr r = s₀.gpr r
       by_cases h : r = .x30

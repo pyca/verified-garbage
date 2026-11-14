@@ -30,7 +30,7 @@ theorem packArgs_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bit
       t.gpr .rcx = BitVec.ofNat 64 len ∧ t.gpr .rdx = BitVec.ofNat 64 (8 * len) ∧ t.mem = s.mem) (by
     xrun [Impl.Dsa.X86_64.Generation.packArgs, ea_sp, L.rsp,
       L.ld (d := 40) (by decide), R.slot (d := 40) (k := 5) rfl (by decide) rfl,
-      sx_ofNat hs, sx_ofNat hd, cast len (by omega), cast (8 * len) (by omega)]) rfl)
+      sx_ofNat hs, sx_ofNat hd, cast len (by omega_using [hl]), cast (8 * len) (by omega_using [hl])]) rfl)
     fun t ⟨⟨hsi, hdi, hcx, hdx, hm⟩, hk⟩ => ⟨hsi, hdi, hcx, hdx, hm, hk⟩
 
 theorem packPart_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -59,7 +59,7 @@ theorem packPart_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bit
       intro i hi he
       apply ha ⟨off (W 5) dst, bs.length⟩ (by simp)
       rw [he]
-      exact Offset.contains_base _ (by omega) (by omega)), hm]
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])), hm]
   have Rt := rep_of_disjoint_frame R ff
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hS)

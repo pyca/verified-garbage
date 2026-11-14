@@ -53,7 +53,7 @@ def packed (g : Nat) (m : Mem) (h a : Addr) : List Byte :=
   rw [hv j hj e he,VG.AArch64.vword_read16 _ _ he,VG.AArch64.vword_read16 _ _ he,
     Offset.add_add,Offset.add_add,Offset.add_add,Offset.add_add]
   simp only [fields,Vector.getElem_ofFn,coeffAt]
-  rw [show 64*block+(16*j+4*e)=4*(16*block+4*j+e) by omega]
+  rw [show 64*block+(16*j+4*e)=4*(16*block+4*j+e) by omega_using []]
 
 end VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
 end

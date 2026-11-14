@@ -102,14 +102,14 @@ theorem setupR_word (w : Nat) {i : Nat} (hi : i < 32) (h1 : i ≠ sW) (h2 : i �
   have h8 := hdr_lt_slot w 8 hi
   simp only [setupR, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
   unfold sW sWs sArr sFn at *
-  exact ⟨by omega, by omega, by omega, Or.inl h8⟩
+  exact ⟨by omega_using [h1], by omega_using [h3], by omega_using [h2], Or.inl h8⟩
 
 /-- `setupR` within a working space with room for the inner workspace. -/
 theorem setupR_le (w : Nat) {Z : Nat} (h : inner w + slot w 8 ≤ Z) : ∀ r ∈ setupR w, r.1 + r.2 ≤ Z := by
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
   simp only [setupR, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
   unfold sW sWs sArr sFn at *
-  exact ⟨by omega, by omega, by omega, h⟩
+  exact ⟨by omega_using [h, h8], by omega_using [h, h8], by omega_using [h, h8], h⟩
 
 theorem wsWords_k {k : Nat} (hk : 16 ≤ k) : wsWords k = (k + 7) / 8 := by unfold wsWords; omega_arith
 

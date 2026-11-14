@@ -20,12 +20,12 @@ theorem trialBuffers_of_octets {s : State} {dst prime : BitVec 32} {n : Nat} {xs
   intro i hi
   change i < n at hi
   change s.mem (State.addr (dst + BitVec.ofNat 32 n - BitVec.ofNat 32 (i + 1))) = xs.reverse[i]?.getD 0
-  rw [List.getElem?_reverse (by omega), length]
-  have index : n - 1 - i = n - (i + 1) := by omega
-  rw [index, VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega),
-    VG.Arm.addr_add (by have := h.bufferFits; omega)]
+  rw [List.getElem?_reverse (by omega_using [length, hi]), length]
+  have index : n - 1 - i = n - (i + 1) := by omega_using []
+  rw [index, VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega_using [hi]),
+    VG.Arm.addr_add (by have := h.bufferFits; omega_using [this])]
   have value := congrArg (fun bs : List Byte => bs[n - (i + 1)]?.getD 0) bytes
-  simpa only [Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range (by omega : n - (i + 1) < n),
+  simpa only [Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range (by omega_using [hi] : n - (i + 1) < n),
     Option.map_some, Option.getD_some] using value
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

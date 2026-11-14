@@ -67,9 +67,9 @@ theorem random_sign_loop_ct (S : Signer) {s t : State}
     | seq eaa eat =>
       cases eb with
       | seq eba ebt =>
-        have hattempt := random_sign_attempt_agreement S hvs hvt ha hb hpub (by omega) htrace eaa eba
-        have hpa := random_post_of_exec (random_sign_step S ha (by omega) (by omega) hvs) eaa
-        have hpb := random_post_of_exec (random_sign_step S hb (by omega) (by omega) hvt) eba
+        have hattempt := random_sign_attempt_agreement S hvs hvt ha hb hpub (by omega_using [hn]) htrace eaa eba
+        have hpa := random_post_of_exec (random_sign_step S ha (by omega_using []) (by omega_using [hn]) hvs) eaa
+        have hpb := random_post_of_exec (random_sign_step S hb (by omega_using []) (by omega_using [hn]) hvt) eba
         obtain ⟨_, hrunA⟩ := hpa.1
         obtain ⟨_, hrunB⟩ := hpb.1
         obtain ⟨_, _, hra⟩ := hrunA.ready
@@ -90,15 +90,15 @@ theorem random_sign_loop_ct (S : Signer) {s t : State}
             have hv := congrArg BitVec.toNat hc
             have hh := random_sign_attempt_status_bound (randomInput s) used (n + 1)
             change randomSignAttemptStatus (randomInput s) used (n + 1) % 2 ^ 64 = 4 at hv
-            omega
+            omega_using [hh, hv]
           have hfourB : randomSignAttemptStatus (randomInput t) used (n + 1) = 4 := hstatus.symm.trans hfour
           have hnext := random_sign_attempt_next_trace htrace hfour hfourB
-          obtain ⟨hf', _⟩ := random_sign_attempt_continue (by omega) hfour
+          obtain ⟨hf', _⟩ := random_sign_attempt_continue (by omega_using []) hfour
           have ha' := hpa'.2.2 hfour
           have hb' := hpb'.2.2 hfourB
           simp only [Nat.add_sub_cancel] at ha' hb'
           rw [← hused] at hb' hnext
-          exact ⟨n, by omega, by omega, by omega, used + (randomSignDraw (randomInput s) used).used,
+          exact ⟨n, by omega_using [], by omega_using [hf'], by omega_using [hn], used + (randomSignDraw (randomInput s) used).used,
             ha', hb', hnext⟩
 
 end VG.Proof.Dsa.AArch64

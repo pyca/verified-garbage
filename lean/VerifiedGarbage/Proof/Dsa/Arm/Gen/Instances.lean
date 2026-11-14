@@ -57,7 +57,7 @@ def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
     PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code) :=
   ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v,
-    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code).trans (by have := v.stack; omega), hb⟩
+    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code).trans (by have := v.stack; omega_using [this]), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
     (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body n e) ≤ 176 := by decide) :

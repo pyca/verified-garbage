@@ -139,7 +139,7 @@ table). -/
 theorem vSatMem_held : ∀ i < p256CombWords.length,
     vSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p256CombWords.getD i 0 := by
   unfold vSatMem
-  exact constMem_held _ _ (by rw [Proof.P256.PPC64LE.comb_words_length]; omega)
+  exact constMem_held _ _ (by rw [Proof.P256.PPC64LE.comb_words_length]; omega_using [])
 
 /-- A state satisfying the precondition with the table. -/
 def vSatC : State :=

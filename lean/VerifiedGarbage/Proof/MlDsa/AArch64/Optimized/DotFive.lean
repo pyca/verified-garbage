@@ -50,7 +50,7 @@ theorem dotFive_ok {n : Nat} (hn : 0<n) (hn7 : n≤7) (u : Nat) {s : State} {v :
     rw [hr,hv₁ i.val i.isLt e he,hv i e he]
   refine five_ok u hb (hp.frame (hc₁.mono (by decide))) (hl.frame hc₁' (by decide)) fun s₂ hc₂ hb₂ => ?_
   rw [firstStores_eq]
-  refine storeBank_ok (regs 7) 16 .x0 (by intro i; omega) hb₂ ?_ fun t hm => ?_
+  refine storeBank_ok (regs 7) 16 .x0 (by intro i; omega_using []) hb₂ ?_ fun t hm => ?_
   · intro i
     simpa only [hc₂.wr,hc₂.gpr,hc₁.wr,hc₁.gpr] using hw i
   · refine k t ⟨s₂,(hc₁'.trans hc₂).mono (by simp),?_⟩

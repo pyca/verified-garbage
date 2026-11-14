@@ -28,7 +28,7 @@ theorem workspaceCall_entry {s : State} {base : Addr} {size : Nat}
     Pow.Entry (pushed [Reg.eax,.edi] s).callEntry base size := by
   have low := room.1
   have bound := (s.gpr .esp).isLt
-  have fit : 4*[Reg.eax,.edi].length+4≤(s.gpr .esp).toNat := by simp; omega
+  have fit : 4*[Reg.eax,.edi].length+4≤(s.gpr .esp).toNat := by simp; omega_using [low]
   have sp : ((pushed [Reg.eax,.edi] s).callEntry.gpr .esp).toNat=(s.gpr .esp).toNat-12 :=
     callEntry_espNat fit
   refine ⟨?_,?_,?_,S.nowrap,?_⟩
@@ -44,7 +44,7 @@ theorem workspaceCall_entry {s : State} {base : Addr} {size : Nat}
   · unfold StkOk
     rw [sp]
     have sep := room.2
-    constructor <;> omega
+    constructor <;> omega_arith
 
 theorem workspaceCall_relCT {base : Addr} {size bytes : Nat} {P : Mem → Mem → Prop}
     {body : Prog isa} {name : String}
@@ -82,8 +82,8 @@ theorem workspaceCall_relCT {base : Addr} {size bytes : Nat} {P : Mem → Mem �
       | call D F Q =>
         rw [call_callEntry,Option.some.injEq] at C D
         subst C D
-        have fitS : 4*[Reg.eax,.edi].length+4≤(s.gpr .esp).toNat := by have := RS.1; simp; omega
-        have fitT : 4*[Reg.eax,.edi].length+4≤(t.gpr .esp).toNat := by have := RT.1; simp; omega
+        have fitS : 4*[Reg.eax,.edi].length+4≤(s.gpr .esp).toNat := by have := RS.1; simp; omega_using [this]
+        have fitT : 4*[Reg.eax,.edi].length+4≤(t.gpr .esp).toNat := by have := RT.1; simp; omega_using [this]
         have trace := (timing _ _ _ _ _ _ ⟨workspaceCall_entry S RS,workspaceCall_entry T RT,
           by rw [callEntry_esp',callEntry_esp',SP],
           stable H0 (callEntry_frame (rs := [Reg.eax,.edi]) (s := s) fitS (by decide)) (callEntry_frame (rs := [Reg.eax,.edi]) (s := t) fitT (by decide))⟩ E F).1

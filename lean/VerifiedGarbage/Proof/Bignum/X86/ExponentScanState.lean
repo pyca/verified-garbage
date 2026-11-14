@@ -32,12 +32,12 @@ theorem ExponentState.current {ep : BitVec 32} {eb : List Byte} {j k : Nat} {s :
     InRegions (s.rd ++ s.wr) (s.ea ⟨.esi, 0⟩) 1 ∧
       s.mem (byteAddr (ep + BitVec.ofNat 32 j)) = eb[j] := by
   have address : byteAddr (ep + BitVec.ofNat 32 j) = byteAddr ep + BitVec.ofNat 64 j :=
-    byteAddr_add (by omega)
+    byteAddr_add (by omega_using [fit, hj])
   have ea : s.ea ⟨.esi, 0⟩ = byteAddr (ep + BitVec.ofNat 32 j) := by
     simp only [State.ea, H.ptr, BitVec.add_zero]; rfl
   refine ⟨?_, ?_⟩
   · rw [ea, address]
-    exact CallLay.inRegions_sub H.read (by omega) (by omega)
+    exact CallLay.inRegions_sub H.read (by omega_using [hj]) (by omega_using [fit])
   · rw [address]; exact H.bytes j hj
 
 theorem ExponentState.step {ep : BitVec 32} {eb : List Byte} {j k : Nat} {s : State}

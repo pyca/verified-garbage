@@ -17,16 +17,16 @@ theorem candidate_word_shape {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
     2 ^ (64 * ((bits + 63) / 64 - 1)) ≤ candidateOf bits x ∧
       candidateOf bits x < 2 ^ (64 * ((bits + 63) / 64)) := by
   obtain ⟨_, hl, hu⟩ := candidate_shape hb x
-  exact ⟨Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) hl,
-    Nat.lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega))⟩
+  exact ⟨Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_using [])) hl,
+    Nat.lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega_using []))⟩
 
 theorem half_word_shape {bits : Nat} (hb : 3 ≤ bits) (x : Nat) :
     2 ^ (64 * ((bits - 1 + 63) / 64 - 1)) ≤ (candidateOf bits x - 1) / 2 ∧
       (candidateOf bits x - 1) / 2 < 2 ^ (64 * ((bits - 1 + 63) / 64)) := by
-  obtain ⟨ho, hl, hu⟩ := candidate_shape (by omega : 2 ≤ bits) x
-  obtain ⟨hql, hqu⟩ := half_shape (by omega) ho hl hu
-  exact ⟨Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) hql,
-    Nat.lt_of_lt_of_le hqu (Nat.pow_le_pow_right (by decide) (by omega))⟩
+  obtain ⟨ho, hl, hu⟩ := candidate_shape (by omega_using [hb] : 2 ≤ bits) x
+  obtain ⟨hql, hqu⟩ := half_shape (by omega_using [hb]) ho hl hu
+  exact ⟨Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_using [])) hql,
+    Nat.lt_of_lt_of_le hqu (Nat.pow_le_pow_right (by decide) (by omega_using []))⟩
 
 /-- The original p-sized buffer can load either modulus, using at most one
 extra zero word in the q workspace. -/
@@ -34,6 +34,6 @@ theorem candidate_load_widths {bits : Nat} (hlo : 512 ≤ bits) (hhi : bits ≤ 
     (((bits + 7) / 8) + 7) / 8 = (bits + 63) / 64 ∧
       (bits - 1 + 63) / 64 ≤ (((bits + 7) / 8) + 7) / 8 ∧
       (((bits + 7) / 8) + 7) / 8 ≤ (bits - 1 + 63) / 64 + 1 ∧
-      8 ≤ (bits - 1 + 63) / 64 ∧ (bits + 63) / 64 ≤ 128 := by omega
+      8 ≤ (bits - 1 + 63) / 64 ∧ (bits + 63) / 64 ≤ 128 := by omega_using [hlo, hhi]
 
 end VG.Proof.Ffdh.ParameterCandidate

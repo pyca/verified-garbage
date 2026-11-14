@@ -52,7 +52,7 @@ theorem Parameters.segment_bound {p : Params} {pass lane slice : Nat} (h : Param
     have blocks := Proof.Argon2.blocks_lanes p h.lanesPositive
     have segments := Proof.Argon2.laneLen_segments p h.lanesPositive
     have laneLe : p.laneLen ≤ p.blocks := by rw [blocks]; exact Nat.le_mul_of_pos_left _ h.lanesPositive
-    omega
+    omega_using [segments, laneLe]
   exact ⟨minimum, Nat.lt_of_le_of_lt le
     (Nat.lt_trans (Nat.lt_of_le_of_lt (Proof.Argon2.blocks_le_memory p) h.memoryBound) (by decide))⟩
 
@@ -85,10 +85,10 @@ open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.SegmentSetup
 def start (pass slice : Nat) : Nat := if pass = 0 ∧ slice = 0 then 2 else 0
 
 theorem start_active (pass slice : Nat) : pass ≠ 0 ∨ slice ≠ 0 ∨ 2 ≤ start pass slice := by
-  unfold start; split <;> omega
+  unfold start; split <;> omega_arith
 
 theorem start_le (pass slice : Nat) (g : Nat) (minimum : 2 ≤ g) : start pass slice ≤ g := by
-  unfold start; split <;> omega
+  unfold start; split <;> omega_arith
 
 theorem first_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) 0) 8) :
     WP isa (.block first) s fun t =>

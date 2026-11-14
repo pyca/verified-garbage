@@ -23,7 +23,7 @@ theorem extr55 (x y : Word) :
   rw [extract_toNat]
   have hx := x.isLt
   have hy := y.isLt
-  omega
+  omega_using []
 
 theorem shifted55_value (xs : List Word) :
     value xs = 2^55 * value (shifted55 xs) + (xs.headD 0).toNat % 2^55 := by
@@ -32,17 +32,17 @@ theorem shifted55_value (xs : List Word) :
   | case2 x =>
     simp only [shifted55, value, List.headD_cons, Nat.mul_zero, Nat.add_zero,
       BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
   | case3 x y ys ih =>
     simp only [shifted55, value, List.headD_cons, extr55] at *
-    omega
+    omega_using [ih]
 
 theorem orLow9 (x y : Word) (hy : y.toNat < 512) :
     y ||| (x <<< 9) = (x.setWidth 55 ++ y.setWidth 9) := by
   have he : y = (y.setWidth 9).setWidth 64 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth]
-    omega
+    omega_using [hy]
   rw [he]
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
@@ -51,7 +51,7 @@ theorem orLow9 (x y : Word) (hy : y.toNat < 512) :
   by_cases h : i < 9
   · simp only [hi, h, decide_true, Bool.not_true, Bool.true_and, Bool.and_false,
       Bool.false_and, Bool.or_false, ite_true]
-  · have hi55 : i - 9 < 55 := by omega
+  · have hi55 : i - 9 < 55 := by omega_using [hi]
     simp only [hi, h, hi55, decide_true, decide_false, Bool.not_false,
       Bool.true_and, Bool.false_and, Bool.false_or, ite_false]
 
@@ -59,7 +59,7 @@ theorem orLow9_value (x y : Word) (hy : y.toNat < 512) :
     (y ||| (x <<< 9)).toNat = y.toNat + 512*(x.toNat % 2^55) := by
   rw [orLow9 x y hy, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (y.setWidth 9).isLt]
   simp only [BitVec.toNat_setWidth, Nat.shiftLeft_eq]
-  omega
+  omega_using [hy]
 
 theorem rotated_value (w : Nat → Word)
     (ht : value ((List.range 9).map w) < 2^521) :
@@ -74,13 +74,13 @@ theorem rotated_value (w : Nat → Word)
   have hs := shifted55_value ((List.range 8).map w ++ [w 8 ||| (w 0 <<< 9)])
   have hm : (value ((List.range 9).map w)) % 2^55 = (w 0).toNat % 2^55 := by
     change ((w 0).toNat + 2^64 * value ((List.range 8).map (fun i => w (i+1)))) % (2^55) = _
-    omega
+    omega_using []
   have hr : shifted55 ((List.range 8).map w ++ [w 8 ||| (w 0 <<< 9)]) = rotated w := rfl
   rw [hr, value_append] at hs
   simp only [List.length_map, List.length_range, value, Nat.mul_zero, Nat.add_zero,
     orLow9_value (w 0) (w 8) hy] at hs
   change _ = 2^55 * value (rotated w) + (w 0).toNat % 2^55 at hs
   rw [hm]
-  omega
+  omega_using [hv, hs]
 
 end VG.Proof.Mont.AArch64.P521Square

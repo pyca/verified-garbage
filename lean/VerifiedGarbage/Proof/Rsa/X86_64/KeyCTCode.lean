@@ -92,7 +92,7 @@ theorem keyCode_ct : RelCT isa (Two KRel) code fun _ _ => True := by
     have c := keyArgs_of hs.1
     have hZ := c.hZ
     have := c.k1
-    have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 10) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+    have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 10) (8 * i)) 8 := fun i hi => c.hs.st (by omega_using [hZ, this, hi])
     have hh : WP isa (.block ([.mov .r11 (.mem { base := .rsp, disp := 88 })] ++ entry.drop 1)) s
         (EntryPost s (stackArg s 10)) := by
       rw [← keyEntry_split]; exact keyEntry_ok rfl hw c.ha c.hsep

@@ -55,10 +55,10 @@ theorem preKS {s : State} (h : (keyGenAArch64S P).pre s) :
     (keyGenAArch64 P).pre s ∧ 128 ≤ s.sp.toNat ∧ ∀ b < 4, (frame s.sp).Disjoint ⟨kA s b, kL P b⟩ := by
   obtain ⟨rd, wr, d01, d02, d03, d12, d13, d23, sp128, k0, k1, k2, k3⟩ := h
   have sub : Region.Sub ⟨s.sp - 16, 16⟩ (frame s.sp) := below_sub (by decide) (by decide)
-  refine ⟨⟨rd, wr, d01, d02, d03, d12, d13, d23, by omega,
+  refine ⟨⟨rd, wr, d01, d02, d03, d12, d13, d23, by omega_using [sp128],
     k0.sub_left sub, k1.sub_left sub, k2.sub_left sub, k3.sub_left sub⟩, sp128, ?_⟩
   intro b hb
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
   · exact k0
   · exact k1
   · exact k2

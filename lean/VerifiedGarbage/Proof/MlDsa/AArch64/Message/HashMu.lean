@@ -73,41 +73,41 @@ theorem muHash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) {t : State} (
   rw [List.nil_append, etr] at hR2
   -- `0 ‖ ctx_len`.
   have fS : Region.Disjoint ⟨L.X + BitVec.ofNat 64 984, 2⟩ ⟨L.ST, 200⟩ := by
-    have := Offset.disjoint L.X (d := 984) (n := 2) (e := 0) (k := 200) (by omega) (by omega) (by omega)
+    have := Offset.disjoint L.X (d := 984) (n := 2) (e := 0) (k := 200) (by omega_using []) (by omega_using []) (by omega_using [])
     simpa only [x0] using this
   have fK : Region.Disjoint ⟨L.X + BitVec.ofNat 64 984, 2⟩ ⟨L.KS, 640⟩ :=
-    Offset.disjoint L.X (d := 984) (n := 2) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+    Offset.disjoint L.X (d := 984) (n := 2) (e := 200) (k := 640) (by omega_using []) (by omega_using []) (by omega_using [])
   refine WP.seq (WP.mono (kabs_ok v hL hc2 (absOk rfl rfl rfl rfl rfl) (by rw [hc2.off]; rfl) rfl rfl
-    (by decide) (by decide) (cov_x hL (e := 984) (k := 2) (by omega)) fS fK (hL.stk_x (by omega)))
+    (by decide) (by decide) (cov_x hL (e := 984) (k := 2) (by omega_using [])) fS fK (hL.stk_x (by omega_using [])))
     fun t3 ⟨hc3, _, hR3, _⟩ => ?_)
   have hR3 := hR3 _ hR2 (by rw [Proof.MlKem.bytesAt_length])
   rw [hc2.hdrX] at hR3
   -- The context string.
   have hcl : (Arg.slot fCtxLen).val t3 = BitVec.ofNat 64 L.ctxLen.toNat := by
-    rw [hc3.slotV (f := fCtxLen) (j := 4) rfl (by omega), ofNat_toNat_self]; rfl
+    rw [hc3.slotV (f := fCtxLen) (j := 4) rfl (by omega_using []), ofNat_toNat_self]; rfl
   refine WP.seq (WP.mono (kabs_ok v hL hc3 (absOk rfl rfl rfl rfl rfl)
-    (by rw [hc3.slotV (f := fCtx) (j := 3) rfl (by omega)]; rfl) hcl rfl (by decide) (by omega)
+    (by rw [hc3.slotV (f := fCtx) (j := 3) rfl (by omega_using [])]; rfl) hcl rfl (by decide) (by omega_using [])
     ⟨L.CTX, List.mem_append_left _ hL.inCtx, within_self _⟩
-    (by have := hL.x_r hL.xCtx (e := 0) (k := 200) (by omega); simpa only [x0] using this.symm)
-    (hL.x_r hL.xCtx (e := 200) (k := 640) (by omega)).symm hL.kCtx)
+    (by have := hL.x_r hL.xCtx (e := 0) (k := 200) (by omega_using []); simpa only [x0] using this.symm)
+    (hL.x_r hL.xCtx (e := 200) (k := 640) (by omega_using [])).symm hL.kCtx)
     fun t4 ⟨hc4, _, hR4, hx4⟩ => ?_)
   have hR4 := hR4 _ hR3 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil])
-  rw [hc3.bytesAt_eq hL.xCtx hL.kCtx (by have := hL.nCtx; omega)] at hR4
+  rw [hc3.bytesAt_eq hL.xCtx hL.kCtx (by have := hL.nCtx; omega_using [])] at hR4
   -- The message.
   have hln : (Arg.slot fLen).val t4 = BitVec.ofNat 64 L.len.toNat := by
-    rw [hc4.slotV (f := fLen) (j := 2) rfl (by omega), ofNat_toNat_self]; rfl
+    rw [hc4.slotV (f := fLen) (j := 2) rfl (by omega_using []), ofNat_toNat_self]; rfl
   refine WP.seq (WP.mono (kabs_ok v hL hc4 (absOk rfl rfl rfl rfl rfl)
-    (by rw [hc4.slotV (f := fMsg) (j := 1) rfl (by omega)]; rfl) hln (ofNat_toNat_eq hx4) (Nat.mod_lt _ (by decide))
-    (by have := L.len.isLt; omega) ⟨L.MSG, List.mem_append_left _ hL.inMsg, within_self _⟩
-    (by have := hL.x_r hL.xMsg (e := 0) (k := 200) (by omega); simpa only [x0] using this.symm)
-    (hL.x_r hL.xMsg (e := 200) (k := 640) (by omega)).symm hL.kMsg)
+    (by rw [hc4.slotV (f := fMsg) (j := 1) rfl (by omega_using [])]; rfl) hln (ofNat_toNat_eq hx4) (Nat.mod_lt _ (by decide))
+    (by have := L.len.isLt; omega_using []) ⟨L.MSG, List.mem_append_left _ hL.inMsg, within_self _⟩
+    (by have := hL.x_r hL.xMsg (e := 0) (k := 200) (by omega_using []); simpa only [x0] using this.symm)
+    (hL.x_r hL.xMsg (e := 200) (k := 640) (by omega_using [])).symm hL.kMsg)
     fun t5 ⟨hc5, _, hR5, hx5⟩ => ?_)
   have hR5 := hR5 _ hR4 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil])
-  rw [hc4.bytesAt_eq hL.xMsg hL.kMsg (by have := hL.nMsg; omega)] at hR5
+  rw [hc4.bytesAt_eq hL.xMsg hL.kMsg (by have := hL.nMsg; omega_using [])] at hR5
   -- Pad and squeeze.
   refine WP.seq (WP.mono (kpad_ok v hL hc5 (padOk rfl) (ofNat_toNat_eq hx5) (Nat.mod_lt _ (by decide)))
     fun t6 ⟨hc6, _, hS6⟩ => ?_)
-  have hS6 := hS6 _ hR5 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil]; omega)
+  have hS6 := hS6 _ hR5 (by simp only [List.length_append, Proof.MlKem.bytesAt_length, List.length_cons, List.length_nil]; omega_using [])
   refine WP.mono (ksqz_ok v hL hc6) fun t7 ⟨hc7, _, hm7⟩ => ⟨hc7, ?_⟩
   rw [hm7, hS6, Spec.MlDsa.H, Proof.MlKem.shake256_eq]
 

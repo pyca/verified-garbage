@@ -36,7 +36,7 @@ theorem tail_ok {s : State} {S D : Addr} {count total : Nat}
   change (S+16#64)+BitVec.ofNat 64 (16*(count-1))=S+BitVec.ofNat 64 (16*count)
   rw [Offset.add_add]
   congr 2
-  omega
+  omega_using [hc]
 
 
 theorem tail_length {s : State} {S D : Addr} {count total : Nat}
@@ -44,9 +44,9 @@ theorem tail_length {s : State} {S D : Addr} {count total : Nat}
     (Spec.Gcm.gathered 64 s.mem (S+16) (count-1)).length=total-(firstLen s).toNat := by
   rw [Proof.Gcm.length_gathered]
   have hh := h.len
-  rw [show count=(count-1)+1 by omega,Proof.Gcm.gatheredLen_cons] at hh
+  rw [show count=(count-1)+1 by omega_using [hc],Proof.Gcm.gatheredLen_cons] at hh
   rw [firstLen,h.r7]
-  omega
+  omega_using [hh]
 
 
 theorem TailResult.frame {s t : State} {S D : Addr} {count total : Nat}
@@ -67,20 +67,20 @@ theorem TailResult.input {s t : State} {S D : Addr} {count total : Nat}
   have hp := first_listed h hc
   have hs : Spec.Aes.bytesAt t.mem (s.mem.readW S 64) (firstLen s).toNat=
       Spec.Aes.bytesAt s.mem (s.mem.readW S 64) (firstLen s).toNat := by
-    apply VG.Proof.Cmac.bytesAt_frame (ht.frame h hc) _ (by have := h.lt; omega)
+    apply VG.Proof.Cmac.bytesAt_frame (ht.frame h hc) _ (by have := h.lt; omega_using [])
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    exact (h.lsd _ hp).sub_right (Offset.sub_base _ (by omega))
+    exact (h.lsd _ hp).sub_right (Offset.sub_base _ (by omega_using [hn]))
   rw [hs,SealSplit.PartialCopy.bytes_drop _ _ _ _ hn,ht.mem]
   have hr : Spec.Aes.bytesAt
       (writeBytes s.mem (D+BitVec.ofNat 64 (firstLen s).toNat) (Spec.Gcm.gathered 64 s.mem (S+16) (count-1)))
       (D+BitVec.ofNat 64 (firstLen s).toNat) (total-(firstLen s).toNat)=Spec.Gcm.gathered 64 s.mem (S+16) (count-1) := by
     rw [← hl]
-    exact VG.Proof.AesGcm.bytesAt_writeBytes_self _ _ _ (by rw [hl]; have := h.lt; omega)
+    exact VG.Proof.AesGcm.bytesAt_writeBytes_self _ _ _ (by rw [hl]; have := h.lt; omega_using [this])
   rw [hr]
   have he := Proof.Gcm.gathered_cons s.mem S (count-1)
-  rw [show count-1+1=count by omega] at he
+  rw [show count-1+1=count by omega_using [hc]] at he
   rw [he,firstLen,h.r7]
 
 end VG.Proof.AesGcm.PPC64LE.GatherSplit

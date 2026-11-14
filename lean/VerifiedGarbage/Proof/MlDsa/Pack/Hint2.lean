@@ -33,7 +33,7 @@ theorem hintAt_congr {m m' : Mem} {p : Addr} {k : Nat}
   have hi := List.mem_range.mp hi
   refine Vector.ext fun j hj => ?_
   simp only [Vector.getElem_ofFn]
-  rw [h _ (by rw [n_eq] at hj; omega)]
+  rw [h _ (by rw [n_eq] at hj; omega_using [hi, hj])]
 
 /-- Words whose values are the same numbers are equal. -/
 theorem coeffAt_of_leak {m m' : Mem} {p : Addr} {N : Nat}
@@ -101,12 +101,12 @@ theorem hintBitPack_hpS (ω k : Nat) (h : List (Vector Bool n)) : hintBitPack ω
 /-- The index before a 1 is less than `ω`. -/
 theorem hpT_idx_lt {ω k : Nat} {h : List (Vector Bool n)} (hk : h.length = k) (hω : hintOnes h ≤ ω) {i j : Nat}
     (hi : i < k) (hj : j < n) (h1 : (h.getD i noHint)[j]! = true) : (hpT ω k h i j).2 < ω := by
-  rw [hpT_idx]; have := hpIdx_lt hk hi hj h1; omega
+  rw [hpT_idx]; have := hpIdx_lt hk hi hj h1; omega_arith
 
 /-- The index after a polynomial is at most `ω`. -/
 theorem hpT_idx_le {ω k : Nat} {h : List (Vector Bool n)} (hk : h.length = k) (hω : hintOnes h ≤ ω) {i : Nat}
     (hi : i < k) : (hpT ω k h i n).2 ≤ ω := by
-  rw [hpT_idx]; have := onesBefore_n_le hk hi; omega
+  rw [hpT_idx]; have := onesBefore_n_le hk hi; omega_arith
 
 /-! ## `HintBitUnpack` -/
 
@@ -124,21 +124,21 @@ theorem harr_set {m : Mem} {p : Addr} {k : Nat} (hk : k ≤ 8) {hA : Array (Vect
   · obtain ⟨rfl, rfl⟩ := e
     rw [coeffAt_eq, Mem.readW_writeW_self32, ite_pos' ⟨rfl, rfl⟩]; rfl
   · rw [ite_neg' e, coeffAt_eq, Mem.readW_writeW_sep (Offset.sep _ (by
-      have : 256 * i' + j ≠ 256 * i + b := fun h' => e ⟨by omega, by omega⟩
-      omega) (by omega) (by omega)) (by decide), ← coeffAt_eq, hh.2 i' hi' j hj]
+      have : 256 * i' + j ≠ 256 * i + b := fun h' => e ⟨by omega_using [hb, hj, h'], by omega_using [hb, hj, h']⟩
+      omega_using [hb, hj, e]) (by omega_using [hk, hi', hj]) (by omega_using [hk, hi, hb])) (by decide), ← coeffAt_eq, hh.2 i' hi' j hj]
 
 /-- Zero words are the hint of zeros. -/
 theorem harr_zero {m : Mem} {p : Addr} {k : Nat} (hz : ∀ t < 256 * k, coeffAt m p t = 0) :
     HArr m p k (Array.replicate k noHint) := by
   refine ⟨Array.size_replicate, fun i hi j hj => ?_⟩
-  rw [hz _ (by omega)]
+  rw [hz _ (by omega_using [hi, hj])]
   simp only [Array.getD_eq_getD_getElem?, Array.getElem?_replicate, hi, ite_true, Option.getD_some, noHint]
   rw [getElem!_pos _ j (show j < n from hj), Vector.getElem_replicate]
   rfl
 
 theorem harr_congr {m m' : Mem} {p : Addr} {k : Nat} {hA : Array (Vector Bool n)} (hh : HArr m p k hA)
     (h : ∀ t < 256 * k, coeffAt m' p t = coeffAt m p t) : HArr m' p k hA :=
-  ⟨hh.1, fun i hi j hj => by rw [h _ (by omega)]; exact hh.2 i hi j hj⟩
+  ⟨hh.1, fun i hi j hj => by rw [h _ (by omega_using [hi, hj])]; exact hh.2 i hi j hj⟩
 
 /-- The hint of the spec, from the words. -/
 theorem harr_hintIs {m : Mem} {p : Addr} {k : Nat} {hA : Array (Vector Bool n)} (hh : HArr m p k hA) :

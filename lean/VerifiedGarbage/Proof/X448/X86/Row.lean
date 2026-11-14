@@ -25,7 +25,7 @@ open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 theorem acc_shift (m : Mem) (base : Addr) (i j : Nat) :
     limbs m base (ACC + 4 * i) j = accw m base (i + j) := by
   change (word m base (ACC + 4 * i + 4 * j)).toNat = _
-  rw [show ACC + 4 * i + 4 * j = ACC + 4 * (i + j) by omega]
+  rw [show ACC + 4 * i + 4 * j = ACC + 4 * (i + j) by omega_using []]
 
 /-- What a row needs of the code `ldA` loading `a_i` (from any state of the
 row's invariant) and of the addresses `mb j` of `b_j` (from any state whose
@@ -62,28 +62,28 @@ theorem rowWith_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
   let c := rowC (accw s.mem base) (limbs s0.mem base a) (limbs s0.mem base b) i
   have cb : ∀ j < 28, c j ≤ 2 ^ 32 - radix := by
     intro j hj
-    exact rowC_bound (ab i hi) (bb j hj) (h.lt (i + j) (by omega))
+    exact rowC_bound (ab i hi) (bb j hj) (h.lt (i + j) (by omega_using [hj]))
   change WP isa (.block (carryPass .ebp ACC (rowSrcWith mb) ++ rowEnd)) u _
   rw [WP.block_append_iff]
   refine WP.mono (carryPass_ok (s0 := u) (base := base) (o := ACC + 4 * i) (c := c)
-    (by decide) (by simp only [ACC]; omega)
+    (by decide) (by simp only [ACC]; omega_using [hi])
     (fun j hj => by
-      rw [rowEa us up (by simp only [ACC]; omega),
-        show 4 * i + (ACC + 4 * j) = ACC + 4 * i + 4 * j by omega])
-    (fun j hj => us.write (by simp only [ACC]; omega)) (by rw [hu.gpr]; rfl) cb ?_) fun v hv => ?_
+      rw [rowEa us up (by simp only [ACC]; omega_using [hi, hj]),
+        show 4 * i + (ACC + 4 * j) = ACC + 4 * i + 4 * j by omega_using []])
+    (fun j hj => us.write (by simp only [ACC]; omega_using [hi, hj])) (by rw [hu.gpr]; rfl) cb ?_) fun v hv => ?_
   · intro j hj v hv
     have vs := us.of_keeps hv.regs (by decide)
     have vp : v.gpr .ebp = v.gpr .edi + BitVec.ofNat 32 (4 * i) := by
       rw [hv.regs.1 _ (by decide), hv.regs.1 _ (by decide)]; exact up
     have va : (v.gpr .ecx).toNat = limbs s0.mem base a i := by rw [hv.regs.1 _ (by decide), uc]
     have vb : limbs v.mem base b j = limbs s0.mem base b j := by
-      rw [hv.mem.limbs (Or.inl (by simp only [ACC]; omega)) (by omega) hj, um, input b hb j hj]
+      rw [hv.mem.limbs (Or.inl (by simp only [ACC]; omega_using [hb'])) (by omega_using [hb']) hj, um, input b hb j hj]
     have vacc : accw v.mem base (i + j) = accw s.mem base (i + j) := by
       change (word v.mem base (ACC + 4 * (i + j))).toNat = _
-      rw [hv.mem.word (Or.inr (by omega)) (by simp only [ACC]; omega), um]
+      rw [hv.mem.word (Or.inr (by omega_using [])) (by simp only [ACC]; omega_using [hi, hj]), um]
     refine WP.mono (rowSrcWith_ok vs hb hi hj vp (hc.mb j hj v vs (k0u.trans (hv.regs.mono (by decide))))
       (by rw [va]; exact ab i hi) (by rw [vb]; exact bb j hj)
-      (by rw [vacc]; exact h.lt (i + j) (by omega))) fun w ⟨wv, wk, wm⟩ => ⟨?_, wk, wm⟩
+      (by rw [vacc]; exact h.lt (i + j) (by omega_using [hj]))) fun w ⟨wv, wk, wm⟩ => ⟨?_, wk, wm⟩
     rw [va, vb, vacc] at wv
     exact wv
   · have vs := us.of_keeps hv.regs (by decide)
@@ -96,26 +96,26 @@ theorem rowWith_ok {base : Addr} {a b : Nat} (ha : Slot a) (hb : Slot b) {s0 s :
         rowAcc (accw s.mem base) (limbs s0.mem base a) (limbs s0.mem base b) i k := by
       intro k hk
       change (word w.mem base (ACC + 4 * k)).toNat = _
-      rw [wm, word_write v.mem base (by simp only [ACC]; omega) (by simp only [ACC]; omega)]
+      rw [wm, word_write v.mem base (by simp only [ACC]; omega_using [hi]) (by simp only [ACC]; omega_using [hi, hk])]
       by_cases he : k = i + 28
       · rw [ite_eq_left he, hv.carry]
-        simp only [c, rowAcc, he, show ¬i + 28 < i by omega, Nat.lt_irrefl, ite_false]
+        simp only [c, rowAcc, he, show ¬i + 28 < i by omega_using [], Nat.lt_irrefl, ite_false]
       · rw [ite_eq_right he]
         by_cases hk' : k < i
-        · rw [passMem.word (Or.inl (by omega)) (by simp only [ACC]; omega)]
+        · rw [passMem.word (Or.inl (by omega_using [hk'])) (by simp only [ACC]; omega_using [hi, hk])]
           simp only [rowAcc, hk', ite_true]
-        · have out := hv.outs (k - i) (by omega)
-          rw [acc_shift, show i + (k - i) = k by omega] at out
+        · have out := hv.outs (k - i) (by omega_using [hk, he])
+          rw [acc_shift, show i + (k - i) = k by omega_using [hk']] at out
           change accw v.mem base k = _
           rw [out]
-          simp only [c, rowAcc, hk', show k < i + 28 by omega, ite_false, ite_true]
+          simp only [c, rowAcc, hk', show k < i + 28 by omega_using [hk, he], ite_false, ite_true]
     refine ⟨⟨vs.of_keeps wk (by decide), h.regs.trans (kv.trans wk), wp, ?_, ?_, ?_⟩, wz⟩
     · rw [wm]
-      exact (h.mem.trans (passMem.mono (by omega) (by omega))).trans
-        ((writeW_outside _ _ _ (by simp only [ACC]; omega)).mono (by omega) (by omega))
+      exact (h.mem.trans (passMem.mono (by omega_using []) (by omega_using [hi]))).trans
+        ((writeW_outside _ _ _ (by simp only [ACC]; omega_using [hi])).mono (by omega_using []) (by omega_using [hi]))
     · intro k hk
       rw [limbsOut k hk]
-      exact rowAcc_lt (fun k hk => h.lt k (by omega)) cb k hk
+      exact rowAcc_lt (fun k hk => h.lt k (by omega_using [hk])) cb k hk
     · rw [valN_congr limbsOut]
       exact row_val h.val
 
@@ -125,8 +125,8 @@ theorem rowCode_sc (base : Addr) {a b : Nat} (ha : Slot a) (hb : Slot b) (s0 : S
     RowCode base a b s0 i [.mov .ecx (.mem (at_ .ebp a))] (fun j => sc (b + 4 * j)) := by
   have ha' : a + 112 ≤ 3584 := ha
   have hb' : b + 112 ≤ 3584 := hb
-  refine ⟨fun s h => ?_, fun j hj s hs _ => hs.ea (by omega)⟩
-  · refine wp_load (by rw [rowEa h.scr h.ptr (by omega), Nat.add_comm]) (h.scr.read (by omega))
+  refine ⟨fun s h => ?_, fun j hj s hs _ => hs.ea (by omega_using [hb', hj])⟩
+  · refine wp_load (by rw [rowEa h.scr h.ptr (by omega_using [hi, ha']), Nat.add_comm]) (h.scr.read (by omega_using [hi, ha']))
       fun t ht => WP.block_nil ⟨ht.gpr, ht.rest (by decide), ht.mem⟩
 
 end VG.Proof.X448.X86

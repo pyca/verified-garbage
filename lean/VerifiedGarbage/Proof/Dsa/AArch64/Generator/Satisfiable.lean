@@ -46,9 +46,9 @@ theorem sat_bits {pLen : Nat} (hb : Supported pLen) :
   rw [sat_p hb]
   have low : 1 ≤ 8 * pLen := by rcases hb with rfl | rfl | rfl <;> decide
   have half : 2 ^ (8 * pLen) = 2 ^ (8 * pLen - 1) * 2 := by
-    rw [← Nat.pow_succ]; congr 1; omega
+    rw [← Nat.pow_succ]; congr 1; omega_using [low]
   have pos := Nat.two_pow_pos (8 * pLen - 1)
-  exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mpr ⟨by omega, by omega⟩
+  exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega_using [low])).mpr ⟨by omega_using [half], by omega_using [half, pos]⟩
 
 theorem sat_q {pLen : Nat} (hb : Supported pLen) : qOf pLen (satMemory pLen) satBase = 1 := by
   rcases hb with rfl | rfl | rfl <;> decide +kernel

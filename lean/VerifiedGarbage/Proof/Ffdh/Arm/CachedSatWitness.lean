@@ -42,8 +42,8 @@ theorem outside (base : Mem) {a : Addr} (small : a.toNat<0x100000) : withContext
   apply ite_eq_right
   rw [BitVec.toNat_sub]
   change ¬ (2^64-0x100000+a.toNat)%2^64<2200
-  rw [Nat.mod_eq_of_lt (by omega : 2^64-0x100000+a.toNat<2^64)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [small] : 2^64-0x100000+a.toNat<2^64)]
+  omega_using []
 
 theorem readW_outside (base : Mem) {a : Addr} {w : Nat} (small : a.toNat+w/8≤0x100000) :
     (withContext base).readW a w=base.readW a w := by
@@ -51,8 +51,8 @@ theorem readW_outside (base : Mem) {a : Addr} {w : Nat} (small : a.toNat+w/8≤0
   intro j hj
   apply outside
   rw [BitVec.toNat_add,BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : j<2^64),Nat.mod_eq_of_lt (by omega : a.toNat+j<2^64)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [small, hj] : j<2^64),Nat.mod_eq_of_lt (by omega_using [small, hj] : a.toNat+j<2^64)]
+  omega_using [small, hj]
 
 theorem domain_unchanged (base : Mem) :
     Spec.Rsa.bytesAt (withContext base) 0x3000 128=Spec.Rsa.bytesAt base 0x3000 128 := by
@@ -62,10 +62,10 @@ theorem domain_unchanged (base : Mem) :
   apply outside
   have bound := List.mem_range.mp hi
   rw [BitVec.toNat_add,BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : i<2^64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [bound] : i<2^64)]
   change (0x3000+i)%2^64<0x100000
-  rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [bound])]
+  omega_using [bound]
 
 theorem held (base : Mem) (i : Nat) (hi : i<275) :
     (withContext base).readW (0x100000+BitVec.ofNat 64 (8*i)) 64=values.getD i 0 := by
@@ -75,7 +75,7 @@ theorem held (base : Mem) (i : Nat) (hi : i<275) :
   unfold withContext
   apply ite_eq_left
   rw [BitVec.add_assoc,BitVec.ofNat_add_ofNat,Offset.add_sub_cancel_left,BitVec.toNat_ofNat]
-  omega
+  omega_using [hi, hj]
 
 theorem words (base : Mem) : Spec.Rsa.wordsAt (withContext base) 0x100000 275=values := by
   apply List.ext_getElem

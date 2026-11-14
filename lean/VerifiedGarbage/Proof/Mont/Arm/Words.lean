@@ -45,7 +45,7 @@ theorem Scr.wb_toNat {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
 /-- `[r12 + d]`. -/
 theorem Scr.ea {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d < size) : State.addr (s.gpr .r12 + BitVec.ofNat 32 d) = off base d := by
-  rw [VG.Arm.addr_add (by have := hs.nowrap; have := hs.wb_toNat; omega), hs.wb]
+  rw [VG.Arm.addr_add (by have := hs.nowrap; have := hs.wb_toNat; omega_arith), hs.wb]
 
 /-- `[r + d]`, with `r` at `4i` bytes into the working space. -/
 theorem Scr.ea_at {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {r : Reg} {i d : Nat}
@@ -64,15 +64,15 @@ theorem Scr.ea_off {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
 theorem Scr.read {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=
   have ⟨_, hl, hl', hR⟩ := hs.wr
-  ⟨_, List.mem_append_right _ hR, Offset.contains_base base (by omega) (by omega)⟩
+  ⟨_, List.mem_append_right _ hR, Offset.contains_base base (by omega_using [hd, hl]) (by omega_using [hd, hl, hl'])⟩
 
 theorem Scr.write {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions s.wr (off base d) n :=
   have ⟨_, hl, hl', hR⟩ := hs.wr
-  ⟨_, hR, Offset.contains_base base (by omega) (by omega)⟩
+  ⟨_, hR, Offset.contains_base base (by omega_using [hd, hl]) (by omega_using [hd, hl, hl'])⟩
 
 theorem Scr.off_lt {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
-    (hd : d < size) : d < 4096 := by have := hs.small; omega
+    (hd : d < size) : d < 4096 := by have := hs.small; omega_using [hd, this]
 
 theorem Scr.of_rest {rs : List Reg} {s s' : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     (h : Rest rs s s') (hr : .r12 ∉ rs) : Scr s' base size :=
@@ -87,11 +87,11 @@ structure Far (s : State) (base : Addr) (len : Nat) : Prop where
 
 theorem Far.read {s : State} {base : Addr} {len : Nat} (hf : Far s base len) {d n : Nat}
     (hd : d + n ≤ len) : InRegions (s.rd ++ s.wr) (off base d) n :=
-  ⟨_, List.mem_append_right _ hf.wr, Offset.contains_base base hd (by have := hf.nowrap; omega)⟩
+  ⟨_, List.mem_append_right _ hf.wr, Offset.contains_base base hd (by have := hf.nowrap; omega_using [hd, this])⟩
 
 theorem Far.write {s : State} {base : Addr} {len : Nat} (hf : Far s base len) {d n : Nat}
     (hd : d + n ≤ len) : InRegions s.wr (off base d) n :=
-  ⟨_, hf.wr, Offset.contains_base base hd (by have := hf.nowrap; omega)⟩
+  ⟨_, hf.wr, Offset.contains_base base hd (by have := hf.nowrap; omega_using [hd, this])⟩
 
 theorem Far.of_rest {rs : List Reg} {s s' : State} {base : Addr} {len : Nat} (hf : Far s base len)
     (h : Rest rs s s') : Far s' base len :=
@@ -101,7 +101,7 @@ theorem Far.of_rest {rs : List Reg} {s s' : State} {base : Addr} {len : Nat} (hf
 theorem Far.ea_reg {s : State} {base : Addr} {size len : Nat} (hf : Far s base len) (hs : Scr s base size)
     {r : Reg} {k d : Nat} (hr : s.gpr r = s.gpr .r12 + BitVec.ofNat 32 k) (hd : k + d < len) :
     State.addr (s.gpr r + BitVec.ofNat 32 d) = off base (k + d) := by
-  rw [hr, Offset.add_add, VG.Arm.addr_add (by have := hf.nowrap; have := hs.wb_toNat; omega), hs.wb]
+  rw [hr, Offset.add_add, VG.Arm.addr_add (by have := hf.nowrap; have := hs.wb_toNat; omega_arith), hs.wb]
 
 /-! ## Digits -/
 
@@ -130,28 +130,28 @@ theorem pow16_succ (k : Nat) : 2 ^ (16 * (k + 1)) = 2 ^ 16 * 2 ^ (16 * k) := by
 theorem dval_lt {m : Mem} {base : Addr} {d : Nat} : ∀ {k : Nat}, Digs m base d k → dval m base d k < 2 ^ (16 * k)
   | 0, _ => by simp [dval]
   | k + 1, h => by
-    have hk := h k (by omega)
-    have ih := dval_lt (k := k) fun j hj => h j (by omega)
+    have hk := h k (by omega_using [])
+    have ih := dval_lt (k := k) fun j hj => h j (by omega_using [hj])
     rw [dval, pow16_succ]
     have : w32 m base (d + 4 * k) * 2 ^ (16 * k) ≤ (2 ^ 16 - 1) * 2 ^ (16 * k) :=
-      Nat.mul_le_mul_right _ (by omega)
+      Nat.mul_le_mul_right _ (by omega_using [hk])
     rw [Nat.sub_mul, Nat.one_mul] at this
-    omega
+    omega_using [ih, this]
 
 /-- A word is its two digits. -/
 theorem word_digits (w : Nat) (hw : w < 2 ^ 32) : w = hdig w 0 + hdig w 1 * 2 ^ 16 := by
   simp only [hdig, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.mul_one]
-  omega
+  omega_using [hw]
 
 /-- `2k` digits are `k` words. -/
 theorem pval_words (m : Mem) (base : Addr) (d : Nat) : ∀ k, pval m base d (2 * k) = val32 m base d k
   | 0 => rfl
   | k + 1 => by
-    rw [show 2 * (k + 1) = 2 * k + 1 + 1 by omega, pval, pval, pval_words m base d k, val32_append m base d k 1]
+    rw [show 2 * (k + 1) = 2 * k + 1 + 1 by omega_using [], pval, pval, pval_words m base d k, val32_append m base d k 1]
     have hw := word_digits (w32 m base (d + 4 * k)) (BitVec.isLt _)
-    simp only [pdig, show (2 * k + 1) / 2 = k by omega, show (2 * k) / 2 = k by omega,
-      show (2 * k + 1) % 2 = 1 by omega, show (2 * k) % 2 = 0 by omega, val32, Nat.mul_zero, Nat.add_zero,
-      show 16 * (2 * k + 1) = 32 * k + 16 by omega, show 16 * (2 * k) = 32 * k by omega, Nat.pow_add]
+    simp only [pdig, show (2 * k + 1) / 2 = k by omega_using [], show (2 * k) / 2 = k by omega_using [],
+      show (2 * k + 1) % 2 = 1 by omega_using [], show (2 * k) % 2 = 0 by omega_using [], val32, Nat.mul_zero, Nat.add_zero,
+      show 16 * (2 * k + 1) = 32 * k + 16 by omega_using [], show 16 * (2 * k) = 32 * k by omega_using [], Nat.pow_add]
     generalize hdig (w32 m base (d + 4 * k)) 0 = lo at *
     generalize hdig (w32 m base (d + 4 * k)) 1 = hi at *
     generalize w32 m base (d + 4 * k) = w at *
@@ -164,34 +164,34 @@ theorem dval_append (m : Mem) (base : Addr) (d j : Nat) : ∀ k,
     dval m base d (j + k) = dval m base d j + 2 ^ (16 * j) * dval m base (d + 4 * j) k
   | 0 => by simp only [dval, Nat.add_zero, Nat.mul_zero]
   | k + 1 => by
-    rw [← Nat.add_assoc, dval, dval_append m base d j k, dval, show d + 4 * (j + k) = d + 4 * j + 4 * k by omega,
-      show 16 * (j + k) = 16 * j + 16 * k by omega, Nat.pow_add, Nat.mul_add, Nat.add_assoc]
+    rw [← Nat.add_assoc, dval, dval_append m base d j k, dval, show d + 4 * (j + k) = d + 4 * j + 4 * k by omega_using [],
+      show 16 * (j + k) = 16 * j + 16 * k by omega_using [], Nat.pow_add, Nat.mul_add, Nat.add_assoc]
     grind
 
 theorem dval_congr {m m' : Mem} {base : Addr} {d : Nat} :
     ∀ {k : Nat}, (∀ j < k, w32 m' base (d + 4 * j) = w32 m base (d + 4 * j)) → dval m' base d k = dval m base d k
   | 0, _ => rfl
-  | k + 1, h => by rw [dval, dval, dval_congr fun j hj => h j (by omega), h k (by omega)]
+  | k + 1, h => by rw [dval, dval, dval_congr fun j hj => h j (by omega_using [hj]), h k (by omega_using [])]
 
 theorem _root_.VG.Proof.Mont.Outside.dval {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
     {d k : Nat} (hd : d + 4 * k ≤ o ∨ o + n ≤ d) (hd' : d + 4 * k ≤ 2 ^ 64) :
     dval m' base d k = dval m base d k :=
-  dval_congr fun j hj => h.w32 (by omega) (by omega)
+  dval_congr fun j hj => h.w32 (by omega_using [hd, hj]) (by omega_using [hd', hj])
 
 theorem _root_.VG.Proof.Mont.Outside.digs {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
     {d k : Nat} (hd : d + 4 * k ≤ o ∨ o + n ≤ d) (hd' : d + 4 * k ≤ 2 ^ 64) (hs : Digs m base d k) :
-    Digs m' base d k := fun j hj => by rw [h.w32 (by omega) (by omega)]; exact hs j hj
+    Digs m' base d k := fun j hj => by rw [h.w32 (by omega_using [hd, hj]) (by omega_using [hd', hj])]; exact hs j hj
 
 theorem _root_.VG.Proof.Mont.Outside.pdig {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
     {d j : Nat} (hd : d + 4 * (j / 2) + 4 ≤ o ∨ o + n ≤ d + 4 * (j / 2)) (hd' : d + 4 * (j / 2) + 4 ≤ 2 ^ 64) :
     pdig m' base d j = pdig m base d j := by
   show hdig (w32 m' base (d + 4 * (j / 2))) (j % 2) = hdig (w32 m base (d + 4 * (j / 2))) (j % 2)
-  rw [h.w32 (by omega) (by omega)]
+  rw [h.w32 (by omega_using [hd]) (by omega_using [hd'])]
 
 theorem Digs.mono {m : Mem} {base : Addr} {d k k' : Nat} (h : Digs m base d k) (hk : k' ≤ k) : Digs m base d k' :=
-  fun j hj => h j (by omega)
+  fun j hj => h j (by omega_using [hk, hj])
 
 theorem Digs.shift {m : Mem} {base : Addr} {d j k : Nat} (h : Digs m base d (j + k)) : Digs m base (d + 4 * j) k :=
-  fun l hl => by rw [show d + 4 * j + 4 * l = d + 4 * (j + l) by omega]; exact h _ (by omega)
+  fun l hl => by rw [show d + 4 * j + 4 * l = d + 4 * (j + l) by omega_using []]; exact h _ (by omega_using [hl])
 
 end VG.Proof.Mont.Arm

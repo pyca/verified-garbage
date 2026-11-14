@@ -89,7 +89,7 @@ theorem powerStep_ok {n e m g E k : Nat} {base : Addr} {s : State}
   refine WP.seq (WP.mono (powerLookup_ok h pub C T A) fun u ⟨Cu,Tu,Au,Bu,Eu,Ou,Ku⟩ => ?_)
   refine WP.seq (WP.mono (context_mul_ok Cu (o := 6) (a := 6) (b := 7)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [Bu]; exact Nat.mod_lt _ (by have := Cu.gt_one; omega))) fun v ⟨Cv,Kv,lv,Vv⟩ => ?_)
+    (by rw [Bu]; exact Nat.mod_lt _ (by have := Cu.gt_one; omega_using [this]))) fun v ⟨Cv,Kv,lv,Vv⟩ => ?_)
   have Av := VG.Proof.Rsa.FixedBaseComb.mont_product_encoded Cu.coprime lv Au Bu Vv
   have Tv := Tu.op (table_layout h) Cu (by decide) Kv
   have Ev := (context_slot_val32 Cu (i := 8) (by decide) (power_bounds h).2.2.2.1
@@ -108,7 +108,7 @@ theorem powerStep_ok {n e m g E k : Nat} {base : Addr} {s : State}
     rw [counter_sub hk32 hk,counter_zero hk32 hk]
   · have ov : Outs base (powerRanges n e) u.mem v.mem := Kv.mem.mono (by
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl|rfl <;> simp [powerRanges,contextMod,accLen,words] <;> omega)
+      rcases hr with rfl|rfl|rfl <;> simp [powerRanges,contextMod,accLen,words] <;> omega_using [])
     rw [M]; exact Ou.trans ov
 
 end VG.Proof.Dsa.X86.Comb

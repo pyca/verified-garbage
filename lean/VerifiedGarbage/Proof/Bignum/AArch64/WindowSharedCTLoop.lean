@@ -74,8 +74,8 @@ theorem loop_ct : RelCT isa (Two fun p s => LoopP p 0 s)
     refine WP.mono (step_loop_ctx p j s hj h) fun t ⟨ht,h3⟩ => ?_
     refine ⟨?_,fun _ => ht,fun he => he ▸ ht⟩
     rw [VG.Proof.MlKem.AArch64.eval_nonzero,h3,VG.Proof.MlKem.AArch64.ne_zero_iff,
-      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 5-(j+1) < 2^64 by omega)]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 5-(j+1) < 2^64 by omega_using [])]
+    exact congrArg some (decide_eq_decide.mpr (by omega_using []))
   · obtain ⟨p,hs,ht,hsp⟩ := h
     exact ⟨p,⟨by decide,hs⟩,⟨by decide,ht⟩,hsp⟩
 

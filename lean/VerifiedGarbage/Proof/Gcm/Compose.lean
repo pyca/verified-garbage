@@ -53,7 +53,7 @@ theorem ghashInput_append (a c e : List Byte) (he : e ≠ []) :
   · next h => subst h; rfl
   · next h => rw [ghashInput_of_ne h]; simp only [List.append_assoc]
 
-theorem length_pad_mod (n : Nat) : (n + padLen n) % 16 = 0 := by simp only [padLen]; omega
+theorem length_pad_mod (n : Nat) : (n + padLen n) % 16 = 0 := by simp only [padLen]; omega_using []
 
 /-- The lengths block `[len(A)]₆₄ ‖ [len(C)]₆₄`. -/
 def lensBlock (aLen cLen : Nat) : List Byte := be64 (8 * aLen) ++ be64 (8 * cLen)
@@ -79,7 +79,7 @@ theorem authBlocks_eq (a c : List Byte) :
   · subst hc; simp [ghashInput_nil, zeros, padLen]
   · rw [ghashInput_of_ne hc]
     have : padLen (a ++ zeros (padLen a.length) ++ c).length = padLen c.length := by
-      simp only [List.length_append, length_zeros, padLen]; omega
+      simp only [List.length_append, length_zeros, padLen]; omega_using []
     rw [this]; simp only [List.append_assoc]
 
 /-- GHASH having absorbed a whole number of blocks. -/

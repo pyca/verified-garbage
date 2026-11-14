@@ -100,7 +100,7 @@ theorem TimingCtx.regsOnly {base tbl:Addr} {S K n m:Nat} {s t:State} {rs:List Re
 private theorem dec_ctx {base tbl:Addr} {S K i:Nat} {s:State} (hi:i<464)
     (h:TimingCtx base tbl S K (i+1) s) :
     WP isa (.block [.subImm .x .x19 .x19 1]) s (TimingCtx base tbl S K i):=by
-  refine WP.mono (VG.Proof.X448.AArch64.Weak.decCounter_ok (by omega) h.counter)
+  refine WP.mono (VG.Proof.X448.AArch64.Weak.decCounter_ok (by omega_using [hi]) h.counter)
     fun t ⟨t19,tg,tm,tr,tw,_⟩ => ?_
   have hk:Keeps [.x19] s t:=⟨fun r hr => tg r (by simpa only [List.mem_singleton] using hr),tr,tw⟩
   exact TimingCtx.regsOnly h hk tm (by decide) t19
@@ -121,7 +121,7 @@ theorem jointStep_ct (hA:AffineOk) (base tbl sp:Addr) (S K i:Nat) (hi:i<464) :
   apply seq_same (RelCT.taint (A:=taintS [baseSym]) (Taint.ofRegs [.x3,.x19])
     (fun _ _ h => timingCtx_agree h) da) (fun _ h => wp_pinned (fun _ h => double_ctx h) h)
   have ba:=addBase_ct base sp tbl i hi (digitAt true S i) (baseDigit_bound S i)
-  have ka:=addKey_ct base sp tbl i hi (digitAt false K i) (by have :=keyDigit_bound K i;omega)
+  have ka:=addKey_ct base sp tbl i hi (digitAt false K i) (by have :=keyDigit_bound K i;omega_using [this])
   apply seq_same (ba.mono (fun _ _ h => ⟨⟨⟨h.1.1.core.scr,h.1.1.counter,h.1.1.sd i hi⟩,h.1.2⟩,
     ⟨⟨h.2.1.core.scr,h.2.1.counter,h.2.1.sd i hi⟩,h.2.2⟩⟩) (fun _ _ h => h))
     (fun _ h => pin_dep (fun _ h => addBase_ctx hA hi h) h)
@@ -157,8 +157,8 @@ theorem jointLoop_ct (hA:AffineOk) (base tbl sp:Addr) (S K n:Nat) (hn:0<n) (hn':
   apply (hl ?_ n).mono (fun _ _ h => ⟨hn,hn',h⟩) (fun _ _ h => h)
   intro m
   by_cases hm:0<m ∧ m≤464
-  · obtain ⟨i,rfl⟩:∃ i,m=i+1:=⟨m-1,by omega⟩
-    have hi:i<464:=by omega
+  · obtain ⟨i,rfl⟩:∃ i,m=i+1:=⟨m-1,by omega_using [hm]⟩
+    have hi:i<464:=by omega_using [hm]
     have hs:RelCT isa (I (i+1)) step (fun _ _ => True):=
       (jointStep_ct hA base tbl sp S K i hi).mono (fun _ _ h => h.2.2) (fun _ _ h => h)
     apply (hs.wp (fun _ _ h => ⟨step_ctx hA hi h.2.2.1,step_ctx hA hi h.2.2.2⟩)).mono
@@ -169,7 +169,7 @@ theorem jointLoop_ct (hA:AffineOk) (base tbl sp:Addr) (S K n:Nat) (hn:0<n) (hn':
     refine ⟨trivial,fun _ => trivial,?_⟩
     intro hc
     have hn:i≠0:=by intro hz;subst i;exact Bool.noConfusion (Option.some.inj hc)
-    exact ⟨i,by omega,by omega,by omega,hs,ht⟩
+    exact ⟨i,by omega_using [],by omega_using [hn],by omega_using [hm],hs,ht⟩
   · exact RelCT.of_false (fun _ _ h => hm ⟨h.1,h.2.1⟩)
 
 end VG.Proof.Ed448.AArch64.Sparse

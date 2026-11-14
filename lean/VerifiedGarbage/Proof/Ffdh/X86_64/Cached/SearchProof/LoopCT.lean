@@ -100,7 +100,7 @@ private theorem iteration_pair (v : RoundImpl) (n : Nat) :
     refine ⟨128 * (nextKeyPoint q).keys + (nextKeyPoint q).scalars + 1, ?_, nextKeyPoint q, rfl,
       h₁.2, h₂.2⟩
     have := nextKeyPoint_measure hb
-    omega
+    omega_using [hn, this]
   · simp only [KeyCTStep, hb, ite_false] at h₁ h₂
     refine ⟨h₁.trans h₂.symm, fun _ => trivial, fun ht => ?_⟩
     rw [h₁] at ht

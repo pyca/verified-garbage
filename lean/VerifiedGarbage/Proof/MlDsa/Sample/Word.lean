@@ -35,18 +35,18 @@ theorem subMask_eq {g x : BitVec 32} (hg : g.toNat < q) (hx : x.toNat < q + g.to
   · rw [decide_eq_true h, BitVec.sub_self,
       show (0#32 - BitVec.setWidth 32 (BitVec.ofBool true) &&& 8380417#32) = 8380417#32 by decide,
       BitVec.toNat_add, BitVec.toNat_sub, show (8380417#32).toNat = 8380417 from rfl]
-    omega
+    omega_using [hx, h]
   · rw [decide_eq_false h, BitVec.sub_self,
       show (0#32 - BitVec.setWidth 32 (BitVec.ofBool false) &&& 8380417#32) = 0 by decide,
       BitVec.toNat_add, BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_using [hg, h]
 
 /-- Bit `j` of a 32-bit little-endian word. -/
 theorem readW32_getLsbD (m : Mem) (a : Addr) {j : Nat} (hj : j < 32) :
     (m.readW a 32).getLsbD j = (m (a + BitVec.ofNat 64 (j / 8))).getLsbD (j % 8) := by
-  rw [Mem.readW_byte m a (by omega), BitVec.getLsbD_extractLsb']
-  simp only [show j % 8 < 8 by omega, decide_true, Bool.true_and]
-  congr 1; omega
+  rw [Mem.readW_byte m a (by omega_using [hj]), BitVec.getLsbD_extractLsb']
+  simp only [show j % 8 < 8 by omega_using [], decide_true, Bool.true_and]
+  congr 1; omega_using []
 
 /-- The `c` bits from bit `sh` of the word at `a` are those of `X` from bit
 `8o + sh`, if its first 3 bytes are those of `X` from byte `o`. -/
@@ -58,9 +58,9 @@ theorem wordBits (m : Mem) (a : Addr) (X : List Byte) {o sh c : Nat} (hc : sh + 
   rw [Nat.testBit_mod_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow, Nat.testBit_div_two_pow]
   by_cases hj : j < c
   · simp only [hj, decide_true, Bool.true_and]
-    rw [← BitVec.getLsbD, readW32_getLsbD m a (j := j + sh) (by omega), hb ((j + sh) / 8) (by omega),
-      testBit_leNat, show (j + (8 * o + sh)) / 8 = o + (j + sh) / 8 by omega,
-      show (j + (8 * o + sh)) % 8 = (j + sh) % 8 by omega]
+    rw [← BitVec.getLsbD, readW32_getLsbD m a (j := j + sh) (by omega_using [hc, hj]), hb ((j + sh) / 8) (by omega_using [hc, hj]),
+      testBit_leNat, show (j + (8 * o + sh)) / 8 = o + (j + sh) / 8 by omega_using [],
+      show (j + (8 * o + sh)) % 8 = (j + sh) % 8 by omega_using []]
   · simp [hj]
 
 end VG.Proof.MlDsa.Sample

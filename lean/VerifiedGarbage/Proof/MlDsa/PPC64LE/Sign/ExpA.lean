@@ -91,9 +91,9 @@ theorem wp_seqR {f : Nat → Prog isa} {I : Nat → State → Prop} :
       ∀ s, I a s → WP isa (seqR f a n) s (I (a + n))
   | 0, a, _, s, hs => by rw [seqR, Nat.add_zero]; exact WP.block_nil hs
   | n + 1, a, h, s, hs => by
-    rw [seqR, show a + (n + 1) = a + 1 + n by omega]
-    exact WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s' hs' =>
-      wp_seqR n (a + 1) (fun k h₁ h₂ => h k (by omega) (by omega)) s' hs')
+    rw [seqR, show a + (n + 1) = a + 1 + n by omega_using []]
+    exact WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_using []) s hs) fun s' hs' =>
+      wp_seqR n (a + 1) (fun k h₁ h₂ => h k (by omega_using [h₁]) (by omega_using [h₂])) s' hs')
 
 theorem rr_seqR {f : Nat → Prog isa} {R : Nat → State → State → Prop} :
     ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → RelCT isa (R k) (f k) (R (k + 1))) →
@@ -107,8 +107,8 @@ theorem rr_seqR {f : Nat → Prog isa} {R : Nat → State → State → Prop} :
     obtain ⟨rfl, rfl⟩ := e₂
     exact ⟨rfl, hr⟩
   | n + 1, a, h => by
-    rw [seqR, show a + (n + 1) = a + 1 + n by omega]
-    exact RelCT.seq (h a (Nat.le_refl _) (by omega)) (rr_seqR n (a + 1) fun k h₁ h₂ => h k (by omega) (by omega))
+    rw [seqR, show a + (n + 1) = a + 1 + n by omega_using []]
+    exact RelCT.seq (h a (Nat.le_refl _) (by omega_using [])) (rr_seqR n (a + 1) fun k h₁ h₂ => h k (by omega_using [h₁]) (by omega_using [h₂]))
 
 section
 variable {P : Prims} {S : Nat} (hP : SPrimsOk P S) {p : Params} (hF : SFacts p) {STK : Nat} (hS : S ≤ STK)
@@ -133,10 +133,10 @@ theorem blkE_ok {e : Nat} (he : e < p.k * p.ℓ) {σ s : State} (h : IA p STK σ
   have hs := h.sc.site
   have hL := hs.ok
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
-  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
+  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega_using [hl])
   refine WP.block_append (WP.mono (setB_ok hs (q := sc (oRS + 32)) ⟨sptr_ok rfl (by decide), by ssep hF⟩
-    (by decide) (by decide) (v := e % p.ℓ) (by omega)) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁)
-      (q := sc (oRS + 33)) ⟨sptr_ok rfl (by decide), by ssep hF⟩ (by decide) (by decide) (v := e / p.ℓ) (by omega))
+    (by decide) (by decide) (v := e % p.ℓ) (by omega_using [hl, hr])) fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁)
+      (q := sc (oRS + 33)) ⟨sptr_ok rfl (by decide), by ssep hF⟩ (by decide) (by decide) (v := e / p.ℓ) (by omega_using [hk, hq]))
       fun s₂ ⟨k₂, b₂⟩ => ?_)
   have sc₂ := (h.sc.keep k₁ (by ssep hF [sc1Chk])).keep k₂ (by ssep hF [sc1Chk])
   have rs₂ : bytesAt s₂.mem ((slay1 p STK σ).A 0 oRS) 32 = rhoOf p σ :=
@@ -192,20 +192,20 @@ theorem andE_ok {e : Nat} (he : e < p.k * p.ℓ) {σ s : State} (h : JE p STK e 
     obtain ⟨ok1, fam⟩ := h.ok hs1
     have hm := hmax hr1
     refine ⟨fun e' he' => ?_, fun e' he' => ?_⟩
-    · rcases (by omega : e' < e ∨ e' = e) with he' | rfl
+    · rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
       exacts [ok1 e' he', hm]
     · rw [r₄.mem]
-      rcases (by omega : e' < e ∨ e' = e) with he' | rfl
+      rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
       · exact polyIs_keepW hL k₃.frame (by ssep hF) (by decide) rfl (fam e' he')
       · exact ⟨hred hr1, rej_val hout hr1 hm⟩
   · rw [e24, h24₃] at h0
     rcases h.r01 with e0 | e0
     · obtain ⟨e', he', hn⟩ := h.bad e0
-      exact ⟨e', by omega, hn⟩
+      exact ⟨e', by omega_using [he'], hn⟩
     · rcases hr01 with e1 | e1
       · rcases hout with ⟨h1, _⟩ | ⟨_, hn⟩
         · rw [e1] at h1; cases h1
-        · exact ⟨e, by omega, hn⟩
+        · exact ⟨e, by omega_using [], hn⟩
       · rw [e0] at h0; simp only [zx, e1] at h0; exact absurd h0 (by decide)
 
 omit hP hF hS in
@@ -226,19 +226,19 @@ theorem sampleE_ok {e : Nat} (he : e < p.k * p.ℓ) {σ s : State} (h : IA p STK
 omit hP hS in
 theorem sk_rho {σ s : State} (h : SC1 p STK σ s) : bytesAt s.mem ((slay1 p STK σ).A 2 0) 32 = rhoOf p σ := by
   have := hF.sk
-  rw [rhoOf, ← h.sk, Proof.MlKem.bytesAt_take _ _ (by omega)]
+  rw [rhoOf, ← h.sk, Proof.MlKem.bytesAt_take _ _ (by omega_using [this])]
 
 omit hP hS in
 theorem rho_ok {σ s : State} (h : SC1 p STK σ s) (h1 : s.gpr .r24 = 1) :
     WP isa (copy .r30 0 .r31 oRS 32) s fun s' => IA p STK σ 0 s' ∧ s'.gpr .r24 = 1 := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   refine WP.mono (copyS h.site (sb := .r30) (so := 0) (db := .r31) (dO := oRS) (len := 32)
-    ⟨sptr_ok rfl (by have := hF.sk; omega), by ssep hF⟩ ⟨sptr_ok rfl (by decide), by ssep hF⟩ (by decide) (by decide)
+    ⟨sptr_ok rfl (by have := hF.sk; omega_using []), by ssep hF⟩ ⟨sptr_ok rfl (by decide), by ssep hF⟩ (by decide) (by decide)
     (by decide) (by decide) (by decide) (by ssep hF))
     fun s' ⟨k', b'⟩ => ?_
   have h24 : s'.gpr .r24 = 1 := by rw [k'.cs .r24 (by decide), h1]
-  refine ⟨⟨h.keep k' (by ssep hF [sc1Chk]), ?_, .inr h24, fun _ => ⟨fun _ hd => absurd hd (by omega),
-    fun _ hd => absurd hd (by omega)⟩, fun h0 => absurd (h0.symm.trans h24) (by decide)⟩, h24⟩
+  refine ⟨⟨h.keep k' (by ssep hF [sc1Chk]), ?_, .inr h24, fun _ => ⟨fun _ hd => absurd hd (by omega_using []),
+    fun _ hd => absurd hd (by omega_using [])⟩, fun h0 => absurd (h0.symm.trans h24) (by decide)⟩, h24⟩
   show bytesAt s'.mem (lpa (slay1 p STK σ) (.r31, oRS)) 32 = _
   rw [b', show lpa (slay1 p STK σ) (.r30, 0) = (slay1 p STK σ).A 2 0 from rfl, sk_rho hF h]
 
@@ -247,7 +247,7 @@ theorem expandA_ok {σ s : State} (h : SC1 p STK σ s) (h1 : s.gpr .r24 = 1) :
   unfold Impl.MlDsa.PPC64LE.Sign.expandA
   refine WP.seq (WP.mono (rho_ok hF h h1) fun s' h' => ?_)
   simpa using wp_seqR (I := fun e => IA p STK σ e) (p.k * p.ℓ) 0
-    (fun e _ he _ hs => sampleE_ok hP hF hS (by omega) hs) s' h'.1
+    (fun e _ he _ hs => sampleE_ok hP hF hS (by omega_using [he]) hs) s' h'.1
 
 omit hP hF hS in
 theorem blkE_taint : ∀ v < 8, ∀ w < 8, (VG.PPC64LE.taint.check (Taint.ofRegs [.r31])
@@ -261,13 +261,13 @@ theorem sampleE_tr {e : Nat} (he : e < p.k * p.ℓ) :
     RelCT isa (RR p STK (IA p STK · e) E24) (sampleE P p e) (RR p STK (IA p STK · (e + 1)) E24) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
-  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
+  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega_using [hl])
   rw [sampleE_eq]
   refine RelCT.seq (stepRR
     (J := fun σ s => IA p STK σ e s ∧ bytesAt s.mem ((slay1 p STK σ).A 0 oRS) 34 = seedE p σ e)
     (F := fun s s' => s'.gpr .r24 = s.gpr .r24) (E' := E24)
     (fun σ s _ h => blkE_ok hF he h)
-    (RelCT.mono (srel1 (fun σ s h => h.sc) (blkE_taint _ (by omega) _ (by omega))) (fun _ _ h => h.1) fun _ _ h => h)
+    (RelCT.mono (srel1 (fun σ s h => h.sc) (blkE_taint _ (by omega_using [hl, hr]) _ (by omega_using [hk, hq]))) (fun _ _ h => h.1) fun _ _ h => h)
     fun x y x' y' hr fx fy _ => by show _ = _; rw [fx, fy]; exact hr.2) ?_
   refine RelCT.seq (stepRR (J := JE p STK e) (F := fun s s' => s'.gpr .r24 = s.gpr .r24)
     (E' := fun x y => E24 x y ∧ (x.gpr .r3).setWidth 32 = (y.gpr .r3).setWidth 32)
@@ -302,7 +302,7 @@ theorem expandA_tr :
     (RelCT.mono (srel1p (fun σ s h => h.1) (by taint_decide)) (fun _ _ h => h.1) fun _ _ h => h)
     fun x y x' y' _ fx fy _ => by show _ = _; rw [fx, fy]) ?_
   simpa using rr_seqR (R := fun e => RR p STK (IA p STK · e) E24) (p.k * p.ℓ) 0
-    fun e _ he => sampleE_tr hP hF hS (by omega)
+    fun e _ he => sampleE_tr hP hF hS (by omega_using [he])
 
 end
 

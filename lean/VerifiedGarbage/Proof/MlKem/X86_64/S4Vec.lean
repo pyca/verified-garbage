@@ -50,7 +50,7 @@ theorem sampleStepCap_room {a : List Zq} (h : a.length + 2 ≤ n) (c₀ c₁ c�
   unfold sampleStepCap sampleStep pair
   rw [ite_eq_right_iff.mpr (fun h' => absurd h' (by bdd_omega))]
   dsimp only
-  split <;> split <;> simp_all <;> omega
+  split <;> split <;> simp_all <;> omega_arith
 
 theorem fm2 {α : Type} (p : Nat → Bool) (f : Nat → α) (k : Nat) :
     ([k, k + 1].filter p).map f = (if p k then [f k] else []) ++ (if p (k + 1) then [f (k + 1)] else []) := by
@@ -73,9 +73,9 @@ theorem sampleAfter_four {a : List Zq} {out : Nat → Byte} {t : Nat}
   have p2 := pair_length (out (3 * (t + 2))) (out (3 * (t + 2) + 1)) (out (3 * (t + 2) + 2))
   rw [sampleAfter_succ, sampleAfter_succ, sampleAfter_succ, sampleAfter_succ,
     sampleStepCap_room (a := sampleAfter a out t) (by bdd_omega),
-    sampleStepCap_room (a := sampleAfter a out t ++ _) (by simp only [List.length_append]; omega),
-    sampleStepCap_room (a := sampleAfter a out t ++ _ ++ _) (by simp only [List.length_append]; omega),
-    sampleStepCap_room (a := sampleAfter a out t ++ _ ++ _ ++ _) (by simp only [List.length_append]; omega),
+    sampleStepCap_room (a := sampleAfter a out t ++ _) (by simp only [List.length_append]; omega_using [h, p0]),
+    sampleStepCap_room (a := sampleAfter a out t ++ _ ++ _) (by simp only [List.length_append]; omega_using [h, p0, p1]),
+    sampleStepCap_room (a := sampleAfter a out t ++ _ ++ _ ++ _) (by simp only [List.length_append]; omega_using [h, p0, p1, p2]),
     acc4_eq]
   simp only [List.append_assoc, show 3 * (t + 1) = 3 * t + 3 by bdd_omega, show 3 * (t + 2) = 3 * t + 6 by bdd_omega,
     show 3 * (t + 3) = 3 * t + 9 by bdd_omega, Nat.add_assoc, Nat.reduceAdd]
@@ -86,10 +86,10 @@ theorem acc4_length (out : Nat → Byte) (p : Nat) : (acc4 out p).length ≤ 8 :
 theorem sampleAfter_eight {a : List Zq} {out : Nat → Byte} {t : Nat}
     (h : (sampleAfter a out t).length + 16 ≤ n) :
     sampleAfter a out (t + 8) = sampleAfter a out t ++ acc4 out (3 * t) ++ acc4 out (3 * t + 12) := by
-  have e4 := sampleAfter_four (a := a) (out := out) (t := t) (by omega)
+  have e4 := sampleAfter_four (a := a) (out := out) (t := t) (by omega_using [h])
   have l := acc4_length out (3 * t)
-  rw [show t + 8 = (t + 4) + 4 by omega, sampleAfter_four (by rw [e4, List.length_append]; omega), e4,
-    show 3 * (t + 4) = 3 * t + 12 by omega]
+  rw [show t + 8 = (t + 4) + 4 by omega_using [], sampleAfter_four (by rw [e4, List.length_append]; omega_using [h, l]), e4,
+    show 3 * (t + 4) = 3 * t + 12 by omega_using []]
 
 end VG.Proof.MlKem
 
@@ -169,7 +169,7 @@ theorem toNat_dword_ofBytes (f : Nat → BitVec 8) {j : Nat} (hj : j < 4) :
   simp only [Nat.shiftLeft_eq]
   have := (f (4 * j)).isLt; have := (f (4 * j + 1)).isLt; have := (f (4 * j + 2)).isLt
   have := (f (4 * j + 3)).isLt
-  omega
+  omega_using []
 
 theorem pshufb_shuf0 (a : BitVec 128) : XBinOp.eval .pshufb a shuf0 =
     ofBytes fun i => if i % 4 < 2 then byte a (cb (i / 4) + i % 4) else 0 := by
@@ -194,12 +194,12 @@ theorem toNat_and_fff (x : BitVec 32) : (x &&& 0xfff#32).toNat = x.toNat % 4096 
 /-- The value of an even candidate from its two bytes. -/
 theorem cand_lo {x y : Nat} (hx : x < 256) (_hy : y < 256) :
     (x + 256 * y) / 2 ^ 0 % 4096 = (x + 256 * (y % 16)) % 2 ^ 32 := by
-  omega
+  omega_using [hx]
 
 /-- The value of an odd candidate from its two bytes. -/
 theorem cand_hi {x y : Nat} (hx : x < 256) (hy : y < 256) :
     (x + 256 * y) / 2 ^ 4 % 4096 = (x / 16 + 16 * y) % 2 ^ 32 := by
-  omega
+  omega_using [hx, hy]
 
 theorem cand_dword (a : BitVec 128) {l j : Nat} (hl : l < 2) (hj : j < 4) :
     dword (candV a l) j = BitVec.ofNat 32 (candN (fun i => (byte a i).toNat) (4 * l + j)) := by
@@ -228,7 +228,7 @@ theorem bsum_lt (f : Nat → Bool) : ∀ n, bsum f n < 2 ^ n
   | n + 1 => by
     have := bsum_lt f n
     simp only [bsum, Nat.pow_succ]
-    cases f n <;> simp <;> omega
+    cases f n <;> simp <;> omega_using [this]
 
 theorem byteMask_eq (x : BitVec 256) {n : Nat} (hn : n ≤ 64) :
     byteMask x n = BitVec.ofNat 64 (bsum (fun i => x.getLsbD (8 * i + 7)) n) := by
@@ -406,8 +406,8 @@ theorem wp_vtbl {d : XReg} {m : MemOp} {name : String} {ws : List (BitVec 64)} {
     WP isa (.block (.vmovdquTbl d m name ws :: is)) s Q := by
   refine WP.cons (s' := s.setV .l256 d (ws.getD (o + 1) 0 ++ ws.getD o 0) (ws.getD (o + 3) 0 ++ ws.getD (o + 2) 0))
     ?_ (k _ (LUpd.setV256 _ _ _ _))
-  have h8 : 8 * o % 8 = 0 := by omega
-  have hd : 8 * o / 8 = o := by omega
+  have h8 : 8 * o % 8 = 0 := by omega_using []
+  have hd : 8 * o / 8 = o := by omega_using []
   simp only [exec, hb, ho, h8, hd, hl, and_self, ite_true, Nat.add_zero]
 
 /-- `add d, QWORD PTR [m]` of word `o` of the static `name` (`aluTbl`). -/
@@ -419,8 +419,8 @@ theorem wp_addTbl {d : Reg} {m : MemOp} {name : String} {ws : List (BitVec 64)} 
   let b := ws.getD o 0
   refine WP.cons (s' := (arithFlags s (a + b) (2 ^ 64 ≤ a.toNat + b.toNat) (addOverflow a b (a + b))).setReg d
     (a + b)) ?_ (k _ (GUpd.withFlags _ _ _ _ _ _ _))
-  have h8 : 8 * o % 8 = 0 := by omega
-  have hd : 8 * o / 8 = o := by omega
+  have h8 : 8 * o % 8 = 0 := by omega_using []
+  have hd : 8 * o / 8 = o := by omega_using []
   simp only [exec, hb, ho, h8, hd, hl, and_self, ite_true, execAluW, a, b]
 
 end
@@ -428,7 +428,7 @@ end
 /-! ## The candidates and their mask -/
 
 theorem candN_lt (b : Nat → Nat) (hb : ∀ i, b i < 256) (k : Nat) : candN b k < 4096 := by
-  unfold candN; have := hb (cb k); have := hb (cb k + 1); split <;> omega
+  unfold candN; have := hb (cb k); have := hb (cb k + 1); split <;> omega_arith
 
 /-! ## The compaction -/
 

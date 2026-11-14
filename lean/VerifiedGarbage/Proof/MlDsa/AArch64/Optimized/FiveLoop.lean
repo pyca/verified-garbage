@@ -38,7 +38,7 @@ theorem fiveAdvance_ok (s : State) :
 
 private theorem root_inc (p : Addr) (u off : Nat) :
     (p+BitVec.ofNat 64 (480*u+off))+480=p+BitVec.ofNat 64 (480*(u+1)+off) := by
-  rw [show 480*(u+1)+off=(480*u+off)+480 by omega]
+  rw [show 480*(u+1)+off=(480*u+off)+480 by omega_using []]
   rw [BitVec.ofNat_add (480*u+off) 480,BitVec.add_assoc]
   rfl
 
@@ -113,7 +113,7 @@ theorem fiveLoop_ok {s : State} {p : Addr} {r : Region} {zi zt : Nat → Nat →
       · simpa only [ha.mem] using hf₁
       · exact ha.pointers hp₁
       · rw [ha.out,hk₁.get .x2,hout]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]
         rfl
       · simpa only [hvec₂] using hq₁
       · rw [ha.mem,hv₁.mem]

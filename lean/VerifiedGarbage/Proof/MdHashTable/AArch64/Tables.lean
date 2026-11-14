@@ -197,6 +197,6 @@ theorem withTable_held (s : State) (vs : List MdHash) (v : MdHash) :
 /-- Below `0x300000`, a word as in `s`. -/
 theorem withTable_below (s : State) (vs : List MdHash) (v : MdHash) {a : Addr} (ha : a.toNat + 8 ≤ 0x300000) :
     (withTable s vs v).mem.readW a 64 = s.mem.readW a 64 :=
-  putWs_out (.inl (by simpa using ha)) (twL_room vs v) (by omega)
+  putWs_out (.inl (by simpa using ha)) (twL_room vs v) (by omega_using [ha])
 
 end VG.Proof.MdHashTable.AArch64

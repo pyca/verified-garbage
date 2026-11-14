@@ -38,8 +38,8 @@ theorem steps_congr (K L : Nat → BitVec 32) (n : Nat) (x y : Nat → BitVec 32
   | zero => exact hx
   | succ n ih =>
     intro w hw
-    rw [steps_succ,steps_succ,hk n (by omega)]
-    exact sround_congr _ (Nat.mod_lt _ (by decide)) (ih (fun i hi => hk i (by omega))) hw
+    rw [steps_succ,steps_succ,hk n (by omega_using [])]
+    exact sround_congr _ (Nat.mod_lt _ (by decide)) (ih (fun i hi => hk i (by omega_using [hi]))) hw
 
 theorem wordReg_mem : ∀ j < 4, wordReg j ∈ written := by decide
 
@@ -55,12 +55,12 @@ theorem rounds_run (s : State) (n : Nat) (hn : n ≤ 32)
   induction n with
   | zero => exact ⟨s,rfl,fun _ _ => rfl,hc,ht,fun _ _ => rfl,rfl,rfl,rfl,rfl⟩
   | succ n ih =>
-    obtain ⟨a,ae,aw,ac,atab,ag,am,ard,awr,asp⟩ := ih (by omega)
+    obtain ⟨a,ae,aw,ac,atab,ag,am,ard,awr,asp⟩ := ih (by omega_using [hn])
     have ab : a.gpr .x5 = s.gpr .x5 := ag _ (by decide)
     have ar : InRegions (a.rd ++ a.wr) (a.gpr .x5 + BitVec.ofNat 64 (256+4*n)) 4 := by
       rw [ard,awr,ab]
-      exact hr n (by omega)
-    obtain ⟨b,be,bw,bc,bt,bg,bm,brd,bwr,bsp⟩ := round_run (by omega) ac atab ar
+      exact hr n (by omega_using [hn])
+    obtain ⟨b,be,bw,bc,bt,bg,bm,brd,bwr,bsp⟩ := round_run (by omega_using [hn]) ac atab ar
     refine ⟨b,?_,?_,bc,bt,?_,bm.trans am,brd.trans ard,bwr.trans awr,bsp.trans asp⟩
     · rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,
         VG.Interleave.runBlock_append,ae,Option.bind_some,be]
@@ -83,8 +83,8 @@ theorem steps_quads (K : Nat → BitVec 32) (x : Nat → BitVec 32) (n : Nat) :
       (sround .enc (K (4*n+2)) ((4*n+2)%4)
         (sround .enc (K (4*n+1)) ((4*n+1)%4)
           (sround .enc (K (4*n)) ((4*n)%4) (steps K (4*n) x)))) = _
-    rw [ih,show (4*n)%4 = 0 by omega,show (4*n+1)%4 = 1 by omega,
-      show (4*n+2)%4 = 2 by omega,show (4*n+3)%4 = 3 by omega]
+    rw [ih,show (4*n)%4 = 0 by omega_using [],show (4*n+1)%4 = 1 by omega_using [],
+      show (4*n+2)%4 = 2 by omega_using [],show (4*n+3)%4 = 3 by omega_using []]
     rfl
 
 end VG.Proof.Sm4.AArch64.Serial

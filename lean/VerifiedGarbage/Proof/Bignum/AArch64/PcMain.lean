@@ -117,13 +117,13 @@ theorem pcMain_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np : Addr} {
       PcPost s t B Z ((k + 7) / 8) op ws true := by
   obtain ⟨hodd, hN1, hlo⟩ := valid_facts hv hk1
   have hn := hs.nowrap
-  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
+  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
   rw [pcMain_eq M]
   refine wp_seqs_append (by simp [pcLoadW, pcLoadWith]) (by simp [r2StepsPub])
-    (WP.mono (pcLoadW_ok hs h0 hZ (by omega) (by omega) hK hN hnb hnspan hnl hodd)
+    (WP.mono (pcLoadW_ok hs h0 hZ (by omega_using [hk1]) (by omega_using [hk2]) hK hN hnb hnspan hnl hodd)
       fun t₁ ⟨minv, hg₁, hn₁, hinv₁, f₁, k₁⟩ => ?_)
   refine wp_seqs_append (by simp [r2StepsPub]) (by simp [Precompute.pcOut])
-    (WP.mono (r2Pub_ok M hg₁ hZ (by omega) (by omega) hn₁ hinv₁ hodd hlo)
+    (WP.mono (r2Pub_ok M hg₁ hZ (by omega_using [hk1]) (by omega_using [hk2]) hn₁ hinv₁ hodd hlo)
       fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
   have x₁₂ := (Fixed.of_frm f₁ (pcLoadRanges_fixed _)).trans (Fixed.of_frm f₂ (r2Ranges_fixed _))
   have i₁₂ : InScr B Z s.mem t₂.mem := (InScr.of_frm f₁ fun r hr => Nat.le_trans (pcLoadRanges_le _ r hr) hZ).trans
@@ -131,8 +131,8 @@ theorem pcMain_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np : Addr} {
   have k₁₂ := k₁.trans k₂
   have hR : wv t₂.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) =
       2 ^ (128 * ((k + 7) / 8)) % Spec.Rsa.os2ip nb := by
-    rw [← Nat.mod_eq_of_lt hlt₂, hr₂, ← Nat.pow_add]; congr 2; omega
-  refine WP.mono (pcOut_ok hg₂ hZ (by omega) (by omega) (by rw [x₁₂ sOut (by decide)]; exact hO)
+    rw [← Nat.mod_eq_of_lt hlt₂, hr₂, ← Nat.pow_add]; congr 2; omega_using []
+  refine WP.mono (pcOut_ok hg₂ hZ (by omega_using [hk1]) (by omega_using [hk2]) (by rw [x₁₂ sOut (by decide)]; exact hO)
     (by rw [f₂.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact hn₁) hR
     (fun i hi => by rw [k₁₂.wr]; exact hpw i hi) hps)
     fun t hp => ⟨_, publicPrecompute_some hnl hv, hp.words, hp.x0,

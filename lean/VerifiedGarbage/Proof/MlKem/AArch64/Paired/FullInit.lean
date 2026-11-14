@@ -132,10 +132,10 @@ theorem fullInit_ok {s : State} {p seed : Addr} {sb ss a k : Nat}
     (Impl.MlKem.AArch64.Paired.initCore sb a a k ++
     [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 904,.movz .x .x22 3 0,.movz .x .x22 5 0])))) v _
   rw [← List.append_assoc,← List.append_assoc]
-  refine WP.mono (reinit_ok (by omega) hsb h8
+  refine WP.mono (reinit_ok (by omega_using [hss]) hsb h8
     (by rw [hv.gpr,hu.gpr]; exact hbase) (by rw [hv.gpr,hu.gpr]; exact hseed)
     (fun j hj => by rw [hv.rd,hv.wr,hu.rd,hu.wr]; exact hin j hj)
-    (fun j hj => by rw [hv.wr,hu.wr]; exact Noise.inScratch hc (by omega : 16*j+16≤2048) (by decide))
+    (fun j hj => by rw [hv.wr,hu.wr]; exact Noise.inScratch hc (by omega_using [hj] : 16*j+16≤2048) (by decide))
     (hsep.sub_right (Region.sub_prefix (by decide : 400≤2048)))) fun t ⟨kt,ft,h19,h20,h21,h22,pt⟩ => ?_
   have eqseed : seedState v.mem seed a k=seedState s.mem seed a k := seedState_frame fv
     (by intro r hr; rw [List.mem_singleton.mp hr]; exact hsep.sub_right (Offset.sub_base p (by decide))) a k

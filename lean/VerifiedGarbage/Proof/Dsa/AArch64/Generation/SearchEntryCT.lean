@@ -23,7 +23,7 @@ private theorem search_attempt_words {p : SearchPublic} {W : Nat → BitVec 64} 
     PPrimalityPlan.reframe, PConstructPlan.reframe, HashPlan.reframe]
   refine ⟨?_, ?_, ?_⟩
   · intro i hi
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [attemptWords, upd, h1, h3, h4, h5]
   · simpa [attemptWords, upd] using h14
   · simpa [attemptWords, upd] using h15

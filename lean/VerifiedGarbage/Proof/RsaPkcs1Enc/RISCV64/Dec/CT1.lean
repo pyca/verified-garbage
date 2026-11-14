@@ -82,11 +82,11 @@ theorem priv_facts {u₁ u₂ : State} (A₁ : AtCall pc e.s₁ u₁) (A₂ : At
     · rw [A₁.a7, A₂.a7, e.r]
   · rw [m, m, callE_gpr _ _ (r := .a2), callE_gpr _ _ (r := .a3), callE_gpr _ _ (r := .a2),
       callE_gpr _ _ (r := .a3), A₁.a2, A₁.a3, A₂.a2, A₂.a3,
-      bytes_call A₁ e.h₁.kn.symm (by have := e.h₁.wn; omega), bytes_call A₂ e.h₂.kn.symm (by have := e.h₂.wn; omega),
+      bytes_call A₁ e.h₁.kn.symm (by have := e.h₁.wn; omega_using []), bytes_call A₂ e.h₂.kn.symm (by have := e.h₂.wn; omega_using []),
       e.S.n]
   · rw [m, m, callE_gpr _ _ (r := .a4), callE_gpr _ _ (r := .a5), callE_gpr _ _ (r := .a4),
       callE_gpr _ _ (r := .a5), A₁.a4, A₁.a5, A₂.a4, A₂.a5,
-      bytes_call A₁ e.h₁.ke.symm (by have := e.h₁.we; omega), bytes_call A₂ e.h₂.ke.symm (by have := e.h₂.we; omega),
+      bytes_call A₁ e.h₁.ke.symm (by have := e.h₁.we; omega_using []), bytes_call A₂ e.h₂.ke.symm (by have := e.h₂.we; omega_using []),
       e.S.e]
 
 omit e in
@@ -96,14 +96,14 @@ theorem pre_leak {s t : State} (X : PreX s) (A : AtCall true s t) :
         ((callE true s t).gpr .a3).toNat =
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 15) (s.gpr .a4).toNat := by
   have pwl : Spec.Rsa.precomputedWords (s.gpr .a4).toNat ≤ (stackArg s 16).toNat := by
-    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide),
     callE_gpr (pc := true) s t (r := .a3), A.a3]
   congr 1
   have subPre : Region.Sub ⟨stackArg s 15, 8 * Spec.Rsa.precomputedWords (s.gpr .a4).toNat⟩ (preR s) :=
-    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega
+    fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.RISCV64.Priv.words_of_frame A.mem (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega)
+    rw [List.mem_singleton.mp hr]; exact X.kP.symm.sub_left subPre) (by have := X.wP; omega_using [pwl, this])
 
 theorem priv_rel : RelCT isa (Rel e (AtCall pc)) (privCall pc) fun _ _ => True := by
   cases pc with
@@ -178,7 +178,7 @@ theorem hashD_ct : RelCT isa (Rel e PostAt) hashD (Rel e PostAt) := by
   refine RelCT.seq (rel_step [.s0, .s1] (P' := H2) (by taint_decide) (pin_post (fun _ _ h => h) _)
     fun s u h hp => ?_) ?_
   · have hk := h.k2
-    have lk : sD + (s.gpr .a4).toNat ≤ scrBytes := by unfold sD scrBytes; omega
+    have lk : sD + (s.gpr .a4).toNat ≤ scrBytes := by unfold sD scrBytes; omega_using [hk]
     unfold shaUpdArgs
     refine wp_addi (imm := sSt) (fun v₁ p₁ f₁ => wp_li (imm := 0) (by decide) fun v₂ p₂ f₂ =>
       wp_addi (imm := sD) (fun v₃ p₃ f₃ => wp_mov fun v₄ p₄ f₄ => wp_nil ?_) (by decide))
@@ -229,13 +229,13 @@ theorem macInit_ct {k : Nat} (hk : k + 32 ≤ scrBytes) (hk1 : sOuter + 96 ≤ k
     RelCT isa (Rel e (MI k)) macInitCall (Rel e PostAt) :=
   rel_post (macInit_rel hk hk1 fun _ _ h => h) fun s u h ⟨⟨_, _, P⟩, a0, a1, a2, a3⟩ =>
     macInit_ok h P (i := sSt) (u := sOuter) (k := k) (by decide) (by decide) hk (.inl (by decide))
-      (.inr (by unfold sSt sOuter at *; omega)) (.inr hk1) a0 a1 a2 a3 fun w P' _ _ _ => ⟨_, _, P'⟩
+      (.inr (by unfold sSt sOuter at *; omega_using [hk1])) (.inr hk1) a0 a1 a2 a3 fun w P' _ _ _ => ⟨_, _, P'⟩
 
 theorem macFin_ct {o : Nat} (ho : o + 32 ≤ scrBytes) (ho1 : sOuter + 96 ≤ o) {cnt : State → BitVec 64}
     (hcnt : cnt e.s₁ = cnt e.s₂) : RelCT isa (Rel e (MF o cnt)) macFinCall (Rel e PostAt) :=
   rel_post (macFin_rel ho ho1 hcnt fun _ _ h => h) fun s u h ⟨⟨_, _, P⟩, a0, a1, _, a3⟩ =>
     macFin_ok h P (i := sSt) (u := sOuter) (o := o) (by decide) (by decide) ho (.inl (by decide))
-      (.inl (by unfold sSt sOuter at *; omega)) (.inl ho1) a0 a1 a3 fun w P' _ _ => ⟨_, _, P'⟩
+      (.inl (by unfold sSt sOuter at *; omega_using [ho1])) (.inl ho1) a0 a1 a3 fun w P' _ _ => ⟨_, _, P'⟩
 
 theorem kdkMac_ct : RelCT isa (Rel e PostAt) kdkMac (Rel e PostAt) := by
   unfold kdkMac

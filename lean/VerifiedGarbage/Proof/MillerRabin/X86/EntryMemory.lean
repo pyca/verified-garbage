@@ -32,9 +32,9 @@ theorem Entry.pushed_read {s : State} (E : Entry s) {d bits : Nat}
     (fit : d + bits / 8 ≤ lenOf s) :
     (entered s).mem.readW (off (wsOf s) d) bits = s.mem.readW (off (wsOf s) d) bits := by
   have bound := E.bound
-  have saved := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) (by change 16 ≤ (s.gpr .esp).toNat; have := E.stackFit; omega)
-  exact saved.readW (r := ⟨wsOf s, lenOf s⟩) (Offset.contains_base _ fit (by omega))
-    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact E.savedSeparate.symm) (by omega)
+  have saved := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) (by change 16 ≤ (s.gpr .esp).toNat; have := E.stackFit; omega_using [this])
+  exact saved.readW (r := ⟨wsOf s, lenOf s⟩) (Offset.contains_base _ fit (by omega_using [fit, bound]))
+    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact E.savedSeparate.symm) (by omega_using [fit, bound])
 
 theorem Entry.pushed_w32 {s : State} (E : Entry s) {d : Nat} (fit : d + 4 ≤ lenOf s) :
     w32 (entered s).mem (wsOf s) d = w32 s.mem (wsOf s) d :=
@@ -45,6 +45,6 @@ theorem Entry.pushed_val32 {s : State} (E : Entry s) {d n : Nat}
     val32 (entered s).mem (wsOf s) d n = val32 s.mem (wsOf s) d n := by
   apply val32_congr
   intro i index
-  exact E.pushed_w32 (by omega)
+  exact E.pushed_w32 (by omega_using [fit, index])
 
 end VG.Proof.MillerRabin.X86

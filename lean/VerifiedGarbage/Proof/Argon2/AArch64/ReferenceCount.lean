@@ -47,7 +47,7 @@ theorem equality_test (x y : Addr) : (x ^^^ y).toNat < 1 ↔ x = y := by
     have zero : x ^^^ y = 0 := by
       apply BitVec.eq_of_toNat_eq
       change (x ^^^ y).toNat = 0
-      omega
+      omega_using [h]
     exact BitVec.xor_eq_zero_iff.mp zero
   · intro h
     rw [h, BitVec.xor_self]
@@ -144,7 +144,7 @@ theorem same_word (b i : Nat) (positive : 0 < b + i) :
       BitVec.ofNat 64 (b + i - 1) := by
   rw [← BitVec.ofNat_add]
   change BitVec.ofNat 64 (b + i) - BitVec.ofNat 64 1 = _
-  exact Offset.ofNat_sub_ofNat (by omega)
+  exact Offset.ofNat_sub_ofNat (by omega_using [positive])
 
 theorem other_word (b i : Nat) (bound : i < 2 ^ 64) (positive : i = 0 → 0 < b) :
     BitVec.ofNat 64 b + Divide.mask (decide ((BitVec.ofNat 64 i).toNat < 1)) =
@@ -154,8 +154,8 @@ theorem other_word (b i : Nat) (bound : i < 2 ^ 64) (positive : i = 0 → 0 < b)
   · simp only [zero, show decide ((0 : Nat) < 1) = true from rfl, Divide.mask, ite_true]
     rw [BitVec.add_neg_eq_sub]
     change BitVec.ofNat 64 b - BitVec.ofNat 64 1 = _
-    exact Offset.ofNat_sub_ofNat (by have := positive zero; omega)
-  · have notSmall : ¬i < 1 := by omega
+    exact Offset.ofNat_sub_ofNat (by have := positive zero; omega_using [this])
+  · have notSmall : ¬i < 1 := by omega_using [zero]
     simp only [notSmall, decide_false, Divide.mask, Bool.false_eq_true, ite_false,
       zero, Nat.sub_zero]
     change BitVec.ofNat 64 b + 0#64 = BitVec.ofNat 64 b

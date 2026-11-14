@@ -30,7 +30,7 @@ theorem private_input {E : Environment} (v : E.Valid) {c : Nat} {entropy : List 
     (S : Scr t E.base E.size) (C : Caller E.geometry E.capacity (E.p - 28#32) t)
     (F : Frame [below E.p 28] s.mem t.mem) (K : Keeps [.edx] (allocFrame 28 s) t) :
     CandidatePrepare.Input (E.parameters c entropy) t := by
-  have shape := candidate_shape odd length (by have := v.bits.low; omega)
+  have shape := candidate_shape odd length (by have := v.bits.low; omega_using [this])
   have workspaceFar : E.workspaceRegion.Disjoint (below E.p 28) :=
     (v.stackFar _ List.mem_cons_self).sub_right (below_sub (by decide) v.low)
   have randFar : E.randRegion.Disjoint (below E.p 28) :=
@@ -39,8 +39,8 @@ theorem private_input {E : Environment} (v : E.Valid) {c : Nat} {entropy : List 
   have W : WorkspaceFrame E.geometry [] s.mem t.mem := workspace_of_frame F fit
     (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
   have header := v.header
-  have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega)
-  refine ⟨⟨S, C, ?_, ?_, odd, by change 1 < c; omega, Nat.le_of_lt shape.2.1⟩, ?_, ?_, ?_, ?_, ?_⟩
+  have big : 2 ^ 63 ≤ 2 ^ (E.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := v.bits.low; omega_using [this])
+  refine ⟨⟨S, C, ?_, ?_, odd, by change 1 < c; omega_using [shape, big], Nat.le_of_lt shape.2.1⟩, ?_, ?_, ?_, ?_, ?_⟩
   · exact (W.val32 (v.geometry.arrayFit (j := 0) (by decide)) (by intro r mem; cases mem)).trans L.value
   · exact (W.val32 (v.geometry.arrayFit (j := 5) (by decide)) (by intro r mem; cases mem)).trans L.minusOne
   · rw [K.2.1, K.2.2]
@@ -51,12 +51,12 @@ theorem private_input {E : Environment} (v : E.Valid) {c : Nat} {entropy : List 
       (fun known => List.mem_append_right _ (List.mem_cons_of_mem _ known))
   · change Spec.Rsa.bytesAt t.mem (E.rand.setWidth 64) E.randLength = entropy
     rw [VG.Proof.RsaKeyGen.frame_bytesAt F
-      (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact randFar) (by have := v.randLengthFit; omega)]
+      (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact randFar) (by have := v.randLengthFit; omega_using [this])]
     exact L.input.memory.entropy
-  · exact (W.read32 (d := 28) (by change 28 + 4 ≤ E.size; omega) (by intro r mem; cases mem)).trans L.input.randPtr
-  · exact (congrArg BitVec.toNat (W.read32 (d := 32) (by change 32 + 4 ≤ E.size; omega)
+  · exact (W.read32 (d := 28) (by change 28 + 4 ≤ E.size; omega_using [header]) (by intro r mem; cases mem)).trans L.input.randPtr
+  · exact (congrArg BitVec.toNat (W.read32 (d := 32) (by change 32 + 4 ≤ E.size; omega_using [header])
       (by intro r mem; cases mem))).trans L.input.randLength
-  · exact (congrArg BitVec.toNat (W.read32 (d := 152) (by change 152 + 4 ≤ E.size; omega)
+  · exact (congrArg BitVec.toNat (W.read32 (d := 152) (by change 152 + 4 ≤ E.size; omega_using [header])
       (by intro r mem; cases mem))).trans L.count
 
 theorem core_pair {E : Environment} {c : Nat} {entropy : List Byte} {s t : State}
@@ -78,7 +78,7 @@ theorem capacity_ok {s : State} {base : Addr} {size : Nat} (S : Scr s base size)
 theorem Loaded.capacityWord {E : Environment} (v : E.Valid) {c : Nat} {entropy : List Byte} {s : State}
     (L : Loaded E c entropy s) : s.mem.readW (off E.base 40) 32 = BitVec.ofNat 32 E.capacity := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := v.workspaceFit; unfold Environment.size at this; omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := v.workspaceFit; unfold Environment.size at this; omega_using [this])]
   exact L.input.capacity
 
 theorem tested_trace {mont round : Prog isa} {montName roundName : String}
@@ -101,8 +101,8 @@ theorem tested_trace {mont round : Prog isa} {montName roundName : String}
     cases B with
     | seq argsB frameB =>
       have argsTrace := (raw _ _ _ _ _ _ (H.1.input.agree H.2.input) argsA argsB).1
-      have Ua := wp_result (capacity_ok H.1.input.scratch (by omega)) argsA
-      have Ub := wp_result (capacity_ok H.2.input.scratch (by omega)) argsB
+      have Ua := wp_result (capacity_ok H.1.input.scratch (by omega_using [space])) argsA
+      have Ub := wp_result (capacity_ok H.2.input.scratch (by omega_using [space])) argsB
       obtain ⟨Da, _, _⟩ := H.1.keepStack v (by rw [Ua.mem]; exact Frame.refl _ _) Ua.keeps (by decide) (by decide)
         (by rw [Ua.syms])
       obtain ⟨Db, _, _⟩ := H.2.keepStack v (by rw [Ub.mem]; exact Frame.refl _ _) Ub.keeps (by decide) (by decide)
@@ -176,7 +176,7 @@ theorem FinishPair.agree {E : Environment} {s t : State} (P : FinishPair E s t) 
 theorem status_trace {E : Environment} (v : E.Valid) :
     RelCT isa (FinishPair E) (.block Candidate.statusArgs) (ControlPair E) := by
   intro s t tr ur u z P A B
-  have space : 172 ≤ E.size := by have := v.header; omega
+  have space : 172 ≤ E.size := by have := v.header; omega_using [this]
   have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block Candidate.statusArgs)
       (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
   obtain ⟨valueU, flagU, memU, KU⟩ := wp_result (Candidate.statusArgs_ok P.left space) A
@@ -207,7 +207,7 @@ theorem finish_trace {E : Environment} (v : E.Valid) :
     RelCT isa (FinishPair E) VG.Impl.Dsa.X86.ProbablePrime.finish (fun _ _ => True) := by
   have pair {s t : State} (P : ControlPair E s t) : CandidateFinish.FinishPair E.base E.size s t :=
     ⟨P.1.left, P.1.right, P.1.used⟩
-  have space : 156 ≤ E.size := by have := v.header; omega
+  have space : 156 ≤ E.size := by have := v.header; omega_using [this]
   unfold VG.Impl.Dsa.X86.ProbablePrime.finish
   refine RelCT.seq (status_trace v) (VG.RelCT.ite (fun _ _ P => P.2.2) ?_ ?_)
   · exact (CandidateFinish.used_trace space 1).mono (fun _ _ P => pair P.1) (fun _ _ _ => trivial)

@@ -50,8 +50,8 @@ theorem packedStep_ok {fP zP : Addr} {len u k : Nat} (hlen : len = 1 ∨ len = 2
       s'.gpr .x3 = coeffAddr zP (if up then k+4/len else k-4/len) ∧
       s'.gpr .x5 = s.gpr .x5-1 ∧ Keep [.x2,.x3,.x5] s s' ∧ BInv fP s s' := by
   let G := layF blk F len zi ((4/len)*u)
-  have j0 : 8*u+4 ≤ 256 := by omega
-  have j1 : 8*u+4+4 ≤ 256 := by omega
+  have j0 : 8*u+4 ≤ 256 := by omega_using [hu]
+  have j1 : 8*u+4+4 ≤ 256 := by omega_using [hu]
   have a1 : coeffAddr fP (8*u)+16 = coeffAddr fP (8*u+4) := coeffAddr_add _ _ 4
   have r0 : InRegions (s.rd++s.wr) (coeffAddr fP (8*u)) 16 :=
     ⟨_,List.mem_append_right _ hw,vector_contains _ j0⟩
@@ -101,18 +101,18 @@ theorem packedStep_ok {fP zP : Addr} {len u k : Nat} (hlen : len = 1 ∨ len = 2
       ⟨(((k06.trans h₇.keep).trans h₈.keep).trans k₉).mono,?_,
         ⟨by rw [hv9]; exact c₈.q,by rw [hv9]; exact c₈.qi⟩⟩⟩
   · rw [hm9,mem₈]
-    refine polyIs_write2 hP j0 j1 (by omega) v6 v7 fun j hj => ?_
+    refine polyIs_write2 hP j0 j1 (by omega_using []) v6 v7 fun j hj => ?_
     rw [packed_batch_get hblk F zi len hlen hu hj]
     by_cases c1 : 8*u ≤ j ∧ j < 8*u+4
-    · rw [ite_eq_left (by omega),ite_eq_left c1]
+    · rw [ite_eq_left (by omega_using [c1]),ite_eq_left c1]
       simp only [G,Nat.add_assoc]
     · rw [ite_eq_right c1]
       by_cases c2 : 8*u+4 ≤ j ∧ j < 8*u+8
-      · rw [ite_eq_left (by omega),ite_eq_left (by omega),show 4+(j-(8*u+4)) = j-8*u by omega]
+      · rw [ite_eq_left (by omega_using [c2]),ite_eq_left (by omega_using [c2]),show 4+(j-(8*u+4)) = j-8*u by omega_using [c2]]
         simp only [G,Nat.add_assoc]
-      · rw [ite_eq_right (by omega),ite_eq_right (by omega)]
+      · rw [ite_eq_right (by omega_using [c1, c2]),ite_eq_right (by omega_using [c2])]
   · rw [hx9,h₈.gpr,h₇.gpr,g6,show (32 : BitVec 64) = BitVec.ofNat 64 (4*8) from rfl,
-      coeffAddr_add,show 8*u+8 = 8*(u+1) by omega]
+      coeffAddr_add,show 8*u+8 = 8*(u+1) by omega_using []]
   · rw [k₉.get .x3,h₈.gpr,h₇.gpr,h₆.gpr,h₅.gpr,h₄.gpr,h33]
   · rw [hcnt9,h₈.gpr,h₇.gpr,k06.get .x5]
   · rw [hm9,mem₈]; exact frame_write2 (Frame.refl _ _) j0 j1 _ _

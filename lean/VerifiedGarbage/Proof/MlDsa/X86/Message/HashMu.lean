@@ -60,7 +60,7 @@ theorem sqzOk {n : Nat} : argsOk n sqzArgs = true := by
 
 theorem Ctx.arg' {L : Lay} {m₁ : Mem} {t : State} (hc : Ctx L m₁ t) (hL : L.Ok) {i : Nat} (hi : i < 5) :
     (Arg.arg i).val t = L.argv.getD i 0 :=
-  hc.argV (by have := hL.nA5; omega)
+  hc.argV (by have := hL.nA5; omega_using [hi, this])
 
 section
 variable (lay : State → Lay) (s₀ : State)
@@ -112,7 +112,7 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
   · have := hR [] (Proof.MlKem.repr_nil h.2.1) rfl
     rwa [List.nil_append, h.2.2] at this
   have argA : ∀ s₀, Pre s₀ → ∀ i < 5, (Arg.arg i).ok (lay s₀).nA = true := fun s₀ h₀ i hi => by
-    have := hnA s₀ h₀; simp only [Arg.ok, decide_eq_true_eq]; omega
+    have := hnA s₀ h₀; simp only [Arg.ok, decide_eq_true_eq]; omega_using [hi, this]
   -- `0 ‖ ctx_len`.
   refine Piece.seq (kabs_piece (.off oHdr) (.imm 2) (.imm 64) (fun s₀ => (lay s₀).X32 + BitVec.ofNat 32 944)
     (fun _ => 2) (fun _ => 64) (by native_taint_decide) hpub (fun _ _ _ h => h.1)
@@ -123,13 +123,13 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
   · have hL := h.1.ok
     have ehd : ((lay s₀).X32 + BitVec.ofNat 32 944).setWidth 64 = (lay s₀).X + BitVec.ofNat 64 944 :=
       hL.xo (by decide)
-    refine ⟨by decide, by decide, by rw [hL.x32_toNat (by decide)]; have := hL.x32_lt; omega,
-      by rw [ehd]; exact cov_x hL (e := 944) (k := 2) (by omega), ?_, ?_, by rw [ehd]; exact hL.stk_x (by omega)⟩
+    refine ⟨by decide, by decide, by rw [hL.x32_toNat (by decide)]; have := hL.x32_lt; omega_using [this],
+      by rw [ehd]; exact cov_x hL (e := 944) (k := 2) (by omega_using []), ?_, ?_, by rw [ehd]; exact hL.stk_x (by omega_using [])⟩
     · rw [ehd]
-      have := Offset.disjoint (lay s₀).X (d := 944) (n := 2) (e := 0) (k := 200) (by omega) (by omega) (by omega)
+      have := Offset.disjoint (lay s₀).X (d := 944) (n := 2) (e := 0) (k := 200) (by omega_using []) (by omega_using []) (by omega_using [])
       simpa only [x0] using this
     · rw [ehd]
-      exact Offset.disjoint (lay s₀).X (d := 944) (n := 2) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+      exact Offset.disjoint (lay s₀).X (d := 944) (n := 2) (e := 200) (k := 640) (by omega_using []) (by omega_using []) (by omega_using [])
   · have ehd : ((lay s₀).X32 + BitVec.ofNat 32 944).setWidth 64 = (lay s₀).X + BitVec.ofNat 64 944 :=
       h.1.ok.xo (by decide)
     have := hR _ h.2 (by rw [hv' s₀ h₀])
@@ -137,9 +137,9 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
   -- The context string.
   refine Piece.seq (kabs_piece (.arg 3) (.arg 4) (.imm 66) (fun s₀ => (lay s₀).ctx)
     (fun s₀ => (lay s₀).ctxLen.toNat) (fun _ => 66) (by native_taint_decide) hpub (fun _ _ _ h => h.1)
-    (fun s₀ h₀ => absOk (argA s₀ h₀ 3 (by omega)) (argA s₀ h₀ 4 (by omega)) rfl rfl rfl)
-    (fun s₀ s h₀ h => ⟨by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a3],
-      by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a4, ofNat_toNat32], rfl⟩)
+    (fun s₀ h₀ => absOk (argA s₀ h₀ 3 (by omega_using [])) (argA s₀ h₀ 4 (by omega_using [])) rfl rfl rfl)
+    (fun s₀ s h₀ h => ⟨by rw [h.1.ctx.arg' h.1.ok (by omega_using []), h.1.ok.a3],
+      by rw [h.1.ctx.arg' h.1.ok (by omega_using []), h.1.ok.a4, ofNat_toNat32], rfl⟩)
     (fun s₀ s₀' h₀ h₀' hq => ⟨(hpub s₀ s₀' h₀ h₀' hq).ctx, by rw [(hpub s₀ s₀' h₀ h₀' hq).ctxLen], rfl⟩)
     (fun s₀ s h₀ h => ?_)
     (B := fun s₀ s => CtxO lay s₀ s ∧ Repr s.mem (lay s₀).ST 136 (trv s₀ ++ hdrBytes (lay s₀) ++ ctxB lay s₀) ∧
@@ -147,19 +147,19 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
     fun s₀ s s' h₀ h hc' _ hR he => ⟨hc', ?_, he⟩) ?_
   · have hL := h.1.ok
     have := hL.ctxLt
-    exact ⟨by decide, by omega, hL.nCtx, ⟨(lay s₀).CTX, List.mem_append_left _ hL.inCtx, within_self _⟩,
-      by have := hL.x_r hL.xCtx (e := 0) (k := 200) (by omega); simpa only [x0] using this.symm,
-      (hL.x_r hL.xCtx (e := 200) (k := 640) (by omega)).symm, hL.kCtx⟩
+    exact ⟨by decide, by omega_using [], hL.nCtx, ⟨(lay s₀).CTX, List.mem_append_left _ hL.inCtx, within_self _⟩,
+      by have := hL.x_r hL.xCtx (e := 0) (k := 200) (by omega_using []); simpa only [x0] using this.symm,
+      (hL.x_r hL.xCtx (e := 200) (k := 640) (by omega_using [])).symm, hL.kCtx⟩
   · have hL := h.1.ok
     have := hR _ h.2 (by simp only [List.length_append, hv' s₀ h₀, List.length_cons, List.length_nil])
-    rwa [h.1.ctx.bytesAt_eq hL.xCtx hL.kCtx (by have := hL.nCtx; omega)] at this
+    rwa [h.1.ctx.bytesAt_eq hL.xCtx hL.kCtx (by have := hL.nCtx; omega_using [])] at this
   -- The message.
   refine Piece.seq (kabs_piece (.arg 1) (.arg 2) .ret (fun s₀ => (lay s₀).msg)
     (fun s₀ => (lay s₀).len.toNat) (fun s₀ => (66 + (lay s₀).ctxLen.toNat) % 136) (by native_taint_decide) hpub
     (fun _ _ _ h => h.1)
-    (fun s₀ h₀ => absOk (argA s₀ h₀ 1 (by omega)) (argA s₀ h₀ 2 (by omega)) rfl rfl rfl)
-    (fun s₀ s h₀ h => ⟨by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a1],
-      by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a2, ofNat_toNat32], ofNat_toNat_eq32 h.2.2⟩)
+    (fun s₀ h₀ => absOk (argA s₀ h₀ 1 (by omega_using [])) (argA s₀ h₀ 2 (by omega_using [])) rfl rfl rfl)
+    (fun s₀ s h₀ h => ⟨by rw [h.1.ctx.arg' h.1.ok (by omega_using []), h.1.ok.a1],
+      by rw [h.1.ctx.arg' h.1.ok (by omega_using []), h.1.ok.a2, ofNat_toNat32], ofNat_toNat_eq32 h.2.2⟩)
     (fun s₀ s₀' h₀ h₀' hq => ⟨(hpub s₀ s₀' h₀ h₀' hq).msg, by rw [(hpub s₀ s₀' h₀ h₀' hq).len],
       by rw [(hpub s₀ s₀' h₀ h₀' hq).ctxLen]⟩)
     (fun s₀ s h₀ h => ?_)
@@ -170,12 +170,12 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
   · have hL := h.1.ok
     exact ⟨Nat.mod_lt _ (by decide), (lay s₀).len.isLt, hL.nMsg,
       ⟨(lay s₀).MSG, List.mem_append_left _ hL.inMsg, within_self _⟩,
-      by have := hL.x_r hL.xMsg (e := 0) (k := 200) (by omega); simpa only [x0] using this.symm,
-      (hL.x_r hL.xMsg (e := 200) (k := 640) (by omega)).symm, hL.kMsg⟩
+      by have := hL.x_r hL.xMsg (e := 0) (k := 200) (by omega_using []); simpa only [x0] using this.symm,
+      (hL.x_r hL.xMsg (e := 200) (k := 640) (by omega_using [])).symm, hL.kMsg⟩
   · have hL := h.1.ok
     have := hR _ h.2.1 (by
       simp only [List.length_append, hv' s₀ h₀, List.length_cons, List.length_nil, Proof.MlKem.bytesAt_length])
-    rwa [h.1.ctx.bytesAt_eq hL.xMsg hL.kMsg (by have := hL.nMsg; omega)] at this
+    rwa [h.1.ctx.bytesAt_eq hL.xMsg hL.kMsg (by have := hL.nMsg; omega_using [])] at this
   -- Pad and squeeze.
   refine Piece.seq (kpad_piece .ret (fun s₀ => ((66 + (lay s₀).ctxLen.toNat) % 136 + (lay s₀).len.toNat) % 136)
     (by native_taint_decide) hpub (fun _ _ _ h => h.1) (fun _ _ => padOk rfl) (fun s₀ s h₀ h => ofNat_toNat_eq32 h.2.2)
@@ -185,7 +185,7 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
       (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix (trv s₀ ++ hdrBytes (lay s₀) ++ ctxB lay s₀ ++ msgB lay s₀)))
     fun s₀ s s' h₀ h hc' _ hS => ⟨hc', hS _ h.2.1 ?_⟩) ?_
   · simp only [List.length_append, hv' s₀ h₀, List.length_cons, List.length_nil, Proof.MlKem.bytesAt_length]
-    omega
+    omega_using []
   exact ksqz_piece hpub (fun _ _ _ h => h.1) (fun _ _ => sqzOk) fun s₀ s s' h₀ h hc' _ hm =>
     ⟨hc', by rw [hm, h.2, Spec.MlDsa.H, Proof.MlKem.shake256_eq]⟩
 

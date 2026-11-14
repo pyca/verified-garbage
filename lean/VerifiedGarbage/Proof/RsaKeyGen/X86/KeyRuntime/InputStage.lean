@@ -20,9 +20,9 @@ theorem input_afterStage {E : Environment} {s t : State} {regs : List Reg} {js :
   apply h.keep ws K
   intro d hd
   apply BitVec.eq_of_toNat_eq
-  have H := Hs.read_val32 (d := d) (k := 1) (by unfold VG.Impl.Rsa.X86.Keys.hdr; omega) O
+  have H := Hs.read_val32 (d := d) (k := 1) (by unfold VG.Impl.Rsa.X86.Keys.hdr; omega_using [hd]) O
     (VG.Proof.RsaKeyGen.X86.Key.stage_preserves_header (n := E.n) (d := d) (count := 1)
-      (by change d + 4 ≤ VG.Impl.RsaKeyGen.X86.Key.kOk; unfold VG.Impl.RsaKeyGen.X86.Key.kOk; omega))
+      (by change d + 4 ≤ VG.Impl.RsaKeyGen.X86.Key.kOk; unfold VG.Impl.RsaKeyGen.X86.Key.kOk; omega_using [hd]))
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

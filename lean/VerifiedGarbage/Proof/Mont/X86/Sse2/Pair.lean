@@ -56,8 +56,8 @@ theorem Sums.add {x0 x1 p : BitVec 128} {S H : Nat} (h : Sums x0 x1 S H) {p0 p1 
     (b0 : p0 < 2 ^ 64) (b1 : p1 < 2 ^ 64) (hH : H + 2 ^ 32 < 2 ^ 64) :
     Sums (XBinOp.eval .paddq x0 p) (XBinOp.eval .paddq x1 (XShiftOp.eval .psrlq p 32))
       (S + p0 + p1) (H + p0 / 2 ^ 32 + p1 / 2 ^ 32) := by
-  have q0 : p0 / 2 ^ 32 < 2 ^ 32 := (Nat.div_lt_iff_lt_mul (by decide)).2 (by omega)
-  have q1 : p1 / 2 ^ 32 < 2 ^ 32 := (Nat.div_lt_iff_lt_mul (by decide)).2 (by omega)
+  have q0 : p0 / 2 ^ 32 < 2 ^ 32 := (Nat.div_lt_iff_lt_mul (by decide)).2 (by omega_using [b0])
+  have q1 : p1 / 2 ^ 32 < 2 ^ 32 := (Nat.div_lt_iff_lt_mul (by decide)).2 (by omega_using [b1])
   have hh := h.high
   refine ⟨?_, ?_⟩
   · rw [qword_paddq _ _ (by decide), qword_paddq _ _ (by decide), e0, e1]
@@ -68,8 +68,8 @@ theorem Sums.add {x0 x1 p : BitVec 128} {S H : Nat} (h : Sums x0 x1 S H) {p0 p1 
       qword_psrlq _ (by decide), e0, e1]
     simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt b0, Nat.mod_eq_of_lt b1, Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow,
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+      Nat.mod_eq_of_lt (by omega_using [b0, hH, hh]), Nat.mod_eq_of_lt (by omega_using [b1, hH, hh])]
+    omega_using [hh]
 
 theorem word_mul_lt (x y : BitVec 32) : x.toNat * y.toNat < 2 ^ 64 := by
   have := Nat.mul_lt_mul'' x.isLt y.isLt; simpa using this
@@ -129,12 +129,12 @@ theorem quadLast_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm 
       (S + pw s.mem x y + pw s.mem (x + 8) (y + 8) + pw s.mem (x + 4) (y + 4) + pw s.mem (x + 12) (y + 12))
       (H + pw s.mem x y / 2 ^ 32 + pw s.mem (x + 8) (y + 8) / 2 ^ 32 + pw s.mem (x + 4) (y + 4) / 2 ^ 32 +
         pw s.mem (x + 12) (y + 12) / 2 ^ 32) := by
-  have a1 := hs.addMul (u := s.mem.readW x 128) (v := s.mem.readW y 128) (by omega)
+  have a1 := hs.addMul (u := s.mem.readW x 128) (v := s.mem.readW y 128) (by omega_using [hH])
   have q0 := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.mem.readW x 128) 0).toNat *
-    (dword (s.mem.readW y 128) 0).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 0) (dword (s.mem.readW y 128) 0); omega)
+    (dword (s.mem.readW y 128) 0).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 0) (dword (s.mem.readW y 128) 0); omega_using [this])
   have q2 := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.mem.readW x 128) 2).toNat *
-    (dword (s.mem.readW y 128) 2).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 2) (dword (s.mem.readW y 128) 2); omega)
-  have a2 := a1.addMul (u := shufDwords (s.mem.readW x 128) 0x31) (v := shufDwords (s.mem.readW y 128) 0x31) (by omega)
+    (dword (s.mem.readW y 128) 2).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 2) (dword (s.mem.readW y 128) 2); omega_using [this])
+  have a2 := a1.addMul (u := shufDwords (s.mem.readW x 128) 0x31) (v := shufDwords (s.mem.readW y 128) 0x31) (by omega_using [hH, q0, q2])
   rw [h0, h1]
   rw [dword_shuf31_0, dword_shuf31_0, dword_shuf31_2, dword_shuf31_2] at a2
   simp only [dword_read128 _ _ (show 0 < 4 by decide),

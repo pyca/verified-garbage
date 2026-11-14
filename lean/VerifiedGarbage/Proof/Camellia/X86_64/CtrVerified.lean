@@ -119,9 +119,9 @@ theorem ctrTaint_wf (s : State) (hs : ctrX86_64.pre s) : Taint.Wf ctrTaint s := 
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 16 ≤ 16; omega)
-        (List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .r8).toNat; omega)
-          (List.Forall₂.cons (by change 8 * 409 ≤ 8 * 409; omega) List.Forall₂.nil))
+    · exact List.Forall₂.cons (by change 16 ≤ 16; omega_using [])
+        (List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .r8).toNat; omega_using [])
+          (List.Forall₂.cons (by change 8 * 409 ≤ 8 * 409; omega_using []) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dDS)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
@@ -132,10 +132,10 @@ theorem ctrTaint_wf (s : State) (hs : ctrX86_64.pre s) : Taint.Wf ctrTaint s := 
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · change 16 ≤ 2 ^ 64; omega
+      · change 16 ≤ 2 ^ 64; omega_using []
       · change 16 * (s.gpr .r8).toNat ≤ 2 ^ 64
-        have := (s.gpr .rcx).isLt; omega
-      · change 8 * 409 ≤ 2 ^ 64; omega
+        have := (s.gpr .rcx).isLt; omega_using [fitD]
+      · change 8 * 409 ≤ 2 ^ 64; omega_using []
   · intro p hp
     simp only [ctrTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> unfold Taint.region <;> rw [hwr]

@@ -20,21 +20,21 @@ theorem carry_eq (H L c : Nat) (hL : L + c < 2 ^ 64) (hV : (2 ^ 32 * H + L + c) 
     (2 ^ 32 * H + L + c) % 2 ^ 64 / 2 ^ 32 + 2 ^ 32 * ((H / 2 ^ 32 +
       (decide ((2 ^ 32 * H + L + c) % 2 ^ 64 / 2 ^ 32 < H % 2 ^ 32)).toNat) % 2 ^ 32) =
       (2 ^ 32 * H + L + c) / 2 ^ 32 := by
-  have e1 : (2 ^ 32 * H + L + c) / 2 ^ 32 = H + (L + c) / 2 ^ 32 := by omega
+  have e1 : (2 ^ 32 * H + L + c) / 2 ^ 32 = H + (L + c) / 2 ^ 32 := by omega_using []
   have e2 : (2 ^ 32 * H + L + c) % 2 ^ 64 / 2 ^ 32 = (H + (L + c) / 2 ^ 32) % 2 ^ 32 := by
     rw [show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 by decide, Nat.mod_mul_right_div_self, e1]
-  have hu : (L + c) / 2 ^ 32 < 2 ^ 32 := by omega
+  have hu : (L + c) / 2 ^ 32 < 2 ^ 32 := by omega_using [hL]
   rw [e1] at hV ⊢
   rw [e2]
   by_cases h : (H + (L + c) / 2 ^ 32) % 2 ^ 32 < H % 2 ^ 32
-  · simp only [h, decide_true, Bool.toNat_true]; omega
-  · simp only [h, decide_false, Bool.toNat_false]; omega
+  · simp only [h, decide_true, Bool.toNat_true]; omega_using [hL, hV, h]
+  · simp only [h, decide_false, Bool.toNat_false]; omega_using [hL, hV, h]
 
 /-- `carry_eq` for the column's sum `P` and high words' sum `H`. -/
 theorem col_carry {P H c Zh : Nat} (hle : 2 ^ 32 * H ≤ P) (hL : P - 2 ^ 32 * H + c < 2 ^ 64)
     (hV : (P + c) / 2 ^ 32 < 2 ^ 64) (hZ : Zh = (P + c) % 2 ^ 64 / 2 ^ 32) :
     Zh + 2 ^ 32 * ((H / 2 ^ 32 + (decide (Zh < H % 2 ^ 32)).toNat) % 2 ^ 32) = (P + c) / 2 ^ 32 := by
-  have e : 2 ^ 32 * H + (P - 2 ^ 32 * H) + c = P + c := by omega
+  have e : 2 ^ 32 * H + (P - 2 ^ 32 * H) + c = P + c := by omega_using [hle]
   have := carry_eq H (P - 2 ^ 32 * H) c hL (by rw [e]; exact hV)
   rw [e] at this
   rw [hZ]; exact this
@@ -47,7 +47,7 @@ theorem cancel_digit (r x m i : Nat) (hi : (m * i + 1) % r = 0) : (x + ((x % r *
 
 /-- Two words of a number below `2⁶⁴`. -/
 theorem words_split {x y h : Nat} (hx : x < 2 ^ 32) (e : x + 2 ^ 32 * y = h) : x = h % 2 ^ 32 ∧ y = h / 2 ^ 32 := by
-  omega
+  omega_using [hx, e]
 
 /-- The bounds of a column with its quotient digit's product `qm`: no sum
 overflows, and the next carry is again at most `(2 N + 2) 2³²`. -/
@@ -60,7 +60,7 @@ theorem column_bounds {AB QM H c qm N : Nat} (hN : N < 2 ^ 29) (hP : AB ≤ N * 
       (AB + QM + qm + c) / 2 ^ 32 ≤ (2 * N + 2) * 2 ^ 32 := by
   have := Nat.div_add_mod qm (2 ^ 32)
   have := Nat.mod_lt qm (show 0 < 2 ^ 32 by decide)
-  refine ⟨by omega, by omega, by omega, by omega, by omega⟩
+  refine ⟨by omega_using [hN, hP, hQ, fl, hqm], by omega_using [fl], by omega_using [hN, fw, hc], by omega_using [hN, hP, hQ, hc, hqm], by omega_using [hP, hQ, hc, hqm]⟩
 
 /-- A column sum without a digit (`qm = 0`). -/
 theorem column_bounds0 {AB QM H c N : Nat} (hN : N < 2 ^ 29) (hP : AB ≤ N * (2 ^ 32 - 1) * (2 ^ 32 - 1))
@@ -68,23 +68,23 @@ theorem column_bounds0 {AB QM H c N : Nat} (hN : N < 2 ^ 29) (hP : AB ≤ N * (2
     (fw : AB + QM - 2 ^ 32 * H ≤ (2 * N + 3) * (2 ^ 32 - 1)) (hc : c ≤ (2 * N + 2) * 2 ^ 32) :
     H < 2 ^ 64 ∧ AB + QM - 2 ^ 32 * H + c < 2 ^ 64 ∧ (AB + QM + c) / 2 ^ 32 < 2 ^ 64 ∧
       (AB + QM + c) / 2 ^ 32 ≤ (2 * N + 2) * 2 ^ 32 := by
-  refine ⟨by omega, by omega, by omega, by omega⟩
+  refine ⟨by omega_using [hN, hP, hQ, fl], by omega_using [hN, fw, hc], by omega_using [hN, hP, hQ, hc], by omega_using [hP, hQ, hc]⟩
 
 /-- After the columns: `R (T + R c) = A B + Q M` with `A, Q < R` and `B < M ≤ R`
 puts `T + R c` below `2 M`, and `c` below 2. -/
 theorem final_bound {R A B M Q T c : Nat} (alt : A < R) (blt : B < M) (mle : M ≤ R) (qlt : Q < R)
     (eq : R * (T + R * c) = A * B + Q * M) : T + R * c < 2 * M ∧ c < 2 := by
-  have rpos : 0 < R := by omega
-  have a : A * B < R * M := Nat.mul_lt_mul_of_lt_of_le alt (Nat.le_of_lt blt) (by omega)
+  have rpos : 0 < R := by omega_using [alt]
+  have a : A * B < R * M := Nat.mul_lt_mul_of_lt_of_le alt (Nat.le_of_lt blt) (by omega_using [blt])
   have q : Q * M ≤ R * M := Nat.mul_le_mul_right _ (Nat.le_of_lt qlt)
   have bound : R * (T + R * c) < R * (2 * M) := by
-    rw [eq, show R * (2 * M) = R * M + R * M by rw [Nat.two_mul, Nat.mul_add]]; omega
+    rw [eq, show R * (2 * M) = R * M + R * M by rw [Nat.two_mul, Nat.mul_add]]; omega_using [a, q]
   have tlt := (Nat.mul_lt_mul_left rpos).mp bound
   refine ⟨tlt, ?_⟩
   have : R * c < R * 2 := by
     have : R * c ≤ T + R * c := Nat.le_add_left _ _
-    have : 2 * M ≤ R * 2 := by rw [Nat.mul_comm R]; omega
-    omega
+    have : 2 * M ≤ R * 2 := by rw [Nat.mul_comm R]; omega_using [mle]
+    omega_using [mle, tlt]
   exact (Nat.mul_lt_mul_left rpos).mp this
 
 /-- The result `O = (T + R c) mod M` is `A B R⁻¹` modulo `M`. -/

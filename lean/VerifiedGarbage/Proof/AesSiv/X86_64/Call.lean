@@ -50,7 +50,7 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86_64.pre 
   generalize hL : (s₀.gpr .r8).toNat = L at hp
   generalize hR' : (s₀.gpr .rsi).toNat = R at hp
   have hR := hp.rounds
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_using [h]
   refine WP.seq (WP.mono (finPre_wp hp sw) fun s₁ h₁ => ?_)
   refine WP.mono (ctr_call v h₁.pre) fun s₂ h₂ => ?_
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := h₁.saved _ (by simp [calleeSaved])
@@ -70,8 +70,8 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86_64.pre 
     bytesAt_frame h₁.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega))).sub_right (hp.cD (by decide))
-      · exact hp.key_st.sub_left (Region.sub_prefix (by omega))) (by omega)
+      · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega_using [hR]))).sub_right (hp.cD (by decide))
+      · exact hp.key_st.sub_left (Region.sub_prefix (by omega_using [hR]))) (by omega_using [hR])
   refine ⟨⟨fun r hr => by rw [h₂.saved r hr, h₁.saved r hr], ?_⟩, ?_⟩
   · refine big.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -102,7 +102,7 @@ theorem finr_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L
     (h : FArgs s K St P S L R) :
     WP isa (.call nm (Impl.CmacAes.X86_64.finalize v.callee)) s (FRPost s K St P S L R) := by
   have hR := VG.Proof.CmacAes.X86_64.toNat_rounds h.rounds
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   refine WP.call (k := finalizeRawX86_64) (finalize_raw_correct v) (finalize_nosp v)
     (by rw [finalize_depth]; decide) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -112,9 +112,9 @@ theorem finr_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hL] at hpost
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_using [h]
   have eK : Spec.Aes.bytesAt s.callEntry.mem K (16 * (R + 1)) = Spec.Aes.bytesAt s.mem K (16 * (R + 1)) :=
-    callEntry_bytes s (h.stkK.sub_right (Region.sub_prefix (by omega))) (by omega)
+    callEntry_bytes s (h.stkK.sub_right (Region.sub_prefix (by omega_using [hRb]))) (by omega_using [hRb])
   have eK1 : Spec.Aes.bytesAt s.callEntry.mem (K + BitVec.ofNat 64 240) 16 =
       Spec.Aes.bytesAt s.mem (K + BitVec.ofNat 64 240) 16 :=
     callEntry_bytes s (h.stkK.sub_right (Offset.sub_base K (d := 240) (n := 16) (by decide))) (by decide)
@@ -122,7 +122,7 @@ theorem finr_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L
       Spec.Aes.bytesAt s.mem (K + BitVec.ofNat 64 256) 16 :=
     callEntry_bytes s (h.stkK.sub_right (Offset.sub_base K (d := 256) (n := 16) (by decide))) (by decide)
   have eSt := callEntry_bytes s h.stkSt (by decide)
-  have eP := callEntry_bytes s h.stkP (by have := h.len; omega)
+  have eP := callEntry_bytes s h.stkP (by have := h.len; omega_using [hL])
   simp only [mn, eK, eK1, eK2, eSt, eP] at hpost
   rw [← hm₂]
   exact hpost

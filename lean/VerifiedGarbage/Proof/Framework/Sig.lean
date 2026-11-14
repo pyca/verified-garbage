@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.SigEval
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public meta import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Proving code against a contract built with `Sig.contract`
@@ -37,7 +38,7 @@ hypotheses.
 namespace VG
 
 theorem BitVec.toNat_setWidth_32_64 (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp [BitVec.toNat_setWidth]; omega
+  simp [BitVec.toNat_setWidth]; omega_using []
 
 theorem BitVec.setWidth_32_64_32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   simp

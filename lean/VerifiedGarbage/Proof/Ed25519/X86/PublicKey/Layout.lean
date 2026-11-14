@@ -61,18 +61,18 @@ theorem bounds {post : State → State → Prop} {s : State} (h : (pkLocalWith n
   exact ⟨a, b, c, d, e⟩
 
 theorem Bounds.frame {s : State} (h : Bounds n s) : (esp s).toNat + 272 ≤ 2 ^ 32 := by
-  rw [sub_toNat (by have := h.below; omega)]
+  rw [sub_toNat (by have := h.below; omega_using [this])]
   have := h.above
-  omega
+  omega_using [this]
 
 theorem Bounds.call {s : State} (h : Bounds n s) : 24 ≤ (esp s).toNat := by
-  rw [sub_toNat (by have := h.below; omega)]
+  rw [sub_toNat (by have := h.below; omega_using [this])]
   have := h.below
-  omega
+  omega_using [this]
 
 theorem stack_eq {s : State} (h : Bounds n s) : Whole.STK (esp s) = below (s.gpr .esp) 280 := by
   simp only [Whole.STK, below, esp]
-  rw [Taint.sub_setWidth (by have := h.below; omega : 256 ≤ (s.gpr .esp).toNat),
+  rw [Taint.sub_setWidth (by have := h.below; omega_using [this] : 256 ≤ (s.gpr .esp).toNat),
     Taint.sub_setWidth h.below, BitVec.sub_sub]
   rfl
 
@@ -81,7 +81,7 @@ theorem push_ctx {post : State → State → Prop} {s : State} (h : (pkLocalWith
     Ctx n s (pushed (List.replicate 64 .eax) s) := by
   have hb := bounds h
   have hf := pushed_frame (s := s) (rs := List.replicate 64 .eax) (by simp)
-    (by simp only [List.length_replicate]; have := hb.below; omega)
+    (by simp only [List.length_replicate]; have := hb.below; omega_using [this])
   refine ⟨(pushed_rd _ _).trans h.1, ?_, ?_, fun r _ hn => pushed_gpr _ _ hn, ?_⟩
   · rw [pushed_wr, h.2.1]
     simp only [List.length_replicate]
@@ -119,12 +119,12 @@ theorem facts {post : State → State → Prop} {s : State} (h : (pkLocalWith n 
 
 theorem arg_address (s : State) (j : Nat) : addr (esp s) (260 + 4 * j) = argAddr s j := by
   simp only [addr, esp, argAddr]
-  rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega, BitVec.ofNat_add,
+  rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega_using [], BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
 theorem arg_address64 {s : State} (h : Bounds n s) {j : Nat} (hj : j < 3) :
     argAddr s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) :=
-  addr_eq (by have := h.above; omega)
+  addr_eq (by have := h.above; omega_using [hj, this])
 
 theorem args_stack {s : State} (h : Bounds n s) : (ARGS s).Disjoint (Whole.STK (esp s)) := by
   rw [stack_eq h]
@@ -136,7 +136,7 @@ theorem args_contains {s : State} (h : Bounds n s) {j : Nat} (hj : j < 3) :
     (ARGS s).Contains (argAddr s j) 4 := by
   change (⟨argAddr s 0, 12⟩ : Region).Contains _ _
   rw [arg_address64 h (by decide), arg_address64 h hj]
-  exact Offset.contains _ (by omega) (by omega) (by decide)
+  exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by decide)
 
 theorem original_arg {s t : State} (h : Facts n s) (hc : Ctx n s t) {j : Nat} (hj : j < 3) :
     t.mem.readW (addr (esp s) (260 + 4 * j)) 32 = arg s j := by

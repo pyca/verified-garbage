@@ -68,16 +68,16 @@ theorem callPrevalidatedSignCompute_relCT (L : CallLayout)
     (D : CallOperand L (.input .digest) L.digestPrefix) (hd : L.digestPrefix < 2 ^ 32) :
     RelCT isa (CallPair L) (PrevalidatedSign.compute L.pLen L.qLen) (CallPair L) := by
   have W := L.lengths
-  have R := CallOperand.localBuffer L r L.qLen (by decide) (by change 14720 + L.qLen ≤ 15712; omega)
-  have S := CallOperand.localBuffer L s L.qLen (by decide) (by change 14752 + L.qLen ≤ 15712; omega)
+  have R := CallOperand.localBuffer L r L.qLen (by decide) (by change 14720 + L.qLen ≤ 15712; omega_using [W])
+  have S := CallOperand.localBuffer L s L.qLen (by decide) (by change 14752 + L.qLen ≤ 15712; omega_using [W])
   unfold PrevalidatedSign.compute Core.sequence
   dsimp only [List.foldr]
-  exact RelCT.seq (callMinusQ_relCT L qMinusTwo Q (by decide) (by change 14912 + L.qLen ≤ 15712; omega))
-    (RelCT.seq (callRange_relCT L L.qLen .q (.input .nonce) false Q K (by omega) (by omega) L.aligned.2)
+  exact RelCT.seq (callMinusQ_relCT L qMinusTwo Q (by decide) (by change 14912 + L.qLen ≤ 15712; omega_using [W]))
+    (RelCT.seq (callRange_relCT L L.qLen .q (.input .nonce) false Q K (by omega_using [W]) (by omega_using [W]) L.aligned.2)
     (RelCT.seq (callSign_relCT L P Q G K X D hd)
     (RelCT.seq (RelCT.seq
-      (callZero_relCT L L.qLen (.local r) true R (by omega) (by omega) L.aligned.2)
-      (callZero_relCT L L.qLen (.local s) true S (by omega) (by omega) L.aligned.2))
+      (callZero_relCT L L.qLen (.local r) true R (by omega_using [W]) (by omega_using [W]) L.aligned.2)
+      (callZero_relCT L L.qLen (.local s) true S (by omega_using [W]) (by omega_using [W]) L.aligned.2))
       (RelCT.block_nil (fun _ _ h => h)))))
 
 theorem callPrevalidatedSignBody_relCT (L : CallLayout) (out : BitVec 32)
@@ -90,7 +90,7 @@ theorem callPrevalidatedSignBody_relCT (L : CallLayout) (out : BitVec 32)
   unfold PrevalidatedSign.body
   refine RelCT.seq (M := isa) (R := fun s t => SignatureReady L out s ∧ SignatureReady L out t) ?_ ?_
   · have C := callPrevalidatedSignCompute_relCT L P Q (.inl ⟨_, G, Nat.le_refl _⟩)
-      (.inl ⟨_, K, Nat.le_refl _⟩) (.inl ⟨_, X, Nat.le_refl _⟩) (.inl D) (by omega)
+      (.inl ⟨_, K, Nat.le_refl _⟩) (.inl ⟨_, X, Nat.le_refl _⟩) (.inl D) (by omega_using [hd])
     intro s t tr ur sf tf ⟨H, S, T⟩ E F
     exact ⟨(C _ _ _ _ _ _ H E F).1,
       wp_result (prevalidatedSignatureReady_compute H.1 S G X K D hd) E,
@@ -117,7 +117,7 @@ theorem prevalidatedSignSized_relCT (L : CallLayout) (digestLen : Nat) (out : Bi
   · simp only [valid, decide_true, Bool.not_true, Bool.false_eq_true, ite_false]
     have B := shape_digest_width valid
     have CT := callPrevalidatedSignBody_relCT L out (.inl ⟨_, P, Nat.le_refl _⟩) (.inl ⟨_, Q, Nat.le_refl _⟩)
-      G X K ⟨_, D, by rw [hd]; exact Nat.min_le_left _ _⟩ (by rw [hd]; omega)
+      G X K ⟨_, D, by rw [hd]; exact Nat.min_le_left _ _⟩ (by rw [hd]; omega_using [B])
     exact CT.mono (fun _ _ H => ⟨⟨(H.1.2 True.intro).1.ready, (H.1.2 True.intro).2.ready⟩,
       H.2.1.signature (H.1.2 True.intro).1, H.2.2.signature (H.1.2 True.intro).2⟩) (fun _ _ h => h)
   · simp only [valid, decide_false, Bool.not_false, ite_true]

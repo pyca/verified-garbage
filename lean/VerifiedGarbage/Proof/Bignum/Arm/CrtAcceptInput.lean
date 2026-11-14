@@ -61,7 +61,7 @@ theorem crt_acceptInput_ok (s : State) {base src : BitVec 32} {len w k : Nat} {b
   have size := h.main.toCrtLayoutState.size
   have header (d : Nat) (hd : d + 4 ≤ 256) :
       t.mem.readW (off (State.addr base) d) 32 = s.mem.readW (off (State.addr base) d) 32 :=
-    (eq.word (d := d) (bits := 32) (by omega)).trans
+    (eq.word (d := d) (bits := 32) (by omega_using [size, hd])).trans
       ((keeps_header_readW keepsV size hd).trans (keeps_header_readW keepsU size hd))
   have mainT : CrtMainState base len w t.mem :=
     ⟨⟨readyT.layout, readyT.width⟩, (header 224 (by decide)).trans h.main.p,

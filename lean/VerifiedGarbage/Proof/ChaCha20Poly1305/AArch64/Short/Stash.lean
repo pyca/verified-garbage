@@ -35,7 +35,7 @@ theorem stashW_ok {s₀ s : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) (h
       s'.mem = s.mem.writeW (off (cx s₀) (64 + 4 * k)) (stashVal s.mem (cx s₀) k) ∧
       (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have o : InRegions s.wr (off (cx s₀) (64 + 4 * k)) 4 := by
-    rw [hwr]; exact hp.in_ctx (by omega)
+    rw [hwr]; exact hp.in_ctx (by omega_using [hk])
   unfold stashW stashVal
   split
   · next h12 =>
@@ -49,9 +49,9 @@ theorem stashW_ok {s₀ s : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) (h
     · rw [g₂.wr, u₁.wr]
   · next h12 =>
     have i : InRegions (s.rd ++ s.wr) (off (cx s₀) (4 * k)) 4 := by
-      rw [hrd, hwr]; exact hp.in_ctx' (by omega)
-    refine wp_ldr32 (a := off (cx s₀) (4 * k)) ⟨by omega, by omega⟩ (by rw [hx21]) i fun s₁ u₁ => ?_
-    refine wp_str32 (a := off (cx s₀) (64 + 4 * k)) ⟨by omega, by omega⟩
+      rw [hrd, hwr]; exact hp.in_ctx' (by omega_using [hk])
+    refine wp_ldr32 (a := off (cx s₀) (4 * k)) ⟨by omega_using [], by omega_using [hk]⟩ (by rw [hx21]) i fun s₁ u₁ => ?_
+    refine wp_str32 (a := off (cx s₀) (64 + 4 * k)) ⟨by omega_using [], by omega_using [hk]⟩
       (by rw [u₁.other _ (by decide), hx21]) (by rw [u₁.wr]; exact o) fun s₂ g₂ =>
         WP.block_nil ⟨?_, fun r hr => ?_, ?_, ?_⟩
     · rw [g₂.mem, u₁.gpr, u₁.mem, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
@@ -67,7 +67,7 @@ theorem stashN_succ (n : Nat) : stashN (n + 1) = stashN n ++ stashW n := by
 
 /-- Words `j` and `k` of `ctx`, for `j ≠ k < 32`, do not overlap. -/
 theorem word_sep (c : Addr) {j k : Nat} (hj : j < 32) (hk : k < 32) (h : j ≠ k) :
-    Mem.Sep (off c (4 * j)) 4 (off c (4 * k)) 4 := Offset.sep c (by omega) (by omega) (by omega)
+    Mem.Sep (off c (4 * j)) 4 (off c (4 * k)) 4 := Offset.sep c (by omega_using [h]) (by omega_using [hj]) (by omega_using [hk])
 
 /-- After the first `n` words. -/
 structure Copied (s₀ s : State) (n : Nat) (s' : State) : Prop where
@@ -82,8 +82,8 @@ theorem stashN_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
   | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
   | n + 1, hn => by
     rw [stashN_succ]
-    refine WP.block_append ((stashN_ok hp hx21 hrd hwr n (by omega)).mono fun s₁ h₁ => ?_)
-    refine (stashW_ok hp (k := n) (by omega) (by rw [h₁.gpr _ (by decide), hx21])
+    refine WP.block_append ((stashN_ok hp hx21 hrd hwr n (by omega_using [hn])).mono fun s₁ h₁ => ?_)
+    refine (stashW_ok hp (k := n) (by omega_using [hn]) (by rw [h₁.gpr _ (by decide), hx21])
       (by rw [h₁.rd, hrd]) (by rw [h₁.wr, hwr])).mono fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_
     -- The source word `n` is outside the copy written so far.
     have src : stashVal s₁.mem (cx s₀) n = stashVal s.mem (cx s₀) n := by
@@ -92,21 +92,21 @@ theorem stashN_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s�
       · rfl
       · refine h₁.frame.readW (r := sub s₀ (4 * n) 4) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
         simp only [List.mem_singleton] at hr; subst hr
-        exact sub_disj s₀ (by omega) (by omega) (by omega)
+        exact sub_disj s₀ (by omega_using [hn]) (by omega_using [hn]) (by omega_using [])
     refine ⟨fun j hj => ?_, ?_, fun r hr => by rw [g₂ r hr, h₁.gpr r hr], by rw [rd₂, h₁.rd],
       by rw [wr₂, h₁.wr]⟩
     · rw [m₂, src]
       by_cases hjn : j = n
       · subst hjn; exact Mem.readW_writeW_self32 _ _ _
       · rw [Mem.readW_writeW_sep (by
-            rw [show off (cx s₀) (64 + 4 * j) = off (cx s₀) (4 * (16 + j)) by congr 1; omega,
-              show off (cx s₀) (64 + 4 * n) = off (cx s₀) (4 * (16 + n)) by congr 1; omega]
-            exact word_sep _ (by omega) (by omega) (by omega)) (by decide)]
-        exact h₁.word j (by omega)
+            rw [show off (cx s₀) (64 + 4 * j) = off (cx s₀) (4 * (16 + j)) by congr 1; omega_using [],
+              show off (cx s₀) (64 + 4 * n) = off (cx s₀) (4 * (16 + n)) by congr 1; omega_using []]
+            exact word_sep _ (by omega_using [hn, hj]) (by omega_using [hn]) (by omega_using [hjn])) (by decide)]
+        exact h₁.word j (by omega_using [hj, hjn])
     · rw [m₂]
       exact h₁.frame.writeW (List.mem_singleton_self _) _ (by
         show (sub s₀ 64 64).Contains (off (cx s₀) (64 + 4 * n)) 4
-        exact Offset.contains _ (e := 64) (k := 64) (by omega) (by omega) (by omega))
+        exact Offset.contains _ (e := 64) (k := 64) (by omega_using []) (by omega_using [hn]) (by omega_using []))
 
 theorem stash_eq : stash = stashN 16 := rfl
 

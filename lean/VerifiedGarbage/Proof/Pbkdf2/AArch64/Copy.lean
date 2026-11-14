@@ -46,17 +46,17 @@ theorem copy32_ok {src dst : Reg} (hs : src ≠ .x9) (hd : dst ≠ .x9) (o₁ o�
   | succ n ih =>
     intro rest s Q hin hout hsep k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih ⟨h₁.1, by omega⟩ ⟨h₂.1, by omega⟩ _ s Q (fun j hj => hin j (by omega))
-      (fun j hj => hout j (by omega)) (fun x hx hy => hsep x (by omega) (by omega))
+    refine ih ⟨h₁.1, by omega_using [h₁]⟩ ⟨h₂.1, by omega_using [h₂]⟩ _ s Q (fun j hj => hin j (by omega_using [hj]))
+      (fun j hj => hout j (by omega_using [hj])) (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy]))
       fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [cp32, List.cons_append, List.nil_append]
-    refine wp_ldr32 (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (4 * n)) ⟨by omega, by omega⟩
-      (by rw [g₁ _ hs, add_ofNat]) (by rw [rd₁, wr₁]; exact hin n (by omega)) fun s₂ u₂ => ?_
-    refine wp_str32 (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (4 * n)) ⟨by omega, by omega⟩
-      (by rw [u₂.other _ hd, g₁ _ hd, add_ofNat]) (by rw [u₂.wr, wr₁]; exact hout n (by omega))
+    refine wp_ldr32 (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 (4 * n)) ⟨by omega_using [h₁], by omega_using [h₁]⟩
+      (by rw [g₁ _ hs, add_ofNat]) (by rw [rd₁, wr₁]; exact hin n (by omega_using [])) fun s₂ u₂ => ?_
+    refine wp_str32 (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 (4 * n)) ⟨by omega_using [h₂], by omega_using [h₂]⟩
+      (by rw [u₂.other _ hd, g₁ _ hd, add_ofNat]) (by rw [u₂.wr, wr₁]; exact hout n (by omega_using []))
       fun s₃ g₃ => k s₃ (fun r hr => by rw [g₃.gpr, u₂.other r hr, g₁ r hr])
         (by rw [g₃.rd, u₂.rd, rd₁]) (by rw [g₃.wr, u₂.wr, wr₁]) (by rw [g₃.sp, u₂.sp, sp₁]) ?_
-    have hlt : 4 * n + 4 < 2 ^ 64 := by omega
+    have hlt : 4 * n + 4 < 2 ^ 64 := by omega_using [h₁]
     rw [g₃.mem, u₂.gpr, u₂.mem, m₁, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq,
       Nat.mul_succ]
     exact copy_mem s.mem _ _ n 4 (by rwa [← Nat.mul_succ]) hlt

@@ -20,7 +20,7 @@ theorem maskCount (bits : Nat) (positive : 0 < bits) (fits : bits < 2 ^ 32) :
   rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_and, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega : bits - 1 < 2 ^ 32)]
+    Nat.mod_eq_of_lt (by omega_using [fits] : bits - 1 < 2 ^ 32)]
   change ((bits - 1 &&& (2 ^ 3 - 1)) + 1) % 2 ^ 32 = (((bits - 1) % 8 + 1) % 2 ^ 32)
   rw [Nat.and_two_pow_sub_one_eq_mod]
 
@@ -44,7 +44,7 @@ theorem shapeMasks_ok (s : State) {bits : Nat} (positive : 0 < bits) (fits : bit
   refine WP.seq (WP.mono (shapeMaskHead_ok s positive fits read value) ?_)
   rintro u ⟨⟨count, mask, mem⟩, rest⟩
   have small := Nat.mod_lt (bits - 1) (by decide : 0 < 8)
-  refine WP.mono (maskLoop_ok u (by omega) (by omega) mask count) ?_
+  refine WP.mono (maskLoop_ok u (by omega_using []) (by omega_using []) mask count) ?_
   rintro t ⟨result, _, memory, keep⟩
   exact ⟨result, memory.trans mem, rest.trans keep⟩
 

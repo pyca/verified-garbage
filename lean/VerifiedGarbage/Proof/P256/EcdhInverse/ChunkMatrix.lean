@@ -31,7 +31,7 @@ theorem neg_row_div {m : MSt} {f g : Int} (h : m.rel 20 f g) :
   have hg' : -m.q*f+-m.r*g=-(2^20*m.g) := by nlinarith only [hg]
   rw [hf',hg']
   norm_num
-  omega
+  omega_using []
 
 def chunk20A : List Instr := chunkCode 19++extract20a++lowUpdateA
 
@@ -49,7 +49,7 @@ theorem chunk20A_ok (s : State) (d : Int)
       Keeps [.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x26,.x28] s t := by
   rw [chunk20A,WP.block_append_iff,WP.block_append_iff]
   have hodd := encoded_odd s d hf
-  have hcon := msteps_cong hodd (encoded_cong s d) 20 (by omega)
+  have hcon := msteps_cong hodd (encoded_cong s d) 20 (by omega_using [])
   obtain ⟨cd,cu,cv,cq,cr,_,_⟩ := hcon
   have hm := msteps_mat (d:=d) (g:=(encoded s d).g) hodd 20
   have hb := msteps_bnd d (encoded s d).f (encoded s d).g 20
@@ -61,7 +61,7 @@ theorem chunk20A_ok (s : State) (d : Int)
   refine WP.mono (lowUpdateA_run a az) fun b ⟨bf,bg,kb⟩ => ?_
   have a2 : a.gpr .x2=s.gpr .x2 := by rw [ka.gpr _ (by decide),kt.gpr _ (by decide)]
   have a3 : a.gpr .x3=s.gpr .x3 := by rw [ka.gpr _ (by decide),kt.gpr _ (by decide)]
-  have hrel := msteps_mat (d:=d) (g:=(s.gpr .x3).toNat) (show ((s.gpr .x2).toNat:Int)%2=1 by omega) 20
+  have hrel := msteps_mat (d:=d) (g:=(s.gpr .x3).toNat) (show ((s.gpr .x2).toNat:Int)%2=1 by omega_using [hf]) 20
   obtain ⟨nf,ng⟩ := neg_row_div hrel
   refine ⟨?_,?_,?_,?_,?_,?_,?_,
     ((kt.mono (by decide)).trans (ka.mono (by decide))).trans (kb.mono (by decide))⟩
@@ -89,7 +89,7 @@ theorem chunk20B_ok (s : State) (d : Int)
       Keeps [.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x12,.x13,.x14,.x15,.x26,.x28] s t := by
   rw [chunk20B,WP.block_append_iff,WP.block_append_iff]
   have hodd := encoded_odd s d hf
-  have hcon := msteps_cong hodd (encoded_cong s d) 20 (by omega)
+  have hcon := msteps_cong hodd (encoded_cong s d) 20 (by omega_using [])
   obtain ⟨cd,cu,cv,cq,cr,_,_⟩ := hcon
   have hm := msteps_mat (d:=d) (g:=(encoded s d).g) hodd 20
   have hb := msteps_bnd d (encoded s d).f (encoded s d).g 20
@@ -101,7 +101,7 @@ theorem chunk20B_ok (s : State) (d : Int)
   refine WP.mono (lowUpdateB_run a az) fun b ⟨bf,bg,kb⟩ => ?_
   have a2 : a.gpr .x2=s.gpr .x2 := by rw [ka.gpr _ (by decide),kt.gpr _ (by decide)]
   have a3 : a.gpr .x3=s.gpr .x3 := by rw [ka.gpr _ (by decide),kt.gpr _ (by decide)]
-  have hrel := msteps_mat (d:=d) (g:=(s.gpr .x3).toNat) (show ((s.gpr .x2).toNat:Int)%2=1 by omega) 20
+  have hrel := msteps_mat (d:=d) (g:=(s.gpr .x3).toNat) (show ((s.gpr .x2).toNat:Int)%2=1 by omega_using [hf]) 20
   obtain ⟨nf,ng⟩ := neg_row_div hrel
   refine ⟨?_,?_,?_,?_,?_,?_,?_,
     ((kt.mono (by decide)).trans (ka.mono (by decide))).trans (kb.mono (by decide))⟩

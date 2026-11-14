@@ -28,10 +28,10 @@ theorem lastWrites_count {σ : State} {p : Nat} (hp : p<2) :
   · exact (pair_count_disjoint σ hp).symm
   · rw [lastPtr_eq]
     exact Offset.disjoint (scr σ) (d := 7904) (e := 1680+1008*(2*p))
-      (n := 32) (k := 168) (by omega) (by decide) (by omega)
+      (n := 32) (k := 168) (by omega_using []) (by decide) (by omega_using [hp])
   · rw [lastPtr_eq]
     exact Offset.disjoint (scr σ) (d := 7904) (e := 1680+1008*(2*p+1))
-      (n := 32) (k := 168) (by omega) (by decide) (by omega)
+      (n := 32) (k := 168) (by omega_using []) (by decide) (by omega_using [hp])
   · exact Offset.disjoint (scr σ) (d := 7904) (e := 4880) (n := 32) (k := 136)
       (by decide) (by decide) (by decide)
 
@@ -40,7 +40,7 @@ theorem last_count_keep {σ : State} {p k : Nat} {s t : State}
     t.mem.readW (countP σ k) 64=s.mem.readW (countP σ k) 64 := by
   apply hf.readW
   · exact Offset.contains (scr σ) (d := 7904+8*k) (e := 7904) (n := 8) (k := 32)
-      (by omega) (by omega) (by decide)
+      (by omega_using []) (by omega_using [hk]) (by decide)
   · exact lastWrites_count hp
   · decide
 
@@ -53,15 +53,15 @@ theorem last_pair_keep {σ : State} {p q : Nat} {s t : State} {A B : Spec.Sha3.S
     simp only [lastWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact Offset.disjoint (scr σ) (d := 400*q) (e := 400*p) (n := 400) (k := 400)
-        (by omega) (by omega) (by omega)
+        (by omega_using [hne]) (by omega_using [hq]) (by omega_using [hp])
     · rw [lastPtr_eq]
       exact Offset.disjoint (scr σ) (d := 400*q) (e := 1680+1008*(2*p)) (n := 400) (k := 168)
-        (by omega) (by omega) (by omega)
+        (by omega_using [hq]) (by omega_using [hq]) (by omega_using [hp])
     · rw [lastPtr_eq]
       exact Offset.disjoint (scr σ) (d := 400*q) (e := 1680+1008*(2*p+1)) (n := 400) (k := 168)
-        (by omega) (by omega) (by omega)
+        (by omega_using [hq]) (by omega_using [hq]) (by omega_using [hp])
     · exact Offset.disjoint (scr σ) (d := 400*q) (e := 4880) (n := 400) (k := 136)
-        (by omega) (by omega) (by decide)) (by decide)]
+        (by omega_using [hq]) (by omega_using [hq]) (by decide)) (by decide)]
   exact hpair i hi
 
 theorem last_buffer_keep {σ : State} {p k j n : Nat} {s t : State}
@@ -75,16 +75,16 @@ theorem last_buffer_keep {σ : State} {p k j n : Nat} {s t : State}
     simp only [lastWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 400*p) (n := n) (k := 400)
-        (by omega) (by omega) (by omega)
+        (by omega_using [hp]) (by omega_using [hk, hn]) (by omega_using [hp])
     · rw [lastPtr_eq]
       exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 1680+1008*(2*p)) (n := n) (k := 168)
-        (by omega) (by omega) (by omega)
+        (by omega_using [hn, h0]) (by omega_using [hk, hn]) (by omega_using [hp])
     · rw [lastPtr_eq]
       exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 1680+1008*(2*p+1)) (n := n) (k := 168)
-        (by omega) (by omega) (by omega)
+        (by omega_using [hn, h1]) (by omega_using [hk, hn]) (by omega_using [hp])
     · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 4880) (n := n) (k := 136)
-        (by omega) (by omega) (by decide)
-  exact hd _ (Offset.contains_base (bufP σ k) (by omega) (by omega))
+        (by omega_using [hk, hn]) (by omega_using [hk, hn]) (by decide)
+  exact hd _ (Offset.contains_base (bufP σ k) (by omega_using [hj]) (by omega_using [hn, hj]))
 
 theorem last_stored_keep {v p k : Nat} {σ s t : State} {L : List Zq}
     (hp : Pre v σ) (hp2 : p<2) (hk : k<v) (hL : L.length≤256)
@@ -132,19 +132,19 @@ theorem LastProgress.rows {v phase : Nat} {σ s : State} {L : Nat → List Zq}
     (h : LastProgress v σ L phase s) (hn : v≤2*phase) : Rows v 6 σ L s := by
   refine ⟨h.env,by decide,?_,?_,h.length,h.counts,h.stored⟩
   · intro p hp
-    simpa only [ite_eq_left (by omega : p<phase)] using h.pairs p hp
+    simpa only [ite_eq_left (by omega_using [hn, hp] : p<phase)] using h.pairs p hp
   · intro k hk
-    simpa only [ite_eq_left (by omega : k<2*phase)] using h.bytes k hk
+    simpa only [ite_eq_left (by omega_using [hn, hk] : k<2*phase)] using h.bytes k hk
 
 theorem lastRate_byte {σ t : State} {k j : Nat} (hj : 840≤j) (hn : j<1008)
     (h : RateBlock t.mem (lastPtr σ k) 10 (permuted (A0 σ k) 6)) :
     t.mem (bufP σ k+BitVec.ofNat 64 j)=F σ k j := by
-  have hx := h.byte (j := j-840) (by omega)
+  have hx := h.byte (j := j-840) (by omega_using [hn])
   change t.mem ((bufP σ k+BitVec.ofNat 64 840)+BitVec.ofNat 64 (j-840))=_ at hx
-  rw [Offset.add_add,show 840+(j-840)=j by omega,Resident.permuted_eq_iterF] at hx
+  rw [Offset.add_add,show 840+(j-840)=j by omega_using [hj],Resident.permuted_eq_iterF] at hx
   rw [hx]
-  have hf := F_block σ k (n := 5) (j := j-840) (by decide) (by omega)
-  simpa only [show 168*5+(j-840)=j by omega] using hf.symm
+  have hf := F_block σ k (n := 5) (j := j-840) (by decide) (by omega_using [hn])
+  simpa only [show 168*5+(j-840)=j by omega_using [hj]] using hf.symm
 
 theorem LastProgress.next {v p : Nat} {σ s t : State} {L : Nat → List Zq}
     (hp : Pre v σ) (h : LastProgress v σ L p s) (hpv : 2*p+1<v)
@@ -153,38 +153,38 @@ theorem LastProgress.next {v p : Nat} {σ s t : State} {L : Nat → List Zq}
     (ha : RateBlock t.mem (lastPtr σ (2*p)) 10 (permuted (A0 σ (2*p)) 6))
     (hb : RateBlock t.mem (lastPtr σ (2*p+1)) 10 (permuted (A0 σ (2*p+1)) 6)) :
     LastProgress v σ L (p+1) t := by
-  have hp2 : p<2 := by have:=hp.streams; omega
+  have hp2 : p<2 := by have:=hp.streams; omega_using [hpv, this]
   refine ⟨he,?_,?_,h.length,?_,?_⟩
   · intro q hq
     by_cases heq : q=p
     · subst q
       simpa only [ite_eq_left (Nat.lt_succ_self p)] using hpair
-    · have hi : (q<p+1)↔(q<p) := by omega
-      simpa only [hi] using last_pair_keep hp2 (by have:=hp.streams; omega) (Ne.symm heq) hf (h.pairs q hq)
+    · have hi : (q<p+1)↔(q<p) := by omega_using [heq]
+      simpa only [hi] using last_pair_keep hp2 (by have:=hp.streams; omega_using [hq, this]) (Ne.symm heq) hf (h.pairs q hq)
   · intro k hk j hj
-    have hk4 : k<4 := by have:=hp.streams; omega
+    have hk4 : k<4 := by have:=hp.streams; omega_using [hk, this]
     by_cases haeq : k=2*p
     · subst k
-      have hjn : j<1008 := by simpa only [ite_eq_left (by omega : 2*p<2*(p+1))] using hj
+      have hjn : j<1008 := by simpa only [ite_eq_left (by omega_using [] : 2*p<2*(p+1))] using hj
       by_cases hj0 : j<840
-      · rw [last_buffer_keep hp2 hk4 (n := 840) (by decide) hj0 (by omega) (by omega) hf]
+      · rw [last_buffer_keep hp2 hk4 (n := 840) (by decide) hj0 (by omega_using []) (by omega_using []) hf]
         exact h.bytes (2*p) hk j (by simpa only [Nat.lt_irrefl,ite_false])
-      · exact lastRate_byte (by omega) hjn ha
+      · exact lastRate_byte (by omega_using [hj0]) hjn ha
     · by_cases hbeq : k=2*p+1
       · subst k
-        have hjn : j<1008 := by simpa only [ite_eq_left (by omega : 2*p+1<2*(p+1))] using hj
+        have hjn : j<1008 := by simpa only [ite_eq_left (by omega_using [] : 2*p+1<2*(p+1))] using hj
         by_cases hj0 : j<840
-        · rw [last_buffer_keep hp2 hk4 (n := 840) (by decide) hj0 (by omega) (by omega) hf]
-          exact h.bytes (2*p+1) hk j (by simpa only [ite_eq_right (by omega : ¬2*p+1<2*p)])
-        · exact lastRate_byte (by omega) hjn hb
-      · have hi : (k<2*(p+1))↔(k<2*p) := by omega
+        · rw [last_buffer_keep hp2 hk4 (n := 840) (by decide) hj0 (by omega_using []) (by omega_using []) hf]
+          exact h.bytes (2*p+1) hk j (by simpa only [ite_eq_right (by omega_using [] : ¬2*p+1<2*p)])
+        · exact lastRate_byte (by omega_using [hj0]) hjn hb
+      · have hi : (k<2*(p+1))↔(k<2*p) := by omega_using [haeq, hbeq]
         have hold : j<(if k<2*p then 1008 else 840) := by simpa only [hi] using hj
         rw [last_buffer_keep hp2 hk4 (n := if k<2*p then 1008 else 840)
-          (by split <;> omega) hold (fun heq => False.elim (haeq heq))
+          (by split <;> omega_using []) hold (fun heq => False.elim (haeq heq))
           (fun heq => False.elim (hbeq heq)) hf]
         exact h.bytes k hk j hold
   · intro k hk
-    rw [last_count_keep hp2 (by have:=hp.streams; omega) hf]
+    rw [last_count_keep hp2 (by have:=hp.streams; omega_using [hk, this]) hf]
     exact h.counts k hk
   · intro k hk
     exact last_stored_keep hp hp2 hk (h.length k hk) hf (h.stored k hk)

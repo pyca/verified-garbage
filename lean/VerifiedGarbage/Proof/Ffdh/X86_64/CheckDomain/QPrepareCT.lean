@@ -41,12 +41,12 @@ theorem beforeQ_m1 (p : CdP) (s : State) (h : BeforeQ p s) : M1 sEp sEl p.qm s :
   have hk := hb.k1
   have hk' := hb.k2
   have hl := hb.qlen h.1.2.2.1
-  have hne : p.qb ≠ [] := by intro he; simp [he] at hl; omega
-  have hld : p.ld < p.k := by have := lead_lt hne; change lead p.qb < p.k; omega
-  have hew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have hne : p.qb ≠ [] := by intro he; simp [he] at hl; omega_using [hk, hl]
+  have hld : p.ld < p.k := by have := lead_lt hne; change lead p.qb < p.k; omega_using [hl, this]
+  have hew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   have hnl : p.eqb.length = p.nq := by simp only [CdP.eqb, List.length_drop, hl]
   exact ⟨p.eqb, h.1.1.parent.outer, h.1.1.el, h.1.1.ep, ((hb.dom.drop (2 * p.k)).take p.k).drop p.ld,
-    hnl, show 1 ≤ p.nq by unfold CdP.nq; omega, show p.nq ≤ 8 * p.w by unfold CdP.nq; omega,
+    hnl, show 1 ≤ p.nq by unfold CdP.nq; omega_using [hld], show p.nq ≤ 8 * p.w by unfold CdP.nq; omega_using [hew],
     by rw [os2ip_drop_lead p.qb]; exact h.1.2.2.2.1⟩
 
 theorem beforeQ_data (p : CdP) (s : State) (h : BeforeQ p s) :
@@ -58,10 +58,10 @@ theorem qdata_rpre (p : CdP) (s : State) (h : QData p s) : RPre aX p.qx s := by
   obtain ⟨mi, hw, _, _, hq⟩ := h
   have hk := hw.base.k1
   have hk' := hw.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   have h2 : 2 ≤ p.wq := Nat.le_max_left _ _
-  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega
-  exact ⟨mi, p.Q, hw.ctx, hw.xv, h2, hwq, show p.w < 2 ^ 30 by omega, hq.2.1, by decide⟩
+  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega_using [hk, ew]
+  exact ⟨mi, p.Q, hw.ctx, hw.xv, h2, hwq, show p.w < 2 ^ 30 by omega_using [hk', ew], hq.2.1, by decide⟩
 
 theorem qdata_residue (M : Mont) (p : CdP) (s : State) (h : QData p s) :
     WP isa (seqs (VG.Impl.Rsa.X86_64.Crt.redc M.mm aX)) s (QResidue p) := by

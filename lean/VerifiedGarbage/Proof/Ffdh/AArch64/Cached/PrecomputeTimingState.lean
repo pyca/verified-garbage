@@ -58,13 +58,13 @@ structure DomainPolicyReady (q : DomainPolicyPublic) (s : State) : Prop where
  symbol : s.syms Policy.tableSym=q.table
 
 def domainRecognize (q : DomainPolicyPublic) : RecognizePublic := by
- have shape : q.dom.length=2*q.k ∨ q.dom.length=3*q.k :=by have :=q.domLength;have :=q.shape;omega
+ have shape : q.dom.length=2*q.k ∨ q.dom.length=3*q.k :=by have :=q.domLength;have :=q.shape;omega_arith
  have leadFacts:=checked_bound_lead q.positive shape q.checked
  exact {
   B:=q.B,Z:=q.Z,dom:=q.src,k:=q.k,dl:=q.dl,bs:=bnd q.k q.dom,L:=lead (bnd q.k q.dom),room:=q.room,
-  positive:=q.positive,size:=by have :=q.size;omega,shape:=q.shape,length:=VG.Proof.Ffdh.KeyScalar.bnd_length shape,
+  positive:=q.positive,size:=by have :=q.size;omega_using [this],shape:=q.shape,length:=VG.Proof.Ffdh.KeyScalar.bnd_length shape,
   inside:=leadFacts.1,zeros:=leadFacts.2.1,nonzero:=leadFacts.2.2,
-  domBytes:=q.dom,table:=q.table,domLength:=q.domLength,small:=by have :=q.size;omega}
+  domBytes:=q.dom,table:=q.table,domLength:=q.domLength,small:=by have :=q.size;omega_using [this]}
 
 theorem domainRecognize_ready {q : DomainPolicyPublic} {s : State} (h : DomainPolicyReady q s) :
  RecognizeReady (domainRecognize q) s := by
@@ -141,7 +141,7 @@ theorem arithmeticField_done (M : Mont) {q : ArithmeticPublic} {s : State} (h : 
  obtain ⟨scratch,base,room,small,large,ctx,len,dom,source,nbLength,valid,_,_,span⟩:=h.pc
  dsimp only [arithmeticPc,PcPub.w,PcPub.N] at *
  have normalized :=(valid_facts valid small).2.2
- refine WP.mono (precomputeField_ok M scratch base room (by change 9≤q.table.p.k;change 64≤q.table.p.k at small;omega)
+ refine WP.mono (precomputeField_ok M scratch base room (by change 9≤q.table.p.k;change 64≤q.table.p.k at small;omega_using [small])
   q.table.size len dom source span nbLength (by rw [q.value];exact q.odd) normalized) ?_
  rintro t ⟨mi,good,modulus,inverse,r2,frame,rest⟩
  have field : FieldInitial (arithmeticTable q mi).p t :=by
@@ -219,24 +219,24 @@ structure PrecomputePublic where
 
 theorem precomputeBits (q : PrecomputePublic) : 0<q.p.N ∧ q.p.N≤8192 :=by
  rw [q.policy]
- exact ⟨generation_bits_positive q.checked,generation_bits_bound (by have :=q.small;omega) q.large⟩
+ exact ⟨generation_bits_positive q.checked,generation_bits_bound (by have :=q.small;omega_using [this]) q.large⟩
 
 def precomputeDomainPolicy (q : PrecomputePublic) : DomainPolicyPublic :=
  ⟨q.p.B,q.p.Z,q.domPtr,q.dom,q.p.k,q.dl,q.table,
-  by have :=q.p.room;dsimp only [slot,hdrBytes] at this;omega,by have :=q.small;omega,q.large,q.shape,q.domLength,q.checked⟩
+  by have :=q.p.room;dsimp only [slot,hdrBytes] at this;omega_using [this],by have :=q.small;omega_using [this],q.large,q.shape,q.domLength,q.checked⟩
 
 def precomputeMetadata (q : PrecomputePublic) : MetadataPublic :=
  ⟨q.p.B,q.p.Z,q.p.ctx,q.p.N,(precomputeDomainPolicy q).room,(precomputeBits q).1,(precomputeBits q).2⟩
 
 def precomputeArithmetic (q : PrecomputePublic) : ArithmeticPublic :=by
  have facts :=(VG.Proof.Ffdh.domainValid_iff q.p.k q.dom).mp q.checked
- have reduced : q.p.G<q.p.P :=by rw [q.generator,q.modulus];have :=facts.2.1;omega
+ have reduced : q.p.G<q.p.P :=by rw [q.generator,q.modulus];have :=facts.2.1;omega_using [this]
  have odd : q.p.P%2=1 :=by
   have mod:=VG.Proof.Ffdh.domainValid_mod q.checked
   simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at mod
   rw [q.modulus];exact mod.1.1.1
- exact ⟨⟨⟨q.p,q.domPtr,(q.dom.drop q.p.k).take q.p.k,q.words,by have :=q.small;omega,
-  by have :=q.large;omega,reduced⟩,precomputeBits q⟩,q.dom.take q.p.k,q.modulus.symm,odd⟩
+ exact ⟨⟨⟨q.p,q.domPtr,(q.dom.drop q.p.k).take q.p.k,q.words,by have :=q.small;omega_using [this],
+  by have :=q.large;omega_using [this],reduced⟩,precomputeBits q⟩,q.dom.take q.p.k,q.modulus.symm,odd⟩
 
 structure PrecomputeReady (q : PrecomputePublic) (s : State) : Prop where
  scratch : Scr s q.p.B q.p.Z
@@ -274,7 +274,7 @@ structure PrecomputePolicyDone (q : PrecomputePublic) (s : State) : Prop extends
 theorem precomputeEntered_policy {q : PrecomputePublic} {s : State} (h : PrecomputeEntered q s) :
  DomainPolicyReady (precomputeDomainPolicy q) s :=
  ⟨h.scratch,h.base,h.domain,h.length,h.domainLength,h.source.toSource,
-  fun i hi =>Nat.le_trans (by have :=q.p.room;dsimp only [slot,hdrBytes,sBits] at *;omega) (h.source.scratchOutside i hi),h.records,h.symbol⟩
+  fun i hi =>Nat.le_trans (by have :=q.p.room;dsimp only [slot,hdrBytes,sBits] at *;omega_using [this]) (h.source.scratchOutside i hi),h.records,h.symbol⟩
 
 theorem precomputePolicyDone_metadata {q : PrecomputePublic} {s : State} (h : PrecomputePolicyDone q s) :
  MetadataReady (precomputeMetadata q) s :=⟨h.scratch,h.base,h.context,h.bits⟩

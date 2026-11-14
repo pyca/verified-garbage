@@ -39,13 +39,13 @@ theorem entry_base_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p
     rw [mem]; exact writeLow_frame _ _ _ (by simp)
   have context : EntryContext p u :=
     ⟨h.after rest frame, ⟨space.congr rest.wr, pointer⟩⟩
-  refine wp_entryCopy (i := 0) (j := 15) context (by have := entryWords_min sampling; omega) (by decide) fun s1 c1 m1 _ => ?_
-  refine wp_entryCopy (i := 1) (j := 7) c1 (by have := entryWords_min sampling; omega) (by decide) fun s2 c2 m2 _ => ?_
-  refine wp_entryCopy (i := 2) (j := 8) c2 (by have := entryWords_min sampling; omega) (by decide) fun s3 c3 m3 _ => ?_
-  refine wp_entryCopy (i := 4) (j := 9) c3 (by have := entryWords_min sampling; omega) (by decide) fun s4 c4 m4 _ => ?_
-  refine wp_entryCopy (i := 5) (j := 10) c4 (by have := entryWords_min sampling; omega) (by decide) fun s5 c5 m5 _ => ?_
-  refine wp_entryCopy (i := 6) (j := 12) c5 (by have := entryWords_min sampling; omega) (by decide) fun s6 c6 m6 _ => ?_
-  refine wp_entryCopy (i := 7) (j := 13) c6 (by have := entryWords_min sampling; omega) (by decide) fun s7 c7 m7 _ => ?_
+  refine wp_entryCopy (i := 0) (j := 15) context (by have := entryWords_min sampling; omega_using [this]) (by decide) fun s1 c1 m1 _ => ?_
+  refine wp_entryCopy (i := 1) (j := 7) c1 (by have := entryWords_min sampling; omega_using [this]) (by decide) fun s2 c2 m2 _ => ?_
+  refine wp_entryCopy (i := 2) (j := 8) c2 (by have := entryWords_min sampling; omega_using [this]) (by decide) fun s3 c3 m3 _ => ?_
+  refine wp_entryCopy (i := 4) (j := 9) c3 (by have := entryWords_min sampling; omega_using [this]) (by decide) fun s4 c4 m4 _ => ?_
+  refine wp_entryCopy (i := 5) (j := 10) c4 (by have := entryWords_min sampling; omega_using [this]) (by decide) fun s5 c5 m5 _ => ?_
+  refine wp_entryCopy (i := 6) (j := 12) c5 (by have := entryWords_min sampling; omega_using [this]) (by decide) fun s6 c6 m6 _ => ?_
+  refine wp_entryCopy (i := 7) (j := 13) c6 (by have := entryWords_min sampling; omega_using [this]) (by decide) fun s7 c7 m7 _ => ?_
   refine WP.mono (entryZero_ok s7 c7) ?_
   rintro t ⟨m8, r8⟩
   have frame8 : Frame [⟨State.addr p.control, 128⟩] s7.mem t.mem := by

@@ -57,9 +57,9 @@ theorem tt_comp_agree {a : KD} {s0 s0' : State} (k : KR a s0) (k' : KR a s0') (g
   obtain ⟨hw, -, -⟩ := cw_facts k.1.1
   obtain ⟨hw', -, -⟩ := cw_facts k'.1.1
   have e := comp_agree k.1 k'.1 hav
-    (by rw [tt_candS k.1.1 hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact g.ncl)
-  rwa [tt_candS k.1.1 hav, tt_candS k'.1.1 hav', hw, hw', show 8 * (8 * cw s0) = 64 * cw s0 by omega,
-    show 8 * (8 * cw s0') = 64 * cw s0' by omega] at e
+    (by rw [tt_candS k.1.1 hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact g.ncl)
+  rwa [tt_candS k.1.1 hav, tt_candS k'.1.1 hav', hw, hw', show 8 * (8 * cw s0) = 64 * cw s0 by omega_using [],
+    show 8 * (8 * cw s0') = 64 * cw s0' by omega_using []] at e
 
 theorem tt_comp_same {a : KD} {s0 s0' : State} (k : KR a s0) (k' : KR a s0') (g : TtG s0)
     (hav : oL s0 ≤ rL s0) (ho : Spec.RsaKeyGen.obviouslyComposite (64 * cw s0) (candOf s0) = true) :
@@ -67,8 +67,8 @@ theorem tt_comp_same {a : KD} {s0 s0' : State} (k : KR a s0) (k' : KR a s0') (g 
   have hav' : oL s0' ≤ rL s0' := by rw [← k.1.oL_eq k'.1, ← k.1.rL_eq k'.1]; exact hav
   obtain ⟨hw, -, -⟩ := cw_facts k.1.1
   have e := comp_same k.1 k'.1 hav
-    (by rw [tt_candS k.1.1 hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact g.ncl)
-    (by rw [tt_candS k.1.1 hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact ho)
+    (by rw [tt_candS k.1.1 hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact g.ncl)
+    (by rw [tt_candS k.1.1 hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact ho)
   rwa [tt_candS k.1.1 hav, tt_candS k'.1.1 hav'] at e
 
 /-! ## The stages -/
@@ -113,11 +113,11 @@ theorem tt_pins_env {X : State → State → Prop} {rs : List Reg}
 
 theorem tt_c8 {s0 : State} (hp : CIn s0) : 8161 < candOf s0 := by
   obtain ⟨-, hw4, -⟩ := cw_facts hp
-  have := (VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * cw s0) (by omega)
+  have := (VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * cw s0) (by omega_using [hw4])
     (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .a7) (8 * cw s0)))).2.1
-  have : 2 ^ 14 ≤ 2 ^ (64 * cw s0 - 2) := Nat.pow_le_pow_right (by decide) (by omega)
+  have : 2 ^ 14 ≤ 2 ^ (64 * cw s0 - 2) := Nat.pow_le_pow_right (by decide) (by omega_using [hw4])
   show 8161 < Spec.RsaKeyGen.candidate (64 * cw s0) _
-  omega
+  omega_arith
 
 /-- Candidates the table divides alike. -/
 theorem tt_divRel {a : KD} {s₁ s₂ : State} (h₁ : SG TtA a s₁) (h₂ : SG TtA a s₂) (hsp : s₁.sp = s₂.sp) :
@@ -294,7 +294,7 @@ theorem tt_copy_fr {s0 s : State} (h : TtS 1 s0 s) :
     have := hp.oS; simp only [cS, sL] at this ⊢; rwa [Nat.mul_comm]
   obtain ⟨hw, -, -⟩ := cw_facts hp
   have hZ : 256 + 28 * (8 * (cw s0 + 2)) ≤ 8 * sL s0 := e.hZ
-  have cp := copyOut_ok c.fr e.hs h7 rfl rfl (by omega) hcS
+  have cp := copyOut_ok c.fr e.hs h7 rfl rfl (by omega_using [hw, hZ]) hcS
   refine WP.mono (WP.rdwr cp) fun t ⟨⟨_, ho, k⟩, _, _, sp⟩ => ?_
   have fo : Frame [cO s0] s.mem t.mem := fun x hx => ho x (Or.inr (by
     have := hx _ List.mem_cons_self

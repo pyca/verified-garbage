@@ -43,7 +43,7 @@ theorem main_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
     Impl.MlKem.X86.sampleNTT :=
-  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨by have := hp.sp; omega, by have := hp.sp'; omega⟩)
+  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨by have := hp.sp; omega_using [this], by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp => hp.hW) (fun _ _ _ _ hq => hq.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -80,7 +80,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.sampleNTT (sampleNTTContra
       refine ⟨fun _ => hr, outcome_of_min (.inl ⟨rfl, ?_⟩)⟩
       rw [hp]
       exact sampleNTT_of_full (Nat.le_refl _) (by rw [n_eq]; exact e)
-    · rw [Nat.div_eq_of_lt (by omega)]
+    · rw [Nat.div_eq_of_lt (by omega_using [hl, e])]
       refine ⟨fun h => absurd (congrArg BitVec.toNat h) (by show ¬ (0 = 1); decide), outcome_of_min (.inr ⟨rfl, ?_⟩)⟩
       exact sampleNTT_none (by rw [n_eq]; exact e)
   · let st := satState satMem [⟨0, 34⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 12⟩]

@@ -64,7 +64,7 @@ theorem leak_entry {s t : State} (hq : PreP s) (he : EnvD s t) (rd wr : List Reg
     Spec.Rsa.privatePrecomputedLeak (t.callEntry.withRegions rd wr).mem (stackArg s 19) (s.gpr .r8).toNat =
       Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 19) (s.gpr .r8).toNat := by
   have hle : Spec.Rsa.precomputedWords (s.gpr .r8).toNat ≤ (stackArg s 20).toNat := by
-    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega
+    rw [hq.hpl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, State.withRegions_mem]
   rw [← VG.Proof.Rsa.wordsAt_take _ _ hle, ← VG.Proof.Rsa.wordsAt_take _ _ hle,
     wordsP_of_frame hq (frD_entry he)]
@@ -93,7 +93,7 @@ theorem callP_ct (c : CrtImpl) {w₁ w : MdHash} :
     have e : ∀ {s t : State}, DPre s → DCall s (privWP s) t → ∀ i, i < 16 → 14 ≤ i →
         stackArg (t.callEntry.withRegions (privRdDP s) (privWrD s)) i = stackArg s (i + 5) := fun hp h i hi hi' => by
       rw [privDP_args hp h _ _ hi]
-      rcases (show i = 14 ∨ i = 15 by omega) with rfl | rfl <;> simp [privWP, upd]
+      rcases (show i = 14 ∨ i = 15 by omega_using [hi, hi']) with rfl | rfl <;> simp [privWP, upd]
     have kx : ∀ {s t : State}, DCall s (privWP s) t →
         (t.callEntry.withRegions (privRdDP s) (privWrD s)).gpr .rcx = s.gpr .r8 := fun h => by
       rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), h.rcx]
@@ -168,9 +168,9 @@ theorem putWs_byte {a : Addr} : ∀ {ws : List (BitVec 64)} {m : Mem} {p : Addr}
   | [], _, _, _, _ => rfl
   | w :: ws, m, p, ha, hp => by
     simp only [List.length_cons] at hp
-    have e := add8_toNat (p := p) (by omega)
+    have e := add8_toNat (p := p) (by omega_using [hp])
     simp only [putWs]
-    rw [putWs_byte (by rw [e]; omega) (by rw [e]; omega)]
+    rw [putWs_byte (by rw [e]; omega_using [ha]) (by rw [e]; omega_using [hp])]
     simp only [Mem.writeW, Mem.write]
     split
     · rename_i hh
@@ -219,7 +219,7 @@ theorem preState_key (vs : List MdHash) (w : MdHash) :
     simp only [Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at h
     omega
   show putWs preMem 0x300000 (twL vs w) a = _
-  rw [putWs_byte (by simp; omega) (twL_room vs w)]
+  rw [putWs_byte (by simp; omega_using [hlt]) (twL_room vs w)]
   show (bif _ then _ else _) = _
   rw [hs, Bool.cond_false, ha, Bool.cond_true]
 
@@ -386,8 +386,8 @@ theorem decPrecomputed_postOut (ts : List FnTable) :
       List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp] at hb
     have hol : outLen.toNat = nLen.toNat := hpre.2.1
     have hby : Spec.Rsa.bytesAt m₂ out nLen.toNat = Spec.Rsa.bytesAt m₁ out nLen.toNat :=
-      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega)
-        (by have := outLen.isLt; simp only [Elem.size]; omega) hb.1
+      VG.Proof.Rsa.X86_64.bytesAt_agree (by simp only [Elem.size]; omega_using [hol])
+        (by have := outLen.isLt; simp only [Elem.size]; omega_using []) hb.1
     have hw : m₂.readW msgLen 64 = m₁.readW msgLen 64 := VG.Proof.Rsa.X86_64.readW_agree (by decide) (by decide) hb.2.1
     intro H G hH hG
     have h' : Spec.RsaOaep.writtenDecrypt m₁ out msgLen nLen.toNat r _ := h H G hH hG

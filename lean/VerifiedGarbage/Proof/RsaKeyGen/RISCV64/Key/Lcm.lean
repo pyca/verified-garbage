@@ -58,16 +58,16 @@ theorem ltS_ok {s : State} {B : Addr} {Z w N d a b : Nat} (h : Ws s B Z w N) (ha
   · rw [vt]
     simp only [num] at e1 ⊢
     generalize 2 ^ (64 * w) = K at *
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b1 with e | e <;> rw [e] at e1 ⊢ <;> split <;> omega
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b1 with e | e <;> rw [e] at e1 ⊢ <;> split <;> omega_arith
   · rw [eT]
     simp only [num] at e1 ⊢
     generalize 2 ^ (64 * w) = K at *
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b1 with e | e <;> rw [e] at e1 <;> split <;> omega
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp b1 with e | e <;> rw [e] at e1 <;> split <;> omega_arith
 
 /-- A free array's words are zero. -/
 theorem St.word_zero {s0 s : State} {used : List Nat} (c : St s0 used s) {j i : Nat} (hj : j < nArr)
     (hu : j ∉ used) (hi : i < wOf s0 + 2) : word s.mem (bOf s0) (arr (wOf s0) j + 8 * i) = 0 := by
-  have := wordsVal_zero_part (a := i) (c := 1) (c.free j hj hu) (by omega)
+  have := wordsVal_zero_part (a := i) (c := 1) (c.free j hj hu) (by omega_using [hi])
   simp only [wordsVal, Nat.mul_zero, Nat.add_zero] at this
   exact BitVec.eq_of_toNat_eq (by rw [this]; rfl)
 
@@ -79,7 +79,7 @@ abbrev stRegs : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a4, .a2, .a3, .
 /-- `a - 1`, or 0 for 0, from the borrow of `a - 1`. -/
 theorem pred_sel {K a : Nat} :
     (if (if a < 1 then 1 else 0) = 0 then (if a < 1 then a + K - 1 else a - 1) else 0) = a - 1 := by
-  by_cases h : a < 1 <;> simp [h] <;> omega
+  by_cases h : a < 1 <;> simp [h] <;> omega_using [h]
 
 /-- The arrays `primes` writes. -/
 abbrev primesArrs : List Nat := [aT, aP, aQ, aPm, aQm]
@@ -109,7 +109,7 @@ theorem primes_ok {s0 s : State} {used : List Nat} (c : St s0 used s)
     (by decide) (by decide) hX0 (by decide)) fun t1 ⟨h1, f1, s1, _, k1⟩ => ?_
   rw [wp_seqs_append (by simp) (by simp [ltS]),
     show seqs [sel aP aP0 aQ0 X0, sel aQ aQ0 aP0 X0] = .seq (sel aP aP0 aQ0 X0) (sel aQ aQ0 aP0 X0) from rfl]
-  have b1 : slot t1.mem (bOf s0) X0 ≤ 1 := by rw [s1]; split <;> omega
+  have b1 : slot t1.mem (bOf s0) X0 ≤ 1 := by rw [s1]; split <;> omega_using []
   refine WP.seq (WP.mono (sel_ok h1 (o := aP) (a := aP0) (b := aQ0) (sl := X0) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hX0 (by decide) b1) fun t2 ⟨h2, f2, v2, k2⟩ => ?_)
   have b2 : slot t2.mem (bOf s0) X0 ≤ 1 := by rw [f2.slot hX0 (by simp)]; exact b1
@@ -119,14 +119,14 @@ theorem primes_ok {s0 s : State} {used : List Nat} (c : St s0 used s)
   refine WP.mono (ltS_ok h3 (d := X0) (a := aP) (b := aOne) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hX0 (by decide)) fun t4 ⟨h4, f4, s4, e4, k4⟩ => ?_
   rw [wp_seqs_append (by simp) (by simp [ltS]), show seqs [sel aPm aT aZero X0] = sel aPm aT aZero X0 from rfl]
-  have b4 : slot t4.mem (bOf s0) X0 ≤ 1 := by rw [s4]; split <;> omega
+  have b4 : slot t4.mem (bOf s0) X0 ≤ 1 := by rw [s4]; split <;> omega_using []
   refine WP.mono (sel_ok h4 (o := aPm) (a := aT) (b := aZero) (sl := X0) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hX0 (by decide) b4) fun t5 ⟨h5, f5, v5, k5⟩ => ?_
   rw [wp_seqs_append (by simp [ltS]) (by simp)]
   refine WP.mono (ltS_ok h5 (d := X0) (a := aQ) (b := aOne) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hX0 (by decide)) fun t6 ⟨h6, f6, s6, e6, k6⟩ => ?_
   rw [show seqs [sel aQm aT aZero X0] = sel aQm aT aZero X0 from rfl]
-  have b6 : slot t6.mem (bOf s0) X0 ≤ 1 := by rw [s6]; split <;> omega
+  have b6 : slot t6.mem (bOf s0) X0 ≤ 1 := by rw [s6]; split <;> omega_using []
   refine WP.mono (sel_ok h6 (o := aQm) (a := aT) (b := aZero) (sl := X0) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hX0 (by decide) b6) fun t ⟨ht, ft, vt, kt⟩ => ?_
   -- The frame and the registers.
@@ -249,17 +249,17 @@ theorem halfStep_ok (h : Ws s B Z w nArr) :
     fun t2 ⟨h2, f2, v2, k2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (notS_ok h2 (d := X1) (a := X1) hX1 (by decide) hX1 (by decide)
-    (by rw [v2]; omega)) fun t3 ⟨h3, f3, v3, k3⟩ => ?_
+    (by rw [v2]; omega_using [])) fun t3 ⟨h3, f3, v3, k3⟩ => ?_
   have x0 : slot t3.mem B X0 = num s.mem B w aU % 2 := by
     rw [f3.slot hX0 (by simp [X0, X1]), f2.slot hX0 (by simp [X0, X1]), v1]
   refine WP.mono (andNotS_ok h3 (d := X2) (a := X0) (b := X1) hX2 (by decide) hX0 (by decide) hX1 (by decide)
-    (by rw [x0]; omega) (by rw [v3]; omega)) fun t4 ⟨h4, f4, v4, k4⟩ => ?_
+    (by rw [x0]; omega_using []) (by rw [v3]; omega_using [])) fun t4 ⟨h4, f4, v4, k4⟩ => ?_
   have uV : num t1.mem B w aV = num s.mem B w aV := f1.num (by simp) (by simp [X0, hdr_eq]) (fit _ (by decide))
   have x2 : slot t4.mem B X2 = if num s.mem B w aU % 2 = 0 ∧ num s.mem B w aV % 2 = 0 then 1 else 0 := by
     rw [v4, x0, v3, v2, uV]
     rcases Nat.mod_two_eq_zero_or_one (num s.mem B w aU) with a | a <;>
       rcases Nat.mod_two_eq_zero_or_one (num s.mem B w aV) with b | b <;> simp [a, b]
-  have b4 : slot t4.mem B X2 ≤ 1 := by rw [x2]; split <;> omega
+  have b4 : slot t4.mem B X2 ≤ 1 := by rw [x2]; split <;> omega_using []
   -- The frame of the block, on arrays: none.
   have F4 : VG.Proof.Rsa.RISCV64.Keys.Frame B w [] [X0, X1, X2] s.mem t4.mem :=
     ((f1.mono.trans f2.mono).trans f3.mono).trans f4.mono
@@ -345,7 +345,7 @@ theorem halving_ok (h : Ws s B Z w nArr) {L : Nat} (hl : s.gpr .a1 = BitVec.ofNa
   have h4 : Ws t4 B Z w nArr := h3.of_keep k4
   have i0 : HalveI t4 B Z w (num t4.mem B w aU, num t4.mem B w aV, num t4.mem B w aF) 0 t4 :=
     ⟨h4, VG.Proof.Rsa.RISCV64.Keys.Frame.refl _ _ _ _ _, rfl, Keep.refl _ _⟩
-  refine WP.mono (halveLoop_ok (by omega) hL' i0 c4) fun t ⟨ht, ft, vt, kt⟩ => ⟨ht, ?_, ?_, ?_⟩
+  refine WP.mono (halveLoop_ok (by omega_using [hL]) hL' i0 c4) fun t ⟨ht, ft, vt, kt⟩ => ⟨ht, ?_, ?_, ?_⟩
   · have f4 : VG.Proof.Rsa.RISCV64.Keys.Frame B w [] [] t3.mem t4.mem := by
       rw [m4]; exact VG.Proof.Rsa.RISCV64.Keys.Frame.refl _ _ _ _ _
     exact (((f1.mono.trans f2.mono).trans f3.mono).trans f4.mono).trans ft.mono
@@ -396,9 +396,9 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
   refine WP.mono (bitOf_ok h (sl := X0) (j := aV) (by decide) (by decide) hX0 (by decide))
     fun t0 ⟨h0, f0, v0, k0⟩ => ?_
   refine WP.mono (notS_ok h0 (d := X0) (a := X0) hX0 (by decide) hX0 (by decide)
-    (by rw [v0]; omega)) fun t1 ⟨h1, f1, v1, k1⟩ => ?_
+    (by rw [v0]; omega_using [])) fun t1 ⟨h1, f1, v1, k1⟩ => ?_
   rw [wp_seqs_cons (by simp)]
-  have b1 : slot t1.mem B X0 ≤ 1 := by rw [v1]; omega
+  have b1 : slot t1.mem B X0 ≤ 1 := by rw [v1]; omega_using []
   refine WP.mono (sel_ok h1 (o := aU2) (a := aU) (b := aV) (sl := X0) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) hX0 (by decide) b1) fun t2 ⟨h2, f2, v2, k2⟩ => ?_
   rw [show seqs [sel aV2 aV aU X0] = sel aV2 aV aU X0 from rfl]
@@ -408,17 +408,17 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
   refine WP.mono (ltS_ok h3 (d := X1) (a := aV2) (b := aTwo) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) hX1 (by decide)) fun t4 ⟨h4, f4, x4, _, k4⟩ => ?_
   rw [wp_seqs_cons (by simp)]
-  have b4 : slot t4.mem B X1 ≤ 1 := by rw [x4]; split <;> omega
+  have b4 : slot t4.mem B X1 ≤ 1 := by rw [x4]; split <;> omega_using []
   refine WP.mono (sel_ok h4 (o := aS) (a := aV2) (b := aThree) (sl := X1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) hX1 (by decide) b4) fun t5 ⟨h5, f5, v5, k5⟩ => ?_
   rw [wp_seqs_cons (by simp)]
   have K5 : Keep stRegs s t5 := (((((k0.trans k1).trans k2).trans k3).trans k4).trans k5).mono (by simp)
-  have hL4 : L / 4 = w := by omega
-  have hL : 0 < L := by omega
+  have hL4 : L / 4 = w := by omega_using [hLw]
+  have hL : 0 < L := by omega_using [hw, hLw]
   have p8 : 4 ≤ 2 ^ (8 * L) := by
     calc 4 = 2 ^ 2 := rfl
-      _ ≤ 2 ^ (8 * L) := Nat.pow_le_pow_right (by decide) (by omega)
-  have e32 : 32 * w = 8 * L := by omega
+      _ ≤ 2 ^ (8 * L) := Nat.pow_le_pow_right (by decide) (by omega_using [hL])
+  have e32 : 32 * w = 8 * L := by omega_using [hLw]
   generalize hU : num s.mem B w aU = U at hu odd ⊢
   generalize hV : num s.mem B w aV = V at hv odd ⊢
   have u1 : num t1.mem B w aU = U := by rw [frame_num f1 (fit _ (by decide)), frame_num f0 (fit _ (by decide)), hU]
@@ -438,23 +438,23 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
   rw [t3T, V2] at x4
   generalize hu' : (if V % 2 = 0 then V else U) = u at U2 ⊢
   generalize hv' : (if V % 2 = 0 then U else V) = v at V2 odd x4 ⊢
-  have uB : u < 2 ^ (8 * L) := by rw [← hu']; split <;> omega
-  have vB : v < 2 ^ (8 * L) := by rw [← hv']; split <;> omega
+  have uB : u < 2 ^ (8 * L) := by rw [← hu']; split <;> omega_arith
+  have vB : v < 2 ^ (8 * L) := by rw [← hv']; split <;> omega_arith
   have u5 : num t5.mem B w aU2 = u := by
     rw [frame_num f5 (fit _ (by decide)), frame_num f4 (fit _ (by decide)), U2]
   have m5 : num t5.mem B w aS = if v < 2 then 3 else v := by
     rw [v5, x4, frame_num f4 (fit _ (by decide)), V2, frame_num f4 (fit _ (by decide)),
       n3 aThree (by decide) (by decide), three]
     by_cases e : v < 2 <;> simp [e]
-  have mB : num t5.mem B w aS < 2 ^ (8 * L) := by rw [m5]; split <;> omega
+  have mB : num t5.mem B w aS < 2 ^ (8 * L) := by rw [m5]; split <;> omega_arith
   have modd : num t5.mem B w aS % 2 = 1 := by
     rw [m5]; split
     · rfl
-    · exact odd (by omega)
+    · exact odd (by omega_arith)
   refine WP.mono (invOf_ok h5 (a := aU2) (m := aS) (n := w) (by decide) (by decide) hw
-    (by decide) (by decide) (by decide) (by decide) (by omega) (by omega)
+    (by decide) (by decide) (by decide) (by decide) (by omega_using [hw]) (by omega_using [])
     (fun u hu => by
-      have := nP_ok u (L := L) (by rw [hu .a1 (by decide), K5.gpr (by decide), hl]) (by omega)
+      have := nP_ok u (L := L) (by rw [hu .a1 (by decide), K5.gpr (by decide), hl]) (by omega_using [hL'])
       rwa [hL4] at this)
     (by rw [e32, u5]; exact uB) (by rw [e32]; exact mB) modd)
     fun t6 ⟨h6, f6, k6, v6⟩ => ?_
@@ -466,15 +466,15 @@ theorem gcdUV_ok [VG.Proof.Rsa.RISCV64.InvLaw] (h : Ws s B Z w nArr) {L : Nat}
   · exact (((((((f0.mono.trans f1.mono).trans f2.mono).trans f3.mono).trans f4.mono).trans f5.mono).trans
       f6.mono).trans ft.mono)
   -- The values.
-  have m1 : 1 < num t5.mem B w aS := by rw [m5]; split <;> omega
+  have m1 : 1 < num t5.mem B w aS := by rw [m5]; split <;> omega_arith
   have o6 : num t6.mem B w aOne = 1 := by
     rw [frame_num f6 (fit _ (by decide)), frame_num f5 (fit _ (by decide)), frame_num f4 (fit _ (by decide)),
       n3 aOne (by decide) (by decide), one]
   have ⟨g6, _, _⟩ := v6 m1
   rw [vt, s6, x4]
   by_cases e : v < 2
-  · simp [e, show v ≤ 1 from by omega, o6]
-  · simp only [e, show ¬ v ≤ 1 by omega, ↓reduceIte]
+  · simp [e, show v ≤ 1 from by omega_using [e], o6]
+  · simp only [e, show ¬ v ≤ 1 by omega_using [e], ↓reduceIte]
     rw [g6, u5, m5]
     simp only [e, ↓reduceIte]
 
@@ -494,13 +494,13 @@ theorem divBy_ok (h : Ws s B Z w nArr) {q d : Nat} (hq : q < nArr) (hd : d < nAr
   refine WP.seq (WP.mono (copy_ok h (o := aDv) (a := d) (by decide) hd (by decide) (Ne.symm hd1))
     fun t1 ⟨h1, f1, v1, k1, o1⟩ => ?_)
   have z1 : word t1.mem B (arr w aDv + 8 * w) = 0 := by
-    rw [o1.word (Or.inr (Nat.le_refl _)) (by omega), hdv]
+    rw [o1.word (Or.inr (Nat.le_refl _)) (by omega_using [fv, hS]), hdv]
   refine WP.mono (div_ok h1 (q := q) (r := aDr) (d := aDv) (t := aDt) hq (by decide) (by decide) (by decide)
     (by decide) hq2 hq1 hq3 (by decide) (by decide) (by decide) z1) fun t ⟨ht, ft, kt, _, vt⟩ => ?_
   have q1 : num t1.mem B w q = num s.mem B w q := f1.num (by simpa using hq1.symm) (by simp) (h.fit64 hq)
   have ⟨eq, _⟩ := vt (by rw [v1]; exact hD)
   refine ⟨ht, f1.mono.trans ft.mono, by rw [eq, q1, v1], ?_, (k1.trans kt).mono (by simp)⟩
-  rw [ft.word (j := aDv) (i := w) (by omega) (by
+  rw [ft.word (j := aDv) (i := w) (by omega_using []) (by
     intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
     rcases hk with rfl | rfl | rfl
     exacts [hq1, by decide, by decide]) (by simp) fv, z1]
@@ -532,8 +532,8 @@ theorem lcmPart_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} {used : List Nat
   have hl := pLen_ofNat c.cb
   simp only [nm] at one two three zero hpm hqm ⊢
   generalize hL : pLen s0 = L at hl hpm hqm hw
-  have hL0 : 0 < L := by omega
-  have hL' : 8 * L < 2 ^ 64 := by omega
+  have hL0 : 0 < L := by omega_using [w8, hw]
+  have hL' : 8 * L < 2 ^ 64 := by omega_using [w128, hw]
   rw [lcmPart_eq]
   refine WP.seq (WP.mono (halving_ok c.ws hl hL0 hL' zero) fun t1 ⟨h1, f1, v1, k1⟩ => ?_)
   have kp : Keep stRegs s t1 := k1
@@ -544,7 +544,7 @@ theorem lcmPart_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} {used : List Nat
   generalize hQ : num s.mem (bOf s0) (wOf s0) aQm = Q at hpm hqm v1 ⊢
   have hPQ : P * Q % 2 ^ (64 * (wOf s0)) = P * Q := by
     apply Nat.mod_eq_of_lt
-    have e : 64 * (wOf s0) = 8 * L + 8 * L := by omega
+    have e : 64 * (wOf s0) = 8 * L + 8 * L := by omega_using [hw]
     rw [e, Nat.pow_add]
     exact Nat.mul_lt_mul_of_lt_of_lt hpm hqm
   rw [hPQ] at v1
@@ -556,7 +556,7 @@ theorem lcmPart_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} {used : List Nat
   simp only [Prod.mk.injEq] at v1
   obtain ⟨vU, vV, vF⟩ := v1
   dsimp only at hle hb
-  refine WP.seq (WP.mono (gcdUV_ok h1 (L := L) (by rw [k1.gpr (by decide), hl]) (by omega) hw hL'
+  refine WP.seq (WP.mono (gcdUV_ok h1 (L := L) (by rw [k1.gpr (by decide), hl]) (by omega_using [w8]) hw hL'
     (by rw [n1 _ (by decide) (by decide), one])
     (by rw [n1 _ (by decide) (by decide), two]) (by rw [n1 _ (by decide) (by decide), three])
     (by rw [vU]; exact hb.1) (by rw [vV]; exact hb.2.1) (by rw [vU, vV]; exact hle.1))
@@ -566,9 +566,9 @@ theorem lcmPart_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} {used : List Nat
     fun t3 ⟨h3, f3, v3, k3, _⟩ => ?_)
   have g3 : num t3.mem (bOf s0) (wOf s0) aG = num t2.mem (bOf s0) (wOf s0) aG := f3.num (by decide) (by decide) (fit _ (by decide))
   have d3 : word t3.mem (bOf s0) (arr (wOf s0) aDv + 8 * (wOf s0)) = 0 := by
-    rw [f3.word (by omega) (by decide) (by decide) (fit _ (by decide)),
-      f2.word (by omega) (by decide) (by decide) (fit _ (by decide)),
-      f1.word (by omega) (by decide) (by decide) (fit _ (by decide)), hdv]
+    rw [f3.word (by omega_using []) (by decide) (by decide) (fit _ (by decide)),
+      f2.word (by omega_using []) (by decide) (by decide) (fit _ (by decide)),
+      f1.word (by omega_using []) (by decide) (by decide) (fit _ (by decide)), hdv]
   have gpos : 0 < num t3.mem (bOf s0) (wOf s0) aG := by
     rw [g3, v2]
     by_cases e : (if V % 2 = 0 then U else V) ≤ 1

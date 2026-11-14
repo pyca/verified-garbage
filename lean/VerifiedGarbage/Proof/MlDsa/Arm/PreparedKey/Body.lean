@@ -56,9 +56,9 @@ theorem t1At_ok {n : String} {c : Prog isa} (C : Callee (fun S => unpackT1Contra
       PolyIs s'.mem (pa s f) ((simpleBitUnpack (bytesAt s.mem (pa s v) 320) t1Max).map
         fun c => ofInt (c * 2 ^ d : Nat)) := by
   obtain ⟨w1, i1, i2, _, b1, b2⟩ := rwChk_spec hc
-  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega) (t1Args_ok b1 b2) L.sp
+  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega_arith) (t1Args_ok b1 b2) L.sp
     (rd := [⟨pa s v, 320⟩]) (wr := [pR (pa s f)])
-    (fun s1 hA k => t1Pre (ent_R L k (by have := C.hS; omega) _ _) hc
+    (fun s1 hA k => t1Pre (ent_R L k (by have := C.hS; omega_using [this]) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hA).2) rfl rfl)
     (Covers.append_left (L.cR i1) (Covers.right (L.cW w1))) (L.cW w1))
     fun s' ⟨hpost, hcs, s1, hA, k, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -71,7 +71,7 @@ theorem t1At_tr {n : String} {c : Prog isa} (C : Callee (fun S => unpackT1Contra
     {v f : Ptr} (hc : rwChk (rbs ++ wbs) wbs v 320 f 1024 = true) :
     RelCT isa (LRel D rbs wbs) (callR n c [.ptr v, .ptr f]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, b1, b2⟩ := rwChk_spec hc
-  have hS : C.S ≤ D := by have := C.hS; omega
+  have hS : C.S ≤ D := by have := C.hS; omega_using [this]
   refine callR_tr C.ver.1 C.ver.2.1 (t1Args_ok b1 b2) fun x y x1 y1 R ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, t1Pre (ent_R R.lx kx hS [⟨pa x v, 320⟩] [pR (pa x f)]) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hAx).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hAx).2) rfl rfl,
@@ -154,7 +154,7 @@ theorem rw_check (bytes count : Nat) {src len o : Nat} (h1 : src + len ≤ bytes
 theorem copy_check (bytes count : Nat) (h : 0 < bytes) :
     copyChk (input bytes ++ output bytes count) (output bytes count) (.r8, 0) (.r4, 0) bytes = true := by
   simp only [copyChk, sep4_8, in4, out8, Bool.and_eq_true, decide_eq_true_eq]
-  exact ⟨⟨⟨⟨⟨by omega, by omega⟩, by omega, by omega⟩, h⟩, by decide⟩, by decide⟩
+  exact ⟨⟨⟨⟨⟨by omega_using [], by omega_using []⟩, by omega_using [], by omega_using []⟩, h⟩, by decide⟩, by decide⟩
 
 theorem keep_source (bytes count : Nat) {i : Nat} (hi : i < count) :
     keepB (input bytes ++ output bytes count) [((.r8, bytes + 1024 * i), 1024), ((.r7, 0), 1024)] (.r4, 0) bytes =
@@ -162,7 +162,7 @@ theorem keep_source (bytes count : Nat) {i : Nat} (hi : i < count) :
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep4_8, sep4_7, in4, Bool.and_eq_true,
     decide_eq_true_eq, bases, List.mem_cons, List.not_mem_nil, reduceCtorEq, or_true, or_false,
     true_and]
-  omega
+  omega_using [hi]
 
 theorem keep_prefix (bytes count : Nat) {i : Nat} (hi : i < count) :
     keepB (input bytes ++ output bytes count) [((.r8, bytes + 1024 * i), 1024), ((.r7, 0), 1024)] (.r8, 0) bytes =
@@ -170,7 +170,7 @@ theorem keep_prefix (bytes count : Nat) {i : Nat} (hi : i < count) :
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep8_8, sep8_7, in8, Bool.and_eq_true,
     Bool.or_eq_true, decide_eq_true_eq, bases, List.mem_cons, List.not_mem_nil, reduceCtorEq, or_true, or_false,
     true_and]
-  omega
+  omega_using [hi]
 
 theorem keep_prior (bytes count : Nat) {i j : Nat} (hi : i < count) (hj : j < i) :
     keepB (input bytes ++ output bytes count) [((.r8, bytes + 1024 * i), 1024), ((.r7, 0), 1024)]
@@ -178,13 +178,13 @@ theorem keep_prior (bytes count : Nat) {i j : Nat} (hi : i < count) (hj : j < i)
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep8_8, sep8_7, in8, Bool.and_eq_true,
     Bool.or_eq_true, decide_eq_true_eq, bases, List.mem_cons, List.not_mem_nil, reduceCtorEq, or_true, or_false,
     true_and]
-  omega
+  omega_using [hi, hj]
 
 theorem keep_copy (bytes count : Nat) :
     keepB (input bytes ++ output bytes count) [((.r8, 0), bytes)] (.r4, 0) bytes = true := by
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep4_8, in4, Bool.and_eq_true, decide_eq_true_eq, bases, List.mem_cons, List.not_mem_nil, reduceCtorEq, or_true, or_false,
     true_and]
-  omega
+  omega_using []
 
 /-! ## The polynomials -/
 
@@ -195,20 +195,20 @@ theorem secret_value (p : Params) (key : List Byte) {i : Nat} (hi : i < p.ℓ + 
   have hlen : secretLen p = VG.Proof.MlDsa.Sign.lenS p := rfl
   by_cases h1 : i < p.ℓ
   · rw [PreparedKey.secret_s1 p key h1]
-    simp only [secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega), hlen]
+    simp only [secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega_using [h1]), hlen]
     rfl
   · by_cases h2 : i < p.ℓ + p.k
-    · have hj : i - p.ℓ < p.k := by omega
-      have he : p.ℓ + (i - p.ℓ) = i := by omega
+    · have hj : i - p.ℓ < p.k := by omega_using [h1, h2]
+      have he : p.ℓ + (i - p.ℓ) = i := by omega_using [h1]
       rw [← he, PreparedKey.secret_s2 p key hj]
-      simp only [secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega), hlen]
+      simp only [secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega_using [h1, h2]), hlen]
       unfold VG.Proof.MlDsa.Sign.s2F
       rw [Nat.mul_add]
-      congr 5 <;> omega
-    · have hj : i - (p.ℓ + p.k) < p.k := by omega
-      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega
+      congr 5 <;> omega_using []
+    · have hj : i - (p.ℓ + p.k) < p.k := by omega_using [hi, h1]
+      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega_using [h2]
       rw [← he, PreparedKey.secret_t0 p key hj]
-      simp only [secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega), hlen]
+      simp only [secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega_using []), hlen]
       unfold VG.Proof.MlDsa.Sign.t0F
       have hoff : 128 + VG.Proof.MlDsa.Sign.lenS p * (p.ℓ + p.k) +
           416 * (p.ℓ + p.k + (i - (p.ℓ + p.k)) - p.ℓ - p.k) =
@@ -216,7 +216,7 @@ theorem secret_value (p : Params) (key : List Byte) {i : Nat} (hi : i < p.ℓ + 
             32 * d * (i - (p.ℓ + p.k)) := by
         rw [Nat.mul_add]
         simp only [d]
-        omega
+        omega_using []
       rw [hoff]
       rfl
 
@@ -289,7 +289,7 @@ theorem public_checks {p : Params} (hp : Ok3 p) {i : Nat} (hi : i < p.k) :
       (.r8, p.pkLen + 1024 * i) 1024 = true ∧
     ipChkW (input p.pkLen ++ output p.pkLen p.k) (output p.pkLen p.k) (.r8, p.pkLen + 1024 * i) (.r7, 0) = true := by
   have := pk_eq hp
-  exact ⟨rw_check _ _ (by omega) (by omega), ip_check _ _ (by omega)⟩
+  exact ⟨rw_check _ _ (by omega_using [hi, this]) (by omega_using [hi]), ip_check _ _ (by omega_using [hi])⟩
 
 theorem secret_checks {p : Params} (hp : Ok3 p) {i : Nat} (hi : i < p.ℓ + 2 * p.k) :
     let (src, len, a, b) := secretPiece p i
@@ -304,7 +304,7 @@ theorem secret_checks {p : Params} (hp : Ok3 p) {i : Nat} (hi : i < p.ℓ + 2 * 
   rcases hp with rfl | rfl | rfl <;>
     dsimp only [secretPiece] <;> split <;>
     simp only [hs44, hs65, hs87, hk44, hk65, hk87, mlDsa44, mlDsa65, mlDsa87] at * <;>
-    exact ⟨rw_check _ _ (by omega) (by omega), by decide, by decide⟩
+    exact ⟨rw_check _ _ (by omega_using [hi]) (by omega_using [hi]), by decide, by decide⟩
 
 /-- The regions the preparation writes. -/
 def writes (bytes count : Nat) : List (Ptr × Nat) :=
@@ -342,7 +342,7 @@ theorem inv_step {D bytes count : Nat} {f : Nat → Poly} {σ s : State} {key : 
     · subst j
       rw [ht.pa (p := (.r8, bytes + 1024 * i)) (show Reg.r8 ∈ bases by decide)]
       exact hpoly
-    · exact h.lay.keepPoly ht (keep_prior bytes count hi (by omega)) (h.polys j (by omega))
+    · exact h.lay.keepPoly ht (keep_prior bytes count hi (by omega_using [hj, he])) (h.polys j (by omega_using [hj, he]))
 
 /-- The copy of the key to `prepared`. -/
 theorem copy_inv {D bytes count : Nat} (f : Nat → Poly) (hb : 0 < bytes) (s : State)
@@ -367,17 +367,17 @@ theorem public_body {p : Params} (hp : Ok3 p) (s : State) (L : Lay D (input p.pk
         (bytesAt s.mem (pa s (.r4, 0)) p.pkLen) p.k t ∧
       PreparedPublicKey p t.mem (pa t (.r8, 0)) := by
   have hpk := pk_eq hp
-  refine WP.seq (WP.mono (copy_inv (Verify.t1Hat (bytesAt s.mem (pa s (.r4, 0)) p.pkLen)) (by omega) s L)
+  refine WP.seq (WP.mono (copy_inv (Verify.t1Hat (bytesAt s.mem (pa s (.r4, 0)) p.pkLen)) (by omega_using [hpk]) s L)
     fun u hu => ?_)
   refine WP.mono (seqR_ok (I := fun i => Inv D p.pkLen p.k (Verify.t1Hat (bytesAt s.mem (pa s (.r4, 0)) p.pkLen)) s
     (bytesAt s.mem (pa s (.r4, 0)) p.pkLen) i) p.k 0 (fun i _ hi u h => ?_) u hu)
     fun t ht => ?_
-  · obtain ⟨hc, hi'⟩ := public_checks hp (i := i) (by omega)
-    refine inv_step (by omega) h (WP.mono (publicPoly_ok hP C1 h.lay hc hi') fun t ⟨ht, hct, hpoly⟩ =>
+  · obtain ⟨hc, hi'⟩ := public_checks hp (i := i) (by omega_using [hi])
+    refine inv_step (by omega_using [hi]) h (WP.mono (publicPoly_ok hP C1 h.lay hc hi') fun t ⟨ht, hct, hpoly⟩ =>
       ⟨ht, hct, ?_⟩)
     have hslice : bytesAt u.mem (pa u (.r4, 32 + 320 * i)) 320 =
         ((bytesAt s.mem (pa s (.r4, 0)) p.pkLen).drop (32 + 320 * i)).take 320 := by
-      rw [← h.source, MlKem.bytesAt_slice _ _ (by omega)]
+      rw [← h.source, MlKem.bytesAt_slice _ _ (by omega_using [hpk, hi])]
       simp only [pa, BitVec.add_zero]
     rw [hslice] at hpoly
     exact hpoly
@@ -400,14 +400,14 @@ theorem secret_body {p : Params} (hp : Ok3 p) (s : State)
     (fun i => (preparedSecretPolys p (bytesAt s.mem (pa s (.r4, 0)) p.skLen))[i]!) s
     (bytesAt s.mem (pa s (.r4, 0)) p.skLen) i) (p.ℓ + 2 * p.k) 0
     (fun i _ hi u h => ?_) u hu) fun t ht => ?_
-  · have hi' : i < p.ℓ + 2 * p.k := by omega
+  · have hi' : i < p.ℓ + 2 * p.k := by omega_using [hi]
     obtain ⟨src, len, a, b, he⟩ : ∃ src len a b, secretPiece p i = (src, len, a, b) := by
       rcases secretPiece p i with ⟨src, len, a, b⟩
       exact ⟨src, len, a, b, rfl⟩
     have hchecks := secret_checks hp hi'
     rw [he] at hchecks
     obtain ⟨hc, hab, hl⟩ := hchecks
-    have hip := ip_check p.skLen (p.ℓ + 2 * p.k) (o := p.skLen + 1024 * i) (by omega)
+    have hip := ip_check p.skLen (p.ℓ + 2 * p.k) (o := p.skLen + 1024 * i) (by omega_using [hi])
     refine inv_step hi' h (WP.mono (secretPoly_ok hP h.lay he hab hl hc hip) fun t ⟨ht, hct, hpoly⟩ =>
       ⟨ht, hct, ?_⟩)
     have hbound : src + len ≤ p.skLen := by

@@ -23,30 +23,30 @@ theorem subtractPair_ok {s : State} {B : Addr} {Z out a b : Nat} (h : Scr s B Z)
         val32 s.mem B a 2 + 2 ^ 64 * borrow.toNat) ∧ Keeps [.eax, .edx] s t := by
   have hn := h.nowrap
   unfold subtractPair
-  refine wp_movS (readSrc_sc h (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc h (by omega_using [fa])) fun u U _ => ?_
   have hu := h.of_keeps U.keeps (by decide)
-  refine wp_movS (readSrc_sc hu (by omega)) fun v V _ => ?_
+  refine wp_movS (readSrc_sc hu (by omega_using [fa])) fun v V _ => ?_
   have Kv : Keeps [.eax, .edx] s v := (U.keeps.mono (by decide)).widen V.keeps
   have hv := h.of_keeps Kv (by decide)
-  have loRead := readSrc_sc hv (d := b) (by omega)
+  have loRead := readSrc_sc hv (d := b) (by omega_using [fb])
   rw [V.mem, U.mem] at loRead
   refine wp_subS loRead fun w W cfW => ?_
   have Kw : Keeps [.eax, .edx] s w := Kv.widen W.keeps
   have hw := h.of_keeps Kw (by decide)
-  have hiRead := readSrc_sc hw (d := b + 4) (by omega)
+  have hiRead := readSrc_sc hw (d := b + 4) (by omega_using [fb])
   rw [W.mem, V.mem, U.mem] at hiRead
   refine wp_sbbS hiRead cfW fun x X _ => ?_
   have Kx : Keeps [.eax, .edx] s x := Kw.widen X.keeps
   have hx := h.of_keeps Kx (by decide)
   have Px : PtrAt x B .ebp out := by rw [PtrAt, Kx.1 _ (by decide)]; exact P
   have Rx : VG.Proof.Mont.X86.Rt.Ws x B Z := ⟨hx.wr, hx.nowrap⟩
-  refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Rx Px (d := 0) (by omega))
-    (VG.Proof.Mont.X86.Rt.ws_write Rx (by omega)) fun y Y => ?_
+  refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Rx Px (d := 0) (by omega_using [fo]))
+    (VG.Proof.Mont.X86.Rt.ws_write Rx (by omega_using [fo])) fun y Y => ?_
   have hy := hx.of_keeps (Y.keeps []) (by decide)
   have Py : PtrAt y B .ebp out := by rw [PtrAt, Y.gpr]; exact Px
   have Ry : VG.Proof.Mont.X86.Rt.Ws y B Z := ⟨hy.wr, hy.nowrap⟩
-  refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Ry Py (d := 4) (by omega))
-    (VG.Proof.Mont.X86.Rt.ws_write Ry (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Ry Py (d := 4) (by omega_using [fo]))
+    (VG.Proof.Mont.X86.Rt.ws_write Ry (by omega_using [fo])) fun t T => WP.block_nil ?_
   simp only [Nat.add_zero] at Y
   let lowBorrow := decide ((v.gpr .eax).toNat < (s.mem.readW (off B b) 32).toNat)
   let highBorrow := decide ((w.gpr .edx).toNat < (s.mem.readW (off B (b + 4)) 32).toNat + lowBorrow.toNat)
@@ -65,18 +65,18 @@ theorem subtractPair_ok {s : State} {B : Addr} {Z out a b : Nat} (h : Scr s B Z)
   have oldMem : x.mem = s.mem := X.mem.trans (W.mem.trans (V.mem.trans U.mem))
   have Oy : Outside B out 4 s.mem y.mem := by
     rw [Y.mem, oldMem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [fo, hn])
   have Ot : Outside B (out + 4) 4 y.mem t.mem := by
     rw [T.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [fo, hn])
   have lowT : w32 t.mem B out = (x.gpr .eax).toNat := by
-    rw [Ot.w32 (Or.inl (Nat.le_refl _)) (by omega), Y.mem, w32_write_self]
+    rw [Ot.w32 (Or.inl (Nat.le_refl _)) (by omega_using [fo, hn]), Y.mem, w32_write_self]
   have highT : w32 t.mem B (out + 4) = (x.gpr .edx).toNat := by
     rw [T.mem, w32_write_self, Y.gpr]
-  refine ⟨(Oy.mono (Nat.le_refl _) (by omega)).trans (Ot.mono (by omega) (by omega)),
+  refine ⟨(Oy.mono (Nat.le_refl _) (by omega_using [])).trans (Ot.mono (by omega_using []) (by omega_using [])),
     ⟨highBorrow, ?_⟩, Kx.trans ((Y.keeps _).trans (T.keeps _))⟩
   simp only [val32, Nat.mul_zero, Nat.add_zero]
   rw [lowT, highT, X.other _ (by decide)]
-  omega
+  omega_using [low, high]
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

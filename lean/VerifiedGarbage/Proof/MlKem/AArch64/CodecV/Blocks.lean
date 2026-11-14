@@ -38,7 +38,7 @@ theorem wp_ldc {s : State} {p : Addr} {X : Nat → Nat} (h : Src p X s) {t : VRe
       WP isa (.block is) s' Q) :
     WP isa (.block (.ldrq t .x0 off :: is)) s Q :=
   wp_ldrq ho ha (h.rd j hj) fun s' h' => k s' h' (by
-    rw [h'.v]; exact lanes_coeffs fun e he => h.val _ (by omega))
+    rw [h'.v]; exact lanes_coeffs fun e he => h.val _ (by omega_using [hj, he]))
 
 /-- Sixteen coefficients, from coefficient `j`. -/
 theorem ld4_ok {s : State} {p : Addr} {X : Nat → Nat} (h : Src p X s) (a b c d : VReg) {o j : Nat}
@@ -50,15 +50,15 @@ theorem ld4_ok {s : State} {p : Addr} {X : Nat → Nat} (h : Src p X s) (a b c d
       Lanes (t.v a) (fun e => X (j + e)) ∧ Lanes (t.v b) (fun e => X (j + 4 + e)) ∧
       Lanes (t.v c) (fun e => X (j + 8 + e)) ∧ Lanes (t.v d) (fun e => X (j + 12 + e)) := by
   have addr (i : Nat) : s.gpr .x0 + BitVec.ofNat 64 (o + 16 * i) = coeffAddr p (j + 4 * i) := by
-    rw [← ptr_add, h0, show 16 * i = 4 * (4 * i) by omega, coeffAddr_off]
+    rw [← ptr_add, h0, show 16 * i = 4 * (4 * i) by omega_using [], coeffAddr_off]
   unfold ld4
-  refine wp_ldc h ⟨ho.1, by omega⟩ h0 (by omega) fun s1 h1 l1 => ?_
-  refine wp_ldc (h.chg h1.chg) ⟨by omega, by omega⟩ (j := j + 4)
-    (by rw [h1.gpr]; exact addr 1) (by omega) fun s2 h2 l2 => ?_
-  refine wp_ldc ((h.chg h1.chg).chg h2.chg) ⟨by omega, by omega⟩ (j := j + 8)
-    (by rw [h2.gpr, h1.gpr]; exact addr 2) (by omega) fun s3 h3 l3 => ?_
-  refine wp_ldc (((h.chg h1.chg).chg h2.chg).chg h3.chg) ⟨by omega, by omega⟩ (j := j + 12)
-    (by rw [h3.gpr, h2.gpr, h1.gpr]; exact addr 3) (by omega) fun s4 h4 l4 => wp_nil ?_
+  refine wp_ldc h ⟨ho.1, by omega_using [ho]⟩ h0 (by omega_using [hj]) fun s1 h1 l1 => ?_
+  refine wp_ldc (h.chg h1.chg) ⟨by omega_using [ho], by omega_using [ho]⟩ (j := j + 4)
+    (by rw [h1.gpr]; exact addr 1) (by omega_using [hj]) fun s2 h2 l2 => ?_
+  refine wp_ldc ((h.chg h1.chg).chg h2.chg) ⟨by omega_using [ho], by omega_using [ho]⟩ (j := j + 8)
+    (by rw [h2.gpr, h1.gpr]; exact addr 2) (by omega_using [hj]) fun s3 h3 l3 => ?_
+  refine wp_ldc (((h.chg h1.chg).chg h2.chg).chg h3.chg) ⟨by omega_using [ho], by omega_using [ho]⟩ (j := j + 12)
+    (by rw [h3.gpr, h2.gpr, h1.gpr]; exact addr 3) (by omega_using [hj]) fun s4 h4 l4 => wp_nil ?_
   refine ⟨(((h1.chg.trans h2.chg).trans h3.chg).trans h4.chg).mono (by
       intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with ((h | h) | h) | h <;> simp [h]),
@@ -94,25 +94,25 @@ theorem cmp4_ok {s : State} {w : Width} (hw : WOk w) (hc : CConsts w s) {a b c e
   unfold cmp4
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (cmpV_ok hw.mul_le hw.add_lt hc.m hc.a hc.k ha.2.1 ha.2.2 la fun i hi => hX i (by omega))
+  refine WP.mono (cmpV_ok hw.mul_le hw.add_lt hc.m hc.a hc.k ha.2.1 ha.2.2 la fun i hi => hX i (by omega_using [hi]))
     fun s1 ⟨c1, l1⟩ => ?_
   have k1 : CConsts w s1 := hc.chg c1 (by simpa using ha.1.symm) (by simpa using ha.2.1.symm)
     (by simpa using ha.2.2.symm)
   rw [WP.block_append_iff]
   refine WP.mono (cmpV_ok hw.mul_le hw.add_lt k1.m k1.a k1.k hb.2.1 hb.2.2 (Lanes.chg c1 (by simpa using hab.symm) lb)
-    fun i hi => hX _ (by omega)) fun s2 ⟨c2, l2⟩ => ?_
+    fun i hi => hX _ (by omega_using [hi])) fun s2 ⟨c2, l2⟩ => ?_
   have k2 : CConsts w s2 := k1.chg c2 (by simpa using hb.1.symm) (by simpa using hb.2.1.symm)
     (by simpa using hb.2.2.symm)
   rw [WP.block_append_iff]
   refine WP.mono (cmpV_ok hw.mul_le hw.add_lt k2.m k2.a k2.k hc'.2.1 hc'.2.2
     (Lanes.chg c2 (by simpa using hbc.symm) (Lanes.chg c1 (by simpa using hac.symm) lc))
-    fun i hi => hX _ (by omega)) fun s3 ⟨c3, l3⟩ => ?_
+    fun i hi => hX _ (by omega_using [hi])) fun s3 ⟨c3, l3⟩ => ?_
   have k3 : CConsts w s3 := k2.chg c3 (by simpa using hc'.1.symm) (by simpa using hc'.2.1.symm)
     (by simpa using hc'.2.2.symm)
   refine WP.mono (cmpV_ok hw.mul_le hw.add_lt k3.m k3.a k3.k he.2.1 he.2.2
     (Lanes.chg c3 (by simpa using hce.symm) (Lanes.chg c2 (by simpa using hbe.symm)
       (Lanes.chg c1 (by simpa using hae.symm) le)))
-    fun i hi => hX _ (by omega)) fun t ⟨c4, l4⟩ => ⟨?_, ?_, ?_, ?_, l4⟩
+    fun i hi => hX _ (by omega_using [hi])) fun t ⟨c4, l4⟩ => ⟨?_, ?_, ?_, ?_, l4⟩
   · exact (((c1.trans c2).trans c3).trans c4).mono (by
       intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with ((h | h) | h) | h <;> simp [h])

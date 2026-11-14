@@ -229,7 +229,7 @@ theorem bs_toNat : (Bs s).toNat = s.sp.toNat - 4640 := by
   have e := congrArg BitVec.toNat h.hB
   rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
   have := h.hBn
-  omega
+  omega_using [e, this]
 
 theorem off_toNat {k : Nat} (hk : k < 4664) : (Bs s + BitVec.ofNat 64 k).toNat = (Bs s).toNat + k := by
   have := h.hBn
@@ -237,7 +237,7 @@ theorem off_toNat {k : Nat} (hk : k < 4664) : (Bs s + BitVec.ofNat 64 k).toNat =
     Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem al8 {k : Nat} (hk : k < 4664) (h8 : k % 8 = 0) : (Bs s + BitVec.ofNat 64 k).toNat % 8 = 0 := by
-  rw [h.off_toNat hk, h.bs_toNat]; have := h.al; have := h.w₁; omega
+  rw [h.off_toNat hk, h.bs_toNat]; have := h.al; have := h.w₁; omega_arith
 
 theorem fsp : s.sp - 16 = Bs s + BitVec.ofNat 64 4624 := by
   rw [h.hB, show (16 : Addr) = BitVec.ofNat 64 16 from rfl, Offset.add_ofNat_sub _ (by decide)]

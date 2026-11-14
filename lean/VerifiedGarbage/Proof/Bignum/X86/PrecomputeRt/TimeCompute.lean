@@ -60,18 +60,18 @@ theorem sq_ready {sp : BitVec 32} {s : State} (I : MulIn base bytes len args sp 
   have Fs : Frame [⟨base, bytes⟩, below (s.gpr .esp) 96] s.mem u.mem := F.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega)⟩
-    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega)⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega_using [f4])⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub_base base (by omega_using [f5])⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   have sp' : u.gpr .esp = s.gpr .esp := Ku.1 _ (by decide)
   have Mu : val32 u.mem base numOff (nw len) = M := by
     rw [← C.mod, show numOff = numAt len 0 by simp [numAt]]
-    exact mulFrame_val32 R nw' F (.inl (by simp only [numAt]; omega)) (by simp only [numAt]; omega)
-      (by simp only [numAt] at f0 ⊢; omega) f4 f5
+    exact mulFrame_val32 R nw' F (.inl (by simp only [numAt]; omega_using [wbe])) (by simp only [numAt]; omega_using [wbe])
+      (by simp only [numAt] at f0 ⊢; omega_using [f0, wbe]) f4 f5
   have Iu : w32 u.mem base invOff = w32 s.mem base invOff := by
     unfold w32
     simp only [Mem.readW]
-    rw [mulFrame_hdr R nw' F (d := invOff) (k := 4) (by decide) (by simp only [numAt, numOff, invOff] at f0 ⊢; omega)
+    rw [mulFrame_hdr R nw' F (d := invOff) (k := 4) (by decide) (by simp only [numAt, numOff, invOff] at f0 ⊢; omega_using [f0])
       f4 f5]
   rw [C.mod] at L
   refine ⟨⟨⟨M, h.keepF Ku (by decide) (by decide) R C.top Fs, by rw [sp']; exact R, by rw [sp']; exact C.top, Mu,
@@ -146,8 +146,8 @@ theorem compute_relCT (sp : BitVec 32) :
       have wbe := VG.Proof.Bignum.X86.PublicRt.wb_eq len
       have sp' : s₃.gpr .esp = s.gpr .esp := K₃.1 _ (by decide)
       refine ⟨M, s₃, z, L, I₀, ?_, Z₃, ?_, by rw [sp']; exact R, by rw [sp']; exact top, A.keep K₃, sp'.trans e⟩
-      · rw [← Mo.val]; exact val32_congr fun j hj => N₃ _ (by omega) (by simp [numAt, numOff] at *; omega)
-      · rw [O₃.w32 (.inl (by simp only [invOff, R2Words.oP]; omega)) (by decide)]; exact inv
+      · rw [← Mo.val]; exact val32_congr fun j hj => N₃ _ (by omega_using []) (by simp [numAt, numOff] at *; omega_using [wbe, hj])
+      · rw [O₃.w32 (.inl (by simp only [invOff, R2Words.oP]; omega_using [])) (by decide)]; exact inv
     -- The steps' loop, by its count.
     case rest =>
       by_cases hb : 64 ≤ len ∧ len ≤ 1024
@@ -172,10 +172,10 @@ theorem compute_relCT (sp : BitVec 32) :
         have f0 := (h.fits (j := 0) (by decide)).1
         have e0 : numAt len 0 = 256 := by simp [numAt, numOff]
         have sp' : t.gpr .esp = s₃.gpr .esp := K.1 _ (by decide)
-        refine ⟨⟨M, h.keep K (by decide) (by decide) (O.mono (Nat.zero_le _) (by simp only [R2Words.oMask]; omega)),
+        refine ⟨⟨M, h.keep K (by decide) (by decide) (O.mono (Nat.zero_le _) (by simp only [R2Words.oMask]; omega_using [f0, e0])),
           by rw [sp']; exact R, by rw [sp']; exact top, by rw [show numOff = numAt len 0 by simp [numAt]]; exact Mt, ?_,
           ?_⟩, A.keep K, sp'.trans e⟩
-        · rw [O.w32 (.inl (by simp only [invOff, R2Words.oMask]; omega)) (by decide)]; exact inv
+        · rw [O.w32 (.inl (by simp only [invOff, R2Words.oMask]; omega_using [])) (by decide)]; exact inv
         · rw [V]; exact Nat.mod_lt _ (Nat.lt_of_le_of_lt (Nat.zero_le _) L.hxm)
   refine VG.RelCT.seq (squares_relCT sp) ?_
   exact RelCT.taint (A := taint) τA (fun _ _ ⟨⟨h₁, A₁, e₁⟩, ⟨h₂, A₂, e₂⟩⟩ => agreeA h₁ h₂ A₁ A₂ (e₁.trans e₂.symm))

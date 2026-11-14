@@ -2,6 +2,7 @@ module
 -- separate module: names no ISA and imports no algebra, so each target's batched inverse over 64-bit words shares its arithmetic
 
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The arithmetic of the batched inverse's top words
 
@@ -26,14 +27,14 @@ theorem mod_split {L M X K : Nat} (hL : L < M) : (L + M * X) % (M * K) = L + M *
     have := Nat.mod_add_div X K
     have : M * X = M * (X % K) + M * K * (X / K) := by
       rw [Nat.mul_assoc, ← Nat.mul_add, this]
-    omega
+    omega_using [this]
   rw [e, Nat.add_mul_mod_self_left]
   rcases Nat.eq_zero_or_pos K with hK | hK
   · subst hK; simp
   · apply Nat.mod_eq_of_lt
     have := Nat.mod_lt X hK
     have : M * (X % K) + M ≤ M * K := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ this
-    omega
+    omega_using [hL, this]
 
 /-- The value of `ν + 1` words is at least half their range exactly when
 their top word is. -/
@@ -43,8 +44,8 @@ theorem half_top {Wlo A : Nat} (x : Nat) (hW : Wlo < A) :
   · intro h
     refine Nat.le_of_not_lt fun hx => ?_
     have : A * (x + 1) ≤ A * 2 ^ 63 := Nat.mul_le_mul_left A hx
-    rw [Nat.mul_add_one] at this; omega
-  · intro h; have := Nat.mul_le_mul_left A h; omega
+    rw [Nat.mul_add_one] at this; omega_using [hW, h, this]
+  · intro h; have := Nat.mul_le_mul_left A h; omega_using [this]
 
 /-- A shift by 59: the low words `L` (shifted, with the top word's low bits
 shifted in) and `y`, the top word `x` shifted arithmetically by 59, are
@@ -59,17 +60,17 @@ theorem shr_arith {L Vlo M x y : Nat} (hx : x < 2 ^ 64) (hVlo : Vlo < M)
   have e2 : 2 * (M * 2 ^ 63) = M * 2 ^ 64 := by rw [show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl]; ac_rfl
   by_cases hneg : 2 ^ 63 ≤ x
   · have hc : M * 2 ^ 63 ≤ Vlo + M * x := by
-      have := Nat.mul_le_mul_left M hneg; omega
+      have := Nat.mul_le_mul_left M hneg; omega_using [this]
     rw [ite_eq_left hneg, ite_eq_left hc, e2]
     have e3 : M * 2 ^ 64 * (2 ^ 64 - 1) = 2 ^ 59 * (M * (2 ^ 5 * (2 ^ 64 - 1))) := by
       rw [show (2 : Nat) ^ 64 = 2 ^ 59 * 2 ^ 5 from rfl]; ac_rfl
     rw [e3, Nat.add_mul_div_left _ _ (Nat.two_pow_pos 59), ← hL, Nat.add_assoc, ← Nat.mul_add, mod_split hLM]
     have inner : (x / 2 ^ 59 + 2 ^ 5 * (2 ^ 64 - 1)) % 2 ^ 64 = x / 2 ^ 59 + 2 ^ 64 - 2 ^ 5 := by
-      omega
+      omega_using [hx]
     rw [inner]
   · have hc : ¬ M * 2 ^ 63 ≤ Vlo + M * x := by
-      have : M * (x + 1) ≤ M * 2 ^ 63 := Nat.mul_le_mul_left M (by omega)
-      rw [Nat.mul_add_one] at this; omega
+      have : M * (x + 1) ≤ M * 2 ^ 63 := Nat.mul_le_mul_left M (by omega_using [hneg])
+      rw [Nat.mul_add_one] at this; omega_using [hVlo, this]
     rw [ite_eq_right hneg, ite_eq_right hc, Nat.mul_zero, Nat.add_zero, e2, ← hL, mod_split hLM,
       Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hx)]
 

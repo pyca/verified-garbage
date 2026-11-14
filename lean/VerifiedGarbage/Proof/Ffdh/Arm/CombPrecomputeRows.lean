@@ -22,16 +22,16 @@ theorem combRowsStep_ok (s : State) {m : Nat} (large : 5≤m) (fit : m<2^32)
   have sub : BitVec.ofNat 32 m - 5 = BitVec.ofNat 32 (m-5) := by
     exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) large
   have val : (BitVec.ofNat 32 (m-5)).toNat=m-5 := by
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [fit])
   refine withRest_all (c := .block rowsStep) [.r3,.r6,.r7] ?_ (by rfl) rfl
   unfold rowsStep
   ffrun [value,zero,sub,val]
   by_cases next : 5≤m-5
-  · have last : ¬m-5<5 := by omega
+  · have last : ¬m-5<5 := by omega_using [next]
     simp only [show (5 : BitVec 32).toNat=5 from rfl,
       next,last,ite_true,decide_true,decide_false]
     decide
-  · have last : m-5<5 := by omega
+  · have last : m-5<5 := by omega_using [next]
     simp only [show (5 : BitVec 32).toNat=5 from rfl,
       next,last,ite_false,decide_true,decide_false]
     decide
@@ -46,7 +46,7 @@ theorem combRowsLoop_ok (s : State) {N : Nat} (positive : 0<N) (fit : N+4<2^32)
   refine WP.loop (M := isa) I ?_ (N+4) s ?_
   · intro k u hu
     obtain ⟨i,large,bound,parts,r3,r6,r2,memU,restU⟩ := hu
-    refine WP.mono (combRowsStep_ok u large (by omega) r3 r2) ?_
+    refine WP.mono (combRowsStep_ok u large (by omega_using [fit, bound]) r3 r2) ?_
     rintro v ⟨⟨r3V,r6V,_r7V,zeroV,memV⟩,restV⟩
     have count : v.gpr .r6=BitVec.ofNat 32 (i+1) := by
       rw [r6V,r6]
@@ -57,13 +57,13 @@ theorem combRowsLoop_ok (s : State) {N : Nat} (positive : 0<N) (fit : N+4<2^32)
       refine ⟨?_,?_,memV.trans memU,restU.trans restV⟩
       · change some (!v.z)=some false
         simp only [zeroV,last,decide_true,Bool.not_true]
-      · rw [count,show i+1=(N+4)/5 by omega]
+      · rw [count,show i+1=(N+4)/5 by omega_using [large, parts, last]]
     · right
-      refine ⟨?_,k-5,by omega,i+1,by omega,by omega,by omega,r3V,count,?_,memV.trans memU,restU.trans restV⟩
+      refine ⟨?_,k-5,by omega_using [large],i+1,by omega_using [last],by omega_using [bound],by omega_using [large, parts],r3V,count,?_,memV.trans memU,restU.trans restV⟩
       · change some (!v.z)=some true
         simp only [zeroV,last,decide_false,Bool.not_false]
       · exact (restV.gpr .r2 (by simp)).trans r2
-  · exact ⟨0,by omega,by omega,by omega,value,start,zero,rfl,Rest.refl _ _⟩
+  · exact ⟨0,by omega_using [positive],by omega_using [],by omega_using [],value,start,zero,rfl,Rest.refl _ _⟩
 
 theorem combRowsCount_ok (s : State) {base : BitVec 32} {len N : Nat}
     (locals : Locals base len s) (positive : 0<N) (fit : N+4<2^32)
@@ -89,7 +89,7 @@ theorem combRowsCount_ok (s : State) {base : BitVec 32} {len N : Nat}
     (restU.mono (by simp)).trans (restV.mono (by simp))
   have equal : (N+4)/5=VG.Spec.Rsa.FixedBaseComb.rows N := by
     unfold VG.Spec.Rsa.FixedBaseComb.rows VG.Spec.Rsa.FixedBaseComb.teeth
-    omega
+    omega_using []
   rw [equal] at count
   refine WP.mono (localStore_ok v .r6 (locals.after rest) (by decide : 44+4≤72) (by decide)) ?_
   rintro t ⟨memT,frameT,restT⟩

@@ -40,7 +40,7 @@ theorem key_dispatch_correct (bodies : KeyBodies) {s₀ : State} (hp : EPre s₀
     · simp only [decide_eq_false_iff_not] at h32
       have h24 : keyLen s₀ ≠ 24 := fun e => h (BitVec.eq_of_toNat_eq e)
       have hN32 : keyLen s₀ ≠ 32 := fun e => h32 (BitVec.eq_of_toNat_eq e)
-      have hl : keyLen s₀ = 16 := by have := hp.len; omega
+      have hl : keyLen s₀ = 16 := by have := hp.len; omega_using [h24, hN32, this]
       refine WP.mono (bodies.expand128 s₀ mid hp hm hl) fun s hd => ?_
       exact ⟨hd.abi hp hm, hd.post (by decide) hl⟩
 

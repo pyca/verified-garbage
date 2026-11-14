@@ -41,7 +41,7 @@ theorem initOut (iv : Spec.Sha512.HashValue) :
     simp only [Spec.Sha512.initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq] at hb
     exact Stream.repr_congr (fun i hi => (hb _ (Offset.contains_base _
-      (by simp only [Elem.size]; omega) (by omega))).symm) h
+      (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm) h
 
 def init384Ks : List Nat := keep_for% Spec.Sha512.init384Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384) []
 

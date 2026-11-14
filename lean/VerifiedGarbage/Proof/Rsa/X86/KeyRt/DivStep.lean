@@ -45,7 +45,7 @@ theorem wide_eq (m : Mem) (B : Addr) (w j : Nat) :
 theorem keep_wide {w : Nat} {js ds : List Nat} {m m' : Mem} (F : Keep B w js ds m m') {j : Nat}
     (hj : ∀ k ∈ js, k ≠ j) (hd : ∀ d ∈ ds, d + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr) (fit : arr w j + S w ≤ 2 ^ 64) :
     wide m' B w j = wide m B w j := by
-  rw [wide_eq, wide_eq, F.num hj hd fit, F.word (i := w) (by simp only [S]; omega) hj hd fit]
+  rw [wide_eq, wide_eq, F.num hj hd fit, F.word (i := w) (by simp only [S]; omega_using []) hj hd fit]
 
 /-- A header word outside a frame of arrays. -/
 theorem keep_slot {w : Nat} {js : List Nat} {m m' : Mem} (F : Keep B w js [] m m') {e : Nat}

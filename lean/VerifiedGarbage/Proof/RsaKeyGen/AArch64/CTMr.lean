@@ -59,9 +59,9 @@ theorem kStat0_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
   have hn := h.scr.nowrap
   have h256 := h.h256
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off B (8 * kStat)) (BitVec.ofNat 64 0)) (by
-    brun [h.x0, hdr_enc (show kStat < 32 by decide), h.scr.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega)]
+    brun [h.x0, hdr_enc (show kStat < 32 by decide), h.scr.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using [h256])]
     rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
-  exact h.congr' (Frm.of_outside (by rw [hm]; exact writeW_outside _ _ _ (by simp only [kStat, sFn]; omega))
+  exact h.congr' (Frm.of_outside (by rw [hm]; exact writeW_outside _ _ _ (by simp only [kStat, sFn]; omega_using []))
     (List.mem_singleton_self (8 * kStat, 8))) (by msb_mut) k (by decide)
 
 /-- What Miller–Rabin needs, for the public data. -/

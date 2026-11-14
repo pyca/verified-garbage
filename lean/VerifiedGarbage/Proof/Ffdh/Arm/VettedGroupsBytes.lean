@@ -20,7 +20,7 @@ private theorem decode_wordBytes (x : Nat) (fit : x < 2 ^ 32) :
     List.map_cons, List.map_nil, List.nil_append, Nat.reduceMul, Nat.reducePow, Nat.div_one]
   simp only [List.cons_append, List.nil_append, VG.Proof.X25519.leNum,
     BitVec.toNat_ofNat, Nat.mul_zero, Nat.add_zero]
-  omega
+  omega_using [fit]
 
 private theorem read_wordBytes {m : Mem} {p : Addr} {x : Nat}
     (fit : x < 2 ^ 32) (bytes : Spec.Rsa.bytesAt m p 4 = wordBytes x) :
@@ -35,7 +35,7 @@ private theorem slice_bytes {s : State} {p : BitVec 32} {blob : List Byte} {d n 
     (fit : p.toNat + blob.length ≤ 2 ^ 32) (part : d + n ≤ blob.length) (positive : 0 < n)
     (bytes : Spec.Rsa.bytesAt s.mem (State.addr p) blob.length = blob) :
     Spec.Rsa.bytesAt s.mem (State.addr (p + BitVec.ofNat 32 d)) n = (blob.drop d).take n := by
-  rw [VG.Arm.addr_add (by omega)]
+  rw [VG.Arm.addr_add (by omega_using [fit, part, positive])]
   rw [← VG.Proof.Dsa.bytesAt_slice s.mem (State.addr p) part, bytes]
 
  theorem recordOfBytes (s : State) (p : BitVec 32) (g : Group)
@@ -48,7 +48,7 @@ private theorem slice_bytes {s : State} {p : BitVec 32} {blob : List Byte} {d n 
   have domainLength : g.domain.length = 3 * g.len := by
     have h := groupBytes_length g
     simp only [Group.bytes, List.length_append, wordLength] at h
-    omega
+    omega_using [h]
   have headLen : (g.bytes.drop 0).take 4 = wordBytes g.len := by
     simp only [Group.bytes, List.drop_zero, List.append_assoc, List.take_left', wordLength]
   have headBits : (g.bytes.drop 4).take 4 = wordBytes g.bits := by
@@ -59,16 +59,16 @@ private theorem slice_bytes {s : State} {p : BitVec 32} {blob : List Byte} {d n 
     rw [← domainLength, List.take_length]
   have reads (d n : Nat) (part : d + n ≤ g.bytes.length) (pos : 0 < n) :
       InRegions (s.rd ++ s.wr) (State.addr (p + BitVec.ofNat 32 d)) n := by
-    rw [VG.Arm.addr_add (by omega)]
-    exact VG.CallLay.inRegions_sub read part (by omega)
-  refine ⟨positive, lenFit, bitsFit, by omega, ?_, reads 4 4 (by omega) (by decide), ?_, ?_,
-    reads 8 (3 * g.len) (by omega) (by omega), ?_⟩
-  · simpa only [BitVec.add_zero] using reads 0 4 (by omega) (by decide)
+    rw [VG.Arm.addr_add (by omega_using [fit, part, pos])]
+    exact VG.CallLay.inRegions_sub read part (by omega_using [fit])
+  refine ⟨positive, lenFit, bitsFit, by omega_using [fit, length], ?_, reads 4 4 (by omega_using [length]) (by decide), ?_, ?_,
+    reads 8 (3 * g.len) (by omega_using [length]) (by omega_using [positive]), ?_⟩
+  · simpa only [BitVec.add_zero] using reads 0 4 (by omega_using [length]) (by decide)
   · apply read_wordBytes lenFit
-    have h := slice_bytes fit (d := 0) (n := 4) (by omega) (by decide) bytes
+    have h := slice_bytes fit (d := 0) (n := 4) (by omega_using [length]) (by decide) bytes
     simpa only [BitVec.add_zero, headLen] using h
-  · exact read_wordBytes bitsFit ((slice_bytes fit (d := 4) (n := 4) (by omega) (by decide) bytes).trans headBits)
-  · exact (slice_bytes fit (d := 8) (n := 3 * g.len) (by omega) (by omega) bytes).trans domain
+  · exact read_wordBytes bitsFit ((slice_bytes fit (d := 4) (n := 4) (by omega_using [length]) (by decide) bytes).trans headBits)
+  · exact (slice_bytes fit (d := 8) (n := 3 * g.len) (by omega_using [length]) (by omega_using [positive]) bytes).trans domain
 
 
 theorem tableOfBytes (s : State) (p : BitVec 32) (gs : List Group) {regions : List Region}
@@ -89,21 +89,21 @@ theorem tableOfBytes (s : State) (p : BitVec 32) (gs : List Group) {regions : Li
     have nowrap : (State.addr p).toNat + ((g :: gs).flatMap Group.bytes).length ≤ 2 ^ 32 := by
       simpa only [State.addr, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans p.isLt (by decide : 2 ^ 32 < 2 ^ 64))] using fit
     have hread := VG.CallLay.inRegions_sub read (off := 0) (l := g.bytes.length)
-      (by rw [total]; omega) (by omega)
-    have hbytes := slice_bytes fit (d := 0) (n := g.bytes.length) (by rw [total]; omega) (by omega) bytes
+      (by rw [total]; omega_using []) (by omega_using [fit])
+    have hbytes := slice_bytes fit (d := 0) (n := g.bytes.length) (by rw [total]; omega_using []) (by omega_using [length]) bytes
     simp only [BitVec.add_zero, List.drop_zero, blob, List.take_left] at hread hbytes
-    have head := recordOfBytes s p g vg.1 vg.2.1 vg.2.2 (by rw [total] at fit; omega) hread hbytes
+    have head := recordOfBytes s p g vg.1 vg.2.1 vg.2.2 (by rw [total] at fit; omega_using [fit]) hread hbytes
     have sub (d n : Nat) (part : d + n ≤ ((g :: gs).flatMap Group.bytes).length) (pos : 0 < n) :
         (⟨State.addr (p + BitVec.ofNat 32 d), n⟩ : Region).Sub
           ⟨State.addr p, ((g :: gs).flatMap Group.bytes).length⟩ := by
-      rw [VG.Arm.addr_add (by omega)]
+      rw [VG.Arm.addr_add (by omega_using [fit, part, pos])]
       exact Offset.sub_base _ part
     have hs : RecordSafe p g regions := by
       intro r hr
-      have h0 := (safe r hr).sub_left (sub 0 4 (by rw [total]; omega) (by decide))
+      have h0 := (safe r hr).sub_left (sub 0 4 (by rw [total]; omega_using [length]) (by decide))
       simp only [BitVec.add_zero] at h0
-      exact ⟨h0, (safe r hr).sub_left (sub 4 4 (by rw [total]; omega) (by decide)),
-        (safe r hr).sub_left (sub 8 (3 * g.len) (by rw [total]; omega) (by omega))⟩
+      exact ⟨h0, (safe r hr).sub_left (sub 4 4 (by rw [total]; omega_using [length]) (by decide)),
+        (safe r hr).sub_left (sub 8 (3 * g.len) (by rw [total]; omega_using [length]) (by omega_using [vg]))⟩
     by_cases empty : gs = []
     · subst gs
       exact ⟨⟨head, trivial⟩, ⟨hs, trivial⟩⟩
@@ -113,24 +113,24 @@ theorem tableOfBytes (s : State) (p : BitVec 32) (gs : List Group) {regions : Li
       | cons first rest =>
         have vf := valid first (by simp)
         simp only [List.flatMap_cons, List.length_append, groupBytes_length]
-        omega
-    have stepFit : p.toNat + (8 + 3 * g.len) < 2 ^ 32 := by rw [total] at fit; omega
+        omega_using []
+    have stepFit : p.toNat + (8 + 3 * g.len) < 2 ^ 32 := by rw [total] at fit; omega_using [fit, length, tailPositive]
     have stepNat : (p + BitVec.ofNat 32 (8 + 3 * g.len)).toNat = p.toNat + (8 + 3 * g.len) := by
       rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (a := 8 + 3 * g.len) (by omega), Nat.mod_eq_of_lt stepFit]
+      rw [Nat.mod_eq_of_lt (a := 8 + 3 * g.len) (by omega_using [stepFit]), Nat.mod_eq_of_lt stepFit]
     have tfit : (p + BitVec.ofNat 32 (8 + 3 * g.len)).toNat + (gs.flatMap Group.bytes).length ≤ 2 ^ 32 := by
-      rw [stepNat]; rw [total] at fit; omega
+      rw [stepNat]; rw [total] at fit; omega_using [fit, length]
     have tread := VG.CallLay.inRegions_sub read (off := 8 + 3 * g.len)
-      (l := (gs.flatMap Group.bytes).length) (by rw [total]; omega) (by omega)
+      (l := (gs.flatMap Group.bytes).length) (by rw [total]; omega_using [length]) (by omega_using [fit])
     rw [← VG.Arm.addr_add stepFit] at tread
     have tbytes := slice_bytes fit (d := 8 + 3 * g.len) (n := (gs.flatMap Group.bytes).length)
-      (by rw [total]; omega) tailPositive bytes
+      (by rw [total]; omega_using [length]) tailPositive bytes
     rw [blob, ← length, List.drop_left, List.take_length] at tbytes
     rw [length] at tbytes
     have tsafe : ∀ r ∈ regions, (⟨State.addr (p + BitVec.ofNat 32 (8 + 3 * g.len)),
         (gs.flatMap Group.bytes).length⟩ : Region).Disjoint r := by
       intro r hr
-      exact (safe r hr).sub_left (sub _ _ (by rw [total]; omega) tailPositive)
+      exact (safe r hr).sub_left (sub _ _ (by rw [total]; omega_using [length]) tailPositive)
     obtain ⟨tail, safeTail⟩ := ih _ tfit tread tbytes (fun h hh => valid h (by simp [hh])) tsafe
     exact ⟨⟨head, tail⟩, ⟨hs, safeTail⟩⟩
 

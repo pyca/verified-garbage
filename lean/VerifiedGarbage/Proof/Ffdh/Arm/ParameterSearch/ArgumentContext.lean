@@ -39,10 +39,10 @@ theorem ArgumentContext.after_frame {p : SearchParams} {used : Nat} {s t : State
   intro j member
   have bound : j < 16 := by
     simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-    omega
+    omega_using [member]
   unfold lowWord
   rw [changed.readW (r := ⟨State.addr p.control, 128⟩)
-    (Offset.contains_base _ (by omega : 8 * j + 4 ≤ 128) (by omega))
+    (Offset.contains_base _ (by omega_using [bound] : 8 * j + 4 ≤ 128) (by omega_using [bound]))
     (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact h.separate) (by decide)]
   exact h.headers j member
 

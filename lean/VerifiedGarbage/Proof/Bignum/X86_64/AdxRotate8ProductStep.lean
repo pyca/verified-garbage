@@ -26,7 +26,7 @@ theorem storeMem_ok {s : State} {B : Addr} {Z e : Nat} {m : MemOp} {r : Reg}
     fun t ⟨hm, kt⟩ => ?_
   · xrun [hp, hs.st he]
   · rw [hm]
-    exact ⟨word_writeW_self _ _ _ _, writeW_outside _ _ _ (by omega), kt⟩
+    exact ⟨word_writeW_self _ _ _ _, writeW_outside _ _ _ (by omega_using [he, hn]), kt⟩
 
 theorem storeAt_ok {s : State} {B : Addr} {Z e d : Nat} {p r : Reg}
     (hs : Scr s B Z) (hp : s.gpr p = off B e) (he : e + d + 8 ≤ Z) :
@@ -37,7 +37,7 @@ theorem storeAt_ok {s : State} {B : Addr} {Z e d : Nat} {p r : Reg}
     fun t ⟨hm, kt⟩ => ?_
   · xrun [ea_at hp d, hs.st he]
   · rw [hm]
-    exact ⟨word_writeW_self _ _ _ _, writeW_outside _ _ _ (by omega), kt⟩
+    exact ⟨word_writeW_self _ _ _ _, writeW_outside _ _ _ (by omega_using [he, hn]), kt⟩
 
 theorem productStep_ok {s : State} {B : Addr} {Z eU eO eN k : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hp : s.gpr .rbp = off B eN)

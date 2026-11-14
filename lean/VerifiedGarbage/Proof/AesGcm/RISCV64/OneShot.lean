@@ -94,20 +94,20 @@ theorem stb_abs16 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : d = 0 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact hk.st.sub_left (Lay.stSub (by omega))
+  · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+  · exact hk.st.sub_left (Lay.stSub (by omega_using [hd]))
 
 theorem stb_t16 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : d = 0 ∨ d = 48) :
     ∀ r ∈ tFrame (V .s1) (V .s0) 16 sp, (⟨V .s1 + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact hk.st.sub_left (Lay.stSub (by omega))
+  · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+  · exact L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+  · exact hk.st.sub_left (Lay.stSub (by omega_using [hd]))
 
 /-- The slots of `W` from 232 to 256, which hold the addresses of the
 additional data and the data (and, out of place, the distance to the
@@ -117,14 +117,14 @@ theorem slot_j0' (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · simpa using (L.st_w (a := 0) (n := 80) (d := d) (k := 8) (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact Lay.w_w (by omega) (by omega) (by decide)
-  · exact Lay.w_w (by omega) (by omega) (by decide)
-  · exact hk.w.sub_left (Lay.wSub (by omega))
+  · simpa using (L.st_w (a := 0) (n := 80) (d := d) (k := 8) (by decide) (.inr ⟨by omega_using [hd], by omega_using [hd]⟩)).symm
+  · exact Lay.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact hk.w.sub_left (Lay.wSub (by omega_using [hd]))
 
 theorem slot_j0 (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
     ∀ r ∈ j0Frame (V .s1) (V .s0) sp, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
-  slot_j0' L hk ⟨hd.1, by omega⟩
+  slot_j0' L hk ⟨hd.1, by omega_using [hd]⟩
 
 theorem slot_abs (hk : StkOk (V .s2) (V .s1) (V .s0) sp) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
     ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
@@ -145,14 +145,14 @@ theorem slot_crFrame' {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (hd.ok.w.sub_right (Lay.wSub (by omega))).symm
-  · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+  · exact (hd.ok.w.sub_right (Lay.wSub (by omega_using [hdd]))).symm
+  · exact (L.st_w (by decide) (.inr ⟨by omega_using [hdd], by omega_using [hdd]⟩)).symm
+  · exact Lay.w_w (.inl (by omega_using [hdd])) (by omega_using [hdd]) (by decide)
 
 theorem slot_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW (V .s2) (V .s1) (V .s0) s D n) {d : Nat}
     (hdd : 232 ≤ d ∧ d + 8 ≤ 248) :
     ∀ r ∈ crFrame (V .s1) (V .s0) D n, (⟨V .s0 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
-  slot_crFrame' L hd ⟨hdd.1, by omega⟩
+  slot_crFrame' L hd ⟨hdd.1, by omega_using [hdd]⟩
 
 /-- `oneAad`: `J₀` of the `n`-byte nonce at `Np`, then the additional data
 (`aad_len`, `s10`, bytes at `A`, in `W + aadO`) absorbed and padded. -/
@@ -184,7 +184,7 @@ theorem oneAad_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {Np A : Addr} {n :
   have he₃ := jo.env.keep (fun r hr => g₃ r (by revert r; decide) (by revert r; decide) (by revert r; decide))
     k₃.sp k₃.rd k₃.wr
   have hAm : bytesAt s₃.mem A (V .s10).toNat = bytesAt s.mem A (V .s10).toNat := by
-    rw [k₃.mem]; exact bytesAt_frame jo.frame (data_j0 hA he.sp) (by have := hA.lt; omega)
+    rw [k₃.mem]; exact bytesAt_frame jo.frame (data_j0 hA he.sp) (by have := hA.lt; omega_using [])
   have ai : AbsIn V sp 16 H [] A (V .s10).toNat s₃ :=
     ⟨he₃, a24, a25, by rw [a26]; rfl, hA.of_eq (k₃.rd.trans rd₂) (k₃.wr.trans wr₂) (k₃.sp.trans sp₂),
       by rw [k₃.mem]; exact jo.hH⟩
@@ -351,7 +351,7 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact L.cs.sub_right (Region.sub_prefix (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by omega))
+    · exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact hk.c
   have dJ : ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp,
@@ -382,7 +382,7 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o 
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl) hk)]; exact hH
   let ct := bytesAt s.mem D (V .s11).toNat
   have hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (V .s11).toNat % 16 := by
-    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega
+    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega_using [hx]
   refine WP.seq (WP.mono (flush_ok L (yo := 16) (.inr rfl) (x := (a ++ zeros (padLen a.length)) ++ ct) (H := H)
     ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [a26', hlx])) fun s₄ fl => ?_)
   rw [k₃.mem] at fl

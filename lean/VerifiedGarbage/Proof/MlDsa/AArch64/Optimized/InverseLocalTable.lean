@@ -107,7 +107,7 @@ theorem local_words {m : Mem} {p : Addr} (h : InverseTable.Words m p)
     exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (63-4*u-i.val)) (h.layer4 (u := u) (g := i.val) (e := e) hu hi he)
   · by_cases hj : i.val<6
     · simp only [localOffset,localRoot,localIndex,hi,hj,ite_false,ite_true,← Nat.add_assoc]
-      exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (31-2*u-(i.val-4))) (h.layer8 (u := u) (g := i.val-4) (e := e) hu (by omega) he)
+      exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (31-2*u-(i.val-4))) (h.layer8 (u := u) (g := i.val-4) (e := e) hu (by omega_using [hj]) he)
     · simp only [localOffset,localRoot,localIndex,hi,hj,ite_false]
       exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (15-u)) (h.layer16 (u := u) (e := e) hu he)
 
@@ -125,7 +125,7 @@ theorem local_tableRoots {s : State} {p : Addr} {u : Nat} (hu : u<8)
   · intro i b hb
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
     have ho := (localOffset_bound i).1
-    exact hr _ (by rcases hb with rfl | rfl <;> omega)
+    exact hr _ (by rcases hb with rfl | rfl <;> omega_using [hu, ho])
   · intro i e he
     rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
     exact (local_words h hu i he).1
@@ -136,7 +136,7 @@ theorem local_tableRoots {s : State} {p : Addr} {u : Nat} (hu : u<8)
 def localPlan (u : Nat) : RootPlan :=
   tablePlan localOffset (localRoot u)
     (fun i => (localOffset_bound i).2)
-    (fun i => by have := (localOffset_bound i).1; omega)
+    (fun i => by have := (localOffset_bound i).1; omega_using [this])
     (fun i e _ => localRoot_range u i e)
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

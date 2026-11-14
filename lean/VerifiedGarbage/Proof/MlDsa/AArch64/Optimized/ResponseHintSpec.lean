@@ -24,6 +24,6 @@ theorem highBits_small {g : Nat} (hg : IsG g) (r : Zq) :
     0≤highBits g r ∧ highBits g r<44 := by
   rw [VG.Proof.MlDsa.Round.highBits_eq (mem_of_isG hg)]
   rcases hg with rfl | rfl <;>
-    simp only [VG.Proof.MlDsa.Round.hbM,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88,q] <;> omega
+    simp only [VG.Proof.MlDsa.Round.hbM,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88,q] <;> omega_using []
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

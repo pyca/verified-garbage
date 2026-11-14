@@ -192,7 +192,7 @@ theorem spec_sp {s : State} (hs : (vspec vs gs).pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
   verify_pre at hs
   obtain ⟨hsp, hsa, -⟩ := hs
-  exact ⟨hsp, by omega⟩
+  exact ⟨hsp, by omega_using [hsa]⟩
 
 /-- The public parameters for the table of `MdHash` of `w` and that of
 `Hash` of `wg`, with their functions where `s'` has them. -/
@@ -222,7 +222,7 @@ theorem entered_state (hok : Sg.OK vs gs) {s s' : State} (hs : (vspec vs gs).pre
   have hpwH := hpw.sublist (List.sublist_append_left _ _)
   have hpwG := (hpw.sublist (List.sublist_append_right _ _)).sublist (List.sublist_append_left _ _)
   obtain ⟨hsp0, -⟩ := spec_sp hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   have hD := dlen_of hs hhH
   let e0 := ep s 0 0 0 (fun _ => True) 0 0 0 (fun _ => True) wg.g
   have ok := (in_of_pre (hai := 0) (hac := 0) (had := 0) (TH := fun _ => True) (ai := 0) (au := 0) (af := 0)
@@ -268,7 +268,7 @@ theorem code_ok (hok : Sg.OK vs gs) (c : Ver.PublicImpl) {s : State} (hs : (vspe
   have he := entered_state hok hs hw hwg hhH hh (s' := s) fun _ _ => rfl
   have hin := he.1.1
   obtain ⟨hsp0, hfit4⟩ := spec_sp hs
-  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega
+  have hsp : 16 + frameBytes ≤ (s.gpr .esp).toNat := by simp only [stackBytes, frameBytes] at hsp0 ⊢; omega_using [hsp0]
   have hb := (bodyw_vq hok c s s hw hwg).1 _ _ he
   have hD := dlen_of hs hhH
   refine WP.mono (wrap_ok (F := frameBytes) (by decide) (body_noSp (Sg.fnsSp vs gs) (Sg.hall_of hok) c) hsp hfit4

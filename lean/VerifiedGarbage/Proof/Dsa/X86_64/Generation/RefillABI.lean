@@ -119,7 +119,7 @@ theorem low_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
   have hl := h.stackLower
   simp only [low, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := (s.gpr .rsp).isLt
-  omega
+  omega_using [hl]
 
 theorem refillBase_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
     (refillBase s).toNat = (s.gpr .rsp).toNat - 376 := by
@@ -127,7 +127,7 @@ theorem refillBase_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
   have hb := low_toNat h
   have := (s.gpr .rsp).isLt
   simp only [refillBase, off, BitVec.toNat_add, BitVec.toNat_ofNat, hb, refillStack, Nat.reducePow, Nat.reduceMod]
-  omega
+  omega_using [hl]
 
 theorem low_sub {d n : Nat} (s : State) (h : d + n ≤ refillStack) :
     Region.Sub ⟨off (low s) d, n⟩ (below (s.gpr .rsp) refillStack) :=
@@ -167,7 +167,7 @@ theorem RefillABI.scratchSize {pBytes : Nat} {s : State} (h : RefillABI pBytes s
   have hl := VG.Proof.Dsa.Generation.generation_layout_fits h.lengths
   have hs := h.scratchLength
   rw [h.width] at hs
-  omega
+  omega_using [hl, hs]
 
 theorem RefillABI.arena_sub {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
     Region.Sub ⟨s.gpr .r9, VG.Impl.Dsa.Generation.Layout.usedBytes pBytes⟩ (inScr s) := by
@@ -179,11 +179,11 @@ def refillGeometry {pBytes : Nat} {s : State} (h : RefillABI pBytes s) : Generat
   pLen := pBytes
   qLen := Spec.Dsa.generationQLen pBytes
   lengths := h.lengths
-  arenaBound := by have hb := h.scrBound; have hn := h.scratchSize; omega
+  arenaBound := by have hb := h.scrBound; have hn := h.scratchSize; omega_using [hb, hn]
   frameBound := by
     rw [refillBase_toNat h]; have hb := (s.gpr .rsp).isLt
-    unfold VG.Impl.RsaOaep.X86_64.frameBytes; omega
-  stackSize := by rw [refillBase_toNat h]; have hl : 568 ≤ (s.gpr .rsp).toNat := h.stackLower; omega
+    unfold VG.Impl.RsaOaep.X86_64.frameBytes; omega_using []
+  stackSize := by rw [refillBase_toNat h]; have hl : 568 ≤ (s.gpr .rsp).toNat := h.stackLower; omega_using [hl]
   frameArena := (h.stack_disjoint (d := 192) (n := 296) (by decide) (by simp)).sub_right h.arena_sub
   stackArena := by
     rw [refillBase_below]

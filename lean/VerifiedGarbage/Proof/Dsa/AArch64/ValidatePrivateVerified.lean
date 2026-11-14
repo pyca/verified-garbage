@@ -47,7 +47,7 @@ theorem PrivateABI.used {s : State} (h : PrivateABI s) : usedBytes ≤ (s.gpr .x
   unfold Spec.Dsa.lengthsValid at hl
   unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
-  omega
+  omega_using [hl, hs]
 
 theorem PrivateABI.pre {s : State} (h : PrivateABI s) : PrivatePre h.input s := by
   have hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8) := Scr.of_mem (by rw [h.wr]; simp) h.scratchBound
@@ -87,13 +87,13 @@ theorem privatePublicRelated {s₁ s₂ : State} (h₁ : PrivateABI s₁) (h₂ 
     rw [← hp, ← hq] at hb'
     exact hb'
   have hpb : h₁.input.components.p = h₂.input.components.p := by
-    have he := prefix_component_eq (offset := 0) (len := h₁.input.pLen) hpub (by omega)
+    have he := prefix_component_eq (offset := 0) (len := h₁.input.pLen) hpub (by omega_using [])
     simp only [List.drop_zero] at he
     change h₁.input.key.take h₁.input.pLen = h₂.input.key.take h₂.input.pLen
     rw [← hp]
     exact he
   have hqb : h₁.input.components.q = h₂.input.components.q := by
-    have he := prefix_component_eq (offset := h₁.input.pLen) (len := h₁.input.qLen) hpub (by omega)
+    have he := prefix_component_eq (offset := h₁.input.pLen) (len := h₁.input.qLen) hpub (by omega_using [])
     change (h₁.input.key.drop h₁.input.pLen).take h₁.input.qLen =
       (h₂.input.key.drop h₂.input.pLen).take h₂.input.qLen
     rw [← hp, ← hq]

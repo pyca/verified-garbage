@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Camellia.Layout
 public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitsliced Camellia on 32-bit planes: words, bytes and blocks
@@ -25,7 +26,7 @@ theorem readW32_bit (m : Mem) (a : Addr) {i j : Nat} (hi : i < 4) (hj : j < 8) :
     (m.readW a 32).getLsbD (8 * i + j) = (m (a + BitVec.ofNat 64 i)).getLsbD j := by
   rw [← Mem.extractLsb'_read m a (n := 4) hi, BitVec.getLsbD_extractLsb']
   simp only [Mem.readW, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and]
-  simp only [show 8 * i + j < 32 by omega, decide_true, Bool.true_and]
+  simp only [show 8 * i + j < 32 by omega_using [hi, hj], decide_true, Bool.true_and]
 
 /-- The left half of a block. -/
 abbrev hiOf (blk : Block) : BitVec 64 := (decodeBlock blk >>> 64).setWidth 64
@@ -47,14 +48,14 @@ theorem halves_of_words {W Q : Nat → BitVec 32} {B : Nat → Block}
     HalfRel Q (fun b => hiOf (B b)) ∧ HalfRel (fun k => Q (16 + k)) (fun b => loOf (B b)) := by
   constructor
   · intro b hb c hc j hj
-    rw [hT (c / 4) (by omega) j hj _ (by omega), show (8 * (c % 4) + b) % 8 = b by omega,
-      show (8 * (c % 4) + b) / 8 = c % 4 by omega, hW b hb c (by omega) j hj, byteOf_hi _ hc]
+    rw [hT (c / 4) (by omega_using [hc]) j hj _ (by omega_using [hb]), show (8 * (c % 4) + b) % 8 = b by omega_using [hb],
+      show (8 * (c % 4) + b) / 8 = c % 4 by omega_using [hb], hW b hb c (by omega_using [hc]) j hj, byteOf_hi _ hc]
   · intro b hb c hc j hj
-    have := hT (2 + c / 4) (by omega) j hj (8 * (c % 4) + b) (by omega)
-    rw [show 8 * (2 + c / 4) + j = 16 + (8 * (c / 4) + j) by omega] at this
-    rw [this, show (8 * (c % 4) + b) % 8 = b by omega,
-      show (8 * (c % 4) + b) / 8 = c % 4 by omega, show 2 + c / 4 = (8 + c) / 4 by omega,
-      show c % 4 = (8 + c) % 4 by omega, hW b hb (8 + c) (by omega) j hj, byteOf_lo _ hc]
+    have := hT (2 + c / 4) (by omega_using [hc]) j hj (8 * (c % 4) + b) (by omega_using [hb])
+    rw [show 8 * (2 + c / 4) + j = 16 + (8 * (c / 4) + j) by omega_using []] at this
+    rw [this, show (8 * (c % 4) + b) % 8 = b by omega_using [hb],
+      show (8 * (c % 4) + b) / 8 = c % 4 by omega_using [hb], show 2 + c / 4 = (8 + c) / 4 by omega_using [],
+      show c % 4 = (8 + c) % 4 by omega_using [], hW b hb (8 + c) (by omega_using [hc]) j hj, byteOf_lo _ hc]
 
 /-- The transpose back: from the planes of the left half `hi` (the first
 sixteen of `Q`) and the right half `lo` (the next sixteen), the words of
@@ -65,15 +66,15 @@ theorem block_of_planes {W Q : Nat → BitVec 32} {hi lo : Nat → BitVec 64}
     (hH : HalfRel Q hi) (hL : HalfRel (fun k => Q (16 + k)) lo) :
     BlockWords W (fun b => encodeBlock (hi b ++ lo b)) := by
   intro b hb c hc j hj
-  rw [hF b hb (c / 4) (by omega) (c % 4) (by omega) j hj, encodeBlock_getElem _ _ hc]
+  rw [hF b hb (c / 4) (by omega_using [hc]) (c % 4) (by omega_using []) j hj, encodeBlock_getElem _ _ hc]
   split
   · rename_i h
     exact hH b hb c h j hj
   · rename_i h
-    have := hL b hb (c - 8) (by omega) j hj
+    have := hL b hb (c - 8) (by omega_using [hc]) j hj
     dsimp only at this
-    rw [show 16 + (8 * ((c - 8) / 4) + j) = 8 * (c / 4) + j by omega,
-      show (c - 8) % 4 = c % 4 by omega] at this
+    rw [show 16 + (8 * ((c - 8) / 4) + j) = 8 * (c / 4) + j by omega_using [h],
+      show (c - 8) % 4 = c % 4 by omega_using [h]] at this
     exact this
 
 end VG.Proof.Camellia.W32

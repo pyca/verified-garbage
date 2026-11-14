@@ -74,7 +74,7 @@ theorem kzero_ok (s : State) (hw : Covers [⟨pa s (sc 0), 200⟩] s.wr) :
   have hbx : s1.gpr .rbx = s.gpr .rbx := k1.gpr (by decide)
   refine WP.mono (zeroSt_ok .rbx 0 s1 hax fun i hi => ?_) fun s2 ⟨hz, hf, k2⟩ => ?_
   · rw [k1.2.2, hbx]
-    exact hw _ _ ⟨_, List.mem_singleton_self _, contains_offset' (by omega) (by omega)⟩
+    exact hw _ _ ⟨_, List.mem_singleton_self _, contains_offset' (by omega_using [hi]) (by omega_using [])⟩
   · rw [hbx] at hz hf
     exact ⟨postB_of_keep (k1.trans k2) (by decide) (by rw [← hm]; exact hf), (k1.trans k2).gpr (by decide), hz⟩
 
@@ -104,14 +104,14 @@ theorem kabs_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) (h
       simp only [kChk, Bool.and_eq_true] at hk; exact hk.1.1.1.2
     have c1 : inB (rbs ++ wbs) (sc 200) 640 = true := by
       simp only [kChk, Bool.and_eq_true] at hk; exact hk.1.1.2
-    exact ⟨⟨ptr_ok hS c0, by decide⟩, ⟨show 136 < 2 ^ 31 by decide, by decide⟩, ⟨show pos < 2 ^ 31 by omega, by decide⟩,
+    exact ⟨⟨ptr_ok hS c0, by decide⟩, ⟨show 136 < 2 ^ 31 by decide, by decide⟩, ⟨show pos < 2 ^ 31 by omega_using [hpos], by decide⟩,
       ⟨ptr_ok hS p3, by decide⟩, ⟨hlen, by decide⟩, ⟨ptr_ok hS c1, by decide⟩⟩
   refine WP.seq (WP.mono (glue_ok' ha (by simp only [List.map_cons, List.map_nil]; decide) s)
     fun s1 (h1 : Args (kabsArgs src len 136 pos) s s1) => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := h1.rsp
   have kk : ∀ {R : Region}, (below (s.gpr .rsp) 32).Disjoint R → (below (s1.gpr .rsp) 16).Disjoint R :=
-    fun h => by rw [hsp]; exact h.sub_left (below_sub (by omega) (by omega))
-  refine absorb_call ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, hpos, by omega, d1, (L.disj p1),
+    fun h => by rw [hsp]; exact h.sub_left (below_sub (by omega_using []) (by omega_using []))
+  refine absorb_call ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, hpos, by omega_using [hlen], d1, (L.disj p1),
     (L.disj p2), kk k1, kk (L.stkD p3), kk k2⟩
     (by rw [h1.2.2.1, h1.2.2.2]; exact Covers.append_left (L.cR p3) (Covers.right (Covers.cons w1 w2)))
     (by rw [h1.2.2.2]; exact Covers.cons w1 w2) (fun s' hrd hwr hcs hf hR _ => ?_)
@@ -124,7 +124,7 @@ theorem kabs_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) (h
     fun msg hm hpo => ?_⟩
   · have f1 : Frame ([⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩] ++ [below (s.gpr .rsp) 16]) s.mem s'.mem := by
       rw [← h1.1.2, ← hsp]; exact hf
-    exact Frame.below_mono (a := 16) (b := 32) f1 (by omega) (by omega)
+    exact Frame.below_mono (a := 16) (b := 32) f1 (by omega_using []) (by omega_using [])
   · rw [← h1.1.2] at hm ⊢
     exact hR msg hm hpo
 
@@ -136,7 +136,7 @@ theorem postB_call {s s1 s' : State} {as : List (Reg × Arg)} (h1 : Args as s s1
     (hf : Frame (W ++ [below (s.gpr .rsp) 16]) s.mem s'.mem) : PostB s s' W := by
   have hsp : s1.gpr .rsp = s.gpr .rsp := h1.rsp
   refine ⟨hrd.trans h1.2.2.1, hwr.trans h1.2.2.2, fun r hr => ?_, by rw [hcs _ (by decide), hsp],
-    Frame.below_mono (a := 16) (b := 32) hf (by omega) (by omega)⟩
+    Frame.below_mono (a := 16) (b := 32) hf (by omega_using []) (by omega_using [])⟩
   simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
   rw [hcs r (by rcases hr with rfl | rfl | rfl | rfl <;> decide),
     h1.2.gpr (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]
@@ -154,13 +154,13 @@ theorem kpad_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) (h
     simp only [kChk, Bool.and_eq_true] at hk; exact hk.1.1.2
   have ha : ∀ a ∈ kpadArgs 136 pos 0x1f, a.2.Ok ∧ a.1 ∈ argRegs := by
     simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-    exact ⟨⟨ptr_ok hS c0, by decide⟩, ⟨show 136 < 2 ^ 31 by decide, by decide⟩, ⟨show pos < 2 ^ 31 by omega, by decide⟩,
+    exact ⟨⟨ptr_ok hS c0, by decide⟩, ⟨show 136 < 2 ^ 31 by decide, by decide⟩, ⟨show pos < 2 ^ 31 by omega_using [hpos], by decide⟩,
       ⟨show 0x1f < 2 ^ 31 by decide, by decide⟩, ⟨ptr_ok hS c1, by decide⟩⟩
   refine WP.seq (WP.mono (glue_ok' ha (by simp only [List.map_cons, List.map_nil]; decide) s)
     fun s1 (h1 : Args (kpadArgs 136 pos 0x1f) s s1) => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := h1.rsp
   have kk : ∀ {R : Region}, (below (s.gpr .rsp) 32).Disjoint R → (below (s1.gpr .rsp) 16).Disjoint R :=
-    fun h => by rw [hsp]; exact h.sub_left (below_sub (by omega) (by omega))
+    fun h => by rw [hsp]; exact h.sub_left (below_sub (by omega_using []) (by omega_using []))
   refine pad_call ⟨h1.r0, h1.r1, h1.r2, h1.r4, by decide, hpos, d1, kk k1, kk k2⟩
     (by rw [h1.2.2.1, h1.2.2.2]; exact Covers.append_left Covers.nil (Covers.right (Covers.cons w1 w2)))
     (by rw [h1.2.2.2]; exact Covers.cons w1 w2) (fun s' hrd hwr hcs hf hR => ⟨postB_call h1 hrd hwr hcs ?_, r15_call h1 hcs, ?_⟩)
@@ -197,8 +197,8 @@ theorem ksqz_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) (h
     fun s1 (h1 : Args (ksqzArgs 136 out len) s s1) => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := h1.rsp
   have kk : ∀ {R : Region}, (below (s.gpr .rsp) 32).Disjoint R → (below (s1.gpr .rsp) 16).Disjoint R :=
-    fun h => by rw [hsp]; exact h.sub_left (below_sub (by omega) (by omega))
-  refine squeeze_call ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, by decide, by omega, (L.disj o1).symm, d1,
+    fun h => by rw [hsp]; exact h.sub_left (below_sub (by omega_using []) (by omega_using []))
+  refine squeeze_call ⟨h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.r5, by decide, by decide, by omega_using [hlen], (L.disj o1).symm, d1,
     L.disj o2, kk k1, kk (L.stkD o3), kk k2⟩
     (by rw [h1.2.2.1, h1.2.2.2]; exact Covers.append_left Covers.nil (Covers.right (Covers.cons w1 (Covers.cons (L.cW o4) w2))))
     (by rw [h1.2.2.2]; exact Covers.cons w1 (Covers.cons (L.cW o4) w2)) (fun s' hrd hwr hcs hf hR => ⟨postB_call h1 hrd hwr hcs ?_, r15_call h1 hcs, ?_⟩)

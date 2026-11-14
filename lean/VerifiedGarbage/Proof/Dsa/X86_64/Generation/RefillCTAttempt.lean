@@ -54,12 +54,12 @@ theorem domainFinishBefore_frame {pLen qLen : Nat} {d : DomainFinishPublic} {s t
     (h : DomainFinishBefore pLen qLen d s) {W : Nat → BitVec 64} (hm : GenerationMemory d.context W t)
     (hf : Frame [⟨d.context.geo.F, frameBytes⟩] s.mem t.mem) : DomainFinishBefore pLen qLen d t := by
   obtain ⟨_, bp, bq, bg, hp, hq⟩ := h
-  have pn : d.context.geo.pLen ≤ 384 := by rcases d.context.geo.width with hh | hh | hh <;> omega
-  have qn : d.context.geo.qLen ≤ 32 := by rcases d.context.geo.qWidth with hh | hh <;> omega
+  have pn : d.context.geo.pLen ≤ 384 := by rcases d.context.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : d.context.geo.qLen ≤ 32 := by rcases d.context.geo.qWidth with hh | hh <;> omega_using [hh]
   refine ⟨⟨W, hm⟩, ?_, ?_, ?_, hp, hq⟩
-  · rw [ctFrame_bytes hf (d.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega))]; exact bp
-  · rw [ctFrame_bytes hf (d.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega))]; exact bq
-  · rw [ctFrame_bytes hf (d.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega))]; exact bg
+  · rw [ctFrame_bytes hf (d.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn]))]; exact bp
+  · rw [ctFrame_bytes hf (d.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [qn]))]; exact bq
+  · rw [ctFrame_bytes hf (d.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn]))]; exact bg
 
 theorem seedGeneratorAfter_pins (pLen qLen : Nat) : Pins (SeedGeneratorAfter pLen qLen) [.rsp] := by
   intro g s t ⟨⟨_, hs, _⟩, _⟩ ⟨⟨_, ht, _⟩, _⟩ r hr
@@ -117,7 +117,7 @@ theorem shortLength_ready {pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State
   obtain ⟨hg, hs⟩ := h
   obtain ⟨⟨W, hm, _⟩, _⟩ := id hg
   obtain ⟨V, R⟩ := hm.rep
-  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega
+  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega_using [hh]
   have h12 : W 12 = BitVec.ofNat 64 g.seed.context.hs.bytes.length :=
     (hm.slots 12 (by simp [generationSlots])).trans g.seed.context.hLengthSlot
   have ne : g.status ≠ 1 := by

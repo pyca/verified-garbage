@@ -130,7 +130,7 @@ theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
       (by rw [o.rd, b.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₂ o₂ e₂ => wp_nil fun sy₂ => ⟨t, h, (o.trans o₂).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, sy₂.trans sy, by
-          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) hd0 (by omega))
+          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) hd0 (by omega_using [hk]))
 
 include X A in
 /-- The call of the table's function `k`, among `ts`, which reaches `n` in
@@ -143,7 +143,7 @@ theorem tcall_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
     (hcall : RelCT isa (Two fun ac u => ∃ t, Φ ac t ∧ Only [.r12] t u ∧ u.syms = t.syms) (.call n c)
       fun _ _ => True) :
     RelCT isa (Two Φ) (tcall j k ts) fun _ _ => True := by
-  refine RelCT.seq (tword_two X A hb (d := .r12) (.inr (.inl rfl)) (k := k) (by omega) (v := fun a => a.syms n)
+  refine RelCT.seq (tword_two X A hb (d := .r12) (.inr (.inl rfl)) (k := k) (by omega_using [hk]) (v := fun a => a.syms n)
     fun P p => (hn P p).2.1.trans (hn P p).2.2) ?_
   cases ts with
   | nil =>

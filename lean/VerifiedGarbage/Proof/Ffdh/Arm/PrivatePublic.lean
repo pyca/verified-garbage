@@ -40,7 +40,7 @@ theorem privatePublic_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : Li
   unfold VG.Impl.Ffdh.Arm.Domain.CheckPrivate.publicCheck
   rw [WP.seq_iff]
   refine WP.mono (importAt_ok s 1 36 32 h stable h36 h32 ready (by decide) (by decide)
-    value (by rw [length]; have := p.minLength; omega) (by rw [length]; exact p.width.2.2.2.1)
+    value (by rw [length]; have := p.minLength; omega_using [this]) (by rw [length]; exact p.width.2.2.2.1)
     (by change BitVec.ofNat 32 p.k = _; rw [length])) ?_
   rintro v ⟨contextV, readyV, y, keepsV, frameV, restV⟩
   have bound : arrAt p.w 8 ≤ 8 * p.len := readyV.width ▸ readyV.layout.2.2.1

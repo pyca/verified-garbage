@@ -27,6 +27,6 @@ theorem save_ok {s : State} {base : Addr} {size n src dst : Nat} (scratch : Scr 
   refine WP.mono (LowWord.decrement_ok (scratch.of_keeps Ka (by decide)) positive dstFit low)
     fun t ⟨V, Ot, Kt⟩ => ?_
   rw [value] at V
-  exact ⟨V, Oa.trans (Ot.mono (by omega) (by omega)), Ka.widen Kt⟩
+  exact ⟨V, Oa.trans (Ot.mono (by omega_using []) (by omega_using [positive])), Ka.widen Kt⟩
 
 end VG.Proof.RsaKeyGen.X86.CandidateSave

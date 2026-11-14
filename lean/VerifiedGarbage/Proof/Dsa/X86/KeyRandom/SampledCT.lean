@@ -37,7 +37,7 @@ theorem deriveArgs_step {s t : State} (A : KeyABI s) (h : Ready s t) {k : Nat}
   · apply callResult_eq A hu
     have ou := argsMem_outs s t.mem (t.gpr .esp)
     rw [← mu] at ou
-    rw [outs_frame_bytes ou (by decide) (by unfold oNonce; omega)]
+    rw [outs_frame_bytes ou (by decide) (by unfold oNonce; omega_using [hql])]
     exact hn
   · have ou := argsMem_outs s t.mem (t.gpr .esp)
     rw [←mu] at ou
@@ -51,7 +51,7 @@ theorem sampleCmp {s t : State} (A : KeyABI s) (O : SampleOut s 0 (draw s) t)
   have h := O.smp.choose_spec.ready
   have hl := sampleStatus_le (draw s)
   refine wp_cmpi fun u fu _ zu => WP.block_nil ⟨O.mem A (h.fupd fu) fu.mem, ?_⟩
-  rw [zu, ax, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)]
+  rw [zu, ax, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega_using [hl]) (by decide)]
 
 theorem scalar_of_status {S : Spec.Dsa.Random.Sample} (h : VG.Proof.Dsa.Random.sampleStatus S = 1) :
     ∃ k, S.scalar = some k := by

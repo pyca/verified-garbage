@@ -40,8 +40,8 @@ theorem word_step {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig bas
     (h : WordInv base P S nk i s) (hprev : Prev base P nk i s) (hi : i < 4*(nk+7)) :
     WP isa Impl.Aes.PPC64LE.Crypto.wordBody s
       (fun t => WordInv base P S nk (i+1) t ∧ Prev base P nk (i+1) t) := by
-  have h3 : nk = 4 ∨ nk = 6 ∨ nk = 8 := by have := hc.length; omega
-  have hn : 0 < nk ∧ nk ≤ 8 := by omega
+  have h3 : nk = 4 ∨ nk = 6 ∨ nk = 8 := by have := hc.length; omega_using [this]
+  have hn : 0 < nk ∧ nk ≤ 8 := by omega_using [h3]
   have hni := h.bound.1
   rw [Impl.Aes.PPC64LE.Crypto.wordBody]
   refine WP.seq (WP.mono (tempWord_ok s h3 hni hi h.index h.keylen h.constant) fun v ⟨htemp, hrc, hf⟩ => ?_)
@@ -50,19 +50,19 @@ theorem word_step {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig bas
   have hrd : InRegions (v.rd ++ v.wr) (v.gpr .r10) 4 := by
     rw [hbefore.keep.2.1, hbefore.keep.2.2, hbefore.keep.gpr (by decide), h.ptr10, h.keep.2.1, h.keep.2.2]
     exact ⟨⟨S, 240⟩, List.mem_append_right _ hc.schedule,
-      Offset.contains_base _ (d := 4*(i-nk)) (n := 4) (k := 240) (by omega) (by omega)⟩
+      Offset.contains_base _ (d := 4*(i-nk)) (n := 4) (k := 240) (by omega_using [hi, h3]) (by omega_using [hi, h3])⟩
   have haddr : v.gpr .r11 + 4#64 = S + BitVec.ofNat 64 (4*i) := by
     rw [hbefore.keep.gpr (by decide), h.ptr11]
     change S + BitVec.ofNat 64 (4*(i-1)) + BitVec.ofNat 64 4 = _
     rw [Offset.add_add]
-    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega)
+    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega_using [h3, hni])
   have hwr : InRegions v.wr (v.gpr .r11 + 4#64) 4 := by
     rw [haddr, hbefore.keep.2.2, h.keep.2.2]
     exact ⟨⟨S, 240⟩, hc.schedule,
-      Offset.contains_base _ (d := 4*i) (n := 4) (k := 240) (by omega) (by omega)⟩
+      Offset.contains_base _ (d := 4*i) (n := 4) (k := 240) (by omega_using [hi, h3]) (by omega_using [hi, h3])⟩
   refine WP.seq (WP.mono (wordStore_ok v hrd hwr) fun t ht => ?_)
   have hvalue : (v.gpr .r9).setWidth 32 ^^^ v.mem.readW (v.gpr .r10) 32 = W base.mem P nk i := by
-    rw [htemp, hbefore.mem, hbefore.keep.gpr (by decide), h.ptr10, h.good _ (by omega), BitVec.xor_comm]
+    rw [htemp, hbefore.mem, hbefore.keep.gpr (by decide), h.ptr10, h.good _ (by omega_using [h3, hni]), BitVec.xor_comm]
     exact (W_ge hn.1 hni).symm
   have hm : t.mem = s.mem.writeW (S + BitVec.ofNat 64 (4*i)) (W base.mem P nk i) := by
     rw [ht.mem, haddr, hvalue, hbefore.mem]
@@ -70,31 +70,31 @@ theorem word_step {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig bas
     rw [ht.index, hbefore.keep.gpr (by decide), h.index]
     change BitVec.ofNat 64 (4*(i%nk)) + BitVec.ofNat 64 4 = _
     rw [← BitVec.ofNat_add]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
   have htest : t.gpr .r0 = BitVec.ofNat 64 (4*(i%nk+1)) - BitVec.ofNat 64 (4*nk) := by
     rw [ht.test, hbefore.keep.gpr (by decide), hbefore.keep.gpr (by decide), h.index, h.keylen]
     change BitVec.ofNat 64 (4*(i%nk)) + BitVec.ofNat 64 4 - BitVec.ofNat 64 (4*nk) = _
     rw [← BitVec.ofNat_add]
-    exact congrArg (fun j => BitVec.ofNat 64 j - BitVec.ofNat 64 (4*nk)) (by omega)
+    exact congrArg (fun j => BitVec.ofNat 64 j - BitVec.ofNat 64 (4*nk)) (by omega_using [])
   have hleft : t.gpr .r4 = BitVec.ofNat 64 (4*(nk+7)-i) :=
     (ht.keep.gpr (by decide)).trans ((hbefore.keep.gpr (by decide)).trans h.left)
   refine WP.mono (wordEnd_ok t h3 hi htest hidx hleft) fun z ⟨h12, h4, hz⟩ => ?_
   have hframes : Frame [⟨S, 240⟩] base.mem t.mem := by
     rw [hm]
     exact h.frame.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (d := 4*i) (n := 4) (k := 240) (by omega) (by omega))
-  refine ⟨⟨⟨by omega, by omega⟩, (((h.keep.trans hbefore.keep).trans ht.keep).trans hz.keep).mono
+      (Offset.contains_base _ (d := 4*i) (n := 4) (k := 240) (by omega_using [hi, h3]) (by omega_using [hi, h3]))
+  refine ⟨⟨⟨by omega_using [hni], by omega_using [hi]⟩, (((h.keep.trans hbefore.keep).trans ht.keep).trans hz.keep).mono
     (by simp [keyGprs]), ?_, ?_, h12, ?_, h4, ?_, ?_, ?_⟩, ?_⟩
   · rw [hz.keep.gpr (by decide), ht.ptr10, hbefore.keep.gpr (by decide), h.ptr10]
     change S + BitVec.ofNat 64 (4*(i-nk)) + BitVec.ofNat 64 4 = _
     rw [Offset.add_add]
-    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega)
+    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega_using [hni])
   · rw [hz.keep.gpr (by decide), ht.ptr11, haddr]
-    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega)
+    exact congrArg (fun j => S + BitVec.ofNat 64 j) (by omega_using [])
   · rw [hz.keep.gpr (by decide), ht.keep.gpr (by decide), hbefore.keep.gpr (by decide), h.keylen]
   · rw [hz.keep.gpr (by decide), ht.keep.gpr (by decide), hrc, Nat.add_sub_cancel]
   · rw [hz.mem, hm]
-    exact good_store h.good rfl (by omega)
+    exact good_store h.good rfl (by omega_using [hi, h3])
   · rw [hz.mem]; exact hframes
   · change (z.gpr .r9).setWidth 32 = W base.mem P nk (i+1-1)
     rw [hz.keep.gpr (by decide), ht.word, Nat.add_sub_cancel]
@@ -105,11 +105,11 @@ theorem prev_load_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig ba
     (h : WordInv base P S nk nk s) :
     WP isa (.block [.load .w .r9 .r11 0]) s
       (fun t => WordInv base P S nk nk t ∧ Prev base P nk nk t) := by
-  have hn : 0 < nk ∧ nk ≤ 8 := by have := hc.length; omega
+  have hn : 0 < nk ∧ nk ≤ 8 := by have := hc.length; omega_using [this]
   have hread : InRegions (s.rd ++ s.wr) (s.gpr .r11) 4 := by
     rw [h.ptr11, h.keep.2.1, h.keep.2.2]
     exact ⟨⟨S, 240⟩, List.mem_append_right _ hc.schedule,
-      Offset.contains_base _ (d := 4*(nk-1)) (n := 4) (k := 240) (by omega) (by omega)⟩
+      Offset.contains_base _ (d := 4*(nk-1)) (n := 4) (k := 240) (by omega_using [hn]) (by omega_using [hn])⟩
   refine WP.mono (loadWord_ok .r9 .r11 s (by decide) hread) fun u ⟨hv, he⟩ => ⟨?_, ?_⟩
   · exact ⟨h.bound, (h.keep.trans he.keep).mono (by simp [keyGprs]),
       (he.keep.gpr (by decide)).trans h.ptr10, (he.keep.gpr (by decide)).trans h.ptr11,
@@ -118,31 +118,31 @@ theorem prev_load_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig ba
       by rw [he.mem]; exact h.good, by rw [he.mem]; exact h.frame⟩
   · change (u.gpr .r9).setWidth 32 = W base.mem P nk (nk-1)
     rw [hv, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq, h.ptr11]
-    exact h.good _ (by omega)
+    exact h.good _ (by omega_using [hn])
 
 theorem word_loop_ok {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig base P S (4*nk))
     (h : WordInv base P S nk i s) (hprev : Prev base P nk i s) (hi : i < 4*(nk+7)) :
     WP isa (.loop Impl.Aes.PPC64LE.Crypto.wordBody (.nonzero .d .r4)) s (WordInv base P S nk (4*(nk+7))) := by
-  have hnk : nk ≤ 8 := by have := hc.length; omega
+  have hnk : nk ≤ 8 := by have := hc.length; omega_using [this]
   have step : ∀ j t, j+1 ≤ 4*(nk+7) → (WordInv base P S nk j t ∧ Prev base P nk j t) →
       WP isa Impl.Aes.PPC64LE.Crypto.wordBody t (fun u => WordInv base P S nk (j+1) u ∧ Prev base P nk (j+1) u) :=
-    fun _ _ hj ht => word_step hc ht.1 ht.2 (by omega)
+    fun _ _ hj ht => word_step hc ht.1 ht.2 (by omega_using [hj])
   have test : ∀ j t, j ≤ 4*(nk+7) → (WordInv base P S nk j t ∧ Prev base P nk j t) →
       (4*(nk+7)-j < 1 → eval (.nonzero .d .r4) t = some false) ∧
       (1 ≤ 4*(nk+7)-j → eval (.nonzero .d .r4) t = some true) := by
     intro j t hj ht
-    have he := eval_nonzero_ofNat' t .r4 (by omega) ht.1.left
+    have he := eval_nonzero_ofNat' t .r4 (by omega_using [hnk]) ht.1.left
     change eval (.nonzero .d .r4) t = some (decide (4*(nk+7)-j ≠ 0)) at he
     constructor
     · intro hl
-      rw [he, show 4*(nk+7)-j = 0 by omega]
+      rw [he, show 4*(nk+7)-j = 0 by omega_using [hl]]
       rfl
     · intro hl
       rw [he]
-      simp only [ne_eq, show ¬4*(nk+7)-j = 0 by omega, not_false_eq_true, decide_true]
-  refine WP.mono (WP.chunk_loop (by decide) (by omega) ⟨h, hprev⟩ step test) ?_
+      simp only [ne_eq, show ¬4*(nk+7)-j = 0 by omega_using [hl], not_false_eq_true, decide_true]
+  refine WP.mono (WP.chunk_loop (by decide) (by omega_using [hi]) ⟨h, hprev⟩ step test) ?_
   rintro t ⟨j, hj, he, ht⟩
-  have hje : j = 4*(nk+7) := by omega
+  have hje : j = 4*(nk+7) := by omega_using [hj, he]
   exact hje ▸ ht.1
 
 end VG.Proof.Aes.PPC64LE.Crypto

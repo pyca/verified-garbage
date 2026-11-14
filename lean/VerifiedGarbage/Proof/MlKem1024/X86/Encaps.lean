@@ -55,7 +55,7 @@ theorem pre_of {s₀ : State} (h : (Proof.MlKem.Scrubbed.encaps1024BodyContract 
     simp only [below]; rw [Taint.sub_setWidth h1]
   rw [hs] at h25 h26 h27 h28 h29 h30
   have c5 : ∀ i, i < (Y L1024).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
-    simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi; omega
+    simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi; omega_using [hi]
   refine ⟨h1, by decide, by simp only [Y, Lay.n, List.length_cons, List.length_nil]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, h30, ?_, by decide⟩
   · intro i hi hw
@@ -96,7 +96,7 @@ theorem pub_of {s₀ s₀' : State} (h : (Proof.MlKem.Scrubbed.encaps1024BodyCon
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · simp only [Y, Lay.n, List.length_cons, List.length_nil] at hi
-    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆, e₇]
   · have e := VG.Proof.MlKem.map_toNat_inj e₂
     show ekRho L1024.p (ek L1024 s₀) = ekRho L1024.p (ek L1024 s₀')
@@ -153,7 +153,7 @@ theorem pre_ofH {s₀ : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContrac
     simp only [below]; rw [Taint.sub_setWidth h1]
   rw [hs] at h30 h31 h32 h33 h34 h35 h36
   have c6 : ∀ i, i < (YH L1024).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := fun i hi => by
-    simp only [YH, Lay.n, List.length_cons, List.length_nil] at hi; omega
+    simp only [YH, Lay.n, List.length_cons, List.length_nil] at hi; omega_using [hi]
   refine ⟨⟨h1, by decide, by simp only [YH, Lay.n, List.length_cons, List.length_nil]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, h36, ?_, by decide⟩, by rw [hv_eq, ek_eq, addr0, addr0]; exact h43⟩
   · intro i hi hw
@@ -199,7 +199,7 @@ theorem pub_ofH {s₀ s₀' : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyC
   obtain ⟨e₁, e₂, e₃, e₄, e₅, e₆, e₇, e₈⟩ := h
   refine ⟨e₁, fun i hi => ?_, ?_⟩
   · simp only [YH, Lay.n, List.length_cons, List.length_nil] at hi
-    obtain rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega
+    obtain rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega_using [hi]
     exacts [e₃, e₄, e₅, e₆, e₇, e₈]
   · have e := map_toNat_inj e₂
     show ekRho L1024.p (ek L1024 s₀) = ekRho L1024.p (ek L1024 s₀')

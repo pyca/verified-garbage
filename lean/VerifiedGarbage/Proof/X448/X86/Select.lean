@@ -30,9 +30,9 @@ theorem selectStep_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi 
         (if sw then word s.mem base (TMP + 4 * i) else word s.mem base (X2 + 4 * i)) ∧
       Keeps [.eax, .edx] s t := by
   unfold selectStep
-  refine load_ok hs (by simp only [X2, slot]; omega) fun t ht => ?_
+  refine load_ok hs (by simp only [X2, slot]; omega_using [hi]) fun t ht => ?_
   have ts := hs.of_upd ht (by decide)
-  refine load_ok ts (by simp only [TMP]; omega) fun u hu => ?_
+  refine load_ok ts (by simp only [TMP]; omega_using [hi]) fun u hu => ?_
   have us := ts.of_upd hu (by decide)
   refine wp_alu (by simp [plain]) rfl fun v hv _ => ?_
   have vs := us.of_upd hv (by decide)
@@ -40,7 +40,7 @@ theorem selectStep_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi 
   have ws := vs.of_upd hw (by decide)
   refine wp_alu (by simp [plain]) rfl fun x hx _ => ?_
   have xs := ws.of_upd hx (by decide)
-  refine store_ok xs (by simp only [X2, slot]; omega) fun y hy => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok xs (by simp only [X2, slot]; omega_using [hi]) fun y hy => WP.block_nil ⟨?_, ?_⟩
   · rw [hy.mem, hx.mem, hw.mem, hv.mem, hu.mem, ht.mem, hx.gpr]
     change _ = s.mem.writeW _ _
     simp only [aluVal]
@@ -64,17 +64,17 @@ theorem select_ok {s : State} {base : Addr} (hs : Scr s base) {sw : Bool} (hc : 
     refine WP.mono (selectStep_ok (hs.of_keeps tk (by decide)) hn ((tk.1 _ (by decide)).trans hc))
       fun u ⟨um, uk⟩ => ?_
     have out : Outside base (X2 + 4 * n) 4 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by simp only [X2, slot]; omega)
-    refine ⟨?_, (tm.mono (by omega) (by omega)).trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by simp only [X2, slot]; omega_using [hn])
+    refine ⟨?_, (tm.mono (by omega_using []) (by omega_using [])).trans (out.mono (by omega_using []) (by omega_using [])), tk.trans uk⟩
     intro i hi
     change (word u.mem base (X2 + 4 * i)).toNat = _
-    rw [um, word_write t.mem base (by simp only [X2, slot]; omega) (by simp only [X2, slot]; omega)]
+    rw [um, word_write t.mem base (by simp only [X2, slot]; omega_using [hn]) (by simp only [X2, slot]; omega_using [hn, hi])]
     by_cases h : i = n
     · rw [ite_eq_left h, h,
-        tm.word (Or.inr (by simp only [X2, slot, TMP]; omega)) (by simp only [TMP]; omega),
-        tm.word (Or.inr (by omega)) (by simp only [X2, slot]; omega)]
+        tm.word (Or.inr (by simp only [X2, slot, TMP]; omega_using [])) (by simp only [TMP]; omega_using [hn]),
+        tm.word (Or.inr (by omega_using [])) (by simp only [X2, slot]; omega_using [hn])]
       cases sw <;> rfl
-    · rw [ite_eq_right h]; exact tf i (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
   exact wp_range_flatMap (M := isa) (N := 28) inv st 28 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

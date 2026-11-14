@@ -38,7 +38,7 @@ theorem init_end (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
     exact ⟨region, List.mem_append_right _ h, hc⟩
   have hw : InRegions s.wr (s.gpr .a2) 256 := by
     simpa only [BitVec.add_zero] using region_offset _ _ _ 0 256 (by decide) (by decide) hp
-  have hsep : Mem.Sep (s.gpr .a2) 256 (s.gpr .a7) 256 := fun x hx hy => hFc x hy (by omega)
+  have hsep : Mem.Sep (s.gpr .a2) 256 (s.gpr .a7) 256 := fun x hx hy => hFc x hy (by omega_using [hx])
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (copy256_ok s (by decide) (by decide) hr hw hsep) fun u ⟨uc, _, ug, _, uwr, _⟩ => ?_
   have u7 : u.gpr .a7 = s.gpr .a7 := ug _ (by decide)
@@ -59,11 +59,11 @@ theorem init_end (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
   rw [v7] at tf
   have hne (k : Nat) (hk : k < 256) (e : Nat) (he : 256 ≤ e) (he' : e < 258) :
       s.gpr .a2 + BitVec.ofNat 64 k ≠ s.gpr .a2 + BitVec.ofNat 64 e :=
-    Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+    Offset.add_ofNat_ne _ (by omega_using [hk]) (by omega_using [he']) (by omega_using [hk, he])
   have hout (k : Nat) (hk : k < 258) : ¬ (s.gpr .a2 + BitVec.ofNat 64 k - s.gpr .a7).toNat < 256 :=
-    fun h => hFc _ h (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hk)
+    fun h => hFc _ h (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hk])]; exact hk)
   refine ⟨fun k hk => ?_, ?_, ?_, (tk.gpr (by decide)).trans v0⟩
-  · rw [frame_byte tf (hout k (by omega)), vm, write_byte, ite_eq_right (hne k hk 257 (by decide) (by decide)),
+  · rw [frame_byte tf (hout k (by omega_using [hk])), vm, write_byte, ite_eq_right (hne k hk 257 (by decide) (by decide)),
       write_byte, ite_eq_right (hne k hk 256 (by decide) (by decide)), uc k hk]
   · rw [frame_byte tf (hout 256 (by decide)), vm, write_byte,
       ite_eq_right (Offset.add_ofNat_ne _ (by decide) (by decide) (by decide)), write_byte, ite_eq_left rfl]
@@ -169,12 +169,12 @@ theorem init_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toNa
     change 1 ≤ (s.gpr .a1).toNat ∧ (s.gpr .a1).toNat ≤ 256 at hg
     simp only [VG.Spec.Rc4.init, bytes_length, hg, and_self, ite_true]
     have hF : (s.sp - 256#64).toNat = s.sp.toNat - 256 := by
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega)]; rfl
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp])]; rfl
     refine WP.alloc (n := frameBytes) (by decide) (by rw [htsp]; exact hsp) ?_
     have hsp' : (allocd frameBytes t).sp = s.sp - 256#64 := by
       show t.sp - BitVec.ofNat 64 256 = _
       rw [htsp]
-    refine WP.mono (init_main (allocd frameBytes t) (by rw [hsp', hF]; omega)
+    refine WP.mono (init_main (allocd frameBytes t) (by rw [hsp', hF]; omega_using [hal])
       ⟨⟨s.sp - 256#64, 256⟩, by
         show _ ∈ (⟨t.sp - BitVec.ofNat 64 256, 256⟩ :: t.wr : List Region)
         rw [htsp]; exact List.mem_cons_self, by rw [hsp']; exact Region.contains_self _ _⟩

@@ -27,7 +27,7 @@ theorem argsMem_outs (s₀ : State) (m : Mem) : Outs (rBase s₀) [(0, 24)] m (a
   unfold argsMem
   have e := fun {m : Mem} {d : Nat} (v : BitVec 32) (h : d + 4 ≤ 24) =>
     KeyRandom.store_in (rBase s₀) m (rs := [(0, 24)]) (o := 0) (n := 24) (d := d) v
-      (List.mem_singleton_self _) (Nat.zero_le _) h (by omega)
+      (List.mem_singleton_self _) (Nat.zero_le _) h (by omega_using [h])
   exact (((((e _ (by decide)).trans (e _ (by decide))).trans (e _ (by decide))).trans
     (e _ (by decide))).trans (e _ (by decide))).trans (e _ (by decide))
 

@@ -29,7 +29,7 @@ theorem loadBEreverseArgs_ok (s : State) {k : Nat} (hk : 0 < k)
       u1.other .r4 (by decide), u1.other .r6 (by decide), count]
     change s.gpr .r4 + BitVec.ofNat 32 k - BitVec.ofNat 32 1 = _
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [hk])]
   · rw [u4.gpr, u3.other .r6 (by decide), u2.other .r6 (by decide), u1.other .r6 (by decide), count]
   · rw [u4.mem, u3.mem, u2.mem, u1.mem]
   · exact (u1.rest (by simp)).trans ((u2.rest (by simp)).trans

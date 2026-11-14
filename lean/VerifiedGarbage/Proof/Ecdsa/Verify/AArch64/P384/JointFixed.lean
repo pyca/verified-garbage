@@ -50,7 +50,7 @@ theorem fixedDigit_using {s₀ s : State} {base T : Addr} {u v j : Nat} {C : Cur
  rw [P384Joint.fixedDigit]
  apply WP.seq
  refine WP.mono_syms (fixedRead9_ok (c:=P384Joint.cfg) cfg_gw h.st.scr (by decide)
-   (by change 3152+2*j+2≤8192; omega) h.x19 hbytes.lo hbytes.hi) fun a ⟨a2,_,a3,ka⟩ sa => ?_
+   (by change 3152+2*j+2≤8192; omega_using [hj]) h.x19 hbytes.lo hbytes.hi) fun a ⟨a2,_,a3,ka⟩ sa => ?_
  have ia := (hi.of_keeps ka (by decide)).to_tmv
  have kpa : ProgKeep K.M base [] s a := keeps_prog ka (by decide)
  have srca := source.keep kpa sa (by simp) hi.mod.tmp

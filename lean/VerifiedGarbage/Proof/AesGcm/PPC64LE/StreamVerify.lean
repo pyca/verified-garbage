@@ -38,11 +38,11 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt StreamRepr ctxH ctxCiph ghashInput fullTag zeros)
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) : bytesAt m p k = (bytesAt m p n).take k := by
-  rw [show n = k + (n - k) by omega, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
+  rw [show n = k + (n - k) by omega_using [h], bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
 
 theorem tagLenOk_bounds {tl : Nat} (h : Spec.Gcm.tagLenOk tl = true) : 1 ≤ tl ∧ tl ≤ 16 := by
   simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at h
-  omega
+  omega_using [h]
 
 section
 variable {s₀ : State} (h : verPre s₀)
@@ -197,7 +197,7 @@ theorem ver_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : verPre s₀)
             · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide), hb₄, k₃.mem,
           ← h1.r20, bytesAt_frame h1.en.frame (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]
-            exact dT (d := 128) (k := 120) (by decide)) (by omega), h1.r20]
+            exact dT (d := 128) (k := 120) (by decide)) (by omega_using []), h1.r20]
       have hX : (bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 0) (s₀.gpr .r9).toNat ++
             zeros (16 - (s₀.gpr .r9).toNat) = bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 256) 16) ↔
           (fullTag (ctxCiph s₀.mem (s₀.gpr .r3) (s₀.gpr .r4).toNat) (ctxH s₀.mem (s₀.gpr .r3)) iv a ct).take

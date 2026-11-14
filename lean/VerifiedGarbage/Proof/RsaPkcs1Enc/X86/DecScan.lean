@@ -80,18 +80,18 @@ include h
 theorem out_fit : P.out.toNat + P.K ≤ 2 ^ 32 := by
   have := h.ok.fits P.OUT (by simp)
   simp only [BitVec.toNat_setWidth] at this
-  rwa [Nat.mod_eq_of_lt (by have := P.out.isLt; omega)] at this
+  rwa [Nat.mod_eq_of_lt (by have := P.out.isLt; omega_using [])] at this
 
 theorem outA {i d : Nat} (hi : i + d < P.K) : addr (P.out + BitVec.ofNat 32 i) d = P.out.setWidth 64 + BitVec.ofNat 64 (i + d) := by
   have := h.out_fit
   rw [addr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact addr_eq (by omega)
+  exact addr_eq (by omega_using [hi, this])
 
 end In
 
 theorem St.out_w {σ s : State} (hs : S P σ s) {i n : Nat} (hn : i + n ≤ P.K) :
     InRegions s.wr (P.out.setWidth 64 + BitVec.ofNat 64 i) n :=
-  ⟨P.OUT, hs.2.inRw (by simp), Offset.contains_base _ hn (by have := hs.1.k1024; omega)⟩
+  ⟨P.OUT, hs.2.inRw (by simp), Offset.contains_base _ hn (by have := hs.1.k1024; omega_using [hn, this])⟩
 
 theorem St.out_r {σ s : State} (hs : S P σ s) {i n : Nat} (hn : i + n ≤ P.K) :
     InRegions (s.rd ++ s.wr) (P.out.setWidth 64 + BitVec.ofNat 64 i) n :=
@@ -113,11 +113,11 @@ theorem sbb_mk (c : Bool) : (if c = true then BitVec.allOnes 32 else 0) = mk c :
 /-- `b - 1` borrows exactly when the byte `b` is zero. -/
 theorem zcf (b : Byte) : decide ((b.setWidth 32).toNat < (1 : BitVec 32).toNat) = decide (b = 0) := by
   have e1 : (1 : BitVec 32).toNat = 1 := rfl
-  rw [e1, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [e1, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
   by_cases h : b = 0
   · subst h; rfl
   · have : b.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
-    rw [decide_eq_false h, decide_eq_false (by omega)]
+    rw [decide_eq_false h, decide_eq_false (by omega_using [this])]
 
 /-! ## The scan -/
 
@@ -150,7 +150,7 @@ theorem scanInit_vp : VP (AL P) (.block scanInit) (SCI P 0) :=
     · simp (disch := decide) only [u7.other, u6.other, u5.other, u4.other, u3.other, u2.gpr, u1.gpr]; rfl
     · simp (disch := decide) only [u7.other, u6.other, u5.gpr]
     · simp (disch := decide) only [u7.other, u6.other, u5.other, u4.gpr, u3.gpr]
-      exact Offset.ofNat_sub_ofNat (d := 2) (by omega)
+      exact Offset.ofNat_sub_ofNat (d := 2) (by omega_using [hK])
     · simp (disch := decide) only [u7.other, u6.gpr]; rfl
     · rw [u7.gpr]; rfl
 
@@ -194,10 +194,10 @@ theorem scanBody_vp (n : Nat) : VP (SCM P (n + 1)) (.block scanBody) fun σ s =>
   have hs := hb.S
   have hK := hs.1.k64
   have hK' := hs.1.k1024
-  have hjK : 2 + j < P.K := by omega
+  have hjK : 2 + j < P.K := by omega_using [hn, hj]
   simp only [scanBody]
   refine wp_movzx8 (a := P.out.setWidth 64 + BitVec.ofNat 64 (2 + j))
-    (by show s.ea ⟨.esi, 0⟩ = _; rw [ea_at, si, hs.1.outA (d := 0) (by omega)]; rfl) (St.out_r hs (by omega)) fun t1 u1 => ?_
+    (by show s.ea ⟨.esi, 0⟩ = _; rw [ea_at, si, hs.1.outA (d := 0) (by omega_using [hn, hj])]; rfl) (St.out_r hs (by omega_using [hn, hj])) fun t1 u1 => ?_
   refine wp_subi fun t2 u2 c2 _ => ?_
   refine wp_sbb_self c2 fun t3 u3 => ?_
   refine wp_mov fun t4 u4 => ?_
@@ -218,7 +218,7 @@ theorem scanBody_vp (n : Nat) : VP (SCM P (n + 1)) (.block scanBody) fun σ s =>
       u5.other, u4.other, u3.other, u2.other, u1.other]) mm
   have z3 : t3.gpr .eax = mk (decide ((emOf P σ).getD (2 + j) 1 = 0)) := by
     rw [u3.gpr, sbb_mk, u1.gpr, hb.byte hjK, zcf]
-  have step := scan_step (emOf P σ) (i := 2 + j) (by omega)
+  have step := scan_step (emOf P σ) (i := 2 + j) (by omega_using [])
   have bp7 : t7.gpr .ebp = (mk (fz P σ (2 + j)).isSome ^^^ BitVec.allOnes 32) &&&
       mk (decide ((emOf P σ).getD (2 + j) 1 = 0)) &&& BitVec.ofNat 32 (2 + j) := by
     rw [u7.gpr, u6.gpr, u5.gpr, u4.gpr]
@@ -249,27 +249,27 @@ theorem scanBody_vp (n : Nat) : VP (SCM P (n + 1)) (.block scanBody) fun σ s =>
   have cx11 : t11.gpr .ecx = BitVec.ofNat 32 (n + 1) := by
     simp (disch := decide) only [u11.other, u10.other, u9.other, u8.other, u7.other, u6.other,
       u5.other, u4.other, u3.other, u2.other, u1.other]
-    rw [cx, show P.K - 2 - j = n + 1 by omega]
+    rw [cx, show P.K - 2 - j = n + 1 by omega_using [hn, hj]]
   have cxt : t12.gpr .ecx = BitVec.ofNat 32 n := by
-    rw [u12.gpr, cx11]; exact Offset.ofNat_sub_ofNat (d := 1) (by omega)
+    rw [u12.gpr, cx11]; exact Offset.ofNat_sub_ofNat (d := 1) (by omega_using [])
   have sb := hb.of_mem st mm
-  refine ⟨?_, fun h0 => ⟨sb, ?_, ?_⟩, fun h0 => ⟨by omega, sb, ?_, ?_, ?_, ?_, ?_⟩⟩
+  refine ⟨?_, fun h0 => ⟨sb, ?_, ?_⟩, fun h0 => ⟨by omega_using [hn], sb, ?_, ?_, ?_, ?_, ?_⟩⟩
   · show eval .ne t12 = _
     rw [cx11, show BitVec.ofNat 32 (n + 1) - 1 = BitVec.ofNat 32 n from
-      Offset.ofNat_sub_ofNat (d := 1) (by omega), ofNat_beq_zero (by omega)] at hz
+      Offset.ofNat_sub_ofNat (d := 1) (by omega_using []), ofNat_beq_zero (by omega_using [hn, hK'])] at hz
     simp only [eval, hz]
-    by_cases h0 : n = 0 <;> simp [h0] <;> omega
-  · rw [bxt, show 2 + j + 1 = P.K by omega]
-  · rw [dit, show 2 + j + 1 = P.K by omega]
-  · rw [sit, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
-  · rw [dxt, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
-  · rw [cxt, show P.K - 2 - (P.K - 2 - n) = n by omega]
-  · rw [bxt, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
-  · rw [dit, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega]
+    by_cases h0 : n = 0 <;> simp [h0] <;> omega_using [h0]
+  · rw [bxt, show 2 + j + 1 = P.K by omega_using [hn, hj, h0]]
+  · rw [dit, show 2 + j + 1 = P.K by omega_using [hn, hj, h0]]
+  · rw [sit, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_using [hn, hj]]
+  · rw [dxt, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_using [hn, hj]]
+  · rw [cxt, show P.K - 2 - (P.K - 2 - n) = n by omega_using [hn]]
+  · rw [bxt, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_using [hn, hj]]
+  · rw [dit, show 2 + (P.K - 2 - n) = 2 + j + 1 by omega_using [hn, hj]]
 
 theorem scanLoop_vp : VP (SCI P 0) scanLoop (SCQ P) := by
   refine (VP.loop (I := SCM P) scanBody_vp (P.K - 2 - 1)).mono (fun σ s h => ?_) fun _ _ h => h
   have hK := h.1.S.1.k64
-  exact ⟨by omega, by rw [show P.K - 2 - (P.K - 2 - 1 + 1) = 0 by omega]; exact h⟩
+  exact ⟨by omega_using [hK], by rw [show P.K - 2 - (P.K - 2 - 1 + 1) = 0 by omega_using []]; exact h⟩
 
 end VG.Proof.RsaPkcs1Enc.X86.Dec

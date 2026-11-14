@@ -90,7 +90,7 @@ theorem r10_digit {S K : Nat} {w z l : State} {m : Nat} (hm : m < 464)
     l.gpr .r10 = dByte (digitAt false (if e = 2 then S else K) m) := by
   have hA : ACC = 952 := rfl
   have hT : TB = 1064 := rfl
-  rw [h10, byte_hi hc.frame (by omega) (by omega), dig_byte hfx.1 (by omega) he]
+  rw [h10, byte_hi hc.frame (by omega_using [hA, hT]) (by omega_using [hm, he, hT]), dig_byte hfx.1 (by omega_using [hm]) he]
 
 theorem base_rel {S K : Nat} {w₁ w₂ z₁ z₂ : State}
     (hf₁ : JFix b S K w₁.mem) (hf₂ : JFix b S K w₂.mem) (hw : w₁.sp = w₂.sp) {m : Nat} (hm : m < 464)
@@ -102,8 +102,8 @@ theorem base_rel {S K : Nat} {w₁ w₂ z₁ z₂ : State}
       rcases hr with rfl | rfl
       · rw [c₁.ctx.ctx.r6, c₂.ctx.ctx.r6]
       · rw [c₁.r14, c₂.r14]))
-    (loadDigit_ok c₁.ctx (n := m) (e := 2) (by omega) (by decide) c₁.r14)
-    (loadDigit_ok c₂.ctx (n := m) (e := 2) (by omega) (by decide) c₂.r14) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
+    (loadDigit_ok c₁.ctx (n := m) (e := 2) (by omega_using [hm]) (by decide) c₁.r14)
+    (loadDigit_ok c₂.ctx (n := m) (e := 2) (by omega_using [hm]) (by decide) c₂.r14) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
   have d₁ := r10_digit hm c₁ hf₁ (.inl rfl) e₁
   have d₂ := r10_digit hm c₂ hf₂ (.inl rfl) e₂
   have hl : l₁.sp = l₂.sp := by rw [r₁.sp, r₂.sp, c₁.rest.sp, c₂.rest.sp, hw]
@@ -124,8 +124,8 @@ theorem key_rel {S K : Nat} {w₁ w₂ z₁ z₂ : State}
       rcases hr with rfl | rfl
       · rw [c₁.ctx.ctx.r6, c₂.ctx.ctx.r6]
       · rw [c₁.r14, c₂.r14]))
-    (loadDigit_ok c₁.ctx (n := m) (e := 3) (by omega) (by decide) c₁.r14)
-    (loadDigit_ok c₂.ctx (n := m) (e := 3) (by omega) (by decide) c₂.r14) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
+    (loadDigit_ok c₁.ctx (n := m) (e := 3) (by omega_using [hm]) (by decide) c₁.r14)
+    (loadDigit_ok c₂.ctx (n := m) (e := 3) (by omega_using [hm]) (by decide) c₂.r14) fun l₁ l₂ ⟨r₁, _, e₁⟩ ⟨r₂, _, e₂⟩ => ?_
   have d₁ := r10_digit hm c₁ hf₁ (.inr rfl) e₁
   have d₂ := r10_digit hm c₂ hf₂ (.inr rfl) e₂
   have hl : l₁.sp = l₂.sp := by rw [r₁.sp, r₂.sp, c₁.rest.sp, c₂.rest.sp, hw]
@@ -165,17 +165,17 @@ theorem loop_rel {S K : Nat} {w₁ w₂ : State}
   rcases n with _ | m
   · exact RelCT.of_false fun a b' h => absurd h.1 (by decide)
   · intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨hn1, hn2, hs₁, hs₂⟩ e₁ e₂
-    have hm : m < 464 := by omega
+    have hm : m < 464 := by omega_using [hn2]
     have r := ((step_rel hf₁ hf₂ hw hm hs₁ hs₂).wp
       (F₁ := fun (t : State) => WInv b S K w₁ m t ∧ (t.gpr .r14 != 0) = decide (m ≠ 0))
       (F₂ := fun (t : State) => WInv b S K w₂ m t ∧ (t.gpr .r14 != 0) = decide (m ≠ 0)) fun a b' ⟨ha, hb⟩ => by
         subst ha hb; exact ⟨jointStep_ok hf₁ hm hs₁, jointStep_ok hf₂ hm hs₂⟩)
       s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂
     obtain ⟨ht, -, ⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩ := r
-    refine ⟨ht, ⟨by rw [eval_nonzero, eval_nonzero, z₁, z₂], fun _ => trivial, fun hc => ⟨m, by omega, ?_⟩⟩⟩
+    refine ⟨ht, ⟨by rw [eval_nonzero, eval_nonzero, z₁, z₂], fun _ => trivial, fun hc => ⟨m, by omega_using [], ?_⟩⟩⟩
     rw [eval_nonzero, z₁] at hc
     have : m ≠ 0 := by simpa using hc
-    exact ⟨by omega, by omega, g₁, g₂⟩
+    exact ⟨by omega_using [this], by omega_using [hn2], g₁, g₂⟩
 
 theorem jointLoop_rel {S K : Nat} (hS : S < Impl.Ed448.WnafWide.scalarLimit)
     (hK : K < Impl.Ed448.WnafWide.scalarLimit) {u₁ u₂ : State} (hv₁ : VCtx b u₁) (hv₂ : VCtx b u₂)
@@ -193,7 +193,7 @@ theorem jointLoop_rel {S K : Nat} (hS : S < Impl.Ed448.WnafWide.scalarLimit)
     hf.sub fun r hr => ⟨FA b, by simp, by
       have hA : ACC = 952 := rfl
       simp only [R3, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact Offset.sub_base _ (by omega)⟩
+      rcases hr with rfl | rfl | rfl <;> exact Offset.sub_base _ (by omega_arith)⟩
   have start : ∀ {w : State}, VCtx b w → ptOf (FS w.mem b) = Spec.Ed448.identity →
       w.gpr .r14 = BitVec.ofNat 64 464 → FS w.mem b DK = Spec.Ed448.d → WInv b S K w 464 w :=
     fun hv hp ht hd => ⟨⟨hv, Rest.refl _ _, Frame.refl _ _, ht⟩, hd, fun a _ => by

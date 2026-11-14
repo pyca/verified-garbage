@@ -221,10 +221,10 @@ theorem word_apart (d : Dir) {B : Addr} {k : Nat} (hk : k < slots)
   rcases hr with hr | hr
   · refine hr.sub_left ?_
     show Region.Sub _ ⟨B + BitVec.ofNat 64 (8 * 6), 8 * (404 - 6)⟩
-    exact Offset.sub B (by omega) (by omega)
+    exact Offset.sub B (by omega_using []) (by omega_using [hk])
   · refine Region.Disjoint.sub_right ?_ hr
     show Region.Disjoint _ ⟨B + BitVec.ofNat 64 (8 * 103), 4 * 4 * 16⟩
-    exact Offset.disjoint B (by omega) (by omega) (by omega)
+    exact Offset.disjoint B (by omega_using [hkb]) (by omega_using [hk]) (by omega_using [])
 
 theorem ready_frame (d : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule}
     {rs : List Region} (h : Ready d s B ws k) (ha : s'.gpr .a0 = s.gpr .a0) (hf : Frame rs s.mem s'.mem)
@@ -236,10 +236,10 @@ theorem ready_frame (d : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : 
     hf.readW (Region.contains_self _ _) (fun r hr => word_apart d hj hjb (hd r hr)) (by decide)
   refine ⟨fun kv hkv => ?_, fun e he => (hk e he).congr fun j hj => ?_, ?_⟩
   · have := masks_range kv hkv
-    rw [keep _ (by rw [slots_eq]; omega) (.inl (by rw [tailSlot_eq]; omega))]
+    rw [keep _ (by rw [slots_eq]; omega_using [this]) (.inl (by rw [tailSlot_eq]; omega_using [this]))]
     exact hm kv hkv
-  · rw [entryW_eq, entryW_eq, keep _ (by rw [tableSlot_eq, slots_eq]; omega)
-      (.inr (by rw [tableSlot_eq, tailSlot_eq]; omega))]
+  · rw [entryW_eq, entryW_eq, keep _ (by rw [tableSlot_eq, slots_eq]; omega_using [he, hj])
+      (.inr (by rw [tableSlot_eq, tailSlot_eq]; omega_using []))]
   · rw [ha, ← hka]
     refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     rcases hd r hr with h | h
@@ -252,7 +252,7 @@ theorem ready_frame (d : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : 
 
 theorem toNat_off {B : Addr} {o n : Nat} (h : B.toNat + n ≤ 2 ^ 64) (ho : o < n) :
     (B + BitVec.ofNat 64 o).toNat = B.toNat + o := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [h, ho]), Nat.mod_eq_of_lt (by omega_using [h, ho])]
 
 theorem ecbA_add (B : Addr) (o : Nat) : ecbA B + BitVec.ofNat 64 o = B + BitVec.ofNat 64 (56 + o) :=
   Offset.add_add B 56 o
@@ -261,7 +261,7 @@ theorem ecbA_add (B : Addr) (o : Nat) : ecbA B + BitVec.ofNat 64 o = B + BitVec.
 theorem sub_core (d : Dir) (B : Addr) {o n : Nat} (h₁ : 48 ≤ o) (h₂ : o + n ≤ 3232) :
     Region.Sub ⟨B + BitVec.ofNat 64 o, n⟩ (coreRegion (inlineCore d) B) := by
   show Region.Sub _ ⟨B + BitVec.ofNat 64 (8 * 6), 8 * (404 - 6)⟩
-  exact Offset.sub B (by omega) (by omega)
+  exact Offset.sub B (by omega_using [h₁]) (by omega_using [h₂])
 
 theorem key_apart (B : Addr) {n : Nat} (hn : 56 + n ≤ 2 ^ 64) : Region.Disjoint ⟨keyA B, 8⟩ ⟨ecbA B, n⟩ :=
   Offset.disjoint B (.inl (by decide)) (by decide) hn
@@ -285,8 +285,8 @@ theorem tail_wp {s₀ t : State} {B : Addr} {body : Prog isa} {P Q : State → P
     rw [← hsv i hi]
     refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint_base (ecbA B) (d := 8 * (savedSlot + i)) (by rw [tableEnd_eq, savedSlot_eq]; omega)
-      (by rw [savedSlot_eq]; omega)
+    exact Offset.disjoint_base (ecbA B) (d := 8 * (savedSlot + i)) (by rw [tableEnd_eq, savedSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq]; omega_using [hi])
   have ka : u.mem.readW (keyA B) 64 = t.mem.readW (keyA B) 64 :=
     hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact key_apart B (by rw [tableEnd_eq]; decide)) (by decide)
@@ -310,8 +310,8 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
   have hal : B.toNat % 16 = 0 := hS.al
   have hW : (⟨B, 8 * 404⟩ : Region) ∈ s.wr := hS.whole (by show 8 * 404 ≤ 4064; decide)
   have dK : (keyR s).Disjoint ⟨B, 8 * 404⟩ := hd _ hm
-  have halE : (ecbA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega
-  have halK : (keyA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega
+  have halE : (ecbA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega_using [hal]
+  have halK : (keyA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega_using [hal]
   refine WP.narrow (R := ⟨ecbA B, 8 * slots⟩) ⟨_, hW, Offset.contains_base B (by show 56 + 8 * 396 ≤ 8 * 404; decide) (by decide)⟩ ?_
   show WP isa (corePrepare d) _ _
   rw [corePrepare]
@@ -323,7 +323,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
   refine coreIn_wp b₁ (by rw [u₁.wr]; exact List.mem_cons_self) halE fun s₂ b₂ sv₂ g₂ f₂ k₂ rd₂ wr₂ => ?_
   have hwE : (⟨ecbA B, 8 * slots⟩ : Region) ∈ s₂.wr := by rw [wr₂, u₁.wr]; exact List.mem_cons_self
   obtain ⟨s₃, e₃, v₃, -, g₃, rd₃, wr₃, f₃⟩ := setSlots_ok (keyMasks ++ bsKs) b₂ hwE halE
-    (fun kv hkv => by have := masks_lt kv hkv; rw [tableSlot_eq]; omega) (by decide)
+    (fun kv hkv => by have := masks_lt kv hkv; rw [tableSlot_eq]; omega_using [this]) (by decide)
   have b₃ : s₃.gpr sb = ecbA B := by rw [g₃ _ sb_ne_t0 sb_ne_t1, b₂]
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₃, e₃, ?_⟩
@@ -340,7 +340,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
     simp only [slotW, b₃] at this
     rw [sb₄, m₄]; exact this
   have hp : SchedPre s₄ (ecbA B) (s.gpr .a0) :=
-    ⟨⟨sb₄, by rw [wr₄']; exact List.mem_cons_self, by rw [toNat_off hfit (by decide), slots_eq]; omega, halE⟩,
+    ⟨⟨sb₄, by rw [wr₄']; exact List.mem_cons_self, by rw [toNat_off hfit (by decide), slots_eq]; omega_using [hfit], halE⟩,
       by
         rw [rd₄', wr₄']
         rcases List.mem_append.mp hin with h | h
@@ -382,8 +382,8 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
       rw [m₄, ← sv₂ i hi]
       refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base (ecbA B) (d := 8 * (savedSlot + i)) (by rw [tableSlot_eq, savedSlot_eq]; omega)
-        (by rw [savedSlot_eq]; omega))
+      exact Offset.disjoint_base (ecbA B) (d := 8 * (savedSlot + i)) (by rw [tableSlot_eq, savedSlot_eq]; omega_using [])
+        (by rw [savedSlot_eq]; omega_using [hi]))
     ⟨_, by rw [wr₄']; exact List.mem_append_right _ (List.mem_cons_of_mem _ hW),
       Offset.contains_base B (by decide) (by decide)⟩ halK
     fun u v hu s1 s2 s3 s4 a0 ra pr mv rd wr kv => ?_
@@ -423,7 +423,7 @@ theorem blockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   simp only [Spec.Sm4.blockAt]
   congr 1
   funext j
-  exact hf.bytes (R := ⟨p, 16⟩) hd (by show 16 ≤ 2 ^ 64; omega) j.isLt
+  exact hf.bytes (R := ⟨p, 16⟩) hd (by show 16 ≤ 2 ^ 64; omega_using []) j.isLt
 
 theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule}
     (hB : s.gpr Impl.Modes.RISCV64.sb = B) (hS : ScrIn s B (inlineCore d).total) (hR : Ready d s B ws k) :
@@ -436,8 +436,8 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.S
   have hfit : B.toNat + 8 * 404 ≤ 2 ^ 64 := hS.fit
   have hal : B.toNat % 16 = 0 := hS.al
   have hW : (⟨B, 8 * 404⟩ : Region) ∈ s.wr := hS.whole (by show 8 * 404 ≤ 4064; decide)
-  have halE : (ecbA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega
-  have halK : (keyA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega
+  have halE : (ecbA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega_using [hal]
+  have halK : (keyA B).toNat % 8 = 0 := by rw [toNat_off hfit (by decide)]; omega_using [hal]
   refine WP.narrow (R := ⟨ecbA B, 8 * slots⟩) ⟨_, hW, Offset.contains_base B (by show 56 + 8 * 396 ≤ 8 * 404; decide) (by decide)⟩ ?_
   show WP isa coreCrypt _ _
   rw [coreCrypt]
@@ -458,13 +458,13 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.S
     fun r h1 h2 h4 hb h0 ha => by rw [o₄ r ha, g₃ r h1 h2 h4, g₂ r hb h0]; rfl
   have hkey : KeyCtx s₄ (dirKeys d k) :=
     { scr := by rw [sb₄, wr₄']; exact List.mem_cons_self
-      fit := by rw [sb₄, toNat_off hfit (by decide), slots_eq]; omega
+      fit := by rw [sb₄, toNat_off hfit (by decide), slots_eq]; omega_using [hfit]
       al := by rw [sb₄]; exact halE
       keys := fun e he => (hek e he).congr fun j hj => by
-        rw [sb₄, entryW_eq, entryW_eq, slot₄ _ (by rw [tableSlot_eq, savedSlot_eq]; omega)] }
+        rw [sb₄, entryW_eq, entryW_eq, slot₄ _ (by rw [tableSlot_eq, savedSlot_eq]; omega_using [he, hj])] }
   have hm₄ : MasksOk s₄ := fun kv hkv => by
     show s₄.mem.readW (wordAddr (s₄.gpr sb) kv.1) 64 = kv.2
-    rw [sb₄, slot₄ _ (by have := masks_lt kv hkv; rw [savedSlot_eq]; omega)]
+    rw [sb₄, slot₄ _ (by have := masks_lt kv hkv; rw [savedSlot_eq]; omega_using [this])]
     exact hmk kv hkv
   have ha0 : s₄.gpr .a0 = s₄.gpr sb + BitVec.ofNat 64 (8 * tableEnd) := by rw [r₄, o₄ sb (by decide)]
   have ka₄ : s₄.mem.readW (keyA B) 64 = s.gpr .a0 := by
@@ -513,11 +513,11 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.S
   · show VG.Proof.Sm4.WordRel (entryW v.mem _ e) _
     rw [mv]
     refine (hek e he).congr fun j hj => ?_
-    rw [entryW_eq, entryW_eq, ← slot₄ _ (by rw [tableSlot_eq, savedSlot_eq]; omega)]
+    rw [entryW_eq, entryW_eq, ← slot₄ _ (by rw [tableSlot_eq, savedSlot_eq]; omega_using [he, hj])]
     refine cf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     rw [wordAddr]
-    exact Offset.disjoint_base (ecbA B) (by rw [tableSlot_eq]; omega) (by rw [tableSlot_eq]; omega)
+    exact Offset.disjoint_base (ecbA B) (by rw [tableSlot_eq]; omega_using []) (by rw [tableSlot_eq]; omega_using [he, hj])
   · show Frame _ s.mem v.mem
     rw [mv]
     have h2 := f₂
@@ -531,14 +531,14 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.S
     have hP : blkAddr (inlineCore d) B j = s₄.gpr sb + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
       rw [sb₄]
       show B + BitVec.ofNat 64 (8 * 103) + BitVec.ofNat 64 (4 * 4 * j) = B + BitVec.ofNat 64 56 + _
-      rw [Offset.add_add, Offset.add_add, tailSlot_eq, show 8 * 103 + 4 * 4 * j = 56 + (8 * 96 + 16 * j) by omega]
+      rw [Offset.add_add, Offset.add_add, tailSlot_eq, show 8 * 103 + 4 * 4 * j = 56 + (8 * 96 + 16 * j) by omega_using []]
     show bytesAt v.mem _ 16 = dirCipher d k (bytesAt s.mem _ 16)
     have := o j hj'
     simp only [tailBlock, hb, sb₄] at this
     rw [hP, dirCipher_bytes, Proof.Sm4.bytesAt_eq_blockAt, mv, sb₄, this, quads_spec, mem₄]
     rw [blockAt_frame f₂ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [ecbA_add, ecbA_add]
-      exact Offset.disjoint B (.inl (by rw [tailSlot_eq, savedSlot_eq]; omega)) (by rw [tailSlot_eq]; omega)
+      exact Offset.disjoint B (.inl (by rw [tailSlot_eq, savedSlot_eq]; omega_using [hj'])) (by rw [tailSlot_eq]; omega_using [hj'])
         (by rw [savedSlot_eq]; decide)]
     rfl
 

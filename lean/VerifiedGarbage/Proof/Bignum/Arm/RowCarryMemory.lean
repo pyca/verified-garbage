@@ -20,15 +20,15 @@ theorem rowCarry_memory {s t : State} {base : Addr} {size o n : Nat}
     Outside base (o + 4 * n) 8 s.mem t.mem ∧
       val32 t.mem base o (n + 2) = val32 s.mem base o n +
         2 ^ (32 * n) * ((t.gpr .r3).toNat + 2 ^ 32 * (t.gpr .r4).toNat) := by
-  have k1 := writeW32_outside s.mem base (d := o + 4 * n) (t.gpr .r3) (by omega)
+  have k1 := writeW32_outside s.mem base (d := o + 4 * n) (t.gpr .r3) (by omega_using [hn, ho])
   have k2 := writeW32_outside (s.mem.writeW (off base (o + 4 * n)) (t.gpr .r3))
-    base (d := o + 4 * n + 4) (t.gpr .r4) (by omega)
+    base (d := o + 4 * n + 4) (t.gpr .r4) (by omega_using [hn, ho])
   rw [← hm] at k2
   have outside : Outside base (o + 4 * n) 8 s.mem t.mem :=
-    (k1.mono (by omega) (by omega)).trans (k2.mono (by omega) (by omega))
-  have low := outside.val32 (d := o) (k := n) (by omega) (by omega)
+    (k1.mono (by omega_using []) (by omega_using [])).trans (k2.mono (by omega_using []) (by omega_using []))
+  have low := outside.val32 (d := o) (k := n) (by omega_using []) (by omega_using [hn, ho])
   have top0 : w32 t.mem base (o + 4 * n) = (t.gpr .r3).toNat := by
-    rw [hm, w32_write_ne hn (by omega) (by omega) (by omega), w32_write_self]
+    rw [hm, w32_write_ne hn (by omega_using [ho]) (by omega_using [ho]) (by omega_using []), w32_write_self]
   have top1 : w32 t.mem base (o + 4 * n + 4) = (t.gpr .r4).toNat := by
     rw [hm, w32_write_self]
   refine ⟨outside, ?_⟩

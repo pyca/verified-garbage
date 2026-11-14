@@ -59,7 +59,7 @@ theorem zeroOptional_ok (advance : Bool) (s : State) {src dst : BitVec 32} {n : 
     · rw [memU]; exact Frame.refl _ _
   · refine WP.ite false (by change some u.z = some false; rw [zeroU, count]; change some (BitVec.ofNat 32 n == 0#32) = some false; rw [countZero, decide_eq_false empty]) (by intro ht; cases ht) ?_
     intro _
-    refine WP.mono (zeroBuffer_ok advance u (by omega) fits destFits (by rw [restU.wr]; exact write)
+    refine WP.mono (zeroBuffer_ok advance u (by omega_using [empty]) fits destFits (by rw [restU.wr]; exact write)
       ((restU.gpr .r2 (by simp)).trans zero) ((restU.gpr .r1 (by simp)).trans source)
       ((restU.gpr .r0 (by simp)).trans dest) ((restU.gpr .lr (by simp)).trans count)) ?_
     rintro t ⟨bytes, dstT, srcT, frame, rest⟩

@@ -155,8 +155,8 @@ theorem IInv.g_words_eq {P : InvCfg} {base : Addr} {I : Divstep.IState} {s t : S
     wordsVal s.mem base P.sG P.L=wordsVal t.mem base P.sG P.L := by
   have es := hs.g
   have et := ht.g
-  rw [Int.emod_eq_of_lt (by omega) (by exact_mod_cast wordsVal_lt s.mem base P.sG P.L)] at es
-  rw [Int.emod_eq_of_lt (by omega) (by exact_mod_cast wordsVal_lt t.mem base P.sG P.L)] at et
+  rw [Int.emod_eq_of_lt (by omega_using []) (by exact_mod_cast wordsVal_lt s.mem base P.sG P.L)] at es
+  rw [Int.emod_eq_of_lt (by omega_using []) (by exact_mod_cast wordsVal_lt t.mem base P.sG P.L)] at et
   exact_mod_cast es.trans et.symm
 
  theorem invAllocated_prefix_ok {base : Addr} {size X : Nat}
@@ -192,7 +192,7 @@ theorem IInv.g_words_eq {P : InvCfg} {base : Addr} {I : Divstep.IState} {s t : S
       KeepRegs invAllocatedRegs s t := by
   rw [invAllocatedCheckedPrefix]
   refine WP.seq (WP.mono (invAllocated_prefix_ok hsize hpr hL hs hM hX hval) fun u ⟨hu,iu,ku⟩ => ?_)
-  exact WP.mono (earlyCheck_ok hu (n:=5) (a:=2312) (by decide) (by omega) (by decide))
+  exact WP.mono (earlyCheck_ok hu (n:=5) (a:=2312) (by decide) (by omega_using [hsize]) (by decide))
     fun t ⟨eq,kt⟩ => ⟨u,iu,eq,ku.trans ((Keeps.regs kt).mono (by decide))⟩
 
 /-- The canonical public signature scalar determines whether the tenth batch runs. -/

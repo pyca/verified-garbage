@@ -52,7 +52,7 @@ theorem DLe.seqR {f : Nat → Prog isa} (h : ∀ k, DLe d (f k)) :
   | _, 0 => DLe.block _
   | a, n + 1 => DLe.seq (h a) (DLe.seqR h (a + 1) n)
 
-theorem DLe.of_fd {c : Prog isa} (h : 16 * c.aarch64Depth ≤ 16) : DLe 1 c := ⟨by omega⟩
+theorem DLe.of_fd {c : Prog isa} (h : 16 * c.aarch64Depth ≤ 16) : DLe 1 c := ⟨by omega_using [h]⟩
 
 end
 

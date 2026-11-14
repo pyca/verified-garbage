@@ -76,8 +76,8 @@ theorem vec_get (f : Nat → Byte) {i : Nat} (h : i < 16) : (vec f)[i] = f i := 
   simp [vec]
 
 theorem quad_vec (f : Nat → Byte) {q : Nat} (hq : q < 4) : quad (vec f) q = quadOf f q := by
-  rw [quad, quadOf, vec, getD_ofFn _ (by omega), getD_ofFn _ (by omega), getD_ofFn _ (by omega),
-    getD_ofFn _ (by omega)]
+  rw [quad, quadOf, vec, getD_ofFn _ (by omega_using [hq]), getD_ofFn _ (by omega_using [hq]), getD_ofFn _ (by omega_using [hq]),
+    getD_ofFn _ (by omega_using [hq])]
 
 /-- XORs reordered. -/
 theorem xor6 (w a b c d e : Word) :
@@ -106,7 +106,7 @@ theorem setQuad_step {Z : Key16} {zf : Nat → Byte} {k : Nat}
   by_cases hq : i / 4 = k
   · rw [ite_eq_left hq, ite_eq_left hq]
   · rw [ite_eq_right hq, ite_eq_right hq]
-    exact hZ i h (by omega)
+    exact hZ i h (by omega_using [hk', hq])
 
 /-- Four lines run in sequence, each storing quadruple `k`, compute the same
 whether on the spec's vectors or on functions, if each line does
@@ -122,14 +122,14 @@ theorem run4 (R : Key16) (zf0 : Nat → Byte) (e : Nat → Key16 → Word) (f : 
       (f 2 (putQuad (putQuad zf0 0 (f 0 zf0)) 1 (f 1 (putQuad zf0 0 (f 0 zf0)))))) 3
       (f 3 (putQuad (putQuad (putQuad zf0 0 (f 0 zf0)) 1 (f 1 (putQuad zf0 0 (f 0 zf0)))) 2
         (f 2 (putQuad (putQuad zf0 0 (f 0 zf0)) 1 (f 1 (putQuad zf0 0 (f 0 zf0)))))))) := by
-  have c0 : ∀ i (h : i < 16), i < 4 * 0 → R[i] = zf0 i := fun i _ h => absurd h (by omega)
+  have c0 : ∀ i (h : i < 16), i < 4 * 0 → R[i] = zf0 i := fun i _ h => absurd h (by omega_using [])
   have c1 := setQuad_step c0 (he 0 (by decide) _ _ c0)
   have c2 := setQuad_step c1 (he 1 (by decide) _ _ c1)
   have c3 := setQuad_step c2 (he 2 (by decide) _ _ c2)
   have c4 := setQuad_step c3 (he 3 (by decide) _ _ c3)
   apply Vector.ext
   intro i hi
-  rw [c4 i hi (by omega)]
+  rw [c4 i hi (by omega_using [hi])]
   simp [vec]
 
 /-- The lines of `zOfX`, as the spec writes them. -/
@@ -152,7 +152,7 @@ theorem zOfX_eq (s : XZ) : zOfX (vec s.x) = vec (runZ zLines s).z :=
   run4 (Vector.replicate 16 0) s.z (eZ (vec s.x)) (fun k zf => lineVal ⟨s.x, zf⟩ (zLines.getD k default))
     (by
       intro k hk Z zf hZ
-      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
       · simp (disch := decide) only [eZ, zLines, List.getD_cons_succ, List.getD_cons_zero, lineVal, XZ.get,
           XZ.arr, sbox, Impl.Cast5.x, Impl.Cast5.z, quad_vec, vec_get, hZ]
         exact xor6 _ _ _ _ _ _)
@@ -161,7 +161,7 @@ theorem xOfZ_eq (s : XZ) : xOfZ (vec s.z) = vec (runX xLines s).x :=
   run4 (Vector.replicate 16 0) s.x (eX (vec s.z)) (fun k xf => lineVal ⟨xf, s.z⟩ (xLines.getD k default))
     (by
       intro k hk X xf hX
-      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
       · simp (disch := decide) only [eX, xLines, List.getD_cons_succ, List.getD_cons_zero, lineVal, XZ.get,
           XZ.arr, sbox, Impl.Cast5.x, Impl.Cast5.z, quad_vec, vec_get, hX]
         exact xor6 _ _ _ _ _ _)

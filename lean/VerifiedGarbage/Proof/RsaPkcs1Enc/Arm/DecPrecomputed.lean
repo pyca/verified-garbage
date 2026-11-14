@@ -139,7 +139,7 @@ theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frame
     VG.Proof.Rsa.wordsAt_frame hpush (by omega_arith) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (kPre'.sub_left below).symm)
   have le : Spec.Rsa.precomputedWords (stackArg s 0).toNat ≤ (stackArg s 20).toNat := by
-    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega
+    rw [prl, Spec.Rsa.privatePrecomputedWords]; omega_using []
   constructor
   rotate_left
   · exact kv

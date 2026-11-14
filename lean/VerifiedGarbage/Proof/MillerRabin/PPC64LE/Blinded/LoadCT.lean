@@ -81,7 +81,7 @@ theorem loadC1_ok {v : State} {B : Addr} {L w t : Nat} (hv : Scr v B (8 * L))
   have z31 : z.gpr .r31 = B := (kz.gpr .r31 (by decide)).trans ey.h31
   have hz : Scr z B (8 * L) := ey.hs.congr kz.wr
   simp only [ldh, hTopOff]
-  prun [z31, z5, zm, ym, r128, hz.ld (d := 128) (n := 8) (by omega)]
+  prun [z31, z5, zm, ym, r128, hz.ld (d := 128) (n := 8) (by omega_using [hZ'])]
   exact kz.sp.trans ky.sp
 
 theorem LA.regs {a : BD × Nat} {s : State} (h : LA a s) :
@@ -113,14 +113,14 @@ theorem load_stN (a : BD × Nat) (s : State) (h : LA a s) : WP isa Precompute.lo
   have hw128 := e.hw'
   have hNr : ∀ i < 8 * (a.1.t + 1), InRegions (s.rd ++ s.wr) (off (a.1.R + BitVec.ofNat 64 a.2) i) 1 := fun i hi => by
     rw [ku.rd, ku.wr, show off (a.1.R + BitVec.ofNat 64 a.2) i = a.1.R + BitVec.ofNat 64 a.2 + BitVec.ofNat 64 i
-      from rfl, Offset.add_add]; exact ctx.rdR _ (by omega)
+      from rfl, Offset.add_add]; exact ctx.rdR _ (by omega_using [hav, hi])
   have hNs : ∀ i < 8 * (a.1.t + 1), ∀ x, ofs a.1.B x < 8 * a.1.L → off (a.1.R + BitVec.ofNat 64 a.2) i ≠ x :=
     fun i hi x hx => by
       rw [show off (a.1.R + BitVec.ofNat 64 a.2) i = a.1.R + BitVec.ofNat 64 a.2 + BitVec.ofNat 64 i from rfl,
-        Offset.add_add]; exact ctx.sepR _ (by omega) x hx
+        Offset.add_add]; exact ctx.sepR _ (by omega_using [hav, hi]) x hx
   exact WP.mono (VG.Proof.Bignum.PPC64LE.loadN_ok (k := 8 * (a.1.t + 1)) (e.hs.congr ku.wr) u10
-    (by rw [u12]; exact (BitVec.add_zero _).symm) u6 ((ku.gpr .r11 (by decide)).trans e.h11) (by omega)
-    (by omega) (by omega) (by simp only [slot, hdrBytes]; omega) (by simp only [slot, hdrBytes]; omega) hNr hNs)
+    (by rw [u12]; exact (BitVec.add_zero _).symm) u6 ((ku.gpr .r11 (by decide)).trans e.h11) (by omega_using [])
+    (by omega_using [htw]) (by omega_using [hw128]) (by simp only [slot, hdrBytes]; omega_using []) (by simp only [slot, hdrBytes]; omega_using [hZ]) hNr hNs)
     fun v ⟨_, vo, kv⟩ => ⟨s, h, vo, kv⟩
 
 theorem load_stC1 (a : BD × Nat) (s : State) (h : LN a s) : WP isa (.block loadC1) s (LC1 a) := by
@@ -130,9 +130,9 @@ theorem load_stC1 (a : BD × Nat) (s : State) (h : LN a s) : WP isa (.block load
   have hnw := e.hs.nowrap
   have hZ : 256 + 28 * (8 * (a.1.w + 2)) ≤ 8 * a.1.L := e.hZ
   have r128 : s.mem.readW (a.1.B + 128#64) 64 = BitVec.ofNat 64 (8 * a.1.t) := by
-    refine ((vo.word (d := 128) (by simp only [slot, hdrBytes]; omega) (by omega)).trans ?_).trans ctx.topOff
+    refine ((vo.word (d := 128) (by simp only [slot, hdrBytes]; omega_using []) (by omega_using [])).trans ?_).trans ctx.topOff
     rw [um]
-    exact (writeW_outside _ _ _ (by simp only [hUsed]; omega)).word (by simp only [hUsed]; omega) (by omega)
+    exact (writeW_outside _ _ _ (by simp only [hUsed]; omega_using [])).word (by simp only [hUsed]; omega_using []) (by omega_using [])
   exact WP.mono (loadC1_ok (e.hs.congr (kv.wr.trans ku.wr)) h31 h29 h11 e.hw e.hw' e.hZ r128)
     fun x ⟨x5, x31, xsp⟩ => ⟨x5, x31, xsp.trans hsp⟩
 

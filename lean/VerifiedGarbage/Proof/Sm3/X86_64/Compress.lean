@@ -55,7 +55,7 @@ theorem var_succ (t : Nat) :
     var (t + 1) 3 = var t 2 ∧ var (t + 1) 4 = var t 7 ∧ var (t + 1) 5 = var t 4 ∧
     var (t + 1) 6 = var t 5 ∧ var (t + 1) 7 = var t 6 := by
   simp only [var]
-  rw [show (t + 1) % 4 = (t % 4 + 1) % 4 by omega]
+  rw [show (t + 1) % 4 = (t % 4 + 1) % 4 by omega_using []]
   have := Nat.mod_lt t (show 4 > 0 by decide)
   generalize t % 4 = c at *
   revert this; revert c; decide
@@ -276,7 +276,7 @@ theorem win_contains (scr : Addr) (j : Nat) : (winRegion scr).Contains (slotAddr
   generalize j % 16 = p at *
   rw [Offset.add_sub_cancel_left]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [this]
 
 theorem slot_sep (scr : Addr) {i j : Nat} (h : i % 16 ≠ j % 16) :
     Mem.Sep (slotAddr scr i) 4 (slotAddr scr j) 4 := by
@@ -451,7 +451,7 @@ theorem nb_lt : 64 * nb s₀ < 2 ^ 64 := by
   refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
   simp only [Region.Contains]
   have := (st s₀ - bp s₀).isLt
-  omega
+  omega_using [hn]
 
 theorem in_state {k : Nat} (hk : k < 8) :
     InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
@@ -753,7 +753,7 @@ theorem saveMem_saved {s₀ : State} : Saved s₀ (saveMem s₀) :=
   Spill.saveMem_saved _ _ _ _ (by decide)
 
 theorem saveMem_frame {s₀ : State} : Frame [scrR s₀] s₀.mem (saveMem s₀) :=
-  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega) (by decide)
+  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega_using [this]) (by decide)
 
 theorem common_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hg : s₁.gpr = s₀.gpr)
     (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) (hm : s₁.mem = saveMem s₀) : Common s₀ 0 s₁ := by

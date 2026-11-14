@@ -20,13 +20,13 @@ private theorem count_one {x : BitVec 32} {N i : Nat} (h : x.toNat = N-i) (hi : 
     rw [BitVec.toNat_sub, h]
     change (2^32 - 1 + (N-i)) % 2^32 = _
     have := x.isLt
-    omega
+    omega_using [h, hi]
   refine ⟨value, ?_⟩
   apply Bool.eq_iff_iff.mpr
   simp only [beq_iff_eq, decide_eq_true_eq]
   constructor
-  · intro hz; have := congrArg BitVec.toNat hz; rw [value] at this; change N-(i+1) = 0 at this; omega
-  · intro hiN; apply BitVec.eq_of_toNat_eq; rw [value]; change N-(i+1) = 0; omega
+  · intro hz; have := congrArg BitVec.toNat hz; rw [value] at this; change N-(i+1) = 0 at this; omega_using [hi, this]
+  · intro hiN; apply BitVec.eq_of_toNat_eq; rw [value]; change N-(i+1) = 0; omega_using [hiN]
 
 /-- Both copy directions use the same proof. Only public pointers advance;
 source and destination must be separate. -/
@@ -112,13 +112,13 @@ theorem copySetup_ok {s : State} {W : Addr} {size n tab : Nat} {index : Src} {v 
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt hn, hs.edi_toNat]
     rw [Nat.mul_comm v.toNat]
-    omega
+    omega_using []
   · unfold PtrAt
     rw [U₈.other _ (by decide), U₇.gpr, U₆.other _ (by decide), U₅.other _ (by decide),
       U₄.other _ (by decide), base, hs.edi_toNat, Nat.add_zero]
     exact (Nat.mod_eq_of_lt (by rw [← hs.edi_toNat]; exact (s.gpr .edi).isLt)).symm
   · rw [U₈.gpr]
     change (2*n) % 2^32 = 2*n
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [hn])
 
 end VG.Proof.Mont.X86.Comb

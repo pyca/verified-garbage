@@ -30,7 +30,7 @@ theorem fieldPowerInit_ct (M : Mont) : RelCT isa (Two FieldInitial)
   (two_map fieldWs (fun p s h =>⟨p.mi,h.good,p.room⟩) (const_ct 7 1 (by decide) (by taint_decide) (by taint_decide))) ?_)
   (two_map fieldWs (fun _ _ h =>h) (M.ct (by simp [MmUse,Public.aY,Public.aR2,Public.aOne])))
  intro p s h
- exact WP.mono (const_ok h.good p.room (by have :=p.positive;omega) p.width (by decide : 7<8) (by decide : 1<2^16))
+ exact WP.mono (const_ok h.good p.room (by have :=p.positive;omega_using [this]) p.width (by decide : 7<8) (by decide : 1<2^16))
   (fun _ ⟨good,_,_,_⟩ =>⟨p.mi,good,p.room⟩)
 
 def LiteralReady (p : Parameters) (s : State) : Prop :=

@@ -79,7 +79,7 @@ theorem VP.dctx {F G : State → State → Prop} {c : Prog isa} {v N : Nat} (cer
   VP.taint _ cert (fun _ _ _ _ h₁ h₂ => ws_regs' (hws _ _ h₁) (hws _ _ h₂)) wp
 
 theorem b2n_lt_one (p : Prop) [Decidable p] : b2n (decide p) ≤ 1 := by
-  unfold b2n; split <;> omega
+  unfold b2n; split <;> omega_using []
 
 theorem b2n_nor (p q : Prop) [Decidable p] [Decidable q] :
     (if b2n (decide p) = 0 ∧ b2n (decide q) = 0 then 1 else 0) = b2n (!(decide p || decide q)) := by
@@ -160,15 +160,15 @@ theorem VP.count {E : State → Prop} {I : Nat → State → State → Prop} {bo
     VP (fun σ s => E σ ∧ I 0 σ s) (.loop body .ne) (fun σ s => E σ ∧ I K σ s) := by
   let J := fun n σ s => E σ ∧ n ≤ K ∧ I (K - n) σ s
   have hl := VP.loop (I := J) (body := body) (c := .ne) (Q := fun σ s => E σ ∧ I K σ s) (fun n => ?_)
-  · refine (hl (K - 1)).mono (fun σ s ⟨e, h⟩ => ⟨e, by omega, by rw [show K - (K - 1 + 1) = 0 by omega]; exact h⟩)
+  · refine (hl (K - 1)).mono (fun σ s ⟨e, h⟩ => ⟨e, by omega_using [pos], by rw [show K - (K - 1 + 1) = 0 by omega_using []]; exact h⟩)
       fun _ _ h => h
   · refine (VP.of_imp (p := n + 1 ≤ K) (fun σ s h => h.2.1) fun hn => ?_)
-    refine (hb (K - (n + 1)) (by omega)).mono (fun σ s ⟨e, _, h⟩ => ⟨e, h⟩) fun σ s ⟨⟨e, h⟩, z⟩ => ⟨?_, ?_, ?_⟩
+    refine (hb (K - (n + 1)) (by omega_using [pos])).mono (fun σ s ⟨e, _, h⟩ => ⟨e, h⟩) fun σ s ⟨⟨e, h⟩, z⟩ => ⟨?_, ?_, ?_⟩
     · show some (!s.z) = some (decide (0 < n))
-      rw [z, show K - (K - (n + 1) + 1) = n by omega]
+      rw [z, show K - (K - (n + 1) + 1) = n by omega_using [hn]]
       by_cases h0 : n = 0 <;> simp [h0, Nat.pos_iff_ne_zero]
-    · intro h0; subst h0; refine ⟨e, ?_⟩; rw [show K - (0 + 1) + 1 = K by omega] at h; exact h
-    · intro hp; refine ⟨e, by omega, ?_⟩; rw [show K - (n + 1) + 1 = K - n by omega] at h; exact h
+    · intro h0; subst h0; refine ⟨e, ?_⟩; rw [show K - (0 + 1) + 1 = K by omega_using [pos]] at h; exact h
+    · intro hp; refine ⟨e, by omega_using [hn], ?_⟩; rw [show K - (n + 1) + 1 = K - n by omega_using [hn]] at h; exact h
 
 end
 

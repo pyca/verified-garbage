@@ -32,7 +32,7 @@ theorem isPowerOfTwo_of_and (n : Nat) (hn : 0 < n) (h : n &&& (n - 1) = 0) : n.i
   (Nat.and_sub_one_eq_zero_iff_isPowerOfTwo (Nat.pos_iff_ne_zero.1 hn)).1 h
 
 theorem valid_pow {N r p dk : Nat} (h : valid N r p dk) : N.isPowerOfTwo :=
-  isPowerOfTwo_of_and N (by have := h.1; omega) h.2.1
+  isPowerOfTwo_of_and N (by have := h.1; omega_using [this]) h.2.1
 
 /-! ## Indices -/
 
@@ -52,7 +52,7 @@ theorem flatMap_chunk {α β : Type} (f : α → List β) {N : Nat} (hf : ∀ a,
     rw [List.flatMap_cons, Nat.mul_zero, List.drop_zero, List.take_left' (hf a)]; rfl
   | a :: l, i + 1, hi => by
     rw [List.flatMap_cons, Nat.mul_succ, Nat.add_comm, ← List.drop_drop, List.drop_left' (hf a)]
-    exact flatMap_chunk f hf l i (by simp at hi; omega)
+    exact flatMap_chunk f hf l i (by simp at hi; omega_using [hi])
 
 /-- The indices each scryptROMix leaks, from the list of all of them. -/
 theorem indices_eq {r N : Nat} {l₁ l₂ : List (List Byte)}
@@ -76,7 +76,7 @@ theorem bytesAt_chunks (m : Mem) (p : Addr) (n : Nat) :
 /-- Part `i` of `n` bytes of the bytes at `p`. -/
 theorem chunk_bytesAt (m : Mem) (p : Addr) {n i k : Nat} (h : n * i + n ≤ k) :
     ((bytesAt m p k).drop (n * i)).take n = bytesAt m (p + BitVec.ofNat 64 (n * i)) n := by
-  obtain ⟨j, rfl⟩ : ∃ j, k = n * i + n + j := ⟨k - (n * i + n), by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, k = n * i + n + j := ⟨k - (n * i + n), by omega_using [h]⟩
   rw [bytesAt_add, bytesAt_add, List.append_assoc, List.drop_left' (bytesAt_length _ _ _),
     List.take_left' (bytesAt_length _ _ _)]
 

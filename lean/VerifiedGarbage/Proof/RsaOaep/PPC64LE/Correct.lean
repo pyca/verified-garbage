@@ -134,7 +134,7 @@ theorem code_ok (hl : H.D ∈ lens) : WP isa (encrypt f) s (Post Hs Gs s) := by
   refine wp_tword TL E.base (k := 6) (by decide) (d := .r3) (by decide) fun t₁ o₁ e₁ => wp_nil fun y₁ => ?_
   have e3 : t₁.gpr .r3 = BitVec.ofNat 64 H.D := e₁.trans TL.d
   -- The code for that length.
-  refine WP.seq (byLen_ok (D := H.D) (by omega)
+  refine WP.seq (byLen_ok (D := H.D) (by omega_using [hD64])
     (F := fun u => Entered s u ∧ u.syms = s.syms ∧ u.gpr .r3 = BitVec.ofNat 64 H.D)
     (fun _ h => h.2.2) (fun u u' ⟨E', y', r3'⟩ o y => ⟨entered_only P E' o, y.trans y',
       by rw [o.get .r3]; exact r3'⟩) ?_ hl (fun x hx => (lens_certs x hx).1) t₁
@@ -159,7 +159,7 @@ theorem tabS_entryL {D : Nat} {vs : List MVar} (hc : Coh vs) {s : State} (P : Pr
       exact List.mem_cons_self ..) P.ktl
     (P.stl.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 /-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
 theorem tabS_entry {D : Nat} {vs : List MVar} (hc : Coh vs) {s : State} (P : PreO D s)
@@ -173,7 +173,7 @@ theorem tabS_entry {D : Nat} {vs : List MVar} (hc : Coh vs) {s : State} (P : Pre
       exact List.mem_cons_self ..) P.kt
     (P.st.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 /-- The tables, on entry: each one of the tables of `vs`, which names its
 hash function, and holds what the calls through it need. -/

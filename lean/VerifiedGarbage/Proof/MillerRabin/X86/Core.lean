@@ -50,7 +50,7 @@ theorem core_ok {code : Prog isa} {name : String}
   have powersLt : ∀ j < 16, runValues A c g.w (aTable + j) < c := by
     intro j digit
     rw [runValues_power A c g.w digit]
-    exact Word32.tp_lt (by omega : 0 < c) Xlt Olt j
+    exact Word32.tp_lt (by omega_using [odd] : 0 < c) Xlt Olt j
   have tableOne : runValues A c g.w aTable = runValues A c g.w aOne := by
     rw [← runValues_identity, runValues_y, runValues_one]
   refine WP.seq (WP.mono (wordLoop_ok verified noSp stack v Sa length odd startLt runArrays_y runArrays_one
@@ -65,14 +65,14 @@ theorem core_ok {code : Prog isa} {name : String}
   refine WP.seq (WP.mono (Sb.lastSquares v marker loB hiB) fun d ⟨Sd, Od, Kd⟩ => ?_)
   have yBound : exponentValues (runValues A c g.w) c g.w g.words false g.words aY < c := by
     rw [exponentValues, setAt_self]
-    exact exponentState_lt (runValues A c g.w) (by omega : 0 < c) g.w g.words false startLt g.words
+    exact exponentState_lt (runValues A c g.w) (by omega_using [odd] : 0 < c) g.w g.words false startLt g.words
   refine WP.seq (WP.mono (squareLoop_ok verified noSp stack v Sd length odd yBound runArrays_y runArrays_minus
-    (by decide : 0 < 3) (by decide : 3 < 2 ^ 31) (by omega : 4 - VG.Proof.RsaKeyGen.sigOf k < 2 ^ 31)
+    (by decide : 0 < 3) (by decide : 3 < 2 ^ 31) (by omega_using [] : 4 - VG.Proof.RsaKeyGen.sigOf k < 2 ^ 31)
     (exponentState (runValues A c g.w) c g.w g.words false g.words).2
     (by intro e mem; simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
         rcases mem with rfl | rfl | rfl <;> decide) (by decide) rfl rfl rfl)
     fun e ⟨Se, Oe, Ke⟩ => ?_)
-  refine wp_movS (Se.data.context.readScalar sFlag (by have := v.headerFit; unfold sFlag; omega))
+  refine wp_movS (Se.data.context.readScalar sFlag (by have := v.headerFit; unfold sFlag; omega_using [this]))
     fun t T _ => WP.block_nil ?_
   refine ⟨?_, ?_, (((Ka.trans Kb).trans Kd).trans Ke).widen T.keeps⟩
   · rw [T.gpr, (Se.data.slotValues sFlag (by decide)).2]

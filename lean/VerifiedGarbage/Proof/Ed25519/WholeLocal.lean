@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Sig
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed25519's whole functions: their contracts read only their buffers
@@ -27,10 +28,10 @@ theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   refine List.map_congr_left fun i hi => (h _ ?_).symm
   have hi := List.mem_range.mp hi
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 variable (pb : Nat)
 
@@ -40,7 +41,7 @@ theorem slice_agree {m₁ m₂ : Mem} {p l : BitVec 64}
     ∀ a, Region.Contains ⟨p, (l.setWidth pb).toNat⟩ a 1 → m₁ a = m₂ a := fun a ha => h a (by
   simp only [Region.Contains, BitVec.toNat_setWidth] at ha ⊢
   have := Nat.mod_le l.toNat (2 ^ pb)
-  omega)
+  omega_using [ha, this])
 
 /-! ## A seed and its public key
 

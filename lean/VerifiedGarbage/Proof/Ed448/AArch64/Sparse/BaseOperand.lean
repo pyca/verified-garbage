@@ -75,16 +75,16 @@ theorem baseOperand_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base
     have n6:i.val≠6:=fun h => hi (by rw [show i=(6:Index) from Fin.ext h];decide)
     have n7:i.val≠7:=fun h => hi (by rw [show i=(7:Index) from Fin.ext h];decide)
     have hilt:=i.isLt
-    exact fo.limbs (by simp only [slot];omega) (by simp only [slot];omega) (by omega)
+    exact fo.limbs (by simp only [slot];omega_using [n6, n7]) (by simp only [slot];omega_using []) (by omega_using [hj])
   have xw:∀ j<8,word t.mem base (slot 6+8*j)=limb (Impl.Ed448.PublicTable.entry (m/2)).1 j:=by
     intro j hj
-    have hd:dst j=slot 6+8*j:=by simp only [dst,slot];omega
-    rw [←hd,tv j (by omega),baseWord_entry (by omega),ite_eq_left hj,Nat.mod_eq_of_lt hj]
+    have hd:dst j=slot 6+8*j:=by simp only [dst,slot];omega_using [hj]
+    rw [←hd,tv j (by omega_using [hj]),baseWord_entry (by omega_using [hj]),ite_eq_left hj,Nat.mod_eq_of_lt hj]
   have yw:∀ j<8,word t.mem base (slot 7+8*j)=limb (Impl.Ed448.PublicTable.entry (m/2)).2 j:=by
     intro j hj
-    have hd:dst (8+j)=slot 7+8*j:=by simp only [dst,slot];omega
-    rw [←hd,tv (8+j) (by omega),baseWord_entry (by omega),ite_eq_right (by omega),
-      show (8+j)%8=j by omega]
+    have hd:dst (8+j)=slot 7+8*j:=by simp only [dst,slot];omega_using [hj]
+    rw [←hd,tv (8+j) (by omega_using [hj]),baseWord_entry (by omega_using [hj]),ite_eq_right (by omega_using []),
+      show (8+j)%8=j by omega_using [hj]]
   have tb:BEnv t.mem base:=by
     intro i j hj
     by_cases h6:i=6
@@ -99,7 +99,7 @@ theorem baseOperand_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base
         exact Nat.lt_of_lt_of_le (limb_lt _ _) (by decide)
       · rw [sm i (by simp only [List.mem_cons,List.not_mem_nil,or_false];exact not_or.mpr ⟨h6,h7⟩) j hj]
         exact hb i j hj
-  refine ⟨⟨kt.mono (by decide),fun x hx _ => fo x (by omega)⟩,tb,sm,?_,?_,kt⟩
+  refine ⟨⟨kt.mono (by decide),fun x hx _ => fo x (by omega_using [hx])⟩,tb,sm,?_,?_,kt⟩
   · intro j hj
     show (word t.mem base (slot 6+8*j)).toNat<Mb
     rw [xw j hj]

@@ -63,15 +63,15 @@ theorem frameR_val32 {bytes : Nat} (F : Frame (frameR base sp ws) m m') (R : Cal
     (hws : ∀ p ∈ ws, d + 4 * k ≤ p.1 ∨ p.1 + p.2 ≤ d) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) :
     val32 m' base d k = val32 m base d k := by
   rw [← VG.Proof.Bignum.read_eq_val32, ← VG.Proof.Bignum.read_eq_val32]
-  refine congrArg BitVec.toNat (F.read (r := ⟨off base d, 4 * k⟩) (Region.contains_self _ _) (fun r hr => ?_) (by omega))
+  refine congrArg BitVec.toNat (F.read (r := ⟨off base d, 4 * k⟩) (Region.contains_self _ _) (fun r hr => ?_) (by omega_using [nw, hd]))
   simp only [frameR, List.mem_cons, List.mem_map] at hr
   rcases hr with rfl | ⟨p, hp, rfl⟩
   · refine (R.apart.sub_right ?_).symm
-    have := Offset.sub base (d := d) (n := 4 * k) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := d) (n := 4 * k) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [hd])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · have := hws p hp
     have := hfit p hp
-    exact Offset.disjoint base (by omega) (by omega) (by omega)
+    exact Offset.disjoint base (by omega_arith) (by omega_using [nw, hd]) (by omega_using [nw, this])
 
 end
 
@@ -100,14 +100,14 @@ theorem In.keepF (h : In Ex base bytes len args s) {regs : List Reg} (K : Keeps 
   rcases hr with rfl | ⟨p, hp, rfl⟩
   · have ea : (stackAddress s i).toNat = (s.gpr .esp).toNat + (4 + 4 * i) := by
       simp only [stackAddress, addr, PublicRt.setWidth_toNat, BitVec.toNat_add, BitVec.toNat_ofNat]
-      omega
+      omega_using [top, hi]
     have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
-      rw [PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega)]
-    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega))
-      (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
+      rw [PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega_using [low])]
+    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega_using [low]))
+      (by dsimp only; rw [eb]; omega_using []) (by dsimp only; rw [ea]; omega_using [hi])).symm
   · refine A.stack.apart.sub_right ?_
     have := hfit p hp
-    have := Offset.sub base (d := p.1) (n := p.2) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := p.1) (n := p.2) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [this])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 end

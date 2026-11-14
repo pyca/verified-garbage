@@ -49,7 +49,7 @@ theorem sharedCheckPublicPublicPower_ct {p : Inputs} {slots : List Nat} {bs es e
   intro s0 t0 tr1 tr2 u v initial run1 run2
   have leadLt := VG.Proof.Ffdh.lead_lt (bs := eb) (by intro empty; rw [empty] at positive; simp at positive)
   have trimmedPositive : 0 < (eb.drop (VG.Proof.Ffdh.lead eb)).length := by
-    simp only [List.length_drop]; omega
+    simp only [List.length_drop]; omega_using [leadLt]
   have args (s : State) (h : PowerAtInput p slots bs es M bb eb s ∧ P s) :
       WP isa (.block (VG.Impl.Ffdh.Arm.Domain.powerArgs bs es ec)) s
         (KeyPower.Input p.base (p.slotValue bs) (p.slotValue es) p.len p.w M P regions bb eb) := by

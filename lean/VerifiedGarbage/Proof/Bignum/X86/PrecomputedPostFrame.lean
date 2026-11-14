@@ -17,13 +17,13 @@ theorem precomputedPost_compose {s u t : State} {base : Addr} {bytes len : Nat} 
   have nw := h.scratch.nowrap
   have sz := h.space
   have size := size_eq (Spec.Rsa.modulusWords len)
-  have Os : Outside base 0 bytes s.mem u.mem := O.mono (by omega) (by omega)
+  have Os : Outside base 0 bytes s.mem u.mem := O.mono (by omega_using []) (by omega_using [sz, size])
   have dims := h.dimensions
-  have W := scratch_words Os (by omega) (n := 2 * Spec.Rsa.modulusWords len) (by omega)
-    (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len by omega] using h.preApart)
-  have E := scratch_bytes Os (by have := h.eBound; have := h.upper; omega) h.eApart
-  have X := scratch_bytes Os (by have := h.upper; omega) h.inApart
-  refine ⟨?_, ((outside_frame O (by omega)).mono (by simp)).trans P.2⟩
+  have W := scratch_words Os (by omega_using [nw]) (n := 2 * Spec.Rsa.modulusWords len) (by omega_using [dims])
+    (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len by omega_using []] using h.preApart)
+  have E := scratch_bytes Os (by have := h.eBound; have := h.upper; omega_using []) h.eApart
+  have X := scratch_bytes Os (by have := h.upper; omega_using [dims]) h.inApart
+  refine ⟨?_, ((outside_frame O (by omega_using [nw])).mono (by simp)).trans P.2⟩
   intro nB length key
   have R := P.1 nB length (by rw [W]; exact key)
   rw [E, X] at R

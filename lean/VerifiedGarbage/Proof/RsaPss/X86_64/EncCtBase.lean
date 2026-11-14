@@ -178,7 +178,7 @@ theorem rest : RestOk 2 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by
   · rw [hp.hwr]; intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have := hp.wO; have := hp.wS
-    rcases hr with rfl | rfl <;> dsimp only <;> omega
+    rcases hr with rfl | rfl <;> dsimp only <;> omega_arith
 
 end Sib
 

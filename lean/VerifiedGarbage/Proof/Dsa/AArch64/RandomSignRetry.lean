@@ -96,7 +96,7 @@ theorem random_callFinish_ok {s : State} {B : Addr} {attempts : Nat} (success : 
         intro he
         have hh := congrArg BitVec.toNat he
         simp only [BitVec.toNat_ofNat] at hh
-        omega
+        omega_using [hsp, hn, hpos, hbound, hul, ha, hua, husp, hun, hva, hvl, h1, he, hh]
       refine WP.ite true (by
         change some (!(v.gpr .x0 == 0#64)) = some true
         rw [hva, hnz]; rfl) (fun _ => ?_) (fun h => Bool.noConfusion h)
@@ -109,7 +109,7 @@ theorem random_retry_outside (m : Mem) (B : Addr) (success : Bool) (attempts : N
     Outside B 152 48 m (randomRetryMem m B success attempts) := by
   have step (m : Mem) (d : Nat) (v : BitVec 64) (hd : 152 ≤ d ∧ d + 8 ≤ 200) :
       Outside B 152 48 m (m.writeW (off B d) v) :=
-    (writeW_outside _ _ _ (by omega)).mono hd.1 hd.2
+    (writeW_outside _ _ _ (by omega_using [hd])).mono hd.1 hd.2
   cases success with
   | true => exact step _ _ _ (by decide)
   | false =>

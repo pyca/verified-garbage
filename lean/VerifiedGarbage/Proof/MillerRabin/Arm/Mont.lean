@@ -32,7 +32,7 @@ theorem KS.w32_six (h : KS P σ A live V ls s) : s.mem.readW (off (State.addr P.
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat]
   show w32 s.mem (State.addr P.ws) 48 = P.w % 2 ^ 32
-  omega
+  omega_using [wd, hw]
 
 /-- `ctx`, from `ws` in `r0`. -/
 theorem KS.ctx_ok (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) {rest : List Instr} {Q : State → Prop}
@@ -48,8 +48,8 @@ theorem KS.ctx_ok (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) {rest : Li
   refine wp_dp (op2_imm (by decide)) fun s1 u1 => ?_
   have rd : InRegions (s1.rd ++ s1.wr) (off (State.addr P.ws) 48) 4 :=
     ⟨P.rS, List.mem_append_right _ (by rw [u1.wr, h.wr, pre.wr]; simp),
-      Offset.contains_base _ (by omega) (by omega)⟩
-  refine wp_ldr (by decide) (by rw [u1.other _ (by decide), r0]; exact addr_add (by omega)) rd fun s2 u2 => ?_
+      Offset.contains_base _ (by omega_using [len]) (by omega_using [])⟩
+  refine wp_ldr (by decide) (by rw [u1.other _ (by decide), r0]; exact addr_add (by omega_using [fit, len])) rd fun s2 u2 => ?_
   refine wp_mov (op2_lsl (by decide)) fun s3 u3 => ?_
   refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
   have e9 : s4.gpr .r9 = BitVec.ofNat 32 P.W := by
@@ -58,8 +58,8 @@ theorem KS.ctx_ok (h : KS P σ A live V ls s) (r0 : s.gpr .r0 = P.ws) {rest : Li
     rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       show (2 : BitVec 32).toNat = 2 from rfl]
     simp only [MP.W]
-    omega
-  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by simp only [MP.W]; omega) e9 fun t h7 r m => ?_
+    omega_using []
+  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by simp only [MP.W]; omega_using [w128]) e9 fun t h7 r m => ?_
   have rt : Rest [.r7, .r8, .r9] s t :=
     (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans ((u4.rest (by simp)).trans
       (r.mono (by simp)))))
@@ -84,8 +84,8 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
     rw [ex]
     refine keeps _ hin fun j hj => ?_
     by_cases hlo : (x - State.addr P.ws).toNat < kOff
-    · simp only [arrAt, Proof.Rsa.Mont.hdrBytes, kOff] at hlo ⊢; omega
-    have hB := pre.ofsB (x := x) (by simp only [ofs]; omega)
+    · simp only [arrAt, Proof.Rsa.Mont.hdrBytes, kOff] at hlo ⊢; omega_using [hlo]
+    have hB := pre.ofsB (x := x) (by simp only [ofs]; omega_using [hlo])
     have hj' : (arr P.W j, S P.W) ∈ ranges P.W [2, 3, o] [] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       simp only [ranges, List.map_cons, List.map_nil, List.append_nil, List.mem_cons, List.not_mem_nil,
@@ -98,12 +98,12 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
     have := pre.arr_eq j
     simp only [ofs] at hB h1
     rw [hB, hS] at h1
-    omega
+    omega_using [h1, this]
   · refine frame x fun r hr hc => hin ?_
     simp only [List.mem_singleton] at hr
     subst hr
     simp only [Region.Contains] at hc
-    omega
+    omega_using [hc]
 
 end
 

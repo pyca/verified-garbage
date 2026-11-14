@@ -27,8 +27,8 @@ theorem zeroTest_ok {s : State} {base : Addr} {size n a : Nat}
     WP isa (.block (Jacobian.zeroTest n a)) s fun t =>
       t.zf = some (decide (wordsVal s.mem base a n = 0)) ∧ CKeeps [.edx] s t := by
   simp only [Jacobian.zeroTest, List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_sc hs (d := a) (by omega)) fun s₁ u₁ _ => ?_
-  refine WP.block_append (WP.mono (winOrs_ok (hs.of_keeps u₁.keeps (by decide)) (2*n-1) (by omega))
+  refine wp_movS (readSrc_sc hs (d := a) (by omega_using [hn, ha])) fun s₁ u₁ _ => ?_
+  refine WP.block_append (WP.mono (winOrs_ok (hs.of_keeps u₁.keeps (by decide)) (2*n-1) (by omega_using [hn, ha]))
     fun s₂ ⟨e₂,k₂,m₂⟩ => ?_)
   rw [u₁.gpr, u₁.mem] at e₂
   have hz : s₂.gpr .edx = 0 ↔ wordsVal s.mem base a n = 0 := by
@@ -40,9 +40,9 @@ theorem zeroTest_ok {s : State} {base : Addr} {size n a : Nat}
     · intro ⟨h₀,h⟩ j hj
       cases j with
       | zero => simpa using h₀
-      | succ j => exact h j (by omega)
+      | succ j => exact h j (by omega_using [hj])
     · intro h
-      exact ⟨by simpa using h 0 (by omega), fun j hj => h (j+1) (by omega)⟩
+      exact ⟨by simpa using h 0 (by omega_using [hn]), fun j hj => h (j+1) (by omega_using [hj])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     Option.bind_some, BitVec.and_self, RegUpd.zf_arithFlags, Option.some.injEq, exists_eq_left']

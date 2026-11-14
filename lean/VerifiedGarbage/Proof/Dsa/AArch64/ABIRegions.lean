@@ -22,7 +22,7 @@ theorem source_shrink {s : State} {B p : Addr} {Z n : Nat} {bs : List Byte}
 
 theorem scratch_prefix {s : State} {B : Addr} {Z n : Nat} (h : Scr s B Z) (hn : n ≤ Z) (hp : 0 < n) :
     Scr s B n := by
-  have hs := h.sub (o := 0) (by omega : 0 + n ≤ Z) hp
+  have hs := h.sub (o := 0) (by omega_using [hn] : 0 + n ≤ Z) hp
   simpa [off] using hs
 
 theorem stackArg_base (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
@@ -39,7 +39,7 @@ theorem stackWord_read {s : State} {count j : Nat}
     InRegions (s.rd ++ s.wr) (off s.sp (8 * j)) 8 := by
   change InRegions _ (stackArgAddr s j) 8
   rw [stackArg_base s j]
-  exact ⟨_, h, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨_, h, Offset.contains_base _ (by omega_using [hbound]) (by omega_using [hbound, hn])⟩
 
 theorem stackWord_separate {s : State} {B : Addr} {Z count j : Nat}
     (h : (⟨B, Z⟩ : Region).Disjoint ⟨stackArgAddr s 0, 8 * count⟩)
@@ -47,7 +47,7 @@ theorem stackWord_separate {s : State} {B : Addr} {Z count j : Nat}
     ∀ i < 8, Z ≤ ofs B (off s.sp (8 * j) + BitVec.ofNat 64 i) := by
   intro i hi
   have ho := out_scr h.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + i)
-    (len := 8 * count) (by omega) hn)
+    (len := 8 * count) (by omega_using [hbound, hi]) hn)
   rw [← stackArg_byte s j i] at ho
   exact ho
 

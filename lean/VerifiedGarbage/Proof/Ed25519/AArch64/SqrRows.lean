@@ -40,7 +40,7 @@ theorem sqrCross_arith {L01 L02 L03 L12 L13 L23 H01 H02 H03 H12 H13 H23
     (p13 : P13 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) (p23 : P23 ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) :
     L01 + 2 ^ 64 * S6 + 2 ^ 128 * S7b + 2 ^ 192 * S21c + 2 ^ 256 * (S22c + 2 ^ 64 * S23) =
       P01 + 2 ^ 64 * P02 + 2 ^ 128 * (P03 + P12) + 2 ^ 192 * P13 + 2 ^ 256 * P23 := by
-  omega
+  omega_using [e7, e8, e9, e14, e15, e16, e17, e18, e21, e22, m01, m02, m03, m12, m13, m23, p01, p02, p03, p12, p13, p23]
 
 /-- What `sqrCross` computes, word by word. -/
 theorem sqrCross_value (a0 a1 a2 a3 : Word) :
@@ -102,7 +102,7 @@ theorem sqrDouble_arith {W1 W2 W3 W4 W5 W6 R1 R2 R3 R4 R5 R6 R7 K1 K2 K3 K4 K5 K
     (e7 : R7 + 2 ^ 64 * K7 = 0 + 0 + K6) :
     R1 + 2 ^ 64 * R2 + 2 ^ 128 * R3 + 2 ^ 192 * R4 + 2 ^ 256 * (R5 + 2 ^ 64 * R6 + 2 ^ 128 * R7) =
       2 * (W1 + 2 ^ 64 * W2 + 2 ^ 128 * W3 + 2 ^ 192 * W4 + 2 ^ 256 * (W5 + 2 ^ 64 * W6)) := by
-  omega
+  omega_using [w1, w2, w3, w4, w5, w6, e1, e2, e3, e4, e5, e6, e7]
 
 /-- What `sqrDouble` computes, word by word. -/
 theorem sqrDouble_value (w1 w2 w3 w4 w5 w6 : Word) :
@@ -160,7 +160,7 @@ theorem sqrDiag_arith {W1 W2 W3 W4 W5 W6 W7 L0 L1 L2 L3 H0 H1 H2 H3 P0 P1 P2 P3
       2 ^ 64 * (W1 + 2 ^ 64 * W2 + 2 ^ 128 * W3 + 2 ^ 192 * W4 +
         2 ^ 256 * (W5 + 2 ^ 64 * W6 + 2 ^ 128 * W7)) +
         (P0 + 2 ^ 128 * P1 + 2 ^ 256 * (P2 + 2 ^ 128 * P3)) := by
-  omega
+  omega_using [e1, e2, e3, e4, e5, e6, e7, m0, m1, m2, m3]
 
 /-- What `sqrDiag` computes, word by word. -/
 theorem sqrDiag_value (a0 a1 a2 a3 w1 w2 w3 w4 w5 w6 w7 : Word) :

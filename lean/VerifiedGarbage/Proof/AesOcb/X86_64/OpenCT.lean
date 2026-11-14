@@ -52,7 +52,7 @@ theorem recv_one {s : State} (o : OneT K W SP R N A D nl n tl Tg s) :
     refine (writeBytes_frame _ _ _ (by rw [Proof.AesCcm.X86_64.length_bytesAt]; exact Region.contains_self _ _)).sub
       fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by have := T.ar.t16; omega)⟩
+    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by have := T.ar.t16; omega_using [this])⟩
   exact o.1.step T.ar.lay T.ar.data.w (o.1.env.keep g rd wr) wr fr
 
 /-- The comparison keeps the public arguments, and leaves 1 or 0 at `W`. -/

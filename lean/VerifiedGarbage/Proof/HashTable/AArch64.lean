@@ -139,6 +139,6 @@ theorem mgf_valid {H : Hash} {hH : HashOK H} (lk : MgfLink H hH) : Proof.Mgf1.Va
   refine ⟨by rw [lk.len]; exact hD, fun x => ?_⟩
   rw [lk.hash, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length, lk.len]
   have := hH.sizes.DN
-  omega
+  omega_using [this]
 
 end VG.Proof.RsaOaep.AArch64

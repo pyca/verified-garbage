@@ -43,10 +43,10 @@ theorem verifyMov_ok {p : Params} {prep : Bool} {s s1 : State} (h : VPre p prep 
     intro d hd
     refine ⟨vArgs s, by simp [hrd, h.rd], ?_⟩
     rw [hg, ← add_add, ← stackArgAddr0]
-    exact Offset.contains_base _ hd (by omega)
+    exact Offset.contains_base _ hd (by omega_using [hd])
   refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
-  have h8 := hin 0 (by omega)
-  have h16 := hin 8 (by omega)
+  have h8 := hin 0 (by omega_using [])
+  have h16 := hin 8 (by omega_using [])
   simp only [Nat.add_zero, Nat.reduceAdd] at h8 h16
   xrun [ea_stk, h8, h16, RegUpd.mxcsr_setReg]
   rw [hm, hg]
@@ -55,10 +55,10 @@ theorem verifyMov_ok {p : Params} {prep : Bool} {s s1 : State} (h : VPre p prep 
 /-- The arguments of `verifyRegs`, pushed. -/
 theorem verifyRegs_vals {p : Params} {prep : Bool} {s s2 : State} (hk : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r)
     (h11 : s2.gpr .r11 = stackArg s 0) (h10 : s2.gpr .r10 = stackArg s 1) (hax : s2.gpr .rax = 0) :
-    ∀ j (hj : j < 9), s2.gpr (verifyRegs[j]'(by simp [verifyRegs]; omega)) =
-      (vlay p prep s).vals[j]'(by simp [Lay.vals]; omega) := by
+    ∀ j (hj : j < 9), s2.gpr (verifyRegs[j]'(by simp [verifyRegs]; omega_using [hj])) =
+      (vlay p prep s).vals[j]'(by simp [Lay.vals]; omega_using [hj]) := by
   intro j hj
-  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 := by omega
+  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 := by omega_using [hj]
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [verifyRegs, Lay.vals, vlay, List.getElem_cons_zero, List.getElem_cons_succ, h10, h11, hax] <;>
     exact hk _ (by decide)
@@ -94,7 +94,7 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
     have hsp2 : s2.gpr .rsp = (vlay p prep s).B + BitVec.ofNat 64 112 := by
       rw [hg2 _ (by decide), vlay_B]
     have hn : 8 * verifyRegs.length ≤ (s2.gpr .rsp).toNat := by
-      rw [hg2 _ (by decide)]; have := h.sp; simp only [verifyRegs, List.length_cons, List.length_nil]; omega
+      rw [hg2 _ (by decide)]; have := h.sp; simp only [verifyRegs, List.length_cons, List.length_nil]; omega_using [this]
     refine WP.frame (by decide) (by decide) (by decide) hn ?_
     refine WP.seq (WP.mono (entry_ok hL rfl (by decide) hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1)
       (verifyRegs_vals hg2 h11 h10 hax) (hg2 _ (by decide)))
@@ -115,7 +115,7 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
         · rw [popped_gpr _ _ _ hr' (cs_r11 r hr), hcs' r hr, hc₂.cs r hr hr', hg2 r (cs_tmp r hr)]
       · have eR : rRet s = ⟨(vlay p prep s).B + BitVec.ofNat 64 112, 8⟩ := by rw [vlay_B]
         have dB : ∀ k, k ≤ 112 → (rRet s).Disjoint ⟨(vlay p prep s).B, k⟩ := fun k hk => by
-          rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega)
+          rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega_using [])
         rw [popped_mem, hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
@@ -132,10 +132,10 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
       simp only [verifyInternal, messageRep, pkTr]
       have ek : bytesAt t₂.mem (vlay p prep s).key p.pkLen = bytesAt s.mem (s.gpr .rdi) p.pkLen := by
         rw [hc₂.bytesAt_eq (p := (vlay p prep s).key) (n := p.pkLen) (hL.xKey.sub_right (Region.sub_prefix hK.2.2))
-          (hL.kKey.sub_right (Region.sub_prefix hK.2.2)) (by have := h.nPk; omega), hm₀]; rfl
+          (hL.kKey.sub_right (Region.sub_prefix hK.2.2)) (by have := h.nPk; omega_using [hK]), hm₀]; rfl
       have es : bytesAt t₂.mem (vlay p prep s).sig p.sigLen = bytesAt s.mem (s.gpr .r9) p.sigLen := by
         rw [hc₂.bytesAt_eq (p := (vlay p prep s).sig) (n := p.sigLen) (h.sigScr.symm.sub_left (vlay_X p prep s).sub) h.stkSig
-          (by have := h.nSig; omega), hm₀]; rfl
+          (by have := h.nSig; omega_using [this]), hm₀]; rfl
       have etr : bytesAt t.mem (vlay p prep s).rnd 64 = pkTr (bytesAt s.mem (s.gpr .rdi) p.pkLen) := by
         rw [hc.bytesAt_eq F.xTr F.kTr (by decide), hm₀]; exact h.tr
       have hμ' := hμ
@@ -151,7 +151,7 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
     refine ⟨⟨fun r hr => ?_, by rw [RegUpd.mem_setReg, hm1], by rw [RegUpd.mxcsr_setReg, hx1]⟩, ?_⟩
     · rw [RegUpd.gpr_setReg_of_ne _ _ (fun e => by subst e; revert hr; decide), hg1]
     · unfold VPost
-      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega)]
+      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_using [h8])]
       rfl
 
 theorem vPost_of {p : Params} {s s' : State} (h : VPost p s s') :

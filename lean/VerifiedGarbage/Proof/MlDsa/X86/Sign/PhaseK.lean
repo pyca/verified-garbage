@@ -115,7 +115,7 @@ theorem leq_step (h : LeakEq p t σ₁ σ₂) (ht : t < 814) :
       ((List.range p.k).map (T0 p σ₁)) (muOf σ₁) (rppS p σ₁) ((999 - t) + 1) (p.ℓ * t) =
     signLeakLoop p maxBounds (amat p (Am p σ₂)) ((List.range p.ℓ).map (S1 p σ₂)) ((List.range p.k).map (S2 p σ₂))
       ((List.range p.k).map (T0 p σ₂)) (muOf σ₂) (rppS p σ₂) ((999 - t) + 1) (p.ℓ * t) := by
-  rw [show 999 - t + 1 = 1000 - t by omega]; exact h
+  rw [show 999 - t + 1 = 1000 - t by omega_using [ht]]; exact h
 
 theorem outTag_eq (hp : ParamsOk p) {σ : State} {κ : Nat} (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
     outTag (iterF p σ maxBounds κ) = if PassV p σ κ then
@@ -148,7 +148,7 @@ theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable 
   unfold tagFn at h
   by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
     by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
-      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega)
+      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega_using [h])
 
 /-- The first polynomial of `z` that fails its check, or `ℓ`. -/
 abbrev zFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
@@ -181,21 +181,21 @@ theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
   have hpass := leq_pass hp h ht hs₁ hs₂
   by_cases h1 : PassV p σ₁ (p.ℓ * t)
   · have h2 := hpass.mp h1
-    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega)) (fun j hj => h2.1 j (by omega)),
-      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega)⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega)⟩, hpass⟩
+    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega_using [hr, hj])) (fun j hj => h2.1 j (by omega_using [hr, hj])),
+      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega_using [hi, hj])⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega_using [hi, hj])⟩, hpass⟩
   · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
     have e := leakF_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
     rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
     obtain ⟨ea, ex, eab, ey⟩ := tagFn_eq e
     refine ⟨fun r hr => ?_, fun i hi => ?_, hpass⟩
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
-      · exact iff_of_true (fun j hj => hz j (by omega)) (fun j hj => ea.mp hz j (by omega))
+      · exact iff_of_true (fun j hj => hz j (by omega_using [hr, hj])) (fun j hj => ea.mp hz j (by omega_using [hr, hj]))
       · rw [prefix_ok _ hr, prefix_ok _ hr]; exact iff_of_eq (congrArg (r ≤ ·) (ex hz))
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
       · have hz' := ea.mp hz
         by_cases hr0 : R0Ok p σ₁ (p.ℓ * t)
         · have hr0' := (eab.mp ⟨hz, hr0⟩).2
-          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega)⟩ ⟨hz', fun j hj => hr0' j (by omega)⟩
+          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega_using [hi, hj])⟩ ⟨hz', fun j hj => hr0' j (by omega_using [hi, hj])⟩
         · rw [and_iff_right hz, and_iff_right hz', prefix_ok _ hi, prefix_ok _ hi]
           exact iff_of_eq (congrArg (i ≤ ·) (ey hz hr0))
       · exact iff_of_false (fun h => hz h.1) (fun h => hz (ea.mpr h.1))
@@ -860,18 +860,18 @@ theorem seqOk_piece {I : Nat → State → State → Prop} {f : Nat → Prog isa
     (hpub : ∀ k, k≤limit → ∀ x y, TPre (Y p) x → TPre (Y p) y → SPub p x y → b k x=b k y) :
     ∀ (a n : Nat), (∀ k, a≤k → k<a+n → SP p (I k) (I (k+1)) (f k)) → a+n≤limit →
       SP p (I a) (fun s₀ s => ∃ k, a≤k ∧ k≤a+n ∧ I k s₀ s ∧ (k=a+n ∨ b k s₀=false)) (seqOk f a n)
-  | a, 0, _, _ => nil_piece fun _ _ _ h => ⟨a, Nat.le_refl _, by omega, h, .inl (by omega)⟩
+  | a, 0, _, _ => nil_piece fun _ _ _ h => ⟨a, Nat.le_refl _, by omega_using [], h, .inl (by omega_using [])⟩
   | a, n+1, h, hbound => by
     rw [seqOk]
-    refine Piece.seq (h a (Nat.le_refl _) (by omega)) ?_
-    refine okIte_piece hc (b (a+1)) (fun s₀ s hp hi => ⟨hctx _ _ _ hp hi, hok _ _ _ hi⟩) (hpub (a+1) (by omega)) ?_ ?_
-    · refine (seqOk_piece b limit hc hctx hok hmem hpub (a+1) n (fun k hk hk' => h k (by omega) (by omega)) (by omega)).mono
-        (fun s₀ s hp h => ?_) (fun s₀ s hp ⟨k,ha,hb,hi,hd⟩ => ⟨k,by omega,by omega,hi,hd.imp (fun _ => by omega) id⟩)
+    refine Piece.seq (h a (Nat.le_refl _) (by omega_using [])) ?_
+    refine okIte_piece hc (b (a+1)) (fun s₀ s hp hi => ⟨hctx _ _ _ hp hi, hok _ _ _ hi⟩) (hpub (a+1) (by omega_using [hbound])) ?_ ?_
+    · refine (seqOk_piece b limit hc hctx hok hmem hpub (a+1) n (fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk'])) (by omega_using [hbound])).mono
+        (fun s₀ s hp h => ?_) (fun s₀ s hp ⟨k,ha,hb,hi,hd⟩ => ⟨k,by omega_using [ha],by omega_using [hb],hi,hd.imp (fun _ => by omega_arith) id⟩)
       obtain ⟨⟨s',hi,ctx,hm⟩,_⟩ := h
       exact hmem _ _ _ _ hp hi ctx hm
     · refine nil_piece fun s₀ s hp h => ?_
       obtain ⟨⟨s',hi,ctx,hm⟩,hb⟩ := h
-      exact ⟨a+1,by omega,by omega,hmem _ _ _ _ hp hi ctx hm,.inr hb⟩
+      exact ⟨a+1,by omega_using [],by omega_using [],hmem _ _ _ _ hp hi ctx hm,.inr hb⟩
 
 /-- A complete phase continues only when every polynomial passed. -/
 theorem until_piece {B : State → State → Prop} {J : Nat → State → State → Prop}
@@ -886,26 +886,26 @@ theorem until_piece {B : State → State → Prop} {J : Nat → State → State 
     (hstep : ∀ k, k<n → SP p (J k) (J (k+1)) (f k))
     (hcont : SP p (J n) B cont) :
     SP p (J 0) B (.seq (seqOk f 0 n) (ifOk cont)) := by
-  refine Piece.seq (seqOk_piece b n hc hctx hok hmem hpub 0 n (fun k _ hk => hstep k (by omega)) (by omega)) ?_
+  refine Piece.seq (seqOk_piece b n hc hctx hok hmem hpub 0 n (fun k _ hk => hstep k (by omega_using [hk])) (by omega_using [])) ?_
   refine okIte_piece hc (b n) (fun s₀ s hp ⟨k,_,hk,hj,hd⟩ => ⟨hctx k _ _ hp hj,?_⟩) (hpub n (Nat.le_refl _)) ?_ ?_
   · rw [hok k _ _ hj]
     rcases hd with he|hb
     · simpa only [Nat.zero_add] using congrArg (fun k => if b k s₀ then (1 : BitVec 32) else 0) he
     · have hn : b n s₀=false := Bool.eq_false_iff.mpr (fun h => by
-        have := hmono k _ _ (by omega) hj h; rw [hb] at this; cases this)
+        have := hmono k _ _ (by omega_using [hk]) hj h; rw [hb] at this; cases this)
       rw [hb,hn]
   · refine hcont.mono (fun s₀ s hp h => ?_) (fun _ _ _ h => h)
     obtain ⟨⟨s',⟨k,_,hk,hj,hd⟩,ctx,hm⟩,hb⟩ := h
     have hk' : k=n := by
       rcases hd with hd|hd
-      · omega
-      · have := hmono k _ _ (by omega) hj hb; rw [hd] at this; cases this
+      · omega_using [hd]
+      · have := hmono k _ _ (by omega_using [hk]) hj hb; rw [hd] at this; cases this
     subst hk'
     exact hmem _ _ _ _ hp hj ctx hm
   · refine nil_piece fun s₀ s hp h => ?_
     obtain ⟨⟨s',⟨k,_,hk,hj,hd⟩,ctx,hm⟩,hb⟩ := h
     have hj' := hmem _ _ _ _ hp hj ctx hm
-    apply hfail k _ _ hp (by omega) hj'
+    apply hfail k _ _ hp (by omega_using [hk]) hj'
     rcases hd with hd|hd
     · simpa only [Nat.zero_add,hd] using hb
     · exact hd
@@ -950,9 +950,9 @@ theorem prefixB_mono {F : PrimsOk P} {t k n : Nat} {r0 : Bool} {s₀ : State} (h
   rintro ⟨hr,hb⟩
   refine ⟨hr,?_⟩
   cases r0 <;> simp only [Bool.false_eq_true,ite_false,ite_true] at hb ⊢
-  · exact all_range_iff.mpr (fun j hj => all_range_iff.mp hb j (by omega))
+  · exact all_range_iff.mpr (fun j hj => all_range_iff.mp hb j (by omega_using [hk, hj]))
   · obtain ⟨hz,hb⟩ := Bool.and_eq_true_iff.mp hb
-    exact Bool.and_eq_true_iff.mpr ⟨hz,all_range_iff.mpr fun j hj=>all_range_iff.mp hb j (by omega)⟩
+    exact Bool.and_eq_true_iff.mpr ⟨hz,all_range_iff.mpr fun j hj=>all_range_iff.mp hb j (by omega_using [hk, hj])⟩
 
 theorem rejectedCE {F : PrimsOk P} {t nh : Nat} {fy fw : State→Nat→Poly} {okb : State→Bool} {ones : State→Nat}
     {s₀ s : State} (h : CS p t fy fw nh okb ones s₀ s) (hr : Reached p F t s₀)
@@ -967,7 +967,7 @@ theorem hints_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
   refine Piece.seq (B := fun s₀ s=>CS p t (zY p t p.ℓ) (hW p t p.k) p.k (okH p t p.k)
     (fun s₀=>onesS p s₀ (p.ℓ*t) p.k) s₀ s ∧ φ s₀) (sp_pure φ ?_) ?_
   · have h := seqR_piece (p:=p) (I:=fun i=>CS p t (zY p t p.ℓ) (hW p t i) i (okH p t i)
-      (fun s₀=>onesS p s₀ (p.ℓ*t) i)) 0 p.k fun i _ hi=>hR_piece F ps t i (by omega)
+      (fun s₀=>onesS p s₀ (p.ℓ*t) i)) 0 p.k fun i _ hi=>hR_piece F ps t i (by omega_using [hi])
     simp only [Nat.zero_add] at h
     refine h.mono (fun s₀ s _ h=>?_) (fun _ _ _ h=>h)
     have h' := h.congr (fY':=zY p t p.ℓ) (fW':=hW p t 0) (okb':=okH p t 0) (fun _ _=>rfl)
@@ -993,7 +993,7 @@ theorem r0checks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
       simpa only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,ite_true] using hb
     refine rejectedCE h.1 h.2 (fun hpass=>?_) raw
     have hz : okZ p s₀ (p.ℓ*t) p.ℓ=true := all_range_iff.mpr hpass.1
-    have hr : okR p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.2.1 j (by omega))
+    have hr : okR p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.2.1 j (by omega_using [hk, hj]))
     rw [hz,hr] at raw; cases raw
   · intro i hi
     exact sp_pure (Reached p F t) (r0R_piece F ps t i hi)
@@ -1012,7 +1012,7 @@ theorem zchecks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
     have raw : okZ p s₀ (p.ℓ*t) k=false := by
       simpa only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,Bool.false_eq_true,ite_false] using hb
     refine rejectedCE h.1 h.2 (fun hpass=>?_) raw
-    have hz : okZ p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.1 j (by omega))
+    have hz : okZ p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.1 j (by omega_using [hk, hj]))
     rw [hz] at raw; cases raw
   · intro i hi
     exact sp_pure (Reached p F t) (zR_piece F ps t i hi)

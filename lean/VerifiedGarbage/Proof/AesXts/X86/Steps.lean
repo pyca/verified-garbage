@@ -41,13 +41,13 @@ def alphaMem (m : Mem) (Q : Addr) : Mem :=
 theorem add_self (x : BitVec 32) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem carry_self (x : BitVec 32) : decide (2 ^ 32 ≤ x.toNat + x.toNat) = x.msb := by
   rw [BitVec.msb_eq_decide]
   have := x.isLt
   simp only [decide_eq_decide]
-  omega
+  omega_using []
 
 theorem carry_self_c (x : BitVec 32) (c : Bool) :
     decide (2 ^ 32 ≤ x.toNat + x.toNat + c.toNat) = x.msb := by
@@ -55,7 +55,7 @@ theorem carry_self_c (x : BitVec 32) (c : Bool) :
   have := x.isLt
   have := c.toNat_le
   simp only [decide_eq_decide]
-  omega
+  omega_using [this]
 
 theorem shl_add_bit (x : BitVec 32) (c : Bool) :
     (x <<< 1) + (BitVec.ofBool c).setWidth 32 = (x <<< 1) ||| (if c then (1 : BitVec 32) else 0) := by
@@ -64,7 +64,7 @@ theorem shl_add_bit (x : BitVec 32) (c : Bool) :
   · apply BitVec.add_eq_or_of_and_eq_zero
     ext i hi
     simp
-    omega
+    omega_using []
 
 theorem mask_87 (x : BitVec 32) (c : Bool) :
     (x - x - (BitVec.ofBool c).setWidth 32) &&& (135 : BitVec 32) = if c then (0x87 : BitVec 32) else 0 := by
@@ -78,7 +78,7 @@ theorem mulA_ok (s : State) {Q : Addr} (hq : (s.gpr .ebx).setWidth 64 = Q) (hfit
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → r ≠ .ebp → s'.gpr r = s.gpr r) ∧
       s'.mem = alphaMem s.mem Q ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have a (d : Nat) (hd : d < 16) : addr (s.gpr .ebx) d = Q + BitVec.ofNat 64 d := by
-    rw [addr_eq (by omega), hq]
+    rw [addr_eq (by omega_using [hfit, hd]), hq]
   have a0 : addr (s.gpr .ebx) 0 = Q := by rw [a 0 (by decide)]; simp
   have r0 : InRegions (s.rd ++ s.wr) Q 4 := by simpa using hr 0 4 (by decide)
   have w0 : InRegions s.wr Q 4 := by simpa using hw 0 4 (by decide)

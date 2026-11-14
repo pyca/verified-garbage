@@ -24,7 +24,7 @@ theorem frameDerived_ok {s : State} {F S B : Addr} {V : Nat → Byte} {W : Nat �
       .store (sp (8 * k)) .rax]) s fun t =>
       Rep t.mem F S V (upd W k (off B offset)) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.rax] s t := by
   have hw : InRegions s.wr (off F (8 * k)) 8 :=
-    ⟨_, hfr, Offset.contains_base _ (by unfold nW frameBytes at *; omega) (by unfold nW frameBytes at *; omega)⟩
+    ⟨_, hfr, Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk]) (by unfold nW frameBytes at *; omega_using [hk])⟩
   have hr : InRegions (s.rd ++ s.wr) (off F 40) 8 :=
     ⟨⟨F, frameBytes⟩, List.mem_append_right _ hfr, Offset.contains_base _ (by decide) (by decide)⟩
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off F (8 * k)) (off B offset))
@@ -38,7 +38,7 @@ theorem frameZero_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
     WP isa (.block [.mov32 .rax (.imm 0), .store (sp (8 * k)) .rax]) s fun t =>
       Rep t.mem F S V (upd W k 0) ∧ Frame [⟨F, frameBytes⟩] s.mem t.mem ∧ Keep [.rax] s t := by
   have hw : InRegions s.wr (off F (8 * k)) 8 :=
-    ⟨_, hfr, Offset.contains_base _ (by unfold nW frameBytes at *; omega) (by unfold nW frameBytes at *; omega)⟩
+    ⟨_, hfr, Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk]) (by unfold nW frameBytes at *; omega_using [hk])⟩
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off F (8 * k)) (0 : BitVec 64))
     (by xrun [ea_sp, hsp, hw]; rfl) rfl) fun t ⟨hm, kt⟩ => ?_
   exact ⟨hm ▸ R.wf G hk _, hm ▸ frameWord_write hk s.mem _, kt⟩

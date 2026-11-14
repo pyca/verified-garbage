@@ -48,7 +48,7 @@ theorem Fr.frame {s : State} {m m' : Mem} (h : Fr s m) {rs : List Region} (hf : 
   have hw : ∀ {d : Nat}, (96 ≤ d ∧ d + 8 ≤ 248) → m'.readW (fb s + BitVec.ofNat 64 d) 64 =
       m.readW (fb s + BitVec.ofNat 64 d) 64 := fun hd =>
     hf.readW (r := ⟨fb s + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _)
-      (fun r hr => (hA r hr).sub_left (Offset.sub _ hd.1 (by omega))) (by decide)
+      (fun r hr => (hA r hr).sub_left (Offset.sub _ hd.1 (by omega_using [hd]))) (by decide)
   refine ⟨h.sv.frame_in (lo := 96) (n := 152) (by decide) hf hA, fun p hp => ?_, by rw [hw (by decide)]; exact h.dig,
     by rw [hw (by decide)]; exact h.salt, by rw [hw (by decide)]; exact h.sl, by rw [hw (by decide)]; exact h.scr⟩
   simp only [regSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -183,7 +183,7 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
     rw [m₁₂.rd, o₁₁.rd, o₁₀.rd, rd₉, rd₃]
     refine Covers.left (Covers.trans (Covers.of_mem fun x hx => by
       rw [List.mem_singleton.mp hx]; simp) hp.hrd) _ _ ⟨tHR s, List.mem_singleton_self _, ?_⟩
-    exact Offset.contains_base _ (by decide) (by omega)
+    exact Offset.contains_base _ (by decide) (by omega_using [])
   refine wp_ldrx (by decide) (by rw [x10₁₂]) rtH fun w₂ q₂ f₂ => ?_
   have x27b : w₂.gpr .x27 = s.mem.readW (stackArg s 14 + BitVec.ofNat 64 40) 64 := by
     rw [f₂, fr₁₂'.readW (r := ⟨stackArg s 14 + BitVec.ofNat 64 40, 8⟩) (Region.contains_self _ _)
@@ -225,14 +225,14 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
     rw [rd₁₄, wr₁₄]
     refine Covers.left (Covers.trans (Covers.of_mem fun x hx => by
       rw [List.mem_singleton.mp hx]; simp) hp.hrd) _ _ ⟨nR s, List.mem_singleton_self _, ?_⟩
-    have := Offset.contains_base (s.gpr .x2) (d := 0) (n := 1) (k := (s.gpr .x3).toNat) (by omega) (by omega)
+    have := Offset.contains_base (s.gpr .x2) (d := 0) (n := 1) (k := (s.gpr .x3).toNat) (by omega_using [hk1]) (by omega_using [])
     rwa [BitVec.add_zero] at this
   refine wp_ldrb (by decide) (by rw [x2₁₄, BitVec.add_zero]) rn fun u₁₆ o₁₆ e₁₆ => wp_nil ?_
   have hn₀ : u₁₄.mem (s.gpr .x2) = s.mem (s.gpr .x2) := by
     rw [mem₁₄]
     refine fr₁₂ _ fun r hr hc => ?_
     rw [List.mem_singleton.mp hr] at hc
-    have := Offset.contains_base (s.gpr .x2) (d := 0) (n := 1) (k := (s.gpr .x3).toNat) (by omega) (by omega)
+    have := Offset.contains_base (s.gpr .x2) (d := 0) (n := 1) (k := (s.gpr .x3).toNat) (by omega_using [hk1]) (by omega_using [])
     rw [BitVec.add_zero] at this
     exact hp.kn _ (frame_sub0 K s _ hc) this
   have K : Keep [.x9, .x10, .x16, .x19, .x20, .x21, .x23, .x27] { u₁ with mem := m₂ } u₁₆ :=
@@ -242,7 +242,7 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreS 
       u₁₂.mem.readW (fb s + BitVec.ofNat 64 d) 64 = Mem.readW (((m₂.writeW (fb s + BitVec.ofNat 64 sDig)
         (stackArg s 8)).writeW (fb s + BitVec.ofNat 64 sSalt) (stackArg s 10)).writeW
         (fb s + BitVec.ofNat 64 sSaltLen) (stackArg s 11)) (fb s + BitVec.ofNat 64 d) 64 := fun hd h => by
-    rw [hm₁₂, Mem.readW_writeW_sep (Offset.sep _ h (by unfold frameBytes at hd; omega) (by decide)) (by decide)]
+    rw [hm₁₂, Mem.readW_writeW_sep (Offset.sep _ h (by unfold frameBytes at hd; omega_using [hd]) (by decide)) (by decide)]
   have x20 : w₂.gpr .x20 = stackArg s 12 := by rw [q₂.get .x20, m₁₂.gpr, o₁₁.get .x20, e₁₀]
   refine ⟨?sp, ?rd, ?wr, ?g, ?x10, ?x19, ?x20, ?x21, ?x27, ?x23, ?v, ?mem, ?fr⟩
   case x27 => rw [o₁₆.get .x27, o₁₄.get .x27, o₁₃.get .x27, x27b]

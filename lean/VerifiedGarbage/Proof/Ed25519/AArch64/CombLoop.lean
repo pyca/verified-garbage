@@ -64,7 +64,7 @@ theorem CombKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (h : Keeps
 
 theorem CombKeep.bit {base : Addr} {s t : State} (h : CombKeep base s t) {q : Nat} (hq : q < 256) :
     t.mem (off base (768 + q)) = s.mem (off base (768 + q)) :=
-  h.mem _ (by rw [ofs_off' base (by omega)]; omega)
+  h.mem _ (by rw [ofs_off' base (by omega_using [hq])]; omega_using [])
 
 theorem CombKeep.powers {base : Addr} {s t : State} (h : CombKeep base s t) :
     PowersKeep base 56 968 s t :=
@@ -136,12 +136,12 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Na
     · exact Or.inr (Or.inl hr))
   -- The entry, negated for a negative digit.
   have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr, h.keep.rd, h.keep.wr])
-    (fun x hx => by rw [ka.mem]; exact h.keep.mem x (Or.inr (by omega)))
+    (fun x hx => by rw [ka.mem]; exact h.keep.mem x (Or.inr (by omega_using [hx])))
   refine WP.seq (WP.mono (combEntry_ok hsa hta (by rw [sya]; exact hT) hj a19 (mag_lt hn) a2 a1)
     fun c ⟨c4, c5, c6, cf, kc⟩ => ?_)
   have fc : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → fe c.mem base (offset i) = fe s.mem base (offset i) :=
     fun i hi => by
-      rw [cf.fe (by simp only [offset]; omega) (by simp only [offset]; omega), ka.mem]
+      rw [cf.fe (by simp only [offset]; omega_using [hi]) (by simp only [offset]; omega_using []), ka.mem]
   have ec : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → env c.mem base i = env s.mem base i := fun i hi => by
     simp only [env, F]
     rw [fc i hi]
@@ -172,7 +172,7 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Na
     simp only [point, ec 0 (by decide), ec 1 (by decide), ec 2 (by decide), ec 3 (by decide)]
   have d21 : env d.mem base 21 = env c.mem base 21 := by
     simp only [env, F]; rw [md 21 (.inr (by decide))]
-  refine ⟨by omega, kbt.scr hsa, t19, ?_, fun q hq => ?_, ?_, fun i hi => by rw [kt.mem]; exact beld i hi,
+  refine ⟨by omega_using [hj], kbt.scr hsa, t19, ?_, fun q hq => ?_, ?_, fun i hi => by rw [kt.mem]; exact beld i hi,
     h.keep.trans kst⟩
   · rw [kt.mem, d21]
     exact c21
@@ -195,16 +195,16 @@ theorem combSteps_ok {s₀ b : State} {base T : Addr} (htb : TblAt s₀ base T) 
   apply WP.loop (fun n (t : State) => (CombInv s₀ base S v (64 - n) t ∧ t.syms combSym = T) ∧
     0 < n ∧ n ≤ 64) (n := 64 - j₀)
   · intro n t ⟨⟨ht, hty⟩, hn0, hn⟩
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono_syms (combStep_ok ht htb hty (by omega)) fun u ⟨u8, hu⟩ suy => ?_
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [hn0]⟩
+    refine WP.mono_syms (combStep_ok ht htb hty (by omega_using [])) fun u ⟨u8, hu⟩ suy => ?_
     by_cases hk : k = 0
     · subst hk
       exact Or.inl ⟨by simp only [eval, read_x, u8, show 64 - (0 + 1) + 1 = 64 from rfl, ne_eq,
         not_true_eq_false, decide_false], hu⟩
-    · refine Or.inr ⟨by simp only [eval, read_x, u8, show 64 - (k + 1) + 1 ≠ 64 by omega, ne_eq,
-        not_false_eq_true, decide_true], k, by omega, ⟨?_, by rw [suy]; exact hty⟩, by omega, by omega⟩
-      rw [show 64 - k = 64 - (k + 1) + 1 by omega]; exact hu
-  · exact ⟨⟨by rw [show 64 - (64 - j₀) = j₀ by omega]; exact init, hT⟩, by omega, by omega⟩
+    · refine Or.inr ⟨by simp only [eval, read_x, u8, show 64 - (k + 1) + 1 ≠ 64 by omega_using [hk], ne_eq,
+        not_false_eq_true, decide_true], k, by omega_using [], ⟨?_, by rw [suy]; exact hty⟩, by omega_using [hk], by omega_using [hn]⟩
+      rw [show 64 - k = 64 - (k + 1) + 1 by omega_using [hn]]; exact hu
+  · exact ⟨⟨by rw [show 64 - (64 - j₀) = j₀ by omega_using [hj₀]]; exact init, hT⟩, by omega_using [hj₀], by omega_using []⟩
 
 /-- The counter `x19` set to `j < 2^16`. -/
 theorem counterInit_ok (s : State) (j : Nat) (hj : j < 2 ^ 16) :
@@ -218,7 +218,7 @@ theorem counterInit_ok (s : State) (j : Nat) (hj : j < 2 ^ 16) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Size.bits]
     simp only [Nat.mul_zero, Nat.shiftLeft_zero, BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)
 
 /-- The loop from digit `j₀ < 64`, from `[v + Σ_{i < j₀} d_i 16^i]B`. -/
@@ -230,10 +230,10 @@ theorem combLoopFrom_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : Tbl
     (hB : AccBel s.mem base) :
     WP isa (combLoopFrom j₀) s fun t => CombInv s base S v 64 t := by
   rw [combLoopFrom]
-  refine WP.seq (WP.mono_syms (counterInit_ok s j₀ (by omega)) fun b ⟨b19, kb⟩ syb => ?_)
+  refine WP.seq (WP.mono_syms (counterInit_ok s j₀ (by omega_using [hj₀])) fun b ⟨b19, kb⟩ syb => ?_)
   have ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
   exact combSteps_ok htb hj₀
-    ⟨by omega, hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
+    ⟨by omega_using [hj₀], hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
       fun q hq => by rw [kb.mem]; exact hb q hq, by rw [kb.mem]; exact hv,
       fun i hi => by rw [kb.mem]; exact hB i hi, ksb⟩
     (by rw [syb]; exact hT)
@@ -258,7 +258,7 @@ theorem combInit_ok {s : State} {base : Addr} (hs : Scr s base) :
   · rw [vt]; rfl
   · have := st i ((by decide : ∀ i : Slot, i.val < 4 →
       smallAfterOps ([.const 21 0] ++ constPointOps combStart) (fun _ => false) i = true) i hi)
-    simp only [VG.Proof.X25519.AArch64.AltLadder.P2]; omega
+    simp only [VG.Proof.X25519.AArch64.AltLadder.P2]; omega_using [this]
 
 theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
     (hT : s.syms combSym = T) {S : Nat} (hS : S < 2 ^ 256)
@@ -269,7 +269,7 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : Tbl
   refine WP.seq (WP.mono_syms (combInit_ok hs) fun a ⟨ka, az, ap, ab⟩ sya => ?_)
   have hsa := ka.scr hs
   have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr])
-    (fun x hx => ka.mem x (Or.inr (by omega)))
+    (fun x hx => ka.mem x (Or.inr (by omega_using [hx])))
   have hv : Rep (point (env a.mem base) 0 1 2 3) (((17 * combGVal : Nat) : ℤ) • baseAff) := by
     rw [ap, natCast_zsmul]; exact combStart_ok
   refine WP.mono (combLoop_ok hsa hta (by rw [sya]; exact hT) az

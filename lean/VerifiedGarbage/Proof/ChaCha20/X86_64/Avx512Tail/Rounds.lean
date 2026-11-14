@@ -58,7 +58,7 @@ def HH (ws : Nat → W) (s : State) : Prop :=
 
 theorem setRow_row {α : Type} (w : Nat → α) (r d : Nat) (f : Nat → α) {q : Nat} (hq : q < 4) :
     setRow w d f (4 * r + q) = if r = d then f q else w (4 * r + q) := by
-  simp only [setRow, show (4 * r + q) / 4 = r by omega, show (4 * r + q) % 4 = q by omega]
+  simp only [setRow, show (4 * r + q) / 4 = r by omega_using [hq], show (4 * r + q) % 4 = q by omega_using [hq]]
 
 /-- One instruction of the rounds, on the four lanes. -/
 theorem step_ok (i : HI) {ws : Nat → W} {s : State} (h : HH ws s) :
@@ -239,7 +239,7 @@ theorem RelS.of_rel {w₀ : W} {f g : Nat → HE} {w : W} (h : Rel w₀ f w) (e 
   simp only [eq32, List.all_eq_true, List.mem_range, beq_iff_eq] at e
   apply Vector.ext; intro i hi
   simp only [blk, Vector.getElem_ofFn]
-  rw [← h, e _ (by omega)]
+  rw [← h, e _ (by omega_using [hk, hi])]
   exact hg i hi
 
 /-- Two term states agree on the words of the three sets. -/
@@ -250,7 +250,7 @@ theorem RelS.of_rel48 {w₀ : W} {f g : Nat → HE} {w : W} (h : Rel w₀ f w) (
   simp only [eq48, List.all_eq_true, List.mem_range, beq_iff_eq] at e
   apply Vector.ext; intro i hi
   simp only [blk, Vector.getElem_ofFn]
-  rw [← h, e _ (by omega)]
+  rw [← h, e _ (by omega_using [hk, hi])]
   exact hg i hi
 
 /-- The column round on the terms of set `k`. -/
@@ -311,13 +311,13 @@ theorem innerBlock_eq (v : CState) : innerBlock v =
 /-- The terms of the other set are unchanged by a round of one. -/
 theorem colsE_other (f : Nat → HE) {k n : Nat} (h : n < 16 * k ∨ 16 * k + 16 ≤ n) : colsE f k n = f n := by
   simp only [colsE]
-  rw [qroundE_other _ (by omega), qroundE_other _ (by omega), qroundE_other _ (by omega),
-    qroundE_other _ (by omega)]
+  rw [qroundE_other _ (by omega_using [h]), qroundE_other _ (by omega_using [h]), qroundE_other _ (by omega_using [h]),
+    qroundE_other _ (by omega_using [h])]
 
 theorem diagsE_other (f : Nat → HE) {k n : Nat} (h : n < 16 * k ∨ 16 * k + 16 ≤ n) : diagsE f k n = f n := by
   simp only [diagsE]
-  rw [qroundE_other _ (by omega), qroundE_other _ (by omega), qroundE_other _ (by omega),
-    qroundE_other _ (by omega)]
+  rw [qroundE_other _ (by omega_using [h]), qroundE_other _ (by omega_using [h]), qroundE_other _ (by omega_using [h]),
+    qroundE_other _ (by omega_using [h])]
 
 theorem dr1_words (w : W) : blk ((colsH ++ diagsH).foldl hstep w) 0 = innerBlock (blk w 0) := by
   rw [List.foldl_append]
@@ -331,15 +331,15 @@ theorem dr2_words (w : W) {k : Nat} (hk : k < 2) :
     blk ((cols2H ++ diags2H).foldl hstep w) k = innerBlock (blk w k) := by
   rw [List.foldl_append]
   have c0 : RelS w (colsE (colsE vars 0) 1) 0 _ :=
-    (relS_vars w 0).cols.congr fun i hi => colsE_other _ (by omega)
+    (relS_vars w 0).cols.congr fun i hi => colsE_other _ (by omega_using [hi])
   have c1 : RelS w (colsE (colsE vars 0) 1) 1 _ :=
-    ((relS_vars w 1).congr fun i hi => colsE_other _ (by omega)).cols
+    ((relS_vars w 1).congr fun i hi => colsE_other _ (by omega_using [])).cols
   let w' := cols2H.foldl hstep w
   have d0 : RelS w' (diagsE (diagsE vars 0) 1) 0 _ :=
-    (relS_vars w' 0).diags.congr fun i hi => diagsE_other _ (by omega)
+    (relS_vars w' 0).diags.congr fun i hi => diagsE_other _ (by omega_using [hi])
   have d1 : RelS w' (diagsE (diagsE vars 0) 1) 1 _ :=
-    ((relS_vars w' 1).congr fun i hi => diagsE_other _ (by omega)).diags
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    ((relS_vars w' 1).congr fun i hi => diagsE_other _ (by omega_using [])).diags
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
   · rw [RelS.of_rel ((rel_vars w').foldl diags2H) diags2_check (by decide) d0,
       RelS.of_rel ((rel_vars w).foldl cols2H) cols2_check (by decide) c0, innerBlock_eq]
   · rw [RelS.of_rel ((rel_vars w').foldl diags2H) diags2_check (by decide) d1,
@@ -349,25 +349,25 @@ theorem dr3_words (w : W) {k : Nat} (hk : k < 3) :
     blk ((cols3H ++ diags3H).foldl hstep w) k = innerBlock (blk w k) := by
   rw [List.foldl_append]
   let w' := cols3H.foldl hstep w
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
   · have c : RelS w (colsE (colsE (colsE vars 0) 1) 2) 0 _ :=
-      (relS_vars w 0).cols.congr fun i hi => by rw [colsE_other _ (by omega), colsE_other _ (by omega)]
+      (relS_vars w 0).cols.congr fun i hi => by rw [colsE_other _ (by omega_using [hi]), colsE_other _ (by omega_using [hi])]
     have d : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 0 _ :=
-      (relS_vars w' 0).diags.congr fun i hi => by rw [diagsE_other _ (by omega), diagsE_other _ (by omega)]
+      (relS_vars w' 0).diags.congr fun i hi => by rw [diagsE_other _ (by omega_using [hi]), diagsE_other _ (by omega_using [hi])]
     rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check hk d,
       RelS.of_rel48 ((rel_vars w).foldl cols3H) cols3_check hk c, innerBlock_eq]
   · have c : RelS w (colsE (colsE (colsE vars 0) 1) 2) 1 _ :=
-      ((relS_vars w 1).congr fun i hi => colsE_other _ (by omega)).cols.congr fun i hi =>
-        colsE_other _ (by omega)
+      ((relS_vars w 1).congr fun i hi => colsE_other _ (by omega_using [])).cols.congr fun i hi =>
+        colsE_other _ (by omega_using [hi])
     have d : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 1 _ :=
-      ((relS_vars w' 1).congr fun i hi => diagsE_other _ (by omega)).diags.congr fun i hi =>
-        diagsE_other _ (by omega)
+      ((relS_vars w' 1).congr fun i hi => diagsE_other _ (by omega_using [])).diags.congr fun i hi =>
+        diagsE_other _ (by omega_using [hi])
     rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check hk d,
       RelS.of_rel48 ((rel_vars w).foldl cols3H) cols3_check hk c, innerBlock_eq]
   · have c : RelS w (colsE (colsE (colsE vars 0) 1) 2) 2 _ :=
-      ((relS_vars w 2).congr fun i hi => by rw [colsE_other _ (by omega), colsE_other _ (by omega)]).cols
+      ((relS_vars w 2).congr fun i hi => by rw [colsE_other _ (by omega_using []), colsE_other _ (by omega_using [])]).cols
     have d : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 2 _ :=
-      ((relS_vars w' 2).congr fun i hi => by rw [diagsE_other _ (by omega), diagsE_other _ (by omega)]).diags
+      ((relS_vars w' 2).congr fun i hi => by rw [diagsE_other _ (by omega_using []), diagsE_other _ (by omega_using [])]).diags
     rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check hk d,
       RelS.of_rel48 ((rel_vars w).foldl cols3H) cols3_check hk c, innerBlock_eq]
 
@@ -386,28 +386,28 @@ def HB (S : Nat) (vs : Nat → CState) (s : State) : Prop :=
 def wordsOf (s : State) (l : Nat) : W := fun n => dword (s.zlane (zreg (n / 4)) l) (n % 4)
 
 theorem hh_wordsOf (s : State) : HH (wordsOf s) s := fun r l q hl hq => by
-  simp only [wordsOf, show (4 * xidx r + q) / 4 = xidx r by omega,
-    show (4 * xidx r + q) % 4 = q by omega, zreg_xidx]
+  simp only [wordsOf, show (4 * xidx r + q) / 4 = xidx r by omega_using [hq],
+    show (4 * xidx r + q) % 4 = q by omega_using [hq], zreg_xidx]
 
 theorem blk_wordsOf {S : Nat} {vs : Nat → CState} {s : State} (h : HB S vs s) {k l : Nat} (hk : k < S)
     (hl : l < 4) : blk (wordsOf s l) k = vs (4 * k + l) := by
   apply Vector.ext; intro i hi
   simp only [blk, Vector.getElem_ofFn, wordsOf]
-  rw [show (16 * k + i) / 4 = 4 * k + i / 4 by omega, show (16 * k + i) % 4 = i % 4 by omega]
+  rw [show (16 * k + i) / 4 = 4 * k + i / 4 by omega_using [], show (16 * k + i) % 4 = i % 4 by omega_using []]
   exact h k hk l hl i hi
 
 theorem hb_of {S : Nat} {ws : Nat → W} {s : State} (h : HH ws s) {vs : Nat → CState}
     (hv : ∀ k < S, ∀ l < 4, blk (ws l) k = vs (4 * k + l)) (hS : S ≤ 4) : HB S vs s := by
   intro k hk l hl i hi
-  rw [h _ l _ hl (Nat.mod_lt _ (by decide)), xidx_zreg _ (by omega), ← hv k hk l hl]
+  rw [h _ l _ hl (Nat.mod_lt _ (by decide)), xidx_zreg _ (by omega_using [hS, hk, hi]), ← hv k hk l hl]
   simp only [blk, Vector.getElem_ofFn]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem doubleRound_ok {vs : Nat → CState} {s : State} (h : HB 1 vs s) :
     WP isa (.block doubleRound) s fun s' => HB 1 (fun j => innerBlock (vs j)) s' ∧ Same s s' := by
   rw [doubleRound_eq]
   refine WP.mono (block_ok _ (hh_wordsOf s)) fun s' ⟨h', hs⟩ => ⟨hb_of h' (fun k hk l hl => ?_) (by decide), hs⟩
-  obtain rfl : k = 0 := by omega
+  obtain rfl : k = 0 := by omega_using [hk]
   rw [dr1_words, blk_wordsOf h hk hl]
 
 theorem doubleRound2_ok {vs : Nat → CState} {s : State} (h : HB 2 vs s) :

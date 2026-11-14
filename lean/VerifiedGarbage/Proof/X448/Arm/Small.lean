@@ -25,11 +25,11 @@ theorem smallStep_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat}
       t.mem = s.mem.writeW (off base (TMP + 4 * i)) (BitVec.ofNat 32 (39081 * limbs s.mem base a i)) ∧
       Keeps [.r3, .r2] s t := by
   have ha' : a + 112 ≤ 3584 := ha
-  refine loadP_ok hs hpa (by omega) (by omega) fun t ht => ?_
+  refine loadP_ok hs hpa (by omega_using [hi]) (by omega_using [hi, ha']) fun t ht => ?_
   have ts := hs.of_upd ht (by decide) (by decide)
   refine wp_mul fun u hu => ?_
   have us := ts.of_upd hu (by decide) (by decide)
-  refine store_ok us (by simp only [TMP]; omega) fun v hv => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok us (by simp only [TMP]; omega_using [hi]) fun v hv => WP.block_nil ⟨?_, ?_⟩
   · rw [hv.mem, hu.mem, ht.mem, hu.gpr, ht.gpr, ht.other .r5 (by decide)]
     apply congrArg (s.mem.writeW _)
     apply BitVec.eq_of_toNat_eq

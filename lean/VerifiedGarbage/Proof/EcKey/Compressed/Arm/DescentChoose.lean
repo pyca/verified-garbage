@@ -59,17 +59,17 @@ theorem descentChoose_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   have hC := sl_le c h7 (i := T1) (by decide)
   have hB := sl_le c h7 (i := T4) (by decide)
   have hO := sl_le c h7 (i := ONEP) (by decide)
-  have hOlt : sv c base s ONEP < c.C.p := by rw [hOne]; exact Nat.mod_lt _ (by omega)
+  have hOlt : sv c base s ONEP < c.C.p := by rw [hOne]; exact Nat.mod_lt _ (by omega_using [ht])
   rw [Impl.EcKey.Compressed.Arm.descentChoose]
   refine WP.seq (WP.mono (slSub_ok hc.fp (MP'_n c) h7 hs hf (o := W0) (a := T3) (b := ONEP)
     (by decide) (by decide) (by decide) ht hOlt) fun s₁ ⟨k₁, e₁⟩ => ?_)
   change sv c base s₁ W0 = (sv c base s T3 + c.C.p - sv c base s ONEP) % c.C.p at e₁
   have hs₁ := k₁.scr hs
   have lt₁ : sv c base s₁ W0 < c.C.p := by
-    rw [e₁]; exact Nat.mod_lt _ (by omega)
+    rw [e₁]; exact Nat.mod_lt _ (by omega_using [ht])
   have v₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ W0) =
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) - 1 := by
-    rw [e₁, toM_sub (by omega), hOne, toM_one (unitMod_pow_two hc.p_odd (64 * c.n))]
+    rw [e₁, toM_sub (by omega_using [hOlt]), hOne, toM_one (unitMod_pow_two hc.p_odd (64 * c.n))]
   have z₁ : sv c base s₁ W0 = 0 ↔ toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1 := by
     rw [← toM_eq_zero_iff (unitMod_pow_two hc.p_odd (64 * c.n)) lt₁, v₁]
     constructor <;> intro h <;> grind
@@ -79,16 +79,16 @@ theorem descentChoose_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   refine wp_mov (op2_reg _ _) fun s₃ u₃ => ?_
   have hs₃ := (hs₁.of_rest k₂ (by decide)).of_rest (u₃.rest (ws := [.r10]) (by simp)) (by decide)
   refine WP.mono (sel_ok (decide (toM c.C.p (2 ^ (64 * c.n)) (sv c base s T3) = 1)) (2 * c.n) hs₃
-    (by rw [u₃.gpr, mask₂]; simp only [decide_eq_true_eq]) (by omega) (by omega) (by omega)
-    (by have := sl_apart c (i := T4) (j := T1) (by decide); omega)
-    (by have := sl_apart c (i := T4) (j := ONEP) (by decide); omega))
+    (by rw [u₃.gpr, mask₂]; simp only [decide_eq_true_eq]) (by omega_using [hB]) (by omega_using [hC]) (by omega_using [hO])
+    (by have := sl_apart c (i := T4) (j := T1) (by decide); omega_using [this])
+    (by have := sl_apart c (i := T4) (j := ONEP) (by decide); omega_using [this]))
     fun t ⟨v₄, k₄, O₄⟩ => ?_
   have mem₃ : s₃.mem = s₁.mem := u₃.mem.trans m₂
   have C₃ : sv c base s₃ T1 = sv c base s T1 := by
     rw [sv, mem₃]; exact sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have O₃ : sv c base s₃ ONEP = sv c base s ONEP := by
     rw [sv, mem₃]; exact sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  rw [show 4 * (2 * c.n) = 8 * c.n by omega] at O₄
+  rw [show 4 * (2 * c.n) = 8 * c.n by omega_using []] at O₄
   simp only [← wordsVal_eq_val32] at v₄
   change sv c base t T4 = _ at v₄
   simp only [decide_eq_true_eq] at v₄

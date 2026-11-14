@@ -99,8 +99,8 @@ theorem mrBody_ct (R : RoundImpl) : RelCT isa (Two MI)
       have hul : a.u ≤ a.q.r.length := hs.ul
       have hik : a.i < a.K := hs.ik
       have hK : a.K ≤ 128 := hs.m.ph.k2
-      exact ⟨sv, toc, hs.m, hs.used, show a.u + (a.mb + 7) / 8 ≤ a.q.r.length by omega, hs.idx, hs.stat,
-        show a.i < 2 ^ 62 by omega⟩
+      exact ⟨sv, toc, hs.m, hs.used, show a.u + (a.mb + 7) / 8 ≤ a.q.r.length by omega_using [hb, hul], hs.idx, hs.stat,
+        show a.i < 2 ^ 62 by omega_using [hik, hK]⟩
     refine two_post (two_map (fun a : MrD => (⟨a.q, a.mb, a.N, a.u, a.i, a.K⟩ : DrawD)) hd (draw_ct R)) fun a s h => ?_
     obtain ⟨sv, toc, M, hu, hroom, hI, hS, hi⟩ := hd a s h
     exact WP.mono (draw_ok R M hu hroom hI hS hi) fun t ht => ht.1.st.r31
@@ -132,6 +132,6 @@ theorem millerRabin_ct (R : RoundImpl) : RelCT isa (Two MI0) (millerRabin R.name
       ⟨he, fun hg => ⟨sv, toc, hend hg⟩, fun hg => ⟨?_, ⟨sv, toc, hgo hg⟩, hbl⟩⟩
     have hul : a.u + (a.mb + 7) / 8 ≤ a.q.r.length := (hgo hg).ul
     show a.q.r.length + 1 - (a.u + (a.mb + 7) / 8) < a.q.r.length + 1 - a.u
-    omega
+    omega_using [hm1, hul]
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

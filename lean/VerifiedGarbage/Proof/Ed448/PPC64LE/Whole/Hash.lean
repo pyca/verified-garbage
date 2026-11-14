@@ -233,7 +233,7 @@ theorem bytes_keep {W : List Region} {m m' : Mem} (hf : Frame W m m') {p : Addr}
   simp only [Spec.Sha3.bytesAt]
   refine List.map_congr_left fun i hi => hf _ fun r hr hc => ?_
   have hi' := List.mem_range.mp hi
-  exact hd r hr _ (Offset.contains_base p (by omega) (by omega)) hc
+  exact hd r hr _ (Offset.contains_base p (by omega_using [hi']) (by omega_using [hn, hi'])) hc
 
 /-- A piece's bytes while a hash runs. -/
 theorem PieceOk.bytes {sc : Addr} {s₀ s : State} {p : Piece} (hp : PieceOk sc s₀ p)
@@ -331,7 +331,7 @@ theorem zeroState_ok {sc : Reg} {scA : Addr} (hsc : sc ∈ preserved) {s : State
   refine WP.mono (Proof.MlKem.PPC64LE.Sample.zeroLanes_ok sc (pres_ne hsc).1
     (s₁ := s.write .r0 (BitVec.ofNat 64 0)) (by rw [RegUpd.gpr_write_self]; rfl) fun k hk => by
       rw [esc, RegUpd.wr_write]
-      exact in_base he.w (by omega) (by omega))
+      exact in_base he.w (by omega_using [hk]) (by omega_using [hk]))
     fun s₂ h₂ => ?_
   have hf := h₂.frame
   have hz := h₂.zero

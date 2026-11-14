@@ -130,7 +130,7 @@ theorem ce_bytes {a : Addr} {len : Nat} (hd : (below (σ.gpr .rsp) 40).Disjoint 
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine VG.Proof.MlKem.bytesAt_frame hf (fun r hr => ?_) hl
   rw [List.mem_singleton] at hr; subst hr
-  exact (hd.sub_left (below_sub (by omega) (by omega))).symm
+  exact (hd.sub_left (below_sub (by omega_using []) (by omega_using []))).symm
 
 theorem kpre0 : (signK p 32).pre s.callEntry := by
   have hp' := hp
@@ -144,12 +144,12 @@ theorem kpre0 : (signK p 32).pre s.callEntry := by
   have e5 := ce_gpr hs (r := .r8) (by decide) (by decide)
   have er := ce_rsp hs
   have hret : Region.Sub (retR s.callEntry) (below (σ.gpr .rsp) 40) := by
-    rw [retR, er]; exact below_sub (sp := σ.gpr .rsp) (a := 8) (by omega) (by omega)
+    rw [retR, er]; exact below_sub (sp := σ.gpr .rsp) (a := 8) (by omega_using []) (by omega_using [])
   have hbel : Region.Sub (below (s.callEntry.gpr .rsp) 32) (below (σ.gpr .rsp) 40) := by
     rw [er]; exact below_callee _ 32
   have hsp' : 32 ≤ (s.callEntry.gpr .rsp).toNat := by
     rw [er, BitVec.toNat_sub]; have := (σ.gpr .rsp).isLt
-    simp only [show (8 : BitVec 64).toNat = 8 from rfl]; omega
+    simp only [show (8 : BitVec 64).toNat = 8 from rfl]; omega_using [hsp]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hsp', ?_⟩
   all_goals simp only [hL, e1, e2, e3, e4, e5, State.callEntry_rd, State.callEntry_wr, hs.rd, hs.wr]
   · exact hrd
@@ -186,7 +186,7 @@ theorem kpost0 {s' s₂ : State} (hm : s₂.mem = s'.mem) (hax : s₂.gpr .rax =
   have h' : Outcome _ _ _ := h
   rw [ce_gpr hs (r := .rdi) (by decide) (by decide), ce_gpr hs (r := .rsi) (by decide) (by decide),
     ce_gpr hs (r := .rdx) (by decide) (by decide), ce_gpr hs (r := .rcx) (by decide) (by decide),
-    ce_bytes hs k1 (by omega), ce_bytes hs k2 (by omega), ce_bytes hs k3 (by omega), hm, hax] at h'
+    ce_bytes hs k1 (by omega_using [n1]), ce_bytes hs k2 (by omega_using []), ce_bytes hs k3 (by omega_using []), hm, hax] at h'
   exact h'
 
 end
@@ -208,7 +208,7 @@ theorem entry0_correct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p
     unfold entry
     refine WP.seq (WP.mono (flag_ok .r9 0 σ) fun s hs => ?_)
     have hs' : Moved .r9 0 σ s := hs
-    refine WP.call_mx hK.ok hK.nosp (by omega) (rd := s.rd) (wr := s.wr)
+    refine WP.call_mx hK.ok hK.nosp (by omega_using [hdep]) (rd := s.rd) (wr := s.wr)
       (by rw [show s.callEntry.withRegions s.rd s.wr = s.callEntry from rfl]; exact kpre0 hpre hs')
       (fun _ _ h => h) (fun _ _ h => h) fun s' _ _ hcs hf _ hpost hmx => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
     · rw [hcs r hr, hs'.gpr r (by
@@ -222,7 +222,7 @@ theorem entry0_correct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p
         rcases hr with rfl | rfl
         exacts [r4, r5]
       · rw [List.mem_singleton] at hr; subst hr
-        exact Offset.base_disjoint_below _ (by omega)
+        exact Offset.base_disjoint_below _ (by omega_using [hdep])
     · rw [hmx, hs'.mx]
     · obtain ⟨s₂, hm₂, hg₂, hq⟩ := hpost
       exact kpost0 hpre hs' hm₂ (hg₂ _ (by decide)) hq
@@ -250,8 +250,8 @@ theorem entry0_ct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p c) :
     ce_gpr h₂ (r := .rdi) (by decide) (by decide), ce_gpr h₂ (r := .rsi) (by decide) (by decide),
     ce_gpr h₂ (r := .rdx) (by decide) (by decide), ce_gpr h₂ (r := .rcx) (by decide) (by decide),
     ce_gpr h₂ (r := .r8) (by decide) (by decide), ce_rsp h₂,
-    ce_bytes h₁ k1 (by omega), ce_bytes h₁ k2 (by omega), ce_bytes h₁ k3 (by omega),
-    ce_bytes h₂ l1 (by omega), ce_bytes h₂ l2 (by omega), ce_bytes h₂ l3 (by omega),
+    ce_bytes h₁ k1 (by omega_using [n1]), ce_bytes h₁ k2 (by omega_using []), ce_bytes h₁ k3 (by omega_using []),
+    ce_bytes h₂ l1 (by omega_using [n1]), ce_bytes h₂ l2 (by omega_using []), ce_bytes h₂ l3 (by omega_using []),
     State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide), h₁.r9, h₂.r9]
   exact ⟨e1, e2, e3, e4, e5, by rw [e6], e7, rfl⟩
 

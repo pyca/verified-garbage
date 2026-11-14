@@ -36,21 +36,21 @@ theorem carry_c (x : BitVec 64) (c : Bool) : decide (2 ^ 64 ≤ x.toNat + x.toNa
   have := x.isLt
   have := c.toNat_le
   simp only [decide_eq_decide]
-  omega
+  omega_using [this]
 
 theorem add_bit (x : BitVec 64) (c : Bool) :
     x + x + BitVec.ofNat 64 c.toNat = (x <<< 1) ||| (if c then (1 : BitVec 64) else 0) := by
   have e : x + x = x <<< 1 := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-    omega
+    omega_using []
   rw [e]
   cases c
   · simp
   · apply BitVec.add_eq_or_of_and_eq_zero
     ext i hi
     simp
-    omega
+    omega_using []
 
 theorem or_zero' (x : BitVec 64) : x ||| (0 : BitVec 64) = x := BitVec.or_zero
 

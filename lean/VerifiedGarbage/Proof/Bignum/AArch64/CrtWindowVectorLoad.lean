@@ -42,26 +42,26 @@ theorem loadBits_ok (n : Nat) {s : State} {choose : Prop} [Decidable choose]
     rw [show loadBits (n + 1) = loadBits n ++
       [.ldrq .v21 .x16 (16 * n), .vop (.bsel .bit (acc n) .v21 .v20)] by
         simp [loadBits, List.range_succ], WP.block_append_iff]
-    refine WP.mono (ih (by omega) (fun i hi => hld i (by omega))) fun t ⟨hv, kt⟩ => ?_
-    refine WP.mono (loadBit_value (choose := choose) (acc_facts n (by omega)).2.1 (by omega)
+    refine WP.mono (ih (by omega_using [hn]) (fun i hi => hld i (by omega_using [hi]))) fun t ⟨hv, kt⟩ => ?_
+    refine WP.mono (loadBit_value (choose := choose) (acc_facts n (by omega_using [hn])).2.1 (by omega_using [hn])
       (by rw [kt.v .v20 (by decide)]; exact hm)
-      (by rw [kt.rd, kt.wr, kt.gpr]; exact hld n (by omega))) fun u ⟨hu, ku⟩ => ?_
+      (by rw [kt.rd, kt.wr, kt.gpr]; exact hld n (by omega_using []))) fun u ⟨hu, ku⟩ => ?_
     refine ⟨?_, (kt.trans ku).mono ?_⟩
     · intro i hi
       by_cases he : i = n
       · subst i
-        rw [hu, kt.mem, kt.gpr, hv n (by omega)]
+        rw [hu, kt.mem, kt.gpr, hv n (by omega_using [hn])]
         simp only [Nat.lt_irrefl, false_and, ite_false, Nat.lt_succ_self, true_and]
       · rw [ku.v (acc i) (by
           simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-          exact ⟨(acc_facts i hi).2.1, acc_ne i hi n (by omega) he⟩), hv i hi]
-        have heq : i < n + 1 ↔ i < n := by omega
+          exact ⟨(acc_facts i hi).2.1, acc_ne i hi n (by omega_using [hn]) he⟩), hv i hi]
+        have heq : i < n + 1 ↔ i < n := by omega_using [he]
         simp only [heq]
     · intro r hr
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with hr | rfl | rfl
       · exact hr
       · decide
-      · exact (acc_facts n (by omega)).2.2
+      · exact (acc_facts n (by omega_using [hn])).2.2
 
 end VG.Proof.Bignum.AArch64.WindowVector

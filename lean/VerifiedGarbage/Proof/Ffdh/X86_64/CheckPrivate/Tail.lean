@@ -30,33 +30,33 @@ theorem checked_pair {p : KpP} {xb : List Byte} {s : State} (h : Checked p xb s)
   obtain ⟨mi, hb, hc, hy, hF⟩ := h
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
   have hn := hc.good.scr.nowrap
   have hYle := slot_le (w := p.w) (show aY < 8 by decide)
   have hFle := hdr_lt_slot p.w 8 (show sF < 32 by decide)
-  refine WP.mono (primeLoad_ok hc (by omega) (Nat.le_refl _) (by omega) (show aXm < 8 by decide)
+  refine WP.mono (primeLoad_ok hc (by omega_using [hk, ew]) (Nat.le_refl _) (by omega_using [hk', ew]) (show aXm < 8 by decide)
     (show sY < 32 by decide) (show sK < 32 by decide)
     (hb.hdr (sY, p.yp) (by simp [KpP.headers]))
     (by rw [hb.ylen]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])) hb.y
-    (by rw [hb.ylen]; omega) (by rw [hb.ylen]; omega) (by rw [hb.ylen]))
+    (by rw [hb.ylen]; omega_using [hk]) (by rw [hb.ylen]; omega_using [hk']) (by rw [hb.ylen]))
     fun t ⟨hc', hxm, ho, k⟩ => ?_
   have hf : Frm (off p.B (inner p.w)) [(slot p.w aXm, 8 * (p.w + 2))] s.mem t.mem := Frm.of_outside ho (by simp)
   have hXmle := slot_le (w := p.w) (show aXm < 8 by decide)
-  obtain ⟨hb', hi, hs⟩ := hb.child hc hf (fun r hr => by rw [List.mem_singleton.mp hr]; omega) k
+  obtain ⟨hb', hi, hs⟩ := hb.child hc hf (fun r hr => by rw [List.mem_singleton.mp hr]; omega_using [hXmle]) k
   refine ⟨⟨mi, hb', hc', ?_, hxm, ?_⟩, hi, hs, k.mono (by decide)⟩
   · apply Eq.trans _ hy
     apply hf.wv_eq
     · intro r hr
       rw [List.mem_singleton.mp hr]
       have := slot_sep (w := p.w) (show aXm ≠ aY by decide)
-      omega
-    · omega
+      omega_using [this]
+    · omega_using [hn, hYle]
   · apply Eq.trans _ hF
     apply hf.word_eq
     · intro r hr
       rw [List.mem_singleton.mp hr]
       exact Or.inl (hdr_lt_slot p.w aXm (show sF < 32 by decide))
-    · omega
+    · omega_using [hn, hFle]
 
 private theorem bit_and (P Q : Prop) [Decidable P] [Decidable Q] : bit Q &&& bit P = bit (P ∧ Q) := by
   by_cases hp : P <;> by_cases hq : Q <;> simp [bit, hp, hq]
@@ -71,9 +71,9 @@ theorem pair_finish {p : KpP} {xb : List Byte} {s : State} (h : PairReady p xb s
   obtain ⟨mi, hb, hc, hy, hxm, hF⟩ := h
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
   refine wp_seqs_append (a := eqArr aY aXm) (by simp [eqArr]) (by simp)
-    (WP.mono (eqArr_ok hc.good (Nat.le_refl _) (by omega) (by omega)
+    (WP.mono (eqArr_ok hc.good (Nat.le_refl _) (by omega_using [hk, ew]) (by omega_using [hk', ew])
       (show aY < 8 by decide) (show aXm < 8 by decide)) fun u ⟨ha, hm, k⟩ => ?_)
   rw [hy, hxm] at ha
   have hcu := (hc.toMem.congr hm k.2.2).ctx ((k.gpr (by decide)).trans hc.rdi)

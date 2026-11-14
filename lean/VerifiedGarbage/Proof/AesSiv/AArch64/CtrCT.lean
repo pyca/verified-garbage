@@ -91,7 +91,7 @@ theorem ctrPre_wp (h : Env s₀ C D P W R L) {i : Nat} {s : State} (hr : CR s₀
     ctrPre_ok h hr.x19 hr.x20 hr.x21 hr.rd hr.wr
   have hz : Spec.Aes.bytesAt s₁.mem (W + BitVec.ofNat 64 80) 16 = Spec.Cmac.zeros 16 := by
     rw [m₁, Proof.Cmac.bytesAt_frame (copyMem_frame _ _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (by omega) (by omega) (by omega))
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (by omega_using []) (by omega_using []) (by omega_using []))
       (by decide), Proof.Cmac.zero2_bytes]
   have hr₁ := hr.keep (fun r hr _ => g₁ r hr) sp₁ rd₁ wr₁
   exact WP.of_runBlock ⟨s₁, run₁, h.cargs hr₁.rd hr₁.wr x0₁ x1₁ x2₁ x3₁ x4₁ x5₁ hz, hr₁⟩
@@ -182,7 +182,7 @@ theorem loop_rel (v : Proof.Aes.AArch64.Ctr32Impl) {s₀' : State} (h : Env s₀
   · omega
   · omega
   · exact ⟨by rw [hci.cr.x23, hci'.cr.x23], fun e => (hz (by simpa using e)).elim, fun _ =>
-      ⟨L - 16 * (i + 1), by have := hci.cr; omega, i + 1, rfl, hci, hci'⟩⟩
+      ⟨L - 16 * (i + 1), by have := hci.cr; omega_using [hk, hc], i + 1, rfl, hci, hci'⟩⟩
 
 /-- What `ctr` needs of a run: the registers, the data in `x26` and `x27`,
 and a counter `Q` (whose last 32 bits are below `2³¹`). -/
@@ -274,7 +274,7 @@ theorem ctr_rel' (v : Proof.Aes.AArch64.Ctr32Impl) {s₀' : State} (h : Env s₀
       ⟨whole_wp v h hcp hPw hab.1, whole_wp v h' hcp hPw' hab.2⟩
   have ev {σ s : State} (hs : WI σ C D P W R L s) :
       isa.eval (.zero .x .x23) s = some (decide (L - 16 * wholeOf L = 0)) :=
-    eval_zero (by omega) hs.cr.x23
+    eval_zero (by omega_using [hlt]) hs.cr.x23
   have i := RelCT.ite (M := isa) (c := .zero .x .x23)
     (P := fun a b => WI s₀ C D P W R L a ∧ WI s₀' C D P W R L b)
     (Q := fun a b => CE s₀ C D P W R L a ∧ CE s₀' C D P W R L b)
@@ -283,7 +283,7 @@ theorem ctr_rel' (v : Proof.Aes.AArch64.Ctr32Impl) {s₀' : State} (h : Env s₀
     ((loop_rel v h h' hq hcp hPw hPw' (L - 16 * wholeOf L)).mono (fun a b hab => by
       have hL : 16 * wholeOf L < L := by
         have e := hab.2; rw [ev hab.1.1] at e
-        simp at e; omega
+        simp at e; omega_using [e]
       exact ⟨wholeOf L, rfl, hab.1.1.ci hL, hab.1.2.ci hL⟩) fun _ _ h => h)
   have we {σ s : State} (hs : CE σ C D P W R L s) :
       WP isa (.block [mov .x22 .x26, mov .x23 .x27]) s fun t =>

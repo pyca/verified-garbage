@@ -124,16 +124,16 @@ theorem prfs_tr (v : Sample4Impl) :
   have hc := W.pr
   simp only [Bool.and_eq_true] at hc
   exact relInv (fun σ s hp hs => prfs_ok W hp v hs.1 hs.2)
-    (rel2_of (v.prfs_tr (kgB_bases K.L) (by omega) hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+    (rel2_of (v.prfs_tr (kgB_bases K.L) (by omega_using []) hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
       kc_lrel Wb p₁ p₂ pub h₁.1.kc h₂.1.kc)
 
 theorem se_tr (v : Sample4Impl) :
     RelCT isa (R K.L (KN K 2)) (seqR (cbdN K v.callee.arith) 2 4) (R K.L (KN K 6)) := by
   have Wb := W.toKgWfB
   exact seqR_tr (R := fun k => R K.L (KN K k)) 4 2 fun N hN hN' =>
-    relInv (fun σ s hp hs => se_ok W hp v.arith (by omega) hN hs)
+    relInv (fun σ s hp hs => se_ok W hp v.arith (by omega_using [hN']) hN hs)
       (rel2_of (cbd2_16At_trL v.arith rbx_na (by
-          have h := W.se N (by omega); simp only [Bool.and_eq_true] at h; exact h.1))
+          have h := W.se N (by omega_using [hN']); simp only [Bool.and_eq_true] at h; exact h.1))
         fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_lrel Wb p₁ p₂ pub h₁.kc h₂.kc)
 
 theorem hzG_tr (T : KgH16T K) : RelCT isa (R K.L (KG K · 0 false)) (.block (Encaps16.hzero K)) fun _ _ => True := by
@@ -155,8 +155,8 @@ theorem nttG_tr (hK : KgRowsOk K.L) : RelCT isa (R K.L (KG K · 2 true)) (nttAt 
     rw [k3]; exact hc.1
   have red : ∀ {σ s}, KG K σ 2 true s → VecReducedW 16 s.mem (pa s (sc K.oR)) (2 * K.L.k) := fun h N hN => by
     rw [sc_w16]
-    rcases (by omega : N < 2 ∨ 2 ≤ N) with h2 | h2
-    exacts [(h.se0 N h2).1, (h.se N (by rw [k3] at hN; omega) h2).1]
+    rcases (by omega_using [] : N < 2 ∨ 2 ≤ N) with h2 | h2
+    exacts [(h.se0 N h2).1, (h.se N (by rw [k3] at hN; omega_using [hN]) h2).1]
   exact rel2_of (kgNttAt_trL hK rbx_na rbx_na rbx_na rbx_na hkn) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
     ⟨kc_lrel Wb p₁ p₂ pub h₁.kc h₂.kc, red h₁, red h₂⟩
 
@@ -201,8 +201,8 @@ theorem frag0_tr (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.calle
       fun _ _ _ _ h hx hy => ⟨h.1.post (kgB_bases K.L) hx.1 hy.1, hx.2, hy.2⟩) ?_
     have st : ∀ J < 4, RelCT isa (RQ kgR (kgW K.L) ρ K.L.k 0 J)
         (seedAt J ((0 + J) / 3) ((0 + J) % 3)) (RQ kgR (kgW K.L) ρ K.L.k 0 (J + 1)) := fun J hJ => by
-      have := seed_tr (kgB_bases K.L) (ρ := ρ) (n := K.L.k) (e₀ := 0) (K := J) (by omega) hJ
-        (by rw [k3]; omega) (by rw [k3]; omega) (hsd J hJ).1
+      have := seed_tr (kgB_bases K.L) (ρ := ρ) (n := K.L.k) (e₀ := 0) (K := J) (by omega_using [hJ]) hJ
+        (by rw [k3]; omega_using [hJ]) (by rw [k3]; omega_using []) (hsd J hJ).1
       rwa [show (0 + J) / K.L.k = (0 + J) / 3 by rw [k3], show (0 + J) % K.L.k = (0 + J) % 3 by rw [k3]] at this
     refine RelCT.seq (st 0 (by decide)) (RelCT.seq (st 1 (by decide)) (RelCT.seq (st 2 (by decide))
       (RelCT.seq (st 3 (by decide)) ?_)))
@@ -268,18 +268,18 @@ theorem frag_tr (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM1
       fun _ _ _ _ h hx hy => ⟨h.1.post (kgB_bases K.L) hx.1 hy.1, hx.2, hy.2⟩) ?_
     have st : ∀ J < 4, RelCT isa (RQ kgR (kgW K.L) ρ K.L.k (3 * i) J)
         (seedAt J ((3 * i + J) / 3) ((3 * i + J) % 3)) (RQ kgR (kgW K.L) ρ K.L.k (3 * i) (J + 1)) := fun J hJ => by
-      have := seed_tr (kgB_bases K.L) (ρ := ρ) (n := K.L.k) (e₀ := 3 * i) (K := J) (by omega) hJ
-        (by rw [k3]; omega) (by rw [k3]; omega) (hsd J hJ).1
+      have := seed_tr (kgB_bases K.L) (ρ := ρ) (n := K.L.k) (e₀ := 3 * i) (K := J) (by omega_using [hi, hJ]) hJ
+        (by rw [k3]; omega_using [hi, hJ]) (by rw [k3]; omega_using []) (hsd J hJ).1
       rwa [show (3 * i + J) / K.L.k = (3 * i + J) / 3 by rw [k3],
         show (3 * i + J) % K.L.k = (3 * i + J) % 3 by rw [k3]] at this
     have s0 := st 0 (by decide)
-    rw [show (3 * i + 0) / 3 = i by omega, show (3 * i + 0) % 3 = 0 by omega] at s0
+    rw [show (3 * i + 0) / 3 = i by omega_using [], show (3 * i + 0) % 3 = 0 by omega_using []] at s0
     have s1 := st 1 (by decide)
-    rw [show (3 * i + 1) / 3 = i by omega, show (3 * i + 1) % 3 = 1 by omega] at s1
+    rw [show (3 * i + 1) / 3 = i by omega_using [], show (3 * i + 1) % 3 = 1 by omega_using []] at s1
     have s2 := st 2 (by decide)
-    rw [show (3 * i + 2) / 3 = i by omega, show (3 * i + 2) % 3 = 2 by omega] at s2
+    rw [show (3 * i + 2) / 3 = i by omega_using [], show (3 * i + 2) % 3 = 2 by omega_using []] at s2
     have s3 := st 3 (by decide)
-    rw [show (3 * i + 3) / 3 = i + 1 by omega, show (3 * i + 3) % 3 = 0 by omega] at s3
+    rw [show (3 * i + 3) / 3 = i + 1 by omega_using [], show (3 * i + 3) % 3 = 0 by omega_using []] at s3
     refine RelCT.seq s0 (RelCT.seq s1 (RelCT.seq s2 (RelCT.seq s3 ?_)))
     rw [Top16.aP, k3]
     refine RelCT.mono (sampleHAtM16_tr hB) (fun x y h => ⟨SHH16.of h.1.1 c4, SHH16.of h.1.2.1 c4, h.1.eq Wb.inBs.1,
@@ -303,10 +303,10 @@ theorem KH.redRow {σ s : State} {i : Nat} (hi : i < 3) (h : KH K σ i (3 * i + 
       Reduced s.mem (pa s (ehP i)) := by
   have k3 := W.k3
   refine ⟨fun j hj => ?_, fun j hj => ?_, (h.eh i hi (Nat.le_refl _)).1⟩
-  · have := h.mat.mat (3 * i + j) (by rw [k3] at hj; omega) _ (aHat_part ho (e' := 3 * i + j) (by rw [k3] at hj; omega))
-    rw [aP, sc_w16, show K.oA + 512 * (3 * i) + 512 * j = K.oA + 512 * (3 * i + j) by omega]
+  · have := h.mat.mat (3 * i + j) (by rw [k3] at hj; omega_using [hj]) _ (aHat_part ho (e' := 3 * i + j) (by rw [k3] at hj; omega_using [hj]))
+    rw [aP, sc_w16, show K.oA + 512 * (3 * i) + 512 * j = K.oA + 512 * (3 * i + j) by omega_using []]
     exact this.1
-  · rw [pa_off]; exact (h.sh j (by omega)).1
+  · rw [pa_off]; exact (h.sh j (by omega_using [k3, hj])).1
 
 /-- The last 504 bytes of `ek` absorbed, `H(ek)` and the rest of the keys, from the pointers. -/
 theorem tail_trL (T : KgH16T K) : RelCT isa (LRel kgR (kgW K.L)) (tail K) fun _ _ => True := by

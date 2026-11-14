@@ -54,10 +54,10 @@ theorem top63 {p : R2Pub} {s : State} (h : R2Pre p s) (hi : 2 ^ (64 * p.L.w - 1)
     2 ^ 63 ≤ p.top ∧ p.top < 2 ^ 64 ∧ p.top.log2 = 63 := by
   obtain ⟨-, -, hT1, -⟩ := h.top
   have hw := h.2.1
-  have e : 2 ^ 63 * 2 ^ (64 * (p.L.w - 1)) = 2 ^ (64 * p.L.w - 1) := by rw [← Nat.pow_add]; congr 1; omega
+  have e : 2 ^ 63 * 2 ^ (64 * (p.L.w - 1)) = 2 ^ (64 * p.L.w - 1) := by rw [← Nat.pow_add]; congr 1; omega_using [hw]
   have hT : 2 ^ 63 ≤ p.top := (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr (by rw [e]; exact hi)
-  exact ⟨hT, hT1, Nat.le_antisymm (Nat.lt_succ_iff.mp ((Nat.log2_lt (by omega)).mpr hT1))
-    ((Nat.le_log2 (by omega)).mpr hT)⟩
+  exact ⟨hT, hT1, Nat.le_antisymm (Nat.lt_succ_iff.mp ((Nat.log2_lt (by omega_using [hT])).mpr hT1))
+    ((Nat.le_log2 (by omega_using [hT])).mpr hT)⟩
 
 theorem pins_up {X : R2Pub → State → Prop} (h : ∀ p s, X p s → R2Pre p s) : Pins (Up X) [.x0] :=
   pins_of _ (fun L _ => L.B) fun _ _ ⟨_, _, hx, _⟩ r hr => by

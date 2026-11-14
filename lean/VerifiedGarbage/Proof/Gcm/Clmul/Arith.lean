@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.Clmul.Ops
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring.RingNF
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Reflected GHASH polynomial arithmetic
@@ -29,9 +30,9 @@ theorem gp_shl (b : BitVec 64) {j : Nat} (hj : j < 64) :
   ext d
   rw [coeff_gp, coeff_X_pow_mul', coeff_gp, BitVec.getMsbD_shiftLeft, BitVec.getMsbD_setWidth]
   by_cases h : 64 - j ≤ d
-  · simp only [h, ite_true, decide_eq_true (show 128 - 64 ≤ d + j by omega), Bool.true_and]
-    exact congrArg _ (congrArg _ (by omega))
-  · simp only [h, ite_false, decide_eq_false (show ¬ 128 - 64 ≤ d + j by omega), Bool.false_and]; rfl
+  · simp only [h, ite_true, decide_eq_true (show 128 - 64 ≤ d + j by omega_using [h]), Bool.true_and]
+    exact congrArg _ (congrArg _ (by omega_using [hj]))
+  · simp only [h, ite_false, decide_eq_false (show ¬ 128 - 64 ≤ d + j by omega_using [h]), Bool.false_and]; rfl
 
 /-- The first `k` steps of `polyMul`. -/
 def clSteps (a b : BitVec 64) (k : Nat) : BitVec 128 :=
@@ -48,18 +49,18 @@ theorem gp_clSteps (a b : BitVec 64) {k : Nat} (hk : k ≤ 64) :
       simp only [clSteps, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
     rw [e, Finset.sum_range_succ]
     split_ifs
-    · rw [gp_xor, ih (by omega), gp_shl b (by omega),
-        show 64 - k = 63 - k + 1 by omega, pow_succ]
+    · rw [gp_xor, ih (by omega_using [hk]), gp_shl b (by omega_using [hk]),
+        show 64 - k = 63 - k + 1 by omega_using [hk], pow_succ]
       ring
-    · rw [ih (by omega)]; ring
+    · rw [ih (by omega_using [hk])]; ring
 
 theorem gp_lsb (a : BitVec 64) :
     (∑ i ∈ Finset.range 64, if a.getLsbD i then (X : P) ^ (63 - i) else 0) = gp a := by
   rw [gp, ← Finset.sum_range_reflect]
   refine Finset.sum_congr rfl fun i hi => ?_
   rw [Finset.mem_range] at hi
-  rw [BitVec.getMsbD_eq_getLsbD, decide_eq_true (by omega), Bool.true_and,
-    show 64 - 1 - i = 63 - i by omega, show 63 - (64 - 1 - i) = i by omega]
+  rw [BitVec.getMsbD_eq_getLsbD, decide_eq_true (by omega_using [hi]), Bool.true_and,
+    show 64 - 1 - i = 63 - i by omega_using [], show 63 - (64 - 1 - i) = i by omega_using [hi]]
 
 /-- `pmull` multiplies polynomials (with the factor `X` of the reflected
 representation). -/
@@ -125,7 +126,7 @@ theorem ψ_poly : ψ poly = 1 + x + x ^ 6 := by
     simp only [coeff_add, coeff_X_pow, coeff_X, coeff_one]
     by_cases hd : d < 64
     · rw [hb d hd]
-      rcases (by omega : d = 0 ∨ d = 1 ∨ d = 6 ∨ (d ≠ 0 ∧ d ≠ 1 ∧ d ≠ 6)) with
+      rcases (by omega_using [] : d = 0 ∨ d = 1 ∨ d = 6 ∨ (d ≠ 0 ∧ d ≠ 1 ∧ d ≠ 6)) with
         rfl | rfl | rfl | ⟨h0, h1, h6⟩
       · decide
       · decide
@@ -134,10 +135,10 @@ theorem ψ_poly : ψ poly = 1 + x + x ^ 6 := by
           show (1 : Nat) ≠ d from fun h => h1 h.symm, add_zero]
     · have e : poly.getMsbD d = false := by
         simp only [BitVec.getMsbD, Nat.add_one_sub_one, Bool.and_eq_false_imp, decide_eq_true_eq]
-        omega
+        omega_using [hd]
       rw [e]
-      simp only [bit, Bool.false_eq_true, ↓reduceIte, show d ≠ 0 by omega,
-        show (1 : Nat) ≠ d by omega, add_zero, show d ≠ 6 by omega]
+      simp only [bit, Bool.false_eq_true, ↓reduceIte, show d ≠ 0 by omega_using [hd],
+        show (1 : Nat) ≠ d by omega_using [hd], add_zero, show d ≠ 6 by omega_using [hd]]
   simp only [ψ, h, map_add, map_one, AdjoinRoot.mk_X, map_pow]
 
 theorem φ_ext8_self (v : BitVec 128) : φ (ext8 v v) = ρ v := by rw [φ_ext8, ρ]
@@ -171,7 +172,7 @@ theorem gp_xInv2 : gp xInv2 = X + X ^ 5 + X ^ 6 + X ^ 126 + X ^ 127 := by
   simp only [coeff_add, coeff_X_pow, coeff_X]
   by_cases hd : d < 128
   · rw [hb d hd]
-    rcases (by omega : d = 1 ∨ d = 5 ∨ d = 6 ∨ d = 126 ∨ d = 127 ∨
+    rcases (by omega_using [] : d = 1 ∨ d = 5 ∨ d = 6 ∨ d = 126 ∨ d = 127 ∨
       (d ≠ 1 ∧ d ≠ 5 ∧ d ≠ 6 ∧ d ≠ 126 ∧ d ≠ 127)) with
       rfl | rfl | rfl | rfl | rfl | ⟨h1, h5, h6, h126, h127⟩
     · decide
@@ -183,10 +184,10 @@ theorem gp_xInv2 : gp xInv2 = X + X ^ 5 + X ^ 6 + X ^ 126 + X ^ 127 := by
         ↓reduceIte, show (1 : Nat) ≠ d from fun h => h1 h.symm, add_zero]
   · have e : xInv2.getMsbD d = false := by
       simp only [BitVec.getMsbD, Nat.add_one_sub_one, Bool.and_eq_false_imp, decide_eq_true_eq]
-      omega
+      omega_using [hd]
     rw [e]
-    simp only [bit, Bool.false_eq_true, ↓reduceIte, show (1 : Nat) ≠ d by omega, add_zero,
-      show d ≠ 5 by omega, show d ≠ 6 by omega, show d ≠ 126 by omega, show d ≠ 127 by omega]
+    simp only [bit, Bool.false_eq_true, ↓reduceIte, show (1 : Nat) ≠ d by omega_using [hd], add_zero,
+      show d ≠ 5 by omega_using [hd], show d ≠ 6 by omega_using [hd], show d ≠ 126 by omega_using [hd], show d ≠ 127 by omega_using [hd]]
 
 theorem x2_φ_xInv2 : x ^ 2 * φ xInv2 = 1 := by
   simp only [φ, gp_xInv2, map_add, map_pow, AdjoinRoot.mk_X]
@@ -215,7 +216,7 @@ theorem gp_ushr63 (q : BitVec 64) : gp (q >>> 63) = if q.getMsbD 0 then (X : P) 
   · have : (decide (d < 64) && (!decide (d < 63) && q.getMsbD (d - 63))) = false := by
       by_cases h : d < 63
       · simp [h]
-      · simp [show ¬ d < 64 by omega]
+      · simp [show ¬ d < 64 by omega_using [hd, h]]
     rw [this]; split_ifs <;> simp [bit, coeff_X_pow, hd]
 
 theorem ψ_ushr63 (q : BitVec 64) : ψ (q >>> 63) = if q.getMsbD 0 then x ^ 63 else 0 := by

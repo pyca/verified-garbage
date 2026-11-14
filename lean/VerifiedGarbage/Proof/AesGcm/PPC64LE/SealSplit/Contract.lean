@@ -29,12 +29,12 @@ theorem allocated_arg (s : State) (i : Nat) (hi : i<4) :
     (allocated 112 s).mem.readW ((allocated 112 s).sp+BitVec.ofNat 64 (208+8*i)) 64=stackArg s i := by
   change (s.mem.writeW (s.sp-112) s.sp).readW (s.sp-112+BitVec.ofNat 64 (208+8*i)) 64=stackArg s i
   rw [Mem.readW_writeW_sep
-    ((Offset.disjoint_base (s.sp-112) (d := 208+8*i) (n := 8) (k := 8) (by omega) (by omega)).sep
+    ((Offset.disjoint_base (s.sp-112) (d := 208+8*i) (n := 8) (k := 8) (by omega_using []) (by omega_using [hi])).sep
       (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)]
   change s.mem.readW (s.sp-112+BitVec.ofNat 64 (208+8*i)) 64=
     s.mem.readW (s.sp+BitVec.ofNat 64 (32+8*(8+i))) 64
   congr 1
-  have hn : 208+8*i=112+(32+8*(8+i)) := by omega
+  have hn : 208+8*i=112+(32+8*(8+i)) := by omega_using []
   rw [hn,BitVec.ofNat_add]
   change s.sp-112#64+(112#64+BitVec.ofNat 64 (32+8*(8+i)))=_
   rw [← BitVec.add_assoc,BitVec.sub_add_cancel]
@@ -115,17 +115,17 @@ theorem prelude_config (s : State) (hs : scratchContract.pre s) : Prelude.Config
   · intro off ho
     have hb : 208≤off ∧ off≤232 := by
       simp only [Prelude.readOffsets,List.mem_cons,List.not_mem_nil,or_false] at ho
-      rcases ho with rfl | rfl | rfl | rfl <;> omega
-    rw [shifted_input s off (by omega)]
+      rcases ho with rfl | rfl | rfl | rfl <;> omega_using []
+    rw [shifted_input s off (by omega_using [hb])]
     change InRegions (s.rd++(frameR 112 s::s.wr)) (s.sp+BitVec.ofNat 64 (off-112)) 8
     rw [lay.rd]
     exact ⟨argsR s,List.mem_append_left _ (by simp),
-      Offset.contains _ (d := off-112) (n := 8) (e := 96) (k := 32) (by omega) (by omega) (by decide)⟩
+      Offset.contains _ (d := off-112) (n := 8) (e := 96) (k := 32) (by omega_using [hb]) (by omega_using [hb]) (by decide)⟩
   · intro off ho
     have hb : off=96 ∨ off=104 := by simpa only [List.mem_cons,List.not_mem_nil,or_false] using ho
     change InRegions (frameR 112 s::s.wr) (s.sp-112#64+BitVec.ofNat 64 off) 8
     exact ⟨frameR 112 s,List.mem_cons_self,
-      Offset.contains _ (d := off) (n := 8) (e := 32) (k := 80) (by omega) (by omega) (by decide)⟩
+      Offset.contains _ (d := off) (n := 8) (e := 32) (k := 80) (by omega_using [hb]) (by omega_using [hb]) (by decide)⟩
   · rw [allocated_work]
     change Covers [workR s] (frameR 112 s::s.wr)
     rw [lay.wr]
@@ -135,15 +135,15 @@ theorem prelude_config (s : State) (hs : scratchContract.pre s) : Prelude.Config
     by_cases hw : off∈[96,104]
     · have hb : off=96 ∨ off=104 := by simpa only [List.mem_cons,List.not_mem_nil,or_false] using hw
       exact (lay.stackApart (workR s) (by simp)).symm.sub_right
-        (Offset.sub_base _ (d := off) (n := 8) (k := 112) (by omega))
+        (Offset.sub_base _ (d := off) (n := 8) (k := 112) (by omega_using [hb]))
     · have hread : off∈Prelude.readOffsets := by
         simp only [Prelude.argOffsets,List.mem_append] at ho
         exact ho.resolve_left hw
       have hb : 208≤off ∧ off≤232 := by
         simp only [Prelude.readOffsets,List.mem_cons,List.not_mem_nil,or_false] at hread
-        rcases hread with rfl | rfl | rfl | rfl <;> omega
-      rw [shifted_input s off (by omega)]
+        rcases hread with rfl | rfl | rfl | rfl <;> omega_using []
+      rw [shifted_input s off (by omega_using [hb])]
       exact (lay.argsApart (workR s) (by simp)).sub_right
-        (Offset.sub _ (d := off-112) (n := 8) (e := 96) (k := 32) (by omega) (by omega))
+        (Offset.sub _ (d := off-112) (n := 8) (e := 96) (k := 32) (by omega_using [hb]) (by omega_using [hb]))
 
 end VG.Proof.AesGcm.PPC64LE.SealSplit

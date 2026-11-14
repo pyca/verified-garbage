@@ -34,26 +34,26 @@ theorem PackedProgress.pair {v : Vector (BitVec 128) 8} {g : Nat} {b : Int}
     -b≤(pairWord v[2*g] v[2*g+1] i).toInt ∧ (pairWord v[2*g] v[2*g+1] i).toInt≤b := by
   unfold pairWord
   split
-  · have hv := h ⟨2*g,by omega⟩ i ‹_›
-    simpa only [show ¬2*g<2*g by omega,ite_false] using hv
-  · have hv := h ⟨2*g+1,by omega⟩ (i-4) (by omega)
-    simpa only [show ¬2*g+1<2*g by omega,ite_false] using hv
+  · have hv := h ⟨2*g,by omega_using [hg]⟩ i ‹_›
+    simpa only [show ¬2*g<2*g by omega_using [],ite_false] using hv
+  · have hv := h ⟨2*g+1,by omega_using [hg]⟩ (i-4) (by omega_using [hi])
+    simpa only [show ¬2*g+1<2*g by omega_using [],ite_false] using hv
 
 theorem packedValues_progress (v : Vector (BitVec 128) 8) {g len : Nat} (hg : g<4)
     (hl : len=1 ∨ len=2) (z : Nat → Int) {b : Int} (hb : 8380417≤b)
     (hs : 2*b<2147483648) (hv : PackedProgress v g b) :
-    PackedProgress (packedValues v ⟨2*g,by omega⟩ ⟨2*g+1,by omega⟩ len z) (g+1) b := by
+    PackedProgress (packedValues v ⟨2*g,by omega_using [hg]⟩ ⟨2*g+1,by omega_using [hg]⟩ len z) (g+1) b := by
   intro i e he
   simp only [packedValues,Vector.getElem_set]
   by_cases hj : 2*g+1=i.val
-  · rw [ite_eq_left hj,ite_eq_left (by omega : i.val<2*(g+1))]
+  · rw [ite_eq_left hj,ite_eq_left (by omega_using [hj] : i.val<2*(g+1))]
     exact packedResult_bound _ _ hl true z he hb hs (fun j hj => hv.pair hg hj)
   · rw [ite_eq_right hj]
     by_cases hi : 2*g=i.val
-    · rw [ite_eq_left hi,ite_eq_left (by omega : i.val<2*(g+1))]
+    · rw [ite_eq_left hi,ite_eq_left (by omega_using [hi] : i.val<2*(g+1))]
       exact packedResult_bound _ _ hl false z he hb hs (fun j hj => hv.pair hg hj)
     · rw [ite_eq_right hi]
-      have heq : (i.val<2*(g+1)) ↔ (i.val<2*g) := by omega
+      have heq : (i.val<2*(g+1)) ↔ (i.val<2*g) := by omega_using [hj, hi]
       simpa only [heq] using hv i e he
 
 theorem packedProgress_zero (v : Vector (BitVec 128) 8) (b : Int) :
@@ -100,13 +100,13 @@ theorem packedLayer_values (v : Vector (BitVec 128) 8) (w : Poly) {u len g n : N
   induction n generalizing g v w with
   | zero => exact ⟨hv,hf⟩
   | succ n ih =>
-    have hg : g<4 := by omega
-    have hm0 : 2*g%8=2*g := Nat.mod_eq_of_lt (by omega)
-    have hm1 : (2*g+1)%8=2*g+1 := Nat.mod_eq_of_lt (by omega)
+    have hg : g<4 := by omega_using [hgn]
+    have hm0 : 2*g%8=2*g := Nat.mod_eq_of_lt (by omega_using [hgn])
+    have hm1 : (2*g+1)%8=2*g+1 := Nat.mod_eq_of_lt (by omega_using [hgn])
     have hp := packedValues_progress v hg hl (fun e => (negZetaNat (root g e) : Int)) hb hs hv
     have hfield := packedValues_field v w hg hl hu (root g) hb hs
       (fun j hj => hv.pair hg hj) hf
-    have hi := ih _ _ (g := g+1) (by omega) hp hfield
+    have hi := ih _ _ (g := g+1) (by omega_using [hgn]) hp hfield
     simpa only [packedLayerValues,packedLayerOps,hm0,hm1,InverseTraversal.run_append,
       Nat.add_assoc,Nat.add_comm 1 n] using hi
 
@@ -153,7 +153,7 @@ theorem packedRoot_index (u g len : Nat) (hl : len=1 ∨ len=2) :
     packedRoot u g len=(fun e => (negZetaNat (packedIndex u len g e) : Int)) := by
   funext e
   have hi : (if len=1 then 255-16*u-4*g-e else 127-8*u-2*g-e/2)=packedIndex u len g e := by
-    rcases hl with rfl | rfl <;> simp [packedIndex] <;> omega
+    rcases hl with rfl | rfl <;> simp [packedIndex] <;> omega_using []
   unfold packedRoot
   rw [hi]
   rfl

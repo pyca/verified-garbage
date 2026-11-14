@@ -92,11 +92,11 @@ theorem verStep {s t t' : State} (hp : VerPre s) (h : VerInv s t) (hrd : t'.rd =
   · rcases hW r hr with rfl | rfl | ⟨d, n, hdn, rfl⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨⟨s.gpr .a5, 272⟩, by simp, Offset.sub_base _ (by omega)⟩
+    · exact ⟨⟨s.gpr .a5, 272⟩, by simp, Offset.sub_base _ (by omega_using [hdn])⟩
   · rcases hW r hr with rfl | rfl | ⟨d, n, hdn, rfl⟩
     · exact hp.cF.symm.sub_left hs
     · exact hp.bF.symm.sub_left hs
-    · exact Offset.disjoint _ (.inr hdn) (by decide) (by omega)
+    · exact Offset.disjoint _ (.inr hdn) (by decide) (by omega_using [hdn])
 
 /-- An input, while the body runs. -/
 theorem ver_input {s t : State} (h : VerInv s t) {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
@@ -126,7 +126,7 @@ theorem verSetup_ok {s : State} (hp : VerPre s) :
   have hF : (⟨s.gpr .a5, 272⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
   have hsl : ∀ p ∈ slots 224 verifyRegs, p.2 + 8 ≤ 272 := by decide
   refine save_ok hp.alF (by decide) (by decide)
-    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega)) fun u hu hsv hfr => ?_
+    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega_using [this])) fun u hu hsv hfr => ?_
   unfold mov
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun u₁ h₁ => wp_mv fun u₂ h₂ => wp_mv fun u₃ h₃ => wp_mv fun u₄ h₄ => ?_
@@ -146,14 +146,14 @@ theorem verSetup_ok {s : State} (hp : VerPre s) :
   -- The signature, then `pk`.
   refine copyIn_ok (P := s.gpr .a3) (F := s.gpr .a5) (o := 128) (n := 64) (by decide) (by decide)
     (by rw [g₄ _ (by decide), gu]) e10 (by decide)
-    (fun i hi => by rw [rd₄, wr₄]; exact in_base (List.mem_append_left _ hS) (by omega) (by omega))
-    (fun i hi => by rw [wr₄]; exact in_base hF (by omega) (by omega))
+    (fun i hi => by rw [rd₄, wr₄]; exact in_base (List.mem_append_left _ hS) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => by rw [wr₄]; exact in_base hF (by omega_using [hi]) (by omega_using [hi]))
     (hp.sF.sub_right (Offset.sub_base _ (by decide))) fun v hv hfv hbv => ?_
   rw [← List.append_nil (copyIn .a0 .s10 192)]
   refine copyIn_ok (P := s.gpr .a0) (F := s.gpr .a5) (o := 192) (n := 32) (by decide) (by decide)
     (by rw [hv.gpr _ (by decide), g₄ _ (by decide), gu]) (by rw [hv.gpr _ (by decide), e10]) (by decide)
-    (fun i hi => by rw [hv.rd, hv.wr, rd₄, wr₄]; exact in_base (List.mem_append_left _ hP) (by omega) (by omega))
-    (fun i hi => by rw [hv.wr, wr₄]; exact in_base hF (by omega) (by omega))
+    (fun i hi => by rw [hv.rd, hv.wr, rd₄, wr₄]; exact in_base (List.mem_append_left _ hP) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => by rw [hv.wr, wr₄]; exact in_base hF (by omega_using [hi]) (by omega_using [hi]))
     (hp.pF.sub_right (Offset.sub_base _ (by decide))) fun t ht hft hbt => WP.block_nil ?_
   have F128 : Region.Sub ⟨s.gpr .a5 + BitVec.ofNat 64 128, 64⟩ ⟨s.gpr .a5, 272⟩ := Offset.sub_base _ (by decide)
   have F192 : Region.Sub ⟨s.gpr .a5 + BitVec.ofNat 64 192, 32⟩ ⟨s.gpr .a5, 272⟩ := Offset.sub_base _ (by decide)
@@ -322,16 +322,16 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     · exact .inr (.inl (by rw [h₅.sp])))
   have dg : bytesAt t₆.mem (s.gpr .a5 + BitVec.ofNat 64 64) 64 =
       Spec.Sha512.sha512 (bytesAt s.mem (s.gpr .a3) 32 ++ bytesAt s.mem (s.gpr .a0) 32 ++ vmsgB s) :=
-    hd₆ _ r₅ (by simp [bytesAt]; omega)
-      (by rw [h₅.regs _ (by decide), cnt_eq, verV_s8]; simp [bytesAt]; congr 1; omega)
+    hd₆ _ r₅ (by simp [bytesAt]; omega_using [hlen])
+      (by rw [h₅.regs _ (by decide), cnt_eq, verV_s8]; simp [bytesAt]; congr 1; omega_using [])
   have keep6 : ∀ {d n : Nat}, 128 ≤ d → d + n ≤ 224 →
       bytesAt t₆.mem (s.gpr .a5 + BitVec.ofNat 64 d) n = bytesAt t₅.mem (s.gpr .a5 + BitVec.ofNat 64 d) n :=
-    fun {d n} hd hdn => bytes_keep f₆ (by omega) fun r hr => by
-      have hs : Region.Sub ⟨s.gpr .a5 + BitVec.ofNat 64 d, n⟩ ⟨s.gpr .a5, 272⟩ := Offset.sub_base _ (by omega)
+    fun {d n} hd hdn => bytes_keep f₆ (by omega_using [hdn]) fun r hr => by
+      have hs : Region.Sub ⟨s.gpr .a5 + BitVec.ofNat 64 d, n⟩ ⟨s.gpr .a5, 272⟩ := Offset.sub_base _ (by omega_using [hdn])
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact hp.cF.symm.sub_left hs
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+      · exact Offset.disjoint _ (.inr (by omega_using [hd])) (by omega_using [hdn]) (by omega_using [])
       · rw [h₅.sp]; exact hp.bF.symm.sub_left hs
   have cs₆ := (keep6 (d := 128) (n := 64) (by decide) (by decide)).trans cs₅
   have cp₆ := (keep6 (d := 192) (n := 32) (by decide) (by decide)).trans cp₅
@@ -378,11 +378,11 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
       bytesAt t₈.mem (s.gpr .a5 + BitVec.ofNat 64 d) n = bytesAt t₆.mem (s.gpr .a5 + BitVec.ofNat 64 d) n :=
     fun {d n} hd hdn => by
       rw [← k₇.mem]
-      exact bytes_keep f₈ (by omega) fun r hr => by
-        have hs : Region.Sub ⟨s.gpr .a5 + BitVec.ofNat 64 d, n⟩ ⟨s.gpr .a5, 272⟩ := Offset.sub_base _ (by omega)
+      exact bytes_keep f₈ (by omega_using [hdn]) fun r hr => by
+        have hs : Region.Sub ⟨s.gpr .a5 + BitVec.ofNat 64 d, n⟩ ⟨s.gpr .a5, 272⟩ := Offset.sub_base _ (by omega_using [hdn])
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact Offset.disjoint_base _ (by omega) (by omega)
+        · exact Offset.disjoint_base _ (by omega_using [hd]) (by omega_using [hdn])
         · exact hp.cF.symm.sub_left hs
   have cs₈ := (keep8 (d := 128) (n := 64) (by decide) (by decide)).trans cs₆
   have cp₈ := (keep8 (d := 192) (n := 32) (by decide) (by decide)).trans cp₆
@@ -390,7 +390,7 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
   have hFw₈ : (⟨s.gpr .a5, 272⟩ : Region) ∈ t₈.wr := ver_Fw hp h₈
   have e10 : t₈.gpr .s10 = s.gpr .a5 := h₈.regs _ (by decide)
   have inF8 : ∀ (u : State), u.wr = t₈.wr → ∀ d, d + 8 ≤ 272 → InRegions u.wr (s.gpr .a5 + BitVec.ofNat 64 d) 8 :=
-    fun u hu d hd => by rw [hu]; exact in_base hFw₈ hd (by omega)
+    fun u hu d hd => by rw [hu]; exact in_base hFw₈ hd (by omega_using [hd])
   refine wp_li (d := .a5) (imm := 0) (by decide) fun u₁ e₁ => ?_
   refine wp_stdd (a := s.gpr .a5 + BitVec.ofNat 64 32) ⟨by decide, Spill.al8 hp.alF (by decide)⟩
     (by rw [e₁.other _ (by decide), e10]) (inF8 _ e₁.wr 32 (by decide)) fun u₂ e₂ => ?_
@@ -417,7 +417,7 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     rw [g₄.other _ p3, g₃.other _ p2, g₂.other _ p1, g₁.other _ p0, e₅.gpr, e₄.gpr, e₃.gpr, e₂.gpr,
       e₁.other _ (by revert hr; cases r <;> decide)]
   have cont : ∀ d, 32 ≤ d → d + 8 ≤ 64 → Region.Contains ⟨s.gpr .a5 + BitVec.ofNat 64 32, 32⟩
-      (s.gpr .a5 + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      (s.gpr .a5 + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
   have fv : Frame [⟨s.gpr .a5 + BitVec.ofNat 64 32, 32⟩] t₈.mem v₄.mem := by
     rw [mv]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cont 32 (by decide) (by decide))).writeW
@@ -426,11 +426,11 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
   have rr : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i + 8 ≤ j ∨ j + 8 ≤ i → i + 8 ≤ 272 → j + 8 ≤ 272 →
       (x.writeW (s.gpr .a5 + BitVec.ofNat 64 j) v).readW (s.gpr .a5 + BitVec.ofNat 64 i) 64 =
         x.readW (s.gpr .a5 + BitVec.ofNat 64 i) 64 :=
-    fun x i j v h hi hj => Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+    fun x i j v h hi hj => Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hi]) (by omega_using [hj])) (by decide)
   have hz : ∀ k < 4, v₄.mem.readW (s.gpr .a5 + BitVec.ofNat 64 32 + BitVec.ofNat 64 (8 * k)) 64 = 0 := by
     intro k hk
     rw [mv, Offset.add_add]
-    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega
+    have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_using [hk]
     rcases this with rfl | rfl | rfl | rfl
     · rw [show 32 + 8 * 0 = 32 from rfl, rr _ 32 56 _ (by decide) (by decide) (by decide),
         rr _ 32 48 _ (by decide) (by decide) (by decide), rr _ 32 40 _ (by decide) (by decide) (by decide),
@@ -441,8 +441,8 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     · rw [show 32 + 8 * 3 = 56 from rfl, Mem.readW_writeW_self64]
   have keepv : ∀ {d n : Nat}, 128 ≤ d → d + n ≤ 224 →
       bytesAt v₄.mem (s.gpr .a5 + BitVec.ofNat 64 d) n = bytesAt t₈.mem (s.gpr .a5 + BitVec.ofNat 64 d) n :=
-    fun hd hdn => bytes_keep fv (by omega) fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+    fun hd hdn => bytes_keep fv (by omega_using [hdn]) fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_using [hd])) (by omega_using [hdn]) (by omega_using [])
   refine ⟨verStep hp h₈ (by rw [g₄.rd, g₃.rd, g₂.rd, g₁.rd, e₅.rd, e₄.rd, e₃.rd, e₂.rd, e₁.rd])
     (by rw [g₄.wr, g₃.wr, g₂.wr, g₁.wr, e₅.wr, e₄.wr, e₃.wr, e₂.wr, e₁.wr])
     (by rw [g₄.sp, g₃.sp, g₂.sp, g₁.sp, e₅.sp, e₄.sp, e₃.sp, e₂.sp, e₁.sp]) gp fv fun r hr => by

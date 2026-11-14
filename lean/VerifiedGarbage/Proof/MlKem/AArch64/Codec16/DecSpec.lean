@@ -20,10 +20,10 @@ theorem even_nat (s : State) {g : Nat} (hg : g<128) :
       (Decode12.byte s (3*g)+Decode12.byte s (3*g+1)%16*256)%3329 := by
   have hq : q=3329 := rfl
   have h0 : Decode12.byte s (3*g)<256 := byte_lt _
-  rw [Decode12.G_even s hg,BitVec.toNat_ofNat,condSub_eq (by omega)]
+  rw [Decode12.G_even s hg,BitVec.toNat_ofNat,condSub_eq (by omega_using [hq, h0])]
   have := Nat.mod_lt (Decode12.byte s (3*g)+Decode12.byte s (3*g+1)%16*256) (show 0<q by decide)
   rw [hq] at *
-  omega
+  omega_using []
 
 theorem odd_nat (s : State) {g : Nat} (hg : g<128) :
     (Decode12.G s (2*g+1)).toNat =
@@ -31,24 +31,24 @@ theorem odd_nat (s : State) {g : Nat} (hg : g<128) :
   have hq : q=3329 := rfl
   have h1 : Decode12.byte s (3*g+1)<256 := byte_lt _
   have h2 : Decode12.byte s (3*g+2)<256 := byte_lt _
-  rw [Decode12.G_odd s hg,BitVec.toNat_ofNat,condSub_eq (by omega)]
+  rw [Decode12.G_odd s hg,BitVec.toNat_ofNat,condSub_eq (by omega_using [hq, h1, h2])]
   have := Nat.mod_lt (Decode12.byte s (3*g+1)/16+Decode12.byte s (3*g+2)*16) (show 0<q by decide)
   rw [hq] at *
-  omega
+  omega_using []
 
 theorem dec_low_spec (s : State) {k : Nat} (hk : k<32) {x : BitVec 128}
     (hx : ∀ j<12, (vbyte x j).toNat = Decode12.byte s (12*k+j)) :
     Lanes (reduced (low x)) (fun e => (Decode12.G s (8*k+2*e)).toNat) := by
-  refine (reduced_lanes (low_lanes x) (fun e _ => by omega)).congr ?_
+  refine (reduced_lanes (low_lanes x) (fun e _ => by omega_using [])).congr ?_
   intro e he
-  rw [hx _ (by omega),hx _ (by omega),hx _ (by omega),
-    show 8*k+2*e=2*(4*k+e) by omega,even_nat s (by omega)]
-  rw [show 3*(4*k+e)=12*k+3*e by omega]
+  rw [hx _ (by omega_using [he]),hx _ (by omega_using [he]),hx _ (by omega_using [he]),
+    show 8*k+2*e=2*(4*k+e) by omega_using [],even_nat s (by omega_using [hk, he])]
+  rw [show 3*(4*k+e)=12*k+3*e by omega_using []]
   simp only [Nat.add_assoc]
   have h0 : Decode12.byte s (12*k+3*e)<256 := byte_lt _
   have h1 : Decode12.byte s (12*k+(3*e+1))<256 := byte_lt _
   congr 1
-  omega
+  omega_using [h0]
 
 theorem dec_high_spec (s : State) {k : Nat} (hk : k<32) {x : BitVec 128}
     (hx : ∀ j<12, (vbyte x j).toNat = Decode12.byte s (12*k+j)) :
@@ -59,16 +59,16 @@ theorem dec_high_spec (s : State) {k : Nat} (hk : k<32) {x : BitVec 128}
     have := (vbyte x (3*e)).isLt
     have := (vbyte x (3*e+1)).isLt
     have := (vbyte x (3*e+2)).isLt
-    omega
+    omega_using []
   refine (reduced_lanes (high_lanes x) hf).congr ?_
   intro e he
-  rw [hx _ (by omega),hx _ (by omega),hx _ (by omega),
-    show 8*k+(2*e+1)=2*(4*k+e)+1 by omega,odd_nat s (by omega)]
-  rw [show 3*(4*k+e)=12*k+3*e by omega]
+  rw [hx _ (by omega_using [he]),hx _ (by omega_using [he]),hx _ (by omega_using [he]),
+    show 8*k+(2*e+1)=2*(4*k+e)+1 by omega_using [],odd_nat s (by omega_using [hk, he])]
+  rw [show 3*(4*k+e)=12*k+3*e by omega_using []]
   simp only [Nat.add_assoc]
   have h0 : Decode12.byte s (12*k+3*e)<256 := byte_lt _
   have h1 : Decode12.byte s (12*k+(3*e+1))<256 := byte_lt _
   congr 1
-  omega
+  omega_using [h0]
 
 end VG.Proof.MlKem.AArch64.Codec16

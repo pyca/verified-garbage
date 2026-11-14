@@ -47,7 +47,7 @@ theorem sealSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN
   refine WP.ite (decide ¬IsFast nl al n any) (eval_e hz) (fun _ => ho C X E₃ hNp hnl hal) fun h => ?_
   obtain ⟨h12, h17, -⟩ : IsFast nl al n any := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
-  exact sealRunFin_ok B (finOk_finishP hF hks) C X hal (aad_mid hF C X E₃ hNp hnl hal (by omega))
+  exact sealRunFin_ok B (finOk_finishP hF hks) C X hal (aad_mid hF C X E₃ hNp hnl hal (by omega_using [h17]))
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
@@ -64,7 +64,7 @@ theorem sealSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.prepared
     fun C hnl hal s h => WP.mono (condE_ok C h hnl hal) fun _ ⟨z, E, _⟩ => ⟨z, E⟩
   have c := rel_next (Fast.cond_rel (F₁ := OneEntry s₀ Ctx W SP A D n) (F₂ := OneEntry s₀' Ctx W SP A D n)
       (fun _ h => condS_of h hnl hal) (fun _ h => condS_of h hnl' hal')
-      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega))
+      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_using [hlt]))
     (hw C hnl hal) (hw C' hnl' hal')
   refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
     ((ho C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
@@ -74,11 +74,11 @@ theorem sealSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.prepared
     subst h12
     have L := C.lay
     exact (sealRunP_rel hks hkr B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR'
-      ((Fast.aad_rel L C.dE (M := (CtxMode.preparedN np hpn)) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
+      ((Fast.aad_rel L C.dE (M := (CtxMode.preparedN np hpn)) (R := R) (Np := Np) (A := A) (al := al) (by omega_using [h17])).mono
         (P' := fun (s₁ s₂ : State) => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂)
         (fun _ _ g => ⟨g.1.aadPre C X hNp hnl hal hR, g.2.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)
-      (fun _ h => aad_mid hF C X h hNp hnl hal (by omega))
-      (fun _ h => aad_mid hF C' X' h hNp' hnl' hal' (by omega))).mono
+      (fun _ h => aad_mid hF C X h hNp hnl hal (by omega_using [h17]))
+      (fun _ h => aad_mid hF C' X' h hNp' hnl' hal' (by omega_using [h17]))).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
   · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 

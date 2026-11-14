@@ -29,15 +29,15 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_ld wp_mov wp_nil wp_lsrw w
 
 /-- The stack arguments are in `aR`. -/
 theorem in_aR {s : State} {j : Nat} (hj : j < 8) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem in_aR_sub {s : State} {j : Nat} (hj : j < 8) : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR s) := by
-  rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega_using [hj])
 
 /-- A word of a table of `n` words is in its region. -/
 theorem tab_sub {p : Addr} {n k : Nat} (hk : k < n) :
     Region.Sub ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (Sig.tableRegion 64 p n) :=
-  Offset.sub_base p (by show 8 * k + 8 ≤ n * (64 / 8); omega)
+  Offset.sub_base p (by show 8 * k + 8 ≤ n * (64 / 8); omega_using [hk])
 
 /-- After the saves and the prologue. -/
 structure Entered (D : Nat) (s t : State) : Prop where
@@ -104,7 +104,7 @@ theorem entry_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D �
     rw [k₆.gpr r (by revert r; decide), gs r hr]
   -- `n₀`.
   have hn : (nR s).Contains (s.gpr .r3) 1 := by
-    have := Offset.contains_base (s.gpr .r3) (d := 0) (n := 1) (k := (s.gpr .r4).toNat) (by have := P.k1; omega)
+    have := Offset.contains_base (s.gpr .r3) (d := 0) (n := 1) (k := (s.gpr .r4).toNat) (by have := P.k1; omega_using [this])
       (by decide)
     rwa [BitVec.add_zero] at this
   refine wp_lbz (a := s.gpr .r3) (by rw [k₁₂.get .r3, g12 .r3 (by decide), BitVec.add_zero])
@@ -115,7 +115,7 @@ theorem entry_ok {H : Impl.Hmac.Stream.PPC64LE.Hash} (hD : H.D = D) (hD64 : D �
     wp_or fun v₁₈ o₁₈ e₁₈ => wp_lsr fun v₁₉ o₁₉ e₁₉ => wp_or fun v₂₀ o₂₀ e₂₀ => wp_subi fun v₂₁ o₂₁ e₂₁ =>
     wp_lsr fun v₂₂ o₂₂ e₂₂ => wp_li (by decide) fun v₂₃ o₂₃ e₂₃ => wp_sub fun v₂₄ o₂₄ e₂₄ =>
     wp_li (by decide) fun v₂₅ o₂₅ e₂₅ => wp_and fun v₂₆ o₂₆ e₂₆ => wp_or fun v₂₇ o₂₇ e₂₇ =>
-    wp_sub fun v₂₈ o₂₈ e₂₈ => wp_subi (h := by omega) fun w ow ew => wp_nil ?_
+    wp_sub fun v₂₈ o₂₈ e₂₈ => wp_subi (h := by omega_using [hD, hD64]) fun w ow ew => wp_nil ?_
   have x16 : v₁₆.gpr .r10 = (n0 s >>> 1) ||| (n0 s >>> 1) >>> 1 := by
     rw [e₁₆, o₁₅.get .r10, e₁₅, e₁₄, hn0]
   have x18 : v₁₈.gpr .r10 = ((n0 s >>> 1) ||| (n0 s >>> 1) >>> 1) |||

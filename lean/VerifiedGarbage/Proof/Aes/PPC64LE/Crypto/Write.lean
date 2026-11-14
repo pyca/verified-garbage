@@ -41,9 +41,9 @@ theorem write_step (ctr : Bool) {o : Reg} {s₀ s : State} {m₀ : Mem} {D E : A
     (h : WriteInv s₀ m₀ D E n k N c F s) :
     WP isa (.block (Impl.Aes.PPC64LE.Crypto.writeBlock ctr (breg c) o)) s
       (WriteInv s₀ m₀ D E n k N (c+1) F) := by
-  have hc8 : c < 8 := by omega
+  have hc8 : c < 8 := by omega_using [hN, hc]
   have all := batchFacts ⟨8, by decide⟩
-  have facts := batchFacts ⟨c, by omega⟩
+  have facts := batchFacts ⟨c, by omega_using [hc8]⟩
   have hbm : breg c ≠ mask := fun he => all.2.2.1 (he ▸ breg_mem hc8)
   have hbd : breg c ≠ data := fun he => all.2.2.2.2.2 (he ▸ breg_mem hc8)
   have hz : s.gpr .r0 = 0 := (h.keep.gpr (by decide)).trans h0
@@ -53,15 +53,15 @@ theorem write_step (ctr : Bool) {o : Reg} {s₀ s : State} {m₀ : Mem} {D E : A
     rw [h.ptr, hso, shift_dst]
   have hwr : InRegions s.wr (s.gpr .r6 + s.gpr o) 16 := by
     rw [h.keep.2.2, haddr]
-    exact ⟨⟨E, 16*n⟩, hw, Offset.contains_base E (by omega) (by omega)⟩
+    exact ⟨⟨E, 16*n⟩, hw, Offset.contains_base E (by omega_using [hc, hkn]) (by omega_using [hc, hkn, hsize])⟩
   have hrr : InRegions (s.rd ++ s.wr) (s.gpr .r6) 16 := by
     rw [h.keep.2.1, h.keep.2.2, h.ptr]
-    exact ⟨⟨D, 16*n⟩, hrd, Offset.contains_base D (by omega) (by omega)⟩
+    exact ⟨⟨D, 16*n⟩, hrd, Offset.contains_base D (by omega_using [hc, hkn]) (by omega_using [hc, hkn, hsize])⟩
   have hx : aesState (outputVector ctr (breg c) s) = F (k+c) := by
     rw [outputVector, h.val c (Nat.le_refl _) hc, h.ptr]
     exact hF c hc s.mem h.processed h.frame
   refine WP.mono (writeBlock_ok ctr (breg c) o s hbd hz hmm hrr hwr) fun t ht => ?_
-  have hp := h.processed.store hsize (show k+c < n by omega) (v := rev128 (outputVector ctr (breg c) s)) (by
+  have hp := h.processed.store hsize (show k+c < n by omega_using [hc, hkn]) (v := rev128 (outputVector ctr (breg c) s)) (by
     intro j hj
     change VG.VectorCrypto.vbyte (rev128 (outputVector ctr (breg c) s)) j = _
     rw [← VG.Proof.Aes.Vector.getD_st _ hj]
@@ -71,17 +71,17 @@ theorem write_step (ctr : Bool) {o : Reg} {s₀ s : State} {m₀ : Mem} {D E : A
   · rw [ht.ptr, h.ptr]
     change D + BitVec.ofNat 64 (16*(k+c)) + BitVec.ofNat 64 16 = _
     rw [Offset.add_add]
-    exact congrArg (fun i => D + BitVec.ofNat 64 i) (by omega)
+    exact congrArg (fun i => D + BitVec.ofNat 64 i) (by omega_using [])
   · rw [ht.mem, haddr]
     simpa only [Nat.add_assoc] using hp.1
   · rw [ht.mem, haddr]
     exact h.frame.trans hp.2
   · intro i hi hin
-    have hi8 : i < 8 := by omega
-    have hbc : breg i ≠ breg c := breg_ne hi8 hc8 (by omega)
+    have hi8 : i < 8 := by omega_using [hN, hin]
+    have hbc : breg i ≠ breg c := breg_ne hi8 hc8 (by omega_using [hi])
     have hbid : breg i ≠ data := fun he => all.2.2.2.2.2 (he ▸ breg_mem hi8)
     rw [ht.v (breg i) (by simp [hbc, hbid])]
-    exact h.val i (by omega) hin
+    exact h.val i (by omega_using [hi]) hin
   · intro r hr
     have hr' : r ≠ data ∧ r ∉ batchRegs c ∧ r ≠ breg c := by
       simpa only [batchRegs_succ, List.mem_cons, List.mem_append, List.not_mem_nil, or_false, not_or] using hr

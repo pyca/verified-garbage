@@ -42,7 +42,7 @@ theorem pair_ok (s : State) {base : BitVec 32} {size a m d : Nat}
       Rest pairClobbers s t := by
   unfold VG.Impl.Bignum.Arm.Fios.pairStep
   rw [WP.seq_iff]
-  refine WP.mono (loadsA_ok s .r6 (by decide) ws (by decide) (by decide) (by omega) (by omega) pa pd) ?_
+  refine WP.mono (loadsA_ok s .r6 (by decide) ws (by decide) (by decide) (by omega_using [fa]) (by omega_using [fd]) pa pd) ?_
   rintro u0 ⟨ua0,ut0,mu0,ru0⟩
   simp only [Nat.add_zero] at ua0
   rw [WP.seq_iff]
@@ -66,7 +66,7 @@ theorem pair_ok (s : State) {base : BitVec 32} {size a m d : Nat}
     rV0.trans ((ru1.mono (by decide)).trans ((framed rv1).mono (by decide)))
   have mv1 : v1.mem=s.mem := rv1.mem.trans (mu1.trans mv0)
   rw [WP.seq_iff]
-  refine WP.mono (loadsM_ok v1 (ws.congr rV1.wr) (by decide) (by omega)
+  refine WP.mono (loadsM_ok v1 (ws.congr rV1.wr) (by decide) (by omega_using [fm])
     ((rV1.gpr .r4 (by decide)).trans pm)) ?_
   rintro n0 ⟨nm0,mn0,rn0⟩
   simp only [Nat.add_zero] at nm0
@@ -87,16 +87,16 @@ theorem pair_ok (s : State) {base : BitVec 32} {size a m d : Nat}
   rw [WP.seq_iff]
   change WP isa (.block [.str .r6 .r0 0]) c0 _
   refine wp_str (a:=off (State.addr base) d) (by decide)
-    (by simpa only [Nat.add_zero] using ((ws.congr rC0.wr).ea ((rC0.gpr .r0 (by decide)).trans pd) (imm:=0) (by omega)))
-    (by rw [rC0.wr];exact ws.write (by omega)) fun st hst => WP.block_nil ?_
+    (by simpa only [Nat.add_zero] using ((ws.congr rC0.wr).ea ((rC0.gpr .r0 (by decide)).trans pd) (imm:=0) (by omega_using [fd])))
+    (by rw [rC0.wr];exact ws.write (by omega_using [fd])) fun st hst => WP.block_nil ?_
   rw [WP.seq_iff]
   have rST : Rest pairClobbers s st := rC0.trans (hst.rest _)
   have mst : st.mem=s.mem.writeW (off (State.addr base) d) (c0.gpr .r6) := by rw [hst.mem,mc0]
   have outside : Outside (State.addr base) d 4 s.mem st.mem := by
-    rw [mst];exact writeW32_outside _ _ _ (by have := ws.nowrap;omega)
+    rw [mst];exact writeW32_outside _ _ _ (by have := ws.nowrap;omega_using [fd, this])
   have oldM1 : st.mem.readW (off (State.addr base) (m+4)) 32=
       s.mem.readW (off (State.addr base) (m+4)) 32 :=
-    outside_read32 outside (by rcases sep with h|h <;> omega) (by have := ws.nowrap;omega)
+    outside_read32 outside (by rcases sep with h|h <;> omega_using [h]) (by have := ws.nowrap;omega_using [fm, this])
   refine WP.mono (loadsM_ok st (ws.congr rST.wr) (by decide) fm
     ((rST.gpr .r4 (by decide)).trans pm)) ?_
   rintro n1 ⟨nm1,mn1,rn1⟩
@@ -126,11 +126,11 @@ theorem pair_ok (s : State) {base : BitVec 32} {size a m d : Nat}
     rw [Nat.mul_comm _ (s.gpr .r2).toNat] at vc0 vc1
     simp only [Nat.mul_add]
     rw [Nat.mul_left_comm (s.gpr .r1).toNat (2^32),Nat.mul_left_comm (s.gpr .r2).toNat (2^32)]
-    omega
+    omega_using [vp0, vp1, vc0, vc1]
   change WP isa (.block [.str .r10 .r0 4]) c1 _
   refine wp_str (a:=off (State.addr base) (d+4)) (by decide)
-    ((ws.congr rC1.wr).ea ((rC1.gpr .r0 (by decide)).trans pd) (by omega))
-    (by rw [rC1.wr];exact ws.write (by omega)) fun t ht => WP.block_nil ?_
+    ((ws.congr rC1.wr).ea ((rC1.gpr .r0 (by decide)).trans pd) (by omega_using [fd]))
+    (by rw [rC1.wr];exact ws.write (by omega_using [fd])) fun t ht => WP.block_nil ?_
   exact ⟨by rw [ht.gpr];exact value,
     by rw [ht.mem,mc1,←out0,ht.gpr],rC1.trans (ht.rest _)⟩
 

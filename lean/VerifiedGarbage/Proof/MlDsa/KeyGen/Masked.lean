@@ -29,7 +29,7 @@ def Small (η : Nat) (x : IPoly) : Prop := ∀ c ∈ x.toList, -(η : Int) ≤ c
 
 theorem small_zero (η : Nat) : Small η (Vector.replicate 256 0) := fun c hc => by
   rw [Vector.mem_toList_iff, Vector.mem_replicate] at hc
-  rw [hc.2]; omega
+  rw [hc.2]; omega_using []
 
 theorem polyAt_coeff {m m' : Mem} {q : Addr} (h : ∀ i < 256, coeffAt m' q i = coeffAt m q i) :
     polyAt m' q = polyAt m q :=

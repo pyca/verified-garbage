@@ -19,16 +19,16 @@ theorem PrecomputeABI.space {s : State} (A : PrecomputeABI s) :
       (arg s 5).toNat * 8 := by
   rw [PublicContext.size_contract]
   have := A.scratchLength
-  omega
+  omega_using [this]
 
 theorem PrecomputeABI.used {s : State} (A : PrecomputeABI s) : 384 ≤ (arg s 5).toNat * 8 := by
   have H := A.space
   rw [PublicContext.size_eq] at H
-  omega
+  omega_using [H]
 
 theorem PrecomputeABI.stackArgument {s : State} (A : PrecomputeABI s) {i : Nat} (hi : i < 6) :
     StackArgument s (argumentPointer s 4) ((arg s 5).toNat * 8) i := by
-  apply stackArgument_of (count := 6) (by have := A.stackBound; omega) hi
+  apply stackArgument_of (count := 6) (by have := A.stackBound; omega_using [this]) hi
   · rw [A.rd, A.wr]; simp
   · exact A.scratchArgs.symm
 
@@ -37,7 +37,7 @@ theorem PrecomputeABI.stack {s : State} (A : PrecomputeABI s) :
   apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) A.stackLow
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 4).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
-  · have H : 384 ≤ (arg s 5).toNat * 8 := A.used; omega
+  · have H : 384 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   · exact A.belowScratch
 
 

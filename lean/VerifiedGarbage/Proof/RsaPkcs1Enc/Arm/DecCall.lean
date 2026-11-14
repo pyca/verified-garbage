@@ -64,11 +64,11 @@ theorem In.subW {σ : State} (h : In P σ) {o n : Nat} (hn : o + n ≤ 8448) (ho
 
 theorem In.subW0 {σ : State} (h : In P σ) {n : Nat} (hn : n ≤ 8448) :
     Region.Sub ⟨State.addr P.scr, n⟩ P.SCR :=
-  Region.sub_prefix (by have := h.sl8; omega)
+  Region.sub_prefix (by have := h.sl8; omega_using [hn, this])
 
 theorem In.scW0 {σ s : State} (hs : S P σ s) {n : Nat} (hn : n ≤ 8448) :
     Covers [⟨State.addr P.scr, n⟩] s.wr := by
-  have := St.sc_w hs (o := 0) (n := n) (by omega)
+  have := St.sc_w hs (o := 0) (n := n) (by omega_using [hn])
   simp only [BitVec.add_zero] at this
   exact Covers.one this
 
@@ -80,7 +80,7 @@ theorem In.scW {σ s : State} (hs : S P σ s) {o n : Nat} (hn : o + n ≤ 8448) 
 theorem In.frW {σ s : State} (hs : S P σ s) {n : Nat} (hn : n ≤ frameBytes) :
     Covers [⟨State.addr P.B, n⟩] s.wr := by
   have q0 : State.addr P.B = P.lay.fr 0 := by simp
-  rw [q0]; exact Covers.one (hs.2.inFr (by show 0 + n ≤ frameBytes; omega))
+  rw [q0]; exact Covers.one (hs.2.inFr (by show 0 + n ≤ frameBytes; omega_using [hn]))
 
 theorem In.roR {σ s : State} (hs : S P σ s) {R : Region} (hR : R ∈ P.lay.ro) :
     Covers [R] (s.rd ++ s.wr) :=

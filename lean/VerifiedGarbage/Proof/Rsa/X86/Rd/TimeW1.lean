@@ -81,7 +81,7 @@ theorem ne_of_zf {v : State} {k w : Nat} (hk : k + 1 ≤ w) (zv : v.zf = some (d
   by_cases e : k + 1 = w
   · simp [e]
   · simp only [e, decide_false, Option.map_some, Bool.not_false]
-    exact congrArg some (decide_eq_true (by omega)).symm
+    exact congrArg some (decide_eq_true (by omega_using [hk, e])).symm
 
 theorem rowW_step {n : Nat} {g : Geo} {k : Nat} {s : State} (hs : ARows n g k s) (hk : k < g.w) :
     WP isa (rowW wA wX3 wT) s (ARows n g (k + 1)) := by
@@ -90,7 +90,7 @@ theorem rowW_step {n : Nat} {g : Geo} {k : Nat} {s : State} (hs : ARows n g k s)
   have kwN : VG.Proof.Rsa.X86.KeyRt.kw (8 * g.n + 8) = g.w := kw_nar _
   have wW : g.W = 2 * g.w + 2 := rfl
   refine WP.mono (rowWRow_ok h.rtW h.rt (o := wA) (a := wX3) (b := wT) (j := k) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rw [h.sl oJ (by simp), hj]) (by rw [kwW]; omega))
+    (by decide) (by decide) (by decide) (by rw [h.sl oJ (by simp), hj]) (by rw [kwW]; omega_using [hk, wW]))
     fun v ⟨_, _, kp, _, _, cv, zv, Kv⟩ => ?_
   rw [kwW] at kp
   rw [kwN] at zv
@@ -101,7 +101,7 @@ theorem rowW_step {n : Nat} {g : Geo} {k : Nat} {s : State} (hs : ARows n g k s)
       · exact h.wsW.arr_fit (by decide)
       · exact h.wsW.arr_fit (by decide)) ds (Kv.mono (by decide)) (h.arrs_W kp (by decide) ds) h.live_lt
       (fun _ hj => nomatch hj) (fun _ hj => nomatch hj) (fun d hd => ?_) h.ls_ok, upd_self .., hz, hn⟩,
-    by omega, fun _ => ne_of_zf hk zv⟩
+    by omega_using [hk], fun _ => ne_of_zf hk zv⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
   rcases hd with rfl | rfl
   · rw [cv, upd_self]
@@ -140,8 +140,8 @@ theorem aStart_ok {n : Nat} {g : Geo} {s : State} (hs : GW1 g n s) : WP isa (seq
   refine WP.mono (h₅.storeSlot (d := oJ) (by decide) .eax) fun u₆ ⟨h₆, _, _⟩ => ?_
   rw [U₅.gpr] at h₆
   refine ⟨⟨s0, A, AW, _, h₆.mono (live' := [VG.Impl.Rsa.X86.Keys.aZero, VG.Impl.Rsa.X86.RecoverDetRt.aN])
-    (liveW' := []) (ls' := [oJ, sOkDE]) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩) (fun _ hj => nomatch hj)
-    (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), ?_, hz, hn⟩, Nat.zero_le _, fun h => absurd h (Nat.lt_irrefl 0)⟩
+    (liveW' := []) (ls' := [oJ, sOkDE]) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩) (fun _ hj => nomatch hj)
+    (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩), ?_, hz, hn⟩, Nat.zero_le _, fun h => absurd h (Nat.lt_irrefl 0)⟩
   rw [upd_self]; rfl
 
 theorem aEnd_ok {n : Nat} {g : Geo} {s : State} (hs : ARows n g g.w s) : WP isa (seqs aEnd) s (PA1 g n) := by
@@ -154,17 +154,17 @@ theorem aEnd_ok {n : Nat} {g : Geo} {s : State} (hs : ARows n g g.w s) : WP isa 
   simp only [seqs]
   refine WP.seq (WP.mono (h'.zeroWide_W (j := wA + 1) (by decide) (by decide)) fun u₁ ⟨h₁, _⟩ => ?_)
   refine WP.mono (h₁.clearTop (by simp) (by decide)) fun t ⟨h₂, top⟩ => ?_
-  exact ⟨s0, A, _, _, h₂.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
-    (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), hz, hn, top⟩
+  exact ⟨s0, A, _, _, h₂.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
+    (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩), hz, hn, top⟩
 
 theorem aProduct_relCT {g : Geo} (pg : PubG g) (n : Nat) :
     RelCT isa (RA (GW1 g n) (GW1 g n)) VG.Impl.Rsa.X86.RecoverDetRt.aProduct (RA (PA1 g n) (PA1 g n)) := by
   have w1 : 1 ≤ g.w := by
-    simp only [Geo.w, VG.Impl.Rsa.X86.Recover.width]; omega
+    simp only [Geo.w, VG.Impl.Rsa.X86.Recover.width]; omega_using []
   rw [aProduct_split]
   refine relSeqs (R := Both (ARows n g 0)) ((aStart_pub.relCT (fun _ hs => aStart_ok hs) (fun _ hs => aStart_ok hs)).mono
     (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, h.2.2⟩)) ?_
-  refine VG.RelCT.seq (R := Both (ARows n g g.w)) (relLoopB (ARows n g) (K := g.w) (by omega) (fun k hk => ?_)
+  refine VG.RelCT.seq (R := Both (ARows n g g.w)) (relLoopB (ARows n g) (K := g.w) (by omega_using [w1]) (fun k hk => ?_)
     (fun k s hk hkK hs => hs.2.2 hk)) ?_
   · exact (leafG (P := fun g' s => ARows n g' k s ∧ k < g'.w) (Q := fun g' => ARows n g' (k + 1)) pg (fun _ => k)
       (by decide) (fun _ h => h.1.1.mul) (fun _ h => ⟨h.1.onView, h.2⟩)
@@ -194,7 +194,7 @@ theorem sqRow_step {g : Geo} {k : Nat} {s : State} (hs : SqRows g k s) (hk : k <
   have kwN : VG.Proof.Rsa.X86.KeyRt.kw (8 * g.n + 8) = g.w := kw_nar _
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.mulRow_ok h.rt (o := 2 * wA) (a := aD) (b := aD) (j := k)
     (rows := none) (half := false) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [h.sl oJ (by simp), hj]) (by rw [kwN]; omega) (by simp))
+    (by rw [h.sl oJ (by simp), hj]) (by rw [kwN]; omega_using [hk]) (by simp))
     fun v ⟨_, kp, _, _, cv, zv, Kv⟩ => ?_
   rw [kwN] at kp
   simp only [VG.Proof.Rsa.X86.WordRt.rowsN, VG.Proof.Rsa.X86.WordRt.rowW, kwN] at zv
@@ -206,7 +206,7 @@ theorem sqRow_step {g : Geo} {k : Nat} {s : State} (hs : SqRows g k s) (hk : k <
       · exact h.ws.arr_fit (by decide)
       · exact h.ws.arr_fit (by decide)) ds (Kv.mono (by decide)) (h.arrs_w kp' (by decide) ds) h.live_lt
       (h.arrsW_w kp' (by decide) ds) h.liveW_lt (fun d hd => ?_) h.ls_ok, upd_self .., hz⟩,
-    by omega, fun _ => ne_of_zf hk zv⟩
+    by omega_using [hk], fun _ => ne_of_zf hk zv⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
   rcases hd with rfl | rfl | rfl | rfl
   · rw [cv, upd_self]
@@ -244,7 +244,7 @@ theorem sqStart_ok {n : Nat} {g : Geo} {s : State} (hs : DB1 g n s) : WP isa sqS
       · exact h₁.ws.arr_fit (by decide)) ds (I.rest.mono (by decide)) (h₁.arrs_w kp' (by decide) ds)
       h₁.live_lt (h₁.arrsW_w kp' (by decide) ds) h₁.liveW_lt (ls' := [oJ, sExact, sLt, sOkDE])
       (V' := upd V oJ 0) (fun d hd => ?_) (by decide)
-  · refine ⟨⟨s0, _, AW, _, h₂.mono (live' := [aD, VG.Impl.Rsa.X86.Keys.aZero]) (fun j hj => ⟨by simp at hj ⊢; omega, rfl⟩)
+  · refine ⟨⟨s0, _, AW, _, h₂.mono (live' := [aD, VG.Impl.Rsa.X86.Keys.aZero]) (fun j hj => ⟨by simp at hj ⊢; omega_using [hj], rfl⟩)
       (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩), upd_self .., ?_⟩, Nat.zero_le _,
       fun h => absurd h (Nat.lt_irrefl 0)⟩
     rw [upd_ne _ _ (by decide)]; exact hz
@@ -260,7 +260,7 @@ theorem SqRows.sq1 {g : Geo} {s : State} (hs : SqRows g g.w s) : SQ1 g s := by
   refine ⟨s0, A, _, V, (h.core (Keep.refl g.B g.W [] [] s.mem) (fun _ hj => nomatch hj) (fun _ hj => nomatch hj)
       (Keeps.refl _ _) h.arrs h.live_lt (liveW' := wA :: [wN]) (AW' := upd AW wA (num s.mem g.B g.W wA))
       (fun j hj => ?_) (by decide) h.sl h.ls_ok).mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨hj, rfl⟩)
-      (fun d hd => ⟨by simp at hd ⊢; omega, rfl⟩), hz⟩
+      (fun d hd => ⟨by simp at hd ⊢; omega_using [hd], rfl⟩), hz⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl
   · rw [upd_self]
@@ -269,12 +269,12 @@ theorem SqRows.sq1 {g : Geo} {s : State} (hs : SqRows g g.w s) : SQ1 g s := by
 theorem square_relCT {g : Geo} (pg : PubG g) (n : Nat) :
     RelCT isa (RA (DB1 g n) (DB1 g n)) VG.Impl.Rsa.X86.RecoverDetRt.square (RA (SQ1 g) (SQ1 g)) := by
   have w1 : 1 ≤ g.w := by
-    simp only [Geo.w, VG.Impl.Rsa.X86.Recover.width]; omega
+    simp only [Geo.w, VG.Impl.Rsa.X86.Recover.width]; omega_using []
   rw [square_split]
   refine VG.RelCT.assoc (VG.RelCT.assoc (VG.RelCT.assoc ?_))
   refine VG.RelCT.seq (R := Both (SqRows g 0)) ((sqStart_pub.relCT (fun _ hs => sqStart_ok hs)
     (fun _ hs => sqStart_ok hs)).mono (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, h.2.2⟩)) ?_
-  refine (relLoopB (SqRows g) (K := g.w) (by omega) (fun k hk => ?_) (fun k s hk hkK hs => hs.2.2 hk)).mono
+  refine (relLoopB (SqRows g) (K := g.w) (by omega_using [w1]) (fun k hk => ?_) (fun k s hk hkK hs => hs.2.2 hk)).mono
     (fun _ _ h => h) fun s t h => RA.of pg (P := SQ1 g)
     (fun _ h => let ⟨_, _, _, _, k, _⟩ := h; ⟨_, _, _, _, _, _, _, k⟩) (SqRows.sq1 h.1) (SqRows.sq1 h.2)
   exact (leafG (P := fun g' s => SqRows g' k s ∧ k < g'.w) (Q := fun g' => SqRows g' (k + 1)) pg (fun _ => k)
@@ -362,14 +362,14 @@ theorem twInit_step {n : Nat} (three : 3 ≤ n) (hs : TW0 g n s) : WP isa twosIn
 theorem twWF_step (hj : 2 ^ j < w0) (hs : TPW w0 j g s) : WP isa (stageWH false) s (TPW w0 j g) := by
   obtain ⟨⟨s0, A, AW, V, h, hd⟩, hw⟩ := hs
   exact WP.mono (stageW_ok false (s0 := s0) (ok := V sOkDE) (n := A VG.Impl.Rsa.X86.RecoverDetRt.aN)
-    (v := (A aU, A aX2, AW wX3)) ⟨A, AW, V, h, hd, rfl, rfl, rfl, rfl, rfl⟩ (Nat.two_pow_pos j) (by omega))
+    (v := (A aU, A aX2, AW wX3)) ⟨A, AW, V, h, hd, rfl, rfl, rfl, rfl, rfl⟩ (Nat.two_pow_pos j) (by omega_using [hj, hw]))
     fun _ ⟨A', AW', V', h', hd', _⟩ => ⟨⟨s0, A', AW', V', h', hd'⟩, hw⟩
 
 theorem twWT1_step (hj : 2 ^ j < w0) (hs : TPW w0 j g s) :
     WP isa (seqs [orLowH aU aX2, .block flagZero, moveH nar aU aTmp true false, sel nar aU aU aTmp sStg]) s
       (TMW w0 j g) := by
   obtain ⟨⟨s0, A, AW, V, h, hd⟩, hw⟩ := hs
-  exact WP.mono (stageW_pre true h hd (Nat.two_pow_pos j) (by omega))
+  exact WP.mono (stageW_pre true h hd (Nat.two_pow_pos j) (by omega_using [hj, hw]))
     fun _ ⟨A', V', h', f, e1, _⟩ => ⟨⟨s0, A', AW, V', h'.mono (fun _ hj => ⟨memOf (by decide) hj, rfl⟩)
       (fun _ hj => ⟨hj, rfl⟩) (fun _ hd => ⟨hd, rfl⟩), by rw [f]; split <;> decide, e1⟩, hw⟩
 
@@ -378,7 +378,7 @@ theorem twWT2_step (hj : 2 ^ j < w0) (hs : TMW w0 j g s) :
   obtain ⟨⟨s0, A, AW, V, h, f, e1⟩, hw⟩ := hs
   simp only [seqs]
   refine WP.seq (WP.mono (h.moveDown_w (o := aTmp) (a := aX2) (c := 2 ^ j) (by decide) (by simp) (by decide)
-    (by omega) (by simp) e1 (by decide)) fun t₁ ⟨h₁, _, _⟩ => ?_)
+    (by omega_using [hj, hw]) (by simp) e1 (by decide)) fun t₁ ⟨h₁, _, _⟩ => ?_)
   refine WP.mono (h₁.sel_w (o := aX2) (a := aX2) (b := aTmp) (sl := sStg) (by decide) (by simp)
     (by simp) (by simp) f (.inr (by decide)) (by decide)) fun _ ⟨h₂, _⟩ => ?_
   exact ⟨⟨s0, _, AW, V, h₂.mono (fun _ hj => ⟨memOf (by decide) hj, rfl⟩) (fun _ hj => ⟨hj, rfl⟩)
@@ -389,7 +389,7 @@ theorem twWT3_step (hj : 2 ^ j < w0) (hs : TMW w0 j g s) :
   obtain ⟨⟨s0, A, AW, V, h, f, e1⟩, hw⟩ := hs
   simp only [seqs]
   refine WP.seq (WP.mono (h.moveUp_W (o := wT) (a := wX3) (c := 2 ^ j) (by decide) (by simp) (by decide)
-    (by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at hw; omega) (by simp) e1
+    (by simp only [Geo.W, VG.Impl.Rsa.X86.Recover.wide]; simp only [Geo.w] at hw; omega_using [hj, hw]) (by simp) e1
     (by decide)) fun t₁ ⟨h₁, _, _⟩ => ?_)
   refine WP.mono (h₁.sel_W (o := wX3) (a := wX3) (b := wT) (sl := sStg) (by decide) (by simp)
     (by simp) (by simp) f (.inr (by decide)) (by decide)) fun _ ⟨h₂, _⟩ => ?_
@@ -524,7 +524,7 @@ theorem twWordBody (joint : Bool) {w0 j : Nat} {g : Geo} (pg : PubG g) (hj : 2 ^
 theorem twBitBody (joint : Bool) {w0 j : Nat} {g : Geo} (pg : PubG g) (hj : 2 ^ j < 32) :
     RelCT isa (Both (TPB w0 j g)) (stageBH joint) (Both (TPB w0 j g)) := by
   have hb : 0 < 2 ^ j := Nat.two_pow_pos j
-  have hb32 : 2 ^ j < 2 ^ 32 := by omega
+  have hb32 : 2 ^ j < 2 ^ 32 := by omega_using [hj]
   have hv : ∀ V : Nat → Nat, V sB = 2 ^ j → ∀ d ∈ [sB], V d = (fun _ => 2 ^ j) d := fun V f d hd => by
     simp only [List.mem_singleton] at hd; subst hd; exact f
   have T1 := twTimes (w0 := w0) (live := aTmp :: twL) (liveW := [wX3]) pg hb hb32 twC_half
@@ -593,7 +593,7 @@ theorem twWords (joint : Bool) {g : Geo} (pg : PubG g) :
           have := pow_pred hj; omega)⟩, hw⟩,
         fun _ => ⟨⟨s0, A, AW, _, (h.setSlot k (by decide) r e).mono (fun _ hj => ⟨hj, rfl⟩)
           (fun _ hj => ⟨hj, rfl⟩) (fun _ hd => ⟨memOf (by decide) hd, rfl⟩), trivial⟩, hw⟩⟩)
-    (fun j _ hl => twWordBody (w0 := g.w) (j := j) joint pg (by omega))
+    (fun j _ hl => twWordBody (w0 := g.w) (j := j) joint pg (by omega_using [hl]))
     twC_c4i twC_lim twC_c4h
 
 /-- A phase's bit stages, related. -/
@@ -634,7 +634,7 @@ theorem twos_tw1 {g : Geo} {n : Nat} {s : State} (three : 3 ≤ n) (small : n < 
     (t13 : VG.Proof.Bignum.ShiftStages.tz (n - 1) < 2 ^ 13) (hs : TW0 g n s) : WP isa twos s (TW1 g n) := by
   obtain ⟨s0, A, AW, V, h, z, hn⟩ := hs
   exact WP.mono (twos_ok h z hn rfl rfl three small t13) fun _ ⟨A', AW', V', h', eU, _, _, eN, _⟩ =>
-    ⟨s0, A', AW', V', h', by rw [eU]; exact (VG.Proof.Bignum.ShiftStages.tz_spec _ (by omega)).2, eN⟩
+    ⟨s0, A', AW', V', h', by rw [eU]; exact (VG.Proof.Bignum.ShiftStages.tz_spec _ (by omega_using [three])).2, eN⟩
 
 theorem twos_relCT {g : Geo} (pg : PubG g) (n : Nat) (three : 3 ≤ n) (small : n < 2 ^ (32 * g.w))
     (t13 : VG.Proof.Bignum.ShiftStages.tz (n - 1) < 2 ^ 13) :

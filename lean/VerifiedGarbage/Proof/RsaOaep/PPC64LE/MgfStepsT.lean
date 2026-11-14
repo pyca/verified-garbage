@@ -111,7 +111,7 @@ theorem wp_tword {G : Hash} {f : Fns} {j : Nat} {S : State → Addr} {vf : State
       (by rw [o₂.rd, o₁.rd, h.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₃ o₃ e₃ => kk u₃ ((o₁.trans (o₂.trans o₃)).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr) (by
-        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) hd (by omega)) hd T.jo
+        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) hd (by omega_using [hk])) hd T.jo
 
 open VG.Proof.RsaPkcs1Sig (bytesAt_length writeBytes_out)
 open VG.Proof.Mgf1 (ifp ifn)

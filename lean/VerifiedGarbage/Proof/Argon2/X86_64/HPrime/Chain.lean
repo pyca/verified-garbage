@@ -217,7 +217,7 @@ theorem ChainResult.cons {s u t : State} {n : Nat} (step : ChainStep s u)
     ChainResult s (n + 1) t := by
   have base := step.regs .rbx (by decide) (by decide) (by decide)
   have sp := step.regs .rsp (by decide) (by decide) (by decide)
-  have sum : 32 * (n + 1) = 32 + 32 * n := by omega
+  have sum : 32 * (n + 1) = 32 + 32 * n := by omega_using []
   have sumBV : BitVec.ofNat 64 (32 * (n + 1)) = 32 + BitVec.ofNat 64 (32 * n) := by
     rw [sum, BitVec.ofNat_add]; rfl
   have tf : Frame [⟨s.gpr .rbx, 832⟩, below (s.gpr .rsp) 16,
@@ -239,8 +239,8 @@ theorem ChainResult.cons {s u t : State} {n : Nat} (step : ChainStep s u)
     tail.rd.trans step.rd, tail.wr.trans step.wr, ?_, ?_, ?_⟩
   · rw [tail.output, step.output, sumBV, BitVec.add_assoc]
   · rw [tail.remaining, step.remaining, sumBV, BitVec.sub_sub]
-  · exact (extend 0 32 (by omega) (by simpa only [BitVec.add_zero] using step.frame)).trans
-      (extend 32 (32 * n) (by omega) tf)
+  · exact (extend 0 32 (by omega_using []) (by simpa only [BitVec.add_zero] using step.frame)).trans
+      (extend 32 (32 * n) (by omega_using []) tf)
   · rw [← base, tail.digest, base, step.digest, Proof.Argon2.chainDigest]
   · have before : bytesAt t.mem (s.gpr .r14) 32 = bytesAt u.mem (s.gpr .r14) 32 := by
       apply Proof.Blake2.bytesAt_congr
@@ -250,9 +250,9 @@ theorem ChainResult.cons {s u t : State} {n : Nat} (step : ChainStep s u)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact (sep.sub_left (Region.sub_prefix (by decide))).symm.sub_left
-          (Region.sub_prefix (by omega))
-      · exact stackOut.symm.sub_left (Region.sub_prefix (by omega))
-      · exact Offset.base_disjoint _ (e := 32) (n := 32 * n) (k := 32) (by decide) (by omega)
+          (Region.sub_prefix (by omega_using []))
+      · exact stackOut.symm.sub_left (Region.sub_prefix (by omega_using []))
+      · exact Offset.base_disjoint _ (e := 32) (n := 32 * n) (k := 32) (by decide) (by omega_using [bound])
     rw [sum, Proof.Blake2.bytesAt_add, before, step.bytes,
       show BitVec.ofNat 64 32 = (32 : Addr) from rfl, ← step.output, tail.bytes,
       base, step.digest]
@@ -272,43 +272,43 @@ theorem chain_ok (v : Proof.Blake2.X86_64.Backend) (n lastLen : Nat) (s : State)
   | zero => omega
   | succ n ih =>
     have out32 : ∀ i < 32, InRegions s.wr (s.gpr .r14 + BitVec.ofNat 64 i) 1 :=
-      fun i hi => out i (by omega)
-    have sep32 := sep.sub_right (Region.sub_prefix (show 32 ≤ 32 * (n + 1) by omega))
+      fun i hi => out i (by omega_using [hi])
+    have sep32 := sep.sub_right (Region.sub_prefix (show 32 ≤ 32 * (n + 1) by omega_using []))
     obtain ⟨trace, u, run, step⟩ := chainStep_ok v s work out32 sep32 stackWork
     have base := step.regs .rbx (by decide) (by decide) (by decide)
     have sp := step.regs .rsp (by decide) (by decide) (by decide)
     have countU : u.gpr .r15 = BitVec.ofNat 64 (32 * n + lastLen) := by
       rw [step.remaining, count, show (32 : Addr) = BitVec.ofNat 64 32 from rfl,
-        Offset.ofNat_sub_ofNat (by omega : 32 ≤ 32 * (n + 1) + lastLen)]
-      rw [show 32 * (n + 1) + lastLen - 32 = 32 * n + lastLen by omega]
+        Offset.ofNat_sub_ofNat (by omega_using [] : 32 ≤ 32 * (n + 1) + lastLen)]
+      rw [show 32 * (n + 1) + lastLen - 32 = 32 * n + lastLen by omega_using []]
     have cfU : u.cf = some (decide (32 * n + lastLen < 65)) := by
-      rw [step.cf, ← step.remaining, countU, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [step.cf, ← step.remaining, countU, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]
     cases n with
     | zero =>
       have flag : isa.eval .ae u = some false := by
-        simp only [eval, cfU, show 32 * 0 + lastLen < 65 by omega, decide_true,
+        simp only [eval, cfU, show 32 * 0 + lastLen < 65 by omega_using [last], decide_true,
           Option.map_some, Bool.not_true]
-      exact ⟨_, u, .loopExit run flag, (ChainResult.refl u).cons step (by omega) sep stackOut⟩
+      exact ⟨_, u, .loopExit run flag, (ChainResult.refl u).cons step (by omega_using []) sep stackOut⟩
     | succ n =>
       have workU : (⟨u.gpr .rbx, 16384⟩ : Region) ∈ u.wr := by rw [base, step.wr]; exact work
       have outU : ∀ i < 32 * (n + 1), InRegions u.wr (u.gpr .r14 + BitVec.ofNat 64 i) 1 := by
         intro i hi
         rw [step.wr, step.output, BitVec.add_assoc,
           show (32 : Addr) = BitVec.ofNat 64 32 from rfl, ← BitVec.ofNat_add]
-        exact out (32 + i) (by omega)
+        exact out (32 + i) (by omega_using [hi])
       have suffix : Region.Sub ⟨u.gpr .r14, 32 * (n + 1)⟩ ⟨s.gpr .r14, 32 * (n + 1 + 1)⟩ := by
         rw [step.output]
-        exact Offset.sub_base _ (by omega : 32 + 32 * (n + 1) ≤ 32 * (n + 1 + 1))
+        exact Offset.sub_base _ (by omega_using [] : 32 + 32 * (n + 1) ≤ 32 * (n + 1 + 1))
       have sepU : (⟨u.gpr .rbx, 16384⟩ : Region).Disjoint ⟨u.gpr .r14, 32 * (n + 1)⟩ := by
         rw [base]; exact sep.sub_right suffix
       have swU : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .rbx, 16384⟩ := by
         rw [sp, base]; exact stackWork
       have soU : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .r14, 32 * (n + 1)⟩ := by
         rw [sp]; exact stackOut.sub_right suffix
-      obtain ⟨trace', t, run', result⟩ := ih u (by omega) (by omega) countU workU outU sepU swU soU
+      obtain ⟨trace', t, run', result⟩ := ih u (by omega_using []) (by omega_using [bound]) countU workU outU sepU swU soU
       have flag : isa.eval .ae u = some true := by
-        simp only [eval, cfU, show ¬ 32 * (n + 1) + lastLen < 65 by omega, decide_false,
+        simp only [eval, cfU, show ¬ 32 * (n + 1) + lastLen < 65 by omega_using [last], decide_false,
           Option.map_some, Bool.not_false]
-      exact ⟨_, t, .loopNext run flag run', result.cons step (by omega) sep stackOut⟩
+      exact ⟨_, t, .loopNext run flag run', result.cons step (by omega_using [bound]) sep stackOut⟩
 
 end VG.Proof.Argon2.X86_64.HPrime

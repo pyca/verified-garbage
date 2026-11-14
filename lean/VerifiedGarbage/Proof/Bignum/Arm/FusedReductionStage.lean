@@ -35,14 +35,14 @@ theorem fusedStage_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i :
   have accFit := ctx.accFits
   rw [fusedReductionStage,WP.seq_iff]
   refine WP.mono (reductionArgs_ok s (acc:=acc) (mod:=mod) (n:=n) inv ctx.workspace
-    (by omega) (by omega) ptr ?_ ?_ ?_ ?_) ?_
-  · simpa only [show acc+4*n+16=tmp by omega] using hdr.count
-  · simpa only [show acc+4*n+24=tmp+8 by omega] using hdr.mPtr
-  · simpa only [show acc+4*n+28=tmp+12 by omega] using hdr.inverse
-  · simpa only [show acc+4*n+44=tmp+28 by omega] using hdr.accPtr
+    (by omega_using [fits, layout]) (by omega_using [accFit]) ptr ?_ ?_ ?_ ?_) ?_
+  · simpa only [show acc+4*n+16=tmp by omega_using [layout]] using hdr.count
+  · simpa only [show acc+4*n+24=tmp+8 by omega_using [layout]] using hdr.mPtr
+  · simpa only [show acc+4*n+28=tmp+12 by omega_using [layout]] using hdr.inverse
+  · simpa only [show acc+4*n+44=tmp+28 by omega_using [layout]] using hdr.accPtr
   · rintro u ⟨scalar,p0,p12,cnt,carry,memU,restU⟩
     have modLow : val32 s.mem (State.addr base) mod n%2^32=w32 s.mem (State.addr base) mod := by
-      simpa only [show n-1+1=n by omega] using val32_mod_low s.mem (State.addr base) mod (n-1)
+      simpa only [show n-1+1=n by omega_using [count]] using val32_mod_low s.mem (State.addr base) mod (n-1)
     have lowInverse : (w32 s.mem (State.addr base) mod*inv.toNat+1)%2^32=0 := by
       simpa only [Nat.add_mod,Nat.mul_mod,modLow,Nat.mod_mod] using inverse
     have cancel : ((u.gpr .r1).toNat*w32 u.mem (State.addr base) mod+
@@ -50,13 +50,13 @@ theorem fusedStage_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i :
       rw [memU,scalar,BitVec.toNat_mul]
       simpa only [w32,Nat.mul_comm] using
         mont_low (w32 s.mem (State.addr base) acc) inv.toNat (w32 s.mem (State.addr base) mod) lowInverse
-    refine WP.mono (FusedReduction.code_ok u (ctx.workspace.congr restU.wr) (by omega)
+    refine WP.mono (FusedReduction.code_ok u (ctx.workspace.congr restU.wr) (by omega_using [count])
       accFit ctx.mFits ctx.accM p0 p12 cnt carry cancel ?_) ?_
     · simpa only [memU,scalar] using capacity
     · rintro t ⟨value,pointer,outside,rest⟩
       rw [memU,scalar] at value
       rw [memU] at outside
-      exact ⟨value,hdr.of_outside outside (by omega) (by have := ctx.workspace.nowrap;omega),
+      exact ⟨value,hdr.of_outside outside (by omega_using [layout]) (by have := ctx.workspace.nowrap;omega_using [fits, this]),
         pointer,outside,(restU.mono (by decide)).trans rest⟩
 
 end VG.Proof.Bignum.Arm

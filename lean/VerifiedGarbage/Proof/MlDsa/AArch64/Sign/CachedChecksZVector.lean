@@ -24,18 +24,18 @@ theorem optimizedZ_pair_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
     (hp : Ok3 p) (hr : r+1<p.ℓ) (roots : Roots p S f s) (h : PositiveIZ p S σ t r s) :
     WP isa (Impl.MlDsa.AArch64.Sign.Optimized.zPair p r) s fun u =>
       PositiveIZ p S σ t (r+2) u ∧ Roots p S f u := by
-  have checks := pairedZChk_ok hp r (by omega) hr
+  have checks := pairedZChk_ok hp r (by omega_using [hr]) hr
   simp only [pairedZChk,Bool.and_eq_true,decide_eq_true_eq,List.all_eq_true] at checks
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hc,hs⟩,hy⟩,hw⟩,hwy⟩,hww⟩,hcy⟩,hcw⟩,hsy⟩,hsw⟩,hyw⟩,hB⟩,hz⟩,hys⟩,he⟩,hye⟩,hws⟩ := checks
   obtain ⟨h,hflag⟩ := h
   have hdata : ∀j<2,PolyIs s.mem (pairPolyPtr (pa s (yP p r)) j) (Yv p σ (p.ℓ*t) (r+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.y j (by omega)
+    simpa only [Nat.add_assoc] using h.y j (by omega_using [hr, hj])
   have hsecret : ∀j<2,PosPolyIs s.mem (pairPolyPtr (pa s (s1P p r)) j) (S1v p σ (r+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.b.l.k.d.s1 (r+j) (by omega)
+    simpa only [Nat.add_assoc] using h.b.l.k.d.s1 (r+j) (by omega_using [hr, hj])
   have hprod : pairedProductsReduced s.mem (pa s cP) (pa s (s1P p r)) :=
     ⟨h.b.c.bound,fun j hj => (hsecret j hj).bound⟩
   have hsum : ∀j<2,add (polyAt s.mem (pairPolyPtr (pa s (yP p r)) j))
@@ -64,7 +64,7 @@ theorem optimizedZ_pair_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
     have h1 := hznew 1 (by decide)
     simpa only [Nat.add_zero,Nat.add_assoc] using (zold.snoc (by simpa only [Nat.add_zero] using h0)).snoc h1
   have yshift : Fam s (yBase p+(r+2)) (p.ℓ-(r+2)) (fun j => Yv p σ (p.ℓ*t) (r+2+j)) := by
-    simpa only [show r+1+1=r+2 by omega] using ((h.y.shift (by omega)).shift (by omega))
+    simpa only [show r+1+1=r+2 by omega_using []] using ((h.y.shift (by omega_using [hr])).shift (by omega_using [hr]))
   have ytail := yshift.keep h.b.l.st.lay hpa hys
   have ha : PositiveIZb p S σ t (r+2) a :=
     ⟨h.b.step hpa hsa hz.1.1.1 hws,zall,ytail,
@@ -83,7 +83,7 @@ theorem optimizedZ_pair_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
   refine ⟨⟨ha.step hpu hsu he hye (by simp),?_⟩,ra.step_layout ha.b.l.st.lay hpu hsu (by simp) (keep_nil hp)⟩
   rw [hfu,bit_and (h24.trans hflag) ret]
   apply bit_congr
-  rw [pairedZ_norm (by omega : 0<p.γ₁-p.β)]
+  rw [pairedZ_norm (by omega_using [hB] : 0<p.γ₁-p.β)]
   exact pairedZ_prefix
 
 end VG.Proof.MlDsa.AArch64.Sign.CachedChecks
@@ -114,7 +114,7 @@ theorem optimizedZ_rooted_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
   have ra := roots.step_layout h.b.l.st.lay hpa hsa hwp (keep_product hp)
   have ha := h.step hpa hsa zp yp hwp
   have hy : PolyIs a.mem (pa a (yP p r)) (Yv p σ (p.ℓ*t) r) := by
-    have hv := ha.y 0 (by omega)
+    have hv := ha.y 0 (by omega_using [hr])
     simpa only [Nat.add_zero] using hv
   have hraw : RawPolyIs a.mem (pa a t1P)
       (nttInv (multiplyNTT (VG.Proof.MlDsa.Sign.chF (cV p σ (p.ℓ*t))) (S1v p σ r))) := by

@@ -23,7 +23,7 @@ theorem prefix_table_ready {q : TablePublic} {s : State} (h : TableReady q s) :
  refine WP.mono (storePrefix_ok h.field h.space h.context) ?_
  rintro t ⟨field,_,_,frame,same,rest⟩
  have hdr (i : Nat) (hi : i<32) :=workspace_header h.field.good same hi
- exact ⟨⟨field,h.space.after rest,h.generator.after_context frame (by omega) rest,
+ exact ⟨⟨field,h.space.after rest,h.generator.after_context frame (by omega_using []) rest,
   (hdr sCtx (by decide)).trans h.context,(hdr sDom (by decide)).trans h.domain,
   (hdr sLen (by decide)).trans h.length⟩,(hdr sRows (by decide)).trans h.rows⟩
 

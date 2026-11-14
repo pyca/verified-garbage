@@ -28,10 +28,10 @@ theorem schedule_readW (m : Mem) (p : Addr) (i : Nat) (hi : i < 32) :
   intro j hj
   rw [VG.Proof.Aes.getD_eq _ hi,getLsbD_readW32 m p i hj]
   have h := VG.Proof.Sm4.getLsbD_scheduleAt m p (i := i) (c := j/8) (j := j%8)
-    hi (by omega) (by omega)
-  rw [show 8*(j/8)+j%8 = j by omega] at h
+    hi (by omega_using [hj]) (by omega_using [])
+  rw [show 8*(j/8)+j%8 = j by omega_using []] at h
   rw [h]
-  rw [show (32*i+j)/8 = 4*i+j/8 by omega,show (32*i+j)%8 = j%8 by omega]
+  rw [show (32*i+j)/8 = 4*i+j/8 by omega_using [],show (32*i+j)%8 = j%8 by omega_using []]
 
 theorem copied_schedule {m m' : Mem} {p q : Addr}
     (h : ∀ j < 128, m' (q + BitVec.ofNat 64 j) = m (p + BitVec.ofNat 64 j)) :
@@ -39,7 +39,7 @@ theorem copied_schedule {m m' : Mem} {p q : Addr}
   apply Vector.ext
   intro i hi
   simp only [Spec.Sm4.scheduleAt,Vector.getElem_ofFn,List.range,List.range.loop,List.foldl]
-  rw [h (4*i+0) (by omega),h (4*i+1) (by omega),h (4*i+2) (by omega),h (4*i+3) (by omega)]
+  rw [h (4*i+0) (by omega_using [hi]),h (4*i+1) (by omega_using [hi]),h (4*i+2) (by omega_using [hi]),h (4*i+3) (by omega_using [hi])]
 
 theorem Ready.frame {s s' : State} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List Region}
     (h : Ready s.mem B k) (hf : Frame rs s.mem s'.mem)
@@ -62,7 +62,7 @@ theorem Ready.frame {s s' : State} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List
     exact h.sbox j hj
   · rw [← VG.Offset.add_add B 256 (4*i)]
     rw [hf.readW (w := 32) (VG.Offset.contains_base ((B + BitVec.ofNat 64 256)) (d := 4*i) (n := 4) (k := 128)
-      (by omega) (by omega)) keysDisjoint (by decide)]
+      (by omega_using [hi]) (by omega_using [hi])) keysDisjoint (by decide)]
     rw [VG.Offset.add_add]
     exact h.keys i hi
 

@@ -45,7 +45,7 @@ theorem code_correct (v : PublicImpl) (s : State)
       abiPreserved s s' ∧ post s s' by
     obtain ⟨t, s', he, hq⟩ := hw
     exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold encStack at this; omega) ?_
+  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold encStack at this; omega_using [this]) ?_
   rw [body_eq]
   refine wp_seq4 (WP.mono_mx (by decide +kernel)
     (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r10, .r11] (em_ok hp.toEPre) (by decide +kernel))

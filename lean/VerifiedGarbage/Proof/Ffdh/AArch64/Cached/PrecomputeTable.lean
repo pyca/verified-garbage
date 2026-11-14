@@ -32,7 +32,7 @@ theorem precomputeTable_ok (M : Mont) {s : State} {p : Parameters} {dom : Addr} 
  refine WP.mono (setControlNat_ok basisA.good p.room (by decide : 16≤sD) (by decide : sD<32) (by decide : 2<2^16)) ?_
  rintro b ⟨goodB,indexB,frameB,restB⟩
  have inB : InScr p.B p.Z a.mem b.mem :=
-  InScr.of_outside frameB (by have := hdr_lt_slot p.w 8 (show sD<32 by decide);have := p.room;omega)
+  InScr.of_outside frameB (by have := hdr_lt_slot p.w 8 (show sD<32 by decide);have := p.room;omega_arith)
  have basisB := basisA.after_header goodB frameB (by decide : sD<32)
  have stateB : BasisState p 1 b :=
   ⟨⟨by decide,by decide⟩,bits,(by simpa only [Nat.sub_self,Nat.zero_mul,Nat.pow_zero] using basisB),spaceA.after restB,

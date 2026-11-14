@@ -35,21 +35,21 @@ theorem markAt_ok {s : State} {W : Addr} {L x n : Nat} (hw : Ws s W L) (P : PtrA
       t.gpr .ebx = s.mem.readW (off W x) 32 ∧ Outside W x 4 s.mem t.mem ∧ Keeps [.eax, .ebx] s t := by
   have nowrap := hw.nowrap
   unfold markAt
-  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega)) fun b B _ => wp_movS rfl fun c Cc _ =>
+  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega_using [positive, fit])) fun b B _ => wp_movS rfl fun c Cc _ =>
     wp_orS rfl fun d D => ?_
   have Kd : Keeps [.eax, .ebx] s d := ((B.keeps.mono (by decide)).widen Cc.keeps).widen D.keeps
   have wd := hw.of_keeps Kd
   have Pd : PtrAt d W .ebp x := by rw [PtrAt, Kd.1 .ebp (by decide)]; exact P
-  refine wp_storeS (ea_ptr wd Pd (d := 0) (by omega)) (ws_write wd (y := x + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr wd Pd (d := 0) (by omega_using [positive, fit])) (ws_write wd (y := x + 0) (n := 4) (by omega_using [positive, fit]))
     fun t T => WP.block_nil ?_
   have Mt : t.mem = s.mem.writeW (off W x) (d.gpr .eax) := by
     rw [T.mem, D.mem, Cc.mem, B.mem, Nat.add_zero]
   have O : Outside W x 4 s.mem t.mem := by
-    rw [Mt]; exact writeW32_outside _ _ _ (by omega)
+    rw [Mt]; exact writeW32_outside _ _ _ (by omega_using [fit, nowrap])
   have low : w32 t.mem W x = w32 s.mem W x ||| 1 := by
     rw [Mt, w32_write_self, D.gpr, Cc.gpr, B.gpr, Nat.add_zero, BitVec.toNat_or]
     rfl
-  refine ⟨val32_low_or_one positive (by omega) O low, ?_, O, Kd.widen (T.keeps [])⟩
+  refine ⟨val32_low_or_one positive (by omega_using [fit, nowrap]) O low, ?_, O, Kd.widen (T.keeps [])⟩
   rw [(T.keeps []).1 .ebx (by decide), D.other .ebx (by decide), Cc.other .ebx (by decide), B.gpr, Nat.add_zero]
 
 theorem mark_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
@@ -61,7 +61,7 @@ theorem mark_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
   obtain ⟨fit, -, many, -⟩ := fits v
   unfold mark
   refine WP.block_append (WP.mono (C.ptr v 6 (by decide) .ebp (by decide) (by decide)) fun a ⟨P, M, K⟩ => ?_)
-  refine WP.mono (markAt_ok (C.ws.of_keeps K) P (n := g.words) (by omega) fit) fun t ⟨V, E, O, Kt⟩ => ?_
+  refine WP.mono (markAt_ok (C.ws.of_keeps K) P (n := g.words) (by omega_using [many]) fit) fun t ⟨V, E, O, Kt⟩ => ?_
   rw [M] at V E O
   exact ⟨V, E, O, (K.mono (by decide)).widen Kt⟩
 
@@ -82,7 +82,7 @@ theorem lessArgs_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
     (((Ka.mono (by decide)).widen Kb).widen Kc).widen Dd.keeps⟩
   · rw [PtrAt, Dd.other .esi (by decide), Kc.1 .esi (by decide), Kb.1 .esi (by decide)]; exact Pa
   · rw [PtrAt, Dd.other .ebp (by decide), Kc.1 .ebp (by decide)]; exact Pb
-  · rw [Dd.other .edx (by decide), D, BitVec.toNat_ofNat]; omega
+  · rw [Dd.other .edx (by decide), D, BitVec.toNat_ofNat]; omega_using [words, bound]
 
 theorem less_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
     WP isa less s fun t =>
@@ -92,7 +92,7 @@ theorem less_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
   unfold less
   refine WP.seq (WP.mono (lessArgs_ok v C) fun d ⟨esi, ebp, edx, ecx, Md, K⟩ => ?_)
   refine WP.mono (VG.Proof.Bignum.X86.PublicRt.compareLoop_ok (C.ws.of_keeps K) (x := g.array 6) (y := g.array 0)
-    (N := g.words) (by omega) (by omega) (by omega) esi ebp edx ecx) fun t ⟨Mt, E, Kt⟩ => ?_
+    (N := g.words) (by omega_using [many]) (by omega_using [fit]) (by omega_using [fit, below]) esi ebp edx ecx) fun t ⟨Mt, E, Kt⟩ => ?_
   rw [Md] at Mt E
   exact ⟨E, Mt, (K.mono (by decide)).trans Kt⟩
 
@@ -102,10 +102,10 @@ theorem restoreAt_ok {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : Ptr
       Keeps [.esi] s t := by
   have nowrap := hw.nowrap
   unfold restoreAt
-  refine wp_storeS (ea_ptr hw P (d := 0) (by omega)) (ws_write hw (y := x + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hw P (d := 0) (by omega_using [fit])) (ws_write hw (y := x + 0) (n := 4) (by omega_using [fit]))
     fun b B => wp_movS rfl fun t T _ => WP.block_nil ?_
   have Mt : t.mem = s.mem.writeW (off W x) (s.gpr .ebx) := by rw [T.mem, B.mem, Nat.add_zero]
-  refine ⟨by rw [Mt, w32_write_self], by rw [Mt]; exact writeW32_outside _ _ _ (by omega), ?_,
+  refine ⟨by rw [Mt, w32_write_self], by rw [Mt]; exact writeW32_outside _ _ _ (by omega_using [fit, nowrap]), ?_,
     ((B.keeps []).mono (by decide)).widen T.keeps⟩
   rw [T.gpr, B.gpr]
 
@@ -120,11 +120,11 @@ theorem restore_ok {g : Geometry} (v : g.Valid) {s original : State} (C : Contex
   have nowrap := C.ws.nowrap
   unfold restore
   refine WP.block_append (WP.mono (C.ptr v 6 (by decide) .ebp (by decide) (by decide)) fun a ⟨P, M, K⟩ => ?_)
-  refine WP.mono (restoreAt_ok (C.ws.of_keeps K) P (by omega)) fun t ⟨low, Ot, E, Kt⟩ => ?_
+  refine WP.mono (restoreAt_ok (C.ws.of_keeps K) P (by omega_using [fit, many])) fun t ⟨low, Ot, E, Kt⟩ => ?_
   rw [M] at Ot
   have low' : w32 t.mem g.W (g.array 6) = w32 original.mem g.W (g.array 6) := by
     rw [low, K.1 .ebx (by decide), saved]
-  refine ⟨val32_restore_low (by omega) (by omega) (O.trans Ot) low', O.trans Ot, ?_, (K.mono (by decide)).widen Kt⟩
+  refine ⟨val32_restore_low (by omega_using [many]) (by omega_using [fit, nowrap]) (O.trans Ot) low', O.trans Ot, ?_, (K.mono (by decide)).widen Kt⟩
   rw [E, K.1 .ecx (by decide)]
 
 theorem scanArgs_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
@@ -143,7 +143,7 @@ theorem scanArgs_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
   refine wp_addS rfl fun c Cc _ => ?_
   have Kc : Keeps [.ebx, .ebp, .edx] s c := ((A.keeps.mono (by decide)).widen Kb).widen Cc.keeps
   refine wp_movS (readSrc_ptr (C.ws.of_keeps Kc) (r := .edi) (x := 0) (d := 48)
-    (by rw [PtrAt, Kc.1 .edi (by decide)]; exact C.base) (by omega)) fun d Dd _ =>
+    (by rw [PtrAt, Kc.1 .edi (by decide)]; exact C.base) (by omega_using [head])) fun d Dd _ =>
     wp_addS rfl fun e E _ => wp_subS rfl fun f F _ => WP.block_nil ?_
   have width : (d.gpr .ecx).toNat = g.w := by
     rw [Dd.gpr, Cc.mem, Mb, A.mem]; exact C.width
@@ -153,7 +153,7 @@ theorem scanArgs_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
     exact ptr_add P 4
   · rw [F.gpr, E.gpr, BitVec.toNat_sub_of_le, BitVec.toNat_add, width]
     · change (g.w + g.w) % 2 ^ 32 - 1 = g.words - 1
-      omega
+      omega_using [words, bound]
     · rw [BitVec.le_def, BitVec.toNat_add, width]
       change 1 ≤ (g.w + g.w) % 2 ^ 32
       omega
@@ -168,7 +168,7 @@ theorem scan_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
   obtain ⟨fit, -, many, words⟩ := fits v
   unfold scan
   refine WP.seq (WP.mono (scanArgs_ok v C) fun f ⟨Pf, count, zero, Mf, Kf⟩ => ?_)
-  refine WP.mono (FrontRt.orLoop_ok (C.ws.of_keeps Kf) (by omega) (by omega) Pf count zero) fun t ⟨Z, Mt, _, Kt⟩ => ?_
+  refine WP.mono (FrontRt.orLoop_ok (C.ws.of_keeps Kf) (by omega_using [many]) (by omega_using [fit, many]) Pf count zero) fun t ⟨Z, Mt, _, Kt⟩ => ?_
   rw [Mf] at Z Mt
   exact ⟨Z, Mt, Kf.trans (Kt.mono (by decide))⟩
 
@@ -181,7 +181,7 @@ theorem lowerAt_ok {s : State} {W : Addr} {L x n : Nat} (hw : Ws s W L) (P : Ptr
     WP isa (.block lowerAt) s fun t =>
       t.gpr .eax = cmask (decide (2 ≤ val32 s.mem W x n) && b) ∧ t.mem = s.mem ∧ Keeps [.eax, .ebx] s t := by
   unfold lowerAt
-  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega)) fun b0 B _ => wp_orS rfl fun c Cc =>
+  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega_using [positive, fit])) fun b0 B _ => wp_orS rfl fun c Cc =>
     wp_logicS (.inr rfl) rfl fun d D => wp_orS rfl fun e E => ?_
   have low : d.gpr .eax = (s.mem.readW (off W x) 32 ||| 1#32) ^^^ 1#32 := by
     rw [D.gpr, Cc.gpr, B.gpr, Nat.add_zero]
@@ -217,7 +217,7 @@ theorem lower_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) {b :
   obtain ⟨fit, -, many, -⟩ := fits v
   unfold lower
   refine WP.block_append (WP.mono (C.ptr v 6 (by decide) .ebp (by decide) (by decide)) fun a ⟨P, M, K⟩ => ?_)
-  refine WP.mono (lowerAt_ok (b := b) (C.ws.of_keeps K) P (n := g.words) (by omega) fit
+  refine WP.mono (lowerAt_ok (b := b) (C.ws.of_keeps K) P (n := g.words) (by omega_using [many]) fit
     (by rw [K.1 .ebx (by decide), M]; exact zero) (by rw [K.1 .esi (by decide)]; exact mask))
     fun t ⟨E, Mt, Kt⟩ => ?_
   rw [M] at E
@@ -232,13 +232,13 @@ theorem fallbackLow_ok {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : P
   refine wp_movS rfl fun a A _ => wp_logicS (.inr rfl) rfl fun b B => wp_logicS (.inl rfl) rfl fun c C => ?_
   have Kc : Keeps [.ecx] s c := (A.keeps.widen B.keeps).widen C.keeps
   have Pc : PtrAt c W .ebp x := by rw [PtrAt, Kc.1 .ebp (by decide)]; exact P
-  have load := readSrc_ptr (hw.of_keeps Kc) Pc (d := 0) (by omega)
+  have load := readSrc_ptr (hw.of_keeps Kc) Pc (d := 0) (by omega_using [fit])
   rw [C.mem, B.mem, A.mem, Nat.add_zero] at load
   refine wp_orS load fun d D => ?_
   have Kd : Keeps [.ecx] s d := Kc.widen D.keeps
   have wd := hw.of_keeps Kd
   have Pd : PtrAt d W .ebp x := by rw [PtrAt, Kd.1 .ebp (by decide)]; exact P
-  refine wp_storeS (ea_ptr wd Pd (d := 0) (by omega)) (ws_write wd (y := x + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr wd Pd (d := 0) (by omega_using [fit])) (ws_write wd (y := x + 0) (n := 4) (by omega_using [fit]))
     fun t T => WP.block_nil ?_
   have V : d.gpr .ecx = (((cmask uniform ^^^ BitVec.allOnes 32) &&& 2#32) ||| s.mem.readW (off W x) 32) := by
     rw [D.gpr, C.gpr, B.gpr, A.gpr, mask]
@@ -247,7 +247,7 @@ theorem fallbackLow_ok {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : P
   · rw [T.mem, Nat.add_zero, w32_write_self, V]
     exact WitnessFallback.low_value _ _
   · rw [T.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero]
-    exact writeW32_outside _ _ _ (by have := hw.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hw.nowrap; omega_using [fit, this])
 
 theorem fallbackHigh_ok {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : PtrAt s W .ebx x)
     (fit : x + 4 ≤ L) {uniform : Bool} (mask : s.gpr .eax = cmask uniform) :
@@ -259,13 +259,13 @@ theorem fallbackHigh_ok {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : 
     wp_logicS (.inl rfl) rfl fun c C => wp_logicS (.inr rfl) rfl fun d D => ?_
   have Kd : Keeps [.ecx] s d := ((A.keeps.widen B.keeps).widen C.keeps).widen D.keeps
   have Pd : PtrAt d W .ebx x := by rw [PtrAt, Kd.1 .ebx (by decide)]; exact P
-  have load := readSrc_ptr (hw.of_keeps Kd) Pd (d := 0) (by omega)
+  have load := readSrc_ptr (hw.of_keeps Kd) Pd (d := 0) (by omega_using [fit])
   rw [D.mem, C.mem, B.mem, A.mem, Nat.add_zero] at load
   refine wp_logicS (.inl rfl) load fun e E => ?_
   have Ke : Keeps [.ecx] s e := Kd.widen E.keeps
   have we := hw.of_keeps Ke
   have Pe : PtrAt e W .ebx x := by rw [PtrAt, Ke.1 .ebx (by decide)]; exact P
-  refine wp_storeS (ea_ptr we Pe (d := 0) (by omega)) (ws_write we (y := x + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr we Pe (d := 0) (by omega_using [fit])) (ws_write we (y := x + 0) (n := 4) (by omega_using [fit]))
     fun t T => WP.block_nil ?_
   have V : e.gpr .ecx = ((((cmask uniform ^^^ BitVec.allOnes 32) &&& 0x80000000#32) ^^^
       BitVec.allOnes 32) &&& s.mem.readW (off W x) 32) := by
@@ -275,7 +275,7 @@ theorem fallbackHigh_ok {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : 
   · rw [T.mem, Nat.add_zero, w32_write_self, V]
     exact WitnessFallback.high_value _ _
   · rw [T.mem, E.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero]
-    exact writeW32_outside _ _ _ (by have := hw.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hw.nowrap; omega_using [fit, this])
 
 theorem fallbackTop_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     (P : PtrAt s g.W .ebp (g.array 6)) :
@@ -292,9 +292,9 @@ theorem fallbackTop_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
   have sum : PtrAt e g.W .ebx (g.array 6 + 4 * g.words) := by
     rw [PtrAt, E.gpr, Dd.gpr, Dd.other .edx (by decide), ptr_add ebp, D, BitVec.toNat_ofNat]
     congr 2
-    omega
+    omega_using [words, bound]
   refine ⟨?_, by rw [F.mem, E.mem, Dd.mem, Mc], (((Kc.mono (by decide)).widen Dd.keeps).widen E.keeps).widen F.keeps⟩
-  rw [PtrAt, F.gpr, ptr_sub sum 4 (by change 4 ≤ _; omega)]
+  rw [PtrAt, F.gpr, ptr_sub sum 4 (by change 4 ≤ _; omega_using [many])]
   rfl
 
 theorem fallback_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) {uniform : Bool}
@@ -312,29 +312,29 @@ theorem fallback_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) {
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (C.ptr v 6 (by decide) .ebp (by decide) (by decide)) fun a ⟨P, M, K⟩ => ?_)
   have Ca := C.keepMem K (by decide) M
-  refine WP.block_append (WP.mono (fallbackLow_ok (uniform := uniform) Ca.ws P (by omega) (by rw [K.1 .eax (by decide)]; exact mask))
+  refine WP.block_append (WP.mono (fallbackLow_ok (uniform := uniform) Ca.ws P (by omega_using [fit, many]) (by rw [K.1 .eax (by decide)]; exact mask))
     fun b ⟨low, Ob, Kb⟩ => ?_)
   have Cb := Ca.keepOutside Kb (by decide) Ob header
   refine WP.block_append (WP.mono (fallbackTop_ok v Cb (by rw [PtrAt, Kb.1 .ebp (by decide)]; exact P))
     fun f ⟨Pf, Mf, Kcf⟩ => ?_)
   have Kf : Keeps [.ebx, .ecx, .ebp, .edx] s f := (((K.mono (by decide)).widen Kb).widen Kcf)
   refine WP.mono (fallbackHigh_ok (uniform := uniform) (Cb.ws.of_keeps Kcf)
-    Pf (by omega) (by
+    Pf (by omega_using [fit, many]) (by
       rw [Kcf.1 .eax (by decide), Kb.1 .eax (by decide), K.1 .eax (by decide)]
       exact mask)) fun t ⟨top, Ot, Kt⟩ => ?_
   rw [Mf] at top Ot
   rw [M] at low Ob
-  have lowSame : w32 t.mem g.W (g.array 6) = w32 b.mem g.W (g.array 6) := Ot.w32 (by omega) (by omega)
+  have lowSame : w32 t.mem g.W (g.array 6) = w32 b.mem g.W (g.array 6) := Ot.w32 (by omega_using [many]) (by omega_using [fit, nowrap])
   have topSame : w32 b.mem g.W (g.array 6 + 4 * g.words - 4) = w32 s.mem g.W (g.array 6 + 4 * g.words - 4) :=
-    Ob.w32 (by omega) (by omega)
-  refine ⟨?_, (Ob.mono (by omega) (by omega)).trans (Ot.mono (by omega) (by omega)), Kf.widen Kt⟩
+    Ob.w32 (by omega_using [many]) (by omega_using [fit, nowrap])
+  refine ⟨?_, (Ob.mono (by omega_using []) (by omega_using [many])).trans (Ot.mono (by omega_using [many]) (by omega_using [many])), Kf.widen Kt⟩
   cases uniform
   · simp only [Bool.false_eq_true, ↓reduceIte] at low top ⊢
-    apply VG.Proof.RsaKeyGen.val32_witness_fallback (by omega)
+    apply VG.Proof.RsaKeyGen.val32_witness_fallback (by omega_using [many])
     · rw [lowSame, low]
-    · rw [show g.array 6 + 4 * (g.words - 1) = g.array 6 + 4 * g.words - 4 by omega, top, topSame]
+    · rw [show g.array 6 + 4 * (g.words - 1) = g.array 6 + 4 * g.words - 4 by omega_using [many], top, topSame]
     · intro j first last
-      exact (Ot.w32 (by omega) (by omega)).trans (Ob.w32 (by omega) (by omega))
+      exact (Ot.w32 (by omega_using [last]) (by omega_using [fit, nowrap, last])).trans (Ob.w32 (by omega_using [first]) (by omega_using [fit, nowrap, last]))
   · simp only [↓reduceIte] at low top ⊢
     apply val32_congr
     intro j hj
@@ -343,9 +343,9 @@ theorem fallback_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) {
       simpa only [Nat.mul_zero, Nat.add_zero] using lowSame.trans low
     · by_cases last : j = g.words - 1
       · subst j
-        rw [show g.array 6 + 4 * (g.words - 1) = g.array 6 + 4 * g.words - 4 by omega]
+        rw [show g.array 6 + 4 * (g.words - 1) = g.array 6 + 4 * g.words - 4 by omega_using [many]]
         exact top.trans topSame
-      · exact (Ot.w32 (by omega) (by omega)).trans (Ob.w32 (by omega) (by omega))
+      · exact (Ot.w32 (by omega_using [last]) (by omega_using [fit, nowrap, hj])).trans (Ob.w32 (by omega_using [first]) (by omega_using [fit, nowrap, hj]))
 
 def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 
@@ -368,7 +368,7 @@ theorem sample_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) {c 
   refine WP.seq (WP.mono (less_ok v Ca) fun b ⟨lt, Mb, Kb⟩ => ?_)
   have Cb := Ca.keepMem Kb (by decide) Mb
   have modA : val32 a.mem g.W (g.array 0) g.words = c := by
-    rw [Oa.val32 (by omega) (by omega)]; exact candidate
+    rw [Oa.val32 (by omega_using [below]) (by omega_using [fit, below, nowrap])]; exact candidate
   rw [Va, modA] at lt
   refine WP.seq (WP.mono (restore_ok (original := s) v Cb (by rw [Mb]; exact Oa)
     (by rw [Kb.1 .ebx (by decide)]; exact saved)) fun d ⟨Vd, Od, esi, Kd⟩ => ?_)
@@ -384,12 +384,12 @@ theorem sample_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) {c 
   have Cf := Ce.keepMem Kf (by decide) Mf
   have Ve : val32 e.mem g.W (g.array 6) g.words = x := by rw [Me]; exact Vd
   have uniform : (decide (2 ≤ x) && decide (x + (1 - x % 2) < c)) = decide (2 ≤ x ∧ x < c - 1) := by
-    rw [← Bool.decide_and]; exact decide_eq_decide.mpr (by omega)
+    rw [← Bool.decide_and]; exact decide_eq_decide.mpr (by omega_using [odd])
   rw [Ve, uniform] at eax
   refine WP.mono (fallback_ok v Cf eax) fun t ⟨V, Ot, Kt⟩ => ?_
   rw [Mf, Ve] at V
   rw [Mf, Me] at Ot
-  have O : Outside g.W (g.array 6) (4 * g.words) s.mem t.mem := (Od.mono (by omega) (by omega)).trans Ot
+  have O : Outside g.W (g.array 6) (4 * g.words) s.mem t.mem := (Od.mono (by omega_using []) (by omega_using [many])).trans Ot
   have K : Keeps clob s t := ((Kad.widen Ke (by unfold clob; decide)).widen Kf (by unfold clob; decide)).widen Kt
     (by unfold clob; decide)
   refine ⟨?_, ?_, O, K, C.keepOutside K (by unfold clob; decide) O header⟩

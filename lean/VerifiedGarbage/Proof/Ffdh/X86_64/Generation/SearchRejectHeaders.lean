@@ -102,7 +102,7 @@ theorem reject_headers {p : SearchPublic} {original s : State} {used remaining n
       BitVec.ofNat 64 (p.c.rand.length - (used + n)) := by
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ hn64 hn]
     congr 1
-    omega
+    omega_using []
   intro e he
   simp only [SearchPublic.headers, List.mem_cons, List.not_mem_nil, or_false] at he
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>

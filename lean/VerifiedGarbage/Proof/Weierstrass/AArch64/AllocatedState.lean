@@ -47,14 +47,14 @@ theorem JointStable.allocatedKeep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q :
     apply hk.byte
     · intro w hw
       have := hsep _ ho w hw
-      dsimp only at this ⊢; omega
-    · have := hb _ ho; dsimp only at this; omega
+      dsimp only at this ⊢; omega_using [hj, this]
+    · have := hb _ ho; dsimp only at this; omega_using [hj, this]
   refine ⟨⟨?_,?_,?_⟩,?_,?_,?_,?_⟩
   · rw [hw c.K.zero (by simp [jointStableFields]),h.peer.zero]
   · intro a ha hb
-    rw [hf _ (jointStable_table c ha (by omega) (by simp)),
-      hf _ (jointStable_table c ha (by omega) (by simp)),
-      hf _ (jointStable_table c ha (by omega) (by simp))]
+    rw [hf _ (jointStable_table c ha (by omega_using [hb]) (by simp)),
+      hf _ (jointStable_table c ha (by omega_using [hb]) (by simp)),
+      hf _ (jointStable_table c ha (by omega_using [hb]) (by simp))]
     exact h.peer.table a ha hb
   · intro j hj
     rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
@@ -64,11 +64,11 @@ theorem JointStable.allocatedKeep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q :
     exact h.generator j hj
   · rw [hf c.onep (by simp [jointStableFields]),h.one]
   · intro i hi
-    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp))]
+    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega_using []) (by omega_using [hi]) (by simp))]
     exact h.cache2 i hi
   · intro i hi
     rw [hf _ (jointStable_cache3 c hi),hf _ (jointStable_cache2 c hi),
-      hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp))]
+      hf _ (jointStable_table c (a:=i+1) (by omega_using []) (by omega_using [hi]) (by simp))]
     exact h.cache3 i hi
 
 theorem JointGenerator.allocatedKeep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : Nat}
@@ -81,19 +81,19 @@ theorem JointGenerator.allocatedKeep {c : Joint.Cfg} {C : Curve} {base T : Addr}
       word s.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i) := by
     apply Mem.readW_congr
     intro b hb
-    have ho := h.outside a ha ha32 i hi b (by omega)
+    have ho := h.outside a ha ha32 i hi b (by omega_using [hb])
     apply hk.unch
     intro w hm
     have := hw w hm
-    dsimp only [off]; exact Or.inr (by omega)
+    dsimp only [off]; exact Or.inr (by omega_using [ho, this])
   have val (a o : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (ho : o=0 ∨ o=32) :
       wordsVal t.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4=
       wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4 := by
     apply wordsVal_of_words₂
     intro i hi
     rcases ho with rfl | rfl
-    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega)
-    · have e := wordeq a (4+i) ha ha32 (by omega)
+    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega_using [hi])
+    · have e := wordeq a (4+i) ha ha32 (by omega_using [hi])
       simpa only [Nat.mul_add] using e
   refine ⟨?_,?_,h.outside,?_,?_⟩
   · rw [hsym]; exact h.symbol
@@ -115,7 +115,7 @@ theorem JointCore.allocatedNext {c : Joint.Cfg} {C : Curve} {base : Addr} {size 
     (hp : InvJ C (E c.K.R.x) (E c.K.R.y) (E c.K.R.z) B) (ht : External t) :
     JointCore c C base size Q u v External B t :=
   ⟨hi.to_tmv,h.stable.allocatedKeep hk.unch (fun r hr => by
-    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega) hsep,
+    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega_arith) hsep,
     ht,hi.point_tmv (jointLive_R c) hp⟩
 
 end VG.Proof.Weierstrass.AArch64

@@ -96,11 +96,11 @@ theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
       rw [usedA, List.length_drop]
       have bound := enough
       rw [← v.entropyLength] at bound
-      omega
+      omega_using [bound]
   | true =>
     by_cases more : goS P.checks (mrSB P.candidate P.bytes P.start P.entropy (k + 1))
     · have next := mrLoopAt_next S.atLoop v.witnessBytes
-        (by have := v.narrow; have := v.two; omega)
+        (by have := v.narrow; have := v.two; omega_arith)
         (by rw [v.entropyLength]; exact enough) passed more
       simp only [passed, ↓reduceIte, more] at statusA
       have nextState := StateAt.next v S A usedA roundsA uniformA next.2 Wa Fa Ka
@@ -116,6 +116,6 @@ theorem draw_again_ok {mont round : Prog isa} {montName roundName : String}
         rw [usedA, List.length_drop]
         have bound := enough
         rw [← v.entropyLength] at bound
-        omega
+        omega_using [bound]
 
 end VG.Proof.RsaKeyGen.X86.MillerRabinLoop

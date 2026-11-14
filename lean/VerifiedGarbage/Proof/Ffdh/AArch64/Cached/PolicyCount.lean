@@ -28,7 +28,7 @@ theorem policyCountStep (s : State) {n j : Nat} (size : n<256)
  have shift : BitVec.ofNat 64 n >>> 1=BitVec.ofNat 64 (n/2) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight,BitVec.toNat_ofNat,Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [size]
  refine WP.keep [.x3,.x10] ?_ rfl rfl rfl
  unfold Policy.countStep
  brun [byte,count,shift]
@@ -44,16 +44,16 @@ theorem policyCount_ok (s : State) {b : Nat} (size : b<256) (positive : 0<b)
   unfold bitLength
   split_ifs <;> try omega
   have lower := Nat.log2_self_le (show n≠0 by assumption)
-  have order := (Nat.le_log2 (show b≠0 by omega)).mpr (Nat.le_trans lower hn)
-  omega
+  have order := (Nat.le_log2 (show b≠0 by omega_using [positive])).mpr (Nat.le_trans lower hn)
+  omega_using [order]
  refine WP.loop (M:=isa) I ?_ b s ?_
  · intro n t h
    obtain ⟨posN,leN,byteT,countT,memT,restT⟩ := h
-   have lengths := byteLengths n (by omega) posN
+   have lengths := byteLengths n (by omega_using [size, leN]) posN
    have countNext : bitLength b-bitLength n+1=bitLength b-bitLength (n/2) := by
     have := monotone n leN
-    omega
-   refine WP.mono (policyCountStep t (by omega) byteT countT) ?_
+    omega_using [lengths, this]
+   refine WP.mono (policyCountStep t (by omega_using [size, leN]) byteT countT) ?_
    rintro u ⟨⟨byteU,countU,memU⟩,restU⟩
    by_cases last : n=1
    · left
@@ -64,10 +64,10 @@ theorem policyCount_ok (s : State) {b : Nat} (size : b<256) (positive : 0<b)
      · rw [countU,countNext,last]
        simp only [show 1/2=0 from rfl,bitLength,ite_true,Nat.sub_zero]
    · right
-     refine ⟨?_,n/2,by omega,by omega,by omega,byteU,?_,memU.trans memT,(restT.trans restU).mono (by decide)⟩
+     refine ⟨?_,n/2,by omega_using [posN],by omega_using [posN, last],by omega_using [leN],byteU,?_,memU.trans memT,(restT.trans restU).mono (by decide)⟩
      · rw [eval_nonzero,byteU]
        change some (BitVec.ofNat 64 (n/2) != 0#64)=some true
-       rw [ofNat_nonzero (by omega),decide_eq_true (by omega : 0<n/2)]
+       rw [ofNat_nonzero (by omega_using [size, leN]),decide_eq_true (by omega_using [posN, last] : 0<n/2)]
      · rw [countU,countNext]
  · refine ⟨positive,Nat.le_refl _,byte,?_,rfl,Keep.refl _ _⟩
    simpa only [Nat.sub_self] using count

@@ -65,7 +65,7 @@ theorem pre_eq {L : ELay} {m₁ m₂ : Mem} (q₁ : PreOk L m₁) (q₂ : PreOk 
   have h := q₁.hx.symm.trans q₂.hx
   simp only [List.cons.injEq, PRE, TABJ, Sig.tableRegion, Region.mk.injEq, and_true] at h
   obtain ⟨⟨h1, h2⟩, h3, h4⟩ := h
-  exact ⟨h1, BitVec.eq_of_toNat_eq (by omega), h4, h3⟩
+  exact ⟨h1, BitVec.eq_of_toNat_eq (by omega_using [h2]), h4, h3⟩
 
 /-- The registers of the call, with the first run's `pre`. -/
 theorem readyP_of {L : ELay} {m m' : Mem} {t : State} (q : PreOk L m) (q' : PreOk L m') (h : PReadyP L m t) :

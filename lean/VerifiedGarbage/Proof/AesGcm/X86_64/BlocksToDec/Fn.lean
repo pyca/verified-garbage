@@ -227,7 +227,7 @@ theorem tail_rel (B : BlkFn M) {q : Nat} :
   intro s₁ s₂ t₁ t₂ s₁' s₂' hP e₁ e₂
   obtain ⟨⟨-, ⟨M₁, z₁, r11₁, cx₁⟩, ⟨M₂, z₂, r11₂, cx₂⟩⟩, hz⟩ := hP
   have hlt : q < n s₀ := by
-    rw [hz] at z₁; simp only [Option.some.injEq, Bool.false_eq, decide_eq_false_iff_not] at z₁; omega
+    rw [hz] at z₁; simp only [Option.some.injEq, Bool.false_eq, decide_eq_false_iff_not] at z₁; omega_using [z₁]
   have hlt' : q < n s₀' := by rw [pb.en]; exact hlt
   -- The pointers of the copy.
   have b := rel_wp (rel_taint (P := fun s₁ s₂ =>
@@ -395,7 +395,7 @@ theorem decryptTo_xdepth : (BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned)
   have e := B.decXd
   simp only [BlocksToDec.decrypt, BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.x86_64Depth,
     X86_64.Instr.frameBytes, List.length_cons, List.length_nil, headFrom_xdepth st, Nat.max_le]
-  omega
+  omega_using [e]
 
 theorem decryptToM_correct (s : State) (hs : (Proof.AesGcm.decryptBlocksToX86_64M M).pre s) :
     ∃ t s', Exec isa (BlocksToDec.decrypt B.dec (st.map (·.dec)) aligned) s t s' ∧ abiPreserved s s' ∧
@@ -439,7 +439,7 @@ theorem decryptToTo_xdepth : (BlocksToDec.decryptTo g.fn ⟨v.callee.name, v.cal
   have e₁ := g.noStack
   have e₂ := v.noStack
   simp only [BlocksToDec.decryptTo, BlocksToDec.tailTo, Code.x86_64Depth, e₁, e₂]
-  omega
+  omega_using []
 
 end
 

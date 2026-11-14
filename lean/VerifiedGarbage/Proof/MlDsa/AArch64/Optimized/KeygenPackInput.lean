@@ -17,8 +17,8 @@ def inputValue (signed : Bool) (b : Nat) (m : Mem) (p : Addr) (j : Nat) : BitVec
 
 theorem inputWord (m : Mem) (p : Addr) (j : Nat) :
     vword (m.read (p+BitVec.ofNat 64 (16*(j/4))) 16) (j%4)=coeffAt m p j := by
-  rw [VG.AArch64.vword_read16 _ _ (by omega),BitVec.add_assoc,←BitVec.ofNat_add,
-    show 16*(j/4)+4*(j%4)=4*j by omega]
+  rw [VG.AArch64.vword_read16 _ _ (by omega_using []),BitVec.add_assoc,←BitVec.ofNat_add,
+    show 16*(j/4)+4*(j%4)=4*j by omega_using []]
   rfl
 
 theorem loadVec_ok (signed : Bool) (b c : Nat) (hc : c≤8) (hc4 : c%4=0) (s : State)
@@ -31,15 +31,15 @@ theorem loadVec_ok (signed : Bool) (b c : Nat) (hc : c≤8) (hc4 : c%4=0) (s : S
     unfold loadVec
     congr 1
   rw [hcode]
-  refine WP.mono (loadCount_ok signed b (c/4) (by omega) s hconst ?_) fun t ⟨hk,hct,hv⟩ => ?_
+  refine WP.mono (loadCount_ok signed b (c/4) (by omega_using [hc]) s hconst ?_) fun t ⟨hk,hct,hv⟩ => ?_
   · intro j hj
-    exact hin _ (by omega)
+    exact hin _ (by omega_using [hj])
   · refine ⟨hk,hct,?_⟩
     intro j hj
     have hreg : regAt (j/4)=(if j<4 then VReg.v0 else .v1) := by
       unfold regAt
       (repeat' split) <;> first | rfl | omega
-    have h := hv (j/4) (by omega) (j%4) (by omega)
+    have h := hv (j/4) (by omega_using [hc4, hj]) (j%4) (by omega_using [])
     rw [hreg,inputWord] at h
     exact congrArg (BitVec.setWidth 64) h
 

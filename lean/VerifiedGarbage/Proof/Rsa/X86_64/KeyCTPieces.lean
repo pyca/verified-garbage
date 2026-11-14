@@ -201,7 +201,7 @@ theorem mulPQK_ct : RelCT isa (Two KK) (seqs mulPQ) (Two KK) := by
         xrun [State.ea, hdr, hdi, hdrOff, hl sPlen (by decide), hl sQlen (by decide), hl (sArr aX) (by decide),
           hl (sArr aR) (by decide), hl (sArr aAcc) (by decide), hpl, hql, hb' aX (by decide), hb' aR (by decide),
           hb' aAcc (by decide)]
-        exact ⟨ceil8_bv (by omega), ceil8_bv (by omega)⟩) rfl)
+        exact ⟨ceil8_bv (by omega_arith), ceil8_bv (by omega_arith)⟩) rfl)
       fun t ⟨⟨a, b, c, d, e⟩, _⟩ => regsAre_cons a (regsAre_cons b (regsAre_cons c (regsAre_cons d
         (regsAre_cons e regsAre_nil))))
   · obtain ⟨s₀, minv, N, c, hs⟩ := h

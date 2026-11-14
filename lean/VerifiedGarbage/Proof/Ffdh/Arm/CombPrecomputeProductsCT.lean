@@ -39,15 +39,15 @@ theorem products_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} {j : N
     refine WP.mono (productsInit_state s h.core h.power h.high) ?_
     rintro t ⟨core,power,high,low,frame,_⟩
     have ctx : WorkspaceEq (State.addr p.output) (bytes p) s.mem t.mem := by
-      apply WorkspaceEq.of_frame (by have := h.core.memory.output.fits; omega) frame
+      apply WorkspaceEq.of_frame (by have := h.core.memory.output.fits; omega_using [this]) frame
       intro r hr
       rw [List.mem_singleton] at hr
       subst r
       exact h.core.memory.localSeparate.symm.sub_right (Offset.sub_base _ (by decide))
     have table : TablePrefix p (2^j+1) t.mem := by
       intro digit hd
-      have highBound : 2^j≤16 := Nat.pow_le_pow_right (n:=2) (i:=j) (j:=4) (by decide) (by omega)
-      rw [ctx.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega))]
+      have highBound : 2^j≤16 := Nat.pow_le_pow_right (n:=2) (i:=j) (j:=4) (by decide) (by omega_using [hj])
+      rw [ctx.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega_using [hd, highBound]))]
       exact h.table digit hd
     exact ⟨core,power,table,high,low⟩
   have one : 1<2^j := by

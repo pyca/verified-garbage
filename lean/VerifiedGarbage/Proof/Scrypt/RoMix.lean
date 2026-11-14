@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Scrypt.BlockMix
 public import VerifiedGarbage.Spec.Scrypt.Contract
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # scryptROMix: facts about the specification
@@ -70,7 +71,7 @@ theorem bytesAt_succ (m : Mem) (p : Addr) (n : Nat) :
 /-- `B[i]` of the bytes at `p` is the 64 bytes at `p + 64 i`. -/
 theorem blk_bytesAt' (m : Mem) (p : Addr) {n i : Nat} (h : 64 * i + 64 ≤ n) :
     blk (bytesAt m p n) i = bytesAt m (p + BitVec.ofNat 64 (64 * i)) 64 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = 64 * i + 64 + k := ⟨n - (64 * i + 64), by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = 64 * i + 64 + k := ⟨n - (64 * i + 64), by omega_using [h]⟩
   rw [blk, bytesAt_add', bytesAt_add', List.append_assoc, List.drop_left' (bytesAt_length' _ _ _),
     List.take_left' (bytesAt_length' _ _ _)]
 
@@ -85,7 +86,7 @@ theorem leNat_append (xs ys : List Byte) :
 theorem toNat_append8 {n : Nat} (x : BitVec n) (y : BitVec 8) :
     (x ++ y).toNat = y.toNat + 256 * x.toNat := by
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt y.isLt, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-- The `n` bytes at `a`, read as a little-endian integer, are `m.read a n`. -/
 theorem leNat_bytesAt (m : Mem) (a : Addr) (n : Nat) :
@@ -109,14 +110,14 @@ theorem leNat_bytesAt64_mod (m : Mem) (a : Addr) {e : Nat} (he : e ≤ 64) :
 theorem integerify_mod (m : Mem) (p : Addr) {r e : Nat} (hr : 0 < r) (he : e ≤ 64) :
     integerify r (bytesAt m p (128 * r)) % 2 ^ e =
       (m.readW (p + BitVec.ofNat 64 (128 * r - 64)) 64).toNat % 2 ^ e := by
-  rw [integerify, blk_bytesAt' _ _ (by omega), show 64 * (2 * r - 1) = 128 * r - 64 by omega,
+  rw [integerify, blk_bytesAt' _ _ (by omega_using [hr]), show 64 * (2 * r - 1) = 128 * r - 64 by omega_using [],
     leNat_bytesAt64_mod _ _ he]
 
 theorem and_mask (w : BitVec 64) {e : Nat} (he : e ≤ 64) :
     (w &&& BitVec.ofNat 64 (2 ^ e - 1)).toNat = w.toNat % 2 ^ e := by
-  have := Nat.pow_le_pow_right (by omega : 0 < 2) he
+  have := Nat.pow_le_pow_right (by omega_using [] : 0 < 2) he
   have := Nat.one_le_two_pow (n := e)
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
     Nat.and_two_pow_sub_one_eq_mod]
 
 end VG.Proof.Scrypt

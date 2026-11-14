@@ -28,7 +28,7 @@ theorem orLoop_ok {t₀ : State} {W : Addr} {L x N : Nat} (hw : Ws t₀ W L) (po
     fun u ⟨K, M, Pu, _, Z⟩ => ⟨Z, M, Pu, K⟩
   rintro j t index ⟨K, M, Pt, cnt, Z⟩
   have ht := hw.of_keeps K
-  refine wp_orS (readSrc_ptr ht Pt (d := 0) (by omega)) fun a A => wp_addS rfl fun b B _ =>
+  refine wp_orS (readSrc_ptr ht Pt (d := 0) (by omega_using [fit, index])) fun a A => wp_addS rfl fun b B _ =>
     wp_subZ rfl fun u U Zf => WP.block_nil ?_
   obtain ⟨next, last⟩ := VG.Proof.Bignum.X86.PublicRt.count1_zf cnt index
   have ecxB : b.gpr .ecx = t.gpr .ecx := by rw [B.other .ecx (by decide), A.other .ecx (by decide)]
@@ -46,7 +46,7 @@ theorem orLoop_ok {t₀ : State} {W : Addr} {L x N : Nat} (hw : Ws t₀ W L) (po
     · rintro ⟨left, right⟩
       rw [left, right, Nat.mul_zero]
     · intro sum
-      have product : 2 ^ (32 * j) * w32 t₀.mem W (x + 4 * j) = 0 := by omega
-      exact ⟨by omega, (Nat.mul_eq_zero.mp product).resolve_left (Nat.ne_of_gt power)⟩
+      have product : 2 ^ (32 * j) * w32 t₀.mem W (x + 4 * j) = 0 := by omega_using [sum]
+      exact ⟨by omega_using [sum], (Nat.mul_eq_zero.mp product).resolve_left (Nat.ne_of_gt power)⟩
 
 end VG.Proof.RsaKeyGen.X86.FrontRt

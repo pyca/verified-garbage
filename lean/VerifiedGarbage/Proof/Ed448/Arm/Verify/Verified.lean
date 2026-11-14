@@ -34,7 +34,7 @@ theorem lay_eq {s t : State} (hp : verifyLocal.pub s t) : lay s = lay t := by
 theorem inner_ct (hv : EqOk) (hct : EqCT) :
     ConstantTime isa (fun s => verifyLocal.pre s ∧ (s.gpr .r2).toNat < 256) verifyLocal.pub (wrap 6 body) := by
   refine Whole.wrap_ct (by decide : 6 ≤ 6) (fun _ _ hp => hp.1) (fun _ hs => entry_below hs.1)
-    (fun _ hs => by have := entry_top hs.1; omega) (fun _ hs => entry_read hs.1) ?_ ?_
+    (fun _ hs => by have := entry_top hs.1; omega_using [this]) (fun _ hs => entry_read hs.1) ?_ ?_
   · intro s hs p hp
     exact WP.mono (body_ok hv (entry_ctx hs.1 hp) (lay_ok hs.1 hs.2) (entry_args hs.1 hp)) fun _ _ => trivial
   · intro s t hs ht hp

@@ -102,18 +102,18 @@ theorem a2_ofNat (s₀ : State) : BitVec.ofNat 64 (R s₀) = s₀.gpr .a2 := by
   rw [R, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 theorem cS (s₀ : State) (d n : Nat) (h : d + n ≤ 2432) : (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by omega)
+  Offset.contains_base _ h (by omega_using [h])
 
 /-- A saved register's slot, within the scratch buffer. -/
 theorem slot_contains (s₀ : State) (d : Nat) (h : d + 8 ≤ 56) :
     (scrR s₀).Contains (sv s₀ + BitVec.ofNat 64 d) 8 := by
   have := pad_lt (S s₀ + BitVec.ofNat 64 32)
-  rw [align_add]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [align_add]; exact Offset.contains_base _ (by omega_using [h, this]) (by omega_using [h, this])
 
 /-- The slots, within the slot region. -/
 theorem slots_sub (s₀ : State) : Region.Sub ⟨sv s₀ + BitVec.ofNat 64 0, 56⟩ (slotR s₀) := by
   have := pad_lt (S s₀ + BitVec.ofNat 64 32)
-  rw [align_add]; exact Offset.sub _ (by omega) (by omega)
+  rw [align_add]; exact Offset.sub _ (by omega_using []) (by omega_using [this])
 
 theorem in_rw {rs : List Region} {r : Region} {a : Addr} {n : Nat} (hr : r ∈ rs) (h : r.Contains a n) :
     InRegions rs a n := ⟨r, hr, h⟩
@@ -222,7 +222,7 @@ theorem pro_wp : WP isa (.block pro) s₀ (ProPost s₀) := by
   rw [WP.block_append_iff]
   have wr₄' : s₄.wr = [dataR s₀, scrR s₀] := by rw [wr₄, wr₃'']
   refine WP.mono (zeroZ_wp s₄ (Z := Zp s₀) (by rw [g₄ _ (by decide), s6₃]) fun i hi => by
-      rw [wr₄', Offset.add_add]; exact in_rw (r := scrR s₀) (by simp) (cS s₀ _ _ (by simp [zO]; omega)))
+      rw [wr₄', Offset.add_add]; exact in_rw (r := scrR s₀) (by simp) (cS s₀ _ _ (by simp [zO]; omega_using [hi])))
     fun s₅ ⟨g₅, z₅, f₅, rd₅, wr₅, sp₅⟩ => ?_
   refine WP.mono (tArgs_wp s₅) fun s₆ ⟨a0₆, a1₆, a2₆, a3₆, a4₆, a5₆, cs₆, mem₆, rd₆, wr₆, sp₆⟩ => ?_
   -- The registers.
@@ -236,7 +236,7 @@ theorem pro_wp : WP isa (.block pro) s₀ (ProPost s₀) := by
   have f₂ : Frame [scrR s₀] s₀.mem s₂.mem := by
     rw [mem₂]
     refine (Spill.saveMem_frame (lo := 0) (n := 56) (fun p hp' => ⟨Nat.zero_le _, by
-      have := saved_bound p hp'; omega⟩) (by decide) s₀.mem (sv s₀) (saveG s₀)).sub fun r hr => ?_
+      have := saved_bound p hp'; omega_using [this]⟩) (by decide) s₀.mem (sv s₀) (saveG s₀)).sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨scrR s₀, by simp, sub_trans (slots_sub s₀) slot_scr⟩
   have m₃ : s₃.mem = s₂.mem := mem₃'
@@ -287,8 +287,8 @@ structure TwPost (s₀ s : State) : Prop where
 theorem UPre.sched_frame {s : State} {rs : List Region} (hf : Frame rs s₀.mem s.mem)
     (hd : ∀ r ∈ rs, r = dataR s₀ ∨ r = scrR s₀ ∨ Region.Sub r (dataR s₀)) :
     bytesAt s.mem (W s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)) := by
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hRb])
   rcases hd r hr with rfl | rfl | h
   · exact hp.sch_data.sub_left (Region.sub_prefix hRb)
   · exact hp.sch_scr.sub_left (Region.sub_prefix hRb)
@@ -303,11 +303,11 @@ abbrev XtsOk (enc : Bool) (c : Prog isa) : Prop :=
 theorem tcall_wp {n : String} {c : Prog isa} (ok : XtsOk true c) (nf : c.noFrames = true) {s₂ : State}
     (h₂ : ProPost s₀ s₂) : WP isa (.call n c) s₂ (TwPost s₀) := by
   refine WP.mono (xts_call true ok nf h₂.pre) fun s₃ c => ?_
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have eK : bytesAt s₂.mem (K s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (K s₀) (16 * (R s₀ + 1)) :=
     Proof.Cmac.bytesAt_frame h₂.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.tsch_scr.sub_left (Region.sub_prefix hRb)) (by omega)
+      exact hp.tsch_scr.sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])
   refine ⟨Inv.call hp h₂.inv z_sub (.inr t_sub) c, ?_, ?_⟩
   · refine (h₂.frame.sub fun r hr => ?_).trans (c.frame.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, fun _ h => h⟩
@@ -343,7 +343,7 @@ theorem blocks_call (enc : Bool) {n : String} {c : Prog isa} (ok : XtsOk enc c)
   have eD : Spec.Cbc.blocksAt s.mem (D s₀) N = Spec.Cbc.blocksAt s₀.mem (D s₀) N :=
     blocksAt_frame h.frame (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      subst hr; exact hp.data_scr.sub_left dS) (by have := hp.data_wrap; omega)
+      subst hr; exact hp.data_scr.sub_left dS) (by have := hp.data_wrap; omega_using [hN, this])
   refine ⟨Inv.call hp h.inv t_sub (.inl dS) x, ?_, ?_, ?_⟩
   · rw [x.out, eW, h.t, eD]
   · rw [x.tw, h.t]

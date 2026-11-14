@@ -76,9 +76,9 @@ theorem ea_arg {s₀ s : State} (h : s.gpr .esp = s₀.gpr .esp) (i : Nat) : s.e
 theorem arg_contains (s : State) (hfit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i : Nat} (hi : i < 4) :
     (⟨argAddr s 0, 16⟩ : Region).Contains (argAddr s i) 4 := by
   have hs := setWidth_toNat (s.gpr .esp)
-  rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega),
-    show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega)]
-  exact VG.Offset.contains _ (by omega) (by omega) (by omega)
+  rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega_using [hfit, hi]),
+    show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega_using [hfit])]
+  exact VG.Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 /-- `mov eax, [esp + 4 + 4 i]; mov [edi + 4 k], eax`. -/
 theorem argSlot_ok (s : State) {b : BitVec 32} {i k : Nat} (hb : s.gpr .edi = b) (hk : k < slots)
@@ -136,7 +136,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
   have f₀₂ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₂.mem :=
     f₁.trans (k₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega)⟩)
+      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega_using [])⟩)
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have esp₂ : s₂.gpr .esp = s₀.gpr .esp := by
     rw [k₂.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), esp₁]
@@ -150,7 +150,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
         (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact VG.Offset.disjoint_base _ (Nat.le_refl _) (by rw [tableEnd_eq, slots_eq]; decide))
-        (by rw [savedSlot_eq, tableEnd_eq]; omega) (by rw [savedSlot_eq, slots_eq]; omega)
+        (by rw [savedSlot_eq, tableEnd_eq]; omega_using []) (by rw [savedSlot_eq, slots_eq]; omega_using [hi])
   have rd₂ : s₂.rd = s₀.rd := by rw [k₂.rd, rd₁]
   have wr₂ : s₂.wr = s₀.wr := by rw [k₂.wr, wr₁]
   -- The data pointer and the count to their slots.
@@ -195,7 +195,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
     f₀₂.trans (f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, dn_sub hfit' r hr⟩)
   have data₃ : ∀ i < 16 * n, s₃.mem (D.setWidth 64 + BitVec.ofNat 64 i) = s₀.mem (D.setWidth 64 + BitVec.ofNat 64 i) :=
     fun i hi => f₀₃.bytes (R := ⟨D.setWidth 64, 16 * n⟩)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega) hi
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega_using []) hi
   have fr₃ : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩] s₀.mem s₃.mem :=
     f₀₃.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
   have g₃ : ∀ r, r ≠ .eax → s₃.gpr r = s₂.gpr r := fun r hr => by
@@ -216,8 +216,8 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
     exact WP.block_nil ⟨base₃, esp₃, sc₃, fun i hi => by omega, fr₃, rd₃, wr₃⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ ⟨base₃, esp₃, by rw [dp₃]; simp,
-      by rw [np₃, Nat.mul_zero, Nat.sub_zero], by omega, sc₃, fun i hi => ?_, fr₃, rd₃, wr₃⟩
-    rw [data₃ i hi, ite_eq_right (by omega)]
+      by rw [np₃, Nat.mul_zero, Nat.sub_zero], by omega_using [hn0], sc₃, fun i hi => ?_, fr₃, rd₃, wr₃⟩
+    rw [data₃ i hi, ite_eq_right (by omega_using [])]
   -- The epilogue.
   obtain ⟨s₆, e₆, rg₆, o₆, m₆, -, -⟩ := restore_ok (s₀ := s₀) (b := b) (by rw [d₅.wr]; exact hwS) d₅.base
     d₅.scr.saved

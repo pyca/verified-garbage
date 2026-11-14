@@ -67,7 +67,7 @@ include hp hz
 
 omit hp in
 theorem fc {d n : Nat} (h : d + n ≤ 164) : (scR Wi s₀).Contains (sc s₀ + BitVec.ofNat 64 d) n :=
-  sc_contains hz (by have := hz.fits; simp only [it] at this; omega)
+  sc_contains hz (by have := hz.fits; simp only [it] at this; omega_using [h, this])
 
 theorem fin {s : State} (hwr : s.wr = s₀.wr) {d n : Nat} (h : d + n ≤ 164) :
     InRegions s.wr (sc s₀ + BitVec.ofNat 64 d) n :=
@@ -84,7 +84,7 @@ theorem fal (s₀ : State) {d : Nat} (h : d % 4 = 0) : (sc s₀ + BitVec.ofNat 6
 
 theorem fsep (s₀ : State) {a b : Nat} (h : a + 4 ≤ b ∨ b + 4 ≤ a) (ha : a + 4 ≤ 164) (hb : b + 4 ≤ 164) :
     Mem.Sep (sc s₀ + BitVec.ofNat 64 a) 4 (sc s₀ + BitVec.ofNat 64 b) 4 :=
-  Offset.sep _ h (by omega) (by omega)
+  Offset.sep _ h (by omega_using [ha]) (by omega_using [hb])
 
 /-- A word of the frame after a word written elsewhere in it. -/
 theorem fw_write (s₀ : State) (m : Mem) {a b : Nat} (v : Word) (h : a + 4 ≤ b ∨ b + 4 ≤ a) (ha : a + 4 ≤ 164)
@@ -94,7 +94,7 @@ theorem fw_write (s₀ : State) (m : Mem) {a b : Nat} (v : Word) (h : a + 4 ≤ 
 /-- The saved registers' slots, apart from the words. -/
 theorem slot_word (s₀ : State) {d a : Nat} (hd : d + 8 ≤ 104) (ha : 104 ≤ a) (ha' : a + 4 ≤ 164) :
     Region.Disjoint ⟨sc s₀ + BitVec.ofNat 64 d, 8⟩ ⟨sc s₀ + BitVec.ofNat 64 a, 4⟩ :=
-  Offset.disjoint _ (by omega) (by omega) (by omega)
+  Offset.disjoint _ (by omega_using [hd, ha]) (by omega_using [hd]) (by omega_using [ha'])
 
 theorem saved_bound : ∀ p ∈ saved, p.2 % 8 = 0 ∧ p.2 + 8 ≤ 104 := by decide
 

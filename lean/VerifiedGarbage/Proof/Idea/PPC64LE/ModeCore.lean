@@ -110,10 +110,10 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Idea.Schedu
     rwa [m₂, r3₂, hk] at h
   have hread : BlockRead s₂ B := fun i hi => by
     rw [K₂.2.1, K₂.2.2]
-    exact ⟨_, List.mem_append_right _ hW, Offset.contains_base _ (show i + 1 ≤ 8 * 8 by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_right _ hW, Offset.contains_base _ (show i + 1 ≤ 8 * 8 by omega_using [hi]) (by omega_using [hi])⟩
   have hwrite : BlockWrite s₂ B := fun i hi => by
     rw [K₂.2.2]
-    exact ⟨_, hW, Offset.contains_base _ (show i + 1 ≤ 8 * 8 by omega) (by omega)⟩
+    exact ⟨_, hW, Offset.contains_base _ (show i + 1 ≤ 8 * 8 by omega_using [hi]) (by omega_using [hi])⟩
   -- The block.
   refine WP.mono (cryptBlock_ok k s₂ a₂ hread hwrite hk₂) fun t ⟨b, f, e⟩ => ?_
   have Kt : Keep ([.r0, .r4] ++ roundWrites) s t := K₂.trans e

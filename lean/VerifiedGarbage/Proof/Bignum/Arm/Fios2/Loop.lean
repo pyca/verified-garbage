@@ -22,31 +22,31 @@ theorem body_ok {s0 s : State} {a0 q0 a1 q1 base : BitVec 32} {size acc b mod n 
     (hj : j + 4 ≤ n) :
     WP isa VG.Impl.Bignum.Arm.Fios2.body s fun t =>
       Inv s0 a0 q0 a1 q1 base acc b mod n (j + 2) (j + 2) t ∧ t.z = decide (j + 2 + 2 = n) := by
-  have small : n < 2 ^ 32 := by have := ctx.workspace.nowrap; have := ctx.accFits; omega
+  have small : n < 2 ^ 32 := by have := ctx.workspace.nowrap; have := ctx.accFits; omega_arith
   rw [VG.Impl.Bignum.Arm.Fios2.body, WP.seq_iff]
-  have first := step_inv ctx inv (by omega) (by omega)
-  rw [show 4 * (j - j) = 0 by omega] at first
+  have first := step_inv ctx inv (by omega_using [hj]) (by omega_using [])
+  rw [show 4 * (j - j) = 0 by omega_using []] at first
   refine WP.mono first fun u iu => ?_
   rw [WP.seq_iff]
-  have second := step_inv ctx iu (by omega) (by omega)
-  rw [show 4 * (j + 1 - j) = 4 by omega] at second
+  have second := step_inv ctx iu (by omega_using [hj]) (by omega_using [])
+  rw [show 4 * (j + 1 - j) = 4 by omega_using []] at second
   refine WP.mono second fun v iv => ?_
   refine WP.mono (Fios.advance_ok v 2 (Or.inr rfl)) ?_
   rintro t ⟨p0, p12, p4, count, zero, mem, rt⟩
   have keep (r : Reg) (h : r ∉ [.r0, .r12, .r4, .lr]) : t.gpr r = v.gpr r := rt.gpr r h
-  refine ⟨⟨by omega, by omega, ?_, ?_, ?_, ?_, (keep .r1 (by decide)).trans iv.scalar0,
+  refine ⟨⟨by omega_using [hj], by omega_using [], ?_, ?_, ?_, ?_, (keep .r1 (by decide)).trans iv.scalar0,
     (keep .r2 (by decide)).trans iv.quotient0, (keep .r9 (by decide)).trans iv.scalar1,
     (keep .r10 (by decide)).trans iv.quotient1, by rw [mem]; exact iv.outside, ?_,
     iv.rest.trans (rt.mono (by decide))⟩, ?_⟩
   · rw [p0, iv.outPtr, Offset.add_add]; congr 2
   · rw [p12, iv.bPtr, Offset.add_add]; congr 2
   · rw [p4, iv.mPtr, Offset.add_add]; congr 2
-  · rw [count, iv.count, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]; congr 1
+  · rw [count, iv.count, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hj])]; congr 1
   · simp only [carries, mem, keep .r7 (by decide), keep .r8 (by decide), keep .r5 (by decide),
       keep .r11 (by decide)]
     exact iv.value
-  · rw [zero, iv.count, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - 2 - j - 2 = 0 ↔ j + 2 + 2 = n by omega]
+  · rw [zero, iv.count, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hj]), ofNat_beq_zero (by omega_using [small])]
+    simp only [show n - 2 - j - 2 = 0 ↔ j + 2 + 2 = n by omega_using [hj]]
 
 theorem loop_ok {s0 s : State} {a0 q0 a1 q1 base : BitVec 32} {size acc b mod n : Nat}
     (ctx : Fios.Ctx s0 base size acc b mod n) (inv : Inv s0 a0 q0 a1 q1 base acc b mod n 0 0 s)
@@ -57,19 +57,19 @@ theorem loop_ok {s0 s : State} {a0 q0 a1 q1 base : BitVec 32} {size acc b mod n 
   refine WP.loop (M := isa) I ?_ ((n - 2) / 2) s ?_
   · intro k t h
     obtain ⟨j, hjk, hk, hj⟩ := h
-    refine WP.mono (body_ok ctx hj (by omega)) ?_
+    refine WP.mono (body_ok ctx hj (by omega_using [hjk, hk])) ?_
     rintro u ⟨hu, hz⟩
     by_cases last : j + 2 + 2 = n
     · left
       refine ⟨?_, ?_⟩
       · change some (!u.z) = some false
         simp only [hz, last, decide_true, Bool.not_true]
-      · have index : j + 2 = n - 2 := by omega
+      · have index : j + 2 = n - 2 := by omega_using [last]
         simpa only [index] using hu
     · right
-      refine ⟨?_, k - 1, by omega, j + 2, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_using [hk], j + 2, by omega_using [hjk, hk], by omega_using [hjk, hk, last], hu⟩
       change some (!u.z) = some true
       simp only [hz, last, decide_false, Bool.not_false]
-  · exact ⟨0, by omega, by omega, inv⟩
+  · exact ⟨0, by omega_using [positive, even], by omega_using [positive], inv⟩
 
 end VG.Proof.Bignum.Arm.Fios2

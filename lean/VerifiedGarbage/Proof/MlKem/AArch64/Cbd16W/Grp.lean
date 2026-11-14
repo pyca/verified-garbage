@@ -39,7 +39,7 @@ theorem vbyte_tbl {T x : BitVec 128} {F : Nat → Nat} (hx : ∀ e < 16, (vbyte 
     (hf : ∀ e < 16, F e ≤ 4) {e : Nat} (he : e < 16) :
     vbyte (ofVBytes fun i => if (vbyte x i).toNat < 16 then vbyte T (vbyte x i).toNat else 0) e =
       vbyte T (F e) := by
-  rw [vbyte_ofVBytes _ he, hx e he, ite_eq_left (by have := hf e he; omega)]
+  rw [vbyte_ofVBytes _ he, hx e he, ite_eq_left (by have := hf e he; omega_using [this])]
 
 /-- The interleaved bytes of the coefficient of nibble `F (b / 2)`. -/
 theorem vbyte_zip_tbl {lo hi : BitVec 128} {F : Nat → Nat} (hf : ∀ e < 16, F e ≤ 4)
@@ -49,16 +49,16 @@ theorem vbyte_zip_tbl {lo hi : BitVec 128} {F : Nat → Nat} (hf : ∀ e < 16, F
       (vbyte (VPermOp.eval .zip2 .b16 lo hi) b).toNat =
         (F (8 + b / 2) + 3327) % 3329 / 256 ^ (b % 2) % 256 := by
   rw [VG.Proof.Blowfish.AArch64.vbyte_zip1 _ _ hb, VG.Proof.Blowfish.AArch64.vbyte_zip2 _ _ hb]
-  have t1 := tables_val (F (b / 2)) (by have := hf (b / 2) (by omega); omega)
-  have t2 := tables_val (F (8 + b / 2)) (by have := hf (8 + b / 2) (by omega); omega)
+  have t1 := tables_val (F (b / 2)) (by have := hf (b / 2) (by omega_using [hb]); omega_using [this])
+  have t2 := tables_val (F (8 + b / 2)) (by have := hf (8 + b / 2) (by omega_using [hb]); omega_using [this])
   rcases Nat.mod_two_eq_zero_or_one b with h | h
-  · rw [ite_eq_left h, ite_eq_left h, hl _ (by omega), hl _ (by omega), t1.1, t2.1, h,
+  · rw [ite_eq_left h, ite_eq_left h, hl _ (by omega_using [hb]), hl _ (by omega_using [hb]), t1.1, t2.1, h,
       Nat.pow_zero, Nat.div_one, Nat.div_one]
     exact ⟨rfl, rfl⟩
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), hh _ (by omega), hh _ (by omega), t1.2,
+  · rw [ite_eq_right (by omega_using [h]), ite_eq_right (by omega_using [h]), hh _ (by omega_using [hb]), hh _ (by omega_using [hb]), t1.2,
       t2.2, h, Nat.pow_one]
     have e : ∀ f, (f + 3327) % 3329 / 256 % 256 = (f + 3327) % 3329 / 256 := fun f =>
-      Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by have := Nat.mod_lt (f + 3327) (show 3329 > 0 by decide); omega))
+      Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by have := Nat.mod_lt (f + 3327) (show 3329 > 0 by decide); omega_using []))
     rw [e, e]
     exact ⟨rfl, rfl⟩
 
@@ -86,9 +86,9 @@ theorem grp16_ok {s : State} {off : Nat} {a : Addr} {F : Nat → Nat}
     rw [h2.get .v5, h1.v, hlo]; exact vbyte_tbl hx hf he
   have l6 : ∀ e < 16, vbyte (s2.v .v6) e = vbyte hiV (F e) := fun e he => by
     rw [h2.v, h1.get .v4, h1.get .v17, hhi]; exact vbyte_tbl hx hf he
-  refine wp_strq (a := a) ⟨ho.1, by omega⟩ (by rw [h4.gpr, h3.gpr, h2.gpr, h1.gpr]; exact ha)
+  refine wp_strq (a := a) ⟨ho.1, by omega_using [ho]⟩ (by rw [h4.gpr, h3.gpr, h2.gpr, h1.gpr]; exact ha)
     (by rw [h4.wr, h3.wr, h2.wr, h1.wr]; exact hin) fun s5 h5 => ?_
-  refine wp_strq (a := a + BitVec.ofNat 64 16) ⟨by omega, ho.2⟩
+  refine wp_strq (a := a + BitVec.ofNat 64 16) ⟨by omega_using [ho], ho.2⟩
     (by rw [h5.gpr, h4.gpr, h3.gpr, h2.gpr, h1.gpr, ← ha, BitVec.add_assoc, ← BitVec.ofNat_add])
     (by rw [h5.wr, h4.wr, h3.wr, h2.wr, h1.wr]; exact hin') fun s6 h6 => ?_
   refine k s6 (s3.v .v7) (s4.v .v5) (by rw [h6.gpr, h5.gpr, h4.gpr, h3.gpr, h2.gpr, h1.gpr])

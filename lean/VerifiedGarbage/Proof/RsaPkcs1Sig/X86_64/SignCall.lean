@@ -70,9 +70,9 @@ theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
   replace hpost := hk _ _ hpost
   rw [hd, he.rsp] at hf
   have hE : ∀ i, i < 14 → stackArg (t.callEntry.withRegions rds (privWr s)) i = callArg s i :=
-    fun i hi => (stackArg_entry he.rsp _ _ (by omega)).trans (hw i hi)
+    fun i hi => (stackArg_entry he.rsp _ _ (by omega_using [hi])).trans (hw i hi)
   have hE2 : ∀ j, j < 12 → stackArg (t.callEntry.withRegions rds (privWr s)) (j + 2) = stackArg s (j + 3) :=
-    fun j hj => hE (j + 2) (by omega)
+    fun j hj => hE (j + 2) (by omega_using [hj])
   have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
     frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
       rw [List.mem_singleton.mp hr, below_kb]; exact .inl (Region.sub_prefix (by decide))
@@ -85,10 +85,10 @@ theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
       Spec.Rsa.bytesAt t.mem (off (fb s) oEM) (s.gpr .rcx).toNat := by
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => (callEntry_frame he.rsp).bytes
-      (R := ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩) (fun r hr => ?_) (by dsimp only; omega) (List.mem_range.mp hi)
+      (R := ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩) (fun r hr => ?_) (by dsimp only; omega_using []) (List.mem_range.mp hi)
     rw [List.mem_singleton.mp hr, below_kb, fb_kb, off_off]
-    exact (Offset.base_disjoint (kb s) (e := 3264 + oEM) (n := (s.gpr .rcx).toNat) (k := 3264) (by omega)
-      (by have := (kb_toNat hp).1; unfold oEM; unfold sigStack at this; omega)).symm
+    exact (Offset.base_disjoint (kb s) (e := 3264 + oEM) (n := (s.gpr .rcx).toNat) (k := 3264) (by omega_using [])
+      (by have := (kb_toNat hp).1; unfold oEM; unfold sigStack at this; omega_using [hk2])).symm
   simp only [chkContract, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
@@ -98,11 +98,11 @@ theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
     (hE2 2 (by decide) : stackArg _ 4 = _), (hE2 3 (by decide) : stackArg _ 5 = _),
     (hE2 4 (by decide) : stackArg _ 6 = _), (hE2 6 (by decide) : stackArg _ 8 = _),
     (hE2 8 (by decide) : stackArg _ 10 = _)] at hpost
-  rw [b hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega), b hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega),
-    hEM, b hp.dKp hp.dOp hp.dps.symm (by have := hp.wP; omega), b hp.dKq hp.dOq hp.dqs.symm (by have := hp.wQ; omega),
-    ← hp.hdpl, b hp.dKdp hp.dOdp hp.ddps.symm (by have := hp.wDp; omega), hp.hdpl,
-    ← hp.hdql, b hp.dKdq hp.dOdq hp.ddqs.symm (by have := hp.wDq; omega), hp.hdql,
-    ← hp.hqil, b hp.dKqi hp.dOqi hp.dqis.symm (by have := hp.wQi; omega), hp.hqil] at hpost
+  rw [b hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega_using []), b hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega_using []),
+    hEM, b hp.dKp hp.dOp hp.dps.symm (by have := hp.wP; omega_using []), b hp.dKq hp.dOq hp.dqs.symm (by have := hp.wQ; omega_using []),
+    ← hp.hdpl, b hp.dKdp hp.dOdp hp.ddps.symm (by have := hp.wDp; omega_using []), hp.hdpl,
+    ← hp.hdql, b hp.dKdq hp.dOdq hp.ddqs.symm (by have := hp.wDq; omega_using []), hp.hdql,
+    ← hp.hqil, b hp.dKqi hp.dOqi hp.dqis.symm (by have := hp.wQi; omega_using []), hp.hqil] at hpost
   refine ⟨⟨(hcs .rsp (by decide)).trans he.rsp, hrd.trans he.rd, hwr.trans he.wr,
     frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_⟩, hpost, fun d n hd i hi => ?_, hcs, hmx⟩
   · simp only [privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -115,6 +115,6 @@ theorem privWith_call {name : String} {code : Prog isa} {k : Contract isa}
   · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sE
   · rw [slot_keep hf (frame_apart hp (by decide))]; exact he.sEl
   · have := (fb_toNat hp).1
-    exact hf.bytes (R := ⟨off (fb s) d, n⟩) (frame_apart hp hd) (by dsimp only; unfold frameBytes at hd; omega) hi
+    exact hf.bytes (R := ⟨off (fb s) d, n⟩) (frame_apart hp hd) (by dsimp only; unfold frameBytes at hd; omega_using [hd]) hi
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Sgn

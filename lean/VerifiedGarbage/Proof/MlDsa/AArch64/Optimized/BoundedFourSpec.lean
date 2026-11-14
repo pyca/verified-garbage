@@ -52,7 +52,7 @@ theorem Result.reduced {σ t : State} {L : Nat→List Zq} (h : Result σ t L)
 theorem Result.full {σ t : State} {L : Nat→List Zq} (h : Result σ t L)
     {i : Nat} (hi : i<4) (hlen : (L i).length=256) :
     polyAt t.mem (outputAt (samplerOut σ) i)=toPoly (L i) :=
-  (stored_polyIs (fun j hj=>by rw [h.words i hi j (by omega),resultWord,ite_eq_left hlen]) hlen).2
+  (stored_polyIs (fun j hj=>by rw [h.words i hi j (by omega_using [hlen, hj]),resultWord,ite_eq_left hlen]) hlen).2
 
 /-- Success is exactly the four standard samplers at the measured 544-byte bound;
 failure implies failure at the standard's minimum allowed bound. -/

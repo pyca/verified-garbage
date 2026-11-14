@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The five public columns reconstruct an exponent and admit a binary Horner scan. -/
 
@@ -23,17 +24,17 @@ theorem digit_lt (bits x row : Nat) : digit bits x row < 32 := by
   have := bit_lt x (row + 2*rows bits); have := bit_lt x (row + 3*rows bits)
   have := bit_lt x (row + 4*rows bits)
   unfold digit
-  omega
+  omega_arith
 
 theorem digit_bit (bits x row j : Nat) (hj : j < 5) :
     digit bits x row / 2 ^ j % 2 = bit x (row + j * rows bits) := by
   have := bit_lt x row; have := bit_lt x (row + rows bits)
   have := bit_lt x (row + 2*rows bits); have := bit_lt x (row + 3*rows bits)
   have := bit_lt x (row + 4*rows bits)
-  have cases : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega
+  have cases : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 := by omega_using [hj]
   rcases cases with rfl | rfl | rfl | rfl | rfl <;>
     simp only [digit, Nat.pow_zero, Nat.pow_one, Nat.div_one, Nat.zero_mul, Nat.add_zero,
-      Nat.one_mul, show 2^2=4 from rfl, show 2^3=8 from rfl, show 2^4=16 from rfl] <;> omega
+      Nat.one_mul, show 2^2=4 from rfl, show 2^3=8 from rfl, show 2^4=16 from rfl] <;> omega_arith
 
 def slice (x start width : Nat) : Nat := x / 2 ^ start % 2 ^ width
 
@@ -46,7 +47,7 @@ def high (bits x row : Nat) : Nat :=
 
 theorem rows_cover (bits : Nat) : bits ≤ 5 * rows bits := by
   simp only [rows, VG.Spec.Rsa.FixedBaseComb.teeth]
-  omega
+  omega_using []
 
 theorem high_top (bits x : Nat) : high bits x (rows bits) = 0 := by
   simp [high,slice,Nat.mod_one]
@@ -74,15 +75,15 @@ theorem exponent_digit (bits x row : Nat) :
 
 theorem high_step (bits x row : Nat) (hr : row < rows bits) :
     high bits x row = 2 * high bits x (row+1) + exponent bits (digit bits x row) := by
-  have width : rows bits-row = (rows bits-(row+1))+1 := by omega
+  have width : rows bits-row = (rows bits-(row+1))+1 := by omega_using [hr]
   dsimp only [high]
   rw [width]
   simp only [slice_step]
   rw [exponent_digit]
-  have a1 : row + rows bits + 1 = row+1+rows bits := by omega
-  have a2 : row + 2*rows bits + 1 = row+1+2*rows bits := by omega
-  have a3 : row + 3*rows bits + 1 = row+1+3*rows bits := by omega
-  have a4 : row + 4*rows bits + 1 = row+1+4*rows bits := by omega
+  have a1 : row + rows bits + 1 = row+1+rows bits := by omega_using []
+  have a2 : row + 2*rows bits + 1 = row+1+2*rows bits := by omega_using []
+  have a3 : row + 3*rows bits + 1 = row+1+3*rows bits := by omega_using []
+  have a4 : row + 4*rows bits + 1 = row+1+4*rows bits := by omega_using []
   rw [a1,a2,a3,a4]
   simp only [Nat.mul_add]
   ac_rfl
@@ -121,10 +122,10 @@ theorem high_zero (bits x : Nat) (bound : x < 2^bits) : high bits x 0 = x := by
 
 theorem rows_pos {bits : Nat} (positive : 0<bits) : 0<rows bits := by
   unfold rows VG.Spec.Rsa.FixedBaseComb.teeth
-  omega
+  omega_using [positive]
 
 theorem rows_small {bits : Nat} (bound : bits≤8192) : rows bits≤1639 ∧ 6*rows bits<2^31 := by
   unfold rows VG.Spec.Rsa.FixedBaseComb.teeth
-  omega
+  omega_using [bound]
 
 end VG.Proof.Rsa.FixedBaseComb

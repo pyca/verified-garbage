@@ -48,16 +48,16 @@ theorem preserved_ne (r : Reg) (hr : r ∈ preserved) :
 theorem shr4 (x : BitVec 64) : x >>> 4 = BitVec.ofNat 64 (x.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+    Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 theorem shr4_shl4 (x : BitVec 64) : (x >>> 4) <<< 4 = BitVec.ofNat 64 (16 * (x.toNat / 16)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq,
     BitVec.toNat_ofNat]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
   simp only [Nat.reducePow]
-  omega
+  omega_using []
 
 theorem read1 (m : Mem) (a : Addr) : m.read a 1 = m a := by
   have := Mem.extractLsb'_read m a (n := 1) (j := 0) (by decide)
@@ -72,7 +72,7 @@ theorem byte_rt (b : Byte) : (b.setWidth 64).setWidth 8 = b := by
   apply BitVec.eq_of_toNat_eq
   have := b.isLt
   simp only [BitVec.toNat_setWidth]
-  omega
+  omega_using []
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -204,9 +204,9 @@ theorem split_wp' (s : State) :
       BitVec.ofNat 64 ((s.gpr .r18).toNat % 16) := by
     apply BitVec.eq_of_toNat_eq
     have := (s.gpr .r18).isLt
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * _) (by omega),
-      Nat.mod_eq_of_lt (a := _ % 16) (by omega)]
-    omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * _) (by omega_using []),
+      Nat.mod_eq_of_lt (a := _ % 16) (by omega_using [])]
+    omega_using []
   unfold split
   refine wp_lsr (by decide) fun s₁ u₁ => wp_lsl (by decide) fun s₂ u₂ => wp_sub fun s₃ u₃ =>
     wp_nil ⟨?_, ?_, fun r h₁ h₂ => ?_, ?_, ?_, ?_⟩
@@ -232,7 +232,7 @@ theorem lastAddr_wp' (s : State) :
 /-- The last whole block, from the bytes of the whole blocks. -/
 theorem last_eq (p : Addr) {m : Nat} (hm : 1 ≤ m) :
     p + BitVec.ofNat 64 (16 * m) - BitVec.ofNat 64 16 = p + BitVec.ofNat 64 (16 * (m - 1)) := by
-  rw [show 16 * m = 16 * (m - 1) + 16 by omega, ← Offset.add_add]
+  rw [show 16 * m = 16 * (m - 1) + 16 by omega_using [hm], ← Offset.add_add]
   exact BitVec.add_sub_cancel _ _
 
 theorem argsL_wp' (s : State) {o : Nat} (ho : o < 2 ^ 15) :
@@ -341,21 +341,21 @@ theorem swap_wp (s : State) {L : Addr} {b : Nat} (hb₀ : 0 < b) (hb : b < 16) (
     ⟨0, rfl, hb₀, by rw [hx, BitVec.add_zero], hc, (Proof.AesXts.Unit.swapMem_zero _ _).symm,
       fun _ _ _ _ _ => rfl, rfl, rfl⟩
   rintro n t ⟨k, rfl, hk, x12, x11, mem, g, rd, wr⟩
-  refine WP.mono (swapStep_wp t (k := k) (b := b - k) x12 x11 (by omega) (by rw [wr]; exact hw k (by omega))
-    (by rw [wr]; exact hw (16 + k) (by omega))) fun t' ⟨mem', x12', x11', g', rd', wr'⟩ => ?_
+  refine WP.mono (swapStep_wp t (k := k) (b := b - k) x12 x11 (by omega_using [hk]) (by rw [wr]; exact hw k (by omega_using [hk]))
+    (by rw [wr]; exact hw (16 + k) (by omega_using [hk]))) fun t' ⟨mem', x12', x11', g', rd', wr'⟩ => ?_
   have hmem : t'.mem = swapMem s.mem L (k + 1) := by
-    rw [mem', mem, swapMem_lo _ _ (Nat.le_refl k) (by omega), swapMem_hi _ _ (Nat.le_refl k) (by omega),
-      swapMem_step _ _ (by omega)]
-  have hz := eval_nonzero_ofNat' t' .r11 (k := b - k - 1) (by omega) x11'
+    rw [mem', mem, swapMem_lo _ _ (Nat.le_refl k) (by omega_using [hb, hk]), swapMem_hi _ _ (Nat.le_refl k) (by omega_using [hb, hk]),
+      swapMem_step _ _ (by omega_using [hb, hk])]
+  have hz := eval_nonzero_ofNat' t' .r11 (k := b - k - 1) (by omega_using [hb]) x11'
   have gg : ∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r11 → r ≠ .r12 → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ h₄ => by
     rw [g' r h₁ h₂ h₃ h₄, g r h₁ h₂ h₃ h₄]
   by_cases he : k + 1 = b
   · left
-    refine ⟨by rw [hz]; simp [show b - k - 1 = 0 by omega], by rw [hmem, he], gg, by rw [rd', rd],
+    refine ⟨by rw [hz]; simp [show b - k - 1 = 0 by omega_using [he]], by rw [hmem, he], gg, by rw [rd', rd],
       by rw [wr', wr]⟩
   · right
-    refine ⟨by rw [hz]; simp [show b - k - 1 ≠ 0 by omega], b - (k + 1), by omega, k + 1, rfl, by omega, x12',
-      by rw [x11', show b - k - 1 = b - (k + 1) by omega], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
+    refine ⟨by rw [hz]; simp [show b - k - 1 ≠ 0 by omega_using [hk, he]], b - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, he], x12',
+      by rw [x11', show b - k - 1 = b - (k + 1) by omega_using []], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 /-! ## The next tweak -/
 

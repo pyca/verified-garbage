@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
 import VerifiedGarbage.Proof.Rsa.KeyParts
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA: the key checks from products
@@ -60,17 +61,17 @@ theorem mont_div {m iv S : Nat} (hinv : (m % 2 ^ 32 * iv + 1) % 2 ^ 32 = 0) :
 theorem mont_bound {M m A Y x k : Nat} (hm : m < M) (hY : Y < M) (hA : A < 3 * M)
     (hx : x < 2 ^ 32) (hk : k < 2 ^ 32) :
     (A + x * Y + k * m) / 2 ^ 32 < 3 * M := by
-  have e1 : x * Y ≤ (2 ^ 32 - 1) * M := Nat.mul_le_mul (by omega) (by omega)
-  have e2 : k * m ≤ (2 ^ 32 - 1) * M := Nat.mul_le_mul (by omega) (by omega)
+  have e1 : x * Y ≤ (2 ^ 32 - 1) * M := Nat.mul_le_mul (by omega_using [hx]) (by omega_using [hY])
+  have e2 : k * m ≤ (2 ^ 32 - 1) * M := Nat.mul_le_mul (by omega_using [hk]) (by omega_using [hm])
   rw [Nat.div_lt_iff_lt_mul (by decide)]
-  omega
+  omega_using [hA, e1, e2]
 
 theorem mont_bound2 {m A Y x k : Nat} (hY : Y < m) (hA : A < 2 * m) (hx : x < 2 ^ 32) (hk : k < 2 ^ 32) :
     (A + x * Y + k * m) / 2 ^ 32 < 2 * m := by
-  have e1 : x * Y ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul (by omega) (by omega)
-  have e2 : k * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul (by omega) (by omega)
+  have e1 : x * Y ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul (by omega_using [hx]) (by omega_using [hY])
+  have e2 : k * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul (by omega_using [hk]) (by omega_using [])
   rw [Nat.div_lt_iff_lt_mul (by decide)]
-  omega
+  omega_using [hA, e1, e2]
 
 /-- The congruence of a step: `(T / 2^32) 2^(32 (i + 1)) ≡ X' Y`, from
 `A 2^(32 i) ≡ X Y` and `X' = X + 2^(32 i) x`. -/
@@ -78,7 +79,7 @@ theorem mont_cong {m A Y x k X i : Nat} (hT : (A + x * Y + k * m) % 2 ^ 32 = 0)
     (hA : A * 2 ^ (32 * i) % m = X * Y % m) :
     (A + x * Y + k * m) / 2 ^ 32 * 2 ^ (32 * (i + 1)) % m = (X + 2 ^ (32 * i) * x) * Y % m := by
   have e : (A + x * Y + k * m) / 2 ^ 32 * 2 ^ (32 * (i + 1)) = (A + x * Y + k * m) * 2 ^ (32 * i) := by
-    rw [show 32 * (i + 1) = 32 + 32 * i by omega, Nat.pow_add, ← Nat.mul_assoc,
+    rw [show 32 * (i + 1) = 32 + 32 * i by omega_using [], Nat.pow_add, ← Nat.mul_assoc,
       Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hT)]
   rw [e, Nat.add_mul, Nat.add_mul, Nat.add_mod, Nat.add_mod (A * _), hA,
     show k * m * 2 ^ (32 * i) = m * (k * 2 ^ (32 * i)) by ac_rfl, Nat.mul_mod_right, Nat.add_zero,
@@ -98,16 +99,16 @@ theorem pq_eq_iff {p q n j : Nat} (hp : p % 2 = 1) (hq : q < 2 ^ j) (hn : n < 2 
   · rintro rfl; exact ⟨Nat.mod_eq_of_lt hn, Nat.mul_mod_right _ _⟩
   · rintro ⟨h1, h2⟩
     obtain ⟨k, rfl⟩ := Nat.dvd_of_mod_eq_zero h2
-    have hk : k < 2 ^ j := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left _ (by omega)) hn
+    have hk : k < 2 ^ j := Nat.lt_of_le_of_lt (Nat.le_mul_of_pos_left _ (by omega_using [hp])) hn
     have e : p * q % 2 ^ j = p * k % 2 ^ j := by rw [h1, Nat.mod_eq_of_lt hn]
     have cp := (coprime_pow2 (j := j) hp).symm
     have d1 : 2 ^ j ∣ q - k := cp.dvd_of_dvd_mul_left (by
       rw [Nat.mul_sub]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e))
     have d2 : 2 ^ j ∣ k - q := cp.dvd_of_dvd_mul_left (by
       rw [Nat.mul_sub]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e.symm))
-    have z1 := Nat.eq_zero_of_dvd_of_lt d1 (by omega)
-    have z2 := Nat.eq_zero_of_dvd_of_lt d2 (by omega)
-    rw [show q = k by omega]
+    have z1 := Nat.eq_zero_of_dvd_of_lt d1 (by omega_using [hq])
+    have z2 := Nat.eq_zero_of_dvd_of_lt d2 (by omega_using [hk])
+    rw [show q = k by omega_using [z1, z2]]
 
 /-- Montgomery's result `M < m` with `M 2^j ≡ n` is zero exactly when `m ∣ n`. -/
 theorem mont_zero_iff {m M n j : Nat} (hm : m % 2 = 1) (hM : M < m) (h : M * 2 ^ j % m = n % m) :
@@ -125,7 +126,7 @@ equal exactly when `a ≡ 1 (mod m)`, for `m ≥ 2`. -/
 theorem mont_eq_iff {m M₁ M₂ a j : Nat} (hm : m % 2 = 1) (hm2 : 2 ≤ m) (h₁ : M₁ < m) (h₂ : M₂ < m)
     (e₁ : M₁ * 2 ^ j % m = a % m) (e₂ : M₂ * 2 ^ j % m = 1 % m) :
     M₁ = M₂ ↔ a % m = 1 := by
-  rw [Nat.mod_eq_of_lt (show 1 < m by omega)] at e₂
+  rw [Nat.mod_eq_of_lt (show 1 < m by omega_using [hm2])] at e₂
   constructor
   · rintro rfl; rw [← e₁, e₂]
   · intro ha
@@ -135,9 +136,9 @@ theorem mont_eq_iff {m M₁ M₂ a j : Nat} (hm : m % 2 = 1) (hm2 : 2 ≤ m) (h�
       rw [Nat.sub_mul]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e))
     have d2 : m ∣ M₂ - M₁ := cp.dvd_of_dvd_mul_right (by
       rw [Nat.sub_mul]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq e.symm))
-    have z1 := Nat.eq_zero_of_dvd_of_lt d1 (by omega)
-    have z2 := Nat.eq_zero_of_dvd_of_lt d2 (by omega)
-    omega
+    have z1 := Nat.eq_zero_of_dvd_of_lt d1 (by omega_using [h₁])
+    have z2 := Nat.eq_zero_of_dvd_of_lt d2 (by omega_using [h₂])
+    omega_using [z1, z2]
 
 /-- With `L = p q mod W` and `M` Montgomery's `n` (zero exactly when `p ∣ n`
 for an odd `p ≥ 2` with `L = n`), the checks `p` odd, `L = n`, `M = 0` are those of
@@ -150,15 +151,15 @@ theorem maskM_iff {P Q N L M V j : Nat} (hQN : Q < N) (hqj : Q < 2 ^ j) (hnj : N
     by_cases p2 : 2 ≤ P
     · have hpq := (pq_eq_iff podd hqj hnj).2 ⟨by rw [← hL, h1], (hM podd p2 h1).1 h2⟩
       refine ⟨podd, ?_, by rw [← hpq, Nat.mul_mod_right], h3⟩
-      rw [← hpq, Nat.mul_div_cancel_left _ (by omega)]
-    · have p1 : P = 1 := by omega
-      subst p1; rw [Nat.one_mul, Nat.mod_eq_of_lt hqj] at hL; omega
+      rw [← hpq, Nat.mul_div_cancel_left _ (by omega_using [podd])]
+    · have p1 : P = 1 := by omega_using [podd, p2]
+      subst p1; rw [Nat.one_mul, Nat.mod_eq_of_lt hqj] at hL; omega_using [hQN, h1, hL]
   · rintro ⟨podd, h1, h2, h3⟩
     have hpq : P * Q = N := mul_of_div h1 h2
     have p2 : 2 ≤ P := by
       rcases Nat.lt_or_ge P 2 with hp | hp
-      · have p1 : P = 1 := by omega
-        subst p1; rw [Nat.one_mul] at hpq; omega
+      · have p1 : P = 1 := by omega_using [podd, hp]
+        subst p1; rw [Nat.one_mul] at hpq; omega_using [hQN, h1]
       · exact hp
     exact ⟨podd, by rw [hL, hpq, Nat.mod_eq_of_lt hnj], (hM podd p2 (by rw [hL, hpq, Nat.mod_eq_of_lt hnj])).2 h2, h3⟩
 
@@ -198,8 +199,8 @@ theorem crtKeyValid_bitsM {k n e p q dP dQ qInv j : Nat} (hm : modulusValid n k 
     obtain ⟨e1, e2⟩ := (pq_eq_iff podd hqj hnj).1 hpq
     have eqL : L = n := by rw [hL, e1]
     have eqM : M = 0 := (hM podd p2).2 e2
-    have mp : 2 * (p / 2) = p - 1 := by omega
-    have mq : 2 * (q / 2) = q - 1 := by omega
+    have mp : 2 * (p / 2) = p - 1 := by omega_using [podd]
+    have mq : 2 * (q / 2) = q - 1 := by omega_using [qodd]
     rw [mp] at hR₁ ⊢
     rw [mq] at hR₂ ⊢
     constructor
@@ -214,7 +215,7 @@ theorem crtKeyValid_bitsM {k n e p q dP dQ qInv j : Nat} (hm : modulusValid n k 
     · rintro ⟨podd, h1, h2, -⟩
       by_cases p2 : 2 ≤ p
       · exact absurd ((pq_eq_iff podd hqj hnj).2 ⟨by rw [← hL, h1], (hM podd p2).1 h2⟩) hpq
-      · have p1 : p = 1 := by omega
+      · have p1 : p = 1 := by omega_using [podd, p2]
         subst p1
         rw [Nat.one_mul, Nat.mod_eq_of_lt hqj] at hL
         have : q < n := Nat.lt_of_lt_of_le hq hn
@@ -242,7 +243,7 @@ theorem keyValid_bitsM {k n e d p q dP dQ qInv j : Nat} (hm : modulusValid n k =
     have q2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
     have podd := odd_factor hpq hodd
     have qodd := odd_factor (by rw [Nat.mul_comm]; exact hpq) hodd
-    rw [hY₁ (by omega), hY₂ (by omega), show 2 * (p / 2) = p - 1 by omega, show 2 * (q / 2) = q - 1 by omega]
+    rw [hY₁ (by omega_using [p2]), hY₂ (by omega_using [q2]), show 2 * (p / 2) = p - 1 by omega_using [podd], show 2 * (q / 2) = q - 1 by omega_using [qodd]]
   · simp only [Bool.not_eq_true] at hc
     simp only [hc, Bool.false_and]
 

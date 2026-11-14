@@ -46,7 +46,7 @@ theorem finishBlock_ok {s : State} {B : Addr} {Z eT : Nat} {p : Bool}
   have h10' := (kt.gpr .x10 (by decide)).trans hb10
   have hc : (t.gpr .x10).toNat = a.c.toNat := by
     have hn := congrArg BitVec.toNat h10'
-    exact hn.trans (Nat.mod_eq_of_lt (by have := Bool.toNat_le a.c; omega))
+    exact hn.trans (Nat.mod_eq_of_lt (by have := Bool.toNat_le a.c; omega_using [this]))
   have hv := htv.trans (congrArg blockValue (keep_accumulator kb (by decide)))
   refine ⟨?_, ?_, ?_, ((kab.trans kt).mono (by decide))⟩
   · exact ((congrArg (· + (2 ^ 64) ^ 8 * (t.gpr .x10).toNat) hv).trans

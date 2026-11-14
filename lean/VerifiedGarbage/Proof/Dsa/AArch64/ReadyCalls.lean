@@ -33,7 +33,7 @@ theorem readyPow_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready L s)
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 16
     have : usedBytes < 2 ^ 16 := by decide
-    omega
+    omega_using [hend, this]
   refine WP.mono (corePow_ok M h.parent (h.child side) (by decide) hlo hhi ho
     hw2 hw48 hw48 (by decide) hm hodd a b ⟨.local d, side.lengthField⟩ ha hb hdp
     has hbs ha1 haw hb1 hb2 (h.length side) hk1 hk31 rfl
@@ -54,7 +54,7 @@ theorem readyProduct_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready 
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 16
     have : usedBytes < 2 ^ 16 := by decide
-    omega
+    omega_using [hend, this]
   refine WP.mono (coreProduct_ok M h.parent (h.child side) (by decide) hlo hhi ho
     hw2 hw48 hw48 (by decide) hm hodd a b ⟨.local d, side.lengthField⟩ ha hb hdp
     has hbs ha1 haw hb1 hbw (h.length side) hk1 hk31 rfl
@@ -73,7 +73,7 @@ theorem readyReduce_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready L
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 16
     have : usedBytes < 2 ^ 16 := by decide
-    omega
+    omega_using [hend, this]
   refine WP.mono (coreReduce_ok M h.parent h.qChild (by decide) hlo hhi hw2 hw48 hm hodd
     a (Core.scalar d) ha hdp has hal (h.length .q) hk1 hk31 rfl
     (h.local_write hend) (h.local_out hd hend)) ?_
@@ -93,7 +93,7 @@ theorem readyAdd_ok {L : ExecutionLayout} {s : State} (h : Ready L s)
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 16
     have : usedBytes < 2 ^ 16 := by decide
-    omega
+    omega_using [hend, this]
   refine WP.mono (coreAdd_ok h.parent h.qChild (by decide) hlo hhi hw2 hw48 hw48 (by decide)
     a b (Core.scalar d) ha hb hdp has hbs ha1 haw hb1 hbw har hbr
     (h.length .q) hk1 hk31 rfl (h.local_write hend) (h.local_out hd hend)) ?_

@@ -201,7 +201,7 @@ theorem prologue_ok {tsH tsG : List FnTable} {K : Nat} {s u : State} (hp : PreV 
     rw [rd₁₂]
     refine Covers.left (Covers.trans (Covers.of_mem fun x hx => by
       rw [List.mem_singleton.mp hx]; simp) hp.hrd) _ _ ⟨tHR s, List.mem_singleton_self _, ?_⟩
-    exact Offset.contains_base _ (by decide) (by omega)
+    exact Offset.contains_base _ (by decide) (by omega_using [])
   refine wp_ldrx (by decide) (by rw [x10₁₂]) rtH fun y₂ q₂ g₂ => ?_
   have x27b : y₂.gpr .x27 = s.mem.readW (stackArg s 6 + BitVec.ofNat 64 40) 64 := by
     rw [g₂, fr₁₂.readW (r := ⟨stackArg s 6 + BitVec.ofNat 64 40, 8⟩) (Region.contains_self _ _)

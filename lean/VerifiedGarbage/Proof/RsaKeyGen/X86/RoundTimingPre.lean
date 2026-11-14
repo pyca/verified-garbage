@@ -60,7 +60,7 @@ theorem Ready.width {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
     Proof.Rsa.Mont.wOf (entry g s).mem g.W = g.w := by
   obtain ⟨c, b, S, _, _, _⟩ := R.1
-  have F := entry_frame (by rw [R.sp]; omega) S.ready.scratch.nowrap
+  have F := entry_frame (by rw [R.sp]; omega_using [fit]) S.ready.scratch.nowrap
     (by rw [R.sp]; exact far.sub_right (below_sub (by decide : 12 ≤ 108) fit))
   exact (S.ready.modulus.keep v F (by simp) (by simp)).width
 
@@ -68,10 +68,10 @@ theorem Ready.publicInputs {g : Geometry} (v : g.Valid) {capacity : Nat} {p : Bi
     (S : Ready g capacity p s) (T : Ready g capacity p t) (fit : 108 ≤ p.toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below p 108)) :
     (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pub (entry g s) (entry g t) := by
-  have sa := fun {i} (hi : i < 2) => entry_arg S.2 (by rw [S.sp]; omega) hi
-  have ta := fun {i} (hi : i < 2) => entry_arg T.2 (by rw [T.sp]; omega) hi
+  have sa := fun {i} (hi : i < 2) => entry_arg S.2 (by rw [S.sp]; omega_using [fit]) hi
+  have ta := fun {i} (hi : i < 2) => entry_arg T.2 (by rw [T.sp]; omega_using [fit]) hi
   obtain ⟨c, b, D, _, _, _⟩ := S.1
-  have bound : g.W.toNat < 2 ^ 32 := by have := D.ready.scratch.nowrap; have := v.headerFit; omega
+  have bound : g.W.toNat < 2 ^ 32 := by have := D.ready.scratch.nowrap; have := v.headerFit; omega_arith
   have ptr : (BitVec.ofNat 32 g.W.toNat).setWidth 64 = g.W := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]

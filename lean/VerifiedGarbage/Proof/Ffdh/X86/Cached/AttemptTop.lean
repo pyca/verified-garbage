@@ -67,14 +67,14 @@ theorem CtxVals.keep {P G bits : Nat} {m m' : Mem} (V : CtxVals len args P G bit
     (hn : ctxBytes len < 2 ^ 64) : CtxVals len args P G bits m' := by
   have bw := bc_eq_cwc len .wide
   have far : ∀ {d N : Nat}, d + 4 * N ≤ ctxBytes len → val32 m' (ctxAddr args) d N = val32 m (ctxAddr args) d N :=
-    fun {d N} h => val32_far F (fun r hr => (hd r hr).sub_left (Offset.sub_base _ h)) (by omega)
+    fun {d N} h => val32_far F (fun r hr => (hd r hr).sub_left (Offset.sub_base _ h)) (by omega_using [hn, h])
   have w : ∀ {d : Nat}, d + 4 ≤ ctxBytes len → w32 m' (ctxAddr args) d = w32 m (ctxAddr args) d := fun {d} h => by
-    rw [← w32_val32_one, ← w32_val32_one]; exact far (by omega)
-  refine ⟨by rw [w (by simp only [ctxBytes]; omega)]; exact V.w0, by rw [w (by simp only [ctxBytes]; omega)]; exact V.w8,
-    by rw [w (by simp only [ctxBytes]; omega)]; exact V.w16, fun e he => ?_⟩
+    rw [← w32_val32_one, ← w32_val32_one]; exact far (by omega_using [h])
+  refine ⟨by rw [w (by simp only [ctxBytes]; omega_using [])]; exact V.w0, by rw [w (by simp only [ctxBytes]; omega_using [])]; exact V.w8,
+    by rw [w (by simp only [ctxBytes]; omega_using [])]; exact V.w16, fun e he => ?_⟩
   have : bc len .wide * (2 + e) + bc len .wide ≤ bc len .wide * 34 := by
-    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
-  rw [far (by simp only [ctxBytes]; omega)]; exact V.ents e he
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [he])
+  rw [far (by simp only [ctxBytes]; omega_using [bw, this])]; exact V.ents e he
 
 /-- The context is apart from the working space's frame. -/
 theorem ctx_frameR (C : CtxRd base bytes len args s) {sp : BitVec 32}
@@ -103,8 +103,8 @@ theorem combStage_ok (h : In Ex base bytes len args s) {P G x bits : Nat}
     intro p hp
     simp only [combR, List.mem_cons] at hp
     rcases hp with rfl | rfl | hp
-    · exact .inr ⟨by simp only [rowsOff]; omega, by simp only [rowsOff]; omega⟩
-    · exact .inr ⟨by simp only [iOff]; omega, by simp only [iOff]; omega⟩
+    · exact .inr ⟨by simp only [rowsOff]; omega_using [], by simp only [rowsOff]; omega_using [nb, en]⟩
+    · exact .inr ⟨by simp only [iOff]; omega_using [], by simp only [iOff]; omega_using [nb, en]⟩
     · exact hs p (by simpa only [stR, List.mem_cons, List.not_mem_nil, or_false] using hp)
   refine ⟨⟨C.inp, fR_widen F inF, K⟩, ⟨fun j a b _ => combR_sv h F h.room a b, fun d a b c hd => ?_⟩, Y⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
@@ -163,7 +163,7 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
   have h2 : 2 * len ≤ dlen := by omega_arith
   have hn : ctxBytes len < 2 ^ 64 := by
     have := CR.afit; have : (2 : Nat) ^ 32 < 2 ^ 64 := by decide
-    omega
+    omega_arith
   -- The width.
   generalize hbits : Spec.Ffdh.generationScalarBits (CheckPrivate.params s.mem args len dlen) = bits at CV
   have bf := VG.Proof.Ffdh.ContextRows.genBits_facts dv
@@ -344,18 +344,18 @@ theorem ctxVals_of {m : Mem} {args : Nat → BitVec 32} {len : Nat} {dom : List 
   generalize (Spec.Ffdh.domainOf len dom).p = P at hp hpl ee ⊢
   have b32 : bits < 2 ^ 32 := Nat.lt_of_le_of_lt (Nat.le_trans bf.2 (Nat.mul_le_mul_left 8 hl)) (by decide)
   have b64 : (2 : Nat) ^ 32 ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by decide)
-  have rs := (VG.Proof.Rsa.FixedBaseComb.rows_small (bits := bits) (by omega)).1
+  have rs := (VG.Proof.Rsa.FixedBaseComb.rows_small (bits := bits) (by omega_using [hl, bf])).1
   have small : ∀ {v : Nat}, v < 2 ^ 32 → (BitVec.ofNat 64 v).toNat % 2 ^ 32 = v := fun {v} hv => by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hv b64), Nat.mod_eq_of_lt hv]
   have hb : bc len .wide = 8 * mw len := rfl
-  have hc : cwc len .wide = 2 * mw len := by simp only [cwc, hb]; omega
+  have hc : cwc len .wide = 2 * mw len := by simp only [cwc, hb]; omega_using []
   have hpw : 2 ^ (8 * len) ≤ 2 ^ (64 * mw len) :=
-    Nat.pow_le_pow_right (by decide) (by simp only [mw, Spec.Rsa.modulusWords]; omega)
+    Nat.pow_le_pow_right (by decide) (by simp only [mw, Spec.Rsa.modulusWords]; omega_using [])
   refine ⟨?_, ?_, ?_, fun e he => ?_⟩
   · rw [VG.Proof.Ffdh.ContextRows.w32_of_word, e0, small b32]
-  · rw [VG.Proof.Ffdh.ContextRows.w32_of_word, e8, small (by omega)]
-  · rw [VG.Proof.Ffdh.ContextRows.w32_of_word, e16, small (by omega)]
-  · rw [hc, VG.Proof.Ffdh.ContextRows.val32_eq_wv, hb, show 8 * (8 * mw len) = 64 * mw len by omega]
+  · rw [VG.Proof.Ffdh.ContextRows.w32_of_word, e8, small (by omega_using [b32])]
+  · rw [VG.Proof.Ffdh.ContextRows.w32_of_word, e16, small (by omega_using [rs])]
+  · rw [hc, VG.Proof.Ffdh.ContextRows.val32_eq_wv, hb, show 8 * (8 * mw len) = 64 * mw len by omega_using []]
     exact VG.Proof.Ffdh.ContextRows.value_of_row (ee e he)
       (Nat.lt_of_lt_of_le (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) (Nat.le_of_lt hpl)) hpw)
 
@@ -434,7 +434,7 @@ theorem wrapABI {s : State} (A : CachedABI s) : WrapABI gArgs 13 s where
   below := ⟨(fun _ h => by cases h; decide), by decide, by decide, by decide, (fun _ h => by cases h; decide),
     (fun _ h => by cases h; decide), by decide, (fun _ h => by cases h; decide)⟩
   stackLow := A.stackLow
-  stackBound := by have := A.stackBound; omega
+  stackBound := by have := A.stackBound; omega_using [this]
   argsIn := by
     rw [A.wr]
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
@@ -473,11 +473,11 @@ theorem frame_subs {s : State} (A : CachedABI s) {sp : BitVec 32}
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
-  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
+  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
   refine ⟨?_, ?_⟩
   · simp only [below]
-    rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
+    rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
       ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
@@ -542,7 +542,7 @@ theorem frame_geo {s : State} (A : CachedABI s) {sp : BitVec 32}
 theorem genWords_eq (k : Nat) : Spec.Ffdh.generationPrecomputedWords k = 3 + 34 * ((k + 7) / 8) := by
   simp only [Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords,
     Spec.Rsa.precomputedWords, Spec.Rsa.FixedBaseComb.entries, Spec.Rsa.FixedBaseComb.teeth, Spec.Rsa.modulusWords]
-  omega
+  omega_using []
 
 /-- The bytes apart from the frame and the working space, kept by the entry and the frame's filling. -/
 theorem frame_far {s : State} (A : CachedABI s) {p : Addr} {n : Nat}
@@ -553,7 +553,7 @@ theorem frame_far {s : State} (A : CachedABI s) {p : Addr} {n : Nat}
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -573,7 +573,7 @@ theorem ctxBytes_eq {s : State} (A : CachedABI s) : (arg s 12).toNat * 8 = ctxBy
   rw [genWords_eq] at this
   simp only [ctxBytes, bc, mw, Spec.Rsa.modulusWords]
   show _ = 24 + 8 * (((arg s 6).toNat + 7) / 8) * 34
-  omega
+  omega_using [this]
 
 /-- The context, as the body reads it. -/
 theorem frame_ctx {s : State} (A : CachedABI s) {f : State} (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame)
@@ -594,8 +594,8 @@ theorem frame_ctx {s : State} (A : CachedABI s) {f : State} (espf : f.gpr .esp =
     have := A.ctxBound
     have hv : (argumentPointer s 11).toNat = (arg s 11).toNat := by
       simp only [argumentPointer, BitVec.toNat_setWidth]
-      exact Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega)
-    rw [hv]; omega
+      exact Nat.mod_eq_of_lt (by have := (arg s 11).isLt; omega_using [])
+    rw [hv]; omega_using [this]
   · show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ _
     rw [← cb]; exact A.scratchCtx.symm
   · show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ _
@@ -634,11 +634,11 @@ theorem frame_vals {s : State} (A : CachedABI s) {m : Mem}
     have h1 := VG.Proof.Bignum.os2ip_lt ((entryDom s).take (arg s 6).toNat)
     have h2 : 256 ^ ((entryDom s).take (arg s 6).toNat).length ≤ 2 ^ (8 * (arg s 6).toNat) := by
       rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega)
+      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega_using [])
     change Spec.Rsa.os2ip ((entryDom s).take (arg s 6).toNat) < _
-    omega
+    omega_using [h1, h2]
   have dlen : (arg s 6).toNat ≤ (entryDom s).length := by
-    rw [VG.Proof.Bignum.bytesAt_length]; omega
+    rw [VG.Proof.Bignum.bytesAt_length]; omega_using [dl]
   have W : Spec.Rsa.wordsAt s.mem (ctxAddr (synth gArgs (arg s))) (3 + 34 * mw (arg s 6).toNat) =
       generationValues (arg s 6).toNat (entryDom s) := by
     have c := A.ctx
@@ -648,7 +648,7 @@ theorem frame_vals {s : State} (A : CachedABI s) {m : Mem}
   have cb := ctxBytes_eq A
   have hn : ctxBytes (pLenOf gArgs s) < 2 ^ 64 := by
     have := A.ctxBound; have : (2 : Nat) ^ 32 < 2 ^ 64 := by decide
-    omega
+    omega_using [cb]
   exact CV0.keep Ft (frame_far A (by
     show Region.Disjoint ⟨argumentPointer s 11, ctxBytes (pLenOf gArgs s)⟩ _
     rw [← cb]; exact A.scratchCtx.symm)
@@ -672,18 +672,18 @@ theorem frame_ok {s : State} (A : CachedABI s) (f : State)
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   have D : Spec.Rsa.bytesAt f.mem (byteAddr (synth gArgs (arg s) 2)) (arg s 5).toNat = entryDom s :=
-    frame_keep A Ft A.domScratch A.belowDom (by have := A.domBound; omega)
+    frame_keep A Ft A.domScratch A.belowDom (by have := A.domBound; omega_using [])
   have R : Spec.Rsa.bytesAt f.mem (byteAddr (synth gArgs (arg s) 10)) (pLenOf gArgs s) = entryRand s := by
     show Spec.Rsa.bytesAt f.mem (argumentPointer s 7) _ = _
     rw [← rL]
-    exact frame_keep A Ft A.randScratch A.belowRand (by have := A.randBound; omega)
+    exact frame_keep A Ft A.randScratch A.belowRand (by have := A.randBound; omega_using [])
   have pl : pLenOf gArgs s = (arg s 6).toNat := rfl
   have dl := Gm.dom.dl
   have lw := Gm.dom.lower
   have up := Gm.dom.upper
-  have h2 : 2 * pLenOf gArgs s ≤ (arg s 5).toNat := by omega
+  have h2 : 2 * pLenOf gArgs s ≤ (arg s 5).toNat := by omega_using [dl]
   have dv : Spec.Ffdh.domainValid (pLenOf gArgs s) (domOf f.mem (synth gArgs (arg s)) (arg s 5).toNat) = true := by
     rw [domOf, D]; exact A.valid
   have CVf := frame_vals A Ft

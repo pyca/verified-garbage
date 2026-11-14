@@ -68,7 +68,7 @@ theorem body_ok {τ i b : Nat} {signs : Array Bool} {a : Addr} {c : IPoly} {j : 
     · exact ⟨by rw [hu.get .x26,pp.x26],by rw [hu.get .x9,pp.x9],
         by rw [hu.get .x10,pp.x10],by rw [hu.get .x11,pp.x11],
         by rw [hu.get .x12,pp.x12],by rw [hu.get .x15,pp.x15],by rw [hu.mem]; exact pp.stored⟩
-  · refine WP.ite false (by rw [eval_zero,eq_zero_iff,pp.x11]; simp; omega)
+  · refine WP.ite false (by rw [eval_zero,eq_zero_iff,pp.x11]; simp; omega_using [hle, done])
       (fun h => nomatch h) (fun _ => wp_nil ?_)
     exact ⟨kt,by rw [mt]; exact ht.frame,x2,by rw [ifF done]; exact x5,pp⟩
 end VG.Proof.MlDsa.AArch64.Optimized.Ball

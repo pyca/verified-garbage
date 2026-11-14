@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.RISCV64.Sign
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_pkcs1_sign` on RISC-V: the precondition
@@ -148,7 +149,7 @@ theorem sPre_of {s : State} (h : (Spec.RsaPkcs1Sig.signContract RISCV64.abi stac
   obtain ⟨sp16, sp1, sp2, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis,
     sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h1,
     e1, e2, p1, p2, q1, q2, h6, h10, h8, hs, al⟩ := h
-  exact ⟨sp16, sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis,
+  exact ⟨sp16, sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [sp2], hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis,
     sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, e1,
     e2, p1, p2, q1, q2, h6, h10, h8, hs, al⟩
 

@@ -204,7 +204,7 @@ theorem subModArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have endA := Nat.le_trans (array_end_le ha.1) fits
   have endB := Nat.le_trans (array_end_le hb.1) fits
   have endM := Nat.le_trans (array_end_le (w := w) (j := 0) (by decide : 0 < 8)) fits
-  have small : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have small : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have nowrap := h.workspace.nowrap
   have width : 2 ≤ w := h.width ▸ h.layout.1
   have sepA := array_sep (w := w) hoa
@@ -220,31 +220,31 @@ theorem subModArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have high : val32 u.mem (State.addr base) (arrAt w o + 4 * (2 * w)) 2 = 0 := by
     rw [val32_append] at zero
     have positive : 0 < 2 ^ (32 * (2 * w)) := Nat.two_pow_pos _
-    have mul : 2 ^ (32 * (2 * w)) * val32 u.mem (State.addr base) (arrAt w o + 4 * (2 * w)) 2 = 0 := by omega
+    have mul : 2 ^ (32 * (2 * w)) * val32 u.mem (State.addr base) (arrAt w o + 4 * (2 * w)) 2 = 0 := by omega_using [zero]
     rcases Nat.mul_eq_zero.mp mul with bad | good
-    · omega
+    · omega_using [positive, bad]
     · exact good
   have header := nativeHeader_of_layout u.mem base nowrap (Nat.le_refl _) readyU.layout
   rw [readyU.width] at header
   rw [WP.seq_iff]
-  refine WP.mono (subModArrayArgs_ok u ho.1 ha.1 hb.1 readyU.workspace (by omega) header readyU.ptr) ?_
+  refine WP.mono (subModArrayArgs_ok u ho.1 ha.1 hb.1 readyU.workspace (by omega_using [small]) header readyU.ptr) ?_
   rintro v ⟨p0, p10, p12, p9, count, memV, restV⟩
   have ctx : SubCtx v base (8 * len) (arrAt w o) (arrAt w a) (arrAt w b) (2 * w) :=
-    ⟨nowrap, by omega, by omega, by omega, by omega, by omega,
+    ⟨nowrap, by omega_using [endO], by omega_using [endA], by omega_using [endB], by omega_using [sepA], by omega_using [sepB],
       by rw [restV.wr]; exact readyU.workspace.writable⟩
   have row : RowCtx v base (8 * len) (arrAt w o) (arrAt w 0) (2 * w) :=
-    ⟨nowrap, by omega, by omega, by omega, by rw [restV.wr]; exact readyU.workspace.writable⟩
+    ⟨nowrap, by omega_using [endO], by omega_using [endM], by omega_using [sepM], by rw [restV.wr]; exact readyU.workspace.writable⟩
   have nums (q : Nat) : val32 v.mem (State.addr base) (arrAt w q) (2 * w) = numAt u.mem (State.addr base) w q := by
     rw [memV, numAt_native]
   rw [WP.seq_iff]
-  refine WP.mono (subModBuffers_ok v ctx row (by omega) (by omega) p0 p10 p12 p9 count
+  refine WP.mono (subModBuffers_ok v ctx row (by omega_using [width]) (by omega_using [endO]) p0 p10 p12 p9 count
     (by rw [memV]; exact high) (by rw [nums a, nums 0, oldA, oldM]; exact boundA)
     (by rw [nums b, nums 0, oldB, oldM]; exact boundB)) ?_
   rintro z ⟨value, _, outside, restZ⟩
   rw [nums a, nums b, nums 0, oldA, oldB, oldM] at value
   rw [memV] at outside
-  have frameZ := outside_workspace outside (by omega : arrAt w o + 4 * (2 * w + 2) ≤ 8 * len)
-  have keepsZ := outside_array_prefix_keeps outside (by omega : 8 * len < 2 ^ 64) (by omega)
+  have frameZ := outside_workspace outside (by omega_using [endO] : arrAt w o + 4 * (2 * w + 2) ≤ 8 * len)
+  have keepsZ := outside_array_prefix_keeps outside (by omega_using [nowrap] : 8 * len < 2 ^ 64) (by omega_using [])
   have restUZ : Rest roundClobbers u z := (restV.mono (by decide)).trans restZ
   refine WP.mono (restoreBase_ok z (by rw [restUZ.rd, restUZ.wr, restUZ.sp]; exact readyU.stackRead)
     (saved_base_kept frameZ readyU.stackSep readyU.saved restUZ.sp)) ?_

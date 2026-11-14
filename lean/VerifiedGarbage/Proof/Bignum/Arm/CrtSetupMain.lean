@@ -30,7 +30,7 @@ theorem crt_links_layout {m m' : Mem} {base : BitVec 32} {len w : Nat}
   refine ⟨h.layout.1, h.layout.2.1, h.layout.2.2.1, ?_⟩
   intro j hj
   change VG.Proof.Mont.word m' (State.addr base) (8 * (8 + j)) = _
-  rw [outside.word (by omega) (by omega)]
+  rw [outside.word (by omega_using [hj]) (by omega_using [hj])]
   exact h.layout.2.2.2 j hj
 
 theorem crt_setupMain_ok (s : State) {base : BitVec 32} {len w : Nat}
@@ -44,7 +44,7 @@ theorem crt_setupMain_ok (s : State) {base : BitVec 32} {len w : Nat}
   rintro u ⟨layoutU, widthU, ptrU, frameU, restU⟩
   have stateU : CrtLayoutState base len w u.mem := ⟨layoutU, widthU⟩
   have wsU := ws.congr restU.wr
-  refine WP.mono (crt_links_ok u wsU (by have := stateU.size; omega) ptrU (stateU.nativeCount wsU)) ?_
+  refine WP.mono (crt_links_ok u wsU (by have := stateU.size; omega_using [this]) ptrU (stateU.nativeCount wsU)) ?_
   rintro t ⟨memT, restT⟩
   have result := crtLinkMem_ok u.mem (State.addr base)
     (base + BitVec.ofNat 32 (pOffset w)) (base + BitVec.ofNat 32 (qOffset w))
@@ -53,7 +53,7 @@ theorem crt_setupMain_ok (s : State) {base : BitVec 32} {len w : Nat}
   dsimp only at result
   rw [← memT] at result
   obtain ⟨p, q, product, compare, modulus, outside⟩ := result
-  have frameT := outside_workspace outside (size := 8 * len) (by have := stateU.size; omega)
+  have frameT := outside_workspace outside (size := 8 * len) (by have := stateU.size; omega_using [this])
   exact ⟨⟨crt_links_layout stateU outside, p, q, product, compare, modulus⟩,
     (restT.gpr .r0 (by decide)).trans ptrU, frameU.trans frameT,
     restU.trans (restT.mono (by decide))⟩

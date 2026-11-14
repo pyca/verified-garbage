@@ -80,13 +80,13 @@ theorem hash_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (hk.nextAt hc2 ha (scr_at L) (src := .caller 1 0) (len := .caller 2 0) (P := L.ctx)
     (N := L.ctxLen.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cx dx ax hL.nx hr2 hp2') fun t3 ⟨hc3, _, hr3, hp3⟩ => ?_)
-  have ex := hk.input_bytes hc2 rx (whole _) (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega)
+  have ex := hk.input_bytes hc2 rx (whole _) (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
   simp only at ex
   rw [ex] at hr3 hp3
   -- `R`.
   refine WP.seq (WP.mono (hk.nextAt hc3 ha (scr_at L) (src := .caller 5 0) (len := .const 57) (P := L.sig)
     (N := 57) ⟨by decide, by decide⟩ (valid_const (by decide)) (by simp [argVal, Lay.value]) rfl cs ds as
-    (by have := hL.ns; omega) hr3 hp3) fun t4 ⟨hc4, _, hr4, hp4⟩ => ?_)
+    (by have := hL.ns; omega_using [this]) hr3 hp3) fun t4 ⟨hc4, _, hr4, hp4⟩ => ?_)
   have es := hk.input_bytes hc3 rs ws (by change 57 ≤ 2 ^ 64; decide)
   simp only at es
   rw [es] at hr4 hp4
@@ -101,7 +101,7 @@ theorem hash_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (hk.nextAt hc5 ha (scr_at L) (src := .caller 3 0) (len := .caller 4 0) (P := L.msg)
     (N := L.len.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cm dm am hL.nm hr5 hp5) fun t6 ⟨hc6, _, hr6, hp6⟩ => ?_)
-  have em := hk.input_bytes hc5 rm (whole _) (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega)
+  have em := hk.input_bytes hc5 rm (whole _) (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
   simp only at em
   rw [em] at hr6 hp6
   -- Pad and squeeze.

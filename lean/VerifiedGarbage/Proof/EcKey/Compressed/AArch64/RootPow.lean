@@ -22,7 +22,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
  theorem rootTable_end (c : Cfg) : c.sl RX + 9 * (8 * c.n) = c.sl T0 := by
   rw [sl_eq c RX (by decide), sl_eq c T0 (by decide)]
   simp only [RX, T0]
-  omega
+  omega_using []
 
  theorem fixedOk_rootWrites {c : Cfg} (_hc : BaseCfgOk c) : FixedOk c (rootWrites c) := by
   intro w hw
@@ -41,7 +41,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
     simp only [rootSlots, ACC, TMP, RX, RY, RZ, DX, DY, DZ, TX, TY, TZ,
       List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
     change i < 14 ∨ 23 ≤ i
-    omega
+    omega_using [hw]
   intro w h
   simp only [rootWrites, List.mem_cons, List.not_mem_nil, or_false] at h
   rcases h with rfl | rfl | rfl
@@ -52,8 +52,8 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
     · exact .inr (by
         rw [sl_eq c T0 (by decide), sl_eq c i ht]
         have := Nat.mul_le_mul_left (8 * c.n) h
-        omega)
-  · exact sl_apart c ht (.inl ht) (.inr (by omega))
+        omega_using [this])
+  · exact sl_apart c ht (.inl ht) (.inr (by omega_using [_hi]))
 
  theorem rootChain_lay {c : Cfg} (hc : BaseCfgOk c) (e : Nat) :
     ChainLay (rootChain c e) size := by
@@ -64,7 +64,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
     ?_, ?_, sl_apart c (i := ACC) (j := TMP) (by decide), sl_apart c (i := W2) (j := TMP) (by decide),
     ?_, ?_, sl_apart c (i := W2) (j := MP) (by decide)⟩
   · change c.sl RX + 9 * (8 * c.n) ≤ size
-    rw [rootTable_end]; have := sl_le c hc.n10 (i := T0) (by decide); omega
+    rw [rootTable_end]; have := sl_le c hc.n10 (i := T0) (by decide); omega_using [this]
   · exact .inr (by change c.sl RX + 9 * (8 * c.n) ≤ c.sl ACC; rw [rootTable_end]; exact Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide : T0 < ACC)))
   · exact .inr (by change c.sl RX + 9 * (8 * c.n) ≤ c.sl W2; rw [rootTable_end]; exact Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide : T0 < W2)))
   · change c.sl RX + 9 * (8 * c.n) ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ c.sl RX
@@ -74,7 +74,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
       left
       rw [sl_eq c T0 (by decide)]
       simp only [T0, VG.Impl.Weierstrass.AArch64.Mont.moAt]
-      have := hc.n10; omega
+      have := hc.n10; omega_using [hh]
     · have ht : c.sl TMP = 64 + 8 * c.n * TMP := by
         unfold Cfg.sl
         rw [ite_eq_right (fun h => hh h.2)]
@@ -82,7 +82,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
       rw [ht]
       right
       rw [sl_eq c RX (by decide)]
-      simp only [TMP, RX]; omega
+      simp only [TMP, RX]; omega_using []
   · intro w hw
     change w ∈ [(c.sl ACC, 8 * c.n), (c.sl RX, 9 * (8 * c.n)), (c.sl TMP, 8 * c.n)] at hw
     exact apart_rootWrites hc (i := MP) (by decide) (by decide) w hw

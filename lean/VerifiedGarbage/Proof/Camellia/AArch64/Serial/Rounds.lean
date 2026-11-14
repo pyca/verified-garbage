@@ -28,7 +28,7 @@ theorem pair_run (s : State) (k : Nat) (hk : k+1 < 34)
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   obtain ⟨u,ue,uv,uc,um,ut,ug,umem,urd,uwr,usp⟩ :=
-    f_run (a := .x6) (b := .x7) (Or.inl rfl) (Or.inr rfl) (by omega) hc hm ht (hr k (by omega))
+    f_run (a := .x6) (b := .x7) (Or.inl rfl) (Or.inr rfl) (by omega_using [hk]) hc hm ht (hr k (by omega_using [hk]))
   have ur : InRegions (u.rd ++ u.wr) (u.gpr .x5 + BitVec.ofNat 64 (256+8*(k+1))) 8 := by
     rw [urd,uwr,ug .x5 (by decide) (by decide)]
     exact hr (k+1) hk
@@ -67,12 +67,12 @@ theorem pairs_run (s : State) (k n : Nat) (hk : k+2*n ≤ 34)
   induction n with
   | zero => exact ⟨s,rfl,rfl,hc,hm,ht,fun _ _ => rfl,rfl,rfl,rfl,rfl⟩
   | succ n ih =>
-    obtain ⟨u,ue,uv,uc,um,ut,ug,umem,urd,uwr,usp⟩ := ih (by omega)
+    obtain ⟨u,ue,uv,uc,um,ut,ug,umem,urd,uwr,usp⟩ := ih (by omega_using [hk])
     have ur : ∀ j < 34, InRegions (u.rd ++ u.wr) (u.gpr .x5 + BitVec.ofNat 64 (256+8*j)) 8 := by
       intro j hj
       rw [urd,uwr,ug .x5 (by decide)]
       exact hr j hj
-    obtain ⟨v,ve,vv,vc,vm,vt,vg,vmem,vrd,vwr,vsp⟩ := pair_run u (k+2*n) (by omega) uc um ut ur
+    obtain ⟨v,ve,vv,vc,vm,vt,vg,vmem,vrd,vwr,vsp⟩ := pair_run u (k+2*n) (by omega_using [hk]) uc um ut ur
     refine ⟨v,?_,?_,vc,vm,vt,fun r h => (vg r h).trans (ug r h),
       vmem.trans umem,vrd.trans urd,vwr.trans uwr,vsp.trans usp⟩
     · rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,
@@ -100,7 +100,7 @@ theorem flPair_run (s : State) (k : Nat) (hk : k+1 < 34)
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   obtain ⟨u,ue,uv,ug,umem,urd,uwr,usp,uvec⟩ :=
-    fl_run false (r := .x6) (Or.inl rfl) (by omega) (hr k (by omega))
+    fl_run false (r := .x6) (Or.inl rfl) (by omega_using [hk]) (hr k (by omega_using [hk]))
   have ur : InRegions (u.rd ++ u.wr) (u.gpr .x5 + BitVec.ofNat 64 (256+8*(k+1))) 8 := by
     rw [urd,uwr,ug .x5 (by decide) (by decide)]
     exact hr (k+1) hk

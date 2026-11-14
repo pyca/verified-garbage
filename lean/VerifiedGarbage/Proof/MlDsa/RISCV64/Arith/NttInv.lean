@@ -211,7 +211,7 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
     have ez : negZetaTab (2 * nb - 1 - c) = (-zetas (2 * nb - 1 - c)).val := negZetaNat_eq _
     rw [h.env.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj.symm)
       (by decide), hm.tab _ hk, hdiv, ez, setWidth64_ofNat (by have := val_lt (-zetas (2 * nb - 1 - c)); omega_arith)]
-  refine WP.seq (WP.mono (bpre_ok ho h.a1 h.a2 (h.env.inRS hp cS) (align4_add (by have := hp.alS; omega) _))
+  refine WP.seq (WP.mono (bpre_ok ho h.a1 h.a2 (h.env.inRS hp cS) (align4_add (by have := hp.alS; omega_using [this]) _))
     fun s₁ ⟨r7, r4, r6, r5, r3, r8, r9, r12, kp, m, rd, wr, sp⟩ => WP.seq ?_)
   have h₁ : FInv s₀ m₁ (VG.Proof.MlDsa.Arith.Lazy.layF iblk Q len (fun c => 256 / len - 1 - c) c) len
       (256 / len - 1 - c) (2 * len * c) 0 s₁ := by
@@ -317,12 +317,12 @@ theorem layers_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m
     ∀ j ℓ, ℓ + j = 8 → ∀ s, LInv s₀ m₁ ℓ s →
       WP isa (layers nttInvLayerCode (nttOffs.reverse.drop ℓ)) s (LInv s₀ m₁ 8)
   | 0, ℓ, h, s, hs => by
-    obtain rfl : ℓ = 8 := by omega
+    obtain rfl : ℓ = 8 := by omega_using [h]
     exact WP.block_nil hs
   | j + 1, ℓ, h, s, hs => by
-    have hℓ : ℓ < 8 := by omega
+    have hℓ : ℓ < 8 := by omega_using [h]
     rw [(layer_facts ℓ hℓ).2.2.2.2.2.2.2]
-    exact WP.seq (WP.mono (lstep hp hm hℓ hs) fun s' h' => layers_ok hp hm j (ℓ + 1) (by omega) s' h')
+    exact WP.seq (WP.mono (lstep hp hm hℓ hs) fun s' h' => layers_ok hp hm j (ℓ + 1) (by omega_using [h]) s' h')
 
 /-! ## The scaling by `256⁻¹` -/
 
@@ -358,8 +358,8 @@ theorem scale_store (x : VG.Proof.MlDsa.Arith.Lazy.Word) :
   have hx := x.isLt
   have hq : x.val * 8347681 % q < 2 ^ 32 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
   have hw : (w64 x * BitVec.ofNat 64 8347681).toNat = x.val * 8347681 := by
-    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+      Nat.mod_eq_of_lt (by omega_using [])]
   rw [BitVec.toNat_setWidth, red_toNat, hw, Fin.val_ofNat, Nat.mod_eq_of_lt hq]
 
 /-- Words less than `256 q`, each multiplied by `8347681` and reduced. -/
@@ -436,7 +436,7 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
     rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_arith)⟩
   have a8 : (s₀.gpr .a1).toNat % 8 = 0 := hp.alS
   refine WP.mono (table_ok negZetaTab negZetaTab_lt (b := .a1) (by decide) rfl
-    (by omega) fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
+    (by omega_using [a8]) fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
   have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
     refine h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     rw [List.mem_singleton] at hr; subst hr

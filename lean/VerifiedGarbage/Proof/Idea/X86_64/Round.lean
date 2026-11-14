@@ -161,7 +161,7 @@ theorem key_at {z : Spec.Idea.Schedule} {s : State} (hk : KeyOk z s) (j i : Nat)
     InRegions (s.rd ++ s.wr) (s.ea (at_ .rdi (12 * j + 2 * i))) 8 ∧
       (s.mem.readW (s.ea (at_ .rdi (12 * j + 2 * i))) 64).setWidth 16 = z.getD (6 * j + i) 0 := by
   have := hk.low (6 * j + i) h
-  rwa [show 2 * (6 * j + i) = 12 * j + 2 * i by omega] at this
+  rwa [show 2 * (6 * j + i) = 12 * j + 2 * i by omega_using []] at this
 
 theorem round_run (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea.State)
     (s : State) (hx : Holds x s) (hk : KeyOk z s) :
@@ -169,35 +169,35 @@ theorem round_run (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea
       Holds (Spec.Idea.round (z.getD (6 * j) 0) (z.getD (6 * j + 1) 0) (z.getD (6 * j + 2) 0)
         (z.getD (6 * j + 3) 0) (z.getD (6 * j + 4) 0) (z.getD (6 * j + 5) 0) x) s' ∧
       Keep roundWrites s s' := by
-  have k0 := key_at hk j 0 (by omega)
+  have k0 := key_at hk j 0 (by omega_using [hj])
   simp only [Nat.mul_zero, Nat.add_zero] at k0
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mulKey_run .r8 (12 * j) s k0.1
   rw [hx.r8, setWidth_setWidth16, k0.2] at v₁
   have hk₁ := hk.keep e₁ (by decide)
-  have k3 := key_at hk₁ j 3 (by omega)
+  have k3 := key_at hk₁ j 3 (by omega_using [hj])
   simp only [Nat.reduceMul] at k3
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mulKey_run .r11 (12 * j + 6) s₁ k3.1
   rw [e₁.reg .r11 (by decide), hx.r11, setWidth_setWidth16, k3.2] at v₂
   have hk₂ := hk₁.keep e₂ (by decide)
-  have k1 := key_at hk₂ j 1 (by omega)
+  have k1 := key_at hk₂ j 1 (by omega_using [hj])
   simp only [Nat.mul_one] at k1
   obtain ⟨s₃, h₃, v₃, e₃⟩ := addKey_run (r := .r9) (by decide) (12 * j + 2) s₂ (x.getD 1 0)
     ((e₂.reg .r9 (by decide)).trans ((e₁.reg .r9 (by decide)).trans hx.r9)) k1.1
   rw [k1.2] at v₃
   have hk₃ := hk₂.keep e₃ (by decide)
-  have k2 := key_at hk₃ j 2 (by omega)
+  have k2 := key_at hk₃ j 2 (by omega_using [hj])
   simp only [Nat.reduceMul] at k2
   obtain ⟨s₄, h₄, v₄, e₄⟩ := addKey_run (r := .r10) (by decide) (12 * j + 4) s₃ (x.getD 2 0)
     ((e₃.reg .r10 (by decide)).trans ((e₂.reg .r10 (by decide)).trans
       ((e₁.reg .r10 (by decide)).trans hx.r10))) k2.1
   rw [k2.2] at v₄
   have hk₄ := hk₃.keep e₄ (by decide)
-  have k4 := key_at hk₄ j 4 (by omega)
+  have k4 := key_at hk₄ j 4 (by omega_using [hj])
   simp only [Nat.reduceMul] at k4
   obtain ⟨s₅, h₅, a₅, d₅, e₅⟩ := p5_run s₄ (12 * j + 8) k4.1
   obtain ⟨s₆, h₆, v₆, e₆⟩ := mul_run s₅
   have hk₆ := (hk₄.keep e₅ (by decide)).keep e₆ (by decide)
-  have k5 := key_at hk₆ j 5 (by omega)
+  have k5 := key_at hk₆ j 5 (by omega_using [hj])
   simp only [Nat.reduceMul] at k5
   obtain ⟨s₇, h₇, b₇, a₇, d₇, e₇⟩ := p6_run s₆ (12 * j + 10) k5.1
   obtain ⟨s₈, h₈, v₈, e₈⟩ := mul_run s₇

@@ -31,7 +31,7 @@ theorem gblk_val (s : State) (j : Nat) : val (gblk s j) = mv (gbytes s j) := by
   rfl
 
 theorem val_add (a b : Nat → Nat) : val (fun i => a i + b i) = val a + val b := by
-  simp only [val]; omega
+  simp only [val]; omega_using []
 
 theorem val_congr {a b : Nat → Nat} (h : ∀ i < 5, a i = b i) : val a = val b := by
   simp only [val, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide), h 4 (by decide)]
@@ -40,7 +40,7 @@ theorem gprod_mod (H : Nat → Nat) (y : Nat → Nat → Nat) (b : Nat → Nat �
     val (gprod H y b e) ≡ val (b (2 + e)) * val (y (2 + e)) + (val H + val (b e)) * val (y e) [MOD P] := by
   have h : val (gprod H y b e) = val (Pair.prod (b (2 + e)) (y (2 + e))) +
       val (Pair.prod (fun i => H i + b e i) (y e)) := by
-    simp only [val, gprod]; omega
+    simp only [val, gprod]; omega_using []
   rw [h, ← val_add H (b e)]
   exact (Pair.prod_mod _ _).add (Pair.prod_mod _ _)
 

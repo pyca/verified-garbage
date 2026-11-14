@@ -79,7 +79,7 @@ theorem reload_ok {s t : State} (hm : Mid s t) :
   unfold reload ld
   have rsl : ∀ {u : State} {d : Nat}, u.sp = fb s → u.rd = s.rd → u.wr = ⟨fb s, frameBytes⟩ :: s.wr →
       d + 8 ≤ frameBytes → InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 d) 8 := fun hsp hrd hwr hd => by
-    rw [hsp, hrd, hwr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ hd (by unfold frameBytes at hd; omega)))
+    rw [hsp, hrd, hwr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])))
   refine wp_ldrSp (by decide) (rsl hm.sp hm.rd hm.wr (by decide)) fun u₁ o₁ e₁ => ?_
   refine wp_ldrSp (by decide) (rsl (o₁.sp.trans hm.sp) (o₁.rd.trans hm.rd) (o₁.wr.trans hm.wr) (by decide))
     fun u₂ o₂ e₂ => wp_nil ?_
@@ -114,13 +114,13 @@ structure AtCallP (K : Nat) (s : State) (em : List Byte) (t : State) : Prop exte
 writes. -/
 theorem argP_frameW {K : Nat} {s : State} (hx : PreXS K s) {m : Mem}
     (h : Frame (wrS K s) s.mem m) {j : Nat} (hj : j < 18) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
-  h.readW (r := aR2 s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by have := hx.sp3; omega))
+  h.readW (r := aR2 s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by have := hx.sp3; omega_using [hj]))
     (wrS_disj hx.ka hx.sa.symm) (by decide)
 
 theorem argP_in {K : Nat} {s : State} (hx : PreXS K s) {rs : List Region} (hrd : Covers s.rd rs) {j : Nat}
     (hj : j < 18) : InRegions rs (stackArgAddr s j) 8 :=
   hrd _ _ <| hx.rd _ _ ⟨aR2 s, by simp, by
-    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by have := hx.sp3; omega)⟩
+    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by have := hx.sp3; omega_using [hj])⟩
 
 /-- `x19` and `x20` restored, and `pre` and `pre_len` in their slots. -/
 theorem preArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH tsG K s) (hx : PreXS K s)
@@ -129,7 +129,7 @@ theorem preArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS t
   simp only [List.cons_append, List.nil_append]
   have rsl : ∀ {u : State} {d : Nat}, u.sp = fb s → u.rd = s.rd → u.wr = ⟨fb s, frameBytes⟩ :: s.wr →
       d + 8 ≤ frameBytes → InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 d) 8 := fun hsp hrd hwr hd => by
-    rw [hsp, hrd, hwr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ hd (by unfold frameBytes at hd; omega)))
+    rw [hsp, hrd, hwr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])))
   have hA : ∀ {u : State} (j : Nat), j < 18 → u.sp = fb s → u.rd = s.rd → u.wr = ⟨fb s, frameBytes⟩ :: s.wr →
       InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (frameBytes + 8 * j)) 8 := fun j hj hsp hrd hwr => by
     rw [hsp, hrd, ← stackArgAddr_fb]
@@ -168,7 +168,7 @@ theorem preArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS t
     rw [mem₅]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ c96
   have c17 : (aR2 s).Contains (stackArgAddr s 17) 8 := by
     rw [stackArgAddr_eq s 17]
-    exact Offset.contains_base _ (by decide) (by have := hx.sp3; omega)
+    exact Offset.contains_base _ (by decide) (by have := hx.sp3; omega_using [])
   have m17 : u₅.mem.readW (stackArgAddr s 17) 64 = stackArg s 17 := by
     rw [f5.readW c17 (fun r hr => by rw [List.mem_singleton.mp hr]; exact dA) (by decide)]
     exact argP_frameW hx ha.mem (by decide)
@@ -187,7 +187,7 @@ theorem preArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS t
       u₈.mem.readW (fb s + BitVec.ofNat 64 d) 64 = t.mem.readW (fb s + BitVec.ofNat 64 d) 64 := fun hd hd' =>
     fW.readW (r := ⟨fb s + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (by omega) (by unfold frameBytes at hd'; omega) (by decide)) (by decide)
+      exact Offset.disjoint _ (by omega_using [hd]) (by unfold frameBytes at hd'; omega_using [hd']) (by decide)) (by decide)
   have gO : ∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x9 → r ≠ .x16 → u₈.gpr r = t.gpr r := fun r h1 h2 h3 h4 => by
     rw [m₈.gpr, o₇.gpr r (by simpa using h4), o₆.gpr r (by simpa using h3), m₅.gpr, o₄.gpr r (by simpa using h4),
       o₃.gpr r (by simpa using h3), o₂.gpr r (by simpa using h2), o₁.gpr r (by simpa using h1)]
@@ -221,11 +221,11 @@ theorem preArgs_ok {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS t
     sv := fun p hp' => (by
       have := saved_offs p (List.mem_of_mem_drop hp')
       have h112 : 112 ≤ p.2 := (show ∀ q ∈ saved.drop 2, 112 ≤ q.2 by decide) p hp'
-      rw [r96 (.inr h112) (by unfold frameBytes; omega)]
+      rw [r96 (.inr h112) (by unfold frameBytes; omega_using [this])]
       exact ha.fr.sv p (List.mem_of_mem_drop hp'))
     em := ?_ }
   · show u₈.mem.readW (u₈.sp + BitVec.ofNat 64 (8 * i)) 64 = _
-    rw [sp₈, r96 (.inl (by omega)) (by unfold frameBytes; omega)]
+    rw [sp₈, r96 (.inl (by omega_using [hi])) (by unfold frameBytes; omega_using [hi])]
     have := ha.args i hi
     simp only [stackArg, stackArgAddr, ha.sp] at this
     exact this
@@ -254,7 +254,7 @@ theorem prl_le {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreS tsH tsG
   rw [hx.prl]
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.primeWords,
     Spec.Rsa.modulusWords]
-  omega
+  omega_arith
 
 theorem privPOk_ofP (c : PrivPChecked) {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH tsG K s)
     (hx : PreXS K s) (hcK : c.stack ≤ K) {em : List Byte} (ha : AtCallP K s em t) : PrivPOk c.stack t := by
@@ -279,14 +279,14 @@ theorem privPOk_ofP (c : PrivPChecked) {tsH tsG : List FnTable} {K : Nat} {s t :
   have f112 : Region.Sub ⟨fb s, 112⟩ (kR K s) := by
     have := frame_sub K s (d := 0) (n := 112) (by decide); rwa [BitVec.add_zero] at this
   have hP : preR t = prR s := by simp only [preR, ha.pre, ha.prl]
-  have hw : 8 * (stackArg s 17).toNat < 2 ^ 64 := by have := prl_le hp hx; omega
+  have hw : 8 * (stackArg s 17).toNat < 2 ^ 64 := by have := prl_le hp hx; omega_using [this]
   have hpre : Spec.Rsa.wordsAt t.mem (stackArg s 16) (stackArg s 17).toNat =
       Spec.Rsa.wordsAt s.mem (stackArg s 16) (stackArg s 17).toNat :=
     VG.Proof.Rsa.wordsAt_frame ha.mem hw (wrS_disj (by rw [Nat.mul_comm]; exact hx.kpr)
       (by rw [Nat.mul_comm]; exact hx.spr.symm))
   have hl : ∀ {p : Addr} {len : Nat}, p.toNat + len ≤ 2 ^ 64 → len ≤ 2 ^ 64 := fun h => by omega_using [h]
   refine ⟨privOk_of c hp hcK ha.toCallArgs, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [ha.sp]; have := hfb; unfold frameBytes at this; omega
+  · rw [ha.sp]; have := hfb; unfold frameBytes at this; omega_using [this]
   · rw [ha.x0, ha.x1, ha.sp, hO]; exact (hp.ko.sub_left f112).symm
   · rw [a10, a11, ha.sp]; exact (hp.ks.sub_left f112).symm.sub_left (sc_sub hp)
   · rw [ha.sp]; exact (Offset.base_disjoint_below (fb s) (n := c.stack) (k := 112) (by omega_using [hcl])).symm
@@ -375,11 +375,11 @@ theorem mainP_ok {s u : State} (hp : PreS tsH tsG K s) (hx : PreXS K s) {i : Nat
       Spec.Rsa.writtenOutcome t.mem (s.gpr .x0) (s.gpr .x3).toNat ((t.gpr .x0).setWidth 32) (signOut Hs Gs s) := by
   have hk1 := hp.k1
   obtain ⟨heb1, heb2, hlok, -⟩ := eb_bounds hp h0
-  have hsign := signOut_enc Hs Gs (s := s) (by omega) h0
+  have hsign := signOut_enc Hs Gs (s := s) (by omega_using [hk1]) h0
   unfold seqs seqs
   refine WP.seq (WP.mono_syms (args_ok hp h0 hu) fun t ht sy => ?_)
-  refine WP.seq (byIdx_wp E.mem (fun j hj => by unfold idxs at hj; simp at hj; omega) (ht.x27.trans E.idx)
-    fun t' o sy' => WP.mono (encCall_ok hp h624 E (ht.only9 o) (by rw [sy', sy, hsy]) (by omega) rfl heb1 heb2)
+  refine WP.seq (byIdx_wp E.mem (fun j hj => by unfold idxs at hj; simp at hj; omega_using [hj]) (ht.x27.trans E.idx)
+    fun t' o sy' => WP.mono (encCall_ok hp h624 E (ht.only9 o) (by rw [sy', sy, hsy]) (by omega_using [hlok]) rfl heb1 heb2)
       fun t₂ ht₂ => ?_)
   unfold seqs
   have M₂ : Mid s t₂ := ⟨ht₂.sp, ht₂.rd, ht₂.wr, ht₂.v, ht₂.fr⟩
@@ -416,10 +416,10 @@ theorem bodyP_ok {s u : State} (hp : PreS tsH tsG K s) (hx : PreXS K s) {i : Nat
       rw [hx10, beq_iff_eq] at hb
       apply BitVec.eq_of_toNat_eq
       have := congrArg BitVec.toNat hb
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .x2)).isLt; omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .x2)).isLt; omega_using [])] at this
       exact this
     exact WP.mono (failP_ok hp ⟨hu.sp, hu.rd, hu.wr, hu.v, hu.fr⟩ hu.x23) fun t ⟨m, r⟩ =>
-      ⟨m, by rw [signOut_zero Hs Gs (by omega) h0]; exact r⟩
+      ⟨m, by rw [signOut_zero Hs Gs (by omega_using [hk1]) h0]; exact r⟩
   have h0 : s.mem (s.gpr .x2) ≠ 0 := fun h => by rw [hx10, h] at hb; exact absurd hb (by decide)
   exact mainP_ok c h624 hcK hp hx E hu hsy h0
 
@@ -428,7 +428,7 @@ theorem codeP_ok {s : State} (hp : PreS tsH tsG K s) (hx : PreXS K s) {i : Nat} 
     (E : ESel f g tsH tsG s i T Hs Gs) :
     WP isa (signCP f g c.name c.code) s (Post Hs Gs s) := by
   unfold signCP
-  refine WP.alloc (by decide) (by have := fb_toNat hp; omega) ?_
+  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold signCBodyP seqs seqs seqs
   refine WP.seq (WP.mono_syms (prologue_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu sy => ?_)

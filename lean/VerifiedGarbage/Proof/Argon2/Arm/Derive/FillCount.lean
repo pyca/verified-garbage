@@ -47,8 +47,8 @@ theorem mask_sub (p : Prop) [Decidable p] {x : BitVec 32} (hx : x = 1) :
 theorem add_allOnes {x : Nat} (h : 1 ≤ x) (h' : x < 2 ^ 32) :
     BitVec.ofNat 32 x + BitVec.allOnes 32 = BitVec.ofNat 32 (x - 1) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_add, toNat32 h', toNat32 (by omega), BitVec.toNat_allOnes]
-  omega
+  rw [BitVec.toNat_add, toNat32 h', toNat32 (by omega_using [h']), BitVec.toNat_allOnes]
+  omega_using [h, h']
 
 theorem ofNat_eq_zero {n : Nat} (h : n < 2 ^ 32) : BitVec.ofNat 32 n = 0 ↔ n = 0 := by
   constructor
@@ -121,14 +121,14 @@ theorem countSelect_ok {s : State} {pass slice lane index ctr : Nat} {st : FillS
       upd_get u₉, upd_get u₈, upd_get u₇, upd_get u₆, upd_get u₅, upd_get u₄, upd_get u₃, upd_get u₂, upd_get u₁, ↓reduceIte, reduceCtorEq]
   have val : s₂₀.gpr .r0 = BitVec.ofNat 32 (countV base index (rl == lane)) := by
     rw [v, mi, ml, h.fs.pos.index, ha, nz, nz, mask_sub _ rfl, mask_sub _ rfl, sel, countV]
-    simp only [ofNat_eq_zero (show index < 2 ^ 32 by omega), xor_eq_zero (show rl < 2 ^ 32 by omega)
-      (show lane < 2 ^ 32 by omega)]
+    simp only [ofNat_eq_zero (show index < 2 ^ 32 by omega_using [hi, sl]), xor_eq_zero (show rl < 2 ^ 32 by omega_using [hrl, lt])
+      (show lane < 2 ^ 32 by omega_using [hl, lt])]
     by_cases hs : rl = lane
     · simp only [hs, ite_true, show (lane == lane) = true from beq_self_eq_true lane]
       rw [BitVec.ofNat_add_ofNat, ofNat_pred (hsame hs) rfl]
     · simp only [hs, ite_false, show (rl == lane) = false from beq_eq_false_iff_ne.mpr hs, Bool.false_eq_true]
       by_cases hi0 : index = 0
-      · rw [ite_eq_left hi0, ite_eq_left hi0, add_allOnes (hother hs hi0) (by omega)]
+      · rw [ite_eq_left hi0, ite_eq_left hi0, add_allOnes (hother hs hi0) (by omega_using [hb])]
       · rw [ite_eq_right hi0, ite_eq_right hi0, Nat.sub_zero]
         exact BitVec.add_zero _
   refine wp_stloc hp h₂₀.fs.inv (d := countOff) (by decide) fun t it vt ot gt mt => k t ?_ (by rw [gt, val])

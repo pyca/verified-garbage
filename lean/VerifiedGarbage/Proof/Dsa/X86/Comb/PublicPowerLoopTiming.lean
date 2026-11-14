@@ -36,14 +36,14 @@ theorem publicPowerLoop_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m g
       simp only [VG.X86.eval,Zs,Zt]
     · intro hc
       have next : i+1<rows e := by
-        have le : i+1≤rows e := by omega
+        have le : i+1≤rows e := by omega_using [hi]
         by_contra hn
         have eq : i+1=rows e := by omega
         change VG.X86.eval .ne sf=some true at hc
         simp only [VG.X86.eval,Zs,eq,decide_true,Option.map_some,Bool.not_true] at hc
         cases hc
-      exact ⟨rows e-(i+1),by omega,i+1,rfl,next,S',T'⟩
+      exact ⟨rows e-(i+1),by omega_using [hi],i+1,rfl,next,S',T'⟩
   · intro s t ⟨S,T⟩
-    exact ⟨0,by omega,(power_bounds h).1,S,T⟩
+    exact ⟨0,by omega_using [],(power_bounds h).1,S,T⟩
 
 end VG.Proof.Dsa.X86.Comb

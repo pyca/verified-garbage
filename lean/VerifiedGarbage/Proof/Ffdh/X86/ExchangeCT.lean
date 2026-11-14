@@ -75,10 +75,10 @@ theorem front_trace :
   · have G := A.dom
     have dl := G.dl
     have fit := G.fit
-    refine WP.mono (pSetup_ok A.run.1 G.e3 (by omega)
-      (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+    refine WP.mono (pSetup_ok A.run.1 G.e3 (by omega_using [dl, fit])
+      (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_using [dl]) (by omega_using [fit])
           rwa [BitVec.add_zero] at this)
-      (G.apart.sub_left (Region.sub_prefix (by omega))))
+      (G.apart.sub_left (Region.sub_prefix (by omega_using [dl]))))
       fun u ⟨I, F, _, _, _, _, K⟩ => run_step A.run ⟨I, F, K⟩
   · refine VG.RelCT.seq ctxP_relCT ?_
     exact RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) loads_check
@@ -88,7 +88,7 @@ theorem body_relCT :
   by_cases hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024
   swap
   · refine VG.RelCT.of_false fun s₁ _ h => hx ⟨h.1.x.e11, h.1.x.pos, ?_⟩
-    have := h.1.x.le; have := h.1.run.1.upper'; omega
+    have := h.1.x.le; have := h.1.run.1.upper'; omega_arith
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
@@ -101,8 +101,8 @@ theorem body_relCT :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl
     · rw [one]; exact hM
-    · rw [R2]; exact Nat.mod_lt _ (by omega)
-  · exact VG.RelCT.seq (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega) (by omega) CheckPrivate.count_check
+    · rw [R2]; exact Nat.mod_lt _ (by omega_using [hM])
+  · exact VG.RelCT.seq (windowPowerWith_relCT (winChecks .wide) (N := 2 * xl) (by omega_using [hx]) (by omega_using [hx]) CheckPrivate.count_check
       fun _ W => lenCount_wst (by decide) hx.1 W)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
@@ -115,7 +115,7 @@ theorem pub_facts {s t : State} (H : (Spec.Ffdh.exchangeContract abi stack).pub 
   sig_pub [Spec.Ffdh.exchangeContract, Spec.Ffdh.exchangeSig, abi, argSlots, argVal, argBytes] at H
   obtain ⟨SP, _, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10⟩ := H
   refine ⟨SP, fun i hi => ?_⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact a0
   · exact a1
@@ -146,7 +146,7 @@ theorem exAt_of {s f : State} (A : ExchangeABI s) (Bf : BodyAt (Rd s) Impl.Ffdh.
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [outR s]) fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact A.belowOut.sub_left (by rw [FA]; exact Offset.sub_below _ (by decide) (by decide)), Bf.2.1⟩,

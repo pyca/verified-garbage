@@ -670,8 +670,8 @@ theorem FX.top {p : R2Pub} {s : State} (h : FX p s) :
     have hP := Nat.two_pow_pos (64 * (p.L.w - 1))
     have := Nat.mod_lt p.N hP
     rw [Nat.div_eq_of_lt_le (k := (word s.mem p.L.B (slot p.L.w aN + 8 * (p.L.w - 1))).toNat) ?_ ?_]
-    · rw [Nat.mul_comm]; omega
-    · rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]; omega
+    · rw [Nat.mul_comm]; omega_using [hsplit]
+    · rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]; omega_using [hsplit]
   apply BitVec.eq_of_toNat_eq
   rw [hT, BitVec.toNat_ofNat, topW, Nat.mod_mod]
   exact (Nat.mod_eq_of_lt (hT ▸ BitVec.isLt _)).symm

@@ -43,12 +43,12 @@ theorem reduceHead_ok {p : CallReducePublic} {s : State} {a output : Operand}
     (h : CallReducePre a output p s) :
     WP isa (.block (reduceHead a output)) s (ReduceFinishPre p.toReduceFinishPublic) := by
   obtain ⟨hg, child, ⟨ba, has, hbl⟩, hp, hop, hol, hout, hprefix⟩ := h
-  have h256 : 256 ≤ slot p.bytes.x.w 8 := by unfold slot hdrBytes; omega
+  have h256 : 256 ≤ slot p.bytes.x.w 8 := by unfold slot hdrBytes; omega_using []
   have hlo := p.childLow
   have hhi := p.childHigh
   unfold reduceHead
   rw [WP.block_append_iff]
-  refine WP.mono (arguments2_ok hg child p.extent (by omega) (by omega) a output ha ho)
+  refine WP.mono (arguments2_ok hg child p.extent (by omega_using [h256, hlo]) (by omega_using [hhi]) a output ha ho)
     fun u ⟨hgu, hcu, hargs, _, hf, hk⟩ => ?_
   rw [← p.offset]
   refine WP.mono (enter_ok hgu hcu.header p.childLow p.childHigh (by rw [p.offset]; decide))

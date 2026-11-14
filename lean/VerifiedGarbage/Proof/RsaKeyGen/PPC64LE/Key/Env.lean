@@ -51,7 +51,7 @@ def upd (V : Nat → Nat) (j v : Nat) : Nat → Nat := fun i => if i = j then v 
 
 theorem upd_ne {V : Nat → Nat} {j v i : Nat} (h : i ≠ j) : upd V j v i = V i := by simp [upd, h]
 
-theorem flag01 (c : Prop) [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by split <;> omega
+theorem flag01 (c : Prop) [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by split <;> omega_using []
 
 /-- A selection under a flag of a condition. -/
 theorem sel_flag (c : Prop) [Decidable c] (a b : Nat) :
@@ -124,7 +124,7 @@ theorem KS.step {m m' : Mem} {B : Addr} {w : Nat} {V F : Nat → Nat} (h : KS m 
     · exact hdv hm
     · rw [← h.dv]
       have hf := fit aDv (by decide)
-      exact k.word (i := w) (by simp only [S]; omega) (fun x hx e => hm (e ▸ hx)) hds hf
+      exact k.word (i := w) (by simp only [S]; omega_using []) (fun x hx e => hm (e ▸ hx)) hds hf
 
 theorem arr_mem {o : Nat} (ho : o < nArr) : ∀ j ∈ [o], j ∈ allArrs := by
   intro j hj
@@ -158,9 +158,9 @@ theorem subW_neg {w x y : Nat} (hy : y < 2 ^ (32 * w)) :
   unfold subW
   rcases Nat.eq_zero_or_pos y with rfl | hy0
   · simp only [Nat.zero_add, Nat.sub_zero, Nat.mod_self, Nat.add_zero, Nat.add_mod_right]
-  · rw [show 0 + 2 ^ (32 * w) - y = 2 ^ (32 * w) - y by omega,
+  · rw [show 0 + 2 ^ (32 * w) - y = 2 ^ (32 * w) - y by omega_using [],
       Nat.mod_eq_of_lt (Nat.sub_lt (Nat.two_pow_pos _) hy0),
-      show x + 2 ^ (32 * w) - (2 ^ (32 * w) - y) = x + y by omega]
+      show x + 2 ^ (32 * w) - (2 ^ (32 * w) - y) = x + y by omega_using [hy]]
 
 /-! ## The routines on values -/
 
@@ -272,7 +272,7 @@ theorem halfE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j c : Nat} (hj : j 
     WP isa (half j) s fun t => Ws t B Z w nArr ∧
       KS t.mem B w (upd V j ((V j + 2 ^ (32 * w) * c) / 2)) F ∧ KK B w s.mem t.mem ∧
       Keep opsRegs s t := by
-  refine WP.mono (half_ok h hj nArr_le (by omega)) fun t ⟨ht, kt, v, kr⟩ => ?_
+  refine WP.mono (half_ok h hj nArr_le (by omega_using [h9, hc])) fun t ⟨ht, kt, v, kr⟩ => ?_
   refine ⟨ht, ?_, KK.of kt (arr_mem hj) (by simp), kr.mono⟩
   refine ks.step kt (fit_of h) (fun i hi hn => ?_) (fun i hi => ?_) (fun _ _ _ => rfl)
     (fun d hd => by simp at hd) (fun hd => ?_)

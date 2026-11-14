@@ -97,7 +97,7 @@ theorem RowsPre.hl {ja : Nat} {p : RowsPub} {s : State} (h : RowsPre ja p s) :
   have h8 := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have h8p := hdr_lt_slot p.wp 8 (show 31 < 32 by decide)
   have h8q := hdr_lt_slot p.wq 8 (show 31 < 32 by decide)
-  exact ⟨fun i hi => hs.ld (by omega), fun i hi => hs.ld (by omega), fun i hi => hs.ld (by omega)⟩
+  exact ⟨fun i hi => hs.ld (by omega_using [hoq, h8q, hi]), fun i hi => hs.ld (by omega_using [hop, hoq, h8p, hi]), fun i hi => hs.ld (by omega_using [hoq, h8q, hi])⟩
 
 theorem RowsPre.keep {ja : Nat} {p : RowsPub} {s t : State} (h : RowsPre ja p s) (hm : t.mem = s.mem)
     {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : RowsPre ja p t := by

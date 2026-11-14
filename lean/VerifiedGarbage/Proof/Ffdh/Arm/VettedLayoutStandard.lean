@@ -11,12 +11,12 @@ open VG.Spec.RsaKeyGen (bitLength)
 
 private theorem byte_bitLength {n : Nat} (small : n < 256) : bitLength n ≤ 8 := by
   by_cases zero : n = 0
-  · simp only [zero, bitLength, ite_true]; omega
+  · simp only [zero, bitLength, ite_true]; omega_using []
   have lower := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds zero).1
   by_contra high
   have bound : 256 ≤ 2 ^ (bitLength n - 1) :=
     Nat.pow_le_pow_right (n := 2) (by decide) (show 8 ≤ bitLength n - 1 by omega)
-  omega
+  omega_using [small, lower, bound]
 
 private theorem byte_bitLength_zero {n : Nat} (zero : bitLength n = 0) : n = 0 := by
   unfold bitLength at zero
@@ -36,10 +36,10 @@ theorem standard_policy_geometry (p : Inputs) (large : 1 < p.P) (odd : p.P % 2 =
     rw [empty] at len
     have := p.minLength
     simp only [List.length_nil] at len
-    omega
+    omega_using [lead, len]
   have index : p.boundOctets.getD p.scalarLead 0 = p.boundOctets[p.scalarLead]'(by rw [p.boundOctetsLength]; exact lead) := by
     simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [p.boundOctetsLength]; exact lead), Option.getD_some]
-  have bits := VG.Proof.Ffdh.KeyScalar.bound_bits (by have := p.minLength; omega : 1 ≤ p.k)
+  have bits := VG.Proof.Ffdh.KeyScalar.bound_bits (by have := p.minLength; omega_using [lead] : 1 ≤ p.k)
     p.domainLengths (fun _ => ⟨odd, large⟩)
   have bitsEq : bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf p.k p.dom)) =
       8 * (p.scalarWidth - 1) + bitLength head.toNat := by
@@ -56,7 +56,7 @@ theorem standard_policy_geometry (p : Inputs) (large : 1 < p.P) (odd : p.P % 2 =
       rw [← index]
       exact hz
     unfold Inputs.scalarWidth
-    omega
+    omega_using [lead, stop]
   have widthEq : VG.Proof.Ffdh.ScalarWidth.width
       (bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf p.k p.dom))) = p.scalarWidth := by
     have small := byte_bitLength headSmall
@@ -64,13 +64,13 @@ theorem standard_policy_geometry (p : Inputs) (large : 1 < p.P) (odd : p.P % 2 =
     have zero := last
     rw [bitsEq]
     unfold VG.Proof.Ffdh.ScalarWidth.width
-    omega
+    omega_using [last, small, widths]
   refine ⟨widthEq, ?_⟩
   have headEq : VG.Proof.Ffdh.ScalarWidth.headBits
       (bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf p.k p.dom))) = bitLength head.toNat := by
     unfold VG.Proof.Ffdh.ScalarWidth.headBits
     rw [widthEq, bitsEq]
-    omega
+    omega_using []
   apply BitVec.eq_of_toNat_eq
   change ((VG.Proof.Ffdh.ScalarWidth.mask _).setWidth 32).toNat =
     (BitVec.ofNat 32 (VG.Proof.Ffdh.KeyScalar.smearN head.toNat)).toNat
@@ -88,7 +88,7 @@ theorem vetted_layout_unrecognized {p : Inputs}
   · unfold ScalarLayout.width
     dsimp
     rw [geometry.1]
-    omega
+    omega_using [fits]
   · exact geometry.2
 
 end VG.Proof.Ffdh.Arm

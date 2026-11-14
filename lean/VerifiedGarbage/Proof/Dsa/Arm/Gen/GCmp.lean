@@ -58,7 +58,7 @@ theorem strR11_vp {d v : Nat} (cert : Cert7 (.block [.str .r11 .r8 d])) (hd : Kl
       (St G { c with KV := KU c.KV d v, kls := d :: c.kls } X) := by
   refine ks_vp cert (fun σ s h => h.1.1) fun σ s ⟨⟨h, x⟩, r11⟩ => ?_
   have hw := h.ws
-  have d4 : d + 4 ≤ 2 ^ 64 := by have := hd.1; simp only [hdr] at this; omega
+  have d4 : d + 4 ≤ 2 ^ 64 := by have := hd.1; simp only [hdr] at this; omega_using [this]
   refine h.ksOp (js := []) (ds := [d]) (ws := []) (P := fun t => slot t.mem G.KB d = v) rfl
     (wp_strSlot hw hd.1 fun t u => WP.block_nil ⟨hw.of_mupd u,
       Keep.of_slot (by rw [u.mem]; exact VG.Proof.Mont.writeW32_outside _ _ _ d4) (by simp),
@@ -81,7 +81,7 @@ theorem andCmp_vp {d a b : Nat} (cert : Cert7 (.block (andS d a b ++ ([.ldr .r1 
   have hw := h.ws
   have va : slot (G.ksState s).mem G.KB a = c.KV a := h.ksl a ha
   have vb : slot (G.ksState s).mem G.KB b = c.KV b := h.ksl b hb
-  have d4 : d + 4 ≤ 2 ^ 64 := by have := hd.1; simp only [hdr] at this; omega
+  have d4 : d + 4 ≤ 2 ^ 64 := by have := hd.1; simp only [hdr] at this; omega_using [this]
   refine h.ksOp (js := []) (ds := [d]) (ws := VG.Proof.Rsa.Arm.Keys.opRegs) (P := fun t =>
       slot t.mem G.KB d = (if c.KV a = 1 ∧ c.KV b = 1 then 1 else 0) ∧
       isa.eval .eq t = some (decide ¬(c.KV a = 1 ∧ c.KV b = 1))) rfl ?_
@@ -130,7 +130,7 @@ theorem slotCmp_vp {d : Nat} (cert : Cert7 (.block [.ldr .r1 .r8 d, .cmp .r1 (.i
     have e0 : ∀ y : BitVec 32, y - 0 = y := fun y => by simp
     rw [eval_eq, z₃, u₂.gpr, e0]
     congr 1
-    rcases (by omega : c.KV d = 0 ∨ c.KV d = 1) with e | e
+    rcases (by omega_using [bd] : c.KV d = 0 ∨ c.KV d = 1) with e | e
     · have : (G.ksState s).mem.readW (off (State.addr G.KB) d) 32 = 0 := BitVec.eq_of_toNat_eq (by rw [r, e]; rfl)
       rw [this, e]; rfl
     · have : (G.ksState s).mem.readW (off (State.addr G.KB) d) 32 = 1 := BitVec.eq_of_toNat_eq (by rw [r, e]; rfl)

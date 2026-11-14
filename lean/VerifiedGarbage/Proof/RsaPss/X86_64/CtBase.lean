@@ -117,7 +117,7 @@ theorem pub_agree {F S : Addr} {rest : List Region} {ws : List (Nat × BitVec 64
     obtain ⟨p, hp, rfl⟩ := hsl
     have := hks p hp
     simp only [pT, List.getD_cons_zero, Function.comp]
-    unfold nW frameBytes at *; omega
+    unfold nW frameBytes at *; omega_using [this]
   · simp only [pT, List.mem_map, List.map_map] at hsl
     obtain ⟨p, hp, rfl⟩ := hsl
     have hk := hks p hp
@@ -126,11 +126,11 @@ theorem pub_agree {F S : Addr} {rest : List Region} {ws : List (Nat × BitVec 64
         off F (8 * p.1) + BitVec.ofNat 64 (k - 8 * p.1) := fun t hw => by
       simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, hw, List.getD_cons_zero, off, BitVec.add_assoc,
         BitVec.ofNat_add_ofNat]
-      congr 2; omega
+      congr 2; omega_using [hk₁]
     rw [hb t₁ h₁.wr, hb t₂ h₂.wr]
     obtain ⟨V₁, W₁, R₁, hw₁, -⟩ := h₁.W
     obtain ⟨V₂, W₂, R₂, hw₂, -⟩ := h₂.W
-    refine word_byte ?_ (by omega)
+    refine word_byte ?_ (by omega_using [hk₂])
     have e₁ := R₁.fr p.1 hk
     have e₂ := R₂.fr p.1 hk
     simp only [Bignum.word] at e₁ e₂

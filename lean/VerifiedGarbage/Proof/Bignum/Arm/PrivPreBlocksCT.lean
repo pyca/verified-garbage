@@ -43,8 +43,8 @@ theorem pp_loadMain_wp (s : State) {g : CrtGeometry} (h : MainSaved g s) (d : Na
     (read : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) d) 4) :
     WP isa (.block [.ldrSp .r4 d, .ldrSp .r1 8]) s fun t => t.gpr .r1 = g.base := by
   obtain ⟨saved, fit, read8⟩ := h
-  refine wp_loadStack (a := off (State.addr s.sp) d) (by omega) (addr_add (by omega)) read fun u a => ?_
-  refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide) (by rw [a.sp]; exact addr_add (by omega))
+  refine wp_loadStack (a := off (State.addr s.sp) d) (by omega_using [hd]) (addr_add (by omega_using [hd, fit])) read fun u a => ?_
+  refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide) (by rw [a.sp]; exact addr_add (by omega_using [fit]))
     (by rw [a.rd, a.wr]; exact read8) fun t b => WP.block_nil ?_
   rw [b.gpr, a.mem]; exact saved
 
@@ -99,7 +99,7 @@ theorem pp_maskArgs_ct {g : CrtGeometry} {P1 P2 : State → Prop}
     RelCT isa (fun s t => P1 s ∧ P2 t ∧ s.sp = t.sp) (.block maskArgs) (fun _ _ => True) := by
   have wp (s : State) (h : MainSaved g s) : WP isa (.block [.ldrSp .r1 8]) s fun t => t.gpr .r1 = g.base := by
     obtain ⟨saved, fit, read8⟩ := h
-    refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide) (addr_add (by omega)) read8 fun t b => WP.block_nil ?_
+    refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide) (addr_add (by omega_using [fit])) read8 fun t b => WP.block_nil ?_
     rw [b.gpr]; exact saved
   have first := ((loadStack_ct .r1 8).mono
     (P' := fun (s t : State) => P1 s ∧ P2 t ∧ s.sp = t.sp) (fun _ _ h => h.2.2) (fun _ _ h => h)).wp

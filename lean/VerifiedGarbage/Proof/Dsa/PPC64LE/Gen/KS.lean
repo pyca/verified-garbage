@@ -46,16 +46,16 @@ variable {G : GP} {STK : Nat} {σ : State} {c : Cfg} {s : State}
 
 theorem SS.kbNat (h : SS G STK σ c s) : G.KB.toNat = G.scr.toNat + kB G.pLen := by
   have := h.gi.wBig; have := h.gi.kBig; have := h.gi.scrFit
-  have : 0 < kz G.pLen := by simp only [kz, hdr]; omega
-  rw [GP.KB, GP.sa, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show kB G.pLen < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  have : 0 < kz G.pLen := by simp only [kz, hdr]; omega_using []
+  rw [GP.KB, GP.sa, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show kB G.pLen < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem SS.wsWith (h : SS G STK σ c s) (hr : KR G s) (rd : List Region) :
     Ws (s.withRegions rd [G.rK]) G.KB (kz G.pLen) G.w nArrs := by
   have := h.gi.wBig; have := h.gi.kBig; have := h.gi.scrFit
   have e := h.kbNat
   have l := h.lens
-  refine ⟨VG.Proof.Bignum.PPC64LE.Scr.of_mem (List.mem_singleton_self _) (by show _ + kz G.pLen ≤ _; omega),
+  refine ⟨VG.Proof.Bignum.PPC64LE.Scr.of_mem (List.mem_singleton_self _) (by show _ + kz G.pLen ≤ _; omega_arith),
     ?_, ?_, ?_, hr.r29, hr.r30, hr.r31⟩ <;>
     simp only [arr, S, hdr, nArrs, kz, GP.w] <;> rcases l with e | e | e <;> rw [e] <;> decide
 
@@ -67,7 +67,7 @@ theorem SS.kcov (h : SS G STK σ c s) : Covers (s.rd ++ [G.rK]) (s.rd ++ s.wr) �
   have big := h.gi.wBig; have kb := h.gi.kBig
   have hw : Covers [G.rK] s.wr := (Covers.of_sub (rs' := [G.rScr]) fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
-    exact ⟨G.rScr, List.mem_singleton_self _, kB G.pLen, rfl, by show kB G.pLen + kz G.pLen ≤ G.scrLen * 8; omega⟩).trans
+    exact ⟨G.rScr, List.mem_singleton_self _, kB G.pLen, rfl, by show kB G.pLen + kz G.pLen ≤ G.scrLen * 8; omega_using [big, kb]⟩).trans
     (Covers.of_mem fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact inS)
   exact ⟨Covers.append (Covers.refl _) hw, hw⟩
 
@@ -93,12 +93,12 @@ theorem SS.of_ks (h : SS G STK σ c s) {t : State} {ws : List Reg} (r : Keep ws 
   have big := gi.wBig
   have kb := gi.kBig
   have hE : hEnd ≤ kB G.pLen := by rcases gi.lens3 with e | e | e <;> rw [e] <;> decide
-  refine ⟨gi.of_scr r sp (o := kB G.pLen) (n := kz G.pLen) hE (by omega) (f.mono (by simp)) h28,
+  refine ⟨gi.of_scr r sp (o := kB G.pLen) (n := kz G.pLen) hE (by omega_using [big, kb]) (f.mono (by simp)) h28,
     h.sb.frame f (fun x hx r hr => ?_) (fun x hx => ?_), h.clOk, ha, hl, hk, hko⟩
   · rw [List.mem_singleton] at hr; subst hr
     have := h.clOk x hx
     exact (gi.kdisj this.2.1 this.2.2).symm
-  · have := (h.clOk x hx).2.2; have := gi.scrFit; omega
+  · have := (h.clOk x hx).2.2; have := gi.scrFit; omega_arith
 
 /-- After an operation that writes the array `o` (to `v`) and no header word. -/
 theorem SS.of_op (h : SS G STK σ c s) {t : State} {ws : List Reg} (r : Keep ws s t) (sp : t.sp = s.sp)
@@ -111,7 +111,7 @@ theorem SS.of_op (h : SS G STK σ c s) {t : State} {ws : List Reg} (r : Keep ws 
     · subst hjo; rw [VG.Proof.Rsa.KeyWorkspace.upd_self]; exact e
     · rw [VG.Proof.Rsa.KeyWorkspace.upd_ne _ _ hjo, kp.num (by simpa using fun e => hjo e.symm) (by simp)
         (by have := arrs_fit l (h.liveOk j ((List.mem_cons.mp hj).resolve_left hjo)); have := kz_eq l
-            show arr (G.pLen / 4) j + 4 * (G.pLen / 4 + 2) ≤ 2 ^ 64; omega)]
+            show arr (G.pLen / 4) j + 4 * (G.pLen / 4 + 2) ≤ 2 ^ 64; omega_arith)]
       exact h.arrs j ((List.mem_cons.mp hj).resolve_left hjo)
   · rcases List.mem_cons.mp hj with rfl | hj
     · exact ho
@@ -127,7 +127,7 @@ theorem SS.of_opS (h : SS G STK σ c s) {t : State} {ws : List Reg} (r : Keep ws
   refine h.of_ks r sp f (fun j hj => ?_) h.liveOk (fun e' he => ?_) (fun e' he => ?_) h28
   · rw [kp.num (by simp) (by simpa using hd.1)
       (by have := arrs_fit l (h.liveOk j hj); have := kz_eq l
-          show arr (G.pLen / 4) j + 4 * (G.pLen / 4 + 2) ≤ 2 ^ 64; omega)]
+          show arr (G.pLen / 4) j + 4 * (G.pLen / 4 + 2) ≤ 2 ^ 64; omega_arith)]
     exact h.arrs j hj
   · by_cases hed : e' = d
     · subst hed; rw [VG.Proof.Rsa.KeyWorkspace.upd_self]; exact e
@@ -135,7 +135,7 @@ theorem SS.of_opS (h : SS G STK σ c s) {t : State} {ws : List Reg} (r : Keep ws
       · exact absurd rfl hed
       rw [VG.Proof.Rsa.KeyWorkspace.upd_ne _ _ hed, kp.slot (h.kslOk e' he).1 (by
         simp only [List.mem_singleton, forall_eq]
-        have := h.kslOk e' he; have := hd; simp only [KlsOk] at *; omega)]
+        have := h.kslOk e' he; have := hd; simp only [KlsOk] at *; omega_arith)]
       exact h.ksl e' he
   · rcases List.mem_cons.mp he with rfl | he
     · exact hd

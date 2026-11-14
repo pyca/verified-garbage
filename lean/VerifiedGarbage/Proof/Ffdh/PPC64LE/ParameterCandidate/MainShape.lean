@@ -74,7 +74,7 @@ theorem trialN_spec {bits c : Nat} (large : 8161 < c) :
   unfold trialN
   rw [VG.Proof.RsaKeyGen.trialPrefix_spec large]
   unfold Spec.RsaKeyGen.obviouslyComposite Spec.RsaKeyGen.trialPrimes
-  have : (1024 < 64 * ((bits + 63) / 64)) = (1024 < bits) := propext (by omega)
+  have : (1024 < 64 * ((bits + 63) / 64)) = (1024 < bits) := propext (by omega_using [])
   simp only [this]
 
 /-- The shape's flags, and trial division of p and q, all clear exactly when

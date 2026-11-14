@@ -52,10 +52,10 @@ theorem random_draw_full_ok {s : State} {B R Q : Addr} {used draws : Nat} {qByte
   let n := (VG.Proof.Dsa.significant qBytes).1
   have hnfit : n ≤ qBytes.length := VG.Proof.Dsa.significant_fits qBytes
   unfold Random.draw
-  refine WP.seq (WP.mono (random_drawHead_ok hs hsp hrlen hu hn (by omega) hrbound (by omega))
+  refine WP.seq (WP.mono (random_drawHead_ok hs hsp hrlen hu hn (by omega_using [hfull]) hrbound (by omega_using [hrbound, hfull]))
     fun a ⟨hac, ham, hka⟩ => ?_)
   change a.gpr .x3 = BitVec.ofNat 64 (if rand.length - used < n then 1 else 0) at hac
-  have hshort : ¬ rand.length - used < n := by omega
+  have hshort : ¬ rand.length - used < n := by omega_using [hfull]
   refine WP.ite false (by simp [eval, State.read, hac, hshort])
     (fun h => Bool.noConfusion h) (fun _ => ?_)
   have has := hs.congr hka.wr
@@ -71,7 +71,7 @@ theorem random_draw_full_ok {s : State} {B R Q : Addr} {used draws : Nat} {qByte
   have hbsp := hbk.sp.trans hsp
   have hbf' : Outside B 200 32 s.mem b.mem := by
     rw [← ham]
-    exact hbf.mono (by omega) (by omega)
+    exact hbf.mono (by omega_using [hnfit]) (by omega_using [hqlen, hnfit])
   have hbu : word b.mem B Random.oUsed = BitVec.ofNat 64 used := by
     rw [hbf'.word (by decide) (by decide)]; exact hu
   have hbn : word b.mem B Random.oWidth = BitVec.ofNat 64 n := by
@@ -95,10 +95,10 @@ theorem random_draw_full_ok {s : State} {B R Q : Addr} {used draws : Nat} {qByte
       (off B (200 + qBytes.length - n) + BitVec.ofNat 64 i) = copied[i] := by
     intro i hi
     rw [hcf _ (by
-      rw [random_nonce_offset B hnfit hqlen (by omega)]
+      rw [random_nonce_offset B hnfit hqlen (by omega_using [hclen, hi])]
       right
       unfold Random.oUsed
-      omega)]
+      omega_using [hnfit])]
     exact hcv i hi
   refine WP.seq (WP.mono (random_check_candidate_ok hcs hcsp hcl hcn hcq hcqsrc
       hqlen hpos hclen rfl hccv)

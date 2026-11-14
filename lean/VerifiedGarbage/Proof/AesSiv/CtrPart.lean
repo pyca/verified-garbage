@@ -71,7 +71,7 @@ theorem ctrPart_all (ciph : Spec.Cmac.Cipher) (hc : ∀ y, (ciph y).length = 16)
     (hk : x.length ≤ k) : ctrPart ciph q x k = Spec.Siv.ctr ciph q x :=
   ext_getD (by rw [length_ctrPart, Siv.length_ctr ciph hc]) fun p hp => by
     rw [length_ctrPart] at hp
-    rw [getD_ctrPart _ _ _ _ hp, ite_eq_left (by omega), Siv.ctr_getD ciph hc q x hp]
+    rw [getD_ctrPart _ _ _ _ hp, ite_eq_left (by omega_using [hk, hp]), Siv.ctr_getD ciph hc q x hp]
 
 theorem getD_xor {a b : List Byte} {k : Nat} (ha : k < a.length) (hb : k < b.length) :
     (Spec.Cmac.xor a b).getD k 0 = a.getD k 0 ^^^ b.getD k 0 := by
@@ -92,24 +92,24 @@ theorem ctrPart_step (ciph : Spec.Cmac.Cipher) (hc : ∀ y, (ciph y).length = 16
   have hlb : (Spec.Aes.bytesAt m (P + BitVec.ofNat 64 (16 * i)) n).length = n := Proof.Cmac.bytesAt_length _ _ _
   have hlx : (Spec.Cmac.xor (Spec.Aes.bytesAt m (P + BitVec.ofNat 64 (16 * i)) n)
       ((Siv.ksBlock ciph q i).take n)).length = n := by
-    rw [Proof.Cmac.length_xor, hlb, List.length_take, hlk]; omega
+    rw [Proof.Cmac.length_xor, hlb, List.length_take, hlk]; omega_using [hn]
   have hdk : ∀ p < x.length, m (P + BitVec.ofNat 64 p) = (ctrPart ciph q x (16 * i)).getD p 0 := fun p hp => by
     rw [← hd, Proof.Cmac.getD_bytesAt _ _ hp]
   refine ext_getD (by rw [Proof.Cmac.bytesAt_length, length_ctrPart]) fun p hp => ?_
   rw [Proof.Cmac.bytesAt_length] at hp
   rw [Proof.Cmac.getD_bytesAt _ _ hp, getD_ctrPart _ _ _ _ hp]
   by_cases h₁ : p < 16 * i
-  · rw [writeBytes_before _ _ _ h₁ (by rw [hlx]; omega), hdk p hp, getD_ctrPart _ _ _ _ hp,
-      ite_eq_left h₁, ite_eq_left (by omega)]
+  · rw [writeBytes_before _ _ _ h₁ (by rw [hlx]; omega_using [hx, hin]), hdk p hp, getD_ctrPart _ _ _ _ hp,
+      ite_eq_left h₁, ite_eq_left (by omega_using [h₁])]
   · have e : P + BitVec.ofNat 64 p = P + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 (p - 16 * i) := by
-      rw [Offset.add_add, show 16 * i + (p - 16 * i) = p by omega]
+      rw [Offset.add_add, show 16 * i + (p - 16 * i) = p by omega_using [h₁]]
     have hm : m (P + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 (p - 16 * i)) = x.getD p 0 := by
       rw [← e, hdk p hp, getD_ctrPart _ _ _ _ hp, ite_eq_right h₁]
-    rw [e, writeBytes_at' _ _ _ (by omega), hlx]
+    rw [e, writeBytes_at' _ _ _ (by omega_using [hx, hp]), hlx]
     by_cases h₂ : p < 16 * i + n
-    · rw [ite_eq_left (by omega), ite_eq_left h₂, getD_xor (by rw [hlb]; omega) (by rw [List.length_take, hlk]; omega),
-        Proof.Cmac.getD_bytesAt _ _ (by omega), hm, getD_take (by omega),
-        show p / 16 = i by omega, show p % 16 = p - 16 * i by omega]
-    · rw [ite_eq_right (by omega), ite_eq_right h₂, hm]
+    · rw [ite_eq_left (by omega_using [h₁, h₂]), ite_eq_left h₂, getD_xor (by rw [hlb]; omega_using [h₁, h₂]) (by rw [List.length_take, hlk]; omega_using [hn, h₁, h₂]),
+        Proof.Cmac.getD_bytesAt _ _ (by omega_using [h₁, h₂]), hm, getD_take (by omega_using [h₁, h₂]),
+        show p / 16 = i by omega_using [hn, h₁, h₂], show p % 16 = p - 16 * i by omega_using [hn, h₁, h₂]]
+    · rw [ite_eq_right (by omega_using [h₂]), ite_eq_right h₂, hm]
 
 end VG.Proof.AesSiv

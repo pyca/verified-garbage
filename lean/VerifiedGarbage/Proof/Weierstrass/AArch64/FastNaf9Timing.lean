@@ -68,8 +68,8 @@ theorem fastPrep9Loop_relCT {K : WinCfg} {src : Nat} (hc : FastPrep9Checks K src
       (eval (.nonzero .x .x19) s=some true → ∃ m<n,I m s t)) := by
     intro n s t ts tt s' t' ⟨j,hj,hn,hp⟩ es et
     have hv : FastNaf.residual 9 k j≤2^256 := Nat.le_trans
-      (FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=j) (by omega))
-      (Nat.pow_le_pow_right (by decide) (by omega))
+      (FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=j) (by omega_using [hj]))
+      (Nat.pow_le_pow_right (by decide) (by omega_using []))
     obtain ⟨he,ip,zs,zt⟩ := fastPrep9Step_relCT hc hb hj hv _ _ _ _ _ _ hp es et
     refine ⟨he,by rw [fastCount_eval zs,fastCount_eval zt],fun _ => trivial,fun hcnd => ?_⟩
     have hz : FastNaf.residual 9 k (fastNext9 k j)≠0 := by
@@ -77,10 +77,10 @@ theorem fastPrep9Loop_relCT {K : WinCfg} {src : Nat} (hc : FastPrep9Checks K src
       exact of_decide_eq_true (Option.some.inj hcnd)
     have hj' : fastNext9 k j<257 := by
       by_contra h
-      exact hz (FastNaf.residual_zero_ge hk (by omega))
+      exact hz (FastNaf.residual_zero_ge hk (by omega_using [h]))
     refine ⟨257-fastNext9 k j,?_,fastNext9 k j,hj',rfl,ip⟩
-    have : j<fastNext9 k j := by unfold fastNext9; split <;> omega
-    omega
+    have : j<fastNext9 k j := by unfold fastNext9; split <;> omega_using []
+    omega_using [hn, hj', this]
   exact (RelCT.loop I step 257).mono (fun _ _ h => ⟨0,by decide,rfl,h⟩) (fun _ _ h => h)
 
 theorem fastPrep9_relCT (K : WinCfg)

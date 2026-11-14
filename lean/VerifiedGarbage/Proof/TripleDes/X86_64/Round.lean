@@ -74,7 +74,7 @@ theorem roundInputCfg_ok (s : State)
   refine ⟨?_, ?_, by decide, ?_⟩
   · intro k hk; simp [roundInputCfg] at hk
   · intro k hk
-    have hk0 : k = 0 := by simp only [roundInputCfg] at hk; omega
+    have hk0 : k = 0 := by simp only [roundInputCfg] at hk; omega_using [hk]
     subst k
     simpa only [roundInputCfg, wordAddr, Nat.mul_zero,
       BitVec.add_zero] using hread
@@ -100,7 +100,7 @@ theorem roundInput_ok (i : Nat) (hi : i < 8) (s : State)
       simp only [roundInputRegs, List.mem_singleton, Prod.mk.injEq] at h
       obtain ⟨rfl, rfl⟩ := h
       exact ⟨by decide, rfl⟩) (fun j hj => by
-      have hj0 : j = 0 := by simp only [roundInputCfg] at hj; omega
+      have hj0 : j = 0 := by simp only [roundInputCfg] at hj; omega_using [hj]
       subst j
       exact ⟨by decide, by simp [W, wordAddr, roundInputCfg]⟩)
   refine ⟨s', hs', fun j hj p hp => ?_, rd, wr, ?_, keep⟩
@@ -124,7 +124,7 @@ theorem bitOf_low (W : Nat → BitVec 64) (a : Nat) (ha : a < 64) :
 
 theorem bitOf_next (W : Nat → BitVec 64) (a : Nat) (ha : a < 64) :
     bitOf W (64 + a) = (W 1).getLsbD a := by
-  have hd : (64 + a) / 64 = 1 := by omega
+  have hd : (64 + a) / 64 = 1 := by omega_using [ha]
   simp only [bitOf, hd, Nat.add_mod_left, Nat.mod_eq_of_lt ha]
 
 def roundChunk (i : Nat) (r : BitVec 32) (k : BitVec 48) : BitVec 6 :=
@@ -135,14 +135,14 @@ theorem roundChunk_bit (i j : Nat) (hi : i < 8) (hj : j < 6)
     (roundChunk i (r.setWidth 32) (k.setWidth 48)).getLsbD j =
       (r.getLsbD (32 - Spec.TripleDes.expansion.getD (6 * i + 5 - j) 1) ^^
         k.getLsbD (47 - (6 * i + 5 - j))) := by
-  have ht : 6 * (7 - i) + j < 48 := by omega
-  have heq : 48 - 1 - (6 * (7 - i) + j) = 6 * i + 5 - j := by omega
-  have hkey : 6 * (7 - i) + j = 47 - (6 * i + 5 - j) := by omega
+  have ht : 6 * (7 - i) + j < 48 := by omega_using [hj]
+  have heq : 48 - 1 - (6 * (7 - i) + j) = 6 * i + 5 - j := by omega_using [hi]
+  have hkey : 6 * (7 - i) + j = 47 - (6 * i + 5 - j) := by omega_using [hi, hj]
   have hsource : 32 - Spec.TripleDes.expansion.getD (6 * i + 5 - j) 1 < 32 := by
     have hb : ∀ t < 48, 1 ≤ Spec.TripleDes.expansion.getD t 1 := by decide +kernel
-    have hpos : 6 * i + 5 - j < 48 := by omega
+    have hpos : 6 * i + 5 - j < 48 := by omega_using [hi]
     have := hb _ hpos
-    omega
+    omega_using [this]
   simp only [roundChunk, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_xor]
   rw [VG.Proof.TripleDes.permute_bit _ _ (by decide) _ ht]
@@ -219,7 +219,7 @@ theorem roundOutput_ok (i : Nat) (hi : i < 8) (s : State) :
       rcases h with ⟨rfl, rfl⟩ | ⟨j, hj, heq⟩
       · exact ⟨by decide, rfl⟩
       · obtain ⟨rfl, rfl⟩ := heq
-        refine ⟨by omega, ?_⟩
+        refine ⟨by omega_using [hj], ?_⟩
         simp [W]) (fun j hj => by simp [roundOutputCfg] at hj)
   refine ⟨s', hs', fun p hp => ?_, rd, wr, ?_, keep⟩
   · exact out .r12 (roundOutputBits i) (by simp) p hp
@@ -251,18 +251,18 @@ theorem roundOutput_piece (i : Nat) (hi : i < 8) (s : State) (b : BitVec 4)
   simp only [List.cons_append, List.nil_append, xorBits_cons, bitOf_low _ _ hp, ite_true]
   by_cases h : p < 32 ∧ boxSource p / 4 = i
   · simp only [h]
-    have hj : 3 - boxSource p % 4 < 4 := by omega
+    have hj : 3 - boxSource p % 4 < 4 := by omega_using []
     simp
     rw [bitOf_word]
-    have hn : 4 - boxSource p % 4 ≠ 0 := by omega
-    have heq : 4 - boxSource p % 4 - 1 = 3 - boxSource p % 4 := by omega
+    have hn : 4 - boxSource p % 4 ≠ 0 := by omega_using []
+    have heq : 4 - boxSource p % 4 - 1 = 3 - boxSource p % 4 := by omega_using []
     simp only [hn, ite_false, heq]
     rw [hb _ hj]
     simp only [boxPiece, getLsbD_ofBits, h.1, h.2, decide_true, Bool.true_and, ite_true]
   · simp only [h, ite_false, xorBits_nil]
     simp only [boxPiece, getLsbD_ofBits]
     by_cases hp32 : p < 32
-    · have hs : boxSource p / 4 ≠ i := by omega
+    · have hs : boxSource p / 4 ≠ i := by omega_using [h, hp32]
       simp only [hp32, decide_true, Bool.true_and, hs, ite_false]
     · simp only [hp32, decide_false, Bool.false_and]
 

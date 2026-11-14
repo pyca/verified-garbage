@@ -40,21 +40,21 @@ theorem zeros_ok {s : State} {p : Addr} (hp : s.gpr .x19 = p)
     ⟨RegKeep.vupd hz,hz.v,by rw [hz.mem]; exact Frame.refl _ _,
       fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
     fun t ⟨ht,_,hf,hvals⟩ => ⟨ht,hf,hvals⟩
-  refine wp_strq (a := wordAddr p k) (by omega)
+  refine wp_strq (a := wordAddr p k) (by omega_using [hk])
     (by rw [ht.gpr .x19 (by simp),hp]; rfl)
     (by rw [ht.wr]; exact hw k hk) fun u hu => WP.block_nil_iff.mpr ⟨?_,?_,?_,?_⟩
   · exact (ht.trans (RegKeep.vmem hu)).mono (by simp)
   · rw [hu.v]; exact hv
   · rw [hu.mem]
-    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega) (by omega))
+    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega_using [hk]) (by omega_using [hk]))
   · intro i hi
     rw [hu.mem,hv]
     by_cases he : i = k
     · subst i; rw [read_write16]
     · have hsep : Mem.Sep (wordAddr p i) 16 (wordAddr p k) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])
       rw [Mem.read_write_sep hsep (by decide)]
-      exact hvals i (by omega)
+      exact hvals i (by omega_using [hi, he])
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 
 end
@@ -116,8 +116,8 @@ theorem pro_ok (s : State) (hw : (Region.mk (s.gpr .x4) 8192)∈s.wr) :
     WP isa (.block pro) s (ProPost s) := by
   unfold pro
   rw [WP.block_append_iff]
-  refine WP.mono (save_ok s (fun i hi => ⟨_,hw,Offset.contains_base _ (by omega) (by omega)⟩)
-    (fun i hi => ⟨_,hw,Offset.contains_base _ (by omega) (by omega)⟩)) ?_
+  refine WP.mono (save_ok s (fun i hi => ⟨_,hw,Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
+    (fun i hi => ⟨_,hw,Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)) ?_
   intro a ⟨ha,has,haf⟩
   have a4 := ha.gpr .x4 (by decide)
   have a1 := ha.gpr .x1 (by decide)
@@ -246,18 +246,18 @@ theorem absorb0_ok (s : State)
   have input (off len : Nat) (hb : off+len≤132) :
       InRegions (a.rd++a.wr) (s.gpr .x20+BitVec.ofNat 64 off) len := by
     rw [ha.rd,ha.wr]
-    exact ⟨_,hin,Offset.contains_base _ hb (by omega)⟩
+    exact ⟨_,hin,Offset.contains_base _ hb (by omega_using [hb])⟩
   refine WP.mono (absorbBody_ok h2 h3 h4
-    (fun j hj => input (8*j) 8 (by omega))
+    (fun j hj => input (8*j) 8 (by omega_using [hj]))
     (fun j hj => by
       change InRegions _ (s.gpr .x20+BitVec.ofNat 64 66+BitVec.ofNat 64 (8*j)) 8
-      rw [Offset.add_add]; exact input (66+8*j) 8 (by omega))
+      rw [Offset.add_add]; exact input (66+8*j) 8 (by omega_using [hj]))
     (input 64 1 (by decide)) (input 65 1 (by decide))
     (by change InRegions _ (s.gpr .x20+BitVec.ofNat 64 66+BitVec.ofNat 64 64) 1
         rw [Offset.add_add]; exact input (66+64) 1 (by decide))
     (by change InRegions _ (s.gpr .x20+BitVec.ofNat 64 66+BitVec.ofNat 64 65) 1
         rw [Offset.add_add]; exact input (66+65) 1 (by decide))
-    (fun j hj => by rw [ha.wr]; exact ⟨_,hw,Offset.contains_base _ (by omega) (by omega)⟩)
+    (fun j hj => by rw [ha.wr]; exact ⟨_,hw,Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩)
     (hsep.sub_left (Region.sub_prefix (by decide)))
     (hsep.sub_left (Offset.sub_base _ (by decide)))
     (by simpa only [ha.mem] using hz)) ?_

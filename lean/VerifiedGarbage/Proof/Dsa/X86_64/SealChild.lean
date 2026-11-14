@@ -22,8 +22,8 @@ theorem sealChild_ok {s : State} {B : Addr} {Z o w wx m : Nat} {oldMinv parentMi
       Outside (off B o) (8 * sMinv) 8 s.mem t.mem ∧ Keep coreRegs s t := by
   have hi := hc.hi
   have hlo := hc.lo
-  have hroot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
-  have hslot : 256 ≤ slot wx aN := by unfold slot hdrBytes; omega
+  have hroot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  have hslot : 256 ≤ slot wx aN := by unfold slot hdrBytes; omega_using []
   have hN := slot_le (w := wx) (show aN < 8 by decide)
   have hodd' : (word s.mem (off B o) (slot wx aN)).toNat % 2 = 1 := by
     rw [← wv_mod64 _ _ _ hw, hn, Nat.mod_mod_of_dvd _ (by decide)]
@@ -35,17 +35,17 @@ theorem sealChild_ok {s : State} {B : Addr} {Z o w wx m : Nat} {oldMinv parentMi
   have hb : ∀ i < 32, word u.mem B (8 * i) = word s.mem B (8 * i) := by
     intro i hi'
     exact hff.word_below (L := 64) (by intro r hr; rw [List.mem_singleton.mp hr]; decide)
-      (by have := hc.scr.nowrap; omega) (by have := hc.scr.nowrap; omega) (by omega)
+      (by have := hc.scr.nowrap; omega_using [hi, hslot, hN, this]) (by have := hc.scr.nowrap; omega_using [hi, hN, this]) (by omega_using [hlo, hroot, hi'])
   have hcu : SubCtx u B Z o w wx mi :=
     ⟨hc.scr.congr hku.2.2, hgu.rdi, hgu.hdr,
       (hfu.word (Or.inr (by decide)) (by decide)).trans hc.link,
       (hb _ (by decide)).trans hc.nw,
-      fun j hj => (hb _ (by unfold sArr; omega)).trans (hc.narr j hj), hlo, hi⟩
+      fun j hj => (hb _ (by unfold sArr; omega_using [hj])).trans (hc.narr j hj), hlo, hi⟩
   have hun : wv u.mem (off B o) (slot wx aN) wx = m := by
-    rw [hfu.wv (Or.inr (by change 64 ≤ slot wx aN; omega)) (by have := hc.good.scr.nowrap; omega)]
+    rw [hfu.wv (Or.inr (by change 64 ≤ slot wx aN; omega_using [hslot])) (by have := hc.good.scr.nowrap; omega_using [hN, this])]
     exact hn
   have hui : ((word u.mem (off B o) (slot wx aN)).toNat * mi.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hfu.word (Or.inr (by change 64 ≤ slot wx aN; omega)) (by have := hc.good.scr.nowrap; omega)]
+    rw [hfu.word (Or.inr (by change 64 ≤ slot wx aN; omega_using [hslot])) (by have := hc.good.scr.nowrap; omega_using [hN, this])]
     exact hinv
   refine WP.mono (leave_ok hcu ((hb _ (by decide)).trans hpm)) fun t ⟨hgt, htm, hkt⟩ => ?_
   exact ⟨mi, hgt, ⟨by rw [htm]; exact ⟨hcu.hdr, hcu.link⟩,

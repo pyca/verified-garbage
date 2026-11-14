@@ -36,8 +36,8 @@ theorem FnCtx.keep {s t : State} {base : Addr} {n o a : Nat} (h : FnCtx s base n
     (hk : Keeps rs s t) (hr : .esp ∉ rs) (he : .edi ∉ rs) (hm : Outside base 0 8192 s.mem t.mem) :
     FnCtx t base n o a := by
   obtain ⟨ta, targ⟩ := h.args.keep (hk.1 _ hr) hk.2.1 hk.2.2 hm
-  exact ⟨h.scr.of_keeps hk he, ta, h.n3, by rw [targ 1 (by have := h.n3; omega)]; exact h.argO,
-    by rw [targ 2 (by have := h.n3; omega)]; exact h.argA, h.slotO, h.slotA⟩
+  exact ⟨h.scr.of_keeps hk he, ta, h.n3, by rw [targ 1 (by have := h.n3; omega_using [this])]; exact h.argO,
+    by rw [targ 2 (by have := h.n3; omega_using [this])]; exact h.argA, h.slotO, h.slotA⟩
 
 /-- `r = ws + ` argument `i`. -/
 theorem argPtr_ok {s : State} {base : Addr} {n : Nat} (ha : ArgArea s base n)

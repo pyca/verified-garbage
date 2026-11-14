@@ -138,11 +138,11 @@ theorem arg_frame (h : SearchInput p s) {m m' : Mem} (hf : Frame (changes s) m m
   have A := h.abi
   have hc : (aR s).Contains (argAddr s i) 4 := by
     have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega)
+      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [this])
     have ai : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega)
+      VG.Proof.MlKem.X86.ea_off (by have := A.stackBound; omega_using [hi, this])
     rw [ai, show aR s = ⟨argAddr s 0, 48⟩ from rfl, a0]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
   exact hf.readW hc (h.read_disjoint (.inr (.inr (.inr rfl)))) (by decide)
 
 end SearchInput

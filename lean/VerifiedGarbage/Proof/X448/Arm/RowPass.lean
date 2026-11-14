@@ -93,7 +93,7 @@ theorem carryPassT_ok {t rb : Reg} {o : Nat} {src : Nat → List Instr} {s0 : St
   have h51 : s1.gpr .r5 = s.gpr .r5 := hr1.gpr _ (by rcases ht with rfl | rfl <;> decide)
   have hsum := sum_lt hc hcin hk
   refine WP.mono (carryStepT_ok (t := t) (a := State.addr (s0.gpr rb) + BitVec.ofNat 64 (o + 4 * k))
-    ht' ⟨hr.2.1, hrb'⟩ (by omega) (by rw [hrb1]; exact ea (by omega))
+    ht' ⟨hr.2.1, hrb'⟩ (by omega_using [ho, hk]) (by rw [hrb1]; exact ea (by omega_using [hfit, hk]))
     (by rw [hr1.wr, h.rest.wr]; exact hw k hk)
     (by rw [hr1.gpr _ (by rcases ht with rfl | rfl <;> decide),
       h.rest.gpr _ (by rcases ht with rfl | rfl <;> decide), h6])
@@ -103,12 +103,12 @@ theorem carryPassT_ok {t rb : Reg} {o : Nat} {src : Nat → List Instr} {s0 : St
   refine ⟨h.rest.trans ((hr1.mono sub3).trans (hr2.mono sub3')), by rw [e5]; rfl, ?_, fun j hj => ?_⟩
   · rw [hm2]
     refine (h.frame.sub fun r hr' => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) v (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      (List.mem_singleton_self _) v (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [ho, hk]))
     rw [List.mem_singleton.mp hr']
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · rw [hm2]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h.outs j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [ho, hk])]; exact h.outs j hj
     · rw [wd_write_self, hv]; rfl
 
 theorem carryPass_ok {rb : Reg} {o : Nat} {src : Nat → List Instr} {s0 : State} {c : Nat → Nat}

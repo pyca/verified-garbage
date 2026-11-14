@@ -112,7 +112,7 @@ theorem tabsOk_of {s : State} {st : Nat} (h : ConstsOk ecbConsts st s) (hst : 0 
   refine ⟨h.2.1, fun t ht => ⟨?_, (h.2.2.1 t ht).1, (h.2.2.1 t ht).2.1, (h.2.2.1 t ht).2.2 _ ?_⟩, h.2.2.2⟩
   · have hm : t ∈ s.rd.drop (s.rd.length - ecbConsts.length) := by rw [h.1]; exact ht
     exact List.mem_of_mem_drop hm
-  · obtain ⟨k, rfl⟩ : ∃ k, st = k + 1 := ⟨st - 1, by omega⟩
+  · obtain ⟨k, rfl⟩ : ∃ k, st = k + 1 := ⟨st - 1, by omega_using [hst]⟩
     exact List.mem_singleton_self _
 
 theorem s1234_length : s1234.length = 512 := by rw [Impl.Cast5.s1234, table_length]
@@ -147,10 +147,10 @@ def frameSatC (ivW : Bool) : State :=
   { frameSat ivW with mem := modeSatMem, rd := (frameSat ivW).rd ++ [⟨0x100000, 4096⟩], syms := fun _ => 0x100000 }
 
 theorem modeSatC_arg (ivW : Bool) {i : Nat} (hi : i < 2) : stackArg (modeSatC ivW) i = 0 :=
-  modeSatMem_readW _ (by rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl <;> cases ivW <;> decide)
+  modeSatMem_readW _ (by rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl <;> cases ivW <;> decide)
 
 theorem frameSatC_arg (ivW : Bool) {i : Nat} (hi : i < 2) : stackArg (frameSatC ivW) i = 0 :=
-  modeSatMem_readW _ (by rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl <;> cases ivW <;> decide)
+  modeSatMem_readW _ (by rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl <;> cases ivW <;> decide)
 
 theorem cbc_sat (post : Spec.Cast5.cbcChainedSig.Post Arm.abi.ptrBits) :
     ∃ s, (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cbcChainedSig 39

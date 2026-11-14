@@ -34,10 +34,10 @@ def CtxMode.preparedN (n : Nat) (hn : 8 ≤ n ∧ n ≤ 24 := by decide) : CtxMo
         (hd r hr).sub_left (Offset.sub_base _ (show 240 + 16 ≤ 1024 by decide))
     have keep (o : Nat) (ho : o + 16 ≤ 1024) :
         m'.readW (p + BitVec.ofNat 64 o) 128 = m.readW (p + BitVec.ofNat 64 o) 128 :=
-      hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base _ ho (by omega)) hd (by decide)
+      hf.readW (r := ⟨p, 1024⟩) (Offset.contains_base _ ho (by omega_using [ho])) hd (by decide)
     obtain ⟨_, hn₂⟩ := hn
     intro k hk
-    rw [keep _ (by omega), keep _ (by omega), hH]
+    rw [keep _ (by omega_using [hn₂, hk]), keep _ (by omega_using [hn₂, hk]), hH]
     exact h k hk
 
 /-- The key context of `vg_aes_gcm_prepare`: all 24 pairs, whose `ok` is
@@ -59,10 +59,10 @@ def CtxMode.flaggedT (t : Nat) : CtxMode where
   frame {rs m m' p} hf hd hw h := by
     have hd' : ∀ r ∈ rs, (⟨p, 1024⟩ : Region).Disjoint r :=
       fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide))
-    have hw' : p.toNat + 1024 ≤ 2 ^ 64 := by show p.toNat + 1024 ≤ 2 ^ 64; omega
+    have hw' : p.toNat + 1024 ≤ 2 ^ 64 := by show p.toNat + 1024 ≤ 2 ^ 64; omega_using [hw]
     have hc : m'.readW (p + 1024) 64 = m.readW (p + 1024) 64 := by
       rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl,
-        hf.readW (r := ⟨p, 1032⟩) (Offset.contains_base _ (by decide) (by omega)) hd (by decide)]
+        hf.readW (r := ⟨p, 1032⟩) (Offset.contains_base _ (by decide) (by omega_using [])) hd (by decide)]
     rw [hc]
     exact ⟨h.1, fun h16 => CtxMode.prepared16.frame hf hd' hw' (h.2.1 h16),
       fun h48 => CtxMode.prepared.frame hf hd' hw' (h.2.2 h48)⟩

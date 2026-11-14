@@ -80,8 +80,8 @@ variable {e : Bool}
 /-- The data's keystream from the five blocks: counters 1 to 4. -/
 theorem ks5_eq (s₀ : State) {i n : Nat} (hi : i < n) :
     ks5 s₀ (64 + i) = (keystream (initState (K s₀) 1 (N s₀)) n).getD i 0 := by
-  rw [VG.Proof.ChaCha20.keystream_getD _ hi, ks5, show (64 + i) / 64 = i / 64 + 1 by omega,
-    show (64 + i) % 64 = i % 64 by omega, ctr_initState, ctr_initState]
+  rw [VG.Proof.ChaCha20.keystream_getD _ hi, ks5, show (64 + i) / 64 = i / 64 + 1 by omega_using [],
+    show (64 + i) % 64 = i % 64 by omega_using [], ctr_initState, ctr_initState]
   congr 4
   rw [BitVec.ofNat_add, BitVec.add_comm]
   exact (BitVec.add_zero _).trans (BitVec.add_comm _ _)
@@ -115,7 +115,7 @@ theorem ks_frame {s₀ : State} {m m' : Mem} {rs : List Region} (hf : Frame rs m
 
 theorem ks_post {s₀ : State} {m : Mem} (h : ∀ k < 320, m (off (cx s₀) 64 + BitVec.ofNat 64 k) = ks5 s₀ k)
     {i : Nat} (hi : i < 256) : m (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := by
-  rw [← h (64 + i) (by omega), kp', off_add, off_add, show 64 + (64 + i) = 128 + i by omega]
+  rw [← h (64 + i) (by omega_using [hi]), kp', off_add, off_add, show 64 + (64 + i) = 128 + i by omega_using []]
 
 /-- The prologue keeps the callee-saved vector registers. -/
 theorem prologue_keepsV (sve : Bool) : (Short.prologue sve).allInstrs keepsV = true := by
@@ -133,8 +133,8 @@ theorem sealAfter_ok {s₀ s₁ : State} (hp : APre true s₀) (hL256 : L s₀ �
   have D₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₂.frame (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
   have K₂ : ∀ i < L s₀, s₂.mem (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := fun i hi => by
-    rw [ks_frame k₂.frame (by rdisj_all) (by omega)]
-    exact ks_post h₁.ks (by omega)
+    rw [ks_frame k₂.frame (by rdisj_all) (by omega_using [hL256, hi])]
+    exact ks_post h₁.ks (by omega_using [hL256, hi])
   refine WP.seq (WP.mono (WP.preservedV (xorKsOut_ok hp hL256 i₂.x21 i₂.x22 (i₂.un .x28 (by decide)) i₂.x23
     i₂.rd i₂.wr) (by lit_decide)) fun s₃ ⟨⟨k₃, x₃⟩, v₃⟩ => ?_)
   have i₃ : Inv true s₀ s₃ := i₂.step k₃ (oR_inv hp).1 (oR_inv hp).2
@@ -173,12 +173,12 @@ theorem openAfter_ok {s₀ s₁ : State} (hp : APre false s₀) (hL256 : L s₀ 
   rw [A₂, D₂, len₂] at R₃
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by rw [bytesAt_frame k₃.frame (by rdisj_all) hL', D₂]
   have K₃ : ∀ i < L s₀, s₃.mem (kp' s₀ + BitVec.ofNat 64 i) = ks5 s₀ (64 + i) := fun i hi => by
-    rw [ks_frame k₃.frame (by rdisj_all) (by omega), ks_frame k₂.frame (by rdisj_all) (by omega)]
-    exact ks_post h₁.ks (by omega)
+    rw [ks_frame k₃.frame (by rdisj_all) (by omega_using [hL256, hi]), ks_frame k₂.frame (by rdisj_all) (by omega_using [hL256, hi])]
+    exact ks_post h₁.ks (by omega_using [hL256, hi])
   refine WP.seq (WP.mono (WP.preservedV (xorKsOut_ok hp hL256 i₃.x21 i₃.x22 (i₃.un .x28 (by decide)) i₃.x23
     i₃.rd i₃.wr) (by lit_decide)) fun s₄ ⟨⟨k₄, x₄⟩, v₄⟩ => ?_)
   have i₄ : Inv false s₀ s₄ := i₃.step k₄ (oR_inv hp).1 (oR_inv hp).2
-  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₄ (out := 48) (by omega)) (by lit_decide))
+  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₄ (out := 48) (by omega_using [])) (by lit_decide))
     fun s₅ ⟨⟨k₅, tag₅⟩, v₅⟩ => ?_
   have T₅ := tag₅ _ _ (Repr.frame k₄.frame (by rdisj_all) R₃)
   refine ⟨i₄.inv0.step k₅ (fun r hr => ?_) (fun r hr => ?_), fun r hr => (v₅ r hr).trans ((v₄ r hr).trans

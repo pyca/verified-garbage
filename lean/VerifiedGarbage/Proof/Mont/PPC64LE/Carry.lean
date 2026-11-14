@@ -38,7 +38,7 @@ theorem Ws.writeCarry {s : State} {base : Addr} {size : Nat} (h : Ws s base size
 theorem ca_split {v : Nat} (h : v < 2 ^ 65) :
     v % 2 ^ 64 + 2 ^ 64 * (decide (2 ^ 64 ≤ v)).toNat = v ∧ (decide (2 ^ 64 ≤ v)).toNat ≤ 1 := by
   by_cases hv : 2 ^ 64 ≤ v
-  · simp only [hv, decide_true, Bool.toNat_true]; omega
-  · simp only [hv, decide_false, Bool.toNat_false]; omega
+  · simp only [hv, decide_true, Bool.toNat_true]; omega_using [h, hv]
+  · simp only [hv, decide_false, Bool.toNat_false]; omega_using [hv]
 
 end VG.Proof.Mont.PPC64LE

@@ -46,7 +46,7 @@ theorem ArgumentContext.after {p : KeyPublic sampling} {used keys scalars : Nat}
     intro j hj
     have bound := headerIndices_bound hj
     exact (frame.readW (r := ⟨State.addr p.control, 128⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (by simpa using h.separate) (by decide)).trans
+      (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])) (by simpa using h.separate) (by decide)).trans
         ((slots_fields _ _ _ _ _ _).mp h.headers j hj)
   · rw [rest.sp]
     exact (rest.gpr .r12 (kept .r12 (by decide))).trans h.stackBase
@@ -76,7 +76,7 @@ theorem wp_argumentCopyAt {p : KeyPublic sampling} {used keys scalars : Nat} {s 
   rintro t ⟨mem, rest⟩
   have frame : Frame [⟨State.addr s.sp, sampling.argumentBytes⟩] s.mem t.mem := by
     rw [mem]
-    exact (Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ fit (by have := h.stack.nowrap; omega))
+    exact (Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ fit (by have := h.stack.nowrap; omega_using [fit, small]))
   exact next t (h.after rest frame) mem rest
 
 theorem wp_argumentCopy {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
@@ -86,7 +86,7 @@ theorem wp_argumentCopy {p : KeyPublic sampling} {used keys scalars : Nat} {s : 
     (next : ∀ t, ArgumentContext p used keys scalars t →
       t.mem = s.mem.writeW (off (State.addr s.sp) d) value → Rest [.r9] s t → WP isa (.block is) t Q) :
     WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 j :: .str .r9 .r12 d :: is)) s Q :=
-  wp_argumentCopyAt h (by omega) fit source next
+  wp_argumentCopyAt h (by omega_using [slot]) fit source next
 
 theorem wp_argumentStore {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
     {Q : State → Prop} {d : Nat} (h : ArgumentContext p used keys scalars s) (fit : d + 4 ≤ sampling.argumentBytes)
@@ -101,7 +101,7 @@ theorem wp_argumentStore {p : KeyPublic sampling} {used keys scalars : Nat} {s :
   rintro t ⟨mem, rest⟩
   have frame : Frame [⟨State.addr s.sp, sampling.argumentBytes⟩] s.mem t.mem := by
     rw [mem]
-    exact (Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ fit (by have := h.stack.nowrap; omega))
+    exact (Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ fit (by have := h.stack.nowrap; omega_using [fit, small]))
   exact next t (h.after rest frame) mem rest
 
 end VG.Proof.Ffdh.Arm.KeySearch

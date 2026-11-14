@@ -44,7 +44,7 @@ theorem nz_succ_le (R : List Byte) (j : Nat) : (nz (R.take (j + 1))).length ≤ 
   rw [List.take_add_one, nz_append, List.length_append]
   have := nz_length_le (R[j]?.toList)
   have : (R[j]?.toList).length ≤ 1 := by cases R[j]? <;> simp
-  omega
+  omega_arith
 
 namespace In
 
@@ -68,16 +68,16 @@ theorem cnt_lt {j : Nat} (hj : j < P.mask.length) : cnt P.mask j < P.pl := by
 theorem cnt_le {j : Nat} (hj : j ≤ P.mask.length) : cnt P.mask j ≤ P.pl := by
   rcases j with _ | j
   · simp [cnt]
-  · have := h.cnt_lt (j := j) (by omega)
+  · have := h.cnt_lt (j := j) (by omega_using [hj])
     rw [← h.cntE hj]
-    rw [← h.cntE (Nat.le_of_lt (by omega : j < P.mask.length))] at this
+    rw [← h.cntE (Nat.le_of_lt (by omega_using [hj] : j < P.mask.length))] at this
     have := nz_succ_le (rB P σ) j
-    omega
+    omega_arith
 
 theorem stopE {j : Nat} (hj : j < P.mask.length) :
     j + 1 = P.mask.length ↔ (cnt P.mask (j + 1) = P.pl ∨ j + 1 = P.len) := by
   have := scan_stop_iff (n := P.pl) (R := rB P σ) (j := j) (by rw [h.scanN]; exact hj)
-  rw [h.scanN, h.cntE (by omega), Proof.RsaPkcs1Sig.bytesAt_len] at this
+  rw [h.scanN, h.cntE (by omega_using [hj]), Proof.RsaPkcs1Sig.bytesAt_len] at this
   exact this
 
 theorem len_pos (hl : P.len ≠ 0) : 0 < P.mask.length := by
@@ -88,15 +88,15 @@ theorem len_pos (hl : P.len ≠ 0) : 0 < P.mask.length := by
     | nil => have := congrArg List.length e; rw [Proof.RsaPkcs1Sig.bytesAt_len] at this; simp at this; omega
     | cons b R => exact ⟨b, R, rfl⟩
   rw [e]
-  obtain ⟨m, hm⟩ : ∃ m, P.pl = m + 1 := ⟨P.pl - 1, by omega⟩
+  obtain ⟨m, hm⟩ : ∃ m, P.pl = m + 1 := ⟨P.pl - 1, by omega_using [hp]⟩
   rw [hm, scanLen]
-  split <;> omega
+  split <;> omega_using []
 
 theorem len1149 : P.len ≤ 1149 := by
-  have := h.lenC; have := h.pl1021; simp only [Spec.RsaPkcs1Enc.padEntropy] at *; omega
+  have := h.lenC; have := h.pl1021; simp only [Spec.RsaPkcs1Enc.padEntropy] at *; omega_arith
 
 theorem len_zero (hl : P.len = 0) : P.mask.length = 0 := by
-  have := h.len_N; omega
+  have := h.len_N; omega_using [hl, this]
 
 end In
 
@@ -132,13 +132,13 @@ theorem In.fit {σ : State} (h : In P σ) : P.B.toNat + frameBytes + 80 ≤ 2 ^ 
   have := h.ok.fit
   simp only [Lay.A, RP.argv, List.length_cons, List.length_nil] at this
   simp only [frameBytes] at this ⊢
-  omega
+  omega_using [this]
 
 theorem In.psLen {σ : State} (h : In P σ) :
     BitVec.ofNat 32 P.K - BitVec.ofNat 32 P.ml - 3 = BitVec.ofNat 32 P.pl := by
   have := h.mlK
-  rw [Offset.ofNat_sub_ofNat (by omega), show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl,
-    Offset.ofNat_sub_ofNat (by omega)]
+  rw [Offset.ofNat_sub_ofNat (by omega_using [this]), show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl,
+    Offset.ofNat_sub_ofNat (by omega_using [this])]
 
 /-- `psLen` into `r`. -/
 theorem wp_psLen {σ s : State} (hs : S P σ s) {r t : Reg} (hr : r ≠ .esp) (ht : t ≠ .esp) (hrt : r ≠ t)
@@ -195,7 +195,7 @@ structure L1 (P : RP) (j : Nat) (σ s : State) : Prop where
 theorem In.rnd_fit {σ : State} (h : In P σ) : P.rnd.toNat + P.len ≤ 2 ^ 32 := by
   have := h.ok.fits P.RAND (by simp)
   simp only [BitVec.toNat_setWidth] at this
-  rwa [Nat.mod_eq_of_lt (by have := P.rnd.isLt; omega)] at this
+  rwa [Nat.mod_eq_of_lt (by have := P.rnd.isLt; omega_using [])] at this
 
 /-- Octet `j` of the tape, in a state of the body. -/
 theorem S.byte {σ s : State} (hs : S P σ s) {j : Nat} (hj : j < P.len) :
@@ -212,7 +212,7 @@ theorem byte_test (b : Byte) : ((b.setWidth 32 &&& b.setWidth 32) == 0) = decide
   · have : b.setWidth 32 ≠ 0 := fun e => hb (by
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_setWidth] at this
-      exact BitVec.eq_of_toNat_eq (by rw [Nat.mod_eq_of_lt (by have := b.isLt; omega)] at this; simpa using this))
+      exact BitVec.eq_of_toNat_eq (by rw [Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])] at this; simpa using this))
     rw [beq_eq_false_iff_ne.mpr this, decide_eq_false hb]
 
 theorem load_wp {σ s : State} {j : Nat} (h : It P j σ s) (hj : j < P.mask.length) :
@@ -297,7 +297,7 @@ theorem keep_wp {σ s : State} {j : Nat} (h : L1 P j σ s) (hz : eval .ne s = so
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth]
       have := ((rB P σ).getD j 0).isLt
-      omega
+      omega_using []
     · have hne := Offset.add_ofNat_ne (P.lay.Q) (by simp only [oBuf]; omega_arith : oBuf + i < 2 ^ 64)
         (by simp only [oBuf]; omega_arith : oBuf + cnt P.mask j < 2 ^ 64) (by omega_arith)
       simp only [hne, ↓reduceIte]
@@ -379,21 +379,21 @@ theorem step_vp (n : Nat) : VP (Lp P (n + 1)) step fun σ s =>
   swap
   · exact vp_false fun σ s h => hn h.1
   refine (((load_vp (P := P) (P.mask.length - (n + 1))).seq ((pick_vp _).seq (more_vp _))).mono
-    (fun σ s h => ⟨h.2, by have := h.1; omega⟩) fun σ s h => ?_)
+    (fun σ s h => ⟨h.2, by have := h.1; omega_using [hn]⟩) fun σ s h => ?_)
   obtain ⟨⟨hi, hj⟩, hz⟩ := h
-  have e : P.mask.length - (n + 1) + 1 = P.mask.length - n := by omega
+  have e : P.mask.length - (n + 1) + 1 = P.mask.length - n := by omega_using [hn]
   rw [e] at hi hz
-  refine ⟨?_, fun h0 => ?_, fun _ => ⟨by omega, hi⟩⟩
+  refine ⟨?_, fun h0 => ?_, fun _ => ⟨by omega_using [hn], hi⟩⟩
   · show Option.map (!·) s.zf = _
     rw [hz]
     cases n with
     | zero => simp
-    | succ m => simp; omega
+    | succ m => simp; omega_using [hn]
   · subst h0; simpa using hi
 
 theorem loop_vp : VP (fun σ s => It P 0 σ s ∧ 0 < P.mask.length) (.loop step .ne) (D P) := by
   refine ((VP.loop (I := Lp P) step_vp (P.mask.length - 1)).mono (fun σ s h => ?_) fun _ _ h => h)
-  rw [show P.mask.length - 1 + 1 = P.mask.length by have := h.2; omega]
+  rw [show P.mask.length - 1 + 1 = P.mask.length by have := h.2; omega_using [this]]
   exact ⟨Nat.le_refl _, by rw [Nat.sub_self]; exact h.1⟩
 
 theorem scan_vp : VP (H0 P) scan (D P) := by
@@ -426,7 +426,7 @@ theorem cmp_vp : VP (D P) (.block [.alu .cmp .edx (.imm 0)]) (Dz P) :=
 theorem Kept.frame {σ s t : State} {j : Nat} (h : Kept P σ s j) (hc : cnt P.mask j ≤ P.pl) (hp : P.pl ≤ 1021)
     {rs : List Region} (hf : Frame rs s.mem t.mem) (hd : ∀ r ∈ rs, Region.Disjoint P.BUF r) : Kept P σ t j :=
   fun i hi => by
-    have := hf.bytes (R := P.BUF) hd (by show P.pl ≤ 2 ^ 64; omega) (i := i) (by show i < P.pl; omega)
+    have := hf.bytes (R := P.BUF) hd (by show P.pl ≤ 2 ^ 64; omega_using [hp]) (i := i) (by show i < P.pl; omega_using [hc, hi])
     rw [show P.lay.fr (oBuf + i) = P.lay.fr oBuf + BitVec.ofNat 64 i from
       (Offset.add_ofNat_add_ofNat _ _ _).symm, this, Offset.add_ofNat_add_ofNat]
     exact h i hi
@@ -442,18 +442,18 @@ theorem readW64_halves {m : Mem} {a : Addr} {lo hi : BitVec 32} (h0 : m.readW a 
   show (m.read a 8).setWidth 64 = _
   rw [BitVec.setWidth_eq]
   refine Mem.read_eq_of_bytes (n := 8) fun i hi8 => ?_
-  rcases (by omega : i < 4 ∨ 4 ≤ i) with h | h
+  rcases (by omega_using [] : i < 4 ∨ 4 ≤ i) with h | h
   · rw [Mem.readW_byte m a h, h0]
     ext j hj
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append]
-    simp [show 8 * i + j < 32 by omega]
-  · obtain ⟨k, rfl⟩ : ∃ k, i = 4 + k := ⟨i - 4, by omega⟩
+    simp [show 8 * i + j < 32 by omega_using [h, hj]]
+  · obtain ⟨k, rfl⟩ : ∃ k, i = 4 + k := ⟨i - 4, by omega_using [h]⟩
     rw [show a + BitVec.ofNat 64 (4 + k) = a + BitVec.ofNat 64 4 + BitVec.ofNat 64 k by
-      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat], Mem.readW_byte m _ (by omega : k < 4), h1]
+      rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat], Mem.readW_byte m _ (by omega_using [hi8] : k < 4), h1]
     ext j hj
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append]
-    simp [show ¬ 8 * (4 + k) + j < 32 by omega]
-    congr 1; omega
+    simp [show ¬ 8 * (4 + k) + j < 32 by omega_using []]
+    congr 1; omega_using []
 
 /-- The tape's two words after its four halves are stored in order. -/
 theorem words4 (m : Mem) (p : Addr) (a b c d : BitVec 32) :
@@ -461,34 +461,34 @@ theorem words4 (m : Mem) (p : Addr) (a b c d : BitVec 32) :
       (p + BitVec.ofNat 64 8) c).writeW (p + BitVec.ofNat 64 12) d) p 2 = [b ++ a, d ++ c] := by
   have sp : ∀ {x y : Nat}, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 16 → y + 4 ≤ 16 → ∀ (mm : Mem) (v : BitVec 32),
       (mm.writeW (p + BitVec.ofNat 64 y) v).readW (p + BitVec.ofNat 64 x) 32 = mm.readW (p + BitVec.ofNat 64 x) 32 :=
-    fun h hx hy mm v => Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+    fun h hx hy mm v => Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hx]) (by omega_using [hy])) (by decide)
   have sp0 : ∀ {y : Nat}, 4 ≤ y → y + 4 ≤ 16 → ∀ (mm : Mem) (v : BitVec 32),
       (mm.writeW (p + BitVec.ofNat 64 y) v).readW p 32 = mm.readW p 32 := by
     intro y hy hy' mm v
-    have := sp (x := 0) (y := y) (by omega) (by omega) hy' mm v
+    have := sp (x := 0) (y := y) (by omega_using [hy]) (by omega_using []) hy' mm v
     rwa [BitVec.add_zero] at this
   rw [wordsAt_two]
   refine List.cons_eq_cons.mpr ⟨?_, List.cons_eq_cons.mpr ⟨?_, rfl⟩⟩
   · exact readW64_halves
-      (by rw [sp0 (y := 12) (by omega) (by omega), sp0 (y := 8) (by omega) (by omega),
-        sp0 (y := 4) (by omega) (by omega), Mem.readW_writeW_self32])
-      (by rw [sp (x := 4) (y := 12) (by omega) (by omega) (by omega),
-        sp (x := 4) (y := 8) (by omega) (by omega) (by omega), Mem.readW_writeW_self32])
+      (by rw [sp0 (y := 12) (by omega_using []) (by omega_using []), sp0 (y := 8) (by omega_using []) (by omega_using []),
+        sp0 (y := 4) (by omega_using []) (by omega_using []), Mem.readW_writeW_self32])
+      (by rw [sp (x := 4) (y := 12) (by omega_using []) (by omega_using []) (by omega_using []),
+        sp (x := 4) (y := 8) (by omega_using []) (by omega_using []) (by omega_using []), Mem.readW_writeW_self32])
   · exact readW64_halves
-      (by rw [sp (x := 8) (y := 12) (by omega) (by omega) (by omega), Mem.readW_writeW_self32])
+      (by rw [sp (x := 8) (y := 12) (by omega_using []) (by omega_using []) (by omega_using []), Mem.readW_writeW_self32])
       (by rw [Offset.add_ofNat_add_ofNat, Mem.readW_writeW_self32])
 theorem zero_append_ofNat {k : Nat} (h : k < 2 ^ 32) :
     ((0 : BitVec 32) ++ BitVec.ofNat 32 k : BitVec 64) = BitVec.ofNat 64 k := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [h])]
   show (0 : Nat) <<< 32 ||| k = k
   rw [Nat.zero_shiftLeft, Nat.zero_or]
 
 theorem In.tape_fit {σ : State} (h : In P σ) : P.tape.toNat + 16 ≤ 2 ^ 32 := by
   have := h.ok.fits P.TAPE (by simp)
   simp only [BitVec.toNat_setWidth] at this
-  rwa [Nat.mod_eq_of_lt (by have := P.tape.isLt; omega)] at this
+  rwa [Nat.mod_eq_of_lt (by have := P.tape.isLt; omega_using [])] at this
 
 /-- A store of a word into the tape. -/
 theorem wp_stTape {σ s : State} (hs : S P σ s) {b r : Reg} {o : Nat} (ho : o + 4 ≤ 16)
@@ -497,9 +497,9 @@ theorem wp_stTape {σ s : State} (hs : S P σ s) {b r : Reg} {o : Nat} (ho : o +
       Frame [P.TAPE] s.mem t.mem → WP isa (.block is) t Q) :
     WP isa (.block (.store ⟨b, o⟩ r :: is)) s Q := by
   have hf := hs.1.tape_fit
-  have ha : addr P.tape o = P.tape.setWidth 64 + BitVec.ofNat 64 o := addr_eq (by omega)
+  have ha : addr P.tape o = P.tape.setWidth 64 + BitVec.ofNat 64 o := addr_eq (by omega_using [ho, hf])
   have hc : (P.TAPE : Region).Contains (P.tape.setWidth 64 + BitVec.ofNat 64 o) 4 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
   refine wp_stm hb (by rw [ha]; exact ⟨P.TAPE, hs.2.inRw (by simp), hc⟩) fun t u => ?_
   rw [ha] at u
   have fr : Frame [P.TAPE] s.mem t.mem := by
@@ -511,7 +511,7 @@ theorem wp_stTape {σ s : State} (hs : S P σ s) {b r : Reg} {o : Nat} (ho : o +
 /-- `PS`'s place misses the tape. -/
 theorem In.buf_tape {σ : State} (h : In P σ) : Region.Disjoint P.BUF P.TAPE := by
   have := h.pl1021
-  exact h.ok.stk_fr (R := P.TAPE) (.inr (by simp)) (by show _ ≤ frameBytes + 16; simp only [oBuf, frameBytes]; omega)
+  exact h.ok.stk_fr (R := P.TAPE) (.inr (by simp)) (by show _ ≤ frameBytes + 16; simp only [oBuf, frameBytes]; omega_using [this])
 
 /-! ## The result -/
 
@@ -540,6 +540,6 @@ def Res (P : RP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
 def Fin (P : RP) (σ s : State) : Prop := S P σ s ∧ Res P σ s.mem (s.gpr .eax)
 
 theorem In.bufA {σ : State} (h : In P σ) : (P.B + BitVec.ofNat 32 oBuf).setWidth 64 = P.lay.fr oBuf :=
-  h.ok.addrB (by simp only [Lay.A, RP.argv, List.length_cons, List.length_nil, oBuf, frameBytes]; omega)
+  h.ok.addrB (by simp only [Lay.A, RP.argv, List.length_cons, List.length_nil, oBuf, frameBytes]; omega_using [])
 
 end VG.Proof.RsaPkcs1Enc.X86.Rnd

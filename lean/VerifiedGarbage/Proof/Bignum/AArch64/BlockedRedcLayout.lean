@@ -15,7 +15,7 @@ theorem spill_arrays {s t : State} {B : Addr} {w o : Nat} (hw : 16 ≤ w)
     (ho : Outside B (slot w o) 88 s.mem t.mem) : Arrays B w [o] s.mem t.mem := by
   intro x hx
   have h := hx o (by simp)
-  exact ho x (by omega)
+  exact ho x (by omega_using [hw, h])
 
 theorem keep_restored {s t : State}
     (h : Keep (mmRegs ++ VG.Impl.Bignum.AArch64.BlockedRedc.saved) s t)
@@ -42,16 +42,16 @@ theorem redc_layout_ok {s : State} {B : Addr} {Z w : Nat} {minv : Word}
   obtain ⟨k, hk⟩ := Nat.dvd_of_mod_eq_zero hmod
   subst w
   have hEnd : slot (8 * k) aAcc + 16 + 64 * k = slot (8 * k) aTmp := by
-    unfold slot aAcc aTmp; omega
+    unfold slot aAcc aTmp; omega_using []
   have hLimit := slot_le (w := 8 * k) (show aTmp < 8 by decide)
   refine WP.mono (redc_ok hs h0 h7 h8 h12
-    (by unfold slot aAcc; omega) (by unfold slot aAcc aTmp at *; omega)
-    (by unfold slot aAcc aN; omega) (by omega) (by omega)
+    (by unfold slot aAcc; omega_using [hw16]) (by unfold slot aAcc aTmp at *; omega_using [hZ])
+    (by unfold slot aAcc aN; omega_using []) (by omega_using [hw16]) (by omega_using [hw])
     (hH.harr aN (by decide)) hH.hminv hH.hw)
     fun t ⟨hv, ho, ht8, ht10, ht12, ht7, kt⟩ => ?_
   rewrite [hEnd] at hv ht8
-  have hCount : 2 * (8 * k) = 16 * k := by omega
-  have hBytes : 8 * (2 * (8 * k) + 2) = 128 * k + 16 := by omega
+  have hCount : 2 * (8 * k) = 16 * k := by omega_using []
+  have hBytes : 8 * (2 * (8 * k) + 2) = 128 * k + 16 := by omega_using []
   refine ⟨?_, ?_, ht8, ht10, ht12, ht7, kt⟩
   · rewrite [hCount]
     exact hv

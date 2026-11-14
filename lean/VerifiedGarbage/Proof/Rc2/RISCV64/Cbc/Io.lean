@@ -33,13 +33,13 @@ theorem in8_hi {rs : List Region} {p : Addr} (h : InRegions rs p 8) : InRegions 
       ← BitVec.add_assoc]
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((p - r.base).toNat + 4 % 2 ^ 64) (2 ^ 64)
-  omega
+  omega_using [hc]
 
 theorem in8_lo {rs : List Region} {p : Addr} (h : InRegions rs p 8) : InRegions rs (p + BitVec.ofNat 64 0) 4 := by
   obtain ⟨r, hr, hc⟩ := h
   refine ⟨r, hr, ?_⟩
   simp only [Region.Contains, BitVec.add_zero] at hc ⊢
-  omega
+  omega_using [hc]
 
 theorem load64_run {d n : Reg} (hdn : d ≠ n) (h7n : Reg.a7 ≠ n) (h1n : Reg.t1 ≠ n) (hd7 : d ≠ .a7)
     (hd1 : d ≠ .t1) (u : State) {p : Addr} (hp : u.gpr n = p) (hr : InRegions (u.rd ++ u.wr) p 8) :

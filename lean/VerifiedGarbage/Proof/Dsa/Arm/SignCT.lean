@@ -71,7 +71,7 @@ theorem signCtx {s t : State} {base : Addr} {size pLen qLen c : Nat} (h : signPr
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega
+  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
   obtain ⟨Ip, Iq, Ig, Iy, Ix⟩ := signKeyIn h hb hsz E
   refine ⟨⟨E.ws, big, wp, wq, qp, q32⟩, fun i hi => ?_⟩
   simp only [signIns, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -110,7 +110,7 @@ theorem sign_keyBytes {s₁ s₂ : State} (h₁ : signPre s₁) (hl : signLeak s
     (List.append_inj hl (by simp [Spec.Rsa.bytesAt])).1
   rw [← VG.Proof.Dsa.bytesAt_prefix, ← VG.Proof.Dsa.bytesAt_prefix,
     show min (s₁.gpr .r3).toNat (3 * (arg s₁ 0).toNat + (arg s₁ 2).toNat) =
-      3 * (arg s₁ 0).toNat + (arg s₁ 2).toNat by omega] at E
+      3 * (arg s₁ 0).toNat + (arg s₁ 2).toNat by omega_using [r3]] at E
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
 theorem sign_constantTime : ConstantTime isa signArm.pre signArm.pub (Entry.operation true) := by

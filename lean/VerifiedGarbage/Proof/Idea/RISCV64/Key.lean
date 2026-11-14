@@ -62,26 +62,26 @@ theorem append8_getLsbD (b0 b1 b2 b3 b4 b5 b6 b7 : BitVec 8) {k b : Nat} (hk : k
     (b0 ++ b1 ++ b2 ++ b3 ++ b4 ++ b5 ++ b6 ++ b7).getLsbD (8 * k + b) =
       ([b7, b6, b5, b4, b3, b2, b1, b0].getD k 0).getLsbD b := by
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-      k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
+      k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
   all_goals
     simp (disch := omega) only [BitVec.getLsbD_append, ite_eq_left, ite_eq_right, List.getD_cons_zero,
       List.getD_cons_succ]
     congr 1
-    omega
+    omega_using []
 
 theorem be64_getLsbD (m : Mem) (p : Addr) (off : Nat) {k b : Nat} (hk : k < 8) (hb : b < 8) :
     (be64 m p off).getLsbD (8 * k + b) = (m (p + BitVec.ofNat 64 (off + (7 - k)))).getLsbD b := by
   unfold be64
   rw [append8_getLsbD _ _ _ _ _ _ _ _ hk hb]
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-      k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
+      k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
   all_goals rfl
 
 /-- Bit `i` of the key at `p` as a 128-bit number. -/
 theorem keyAt_getLsbD (m : Mem) (p : Addr) {i : Nat} (hi : i < 128) :
     (Spec.Idea.keyValue (Spec.Idea.keyAt m p)).getLsbD i =
       (m (p + BitVec.ofNat 64 (15 - i / 8))).getLsbD (i % 8) := by
-  rw [keyValue_getLsbD _ hi, keyAt_getD _ _ (by omega)]
+  rw [keyValue_getLsbD _ hi, keyAt_getD _ _ (by omega_using [])]
 
 /-- The bit of the key that is at bit `i` of the pair after `j` rotations. -/
 def src (j i : Nat) : Nat := (i + 128 - 25 * j % 128) % 128
@@ -115,32 +115,32 @@ theorem keyLoad_ok (s : State) (hp : KeyPre s) :
       Impl.Words.RISCV64.loadBE64 .a3 .t0 .a0 8)) s (KInv s 0 0) := by
   rw [WP.block_append_iff]
   have h0 : InRegions (s.rd ++ s.wr) (s.gpr .a0 + BitVec.ofNat 64 0) 8 :=
-    ⟨_, hp.key, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, hp.key, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   refine WP.mono (loadBE64_ok (by decide) (by decide) (by decide) (by decide) h0) fun s₁ h₁ => ?_
   have e₁ : s₁.gpr .a0 = s.gpr .a0 ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     rw [h₁]; exact ⟨by simp [State.write], rfl, rfl⟩
   have h8 : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .a0 + BitVec.ofNat 64 8) 8 := by
     rw [e₁.1, e₁.2.1, e₁.2.2]
-    exact ⟨_, hp.key, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hp.key, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   refine WP.mono (loadBE64_ok (by decide) (by decide) (by decide) (by decide) h8) fun s₂ h₂ => ?_
   subst h₂
   subst h₁
   have hk (i : Nat) (hi : i < 128) := keyAt_getLsbD s.mem (s.gpr .a0) hi
   refine ⟨by decide, ⟨fun r hr => ?_, rfl, rfl⟩, fun i hi => ?_, fun i hi => ?_, Frame.refl _ _,
-    fun k hk => absurd hk (by omega)⟩
+    fun k hk => absurd hk (by omega_using [])⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [State.write, hr.1, hr.2.1, hr.2.2.1]
   · simp only [State.write, ite_eq_right (show Reg.a2 ≠ Reg.a3 by decide),
       ite_eq_right (show Reg.a2 ≠ Reg.t0 by decide), ite_true]
-    have := be64_getLsbD s.mem (s.gpr .a0) 0 (k := i / 8) (b := i % 8) (by omega) (by omega)
-    rw [show 8 * (i / 8) + i % 8 = i by omega] at this
-    rw [this, show src 0 (64 + i) = 64 + i by simp only [src]; omega, hk _ (by omega),
-      show (64 + i) % 8 = i % 8 by omega, show 15 - (64 + i) / 8 = 0 + (7 - i / 8) by omega]
+    have := be64_getLsbD s.mem (s.gpr .a0) 0 (k := i / 8) (b := i % 8) (by omega_using [hi]) (by omega_using [])
+    rw [show 8 * (i / 8) + i % 8 = i by omega_using []] at this
+    rw [this, show src 0 (64 + i) = 64 + i by simp only [src]; omega_using [hi], hk _ (by omega_using [hi]),
+      show (64 + i) % 8 = i % 8 by omega_using [], show 15 - (64 + i) / 8 = 0 + (7 - i / 8) by omega_using []]
   · simp only [State.write, reduceCtorEq, ↓reduceIte]
-    have := be64_getLsbD s.mem (s.gpr .a0) 8 (k := i / 8) (b := i % 8) (by omega) (by omega)
-    rw [show 8 * (i / 8) + i % 8 = i by omega] at this
-    rw [this, show src 0 i = i by simp only [src]; omega, hk _ (by omega),
-      show 15 - i / 8 = 8 + (7 - i / 8) by omega]
+    have := be64_getLsbD s.mem (s.gpr .a0) 8 (k := i / 8) (b := i % 8) (by omega_using [hi]) (by omega_using [])
+    rw [show 8 * (i / 8) + i % 8 = i by omega_using []] at this
+    rw [this, show src 0 i = i by simp only [src]; omega_using [hi], hk _ (by omega_using [hi]),
+      show 15 - i / 8 = 8 + (7 - i / 8) by omega_using [hi]]
 
 theorem rotate_ok (s₀ : State) (j n : Nat) (t : State) (hi : KInv s₀ j n t) :
     WP isa (.block rotate) t (KInv s₀ (j + 1) n) := by
@@ -161,24 +161,24 @@ theorem rotate_ok (s₀ : State) (j n : Nat) (t : State) (hi : KInv s₀ j n t) 
     by_cases h25 : i < 25
     · simp only [h25, decide_true, Bool.not_true, Bool.and_false, Bool.false_and, Bool.false_or,
         show i < 64 from hi']
-      rw [hi.lo _ (by omega)]
-      congr 1; simp only [src]; omega
-    · rw [BitVec.getLsbD_of_ge (t.gpr .a3) (39 + i) (by omega)]
+      rw [hi.lo _ (by omega_using [h25])]
+      congr 1; simp only [src]; omega_using []
+    · rw [BitVec.getLsbD_of_ge (t.gpr .a3) (39 + i) (by omega_using [h25])]
       simp only [h25, decide_false, Bool.not_false, Bool.and_true, Bool.or_false,
         show i < 64 from hi', decide_true, Bool.true_and]
-      rw [hi.hi _ (by omega)]
-      congr 1; simp only [src]; omega
+      rw [hi.hi _ (by omega_using [hi'])]
+      congr 1; simp only [src]; omega_using [h25]
   · rw [u3, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight]
     by_cases h25 : i < 25
     · simp only [h25, decide_true, Bool.not_true, Bool.and_false, Bool.false_and, Bool.false_or,
         show i < 64 from hi']
-      rw [hi.hi _ (by omega)]
-      congr 1; simp only [src]; omega
-    · rw [BitVec.getLsbD_of_ge (t.gpr .a2) (39 + i) (by omega)]
+      rw [hi.hi _ (by omega_using [h25])]
+      congr 1; simp only [src]; omega_using []
+    · rw [BitVec.getLsbD_of_ge (t.gpr .a2) (39 + i) (by omega_using [h25])]
       simp only [h25, decide_false, Bool.not_false, Bool.and_true, Bool.or_false,
         show i < 64 from hi', decide_true, Bool.true_and]
-      rw [hi.lo _ (by omega)]
-      congr 1; simp only [src]; omega
+      rw [hi.lo _ (by omega_using [hi'])]
+      congr 1; simp only [src]; omega_using [h25]
 
 /-- A 16-bit window, as `storeKey` stores it, read back little-endian. -/
 theorem window_getLsbD (x : BitVec 64) {b : Nat} (hb : b < 16) :
@@ -187,8 +187,8 @@ theorem window_getLsbD (x : BitVec 64) {b : Nat} (hb : b < 16) :
   by_cases h : b < 8
   · simp [h]
   · simp only [h, ↓reduceIte, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
-      show b - 8 < 8 by omega, decide_true, Bool.true_and]
-    congr 1; omega
+      show b - 8 < 8 by omega_using [hb], decide_true, Bool.true_and]
+    congr 1; omega_using [h]
 
 theorem expandSub_ok (s₀ : State) (hp : KeyPre s₀) (j i : Nat) (hi8 : i < 8) (hn : 8 * j + i < 52)
     (t : State) (hi : KInv s₀ j (8 * j + i) t) :
@@ -196,7 +196,7 @@ theorem expandSub_ok (s₀ : State) (hp : KeyPre s₀) (j i : Nat) (hi8 : i < 8)
   have ha : t.gpr .a1 = s₀.gpr .a1 := hi.keep.gpr (by decide)
   have hw (o : Nat) (ho : o < 104) : InRegions t.wr (t.gpr .a1 + BitVec.ofNat 64 o) 1 := by
     rw [ha, hi.keep.2.2]
-    exact ⟨_, hp.out, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hp.out, Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])⟩
   unfold expandSub
   rw [show ∀ (x : Instr) (l : List Instr), x :: l = [x] ++ l from fun _ _ => rfl,
     WP.block_append_iff]
@@ -205,42 +205,42 @@ theorem expandSub_ok (s₀ : State) (hp : KeyPre s₀) (j i : Nat) (hi8 : i < 8)
     refine WP.mono (WP.keep (c := .block [.shift .srl .d .t0 (half i) (16 * (3 - i % 4))]) [.t0]
       (Q := fun u => u.gpr .t0 = t.gpr (half i) >>> (16 * (3 - i % 4)) ∧ u.mem = t.mem) ?_
       (by simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun u ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
-    mrun [show 16 * (3 - i % 4) < 64 by omega]
+    mrun [show 16 * (3 - i % 4) < 64 by omega_using []]
   refine WP.mono hs fun u ⟨u0, um, ue⟩ => ?_
   have ua : u.gpr .a1 = t.gpr .a1 := ue.gpr (by decide)
   refine WP.mono (storeKey_ok (r := .t0) (by decide) (8 * j + i) hn u
-    (by rw [ua, ue.2.2]; exact hw _ (by omega)) (by rw [ua, ue.2.2]; exact hw _ (by omega)))
+    (by rw [ua, ue.2.2]; exact hw _ (by omega_using [hn])) (by rw [ua, ue.2.2]; exact hw _ (by omega_using [hn])))
     fun v ⟨vm, ve⟩ => ?_
   rw [ua, ha, u0, um] at vm
-  refine ⟨by omega, ((hi.keep.trans ue).trans ve).mono (by decide), fun b hb => ?_, fun b hb => ?_,
+  refine ⟨by omega_using [hn], ((hi.keep.trans ue).trans ve).mono (by decide), fun b hb => ?_, fun b hb => ?_,
     ?_, fun k hk => ?_⟩
   · rw [ve.gpr (by decide), ue.gpr (by decide)]; exact hi.hi b hb
   · rw [ve.gpr (by decide), ue.gpr (by decide)]; exact hi.lo b hb
   · rw [vm]
     have hc (o : Nat) (ho : o < 104) : (⟨s₀.gpr .a1, 104⟩ : Region).Contains
-        (s₀.gpr .a1 + BitVec.ofNat 64 o) 1 := Offset.contains_base _ (by omega) (by omega)
-    exact (hi.frame.write (List.mem_singleton_self _) _ (hc _ (by omega))).write
-      (List.mem_singleton_self _) _ (hc _ (by omega))
-  · rw [vm, write1_off _ _ _ (by omega) (by omega), write1_off _ _ _ (by omega) (by omega),
-      write1_off _ _ _ (by omega) (by omega), write1_off _ _ _ (by omega) (by omega)]
+        (s₀.gpr .a1 + BitVec.ofNat 64 o) 1 := Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
+    exact (hi.frame.write (List.mem_singleton_self _) _ (hc _ (by omega_using [hn]))).write
+      (List.mem_singleton_self _) _ (hc _ (by omega_using [hn]))
+  · rw [vm, write1_off _ _ _ (by omega_using [hn, hk]) (by omega_using [hn]), write1_off _ _ _ (by omega_using [hn, hk]) (by omega_using [hn]),
+      write1_off _ _ _ (by omega_using [hn, hk]) (by omega_using [hn]), write1_off _ _ _ (by omega_using [hn, hk]) (by omega_using [hn])]
     by_cases he : k = 8 * j + i
     · subst he
-      simp only [↓reduceIte, show ¬ (2 * (8 * j + i) = 2 * (8 * j + i) + 1) by omega]
+      simp only [↓reduceIte, show ¬ (2 * (8 * j + i) = 2 * (8 * j + i) + 1) by omega_using []]
       apply BitVec.eq_of_getLsbD_eq
       intro b hb
-      rw [window_getLsbD _ hb, BitVec.getLsbD_ushiftRight, expandKey_getLsbD _ (by omega) hb]
+      rw [window_getLsbD _ hb, BitVec.getLsbD_ushiftRight, expandKey_getLsbD _ (by omega_using [hn]) hb]
       unfold half
       by_cases h4 : i < 4
-      · rw [ite_eq_left h4, hi.hi _ (by omega), show i % 4 = i by omega]
-        congr 1; simp only [src, keyBit, show (8 * j + i) / 8 = j by omega,
-          show (8 * j + i) % 8 = i by omega]; omega
-      · rw [ite_eq_right h4, hi.lo _ (by omega), show i % 4 = i - 4 by omega]
-        congr 1; simp only [src, keyBit, show (8 * j + i) / 8 = j by omega,
-          show (8 * j + i) % 8 = i by omega]; omega
-    · simp only [show ¬ (2 * k + 1 = 2 * (8 * j + i) + 1) by omega,
-        show ¬ (2 * k + 1 = 2 * (8 * j + i)) by omega, show ¬ (2 * k = 2 * (8 * j + i) + 1) by omega,
-        show ¬ (2 * k = 2 * (8 * j + i)) by omega, ↓reduceIte]
-      exact hi.words k (by omega)
+      · rw [ite_eq_left h4, hi.hi _ (by omega_using [hb]), show i % 4 = i by omega_using [h4]]
+        congr 1; simp only [src, keyBit, show (8 * j + i) / 8 = j by omega_using [hi8],
+          show (8 * j + i) % 8 = i by omega_using [hi8]]; omega_using [h4]
+      · rw [ite_eq_right h4, hi.lo _ (by omega_using [hb]), show i % 4 = i - 4 by omega_using [hi8, h4]]
+        congr 1; simp only [src, keyBit, show (8 * j + i) / 8 = j by omega_using [hi8],
+          show (8 * j + i) % 8 = i by omega_using [hi8]]; omega_using [h4]
+    · simp only [show ¬ (2 * k + 1 = 2 * (8 * j + i) + 1) by omega_using [he],
+        show ¬ (2 * k + 1 = 2 * (8 * j + i)) by omega_using [], show ¬ (2 * k = 2 * (8 * j + i) + 1) by omega_using [],
+        show ¬ (2 * k = 2 * (8 * j + i)) by omega_using [he], ↓reduceIte]
+      exact hi.words k (by omega_using [hk, he])
 
 /-- The subkeys `8j … 8j + c - 1`. -/
 theorem expandSubs_ok (s₀ : State) (hp : KeyPre s₀) (j : Nat) :
@@ -249,18 +249,18 @@ theorem expandSubs_ok (s₀ : State) (hp : KeyPre s₀) (j : Nat) :
   | 0, _, _, t, hi => WP.block_nil hi
   | c + 1, hc, hj, t, hi => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (expandSubs_ok s₀ hp j c (by omega) (by omega) t hi) fun u hu =>
-      expandSub_ok s₀ hp j c (by omega) (by omega) u hu
+    exact WP.mono (expandSubs_ok s₀ hp j c (by omega_using [hc]) (by omega_using [hj]) t hi) fun u hu =>
+      expandSub_ok s₀ hp j c (by omega_using [hc]) (by omega_using [hj]) u hu
 
 theorem expandGroup_ok (s₀ : State) (hp : KeyPre s₀) (j : Nat) (hj : j ≤ 6) (t : State)
     (hi : KInv s₀ j (8 * j) t) :
     WP isa (.block (expandGroup j)) t (KInv s₀ j (min (8 * j + 8) 52)) := by
   unfold expandGroup
   by_cases h6 : j < 6
-  · rw [ite_eq_left h6, show min (8 * j + 8) 52 = 8 * j + 8 by omega]
-    exact expandSubs_ok s₀ hp j 8 (by decide) (by omega) t hi
-  · rw [ite_eq_right h6, show min (8 * j + 8) 52 = 8 * j + 4 by omega]
-    exact expandSubs_ok s₀ hp j 4 (by decide) (by omega) t hi
+  · rw [ite_eq_left h6, show min (8 * j + 8) 52 = 8 * j + 8 by omega_using [h6]]
+    exact expandSubs_ok s₀ hp j 8 (by decide) (by omega_using [h6]) t hi
+  · rw [ite_eq_right h6, show min (8 * j + 8) 52 = 8 * j + 4 by omega_using [hj, h6]]
+    exact expandSubs_ok s₀ hp j 4 (by decide) (by omega_using [hj]) t hi
 
 theorem groups_ok (s₀ : State) (hp : KeyPre s₀) :
     ∀ c ≤ 6, ∀ t, KInv s₀ 0 8 t →
@@ -269,11 +269,11 @@ theorem groups_ok (s₀ : State) (hp : KeyPre s₀) :
   | 0, _, t, hi => WP.block_nil hi
   | c + 1, hc, t, hi => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (groups_ok s₀ hp c (by omega) t hi) fun u hu => ?_
+    refine WP.mono (groups_ok s₀ hp c (by omega_using [hc]) t hi) fun u hu => ?_
     rw [WP.block_append_iff]
     refine WP.mono (rotate_ok s₀ c _ u hu) fun v hv => ?_
-    rw [show min (8 * c + 8) 52 = 8 * (c + 1) by omega] at hv
-    exact expandGroup_ok s₀ hp (c + 1) (by omega) v hv
+    rw [show min (8 * c + 8) 52 = 8 * (c + 1) by omega_using [hc]] at hv
+    exact expandGroup_ok s₀ hp (c + 1) (by omega_using [hc]) v hv
 
 /-! ## The function -/
 
@@ -305,7 +305,7 @@ theorem expand_wp (s : State) (hs : expandContract.pre s) :
   apply Vector.ext
   intro n hn
   rw [← getD_lt _ 0 hn, ← getD_lt _ 0 hn, scheduleAt_getD _ _ hn]
-  exact hi.words n (by omega)
+  exact hi.words n (by omega_using [hn])
 
 /-- The registers `expandKey` writes. -/
 abbrev expandWrites : List Reg := [.a2, .a3, .t0, .t1]

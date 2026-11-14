@@ -27,9 +27,9 @@ private theorem byteBits : ∀ b : Byte,Spec.RsaKeyGen.bitLength b.toNat≤8 := 
 
 def recognizedLoop (q : RecognizePublic) : PolicyLoopPublic :=
  ⟨⟨q.B,q.Z,q.dom,q.table,q.domBytes,⟨256,225,Spec.Ffdh.modp2048Prime⟩,q.k,q.room,
-   by have :=q.domLength;have :=q.shape;omega,q.positive,q.small⟩,
+   by have :=q.domLength;have :=q.shape;omega_arith,q.positive,q.small⟩,
   Policy.groups.tail,initialPolicyWidth q,
-  by have :=byteBits (q.bs.getD q.L 0);have :=q.inside;have :=q.size;have :=q.length;unfold initialPolicyWidth;omega,
+  by have :=byteBits (q.bs.getD q.L 0);have :=q.inside;have :=q.size;have :=q.length;unfold initialPolicyWidth;omega_arith,
   by decide⟩
 
 structure RecognizeReady (q : RecognizePublic) (s : State) : Prop extends PolicyBoundReady q.toPolicyBoundPublic s where

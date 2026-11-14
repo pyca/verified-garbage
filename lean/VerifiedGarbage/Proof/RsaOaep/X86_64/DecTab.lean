@@ -48,18 +48,18 @@ theorem dtabJ {s t : State} (hp : DPre s) (he : EnvD s t) (hsy : t.syms = s.syms
   have hsp := hp.sp2
   have hT' : (⟨stackArg s j, 88⟩ : Region) ∈ t.rd := by rw [he.rd]; exact hT
   have cT : ∀ d, d + 8 ≤ 88 → (⟨stackArg s j, 88⟩ : Region).Contains (off (stackArg s j) d) 8 := fun d hd =>
-    Offset.contains_base _ hd (by have := wT; omega)
+    Offset.contains_base _ hd (by have := wT; omega_using [hd])
   have cA : (⟨stackArgAddr s 0, 152⟩ : Region).Contains (off (fb s) (frameBytes + 8 + 8 * j)) 8 := by
     rw [argAddr, stackArgAddr_j s j]
-    exact Offset.contains_base _ (by omega) (by have := hp.sp2; omega)
-  refine ⟨by rw [hsy]; exact ok, fun i hi => ⟨_, List.mem_append_left _ hT', cT _ (by omega)⟩,
-    ⟨_, List.mem_append_left _ hT', cT 48 (by omega)⟩, by rw [argAddr]; exact hp.argIn he.rd hj, fun m hf => ?_⟩
+    exact Offset.contains_base _ (by omega_using [hj]) (by have := hp.sp2; omega_using [hj])
+  refine ⟨by rw [hsy]; exact ok, fun i hi => ⟨_, List.mem_append_left _ hT', cT _ (by omega_using [hi])⟩,
+    ⟨_, List.mem_append_left _ hT', cT 48 (by omega_using [])⟩, by rw [argAddr]; exact hp.argIn he.rd hj, fun m hf => ?_⟩
   have hF : FrD s m := FrD.step he.fr he.wr hf
   have rt : ∀ d, d + 8 ≤ 88 → m.readW (off (stackArg s j) d) 64 = s.mem.readW (off (stackArg s j) d) 64 :=
     fun d hd => hF.readW' (cT d hd) dK dO dM dS
   rw [hsy]
-  refine ⟨⟨(rt _ (by omega)).trans hm.1, (rt _ (by omega)).trans hm.2.1, (rt _ (by omega)).trans hm.2.2⟩,
-    (rt 48 (by omega)).trans hD, ?_⟩
+  refine ⟨⟨(rt _ (by omega_using [])).trans hm.1, (rt _ (by omega_using [])).trans hm.2.1, (rt _ (by omega_using [])).trans hm.2.2⟩,
+    (rt 48 (by omega_using [])).trans hD, ?_⟩
   rw [hF.readW' cA hp.dKa hp.dOa hp.dMa hp.dsa, argAddr]
   rfl
 

@@ -39,7 +39,7 @@ theorem generatorWP_gen {c : Cfg} (hc : CfgOk c) {s₀ : State} {base : Addr} {k
     GeneratorWP c c.gen s₀ base k Q symbols c.qA0 := by
   intro s hs hf F _ hstep _ hrx hry hrz bits hk _ _ _
   exact qMul_ok hc hs hf F (px := GX) (py := GY) (by decide) (lt_of_eq_of_lt F.gx (Nat.mod_lt _
-    (by have := hc.p_ge; omega))) (lt_of_eq_of_lt F.gy (Nat.mod_lt _ (by have := hc.p_ge; omega)))
+    (by have := hc.p_ge; omega_using [this]))) (lt_of_eq_of_lt F.gy (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])))
     hrx hry hrz hstep hO hk bits
 
 end VG.Proof.Ecdsa.Verify.Arm

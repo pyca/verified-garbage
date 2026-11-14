@@ -35,11 +35,11 @@ theorem start_ok (K : TCombCfg) {s : State} {base : Addr}
   refine VG.Proof.X25519.Arm.WP.append (ladderSetup_ok hs h.n3 h.n6 h.point)
     fun u ⟨ku,ou,cp⟩ => ?_
   have hsu := hs.of_rest ku (by decide)
-  refine VG.Proof.X25519.Arm.WP.append (setConst_ok hsu (by omega) hx) fun v ⟨xv,kv,ov⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (setConst_ok hsu (by omega_using [hl, rx]) hx) fun v ⟨xv,kv,ov⟩ => ?_
   have hsv := hsu.of_rest kv (by decide)
-  refine VG.Proof.X25519.Arm.WP.append (setConst_ok hsv (by omega) hy) fun a ⟨ya,ka,oa⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (setConst_ok hsv (by omega_using [hl, ry]) hy) fun a ⟨ya,ka,oa⟩ => ?_
   have hsa := hsv.of_rest ka (by decide)
-  refine VG.Proof.X25519.Arm.WP.append (setConst_ok hsa (by omega) hz) fun b ⟨zb,kb,ob⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (setConst_ok hsa (by omega_using [hl, rz]) hz) fun b ⟨zb,kb,ob⟩ => ?_
   refine wp_mov (op2_imm encJ) fun t ut => WP.block_nil ?_
   have ub : Unch base [(K.L.R.x,8*K.L.M.n),(K.L.R.y,8*K.L.M.n),(K.L.R.z,8*K.L.M.n)] u.mem t.mem := by
     rw [ut.mem]
@@ -54,8 +54,8 @@ theorem start_ok (K : TCombCfg) {s : State} {base : Addr}
     intro w hw
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hw
     rcases hw with rfl|rfl|rfl <;> exact .inl (Nat.le_trans (by assumption) (oAt_le_qAt _))
-  · rw [ut.mem,ob.wordsVal (by omega) (by omega),oa.wordsVal (by omega) (by omega),xv]
-  · rw [ut.mem,ob.wordsVal (by omega) (by omega),ya]
+  · rw [ut.mem,ob.wordsVal (by omega_using [rxz]) (by omega_using [hl, rx]),oa.wordsVal (by omega_using [rxy]) (by omega_using [hl, rx]),xv]
+  · rw [ut.mem,ob.wordsVal (by omega_using [ryz]) (by omega_using [hl, ry]),ya]
   · rw [ut.mem,zb]
 
 end VG.Proof.Weierstrass.Arm.TComb

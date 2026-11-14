@@ -145,16 +145,16 @@ theorem loB_ge {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) {t : Q} {k : Nat} (
     have h₁ := Nat.mod_le (qz s₀ (xr r) k).toNat (2 ^ 32)
     have h₂ := Nat.mod_lt (qz s₀ (xr r) k).toNat (show 2 ^ 32 > 0 by decide)
     simp only [Q.eval] at hb ⊢
-    omega
+    omega_using [hb, this]
   · rename_i d
     have := hE.mbl d
     have h₁ := Nat.mod_le (Q.eval s₀ (.mb d) k).toNat (2 ^ 32)
     have h₂ := Nat.mod_lt (Q.eval s₀ (.mb d) k).toNat (show 2 ^ 32 > 0 by decide)
     simp only [Q.eval] at hb h₁ h₂ ⊢
-    omega
+    omega_using [hb, this]
   · have h₁ := Nat.mod_le (t.eval s₀ k).toNat (2 ^ 32)
     have h₂ := Nat.mod_lt (t.eval s₀ k).toNat (show 2 ^ 32 > 0 by decide)
-    omega
+    omega_using [hb]
 
 theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     ∀ (t : Q) {k : Nat}, k < 8 → t.ok B k = true →
@@ -193,7 +193,7 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     rw [← ea, ← eb]
     have := BitVec.isLt (a.eval s₀ k + b.eval s₀ k)
     rw [BitVec.toNat_add] at this
-    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this⟩
+    exact ⟨Nat.mod_eq_of_lt (by omega_using [hs, ba, bb]), capW_ge (by rw [Nat.mod_eq_of_lt (by omega_using [hs, ba, bb])]; omega_using [ba, bb]) this⟩
   | mul a b iha ihb =>
     intro k hk ho
     simp only [Q.ok, Bool.and_eq_true] at ho
@@ -242,7 +242,7 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     simp only [Q.eval, Q.nat, Q.bnd, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq] at this ⊢
     rw [← ea]
     have hm := Nat.mul_le_mul_right (2 ^ n) ba
-    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this⟩
+    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega_using [hm]) this⟩
   | shr a n ih =>
     intro k hk ho
     obtain ⟨ea, ba⟩ := ih hk ho
@@ -254,12 +254,12 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     simp only [Q.eval, Q.nat, Q.bnd, Q.ok] at ho ⊢
     split
     · rename_i h; rw [ite_eq_left h] at ho; exact iha hk ho
-    · rename_i h; rw [ite_eq_right h] at ho; exact ihb (by omega) ho
+    · rename_i h; rw [ite_eq_right h] at ho; exact ihb (by omega_using [hk]) ho
   | unph a b iha ihb =>
     intro k hk ho
     simp only [Q.eval, Q.nat, Q.bnd, Q.ok] at ho ⊢
     split
-    · rename_i h; rw [ite_eq_left h] at ho; exact iha (by omega) ho
+    · rename_i h; rw [ite_eq_left h] at ho; exact iha (by omega_using [hk, h]) ho
     · rename_i h; rw [ite_eq_right h] at ho; exact ihb hk ho
   | shuf a b sel iha ihb =>
     intro k _ ho

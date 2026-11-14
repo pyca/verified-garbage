@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Sig
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Tables of hash functions: what every target's proofs share
@@ -71,8 +72,8 @@ theorem symsOf_distinct {ns : List String} (h : ns.length < 2 ^ 32) :
     have i2 := List.idxOf_lt_length_of_mem hg
     have e' := congrArg BitVec.toNat e
     simp only [symsOf, BitVec.toNat_ofNat] at e'
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e'
-    have hi : ns.idxOf f = ns.idxOf g := by omega
+    rw [Nat.mod_eq_of_lt (by omega_using [h, i1]), Nat.mod_eq_of_lt (by omega_using [h, i2])] at e'
+    have hi : ns.idxOf f = ns.idxOf g := by omega_using [e']
     exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
 
 /-- The functions' addresses are distinct, in the list of the functions of
@@ -86,8 +87,8 @@ theorem symsOf_distinct2 {ns : List String} (h : ns.length < 2 ^ 32) :
     have i2 := List.idxOf_lt_length_of_mem hg'
     have e' := congrArg BitVec.toNat e
     simp only [symsOf, BitVec.toNat_ofNat] at e'
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e'
-    have hi : ns.idxOf f = ns.idxOf g := by omega
+    rw [Nat.mod_eq_of_lt (by omega_using [h, i1]), Nat.mod_eq_of_lt (by omega_using [h, i2])] at e'
+    have hi : ns.idxOf f = ns.idxOf g := by omega_using [e']
     exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
 
 /-- A 64-bit word apart from a write of one. -/
@@ -109,9 +110,9 @@ theorem symsOf32_distinct {ns : List String} (h : ns.length < 2 ^ 24) :
     have i2 := List.idxOf_lt_length_of_mem hg
     have e' := congrArg BitVec.toNat e
     simp only [symsOf32, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at e'
-    rw [Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega), Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e'
-    have hi : ns.idxOf f = ns.idxOf g := by omega
+    rw [Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega_using []), Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega_using []),
+      Nat.mod_eq_of_lt (by omega_using [h, i1]), Nat.mod_eq_of_lt (by omega_using [h, i2])] at e'
+    have hi : ns.idxOf f = ns.idxOf g := by omega_using [e']
     exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
 
 /-- The functions' addresses are distinct, in the list of the functions of
@@ -125,9 +126,9 @@ theorem symsOf32_distinct2 {ns : List String} (h : ns.length < 2 ^ 24) :
     have i2 := List.idxOf_lt_length_of_mem hg'
     have e' := congrArg BitVec.toNat e
     simp only [symsOf32, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at e'
-    rw [Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega), Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at e'
-    have hi : ns.idxOf f = ns.idxOf g := by omega
+    rw [Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega_using []), Nat.mod_eq_of_lt (a := _ % 2 ^ 32) (by omega_using []),
+      Nat.mod_eq_of_lt (by omega_using [h, i1]), Nat.mod_eq_of_lt (by omega_using [h, i2])] at e'
+    have hi : ns.idxOf f = ns.idxOf g := by omega_using [e']
     exact hne (by rw [← List.getElem_idxOf i1, ← List.getElem_idxOf i2]; simp only [hi])
 
 /-- A 32-bit word apart from a write of one. -/
@@ -152,9 +153,9 @@ theorem putWs_out {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)},
   | _, [], _, _, _ => rfl
   | p, w :: ws, h, hp, ha => by
     simp only [List.length_cons] at h hp
-    have h8 := add8_toNat (p := p) (by omega)
+    have h8 := add8_toNat (p := p) (by omega_using [hp])
     simp only [putWs]
-    rw [putWs_out (by rw [h8]; omega) (by rw [h8]; omega) ha, readW_sep64 (by omega) ha (by omega)]
+    rw [putWs_out (by rw [h8]; omega_using [h]) (by rw [h8]; omega_using [hp]) ha, readW_sep64 (by omega_using [h]) ha (by omega_using [hp])]
 
 /-- The words `putWs` writes. -/
 theorem putWs_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat + 8 * ws.length < 2 ^ 64 →
@@ -162,19 +163,19 @@ theorem putWs_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat +
   | _, [], _ => fun i hi => absurd hi (Nat.not_lt_zero _)
   | p, w :: ws, hp => by
     simp only [List.length_cons] at hp
-    have h8 := add8_toNat (p := p) (by omega)
+    have h8 := add8_toNat (p := p) (by omega_using [hp])
     intro i hi
     simp only [putWs]
     cases i with
     | zero =>
       rw [show p + BitVec.ofNat 64 (64 / 8 * 0) = p from BitVec.add_zero p,
-        putWs_out (.inl (by rw [h8])) (by rw [h8]; omega) (by omega), Mem.readW_writeW_self64]
+        putWs_out (.inl (by rw [h8])) (by rw [h8]; omega_using [hp]) (by omega_using [hp]), Mem.readW_writeW_self64]
       simp
     | succ i =>
-      have := putWs_held (m := m.writeW p w) (p := p + 8) (ws := ws) (by rw [h8]; omega) i
-        (by simp at hi; omega)
+      have := putWs_held (m := m.writeW p w) (p := p + 8) (ws := ws) (by rw [h8]; omega_using [hp]) i
+        (by simp at hi; omega_using [hi])
       rw [show p + BitVec.ofNat 64 (64 / 8 * (i + 1)) = p + 8 + BitVec.ofNat 64 (64 / 8 * i) by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega]
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []]
       simpa using this
 
 
@@ -194,9 +195,9 @@ theorem putWs32_out {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)
   | _, [], _, _, _ => rfl
   | p, w :: ws, h, hp, ha => by
     simp only [List.length_cons] at h hp
-    have h4 := add4_toNat (p := p) (by omega)
+    have h4 := add4_toNat (p := p) (by omega_using [hp])
     simp only [putWs32]
-    rw [putWs32_out (by rw [h4]; omega) (by rw [h4]; omega) ha, readW_sep32 (by omega) ha (by omega)]
+    rw [putWs32_out (by rw [h4]; omega_using [h]) (by rw [h4]; omega_using [hp]) ha, readW_sep32 (by omega_using [h]) ha (by omega_using [hp])]
 
 /-- The words `putWs32` writes. -/
 theorem putWs32_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat + 4 * ws.length < 2 ^ 64 →
@@ -204,19 +205,19 @@ theorem putWs32_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat
   | _, [], _ => fun i hi => absurd hi (Nat.not_lt_zero _)
   | p, w :: ws, hp => by
     simp only [List.length_cons] at hp
-    have h4 := add4_toNat (p := p) (by omega)
+    have h4 := add4_toNat (p := p) (by omega_using [hp])
     intro i hi
     simp only [putWs32]
     cases i with
     | zero =>
       rw [show p + BitVec.ofNat 64 (32 / 8 * 0) = p from BitVec.add_zero p,
-        putWs32_out (.inl (by rw [h4])) (by rw [h4]; omega) (by omega), Mem.readW_writeW_self32]
+        putWs32_out (.inl (by rw [h4])) (by rw [h4]; omega_using [hp]) (by omega_using [hp]), Mem.readW_writeW_self32]
       simp
     | succ i =>
-      have := putWs32_held (m := m.writeW p (w.setWidth 32)) (p := p + 4) (ws := ws) (by rw [h4]; omega) i
-        (by simp at hi; omega)
+      have := putWs32_held (m := m.writeW p (w.setWidth 32)) (p := p + 4) (ws := ws) (by rw [h4]; omega_using [hp]) i
+        (by simp at hi; omega_using [hi])
       rw [show p + BitVec.ofNat 64 (32 / 8 * (i + 1)) = p + 4 + BitVec.ofNat 64 (32 / 8 * i) by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega]
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []]
       simpa using this
 
 end VG.Proof.HashTable

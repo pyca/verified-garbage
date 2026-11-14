@@ -110,7 +110,7 @@ theorem ptr6_trace (v : g.Valid) :
 theorem lowerAt_frame {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : PtrAt s W .ebp x) (fit : x + 4 ≤ L) :
     WP isa (.block lowerAt) s fun t => t.mem = s.mem ∧ Keeps [.eax, .ebx] s t := by
   unfold lowerAt
-  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega)) fun b B _ => wp_orS rfl fun c Cc =>
+  refine wp_movS (readSrc_ptr hw P (d := 0) (by omega_using [fit])) fun b B _ => wp_orS rfl fun c Cc =>
     wp_logicS (.inr rfl) rfl fun d D => wp_orS rfl fun e E => ?_
   refine wp_cmpi fun f F cf _ => wp_sbb_self cf fun h H => wp_logicS (.inr rfl) rfl fun i I =>
     wp_movS rfl fun j J _ => wp_logicS (.inl rfl) rfl fun t T => WP.block_nil ?_
@@ -125,14 +125,14 @@ theorem fallbackLow_frame {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P 
   refine wp_movS rfl fun a A _ => wp_logicS (.inr rfl) rfl fun b B => wp_logicS (.inl rfl) rfl fun c C => ?_
   have Kc : Keeps [.ecx] s c := (A.keeps.widen B.keeps).widen C.keeps
   have Pc : PtrAt c W .ebp x := by rw [PtrAt, Kc.1 .ebp (by decide)]; exact P
-  refine wp_orS (readSrc_ptr (hw.of_keeps Kc) Pc (d := 0) (by omega)) fun d D => ?_
+  refine wp_orS (readSrc_ptr (hw.of_keeps Kc) Pc (d := 0) (by omega_using [fit])) fun d D => ?_
   have Kd : Keeps [.ecx] s d := Kc.widen D.keeps
   have wd := hw.of_keeps Kd
   have Pd : PtrAt d W .ebp x := by rw [PtrAt, Kd.1 .ebp (by decide)]; exact P
-  refine wp_storeS (ea_ptr wd Pd (d := 0) (by omega)) (ws_write wd (y := x + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr wd Pd (d := 0) (by omega_using [fit])) (ws_write wd (y := x + 0) (n := 4) (by omega_using [fit]))
     fun t T => WP.block_nil ⟨?_, Kd.widen (T.keeps [])⟩
   rw [T.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero]
-  exact writeW32_outside _ _ _ (by have := hw.nowrap; omega)
+  exact writeW32_outside _ _ _ (by have := hw.nowrap; omega_using [fit, this])
 
 theorem fallbackHigh_frame {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P : PtrAt s W .ebx x)
     (fit : x + 4 ≤ L) :
@@ -142,14 +142,14 @@ theorem fallbackHigh_frame {s : State} {W : Addr} {L x : Nat} (hw : Ws s W L) (P
     wp_logicS (.inl rfl) rfl fun c C => wp_logicS (.inr rfl) rfl fun d D => ?_
   have Kd : Keeps [.ecx] s d := ((A.keeps.widen B.keeps).widen C.keeps).widen D.keeps
   have Pd : PtrAt d W .ebx x := by rw [PtrAt, Kd.1 .ebx (by decide)]; exact P
-  refine wp_logicS (.inl rfl) (readSrc_ptr (hw.of_keeps Kd) Pd (d := 0) (by omega)) fun e E => ?_
+  refine wp_logicS (.inl rfl) (readSrc_ptr (hw.of_keeps Kd) Pd (d := 0) (by omega_using [fit])) fun e E => ?_
   have Ke : Keeps [.ecx] s e := Kd.widen E.keeps
   have we := hw.of_keeps Ke
   have Pe : PtrAt e W .ebx x := by rw [PtrAt, Ke.1 .ebx (by decide)]; exact P
-  refine wp_storeS (ea_ptr we Pe (d := 0) (by omega)) (ws_write we (y := x + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr we Pe (d := 0) (by omega_using [fit])) (ws_write we (y := x + 0) (n := 4) (by omega_using [fit]))
     fun t T => WP.block_nil ⟨?_, Ke.widen (T.keeps [])⟩
   rw [T.mem, E.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero]
-  exact writeW32_outside _ _ _ (by have := hw.nowrap; omega)
+  exact writeW32_outside _ _ _ (by have := hw.nowrap; omega_using [fit, this])
 
 /-! ## The sampler's segments -/
 
@@ -160,8 +160,8 @@ theorem mark_trace (v : g.Valid) :
   unfold mark
   exact RelCT.block_append (RelCT.seq (ptr6_trace v)
     (ptrSeg .ebp (g.array 6) (by decide) (by decide) (fun _ S => S.1) (fun _ S => S.2) (rawBlock (by decide +kernel))
-      fun s S => WP.mono (markAt_ok S.1.context.ws S.2 (n := g.words) (by omega) fit) fun _ ⟨_, _, O, K⟩ =>
-        S.1.keep v K (by decide) (by decide) (O.mono (by omega) (by omega))))
+      fun s S => WP.mono (markAt_ok S.1.context.ws S.2 (n := g.words) (by omega_using [many]) fit) fun _ ⟨_, _, O, K⟩ =>
+        S.1.keep v K (by decide) (by decide) (O.mono (by omega_using []) (by omega_using [many]))))
 
 /-- About to compare the witness with the candidate. -/
 def Comparing (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop :=
@@ -196,7 +196,7 @@ theorem less_trace (v : g.Valid) :
     · exact ptr_value S.2.2.1
     · exact toNat_value S.2.2.2.1
   · exact WP.mono (VG.Proof.Bignum.X86.PublicRt.compareLoop_ok S.1.context.ws (x := g.array 6) (y := g.array 0)
-      (N := g.words) (by omega) (by omega) (by omega) S.2.1 S.2.2.1 S.2.2.2.1 S.2.2.2.2) fun _ ⟨M, _, K⟩ =>
+      (N := g.words) (by omega_using [many]) (by omega_using [fit]) (by omega_using [fit, below]) S.2.1 S.2.2.1 S.2.2.2.1 S.2.2.2.2) fun _ ⟨M, _, K⟩ =>
         S.1.keepMem v K (by decide) (by decide) M
 
 theorem restore_trace (v : g.Valid) :
@@ -206,8 +206,8 @@ theorem restore_trace (v : g.Valid) :
   unfold restore
   exact RelCT.block_append (RelCT.seq (ptr6_trace v)
     (ptrSeg .ebp (g.array 6) (by decide) (by decide) (fun _ S => S.1) (fun _ S => S.2) (rawBlock (by decide +kernel))
-      fun s S => WP.mono (restoreAt_ok S.1.context.ws S.2 (by omega)) fun _ ⟨_, O, _, K⟩ =>
-        S.1.keep v K (by decide) (by decide) (O.mono (by omega) (by omega))))
+      fun s S => WP.mono (restoreAt_ok S.1.context.ws S.2 (by omega_using [fit, many])) fun _ ⟨_, O, _, K⟩ =>
+        S.1.keep v K (by decide) (by decide) (O.mono (by omega_using []) (by omega_using [many]))))
 
 /-- About to scan the witness's words above its lowest. -/
 def Scanning (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop :=
@@ -234,7 +234,7 @@ theorem scan_trace (v : g.Valid) :
     · exact edi_value S.1.context
     · exact ptr_value S.2.1
     · exact toNat_value S.2.2.1
-  · exact WP.mono (FrontRt.orLoop_ok S.1.context.ws (by omega) (by omega) S.2.1 S.2.2.1 S.2.2.2) fun _ ⟨_, M, _, K⟩ =>
+  · exact WP.mono (FrontRt.orLoop_ok S.1.context.ws (by omega_using [many]) (by omega_using [fit, many]) S.2.1 S.2.2.1 S.2.2.2) fun _ ⟨_, M, _, K⟩ =>
       S.1.keepMem v K (by decide) (by decide) M
 
 theorem finish_trace (v : g.Valid) :
@@ -246,13 +246,13 @@ theorem finish_trace (v : g.Valid) :
   have lowerT : RelCT isa (fun s t => At g capacity p .ebp (g.array 6) s ∧ At g capacity p .ebp (g.array 6) t)
       (.block lowerAt) (fun u z => Work g capacity p u ∧ Work g capacity p z) :=
     ptrSeg .ebp (g.array 6) (by decide) (by decide) (fun _ S => S.1) (fun _ S => S.2) (rawBlock (by decide +kernel))
-      fun s S => WP.mono (lowerAt_frame S.1.context.ws S.2 (by omega)) fun _ ⟨M, K⟩ =>
+      fun s S => WP.mono (lowerAt_frame S.1.context.ws S.2 (by omega_using [fit, many])) fun _ ⟨M, K⟩ =>
         S.1.keepMem v K (by decide) (by decide) M
   have lowT : RelCT isa (fun s t => At g capacity p .ebp (g.array 6) s ∧ At g capacity p .ebp (g.array 6) t)
       (.block fallbackLow) (fun u z => At g capacity p .ebp (g.array 6) u ∧ At g capacity p .ebp (g.array 6) z) :=
     ptrSeg .ebp (g.array 6) (by decide) (by decide) (fun _ S => S.1) (fun _ S => S.2) (rawBlock (by decide +kernel))
-      fun s S => WP.mono (fallbackLow_frame S.1.context.ws S.2 (by omega)) fun _ ⟨O, K⟩ =>
-        ⟨S.1.keep v K (by decide) (by decide) (O.mono (by omega) (by omega)), by
+      fun s S => WP.mono (fallbackLow_frame S.1.context.ws S.2 (by omega_using [fit, many])) fun _ ⟨O, K⟩ =>
+        ⟨S.1.keep v K (by decide) (by decide) (O.mono (by omega_using []) (by omega_using [many])), by
           rw [PtrAt, K.1 .ebp (by decide)]; exact S.2⟩
   have topT : RelCT isa (fun s t => At g capacity p .ebp (g.array 6) s ∧ At g capacity p .ebp (g.array 6) t)
       (.block fallbackTop) (fun u z => At g capacity p .ebx (g.array 6 + 4 * g.words - 4) u ∧
@@ -263,8 +263,8 @@ theorem finish_trace (v : g.Valid) :
       At g capacity p .ebx (g.array 6 + 4 * g.words - 4) t)
       (.block fallbackHigh) (fun u z => Work g capacity p u ∧ Work g capacity p z) :=
     ptrSeg .ebx (g.array 6 + 4 * g.words - 4) (by decide) (by decide) (fun _ S => S.1) (fun _ S => S.2)
-      (rawBlock (by decide +kernel)) fun s S => WP.mono (fallbackHigh_frame S.1.context.ws S.2 (by omega))
-        fun _ ⟨O, K⟩ => S.1.keep v K (by decide) (by decide) (O.mono (by omega) (by omega))
+      (rawBlock (by decide +kernel)) fun s S => WP.mono (fallbackHigh_frame S.1.context.ws S.2 (by omega_using [fit, many]))
+        fun _ ⟨O, K⟩ => S.1.keep v K (by decide) (by decide) (O.mono (by omega_using [many]) (by omega_using [many]))
   exact RelCT.block_append (RelCT.seq (ptr6_trace v) (RelCT.block_append (RelCT.seq lowerT
     (RelCT.block_append (RelCT.seq (ptr6_trace v) (RelCT.block_append (RelCT.seq lowT
       (RelCT.block_append (RelCT.seq topT highT)))))))))
@@ -296,7 +296,7 @@ theorem load_trace (v : g.Valid) {input : Import.Geometry} (count : input.count 
           ⟨(show Work g capacity p s from ⟨c, D, odd, large⟩).keepMem v K (by decide) (by decide) M,
             ⟨I.positive, I.sourceFit, I.destFit, fun i index => by rw [K.2.1, K.2.2]; exact I.readable i index,
               fun i index => by rw [K.2.2]; exact I.writable i index, I.separate⟩, Ps, Pd, Pc,
-            by rw [← destination]; exact D.ready.scratch.ea (d := g.array 6) (by omega)⟩) ?_
+            by rw [← destination]; exact D.ready.scratch.ea (d := g.array 6) (by omega_using [fit, many])⟩) ?_
   refine seg [.esp, .edi, .esi, .ebx, .ecx] (regs g p fun r => if r = .esi then input.sourcePtr 0
     else if r = .ebx then input.destPtr 0 else BitVec.ofNat 32 input.count) (fun s S r mem => ?_)
     (VG.Proof.RsaKeyGen.X86.Import.code_trace.mono (fun _ _ h => h) (fun _ _ _ => trivial)) fun s S => ?_
@@ -316,7 +316,7 @@ theorem load_trace (v : g.Valid) {input : Import.Geometry} (count : input.count 
       unfold Import.Geometry.destRegion
       rw [dstAddr]
     rw [region, count] at F
-    exact Sw.keep v T.keeps (by decide) (by decide) (frame_outside F (by omega))
+    exact Sw.keep v T.keeps (by decide) (by decide) (frame_outside F (by omega_using [fit, nowrap]))
 
 end
 

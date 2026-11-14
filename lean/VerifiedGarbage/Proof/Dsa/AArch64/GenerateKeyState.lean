@@ -31,7 +31,7 @@ theorem keygen_call_frameBytes {extra : Nat} {s : State} {wr : List Region} {m m
   · exact (hwr r hr).symm
   · simp only [List.mem_singleton] at hr
     subst hr
-    exact Offset.base_disjoint_below _ (by unfold Random.frameBytes; omega)
+    exact Offset.base_disjoint_below _ (by unfold Random.frameBytes; omega_using [hl])
 
 /-- A callee keeps a buffer apart from what it writes and from the stack. -/
 theorem keygen_call_inputBytes {extra : Nat} {s : State} {wr : List Region} {m m' : Mem} {p : Addr} {n : Nat}
@@ -87,7 +87,7 @@ theorem KeygenState.of_frame {extra : Nat} {s t u : State} {h : GenerateKeyABI e
     (hlink : word u.mem (randomBase s) RandomSign.oLink = word t.mem (randomBase s) RandomSign.oLink) :
     KeygenState h used u :=
   ⟨ht.scr.congr hk.wr, hk.sp.trans ht.sp,
-    ht.saved.congr (fun d hd hd' => hw d hd (by omega)), (hw _ (by decide) (by decide)).trans ht.usedWord,
+    ht.saved.congr (fun d hd hd' => hw d hd (by omega_using [hd'])), (hw _ (by decide) (by decide)).trans ht.usedWord,
     hk.rd.trans ht.rd, hk.wr.trans ht.wr, ht.params.congrK hf hk, ht.rand.congrK hf hk,
     fun r hc => (hk.gpr r (random_saved_not_volatile hc)).trans (ht.callee r hc),
     fun r hc => (hk.vcs r hc).trans (ht.vectors r hc), hlink.trans ht.link⟩

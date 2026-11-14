@@ -50,14 +50,14 @@ theorem copied_bytes {m m' : Mem} {S D : Addr} {n : Nat}
 /-- The 16 bytes of `siv` and of `W` are apart. -/
 theorem v_w0 {c : Cx} (L : Lay c) {i : Nat} (hi : i < 16) :
     ¬ (⟨c.W + BitVec.ofNat 64 0, 16⟩ : Region).Contains (c.V + BitVec.ofNat 64 (0 + i)) 1 :=
-  L.v_w' (d := 0) (k := 16) (by decide) _ (Offset.contains_base _ (by omega) (by omega))
+  L.v_w' (d := 0) (k := 16) (by decide) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
 
 theorem w0_v {c : Cx} (L : Lay c) {i : Nat} (hi : i < 16) :
     ¬ (⟨c.V + BitVec.ofNat 64 0, 16⟩ : Region).Contains (c.W + BitVec.ofNat 64 (0 + i)) 1 := by
   intro h
   rw [BitVec.add_zero] at h
   exact L.v_w' (d := 0) (k := 16) (by decide) _ h (by
-    rw [BitVec.add_zero]; exact Offset.contains_base _ (by omega) (by omega))
+    rw [BitVec.add_zero]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
 
 /-- `sivIn`: the received synthetic IV copied to `W`. -/
 theorem sivIn_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
@@ -66,8 +66,8 @@ theorem sivIn_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
   unfold sivIn
   refine WP.mono (Bytes.copyBytes_ok (tmp := .t0) (src := .s11) (dst := .s1) (soff := 0) (doff := 0) (n := 16)
     (by decide) (by decide) (by decide) (by decide)
-    (fun i hi => by rw [E.s11]; exact E.perm.vR (by omega))
-    (fun i hi => by rw [E.s1]; exact E.perm.wW (by omega))
+    (fun i hi => by rw [E.s11]; exact E.perm.vR (by omega_using [hi]))
+    (fun i hi => by rw [E.s1]; exact E.perm.wW (by omega_using [hi]))
     (fun i hi => by rw [E.s1, E.s11]; exact v_w0 L hi)) fun s' h => ?_
   refine ⟨⟨h.rd, h.wr, h.sp, fun r hr => h.gpr r (by intro e; subst e; simp [keepRegs] at hr)⟩, ?_, ?_⟩
   · have := h.frame; rwa [E.s1, BitVec.add_zero] at this
@@ -84,8 +84,8 @@ theorem sivOut_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hV : Covers [�
   unfold sivOut
   refine WP.mono (Bytes.copyBytes_ok (tmp := .t0) (src := .s1) (dst := .s11) (soff := 0) (doff := 0) (n := 16)
     (by decide) (by decide) (by decide) (by decide)
-    (fun i hi => by rw [E.s1]; exact E.perm.wR (by omega))
-    (fun i hi => by rw [E.s11]; exact in_off hV (by omega) (by decide))
+    (fun i hi => by rw [E.s1]; exact E.perm.wR (by omega_using [hi]))
+    (fun i hi => by rw [E.s11]; exact in_off hV (by omega_using [hi]) (by decide))
     (fun i hi => by rw [E.s1, E.s11]; exact w0_v L hi)) fun s' h => ?_
   refine ⟨⟨h.rd, h.wr, h.sp, fun r hr => h.gpr r (by intro e; subst e; simp [keepRegs] at hr)⟩, ?_, ?_⟩
   · have := h.frame; rwa [E.s11, BitVec.add_zero] at this
@@ -111,7 +111,7 @@ theorem zero_test (d : BitVec 64) :
   · have h : BitVec.ofNat 64 0 < d := by
       rw [BitVec.lt_def]
       have : d.toNat ≠ 0 := fun h => hd (BitVec.eq_of_toNat_eq (by simpa using h))
-      simp only [BitVec.toNat_ofNat]; omega
+      simp only [BitVec.toNat_ofNat]; omega_using [this]
     rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_right_of_eq_false _ _ (eq_false hd)]; decide
 
 /-- `compare`: `s0` is 1 iff the 16 bytes at `W` and at `W + 112` are equal. -/
@@ -207,11 +207,11 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       (fun (w : Nat) (t : State) => ∃ i, w = c.n - i ∧ i < c.n ∧ t.gpr .a0 = c.D + BitVec.ofNat 64 i ∧
         t.gpr .a2 = BitVec.ofNat 64 (c.n - i) ∧ t.gpr .t1 = s₄.gpr .t1 ∧ t.gpr .s0 = s.gpr .s0 ∧
         t.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D i).map f) ∧ PK s t) ?_ (c.n - 0) _
-      ⟨0, rfl, by omega, by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, s0₄,
+      ⟨0, rfl, by omega_using [h0], by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, s0₄,
         by rw [m₄]; simp [bytesAt, writeBytes_nil], pk₄⟩
     rintro w t ⟨i, rfl, hi, r3, r4, r9, s0, mem, pk⟩
     have Et := E.of_pk pk
-    have hin : i + 1 ≤ c.n := by omega
+    have hin : i + 1 ≤ c.n := by omega_using [hi]
     have hD : Covers [⟨c.D, c.n⟩] t.wr := Et.perm.d
     unfold maskBody
     refine wp_lbu (a := c.D + BitVec.ofNat 64 i) (by decide)
@@ -228,30 +228,30 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
     have hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
     have hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
       rw [mem]
-      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega)
+      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega_using [hn, hi])
       rwa [hlen] at this
     have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
       rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .t1 (by decide), r9, r9₄, u₂.mem,
         u₁.mem, mask_byte, hb, mem, Proof.Cmac.Stream.bytesAt_append, bytesAt_one,
         List.map_append, List.map_singleton]
-      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega), hlen]
+      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_using [hn, hi]), hlen]
     have hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     have r3' : t₅.gpr .a0 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3, hstep]
     have r4' : t₅.gpr .a2 = BitVec.ofNat 64 (c.n - (i + 1)) := by
       rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r4,
-        ofNat_sub_one (by omega), Nat.sub_sub]
+        ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
     have r9' : t₅.gpr .t1 = s₄.gpr .t1 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r9]
     have s0' : t₅.gpr .s0 = s.gpr .s0 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
         s0]
-    have ev := eval_nz (r := .a2) (a := c.n - (i + 1)) r4' (by omega)
+    have ev := eval_nz (r := .a2) (a := c.n - (i + 1)) r4' (by omega_using [hn])
     by_cases he : i + 1 = c.n
     · left
       exact ⟨by rw [ev]; simp [he], pk₅, s0', by rw [hmem, he]⟩
     · right
-      exact ⟨by rw [ev]; simp; omega, c.n - (i + 1), by omega, i + 1, rfl, by omega, r3', r4', r9', s0', hmem, pk₅⟩
+      exact ⟨by rw [ev]; simp; omega_using [hi, he], c.n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], r3', r4', r9', s0', hmem, pk₅⟩
 
 end VG.Proof.AesSiv.RISCV64

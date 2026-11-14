@@ -491,7 +491,7 @@ theorem shl_mod_le {a z : Nat} (hz : z ≤ 32) : a * 2 ^ z % 2 ^ 32 + 2 ^ z ≤ 
   have e : 2 ^ 32 = 2 ^ z * 2 ^ (32 - z) := by rw [← Nat.pow_add, Nat.add_sub_cancel' hz]
   rw [e, Nat.mul_comm a, Nat.mul_mod_mul_left]
   have h := Nat.mod_lt a (Nat.two_pow_pos (32 - z))
-  have := Nat.mul_le_mul_left (2 ^ z) (show a % 2 ^ (32 - z) + 1 ≤ 2 ^ (32 - z) by omega)
+  have := Nat.mul_le_mul_left (2 ^ z) (show a % 2 ^ (32 - z) + 1 ≤ 2 ^ (32 - z) by omega_using [])
   rw [Nat.mul_add, Nat.mul_one] at this
   exact this
 
@@ -502,13 +502,13 @@ theorem lohi_lt {a b z : Nat} (hz : z ≤ 32) (ha : a < 2 ^ 32) : b * 2 ^ z % 2 
   have h2 : a * 2 ^ z / 2 ^ 32 < 2 ^ z := by
     rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos 32), Nat.mul_comm (2 ^ z)]
     exact Nat.mul_lt_mul_of_pos_right ha (Nat.two_pow_pos z)
-  omega
+  omega_using [h1, h2]
 
 /-- The words above word `k` of `2^z x`, for `x = L + K a + K 2^32 H` with
 `L < K`, `a` its word `k`: `H 2^z + hi(2^z a)`. -/
 theorem shl_div {L K a H z : Nat} (hz : z ≤ 32) (hL : L < K) :
     (L + K * a + K * 2 ^ 32 * H) * 2 ^ z / (K * 2 ^ 32) = H * 2 ^ z + a * 2 ^ z / 2 ^ 32 := by
-  have hK : 0 < K := by omega
+  have hK : 0 < K := by omega_using [hL]
   have hl := shl_mod_le (a := a) hz
   have hd := Nat.div_add_mod (a * 2 ^ z) (2 ^ 32)
   generalize a * 2 ^ z / 2 ^ 32 = hi at hd
@@ -521,6 +521,6 @@ theorem shl_div {L K a H z : Nat} (hz : z ≤ 32) (hL : L < K) :
     have : K * a * 2 ^ z = K * (2 ^ 32 * hi + lo) := by rw [hd, Nat.mul_assoc]
     rw [Nat.add_mul, Nat.add_mul, this]
     grind
-  rw [e, Nat.mul_add_div (Nat.mul_pos hK (Nat.two_pow_pos 32)), Nat.div_eq_of_lt (by omega), Nat.add_zero]
+  rw [e, Nat.mul_add_div (Nat.mul_pos hK (Nat.two_pow_pos 32)), Nat.div_eq_of_lt (by omega_using [h1, h2]), Nat.add_zero]
 
 end VG.Proof.Bignum.WordStep32

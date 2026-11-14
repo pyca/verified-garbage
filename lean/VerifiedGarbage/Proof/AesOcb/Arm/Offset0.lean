@@ -55,8 +55,8 @@ theorem stageMask_ok (s : State) {k v : Nat} (hk : k ≤ 5) (hv : v < 64) (h6 : 
     refine ⟨_, by orun [stageMask], ?_, by rfl, by others_tac, by rfl, by rfl, by rfl⟩
     simp only [gpr_setReg, ite_true, h6, bit32_0 hv]
     rfl
-  · have h1 : 1 ≤ k := by omega
-    have h31 : k ≤ 31 := by omega
+  · have h1 : 1 ≤ k := by omega_using [hk0]
+    have h31 : k ≤ 31 := by omega_using [hk]
     refine ⟨_, by orun [stageMask, hk0, h1, h31], ?_, by rfl, by others_tac, by rfl, by rfl, by rfl⟩
     simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, h6, bit32 hv]
     rfl
@@ -76,9 +76,9 @@ theorem stageWords_ok (s : State) {a : Nat} (ha : 0 < a) (ha' : a < 32) (b : Boo
     ∃ s', runBlock isa (stageWords a) s = some s' ∧ words s' = shlIf b a (words s) ∧
       Ran [.r0, .r1, .r2, .r3, .r4, .r5, .r8] s.mem s s' := by
   have h1 : 1 ≤ a := ha
-  have h31 : a ≤ 31 := by omega
-  have h1' : 1 ≤ 32 - a := by omega
-  have h31' : 32 - a ≤ 31 := by omega
+  have h31 : a ≤ 31 := by omega_using [ha']
+  have h1' : 1 ≤ 32 - a := by omega_using [ha']
+  have h31' : 32 - a ≤ 31 := by omega_using [ha]
   refine ⟨_, by orun [stageWords, sel, h1, h31, h1', h31', List.flatMap_cons, List.flatMap_nil], ?_, by rfl,
     by others_tac, by rfl, by rfl, by rfl⟩
   simp only [words, gpr_setReg, ite_true, ite_false, reduceCtorEq, h7]
@@ -217,7 +217,7 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
   have hO : s₇.gpr .r0 ++ s₇.gpr .r1 ++ s₇.gpr .r2 ++ s₇.gpr .r3 =
       (stretch (blockAtMem s.mem (State.addr p.W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128 := by
     rw [← Proof.Ocb.top4 _ _ _ _ (s₇.gpr .r4) (s₇.gpr .r5), show s₇.gpr .r0 ++ s₇.gpr .r1 ++ s₇.gpr .r2 ++
-      s₇.gpr .r3 ++ s₇.gpr .r4 ++ s₇.gpr .r5 = words s₇ from rfl, hw7, Proof.Ocb.offset_shl _ (by omega)]
+      s₇.gpr .r3 ++ s₇.gpr .r4 ++ s₇.gpr .r5 = words s₇ from rfl, hw7, Proof.Ocb.offset_shl _ (by omega_using [hv])]
   have hm₇ : s₇.mem = s.mem := by rw [R₇.mem, R₆.mem, R₅.mem, R₄.mem, R₃.mem, R₂.mem, R₁.mem]
   have hsp₇ : s₇.sp = s.sp := by rw [R₇.sp, R₆.sp, R₅.sp, R₄.sp, R₃.sp, R₂.sp, R₁.sp]
   have hrd₇ : s₇.rd = s.rd := by rw [R₇.rd, R₆.rd, R₅.rd, R₄.rd, R₃.rd, R₂.rd, R₁.rd]

@@ -54,7 +54,7 @@ theorem crtExpRanges5_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h
   · exact crtExpRanges_arr wx hj h1 h2 h3 h4 (n := 32) r hr
 
 /-- Two different header words are disjoint. -/
-theorem hdr_sep {k s : Nat} (h : k ≠ s) : 8 * k + 8 ≤ 8 * s ∨ 8 * s + 8 ≤ 8 * k := by omega
+theorem hdr_sep {k s : Nat} (h : k ≠ s) : 8 * k + 8 ≤ 8 * s ∨ 8 * s + 8 ≤ 8 * k := by omega_using [h]
 
 /-- A header slot that `expLoop5S`'s ranges miss. -/
 theorem crtExpRanges5_hdr (wx : Nat) {k : Nat} (hk : k < 32) (h0 : k ≠ Crt.sPow) (h1 : k ≠ Crt.sExp)
@@ -163,14 +163,14 @@ theorem padStep_ok {s : State} {b k : Nat} (hb : b < 5) (hk : k < 4) (hax : s.gp
       .cmov .ae .rcx (.reg .rdx)]) s fun s' => s'.gpr .rax = BitVec.ofNat 64 b ∧
         s'.gpr .rcx = BitVec.ofNat 64 (2 ^ (56 - min b (k + 1))) ∧ s'.mem = s.mem ∧
         s'.gpr .rdi = s.gpr .rdi ∧ s'.wr = s.wr := by
-  have e1 : (BitVec.ofNat 64 b).toNat = b := toNat_ofNat_of_lt (by omega)
+  have e1 : (BitVec.ofNat 64 b).toNat = b := toNat_ofNat_of_lt (by omega_using [hb])
   have e2 := (by decide : ∀ k < 4, (BitVec.signExtend 64 (BitVec.ofNat 32 (k + 1))).toNat = k + 1) k hk
   by_cases h : k + 1 ≤ b
   · have v : ∀ k < 4, BitVec.ofNat 64 (2 ^ (56 - k)) >>> 1 = BitVec.ofNat 64 (2 ^ (56 - (k + 1))) := by decide
-    xrun [hax, hcx, e1, e2, execCmov, eval, show ¬ b < k + 1 by omega, Nat.min_eq_right (by omega : k ≤ b),
+    xrun [hax, hcx, e1, e2, execCmov, eval, show ¬ b < k + 1 by omega_using [h], Nat.min_eq_right (by omega_using [h] : k ≤ b),
       Nat.min_eq_right h, v k hk]
-  · xrun [hax, hcx, e1, e2, execCmov, eval, show b < k + 1 by omega, Nat.min_eq_left (by omega : b ≤ k),
-      Nat.min_eq_left (by omega : b ≤ k + 1)]
+  · xrun [hax, hcx, e1, e2, execCmov, eval, show b < k + 1 by omega_using [h], Nat.min_eq_left (by omega_using [h] : b ≤ k),
+      Nat.min_eq_left (by omega_using [h] : b ≤ k + 1)]
 
 /-- `sV := 0` and `sPow := 2^(56 - b)` for `b < 5` in `rax`: `2^56` halved
 for each of 1 to 4 that is at most `b`. -/
@@ -201,7 +201,7 @@ theorem padPow_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n b
     (fun k s hk h => WP.mono (padStep_ok hb hk h.1 h.2.1) fun _ h' =>
       ⟨h'.1, h'.2.1, h'.2.2.1.trans h.2.2.1, h'.2.2.2.1.trans h.2.2.2.1, h'.2.2.2.2.trans h.2.2.2.2⟩)
     4 (Nat.le_refl _) s₁ h₁) fun s₂ ⟨_, hcx, hm, hdi₂, hwr⟩ => ?_
-  rw [Nat.min_eq_left (by omega : b ≤ 4)] at hcx
+  rw [Nat.min_eq_left (by omega_using [hb] : b ≤ 4)] at hcx
   xrun [State.ea, hdr, hdi₂, hdi, hdrOff, hwr, hsp, hcx, hm]
 
 theorem padInit_eq : Crt.padInit =

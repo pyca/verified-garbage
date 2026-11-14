@@ -57,7 +57,7 @@ theorem prepare_ok (hc : CfgOk p384) (hC : Law p384.C) {base : Addr} {s : State}
   have Ua : Unch base genW s.mem a.mem := oa.unch
   have Fa := F.unch h7 hn genW_fixed Ua
   have e : ∀ {i}, i < 45 → sv p384 base a i = sv p384 base s i := fun {i} hi =>
-    Ua.wordsVal (genW_apart i (List.mem_range.mpr hi)) (by have h := sl_le p384 h7 hi; omega)
+    Ua.wordsVal (genW_apart i (List.mem_range.mpr hi)) (by have h := sl_le p384 h7 hi; omega_using [hn, h])
   have tv : ∀ {i}, i < 45 → tmv p384.C p384.n base a (p384.sl i) = tmv p384.C p384.n base s (p384.sl i) :=
     fun hi => by show toM _ _ (sv p384 base a _) = toM _ _ (sv p384 base s _); rw [e hi]
   have hrep' : Rep p384.C (tmv p384.C p384.n base a (p384.sl PX)) (tmv p384.C p384.n base a (p384.sl PY))
@@ -78,7 +78,7 @@ theorem prepare_ok (hc : CfgOk p384) (hC : Law p384.C) {base : Addr} {s : State}
     rw [ut x (fun w hw => hx w (List.mem_append_right _ hw)),
       Ua x (fun w hw => hx w (List.mem_append_left _ hw))]
   · intro j hj
-    rw [ut.byte (fun w hw => by have := genW_winX w hw; have hb : P384Joint.KG.bits = 3152 := rfl; omega) (by have := hs.nowrap; change 3152 + j < 2 ^ 64; omega)]
-    exact pa.digits j (by have : P384Joint.KG.M.n = 6 := rfl; omega)
+    rw [ut.byte (fun w hw => by have := genW_winX w hw; have hb : P384Joint.KG.bits = 3152 := rfl; omega_using [hj, this]) (by have := hs.nowrap; change 3152 + j < 2 ^ 64; omega_using [hj])]
+    exact pa.digits j (by have : P384Joint.KG.M.n = 6 := rfl; omega_using [hj, this])
 
 end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint

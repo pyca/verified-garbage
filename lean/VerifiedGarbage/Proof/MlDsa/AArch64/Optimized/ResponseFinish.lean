@@ -18,7 +18,7 @@ def finishValue (v : BitVec 128) : BitVec 64 :=
 
 theorem exec_umov_word (s : State) (d : Reg) (n : VReg) {i : Nat} (hi : i<4) :
     exec (.umov .w d n i) s=some (s.write .w d (vword (s.v n) i)) := by
-  simp only [exec,Size.bits,show i*32<128 by omega,ite_true,vword]
+  simp only [exec,Size.bits,show i*32<128 by omega_using [hi],ite_true,vword]
 
 theorem finish_ok (s : State) :
     WP isa VG.Impl.MlDsa.AArch64.Optimized.Response.finish s fun t =>

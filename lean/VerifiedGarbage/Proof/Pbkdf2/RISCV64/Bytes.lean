@@ -43,7 +43,7 @@ theorem writeBytes_past {m : Mem} {q x : Addr} {xs : List Byte} (h : ¬ (x - q).
   VG.Proof.Hmac.Common.writeBytes_other _ _ _ h
 
 theorem past_self (q : Addr) {n : Nat} (hn : n < 2 ^ 64) : ¬ (q + BitVec.ofNat 64 n - q).toNat < n := by
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]; omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]; omega_using []
 
 /-! ## Copying -/
 
@@ -65,13 +65,13 @@ theorem cp_ok {src dst : Reg} (hs : src ≠ .t1) (hd : dst ≠ .t1) (o₁ o₂ :
   | succ n ih =>
     intro h₁ h₂ rest s Q hin hout hsep k
     rw [It.cp, List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih (by omega) (by omega) _ s Q (fun j hj => hin j (by omega)) (fun j hj => hout j (by omega))
-      (fun x hx hy => hsep x (by omega) (by omega)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    refine ih (by omega_using [h₁]) (by omega_using [h₂]) _ s Q (fun j hj => hin j (by omega_using [hj])) (fun j hj => hout j (by omega_using [hj]))
+      (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [List.cons_append, List.nil_append]
-    refine wp_lbu (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 n) (by omega)
-      (by rw [g₁ _ hs, add_off]) (by rw [rd₁, wr₁]; exact hin n (by omega)) fun s₂ u₂ => ?_
-    refine wp_sb (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 n) (by omega)
-      (by rw [u₂.other _ hd, g₁ _ hd, add_off]) (by rw [u₂.wr, wr₁]; exact hout n (by omega)) fun s₃ u₃ =>
+    refine wp_lbu (a := s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 n) (by omega_using [h₁])
+      (by rw [g₁ _ hs, add_off]) (by rw [rd₁, wr₁]; exact hin n (by omega_using [])) fun s₂ u₂ => ?_
+    refine wp_sb (a := s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 n) (by omega_using [h₂])
+      (by rw [u₂.other _ hd, g₁ _ hd, add_off]) (by rw [u₂.wr, wr₁]; exact hout n (by omega_using [])) fun s₃ u₃ =>
       k s₃ (fun r hr => by rw [u₃.gpr, u₂.other r hr, g₁ r hr])
         (by rw [u₃.rd, u₂.rd, rd₁]) (by rw [u₃.wr, u₂.wr, wr₁]) (by rw [u₃.sp, u₂.sp, sp₁]) ?_
     have hrd : s₁.mem (s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 n) =
@@ -80,11 +80,11 @@ theorem cp_ok {src dst : Reg} (hs : src ≠ .t1) (hd : dst ≠ .t1) (o₁ o₂ :
       refine writeBytes_past ?_
       rw [VG.Proof.Hmac.Common.bytesAt_length]
       intro hlt
-      refine hsep (s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 n) ?_ (by omega)
+      refine hsep (s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 n) ?_ (by omega_using [hlt])
       rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-      omega
+      omega_using []
     rw [u₃.mem, u₂.gpr, u₂.mem, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq, hrd, m₁,
-      bytesAt_succ, writeBytes_snoc _ _ _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega),
+      bytesAt_succ, writeBytes_snoc _ _ _ _ (by rw [VG.Proof.Hmac.Common.bytesAt_length]; omega_using [h₁]),
       VG.Proof.Hmac.Common.bytesAt_length]
 
 /-! ## Constant bytes -/
@@ -98,7 +98,7 @@ theorem padCode_eq (P : It) : P.padCode = bytesCode P.pad P.D P.pad.length := rf
 theorem setWidth_ofNat8 (v : Nat) : (BitVec.ofNat 64 v).setWidth 8 = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- The first `n` bytes of `xs` at `s3 + o`. -/
 theorem bytes_ok (xs : List Nat) (hx : ∀ i < xs.length, xs.getD i 0 < 2048) (o : Nat) :
@@ -116,20 +116,20 @@ theorem bytes_ok (xs : List Nat) (hx : ∀ i < xs.length, xs.getD i 0 < 2048) (o
   | succ n ih =>
     intro h₁ h₂ rest s Q hout k
     rw [bytesCode, List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih (by omega) (by omega) _ s Q (fun j hj => hout j (by omega)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    refine ih (by omega_using [h₁]) (by omega_using [h₂]) _ s Q (fun j hj => hout j (by omega_using [hj])) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [List.cons_append, List.nil_append]
-    refine wp_li (hx n (by omega)) fun s₂ u₂ => ?_
-    refine wp_sb (a := s.gpr .s3 + BitVec.ofNat 64 o + BitVec.ofNat 64 n) (by omega)
-      (by rw [u₂.other _ (by decide), g₁ _ (by decide), add_off]) (by rw [u₂.wr, wr₁]; exact hout n (by omega))
+    refine wp_li (hx n (by omega_using [h₁])) fun s₂ u₂ => ?_
+    refine wp_sb (a := s.gpr .s3 + BitVec.ofNat 64 o + BitVec.ofNat 64 n) (by omega_using [h₂])
+      (by rw [u₂.other _ (by decide), g₁ _ (by decide), add_off]) (by rw [u₂.wr, wr₁]; exact hout n (by omega_using []))
       fun s₃ u₃ => k s₃ (fun r hr => by rw [u₃.gpr, u₂.other r hr, g₁ r hr])
         (by rw [u₃.rd, u₂.rd, rd₁]) (by rw [u₃.wr, u₂.wr, wr₁]) (by rw [u₃.sp, u₂.sp, sp₁]) ?_
     have hl : ((xs.take n).map (BitVec.ofNat 8)).length = n := by
-      simp only [List.length_map, List.length_take]; omega
+      simp only [List.length_map, List.length_take]; omega_using [h₁]
     rw [u₃.mem, u₂.gpr, u₂.mem, m₁, setWidth_ofNat8, List.take_add_one, List.map_append,
-      List.getElem?_eq_getElem (by omega)]
+      List.getElem?_eq_getElem (by omega_using [h₁])]
     simp only [Option.toList_some, List.map_cons, List.map_nil]
-    rw [writeBytes_snoc _ _ _ _ (by rw [hl]; omega), hl]
-    simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show n < xs.length by omega)]
+    rw [writeBytes_snoc _ _ _ _ (by rw [hl]; omega_using [h₂]), hl]
+    simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show n < xs.length by omega_using [h₁])]
 
 /-! ## Exclusive-or -/
 
@@ -164,36 +164,36 @@ theorem xor_ok : ∀ (n : Nat), n ≤ 2048 → ∀ (rest : List Instr) (s : Stat
   | succ n ih =>
     intro h₁ rest s Q hin hout hsep k
     rw [xorCode, List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih (by omega) _ s Q (fun j hj => hin j (by omega)) (fun j hj => hout j (by omega))
-      (fun x hx hy => hsep x (by omega) (by omega)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    refine ih (by omega_using [h₁]) _ s Q (fun j hj => hin j (by omega_using [hj])) (fun j hj => hout j (by omega_using [hj]))
+      (fun x hx hy => hsep x (by omega_using [hx]) (by omega_using [hy])) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [List.cons_append, List.nil_append]
-    refine wp_lbu (a := s.gpr .s5 + BitVec.ofNat 64 n) (by omega) (by rw [g₁ _ (by decide) (by decide)])
-      (by rw [rd₁, wr₁]; exact ⟨_, List.mem_append_right _ (hout n (by omega)).choose_spec.1,
-        (hout n (by omega)).choose_spec.2⟩) fun s₂ u₂ => ?_
-    refine wp_lbu (a := s.gpr .s3 + BitVec.ofNat 64 n) (by omega)
+    refine wp_lbu (a := s.gpr .s5 + BitVec.ofNat 64 n) (by omega_using [h₁]) (by rw [g₁ _ (by decide) (by decide)])
+      (by rw [rd₁, wr₁]; exact ⟨_, List.mem_append_right _ (hout n (by omega_using [])).choose_spec.1,
+        (hout n (by omega_using [])).choose_spec.2⟩) fun s₂ u₂ => ?_
+    refine wp_lbu (a := s.gpr .s3 + BitVec.ofNat 64 n) (by omega_using [h₁])
       (by rw [u₂.other _ (by decide), g₁ _ (by decide) (by decide)])
-      (by rw [u₂.rd, u₂.wr, rd₁, wr₁]; exact hin n (by omega)) fun s₃ u₃ => wp_xor fun s₄ u₄ => ?_
-    refine wp_sb (a := s.gpr .s5 + BitVec.ofNat 64 n) (by omega)
+      (by rw [u₂.rd, u₂.wr, rd₁, wr₁]; exact hin n (by omega_using [])) fun s₃ u₃ => wp_xor fun s₄ u₄ => ?_
+    refine wp_sb (a := s.gpr .s5 + BitVec.ofNat 64 n) (by omega_using [h₁])
       (by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
         g₁ _ (by decide) (by decide)])
-      (by rw [u₄.wr, u₃.wr, u₂.wr, wr₁]; exact hout n (by omega)) fun s₅ u₅ =>
+      (by rw [u₄.wr, u₃.wr, u₂.wr, wr₁]; exact hout n (by omega_using [])) fun s₅ u₅ =>
       k s₅ (fun r h1 h2 => by rw [u₅.gpr, u₄.other r h1, u₃.other r h2, u₂.other r h1, g₁ r h1 h2])
         (by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁]) (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁])
         (by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, sp₁]) ?_
     have hl : (xorBytes (bytesAt s.mem (s.gpr .s5) n) (bytesAt s.mem (s.gpr .s3) n)).length = n := by
       simp [xorBytes, VG.Proof.Hmac.Common.bytesAt_length]
     have ht : s₁.mem (s.gpr .s5 + BitVec.ofNat 64 n) = s.mem (s.gpr .s5 + BitVec.ofNat 64 n) := by
-      rw [m₁]; exact writeBytes_past (by rw [hl]; exact past_self _ (by omega))
+      rw [m₁]; exact writeBytes_past (by rw [hl]; exact past_self _ (by omega_using [h₁]))
     have hb : s₁.mem (s.gpr .s3 + BitVec.ofNat 64 n) = s.mem (s.gpr .s3 + BitVec.ofNat 64 n) := by
       rw [m₁]
       refine writeBytes_past ?_
       rw [hl]
       intro hlt
-      refine hsep (s.gpr .s3 + BitVec.ofNat 64 n) (by omega) ?_
+      refine hsep (s.gpr .s3 + BitVec.ofNat 64 n) (by omega_using [hlt]) ?_
       rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-      omega
+      omega_using []
     rw [u₅.mem, u₄.gpr, u₄.mem, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₃.mem, u₂.mem, xor_setWidth, ht, hb,
       m₁, bytesAt_succ, bytesAt_succ, xorBytes_snoc _ _ _ _ (by simp [VG.Proof.Hmac.Common.bytesAt_length]),
-      writeBytes_snoc _ _ _ _ (by rw [hl]; omega), hl]
+      writeBytes_snoc _ _ _ _ (by rw [hl]; omega_using [h₁]), hl]
 
 end VG.Proof.Pbkdf2.RISCV64

@@ -22,7 +22,7 @@ theorem crt_linkStride_ok (s : State) {base : BitVec 32} {size w : Nat}
       t.mem = s.mem ∧ Rest [.r7, .r1, .r2] s t := by
   unfold linkStride
   refine wp_ldr (a := off (State.addr base) 48) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read fit) fun u a => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read fit) fun u a => ?_
   refine wp_mov (op2_lsl (by decide)) fun v b => ?_
   refine wp_dp (op2_imm (by decide)) fun z c => ?_
   refine wp_mov (op2_reg _ _) fun t d => WP.block_nil ?_
@@ -34,7 +34,7 @@ theorem crt_linkStride_ok (s : State) {base : BitVec 32} {size w : Nat}
     rw [← BitVec.ofNat_mul, ← BitVec.ofNat_add]
     congr 1
     simp only [stride, workspaceWords]
-    omega
+    omega_using []
   · rw [d.gpr, c.other .r0 (by decide), b.other .r0 (by decide), a.other .r0 (by decide), ptr]
 
 theorem crt_productStride_ok (s : State) {w : Nat} (count : s.gpr .r7 = BitVec.ofNat 32 w) :
@@ -49,6 +49,6 @@ theorem crt_productStride_ok (s : State) {w : Nat} (count : s.gpr .r7 = BitVec.o
   rw [← BitVec.ofNat_mul, ← BitVec.ofNat_add]
   congr 1
   simp only [productBytes, productWords]
-  omega
+  omega_using []
 
 end VG.Proof.Bignum.Arm

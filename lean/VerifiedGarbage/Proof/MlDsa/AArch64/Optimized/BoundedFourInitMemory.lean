@@ -73,7 +73,7 @@ theorem storeCount_ok {mask : Nat} (hm : mask<16)
   have hs : WP isa (.block (storeCount mask)) s fun t => Keep [.x6] s t ∧
       t.mem=s.mem.writeW (s.gpr .x19+BitVec.ofNat 64 (6000+64*mask+32))
         (BitVec.ofNat 64 (acceptedIndices mask).length) := by
-    refine wp_movz fun u hu hval => wp_strx (by omega) rfl
+    refine wp_movz fun u hu hval => wp_strx (by omega_using [hm]) rfl
       (by rw [hu.wr,hu.get .x19]; exact hw) fun t ht => wp_nil ⟨(hu.keep.trans ht.keep).mono (by simp),?_⟩
     rw [ht.mem,hu.mem,hu.get .x19,hval,init_count hm]
   rw [WP.block_append_iff]
@@ -96,8 +96,8 @@ theorem entryInit_ok {mask : Nat} (hm : mask<16)
     simp only [initEntry,storeConstant,storeCount,List.append_assoc,List.cons_append,List.nil_append]
   rw [he]
   simp only [List.append_assoc]
-  refine storeConstant_ok (by omega) (by simpa using hw 0 (by simp)) fun a ha hav ham => ?_
-  refine storeConstant_ok (by omega)
+  refine storeConstant_ok (by omega_using [hm]) (by simpa using hw 0 (by simp)) fun a ha hav ham => ?_
+  refine storeConstant_ok (by omega_using [hm])
     (by rw [ha.wr,ha.get .x19]; exact hw 8 (by simp)) fun b hb hbv hbm => ?_
   have hk : Keep [.x6] s b := (ha.trans hb).mono (by simp)
   refine storeCount_ok hm (by rw [hk.wr,hk.get .x19]; exact hw 32 (by simp)) fun t ht htv htm =>
@@ -127,9 +127,9 @@ theorem initEntryMemory_frame (m : Mem) (p : Addr) {mask : Nat} (hm : mask<16) :
     Frame [⟨p+BitVec.ofNat 64 (6000+64*mask),64⟩] m (initEntryMemory m p mask) := by
   rw [initEntryMemory_eq m p hm]
   have h16 : (⟨p+BitVec.ofNat 64 (6000+64*mask),64⟩ : Region).Contains
-      (p+BitVec.ofNat 64 (6000+64*mask)) 16 := Offset.contains p (by omega) (by omega) (by omega)
+      (p+BitVec.ofNat 64 (6000+64*mask)) 16 := Offset.contains p (by omega_using []) (by omega_using []) (by omega_using [hm])
   have h32 : (⟨p+BitVec.ofNat 64 (6000+64*mask),64⟩ : Region).Contains
-      (p+BitVec.ofNat 64 (6000+64*mask+32)) 8 := Offset.contains p (by omega) (by omega) (by omega)
+      (p+BitVec.ofNat 64 (6000+64*mask+32)) 8 := Offset.contains p (by omega_using []) (by omega_using []) (by omega_using [hm])
   exact ((Frame.refl _ m).write (by simp) _ h16).writeW (by simp) _ h32
 
 theorem initEntryMemory_read (m : Mem) (p : Addr) {mask : Nat} (hm : mask<16) :
@@ -138,7 +138,7 @@ theorem initEntryMemory_read (m : Mem) (p : Addr) {mask : Nat} (hm : mask<16) :
       BitVec.ofNat 64 (acceptedIndices mask).length := by
   rw [initEntryMemory_eq m p hm]
   constructor
-  · rw [Mem.writeW,Mem.read_write_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)]
+  · rw [Mem.writeW,Mem.read_write_sep (Offset.sep p (by omega_using []) (by omega_using [hm]) (by omega_using [hm])) (by decide)]
     have hs := Mem.readW_writeW_self m (p+BitVec.ofNat 64 (6000+64*mask)) 16 (shuffleWord mask) (by decide)
     simpa only [Mem.readW,Mem.writeW,BitVec.setWidth_eq] using hs
   · exact Mem.readW_writeW_self64 _ _ _
@@ -151,11 +151,11 @@ theorem initEntryMemory_other (m : Mem) (p : Addr) {mask other : Nat}
       m.readW (p+BitVec.ofNat 64 (6000+64*other+32)) 64 := by
   have hf := initEntryMemory_frame m p hm
   have hd : (⟨p+BitVec.ofNat 64 (6000+64*other),64⟩ : Region).Disjoint
-      ⟨p+BitVec.ofNat 64 (6000+64*mask),64⟩ := Offset.disjoint p (by omega) (by omega) (by omega)
+      ⟨p+BitVec.ofNat 64 (6000+64*mask),64⟩ := Offset.disjoint p (by omega_using [hne]) (by omega_using [ho]) (by omega_using [hm])
   constructor
-  · exact hf.read (Offset.contains p (e := 6000+64*other) (k := 64) (by omega) (by omega) (by omega))
+  · exact hf.read (Offset.contains p (e := 6000+64*other) (k := 64) (by omega_using []) (by omega_using []) (by omega_using [ho]))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
-  · exact hf.readW (Offset.contains p (e := 6000+64*other) (k := 64) (by omega) (by omega) (by omega))
+  · exact hf.readW (Offset.contains p (e := 6000+64*other) (k := 64) (by omega_using []) (by omega_using []) (by omega_using [ho]))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

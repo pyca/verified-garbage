@@ -164,9 +164,9 @@ theorem zeroB_wp {s : State} (hw : pR (s.gpr .rdi) ∈ s.wr) :
     fun i hi u hI => ?_) fun u hI => ⟨polyIs_of_toNat fun k hk => ?_, hI.frame, hI.keep⟩
   · refine ⟨by rw [g.keep.gpr (by decide), k1.gpr (by decide)]; exact (BitVec.add_zero _).symm,
       by rw [g.keep.2.1, k1.2.1], by rw [g.keep.2.2, k1.2.2], by rw [g.xmm, hx], (k1.trans g.keep).mono (by decide),
-      by rw [g.mem, hm]; exact Frame.refl _ _, fun _ h => absurd h (by omega)⟩
+      by rw [g.mem, hm]; exact Frame.refl _ _, fun _ h => absurd h (by omega_using [])⟩
   · have hc : InRegions u.wr (u.gpr .rdi) 16 := by
-      rw [hI.wr, hI.rdi]; exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+      rw [hI.wr, hI.rdi]; exact ⟨_, hw, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
     have hc' : InRegions (u.rd ++ u.wr) (u.gpr .rdi) 16 := let ⟨r, hr, h⟩ := hc; ⟨r, List.mem_append_right _ hr, h⟩
     vrunm [hc, hc']
     refine ⟨?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags]; exact hI.rd,
@@ -181,14 +181,14 @@ theorem zeroB_wp {s : State} (hw : pR (s.gpr .rdi) ∈ s.wr) :
     · simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]; exact hI.keep.2.2
     · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
       rw [hI.rdi]
-      exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
     · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-      rw [hI.rdi, coeffAt_write128 _ _ (by omega) _ (by omega), hI.x0]
+      rw [hI.rdi, coeffAt_write128 _ _ (by omega_using [hi]) _ (by omega_using [hi, hk]), hI.x0]
       split
       · simp [dword]
-      · exact hI.zero k (by omega)
+      · exact hI.zero k (by omega_arith)
   · rw [n_eq] at hk
-    rw [hI.zero k (by omega), zero, getElem!_pos _ k (by rw [n_eq]; exact hk)]
+    rw [hI.zero k (by omega_using [hk]), zero, getElem!_pos _ k (by rw [n_eq]; exact hk)]
     simp
 
 theorem zeroB_correct (s : State) (hs : (zeroK accSse).pre s) :

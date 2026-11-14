@@ -44,7 +44,7 @@ theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' 
   have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps]))
   have flag : zeroFlag s₁ = some (decide (key.length = 128)) := by
     rw [flag₁, start]
-    exact congrArg some (counter_eq _ _ (by omega) (by decide))
+    exact congrArg some (counter_eq _ _ (by omega_using [ht']) (by decide))
   have ptr₁ := keep₁.reg .x21 (by simp)
   by_cases he : key.length = 128
   · apply WP.ite false (by simp only [eval_nonzero, flag, he, decide_true, Option.map_some, Bool.not_true])
@@ -61,7 +61,7 @@ theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' 
         rw [keep₁.wr, ptr₁]; exact writable
       have initial : BytesPrefix s₁.mem (s₁.gpr .x21) (fill key 0) key.length := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
-      apply WP.mono (fillLoop_ok s₁ key ht (by omega)
+      apply WP.mono (fillLoop_ok s₁ key ht (by omega_using [ht', he])
         ((keep₁.reg .x20 (by simp)).trans len) ((keep₁.reg .x23 (by simp)).trans start) writes initial)
       intro s₂ h₂
       exact ⟨h₂.1, frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩
@@ -88,7 +88,7 @@ theorem setReduction_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits �
   · simp only [gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_true, ite_false]
     change 128#64 - (s.gpr .x22 + 7#64) >>> 3 = _
     rw [t8]
-    exact Offset.ofNat_sub_ofNat (by omega)
+    exact Offset.ofNat_sub_ofNat (by omega_using [hb'])
   · constructor
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -110,11 +110,11 @@ theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (h
   have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps]))
   have flag : zeroFlag s₁ = some (decide (t8 = 128)) := by
     rw [flag₁, start]
-    have eqZero := counter_eq (128 - t8) 0 (by omega) (by decide)
+    have eqZero := counter_eq (128 - t8) 0 (by omega_using []) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 64 (128 - t8) == 0#64) = _
     rw [eqZero]
-    have he : 128 - t8 = 0 ↔ t8 = 128 := by omega
+    have he : 128 - t8 = 0 ↔ t8 = 128 := by omega_using [ht']
     simp only [he]
   have ptr₁ := keep₁.reg .x21 (by simp)
   by_cases he : t8 = 128
@@ -131,7 +131,7 @@ theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (h
         rw [keep₁.wr, ptr₁]; exact writable
       have initial : BytesPrefix s₁.mem (s₁.gpr .x21) l 128 := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
-      apply WP.mono (descendLoop_ok s₁ l t8 ht (by omega)
+      apply WP.mono (descendLoop_ok s₁ l t8 ht (by omega_using [ht', he])
         ((keep₁.reg .x24 (by simp)).trans len) ((keep₁.reg .x23 (by simp)).trans start) writes initial)
       intro s₂ h₂
       exact ⟨frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩

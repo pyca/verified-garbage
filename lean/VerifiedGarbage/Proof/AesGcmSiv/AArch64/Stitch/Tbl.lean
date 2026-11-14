@@ -92,9 +92,9 @@ theorem hPrime_ok (hP : PrepPow) {s : State}
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨by decide, by decide, by decide, by decide, ne_sReg 1⟩
     rw [o₄.v C (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ne_tReg 1), o₃.v C h, c₂]
-  · obtain rfl : k = 1 := by omega
+  · obtain rfl : k = 1 := by omega_using [hk, hk1]
     rw [w₄, hm, ext8_ext8, hP.key]
-  · obtain rfl : k = 1 := by omega
+  · obtain rfl : k = 1 := by omega_using [hk, hk1]
     rw [s₁', hm, hP.key]
   · rw [o₄.gpr, o₃.gpr, kg₂ r h5 h6 h7, o₁.gpr]
   · rw [o₄.mem, o₃.mem, m₂, o₁.mem]
@@ -107,9 +107,9 @@ theorem hPrime_ok (hP : PrepPow) {s : State}
 /-- Where the table is. -/
 abbrev tblR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 tblO, 192⟩
 
-theorem sOff_eq (k : Nat) : sOff (k + 1) = tblO + 16 * k := by unfold sOff; omega
+theorem sOff_eq (k : Nat) : sOff (k + 1) = tblO + 16 * k := by unfold sOff; omega_using []
 
-theorem kOff_eq (p : Nat) : kOff p = tblO + 128 + 16 * p := by unfold kOff; omega
+theorem kOff_eq (p : Nat) : kOff p = tblO + 128 + 16 * p := by unfold kOff; omega_using []
 
 theorem tblO_eq : tblO = 480 := rfl
 
@@ -120,11 +120,11 @@ theorem st_ok (t : VReg) {d : Nat} (hd : tblO ≤ d) (hd' : d + 16 ≤ tblO + 19
       s' = { s with mem := s.mem.write (s.gpr .x19 + BitVec.ofNat 64 d) 16 (s.v t) } ∧
       Frame [tblR (s.gpr .x19)] s.mem s'.mem := by
   have hin : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 d) 16 := by
-    have := CallLay.inRegions_sub (off := d - tblO) (l := 16) hw (by omega) (by decide)
-    rwa [Offset.add_add, show tblO + (d - tblO) = d by omega] at this
-  refine WP.block_cons_iff.mpr ⟨_, Proof.Gcm.AArch64.Pmull.exec_strq h16 (by rw [tblO_eq] at hd'; omega) hin,
+    have := CallLay.inRegions_sub (off := d - tblO) (l := 16) hw (by omega_using [hd']) (by decide)
+    rwa [Offset.add_add, show tblO + (d - tblO) = d by omega_using [hd]] at this
+  refine WP.block_cons_iff.mpr ⟨_, Proof.Gcm.AArch64.Pmull.exec_strq h16 (by rw [tblO_eq] at hd'; omega_using [hd']) hin,
     WP.block_nil ⟨rfl, ?_⟩⟩
-  exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Offset.contains _ hd (by omega) (by decide))
+  exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Offset.contains _ hd (by omega_using [hd']) (by decide))
 
 /-- The table's first `n` powers and `q` pairs of keys stored. -/
 structure TS (s₀ : State) (H : Block) (n q : Nat) (s : State) : Prop where
@@ -147,19 +147,19 @@ theorem sws_ok {s₀ : State} {H : Block} (hI : PT H 8 s₀)
   | zero => exact WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, nofun, nofun⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s h => ?_
+    refine WP.mono (ih (by omega_using [hn])) fun s h => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     have e := sOff_eq n
-    refine WP.mono (st_ok (s := s) (sReg (n + 1)) (d := sOff (n + 1)) (by omega) (by omega)
-      (by rw [e, tblO_eq]; omega) (by rw [h.wr, h.gpr]; exact hw)) fun s' ⟨hs', f'⟩ => ?_
+    refine WP.mono (st_ok (s := s) (sReg (n + 1)) (d := sOff (n + 1)) (by omega_using [e]) (by omega_using [hn, e])
+      (by rw [e, tblO_eq]; omega_using []) (by rw [h.wr, h.gpr]; exact hw)) fun s' ⟨hs', f'⟩ => ?_
     subst hs'
     refine ⟨h.v, h.gpr, h.sp, h.rd, h.wr, h.frame.trans (h.gpr ▸ f'), fun k hk => ?_, nofun⟩
     dsimp only
     rw [h.gpr]
-    rcases (by omega : k = n ∨ k < n) with rfl | hk'
-    · rw [readW_write_self, h.v _ (sReg_nlow _), hI.sw _ (by omega) (by omega)]
-    · rw [readW_write_sep (by rw [sOff_eq, sOff_eq]; omega) (by rw [sOff_eq, tblO_eq]; omega)
-        (by rw [tblO_eq] at e; omega), h.sw k hk']
+    rcases (by omega_using [hk] : k = n ∨ k < n) with rfl | hk'
+    · rw [readW_write_self, h.v _ (sReg_nlow _), hI.sw _ (by omega_using []) (by omega_using [hn])]
+    · rw [readW_write_sep (by rw [sOff_eq, sOff_eq]; omega_using [hk']) (by rw [sOff_eq, tblO_eq]; omega_using [hn, hk])
+        (by rw [tblO_eq] at e; omega_using [hn, e]), h.sw k hk']
 
 /-- A pair of keys stored. -/
 theorem key_ok {s₀ : State} {H : Block} (hI : PT H 8 s₀)
@@ -172,7 +172,7 @@ theorem key_ok {s₀ : State} {H : Block} (hI : PT H 8 s₀)
   have e := kOff_eq q
   rw [show ∀ a b c d : Instr, [a, b, c, d] = [a, b, c] ++ [d] from fun _ _ _ _ => rfl, WP.block_append_iff]
   refine WP.mono (kv_ok (pk q) (pl q) s) fun s₃ ⟨v4, v₃, g₃, m₃, sp₃, rd₃, wr₃⟩ => ?_
-  refine WP.mono (st_ok .v4 (d := kOff q) (by omega) (by omega) (by rw [e, tblO_eq]; omega)
+  refine WP.mono (st_ok .v4 (d := kOff q) (by omega_using [e]) (by omega_using [hq, e]) (by rw [e, tblO_eq]; omega_using [])
     (by rw [wr₃, g₃, h.wr, h.gpr]; exact hw)) fun s' ⟨hs', f'⟩ => ?_
   subst hs'
   refine ⟨fun r hr => by dsimp only; rw [v₃ r hr, h.v r hr], by dsimp only; rw [g₃, h.gpr],
@@ -180,16 +180,16 @@ theorem key_ok {s₀ : State} {H : Block} (hI : PT H 8 s₀)
     h.frame.trans (by rw [← m₃]; rw [show tblR (s₃.gpr .x19) = tblR (s₀.gpr .x19) by rw [g₃, h.gpr]] at f'; exact f'),
     fun k hk => ?_, fun p hp => ?_⟩
   · dsimp only
-    rw [g₃, m₃, h.gpr, readW_write_sep (by rw [sOff_eq, kOff_eq]; omega) (by rw [sOff_eq, tblO_eq]; omega)
-      (by rw [tblO_eq] at e; omega), h.sw k hk]
+    rw [g₃, m₃, h.gpr, readW_write_sep (by rw [sOff_eq, kOff_eq]; omega_using [hk]) (by rw [sOff_eq, tblO_eq]; omega_using [hk])
+      (by rw [tblO_eq] at e; omega_using [hq, e]), h.sw k hk]
   · dsimp only
     rw [g₃, m₃, h.gpr]
-    rcases (by omega : p = q ∨ p < q) with rfl | hp'
+    rcases (by omega_using [hp] : p = q ∨ p < q) with rfl | hp'
     · rw [readW_write_self, v4, h.v _ (sReg_nlow _), h.v _ (tReg_nlow _), h.v _ (sReg_nlow _),
         h.v _ (tReg_nlow _), hI.sw _ k1 k8, hI.t _ k1 k8, hI.sw _ l1 l8, hI.t _ l1 l8, kpack_eq]
       rfl
-    · rw [readW_write_sep (by rw [kOff_eq, kOff_eq]; omega) (by rw [kOff_eq, tblO_eq]; omega)
-        (by rw [tblO_eq] at e; omega), h.key p hp']
+    · rw [readW_write_sep (by rw [kOff_eq, kOff_eq]; omega_using [hp']) (by rw [kOff_eq, tblO_eq]; omega_using [hq, hp])
+        (by rw [tblO_eq] at e; omega_using [hq, e]), h.key p hp']
 
 /-- The table stores. -/
 abbrev tblStores : List Instr :=
@@ -211,16 +211,16 @@ theorem tbl_ok {s₀ : State} {H : Block} (hI : PT H 8 s₀)
     | zero => exact WP.block_nil ⟨h.v, h.gpr, h.sp, h.rd, h.wr, h.frame, h.sw, nofun⟩
     | succ q ih =>
       rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-      refine WP.mono (ih (by omega)) fun s' h' => ?_
+      refine WP.mono (ih (by omega_using [hq])) fun s' h' => ?_
       simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-      exact key_ok hI hw (by omega) h'
+      exact key_ok hI hw (by omega_using [hq]) h'
   rw [tblStores, WP.block_append_iff]
   exact WP.mono (sws_ok hI hw 8 (Nat.le_refl _)) fun s h => ks 4 (by decide) s h
 
 theorem TS.tblOk {s₀ s : State} {H : Block} (h : TS s₀ H 8 4 s) : TblOk s.mem (s₀.gpr .x19) H :=
   ⟨fun k hk hk8 => by
-    have := h.sw (k - 1) (by omega)
-    rwa [show k - 1 + 1 = k by omega] at this, h.key⟩
+    have := h.sw (k - 1) (by omega_using [hk8])
+    rwa [show k - 1 + 1 = k by omega_using [hk]] at this, h.key⟩
 
 /-- `tblBuild`: the table of keys of `H` (at `x19 + 64`), and only `x5`–`x7`,
 the vector registers and the table written. -/

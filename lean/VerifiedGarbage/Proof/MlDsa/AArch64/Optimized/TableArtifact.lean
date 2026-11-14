@@ -20,19 +20,19 @@ def ExpandedArtifact (m : Mem) (p : Addr) : Prop :=
 theorem ExpandedArtifact.words {m : Mem} {p : Addr} (h : ExpandedArtifact m p) :
     ExpandedWords m p := by
   intro k hk
-  have hi : k/2<488 := by omega
+  have hi : k/2<488 := by omega_using [hk]
   have hv := h (k/2) hi
-  have hr : k%2=0 ∨ k%2=1 := by omega
+  have hr : k%2=0 ∨ k%2=1 := by omega_using []
   rcases hr with hr | hr
-  · have he : k=2*(k/2) := by omega
+  · have he : k=2*(k/2) := by omega_using [hr]
     have hx := congrArg (fun v : BitVec 64 => v.extractLsb' 0 32) hv
     rw [readW64_lo,TableConstants.staticNttWords_low hi] at hx
-    simpa only [show 8*(k/2)=4*k by omega,← he] using hx
-  · have he : k=2*(k/2)+1 := by omega
+    simpa only [show 8*(k/2)=4*k by omega_using [hr],← he] using hx
+  · have he : k=2*(k/2)+1 := by omega_using [hr]
     have hx := congrArg (fun v : BitVec 64 => v.extractLsb' 32 32) hv
     rw [readW64_hi,TableConstants.staticNttWords_high hi,BitVec.add_assoc,
       ← BitVec.ofNat_add (8*(k/2)) 4] at hx
-    simpa only [show 8*(k/2)+4=4*k by omega,← he] using hx
+    simpa only [show 8*(k/2)+4=4*k by omega_using [hr],← he] using hx
 
 theorem ExpandedArtifact.roots {m : Mem} {p : Addr} (h : ExpandedArtifact m p) :
     HoistedTable m p ordinaryRoot ∧ RootTable m p innerRoot tailRoot :=

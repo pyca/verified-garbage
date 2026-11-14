@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Divstep.Red30
 import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
 import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
 import Mathlib.Algebra.Order.Ring.Int
+import VerifiedGarbage.Proof.Framework.Omega
 -- separate module: target-independent, for any target's batched inverse
 
 /-! # The inverse from batches of 30 divsteps with coefficients reduced by `2^30`
@@ -22,7 +23,7 @@ open VG.Proof.Divstep
 theorem inv30_spec {n a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) (ha : a < 2 ^ (32 * n))
     (hmn : m < 2 ^ (32 * n)) :
     (m : Int) ∣ (inv30 n a m : Int) * a - Nat.gcd a m ∧ inv30 n a m < m := by
-  have hm0 : (0 : Int) < m := Int.natCast_pos.mpr (by omega)
+  have hm0 : (0 : Int) < m := Int.natCast_pos.mpr (by omega_using [hm])
   set X := oddInput m a
   set f := (W32.invRun 30 m 0 X (3 * (n + 1))).f
   set D := ((W32.deRun m X (3 * (n + 1))).1 : Int)
@@ -33,7 +34,7 @@ theorem inv30_spec {n a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) (ha : a < 2 ^ (32
   have nn : 0 ≤ y := Int.emod_nonneg _ hm0.ne'
   have lt : y < m := Int.emod_lt_of_pos _ hm0
   have ey : ((inv30 n a m : Nat) : Int) = y := Int.toNat_of_nonneg nn
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_using [lt, ey]⟩
   rw [ey, ← hgcd, Int.natCast_natAbs]
   refine Int.ModEq.dvd ?_
   have e : y * a ≡ (if f < 0 then -D else D) * X [ZMOD m] :=

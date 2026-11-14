@@ -20,11 +20,11 @@ padding and length checks have succeeded. -/
 theorem fixedSalt_suffix (V : Nat → Byte) (e : Nat) {db pos : Nat} (hp : pos < db) :
     (List.range (db - pos - 1)).map (fun i => V (e + db - (db - pos - 1) + i)) =
       ((List.range db).map (fun i => V (e + i))).drop (pos + 1) := by
-  apply List.ext_getElem (by simp; omega)
+  apply List.ext_getElem (by simp; omega_using [])
   intro i h₁ h₂
   simp only [List.getElem_map, List.getElem_range, List.getElem_drop]
   congr 1
-  omega
+  omega_using [hp]
 
 variable {H : Impl.Pbkdf2.Md.X86_64.Hash} (hH : Pbkdf2.Md.X86_64.HashOK H)
   (K : Pbkdf2.Md.X86_64.Callees H) {f : MdFns} (hf : MdFnsSafe f)
@@ -42,7 +42,7 @@ theorem saltBack_xd : (saltBack f H).x86_64Depth ≤ 8 := by
   have := fixedHash_xd (H := H) hf
   simp only [saltBack, fixedSaltBack, fixedSaltPrefix, fixedHead, clearNb, padSalt, genericSaltBack, seqs, clearY,
     copyDigest, copyFixedSalt, copyDb, shift, shiftPass, cmpH, byteLoop, Code.x86_64Depth, Nat.max_le]
-  omega
+  omega_arith
 
 include hH K in
 theorem saltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} (hdk : DigOK H)
@@ -98,7 +98,7 @@ theorem saltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} (hdk : Di
     w.mem = v.mem ∧ w.cf = some (decide ((W 36).toNat < db))) ?_ rfl) fun w ⟨⟨hmw, hc⟩, kw⟩ sw => ?_)
   · xrun [ea_sp, Lv.rsp, Lv.ld (d := sSlen) (by decide), Lv.ld (d := sDb) (by decide),
       Rv.rd (d := sSlen) 36 rfl (by decide), Rv.rd (d := sDb) 24 rfl (by decide), hdb]
-    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show db < 2 ^ 64 by omega)]
+    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show db < 2 ^ 64 by omega_using [hfit])]
   have kuw : Keep [.rax] u w := (kv.trans kw).mono (by decide)
   have hmu : w.mem = u.mem := hmw.trans hm
   refine WP.ite (M := isa) _ (show isa.eval .b w = _ from hc) (fun hf => ?_) (fun _ => generic kuw hmu (sw.trans sv))
@@ -115,7 +115,7 @@ theorem saltBack_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} (hdk : Di
   · rw [out]
     by_cases hacc : W 33 = 0
     · have hsl : (W 36).toNat = db - pos - 1 := by
-        rw [hmatch hb hacc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        rw [hmatch hb hacc, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hfit])]
       rw [hsl, fixedSalt_suffix V (oEm + lo) hpd, hmu]
     · simp only [hacc, false_and, ↓reduceIte]
 

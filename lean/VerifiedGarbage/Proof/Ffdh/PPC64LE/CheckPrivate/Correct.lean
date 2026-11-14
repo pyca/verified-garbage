@@ -46,7 +46,7 @@ theorem kp_correct (s : State) (h : kpContract.pre s) :
   simp only [Spec.Rsa.scratchWords] at hsl
   have hin : ∀ i < 18, InRegions s.wr (off (Domain.savW (s.gpr .r10)) (8 * i)) 8 := fun i hi =>
     ⟨⟨s.gpr .r10, (stackArg s 0).toNat * 8⟩, by rw [hwr]; simp, by
-      rw [off, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      rw [off, Offset.add_add]; exact Offset.contains_base _ (by omega_using [hsl, hi]) (by omega_using [hi])⟩
   unfold checkPrivate
   refine WP.seq (WP.mono (kp_front hpre) fun s₁ ⟨hb, he, hsav, hby, k1⟩ => ?_)
   have hk := hb.k64
@@ -56,15 +56,15 @@ theorem kp_correct (s : State) (h : kpContract.pre s) :
   have hnw := hb.env.hs.nowrap
   have e0 := Domain.slot_eq (kdOf s).c.w 0
   have e28 := Domain.slot_eq (kdOf s).c.w 28
-  refine WP.seq (WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hk' (fun i hi => hb.rdD i (by omega))
-    (fun i hi => hb.sepD i (by omega))) fun s₂ ⟨⟨p2, c2, b2⟩, k2⟩ => ?_)
+  refine WP.seq (WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hk' (fun i hi => hb.rdD i (by omega_using [hLk, hi]))
+    (fun i hi => hb.sepD i (by omega_using [hLk, hi]))) fun s₂ ⟨⟨p2, c2, b2⟩, k2⟩ => ?_)
   have hb2 := hb.keep k2 b2
   have he2 := he.keep k2 b2
   have hDk : Spec.Rsa.bytesAt s₁.mem (s.gpr .r3) (s.gpr .r5).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r5).toNat := by
     rw [← Proof.Ffdh.take_bytesAt _ _ (show (s.gpr .r5).toNat ≤ (s.gpr .r4).toNat by
-      rcases hLk with h | h <;> simp only [kdOf] at h <;> omega), ← Proof.Ffdh.take_bytesAt s.mem _
-      (show (s.gpr .r5).toNat ≤ (s.gpr .r4).toNat by rcases hLk with h | h <;> simp only [kdOf] at h <;> omega)]
+      rcases hLk with h | h <;> simp only [kdOf] at h <;> omega_using [h]), ← Proof.Ffdh.take_bytesAt s.mem _
+      (show (s.gpr .r5).toNat ≤ (s.gpr .r4).toNat by rcases hLk with h | h <;> simp only [kdOf] at h <;> omega_using [h])]
     exact congrArg _ hb.bD
   rw [show (kdOf s).c.D = s.gpr .r3 from rfl, show (kdOf s).c.k = (s.gpr .r5).toNat from rfl, hDk] at p2 c2
   generalize hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r5).toNat) = p at p2 c2
@@ -83,8 +83,8 @@ theorem kp_correct (s : State) (h : kpContract.pre s) :
       have hf := modulus_facts hv
       refine WP.mono (cpBody_ok (Yv := s.gpr .r6) hb2.env hb2.r23 hb2.r21 hb2.r27 hb2.r28 rfl hk hk' hLk
         he2.xl1 he2.xlk he2.wX he2.wXL he2.wY hb2.rdD hb2.sepD he2.rdX he2.sepX he2.rdY he2.sepY p2 hf.1
-        hf.2 (top_of_valid hv (by have : (kdOf s).c.k = (s.gpr .r5).toNat := rfl; simp only [CD.w]; omega)
-          (by have : (kdOf s).c.k = (s.gpr .r5).toNat := rfl; simp only [CD.w]; omega)) hxv hgv hyv hbv) fun t ⟨⟨t3, tw⟩, kt⟩ => ⟨fun _ => t3, tw, kt.mono (by decide)⟩
+        hf.2 (top_of_valid hv (by have : (kdOf s).c.k = (s.gpr .r5).toNat := rfl; simp only [CD.w]; omega_using [this])
+          (by have : (kdOf s).c.k = (s.gpr .r5).toNat := rfl; simp only [CD.w]; omega_using [hk])) hxv hgv hyv hbv) fun t ⟨⟨t3, tw⟩, kt⟩ => ⟨fun _ => t3, tw, kt.mono (by decide)⟩
     · refine WP.mono (li_ok s₂ 0 (by decide)) fun t ⟨⟨_, tm⟩, kt⟩ =>
         ⟨fun hv => absurd (c2.mpr hv) (by simpa using hz), fun i hi => by rw [tm], kt.mono (by decide)⟩
   refine WP.seq (WP.mono hite fun t₅ ⟨tpost, tw, k5⟩ => ?_)
@@ -96,7 +96,7 @@ theorem kp_correct (s : State) (h : kpContract.pre s) :
     rw [ea]
     show word t₅.mem (s.gpr .r10) (112 + 8 * i) = _
     have b2' : Body (s.gpr .r10) (kdOf s).c.w s₁.mem s₂.mem := b2
-    rw [tw i hi, Outside.word b2' (by omega) (by omega)]
+    rw [tw i hi, Outside.word b2' (by omega_using [e0, hi]) (by omega_using [hi])]
     exact hsav i hi
   refine WP.mono (Domain.restore_ok t₅ ((k5.gpr .r23 (by decide)).trans hb2.r23) (by rw [kall.wr]; exact hin) hsav')
     fun u ⟨urs, uot, um, _, _, usp, ulr⟩ => ?_
@@ -110,7 +110,7 @@ theorem kp_correct (s : State) (h : kpContract.pre s) :
     intro hdv
     have hL' : (s.gpr .r4).toNat = 2 * (s.gpr .r5).toNat ∨ (s.gpr .r4).toNat = 3 * (s.gpr .r5).toNat := hLk
     have hmod := Proof.Ffdh.domainValid_mod hdv
-    rw [Proof.Ffdh.domainOf_p _ _ (by omega), hp] at hmod
+    rw [Proof.Ffdh.domainOf_p _ _ (by omega_using [hL']), hp] at hmod
     have hsep : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs (s.gpr .r10) y < (stackArg s 0).toNat * 8 → off Q i ≠ y) →
         Spec.Rsa.bytesAt s₂.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hq => by
       rw [b2.bytesAt hZ hq]; exact hby Q n hq
@@ -123,12 +123,12 @@ theorem kp_correct (s : State) (h : kpContract.pre s) :
     have eb : bnd s₂.mem (s.gpr .r3) (s.gpr .r5).toNat (s.gpr .r4).toNat p =
         bnd s.mem (s.gpr .r3) (s.gpr .r5).toNat (s.gpr .r4).toNat p :=
       bnd_congr fun hq => hsep _ _ fun i hi => by
-        rw [off_off']; exact hb.sepD (2 * (s.gpr .r5).toNat + i) (by simp only [kdOf]; omega)
+        rw [off_off']; exact hb.sepD (2 * (s.gpr .r5).toNat + i) (by simp only [kdOf]; omega_using [hq, hi])
     rw [ex] at hxv
     rw [eg] at hgv
     rw [ey] at hyv
     rw [eb] at hbv
-    have hk0 : 0 < (s.gpr .r5).toNat := by have := hb.k64; simp only [kdOf] at this; omega
+    have hk0 : 0 < (s.gpr .r5).toNat := by have := hb.k64; simp only [kdOf] at this; omega_using [this]
     rw [privateStatus_dom hk0 hL' hdv, hp, hyl, hyv, hxv, hgv, hbv, uot .r3 (by decide), tpost hmod,
       ret_status _ (by split <;> [decide; split <;> decide])]
 

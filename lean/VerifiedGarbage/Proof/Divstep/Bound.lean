@@ -11,6 +11,7 @@ import Mathlib.Tactic.NormNum.Ineq
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The divstep bound: runs of the relaxed iteration
@@ -38,10 +39,10 @@ def Step (i : Int) (f g : ℚ) (i' : Int) (f' g' : ℚ) : Prop :=
     (if i < 0 then i' = i + 1 ∧ f' = f ∧ g' = (g + f) / 2 else i' = -i ∧ f' = g ∧ g' = (g - f) / 2)
 
 theorem W_pos {n : Nat} {x y : ℚ} : W n x y ↔ Wpos n x y := by
-  unfold W; rw [ite_t (by omega)]; rfl
+  unfold W; rw [ite_t (by omega_using [])]; rfl
 
 theorem W_neg {j : Nat} (hj : 1 ≤ j) {x y : ℚ} : W (-(j : Int)) x y ↔ Wneg j x y := by
-  unfold W; rw [ite_f (by omega), show (-(-(j : Int))).toNat = j by omega]
+  unfold W; rw [ite_f (by omega_using [hj]), show (-(-(j : Int))).toNat = j by omega_using []]
 
 /-- A step keeps the scaled point in `W`. -/
 theorem W_step {i i' : Int} {x y : ℚ} {f g f' g' : ℚ} (c : ℚ) (hc : c ≠ 0) (hx : x = f / c) (hy : y = g / c)
@@ -55,15 +56,15 @@ theorem W_step {i i' : Int} {x y : ℚ} {f g f' g' : ℚ} (c : ℚ) (hc : c ≠ 
     have e2 : g / 2 / (c * s) = g / c / (2 * s) := by fsr
     rw [e1, e2]
     rcases Int.lt_or_le i 0 with hi | hi
-    · obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega⟩
-      have hj : 1 ≤ j := by omega
+    · obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega_using [hi]⟩
+      have hj : 1 ≤ j := by omega_using [hi]
       have := Wneg_even ((W_neg hj).mp h)
       rcases Nat.lt_or_ge j 2 with h2 | h2
-      · obtain rfl : j = 1 := by omega
-        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega, W_pos]; exact this.1 rfl
-      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega, W_neg (by omega)]; exact this.2 h2
-    · obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega⟩
-      rw [show (n : Int) + 1 = ((n + 1 : Nat) : Int) by omega, W_pos]
+      · obtain rfl : j = 1 := by omega_using [hi, h2]
+        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega_using [], W_pos]; exact this.1 rfl
+      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega_using [hi], W_neg (by omega_using [h2])]; exact this.2 h2
+    · obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega_using [hi]⟩
+      rw [show (n : Int) + 1 = ((n + 1 : Nat) : Int) by omega_using [], W_pos]
       exact Wpos_even (W_pos.mp h)
   · split at hs
     · rename_i hi
@@ -72,24 +73,24 @@ theorem W_step {i i' : Int} {x y : ℚ} {f g f' g' : ℚ} (c : ℚ) (hc : c ≠ 
       have e1 : f / (c * s) = f / c / s := by field_simp
       have e2 : (g + f) / 2 / (c * s) = (g / c + f / c) / (2 * s) := by fsr
       rw [e1, e2]
-      obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega⟩
-      have hj : 1 ≤ j := by omega
+      obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega_using [hi]⟩
+      have hj : 1 ≤ j := by omega_using [hi]
       have := Wneg_odd ((W_neg hj).mp h)
       rcases Nat.lt_or_ge j 2 with h2 | h2
-      · obtain rfl : j = 1 := by omega
-        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega, W_pos]; exact this.1 rfl
-      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega, W_neg (by omega)]; exact this.2 h2
+      · obtain rfl : j = 1 := by omega_using [hi, h2]
+        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega_using [], W_pos]; exact this.1 rfl
+      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega_using [hi], W_neg (by omega_using [h2])]; exact this.2 h2
     · rename_i hi
       obtain ⟨rfl, hf', hg'⟩ := hs
       rw [hf', hg']
       have e1 : g / (c * s) = g / c / s := by field_simp
       have e2 : (g - f) / 2 / (c * s) = (g / c - f / c) / (2 * s) := by fsr
       rw [e1, e2]
-      obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega⟩
+      obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega_using [hi]⟩
       have := Wpos_odd (W_pos.mp h)
       rcases Nat.lt_or_ge n 1 with h1 | h1
-      · obtain rfl : n = 0 := by omega
-        rw [show -((0 : Nat) : Int) = ((0 : Nat) : Int) by omega, W_pos]; exact this.1 rfl
+      · obtain rfl : n = 0 := by omega_using [h1]
+        rw [show -((0 : Nat) : Int) = ((0 : Nat) : Int) by omega_using [], W_pos]; exact this.1 rfl
       · rw [W_neg h1]; exact this.2 h1
 
 /-- A run of the relaxed iteration from `i = 0`. -/
@@ -102,7 +103,7 @@ theorem stable {i : Nat → Int} {f g : Nat → ℚ} (hr : Run i f g) {u : ℚ} 
     (h0 : H1P (f 0 / u) (g 0 / u)) : ∀ m, W (i m) (f m / (u * s ^ m)) (g m / (u * s ^ m))
   | 0 => by
     rw [hr.i0, show (0 : Int) = ((0 : Nat) : Int) from rfl, W_pos]
-    unfold Wpos; rw [ite_t (by omega)]
+    unfold Wpos; rw [ite_t (by omega_using [])]
     simpa using h0
   | m + 1 => by
     have := W_step (u * s ^ m) (by have := s_pos; positivity) rfl rfl (stable hr hu h0 m) (hr.step m)
@@ -132,10 +133,10 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
     exact_mod_cast this
   unfold Wpos at h
   rcases Nat.lt_or_ge n 3 with h3 | h3
-  · rw [ite_t (by omega)] at h
+  · rw [ite_t (by omega_using [h3])] at h
     rcases Nat.lt_or_ge n 2 with h2 | h2
     · rcases Nat.lt_or_ge n 1 with h1 | h1
-      · obtain rfl : n = 0 := by omega
+      · obtain rfl : n = 0 := by omega_using [h1]
         have h' := H1_atL (a := x) (b := y) (u := t) (by simpa using h) ht (by simpa using hc)
         obtain ⟨bx, bY⟩ := H1_box h'
         rw [abs_le] at bx bY
@@ -143,14 +144,14 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
           have : (-2 : ℚ) < x ∧ (x : ℚ) < 2 := by constructor <;> linarith only [bx.1, bx.2]
           have a : (-2 : Int) < x := by exact_mod_cast this.1
           have b : x < (2 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [a, b]
         have hyv : y = -1 ∨ y = 1 := by
           have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith only [bY.1, bY.2]
           have a : (-2 : Int) < y := by exact_mod_cast this.1
           have b : y < (2 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [hy, a, b]
         rcases hx with rfl | rfl | rfl <;> rcases hyv with rfl | rfl <;> revert h' <;> decide +kernel
-      · obtain rfl : n = 1 := by omega
+      · obtain rfl : n = 1 := by omega_using [h2, h1]
         have h' := H1_atL (a := x * s ^ 2) (b := 2 * y * s ^ 2) (u := t * s ^ 1)
           (inP_congr h (by field_simp) (by fsr)) hu hc
         obtain ⟨bx, bY⟩ := H1_box h'
@@ -161,15 +162,15 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
           have : (-3 : ℚ) < x ∧ (x : ℚ) < 3 := by constructor <;> linarith only [bx.1, bx.2]
           have a : (-3 : Int) < x := by exact_mod_cast this.1
           have b : x < (3 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [a, b]
         have hyv : y = -1 ∨ y = 1 := by
           have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith only [bY.1, bY.2]
           have a : (-2 : Int) < y := by exact_mod_cast this.1
           have b : y < (2 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [hy, a, b]
         rw [hs2] at h'
         rcases hx with rfl | rfl | rfl | rfl | rfl <;> rcases hyv with rfl | rfl <;> revert h' <;> decide +kernel
-    · obtain rfl : n = 2 := by omega
+    · obtain rfl : n = 2 := by omega_using [h3, h2]
       have h' := H1_atL (a := x * s ^ 4) (b := 4 * y * s ^ 4) (u := t * s ^ 2)
         (inP_congr h (by fsr) (by fsr)) hu hc
       have bY := (H1_box h').2
@@ -183,7 +184,7 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
         rw [div_lt_one (by positivity)] at hs4
         nlinarith only [this, hs4, abs_nonneg (y : ℚ)]
       exact absurd hy1 (not_le.mpr this)
-  · rw [ite_f (by omega)] at h
+  · rw [ite_f (by omega_using [h3])] at h
     have h' := H1_atL (a := c32 * x * s ^ (2 * n)) (b := c32 * y * 2 ^ n * s ^ (2 * n)) (u := t * s ^ n)
       (inP_congr h (by rw [pow_mul']; fsr) (by rw [pow_mul', mul_pow]; fsr)) hu hc
     have bY := (H1_box h').2
@@ -224,21 +225,21 @@ theorem sizeBound {i : Nat → Int} {f g : Nat → ℚ} (hr : Run i f g) {u : �
       (t := u * s ^ 0) (by positivity) h
     simpa [hr.i0, J] using this
   · rcases Int.lt_or_le (i (m + 1)) 0 with hi | hi
-    · have ih' := ih fun n hn => hnz n (by omega)
+    · have ih' := ih fun n hn => hnz n (by omega_using [hn])
       have e : m + J (i m) = m + 1 + J (i (m + 1)) := by
         have st := hr.step m
         unfold J
         rcases st with ⟨h1, -, -⟩ | st
-        · rw [ite_f (by omega), ite_f (by omega)]; omega
+        · rw [ite_f (by omega), ite_f (by omega_using [hi])]; omega_using [hi, h1]
         · split at st
-          · rw [ite_f (by omega), ite_f (by omega)]; omega
+          · rw [ite_f (by omega_arith), ite_f (by omega_using [hi])]; omega
           · obtain ⟨h1, -, -⟩ := st
-            rw [ite_t (by omega), ite_f (by omega)]; omega
+            rw [ite_t (by omega_arith), ite_f (by omega_using [hi])]; omega_using [hi, h1]
       rw [← e]; exact ih'
     · obtain ⟨x, hx⟩ := hf (m + 1)
       obtain ⟨y, hy⟩ := hg (m + 1)
       have h := stable hr hu h0 (m + 1)
-      obtain ⟨n, hn⟩ : ∃ n : Nat, i (m + 1) = n := ⟨(i (m + 1)).toNat, by omega⟩
+      obtain ⟨n, hn⟩ : ∃ n : Nat, i (m + 1) = n := ⟨(i (m + 1)).toNat, by omega_using [hi]⟩
       rw [hn, W_pos, hx, hy] at h
       have := lattice (x := x) (y := y) (by intro e; exact hnz (m + 1) (Nat.le_refl _) (by rw [hy, e]; simp))
         (by positivity) h

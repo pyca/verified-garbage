@@ -68,7 +68,7 @@ theorem kernel_ok (sve : Bool) (k : Nat) {R a : Nat} {W : Addr} {c : Nat} {s : S
   have m₃ : s₃.mem = s.mem := m₂
   let vs : Nat → CState := fun j => ctr (stateAt s.mem (s.gpr .x0)) j
   have h₄ : TI vs R a W c k s₄ s₄ 0 := by
-    refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl, ⟨by omega, ?_, ?_, ?_⟩, ?_⟩
+    refine ⟨?_, ?_, rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl, ⟨by omega_using [], ?_, ?_, ?_⟩, ?_⟩
     · intro k j hj
       rw [Stitch.write_v]
       exact h₂ k j hj
@@ -131,7 +131,7 @@ theorem kernel_ok (sve : Bool) (k : Nat) {R a : Nat} {W : Addr} {c : Nat} {s : S
       (s₈.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
     intro r j
     rw [l₈.wr, l₈.gpr _ (by decide), u₇.wr, wr₆, wr₅, x1₇]
-    exact hw _ (by omega)
+    exact hw _ (by omega_using [])
   refine (VG.Proof.ChaCha20.AArch64.Neon4.finishBlocks_ok hc₈ ho).mono
     fun s₉ ⟨d₉, f₉, k₉⟩ => ?_
   have x1₈ : s₈.gpr .x1 = s.gpr .x3 := by rw [l₈.gpr _ (by decide), x1₇]
@@ -140,8 +140,8 @@ theorem kernel_ok (sve : Bool) (k : Nat) {R a : Nat} {W : Addr} {c : Nat} {s : S
     rw [h₅.keep _ h4 h6 hp, RegUpd.gpr_write_of_ne s₃ .x _ h4]
   have acc₅ := h₅.abs.acc
   have ptr₅ := h₅.abs.ptr
-  rw [show min c (k * 10) = c by omega, show s₄.mem = s.mem from m₃] at acc₅
-  rw [show min c (k * 10) = c by omega] at ptr₅
+  rw [show min c (k * 10) = c by omega_using [hck], show s₄.mem = s.mem from m₃] at acc₅
+  rw [show min c (k * 10) = c by omega_using [hck]] at ptr₅
   have e21 : ∀ r ∈ [Reg.x21, .x22, .x23], s₉.gpr r = s₅.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

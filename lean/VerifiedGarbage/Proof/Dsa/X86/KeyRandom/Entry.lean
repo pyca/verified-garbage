@@ -36,7 +36,7 @@ theorem entry_ok {s₀ t : State} (h : Ready s₀ t) (hb : t.gpr .ebx = s₀.gpr
       ⟨fun r _ => by rw [g₃], r₃, w₃⟩).trans ⟨fun r _ => by rw [g₄], r₄, w₄⟩).trans u₅.keeps).trans
       ⟨fun r _ => by rw [g₆], r₆, w₆⟩).trans ⟨fun r _ => by rw [g₈], r₈, w₈⟩
   have e := fun {m : Mem} {d : Nat} (v : BitVec 32) (h₁ : oSaveEbx ≤ d) (h₂ : d + 4 ≤ oSaveEbx + 44) =>
-    store_in (rBase s₀) m (rs := [(oSaveEbx, 44)]) v (List.mem_singleton_self _) h₁ h₂ (by unfold oSaveEbx at h₂; omega)
+    store_in (rBase s₀) m (rs := [(oSaveEbx, 44)]) v (List.mem_singleton_self _) h₁ h₂ (by unfold oSaveEbx at h₂; omega_using [h₂])
   refine ⟨h.congr kk (by
       rw [hm]
       exact (((((frame_store s₀ _ (by decide) _).trans (frame_store s₀ _ (by decide) _)).trans

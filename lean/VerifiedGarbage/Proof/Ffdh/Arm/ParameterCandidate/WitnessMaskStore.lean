@@ -25,12 +25,12 @@ theorem witnessMaskStore_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
         t.gpr .r0 = base) ∧ Rest [.r0, .r3, .r4] s t := by
   have fits : arrAt w 8 ≤ 8 * capacity := ready.width ▸ ready.layout.2.2.1
   have arrayFit := array_end_le (w := w) (j := 1) (k := 8) (by decide)
-  have size : 128 ≤ 8 * capacity := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * capacity := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have header := nativeHeader_of_layout s.mem base ready.workspace.nowrap (Nat.le_refl _) ready.layout
   rw [ready.width] at header
   have pointer := header.array 1 (by decide)
   have addr72 : State.addr (base + 72#32) = off (State.addr base) 72 :=
-    VG.Arm.addr_add (by have := ready.workspace.nowrap; omega)
+    VG.Arm.addr_add (by have := ready.workspace.nowrap; omega_using [size, this])
   have shifted : BitVec.ofNat 32 j <<< 2 = BitVec.ofNat 32 (4 * j) := by
     rw [BitVec.shiftLeft_eq_mul_twoPow]
     change BitVec.ofNat 32 j * BitVec.ofNat 32 4 = _
@@ -38,10 +38,10 @@ theorem witnessMaskStore_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
   have address : State.addr (base + BitVec.ofNat 32 (arrAt w 1) + BitVec.ofNat 32 (4 * j)) =
       off (State.addr base) (arrAt w 1 + 4 * j) := by
     rw [Offset.add_add]
-    exact VG.Arm.addr_add (by have := ready.workspace.nowrap; omega)
-  have readHeader := ready.workspace.read (off := 72) (by omega)
-  have read := ready.workspace.read (off := arrAt w 1 + 4 * j) (by omega)
-  have write := ready.workspace.write (off := arrAt w 1 + 4 * j) (by omega)
+    exact VG.Arm.addr_add (by have := ready.workspace.nowrap; omega_using [bound, fits, arrayFit, this])
+  have readHeader := ready.workspace.read (off := 72) (by omega_using [size])
+  have read := ready.workspace.read (off := arrAt w 1 + 4 * j) (by omega_using [bound, fits, arrayFit])
+  have write := ready.workspace.write (off := arrAt w 1 + 4 * j) (by omega_using [bound, fits, arrayFit])
   refine withRest_all [.r0, .r3, .r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.witnessMaskStore
   ffrun [BitVec.add_zero, ready.stackRead, ready.saved, addr72, readHeader, pointer,

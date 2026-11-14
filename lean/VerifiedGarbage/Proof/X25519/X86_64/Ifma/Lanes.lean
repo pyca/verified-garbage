@@ -28,7 +28,7 @@ theorem fe5_congr {x y : Nat → Nat} (h : ∀ i < 5, x i = y i) : fe5 x = fe5 y
 theorem fe5_add {x y z : Nat → Nat} (h : ∀ i < 5, z i = x i + y i) : fe5 z = fe5 x + fe5 y := by
   refine toFe_add (congrArg (· % P) ?_)
   simp only [lv, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide), h 4 (by decide)]
-  omega
+  omega_using []
 
 theorem lv_kbv : lv kbv = 2 ^ 11 * P := by decide
 
@@ -41,7 +41,7 @@ theorem fe5_sub {x y z : Nat → Nat} (h : ∀ i < 5, z i = x i + (kbv i - y i))
     have h3 := hy 3 (by decide); have h4 := hy 4 (by decide)
     simp only [lv, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide), h 4 (by decide)]
     simp only [kbv] at h0 h1 h2 h3 h4 ⊢
-    omega
+    omega_using [h1, h2, h3, h4, h0]
   rw [e, Nat.add_mul_mod_self_left]
 
 theorem fe5_carry (x : Nat → Nat) (h4 : x 4 < 2 ^ 63) : fe5 (carryNat (2 ^ 51 - 1) 19 x) = fe5 x :=

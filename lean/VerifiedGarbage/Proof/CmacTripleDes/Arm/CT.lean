@@ -53,7 +53,7 @@ theorem streamTaint_wf {s : State} (hwr : s.wr = [⟨State.addr (s.gpr .r1), 8�
       List.Pairwise.nil, false_implies, implies_true, and_true]
     exact st_scr
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega
+    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega_arith
   · simp only [streamTaint, List.mem_singleton] at hp'; subst hp'
     simp [VG.Arm.Taint.region, hwr]
   · simp only [streamTaint, e, hwr, List.mem_cons, List.not_mem_nil, or_false]

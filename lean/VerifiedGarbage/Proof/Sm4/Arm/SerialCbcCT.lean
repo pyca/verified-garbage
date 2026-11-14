@@ -95,7 +95,7 @@ include hn32 hB hB' fitB fitD hw hw' wd wd' sep in
   intro a b ta tb a' b' ⟨i, hm, hi, l, l'⟩ ea eb
   have p := loop_pre hn32 hi hB fitB fitD hw wd sep l
   have p' := loop_pre hn32 hi hB' fitB fitD hw' wd' sep l'
-  have eqtr := group_ct (by omega) (by omega) p p' (by rw [l.data, l'.data]) ea eb
+  have eqtr := group_ct (by omega_using [hi]) (by omega_using [hn32]) p p' (by rw [l.data, l'.data]) ea eb
   obtain ⟨la, za⟩ := result (loopInv_step hn32 hi hB fitB fitD hw wd sep l) ea
   obtain ⟨lb, zb⟩ := result (loopInv_step hn32 hi hB' fitB fitD hw' wd' sep l') eb
   have evA : isa.eval .ne a' = some !decide (i + 1 = n) := by
@@ -111,9 +111,9 @@ include hn32 hB hB' fitB fitD hw hw' wd wd' sep in
   · intro h
     rw [evA] at h
     have he : i + 1 ≠ n := by simpa using h
-    refine ⟨n - (i + 1), by omega, i + 1, rfl, ?_, la, lb⟩
+    refine ⟨n - (i + 1), by omega_using [hm, hi], i + 1, rfl, ?_, la, lb⟩
     have := la.bound
-    omega
+    omega_using [hi, he]
 
 include hn32 hB hB' fitB fitD hw hw' wd wd' sep in
  theorem dataLoop_ct :
@@ -129,8 +129,8 @@ include hn32 hB hB' fitB fitD hw hw' wd wd' sep in
     rw [ev h.1.2.2.1] at he
     have hn : 0 < n := by
       have : n ≠ 0 := by simpa using he
-      omega
-    exact ⟨0, by omega, hn, h.1.1, h.1.2.1⟩
+      omega_using [this]
+    exact ⟨0, by omega_using [], hn, h.1.1, h.1.2.1⟩
 
 end
 
@@ -163,7 +163,7 @@ theorem prologue_ct {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak}
               rcases hr with rfl | rfl | rfl | rfl
               exacts [hq.2.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2.1]) hq.1 (arg_wf h₁) (arg_wf h₂)
               (argMem_of (j := 1) hq.1 h₁.spFit (fun i hi => by
-                have he : i = 0 := by omega
+                have he : i = 0 := by omega_using [hi]
                 subst i
                 exact hq.2.2.2.2.2))
           obtain ⟨_, hc⟩ := BatchTaint.proHead_check
@@ -184,7 +184,7 @@ theorem initial {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {t : List 
     (hH : Proof.Sm4.Prepared.Holds layout s.mem (State.addr B) K .encrypt)
     (hC : Spec.Aes.bytesAt s.mem (counterAddr B) 16 = t) : LoopInv s B D K t n 0 s :=
   ⟨fun _ _ => rfl, by simpa only [Nat.mul_zero, BitVec.add_zero] using hD,
-    by simpa only [Nat.sub_zero] using hN, by omega, rfl, rfl, rfl, Frame.refl _ _, hH,
+    by simpa only [Nat.sub_zero] using hN, by omega_using [], rfl, rfl, rfl, Frame.refl _ _, hH,
     by change Spec.Aes.bytesAt s.mem (counterAddr B) 16 = t; exact hC, fun _ h => by omega⟩
 
 theorem cbc_ct : ConstantTime isa Pre Pub SerialCbc.encrypt := by

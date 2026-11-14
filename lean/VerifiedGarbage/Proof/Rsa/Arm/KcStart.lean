@@ -48,7 +48,7 @@ theorem stride_ok {s : State} {w : Nat} (_hw : w ≤ 1024) (h9 : s.gpr .r9 = Bit
   rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     show (2 : BitVec 32).toNat = 2 from rfl]
   simp only [S]
-  omega
+  omega_using []
 
 /-- `ctxDiv`: `r7` and `r9` again after a division. -/
 theorem StgD.ctx_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
@@ -58,8 +58,8 @@ theorem StgD.ctx_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   have nw := hw.nowrap
   simp only [hdr] at hz
   unfold ctxDiv
-  refine wp_ldr (by decide) (by rw [hw.r8]; exact VG.Arm.addr_add (by omega))
-    ⟨_, List.mem_append_right _ hw.writable, Offset.contains_base _ (by omega) (by omega)⟩ fun s1 u1 => ?_
+  refine wp_ldr (by decide) (by rw [hw.r8]; exact VG.Arm.addr_add (by omega_using [hz, nw]))
+    ⟨_, List.mem_append_right _ hw.writable, Offset.contains_base _ (by omega_using [hz]) (by omega_using [])⟩ fun s1 u1 => ?_
   have h9 : s1.gpr .r9 = BitVec.ofNat 32 g.w := by rw [u1.gpr, h.cnt]
   rw [← List.append_nil stride]
   refine stride_ok hw.wle h9 fun t h7 r m => WP.block_nil ?_
@@ -78,7 +78,7 @@ theorem first_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
     WP isa (.block (ctxK ++ setOne aOne ++ bitOf sMask aP)) s
       (Stg g s (upd (vals v) aOne 1) live0 (decide (v.p % 2 = 1))) := by
   have kb := h.kb
-  have hw16 : 16 ≤ g.w ∧ g.w ≤ 256 := by simp only [Geo.w]; omega
+  have hw16 : 16 ≤ g.w ∧ g.w ≤ 256 := by simp only [Geo.w]; omega_using [kb]
   unfold ctxK
   simp only [List.append_assoc, List.cons_append]
   refine wp_dp (op2_imm (by decide)) fun s1 u1 => ?_
@@ -89,12 +89,12 @@ theorem first_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, show (3 : BitVec 32).toNat = 3 from rfl]
     simp only [Geo.w]
-    omega
-  refine stride_ok (by omega) h9 fun s3 h7 r3 m3 => ?_
+    omega_using [kb]
+  refine stride_ok (by omega_using [hw16]) h9 fun s3 h7 r3 m3 => ?_
   have r12 : Rest [.r9, .r7] s s3 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (r3.mono (by simp)))
   have m12 : s3.mem = s.mem := m3.trans (u2.mem.trans u1.mem)
   have ws : Ws s3 g.B g.Z g.w nArr :=
-    ⟨h.nowrap, by rw [r12.wr]; exact h.writable, h.fits, by omega, by omega, h7,
+    ⟨h.nowrap, by rw [r12.wr]; exact h.writable, h.fits, by omega_using [hw16], by omega_using [hw16], h7,
       by rw [r12.gpr _ (by decide), h.r8], by rw [r3.gpr _ (by decide), h9]⟩
   refine setOne_ok ws (j := aOne) (by decide) (by decide) fun s4 h4 k4 e4 r4 => ?_
   rw [← List.append_nil (bitOf sMask aP)]
@@ -110,8 +110,8 @@ theorem first_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
     a4.keep k5 ht (by decide) (by decide), by decide, ?_, ?_⟩
   · exact (r12.mono (by decide)).trans ((r4.mono (by decide)).trans (r5.mono (by decide)))
   · rw [slot_eq_of_keep k5 (by decide) (by decide), slot_eq_of_keep k4 (by decide) (by simp), m12, h.cnt]
-  · rw [k5.word (by simp only [S]; omega) (by simp) (by decide) (fit _ (by decide)),
-      k4.word (by simp only [S]; omega) (by decide) (by simp) (fit _ (by decide)), m12, h.vdTop]
+  · rw [k5.word (by simp only [S]; omega_using []) (by simp) (by decide) (fit _ (by decide)),
+      k4.word (by simp only [S]; omega_using []) (by decide) (by simp) (fit _ (by decide)), m12, h.vdTop]
   · rw [e5, p4]
     rcases Nat.mod_two_eq_zero_or_one v.p with e | e <;> simp [e]
 

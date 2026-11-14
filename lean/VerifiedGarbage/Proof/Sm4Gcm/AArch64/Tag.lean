@@ -75,17 +75,17 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {s 
     (hk : Kept k s) :
     WP isa (.block (tagSeg o)) s (Tag1 Ctx St W SP k o (blockAt s.mem (St + BitVec.ofNat 64 16))
       (blockAt s.mem St) s.mem) := by
-  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega
+  have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ 768) := by omega_using [ho]
   have r₁ := he.perm.stR (show 16 + 8 ≤ 80 by decide)
   have r₂ := he.perm.stR (show 24 + 8 ≤ 80 by decide)
-  have w₁ := he.perm.wW (show o + 8 ≤ 768 by omega)
-  have w₂ := he.perm.wW (show o + 8 + 8 ≤ 768 by omega)
-  have ho8 : (o + 8) % 8 = 0 ∧ o + 8 < 32768 := by omega
-  have ho0 : o % 8 = 0 ∧ o < 32768 := by omega
-  have ho' : o < 4096 := by omega
+  have w₁ := he.perm.wW (show o + 8 ≤ 768 by omega_using [ho])
+  have w₂ := he.perm.wW (show o + 8 + 8 ≤ 768 by omega_using [ho])
+  have ho8 : (o + 8) % 8 = 0 ∧ o + 8 < 32768 := by omega_using [ho]
+  have ho0 : o % 8 = 0 ∧ o < 32768 := by omega_using [ho]
+  have ho' : o < 4096 := by omega_using [ho]
   have dsep : (⟨W + BitVec.ofNat 64 o, 8⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 16 + BitVec.ofNat 64 8, 8⟩ := by
     rw [add_ofNat_assoc]
-    exact (L.st_w (a := 24) (n := 8) (by decide) (by omega)).symm
+    exact (L.st_w (a := 24) (n := 8) (by decide) (by omega_using [ho])).symm
   obtain ⟨s₁, run₁, m₁, x0₁, x1₁, x2₁, x3₁, og, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa (tagSeg o) s = some s₁ ∧
       s₁.mem = (s.mem.writeW (W + BitVec.ofNat 64 o) (s.mem.readW (St + BitVec.ofNat 64 16) 64)).writeW
         (W + BitVec.ofNat 64 (o + 8))
@@ -114,18 +114,18 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {s 
   · have hsw := L.sw
     have hww := L.ww
     refine ⟨x0₁, x1₁, x2₁, x3₁, by rw [sp₁, he.sp]; exact L.sp, by decide,
-      by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega, by have := L.cw; omega, by omega,
+      by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [ho, hww], by have := L.cw; omega_using [this], by omega_using [hsw],
       by simpa using (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (d := 0) (n := 16) (by decide)),
-      (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega)),
+      (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_using [ho])),
       dJo, by rw [sp₁, he.sp]; exact L.kc.sub_right (Region.sub_prefix (by decide)),
       by rw [sp₁, he.sp]; simpa using L.stk_st (a := 0) (n := 16) (by decide),
-      by rw [sp₁, he.sp]; exact L.stk_w (by omega), ?_, ?_⟩
-    · refine covers_cons ?_ (covers_cons ?_ (covers_left (he₁.perm.wC (by omega))))
+      by rw [sp₁, he.sp]; exact L.stk_w (by omega_using [ho]), ?_, ?_⟩
+    · refine covers_cons ?_ (covers_cons ?_ (covers_left (he₁.perm.wC (by omega_using [ho]))))
       · exact fun a m' ⟨r, hr, hc'⟩ => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact he₁.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega⟩
+          exact he₁.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega_using [hc']⟩
       · simpa using covers_left (he₁.perm.stC (d := 0) (n := 16) (by decide))
-    · exact covers_cons (by simpa using he₁.perm.stC (d := 0) (n := 16) (by decide)) (he₁.perm.wC (by omega))
+    · exact covers_cons (by simpa using he₁.perm.stC (d := 0) (n := 16) (by decide)) (he₁.perm.wC (by omega_using [ho]))
   · rw [blockAt, m₁, bytesAt_copy2 _ dsep]; rfl
   · exact blockAt_frame f₁ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo
 
@@ -140,7 +140,7 @@ theorem tagCall_ok {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {Y
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
   have hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx :=
     ciph_frame h.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega)))
+      simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by omega_using [ho])))
   refine ⟨h.env.of_saved g.saved g.sp g.rd g.wr, h.kept.of_saved g.saved, ?_, ?_⟩
   · rw [Proof.Cmac.bytesAt_blockAt, gout.1, h.hJ, h.cp,
       show Spec.Sm4.gcmCipher (Spec.Sm4.scheduleAt s.mem Ctx) = ciphOf s.mem Ctx from rfl, hc]

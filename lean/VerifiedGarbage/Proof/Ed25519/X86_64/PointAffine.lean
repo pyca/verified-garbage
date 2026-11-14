@@ -27,7 +27,7 @@ theorem invertWide_ok [DivstepInv] {s : State} {base : Addr} (hs : Scratch s bas
       t.wr = s.wr ∧ Proof.X25519.X86_64.Outside base 512 256 s.mem t.mem ∧
       env t.mem base 15 = Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2) := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_using [this]⟩
   obtain ⟨tr, t, he, hg, hr, hw, hm, hv⟩ :=
     Proof.X25519.X86_64.invertFn_pow hn
   have cw : Covers [⟨base, 4096⟩] s.wr := by

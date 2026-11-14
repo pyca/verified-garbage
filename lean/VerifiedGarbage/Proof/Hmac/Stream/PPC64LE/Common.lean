@@ -27,7 +27,7 @@ hash value. -/
 theorem repr_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {x : List Byte}
     (hx : x.length % H.B = 0) (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, H.N⟩ r) (hr : hH.SH.Repr m p x) :
     hH.SH.Repr m' p x :=
-  hH.reloc m m' p p x hx (fun i hi => hf.bytes (R := ⟨p, H.N⟩) hd (by have : H.N ≤ 64 := hH.dims.N.2; show H.N ≤ 2 ^ 64; omega) hi) hr
+  hH.reloc m m' p p x hx (fun i hi => hf.bytes (R := ⟨p, H.N⟩) hd (by have : H.N ≤ 64 := hH.dims.N.2; show H.N ≤ 2 ^ 64; omega_using [this]) hi) hr
 
 end HashOK
 

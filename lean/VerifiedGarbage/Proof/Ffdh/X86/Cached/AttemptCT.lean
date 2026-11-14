@@ -93,7 +93,7 @@ abbrev MW (Ex : List Region → List Region → Prop) (base : Addr) (bytes len :
 
 theorem metaCut_trace {bits : Nat} (hb1 : 1 ≤ bits) (hb : bits ≤ 8 * len) :
     RelCT isa (Both (MW Ex base bytes len args sp bits)) Generate.metaCut fun _ _ => True := by
-  have hb8 : 1 ≤ bits + 8 - 8 * ((bits + 7) / 8) ∧ bits + 8 - 8 * ((bits + 7) / 8) ≤ 8 := by omega
+  have hb8 : 1 ≤ bits + 8 - 8 * ((bits + 7) / 8) ∧ bits + 8 - 8 * ((bits + 7) / 8) ≤ 8 := by omega_using []
   generalize hN : bits + 8 - 8 * ((bits + 7) / 8) = N at hb8
   unfold Generate.metaCut
   refine VG.RelCT.seq (taint_both (F := fun u => Run Ex base bytes len args sp u ∧
@@ -101,23 +101,23 @@ theorem metaCut_trace {bits : Nat} (hb1 : 1 ≤ bits) (hb : bits ≤ 8 * len) :
     WP.mono (metaHead_ok M.1.1 M.2.1 M.2.2.2.2 hb1 hb M.2.2.1 M.2.2.2.1) fun u ⟨S, _, _, e, _⟩ =>
       ⟨run_step M.1 S, by rw [e, hN, Nat.sub_zero]⟩) ?_
   refine VG.RelCT.seq (relCT_countLoop (N := N) (I := fun j u => Run Ex base bytes len args sp u ∧
-      u.gpr .edx = BitVec.ofNat 32 (N - j)) (by omega) fun j hj => ?_) ?_
+      u.gpr .edx = BitVec.ofNat 32 (N - j)) (by omega_using [hN]) fun j hj => ?_) ?_
   · refine taint_both (fun _ _ M₁ M₂ => M₁.1.agree M₂.1) _ metaLoop_check fun x ⟨R, ed⟩ =>
       wp_addS rfl fun t₁ V₁ _ => wp_subZ rfl fun t₂ V₂ z₂ => WP.block_nil ⟨⟨?_, ?_⟩, ?_⟩
     · have K : Keeps [.eax, .edx] x t₂ := (V₁.keeps.mono (by decide)).widen V₂.keeps
       exact ⟨R.1.regs K (by rw [V₂.mem, V₁.mem]), R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
     · rw [V₂.gpr, V₁.other _ (by decide), ed, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), Nat.sub_sub]
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hj]), Nat.sub_sub]
     · rw [z₂, V₁.other _ (by decide), ed, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hj])]
       congr 1
       by_cases e : j + 1 = N
-      · simp [e, show N - j - 1 = 0 by omega]
+      · simp [e, show N - j - 1 = 0 by omega_using [e]]
       · simp only [e, decide_false, beq_eq_false_iff_ne, ne_eq]
         intro c
         have := congrArg BitVec.toNat c
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-        simp at this; omega
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hN])] at this
+        simp at this; omega_using [hj, e, this]
   exact VG.RelCT.taint (A := taint) τA (fun _ _ h => h.1.1.agree h.2.1) metaTail_check
 
 end
@@ -157,7 +157,7 @@ theorem KAtC.vals_step {x u : State} (A : KAtC Ex base bytes len dlen args sp D 
     CtxVals len args (Spec.Ffdh.domainOf len D).p (Spec.Ffdh.domainOf len D).g (cBits len D) u.mem := by
   have hn : ctxBytes len < 2 ^ 64 := by
     have := A.rd.afit; have : (2 : Nat) ^ 32 < 2 ^ 64 := by decide
-    omega
+    omega_arith
   have F := S.frame
   rw [A.run.2.2] at F
   exact A.vals.keep F (ctx_frameR A.rd A.stk (fR_fit A.run.1)) hn
@@ -218,8 +218,8 @@ theorem prefixC_ok (hD : Spec.Ffdh.domainValid len D = true) {x : State}
   have lw := A.geo.dom.lower
   have sp' := A.run.2.2
   have wlt : len - VG.Proof.Ffdh.ScalarWidth.width (cBits len D) < len := by
-    have := VG.Proof.Ffdh.ScalarWidth.width_pos (cBits len D); omega
-  rw [← cut_vetted bf.2 (by omega)]
+    have := VG.Proof.Ffdh.ScalarWidth.width_pos (cBits len D); omega_using [bf, this]
+  rw [← cut_vetted bf.2 (by omega_using [bf])]
   exact KeyGen.prefixWith_ok A.run.1 A.geo.dom (by rw [sp']; exact A.geo.dom40) (by rw [sp']; exact A.geo.cut)
     A.geo.rWs (by rw [sp']; exact A.geo.r40) A.geo.domX wlt fun w Sw =>
       WP.mono (metaCut_ok Sw.inp (A.rd.keep Sw.keeps) A.geo.dom.e3 bf.1 bf.2 (A.vals_step Sw).w0
@@ -259,7 +259,7 @@ theorem frontC_ok (hD : Spec.Ffdh.domainValid len D = true) (hm : KeyGen.modOk l
   rw [sp'] at Fu
   have hn : ctxBytes len < 2 ^ 64 := by
     have := A.rd.afit; have : (2 : Nat) ^ 32 < 2 ^ 64 := by decide
-    omega
+    omega_arith
   have Vu := A.vals.keep Fu (fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
     · exact A.cx
@@ -295,7 +295,7 @@ theorem main_trace (hD : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024)
       (fun _ _ h => ⟨h.1.1.1.2, h.2.1.1.2⟩) fun _ _ h => h) fun x T => ?_)
     obtain ⟨⟨⟨T, G, xx, hx, h, E, hP, hrows, _, _⟩, _⟩, _⟩ := T
     exact WP.mono (combStage_ok h E hP hx hR0 hrows) fun u ⟨S, _, _⟩ => KeyGen.tp_step T S
-  · omega
+  · omega_using [hl]
 
 
 theorem body_trace (hD : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024) :
@@ -315,11 +315,11 @@ theorem body_trace (hD : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 1024)
     have S₁ : Step Ex base bytes len args x u := Step.regs h M K
     have rd : InRegions (u.rd ++ u.wr) (byteAddr (u.gpr .esi)) len := by
       rw [P, K.2.1, K.2.2]
-      have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+      have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_using [dl]) (by omega_using [fit])
       rwa [BitVec.add_zero] at this
-    refine WP.seq (WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega) rd (by rw [C, G.e3]))
+    refine WP.seq (WP.mono (modulusCheck_ok u (k := len) h.lower' h.upper' (by rw [P]; omega_using [fit, dl]) rd (by rw [C, G.e3]))
       fun v ⟨Z, Mv, Kv⟩ => WP.block_nil ⟨(A.keep S₁ M).keep (Step.regs S₁.inp Mv Kv) Mv, Gate.of_eval Z ?_⟩)
-    rw [P, M, ← A.dom, KeyGen.modOk, VG.Proof.Ffdh.domainOf_p x.mem _ (by omega)]
+    rw [P, M, ← A.dom, KeyGen.modOk, VG.Proof.Ffdh.domainOf_p x.mem _ (by omega_using [dl])]
   · exact gate_relCT (fun _ h => h.2) ((main_trace hD hl).mono (fun _ _ h => ⟨⟨h.1.1.1, h.1.2⟩, h.2.1.1, h.2.2⟩)
       fun _ _ h => h) (aEnd (fun _ h => h.1.1.run) KeyGen.ret0_check)
 
@@ -357,7 +357,7 @@ theorem pub_facts {s t : State} (H : (Proof.Ffdh.cachedGenerateKeyContract abi s
   obtain ⟨L₁, L₂⟩ := List.append_inj L (by simp [Spec.Rsa.bytesAt, a5])
   refine ⟨SP, fun i hi => ?_, inj L₁, List.cons.inj L₂ |>.1⟩
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨
-    i = 12 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    i = 12 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact a0
   · exact a1
   · exact a2
@@ -389,16 +389,16 @@ theorem kAt_of {s f : State} (A : CachedABI s) (Bf : BodyAt (Rd s) gArgs s f) :
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
   have rL : (arg s 8).toNat = pLenOf gArgs s := A.randLen
   have D : KeyGen.domOf f.mem (synth gArgs (arg s)) (arg s 5).toNat = entryDom s :=
-    frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega)
+    frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega_using [])
   have R : Spec.Rsa.bytesAt f.mem (byteAddr (synth gArgs (arg s) 10)) (pLenOf gArgs s) = entryRand s := by
     show Spec.Rsa.bytesAt f.mem (argumentPointer s 7) _ = _
     rw [← rL]
-    exact frame_keep A Bf.2.2.2.2 A.randScratch A.belowRand (by have := A.randBound; omega)
+    exact frame_keep A Bf.2.2.2.2 A.randScratch A.belowRand (by have := A.randBound; omega_using [])
   obtain ⟨CR, cstk, cx⟩ := frame_ctx (f := narrowed (wsBase gArgs s) (wsSize gArgs s) f [KeyGen.xR s, KeyGen.yR s])
     A Bf.2.1 hx
   refine ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [KeyGen.xR s, KeyGen.yR s])

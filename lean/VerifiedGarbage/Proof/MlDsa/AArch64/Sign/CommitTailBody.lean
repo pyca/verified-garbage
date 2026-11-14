@@ -186,8 +186,8 @@ theorem sponge_ok {s : State} {wlen : Nat} (hc : CoreConfig s wlen (s.gpr .x1) (
         Spec.MlDsa.H (seedBytes s.mem (s.gpr .x4) (s.gpr .x5)) 640 := by
   have hw : 768≤wlen := by rcases hc.length with rfl|rfl <;> decide
   rw [WP.seq_iff]
-  refine WP.mono (initial_ok hmu (fun j hj => hc.readable _ _ (by omega))
-    (hc.readable 64 8 (by omega)) hseed) ?_
+  refine WP.mono (initial_ok hmu (fun j hj => hc.readable _ _ (by omega_using [hw, hj]))
+    (hc.readable 64 8 (by omega_using [hw])) hseed) ?_
   intro a ⟨ha,hma,h5,hp⟩
   have hca : CoreConfig a wlen (s.gpr .x1) (s.gpr .x19) := by
     refine ⟨hc.length,ha.gpr .x19 (by decide),?_,?_,hc.separate⟩
@@ -290,12 +290,12 @@ theorem decode_poly {m n : Mem} {a out : Addr}
   have hy := field_lt (inNum m a 20) 20 i (by decide)
   have hy' := hy
   unfold inNum at hy'
-  rw [hc i hi,buWord,BitVec.toNat_setWidth,subModQ_toNat (by decide) (by omega),
+  rw [hc i hi,buWord,BitVec.toNat_setWidth,subModQ_toNat (by decide) (by omega_using [hq]),
     Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (show 0<q by decide)) (by decide)),
     toRq,Vector.getElem_map,bitUnpack_get _ _ _ hi]
   change _=(ofInt ((524288:Nat) -
     ((VG.Proof.MlKem.digits 8 ((Spec.Sha3.bytesAt m a 640).map BitVec.toNat) /2^(20*i)%2^20 : Nat) : Int))).val
-  rw [ofInt_sub (by omega)]
+  rw [ofInt_sub (by omega_using [hq])]
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -313,25 +313,25 @@ open VG.Proof.MlDsa.AArch64.Optimized.Resident
 theorem ratePairs_word {m : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
     (h : RatePairs m a n A) {i : Nat} (hi : i<2*n) :
     m.readW (a+BitVec.ofNat 64 (8*i)) 64=A[i]! := by
-  have hp := h (i/2) (by omega)
+  have hp := h (i/2) (by omega_using [hi])
   have hv := congrArg (fun v => vdword v (i%2)) hp
-  rw [vdword_read16 _ _ (by omega)] at hv
-  rcases (show i%2=0 ∨ i%2=1 by omega) with hm|hm
+  rw [vdword_read16 _ _ (by omega_using [])] at hv
+  rcases (show i%2=0 ∨ i%2=1 by omega_using []) with hm|hm
   · rw [hm,vdword_ofVDwords_0] at hv
     simpa only [BitVec.add_assoc,BitVec.ofNat_add_ofNat,
-      show 16*(i/2)+8*0=8*i by omega,show 2*(i/2)=i by omega] using hv
+      show 16*(i/2)+8*0=8*i by omega_using [hm],show 2*(i/2)=i by omega_using [hm]] using hv
   · rw [hm,vdword_ofVDwords_1] at hv
     simpa only [BitVec.add_assoc,BitVec.ofNat_add_ofNat,
-      show 16*(i/2)+8*1=8*i by omega,show 2*(i/2)+1=i by omega] using hv
+      show 16*(i/2)+8*1=8*i by omega_using [hm],show 2*(i/2)+1=i by omega_using [hm]] using hv
 
 theorem ratePairs_byte {m : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
     (h : RatePairs m a n A) {j : Nat} (hj : j<16*n) :
     m (a+BitVec.ofNat 64 j)=Proof.Sha3.byteOf A j := by
-  have hw := ratePairs_word h (i:=j/8) (by omega)
+  have hw := ratePairs_word h (i:=j/8) (by omega_using [hj])
   have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) hw
   change (m.read (a+BitVec.ofNat 64 (8*(j/8))) 8).extractLsb' (8*(j%8)) 8=_ at he
-  rw [Mem.extractLsb'_read m _ (by omega)] at he
-  rw [BitVec.add_assoc,← BitVec.ofNat_add,show 8*(j/8)+j%8=j by omega] at he
+  rw [Mem.extractLsb'_read m _ (by omega_using [])] at he
+  rw [BitVec.add_assoc,← BitVec.ofNat_add,show 8*(j/8)+j%8=j by omega_using []] at he
   exact he
 
 theorem ratePairs_bytes {m : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
@@ -339,10 +339,10 @@ theorem ratePairs_bytes {m : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
     Spec.Sha3.bytesAt m a (16*n)=(Spec.Sha3.toBytes A).take (16*n) := by
   apply List.ext_getElem
   · rw [Proof.Sha3.bytesAt_length,List.length_take,Proof.Sha3.length_toBytes]
-    omega
+    omega_using [hn]
   · intro j hj hj'
     rw [Proof.Sha3.bytesAt_length] at hj
-    rw [Proof.MlKem.bytesAt_getElem,List.getElem_take,Proof.Sha3.toBytes_getElem _ (by omega)]
+    rw [Proof.MlKem.bytesAt_getElem,List.getElem_take,Proof.Sha3.toBytes_getElem _ (by omega_using [hn, hj])]
     exact ratePairs_byte h hj
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
@@ -419,8 +419,8 @@ theorem front_ok {s : State} {wlen : Nat} (hp : FrontPre wlen s) :
     WP isa (.seq (.block (pro++first++upperInit++([.addImm .x .x5 .x1 72] : List Instr)))
       (coreFor wlen)) s (FrontPost wlen s) := by
   rw [WP.seq_iff,List.append_assoc,List.append_assoc,WP.block_append_iff]
-  refine WP.mono (pro_ok (fun i hi => hp.work _ _ (by omega))
-    (fun i hi => hp.work _ _ (by omega))) fun a ⟨ha,hva,hsa,hfa,h19,h20,h21⟩ => ?_
+  refine WP.mono (pro_ok (fun i hi => hp.work _ _ (by omega_using [hi]))
+    (fun i hi => hp.work _ _ (by omega_using [hi]))) fun a ⟨ha,hva,hsa,hfa,h19,h20,h21⟩ => ?_
   have hsub : (Region.mk (s.gpr .x3) 160).Sub ⟨s.gpr .x3,2048⟩ := by
     simpa using Offset.sub_base (s.gpr .x3) (d:=0) (n:=160) (k:=2048) (by decide)
   have hconfig : CoreConfig a wlen (a.gpr .x1) (a.gpr .x19) := by
@@ -431,8 +431,8 @@ theorem front_ok {s : State} {wlen : Nat} (hp : FrontPre wlen s) :
       exact hp.packedSep.sub_right (Offset.sub_base _ (d:=256) (n:=680) (k:=2048) (by decide))
   rw [← WP.seq_iff,← List.append_assoc]
   refine WP.mono (sponge_ok hconfig (fun i hi => by
-    rw [ha.rd,ha.wr,ha.gpr .x0 (by decide)]; exact hp.mu _ _ (by omega)) (fun i hi => by
-    rw [ha.rd,ha.wr,ha.gpr .x4 (by decide)]; exact hp.seed _ _ (by omega)))
+    rw [ha.rd,ha.wr,ha.gpr .x0 (by decide)]; exact hp.mu _ _ (by omega_using [hi])) (fun i hi => by
+    rw [ha.rd,ha.wr,ha.gpr .x4 (by decide)]; exact hp.seed _ _ (by omega_using [hi])))
     fun t ⟨ht,hft,hpt,hbytes⟩ => ?_
   rw [h19] at hft hbytes
   have hmu : Spec.Sha3.bytesAt a.mem (s.gpr .x0) 64=Spec.Sha3.bytesAt s.mem (s.gpr .x0) 64 := by
@@ -558,7 +558,7 @@ theorem body_ok {σ s : State} {wlen olen : Nat} (hp : Pre wlen olen σ) (hs : F
   have hn : olen/16≤12 := by rcases hp.outLength with rfl|rfl <;> decide
   rw [WP.seq_iff,← hmul]
   refine WP.mono (outputStage_ok hn hpAB (fun i hi => by
-    rw [hk.wr,h21]; exact hp.output _ _ (by omega))) fun a ⟨ha,hfa,h0,h4,hout⟩ => ?_
+    rw [hk.wr,h21]; exact hp.output _ _ (by omega_using [hi]))) fun a ⟨ha,hfa,h0,h4,hout⟩ => ?_
   rw [hmul]
   rw [hmul,h21] at hfa hout
   rw [h19] at h0

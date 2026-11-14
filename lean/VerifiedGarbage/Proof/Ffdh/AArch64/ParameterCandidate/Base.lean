@@ -70,7 +70,7 @@ def PMut (r : Nat × Nat) : Prop :=
   8 * 26 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * 16 ∨ (8 * 18 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 19) ∨
     (8 * 22 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 24)
 
-theorem PMut.ofSlot (w j n : Nat) : PMut (slot w j, n) := Or.inl (by unfold VG.Proof.Bignum.slot hdrBytes; omega)
+theorem PMut.ofSlot (w j n : Nat) : PMut (slot w j, n) := Or.inl (by unfold VG.Proof.Bignum.slot hdrBytes; omega_using [])
 
 /-- A header word other than those of `PArgs`. -/
 theorem PMut.hdr {i : Nat} (h : i < 16 ∨ i = 18 ∨ i = 22 ∨ i = 23 ∨ 26 ≤ i) : PMut (8 * i, 8) := by
@@ -80,7 +80,7 @@ theorem PArgs.frm {m m' : Mem} {p : PP} (h : PArgs m p) {rs : List (Nat × Nat)}
     (hm : ∀ r ∈ rs, PMut r) : PArgs m' p := by
   have k : ∀ {i : Nat}, i = 16 ∨ i = 17 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 24 ∨ i = 25 →
       word m' p.B (8 * i) = word m p.B (8 * i) := fun hi =>
-    hf.word_eq (fun r hr => by have := hm r hr; unfold PMut at this; omega) (by omega)
+    hf.word_eq (fun r hr => by have := hm r hr; unfold PMut at this; omega_using [hi, this]) (by omega_using [hi])
   exact ⟨(k (by decide)).trans h.out, (k (by decide)).trans h.usedP, (k (by decide)).trans h.len,
     (k (by decide)).trans h.bits, (k (by decide)).trans h.gen, (k (by decide)).trans h.rand,
     (k (by decide)).trans h.rlen⟩
@@ -135,7 +135,7 @@ theorem pctx_of {s : State} (h : pcPre s) : PCtx s := by
   have hs : Scr s (s.gpr .x7) ((stackArg s 0).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hr := src_of_region (s := s) (B := s.gpr .x7) (Z := (stackArg s 0).toNat * 8) (by rw [hrd]; simp)
     (by omega_using []) drs
-  have hL : (ppOf s).L = (s.gpr .x1).toNat := by simp only [ppOf, PP.L]; omega
+  have hL : (ppOf s).L = (s.gpr .x1).toNat := by simp only [ppOf, PP.L]; omega_using [hk]
   have ho : OutUp s (s.gpr .x7) ((stackArg s 0).toNat * 8) (s.gpr .x0) (s.gpr .x2) (ppOf s).L := by
     rw [hL]
     refine ⟨⟨⟨s.gpr .x2, 8⟩, by rw [hwr]; simp, ?_⟩, fun b hb => out_scr dUs (contains_byte _ (by omega_using [hb]) (by omega_using [])),
@@ -144,7 +144,7 @@ theorem pctx_of {s : State} (h : pcPre s) : PCtx s := by
     · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
     · exact dOu _ (contains_byte _ (by omega_using [hj]) (by omega_using []))
         (by rw [he]; exact contains_byte _ (by omega_using [hb]) (by omega_using []))
-  refine ⟨⟨hb1, hb2, hg, by simp only [ppOf, PP.L]; omega, ?_⟩, hL.symm, hs, hr, ho, ?_⟩
+  refine ⟨⟨hb1, hb2, hg, by simp only [ppOf, PP.L]; omega_using [hk, hsl], ?_⟩, hL.symm, hs, hr, ho, ?_⟩
   · simp only [ppOf, pcRand, bytesAt_length]; exact BitVec.isLt _
   · rw [hL]
     intro i hi j hj hh

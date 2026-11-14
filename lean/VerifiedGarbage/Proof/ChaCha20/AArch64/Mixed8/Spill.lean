@@ -58,7 +58,7 @@ theorem spill_ok {s₀ s : State} (hp : CP s₀) (h : Prepared s₀ s 5) :
     · intro k hk
       change InRegions a.wr (a.gpr .x1 + BitVec.ofNat 64 (4 * k)) 4
       rw [ha.wr,h.wr,ha.gpr,hx20]
-      exact hp.buffer _ _ (by omega)
+      exact hp.buffer _ _ (by omega_using [hk])
     · change (⟨a.gpr .x1,256⟩ : Region).Disjoint ⟨a.gpr .x0,64⟩
       rw [ha.gpr,hx20,ha.other _ (by decide),hx0]
       exact hp.st_b.symm.sub_left (Region.sub_prefix (by decide : 256 ≤ 320))

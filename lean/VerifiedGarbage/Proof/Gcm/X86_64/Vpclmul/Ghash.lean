@@ -94,10 +94,10 @@ structure Inv8 (s₀ : State) (i : Nat) (s : State) : Prop where
   pw : ∀ k < 4, ∀ l < 2, x * φ (s.lane (preg k) l) = φ (H₀ s₀) ^ (8 - 2 * k - l)
 
 theorem Inv8.l0 {s₀ : State} {i : Nat} {s : State} (h : Inv8 s₀ i s) : ∀ l < 2, s.lane .xmm0 l = revMask :=
-  fun l hl => by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.inv.x0, h.m0]
+  fun l hl => by rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.inv.x0, h.m0]
 
 theorem Inv8.l1 {s₀ : State} {i : Nat} {s : State} (h : Inv8 s₀ i s) : ∀ l < 2, s.lane .xmm1 l = poly :=
-  fun l hl => by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.inv.x1, h.m1]
+  fun l hl => by rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.inv.x1, h.m1]
 
 /-- Blocks `i + 2k` and `i + 2k + 1` are in the data. -/
 theorem in_blk32 {s₀ : State} (hp : Pre s₀) {i k : Nat} (h : i + 2 * k + 2 ≤ nb s₀) :
@@ -105,13 +105,13 @@ theorem in_blk32 {s₀ : State} (hp : Pre s₀) {i k : Nat} (h : i + 2 * k + 2 �
   have := hp.nb_lt
   refine ⟨Pclmul.dR s₀, by simp [hp.rd], ?_⟩
   rw [addr_add]
-  exact Pclmul.contains_offset (by omega) (by omega)
+  exact Pclmul.contains_offset (by omega_using [h]) (by omega_using [h, this])
 
 /-- The address of lane `l` of the `k`-th load of a body at block `i`. -/
 theorem lane_addr (p : Addr) (i k l : Nat) :
     p + BitVec.ofNat 64 (16 * i) + BitVec.ofInt 64 ((32 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l) =
       p + BitVec.ofNat 64 (16 * (i + (2 * k + l))) := by
-  rw [addr_add, add_ofNat_ofNat p (c := 16 * (i + (2 * k + l))) (by omega)]
+  rw [addr_add, add_ofNat_ofNat p (c := 16 * (i + (2 * k + l))) (by omega_using [])]
 
 theorem zero_xor' (a : BitVec 128) : (0 : BitVec 128) ^^^ a = a := by simp
 
@@ -136,7 +136,7 @@ theorem load_step {s₀ : State} (hp : Pre s₀) {i k : Nat} {p : XReg}
   have := hp.nb_lt
   have ⟨n7, n8, n9, n10, n11, _, _, _⟩ := hpr
   refine WP.mono (load_ok hl hpr t (fun l hl => by rw [ht.lane _ (by decide) l hl]; exact h0 l hl)
-    (by rw [ht.rd, ht.wr, ht.gpr, hrd, hwr, hrdx]; exact in_blk32 hp (by omega))) fun t' ⟨a, f⟩ => ⟨?_, ht.trans f⟩
+    (by rw [ht.rd, ht.wr, ht.gpr, hrd, hwr, hrdx]; exact in_blk32 hp (by omega_using [hik]))) fun t' ⟨a, f⟩ => ⟨?_, ht.trans f⟩
   intro l hl
   rw [a l hl, ht.mem, ht.gpr, hm, hrdx, blkAddr, lane_addr,
     ht.lane p (by simp [n7, n8, n9, n10, n11]) l hl]
@@ -151,12 +151,12 @@ theorem loads_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 8 ≤ nb s�
   have F₁ := f₁.mono (rs' := [.xmm7, .xmm8, .xmm9, .xmm10, .xmm11]) (by decide)
   have y₁ : ∀ l < 2, s₁.lane .xmm2 l = s.lane .xmm2 l := fun l hl => F₁.lane _ (by decide) l hl
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load (k := 0) (by decide)) preg_ne (by omega) h0 hm hrd hwr hrdx F₁) fun s₂ ⟨a₂, f₂⟩ => ?_
+  refine WP.mono (load_step hp (lane_load (k := 0) (by decide)) preg_ne (by omega_using [hi]) h0 hm hrd hwr hrdx F₁) fun s₂ ⟨a₂, f₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load (k := 1) (by decide)) preg_ne (by omega) h0 hm hrd hwr hrdx f₂) fun s₃ ⟨a₃, f₃⟩ => ?_
+  refine WP.mono (load_step hp (lane_load (k := 1) (by decide)) preg_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₂) fun s₃ ⟨a₃, f₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load (k := 2) (by decide)) preg_ne (by omega) h0 hm hrd hwr hrdx f₃) fun s₄ ⟨a₄, f₄⟩ => ?_
-  refine WP.mono (load_step hp (lane_load (k := 3) (by decide)) preg_ne (by omega) h0 hm hrd hwr hrdx f₄) fun s₅ ⟨a₅, f₅⟩ => ⟨?_, f₅⟩
+  refine WP.mono (load_step hp (lane_load (k := 2) (by decide)) preg_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₃) fun s₄ ⟨a₄, f₄⟩ => ?_
+  refine WP.mono (load_step hp (lane_load (k := 3) (by decide)) preg_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₄) fun s₅ ⟨a₅, f₅⟩ => ⟨?_, f₅⟩
   intro l hl
   rw [a₅ l hl, a₄ l hl, a₃ l hl, a₂ l hl, z₁ l hl, y₁ l hl]
   simp only [lanes, ↓reduceIte, Nat.one_ne_zero, Nat.reduceEqDiff, zero_xor', Nat.mul_zero, Nat.zero_add,
@@ -228,23 +228,23 @@ theorem body8_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 8 ≤ nb s�
   have hrdx : s₇.gpr .rdx = blkAddr s₀ i := by rw [F₇.gpr, hI.inv.rdx]
   have hrcx : s₇.gpr .rcx - 8 = BitVec.ofNat 64 (nb s₀ - (i + 8)) := by
     rw [F₇.gpr, hI.inv.rcx]
-    exact ofNat_sub_ofNat (k := 8) (by omega) (by have := (s₀.gpr .rcx).isLt; omega)
+    exact ofNat_sub_ofNat (k := 8) (by omega_using [hi]) (by have := (s₀.gpr .rcx).isLt; omega_using [hn])
   have k2 := fun r h2 h7 h8 h9 h10 h11 => kx r h2 h7 h8 h9 h10 h11
-  refine ⟨⟨⟨by omega, by rw [k2 _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine ⟨⟨⟨by omega_using [hi], by rw [k2 _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.inv.x0], by rw [k2 _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.inv.x1], by rw [k2 _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.inv.t1], fun h => by rw [k2 _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.inv.t2 h], fun h => by rw [k2 _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.inv.t3 h], fun h => by rw [k2 _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.inv.t4 h], y', fun r ha hd hc => by rw [fg r hd hc, F₇.gpr, hI.inv.gpr r ha hd hc],
-      by rw [frdx, hrdx]; exact add_ofNat_ofNat (b := 128) _ (by omega), by rw [frcx, hrcx],
+      by rw [frdx, hrdx]; exact add_ofNat_ofNat (b := 128) _ (by omega_using []), by rw [frcx, hrcx],
       by rw [fm, F₇.mem, hI.inv.mem], by rw [frd, F₇.rd, hI.inv.rd], by rw [fwr, F₇.wr, hI.inv.wr]⟩,
     by rw [kl _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 1 (by decide), hI.m0],
     by rw [kl _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 1 (by decide), hI.m1],
     by rw [fl, y₇], fun k hk l hl => ?_⟩, ?_⟩
   · obtain ⟨n7, n8, n9, n10, n11, -, -, n2⟩ := preg_ne (k := k)
     rw [kl _ n2 n7 n8 n9 n10 n11 l hl]; exact hI.pw k hk l hl
-  · rw [fcf, hrcx, toNat_ofNat_lt (by omega)]
+  · rw [fcf, hrcx, toNat_ofNat_lt (by omega_using [hn])]
 
 /-! ## The sixteen-block loop -/
 
@@ -269,10 +269,10 @@ structure Inv16 (s₀ : State) (i : Nat) (s : State) : Prop where
 
 theorem Inv16.l0 {s₀ : State} {i : Nat} {s : State} (h : Inv16 s₀ i s) :
     ∀ l < 2, s.lane .xmm0 l = revMask :=
-  fun l hl => by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.x0, h.m0]
+  fun l hl => by rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.x0, h.m0]
 
 theorem Inv16.l1 {s₀ : State} {i : Nat} {s : State} (h : Inv16 s₀ i s) : ∀ l < 2, s.lane .xmm1 l = poly :=
-  fun l hl => by rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.x1, h.m1]
+  fun l hl => by rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl; exacts [h.x1, h.m1]
 
 /-- What a lane's products are after the eight loads of a sixteen-block body,
 the product with `Y` last. -/
@@ -293,28 +293,28 @@ theorem loads16_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 16 ≤ nb 
   refine WP.mono (zero_lanes s) fun s₁ ⟨z₁, f₁, _⟩ => ?_
   have F₁ := f₁.mono (rs' := [.xmm7, .xmm8, .xmm9, .xmm10, .xmm11]) (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load16 (k := 1) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx F₁)
+  refine WP.mono (load_step hp (lane_load16 (k := 1) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx F₁)
     fun s₂ ⟨a₂, f₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load16 (k := 2) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx f₂)
+  refine WP.mono (load_step hp (lane_load16 (k := 2) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₂)
     fun s₃ ⟨a₃, f₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load16 (k := 3) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx f₃)
+  refine WP.mono (load_step hp (lane_load16 (k := 3) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₃)
     fun s₄ ⟨a₄, f₄⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load16 (k := 4) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx f₄)
+  refine WP.mono (load_step hp (lane_load16 (k := 4) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₄)
     fun s₅ ⟨a₅, f₅⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load16 (k := 5) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx f₅)
+  refine WP.mono (load_step hp (lane_load16 (k := 5) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₅)
     fun s₆ ⟨a₆, f₆⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load16 (k := 6) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx f₆)
+  refine WP.mono (load_step hp (lane_load16 (k := 6) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₆)
     fun s₇ ⟨a₇, f₇⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (load_step hp (lane_load16 (k := 7) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx f₇)
+  refine WP.mono (load_step hp (lane_load16 (k := 7) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₇)
     fun s₈ ⟨a₈, f₈⟩ => ?_
   have y₈ : ∀ l < 2, s₈.lane .xmm2 l = s.lane .xmm2 l := fun l hl => f₈.lane _ (by decide) l hl
-  refine WP.mono (load_step hp (lane_load16 (k := 0) (by decide)) preg16_ne (by omega) h0 hm hrd hwr hrdx f₈)
+  refine WP.mono (load_step hp (lane_load16 (k := 0) (by decide)) preg16_ne (by omega_using [hi]) h0 hm hrd hwr hrdx f₈)
     fun s₉ ⟨a₉, f₉⟩ => ⟨?_, f₉⟩
   intro l hl
   rw [a₉ l hl, a₈ l hl, a₇ l hl, a₆ l hl, a₅ l hl, a₄ l hl, a₃ l hl, a₂ l hl, z₁ l hl, y₈ l hl]
@@ -412,9 +412,9 @@ theorem body16_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 16 ≤ nb s
   have hrdx : s₇.gpr .rdx = blkAddr s₀ i := by rw [F₇.gpr, hI.rdx]
   have hrcx : s₇.gpr .rcx - 16 = BitVec.ofNat 64 (nb s₀ - (i + 16)) := by
     rw [F₇.gpr, hI.rcx]
-    exact ofNat_sub_ofNat (k := 16) (by omega) (by have := (s₀.gpr .rcx).isLt; omega)
+    exact ofNat_sub_ofNat (k := 16) (by omega_using [hi]) (by have := (s₀.gpr .rcx).isLt; omega_using [hn])
   refine ⟨{
-      le := by omega
+      le := by omega_using [hi]
       x0 := by
         show s'.lane .xmm0 0 = _
         rw [kl _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 0 (by decide)]
@@ -425,7 +425,7 @@ theorem body16_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 16 ≤ nb s
         exact hI.x1
       y := y'
       gpr := fun r ha hd hc => by rw [fg r hd hc, F₇.gpr, hI.gpr r ha hd hc]
-      rdx := by rw [frdx, hrdx]; exact add_ofNat_ofNat (b := 256) _ (by omega)
+      rdx := by rw [frdx, hrdx]; exact add_ofNat_ofNat (b := 256) _ (by omega_using [])
       rcx := by rw [frcx, hrcx]
       mem := by rw [fm, F₇.mem, hI.mem]
       rd := by rw [frd, F₇.rd, hI.rd]
@@ -441,7 +441,7 @@ theorem body16_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 16 ≤ nb s
         obtain ⟨n7, n8, n9, n10, n11, -, -, n2⟩ := preg16_ne (k := k)
         rw [kl _ n2 n7 n8 n9 n10 n11 l hl]; exact hI.pw k hk l hl
     }, ?_⟩
-  rw [fcf, hrcx, toNat_ofNat_lt (by omega)]
+  rw [fcf, hrcx, toNat_ofNat_lt (by omega_using [hn])]
 
 theorem loop16_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hi : i + 16 ≤ nb s₀)
     (hI : Inv16 s₀ i s) :
@@ -456,7 +456,7 @@ theorem loop16_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hi : i +
     · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true], i + 16,
         hlt, hI'⟩
     · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-        nb s₀ - (i + 16), by omega, i + 16, rfl, by omega, hI'⟩
+        nb s₀ - (i + 16), by omega_using [hi], i + 16, rfl, by omega_using [hlt], hI'⟩
   exact WP.loop (M := isa) I hstep (nb s₀ - i) s ⟨i, rfl, hi, hI⟩
 
 theorem loop8_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hi : i + 8 ≤ nb s₀)
@@ -472,7 +472,7 @@ theorem loop8_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hi : i + 
     · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true], i + 8,
         hlt, hI'.inv⟩
     · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-        nb s₀ - (i + 8), by omega, i + 8, rfl, by omega, hI'⟩
+        nb s₀ - (i + 8), by omega_using [hi], i + 8, rfl, by omega_using [hlt], hI'⟩
   exact WP.loop (M := isa) I8 hstep (nb s₀ - i) s ⟨i, rfl, hi, hI⟩
 
 /-! ## The powers -/
@@ -559,18 +559,18 @@ theorem powersP_ok {H : Block} {s : State} (h0 : s.xmm .xmm0 = revMask) (h1 : s.
     rintro r (rfl | rfl | rfl | rfl) <;> exact O.xmm _ (by decide)
   refine ⟨fun l hl => ?_, fun l hl => ?_, p2, fun k hk l hl => ?_, k, fun r hr => by rw [g, O.gpr r hr],
     by rw [m, O.mem], by rw [rd, O.rd], by rw [wr, O.wr]⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · show s'.xmm .xmm0 = _
       rw [k _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide), h0]
     · rw [p0, O.xmm _ (by decide), h0]
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · show s'.xmm .xmm1 = _
       rw [k _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide), h1]
     · rw [p1, O.xmm _ (by decide), h1]
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
   · show x * φ (s'.lane .xmm15 0) = φ H ^ 8; rw [p15]; exact H8
   · show x * φ (s'.lane .xmm15 1) = φ H ^ 7; rw [q15, r14]; exact H7
   · show x * φ (s'.lane .xmm14 0) = φ H ^ 6; rw [p14, r13]; exact H6
@@ -600,10 +600,10 @@ theorem vins7_ok (s : State) :
     WP isa (.block [.vop (.vinserti128 .xmm7 .xmm15 .xmm15 1)]) s fun s' =>
       (∀ l < 2, s'.lane .xmm7 l = s.lane .xmm15 0) ∧ YFrame [.xmm7] s s' := by
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, fun r hr l hl => ?_⟩⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp [VOp.exec, State.setV, State.lane]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp [hr, VOp.exec, State.setV, State.lane]
 
 /-- `d ← mul(p, ymm7)` in each lane. -/
@@ -660,38 +660,38 @@ theorem powers16P_ok {H : Block} {s : State} (h1 : ∀ l < 2, s.lane .xmm1 l = p
       .xmm8, .xmm9, .xmm10, .xmm11, .xmm5] s₁ t → ∀ l < 2, t.lane .xmm7 l = s.lane .xmm15 0 :=
     fun t f l hl => by rw [f.lane _ (by decide) l hl, b₁ l hl]
   refine ⟨fun k hk l hl => ?_, F.mono (by decide)⟩
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · show x * φ (s₅.lane .xmm3 l) = _
-    rw [(f₃.comp (f₄.comp f₅)).lane _ (by decide) l hl, show 16 - 2 * 0 - l = (8 - 2 * 0 - l) + 8 by omega]
+    rw [(f₃.comp (f₄.comp f₅)).lane _ (by decide) l hl, show 16 - 2 * 0 - l = (8 - 2 * 0 - l) + 8 by omega_using [hl]]
     exact pow_mul_pair (m₂ l hl) (by rw [f₁.lane _ (by decide) l hl]; exact hpw 0 (by decide) l hl)
       (by rw [b₁ l hl]; exact h8)
   · show x * φ (s₅.lane .xmm4 l) = _
-    rw [(f₄.comp f₅).lane _ (by decide) l hl, show 16 - 2 * 1 - l = (8 - 2 * 1 - l) + 8 by omega]
+    rw [(f₄.comp f₅).lane _ (by decide) l hl, show 16 - 2 * 1 - l = (8 - 2 * 1 - l) + 8 by omega_using [hl]]
     exact pow_mul_pair (m₃ l hl)
       (by rw [f₂.lane _ (by decide) l hl, f₁.lane _ (by decide) l hl]; exact hpw 1 (by decide) l hl)
       (by rw [b7 s₂ (f₂.mono (by decide)) l hl]; exact h8)
   · show x * φ (s₅.lane .xmm5 l) = _
-    rw [f₅.lane _ (by decide) l hl, show 16 - 2 * 2 - l = (8 - 2 * 2 - l) + 8 by omega]
+    rw [f₅.lane _ (by decide) l hl, show 16 - 2 * 2 - l = (8 - 2 * 2 - l) + 8 by omega_using [hl]]
     exact pow_mul_pair (m₄ l hl)
       (by rw [f₃.lane _ (by decide) l hl, f₂.lane _ (by decide) l hl, f₁.lane _ (by decide) l hl]
           exact hpw 2 (by decide) l hl)
       (by rw [b7 s₃ ((f₂.comp f₃).mono (by decide)) l hl]; exact h8)
   · show x * φ (s₅.lane .xmm6 l) = _
-    rw [show 16 - 2 * 3 - l = (8 - 2 * 3 - l) + 8 by omega]
+    rw [show 16 - 2 * 3 - l = (8 - 2 * 3 - l) + 8 by omega_using [hl]]
     exact pow_mul_pair (m₅ l hl)
       (by rw [f₄.lane _ (by decide) l hl, f₃.lane _ (by decide) l hl, f₂.lane _ (by decide) l hl,
             f₁.lane _ (by decide) l hl]
           exact hpw 3 (by decide) l hl)
       (by rw [b7 s₄ ((f₂.comp (f₃.comp f₄)).mono (by decide)) l hl]; exact h8)
   · show x * φ (s₅.lane .xmm15 l) = _
-    rw [F.lane _ (by decide) l hl, show 16 - 2 * 4 - l = 8 - 2 * 0 - l by omega]; exact hpw 0 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 16 - 2 * 4 - l = 8 - 2 * 0 - l by omega_using []]; exact hpw 0 (by decide) l hl
   · show x * φ (s₅.lane .xmm14 l) = _
-    rw [F.lane _ (by decide) l hl, show 16 - 2 * 5 - l = 8 - 2 * 1 - l by omega]; exact hpw 1 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 16 - 2 * 5 - l = 8 - 2 * 1 - l by omega_using []]; exact hpw 1 (by decide) l hl
   · show x * φ (s₅.lane .xmm13 l) = _
-    rw [F.lane _ (by decide) l hl, show 16 - 2 * 6 - l = 8 - 2 * 2 - l by omega]; exact hpw 2 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 16 - 2 * 6 - l = 8 - 2 * 2 - l by omega_using []]; exact hpw 2 (by decide) l hl
   · show x * φ (s₅.lane .xmm12 l) = _
-    rw [F.lane _ (by decide) l hl, show 16 - 2 * 7 - l = 8 - 2 * 3 - l by omega]; exact hpw 3 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 16 - 2 * 7 - l = 8 - 2 * 3 - l by omega_using []]; exact hpw 3 (by decide) l hl
 
 /-- `vinserti128 ymm7, ymm{r}, xmm{r}, 1`: the low lane of `r` into both
 lanes of `ymm7`. -/
@@ -699,10 +699,10 @@ theorem vinsB_ok (r : XReg) (s : State) :
     WP isa (.block [.vop (.vinserti128 .xmm7 r r 1)]) s fun s' =>
       (∀ l < 2, s'.lane .xmm7 l = s.lane r 0) ∧ YFrame [.xmm7] s s' := by
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, fun q hq l hl => ?_⟩⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp [VOp.exec, State.setV, State.lane]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp [hq, VOp.exec, State.setV, State.lane]
 
 /-- The first instructions of `powersY`: the upper lanes of the mask, the
@@ -741,26 +741,26 @@ theorem powersYP_ok {H : Block} {s : State} (h0 : s.xmm .xmm0 = revMask) (h1 : s
   rw [WP.block_append_iff]
   refine WP.mono (insY_ok s) fun s₁ ⟨p12, q12, p7, q7, p0, p1, p2, kx, g₁, m₁, rd₁, wr₁⟩ => ?_
   have L0 : ∀ l < 2, s₁.lane .xmm0 l = revMask := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · show s₁.xmm .xmm0 = _; rw [kx _ (by decide) (by decide), h0]
     · rw [p0, h0]
   have L1 : ∀ l < 2, s₁.lane .xmm1 l = poly := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · show s₁.xmm .xmm1 = _; rw [kx _ (by decide) (by decide), h1]
     · rw [p1, h1]
   have A12 : ∀ l < 2, x * φ (s₁.lane .xmm12 l) = φ H ^ (2 - l) := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · rw [p12, H2]
     · rw [q12, H1, pow_one]
   have A7 : ∀ l < 2, x * φ (s₁.lane .xmm7 l) = φ H ^ 2 := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · rw [p7, H2]
     · rw [q7, H2]
   rw [WP.block_append_iff]
   refine WP.mono (mulPair_ok .xmm13 .xmm12 rfl (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) s₁ L1) fun s₂ ⟨m₂, f₂⟩ => ?_
   have A13 : ∀ l < 2, x * φ (s₂.lane .xmm13 l) = φ H ^ (4 - l) := fun l hl => by
-    rw [show 4 - l = (2 - l) + 2 by omega]; exact pow_mul_pair (m₂ l hl) (A12 l hl) (A7 l hl)
+    rw [show 4 - l = (2 - l) + 2 by omega_using [hl]]; exact pow_mul_pair (m₂ l hl) (A12 l hl) (A7 l hl)
   rw [WP.block_append_iff]
   refine WP.mono (vinsB_ok .xmm13 s₂) fun s₃ ⟨b₃, f₃⟩ => ?_
   have A7' : ∀ l < 2, x * φ (s₃.lane .xmm7 l) = φ H ^ 4 := fun l hl => by
@@ -786,16 +786,16 @@ theorem powersYP_ok {H : Block} {s : State} (h0 : s.xmm .xmm0 = revMask) (h1 : s
     fun l hl => by rw [F.lane _ (by decide) l hl]; exact L1 l hl,
     by rw [F.lane _ (by decide) 1 (by decide)]; exact p2, fun k hk l hl => ?_,
     fun r _ => by rw [F.gpr, g₁], by rw [F.mem, m₁], by rw [F.rd, rd₁], by rw [F.wr, wr₁]⟩
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
   · show x * φ (s'.lane .xmm15 l) = _
-    rw [show 8 - 2 * 0 - l = (4 - l) + 4 by omega]; exact pow_mul_pair (m₅ l hl) (A13' l hl) (A7'' l hl)
+    rw [show 8 - 2 * 0 - l = (4 - l) + 4 by omega_using [hl]]; exact pow_mul_pair (m₅ l hl) (A13' l hl) (A7'' l hl)
   · show x * φ (s'.lane .xmm14 l) = _
-    rw [f₅.lane _ (by decide) l hl, show 8 - 2 * 1 - l = (2 - l) + 4 by omega]
+    rw [f₅.lane _ (by decide) l hl, show 8 - 2 * 1 - l = (2 - l) + 4 by omega_using [hl]]
     exact pow_mul_pair (m₄ l hl) (A12' l hl) (A7' l hl)
   · show x * φ (s'.lane .xmm13 l) = _
-    rw [F₃.lane _ (by decide) l hl, show 8 - 2 * 2 - l = 4 - l by omega]; exact A13 l hl
+    rw [F₃.lane _ (by decide) l hl, show 8 - 2 * 2 - l = 4 - l by omega_using []]; exact A13 l hl
   · show x * φ (s'.lane .xmm12 l) = _
-    rw [F.lane _ (by decide) l hl, show 8 - 2 * 3 - l = 2 - l by omega]; exact A12 l hl
+    rw [F.lane _ (by decide) l hl, show 8 - 2 * 3 - l = 2 - l by omega_using []]; exact A12 l hl
 
 /-- `H'⁹`–`H'¹⁶` in the lanes of `ymm3`–`ymm6`. -/
 theorem powers16_ok {s₀ : State} {i : Nat} {s : State} (hI : Inv8 s₀ i s) :
@@ -834,7 +834,7 @@ theorem restore_ok (s : State) :
   refine ⟨trivial, trivial, trivial, trivial, rfl, rfl, rfl, rfl, fun r hr l hl => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   obtain ⟨h3, h4, h5, h6⟩ := hr
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h3, h4, h5, h6, State.lane]
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h3, h4, h5, h6, State.lane]
 
 /-- After the sixteen-block loop and `restore`, the eight-block loop's
 invariant. -/
@@ -868,15 +868,15 @@ theorem restore_inv {s₀ : State} {i : Nat} {s s' : State} (hI : Inv16 s₀ i s
            m1 := by rw [F.lane _ (by decide) 1 (by decide)]; exact hI.m1
            y1 := by rw [F.lane _ (by decide) 1 (by decide)]; exact hI.y1
            pw := fun k hk l hl => ?_ }
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
   · show x * φ (s'.lane .xmm15 l) = _
-    rw [F.lane _ (by decide) l hl, show 8 - 2 * 0 - l = 16 - 2 * 4 - l by omega]; exact hI.pw 4 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 8 - 2 * 0 - l = 16 - 2 * 4 - l by omega_using []]; exact hI.pw 4 (by decide) l hl
   · show x * φ (s'.lane .xmm14 l) = _
-    rw [F.lane _ (by decide) l hl, show 8 - 2 * 1 - l = 16 - 2 * 5 - l by omega]; exact hI.pw 5 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 8 - 2 * 1 - l = 16 - 2 * 5 - l by omega_using []]; exact hI.pw 5 (by decide) l hl
   · show x * φ (s'.lane .xmm13 l) = _
-    rw [F.lane _ (by decide) l hl, show 8 - 2 * 2 - l = 16 - 2 * 6 - l by omega]; exact hI.pw 6 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 8 - 2 * 2 - l = 16 - 2 * 6 - l by omega_using []]; exact hI.pw 6 (by decide) l hl
   · show x * φ (s'.lane .xmm12 l) = _
-    rw [F.lane _ (by decide) l hl, show 8 - 2 * 3 - l = 16 - 2 * 7 - l by omega]; exact hI.pw 7 (by decide) l hl
+    rw [F.lane _ (by decide) l hl, show 8 - 2 * 3 - l = 16 - 2 * 7 - l by omega_using []]; exact hI.pw 7 (by decide) l hl
 
 /-! ## The whole function -/
 
@@ -899,7 +899,7 @@ theorem cmp8_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hI : Inv8 
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, arithFlags, State.setFlags, isa, hrcx, ec, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨{ inv := { hI.inv with }, m0 := hI.m0, m1 := hI.m1, y1 := hI.y1, pw := hI.pw }, ?_⟩
-  simp only [toNat_ofNat_lt (show nb s₀ - i < 2 ^ 64 by omega), toNat_ofNat_lt (show c < 2 ^ 64 by omega)]
+  simp only [toNat_ofNat_lt (show nb s₀ - i < 2 ^ 64 by omega_using [hn]), toNat_ofNat_lt (show c < 2 ^ 64 by omega_using [hc])]
 
 /-- With eight blocks or more left: the powers, the sixteen-block loop, and the
 eight-block loop. -/
@@ -908,18 +908,18 @@ theorem wide_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hi : i + 8
   have hn := hp.nb_lt
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (powers_ok hI (by omega)) fun s₁ hI₁ =>
+  refine WP.mono (powers_ok hI (by omega_using [hi])) fun s₁ hI₁ =>
     WP.mono (cmp8_ok hp hI₁ 16 (by decide) (by decide)) fun s₂ ⟨hI₂, hcf⟩ => ?_
   refine WP.seq (WP.mono (Q := fun s => ∃ j, nb s₀ - j < 16 ∧ Inv8 s₀ j s) ?_ fun s₃ ⟨j, _, hI₃⟩ => ?_)
   · refine WP.ite (decide (nb s₀ - i < 16)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
     · exact WP.block_nil ⟨i, by simpa using h, hI₂⟩
     · refine WP.seq (WP.mono (powers16_ok hI₂) fun s₃ hI₃ =>
-        WP.seq (WP.mono (loop16_ok hp (by simp at h; omega) hI₃) fun s₄ ⟨j, hj, hI₄⟩ =>
+        WP.seq (WP.mono (loop16_ok hp (by simp at h; omega_using [h]) hI₃) fun s₄ ⟨j, hj, hI₄⟩ =>
           WP.mono (restore_ok s₄) fun s₅ ⟨e3, e4, e5, e6, F⟩ => ⟨j, hj, restore_inv hI₄ e3 e4 e5 e6 F⟩))
   · refine WP.seq (WP.mono (cmp8_ok hp hI₃ 8 (by decide) (by decide)) fun s₄ ⟨hI₄, hcf₄⟩ => ?_)
     refine WP.ite (decide (nb s₀ - j < 8)) (by simp only [eval, hcf₄]) (fun h => ?_) (fun h => ?_)
     · exact WP.block_nil ⟨j, by simpa using h, hI₄.inv⟩
-    · exact loop8_ok hp (by simp at h; omega) hI₄
+    · exact loop8_ok hp (by simp at h; omega_using [h]) hI₄
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa ghash s₀ fun s' => gprPreserved s₀ s' ∧ ghashX86_64.post s₀ s' := by
@@ -931,7 +931,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   refine WP.seq (WP.mono (cmp_ok hp hI₂ 32 (by decide) (by decide)) fun s₂ ⟨hI₂, hcf⟩ => ?_)
   refine WP.ite (decide (nb s₀ - 0 < 32)) (by simp only [eval, hcf]) (fun _ => ?_) (fun h => ?_)
   · exact WP.block_nil ⟨0, hI₂⟩
-  · exact WP.mono (wide_ok hp (by simp at h; omega) hI₂) fun _ ⟨i, _, hI⟩ => ⟨i, hI⟩
+  · exact WP.mono (wide_ok hp (by simp at h; omega_using [h]) hI₂) fun _ ⟨i, _, hI⟩ => ⟨i, hI⟩
 
 theorem ghash_correct (s : State) (hs : ghashX86_64.pre s) :
     ∃ t s', Exec isa ghash s t s' ∧ abiPreserved s s' ∧ ghashX86_64.post s s' := by

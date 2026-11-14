@@ -159,7 +159,7 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamO
   refine WP.seq (WP.mono (pConstruct_ok hG hHh hsize hd hs hhash hseedsize)
     fun u ⟨up, ue, ho, hb, Lu, ⟨Vu, Ru⟩, wu, hp, fu, rdu, wru⟩ => ?_)
   have hlen : 0 < p.construct.len ∧ p.construct.len < 2 ^ 64 := by
-    rcases p.construct.width with hh | hh | hh <;> omega
+    rcases p.construct.width with hh | hh | hh <;> omega_using [hh]
   have hbound : p.construct.value < 256 ^ p.construct.len := by
     simpa only [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] using hb
   have hread : InRegions (u.rd ++ u.wr) (off (p.construct.hash.W 5) Impl.Dsa.Generation.Layout.p) 1 := by
@@ -176,7 +176,7 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamO
       have hn := ha ⟨p.construct.hash.F, frameBytes⟩ (by simp [PPrimalityPlan.testWrites])
       change ¬ ofs p.construct.hash.F a < frameBytes at hn
       unfold frameBytes at hn
-      omega
+      omega_using [hn]
     have hself : upd p.construct.hash.W 16 (BitVec.ofNat 64 used) = p.construct.hash.W := by
       funext i
       by_cases hi : i = 16 <;> simp [upd, hi, hused]
@@ -188,7 +188,7 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamO
     · intro b rest hr
       simp only [PPrimalityPlan.result, hsmall, ite_true, Option.some.injEq, Prod.mk.injEq] at hr
       rcases hr with ⟨rfl, rfl⟩
-      exact ⟨rfl, by simp only [List.length_drop]; omega⟩
+      exact ⟨rfl, by simp only [List.length_drop]; omega_using [hu]⟩
     · exact (fu.mono (fun r hr => List.mem_append_left _ hr)).trans
         (ff.mono (fun r hr => List.mem_append_right _ hr))
   · have domain : VG.Proof.Dsa.Generation.PDomain p.construct.len p.construct.value :=
@@ -200,7 +200,7 @@ theorem pConstructTest_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamO
       rw [up]; exact VG.Proof.Dsa.decodeBE_encodeBE hbound
     have hcandidate : Impl.Dsa.X86_64.ProbablePrime.candidate call.bits = Impl.Dsa.Generation.Layout.p := by
       change (if 8 * p.construct.len ≤ 256 then _ else _) = _
-      exact ite_eq_right (by rcases p.construct.width with hh | hh | hh <;> omega)
+      exact ite_eq_right (by rcases p.construct.width with hh | hh | hh <;> omega_using [hh])
     refine WP.mono (pTest_full_ok T (p := call) Lu Ru wu hp hbound up hread hsmall hcandidate hused hu
       (hA.congr wru) (by rw [rdu, wru]; exact htc) tape hcand)
       fun t ⟨used', status, hbound', Lt, Rt, he, hr, ft, rdt, wrt⟩ => ?_

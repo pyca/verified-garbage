@@ -176,7 +176,7 @@ theorem seqPre_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :
     by simp only [Proof.Modes.PPC64LE.P, h₁.r4]; exact fV, by rw [eD, hwr₁]; simp,
     by simp only [Proof.Modes.PPC64LE.Dp, Proof.Modes.PPC64LE.N, h₁.r5, h₁.r6, hstep]; exact fD,
     by rw [eD, eS]; exact dDS, by rw [eV, eS]; exact dVS, fun _ => by rw [eV, eD]; exact dVD,
-    ⟨by omega, by rw [hstep]; rfl⟩, layout up n⟩
+    ⟨by omega_using [hstep], by rw [hstep]; rfl⟩, layout up n⟩
 
 /-- `modePC`'s precondition gives the key's arguments. -/
 theorem keyArgs_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :

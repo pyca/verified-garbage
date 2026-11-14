@@ -33,12 +33,12 @@ theorem advance_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c p n : Nat}
   have hw := hp.fSrc
   have hsub : BitVec.ofNat 32 (nBlk s₀ - p) - BitVec.ofNat 32 n =
       BitVec.ofNat 32 (nBlk s₀ - (p + n)) := by
-    rw [Offset.ofNat_sub_ofNat (by omega)]
-    exact congrArg (BitVec.ofNat 32) (by omega)
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hn])]
+    exact congrArg (BitVec.ofNat 32) (by omega_using [])
   have hadd : ∀ X : BitVec 32, (X + BitVec.ofNat 32 (16 * p)) + BitVec.ofNat 32 (16 * n) =
       X + BitVec.ofNat 32 (16 * (p + n)) := fun X => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (fun k => X + BitVec.ofNat 32 k) (by omega)
+    exact congrArg (fun k => X + BitVec.ofNat 32 k) (by omega_using [])
   have hI' := hI
   cases to
   · have hedx := hI.edx
@@ -54,7 +54,7 @@ theorem advance_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c p n : Nat}
       exact hadd _
     · simp only [gpr_setReg_self]
       exact hsub
-    · rw [zf_setReg, zf_arithFlags, hsub, beq_ofNat_zero (by omega)]
+    · rw [zf_setReg, zf_arithFlags, hsub, beq_ofNat_zero (by omega_using [hw])]
   · have hedx := hI.edx
     simp only [edxAt, ↓reduceIte] at hedx
     apply WP.of_runBlock
@@ -68,7 +68,7 @@ theorem advance_ok {to : Bool} {s₀ : State} (hp : GPre to s₀) {c p n : Nat}
       exact hadd _
     · simp only [gpr_setReg_self]
       exact hsub
-    · rw [zf_setReg, zf_arithFlags, hsub, beq_ofNat_zero (by omega)]
+    · rw [zf_setReg, zf_arithFlags, hsub, beq_ofNat_zero (by omega_using [hw])]
 
 /-- The bulk-loop branch depends only on the public remaining count. -/
 theorem cmpEdi_ok {to : Bool} {s₀ : State} {c p n : Nat} (hn : n < 2 ^ 32)
@@ -94,6 +94,6 @@ theorem testEdi_ok {to : Bool} {s₀ : State} {c p : Nat} {s : State} (hI : Inv 
     readSrc, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨hI.le, hI.ebx, hI.esp, hI.ecx, hI.edx, hI.ebp, hI.esi, hI.edi,
     hI.rd, hI.wr, hI.frame, hI.saved, hI.scratchPrefix, hI.blocks⟩, ?_⟩
-  rw [zf_arithFlags, BitVec.and_self, hI.edi, beq_ofNat_zero (by omega)]
+  rw [zf_arithFlags, BitVec.and_self, hI.edi, beq_ofNat_zero (by omega_using [hnb])]
 
 end VG.Proof.Aes.X86.AesNi

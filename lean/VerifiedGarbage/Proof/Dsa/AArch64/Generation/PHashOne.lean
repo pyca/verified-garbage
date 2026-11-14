@@ -43,7 +43,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.str
       Spec.Rsa.bytesAt t.mem dp len =
         Hs.hash (Spec.Dsa.encodeBE len (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem rp len) + (offset + j))) := by
   unfold Impl.Dsa.AArch64.Generation.pHashOne
-  refine WP.seq (WP.mono (pSeedHash_ok hG hHh hsize (by omega) (by omega) hc L R A hrp hop hoff hrd hwr hsep hbuf)
+  refine WP.seq (WP.mono (pSeedHash_ok hG hHh hsize (by omega_using [hlen]) (by omega_using [hcount, hj]) hc L R A hrp hop hoff hrd hwr hsep hbuf)
     fun u ⟨Lu, step, hfu, ⟨V', Ru⟩, hb⟩ => ?_)
   refine WP.seq (WP.mono (hashCopyArgs_ok hlen hcount Lu Ru hhp) fun v ⟨hsi, hdi, hcx, hm, kv⟩ => ?_)
   rw [hdp] at hdi
@@ -53,7 +53,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.str
     intro i hi
     rw [hdl] at hi
     rw [kv.rd, kv.wr, off_off]
-    exact Lu.sld (o := oDig + i) (n := 1) (by dsimp only [oDig, oRsa]; omega)
+    exact Lu.sld (o := oDig + i) (n := 1) (by dsimp only [oDig, oRsa]; omega_using [hlen, hi])
   have hbytes : ∀ i < digest.length, v.mem (off (off S oDig) i) = digest.getD i 0 := by
     intro i hi
     rw [hdl] at hi
@@ -62,14 +62,14 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.str
     rw [← hb, hd]
     simp [Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD, hi]
   have hcopy := random_copyRest_ok hsi hdi (by rw [hdl]; exact hcx)
-    (by rw [hdl]; rcases hlen with rfl | rfl <;> omega) hread
+    (by rw [hdl]; rcases hlen with rfl | rfl <;> omega_using []) hread
     (fun i hi => by rw [kv.wr, step.wr]; exact hwd i (hdl ▸ hi))
     (by
       intro i hi k hk
       rw [hdl] at hi hk
       change off (off S oDig) i ≠ off dp k
       rw [off_off]
-      exact Ne.symm (hdbuf.scratch k hk (oDig + i) (by dsimp only [oDig, oRsa]; omega)))
+      exact Ne.symm (hdbuf.scratch k hk (oDig + i) (by dsimp only [oDig, oRsa]; omega_using [hlen, hi])))
   rw [hdl] at hcopy
   refine WP.mono hcopy fun t ⟨hout, hf, kt⟩ => ?_
   have Rv : Rep v.mem F S V' W := hm ▸ Ru
@@ -78,7 +78,7 @@ theorem pHashOne_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.str
   have hft : Frame [⟨dp, len⟩, ⟨op, len⟩, ⟨S, oRsa⟩, retR F] u.mem t.mem := by
     intro a ha
     rw [hf a (fun i hi => fun he => ha ⟨dp, len⟩ (by simp) (he ▸
-      Offset.contains_base dp (by omega) (by omega))), hm]
+      Offset.contains_base dp (by omega_using [hi]) (by omega_using [hlen, hi]))), hm]
   have hfinal := (hfu.mono (by simp)).trans hft
   have k := kv.trans kt
   refine ⟨lay_of_rep Lv Rv Rt rfl kt.sp kt.wr,

@@ -100,17 +100,17 @@ theorem native_front_ok {q : FrontPublic} {s : State} (h : NativeReady q s) :
  WP isa (.block Generate.entry) s (FrontReady q) := by
  obtain ⟨rb,h⟩:=h
  let p:=q.body.scalar.p
- have room : 256≤p.Z := by have :=p.room;dsimp only [slot,hdrBytes] at this;omega
- have count3 : 3≤q.count := by rw [context_words_count h.view.canonical];omega
- have domSize : p.k≤q.body.scalar.dom.length := by have :=q.body.scalar.shape;have :=q.body.scalar.domLength;dsimp only [p];omega
+ have room : 256≤p.Z := by have :=p.room;dsimp only [slot,hdrBytes] at this;omega_using [this]
+ have count3 : 3≤q.count := by rw [context_words_count h.view.canonical];omega_using []
+ have domSize : p.k≤q.body.scalar.dom.length := by have :=q.body.scalar.shape;have :=q.body.scalar.domLength;dsimp only [p];omega_arith
  have head (i : Nat) (hi : i<3) := context_header domSize (VG.Proof.Ffdh.domainValid_mod q.checked) h.view.canonical hi
  have head0 : word s.mem p.ctx 0=BitVec.ofNat 64 p.N := by simpa [word,off,p,q.policy] using head 0 (by decide)
  have head1 : word s.mem p.ctx 8=BitVec.ofNat 64 ((p.N+7)/8) := by simpa [word,off,p,q.policy] using head 1 (by decide)
  have head2 : word s.mem p.ctx 16=BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.N) := by simpa [word,off,p,q.policy] using head 2 (by decide)
  refine WP.mono (generateEntry_ok h.scratch room h.readB h.readCtx h.stackB h.stackCtx
-  (fun i hi =>h.view.readable i (by omega)) (fun i hi =>h.view.outside i (by omega)) head0 head1 head2) ?_
+  (fun i hi =>h.view.readable i (by omega_using [count3, hi])) (fun i hi =>h.view.outside i (by omega_using [count3, hi])) head0 head1 head2) ?_
  rintro t ⟨base,mem,frame,rest⟩
- have inscr : InScr p.B p.Z s.mem t.mem := InScr.of_outside frame (by omega)
+ have inscr : InScr p.B p.Z s.mem t.mem := InScr.of_outside frame (by omega_using [room])
  simp only [h.xArg,h.yArg,h.domArg,h.dlArg,h.lenArg,h.randArg] at mem
  have headers :=generationEntry_headers s.mem p.B p.src q.body.yp q.body.scalar.dp (BitVec.ofNat 64 q.body.scalar.dl)
   (BitVec.ofNat 64 p.k) q.rp p.ctx (BitVec.ofNat 64 p.N) (BitVec.ofNat 64 ((p.N+7)/8)) (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.N))

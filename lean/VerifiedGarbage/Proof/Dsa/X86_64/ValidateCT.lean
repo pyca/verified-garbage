@@ -115,10 +115,10 @@ def ValidatingCall.shape (c : ValidatingCall) : ShapePublic where
   qBytes := c.input.components.q
   digestLen := 0
   extentBound := by decide
-  pPositive := by rw [c.input.components.pLength]; have := c.layout.widths; change 0 < c.layout.pLen; omega
+  pPositive := by rw [c.input.components.pLength]; have := c.layout.widths; change 0 < c.layout.pLen; omega_using [this]
   qPositive := by rw [c.input.components.qLength]; exact c.layout.widths.1
-  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega
-  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega
+  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega_using [this]
+  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega_using [this]
   digestBound := by decide
 
 theorem ValidatingAgrees.shape {reference c : ValidatingCall} (h : ValidatingAgrees reference c) :
@@ -148,7 +148,7 @@ theorem ValidatingEntered.context {reference : ValidatingCall} {s : State} (h : 
     rw [he.digestLen, c.pre.digestNil]; rfl
   · change Src s c.input.base usedBytes (c.original.gpr .rdi + c.original.gpr .rdx) c.input.components.q
     rw [c.pre.pLength]
-    exact source_slice hkey (by rw [c.input.keyLength]; omega)
+    exact source_slice hkey (by rw [c.input.keyLength]; omega_using [])
 
 theorem validatingShape_ct : RelCT isa (Two ValidatingStart)
     (.seq (.block Prevalidated.validateEntry) Checks.domainShape) (Two ValidatingShaped) := by
@@ -192,7 +192,7 @@ theorem ValidatingShaped.initialization {reference : ValidatingCall} {s : State}
   have hqs : Src s c.layout.base usedBytes (c.layout.fields .q) c.input.components.q := by
     change Src s c.input.base usedBytes (c.original.gpr .rdi + c.original.gpr .rdx) c.input.components.q
     rw [c.pre.pLength]
-    exact source_slice hkey (by rw [c.input.keyLength]; omega)
+    exact source_slice hkey (by rw [c.input.keyLength]; omega_using [])
   rw [hag.layout] at hf hr hscr hps hqs
   rw [hag.pb] at hps
   rw [hag.qb] at hqs

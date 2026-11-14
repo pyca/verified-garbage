@@ -87,7 +87,7 @@ theorem partial_wp (hL : L < 8) {s : State} (h : P1 s₀ W St P S s) :
   have dPC : (⟨P, L⟩ : Region).Disjoint ⟨C, 8⟩ := by rw [← hC]; exact hp.last_scr.sub_right (FPre.scrD (by decide))
   have sl : slot12 S = ⟨C, 8⟩ := by rw [← hC]
   -- Zero the slot.
-  obtain ⟨s₁, run₁, zf₁, mem₁, g₁, rd₁, wr₁⟩ := zero_ok s hc hcx (by omega)
+  obtain ⟨s₁, run₁, zf₁, mem₁, g₁, rd₁, wr₁⟩ := zero_ok s hc hcx (by omega_using [hL])
     (by rw [h.wr, ← hC]; exact hp.inScr (d := 96) (n := 8) (by decide))
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   let m₁ := (savedMem s₀ S).writeW C (BitVec.setWidth 64 (0 : BitVec 32))
@@ -95,9 +95,9 @@ theorem partial_wp (hL : L < 8) {s : State} (h : P1 s₀ W St P S s) :
   have fz : Frame [⟨C, 8⟩] (savedMem s₀ S) m₁ :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have lastS : Spec.Aes.bytesAt (savedMem s₀ S) P L = Spec.Aes.bytesAt s₀.mem P L :=
-    bytesAt_frame (savedMem_frame s₀ S) (hp.save_frame) (by omega)
+    bytesAt_frame (savedMem_frame s₀ S) (hp.save_frame) (by omega_using [hL])
   have lastZ : Spec.Aes.bytesAt m₁ P L = Spec.Aes.bytesAt s₀.mem P L := by
-    rw [bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dPC) (by omega),
+    rw [bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dPC) (by omega_using [hL]),
       lastS]
   -- Copy the last bytes.
   refine WP.seq (WP.mono (Q := fun (s₂ : State) => s₂.mem = writeBytes m₁ C (Spec.Aes.bytesAt s₀.mem P L) ∧
@@ -108,11 +108,11 @@ theorem partial_wp (hL : L < 8) {s : State} (h : P1 s₀ W St P S s) :
       refine ⟨by rw [zf]; simp [Spec.Aes.bytesAt, writeBytes_nil], fun r h₁ _ => g₁ r h₁,
         by rw [rd₁, h.rd], by rw [wr₁, h.wr]⟩
     · refine WP.ite false (by show s₁.zf = _; rw [zf₁]; simp [hL0]) (fun h => by cases h) fun _ => ?_
-      refine WP.mono (copy_ok s₁ (by omega) hL (by rw [g₁ _ (by decide), h.rdx])
+      refine WP.mono (copy_ok s₁ (by omega_using [hL0]) hL (by rw [g₁ _ (by decide), h.rdx])
         (by rw [g₁ _ (by decide)]; exact hc) (by rw [g₁ _ (by decide)]; exact hcx)
-        (fun i hi => by rw [rd₁, wr₁, h.rd, h.wr]; exact hp.inLast (d := i) (n := 1) (by omega))
+        (fun i hi => by rw [rd₁, wr₁, h.rd, h.wr]; exact hp.inLast (d := i) (n := 1) (by omega_using [hi]))
         (fun i hi => by
-          rw [wr₁, h.wr, ← hC, Offset.add_add]; exact hp.inScr (d := 96 + i) (n := 1) (by omega)) dPC) ?_
+          rw [wr₁, h.wr, ← hC, Offset.add_add]; exact hp.inScr (d := 96 + i) (n := 1) (by omega_using [hi])) dPC) ?_
       rintro s₂ ⟨m₂, g₂, rd₂, wr₂⟩
       refine ⟨by rw [m₂, zf, lastZ], fun r h₁ h₂ => by rw [g₂ r h₁ h₂, g₁ r h₁], by rw [rd₂, rd₁, h.rd],
         by rw [wr₂, wr₁, h.wr]⟩
@@ -124,7 +124,7 @@ theorem partial_wp (hL : L < 8) {s : State} (h : P1 s₀ W St P S s) :
       (by rw [r15₂, rcx₂, BitVec.mul_one, show BitVec.ofInt 64 96 = BitVec.ofNat 64 96 from rfl, ← hC,
         BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 L), ← BitVec.add_assoc])
       (by rw [r15₂, hC]) (by rw [rdi₂])
-      (by rw [wr₂, ← hC, Offset.add_add]; exact hp.inScr (d := 96 + L) (n := 1) (by omega))
+      (by rw [wr₂, ← hC, Offset.add_add]; exact hp.inScr (d := 96 + L) (n := 1) (by omega_using [hL]))
       (by rw [rd₂, wr₂, ← hC]; exact wr_in (hp.inScr (d := 96) (n := 8) (by decide)))
       (by rw [rd₂, wr₂]; exact hp.inKey (d := 392) (n := 8) (by decide))
     refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
@@ -132,10 +132,10 @@ theorem partial_wp (hL : L < 8) {s : State} (h : P1 s₀ W St P S s) :
     have hlen : (Spec.Aes.bytesAt s₀.mem P L).length = L := Proof.Cmac.bytesAt_length _ _ _
     have fB : Frame [⟨C, 8⟩] m₁ (writeBytes m₁ C (Spec.Aes.bytesAt s₀.mem P L)) :=
       writeBytes_frame _ _ _ (by
-        rw [hlen]; simpa using Offset.contains_base C (d := 0) (n := L) (k := 8) (by omega) (by decide))
+        rw [hlen]; simpa using Offset.contains_base C (d := 0) (n := L) (k := 8) (by omega_using [hL]) (by decide))
     have fW : Frame [⟨C, 8⟩] (writeBytes m₁ C (Spec.Aes.bytesAt s₀.mem P L)) s₃.mem := by
       rw [m₃, m₂]
-      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hL]) (by omega_using [hL]))
     have f₃ : Frame [⟨C, 8⟩] (savedMem s₀ S) s₃.mem := (fz.trans fB).trans fW
     have kD : (⟨W + BitVec.ofNat 64 392, 8⟩ : Region).Disjoint ⟨C, 8⟩ := by
       rw [← hC]; exact hp.keyD (by decide) (FPre.scrD (by decide))
@@ -156,7 +156,7 @@ theorem partial_wp (hL : L < 8) {s : State} (h : P1 s₀ W St P S s) :
       by rw [gg _ (by decide) (by decide), h.rbp], by rw [gg _ (by decide) (by decide), h.rsp],
       by rw [rd₃, rd₂], by rw [wr₃, wr₂], by rw [sl]; exact f₃, ?_⟩
     rw [ax₃, ← m₃, le8_xor, le8_readW, le8_readW, pad, k2]
-    simp only [mn, Spec.Cmac.lastBlock, hlen, show L ≠ 8 by omega, ite_false]
+    simp only [mn, Spec.Cmac.lastBlock, hlen, show L ≠ 8 by omega_using [hL], ite_false]
     exact xor_comm _ _
 
 end
@@ -165,7 +165,7 @@ theorem finPre_wp {s₀ : State} {W St P S : Addr} {L : Nat} (hp : FPre s₀ W S
     WP isa finPre s₀ (BPost s₀ W St P S L) := by
   have hcx : s₀.gpr .rcx = BitVec.ofNat 64 L := by rw [← hp.rcx]; apply BitVec.eq_of_toNat_eq; simp
   obtain ⟨s₁, run₁, r15₁, r14₁, rbp₁, g₁, zf₁, m₁, rd₁, wr₁⟩ :=
-    pre1_ok s₀ (fun d _ h => by rw [hp.r8]; exact hp.inScr (by omega)) hcx hp.len
+    pre1_ok s₀ (fun d _ h => by rw [hp.r8]; exact hp.inScr (by omega_using [h])) hcx hp.len
   have h1 : P1 s₀ W St P S s₁ := ⟨by rw [r15₁, hp.r8], by rw [r14₁, hp.rdi], by rw [rbp₁, hp.rsi],
     by rw [g₁ _ (by decide), hp.rdi], by rw [g₁ _ (by decide), hp.rdx], g₁ _ (by decide),
     g₁ _ (by decide), by rw [m₁, hp.r8], rd₁, wr₁⟩
@@ -173,7 +173,7 @@ theorem finPre_wp {s₀ : State} {W St P S : Addr} {L : Nat} (hp : FPre s₀ W S
   by_cases hL : L = 8
   · exact WP.ite true (by show s₁.zf = _; rw [zf₁]; simp [hL]) (fun _ => full_wp hp hL h1) (fun h => by cases h)
   · exact WP.ite false (by show s₁.zf = _; rw [zf₁]; simp [hL]) (fun h => by cases h)
-      (fun _ => partial_wp hp (by have := hp.len; omega) h1)
+      (fun _ => partial_wp hp (by have := hp.len; omega_using [hL, this]) h1)
 
 theorem xorSt_ok (s : State) {St : Addr} (hb : s.gpr .rbp = St) (r : InRegions (s.rd ++ s.wr) St 8) :
     ∃ s', runBlock isa [.alu .xor .rax (.mem (at_ .rbp 0)), .bswap .rax] s = some s' ∧
@@ -234,7 +234,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86_64.pre s₀) :
   have rdwr₄ : s₄.rd ++ s₄.wr = [⟨W, 400⟩, ⟨P, L⟩, ⟨St, 8⟩, ⟨S, 120⟩] := by
     rw [rd₄, wr₄, same₃.rd, same₃.wr, rd₂, wr₂, rdwr₁]
   obtain ⟨s₅, run₅, b, c, d, e, f, g, rsp₅, m₅⟩ := restore_ok s₄ (by rw [g₄ _ (by decide), r15₃]) fun d _ h₂' => by
-    rw [rdwr₄]; exact in_rw (r := ⟨S, 120⟩) (by simp) (Offset.contains_base _ (by omega) (by omega))
+    rw [rdwr₄]; exact in_rw (r := ⟨S, 120⟩) (by simp) (Offset.contains_base _ (by omega_using [h₂']) (by omega_using [h₂']))
   refine WP.of_runBlock ⟨s₄, run₄, WP.of_runBlock ⟨s₅, run₅, ?_⟩⟩
   -- Memory.
   have xR₂ : xR s₂ = ⟨S, 48⟩ := by rw [xR, g₂ _ (by decide), h₁.r15]
@@ -261,9 +261,9 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeX86_64.pre s₀) :
     refine fAll.readW (r := ⟨S + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ (d := d) (e := 96) (by omega) (by omega) (by omega)
-    · exact Offset.disjoint_base _ (by omega) (by omega)
-    · exact (hp.st_scr.sub_right (FPre.scrD (by omega))).symm
+    · exact Offset.disjoint _ (d := d) (e := 96) (by omega_using [h₂']) (by omega_using [h₂']) (by omega_using [])
+    · exact Offset.disjoint_base _ (by omega_using [h₁']) (by omega_using [h₂'])
+    · exact (hp.st_scr.sub_right (FPre.scrD (by omega_using [h₂']))).symm
   refine ⟨⟨restored (S := S) hm ⟨b, c, d, e, f, g⟩ (by rw [rsp₅, g₄ _ (by decide), same₃.rsp,
     g₂ _ (by decide), h₁.rsp]), ?_⟩, ?_⟩
   · refine big.readW (r := ⟨s₀.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)

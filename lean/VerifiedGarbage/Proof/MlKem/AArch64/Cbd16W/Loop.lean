@@ -73,12 +73,12 @@ theorem nib_le (s₀ : State) (k i : Nat) : nib s₀ k i ≤ 4 :=
 theorem L_nib (s₀ : State) {k i b : Nat} (hk : k < 8) (hi : i < 32) (hb : b < 2) :
     (L s₀ (64 * k + 2 * i + b)).toNat = (nib s₀ k i + 3327) % 3329 / 256 ^ b % 256 := by
   have hc : coef s₀ (32 * k + i) = (nib s₀ k i + 3327) % 3329 := by
-    have h := G_nibble s₀ (i := 32 * k + i) (by omega)
+    have h := G_nibble s₀ (i := 32 * k + i) (by omega_using [hk, hi])
     rw [Cbd2.G, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans (Fin.isLt _) (by decide)),
-      show (32 * k + i) / 2 = 16 * k + i / 2 by omega, show (32 * k + i) % 2 = i % 2 by omega] at h
+      show (32 * k + i) / 2 = 16 * k + i / 2 by omega_using [], show (32 * k + i) % 2 = i % 2 by omega_using []] at h
     exact h
-  rw [L, bytesW16, BitVec.toNat_ofNat, show (64 * k + 2 * i + b) / 2 = 32 * k + i by omega,
-    show (64 * k + 2 * i + b) % 2 = b by omega, hc]
+  rw [L, bytesW16, BitVec.toNat_ofNat, show (64 * k + 2 * i + b) / 2 = 32 * k + i by omega_using [hb],
+    show (64 * k + 2 * i + b) % 2 = b by omega_using [hb], hc]
 
 /-- The constants of the loop. -/
 structure Consts (s : State) : Prop where
@@ -141,30 +141,30 @@ theorem half_ok {s₀ s : State} {k c off : Nat} (hk : k < 8) (hc : c < 2) (hoff
   have ea : Cbd2.fP s₀ + BitVec.ofNat 64 (64 * k) + BitVec.ofNat 64 (32 * c) =
       Cbd2.fP s₀ + BitVec.ofNat 64 (64 * k + 32 * c) := ptr_add _ _ _
   refine grp16_ok (F := fun e => nib s₀ k (16 * c + e)) (a := Cbd2.fP s₀ + BitVec.ofNat 64 (64 * k + 32 * c))
-    (by omega)
+    (by omega_using [hc])
     (by rw [h1.gpr, hx1]; exact ea)
-    (by rw [h1.wr, hw]; exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    (by rw [h1.wr, hw]; exact in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hk, hc]) (by decide)))
     (by rw [h1.wr, hw, ptr_add]
-        exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+        exact in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hk, hc]) (by decide)))
     (by rw [h1.get .v16]; exact hcs.lo) (by rw [h1.get .v17]; exact hcs.hi)
     (by rw [h1.v]; exact hv) (fun e _ => nib_le _ _ _) fun t x y g rd wr sp tv tm hx hy => ?_
-  have o1 := BytesUpTo.writeN (n := 16) hout (by decide) (by omega) (x := x) fun b hb => by
+  have o1 := BytesUpTo.writeN (n := 16) hout (by decide) (by omega_using [hk, hc]) (x := x) fun b hb => by
     apply BitVec.eq_of_toNat_eq
-    rw [show 64 * k + 32 * c + b = 64 * k + 2 * (16 * c + b / 2) + b % 2 by omega,
-      L_nib s₀ hk (by omega) (Nat.mod_lt _ (by decide))]
+    rw [show 64 * k + 32 * c + b = 64 * k + 2 * (16 * c + b / 2) + b % 2 by omega_using [],
+      L_nib s₀ hk (by omega_using [hc, hb]) (Nat.mod_lt _ (by decide))]
     exact hx b hb
-  have o2 := BytesUpTo.writeN (n := 16) o1 (by decide) (by omega) (x := y) fun b hb => by
+  have o2 := BytesUpTo.writeN (n := 16) o1 (by decide) (by omega_using [hk, hc]) (x := y) fun b hb => by
     apply BitVec.eq_of_toNat_eq
-    rw [show 64 * k + 32 * c + 16 + b = 64 * k + 2 * (16 * c + (8 + b / 2)) + b % 2 by omega,
-      L_nib s₀ hk (by omega) (Nat.mod_lt _ (by decide))]
+    rw [show 64 * k + 32 * c + 16 + b = 64 * k + 2 * (16 * c + (8 + b / 2)) + b % 2 by omega_using [],
+      L_nib s₀ hk (by omega_using [hc, hb]) (Nat.mod_lt _ (by decide))]
     exact hy b hb
   refine k' t (g.trans h1.gpr) (rd.trans h1.rd) (wr.trans h1.wr) (sp.trans h1.sp)
     (fun r r4 r5 r6 r7 => by rw [tv r r5 r6 r7, h1.get r r4]) ?_ ?_
-  · rw [tm, h1.mem, ptr_add, show 64 * k + 32 * c + 32 = 64 * k + 32 * c + 16 + 16 by omega]
+  · rw [tm, h1.mem, ptr_add, show 64 * k + 32 * c + 32 = 64 * k + 32 * c + 16 + 16 by omega_using []]
     exact o2
   · rw [tm, h1.mem]
-    exact (hfr.write (n := 16) (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))).write
-      (n := 16) (List.mem_singleton_self _) _ (by rw [ptr_add]; exact contains_off (by omega) (by decide))
+    exact (hfr.write (n := 16) (List.mem_singleton_self _) _ (contains_off (by omega_using [hk, hc]) (by decide))).write
+      (n := 16) (List.mem_singleton_self _) _ (by rw [ptr_add]; exact contains_off (by omega_using [hk, hc]) (by decide))
 
 end
 

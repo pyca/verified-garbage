@@ -44,7 +44,7 @@ theorem sub_eq_zero {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) :
 /-- A comparison of `x27` with `j`: `x9` is zero exactly when `i = j`. -/
 theorem cmpIdx_ok {t : State} {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 4096) (h27 : t.gpr .x27 = BitVec.ofNat 64 i) :
     WP isa (cmpIdx j) t fun t' => Only [.x9] t t' ∧ (t'.gpr .x9 == 0) = decide (i = j) ∧ t'.syms = t.syms :=
-  WP.of_syms (wp_subImm hj fun t' o e => wp_nil fun sy => ⟨o, by rw [e, h27, sub_eq_zero hi (by omega)], sy⟩)
+  WP.of_syms (wp_subImm hj fun t' o e => wp_nil fun sy => ⟨o, by rw [e, h27, sub_eq_zero hi (by omega_using [hj])], sy⟩)
 
 /-- `byIdx b is` runs `b i`. -/
 theorem byIdx_wp {b : Nat → Prog isa} {Q : State → Prop} : ∀ {is : List Nat} {i : Nat} {t : State},
@@ -55,7 +55,7 @@ theorem byIdx_wp {b : Nat → Prog isa} {Q : State → Prop} : ∀ {is : List Na
     obtain rfl := List.mem_singleton.mp hi
     exact h t (Only.refl _ _) rfl
   | j :: k :: is, i, t, hi, hlt, h27, h => by
-    have hil : i < 2 ^ 64 := by have := hlt i hi; omega
+    have hil : i < 2 ^ 64 := by have := hlt i hi; omega_using [this]
     simp only [byIdx]
     refine WP.seq (WP.mono (cmpIdx_ok hil (hlt j List.mem_cons_self) h27) fun t' ⟨o, hz, sy⟩ => ?_)
     refine WP.ite (M := isa) _ (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
@@ -95,7 +95,7 @@ theorem byIdx_ct {α : Type} {b : Nat → Prog isa} {Q : State → State → Pro
         ((hb j List.mem_cons_self).mono (fun _ _ => two_mono fun a t ⟨⟨h, hz⟩, he⟩ => ⟨h, ?_⟩) fun _ _ h => h)
         (ih.mono (fun _ _ => two_mono fun a t ⟨⟨h, hz⟩, he⟩ => ⟨h, ?_⟩) fun _ _ h => h))
     · obtain ⟨hm, h27, _⟩ := hΦ a t h
-      exact WP.mono (cmpIdx_ok (by have := hlt _ hm; omega) (hlt j List.mem_cons_self) h27)
+      exact WP.mono (cmpIdx_ok (by have := hlt _ hm; omega_using [this]) (hlt j List.mem_cons_self) h27)
         fun t' ⟨o, hz, sy⟩ => ⟨hkeep a t t' h o sy, hz⟩
     · rw [eval_zero, eval_zero, h₁.2, h₂.2]
     · rw [eval_zero, hz] at he

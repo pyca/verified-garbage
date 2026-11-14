@@ -66,7 +66,7 @@ section
 variable {a : Args} {n : Nat} {s : State}
 
 theorem WrapABI.argument (A : WrapABI a n s) {i : Nat} (hi : i < n) : StackArgument s (wsBase a s) (wsSize a s) i :=
-  VG.Proof.Dsa.X86.stackArgument_of (count := n) (by have := A.stackBound; omega) hi
+  VG.Proof.Dsa.X86.stackArgument_of (count := n) (by have := A.stackBound; omega_using [this]) hi
     (List.mem_append_right _ A.argsIn) A.scratchArgs.symm
 
 theorem WrapABI.need (A : WrapABI a n s) : CrtRt.need (pLenOf a s) ≤ wsSize a s := by
@@ -75,7 +75,7 @@ theorem WrapABI.need (A : WrapABI a n s) : CrtRt.need (pLenOf a s) ≤ wsSize a 
   have := A.upper
   simp only [CrtRt.need, CrtRt.st, CrtRt.bc, CrtRt.mw, Spec.Rsa.modulusWords, Impl.Bignum.X86.CrtRt.numBase,
     Spec.Rsa.scratchWords, wsSize] at *
-  omega
+  omega_arith
 
 theorem WrapABI.base_toNat (_ : WrapABI a n s) : (wsBase a s).toNat = (arg s a.ws).toNat := by
   simp only [wsBase, argumentPointer, BitVec.toNat_setWidth,
@@ -86,12 +86,12 @@ theorem entry_ok (A : WrapABI a n s) :
     WP isa (.block (entry a)) s fun t =>
       Scr t (wsBase a s) (wsSize a s) ∧ Saved t.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters ∧
       Keeps [.eax, .edi] s t ∧ Outside (wsBase a s) 0 (wsSize a s) s.mem t.mem := by
-  have hz : 48 ≤ wsSize a s := by have := A.need; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega
+  have hz : 48 ≤ wsSize a s := by have := A.need; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]
   have hb := A.base_toNat
-  have read := (A.argument (i := a.ws) (by have := A.below.ws; omega)).readSrc
+  have read := (A.argument (i := a.ws) (by have := A.below.ws; omega_using [this])).readSrc
   have stk : StkOk (s.gpr .esp) (wsBase a s) (wsSize a s) :=
     VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 172) A.stackLow (by rw [hb]; exact A.scratchBound)
-      (by omega) A.belowScratch
+      (by omega_using [hz]) A.belowScratch
   unfold entry
   rw [show Impl.Bignum.X86.CrtRt.save = Impl.Bignum.X86.Crt.save from rfl]
   simp only [List.singleton_append]
@@ -123,7 +123,7 @@ theorem entry_ok (A : WrapABI a n s) :
     have H : ¬ InRegions [⟨wsBase a s, wsSize a s⟩] x 1 := by
       simp only [InRegions, List.mem_singleton, exists_eq_left, Region.Contains]
       change ¬ (ofs (wsBase a s) x + 1 ≤ wsSize a s)
-      omega
+      omega_using [hx]
     exact (F x (by intro reg hreg hcontains; exact H ⟨reg, hreg, hcontains⟩)).trans (congrFun U.mem x)
 
 /-- The entry's argument `j` read through the frame of the synthetic arguments. -/
@@ -143,10 +143,10 @@ theorem argAt_frame (A : WrapABI a n s) {s₁ : State} (K : Keeps [.eax, .edi] s
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, argsFrame]
-    omega
-  have SE : stackAddress s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) := addr_eq (by omega)
+    omega_using []
+  have SE : stackAddress s j = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * j) := addr_eq (by omega_using [hj, top])
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
   refine ⟨?_, ?_⟩
   · simp only [readSrc, State.load32, ea, allocFrame_mem, allocFrame_rd, allocFrame_wr]
     have rd : InRegions (s₁.rd ++ ⟨(s₁.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64, argsFrame⟩ :: s₁.wr)
@@ -158,12 +158,12 @@ theorem argAt_frame (A : WrapABI a n s) {s₁ : State} (K : Keeps [.eax, .edi] s
       · exact List.mem_append_left _ h
       · exact List.mem_append_right _ (List.mem_cons_of_mem _ h)
     rw [ite_eq_left_of_eq_true _ _ (eq_true rd)]
-    have F := VG.Proof.Bignum.outside_frame O (by have := A.scratchBound; have := A.base_toNat; omega)
+    have F := VG.Proof.Bignum.outside_frame O (by have := A.scratchBound; have := A.base_toNat; omega_arith)
     simp only [off, BitVec.add_zero] at F
     exact congrArg some (F.readW (r := ⟨stackAddress s j, 4⟩) (Region.contains_self _ _)
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact SA.apart) (by decide))
   · rw [ea, SE, FA]
-    exact Offset.disjoint_below _ (by omega)
+    exact Offset.disjoint_below _ (by omega_using [hj, fb, top])
 
 /-- The state after the frame of the synthetic arguments is filled: private CRT's operations' inputs
 `In`, from the entry state `s` and the state `s₁` after `entry`. -/
@@ -188,17 +188,17 @@ theorem frameIn_ok (A : WrapABI a n s) {s₁ : State} (S : Scr s₁ (wsBase a s)
   have bd := A.scratchBound
   have nd := A.need
   have hz : 48 ≤ wsSize a s := by
-    have := nd; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega
+    have := nd; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]
   have lo := A.lower
   have hi := A.upper
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
   have t0esp : (allocFrame argsFrame s₁).gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := by
     rw [allocFrame_esp, sp]
   have t0P : ((allocFrame argsFrame s₁).gpr .esp).setWidth 64 = frameAt s := by rw [t0esp]
   have espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
-    VG.X86.sub_toNat (by omega)
-  refine fill_ok A.below t0P (by rw [t0esp, espN]; omega)
+    VG.X86.sub_toNat (by omega_using [fb, st', low])
+  refine fill_ok A.below t0P (by rw [t0esp, espN]; omega_using [])
     (by rw [allocFrame_wr, sp]; exact List.mem_cons_self ..)
     (fun j hj => (argAt_frame A K O hj).1) (fun j hj => (argAt_frame A K O hj).2) 18 (Nat.le_refl _)
     fun f Kf Ff Sf => ?_
@@ -215,35 +215,35 @@ theorem frameIn_ok (A : WrapABI a n s) {s₁ : State} (S : Scr s₁ (wsBase a s)
   have belowf : Region.Disjoint (below (f.gpr .esp) 96) ⟨wsBase a s, wsSize a s⟩ := by
     refine A.belowScratch.sub_left ?_
     simp only [below]
-    rw [espf, VG.X86.Taint.sub_setWidth (by rw [espN]; omega),
+    rw [espf, VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [st', low]),
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
       ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
     exact Region.sub_prefix (by decide)
   have stackF : ∀ i < 18, CallArgument f (wsBase a s) (wsSize a s) i (synth a (arg s) i) := by
     intro i hi
     have SAd : stackAddress f i = slotAddr (frameAt s) i := by
-      rw [stackAddress, espf, addr_eq (by rw [espN]; omega)]
+      rw [stackAddress, espf, addr_eq (by rw [espN]; omega_using [hi])]
     refine ⟨⟨?_, ?_⟩, ?_⟩
     · rw [SAd, rdf, wrf]
-      exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [SAd]; exact frameWs.sub_left (Offset.sub_base _ (by omega))
+      exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains_base _ (by omega_using [fb, hi]) (by omega_using [hi])⟩
+    · rw [SAd]; exact frameWs.sub_left (Offset.sub_base _ (by omega_using [fb, hi]))
     · show f.mem.readW (stackAddress f i) 32 = _
       rw [SAd]; exact Sf i hi
   have stk : StkOk (f.gpr .esp) (wsBase a s) (wsSize a s) := by
-    refine VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) (by rw [espfN]; omega) (by rw [hb]; exact bd)
-      (by omega) ?_
+    refine VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) (by rw [espfN]; omega_using [st', low]) (by rw [hb]; exact bd)
+      (by omega_using [hz]) ?_
     have := belowf
     simp only [below] at this
-    rwa [VG.X86.Taint.sub_setWidth (by rw [espfN]; omega)] at this
+    rwa [VG.X86.Taint.sub_setWidth (by rw [espfN]; omega_using [st', low])] at this
   have Ft : Frame [⟨wsBase a s, wsSize a s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem := by
-    have F₁ := VG.Proof.Bignum.outside_frame O (by omega)
+    have F₁ := VG.Proof.Bignum.outside_frame O (by omega_using [bd])
     simp only [off, BitVec.add_zero] at F₁
     exact (F₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..).trans
       (by rw [← allocFrame_mem argsFrame s₁]
           exact Ff.mono fun r hr => by
             rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))
   refine k f ⟨⟨by rw [edif]; exact S.edi, by rw [wrf]; exact List.mem_cons_of_mem _ (by rw [← K.2.2]; exact S.wr),
-      S.nowrap, stk⟩, A.lower, A.upper, stackF, ?_, ⟨by rw [espfN]; omega, belowf⟩, by rw [espfN]; omega, A.need,
+      S.nowrap, stk⟩, A.lower, A.upper, stackF, ?_, ⟨by rw [espfN]; omega_using [st', low], belowf⟩, by rw [espfN]; omega_using [], A.need,
       hb.symm, rfl, by rw [rdf, wrf]; exact hx⟩ espf rdf wrf Ft (by rw [← allocFrame_mem argsFrame s₁]; exact Ff) ?_
   · show arg s a.plen = _
     simp only [pLenOf, BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -259,19 +259,19 @@ theorem saved_keep {base : Addr} {m m' : Mem} {g : Reg → BitVec 32} {rs : List
   have B : 32 ≤ p.2 ∧ p.2 + 4 ≤ 48 := by
     simp only [Impl.Bignum.X86.Crt.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;> decide
-  exact (F.readW (r := ⟨off base 32, 16⟩) (Offset.contains base B.1 (by omega) (by decide)) hd (by decide)).trans
+  exact (F.readW (r := ⟨off base 32, 16⟩) (Offset.contains base B.1 (by omega_using [B]) (by decide)) hd (by decide)).trans
     (S p hp)
 
 /-- A range of `fR`, past the saved registers' words. -/
 theorem fR_saved {base : Addr} {len size : Nat} (hn : base.toNat + size ≤ 2 ^ 32) (hf : CrtRt.need len ≤ size) :
     ∀ p ∈ fR len, Region.Disjoint ⟨off base 32, 16⟩ ⟨off base p.1, p.2⟩ := by
-  have : 48 ≤ CrtRt.need len := by simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase]; omega
+  have : 48 ≤ CrtRt.need len := by simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase]; omega_using []
   intro p hp
   simp only [fR, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl
   · exact Offset.disjoint base (d := 32) (n := 16) (e := 0) (k := 32) (.inr (Nat.le_refl _)) (by decide) (by decide)
   · exact Offset.disjoint base (d := 32) (n := 16) (e := 48) (k := CrtRt.need len - 48) (.inl (Nat.le_refl _))
-      (by decide) (by omega)
+      (by decide) (by omega_using [hn, hf])
 
 /-- `wrap a body`: what `body` leaves in memory and `eax`, run from the state `In` of private CRT's
 operations, with the ABI preserved and the statics where they were. `body` may also write the regions
@@ -296,21 +296,21 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
   have bd := A.scratchBound
   have nd := A.need
   have hz : 48 ≤ wsSize a s := by
-    have := nd; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega
+    have := nd; simp only [CrtRt.need, Impl.Bignum.X86.CrtRt.numBase] at this; omega_using [this]
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
   unfold wrap
   refine WP.seq (WP.mono_syms (entry_ok A) fun s₁ ⟨S, Sv, K, O⟩ sy₁ => ?_)
   have sp : s₁.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   -- The saved registers and the return address, kept by what the frame changes.
   have retWs := A.retScratch
   have retFrame : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨frameAt s, argsFrame⟩ := by
-    rw [FA]; exact Offset.base_disjoint_below _ (by omega)
+    rw [FA]; exact Offset.base_disjoint_below _ (by omega_using [fb])
   let R : State → Prop := fun u => P u.mem (u.gpr .eax) ∧ Scr u (wsBase a s) (wsSize a s) ∧
     Saved u.mem (off (wsBase a s)) s.gpr Impl.Bignum.X86.Crt.savedRegisters ∧ u.gpr .esp = s.gpr .esp ∧
     u.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32
   refine WP.seq (WP.mono (Q := R) (WP.frameAlloc (bytes := argsFrame) (by decide) (by decide) (by decide)
-    (by rw [sp]; omega) hsp ?_) fun s₂ R₂ => ?_)
+    (by rw [sp]; omega_using [fb, st', low]) hsp ?_) fun s₂ R₂ => ?_)
   · rw [show Impl.Ffdh.X86.fill a = Impl.Ffdh.X86.fill a ++ [] from (List.append_nil _).symm]
     refine WP.seq (WP.mono_syms (frameIn_ok A S K O hx (Q := fun f =>
         In Ex (wsBase a s) (wsSize a s) (pLenOf a s) (synth a (arg s)) f ∧
@@ -324,16 +324,16 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
     have espt : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame := (Kt.1 _ (by decide)).trans espf
     have ediT : t.gpr .edi = s₁.gpr .edi := (Kt.1 _ (by decide)).trans (regs _ (by decide) (by decide) (by decide))
     have espN : (s.gpr .esp - BitVec.ofNat 32 argsFrame).toNat = (s.gpr .esp).toNat - 76 :=
-      VG.X86.sub_toNat (by omega)
+      VG.X86.sub_toNat (by omega_using [fb, st', low])
     have belowRet : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ (below (f.gpr .esp) 96) := by
       simp only [below]
-      rw [espf, VG.X86.Taint.sub_setWidth (by rw [espN]; omega),
+      rw [espf, VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [st', low]),
         show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
         ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
       exact (Offset.base_disjoint_below _ (n := 172) (k := 4) (by decide)).sub_right (Region.sub_prefix (by decide))
     have bnd : (wsBase a s).toNat + wsSize a s ≤ 2 ^ 32 := by rw [hb']; exact bd
     have savedSub : Region.Sub ⟨off (wsBase a s) 32, 16⟩ ⟨wsBase a s, wsSize a s⟩ :=
-      Offset.sub_base _ (d := 32) (n := 16) (by omega)
+      Offset.sub_base _ (d := 32) (n := 16) (by omega_using [hz])
     have belowWs : Region.Disjoint ⟨off (wsBase a s) 32, 16⟩ (below (f.gpr .esp) 96) :=
       (I.room.apart.sub_right savedSub).symm
     have frameWs16 : Region.Disjoint ⟨off (wsBase a s) 32, 16⟩ ⟨frameAt s, argsFrame⟩ := by
@@ -350,7 +350,7 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
         rcases hr with rfl | ⟨p, hp, rfl⟩
         · exact belowWs
         · exact fR_saved bnd nd p hp
-    have F₀ := VG.Proof.Bignum.outside_frame O (by omega)
+    have F₀ := VG.Proof.Bignum.outside_frame O (by omega_using [bd])
     simp only [off, BitVec.add_zero] at F₀
     have Ret : t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
       rw [Fb.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) ?_ (by decide),
@@ -365,7 +365,7 @@ theorem wrap_syms_ok (A : WrapABI a n s) {body : Prog isa} (hsp : NoSp (.seq (.b
         rcases hr with rfl | ⟨p, hp, rfl⟩
         · exact belowRet
         · have := fR_fit I p hp
-          exact retWs.sub_right (Offset.sub_base _ (by omega))
+          exact retWs.sub_right (Offset.sub_base _ (by omega_using [this]))
     refine ⟨by rw [freed_mem, freed_gpr _ _ (by decide)]; exact Pt, ⟨?_, ?_, S.nowrap, ?_⟩, Svt, ?_, Ret⟩
     · rw [freed_gpr _ _ (by decide), ediT]; exact S.edi
     · rw [freed_wr, Kt.2.2, wrf]; exact (K.2.2 ▸ S.wr)

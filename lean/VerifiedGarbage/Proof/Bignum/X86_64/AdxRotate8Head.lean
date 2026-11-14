@@ -23,7 +23,7 @@ theorem cols_mod (s : State) : cols s % 2 ^ 64 = (s.gpr .r8).toNat := by
       ((s.gpr .r9).toNat + 2 ^ 64 * (s.gpr .r10).toNat + 2 ^ 128 * (s.gpr .r11).toNat +
       2 ^ 192 * (s.gpr .r12).toNat + 2 ^ 256 * (s.gpr .r13).toNat +
       2 ^ 320 * (s.gpr .r14).toNat + 2 ^ 384 * (s.gpr .r15).toNat) := by
-    unfold cols; omega
+    unfold cols; omega_using []
   rw [h, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (s.gpr .r8).isLt]
 
 theorem cancel_low {s t : State} {B : Addr} {eN : Nat} {mi : BitVec 64}
@@ -58,10 +58,10 @@ theorem headStep_ok {s : State} {B : Addr} {Z e eN k : Nat} {mi : BitVec 64}
   unfold AdxRotate8.headStep
   refine WP.seq (WP.mono (digit_ok hs hc he hm) fun a ⟨hd, hv, ha, ka⟩ => ?_)
   have oa : Outside B (e + 8 * k) 8 s.mem a.mem := by
-    rw [ha]; exact writeW_outside _ _ _ (by omega)
+    rw [ha]; exact writeW_outside _ _ _ (by omega_using [he, hn])
   refine WP.mono (core_mem (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hp) hN)
     fun t ⟨ht, _, _, kt⟩ => ?_
-  rw [hv, hd, oa.wv (by omega) (by omega)] at ht
+  rw [hv, hd, oa.wv (by omega_using [hsep]) (by omega_using [hN, hn])] at ht
   refine ⟨?_, ?_, ?_, (ka.trans kt.keep).mono (by decide)⟩
   · intro hi
     have low := cancel_low hi ht
@@ -98,22 +98,22 @@ theorem headN_ok {s : State} {B : Addr} {Z e eN n : Nat} {mi : BitVec 64}
     exact ⟨fun _ => by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.add_zero], Outside.refl _ _ _ _, Keep.refl _ _⟩
   | succ n ih =>
     unfold AdxRotate8.headN
-    refine WP.seq (WP.mono (ih (by omega)) fun a ⟨va, oa, ka⟩ => ?_)
+    refine WP.seq (WP.mono (ih (by omega_using [he])) fun a ⟨va, oa, ka⟩ => ?_)
     have sa := hs.congr ka.2.2
     have hna := sa.nowrap
     have ma : word a.mem B (8 * sMinv) = mi :=
-      (oa.word (by omega) (by omega)).trans hmi
+      (oa.word (by omega_using [hh]) (by omega_using [hh, he, hna])).trans hmi
     have miRead : readSrc a (.mem (hdr sMinv)) = some mi := by
       rw [readSrc_word (d := 8 * sMinv) sa (by
-        simp only [State.ea, hdr, (ka.gpr (by decide)).trans hdi, hdrOff]) (by omega), ma]
+        simp only [State.ea, hdr, (ka.gpr (by decide)).trans hdi, hdrOff]) (by omega_using [hh, he]), ma]
     refine WP.mono (headStep_ok sa ((ka.gpr (by decide)).trans hc)
-      ((ka.gpr (by decide)).trans hp) (by omega) hN hsep miRead)
+      ((ka.gpr (by decide)).trans hp) (by omega_using [he]) hN hsep miRead)
       fun t ⟨vt, digit, ot, kt⟩ => ?_
-    have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega) (by omega)
-    have mn0 : word a.mem B eN = word s.mem B eN := oa.word (by omega) (by omega)
-    have lo : wv t.mem B e n = wv a.mem B e n := ot.wv (by omega) (by omega)
-    refine ⟨?_, (oa.mono (o' := e) (n' := 8 * (n + 1)) (by omega) (by omega)).trans
-      (ot.mono (o' := e) (n' := 8 * (n + 1)) (by omega) (by omega)), (ka.trans kt).mono (by decide)⟩
+    have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega_using [hsep]) (by omega_using [hN, hna])
+    have mn0 : word a.mem B eN = word s.mem B eN := oa.word (by omega_using [hsep]) (by omega_using [hN, hna])
+    have lo : wv t.mem B e n = wv a.mem B e n := ot.wv (by omega_using []) (by omega_using [he, hna])
+    refine ⟨?_, (oa.mono (o' := e) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using [])).trans
+      (ot.mono (o' := e) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using [])), (ka.trans kt).mono (by decide)⟩
     intro hinv
     have ea := va hinv
     have et := vt (by rw [mn0]; exact hinv)

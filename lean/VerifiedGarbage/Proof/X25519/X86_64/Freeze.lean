@@ -63,7 +63,7 @@ theorem freezeA_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : S
     RegUpd.gpr_setFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.mem_setReg, hs.rdi, ld_sc hs (d := a) (by omega), ld_sc hs (d := a + 8) (by omega),
     ld_sc hs (d := a + 16) (by omega), ld_sc hs (d := a + 24) (by omega),
-    show 1 ≤ 63 ∧ 63 ≤ 63 from ⟨by omega, by omega⟩, ite_true, ite_false, reduceCtorEq, and_self,
+    show 1 ≤ 63 ∧ 63 ≤ 63 from ⟨by omega_using [], by omega_using []⟩, ite_true, ite_false, reduceCtorEq, and_self,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left', se0]
   have ht : ∀ x : BitVec 64, (x >>> 63).toNat = x.toNat / 2 ^ 63 := fun x => by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
@@ -71,7 +71,7 @@ theorem freezeA_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : S
       (BitVec.setWidth 64 (0 : BitVec 32) - x >>> 63 &&& BitVec.signExtend 64 (19 : BitVec 32)).toNat =
         19 * (x.toNat / 2 ^ 63) := fun x => by
     have hx := x.isLt
-    rcases (by omega : x.toNat / 2 ^ 63 = 0 ∨ x.toNat / 2 ^ 63 = 1) with h | h
+    rcases (by omega_using [] : x.toNat / 2 ^ 63 = 0 ∨ x.toNat / 2 ^ 63 = 1) with h | h
     · rw [BitVec.eq_of_toNat_eq (show (x >>> 63).toNat = (0 : BitVec 64).toNat by rw [ht, h]; rfl), h]
       decide
     · rw [BitVec.eq_of_toNat_eq (show (x >>> 63).toNat = (1 : BitVec 64).toNat by rw [ht, h]; rfl), h]

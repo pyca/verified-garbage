@@ -73,7 +73,7 @@ theorem exec_widenWs {c : Prog isa} {s s' : State} {t : List Leak} {ws : Addr} {
     Exec isa c s t (s'.withRegions s.rd s.wr) := by
   have hc : Covers [⟨ws, 8 * core.total⟩] s.wr := Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨ws, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by show 0 + 8 * core.total ≤ len; omega⟩
+    exact ⟨⟨ws, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by show 0 + 8 * core.total ≤ len; omega_using [hl]⟩
   have := Exec.widen h (Covers.append (Covers.refl _) hc) hc
   rw [show (narrowWs s ws).rd = s.rd from rfl] at this
   rwa [State.withRegions_withRegions, State.withRegions_self] at this
@@ -147,9 +147,9 @@ theorem prep_correct (s : State) (hs : prepAArch64.pre s) :
   obtain ⟨hrd, hwr, dSW, fitK, fitW, hR, hsz⟩ := hs
   rw [size_eq] at hsz
   have hl : 8 * core.total ≤ (s.gpr .x3).toNat * 8 := by
-    show 3344 ≤ _; omega
+    show 3344 ≤ _; omega_using [hsz]
   have w := prepareEncrypt_wp (s := narrowWs s (s.gpr .x2)) (R := (s.gpr .x1).toNat) rfl rfl
-    toNat_ofNat_rounds.symm hR ⟨by simp, by show (s.gpr .x2).toNat + 3344 ≤ 2 ^ 64; omega⟩
+    toNat_ofNat_rounds.symm hR ⟨by simp, by show (s.gpr .x2).toNat + 3344 ≤ 2 ^ 64; omega_using [fitW, hsz]⟩
     (by simp [hrd]) fitK (dSW.sub_right (Region.sub_prefix hl))
   obtain ⟨t, s', he, ⟨hr, hf, h21, -, -⟩, hg⟩ := WP.gprs (rs := [.x19, .x20, .x22, .x23, .x24, .x25, .x26,
     .x27, .x28, .x30]) w (by lit_decide) (by lit_decide)
@@ -163,7 +163,7 @@ theorem prep_correct (s : State) (hs : prepAArch64.pre s) :
       | exact hg _ (by simp)
   · exact holds_of_ready hr .encrypt
   · exact keeps_of_frame (e := 0) (by simpa only [narrowWs, State.withRegions_mem, State.withRegions_gpr,
-      BitVec.add_zero] using hf) (by decide) fitW (by omega)
+      BitVec.add_zero] using hf) (by decide) fitW (by omega_using [hsz])
 
 /-! ## A block -/
 
@@ -236,9 +236,9 @@ theorem crypt_correct (s : State) (hs : cryptAArch64.pre s) :
   obtain ⟨-, hwr, fitW, hR, hsz, w₀, hH⟩ := hs
   rw [size_eq] at hsz
   have hl : 8 * core.total ≤ (s.gpr .x2).toNat * 8 := by
-    show 3344 ≤ _; omega
+    show 3344 ≤ _; omega_using [hsz]
   have hsN : ScrIn (narrowWs s (s.gpr .x1)) (s.gpr .x1) core.total :=
-    ⟨by simp, by show (s.gpr .x1).toNat + 3344 ≤ 2 ^ 64; omega⟩
+    ⟨by simp, by show (s.gpr .x1).toNat + 3344 ≤ 2 ^ 64; omega_using [fitW, hsz]⟩
   have run := fun (w : List (BitVec 64)) (h : Holds layout s.mem (s.gpr .x1) (s.gpr .x0).toNat w .encrypt) =>
     encryptPrepared_wp (s := narrowWs s (s.gpr .x1)) (k := ((s.gpr .x0).toNat, w)) rfl
       toNat_ofNat_rounds.symm hsN (ready_of_holds hR h)
@@ -250,6 +250,6 @@ theorem crypt_correct (s : State) (hs : cryptAArch64.pre s) :
   · obtain ⟨t₂, s₂, he₂, -, hc⟩ := run w hw
     obtain ⟨-, rfl⟩ := Exec.det he he₂
     exact blocks_of hc
-  · exact keeps_of_frame hf (by decide) fitW (by show 784 ≤ _; omega)
+  · exact keeps_of_frame hf (by decide) fitW (by show 784 ≤ _; omega_using [hsz])
 
 end VG.Proof.Camellia.AArch64.Serial

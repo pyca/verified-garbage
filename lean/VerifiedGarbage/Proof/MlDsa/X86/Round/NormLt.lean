@@ -78,7 +78,7 @@ theorem maskN_succ (s₀ : State) (k : Nat) :
     maskN s₀ k &&& ((if okC s₀ k then BitVec.allOnes 32 else 0)) = maskN s₀ (k + 1) := by
   unfold maskN
   have e : (∀ i < k + 1, okC s₀ i) ↔ ((∀ i < k, okC s₀ i) ∧ okC s₀ k) :=
-    ⟨fun h' => ⟨fun i hi => h' i (by omega), h' k (by omega)⟩, fun ⟨h₁, h₂⟩ i hi => by
+    ⟨fun h' => ⟨fun i hi => h' i (by omega_using [hi]), h' k (by omega_using [])⟩, fun ⟨h₁, h₂⟩ i hi => by
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       exacts [h₁ i hi, h₂]⟩
   by_cases h : ∀ i < k, okC s₀ i <;> by_cases hk : okC s₀ k
@@ -174,15 +174,15 @@ theorem maskN_zero (s₀ : State) : maskN s₀ 0 = BitVec.allOnes 32 :=
 theorem nl_piece : Piece NPre NPub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => NInv s₀ 256 s ∧ s.gpr .eax = maskN s₀ 256 &&& 1) s₀ s') normLt := by
   refine Piece.leaf (fun _ => []) (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩) (fun _ _ r hr => absurd hr (by simp)) (fun _ _ _ _ hq => hq.1)
+    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩) (fun _ _ r hr => absurd hr (by simp)) (fun _ _ _ _ hq => hq.1)
     ((Piece.seq (B := NS1) ?_ (Piece.seq (B := fun s₀ s => NInv s₀ 256 s)
       (Piece.seq (B := fun s₀ s => NInv s₀ 0 s) ?_ ?_) ?_)).mono
       (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨by rw [h.1.mem]; exact Frame.refl _ _, h.1.esp, h.1.rd, h.1.wr⟩, h⟩)
   · refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
     · subst e
       have hin : aR s₀ 2 ∈ s₀.rd ++ s₀.wr := by simp [hp.rd]
-      obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a
-      obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega) hp.sp hp.sp' hin hp.stk_a
+      obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega_using []) hp.sp hp.sp' hin hp.stk_a
+      obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega_using []) hp.sp hp.sp' hin hp.stk_a
       simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
       apply WP.of_runBlock
       simp only [reduceCtorEq, ↓reduceIte, nlInit, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -265,7 +265,7 @@ theorem normLt_verified : Verified X86.target normLt (normLtContract X86.abi 16)
         | (rw [show BitVec.setWidth 64 (arg st 0) = BitVec.ofNat 64 0 by decide]
            refine reduced_zero (fun a ha => ?_) 0 (by decide)
            simp only [nlSatMem]
-           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)])
+           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])])
         | decide +kernel
 
 end VG.Proof.MlDsa.X86.Round

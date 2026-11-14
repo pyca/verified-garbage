@@ -25,7 +25,7 @@ without changing memory or the source address. -/
 theorem groupBytes_ok (n : Nat) {s : State} {src : Addr} {bs : List Byte}
     (hn : n ≤ 5) (hbs : n ≤ bs.length) (h3 : s.gpr .x3 = src) (h4 : s.gpr .x4 = 0#64)
     (hld : ∀ i < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 i) 1)
-    (hb : ∀ i (hi : i < n), s.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega)) :
+    (hb : ∀ i (hi : i < n), s.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega_using [hbs, hi])) :
     WP isa (.block (groupBytes n)) s fun t =>
       t.gpr .x4 = BitVec.ofNat 64 (pre bs n) ∧ t.mem = s.mem ∧ Keep [.x4, .x5] s t := by
   induction n with
@@ -36,26 +36,26 @@ theorem groupBytes_ok (n : Nat) {s : State} {src : Addr} {bs : List Byte}
     have he : groupBytes (n + 1) = groupBytes n ++ groupByte n := by
       simp [groupBytes, List.range_succ]
     rw [he, WP.block_append_iff]
-    refine WP.mono (ih (by omega) (by omega)
-      (fun i hi => hld i (by omega)) (fun i hi => hb i (by omega)))
+    refine WP.mono (ih (by omega_using [hn]) (by omega_using [hbs])
+      (fun i hi => hld i (by omega_using [hi])) (fun i hi => hb i (by omega_using [hi])))
       fun t ⟨ht4, htm, kt⟩ => ?_
-    refine WP.mono (groupByte_ok (by omega) ((kt.gpr .x3 (by decide)).trans h3)
-      (by rw [kt.rd, kt.wr]; exact hld n (by omega))) fun u ⟨⟨hu4, hum⟩, ku⟩ =>
+    refine WP.mono (groupByte_ok (by omega_using [hn]) ((kt.gpr .x3 (by decide)).trans h3)
+      (by rw [kt.rd, kt.wr]; exact hld n (by omega_using []))) fun u ⟨⟨hu4, hum⟩, ku⟩ =>
         ⟨?_, hum.trans htm, (kt.trans ku).mono (by decide)⟩
-    have hnbs : n < bs.length := by omega
-    have hp := pre_lt bs (i := n) (by omega)
-    have hpow : 256 ^ n ≤ 256 ^ 4 := Nat.pow_le_pow_right (by decide) (by omega)
-    have hv : pre bs n < 2 ^ 56 := by omega
+    have hnbs : n < bs.length := by omega_using [hbs]
+    have hp := pre_lt bs (i := n) (by omega_using [hbs])
+    have hpow : 256 ^ n ≤ 256 ^ 4 := Nat.pow_le_pow_right (by decide) (by omega_using [hn])
+    have hv : pre bs n < 2 ^ 56 := by omega_using [hp, hpow]
     have hbyte : ((t.mem.read (src + BitVec.ofNat 64 n) 1).setWidth 32).setWidth 64 =
         (bs[n]'hnbs).setWidth 64 := by
-      rw [VG.Proof.MlKem.AArch64.read_one, htm, hb n (by omega)]
+      rw [VG.Proof.MlKem.AArch64.read_one, htm, hb n (by omega_using [])]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth]
       have := (bs[n]'hnbs).isLt
-      omega
+      omega_using []
     apply BitVec.eq_of_toNat_eq
     rw [hu4, ht4, hbyte, appendByte_value _ _ hv, BitVec.toNat_ofNat, pre_succ bs hnbs]
     have := (bs[n]'hnbs).isLt
-    omega
+    omega_using [hv]
 
 end VG.Proof.Bignum.AArch64.WindowFive

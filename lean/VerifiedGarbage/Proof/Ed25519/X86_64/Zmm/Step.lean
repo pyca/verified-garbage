@@ -41,8 +41,8 @@ theorem selWord_fe (j m c : Nat) (hm : m ≤ 16) (hc : c < 3) :
   by_cases h1 : 1 ≤ m
   · simp only [selWord, h1, ite_true]
     exact val4_feWord _
-  · obtain rfl : m = 0 := by omega
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl
+  · obtain rfl : m = 0 := by omega_using [h1]
+    rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;> rfl
 
 /-- The limbs of rows `0–3` of the entry, as field elements. -/
 theorem entry_fe {w : Nat → Nat → Nat} (hw : ∀ l k, w l k < 2 ^ 64) (l : Nat) :
@@ -111,7 +111,7 @@ theorem readW_keep {m m' : Mem} {b : Addr} (k : ∀ a, ¬ InZ (a - b).toNat → 
     (hd : d + 8 ≤ ZB ∨ (ZMASK ≤ d ∧ d + 8 ≤ 8192)) : m'.readW (off b d) 64 = m.readW (off b d) 64 :=
   Mem.readW_congr fun i hi => k _ (by
     simp only [off, Offset.add_ofNat_add_ofNat]
-    rw [off_ofNat _ (by unfold ZB ZMASK at hd; omega)]; unfold InZ; omega)
+    rw [off_ofNat _ (by unfold ZB ZMASK at hd; omega_using [hd, hi])]; unfold InZ; omega_using [hd, hi])
 
 theorem zq_lanes {z t : State} (k : ∀ r, r ≠ xr 14 → r ≠ xr 15 → ∀ i < 4, t.zlane r i = z.zlane r i)
     (b : Addr) {h : Nat} (hh : h < 2) {r : Nat} (hr : r + 5 ≤ 14) :
@@ -120,7 +120,7 @@ theorem zq_lanes {z t : State} (k : ∀ r, r ≠ xr 14 → r ≠ xr 15 → ∀ i
   rw [qw_half b t _ hl, qw_half b z _ hl]
   simp only [zq]
   have hne : ∀ q < 14, xr q ≠ xr 14 ∧ xr q ≠ xr 15 := by decide
-  rw [k _ (hne (r + i) (by omega)).1 (hne (r + i) (by omega)).2 _ (by omega)]
+  rw [k _ (hne (r + i) (by omega_using [hr, hi])).1 (hne (r + i) (by omega_using [hr, hi])).2 _ (by omega_using [hh, hl])]
 
 /-- After the selection: each half's entry, negated for a negative digit, added to its point. -/
 theorem zentry_ok {z : State} {b : Addr} (hs : Scratch z b) (hz : ZOK b z)
@@ -139,8 +139,8 @@ theorem zentry_ok {z : State} {b : Addr} (hs : Scratch z b) (hz : ZOK b z)
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (zsplit_ok hs hz hk) fun z₁ ⟨o₁, k₁, u₁, q₁, e₁⟩ => ?_
   have hs₁ : Scratch z₁ b := ⟨by rw [vm_gpr' k₁.vm]; exact hs.rdi, by rw [vm_wr' k₁.vm]; exact hs.wr, hs.nowrap⟩
-  refine WP.mono (zsign_ok hs₁ (mA := signMask (n 0)) (mB := signMask (n 1)) (by rw [readW_keep k₁.mem (Or.inr (by unfold SGA ZMASK; omega))]; exact hSA)
-    (by rw [readW_keep k₁.mem (Or.inr (by unfold SGB ZMASK; omega))]; exact hSB)) fun z₂ ⟨q₂, k₂⟩ => ?_
+  refine WP.mono (zsign_ok hs₁ (mA := signMask (n 0)) (mB := signMask (n 1)) (by rw [readW_keep k₁.mem (Or.inr (by unfold SGA ZMASK; omega_using []))]; exact hSA)
+    (by rw [readW_keep k₁.mem (Or.inr (by unfold SGB ZMASK; omega_using []))]; exact hSB)) fun z₂ ⟨q₂, k₂⟩ => ?_
   have hs₂ : Scratch z₂ b := ⟨by rw [k₂.gpr _ (by decide)]; exact hs₁.rdi, by rw [k₂.wr]; exact hs₁.wr, hs.nowrap⟩
   have zl₂ : ∀ r, r ≠ xr 14 → r ≠ xr 15 → ∀ i < 4, z₂.zlane r i = z₁.zlane r i :=
     fun r h1 h2 => k₂.zl r (fun h => h.elim h1 h2)
@@ -158,7 +158,7 @@ theorem zentry_ok {z : State} {b : Addr} (hs : Scratch z b) (hz : ZOK b z)
     (fun h hh l hl i hi => by rw [l0 h hh l hl i hi]; exact hsm h hh l hl i hi)
     (fun h hh k hk => by
       rw [qw_half b z₂ _ hk, q₂ h hh k hk, ← signMask_eq]
-      rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> rfl)
+      rcases (by omega_using [hh] : h = 0 ∨ h = 1) with rfl | rfl <;> rfl)
     (fun h hh l hl i hi => by rw [l5 h hh l hl i hi]; exact (u₁ h hh l hl i hi).2))
     fun t ⟨o₃, k₃, p₃, sm₃, e₃⟩ => ?_
   have row : ∀ h < 2, ∀ l < 4, fe5 (lanes (Zmm.half b h z₂) 5 l) =
@@ -169,7 +169,7 @@ theorem zentry_ok {z : State} {b : Addr} (hs : Scratch z b) (hz : ZOK b z)
       show (qw (Zmm.half b h z) (xr (11 + l)) k).toNat = _
       rw [qw_half b z _ hk]
     rw [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide)]
-    rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
     · rw [hsel h hh 0 (by decide) 0 (by decide), hsel h hh 0 (by decide) 1 (by decide),
         hsel h hh 0 (by decide) 2 (by decide), hsel h hh 0 (by decide) 3 (by decide),
         selWord_fe _ _ _ (hm h hh) (by decide)]

@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-OAEP encryption on PPC64LE: arithmetic
@@ -24,7 +25,7 @@ theorem ltBit {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
     (BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63 = if x < y then 1 else 0 := by
   have e : ((BitVec.ofNat 64 x - BitVec.ofNat 64 y) >>> 63).toNat = if x < y then 1 else 0 := by
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    split <;> omega
+    split <;> omega_arith
   apply BitVec.eq_of_toNat_eq; rw [e]; split <;> rfl
 
 theorem ne_zero_ltBit {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 63) :
@@ -39,13 +40,13 @@ theorem msgBit {x y : Nat} (hx : x < 2 ^ 63) (hy : y < 2 ^ 64) :
     have e : BitVec.ofNat 64 y >>> 63 = 0 := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      rw [Nat.mod_eq_of_lt (by omega)]; simp; omega
+      rw [Nat.mod_eq_of_lt (by omega_using [hy])]; simp; omega_using [h]
     rw [e]; split <;> rename_i hxy <;> simp only [hxy, decide_true, decide_false] <;> decide
   · have e : BitVec.ofNat 64 y >>> 63 = 1 := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      rw [Nat.mod_eq_of_lt hy]; simp; omega
-    rw [e, decide_eq_true (by omega), bne_iff_ne]
+      rw [Nat.mod_eq_of_lt hy]; simp; omega_using [hy, h]
+    rw [e, decide_eq_true (by omega_using [hx, h]), bne_iff_ne]
     intro h0
     have := congrArg (fun v : BitVec 64 => v.getLsbD 0) h0
     simp at this
@@ -57,11 +58,11 @@ theorem minSel {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
   rw [ltBit ha hb]
   by_cases h : a < b
   · rw [ite_eq_left h, show BitVec.ofNat 64 0 - 1 = BitVec.allOnes 64 by decide, BitVec.and_allOnes,
-      Nat.min_eq_right (by omega)]
+      Nat.min_eq_right (by omega_using [h])]
     apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]; omega_using []
   · rw [ite_eq_right h, show BitVec.ofNat 64 0 - 0 = 0#64 by decide, BitVec.and_zero, BitVec.add_zero,
-      Nat.min_eq_left (by omega)]
+      Nat.min_eq_left (by omega_using [h])]
 
 theorem trunc8 (x : Nat) : BitVec.setWidth 8 (BitVec.ofNat 64 x) = BitVec.ofNat 8 x := by
   apply BitVec.eq_of_toNat_eq
@@ -86,8 +87,8 @@ theorem byte_xor (x y : Byte) : BitVec.setWidth 8 (x.setWidth 64 ^^^ y.setWidth 
   simp only [BitVec.toNat_setWidth, BitVec.toNat_xor]
   have := x.isLt
   have := y.isLt
-  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega), Nat.mod_eq_of_lt (a := y.toNat) (by omega)]
-  have : x.toNat ^^^ y.toNat < 2 ^ 8 := Nat.xor_lt_two_pow (by omega) (by omega)
-  omega
+  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := y.toNat) (by omega_using [])]
+  have : x.toNat ^^^ y.toNat < 2 ^ 8 := Nat.xor_lt_two_pow (by omega_using []) (by omega_using [])
+  omega_using [this]
 
 end VG.Proof.RsaOaep.PPC64LE

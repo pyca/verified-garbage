@@ -31,15 +31,15 @@ theorem operation_trace {full : Bool} {s t : State} (a : ABI full s) (b : ABI fu
     (exponent : inputBytes (caller full s) s.mem 1 = inputBytes (caller full t) t.mem 1)
     {tr ur : List Leak} {sf tf : State} (es : Exec isa (code full) s tr sf) (et : Exec isa (code full) t ur tf) : tr = ur := by
   have a1 := args 1 (by cases full <;> decide)
-  have ac := args (scratchArg full) (by omega)
-  have al := args (scratchArg full + 1) (by omega)
+  have ac := args (scratchArg full) (by omega_using [])
+  have al := args (scratchArg full + 1) (by omega_using [])
   cases es with
   | @seq _ _ _ u _ _ _ e1 er =>
     cases et with
     | @seq _ _ _ v _ _ _ f1 fr =>
       have eq1 := (entry_relCT full _ _ _ _ _ _
-        ⟨sp, ac, (a.stackArgument (by omega : scratchArg full < scratchArg full + 2)).readSrc,
-          (b.stackArgument (by omega : scratchArg full < scratchArg full + 2)).readSrc⟩ e1 f1).1
+        ⟨sp, ac, (a.stackArgument (by omega_using [] : scratchArg full < scratchArg full + 2)).readSrc,
+          (b.stackArgument (by omega_using [] : scratchArg full < scratchArg full + 2)).readSrc⟩ e1 f1).1
       obtain ⟨hs, _, ks, os⟩ := wp_result (installed_ok a) e1
       obtain ⟨ht, _, kt, ot⟩ := wp_result (installed_ok b) f1
       have hv : Inputs (caller full s) v := by
@@ -51,16 +51,16 @@ theorem operation_trace {full : Bool} {s t : State} (a : ABI full s) (b : ABI fu
           (initial : inputBytes (caller full s) s.mem i = inputBytes (caller full t) t.mem i) :
           inputBytes (caller full s) u.mem i = inputBytes (caller full s) v.mem i := by
         have ns := VG.Proof.Bignum.scratch_bytes os
-          (by have := (a.inputLength hi).2; have := a.width.2.1; omega)
+          (by have := (a.inputLength hi).2; have := a.width.2.1; omega_using [])
           (a.inApart _ (a.inputMember hi))
         have nt := VG.Proof.Bignum.scratch_bytes ot
-          (by have := (b.inputLength hi).2; have := b.width.2.1; omega)
+          (by have := (b.inputLength hi).2; have := b.width.2.1; omega_using [])
           (b.inApart _ (b.inputMember hi))
         change inputBytes (caller full s) u.mem i = inputBytes (caller full s) s.mem i at ns
         change inputBytes (caller full t) v.mem i = inputBytes (caller full t) t.mem i at nt
         have align : inputBytes (caller full s) v.mem i = inputBytes (caller full t) v.mem i := by
           simp only [inputBytes, caller, CallGeometry.buffer]
-          rw [args (2 * i) (by omega), args (2 * i + 1) (by omega)]
+          rw [args (2 * i) (by omega_using [hi]), args (2 * i + 1) (by omega_using [hi])]
         exact ns.trans (initial.trans (align.trans nt).symm)
       have len : Lengths (caller full s) := a.lengths_ok
       cases er with
@@ -68,9 +68,9 @@ theorem operation_trace {full : Bool} {s t : State} (a : ABI full s) (b : ABI fu
         cases fr with
         | @seq _ _ _ y _ _ _ f2 f3 =>
           have espu : u.gpr .esp = s.gpr .esp := ks.1 _ (by decide)
-          have span : argSpan full = 4 + 4 * (scratchArg full + 2) := by unfold argSpan; omega
+          have span : argSpan full = 4 + 4 * (scratchArg full + 2) := by unfold argSpan; omega_using []
           have fit : (u.gpr .esp).toNat + argSpan (caller full s).full ≤ 2 ^ 32 := by
-            rw [espu]; change _ + argSpan full ≤ _; have := a.stackBound; omega
+            rw [espu]; change _ + argSpan full ≤ _; have := a.stackBound; omega_using [span, this]
           have apart : ∀ r ∈ (caller full s).writes,
               Region.Disjoint ⟨(u.gpr .esp).setWidth 64, argSpan (caller full s).full⟩ r := by
             intro r hr
@@ -79,7 +79,7 @@ theorem operation_trace {full : Bool} {s t : State} (a : ABI full s) (b : ABI fu
             rw [espu]
             change Region.Disjoint ⟨_, argSpan full⟩ _
             rw [span]
-            exact VG.X86.Taint.frame_disjoint (by have := a.stackBound; omega) a.retApart a.argsApart
+            exact VG.X86.Taint.frame_disjoint (by have := a.stackBound; omega_using [this]) a.retApart a.argsApart
           have eq2 := (body_relCT (caller full s) len _ fit apart _ _ _ _ _ _
             ⟨⟨pair, rfl⟩, same 0 (by cases full <;> decide) modulus, same 1 (by cases full <;> decide) exponent⟩ e2 f2).1
           obtain ⟨hx, kx⟩ := wp_result (body_ok hs len (a.numberBounds u.mem)) e2

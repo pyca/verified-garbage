@@ -53,7 +53,7 @@ theorem appLo (a b : BitVec 64) {j : Nat} (h : j < 64) : (a ++ b).getLsbD j = b.
   rw [BitVec.getLsbD_append]; simp [h]
 
 theorem appHi (a b : BitVec 64) {j : Nat} (h : 64 ≤ j) : (a ++ b).getLsbD j = a.getLsbD (j - 64) := by
-  rw [BitVec.getLsbD_append]; simp [show ¬ j < 64 by omega]
+  rw [BitVec.getLsbD_append]; simp [show ¬ j < 64 by omega_using [h]]
 
 /-- `mulXG` on the halves of a block, for any words `M` and `C` with the bits
 of the carry into the low half and of `R` in the high half. -/
@@ -72,13 +72,13 @@ theorem mulXG_core (hi lo : BitVec 64) (M C : BitVec 64)
       rw [e]
       cases hl : lo.getLsbD 0 <;> simp only [ite_true, ite_false, Bool.false_eq_true, BitVec.getLsbD_xor,
         BitVec.getLsbD_ushiftRight, appHi hi lo (show 64 ≤ 1 + 63 by decide), hR 63 (by decide)] <;> simp
-    · have e : (hi ++ lo).getLsbD (1 + i) = lo.getLsbD (1 + i) := appLo hi lo (by omega)
+    · have e : (hi ++ lo).getLsbD (1 + i) = lo.getLsbD (1 + i) := appLo hi lo (by omega_using [h64, h63])
       cases hl : lo.getLsbD 0 <;> simp only [ite_true, ite_false, Bool.false_eq_true, BitVec.getLsbD_xor,
         BitVec.getLsbD_ushiftRight, e, hR i h64, decide_eq_false h63] <;> simp
-  · rw [appHi _ _ (by omega), BitVec.getLsbD_xor, BitVec.getLsbD_ushiftRight, hC (i - 64) (by omega),
-      show i - 64 + 64 = i by omega]
+  · rw [appHi _ _ (by omega_using [h64]), BitVec.getLsbD_xor, BitVec.getLsbD_ushiftRight, hC (i - 64) (by omega_using [hi128]),
+      show i - 64 + 64 = i by omega_using [h64]]
     have e : (hi ++ lo).getLsbD (1 + i) = hi.getLsbD (1 + (i - 64)) := by
-      rw [appHi hi lo (by omega)]; congr 1; omega
+      rw [appHi hi lo (by omega_using [h64])]; congr 1; omega_using [h64]
     cases hl : lo.getLsbD 0 <;> simp only [ite_true, ite_false, Bool.false_eq_true, BitVec.getLsbD_xor,
       BitVec.getLsbD_ushiftRight, e] <;> simp
 
@@ -121,7 +121,7 @@ theorem frame4 (W : Addr) (m : Mem) (a b c d : BitVec 64) :
     Frame [⟨W + BitVec.ofNat 64 64, 32⟩] m ((((m.writeW (W + BitVec.ofNat 64 64) a).writeW (W + BitVec.ofNat 64 72) b).writeW
       (W + BitVec.ofNat 64 80) c).writeW (W + BitVec.ofNat 64 88) d) := by
   have ct : ∀ e, 64 ≤ e → e + 8 ≤ 96 → (⟨W + BitVec.ofNat 64 64, 32⟩ : Region).Contains (W + BitVec.ofNat 64 e) (64 / 8) :=
-    fun e h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
+    fun e h₁ h₂ => Offset.contains W h₁ (by omega_using [h₂]) (by decide)
   exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (ct 64 (by decide) (by decide))).writeW
     (List.mem_singleton_self _) _ (ct 72 (by decide) (by decide))).writeW (List.mem_singleton_self _) _
     (ct 80 (by decide) (by decide))).writeW (List.mem_singleton_self _) _ (ct 88 (by decide) (by decide))
@@ -187,8 +187,8 @@ theorem expArgs_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : A
   · rfl
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
-    rw [Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega), ofNat_add_ofNat, ofNat_add_ofNat]
-    congr 1; unfold Spec.GcmSiv.keyLen; omega
+    rw [Proof.AesGcm.X86_64.ofNat_sub (by omega_using [hR]) (by omega_using [hR]), ofNat_add_ofNat, ofNat_add_ofNat]
+    congr 1; unfold Spec.GcmSiv.keyLen; omega_using []
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
   · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -202,7 +202,7 @@ theorem expand_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR :
   have h15 := E.r15
   have rR := S.rounds
   have rr := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
-  have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega
+  have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega_using [hR]
   obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, rcx, hg₁, hrd₁, hwr₁⟩ := expArgs_ok hR E S
   have E₁ : Env K W SP t₁ := E.of_saved hg₁ hrd₁ hwr₁
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
@@ -212,7 +212,7 @@ theorem expand_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR :
   refine ⟨E₁.of_saved P.saved P.rd P.wr, by rw [P.rd, hrd₁], by rw [P.wr, hwr₁],
     fun r hr => by rw [P.saved r hr, hg₁ r hr], by rw [← hm₁]; exact fc, ?_⟩
   have hr : Spec.Aes.rounds (Spec.GcmSiv.keyLen R / 4) = R := by
-    unfold Spec.Aes.rounds Spec.GcmSiv.keyLen; omega
+    unfold Spec.Aes.rounds Spec.GcmSiv.keyLen; omega_using [hR]
   have out := P.out
   rw [hr] at out
   rw [Spec.GcmSiv.ctxCiph, out, Spec.GcmSiv.aes, Proof.Cmac.bytesAt_length, hr, hm₁]

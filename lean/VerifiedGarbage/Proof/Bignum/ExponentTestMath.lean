@@ -30,12 +30,12 @@ theorem exponentBounds_words (x : Nat) :
   rw [parity_word]
   simp only [← BitVec.toNat_inj, BitVec.toNat_ofNat, BitVec.toNat_ushiftRight,
     Nat.shiftRight_eq_div_pow, Nat.mod_mod]
-  rw [Nat.mod_eq_of_lt (by omega : exponentHigh x < 2 ^ 32)]
+  rw [Nat.mod_eq_of_lt (by omega_using [high] : exponentHigh x < 2 ^ 32)]
   have parity : x % 2 ^ 32 % 2 = x % 2 := Nat.mod_mod_of_dvd x (by decide)
   simp only [parity]
   unfold exponentHigh
   change min 2 (x / 2 ^ 32) / 2 = 0 ∧ x % 2 % 2 ^ 32 = 1 ↔ x < 2 ^ 33 ∧ x % 2 = 1
-  omega
+  omega_using []
 
 theorem exponentIsOne_words (x : Nat) :
     exponentIsOne (BitVec.ofNat 32 (x % 2 ^ 32)) (BitVec.ofNat 32 (exponentHigh x)) = decide (x = 1) := by
@@ -45,10 +45,10 @@ theorem exponentIsOne_words (x : Nat) :
   rw [BitVec.or_eq_zero_iff, BitVec.xor_eq_zero_iff]
   simp only [← BitVec.toNat_inj, BitVec.toNat_ofNat, Nat.mod_mod]
   have high := exponentHigh_bound x
-  rw [Nat.mod_eq_of_lt (by omega : exponentHigh x < 2 ^ 32)]
+  rw [Nat.mod_eq_of_lt (by omega_using [high] : exponentHigh x < 2 ^ 32)]
   unfold exponentHigh
   change x % 2 ^ 32 = 1 ∧ min 2 (x / 2 ^ 32) = 0 ↔ x = 1
-  omega
+  omega_using []
 
 theorem exponentTest_value (x : Nat) :
     (exponentBounds (BitVec.ofNat 32 (x % 2 ^ 32)) (BitVec.ofNat 32 (exponentHigh x)) &&
@@ -56,6 +56,6 @@ theorem exponentTest_value (x : Nat) :
       Spec.Rsa.exponentValid x := by
   rw [exponentBounds_words, exponentIsOne_words, Bool.eq_iff_iff]
   simp [Spec.Rsa.exponentValid]
-  omega
+  omega_using []
 
 end VG.Proof.Bignum

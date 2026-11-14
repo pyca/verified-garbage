@@ -113,7 +113,7 @@ theorem out_in (s : State) : OUT s ∈ scWr s := List.mem_cons_self
 theorem scr_in (s : State) : SCR (arg s 7) ∈ scWr s := List.mem_cons_of_mem _ List.mem_cons_self
 
 theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 7) 8 (scRd s) (scWr s) := by
-  refine Shake.kit h.below (by have := h.above; omega) h.scratch (scr_in s) ?_ ?_ ?_ (args_in s)
+  refine Shake.kit h.below (by have := h.above; omega_using [this]) h.scratch (scr_in s) ?_ ?_ ?_ (args_in s)
   · intro R hR
     simp only [scWr, List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
@@ -126,7 +126,7 @@ theorem kit {s : State} (h : Facts s) : Kit (base s) (arg s 7) 8 (scRd s) (scWr 
     simp only [scRd, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     exacts [h.ks.symm, h.kp.symm, h.kx.symm, h.km.symm,
-      Shake.args_stack (n := 8) h.below (by have := h.above; omega) (by decide)]
+      Shake.args_stack (n := 8) h.below (by have := h.above; omega_using [this]) (by decide)]
 
 theorem ret_out {s : State} (h : Facts s) : ∀ R ∈ scWr s, (RET s).Disjoint R := by
   intro R hR
@@ -146,7 +146,7 @@ theorem out2_within (s : State) : VG.Proof.Ed25519.X86.Whole.Within (OUT2 s) (OU
 
 theorem out2_addr {s : State} (h : Facts s) : (arg s 0 + BitVec.ofNat 32 57).setWidth 64 =
     (arg s 0).setWidth 64 + BitVec.ofNat 64 57 :=
-  addr_eq (by have := h.out; omega)
+  addr_eq (by have := h.out; omega_using [this])
 
 theorem out12 (s : State) : (OUT1 s).Disjoint (OUT2 s) := Offset.base_disjoint _ (by decide) (by decide)
 

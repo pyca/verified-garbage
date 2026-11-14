@@ -29,13 +29,13 @@ def blockContract (d : Direction) : Contract isa where
 def selectedRound (d : Direction) (j : Nat) : Nat := if d = .encrypt then j else 15 - j
 
 theorem selectedRound_bound (d : Direction) (j : Nat) (hj : j < 16) : selectedRound d j < 16 := by
-  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega
+  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega_arith
 
 theorem keyAddr_component (base : Addr) (c : Nat) (d : Direction) (j : Nat) :
     keyAddr (componentBase base c) d j = base + BitVec.ofNat 64 (8 * (16 * c + selectedRound d j)) := by
   unfold keyAddr componentBase selectedRound
   rw [Offset.add_ofNat_add_ofNat]
-  exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega)
+  exact congrArg (fun n => base + BitVec.ofNat 64 n) (by omega_using [])
 
 /-- The block function's precondition, from its 512 bytes of scratch at
 `x2` writable, the schedule at `x0` readable and the block at `x1`
@@ -59,14 +59,14 @@ theorem headPre_of (s : State)
     intro c hc direction j hj
     rw [keyAddr_component]
     have hindex := selectedRound_bound direction j hj
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [hc, hindex])
   have workSub : Region.Sub (spillRegion s) ⟨s.gpr .x2, 512⟩ := Offset.sub_base _ (by decide)
   have saveSub : Region.Sub (saveRegion s) ⟨s.gpr .x2, 512⟩ := Region.sub_prefix (by decide)
-  refine ⟨spills, rfl, (fun i hi => inRd (scratchWrites i (by omega))),
-    (fun i hi => scratchWrites i (by omega)), inRd dataWrite, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
+  refine ⟨spills, rfl, (fun i hi => inRd (scratchWrites i (by omega_using [hi]))),
+    (fun i hi => scratchWrites i (by omega_using [hi])), inRd dataWrite, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
   · intro c hc direction j hj
     rw [keyAddr_component]
-    exact keyReads _ (by have := selectedRound_bound direction j hj; omega)
+    exact keyReads _ (by have := selectedRound_bound direction j hj; omega_using [hc, this])
   · intro c hc direction j hj
     exact (keySep.sub_left (keySub c hc direction j hj)).sub_right workSub
   · intro c hc direction j hj
@@ -82,9 +82,9 @@ theorem headPre_of_contract (d : Direction) (s : State) (hs : (blockContract d).
   obtain ⟨hrd, hwr, keySep, dataSep⟩ := hs
   refine headPre_of s (fun i hi => ?_) (fun i hi => ?_) ?_ keySep dataSep
   · rw [hwr]
-    exact ⟨⟨s.gpr .x2, 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x2, 512⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   · rw [hrd, hwr]
-    exact ⟨⟨s.gpr .x0, 384⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x0, 384⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   · rw [hwr]
     exact ⟨⟨s.gpr .x1, 8⟩, by simp, Region.contains_self _ _⟩
 

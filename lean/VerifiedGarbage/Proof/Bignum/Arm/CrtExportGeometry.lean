@@ -23,10 +23,10 @@ theorem CrtShared.product_address {s : State} {g : CrtGeometry} {bs : Fin 7 → 
   have nowrap := h.buffers.workspace.nowrap
   have fit : g.base.toNat + productOffset g.words < 2 ^ 32 := by
     simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productBytes, productWords] at size
-    omega
-  refine ⟨addr_add (by omega), ?_⟩
+    omega_using [size, nowrap]
+  refine ⟨addr_add (by omega_using [fit]), ?_⟩
   simp only [crtProduct, BitVec.toNat_add, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega : productOffset g.words < 2 ^ 32), Nat.mod_eq_of_lt fit]
+    Nat.mod_eq_of_lt (by omega_using [fit] : productOffset g.words < 2 ^ 32), Nat.mod_eq_of_lt fit]
 
 theorem CrtShared.product_read {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) :
@@ -47,16 +47,16 @@ theorem CrtShared.export_input {s : State} {g : CrtGeometry} {bs : Fin 7 → Lis
   have productFit : productOffset g.words + g.length ≤ g.size := by
     simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productBytes, productWords] at size
     change g.length ≤ 8 * g.words at width
-    omega
+    omega_using [size, width]
   have sub : Region.Sub ⟨State.addr (crtProduct g.base g.words), g.length⟩ ⟨State.addr g.base, g.size⟩ := by
     rw [h.product_address.1]; exact Offset.sub_base _ productFit
-  refine ⟨by have := length.1; omega, by change g.length ≤ 8 * g.words at width; omega,
-    by rw [h.product_address.2]; omega, h.buffers.outputFits, by have := length.2; omega,
+  refine ⟨by have := length.1; omega_using [this], by change g.length ≤ 8 * g.words at width; omega_using [width],
+    by rw [h.product_address.2]; omega_using [nowrap, productFit], h.buffers.outputFits, by have := length.2; omega_using [this],
     ?_, h.buffers.write, h.buffers.outputSeparate.sub_left sub, source, output, count,
-    ?_, by have := h.stack.nowrap; omega, h.stack.read (by decide),
+    ?_, by have := h.stack.nowrap; omega_using [this], h.stack.read (by decide),
     h.buffers.outputStack.symm.sub_left (Offset.sub_base _ (by decide)), flag⟩
   · rw [h.product_address.1]
-    exact ⟨_, List.mem_append_right _ h.buffers.workspace.writable, Offset.contains_base _ productFit (by omega)⟩
+    exact ⟨_, List.mem_append_right _ h.buffers.workspace.writable, Offset.contains_base _ productFit (by omega_using [nowrap, productFit])⟩
   · rw [h.product_read]; exact valueFits
 
 end VG.Proof.Bignum.Arm

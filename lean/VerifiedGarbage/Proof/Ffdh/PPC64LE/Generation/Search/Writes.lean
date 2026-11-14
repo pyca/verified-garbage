@@ -48,7 +48,7 @@ theorem out_frame {p : SPub} {original : State} (hi : SInput p original) {m m' :
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi' => ?_
   exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hi.out_ctl)
-    (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi')
+    (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi')
 
 /-! ## Terminal statuses -/
 
@@ -138,8 +138,8 @@ theorem zeroLoop_ok {s : State} {O : Addr} {k : Nat} (ho : ∀ i < k, InRegions 
       (∀ i < j, t.mem (off O i) = 0) ∧ Keep [.r3, .r4, .r5] s t
   refine WP.mono (wp_countdown (body := .block ([.stb .r5 .r3 0, .addi .r3 .r3 1] ++
       ([.subi .r4 .r4 1] : List Instr)))
-    (cnt := .r4) (N := k) (by omega) (by omega) Inv (fun j hj t ⟨t3, t5, tout, tb, tk⟩ hc => ?_)
-    ⟨by rw [h3]; simp [off], h5, Outside.refl _ _ _ _, fun _ h => absurd h (by omega),
+    (cnt := .r4) (N := k) (by omega_using [hk']) (by omega_using [hk]) Inv (fun j hj t ⟨t3, t5, tout, tb, tk⟩ hc => ?_)
+    ⟨by rw [h3]; simp [off], h5, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []),
       Keep.refl _ _⟩ h4) fun t ⟨_, _, tout, tb, tk⟩ => ⟨⟨tb, tout⟩, tk⟩
   have hst : WP isa (.block [.stb .r5 .r3 0, .addi .r3 .r3 1, .subi .r4 .r4 1]) t fun t' =>
       t' = (({ t with mem := t.mem.write (off O j) 1 ((BitVec.ofNat 64 0).setWidth 8) } :
@@ -148,13 +148,13 @@ theorem zeroLoop_ok {s : State} {O : Addr} {k : Nat} (ho : ∀ i < k, InRegions 
     prun [t3, t5, exec_stb (show Reg.r3 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hs]
   refine WP.mono hst fun t' e => ?_
   subst e
-  have hw1 := write1_outside t.mem O (d := j) ((BitVec.ofNat 64 0).setWidth 8) (by omega)
+  have hw1 := write1_outside t.mem O (d := j) ((BitVec.ofNat 64 0).setWidth 8) (by omega_using [hk', hj])
   refine ⟨⟨by gsimp, by gsimp; exact t5, ?_, ?_, ?_⟩, by gsimp⟩
-  · gsimp; exact (tout.mono (Nat.le_refl _) (by omega)).trans (hw1.mono (by omega) (by omega))
+  · gsimp; exact (tout.mono (Nat.le_refl _) (by omega_using [])).trans (hw1.mono (by omega_using []) (by omega_using []))
   · intro i hi
     gsimp
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [hw1 _ (by rw [ofs_off0 O (by omega)]; omega)]; exact tb i hi
+    · rw [hw1 _ (by rw [ofs_off0 O (by omega_arith)]; omega_using [hi])]; exact tb i hi
     · rw [write1_self]; rfl
   · exact tk.trans' (((Keep.mem _ _).trans (Keep.write _ _ _)).trans (Keep.write _ _ _)).mono
 
@@ -180,13 +180,13 @@ theorem search_zero_out {p : SPub} {original s : State} {used k : Nat}
   refine WP.seq (WP.mono_syms (WP.keep [.r3, .r4, .r5] (Q := fun t => t.gpr .r3 = p.op ∧
       t.gpr .r4 = BitVec.ofNat 64 p.len ∧ t.gpr .r5 = BitVec.ofNat 64 0 ∧ t.mem = s.mem) (by
     prun [ldf, h.r31, hl, hl6, hv, hv6]) (by decide)) fun s₁ ⟨⟨h3, h4, h5, hm₁⟩, k₁⟩ hy₁ => ?_)
-  refine WP.mono_syms (zeroLoop_ok (fun i hi => by rw [k₁.wr]; exact hout i hi) (by omega) (by omega) h3 h4 h5)
+  refine WP.mono_syms (zeroLoop_ok (fun i hi => by rw [k₁.wr]; exact hout i hi) (by omega_using [hk]) (by omega_using [hk]) h3 h4 h5)
     fun t ⟨⟨tb, tout⟩, kt⟩ hy₂ => ?_
   have hf : ∀ x, (∀ i < p.len, x ≠ p.op + BitVec.ofNat 64 i) → t.mem x = s.mem x := by
     intro x hx
     rw [tout x (Or.inr ?_), hm₁]
     by_contra hc
-    exact hx (x - p.op).toNat (by simp only [ofs] at hc; omega)
+    exact hx (x - p.op).toNat (by simp only [ofs] at hc; omega_using [hc])
       (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel])
   have kk := k₁.trans kt
   have hfr := zero_frame h.input hf

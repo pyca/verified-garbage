@@ -86,11 +86,11 @@ theorem open_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
     fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact L.w_w (.inl hd) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact (L.d_w' (by omega)).symm
+      · exact L.w_w (.inl hd) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact (L.d_w' (by omega_using [hd])).symm
   have a₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 16) 16 = bytesAt s₃.mem (c.W + BitVec.ofNat 64 16) 16 :=
     bytesAt_keep Cr.frame (dC (by decide)) (by decide)
   have hG₄ : Spec.Gcm.blockAt s₄.mem (c.W + BitVec.ofNat 64 64) =
@@ -134,19 +134,19 @@ theorem open_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
   have hK₁ : Spec.GcmSiv.ctxCiph s₂.mem c.K c.R = Spec.GcmSiv.ctxCiph s.mem c.K c.R := by
     rw [ciph_keep fR' (buf_keep L.k_w (by decide)) hRb]
     unfold Spec.GcmSiv.ctxCiph
-    rw [entry_buf En.frame (L.k_w.sub_left (Region.sub_prefix hRb)) (by omega)]
+    rw [entry_buf En.frame (L.k_w.sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])]
   have n₂ : bytesAt s₂.mem c.N 12 = bytesAt s.mem c.N 12 := by
     rw [bytesAt_keep fR' (buf_keep L.n_w (by decide)) (by decide), entry_buf En.frame L.n_w (by decide)]
   have n₄ : bytesAt s₄.mem c.N 12 = bytesAt s.mem c.N 12 := by
     rw [bytesAt_keep Cr.frame (buf_cryR L.n_w L.n_d) (by decide),
       bytesAt_keep fK (buf_keep L.n_w (by decide)) (by decide), n₂]
   have a₄' : bytesAt s₄.mem c.A c.al = bytesAt s.mem c.A c.al := by
-    rw [bytesAt_keep Cr.frame (buf_cryR L.a_w L.a_d) (by omega),
-      bytesAt_keep fK (buf_keep L.a_w (by decide)) (by omega),
-      bytesAt_keep fR' (buf_keep L.a_w (by decide)) (by omega), entry_buf En.frame L.a_w (by omega)]
+    rw [bytesAt_keep Cr.frame (buf_cryR L.a_w L.a_d) (by omega_using [hal]),
+      bytesAt_keep fK (buf_keep L.a_w (by decide)) (by omega_using [hal]),
+      bytesAt_keep fR' (buf_keep L.a_w (by decide)) (by omega_using [hal]), entry_buf En.frame L.a_w (by omega_using [hal])]
   have d₃ : bytesAt s₃.mem c.D c.n = bytesAt s.mem c.D c.n := by
-    rw [bytesAt_keep fK (buf_keep L.d_w (by decide)) (by omega),
-      bytesAt_keep fR' (buf_keep L.d_w (by decide)) (by omega), entry_buf En.frame L.d_w (by omega)]
+    rw [bytesAt_keep fK (buf_keep L.d_w (by decide)) (by omega_using [hn]),
+      bytesAt_keep fR' (buf_keep L.d_w (by decide)) (by omega_using [hn]), entry_buf En.frame L.d_w (by omega_using [hn])]
   have tag₃ : bytesAt s₃.mem (c.W + BitVec.ofNat 64 0) 16 = bytesAt s.mem c.T 16 := by
     rw [bytesAt_keep fK (w_keep L (by decide) (by decide)) (by decide), BitVec.add_zero, hm₂, copy2Mem_bytes,
       entry_buf En.frame L.t_w (by decide)]
@@ -159,8 +159,8 @@ theorem open_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
       Spec.GcmSiv.ctxCiph s₃.mem (c.W + BitVec.ofNat 64 256) c.R := by
     rw [ciph_keep fP (w_keep L (by decide) (by decide)) hRb, ciph_cryR L Cr.frame]
   have d₇ : bytesAt s₇.mem c.D c.n = bytesAt s₄.mem c.D c.n := by
-    rw [hm₇, bytesAt_keep fT (buf_keep L.d_w (by decide)) (by omega),
-      bytesAt_keep fP (buf_keep L.d_w (by decide)) (by omega)]
+    rw [hm₇, bytesAt_keep fT (buf_keep L.d_w (by decide)) (by omega_using [hn]),
+      bytesAt_keep fP (buf_keep L.d_w (by decide)) (by omega_using [hn])]
   have au := Ky.auth
   have ci := Ky.ciph
   rw [hK₁, n₂] at au ci
@@ -178,7 +178,7 @@ theorem open_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
     have e := Proof.AesGcm.PPC64LE.bytesAt_writeBytes_self s₇.mem c.D
       ((bytesAt s₇.mem c.D c.n).map fun b => if bytesAt s₆.mem c.W 16 =
         bytesAt s₆.mem (c.W + BitVec.ofNat 64 240) 16 then b else 0)
-      (by rw [List.length_map, Proof.Cmac.bytesAt_length]; omega)
+      (by rw [List.length_map, Proof.Cmac.bytesAt_length]; omega_using [hn])
     rw [List.length_map, Proof.Cmac.bytesAt_length] at e
     rw [hm, u₉.mem, hm₈, e, tag₆, Tg.out]
   rw [d₇, pt₄, ci₅, ci, po] at md

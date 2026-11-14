@@ -55,9 +55,9 @@ private theorem qShift_value (e : Word) (he : e.toNat≤20) :
     ((e+1)<<<32).toNat=(e.toNat+1)*2^32 := by
   have hq : (e+1).toNat=e.toNat+1 := by
     simp only [BitVec.toNat_add,show (1 : Word).toNat=1 from rfl]
-    omega
+    omega_using [he]
   simp only [BitVec.toNat_shiftLeft,Nat.shiftLeft_eq,hq]
-  omega
+  omega_using [he]
 
 private theorem tinyAdd_value (e : Word) (co : Bool) (he : e.toNat≤20) :
     (addCarry e 0 co).toNat=e.toNat+co.toNat := by
@@ -65,7 +65,7 @@ private theorem tinyAdd_value (e : Word) (co : Bool) (he : e.toNat≤20) :
   have hc := Bool.toNat_le co
   have hl := (addCarry e 0 co).isLt
   change (addCarry e 0 co).toNat+2^64*(carryOut e 0 co).toNat=e.toNat+0+co.toNat at h
-  omega
+  omega_using [he, hc, h]
 
 private theorem lowAdd_value (d x : Word) (n : Nat) (hx : x.toNat=n) :
     (addCarry d x false).toNat+2^64*(carryOut d x false).toNat=d.toNat+n := by
@@ -98,11 +98,11 @@ theorem correctionWords_value (a b c d e : Word) (hn : five a b c d e<21*p) :
     four w.1 w.2.1 w.2.2.1 w.2.2.2=five a b c d e%p := by
   have he : e.toNat≤20 := by
     simp only [five,p_value] at hn
-    omega
+    omega_using [hn]
   have hq : e.toNat=five a b c d e/2^256 := by
     have hl := four_lt a b c d
     simp only [five]
-    omega
+    omega_using [hl]
   have hv := subQ_value a b c d e he
   dsimp only [correctionWords]
   generalize hw : subQ a b c d e = result at hv ⊢

@@ -62,8 +62,8 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.Arm.
   unfold Impl.Blowfish.Arm.expandKey
   apply WP.seq
   rw [show save = saved.map (fun p => Instr.str p.1 .r3 p.2) ++ [] from rfl]
-  refine Spill.save_slots_ok saved_slots (by omega) (fun d _ hd =>
-    ⟨_, bR, Offset.contains_base _ (by omega) (by omega)⟩) (WP.block_nil ?_)
+  refine Spill.save_slots_ok saved_slots (by omega_using [fBuf]) (fun d _ hd =>
+    ⟨_, bR, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩) (WP.block_nil ?_)
   let s₁ : State := { s with mem := Spill.saveMem s.mem (State.addr (s.gpr .r3)) s.gpr saved }
   have F₁ : Frame [⟨State.addr (s.gpr .r3), 64⟩] s.mem s₁.mem :=
     (Spill.saveMem_frame s.mem _ s.gpr (L := 36) (by decide) saved (by decide)).sub fun r hr => by
@@ -77,7 +77,7 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.Arm.
     · rw [← table_byte held ho]
       refine F₁ _ fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr
-      exact tBuf _ (Offset.contains_base _ (by omega) (by omega))
+      exact tBuf _ (Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
     · show InRegions (s.rd ++ s.wr) _ _
       rw [hrd]; exact ⟨_, List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.contains_self _ _⟩
   apply WP.seq
@@ -86,12 +86,12 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.Arm.
   -- the key into the P-array
   have KE : KeyEnv (s.gpr .r0) (s.gpr .r1).toNat u₃ :=
     ⟨by rw [k₃.gpr (by decide)], by rw [k₃.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      by omega, hL', fKey, by rw [keep_reads k₃, hrd]; exact ⟨_, List.mem_cons_self, Region.contains_self _ _⟩⟩
+      by omega_using [hL], hL', fKey, by rw [keep_reads k₃, hrd]; exact ⟨_, List.mem_cons_self, Region.contains_self _ _⟩⟩
   have dKP : Region.Disjoint ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
       ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 4096, 72⟩ := ks.sub_right (Offset.sub_base _ (by decide))
   apply WP.seq
   refine WP.mono (keyP_run KE (by rw [k₃.gpr (by decide)]) fSch
-    (by rw [k₃.2.2.1]; exact ⟨_, sR, Offset.contains_base _ (by decide) (by omega)⟩) dKP) fun u₄ I₄ => ?_
+    (by rw [k₃.2.2.1]; exact ⟨_, sR, Offset.contains_base _ (by decide) (by omega_using [])⟩) dKP) fun u₄ I₄ => ?_
   have k₄ : Keep (copyKeep ++ [.r4, .r5, .r6, .r7, .r8]) s u₄ := (k₃.trans I₄.keep).mono (by decide)
   -- the memory so far
   have m₃ : Frame [⟨State.addr (s.gpr .r3), 64⟩, ⟨State.addr (s.gpr .r2), 4168⟩] s.mem u₃.mem := by
@@ -101,15 +101,15 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.Arm.
     bytesAt_frame m₃ fun c hc r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact kb _ (Offset.contains_base _ (by omega) (by omega))
-      · exact ks _ (Offset.contains_base _ (by omega) (by omega))
+      · exact kb _ (Offset.contains_base _ (by omega_using [hc]) (by omega_using [hc]))
+      · exact ks _ (Offset.contains_base _ (by omega_using [hc]) (by omega_using [hc]))
   have hP : ∀ i < 18, u₄.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 (4096 + 4 * i)) 32 =
       initial.getD i 0 ^^^ Spec.Blowfish.keyWord key i := fun i hi => by
     rw [I₄.done i hi, hkey, table_P I₃.bytes hi]
   have hS : ∀ o < 4096, u₄.mem (State.addr (s.gpr .r2) + BitVec.ofNat 64 o) = initByte o := fun o ho => by
-    rw [I₄.frame _ fun r hr => ?_, I₃.bytes o (by omega)]
+    rw [I₄.frame _ fun r hr => ?_, I₃.bytes o (by omega_using [ho])]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr
-    exact (Offset.disjoint _ (d := o) (n := 1) (e := 4096) (k := 72) (by omega) (by omega) (by decide)) _
+    exact (Offset.disjoint _ (d := o) (n := 1) (e := 4096) (k := 72) (by omega_using [ho]) (by omega_using [ho]) (by decide)) _
       (Region.contains_self _ _)
   have hK : scheduleAt u₄.mem (State.addr (s.gpr .r2)) = keyed key := keyed_of_mem hS hP
   -- the encryptions
@@ -139,9 +139,9 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.Arm.
   refine WP.mono (encryptP_run EE I₅) fun u₆ I₆ => ?_
   apply WP.seq
   refine WP.mono (encryptS_run EE I₆) fun u₇ I₇ => ?_
-  refine WP.mono (restore_run (u := u₇) (by rw [I₇.r3]; omega) (fun d hd => ?_)
+  refine WP.mono (restore_run (u := u₇) (by rw [I₇.r3]; omega_using [fBuf]) (fun d hd => ?_)
     (by rw [I₇.r3]; exact I₇.saved)) fun t ⟨tr, tm⟩ => ⟨tr, by rw [tm, I₇.sched, expandKey_eq]⟩
   rw [I₇.rd, I₇.wr, I₇.r3]
-  exact region_in (inRegions_off EE.wrB (by omega))
+  exact region_in (inRegions_off EE.wrB (by omega_using [hd]))
 
 end VG.Proof.Blowfish.Arm

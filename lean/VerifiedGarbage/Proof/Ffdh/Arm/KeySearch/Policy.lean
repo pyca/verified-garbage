@@ -27,11 +27,11 @@ theorem KeyLive.policy {p : KeyPublic sampling} {original s : State} {used keys 
     (high : s.mem.readW (off (State.addr p.control) 28) 32 = 0) :
     Spec.Rsa.wordsAt s.mem (State.addr p.control) 4 =
       [BitVec.ofNat 64 keys, BitVec.ofNat 64 scalars, BitVec.ofNat 64 p.len, BitVec.ofNat 64 request] := by
-  have w0 := packedWord s.mem p.control 0 keys (by have := h.keys_le; omega)
+  have w0 := packedWord s.mem p.control 0 keys (by have := h.keys_le; omega_using [this])
     (h.header (by simp [KeyPublic.headers])) (h.high 0 (by decide))
-  have w1 := packedWord s.mem p.control 1 scalars (by have := h.scalars_le; omega)
+  have w1 := packedWord s.mem p.control 1 scalars (by have := h.scalars_le; omega_using [this])
     (h.header (by simp [KeyPublic.headers])) (h.high 1 (by decide))
-  have w2 := packedWord s.mem p.control 2 p.len (by have := h.input.bounds.maxLength; omega)
+  have w2 := packedWord s.mem p.control 2 p.len (by have := h.input.bounds.maxLength; omega_using [this])
     (h.header (by simp [KeyPublic.headers])) (h.high 2 (by decide))
   have w3 := packedWord s.mem p.control 3 request fits low high
   change [s.mem.readW (off (State.addr p.control) 0) 64,
@@ -63,7 +63,7 @@ theorem KeyLive.terminal {p : KeyPublic sampling} {original s : State} {used key
   refine ⟨h.after_control rest syms (by decide) frame h.used_le (by decide) (by decide) ?_ ?_ ?_, ?_, ?_, ?_, frame⟩
   · rw [mem]; exact h.terminal_fields _
   · intro j hj
-    rw [mem, terminalMem_high _ _ _ j (by omega), ite_eq_right (by omega : j ≠ 3)]
+    rw [mem, terminalMem_high _ _ _ j (by omega_using [hj]), ite_eq_right (by omega_using [hj] : j ≠ 3)]
     exact h.high j hj
   · rw [mem]; exact h.cachedSlots.terminal _
   · rw [mem, terminalMem_low _ _ _ 14 (by decide)]
@@ -99,7 +99,7 @@ theorem KeyLive.request_block {p : KeyPublic sampling} {original s : State} {use
   refine ⟨h.after_control rest syms (by decide) frame h.used_le h.keys_le h.scalars_le ?_ ?_ ?_, ?_, ?_, ?_⟩
   · rw [mem]; exact h.request_fields
   · intro j hj
-    rw [mem, requestMem_high _ _ j (by omega), ite_eq_right (by omega : j ≠ 3)]
+    rw [mem, requestMem_high _ _ j (by omega_using [hj]), ite_eq_right (by omega_using [hj] : j ≠ 3)]
     exact h.high j hj
   · rw [mem]; exact h.cachedSlots.request
   · rw [mem, requestMem_low _ _ 14 (by decide)]

@@ -20,8 +20,8 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .r8)
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r', r' ≠ r → r' ≠ .r8 → s'.gpr r' = s.gpr r') := by
-  have hleft : 64 - n < 64 := by omega
-  have hright : 28 - n < 64 := by omega
+  have hleft : 64 - n < 64 := by omega_using [hn]
+  have hright : 28 - n < 64 := by omega_using []
   let s₁ := s.write .r8 (s.gpr r >>> (28 - n))
   let s₂ := s₁.write r ((s₁.gpr r).rotateRight (64 - n))
   let s₃ := s₂.write r (s₂.gpr r ^^^ s₂.gpr .r8)

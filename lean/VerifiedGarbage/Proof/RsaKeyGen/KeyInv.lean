@@ -38,25 +38,25 @@ theorem inverse_odd_exact {e L x : Nat} (he3 : 3 ≤ e) (hL : 2 ≤ L) (hx : (e 
     · subst h
       obtain ⟨c, hc⟩ := hx
       simp at hc
-      have := Int.eq_one_of_mul_eq_one_right (by omega)
+      have := Int.eq_one_of_mul_eq_one_right (by omega_using [])
         (show (e : Int) * (-c) = 1 by rw [Int.mul_neg, ← hc, Int.neg_neg])
-      omega
+      omega_using [he3, this]
     · exact h
   generalize ht : e - x = t
-  have hte : t < e := by omega
+  have hte : t < e := by omega_using [he3, hx1, ht]
   have hdv : e ∣ L * t + 1 := by
     have : ((L * t + 1 : Nat) : Int) = (e : Int) * L - ((x : Int) * L - 1) := by
-      rw [← ht]; push_cast [Int.ofNat_sub (show x ≤ e by omega)]; grind
+      rw [← ht]; push_cast [Int.ofNat_sub (show x ≤ e by omega_using [hxe])]; grind
     have h' : (e : Int) ∣ ((L * t + 1 : Nat) : Int) := by
       rw [this]; exact Int.dvd_sub (Int.dvd_mul_right _ _) hx
     exact Int.natCast_dvd_natCast.mp h'
   refine ⟨hdv, ?_⟩
   obtain ⟨y, hy⟩ := hdv
-  rw [hy, Nat.mul_div_cancel_left _ (by omega)]
-  refine inverse_eq (by omega) ?_ ⟨t, ?_⟩
+  rw [hy, Nat.mul_div_cancel_left _ (by omega_using [he3])]
+  refine inverse_eq (by omega_using [hL]) ?_ ⟨t, ?_⟩
   · have : L * t + 1 < L * e := by
       have : L * t + L ≤ L * e := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hte
-      omega
+      omega_using [hL, this]
     have : e * y < e * L := by rw [← hy, Nat.mul_comm e L]; exact this
     exact Nat.lt_of_mul_lt_mul_left this
   · have : ((e * y : Nat) : Int) = ((L * t + 1 : Nat) : Int) := by rw [hy]
@@ -67,8 +67,8 @@ theorem inverse_odd_exact {e L x : Nat} (he3 : 3 ≤ e) (hL : 2 ≤ L) (hx : (e 
 theorem inverse_odd_none' {e L : Nat} (he3 : 3 ≤ e) (h : ¬ (2 ≤ L ∧ Nat.gcd L e = 1)) :
     Spec.Rsa.inverse e L = none := by
   rcases Nat.lt_or_ge L 2 with hl | hl
-  · rcases (show L = 0 ∨ L = 1 by omega) with rfl | rfl
-    · rw [inverse_mod_zero, ite_eq_right (show e ≠ 1 by omega)]
+  · rcases (show L = 0 ∨ L = 1 by omega_using [hl]) with rfl | rfl
+    · rw [inverse_mod_zero, ite_eq_right (show e ≠ 1 by omega_using [he3])]
     · exact inverse_mod_one e
   · exact inverse_none fun h1 => h ⟨hl, by rw [Nat.gcd_comm]; exact h1⟩
 

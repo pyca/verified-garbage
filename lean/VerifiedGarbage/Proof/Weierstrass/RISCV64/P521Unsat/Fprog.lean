@@ -165,7 +165,7 @@ theorem ucall_ok {f : String} {body bodyA : Prog isa} (hn : body.noFrames = true
     (ho' : o < 4095) (ha' : a < 4095) (hb' : b < 4095) (hp : P (wv base s a) (wv base s b)) :
     WP isa (callOp f body bodyA o a b) s fun s' =>
       CallKeep 9 base o s s' ∧ R (wv base s a) (wv base s b) (wv base s' o) := by
-  have h32 : ∀ x, x + 72 ≤ 7616 → x < 2 ^ 32 := fun x hx => by omega
+  have h32 : ∀ x, x + 72 ≤ 7616 → x < 2 ^ 32 := fun x hx => by omega_using [hx]
   refine callOp_ok (S := p521p) hn hnA hK hKA hw (by rw [show p521p.k = 9 from rfl, own9]; exact ho)
     (by rw [show p521p.k = 9 from rfl, own9]; exact ha) (by rw [show p521p.k = 9 from rfl, own9]; exact hb)
     ho' ha' hb' (fun t ht h0 h1 h2 h3 hm => hpre t ht (by
@@ -248,7 +248,7 @@ def uf (X : Nat) : Fe W := Fin.ofNat W.p (uv X)
 
 theorem lv9' (l : Nat → Nat) : lv l 9 = l 0 + 2 ^ 58 * l 1 + 2 ^ 116 * l 2 + 2 ^ 174 * l 3 + 2 ^ 232 * l 4 +
     2 ^ 290 * l 5 + 2 ^ 348 * l 6 + 2 ^ 406 * l 7 + 2 ^ 464 * l 8 := by
-  simp only [lv]; omega
+  simp only [lv]; omega_using []
 
 /-- Tight limbs stand for a number below `4p`. -/
 theorem uv_le {X : Nat} (h : Tight X) : uv X ≤ 4 * p := by
@@ -256,7 +256,7 @@ theorem uv_le {X : Nat} (h : Tight X) : uv X ≤ 4 * p := by
   have := h1 0 (by decide); have := h1 1 (by decide); have := h1 2 (by decide); have := h1 3 (by decide)
   have := h1 4 (by decide); have := h1 5 (by decide); have := h1 6 (by decide); have := h1 7 (by decide)
   rw [uv, lv9', show 4 * p = 2 ^ 523 - 4 from rfl]
-  omega
+  omega_arith
 
 theorem uf_eq {X : Nat} {v : Nat} (h : uv X % p = v % p) : uf X = Fin.ofNat W.p v :=
   Fin.ext (by simp only [uf, W_p]; exact h)
@@ -277,7 +277,7 @@ theorem uf_sub {r A B : Nat} (hB : uv B ≤ 4 * p) (h : uv r % p = (uv A + 4 * p
   have e : Fin.ofNat W.p (uv A + 4 * p - uv B) + uf B = uf A := by
     apply Fin.ext
     simp only [uf, Fin.val_add, Fin.val_ofNat]
-    rw [← Nat.add_mod, Nat.sub_add_cancel (by omega), W_p, show 4 * p = p * 4 from Nat.mul_comm _ _,
+    rw [← Nat.add_mod, Nat.sub_add_cancel (by omega_using [hB]), W_p, show 4 * p = p * 4 from Nat.mul_comm _ _,
       Nat.add_mul_mod_self_left]
   rw [← e]; grind
 
@@ -312,7 +312,7 @@ theorem LInv.update {base : Addr} {Sl : Nat → Prop} (hL : ULay Sl) {V : List N
     have hxS := hI.sl x hx
     have h1 := hL.le x hxS
     have h2 := hL.apart x o hxS ho hxo
-    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega)
+    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega_using [h1])
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

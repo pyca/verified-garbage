@@ -40,14 +40,14 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hM.fixed
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl hi 0
   refine WP.seq (hM.keep.withSp hsp ?_)
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsWindow
   -- The table of `u`.
   refine WP.seq (WP.mono (bits_ok hM.scr h0 (sl_le c h7 (i := U) (by decide)) (tbl_le h7)
-    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
+    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega_using [this])))
     fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
   have hs₁ := hM.scr.of_keeps k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
@@ -136,10 +136,10 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
     (sv_unch U₆ h7 hn (by decide) (apart_slWk (by decide) (by decide))).trans
       ((v₅ (by decide) (by decide)).trans (W₃ (by decide) (by decide)))
   have flag₆ : flagW c base s₆ = flagW c base s := by
-    rw [flagW, flag_unch U₆ h7 h0 hn (by decide), Unch.readW32 U₅ (fun w hw => ((windowW_apart hn4 (i := FLAG) (by decide) (by decide)) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega),
-      Unch.readW32 U₃ (fun w hw => (apart_slW (c := c) (i := FLAG) (by decide) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega),
+    rw [flagW, flag_unch U₆ h7 h0 hn (by decide), Unch.readW32 U₅ (fun w hw => ((windowW_apart hn4 (i := FLAG) (by decide) (by decide)) w hw).imp (fun h => by omega_using [hn4, h]) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [hn, this]),
+      Unch.readW32 U₃ (fun w hw => (apart_slW (c := c) (i := FLAG) (by decide) w hw).imp (fun h => by omega_using [hn4, h]) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [hn, this]),
       flag_unch_gW U₂ h7 h0 hn,
-      Unch.readW32 U₁ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
+      Unch.readW32 U₁ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega_using [hn4, h]) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [hn, this])]
   refine ⟨hs₆, by rw [wr₆, K₅.2.2, k₃.2.2, K₂.2.2, k₁.2.2, hM.wr],
     by rw [rd₆, K₅.2.1, k₃.2.1, K₂.2.1, k₁.2.1, hM.rd],
     by rw [g₆ _ (by decide), K₅.1 _ (by decide), k₃.1 _ (by decide), K₂.1 _ (by decide),
@@ -151,7 +151,7 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]
       ⟩, f₆, hM.sp_lo, rx₆, ?_⟩
   · rw [tbl_unch U₆ h7 (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
-      U₅.byte (windowW_table hn4 ht) (by rw [bitsAt_eq, hn4]; rw [hn4] at ht; omega),
+      U₅.byte (windowW_table hn4 ht) (by rw [bitsAt_eq, hn4]; rw [hn4] at ht; omega_using [ht]),
       tbl_unch U₃ h7 (by decide) ht (tbl_apart_slW (by decide) 1 _),
       tbl_unch U₂ h7 (by decide) ht (tbl_apart_gW (Or.inl rfl) ht),
       tbl_unch U₁ h7 (by decide) ht (tbl_apart_tbl (by decide) ht)]

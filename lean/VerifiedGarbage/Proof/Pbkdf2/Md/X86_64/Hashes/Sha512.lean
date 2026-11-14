@@ -180,7 +180,7 @@ def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.Has
     (hB : I.S.H.blockSize = 128) (hS : I.S.stateBytes = 192) (hDs : I.S.digestBytes = D)
     (hD : DOk D) : HashOK (hash I D initN iv v) where
   md := Proof.Sha512.md
-  dims := Proof.Sha512.X86_64.Stream.dimsS _ (by rcases v.hso with h | h | h <;> omega)
+  dims := Proof.Sha512.X86_64.Stream.dimsS _ (by rcases v.hso with h | h | h <;> omega_using [h])
   shape := Proof.Sha512.X86_64.Stream.shapeS _
   taints := Proof.Sha512.X86_64.Stream.taintsS3 _ v.hso
   comp := v.okS
@@ -192,7 +192,7 @@ def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.Has
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha512.md, Spec.Sha512.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega_using [hj])
   lenOk _ h := h
   SH := I.S
   iv := iv
@@ -214,7 +214,7 @@ def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.Has
     rcases v.hso with h | h | h <;> rw [h] <;> decide
   fits := by
     show v.callee.so + 48 + 64 + 128 ≤ 8 * ((v.callee.so + 48 + 64 + 128 + 7) / 8)
-    omega
+    omega_using []
   hW := by rcases hashW v with h | h | h <;> rw [h] <;> decide
   init := hR ▸ Proof.Sha512.X86_64.Stream.init_verified iv
   initDepth := by rw [K.iD]; decide
@@ -600,16 +600,16 @@ def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
     ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha384OK v.uniform) rfl
     (sha384_satI (hashW v)) (sha384_satF (hashW v)) (sha384_satT (hashW v)) (sha384_satP (hashW v))
-    (by rcases sha384W v with h | h | h <;> omega)
+    (by rcases sha384W v with h | h | h <;> omega_using [h])
     (sha384A v) (sha384_satA (hashW v))
     (by
       show (sha384H v).W + 192 < 511
-      rcases sha384W v with h | h | h <;> omega)
+      rcases sha384W v with h | h | h <;> omega_using [h])
     Proof.Hmac.sha384_local (sha384_satAF (hashW v)) (sha384_satW (hashIW v)) (sha384_satIF (hashIW v))
     (by decide) (sha384_satFF (hashW v))
     (by
       show (sha384H v).W + 192 < 509
-      rcases sha384W v with h | h | h <;> omega)
+      rcases sha384W v with h | h | h <;> omega_using [h])
     (sha384_satPF (hashW v))
     v.suffix v.features stream
 
@@ -768,16 +768,16 @@ def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
     ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512OK v.uniform) rfl
     (sha512_satI (hashW v)) (sha512_satF (hashW v)) (sha512_satT (hashW v)) (sha512_satP (hashW v))
-    (by rcases sha512W v with h | h | h <;> omega)
+    (by rcases sha512W v with h | h | h <;> omega_using [h])
     (sha512A v) (sha512_satA (hashW v))
     (by
       show (sha512H v).W + 192 < 511
-      rcases sha512W v with h | h | h <;> omega)
+      rcases sha512W v with h | h | h <;> omega_using [h])
     Proof.Hmac.sha512_local (sha512_satAF (hashW v)) (sha512_satW (hashIW v)) (sha512_satIF (hashIW v))
     (by decide) (sha512_satFF (hashW v))
     (by
       show (sha512H v).W + 192 < 509
-      rcases sha512W v with h | h | h <;> omega)
+      rcases sha512W v with h | h | h <;> omega_using [h])
     (sha512_satPF (hashW v))
     v.suffix v.features stream
 
@@ -936,16 +936,16 @@ def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
     ⟨Spec.Mgf1.sha512_224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512_224OK v.uniform) rfl
     (sha512_224_satI (hashW v)) (sha512_224_satF (hashW v)) (sha512_224_satT (hashW v)) (sha512_224_satP (hashW v))
-    (by rcases sha512_224W v with h | h | h <;> omega)
+    (by rcases sha512_224W v with h | h | h <;> omega_using [h])
     (sha512_224A v) (sha512_224_satA (hashW v))
     (by
       show (sha512_224H v).W + 192 < 511
-      rcases sha512_224W v with h | h | h <;> omega)
+      rcases sha512_224W v with h | h | h <;> omega_using [h])
     Proof.Hmac.sha512_224_local (sha512_224_satAF (hashW v)) (sha512_224_satW (hashIW v)) (sha512_224_satIF (hashIW v))
     (by decide) (sha512_224_satFF (hashW v))
     (by
       show (sha512_224H v).W + 192 < 509
-      rcases sha512_224W v with h | h | h <;> omega)
+      rcases sha512_224W v with h | h | h <;> omega_using [h])
     (sha512_224_satPF (hashW v))
     v.suffix v.features stream
 
@@ -1104,16 +1104,16 @@ def sha512_256 (v : Compress) (stream : List StreamFn := []) : MdHash :=
     ⟨Spec.Mgf1.sha512_256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512_256OK v.uniform) rfl
     (sha512_256_satI (hashW v)) (sha512_256_satF (hashW v)) (sha512_256_satT (hashW v)) (sha512_256_satP (hashW v))
-    (by rcases sha512_256W v with h | h | h <;> omega)
+    (by rcases sha512_256W v with h | h | h <;> omega_using [h])
     (sha512_256A v) (sha512_256_satA (hashW v))
     (by
       show (sha512_256H v).W + 192 < 511
-      rcases sha512_256W v with h | h | h <;> omega)
+      rcases sha512_256W v with h | h | h <;> omega_using [h])
     Proof.Hmac.sha512_256_local (sha512_256_satAF (hashW v)) (sha512_256_satW (hashIW v)) (sha512_256_satIF (hashIW v))
     (by decide) (sha512_256_satFF (hashW v))
     (by
       show (sha512_256H v).W + 192 < 509
-      rcases sha512_256W v with h | h | h <;> omega)
+      rcases sha512_256W v with h | h | h <;> omega_using [h])
     (sha512_256_satPF (hashW v))
     v.suffix v.features stream
 

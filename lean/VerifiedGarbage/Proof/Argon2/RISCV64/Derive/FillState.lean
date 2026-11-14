@@ -68,11 +68,11 @@ theorem independent_eq {s₀ : State} (hk : (kindV s₀).toNat ≤ 2) (pass slic
   have e3' : (Spec.Argon2.Variant.i == .id) = false := rfl
   have e4 : (Spec.Argon2.Variant.id == .i) = false := rfl
   have e5 : (Spec.Argon2.Variant.id == .id) = true := rfl
-  rcases (by omega : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with
+  rcases (by omega_using [hk] : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with
     h | h | h
   · rw [independent, hv, ite_eq_left h, e1, e2, h]; simp
-  · rw [independent, hv, ite_eq_right (by omega), ite_eq_left h, e3, e3', h]; simp
-  · rw [independent, hv, ite_eq_right (by omega), ite_eq_right (by omega), e4, e5, h]; simp
+  · rw [independent, hv, ite_eq_right (by omega_using [h]), ite_eq_left h, e3, e3', h]; simp
+  · rw [independent, hv, ite_eq_right (by omega_using [h]), ite_eq_right (by omega_using [h]), e4, e5, h]; simp
     cases pass <;> rfl
 
 /-- `((0 - x) | x) >> 63` is whether `x` is not zero. -/
@@ -88,13 +88,13 @@ theorem nz (x : BitVec 64) : ((0 - x) ||| x) >>> 63 = if x = 0 then 0 else 1 := 
         rw [BitVec.msb_or, hm, hm, BitVec.toNat_sub, show (0 : BitVec 64).toNat = 0 from rfl]
         have := x.isLt
         simp only [Bool.or_eq_true, decide_eq_true_eq]
-        omega
+        omega_using [hn]
       rw [hm] at this; exact of_decide_eq_true this
     have hl := ((0 - x) ||| x).isLt
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     show _ = 1
-    omega
+    omega_using [hb]
 
 /-- The second test of `addressMode`: Argon2id in the first two slices of the first pass. -/
 theorem id_zero {k : Nat} (hk : k ≤ 2) {pass slice : Nat} (hp : pass < 2 ^ 64) (hs : slice < 4) :
@@ -105,17 +105,17 @@ theorem id_zero {k : Nat} (hk : k ≤ 2) {pass slice : Nat} (hp : pass < 2 ^ 64)
     · intro h
       have := congrArg BitVec.toNat h
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega)] at this
+        Nat.mod_eq_of_lt (by omega_using [hs])] at this
       rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
-      omega
+      omega_using [this]
     · intro h
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt (by omega_using [hs])]
       rw [show (0 : BitVec 64).toNat = 0 from rfl]
-      omega
+      omega_using [h]
   have f : BitVec.ofNat 64 k ^^^ BitVec.ofNat 64 2 = 0 ↔ k = 2 := by
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with h | h | h <;> subst h <;> decide
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2) with h | h | h <;> subst h <;> decide
   have pp : BitVec.ofNat 64 pass = 0 ↔ pass = 0 := by
     constructor
     · intro e; have := congrArg BitVec.toNat e
@@ -182,10 +182,10 @@ theorem addressMode_ok {s : State} (h : Inv s₀ s) {pass slice lane index : Nat
           (BitVec.ofNat 64 slice >>> 1) = 0 then 0 else 1) := by
       rw [ut.gpr, o₁₂.gpr _ (by decide), v₁₁, v4, v₁₂, o₁₁.gpr _ (by decide), v5]
     have k1 : (BitVec.ofNat 64 (kindV s₀).toNat ^^^ BitVec.ofNat 64 1 = 0) ↔ (kindV s₀).toNat = 1 := by
-      rcases (by omega : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with
+      rcases (by omega_using [hk] : (kindV s₀).toNat = 0 ∨ (kindV s₀).toNat = 1 ∨ (kindV s₀).toNat = 2) with
         e | e | e <;> rw [e] <;> decide
     rw [VG.RISCV64.Wp.eval_nonzero, r8, mode_bits, independent_eq hk]
-    simp only [k1, id_zero hk (by omega : pass < 2 ^ 64) hs, Bool.decide_and, Bool.and_assoc]
+    simp only [k1, id_zero hk (by omega_using [hpass] : pass < 2 ^ 64) hs, Bool.decide_and, Bool.and_assoc]
   · exact (((o₁₀.trans o₁₁).trans o₁₂).trans (Only.of_upd ut)).mono (by simp)
 
 end

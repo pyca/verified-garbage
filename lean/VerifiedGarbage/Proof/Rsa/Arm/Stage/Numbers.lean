@@ -62,7 +62,7 @@ theorem loads_vp {E : State → Prop} :
   rw [eL]
   refine setupK_vp.seq (zero_vp.seq (VP.assoc ?_))
   refine (loadArg_vp (A := fun _ _ => 0) (src := P.nP) (k := P.K) loadN_taint (by decide) (by decide) (by decide)
-    (by decide) fun σ h => ⟨h.aN, h.aK, h.rdN, h.sN.symm, h.nF, h.fN, by have := h.k1; omega, Nat.le_refl _⟩).seq
+    (by decide) fun σ h => ⟨h.aN, h.aK, h.rdN, h.sN.symm, h.nF, h.fN, by have := h.k1; omega_using [this], Nat.le_refl _⟩).seq
     (VP.assoc ((loadArg_vp (src := P.eP) (k := P.el) loadE_taint (by decide) (by decide) (by decide) (by decide)
       fun σ h => ⟨h.aE, h.aEl, h.rdE, h.sE.symm, h.eF, h.fE, h.el1, h.el2⟩).seq
     ((loadArg_vp (src := P.dP) (k := P.dl) loadD_taint (by decide) (by decide) (by decide) (by decide)

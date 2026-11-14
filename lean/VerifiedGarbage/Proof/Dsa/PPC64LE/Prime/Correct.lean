@@ -101,13 +101,13 @@ theorem after_loadC {bits : Nat} (hb : Bits bits) {σ s₁ s₂ : State} (h : CI
   have hw48 := hs.w48
   have hW : cW σ ∈ σ.wr := by rw [h.wr]; exact List.mem_cons_self
   have hslot : slot (words bits) 0 + 8 * words bits ≤ 8 * keyWords bits := by
-    simp only [slot, VG.Impl.Bignum.hdrBytes]; omega
+    simp only [slot, VG.Impl.Bignum.hdrBytes]; omega_using [hkey]
   have f₁ : Frame [cW σ] σ.mem s₁.mem := ep.frame.sub fun r hr => ⟨cW σ, List.mem_cons_self, by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact sub_ws (by simp only [saveOff, keyOff] at *; omega)⟩
+    rcases hr with rfl | rfl <;> exact sub_ws (by simp only [saveOff, keyOff] at *; omega_arith)⟩
   have f₂ : Frame [⟨wsB σ, 8 * keyWords bits⟩] s₁.mem s₂.mem := frame_outside o₂ hslot
   have f₂' : Frame [cW σ] s₁.mem s₂.mem := f₂.sub fun r hr => ⟨cW σ, List.mem_cons_self, by
-    rw [List.mem_singleton] at hr; subst hr; exact sub_ws (by simp only [keyOff] at *; omega)⟩
+    rw [List.mem_singleton] at hr; subst hr; exact sub_ws (by simp only [keyOff] at *; omega_using [hsz])⟩
   have fW := f₁.trans f₂'
   have bin : BIn bits σ s₂ := by
     refine ⟨hb, h, (env_of hs h ep).keep k₂ (by decide), (hdr_of ep).keep fun d hd => ?_, c₂, fun i hi => ?_,
@@ -119,12 +119,12 @@ theorem after_loadC {bits : Nat} (hb : Bits bits) {σ s₁ s₂ : State} (h : CI
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         left; simp only [slot, VG.Impl.Bignum.hdrBytes]
         rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-          rfl | rfl | rfl | rfl | rfl <;> omega
+          rfl | rfl | rfl | rfl | rfl <;> omega_using []
       · have := (env_of hs h ep).hs.nowrap
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-          rfl | rfl | rfl | rfl | rfl <;> omega
-    · rw [fW.readW (r := ⟨σ.syms TrialTable32.symbol, 8192⟩) (Offset.contains_base _ (by omega) (by omega))
+          rfl | rfl | rfl | rfl | rfl <;> omega_using []
+    · rw [fW.readW (r := ⟨σ.syms TrialTable32.symbol, 8192⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
         (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact table_wr hk _ hW) (by decide)]
       exact table_held hk hi
     · simp only [Spec.Rsa.bytesAt]
@@ -134,19 +134,19 @@ theorem after_loadC {bits : Nat} (hb : Bits bits) {σ s₁ s₂ : State} (h : CI
         (by have := (σ.gpr .r6).isLt; exact Nat.le_of_lt this) hi
   refine ⟨bin, ep.svd.frame_in (lo := saveOff) (n := 168) savedSlots_in f₂ fun r hr => ?_, fun i hi hout => ?_⟩
   · rw [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint _ (.inl (show saveOff + 168 ≤ keyOff by decide)) (by simp only [saveOff] at *; omega)
-      (by simp only [keyOff] at *; omega)
+    exact Offset.disjoint _ (.inl (show saveOff + 168 ≤ keyOff by decide)) (by simp only [saveOff] at *; omega_using [])
+      (by simp only [keyOff] at *; omega_using [hsz, hfw])
   simp only [keyOff] at hsz
   have e₁ : s₂.mem (σ.gpr .r3 + BitVec.ofNat 64 i) = s₁.mem (σ.gpr .r3 + BitVec.ofNat 64 i) :=
     f₂ _ fun r hr hc => by
       rw [List.mem_singleton] at hr; subst hr
-      exact not_in _ (e := keyOff) (by simp only [keyOff]; omega) (by omega) (by simp only [keyOff]; omega) hc
+      exact not_in _ (e := keyOff) (by simp only [keyOff]; omega_using [hout]) (by omega_using [hfw, hi]) (by simp only [keyOff]; omega_using [hsz, hfw]) hc
   have e₀ : s₁.mem (σ.gpr .r3 + BitVec.ofNat 64 i) = σ.mem (σ.gpr .r3 + BitVec.ofNat 64 i) :=
     ep.frame _ fun r hr hc => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact not_in _ (e := saveOff) (by simp only [saveOff]; omega) (by omega) (by simp only [saveOff]; omega) hc
-      · exact not_in _ (e := keyOff) (by simp only [keyOff]; omega) (by omega) (by simp only [keyOff]; omega) hc
+      · exact not_in _ (e := saveOff) (by simp only [saveOff]; omega_using [hout]) (by omega_using [hfw, hi]) (by simp only [saveOff]; omega_using []) hc
+      · exact not_in _ (e := keyOff) (by simp only [keyOff]; omega_using [hkey, hout]) (by omega_using [hfw, hi]) (by simp only [keyOff]; omega_using []) hc
   rw [e₁, e₀]
 
 /-- The saved registers survive the body. -/
@@ -158,9 +158,9 @@ theorem saved_body {bits : Nat} {σ s t : State} (h : CIn bits σ) (bo : BOut bi
   refine sv.frame_in (lo := saveOff) (n := 168) savedSlots_in bo.frame fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint _ (.inl (show saveOff + 168 ≤ keyOff by decide)) (by simp only [saveOff] at *; omega)
-      (by simp only [keyOff] at *; omega)
-  · exact (h.sW.symm.sub_left (sub_ws (by simp only [saveOff, keyOff] at *; omega)))
+  · exact Offset.disjoint _ (.inl (show saveOff + 168 ≤ keyOff by decide)) (by simp only [saveOff] at *; omega_using [])
+      (by simp only [keyOff] at *; omega_using [hsz, hfw])
+  · exact (h.sW.symm.sub_left (sub_ws (by simp only [saveOff, keyOff] at *; omega_using [hsz])))
 
 /-- The body and the exit, from the body's context. -/
 theorem tail_ok (Ri : RoundImpl) {bits : Nat} {σ s₂ : State} (h : CIn bits σ) (bin : BIn bits σ s₂)
@@ -172,14 +172,14 @@ theorem tail_ok (Ri : RoundImpl) {bits : Nat} {σ s₂ : State} (h : CIn bits σ
   refine WP.mono (exit_ok h bo (saved_body h bo sv₂)) fun f xo => ⟨xo.abi, xo.r3, fun i hi hout => ?_, xo.used⟩
   -- A byte of `ws` outside the scratch range.
   simp only [layout, List.mem_singleton, forall_eq, saveOff, keyOff] at hout hsz
-  have inW : (cW σ).Contains (σ.gpr .r3 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega) (by omega)
+  have inW : (cW σ).Contains (σ.gpr .r3 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega_using [hi]) (by omega_using [hfw, hi])
   have e₃ : f.mem (σ.gpr .r3 + BitVec.ofNat 64 i) = t.mem (σ.gpr .r3 + BitVec.ofNat 64 i) :=
     xo.frame _ fun r hr hc => by rw [List.mem_singleton] at hr; subst hr; exact h.wU _ inW hc
   have e₂ : t.mem (σ.gpr .r3 + BitVec.ofNat 64 i) = s₂.mem (σ.gpr .r3 + BitVec.ofNat 64 i) :=
     bo.frame _ fun r hr hc => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact not_in _ (e := keyOff) (by simp only [keyOff]; omega) (by omega) (by simp only [keyOff]; omega) hc
+      · exact not_in _ (e := keyOff) (by simp only [keyOff]; omega_using [hout]) (by omega_using [hfw, hi]) (by simp only [keyOff]; omega_using [hsz, hfw]) hc
       · exact h.sW _ hc inW
   rw [e₃, e₂, kept i hi hout]
 

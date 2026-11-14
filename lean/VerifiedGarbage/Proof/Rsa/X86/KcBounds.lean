@@ -45,7 +45,7 @@ open VG.Impl.Rsa.X86.KeyCheck
 
 theorem ABI.numberBounds {full : Bool} {s : State} (a : ABI full s) (m : Mem) :
     Bounds (geometry (caller full s)) (arg s 1).toNat (numbers (caller full s) m) := by
-  have width : (arg s 1).toNat ≤ 4 * (2 * (caller full s).n) := by have := a.width.2.2; omega
+  have width : (arg s 1).toNat ≤ 4 * (2 * (caller full s).n) := by have := a.width.2.2; omega_using [this]
   have pLen : (inputBytes (caller full s) m (if full then 3 else 2)).length < (arg s 1).toNat := by
     rw [inputBytes, VG.Proof.Bignum.bytesAt_length]
     cases full <;> exact a.pSmall
@@ -62,7 +62,7 @@ theorem numbers_entry {full : Bool} {s : State} {m : Mem} (a : ABI full s)
   have same (i : Nat) (hi : 2 * i < scratchArg full) :
       inputBytes (caller full s) m i = inputBytes (caller full s) s.mem i :=
     VG.Proof.Bignum.scratch_bytes o
-      (by have := (a.inputLength hi).2; have := a.width.2.1; omega)
+      (by have := (a.inputLength hi).2; have := a.width.2.1; omega_arith)
       (a.inApart _ (a.inputMember hi))
   cases full
   · simp only [numbers, show (caller false s).full = false from rfl, Bool.false_eq_true, ite_false]

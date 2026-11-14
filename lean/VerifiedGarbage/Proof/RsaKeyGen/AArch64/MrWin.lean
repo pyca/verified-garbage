@@ -42,17 +42,17 @@ def TabOK (m : Mem) (B : Addr) (w c b : Nat) : Prop :=
 theorem TabOK.of_low {m m' : Mem} {B : Addr} {Z w c b : Nat} {rs : List (Nat × Nat)} (h : TabOK m B w c b)
     (hf : Frm B rs m m') (hl : ∀ r ∈ rs, r.1 + r.2 ≤ slot w aT0) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
     (hn : B.toNat + Z ≤ 2 ^ 64) : TabOK m' B w c b := fun j hj => by
-  have := VG.Proof.Bignum.slot_mono w (show aT0 ≤ aT0 + j by omega)
+  have := VG.Proof.Bignum.slot_mono w (show aT0 ≤ aT0 + j by omega_using [])
   have := tab_fits hEZ hj
-  rw [hf.wv_eq (fun r hr => Or.inr (by have := hl r hr; omega)) (by omega)]
+  rw [hf.wv_eq (fun r hr => Or.inr (by have := hl r hr; omega_arith)) (by omega_using [hn, this])]
   exact h j hj
 
 /-- `ECtx` survives changes below the table. -/
 theorem ECtx.of_low {m m' : Mem} {B : Addr} {Z w c : Nat} {rs : List (Nat × Nat)} (h : ECtx m B w c)
     (hf : Frm B rs m m') (hl : ∀ r ∈ rs, r.1 + r.2 ≤ slot w aT0) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
     (hn : B.toNat + Z ≤ 2 ^ 64) : ECtx m' B w c :=
-  h.of_frm hf (fun r hr => Or.inr (by have := hl r hr; have := VG.Proof.Bignum.slot_mono w (show aT0 ≤ aE by decide); omega))
-    (by omega)
+  h.of_frm hf (fun r hr => Or.inr (by have := hl r hr; have := VG.Proof.Bignum.slot_mono w (show aT0 ≤ aE by decide); omega_arith))
+    (by omega_using [hEZ, hn])
 
 /-- What a window changes. -/
 def winRanges (w : Nat) : List (Nat × Nat) :=
@@ -108,7 +108,7 @@ theorem midRanges_sub (w : Nat) : ∀ r ∈ midRanges w, r ∈ winRanges w := by
 theorem winRanges_low (w : Nat) : ∀ r ∈ winRanges w, r.1 + r.2 ≤ slot w aT0 := by
   simp only [winRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [slot, hdrBytes, aT0, aAcc, aTmp, aY, aXm, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2, sFn] <;> omega
+    simp only [slot, hdrBytes, aT0, aAcc, aTmp, aY, aXm, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2, sFn] <;> omega_using []
 
 theorem winRanges_mut (w : Nat) : ∀ r ∈ winRanges w, KMut r := by unfold winRanges; w_mut
 
@@ -158,7 +158,7 @@ theorem win_flag (P e1 em nz : Bool) :
 theorem top_nibble (V : BitVec 64) : (V >>> 60).toNat < 16 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := V.isLt
-  omega
+  omega_using []
 
 theorem top_nibble_eq (V : BitVec 64) : V >>> 60 = BitVec.ofNat 64 (V >>> 60).toNat := by
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -192,8 +192,8 @@ theorem winTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
   have hs := h.scr
   have hn := hs.nowrap
   have h256 := h.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
-  have hst : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi => hs.st (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
+  have hst : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi => hs.st (by omega_using [h256, hi])
   refine WP.keep [.x3, .x4, .x5, .x6, .x7, .x8, .x15] ?_ (by decide) (by decide) (by decide +kernel)
   brun [winTail, h.x0, hdr_enc (show kV < 32 by decide), hdr_enc (show kG < 32 by decide),
     hdr_enc (show kFlag < 32 by decide), hdr_enc (show kBits < 32 by decide), hl kV (by decide), hl kG (by decide),
@@ -215,7 +215,7 @@ theorem winDigit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {V : Bit
   refine WP.keep [.x3] ?_ (by decide) (by decide) (by decide +kernel)
   rw [← top_nibble_eq]
   brun [h.x0, hdr_enc (show kV < 32 by decide), hdr_enc (show kG < 32 by decide),
-    hs.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega), hs.st (d := 8 * kG) (by simp only [kG]; omega), hV]
+    hs.ld (d := 8 * kV) (by simp only [kV, kT0, sCnt, sFn]; omega_using [h256]), hs.st (d := 8 * kG) (by simp only [kG]; omega_using [h256]), hV]
 
 /-- One window. -/
 theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b y : Nat} {P : Bool} (hw128 : w ≤ 128)

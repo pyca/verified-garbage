@@ -27,20 +27,20 @@ theorem half_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N)
   have wpos := h.wpos
   change WP isa (.seq (.block [.store (VG.Impl.Mont.X86.sc (arr w j + 4 * w)) .ebx])
     (VG.Impl.Mont.X86.Dynamic.shiftDown (w + 1) (arr w j))) s _
-  refine WP.seq (wp_storeS (h.workspace.ea (by omega)) (h.workspace.write (by omega)) fun u U => WP.block_nil ?_)
+  refine WP.seq (wp_storeS (h.workspace.ea (by omega_using [fit])) (h.workspace.write (by omega_using [fit])) fun u U => WP.block_nil ?_)
   have hu := h.workspace.of_keeps (U.keeps []) (by decide)
-  refine WP.mono (VG.Proof.Mont.X86.Dynamic.shiftDown_ok hu (k := w + 1) (out := arr w j) (by omega) (by omega)) ?_
+  refine WP.mono (VG.Proof.Mont.X86.Dynamic.shiftDown_ok hu (k := w + 1) (out := arr w j) (by omega_using [wpos]) (by omega_using [fit])) ?_
   rintro t ⟨frame, value, rest⟩
-  have stored := writeW32_outside s.mem B (d := arr w j + 4 * w) (s.gpr .ebx) (by omega)
+  have stored := writeW32_outside s.mem B (d := arr w j + 4 * w) (s.gpr .ebx) (by omega_using [fit, nw])
   have keepU : Keep B w [j] [] s.mem u.mem := by
     rw [U.mem]
-    exact Keep.of_arr stored (by unfold S; omega) (by simp)
+    exact Keep.of_arr stored (by unfold S; omega_using []) (by simp)
   have keepT : Keep B w [j] [] u.mem t.mem :=
-    Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega) (by simp)
+    Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega_using []) (by simp)
   refine ⟨h.rest ((U.keeps _).trans rest), keepU.trans keepT, ?_, (U.keeps _).trans rest⟩
   have original : val32 u.mem B (arr w j) (w + 1) =
       num s.mem B w j + 2 ^ (32 * w) * (s.gpr .ebx).toNat := by
-    rw [val32_succ, U.mem, w32_write_self, stored.val32 (by omega) (by omega)]
+    rw [val32_succ, U.mem, w32_write_self, stored.val32 (by omega_using []) (by omega_using [fit, nw])]
   rw [original] at value
   have bound := val32_lt s.mem B (arr w j) w
   have positive : 0 < 2 ^ (32 * w) := Nat.two_pow_pos _
@@ -48,14 +48,14 @@ theorem half_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N)
     have mul : 2 ^ (32 * w) * (s.gpr .ebx).toNat ≤ 2 ^ (32 * w) := by
       simpa using Nat.mul_le_mul_left (2 ^ (32 * w)) bit
     unfold num
-    omega
+    omega_using [bound, mul]
   have lower := val32_lt t.mem B (arr w j) w
   rw [val32_succ] at value
   have topZero : w32 t.mem B (arr w j + 4 * w) = 0 := by
     by_contra ne
-    have ge := Nat.mul_le_mul_left (2 ^ (32 * w)) (show 1 ≤ w32 t.mem B (arr w j + 4 * w) by omega)
+    have ge := Nat.mul_le_mul_left (2 ^ (32 * w)) (show 1 ≤ w32 t.mem B (arr w j + 4 * w) by omega_using [ne])
     simp only [Nat.mul_one] at ge
-    omega
+    omega_using [hj, bit, fit, nw, wpos, value, original, bound, positive, small, lower, ne, ge]
   rw [topZero, Nat.mul_zero, Nat.add_zero] at value
   exact value
 end VG.Proof.Rsa.X86.Keys

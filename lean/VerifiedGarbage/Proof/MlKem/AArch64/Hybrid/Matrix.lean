@@ -105,7 +105,7 @@ theorem far3 {s₀ : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {e : Nat}
 theorem safe_frame {s₀ : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) :
     Safe P L s₀ (frame s₀.sp) :=
   ⟨(hk.R (b := L.sc) hp.scb hp.sv).symm, fun c hc => (hk.args c (by
-    have := hp.scw; have := hp.scb; omega)).symm⟩
+    have := hp.scw; have := hp.scb; omega_arith)).symm⟩
 
 theorem BInvW.paired3 {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem}
     {ρ E : List Byte} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {ea : Addr} {e : Nat}
@@ -134,19 +134,19 @@ theorem BInvW.paired3 {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) (hk : 
     exact h.rho
   · have hall : okR P ρ (e+2) ↔ (okR P ρ e ∧ (sampleNTT 280 (matSeed ρ (e/P.k) (e%P.k))).isSome) ∧
         (sampleNTT 280 (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))).isSome := by
-      rw [show e+2=(e+1)+1 by omega,okR_succ,okR_succ]
+      rw [show e+2=(e+1)+1 by omega_using [],okR_succ,okR_succ]
     rw [ht.status,h.acc]
     by_cases ha : okR P ρ e <;>
       by_cases hb : (sampleNTT 280 (matSeed ρ (e/P.k) (e%P.k))).isSome <;>
       by_cases hc : (sampleNTT 280 (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))).isSome <;>
       simp [hall,ha,hb,hc]
   · intro j hj
-    rcases (by omega : j<e ∨ j=e ∨ j=e+1) with hj|rfl|rfl
+    rcases (by omega_using [hj] : j<e ∨ j=e ∨ j=e+1) with hj|rfl|rfl
     · exact reducedW_frame fr (old hj) (h.red j hj)
     · exact ht.reducedLeft
     · exact ht.reducedRight
   · intro j hj
-    rcases (by omega : j<e ∨ j=e ∨ j=e+1) with hj|rfl|rfl
+    rcases (by omega_using [hj] : j<e ∨ j=e ∨ j=e+1) with hj|rfl|rfl
     · rw [polyAtW_frame fr (old hj)]; exact h.res j hj
     · exact ht.left
     · exact ht.right
@@ -169,7 +169,7 @@ theorem hash_input {M : Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P
   · rw [h.sp]; exact tb.stk
   · rw [stR_sc]; exact sdisj hp (by lom) (by lom) (by lom)
   · rw [stR_sc]; exact sdisj hp (by lom) (by lom) (by lom)
-  · exact (hM.dA e (by omega)).symm
+  · exact (hM.dA e (by omega_using [he])).symm
   · exact (hM.dA (e+1) he).symm
 
 theorem MT3.frame {s₀ s t : State} (h : MT3 P L s₀ s) {rs : List Region}
@@ -209,7 +209,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
   have pin := pair_input (L := L) hp he h.b.kb tb.t
   have hin := hash_input hp hk hM he h.b.kb tb
   refine WP.mono_syms (pairMCode_ok P M.S (a := 2*i) (j := 3*i) (m := 3) hM.src (by decide) (by decide)
-    (by decide) hoa hob pin hin (fun k hk _ => by omega) h.hash h.ek
+    (by decide) hoa hob pin hin (fun k hk _ => by omega_using [hb, hk]) h.hash h.ek
     (x24_bit h.b)) fun t ht sy => ?_
   have post := ht.outcome (p := sA L s₀ SS) hk1 hk2
   have seed {j : Nat} : Paired.seedBytes s.mem (sA L s₀ SB) j P.k=matSeed ρ (j/P.k) (j%P.k) := by
@@ -229,7 +229,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
       · exact ⟨R (kA s₀) L.sc 0 200, by simp, by rw [stR_sc]; exact fun _ h => h⟩
       · exact ⟨frame s₀.sp, by simp, fun _ h => h⟩
   refine ⟨⟨BInvW.paired3 hp hk he h.b post, h.fr.trans (fr.sub sub3), ?_, ht.ek⟩, ?_⟩
-  · rw [ht.hash, show 3 * (i + 1) = 3 * i + min 3 3 by omega]
+  · rw [ht.hash, show 3 * (i + 1) = 3 * i + min 3 3 by omega_using []]
   · refine tb.frame post.keep.rd post.keep.wr sy fr fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact .inl (pair_scratch hp he r hr)

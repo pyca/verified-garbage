@@ -129,7 +129,7 @@ theorem copySeal_rel (S : SealFn M) (hL : L s₀ < 2 ^ 63) {σ₁ σ₂ : State}
     intro j hj
     have hw := hp.w_ds
     have hc : (Sig.descRegion 64 (Src s₀) (Cnt s₀)).Contains (Src s₀ + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ (show j + 1 ≤ Cnt s₀ * (2 * (64 / 8)) by simp; omega) (by omega)
+      Offset.contains_base _ (show j + 1 ≤ Cnt s₀ * (2 * (64 / 8)) by simp; omega_using [hj]) (by omega_using [hj, hw])
     have hc' : (Sig.descRegion 64 (Src s₀') (Cnt s₀')).Contains (Src s₀ + BitVec.ofNat 64 j) 1 := by
       rw [pb.src, pb.cnt]; exact hc
     rw [desc_byte hp C₁.frame _ hc, desc_byte hp' C₂.frame _ hc', pb.desc j hj]
@@ -212,6 +212,6 @@ theorem sealShort_rel {M : CtxMode} (S : SealFn M) {t : Nat} {s₀ s₀' : State
     (E₁ : E2 s₀ σ₁) (r₁ : σ₁.gpr .r11 = W s₀) (E₂ : E2 s₀' σ₂) (r₂ : σ₂.gpr .r11 = W s₀') :
     RelCT isa (Eq2 σ₁ σ₂) (copySeal S.fn) TT := by
   have hL : L s₀ < t := by simpa using e
-  exact copySeal_rel hp hp' pb S (by omega) E₁.1 r₁ E₁.2.2.1 E₁.2.2.2.1 E₂.1 r₂ E₂.2.2.1 E₂.2.2.2.1
+  exact copySeal_rel hp hp' pb S (by omega_using [ht, hL]) E₁.1 r₁ E₁.2.2.1 E₁.2.2.2.1 E₂.1 r₂ E₂.2.2.1 E₂.2.2.2.1
 
 end VG.Proof.AesGcm.X86_64.Gather

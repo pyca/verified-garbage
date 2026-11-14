@@ -31,7 +31,7 @@ theorem entryPtr_ok {s : State} {B ctx : Addr} {Z w j : Nat} {mi : BitVec 64}
   rw [BitVec.add_assoc,show (24#64:Addr)=BitVec.ofNat 64 24 from rfl,←BitVec.ofNat_add]
   unfold off entryOffset
   congr 2
-  omega
+  omega_using []
  refine WP.keep [.x3,.x12,.x17] ?_ rfl rfl rfl
  unfold entryPtr
  brun [good.x0,hdr_enc (show sCtx<32 by decide),hdr_enc (show sW<32 by decide),

@@ -33,7 +33,7 @@ theorem ofNat_add_eq_iff {B k m : Nat} (hk : k < 256) (hm : m < 256) :
   · intro h
     have := congrArg BitVec.toNat h
     simp only [BitVec.toNat_ofNat] at this
-    omega
+    omega_using [hk, hm, this]
   · intro h; rw [h]
 
 theorem ofNat_add_eq_j {B k : Nat} (hk : k < 256) (j : BitVec 8) :
@@ -44,11 +44,11 @@ theorem ofNat_add_eq_j {B k : Nat} (hk : k < 256) (j : BitVec 8) :
   · intro h
     have := congrArg BitVec.toNat h
     simp only [BitVec.toNat_ofNat] at this
-    omega
+    omega_using [hk, this]
   · intro h
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_using [h]
 
 /-- The swap of positions `l` and `J` of the registers' table is RC4's swap
 of `B + l` and `j`. -/
@@ -86,7 +86,7 @@ theorem idx_out (a b : BitVec 8) (B : Nat) :
   simp only [BitVec.toNat_ofNat, BitVec.toNat_add, BitVec.toNat_sub,
     show (0 : BitVec 8).toNat = 0 from rfl]
   have := a.isLt; have := b.isLt
-  omega
+  omega_using []
 
 /-- One byte of the stream, at lane `l` of the group whose base is `B`. -/
 theorem byte_ok {l : Nat} (hl : l < 16) {B : Nat} {c : Context} {s : State} (h : PrgaRegs s B c)
@@ -104,12 +104,12 @@ theorem byte_ok {l : Nat} (hl : l < 16) {B : Nat} {c : Context} {s : State} (h :
   let j := c.j + a
   let b := T.getD j.toNat 0
   have hR : ∀ k < 256, tbyte s.v k = T.getD (BitVec.ofNat 8 (B + k)).toNat 0 := h.table
-  have ha : tbyte s.v l = a := by rw [hR l (by omega)]; simp only [a, i, hi]
+  have ha : tbyte s.v l = a := by rw [hR l (by omega_using [hl])]; simp only [a, i, hi]
   have hJ : c.j - bB B + tbyte s.v l = j - bB B := by rw [ha, byte_add_sub]
   obtain ⟨s₁, run₁, t₁, j₁, i₁, o6₁, o₁⟩ := swapStep_run true hl h.consts h.j hsi fun _ => h.nb
   rw [hJ] at t₁ j₁ i₁ o6₁
   have tab₁ : ∀ k < 256, tbyte s₁.v k = (swap T i j).getD (BitVec.ofNat 8 (B + k)).toNat 0 := by
-    intro k hk; rw [t₁ k hk, swapR_eq T (by omega) hR j hk, ← hi]
+    intro k hk; rw [t₁ k hk, swapR_eq T (by omega_using [hl]) hR j hk, ← hi]
   have hb : tbyte s.v (j - bB B).toNat = b := by
     rw [hR _ (j - bB B).isLt, (ofNat_add_eq_j (j - bB B).isLt j).mpr rfl]
   have six₁ : s₁.v .v6 = bc (a + b + (0 - bB B)) := by rw [o6₁ rfl, ha, hb]
@@ -129,7 +129,7 @@ theorem byte_ok {l : Nat} (hl : l < 16) {B : Nat} {c : Context} {s : State} (h :
   refine ⟨⟨fun k hk => by rw [tt, tab₁ k hk], by rw [v _ (by decide), j₁],
       by rw [v _ (by decide), o₁.2 _ (by decide), h.nb], k₁.congr fun r hr => v r (by
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)⟩,
-    by rw [v _ (by decide), i₁, tt, t₁ _ (by omega)], ?_, by rw [x1, o₁.gpr], by rw [x2, o₁.gpr],
+    by rw [v _ (by decide), i₁, tt, t₁ _ (by omega_using [hl])], ?_, by rw [x1, o₁.gpr], by rw [x2, o₁.gpr],
     fun r a b c d => by rw [g r a b c d, o₁.gpr], fun r hr => ?_, by rw [rd, o₁.rd],
     by rw [wr, o₁.wr], by rw [sp, o₁.sp]⟩
   · rw [m, o₁.mem, o₁.gpr, tab₁ _ (by exact (a + b + (0 - bB B)).isLt), idx_out]

@@ -31,7 +31,7 @@ theorem freed_mem (n : Nat) (s : State) : (freed n s).mem = s.mem := rfl
 
 /-- The stack arguments are in `aR`. -/
 theorem in_aR {s : State} {j : Nat} (hj : j < 10) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-- After the saves and the prologue. -/
 structure Entered (s t : State) : Prop where

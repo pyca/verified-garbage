@@ -43,7 +43,7 @@ theorem nttZ_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre
     rw [hz.2] at hv
     exact hv
   · have hv' := stored_keep L hP (by vlayd) (hs.z i' hi')
-    have hh : (i'<i+1)=(i'<i) := propext (by omega)
+    have hh : (i'<i+1)=(i'<i) := propext (by omega_using [he])
     simpa only [hh] using hv'
 
 theorem nttC_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre p S σ)

@@ -17,21 +17,21 @@ open VG.Proof.X25519.Arm (Rest)
 theorem witness_geometry {bits w : Nat} (positive : 0 < bits) (bound : bits ≤ 64 * w) :
     (bits - 1) / 32 < 2 * w ∧ (bits - 1) % 32 + 1 ≤ 32 ∧
       32 * ((bits - 1) / 32) + ((bits - 1) % 32 + 1) = bits ∧
-      8 * ((bits + 7) / 8) ≤ 32 * ((bits - 1) / 32 + 1) := by omega
+      8 * ((bits + 7) / 8) ≤ 32 * ((bits - 1) / 32 + 1) := by omega_using [positive, bound]
 
 private theorem nativeIndex {bits : Nat} (bound : bits ≤ 8192) :
     BitVec.ofNat 32 (bits - 1) >>> 5 = BitVec.ofNat 32 ((bits - 1) / 32) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : bits - 1 < 2 ^ 32),
-    Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : (bits - 1) / 32 < 2 ^ 32)]
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : bits - 1 < 2 ^ 32),
+    Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : (bits - 1) / 32 < 2 ^ 32)]
 
 private theorem nativeCount {bits : Nat} (bound : bits ≤ 8192) :
     (BitVec.ofNat 32 (bits - 1) &&& 31) + 1 = BitVec.ofNat 32 ((bits - 1) % 32 + 1) := by
   have mask : BitVec.ofNat 32 (bits - 1) &&& 31 = BitVec.ofNat 32 ((bits - 1) % 32) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : bits - 1 < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : (bits - 1) % 32 < 2 ^ 32)]
+    rw [Nat.mod_eq_of_lt (by omega_using [bound] : bits - 1 < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [] : (bits - 1) % 32 < 2 ^ 32)]
     change (bits - 1) &&& (2 ^ 5 - 1) = _
     exact Nat.and_two_pow_sub_one_eq_mod _ _
   rw [mask]
@@ -45,7 +45,7 @@ theorem witnessMaskHead_ok {s : State} {bits : Nat} (stack : Workspace s s.sp 72
       (t.gpr .r5 = BitVec.ofNat 32 ((bits - 1) / 32) ∧
         t.gpr .r6 = BitVec.ofNat 32 ((bits - 1) % 32 + 1) ∧ t.mem = s.mem) ∧ Rest [.r5, .r6] s t := by
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 44#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.read (by decide)
   have sub : BitVec.ofNat 32 bits - 1 = BitVec.ofNat 32 (bits - 1) := by
     change BitVec.ofNat 32 bits - BitVec.ofNat 32 1 = _

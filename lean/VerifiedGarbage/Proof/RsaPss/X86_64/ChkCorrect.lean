@@ -126,7 +126,7 @@ theorem copyIn_ok {s u : State} (hp : Pre T s) {V : Nat → Byte} {W : Nat → B
         (cpV V (fun i => u.mem (s.gpr .rsi + BitVec.ofNat 64 i)) (oEm + 0) (s.gpr .rdx).toNat) W := by
   have hk2 := hp.k2
   have hk1 : 1 ≤ (s.gpr .rdx).toNat := by
-    have := hp.hel; have := hp.b1; unfold Spec.RsaPss.emLength at *; omega
+    have := hp.hel; have := hp.b1; unfold Spec.RsaPss.emLength at *; omega_arith
   have hs := L.slot
   simp only [Bignum.word] at hs
   refine WP.seq (WP.mono (WP.keep [.rcx, .rsi, .r10, .r8] (Q := fun v => v.gpr .rcx = off (stackArg s 0) oEm ∧
@@ -138,14 +138,14 @@ theorem copyIn_ok {s u : State} (hp : Pre T s) {V : Nat → Byte} {W : Nat → B
     simp
   have Lv : Lay v (fb s) (stackArg s 0) := L.congr (hkv.gpr (by decide)) hkv.2.2 (by rw [hm])
   refine WP.mono (copy_ok Lv (hm ▸ R) (d := .rcx) (by decide) (p := s.gpr .rsi) (o := oEm) (disp := 0)
-    (n := (s.gpr .rdx).toNat) (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₁₀)
-    (by omega) (by unfold oEm oRsa; omega) h₂ h₁ h₃
+    (n := (s.gpr .rdx).toNat) (stepR_ok (by omega_using [hk2]) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₁₀)
+    (by omega_using [hk1]) (by unfold oEm oRsa; omega_using [hk2]) h₂ h₁ h₃
     (fun i hi => ⟨⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, List.mem_append_left _ (by rw [hkv.2.1, hrd, hp.hrd]; simp),
-      Offset.contains_base _ (by have := hp.wEm; omega) (by omega)⟩)
+      Offset.contains_base _ (by have := hp.wEm; omega_using [hi]) (by omega_using [hi])⟩)
     (fun i hi j hj => Outside.ne Lv (by
       have := hp.outside hp.dems hp.dKem (a := s.gpr .rsi + BitVec.ofNat 64 i)
-        (Offset.contains_base _ (by have := hp.wEm; omega) (by omega))
-      rwa [hkv.2.2, hw]) (by unfold oEm oRsa; omega)))
+        (Offset.contains_base _ (by have := hp.wEm; omega_using [hi]) (by omega_using [hi]))
+      rwa [hkv.2.2, hw]) (by unfold oEm oRsa; omega_using [hk2, hj])))
     fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, (hkv.trans kw).mono (by decide), by rw [hm] at Rw; exact Rw⟩
 
 variable (hH : Pbkdf2.Md.X86_64.HashOK T.H) (K : Pbkdf2.Md.X86_64.Callees T.H)
@@ -226,7 +226,7 @@ theorem cpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH)
   have hT4 : HT T.H T.dn T.f W3 u4.syms :=
     hT.congr sy4 (hW3 8 (by decide) (.inl (by decide))) (hW3 9 (by decide) (.inl (by decide)))
       (hW3 10 (by decide) (.inl (by decide)))
-  refine WP.mono (WP.keepIn (saltBack_safe hH hf) (by have := saltBack_xd (H := T.H) hf; omega)
+  refine WP.mono (WP.keepIn (saltBack_safe hH hf) (by have := saltBack_xd (H := T.H) hf; omega_using [this])
     (saltBack_ok hH K lk hdk L4 R3 hT4 (lo := lo) (db := db) (pos := posF) (dig := s.gpr .rdi)
       h23' h24' h34 h27 h37' hlo (by omega_arith) hpd (by omega_arith)
       (fun i hi => by
@@ -327,7 +327,7 @@ theorem chkBody_xd : (chkBody T.f T.H T.g).x86_64Depth ≤ 16 := by
   have := saltBack_xd (H := T.H) hf
   simp only [chkBody, chkMain, ret0, copyIn, anyReg, seqs, Code.x86_64Depth, scanCheck, prefixCheck, prefixWords,
     prefixBytes, posScan, posCheck, byteLoop, Nat.max_le]
-  omega
+  omega_arith
 
 include hH hf hg in
 theorem chk_spAll : (checkEncoding T.f T.H T.g).allInstrs (fun i => !isa.writesSp i) = true := by
@@ -341,7 +341,7 @@ theorem chk_xd : (checkEncoding T.f T.H T.g).x86_64Depth ≤ chkStack := by
   have := chkBody_xd (T := T) hf hg
   simp only [checkEncoding, Code.x86_64Depth, X86_64.Instr.frameBytes]
   unfold chkStack frameBytes at *
-  omega
+  omega_using [this]
 
 /-- The epilogue: the callee-saved registers restored and the outcome. -/
 theorem restore_ok {Hs : Spec.Mgf1.Hash} {s t : State} (D : CDone (chkOut T.H.D Hs Gs s) s t) :
@@ -386,7 +386,7 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
   have hGl' : lk.G.len = T.H.D := lk.len
   have hHv := validG hH lk.hash lk.len
   have hel := hp.hel
-  refine wp_frame (by have := hp.sp1; unfold chkStack frameBytes at *; omega) ?_
+  refine wp_frame (by have := hp.sp1; unfold chkStack frameBytes at *; omega_using [hF]) ?_
   refine WP.mono_mx (safe_mx (chkBody_safe hH hf hg)) (Q := fun s₂ => s₂.gpr .rsp = fb s ∧
     s₂.wr = (allocState frameBytes s).wr ∧ (∀ r ∈ calleeSaved, (freedF s₂).gpr r = s.gpr r) ∧
       (chkK T lk.G Gs).post s (freedF s₂)) ?_ fun t ⟨a, b, c, d⟩ hmx =>
@@ -421,9 +421,9 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
   have hM3 := frame_keep hp hw2 L2.rsp hM2 f3
   have hw3 : t3.wr = frR s :: s.wr := k3.2.2.trans hw2
   -- `emLen ≥ hLen + 2`.
-  refine WP.seq (X86_64.WP.mono_syms (fitH_ok (H := T.H) (by omega) L3 R3 (k := (s.gpr .rdx).toNat)
+  refine WP.seq (X86_64.WP.mono_syms (fitH_ok (H := T.H) (by omega_using [hDN, hN]) L3 R3 (k := (s.gpr .rdx).toNat)
     (by simp only [upd, proW', proW, Nat.reduceEqDiff, ite_true, ite_false]; rw [BitVec.ofNat_toNat,
-      BitVec.setWidth_eq]) (by omega)) fun t4 ⟨k4, hm4, hax4, hc4⟩ sy4 => ?_)
+      BitVec.setWidth_eq]) (by omega_using [hk2])) fun t4 ⟨k4, hm4, hax4, hc4⟩ sy4 => ?_)
   have L4 : Lay t4 (fb s) (stackArg s 0) := L3.congr (k4.gpr (by decide)) k4.2.2 (by rw [hm4])
   have R4 := hm4 ▸ R3
   have hM4 : Frame (wrR s) s.mem t4.mem := hm4 ▸ hM3
@@ -456,7 +456,7 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
   refine WP.ite (M := isa) _ (show isa.eval .b t4 = _ from hc4) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
     exact hfail L4 R4 hw4 hcs4 (by simp [upd, proW', proW]) (by simp [upd, proW', proW])
-      (by simp [upd, proW', proW]) (hshort (by rw [hGl']; omega))
+      (by simp [upd, proW', proW]) (hshort (by rw [hGl']; omega_using [hb]))
   rw [decide_eq_false_iff_not] at hb
   have hdx3' : t4.gpr .rdx = BitVec.ofNat 64 (sLen.getD 0) := by
     rw [k4.gpr (by decide), hdx3, hsl, hfixed]
@@ -473,8 +473,8 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
     simp only [upd, proW', proW, Nat.reduceEqDiff, ite_true, ite_false]
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
     exact BitVec.sub_zero _) rfl) fun t6 ⟨⟨hax6, hm6⟩, k6⟩ sy6 => ?_
-  refine X86_64.WP.mono_syms (saltFits_ok (H := T.H) (by omega) t6 (a := (s.gpr .rdx).toNat)
-    (b := BitVec.ofNat 64 (sLen.getD 0)) (by omega) (by omega) hax6 (by rw [k6.gpr (by decide)]; exact hdx3'))
+  refine X86_64.WP.mono_syms (saltFits_ok (H := T.H) (by omega_using [hDN, hN]) t6 (a := (s.gpr .rdx).toNat)
+    (b := BitVec.ofNat 64 (sLen.getD 0)) (by omega_using [hb]) (by omega_using [hk2]) hax6 (by rw [k6.gpr (by decide)]; exact hdx3'))
     fun t7 ⟨k7, hm7, hax7, hc7⟩ sy7 => ?_
   have hsl0 : (BitVec.ofNat 64 (sLen.getD 0)).toNat = sLen.getD 0 := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
@@ -496,7 +496,7 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
   refine WP.ite (M := isa) _ (show isa.eval .b t7 = _ from hc7) (fun hb7 => ?_) (fun hb7 => ?_)
   · rw [decide_eq_true_eq] at hb7
     exact hfail L7 R7 hw7 hcs7 (by simp [upd, proW', proW]) (by simp [upd, proW', proW])
-      (by simp [upd, proW', proW]) (hshort (by rw [hGl']; omega))
+      (by simp [upd, proW', proW]) (hshort (by rw [hGl']; omega_using [hb7]))
   rw [decide_eq_false_iff_not] at hb7
   -- `DB`'s slots, and the checks.
   rw [chkMain]
@@ -507,7 +507,7 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
   -- The encoding's bytes.
   have hem : ∀ i < (s.gpr .rdx).toNat, t1.mem (s.gpr .rsi + BitVec.ofNat 64 i) =
       (Spec.Rsa.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat).getD i 0 := fun i hi => by
-    have := bytesAt_frame hM1 (in_apart hp.dKem hp.dems) (by omega) (p := s.gpr .rsi) (len := (s.gpr .rdx).toNat)
+    have := bytesAt_frame hM1 (in_apart hp.dKem hp.dems) (by omega_using []) (p := s.gpr .rsi) (len := (s.gpr .rdx).toNat)
     rw [← this]
     simp [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, hi]
   have hz : 8 * (s.gpr .rdx).toNat - (s.gpr .rcx).toNat < 8 := by
@@ -518,19 +518,19 @@ theorem chk_ok (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) {s : State} (h : (chkK T l
     (fun r hr => (k8.gpr (by simp at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)).trans (hcs7 r hr)) hM8
     (lo := 0) (z := 8 * (s.gpr .rdx).toNat - (s.gpr .rcx).toNat) (fixed := fixed)
     (Spec.Rsa.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat) hlenE
-    (fun i hi => ?_) (by simp [upd, proW', proW]) (by simp [upd]) (by simp only [upd]; simp; congr 1; omega)
+    (fun i hi => ?_) (by simp [upd, proW', proW]) (by simp [upd]) (by simp only [upd]; simp; congr 1; omega_using [hGl', hb])
     (by simp [upd, proW', hel]) (by simp [upd, proW']) (by simp [upd, hfixed])
     (by simp [upd, proW', proW]) (by simp [upd, proW', proW]) (by simp [upd, proW', proW])
-    (by simp [upd, proW', proW]) (by simp [upd, proW', proW]) (Nat.zero_le 1) (by omega) ?_ hsl
+    (by simp [upd, proW', proW]) (by simp [upd, proW', proW]) (Nat.zero_le 1) (by omega_using [hb]) ?_ hsl
   · rw [sy8']
     exact tb.hf.ht (by simpa [upd] using tb.h0) (by simpa [upd] using tb.h3) (by simpa [upd] using tb.h4)
   · rw [sy8']
     exact tb.gf.gt (by simpa [upd] using tb.g0) (by simpa [upd] using tb.g1) (by simpa [upd] using tb.g2)
       (by simpa [upd] using tb.g4)
   · simp only [cpV, Nat.add_zero]
-    rw [ifp ⟨Nat.le_add_right _ _, by omega⟩, Nat.add_sub_cancel_left, hem i hi]
+    rw [ifp ⟨Nat.le_add_right _ _, by omega_using [hi]⟩, Nat.add_sub_cancel_left, hem i hi]
   · rw [chkOut, RsaPss.verifyEncoding_bytes₂ Gs lk.G hGv hlenD (by rw [hlenE, hel])
-      (by rw [← hel]; show lk.G.len + sLen.getD 0 + 2 ≤ _; omega), ← hel, ← hGl']
+      (by rw [← hel]; show lk.G.len + sLen.getD 0 + 2 ≤ _; omega_using [hGl', hb, hb7]), ← hel, ← hGl']
     simp
 
 include hH K hG hGh hGl hGv hf hg hdk in
@@ -545,7 +545,7 @@ theorem chk_correct (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) (s : State) (h : (chk
     intro i hi
     simpa using List.all_eq_true.mp h' i hi
   have hd := chk_xd (T := T) hf hg
-  have hW := X86_64.WP.stackFrame hsp (by unfold chkStack at hd; omega)
+  have hW := X86_64.WP.stackFrame hsp (by unfold chkStack at hd; omega_using [hd])
     (chk_ok hH K hG hGh hGl hGv hf hg hdk lk h)
   obtain ⟨t, s', he, ⟨hcs, hpost, hmx⟩, hf'⟩ := hW
   refine ⟨t, s', he, ⟨hcs, ?_, hmx⟩, hpost⟩
@@ -554,10 +554,10 @@ theorem chk_correct (lk : Pbkdf2.Md.X86_64.MgfLink T.H hH) (s : State) (h : (chk
   · rw [hp.hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
-    exact hp.dRs _ (Offset.contains_base _ (by omega) (by omega)) hc
+    exact hp.dRs _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
   · simp only [List.mem_singleton] at hr; subst hr
     have := hp.sp1; have := hp.sp2
     exact Offset.base_disjoint_below (s.gpr .rsp) (n := (checkEncoding T.f T.H T.g).x86_64Depth) (k := 8)
-      (by unfold chkStack at *; omega) _ (Offset.contains_base _ (by omega) (by omega)) hc
+      (by unfold chkStack at *; omega_using [hd]) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
 
 end VG.Proof.RsaPss.X86_64.Chk

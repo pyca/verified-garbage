@@ -45,14 +45,14 @@ theorem precompute_correct (M : Mont) {s : State} (pre : precomputePre s) :
    have count : Spec.Ffdh.generationPrecomputedWords (s.gpr .x4).toNat=3+34*(((s.gpr .x4).toNat+7)/8) :=by
     simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,Spec.Rsa.precomputedWords,
      Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth,Spec.Rsa.modulusWords]
-    omega
+    omega_using []
    rw [count] at canonical
    rw [canonical]
    apply VG.Proof.Ffdh.generationPrecompute_eq
    · have shape :=g.shape
      have length : (precomputeDomain s).length=(s.gpr .x3).toNat :=by simp only [precomputeDomain,Spec.Rsa.bytesAt,List.length_map,List.length_range]
      change (s.gpr .x4).toNat≤(precomputeDomain s).length
-     omega
+     omega_using [shape, length]
    · exact VG.Proof.Ffdh.domainValid_mod g.checked
 
 end VG.Proof.Ffdh.AArch64.Cached
@@ -82,8 +82,8 @@ theorem precomputeMetadata_arithmetic {q : PrecomputePublic} {s : State} (h : Pr
  rw [←mem] at controls
  have header (i : Nat) (hi : i<32) (notBytes : i≠sBytes) (notRows : i≠sRows) :=controls.2.2 i hi notBytes notRows
  have space:=h.space.after rest
- have domSize : q.p.k≤q.dom.length :=by have :=q.shape;have :=q.domLength;omega
- have nbLength : (q.dom.take q.p.k).length=q.p.k :=by simp only [List.length_take];omega
+ have domSize : q.p.k≤q.dom.length :=by have :=q.shape;have :=q.domLength;omega_arith
+ have nbLength : (q.dom.take q.p.k).length=q.p.k :=by simp only [List.length_take];omega_using [domSize]
  refine ⟨?_,?_,?_,controls.2.1⟩
  · change PcM (⟨q.p.B,q.p.Z,q.p.k,q.p.ctx,q.domPtr,q.dom.take q.p.k⟩ : PcPub) t
    refine ⟨h.scratch.congr rest.wr,(rest.gpr .x0 (by decide)).trans h.base,
@@ -95,14 +95,14 @@ theorem precomputeMetadata_arithmetic {q : PrecomputePublic} {s : State} (h : Pr
    · intro i hi
      change i<2*((q.p.k+7)/8) at hi
      rw [←q.words] at hi
-     exact space.writable i (by omega)
+     exact space.writable i (by omega_using [hi])
    · intro i hi
      change i<16*((q.p.k+7)/8) at hi
      rw [←q.words] at hi
-     exact space.outside i (by omega)
+     exact space.outside i (by omega_using [hi])
    · rw [rest.rd,rest.wr];exact h.span
  · exact ⟨space.writable,space.outside⟩
- · exact source.generator (by have :=q.shape;have :=q.domLength;omega) q.generator
+ · exact source.generator (by have :=q.shape;have :=q.domLength;omega_arith) q.generator
 
 end VG.Proof.Ffdh.AArch64.Cached
 end

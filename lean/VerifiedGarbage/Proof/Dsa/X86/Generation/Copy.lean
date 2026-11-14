@@ -44,16 +44,16 @@ theorem copyS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   refine scr_ok fun s₁ e₁ g₁ m₁ rd₁ wr₁ _ => scr_ok fun s₂ e₂ g₂ m₂ rd₂ wr₂ _ => wp_movi fun s₃ u₃ =>
     WP.block_nil ?_
   have edi₂ : s₂.gpr .edi = s.gpr .edi := by rw [g₂ _ (by decide), g₁ _ (by decide)]
-  have srcW := Scr.wide hs (d := src) (by omega)
-  have dstW := Scr.wide hs (d := dst) (by omega)
-  have srcN := Scr.toNat_add hs (d := src) (by omega)
-  have dstN := Scr.toNat_add hs (d := dst) (by omega)
+  have srcW := Scr.wide hs (d := src) (by omega_using [hn, hsrc])
+  have dstW := Scr.wide hs (d := dst) (by omega_using [hn, hd])
+  have srcN := Scr.toNat_add hs (d := src) (by omega_using [hn, hsrc])
+  have dstN := Scr.toNat_add hs (d := dst) (by omega_using [hn, hd])
   refine WP.mono (VG.Proof.Bignum.X86.copyBuffers_ok (src := s.gpr .edi + BitVec.ofNat 32 src)
-    (dst := s.gpr .edi + BitVec.ofNat 32 dst) hn (by omega) (by rw [srcN]; omega) (by rw [dstN]; omega)
+    (dst := s.gpr .edi + BitVec.ofNat 32 dst) hn (by omega_using [hd, hsrc, apart, nw]) (by rw [srcN]; omega_using [hsrc, nw]) (by rw [dstN]; omega_using [hd, nw])
     ?_ ?_ ?_ ?_ ?_ ?_) fun t ⟨R, _, _, F, K⟩ => ?_
-  · simp only [byteAddr, srcW, u₃.rd, u₃.wr, rd₂, wr₂, rd₁, wr₁]; exact hs.read (by omega)
-  · simp only [byteAddr, dstW, u₃.wr, wr₂, wr₁]; exact hs.write (by omega)
-  · simp only [byteAddr, srcW, dstW]; exact Offset.disjoint base (by omega) (by omega) (by omega)
+  · simp only [byteAddr, srcW, u₃.rd, u₃.wr, rd₂, wr₂, rd₁, wr₁]; exact hs.read (by omega_using [hsrc])
+  · simp only [byteAddr, dstW, u₃.wr, wr₂, wr₁]; exact hs.write (by omega_using [hd])
+  · simp only [byteAddr, srcW, dstW]; exact Offset.disjoint base (by omega_using [apart]) (by omega_using [hsrc, nw]) (by omega_using [hd, nw])
   · rw [u₃.other _ (by decide), g₂ _ (by decide), e₁]
   · rw [u₃.other _ (by decide), e₂, g₁ _ (by decide)]
   · rw [u₃.gpr]
@@ -78,16 +78,16 @@ theorem copyIn_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   refine WP.seq ?_
   simp only [List.cons_append, List.nil_append]
   refine ld_ok hs hw fun s₁ u₁ => scr_ok fun s₂ e₂ g₂ m₂ rd₂ wr₂ _ => wp_movi fun s₃ u₃ => WP.block_nil ?_
-  have dstW := Scr.wide hs (d := dst) (by omega)
-  have dstN := Scr.toNat_add hs (d := dst) (by omega)
+  have dstW := Scr.wide hs (d := dst) (by omega_using [hn, hd])
+  have dstN := Scr.toNat_add hs (d := dst) (by omega_using [hn, hd])
   have sub : Region.Sub ⟨S.setWidth 64, n⟩ R := by rw [hSo]; exact Offset.sub_base _ ho
   refine WP.mono (VG.Proof.Bignum.X86.copyBuffers_ok (src := S)
-    (dst := s.gpr .edi + BitVec.ofNat 32 dst) hn (by omega) hSn (by rw [dstN]; omega)
+    (dst := s.gpr .edi + BitVec.ofNat 32 dst) hn (by omega_using [hd, sl]) hSn (by rw [dstN]; omega_using [hd, nw])
     ?_ ?_ ?_ ?_ ?_ ?_) fun t ⟨Rd, _, _, F, K⟩ => ?_
   · simp only [byteAddr, u₃.rd, u₃.wr, rd₂, wr₂, u₁.rd, u₁.wr]
     rw [hSo]
-    exact ⟨R, List.mem_append_left _ hR, Offset.contains_base _ ho (by omega)⟩
-  · simp only [byteAddr, dstW, u₃.wr, wr₂, u₁.wr]; exact hs.write (by omega)
+    exact ⟨R, List.mem_append_left _ hR, Offset.contains_base _ ho (by omega_using [hRl, ho])⟩
+  · simp only [byteAddr, dstW, u₃.wr, wr₂, u₁.wr]; exact hs.write (by omega_using [hd])
   · simp only [byteAddr, dstW]
     exact (hRs.sub_left sub).sub_right (Offset.sub_base base hd)
   · rw [u₃.other _ (by decide), g₂ _ (by decide), u₁.gpr, hS]

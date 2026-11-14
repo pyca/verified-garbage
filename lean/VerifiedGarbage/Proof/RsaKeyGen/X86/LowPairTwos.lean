@@ -94,8 +94,8 @@ theorem first_twos {m : Mem} {base : Addr} {src count N : Nat}
       exact wordsVal_lt _ _ _ _
     by_cases h : a < 64 * count
     · exact h
-    · have pow := Nat.pow_le_pow_right (n := 2) (by decide) (show 64 * count ≤ a by omega)
-      have mul := Nat.le_mul_of_pos_left (2 ^ a) (show 0 < (Spec.Rsa.splitTwos N).2 by omega)
+    · have pow := Nat.pow_le_pow_right (n := 2) (by decide) (show 64 * count ≤ a by omega_using [h])
+      have mul := Nat.le_mul_of_pos_left (2 ^ a) (show 0 < (Spec.Rsa.splitTwos N).2 by omega_using [odd])
       rw [← factor] at mul
       omega
   have digit {j : Nat} (index : j < count) :
@@ -105,18 +105,18 @@ theorem first_twos {m : Mem} {base : Addr} {src count N : Nat}
       pairAt m base (src + 8 * j) = (0#32, 0#32) := by
     apply (pairAt_zero_iff _ _ _).mpr
     apply BitVec.eq_of_toNat_eq
-    rw [digit (by omega), zero j hj]
+    rw [digit (by omega_using [bound, hj]), zero j hj]
     rfl
   have hit : pairAt m base (src + 8 * (a / 64)) ≠ (0#32, 0#32) := by
     intro h
     have empty := congrArg BitVec.toNat ((pairAt_zero_iff _ _ _).mp h)
-    rw [digit (by omega)] at empty
+    rw [digit (by omega_using [bound])] at empty
     have notZero : N / 2 ^ (64 * (a / 64)) % 2 ^ 64 ≠ 0 := by
       intro h
       rw [h, Nat.zero_testBit] at bit
       contradiction
     exact notZero empty
-  rw [first_hit m base src 0 count (a / 64) (by omega) (by omega) below hit, pairAt_word, digit (by omega)]
+  rw [first_hit m base src 0 count (a / 64) (by omega_using []) (by omega_using [bound]) below hit, pairAt_word, digit (by omega_using [bound])]
 
 theorem scan_twos {s : State} {base : Addr} {size src count N : Nat} (scratch : Scr s base size)
     (fit : src + 8 * count ≤ size) (value : val32 s.mem base src (2 * count) = N) (positive : 0 < N) :

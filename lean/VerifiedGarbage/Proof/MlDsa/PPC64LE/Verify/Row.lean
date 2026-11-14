@@ -112,9 +112,9 @@ theorem mulW_piece :
       (mulAt P pW (pA r 0) (pZ 0)) := by
   have hk := hF.k; have hl := hF.l
   refine ⟨fun σ s _ ⟨A', cc, h, R, hk5⟩ => ?_, ?_⟩
-  · have ha := hk5.aR hr (j := 0) (by omega)
-    have hz := hk5.zR (j := 0) (by omega)
-    refine mul_ok hP.mul hk5.vc.site hS (mulW_m hF hr (by omega)) ha.1 hz.1 fun s' k' hb =>
+  · have ha := hk5.aR hr (j := 0) (by omega_using [hl])
+    have hz := hk5.zR (j := 0) (by omega_using [hl])
+    refine mul_ok hP.mul hk5.vc.site hS (mulW_m hF hr (by omega_using [hl])) ha.1 hz.1 fun s' k' hb =>
       ⟨A', cc, h, R, hk5.keep hF k' (by k5chks hF (Nat.le_of_lt hr)), ?_⟩
     show PolyIs s'.mem (lpa (vlay p STK σ) pW) _
     rw [show dotAcc p (sgOf p σ) A' r 1 = _ from Proof.MlDsa.Verify.add_zero_left _]
@@ -125,13 +125,13 @@ theorem mulW_piece :
   · refine rel_of (Q := fun x y => ∃ σ, Two (vlay p STK σ) vWb STK x y ∧
       (Reduced x.mem (lpa (vlay p STK σ) (pA r 0)) ∧ Reduced x.mem (lpa (vlay p STK σ) (pZ 0))) ∧
       (Reduced y.mem (lpa (vlay p STK σ) (pA r 0)) ∧ Reduced y.mem (lpa (vlay p STK σ) (pZ 0))))
-      (RelCT.exists_ fun σ => mul_tr hP.mul hS (mulW_m hF (σ := σ) hr (by omega))
+      (RelCT.exists_ fun σ => mul_tr hP.mul hS (mulW_m hF (σ := σ) hr (by omega_using [hl]))
         fun x y ⟨T, ⟨a, b⟩, ⟨c, d⟩⟩ => ⟨T.1, T.2.1, T.2.2, a, b, c, d⟩)
       fun σ₁ _ _ _ _ _ pub ⟨_, _, _, _, h₁⟩ ⟨_, _, _, _, h₂⟩ => ?_
-    have a₂ : Reduced _ (lpa (vlay p STK _) (pA r 0)) := (h₂.aR hr (j := 0) (by omega)).1
-    have z₂ : Reduced _ (lpa (vlay p STK _) (pZ 0)) := (h₂.zR (j := 0) (by omega)).1
+    have a₂ : Reduced _ (lpa (vlay p STK _) (pA r 0)) := (h₂.aR hr (j := 0) (by omega_using [hl])).1
+    have z₂ : Reduced _ (lpa (vlay p STK _) (pZ 0)) := (h₂.zR (j := 0) (by omega_using [hl])).1
     rw [← vlay_pub pub] at a₂ z₂
-    exact ⟨σ₁, vc_twoL pub h₁.vc h₂.vc, ⟨(h₁.aR hr (j := 0) (by omega)).1, (h₁.zR (j := 0) (by omega)).1⟩, ⟨a₂, z₂⟩⟩
+    exact ⟨σ₁, vc_twoL pub h₁.vc h₂.vc, ⟨(h₁.aR hr (j := 0) (by omega_using [hl])).1, (h₁.zR (j := 0) (by omega_using [hl])).1⟩, ⟨a₂, z₂⟩⟩
 
 theorem mulAddW_piece {j : Nat} (hj : j < p.ℓ) :
     VPiece p STK (RowI p STK r fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r j))
@@ -170,8 +170,8 @@ theorem dot_piece :
   unfold dot
   refine (mulW_piece hP hF hS hr).seq (Piece.mono (Piece.seqR
     (I := fun j => RowI p STK r fun σ A' _ _ => PIs p STK σ 18 (dotAcc p (sgOf p σ) A' r j)) (p.ℓ - 1) 1
-    fun j h1 h2 => mulAddW_piece hP hF hS hr (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_)
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
+    fun j h1 h2 => mulAddW_piece hP hF hS hr (by omega_using [hl, h2])) (fun _ _ _ h => h) fun _ _ _ h => ?_)
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_using [hl]] at h
 
 /-! ## `t̂₁[r]` -/
 
@@ -195,7 +195,7 @@ theorem t1_piece :
       ⟨A', cc, h, R, hk5.keep hF k' (by k5chks hF (Nat.le_of_lt hr)),
         polyIs_keepW hk5.vc.site.ok k'.frame (by vsep hF) (by decide) rfl hw, ?_⟩
     have e : bytesAt s.mem (lpa (vlay p STK σ) (.r30, 32 + 320 * r)) 320 =
-        ((pkOf p σ).drop (32 + 320 * r)).take 320 := pk_slice hk5.vc (by rw [hF.pk]; omega)
+        ((pkOf p σ).drop (32 + 320 * r)).take 320 := pk_slice hk5.vc (by rw [hF.pk]; omega_using [hr])
     rw [e] at hb
     exact hb
   · unfold unpackT1At
@@ -240,7 +240,7 @@ theorem cachedT_piece :
         σ.gpr .r15 ≠ 0)
       (RowI p STK r (F2 p STK r fun σ => t1Hat (pkOf p σ) r)) (Impl.MlDsa.PPC64LE.copyW (.r14, 1024 * r) pT 128) := by
   have hk := hF.k; have hscr := hF.scr
-  have hoT : oP 16 + 1024 ≤ scrLen p := by simp only [oP]; omega
+  have hoT : oP 16 + 1024 ≤ scrLen p := by simp only [oP]; omega_using [hscr]
   refine ⟨fun σ s hp ⟨⟨A', cc, h, R, hk5, hw⟩, hne⟩ => ?_, ?_⟩
   · have vc := hk5.vc
     have hs := vc.site
@@ -249,7 +249,7 @@ theorem cachedT_piece :
     obtain ⟨hlen, -⟩ := hp.2.polys.resolve_left hne
     have hsub : Region.Sub ⟨σ.gpr .r14 + BitVec.ofNat 64 (1024 * r), 8 * 128⟩
         (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
-      Offset.sub_base _ (by rw [hlen]; show 1024 * r + 1024 ≤ 4 * 256 * p.k; omega)
+      Offset.sub_base _ (by rw [hlen]; show 1024 * r + 1024 ≤ 4 * 256 * p.k; omega_using [hr])
     have dsub : Region.Sub ⟨vScr σ + BitVec.ofNat 64 (oP 16), 8 * 128⟩ (reg (vScr σ) (scrLen p)) :=
       Offset.sub_base _ hoT
     have cr : PPC64LE.Covers [⟨s.gpr .r14 + BitVec.ofNat 64 (1024 * r), 8 * 128⟩] (s.rd ++ s.wr) := by
@@ -257,7 +257,7 @@ theorem cachedT_piece :
       exact Covers.of_sub fun x hx => by
         rw [List.mem_singleton] at hx; subst hx
         exact ⟨_, List.mem_append_left _ hp.2.rd, 1024 * r, rfl,
-          by rw [hlen]; show 1024 * r + 1024 ≤ 4 * 256 * p.k; omega⟩
+          by rw [hlen]; show 1024 * r + 1024 ≤ 4 * 256 * p.k; omega_using [hr]⟩
     have cw : PPC64LE.Covers [⟨s.gpr .r31 + BitVec.ofNat 64 (oP 16), 8 * 128⟩] s.wr := by
       rw [g31, vc.wr, hp.1.wr]
       exact Covers.of_sub fun x hx => by
@@ -267,7 +267,7 @@ theorem cachedT_piece :
         ⟨s.gpr .r31 + BitVec.ofNat 64 (oP 16), 8 * 128⟩ := by
       rw [g14, g31]; exact (hp.2.d_c.sub_left hsub).sub_right dsub
     refine WP.mono (copyW_ok (sb := .r14) (db := .r31) (by decide) (by decide)
-      (by omega) (by simp only [oP]; omega) (by decide) (by decide) cr cw hd) fun s' ⟨k, hbt⟩ => ?_
+      (by omega_using [hr, hk]) (by simp only [oP]; omega_using []) (by decide) (by decide) cr cw hd) fun s' ⟨k, hbt⟩ => ?_
     rw [g31] at k hbt
     rw [g14] at hbt
     have k' : Kept ((vlay p STK σ).RL [tri pT 1024]) s s' :=
@@ -279,9 +279,9 @@ theorem cachedT_piece :
     show PolyIs s'.mem (vScr σ + BitVec.ofNat 64 (oP 16)) (t1Hat (pkOf p σ) r)
     rw [← Proof.MlDsa.PreparedKey.public_poly p _ hr]
     have := vc.cache hp.2 hne r hr
-    rw [show 4 * Spec.MlDsa.n * r = 1024 * r by show 4 * 256 * r = 1024 * r; omega] at this
+    rw [show 4 * Spec.MlDsa.n * r = 1024 * r by show 4 * 256 * r = 1024 * r; omega_using []] at this
     exact Proof.MlDsa.PreparedKey.polyIs_of_copy hbt this
-  · refine rel_of (copyW_tr (by decide) (by decide) (by decide) (by omega) (by simp only [oP]; omega)
+  · refine rel_of (copyW_tr (by decide) (by decide) (by decide) (by omega_using [hr, hk]) (by simp only [oP]; omega_using [])
       (by decide) (P := fun x y => x.sp = y.sp ∧ x.gpr .r14 = y.gpr .r14 ∧ x.gpr .r31 = y.gpr .r31) fun _ _ h => h)
       fun σ₁ σ₂ x y p₁ p₂ pub ⟨⟨_, _, _, _, h₁, _⟩, _⟩ ⟨⟨_, _, _, _, h₂, _⟩, _⟩ => ⟨?_, ?_, ?_⟩
     · rw [h₁.vc.sp, h₂.vc.sp, pub.1.1]
@@ -467,7 +467,7 @@ theorem sbpW_piece :
         rw [← Nat.mul_succ, Nat.mul_comm p.k]; exact Nat.mul_le_mul_left _ hr
       k5chks hF (Nat.le_of_lt hr))
     refine ⟨hk'.vc, hk'.hh, hk'.hint, hk'.a, hk'.z, hk'.c, fun r' hr' => ?_, hk'.r24, hk'.gd⟩
-    rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
+    rcases (by omega_using [hr'] : r' < r ∨ r' = r) with hr' | rfl
     · exact hk'.rows r' hr'
     · show bytesAt s'.mem (lpa (vlay p STK σ) (sc (oB + w1Len p * r'))) (w1Len p) = _
       rw [hb]

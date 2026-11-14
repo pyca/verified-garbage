@@ -27,7 +27,7 @@ theorem canonicalY_ok (s : State) (n : Nat) (hn : n < 2 ^ 255)
     WP isa (.block canonicalY) s fun t => (t.gpr .x8 == 0) = decide (n < Spec.X25519.P) ∧
       Keeps [.x10, .x11, .x21, .x22, .x23, .x24, .x8] s t := by
   have H := (add19_top (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7)
-    (by rw [hv]; omega)).1
+    (by rw [hv]; omega_using [hn])).1
   have hz (w : Word) (hw : 0 - w = mask (decide (Spec.X25519.P ≤ n))) :
       (w == 0) = decide (n < Spec.X25519.P) := by
     apply Bool.eq_iff_iff.mpr
@@ -39,9 +39,9 @@ theorem canonicalY_ok (s : State) (n : Nat) (hn : n < 2 ^ 255)
     rw [he]
     by_cases h : Spec.X25519.P ≤ n
     · simp only [decide_eq_true h, mask, ite_true]
-      exact iff_of_false (by decide) (by omega)
+      exact iff_of_false (by decide) (by omega_using [h])
     · simp only [decide_eq_false h, mask, Bool.false_eq_true, ite_false]
-      exact iff_of_true True.intro (by omega)
+      exact iff_of_true True.intro (by omega_using [h])
   rw [hv] at H
   have H' := hz _ H
   apply WP.of_runBlock

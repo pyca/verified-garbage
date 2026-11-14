@@ -161,12 +161,12 @@ theorem body_ct (c : PdChecked)
       (kept s (N a)).length = psLen s := fun {s t₀ w} S I e => by
     rw [eval_zero, I.x16] at e
     have hc := I.hc
-    have hP : psLen s < 2 ^ 64 := by have := S.pre.ps; omega
+    have hP : psLen s < 2 ^ 64 := by have := S.pre.ps; omega_using [this]
     have h0 : BitVec.ofNat 64 (psLen s - (kept s (N a)).length) = 0 := by
       simpa using e
     have := congrArg BitVec.toNat h0
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-    simp at this; omega
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hP])] at this
+    simp at this; omega_using [hc, this]
   exact ⟨a, ⟨s₁, t₁, S₁, B₁, I₁, full S₁ I₁ e₁⟩, ⟨s₂, t₂, S₂, B₂, I₂, full S₂ I₂ e₂⟩, hsp⟩
 
 theorem pub_refl (s : State) : pub s s :=

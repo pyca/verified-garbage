@@ -158,7 +158,7 @@ theorem sealRest_rel (v : GcmImpl) {w : Nat} {extra₁ extra₂ extraW₁ extraW
     (hq : onePub (w + 1) σ₁ σ₂) (a₁ : SealEntered w σ₁ σ₁ τ₁) (a₂ : SealEntered w σ₂ σ₁ τ₂) :
     RelCT isa (Eq2 τ₁ τ₂) (sealRest v.callees) TT := by
   unfold sealRest
-  obtain ⟨f₁, f₂⟩ := oneFacts (by omega : w < w + 1) (sealCore h₁) (sealCore h₂) hq
+  obtain ⟨f₁, f₂⟩ := oneFacts (by omega_using [] : w < w + 1) (sealCore h₁) (sealCore h₂) hq
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qa⟩ := hq
   have L := f₁.ol.lay
   have i₁ := frontIn_of f₁ rfl rfl rfl rfl rfl rfl a₁

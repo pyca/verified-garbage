@@ -65,10 +65,10 @@ abbrev pdWr (out scr : BitVec 32) (K sl : Nat) : List Region :=
   [⟨State.addr out, K⟩, ⟨State.addr scr, sl * 8⟩]
 
 theorem PdArgs.k32 (h : PdArgs s out pre e inp scr K el rl sl) : K < 2 ^ 32 := by
-  have := h.kv.2; omega
+  have := h.kv.2; omega_using [this]
 
 theorem PdArgs.rl32 (h : PdArgs s out pre e inp scr K el rl sl) : rl < 2 ^ 32 := by
-  have := h.kv.2; rw [h.rlK]; simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega
+  have := h.kv.2; rw [h.rlK]; simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega_using [this]
 
 theorem pd_pre {sp : BitVec 32} (h : PdArgs s out pre e inp scr K el rl sl) (hspE : s.sp = sp)
     (hsp : 56 ≤ sp.toNat) (hsa : sp.toNat + 24 ≤ 2 ^ 32)
@@ -90,7 +90,7 @@ theorem pd_pre {sp : BitVec 32} (h : PdArgs s out pre e inp scr K el rl sl) (hsp
   subst hspE
   have k32 := h.k32
   have rl32 := h.rl32
-  have el32 : el < 2 ^ 32 := by have := h.elK; omega
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_using [k32, this]
   sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, stackArgAddr_call, h.r0, h.r1, h.r2, h.r3, h.a0, h.a1, h.a2, h.a3, h.a4, h.a5,
@@ -117,7 +117,7 @@ theorem pd_pub {s₁ s₂ : State} (h₁ : PdArgs s₁ out pre e inp scr K el rl
       (s₂.callEntry.withRegions rd wr) := by
   have k32 := h₁.k32
   have rl32 := h₁.rl32
-  have el32 : el < 2 ^ 32 := by have := h₁.elK; omega
+  have el32 : el < 2 ^ 32 := by have := h₁.elK; omega_using [k32, this]
   sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val]
   simp only [stackArg_call, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₁.a0, h₁.a1, h₁.a2, h₁.a3, h₁.a4, h₁.a5,
@@ -140,7 +140,7 @@ theorem pd_post {s t : State} (h : PdArgs s out pre e inp scr K el rl sl) {rd wr
           (Spec.Rsa.bytesAt s.mem (State.addr inp) K)) := by
   have k32 := h.k32
   have rl32 := h.rl32
-  have el32 : el < 2 ^ 32 := by have := h.elK; omega
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_using [k32, this]
   sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val] at hp
   simp only [stackArg_call, h.r0, h.r1, h.r2, h.r3, h.a0, h.a1, h.a2,

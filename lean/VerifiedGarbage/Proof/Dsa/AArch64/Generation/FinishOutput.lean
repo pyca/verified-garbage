@@ -30,8 +30,8 @@ theorem finishOutput_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
           (List.replicate (2 * p.geo.pLen + p.geo.qLen) 0) ∧
       Frame [⟨p.geo.F, frameBytes⟩, ⟨p.saved 6, 2 * p.geo.pLen + p.geo.qLen⟩] s.mem t.mem ∧
       Keep (.x0 :: mmRegs) s t := by
-  have pn : 0 < p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : 0 < p.geo.pLen ∧ p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   obtain ⟨V, R⟩ := h.rep
   unfold Impl.Dsa.AArch64.Generation.finishOutput
   refine WP.seq (WP.mono (successStatus_ok h.layout R) fun u ⟨hz, hm, ku⟩ => ?_)
@@ -44,7 +44,7 @@ theorem finishOutput_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Sta
     obtain ⟨Vu, Ru⟩ := mu.rep
     have h6 := mu.slots 6 (by simp [generationSlots])
     have h7 := (mu.slots 7 (by simp [generationSlots])).trans o.lengthSlot
-    have call := outputZero_ok mu.layout Ru h7 ⟨by omega, by omega⟩
+    have call := outputZero_ok mu.layout Ru h7 ⟨by omega_using [pn], by omega_using [pn, qn]⟩
     rw [h6] at call
     refine WP.mono (call hwu o.bound o.apart) fun t ⟨hr, bt, ft, kt⟩ => ?_
     rw [he]

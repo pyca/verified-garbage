@@ -38,14 +38,14 @@ theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (
     Region.Sub ⟨base + BitVec.ofNat 64 off, len⟩ ⟨base, len'⟩ := Offset.sub_base base h
 
 theorem addr_toNat (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
 
 /-- `[x + d]`, for a word within a region at `x` inside the 32-bit address space. -/
 theorem contains_addr {x : BitVec 32} {d n len : Nat} (h : d + n ≤ len) (hn : 0 < n)
     (hx : x.toNat + len ≤ 2 ^ 32) :
     (⟨x.setWidth 64, len⟩ : Region).Contains (addr x d) n := by
-  rw [addr_eq (by omega)]
-  exact contains_offset h (by omega)
+  rw [addr_eq (by omega_using [h, hn, hx])]
+  exact contains_offset h (by omega_using [h, hx])
 
 /-- `[(x + k) + d]`, where nothing wraps around the 32-bit address space. -/
 theorem addr_add_ofNat {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
@@ -54,11 +54,11 @@ theorem addr_add_ofNat {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat) (by omega),
-    Nat.mod_eq_of_lt (a := k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := d) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []),
+    Nat.mod_eq_of_lt (a := k + d) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega_using [h])]
+  omega_using []
 
 /-- Two accesses `[x + d]` and `[x + e]` of `n` and `k` bytes that do not overlap. -/
 theorem addr_sep {x : BitVec 32} {d e n k : Nat} (hd : x.toNat + d + n ≤ 2 ^ 32) (he : x.toNat + e + k ≤ 2 ^ 32)
@@ -67,8 +67,8 @@ theorem addr_sep {x : BitVec 32} {d e n k : Nat} (hd : x.toNat + d + n ≤ 2 ^ 3
   · exact fun _ h₁ => absurd h₁ (Nat.not_lt_zero _)
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · exact fun _ _ h₂ => absurd h₂ (Nat.not_lt_zero _)
-  rw [addr_eq (by omega), addr_eq (by omega)]
-  exact Offset.sep _ h (by omega) (by omega)
+  rw [addr_eq (by omega_using [hd, hn]), addr_eq (by omega_using [he, hk])]
+  exact Offset.sep _ h (by omega_using [hd]) (by omega_using [he])
 
 theorem readW_writeW_addr (m : Mem) {x : BitVec 32} (v : BitVec 32) {d e : Nat}
     (hd : x.toNat + d + 4 ≤ 2 ^ 32) (he : x.toNat + e + 4 ≤ 2 ^ 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
@@ -216,7 +216,7 @@ theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k == 0) = d
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 32 a - BitVec.ofNat 32 b = BitVec.ofNat 32 (a - b) := by
-  conv => lhs; rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega_using [h], BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
@@ -230,13 +230,13 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 theorem ofNat_succ (k : Nat) : BitVec.ofNat 32 (k + 1) = BitVec.ofNat 32 k + 1 := by
   rw [BitVec.ofNat_add]; rfl
 
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 32 k - 1 = BitVec.ofNat 32 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_using [h], ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 theorem toNat_ofNat_lt {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k).toNat = k := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]

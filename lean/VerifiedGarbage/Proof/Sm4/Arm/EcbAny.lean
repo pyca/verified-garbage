@@ -88,12 +88,12 @@ theorem ecbAny_wp {s₀ : State} (hp : ecbAnyArm.pre s₀) :
   refine WP.mono (ecbWith_wp .r12 keysAny (dirOf (s₀.gpr .r3)) (s₀ := s₁) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_)
     fun s' ⟨hg, hpost⟩ => ⟨fun i hi => ?_, ?_⟩
   · rw [u₁.rd, e0, hrd]; simp
-  · refine ⟨by rw [hS, u₁.wr, hwr]; simp, by rw [h12, slots_eq]; omega⟩
+  · refine ⟨by rw [hS, u₁.wr, hwr]; simp, by rw [h12, slots_eq]; omega_using [fitS]⟩
   · rw [hD, u₁.wr, hwr]; simp
   · rw [hS, e0]; exact dKS
   · rw [hD, hS]; exact dDS
   · rw [e0]; exact fitK
-  · rw [e1, e2]; omega
+  · rw [e1, e2]; omega_using [fitD]
   · intro s₂ hs₂ r12₂ g₂
     exact keysAny_wp hs₂ r12₂ ((g₂ .r3 (by decide) (by decide)).trans e3)
   · rw [hg i hi]; exact g₁ _ (by revert i; decide)
@@ -118,7 +118,7 @@ theorem ecbAnyTaint_wf {s : State} (h : ecbAnyArm.pre s) : VG.Arm.Taint.Wf ecbAn
       List.Pairwise.nil]
     exact ⟨dDS, fun _ h => h.elim, trivial⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega
+    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false] at hr
     show (⟨State.addr s.sp, 4⟩ : Region).Disjoint r
     rw [← harg]
@@ -138,7 +138,7 @@ theorem ecbAnyTaint_agree (s₁ s₂ : State) (h₁ : ecbAnyArm.pre s₁) (h₂ 
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.2.1, h₂.2.2.1, p1, p2, pa]
   · exact fun k hk => argMem_of (j := 1) psp (by simpa using h₁.1)
-      (fun i hi => by obtain rfl : i = 0 := by omega
+      (fun i hi => by obtain rfl : i = 0 := by omega_using [hi]
                       exact pa) k hk
 
 theorem ecbAny_ct : ConstantTime isa ecbAnyArm.pre ecbAnyArm.pub ecbAny :=
@@ -150,15 +150,15 @@ theorem ecbAny_correct (s : State) (hs : ecbAnyArm.pre s) :
   refine ⟨t, s', he, ⟨fun r hr => ?_, VG.Arm.Exec.sp he⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
+  · exact h₁ 6 (by omega_using [])
+  · exact h₁ 7 (by omega_using [])
+  · exact h₁ 8 (by omega_using [])
 
 /-- A state satisfying the precondition with the scratch buffer as an
 argument: the schedule at `0x1000`, one block at `0x3000`, the buffer at 0

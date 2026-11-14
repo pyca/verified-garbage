@@ -27,7 +27,7 @@ theorem pdSmall_ready (s : State) {base : BitVec 32} {len w N R : Nat}
   refine WP.mono (smallConstLayout_ok s 1 h.ready.workspace h.ready.layout h.ready.width h.ready.ptr
     (by decide : 7 < 8) (by decide) (by decide) h.ready.stackRead h.ready.stackSep h.ready.saved) ?_
   rintro t ⟨_, _, _, outside, frame, rest, ptr⟩
-  have keeps := outside_array_keeps outside (len := len) (by have := h.ready.workspace.nowrap; omega)
+  have keeps := outside_array_keeps outside (len := len) (by have := h.ready.workspace.nowrap; omega_using [this])
   exact h.after_array (h.ready.after_array keeps frame rest ptr) rest keeps (by decide) (by decide)
 
 theorem pdSave_ready (s : State) {base : BitVec 32} {len w N R : Nat}

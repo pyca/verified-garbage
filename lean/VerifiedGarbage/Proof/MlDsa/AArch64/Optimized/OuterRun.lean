@@ -29,7 +29,7 @@ theorem ValidGroup.root_index {gap g : Nat} (h : ValidGroup gap g) :
   rcases h with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩
   · decide
   · rcases hg with rfl | rfl <;> decide
-  · omega
+  · omega_using [hg]
 
 theorem outerAfter_code (r : Ren) (ps : List (Nat × Nat))
     (hv : ∀ p ∈ ps, ValidGroup p.1 p.2) :

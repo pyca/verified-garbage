@@ -114,7 +114,7 @@ theorem restoreIv_run (s : State) :
 /-- The scratch buffer's bytes `t` to `t + n`, within the writable regions. -/
 theorem inScr {s : State} {B : Addr} (hw : (⟨B, 8 * 11⟩ : Region) ∈ s.wr)
     {t n : Nat} (ht : t + n ≤ 8 * 11) : InRegions s.wr (B + BitVec.ofNat 64 t) n :=
-  ⟨_, hw, Offset.contains_base B ht (by omega)⟩
+  ⟨_, hw, Offset.contains_base B ht (by omega_using [ht])⟩
 
 theorem inScr' {s : State} {B : Addr} (hw : (⟨B, 8 * 11⟩ : Region) ∈ s.wr)
     {t n : Nat} (ht : t + n ≤ 8 * 11) : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 t) n := by
@@ -149,7 +149,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   have rsi₅ : t₅.gpr .rsi = B := by
     rw [g₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), r₂, o₁ _ (by decide), sb₁]
   obtain ⟨t₆, f₆, l₆a, l₆b, k₆, g₆, u₆⟩ := loadBlock_run t₅ B rsi₅ fun o ho => by
-    rw [rd₅, wr₅]; exact inScr' (s := s) hw (by omega)
+    rw [rd₅, wr₅]; exact inScr' (s := s) hw (by omega_using [ho])
   have mem₆ : t₆.mem = s.mem := by rw [u₆, mem₅]
   have rd₆ : t₆.rd = s.rd := by rw [u₆, rd₅]
   have wr₆ : t₆.wr = s.wr := by rw [u₆, wr₅]
@@ -167,11 +167,11 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   refine WP.of_runBlock ⟨t₆, cat_run (cat_run (cat_run f₁ (cat_run f₂ (cat_run f₃ f₄))) f₅) f₆, ?_⟩
   -- The rounds.
   have inSch : ∀ off n, off + n ≤ 4168 → InRegions (t₆.rd ++ t₆.wr) (p + BitVec.ofNat 64 off) n :=
-    fun off n h => ⟨_, List.mem_append_left _ (by rw [rd₆]; exact hS.rd), Offset.contains_base p h (by omega)⟩
+    fun off n h => ⟨_, List.mem_append_left _ (by rw [rd₆]; exact hS.rd), Offset.contains_base p h (by omega_using [h])⟩
   have CE : CipherEnv .rdi p t₆ := by
-    refine ⟨⟨rdi₆, by decide, by decide, by decide, fun off h => inSch off 16 (by omega),
+    refine ⟨⟨rdi₆, by decide, by decide, by decide, fun off h => inSch off 16 (by omega_using [h]),
       by rw [k₆ _ (by decide) (by decide), x₅a], by rw [k₆ _ (by decide) (by decide), x₅b],
-      by rw [k₆ _ (by decide) (by decide), x₅c]⟩, by decide, by decide, fun i hi => inSch _ 4 (by omega)⟩
+      by rw [k₆ _ (by decide) (by decide), x₅c]⟩, by decide, by decide, fun i hi => inSch _ 4 (by omega_using [hi])⟩
   apply WP.seq
   refine WP.mono (cipher_run CE up) fun t₇ ⟨c₁, c₂, O⟩ => ?_
   have mem₇ : t₇.mem = s.mem := by rw [O.upd, mem₆]
@@ -183,7 +183,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
     refine ⟨by rw [g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide), rsi₆],
       by rw [g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide), rcx₆],
       by rw [wr₇, show B = B + BitVec.ofNat 64 0 by simp]; exact inScr hw (by decide),
-      by rw [wr₇]; exact inScr hw (by simp only [wsSlot]; omega),
+      by rw [wr₇]; exact inScr hw (by simp only [wsSlot]; omega_using []),
       sep_of_disjoint (buf_ws B), sep_of_disjoint (buf_ws B).symm⟩
   obtain ⟨t₈, f₈, b₈, fr₈, g₈, e₈⟩ := storeBlock_run SE
   obtain ⟨t₉, f₉, r₉, o₉, n₉, d₉, w₉⟩ := movR_ok t₈ sb .rdx
@@ -194,7 +194,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   have mem₁₀ : t₁₀.mem = t₈.mem := by rw [n₁₀, n₉]
   have fr : Frame [⟨B, 8⟩, ⟨wsAddr B, 16⟩] s.mem t₁₀.mem := by rw [mem₁₀, ← mem₇]; exact fr₈
   have sub : Region.Sub ⟨B, 8⟩ ⟨B, 8 * 11⟩ ∧ Region.Sub ⟨wsAddr B, 16⟩ ⟨B, 8 * 11⟩ :=
-    ⟨Region.sub_prefix (by decide), Offset.sub_base B (by simp only [wsSlot]; omega)⟩
+    ⟨Region.sub_prefix (by decide), Offset.sub_base B (by simp only [wsSlot]; omega_using [])⟩
   have kp : ∀ g, g ≠ .r14 → g ≠ .rdx → g ≠ .rsi → g ≠ .rcx → g ≠ .rax → g ≠ .r8 →
       g ≠ .r9 → g ≠ .r10 → g ≠ .r11 → t₁₀.gpr g = s.gpr g := fun g h1 h3 h5 h6 h7 h8 h9 h10 h11 => by
     rw [g₁₀, o₉ _ h9, g₈ _ h11, g₇ _ h7 h8 h9 h10 h11, g₆' _ h3 h5 h6 h11, g₁ _ h1]
@@ -220,8 +220,8 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by simp only [wsSlot]; omega)⟩
-  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega
+      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by simp only [wsSlot]; omega_using [])⟩
+  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_using [hj]
     subst hj0
     have ea : blkAddr (dirCore up) B 0 = B := by simp [dirCore]
     have hK₆ : scheduleAt t₆.mem p = k := by rw [mem₆]; exact hK
@@ -256,8 +256,8 @@ theorem movq_lo {v : BitVec 128} (h : v.extractLsb' 64 64 = 0) : (0 : BitVec 64)
   by_cases h64 : i < 64
   · simp [h64, hi]
   · simp only [h64, decide_false, Bool.false_and, ite_false]
-    simp only [Bool.true_and, show i - 64 < 64 by omega, decide_true]
-    congr 1; omega
+    simp only [Bool.true_and, show i - 64 < 64 by omega_using [hi], decide_true]
+    congr 1; omega_using [h64]
 
 theorem gprSafe_setup : gprSafe .r14 (.block setup) = true := by decide
 

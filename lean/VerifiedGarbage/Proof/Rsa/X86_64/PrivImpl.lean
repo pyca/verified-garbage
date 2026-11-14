@@ -66,11 +66,11 @@ theorem bytesAt_agree {m₁ m₂ : Mem} {p : Addr} {n k : Nat} (hk : k ≤ n) (h
   unfold Spec.Rsa.bytesAt
   refine List.map_congr_left fun i hi => ?_
   have := List.mem_range.mp hi
-  exact (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+  exact (h _ (Offset.contains_base _ (by omega_using [hk, this]) (by omega_using [hk, hn, this]))).symm
 
 theorem readW_agree {m₁ m₂ : Mem} {p : Addr} {n : Nat} (hk : 8 ≤ n) (hn : n < 2 ^ 64)
     (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
     m₂.readW p 64 = m₁.readW p 64 :=
-  Mem.readW_congr fun i hi => (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+  Mem.readW_congr fun i hi => (h _ (Offset.contains_base _ (by omega) (by omega_using [hi]))).symm
 
 end VG.Proof.Rsa.X86_64

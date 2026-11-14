@@ -28,11 +28,11 @@ theorem seedWord_ok {s : State} {p a b : Addr} {j : Nat} (hj : j < 4)
       t.mem = s.mem.write (wordAddr p j) 16 (ofVDwords
         (s.mem.readW (a+BitVec.ofNat 64 (8*j)) 64) (s.mem.readW (b+BitVec.ofNat 64 (8*j)) 64)) := by
   unfold seedWord
-  refine wp_ldr ⟨by omega,by omega⟩ (by rw [ha]) hina fun s1 h1 => ?_
-  refine wp_ldr ⟨by omega,by omega⟩ (by rw [h1.other .x4 (by decide),hb])
+  refine wp_ldr ⟨by omega_using [],by omega_using [hj]⟩ (by rw [ha]) hina fun s1 h1 => ?_
+  refine wp_ldr ⟨by omega_using [],by omega_using [hj]⟩ (by rw [h1.other .x4 (by decide),hb])
     (by rw [h1.rd,h1.wr]; exact hinb) fun s2 h2 => ?_
   refine wp_vop (d := .v0) rfl fun s3 h3 => wp_vop (d := .v0) rfl fun s4 h4 => ?_
-  refine wp_strq (a := wordAddr p j) (by omega)
+  refine wp_strq (a := wordAddr p j) (by omega_using [hj])
     (by rw [h4.gpr,h3.gpr,h2.other .x2 (by decide),h1.other .x2 (by decide),hp]; rfl)
     (by rw [h4.wr,h3.wr,h2.wr,h1.wr]; exact hw) fun t h5 => WP.block_nil_iff.mpr ⟨?_,?_⟩
   · exact ((((RegKeep.upd h1).trans (RegKeep.upd h2)).trans (RegKeep.vupd h3)).trans

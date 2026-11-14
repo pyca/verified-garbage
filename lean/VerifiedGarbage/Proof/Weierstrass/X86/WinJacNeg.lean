@@ -51,10 +51,10 @@ theorem neg_fields_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk v j : N
   have aa := h.field hL hW kaw hw
   have bs : ∀ i<260,a.mem (off base (K.bits+i))=if v.testBit i then 1 else 0 := by
     intro i hi; rw [aa.bits hL hi]; exact hb i hi
-  have hbs : K.bits+260≤size := by have := hL.bits; have := hL.table; omega
+  have hbs : K.bits+260≤size := by have := hL.bits; have := hL.table; omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (signMask_ok K.tc aa.scr (k:=v) (N:=260)
-    (by change 1≤5; decide) (by change 5<2^31; decide) (by change 5*j+5≤260; omega) hbs
+    (by change 1≤5; decide) (by change 5<2^31; decide) (by change 5*j+5≤260; omega_using [hj]) hbs
     ((ka.gpr _ (by decide)).trans hc) bs) fun b ⟨cb,kb⟩ => ?_
   have ib := ia.of_keeps kb (by decide)
   have kbk : ProgKeep K.M base wk [K.neg,K.E.y] a b := (keep_of_ckeeps (kb.mono (by decide))).mono (by simp)

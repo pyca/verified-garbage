@@ -73,7 +73,7 @@ theorem relCT_counted {α : Type} {body : Prog isa} (Inv : α → Nat → State 
     {n : Nat} (hn : n < N) :
     RelCT isa (fun t₁ t₂ => ∃ p₁ p₂, Inv p₁ n t₁ ∧ Inv p₂ n t₂) (.loop body .ne) fun _ _ => True := by
   refine (VG.RelCT.loop (M := isa) (fun k t₁ t₂ => ∃ n, n + k = N ∧ n < N ∧ ∃ p₁ p₂, Inv p₁ n t₁ ∧ Inv p₂ n t₂)
-    ?_ (N - n)).mono (fun t₁ t₂ ⟨p₁, p₂, h₁, h₂⟩ => ⟨n, by omega, hn, p₁, p₂, h₁, h₂⟩) fun _ _ h => h
+    ?_ (N - n)).mono (fun t₁ t₂ ⟨p₁, p₂, h₁, h₂⟩ => ⟨n, by omega_using [hn], hn, p₁, p₂, h₁, h₂⟩) fun _ _ h => h
   intro k
   refine (VG.RelCT.exists_ (P := fun (x : Nat × α × α) t₁ t₂ => x.1 + k = N ∧ x.1 < N ∧
     Inv x.2.1 x.1 t₁ ∧ Inv x.2.2 x.1 t₂) fun ⟨m, p₁, p₂⟩ => ?_).mono
@@ -93,8 +93,8 @@ theorem relCT_counted {α : Type} {body : Prog isa} (Inv : α → Nat → State 
   have hlt : m + 1 < N := by
     by_cases h : m + 1 = N
     · simp [h] at et
-    · omega
-  exact ⟨k - 1, by omega, m + 1, by omega, hlt, p₁, p₂, i₁ hlt, i₂ hlt⟩
+    · omega_using [hk, h]
+  exact ⟨k - 1, by omega_using [hk], m + 1, by omega_using [hk], hlt, p₁, p₂, i₁ hlt, i₂ hlt⟩
 
 /-- A block whose first part `l₁` loads what makes the registers of `τ'` agree: `l₁` checked
 from `τ`, the rest from `τ'`. -/
@@ -206,9 +206,9 @@ theorem loadHead_ok {t : State} (h : RtWs L t B Z len N) {b d j : Nat} (hb : b <
   simp only [S] at fb
   simp only [VG.Impl.Rsa.X86.Keys.hdr] at hdr
   refine arrPtr_ok (lenSrc h) h.lenLe h.edi (r := .ebx) (t := .edx) (j := b) (by decide) (by decide)
-    (by omega) fun u₁ K₁ m₁ p₁ _ => ?_
+    (by omega_using [nw, fb]) fun u₁ K₁ m₁ p₁ _ => ?_
   have h₁ := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _)
-  refine wp_movS (readSrc_sc h₁.ws.workspace (d := d) (by omega)) fun m U _ => WP.block_nil ?_
+  refine wp_movS (readSrc_sc h₁.ws.workspace (d := d) (by omega_using [hd, hdr])) fun m U _ => WP.block_nil ?_
   refine ⟨(K₁.mono (by decide)).trans (U.keeps.mono (by decide)), by rw [U.mem, m₁], ?_, ?_⟩
   · rw [PtrAt, U.other .ebx (by decide)]; exact p₁
   · rw [U.gpr, m₁]; exact hj
@@ -244,9 +244,9 @@ theorem rowsFrom_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
     (RtWs L p B Z len N ∧ Fr p) ∧ RowsI L p B Z len N o a b j half t
   have frAt : ∀ {p j t}, Inv p j t → Fr t := fun {p j t} ⟨⟨_, fp⟩, I⟩ =>
     hF fp I.rest (by decide) (by decide)
-      (VG.Proof.Rsa.X86.KeyRt.keep_outside I.ws.ws I.keep (by simp; omega) (by decide))
+      (VG.Proof.Rsa.X86.KeyRt.keep_outside I.ws.ws I.keep (by simp; omega_using [ho]) (by decide))
   refine VG.RelCT.seq (R := fun t₁ t₂ => ∃ p₁ p₂, Inv p₁ 0 t₁ ∧ Inv p₂ 0 t₂) ?_
-    (relCT_counted Inv (rowsN len rows half) (fun j hj => ?_) (fun p j t hj ⟨P, I⟩ => ?_) (n := 0) (by omega))
+    (relCT_counted Inv (rowsN len rows half) (fun j hj => ?_) (fun p j t hj ⟨P, I⟩ => ?_) (n := 0) (by omega_using [hR1]))
   · -- The rows' start, by the taint analysis.
     obtain ⟨_, c₀⟩ := c₀
     have init : ∀ t, RtWs L t B Z len N → Fr t → WP isa init t (fun u => Inv t 0 u) := fun t ht ft =>
@@ -318,7 +318,7 @@ theorem mulHalf_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
   exact VG.RelCT.assoc (VG.RelCT.assoc (VG.RelCT.assoc (rowsFrom_relCT hA hF hτ (half := true) (rows := none)
     (fun t ht => WP.assoc' (WP.assoc'
       (by simpa only [VG.Impl.Rsa.X86.WordModRt.seqs] using halfInit_ok ht (a := a) (b := b) ho)))
-    (by simp only [rowsN, rowW]; omega) (by simp only [rowsN, rowW]; omega) (by simp)
+    (by simp only [rowsN, rowW]; omega_using [hw, kwe]) (by simp only [rowsN, rowW]; omega_using []) (by simp)
     ho ha hb hao hao1 hbo hbo1 c₀ c₁ c₂)))
 
 /-! ## `wordMod` -/
@@ -371,11 +371,11 @@ theorem wordMod_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
     LoopI L p.1 B Z len N ml a r t p.2.1 p.2.2 Sc i u
   have frAt : ∀ {p i u}, Inv p i u → Fr u := fun {p i u} ⟨⟨fp, _⟩, I⟩ =>
     hF fp I.rest (by decide) (by decide)
-      (VG.Proof.Rsa.X86.KeyRt.keep_outside I.ws.ws I.keep (by simp; omega) (by decide))
+      (VG.Proof.Rsa.X86.KeyRt.keep_outside I.ws.ws I.keep (by simp; omega_using [hr, ht]) (by decide))
   unfold VG.Impl.Rsa.X86.WordModRt.wordMod
   simp only [VG.Impl.Rsa.X86.WordModRt.seqs]
   refine VG.RelCT.assoc (VG.RelCT.assoc (VG.RelCT.seq (R := fun t₁ t₂ => ∃ p₁ p₂, Inv p₁ 0 t₁ ∧ Inv p₂ 0 t₂) ?_
-    ((relCT_counted Inv Sc (fun i hi => ?_) (fun p i u hi ⟨P, I⟩ => ?_) (n := 0) (by omega)))))
+    ((relCT_counted Inv Sc (fun i hi => ?_) (fun p i u hi ⟨P, I⟩ => ?_) (n := 0) (by omega_using [])))))
   · -- `orTop`, `recip` and `seed`, by the taint analysis.
     obtain ⟨_, c₀⟩ := c₀
     have pre : ∀ u, RtWs L u B Z len N → Fr u → MLen u B Z ml a →
@@ -384,7 +384,7 @@ theorem wordMod_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
       WP.mono (wordModPre_ok (t := t) hu mu hx hr hmN hrm hxr hxm h4 hw htop)
         fun v ⟨Mn, X₀, _, X₃, M₃, H₃, I₀, k₀, _, _, K₀⟩ =>
           ⟨(v, Mn, X₀), ⟨hF fu K₀ (by decide) (by decide)
-            (VG.Proof.Rsa.X86.KeyRt.keep_outside hu.ws k₀ (by simp; omega) (by decide)), X₃, M₃, H₃⟩, I₀⟩
+            (VG.Proof.Rsa.X86.KeyRt.keep_outside hu.ws k₀ (by simp; omega_using [hr, hmN]) (by decide)), X₃, M₃, H₃⟩, I₀⟩
     exact (VG.RelCT.wpDep (VG.RelCT.taint (A := sseTaint) τ (fun t₁ t₂ h => hA t₁ t₂ h.1.2.1 h.2.2.1) c₀)
       (F := fun _ v => ∃ p, Inv p 0 v) fun t₁ t₂ h => ⟨pre t₁ h.1.1 h.1.2.1 h.1.2.2, pre t₂ h.2.1 h.2.2.1 h.2.2.2⟩).mono
       (fun _ _ h => h) fun _ _ ⟨_, _, _, _, ⟨p₁, g₁⟩, ⟨p₂, g₂⟩⟩ => ⟨p₁, p₂, g₁, g₂⟩
@@ -393,7 +393,7 @@ theorem wordMod_relCT {τ : VG.X86.Taint.T} {Fr : State → Prop}
     refine relCT_head (J := fun p u => Inv p i u) (τ := τ) (τ' := { τ with regs := .ofList [.edi, .esp, .eax, .ebx] })
       (G := fun _ v => Fr v ∧ PtrAt v B .ebx (arr (kw len) x) ∧ (v.gpr .eax).toNat = Sc - i)
       (fun _ _ t₁ t₂ i₁ i₂ => hA t₁ t₂ (frAt i₁) (frAt i₂)) c₁
-      (fun _ u iu => WP.mono (loadHead_ok iu.2.ws (by omega) (by decide) iu.2.steps) fun v ⟨K, mm, pb, ea⟩ =>
+      (fun _ u iu => WP.mono (loadHead_ok iu.2.ws (by omega_using [hx]) (by decide) iu.2.steps) fun v ⟨K, mm, pb, ea⟩ =>
         ⟨hF (frAt iu) K (by decide) (by decide) (by rw [mm]; exact Outside.refl _ _ _ _), pb, ea⟩)
       (fun _ _ m₁ m₂ ⟨f₁, b₁, e₁⟩ ⟨f₂, b₂, e₂⟩ => agree_regs' (hA m₁ m₂ f₁ f₂) fun r hr => ?_) c₂
     have G := hA m₁ m₂ f₁ f₂

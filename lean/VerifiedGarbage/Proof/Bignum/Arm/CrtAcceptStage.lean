@@ -30,8 +30,8 @@ theorem crt_acceptStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     (r := ⟨State.addr g.base, 8 * workspaceWords g.words⟩) (by simp [crtRegions])
   have input : CrtAcceptInput g.base g.input (workspaceWords g.words) g.words g.length (bs 1) s :=
     ⟨ready, h.main, h.inputSaved (by simp [crtRegions]),
-      by have := h.buffers.lengthValid.1; omega, (crt_width_valid h.buffers.lengthValid).2.2,
-      by have := h.stack.nowrap; omega, h.stack.write (by decide),
+      by have := h.buffers.lengthValid.1; omega_using [this], (crt_width_valid h.buffers.lengthValid).2.2,
+      by have := h.stack.nowrap; omega_using [this], h.stack.write (by decide),
       (h.stack.separate.symm.sub_right (Offset.sub_base _ (by decide))).sub_left mainSub⟩
   refine WP.mono (crt_acceptInput_ok s input) ?_
   rintro t ⟨readyT, modulus, _, flag, frame, rest, mainT⟩

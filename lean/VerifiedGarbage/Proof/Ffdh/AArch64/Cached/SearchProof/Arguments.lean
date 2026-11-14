@@ -35,7 +35,7 @@ theorem KeyInput.context_frame {p : KeyPublic} {s : State} (h : KeyInput p s) {m
  · have inside : i<(stackArg s 6).toNat :=List.mem_range.mp hi
    have size:=h.nowrap (r:=inContext s) (by simp [inReads])
    change (stackArg s 5).toNat+(stackArg s 6).toNat*8≤2^64 at size
-   exact Offset.contains_base _ (by omega) (by omega)
+   exact Offset.contains_base _ (by omega_using [inside]) (by omega_using [inside, size])
  · exact h.read_disjoint (by simp [inReads])
  · decide
 
@@ -44,7 +44,7 @@ theorem KeyInput.argument_frame {p : KeyPublic} {s : State} (h : KeyInput p s) {
  m'.readW (s.sp+BitVec.ofNat 64 (8*j)) 64=m.readW (s.sp+BitVec.ofNat 64 (8*j)) 64 :=by
  apply hf.readW (r:=inArgs s)
  · simp only [inArgs,stackArgAddr,Nat.mul_zero,BitVec.add_zero]
-   exact Offset.contains_base _ (by omega) (by omega)
+   exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
  · exact h.read_disjoint (by simp [inReads])
  · decide
 
@@ -114,7 +114,7 @@ theorem key_arguments_ok {p : KeyPublic} {original s : State} {used keys scalars
       Keep argRegsW (allocated 48 s) u := by
   have a := h.access
   have hw : ∀ d, d + 8 ≤ 48 → InRegions (⟨callSp p, 48⟩ :: s.wr) (callSp p + BitVec.ofNat 64 d) 8 :=
-    fun d hd => ⟨⟨callSp p, 48⟩, List.mem_cons_self .., Offset.contains_base _ hd (by omega)⟩
+    fun d hd => ⟨⟨callSp p, 48⟩, List.mem_cons_self .., Offset.contains_base _ hd (by omega_using [hd])⟩
   have hw0 : InRegions (⟨callSp p, 48⟩ :: s.wr) (callSp p) 8 := by
     simpa only [BitVec.add_zero] using hw 0 (by decide)
   have hl : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ ⟨callSp p, 48⟩ :: s.wr) (p.control + BitVec.ofNat 64 d) 8 :=

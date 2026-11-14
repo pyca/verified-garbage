@@ -43,13 +43,13 @@ def res (m : Nat) (v : Int) : Nat := (v % (m : Int)).toNat
 theorem res_cast (v : Int) : (res m v : Int) = v % (m : Int) := by
   have hm : (0 : Int) < m := Int.natCast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
   have := Int.emod_nonneg v (Int.ne_of_gt hm)
-  unfold res; omega
+  unfold res; omega_using [this]
 
 theorem res_lt (v : Int) : res m v < m := by
   have hm : (0 : Int) < m := Int.natCast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
   have h1 := Int.emod_lt_of_pos v hm
   have := res_cast (m := m) v
-  omega
+  omega_using [h1, this]
 
 theorem res_add (a b : Int) : res m (a + b) = (res m a + res m b) % m := by
   apply Int.ofNat.inj
@@ -83,7 +83,7 @@ theorem ofI_self : ofI m (m : Int) = 0 := by
 
 theorem ofI_sub (a b : Int) : ofI m (a - b) = ofI m a - ofI m b := by
   have := ofI_add (m := m) (a - b) b
-  rw [show a - b + b = a by omega] at this
+  rw [show a - b + b = a by omega_using []] at this
   grind
 
 /-- A multiple of `m` more is the same. -/
@@ -135,31 +135,31 @@ open VG.Proof.Poly1305.X86_64.Avx2 (sel4)
 theorem dbl1g_v0 (u zn q3 : F5 T) (E : Env) :
     vI E 0 (Id.run (dbl1g tops u zn q3)) = 4 * vI E 0 u + 80 * pI := by
   glue_simp [dbl1g]
-  omega
+  omega_using []
 
 theorem dbl1g_v1 (u zn q3 : F5 T) (E : Env) :
     vI E 1 (Id.run (dbl1g tops u zn q3)) = 4 * vI E 0 u + 2 * vI E 1 zn + 80 * pI := by
   glue_simp [dbl1g]
-  omega
+  omega_using []
 
 theorem dbl1g_v3 (u zn q3 : F5 T) (E : Env) :
     vI E 3 (Id.run (dbl1g tops u zn q3)) = 48 * (vI E 3 q3 - vI E 1 q3) + 96 * pI := by
   glue_simp [dbl1g]
-  omega
+  omega_using []
 
 theorem dbl3g_v0 (q1 n3 : F5 T) (E : Env) : vI E 0 (Id.run (dbl3g tops q1 n3)) = vI E 0 q1 := by
   glue_simp [dbl3g]
-  omega
+  omega_using []
 
 theorem dbl3g_v1 (q1 n3 : F5 T) (E : Env) :
     vI E 1 (Id.run (dbl3g tops q1 n3)) = vI E 1 q1 - vI E 0 q1 - 4 * vI E 1 n3 + 10 * pI := by
   glue_simp [dbl3g]
-  omega
+  omega_using []
 
 theorem dbl3g_v2 (q1 n3 : F5 T) (E : Env) :
     vI E 2 (Id.run (dbl3g tops q1 n3)) = vI E 0 q1 + 4 * vI E 3 n3 := by
   glue_simp [dbl3g]
-  omega
+  omega_using []
 
 /-- `W = XB2 - BB - 16 XX'`, as the lanes of `dbl5g` have it. -/
 def dblW (E : Env) (q2 q3 : F5 T) : Int := vI E 2 q2 - vI E 0 q2 - 16 * vI E 3 q3
@@ -167,22 +167,22 @@ def dblW (E : Env) (q2 q3 : F5 T) : Int := vI E 2 q2 - vI E 0 q2 - 16 * vI E 3 q
 theorem dbl5g_v0 (q2 q1 o1 q3 : F5 T) (E : Env) :
     vI E 0 (Id.run (dbl5g tops q2 q1 o1 q3)).1 = 6 * dblW E q2 q3 - vI E 3 q1 + 200 * pI := by
   glue_simp [dbl5g, dblW]
-  omega
+  omega_using []
 
 theorem dbl5g_v1 (q2 q1 o1 q3 : F5 T) (E : Env) :
     vI E 1 (Id.run (dbl5g tops q2 q1 o1 q3)).1 = vI E 1 q2 := by
   glue_simp [dbl5g]
-  omega
+  omega_using []
 
 theorem dbl5g_v2 (q2 q1 o1 q3 : F5 T) (E : Env) :
     vI E 2 (Id.run (dbl5g tops q2 q1 o1 q3)).1 = 6 * dblW E q2 q3 - vI E 3 q1 + vI E 3 o1 + 200 * pI := by
   glue_simp [dbl5g, dblW]
-  omega
+  omega_using []
 
 theorem dbl5g_v3 (q2 q1 o1 q3 : F5 T) (E : Env) :
     vI E 3 (Id.run (dbl5g tops q2 q1 o1 q3)).1 = vI E 3 q1 - 4 * dblW E q2 q3 + 5 * pI := by
   glue_simp [dbl5g, dblW]
-  omega
+  omega_using []
 
 theorem dbl5g_dd (q2 q1 o1 q3 : F5 T) (E : Env) : vI E 0 (Id.run (dbl5g tops q2 q1 o1 q3)).2.1 = vI E 3 q1 := by
   glue_simp [dbl5g]
@@ -193,7 +193,7 @@ theorem dbl5g_bb (q2 q1 o1 q3 : F5 T) (E : Env) : vI E 0 (Id.run (dbl5g tops q2 
 theorem dbl6u_v0 (q3 pdd pbb : F5 T) (E : Env) :
     vI E 0 (Id.run (dbl6u tops q3 pdd pbb)) = vI E 2 q3 - vI E 0 q3 - vI E 0 pdd - 16 * vI E 0 pbb := by
   glue_simp [dbl6u]
-  omega
+  omega_using []
 
 end
 
@@ -249,7 +249,7 @@ abbrev Pb : Int := pI + 2 ^ 252 + 2 ^ 236
 theorem Carried.nonneg {E : Env} {k : Nat} {v : F5 T} (h : Carried E k v) : 0 ≤ vI E k v := by
   unfold Carried at h
   simp only [vI, val5]
-  omega
+  omega_using [h]
 
 /-- A product of carried lanes below `A` and `B`, with `A B ≤ 2²⁶⁰ Dd`. -/
 theorem mul_fact {E : Env} {k : Nat} {a b : F5 T} (ha : Carried E k a) (hb : Carried E k b) {A B Dd : Int}
@@ -259,13 +259,13 @@ theorem mul_fact {E : Env} {k : Nat} {a b : F5 T} (ha : Carried E k a) (hb : Car
   obtain ⟨M, h0, h1, h2⟩ := mulCore_val a b E k ha hb
   have a0 := ha.nonneg
   have b0 := hb.nonneg
-  have hp : vI E k a * vI E k b ≤ A * B := Int.mul_le_mul (Int.le_of_lt hA) (Int.le_of_lt hB) b0 (by omega)
+  have hp : vI E k a * vI E k b ≤ A * B := Int.mul_le_mul (Int.le_of_lt hA) (Int.le_of_lt hB) b0 (by omega_using [hA, a0])
   refine ⟨?_, ?_, ?_⟩
   · have := Int.mul_nonneg a0 b0
     simp only [pI] at h2
-    omega
+    omega_using [h0, h2, this]
   · simp only [pI] at h2 ⊢
-    omega
+    omega_using [hAB, h1, h2, hp]
   · rw [← pN_eq] at h2
     exact dec_mont unitR h2
 
@@ -279,9 +279,9 @@ theorem sqr_fact {E : Env} {k : Nat} {a : F5 T} (ha : Carried E k a) (hA : vI E 
   refine ⟨?_, ?_, ?_⟩
   · have := Int.mul_nonneg a0 a0
     simp only [pI] at h2
-    omega
+    omega_using [h0, h2, this]
   · simp only [pI, Pb, Nb] at h2 hp ⊢
-    omega
+    omega_using [h1, h2, hp]
   · rw [← pN_eq] at h2
     exact dec_mont unitR h2
 
@@ -339,12 +339,12 @@ theorem Raw.sqr {E : Env} {k : Nat} {a : F5 T} {x : Fin pN} (h : Car E k a x) :
 
 theorem Raw.mul {E : Env} {k : Nat} {a b : F5 T} {x y : Fin pN} (ha : Car E k a x) (hb : Car E k b y) :
     Raw E k (Id.run (mulCore tops a b)) (x * y) := by
-  obtain ⟨l, u, e⟩ := mul_fact ha.c hb.c ha.hi hb.hi (Dd := 2 ^ 252 + 2 ^ 236) (by simp only [Nb]; omega)
+  obtain ⟨l, u, e⟩ := mul_fact ha.c hb.c ha.hi hb.hi (Dd := 2 ^ 252 + 2 ^ 236) (by simp only [Nb]; omega_using [])
   exact ⟨l, u, by rw [e, ha.d, hb.d]⟩
 
 theorem Wide.mul {E : Env} {k : Nat} {a b : F5 T} {x y : Fin pN} (ha : Car E k a x) (hb : Ent E k b y) :
     Wide E k (Id.run (mulCore tops a b)) (x * y) := by
-  obtain ⟨l, u, e⟩ := mul_fact ha.c hb.c ha.hi hb.hi (Dd := 2 ^ 255 + 2 ^ 238) (by simp only [Nb]; omega)
+  obtain ⟨l, u, e⟩ := mul_fact ha.c hb.c ha.hi hb.hi (Dd := 2 ^ 255 + 2 ^ 238) (by simp only [Nb]; omega_using [])
   exact ⟨l, u, by rw [e, ha.d, hb.d]⟩
 
 theorem Car.norm {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) (v : F5 T) {k : Nat} (hk : k < 4) {iv : Int × Int}

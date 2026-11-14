@@ -134,12 +134,12 @@ theorem pp_contract_pre (s : State) (h : (Spec.Rsa.privatePrecomputeContract abi
 theorem byte_zero_of_read {m : Mem} {a : Addr} {n i : Nat} (h : (m.read a n).toNat = 0) (hi : i < n) :
     m (a + BitVec.ofNat 64 i) = 0 := by
   have split := read_toNat_add m (n - i) i a
-  rw [show n - i + i = n by omega, h] at split
+  rw [show n - i + i = n by omega_using [hi], h] at split
   have high : (m.read (a + BitVec.ofNat 64 i) (n - i)).toNat = 0 := by
     have := Nat.two_pow_pos (8 * i)
     rcases Nat.eq_zero_of_add_eq_zero split.symm with ⟨_, h2⟩
-    exact (Nat.mul_eq_zero.mp h2).resolve_left (by omega)
-  rw [show n - i = n - i - 1 + 1 by omega, read_toNat_succ] at high
+    exact (Nat.mul_eq_zero.mp h2).resolve_left (by omega_using [split])
+  rw [show n - i = n - i - 1 + 1 by omega_using [hi], read_toNat_succ] at high
   apply BitVec.eq_of_toNat_eq
   have := Nat.eq_zero_of_add_eq_zero high
   exact this.1
@@ -151,7 +151,7 @@ theorem bytesAt_zero_of_read {m : Mem} {a : Addr} {n k : Nat} (h : (m.read a n).
   · intro i hi _
     have hi' : i < k := by simpa only [Spec.Rsa.bytesAt, List.length_map, List.length_range] using hi
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
-    exact byte_zero_of_read h (by omega)
+    exact byte_zero_of_read h (by omega_using [hk, hi'])
 
 /-- The three frames below the caller's stack pointer: the caller's
 registers', the CRT's arguments' and the CRT's own, at `112`, `56` and `0`
@@ -163,19 +163,19 @@ theorem pp_stack_addrs {sp : BitVec 32} (fit : 168 ≤ sp.toNat) :
       State.addr sp - BitVec.ofNat 64 168 + BitVec.ofNat 64 56 ∧
     State.addr (sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 56 - BitVec.ofNat 32 56) =
       State.addr sp - BitVec.ofNat 64 168 := by
-  have a1 : (sp - BitVec.ofNat 32 56).toNat = sp.toNat - 56 := FrameStack.sub_toNat' (by omega)
+  have a1 : (sp - BitVec.ofNat 32 56).toNat = sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [fit])
   have a2 : (sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 56).toNat = sp.toNat - 112 := by
-    rw [FrameStack.sub_toNat' (by omega), a1]; omega
+    rw [FrameStack.sub_toNat' (by omega_using [fit, a1]), a1]; omega_using []
   have lt := sp.isLt
   have eq (x : BitVec 32) (k : Nat) (hx : x.toNat = sp.toNat - k) (hk : k ≤ 168) :
       State.addr x = State.addr sp - BitVec.ofNat 64 168 + BitVec.ofNat 64 (168 - k) := by
     apply BitVec.eq_of_toNat_eq
     simp only [State.addr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, hx]
-    omega
+    omega_using [fit, hk]
   refine ⟨?_, eq _ 56 a1 (by decide), eq _ 112 a2 (by decide), ?_⟩
   · unfold FrameStack.belowA; rw [FrameStack.addr_sub' fit]
   · have := eq (sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 56 - BitVec.ofNat 32 56) 168
-      (by rw [FrameStack.sub_toNat' (by omega), a2]; omega) (by decide)
+      (by rw [FrameStack.sub_toNat' (by omega_using [fit, a2]), a2]; omega_using []) (by decide)
     simpa only [Nat.sub_self, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 theorem pp_loadArgs_ok (x : State) (fit : x.sp.toNat + 76 ≤ 2 ^ 32)
@@ -187,7 +187,7 @@ theorem pp_loadArgs_ok (x : State) (fit : x.sp.toNat + 76 ≤ 2 ^ 32)
       t.gpr .r10 = v 0 ∧ t.gpr .r11 = v 60 ∧ t.gpr .r12 = v 72 ∧ t.mem = x.mem ∧
       Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] x t := by
   unfold loadArgs
-  have ld (d : Nat) (hd : d + 4 ≤ 76) := addr_add (a := x.sp) (k := d) (by omega)
+  have ld (d : Nat) (hd : d + 4 ≤ 76) := addr_add (a := x.sp) (k := d) (by omega_using [fit, hd])
   refine wp_loadStack (a := off (State.addr x.sp) 0) (by decide) (ld 0 (by decide)) (read 0 (Or.inl (by decide))) fun a1 h1 => ?_
   refine wp_loadStack (a := off (State.addr x.sp) 12) (by decide) (by rw [h1.sp]; exact ld 12 (by decide))
     (by rw [h1.rd, h1.wr]; exact read 12 (Or.inl (by decide))) fun a2 h2 => ?_
@@ -288,12 +288,12 @@ structure PpLayout (s : State) (B : Addr) (P : Nat) : Prop where
 theorem pp_layout (s : State) (h : PpFnInput s) :
     PpLayout s (State.addr s.sp - BitVec.ofNat 64 168) (ppPreWords (ppGeometry s)) := by
   have hP := pp_preWords h
-  have lenP : (s.gpr .r1).toNat * 8 = 8 * ppPreWords (ppGeometry s) := by rw [hP]; omega
+  have lenP : (s.gpr .r1).toNat * 8 = 8 * ppPreWords (ppGeometry s) := by rw [hP]; omega_using []
   obtain ⟨below168, a1, a2, a3⟩ := pp_stack_addrs h.stackFit
-  refine ⟨rfl, hP, lenP, by have := h.preFit; omega, a1, a2, a3, ?_, (BitVec.sub_add_cancel _ _).symm,
+  refine ⟨rfl, hP, lenP, by have := h.preFit; omega_using [hP, this], a1, a2, a3, ?_, (BitVec.sub_add_cancel _ _).symm,
     ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have := h.stackFit
-    simp only [State.addr, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    simp only [State.addr, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [this]
   · have := h.stPre; rw [below168, lenP] at this; exact this
   · have := h.stN; rw [below168] at this; exact this
   · have := h.stP; rw [below168] at this; exact this
@@ -309,7 +309,7 @@ theorem PpLayout.frame1 {s : State} {B : Addr} {P : Nat} (L : PpLayout s B P) (h
     Frame [⟨B + BitVec.ofNat 64 112, 56⟩] s.mem (pcPushed s).mem := by
   have := FrameStack.pushed_frameA
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (s := s)
-    (by show 56 ≤ _; have := h.stackFit; omega)
+    (by show 56 ≤ _; have := h.stackFit; omega_using [this])
   unfold FrameStack.belowA at this
   rw [show 4 * List.length [Reg.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr] = 56
     from rfl, L.a1] at this
@@ -341,16 +341,16 @@ theorem pp_zero_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
     (hv : PpZeroReady s P v) : WP isa zero v (PpZeroed s P) := by
   obtain ⟨r0, lr, r3, memV, restV⟩ := hv
   refine WP.mono (zero_ok v (base := s.gpr .r0) (size := 8 * P) (o := 0) (n := 2 * P)
-    ⟨L.preFit, by omega, ?_⟩ (by have := h.pPositive; rw [← L.hPw]; simp only [ppPreWords, ppWords]; omega)
+    ⟨L.preFit, by omega_using [], ?_⟩ (by have := h.pPositive; rw [← L.hPw]; simp only [ppPreWords, ppWords]; omega_using [])
     (by rw [r0]; simp) lr r3) ?_
   · rw [restV.wr]; exact ⟨_, List.mem_cons_of_mem _ L.preW, Region.contains_self _ _⟩
   rintro w ⟨_, _, _, outside, value, restW⟩
   refine ⟨(restV.mono (by decide)).trans (restW.mono (by decide)), ?_, ?_⟩
-  · have := outside_frame outside (by have := L.preFit; omega)
-    rw [memV, show 4 * (2 * P) = 8 * P by omega] at this
+  · have := outside_frame outside (by have := L.preFit; omega_using [this])
+    rw [memV, show 4 * (2 * P) = 8 * P by omega_using []] at this
     simpa only [off, BitVec.add_zero] using this
   · have := read_eq_val32 w.mem (State.addr (s.gpr .r0)) (2 * P) 0
-    rw [value, show 4 * (2 * P) = 8 * P by omega] at this
+    rw [value, show 4 * (2 * P) = 8 * P by omega_using []] at this
     simpa only [off, BitVec.add_zero] using this
 
 /-! ### The CRT's stack arguments in registers -/
@@ -382,10 +382,10 @@ theorem pp_load_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
   have spW : w.sp = s.sp - BitVec.ofNat 32 56 := by rw [restW.sp]; rfl
   have argAddr (d : Nat) (hd : d + 4 ≤ 24) :
       off (State.addr w.sp) (56 + d) = off (State.addr s.sp) d := by
-    rw [spW]; exact public_push_argOffset (s := s) (by omega) d
+    rw [spW]; exact public_push_argOffset (s := s) (by omega_using [stackFit]) d
   have savedW : Spill.Saved w.mem (State.addr w.sp) s.gpr pcAllSaved := by
     rw [spW]
-    refine (pc_push_saved s (by omega)).frame (lo := 0) (hi := 56) (by decide) hw.frame ?_
+    refine (pc_push_saved s (by omega_using [stackFit])).frame (lo := 0) (hi := 56) (by decide) hw.frame ?_
     intro r hr; simp only [List.mem_singleton] at hr; subst r
     rw [BitVec.add_zero]
     have e : State.addr (s.sp - 56) = B + BitVec.ofNat 64 112 := L.a1
@@ -406,19 +406,19 @@ theorem pp_load_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
           simp only [List.mem_singleton] at hr; subst r
           have := L.Bnat
           simp only [off]; rw [L.spB, BitVec.add_assoc, ← BitVec.ofNat_add]
-          exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)) (by decide)
+          exact Offset.disjoint _ (Or.inr (by omega_using [])) (by omega_using [hi]) (by omega_using [])) (by decide)
     rw [keep1, keep2]
     unfold stackArg stackArgAddr
-    rw [addr_add (by omega)]
-  refine WP.mono (pp_loadArgs_ok w (by rw [spW, FrameStack.sub_toNat' (by omega)]; omega) ?_) ?_
+    rw [addr_add (by omega_using [argFit, hi])]
+  refine WP.mono (pp_loadArgs_ok w (by rw [spW, FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using [argFit]) ?_) ?_
   · intro d hd
     rcases hd with low | ⟨high, hd⟩
-    · refine ⟨_, List.mem_append_right _ ?_, Offset.contains_base _ low (by omega)⟩
+    · refine ⟨_, List.mem_append_right _ ?_, Offset.contains_base _ low (by omega_using [low])⟩
       rw [restW.wr, spW]; exact List.mem_cons_self
-    · have e := argAddr (d - 56) (by omega)
-      rw [show 56 + (d - 56) = d by omega] at e
+    · have e := argAddr (d - 56) (by omega_using [hd])
+      rw [show 56 + (d - 56) = d by omega_using [high]] at e
       rw [e, restW.rd]
-      exact ⟨_, List.mem_append_left _ h.argRead, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, List.mem_append_left _ h.argRead, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩
   rintro x ⟨x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, memX, restX⟩
   dsimp only at x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12
   have sv (r : Reg) (d : Nat) (hr : (r, d) ∈ pcAllSaved) :
@@ -459,38 +459,38 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
   have stackSub := L.stackSub
   have restX := hx.rest
   have spX : x.sp = s.sp - BitVec.ofNat 32 56 := by rw [restX.sp]; rfl
-  have spXnat : x.sp.toNat = s.sp.toNat - 56 := by rw [spX, FrameStack.sub_toNat' (by omega)]
+  have spXnat : x.sp.toNat = s.sp.toNat - 56 := by rw [spX, FrameStack.sub_toNat' (by omega_using [stackFit])]
   have frameY0 : Frame [⟨B + BitVec.ofNat 64 56, 56⟩] x.mem (pcPushed x).mem := by
     have := FrameStack.pushed_frameA
-      (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (s := x) (by show 56 ≤ _; omega)
+      (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (s := x) (by show 56 ≤ _; omega_using [stackFit, spXnat])
     unfold FrameStack.belowA at this
     rw [show 4 * List.length [Reg.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr] = 56
       from rfl, spX, L.a2] at this
     exact this
   have outerY0 (d : Nat) (hd : d + 4 ≤ 56) :
       (pcPushed x).mem.readW (off (State.addr (pcPushed x).sp) (56 + d)) 32 = x.mem.readW (off (State.addr x.sp) d) 32 := by
-    rw [public_push_argOffset (by omega) d]
+    rw [public_push_argOffset (by omega_using [stackFit, spXnat]) d]
     refine frameY0.readW (r := ⟨off (State.addr x.sp) d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr; simp only [List.mem_singleton] at hr; subst r
     simp only [off]; rw [spX, L.a1, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+    exact Offset.disjoint _ (Or.inr (by omega_using [])) (by omega_using [hd]) (by omega_using [])
   have outerW (r : Reg) (d : Nat) (hr : (r, d) ∈ pcAllSaved) :
       x.mem.readW (off (State.addr x.sp) d) 32 = s.gpr r := hx.saved (r, d) hr
   unfold callArgs
   have rd0 (d : Nat) (hd : 56 + d + 4 ≤ 112) : InRegions ((pcPushed x).rd ++ (pcPushed x).wr)
       (off (State.addr (pcPushed x).sp) (56 + d)) 4 := by
-    rw [public_push_argOffset (by omega) d]
+    rw [public_push_argOffset (by omega_using [stackFit, spXnat]) d]
     refine ⟨⟨State.addr x.sp, 56⟩, List.mem_append_right _ (List.mem_cons_of_mem _ ?_),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩
     rw [restX.wr, spX]; exact List.mem_cons_self
   have sp0 : (pcPushed x).sp.toNat + 112 ≤ 2 ^ 32 := by
-    change (x.sp - BitVec.ofNat 32 56).toNat + 112 ≤ _; rw [FrameStack.sub_toNat' (by omega)]; omega
-  refine wp_loadStack (a := off (State.addr (pcPushed x).sp) (56 + 0)) (by decide) (addr_add (by omega)) (rd0 0 (by decide))
+    change (x.sp - BitVec.ofNat 32 56).toNat + 112 ≤ _; rw [FrameStack.sub_toNat' (by omega_using [stackFit, spXnat])]; omega_using [spXnat]
+  refine wp_loadStack (a := off (State.addr (pcPushed x).sp) (56 + 0)) (by decide) (addr_add (by omega_using [sp0])) (rd0 0 (by decide))
     fun y1 c1 => ?_
   refine wp_loadStack (a := off (State.addr (pcPushed x).sp) (56 + 8)) (by decide)
-    (by rw [c1.sp]; exact addr_add (by omega)) (by rw [c1.rd, c1.wr]; exact rd0 8 (by decide)) fun y2 c2 => ?_
+    (by rw [c1.sp]; exact addr_add (by omega_using [sp0])) (by rw [c1.rd, c1.wr]; exact rd0 8 (by decide)) fun y2 c2 => ?_
   refine wp_loadStack (a := off (State.addr (pcPushed x).sp) (56 + 12)) (by decide)
-    (by rw [c2.sp, c1.sp]; exact addr_add (by omega)) (by rw [c2.rd, c2.wr, c1.rd, c1.wr]; exact rd0 12 (by decide))
+    (by rw [c2.sp, c1.sp]; exact addr_add (by omega_using [sp0])) (by rw [c2.rd, c2.wr, c1.rd, c1.wr]; exact rd0 12 (by decide))
     fun y c3 => WP.block_nil ?_
   have memY : y.mem = (pcPushed x).mem := by rw [c3.mem, c2.mem, c1.mem]
   have spY : y.sp = (pcPushed x).sp := by rw [c3.sp, c2.sp, c1.sp]
@@ -508,14 +508,14 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
   have belowY : FrameStack.belowA y.sp 56 = ⟨B, 56⟩ := by
     unfold FrameStack.belowA; rw [spY', L.a3]
   have ySpNat : y.sp.toNat = s.sp.toNat - 112 := by
-    rw [spY', FrameStack.sub_toNat' (by rw [FrameStack.sub_toNat' (by omega)]; omega),
-      FrameStack.sub_toNat' (by omega)]; omega
+    rw [spY', FrameStack.sub_toNat' (by rw [FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using [stackFit]),
+      FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using []
   have wrY : y.wr = ⟨State.addr y.sp, 56⟩ :: ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ :: s.wr := by
     rw [c3.wr, c2.wr, c1.wr, spY]; change ⟨_, 56⟩ :: x.wr = _; rw [restX.wr]; rfl
   have rdY : y.rd = s.rd := by rw [c3.rd, c2.rd, c1.rd]; change x.rd = _; rw [restX.rd]; rfl
   have slotY (r : Reg) (d : Nat) (hr : (r, d) ∈ pcAllSaved) :
       y.mem.readW (off (State.addr y.sp) d) 32 = x.gpr r := by
-    rw [memY, spY]; exact pc_push_saved x (by omega) (r, d) hr
+    rw [memY, spY]; exact pc_push_saved x (by omega_using [stackFit, spXnat]) (r, d) hr
   have frameSY : Frame [⟨B + BitVec.ofNat 64 112, 56⟩, ⟨State.addr (s.gpr .r0), 8 * P⟩,
       ⟨B + BitVec.ofNat 64 56, 56⟩] s.mem y.mem := by
     have f2 : Frame [⟨B + BitVec.ofNat 64 112, 56⟩, ⟨State.addr (s.gpr .r0), 8 * P⟩,
@@ -523,13 +523,13 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
     rw [memY]
     exact ((L.frame1 h).mono (by simp)).trans (f2.trans (frameY0.mono (by simp)))
   have nLe : (s.gpr .r3).toNat ≤ 8 * P := by
-    rw [← hPw]; simp only [ppPreWords, ppGeometry, CrtGeometry.words, Spec.Rsa.modulusWords]; omega
-  have pLe : (stackArg s 1).toNat ≤ 8 * P := by have := h.pShort; omega
+    rw [← hPw]; simp only [ppPreWords, ppGeometry, CrtGeometry.words, Spec.Rsa.modulusWords]; omega_using []
+  have pLe : (stackArg s 1).toNat ≤ 8 * P := by have := h.pShort; omega_using [nLe, this]
   have preCont (k : Nat) (hk : k ≤ 8 * P) : (⟨State.addr (s.gpr .r0), 8 * P⟩ : Region).Contains (State.addr (s.gpr .r0)) k := by
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hk]
   have zeroBytesY (k : Nat) (hk : k ≤ 8 * P) :
       Spec.Rsa.bytesAt y.mem (State.addr (s.gpr .r0)) k = List.replicate k 0 := by
-    rw [memY, Proof.Rsa.rsa_bytes_frame frameY0 (by omega)
+    rw [memY, Proof.Rsa.rsa_bytes_frame frameY0 (by omega_using [preFit, hk])
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst r
         exact ((preD.sub_left (stackSub 56 (by decide))).sub_right (Region.sub_prefix hk)).symm)]
@@ -561,21 +561,21 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
       storageFits := by
         have := crt_layout_fits h.valid; have := h.space
         change Impl.Bignum.Arm.Crt.totalBytes (Spec.Rsa.modulusWords (s.gpr .r3).toNat) ≤ (stackArg s 5).toNat * 8
-        omega
-      pPositive := by have := h.pPositive; change 0 < (stackArg s 1).toNat; omega
+        omega_arith
+      pPositive := by have := h.pPositive; change 0 < (stackArg s 1).toNat; omega_using [this]
       pShort := h.pShort
-      qPositive := by have := h.qPositive; change 0 < (stackArg s 3).toNat; omega
+      qPositive := by have := h.qPositive; change 0 < (stackArg s 3).toNat; omega_using [this]
       qShort := h.qShort
       source := ?_
       sourceSeparate := ?_
-      outputFits := by change (s.gpr .r0).toNat + (s.gpr .r3).toNat ≤ _; omega
+      outputFits := by change (s.gpr .r0).toNat + (s.gpr .r3).toNat ≤ _; omega_using [preFit, nLe]
       write := ⟨_, preMem, preCont _ nLe⟩
       outputSeparate := (preWs'.symm.sub_right (Region.sub_prefix nLe))
       output := y0
       modulus := y2
       count := by rw [y3]; change s.gpr .r3 = BitVec.ofNat 32 (s.gpr .r3).toNat; simp
-      stackFit := by omega
-      argFit := by omega
+      stackFit := by omega_using [stackFit, ySpNat]
+      argFit := by omega_using [ySpNat]
       argRead := ⟨⟨State.addr y.sp, 56⟩, List.mem_append_right _ (by rw [wrY]; exact List.mem_cons_self),
         Region.contains_self _ _⟩
       pointer := ?_
@@ -588,28 +588,28 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
       stackOutput := by rw [belowY]; exact (preD.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix nLe)
       stackArgs := by
         rw [belowY, addrY]
-        exact (Offset.disjoint_base B (Nat.le_refl 56) (by omega)).symm }
+        exact (Offset.disjoint_base B (Nat.le_refl 56) (by omega_using [])).symm }
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_using []) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · refine ⟨h.nFit, ⟨_, List.mem_append_left _ (by rw [rdY]; exact h.nR), Region.contains_self _ _⟩, ?_⟩
-        exact (keptBytes (a := s.gpr .r2) (by omega) nD preN).trans (ppBytes_other s 0 (by decide) (by decide)).symm
-      · refine ⟨by change (s.gpr .r0).toNat + (s.gpr .r3).toNat ≤ _; omega,
+        exact (keptBytes (a := s.gpr .r2) (by omega_using []) nD preN).trans (ppBytes_other s 0 (by decide) (by decide)).symm
+      · refine ⟨by change (s.gpr .r0).toNat + (s.gpr .r3).toNat ≤ _; omega_using [preFit, nLe],
           ⟨_, List.mem_append_right _ preMem, preCont _ nLe⟩, ?_⟩
         exact (zeroBytesY _ nLe).trans (ppBytes_zero s 1 (Or.inl rfl)).symm
       · refine ⟨h.pFit, ⟨_, List.mem_append_left _ (by rw [rdY]; exact h.pR), Region.contains_self _ _⟩, ?_⟩
-        exact (keptBytes (a := stackArg s 0) (by omega) pD preP').trans (ppBytes_other s 2 (by decide) (by decide)).symm
+        exact (keptBytes (a := stackArg s 0) (by omega_using []) pD preP').trans (ppBytes_other s 2 (by decide) (by decide)).symm
       · refine ⟨h.qFit, ⟨_, List.mem_append_left _ (by rw [rdY]; exact h.qR), Region.contains_self _ _⟩, ?_⟩
-        exact (keptBytes (a := stackArg s 2) (by omega) qD preQ').trans (ppBytes_other s 3 (by decide) (by decide)).symm
+        exact (keptBytes (a := stackArg s 2) (by omega_using []) qD preQ').trans (ppBytes_other s 3 (by decide) (by decide)).symm
       · refine ⟨h.pFit, ⟨_, List.mem_append_left _ (by rw [rdY]; exact h.pR), Region.contains_self _ _⟩, ?_⟩
-        exact (keptBytes (a := stackArg s 0) (by omega) pD preP').trans (ppBytes_other s 4 (by decide) (by decide)).symm
+        exact (keptBytes (a := stackArg s 0) (by omega_using []) pD preP').trans (ppBytes_other s 4 (by decide) (by decide)).symm
       · refine ⟨h.qFit, ⟨_, List.mem_append_left _ (by rw [rdY]; exact h.qR), Region.contains_self _ _⟩, ?_⟩
-        exact (keptBytes (a := stackArg s 2) (by omega) qD preQ').trans (ppBytes_other s 5 (by decide) (by decide)).symm
-      · refine ⟨by change (s.gpr .r0).toNat + (stackArg s 1).toNat ≤ _; omega,
+        exact (keptBytes (a := stackArg s 2) (by omega_using []) qD preQ').trans (ppBytes_other s 5 (by decide) (by decide)).symm
+      · refine ⟨by change (s.gpr .r0).toNat + (stackArg s 1).toNat ≤ _; omega_using [preFit, pLe],
           ⟨_, List.mem_append_right _ preMem, preCont _ pLe⟩, ?_⟩
         exact (zeroBytesY _ pLe).trans (ppBytes_zero s 6 (Or.inr rfl)).symm
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_using []) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact h.nWs
       · exact preWs'.sub_left (Region.sub_prefix nLe)
@@ -619,7 +619,7 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
       · exact h.qWs
       · exact preWs'.sub_left (Region.sub_prefix pLe)
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega_using []) with
         rfl | rfl | rfl | rfl | rfl | rfl
       · change y.mem.readW (off (State.addr y.sp) 0) 32 = _
         rw [slotY .r0 0 (by decide), hx.r0]; rfl
@@ -634,7 +634,7 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
       · change y.mem.readW (off (State.addr y.sp) 40) 32 = _
         rw [slotY .r10 40 (by decide), hx.r10]; rfl
     · intro i
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 from by omega_using []) with
         rfl | rfl | rfl | rfl | rfl | rfl
       · change y.mem.readW (off (State.addr y.sp) 4) 32 = _
         rw [slotY .r1 4 (by decide), hx.r1]; simp [ppGeometry, CrtGeometry.sourceLength]
@@ -652,7 +652,7 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
         rw [slotY .r11 44 (by decide), hx.r11]; simp [ppGeometry, CrtGeometry.sourceLength]
     · intro i
       rw [belowY]
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_using []) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact nD.sub_left (Region.sub_prefix (by decide))
       · exact (preD.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix nLe)
@@ -667,7 +667,7 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
       by rw [hPw, addrY]; exact preD.sub_left (stackSub 56 (by decide)), ?_, rfl, rfl, ?_, rfl⟩
     · intro i h1 h6
       rw [hPw]
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega) with
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_using []) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact preN.symm
       · exact absurd rfl h1
@@ -676,7 +676,7 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
       · exact preP'.symm
       · exact preQ'.symm
       · exact absurd rfl h6
-    · rw [hPw, memY, Proof.Rsa.wordsAt_frame frameY0 (by omega)
+    · rw [hPw, memY, Proof.Rsa.wordsAt_frame frameY0 (by omega_using [preFit])
         (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact (preD.sub_left (stackSub 56 (by decide))).symm)]
       exact VG.Proof.Bignum.wordsAt_zero_read hx.zero
   refine ⟨hIn, hCall, spY', wrY, ?_⟩
@@ -700,7 +700,7 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
   have wsD := L.wsD
   have stackSub := L.stackSub
   unfold code
-  refine WP.frame (by decide) (by show 56 ≤ _; omega) (by decide) ?_
+  refine WP.frame (by decide) (by show 56 ≤ _; omega_using [stackFit]) (by decide) ?_
   rw [WP.seq_iff]
   refine WP.mono (pp_zeroArgs_ok s L) fun v hv => ?_
   rw [WP.seq_iff]
@@ -710,7 +710,7 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
   have spX : x.sp = s.sp - BitVec.ofNat 32 56 := by rw [hx.rest.sp]; rfl
   rw [WP.seq_iff]
   unfold argsFrame
-  refine WP.frame (by decide) (by show 56 ≤ _; rw [spX, FrameStack.sub_toNat' (by omega)]; omega) (by decide) ?_
+  refine WP.frame (by decide) (by show 56 ≤ _; rw [spX, FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using [stackFit]) (by decide) ?_
   change WP isa _ (pcPushed x) _
   rw [WP.seq_iff]
   refine WP.mono (pp_call_ok s h L x hx) fun y hy => ?_
@@ -724,7 +724,7 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
     rw [popped_sp, spz, hy.sp]; exact BitVec.sub_add_cancel _ _
   have saved : Spill.Saved (popped .r12 56 z).mem (State.addr (popped .r12 56 z).sp) s.gpr pcCalleeSaved := by
     rw [popped_mem, zsp]
-    have base := pc_push_callee_saved s (by omega)
+    have base := pc_push_callee_saved s (by omega_using [stackFit])
     have outer : (⟨State.addr (s.sp - 56) + BitVec.ofNat 64 0, 56 - 0⟩ : Region) = ⟨B + BitVec.ofNat 64 112, 56⟩ := by
       rw [BitVec.add_zero]; exact congrArg (Region.mk · 56) L.a1
     have f1 : Frame [⟨State.addr (s.gpr .r0), 8 * P⟩, ⟨B + BitVec.ofNat 64 56, 56⟩, ⟨B, 56⟩,
@@ -748,11 +748,11 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact preD.sub_left (stackSub 112 (by decide))
-    · exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact Offset.disjoint _ (Or.inr (by omega_using [])) (by omega_using []) (by omega_using [])
+    · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
     · exact wsD.sub_left (stackSub 112 (by decide))
   have fitR : (popped .r12 56 z).sp.toNat + 56 ≤ 2 ^ 32 := by
-    rw [zsp, FrameStack.sub_toNat' (by omega)]; omega
+    rw [zsp, FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using []
   have readR : InRegions ((popped .r12 56 z).rd ++ (popped .r12 56 z).wr) (State.addr (popped .r12 56 z).sp) 56 := by
     refine ⟨⟨State.addr (popped .r12 56 z).sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
     rw [popped_wr, wrz, hy.wr, zsp]; exact List.mem_cons_self
@@ -815,7 +815,7 @@ theorem pp_result (s : State) (h : PpFnInput s) :
         · rw [h0, Nat.zero_mul] at hpq; omega
         · exact h0
       rw [VG.Proof.Bignum.publicPrecompute_some ln hv]
-      have ne : Spec.Rsa.os2ip nb ≠ 0 := by omega
+      have ne : Spec.Rsa.os2ip nb ≠ 0 := by omega_arith
       simp [hpq, hv, ne, pPos, Spec.Rsa.primeR2, lp, lq, ppWords, Spec.Rsa.primeWords, ppGeometry,
         CrtGeometry.words, Spec.Rsa.modulusWords]
     · simp [hpq]

@@ -48,13 +48,13 @@ theorem shl_xor_shr (x : BitVec 32) {k : Nat} (hk : 0 < k) (hk' : k < 32) :
     BitVec.getLsbD_ushiftRight]
   by_cases h : m < k
   · simp [h]
-  · rw [BitVec.getLsbD_of_ge x (32 - k + m) (by omega)]
+  · rw [BitVec.getLsbD_of_ge x (32 - k + m) (by omega_using [h])]
     simp
 
 /-! ## One line, and a quarter round, on each doubleword -/
 
 theorem toNat_ofNat8 {n : Nat} (h : n < 256) : (BitVec.ofNat 8 n).toNat = n := by
-  rw [BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_ofNat]; omega_using [h]
 
 theorem vstep_ok {x y z : XReg} {n : Nat} (hn : 0 < n) (hn' : n < 32) (hx4 : x ≠ .xmm4)
     (hx5 : x ≠ .xmm5) (hz4 : z ≠ .xmm4) (s : State) :
@@ -73,10 +73,10 @@ theorem vstep_ok {x y z : XReg} {n : Nat} (hn : 0 < n) (hn' : n < 32) (hx4 : x �
       RegUpd.xmm_setXmm_of_ne _ _ hz4, RegUpd.xmm_setXmm_of_ne _ _ h5x,
       RegUpd.xmm_setXmm_of_ne _ _ (show ¬ XReg.xmm5 = .xmm4 by decide),
       RegUpd.xmm_setXmm_of_ne _ _ (show ¬ XReg.xmm4 = .xmm5 by decide), eval_movdqa]
-    have e₁ : (BitVec.ofNat 8 n).toNat = n := toNat_ofNat8 (by omega)
-    have e₂ : (BitVec.ofNat 8 (32 - n)).toNat = 32 - n := toNat_ofNat8 (by omega)
-    rw [dword_pxor, dword_pxor, dword_pslld _ (BitVec.ofNat 8 n) (by rw [e₁]; omega) hi,
-      dword_psrld _ (BitVec.ofNat 8 (32 - n)) (by rw [e₂]; omega) hi, dword_paddd _ _ hi, e₁, e₂,
+    have e₁ : (BitVec.ofNat 8 n).toNat = n := toNat_ofNat8 (by omega_using [hn'])
+    have e₂ : (BitVec.ofNat 8 (32 - n)).toNat = 32 - n := toNat_ofNat8 (by omega_using [])
+    rw [dword_pxor, dword_pxor, dword_pslld _ (BitVec.ofNat 8 n) (by rw [e₁]; omega_using [hn']) hi,
+      dword_psrld _ (BitVec.ofNat 8 (32 - n)) (by rw [e₂]; omega_using [hn]) hi, dword_paddd _ _ hi, e₁, e₂,
       BitVec.xor_assoc, shl_xor_shr _ hn hn']
   · simp only [RegUpd.xmm_setXmm_of_ne _ _ h0, RegUpd.xmm_setXmm_of_ne _ _ h4,
       RegUpd.xmm_setXmm_of_ne _ _ h5]

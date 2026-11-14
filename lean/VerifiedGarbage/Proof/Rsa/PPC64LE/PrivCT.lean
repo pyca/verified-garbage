@@ -117,7 +117,7 @@ theorem crt_pub {pc : Bool} {s₁ s₂ t₁ t₂ : State} (h₁ : PreP pc s₁) 
   have hn : ∀ {s t : State}, PreP pc s → AtCrt s t →
       Spec.Rsa.bytesAt t.mem (s.gpr .r5) (s.gpr .r6).toNat = Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat :=
     fun h A => bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kn.symm)
-      (by have := h.wn; omega)
+      (by have := h.wn; omega_using [])
   have hl : ∀ {s t : State}, AtCrt s t →
       (List.range 10).map (stackArg (crtEntry s t)) = (List.range 10).map fun i => stackArg s (2 + i) :=
     fun A => List.map_congr_left fun i hi => crtEntry_stackArg A (List.mem_range.mp hi)
@@ -135,7 +135,7 @@ theorem crt_pub {pc : Bool} {s₁ s₂ t₁ t₂ : State} (h₁ : PreP pc s₁) 
     · rw [A₁.r9, A₂.r9, S.arg 0 (by decide)]
     · rw [A₁.r10, A₂.r10, S.arg 1 (by decide)]
   · rw [hl A₁, hl A₂]
-    exact List.map_congr_left fun i hi => S.arg _ (by have := List.mem_range.mp hi; omega)
+    exact List.map_congr_left fun i hi => S.arg _ (by have := List.mem_range.mp hi; omega_using [this])
   · show Spec.Rsa.bytesAt t₁.mem ((crtEntry s₁ t₁).gpr .r5) ((crtEntry s₁ t₁).gpr .r6).toNat =
       Spec.Rsa.bytesAt t₂.mem ((crtEntry s₂ t₂).gpr .r5) ((crtEntry s₂ t₂).gpr .r6).toNat
     rw [g .r5 (by decide), g .r6 (by decide), g .r5 (by decide), g .r6 (by decide), A₁.r5, A₁.r6, A₂.r5,
@@ -152,7 +152,7 @@ theorem pre_pub {s₁ s₂ t₁ t₂ : State} (h₁ : PreP false s₁) (h₂ : P
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact h.kn.symm
-      · exact h.ns) (by have := h.wn; omega)
+      · exact h.ns) (by have := h.wn; omega_using [])
   simp only [Proof.Bignum.PPC64LE.Pre.fnContract, g .r3 (by decide), g .r4 (by decide), g .r5 (by decide),
     g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), A₁.r3, A₁.r4, A₁.r5, A₁.r6, A₁.r7, A₁.r8, A₂.r3,
     A₂.r4, A₂.r5, A₂.r6, A₂.r7, A₂.r8, State.withRegions_mem, State.callEntry_mem, State.withRegions_sp,
@@ -171,7 +171,7 @@ theorem pub_pub {pc : Bool} {s₁ s₂ t₁ t₂ : State} (h₁ : PreP pc s₁) 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact h.ke.symm
-      · exact h.es) (by have := h.we; omega)
+      · exact h.es) (by have := h.we; omega_using [])
   obtain ⟨a₁, b₁⟩ := pubEntry_sa A₁
   obtain ⟨a₂, b₂⟩ := pubEntry_sa A₂
   simp only [Proof.Bignum.PPC64LE.Pub.fnContract, g .r3 (by decide), g .r4 (by decide), g .r5 (by decide),

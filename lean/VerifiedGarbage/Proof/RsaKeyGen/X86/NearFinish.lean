@@ -42,7 +42,7 @@ theorem finish_ok (s : State) (bound : (s.gpr .ecx).toNat < 16) :
     apply congrArg bit
     apply decide_eq_decide.mpr
     change (s.gpr .edx).toNat < 1 ↔ (s.gpr .edx).toNat = 0
-    omega
+    omega_using []
   refine wp_and fun t T => WP.block_nil ?_
   refine ⟨?_, ?_, (((Kh.mono (by decide)).widen I.keeps).widen J.keeps).widen K.keeps |>.widen T.keeps⟩
   · rw [T.gpr, high, K.other .eax (by decide), J.other .eax (by decide), I.other .eax (by decide), flag, bit_and]

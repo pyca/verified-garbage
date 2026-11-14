@@ -19,15 +19,15 @@ open VG.Proof.Ffdh.X86_64.Generation (controller_zero_out)
 open VG.Impl.Ffdh.X86_64.KeyGeneration.Search
 
 private theorem not_self_disjoint {r : Region} (h : r.Disjoint r) (hl : 0 < r.len) : False :=
-  h r.base (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+  h r.base (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hl])
+    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hl])
 
 namespace KeyInput
 
 variable {p : KeyPublic} {original : State}
 
 theorem len_lt (h : KeyInput p original) : p.len < 2 ^ 31 := by
-  have := h.len_bounds.2; omega
+  have := h.len_bounds.2; omega_using [this]
 
 private theorem output (h : KeyInput p original) {s : State} (hw : s.wr = original.wr)
     {r : Region} (hr : r ∈ inWrites original) (hrc : r ≠ inCtl original) {o : Addr}

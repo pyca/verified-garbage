@@ -24,8 +24,8 @@ theorem publicRange_ok {p : Parameters} {s : State} (state : ModState p s) (odd 
  ModState p t ∧ wv t.mem p.B (slot p.w 6) p.w=wv s.mem p.B (slot p.w 6) p.w ∧
  t.gpr .x9=(if 1<wv s.mem p.B (slot p.w 6) p.w ∧ wv s.mem p.B (slot p.w 6) p.w<p.P-1 then 1#64 else 0#64) ∧
  word t.mem p.B (8*sTmp)=t.gpr .x9 ∧ Frm p.B (publicRangeRanges p.w) s.mem t.mem ∧ Keep mmRegs s t := by
- have positive : 0<p.w := by have := p.positive;omega
- have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := state.good.scr.nowrap;have := p.room;omega
+ have positive : 0<p.w := by have := p.positive;omega_using [this]
+ have nowrap : p.B.toNat+slot p.w 8≤2^64 := by have := state.good.scr.nowrap;have := p.room;omega_arith
  have yRoom := slot_le (w:=p.w) (show 6<8 by decide)
  unfold Generate.publicRange
  simp only [seqs]
@@ -41,7 +41,7 @@ theorem publicRange_ok {p : Parameters} {s : State} (state : ModState p s) (odd 
  have flagB : word b.mem p.B (8*sTmp)=(if 1<wv s.mem p.B (slot p.w 6) p.w then 1#64 else 0#64) := by
   rw [memB,word_writeW_self];exact valueA
  have yB : wv b.mem p.B (slot p.w 6) p.w=wv s.mem p.B (slot p.w 6) p.w := by
-  rw [frameB.wv (Or.inr (hdr_lt_slot p.w 6 (show sTmp<32 by decide))) (by omega),memA]
+  rw [frameB.wv (Or.inr (hdr_lt_slot p.w 6 (show sTmp<32 by decide))) (by omega_using [nowrap, yRoom]),memA]
  rw [WP.seq_iff]
  refine WP.mono (copy_ok goodB p.room positive p.width (by decide : 1<8) (by decide : 6<8) (by decide)) ?_
  rintro c ⟨goodC,valueC,frameC,restC⟩
@@ -71,7 +71,7 @@ theorem publicRange_ok {p : Parameters} {s : State} (state : ModState p s) (odd 
   split <;> split <;> simp_all
  refine WP.mono (WP.keep [.x3,.x9] (Q:=fun t =>t.gpr .x9=flag ∧ t.mem=e.mem.writeW (off p.B (8*sTmp)) flag) ?_ rfl rfl rfl) ?_
  · brun [goodE.x0,hdr_enc (show sTmp<32 by decide),header_read goodE p.room (show sTmp<32 by decide),
-    goodE.scr.st (d:=8*sTmp) (by have := hdr_lt_slot p.w 8 (show sTmp<32 by decide);have := p.room;omega),
+    goodE.scr.st (d:=8*sTmp) (by have := hdr_lt_slot p.w 8 (show sTmp<32 by decide);have := p.room;omega_arith),
     flagE,valueE,combine]
  · rintro t ⟨⟨flagT,memT⟩,restT⟩
    have frameT : Outside p.B (8*sTmp) 8 e.mem t.mem := by rw [memT];exact writeW_outside _ _ _ (by decide)
@@ -79,7 +79,7 @@ theorem publicRange_ok {p : Parameters} {s : State} (state : ModState p s) (odd 
    have goodT := good_after_header goodE (by decide) (by decide) frameT restT ((restT.gpr .x0 (by decide)).trans goodE.x0)
    have stateT := stateE.after_header goodT frameT (by decide)
    have yT : wv t.mem p.B (slot p.w 6) p.w=wv s.mem p.B (slot p.w 6) p.w := by
-    rw [frameT.wv (Or.inr (hdr_lt_slot p.w 6 (show sTmp<32 by decide))) (by omega),memE];exact yD
+    rw [frameT.wv (Or.inr (hdr_lt_slot p.w 6 (show sTmp<32 by decide))) (by omega_using [nowrap, yRoom]),memE];exact yD
    have first : Frm p.B (publicRangeRanges p.w) s.mem b.mem := by
     rw [←memA];exact Frm.of_outside frameB (by simp [publicRangeRanges])
    have middle : Frm p.B (publicRangeRanges p.w) b.mem d.mem :=

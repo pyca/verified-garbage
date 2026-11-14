@@ -57,18 +57,18 @@ theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI 
   (ct_app (by simp [mulPQ]) (by simp [wmodOne]) (mulPQ_ckct (by taint_decide))
     (wmodOne_ckct (fun p => (p.ql + 7) / 8) (fun p => (wW p.cap - 2) / 2) (fun p s h => by
         obtain ⟨I, m₀, c, rfl, hs, L, -⟩ := h
-        exact topQ_ok hs.args.ql (by simp only [CkIn.pub]; have := L.ql2; have := L.k2; omega)
+        exact topQ_ok hs.args.ql (by simp only [CkIn.pub]; have := L.ql2; have := L.k2; omega_arith)
           (by simp only [CkIn.pub]; have := hs.ws.h256; omega_using [this]))
       (fun p s h => by
         obtain ⟨I, m₀, c, rfl, -, L, -⟩ := h
         have := L.ql1; have := L.qcap
-        exact ⟨by simp only [CkIn.pub]; omega, by simp only [CkIn.pub, wW, wk]; omega⟩)
+        exact ⟨by simp only [CkIn.pub]; omega_arith, by simp only [CkIn.pub, wW, wk]; omega_using [this]⟩)
       (fun p s h => by
         obtain ⟨I, m₀, c, rfl, -, L, -⟩ := h
         have := L.k2
         dsimp only [CkIn.pub]
         rw [L.capk]
-        exact ⟨ckLenQ_ok _ (by unfold wW wk; omega) (by unfold wW wk; omega), by omega, by unfold wW wk; omega⟩)
+        exact ⟨ckLenQ_ok _ (by unfold wW wk; omega_using []) (by unfold wW wk; omega_using [this]), by omega_using [], by unfold wW wk; omega_using []⟩)
       (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)))))))
 
 end VG.Proof.Rsa.AArch64

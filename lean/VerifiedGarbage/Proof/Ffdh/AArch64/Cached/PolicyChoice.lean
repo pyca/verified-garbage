@@ -27,7 +27,7 @@ theorem publicCarry {a b : Nat} (fitA : a<2^64) (fitB : b<2^64) :
  simp only [BitVec.toNat_not,BitVec.toNat_ofNat]
  rw [Nat.mod_eq_of_lt fitA,Nat.mod_eq_of_lt fitB]
  apply decide_eq_decide.mpr
- omega
+ omega_using [fitB]
 
 theorem policyMatch_ok {s : State} {B : Addr} {Z N cap : Nat}
  (scratch : Scr s B Z) (room : 256≤Z) (base : s.gpr .x0=B)
@@ -39,11 +39,11 @@ theorem policyMatch_ok {s : State} {B : Addr} {Z N cap : Nat}
  have choose : (if decide (cap≤N) then BitVec.ofNat 64 cap else BitVec.ofNat 64 N)=BitVec.ofNat 64 (min N cap) := by
   by_cases h : cap≤N
   · simp only [decide_eq_true h,ite_true,Nat.min_eq_right h]
-  · simp only [decide_eq_false h,Bool.false_eq_true,ite_false,Nat.min_eq_left (show N≤cap by omega)]
+  · simp only [decide_eq_false h,Bool.false_eq_true,ite_false,Nat.min_eq_left (show N≤cap by omega_using [h])]
  refine WP.keep [.x7,.x9,.x10] ?_ rfl rfl rfl
  unfold Policy.matched
- brun [base,hdr_enc (show sBits<32 by decide),scratch.ld (d:=8*sBits) (by unfold sBits;omega),
-  scratch.st (d:=8*sBits) (by unfold sBits;omega),width,limit,Bool.toNat_true,publicCarry fit capFit,choose]
+ brun [base,hdr_enc (show sBits<32 by decide),scratch.ld (d:=8*sBits) (by unfold sBits;omega_using [room]),
+  scratch.st (d:=8*sBits) (by unfold sBits;omega_using [room]),width,limit,Bool.toNat_true,publicCarry fit capFit,choose]
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -76,13 +76,13 @@ theorem policyChoice_ok {s : State} {B src rec : Addr} {Z k N : Nat} {dom : List
  refine WP.ite (decide (k=g.len)) ?_ ?_ ?_
  · rw [eval_zero,test]
    change some (BitVec.ofNat 64 k-BitVec.ofNat 64 g.len == 0#64)=_
-   rw [sub_zero_iff (by omega) (by have := record.lenFit;omega)]
+   rw [sub_zero_iff (by omega_using [size]) (by have := record.lenFit;omega_using [this])]
  · intro yes
    have same := of_decide_eq_true yes
-   have limit : dom.length≤g.domain.length := by rw [policyDomain_length];omega
+   have limit : dom.length≤g.domain.length := by rw [policyDomain_length];omega_using [shape, same]
    rw [WP.seq_iff]
    refine WP.mono (policyCompare_ok scratch room base domain length pointer source
-    (record.source.take dom.length) (by simp only [List.length_take];omega) (by omega) (by omega)) ?_
+    (record.source.take dom.length) (by simp only [List.length_take];omega_using [limit]) (by omega_using [shape, positive]) (by omega_using [shape, size])) ?_
    rintro u ⟨equal,memU,restU⟩
    have choose : isa.eval (.zero .x .x11) u=some (decide (dom=g.domain.take dom.length)) := by
     rw [eval_zero]
@@ -96,7 +96,7 @@ theorem policyChoice_ok {s : State} {B src rec : Addr} {Z k N : Nat} {dom : List
      have matched : k=g.len ∧ dom=g.domain.take dom.length := ⟨same,sameDomain⟩
      refine WP.mono (policyMatch_ok (scratch.congr restU.wr) room
       ((restU.gpr .x0 (by simp [compareClobbers])).trans base) (memU ▸ width) fit
-      ((restU.gpr .x6 (by simp [compareClobbers])).trans cap) (by have := record.bitsFit;omega)) ?_
+      ((restU.gpr .x6 (by simp [compareClobbers])).trans cap) (by have := record.bitsFit;omega_using [this])) ?_
      rintro t ⟨⟨memT,countT⟩,restT⟩
      refine ⟨?_,?_,(restU.trans restT).mono (by simp [compareClobbers,choiceClobbers])⟩
      · simpa only [ite_eq_left matched,memU] using memT

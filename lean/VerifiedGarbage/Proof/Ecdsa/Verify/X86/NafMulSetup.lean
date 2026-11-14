@@ -33,7 +33,7 @@ theorem windowMulQ_setup_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C)
       sv c base u EM=c.mont c.C.b ∧ u.gpr .esi=257 := by
   have hn := hs.nowrap
   have hp := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hpx])
   refine WP.seq (WP.mono (setConst_ok hs (sl_le c hc.n10 (i := EM) (by decide))
     (Nat.lt_trans (hmont _) hc.p_lt)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_)
   change sv c base s₁ EM = c.mont c.C.b at v₁
@@ -60,7 +60,7 @@ theorem windowMulQ_setup_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C)
     intro i hi w hw
     simp only [nafPrepWrites,List.mem_cons, List.not_mem_nil, or_false] at hw
     left; rw [sl_eq, h4]
-    rcases hw with rfl | rfl <;> dsimp only <;> omega
+    rcases hw with rfl | rfl <;> dsimp only <;> omega_using [hi]
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s₁ i :=
     fun hi => sv_unch U₂ hc.n10 hn hi (ap₂ hi)
   have F₂ := F₁.unch hc.n10 hn (show FixedOk c (nafPrepWrites 3580 3520) from by
@@ -83,12 +83,12 @@ theorem windowMulQ_setup_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C)
     · rw [F₂.ap]; exact hmont _
     · change sv c base s₂ EM < _
       rw [e₂ (by decide),v₁]; exact hmont _
-    · rw [F₂.zero]; omega
+    · rw [F₂.zero]; omega_using [hpx]
     · change sv c base s₂ PX < _
       rw [e₂ (by decide),e₁ (by decide) (by decide)]; exact hpx
     · change sv c base s₂ PY < _
       rw [e₂ (by decide),e₁ (by decide) (by decide)]; exact hpy
-    · rw [F₂.onep]; exact Nat.mod_lt _ (by omega)
+    · rw [F₂.onep]; exact Nat.mod_lt _ (by omega_using [hpx])
   have hI : Inv K.M base size c.C.p (·∈nafSlots K) (winRo K) (tmv c.C c.n base s₂) s₂ :=
     ⟨hs₂,modP_of hc F₂.mp,hSl,hlt,fun _ _ => rfl⟩
   have hone : tmv c.C c.n base s₂ (c.sl ONEP)=1 := by

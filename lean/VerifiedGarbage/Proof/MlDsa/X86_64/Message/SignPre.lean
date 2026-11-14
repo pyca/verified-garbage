@@ -117,7 +117,7 @@ theorem sPreP_of {p : Params} {s : State} (h : (preparedSignMessageContract p X8
 /-! ## The layout -/
 
 theorem mScr_eq (p : Params) : mScrLen p = oE p + 1024 := by
-  simp only [mScrLen, messageScratchWords, oE]; omega
+  simp only [mScrLen, messageScratchWords, oE]; omega_using []
 
 theorem oE_lt {p : Params} (hp : p ∈ params) : oE p + 1024 < 2 ^ 31 := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -163,11 +163,11 @@ theorem slay_ok {p : Params} {prep : Bool} (hp : p ∈ params) {s : State} (h : 
     h.ctxScr.symm.sub_left hXs, h.stkScr.sub_right hXs, h.stkSk, h.stkMsg, h.stkCtx, h.nSk, h.nMsg, h.nCtx, ?_⟩
   · have := h.sp; have := (s.gpr .rsp).isLt
     simp only [slay, BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · intro R hR
     simp only [slay, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hR
     have := h.nSig; have := h.nScr
-    rcases hR with rfl | rfl <;> simp only <;> omega
+    rcases hR with rfl | rfl <;> simp only <;> omega_arith
 
 theorem mu_eq (p : Params) (prep : Bool) (s : State) :
     (slay p prep s).MU = stackArg s 1 + BitVec.ofNat 64 (oE p + 840) := by
@@ -180,8 +180,8 @@ theorem mu_nowrap {p : Params} {prep : Bool} {s : State} (h : SPre p prep s) : (
   generalize oE p = e at hn ⊢
   generalize stackArg s 1 = x at hn ⊢
   clear h
-  rw [toNat_add_ofNat (by omega), Nat.add_assoc]
-  exact Nat.le_trans (Nat.add_le_add_left (by clear hn; omega) _) hn
+  rw [toNat_add_ofNat (by omega_using [hn]), Nat.add_assoc]
+  exact Nat.le_trans (Nat.add_le_add_left (by clear hn; omega_using []) _) hn
 
 
 end VG.Proof.MlDsa.X86_64.Message

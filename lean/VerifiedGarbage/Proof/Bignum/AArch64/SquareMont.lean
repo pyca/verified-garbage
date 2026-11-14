@@ -66,15 +66,15 @@ theorem guarded_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       wv t.mem B (slot w o) w*2 ^ (64*w) % wv s.mem B (slot w aN) w =
         wv s.mem B (slot w a) w*wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.seq (WP.mono (guard_ok hg.scr hg.x0 hg.hdr hZ (by omega))
+  refine WP.seq (WP.mono (guard_ok hg.scr hg.x0 hg.hdr hZ (by omega_using [hw]))
     fun u ⟨⟨hm, _, h3⟩, ku⟩ => ?_)
   have hgu : Good u B Z w minv :=
     ⟨hg.scr.congr ku.wr, (ku.gpr .x0 (by decide)).trans hg.x0, hm ▸ hg.hdr⟩
   have invu : ((word u.mem B (slot w aN)).toNat*minv.toNat+1) % 2 ^ 64 = 0 := by rw [hm]; exact hinv
   have au : wv u.mem B (slot w a) w < wv u.mem B (slot w aN) w := by rw [hm]; exact hA
-  have hdiv : w/8 < 2 ^ 64 := by omega
+  have hdiv : w/8 < 2 ^ 64 := by omega_using [hw]
   by_cases hfast : 8 ≤ w
-  · have hn : w/8 ≠ 0 := by omega
+  · have hn : w/8 ≠ 0 := by omega_using [hfast]
     refine WP.ite true (by rw [eval_nonzero, h3, ne_zero_iff, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt hdiv, decide_eq_true hn]) (fun _ => ?_) (by simp)
     refine WP.mono (square_ok hgu.scr hgu.x0 hgu.hdr hZ hw1 hw ho ha ho1 ho2 ha1 ha2 invu au)
@@ -82,7 +82,7 @@ theorem guarded_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     rw [hm] at ht hv hf
     exact ⟨⟨hg.scr.congr (kt.wr.trans ku.wr), ((ku.trans kt).gpr .x0 (by decide)).trans hg.x0,
       hf.hdr hg.hdr⟩, ht, hv, hf, (ku.trans kt).mono (by decide)⟩
-  · have hn : w/8 = 0 := by omega
+  · have hn : w/8 = 0 := by omega_using [hfast]
     refine WP.ite false (by rw [eval_nonzero, h3, hn]; rfl) (by simp) (fun _ => ?_)
     refine WP.mono (Mont.basic.mm_ok hgu hZ hw1 hw ho ha ha ho1 ho2 ha1 ha1 invu au ha2 ha2)
       fun t ⟨hg', ht, hv, hf, kt⟩ => ?_

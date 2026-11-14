@@ -122,7 +122,7 @@ theorem crtCtxP_of {s : State} (h : crtContractP.pre s) :
   rw [bytesAt_length, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] at hpub
   obtain ⟨hv, -, hval⟩ := pre_of_some (bytesAt_length _ _ _) hk1 hpub
   have hw2 : 2 * (((s.gpr .rcx).toNat + 7) / 8) ≤ (stackArg s 13).toNat := by
-    rw [hprl]; unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega
+    rw [hprl]; unfold Spec.Rsa.privatePrecomputedWords Spec.Rsa.precomputedWords Spec.Rsa.modulusWords; omega_using []
   have hoff : ∀ d b : Nat, off (stackArg s 12) d + BitVec.ofNat 64 b = stackArg s 12 + BitVec.ofNat 64 (d + b) := by
     intro d b; simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   refine ⟨⟨hk1, hk2, hpl1, hpl2, hql1, hql2, by omega_arith, hs,
@@ -218,12 +218,12 @@ theorem crtPrimes_of {s : State} (h : crtContractP.pre s) :
         2 ^ (64 * Spec.Rsa.primeWords l) := fun {l} pa _ h0 => by
     refine Nat.lt_of_lt_of_le (Nat.mod_lt _ h0) (Nat.le_trans
       (Nat.le_of_lt (show Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem pa l) < 2 ^ (8 * l) from ?_))
-      (Nat.pow_le_pow_right (by decide) (by unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega)))
+      (Nat.pow_le_pow_right (by decide) (by unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega_using [])))
     have := os2ip_lt (Spec.Rsa.bytesAt s.mem pa l)
     rwa [bytesAt_length, pow256_eq] at this
   rw [hw] at hpre dprs wPr
-  refine ⟨preW_of hargs hpre wPr (by omega) dprs dsa (wv_of_toWords eP (hlt _ hpl2 ?_)),
-    preW_of hargs hpre wPr (by omega) dprs dsa (wv_of_toWords eQ (hlt _ hql2 ?_))⟩
+  refine ⟨preW_of hargs hpre wPr (by omega_using []) dprs dsa (wv_of_toWords eP (hlt _ hpl2 ?_)),
+    preW_of hargs hpre wPr (by omega_using []) dprs dsa (wv_of_toWords eQ (hlt _ hql2 ?_))⟩
   · exact Nat.pos_of_ne_zero fun h0 => hN0 (by rw [← hpq, h0, Nat.zero_mul])
   · exact Nat.pos_of_ne_zero fun h0 => hN0 (by rw [← hpq, h0, Nat.mul_zero])
 

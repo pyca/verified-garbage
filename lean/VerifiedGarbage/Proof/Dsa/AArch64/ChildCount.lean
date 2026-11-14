@@ -35,12 +35,12 @@ theorem childCount_ok {s : State} {B : Addr} {Z offset len : Nat}
   have hoff : (BitVec.ofNat 16 offset).setWidth 64 = BitVec.ofNat 64 offset := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [ho]
   have hwidth : (BitVec.ofNat 64 len + (7#64)) >>> 3 = BitVec.ofNat 64 ((len + 7) / 8) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [hlen]
   brun [hdi, hl, hdr_enc (show argLen < 32 by decide), hoff, hwidth,
     hs.ld (Nat.le_trans (show 8 * argLen + 8 ≤ pWorkspace by decide) hZ)]
 

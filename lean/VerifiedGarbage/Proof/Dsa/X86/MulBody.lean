@@ -22,7 +22,7 @@ theorem Outs.readW32 {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Ou
     m'.readW (off base d) 32 = m.readW (off base d) 32 :=
   Mem.readW_congr fun i hi => h _ fun r hr => by
     have := hd r hr
-    rw [ofs_off base (by omega)]; omega
+    rw [ofs_off base (by omega_using [hn, hi])]; omega_using [hi, this]
 
 theorem body_ok {s : State} {base : Addr} {size n m : Nat}
     (E : Entry s base size) (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48)
@@ -35,23 +35,23 @@ theorem body_ok {s : State} {base : Addr} {size n m : Nat}
   have nw := E.nowrap
   have hz' := hz
   simp only [contextBytes, slot, stride] at hz'
-  have hz24 : 24 ≤ size := by omega
+  have hz24 : 24 ≤ size := by omega_using [hz']
   unfold mulBody
   refine WP.seq (WP.mono (save_ok E hz24) fun u ⟨Su, Sv, Ou, Ku⟩ => ?_)
   have kept (i : Nat) (hi : i < 9) : wordsVal u.mem base (slot n i) n = wordsVal s.mem base (slot n i) n := by
     have := slot_bound (n := n) hi
     simp only [stride] at this
     rw [wordsVal_eq_val32, wordsVal_eq_val32]
-    exact Ou.val32 (by simp only [slot]; omega) (by omega)
-  refine WP.seq (WP.mono (contextSetup_ok Su hn (by omega) hz ((kept 0 (by decide)).trans hv) hm1 hodd)
+    exact Ou.val32 (by simp only [slot]; omega_using []) (by omega_using [hz, nw, this])
+  refine WP.seq (WP.mono (contextSetup_ok Su hn (by omega_using [hn48]) hz ((kept 0 (by decide)).trans hv) hm1 hodd)
     fun v ⟨Cv, _, R2, Ov, Kv⟩ => ?_)
   have setupVal (i : Nat) (hi : i = 5 ∨ i = 8) :
       wordsVal v.mem base (slot n i) n = wordsVal u.mem base (slot n i) n := by
     rw [wordsVal_eq_val32, wordsVal_eq_val32]
     rcases hi with rfl | rfl <;>
-    · refine Ov.val32 (fun r hr => ?_) (by simp only [slot, stride]; omega)
+    · refine Ov.val32 (fun r hr => ?_) (by simp only [slot, stride]; omega_using [hn48])
       simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using []
   refine WP.seq (WP.mono (ordinaryMul_ok Cv R2) fun w ⟨Cw, Vw, Ow, Kw⟩ => ?_)
   have savedW : Saved w.mem (off base) s.gpr slots := by
     intro p hp
@@ -60,10 +60,10 @@ theorem body_ok {s : State} {base : Addr} {size n m : Nat}
       rcases hp with rfl | rfl | rfl | rfl <;> decide
     rw [Outs.readW32 Ow (fun r hr => by
         simp only [productRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega) (by omega),
+        rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [hp']) (by omega_using [nw, hz', hp']),
       Outs.readW32 Ov (fun r hr => by
         simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega) (by omega)]
+        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [hp']) (by omega_using [nw, hz', hp'])]
     exact Sv p hp
   have Kuw : Keeps powerClob u w := Kv.trans (Kw.mono (by decide))
   refine WP.mono (restore_ok (Su.of_keeps Kuw (by decide)) hz24 savedW)
@@ -80,25 +80,25 @@ theorem body_ok {s : State} {base : Addr} {size n m : Nat}
       simp only [contextBytes, slot, stride] at h1
       by_cases y8 : y < 8
       · exact .inl y8
-      refine .inr ⟨by omega, fun r hr => ?_⟩
+      refine .inr ⟨by omega_using [h0], fun r hr => ?_⟩
       simp only [setupRanges, productRanges, List.cons_append, List.nil_append, List.mem_cons,
         List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [slot, stride] <;> omega
+        simp only [slot, stride] <;> omega_arith
     intro x hx
     rcases cover _ hx with lo | ⟨hi, rest⟩
     · rw [Ow x (fun r hr => by
           simp only [productRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega),
+          rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using [lo]),
         Ov x (fun r hr => by
           simp only [setupRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
           have h0 := hx (0, 64) (List.mem_cons_self ..)
           dsimp only at h0
-          rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega)]
+          rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_arith)]
       exact Ou x (.inl lo)
     · rw [Ow x (fun r hr => rest r (List.mem_append_right _ hr)),
         Ov x (fun r hr => rest r (List.mem_append_left _ hr))]
-      exact Ou x (.inr (by omega))
+      exact Ou x (.inr (by omega_using [hi]))
   · exact (Kuw.1 _ (by decide)).trans (Ku.1 _ (by decide))
   · rw [R'.rd, Kuw.2.1, Ku.2.1]
   · rw [R'.wr, Kuw.2.2, Ku.2.2]

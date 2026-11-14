@@ -41,7 +41,7 @@ theorem ro_bytes {R : Region} (ho : R.Disjoint L.OUT) (hs : R.Disjoint L.SC) (hk
   frame_bytesAt hc.frame (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    exacts [ho, hs, hk.symm]) (by omega)
+    exacts [ho, hs, hk.symm]) (by omega_using [hR])
 
 /-- The key, as the CRT reads it. -/
 theorem key_bytes :
@@ -64,8 +64,8 @@ theorem crtArgs_ok (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc : Ctx L g vv
     WP isa (.block crtArgs) t fun t' => Ctx L g vv m₀ t' ∧ Slots L t'.mem ∧ CrtArgs L t' := by
   rw [crtArgs, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (saveSlots_ok hL hc hr) fun t₁ ⟨hc₁, hs₁, hr₁, h15, _⟩ => ?_
-  refine WP.mono (copyArgs_upto hL (t₀ := t₁) 10 (by omega) t₁
-    ⟨hc₁, hs₁, hr₁, h15, Frame.refl _ _, fun _ h => absurd h (by omega)⟩) fun t₂ hI => ?_
+  refine WP.mono (copyArgs_upto hL (t₀ := t₁) 10 (by omega_using []) t₁
+    ⟨hc₁, hs₁, hr₁, h15, Frame.refl _ _, fun _ h => absurd h (by omega_using [])⟩) fun t₂ hI => ?_
   exact WP.mono (crtRegs_ok hL ha hI) fun t₃ ⟨hc₃, hs₃, a₃, _⟩ => ⟨hc₃, hs₃, a₃⟩
 
 theorem freed_mem (b : Nat) (s : State) : (freed b s).mem = s.mem := rfl
@@ -113,12 +113,12 @@ theorem codeWith_correct (C : CrtCallee) (v : CrtImpl) (stage : Prog isa) {s : S
   have hL : (layW s X).Ok := (lay_ok h).withX X
   have hst0 : stackBytes ≤ s.sp.toNat := h.1
   have hnB := hL.nB
-  refine WP.frame (by unfold stackBytes at hst0; omega) ?_
+  refine WP.frame (by unfold stackBytes at hst0; omega_using [hst0]) ?_
   refine WP.alloc ⟨by decide, by decide, by decide⟩ (by
     show frameBytes ≤ (s.sp - 16).toNat
     rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.toNat_sub_ofNat]
     simp only [frameBytes, stackBytes] at hst0 ⊢
-    omega) ?_
+    omega_using [hst0]) ?_
   show WP isa (seqs _) (entered s) _
   have ha : ArgsAt (layW s X) s.mem := argsAt_entry s
   refine WP.seq (WP.mono (crtArgs_ok hL ha (entered_ctxW h hX) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)

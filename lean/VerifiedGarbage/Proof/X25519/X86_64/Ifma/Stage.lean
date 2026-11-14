@@ -40,7 +40,7 @@ def s1aNat (E : Env) (j : Nat) : Nat → Nat
 
 theorem s1a_nat (E : Env) : ∀ j < 5, ∀ l < 4, (s1a.reg j).nat E l = s1aNat E j l := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 /-- Bounds: limbs below `2⁶¹`, and the bias. -/
@@ -81,7 +81,7 @@ def s2aU (E : Env) (j : Nat) : Nat → Nat
 
 theorem s2a_nat (E : Env) : ∀ j < 5, ∀ l < 4, (s2a.reg (10 + j)).nat E l = s2aU E j l := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 theorem s2a_ok : ∀ j < 5, ∀ l < 4, (s2a.reg (10 + j)).ok s1aB l = true ∧
@@ -99,7 +99,7 @@ def topB : Bnds := ⟨fun _ => 2 ^ 64 - 1, fun _ => 2 ^ 64 - 1, fun _ => 2 ^ 64 
 theorem s2b_nat (E : Env) : ∀ j < 5, ∀ l < 4, (s2b.reg (5 + j)).nat E l =
     if l < 2 then E.m (KA24 + 32 * j) l else E.v (10 + j) l := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 theorem s2b_ok : ∀ j < 5, ∀ l < 4, (s2b.reg (5 + j)).ok topB l = true := by decide +kernel
 theorem s2b_st : s2b.st = [] := by decide +kernel
@@ -113,7 +113,7 @@ theorem s3b_nat (E : Env) : ∀ j < 5, ∀ l < 4,
     (s3b.reg (10 + j)).nat E l = (if l < 2 then E.v (10 + j) l else E.v j l) ∧
     (s3b.reg (5 + j)).nat E l = (if l < 2 then E.v j l else E.m (KX1 + 32 * j) l) := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> exact ⟨rfl, rfl⟩
 theorem s3b_ok : ∀ j < 5, ∀ l < 4, (s3b.reg (10 + j)).ok topB l = true ∧ (s3b.reg (5 + j)).ok topB l = true := by
   decide +kernel

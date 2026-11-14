@@ -309,8 +309,8 @@ theorem selectAcc64_ok32 {s : State} {B : Addr} {Z dA dT dO w : Nat} (hs : Scr s
       Outside B dO (4 * (2 * w)) s.mem s'.mem ∧ Keep [.r0, .r3, .r14, .r15, .r16, .r17] s s' := by
   have hm : BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) = if b then BitVec.allOnes 64 else 0 := by
     cases b <;> rfl
-  refine WP.mono (selectAcc64_ok (w := w) hs h8 h9 h5 h11 (h20.trans hm) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega)) fun s' ⟨hv, hout, k⟩ => ⟨?_, hout.mono (Nat.le_refl _) (by omega), k⟩
+  refine WP.mono (selectAcc64_ok (w := w) hs h8 h9 h5 h11 (h20.trans hm) (by omega_using [hn]) (by omega_using [hn']) (by omega_using [hA])
+    (by omega_using [hT]) (by omega_using [hO]) (by omega_using [dOA]) (by omega_using [dOT])) fun s' ⟨hv, hout, k⟩ => ⟨?_, hout.mono (Nat.le_refl _) (by omega_using []), k⟩
   rw [← wordsVal_eq_val32, ← wordsVal_eq_val32, ← wordsVal_eq_val32, hv]
 
 end VG.Proof.Bignum.PPC64LE

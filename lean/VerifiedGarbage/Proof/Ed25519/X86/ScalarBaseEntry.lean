@@ -40,21 +40,21 @@ structure Prologue (s t : State) : Prop where
 /-- The static's address's frame, within the stack a call uses. -/
 theorem below4_sub {sp : BitVec 32} (h : 8 ≤ sp.toNat) :
     Region.Sub (below sp 4) ⟨(sp - BitVec.ofNat 32 8).setWidth 64, 8⟩ := by
-  simp only [below, Taint.sub_setWidth (show 4 ≤ sp.toNat by omega), Taint.sub_setWidth h]
+  simp only [below, Taint.sub_setWidth (show 4 ≤ sp.toNat by omega_using [h]), Taint.sub_setWidth h]
   exact Offset.sub_below _ (by decide) (by decide)
 
 theorem combAddr_ok {s : State} (h : scalarBaseLocal.pre s) : WP isa (combAddr 2) s (Prologue s) := by
   obtain ⟨hr, _, held⟩ := h
   obtain ⟨hp, hi, _⟩ := scalarBase_pre hr
   have h20 := hp.stk.1
-  have hsp : 4 ≤ (s.gpr .esp).toNat := by omega
+  have hsp : 4 ≤ (s.gpr .esp).toNat := by omega_using [h20]
   have s4 := below4_sub h20
   have ki : (below (s.gpr .esp) 4).Disjoint ⟨(arg s 1).setWidth 64, 32⟩ := hr.2.2.2.2.2.2.2.2.2.2.2.2.2.1.sub_left s4
   have hspfit := hp.sp_fit
   have hl := combWords_length
   refine WP.seq (WP.mono (symFrame_ok combSym s hsp) fun s₁ P => ?_)
   have e1 : s₁.gpr .esp = s.gpr .esp := P.gpr .esp (by decide)
-  have a1 : ∀ j < 3, arg s₁ j = arg s j := fun j hj => P.arg hsp (by omega)
+  have a1 : ∀ j < 3, arg s₁ j = arg s j := fun j hj => P.arg hsp (by omega_using [hspfit, hj])
   refine Wp.wp_ldm e1 (by rw [P.rd, P.wr]; exact hp.argIn hp.index) fun s₂ h₂ => ?_
   have e2 : s₂.gpr .edx = arg s 2 := by
     rw [h₂.gpr, ← a1 2 (by decide)]
@@ -92,8 +92,8 @@ theorem combAddr_ok {s : State} (h : scalarBaseLocal.pre s) : WP isa (combAddr 2
     · intro r hr; rw [List.mem_singleton.mp hr]; exact hp.args_sc
   have T3 : TblWords ((s.syms combSym).setWidth 64) s₃.mem := fun i hi => by
     rw [← held.1 i hi]
-    refine F.readW (r := TBL ((s.syms combSym).setWidth 64)) (Offset.contains_base _ (by omega)
-      (by omega)) ?_ (by decide)
+    refine F.readW (r := TBL ((s.syms combSym).setWidth 64)) (Offset.contains_base _ (by omega_using [hi])
+      (by omega_using [hl, hi])) ?_ (by decide)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -109,7 +109,7 @@ theorem combAddr_ok {s : State} (h : scalarBaseLocal.pre s) : WP isa (combAddr 2
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
-  · rw [← P.ret hsp (by omega)]
+  · rw [← P.ret hsp (by omega_using [hspfit])]
     refine G.readW (r := ⟨(s.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr; rw [List.mem_singleton.mp hr]; exact hp.ret_sc
   · unfold Spec.Ed25519.bytesAt
@@ -129,7 +129,7 @@ theorem BaseRegions.symAddr {name : String} {s t : State} (h : BaseRegions s)
     (P : SymAddrPost name s t) (hsp : 4 ≤ (s.gpr .esp).toNat) : BaseRegions t := by
   have hf : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := h.2.2.2.2.2.2.2.2.2.2.2.1
   have e : t.gpr .esp = s.gpr .esp := P.gpr .esp (by decide)
-  have a : ∀ j < 3, arg t j = arg s j := fun j hj => P.arg hsp (by omega)
+  have a : ∀ j < 3, arg t j = arg s j := fun j hj => P.arg hsp (by omega_using [hf, hj])
   simpa only [BaseRegions, argAddr, callStk, e, P.rd, P.wr, P.syms, a 0 (by decide), a 1 (by decide),
     a 2 (by decide)] using h
 

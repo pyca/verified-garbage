@@ -138,13 +138,13 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2576) (hd : d + k ≤ 2576) :
     (⟨c.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 omit L in
 /-- `W` and a part of it. -/
 theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 2576) :
     (⟨c.W, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.base_disjoint _ h (by omega)
+  Offset.base_disjoint _ h (by omega_using [hd])
 
 theorem c_w' {a n d k : Nat} (ha : a + n ≤ 512) (hd : d + k ≤ 2576) :
     (⟨c.C + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
@@ -162,7 +162,7 @@ theorem v_w' {d k : Nat} (hd : d + k ≤ 2576) : (⟨c.V, 16⟩ : Region).Disjoi
 
 theorem wrapW {d : Nat} (hd : d < 2576) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem rb : 16 * (c.R + 1) ≤ 240 := by rcases L.rounds with h | h | h <;> rw [h] <;> decide
 
@@ -215,20 +215,20 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf c s' 
 
 /-- The bytes from `k` on. -/
 theorem drop {k : Nat} (hk : k ≤ len) : Buf c s (P + BitVec.ofNat 64 k) (len - k) where
-  rd := covers_off h.rd (by omega) h.lt
-  lt := by have := h.lt; omega
+  rd := covers_off h.rd (by omega_using [hk]) h.lt
+  lt := by have := h.lt; omega_using [this]
   wrap := by
     have := h.wrap
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega_using [hk, this])]
     have := Nat.mod_le (P.toNat + k) (2 ^ 64)
-    omega
-  w := h.w.sub_left (Offset.sub_base P (by omega))
+    omega_arith
+  w := h.w.sub_left (Offset.sub_base P (by omega_using [hk]))
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ len) : Buf c s P k where
   rd := VG.Proof.Gather.PPC64LE.covers_prefix h.rd hk
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
+  lt := by have := h.lt; omega_using [hk, this]
+  wrap := by have := h.wrap; omega_using [hk, this]
   w := h.w.sub_left (Region.sub_prefix hk)
 
 theorem wd {d k : Nat} (hd : d + k ≤ 2576) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=

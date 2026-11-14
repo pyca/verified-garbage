@@ -45,7 +45,7 @@ theorem prepared_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
       exact hh.mono (by simp [workR])
     have hsource : Spec.Aes.bytesAt s₂.mem (s.gpr .r9) (s.gpr .r10).toNat=
         Spec.Aes.bytesAt s.mem (s.gpr .r9) (s.gpr .r10).toNat := by
-      apply bytesAt_frame hf _ (by have := (s.gpr .r10).isLt; omega)
+      apply bytesAt_frame hf _ (by have := (s.gpr .r10).isLt; omega_using [])
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
@@ -54,7 +54,7 @@ theorem prepared_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
     have hdata : Spec.Aes.bytesAt s₂.mem (s₁.gpr .r27) (s₁.gpr .r23).toNat=
         Spec.Aes.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat := by
       rw [h1.r27,h1.r23,prepared_destination s hs,prepared_length s hs]
-      apply bytesAt_frame hf _ (by have := (stackArg s 1).isLt; omega)
+      apply bytesAt_frame hf _ (by have := (stackArg s 1).isLt; omega_using [])
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl

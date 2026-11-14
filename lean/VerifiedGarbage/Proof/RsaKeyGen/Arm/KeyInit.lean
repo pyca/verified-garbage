@@ -110,13 +110,13 @@ theorem shl8_add (v : Nat) (hv : v < 2 ^ 32) (b : Byte) :
   apply BitVec.eq_of_toNat_eq
   have hb := b.isLt
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (show b.toNat < 2 ^ 32 by omega), Nat.shiftLeft_eq, Nat.mod_mod]
-  omega
+    Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (show b.toNat < 2 ^ 32 by omega_using []), Nat.shiftLeft_eq, Nat.mod_mod]
+  omega_using []
 
 theorem shr24 (v : Nat) (hv : v < 2 ^ 32) : BitVec.ofNat 32 v >>> 24 = BitVec.ofNat 32 (v / 2 ^ 24) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hv])]
 
 /-! ## `e`'s octets -/
 
@@ -136,7 +136,7 @@ theorem octet_step {s u : State} {E : BitVec 32} {n j : Nat} (hj : j < n) (hn : 
     (hrd : InRegions (s.rd ++ s.wr) (State.addr E + BitVec.ofNat 64 j) 1) (h : ScanInv s E n j u) :
     WP isa (.block octet) u (ScanInv s E n (j + 1)) := by
   have addr : State.addr (E + BitVec.ofNat 32 j) = State.addr E + BitVec.ofNat 64 j :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [hj, fits])
   have hr : InRegions (u.rd ++ u.wr) (State.addr E + BitVec.ofNat 64 j) 1 := by
     rw [h.rest.rd, h.rest.wr]; exact hrd
   obtain ⟨V, hVd⟩ : ∃ V, Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr E) j) = V := ⟨_, rfl⟩
@@ -151,24 +151,24 @@ theorem octet_step {s u : State} {E : BitVec 32} {n j : Nat} (hj : j < n) (hn : 
     (by rfl) (by rfl)) fun t ⟨⟨h2, h4, h5, h3, hz, hm⟩, k⟩ => ⟨h2, ?_, ?_, h3, hz, hm.trans h.mem, h.rest.trans k⟩
   · unfold octet
     ffrun [h.ptr, hval, h.count, BitVec.add_zero, addr, hr, hbd, add_one32, shr24 _ hV, shl8_add _ hV,
-      sub_one32 (k := n - j) (by omega) (by omega), show n - j - 1 = n - (j + 1) by omega,
-      ofNat_beq (k := n - (j + 1)) (by omega), ofNat_beq0 (k := n - (j + 1)) (by omega)]
+      sub_one32 (k := n - j) (by omega_using [hj]) (by omega_using [hn]), show n - j - 1 = n - (j + 1) by omega_using [],
+      ofNat_beq (k := n - (j + 1)) (by omega_using [hn]), ofNat_beq0 (k := n - (j + 1)) (by omega_using [hn])]
   · have hb' : s.mem (State.addr E + BitVec.ofNat 64 j) = b := by rw [← h.mem]; exact hbd
     rw [h4, bytesAt_succ, os2ip_snoc, hVd, hb']
     congr 1
-    omega
+    omega_using []
   · have hb' : s.mem (State.addr E + BitVec.ofNat 64 j) = b := by rw [← h.mem]; exact hbd
     have hb := b.isLt
-    rw [h5, or_zero32, h.high, bytesAt_succ, os2ip_snoc, hVd, hb', ofNat32_eq_zero (by omega)]
+    rw [h5, or_zero32, h.high, bytesAt_succ, os2ip_snoc, hVd, hb', ofNat32_eq_zero (by omega_using [])]
     constructor
     · rintro ⟨h1, h2⟩
       rw [Nat.mod_eq_of_lt h1] at h2
       have := (Nat.div_eq_zero_iff_lt (by decide)).mp h2
-      omega
+      omega_using [h2]
     · intro h'
-      refine ⟨by omega, ?_⟩
-      rw [Nat.mod_eq_of_lt (by omega)]
-      exact Nat.div_eq_of_lt (by omega)
+      refine ⟨by omega_using [h'], ?_⟩
+      rw [Nat.mod_eq_of_lt (by omega_using [h'])]
+      exact Nat.div_eq_of_lt (by omega_using [h'])
 
 theorem scan_ok {s u : State} {E : BitVec 32} {n : Nat} (hp : u.gpr .r2 = E)
     (hl : u.gpr .r3 = BitVec.ofNat 32 n) (hn : n < 2 ^ 32) (fits : E.toNat + n ≤ 2 ^ 32)
@@ -189,17 +189,17 @@ theorem scan_ok {s u : State} {E : BitVec 32} {n : Nat} (hp : u.gpr .r2 = E)
     exact WP.block_nil h0
   · rw [hz] at hz'
     have hz' : n ≠ 0 := of_decide_eq_false hz'
-    refine WP.mono (WP.chunk_loop (I := ScanInv s E n) (n := n) (N := 1) (k := 0) (by decide) (by omega) h0
-      (fun j t hj ht => octet_step (by omega) hn fits (hrd j (by omega)) ht)
+    refine WP.mono (WP.chunk_loop (I := ScanInv s E n) (n := n) (N := 1) (k := 0) (by decide) (by omega_using [hz']) h0
+      (fun j t hj ht => octet_step (by omega_using [hj]) hn fits (hrd j (by omega_using [hj])) ht)
       (fun j t _ ht => ?_)) fun t ⟨j, hj, hl, ht⟩ => by
-        obtain rfl : j = n := by omega
+        obtain rfl : j = n := by omega_using [hj, hl]
         exact ht
     have e : isa.eval .ne t = some (!decide (n - j = 0)) := by
       change some (!t.z) = _; rw [ht.z]
     rw [e]
     constructor
-    · intro hl; rw [decide_eq_true (by omega)]; rfl
-    · intro hl; rw [decide_eq_false (by omega)]; rfl
+    · intro hl; rw [decide_eq_true (by omega_using [hl])]; rfl
+    · intro hl; rw [decide_eq_false (by omega_using [hl])]; rfl
 
 /-! ## The status -/
 
@@ -229,7 +229,7 @@ theorem status_bits (a b c d : Bool) (o : Nat) (ho : o < 2) (hab : b = true → 
         (BitVec.ofNat 32 a.toNat - BitVec.ofNat 32 b.toNat)) =
       maskOf (if o = 1 ∧ c = true ∧ d = false then (if a = true ∧ b = false then 1 else 2) else 0) := by
   unfold maskOf
-  rcases (by omega : o = 0 ∨ o = 1) with rfl | rfl <;> cases a <;> cases b <;> cases c <;> cases d <;>
+  rcases (by omega_using [ho] : o = 0 ∨ o = 1) with rfl | rfl <;> cases a <;> cases b <;> cases c <;> cases d <;>
     simp at hab <;> decide
 
 theorem and1_32 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n &&& 1#32 = BitVec.ofNat 32 (n % 2) := by
@@ -237,7 +237,7 @@ theorem and1_32 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n &&& 1#32 = BitVe
   rw [BitVec.toNat_and]
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn, show (1#32).toNat = 2 ^ 1 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem enc512 : encodable 512 = true := by decide
 
@@ -296,7 +296,7 @@ structure Space (B : BitVec 32) (s : State) : Prop where
 
 theorem Space.addr {B : BitVec 32} {s : State} (h : Space B s) {d : Nat} (hd : d < 56) :
     State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr B) d := by
-  rw [h.ptr]; exact VG.Arm.addr_add (by have := h.space.nowrap; omega)
+  rw [h.ptr]; exact VG.Arm.addr_add (by have := h.space.nowrap; omega_using [hd, this])
 
 theorem Space.congr {B : BitVec 32} {s t : State} (h : Space B s) (hw : t.wr = s.wr)
     (h0 : t.gpr .r0 = s.gpr .r0) : Space B t :=
@@ -461,7 +461,7 @@ theorem plen_eq {bits : Nat} (hb : bits < 2 ^ 32) : plenBV bits = BitVec.ofNat 3
   apply BitVec.eq_of_toNat_eq
   unfold plenBV
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt hb, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt hb, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_using [hb])]
 
 theorem xor3_toNat {V : Nat} (hV : V < 2 ^ 32) : (1 ≤ (BitVec.ofNat 32 V ^^^ 3).toNat) ↔ V ≠ 3 := by
   constructor
@@ -477,37 +477,37 @@ theorem xor3_toNat {V : Nat} (hV : V < 2 ^ 32) : (1 ≤ (BitVec.ofNat 32 V ^^^ 3
 theorem limit_eq {L V : Nat} (hL : L ≤ 512) (hV : V < 2 ^ 32) :
     limitBV (BitVec.ofNat 32 L) V = BitVec.ofNat 32 (if V = 3 then 64 * L else 40 * L) := by
   unfold limitBV
-  rw [shl32 L 6 (by omega), shl32 L 3 (by omega), shl32 L 4 (by omega), ← BitVec.ofNat_add,
+  rw [shl32 L 6 (by omega_using [hL]), shl32 L 3 (by omega_using [hL]), shl32 L 4 (by omega_using [hL]), ← BitVec.ofNat_add,
     ← BitVec.ofNat_mul]
   by_cases h3 : V = 3
   · rw [decide_eq_false (by rw [xor3_toNat hV]; exact fun e => e h3), ite_eq_left h3, Bool.toNat_false,
-      Nat.zero_mul, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
-    congr 1; omega
+      Nat.zero_mul, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [])]
+    congr 1; omega_using []
   · rw [decide_eq_true ((xor3_toNat hV).mpr h3), ite_eq_right h3, Bool.toNat_true, Nat.one_mul,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
-    congr 1; omega
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hL]) (by omega_using [])]
+    congr 1; omega_using []
 
 /-! ## The exponent's octets -/
 
 theorem rev_byte32 (v : BitVec 32) {k : Nat} (hk : k < 4) :
     (rev v).extractLsb' (8 * k) 8 = v.extractLsb' (8 * (3 - k)) 8 := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> ext i hi <;>
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> ext i hi <;>
     simp (disch := omega) only [rev, BitVec.getElem_extractLsb', BitVec.getLsbD_append, BitVec.getLsbD_extractLsb',
       Nat.reduceMul, Nat.reduceSub, Nat.zero_add]
   · simp only [hi, ↓reduceIte, decide_true, Bool.true_and]
-  · simp only [show ¬ (8 + i < 8) by omega, show 8 + i - 8 = i by omega, hi, ↓reduceIte, decide_true,
+  · simp only [show ¬ (8 + i < 8) by omega_using [], show 8 + i - 8 = i by omega_using [], hi, ↓reduceIte, decide_true,
       Bool.true_and]
-  · simp only [show ¬ (16 + i < 8) by omega, show ¬ (16 + i - 8 < 8) by omega, show 16 + i - 8 - 8 = i by omega,
+  · simp only [show ¬ (16 + i < 8) by omega_using [], show ¬ (16 + i - 8 < 8) by omega_using [], show 16 + i - 8 - 8 = i by omega_using [],
       hi, ↓reduceIte, decide_true, Bool.true_and]
-  · simp only [show ¬ (24 + i < 8) by omega, show ¬ (24 + i - 8 < 8) by omega, show ¬ (24 + i - 8 - 8 < 8) by omega,
-      show 24 + i - 8 - 8 - 8 = i by omega, hi, decide_true, Bool.true_and, ↓reduceIte]
+  · simp only [show ¬ (24 + i < 8) by omega_using [], show ¬ (24 + i - 8 < 8) by omega_using [], show ¬ (24 + i - 8 - 8 < 8) by omega_using [],
+      show 24 + i - 8 - 8 - 8 = i by omega_using [], hi, decide_true, Bool.true_and, ↓reduceIte]
 
 theorem extract_nat32 (x : Nat) {j : Nat} (hj : j < 4) :
     (BitVec.ofNat 32 x).extractLsb' (8 * j) 8 = BitVec.ofNat 8 (x / 256 ^ j) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [show (2 : Nat) ^ 32 = 2 ^ (8 * j) * 2 ^ (32 - 8 * j) by rw [← Nat.pow_add]; congr 1; omega,
-    Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega))]
+  rw [show (2 : Nat) ^ 32 = 2 ^ (8 * j) * 2 ^ (32 - 8 * j) by rw [← Nat.pow_add]; congr 1; omega_using [hj],
+    Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [hj]))]
   rw [show (256 : Nat) ^ j = 2 ^ (8 * j) by rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]]
 
 theorem e_bytes (m : Mem) (B : Addr) {E : Nat} (hE : E < 2 ^ 32) (h12 : slot m B 12 = 0)
@@ -521,17 +521,17 @@ theorem e_bytes (m : Mem) (B : Addr) {E : Nat} (hE : E < 2 ^ 32) (h12 : slot m B
   · have e : B + 48 + BitVec.ofNat 64 i = off B (4 * 12) + BitVec.ofNat 64 i := rfl
     rw [e, Mem.readW_byte m (off B (4 * 12)) hlo, h12]
     have : E / 256 ^ (8 - 1 - i) = 0 := Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hE
-      (by rw [show (2 : Nat) ^ 32 = 256 ^ 4 from rfl]; exact Nat.pow_le_pow_right (by decide) (by omega)))
+      (by rw [show (2 : Nat) ^ 32 = 256 ^ 4 from rfl]; exact Nat.pow_le_pow_right (by decide) (by omega_using [hlo])))
     rw [this]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega_using [hlo] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl
   · have e : B + 48 + BitVec.ofNat 64 i = off B (4 * 13) + BitVec.ofNat 64 (i - 4) := by
       have h1 : B + 48 + BitVec.ofNat 64 i = B + BitVec.ofNat 64 (48 + i) := by
         rw [BitVec.add_assoc, BitVec.ofNat_add]; rfl
       have h2 : off B (4 * 13) + BitVec.ofNat 64 (i - 4) = B + BitVec.ofNat 64 (52 + (i - 4)) := by
         rw [off, BitVec.add_assoc, BitVec.ofNat_add]
-      rw [h1, h2, show 48 + i = 52 + (i - 4) by omega]
-    rw [e, Mem.readW_byte m (off B (4 * 13)) (show i - 4 < 4 by omega), h13, rev_byte32 _ (by omega),
-      extract_nat32 _ (by omega), show 3 - (i - 4) = 8 - 1 - i by omega]
+      rw [h1, h2, show 48 + i = 52 + (i - 4) by omega_using [hlo]]
+    rw [e, Mem.readW_byte m (off B (4 * 13)) (show i - 4 < 4 by omega_using [hi]), h13, rev_byte32 _ (by omega_using [hi]),
+      extract_nat32 _ (by omega_using []), show 3 - (i - 4) = 8 - 1 - i by omega_using [hlo]]
 
 /-! ## The final halves -/
 
@@ -547,14 +547,14 @@ abbrev finalMem (m : Mem) (B : Addr) (a b : BitVec 32) (bits V : Nat) (M : BitVe
 theorem final_vals (m : Mem) (B : Addr) (a b : BitVec 32) (bits V : Nat) (M : BitVec 32) {j : Nat} (hj : j < 14) :
     slot (finalMem m B a b bits V M) B j = (finalVals bits V M).getD j 0 := by
   rw [final_slot m B a b bits V M hj]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
     j = 11 ∨ j = 12 ∨ j = 13) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem final_zero (m : Mem) (B : Addr) (a b : BitVec 32) (bits V : Nat) {st : Nat} (hst : st ≠ 1) {j : Nat}
     (hj : j < 14) : slot (finalMem m B a b bits V (maskOf st)) B j = 0 := by
   rw [final_vals m B a b bits V _ hj]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
     j = 11 ∨ j = 12 ∨ j = 13) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [finalVals, List.getD_cons_zero, List.getD_cons_succ, mask_ne _ hst]
@@ -567,14 +567,14 @@ theorem final_valid (m : Mem) (B : Addr) (a b : BitVec 32) {bits E : Nat} (hb : 
     slot (finalMem m B a b bits E (maskOf 1)) B (2 * j) =
         BitVec.ofNat 32 ((validVals (bits / 128 * 8) E).getD j 0) ∧
       slot (finalMem m B a b bits E (maskOf 1)) B (2 * j + 1) = 0 := by
-  rw [final_vals m B a b bits E _ (by omega), final_vals m B a b bits E _ (by omega)]
+  rw [final_vals m B a b bits E _ (by omega_using [hj]), final_vals m B a b bits E _ (by omega_using [hj])]
   have p := plen_eq hb
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [finalVals, validVals, List.getD_cons_zero, List.getD_cons_succ, mask_one, p, Nat.reduceMul,
       Nat.reduceAdd, and_true]
   · rw [limit_eq hL hE]
-  · rw [shl32 _ 15 (by omega), ← BitVec.ofNat_add]; congr 1; omega
-  · rw [shl32 _ 5 (by omega)]; congr 1; omega
+  · rw [shl32 _ 15 (by omega_using [hL]), ← BitVec.ofNat_add]; congr 1; omega_using []
+  · rw [shl32 _ 5 (by omega_using [hL])]; congr 1; omega_using []
   · rfl
   · rfl
 
@@ -590,10 +590,10 @@ theorem status_eq (bits E H : Nat) (hH : H = 0 ↔ E < 2 ^ 32) :
   · have h0 : H = 0 := hH.mpr hE
     rw [Nat.mod_eq_of_lt hE, h0]
     repeat' split
-    all_goals first | rfl | omega
+    all_goals first | rfl | omega_arith
   · have h0 : H ≠ 0 := fun e => hE (hH.mp e)
     repeat' split
-    all_goals first | rfl | omega
+    all_goals first | rfl | omega_arith
 
 /-! ## The whole initialization -/
 
@@ -614,7 +614,7 @@ def initPost (s t : State) : Prop :=
       Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy (values.getD 1 0)) 0 first
 
 theorem initStatus_lt (bits E : Nat) : initStatus bits E < 2 ^ 32 := by
-  rw [initStatus_val]; split <;> (try split) <;> omega
+  rw [initStatus_val]; split <;> (try split) <;> omega_using []
 
 theorem result_post {s t : State} {E : Nat} {a b : BitVec 32}
     (hE : E = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat))
@@ -634,14 +634,14 @@ theorem result_post {s t : State} {E : Nat} {a b : BitVec 32}
   have zeros (st : Nat) (h : st ≠ 1) (hm' : t.mem = finalMem s.mem (State.addr (s.gpr .r0)) a b bits (E % 2 ^ 32)
       (maskOf st)) : Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 7 = List.replicate 7 0 := by
     rw [hm', wordsAt_halves _ _ 7 (fun _ => 0) (fun _ _ => by decide)
-      (fun j hj => final_zero _ _ _ _ _ _ h (by omega)) (fun j hj => final_zero _ _ _ _ _ _ h (by omega))]
+      (fun j hj => final_zero _ _ _ _ _ _ h (by omega_using [hj])) (fun j hj => final_zero _ _ _ _ _ _ h (by omega_using [hj]))]
     rfl
   by_cases hv : Spec.RsaKeyGen.exponentValid E = true
   · rw [ite_eq_right (by rw [hv]; decide)]
     have hvE : E % 2 = 1 ∧ 3 ≤ E ∧ E < 2 ^ 32 := by
       unfold Spec.RsaKeyGen.exponentValid at hv
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv
-      omega
+      omega_using [hv]
     cases hmb : Spec.RsaKeyGen.modulusBits bits with
     | none =>
       have h2 : initStatus bits E = 2 := by
@@ -656,25 +656,25 @@ theorem result_post {s t : State} {E : Nat} {a b : BitVec 32}
         · by_cases h2 : bits / 128 * 128 < 512
           · simp [h1, h2] at hmb
           · simp only [h1, h2, ↓reduceIte, Option.some.injEq] at hmb
-            omega
+            omega_using [h1, h2, hmb]
       have h1 : initStatus bits E = 1 := by
-        rw [hst, ite_eq_left hvE, ite_eq_left (by omega)]
+        rw [hst, ite_eq_left hvE, ite_eq_left (by omega_using [hn])]
       rw [h1] at hr hm
-      have hP : nlen / 16 = bits / 128 * 8 := by omega
-      have hL : bits / 128 * 8 ≤ 512 := by omega
+      have hP : nlen / 16 = bits / 128 * 8 := by omega_using [hn]
+      have hL : bits / 128 * 8 ≤ 512 := by omega_using [hn]
       have hV : E % 2 ^ 32 = E := Nat.mod_eq_of_lt hvE.2.2
       rw [hV] at hm
       refine ⟨ret 1 (by decide) hr, 32 * (bits / 128 * 8), ?_, ?_, ?_⟩
       · rw [hm, wordsAt_halves _ _ 6 (fun j => (validVals (bits / 128 * 8) E).getD j 0)
           (fun j hj => by
-            rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;>
-              simp only [validVals, List.getD_cons_zero, List.getD_cons_succ] <;> (try split) <;> omega)
+            rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;>
+              simp only [validVals, List.getD_cons_zero, List.getD_cons_succ] <;> (try split) <;> omega_arith)
           (fun j hj => (final_valid _ _ _ _ hb hL hvE.2.2 hj).1) (fun j hj => (final_valid _ _ _ _ hb hL hvE.2.2 hj).2)]
         rw [show ∀ f : Nat → BitVec 64, (List.range 6).map f = [f 0, f 1, f 2, f 3, f 4, f 5] from fun f => rfl]
         simp only [hP, validVals, Spec.RsaKeyGen.primeLimit, Spec.RsaKeyGen.primeEntropy,
           Spec.RsaKeyGen.keyGenerations, List.cons_append, List.nil_append, List.map_cons, List.map_nil,
           List.getD_cons_zero, List.getD_cons_succ, List.cons.injEq, and_true]
-        by_cases h3 : E = 3 <;> simp only [h3, ↓reduceIte] <;> congr 1 <;> omega
+        by_cases h3 : E = 3 <;> simp only [h3, ↓reduceIte] <;> congr 1 <;> omega_using []
       · rw [hm]
         refine e_bytes _ _ hvE.2.2 ?_ ?_
         · rw [final_vals _ _ _ _ _ _ _ (by decide)]; rfl
@@ -682,7 +682,7 @@ theorem result_post {s t : State} {E : Nat} {a b : BitVec 32}
           simp only [finalVals, List.getD_cons_zero, List.getD_cons_succ, mask_one]
       · simp only [List.getD_cons_zero, List.getD_cons_succ, hP]
         unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
-        omega
+        omega_using [hn]
   · have hv' : Spec.RsaKeyGen.exponentValid E = false := by simpa using hv
     rw [ite_eq_left (by rw [hv']; rfl)]
     have h0 : initStatus bits E = 0 := by
@@ -714,11 +714,11 @@ theorem init_ok {s : State} (h : initPre s) :
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     exact hf.bytes (R := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩)
-      (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact disj.symm) (by simp only; omega)
+      (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact disj.symm) (by simp only; omega_using [])
       (List.mem_range.mp hi)
   have hrd0 : ∀ j < (s.gpr .r3).toNat, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r2) + BitVec.ofNat 64 j) 1 :=
     fun i hi => ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have hrd1 : ∀ j < (s.gpr .r3).toNat, InRegions (u0.rd ++ u0.wr) (State.addr (s.gpr .r2) + BitVec.ofNat 64 j) 1 := by
     rw [k0.rd, k0.wr]; exact hrd0
   refine WP.seq (WP.mono (scan_ok (s := u0) (u := u0) (E := s.gpr .r2) (n := (s.gpr .r3).toNat)
@@ -741,8 +741,8 @@ theorem init_ok {s : State} (h : initPre s) :
   refine WP.mono (expTest_ok (u := u2) (V := E % 2 ^ 32) (Nat.mod_lt _ (by decide))
     ((k2.gpr .r4 (by decide)).trans h4)) fun u3 ⟨⟨h312, hm3⟩, k3⟩ => ?_
   have h5' : u2.gpr .r5 = u1.gpr .r5 := k2.gpr .r5 (by decide)
-  refine WP.mono (statusMask_ok (u := u3) (o := E % 2 ^ 32 % 2) (by omega)
-    (fun hb' => by simp only [decide_eq_true_eq] at hb' ⊢; omega)
+  refine WP.mono (statusMask_ok (u := u3) (o := E % 2 ^ 32 % 2) (by omega_using [])
+    (fun hb' => by simp only [decide_eq_true_eq] at hb' ⊢; omega_using [hb'])
     ((k3.gpr .r3 (by decide)).trans h23) h312) fun u4 ⟨⟨h45, h412, h43, hm4⟩, k4⟩ => ?_
   rw [h5', status_eq _ _ _ (show (u1.gpr .r5).toNat = 0 ↔ E < 2 ^ 32 by
     rw [← h5]; exact ⟨fun e => BitVec.eq_of_toNat_eq (by rw [e]; rfl), fun e => by rw [e]; rfl⟩)] at h45 h412

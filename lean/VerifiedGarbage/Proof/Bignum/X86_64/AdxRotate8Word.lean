@@ -43,7 +43,7 @@ theorem word_ok (s : State) {k : Nat} {hi prev next : Reg} {v : BitVec 64} {c o 
   rw [ep] at eb
   rw [en, eh] at et
   rw [eo]
-  omega
+  omega_using [ea, eb, et]
 
 theorem close_ok (s : State) {c o : Bool} (hc : s.cf = some c) (ho : s.of = some o) :
     WP isa (.block AdxRotate8.close) s fun t => ∃ c' o' : Bool,
@@ -64,5 +64,5 @@ theorem close_ok (s : State) {c o : Bool} (hc : s.cf = some c) (ho : s.of = some
   rw [ep, za] at eb
   rw [zb] at et
   simp only [show (0 : BitVec 64).toNat = 0 from rfl] at eb et
-  omega
+  omega_using [eb, et]
 end VG.Proof.Bignum.X86_64.AdxRotate8

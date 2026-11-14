@@ -57,10 +57,10 @@ theorem generatorFromFrame_ok {s : State} {B F S : Addr} {Z len : Nat}
     fun v ⟨hv, _, fv, kv⟩ => ?_)
   have bounds : ∀ r ∈ [(48, 80), (224, 8)], r.1 + r.2 ≤ Z := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> omega
+    rintro r (rfl | rfl) <;> simp only <;> omega_using [hz]
   refine WP.mono (generatorCheck_ok result hv hb.2.2.2.1
     ((kv.gpr (by decide)).trans ((ku.gpr (by decide)).trans L.rsp))
-    (fun k hk => by rw [kv.2.1, kv.2.2, ku.2.1, ku.2.2]; exact L.ld (by unfold frameBytes; omega))
+    (fun k hk => by rw [kv.2.1, kv.2.2, ku.2.1, ku.2.2]; exact L.ld (by unfold frameBytes; omega_using [hk]))
     (fun k hk => by rw [frame_word_of_workspace fv bounds (hframe k hk), hm]; exact R.fr k hk)
     hsep (spu.congrK (InScr.of_frm fv bounds) kv) (sxu.congrK (InScr.of_frm fv bounds) kv)
     hp hx hb.2.2.1 hb.2.2.2.2 hodd hresult) fun t ⟨hr, ht, ft, kt⟩ => ?_
@@ -72,10 +72,10 @@ theorem generatorFromFrame_ok {s : State} {B F S : Addr} {Z len : Nat}
     rw [ft a (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl) <;> right
-      · exact Nat.le_trans hz (by omega)
-      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 0 < 16))) (by omega)
-      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 1 < 16))) (by omega)),
-      fv a (fun r hr => Or.inr (Nat.le_trans (bounds r hr) (by omega))), hm]
+      · exact Nat.le_trans hz (by omega_using [hn])
+      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 0 < 16))) (by omega_using [hn])
+      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 1 < 16))) (by omega_using [hn])),
+      fv a (fun r hr => Or.inr (Nat.le_trans (bounds r hr) (by omega_using [hn]))), hm]
   have Rt := rep_of_disjoint_frame R ff
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hS)

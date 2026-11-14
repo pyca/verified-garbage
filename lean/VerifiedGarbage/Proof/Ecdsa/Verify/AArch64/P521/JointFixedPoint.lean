@@ -44,13 +44,13 @@ theorem fixedPoint_ok {s : State} {base T : Addr} {size a : Nat} {C : Curve}
   have sy1 := hL.apart _ _ (hD P521Joint.K.E.y (by simp)) (hi.sl _ hOne) hy1
   have sz1 : P521Joint.K.E.z≤(p521.sl ONEP) ∨ (p521.sl ONEP)+72≤P521Joint.K.E.z := by
     by_cases e : P521Joint.K.E.z=(p521.sl ONEP)
-    · omega
+    · omega_using [e]
     · have := hL.apart _ _ (hD P521Joint.K.E.z (by simp)) (hi.sl _ hOne) e
-      rw [hn] at this; omega
+      rw [hn] at this; omega_using [this]
   simp only [hn,hy] at bx by' bz b1 sxz syz sx1 sy1
-  refine WP.mono (fixedLoadBody_ok hi.scr ha h2 ht hy (by omega)
+  refine WP.mono (fixedLoadBody_ok hi.scr ha h2 ht hy (by omega_using [by'])
     (hAl.sl _ (hD P521Joint.K.E.x (by simp))) bz (hAl.sl _ (hD P521Joint.K.E.z (by simp)))
-    b1 (hAl.sl _ (hi.sl _ hOne)) (by omega) (by omega) sz1 hr hout)
+    b1 (hAl.sl _ (hi.sl _ hOne)) (by omega_using [sxz, syz]) (by omega_using [sx1, sy1]) sz1 hr hout)
     fun t ⟨vx,vy,vz,kt,ut⟩ => ?_
   have kp : ProgKeep P521Joint.K.M base [P521Joint.K.E.x,P521Joint.K.E.y,P521Joint.K.E.z] s t := by
     refine ⟨fun r hr => kt.gpr r (fun hh => hr ?_),kt.rd,kt.wr,kt.sp,fun x hx _ => ut x ?_⟩
@@ -63,7 +63,7 @@ theorem fixedPoint_ok {s : State} {base T : Addr} {size a : Nat} {C : Curve}
       have hx2 := hx P521Joint.K.E.z (by simp)
       rw [hn] at hx0 hx1 hx2
       rw [hy] at hx1
-      rcases hw with rfl | rfl <;> dsimp only <;> omega
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith
   have hlt : ∀ x∈[P521Joint.K.E.x,P521Joint.K.E.y,P521Joint.K.E.z],wordsVal t.mem base x P521Joint.K.M.n<C.p := by
     intro x hx
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx

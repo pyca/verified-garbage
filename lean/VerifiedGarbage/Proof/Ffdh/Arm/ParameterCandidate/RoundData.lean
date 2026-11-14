@@ -67,15 +67,15 @@ theorem RoundData.after_operand {base : BitVec 32} {capacity w n o : Nat} {m m' 
     Nat.le_trans (Nat.le_add_right 256 (28 * (8 * (w + 2)))) h.fits
   have unwritten (q : Nat) (member : q ∈ [0, 4, 9, 10, 27]) : q < 28 ∧ q ≠ 2 ∧ q ≠ 3 ∧ q ≠ o := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at member
-    rcases member with rfl | rfl | rfl | rfl | rfl <;> omega
-  refine h.after_reads (fun _ bound => keeps_header_readW keep size (by omega)) ?_ ?_
+    rcases member with rfl | rfl | rfl | rfl | rfl <;> omega_arith
+  refine h.after_reads (fun _ bound => keeps_header_readW keep size (by omega_using [bound])) ?_ ?_
   · intro q member
     have p := unwritten q member
-    have read := operand_keeps_extended keep h.fits p.1 p.2.1 p.2.2.1 p.2.2.2 (d := 0) (n := 8 * w) (by omega)
+    have read := operand_keeps_extended keep h.fits p.1 p.2.1 p.2.2.1 p.2.2.2 (d := 0) (n := 8 * w) (by omega_using [])
     simpa only [numAt, off, Nat.add_zero] using congrArg BitVec.toNat read
   · unfold Mem.readW
-    rw [operand_keeps_extended keep h.fits (q := 27) (by decide) (by decide) (by decide) (by omega)
-      (d := 8 * w) (n := 8) (by omega)]
+    rw [operand_keeps_extended keep h.fits (q := 27) (by decide) (by decide) (by decide) (by omega_using [oBound])
+      (d := 8 * w) (n := 8) (by omega_using [])]
 
 theorem RoundData.after_round {base : BitVec 32} {capacity w n : Nat} {m m' : Mem}
     (h : RoundData base capacity w n m)
@@ -86,22 +86,22 @@ theorem RoundData.after_round {base : BitVec 32} {capacity w n : Nat} {m m' : Me
   refine h.after_reads (fun _ bound => round_keeps_header keep size bound) ?_ ?_
   · intro q member
     have p := unwritten q member
-    have read := round_keeps_array keep h.fits p.1 p.2 (d := 0) (n := 8 * w) (by omega)
+    have read := round_keeps_array keep h.fits p.1 p.2 (d := 0) (n := 8 * w) (by omega_using [])
     simpa only [numAt, off, Nat.add_zero] using congrArg BitVec.toNat read
   · unfold Mem.readW
-    rw [round_keeps_array keep h.fits (q := 27) (by decide) (by decide) (d := 8 * w) (n := 8) (by omega)]
+    rw [round_keeps_array keep h.fits (q := 27) (by decide) (by decide) (d := 8 * w) (n := 8) (by omega_using [])]
 
 private theorem array64 {w q : Nat} (words : w ≤ 128) (index : q ≤ 27) :
     arrAt w q + 8 * (w + 2) ≤ 2 ^ 64 := by
   have scale := Nat.mul_le_mul_right (8 * (w + 2)) index
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
-  omega
+  omega_using [words, scale]
 
 theorem RoundData.after_aux_word {base : BitVec 32} {capacity w n d : Nat} {m : Mem}
     (h : RoundData base capacity w n m) (lower : 128 ≤ d) (upper : d + 4 ≤ 256) (value : BitVec 32) :
     RoundData base capacity w n (m.writeW (off (VG.Arm.State.addr base) d) value) := by
-  have outside := writeW32_outside m (VG.Arm.State.addr base) value (d := d) (by omega)
-  refine h.after_reads (fun _ bound => outside.word (.inl (by omega)) (by omega)) ?_ ?_
+  have outside := writeW32_outside m (VG.Arm.State.addr base) value (d := d) (by omega_using [upper])
+  refine h.after_reads (fun _ bound => outside.word (.inl (by omega_using [lower, bound])) (by omega_using [bound])) ?_ ?_
   · intro q member
     have indexBound : ∀ q ∈ [0, 4, 9, 10, 27], q ≤ 27 := by decide
     have fit := array64 h.maxWords (indexBound q member)
@@ -109,9 +109,9 @@ theorem RoundData.after_aux_word {base : BitVec 32} {capacity w n d : Nat} {m : 
     apply outside.val32
     · right
       simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
-      omega
-    · exact Nat.le_trans (by omega) fit
+      omega_using [upper]
+    · exact Nat.le_trans (by omega_using []) fit
   · have fit := array64 h.maxWords (q := 27) (by decide)
-    exact outside.word (.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)
+    exact outside.word (.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using [upper])) (by omega_using [fit])
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

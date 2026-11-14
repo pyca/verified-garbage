@@ -46,17 +46,17 @@ theorem LoopKeep.bit {base : Addr} {s t : State} (h : LoopKeep base s t)
   apply h.mem
   rw [ofs_off' base (by simp [VG.Impl.X25519.AArch64.Word.BITS,
     VG.Impl.X25519.AArch64.BITS, VG.Impl.X25519.AArch64.slot,
-    VG.Impl.X25519.AArch64.NSLOT]; omega)]
+    VG.Impl.X25519.AArch64.NSLOT]; omega_using [hi])]
   right
   simp [VG.Impl.X25519.AArch64.Word.BITS, VG.Impl.X25519.AArch64.BITS,
     VG.Impl.X25519.AArch64.slot, VG.Impl.X25519.AArch64.NSLOT]
-  omega
+  omega_using []
 
 theorem env_swap_store (m : Mem) (base : Addr) (v : BitVec 64) :
     env (m.writeW (off base 768) v) base = env m base := by
   funext i
   simp only [env, F]
   rw [(writeW_outside m base v (by decide : 768+8<2^64)).fe
-    (by simp only [offset]; omega) (by simp only [offset]; omega)]
+    (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using [])]
 
 end VG.Proof.X25519.AArch64.Word

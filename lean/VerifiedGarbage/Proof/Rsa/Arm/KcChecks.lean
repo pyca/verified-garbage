@@ -82,7 +82,7 @@ theorem crtChecks_ok {g : Geo} {s0 s : State} {v : Vals} {X₁ X₂ : Nat}
   refine WP.mono (h12.ltA_ok (a := aQI) (b := aP) (by decide) (by decide) (by decide)) fun t13 h13 => ?_
   rw [wp_seqs_append (by simp [mulA]) (by simp [eqA])]
   refine WP.mono (h13.mulA_ok (y := aQ) (x := aQI) (m := aP) (k := 32 * g.w) (by decide) (by decide)
-    (by decide) (by decide) rfl mulIdx_p (by decide) (by decide) (by omega) (by omega) fun u hu => cntW_ok hu)
+    (by decide) (by decide) rfl mulIdx_p (by decide) (by decide) (by omega_using [wpos]) (by omega_using [wle]) fun u hu => cntW_ok hu)
     fun t14 ⟨R₃, hR₃, h14⟩ => ?_
   refine WP.mono (h14.eqA_ok (a := aA) (b := aOne) (by decide) (by decide) (by decide)) fun t h15 => ?_
   exact ⟨R₁, R₂, R₃, hR₁, hR₂, hR₃, (h15.sub (live' := liveFin) (by decide)).congr rfl⟩

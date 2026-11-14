@@ -124,12 +124,12 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
   have hsep : Region.Disjoint ⟨p, 128⟩ ⟨B, 1536⟩ := (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]))
   refine WP.mono (copyN_wp (k := 16) (P := schedAddr B) (Q := p) ⟨by rw [hB], by rw [hp]; simp, by decide,
     by decide, fun w hw => ⟨_, hs.wr, by
-      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot, bufSlot]; omega)
-        (by simp only [schedSlot, bufSlot]; omega)⟩,
-    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
-    (hsep.sub_right (Offset.sub_base B (by decide))).symm, by omega⟩) fun s' h => ?_
+      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot, bufSlot]; omega_using [hw])
+        (by simp only [schedSlot, bufSlot]; omega_using [hw])⟩,
+    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_using [hw]) (by omega_using [hw])⟩,
+    (hsep.sub_right (Offset.sub_base B (by decide))).symm, by omega_using []⟩) fun s' h => ?_
   have hsp : s'.gpr .rsp = s.gpr .rsp := h.regs .rsp (by decide)
-  refine ⟨⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega)], by rw [hsp]; exact hst,
+  refine ⟨⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega_using [])], by rw [hsp]; exact hst,
       by rw [hsp, ← total_eq d]; exact hsd _ hR⟩,
     by rw [h.regs _ (by decide), hB], hsp, h.regs _ (by decide), h.regs _ (by decide), ?_, h.rd, h.wr⟩
   rw [h.mem]
@@ -233,12 +233,12 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
     · sig_pre [Proof.Seed.blocksContract, Proof.Seed.blocksSig, abi, argRegs]
       rw [rdi₉, rsi₉, rdx₉, rcx₉, rsp₉, show (16 : BitVec 64).toNat * 16 = 256 from rfl]
       have hfit : ∀ off, off < 1536 → (B + BitVec.ofNat 64 off).toNat = B.toNat + off := fun off h => by
-        rw [Offset.toNat_add_ofNat]; omega
+        rw [Offset.toNat_add_ofNat]; omega_using [hfB, h]
       refine ⟨rfl, rfl, sched_buf B, sched_work B, Offset.disjoint_base B (by decide) (by decide),
         stS.sub_right (Offset.sub_base B (by decide)), stS.sub_right (Offset.sub_base B (by decide)),
-        stS.sub_right (Region.sub_prefix (by decide)), ?_, ?_, by omega⟩
-      · rw [schedAddr, hfit _ (by decide)]; simp only [schedSlot, bufSlot]; omega
-      · rw [bufAt, hfit _ (by decide)]; simp only [bufSlot]; omega
+        stS.sub_right (Region.sub_prefix (by decide)), ?_, ?_, by omega_using [hfB]⟩
+      · rw [schedAddr, hfit _ (by decide)]; simp only [schedSlot, bufSlot]; omega_using [hfB]
+      · rw [bufAt, hfit _ (by decide)]; simp only [bufSlot]; omega_using [hfB]
     · simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append] at hr
       rcases hr with rfl | rfl | rfl
       · obtain ⟨r', h1, o, h2, h3⟩ := sub (8 * schedSlot) 128 (by decide)

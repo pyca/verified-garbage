@@ -24,8 +24,8 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont
 /-- The sum of a step fits two words. -/
 theorem step_lt {c b k t : Nat} (hc : c < 2 ^ 32) (hb : b < 2 ^ 32) (hk : k < 2 ^ 32) (ht : t < 2 ^ 32) :
     c * b + k + t < 2 ^ 64 := by
-  have : c * b ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1) := Nat.mul_le_mul (by omega) (by omega)
-  omega
+  have : c * b ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1) := Nat.mul_le_mul (by omega_using [hc]) (by omega_using [hb])
+  omega_using [hk, ht, this]
 
 theorem ofBool_toNat (c : Bool) : ((BitVec.ofBool c).setWidth 32).toNat = c.toNat := by
   cases c <;> rfl
@@ -45,7 +45,7 @@ theorem step_regs (A C K T : BitVec 32) (c3 c5 : Bool)
   rw [Nat.mul_comm C.toNat] at hx ⊢
   have he2 : (BitVec.ofNat 32 (A.toNat * C.toNat)).toNat = A.toNat * C.toNat % 2 ^ 32 := BitVec.toNat_ofNat _ _
   have hd2 : (BitVec.ofNat 32 (A.toNat * C.toNat / 2 ^ 32)).toNat = A.toNat * C.toNat / 2 ^ 32 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]
   have h0 : ∀ x : BitVec 32, x + 0 = x := BitVec.add_zero
   rw [h0, h0]
   rw [add3_toNat, ofBool_toNat, BitVec.toNat_add, BitVec.toNat_add, he2, hd2]
@@ -55,7 +55,7 @@ theorem step_regs (A C K T : BitVec 32) (c3 c5 : Bool)
   generalize A.toNat * C.toNat = P at *
   by_cases h1 : 2 ^ 32 ≤ P % 2 ^ 32 + K.toNat <;> by_cases h2 : 2 ^ 32 ≤ (P % 2 ^ 32 + K.toNat) % 2 ^ 32 + T.toNat <;>
     simp only [h1, h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false, Nat.add_zero] <;>
-    constructor <;> omega
+    constructor <;> omega_arith
 
 /-- `[ebp + acc + 4j] += ecx · [edi + b + 4j] + ebx`, the carry word to `ebx`. -/
 theorem mulStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc b i j : Nat}
@@ -88,7 +88,7 @@ theorem mulStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [u₆.other _ (by decide), u₅.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide)]
     exact hp₄
-  refine wp_storeS (hs₆.ea_at hp₆ (by omega)) (hs₆.write ht) fun s₇ m₇ => ?_
+  refine wp_storeS (hs₆.ea_at hp₆ (by omega_using [ht])) (hs₆.write ht) fun s₇ m₇ => ?_
   refine wp_movS rfl fun s₈ u₈ _ => WP.block_nil ?_
   -- The registers and memory along the way.
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, m₂.mem, u₁.mem]

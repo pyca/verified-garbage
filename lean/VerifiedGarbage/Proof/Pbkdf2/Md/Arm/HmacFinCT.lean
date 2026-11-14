@@ -109,7 +109,7 @@ theorem fin_ct {H : Hash} (hH : HashOK H) (hc : Checks H) {sc : Nat} {s₀ s₀'
         rw [e, e']
         refine agree_argTaint (fun r hr => ?_) hq.sp (aw hp) (aw hp')
           (argMem_of (j := 2) hq.sp hp.spf fun i hi => by
-            rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+            rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
             · exact hq.a0
             · exact hq.a1)
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

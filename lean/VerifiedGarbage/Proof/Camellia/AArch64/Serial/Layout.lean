@@ -51,7 +51,7 @@ theorem encode_sbox {R : Nat} {w : List (BitVec 64)} {d : Spec.Camellia.Directio
 
 theorem encode_word {R : Nat} {w : List (BitVec 64)} {d : Spec.Camellia.Direction} (i : Nat) :
     layout.encode R w d (256 + i) = Proof.Camellia.byteOf (w.getD (i / 8) 0) (i % 8) := by
-  simp only [layout, show ¬ 256 + i < 256 by omega, ↓reduceIte, Nat.add_sub_cancel_left]
+  simp only [layout, show ¬ 256 + i < 256 by omega_using [], ↓reduceIte, Nat.add_sub_cancel_left]
   exact wordBytes_getD _ (Nat.mod_lt _ (by decide))
 
 /-- A ready table holds its words, for either direction (the encoding does
@@ -66,8 +66,8 @@ theorem holds_of_ready {m : Mem} {B : Addr} {k : Nat × List (BitVec 64)} (h : R
     rw [encode_sbox hi]
     exact h.sbox i hi
   · dsimp only at hi ⊢
-    rw [encode_word, ← h.keys (i / 8) (by omega), Proof.Camellia.byteOf_wordAt _ _ (Nat.mod_lt _ (by decide)),
-      VG.Offset.add_add, show 256 + 8 * (i / 8) + i % 8 = 256 + i by omega]
+    rw [encode_word, ← h.keys (i / 8) (by omega_using [hi]), Proof.Camellia.byteOf_wordAt _ _ (Nat.mod_lt _ (by decide)),
+      VG.Offset.add_add, show 256 + 8 * (i / 8) + i % 8 = 256 + i by omega_using []]
 
 /-- A table holding the words of 18 or 24 rounds is ready for them. -/
 theorem ready_of_holds {m : Mem} {B : Addr} {R : Nat} {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
@@ -80,13 +80,13 @@ theorem ready_of_holds {m : Mem} {B : Addr} {R : Nat} {w : List (BitVec 64)} {d 
     apply BitVec.eq_of_getLsbD_eq
     intro k hk
     have hb := h (256, 8 * Spec.Camellia.scheduleLength R) (by rw [layout_table]; simp)
-      (8 * i + (7 - k / 8)) (by omega)
+      (8 * i + (7 - k / 8)) (by omega_using [hi])
     dsimp only at hb
     rw [Proof.Camellia.getLsbD_wordAt _ _ hk, VG.Offset.add_add,
-      show 256 + 8 * i + (7 - k / 8) = 256 + (8 * i + (7 - k / 8)) by omega, hb, encode_word,
-      show (8 * i + (7 - k / 8)) / 8 = i by omega, show (8 * i + (7 - k / 8)) % 8 = 7 - k / 8 by omega,
-      Proof.Camellia.getLsbD_byteOf _ (by omega) (Nat.mod_lt _ (by decide)),
-      show 56 - 8 * (7 - k / 8) + k % 8 = k by omega]
+      show 256 + 8 * i + (7 - k / 8) = 256 + (8 * i + (7 - k / 8)) by omega_using [], hb, encode_word,
+      show (8 * i + (7 - k / 8)) / 8 = i by omega_using [], show (8 * i + (7 - k / 8)) % 8 = 7 - k / 8 by omega_using [],
+      Proof.Camellia.getLsbD_byteOf _ (by omega_using []) (Nat.mod_lt _ (by decide)),
+      show 56 - 8 * (7 - k / 8) + k % 8 = k by omega_using [hk]]
 
 /-- A working space changed only within the `n` bytes at offset `e` keeps
 every byte outside them. -/
@@ -96,7 +96,7 @@ theorem keeps_of_frame {m m' : Mem} {B : Addr} {len e n : Nat}
   hf _ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     have ho := hout (e, n) (List.mem_singleton_self _)
-    exact Proof.Camellia.not_contains_off B ho (by omega) hn (by omega)
+    exact Proof.Camellia.not_contains_off B ho (by omega_using [fit, hi]) hn (by omega_using [fit, he])
 
 /-- What changed within the working space and only within one range of it
 changed only within that range. -/

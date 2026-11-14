@@ -44,8 +44,8 @@ theorem first_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
   refine ⟨ht, (k4.mono (by decide) (by simp)).trans (k5.mono (by simp) (by decide)),
     (r4.mono (by decide)).trans (r5.mono (by decide)), a4.keep k5 ht.ws (by decide) (by decide),
     by decide, ?_, ?_⟩
-  · rw [k5.word (by unfold S Geo.w; omega) (by simp) (by decide) (h.ws.ws.fit64 (by decide)),
-      k4.word (by unfold S Geo.w; omega) (by decide) (by simp) (h.ws.ws.fit64 (by decide)), h.vdTop]
+  · rw [k5.word (by unfold S Geo.w; omega_using []) (by simp) (by decide) (h.ws.ws.fit64 (by decide)),
+      k4.word (by unfold S Geo.w; omega_using []) (by decide) (by simp) (h.ws.ws.fit64 (by decide)), h.vdTop]
   · rw [e5, p4]
     rcases Nat.mod_two_eq_zero_or_one v.p with e | e <;> simp [e]
 
@@ -77,10 +77,10 @@ theorem start_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
     have hkw' : VG.Proof.Rsa.X86.KeyRt.kw an = g.w := hkw
     have hw : g.w = an / 4 := by
       rw [← hkw']
-      simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega
-    have e8 : 32 * (g.w / 2) = 8 * ap := by omega
+      simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega_using [h8]
+    have e8 : 32 * (g.w / 2) = 8 * ap := by omega_using [h8, hpa, hw]
     exact hu.mulHalf_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by show v.p < _; rw [e8]; exact plt) (by show v.q < _; rw [e8, show 8 * ap = 8 * aq by omega]; exact qlt)
+      (by show v.p < _; rw [e8]; exact plt) (by show v.q < _; rw [e8, show 8 * ap = 8 * aq by omega_using [hpa, hqa]]; exact qlt)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (h1.eqWide_ok (o := aVQ) (n := aN) (by decide) (by decide)) fun t2 ⟨h2, e2⟩ => ?_
   refine h2.acc_ok ?_

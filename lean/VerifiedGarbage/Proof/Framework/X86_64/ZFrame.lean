@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # x86-64: what a block leaves of the AVX-512 registers, lane by lane
@@ -46,6 +47,6 @@ theorem State.zlane_lt2 (s : State) (r : XReg) {l : Nat} (hl : l < 2) : s.zlane 
 
 theorem ZFrame.yframe {rs : List XReg} {s s' : State} (h : ZFrame rs s s') : YFrame rs s s' :=
   ⟨h.gpr, h.mem, h.rd, h.wr, fun r hr l hl => by
-    rw [← s'.zlane_lt2 r hl, ← s.zlane_lt2 r hl]; exact h.zlane r hr l (by omega)⟩
+    rw [← s'.zlane_lt2 r hl, ← s.zlane_lt2 r hl]; exact h.zlane r hr l (by omega_using [hl])⟩
 
 end VG.X86_64

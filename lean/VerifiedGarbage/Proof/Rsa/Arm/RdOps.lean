@@ -83,10 +83,10 @@ theorem shlN_ok {s : State} {B : BitVec 32} {Z w N j n : Nat} (h : Ws s B Z w N)
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
   rw [shlN, WP.seq_iff, ← List.append_nil (ptr .r0 j)]
-  refine ptr_ok h (r := .r0) (by decide) (j := j) (by omega) (rest := []) fun s1 p1 r1 m1 h1 => WP.block_nil ?_
+  refine ptr_ok h (r := .r0) (by decide) (j := j) (by omega_using [hj, hN]) (rest := []) fun s1 p1 r1 m1 h1 => WP.block_nil ?_
   have r11 : s1.gpr .r11 = s.gpr .r11 := r1.gpr _ (by decide)
   refine WP.mono (VG.Proof.Bignum.Arm.shiftLeft_ok s1 (base := B) (size := Z) (o := arr w j) (n := n)
-    ⟨nw, by omega, h1.writable⟩ hn p1 (by rw [r1.gpr _ (by decide), hlr])
+    ⟨nw, by omega_using [hnw, fit, hS], h1.writable⟩ hn p1 (by rw [r1.gpr _ (by decide), hlr])
     (by rw [r11]; exact carry)) fun t inv => ?_
   obtain ⟨res, cout⟩ := inv.result
   rw [m1, r11] at res cout
@@ -110,7 +110,7 @@ theorem shl_ok {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N)
     fun t ⟨ht, O, v, c, r⟩ => ?_
   rw [u1.mem] at O
   rw [u1.mem, r11] at v c
-  refine ⟨ht, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by omega) (by simp), ?_, ?_,
+  refine ⟨ht, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by omega_using [hS]) (by simp), ?_, ?_,
     (u1.rest (by simp)).trans r⟩
   · simp only [num]; exact v
   · simp only [num]; exact c
@@ -125,7 +125,7 @@ theorem halfKN_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s : State} {B : BitVec 32} 
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
   rw [halfKN, WP.seq_iff]
-  refine ptr_ok h (by decide) (by omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok h (by decide) (by omega_using [hj, hN]) fun s1 p1 r1 m1 h1 => ?_
   refine wp_dp (op2_lsl (by decide)) fun s2 u2 => ?_
   have a2 : State.addr (s2.gpr .r1 + BitVec.ofNat 32 0) = off (State.addr B) (arr w j + 4 * w) := by
     have e : s2.gpr .r1 = B + BitVec.ofNat 32 (arr w j + 4 * w) := by
@@ -134,12 +134,12 @@ theorem halfKN_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s : State} {B : BitVec 32} 
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         have := h.wle
-        omega
+        omega_using []
       rw [h1.r9, this, BitVec.add_assoc, ← BitVec.ofNat_add]
     rw [e, Offset.add_add, Nat.add_zero]
-    exact h.addr (by omega)
+    exact h.addr (by omega_using [fit, hS])
   have h2 : Ws s2 B Z w N := h1.of_upd u2 (by decide) (by decide) (by decide)
-  refine wp_str (by decide) a2 (h2.write (by omega)) fun s3 u3 => ?_
+  refine wp_str (by decide) a2 (h2.write (by omega_using [fit, hS])) fun s3 u3 => ?_
   have h3 : Ws s3 B Z w N := h2.of_mupd u3
   refine wp_mov (op2_reg _ _) fun u u4 => WP.block_nil ?_
   have hu : Ws u B Z w N := h3.of_upd u4 (by decide) (by decide) (by decide)
@@ -147,19 +147,19 @@ theorem halfKN_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s : State} {B : BitVec 32} 
     rw [u4.mem, u3.mem, u2.mem, m1, u2.other .r11 (by decide), r1.gpr _ (by decide)]
   have restU : Rest opRegs s u :=
     (r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest _).trans (u4.rest (by simp))))
-  have outS := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * w) (s.gpr .r11) (by omega)
+  have outS := writeW32_outside s.mem (State.addr B) (d := arr w j + 4 * w) (s.gpr .r11) (by omega_using [fit, hS, nw])
   rw [← mu] at outS
   refine WP.mono (VG.Proof.Bignum.Arm.shiftRightK_ok hk u (base := B) (size := Z) (o := arr w j) (n := w)
-    ⟨nw, by omega, hu.writable⟩ h.wpos
+    ⟨nw, by omega_using [fit, hS], hu.writable⟩ h.wpos
     (by rw [u4.other _ (by decide), u3.gpr, u2.other _ (by decide), p1])
     (by rw [u4.gpr, h3.r9])) ?_
   intro t inv
   have top : w32 u.mem (State.addr B) (arr w j + 4 * w) = (s.gpr .r11).toNat := by
     rw [mu, w32_write_self]
   have res := inv.result hk h.wpos
-  have low := outS.val32 (d := arr w j) (k := w) (by omega) (by omega)
-  refine ⟨hu.rest inv.rest, (Keep.of_arr (d := 4 * w) outS (by omega) (by simp)).trans
-    (Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using inv.outside) (by omega) (by simp)),
+  have low := outS.val32 (d := arr w j) (k := w) (by omega_using []) (by omega_using [fit, hS, nw])
+  refine ⟨hu.rest inv.rest, (Keep.of_arr (d := 4 * w) outS (by omega_using [hS]) (by simp)).trans
+    (Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using inv.outside) (by omega_using [hS]) (by simp)),
     ?_, restU.trans (inv.rest.mono (by simp))⟩
   change val32 _ _ _ _ = _
   rw [res, low, top, Nat.mod_eq_of_lt bits]
@@ -176,15 +176,15 @@ theorem shlKN_ok {k : Nat} (hk : 0 < k ∧ k < 32) {s : State} {B : BitVec 32} {
   rw [shlKN, WP.seq_iff, ← List.append_nil (ptr .r0 j)]
   refine wp_mov (op2_reg _ _) fun u u1 => ?_
   have hu : Ws u B Z w N := h.of_upd u1 (by decide) (by decide) (by decide)
-  refine ptr_ok hu (r := .r0) (by decide) (j := j) (by omega) (rest := []) fun s1 p1 r1 m1 h1 => WP.block_nil ?_
+  refine ptr_ok hu (r := .r0) (by decide) (j := j) (by omega_using [hj, hN]) (rest := []) fun s1 p1 r1 m1 h1 => WP.block_nil ?_
   have r11 : s1.gpr .r11 = s.gpr .r11 := by rw [r1.gpr _ (by decide), u1.other _ (by decide)]
   refine WP.mono (VG.Proof.Bignum.Arm.shiftLeftK_ok hk s1 (base := B) (size := Z) (o := arr w j) (n := w)
-    ⟨nw, by omega, h1.writable⟩ h.wpos p1 (by rw [r1.gpr _ (by decide), u1.gpr, h.r9])
+    ⟨nw, by omega_using [fit, hS], h1.writable⟩ h.wpos p1 (by rw [r1.gpr _ (by decide), u1.gpr, h.r9])
     (by rw [r11]; exact bits)) fun t inv => ?_
   obtain ⟨res, _⟩ := inv.result
   rw [m1, u1.mem, r11] at res
   refine ⟨h1.rest inv.rest, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero, m1, u1.mem] using inv.outside)
-    (by omega) (by simp), res, ((u1.rest (by simp)).trans (r1.mono (by simp))).trans (inv.rest.mono (by simp))⟩
+    (by omega_using [hS]) (by simp), res, ((u1.rest (by simp)).trans (r1.mono (by simp))).trans (inv.rest.mono (by simp))⟩
 
 /-- `copy o a`, with the words of `[o]` above its `w` kept. -/
 theorem copy_out_ok {s : State} {B : BitVec 32} {Z w N o a : Nat} (h : Ws s B Z w N)
@@ -194,14 +194,14 @@ theorem copy_out_ok {s : State} {B : BitVec 32} {Z w N o a : Nat} (h : Ws s B Z 
       Rest opRegs s t := by
   rw [copy]
   refine WP.mono (copyN_ok h ho ha hN hoa h.wpos (Nat.le_refl _) (Or.inl ⟨rfl, rfl⟩)) fun t ⟨ht, O, v, R⟩ =>
-    ⟨ht, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by simp only [S]; omega) (by simp), v, O, R⟩
+    ⟨ht, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O) (by simp only [S]; omega_using []) (by simp), v, O, R⟩
 
 /-- A number of `W` words: its low `w` words are the narrow array `2 j`'s number. -/
 theorem numW_split (m : Mem) (B : BitVec 32) (w j : Nat) :
     num m B (2 * w + 2) j = num m B w (2 * j) +
       2 ^ (32 * w) * (val32 m (State.addr B) (arr w (2 * j) + 4 * w) 2 + 2 ^ 64 * num m B w (2 * j + 1)) := by
   have e : 2 ^ (32 * (w + 2)) = 2 ^ (32 * w) * 2 ^ 64 := by
-    rw [← Nat.pow_add, show 32 * (w + 2) = 32 * w + 64 by omega]
+    rw [← Nat.pow_add, show 32 * (w + 2) = 32 * w + 64 by omega_using []]
   rw [numW, val32_append, e, Nat.mul_add, ← Nat.mul_assoc, Nat.add_assoc]
 
 section
@@ -232,7 +232,7 @@ theorem KS.half_w {j : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B 
     (hj : j ∈ live) (r11 : (s.gpr .r11).toNat = 0) (hlW : ∀ i ∈ liveW, j / 2 ≠ i) :
     WP isa (half j) s fun t => KS P σ (upd A j (A j / 2)) (j :: live) AW liveW V ls t ∧
       Ws t P.B P.Z P.w nArr ∧ Rest opRegs s t :=
-  WP.mono (Keys.half_ok hv (h.live_lt j hj) (by decide) (by omega)) fun _ ⟨ht, k, e, r⟩ =>
+  WP.mono (Keys.half_ok hv (h.live_lt j hj) (by decide) (by omega_using [r11])) fun _ ⟨ht, k, e, r⟩ =>
     ⟨h.write_w k (h.live_lt j hj) (by simp) (h.r8_of r) r.sp r.rd r.wr
       (by rw [e, r11, Nat.mul_zero, Nat.add_zero, h.arrs j hj]) hlW (by simp), ht, r⟩
 
@@ -240,7 +240,7 @@ theorem KS.half_W {j : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B 
     (hj : j ∈ liveW) (r11 : (s.gpr .r11).toNat = 0) (hl : ∀ i ∈ live, i / 2 ≠ j) :
     WP isa (half j) s fun t => KS P σ A live (upd AW j (AW j / 2)) (j :: liveW) V ls t ∧
       Ws t P.B P.Z P.W 22 ∧ Rest opRegs s t :=
-  WP.mono (Keys.half_ok hv (h.liveW_lt j hj) (by decide) (by omega)) fun _ ⟨ht, k, e, r⟩ =>
+  WP.mono (Keys.half_ok hv (h.liveW_lt j hj) (by decide) (by omega_using [r11])) fun _ ⟨ht, k, e, r⟩ =>
     ⟨h.write_W k (h.liveW_lt j hj) (by simp) (h.r8_of r) r.sp r.rd r.wr
       (by rw [e, r11, Nat.mul_zero, Nat.add_zero, h.arrsW j hj]) hl (by simp), ht, r⟩
 
@@ -291,15 +291,15 @@ theorem KS.widen {j a : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B
     WP isa (copy (2 * j) a) s fun t =>
       KS P σ A live (upd AW j (A a)) (j :: liveW) V ls t ∧ Ws t P.B P.Z P.w nArr := by
   have sz := h.sizes
-  refine WP.mono (copy_out_ok hv (by omega) (h.live_lt a ha) (by decide) h2a) fun t ⟨ht, k, e, out, r⟩ => ⟨?_, ht⟩
-  have f2 := fit_w sz (show 2 * j < nArr by omega)
-  have f2Z := fitZ_w sz (show 2 * j < nArr by omega)
+  refine WP.mono (copy_out_ok hv (by omega_using [hj]) (h.live_lt a ha) (by decide) h2a) fun t ⟨ht, k, e, out, r⟩ => ⟨?_, ht⟩
+  have f2 := fit_w sz (show 2 * j < nArr by omega_using [hj])
+  have f2Z := fitZ_w sz (show 2 * j < nArr by omega_using [hj])
   have f3 := fit_w sz hj
   have hS : S P.w = 4 * (P.w + 2) := rfl
   have hi : num t.mem P.B P.w (2 * j + 1) = num s.mem P.B P.w (2 * j + 1) :=
     k.num (by simp) (by simp) f3
   have hx : val32 t.mem (State.addr P.B) (arr P.w (2 * j) + 4 * P.w) 2 =
-      val32 s.mem (State.addr P.B) (arr P.w (2 * j) + 4 * P.w) 2 := out.val32 (by omega) (by omega)
+      val32 s.mem (State.addr P.B) (arr P.w (2 * j) + 4 * P.w) 2 := out.val32 (by omega_using []) (by omega_using [f2, hS])
   change num s.mem P.B (2 * P.w + 2) j = 0 at z
   rw [numW_split s.mem P.B P.w j] at z
   have z1 : val32 s.mem (State.addr P.B) (arr P.w (2 * j) + 4 * P.w) 2 + 2 ^ 64 * num s.mem P.B P.w (2 * j + 1) = 0 := by
@@ -307,19 +307,19 @@ theorem KS.widen {j a : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B
     rcases Nat.eq_zero_or_pos (val32 s.mem (State.addr P.B) (arr P.w (2 * j) + 4 * P.w) 2 +
       2 ^ 64 * num s.mem P.B P.w (2 * j + 1)) with c | c
     · exact c
-    · have := Nat.mul_pos p c; omega
+    · have := Nat.mul_pos p c; omega_using [z, this]
   have vt : num t.mem P.B P.W j = A a := by
     change num t.mem P.B (2 * P.w + 2) j = _
     rw [numW_split t.mem P.B P.w j, e, hi, hx, z1, Nat.mul_zero, Nat.add_zero, h.arrs a ha]
   refine h.core k (by simpa using f2Z) (by simp) (h.r8_of r) r.sp r.rd r.wr (h.arrs_w k (fun i hi o ho => by
       simp only [List.mem_singleton] at ho; subst ho; exact Ne.symm (hl i hi)) (by simp)) h.live_lt
-    (fun i hi => ?_) (fun i hi => (List.mem_cons.mp hi).elim (fun e => by subst e; have : nArr = 44 := rfl; omega) (h.liveW_lt i))
+    (fun i hi => ?_) (fun i hi => (List.mem_cons.mp hi).elim (fun e => by subst e; have : nArr = 44 := rfl; omega_using [hj, this]) (h.liveW_lt i))
     (h.sl_keep k (by simp)) h.ls_ok
   by_cases e' : i = j
   · subst e'; rw [upd_self, vt]
   · rw [upd_ne _ _ e']
     exact h.arrsW_w k (fun i hi o ho => by
-      simp only [List.mem_singleton] at ho; subst ho; have := hlW i hi; omega) (by simp) i
+      simp only [List.mem_singleton] at ho; subst ho; have := hlW i hi; omega_using [this]) (by simp) i
       ((List.mem_cons.mp hi).resolve_left e')
 
 /-- A narrow array recorded at the value it holds. -/
@@ -373,8 +373,8 @@ theorem sub32_neg {w a b : Nat} (ha : a < 2 ^ (32 * w)) (hb : b < 2 ^ (32 * w)) 
   unfold sub32
   rcases Nat.eq_zero_or_pos b with rfl | pos
   · simp [Nat.mod_eq_of_lt ha]
-  · rw [Nat.zero_add, Nat.mod_eq_of_lt (a := 2 ^ (32 * w) - b) (by omega),
-      show a + 2 ^ (32 * w) - (2 ^ (32 * w) - b) = a + b by omega]
+  · rw [Nat.zero_add, Nat.mod_eq_of_lt (a := 2 ^ (32 * w) - b) (by omega_using [ha, pos]),
+      show a + 2 ^ (32 * w) - (2 ^ (32 * w) - b) = a + b by omega_using [hb]]
 
 /-- `add o a b t z`: `[o] := [a] + [b]` with `w` words, through `[t] := 0 - [b]`, `[z] = 0`. -/
 theorem KS.add_w {o a b t z : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B P.Z P.w nArr)
@@ -430,9 +430,9 @@ theorem KS.notS {d a : Nat} {v N : Nat} (h : KS P σ A live AW liveW V ls s) (hv
   refine h2.strSlot hv2 (d := d) (r := .r1) hd fun t ht hvt _ _ => k t ?_ hvt
   have e : (s2.gpr .r1).toNat = 1 - V a := by
     rw [u2.gpr, dpVal, u1.gpr,
-      VG.Proof.Rsa.KeyBits32.bv_xor_bits (by rw [BitVec.toNat_ofNat]; omega) (by decide), BitVec.toNat_ofNat]
+      VG.Proof.Rsa.KeyBits32.bv_xor_bits (by rw [BitVec.toNat_ofNat]; omega_using [bit]) (by decide), BitVec.toNat_ofNat]
     simp only [show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_using [bit]
   rw [e] at ht; exact ht
 
 /-- `norS d a b`: the header word `d :=` neither of the bits `a` and `b`. -/
@@ -453,8 +453,8 @@ theorem KS.norS {d a b : Nat} {v N : Nat} (h : KS P σ A live AW liveW V ls s) (
   refine h4.strSlot hv4 (d := d) (r := .r1) hd fun t ht hvt _ _ => k t ?_ hvt
   have e : (s4.gpr .r1).toNat = if V a = 0 ∧ V b = 0 then 1 else 0 := by
     rw [u4.gpr, dpVal, u3.gpr, dpVal, u2.other .r1 (by decide), u1.gpr, u2.gpr]
-    rw [VG.Proof.Rsa.KeyBits32.bv_nor_bits (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega),
-      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [VG.Proof.Rsa.KeyBits32.bv_nor_bits (by rw [BitVec.toNat_ofNat]; omega_using [bita]) (by rw [BitVec.toNat_ofNat]; omega_using [bitb]),
+      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bita]), Nat.mod_eq_of_lt (by omega_using [bitb])]
   rw [e] at ht; exact ht
 
 /-- `andS d a b`: the header word `d :=` the bits `a` and `b`. -/
@@ -473,8 +473,8 @@ theorem KS.andS {d a b : Nat} {v N : Nat} (h : KS P σ A live AW liveW V ls s) (
   refine h3.strSlot hv3 (d := d) (r := .r1) hd fun t ht hvt _ _ => k t ?_ hvt
   have e : (s3.gpr .r1).toNat = if V a = 1 ∧ V b = 1 then 1 else 0 := by
     rw [u3.gpr, dpVal, u2.other .r1 (by decide), u1.gpr, u2.gpr]
-    rw [VG.Proof.Rsa.KeyBits32.bv_and_bits (by rw [BitVec.toNat_ofNat]; omega) (by rw [BitVec.toNat_ofNat]; omega),
-      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [VG.Proof.Rsa.KeyBits32.bv_and_bits (by rw [BitVec.toNat_ofNat]; omega_using [bita]) (by rw [BitVec.toNat_ofNat]; omega_using [bitb]),
+      BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bita]), Nat.mod_eq_of_lt (by omega_using [bitb])]
   rw [e] at ht; exact ht
 
 /-- `mov r11, #0`. -/
@@ -504,12 +504,12 @@ theorem KS.cntNext {v N : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P
   refine h2'.strSlot hv2 (d := sK) (r := .r1) (by decide) fun t ht hvt gt zt => WP.block_nil ⟨?_, hvt, ?_⟩
   · have e : (s2.gpr .r1).toNat = V sK - 1 := by
       rw [u2.gpr, u1.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [h1]), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h2])]
     rw [e] at ht; exact ht
   · rw [zt, z2, u1.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [h1])]
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← BitVec.toNat_inj, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using [h2])]
     rfl
 
 /-! ## The widths -/
@@ -532,12 +532,12 @@ theorem KS.toW (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B P.Z P.w nArr)
     rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       show (2 : BitVec 32).toNat = 2 from rfl]
     simp only [RP.W]
-    omega
-  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by have := sz.Wle; omega) e9 fun t h7 r m => ?_
+    omega_using []
+  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by have := sz.Wle; omega_using [this]) e9 fun t h7 r m => ?_
   have rt : Rest [.r9, .r7] s t := (u2.rest (by simp)).trans ((u3.rest (by simp)).trans (r.mono (by simp)))
   have mt : t.mem = s.mem := m.trans (u3.mem.trans u2.mem)
   refine k t (h.of_rest rt mt (by decide)) ⟨hv.nowrap, by rw [rt.wr]; exact hv.writable,
-    by rw [arrW_end]; exact sz.fits, by show 0 < 2 * P.w + 2; omega, by have := sz.Wle; omega, h7,
+    by rw [arrW_end]; exact sz.fits, by show 0 < 2 * P.w + 2; omega_using [], by have := sz.Wle; omega_using [this], h7,
     by rw [rt.gpr _ (by decide), hv.r8], by rw [r.gpr _ (by decide), e9]⟩ rt
 
 /-- `toN`: from the wide arrays to the narrow ones. -/
@@ -558,12 +558,12 @@ theorem KS.toN (h : KS P σ A live AW liveW V ls s) (hv : Ws s P.B P.Z P.W 22)
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, show (2 : BitVec 32).toNat = 2 from rfl]
     simp only [RP.W]
-    omega
-  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by omega) e9 fun t h7 r m => ?_
+    omega_using [wl]
+  refine VG.Proof.Rsa.Arm.KeyCheck.stride_ok (by omega_using [wl]) e9 fun t h7 r m => ?_
   have rt : Rest [.r9, .r7] s t := (u2.rest (by simp)).trans ((u3.rest (by simp)).trans (r.mono (by simp)))
   have mt : t.mem = s.mem := m.trans (u3.mem.trans u2.mem)
   refine k t (h.of_rest rt mt (by decide)) ⟨hv.nowrap, by rw [rt.wr]; exact hv.writable,
-    sz.fits, by show 0 < 2 * P.w6 + 2; omega, by omega, h7,
+    sz.fits, by show 0 < 2 * P.w6 + 2; omega_using [], by omega_using [wl], h7,
     by rw [rt.gpr _ (by decide), hv.r8], by rw [r.gpr _ (by decide), e9]⟩ rt
 
 end

@@ -131,7 +131,7 @@ theorem layout : Fns.st0O = 64 ∧ F.st1O = 64 + F.H.S ∧ F.stWO = 64 + 2 * F.H
     F.bytes = 64 + 3 * F.H.S + 2 * F.H.D + 4 ∧ F.bytes ≤ F.frB ∧ F.frB % 16 = 0 ∧ F.itW ≤ F.itB ∧
     F.itB % 16 = 0 := by
   dsimp only [Fns.st0O, Fns.st1O, Fns.stWO, Fns.uO, Fns.tO, Fns.intO, Fns.bytes, Fns.frB, Fns.itB]
-  omega
+  omega_using []
 
 variable (hF : FnsOK F)
 include hF
@@ -152,10 +152,10 @@ theorem sizes : Sz F := by
   have hB := hl.B
   have hD := hl.D
   have hS : F.H.S = F.H.N + F.H.B := rfl
-  refine ⟨hl.N, hB, hS, ⟨hD.1, hD.2, by rcases hB with h | h <;> omega⟩, hl.F, ?_, hF.frB, hF.itB⟩
+  refine ⟨hl.N, hB, hS, ⟨hD.1, hD.2, by rcases hB with h | h <;> omega_using [hD, h]⟩, hl.F, ?_, hF.frB, hF.itB⟩
   have := hl.ibytes; have := hl.fbytes; have := hl.F
   simp only [Fns.X]
-  omega
+  omega_arith
 
 end
 
@@ -170,11 +170,11 @@ theorem part_sub {o n : Nat} (h : o + n ≤ F.frB) : Region.Sub (sR s₀ o n) (f
 omit hp in
 theorem part_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ 4096) (hb : b + n ≤ 4096) :
     Region.Disjoint (sR s₀ a m) (sR s₀ b n) :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hb])
 
 omit hp in
 theorem part_contains {o n : Nat} (h : o + n ≤ F.frB) (hr : F.frB ≤ 4096) : (frR F s₀).Contains (sA s₀ o) n :=
-  Offset.contains_base _ h (by omega)
+  Offset.contains_base _ h (by omega_using [h, hr])
 
 theorem fr_wr {s : State} (hwr : s.wr = s₀.wr) : frR F s₀ ∈ s.wr := by rw [hwr, hp.wr]; simp
 
@@ -193,15 +193,15 @@ theorem in_fr' {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ F.f
 /-- The two frames are apart from each other and from the stack below them. -/
 theorem f_i : (frR F s₀).Disjoint (itR F s₀) := by
   have := hp.top
-  have := Offset.base_disjoint s₀.sp (k := F.frB) (e := F.frB) (n := F.itB) (Nat.le_refl _) (by omega)
+  have := Offset.base_disjoint s₀.sp (k := F.frB) (e := F.frB) (n := F.itB) (Nat.le_refl _) (by omega_using [this])
   exact this
 
 theorem f_s : (frR F s₀).Disjoint (stk F s₀) :=
-  Offset.base_disjoint_below _ (by have := hp.top; have := hp.spX; have := s₀.sp.isLt; omega)
+  Offset.base_disjoint_below _ (by have := hp.top; have := hp.spX; have := s₀.sp.isLt; omega_arith)
 
 /-- The stack below the stack pointer, within `stk`. -/
 theorem below_stk {n : Nat} (hn : n ≤ F.X) : Region.Sub (below s₀.sp n) (stk F s₀) :=
-  below_sub hn (by have := hp.spX; have := s₀.sp.isLt; omega)
+  below_sub hn (by have := hp.spX; have := s₀.sp.isLt; omega_arith)
 
 end
 
@@ -270,10 +270,10 @@ theorem Wk.ok (hp : Pre F s₀) (hz : Sz F) {r : Region} (h : Wk F s₀ r) :
   have hl := layout (F := F)
   have := hz.frB; have := hz.itB
   rcases h with ⟨o, n, rfl, h₁, h₂⟩ | h | ⟨n, rfl, hn⟩
-  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by omega) (by omega), _, by simp, part_sub (s₀ := s₀) h₂⟩
-  · exact ⟨((f_i hp).sub_left (part_sub (s₀ := s₀) (o := 0) (n := 64) (by omega))).sub_right h,
+  · exact ⟨part_disj (s₀ := s₀) (.inl h₁) (by omega_using []) (by omega_arith), _, by simp, part_sub (s₀ := s₀) h₂⟩
+  · exact ⟨((f_i hp).sub_left (part_sub (s₀ := s₀) (o := 0) (n := 64) (by omega_using [hl]))).sub_right h,
       _, by simp, h⟩
-  · exact ⟨((f_s hp).sub_left (part_sub (s₀ := s₀) (o := 0) (n := 64) (by omega))).sub_right
+  · exact ⟨((f_s hp).sub_left (part_sub (s₀ := s₀) (o := 0) (n := 64) (by omega_using [hl]))).sub_right
       (below_stk hp hn), _, by simp, below_stk hp hn⟩
 
 /-- What a call leaves, writing parts of the frames after the save area and
@@ -297,7 +297,7 @@ theorem KR.pwBytes (hp : Pre F s₀) {s : State} (hk : KR F s₀ s) :
     · exact hp.f_pw.symm
     · exact hp.i_pw.symm
     · exact hp.pw_o
-    · exact hp.b_pw.symm) (by show (s₀.gpr .a1).toNat ≤ 2 ^ 64; have := (s₀.gpr .a1).isLt; omega)
+    · exact hp.b_pw.symm) (by show (s₀.gpr .a1).toNat ≤ 2 ^ 64; have := (s₀.gpr .a1).isLt; omega_using [])
 
 theorem KR.saltBytes (hp : Pre F s₀) {s : State} (hk : KR F s₀ s) :
     bytesAt s.mem (salt s₀) (sl s₀) = bytesAt s₀.mem (salt s₀) (sl s₀) :=
@@ -307,7 +307,7 @@ theorem KR.saltBytes (hp : Pre F s₀) {s : State} (hk : KR F s₀ s) :
     · exact hp.f_sa.symm
     · exact hp.i_sa.symm
     · exact hp.sa_o
-    · exact hp.b_sa.symm) (by show (s₀.gpr .a3).toNat ≤ 2 ^ 64; have := (s₀.gpr .a3).isLt; omega)
+    · exact hp.b_sa.symm) (by show (s₀.gpr .a3).toNat ≤ 2 ^ 64; have := (s₀.gpr .a3).isLt; omega_using [])
 
 end
 

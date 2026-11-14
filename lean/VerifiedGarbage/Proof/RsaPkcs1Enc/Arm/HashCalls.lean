@@ -31,7 +31,7 @@ theorem count_eq {lo : Nat} (h : lo < 2 ^ 32) :
     (0 : BitVec 32) ++ BitVec.ofNat 32 lo = BitVec.ofNat 64 lo := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [h])]
   simp
 
 /-! ## SHA-256's `init(state)` -/
@@ -40,7 +40,7 @@ theorem shInit_pre {s : State} {st : BitVec 32} (h0 : s.gpr .r0 = st) (fit : st.
     (Spec.Sha256.initContract abi).pre (s.callEntry.withRegions [] [⟨State.addr st, 96⟩]) := by
   sig_pre [Spec.Sha256.initContract, Spec.Sha256.initSig, abi, argRegs, reduceClassify, Loc.val]
   rw [h0]
-  exact ⟨by have := s.sp.isLt; omega, rfl, fit⟩
+  exact ⟨by have := s.sp.isLt; omega_using [], rfl, fit⟩
 
 theorem shInit_pub {s₁ s₂ : State} {st : BitVec 32} (h₁ : s₁.gpr .r0 = st) (h₂ : s₂.gpr .r0 = st)
     (hsp : s₁.sp = s₂.sp) (rd wr : List Region) :
@@ -184,11 +184,11 @@ theorem hi_pre {sp : BitVec 32} (h : HiArgs s inn out key kl) (hspE : s.sp = sp)
     (fI : inn.toNat + 96 ≤ 2 ^ 32) (fO : out.toNat + 96 ≤ 2 ^ 32) (fK : key.toNat + kl ≤ 2 ^ 32) :
     (Spec.Hmac.sha256I.initAnyKeyContract abi 1656).pre (s.callEntry.withRegions (hiRd key kl) (hiWr inn out)) := by
   subst hspE
-  have k32 : kl < 2 ^ 32 := by have := h.kl64; omega
+  have k32 : kl < 2 ^ 32 := by have := h.kl64; omega_using [this]
   sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
     Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, abi, argRegs, reduceClassify, Loc.val]
   simp only [h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32]
-  exact ⟨hsp, by have := s.sp.isLt; omega, rfl, rfl, dIO, dIK, dOK, lo _ (by simp [State.addr]),
+  exact ⟨hsp, by have := s.sp.isLt; omega_using [], rfl, rfl, dIO, dIK, dOK, lo _ (by simp [State.addr]),
     lo _ (by simp [State.addr]), lo _ (by simp [State.addr]), fI, fO, fK⟩
 
 theorem hi_pub {s₁ s₂ : State} (h₁ : HiArgs s₁ inn out key kl) (h₂ : HiArgs s₂ inn out key kl)
@@ -205,7 +205,7 @@ theorem hi_post {t : State} (h : HiArgs s inn out key kl) {rd wr : List Region}
     let k0 := Spec.Hmac.blockKey Spec.Hmac.sha256 (Spec.Rsa.bytesAt s.mem (State.addr key) kl)
     Spec.Sha256.Repr t.mem (State.addr inn) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
       Spec.Sha256.Repr t.mem (State.addr out) (Spec.Hmac.xorPad k0 Spec.Hmac.opad) := by
-  have k32 : kl < 2 ^ 32 := by have := h.kl64; omega
+  have k32 : kl < 2 ^ 32 := by have := h.kl64; omega_using [this]
   sig_post [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
     Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32] at hp
@@ -268,7 +268,7 @@ theorem hf_post {t : State} (h : HfArgs s inn ou out cnt) {rd wr : List Region}
     Spec.Hmac.finalizePost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [stackArg_call, h.r0, h.r1, h.r2, h.r3, h.a0] at hp
   have c32 := h.cnt32
-  exact hp k0 text hk (by omega) hi (by rw [count_eq h.cnt32, ← ht]) ho
+  exact hp k0 text hk (by omega_using [hk, ht, c32]) hi (by rw [count_eq h.cnt32, ← ht]) ho
 
 end
 

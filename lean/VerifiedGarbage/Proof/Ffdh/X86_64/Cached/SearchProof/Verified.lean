@@ -78,13 +78,13 @@ private theorem key_return_address (v : RoundImpl) {s t : State} {tr : List Leak
     t.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 := by
   obtain ⟨-, -, -, hwr, -, -, -, hstk, -⟩ := h
   have hd : (keyCode v).x86_64Depth ≤ 72 := keyCode_depth v
-  have hf := Exec.stackFrame (SpSafe.of_all (keyCode_sp v)) he (by omega)
+  have hf := Exec.stackFrame (SpSafe.of_all (keyCode_sp v)) he (by omega_using [hd])
   refine hf.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   rcases List.mem_append.mp hr with hr | hr
   · rw [hwr] at hr
     exact (hstk r (List.mem_append_left _ hr)).1
   · obtain rfl := List.mem_singleton.mp hr
-    exact Offset.base_disjoint_below _ (by omega)
+    exact Offset.base_disjoint_below _ (by omega_using [hd])
 
 theorem key_correct (v : RoundImpl) (s : State) (h : keyContract.pre s) :
     ∃ tr t, Exec isa (keyCode v) s tr t ∧ abiPreserved s t ∧ keyContract.post s t := by

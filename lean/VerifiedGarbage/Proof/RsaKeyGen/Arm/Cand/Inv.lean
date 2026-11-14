@@ -52,7 +52,7 @@ theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero �
         (1 :: 3 :: aNM :: aM :: L0) V LS) := by
   refine VP.of_ct (fun σ₁ σ₂ => inverse_cert σ₁ σ₂) fun σ s ⟨e, h, hw⟩ => ?_
   obtain ⟨vZ, vNM, vodd, v1, e1, e2, e3⟩ := hv σ s ⟨e, h, hw⟩
-  refine WP.mono (inverse_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega)) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
+  refine WP.mono (inverse_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega_using [this])) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
   have g : ∀ j ∈ aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0, num s.mem P.B P.W j = A σ j := fun j hj => h.arrs j hj
   have bk := v (by rw [g aNM (by simp), g aM (by simp)]; exact vNM) (by rw [g aZero (by simp [hZ])]; exact vZ)
     (by rw [g aM (by simp)]; exact vodd) (by rw [g aM (by simp)]; exact v1)
@@ -94,7 +94,7 @@ theorem St.pinv [VG.Proof.Rsa.Arm.Keys.InvLaw] {a m : Nat} (cm : Cert (copy aM m
   have low : ∀ j, (j = aZero ∨ 15 ≤ j) → j ∉ invArrs ∧ j ≠ aM ∧ j ≠ aNM ∧ j ≠ 0 := fun j h => by
     rcases h with rfl | h
     · decide
-    · simp only [invArrs, aM, aNM, aT1, aT2, aT3, aT4, List.mem_cons, List.not_mem_nil, or_false]; omega
+    · simp only [invArrs, aM, aNM, aT1, aT2, aT3, aT4, List.mem_cons, List.not_mem_nil, or_false]; omega_using [h]
   have nmM : aM ≠ m := fun x => (low m (hL m hm)).2.1 x.symm
   have na0 : (0 : Nat) ≠ a := fun x => (low a (hL a ha)).2.2.2 x.symm
   have hL0 : ∀ j ∈ L, j ∉ invArrs := fun j hj => (low j (hL j hj)).1
@@ -115,8 +115,8 @@ theorem St.pinv [VG.Proof.Rsa.Arm.Keys.InvLaw] {a m : Nat} (cm : Cert (copy aM m
       exact this
     simp (config := {decide := true}) only [upd, sub32, ↓reduceIte]
     refine ⟨vZ, ?_, vodd, v1, trivial, vO, vZ⟩
-    rw [vZ, Nat.zero_add, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [vZ, Nat.zero_add, Nat.mod_eq_of_lt (by omega_using [vodd, mlt])]
+    omega_using [mlt]
   · simp only [List.mem_cons] at hj ⊢
     rcases hj with rfl | rfl | hj
     · exact .inl rfl

@@ -58,7 +58,7 @@ theorem cmadd4x_ok {base : Addr} {s : State} (hs : Scratch s base) (hz : s.gpr .
       rw [k1 r e1, hb.gpr r (fun hm => hr (altClob_sub r hm)),
         ka.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨r20, e1⟩)]
   · rw [kt.mem, ← ka.mem]
-    exact hb.mem.mono (by simp only [offset]; omega) (by simp only [offset]; omega)
+    exact hb.mem.mono (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using [])
   · rw [k1 _ (by decide), hb.gpr _ (by decide), ka.gpr _ (by decide), hz]
 
 /-- The swap set: `x2 := 1`, stored. -/
@@ -102,7 +102,7 @@ theorem first_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe}
   have lk3 := lk2.trans lk3'
   have o3fe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, j ≠ 4 →
       fe b3.mem base (offset j) = fe b2.mem base (offset j) :=
-    fun j hj => o3.fe (apart j 4 hj) (by simp only [offset]; omega)
+    fun j hj => o3.fe (apart j 4 hj) (by simp only [offset]; omega_using [])
   rw [WP.block_append_iff]
   refine WP.mono (sqrE (lk3.scratch hs) 8 8 (by decide) (by decide) z3)
     fun b4 ⟨h4, l4, e4⟩ => ?_
@@ -128,7 +128,7 @@ theorem first_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe}
   have lk8 := lk7.trans lk8'
   have o8fe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, j ≠ 2 →
       fe b8.mem base (offset j) = fe b7.mem base (offset j) :=
-    fun j hj => o8.fe (apart j 2 hj) (by simp only [offset]; omega)
+    fun j hj => o8.fe (apart j 2 hj) (by simp only [offset]; omega_using [])
   rw [WP.block_append_iff]
   refine WP.mono (mulE (lk8.scratch hs) 1 1 8 (by decide) (by decide) (by decide) z8)
     fun b9 ⟨h9, l9, e9⟩ => ?_
@@ -140,7 +140,7 @@ theorem first_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe}
   have lk10 := lk9.trans (AltOp.lk h10 (by decide))
   refine WP.mono (swap1_ok (lk10.scratch hs)) fun t ⟨lkt, et, wt, ot⟩ => ?_
   have otfe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, fe t.mem base (offset j) = fe b10.mem base (offset j) :=
-    fun j => ot.fe (Or.inl (by simp only [offset]; omega)) (by simp only [offset]; omega)
+    fun j => ot.fe (Or.inl (by simp only [offset]; omega_using [])) (by simp only [offset]; omega_using [])
   have h254 : ladderAfter k x1 254 = ladderStep k x1 (init x1) 254 :=
     ladderAfter_step k x1 (by decide)
   refine ⟨lk10.trans lkt, ?_, ?_, ?_⟩
@@ -259,7 +259,7 @@ theorem tailFlags_ok {base : Addr} {s : State} {sw : Nat} (hs : Scratch s base) 
 
 theorem cswap_fst {sw : Nat} (hsw : sw ≤ 1) (a b : Fe) :
     (Spec.X25519.cswap sw a b).1 = if (sw == 0) = true then a else b := by
-  rcases (by omega : sw = 0 ∨ sw = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hsw] : sw = 0 ∨ sw = 1) with rfl | rfl <;> rfl
 
 /-- The iterations for bits 2, 1 and 0, from the state after bit 3: slots 1
 and 2 end as the ladder's result, its last swap made. -/

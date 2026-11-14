@@ -87,7 +87,7 @@ theorem mask_ge {j kl : Nat} (hj : j < 2 ^ 31) (hk : kl < 2 ^ 31) (c : Bool) :
   by_cases h : j < kl
   · simp only [h, ↓reduceIte, show ¬ (kl ≤ j ∧ c = true) from fun h' => by omega]
     cases c <;> decide
-  · simp only [h, ↓reduceIte, show kl ≤ j by omega, true_and]
+  · simp only [h, ↓reduceIte, show kl ≤ j by omega_using [h], true_and]
     cases c <;> decide
 
 /-- `m` bytes left. -/
@@ -105,15 +105,15 @@ theorem selBody_vp (n : Nat) : VP (SLM P (n + 1)) (.block selBody) fun σ s =>
   generalize hj : P.K - (n + 1) = j at ob r0 r1 r4 lr
   have hK := hs.1.k64
   have hK' := hs.1.k1024
-  have hjK : j < P.K := by omega
-  have hl := lsel_le P σ (by omega)
+  have hjK : j < P.K := by omega_using [hn, hj]
+  have hl := lsel_le P σ (by omega_using [hK])
   refine wp_ldrb (by decide) (a := State.addr P.out + BitVec.ofNat 64 j)
     (by rw [r0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_zero, hs.1.outA hjK])
-    (St.out_r hs (by omega)) fun t1 u1 => ?_
+    (St.out_r hs (by omega_using [hn, hj])) fun t1 u1 => ?_
   refine wp_ldrb (by decide) (a := State.addr P.scr + BitVec.ofNat 64 (sAM + j))
     (by rw [u1.other _ (by decide), r1, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_zero,
-      hs.1.scrA (by simp only [sAM]; omega)])
-    (by rw [u1.rd, u1.wr]; exact St.sc_r hs (by simp only [sAM]; omega)) fun t2 u2 => ?_
+      hs.1.scrA (by simp only [sAM]; omega_using [hj, hK'])])
+    (by rw [u1.rd, u1.wr]; exact St.sc_r hs (by simp only [sAM]; omega_using [hj, hK'])) fun t2 u2 => ?_
   refine wp_dp (op2_reg _ _) fun t3 u3 => ?_
   refine wp_dp (op2_reg _ _) fun t4 u4 => ?_
   refine wp_dp (op2_reg _ _) fun t5 u5 => ?_
@@ -137,16 +137,16 @@ theorem selBody_vp (n : Nat) : VP (SLM P (n + 1)) (.block selBody) fun σ s =>
       u2.other .r2 (by decide), e1, sel2]
   have R5 : Rest [.r2, .r3] s t5 := ((((u1.rest (by simp)).trans (u2.rest (by simp))).trans (u3.rest (by simp))).trans
     (u4.rest (by simp))).trans (u5.rest (by simp))
-  have hkl : P.K - lselV P σ < 2 ^ 31 := by omega
+  have hkl : P.K - lselV P σ < 2 ^ 31 := by omega_using [hK']
   have v10 : t10.gpr .r2 = (if vB P σ then ((emOf P σ).getD j 1).setWidth 32 else ((amV P σ).getD j 0).setWidth 32)
       &&& (if P.K - lselV P σ ≤ j ∧ okB P σ = true then BitVec.allOnes 32 else 0) := by
     rw [u10.gpr, dpVal, u9.gpr, dpVal, u8.gpr, dpVal, u7.gpr, u6.gpr, dpVal, u9.other .r2 (by decide),
       u8.other .r2 (by decide), u7.other .r2 (by decide), u6.other .r2 (by decide), v5,
       u8.other .r11 (by decide), u7.other .r11 (by decide), u6.other .r11 (by decide), R5.gpr .r11 (by decide), r11,
-      R5.gpr .r4 (by decide), r4, R5.gpr .r9 (by decide), r9, mask_ge (by omega) hkl]
+      R5.gpr .r4 (by decide), r4, R5.gpr .r9 (by decide), r9, mask_ge (by omega_using [hj, hK']) hkl]
   refine wp_strb (by decide) (a := State.addr P.out + BitVec.ofNat 64 j)
     (by rw [R10.gpr .r0 (by decide), r0, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_zero, hs.1.outA hjK])
-    (by rw [R10.wr]; exact St.out_w hs (by omega)) fun t11 m11 => ?_
+    (by rw [R10.wr]; exact St.out_w hs (by omega_using [hn, hj])) fun t11 m11 => ?_
   refine wp_dp (op2_imm (by decide)) fun t12 u12 => ?_
   refine wp_dp (op2_imm (by decide)) fun t13 u13 => ?_
   refine wp_dp (op2_imm (by decide)) fun t14 u14 => ?_
@@ -156,7 +156,7 @@ theorem selBody_vp (n : Nat) : VP (SLM P (n + 1)) (.block selBody) fun σ s =>
   have bv : (t10.gpr .r2).setWidth 8 = obV P σ j := by rw [v10, selByte]; rfl
   have mm : t15.mem = s.mem.writeW (State.addr P.out + BitVec.ofNat 64 j) (obV P σ j) := by
     rw [u15.mem, u14.mem, u13.mem, u12.mem, m11.mem, m10, bv]
-  have W1 : Region.Sub ⟨State.addr P.out + BitVec.ofNat 64 j, 1⟩ P.OUT := Offset.sub_base _ (by omega)
+  have W1 : Region.Sub ⟨State.addr P.out + BitVec.ofNat 64 j, 1⟩ P.OUT := Offset.sub_base _ (by omega_using [hn, hj])
   have fr : Frame [⟨State.addr P.out + BitVec.ofNat 64 j, 1⟩] s.mem t15.mem := by
     rw [mm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) (obV P σ j) (Region.contains_self _ _)
   have st : P.lay.St σ t15 := hs.2.write fr (fun r hr => by
@@ -175,35 +175,35 @@ theorem selBody_vp (n : Nat) : VP (SLM P (n + 1)) (.block selBody) fun σ s =>
       R10.gpr .r4 (by decide), r4, BitVec.ofNat_add_ofNat]
   have lrt : t15.gpr .lr = BitVec.ofNat 32 n := by
     rw [u15.gpr, u14.other _ (by decide), u13.other _ (by decide), u12.other _ (by decide), m11.gpr,
-      R10.gpr .lr (by decide), lr, show P.K - j = n + 1 by omega]
-    exact sub_one_ofNat (by omega)
+      R10.gpr .lr (by decide), lr, show P.K - j = n + 1 by omega_using [hn, hj]]
+    exact sub_one_ofNat (by omega_using [hn, hK'])
   have obt : ∀ i < P.K, t15.mem (State.addr P.out + BitVec.ofNat 64 i) =
       if i < j + 1 then obV P σ i else (emOf P σ).getD i 1 := by
     intro i hi
     rw [mm, WriteBytes.writeW8_apply]
     by_cases e : i = j
     · subst e; simp
-    · simp only [Offset.add_ofNat_ne (State.addr P.out) (by omega) (by omega) e, ↓reduceIte]
+    · simp only [Offset.add_ofNat_ne (State.addr P.out) (by omega_using [hK', hi]) (by omega_using [hj, hK']) e, ↓reduceIte]
       rw [ob i hi]
-      simp only [show (i < j + 1) = (i < j) by apply propext; omega]
+      simp only [show (i < j + 1) = (i < j) by apply propext; omega_using [e]]
   have sl : SL P (j + 1) σ t15 :=
     ⟨⟨hs.1, st⟩, obt,
-      (bytes_frame fr (R := sc P sAM P.K) (one (hs.1.sc_out (by simp only [sAM]; omega)))
-        (by show P.K ≤ 2 ^ 64; omega)).trans am,
+      (bytes_frame fr (R := sc P sAM P.K) (one (hs.1.sc_out (by simp only [sAM]; omega_using [hK'])))
+        (by show P.K ≤ 2 ^ 64; omega_using [hK'])).trans am,
       by rw [slot_keep fr (one (hs.1.ok.stk_fr (R := P.OUT) (.inr (by simp))
         (by simp only [oR, frameBytes]; decide)))]; exact rc,
       (wordsAt_frame fr (one hs.1.out_ml.symm) (by decide)).trans ml,
-      r0t, r1t, r4t, by rw [lrt, show P.K - (j + 1) = n by omega], by rw [R15.gpr .r9 (by decide), r9],
+      r0t, r1t, r4t, by rw [lrt, show P.K - (j + 1) = n by omega_using [hn, hj]], by rw [R15.gpr .r9 (by decide), r9],
       by rw [R15.gpr .r10 (by decide), r10], by rw [R15.gpr .r11 (by decide), r11], hEM⟩
-  refine ⟨?_, fun h0 => ?_, fun h0 => ⟨by omega, by rw [show P.K - n = j + 1 by omega]; exact sl⟩⟩
-  · rw [eval_ne, hz, ← u15.gpr, lrt, ofNat_beq_zero (by omega)]
-    by_cases h0 : n = 0 <;> simp [h0] <;> omega
-  · rw [show P.K = j + 1 by omega]; exact sl
+  refine ⟨?_, fun h0 => ?_, fun h0 => ⟨by omega_using [hn], by rw [show P.K - n = j + 1 by omega_using [hn, hj]]; exact sl⟩⟩
+  · rw [eval_ne, hz, ← u15.gpr, lrt, ofNat_beq_zero (by omega_using [hn, hK'])]
+    by_cases h0 : n = 0 <;> simp [h0] <;> omega_using [h0]
+  · rw [show P.K = j + 1 by omega_using [hn, hj, h0]]; exact sl
 
 theorem selLoop_vp : VP (SL P 0) selLoop (SL P P.K) := by
   refine (VP.loop (I := SLM P) selBody_vp (P.K - 1)).mono (fun σ s h => ?_) fun _ _ h => h
   have hK := h.1.1.k64
-  exact ⟨by omega, by rw [show P.K - (P.K - 1 + 1) = 0 by omega]; exact h⟩
+  exact ⟨by omega_using [hK], by rw [show P.K - (P.K - 1 + 1) = 0 by omega_using []]; exact h⟩
 
 /-! ## The result -/
 
@@ -217,7 +217,7 @@ def Fin (P : EP) (σ s : State) : Prop := S P σ s ∧ Res P σ s.mem (s.gpr .r0
 
 theorem amV_length (P : EP) (σ : State) : (amV P σ).length = P.K := by
   rw [amV, VG.Proof.RsaPkcs1Enc.irprf_eq, List.length_take, flatMap_blocks_length]
-  omega
+  omega_using []
 
 theorem res_of {σ : State} {m : Mem} (hin : In P σ) (hEM : (emOf P σ).length = P.K)
     (hout : ∀ i < P.K, m (State.addr P.out + BitVec.ofNat 64 i) = obV P σ i)
@@ -236,9 +236,9 @@ theorem res_of {σ : State} {m : Mem} (hin : In P σ) (hEM : (emOf P σ).length 
     have r1 : rcOf P σ = 1 := by simp only [rcOf, ho]
     have ok1 : okB P σ = true := by simp only [okB, r1]; rfl
     have hEM' : EM.length = P.K := e1 ▸ hEM
-    rw [VG.Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by omega) ho]
+    rw [VG.Proof.RsaPkcs1Enc.decryptWith_of_ok hC (by omega_using [hK]) ho]
     obtain ⟨hl, hm⟩ := VG.Proof.RsaPkcs1Enc.sel_eq (EM := EM) (AM := amV P σ) (al := alV P σ) hEM'
-      (amV_length P σ) (by omega) (alV_le P σ)
+      (amV_length P σ) (by omega_using [hK]) (alV_le P σ)
     have hM : Spec.RsaPkcs1Enc.implicitDecode (dB P σ) (cB P σ) EM =
         (if Spec.RsaPkcs1Enc.valid EM then Spec.RsaPkcs1Enc.lastN (Spec.RsaPkcs1Enc.msgLength EM) EM
           else Spec.RsaPkcs1Enc.lastN (alV P σ) (amV P σ)) := by
@@ -263,7 +263,7 @@ theorem res_of {σ : State} {m : Mem} (hin : In P σ) (hEM : (emOf P σ).length 
   | fault =>
     have r2 : rcOf P σ = 2 := by simp only [rcOf, ho]
     have ok0 : okB P σ = false := by simp only [okB, r2]; rfl
-    rw [VG.Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by omega) ho]
+    rw [VG.Proof.RsaPkcs1Enc.decryptWith_of_fault hC (by omega_using [hK]) ho]
     refine ⟨r2, ?_, by rw [hml, ok0]; rfl⟩
     have z : ∀ i, obV P σ i = 0 := fun i => by
       simp only [obV, ok0]; exact VG.Proof.RsaPkcs1Enc.outByte_false _ _ _ _ _

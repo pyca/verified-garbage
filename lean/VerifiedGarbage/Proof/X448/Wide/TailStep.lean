@@ -21,8 +21,8 @@ theorem loadLow_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i
     (hb : coeff s.mem base TMP i < 2 ^ 64) :
     WP isa (.block [ld .x4 (TMP + 16 * i)]) s fun t =>
       (t.gpr .x4).toNat = coeff s.mem base TMP i ∧ t.mem = s.mem ∧ Keeps [.x4] s t := by
-  have ae : (TMP + 16 * i) % 8 = 0 ∧ TMP + 16 * i < 32768 := by simp only [TMP]; omega
-  have al := hs.read (d := TMP + 16 * i) (n := 8) (by simp only [TMP]; omega)
+  have ae : (TMP + 16 * i) % 8 = 0 ∧ TMP + 16 * i < 32768 := by simp only [TMP]; omega_using [hi]
+  have al := hs.read (d := TMP + 16 * i) (n := 8) (by simp only [TMP]; omega_using [hi])
   have low := (pair_low64 _ _ hb).2
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
@@ -36,8 +36,8 @@ theorem loadLow_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i
 theorem storeLow_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 8) :
     WP isa (.block [st .x4 (TMP + 16 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (TMP + 16 * i)) (s.gpr .x4) ∧ Keeps [] s t := by
-  have ae : (TMP + 16 * i) % 8 = 0 ∧ TMP + 16 * i < 32768 := by simp only [TMP]; omega
-  have aw := hs.write (d := TMP + 16 * i) (n := 8) (by simp only [TMP]; omega)
+  have ae : (TMP + 16 * i) % 8 = 0 ∧ TMP + 16 * i < 32768 := by simp only [TMP]; omega_using [hi]
+  have aw := hs.write (d := TMP + 16 * i) (n := 8) (by simp only [TMP]; omega_using [hi])
   apply WP.of_runBlock
   simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, and_self, State.read, State.store, hs.x3, aw, ite_true,
@@ -54,7 +54,7 @@ theorem tailStep_ok {s : State} {base : Addr} (hs : Scr s base) {o i : Nat}
       (t.gpr .x6).toNat = v / radix ∧ coeff t.mem base o i = encoded (v % radix) unpack ∧
       Outside base (o + 16 * i) 16 s.mem t.mem ∧ Keeps [.x4, .x5, .x6] s t := by
   intro v
-  have hb' : coeff s.mem base TMP i < 2 ^ 64 := by omega
+  have hb' : coeff s.mem base TMP i < 2 ^ 64 := by omega_using [hb]
   have high := (pair_low64 _ _ hb').1
   rw [Impl.X448.AArch64.Tail.step, List.append_assoc, WP.block_append_iff]
   refine WP.mono (loadLow_ok hs hi hb') fun u ⟨uv, um, uk⟩ => ?_
@@ -75,16 +75,16 @@ theorem tailStep_ok {s : State} {base : Addr} (hs : Scr s base) {o i : Nat}
     refine ⟨?_, ?_, ?_, keep.trans (tk.mono (by decide))⟩
     · rw [tk.1 .x6 (by decide)]; exact w6
     · rw [tm]
-      have out := writeW_outside w.mem base (w.gpr .x4) (d := TMP + 16 * i) (by simp only [TMP]; omega)
+      have out := writeW_outside w.mem base (w.gpr .x4) (d := TMP + 16 * i) (by simp only [TMP]; omega_using [hi])
       have lo : word (w.mem.writeW (off base (TMP + 16 * i)) (w.gpr .x4)) base (TMP + 16 * i) = w.gpr .x4 :=
         Mem.readW_writeW_self64 _ _ _
-      have eh := out.word (d := TMP + 16 * i + 8) (Or.inr (by omega)) (by simp only [TMP]; omega)
+      have eh := out.word (d := TMP + 16 * i + 8) (Or.inr (by omega_using [])) (by simp only [TMP]; omega_using [hi])
       change pair (word _ base (TMP + 16 * i)) (word _ base (TMP + 16 * i + 8)) = _
       rw [lo, eh, wm, um]
       simp only [pair, high, Nat.mul_zero, Nat.add_zero, encoded, Bool.false_eq_true, ite_false]
       exact w4
     · rw [tm, wm, um]
-      exact (writeW_outside _ _ _ (by simp only [TMP]; omega)).mono (by omega) (by omega)
+      exact (writeW_outside _ _ _ (by simp only [TMP]; omega_using [hi])).mono (by omega_using []) (by omega_using [])
   | true =>
     rw [ite_eq_left (by decide), show
       [.lsr .x .x5 .x4 28, .logic .and .x .x4 .x4 .x12, st .x4 (o + 16 * i), st .x5 (o + 16 * i + 8)] =
@@ -92,13 +92,13 @@ theorem tailStep_ok {s : State} {base : Addr} (hs : Scr s base) {o i : Nat}
         [st .x4 (o + 16 * i), st .x5 (o + 16 * i + 8)] from rfl, WP.block_append_iff]
     refine WP.mono (unpackRegs_ok ws) fun z ⟨z4, z5, zm, zk⟩ => ?_
     have zs := ws.of_keeps zk (by decide)
-    refine WP.mono (storeAt_ok zs (k := i) (by omega) ho8) fun t ⟨tm, tk⟩ => ?_
+    refine WP.mono (storeAt_ok zs (k := i) (by omega_using [ho, hi]) ho8) fun t ⟨tm, tk⟩ => ?_
     refine ⟨?_, ?_, ?_, keep.trans ((zk.mono (by decide)).trans (tk.mono (by decide)))⟩
     · rw [tk.1 .x6 (by decide), zk.1 .x6 (by decide)]; exact w6
-    · rw [tm, coeff_put _ base _ _ (by omega) (by omega), ite_eq_left rfl]
+    · rw [tm, coeff_put _ base _ _ (by omega_using [ho, hi]) (by omega_using [ho, hi]), ite_eq_left rfl]
       simp only [pair, encoded, ite_true]
       rw [z4, z5, w4]
     · rw [tm, zm, wm, um]
-      exact putCoeff_outside _ _ _ _ (by omega)
+      exact putCoeff_outside _ _ _ _ (by omega_using [ho, hi])
 
 end VG.Proof.X448.Wide

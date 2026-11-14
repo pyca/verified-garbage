@@ -16,14 +16,14 @@ theorem zeroHigh (x : BitVec 32) : 0#32 ++ x = x.setWidth 64 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_append, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem width_eq {base : Addr} {p : BitVec 32} {w : Nat} {m : Mem} (bound : w < 2 ^ 32) :
     Proof.Rsa.Mont.wOf (headerMemory base p w m) base = w := by
   change ((headerMemory base p w m).readW (off base 48) 64).toNat = w
   rw [header_width, zeroHigh]
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [bound]
 
 theorem slot_eq (w j : Nat) : slot w j = Proof.Rsa.Mont.arrAt w j := by
   unfold slot stride VG.Impl.Bignum.hdrBytes Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
@@ -34,22 +34,22 @@ theorem layout {base : Addr} {p : BitVec 32} {w wsLen : Nat} {m : Mem}
     (fit : Proof.Rsa.Mont.arrAt w 8 ≤ 8 * wsLen) (nowrap : base.toNat + 8 * wsLen ≤ 2 ^ 32) :
     Proof.Rsa.Mont.Layout (headerMemory base p w m) base wsLen := by
   unfold Proof.Rsa.Mont.Layout
-  rw [width_eq (by omega)]
+  rw [width_eq (by omega_using [bound])]
   refine ⟨positive, bound, fit, ?_⟩
   intro j index
   change (headerMemory base p w m).readW (off base (8 * (8 + j))) 64 = _
-  rw [show 8 * (8 + j) = 64 + 8 * j by omega, header_pointer index, zeroHigh]
+  rw [show 8 * (8 + j) = 64 + 8 * j by omega_using [], header_pointer index, zeroHigh]
   change addr p (slot w j) = _
   rw [addr_eq, baseEq, slot_eq]
   have pNat : p.toNat = base.toNat := by
     rw [← baseEq, BitVec.toNat_setWidth]
     have := p.isLt
-    omega
+    omega_using []
   have offset : slot w j < Proof.Rsa.Mont.arrAt w 8 := by
     rw [← slot_eq]
     unfold slot stride
-    have := Nat.mul_lt_mul_of_pos_right index (by omega : 0 < 8 * w + 16)
-    omega
-  omega
+    have := Nat.mul_lt_mul_of_pos_right index (by omega_using [] : 0 < 8 * w + 16)
+    omega_using [this]
+  omega_using [fit, nowrap, pNat, offset]
 
 end VG.Proof.RsaKeyGen.X86.Header

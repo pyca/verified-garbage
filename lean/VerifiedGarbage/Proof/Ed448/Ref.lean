@@ -96,7 +96,7 @@ def ladder (k : Nat) : Nat → Point
 /-- The bits from `t` up, after bit `t + 1`'s. -/
 theorem ladder_bit (k : Nat) {t : Nat} (ht : t < 456) :
     ladder k (456 - t) = ladderStep (bitAt k t) (ladder k (456 - (t + 1))) := by
-  rw [show 456 - t = (456 - (t + 1)) + 1 by omega, ladder, show 455 - (456 - (t + 1)) = t by omega]
+  rw [show 456 - t = (456 - (t + 1)) + 1 by omega_using [ht], ladder, show 455 - (456 - (t + 1)) = t by omega_using [ht]]
 
 /-- The ladder over all 456 bits encodes `[k]B`. -/
 def BaseLadderOk : Prop :=
@@ -118,7 +118,7 @@ def ladder2 (k : Nat) : Nat → Point
 /-- The bits from `t` up, after bit `t + 1`'s. -/
 theorem ladder2_bit (k : Nat) {t : Nat} (ht : t < 456) :
     ladder2 k (456 - t) = ladderStep2 (bitAt k t) (ladder2 k (456 - (t + 1))) := by
-  rw [show 456 - t = (456 - (t + 1)) + 1 by omega, ladder2, show 455 - (456 - (t + 1)) = t by omega]
+  rw [show 456 - t = (456 - (t + 1)) + 1 by omega_using [ht], ladder2, show 455 - (456 - (t + 1)) = t by omega_using [ht]]
 
 /-- `ladder2` over all 456 bits encodes `[k]B`. -/
 def BaseLadder2Ok : Prop :=
@@ -152,7 +152,7 @@ def vladder (S K : Nat) (a : Point) : Nat → Point
 
 theorem vladder_bit (S K : Nat) (a : Point) {t : Nat} (ht : t < 456) :
     vladder S K a (456 - t) = vstepRef (bitAt S t) (bitAt K t) a (vladder S K a (456 - (t + 1))) := by
-  rw [show 456 - t = (456 - (t + 1)) + 1 by omega, vladder, show 455 - (456 - (t + 1)) = t by omega]
+  rw [show 456 - t = (456 - (t + 1)) + 1 by omega_using [ht], vladder, show 455 - (456 - (t + 1)) = t by omega_using [ht]]
 
 /-- The equation (RFC 8032 §5.2.7) of decoded `A` and `R`: `S < L`, and
 `[4]([S]B + [k](-A))` (by `vladder`) and `[4]R` (by doubling) represent the
@@ -192,7 +192,7 @@ def vladder4 (S K M : Nat) (a r : Point) : Nat → Point
 
 theorem vladder4_bit (S K M : Nat) (a r : Point) {t : Nat} (ht : t < 458) :
     vladder4 S K M a r (458 - t) = vstep4 S K M t a r (vladder4 S K M a r (458 - (t + 1))) := by
-  rw [show 458 - t = (458 - (t + 1)) + 1 by omega, vladder4, show 457 - (458 - (t + 1)) = t by omega]
+  rw [show 458 - t = (458 - (t + 1)) + 1 by omega_using [ht], vladder4, show 457 - (458 - (t + 1)) = t by omega_using [ht]]
 
 /-- The equation (RFC 8032 §5.2.7) of decoded `A` and `R`: `S < L`, and
 `[4S]B + [4k](-A) + [4](-R)` (by `vladder4`) is the neutral point. -/

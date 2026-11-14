@@ -54,7 +54,7 @@ theorem SharedEnv.patch_frm {B sp : Addr} {Z : Nat} {s b : State} {hv : Mem} {u 
   intro x hx
   have hx := hx _ (List.mem_singleton_self _)
   have hlt : ofs B x < 2 ^ 64 := BitVec.isLt _
-  exact State.patch_mem (he.hole_miss (by omega))
+  exact State.patch_mem (he.hole_miss (by omega_using [hx, hlt]))
 
 /-- What the inline run changes, the run with calls changes, but for the
 return address. -/
@@ -75,13 +75,13 @@ theorem SharedEnv.patch_wv {B sp : Addr} {Z d k : Nat} {s b : State} {hv : Mem}
     {u : Nat → BitVec 64} (he : SharedEnv B Z sp s) (hd : d + 8 * k ≤ Z) (hn : B.toNat + Z ≤ 2 ^ 64) :
     wv (b.patch (hole sp) hv u).mem B d k = wv b.mem B d k :=
   he.patch_frm.wv_eq (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact Or.inl hd)
-    (by omega)
+    (by omega_using [hd, hn])
 
 theorem SharedEnv.patch_word {B sp : Addr} {Z d : Nat} {s b : State} {hv : Mem}
     {u : Nat → BitVec 64} (he : SharedEnv B Z sp s) (hd : d + 8 ≤ Z) (hn : B.toNat + Z ≤ 2 ^ 64) :
     word (b.patch (hole sp) hv u).mem B d = word b.mem B d :=
   he.patch_frm.word_eq (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact Or.inl hd)
-    (by omega)
+    (by omega_using [hd, hn])
 
 theorem SharedEnv.patch_mrCtx {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat} {s b : State}
     {hv : Mem} {u : Nat → BitVec 64} (he : SharedEnv B Z sp s) (hc : MrCtx b B Z w mi c bm)
@@ -96,7 +96,7 @@ theorem SharedEnv.patch_mrCtx {B sp : Addr} {Z w : Nat} {mi : BitVec 64} {c bm :
     subst hr
     have : slot w j ≤ slot w aRm1 := by
       unfold slot; exact Nat.add_le_add_left (Nat.mul_le_mul_right _ hj) _
-    exact Or.inl (by omega)
+    exact Or.inl (by omega_using [hx, this])
   exact MrCtx.of_frm hc hd he.patch_frm (hc.good.scr.congr rfl) hc.good.rdi
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h128)
     (hsep aN (by decide)) (hsep aB (by decide)) (hsep aR1 (by decide)) (hsep aRm1 (by decide))

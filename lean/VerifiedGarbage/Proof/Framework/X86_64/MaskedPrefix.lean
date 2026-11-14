@@ -39,27 +39,27 @@ theorem foldl_qwrites_byte {a : Addr} (f : Nat → BitVec 64) :
     -- The offset of `x` in quadword `j`.
     have e : (x - State.qAddr a j).toNat < 8 ↔ (x - a).toNat < 64 ∧ (x - a).toNat / 8 = j := by
       simp only [State.qAddr]
-      rw [Offset.sub_add_eq, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 8 * j < 2 ^ 64)]
+      rw [Offset.sub_add_eq, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj] : 8 * j < 2 ^ 64)]
       have := (x - a).isLt
       constructor
       · intro h
         by_cases hge : 8 * j ≤ (x - a).toNat
-        · rw [show 2 ^ 64 - 8 * j + (x - a).toNat = 2 ^ 64 + ((x - a).toNat - 8 * j) by omega,
-            Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)] at h
-          omega
-        · rw [Nat.mod_eq_of_lt (by omega)] at h; omega
+        · rw [show 2 ^ 64 - 8 * j + (x - a).toNat = 2 ^ 64 + ((x - a).toNat - 8 * j) by omega_using [hj, h],
+            Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [])] at h
+          omega_using [hj, h, hge]
+        · rw [Nat.mod_eq_of_lt (by omega_using [hge])] at h; omega_using [hj, h]
       · rintro ⟨h1, h2⟩
-        rw [show 2 ^ 64 - 8 * j + (x - a).toNat = 2 ^ 64 + ((x - a).toNat - 8 * j) by omega,
-          Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
-        omega
+        rw [show 2 ^ 64 - 8 * j + (x - a).toNat = 2 ^ 64 + ((x - a).toNat - 8 * j) by omega_using [h2],
+          Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [])]
+        omega_using [h2]
     have eo : (x - a).toNat < 64 ∧ (x - a).toNat / 8 = j →
         (x - State.qAddr a j).toNat = (x - a).toNat % 8 := fun ⟨h1, h2⟩ => by
       simp only [State.qAddr]
       rw [Offset.sub_add_eq, BitVec.toNat_sub, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega : 8 * j < 2 ^ 64),
-        show 2 ^ 64 - 8 * j + (x - a).toNat = 2 ^ 64 + ((x - a).toNat - 8 * j) by omega,
-        Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
-      omega
+        Nat.mod_eq_of_lt (by omega_using [hj] : 8 * j < 2 ^ 64),
+        show 2 ^ 64 - 8 * j + (x - a).toNat = 2 ^ 64 + ((x - a).toNat - 8 * j) by omega_arith,
+        Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [])]
+      omega_arith
     by_cases hin : (x - a).toNat < 64 ∧ (x - a).toNat / 8 ∈ l
     · have hin' : (x - a).toNat < 64 ∧ (x - a).toNat / 8 ∈ j :: l := ⟨hin.1, List.mem_cons_of_mem _ hin.2⟩
       simp only [hin, hin', and_self, ite_true]
@@ -83,43 +83,43 @@ theorem State.storeMasked512_prefix {s : State} {a : Addr} {k : BitVec 64} {c : 
     s.storeMasked512 a k v = some { s with mem := s.mem.writeW a (v.setWidth (128 * c)) } := by
   have hq : ∀ j ∈ State.qOn k, InRegions s.wr (State.qAddr a j) 8 := fun j hj => by
     rw [hk, List.mem_range] at hj
-    exact CallLay.inRegions_sub hin (by omega) (by omega)
+    exact CallLay.inRegions_sub hin (by omega_using [hj]) (by omega_using [hc])
   unfold State.storeMasked512
   rw [ite_eq_left hq]
   congr 2
   funext x
   rw [foldl_qwrites_byte _ _ (qOn_lt k), hk]
-  simp only [Mem.writeW, Mem.write, List.mem_range, show 128 * c / 8 = 16 * c by omega]
+  simp only [Mem.writeW, Mem.write, List.mem_range, show 128 * c / 8 = 16 * c by omega_using []]
   by_cases hx : (x - a).toNat < 16 * c
-  · rw [ite_eq_left (show (x - a).toNat < 64 ∧ (x - a).toNat / 8 < 2 * c by omega), ite_eq_left hx]
+  · rw [ite_eq_left (show (x - a).toNat < 64 ∧ (x - a).toNat / 8 < 2 * c by omega_using [hc, hx]), ite_eq_left hx]
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hi, decide_true, Bool.true_and]
-    rw [decide_eq_true (show 8 * (x - a).toNat + i < 8 * (128 * c / 8) by omega),
-      decide_eq_true (show 8 * (x - a).toNat + i < 128 * c by omega),
-      decide_eq_true (show 8 * ((x - a).toNat % 8) + i < 64 by omega), Bool.true_and, Bool.true_and,
+    rw [decide_eq_true (show 8 * (x - a).toNat + i < 8 * (128 * c / 8) by omega_using [hx, hi]),
+      decide_eq_true (show 8 * (x - a).toNat + i < 128 * c by omega_using [hx, hi]),
+      decide_eq_true (show 8 * ((x - a).toNat % 8) + i < 64 by omega_using [hi]), Bool.true_and, Bool.true_and,
       Bool.true_and]
-    exact congrArg _ (by omega)
-  · rw [ite_eq_right (show ¬ ((x - a).toNat < 64 ∧ (x - a).toNat / 8 < 2 * c) by omega), ite_eq_right hx]
+    exact congrArg _ (by omega_using [])
+  · rw [ite_eq_right (show ¬ ((x - a).toNat < 64 ∧ (x - a).toNat / 8 < 2 * c) by omega_using [hx]), ite_eq_right hx]
 
 /-- Bit `n` of eight quadwords, the first the least significant. -/
 theorem getLsbD_concat8 (q : Nat → BitVec 64) {n : Nat} (hn : n < 512) :
     (q 7 ++ q 6 ++ q 5 ++ q 4 ++ q 3 ++ q 2 ++ q 1 ++ q 0).getLsbD n = (q (n / 64)).getLsbD (n % 64) := by
   simp only [BitVec.getLsbD_append]
   split
-  · rw [show n / 64 = 0 by omega, Nat.mod_eq_of_lt (by omega)]
+  · rw [show n / 64 = 0 by omega_arith, Nat.mod_eq_of_lt (by omega_arith)]
   split
-  · rw [show n / 64 = 1 by omega]; exact congrArg _ (by omega)
+  · rw [show n / 64 = 1 by omega_arith]; exact congrArg _ (by omega_arith)
   split
-  · rw [show n / 64 = 2 by omega]; exact congrArg _ (by omega)
+  · rw [show n / 64 = 2 by omega_arith]; exact congrArg _ (by omega_arith)
   split
-  · rw [show n / 64 = 3 by omega]; exact congrArg _ (by omega)
+  · rw [show n / 64 = 3 by omega_arith]; exact congrArg _ (by omega_arith)
   split
-  · rw [show n / 64 = 4 by omega]; exact congrArg _ (by omega)
+  · rw [show n / 64 = 4 by omega_arith]; exact congrArg _ (by omega_arith)
   split
-  · rw [show n / 64 = 5 by omega]; exact congrArg _ (by omega)
+  · rw [show n / 64 = 5 by omega_arith]; exact congrArg _ (by omega_arith)
   split
-  · rw [show n / 64 = 6 by omega]; exact congrArg _ (by omega)
-  rw [show n / 64 = 7 by omega]; exact congrArg _ (by omega)
+  · rw [show n / 64 = 6 by omega_arith]; exact congrArg _ (by omega_arith)
+  rw [show n / 64 = 7 by omega_arith]; exact congrArg _ (by omega_arith)
 
 /-- A masked load of the first `c` blocks at `a`: those blocks in the lanes
 below `c`, zero in the others. -/
@@ -130,23 +130,23 @@ theorem State.loadMasked512_prefix {s : State} {a : Addr} {k : BitVec 64} {c : N
       if l < c then s.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 else 0 := by
   have hq : ∀ j ∈ State.qOn k, InRegions (s.rd ++ s.wr) (State.qAddr a j) 8 := fun j hj => by
     rw [hk, List.mem_range] at hj
-    exact CallLay.inRegions_sub hin (by omega) (by omega)
+    exact CallLay.inRegions_sub hin (by omega_using [hj]) (by omega_using [hc])
   unfold State.loadMasked512
   rw [ite_eq_left hq]
   refine ⟨_, rfl, fun l hl => ?_⟩
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   rw [BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and,
-    getLsbD_concat8 (fun j => if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) (by omega)]
-  have hj : (128 * l + i) / 64 < 8 := by omega
+    getLsbD_concat8 (fun j => if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) (by omega_using [hl, hi])]
+  have hj : (128 * l + i) / 64 < 8 := by omega_using [hl, hi]
   simp only [hb _ hj]
   by_cases hlc : l < c
-  · rw [decide_eq_true (show (128 * l + i) / 64 < 2 * c by omega), ite_eq_left rfl, ite_eq_left hlc]
+  · rw [decide_eq_true (show (128 * l + i) / 64 < 2 * c by omega_using [hi, hlc]), ite_eq_left rfl, ite_eq_left hlc]
     simp only [Mem.readW, BitVec.getLsbD_setWidth]
-    rw [decide_eq_true (show (128 * l + i) % 64 < 64 by omega), decide_eq_true hi, Bool.true_and, Bool.true_and,
-      getLsbD_read _ _ (by omega), getLsbD_read _ _ (by omega), State.qAddr, Offset.add_add, Offset.add_add]
-    rw [show 8 * ((128 * l + i) / 64) + (128 * l + i) % 64 / 8 = 16 * l + i / 8 by omega,
-      show (128 * l + i) % 64 % 8 = i % 8 by omega]
-  · rw [decide_eq_false (show ¬ (128 * l + i) / 64 < 2 * c by omega), ite_eq_right hlc,
+    rw [decide_eq_true (show (128 * l + i) % 64 < 64 by omega_using []), decide_eq_true hi, Bool.true_and, Bool.true_and,
+      getLsbD_read _ _ (by omega_using []), getLsbD_read _ _ (by omega_using [hi]), State.qAddr, Offset.add_add, Offset.add_add]
+    rw [show 8 * ((128 * l + i) / 64) + (128 * l + i) % 64 / 8 = 16 * l + i / 8 by omega_using [],
+      show (128 * l + i) % 64 % 8 = i % 8 by omega_using []]
+  · rw [decide_eq_false (show ¬ (128 * l + i) / 64 < 2 * c by omega_using [hlc]), ite_eq_right hlc,
       ite_eq_right (by decide)]
     simp
 

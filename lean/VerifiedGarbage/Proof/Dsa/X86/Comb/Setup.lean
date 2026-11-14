@@ -90,7 +90,7 @@ theorem seed_ok {n size m : Nat} {base : Addr} {s : State}
   have s04 := slot_le (n := n) (i := 0) (j := 4) (by decide)
   refine WP.mono (publicPower_ok Cv.scr Cv.modulus
     (context_opLay hz (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
-    (by change slot n 4+8*n≤slot n 0 ∨ slot n 0+8*n≤slot n 4;unfold stride at s04;omega)
+    (by change slot n 4+8*n≤slot n 0 ∨ slot n 0+8*n≤slot n 4;unfold stride at s04;omega_using [s04])
     hn32 hm1 hodd) fun t ⟨Vt,Mt,Ot,Kt⟩ => ?_
   obtain ⟨Ct,one,frame⟩ := Cv.power_frame Mt Ot Kt
   exact ⟨Ct,one.trans Vv,Vt,Ov.trans frame,Kv.trans Kt⟩
@@ -106,9 +106,9 @@ theorem setup_ok {n size m : Nat} {base : Addr} {s : State}
   unfold setup
   refine WP.seq (WP.mono (seed_ok hs hn hn32 hz hv hm1 hodd) fun u ⟨Cu, Ou, Vu, Fu, Ku⟩ => ?_)
   have value : wordsVal u.mem base (slot n 4) n = 2^(64*n+n) % m := by
-    simpa only [show 64*n+n = 65*n by omega] using Vu
+    simpa only [show 64*n+n = 65*n by omega_using []] using Vu
   refine WP.mono (setupSquares_ok Cu value) fun t ⟨Ct, Ot, Vt, Ft, Kt⟩ => ?_
-  exact ⟨Ct, Ot.trans Ou, by simpa only [show 64*n+64*n = 128*n by omega] using Vt,
+  exact ⟨Ct, Ot.trans Ou, by simpa only [show 64*n+64*n = 128*n by omega_using []] using Vt,
     Fu.trans Ft, Ku.trans Kt⟩
 
 end VG.Proof.Dsa.X86.Comb

@@ -63,7 +63,7 @@ theorem addr {s0 s : State} {base : BitVec 32} {size o b n d : Nat}
     (hr : s.gpr r = base + BitVec.ofNat 32 d) (hd : d < size) :
     State.addr (s.gpr r + BitVec.ofNat 32 0) = off (State.addr base) d := by
   rw [hr, Offset.add_add, Nat.add_zero]
-  exact VG.Arm.addr_add (by have := ctx.nowrap; omega)
+  exact VG.Arm.addr_add (by have := ctx.nowrap; omega_using [hd, this])
 
 /-- Any word in the workspace remains writable throughout the row. -/
 theorem writable {s0 s : State} {base : BitVec 32} {size o b n d : Nat}
@@ -72,7 +72,7 @@ theorem writable {s0 s : State} {base : BitVec 32} {size o b n d : Nat}
   rw [hr]
   refine ⟨_, ctx.writable, Offset.contains_base _ hd ?_⟩
   have := ctx.nowrap
-  omega
+  omega_using [hd, this]
 
 /-- Extend the arithmetic invariant with the next stored word, from the
 invariant's memory facts alone. -/
@@ -94,15 +94,15 @@ theorem value_step_of {s0 s t : State} {x base : BitVec 32} {size o b n i : Nat}
   have ho := ctx.outFits
   have hb := ctx.inFits
   have hs := ctx.separate
-  have own := houtside.w32 (d := o + 4 + 4 * i) (by omega) (by omega)
-  have src := houtside.w32 (d := b + 4 * i) (by omega) (by omega)
+  have own := houtside.w32 (d := o + 4 + 4 * i) (by omega_using []) (by omega_using [hi, hn, ho])
+  have src := houtside.w32 (d := b + 4 * i) (by omega_using [hi, hs]) (by omega_using [hi, hn, hb])
   rw [own, src] at hv
-  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega)
+  have wr := writeW32_outside s.mem (State.addr base) (d := o + 4 * i) (t.gpr .r3) (by omega_using [hi, hn, ho])
   rw [← hm] at wr
-  have low := wr.val32 (d := o) (k := i) (by omega) (by omega)
+  have low := wr.val32 (d := o) (k := i) (by omega_using []) (by omega_using [hi, hn, ho])
   have top : w32 t.mem (State.addr base) (o + 4 * i) = (t.gpr .r3).toNat := by
     rw [hm, w32_write_self]
-  refine ⟨(houtside.mono (Nat.le_refl _) (by omega)).trans (wr.mono (by omega) (by omega)), ?_⟩
+  refine ⟨(houtside.mono (Nat.le_refl _) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using [])), ?_⟩
   rw [val32_succ, val32_succ, val32_succ, low, top, pow32_succ]
   have prior := hvalue
   generalize 2 ^ (32 * i) = P at *

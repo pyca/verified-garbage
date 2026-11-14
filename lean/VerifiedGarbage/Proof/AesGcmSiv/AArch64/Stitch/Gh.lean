@@ -44,7 +44,7 @@ theorem ld_ok (d : VReg) (j : Nat) (s : State) (hj : j < 8)
     WP isa (.block (ld d j)) s fun s' => s'.v d = blkV s j ∧ VOnly [d] s s' := by
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil,
-    Proof.Gcm.AArch64.Pmull.exec_ldrq (Nat.mul_mod_right 16 j) (by omega) hin, exec_ext8,
+    Proof.Gcm.AArch64.Pmull.exec_ldrq (Nat.mul_mod_right 16 j) (by omega_using [hj]) hin, exec_ext8,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_setV], by simp only [mem_setV], by simp only [rd_setV],
     by simp only [wr_setV], by simp only [sp_setV]⟩⟩
@@ -89,9 +89,9 @@ theorem pairTail_ok (p k l : Nat) (s : State) (hk : sOff k % 16 = 0 ∧ sOff k <
 
 /-- The table's offsets. -/
 theorem sOff_ok (k : Nat) (hk : k ≤ 8) : sOff k % 16 = 0 ∧ sOff k < 4096 * 16 := by
-  unfold sOff tblO Impl.AesGcmSiv.AArch64.revO; omega
+  unfold sOff tblO Impl.AesGcmSiv.AArch64.revO; omega_using [hk]
 theorem kOff_ok (p : Nat) (hp : p < 4) : kOff p % 16 = 0 ∧ kOff p < 4096 * 16 := by
-  unfold kOff tblO Impl.AesGcmSiv.AArch64.revO; omega
+  unfold kOff tblO Impl.AesGcmSiv.AArch64.revO; omega_using [hp]
 
 /-- What `ghPart` reads. -/
 structure GhIn (s : State) : Prop where
@@ -197,10 +197,10 @@ theorem pairAdd_ok (e3 : Bool) (p : Nat) (hp : p < 4) (first : Bool) (s₀ s : S
       s fun s' => prodS s' = pairP s₀ (if first then ⟨0, 0, 0⟩ else prodS s) p ∧ VOnly pairV s s' := by
   have hin' := hin.of hg hrd hwr
   rw [WP.block_append_iff]
-  have hpa : pa p < 8 := by unfold pa; split <;> omega
-  have hpb : pb p < 8 := by unfold pb; split <;> omega
-  have hpk : 1 ≤ pk p ∧ pk p ≤ 8 := by unfold pk; split <;> omega
-  have hpl : 1 ≤ pl p ∧ pl p ≤ 8 := by unfold pl; split <;> omega
+  have hpa : pa p < 8 := by unfold pa; split <;> omega_using []
+  have hpb : pb p < 8 := by unfold pb; split <;> omega_using []
+  have hpk : 1 ≤ pk p ∧ pk p ≤ 8 := by unfold pk; split <;> omega_using []
+  have hpl : 1 ≤ pl p ∧ pl p ≤ 8 := by unfold pl; split <;> omega_using []
   refine WP.mono (pair_ok p (pa p) (pk p) (pb p) (pl p) (decide (p = 3)) s hin' hp hpa hpb hpk hpl)
     fun s₁ ⟨h1, h2, h3, h4, h5, h6, o₁⟩ => ?_
   have eb : ∀ j, blkV s j = blkV s₀ j := fun j => by simp only [blkV, hm, hg]

@@ -55,10 +55,10 @@ theorem movzk (x : BitVec 32) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_extractLsb', BitVec.ofNat_eq_ofNat, BitVec.getLsbD_ofNat,
     VG.AArch64.testBit_65535, hi, decide_true, Bool.true_and, Nat.zero_add]
-  rcases (by omega : i < 16 ∨ 16 ≤ i) with h | h <;>
+  rcases (by omega_using [] : i < 16 ∨ 16 ≤ i) with h | h <;>
   simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and,
     Bool.and_false, Bool.or_false, Bool.false_or, Bool.and_true, Bool.not_true, Bool.not_false]
-  all_goals exact congrArg _ (by omega)
+  all_goals exact congrArg _ (by omega_using [h])
 
 theorem word_ok {x : BitVec 32} {off : Nat} (ho : off % 4 = 0 ∧ off < 16384) {rest : List Instr}
     {s : State} {Q : State → Prop} (hout : InRegions s.wr (s.gpr .x0 + BitVec.ofNat 64 off) 4)
@@ -78,34 +78,34 @@ theorem init_correct {s₀ : State} (hp : Proof.Sm3.initAArch64.pre s₀) :
   apply WP.withPreservedV (hc := by lit_decide)
   obtain ⟨-, hwr⟩ := hp
   have o : ∀ k, k < 8 → InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4 :=
-    fun k hk => ⟨⟨s₀.gpr .x0, 96⟩, by simp [hwr], contains_offset (by omega) (by omega)⟩
+    fun k hk => ⟨⟨s₀.gpr .x0, 96⟩, by simp [hwr], contains_offset (by omega_using [hk]) (by omega_using [hk])⟩
   rw [init_eq, ← List.append_nil (_ ++ word iv[7] 28)]
   simp only [List.append_assoc]
-  refine word_ok (by decide) (o 0 (by omega)) fun s1 g1 _ wr1 sp1 m1 => ?_
-  refine word_ok (by decide) (by rw [wr1, g1 _ (by decide)]; exact o 1 (by omega))
+  refine word_ok (by decide) (o 0 (by omega_using [])) fun s1 g1 _ wr1 sp1 m1 => ?_
+  refine word_ok (by decide) (by rw [wr1, g1 _ (by decide)]; exact o 1 (by omega_using []))
     fun s2 g2 _ wr2 sp2 m2 => ?_
-  refine word_ok (by decide) (by rw [wr2, wr1, g2 _ (by decide), g1 _ (by decide)]; exact o 2 (by omega))
+  refine word_ok (by decide) (by rw [wr2, wr1, g2 _ (by decide), g1 _ (by decide)]; exact o 2 (by omega_using []))
     fun s3 g3 _ wr3 sp3 m3 => ?_
   refine word_ok (by decide)
-    (by rw [wr3, wr2, wr1, g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]; exact o 3 (by omega))
+    (by rw [wr3, wr2, wr1, g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]; exact o 3 (by omega_using []))
     fun s4 g4 _ wr4 sp4 m4 => ?_
   refine word_ok (by decide)
     (by rw [wr4, wr3, wr2, wr1, g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
-        exact o 4 (by omega))
+        exact o 4 (by omega_using []))
     fun s5 g5 _ wr5 sp5 m5 => ?_
   refine word_ok (by decide)
     (by rw [wr5, wr4, wr3, wr2, wr1, g5 _ (by decide), g4 _ (by decide), g3 _ (by decide),
           g2 _ (by decide), g1 _ (by decide)]
-        exact o 5 (by omega))
+        exact o 5 (by omega_using []))
     fun s6 g6 _ wr6 sp6 m6 => ?_
   have w6 : s6.wr = s₀.wr := by rw [wr6, wr5, wr4, wr3, wr2, wr1]
   have k6 : s6.gpr .x0 = s₀.gpr .x0 := by
     rw [g6 _ (by decide), g5 _ (by decide), g4 _ (by decide), g3 _ (by decide), g2 _ (by decide),
       g1 _ (by decide)]
-  refine word_ok (by decide) (by rw [w6, k6]; exact o 6 (by omega)) fun s7 g7 _ wr7 sp7 m7 => ?_
+  refine word_ok (by decide) (by rw [w6, k6]; exact o 6 (by omega_using [])) fun s7 g7 _ wr7 sp7 m7 => ?_
   have w7 : s7.wr = s₀.wr := by rw [wr7, w6]
   have k7 : s7.gpr .x0 = s₀.gpr .x0 := by rw [g7 _ (by decide), k6]
-  refine word_ok (by decide) (by rw [w7, k7]; exact o 7 (by omega)) fun s8 g8 _ _ sp8 m8 =>
+  refine word_ok (by decide) (by rw [w7, k7]; exact o 7 (by omega_using [])) fun s8 g8 _ _ sp8 m8 =>
     WP.block_nil ?_
   have k8 : ∀ r, r ≠ .x9 → s8.gpr r = s₀.gpr r := fun r h => by
     rw [g8 r h, g7 r h, g6 r h, g5 r h, g4 r h, g3 r h, g2 r h, g1 r h]

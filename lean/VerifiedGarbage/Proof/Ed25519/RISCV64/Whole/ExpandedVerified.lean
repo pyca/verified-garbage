@@ -130,9 +130,9 @@ theorem sat_digestE : bytesAt satMemE 0x2000 64 = Spec.Sha512.sha512 satSeed := 
     have hi' : i < 64 := by simpa only [bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
       change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
+      omega_using [hi']
     simp only [bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x2000 + i < 0x2000 from by omega, show 0x2000 + i < 0x2100 from by omega, ite_false, ite_true,
+      show ¬ 0x2000 + i < 0x2000 from by omega_using [], show 0x2000 + i < 0x2100 from by omega_using [hi'], ite_false, ite_true,
       Nat.add_sub_cancel_left, satDigestE, List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem sat_keyE : bytesAt satMemE 0x2100 32 = satKey := by
@@ -142,9 +142,9 @@ theorem sat_keyE : bytesAt satMemE 0x2100 32 = satKey := by
     have hi' : i < 32 := by simpa only [bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2100 : Addr) + BitVec.ofNat 64 i).toNat = 0x2100 + i := by
       change (0x2100 + i % 2 ^ 64) % 2 ^ 64 = 0x2100 + i
-      omega
+      omega_using [hi']
     simp only [bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x2100 + i < 0x2000 from by omega, show ¬ 0x2100 + i < 0x2100 from by omega, ite_false,
+      show ¬ 0x2100 + i < 0x2000 from by omega_using [], show ¬ 0x2100 + i < 0x2100 from by omega_using [], ite_false,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 /-- The comb's table at `0x100000`. -/
@@ -168,8 +168,8 @@ theorem satMemTE_held : ∀ i < combWords.length,
   have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j).toNat = 0x100000 + 8 * i + j := by
     rw [show (0x100000 : Addr) = BitVec.ofNat 64 0x100000 from rfl]
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
-  simp only [satMemTE, e, show ¬ 0x100000 + 8 * i + j < 0x100000 by omega, ↓reduceIte]
+    omega_using [hi, hj]
+  simp only [satMemTE, e, show ¬ 0x100000 + 8 * i + j < 0x100000 by omega_using [], ↓reduceIte]
 
 theorem satMemTE_bytes {p : Addr} {n : Nat} (h : p.toNat + n ≤ 0x100000) :
     bytesAt satMemTE p n = bytesAt satMemE p n := by
@@ -178,8 +178,8 @@ theorem satMemTE_bytes {p : Addr} {n : Nat} (h : p.toNat + n ≤ 0x100000) :
   have hi' := List.mem_range.mp hi
   have e : (p + BitVec.ofNat 64 i).toNat = p.toNat + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
-  simp only [satMemTE, e, show p.toNat + i < 0x100000 by omega, ↓reduceIte]
+    omega_using [h, hi']
+  simp only [satMemTE, e, show p.toNat + i < 0x100000 by omega_using [h, hi'], ↓reduceIte]
 
 theorem satMemTE_pre : ∃ seed : List Byte, seed.length = 32 ∧
     bytesAt satMemTE 0x2000 64 = Spec.Sha512.sha512 seed ∧ bytesAt satMemTE 0x2100 32 = Spec.Ed25519.publicKey seed :=

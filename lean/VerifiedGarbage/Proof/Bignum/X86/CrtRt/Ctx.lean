@@ -48,10 +48,10 @@ theorem CtxOk.keepF (C : CtxOk Ex base bytes len args c M s) {regs : List Reg} (
   refine ⟨h.keepF K di sp F hfit, ?_, C.gt, C.odd, ?_⟩
   · have hm := C.mod
     simp only [sv, z0] at hm ⊢
-    rw [frameR_val32 F h.room nw (by omega) (fun p hp => .inl (by have := h0 p hp; omega)) hfit]
+    rw [frameR_val32 F h.room nw (by omega_using [f0, bw, z0, est]) (fun p hp => .inl (by have := h0 p hp; omega_using [bw, this])) hfit]
     exact hm
-  · rw [← w32_val32_one, frameR_val32 F h.room nw (by simp only [invOff, numBase] at *; omega)
-      (fun p hp => .inl (by have := h0 p hp; simp only [invOff, numBase] at *; omega)) hfit, w32_val32_one]
+  · rw [← w32_val32_one, frameR_val32 F h.room nw (by simp only [invOff, numBase] at *; omega_using [f0, z0])
+      (fun p hp => .inl (by have := h0 p hp; simp only [invOff, numBase] at *; omega_using [this])) hfit, w32_val32_one]
     exact C.inv
 
 /-- The same for ranges that may also lie in the header past its first word. -/
@@ -71,13 +71,13 @@ theorem CtxOk.keepF2 (C : CtxOk Ex base bytes len args c M s) {regs : List Reg} 
   refine ⟨h.keepF K di sp F hfit, ?_, C.gt, C.odd, ?_⟩
   · have hm := C.mod
     simp only [sv, z0] at hm ⊢
-    rw [frameR_val32 F h.room nw (by omega) (fun p hp => by
+    rw [frameR_val32 F h.room nw (by omega_using [f0, bw, z0, est]) (fun p hp => by
       rcases h0 p hp with e | e
-      · exact .inl (by omega)
-      · exact .inr (by omega)) hfit]
+      · exact .inl (by omega_using [bw, e])
+      · exact .inr (by omega_using [e])) hfit]
     exact hm
-  · rw [← w32_val32_one, frameR_val32 F h.room nw (by omega)
-      (fun p hp => .inl (by rcases h0 p hp with e | e <;> omega)) hfit, w32_val32_one]
+  · rw [← w32_val32_one, frameR_val32 F h.room nw (by omega_using [f0, est, io])
+      (fun p hp => .inl (by rcases h0 p hp with e | e <;> omega_arith)) hfit, w32_val32_one]
     exact C.inv
 
 /-- The ranges of a multiplication into slot `o`. -/
@@ -109,14 +109,14 @@ theorem cmul_ok (C : CtxOk Ex base bytes len args c M s) {o a b : Nat} (ho3 : 3 
       lo len (.slot c j) + st len c ≤ lo len (.slot c 8) + st len c := fun j h3 h8 => by
     have := Nat.mul_le_mul_right (st len c) h3
     have := Nat.mul_le_mul_right (st len c) h8
-    simp only [lo]; omega
+    simp only [lo]; omega_arith
   obtain ⟨o1, o2⟩ := mo o ho3 ho
   have s1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
   refine ⟨C.keepF Ks (by decide) (by decide) F' (by
       intro p hp; simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega) (by
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith) (by
       intro p hp; simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only <;> omega), Ks, F', L, V⟩
+      rcases hp with rfl | rfl <;> dsimp only <;> omega_arith), Ks, F', L, V⟩
 
 /-- The context holds after register changes but `edi` and `esp`. -/
 theorem CtxOk.regs (C : CtxOk Ex base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)

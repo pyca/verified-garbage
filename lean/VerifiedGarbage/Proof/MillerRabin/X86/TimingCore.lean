@@ -35,7 +35,7 @@ theorem coreWords_relCT {code : Prog isa} {name : String}
     {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} (length : g.L = 8 * capacity) :
     RelCT isa (Two g (CoreRun g capacity p)) (.loop (wordStep name code) .ne) (Two g (CoreWords g capacity p)) := by
   refine private_attach ((wordLoop_relCT (p := p) verified noSp stack v length
-    (by have := v.minWidth; unfold Geometry.words; omega : 0 < g.words)).mono
+    (by have := v.minWidth; unfold Geometry.words; omega_using [this] : 0 < g.words)).mono
     (fun _ _ H => ⟨H.1, H.2.1.choose_spec.wordInput, H.2.2.choose_spec.wordInput⟩) (fun _ _ H => H.2.2))
     (fun _ _ H => H.words verified noSp stack v length) (fun _ _ H => H.1.data.context)
 

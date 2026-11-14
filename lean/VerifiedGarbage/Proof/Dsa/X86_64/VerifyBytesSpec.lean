@@ -42,7 +42,7 @@ theorem verifyBytes_compute (L : ExecutionLayout) (data : VerifyValues) (key sig
     (hr : signature.take L.qLen = data.signatureR) (hs : signature.drop L.qLen = data.signatureS)
     (hq : Spec.Dsa.bitLength L.subgroup = 8 * n) (hz : data.digest = digest.take n) :
     Spec.Dsa.verifyBytes L.pLen L.qLen key signature digest = verifyAccepted L data true := by
-  have hqpos : 0 < L.subgroup := by have := (VG.Proof.Dsa.supported_bounds hsize).2.1; omega
+  have hqpos : 0 < L.subgroup := by have := (VG.Proof.Dsa.supported_bounds hsize).2.1; omega_using [hoq]
   rw [verifyAccepted_value L data true hqpos hqf hrl,
     publicAccepted_spec L data.generator data.publicValue hsize hop hoq]
   unfold Spec.Dsa.verifyBytes

@@ -35,12 +35,12 @@ theorem counter_zero {s : State} {n : Nat} (hn : n < 2 ^ 32)
   rw [hc]
   rcases Nat.eq_zero_or_pos n with rfl | h
   · rfl
-  · rw [decide_eq_false (by omega)]
+  · rw [decide_eq_false (by omega_using [h])]
     apply beq_false_of_ne
     intro he
     have := congrArg BitVec.toNat he
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-    exact absurd this (by simp; omega)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at this
+    exact absurd this (by simp; omega_using [h])
 
 theorem ofs_off' (base : Addr) {d : Nat} (h : d < 2 ^ 64) : ofs base (off base d) = d :=
   Mem.sub_ofNat_toNat base h

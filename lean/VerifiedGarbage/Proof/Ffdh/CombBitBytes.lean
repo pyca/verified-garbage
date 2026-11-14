@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import Init.Data.Nat.Bitwise.Lemmas
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! A public big-endian byte index exposes exactly one exponent bit. -/
 
@@ -22,9 +23,9 @@ theorem byte_value (bs : List Byte) (i : Nat) (hi : i < bs.length) :
 theorem os2ip_bit (bs : List Byte) (k : Nat) (hk : k < 8 * bs.length) :
     os2ip bs / 2 ^ k % 2 =
       bs[bs.length - 1 - k / 8].toNat / 2 ^ (k % 8) % 2 := by
-  have hj : bs.length - 1 - k / 8 < bs.length := by omega
+  have hj : bs.length - 1 - k / 8 < bs.length := by omega_using [hk]
   have byte := byte_value bs (bs.length - 1 - k / 8) hj
-  have index : bs.length - 1 - (bs.length - 1 - k / 8) = k / 8 := by omega
+  have index : bs.length - 1 - (bs.length - 1 - k / 8) = k / 8 := by omega_using [hk]
   have power : 256 ^ (k / 8) = 2 ^ (8 * (k / 8)) := by
     rw [Nat.pow_mul]
   have bits : Nat.testBit bs[bs.length - 1 - k / 8].toNat (k % 8) = Nat.testBit (os2ip bs) k := by
@@ -32,17 +33,17 @@ theorem os2ip_bit (bs : List Byte) (k : Nat) (hk : k < 8 * bs.length) :
       decide_eq_true (Nat.mod_lt k (by decide : 0 < 8)), Bool.true_and,
       ← Nat.shiftRight_eq_div_pow, Nat.testBit_shiftRight]
     congr 1
-    omega
+    omega_using []
   rw [Nat.testBit_eq_decide_div_mod_eq, Nat.testBit_eq_decide_div_mod_eq] at bits
   have a : os2ip bs / 2 ^ k % 2 < 2 := Nat.mod_lt _ (by decide)
   have b : bs[bs.length - 1 - k / 8].toNat / 2 ^ (k % 8) % 2 < 2 := Nat.mod_lt _ (by decide)
   by_cases ha : os2ip bs / 2 ^ k % 2 = 1
   · have hb : bs[bs.length - 1 - k / 8].toNat / 2 ^ (k % 8) % 2 = 1 := by
       simpa [ha] using bits
-    omega
+    omega_using [ha, hb]
   · have hb : bs[bs.length - 1 - k / 8].toNat / 2 ^ (k % 8) % 2 ≠ 1 := by
       intro h
       simp [h, ha] at bits
-    omega
+    omega_using [ha, hb]
 
 end VG.Proof.Ffdh.CombBitBytes

@@ -371,7 +371,7 @@ def HashOK.withWs {H : Hash} (hH : HashOK H) (so W : Nat) (hso : so % 8 = 0 ∧ 
       ⟨K.b.bMx, K.b.bSp, K.b.bNs, K.b.bD, K.b.bXD⟩⟩
   {
   md := hH.md
-  dims := ⟨hH.dims.B, hH.dims.N, hH.dims.L, show so ≤ 2048 by omega⟩
+  dims := ⟨hH.dims.B, hH.dims.N, hH.dims.L, show so ≤ 2048 by omega_using [hso]⟩
   shape := ⟨hH.shape.len, hH.shape.lenV, hH.shape.out⟩
   taints := taints
   comp := comp

@@ -70,7 +70,7 @@ theorem rawFinalValues_field (v : Vector (BitVec 128) 8) (w : Poly)
   rw [rawFinalValues,runValues_split_last]
   refine ⟨hl.1,hl.2.1,?_⟩
   simpa only [← InverseTraversal.run_append,stridedOps_eq hu,
-    InverseTraversal.stridedLoc,show 32*i.val+4*u+e=4*u+32*i.val+e by omega,
+    InverseTraversal.stridedLoc,show 32*i.val+4*u+e=4*u+32*i.val+e by omega_using [],
     show ofInt (16382 : Int)=(16382 : Zq) by decide +kernel] using hl.2.2
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse
@@ -94,20 +94,20 @@ theorem rawFinalPass_field {m : Mem} {p : Addr} {w : Poly}
     rawFinalValues_field (readBank m (coeffAddr p (4*u)) 128) w hu
       (fun j e he => by
         rw [readBank_coeff m p (4*u) 32 j he]
-        exact h.bound _ (by change 4*u+32*j.val+e<256; omega))
+        exact h.bound _ (by change 4*u+32*j.val+e<256; omega_using [hu, he]))
       (fun j e he => by
         rw [readBank_coeff m p (4*u) 32 j he]
         simpa only [Traversal.loc,Nat.add_comm,Nat.add_left_comm,Nat.add_assoc] using
-          h.value (4*u+32*j.val+e) (by change 4*u+32*j.val+e<256; omega)) i he
+          h.value (4*u+32*j.val+e) (by change 4*u+32*j.val+e<256; omega_using [hu, he])) i he
   apply rawPolyIs_iff.mpr
   intro k hk
-  have hi : k/32<8 := by change k<256 at hk; omega
-  have hu : k%32/4<8 := by omega
-  have he : k%4<4 := by omega
+  have hi : k/32<8 := by change k<256 at hk; omega_using [hk]
+  have hu : k%32/4<8 := by omega_using []
+  have he : k%4<4 := by omega_using []
   rw [rawFinalPass_all_values m p hk,getElem!_pos _ (k/32) hi]
   have hh := bank _ hu ⟨k/32,hi⟩ _ he
   refine ⟨hh.1,hh.2.1,?_⟩
-  have hidx : 4*(k%32/4)+32*(k/32)+k%4=k := by omega
+  have hidx : 4*(k%32/4)+32*(k/32)+k%4=k := by omega_using []
   rw [hidx] at hh
   rw [map_mul_get _ _ hk,InverseTraversal.strided_coordinate w hk]
   exact hh.2.2

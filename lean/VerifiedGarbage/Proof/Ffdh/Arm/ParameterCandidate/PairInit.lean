@@ -34,7 +34,7 @@ theorem pairInit_ok {s : State} {dst base : BitVec 32} {n : Nat} (h : SieveConte
   rw [memory] at bytes
   have total : Rest sieveRegs s t := (rest.mono (by simp [sieveRegs])).trans (restT.mono (by simp [sieveRegs]))
   have positive := trialCount_positive n
-  refine ⟨finalCtx, by omega, ?_, count, ?_, ?_, ?_, total⟩
+  refine ⟨finalCtx, by omega_using [], ?_, count, ?_, ?_, ?_, total⟩
   · simpa only [Nat.mul_zero, Nat.add_zero] using cursor.trans ptr
   · rw [restT.sp, memT, Mem.readW_writeW_self32]
     rfl

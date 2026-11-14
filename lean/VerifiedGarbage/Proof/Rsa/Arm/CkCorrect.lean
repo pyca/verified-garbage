@@ -34,7 +34,7 @@ theorem ck_pre (s : State) (h : (Spec.Rsa.checkKeyContract abi 0).pre s) : FnPre
     State.addr] at h
   obtain ⟨sp, rd, wr, dN, dE, dD, dP, dQ, dDP, dDQ, dQI, dA, fN, fE, fD, fP, fQ, fDP, fDQ, fQI, fS, v, e1, e2,
     d1, d2, p1, p2, q1, q2, l1, l2, l3, scr⟩ := h
-  refine ⟨by omega, by rw [rd]; simp [State.addr], by rw [rd]; simp [State.addr],
+  refine ⟨by omega_using [sp], by rw [rd]; simp [State.addr], by rw [rd]; simp [State.addr],
     by rw [rd]; simp [stackArgAddr], fun p hp => ?_, by rw [wr]; rfl, dN, dE, fun p hp => ?_, dA, fN, fE,
     fun p hp => ?_, fS, v, e1, e2, fun p hp => ?_, scr, by decide, by decide, by decide⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -46,7 +46,7 @@ theorem ck_pre (s : State) (h : (Spec.Rsa.checkKeyContract abi 0).pre s) : FnPre
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
     exacts [fD, fP, fQ, fDP, fDQ, fQI]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [fK, Nat.reduceAdd] <;> omega
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [fK, Nat.reduceAdd] <;> omega_arith
 
 /-- The numbers. -/
 abbrev vK (σ : State) : Vals := ⟨nV σ, eV σ, inV σ 2, inV σ 4, inV σ 6, inV σ 8, inV σ 10, inV σ 0⟩
@@ -55,7 +55,7 @@ theorem ck_hv (σ : State) : aEnt insK σ = vals (vK σ) := rfl
 
 theorem ck_hA {σ : State} (pre : FnPre 14 12 insK σ) : ∀ j < nArr, aEnt insK σ j < 2 ^ (32 * (geo 12 σ).w) := by
   have kb := pre.kb
-  have hw : fK σ ≤ 4 * (geo 12 σ).w := by simp only [Geo.w]; omega
+  have hw : fK σ ≤ 4 * (geo 12 σ).w := by simp only [Geo.w]; omega_using []
   have ins := fun p (hp : p ∈ insK) => (pre.ins1 p hp).2
   have i0 : (stackArg σ 1).toNat ≤ fK σ := ins (0, aD) (by simp)
   have i2 : (stackArg σ 3).toNat ≤ fK σ := ins (2, aP) (by simp)
@@ -65,10 +65,10 @@ theorem ck_hA {σ : State} (pre : FnPre 14 12 insK σ) : ∀ j < nArr, aEnt insK
   have i10 : (stackArg σ 11).toNat ≤ fK σ := ins (10, aQI) (by simp)
   intro j hj
   rw [ck_hv σ]
-  exact vals_lt (Nat.two_pow_pos _) (bytesV_lt (by omega)) (bytesV_lt (by have := pre.e2; omega))
-    (bytesV_lt (k := (stackArg σ 3).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 5).toNat) (by omega))
-    (bytesV_lt (k := (stackArg σ 7).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 9).toNat) (by omega))
-    (bytesV_lt (k := (stackArg σ 11).toNat) (by omega)) (bytesV_lt (k := (stackArg σ 1).toNat) (by omega)) j
+  exact vals_lt (Nat.two_pow_pos _) (bytesV_lt (by omega_using [hw])) (bytesV_lt (by have := pre.e2; omega_using [hw, this]))
+    (bytesV_lt (k := (stackArg σ 3).toNat) (by omega_using [hw, i2])) (bytesV_lt (k := (stackArg σ 5).toNat) (by omega_using [hw, i4]))
+    (bytesV_lt (k := (stackArg σ 7).toNat) (by omega_using [hw, i6])) (bytesV_lt (k := (stackArg σ 9).toNat) (by omega_using [hw, i8]))
+    (bytesV_lt (k := (stackArg σ 11).toNat) (by omega_using [hw, i10])) (bytesV_lt (k := (stackArg σ 1).toNat) (by omega_using [hw, i0])) j
 
 /-- `BodyIn` after code that changes only `r0`–`r3` and the flags. -/
 theorem _root_.VG.Proof.Rsa.Arm.KeyCheck.BodyIn.of_rest {g : Geo} {v : Vals} {s t : State} (h : BodyIn g v s) (r : Rest [.r0, .r1, .r2, .r3] s t)
@@ -100,15 +100,15 @@ theorem keyBodyS_post {σ s : State} (m : Mid 14 12 insK σ s (aEnt insK σ)) (b
   refine WP.ite t.z rfl (fun hz => ?_) (fun _ => ?_)
   · rw [zt] at hz
     obtain ⟨lp, lq, ld, le, he⟩ := of_decide_eq_true hz
-    have hpw : (stackArg σ 3).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
-    have hqw : (stackArg σ 5).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
-    have hdw : (stackArg σ 7).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
-    have hew : (stackArg σ 9).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega
+    have hpw : (stackArg σ 3).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [lp, he]
+    have hqw : (stackArg σ 5).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [lq, he]
+    have hdw : (stackArg σ 7).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [ld, he]
+    have hew : (stackArg σ 9).toNat ≤ 4 * ((geo 12 σ).w / 2) := by omega_using [le, he]
     refine WP.mono (keyBodyW_ok bi' he (bytesV_lt hpw) (bytesV_lt hqw) (bytesV_lt hdw) (bytesV_lt hew)
         (bytesV_lt (k := (stackArg σ 11).toNat) (by rw [l2]; exact hpw)) (Nat.lt_of_lt_of_le e33 (by decide)))
       fun u ⟨A, live, hu⟩ => ⟨A, live, _, hu.of_pre rt mt, _, _, _, _, _, _, _, fun _ => ⟨rfl, rfl⟩,
         ⟨fun _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl⟩, fun _ => rfl, fun _ => rfl,
-        VG.Proof.Rsa.keyBits_words2 hm rfl (by simp only [Geo.w]; omega) he (bytesV_lt hpw) (bytesV_lt hqw)
+        VG.Proof.Rsa.keyBits_words2 hm rfl (by simp only [Geo.w]; omega_using [kb]) he (bytesV_lt hpw) (bytesV_lt hqw)
           (bytesV_lt hdw) (bytesV_lt hew) e33⟩
   · exact WP.mono (keyBody_post bi') fun u ⟨A, live, c, hu, hk⟩ => ⟨A, live, c, hu.of_pre rt mt, hk⟩
 
@@ -130,7 +130,7 @@ theorem ck_ok {σ : State} (pre : FnPre 14 12 insK σ) (l1 : (stackArg σ 7).toN
   refine WP.mono (fn_ok pre (by decide) (ck_hv σ) (ck_hA pre) fun s m hs hm he => keyBodyS_post m hs hm he l2)
     fun u ⟨pres, c, hc, hr⟩ => ⟨pres, ?_⟩
   rw [hr, key_result (g := geo 12 σ) (VG.Proof.Rsa.Arm.CrtValues.bytesAt_length _ _ _)
-    (by show 0 < fK σ; omega) (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hp)
+    (by show 0 < fK σ; omega_using [hp]) (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hp)
     (by rw [VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]; exact hq) hc]
   rw [show (0 + 1 : Nat) = 1 from rfl, show (2 + 1 : Nat) = 3 from rfl, show (4 + 1 : Nat) = 5 from rfl,
     show (6 + 1 : Nat) = 7 from rfl, show (8 + 1 : Nat) = 9 from rfl, show (10 + 1 : Nat) = 11 from rfl,

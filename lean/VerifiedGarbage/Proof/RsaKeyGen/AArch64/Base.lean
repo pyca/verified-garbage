@@ -28,12 +28,12 @@ def KMut (r : Nat × Nat) : Prop :=
   8 * 32 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sW ∨ (8 * sMinv ≤ r.1 ∧ r.1 + r.2 ≤ 8 * sArr 0) ∨
     (8 * sArr 8 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * sStride) ∨ 8 * (sStride + 1) ≤ r.1
 
-theorem KMut.ofSlot (w j n : Nat) : KMut (slot w j, n) := Or.inl (by unfold slot hdrBytes; omega)
+theorem KMut.ofSlot (w j n : Nat) : KMut (slot w j, n) := Or.inl (by unfold slot hdrBytes; omega_using [])
 
 /-- A header slot `i` that `Ws` does not depend on. -/
 theorem KMut.hdr {i : Nat} (h : i < sW ∨ i = sMinv ∨ (sArr 8 ≤ i ∧ i < sStride) ∨ sStride < i) :
     KMut (8 * i, 8) := by
-  simp only [KMut, sW, sMinv, sArr, sStride, sFn] at h ⊢; omega
+  simp only [KMut, sW, sMinv, sArr, sStride, sFn] at h ⊢; omega_using [h]
 
 theorem _root_.VG.Proof.Rsa.AArch64.Ws.congr' {s t : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {rs : List (Nat × Nat)}
     (hf : Frm B rs s.mem t.mem) (hm : ∀ r ∈ rs, KMut r) {regs : List Reg} (k : Keep regs s t)
@@ -41,14 +41,14 @@ theorem _root_.VG.Proof.Rsa.AArch64.Ws.congr' {s t : State} {B : Addr} {Z w : Na
   have hh : ∀ i, i ∈ [sW, sStride] ∨ (8 ≤ i ∧ i < 16) → word t.mem B (8 * i) = word s.mem B (8 * i) := by
     intro i hi
     have hi' : i = 6 ∨ (8 ≤ i ∧ i < 16) ∨ i = 28 := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, sW, sStride, sFn] at hi; omega
+      simp only [List.mem_cons, List.not_mem_nil, or_false, sW, sStride, sFn] at hi; omega_using [hi]
     exact hf.word_eq (fun r hr => by
       have := hm r hr
       simp only [KMut, sW, sMinv, sArr, sStride, sFn] at this
-      omega)
-      (by have := h.scr.nowrap; have := hdr_lt_slot w 16 (show 31 < 32 by decide); have := h.hZ; omega)
+      omega_using [hi', this])
+      (by have := h.scr.nowrap; have := hdr_lt_slot w 16 (show 31 < 32 by decide); have := h.hZ; omega_using [hi'])
   exact ⟨h.scr.congr k.wr, (k.gpr .x0 hr).trans h.x0, (hh sW (.inl (by simp))).trans h.hw,
-    (hh sStride (.inl (by simp))).trans h.hS, fun j hj => (hh (sArr j) (.inr (by unfold sArr; omega))).trans (h.harr j hj),
+    (hh sStride (.inl (by simp))).trans h.hS, fun j hj => (hh (sArr j) (.inr (by unfold sArr; omega_using [hj]))).trans (h.harr j hj),
     h.hZ, h.w1, h.w2⟩
 
 /-- The working space keeps `Ws` across changes in arrays only. -/
@@ -62,9 +62,9 @@ theorem ofNat64_beq_zero {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n == 0) =
   rcases Nat.eq_zero_or_pos n with rfl | hp
   · rfl
   · have : BitVec.ofNat 64 n ≠ 0 := fun e => by
-      have := congrArg BitVec.toNat e; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h] at this; simp at this; omega
+      have := congrArg BitVec.toNat e; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h] at this; simp at this; omega_using [hp, this]
     rw [show (BitVec.ofNat 64 n == 0) = false from beq_eq_false_iff_ne.mpr this]
-    exact (decide_eq_false (by omega)).symm
+    exact (decide_eq_false (by omega_using [hp])).symm
 
 /-! ## Instructions -/
 
@@ -80,12 +80,12 @@ theorem exec_addImm_w {d n : Reg} {imm : Nat} (h : imm < 4096) :
 
 theorem exec_movz_x' {d : Reg} {imm : BitVec 16} {hw : Nat} (h : hw < 4) :
     exec (.movz .x d imm hw) s = some (s.write .x d (imm.setWidth 64 <<< (16 * hw))) := by
-  simp only [exec, Size.bits, show 16 * hw < 64 by omega, ite_true]
+  simp only [exec, Size.bits, show 16 * hw < 64 by omega_using [h], ite_true]
 
 theorem exec_movk_x {d : Reg} {imm : BitVec 16} {hw : Nat} (h : hw < 4) :
     exec (.movk .x d imm hw) s = some (s.write .x d ((s.gpr d &&& ~~~((0xFFFF : BitVec 64) <<< (16 * hw))) |||
       (imm.setWidth 64 <<< (16 * hw)))) := by
-  simp only [exec, Size.bits, show 16 * hw < 64 by omega, ite_true, State.read, BitVec.setWidth_eq]
+  simp only [exec, Size.bits, show 16 * hw < 64 by omega_using [h], ite_true, State.read, BitVec.setWidth_eq]
 
 end
 

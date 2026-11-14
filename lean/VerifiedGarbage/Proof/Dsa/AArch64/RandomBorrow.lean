@@ -16,7 +16,7 @@ namespace VG.Proof.Dsa.AArch64
 theorem random_byte_borrow (a b : BitVec 64) (ha : a.toNat ≤ 255) (hb : b.toNat ≤ 256) :
     ((a - b) >>> 63).toNat = if a.toNat < b.toNat then 1 else 0 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
-  split <;> omega
+  split <;> omega_arith
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.Bignum.AArch64
 

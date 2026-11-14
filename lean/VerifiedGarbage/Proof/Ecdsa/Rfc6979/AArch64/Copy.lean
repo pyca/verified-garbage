@@ -233,34 +233,34 @@ theorem cpRaw_ok {u₀ : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hpn : n < 2
   have hin : InRegions v.wr (p + BitVec.ofNat 64 j) 1 := by
     obtain ⟨R, hR, hc⟩ := hw
     refine ⟨R, I.wr ▸ hR, hc.byte ?_⟩
-    rw [BitVec.add_comm p, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.add_comm p, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hpn, hj])]
     exact hj
   have hrd : InRegions (v.rd ++ v.wr) (q + BitVec.ofNat 64 j) 1 := by
     rw [I.rd, I.wr]; exact hsrc j hj
   have hq : v.mem (q + BitVec.ofNat 64 j) = u₀.mem (q + BitVec.ofNat 64 j) := by
     rw [I.mem, ifn]
     exact fun h => hd j hj (by
-      simp only [Region.Contains] at h ⊢; omega)
+      simp only [Region.Contains] at h ⊢; omega_using [hj, h])
   refine WP.mono (cpStep_ok I.x11 I.x12 hrd hin) fun v' ⟨hrd', hwr', hsp', hsy', hm', h11', h12', h13', hg'⟩ => ?_
   refine ⟨⟨hrd'.trans I.rd, hwr'.trans I.wr, hsp'.trans I.sp, hsy'.trans I.syms,
     fun r a b c d => (hg' r a b c d).trans (I.gpr r a b c d), by rw [h11', Offset.add_add],
-    by rw [h12', Offset.add_add], by rw [h13', I.x13, counter_step hj (by omega)], fun x => ?_⟩, ?_⟩
+    by rw [h12', Offset.add_add], by rw [h13', I.x13, counter_step hj (by omega_using [hpn])], fun x => ?_⟩, ?_⟩
   · rw [hm', write1_apply, I.mem x, hq]
     by_cases he : x = p + BitVec.ofNat 64 j
     · subst he
       rw [ifp rfl, ifp (show (⟨p, j + 1⟩ : Region).Contains (p + BitVec.ofNat 64 j) 1 from
-        Offset.contains_base _ (by omega) (by omega))]
+        Offset.contains_base _ (by omega_using []) (by omega_using [hpn, hj]))]
       congr 1
       rw [BitVec.add_comm p, BitVec.add_sub_cancel]
     · rw [ifn he]
       have hne : (x - p).toNat ≠ j := fun h => he (by
         rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel])
       have iff : (⟨p, j + 1⟩ : Region).Contains x 1 ↔ (⟨p, j⟩ : Region).Contains x 1 := by
-        simp only [Region.Contains]; omega
+        simp only [Region.Contains]; omega_using [hne]
       by_cases h1 : (⟨p, j⟩ : Region).Contains x 1
       · rw [ifp h1, ifp (iff.mpr h1)]
       · rw [ifn h1, ifn (fun h => h1 (iff.mp h))]
-  · rw [h13', I.x13, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+  · rw [h13', I.x13, counter_step hj (by omega_using [hpn])]; exact counter_ne hj (by omega_using [hpn])
 
 /-- `n` bytes from `q` (`x11`) to `p` (`x12`), `n` in `x13`, by `cpLoop`:
 `Ctx` kept, for a destination the code may write apart from the source. -/

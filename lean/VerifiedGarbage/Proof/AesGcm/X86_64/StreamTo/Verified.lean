@@ -66,7 +66,7 @@ theorem framed_mx {bytes m : Nat} {c : Prog isa} (h : c.allInstrs (fun i => !loa
 theorem framed_xdepth {bytes m d : Nat} {c : Prog isa} (h : c.x86_64Depth ≤ d) :
     (Impl.StackScratch.X86_64.withStackArgScratch bytes m c).x86_64Depth ≤ d + bytes := by
   simp only [Impl.StackScratch.X86_64.withStackArgScratch, Code.x86_64Depth, X86_64.Instr.frameBytes]
-  omega
+  omega_using [h]
 
 /-! ## The code -/
 
@@ -86,7 +86,7 @@ theorem encrypt_xdepth : (encrypt T.fn E.fn).x86_64Depth ≤ 2624 := by
   have e := E.xd
   simp only [encrypt, head, blocks, rest, copyLoop, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
     List.length_nil, Nat.max_le]
-  omega
+  omega_using [t, e]
 
 theorem encrypt_correct (s : State) (hs : (Proof.AesGcm.streamEncryptToX86_64M M).pre s) :
     ∃ t s', Exec isa (encrypt T.fn E.fn) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamToPost s s' := by

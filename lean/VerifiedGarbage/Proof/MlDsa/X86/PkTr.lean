@@ -83,7 +83,7 @@ theorem pre_of {p : Params} {s₀ : State} (h : (Spec.MlDsa.pkTrContract p X86.a
     simp only [below]; rw [Taint.sub_setWidth h1]
   rw [hs] at h15 h16 h17 h18
   have c3 : ∀ i, i < (YT p).n → i = 0 ∨ i = 1 ∨ i = 2 := fun i hi => by
-    simp only [YT, Lay.n, List.length_cons, List.length_nil] at hi; omega
+    simp only [YT, Lay.n, List.length_cons, List.length_nil] at hi; omega_using [hi]
   refine ⟨h1, by show 16 ≤ 56; decide, by simp only [YT, Lay.n, List.length_cons, List.length_nil]; omega, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, h18, ?_, by show 2 < 3; decide⟩
   · intro i hi hw
@@ -129,7 +129,7 @@ theorem pub_of {p : Params} {s₀ s₀' : State} (h : (Spec.MlDsa.pkTrContract p
   obtain ⟨e₁, e₂, e₃, e₄⟩ := h
   refine ⟨e₁, fun i hi => ?_, rfl⟩
   simp only [YT, Lay.n, List.length_cons, List.length_nil] at hi
-  obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
   exacts [e₂, e₃, e₄]
 
 theorem addr0 (s₀ : State) (i : Nat) (l : Nat) : Buf.addr s₀ ⟨i, 0, l⟩ = (arg s₀ i).setWidth 64 := by

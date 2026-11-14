@@ -22,12 +22,12 @@ theorem copyRetained_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte
   have fit := h.valid.stackHigh
   unfold copyRetained
   refine wp_loadStack (a := off (State.addr g.stack) (64 + 4 * j))
-    (by omega)
-    (by rw [h.sp]; exact addr_add (by simp only [frameBytes] at *; omega))
-    (h.inner.read (by simp only [frameBytes]; omega)) fun u a => ?_
-  refine wp_str (a := off (State.addr g.stack) d) (by omega)
-    (by rw [a.other .r12 (by decide), ptr]; exact addr_add (by simp only [frameBytes] at *; omega))
-    (by rw [a.wr]; exact h.inner.write (by simp only [frameBytes]; omega)) fun t b => WP.block_nil ?_
+    (by omega_using [hj])
+    (by rw [h.sp]; exact addr_add (by simp only [frameBytes] at *; omega_using [hj, fit]))
+    (h.inner.read (by simp only [frameBytes]; omega_using [hj])) fun u a => ?_
+  refine wp_str (a := off (State.addr g.stack) d) (by omega_using [hd])
+    (by rw [a.other .r12 (by decide), ptr]; exact addr_add (by simp only [frameBytes] at *; omega_using [hd, fit]))
+    (by rw [a.wr]; exact h.inner.write (by simp only [frameBytes]; omega_using [hd])) fun t b => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off (State.addr g.stack) d) (slotValue g j) := by
     rw [b.mem, a.gpr, a.mem, slots j hj]
   have rest : Rest [.r0] s t := (a.rest (by simp)).trans (b.rest _)
@@ -38,9 +38,9 @@ theorem copyRetained_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte
   · intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [frameBytes]; omega)⟩
+    exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [frameBytes]; omega_using [hd])⟩
   · intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact Offset.disjoint _ (Or.inr (by omega)) (by decide) (by omega)
+    exact Offset.disjoint _ (Or.inr (by omega_using [hd])) (by decide) (by omega_using [hd])
 end VG.Proof.Rsa.Arm

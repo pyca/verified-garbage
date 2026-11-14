@@ -32,7 +32,7 @@ theorem restoreV_ok {σ s : State} (hs : Saved σ s.mem) (hptr : s.gpr .x3=σ.gp
     (fun k t => RegKeep [] s t ∧ t.mem=s.mem ∧ ∀i<k,t.v (vreg (8+i))=σ.v (vreg (8+i)))
     (fun k t hk ht => ?_) 8 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,rfl,fun _ h => by omega⟩
-  refine wp_ldrq ⟨by omega,by omega⟩ (by rw [ht.1.gpr .x3 (by simp),hptr])
+  refine wp_ldrq ⟨by omega_using [],by omega_using [hk]⟩ (by rw [ht.1.gpr .x3 (by simp),hptr])
     (by rw [ht.1.rd,ht.1.wr]; exact hin k hk) fun u hu => WP.block_nil_iff.mpr ?_
   refine ⟨(ht.1.trans (RegKeep.vupd hu)).mono (by simp),hu.mem.trans ht.2.1,?_⟩
   intro i hi
@@ -40,9 +40,9 @@ theorem restoreV_ok {σ s : State} (hs : Saved σ s.mem) (hptr : s.gpr .x3=σ.gp
   · subst i
     rw [hu.v,ht.2.1,hs.vec k hk]
   · have hne : vreg (8+i)≠vreg (8+k) := by
-      rw [ne_eq,vreg_inj (8+i) (by omega) (8+k) (by omega)]; omega
+      rw [ne_eq,vreg_inj (8+i) (by omega_using [hk, hi]) (8+k) (by omega_using [hk])]; omega_using [he]
     rw [hu.get _ hne]
-    exact ht.2.2 i (by omega)
+    exact ht.2.2 i (by omega_using [hi, he])
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -73,7 +73,7 @@ theorem restoreG_ok {σ s : State} (hs : Saved σ s.mem) (hptr : s.gpr .x3=σ.gp
       ∀i<k,t.gpr saved[i]! =σ.gpr saved[i]!)
     (fun k t hk ht => ?_) 4 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,rfl,rfl,fun _ h => by omega⟩
-  refine wp_ldr ⟨by omega,by omega⟩ (by rw [ht.1.gpr .x3 (by decide),hptr])
+  refine wp_ldr ⟨by omega_using [],by omega_using [hk]⟩ (by rw [ht.1.gpr .x3 (by decide),hptr])
     (by rw [ht.1.rd,ht.1.wr]; exact hin k hk) fun u hu => WP.block_nil_iff.mpr ?_
   refine ⟨(ht.1.trans (RegKeep.upd hu)).mono ?_,hu.mem.trans ht.2.1,hu.vec.trans ht.2.2.1,?_⟩
   · intro r hr
@@ -86,9 +86,9 @@ theorem restoreG_ok {σ s : State} (hs : Saved σ s.mem) (hptr : s.gpr .x3=σ.gp
     · subst i
       rw [hu.gpr,ht.2.1,hs.regs k hk]
     · have hne : saved[i]!≠saved[k]! := by
-        rw [ne_eq,saved_inj i (by omega) k hk]; exact he
+        rw [ne_eq,saved_inj i (by omega_using [hk, hi]) k hk]; exact he
       rw [hu.other _ hne]
-      exact ht.2.2.2 i (by omega)
+      exact ht.2.2.2 i (by omega_using [hi, he])
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 

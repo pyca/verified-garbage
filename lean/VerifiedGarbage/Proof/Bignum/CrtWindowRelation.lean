@@ -18,7 +18,7 @@ theorem square_scale {m y y' a R k : Nat}
   have h₂ := congrArg (fun z => z * z % m) hy
   simp only [Nat.mod_mul_mod, Nat.mul_mod_mod] at h₁ h₂
   have e₁ : y' * R ^ (2 * k + 1) = (y' * R) * (R ^ k * R ^ k) := by
-    rw [show 2 * k + 1 = k + k + 1 by omega, Nat.pow_add, Nat.pow_add, Nat.pow_one]
+    rw [show 2 * k + 1 = k + k + 1 by omega_using [], Nat.pow_add, Nat.pow_add, Nat.pow_one]
     ac_rfl
   have e₂ : y * y * (R ^ k * R ^ k) = (y * R ^ k) * (y * R ^ k) := by ac_rfl
   rw [e₁,h₁,e₂,h₂,Nat.pow_two]

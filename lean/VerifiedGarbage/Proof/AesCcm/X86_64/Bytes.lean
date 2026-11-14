@@ -116,7 +116,7 @@ theorem le8_bswap64_ofNat {v : Nat} (hv : v < 2 ^ 64) : le8 (bswap64 (BitVec.ofN
     List.length_range, Spec.Ccm.be]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt hv, show 8 - 1 - k = 7 - k by omega, show 2 ^ (8 * (7 - k)) = 256 ^ (7 - k) by
+  rw [Nat.mod_eq_of_lt hv, show 8 - 1 - k = 7 - k by omega_using [], show 2 ^ (8 * (7 - k)) = 256 ^ (7 - k) by
     rw [Nat.pow_mul]]
 
 theorem be_zero (k : Nat) : Spec.Ccm.be k 0 = Spec.Ccm.zeros k :=
@@ -149,11 +149,11 @@ theorem ctr_or {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length
     (hw : le8 w = (Spec.Ccm.ctrBlock nonce 0).drop 8) {i : Nat} (hi : i < 256 ^ (15 - nonce.length)) :
     le8 (bswap64 (BitVec.ofNat 64 i) ||| w) = (Spec.Ccm.ctrBlock nonce i).drop 8 := by
   have hi64 : i < 2 ^ 64 := Nat.lt_of_lt_of_le hi (by
-    rw [show 2 ^ 64 = 256 ^ 8 from rfl]; exact Nat.pow_le_pow_right (by decide) (by omega))
+    rw [show 2 ^ 64 = 256 ^ 8 from rfl]; exact Nat.pow_le_pow_right (by decide) (by omega_using [h7]))
   rw [le8_or, le8_bswap64_ofNat hi64, hw, ctrBlock_drop8 h7, ctrBlock_drop8 h7, be_zero,
-    be_split (q := 15 - nonce.length) (by omega) hi,
+    be_split (q := 15 - nonce.length) (by omega_using [h7]) hi,
     List.zipWith_comm_of_comm (f := (· ||| ·)) (fun a b => BitVec.or_comm a b)]
-  have hd : (nonce.drop 7).length = 8 - (15 - nonce.length) := by rw [List.length_drop]; omega
+  have hd : (nonce.drop 7).length = 8 - (15 - nonce.length) := by rw [List.length_drop]; omega_using [h13]
   rw [List.zipWith_append (by rw [hd]; simp [Spec.Ccm.zeros]), zipWith_or_zeros_right _ hd,
     zipWith_or_zeros_left _ (Proof.AesCcm.length_be _ _)]
 

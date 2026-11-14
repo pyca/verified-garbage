@@ -106,12 +106,12 @@ theorem covers_wide : Covers (entry s₀).wr (wide s₀) := by
   · rw [hp.wr] at hr
     exact ⟨r, by simp only [wide, List.mem_cons] at hr ⊢; simp at hr; rcases hr with h | h | h <;> simp [h],
       0, by simp, by simp⟩
-  · refine ⟨⟨(E s₀).setWidth 64, 160⟩, by simp [wide], x.toNat - (E s₀).toNat, ?_, by simp only; omega⟩
+  · refine ⟨⟨(E s₀).setWidth 64, 160⟩, by simp [wide], x.toNat - (E s₀).toNat, ?_, by simp only; omega_using [h₁, h₂]⟩
     show x.setWidth 64 = (E s₀).setWidth 64 + BitVec.ofNat 64 (x.toNat - (E s₀).toNat)
-    rw [← HPrime.setWidth_add (by omega)]
+    rw [← HPrime.setWidth_add (by omega_using [])]
     congr 1
     apply BitVec.eq_of_toNat_eq
-    rw [add_nat (by omega)]; omega
+    rw [add_nat (by omega_using [])]; omega_using [h₁]
 
 end
 
@@ -141,7 +141,7 @@ theorem arg_byteAddr {i : Nat} (hi : i < 18) :
   have := hp.esp_lo
   have : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
   simp only [argAddr]
-  rw [← HPrime.setWidth_add (by rw [add_nat (by omega)]; omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  rw [← HPrime.setWidth_add (by rw [add_nat (by omega_arith)]; omega_arith), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 theorem wf_wide (sl : List (Nat × Nat × Nat)) (rs : List Reg) {s : State} (h : Inv s₀ s) :
     VG.X86.Taint.Wf (τB sl rs) (s.withRegions s.rd (wide s₀)) := by
@@ -154,7 +154,7 @@ theorem wf_wide (sl : List (Nat × Nat × Nat)) (rs : List Reg) {s : State} (h :
   have hs := hp.scr_fits
   have ho := hp.out_fits
   have aR : (argR s₀) = ⟨(E0 s₀ + BitVec.ofNat 32 4).setWidth 64, 72⟩ := rfl
-  have a4 : (E0 s₀ + BitVec.ofNat 32 4).toNat = (E0 s₀).toNat + 4 := add_nat (by omega)
+  have a4 : (E0 s₀ + BitVec.ofNat 32 4).toNat = (E0 s₀).toNat + 4 := add_nat (by omega_using [hhi])
   have locS : Region.Sub ⟨(E s₀).setWidth 64, 160⟩ (stkR s₀) := by
     simpa using frame_stk hp (d := 0) (n := 160) (by decide)
   refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hp' => ?_, fun p hp' => ?_, fun h0 => absurd h0 (Nat.lt_irrefl 0),
@@ -162,13 +162,13 @@ theorem wf_wide (sl : List (Nat × Nat × Nat)) (rs : List Reg) {s : State} (h :
     fun _ h' => by simp [τB, VG.X86.Taint.frameList] at h', fun h0 => absurd h0 (Nat.lt_irrefl 0)⟩
   · simp only [State.withRegions_wr, wide, τB]
     refine .cons (by simp) (.cons ?_ (.cons (by simp) (.cons (by simp) (.cons (by simp) .nil))))
-    show 1024 ≤ blocksN s₀ * 1024; omega
+    show 1024 ≤ blocksN s₀ * 1024; omega_using [b1]
   · simp only [State.withRegions_wr, wide]
     have d1 := (hp.stk_all (memR s₀) (by simp)).sub_left locS
     have d2 := (hp.stk_all (scrR s₀) (by simp)).sub_left locS
     have d3 := (hp.stk_all (outR s₀) (by simp)).sub_left locS
     have d4 : Region.Disjoint ⟨(E s₀).setWidth 64, 160⟩ (argR s₀) := by
-      rw [aR]; exact disj32 (.inl (by rw [a4]; omega)) (by omega) (by rw [a4]; omega)
+      rw [aR]; exact disj32 (.inl (by rw [a4]; omega_using [hlo, hE])) (by omega_using [hE]) (by rw [a4]; omega_using [hhi])
     have r1 := hp.ro_w (argR s₀) (by simp) (memR s₀) (by simp)
     have r2 := hp.ro_w (argR s₀) (by simp) (scrR s₀) (by simp)
     have r3 := hp.ro_w (argR s₀) (by simp) (outR s₀) (by simp)
@@ -186,12 +186,12 @@ theorem wf_wide (sl : List (Nat × Nat × Nat)) (rs : List Reg) {s : State} (h :
       subst hr; exact r3.symm
   · simp only [State.withRegions_wr, wide, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl) <;> simp only [toNat_w]
-    · omega
+    · omega_using [hE]
     · exact hm
     · exact hs
     · exact ho
     · show ((E0 s₀ + BitVec.ofNat 32 4).setWidth 64).toNat + 72 ≤ 2 ^ 32
-      rw [toNat_w, a4]; omega
+      rw [toNat_w, a4]; omega_using [hhi]
   · simp only [τB, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl | rfl
     · show addr (s.gpr .ebp) 164 = argAddr s₀ 0
@@ -234,7 +234,7 @@ theorem loc_byte (m : Mem) {k : Nat} (hk : k < 160) :
     m ((E s₀).setWidth 64 + BitVec.ofNat 64 k) =
       (m.readW (addr (E s₀) (4 * (k / 4))) 32).extractLsb' (8 * (k % 4)) 8 := by
   have := E_hi hp
-  rw [addr_eq (by omega), ← Mem.readW_byte m _ (Nat.mod_lt _ (by decide)), BitVec.add_assoc,
+  rw [addr_eq (by omega_using [hk, this]), ← Mem.readW_byte m _ (Nat.mod_lt _ (by decide)), BitVec.add_assoc,
     BitVec.ofNat_add_ofNat, Nat.div_add_mod]
 
 /-- A byte of the arguments, from its word. -/
@@ -242,8 +242,8 @@ theorem arg_byte {s : State} (h : Inv s₀ s) {k : Nat} (hk : k < 72) :
     s.mem (argAddr s₀ 0 + BitVec.ofNat 64 k) = (arg s₀ (k / 4)).extractLsb' (8 * (k % 4)) 8 := by
   rw [show argAddr s₀ 0 + BitVec.ofNat 64 k = argAddr s₀ 0 + BitVec.ofNat 64 (4 * (k / 4)) +
       BitVec.ofNat 64 (k % 4) by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod],
-    Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), arg_byteAddr hp (by omega), ← arg_addr hp (by omega),
-    h.arg hp (by omega)]
+    Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), arg_byteAddr hp (by omega_using [hk]), ← arg_addr hp (by omega_using [hk]),
+    h.arg hp (by omega_using [hk])]
 
 end
 
@@ -274,7 +274,7 @@ theorem agreeB {s₀₁ s₀₂ s₁ s₂ : State} (hp₁ : DPre s₀₁) (hp₂
     · obtain ⟨x0, hk⟩ := hsl x hx
       rw [x0] at hlen
       simp only [τB, List.getD_cons_zero] at hlen
-      have k160 : k < 160 := by omega
+      have k160 : k < 160 := by omega_using [hlen]
       simp only [VG.X86.Taint.byteAddr, VG.X86.Taint.region, State.withRegions_wr, State.withRegions_mem, x0,
         wide, List.getD_cons_zero]
       rw [loc_byte hp₁ s₁.mem k160, loc_byte hp₂ s₂.mem k160]
@@ -282,5 +282,5 @@ theorem agreeB {s₀₁ s₀₂ s₁ s₂ : State} (hp₁ : DPre s₀₁) (hp₂
     · simp only at hk₁ hk₂
       simp only [VG.X86.Taint.byteAddr, VG.X86.Taint.region, State.withRegions_wr, State.withRegions_mem,
         wide, List.getD_cons_succ, List.getD_cons_zero]
-      rw [arg_byte hp₁ h₁ (by omega), arg_byte hp₂ h₂ (by omega), pb.2 _ (by omega)]
+      rw [arg_byte hp₁ h₁ (by omega_using [hk₂]), arg_byte hp₂ h₂ (by omega_using [hk₂]), pb.2 _ (by omega_using [hk₂])]
 end VG.Proof.Argon2.X86.Derive

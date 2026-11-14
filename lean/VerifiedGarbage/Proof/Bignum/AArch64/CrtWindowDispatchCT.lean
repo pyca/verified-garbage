@@ -64,11 +64,11 @@ theorem guard_post {G : Nat → Nat → Nat → Prop} {p : CrtPub} {s : State} (
 theorem guarded_wide {G : Nat → Nat → Nat → Prop} {p : CrtPub} {s : State}
     (h : GuardPost G p s ∧ isa.eval (.zero .x .x9) s = some false) : Stage (RG G R0) p s := by
   obtain ⟨⟨⟨σ,xb,pb,qb,dpb,dqb,qib,h,hv,hg,rfl⟩,h9⟩,he⟩ := h
-  have hk64 : p.k < 2 ^ 64 := by have := h.k2; omega
+  have hk64 : p.k < 2 ^ 64 := by have := h.k2; omega_using [this]
   rw [eval_zero,h9] at he
   have hk128 : 128 ≤ p.k := guardValue_nonzero hk64 (Option.some.inj he)
   have hwide : CrtWindowFive.offQ32 p.w p.pl + slot (wsWords p.ql) 8 + CrtWindowFive.tabBytes32 (wsWords p.ql) ≤ p.Z :=
-    Nat.le_trans (CrtWindowFive.prime_scratch32_fits hk128 h.pl2 h.ql2) (by have := h.zk; omega)
+    Nat.le_trans (CrtWindowFive.prime_scratch32_fits hk128 h.pl2 h.ql2) (by have := h.zk; omega_using [this])
   exact ⟨s,xb,pb,qb,dpb,dqb,qib,⟨h,hwide⟩,hv,hg,rfl⟩
 
 theorem dispatch_ct (W : Window) (M : Mont) (S : Selector) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop}

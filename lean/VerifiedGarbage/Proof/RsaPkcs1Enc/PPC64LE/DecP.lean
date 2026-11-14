@@ -46,7 +46,7 @@ theorem dPreP_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptPrecomputedContract a
     ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks, kP, ka,
     wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩, h4, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,
     h10, hs, hpl, hyp⟩ := h
-  exact ⟨⟨sp1, by simp only [↓reduceIte]; omega, hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn,
+  exact ⟨⟨sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn,
     me, md, mi, mp, mq, mdp, mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp,
     kq, kdp, kdq, kqi, ks, ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h4, hi, e1, e2, d1, d2, p1,
     p2, q1, q2, h8, h12, h10, hs⟩, ⟨oP, mP, sP, kP, wP, hpl, fun _ => hyp⟩⟩

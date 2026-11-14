@@ -51,10 +51,10 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   refine WP.mono (s2b_wp hs₂.rdi (scr_ctx hs₂) hk₂) fun s₃ ⟨v₃, m₃, u₃, k₃⟩ => ?_
   have hs₃ := scr_of hs₂ (vm_gpr v₃) (vm_wr v₃)
   have e0 : ∀ l < 4, ∀ i < 5, lanes s₃ 0 l i = lanes s 0 l i := fun l hl i hi => by
-    rw [lanes_keep (s := s₂) (s' := s₃) (r0 := 0) (fun r hr _ h2 l hl => k₃ r hr (.inl (by omega)) l hl)
+    rw [lanes_keep (s := s₂) (s' := s₃) (r0 := 0) (fun r hr _ h2 l hl => k₃ r hr (.inl (by omega_using [h2])) l hl)
         (by decide) l hl i hi,
-      lanes_keep (s := s₁) (s' := s₂) (r0 := 0) (fun r _ _ h2 l hl => k₂ r (by omega) l hl) (by decide) l hl i hi,
-      lanes_keep (s := s) (s' := s₁) (r0 := 0) (fun r _ _ h2 l hl => k₁ r (by omega) l hl) (by decide) l hl i hi]
+      lanes_keep (s := s₁) (s' := s₂) (r0 := 0) (fun r _ _ h2 l hl => k₂ r (by omega_using [h2]) l hl) (by decide) l hl i hi,
+      lanes_keep (s := s) (s' := s₁) (r0 := 0) (fun r _ _ h2 l hl => k₁ r (by omega_using [h2]) l hl) (by decide) l hl i hi]
   have e10 := lanes_keep (s := s₂) (s' := s₃) (r0 := 10) (fun r hr h1 _ l hl => k₃ r hr (.inr h1) l hl) (by decide)
   have bU : ∀ l < 4, ∀ i < 5, lanes s₃ 10 l i < 2 ^ 52 := fun l hl i hi => by
     rw [e10 l hl i hi]; exact (u₂ l hl i hi).2
@@ -66,7 +66,7 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
     fun s₄ ⟨v₄, m₄, u₄, k₄⟩ => ?_
   have K : Kept base s s₄ :=
     (((Kept.vm v₁ m₁).trans (Kept.vm v₂ m₂)).trans (Kept.vm v₃ m₃)).trans (Kept.vm v₄ m₄)
-  have e10' := lanes_keep (s := s₃) (s' := s₄) (r0 := 10) (fun r _ h1 h2 l hl => k₄ r (by omega) (by omega) l hl)
+  have e10' := lanes_keep (s := s₃) (s' := s₄) (r0 := 10) (fun r _ h1 h2 l hl => k₄ r (by omega_using [h2]) (by omega_using [h1]) l hl)
     (by decide)
   -- the operands
   have fU : ∀ l < 4, fe5 (lanes s₃ 10 l) = fe5 (fun i => opU (lanes s 0) l i) := fun l hl => by
@@ -85,16 +85,16 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
     rw [fe5_mul (bU l hl) (bV l hl), fU l hl]
   have fV : ∀ l < 4, 2 ≤ l → fe5 (lanes s₃ 5 l) = fe5 (fun i => opU (lanes s 0) l i) := fun l hl h2 => by
     rw [← fU l hl]
-    exact fe5_congr fun i hi => by rw [u₃ l hl i hi, ite_eq_right (by omega), e10 l hl i hi]
+    exact fe5_congr fun i hi => by rw [u₃ l hl i hi, ite_eq_right (by omega_using [h2]), e10 l hl i hi]
   have fS : ∀ l < 4, 2 ≤ l → fe5 (lanes s₄ 0 l) =
       fe5 (fun i => opU (lanes s 0) l i) * fe5 (fun i => opU (lanes s 0) l i) := fun l hl h2 => by
     rw [fe5_congr (y := fun i => mulNat (lanes s₃ 10 l) (lanes s₃ 5 l) i) (fun i hi => by
-      rw [(u₄ l hl i hi).1, ite_eq_right (by omega), Nat.zero_add]), fP l hl, fV l hl h2]
+      rw [(u₄ l hl i hi).1, ite_eq_right (by omega_using [h2]), Nat.zero_add]), fP l hl, fV l hl h2]
   have fA : ∀ l < 2, fe5 (lanes s₄ 0 l) = fe5 (lanes s 0 l) +
       fe5 (fun i => opU (lanes s 0) l i) * fe5 (lanes s₃ 5 l) := fun l hl => by
-    rw [← fP l (by omega)]
+    rw [← fP l (by omega_using [hl])]
     exact fe5_add fun i hi => by
-      rw [(u₄ l (by omega) i hi).1, ite_eq_left ⟨rfl, hl⟩, e0 l (by omega) i hi]
+      rw [(u₄ l (by omega_using [hl]) i hi).1, ite_eq_left ⟨rfl, hl⟩, e0 l (by omega_using [hl]) i hi]
   have v0 : fe5 (lanes s₃ 5 0) = 0 := by
     rw [← fe5_zero]; exact fe5_congr fun i hi => by rw [u₃ 0 (by decide) i hi]; simp
   have v1 : fe5 (lanes s₃ 5 1) = Spec.X25519.a24 := by
@@ -118,11 +118,11 @@ theorem part3_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   have hr := hs.rdi
   simp only [stage3, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (carryR_wp hr (scr_ctx hs) hk.c fun l hl i hi => by have := (hy l hl i hi).1; omega)
+  refine WP.mono (carryR_wp hr (scr_ctx hs) hk.c fun l hl i hi => by have := (hy l hl i hi).1; omega_using [this])
     fun s₁ ⟨v₁, m₁, u₁, k₁⟩ => ?_
   have hs₁ := scr_of hs (vm_gpr v₁) (vm_wr v₁)
   have hk₁ : Consts s₁.mem base x1 := by rw [m₁]; exact hk
-  have e10 := lanes_keep (s := s) (s' := s₁) (r0 := 10) (fun r _ h1 h2 l hl => k₁ r (by omega) h1 l hl) (by decide)
+  have e10 := lanes_keep (s := s) (s' := s₁) (r0 := 10) (fun r _ h1 h2 l hl => k₁ r (by omega_using [h2]) h1 l hl) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (s3b_wp hs₁.rdi (scr_ctx hs₁) hk₁) fun s₂ ⟨v₂, m₂, u₂⟩ => ?_
   have hs₂ := scr_of hs₁ (vm_gpr v₂) (vm_wr v₂)
@@ -139,18 +139,18 @@ theorem part3_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   refine WP.mono (mulG0_wp hs₂.rdi (scr_ctx hs₂) bU bV) fun s₃ ⟨⟨v₃, m₃, u₃, _⟩, _⟩ => ?_
   have K : Kept base s s₃ := ((Kept.vm v₁ m₁).trans (Kept.vm v₂ m₂)).trans (Kept.vm v₃ m₃)
   have fC : ∀ l < 4, fe5 (lanes s₁ 0 l) = fe5 (lanes s 0 l) := fun l hl => by
-    rw [fe5_congr (fun i hi => (u₁ l hl i hi).1), fe5_carry _ (by have := (hy l hl 4 (by decide)).1; omega)]
+    rw [fe5_congr (fun i hi => (u₁ l hl i hi).1), fe5_carry _ (by have := (hy l hl 4 (by decide)).1; omega_using [this])]
   have fM : ∀ l < 4, fe5 (lanes s₃ 0 l) = fe5 (lanes s₂ 10 l) * fe5 (lanes s₂ 5 l) := fun l hl => by
     rw [fe5_congr (y := fun i => mulNat (lanes s₂ 10 l) (lanes s₂ 5 l) i) (fun i hi => by
       rw [(u₃ l hl i hi).1]; simp), fe5_mul (bU l hl) (bV l hl)]
   have fU : ∀ l < 2, fe5 (lanes s₂ 10 l) = fe5 (lanes s 10 l) := fun l hl =>
-    fe5_congr fun i hi => by rw [(u₂ l (by omega) i hi).1, ite_eq_left hl, e10 l (by omega) i hi]
+    fe5_congr fun i hi => by rw [(u₂ l (by omega_using [hl]) i hi).1, ite_eq_left hl, e10 l (by omega_using [hl]) i hi]
   have fU' : ∀ l < 4, 2 ≤ l → fe5 (lanes s₂ 10 l) = fe5 (lanes s 0 l) := fun l hl h2 => by
     rw [← fC l hl]
-    exact fe5_congr fun i hi => by rw [(u₂ l hl i hi).1, ite_eq_right (by omega)]
+    exact fe5_congr fun i hi => by rw [(u₂ l hl i hi).1, ite_eq_right (by omega_using [h2])]
   have fV : ∀ l < 2, fe5 (lanes s₂ 5 l) = fe5 (lanes s 0 l) := fun l hl => by
-    rw [← fC l (by omega)]
-    exact fe5_congr fun i hi => by rw [(u₂ l (by omega) i hi).2, ite_eq_left hl]
+    rw [← fC l (by omega_using [hl])]
+    exact fe5_congr fun i hi => by rw [(u₂ l (by omega_using [hl]) i hi).2, ite_eq_left hl]
   have v2 : fe5 (lanes s₂ 5 2) = 1 := by
     rw [← fe5_one]; exact fe5_congr fun i hi => by rw [(u₂ 2 (by decide) i hi).2]; simp
   have v3 : fe5 (lanes s₂ 5 3) = fe5 x1 :=

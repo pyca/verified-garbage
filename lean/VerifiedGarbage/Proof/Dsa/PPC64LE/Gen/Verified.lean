@@ -51,7 +51,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
     (cs := [])).mpr ?_
   sig_post [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs]
   have hp : 0 < pLenOf s := by
-    have := hpre.valid; simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this; omega
+    have := hpre.valid; simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this; omega_using [this]
   have ht : Spec.Dsa.parameterSearch (pLenOf s) (s.mem.readW (s.gpr .r10) 64).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat) = cRes (mkG s) (oOf (mkG s)) := res.symm
   have w8 : s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 (pLenOf s) := by
@@ -64,7 +64,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
   · have hst : (cRes (mkG s) (oOf (mkG s))).status < 4 := by
       unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
     have e3 : u.gpr .r3 = BitVec.ofNat 64 (cRes (mkG s) (oOf (mkG s))).status := r3.trans fo.r3
-    rw [e3, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [e3, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]
   · rw [m]; exact fo.out.trans (outBytes_eq _ _)
   · rw [m]; exact congrArg (· :: []) fo.used
   · rw [m]
@@ -139,7 +139,7 @@ theorem sat_table : Abi.constsHeld satMem (fun _ => 0x50000#64) kT := by
   intro j hj
   have hj' : j < 8 := hj
   have e : (0x50000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j).toNat = 0x50000 + (8 * i + j) := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [small, hj]
   have ne : ∀ n, n < 0x50000 → Nat.beq (0x50000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j).toNat n = false :=
     fun n hn => by
       rw [e]
@@ -151,7 +151,7 @@ theorem sat_table : Abi.constsHeld satMem (fun _ => 0x50000#64) kT := by
   simp only [Bool.cond_false]
   split
   · rfl
-  · next hn => exact (hn (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega)).elim
+  · next hn => exact (hn (by simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [small, hj])).elim
 
 theorem search_satisfiable : ∃ s, genK.pre s := by
   have e : constRegs [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)] searchSat = _ :=

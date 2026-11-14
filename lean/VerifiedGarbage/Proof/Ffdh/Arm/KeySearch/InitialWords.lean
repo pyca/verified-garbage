@@ -40,14 +40,14 @@ theorem KeyInput.pushed_word {p : KeyPublic sampling} {s : State} {j : Nat} (h :
     (searchPushed s).mem.readW (off (State.addr p.control) (8 * j)) 64 =
       s.mem.readW (off (State.addr p.control) (8 * j)) 64 := by
   have fit : stackUse sampling ≤ p.sp.toNat := h.bounds.stackFits
-  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2.1] at fit; change stackUse sampling ≤ s.sp.toNat at fit; have := stackUse_min sampling; omega
+  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2.1] at fit; change stackUse sampling ≤ s.sp.toNat at fit; have := stackUse_min sampling; omega_using [fit, this]
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) rootFit
   have sep : (rControl p).Disjoint (FrameStack.belowA s.sp 24) := by
     have base : p.sp = s.sp := by rw [← h.2.1]; rfl
     rw [← base]
     exact h.saved_control.symm
-  exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
+  exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
     (by simpa using sep) (by decide)
 
 theorem KeyInput.pushed_policy {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
@@ -58,12 +58,12 @@ theorem KeyInput.pushed_policy {p : KeyPublic sampling} {s : State} (h : KeyInpu
   have w0 := (h.pushed_word (j := 0) (by decide)).trans h.initial_words.1
   have w1 := (h.pushed_word (j := 1) (by decide)).trans h.initial_words.2.1
   have w2 := (h.pushed_word (j := 2) (by decide)).trans h.initial_words.2.2
-  have keys : p.keys < 2 ^ 32 := by have := h.bounds.keys; omega
-  have scalars : p.scalars < 2 ^ 32 := by have := h.bounds.scalars; omega
-  have len : p.len < 2 ^ 32 := by have := h.bounds.maxLength; omega
+  have keys : p.keys < 2 ^ 32 := by have := h.bounds.keys; omega_using [this]
+  have scalars : p.scalars < 2 ^ 32 := by have := h.bounds.scalars; omega_using [this]
+  have len : p.len < 2 ^ 32 := by have := h.bounds.maxLength; omega_using [this]
   refine ⟨packed_low _ _ _ _ keys w0, packed_low _ _ _ _ scalars w1, packed_low _ _ _ _ len w2, ?_⟩
   intro j hj
-  have casesJ : j = 0 ∨ j = 1 ∨ j = 2 := by omega
+  have casesJ : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
   rcases casesJ with rfl | rfl | rfl
   · exact packed_high _ _ _ _ keys w0
   · exact packed_high _ _ _ _ scalars w1

@@ -18,7 +18,7 @@ open VG.Proof.X25519.Arm (Rest)
  theorem triple (n : Nat) : (BitVec.ofNat 32 n + (BitVec.ofNat 32 n <<< 1)) = BitVec.ofNat 32 (3 * n) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
  theorem header_ok (s : State) {p : BitVec 32} {g : Group} {k : Nat}
     (h : RecordAt p g s) (ptr : s.gpr .r4 = p) (width : s.gpr .r6 = BitVec.ofNat 32 k)
@@ -38,7 +38,7 @@ open VG.Proof.X25519.Arm (Rest)
         Nat.mod_eq_of_lt kfit] at number
       change (2 ^ 32 - k + g.len) % 2 ^ 32 = 0 at number
       have := h.lenFit
-      omega
+      omega_using [kfit, number, this]
     · intro equal
       subst k
       simp
@@ -63,15 +63,15 @@ open VG.Proof.X25519.Arm (Rest)
     WP isa VG.Impl.Ffdh.Arm.VettedGroups.compare s fun t =>
       (t.gpr .r2 = 0 ↔ dom = g.domain.take dom.length) ∧ t.mem = s.mem ∧
       Rest [.r0, .r1, .r2, .r3, .r12, .lr] s t := by
-  have nfit : dom.length < 2 ^ 32 := by rw [← same] at source; have := record.fit; rcases source.length with h | h <;> omega
-  have limit : dom.length ≤ 3 * g.len := by rcases source.length with h | h <;> omega
+  have nfit : dom.length < 2 ^ 32 := by rw [← same] at source; have := record.fit; rcases source.length with h | h <;> omega_using [this, h]
+  have limit : dom.length ≤ 3 * g.len := by rcases source.length with h | h <;> omega_using [same, h]
   have pfit : (p + 8).toNat + dom.length ≤ 2 ^ 32 := by
     change (p.toNat + 8) % 2 ^ 32 + dom.length ≤ 2 ^ 32
     have := record.fit
-    omega
+    omega_using [limit, this]
   have read : InRegions (s.rd ++ s.wr) (State.addr (p + 8)) dom.length := by
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
-      CallLay.inRegions_sub record.read (off := 0) (by omega : 0 + dom.length ≤ 3 * g.len) (by have := record.fit; omega)
+      CallLay.inRegions_sub record.read (off := 0) (by omega_using [limit] : 0 + dom.length ≤ 3 * g.len) (by have := record.fit; omega_using [this])
   rw [VG.Impl.Ffdh.Arm.VettedGroups.compare, WP.seq_iff]
   refine WP.mono (compareArgs_ok s) ?_
   rintro u ⟨⟨r0, r1, lr, zero, memU⟩, restU⟩

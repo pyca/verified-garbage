@@ -36,7 +36,7 @@ theorem lo_toNat (x : BitVec 64) : (lo x).toNat = x.toNat % 2 ^ 32 := by
 theorem hi_toNat (x : BitVec 64) : (hi x).toNat = x.toNat / 2 ^ 32 := by
   simp only [hi, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  omega
+  omega_using []
 
 @[simp] theorem lo_zero : lo 0#64 = 0#32 := rfl
 
@@ -48,13 +48,13 @@ theorem eq_of_lo_hi {x y : BitVec 64} (h1 : lo x = lo y) (h2 : hi x = hi y) : x 
   rw [lo_toNat, lo_toNat] at e1
   rw [hi_toNat, hi_toNat] at e2
   apply BitVec.eq_of_toNat_eq
-  omega
+  omega_using [e1, e2]
 
 theorem hi_append_lo (x : BitVec 64) : hi x ++ lo x = x := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (lo x).isLt, Nat.shiftLeft_eq, lo_toNat,
     hi_toNat]
-  omega
+  omega_using []
 
 theorem lo_append (a b : BitVec 32) : lo (a ++ b) = b := by
   simp only [lo]; exact BitVec.extractLsb'_append_eq_right
@@ -66,14 +66,14 @@ theorem hi_append (a b : BitVec 32) : hi (a ++ b) = a := by
 theorem lo_add (x y : BitVec 64) : lo (x + y) = lo x + lo y := by
   apply BitVec.eq_of_toNat_eq
   simp only [lo_toNat, BitVec.toNat_add]
-  omega
+  omega_using []
 
 theorem hi_add (x y : BitVec 64) :
     hi (x + y) = hi x + hi y + (if 2 ^ 32 ≤ (lo x).toNat + (lo y).toNat then 1 else 0) := by
   apply BitVec.eq_of_toNat_eq
   simp only [hi_toNat, lo_toNat, BitVec.toNat_add]
   have := x.isLt; have := y.isLt
-  split <;> simp <;> omega
+  split <;> simp <;> omega_arith
 
 theorem lo_xor (x y : BitVec 64) : lo (x ^^^ y) = lo x ^^^ lo y := by
   simp [lo, BitVec.extractLsb'_xor]
@@ -105,9 +105,9 @@ theorem lo_rotr {n : Nat} (x : BitVec 64) (h0 : 0 < n) (h : n < 32) :
   simp only [lo, hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight, BitVec.getLsbD_xor,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, Nat.mod_eq_of_lt (show n < 64 by omega)]
   by_cases hc : i < 32 - n
-  · simp [hc, hi', show i < 64 - n by omega, show n + i < 32 by omega]
-  · simp [hi', show i < 64 - n by omega, show ¬ n + i < 32 by omega, show ¬ i < 32 - n by omega,
-      show i - (32 - n) < 32 by omega, show 32 + (i - (32 - n)) = n + i by omega]
+  · simp [hc, hi', show i < 64 - n by omega_using [h, hi'], show n + i < 32 by omega_using [hc]]
+  · simp [hi', show i < 64 - n by omega_using [h, hi'], show ¬ n + i < 32 by omega_using [hc], show ¬ i < 32 - n by omega_using [hc],
+      show i - (32 - n) < 32 by omega_using [hi'], show 32 + (i - (32 - n)) = n + i by omega_using [h, hc]]
 
 theorem hi_rotr {n : Nat} (x : BitVec 64) (h0 : 0 < n) (h : n < 32) :
     hi (x.rotateRight n) = hi x >>> n ^^^ lo x <<< (32 - n) := by
@@ -116,11 +116,11 @@ theorem hi_rotr {n : Nat} (x : BitVec 64) (h0 : 0 < n) (h : n < 32) :
   simp only [lo, hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight, BitVec.getLsbD_xor,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, Nat.mod_eq_of_lt (show n < 64 by omega)]
   by_cases hc : i < 32 - n
-  · simp [hc, hi', show 32 + i < 64 - n by omega, show n + i < 32 by omega,
-      show n + (32 + i) = 32 + (n + i) by omega]
-  · simp [show 32 + i < 64 by omega, hi', show ¬ 32 + i < 64 - n by omega,
-      show ¬ n + i < 32 by omega, show ¬ i < 32 - n by omega, show i - (32 - n) < 32 by omega,
-      show 32 + i - (64 - n) = i - (32 - n) by omega]
+  · simp [hc, hi', show 32 + i < 64 - n by omega_using [hc], show n + i < 32 by omega_using [hc],
+      show n + (32 + i) = 32 + (n + i) by omega_using []]
+  · simp [show 32 + i < 64 by omega_using [hi'], hi', show ¬ 32 + i < 64 - n by omega_using [hc],
+      show ¬ n + i < 32 by omega_using [hc], show ¬ i < 32 - n by omega_using [hc], show i - (32 - n) < 32 by omega_using [hi'],
+      show 32 + i - (64 - n) = i - (32 - n) by omega_using [h]]
 
 theorem lo_rotr' {n : Nat} (x : BitVec 64) (h0 : 32 < n) (h : n < 64) :
     lo (x.rotateRight n) = hi x >>> (n - 32) ^^^ lo x <<< (64 - n) := by
@@ -129,9 +129,9 @@ theorem lo_rotr' {n : Nat} (x : BitVec 64) (h0 : 32 < n) (h : n < 64) :
   simp only [lo, hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight, BitVec.getLsbD_xor,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, Nat.mod_eq_of_lt h]
   by_cases hc : i < 64 - n
-  · simp [hc, hi', show n - 32 + i < 32 by omega, show 32 + (n - 32 + i) = n + i by omega]
-  · simp [show i < 64 by omega, hi', hc, show ¬ n - 32 + i < 32 by omega,
-      show i - (64 - n) < 32 by omega]
+  · simp [hc, hi', show n - 32 + i < 32 by omega_using [h0, hc], show 32 + (n - 32 + i) = n + i by omega_using [h0]]
+  · simp [show i < 64 by omega_using [hi'], hi', hc, show ¬ n - 32 + i < 32 by omega_using [hc],
+      show i - (64 - n) < 32 by omega_using [hi']]
 
 theorem hi_rotr' {n : Nat} (x : BitVec 64) (h0 : 32 < n) (h : n < 64) :
     hi (x.rotateRight n) = lo x >>> (n - 32) ^^^ hi x <<< (64 - n) := by
@@ -140,11 +140,11 @@ theorem hi_rotr' {n : Nat} (x : BitVec 64) (h0 : 32 < n) (h : n < 64) :
   simp only [lo, hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight, BitVec.getLsbD_xor,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, Nat.mod_eq_of_lt h]
   by_cases hc : i < 64 - n
-  · simp [show 32 + i < 64 by omega, hc, hi', show n - 32 + i < 32 by omega,
-      show ¬ 32 + i < 64 - n by omega, show 32 + i - (64 - n) = n - 32 + i by omega]
-  · simp [show 32 + i < 64 by omega, hi', hc, show ¬ n - 32 + i < 32 by omega,
-      show ¬ 32 + i < 64 - n by omega, show i - (64 - n) < 32 by omega,
-      show 32 + i - (64 - n) = 32 + (i - (64 - n)) by omega]
+  · simp [show 32 + i < 64 by omega_using [hi'], hc, hi', show n - 32 + i < 32 by omega_using [h0, hc],
+      show ¬ 32 + i < 64 - n by omega_using [h0], show 32 + i - (64 - n) = n - 32 + i by omega_using [h0, h]]
+  · simp [show 32 + i < 64 by omega_using [hi'], hi', hc, show ¬ n - 32 + i < 32 by omega_using [hc],
+      show ¬ 32 + i < 64 - n by omega_using [h0], show i - (64 - n) < 32 by omega_using [hi'],
+      show 32 + i - (64 - n) = 32 + (i - (64 - n)) by omega_using [hc]]
 
 theorem lo_shr {n : Nat} (x : BitVec 64) (h0 : 0 < n) (h : n < 32) :
     lo (x >>> n) = lo x >>> n ^^^ hi x <<< (32 - n) := by
@@ -154,17 +154,17 @@ theorem lo_shr {n : Nat} (x : BitVec 64) (h0 : 0 < n) (h : n < 32) :
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
   by_cases hc : i < 32 - n
   · simp [hc, hi', show n + i < 32 by omega]
-  · simp [hi', hc, show ¬ n + i < 32 by omega, show i - (32 - n) < 32 by omega,
-      show 32 + (i - (32 - n)) = n + i by omega]
+  · simp [hi', hc, show ¬ n + i < 32 by omega_using [hc], show i - (32 - n) < 32 by omega_using [hi'],
+      show 32 + (i - (32 - n)) = n + i by omega_using [h, hc]]
 
 theorem hi_shr (n : Nat) (x : BitVec 64) : hi (x >>> n) = hi x >>> n := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi'
   simp only [hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight]
   by_cases hc : n + i < 32
-  · simp [hi', hc, show n + (32 + i) = 32 + (n + i) by omega]
+  · simp [hi', hc, show n + (32 + i) = 32 + (n + i) by omega_using []]
   · simp [hi', hc]
-    exact BitVec.getLsbD_of_ge x _ (by omega)
+    exact BitVec.getLsbD_of_ge x _ (by omega_using [hc])
 
 /-! ## The terms of `Σ₀`, `Σ₁`, `σ₀` and `σ₁` -/
 
@@ -206,8 +206,8 @@ theorem Term.lo_eval {o : Term} (hv : o.valid = true) (x : BitVec 64) :
     simp only [Term.valid, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at hv
     simp only [Term.loVals, Term.eval]
     split
-    · simp [lo_rotr x hv.1.1 (by omega)]
-    · simp [lo_rotr' x (by omega) hv.1.2]
+    · simp [lo_rotr x hv.1.1 (by omega_arith)]
+    · simp [lo_rotr' x (by omega_arith) hv.1.2]
   | shr n =>
     simp only [Term.valid, Bool.and_eq_true, decide_eq_true_eq] at hv
     simp [Term.loVals, Term.eval, lo_shr x hv.1 hv.2]
@@ -219,8 +219,8 @@ theorem Term.hi_eval {o : Term} (hv : o.valid = true) (x : BitVec 64) :
     simp only [Term.valid, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq] at hv
     simp only [Term.hiVals, Term.eval]
     split
-    · simp [hi_rotr x hv.1.1 (by omega)]
-    · simp [hi_rotr' x (by omega) hv.1.2]
+    · simp [hi_rotr x hv.1.1 (by omega_arith)]
+    · simp [hi_rotr' x (by omega_arith) hv.1.2]
   | shr n => simp [Term.hiVals, Term.eval, hi_shr]
 
 theorem foldl_xor_acc (a : BitVec 32) (l : List (BitVec 32)) :
@@ -264,32 +264,32 @@ theorem eq_of_bytes32 {x y : BitVec 32}
     (h : ∀ j < 4, x.extractLsb' (8 * j) 8 = y.extractLsb' (8 * j) 8) : x = y := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have e := congrArg (fun z : BitVec 8 => z.getLsbD (i % 8)) (h (i / 8) (by omega))
+  have e := congrArg (fun z : BitVec 8 => z.getLsbD (i % 8)) (h (i / 8) (by omega_using [hi]))
   simp only [BitVec.getLsbD_extractLsb'] at e
-  simpa [Nat.mod_lt i (show 8 > 0 by omega), show 8 * (i / 8) + i % 8 = i by omega] using e
+  simpa [Nat.mod_lt i (show 8 > 0 by omega_using []), show 8 * (i / 8) + i % 8 = i by omega_using []] using e
 
 theorem readW_lo (m : Mem) (a : Addr) : lo (m.readW a 64) = m.readW a 32 := by
   apply eq_of_bytes32
   intro j hj
   rw [← Mem.readW_byte m a hj]
-  have e := Mem.extractLsb'_read m a (n := 8) (j := j) (by omega)
+  have e := Mem.extractLsb'_read m a (n := 8) (j := j) (by omega_using [hj])
   simp only [lo, Mem.readW] at e ⊢
   rw [← e]
   ext i hi
   simp [BitVec.getElem_extractLsb']
-  omega
+  omega_using [hj, hi]
 
 theorem readW_hi (m : Mem) (a : Addr) : hi (m.readW a 64) = m.readW (a + 4) 32 := by
   apply eq_of_bytes32
   intro j hj
   rw [← Mem.readW_byte m (a + 4) hj, show a + 4 + BitVec.ofNat 64 j = a + BitVec.ofNat 64 (4 + j) by
     rw [BitVec.add_assoc, BitVec.ofNat_add]; rfl]
-  have e := Mem.extractLsb'_read m a (n := 8) (j := 4 + j) (by omega)
+  have e := Mem.extractLsb'_read m a (n := 8) (j := 4 + j) (by omega_using [hj])
   simp only [hi, Mem.readW] at e ⊢
   rw [← e]
   ext i hi
-  simp [BitVec.getElem_extractLsb', show 8 * j + i < 32 by omega,
-    show 32 + (8 * j + i) = 8 * (4 + j) + i by omega]
+  simp [BitVec.getElem_extractLsb', show 8 * j + i < 32 by omega_using [hj, hi],
+    show 32 + (8 * j + i) = 8 * (4 + j) + i by omega_using []]
 
 /-- A 64-bit word in memory is its high half at `a + 4` and its low half at `a`. -/
 theorem readW64 (m : Mem) (a : Addr) : m.readW a 64 = m.readW (a + 4) 32 ++ m.readW a 32 := by
@@ -307,20 +307,20 @@ theorem wordBytes_split (x : BitVec 64) :
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals apply BitVec.eq_of_getLsbD_eq; intro i hi
   all_goals simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
-  all_goals rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega
+  all_goals rw [decide_eq_true (by omega_using [hi]), Bool.true_and]; congr 1; omega_using []
 
 theorem lo_shr61 (x : BitVec 64) : lo (x >>> 61) = hi x >>> 29 := by
   apply BitVec.eq_of_toNat_eq
   rw [lo_toNat]
   simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hi_toNat]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem hi_shr61 (x : BitVec 64) : hi (x >>> 61) = 0 := by
   apply BitVec.eq_of_toNat_eq
   rw [hi_toNat]
   simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, show (0 : BitVec 32).toNat = 0 from rfl]
   have := x.isLt
-  omega
+  omega_using []
 
 end VG.Proof.Sha512.Word64

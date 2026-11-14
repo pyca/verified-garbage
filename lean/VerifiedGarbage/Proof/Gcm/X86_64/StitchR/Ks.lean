@@ -58,18 +58,18 @@ theorem ks_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) (j : Nat) (hj : 32 *
   have h11₂ : s₂.gpr .r11 = pp s₀ := by rw [f₂.gpr, f₁.gpr, h11]
   have hwr₂ : s₂.wr = s₀.wr := by rw [f₂.wr, f₁.wr, hwr]
   refine WP.mono (storesK_ok .r11 aregs j s₂ (fun k hk => by
-      rw [hwr₂, h11₂]; exact in_sub_int hp.p_in (by simp [aregs] at hk; omega))
-    (by rw [h11₂]; simp [aregs]; omega)) fun s₃ ⟨sv, fr, g₃, rd₃, wr₃, l₃⟩ => ?_
+      rw [hwr₂, h11₂]; exact in_sub_int hp.p_in (by simp [aregs] at hk; omega_using [hj, hk]))
+    (by rw [h11₂]; simp [aregs]; omega_using [hj, hwp])) fun s₃ ⟨sv, fr, g₃, rd₃, wr₃, l₃⟩ => ?_
   rw [h11₂, show 32 * aregs.length = 128 from rfl] at fr
   rw [h11₂] at sv
   have hm₂ : s₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
   rw [hm₂] at fr
   refine ⟨fun i hi => ?_, fun l hl => ?_, by rw [g₃, f₂.gpr, f₁.gpr], by rw [rd₃, f₂.rd, f₁.rd],
     by rw [wr₃, f₂.wr, f₁.wr], fun x h13' h14 hr l hl => ?_, fr⟩
-  · have hk : i / 2 < aregs.length := by simp [aregs]; omega
-    have := sv (i / 2) hk (i % 2) (by omega)
-    rw [show 32 * (j + i / 2) + 16 * (i % 2) = 32 * j + 16 * i by omega] at this
-    rw [blockAt_eq, this, ks (i / 2) hk (i % 2) (by omega), show c + 2 * (i / 2) + i % 2 = c + i by omega]
+  · have hk : i / 2 < aregs.length := by simp [aregs]; omega_using [hi]
+    have := sv (i / 2) hk (i % 2) (by omega_using [])
+    rw [show 32 * (j + i / 2) + 16 * (i % 2) = 32 * j + 16 * i by omega_using []] at this
+    rw [blockAt_eq, this, ks (i / 2) hk (i % 2) (by omega_using []), show c + 2 * (i / 2) + i % 2 = c + i by omega_using []]
   · rw [l₃, f₂.lane _ (by simp [aregs]) l hl, c₁ l hl]; simp [aregs]
   · rw [l₃, f₂.lane _ (by simp [h13', hr]) l hl, f₁.lane _ (by simp [h14, hr]) l hl]
 

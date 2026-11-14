@@ -28,7 +28,7 @@ theorem KeepsPtr.trans {base : BitVec 32} {m₁ m₂ m₃ : Mem} (h₁ : KeepsPt
     (h₂ : KeepsPtr base m₂ m₃) : KeepsPtr base m₁ m₃ := fun e he => (h₂ e he).trans (h₁ e he)
 
 theorem KeepsExp.ptr {base : BitVec 32} {m m' : Mem} (h : KeepsExp base m m') : KeepsPtr base m m' :=
-  fun e he => h e (by simp only [List.mem_cons, List.not_mem_nil, or_false] at he ⊢; omega)
+  fun e he => h e (by simp only [List.mem_cons, List.not_mem_nil, or_false] at he ⊢; omega_using [he])
 
 /-- The byte and the count of its bits, two header writes. -/
 theorem windowByteSave_ok (s : State) {base : BitVec 32} {len w : Nat} {v : BitVec 32}
@@ -37,16 +37,16 @@ theorem windowByteSave_ok (s : State) {base : BitVec 32} {len w : Nat} {v : BitV
       t.mem = (s.mem.writeW (off (State.addr base) 200) v).writeW (off (State.addr base) 192)
         (BitVec.ofNat 32 8) ∧ Rest [.r1] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have addr (d : Nat) (hd : d ≤ 252) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega)
+    rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, hd, this])
   unfold expByteSave
   refine wp_str (a := off (State.addr base) 200) (by decide) (addr 200 (by decide))
-    (h.workspace.write (by omega)) fun u a => ?_
+    (h.workspace.write (by omega_using [size])) fun u a => ?_
   refine wp_mov (op2_imm (by decide)) fun z b => ?_
   refine wp_str (a := off (State.addr base) 192) (by decide)
     (by rw [b.other .r0 (by decide), a.gpr]; exact addr 192 (by decide))
-    (by rw [b.wr, a.wr]; exact h.workspace.write (by omega)) fun t c => WP.block_nil ?_
+    (by rw [b.wr, a.wr]; exact h.workspace.write (by omega_using [size])) fun t c => WP.block_nil ?_
   refine ⟨?_, (a.rest _).trans ((b.rest (by simp)).trans (c.rest _))⟩
   rw [c.mem, b.mem, a.mem, b.gpr, value]
   rfl
@@ -63,9 +63,9 @@ theorem windowByteHead_ok (s : State) {base ep : BitVec 32} {len w M x A p q : N
       KeepsPtr base s.mem t.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
   have nowrap := h.power.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) fits
   rw [expByteHead, WP.block_append_iff]
-  refine WP.mono (expByteLoad_ok s h.power.ready.workspace (by omega) h.power.ready.ptr pointer read) ?_
+  refine WP.mono (expByteLoad_ok s h.power.ready.workspace (by omega_using [size]) h.power.ready.ptr pointer read) ?_
   rintro u ⟨byte, mem, rest⟩
   have readyU := h.power.ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.power.ready.ptr)
   refine WP.mono (windowByteSave_ok u readyU (v := BitVec.ofNat 32 (s.mem (State.addr ep)).toNat)
@@ -81,7 +81,7 @@ theorem windowByteHead_ok (s : State) {base ep : BitVec 32} {len w M x A p q : N
   rw [← memT] at byteT countT
   have keep (a : Nat) (ha : a + 4 ≤ 192 ∨ 204 ≤ a) (ha' : a + 4 ≤ 256) :
       t.mem.readW (off (State.addr base) a) 32 = s.mem.readW (off (State.addr base) a) 32 := by
-    rw [memT]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
+    rw [memT]; exact read_after_writes _ _ _ _ (by omega_using [ha]) (by omega_using [ha]) (by decide) (by decide) ha'
   refine ⟨⟨powerT, h.table.after_ctl ctl fits nowrap (by decide), fits, ?_, ?_, h.bound, h.short⟩,
     byteT, countT, ?_, frameT, restST⟩
   · rw [memT, read_after_writes _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
@@ -106,17 +106,17 @@ theorem windowRound_ok (s : State) {base : BitVec 32} {len w M x A p q V c : Nat
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits := h.fits
   have nowrap := h.power.ready.workspace.nowrap
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) fits
   rw [windowRound, WP.seq_iff]
   refine WP.mono (windowBit_ok s h hv byte) ?_
   rintro u ⟨⟨A', p', stateU, sum⟩, keepsU, frameU, restU⟩
   have byteU := (keepsU 200 (by simp)).trans byte
   have countU := (keepsU 192 (by simp)).trans count
   rw [WP.seq_iff]
-  refine WP.mono (expShift_ok u stateU.power.ready.workspace (by omega) stateU.power.ready.ptr byteU) ?_
+  refine WP.mono (expShift_ok u stateU.power.ready.workspace (by omega_using [size]) stateU.power.ready.ptr byteU) ?_
   rintro v ⟨memV, restV⟩
   have readyV := stateU.power.ready
-  refine WP.mono (expDecrement_ok v (readyV.workspace.congr restV.wr) (by omega)
+  refine WP.mono (expDecrement_ok v (readyV.workspace.congr restV.wr) (by omega_using [size])
     ((restV.gpr .r0 (by simp)).trans readyV.ptr) hc hc' (by
       have outside := writeW32_outside u.mem (State.addr base) (d := 200) (BitVec.ofNat 32 (V + V)) (by decide)
       rw [← memV] at outside
@@ -133,7 +133,7 @@ theorem windowRound_ok (s : State) {base : BitVec 32} {len w M x A p q V c : Nat
   rw [← memT] at byteT countT
   have keep (a : Nat) (ha : a + 4 ≤ 192 ∨ 204 ≤ a) (ha' : a + 4 ≤ 256) :
       t.mem.readW (off (State.addr base) a) 32 = u.mem.readW (off (State.addr base) a) 32 := by
-    rw [memT]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
+    rw [memT]; exact read_after_writes _ _ _ _ (by omega_using [ha]) (by omega_using [ha]) (by decide) (by decide) ha'
   refine ⟨⟨A', p', ⟨powerT, stateU.table.after_ctl ctl fits nowrap (by decide), fits, ?_, ?_,
     stateU.bound, stateU.short⟩, sum⟩, byteT, countT, flag, ?_, frameU.trans frameT, restU.trans restUT⟩
   · rw [memT, read_after_writes _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
@@ -163,16 +163,16 @@ theorem windowBits_ok (s : State) {base : BitVec 32} {len w M x E v n : Nat}
   refine WP.loop (M := isa) I ?_ 8 s ?_
   · intro k t inv
     obtain ⟨j, jk, hk, ⟨⟨A, p, state, sum⟩, byte, count⟩, keeps, frame, rest⟩ := inv
-    have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega : j ≤ 7)
+    have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega_using [jk, hk] : j ≤ 7)
     have valueFit : v * 2 ^ j < 2 ^ 32 := by
       have := Nat.mul_le_mul_left v hp
-      omega
-    refine WP.mono (windowRound_ok t state valueFit (by omega) (by omega) byte count) ?_
+      omega_using [hv, this]
+    refine WP.mono (windowRound_ok t state valueFit (by omega_using [jk, hk]) (by omega_using []) byte count) ?_
     rintro u ⟨⟨A', p', stateU, sumU⟩, byteU, countU, zero, keepsU, frameU, restU⟩
     rw [Nat.mod_add_mod] at stateU
     have expEq : 2 * (E * 2 ^ j + v / 2 ^ (8 - j)) + v * 2 ^ j / 128 % 2 =
         E * 2 ^ (j + 1) + v / 2 ^ (8 - (j + 1)) := by
-      rw [Nat.mul_add, Nat.add_assoc, bit_step (by omega), show 7 - j = 8 - (j + 1) by omega,
+      rw [Nat.mul_add, Nat.add_assoc, bit_step (by omega_using [jk, hk]), show 7 - j = 8 - (j + 1) by omega_using [],
         Nat.pow_succ, Nat.mul_comm 2 (E * 2 ^ j), Nat.mul_assoc]
     rw [sum, expEq] at sumU
     have next : WinBitState base len w M x E v n (j + 1) u := by
@@ -183,15 +183,15 @@ theorem windowBits_ok (s : State) {base : BitVec 32} {len w M x E v n : Nat}
     · left
       refine ⟨?_, ?_, keeps.trans keepsU, frame.trans frameU, rest.trans restU⟩
       · change some (!u.z) = some false
-        simp only [zero, show 8 - j = 1 by omega, decide_true, Bool.not_true]
-      · refine ⟨A', p', by rw [show n + 8 = n + j + 1 by omega]; exact stateU, ?_⟩
+        simp only [zero, show 8 - j = 1 by omega_using [last], decide_true, Bool.not_true]
+      · refine ⟨A', p', by rw [show n + 8 = n + j + 1 by omega_using [last]]; exact stateU, ?_⟩
         simpa only [last, Nat.sub_self, Nat.pow_zero, Nat.div_one, show 2 ^ 8 = 256 from rfl,
           Nat.mul_comm E 256] using sumU
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, next, keeps.trans keepsU, frame.trans frameU,
+      refine ⟨?_, k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, last], next, keeps.trans keepsU, frame.trans frameU,
         rest.trans restU⟩
       change some (!u.z) = some true
-      simp only [zero, show (8 - j = 1) = False by simp; omega, decide_false, Bool.not_false]
+      simp only [zero, show (8 - j = 1) = False by simp; omega_using [last], decide_false, Bool.not_false]
   · exact ⟨0, by decide, by decide, h, KeepsPtr.refl _ _, Frame.refl _ _, Rest.refl _ _⟩
 
 end VG.Proof.Bignum.Arm

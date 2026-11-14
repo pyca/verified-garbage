@@ -38,7 +38,7 @@ theorem privateGeometry_stack (s : State) :
 
 theorem privateGeometry_stackNat (s : State) (fit : stackBytes ≤ s.sp.toNat) :
     (privateGeometry s).stack.toNat = s.sp.toNat - (56 + frameBytes) := by
-  rw [privateGeometry_stack, FrameStack.sub_toNat' (by simp only [stackBytes, frameBytes] at *; omega)]
+  rw [privateGeometry_stack, FrameStack.sub_toNat' (by simp only [stackBytes, frameBytes] at *; omega_using [fit])]
 
 theorem privateGeometry_wholeStack (s : State) (fit : stackBytes ≤ s.sp.toNat) :
     (privateGeometry s).wholeStack = ⟨State.addr s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩ := by
@@ -50,7 +50,7 @@ theorem privateGeometry_wholeStack (s : State) (fit : stackBytes ≤ s.sp.toNat)
 theorem privateGeometry_arguments (s : State) (fit : stackBytes ≤ s.sp.toNat) :
     (privateGeometry s).argumentsRegion = ⟨State.addr s.sp, 64⟩ := by
   unfold PrivGeometry.argumentsRegion
-  rw [privateGeometry_stack, FrameStack.addr_sub' (by simp only [stackBytes, frameBytes] at *; omega)]
+  rw [privateGeometry_stack, FrameStack.addr_sub' (by simp only [stackBytes, frameBytes] at *; omega_using [fit])]
   change (⟨State.addr s.sp - BitVec.ofNat 64 (56 + frameBytes) + BitVec.ofNat 64 (56 + frameBytes), 64⟩ : Region) = _
   rw [BitVec.sub_add_cancel]
 end VG.Proof.Rsa.Arm

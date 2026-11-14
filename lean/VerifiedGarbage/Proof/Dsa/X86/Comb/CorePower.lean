@@ -52,13 +52,13 @@ theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat
       StackOuts base (s.gpr .esp) (callRanges prepare n output len) s.mem t.mem ∧ Keeps powerClob s t := by
   have L := table_layout supported
   have nw := hs.nowrap
-  have cb : contextBytes n≤size := by have := L.apart; have := L.bound; omega
-  have hl : len≤8*n := by omega
+  have cb : contextBytes n≤size := by have := L.apart; have := L.bound; omega_using [ho, hfar]
+  have hl : len≤8*n := by omega_using [hn]
   have bound (j : Nat) (hj : j<9) : slot n j+8*n≤contextBytes n := by
     have H := slot_bound (n := n) hj
     simp only [stride] at H
-    omega
-  have bounds (j : Nat) (hj : j<9) : slot n j+8*n≤size := by have := bound j hj; omega
+    omega_using [H]
+  have bounds (j : Nat) (hj : j<9) : slot n j+8*n≤size := by have := bound j hj; omega_using [cb, this]
   have contextSize : 8*Proof.Dsa.FixedBaseComb.contextWords (layout n ((expLen+3)/4))=272*n := by
     rcases supported with ⟨rfl,_⟩|⟨rfl,_⟩|⟨rfl,_⟩|⟨rfl,_⟩|⟨rfl,_⟩ <;> rfl
   unfold power
@@ -70,17 +70,17 @@ theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat
     intro hp
     rw [Aw]
     unfold canonical
-    rw [wordsAt_canonical,Opre.wordsVal (.inr (by simpa only [Nat.zero_add] using L.apart)) (by rw [contextSize]; have := L.bound; omega),←wordsAt_canonical]
+    rw [wordsAt_canonical,Opre.wordsVal (.inr (by simpa only [Nat.zero_add] using L.apart)) (by rw [contextSize]; have := L.bound; omega_using [hz, hused, hn, h4, hmax, hw4, he4, he, hwe, ho, hfar, sizeComb, sep, nw, cb, hl, contextSize, this]),←wordsAt_canonical]
     exact H hp
   have Wscr := hs.of_keeps Ksw (by decide)
   refine WP.seq (WP.mono (call_ok supported prepare Wscr (by rw [Ksw.1 _ (by decide)]; exact room)
     sizeComb hused Mw hm1 odd Cpre) fun v ⟨⟨Vv,Cv⟩,Ov,Kv⟩ => ?_)
   refine WP.mono (coreStore_ok (Wscr.of_keeps Kv (by decide)) hz hn.symm
-    (bounds 6 (by decide)) h4 hl hw4 ho (by have := bound 6 (by decide); omega)) fun t ⟨Vt,Kt,Ot⟩ => ?_
+    (bounds 6 (by decide)) h4 hl hw4 ho (by have := bound 6 (by decide); omega_using [hfar, this])) fun t ⟨Vt,Kt,Ot⟩ => ?_
   refine ⟨by rw [Vt,Vv,Aw,Ew],?_,?_,?_⟩
   · intro hp
     unfold canonical
-    rw [wordsAt_canonical,Ot.wordsVal (by rw [contextSize]; exact sep.symm) (by rw [contextSize]; have := L.bound; omega),←wordsAt_canonical]
+    rw [wordsAt_canonical,Ot.wordsVal (by rw [contextSize]; exact sep.symm) (by rw [contextSize]; have := L.bound; omega_using [hz, hused, hn, h4, hmax, hw4, he4, he, hwe, ho, hfar, sizeComb, sep, nw, cb, hl, contextSize, this]),←wordsAt_canonical]
     rw [Aw] at Cv
     exact Cv hp
   · rw [Ksw.1 _ (by decide)] at Ov
@@ -91,7 +91,7 @@ theorem corePower_ok {s : State} {base : Addr} {size len expLen n m output : Nat
       · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl|rfl
         · exact ⟨(0,contextBytes n),by simp [callRanges],Nat.le_refl _,by simp [contextBytes,slot,stride]⟩
-        · exact ⟨(0,contextBytes n),by simp [callRanges],by omega,by
+        · exact ⟨(0,contextBytes n),by simp [callRanges],by omega_using [],by
             have := slot_bound (n := n) (i := 1) (by decide); simp only [stride] at this; omega⟩
       · cases prepare with
         | false => simp at hr

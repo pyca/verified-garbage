@@ -35,8 +35,8 @@ theorem localLoad_ok (s : State) {base : BitVec 32} {len d : Nat} (r : Reg)
     (h : Locals base len s) (fit : d + 4 ≤ 72) :
     WP isa (.block [.ldrSp r d]) s fun t =>
       t.gpr r = s.mem.readW (off (State.addr s.sp) d) 32 ∧ t.mem = s.mem ∧ Rest [r] s t := by
-  refine wp_loadStack (a := off (State.addr s.sp) d) (by omega)
-    (addr_add (by have := h.space.nowrap; omega)) (h.read fit) fun t loaded => WP.block_nil ?_
+  refine wp_loadStack (a := off (State.addr s.sp) d) (by omega_using [fit])
+    (addr_add (by have := h.space.nowrap; omega_using [fit, this])) (h.read fit) fun t loaded => WP.block_nil ?_
   exact ⟨loaded.gpr, loaded.mem, loaded.rest (by simp)⟩
 
 theorem localStore_ok (s : State) {base : BitVec 32} {len d : Nat} (r : Reg)
@@ -45,8 +45,8 @@ theorem localStore_ok (s : State) {base : BitVec 32} {len d : Nat} (r : Reg)
       t.mem = s.mem.writeW (off (State.addr s.sp) d) (s.gpr r) ∧
       Frame [⟨off (State.addr s.sp) d, 4⟩] s.mem t.mem ∧ Rest [.r12] s t := by
   refine wp_stackAddr (by decide) fun u addr => ?_
-  refine wp_str (a := off (State.addr s.sp) d) (by omega)
-    (by rw [addr.gpr, BitVec.add_zero]; exact addr_add (by have := h.space.nowrap; omega))
+  refine wp_str (a := off (State.addr s.sp) d) (by omega_using [fit])
+    (by rw [addr.gpr, BitVec.add_zero]; exact addr_add (by have := h.space.nowrap; omega_using [fit, this]))
     (by rw [addr.wr]; exact h.space.write fit) fun t stored => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off (State.addr s.sp) d) (s.gpr r) := by
     rw [stored.mem, addr.mem, addr.other r notTemp]

@@ -105,18 +105,18 @@ theorem blocks_wf₀ {s : State} (hp : BPre s) : VG.X86.Taint.Wf blocksτ₀ s :
   have hD := hp.fD; have hB := hp.fB; have hs := hp.fSp
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [blocksτ₀]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [blocksτ₀]; omega_using [hs], ?_⟩, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
       List.Pairwise.nil, and_true]
     exact ⟨hp.dDB, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega
+    rintro r (rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.rD hp.aD
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.rB hp.aB
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [hs]) hp.rD hp.aD
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [hs]) hp.rB hp.aB
   · intro p hp'
     simp only [blocksτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -133,12 +133,12 @@ theorem blocks_agree₀ {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.S
   · simp only [blocksτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
-    simp only [bDatR, bScrR, bDatP, bN, bScrP, ha 2 (by omega), ha 3 (by omega), ha 4 (by omega)]
+    simp only [bDatR, bScrR, bDatP, bN, bScrP, ha 2 (by omega_using []), ha 3 (by omega_using []), ha 4 (by omega_using [])]
   · simp only [blocksτ₀] at hk
     rw [show VG.X86.Taint.depth blocksτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 24) hp₁.fSp h4 hk, VG.X86.Taint.argByte_eq (n := 24) hp₂.fSp h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 /-- Memory holding the arguments `0x1000, 10, 0x3000, 0, 0x4000` at `0x8004`. -/
 def blocksSatMem : Mem := fun a =>

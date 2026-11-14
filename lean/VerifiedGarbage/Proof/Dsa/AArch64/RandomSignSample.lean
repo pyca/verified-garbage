@@ -41,8 +41,8 @@ theorem random_sign_sample {extra : Nat} {s t : State} {h : RandomSignABI extra 
     have sep : ∀ r ∈ randomWriteRanges, d + 8 ≤ r.1 ∨ r.1 + r.2 ≤ d := by
       intro r hmem
       simp only [randomWriteRanges, List.mem_cons, List.not_mem_nil, or_false] at hmem
-      rcases hmem with rfl | rfl <;> dsimp only <;> omega
-    exact (hf.word_eq sep (by omega)).trans (hready.frame.word_eq sep (by omega)).symm
+      rcases hmem with rfl | rfl <;> dsimp only <;> omega_using [hd]
+    exact (hf.word_eq sep (by omega_using [hd])).trans (hready.frame.word_eq sep (by omega_using [hd])).symm
   have hkv : Keep randomVolatile t u := hk.mono (by decide)
   refine ⟨hstatus, hstatusWord, ⟨⟨m, draws', hready'⟩, hr.saved.congr (fun d _ hd => hw d (Or.inl hd)),
     (hw _ (Or.inr (Or.inl rfl))).trans hr.attempts, hk.rd.trans hr.rd, hk.wr.trans hr.wr,

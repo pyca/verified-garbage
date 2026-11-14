@@ -132,7 +132,7 @@ variable {s₀ : State} (hp : TPre s₀)
 include hp
 
 theorem TPre.cS {d n : Nat} (h : d + n ≤ 2176) : (scrR s₀).Contains (Sd s₀ d) n :=
-  Offset.contains_base _ h (by have := hp.scr_wrap; omega)
+  Offset.contains_base _ h (by have := hp.scr_wrap; omega_using [h])
 
 theorem TPre.wS {d n : Nat} (h : d + n ≤ 2176) : InRegions s₀.wr (Sd s₀ d) n :=
   in_rw (r := scrR s₀) (by rw [hp.wr]; simp) (hp.cS h)
@@ -141,8 +141,8 @@ theorem TPre.shl16 : BitVec.ofNat 64 (N s₀) <<< 4 = BitVec.ofNat 64 (16 * N s�
   apply BitVec.eq_of_toNat_eq
   have := hp.n_lt
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (a := N s₀) (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := N s₀) (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
+  omega_using []
 
 /-- The stash: `schedule`, `rounds` and `n` in the scratch buffer, and the
 copy's arguments. -/
@@ -172,16 +172,16 @@ theorem stash_frame : Frame [scrR s₀] s₀.mem (stashMem s₀) := by
 
 theorem stash_read0 : (stashMem s₀).readW (Sd s₀ 0) 64 = s₀.gpr .rdi := by
   have hw := hp.scr_wrap
-  rw [stashMem, Mem.readW_writeW_sep (Offset.sep (S s₀) (d := 0) (n := 8) (e := 16) (k := 8) (by omega)
-      (by omega) (by omega)) (by decide),
-    Mem.readW_writeW_sep (Offset.sep (S s₀) (d := 0) (n := 8) (e := 8) (k := 8) (by omega)
-      (by omega) (by omega)) (by decide),
+  rw [stashMem, Mem.readW_writeW_sep (Offset.sep (S s₀) (d := 0) (n := 8) (e := 16) (k := 8) (by omega_using [])
+      (by omega_using []) (by omega_using [])) (by decide),
+    Mem.readW_writeW_sep (Offset.sep (S s₀) (d := 0) (n := 8) (e := 8) (k := 8) (by omega_using [])
+      (by omega_using []) (by omega_using [])) (by decide),
     Mem.readW_writeW_self64]
 
 theorem stash_read8 : (stashMem s₀).readW (Sd s₀ 8) 64 = s₀.gpr .rsi := by
   have hw := hp.scr_wrap
-  rw [stashMem, Mem.readW_writeW_sep (Offset.sep (S s₀) (d := 8) (n := 8) (e := 16) (k := 8) (by omega)
-      (by omega) (by omega)) (by decide), Mem.readW_writeW_self64]
+  rw [stashMem, Mem.readW_writeW_sep (Offset.sep (S s₀) (d := 8) (n := 8) (e := 16) (k := 8) (by omega_using [])
+      (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self64]
 
 omit hp in
 theorem stash_read16 : (stashMem s₀).readW (Sd s₀ 16) 64 = s₀.gpr .r8 := Mem.readW_writeW_self64 _ _ _
@@ -213,7 +213,7 @@ theorem P1.copyPre {s : State} (h : P1 s₀ s) :
   rsi := h.rsi
   rdi := h.rdi
   rcx := h.rcx
-  lt := by have := hp.n_lt; omega
+  lt := by have := hp.n_lt; omega_using [this]
   rd := by
     rw [h.rd, h.wr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -228,7 +228,7 @@ theorem P1.copyPre {s : State} (h : P1 s₀ s) :
 
 theorem src_stash : bytesAt (stashMem s₀) (Sr s₀) (16 * N s₀) = bytesAt s₀.mem (Sr s₀) (16 * N s₀) :=
   Proof.Cmac.bytesAt_frame (stash_frame hp) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hp.src_scr) (by have := hp.n_lt; omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact hp.src_scr) (by have := hp.n_lt; omega_using [this])
 
 theorem copy_wp {s : State} (h : P1 s₀ s) :
     WP isa (Impl.ChaCha20Poly1305.X86_64.SealGather.copyBytes .x16) s (P2 s₀) :=
@@ -259,7 +259,7 @@ theorem P2.copied {s : State} (h : P2 s₀ s) : CopiedMem s₀ s.mem := by
     exact ((stash_frame hp).mono (by simp)).trans ((Proof.AesGcm.X86_64.writeBytes_frame' _ hl).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨dstR s₀, by simp, fun _ h => h⟩)
   · rw [← Proof.AesXts.Unit.blocks_bytesAt, ← Proof.AesXts.Unit.blocks_bytesAt, h.mem,
-      Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [hl]) (by omega), hl, List.drop_eq_nil_of_le (by
+      Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by rw [hl]) (by omega_using [hn]), hl, List.drop_eq_nil_of_le (by
         rw [Proof.AesXts.Unit.length_bytesAt]), List.append_nil]
 
 theorem P2.read {s : State} (h : P2 s₀ s) {d : Nat} (hd : d + 8 ≤ 2176) :
@@ -320,7 +320,7 @@ theorem unstash_wp {s : State} (h : P2 s₀ s) : WP isa (.block unstash) s (Read
       (h₆ : r ≠ .r10) : s.gpr r = s₀.gpr r := h.keep r h₁ h₂ h₃ h₄ h₅ h₆
   have krsp : s.gpr .rsp = s₀.gpr .rsp := k _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have v0' : s.mem.readW (S s₀) 64 = W s₀ := by simpa using v0
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, hp.rounds, by have := hp.n_lt; omega, hp.sch_iv, hp.sch_dst, hp.sch_scr,
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, hp.rounds, by have := hp.n_lt; omega_using [this], hp.sch_iv, hp.sch_dst, hp.sch_scr,
     hp.iv_dst, hp.iv_scr, hp.dst_scr, ?_, ?_, ?_, ?_, hp.iv_wrap, hp.dst_wrap, hp.scr_wrap, ?_, ?_⟩, ?_, ?_⟩
   · simp [gpr_setReg, v0']
   · simp [gpr_setReg, v8]
@@ -349,13 +349,13 @@ theorem call_wp (enc : Bool) {f : Impl.Aes.X86_64.Blocks}
     WP isa (.call f.name f.code) s fun s' => gprPreserved s₀ s' ∧ (xtsToX86_64 enc).post s₀ s' := by
   refine WP.mono (Unit.xts_call enc ok nosp depth h.pre) fun s' x => ?_
   have hsp : s.gpr .rsp = s₀.gpr .rsp := h.cs .rsp (by simp [calleeSaved])
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have eW : bytesAt s.mem (W s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)) :=
     Proof.Cmac.bytesAt_frame h.mem.1 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.sch_scr.sub_left (Region.sub_prefix hRb)
-      · exact hp.sch_dst.sub_left (Region.sub_prefix hRb)) (by omega)
+      · exact hp.sch_dst.sub_left (Region.sub_prefix hRb)) (by omega_using [hRb])
   have eT : bytesAt s.mem (T s₀) 16 = bytesAt s₀.mem (T s₀) 16 :=
     Proof.Cmac.bytesAt_frame h.mem.1 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

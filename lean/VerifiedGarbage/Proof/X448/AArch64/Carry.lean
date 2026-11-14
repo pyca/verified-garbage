@@ -52,37 +52,37 @@ theorem pass_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
   have step : ∀ k t, k < 16 → inv k t → WP isa (.block (carryStep o a k)) t (inv (k + 1)) := by
     intro k t hk ⟨hlo, hhi, hc, hm, ht⟩
     have hts := hs.of_keeps ht (by decide)
-    have he := hhi k (by omega) hk
+    have he := hhi k (by omega_using []) hk
     have hsum : (word t.mem base (a + 8 * k)).toNat + (t.gpr .x6).toNat < 2 ^ 64 := by
       change limbs t.mem base a k + (t.gpr .x6).toNat < _
       rw [he, hc]
       have := hb k hk
-      have := carry_bound (n := k) (fun i hi => hb i (by omega))
-      omega
-    refine WP.mono (carryStep_ok hts (by omega) (by omega) ho8 ha8 hsum) fun u ⟨hu, hmem, huKeep⟩ => ?_
+      have := carry_bound (n := k) (fun i hi => hb i (by omega_using [hk, hi]))
+      omega_arith
+    refine WP.mono (carryStep_ok hts (by omega_using [ho, hk]) (by omega_using [ha, hk]) ho8 ha8 hsum) fun u ⟨hu, hmem, huKeep⟩ => ?_
     have he' : (word t.mem base (a + 8 * k)).toNat + (t.gpr .x6).toNat = f k + carry f k := by
       change limbs t.mem base a k + (t.gpr .x6).toNat = _
       rw [he, hc]
     rw [he'] at hu hmem
     have out : Outside base (o + 8 * k) 8 t.mem u.mem := by
       rw [hmem]
-      exact writeW_outside _ _ _ (by omega)
-    refine ⟨?_, ?_, hu, hm.trans (out.mono (by omega) (by omega)), ht.trans huKeep⟩
+      exact writeW_outside _ _ _ (by omega_using [ho, hk])
+    refine ⟨?_, ?_, hu, hm.trans (out.mono (by omega_using []) (by omega_using [hk])), ht.trans huKeep⟩
     · intro i hi
       change (word u.mem base (o + 8 * i)).toNat = _
-      rw [hmem, word_write t.mem base (by omega) (by omega)]
+      rw [hmem, word_write t.mem base (by omega_using [ho, hk]) (by omega_using [ho, hk, hi])]
       by_cases hik : i = k
       · rw [ite_eq_left hik, hik, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := (f k + carry f k) % radix)
           (Nat.lt_trans (digit_lt f k) (by decide))]
         rfl
       · rw [ite_eq_right hik]
-        exact hlo i (by omega)
+        exact hlo i (by omega_using [hi, hik])
     · intro i hi hi'
       have sep : a + 8 * i + 8 ≤ o + 8 * k ∨ o + 8 * k + 8 ≤ a + 8 * i := by
-        rcases hsep with h | h | h <;> omega
+        rcases hsep with h | h | h <;> omega_arith
       change (word u.mem base (a + 8 * i)).toNat = _
-      rw [out.word sep (by omega)]
-      exact hhi i (by omega) hi'
+      rw [out.word sep (by omega_using [ha, hi'])]
+      exact hhi i (by omega_using [hi]) hi'
   change WP isa (.block ([.movz .x .x6 0 0] ++ (List.range 16).flatMap (carryStep o a))) s _
   rw [WP.block_append_iff]
   refine WP.mono (zeroCarry_ok s) fun t ⟨hc, hm, ht⟩ => ?_
@@ -101,7 +101,7 @@ theorem foldStep_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
         Keeps [.x4] s s' := by
   have l := hs.read hd
   have w := hs.write hd
-  have enc : d % 8 = 0 ∧ d < 32768 := ⟨hd8, by omega⟩
+  have enc : d % 8 = 0 ∧ d < 32768 := ⟨hd8, by omega_using [hd]⟩
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, Size.bytes,
     Size.bits, addr, enc, State.read, State.load, State.store, hs.x3, l, w,
@@ -119,16 +119,16 @@ theorem foldLimb_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : 
       (∀ i < 16, limbs t.mem base TMP i =
         if i = k then limbs s.mem base TMP i + (s.gpr .x6).toNat else limbs s.mem base TMP i) ∧
       Outside base TMP 128 s.mem t.mem ∧ Keeps [.x4] s t := by
-  have hd : TMP + 8 * k + 8 ≤ 8192 := by simp only [TMP]; omega
-  refine WP.mono (foldStep_ok hs hd (by simp only [TMP]; omega)) fun t ⟨hm, ht⟩ => ?_
+  have hd : TMP + 8 * k + 8 ≤ 8192 := by simp only [TMP]; omega_using [hk]
+  refine WP.mono (foldStep_ok hs hd (by simp only [TMP]; omega_using [])) fun t ⟨hm, ht⟩ => ?_
   refine ⟨?_, ?_, ht⟩
   · intro i hi
     change (word t.mem base (TMP + 8 * i)).toNat = _
-    rw [hm, word_write s.mem base (by omega) (by simp only [TMP]; omega)]
+    rw [hm, word_write s.mem base (by omega_using [hd]) (by simp only [TMP]; omega_using [hi])]
     by_cases h : i = k
     · rw [ite_eq_left h, ite_eq_left h, h, BitVec.toNat_add, Nat.mod_eq_of_lt hb]
     · rw [ite_eq_right h, ite_eq_right h]
   · rw [hm]
-    exact (writeW_outside _ _ _ hd).mono (by omega) (by omega)
+    exact (writeW_outside _ _ _ hd).mono (by omega_using []) (by omega_using [hk])
 
 end VG.Proof.X448.AArch64

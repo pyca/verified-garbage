@@ -40,10 +40,10 @@ theorem out_list {m : Mem} {o : Addr} {k : Nat} {T : List Byte} {idx : Nat} (hT 
   refine range_ext (by simp [Spec.RsaOaep.zeros]; omega) fun i hi' => ?_
   rw [h i hi', Proof.Mgf1.getD_append, List.length_drop]
   by_cases hl : i < T.length - (idx + 1)
-  · rw [ifp hl, drop_getD']; congr 1; omega
+  · rw [ifp hl, drop_getD']; congr 1; omega_using []
   · rw [ifn hl]
     simp [Spec.RsaOaep.zeros, List.getD_eq_getElem?_getD, List.getElem?_replicate]
-    rw [List.getElem?_eq_none (by omega), ifp (by omega)]; rfl
+    rw [List.getElem?_eq_none (by omega_using [hl]), ifp (by omega_using [hT, hi'])]; rfl
 
 theorem out_zero {m : Mem} {o : Addr} {k : Nat} (h : ∀ i < k, m (o + BitVec.ofNat 64 i) = 0) :
     Spec.Rsa.bytesAt m o k = Spec.RsaOaep.zeros k := by
@@ -61,31 +61,31 @@ theorem chain_eq {G : Spec.Mgf1.Hash} {V V1 V3 V5 : Nat → Byte} {D k : Nat} (h
     (h5 : ∀ x < k, V5 x = mixV V3 (mgf1 G (srcB V3 1 D) (k - (D + 1))) (1 + D) (k - (D + 1)) x) :
     ∀ x < k, V5 x = mixV (mixV V (mgf1 G (srcB V (1 + D) (k - D - 1)) D) 1 D)
       (mgf1 G (srcB (mixV V (mgf1 G (srcB V (1 + D) (k - D - 1)) D) 1 D) 1 D) (k - D - 1)) (1 + D) (k - D - 1) x := by
-  have e0 : k - (D + 1) = k - D - 1 := by omega
+  have e0 : k - (D + 1) = k - D - 1 := by omega_using []
   rw [e0] at h3 h5
   have s1 : srcB V1 (1 + D) (k - D - 1) = srcB V (1 + D) (k - D - 1) :=
-    List.map_congr_left fun i hi => h1 _ (by have := List.mem_range.mp hi; omega)
+    List.map_congr_left fun i hi => h1 _ (by have := List.mem_range.mp hi; omega_using [this])
   have v3 : ∀ x < k, V3 x = mixV V (mgf1 G (srcB V (1 + D) (k - D - 1)) D) 1 D x := fun x hx => by
     rw [h3 x hx, s1]; exact mixV_congr _ _ _ (h1 x hx)
   have s3 : srcB V3 1 D = srcB (mixV V (mgf1 G (srcB V (1 + D) (k - D - 1)) D) 1 D) 1 D :=
-    List.map_congr_left fun i hi => v3 _ (by have := List.mem_range.mp hi; omega)
+    List.map_congr_left fun i hi => v3 _ (by have := List.mem_range.mp hi; omega_using [hk, this])
   intro x hx
   rw [h5 x hx, s3]; exact mixV_congr _ _ _ (v3 x hx)
 
 theorem srcB_drop (V : Nat → Byte) (a n d : Nat) :
     (srcB V a n).drop d = srcB V (a + d) (n - d) := by
   refine (srcB_eq (by simp [srcB]) fun i hi => ?_).symm
-  rw [drop_getD', srcB, map_range_getD' _ (by omega)]; congr 1; omega
+  rw [drop_getD', srcB, map_range_getD' _ (by omega_using [hi])]; congr 1; omega_using []
 
 theorem srcB_take (V : Nat → Byte) (a n d : Nat) (hd : d ≤ n) : (srcB V a n).take d = srcB V a d := by
-  refine (srcB_eq (by simp [srcB]; omega) fun i hi => ?_).symm
-  rw [take_getD' _ hi, srcB, map_range_getD' _ (by omega)]
+  refine (srcB_eq (by simp [srcB]; omega_using [hd]) fun i hi => ?_).symm
+  rw [take_getD' _ hi, srcB, map_range_getD' _ (by omega_using [hd, hi])]
 
 theorem scanS_congr {f g : Nat → Byte} (c₀ : BitVec 64) : ∀ n, (∀ i < n, f i = g i) → scanS f c₀ n = scanS g c₀ n
   | 0, _ => rfl
   | n + 1, h => by
     simp only [scanS]
-    rw [scanS_congr c₀ n fun i hi => h i (by omega), h n (by omega)]
+    rw [scanS_congr c₀ n fun i hi => h i (by omega_using [hi]), h n (by omega_using [])]
 
 open VG.Spec.Mgf1 (mgf1 xorBytes) in
 /-- `decode`, with `DB` read from the working space after the unmasking. -/
@@ -102,11 +102,11 @@ theorem decode_eq {H G : Spec.Mgf1.Hash} (hGv : Proof.Mgf1.Valid G) (label : Lis
   have h5' : srcB (mixV (mixV V (mgf1 G (srcB V (1 + D) (k - D - 1)) D) 1 D)
       (mgf1 G (srcB (mixV V (mgf1 G (srcB V (1 + D) (k - D - 1)) D) 1 D) 1 D) (k - D - 1)) (1 + D) (k - D - 1))
       (1 + D) (k - D - 1) = srcB V5 (1 + D) (k - D - 1) :=
-    List.map_congr_left fun i hi => (h5 _ (by have := List.mem_range.mp hi; omega)).symm
+    List.map_congr_left fun i hi => (h5 _ (by have := List.mem_range.mp hi; omega_using [this])).symm
   rw [h5'] at hdb
   simp only [Spec.RsaOaep.decode, List.length_map, List.length_range, hHl]
-  rw [ifn (by omega), ← hdb, srcB_drop, srcB_take _ _ _ _ (by omega),
-    show 1 + D + D = 1 + 2 * D by omega, show k - D - 1 - D = k - (2 * D + 1) by omega]
+  rw [ifn (by omega_using [hk]), ← hdb, srcB_drop, srcB_take _ _ _ _ (by omega_using [hk]),
+    show 1 + D + D = 1 + 2 * D by omega_using [], show k - D - 1 - D = k - (2 * D + 1) by omega_using []]
   rfl
 
 /-! ## The outcome -/

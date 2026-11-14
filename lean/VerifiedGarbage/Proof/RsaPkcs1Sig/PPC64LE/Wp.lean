@@ -267,11 +267,11 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 64) (
     rw [hc', hcu]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hi]
   have ev : isa.eval (.nonzero .d cnt) u' = some (decide (N - (i + 1) ≠ 0)) := by
-    rw [eval_nonzero, e, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [eval_nonzero, e, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hN])]
   by_cases hd : i + 1 = N
-  · left; exact ⟨ev.trans (by simp; omega), hd ▸ hI'⟩
-  · right; exact ⟨ev.trans (by simp; omega), N - (i + 1), by omega, i + 1, rfl, by omega, hI', e⟩
+  · left; exact ⟨ev.trans (by simp; omega_using [hd]), hd ▸ hI'⟩
+  · right; exact ⟨ev.trans (by simp; omega_using [hi, hd]), N - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hd], hI', e⟩
 
 end VG.Proof.RsaPkcs1Sig.PPC64LE

@@ -59,7 +59,7 @@ theorem signChallenge_ok (C : ShaOK) {s t : State} (hp : SignPre sl s) (h : Sign
     have hF : Region.Sub ⟨p, 32⟩ ⟨s.gpr .a6, 288⟩ ∨ Region.Sub ⟨p, 32⟩ ⟨s.gpr .a0, 32⟩ := by
       rcases hpr with h | ⟨d, hd, rfl⟩ | rfl
       · exact .inr h
-      · exact .inl (Offset.sub_base _ (by omega))
+      · exact .inl (Offset.sub_base _ (by omega_using [hd]))
       · exact .inl F192
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -68,7 +68,7 @@ theorem signChallenge_ok (C : ShaOK) {s t : State} (hp : SignPre sl s) (h : Sign
       · exact (hp.oC.sub_left O32).sub_left hF
     · rcases hpr with h | ⟨d, hd, rfl⟩ | rfl
       · exact (hp.oF.sub_left O32).sub_left h |>.sub_right (Offset.sub_base _ (by decide))
-      · exact Offset.disjoint _ (.inl hd) (by omega) (by decide)
+      · exact Offset.disjoint _ (.inl hd) (by omega_using [hd]) (by decide)
       · exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
     · rcases hF with hF | hF
       · exact hp.bF.symm.sub_left hF
@@ -150,7 +150,7 @@ theorem signChallenge_ok (C : ShaOK) {s t : State} (hp : SignPre sl s) (h : Sign
     · exact .inr (.inr (.inr (.inr (.inr ⟨128, 64, by decide, rfl⟩))))
     · exact .inr (.inl (by rw [h₅.sp])))
   have dg : bytesAt t₆.mem (s.gpr .a6 + BitVec.ofNat 64 128) 64 = Spec.Sha512.sha512 (Rb ++ Kb ++ msgB s) :=
-    hd₆ _ r₅ (by rw [List.length_append, List.length_append, hRl, hKl, msgB_length]; omega)
+    hd₆ _ r₅ (by rw [List.length_append, List.length_append, hRl, hKl, msgB_length]; omega_using [hlen])
       (by rw [h₅.regs _ (by decide), List.length_append, List.length_append, hRl, hKl, msgB_length, cnt_eq]; rfl)
   have f₆' : Frame (chW s) t₅.mem t₆.mem := f₆.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

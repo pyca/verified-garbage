@@ -29,8 +29,8 @@ theorem loadRange_ok {s : State} {B p : Addr} {Z o w wx m sp sl : Nat} {minv : B
         Spec.Dsa.decodeBE bytes < m)) ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   refine WP.seq (WP.mono (load_mod_ok hc hm hw2 hwx hw30 (by decide) (by decide) hsp hsl
-    hp hl hs h1 (by omega) hfit) fun u ⟨hcu, hmu, hv, _, hf, hk⟩ => ?_)
-  refine WP.mono (rangeMask_ok hcu.good (Nat.le_refl _) hw2 (by omega) aboveOne)
+    hp hl hs h1 (by omega_using [hw48, hfit]) hfit) fun u ⟨hcu, hmu, hv, _, hf, hk⟩ => ?_)
+  refine WP.mono (rangeMask_ok hcu.good (Nat.le_refl _) hw2 (by omega_using [hw48]) aboveOne)
     fun t ⟨ht, hmem, hkt⟩ => ?_
   have hft : Frm (off B o) (workRanges wx) u.mem t.mem := by rw [hmem]; exact Frm.refl _ _ _
   have hct := hcu.of_frmT hft (workRanges_ok wx) hkt.wr (hkt.gpr .x0 (by decide))

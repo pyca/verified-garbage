@@ -34,12 +34,12 @@ theorem EnvW.write {σ s s' : State} (he : EnvW w16 σ s) {a n : Nat} (h : a + n
     by rw [hg .r13 (by simp), he.r13], by rw [hg .rsp (by simp), he.rsp], by rw [hg .r15 (by simp), he.r15],
     fun i hi => ?_, ?_⟩
   · rw [hf.readW (Region.contains_self _ _) (by
-        simpa using Offset.disjoint (scr σ) (d := oSave + 8 * i) (n := 8) (e := a) (k := n) (by simp only [oSave] at h ⊢; omega)
-          (by simp only [oSave]; omega) (by simp only [oSave] at h; omega)) (by decide)]
+        simpa using Offset.disjoint (scr σ) (d := oSave + 8 * i) (n := 8) (e := a) (k := n) (by simp only [oSave] at h ⊢; omega_using [h])
+          (by simp only [oSave]; omega_using [hi]) (by simp only [oSave] at h; omega_using [h])) (by decide)]
     exact he.saved i hi
   · refine he.frame.trans (hf.sub fun r hr => ?_)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨scrR σ, by simp, Offset.sub_base _ (by simp only [oSave] at h; omega)⟩
+    exact ⟨scrR σ, by simp, Offset.sub_base _ (by simp only [oSave] at h; omega_using [h])⟩
 
 /-! ## Bytes written -/
 
@@ -54,7 +54,7 @@ theorem wb_out (m : Mem) (p : Addr) {w : Nat} (v : BitVec w) {e d : Nat} (h : d 
     (m.writeW (p + BitVec.ofNat 64 e) v) (p + BitVec.ofNat 64 d) = m (p + BitVec.ofNat 64 d) := by
   refine writeW_byte_off _ _ _ _ ?_
   rw [Offset.sub_toNat' _ (by bdd_omega) (by bdd_omega)]
-  split <;> omega
+  split <;> omega_arith
 
 /-! ## The round constants -/
 
@@ -81,8 +81,8 @@ theorem rc_step {σ : State} (hp : PreW w16 σ) {s₀ : State} (he : EnvW w16 σ
       by rw [r₄, u₃.rd, u₂.rd, u₁.rd, h.keep.2.1], by rw [w₄, u₃.wr, u₂.wr, u₁.wr, h.keep.2.2]⟩, ?_,
     fun r' hr' k hk => ?_⟩
   · rw [hm]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by simp only [oRc]; omega)
-      (by simp only [oRc]; omega) (by simp only [oRc]; omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by simp only [oRc]; omega_using [])
+      (by simp only [oRc]; omega_using [hr]) (by simp only [oRc]; omega_using []))
   · rw [hm]
     by_cases e : r' = r
     · subst e
@@ -139,7 +139,7 @@ theorem AIW.write {σ : State} {m₁ : Mem} {s s' : State} (h : AIW w16 σ m₁ 
   have hf : Frame [⟨at' σ e, n⟩] s.mem s'.mem := by
     rw [hv]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
       rw [show 8 * n / 8 = n by bdd_omega]; exact Region.contains_self _ _)
-  refine ⟨h.env.write (by simp only [oSave]; omega) hf hrd hwr fun r hr => hg r (by
+  refine ⟨h.env.write (by simp only [oSave]; omega_using [hn]) hf hrd hwr fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
     by rw [hg _ (by decide), h.r14], h.frame.trans (hf.sub fun r hr => ?_)⟩

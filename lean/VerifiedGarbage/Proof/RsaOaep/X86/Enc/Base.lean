@@ -127,15 +127,15 @@ theorem pubScr : Spec.Rsa.publicScratchWords P.K ≤ P.scl - 1024 ∧ 1025 ≤ P
   have := h.scrK
   unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords at this
   unfold Spec.Rsa.publicScratchWords
-  omega
+  omega_using [this]
 
 /-- Our part of `scratch`. -/
 theorem geo : Geo (P.lay D) P.scr := by
   have hs := h.pubScr.2
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega)] at hf
-  exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩,
+  rw [Nat.mod_eq_of_lt (by have := P.scr.isLt; omega_using [])] at hf
+  exact ⟨rfl, by unfold oRsa; omega_using [hs, hf], ⟨P.scl * 8, by unfold oRsa; omega_using [hs], by simp⟩, ⟨σ, h.ok⟩,
     by show 48 ≤ 100; decide⟩
 
 end In

@@ -69,7 +69,7 @@ theorem shoup_bounds {a z q D : Nat} (hq : 0 < q) (hD : 0 < D) (ha : a < D) :
 abbrev Q32 : BitVec 32 := 3329
 
 theorem toNat_sub_q (v : BitVec 32) : (v - Q32).toNat = (v.toNat + (2 ^ 32 - 3329)) % 2 ^ 32 := by
-  rw [BitVec.toNat_sub, show Q32.toNat = 3329 from rfl]; omega
+  rw [BitVec.toNat_sub, show Q32.toNat = 3329 from rfl]; omega_using []
 
 /-- `min(v, v - q)` of a word below `2q` is its remainder mod `q`. -/
 theorem minq {v : BitVec 32} (hv : v.toNat < 2 * 3329) :
@@ -77,15 +77,15 @@ theorem minq {v : BitVec 32} (hv : v.toNat < 2 * 3329) :
   have hs := toNat_sub_q v
   split
   · rename_i h
-    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; rw [hs] at h; omega
+    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; rw [hs] at h; omega_using [h]
   · rename_i h
-    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, hs]; rw [hs] at h; omega
+    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, hs]; rw [hs] at h; omega_using [hv, h]
 
 /-- The high word of a product below `2⁶⁴`. -/
 theorem hi_word {x : Nat} (hx : x < 2 ^ 64) : (BitVec.ofNat 64 x).extractLsb' 32 32 = BitVec.ofNat 32 (x / 2 ^ 32) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega))]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega_using [hx]))]
 
 /-- Shoup's product of a word `y < 2q` by `w < q`, with `w' = ⌊w · 2³² / q⌋`, reduced. -/
 theorem mulZ_word (y w w' : BitVec 32) (hy : y.toNat < 2 * 3329) (hw : w.toNat < 3329)
@@ -95,24 +95,24 @@ theorem mulZ_word (y w w' : BitVec 32) (hy : y.toNat < 2 * 3329) (hw : w.toNat <
     (if r.toNat < (r - Q32).toNat then r else r - Q32) = BitVec.ofNat 32 (y.toNat * w.toNat % 3329) := by
   intro t r
   obtain ⟨b1, b2⟩ := shoup_bounds (a := y.toNat) (z := w.toNat) (q := 3329) (D := 2 ^ 32) (by decide)
-    (by decide) (by omega)
+    (by decide) (by omega_using [])
   have hw'lt : w'.toNat < 2 ^ 32 := w'.isLt
   have hp : y.toNat * w'.toNat < 2 ^ 64 := by
-    have := Nat.mul_lt_mul_of_lt_of_le (show y.toNat < 2 ^ 32 by omega) (Nat.le_of_lt hw'lt) (by decide)
+    have := Nat.mul_lt_mul_of_lt_of_le (show y.toNat < 2 ^ 32 by omega_using []) (Nat.le_of_lt hw'lt) (by decide)
     simpa using this
   have ht : t.toNat = y.toNat * (w.toNat * 2 ^ 32 / 3329) / 2 ^ 32 := by
     simp only [t, hi_word hp, BitVec.toNat_ofNat, hw']
-    exact Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by rw [← hw']; omega))
+    exact Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by rw [← hw']; omega_using [hp]))
   generalize hT : y.toNat * (w.toNat * 2 ^ 32 / 3329) / 2 ^ 32 = T at b1 b2 ht
   have hyw : (y * w).toNat = y.toNat * w.toNat := by
     rw [BitVec.toNat_mul]; apply Nat.mod_eq_of_lt
-    have := Nat.mul_lt_mul_of_lt_of_le hy (Nat.le_of_lt hw) (by decide); omega
+    have := Nat.mul_lt_mul_of_lt_of_le hy (Nat.le_of_lt hw) (by decide); omega_using [this]
   have htq : (t * Q32).toNat = T * 3329 := by
     rw [BitVec.toNat_mul, ht, show Q32.toNat = 3329 from rfl]; apply Nat.mod_eq_of_lt
-    have := Nat.mul_lt_mul_of_lt_of_le hy (Nat.le_of_lt hw) (by decide); omega
+    have := Nat.mul_lt_mul_of_lt_of_le hy (Nat.le_of_lt hw) (by decide); omega_using [b1, hyw]
   have hr : r.toNat = y.toNat * w.toNat - T * 3329 := by
-    simp only [r]; rw [BitVec.toNat_sub, hyw, htq]; omega
-  rw [minq (by rw [hr]; omega), hr, Nat.mul_comm T, Nat.sub_mul_mod (by rw [Nat.mul_comm]; exact b1)]
+    simp only [r]; rw [BitVec.toNat_sub, hyw, htq]; omega_using [b1, hyw]
+  rw [minq (by rw [hr]; omega_using [b2]), hr, Nat.mul_comm T, Nat.sub_mul_mod (by rw [Nat.mul_comm]; exact b1)]
 
 /-! ## The instructions, word by word -/
 
@@ -148,13 +148,13 @@ theorem exec_perm (d n m c : VReg) (s : State) :
     exec (.vop (.perm d n m c)) s = some (s.writeV d (permV (s.vpr n) (s.vpr m) (s.vpr c))) := rfl
 
 theorem vword_qVec {i : Nat} (hi : i < 4) : vword qVec i = Q32 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-- The high words of the products gathered in word order. -/
 theorem vword_hi (n m : BitVec 128) {i : Nat} (hi : i < 4) :
     vword (permV (mulD 0 n m) (mulD 1 n m) ctlHi) i =
       (BitVec.ofNat 64 ((vword n i).toNat * (vword m i).toNat)).extractLsb' 32 32 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide), mulD, vword_dwords _ _ (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 4) (by decide) (by decide) (by decide)]
     simp only [show ¬ (4 : Nat) < 4 by decide, ↓reduceIte, Nat.sub_self, mulD]
@@ -198,20 +198,20 @@ theorem vbfly_ok {s : State} (h : BIn s) :
     simp only [vpr_writeV, n6, n7, n8, n9, n10, ite_false]
   all_goals
     have mz := mulZ_word (vword (s.vpr .v7) i) (vword (s.vpr .v4) i) (vword (s.vpr .v5) i)
-      (by have := h.y i hi; omega) (h.w i hi) (h.w' i hi)
+      (by have := h.y i hi; omega_using [this]) (h.w i hi) (h.w' i hi)
     simp only [vword_ofVWords _ hi, vword_hi _ _ hi, vword_qVec hi] at mz ⊢
     rw [mz]
     have hx := h.x i hi
     have hm : (BitVec.ofNat 32 ((vword (s.vpr .v7) i).toNat * (vword (s.vpr .v4) i).toNat % 3329)).toNat =
         (vword (s.vpr .v7) i).toNat * (vword (s.vpr .v4) i).toNat % 3329 := by
       rw [BitVec.toNat_ofNat]; apply Nat.mod_eq_of_lt; have := Nat.mod_lt ((vword (s.vpr .v7) i).toNat *
-        (vword (s.vpr .v4) i).toNat) (show 3329 > 0 by decide); omega
+        (vword (s.vpr .v4) i).toNat) (show 3329 > 0 by decide); omega_using []
     have hlt := Nat.mod_lt ((vword (s.vpr .v7) i).toNat * (vword (s.vpr .v4) i).toNat) (show 3329 > 0 by decide)
-  · rw [minq (by rw [BitVec.toNat_add, hm]; omega), bx, BitVec.toNat_add, hm]
-    congr 1; omega
-  · rw [minq (by rw [BitVec.toNat_sub, BitVec.toNat_add, hm, show Q32.toNat = 3329 from rfl]; omega), by',
+  · rw [minq (by rw [BitVec.toNat_add, hm]; omega_using [hx]), bx, BitVec.toNat_add, hm]
+    congr 1; omega_using [hx]
+  · rw [minq (by rw [BitVec.toNat_sub, BitVec.toNat_add, hm, show Q32.toNat = 3329 from rfl]; omega_using [hx]), by',
       BitVec.toNat_sub, BitVec.toNat_add, hm, show Q32.toNat = 3329 from rfl]
-    exact congrArg (BitVec.ofNat 32) (by omega)
+    exact congrArg (BitVec.ofNat 32) (by omega_using [hx])
 
 /-- The inverse butterfly's results, word by word. -/
 def ix (x y : BitVec 32) : BitVec 32 := BitVec.ofNat 32 ((x.toNat + y.toNat) % 3329)
@@ -231,15 +231,15 @@ theorem vibfly_ok {s : State} (h : BIn s) :
   · have hx := h.x i hi
     have hy := h.y i hi
     simp only [vword_ofVWords _ hi, vword_qVec hi]
-    rw [minq (by rw [BitVec.toNat_add]; omega), ix, BitVec.toNat_add]
-    exact congrArg (BitVec.ofNat 32) (by omega)
+    rw [minq (by rw [BitVec.toNat_add]; omega_using [hx, hy]), ix, BitVec.toNat_add]
+    exact congrArg (BitVec.ofNat 32) (by omega_using [hx, hy])
   · have hx := h.x i hi
     have hy := h.y i hi
     have hY : (vword (s.vpr .v7) i + Q32 - vword (s.vpr .v6) i).toNat =
         (vword (s.vpr .v7) i).toNat + 3329 - (vword (s.vpr .v6) i).toNat := by
-      rw [BitVec.toNat_sub, BitVec.toNat_add, show Q32.toNat = 3329 from rfl]; omega
+      rw [BitVec.toNat_sub, BitVec.toNat_add, show Q32.toNat = 3329 from rfl]; omega_using [hx, hy]
     have mz := mulZ_word (vword (s.vpr .v7) i + Q32 - vword (s.vpr .v6) i) (vword (s.vpr .v4) i)
-      (vword (s.vpr .v5) i) (by rw [hY]; omega) (h.w i hi) (h.w' i hi)
+      (vword (s.vpr .v5) i) (by rw [hY]; omega_using [hy]) (h.w i hi) (h.w' i hi)
     simp only [vword_ofVWords _ hi, vword_hi _ _ hi, vword_qVec hi] at mz ⊢
     rw [mz, iy, hY]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -259,7 +259,7 @@ theorem coeffAddr_add (F : Addr) (j q : Nat) :
 theorem row_lane {m : Mem} {F : Addr} {f : Poly} (h : PolyIs m F f) {j : Nat} (hj : j + 4 ≤ 256) {p : Nat}
     (hp : p < 4) : vword (swapDwords (m.read (coeffAddr F j) 16)) p = BitVec.ofNat 32 (f[j + (p ^^^ 1)]!).val := by
   rw [vword_load _ _ hp, coeffAddr_add, ← coeffAt_eq]
-  exact polyIs_coeffAt h (by have := xor1_lt hp; rw [n_eq]; omega)
+  exact polyIs_coeffAt h (by have := xor1_lt hp; rw [n_eq]; omega_using [hj, this])
 
 /-- A coefficient after `stxvd2x` of a row from `j`. -/
 theorem coeffAt_row (m : Mem) (F : Addr) (j : Nat) (v : BitVec 128) {i : Nat} (hi : i < 256)
@@ -269,12 +269,12 @@ theorem coeffAt_row (m : Mem) (F : Addr) (j : Nat) (v : BitVec 128) {i : Nat} (h
   split
   · rename_i h
     rw [coeffAt_eq, show coeffAddr F i = coeffAddr F j + BitVec.ofNat 64 (4 * (i - j)) by
-      rw [coeffAddr_add, show j + (i - j) = i by omega]]
-    exact readW_store _ _ _ (by omega)
+      rw [coeffAddr_add, show j + (i - j) = i by omega_using [h]]]
+    exact readW_store _ _ _ (by omega_using [h])
   · have hw : m.write (coeffAddr F j) 16 (swapDwords v) = m.writeW (coeffAddr F j) (swapDwords v) := by
       simp only [Mem.writeW, BitVec.setWidth_eq]
     rw [hw]
-    exact Mem.readW_writeW_sep (Offset.sep F (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep F (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 /-- Two rows stored over a polynomial. -/
 theorem polyIs_rows {m : Mem} {F : Addr} {f g : Poly} (h : PolyIs m F f) {j₁ j₂ : Nat}
@@ -287,16 +287,16 @@ theorem polyIs_rows {m : Mem} {F : Addr} {f g : Poly} (h : PolyIs m F f) {j₁ j
   rw [n_eq] at hi
   rw [coeffAt_row _ _ _ _ hi h2, coeffAt_row _ _ _ _ hi h1]
   by_cases r2 : j₂ ≤ i ∧ i < j₂ + 4
-  · have l := xor1_lt (e := i - j₂) (by omega); have e := xor1_xor1 (i - j₂)
+  · have l := xor1_lt (e := i - j₂) (by omega_using [r2]); have e := xor1_xor1 (i - j₂)
     rw [ite_eq_left r2, hB _ l, e, Nat.add_sub_cancel' r2.1]
   rw [ite_eq_right r2]
   by_cases r1 : j₁ ≤ i ∧ i < j₁ + 4
-  · have l := xor1_lt (e := i - j₁) (by omega); have e := xor1_xor1 (i - j₁)
+  · have l := xor1_lt (e := i - j₁) (by omega_using [r1]); have e := xor1_xor1 (i - j₁)
     rw [ite_eq_left r1, hA _ l, e, Nat.add_sub_cancel' r1.1]
   rw [ite_eq_right r1, polyIs_coeffAt h (by rw [n_eq]; exact hi), hf i hi r1 r2]
 
 theorem toNat_val32 (a : Zq) : (BitVec.ofNat 32 a.val).toNat = a.val := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := val_lt a; omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := val_lt a; omega_using [this])
 
 theorem bx_val (a b z : Zq) :
     bx (BitVec.ofNat 32 a.val) (BitVec.ofNat 32 b.val) (BitVec.ofNat 32 z.val) = BitVec.ofNat 32 (a + z * b).val := by
@@ -306,7 +306,7 @@ theorem by'_val (a b z : Zq) :
     by' (BitVec.ofNat 32 a.val) (BitVec.ofNat 32 b.val) (BitVec.ofNat 32 z.val) = BitVec.ofNat 32 (a - z * b).val := by
   rw [by', toNat_val32, toNat_val32, toNat_val32, val_sub', val_mul, Nat.mul_comm z.val]
   have := Nat.mod_lt (b.val * z.val) (show 0 < 3329 by decide)
-  congr 2; show _ = a.val + (3329 - b.val * z.val % 3329); omega
+  congr 2; show _ = a.val + (3329 - b.val * z.val % 3329); omega_using []
 
 end
 
@@ -376,7 +376,7 @@ theorem body_ok {s : State} (ia : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .r
 
 theorem vword_lo (n m : BitVec 128) {p : Nat} (hp : p < 4) :
     vword (permV n m ctlLo) p = if p < 2 then vword n p else vword m (p - 2) := by
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
   · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 1) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 4) (by decide) (by decide) (by decide)]; rfl
@@ -384,7 +384,7 @@ theorem vword_lo (n m : BitVec 128) {p : Nat} (hp : p < 4) :
 
 theorem vword_hi2 (n m : BitVec 128) {p : Nat} (hp : p < 4) :
     vword (permV n m ctlHi2) p = if p < 2 then vword n (p + 2) else vword m p := by
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
   · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 3) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 6) (by decide) (by decide) (by decide)]; rfl
@@ -392,7 +392,7 @@ theorem vword_hi2 (n m : BitVec 128) {p : Nat} (hp : p < 4) :
 
 theorem vword_pw (n : BitVec 128) {p : Nat} (hp : p < 4) :
     vword (permV n n ctlPw) p = vword n (if p < 2 then 1 else 3) := by
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
   · rw [vword_permV _ _ _ (k := 1) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 1) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 3) (by decide) (by decide) (by decide)]; rfl
@@ -400,7 +400,7 @@ theorem vword_pw (n : BitVec 128) {p : Nat} (hp : p < 4) :
 
 theorem vword_pwp (n : BitVec 128) {p : Nat} (hp : p < 4) :
     vword (permV n n ctlPwp) p = vword n (if p < 2 then 0 else 2) := by
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
   · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide)]; rfl
   · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide)]; rfl
@@ -456,10 +456,10 @@ theorem body2_ok {s : State} {R T Z : BitVec 128}
   · simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write, RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false]
     rw [vword_lo _ _ hi]; split
     · exact hR _ hi
-    · exact hT _ (by omega)
+    · exact hT _ (by omega_using [hi])
   · simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write, RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false]
     rw [vword_hi2 _ _ hi]; split
-    · exact hR _ (by omega)
+    · exact hR _ (by omega_arith)
     · exact hT _ hi
   · simp only [vpr_writeV, vpr_write, reduceCtorEq, ite_false, ite_true]
     rw [vword_pw _ hi]; split
@@ -499,13 +499,13 @@ theorem body2_ok {s : State} {R T Z : BitVec 128}
       simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
         RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
         ↓ite_eq_left]
-    · rw [h7 (p - 2) (by omega)]
+    · rw [h7 (p - 2) (by omega_using [hp])]
       simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
         RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
         ↓ite_eq_left, Nat.sub_add_cancel]
   · rw [vword_hi2 _ _ hp]
     split
-    · rw [h6 (p + 2) (by omega)]
+    · rw [h6 (p + 2) (by omega_arith)]
       simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
         RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
         ↓ite_eq_right, Nat.add_sub_cancel]
@@ -616,10 +616,10 @@ theorem ibody2_ok {s : State} {R T Z : BitVec 128}
   · simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write, RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false]
     rw [vword_lo _ _ hi]; split
     · exact hT _ hi
-    · exact hR _ (by omega)
+    · exact hR _ (by omega_using [hi])
   · simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write, RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false]
     rw [vword_hi2 _ _ hi]; split
-    · exact hT _ (by omega)
+    · exact hT _ (by omega_arith)
     · exact hR _ hi
   · simp only [vpr_writeV, vpr_write, reduceCtorEq, ite_false, ite_true]
     rw [vword_pw _ hi]; split
@@ -659,13 +659,13 @@ theorem ibody2_ok {s : State} {R T Z : BitVec 128}
       simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
         RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2,
         ↓ite_eq_left]
-    · rw [h7 (p - 2) (by omega)]
+    · rw [h7 (p - 2) (by omega_using [hp])]
       simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
         RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
         ↓ite_eq_left, Nat.sub_add_cancel]
   · rw [vword_hi2 _ _ hp]
     split
-    · rw [h6 (p + 2) (by omega)]
+    · rw [h6 (p + 2) (by omega_arith)]
       simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
         RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2,
         ↓ite_eq_right, Nat.add_sub_cancel]
@@ -722,7 +722,7 @@ theorem sbody_ok {s : State} (ia : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .
   rw [runBlock_cons, exec_lxvd2x .v7 .r3 .r5 s (by decide) ia, runStep_some, runBlock_nil]
   refine ⟨_, rfl, ?_⟩
   refine WP.mono (mulZ_ok (fun i hi => ?_) (fun i hi => ?_) (fun i hi => ?_) ?_ ?_) fun s₂ ⟨h8, hv⟩ => ?_
-  · simp only [vpr_writeV, ite_true]; have := hx i hi; omega
+  · simp only [vpr_writeV, ite_true]; have := hx i hi; omega_using [this]
   · simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hw i hi
   · simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hw' i hi
   · simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hq
@@ -758,40 +758,40 @@ theorem group_poly {m : Mem} {F : Addr} {Q : Poly} {len k st t : Nat} (ht : t + 
       (vword (swapDwords (m.read (coeffAddr F (st + t + len)) 16)) p) (BitVec.ofNat 32 (zeta k).val)) :
     PolyIs ((m.write (coeffAddr F (st + t)) 16 (swapDwords A)).write (coeffAddr F (st + t + len)) 16
       (swapDwords B)) F (nttBlockN Q len k st (t + 4)) := by
-  have hl : 0 < len := by omega
+  have hl : 0 < len := by omega_using [ht]
   have hs' : st + 2 * len ≤ n := by rw [n_eq]; exact hs
   have g4 := fun i (hi : i < 256) => nttBlockN_get Q (k := k) (t := t + 4) hl ht hs' (i := i) (by rw [n_eq]; exact hi)
-  have g0 := fun i (hi : i < 256) => nttBlockN_get Q (k := k) (t := t) hl (by omega) hs' (i := i) (by rw [n_eq]; exact hi)
-  refine polyIs_rows h (j₁ := st + t) (j₂ := st + t + len) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+  have g0 := fun i (hi : i < 256) => nttBlockN_get Q (k := k) (t := t) hl (by omega_using [ht]) hs' (i := i) (by rw [n_eq]; exact hi)
+  refine polyIs_rows h (j₁ := st + t) (j₂ := st + t + len) (by omega_using [ht, hs]) (by omega_using [ht, hs]) (fun p hp => ?_) (fun p hp => ?_)
     (fun i hi r1 r2 => ?_)
   · have l := xor1_lt hp
-    rw [hA p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, bx_val]
+    rw [hA p hp, row_lane h (by omega_using [ht, hs]) hp, row_lane h (by omega_using [ht, hs]) hp, bx_val]
     simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
     rw [Nat.add_right_comm (st + t) _ len]
   · have l := xor1_lt hp
-    rw [hB p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, by'_val]
+    rw [hB p hp, row_lane h (by omega_using [ht, hs]) hp, row_lane h (by omega_using [ht, hs]) hp, by'_val]
     simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
-    rw [show st + t + len + (p ^^^ 1) - len = st + t + (p ^^^ 1) by omega]
+    rw [show st + t + len + (p ^^^ 1) - len = st + t + (p ^^^ 1) by omega_using []]
   · rw [g4 i hi, g0 i hi]
-    have c1 : (st ≤ i ∧ i < st + (t + 4)) ↔ (st ≤ i ∧ i < st + t) := by omega
-    have c2 : (st + len ≤ i ∧ i < st + len + (t + 4)) ↔ (st + len ≤ i ∧ i < st + len + t) := by omega
+    have c1 : (st ≤ i ∧ i < st + (t + 4)) ↔ (st ≤ i ∧ i < st + t) := by omega_using [r1]
+    have c2 : (st + len ≤ i ∧ i < st + len + (t + 4)) ↔ (st + len ≤ i ∧ i < st + len + t) := by omega_using [r2]
     simp only [c1, c2]
 
 /-- The coefficients of the layer with `len = 2` before block `c`. -/
 theorem layer2_old (Q : Poly) {c i : Nat} (hc : c ≤ 64) (h1 : 4 * c ≤ i) (h2 : i < 256) :
     (nttLayerN Q 2 c)[i]! = Q[i]! := by
-  rw [nttLayerN_get Q (by decide) (by omega) h2, ite_eq_right (by omega)]
+  rw [nttLayerN_get Q (by decide) (by omega_using [hc]) h2, ite_eq_right (by omega_using [h1])]
 
 /-- The coefficients of blocks `c` and `c + 1` of the layer with `len = 2`. -/
 theorem layer2_new (Q : Poly) {c d : Nat} (hc : c + 2 ≤ 64) (hd : d < 8) :
     (nttLayerN Q 2 (c + 2))[4 * c + d]! =
       if d % 4 < 2 then Q[4 * c + d]! + zeta (64 + c + d / 4) * Q[4 * c + (d + 2)]!
       else Q[4 * c + (d - 2)]! - zeta (64 + c + d / 4) * Q[4 * c + d]! := by
-  rw [nttLayerN_get Q (by decide) (by omega) (by omega), ite_eq_left (by omega),
-    show (4 * c + d) % (2 * 2) = d % 4 by omega, show 128 / 2 + (4 * c + d) / (2 * 2) = 64 + c + d / 4 by omega]
+  rw [nttLayerN_get Q (by decide) (by omega_using [hc]) (by omega_using [hc, hd]), ite_eq_left (by omega_using [hd]),
+    show (4 * c + d) % (2 * 2) = d % 4 by omega_using [], show 128 / 2 + (4 * c + d) / (2 * 2) = 64 + c + d / 4 by omega_using []]
   split
   · rfl
-  · rw [show 4 * c + d - 2 = 4 * c + (d - 2) by omega]
+  · rw [show 4 * c + d - 2 = 4 * c + (d - 2) by omega_arith]
 
 theorem layer2_new0 (Q : Poly) {c : Nat} (hc : c + 2 ≤ 64) :
     (nttLayerN Q 2 (c + 2))[4 * c]! = Q[4 * c]! + zeta (64 + c) * Q[4 * c + 2]! := by
@@ -815,16 +815,16 @@ theorem pair_poly {m : Mem} {F : Addr} {Q : Poly} {c : Nat} (hc : c + 2 ≤ 64)
           (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) p) (vword Z 3)) :
     PolyIs ((m.write (coeffAddr F (4 * c)) 16 (swapDwords A)).write (coeffAddr F (4 * c + 4)) 16
       (swapDwords B)) F (nttLayerN Q 2 (c + 2)) := by
-  refine polyIs_rows h (j₁ := 4 * c) (j₂ := 4 * c + 4) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+  refine polyIs_rows h (j₁ := 4 * c) (j₂ := 4 * c + 4) (by omega_using [hc]) (by omega_using [hc]) (fun p hp => ?_) (fun p hp => ?_)
     (fun i hi r1 r2 => ?_)
-  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+  · rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
     simp (disch := omega) only [hA, hz1, row_lane h, layer2_old, layer2_new, layer2_new0, bx_val, by'_val,
       ↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero]
-  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+  · rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
     simp (disch := omega) only [hB, hz3, row_lane h, layer2_old, layer2_new, bx_val, by'_val, ↓ite_eq_left,
       ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero, Nat.add_assoc]
-  · rw [nttLayerN_get Q (by decide) (by omega) hi, nttLayerN_get Q (by decide) (by omega) hi]
-    have c1 : i < 2 * 2 * (c + 2) ↔ i < 2 * 2 * c := by omega
+  · rw [nttLayerN_get Q (by decide) (by omega_using [hc]) hi, nttLayerN_get Q (by decide) (by omega_using [hc]) hi]
+    have c1 : i < 2 * 2 * (c + 2) ↔ i < 2 * 2 * c := by omega_using [r1, r2]
     simp only [c1]
 
 end
@@ -843,7 +843,7 @@ theorem iy_val (a b z : Zq) :
   have := val_lt a
   congr 1
   show _ = z.val * ((b.val + (3329 - a.val)) % 3329) % 3329
-  rw [show b.val + 3329 - a.val = b.val + (3329 - a.val) by omega, Nat.mul_comm, Nat.mul_mod_mod]
+  rw [show b.val + 3329 - a.val = b.val + (3329 - a.val) by omega_using [this], Nat.mul_comm, Nat.mul_mod_mod]
 
 /-- Four inverse butterflies of a block of the layer with `len`, from `st + t`. -/
 theorem igroup_poly {m : Mem} {F : Addr} {Q : Poly} {len k st t : Nat} (ht : t + 4 ≤ len)
@@ -854,38 +854,38 @@ theorem igroup_poly {m : Mem} {F : Addr} {Q : Poly} {len k st t : Nat} (ht : t +
       (vword (swapDwords (m.read (coeffAddr F (st + t + len)) 16)) p) (BitVec.ofNat 32 (zeta k).val)) :
     PolyIs ((m.write (coeffAddr F (st + t)) 16 (swapDwords A)).write (coeffAddr F (st + t + len)) 16
       (swapDwords B)) F (nttInvBlockN Q len k st (t + 4)) := by
-  have hl : 0 < len := by omega
+  have hl : 0 < len := by omega_using [ht]
   have hs' : st + 2 * len ≤ n := by rw [n_eq]; exact hs
   have g4 := fun i (hi : i < 256) => nttInvBlockN_get Q (k := k) (t := t + 4) hl ht hs' (i := i) (by rw [n_eq]; exact hi)
-  have g0 := fun i (hi : i < 256) => nttInvBlockN_get Q (k := k) (t := t) hl (by omega) hs' (i := i) (by rw [n_eq]; exact hi)
-  refine polyIs_rows h (j₁ := st + t) (j₂ := st + t + len) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+  have g0 := fun i (hi : i < 256) => nttInvBlockN_get Q (k := k) (t := t) hl (by omega_using [ht]) hs' (i := i) (by rw [n_eq]; exact hi)
+  refine polyIs_rows h (j₁ := st + t) (j₂ := st + t + len) (by omega_using [ht, hs]) (by omega_using [ht, hs]) (fun p hp => ?_) (fun p hp => ?_)
     (fun i hi r1 r2 => ?_)
   · have l := xor1_lt hp
-    rw [hA p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, ix_val]
+    rw [hA p hp, row_lane h (by omega_using [ht, hs]) hp, row_lane h (by omega_using [ht, hs]) hp, ix_val]
     simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
     rw [Nat.add_right_comm (st + t) _ len]
   · have l := xor1_lt hp
-    rw [hB p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, iy_val]
+    rw [hB p hp, row_lane h (by omega_using [ht, hs]) hp, row_lane h (by omega_using [ht, hs]) hp, iy_val]
     simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
-    rw [show st + t + len + (p ^^^ 1) - len = st + t + (p ^^^ 1) by omega]
+    rw [show st + t + len + (p ^^^ 1) - len = st + t + (p ^^^ 1) by omega_using []]
   · rw [g4 i hi, g0 i hi]
-    have c1 : (st ≤ i ∧ i < st + (t + 4)) ↔ (st ≤ i ∧ i < st + t) := by omega
-    have c2 : (st + len ≤ i ∧ i < st + len + (t + 4)) ↔ (st + len ≤ i ∧ i < st + len + t) := by omega
+    have c1 : (st ≤ i ∧ i < st + (t + 4)) ↔ (st ≤ i ∧ i < st + t) := by omega_using [r1]
+    have c2 : (st + len ≤ i ∧ i < st + len + (t + 4)) ↔ (st + len ≤ i ∧ i < st + len + t) := by omega_using [r2]
     simp only [c1, c2]
 
 theorem ilayer2_old (Q : Poly) {c i : Nat} (hc : c ≤ 64) (h1 : 4 * c ≤ i) (h2 : i < 256) :
     (nttInvLayerN Q 2 c)[i]! = Q[i]! := by
-  rw [nttInvLayerN_get Q (by decide) (by omega) h2, ite_eq_right (by omega)]
+  rw [nttInvLayerN_get Q (by decide) (by omega_using [hc]) h2, ite_eq_right (by omega_using [h1])]
 
 theorem ilayer2_new (Q : Poly) {c d : Nat} (hc : c + 2 ≤ 64) (hd : d < 8) :
     (nttInvLayerN Q 2 (c + 2))[4 * c + d]! =
       if d % 4 < 2 then Q[4 * c + d]! + Q[4 * c + (d + 2)]!
       else zeta (127 - c - d / 4) * (Q[4 * c + d]! - Q[4 * c + (d - 2)]!) := by
-  rw [nttInvLayerN_get Q (by decide) (by omega) (by omega), ite_eq_left (by omega),
-    show (4 * c + d) % (2 * 2) = d % 4 by omega, show 256 / 2 - 1 - (4 * c + d) / (2 * 2) = 127 - c - d / 4 by omega]
+  rw [nttInvLayerN_get Q (by decide) (by omega_using [hc]) (by omega_using [hc, hd]), ite_eq_left (by omega_using [hd]),
+    show (4 * c + d) % (2 * 2) = d % 4 by omega_using [], show 256 / 2 - 1 - (4 * c + d) / (2 * 2) = 127 - c - d / 4 by omega_using []]
   split
   · rfl
-  · rw [show 4 * c + d - 2 = 4 * c + (d - 2) by omega]
+  · rw [show 4 * c + d - 2 = 4 * c + (d - 2) by omega_arith]
 
 theorem ilayer2_new0 (Q : Poly) {c : Nat} (hc : c + 2 ≤ 64) :
     (nttInvLayerN Q 2 (c + 2))[4 * c]! = Q[4 * c]! + Q[4 * c + 2]! := by
@@ -910,18 +910,18 @@ theorem ipair_poly {m : Mem} {F : Addr} {Q : Poly} {c : Nat} (hc : c + 2 ≤ 64)
           (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) p) (vword Z 3)) :
     PolyIs ((m.write (coeffAddr F (4 * c + 4)) 16 (swapDwords A)).write (coeffAddr F (4 * c)) 16
       (swapDwords B)) F (nttInvLayerN Q 2 (c + 2)) := by
-  refine polyIs_rows h (j₁ := 4 * c + 4) (j₂ := 4 * c) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+  refine polyIs_rows h (j₁ := 4 * c + 4) (j₂ := 4 * c) (by omega_using [hc]) (by omega_using [hc]) (fun p hp => ?_) (fun p hp => ?_)
     (fun i hi r1 r2 => ?_)
-  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+  · rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
     simp (disch := omega) only [hA, hz1, row_lane h, ilayer2_old, ilayer2_new, ix_val, iy_val, ↓ite_eq_left,
       ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero, Nat.add_assoc,
       Nat.sub_sub]
-  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+  · rcases (by omega_using [hp] : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
     simp (disch := omega) only [hB, hz3, row_lane h, ilayer2_old, ilayer2_new, ilayer2_new0, ix_val, iy_val,
       ↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero,
       Nat.sub_zero]
-  · rw [nttInvLayerN_get Q (by decide) (by omega) hi, nttInvLayerN_get Q (by decide) (by omega) hi]
-    have c1 : i < 2 * 2 * (c + 2) ↔ i < 2 * 2 * c := by omega
+  · rw [nttInvLayerN_get Q (by decide) (by omega_using [hc]) hi, nttInvLayerN_get Q (by decide) (by omega_using [hc]) hi]
+    have c1 : i < 2 * 2 * (c + 2) ↔ i < 2 * 2 * c := by omega_using [r1, r2]
     simp only [c1]
 
 /-- A row of the scaling by `3303`. -/
@@ -934,17 +934,17 @@ theorem scale_coeff {m m₂ : Mem} {F : Addr} {R : Poly} {g : Nat} (hg : g < 64)
     ∀ j < 256, coeffAt (m.write (coeffAddr F (4 * g)) 16 (swapDwords A)) F j =
       if j < 4 * (g + 1) then BitVec.ofNat 32 ((R.map (· * 3303))[j]!).val else coeffAt m₂ F j := by
   intro j hj
-  rw [coeffAt_row _ _ _ _ hj (by omega)]
+  rw [coeffAt_row _ _ _ _ hj (by omega_using [hg])]
   by_cases r : 4 * g ≤ j ∧ j < 4 * g + 4
-  · have l := xor1_lt (e := j - 4 * g) (by omega)
-    rw [ite_eq_left r, ite_eq_left (by omega), hA _ l, vword_load _ _ l, coeffAddr_add, xor1_xor1,
-      Nat.add_sub_cancel' r.1, ← coeffAt_eq, h j hj, ite_eq_right (by omega),
+  · have l := xor1_lt (e := j - 4 * g) (by omega_using [r])
+    rw [ite_eq_left r, ite_eq_left (by omega_using [r]), hA _ l, vword_load _ _ l, coeffAddr_add, xor1_xor1,
+      Nat.add_sub_cancel' r.1, ← coeffAt_eq, h j hj, ite_eq_right (by omega_using [r]),
       polyIs_coeffAt hR (by rw [n_eq]; exact hj), toNat_val32, map_mul_get _ (by rw [n_eq]; exact hj), val_mul]
     rfl
   · rw [ite_eq_right r, h j hj]
     by_cases r' : j < 4 * g
-    · rw [ite_eq_left r', ite_eq_left (by omega)]
-    · rw [ite_eq_right r', ite_eq_right (by omega)]
+    · rw [ite_eq_left r', ite_eq_left (by omega_using [r'])]
+    · rw [ite_eq_right r', ite_eq_right (by omega_using [r, r'])]
 
 end
 

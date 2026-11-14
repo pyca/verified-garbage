@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Canonical word lists are determined by the arithmetic value of memory. -/
 
@@ -25,8 +26,8 @@ theorem wordsVal_word {m : Mem} {base : Addr} {o n j : Nat} (hj : j<n) :
     | zero => omega
     | succ n =>
       rw [wordsVal,pow64_succ,←Nat.div_div_eq_div_mul,Nat.add_mul_div_left _ _ (by decide),
-        Nat.div_eq_of_lt (word m base o).isLt,Nat.zero_add,ih (by omega)]
-      congr 2; omega
+        Nat.div_eq_of_lt (word m base o).isLt,Nat.zero_add,ih (by omega_using [hj])]
+      congr 2; omega_using []
 
 theorem wordsAt_canonical (m : Mem) (base : Addr) (o n : Nat) :
     Spec.Rsa.wordsAt m (off base o) n=Spec.Rsa.toWords (wordsVal m base o n) n := by
@@ -66,7 +67,7 @@ theorem wordsVal_digits {m : Mem} {base : Addr} {o n x : Nat}
   induction n with
   | zero => simp only [wordsVal,Nat.mul_zero,Nat.pow_zero,Nat.mod_one]
   | succ n ih =>
-    rw [wordsVal_succ_top,ih (fun j hj => digits j (by omega)),digits n (by omega),
+    rw [wordsVal_succ_top,ih (fun j hj => digits j (by omega_using [hj])),digits n (by omega_using []),
       Nat.mul_succ,Nat.pow_add,Nat.mod_mul]
 
 theorem wordsAt_value {m : Mem} {base : Addr} {o n x : Nat}
@@ -82,7 +83,7 @@ theorem wordsAt_value {m : Mem} {base : Addr} {o n x : Nat}
 theorem wordsAt_slice (m : Mem) (base : Addr) (o total a b : Nat) (ha : a+b≤total) :
     ((Spec.Rsa.wordsAt m (off base o) total).drop a).take b=
       Spec.Rsa.wordsAt m (off base (o+8*a)) b := by
-  have split : total=a+(b+(total-a-b)) := by omega
+  have split : total=a+(b+(total-a-b)) := by omega_using [ha]
   rw [split,wordsAt_append,wordsAt_append]
   rw [List.drop_left' (by simp only [Spec.Rsa.wordsAt,List.length_map,List.length_range])]
   exact List.take_left' (by simp only [Spec.Rsa.wordsAt,List.length_map,List.length_range])

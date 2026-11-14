@@ -44,7 +44,7 @@ theorem var_succ (t k : Nat) (hk : k < 3) : var (t + 1) (k + 1) = var t k := by
   simp only [var]; congr 1; omega
 
 theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 3 := by
-  simp only [var]; congr 1; omega
+  simp only [var]; congr 1; omega_using []
 
 theorem var_mem (t k : Nat) : var t k ∈ work := by
   unfold var List.getD
@@ -69,7 +69,7 @@ theorem var_ne_aux : ∀ c < 4, ∀ i < 4, ∀ j < 4, i ≠ j →
 
 /-- The registers of an operation are all different. -/
 theorem var_ne (t : Nat) {i j : Nat} (hi : i < 4) (hj : j < 4) (h : i ≠ j) : var t i ≠ var t j :=
-  var_ne_aux (t % 4) (Nat.mod_lt _ (by omega)) i hi j hj h
+  var_ne_aux (t % 4) (Nat.mod_lt _ (by omega_using [])) i hi j hj h
 
 theorem pub_ne' : ∀ p ∈ pubRegs, p ≠ T0 ∧ p ≠ T1 ∧ p ≠ T2 := by decide
 
@@ -89,7 +89,7 @@ theorem fn_ok (r : Nat) (hr : r < 4) (a b c d : Reg) (ha : a ≠ T0) (hb : b ≠
   have hba : b ≠ a := fun h => hab h.symm
   have hda : d ≠ a := fun h => had h.symm
   apply WP.of_runBlock
-  rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hr] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
   simp only [fn, runBlock_cons, runStep_some, runBlock_nil, exec_logic, exec_add,
     exec_logicImm (show imm12 (-1) by decide), RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, ha, hb, hc, hd, hba, hda, ↓reduceIte, Option.some.injEq,
@@ -120,9 +120,9 @@ theorem step_split (t : Nat) :
 /-- With `scratch` 8-byte aligned, its words are naturally aligned. -/
 theorem word_al {scr : Addr} (hal : scr.toNat % 8 = 0) {k : Nat} (hk : k < 16) :
     (scr + BitVec.ofNat 64 (4 * k)).toNat % 4 = 0 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * k) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * k) (by omega_using [hk])]
   have := scr.isLt
-  omega
+  omega_using [hal]
 
 theorem head_ok (a : Reg) (k : Nat) (hk : k < 16) (T : Word) (ha₁ : a ≠ T1)
     (s : State) (va x : Word) (scr : Addr) (h₁ : (s.gpr a).setWidth 32 = va)
@@ -135,7 +135,7 @@ theorem head_ok (a : Reg) (k : Nat) (hk : k < 16) (T : Word) (ha₁ : a ≠ T1)
       s'.wr = s.wr := by
   apply WP.of_runBlock
   simp only [headI, li32, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
-    runBlock_nil, exec_load_w (s := s) (show 4 * k < 2048 by omega) (by rw [hr3]; exact word_al hal hk)
+    runBlock_nil, exec_load_w (s := s) (show 4 * k < 2048 by omega_using [hk]) (by rw [hr3]; exact word_al hal hk)
       (by rw [hr3]; exact hin), exec_add, exec_lui, exec_addiw_lo12, RegUpd.gpr_write,
     RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, ha₁, ↓reduceIte, Option.some.injEq,
     exists_eq_left']
@@ -152,7 +152,7 @@ theorem tail_ok (a b : Reg) (n : Nat) (hn0 : 0 < n) (hn : n < 32) (hab : a ≠ b
   have hTa : T0 ≠ a := fun h => ha h.symm
   apply WP.of_runBlock
   simp only [tailI, runBlock_cons, runStep_some, runBlock_nil, exec_add, exec_logic,
-    exec_shift_w hn, exec_shift_w (show 32 - n < 32 by omega), RegUpd.gpr_write, RegUpd.mem_write,
+    exec_shift_w hn, exec_shift_w (show 32 - n < 32 by omega_using [hn0]), RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, ha, hb, hba, hTa, ↓reduceIte, Option.some.injEq,
     exists_eq_left']
   refine ⟨?_, fun r hr hr' => by simp [hr, hr'], trivial, trivial, trivial⟩
@@ -177,33 +177,33 @@ theorem step_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (X : Block) 
   refine WP.mono (head_ok (var t 0) (ks.getD t 0) hk (Ts.getD t 0) (var_ne_T1 t 0)
     s v[0] (X ⟨ks.getD t 0, hk⟩) scr h0 hr3 hal (hin _ hk) (hX _ hk)) fun s₁ ⟨a₁, e₁, m₁, rd₁, wr₁⟩ => ?_
   have e : ∀ k, 0 < k → k < 4 → s₁.gpr (var t k) = s.gpr (var t k) := fun k h0 h4 =>
-    e₁ _ (var_ne t h4 (by omega) (by omega)) (var_ne_T1 t k) (var_ne_T2 t k)
+    e₁ _ (var_ne t h4 (by omega_using []) (by omega_using [h0])) (var_ne_T1 t k) (var_ne_T2 t k)
   rw [WP.block_append_iff]
-  refine WP.mono (fn_ok (t / 16) (by omega) (var t 0) (var t 1) (var t 2) (var t 3) (var_ne_T0 t 0)
-    (var_ne_T0 t 1) (var_ne_T0 t 2) (var_ne_T0 t 3) (var_ne t (by omega) (by omega) (by omega))
-    (var_ne t (by omega) (by omega) (by omega)) s₁
-    _ v[1] v[2] v[3] a₁ (by rw [e 1 (by omega) (by omega)]; exact h1)
-    (by rw [e 2 (by omega) (by omega)]; exact h2) (by rw [e 3 (by omega) (by omega)]; exact h3))
+  refine WP.mono (fn_ok (t / 16) (by omega_using [ht]) (var t 0) (var t 1) (var t 2) (var t 3) (var_ne_T0 t 0)
+    (var_ne_T0 t 1) (var_ne_T0 t 2) (var_ne_T0 t 3) (var_ne t (by omega_using []) (by omega_using []) (by omega_using []))
+    (var_ne t (by omega_using []) (by omega_using []) (by omega_using [])) s₁
+    _ v[1] v[2] v[3] a₁ (by rw [e 1 (by omega_using []) (by omega_using [])]; exact h1)
+    (by rw [e 2 (by omega_using []) (by omega_using [])]; exact h2) (by rw [e 3 (by omega_using []) (by omega_using [])]; exact h3))
     fun s₂ ⟨a₂, e₂, m₂, rd₂, wr₂⟩ => ?_
-  refine WP.mono (tail_ok (var t 0) (var t 1) (Proof.Md5.rot t) (by omega) (by omega)
-    (var_ne t (by omega) (by omega) (by omega)) (var_ne_T0 t 0) (var_ne_T0 t 1) s₂ _ v[1] a₂
-    (by rw [e₂ _ (var_ne t (by omega) (by omega) (by omega)).symm (var_ne_T0 t 1),
-      e 1 (by omega) (by omega)]; exact h1)) fun s₃ ⟨a₃, e₃, m₃, rd₃, wr₃⟩ => ?_
+  refine WP.mono (tail_ok (var t 0) (var t 1) (Proof.Md5.rot t) (by omega_using [hr]) (by omega_using [hr])
+    (var_ne t (by omega_using []) (by omega_using []) (by omega_using [])) (var_ne_T0 t 0) (var_ne_T0 t 1) s₂ _ v[1] a₂
+    (by rw [e₂ _ (var_ne t (by omega_using []) (by omega_using []) (by omega_using [])).symm (var_ne_T0 t 1),
+      e 1 (by omega_using []) (by omega_using [])]; exact h1)) fun s₃ ⟨a₃, e₃, m₃, rd₃, wr₃⟩ => ?_
   have g : ∀ r, r ≠ var t 0 → r ≠ T0 → r ≠ T1 → r ≠ T2 → s₃.gpr r = s.gpr r :=
     fun r h h' h'' h''' => by rw [e₃ r h h', e₂ r h h', e₁ r h h'' h''']
   refine ⟨?_, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], fun r hr =>
     g r (fun h => var_ne_pub t 0 hr h.symm) (pub_ne' r hr).1 (pub_ne' r hr).2.1 (pub_ne' r hr).2.2⟩
   rw [Proof.Md5.step_eq X v ht]
-  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 3 by omega),
-    var_succ t _ (show 1 < 3 by omega), var_succ t _ (show 2 < 3 by omega), Proof.Md5.stepKX,
+  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 3 by omega_using []),
+    var_succ t _ (show 1 < 3 by omega_using []), var_succ t _ (show 2 < 3 by omega_using []), Proof.Md5.stepKX,
     Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ]
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [g _ (var_ne t (by omega) (by omega) (by omega)) (var_ne_T0 t 3) (var_ne_T1 t 3)
+  · rw [g _ (var_ne t (by omega_using []) (by omega_using []) (by omega_using [])) (var_ne_T0 t 3) (var_ne_T1 t 3)
       (var_ne_T2 t 3), h3]
   · rw [a₃, BitVec.add_comm _ (v[1]), Proof.Md5.add_fn]
-  · rw [g _ (var_ne t (by omega) (by omega) (by omega)) (var_ne_T0 t 1) (var_ne_T1 t 1)
+  · rw [g _ (var_ne t (by omega_using []) (by omega_using []) (by omega_using [])) (var_ne_T0 t 1) (var_ne_T1 t 1)
       (var_ne_T2 t 1), h1]
-  · rw [g _ (var_ne t (by omega) (by omega) (by omega)) (var_ne_T0 t 2) (var_ne_T1 t 2)
+  · rw [g _ (var_ne t (by omega_using []) (by omega_using []) (by omega_using [])) (var_ne_T0 t 2) (var_ne_T1 t 2)
       (var_ne_T2 t 2), h2]
 
 /-! ## The 64 operations -/
@@ -226,9 +226,9 @@ theorem steps_ok (H : HashValue) (X : Block) (scr : Addr) (sB : State) (hr3 : sB
   induction t with
   | zero => exact WP.block_nil (M := isa) ⟨h0, fun _ _ => rfl, rfl, rfl, rfl⟩
   | succ t ih =>
-    refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
+    refine WP.seq (WP.mono (ih (by omega_using [ht])) fun s hs => ?_)
     have hs_r3 : s.gpr .a3 = scr := (hs.pub .a3 (by decide)).trans hr3
-    refine WP.mono (step_ok t (by omega) s _ X scr hs.vars hs_r3 hal
+    refine WP.mono (step_ok t (by omega_using [ht]) s _ X scr hs.vars hs_r3 hal
       (by rw [hs.rd, hs.wr]; exact hin) (by rw [hs.mem]; exact hX)) fun s' ⟨hv, hm, hrd, hwr, hp⟩ => ?_
     refine ⟨?_, fun r hr => by rw [hp r hr, hs.pub r hr], by rw [hrd, hs.rd], by rw [hwr, hs.wr],
       by rw [hm, hs.mem]⟩

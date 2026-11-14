@@ -24,7 +24,7 @@ theorem countDown_ok {s : State} {base : Addr} {size j d : Nat}
       Keeps [.esi] s z ∧ Outside base d 4 s.mem z.mem := by
   have hn := hs.nowrap
   unfold countDown
-  refine wp_movS (readSrc_sc hs (by omega)) fun s₁ U₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_using [ht])) fun s₁ U₁ _ => ?_
   have J : s₁.gpr .esi = BitVec.ofNat 32 j := by
     rw [U₁.gpr]
     apply BitVec.eq_of_toNat_eq
@@ -33,12 +33,12 @@ theorem countDown_ok {s : State} {base : Addr} {size j d : Nat}
   refine wp_decCounter hj J fun s₂ J₂ K₂ M₂ => ?_
   have K := U₁.keeps.trans K₂
   have hs₂ := hs.of_keeps K (by decide)
-  refine wp_storeS (hs₂.ea (by omega)) (hs₂.write (by omega)) fun s₃ U₃ => ?_
+  refine wp_storeS (hs₂.ea (by omega_using [ht])) (hs₂.write (by omega_using [ht])) fun s₃ U₃ => ?_
   have J₃ : s₃.gpr .esi = BitVec.ofNat 32 (j - 1) := by rw [U₃.gpr, J₂]
-  refine wp_testCounter (by omega) J₃ fun z F hz => WP.block_nil ⟨?_, hz, ?_, ?_⟩
-  · rw [F.mem, U₃.mem, w32_write_self, J₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  refine wp_testCounter (by omega_using [hj32]) J₃ fun z F hz => WP.block_nil ⟨?_, hz, ?_, ?_⟩
+  · rw [F.mem, U₃.mem, w32_write_self, J₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj32])]
   · exact (K.trans (U₃.keeps _)).trans (F.keeps _)
   · rw [F.mem, U₃.mem, M₂, U₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [ht, hn])
 
 end VG.Proof.Rsa.X86.GcdBatch

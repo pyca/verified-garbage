@@ -83,11 +83,11 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.P384.curve) (s₀ : State) :
     have hi' : i < 14 ∨ 29 ≤ i := by
       refine Classical.byContradiction fun hc => hr ?_
       have : i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨
-        i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 := by omega
+        i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 := by omega_using [hc]
       rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         decide
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl | rfl <;> simp only [Cfg.sl, slot, p384] <;> omega
+    rcases hw with rfl | rfl | rfl <;> simp only [Cfg.sl, slot, p384] <;> omega_arith
   have e₅ : ∀ {i}, i < 45 → i ∉ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx → sv p384 base s₅ i = sv p384 base s i :=
     fun hi hr => sv_unch U₅ h7 hn hi (apS _ hi hr)
   have tA₅ : ∀ j < 3, j ≠ 0 → ∀ t < 64 * p384.n, ∀ w ∈ Proof.Ecdsa.PPC64LE.Window.P384.mulW,
@@ -95,7 +95,7 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.P384.curve) (s₀ : State) :
     intro j hj hj0 t ht w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [bitsAt, p384] at ht ⊢
-    rcases hw with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hw with rfl | rfl | rfl <;> simp only <;> omega_arith
   have lx₅ : sv p384 base s₅ RX < p384.C.p := R₅.x
   have ly₅ : sv p384 base s₅ RY < p384.C.p := R₅.y
   have lz₅ : sv p384 base s₅ RZ < p384.C.p := R₅.z

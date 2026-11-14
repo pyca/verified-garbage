@@ -200,7 +200,7 @@ variable {D : Nat} {s : State} (P : PreP D s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 3).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.publicScratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC Sp s) (scR s) := Region.sub_prefix (scLen P)
 
@@ -209,7 +209,7 @@ theorem PreP.fits : Fits Sp s where
   sp16 := P.spal
   sc := ⟨scR s, by rw [P.hwr]; simp, rfl, scLen P⟩
   ksc := P.ksc.sub_right (sc_sub P)
-  wS := by show (stackArg s 2).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 2).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 
@@ -263,11 +263,11 @@ theorem cm_eq : cm s = (if (s.mem (s.gpr .a0)).toNat = 1 then (0xFF : Byte) else
   split
   · rfl
   · have h8 := Proof.RsaPss.log2_lt8 (s.mem (s.gpr .a0))
-    have hp : 2 ^ Nat.log2 (s.mem (s.gpr .a0)).toNat ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
+    have hp : 2 ^ Nat.log2 (s.mem (s.gpr .a0)).toNat ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [h8])
     have hp1 := Nat.one_le_two_pow (n := Nat.log2 (s.mem (s.gpr .a0)).toNat)
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hp]), Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hp])]
 
 end
 
@@ -292,22 +292,22 @@ theorem shV_in (V : Nat → Byte) (b n a : Nat) (hz : ∀ x, n ≤ x → x < n +
     ∀ j ≤ 10, ∀ i < n, shV V b n a j (b + i) = if i + a % 2 ^ j < n then V (b + (i + a % 2 ^ j)) else 0
   | 0, _, i, hi => by simp only [shV, Nat.pow_zero, Nat.mod_one, Nat.add_zero]; rw [ifp hi]
   | j + 1, hj, i, hi => by
-    have ih := shV_in V b n a hz j (by omega)
+    have ih := shV_in V b n a hz j (by omega_using [hj])
     have hm : a % 2 ^ (j + 1) = a % 2 ^ j + 2 ^ j * (a / 2 ^ j % 2) := Nat.mod_pow_succ
     have h2 := Nat.mod_lt (a / 2 ^ j) (show 0 < 2 by decide)
-    have hp : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+    have hp : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
     have hp10 : (2 : Nat) ^ 10 = 1024 := rfl
     have hp9 : (2 : Nat) ^ 9 = 512 := rfl
     have hmj := Nat.mod_lt a (Nat.two_pow_pos j)
-    rw [shV, passV, ifp ⟨by omega, by omega⟩]
+    rw [shV, passV, ifp ⟨by omega_using [], by omega_using [hi]⟩]
     by_cases hb : a / 2 ^ j % 2 = 1
-    · rw [ifp (decide_eq_true hb), show b + i + 2 ^ j = b + (i + 2 ^ j) by omega]
+    · rw [ifp (decide_eq_true hb), show b + i + 2 ^ j = b + (i + 2 ^ j) by omega_using []]
       rw [hb, Nat.mul_one] at hm
       rw [hm]
       by_cases hl : i + 2 ^ j < n
-      · rw [ih (i + 2 ^ j) hl, show i + 2 ^ j + a % 2 ^ j = i + (a % 2 ^ j + 2 ^ j) by omega]
-      · rw [shV_out V b n a j _ (by omega), hz _ (by omega) (by omega), ifn (by omega)]
-    · have hb0 : a / 2 ^ j % 2 = 0 := by omega
+      · rw [ih (i + 2 ^ j) hl, show i + 2 ^ j + a % 2 ^ j = i + (a % 2 ^ j + 2 ^ j) by omega_using []]
+      · rw [shV_out V b n a j _ (by omega_using [hl]), hz _ (by omega_using [hl]) (by omega_using [hi, hp]), ifn (by omega_using [hl])]
+    · have hb0 : a / 2 ^ j % 2 = 0 := by omega_using [hb]
       rw [ifn (by simpa using hb), hm, hb0, Nat.mul_zero, Nat.add_zero, ih i hi]
 
 /-- Ten passes shift the `n` bytes left by `a`. -/
@@ -322,7 +322,7 @@ theorem shV_eq (V : Nat → Byte) {b n a : Nat} (ha : a < 2 ^ 10)
 
 /-- The stack arguments are in `aR`. -/
 theorem in_aR {s : State} {j : Nat} (hj : j < 8) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-- After the saves and the prologue. -/
 structure Entered (D : Nat) (s t : State) : Prop where
@@ -340,11 +340,11 @@ include P
 theorem arg_al {j : Nat} (hj : j < 8) : (stackArgAddr s j).toNat % 8 = 0 := by
   have := P.spal; have := P.sp2
   have e : (stackArgAddr s j).toNat = s.sp.toNat + 8 * j := by
-    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  rw [e]; omega
+    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hj, this]
+  rw [e]; omega_arith
 
 theorem fb_al8 : (fb s).toNat % 8 = 0 := by
-  have := fb_al (PreP.fits P); omega
+  have := fb_al (PreP.fits P); omega_using [this]
 
 /-- A load of our stack argument `j` through `t6`, the entry stack pointer,
 with memory changed only in the stack and our part of the working space. -/
@@ -389,8 +389,8 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
       o₁₁)))))))))).mono
   have hn : nR s ∈ s.rd := by rw [P.hrd]; simp
   have hc : (nR s).Contains (s.gpr .a0) 1 := by
-    have := Offset.contains_base (s.gpr .a0) (d := 0) (n := 1) (k := (s.gpr .a1).toNat) (by have := P.k1; omega)
-      (by have := P.wn; omega)
+    have := Offset.contains_base (s.gpr .a0) (d := 0) (n := 1) (k := (s.gpr .a1).toNat) (by have := P.k1; omega_using [this])
+      (by have := P.wn; omega_using [])
     simpa only [BitVec.add_zero] using this
   refine wp_lbu (a := s.gpr .a0) (by rw [k₁₁.get .a0, gs .a0 (by decide), BitVec.add_zero])
     (by rw [k₁₁.rd, hrd]; exact ⟨nR s, List.mem_append_left _ hn, hc⟩) fun v₁₂ o₁₂ e₁₂ => ?_
@@ -398,7 +398,7 @@ theorem entry_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) (hD64 : D �
     wp_or fun v₁₇ o₁₇ e₁₇ => wp_srl fun v₁₈ o₁₈ e₁₈ => wp_or fun v₁₉ o₁₉ e₁₉ =>
     wp_subi (imm := 1) fun v₂₀ o₂₀ e₂₀ => wp_srl fun v₂₁ o₂₁ e₂₁ => wp_li (imm := 0) (by decide) fun v₂₂ o₂₂ e₂₂ =>
     wp_sub fun v₂₃ o₂₃ e₂₃ => wp_li (imm := 255) (by decide) fun v₂₄ o₂₄ e₂₄ => wp_and fun v₂₅ o₂₅ e₂₅ =>
-    wp_or fun v₂₆ o₂₆ e₂₆ => wp_sub fun v₂₇ o₂₇ e₂₇ => wp_subi (imm := H.D + 1) (h := by omega)
+    wp_or fun v₂₆ o₂₆ e₂₆ => wp_sub fun v₂₇ o₂₇ e₂₇ => wp_subi (imm := H.D + 1) (h := by omega_using [hD, hD64])
     fun w ow ew => wp_nil ?_
   have kw : Only [.t1, .t2, .t3, .s3, .t4, .s5, .s4] v₁₁ w :=
     (o₁₂.trans (o₁₃.trans (o₁₄.trans (o₁₅.trans (o₁₆.trans (o₁₇.trans (o₁₈.trans (o₁₉.trans (o₂₀.trans (o₂₁.trans

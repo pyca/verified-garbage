@@ -16,7 +16,7 @@ open VG.Spec.ChaCha20 (Word stateAt)
 
 theorem vword_dup (w : Word) {j : Nat} (hj : j < 4) : vword (ofVWords w w w w) j = w := by
   rw [vword_ofVWords _ _ _ _ hj]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem vword_insert (v : BitVec 128) (w : Word) {i j : Nat} (hi : i < 4) (hj : j < 4) :
     vword (setLane v 32 i w) j = if j = i then w else vword v j := by
@@ -57,7 +57,7 @@ theorem inputWordInto_ok (s : State) (k : Fin 16) (d : VReg)
     WP isa (.block (inputWordInto k d)) s fun s' =>
       (∀ j, j < 4 → vword (s'.v d) j = input s k j) ∧
       (∀ r, r ≠ d → s'.v r = s.v r) ∧ LoadSame s s' := by
-  have ha : 4 * k.val % 4 = 0 ∧ 4 * k.val < 4096 * 4 := by omega
+  have ha : 4 * k.val % 4 = 0 ∧ 4 * k.val < 4096 * 4 := by omega_using []
   unfold inputWordInto
   split
   · rename_i hk
@@ -74,7 +74,7 @@ theorem inputWordInto_ok (s : State) (k : Fin 16) (d : VReg)
         vword_insert _ _ (i := 2) (by decide) hj,
         vword_insert _ _ (i := 1) (by decide) hj, vword_dup _ hj, input,
         ite_true, Mem.readW, BitVec.setWidth_eq]
-      rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+      rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
         simp (config := {decide := true}) [Size.bits, BitVec.add_assoc]
     · simp only [hr, ite_false]
     · simp only [RegUpd.gpr_setV, RegUpd.gpr_write, hr, ite_false]

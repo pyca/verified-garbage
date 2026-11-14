@@ -48,7 +48,7 @@ theorem macWord_ok {s : State} {W : Addr} {Z x y d : Nat} (hw : Ws s W Z)
   have K₆ : Keeps [.eax, .edx] s s₆ := (K₄.trans (u₅.keeps.mono (by decide))).trans (u₆.keeps.mono (by decide))
   have py₆ : PtrAt s₆ W .ebp y := by rw [PtrAt, K₆.1 _ (by decide)]; exact py
   have hw₆ := hw.of_keeps K₆
-  refine wp_storeS (by simpa using ea_ptr hw₆ py₆ (d := d) (by omega)) (ws_write hw₆ hy) fun s₇ m₇ => ?_
+  refine wp_storeS (by simpa using ea_ptr hw₆ py₆ (d := d) (by omega_using [hy])) (ws_write hw₆ hy) fun s₇ m₇ => ?_
   refine wp_movS rfl fun s₈ u₈ _ => ?_
   -- The registers along the way.
   have m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, m₄]
@@ -98,7 +98,7 @@ theorem macSet_ok {s : State} {W : Addr} {Z x y d : Nat} (hw : Ws s W Z)
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, m₂.mem, u₁.mem]
   have py₄ : PtrAt s₄ W .ebp y := by rw [PtrAt, K₄.1 _ (by decide)]; exact py
   have hw₄ := hw.of_keeps K₄
-  refine wp_storeS (by simpa using ea_ptr hw₄ py₄ (d := d) (by omega)) (ws_write hw₄ hy) fun s₇ m₇ => ?_
+  refine wp_storeS (by simpa using ea_ptr hw₄ py₄ (d := d) (by omega_using [hy])) (ws_write hw₄ hy) fun s₇ m₇ => ?_
   refine wp_movS rfl fun s₈ u₈ _ => ?_
   have ecx₂ : s₁.gpr .ecx = s.gpr .ecx := u₁.other _ (by decide)
   have eax₂ := m₂.eax

@@ -26,28 +26,28 @@ theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
   have hb := h.sized
   have spLo := h.spLo; have spHi := h.spHi
   unfold Impl.Dsa.Arm.ProbablePrime.code
-  refine WP.alloc (by decide) (by omega) ?_
+  refine WP.alloc (by decide) (by omega_using [spLo]) ?_
   rw [WP.seq_iff]
   refine WP.mono (pre_ok hb spLo spHi h.argsIn h.arg) fun t ⟨rest, fr, vals, r1, r2⟩ => ?_
   have o : PreOut bits s t := ⟨rest, fr, vals, r1, r2⟩
   have tspN : t.sp.toNat = s.sp.toNat - 32 := by
-    rw [rest.sp]; exact sub_toNat' (by omega)
-  refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega) (by decide) ?_
+    rw [rest.sp]; exact sub_toNat' (by omega_using [spLo])
+  refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo, tspN]) (by decide) ?_
   rw [WP.seq_iff]
   obtain ⟨tr, w, -, run', ⟨-, bk, r0, used⟩⟩ := body_wide v hb h o
   refine WP.mono (Q := fun x => x = w.withRegions s.rd (pcPushed t).wr) ⟨tr, _, run', rfl⟩ ?_
   rintro _ rfl
   have pre := bk.pre
   have wsp : w.sp = (mkP bits s).sp := bk.sp.trans pre.sp
-  have spN : (mkP bits s).sp.toNat = s.sp.toNat - 88 := sub_toNat' (by omega)
-  have sv := pc_push_callee_saved t (by omega)
+  have spN : (mkP bits s).sp.toNat = s.sp.toNat - 88 := sub_toNat' (by omega_using [spLo])
+  have sv := pc_push_callee_saved t (by omega_using [spLo, tspN])
   rw [show (t.sp - 56 : BitVec 32) = (mkP bits s).sp from pushed_sp o] at sv
   have saved : Spill.Saved w.mem (State.addr (mkP bits s).sp) t.gpr pcCalleeSaved := fun p hp => by
     have ho : FwOk p.2 := by revert hp; revert p; decide
     exact (bk.frame.readW (r := ⟨State.addr (mkP bits s).sp + BitVec.ofNat 64 p.2, 4⟩) (Region.contains_self _ _)
       (pre.fwSep ho) (by decide)).trans (sv p hp)
   have fit : (w.withRegions s.rd (pcPushed t).wr).sp.toNat + 56 ≤ 2 ^ 32 := by
-    show w.sp.toNat + 56 ≤ _; rw [wsp, spN]; omega
+    show w.sp.toNat + 56 ≤ _; rw [wsp, spN]; omega_using []
   have read : InRegions ((w.withRegions s.rd (pcPushed t).wr).rd ++ (w.withRegions s.rd (pcPushed t).wr).wr)
       (State.addr (w.withRegions s.rd (pcPushed t).wr).sp) 56 := by
     refine ⟨⟨State.addr (mkP bits s).sp, 56⟩, List.mem_append_right _ ?_, ?_⟩

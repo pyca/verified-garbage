@@ -177,7 +177,7 @@ include hs
 /-- A stack argument is readable. -/
 theorem arg_in {j : Nat} (hj : j < 4) : InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) (8 * (j + 1))) 8 :=
   ⟨eargR s, by rw [hs.rd]; simp, by
-    rw [off_eq]; exact Offset.contains _ (e := 8 * (0 + 1)) (by omega) (by omega) (by have := hs.sp_hi; omega)⟩
+    rw [off_eq]; exact Offset.contains _ (e := 8 * (0 + 1)) (by omega_using []) (by omega_using [hj]) (by have := hs.sp_hi; omega_using [])⟩
 
 omit hs in
 theorem arg_val (j : Nat) : s.mem.readW (off (s.gpr .rsp) (8 * (j + 1))) 64 = stackArg s j := by
@@ -288,7 +288,7 @@ theorem cpre_of {s h : State} (hs : TPre s) (hh : Loaded s h) : CallOpen.CPre h 
 theorem ret_stk {s : State} (hs : TPre s) : (eretR s).Disjoint (estkR s) := by
   have := hs.sp_lo
   show (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 56, 56⟩
-  exact Offset.base_disjoint_below _ (by have := hs.sp_hi; omega)
+  exact Offset.base_disjoint_below _ (by have := hs.sp_hi; omega_using [])
 
 /-! ## The body -/
 

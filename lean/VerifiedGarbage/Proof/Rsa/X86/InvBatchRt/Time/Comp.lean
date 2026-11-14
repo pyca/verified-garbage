@@ -50,9 +50,9 @@ theorem relCorrection {c i : Nat} (F : Room Z len) (hc4 : c + 4 ≤ 160) (hi : i
     by rw [← Nat.succ_mul]; exact Nat.mul_le_mul_right _ hi
   obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂
   exact RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
-      (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega)
-      (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega) h₁)
-    (relMaskOfSel (stable_true _) hc4 (by omega) (by omega) (by omega) h₂)
+      (by simp only [Nat.add_zero]; omega_using [F1, r12, rt]) (by simp only [Nat.add_zero]; omega_using [F1, r11, e4]) (by simp only [Nat.add_zero]; omega_using [F1, ri, hiS])
+      (by simp only [Nat.add_zero]; omega_using [r11, r12, e4, rt]) (by simp only [Nat.add_zero]; omega_using [ri, r12, rt, hiS]) h₁)
+    (relMaskOfSel (stable_true _) hc4 (by omega_using [F1, r11]) (by omega_using [F1, r12, rt]) (by omega_using [r11, r12, rt]) h₂)
 
 theorem relLinear {u v i j e : Nat} (F : Room Z len) (hu : u + 4 ≤ 160) (hv : v + 4 ≤ 160)
     (he : e ≤ 1) (hi : i < 11) (hj : j < 11)
@@ -76,8 +76,8 @@ theorem relLinear {u v i j e : Nat} (F : Room Z len) (hu : u + 4 ≤ 160) (hv : 
   obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂
   unfold linear linearUnsigned
   exact RelCT.seq (RelCT.seq
-      (relRowAdd (stable_true _) hu (by omega) rfl (by omega) (by omega) (by omega) h₁)
-      (relRowAdd (stable_true _) hv (by omega) rfl (by omega) (by omega) (by omega) h₂))
+      (relRowAdd (stable_true _) hu (by omega_using [he]) rfl (by omega_using [he, F1, r11]) (by omega_using [he, F1, ri, hiS]) (by omega_using [he, r11, ri, hiS]) h₁)
+      (relRowAdd (stable_true _) hv (by omega_using [he]) rfl (by omega_using [he, F1, r11]) (by omega_using [he, F1, rj, hjS]) (by omega_using [he, r11, rj, hjS]) h₂))
     (RelCT.seq (relCorrection F hu hi h₃ h₄) (relCorrection F hv hj h₅ h₆))
 
 /-- `csub src o` with any register facts that it keeps (`esi`'s, in the doublings). -/
@@ -106,16 +106,16 @@ theorem relCsub {G : (Reg → BitVec 32) → Prop} {src o : Ref}
   obtain ⟨_, h₁⟩ := h₁; obtain ⟨_, h₂⟩ := h₂; obtain ⟨_, h₃⟩ := h₃
   unfold VG.Impl.Rsa.X86.InvBatchRt.csub
   refine RelCT.seq (relChainSub (X := Mask) hG (fun _ h => h) (by decide) rfl
-      (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega)
-      (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega) h₁)
+      (by simp only [Nat.add_zero]; omega_using [F1, r12, rt, qt]) (by simp only [Nat.add_zero]; omega_using [hsz, qs]) (by simp only [Nat.add_zero]; omega_using [F1, r2, rmo, qm])
+      (by simp only [Nat.add_zero]; omega_using [hts, qs, qt]) (by simp only [Nat.add_zero]; omega_using [r12, r2, rt, rmo, qt, qm]) h₁)
     (RelCT.seq (relBorrowMask (fun g g' k hg => hG g g' (fun r hr => k r (by simp_all)) hg) hsh hsz h₂) ?_)
   by_cases ho : o = src
   · rw [ite_eq_left_of_eq_true _ _ (eq_true ho)] at h₃ ⊢
     subst ho
     exact relSelIn (fun g g' k hg => hG g g' (fun r hr => k r (by simp_all)) hg) (by decide)
-      (by simpa using hoz) (by simpa using (by omega : rv (kw len) tmp + 4 * nw len ≤ Z)) (by simp only [Nat.add_zero]; omega) h₃
+      (by simpa using hoz) (by simpa using (by omega_using [F1, r12, rt] : rv (kw len) tmp + 4 * nw len ≤ Z)) (by simp only [Nat.add_zero]; omega_using [hot, qo, qt]) h₃
   · rw [ite_eq_right_of_eq_false _ _ (eq_false ho)] at h₃ ⊢
-    exact relSelect3 (fun g g' k hg => hG g g' (fun r hr => k r (by simp_all)) hg) hoh hoz (by omega) (by omega)
+    exact relSelect3 (fun g g' k hg => hG g g' (fun r hr => k r (by simp_all)) hg) hoh hoz (by omega_using [hsz]) (by omega_using [F1, r12, rt])
       (hos ho) hot h₃
 
 end VG.Proof.Rsa.X86.InvBatchRt.Time

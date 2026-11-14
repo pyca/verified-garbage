@@ -39,7 +39,7 @@ theorem foldl_ones : ∀ (n acc : Nat),
     rw [ff]
     have pos : 0 < 256 ^ n := Nat.pow_pos (by decide)
     generalize 256 ^ n = p at *
-    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega⟩
+    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega_using [pos]⟩
     grind
 
 theorem sat_candidate {bits : Nat} (hb : Supported bits) :
@@ -53,7 +53,7 @@ theorem sat_candidate {bits : Nat} (hb : Supported bits) :
     simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
     simp only [List.length_map, List.length_range] at hi
     unfold satMemory
-    rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl, hi])]
     exact ite_eq_left hi
   change Spec.Dsa.decodeBE (Spec.Rsa.bytesAt (satMemory bits) (satBase + BitVec.ofNat 64 (candidate bits))
     (bits / 8)) = _
@@ -66,18 +66,18 @@ theorem sat_candidate {bits : Nat} (hb : Supported bits) :
 theorem sat_odd {bits : Nat} (hb : Supported bits) : candidateOf bits (satState bits) % 2 = 1 := by
   rw [sat_candidate hb]
   have : 2 ^ bits % 2 = 0 := by
-    rw [show bits = (bits - 1) + 1 by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide, Nat.pow_succ]; omega
+    rw [show bits = (bits - 1) + 1 by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide, Nat.pow_succ]; omega_using []
   have := Nat.two_pow_pos bits
-  omega
+  omega_arith
 
 theorem sat_length {bits : Nat} (hb : Supported bits) :
     Spec.Dsa.bitLength (candidateOf bits (satState bits)) = bits := by
   rw [sat_candidate hb]
   have low : 1 ≤ bits := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   have half : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
-    rw [← Nat.pow_succ]; congr 1; omega
+    rw [← Nat.pow_succ]; congr 1; omega_using [low]
   have pos := Nat.two_pow_pos (bits - 1)
-  exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mpr ⟨by omega, by omega⟩
+  exact (VG.Proof.Dsa.bitLength_iff_bounds (by omega_using [low])).mpr ⟨by omega_using [half], by omega_using [half, pos]⟩
 
 theorem satisfiable {bits : Nat} (hb : Supported bits) : ∃ s, (contract bits).pre s := by
   refine ⟨satState bits, ?_⟩

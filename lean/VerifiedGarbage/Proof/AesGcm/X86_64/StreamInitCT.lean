@@ -62,7 +62,7 @@ theorem streamInitEntry_ok {N : Nat} {s : State} (hp : (Proof.AesGcm.streamInitX
     · simp [gpr_setReg, hg₁]
     all_goals rfl
   refine WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, _, ⟨h13, h14, h15, hg₂, ?_⟩,
-    rfl, h12, hbp, ⟨?_, by have := (s.gpr .rdx).isLt; omega, wn, d_ns, d_nw, k_n⟩⟩⟩)
+    rfl, h12, hbp, ⟨?_, by have := (s.gpr .rdx).isLt; omega_using [], wn, d_ns, d_nw, k_n⟩⟩⟩)
   · refine ⟨?_, ?_, ?_⟩ <;> simp only [hrd₂, hwr₂, hrd₁, hwr₁]
     · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
     · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
@@ -77,15 +77,15 @@ theorem streamInit_rel (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] {s₀ s₀
   have L : Lay (s₀.gpr .rdi) (s₀.gpr .rcx) (s₀.gpr .r8) (s₀.gpr .rsp) N := by
     simp only [Proof.AesGcm.streamInitX86_64, Proof.AesGcm.stk, Proof.AesGcm.ret] at hp
     obtain ⟨-, -, d_cs, d_cw, -, -, d_sw, -, -, k_c, -, k_s, k_w, wc, -, ws, ww⟩ := hp
-    exact Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega) hN'
+    exact Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega_using [hN]) hN'
   obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆⟩ := hq
-  have hE₂ := streamInitEntry_ok hp' (by omega)
+  have hE₂ := streamInitEntry_ok hp' (by omega_using [hN])
   rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆] at hE₂
   refine fn_relN (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rcx) (W := s₀.gpr .r8) (SP := s₀.gpr .rsp) (N := N)
     [.rdi, .rsi, .rdx, .rcx, .r8, .rsp] (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
-    ⟨_, by taint_decide⟩ (streamInitEntry_ok hp (by omega)) hE₂ ?_
+    ⟨_, by taint_decide⟩ (streamInitEntry_ok hp (by omega_using [hN])) hE₂ ?_
   have a := RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ =>
     j0_rel v L hN (H₁ := H₁) (H₂ := H₂) (Np := s₀.gpr .rsi) (n := (s₀.gpr .rdx).toNat)
   have hw : ∀ s, (∃ H, J0In (s₀.gpr .rdi) (s₀.gpr .rcx) (s₀.gpr .r8) (s₀.gpr .rsp) H (s₀.gpr .rsi)

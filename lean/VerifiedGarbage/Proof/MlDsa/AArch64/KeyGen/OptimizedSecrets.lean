@@ -38,7 +38,7 @@ theorem secretTailThree_eq (c : Impl.Sha3.AArch64.Callee) (p : Params) :
     by_cases hi3 : i=3
     · subst i; rfl
     · dsimp only
-      simp only [ite_eq_left (by omega : i<3),ite_eq_right hi3]
+      simp only [ite_eq_left (by omega_using [hi4, hi3] : i<3),ite_eq_right hi3]
   unfold VG.Impl.MlDsa.AArch64.KeyGen.Optimized.secretTailThree groupCode
   rw [he]
 
@@ -47,7 +47,7 @@ theorem secretGroup_piece (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFac
     Piece p S (KSamp p · (p.k*p.ℓ) (4*g)) (KSamp p · (p.k*p.ℓ) (4*(g+1)))
       (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.secretGroup c p g) := by
   rw [secretGroup_eq]
-  have he : 4*(g+1)=4*g+4 := by omega
+  have he : 4*(g+1)=4*g+4 := by omega_using []
   rw [he] at hg ⊢
   exact group_piece c hF (Or.inr rfl) hg
 
@@ -60,17 +60,17 @@ theorem secrets_piece (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p
       (KSamp p · (p.k*p.ℓ) (4*((p.ℓ+p.k)/4)))
       (seqR (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.secretGroup c p) 0 ((p.ℓ+p.k)/4)) := by
     simpa only [Nat.mul_zero,Nat.zero_add] using Piece.seqR (S := S) (I := fun g σ s=>KSamp p σ (p.k*p.ℓ) (4*g) s) ((p.ℓ+p.k)/4) 0
-      (fun g _ hg=>secretGroup_piece c hF (by omega))
+      (fun g _ hg=>secretGroup_piece c hF (by omega_using [hg]))
   unfold VG.Impl.MlDsa.AArch64.KeyGen.Optimized.secretsWith
   apply Piece.seq hg
   split
   · rename_i hmod
     rw [secretTailThree_eq]
-    have he : 4*((p.ℓ+p.k)/4)+3=p.ℓ+p.k := by omega
+    have he : 4*((p.ℓ+p.k)/4)+3=p.ℓ+p.k := by omega_using [hmod]
     simpa only [he] using group_piece c hF (S := S) (r := 4*((p.ℓ+p.k)/4))
-      (n := 3) (Or.inl rfl) (by omega)
+      (n := 3) (Or.inl rfl) (by omega_using [hmod])
   · rename_i hmod
-    have he : 4*((p.ℓ+p.k)/4)=p.ℓ+p.k := by omega
+    have he : 4*((p.ℓ+p.k)/4)=p.ℓ+p.k := by omega_using [hm, hmod]
     rw [he]
     exact ⟨fun _ _ _ hs=>WP.block_nil hs,block_nomem_tr (fun _ hi _=>False.elim (List.not_mem_nil hi))⟩
 

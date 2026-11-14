@@ -66,11 +66,11 @@ theorem inRegions_off {rs : List Region} {a : Addr} {N o n : Nat} (h : InRegions
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((a - r.base).toNat + o % 2 ^ 64) (2 ^ 64)
   have := Nat.mod_le o (2 ^ 64)
-  omega
+  omega_using [hon, hc]
 
 theorem inRegions_pre {rs : List Region} {a : Addr} {N n : Nat} (h : InRegions rs a N) (hn : n ≤ N) :
     InRegions rs a n := by
-  have := inRegions_off (o := 0) (n := n) h (by omega)
+  have := inRegions_off (o := 0) (n := n) h (by omega_using [hn])
   rwa [BitVec.add_zero] at this
 
 /-! ## Offsets from a pointer -/
@@ -83,7 +83,7 @@ theorem ofs_sub (S : BitVec 32) {a b : Nat} (h : b ≤ a) :
     S + BitVec.ofNat 32 a - BitVec.ofNat 32 b = S + BitVec.ofNat 32 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- The schedule's address less a pointer `a` bytes into it. -/
 theorem ofs_neg (S : BitVec 32) (a : Nat) :
@@ -91,7 +91,7 @@ theorem ofs_neg (S : BitVec 32) (a : Nat) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := S.isLt
-  omega
+  omega_using []
 
 theorem ofNat_sub_beq {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 c == 0#32) = decide (a = c) := by
@@ -101,7 +101,7 @@ theorem ofNat_sub_beq {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32) :
       intro e
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at this
-      omega
+      omega_using [ha, hc, h, this]
     simp [this, h]
 
 theorem ofNat_sub_beq' {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32) :

@@ -41,7 +41,7 @@ theorem wipeFrom_run (R : Region) (u : State) (off words : Nat) (hoff : off < 20
     simp [State.write]
   obtain ⟨u', he, hf, ho, sp', rd', wr'⟩ := wipeChunks_run R (words / 256) words
     ((u.write .t5 (u.sp + BitVec.ofNat 64 off)).write .t6 (BitVec.ofInt 64 0))
-    (by simpa [State.write]) (by rw [h5]; exact hal) (by omega) (by rw [h5]; exact hc)
+    (by simpa [State.write]) (by rw [h5]; exact hal) (by omega_using []) (by rw [h5]; exact hc)
   refine ⟨u', ?_, by simpa [State.write] using hf, fun r h5' h6 => ?_, by rw [sp']; rfl,
     by rw [rd']; rfl, by rw [wr']; rfl⟩
   · simp only [wipeFrom, execBlock, isa, exec, hoff, ↓reduceIte]

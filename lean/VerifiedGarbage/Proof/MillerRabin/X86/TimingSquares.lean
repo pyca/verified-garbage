@@ -43,14 +43,14 @@ theorem SquareInput.step {code : Prog isa} {name : String}
   let Y := Word32.mm c g.w (A aY) (A aY)
   let E := decide (Y = A aMinusOne)
   refine ⟨⟨c, setAt A aY Y, squareSlots (setAt V sEq2 (BitVec.ofNat 32 E.toNat)) q r E F,
-    r, F || (decide (r < q) && E), ?_, odd, ?_, rBound, by omega, rfl, ?_, ?_⟩, Z⟩
+    r, F || (decide (r < q) && E), ?_, odd, ?_, rBound, by omega_using [qBound], rfl, ?_, ?_⟩, Z⟩
   · exact St.mono (fun j mem => ⟨mem, rfl⟩) (by
       intro d mem
       refine ⟨?_, rfl⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at mem ⊢
       rcases mem with rfl | rfl | rfl <;> simp)
   · rw [setAt_self]
-    exact Word32.mm_lt (by omega : 0 < c)
+    exact Word32.mm_lt (by omega_using [odd] : 0 < c)
   · exact threshold
   · change BitVec.ofNat 32 (F || (E && decide (r < q))).toNat = _
     rw [Bool.and_comm]

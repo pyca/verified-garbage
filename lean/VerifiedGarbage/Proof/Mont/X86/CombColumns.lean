@@ -122,11 +122,11 @@ theorem buildColumns_initial {n e context size m g : Nat} {base : Addr} {s : Sta
   have bound := L.bound
   have apart := L.apart
   have hdr := slot_header n 9
-  have context32 : 32 ≤ context := by change slot n 9 ≤ context at apart; omega
+  have context32 : 32 ≤ context := by change slot n 9 ≤ context at apart; omega_using [hdr, apart]
   have nw := C.scr.nowrap
   refine wp_movS rfl fun u U _ => ?_
   have hu := C.scr.of_keeps U.keeps (by decide)
-  refine wp_storeS (hu.ea (d := 28) (by omega)) (hu.write (d := 28) (n := 4) (by omega))
+  refine wp_storeS (hu.ea (d := 28) (by omega_using [bound, context32])) (hu.write (d := 28) (n := 4) (by omega_using [bound, context32]))
     fun t M => WP.block_nil ?_
   have O : Outside base 28 4 s.mem t.mem := by
     rw [M.mem, U.mem]; exact writeW32_outside _ _ _ (by decide)
@@ -135,13 +135,13 @@ theorem buildColumns_initial {n e context size m g : Nat} {base : Addr} {s : Sta
   have init : Columns n context size m g (Spec.Rsa.FixedBaseComb.rows (32*e)) 0 base s t := by
     refine ⟨Ct, ?_, ?_, ?_, Outs.of_outside O (by simp [columnRanges]), K⟩
     · rw [M.mem, w32_write_self, U.gpr]; rfl
-    · rw [O.wordsVal (.inr (by have := slot_header n 5; omega))
-        (by have := L.slot (i := 5) (by decide); omega), V]
+    · rw [O.wordsVal (.inr (by have := slot_header n 5; omega_using [this]))
+        (by have := L.slot (i := 5) (by decide); omega_using [bound, nw, this]), V]
     · intro j hj
-      have eq : j=0 := by omega
+      have eq : j=0 := by omega_using [hj]
       subst j
-      have addr : entry n (context+16*n) (2^0) = context+24*n := by simp [entry]; omega
-      rw [addr, O.wordsVal (.inr (by omega)) (by omega), T]
+      have addr : entry n (context+16*n) (2^0) = context+24*n := by simp [entry]; omega_using []
+      rw [addr, O.wordsVal (.inr (by omega_using [context32])) (by omega_using [bound, nw]), T]
   exact init
 
 theorem buildColumns_ok {n e context size m g : Nat} {base : Addr} {s : State}

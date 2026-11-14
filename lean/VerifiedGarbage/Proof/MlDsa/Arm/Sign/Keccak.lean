@@ -105,7 +105,7 @@ theorem kzero_ok {s : State} (L : Lay D rbs wbs s) (hk : kChk (rbs ++ wbs) wbs =
   refine WP.mono (VG.Proof.MlKem.Arm.Sample.zeroWords_ok .r7 (s₁ := s₁) (by rw [g]; simp [State.setReg])
     (by rw [e7]; have := L.nwp i0; simpa using this) fun k hk => by
       rw [e7, wr, ep]
-      exact inRegions_sub (L.iW w0) (by omega) (by decide))
+      exact inRegions_sub (L.iW w0) (by omega_using [hk]) (by decide))
     fun s₂ h₂ => ?_
   have hf := h₂.frame
   have hz := h₂.zero
@@ -140,7 +140,7 @@ theorem kabsArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 8 ≤ D) (hk : kChk 
   have a0 : State.addr (s.gpr .r7 + BitVec.ofNat 32 0) = pa s (sc 0) := L.pa32 (p := sc 0) i0 (by decide)
   have a1 : State.addr (s.gpr .r7 + BitVec.ofNat 32 200) = pa s (sc 200) := L.pa32 (p := sc 200) i1 (by decide)
   have as : State.addr (s.gpr src.1 + BitVec.ofNat 32 src.2) = pa s src := L.pa32 is l0
-  refine ⟨e1, e2, e3, e4, e5, e6, hrate, hpos, hl, by rw [k.sp]; have := L.sp; omega,
+  refine ⟨e1, e2, e3, e4, e5, e6, hrate, hpos, hl, by rw [k.sp]; have := L.sp; omega_using [hD, this],
     L.fit (p := sc 0) i0 (by decide), L.fit is l0, L.fit (p := sc 200) i1 (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [regA, a0, a1]; exact L.disj d01
   · simp only [regA, a0, as]; exact L.disj d0
@@ -203,7 +203,7 @@ theorem kpadArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 8 ≤ D) (hk : kChk 
   have a0 : State.addr (s.gpr .r7 + BitVec.ofNat 32 0) = pa s (sc 0) := L.pa32 (p := sc 0) i0 (by decide)
   have a1 : State.addr (s.gpr .r7 + BitVec.ofNat 32 200) = pa s (sc 200) := L.pa32 (p := sc 200) i1 (by decide)
   refine ⟨hA (.r0, .ptr (sc 0)) (by simp), hA (.r1, .imm rate) (by simp), hA (.r2, .imm pos) (by simp),
-    hA (.r3, .imm suffix) (by simp), hA (.lr, .ptr (sc 200)) (by simp), hrate, hpos, by rw [k.sp]; have := L.sp; omega,
+    hA (.r3, .imm suffix) (by simp), hA (.lr, .ptr (sc 200)) (by simp), hrate, hpos, by rw [k.sp]; have := L.sp; omega_using [hD, this],
     L.fit (p := sc 0) i0 (by decide), L.fit (p := sc 200) i1 (by decide), ?_, ?_, ?_, ?_⟩
   · simp only [regA, a0, a1]; exact L.disj d01
   · simp only [regA, a0]; exact k8 L hD i0 k.sp
@@ -213,7 +213,7 @@ theorem kpadArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 8 ≤ D) (hk : kChk 
 theorem b8_ofNat32 {v : Nat} (_hv : v < 256) : BitVec.setWidth 8 (BitVec.ofNat 32 v) = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem kpad_ok {s : State} (L : Lay D rbs wbs s) (hD : 8 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {rate pos suffix : Nat} (hrate : rate ∈ rates) (hpos : pos < rate) (hs : suffix < 256) :
@@ -269,7 +269,7 @@ theorem ksqzArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 8 ≤ D) (hk : kChk 
   have a0 : State.addr (s.gpr .r7 + BitVec.ofNat 32 0) = pa s (sc 0) := L.pa32 (p := sc 0) i0 (by decide)
   have a1 : State.addr (s.gpr .r7 + BitVec.ofNat 32 200) = pa s (sc 200) := L.pa32 (p := sc 200) i1 (by decide)
   have ad : State.addr (s.gpr dst.1 + BitVec.ofNat 32 dst.2) = pa s dst := L.pa32 id l0
-  refine ⟨e1, e2, e3, e4, e5, e6, hrate, Nat.zero_le _, hl, by rw [k.sp]; have := L.sp; omega,
+  refine ⟨e1, e2, e3, e4, e5, e6, hrate, Nat.zero_le _, hl, by rw [k.sp]; have := L.sp; omega_using [hD, this],
     L.fit (p := sc 0) i0 (by decide), L.fit id l0, L.fit (p := sc 200) i1 (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [regA, a0, ad]; exact L.disj d0
   · simp only [regA, a0, a1]; exact L.disj d01

@@ -40,7 +40,7 @@ theorem incr32_ok (s : State) {base : Reg} (h9 : base ≠ .r9) {off : Nat} (hoff
       (∀ r, r ≠ .r9 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       s'.mem = inc32Mem s.mem Q ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have i1 (t : State) : (Op2.imm 1).eval t = some 1 := Proof.MdStream.Arm.op2_imm (by decide)
-  have h12 : off + 12 < 4096 := by omega
+  have h12 : off + 12 < 4096 := by omega_using [hoff]
   refine ⟨_, by
     simp only [↓reduceIte, inc32At, runBlock_cons, runStep_some, runBlock_nil, exec,
       i1, State.load32, State.store32, Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg,
@@ -69,8 +69,8 @@ theorem inc32Mem_bytes (m : Mem) (Q : Addr) :
     simp only [bytesAt, List.getElem_map, List.getElem_range, inc32Mem, Mem.writeW]
     exact Mem.write_apply (by
       rw [show Q + BitVec.ofNat 64 i - (Q + BitVec.ofNat 64 12) = BitVec.ofNat 64 (2 ^ 64 - (12 - i)) by
-        apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega]
-      simp only [BitVec.toNat_ofNat]; omega)
+        apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h₁]]
+      simp only [BitVec.toNat_ofNat]; omega_using [h₁])
   rw [split, frame, inc32Mem, rev_eq, rev_eq, AesCtr.bytesAt_writeW_rv32, show (16 : Nat) = 12 + 4 from rfl,
     AesCtr.ofNat_add, hhi]
   have h4 := congrArg toNat hlow
@@ -78,12 +78,12 @@ theorem inc32Mem_bytes (m : Mem) (Q : Addr) :
   have hw := (AesCtr.rv32 (m.readW (Q + BitVec.ofNat 64 12) 32)).isLt
   have e1 : (1 : BitVec 32).toNat = 1 := rfl
   congr 1
-  · exact AesCtr.ofNat_congr (by unfold Proof.Modes.ctr32Val; omega)
+  · exact AesCtr.ofNat_congr (by unfold Proof.Modes.ctr32Val; omega_using [])
   · refine AesCtr.ofNat_congr ?_
     rw [BitVec.toNat_add, e1]
     unfold Proof.Modes.ctr32Val
     simp only [Nat.reducePow] at *
-    omega
+    omega_using [h4]
 
 theorem inc32Mem_frame (m : Mem) (Q : Addr) : Frame [⟨Q, 16⟩] m (inc32Mem m Q) :=
   (Frame.refl _ _).writeW (List.mem_singleton_self _) _

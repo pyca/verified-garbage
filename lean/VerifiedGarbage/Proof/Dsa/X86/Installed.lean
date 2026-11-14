@@ -29,7 +29,7 @@ structure Installed (base : Addr) (size : Nat) (args : List (Nat × Field))
 theorem verifyingEntry_ok {s : State} (A : VerifyingABI s) :
     WP isa (.block Entry.verifyEntry) s fun t =>
       Installed (argumentPointer s 8) ((arg s 9).toNat * 8) Entry.verifyArguments 0 2 3 s t := by
-  have sz : 8272 ≤ (arg s 9).toNat * 8 := by have H : 15712 ≤ (arg s 9).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 9).toNat * 8 := by have H : 15712 ≤ (arg s 9).toNat * 8 := A.used; omega_using [H]
   apply WP.mono (installArguments_ok Entry.verifyArguments (scratchArg := 8)
     (keyArg := 0) (pLenArg := 2) (qLenArg := 3)
     (A.stackArgument (by decide : 8 < 10)).readSrc rfl A.scratchBound sz
@@ -44,7 +44,7 @@ theorem verifyingEntry_ok {s : State} (A : VerifyingABI s) :
 theorem signingEntry_ok {s : State} (A : SigningABI s) :
     WP isa (.block Entry.signEntry) s fun t =>
       Installed (argumentPointer s 9) ((arg s 10).toNat * 8) Entry.signArguments 2 4 6 s t := by
-  have sz : 8272 ≤ (arg s 10).toNat * 8 := by have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 10).toNat * 8 := by have H : 15712 ≤ (arg s 10).toNat * 8 := A.used; omega_using [H]
   apply WP.mono (installArguments_ok Entry.signArguments (scratchArg := 9)
     (keyArg := 2) (pLenArg := 4) (qLenArg := 6)
     (A.stackArgument (by decide : 9 < 11)).readSrc rfl A.scratchBound sz

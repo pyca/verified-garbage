@@ -45,7 +45,7 @@ theorem key_public {s t : State} (H : (Spec.Dsa.generateKeyContract Arm.abi 144)
   refine ⟨?_, hkey, hst, htr⟩
   have hargs : ∀ i < 7, stackArg s i = stackArg t i := by
     intro i hi
-    have c : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega
+    have c : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega_using [hi]
     rcases c with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3, a4, a5, a6]
   have hp : (rInput s).pLen = (rInput t).pLen := congrArg BitVec.toNat a1
@@ -57,7 +57,7 @@ theorem key_public {s t : State} (H : (Spec.Dsa.generateKeyContract Arm.abi 144)
 
 theorem alloc_push {s₀ : State} (A : KeyABI s₀) :
     isa.push (.alloc frameBytes) s₀ = some (allocated frameBytes s₀) := by
-  have hsp : frameBytes ≤ s₀.sp.toNat := by have := A.stackLow; unfold frameBytes; omega
+  have hsp : frameBytes ≤ s₀.sp.toNat := by have := A.stackLow; unfold frameBytes; omega_using [this]
   have hn : 0 < frameBytes ∧ frameBytes < 4096 ∧ frameBytes % 8 = 0 ∧
       encodable (BitVec.ofNat 32 frameBytes) = true := by decide
   simp only [isa, push, hn.1, hn.2.1, hn.2.2.1, hn.2.2.2, hsp, and_self, ite_true]

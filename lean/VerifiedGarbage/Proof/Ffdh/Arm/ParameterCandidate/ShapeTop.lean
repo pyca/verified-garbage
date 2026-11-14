@@ -23,7 +23,7 @@ theorem shapeTop_ok (s : State) {dst src : BitVec 32} {bs : List Byte} {bits j :
       (∀ i < bs.length, t.mem (State.addr (dst + BitVec.ofNat 32 i)) =
         (VG.Proof.Ffdh.ParameterCandidate.topCut bs j).getD i 0) ∧
       Frame [⟨State.addr dst, bs.length⟩] s.mem t.mem ∧ Rest [.r3, .r4, .r9] s t := by
-  have positive : 0 < bs.length := by have := h.size; omega
+  have positive : 0 < bs.length := by have := h.size; omega_using [this]
   have read := h.readByte (i := 0) positive
   have write := h.writeByte (i := 0) positive
   simp only [BitVec.add_zero] at read write

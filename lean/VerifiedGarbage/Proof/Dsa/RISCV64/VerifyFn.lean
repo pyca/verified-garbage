@@ -76,10 +76,10 @@ theorem keyVals_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (3 * L
     pOf m' L key = pOf m L key ∧ qOf m' L key = qOf m L key ∧ gOf m' L key = gOf m L key ∧
       yOf m' L key = yOf m L key := by
   refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [pOf]; rw [(hk.take (k := L.pl) (by omega)).bytes h (by omega)]
-  · simp only [qOf]; rw [(hk.sub (o := L.pl) (k := L.ql) (by omega)).bytes h (by omega)]
-  · simp only [gOf]; rw [(hk.sub (o := L.pl + L.ql) (k := L.pl) (by omega)).bytes h (by omega)]
-  · simp only [yOf]; rw [(hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega)).bytes h (by omega)]
+  · simp only [pOf]; rw [(hk.take (k := L.pl) (by omega_using [])).bytes h (by omega_using [])]
+  · simp only [qOf]; rw [(hk.sub (o := L.pl) (k := L.ql) (by omega_using [])).bytes h (by omega_using [])]
+  · simp only [gOf]; rw [(hk.sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])).bytes h (by omega_using [])]
+  · simp only [yOf]; rw [(hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_using [])).bytes h (by omega_using [])]
 
 /-- Verification after `Verify.entry`, with the check of the key by `X`:
 `checkKey`, or, when `V` gives `KeyOk`, a setup of the working spaces that
@@ -136,10 +136,10 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     fun u hu i hi => by
       rw [← saveOff_eq]
       exact hu.al8 (d := saveOff i) (by simp only [saveOff, layOf] at hZ ⊢; omega_arith)
-        (by simp only [saveOff]; omega)
+        (by simp only [saveOff]; omega_using [])
   have hsav' : ∀ u : State, Kept (layOf s) s₁.mem u.mem → ∀ i < 13,
       word u.mem (stackArg s 0) (saveOff i) = s.gpr (saved i) := fun u hu i hi =>
-    (hu.word (Or.inr ⟨by simp only [saveOff, hLens]; omega, by simp only [saveOff]; omega⟩)).trans (F.sav i hi)
+    (hu.word (Or.inr ⟨by simp only [saveOff, hLens]; omega_using [], by simp only [saveOff]; omega_using [hi]⟩)).trans (F.sav i hi)
   have Out₁ : Outside (layOf s).S 0 (layOf s).Z s.mem s₁.mem :=
     F.out.mono (Nat.le_refl _) (by simp only [layOf] at hZ ⊢; omega_arith)
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := keyVals_kept (srcK s rfl rfl) Out₁
@@ -156,10 +156,10 @@ theorem verifyLike_ok {X : Prog isa → Prog isa → Prog isa} {V : Prop}
     have hKt := hKs.mp hK
     refine WP.mono (body_ok hL hK hc hkp (srcK t kt.2.1 kt.2.2) (srcG t kt.2.1 kt.2.2) (by omega_arith)
       ((srcD t kt.2.1 kt.2.2).take (Nat.min_le_left _ _))
-      (by rw [hkp.word (Or.inl (by simp only [hDigest, hLens]; omega))]; exact F.dig))
+      (by rw [hkp.word (Or.inl (by simp only [hDigest, hLens]; omega_using []))]; exact F.dig))
       fun u ⟨⟨a0u, Ku, h6u, scru⟩, ku⟩ => ?_
     refine WP.mono (finish_ok h6u (hwr' u scru) (hal' u scru) fun i hi =>
-        (Ku.word (by simp only [saveOff]; omega) (by simp only [saveOff]; omega)).trans (hsav' t hkp i hi))
+        (Ku.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi])).trans (hsav' t hkp i hi))
       fun w ⟨hab, w0⟩ => ⟨hab, ?_⟩
     show ((w.gpr .a0).setWidth 32).toNat = _
     rw [w0, a0u, ret_ofNat, hspec, VG.Proof.Dsa.RISCV64.bytesAt_take]

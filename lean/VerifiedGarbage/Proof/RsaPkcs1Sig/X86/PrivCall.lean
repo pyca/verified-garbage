@@ -59,11 +59,11 @@ abbrev privWr (sp out scr : BitVec 32) (K sl : Nat) : List Region :=
 theorem PrivArgs.arg (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl) (rd wr : List Region)
     {i : Nat} (hi : i < 20) :
     VG.X86.arg (s.callEntry.withRegions rd wr) i = (privArgv out n e inp p q dp dq qinv scr K el pl ql sl).getD i 0 := by
-  rw [arg_withRegions, arg_callEntry (by have := h.sp; omega) (by have := h.fit; omega)]
+  rw [arg_withRegions, arg_callEntry (by have := h.sp; omega_using [this]) (by have := h.fit; omega_using [hi, this])]
   exact h.args i hi
 
 theorem PrivArgs.k32 (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl) : K < 2 ^ 32 := by
-  have := h.kv.2; omega
+  have := h.kv.2; omega_using [this]
 
 theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     (dW : ∀ w ∈ privWr (s.gpr .esp) out scr K sl, ∀ r ∈ privRd n e inp p q dp dq qinv K el pl ql, w.Disjoint r)
@@ -75,14 +75,14 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     (Proof.Rsa.privateCheckedContract abi Proof.Rsa.X86.PrivChecked.stackBytes).pre
       (s.callEntry.withRegions (privRd n e inp p q dp dq qinv K el pl ql) (privWr (s.gpr .esp) out scr K sl)) := by
   have k32 := h.k32
-  have el32 : el < 2 ^ 32 := by have := h.elK; omega
-  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega
-  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega
+  have el32 : el < 2 ^ 32 := by have := h.elK; omega_using [k32, this]
+  have pl32 : pl < 2 ^ 32 := by have := h.plK; omega_using [k32, this]
+  have ql32 : ql < 2 ^ 32 := by have := h.qlK; omega_using [k32, this]
   have a := fun {i} (hi : i < 20) => h.arg (privRd n e inp p q dp dq qinv K el pl ql)
     (privWr (s.gpr .esp) out scr K sl) hi
   have hsp := h.sp
   have hfit := h.fit
-  have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
+  have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega_using [hsp])
   sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argSlots, argVal, argBytes,
     stackBelow]
   simp only [a (by decide : 0 < 20), a (by decide : 1 < 20), a (by decide : 2 < 20), a (by decide : 3 < 20),
@@ -91,9 +91,9 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     a (by decide : 12 < 20), a (by decide : 13 < 20), a (by decide : 14 < 20), a (by decide : 15 < 20),
     a (by decide : 16 < 20), a (by decide : 17 < 20), a (by decide : 18 < 20), a (by decide : 19 < 20),
     privArgv, List.getD_cons_zero, List.getD_cons_succ, BitVec.toNat_ofNat, Nat.reducePow,
-    Nat.mod_eq_of_lt (show K < 4294967296 by omega), Nat.mod_eq_of_lt (show el < 4294967296 by omega),
-    Nat.mod_eq_of_lt (show pl < 4294967296 by omega), Nat.mod_eq_of_lt (show ql < 4294967296 by omega),
-    Nat.mod_eq_of_lt (show sl < 4294967296 by have := h.sl32; omega),
+    Nat.mod_eq_of_lt (show K < 4294967296 by omega_using [k32]), Nat.mod_eq_of_lt (show el < 4294967296 by omega_using [el32]),
+    Nat.mod_eq_of_lt (show pl < 4294967296 by omega_using [pl32]), Nat.mod_eq_of_lt (show ql < 4294967296 by omega_using [ql32]),
+    Nat.mod_eq_of_lt (show sl < 4294967296 by have := h.sl32; omega_using [this]),
     argAddr_withRegions, argAddr_callEntry, Nat.mul_zero, BitVec.add_zero, e4]
   have wr := fun {w r : Region} (hw : w ∈ privWr (s.gpr .esp) out scr K sl)
     (hr : r ∈ privRd n e inp p q dp dq qinv K el pl ql) => dW w hw r hr
@@ -109,11 +109,11 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
       x.toNat + k ≤ 2 ^ 32 := by
     intro x k hx
     have := fi hx
-    rwa [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega)] at this
+    rwa [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])] at this
   have ret : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (s.gpr .esp) 3448) :=
     below_sub (by decide) h.sp
   have low : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64 - BitVec.ofNat 64 3444, 3444⟩ (below (s.gpr .esp) 3448) := by
-    rw [← Taint.sub_setWidth (by omega)]
+    rw [← Taint.sub_setWidth (by omega_using [hsp, e4])]
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
   all_goals first
@@ -122,7 +122,7 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
     | (refine (lo ?_).sub_left ret; simp <;> fail) | (refine (lo ?_).sub_left low; simp <;> fail)
     | (refine fi' _ _ ?_; simp <;> fail)
-    | (simp only [Proof.Rsa.X86.PrivChecked.stackBytes]; omega)
+    | (simp only [Proof.Rsa.X86.PrivChecked.stackBytes]; omega_using [hsp])
     | exact h.kv.1 | exact h.kv.2
 
 theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq qinv scr K el pl ql sl)
@@ -150,7 +150,7 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
     a₂ (by decide : 16 < 20), a₂ (by decide : 17 < 20), a₂ (by decide : 18 < 20), a₂ (by decide : 19 < 20),
     privArgv, List.getD_cons_zero, List.getD_cons_succ, hsp, true_and, and_true]
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32,
-    Nat.mod_eq_of_lt (show el < 2 ^ 32 by have := h₁.elK; omega)]
+    Nat.mod_eq_of_lt (show el < 2 ^ 32 by have := h₁.elK; omega_using [k32, this])]
   have ret := fun {sx : State} (hx : 3448 ≤ (sx.gpr .esp).toNat) =>
     (Frame.refl [⟨(sx.gpr .esp - 4).setWidth 64, 4⟩] sx.mem).writeW (List.mem_singleton_self _) (sx.unknowns 0)
       (Region.contains_self _ _)
@@ -162,9 +162,9 @@ theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq
     intro x k hd r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact (hd.sub_left (below_sub (a := 4) (by decide) h₁.sp)).symm
-  rw [Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hdn) (by omega), Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hdn) (by omega),
-    Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hde) (by have := h₁.elK; omega),
-    Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hde) (by have := h₁.elK; omega), hn, he]
+  rw [Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hdn) (by omega_using [k32]), Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hdn) (by omega_using [k32]),
+    Proof.RsaPkcs1Sig.bytesAt_frame ret₁ (dq hde) (by have := h₁.elK; omega_using [k32, this]),
+    Proof.RsaPkcs1Sig.bytesAt_frame ret₂ (dq hde) (by have := h₁.elK; omega_using [k32, this]), hn, he]
 
 /-- The call's result: what it writes to `out` and returns. -/
 theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
@@ -185,10 +185,10 @@ theorem priv_post {s t : State} (h : PrivArgs s out n e inp p q dp dq qinv scr K
     a (by decide : 12 < 20), a (by decide : 14 < 20),
     a (by decide : 16 < 20),
     privArgv, List.getD_cons_zero, List.getD_cons_succ, BitVec.toNat_ofNat, Nat.reducePow,
-    Nat.mod_eq_of_lt (show K < 4294967296 by have := h.kv.2; omega),
-    Nat.mod_eq_of_lt (show el < 4294967296 by have := h.elK; have := h.kv.2; omega),
-    Nat.mod_eq_of_lt (show pl < 4294967296 by have := h.plK; have := h.kv.2; omega),
-    Nat.mod_eq_of_lt (show ql < 4294967296 by have := h.qlK; have := h.kv.2; omega)] at hp
+    Nat.mod_eq_of_lt (show K < 4294967296 by have := h.kv.2; omega_using [this]),
+    Nat.mod_eq_of_lt (show el < 4294967296 by have := h.elK; have := h.kv.2; omega_arith),
+    Nat.mod_eq_of_lt (show pl < 4294967296 by have := h.plK; have := h.kv.2; omega_arith),
+    Nat.mod_eq_of_lt (show ql < 4294967296 by have := h.qlK; have := h.kv.2; omega_arith)] at hp
   rw [BitVec.setWidth_append_eq_right] at hp
   exact hp
 

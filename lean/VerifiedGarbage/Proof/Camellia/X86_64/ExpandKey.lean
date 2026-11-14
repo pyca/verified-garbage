@@ -34,7 +34,7 @@ open VG.Proof.Camellia (hiW loW)
 
 theorem entryW_slot (s : State) (i j : Nat) : entryW s.mem (s.gpr sb) i j = slotW s (keySlot + 8 * i + j) := by
   simp only [entryW, slotW, wordAddr]
-  rw [show 8 * (keySlot + 8 * i + j) = 8 * keySlot + 64 * i + 8 * j by omega]
+  rw [show 8 * (keySlot + 8 * i + j) = 8 * keySlot + 64 * i + 8 * j by omega_using []]
 
 /-- What the subkeys' stores leave: the schedule's bytes. -/
 structure StoresPost (s₈ : State) (S : Addr) (len : Nat) (key : List Byte) (s : State) : Prop where
@@ -59,14 +59,14 @@ theorem stores_wp {s₈ : State} {S : Addr} {len : Nat} {key : List Byte} {ks : 
     (hks' : ks = if key.length = 16 then Impl.Camellia.subkeys128 else Impl.Camellia.subkeys256) :
     WP isa (.block (storeSubkeys ks)) s₈ (StoresPost s₈ S len key) := by
   obtain ⟨s₉, e₉, b₉, f₉, g₉, rd₉, wr₉⟩ := storeSubkeys_ok ks hv 0 s₈ (fun i hi => ⟨_, hw, by
-    rw [hS]; exact VG.Offset.contains_base _ (by omega) (by omega)⟩) (by omega)
+    rw [hS]; exact VG.Offset.contains_base _ (by omega_using [hks, hi]) (by omega_using [hks, hi])⟩) (by omega_using [hks])
   refine WP.of_runBlock ⟨s₉, e₉, ⟨?_, ?_, g₉, rd₉, wr₉⟩⟩
   · rw [hlen, schedule_of_stores (H := fun v => s₈.gpr (hiReg v)) (L := fun v => s₈.gpr (loReg v)) hv hg (by rw [← hS]; exact b₉), Spec.Camellia.scheduleBytes,
       Proof.Camellia.scheduleWords_expandKey, ← hks']
   · rw [hS] at f₉
     exact f₉.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.sub_base S (by omega)⟩
+      exact VG.Offset.sub_base S (by omega_using [hks])⟩
 
 theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
     WP isa expandKey s₀ fun s' => gprPreserved s₀ s' ∧ expandKeyX86_64.post s₀ s' := by

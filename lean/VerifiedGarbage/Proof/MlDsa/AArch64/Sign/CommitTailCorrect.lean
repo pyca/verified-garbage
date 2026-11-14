@@ -21,8 +21,8 @@ theorem finish_ok {σ s : State} {wlen olen : Nat} (hp : Pre wlen olen σ)
         (Spec.MlDsa.H (seedBytes σ.mem (σ.gpr .x4) (σ.gpr .x5)) 640) 524287 524288)) := by
   obtain ⟨hk,hsv,hf,h19,hh,hm⟩ := hs
   refine WP.mono (epi_ok hsv h19 (fun i hi => by
-    rw [hk.rd,hk.wr]; exact hp.readWork _ _ (by omega)) (fun i hi => by
-    rw [hk.rd,hk.wr]; exact hp.readWork _ _ (by omega))) fun t ⟨ht,hmt,hv,hg⟩ => ?_
+    rw [hk.rd,hk.wr]; exact hp.readWork _ _ (by omega_using [hi])) (fun i hi => by
+    rw [hk.rd,hk.wr]; exact hp.readWork _ _ (by omega_using [hi]))) fun t ⟨ht,hmt,hv,hg⟩ => ?_
   refine ⟨⟨?_,ht.sp.trans hk.sp,?_⟩,?_,?_,?_⟩
   · intro r hr
     simp only [preserved,List.mem_cons,List.not_mem_nil,or_false] at hr

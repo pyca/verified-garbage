@@ -497,13 +497,13 @@ theorem descentRound_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {
         (slots_widen V.unch (by decide))
     rw [U.word (fun w hw => by
       have := apart_slW (c := c) (by decide : T2 ∉ [T3, W0, T4, TMP, ACC, T0, T1]) w hw
-      omega) (by have := sl_le c h7 (i := T2) (by decide); omega), hword]
-  refine WP.mono (descentCounter_ok V.scr (by have := sl_le c h7 (i := T2) (by decide); omega)
-    hj (by omega) w₃) fun s₄ ⟨word₄, zf₄, k₄, O₄⟩ => ?_
+      omega_using [h0, this]) (by have := sl_le c h7 (i := T2) (by decide); omega_using [h0, hn, this]), hword]
+  refine WP.mono (descentCounter_ok V.scr (by have := sl_le c h7 (i := T2) (by decide); omega_using [h0, this])
+    hj (by omega_using [hj']) w₃) fun s₄ ⟨word₄, zf₄, k₄, O₄⟩ => ?_
   have e₄ {i : Nat} (hi : i < 45) (hw : i ≠ T2) : sv c base s₄ i = sv c base s₃ i :=
-    O₄.wordsVal (by have := sl_apart c hw; omega) (by have := sl_le c h7 hi; omega)
+    O₄.wordsVal (by have := sl_apart c hw; omega_using [h0, this]) (by have := sl_le c h7 hi; omega_using [hn, this])
   refine ⟨V.scr.of_keepRegs k₄ (by decide), ?_,
-    unch_same U₁₂₃ (slot_frame (by decide : T2 ∈ roundSlots) (by omega) O₄), ?_, word₄, zf₄, ?_⟩
+    unch_same U₁₂₃ (slot_frame (by decide : T2 ∈ roundSlots) (by omega_using [h0]) O₄), ?_, word₄, zf₄, ?_⟩
   · exact ((k₁.trans (k₂.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
       (V.keep.mono (fun _ h => List.mem_cons_of_mem _ h))).trans (k₄.mono (by simp [powClob]))
   · intro i hi
@@ -516,7 +516,7 @@ theorem descentRound_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {
       rw [fieldAt, e₄ (by decide) (by decide), V.t, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
     have c₄ : fieldAt c base s₄ T1 = fieldAt c base s T1 * fieldAt c base s T1 := by
       rw [fieldAt, e₄ (by decide) (by decide), V.c, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
-    conv_rhs => rw [show j = j - 1 + 1 by omega, rootDescent]
+    conv_rhs => rw [show j = j - 1 + 1 by omega_using [hj], rootDescent]
     simp only [pow_eq_npow]
     rw [r₄, t₄, c₄, b₂]
 

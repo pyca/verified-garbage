@@ -65,18 +65,18 @@ def PPrimalityPlan.prime (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDoma
     rw [p.size]
     rcases p.construct.width with hh | hh | hh <;> rw [hh] <;> constructor <;> decide
   room := by rw [p.size]; rcases p.construct.width with hh | hh | hh <;> rw [hh] <;> decide
-  len2 := by rcases p.construct.width with hh | hh | hh <;> omega
+  len2 := by rcases p.construct.width with hh | hh | hh <;> omega_using [hh]
   lenDraw := Nat.le_refl _
-  drawMax := by rcases p.construct.width with hh | hh | hh <;> omega
-  drawMin := by rcases p.construct.width with hh | hh | hh <;> omega
+  drawMax := by rcases p.construct.width with hh | hh | hh <;> omega_using [hh]
+  drawMin := by rcases p.construct.width with hh | hh | hh <;> omega_using [hh]
   lenWords := by rcases p.construct.width with hh | hh | hh <;> rw [hh] <;> decide
   predBits := h.predBits
   drawWidth := h.draw
   odd := h.odd
-  n3 := by have := h.large; omega
+  n3 := by have := h.large; omega_using [this]
   checksMax := by split <;> decide
   randMax := p.randMax
-  stackSize := by have := p.stackSize; omega
+  stackSize := by have := p.stackSize; omega_using [this]
   stackSeparate := p.stackSeparate.sub_right (below_sub (by decide) (by decide))
   bufferSeparate := p.bufferSeparate
   bufferOutside := p.bufferOutside
@@ -90,7 +90,7 @@ def PPrimalityPlan.call (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDomai
   bits := 8 * p.construct.len
   supported := by
     rcases p.construct.width with hh | hh | hh <;> rw [hh] <;> unfold ProbablePrime.Supported <;> decide
-  len := by dsimp [PPrimalityPlan.prime]; omega
+  len := by dsimp [PPrimalityPlan.prime]; omega_using []
   base := p.construct.base.symm
   witnessPtr := rfl
   tapePtr := p.tapePtr
@@ -105,7 +105,7 @@ def PPrimalityPlan.call (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDomai
     arenaFrame := p.arenaFrame
     arenaStack := p.arenaStack
     hashTest := by
-      have hlen : 8 * p.construct.len / 8 = p.construct.len := by omega
+      have hlen : 8 * p.construct.len / 8 = p.construct.len := by omega_using []
       have hp := p.hashPrime
       rw [← p.construct.base] at hp
       rw [hlen]

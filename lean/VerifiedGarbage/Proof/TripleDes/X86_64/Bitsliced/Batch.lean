@@ -51,7 +51,7 @@ theorem DataOk.congr {s s' : State} {D : Addr} {k : Nat} (h : DataOk s D k)
 
 theorem word_sub {D : Addr} {b k : Nat} (hb : b < k) :
     Region.Sub ⟨wAt D b, 8⟩ ⟨D, 8 * k⟩ :=
-  Offset.sub_base D (by omega)
+  Offset.sub_base D (by omega_using [hb])
 
 /-- A data word of the batch is unchanged by writes to the scratch buffer. -/
 theorem DataOk.readW {s : State} {D : Addr} {k : Nat} (h : DataOk s D k) {b : Nat} (hb : b < k)
@@ -80,7 +80,7 @@ theorem transpose_ok' {s : State} (h : Room s) :
   refine f.readW (r := ⟨Straight.wordAddr (s.gpr .rcx) x, 8⟩) (Region.contains_self _ _) ?_ (by decide)
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact Offset.disjoint_base (s.gpr .rcx) (d := 8 * x) (n := 8) (k := 576) (by omega) (by omega)
+  exact Offset.disjoint_base (s.gpr .rcx) (d := 8 * x) (n := 8) (k := 576) (by omega_using [hl]) (by omega_using [hx])
 
 /-! ## The batch -/
 
@@ -129,8 +129,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) :
     WP isa (batch d) s (BatchPost d s (min (sl s leftSlot).toNat 64)) := by
   have hpos := h.pos
   generalize hk : min (sl s leftSlot).toNat 64 = k
-  have hk1 : 1 ≤ k := by omega
-  have hk64 : k ≤ 64 := by omega
+  have hk1 : 1 ≤ k := by omega_using [hpos, hk]
+  have hk64 : k ≤ 64 := by omega_using [hk]
   have hdata : DataOk s (sl s dataSlot) k := hk ▸ h.data
   let D := sl s dataSlot
   let S := sl s schedSlot
@@ -178,8 +178,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) :
   have words₃ : ∀ j < 64, words s₃ j = transposeW (words s₂) j := by
     intro j hj
     simp only [words]
-    have hp : stSlot j ≠ passSlot := by unfold stSlot passSlot; omega
-    rw [slu₃ _ (by unfold stSlot; omega)]
+    have hp : stSlot j ≠ passSlot := by unfold stSlot passSlot; omega_using [hj]
+    rw [slu₃ _ (by unfold stSlot; omega_using [hj])]
     simp only [hp, ↓reduceIte]
     exact w₃ j hj
   have misc₃ : ∀ x < 128, 72 ≤ x → x ≠ passSlot → sl s₃ x = sl s₂ x := by
@@ -260,7 +260,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) :
     fun x hx hl => ?_, frame⟩
   · -- every block of the batch
     intro b hb
-    have hb64 : b < 64 := by omega
+    have hb64 : b < 64 := by omega_using [hk, hb]
     let K₃ := scheduleAt s₃.mem (sl s₃ schedSlot)
     have K₃eq : K₃ = scheduleAt s.mem S := by
       simp only [K₃, S₃]
@@ -285,9 +285,9 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) :
     rw [word₇, VG.Proof.TripleDes.Bitslice.transpose_out _ _ j hj, ipLane_congr q₄.words b,
       chain_lane d _ _ hb64, lane₃]
     rfl
-  · have ne : ∀ y, 78 ≤ y → x ≠ y := fun y hy e => by omega
-    rw [oth₇ x (by omega) (ne _ (by decide)) (ne _ (by decide)) (ne _ (by decide)), o₆.slots x (by omega),
-      keep₅ x (by omega) hl (ne _ (by decide)) (ne _ (by decide)) (ne _ (by decide)) (ne _ (by decide)),
-      keep₃ x (by omega) hl (ne _ (by decide)) (ne _ (by decide))]
+  · have ne : ∀ y, 78 ≤ y → x ≠ y := fun y hy e => by omega_using [hpos, hk, hk1, hk64, bs₁, c₁, sp₁, D₁, c₂, sp₂, c₃, sp₃, uc₃, c₃', sp₃', S₃, cs₃, c₅, sp₅, cs₅, D₅, B₅, sch₇, dat₇, left₇, c₇, sp₇, cs₆, L₅, diff, hx, hl, hy, e]
+    rw [oth₇ x (by omega_using [hx]) (ne _ (by decide)) (ne _ (by decide)) (ne _ (by decide)), o₆.slots x (by omega_using [hx]),
+      keep₅ x (by omega_using [hx]) hl (ne _ (by decide)) (ne _ (by decide)) (ne _ (by decide)) (ne _ (by decide)),
+      keep₃ x (by omega_using [hx]) hl (ne _ (by decide)) (ne _ (by decide))]
 
 end VG.Proof.TripleDes.X86_64.Bitsliced

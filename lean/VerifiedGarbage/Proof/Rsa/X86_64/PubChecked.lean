@@ -85,15 +85,15 @@ theorem pubGeom {s : State} (h : pubContract.pre s) : Geom s := by
   have hsi := pub_rsi h
   have hk2 := c.hk2
   have hL2 := c.hL2
-  refine ⟨by have := c.hk1; omega, by omega, fun j hj => c.hout j (by omega),
-    fun b hb j hj => (c.hret b hb).2 j (by omega), c.hL1, by omega, fun i hi => c.heb.rd i (by
+  refine ⟨by have := c.hk1; omega_using [hsi, this], by omega_using [hsi, hk2], fun j hj => c.hout j (by omega_using [hsi, hj]),
+    fun b hb j hj => (c.hret b hb).2 j (by omega_using [hsi, hj]), c.hL1, by omega_using [hk2, hL2], fun i hi => c.heb.rd i (by
       rw [bytesAt_length]; exact hi)⟩
 
 theorem pdGeom {s : State} (h : pdContract.pre s) : Geom s := by
   have c := pdCtx_of h
   have hk2 := c.hk2
   have hL2 := c.hL2
-  exact ⟨by have := c.hk1; omega, by omega, c.hout, fun b hb j hj => (c.hret b hb).2 j hj, c.hL1, by omega,
+  exact ⟨by have := c.hk1; omega_using [this], by omega_using [hk2], c.hout, fun b hb j hj => (c.hret b hb).2 j hj, c.hL1, by omega_using [hk2, hL2],
     fun i hi => c.heb.rd i (by rw [bytesAt_length]; exact hi)⟩
 
 /-! ## `vg_rsa_public_checked` -/

@@ -49,13 +49,13 @@ theorem unfold_twice {v0 v1 v2 X Y c c1 c2 : Nat} (hv0 : v0 < 2 ^ 224 * 2 ^ 224)
     (v2 + Y) % P = X % P := by
   have hP := VG.Proof.X448.Limbs32.pow448_eq
   have hc1 : c1 ≤ 1 := by omega
-  have hc2 : c2 = 0 := by omega
+  have hc2 : c2 = 0 := by omega_using [hv1, hv2, hc, e1, e2]
   subst hc2
   have : v2 + Y = X + P * (c + c1) := by
     rw [Nat.mul_add]
     generalize 2 ^ 224 * 2 ^ 224 = K at *
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with rfl | rfl <;>
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc1 with rfl | rfl <;> omega
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc1 with rfl | rfl <;> omega_arith
   rw [this, Nat.add_mul_mod_self_left]
 
 section
@@ -84,8 +84,8 @@ theorem addStep0_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y
     (hy8 : y % 8 = 0) {s : State} (hc : Ctx b s) :
     WP isa (.block (addStep x y 0)) s (AddInv b s x y 1) := by
   simp only [addStep, ite_true]
-  refine ld_ok hc (by omega) hx8 fun s1 u1 => ?_
-  refine ld_ok (hc.of_rest (u1.rest (ws := clob64) (by decide)) (by decide)) (by omega) hy8
+  refine ld_ok hc (by omega_using [hx]) hx8 fun s1 u1 => ?_
+  refine ld_ok (hc.of_rest (u1.rest (ws := clob64) (by decide)) (by decide)) (by omega_using [hy]) hy8
     fun s2 u2 => ?_
   refine WP.mono (addOut_ok (by decide) (by decide)) fun s3 ⟨e3, k3⟩ => ?_
   have hr : Rest clob64 s s3 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
@@ -96,10 +96,10 @@ theorem addStep0_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y
   have v2 : (s2.gpr .a7).toNat = dw s.mem b (y + 8 * 0) := by rw [u2.gpr, u1.mem]; rfl
   rw [v1, v2] at e3
   refine ⟨hc.of_rest hr (by decide), hr, hm, ?_, ?_⟩
-  · simp only [colsV, regsV, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.pow_one]; omega
+  · simp only [colsV, regsV, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.pow_one]; omega_using [e3]
   · have := (s3.gpr (w 0)).isLt
     have := dw_lt s.mem b (x + 8 * 0); have := dw_lt s.mem b (y + 8 * 0)
-    omega
+    omega_using [e3, v1, v2]
 
 /-- Word `k > 0` of `[x] + [y]`. -/
 theorem addStepS_ok {s0 : State} {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0)
@@ -111,8 +111,8 @@ theorem addStepS_ok {s0 : State} {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8
   simp only [addStep, hk0, ite_false]
   rw [show ∀ (a b c d e f g : Instr), [a, b, c, d, e, f, g] = a :: b :: ([c, d] ++ ([e, f] ++ [g]))
     from fun _ _ _ _ _ _ _ => rfl]
-  refine ld_ok hc (by omega) (by omega) fun s1 u1 => ?_
-  refine ld_ok (hc.of_rest (u1.rest wc) (by decide)) (by omega) (by omega) fun s2 u2 => ?_
+  refine ld_ok hc (by omega_using [hx, hk]) (by omega_using [hx8]) fun s1 u1 => ?_
+  refine ld_ok (hc.of_rest (u1.rest wc) (by decide)) (by omega_using [hy, hk]) (by omega_using [hy8]) fun s2 u2 => ?_
   refine WP.append (addOut_ok h7 h6) fun s3 ⟨e3, k3⟩ => ?_
   refine WP.append (addOut_ok h5 h7) fun s4 ⟨e4, k4⟩ => ?_
   refine WP.mono addSmall_ok fun s5 ⟨e5, k5⟩ => ?_
@@ -138,16 +138,16 @@ theorem addStepS_ok {s0 : State} {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8
   have hcy := h.cy
   have := (s3.gpr (w k)).isLt; have := (s4.gpr (w k)).isLt
   have := dw_lt s0.mem b (x + 8 * k); have := dw_lt s0.mem b (y + 8 * k)
-  have e5 := e5 (by omega)
-  refine ⟨hc.of_rest hr (by decide), h.rest.trans hr, by rw [kp.2.1, h.mem], ?_, by omega⟩
+  have e5 := e5 (by omega_using [e3, e4, v1, v2])
+  refine ⟨hc.of_rest hr (by decide), h.rest.trans hr, by rw [kp.2.1, h.mem], ?_, by omega_arith⟩
   rw [asFinish hk kp, colsV, colsV, w5, Nat.pow_succ (n := 2 ^ 64)]
   have hv := h.val
   generalize (2 ^ 64) ^ k = K at *
   have : K * (s4.gpr (w k)).toNat + K * 2 ^ 64 * (s5.gpr .a5).toNat =
       K * (dw s0.mem b (x + 8 * k) + dw s0.mem b (y + 8 * k)) + K * (s.gpr .a5).toNat := by
-    rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, e5]; congr 1; omega
+    rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, e5]; congr 1; omega_using [e3, e4]
   rw [Nat.mul_add] at this
-  omega
+  omega_using [hv, this]
 
 /-- The words of `[x] + [y]`. -/
 theorem addSteps_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y + 56 ≤ 2048)
@@ -157,8 +157,8 @@ theorem addSteps_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y
   | 1, _, _ => by simpa using addStep0_ok hx hx8 hy hy8 hc
   | n + 2, _, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.append (addSteps_ok hx hx8 hy hy8 hc (n + 1) (by omega) (by omega)) fun s1 h1 =>
-      addStepS_ok hx hx8 hy hy8 (by omega) (by omega) h1
+    exact WP.append (addSteps_ok hx hx8 hy hy8 hc (n + 1) (by omega_using []) (by omega_using [hn])) fun s1 h1 =>
+      addStepS_ok hx hx8 hy hy8 (by omega_using [hn]) (by omega_using []) h1
 
 /-- After `k` words of `[x] - [y]`, from `s0`. -/
 structure SubInv (b : Addr) (s0 : State) (x y : Nat) (k : Nat) (s : State) : Prop where
@@ -174,8 +174,8 @@ theorem subStep0_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y
     (hy8 : y % 8 = 0) {s : State} (hc : Ctx b s) :
     WP isa (.block (subStep x y 0)) s (SubInv b s x y 1) := by
   simp only [subStep, ite_true]
-  refine ld_ok hc (by omega) hx8 fun s1 u1 => ?_
-  refine ld_ok (hc.of_rest (u1.rest (ws := clob64) (by decide)) (by decide)) (by omega) hy8
+  refine ld_ok hc (by omega_using [hx]) hx8 fun s1 u1 => ?_
+  refine ld_ok (hc.of_rest (u1.rest (ws := clob64) (by decide)) (by decide)) (by omega_using [hy]) hy8
     fun s2 u2 => ?_
   refine WP.mono (subOut_ok (by decide) (by decide)) fun s3 ⟨e3, k3⟩ => ?_
   have hr : Rest clob64 s s3 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
@@ -186,10 +186,10 @@ theorem subStep0_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y
   have v2 : (s2.gpr .a7).toNat = dw s.mem b (y + 8 * 0) := by rw [u2.gpr, u1.mem]; rfl
   rw [v1, v2] at e3
   refine ⟨hc.of_rest hr (by decide), hr, hm, ?_, ?_⟩
-  · simp only [colsV, regsV, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.pow_one]; omega
+  · simp only [colsV, regsV, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.pow_one]; omega_using [e3]
   · have := (s3.gpr (w 0)).isLt
     have := dw_lt s.mem b (x + 8 * 0); have := dw_lt s.mem b (y + 8 * 0)
-    omega
+    omega_using [e3, v2]
 
 /-- Word `k > 0` of `[x] - [y]`. -/
 theorem subStepS_ok {s0 : State} {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0)
@@ -201,8 +201,8 @@ theorem subStepS_ok {s0 : State} {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8
   simp only [subStep, hk0, ite_false]
   rw [show ∀ (a b c d e f g : Instr), [a, b, c, d, e, f, g] = a :: b :: ([c, d] ++ ([e, f] ++ [g]))
     from fun _ _ _ _ _ _ _ => rfl]
-  refine ld_ok hc (by omega) (by omega) fun s1 u1 => ?_
-  refine ld_ok (hc.of_rest (u1.rest wc) (by decide)) (by omega) (by omega) fun s2 u2 => ?_
+  refine ld_ok hc (by omega_using [hx, hk]) (by omega_using [hx8]) fun s1 u1 => ?_
+  refine ld_ok (hc.of_rest (u1.rest wc) (by decide)) (by omega_using [hy, hk]) (by omega_using [hy8]) fun s2 u2 => ?_
   refine WP.append (subOut_ok h6 (by decide)) fun s3 ⟨e3, k3⟩ => ?_
   refine WP.append (subOut_ok h7 (by decide)) fun s4 ⟨e4, k4⟩ => ?_
   refine WP.mono addSmall_ok fun s5 ⟨e5, k5⟩ => ?_
@@ -228,16 +228,16 @@ theorem subStepS_ok {s0 : State} {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8
   have hcy := h.cy
   have := (s3.gpr (w k)).isLt; have := (s4.gpr (w k)).isLt
   have := dw_lt s0.mem b (x + 8 * k); have := dw_lt s0.mem b (y + 8 * k)
-  have hb : (s3.gpr .a6).toNat + (s4.gpr .a7).toNat ≤ 1 := by omega
-  have e5 := e5 (by omega)
-  refine ⟨hc.of_rest hr (by decide), h.rest.trans hr, by rw [kp.2.1, h.mem], ?_, by omega⟩
+  have hb : (s3.gpr .a6).toNat + (s4.gpr .a7).toNat ≤ 1 := by omega_using [e3, e4, v2, hcy]
+  have e5 := e5 (by omega_using [hb])
+  refine ⟨hc.of_rest hr (by decide), h.rest.trans hr, by rw [kp.2.1, h.mem], ?_, by omega_arith⟩
   rw [asFinish hk kp, colsV, colsV, w5, Nat.pow_succ (n := 2 ^ 64)]
   have hv := h.val
   generalize (2 ^ 64) ^ k = K at *
   have : K * (s4.gpr (w k)).toNat + K * dw s0.mem b (y + 8 * k) + K * (s.gpr .a5).toNat =
       K * dw s0.mem b (x + 8 * k) + K * 2 ^ 64 * (s5.gpr .a5).toNat := by
-    rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, ← Nat.mul_add, e5]; congr 1; omega
-  omega
+    rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, ← Nat.mul_add, e5]; congr 1; omega_using [e3, e4]
+  omega_using [hv, this]
 
 /-- The words of `[x] - [y]`. -/
 theorem subSteps_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y + 56 ≤ 2048)
@@ -247,8 +247,8 @@ theorem subSteps_ok {x y : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hy : y
   | 1, _, _ => by simpa using subStep0_ok hx hx8 hy hy8 hc
   | n + 2, _, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.append (subSteps_ok hx hx8 hy hy8 hc (n + 1) (by omega) (by omega)) fun s1 h1 =>
-      subStepS_ok hx hx8 hy hy8 (by omega) (by omega) h1
+    exact WP.append (subSteps_ok hx hx8 hy hy8 hc (n + 1) (by omega_using []) (by omega_using [hn])) fun s1 h1 =>
+      subStepS_ok hx hx8 hy hy8 (by omega_using [hn]) (by omega_using []) h1
 
 theorem add_ok {o x y : Nat} (ho : o + 56 ≤ 2048) (hx : x + 56 ≤ 2048) (hy : y + 56 ≤ 2048)
     (ho8 : o % 8 = 0) (hx8 : x % 8 = 0) (hy8 : y % 8 = 0) {s : State} (hc : Ctx b s) :
@@ -260,13 +260,13 @@ theorem add_ok {o x y : Nat} (ho : o + 56 ≤ 2048) (hx : x + 56 ≤ 2048) (hy :
   refine WP.append (addSteps_ok hx hx8 hy hy8 hc 7 (by decide) (Nat.le_refl _)) fun s1 h1 => ?_
   refine WP.append foldR_ok fun s2 ⟨e2, k2⟩ => ?_
   have hcy := h1.cy
-  have e2 := e2 (by omega)
+  have e2 := e2 (by omega_using [hcy])
   refine WP.append foldR_ok fun s3 ⟨e3, k3⟩ => ?_
   have l v := val7_lt (f := fun i => (State.gpr v (w i)).toNat) fun i _ => (v.gpr (w i)).isLt
   rw [B7_eq] at l
   simp only [rw7, B7_eq] at e2 e3
-  have hc2 : (s2.gpr .a5).toNat ≤ 1 := by have := l s1; have := l s2; omega
-  have e3 := e3 (by omega)
+  have hc2 : (s2.gpr .a5).toNat ≤ 1 := by have := l s1; have := l s2; omega_arith
+  have e3 := e3 (by omega_using [hc2])
   have hr3 : Rest clob64 s s3 := h1.rest.trans (Rest.mono (Keeps.rest (k2.trans k3)) (by decide))
   have hc3 : Ctx b s3 := hc.of_rest hr3 (by decide)
   have hm3 : s3.mem = s.mem := by rw [k3.2.1, k2.2.1, h1.mem]
@@ -276,7 +276,7 @@ theorem add_ok {o x y : Nat} (ho : o + 56 ≤ 2048) (hx : x + 56 ≤ 2048) (hy :
     rw [V_eq]; exact val7_congr fun i hi => h4 i hi
   have hv := h1.val
   rw [colsV7, colsV7, colsV7, B7_eq] at hv
-  rw [hV, fold_twice (l s1) (l s2) (l s3) (by omega) e2 e3, V_eq, V_eq]
+  rw [hV, fold_twice (l s1) (l s2) (l s3) (by omega_using [hcy]) e2 e3, V_eq, V_eq]
   exact congrArg (· % P) hv
 
 theorem sub_ok {o x y : Nat} (ho : o + 56 ≤ 2048) (hx : x + 56 ≤ 2048) (hy : y + 56 ≤ 2048)
@@ -289,13 +289,13 @@ theorem sub_ok {o x y : Nat} (ho : o + 56 ≤ 2048) (hx : x + 56 ≤ 2048) (hy :
   refine WP.append (subSteps_ok hx hx8 hy hy8 hc 7 (by decide) (Nat.le_refl _)) fun s1 h1 => ?_
   refine WP.append unfoldR_ok fun s2 ⟨e2, k2⟩ => ?_
   have hcy := h1.cy
-  have e2 := e2 (by omega)
+  have e2 := e2 (by omega_using [hcy])
   refine WP.append unfoldR_ok fun s3 ⟨e3, k3⟩ => ?_
   have l v := val7_lt (f := fun i => (State.gpr v (w i)).toNat) fun i _ => (v.gpr (w i)).isLt
   rw [B7_eq] at l
   simp only [rw7, B7_eq] at e2 e3
-  have hc2 : (s2.gpr .a5).toNat ≤ 1 := by have := l s1; have := l s2; omega
-  have e3 := e3 (by omega)
+  have hc2 : (s2.gpr .a5).toNat ≤ 1 := by have := l s1; have := l s2; omega_using [e2, this]
+  have e3 := e3 (by omega_using [hc2])
   have hr3 : Rest clob64 s s3 := h1.rest.trans (Rest.mono (Keeps.rest (k2.trans k3)) (by decide))
   have hc3 : Ctx b s3 := hc.of_rest hr3 (by decide)
   have hm3 : s3.mem = s.mem := by rw [k3.2.1, k2.2.1, h1.mem]
@@ -351,7 +351,7 @@ theorem hi_lt {x K lo hi : Nat} (hx : x < 2 ^ 64) (hK : 0 < K) (e : lo + 2 ^ 64 
     hi < K := by
   have : 2 ^ 64 * hi < 2 ^ 64 * K := by
     have := Nat.mul_lt_mul_of_pos_right hx hK
-    rw [Nat.mul_comm (2 ^ 64) K]; omega
+    rw [Nat.mul_comm (2 ^ 64) K]; omega_using [e, this]
   exact Nat.lt_of_mul_lt_mul_left this
 
 theorem mulSmallStep_eq (x k : Nat) (hk : k ≠ 0) : mulSmallStep x k =
@@ -366,7 +366,7 @@ theorem mulSmallStep0_ok {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (h
     WP isa (.block (mulSmallStep x 0)) s (MulSInv b s x K 1) := by
   rw [show mulSmallStep x 0 = .load .d .t0 .a3 x :: Impl.Words.RISCV64.mulWide (w 0) .a5 .t0 .a6 by
     simp only [mulSmallStep, ite_true]; rfl]
-  refine ld_ok hc (by omega) hx8 fun s1 u1 => ?_
+  refine ld_ok hc (by omega_using [hx]) hx8 fun s1 u1 => ?_
   refine WP.mono mulWide_ok fun s2 ⟨e2, k2⟩ => ?_
   have hr : Rest clob64 s s2 := (u1.rest (by decide)).trans (Rest.mono (Keeps.rest k2) (by decide))
   have v1 : (s1.gpr .t0).toNat = dw s.mem b (x + 8 * 0) := by rw [u1.gpr]; rfl
@@ -386,7 +386,7 @@ theorem mulSmallStepS_ok {s0 : State} {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : 
   obtain ⟨h7, h5, h6, h0, wc⟩ := ms_regs k hk
   have hc := h.ctx
   rw [mulSmallStep_eq x k hk0]
-  refine ld_ok hc (by omega) (by omega) fun s1 u1 => ?_
+  refine ld_ok hc (by omega_using [hx, hk]) (by omega_using [hx8]) fun s1 u1 => ?_
   refine WP.append (mulWide_ok h0 h6 h7) fun s2 ⟨e2, k2⟩ => ?_
   refine WP.append (addOut_ok h5 h5) fun s3 ⟨e3, k3⟩ => ?_
   refine WP.mono addSmall_ok fun s4 ⟨e4, k4⟩ => ?_
@@ -409,9 +409,9 @@ theorem mulSmallStepS_ok {s0 : State} {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : 
   have hcy := h.cy
   have hhi := hi_lt (dw_lt s0.mem b (x + 8 * k)) hK e2
   have := (s2.gpr (w k)).isLt; have := (s3.gpr (w k)).isLt
-  have e4 := e4 (by omega)
+  have e4 := e4 (by omega_using [hK', e3, hhi])
   refine ⟨hc.of_rest hr (by decide), h.rest.trans hr, by rw [kp.2.1, h.mem],
-    by rw [kp.1 _ (by simp [Ne.symm h6]), h.a6], ?_, by omega⟩
+    by rw [kp.1 _ (by simp [Ne.symm h6]), h.a6], ?_, by omega_arith⟩
   have hfin : colsV (regsV s4) (k + 1) = colsV (regsV s) k + (2 ^ 64) ^ k * (s4.gpr (w k)).toNat := by
     rw [colsV, colsV_congr (g := regsV s) fun c hc => by
       obtain ⟨n1, n2, n3, n4⟩ := ms_below' k (List.mem_range.mpr hk) c (List.mem_range.mpr hc)
@@ -424,9 +424,9 @@ theorem mulSmallStepS_ok {s0 : State} {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : 
   have : Q * (s3.gpr (w k)).toNat + Q * 2 ^ 64 * (s4.gpr .a5).toNat =
       Q * (d * K) + Q * (s.gpr .a5).toNat := by
     rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, e4, ← e2]
-    congr 1; omega
+    congr 1; omega_using [e3]
   rw [Nat.mul_add K, Nat.mul_comm K (Q * d), Nat.mul_assoc Q d K]
-  omega
+  omega_arith
 
 /-- The words of `K · [x]`. -/
 theorem mulSmallSteps_ok {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (hK : 0 < K)
@@ -437,8 +437,8 @@ theorem mulSmallSteps_ok {x K : Nat} (hx : x + 56 ≤ 2048) (hx8 : x % 8 = 0) (h
   | 1, _, _ => by simpa using mulSmallStep0_ok hx hx8 hK hc h6
   | n + 2, _, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.append (mulSmallSteps_ok hx hx8 hK hK' hc h6 (n + 1) (by omega) (by omega))
-      fun s1 h1 => mulSmallStepS_ok hx hx8 hK hK' (by omega) (by omega) h1
+    exact WP.append (mulSmallSteps_ok hx hx8 hK hK' hc h6 (n + 1) (by omega_using []) (by omega_using [hn]))
+      fun s1 h1 => mulSmallStepS_ok hx hx8 hK hK' (by omega_using [hn]) (by omega_using []) h1
 
 /-- `[o] = c · [x]` modulo `p`, for a constant `c` whose `li32` is below `2³¹`. -/
 theorem mulSmall_ok {o x : Nat} {c : BitVec 32} (hcK : 0 < (sext32 c).toNat)
@@ -454,17 +454,17 @@ theorem mulSmall_ok {o x : Nat} {c : BitVec 32} (hcK : 0 < (sext32 c).toNat)
   have hr0 : Rest clob64 s s0 := u0.rest (by decide)
   have hc0 : Ctx b s0 := hc.of_rest hr0 (by decide)
   have hm0 : s0.mem = s.mem := u0.mem
-  refine WP.append (mulSmallSteps_ok hx hx8 hcK (by omega) hc0 (by rw [u0.gpr]) 7 (by decide)
+  refine WP.append (mulSmallSteps_ok hx hx8 hcK (by omega_using [hcK']) hc0 (by rw [u0.gpr]) 7 (by decide)
     (Nat.le_refl _)) fun s1 h1 => ?_
   refine WP.append foldR_ok fun s2 ⟨e2, k2⟩ => ?_
   have hcy := h1.cy
-  have e2 := e2 (by omega)
+  have e2 := e2 (by omega_using [hcK', hcy])
   refine WP.append foldR_ok fun s3 ⟨e3, k3⟩ => ?_
   have l v := val7_lt (f := fun i => (State.gpr v (w i)).toNat) fun i _ => (v.gpr (w i)).isLt
   rw [B7_eq] at l
   simp only [rw7, B7_eq] at e2 e3
-  have hc2 : (s2.gpr .a5).toNat ≤ 1 := by have := l s1; have := l s2; omega
-  have e3 := e3 (by omega)
+  have hc2 : (s2.gpr .a5).toNat ≤ 1 := by have := l s1; have := l s2; omega_arith
+  have e3 := e3 (by omega_using [hc2])
   have hr3 : Rest clob64 s s3 :=
     hr0.trans (h1.rest.trans (Rest.mono (Keeps.rest (k2.trans k3)) (by decide)))
   have hc3 : Ctx b s3 := hc.of_rest hr3 (by decide)
@@ -475,7 +475,7 @@ theorem mulSmall_ok {o x : Nat} {c : BitVec 32} (hcK : 0 < (sext32 c).toNat)
     rw [V_eq]; exact val7_congr fun i hi => h4 i hi
   have hv := h1.val
   rw [colsV7, colsV7, B7_eq, hm0] at hv
-  rw [hV, fold_twice32 (l s1) (l s2) (l s3) (by omega) e2 e3, V_eq, hv]
+  rw [hV, fold_twice32 (l s1) (l s2) (l s3) (by omega_using [hcK', hcy]) e2 e3, V_eq, hv]
 
 end
 

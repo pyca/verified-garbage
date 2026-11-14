@@ -18,7 +18,7 @@ structure SavedFrame (values : Nat → BitVec 32) (slots : List Nat) (s : State)
 theorem SavedFrame.read {values : Nat → BitVec 32} {slots : List Nat} {s : State}
     (h : SavedFrame values slots s) {d : Nat} (fit : d + 4 ≤ 72) :
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-  rw [VG.Arm.addr_add (by have := h.space.nowrap; omega)]
+  rw [VG.Arm.addr_add (by have := h.space.nowrap; omega_using [fit, this])]
   exact h.space.read fit
 
 theorem SavedFrame.after_frame {values : Nat → BitVec 32} {slots : List Nat} {s t : State}
@@ -55,7 +55,7 @@ theorem SavedFrame.after_output {values : Nat → BitVec 32} {slots : List Nat} 
   intro d hd r hr
   rw [List.mem_singleton] at hr
   subst r
-  rw [VG.Arm.addr_add (by have := h.space.nowrap; have := bounds d hd; omega)]
+  rw [VG.Arm.addr_add (by have := h.space.nowrap; have := bounds d hd; omega_arith)]
   exact separate.symm.sub_left (Offset.sub_base _ (bounds d hd))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

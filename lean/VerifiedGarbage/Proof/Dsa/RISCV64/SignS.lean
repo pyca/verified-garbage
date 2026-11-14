@@ -44,15 +44,15 @@ theorem qmont28_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
   have e := h.inq.env
   have hwq := hL.wq_ge
   have hqs := hL.qslot
-  have hn : L.Q.toNat + slot L.wq 28 ≤ 2 ^ 64 := by have := e.hs.nowrap; omega
-  refine WP.mono (Pub.montOpN_ok e.hs (n := 28) (by decide) (by omega) ha hb (by omega) (by omega) ha2 hb2 e.w2
-    (by omega) e.hZ e.a7 e.s5 e.t0 hi hB) fun t ⟨⟨lt, eq, ar⟩, k⟩ => ?_
+  have hn : L.Q.toNat + slot L.wq 28 ≤ 2 ^ 64 := by have := e.hs.nowrap; omega_using [hqs, this]
+  refine WP.mono (Pub.montOpN_ok e.hs (n := 28) (by decide) (by omega_using [ho]) ha hb (by omega_using [ho]) (by omega_using [ho]) ha2 hb2 e.w2
+    (by omega_using [hwq]) e.hZ e.a7 e.s5 e.t0 hi hB) fun t ⟨⟨lt, eq, ar⟩, k⟩ => ?_
   have qa : QArr L s.mem t.mem := arrays_qarr ar (by
-    intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega)
+    intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [ho, hk])
   refine ⟨⟨h.step k (qa.body hL), ?_, lt, eq, fun j hj h2 h3 ho' => arrays_val ar hj (by
-    intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega) hn, qa⟩, k⟩
+    intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [h2, h3, ho', hk]) hn, qa⟩, k⟩
   show ((word t.mem L.Q (slot L.wq 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-  rw [arrays_word0 ar (by intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega) hn,
+  rw [arrays_word0 ar (by intro k hk; simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [ho, hk]) hn,
     k.gpr (by decide)]
   exact hi
 
@@ -76,7 +76,7 @@ theorem AKeep.one {L : Lay} (hL : L.Ok) {o n : Nat} {m m' : Mem} (h : Outside L.
   have := slot_sep' (w := L.wq) hjo
   have := slot_lt (w := L.wq) hj
   have := hL.wq_ge
-  exact h.wordsVal (by omega) (by simp only [Lay.slot_eq] at *; omega)
+  exact h.wordsVal (by omega_arith) (by simp only [Lay.slot_eq] at *; omega_arith)
 
 theorem AKeep.red {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.Q (slot L.wq 1) (24 * (L.wq + 2)) m m') :
     AKeep L [1, 2, 3] m m' := fun j hj hn => by
@@ -86,9 +86,9 @@ theorem AKeep.red {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.Q (slot L.wq
   have e0 := Lay.slot_eq L.wq 0; have e1 := Lay.slot_eq L.wq 1; have e4 := Lay.slot_eq L.wq 4
   have e28 := Lay.slot_eq L.wq 28
   rcases Nat.eq_zero_or_pos j with rfl | hj0
-  · exact h.wordsVal (Or.inl (by omega)) (by omega)
-  · have := slot_mono (w := L.wq) (show 4 ≤ j by omega)
-    exact h.wordsVal (Or.inr (by omega)) (by omega)
+  · exact h.wordsVal (Or.inl (by omega_using [e0, e1])) (by omega_using [this, e0])
+  · have := slot_mono (w := L.wq) (show 4 ≤ j by omega_using [hn, hj0])
+    exact h.wordsVal (Or.inr (by omega_using [e1, e4, this])) (by omega_arith)
 
 theorem AKeep.add {L : Lay} (hL : L.Ok) {o : Nat} {m m' : Mem} (h : AddFrame L.Q L.wq o m m')
     (hnw : L.Q.toNat + 1600 ≤ 2 ^ 64) : AKeep L [2, 3, o] m m' := fun j hj hn => by
@@ -105,13 +105,13 @@ theorem AddFrame.qarr {L : Lay} {o : Nat} {m m' : Mem} (h : AddFrame L.Q L.wq o 
   obtain ⟨m₁, h₁, h₂⟩ := h
   have h1 := slot_mono (w := L.wq) ho1
   have h2 := slot_lt (w := L.wq) ho
-  exact (QArr.of h₁ (by simp only [Lay.slot_eq]; omega) (by simp only [Lay.slot_eq]; omega)).trans
-    (QArr.of h₂ h1 (by omega))
+  exact (QArr.of h₁ (by simp only [Lay.slot_eq]; omega_using []) (by simp only [Lay.slot_eq]; omega_using [])).trans
+    (QArr.of h₂ h1 (by omega_using [h2]))
 
 theorem QArr.word0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QArr L m m') :
     word m' L.Q (slot L.wq 0) = word m L.Q (slot L.wq 0) := by
   have := hL.wq_ge
-  exact h.word (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.slot_eq]; omega)
+  exact h.word (Or.inl (by simp only [Lay.slot_eq]; omega_using [])) (by simp only [Lay.slot_eq]; omega_using [])
 
 theorem QInv.keepW {s t : State} {L : Lay} (hi : QInv s L) (hw : word t.mem L.Q (slot L.wq 0) = word s.mem L.Q (slot L.wq 0))
     (h1 : t.gpr .t1 = s.gpr .t1) : QInv t L := by
@@ -142,7 +142,7 @@ theorem sValue_ok {s : State} {L : Lay} {key nonce dig : Addr} {qb d : Nat} (hL 
         arrQ t.mem L 25 = arrQ s.mem L 25 ∧ QArr L s.mem t.mem) ∧ Keep sValueRegs s t := by
   have hwq := hL.wq_ge
   have hqs := hL.qslot
-  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega
+  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]
   have hcop : Nat.Coprime (2 ^ (64 * L.wq)) (arrQ s.mem L 0) := VG.Proof.Bignum.coprime_pow2 hqo _
   have hRR := pow_two_mul L.wq
   have hnw : L.Q.toNat + 1600 ≤ 2 ^ 64 := h.inq.env.hs.nowrap
@@ -155,18 +155,18 @@ theorem sValue_ok {s : State} {L : Lay} {key nonce dig : Addr} {qb d : Nat} (hL 
   -- z into array 6, 0 into array 7, `z mod q` into array 6.
   refine WP.seq (WP.mono (scalar_ok hL h hdg8 hlen hqb hd hdg) fun s₁ ⟨⟨Q1, v6, o1⟩, k1⟩ => ?_)
   generalize Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem dig (min d qb)) = z at v6 hz ⊢
-  have f1 : AKeep L [6] s.mem s₁.mem := AKeep.one hL o1 (by omega)
-  have qa1 : QArr L s.mem s₁.mem := QArr.of o1 (by omega) (by omega)
+  have f1 : AKeep L [6] s.mem s₁.mem := AKeep.one hL o1 (by omega_using [])
+  have qa1 : QArr L s.mem s₁.mem := QArr.of o1 (by omega_using [e1, e6]) (by omega_using [e6, e28])
   refine WP.seq (WP.mono (zeroArr_ok Q1.inq.env (j := 7) (by decide)) fun s₂ ⟨⟨z7, o2⟩, k2⟩ => ?_)
-  have Q2 := Q1.step k2 (Body.ofQ hL o2 (by omega))
-  have f2 : AKeep L [7] s₁.mem s₂.mem := AKeep.one hL o2 (by omega)
-  have qa2 : QArr L s₁.mem s₂.mem := QArr.of o2 (by omega) (by omega)
+  have Q2 := Q1.step k2 (Body.ofQ hL o2 (by omega_using [hwq, e7]))
+  have f2 : AKeep L [7] s₁.mem s₂.mem := AKeep.one hL o2 (by omega_using [])
+  have qa2 : QArr L s₁.mem s₂.mem := QArr.of o2 (by omega_using [e1, e7]) (by omega_using [e7, e28])
   have q2 : arrQ s₂.mem L 0 = q := by rw [(qa1.trans qa2).arr0 hL]; exact hq
   have z2 : arrQ s₂.mem L 6 = z := (f2.get 6).trans v6
   refine WP.seq (WP.mono (addMod_ok Q2.inq.env (o := 6) (a := 6) (b := 7) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by show arrQ s₂.mem L 6 + arrQ s₂.mem L 7 < 2 * arrQ s₂.mem L 0; rw [z2, show arrQ s₂.mem L 7 = 0 from z7, q2]
-        omega)) fun s₃ ⟨⟨a6, fr3⟩, k3⟩ => ?_)
+        omega_using [hz])) fun s₃ ⟨⟨a6, fr3⟩, k3⟩ => ?_)
   have a6' : arrQ s₃.mem L 6 = z % q := by
     show wordsVal s₃.mem L.Q (slot L.wq 6) L.wq = _
     rw [a6, show wordsVal s₂.mem L.Q (slot L.wq 6) L.wq = arrQ s₂.mem L 6 from rfl, z2,
@@ -187,45 +187,45 @@ theorem sValue_ok {s : State} {L : Lay} {key nonce dig : Addr} {qb d : Nat} (hL 
   have k35 := k4.trans k5
   have hm5 : s₅.mem = s₃.mem := by rw [m5, m4]
   have e3 := Q3.inq.env.keep k35
-  have hx := (hk.keep (k13.trans k35).2.1 (k13.trans k35).2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)
+  have hx := (hk.keep (k13.trans k35).2.1 (k13.trans k35).2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])
   refine WP.seq (WP.mono (ModArith.reduce64_ok (B := L.Q) (Z := 1600) (w := L.wq) (D := off key (3 * L.pl + L.ql))
-    (L := L.ql) e3.hs (by omega) (by omega) (by omega) e3.a7 e3.s5 e3.t0
-    (by rw [hm5]; show 0 < arrQ s₃.mem L 0; rw [q3]; omega)
-    (by rw [c9]; exact (BitVec.add_zero _).symm) c10 (by omega) (by omega) hx.rd (hx.sepQ hL))
+    (L := L.ql) e3.hs (by omega_using [hwq]) (by omega_using [hwq]) (by omega_using [hwq, e4]) e3.a7 e3.s5 e3.t0
+    (by rw [hm5]; show 0 < arrQ s₃.mem L 0; rw [q3]; omega_using [hq3])
+    (by rw [c9]; exact (BitVec.add_zero _).symm) c10 (by omega_using [hql]) (by omega_using [hwq]) hx.rd (hx.sepQ hL))
     fun s₆ ⟨⟨v1, o6⟩, k6⟩ => ?_)
   rw [hm5] at v1 o6
   have x6 : arrQ s₆.mem L 1 = xOf s.mem L key % q := by
     refine v1.trans ?_
-    rw [(hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)).bytes (qa13.body hL) (by have := hL.z256; omega)]
+    rw [(hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])).bytes (qa13.body hL) (by have := hL.z256; omega_using [this])]
     show _ % arrQ s₃.mem L 0 = _
     rw [q3]
     rfl
   have f6 := AKeep.red hL o6
-  have qa6 : QArr L s₃.mem s₆.mem := QArr.of o6 (Nat.le_refl _) (by omega)
+  have qa6 : QArr L s₃.mem s₆.mem := QArr.of o6 (Nat.le_refl _) (by omega_using [e1, e28])
   have Q6 := Q3.step (k35.trans k6) (qa6.body hL)
   -- `x mod q` into array 5, `R² mod q` into array 1.
   refine WP.seq (WP.mono (copy_ok Q6.inq.env (o := 5) (a := 1) (by decide) (by decide) (by decide))
     fun s₇ ⟨⟨v5, o7⟩, k7⟩ => ?_)
-  have Q7 := Q6.step k7 (Body.ofQ hL o7 (by omega))
+  have Q7 := Q6.step k7 (Body.ofQ hL o7 (by omega_using [hwq, e5]))
   have f7 : AKeep L [5] s₆.mem s₇.mem := AKeep.one hL o7 (Nat.le_refl _)
   refine WP.seq (WP.mono (copy_ok Q7.inq.env (o := 1) (a := 24) (by decide) (by decide) (by decide))
     fun s₈ ⟨⟨v1', o8⟩, k8⟩ => ?_)
-  have Q8 := Q7.step k8 (Body.ofQ hL o8 (by omega))
+  have Q8 := Q7.step k8 (Body.ofQ hL o8 (by omega_using [hwq, e1]))
   have f8 : AKeep L [1] s₇.mem s₈.mem := AKeep.one hL o8 (Nat.le_refl _)
   have qa8 : QArr L s.mem s₈.mem :=
-    ((qa13.trans qa6).trans (QArr.of o7 (by omega) (by omega))).trans (QArr.of o8 (by omega) (by omega))
+    ((qa13.trans qa6).trans (QArr.of o7 (by omega_using [e1, e5]) (by omega_using [e5, e28]))).trans (QArr.of o8 (by omega_using []) (by omega_using [e1, e28]))
   have k18 := ((k13.trans k35).trans k6).trans (k7.trans k8)
   have I8 : QInv s₈ L := hi.keepW (qa8.word0 hL) (k18.gpr (by decide))
   have F38 := (f6.trans f7).trans f8
   have F08 := ((f1.trans f2).trans f3).trans F38
   have A0 : arrQ s₈.mem L 0 = q := by rw [qa8.arr0 hL]; exact hq
   have A1 : arrQ s₈.mem L 1 = R2 % q := by
-    rw [arrQ, wordsVal_congr (m := s₇.mem) (d := slot L.wq 24) fun i hi => v1' i (by omega)]
+    rw [arrQ, wordsVal_congr (m := s₇.mem) (d := slot L.wq 24) fun i hi => v1' i (by omega_using [hi])]
     show arrQ s₇.mem L 24 = _
     rw [f7.get 24, f6.get 24, f3.get 24, f2.get 24, f1.get 24]; exact h24
   have A4 : arrQ s₈.mem L 4 = arrQ s.mem L 4 := F08.get 4
   have A5 : arrQ s₈.mem L 5 = xOf s.mem L key % q := by
-    rw [f8.get 5, arrQ, wordsVal_congr (m := s₆.mem) (d := slot L.wq 1) fun i hi => v5 i (by omega)]
+    rw [f8.get 5, arrQ, wordsVal_congr (m := s₆.mem) (d := slot L.wq 1) fun i hi => v5 i (by omega_using [hi])]
     exact x6
   have A6 : arrQ s₈.mem L 6 = z % q := (F38.get 6).trans a6'
   have A25 : arrQ s₈.mem L 25 = arrQ s.mem L 25 := F08.get 25
@@ -237,7 +237,7 @@ theorem sValue_ok {s : State} {L : Lay} {key nonce dig : Addr} {qb d : Nat} (hL 
   have B0 : arrQ s₉.mem L 0 = q := (f9.get 0).trans A0
   have B1 : arrQ s₉.mem L 1 = R2 % q := (f9.get 1).trans A1
   refine WP.seq (WP.mono (qmont28_ok hL Q9 I9 (o := 5) (a := 5) (b := 1) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [B1, B0]; exact Nat.mod_lt _ (by omega)))
+    (by decide) (by decide) (by rw [B1, B0]; exact Nat.mod_lt _ (by omega_using [hq3])))
     fun s₁₀ ⟨⟨Q10, I10, l10, e10, k10a, qa10⟩, k10⟩ => ?_)
   rw [B0] at l10
   rw [B0, B1] at e10
@@ -248,11 +248,11 @@ theorem sValue_ok {s : State} {L : Lay} {key nonce dig : Addr} {qb d : Nat} (hL 
   have C0 : arrQ s₁₀.mem L 0 = q := (F910.get 0).trans A0
   have C6 : arrQ s₁₀.mem L 6 = z % q := (F910.get 6).trans A6
   -- `z + x r mod q` into array 6.
-  have l1 := Nat.mod_lt z (show 0 < q by omega)
-  have l2 := Nat.mod_lt (xOf s.mem L key % q * arrQ s.mem L 25) (show 0 < q by omega)
+  have l1 := Nat.mod_lt z (show 0 < q by omega_using [hq3])
+  have l2 := Nat.mod_lt (xOf s.mem L key % q * arrQ s.mem L 25) (show 0 < q by omega_using [hq3])
   refine WP.seq (WP.mono (addMod_ok Q10.inq.env (o := 6) (a := 6) (b := 5) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by show arrQ s₁₀.mem L 6 + arrQ s₁₀.mem L 5 < 2 * arrQ s₁₀.mem L 0; rw [C6, X10, C0]; omega))
+    (by show arrQ s₁₀.mem L 6 + arrQ s₁₀.mem L 5 < 2 * arrQ s₁₀.mem L 0; rw [C6, X10, C0]; omega_using [l1, l2]))
     fun s₁₁ ⟨⟨a11, fr11⟩, k11⟩ => ?_)
   have a11' : arrQ s₁₁.mem L 6 = (z % q + xOf s.mem L key * arrQ s.mem L 25 % q) % q := by
     show wordsVal s₁₁.mem L.Q (slot L.wq 6) L.wq = _
@@ -275,7 +275,7 @@ theorem sValue_ok {s : State} {L : Lay} {key nonce dig : Addr} {qb d : Nat} (hL 
   have E0 : arrQ s₁₂.mem L 0 = q := (f12.get 0).trans D0
   have E1 : arrQ s₁₂.mem L 1 = R2 % q := (f12.get 1).trans D1
   refine WP.mono (qmont28_ok hL Q12 I12 (o := 6) (a := 6) (b := 1) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [E1, E0]; exact Nat.mod_lt _ (by omega)))
+    (by decide) (by decide) (by rw [E1, E0]; exact Nat.mod_lt _ (by omega_using [hq3])))
     fun t ⟨⟨Qt, It, lt, et, kta, qat⟩, kt⟩ => ?_
   rw [E0] at lt
   rw [E0, E1] at et

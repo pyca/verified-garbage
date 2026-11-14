@@ -27,12 +27,12 @@ theorem trialPrime5 : VG.Impl.RsaKeyGen.tabEntry 1 = 5 := by
 private theorem radix_fixed {prime : Nat} (bound : prime < 2) (steps : Nat) :
     2 ^ (16 * steps) % VG.Impl.RsaKeyGen.tabEntry prime = 1 := by
   have fixed : 2 ^ 16 % VG.Impl.RsaKeyGen.tabEntry prime = 1 := by
-    rcases (by omega : prime = 0 ∨ prime = 1) with rfl | rfl
+    rcases (by omega_using [bound] : prime = 0 ∨ prime = 1) with rfl | rfl
     · rw [trialPrime3]
     · rw [trialPrime5]
   rw [Nat.pow_mul, Nat.pow_mod, fixed, Nat.one_pow]
   have positive : 1 < VG.Impl.RsaKeyGen.tabEntry prime := by
-    rcases (by omega : prime = 0 ∨ prime = 1) with rfl | rfl
+    rcases (by omega_using [bound] : prime = 0 ∨ prime = 1) with rfl | rfl
     · rw [trialPrime3]; decide
     · rw [trialPrime5]; decide
   exact Nat.mod_eq_of_lt positive
@@ -51,7 +51,7 @@ theorem trialSmall_residue_ok (s : State) (dst : BitVec 32) {n prime : Nat}
         next % VG.Impl.RsaKeyGen.tabEntry prime =
           Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr dst) n) % VG.Impl.RsaKeyGen.tabEntry prime ∧
         t.mem = s.mem ∧ Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7] s t := by
-  refine WP.mono (trialSmall_value_ok s dst positive fits bufferFits (by omega) divisor
+  refine WP.mono (trialSmall_value_ok s dst positive fits bufferFits (by omega_using [primeBound]) divisor
     readOut readWidth out width read) ?_
   rintro t ⟨next, steps, bound, value, congruence, _, memory, rest⟩
   have residue : next % VG.Impl.RsaKeyGen.tabEntry prime =

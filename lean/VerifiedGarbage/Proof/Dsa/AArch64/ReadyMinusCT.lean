@@ -31,7 +31,7 @@ def ReadyMinusPublic.call {side : ModulusSide} {amount d : Nat} (p : ReadyMinusP
   upper := by
     change side.words p.layout < 2 ^ 31
     have h : side.words p.layout ≤ 48 := (side.bounds p.layout).2.1
-    omega
+    omega_using [h]
   enough := p.enough
 
 theorem minusCallHead_ok {side : ModulusSide} {amount d : Nat} {p : ReadyMinusPublic side amount d}
@@ -44,7 +44,7 @@ theorem minusCallHead_ok {side : ModulusSide} {amount d : Nat} {p : ReadyMinusPu
   rw [WP.block_append_iff]
   refine WP.mono (operand_context hr.parent (by decide) ⟨.local d, side.lengthField⟩ hd31 (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun u ⟨hgu, hup, hul, _, hfu, hku⟩ => ?_
-  have child := call_ready (hr.child side) hfu (by decide) (by decide) (by omega) (by omega)
+  have child := call_ready (hr.child side) hfu (by decide) (by decide) (by omega_using [hlo, h256]) (by omega_using [hhi, hactive])
   refine WP.mono (enter_ok hgu child.header hlo hhi ho) fun t ⟨hct, hm, hkt⟩ => ?_
   have hk : Keep coreRegs s t := (hku.trans hkt).mono (by decide)
   refine ⟨hct, ⟨hct.good, hm ▸ child.modulus, hm ▸ child.inverse⟩,

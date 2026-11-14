@@ -54,7 +54,7 @@ theorem save_ok {s : State} {b : Reg} (hb0 : b ≠ .r0) (hw : Covers [⟨s.gpr b
       Keeps' s s' ∧ SavedAt s'.mem (s.gpr b) s ∧ Frame [savedR (s.gpr b)] s.mem s'.mem := by
   rw [save_eq]
   refine Spill.save_ok hb0 (fun p hp => by have := saved_bound p hp; revert p; decide)
-    (fun p hp => in_off hw (by have := saved_bound p hp; omega) (by decide)) ?_
+    (fun p hp => in_off hw (by have := saved_bound p hp; omega_using [this]) (by decide)) ?_
   generalize hM : Spill.saveMem s.mem (s.gpr b) s.gpr saved = M
   have hl := in_off hw (show lrO + 8 ≤ 2560 by decide) (by decide)
   have hb0' : (b = .r0) = False := eq_false hb0
@@ -67,10 +67,10 @@ theorem save_ok {s : State} {b : Reg} (hb0 : b ≠ .r0) (hw : Covers [⟨s.gpr b
       ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)) fun p hp r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     have := saved_bound p hp
-    exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
+    exact Offset.disjoint _ (.inl (by omega_using [this])) (by omega_using [this]) (by decide)
   · simp only [lrO]; exact Mem.readW_writeW_self64 _ _ _
   · rw [← hM]
-    exact (Spill.saveMem_frame (lo := 128) (n := 120) (fun p hp => by have := saved_bound p hp; omega)
+    exact (Spill.saveMem_frame (lo := 128) (n := 120) (fun p hp => by have := saved_bound p hp; omega_using [this])
       (by decide) _ _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by decide) (by decide)
         (by decide))
 
@@ -79,7 +79,7 @@ theorem SavedAt.frame {m m' : Mem} {w : Addr} {s₀ : State} (h : SavedAt m w s�
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (savedR w).Disjoint r) : SavedAt m' w s₀ := by
   refine ⟨h.1.frame hf fun p hp r hr => (hd r hr).sub_left ?_, ?_⟩
   · have := saved_bound p hp
-    exact Offset.sub _ (by omega) (by omega)
+    exact Offset.sub _ (by omega_using [this]) (by omega_using [this])
   · rw [hf.readW (Region.contains_self _ _) (fun r hr => (hd r hr).sub_left (Offset.sub _ (by decide)
       (by decide))) (by decide)]
     exact h.2
@@ -108,7 +108,7 @@ theorem restore_ok {s s₀ : State} {w : Addr} (h31 : s.gpr .r31 = w)
   refine WP.block_append (WP.mono h₁ fun s₁ ⟨h12, hlr, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ => ?_)
   refine WP.mono (Spill.restore_wp (by decide) h12 (fun p hp => by have := saved_bound p hp; revert p; decide)
     (by decide) (fun p hp => by
-      rw [hrd₁, hwr₁]; exact in_off hr (by have := saved_bound p hp; omega) (by decide))
+      rw [hrd₁, hwr₁]; exact in_off hr (by have := saved_bound p hp; omega_using [this]) (by decide))
     (hm₁ ▸ hs.1)) fun s' h => ?_
   refine ⟨⟨fun r hr => h.gpr_of ?_, by rw [h.sp, hsp₁, hsp], by rw [h.lr, hlr]⟩,
     by rw [h.mem, hm₁], ?_, by rw [h.rd, hrd₁], by rw [h.wr, hwr₁]⟩
@@ -150,7 +150,7 @@ include L
 omit L in
 theorem saved_w {d k : Nat} (hd : d + k ≤ 2560) (ho : d + k ≤ 128 ∨ 248 ≤ d) :
     (savedR w).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
-  Lay.w_w (by omega) (by decide) hd
+  Lay.w_w (by omega_using [ho]) (by decide) hd
 
 theorem Lay.saved_st {d k : Nat} (hd : d + k ≤ 80) : (savedR w).Disjoint ⟨st + BitVec.ofNat 64 d, k⟩ :=
   (L.st_w hd (.inr ⟨by decide, by decide⟩)).symm
@@ -160,7 +160,7 @@ theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact L.saved_st (by omega)
+  · exact L.saved_st (by omega_using [hyo])
   · exact L.saved_st (by decide)
   · exact saved_w (by decide) (.inr (by decide))
 

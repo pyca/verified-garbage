@@ -30,7 +30,7 @@ theorem baseConsts_eq : baseConsts=[(baseSym,baseWords)]:=rfl
 theorem satMem_held : ∀ i<baseWords.length,
     satMem.readW (0x100000+BitVec.ofNat 64 (8*i)) 64=baseWords.getD i 0:=by
   unfold satMem
-  exact constMem_held _ _ (by rw [baseWords_length];omega)
+  exact constMem_held _ _ (by rw [baseWords_length];omega_using [])
 
 theorem held_baseTable {s:State} {base:Addr} (h:BaseHeld s [⟨base,8192⟩])
     (hr:(⟨s.syms baseSym,8192⟩:Region)∈s.rd) : BaseTableAt s base (s.syms baseSym):=by

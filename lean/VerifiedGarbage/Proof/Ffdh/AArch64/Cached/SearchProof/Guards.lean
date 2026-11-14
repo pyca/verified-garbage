@@ -41,7 +41,7 @@ theorem budget_guard {p : KeyPublic} {original s : State} {used keys scalars : N
       (by decide +kernel)) fun _ ⟨⟨he, hm⟩, k⟩ => ⟨h.keep k hm, he⟩
     brun [ldf, h.x19, hw, a.ld 0 (by decide), a.ld 8 (by decide), a.ld0]
     simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq,
-      ofNat_beq_zero (show n < 2 ^ 64 by omega)]
+      ofNat_beq_zero (show n < 2 ^ 64 by omega_using [hn])]
 
 theorem keys_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) :
@@ -66,18 +66,18 @@ theorem room_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat
   have hv10 := h.header (j := 10) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [KeyPublic.headers])
   simp only [Bignum.word, off, Nat.reduceMul] at hv2 hv10
   have hr : p.randLen < 2 ^ 64 := by rw [← h.input.2]; exact BitVec.isLt _
-  have hk : p.len < 2 ^ 64 := by have := h.input.len_lt; omega
+  have hk : p.len < 2 ^ 64 := by have := h.input.len_lt; omega_using [this]
   refine WP.mono (WP.keep [.x9, .x10, .x11, .x12, .x13, .x14] (Q := fun t =>
     isa.eval (.zero .x .x12) t = some (decide (p.randLen - used < p.len)) ∧ t.mem = s.mem) ?_
     (by decide) (by decide) (by decide +kernel)) fun _ ⟨⟨he, hm⟩, k⟩ => ⟨h.keep k hm, he⟩
   unfold room
   brun [ldf, h.x19, hv2, hv10, a.ld 16 (by decide), a.ld 80 (by decide), imm64 (show 0 < 65536 by decide),
-    imm64 (show 1 < 65536 by decide), subs_ge (show p.randLen - used < 2 ^ 64 by omega) hk]
+    imm64 (show 1 < 65536 by decide), subs_ge (show p.randLen - used < 2 ^ 64 by omega_using [hr]) hk]
   simp only [eval, State.read, RegUpd.gpr_write, ite_true, Size.bits, BitVec.setWidth_eq]
   by_cases hb : p.len ≤ p.randLen - used
-  · simp only [hb, decide_true, ite_true, show ¬p.randLen - used < p.len by omega, decide_false]
+  · simp only [hb, decide_true, ite_true, show ¬p.randLen - used < p.len by omega_using [hb], decide_false]
     decide
-  · simp only [hb, decide_false, ite_false, show p.randLen - used < p.len by omega, decide_true,
+  · simp only [hb, decide_false, ite_false, show p.randLen - used < p.len by omega_using [hb], decide_true,
       Bool.false_eq_true]
     decide
 

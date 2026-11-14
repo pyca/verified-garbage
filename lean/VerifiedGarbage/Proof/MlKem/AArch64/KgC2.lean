@@ -44,7 +44,7 @@ theorem CInv.frame {s₀ : State} {mB : Mem} {v : BitVec 64} {s s' : State} (h :
   have ha : ∀ e < P.k * P.k, ∀ r ∈ W, (polyRegion (AR s₀ e)).Disjoint r := fun e he r hr =>
     (hW r hr).2.2.sub_left (by
       rw [show AR s₀ e = kA s₀ 3 + BitVec.ofNat 64 AH + BitVec.ofNat 64 (1024 * e) by rw [ptr_add]]
-      exact sub_offset' (by omega))
+      exact sub_offset' (by omega_using [he]))
   refine ⟨hk, ?_, ?_, by rw [hx, h.x24], fun e he => ⟨reduced_frame hf (ha e he) (h.ahat e he).1, ?_⟩⟩
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).1) (by decide)]; exact h.rho
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.1) (by decide)]; exact h.sig
@@ -57,13 +57,13 @@ theorem cnW_apart {s₀ : State} (hp : Pre P s₀) {off b o l : Nat} (hb : b < 4
     ∀ r ∈ cnW s₀ off, (R (kA s₀) b o l).Disjoint r := by
   intro r hr
   rcases mem7 hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.ST]; omega
-  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.WK]; omega
+  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.ST]; omega_using [h]
+  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.WK]; omega_using [h]
   · exact below_R hp hb f
-  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.SG]; omega
-  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.PB]; omega
-  · refine hp.args.rdisj hb (by decide) f ho ?_; omega
-  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.NS]; omega
+  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.SG]; omega_using [h]
+  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.PB]; omega_using [h]
+  · refine hp.args.rdisj hb (by decide) f ho ?_; omega_using [h]
+  · refine hp.args.rdisj hb (by decide) f (by kl) ?_; simp only [KG.NS]; omega_using [h]
 
 /-- `ρ`, `σ` and `Â` are apart from what `(kgCbdNttWith keccak.callee)` writes, for a polynomial past `Â`. -/
 theorem cnW_far {s₀ : State} (hp : Pre P s₀) {off : Nat} (ho : SH P ≤ off ∧ off + 1024 ≤ SV P) :
@@ -110,15 +110,15 @@ theorem s_step {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {j : 
   · have hS : ∀ r ∈ [R (kA s₀) 2 (384 * j) 384], (R (kA s₀) 3 (sOff P j') 1024).Disjoint r := fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact hp.args.rdisj (by decide) (by decide) (by kl) fd (.inl (by decide))
-    rcases (by omega : j' < j ∨ j' = j) with hj' | rfl
+    rcases (by omega_using [hj'] : j' < j ∨ j' = j) with hj' | rfl
     · refine polyIs_frame f₂ hS (polyIs_frame f₁ (cnW_apart hp (by decide)
         (by kl) (.inr (by kl)) hoL)
         (h.sp j' hj'))
     · exact polyIs_frame f₂ hS p₁
-  · rcases (by omega : j' < j ∨ j' = j) with hj' | rfl
+  · rcases (by omega_using [hj'] : j' < j ∨ j' = j) with hj' | rfl
     · rw [bytesAt_frame f₂ (fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact hp.args.rdisj (by decide) (by decide) (by kl) fd (by omega))
+          exact hp.args.rdisj (by decide) (by decide) (by kl) fd (by omega_using [hj']))
           (by decide),
         bytesAt_frame f₁ (cnW_apart hp (by decide) (by kl) (.inl (by decide)) hoL)
           (by decide)]

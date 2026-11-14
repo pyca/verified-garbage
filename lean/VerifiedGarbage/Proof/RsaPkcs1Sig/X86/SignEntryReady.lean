@@ -46,7 +46,7 @@ theorem EntryInput.savedAddr {g : Geometry} {bs : Fin 8 → List Byte} {s : Stat
 theorem EntryInput.enteredFrame {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     (h : EntryInput g bs s) : Frame [g.savedRegion] s.mem (entered s).mem := by
   have f := pushed_frame (rs := savedRegisters) (s := s) (by decide)
-    (by change 16 ≤ _; have := h.stackFit; unfold sigStack at this; omega)
+    (by change 16 ≤ _; have := h.stackFit; unfold sigStack at this; omega_using [this])
   unfold below at f
   rw [← pushed_esp] at f
   change Frame [⟨((pushed savedRegisters s).gpr .esp).setWidth 64, 16⟩] s.mem (entered s).mem at f
@@ -82,7 +82,7 @@ theorem EntryInput.enteredSource {g : Geometry} {bs : Fin 8 → List Byte} {s : 
     intro r hr
     obtain rfl := List.mem_singleton.mp hr
     exact ((h.valid.stackSources i).sub_left h.valid.savedSub).symm
-  exact (Rsa.rsa_bytes_frame h.enteredFrame (by have := (h.source i).fits; omega) sep).trans (h.source i).bytes
+  exact (Rsa.rsa_bytes_frame h.enteredFrame (by have := (h.source i).fits; omega_using [this]) sep).trans (h.source i).bytes
 
 theorem EntryInput.enteredArguments {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     (h : EntryInput g bs s) (j : Nat) (hj : j < 21) :
@@ -92,7 +92,7 @@ theorem EntryInput.enteredArguments {g : Geometry} {bs : Fin 8 → List Byte} {s
     obtain rfl := List.mem_singleton.mp hr
     exact (h.valid.stackArguments.sub_left h.valid.savedSub).symm
   have eq := h.enteredFrame.readW (r := g.argumentsRegion)
-    (Offset.contains_base _ (by omega : 4 * j + 32 / 8 ≤ 84) (by omega)) sep (by decide : 32 / 8 < 2 ^ 64)
+    (Offset.contains_base _ (by omega_using [hj] : 4 * j + 32 / 8 ≤ 84) (by omega_using [hj])) sep (by decide : 32 / 8 < 2 ^ 64)
   have address : g.argumentsRegion.base + BitVec.ofNat 64 (4 * j) =
       byteAddr g.stack + BitVec.ofNat 64 (VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes + 20 + 4 * j) :=
     Offset.add_add _ _ _
@@ -106,7 +106,7 @@ theorem EntryInput.ready {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
   refine ⟨h.stackFit, ⟨h.valid, h.enteredSp, ?_, h.enteredSource,
     entered_write h.outputWrite, entered_write h.workspaceWrite,
     entered_read h.argumentsRead, h.enteredArguments⟩, h.returnSeparate⟩
-  refine ⟨by have := h.valid.stackHigh; omega, ?_⟩
+  refine ⟨by have := h.valid.stackHigh; omega_using [this], ?_⟩
   change (⟨byteAddr g.stack, VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes⟩ : Region) ∈
     ⟨byteAddr ((entered s).gpr .esp), VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes⟩ :: (pushed savedRegisters s).wr
   rw [h.enteredSp]

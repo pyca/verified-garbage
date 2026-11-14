@@ -41,7 +41,7 @@ theorem PublicInputs.environment {s t : State} (P : PublicInputs s t) : callEnvi
   funext i
   by_cases hi : i < 7
   · simp only [hi, ite_true]
-    exact P.arguments (2 * i) (by omega)
+    exact P.arguments (2 * i) (by omega_using [hi])
   · simp only [hi, ite_false]
 
 theorem PublicInputs.exponent {s t : State} (P : PublicInputs s t) : callEBytes s = callEBytes t := by

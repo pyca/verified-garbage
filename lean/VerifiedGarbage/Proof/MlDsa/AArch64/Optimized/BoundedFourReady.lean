@@ -56,12 +56,12 @@ structure SamplerPre (s : State) : Prop where
 theorem sampler_in_work {σ s : State} (hp : SamplerPre σ) (hw : s.wr=σ.wr)
     {d n : Nat} (hd : d+n≤8192) : InRegions s.wr (samplerAt σ d) n := by
   rw [hw,hp.wr]
-  exact ⟨samplerWorkspace σ,by simp,Offset.contains_base (samplerScratch σ) hd (by omega)⟩
+  exact ⟨samplerWorkspace σ,by simp,Offset.contains_base (samplerScratch σ) hd (by omega_using [hd])⟩
 
 theorem sampler_in_seed {σ s : State} (hp : SamplerPre σ) (hr : s.rd=σ.rd)
     {d n : Nat} (hd : d+n≤264) : InRegions (s.rd++s.wr) (samplerSeed σ+BitVec.ofNat 64 d) n := by
   rw [hr,hp.rd]
-  exact ⟨samplerSeeds σ,by simp,Offset.contains_base (samplerSeed σ) hd (by omega)⟩
+  exact ⟨samplerSeeds σ,by simp,Offset.contains_base (samplerSeed σ) hd (by omega_using [hd])⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 end

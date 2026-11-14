@@ -30,7 +30,7 @@ def invAllocatedOuterW : List (Nat × Nat) := invAllocatedW ++ [(7800,32)]
  theorem invAllocated_save_input {base : Addr} {size : Nat} {s a : State}
     (hs : Scr s base size) (_hsize : 8192≤size) (ua : Outside base 7800 32 s.mem a.mem) :
     wordsVal a.mem base invAllocatedCfg.base 4=wordsVal s.mem base invAllocatedCfg.base 4 :=
-  ua.wordsVal (by decide) (by have := hs.nowrap; change 1248+8*4≤2^64; omega)
+  ua.wordsVal (by decide) (by have := hs.nowrap; change 1248+8*4≤2^64; omega_using [])
 
 /-- The production inverse restores every extra callee-saved register used by allocation. -/
 theorem invAllocated_inverse_ok {base : Addr} {size : Nat} [NeZero invAllocatedModulus]
@@ -46,7 +46,7 @@ theorem invAllocated_inverse_ok {base : Addr} {size : Nat} [NeZero invAllocatedM
       toM invAllocatedModulus (2^256) (wordsVal t.mem base invAllocatedCfg.acc 4)=
         toM invAllocatedModulus (2^256) (wordsVal s.mem base invAllocatedCfg.base 4) ^ (invAllocatedModulus-2) := by
   change WP isa (.seq (.block saveExtra) (.seq invAllocatedBody (.block restoreExtra))) s _
-  refine WP.seq (WP.mono (allocatedSave_ok hs (by omega)) fun a ⟨ka,ua,sa⟩ => ?_)
+  refine WP.seq (WP.mono (allocatedSave_ok hs (by omega_using [hsize])) fun a ⟨ka,ua,sa⟩ => ?_)
   have ha := hs.of_keepRegs ka (by simp)
   have ma := invAllocated_save_mod hs hM ua
   have va := invAllocated_save_input hs hsize ua
@@ -54,7 +54,7 @@ theorem invAllocated_inverse_ok {base : Addr} {size : Nat} [NeZero invAllocatedM
     fun b ⟨kb,ub,lb,eb⟩ => ?_)
   have hb := ha.of_keepRegs kb (by decide)
   have sb := allocatedSaved_keep sa ub (by decide)
-  refine WP.mono (allocatedRestore_ok hb (by omega) sb) fun t ⟨kt,vt⟩ =>
+  refine WP.mono (allocatedRestore_ok hb (by omega_using [hsize]) sb) fun t ⟨kt,vt⟩ =>
     ⟨allocatedRestore_frame ka kb kt vt,?_,?_,?_⟩
   · intro x hx
     rw [kt.mem,ub x (fun w hw => hx w (List.mem_append_left _ hw)),ua x (hx (7800,32) (List.mem_append_right _ (by simp)))]
@@ -84,8 +84,8 @@ theorem invAllocated_inverse_relCT {base : Addr} {size X : Nat} [NeZero invAlloc
     exact hp.1.x0.trans hp.2.1.x0.symm
   have hsave : RelCT isa Pre (.block saveExtra) Pre := by
     intro s t ts tt s' t' hp es et
-    obtain ⟨_,_,xs,ks,us,_⟩ := allocatedSave_ok hp.1 (by omega)
-    obtain ⟨_,_,xt,kt,ut,_⟩ := allocatedSave_ok hp.2.1 (by omega)
+    obtain ⟨_,_,xs,ks,us,_⟩ := allocatedSave_ok hp.1 (by omega_using [hsize])
+    obtain ⟨_,_,xt,kt,ut,_⟩ := allocatedSave_ok hp.2.1 (by omega_using [hsize])
     obtain ⟨_,rfl⟩ := es.det xs
     obtain ⟨_,rfl⟩ := et.det xt
     refine ⟨invAllocated_save_ct _ _ _ _ _ _ trivial trivial (hpub s t hp) es et,

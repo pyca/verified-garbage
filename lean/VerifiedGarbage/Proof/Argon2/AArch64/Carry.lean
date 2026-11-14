@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Arithmetic facts for ARM64's subtraction carry -/
 
@@ -18,7 +19,7 @@ theorem sub_carry (a b : BitVec 64) :
   have hb := b.isLt
   have h : (2 ^ 64 ≤ a.toNat + (2 ^ 64 - 1 - b.toNat) + 1) ↔ b.toNat ≤ a.toNat := by
     simp only [Nat.reducePow] at *
-    omega
+    omega_using []
   simp only [h]
 
 theorem borrow_mask (x : BitVec 64) (b : Bool) :

@@ -42,17 +42,17 @@ theorem ors_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a 
       fun _ _ => rfl, rfl, rfl, rfl⟩
   | k + 1, hk => by
     rw [List.range_succ, List.map_append, List.map_cons, List.map_nil, WP.block_append_iff]
-    refine WP.mono (ors_ok hs k (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (ors_ok hs k (by omega_using [hk])) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by decide)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc_sc hs₁ (d := a + 8 * (k + 1))
-      (by omega), Option.bind_some, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left',
+      (by omega_using [hk]), Option.bind_some, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left',
       or_eq_zero, e₁, k₁.2.1]
-    refine ⟨⟨fun ⟨⟨h₀, h⟩, hw⟩ => ⟨h₀, fun j hj => ?_⟩, fun ⟨h₀, h⟩ => ⟨⟨h₀, fun j hj => h j (by omega)⟩,
-      h k (by omega)⟩⟩, fun r hr => ?_, ?_, ?_, ?_⟩
+    refine ⟨⟨fun ⟨⟨h₀, h⟩, hw⟩ => ⟨h₀, fun j hj => ?_⟩, fun ⟨h₀, h⟩ => ⟨⟨h₀, fun j hj => h j (by omega_using [hj])⟩,
+      h k (by omega_using [])⟩⟩, fun r hr => ?_, ?_, ?_, ?_⟩
     · rcases Nat.lt_or_ge j k with hj' | hj'
       · exact h j hj'
-      · obtain rfl : j = k := by omega
+      · obtain rfl : j = k := by omega_using [hj, hj']
         exact hw
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ite_eq_right hr, k₁.1 r (by simpa using hr)]
@@ -73,14 +73,14 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
   refine WP.mono (show WP isa (.block [.mov .rdx (.mem (sc a))]) s (fun s₁ =>
       s₁.gpr .rdx = word s.mem base a ∧ Keeps [.rdx] s s₁) by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := a) (by omega),
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := a) (by omega_using [hn, ha]),
       Option.map_some, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left']
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ors_ok hs₁ (a := a) (c.n - 1) (by omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+  refine WP.mono (ors_ok hs₁ (a := a) (c.n - 1) (by omega_using [hn, ha])) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [e₁, k₁.2.1] at e₂
   have hz : s₂.gpr .rdx = 0 ↔ wordsVal s.mem base a c.n = 0 := by
     rw [e₂, wordsVal_eq_zero_iff]
@@ -88,9 +88,9 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s 
     · intro ⟨h₀, h⟩ j hj
       rcases j with _ | j
       · simpa using h₀
-      · exact h j (by omega)
+      · exact h j (by omega_using [hj])
     · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega_using [hj])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.setReg32,
     Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags,
@@ -139,9 +139,9 @@ theorem ltSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     apply WP.of_runBlock
     rw [show (List.range (0 + 1)).flatMap (ltStep a m) = ltStep a m 0 from rfl, ltStep_zero]
     simp only [runBlock_cons, runStep_some,
-      runBlock_nil, exec, execAlu, readSrc, ld_sc hs (d := a + 8 * 0) (by omega), Option.map_some,
+      runBlock_nil, exec, execAlu, readSrc, ld_sc hs (d := a + 8 * 0) (by omega_using [ha]), Option.map_some,
       Option.bind_some, RegUpd.gpr_setReg, ite_true, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-      State.load64, ea_sc, hs.rdi, ld_sc hs (d := m + 8 * 0) (by omega), RegUpd.cf_setReg,
+      State.load64, ea_sc, hs.rdi, ld_sc hs (d := m + 8 * 0) (by omega_using [hm]), RegUpd.cf_setReg,
       RegUpd.cf_arithFlags, reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
     refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
     · simp only [wordsVal, Nat.mul_zero, Nat.add_zero]
@@ -150,13 +150,13 @@ theorem ltSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       rw [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ite_eq_right hr, RegUpd.gpr_setReg, ite_eq_right hr]
   | k + 1, ha, hm => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ltSteps_ok hs k (by omega) (by omega)) fun s₁ ⟨c₁, k₁⟩ => ?_
+    refine WP.mono (ltSteps_ok hs k (by omega_using [ha]) (by omega_using [hm])) fun s₁ ⟨c₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by decide)
     apply WP.of_runBlock
     simp only [ltStep_succ, runBlock_cons, runStep_some, runBlock_nil, exec,
-      execAlu, readSrc, ld_sc hs₁ (d := a + 8 * (k + 1)) (by omega), Option.map_some, Option.bind_some,
+      execAlu, readSrc, ld_sc hs₁ (d := a + 8 * (k + 1)) (by omega_using [ha]), Option.map_some, Option.bind_some,
       RegUpd.gpr_setReg, ite_true, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-      State.load64, ea_sc, hs₁.rdi, ld_sc hs₁ (d := m + 8 * (k + 1)) (by omega), RegUpd.cf_setReg, c₁,
+      State.load64, ea_sc, hs₁.rdi, ld_sc hs₁ (d := m + 8 * (k + 1)) (by omega_using [hm]), RegUpd.cf_setReg, c₁,
       RegUpd.cf_arithFlags, reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left', k₁.2.1]
     refine ⟨?_, fun r hr => ?_, ?_, ?_, ?_⟩
     · refine decide_eq_decide.mpr ?_
@@ -175,7 +175,7 @@ theorem ltN_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base
     WP isa (.block (c.ltN a)) s fun s' =>
       s'.gpr .rax = mask (wordsVal s.mem base a c.n < wordsVal s.mem base (c.sl MN) c.n) ∧
       Keeps [.rax, .rdx] s s' := by
-  obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega⟩
+  obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega_using [hn]⟩
   rw [ltN_eq, WP.block_append_iff, hk]
   rw [hk] at ha hm
   refine WP.mono (ltSteps_ok hs k ha hm) fun s₁ ⟨c₁, k₁⟩ => ?_
@@ -208,7 +208,7 @@ theorem andFlag_ok' (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s
       word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& s.gpr .rdx ∧
       KeepRegs [.rax] s s' ∧ Outside base (c.sl FLAG) 8 s.mem s'.mem :=
   WP.mono (andFlag_ok c hs hf) fun s' ⟨m, k⟩ =>
-    ⟨by rw [m, word_writeW_self], k, by rw [m]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega)⟩
+    ⟨by rw [m, word_writeW_self], k, by rw [m]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega_using [hf, this])⟩
 
 /-- `checkRange a`: the flag `&=` the mask of `0 < [a] < [MN]`. -/
 theorem checkRange_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}

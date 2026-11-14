@@ -17,11 +17,11 @@ open VG.Proof.ChaCha20.AArch64.Neon4 (output output_word byte_vword)
 theorem output_byte (vs : Nat → CState) (k : Nat) :
     (output vs (k / 16)).extractLsb' (8 * (k % 16)) 8 =
       (VG.Spec.ChaCha20.serialize (vs (k / 64))).getD (k % 64) 0 := by
-  rw [byte_vword _ (by omega),output_word _ _ (by omega),
-    VG.Proof.ChaCha20.serialize_getD _ (by omega)]
-  simp only [show k / 16 / 4 = k / 64 by omega,
-    show 4 * (k / 16 % 4) + k % 16 / 4 = k % 64 / 4 by omega,
-    show k % 16 % 4 = k % 64 % 4 by omega]
+  rw [byte_vword _ (by omega_using []),output_word _ _ (by omega_using []),
+    VG.Proof.ChaCha20.serialize_getD _ (by omega_using [])]
+  simp only [show k / 16 / 4 = k / 64 by omega_using [],
+    show 4 * (k / 16 % 4) + k % 16 / 4 = k % 64 / 4 by omega_using [],
+    show k % 16 % 4 = k % 64 % 4 by omega_using []]
 
 /-- The six blocks' keystream XORed with the 384 bytes of the source (at `r`)
 into the destination (at `x1`), which is the source or apart from it. -/
@@ -47,8 +47,8 @@ theorem finishBlocksFrom_ok (r : Reg) {s : State} {blocks : Nat → CState} (h :
   intro k hk
   have hm : k / 16 ∈ (List.finRange 24).map Fin.val ++ [] := by
     apply List.mem_append_left
-    exact List.mem_map_of_mem (f := Fin.val) (List.mem_finRange (⟨k / 16,by omega⟩ : Fin 24))
-  rw [hu _,VG.Offset.add_sub_cancel_left,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : k < 2 ^ 64),
+    exact List.mem_map_of_mem (f := Fin.val) (List.mem_finRange (⟨k / 16,by omega_using [hk]⟩ : Fin 24))
+  rw [hu _,VG.Offset.add_sub_cancel_left,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hk] : k < 2 ^ 64),
     ite_eq_left ⟨hm,hk⟩,output_byte]
 
 end VG.Proof.ChaCha20.AArch64.Rows6

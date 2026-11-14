@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Signed sliding-window digits
@@ -36,8 +37,8 @@ theorem hsum_add (f : Nat → Int) (p a b : Nat) :
   induction a generalizing p with
   | zero => simp [hsum]
   | succ a ih =>
-    rw [show a + 1 + b = (a + b) + 1 by omega, hsum_succ, ih, hsum_succ,
-      show p + 1 + a = p + (a + 1) by omega, Int.pow_succ]
+    rw [show a + 1 + b = (a + b) + 1 by omega_using [], hsum_succ, ih, hsum_succ,
+      show p + 1 + a = p + (a + 1) by omega_using [], Int.pow_succ]
     grind
 
 theorem hsum_one (f : Nat → Int) (p : Nat) : hsum f p 1 = f p := by simp [hsum]
@@ -50,7 +51,7 @@ theorem hsum_congr {f g : Nat → Int} {p n : Nat} (h : ∀ j, p ≤ j → j < p
   induction n generalizing p with
   | zero => rfl
   | succ n ih =>
-    rw [hsum_succ, hsum_succ, h p (by omega) (by omega), ih fun j h1 h2 => h j (by omega) (by omega)]
+    rw [hsum_succ, hsum_succ, h p (by omega_using []) (by omega_using []), ih fun j h1 h2 => h j (by omega_using [h1]) (by omega_using [h2])]
 
 theorem hsum_eq_zero {f : Nat → Int} {p n : Nat} (h : ∀ j, p ≤ j → j < p + n → f j = 0) :
     hsum f p n = 0 := by
@@ -106,18 +107,18 @@ theorem init_good (w K : Nat) : Good w K init :=
 
 theorem dec_odd {W : Nat} (h : W % 2 = 1) : dec W = W := by
   simp only [dec, h, ite_true]
-  rw [ite_eq_right_iff.mpr (by omega)]
+  rw [ite_eq_right_iff.mpr (by omega_using [])]
 
 theorem dec_even {u : Nat} (h0 : u ≠ 0) (h : u % 2 = 0) : dec u = 1 - u := by
   simp only [dec, h0, ite_false]
-  rw [ite_eq_right_iff.mpr (by omega)]
+  rw [ite_eq_right_iff.mpr (by omega_using [h])]
 
 theorem step_good {w K : Nat} (hw : 2 ≤ w) {s : St} (h : Good w K s) : Good w K (step w K s) := by
   obtain ⟨hc, habove, hle, hsum'⟩ := h
   have hpw : 2 ^ w = 2 * 2 ^ (w - 1) := by
-    rw [show 2 ^ w = 2 ^ ((w - 1) + 1) by congr 1; omega, Nat.pow_succ']
+    rw [show 2 ^ w = 2 ^ ((w - 1) + 1) by congr 1; omega_using [hw], Nat.pow_succ']
   have hpw1 : 2 ^ (w - 1) = 2 * 2 ^ (w - 2) := by
-    rw [show 2 ^ (w - 1) = 2 ^ ((w - 2) + 1) by congr 1; omega, Nat.pow_succ']
+    rw [show 2 ^ (w - 1) = 2 ^ ((w - 2) + 1) by congr 1; omega_using [hw], Nat.pow_succ']
   have hp2 : 0 < 2 ^ (w - 2) := Nat.two_pow_pos _
   have hKw : K % 2 ^ (s.i + w) = K % 2 ^ s.i + 2 ^ s.i * (K / 2 ^ s.i % 2 ^ w) := by
     rw [Nat.pow_add, Nat.mod_mul]
@@ -131,11 +132,11 @@ theorem step_good {w K : Nat} (hw : 2 ≤ w) {s : St} (h : Good w K s) : Good w 
     intro v hv
     have e1 := hsum_add (fun j => dec (v j)) 0 s.i w
     have e2 := hsum_add (fun j => dec (v j)) s.i 1 (w - 1)
-    rw [show 1 + (w - 1) = w by omega] at e2
+    rw [show 1 + (w - 1) = w by omega_using [hw]] at e2
     have e3 : hsum (fun j => dec (v j)) (s.i + 1) (w - 1) = 0 :=
-      hsum_eq_zero (fun j h1 h2 => by rw [hv j (by omega), habove j (by omega)]; rfl)
+      hsum_eq_zero (fun j h1 h2 => by rw [hv j (by omega_using [h1]), habove j (by omega_using [h1])]; rfl)
     have e4 : hsum (fun j => dec (v j)) 0 s.i = hsum (fun j => dec (s.u j)) 0 s.i :=
-      hsum_congr (fun j _ h2 => by rw [hv j (by omega)])
+      hsum_congr (fun j _ h2 => by rw [hv j (by omega_using [h2])])
     simp only [Nat.zero_add, hsum] at e1 e2
     rw [e1, e2, e3, e4]
     grind
@@ -149,23 +150,23 @@ theorem step_good {w K : Nat} (hw : 2 ≤ w) {s : St} (h : Good w K s) : Good w 
   generalize K % 2 ^ s.i = Q at *
   split
   · rename_i heq
-    refine ⟨hc, fun j hj => habove j (by dsimp only at hj; omega), hle, ?_⟩
+    refine ⟨hc, fun j hj => habove j (by dsimp only at hj; omega_using [hj]), hle, ?_⟩
     dsimp only
     rw [hsplit1, hK1, Int.pow_succ]
     push_cast
     rw [heq]
     grind
   · rename_i hne
-    have hbc : b + s.c = 1 := by omega
-    have hodd : (Wm + s.c) % 2 = 1 := by omega
+    have hbc : b + s.c = 1 := by omega_using [hc, hb, hne]
+    have hodd : (Wm + s.c) % 2 = 1 := by omega_using [hc, hmod2, hne]
     split
     · rename_i hW
       refine ⟨Nat.zero_le _, fun j hj => ?_, fun j => ?_, ?_⟩
       · dsimp only at hj ⊢
-        rw [upd_ne _ _ (show j ≠ s.i by omega)]; exact habove j (by omega)
+        rw [upd_ne _ _ (show j ≠ s.i by omega_using [hw, hj])]; exact habove j (by omega_using [hj])
       · dsimp only
         by_cases hj : j = s.i
-        · rw [hj, upd_self]; omega
+        · rw [hj, upd_self]; omega_using [hW]
         · rw [upd_ne _ _ hj]; exact hle j
       · dsimp only
         rw [hsplit _ (fun j hj => upd_ne _ _ hj), upd_self, dec_odd hodd, hKw]
@@ -174,27 +175,27 @@ theorem step_good {w K : Nat} (hw : 2 ≤ w) {s : St} (h : Good w K s) : Good w 
     · rename_i hW
       refine ⟨Nat.le_refl _, fun j hj => ?_, fun j => ?_, ?_⟩
       · dsimp only at hj ⊢
-        rw [upd_ne _ _ (show j ≠ s.i by omega)]; exact habove j (by omega)
+        rw [upd_ne _ _ (show j ≠ s.i by omega_using [hw, hj])]; exact habove j (by omega_using [hj])
       · dsimp only
         by_cases hj : j = s.i
-        · rw [hj, upd_self]; omega
+        · rw [hj, upd_self]; omega_using [hc, hpw, hpw1, hmod2, hne, hW]
         · rw [upd_ne _ _ hj]; exact hle j
       · dsimp only
         rw [hsplit _ (fun j hj => upd_ne _ _ hj), upd_self,
-          dec_even (by omega) (by omega), hKw, Int.ofNat_sub (by omega), Int.pow_add]
+          dec_even (by omega_using [hc, hlt]) (by omega_using [hc, hpw, hmod2, hne]), hKw, Int.ofNat_sub (by omega_using [hc, hlt]), Int.pow_add]
         push_cast
         grind
 
 theorem step_i {w K : Nat} (hw : 1 ≤ w) (s : St) : s.i + 1 ≤ (step w K s).i ∧ (step w K s).i ≤ s.i + w := by
   unfold step; split
-  · exact ⟨Nat.le_refl _, by simp only; omega⟩
-  · split <;> exact ⟨by simp only; omega, Nat.le_refl _⟩
+  · exact ⟨Nat.le_refl _, by simp only; omega_using [hw]⟩
+  · split <;> exact ⟨by simp only; omega_using [hw], Nat.le_refl _⟩
 
 theorem run_succ {w K n f : Nat} {s : St} (h : s.i < n) : run w K n (f + 1) s = run w K n f (step w K s) := by
   simp only [run, h, ↓reduceIte]
 
 theorem run_stop {w K n f : Nat} {s : St} (h : n ≤ s.i) : run w K n f s = s := by
-  cases f <;> simp only [run, show ¬ s.i < n by omega, ↓reduceIte]
+  cases f <;> simp only [run, show ¬ s.i < n by omega_using [h], ↓reduceIte]
 
 theorem run_good {w K n : Nat} (hw : 2 ≤ w) (f : Nat) {s : St} (h : Good w K s) :
     Good w K (run w K n f s) := by
@@ -203,17 +204,17 @@ theorem run_good {w K n : Nat} (hw : 2 ≤ w) (f : Nat) {s : St} (h : Good w K s
   | succ f ih =>
     by_cases hi : s.i < n
     · rw [run_succ hi]; exact ih (step_good hw h)
-    · rw [run_stop (by omega)]; exact h
+    · rw [run_stop (by omega_using [hi])]; exact h
 
 /-- Enough fuel ends past bit `n`. -/
 theorem run_end {w K n : Nat} (hw : 1 ≤ w) (f : Nat) {s : St} (hf : n - s.i ≤ f) :
     n ≤ (run w K n f s).i := by
   induction f generalizing s with
-  | zero => rw [run_stop (by omega)]; omega
+  | zero => rw [run_stop (by omega_using [hf])]; omega_using [hf]
   | succ f ih =>
     by_cases hi : s.i < n
-    · rw [run_succ hi]; exact ih (by have := (step_i hw (K := K) s).1; omega)
-    · rw [run_stop (by omega)]; omega
+    · rw [run_succ hi]; exact ih (by have := (step_i hw (K := K) s).1; omega_using [hf, this])
+    · rw [run_stop (by omega_using [hi])]; omega_using [hi]
 
 /-- The steps end before bit `n + w`. -/
 theorem run_lt {w K n : Nat} (hw : 1 ≤ w) (f : Nat) {s : St} (hs : s.i < n + w) :
@@ -222,21 +223,21 @@ theorem run_lt {w K n : Nat} (hw : 1 ≤ w) (f : Nat) {s : St} (hs : s.i < n + w
   | zero => exact hs
   | succ f ih =>
     by_cases hi : s.i < n
-    · rw [run_succ hi]; exact ih (by have := (step_i hw (K := K) s).2; omega)
-    · rw [run_stop (by omega)]; exact hs
+    · rw [run_succ hi]; exact ih (by have := (step_i hw (K := K) s).2; omega_using [hi, this])
+    · rw [run_stop (by omega_using [hi])]; exact hs
 
 /-- Enough fuel, however much, gives the same end. -/
 theorem run_fuel {w K n : Nat} (hw : 1 ≤ w) (f g : Nat) {s : St} (hf : n - s.i ≤ f) (hg : n - s.i ≤ g) :
     run w K n f s = run w K n g s := by
   induction f generalizing s g with
-  | zero => rw [run_stop (by omega), run_stop (by omega)]
+  | zero => rw [run_stop (by omega_using [hf]), run_stop (by omega_using [hf])]
   | succ f ih =>
     by_cases hi : s.i < n
-    · obtain ⟨g, rfl⟩ : ∃ g', g = g' + 1 := ⟨g - 1, by omega⟩
+    · obtain ⟨g, rfl⟩ : ∃ g', g = g' + 1 := ⟨g - 1, by omega_using [hg, hi]⟩
       rw [run_succ hi, run_succ hi]
       have := (step_i hw (K := K) s).1
-      exact ih g (by omega) (by omega)
-    · rw [run_stop (by omega), run_stop (by omega)]
+      exact ih g (by omega_using [hf, this]) (by omega_using [hg, this])
+    · rw [run_stop (by omega_using [hi]), run_stop (by omega_using [hi])]
 
 /-- A state the recoding reaches, from which it ends at `run w K n n init`. -/
 def Reach (w K n : Nat) (s : St) : Prop := run w K n (n - s.i) s = run w K n n init
@@ -247,9 +248,9 @@ theorem reach_init (w K n : Nat) : Reach w K n init := by
 theorem reach_step {w K n : Nat} (hw : 1 ≤ w) {s : St} (h : Reach w K n s) (hi : s.i < n) :
     Reach w K n (step w K s) := by
   unfold Reach at *
-  rw [← h, show n - s.i = (n - s.i - 1) + 1 by omega, run_succ hi]
+  rw [← h, show n - s.i = (n - s.i - 1) + 1 by omega_using [hi], run_succ hi]
   have := (step_i hw (K := K) s).1
-  exact run_fuel hw _ _ (by omega) (by omega)
+  exact run_fuel hw _ _ (by omega_using []) (by omega_using [this])
 
 theorem reach_end {w K n : Nat} {s : St} (h : Reach w K n s) (hi : n ≤ s.i) :
     s = run w K n n init := by
@@ -269,17 +270,17 @@ theorem digits_le {w K n : Nat} (hw : 2 ≤ w) (j : Nat) : digits w K n j ≤ 2 
 theorem digits_sum {w K n : Nat} (hw : 2 ≤ w) (hK : K < 2 ^ n) {N : Nat} (hN : n + w ≤ N) :
     hsum (fun j => dec (digits w K n j)) 0 N = K := by
   have hg : Good w K (run w K n n init) := run_good hw n (init_good w K)
-  have he : n ≤ (run w K n n init).i := run_end (by omega) n (by simp only [init]; omega)
-  have hl : (run w K n n init).i < n + w := run_lt (by omega) n (by simp only [init]; omega)
+  have he : n ≤ (run w K n n init).i := run_end (by omega_using [hw]) n (by simp only [init]; omega_using [])
+  have hl : (run w K n n init).i < n + w := run_lt (by omega_using [hw]) n (by simp only [init]; omega_using [hw])
   unfold digits
   generalize run w K n n init = F at *
   have e1 := hsum_add (fun j => dec (fin F j)) 0 (F.i + 1) (N - F.i - 1)
-  rw [show F.i + 1 + (N - F.i - 1) = N by omega, Nat.zero_add] at e1
+  rw [show F.i + 1 + (N - F.i - 1) = N by omega_using [hN, hl], Nat.zero_add] at e1
   have e2 : hsum (fun j => dec (fin F j)) (F.i + 1) (N - F.i - 1) = 0 :=
-    hsum_eq_zero fun j h1 _ => by rw [fin_ne _ (by omega), hg.above j (by omega)]; rfl
+    hsum_eq_zero fun j h1 _ => by rw [fin_ne _ (by omega_using [h1]), hg.above j (by omega_using [h1])]; rfl
   have e3 := hsum_snoc (fun j => dec (fin F j)) 0 F.i
   have e4 : hsum (fun j => dec (fin F j)) 0 F.i = hsum (fun j => dec (F.u j)) 0 F.i :=
-    hsum_congr fun j _ h2 => by rw [fin_ne _ (by omega)]
+    hsum_congr fun j _ h2 => by rw [fin_ne _ (by omega_using [h2])]
   have hK' : K % 2 ^ F.i = K := Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hK (Nat.pow_le_pow_right (by decide) he))
   have hs := hg.sum
   rw [hK'] at hs

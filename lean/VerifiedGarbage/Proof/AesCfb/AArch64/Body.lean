@@ -121,7 +121,7 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
       s₅.gpr r = s.gpr r := by
     rw [keep₅ r h22 h23, g₄ r (preserved_ne hr).1 (preserved_ne hr).2, a.g r hr h30]
   have hl' : (outK M s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   obtain ⟨x19', x20', x21', x24', other'⟩ := h.next g
   refine ⟨x19', x20', x21', x22₅, x23₅, x24', other', ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [sp₅, sp₄, a.sp, h.sp]

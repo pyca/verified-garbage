@@ -23,7 +23,7 @@ theorem redc_lt {R T X q m : Nat} (hm : 0 < m) (hq : q < R)
     rw [he]
     have h1 : m*R = R*m := Nat.mul_comm _ _
     have h2 : R*(2*m) = R*m+R*m := by grind
-    omega
+    omega_using [hX, hqm, h1, h2]
   exact Nat.lt_of_mul_lt_mul_left hb
 
 theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
@@ -40,20 +40,20 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have hNs := slot_le (w := w) (show aN < 8 by decide)
-  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
-  have hmpos : 0 < wv s.mem B (slot w aN) w := by omega
+  have hsep : slot w aN+8*(w+2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_using []
+  have hmpos : 0 < wv s.mem B (slot w aN) w := by omega_using [hA]
   unfold VG.Impl.Bignum.AArch64.Square.square
-  refine WP.seq (WP.mono (rawSquare_ok hs h0 hH hZ hw1 (by omega) ha ha1 ha2)
+  refine WP.seq (WP.mono (rawSquare_ok hs h0 hH hZ hw1 (by omega_using [hw]) ha ha1 ha2)
     fun u ⟨_, hv1, ho1', h8, h10, h12, h15, h7, _, ku⟩ => ?_)
-  have hN0 : word u.mem B (slot w aN) = word s.mem B (slot w aN) := ho1'.word (by omega) (by omega)
-  have hN1 : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho1'.wv (by omega) (by omega)
-  refine WP.seq (WP.mono (redc_ok (hs.congr ku.wr) hZ h8 h10 h12 h15 h7 hw1 (by omega))
+  have hN0 : word u.mem B (slot w aN) = word s.mem B (slot w aN) := ho1'.word (by omega_using [hsep]) (by omega_using [hZ, hn, hNs])
+  have hN1 : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho1'.wv (by omega_using [hsep]) (by omega_using [hZ, hn, hNs])
+  refine WP.seq (WP.mono (redc_ok (hs.congr ku.wr) hZ h8 h10 h12 h15 h7 hw1 (by omega_using [hw]))
     fun v ⟨hv2, ho2', v8, v10, v12, v7, kv⟩ => ?_)
   have invu : ((word u.mem B (slot w aN)).toNat*minv.toNat+1) % 2 ^ 64 = 0 := by rw [hN0]; exact hinv
   obtain ⟨q, hq, heq⟩ := hv2 invu
   rw [hv1, hN1] at heq
   have ho12 := ho1'.trans ho2'
-  have hN2 : wv v.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho12.wv (by omega) (by omega)
+  have hN2 : wv v.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho12.wv (by omega_using [hsep]) (by omega_using [hZ, hn, hNs])
   have k12 := ku.trans kv
   have hH2 := (scratch_arrays ho12).hdr hH
   have hTlt : wv v.mem B (slot w aTmp) (w+2) < 2*wv s.mem B (slot w aN) w :=
@@ -65,7 +65,7 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   refine WP.mono (finish_ok (hs.congr kAll.wr) hZ
     ((kc.gpr .x8 (by decide)).trans v8) ((kc.gpr .x10 (by decide)).trans v10) c6 c5
     ((kc.gpr .x12 (by decide)).trans v12) ((kc.gpr .x7 (by decide)).trans v7)
-    (by omega) hw ho ho1 ho2 (by rw [hmc, hN2]; exact hmpos)
+    (by omega_using [hw1]) hw ho ho1 ho2 (by rw [hmc, hN2]; exact hmpos)
     (by rw [hmc, hN2]; exact hTlt)) fun t ⟨hres, hframe, kt⟩ => ?_
   rw [hmc, hN2] at hres
   refine ⟨?_, ?_, ?_, (kAll.trans kt).mono (by decide)⟩

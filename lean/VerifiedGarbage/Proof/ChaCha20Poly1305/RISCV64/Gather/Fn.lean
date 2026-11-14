@@ -126,7 +126,7 @@ theorem bs_toNat : (Bs s).toNat = s.sp.toNat - 640 := by
   have e := congrArg BitVec.toNat h.hB
   rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
   have := h.hBn
-  omega
+  omega_using [e, this]
 
 theorem argIn : argR s ∈ s.rd := by rw [h.pre.1]; simp
 
@@ -135,18 +135,18 @@ omit h in
 theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 640⟩) {x : Addr} (hx : r.Contains x 1) :
     eMem s x = s.mem x :=
   Mem.write_apply fun hc => hr x hx (stk_sub s 632 8 (by decide) x (by
-    simp only [Region.Contains, raA] at hc ⊢; omega))
+    simp only [Region.Contains, raA] at hc ⊢; omega_using [hc]))
 
 theorem frame_eMem : Frame [FA s] s.mem (eMem s) :=
   (Frame.refl _ _).write (List.mem_singleton_self _) _
-    (Offset.contains (Bs s) (d := 632) (e := 624) (by decide) (by decide) (by have := h.hBn; omega))
+    (Offset.contains (Bs s) (d := 632) (e := 624) (by decide) (by decide) (by have := h.hBn; omega_using []))
 
 /-- `tag`, after the push. -/
 theorem eTag : (eMem s).readW (Bs s + BitVec.ofNat 64 640) 64 = Tg s := by
   rw [Frame.readW h.frame_eMem (r := ⟨Bs s + BitVec.ofNat 64 640, 8⟩) (Region.contains_self _ _)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inr (by decide)) (by have := h.hBn; omega) (by have := h.hBn; omega))
+      exact Offset.disjoint _ (.inr (by decide)) (by have := h.hBn; omega_using []) (by have := h.hBn; omega_using []))
     (by decide)]
   show _ = s.mem.readW (stackArgAddr s 0) 64
   rw [show stackArgAddr s 0 = Bs s + BitVec.ofNat 64 640 from congrArg Region.base h.hargR]
@@ -207,7 +207,7 @@ theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (pushed .ra s
   refine wp_addSp (imm := 16) (by decide) fun u₁ v₁ => ?_
   have p₁ : u₁.gpr .t5 = Bs s + BitVec.ofNat 64 640 := by rw [v₁.gpr, asp, Offset.add_add]
   refine wp_ld (a := Bs s + BitVec.ofNat 64 640) (by decide) (by rw [p₁]; exact BitVec.add_zero _)
-    (by rw [← h.hB]; have := h.al; omega)
+    (by rw [← h.hB]; have := h.al; omega_using [this])
     (by rw [v₁.rd, v₁.wr]
         exact ⟨_, List.mem_append_left _ h.argIn, by rw [h.hargR]; exact Region.contains_self _ _⟩)
     fun u₂ v₂ => wp_mv fun u₃ v₃ => WP.block_nil ?_
@@ -327,14 +327,14 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
   obtain ⟨c3, c4, c5, c6, c7, c8, c9⟩ := hc.callGpr
   have hb := h.bs_toNat
   have hc24 : (Bs s + BitVec.ofNat 64 624).toNat = (Bs s).toNat + 624 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := h.hBn; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := h.hBn; omega_using [hb]
   refine ⟨?_, ?_, ?_⟩
   · simp only [callPre, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.withRegions_sp,
       State.callEntry_sp, c3, c4, c5, c6, c7, c8, c9, hc.sp, cs_sub]
     exact ⟨trivial, trivial, kd, kt, nd, nt, ad, at_, dt, h.bk.sub_left (stk_sub0 s _ (by decide)),
       h.bn.sub_left (stk_sub0 s _ (by decide)), h.ba.sub_left (stk_sub0 s _ (by decide)),
       h.bd.sub_left (stk_sub0 s _ (by decide)), h.bt.sub_left (stk_sub0 s _ (by decide)),
-      ok, on, oa, od, ot, by rw [hc24]; omega, by rw [hc24]; omega⟩
+      ok, on, oa, od, ot, by rw [hc24]; omega_using [al, hb], by rw [hc24]; omega_using []⟩
   · refine covers_mem fun r hr => ?_
     simp only [rdC, wrC, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hc.rd, hc.wr, rd, wr]

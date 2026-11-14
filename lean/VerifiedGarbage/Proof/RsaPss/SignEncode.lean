@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaPss
 import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSASSA-PSS: signing and verification through the encoding
@@ -37,13 +38,13 @@ theorem encode_isSome₂ {mHash salt : List Byte} {eb : Nat} (hm : mHash.length 
   unfold encode
   by_cases h : emLength eb < H.len + salt.length + 2
   · simp [hm, h]
-  · simp [hm, h]; omega
+  · simp [hm, h]; omega_using [h]
 
 /-- No encoding of zeros is consistent. -/
 theorem verifyEncoding_zeros₂ (mHash : List Byte) {n eb : Nat} (hn : 1 ≤ n) (sLen : Option Nat) :
     verifyEncoding H G mHash (zeros n) eb sLen = false := by
   have hl : (zeros n).getLast? ≠ some 0xbc := by
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega_using [hn]⟩
     simp [zeros, List.replicate_succ', List.getLast?_append]
   unfold verifyEncoding
   simp only [Bool.ite_false_left]

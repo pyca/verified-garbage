@@ -27,7 +27,7 @@ theorem val32_low (mem : Mem) (W : Addr) (m : Nat) {N : Nat} (hn : 0<N) :
     val32 mem W m N%2^32=w32 mem W m := by
   have one : val32 mem W m 1=w32 mem W m := by simp [val32]
   have e := val32_append mem W m 1 (N-1)
-  rw [show 1+(N-1)=N by omega, one] at e
+  rw [show 1+(N-1)=N by omega_using [hn], one] at e
   simp only [Nat.mul_one] at e
   rw [e, Nat.add_mod, Nat.mul_mod]
   have word := (mem.readW (off W m) 32).isLt

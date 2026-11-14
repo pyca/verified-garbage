@@ -73,7 +73,7 @@ theorem phase_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args 
   have hwl : w - 1 < 2 ^ (32 * cwc len .wide) := by
     have := val32_lt s.mem base (lo len (.slot .wide j)) (cwc len .wide)
     change sv s.mem base len .wide j < _ at this
-    omega
+    omega_using [hw, this]
   unfold phase
   refine WP.assoc (WP.seq (WP.mono (phaseStart_ok h G hT hj9 hj hw hw3 hodd ho hk hn hc) fun u₃ ⟨S₀, A₀, k₀⟩ => ?_))
   have G₀ : TapeGeo Ex args base bytes (u₃.gpr .esp) T.length := by rw [S₀.esp]; exact G
@@ -86,7 +86,7 @@ theorem phase_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len args 
   · rintro m t ⟨n', c', rfl, A, hn', hc', hD⟩
     refine WP.mono (draw_ok G₀ hw3 hodd hwl A hn' hc') fun u o => ?_
     rcases o with ⟨ev, n'', c'', A', h1, h2, h3, h4, -⟩ | ⟨ev, E, -⟩
-    · exact .inr ⟨ev, T.length - c'', by omega, n'', c'', rfl, A', h1, h3, by rw [h4, hD]⟩
+    · exact .inr ⟨ev, T.length - c'', by omega_using [h2, h3], n'', c'', rfl, A', h1, h3, by rw [h4, hD]⟩
     · exact .inl ⟨ev, by rw [hD] at E; exact E⟩
   refine wp_movS (hdr_read E.step.inp hdr_st) fun v U _ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · exact S₀.trans (E.step.trans (Step.regs E.step.inp U.mem U.keeps))

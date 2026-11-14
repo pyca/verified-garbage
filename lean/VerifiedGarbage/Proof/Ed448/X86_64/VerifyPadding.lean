@@ -57,8 +57,8 @@ private theorem padding_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, State.store8,
     ea_sc, RegUpd.gpr_setReg, RegUpd.mem_setReg,
     RegUpd.wr_setReg,  hs.rdi,
-    hw (o - 1) (by omega), hw (o + 456) (by omega), hw (o + 457) (by omega),
-    hw (o + 458) (by omega), hw (o + 459) (by omega),
+    hw (o - 1) (by omega), hw (o + 456) (by omega_using [hb]), hw (o + 457) (by omega_using [hb]),
+    hw (o + 458) (by omega_using [hb]), hw (o + 459) (by omega_using [hb]),
     Option.map_some, Option.some.injEq, exists_eq_left',
     reduceCtorEq, ite_true, ite_false]
   exact ⟨fun r hr => by simp only [hr, ite_false], rfl, trivial, rfl⟩
@@ -70,12 +70,12 @@ private theorem pad_read {base : Addr} {o j : Nat} (ho : 1 ≤ o) (hb : o + 460 
   rw [zeroMem_read]
   have he : (off base (o - 1 + j) ∈ padAddresses base o) ↔ j = 0 ∨ 457 ≤ j := by
     simp only [padAddresses, List.mem_cons, List.not_mem_nil, or_false,
-      off_eq_iff base (by omega : o - 1 + j < 2 ^ 64) (by omega : o - 1 < 2 ^ 64),
-      off_eq_iff base (by omega : o - 1 + j < 2 ^ 64) (by omega : o + 456 < 2 ^ 64),
-      off_eq_iff base (by omega : o - 1 + j < 2 ^ 64) (by omega : o + 457 < 2 ^ 64),
-      off_eq_iff base (by omega : o - 1 + j < 2 ^ 64) (by omega : o + 458 < 2 ^ 64),
-      off_eq_iff base (by omega : o - 1 + j < 2 ^ 64) (by omega : o + 459 < 2 ^ 64)]
-    omega
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o - 1 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 456 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 457 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 458 < 2 ^ 64),
+      off_eq_iff base (by omega_using [hb, hj] : o - 1 + j < 2 ^ 64) (by omega_using [hb] : o + 459 < 2 ^ 64)]
+    omega_using [ho, hj]
   simp only [he]
 
 private theorem pad_outside {base : Addr} {o : Nat} (ho : 1 ≤ o) (hb : o + 460 ≤ 8192)
@@ -85,7 +85,7 @@ private theorem pad_outside {base : Addr} {o : Nat} (ho : 1 ≤ o) (hb : o + 460
   intro hm
   simp only [padAddresses, List.mem_cons, List.not_mem_nil, or_false] at hm
   rcases hm with rfl | rfl | rfl | rfl | rfl <;>
-    rw [VG.Proof.X448.X86_64.ofs_off' base (by omega)] at hx <;> omega
+    rw [VG.Proof.X448.X86_64.ofs_off' base (by omega)] at hx <;> omega_using [hx]
 
 /-- The original 456 bits, with zero at index -1 and at indices 456 through 459. -/
 theorem bitsAtPadded_ok {s : State} {base k : Addr} (hs : Scr s base) {o : Nat}
@@ -98,13 +98,13 @@ theorem bitsAtPadded_ok {s : State} {base k : Addr} (hs : Scr s base) {o : Nat}
       ∀ j < 461, u.mem (off base (o - 1 + j)) = BitVec.ofNat 8
         (SignedWindow.carry (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem k 57)) j) := by
   rw [bitsAtPadded]
-  refine WP.seq (WP.mono (bitsAt_ok (by omega) hs hk hkr hkd) fun v ⟨gv, rv, wv, ov, bv⟩ => ?_)
+  refine WP.seq (WP.mono (bitsAt_ok (by omega_using [hb]) hs hk hkr hkd) fun v ⟨gv, rv, wv, ov, bv⟩ => ?_)
   have hv : Scr v base := ⟨(gv _ (by decide)).trans hs.rdi, wv ▸ hs.wr, hs.nowrap⟩
   refine WP.mono (padding_ok hv ho hb) fun u ⟨gu, ru, wu, mu⟩ => ?_
   refine ⟨fun r hr => (gu r (fun h => hr (by simp [h]))).trans (gv r hr),
     ru.trans rv, wu.trans wv, ?_, ?_⟩
   · rw [mu]
-    exact (ov.mono (by omega) (by omega)).trans (pad_outside ho hb v.mem)
+    exact (ov.mono (by omega_using []) (by omega_using [])).trans (pad_outside ho hb v.mem)
   · intro j hj
     rw [mu, pad_read ho hb hj]
     by_cases hj0 : j = 0
@@ -113,10 +113,10 @@ theorem bitsAtPadded_ok {s : State} {base k : Addr} (hs : Scr s base) {o : Nat}
       · have hlt : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem k 57) < 2 ^ 456 :=
           decodeLE_below (by simp [Spec.Ed448.bytesAt])
         simp only [hj0, hjh, or_true, ite_true, SignedWindow.carry, ite_false,
-          SignedWindow.bit_zero hlt (by omega : 456 ≤ j - 1), Nat.zero_mod]
+          SignedWindow.bit_zero hlt (by omega_using [hjh] : 456 ≤ j - 1), Nat.zero_mod]
         rfl
       · simp only [hj0, hjh, or_self, ite_false, SignedWindow.carry]
-        rw [show o - 1 + j = o + (j - 1) by omega, bv (j - 1) (by omega), scalar_bit s.mem k (by omega)]
+        rw [show o - 1 + j = o + (j - 1) by omega_using [ho, hj0], bv (j - 1) (by omega_using [hjh]), scalar_bit s.mem k (by omega_using [hjh])]
         simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
 
 end VG.Proof.Ed448.X86_64

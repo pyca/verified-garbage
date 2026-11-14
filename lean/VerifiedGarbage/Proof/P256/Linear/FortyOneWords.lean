@@ -28,7 +28,7 @@ theorem shift2_value (a : W4) :
   have h := leftShift_value 2 (by simp) a.1 a.2.1 a.2.2.1 a.2.2.2
   simp only [five,VerifySparse.four,show 64-2=62 from rfl,show 2^2=4 from rfl] at h
   simp only [shift2,value,val4,radix]
-  omega
+  omega_using [h]
 
 def highWord (h : Word) (c : Bool) : Word := addCarry h (~~~(0 : Word)) c
 def quotient (h : Word) (c : Bool) : Word := highWord h c+1
@@ -66,12 +66,12 @@ theorem addBack_value (a : W4) (c : Bool) {n : Int}
   · change value (addBack a false)+radix*(addWords a Weak.modulusWords).2.toNat=value a+p at h
     have ha := value_lt a
     rw [ite_eq_left (show n-(n/(radix:Int)+1)*(p:Int)<0 by
-      simp only [radix,Weak.R] at he ha ⊢; omega)] at hm
+      simp only [radix,Weak.R] at he ha ⊢; omega_using [he, ha])] at hm
     simp only [p,radix,Weak.R,VG.Spec.P256.p] at *
-    omega
+    omega_using [hm, hl, he, h]
   · change value (addBack a true)+radix*(addWords a (0,0,0,0)).2.toNat=value a+0 at h
-    rw [ite_eq_right (show ¬n-(n/(radix:Int)+1)*(p:Int)<0 by omega)] at hm
+    rw [ite_eq_right (show ¬n-(n/(radix:Int)+1)*(p:Int)<0 by omega_using [he])] at hm
     have ha := value_lt a
     simp only [p,radix,Weak.R,VG.Spec.P256.p] at *
-    omega
+    omega_using [hd1, he, h]
 end VG.Proof.P256.Linear.FortyOne

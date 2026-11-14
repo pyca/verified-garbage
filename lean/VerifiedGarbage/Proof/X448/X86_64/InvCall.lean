@@ -48,7 +48,7 @@ theorem invertCall_post {keep : List Nat} (hk : ∀ d ∈ keep, d + 8 ≤ 832 �
   refine WP.seq (WP.mono (copyOut_ok hs (o := slot 12) (a := Z2) (by decide) (by decide))
     fun s₁ ⟨v₁, o₁, g₁, rd₁, wr₁⟩ => ?_)
   have hs₁ : Scr s₁ base := ⟨(g₁ _ (by decide)).trans hs.rdi, wr₁ ▸ hs.wr, hs.nowrap⟩
-  refine WP.seq (WP.mono (pow223Keep_ok keep (fun d hd => by rcases hk d hd with h | h <;> omega) hs₁)
+  refine WP.seq (WP.mono (pow223Keep_ok keep (fun d hd => by rcases hk d hd with h | h <;> omega_using [h]) hs₁)
     fun s₂ ⟨g₂, rd₂, wr₂, o₂, e₂⟩ => ?_)
   have hs₂ : Scr s₂ base :=
     ⟨(g₂ .rdi (by decide) (by decide) (by decide)).trans hs₁.rdi, wr₂ ▸ hs₁.wr, hs₁.nowrap⟩
@@ -60,7 +60,7 @@ theorem invertCall_post {keep : List Nat} (hk : ∀ d ∈ keep, d + 8 ≤ 832 �
   · rw [k₃.gpr r hr hb, g₂ r (by revert hr; cases r <;> decide) (by revert hr; cases r <;> decide)
       (by revert hr; cases r <;> decide), g₁ r (by revert hr; cases r <;> decide)]
   · intro x hx
-    rw [k₃.out x (by omega), o₂ x (by omega), o₁ x (by simp only [slot]; omega)]
+    rw [k₃.out x (by omega_using [hx]), o₂ x (by omega_using [hx]), o₁ x (by simp only [slot]; omega_using [hx])]
   · rw [e₃, invert_c]
     simp only [↓reduceIte, tailEnv, opMul, opSqn, Function.update_apply]
     rw [z₂, e₂, chainEnv_21, chainEnv_20, z₁]
@@ -75,7 +75,7 @@ theorem invertCallWith_post (name : String) {keep : List Nat} (hk : ∀ d ∈ ke
   refine WP.seq (WP.mono (copyOut_ok hs (o := slot 12) (a := Z2) (by decide) (by decide))
     fun s₁ ⟨v₁, o₁, g₁, rd₁, wr₁⟩ => ?_)
   have hs₁ : Scr s₁ base := ⟨(g₁ _ (by decide)).trans hs.rdi, wr₁ ▸ hs.wr, hs.nowrap⟩
-  refine WP.seq (WP.mono (pow223KeepWith_ok hf name keep (fun d hd => by rcases hk d hd with h | h <;> omega) hs₁)
+  refine WP.seq (WP.mono (pow223KeepWith_ok hf name keep (fun d hd => by rcases hk d hd with h | h <;> omega_using [h]) hs₁)
     fun s₂ ⟨g₂, rd₂, wr₂, o₂, e₂⟩ => ?_)
   have hs₂ : Scr s₂ base :=
     ⟨(g₂ .rdi (by decide) (by decide) (by decide)).trans hs₁.rdi, wr₂ ▸ hs₁.wr, hs₁.nowrap⟩
@@ -87,7 +87,7 @@ theorem invertCallWith_post (name : String) {keep : List Nat} (hk : ∀ d ∈ ke
   · rw [k₃.gpr r hr hb, g₂ r (by revert hr; cases r <;> decide) (by revert hr; cases r <;> decide)
       (by revert hr; cases r <;> decide), g₁ r (by revert hr; cases r <;> decide)]
   · intro x hx
-    rw [k₃.out x (by omega), o₂ x (by omega), o₁ x (by simp only [slot]; omega)]
+    rw [k₃.out x (by omega_using [hx]), o₂ x (by omega_using [hx]), o₁ x (by simp only [slot]; omega_using [hx])]
   · rw [e₃, invert_c]
     simp only [↓reduceIte, tailEnv, opMul, opSqn, Function.update_apply]
     rw [z₂, e₂, chainEnv_21, chainEnv_20, z₁]

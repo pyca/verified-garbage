@@ -125,7 +125,7 @@ theorem after_key_ct : RelCT isa (Two AfterKCT) afterKey (fun _ _ => True) := by
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm) ?_ ?_
   · exact frame_ct (fun _ _ h => h.1.1) (by taint_decide)
   · refine RelCT.seq (two_post (Ψ := Key2CT) (frame_ct (fun _ _ h => h.1.1) (by taint_decide))
-      fun q v ⟨⟨⟨o, u, st, g⟩, hax, h3, _⟩, _⟩ => WP.mono (second_status_guard hax (by omega))
+      fun q v ⟨⟨⟨o, u, st, g⟩, hax, h3, _⟩, _⟩ => WP.mono (second_status_guard hax (by omega_using [h3]))
         fun w ⟨⟨he, hmem⟩, k⟩ =>
         ⟨⟨o, u, st, g.keep hmem k.2.1 k.2.2 (fun r hr => k.gpr (by revert r; decide))⟩, he⟩) ?_
     refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
@@ -158,7 +158,7 @@ theorem accepted_ct [Key.KeyProof] : RelCT isa (Two fun q u => MidCT q u ∧ q.s
         cases ho : (rOf q.inputs o q.used ⟨left, .q pB, remaining⟩).outcome with
         | entropy k a => rw [← ha.status, rOf_status, ho] at h1; cases h1
         | exhausted => rw [← ha.status, rOf_status, ho] at h1; cases h1
-        | accepted c => exact ⟨o, _, _, c, pB, ha, hm, ho, by rw [ha.cand]; omega, rfl⟩
+        | accepted c => exact ⟨o, _, _, c, pB, ha, hm, ho, by rw [ha.cand]; omega_using [h0], rfl⟩
     refine RelCT.seq (two_post (Ψ := AfterKCT) ((key_run_ct).mono (fun _ _ ⟨q, h₁, h₂⟩ =>
       ⟨q, hk q _ h₁, hk q _ h₂⟩) fun _ _ h => h) fun q u h => ?_) after_key_ct
     have hkc := hk q u h
@@ -188,7 +188,7 @@ theorem classify_ct [Key.KeyProof] : RelCT isa (Two AfterCT) (classify keyCall) 
       fun q u ⟨⟨⟨o, st, ha, hm⟩, hax, hcx, he⟩, hf⟩ => ?_) ?_
     · have hs := MidCT.status ⟨o, st, ha, hm⟩
       have h0 : q.status ≠ 0 := ev_false he hf
-      refine WP.mono (cmp3_guard hax (by omega)) fun v ⟨⟨he3, hmem⟩, k⟩ =>
+      refine WP.mono (cmp3_guard hax (by omega_using [hs])) fun v ⟨⟨he3, hmem⟩, k⟩ =>
         ⟨⟨o, st, ha, hm.keep hmem k.2.1 k.2.2 (fun r hr => k.gpr (by revert r; decide))⟩,
           by rw [k.gpr (by decide)]; exact hcx, h0, he3⟩
     refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm) ?_ ?_
@@ -199,9 +199,9 @@ theorem classify_ct [Key.KeyProof] : RelCT isa (Two AfterCT) (classify keyCall) 
         have h3 : q.status ≠ 3 := ev_false he hf
         obtain ⟨o, st, ha, hm'⟩ := hm
         have hu64 : q.cand < 2 ^ 64 := by
-          have := hm'.frame.used_le; have := hm'.frame.input.cfacts.rand64; rw [← ha.cand]; omega
+          have := hm'.frame.used_le; have := hm'.frame.input.cfacts.rand64; rw [← ha.cand]; omega_arith
         refine WP.mono (test_guard hcx hu64) fun v ⟨⟨he4, hmem⟩, k⟩ =>
-          ⟨⟨o, st, ha, hm'.keep hmem k.2.1 k.2.2 (fun r hr => k.gpr (by revert r; decide))⟩, by omega, he4⟩
+          ⟨⟨o, st, ha, hm'.keep hmem k.2.1 k.2.2 (fun r hr => k.gpr (by revert r; decide))⟩, by omega_using [h0, hs, h3], he4⟩
       refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.trans h₂.2.2.symm) ?_ ?_
       · exact frame_ct (fun _ _ h => h.1.1.any) (by taint_decide)
       · refine (accepted_ct.mono (fun _ _ ⟨q, h₁, h₂⟩ => ⟨q, ?_, ?_⟩) fun _ _ h => h)

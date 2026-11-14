@@ -60,10 +60,10 @@ theorem squares_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : B
   refine WP.loop (M:=isa) I ?_ D s ?_
   · intro k u hu
     obtain ⟨hk,bound,core,pow,count,frame,rest⟩ := hu
-    refine WP.mono (square_round_ok backend u core pow hk (by omega) count) ?_
+    refine WP.mono (square_round_ok backend u core pow hk (by omega_using [fits, bound]) count) ?_
     rintro t ⟨coreT,powT,countT,zero,frameT,restT⟩
     have exponent : 2*(2^(D-k)*E)=2^(D-(k-1))*E := by
-      rw [show D-(k-1)=(D-k)+1 by omega,Nat.pow_succ]
+      rw [show D-(k-1)=(D-k)+1 by omega_using [hk, bound],Nat.pow_succ]
       ac_rfl
     rw [exponent] at powT
     by_cases last : k-1=0
@@ -74,10 +74,10 @@ theorem squares_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : B
       · simpa only [last,Nat.sub_zero] using powT
       · simpa only [last] using countT
     · right
-      refine ⟨?_,k-1,by omega,by omega,by omega,coreT,powT,countT,frame.trans frameT,rest.trans restT⟩
+      refine ⟨?_,k-1,by omega_using [hk],by omega_using [last],by omega_using [bound],coreT,powT,countT,frame.trans frameT,rest.trans restT⟩
       change some (!t.z)=some true
       simp only [zero,last,decide_false,Bool.not_false]
-  · refine ⟨positive,by omega,h,?_,counter,Frame.refl _ _,Rest.refl _ _⟩
+  · refine ⟨positive,by omega_using [],h,?_,counter,Frame.refl _ _,Rest.refl _ _⟩
     simpa only [Nat.sub_self,Nat.pow_zero,Nat.one_mul] using power
 
 theorem squares_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32} {E : Nat}

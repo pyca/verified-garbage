@@ -88,7 +88,7 @@ theorem arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 6) :
     t.mem.readW (L.E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j)) 32 =
       m₀.readW (L.E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j)) 32 := by
   refine hc.frame.readW (r := L.ARGS) ?_ ?_ (by decide)
-  · exact Offset.contains _ (e := 260) (k := 24) (by omega) (by omega) (by decide)
+  · exact Offset.contains _ (e := 260) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)
   · intro R hR
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hR
@@ -128,19 +128,19 @@ theorem Ctx.value (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   | caller j d =>
     change j < 6 at hv
     simp only [Whole.value, SignCached.value]
-    rw [addr_eq (by have := hL.top; omega), hc.arg_word hL hv, ha.1 j hv]
+    rw [addr_eq (by have := hL.top; omega_using [hv, this]), hc.arg_word hL hv, ha.1 j hv]
 
 theorem args_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     {vs : List Value} (hlen : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid 6 v) :
     WP isa (.block (setup 0 vs)) s fun t => Ctx L g m₀ t ∧
       Frame [⟨L.E.setWidth 64, 24⟩] s.mem t.mem ∧ OutArgs L vs t := by
-  refine WP.mono (Whole.Ctx.setup hc (by simpa using hL.top) ?_ (by omega) hv)
+  refine WP.mono (Whole.Ctx.setup hc (by simpa using hL.top) ?_ (by omega_using [hlen]) hv)
     fun t ⟨ht, hf, hvals⟩ => ⟨ht, hf, fun j hj => ?_⟩
   · intro j hj
     refine ⟨L.ARGS, ?_, ?_⟩
     · rw [hc.rd]; exact List.mem_append_left _ (by simp [Lay.inputs])
-    · rw [addr_eq (by have := hL.top; omega)]
-      exact Offset.contains _ (e := 260) (k := 24) (by omega) (by omega) (by decide)
+    · rw [addr_eq (by have := hL.top; omega_using [hj, this])]
+      exact Offset.contains _ (e := 260) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)
   · simpa only [Nat.zero_add, hc.value hL ha (hv _ (List.getElem_mem _))] using hvals j hj
 
 /-- The tables survive everything the function writes. -/

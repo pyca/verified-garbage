@@ -61,7 +61,7 @@ theorem MulAddPre.of {s : State} (h : scalarMulAddLocal.pre s) : MulAddPre s := 
 
 theorem MulAddPre.input {s : State} (h : MulAddPre s) {i : Nat} (h1 : 1 ≤ i) (h4 : i < 4) :
     Input (stackArg s 0) s (s.gpr (argReg i)) := by
-  rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl
+  rcases (by omega_using [h1, h4] : i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl
   · exact ⟨h.f1, by rw [h.rd]; simp [argReg], h.r_ws⟩
   · exact ⟨h.f2, by rw [h.rd]; simp [argReg], h.k_ws⟩
   · exact ⟨h.f3, by rw [h.rd]; simp [argReg], h.a_ws⟩
@@ -87,11 +87,11 @@ theorem scalarMulAdd_correct {s : State} (h : MulAddPre s) :
     fun v ⟨kv, fv, lK, lS, lR, vK, vS, vR⟩ => ?_)
   have hcv0 := hcu.of_rest kv (by decide)
   have hiv : ∀ r ∈ [(⟨State.addr (stackArg s 0) + BitVec.ofNat 64 TF, 624⟩ : Region)], Hi (stackArg s 0) r := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact hi_of (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hT]) (by omega_using [hT])
   have av := au.hi fv hiv
   have hld : WP isa (.block [.ldr .r12 .r0 OUT]) v fun v' =>
       Rest [.r12] v v' ∧ v'.mem = v.mem ∧ v'.gpr .r12 = s.gpr .r0 :=
-    ldr0_ok hcv0 (d := OUT) (by omega) fun v' hv' => WP.block_nil ⟨hv'.rest (by decide), hv'.mem,
+    ldr0_ok hcv0 (d := OUT) (by omega_using [hO]) fun v' hv' => WP.block_nil ⟨hv'.rest (by decide), hv'.mem,
       by rw [hv'.gpr]; exact av 0 (by decide)⟩
   refine WP.seq (WP.mono hld fun v' ⟨kv', mv', qv'⟩ => ?_)
   have hcv := hcv0.of_rest kv' (by decide)
@@ -101,20 +101,20 @@ theorem scalarMulAdd_correct {s : State} (h : MulAddPre s) :
   have hcw := hcv.of_rest kw (by decide)
   have h6w : w.gpr .r6 = mask16 := (kw.gpr _ (by decide)).trans h6v
   have hiw : ∀ r ∈ [(⟨State.addr (stackArg s 0) + BitVec.ofNat 64 Impl.X448.Arm.ACC, 224⟩ : Region)], Hi (stackArg s 0) r :=
-    fun r hr => by rw [List.mem_singleton.mp hr]; exact hi_of (by omega) (by omega)
+    fun r hr => by rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hC]) (by omega_using [hC])
   refine WP.seq (WP.mono (reduceProduct_ok hcw h6w aw) fun x ⟨kx, lx, vx⟩ => ?_)
   have hcx := hcw.of_rest kx.rest (by decide)
   have h6x : x.gpr .r6 = mask16 := (kx.rest.gpr _ (by decide)).trans h6w
   have hix : ∀ r ∈ [limbsR (stackArg s 0) TF, limbsR (stackArg s 0) RA], Hi (stackArg s 0) r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact hi_of (by omega) (by omega)
+    rcases hr with rfl | rfl <;> exact hi_of (by omega_arith) (by omega_arith)
   -- The reduced `r` survives the product and its reduction.
   have eR : ∀ k < 28, limb x.mem (State.addr (stackArg s 0)) SR k = limb v'.mem (State.addr (stackArg s 0)) SR k := fun k hk => by
     rw [limbs_frame_hi kx.frame (o := SR) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact ⟨_, _, rfl, by omega, by omega⟩) (by omega) k hk,
+      rcases hr with rfl | rfl <;> exact ⟨_, _, rfl, by omega_arith, by omega_arith⟩) (by omega_using [hR]) k hk,
       limbs_frame_hi fw (o := SR) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact ⟨_, _, rfl, by omega, by omega⟩) (by omega) k hk]
+      rw [List.mem_singleton.mp hr]; exact ⟨_, _, rfl, by omega_using [hR, hC], by omega_using [hC]⟩) (by omega_using [hR]) k hk]
   have lRx : Lim28 x.mem (State.addr (stackArg s 0)) SR := fun k hk => by rw [eR k hk]; exact lR k hk
   have vRx : V28 x.mem (State.addr (stackArg s 0)) SR = V28 v'.mem (State.addr (stackArg s 0)) SR := val16_congr eR
   rw [List.append_assoc]
@@ -124,12 +124,12 @@ theorem scalarMulAdd_correct {s : State} (h : MulAddPre s) :
   refine WP.append (reduceT_ok RA_buf hcy ((ky.gpr _ (by decide)).trans h6x) ly
     (by rw [vy, vx, vRx, vR]; have := Nat.mod_lt (val16 (limb w.mem (State.addr (stackArg s 0)) Impl.X448.Arm.ACC) 56) L_pos
         have := Nat.mod_lt (decodeLE (bytesAt u.mem (State.addr (s.gpr .r1)) 57)) L_pos
-        omega)) fun z ⟨kz, fz, lz, vz⟩ => ?_
+        omega_arith)) fun z ⟨kz, fz, lz, vz⟩ => ?_
   have hcz := hcy.of_rest kz (by decide)
   have hiy : ∀ r ∈ [limbsR (stackArg s 0) TF], Hi (stackArg s 0) r := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact hi_of (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hT]) (by omega_using [hT])
   have hiz : ∀ r ∈ [limbsR (stackArg s 0) RA], Hi (stackArg s 0) r := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact hi_of (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hA]) (by omega_using [hA])
   have sz := ((((su.hi fv hiv).hi fw hiw).hi kx.frame hix).hi fy hiy).hi fz hiz
   have rz' : Rest [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11] w z :=
     (kx.rest.mono (by decide)).trans ((ky.mono (by decide)).trans (kz.mono (by decide)))

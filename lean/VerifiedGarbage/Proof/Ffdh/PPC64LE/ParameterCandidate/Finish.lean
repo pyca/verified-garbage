@@ -23,15 +23,15 @@ theorem finish_ok (r : Nat) (hr : r ≤ 2) {s : State} {B U : Addr} {Z v : Nat} 
     (hV : s.mem.readW (B + BitVec.ofNat 64 152) 64 = BitVec.ofNat 64 v) (hZ : 160 ≤ Z) :
     WP isa (.block (finish r)) s fun t => (t.gpr .r3 = BitVec.ofNat 64 r ∧
       t.mem = s.mem.writeW (off U 0) (BitVec.ofNat 64 (if r = 0 then 0 else v))) ∧ Keep [.r3, .r4, .r5] s t := by
-  obtain rfl | rfl | rfl : r = 0 ∨ r = 1 ∨ r = 2 := by omega
+  obtain rfl | rfl | rfl : r = 0 ∨ r = 1 ∨ r = 2 := by omega_using [hr]
   · refine WP.keep [.r3, .r4, .r5] ?_ (by decide)
     simp only [finish, ldh, hUsedP, ↓reduceIte]
-    prun [h31, hU, hs.ld (d := 32) (n := 8) (by omega), hu.st (d := 0) (n := 8) (by omega)]
+    prun [h31, hU, hs.ld (d := 32) (n := 8) (by omega_using [hZ]), hu.st (d := 0) (n := 8) (by omega_using [])]
   all_goals
     refine WP.keep [.r3, .r4, .r5] ?_ (by decide)
     simp only [finish, ldh, hUsedP, hUsed, Nat.reduceEqDiff, ↓reduceIte, List.cons_append,
       List.nil_append]
-    prun [h31, hU, hV, hs.ld (d := 32) (n := 8) (by omega), hs.ld (d := 152) (n := 8) (by omega),
-      hu.st (d := 0) (n := 8) (by omega)]
+    prun [h31, hU, hV, hs.ld (d := 32) (n := 8) (by omega_using [hZ]), hs.ld (d := 152) (n := 8) (by omega_using [hZ]),
+      hu.st (d := 0) (n := 8) (by omega_using [])]
 
 end VG.Proof.Ffdh.PPC64LE.ParameterCandidate

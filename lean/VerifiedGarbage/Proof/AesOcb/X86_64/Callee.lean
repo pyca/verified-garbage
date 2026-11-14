@@ -100,7 +100,7 @@ theorem BCall.pre {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} 
     (h : BCall s K D S R n) :
     (Proof.Aes.blocksX86_64 f).pre (s.callEntry.withRegions [⟨K, 240⟩] [⟨D, 16 * n⟩, ⟨S, 2048⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   simp only [Proof.Aes.blocksX86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -114,7 +114,7 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     (nosp : NoSp c) (depth : c.depth = 0) {s : State} {K D S : Addr} {R n : Nat} (h : BCall s K D S R n) :
     WP isa (.call name c) s (BPost f s K D S R n) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.call (k := Proof.Aes.blocksX86_64 f) ok nosp (by rw [depth]; decide)
     (rd := [⟨K, 240⟩]) (wr := [⟨D, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -128,7 +128,7 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
   have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega_using [hRb])
   have eD : Spec.Aes.statesAt s.callEntry.mem D n = Spec.Aes.statesAt s.mem D n := by
     simp only [Spec.Aes.statesAt]
     refine List.map_congr_left fun i hi => ?_
@@ -138,7 +138,7 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     intro j hj
     simp only [Vector.getElem_ofFn]
     rw [Offset.add_add]
-    exact fE.bytes (R := ⟨D, 16 * n⟩) (disj_below h.stkD) (by show 16 * n ≤ 2 ^ 64; have := h.wrap; omega) (by show 16 * i + j < 16 * n; omega)
+    exact fE.bytes (R := ⟨D, 16 * n⟩) (disj_below h.stkD) (by show 16 * n ≤ 2 ^ 64; have := h.wrap; omega_using [this]) (by show 16 * i + j < 16 * n; omega_using [hi, hj])
   rw [eK, eD] at hpost
   exact ⟨hrd, hwr, hcs, by simpa using hf, hpost⟩
 
@@ -203,7 +203,7 @@ structure KPost (s : State) (Kp C S : Addr) (KL : Nat) (s' : State) : Prop where
 
 theorem KCall.pre {s : State} {Kp C S : Addr} {KL : Nat} (h : KCall s Kp C S KL) :
     Proof.Aes.expandKeyX86_64.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨C, 240⟩, ⟨S, 512⟩]) := by
-  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
   simp only [Proof.Aes.expandKeyX86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -212,7 +212,7 @@ theorem KCall.pre {s : State} {Kp C S : Addr} {KL : Nat} (h : KCall s Kp C S KL)
 
 theorem key_call (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (h : KCall s Kp C S KL) :
     WP isa (.call v.expand.name v.expand.code) s (KPost s Kp C S KL) := by
-  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
   refine WP.call (k := Proof.Aes.expandKeyX86_64) v.expandOk v.expandNosp
     (by rw [v.expandDepth]; decide) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -222,7 +222,7 @@ theorem key_call (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (h : KC
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx, hK] at hpost
   rw [← hm₂, hpost, bytesAt_frame (callEntry_frame s) (disj_below h.stkK)
-    (by rcases h.klen with h | h | h <;> omega)]
+    (by rcases h.klen with h | h | h <;> omega_using [hK])]
 
 theorem key_rel (v : BlocksImpl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kp C S : Addr, ∃ KL : Nat,
@@ -270,7 +270,7 @@ structure BPostF (s : State) (K D : Addr) (R n : Nat) (s' : State) : Prop where
 theorem BCallF.pre {s : State} {K D S : Addr} {R n : Nat} (h : BCallF s K D S R n) :
     (Proof.Aes.blocksX86_64F Spec.Aes.cipher).pre (s.callEntry.withRegions [⟨K, 240⟩] [⟨D, 16 * n⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   simp only [Proof.Aes.blocksX86_64F, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -281,7 +281,7 @@ theorem enc_callF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expa
     {R n : Nat} (h : BCallF s K D S R n) :
     WP isa (.call v.enc.name v.enc.code) s (BPostF s K D R n) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.call (k := Proof.Aes.blocksX86_64F Spec.Aes.cipher) f.encOk v.encNosp (by rw [v.encDepth]; decide)
     (rd := [⟨K, 240⟩]) (wr := [⟨D, 16 * n⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -295,7 +295,7 @@ theorem enc_callF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expa
   have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega_using [hRb])
   have eD : Spec.Aes.statesAt s.callEntry.mem D n = Spec.Aes.statesAt s.mem D n := by
     simp only [Spec.Aes.statesAt]
     refine List.map_congr_left fun i hi => ?_
@@ -305,7 +305,7 @@ theorem enc_callF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expa
     intro j hj
     simp only [Vector.getElem_ofFn]
     rw [Offset.add_add]
-    exact fE.bytes (R := ⟨D, 16 * n⟩) (disj_below h.stkD) (by show 16 * n ≤ 2 ^ 64; have := h.wrap; omega) (by show 16 * i + j < 16 * n; omega)
+    exact fE.bytes (R := ⟨D, 16 * n⟩) (disj_below h.stkD) (by show 16 * n ≤ 2 ^ 64; have := h.wrap; omega_using [this]) (by show 16 * i + j < 16 * n; omega_using [hi, hj])
   rw [eK, eD] at hpost
   exact ⟨hrd, hwr, hcs, by simpa using hf, hpost⟩
 
@@ -351,7 +351,7 @@ structure KPostF (s : State) (Kp C : Addr) (KL : Nat) (s' : State) : Prop where
 
 theorem KCallF.pre {s : State} {Kp C : Addr} {KL : Nat} (h : KCallF s Kp C KL) :
     Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨C, 240⟩]) := by
-  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
   simp only [Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -360,7 +360,7 @@ theorem KCallF.pre {s : State} {Kp C : Addr} {KL : Nat} (h : KCallF s Kp C KL) :
 
 theorem key_callF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) {s : State} {Kp C : Addr}
     {KL : Nat} (h : KCallF s Kp C KL) : WP isa (.call v.expand.name v.expand.code) s (KPostF s Kp C KL) := by
-  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat_of_lt (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
   refine WP.call (k := Proof.Aes.X86_64.AesNi.Key.expandKey3X86_64) f.expandOk v.expandNosp
     (by rw [v.expandDepth]; decide) (rd := [⟨Kp, KL⟩]) (wr := [⟨C, 240⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -371,7 +371,7 @@ theorem key_callF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expa
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx, hK] at hpost
   rw [← hm₂, hpost, bytesAt_frame (callEntry_frame s) (disj_below h.stkK)
-    (by rcases h.klen with h | h | h <;> omega)]
+    (by rcases h.klen with h | h | h <;> omega_using [hK])]
 
 theorem key_relF (v : BlocksImpl) (f : Proof.Aes.X86_64.BlocksFree v.enc v.expand) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kp C : Addr, ∃ KL : Nat,

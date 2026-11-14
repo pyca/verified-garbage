@@ -341,7 +341,7 @@ theorem vettedGroups_ok (s : State) {p : Inputs} {slots : List Nat} (h : Context
   rintro t ⟨context, cap, mem, rest⟩
   have size : p.dom.length = 2 * p.k ∨ p.dom.length = 3 * p.k := by
     rw [p.domainLength]; split <;> simp
-  rw [VettedGroups.recognize_spec (by have := p.minLength; omega) size normalized] at cap
+  rw [VettedGroups.recognize_spec (by have := p.minLength; omega_using [this]) size normalized] at cap
   exact ⟨context, cap, mem, rest⟩
 
 end VG.Proof.Ffdh.Arm
@@ -374,7 +374,7 @@ theorem layoutLaw : VettedCap.LayoutLaw cap ScalarLayout.vetted := by
     cases recognized : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf p.k p.dom) with
     | none =>
       have width := p.width.1
-      have low : 2 ^ 64 ≤ 2 ^ (64 * (p.w - 1)) := Nat.pow_le_pow_right (by decide) (by omega)
+      have low : 2 ^ 64 ≤ 2 ^ (64 * (p.w - 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [width])
       have large : 1 < p.P := Nat.lt_of_lt_of_le (Nat.lt_of_lt_of_le (by decide : 1 < (2 : Nat) ^ 64) low) normalized
       exact vetted_layout_unrecognized recognized large odd
     | some bits =>

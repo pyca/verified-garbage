@@ -46,12 +46,12 @@ theorem selectTable_ok (K : TCombCfg) {s : State} {base T : Addr} {size a j R p 
   have span : 16*K.L.M.n*K.H*j+16*K.L.M.n*K.H≤8*(tcombWords K.L.M.n R p tbl).length := by
     rw [total,← Nat.mul_succ]
     exact Nat.mul_le_mul_left _ hj
-  have pos : 0<16*K.L.M.n*K.H := Nat.mul_pos (by omega) hHp
+  have pos : 0<16*K.L.M.n*K.H := Nat.mul_pos (by omega_using [hn]) hHp
   have ptr : State.addr (s.syms K.tsym+BitVec.ofNat 32 (16*K.L.M.n*K.H*j))=X := by
     have fit := hT.fit
     have sn : (s.syms K.tsym).toNat=T.toNat := by rw [← sym,addr_toNat]
-    rw [VG.Arm.addr_add (by rw [sn]; omega),sym]
-  have entry := hT.entry hJ hRows hj (show a-1<K.H by omega)
+    rw [VG.Arm.addr_add (by rw [sn]; omega_using [hq, hzle, hza, hn, hH, ha, hj, total, hHp, span, pos, fit, sn]),sym]
+  have entry := hT.entry hJ hRows hj (show a-1<K.H by omega_using [ha, hHp])
     (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) hpfit) (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) hpfit)
   rw [Nat.mul_comm j (16*K.L.M.n*K.H)] at entry
   change wordsVal s.mem X (16*K.L.M.n*(a-1)) K.L.M.n=(combAt tbl j (a-1)).1*R%p ∧

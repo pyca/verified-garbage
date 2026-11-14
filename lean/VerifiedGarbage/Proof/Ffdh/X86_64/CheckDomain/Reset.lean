@@ -27,36 +27,36 @@ theorem reset_p {p : CdP} {s : State} (h : Parent p s) (hm : p.mv = true) :
   have hb := h.base
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   have hn := h.outer.scr.nowrap
   have hroom := h.outer.room
   have hZ := hb.hZ
-  have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega
-  have h136 : 136 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
-  have eW : wsWords p.k = p.w := wsWords_k (by omega)
+  have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega_using []
+  have h136 : 136 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_using []
+  have eW : wsWords p.k = p.w := wsWords_k (by omega_using [hk])
   unfold pSetup
   refine wp_seqs_append (a := wsSetup sK ++ ([.block [enter]] : List (Prog isa))) (b := modSetup sDom sK)
     (by simp [wsSetup]) (by simp [modSetup, VG.Impl.Rsa.X86_64.Crt.loadArr])
     (WP.mono (wsSetup_ok (sl := sK) (len := p.k) h.outer (by decide) (by decide)
-      (hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers])) (by omega) (by omega))
+      (hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers])) (by omega_using [hk]) (by omega_using [ew]))
       fun u ⟨hc, _, hWs, hf, k⟩ => ?_)
   rw [eW] at hc
   have hh : ∀ i < 32, i ≠ sWs → word u.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
     fun i hi hne => hf.word_eq (fun r he => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at he
-      rcases he with rfl | rfl <;> simp only <;> unfold sWs sFn at * <;> omega) (by omega)
+      rcases he with rfl | rfl <;> simp only <;> unfold sWs sFn at * <;> omega_arith) (by omega_using [hi])
   have hi : InScr p.B p.Z s.mem u.mem := InScr.of_frm hf (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> unfold sWs sFn at * <;> omega)
+    rintro r (rfl | rfl) <;> simp only <;> unfold sWs sFn at * <;> omega_arith)
   have hbu : Base p u := hb.keep hi k (by
     intro e he
     simp only [CdP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl <;> exact hh _ (by dsimp only; decide) (by dsimp only; decide))
-  refine WP.mono (modSetup_ok hc (by omega) (Nat.le_refl _) (by omega)
+  refine WP.mono (modSetup_ok hc (by omega_using [hk, ew]) (Nat.le_refl _) (by omega_using [hk', ew])
     (show sDom < 32 by decide) (show sK < 32 by decide)
     (hbu.hdr (sDom, p.dp) (by simp [CdP.headers]))
     (by rw [hbu.plen]; exact hbu.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]))
-    (hbu.dom.take p.k) (by rw [hbu.plen]; omega) (by rw [hbu.plen])
+    (hbu.dom.take p.k) (by rw [hbu.plen]; omega_using [hk]) (by rw [hbu.plen])
     (valid_facts hm hk).1) fun t ⟨mi, hc', hv, ff, kk⟩ => ?_
   have hr : ∀ r ∈ [(slot p.w aN, 8 * (p.w + 2)), (slot p.w aOne, 8 * (p.w + 2)), (8 * sMinv, 8)],
       r.1 + r.2 ≤ slot p.w 8 := by
@@ -65,7 +65,7 @@ theorem reset_p {p : CdP} {s : State} (h : Parent p s) (hm : p.mv = true) :
     · exact slot_le (by decide)
     · exact slot_le (by decide)
     · exact hdr_lt_slot p.w 8 (by decide)
-  obtain ⟨hbt, hit, hht⟩ := hbu.child hc (L := slot p.w 8) (by omega) ff hr kk
+  obtain ⟨hbt, hit, hht⟩ := hbu.child hc (L := slot p.w 8) (by omega_using [hroom]) ff hr kk
   refine ⟨mi, ⟨hbt, hc'.toMem, hv, ?_, ?_, ?_⟩, hc'.rdi, hi.trans hit, ?_, keep_trans k (kk.mono (by decide))⟩
   · rw [hht _ (by decide)]; exact hWs
   · rw [hht _ (by decide), hh _ (by decide) (by decide)]; exact h.g

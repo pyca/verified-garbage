@@ -40,22 +40,22 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
     (fun _ => []) hL hS (fun s hs => ⟨_, rfl, ?_, fun _ => ⟨hs, fun s' a q => ⟨a, q⟩⟩, fun hp => ?_⟩) ?_ hsat
   · show Option.map (!·) (some (decide ((s.gpr .rcx).toNat <
       ((BitVec.ofNat 32 (I.S.H.blockSize + 1)).signExtend 64).toNat))) = _
-    rw [Calls.sx_ofNat hB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Calls.sx_ofNat hB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hB])]
     simp only [Option.map_some, ← decide_not, Nat.not_lt]
-  · have hk : (s.gpr .rcx).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega
+  · have hk : (s.gpr .rcx).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega_using [this]
     refine ⟨?_, fun s' a q => ⟨a, q⟩⟩
     sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
       Spec.Hmac.initPost, X86_64.abi, X86_64.argRegs] at hs
     sig_pre [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
       Spec.Hmac.initPost, X86_64.abi, X86_64.argRegs]
-    obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega⟩
-    obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega⟩
+    obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega_using [h₁]⟩
+    obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega_using [hn]⟩
     simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
       List.append_nil] at hs ⊢
     obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, ⟨c0, c1, c2, c3⟩, n1, n2, n3⟩ := hs
     have sb := Offset.sub_below (s.gpr .rsp) (a := m₁ + 1) (n := m₁ + 1) (b := m₂ + 1) (m := m₂ + 1)
-      (by omega) (by omega)
-    exact ⟨by omega, h1, h2, h3, h4, h5, h6, h7, ⟨c0, c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2,
+      (by omega_using [hn]) (by omega_using [hn])
+    exact ⟨by omega_using [hn, h0], h1, h2, h3, h4, h5, h6, h7, ⟨c0, c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2,
       n3, hk⟩
   · intro s s' u u' hs hs' hq e e'
     have hq' := hq
@@ -123,21 +123,21 @@ theorem initEntry_noResidue {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
     (fun _ => []) hL hS (fun s hs => ⟨_, rfl, ?_, fun _ => hs, fun hp => ?_⟩) ?_
   · show Option.map (!·) (some (decide ((s.gpr .rcx).toNat <
       ((BitVec.ofNat 32 (I.S.H.blockSize + 1)).signExtend 64).toNat))) = _
-    rw [Calls.sx_ofNat hB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Calls.sx_ofNat hB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hB])]
     simp only [Option.map_some, ← decide_not, Nat.not_lt]
-  · have hk : (s.gpr .rcx).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega
+  · have hk : (s.gpr .rcx).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega_using [this]
     sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
       Spec.Hmac.initPost, X86_64.abi, X86_64.argRegs] at hs
     sig_pre [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
       Spec.Hmac.initPost, X86_64.abi, X86_64.argRegs]
-    obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega⟩
-    obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega⟩
+    obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega_using [h₁]⟩
+    obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega_using [hn]⟩
     simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
       List.append_nil] at hs ⊢
     obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, ⟨c0, c1, c2, c3⟩, n1, n2, n3⟩ := hs
     have sb := Offset.sub_below (s.gpr .rsp) (a := m₁ + 1) (n := m₁ + 1) (b := m₂ + 1) (m := m₂ + 1)
-      (by omega) (by omega)
-    exact ⟨by omega, h1, h2, h3, h4, h5, h6, h7, ⟨c0, c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2,
+      (by omega_using [hn]) (by omega_using [hn])
+    exact ⟨by omega_using [hn, h0], h1, h2, h3, h4, h5, h6, h7, ⟨c0, c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2,
       n3, hk⟩
   · intro s s' u u' hs hs' hq ho hu e e'
     have hq' := hq

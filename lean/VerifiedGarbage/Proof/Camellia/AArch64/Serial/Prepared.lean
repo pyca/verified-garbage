@@ -58,7 +58,7 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (B
     intro i hi
     have hi34 : i < 34 := by
       simp only [Spec.Camellia.scheduleLength] at hi
-      omega
+      omega_using [hrounds, hi]
     rw [hws,VG.Proof.Camellia.schedWords_getD _ _ hi]
     unfold Spec.Camellia.wordAt Spec.Camellia.bytesAt
     congr 1
@@ -66,9 +66,9 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (B
     intro j hj
     have hj8 : j < 8 := List.mem_range.mp hj
     rw [VG.Offset.add_add,VG.Offset.add_add]
-    have e := tc (8*i+j) (by omega)
-    rw [ab,ap,preserved _ (by omega),VG.Offset.add_add] at e
-    simpa only [show 256+8*i+j = 256+(8*i+j) by omega] using e
+    have e := tc (8*i+j) (by omega_using [hi34, hj8])
+    rw [ab,ap,preserved _ (by omega_using [hi34, hj8]),VG.Offset.add_add] at e
+    simpa only [show 256+8*i+j = 256+(8*i+j) by omega_using []] using e
   refine ⟨⟨hrounds,tab,keyWords⟩,?_,?_,?_,?_,?_,trd.trans ard,twr.trans awr⟩
   · exact (tg _ (by decide) (by decide) (by decide) (by decide)).trans
       ((ag _ (by decide)).trans hx1)

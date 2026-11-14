@@ -161,8 +161,8 @@ theorem StageABI.packed_sep (hb : Supported pLen) (A : StageABI pLen s) {d n : N
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
   have := hb.q_le
   have hp0 := used_small hb (d := packed) (n := 0) (by decide) (by decide)
-  exact A.parts hb (by omega)
-    (used_small hb (by decide) (by unfold arithmeticBytes; omega)) (Or.inl hd)
+  exact A.parts hb (by omega_using [hd, hp0])
+    (used_small hb (by decide) (by unfold arithmeticBytes; omega_using [pn, this])) (Or.inl hd)
 
 /-- The search's status: 1 when it finds a g, 3 when it does not. -/
 def statusOf (pl : GeneratorSearchPlan) : BitVec 64 := if (pl.remaining 0).isSome then 1 else 3
@@ -214,7 +214,7 @@ theorem search_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : St
       Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) d) n = Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) d) n := fun h1 h2 => by
     have g0 := used_small hb (d := g) (n := 0) (by decide) (by decide)
     have gl : g ≤ 2 ^ 64 := by decide
-    rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (keepPart h1 h2) (by omega), A.bytes_entered hb E (by unfold Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control g at *; omega)]
+    rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (keepPart h1 h2) (by omega_using [h2, gl]), A.bytes_entered hb E (by unfold Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control g at *; omega_using [h2])]
   refine ⟨mt.layout, ⟨V, W', R, mt.base, ?_, h20⟩, (A.scr E).congr wrt, fun hs => ?_, ft.mono ?_, rdt, wrt⟩
   · rcases outcome with ⟨h3, hn⟩ | ⟨gv, h1, hgv, _⟩
     · rw [h3]; simp [statusOf, ← hn]
@@ -225,11 +225,11 @@ theorem search_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : St
     rotate_left 2
     · change Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) g) pLen = Spec.Dsa.encodeBE pLen gv at bg
       simpa [gOf, hgv] using bg
-    · rw [bytesT (by decide) (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega)]
+    · rw [bytesT (by decide) (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega_using [pn])]
       have := VG.Proof.Dsa.encodeBE_decodeBE (pBytes pLen s)
       rw [bytesAt_length] at this
       exact this.symm
-    · rw [bytesT (Nat.le_refl _) (by unfold VG.Impl.Dsa.Generation.Layout.q g; omega)]
+    · rw [bytesT (Nat.le_refl _) (by unfold VG.Impl.Dsa.Generation.Layout.q g; omega_using [qn])]
       have := VG.Proof.Dsa.encodeBE_decodeBE (qBytes pLen s)
       rw [bytesAt_length] at this
       exact this.symm
@@ -262,7 +262,7 @@ theorem pack_stage_ok (hb : Supported pLen) (A : StageABI pLen s) {u t : State} 
   have c12 : usedBytes pLen = domainCheck + 128 * pLen := rfl
   have p128 : 128 ≤ pLen := by rcases hb with rfl | rfl | rfl <;> decide
   have qn := hb.q_le
-  have hpk := used_small hb (d := packed) (n := 2 * pLen + qLen pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hpk := used_small hb (d := packed) (n := 2 * pLen + qLen pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   have hs : (plan hb A).remaining 0 ≠ none := by
     intro hn; simp [statusOf, hn] at h19
   obtain ⟨pE, qE, gE⟩ := S.bytes hs
@@ -272,18 +272,18 @@ theorem pack_stage_ok (hb : Supported pLen) (A : StageABI pLen s) {u t : State} 
       Src t (off (W 5) packed) (2 * pLen + qLen pLen) (off (W 5) d) bs := by
     rw [h5]
     subst hl
-    exact VG.Proof.Dsa.AArch64.Generation.arena_source S.scr (by unfold packed at hd; omega)
-      (by have := used_lt hb; unfold packed at hd; omega) hbs (A.packed_sep hb hd)
+    exact VG.Proof.Dsa.AArch64.Generation.arena_source S.scr (by unfold packed at hd; omega_using [c6, c12, hd])
+      (by have := used_lt hb; unfold packed at hd; omega_using [hd]) hbs (A.packed_sep hb hd)
   have hS : (⟨hashBase s, oRsa⟩ : Region).Disjoint ⟨off (W 5) packed, 2 * pLen + qLen pLen⟩ := by
     rw [h5]; exact A.packed_sep hb (d := VG.Impl.Dsa.Generation.Layout.hash) (by decide)
   have hF : (⟨frameBase s, frameBytes⟩ : Region).Disjoint ⟨off (W 5) packed, 2 * pLen + qLen pLen⟩ := by
     rw [h5]; exact A.framePart hb hpk
   refine WP.mono (VG.Proof.Dsa.AArch64.Generation.pack_ok S.lay R (VG.Proof.Dsa.encodeBE_length _ _)
-    (VG.Proof.Dsa.encodeBE_length _ _) (VG.Proof.Dsa.encodeBE_length _ _) ⟨by omega, qn.1, by omega⟩
-    (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold VG.Impl.Dsa.Generation.Layout.p packed; omega) pE)
-    (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold VG.Impl.Dsa.Generation.Layout.q packed; omega) qE)
-    (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold g packed; omega) gE)
-    (fun i hi => by rw [h5, off_off]; exact S.scr.region (by omega) (by decide)) hF hS)
+    (VG.Proof.Dsa.encodeBE_length _ _) (VG.Proof.Dsa.encodeBE_length _ _) ⟨by omega_using [p128], qn.1, by omega_using [pn, qn]⟩
+    (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold VG.Impl.Dsa.Generation.Layout.p packed; omega_using [pn]) pE)
+    (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold VG.Impl.Dsa.Generation.Layout.q packed; omega_using [qn]) qE)
+    (src _ _ _ (VG.Proof.Dsa.encodeBE_length _ _) (by unfold g packed; omega_using [pn]) gE)
+    (fun i hi => by rw [h5, off_off]; exact S.scr.region (by omega_using [hpk, hi]) (by decide)) hF hS)
     fun t₁ ⟨bytes₁, L₁, R₁, f₁, k₁⟩ => ⟨L₁, ⟨V, W, R₁, h5, h20⟩, S.scr.congr k₁.wr, by rw [← h5]; exact bytes₁,
       S.frame.trans (f₁.mono (by intro r hr; obtain rfl := List.mem_singleton.mp hr; rw [h5]; simp [stageChanged])),
       k₁.rd.trans S.rd, k₁.wr.trans S.wr⟩
@@ -301,18 +301,18 @@ theorem StageABI.packed_domain (hb : Supported pLen) (A : StageABI pLen s) :
       ⟨off (s.gpr .x0) domainCheck, Impl.Dsa.Layout.usedBytes⟩ := by
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
   have qn := hb.q_le
-  exact A.parts hb (used_small hb (by decide) (by unfold arithmeticBytes; omega)) (StageABI.domainCheck_room hb)
-    (Or.inl (by unfold packed domainCheck; omega))
+  exact A.parts hb (used_small hb (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])) (StageABI.domainCheck_room hb)
+    (Or.inl (by unfold packed domainCheck; omega_using [pn, qn]))
 
 theorem Packed.check_src {hb : Supported pLen} {A : StageABI pLen s} {u t : State} (P : Packed hb A u t) :
     Src t (checkInput hb s (plan hb A)).base Impl.Dsa.Layout.usedBytes (off (s.gpr .x0) packed)
       (checkInput hb s (plan hb A)).params := by
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
   have qn := hb.q_le
-  have hpk := used_small hb (d := packed) (n := 2 * pLen + qLen pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hpk := used_small hb (d := packed) (n := 2 * pLen + qLen pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   have := VG.Proof.Dsa.AArch64.Generation.arena_source (bs := Spec.Dsa.encodeParams pLen (qLen pLen) (domainOf pLen s (plan hb A)))
     P.scr (by rw [VG.Proof.Dsa.Generation.encodeParams_length]; exact hpk)
-    (by rw [VG.Proof.Dsa.Generation.encodeParams_length]; have := used_lt hb; omega)
+    (by rw [VG.Proof.Dsa.Generation.encodeParams_length]; have := used_lt hb; omega_using [pn, qn])
     (by rw [VG.Proof.Dsa.Generation.encodeParams_length]; exact P.bytes)
     (by rw [VG.Proof.Dsa.Generation.encodeParams_length]; exact A.packed_domain hb)
   exact this
@@ -326,7 +326,7 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
   have qn := hb.q_le
   have hhash := used_small hb (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  have hpk := used_small hb (d := packed) (n := 2 * pLen + qLen pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hpk := used_small hb (d := packed) (n := 2 * pLen + qLen pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   have rem := plan_remaining hb A
   have cnt := plan_count hb A
   unfold Impl.Dsa.AArch64.Generator.stage
@@ -352,7 +352,7 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
     have check := VG.Proof.Dsa.Generation.check_encodedParams (a := domainOf pLen s (plan hb A)) hb.lengths pfit qfit
       (by show gOf (plan hb A) < _; rw [gdef]; exact Nat.lt_trans bounds.2 pfit)
     refine WP.mono (VG.Proof.Dsa.AArch64.Generation.validate_ok M (checkInput hb s (plan hb A)) P.lay R₁
-      (by rw [h5₁]; rfl) (by change pLen < 2 ^ 16; omega) (by change qLen pLen < 2 ^ 16; omega)
+      (by rw [h5₁]; rfl) (by change pLen < 2 ^ 16; omega_using [pn]) (by change qLen pLen < 2 ^ 16; omega_using [qn])
       P.check_scr (by rw [h5₁]; exact P.check_src)
       (A.framePart hb (StageABI.domainCheck_room hb))
       (A.parts hb hhash (StageABI.domainCheck_room hb) (Or.inl (by decide))))
@@ -376,7 +376,7 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact A.packed_domain hb
-          · exact (A.framePart hb hpk).symm) (by omega)]
+          · exact (A.framePart hb hpk).symm) (by omega_using [pn, qn])]
         exact P.bytes
       · exact absurd ha' (by simp)
     · refine P.frame.trans (f₂.mono ?_)

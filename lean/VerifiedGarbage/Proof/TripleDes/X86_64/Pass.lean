@@ -152,7 +152,7 @@ theorem select_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3) (s : Stat
       exact branch t₂ 2 (by simpa using h2 : p = 2).symm hm₂ hrd₂ hwr₂ hg₂
     · intro h2
       have hp2 : p ≠ 2 := by simpa using h2
-      exact branch t₂ 1 (by omega) hm₂ hrd₂ hwr₂ hg₂
+      exact branch t₂ 1 (by omega_using [hp, hp3, hp2]) hm₂ hrd₂ hwr₂ hg₂
 
 structure PassPost (keys : DesSchedule) (direction : Direction)
     (origin : State) (v : BitVec 32 × BitVec 32) (n : Nat) (s : State) : Prop where
@@ -265,7 +265,7 @@ theorem pass_ok (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
       (Region.contains_self _ _) (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq; exact passes_round_disjoint s) (by decide)]
     exact hpassesS
-  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega) hp.1
+  obtain ⟨hsub, hzero⟩ := countDown_rules p (by omega_using [hp]) hp.1
   refine WP.of_runBlock ⟨s₄, by simp only [runBoxes_append, run₃, Option.bind_some, run₄], ?_⟩
   refine ⟨?_, ?_, rd₄.trans (rd₃.trans (hs₂.rd.trans hs.rd)),
     wr₄.trans (wr₃.trans (hs₂.wr.trans hs.wr)), ?_, ?_, ?_, ?_⟩

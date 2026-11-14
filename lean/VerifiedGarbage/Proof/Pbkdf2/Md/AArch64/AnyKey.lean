@@ -498,7 +498,7 @@ theorem short_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hs : kln 
   simp only [Hash.short]
   refine wp_mov fun t₁ u₁ => wp_mov fun t₂ u₂ => WP.block_nil ?_
   refine ⟨(h.upd u₁ (by decide)).upd u₂ (by decide), by rw [u₂.other _ (by decide), u₁.gpr, h.x19],
-    by rw [u₂.gpr, u₁.other _ (by decide), h.x20], ⟨.inl ⟨rfl, rfl⟩, by omega, ?_⟩⟩
+    by rw [u₂.gpr, u₁.other _ (by decide), h.x20], ⟨.inl ⟨rfl, rfl⟩, by omega_using [hs], ?_⟩⟩
   rw [u₂.mem, u₁.mem, h.kr.keyBytes hp]
 
 theorem long_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hs : ¬ kln s₀ < H.P.B + 1) :
@@ -509,7 +509,7 @@ theorem long_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hs : ¬ kl
   rw [e₁, e₂]
   refine WP.mono (hashKey_ok hp hz hH h) fun t ⟨k, x2, x3, hb⟩ =>
     ⟨k, x2, x3, ⟨.inr ⟨rfl, rfl⟩, by exact hz.o_D_le_B, ?_⟩⟩
-  rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega)]
+  rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega_using [hs])]
 
 omit hp in
 /-- The value of `x9` the key's first branch tests. -/
@@ -535,13 +535,13 @@ theorem key_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) :
   unfold Hash.key Hash.keyShr Hash.keySub
   refine WP.seq (wp_lsr (log2_B hz).2 fun s₁ u₁ => WP.block_nil ?_)
   have k₁ := h.upd u₁ (by decide)
-  refine WP.ite _ (key_shr hz h u₁) (fun hT => short_ok hp hH k₁ (by have := of_decide_eq_true hT; omega))
+  refine WP.ite _ (key_shr hz h u₁) (fun hT => short_ok hp hH k₁ (by have := of_decide_eq_true hT; omega_using [this]))
     fun hF => ?_
   refine WP.seq (wp_subImm (by exact hz.o_B_lt_4096) fun s₂ u₂ => WP.block_nil ?_)
   have k₂ := k₁.upd u₂ (by decide)
   refine WP.ite _ (key_sub k₁ u₂ (by exact hz.o_B_lt_p64)) (fun hT => short_ok hp hH k₂ (by
-    have := of_decide_eq_true hT; omega)) fun hF' => long_ok hp hz hH k₂ (by
-      have := of_decide_eq_false hF; have := of_decide_eq_false hF'; omega)
+    have := of_decide_eq_true hT; omega_using [this])) fun hF' => long_ok hp hz hH k₂ (by
+      have := of_decide_eq_false hF; have := of_decide_eq_false hF'; omega_arith)
 
 /-- The key's region: where HMAC's `init` may read it. -/
 theorem KeyAt.facts (hH : HashOK H) {m : Mem} {kp : Addr} {kl : Nat} (hk : KeyAt hH s₀ m kp kl) {s : State}
@@ -601,7 +601,7 @@ theorem args_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hx2 : s.gp
       stk_o := by rw [k₃.kr.sp]; exact hp.stk_o
       stk_k := k_stk
       stk_s := stk_sc hp k₃.kr low_sub
-      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega }
+      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega_using [hsnw] }
 
 /-- HMAC's `init`: the states. -/
 theorem call_ok (hH : HashOK H) (hI : Verified AArch64.target H.hmacInit (initG hH.SH H.W))

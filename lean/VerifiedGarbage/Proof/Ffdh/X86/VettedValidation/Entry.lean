@@ -56,12 +56,12 @@ theorem entry_ok {s : State} (h : contract.pre s) :
     have bound : (arg s 3).toNat + (arg s 4).toNat * 8 ≤ 2 ^ 32 := (geometry h).scratchBound
     have room : 48 ≤ (arg s 4).toNat * 8 := scratch_room h
     have po : p.2 + 4 ≤ 48 := by revert p; decide
-    rw [T.mem, addr_eq (by omega)]
+    rw [T.mem, addr_eq (by omega_using [bound, room, po])]
     exact savedU p member
   · rw [T.mem]
-    have fit : (arg s 4).toNat * 8 < 2 ^ 64 := by have := (arg s 4).isLt; omega
+    have fit : (arg s 4).toNat * 8 < 2 ^ 64 := by have := (arg s 4).isLt; omega_using []
     have F := VG.Proof.Bignum.outside_frame outside
-      (by change 0 + (arg s 4).toNat * 8 ≤ 2 ^ 64; omega)
+      (by change 0 + (arg s 4).toNat * 8 ≤ 2 ^ 64; omega_using [])
     change Frame [⟨byteAddr (arg s 3) + BitVec.ofNat 64 0, (arg s 4).toNat * 8⟩] s.mem u.mem at F
     change Frame [⟨byteAddr (arg s 3), (arg s 4).toNat * 8⟩] s.mem u.mem
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using F

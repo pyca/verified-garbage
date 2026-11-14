@@ -27,11 +27,11 @@ theorem disj112 {r : Region} {a : Addr} (h1 : r.Disjoint ⟨a, 56⟩) (h2 : r.Di
   intro x hx hc
   simp only [Region.Contains] at hc
   by_cases hlt : (x - a).toNat < 56
-  · exact h1 x hx (by simp only [Region.Contains]; omega)
+  · exact h1 x hx (by simp only [Region.Contains]; omega_using [hlt])
   · refine h2 x hx ?_
     simp only [Region.Contains]
-    have := (Offset.lt_iff x a (d := 56) (n := 56) (by decide)).mpr ⟨by omega, by omega⟩
-    omega
+    have := (Offset.lt_iff x a (d := 56) (n := 56) (by decide)).mpr ⟨by omega_using [hlt], by omega_using [hc]⟩
+    omega_using [this]
 
 section
 variable {s : State}
@@ -44,13 +44,13 @@ theorem cA_eq (s : State) : cA s = ⟨State.addr s.sp, 56⟩ := by simp [cA, sta
 theorem CIn.ei (h : CIn s) {i : Nat} (hi : i < 14) :
     stackArgAddr s i = State.addr s.sp + BitVec.ofNat 64 (4 * i) := by
   have := h.spHi
-  simp only [stackArgAddr]; exact addr_add (by omega)
+  simp only [stackArgAddr]; exact addr_add (by omega_using [hi, this])
 
 theorem CIn.argAddr (h : CIn s) {i : Nat} (hi : i < 14) :
     off (State.addr (s.sp - BitVec.ofNat 32 56)) (56 + 4 * i) = stackArgAddr s i := by
   have := h.spLo; have := h.spHi
   simp only [stackArgAddr, off]
-  rw [h.sp', addr_add (by omega), ← Offset.add_add, BitVec.sub_add_cancel]
+  rw [h.sp', addr_add (by omega_using [hi, this]), ← Offset.add_add, BitVec.sub_add_cancel]
 
 theorem CIn.frameP (h : CIn s) : Frame [cF s] s.mem (pcPushed s).mem := by
   have f := FrameStack.pushed_frameA (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
@@ -66,7 +66,7 @@ theorem CIn.argVal (h : CIn s) {i : Nat} (hi : i < 14) :
   refine h.frameP.readW (r := ⟨stackArgAddr s i, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
   refine h.FA.symm.sub_left ?_
-  rw [cA_eq, h.ei hi]; exact Offset.sub_base _ (by omega)
+  rw [cA_eq, h.ei hi]; exact Offset.sub_base _ (by omega_using [hi])
 
 theorem CIn.bytes (h : CIn s) {R : Region} (hR : (cF s).Disjoint R) (hl : R.len ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt (pcPushed s).mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len :=
@@ -125,7 +125,7 @@ theorem in_k (h : CIn s) : In (mkP s) (sx s) := by
   have bE : Spec.Rsa.bytesAt (pcPushed s).mem (State.addr (stackArg s 10)) (stackArg s 11).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 10)) (stackArg s 11).toNat :=
     h.bytes (R := cE s) h.Fe (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
-  refine ⟨by simp only [State.withRegions_sp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 112 ≤ 2 ^ 32; omega,
+  refine ⟨by simp only [State.withRegions_sp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 112 ≤ 2 ^ 32; omega_using [spHi, spN],
     rfl, ⟨cE s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cA s, rdm _ (by simp), ?_⟩, hk.1, hk.2.1, hk.2.2,
     h.el1, h.el2, by show Spec.Rsa.scratchWords (2 * (stackArg s 1).toNat) ≤ (stackArg s 13).toNat; rw [← h.nl]; exact h.scr,
     by show _ + 2 * (stackArg s 1).toNat ≤ _; rw [← h.nl]; exact h.fn,

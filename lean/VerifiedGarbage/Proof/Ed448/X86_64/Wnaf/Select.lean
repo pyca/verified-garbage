@@ -25,12 +25,12 @@ def baseEntry (d : Int) : Spec.X448.Fe × Spec.X448.Fe :=
   let p := Impl.Ed448.SignedWindow.entry d.natAbs
   (if d < 0 then -p.1 else p.1, p.2)
 
-theorem abs_lt {d : Int} (hd : -15 ≤ d ∧ d ≤ 15) : d.natAbs < 17 := by omega
+theorem abs_lt {d : Int} (hd : -15 ≤ d ∧ d ≤ 15) : d.natAbs < 17 := by omega_using [hd]
 
 theorem code_keep {base : Addr} {o t : Nat} {d : Int} {s u : State} (h : Keep base s u)
     (ho : 2048 ≤ o) (hb : o + t + 1 ≤ 8192) (hm : s.mem (off base (o + t)) = CodeByte d) :
     u.mem (off base (o + t)) = CodeByte d := by
-  rw [h.mem _ (Or.inr (by rw [ofs_off' base (by omega)]; omega))]
+  rw [h.mem _ (Or.inr (by rw [ofs_off' base (by omega_using [hb])]; omega_using [ho]))]
   exact hm
 
 theorem selectBase_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} {d : Int}
@@ -46,8 +46,8 @@ theorem selectBase_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} {d :
   refine WP.mono (baseCoords_ok (ka'.scr hs) (abs_lt hd) da) fun b ⟨kb, pb, fb⟩ => ?_
   have kab := ka'.trans kb
   refine WP.mono (negateSelected_ok (kab.scr hs) (by decide : 2048 ≤ SDIG)
-    (by simp only [SDIG]; omega) hd ((kab.gpr _ (by decide)).trans hr)
-    (code_keep kab (by decide) (by simp only [SDIG]; omega) hm)) fun u ⟨ku, xu, fu⟩ => ?_
+    (by simp only [SDIG]; omega_using [ht]) hd ((kab.gpr _ (by decide)).trans hr)
+    (code_keep kab (by decide) (by simp only [SDIG]; omega_using [ht]) hm)) fun u ⟨ku, xu, fu⟩ => ?_
   refine ⟨kab.trans ku, ?_, ?_⟩
   · have px := congrArg Prod.fst pb
     have py := congrArg Prod.snd pb
@@ -71,8 +71,8 @@ theorem selectKey_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} {d : 
   refine WP.mono (keyCoords_ok (ka'.scr hs) (abs_lt hd) da) fun b ⟨kb, pb, fb⟩ => ?_
   have kab := ka'.trans kb
   refine WP.mono (negateSelected_ok (kab.scr hs) (by decide : 2048 ≤ KDIG)
-    (by simp only [KDIG]; omega) hd ((kab.gpr _ (by decide)).trans hr)
-    (code_keep kab (by decide) (by simp only [KDIG]; omega) hm)) fun u ⟨ku, xu, fu⟩ => ?_
+    (by simp only [KDIG]; omega_using [ht]) hd ((kab.gpr _ (by decide)).trans hr)
+    (code_keep kab (by decide) (by simp only [KDIG]; omega_using [ht]) hm)) fun u ⟨ku, xu, fu⟩ => ?_
   refine ⟨kab.trans ku, ?_, ?_⟩
   · have px := congrArg Spec.Ed448.Point.X pb
     have py := congrArg Spec.Ed448.Point.Y pb

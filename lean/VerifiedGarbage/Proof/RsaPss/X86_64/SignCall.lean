@@ -87,7 +87,7 @@ theorem stackArgAddr_call {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List 
 theorem stackArgAddr_callj {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) (j : Nat) :
     stackArgAddr (t.callEntry.withRegions rd wr) j = off (fb s) (8 * j) := by
   simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp, hsp, off]
-  rw [show 8 * (j + 1) = 8 + 8 * j by omega, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
+  rw [show 8 * (j + 1) = 8 + 8 * j by omega_using [], ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
     show BitVec.ofNat 64 8 = 8 from rfl, BitVec.sub_add_cancel]
 
 theorem priv_pre {s t : State} (hp : SPre tsH tsG s) (hsp : t.gpr .rsp = fb s)
@@ -96,7 +96,7 @@ theorem priv_pre {s t : State} (hp : SPre tsH tsG s) (hsp : t.gpr .rsp = fb s)
     (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
     chkContract.pre (t.callEntry.withRegions (pRd s) (pWr s)) := by
   have hE : ∀ i < 14, stackArg (t.callEntry.withRegions (pRd s) (pWr s)) i = pArg s i :=
-    fun i hi => (stackArg_call hp hsp _ _ (by omega)).trans (hargs i hi)
+    fun i hi => (stackArg_call hp hsp _ _ (by omega_using [hi])).trans (hargs i hi)
   simp only [chkContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.callEntry_rsp,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
@@ -246,7 +246,7 @@ theorem privWith_call {privN : String} {privC : Prog isa} {k : Contract isa}
         (k := oRsa) (le_refl _) (by rw [hsc]; omega_using [wS, c2])) x hx hc
     · exact ((hp.dKs.sub_left sBel).symm.sub_left (Region.sub_prefix (by omega_using [hsl, c2]))) x hx hc
   · have hE : ∀ i < 14, stackArg (t.callEntry.withRegions rds (pWr s)) i = pArg s i :=
-      fun i hi => (stackArg_call hp hst _ _ (by omega)).trans (hargs i hi)
+      fun i hi => (stackArg_call hp hst _ _ (by omega_using [hi])).trans (hargs i hi)
     have fE : Frame [below (fb s) 8] t.mem t.callEntry.mem := by
       rw [State.callEntry_mem, hst]
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))

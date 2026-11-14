@@ -49,11 +49,11 @@ theorem TabAt.of_mem {base : Addr} {s s' : State} (h : TabAt base s) (hsy : s'.s
   rw [hsy, ← h.held i hi]
   refine Mem.readW_congr fun b hb => hm _ ?_
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact hT.far _ (by omega)
+  exact hT.far _ (by omega_using [hi, hb])
 
 theorem TabAt.of_unch {base : Addr} {s s' : State} (h : TabAt base s) (hsy : s'.syms = s.syms) (hrd : s'.rd = s.rd)
     {W' : List (Nat × Nat)} (hW : ∀ w ∈ W', w.1 + w.2 ≤ 8192) (hu : Unch base W' s.mem s'.mem) : TabAt base s' :=
-  h.of_mem hsy hrd fun x hx => hu.far fun w hw => by have := hW w hw; omega
+  h.of_mem hsy hrd fun x hx => hu.far fun w hw => by have := hW w hw; omega_using [hx, this]
 
 /-- What follows code may assume it names the same addresses of statics as
 before. -/
@@ -78,7 +78,7 @@ theorem wp_syms_frame {is : List Instr} {s : State} {R : State → Prop}
   · exact hx r h
   · simp only [List.mem_singleton] at h; subst h
     simp only [sdepth, Region.Contains]
-    omega
+    omega_using []
 
 /-- The table survives what keeps the symbols and changes memory only in
 writable regions apart from it. -/
@@ -89,8 +89,8 @@ theorem TabAt.of_frame {base : Addr} {s s' : State} (h : TabAt base s) (hsy : s'
   rw [hsy, ← h.held i hi]
   refine Mem.readW_congr fun b hb => hF _ fun r hr hc => hd r hr _ ?_ hc
   simp only [Region.Contains]
-  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Mem.sub_ofNat_toNat _ (by omega)]
-  omega
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Mem.sub_ofNat_toNat _ (by omega_using [hi, hb])]
+  omega_using [hi, hb]
 
 theorem combWords_length : p256CombWords.length = 18944 := by
   rw [combWords_eq]
@@ -148,8 +148,8 @@ theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
   refine tailWith_ok hL hw h3 hc fun s₁ hw₁ h3₁ K₁ U₁ sy₁ => ?_
   have hc₁ := hc.of_unch U₁ (by decide)
   have e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
-    sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega)
-      (by omega)
+    sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega_using [hi])
+      (by omega_using [hi])
   have hT₁ : TabAt base s₁ := hT.of_unch sy₁ K₁.rd (by decide) U₁
   have eG : MC.point base s₁.mem = Spec.Weierstrass.G W := by
     rw [point_eq hL]

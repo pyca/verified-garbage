@@ -35,21 +35,21 @@ theorem words_ok {s : State} {base : Addr} {size a b d n : Nat} {op : AluOp} {ci
     | succ k ih =>
       intro hk
       simp only [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil]
-      refine WP.block_append (WP.mono (ih (by omega)) fun t ⟨O,K,c,C,V⟩ => ?_)
+      refine WP.block_append (WP.mono (ih (by omega_using [hk])) fun t ⟨O,K,c,C,V⟩ => ?_)
       have ht := hw.of_keeps K
       have pa' : PtrAt t base .ebp a := by rw [PtrAt,K.1 _ (by decide)];exact pa
       have pb' : PtrAt t base .ebx b := by rw [PtrAt,K.1 _ (by decide)];exact pb
       have pd' : PtrAt t base .edi d := by rw [PtrAt,K.1 _ (by decide)];exact pd
-      refine WP.mono (word_ok ht hop pa' pb' pd' (by omega) (by omega) (by omega) C) ?_
+      refine WP.mono (word_ok ht hop pa' pb' pd' (by omega_using [ha, hk]) (by omega_using [hb, hk]) (by omega_using [hd, hk]) C) ?_
       rintro u ⟨O',K',c',C',V'⟩
       have aw : w32 t.mem base (a+4*k)=w32 s.mem base (a+4*k) :=
-        O.w32 (by omega) (by have := hw.nowrap;omega)
+        O.w32 (by omega_using [da, hk]) (by have := hw.nowrap;omega_using [ha, hk, this])
       have bw : w32 t.mem base (b+4*k)=w32 s.mem base (b+4*k) :=
-        O.w32 (by omega) (by have := hw.nowrap;omega)
+        O.w32 (by omega_using [db, hk]) (by have := hw.nowrap;omega_using [hb, hk, this])
       have preVal : val32 u.mem base d k=val32 t.mem base d k :=
-        O'.val32 (by omega) (by have := hw.nowrap;omega)
+        O'.val32 (by omega_using []) (by have := hw.nowrap;omega_using [hd, hk, this])
       rw [aw,bw] at V'
-      refine ⟨(O.mono (Nat.le_refl _) (by omega)).trans (O'.mono (by omega) (by omega)),
+      refine ⟨(O.mono (Nat.le_refl _) (by omega_using [])).trans (O'.mono (by omega_using []) (by omega_using [])),
         K.trans K',c',C',?_⟩
       rw [val32_succ,val32_succ,val32_succ,preVal,pow32_succ]
       exact rel_step V V'

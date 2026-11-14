@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # OCB: the sum of `HASH` a chunk at a time
@@ -36,20 +37,20 @@ theorem ckOf_eq {X : Nat → Block} {p : List Byte} {m : Nat} (h : ∀ i < m, X 
     ckOf X m = ckAt p m := by
   induction m with
   | zero => rfl
-  | succ m ih => rw [ckOf, ckAt, ih (fun i hi => h i (by omega)), h m (by omega)]
+  | succ m ih => rw [ckOf, ckAt, ih (fun i hi => h i (by omega_using [hi])), h m (by omega_using [])]
 
 theorem ckOf_dck {X : Nat → Block} {inv : Cipher} {o0 l : Block} {c : List Byte} {m : Nat}
     (h : ∀ i < m, X i = decBlock inv o0 l c i) : ckOf X m = dckAt inv o0 l c m := by
   induction m with
   | zero => rfl
-  | succ m ih => rw [ckOf, dckAt, ih (fun i hi => h i (by omega)), h m (by omega)]
+  | succ m ih => rw [ckOf, dckAt, ih (fun i hi => h i (by omega_using [hi])), h m (by omega_using [])]
 
 theorem flatMap_range_congr {α : Type} {f g : Nat → List α} {m : Nat} (h : ∀ i < m, f i = g i) :
     (List.range m).flatMap f = (List.range m).flatMap g := by
   induction m with
   | zero => rfl
   | succ m ih =>
-    rw [List.range_succ, List.flatMap_append, List.flatMap_append, ih (fun i hi => h i (by omega))]
-    simp only [List.flatMap_cons, List.flatMap_nil, h m (by omega)]
+    rw [List.range_succ, List.flatMap_append, List.flatMap_append, ih (fun i hi => h i (by omega_using [hi]))]
+    simp only [List.flatMap_cons, List.flatMap_nil, h m (by omega_using [])]
 
 end VG.Proof.Ocb

@@ -45,10 +45,10 @@ theorem agree_le (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact VG.Offset.contains_base _ (by omega) hw
+  · exact VG.Offset.contains_base _ (by omega_using [hn, hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hn, hi, hw]
 
 theorem bytesAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {d n : Nat} (hn : d + n ≤ L) :
     Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n := by
@@ -56,11 +56,11 @@ theorem bytesAt_of (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ 
   refine List.map_congr_left fun i hi => ?_
   have := List.mem_range.mp hi
   rw [VG.Offset.add_add]
-  exact agree_le h hn _ (by omega)
+  exact agree_le h hn _ (by omega_using [this])
 
 theorem bytesAt_of0 (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) {n : Nat} (hn : n ≤ L) :
     Spec.Aes.bytesAt m₂ p n = Spec.Aes.bytesAt m₁ p n := by
-  have := bytesAt_of h (d := 0) (n := n) (by omega)
+  have := bytesAt_of h (d := 0) (n := n) (by omega_using [hn])
   simpa using this
 
 end

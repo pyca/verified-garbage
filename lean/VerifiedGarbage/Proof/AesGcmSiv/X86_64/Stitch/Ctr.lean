@@ -36,9 +36,9 @@ theorem insSelf_ok (r : XReg) (s : State) :
     WP isa (.block [.vop (.vinserti128 r r r 1)]) s fun s' =>
       (∀ l < 2, s'.lane r l = s.lane r 0) ∧ YFrame [r] s s' := by
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, fun r' hr l hl => ?_⟩⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [VOp.exec, State.setV, State.lane]
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [VOp.exec, State.setV, State.lane]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr, VOp.exec, State.setV, State.lane]
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr, VOp.exec, State.setV, State.lane]
 
 /-- `setupK` after the mask. -/
 abbrev setupKT : List Instr :=
@@ -71,10 +71,10 @@ theorem setupKT_ok (s : State) (hc : InRegions s.wr (s.gpr .rdx) 16) :
     fun r h13 h14 h15 l hl => ?_, trivial, trivial, trivial⟩
   · rw [BitVec.ofInt_natCast, BitVec.add_zero]
   · rw [BitVec.ofInt_natCast, BitVec.add_zero]; rfl
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
   · bv_omega
   · simp [h1, h2, h3]
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h13, h14, h15]
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h13, h14, h15]
 
 /-- `add rdx, 256; sub r9, 16`. -/
 theorem nextC_ok (s : State) :
@@ -117,7 +117,7 @@ theorem setupK_ok {s₀ : State} (hp : SPre s₀) : WP isa (.block setupK) s₀ 
     by rw [rdx, g₂ _ (by decide), Nat.mul_zero, BitVec.add_zero],
     by rw [gk _ (by decide) (by decide) (by decide), g₂ _ (by decide), Nat.mul_zero, Nat.sub_zero]; simp,
     by rw [rax, g₂ _ (by decide)], fun r h1 h2 _ h4 => by rw [gk r h1 h2 h4, g₂ r h1]⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · rw [c140, hd, Nat.mul_zero, ctrX₀]
     · rw [c141, hd]
       conv => lhs; rw [← ctrX₀ s₀, ctrX, paddd_one, ← BitVec.ofNat_add]
@@ -136,26 +136,26 @@ theorem cbody_ok {s₀ : State} (hp : SPre s₀) {e : Nat} (he : 16 * (e + 1) �
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hw := hp.wrap_d
   have hrdx : (s.gpr .rdx).toNat = (dp s₀).toNat + 256 * e := by
-    rw [hI.rdx, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 256 * e) (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [hI.rdx, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 256 * e) (by omega_using [he, hw]),
+      Nat.mod_eq_of_lt (by omega_using [he, hw])]
   have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ YFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, YFrame.refl _ _⟩
   refine WP.seq (WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * e) (j := 0) (by omega) hI.a
-    (by rw [hrdx]; omega) trivial) fun s₁ ⟨hA₁, _, hg₁, _, _⟩ => ?_)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * e) (j := 0) (by omega_using [he]) hI.a
+    (by rw [hrdx]; omega_using []) trivial) fun s₁ ⟨hA₁, _, hg₁, _, _⟩ => ?_)
   refine WP.seq (WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * e + 8) (j := 4) (by omega) hA₁
-    (by rw [hg₁, hrdx]; omega) trivial) fun s₂ ⟨hA₂, _, hg₂, _, _⟩ => ?_)
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * e + 8) (j := 4) (by omega_using [he]) hA₁
+    (by rw [hg₁, hrdx]; omega_using []) trivial) fun s₂ ⟨hA₂, _, hg₂, _, _⟩ => ?_)
   refine WP.mono (nextC_ok s₂) fun s' ⟨frdx, fr9, fzf, fg, fl, fm, frd, fwr⟩ => ?_
   have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, hg₂, hg₁]
   have hr9 : s₂.gpr .r9 - 16 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 1)) := by
     rw [hg₂, hg₁, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
-      ofNat_sub_ofNat (by omega) (by omega)]
+      ofNat_sub_ofNat (by omega_using [he]) (by omega_using [hn])]
     congr 1
   refine ⟨⟨?_, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
     fun r h1 h2 h3 h4 => by rw [gk r h2 h3]; exact hI.gpr r h1 h2 h3 h4⟩, ?_⟩
-  · rw [show 16 * (e + 1) = 16 * e + 8 + 8 by omega]
+  · rw [show 16 * (e + 1) = 16 * e + 8 + 8 by omega_using []]
     exact ⟨hA₂.le, fun l hl => by rw [fl]; exact hA₂.ctr l hl, fun l hl => by rw [fl]; exact hA₂.msk l hl,
       fun l hl => by rw [fl]; exact hA₂.inc l hl,
       by rw [fg _ (by decide) (by decide)]; exact hA₂.rdi, by rw [fg _ (by decide) (by decide)]; exact hA₂.rsi,
@@ -170,7 +170,7 @@ theorem cbody_ok {s₀ : State} (hp : SPre s₀) {e : Nat} (he : 16 * (e + 1) �
     · simp only [h, decide_false]
       exact beq_false_of_ne fun h' => h (by
         have := congrArg BitVec.toNat h'
-        rwa [toNat_ofNat_lt (by omega)] at this)
+        rwa [toNat_ofNat_lt (by omega_using [hn])] at this)
 
 /-- The counter block stored, and the upper lanes cleared. -/
 theorem ctrFin_ok {s₀ : State} (hp : SPre s₀) {e : Nat} (he : nb s₀ = 16 * e) {s : State} (hI : CInv s₀ e s) :
@@ -183,14 +183,14 @@ theorem ctrFin_ok {s₀ : State} (hp : SPre s₀) {e : Nat} (he : nb s₀ = 16 *
   rw [hI.rax] at m₁
   have fC : Frame [cR s₀] s.mem s₁.mem := by rw [m₁]; exact frame_write16 _ _ _
   have cD : ∀ k < nb s₀, Region.Disjoint ⟨bAddr s₀ k, 16⟩ (cR s₀) := fun k hk =>
-    hp.d_c.sub_left (Offset.sub_base _ (by omega))
+    hp.d_c.sub_left (Offset.sub_base _ (by omega_using [hk]))
   refine ⟨fun k hk => ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_, by show s₁.rd = _; rw [rd₁, hI.a.rd],
     by show s₁.wr = _; rw [wr₁, hI.a.wr]⟩
   · show bytesAt s₁.mem _ 16 = _
     rw [Proof.AesGcm.X86_64.bytesAt_frame fC (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact cD k hk) (by decide),
       hI.a.blocks k hk]
-    simp only [show k < 16 * e by omega, ite_true]
+    simp only [show k < 16 * e by omega_using [he, hk], ite_true]
   · show bytesAt s₁.mem (cp s₀) 16 = _
     rw [m₁, bytesAt_writeW128, hI.a.ctr 0 (by decide), Nat.add_zero, he, le16_ctrX (rest₀ s₀)]
   · show Frame _ s₀.mem s₁.mem
@@ -212,10 +212,10 @@ theorem ctr_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa 
     refine WP.mono (cbody_ok hp he hI) fun s' ⟨hI', hzf⟩ => ?_
     by_cases h0 : nb s₀ - 16 * (e + 1) = 0
     · exact .inl ⟨by simp only [eval, hzf, h0, decide_true, Option.map_some, Bool.not_true],
-        e + 1, by omega, hI'⟩
+        e + 1, by omega_using [he, h0], hI'⟩
     · exact .inr ⟨by simp only [eval, hzf, h0, decide_false, Option.map_some, Bool.not_false],
-        nb s₀ - 16 * (e + 1), by omega, e + 1, rfl, by omega, hI'⟩
-  exact WP.mono (WP.loop (M := isa) I hstep (nb s₀ - 16 * 0) s₁ ⟨0, rfl, by omega, hI₁⟩)
+        nb s₀ - 16 * (e + 1), by omega_using [he], e + 1, rfl, by omega_using [hm, h0], hI'⟩
+  exact WP.mono (WP.loop (M := isa) I hstep (nb s₀ - 16 * 0) s₁ ⟨0, rfl, by omega_using [h16], hI₁⟩)
     fun s ⟨e, he, hI⟩ => ctrFin_ok hp he hI
 
 end VG.Proof.AesGcmSiv.X86_64.Stitch

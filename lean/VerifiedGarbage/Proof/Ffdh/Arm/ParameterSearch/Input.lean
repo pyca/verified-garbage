@@ -153,8 +153,8 @@ theorem searchInput {p : SearchParams} {s : State}
       rw [layout.reads]; simp [readRegions]
     · exact ⟨_, List.mem_append_left _ (List.mem_cons_self), Region.contains_self _ _⟩
     · change 208 ≤ (s.sp - 24#32).toNat
-      rw [FrameStack.sub_toNat' (by omega : 24 ≤ s.sp.toNat)]
-      omega
+      rw [FrameStack.sub_toNat' (by omega_using [fit] : 24 ≤ s.sp.toNat)]
+      omega_using [fit]
     · intro r member
       have original : r ∈ writeRegions p ++ readRegions p s.sp := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at member

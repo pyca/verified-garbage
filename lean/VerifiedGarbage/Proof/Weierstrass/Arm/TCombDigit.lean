@@ -40,15 +40,15 @@ theorem hornerWindow_ok (K : TCombCfg) {s : State} {base : Addr} {size len j cou
     WP isa (.block (K.horner count)) s fun t =>
       t.gpr .r9=BitVec.ofNat 32 (hornerVal v 0 count) ∧ RegOnly [.r5,.r9] s t := by
   unfold TCombCfg.horner
-  refine hornerAt_ok K hv count 0 s (by omega) (by omega) fun i hi => ?_
+  refine hornerAt_ok K hv count 0 s (by omega_using [hw, hc]) (by omega_using [hc, ho]) fun i hi => ?_
   have fa := far_add hd
   have ea : State.addr (s.gpr .r4+BitVec.ofNat 32 (K.L.bits%4096+0+i))=
       VG.Proof.Mont.off base (K.L.bits+K.w*j+i) := by
-    rw [hf.ea_reg hs hp (by omega)]
+    rw [hf.ea_reg hs hp (by omega_using [hl, hi, fa])]
     congr 1
-    omega
+    omega_using [fa]
   rw [ea]
-  exact ⟨hf.read (by omega),by simpa only [Nat.zero_add] using hb i hi⟩
+  exact ⟨hf.read (by omega_using [hl, hi]),by simpa only [Nat.zero_add] using hb i hi⟩
 
 theorem digitWords_ok (K : TCombCfg) {s : State} {base : Addr} {size len j : Nat}
     (hs : Scr s base size) (hf : Far s base len)
@@ -66,7 +66,7 @@ theorem digitWords_ok (K : TCombCfg) {s : State} {base : Addr} {size len j : Nat
         (magH K.H (hornerVal v 0 (if j=K.J-1 then K.topBits else K.w))) ∧
       RegOnly [.r4,.r5,.r9] s t := by
   let count := if j=K.J-1 then K.topBits else K.w
-  have hc : count≤K.w := by dsimp only [count]; split <;> omega
+  have hc : count≤K.w := by dsimp only [count]; split <;> omega_arith
   unfold TCombCfg.digit
   rw [WP.seq_iff]
   refine WP.mono (windowIndex_ok K hw gj) fun s₁ ⟨p₁,k₁⟩ => ?_
@@ -123,11 +123,11 @@ theorem digit_ok (K : TCombCfg) {s : State} {base : Addr} {size len j k : Nat}
   have bytes : ∀ i<count,s.mem (VG.Proof.Mont.off base (K.L.bits+K.w*j+i))=
       BitVec.ofNat 8 (v i) := by
     intro i hi
-    rw [show K.L.bits+K.w*j+i=K.L.bits+(K.w*j+i) by omega,hb _ (by omega)]
+    rw [show K.L.bits+K.w*j+i=K.L.bits+(K.w*j+i) by omega_using [],hb _ (by omega_using [bounds, hi])]
     dsimp only [v]
     cases k.testBit (K.w*j+i) <;> rfl
-  refine WP.mono (digitWords_ok K hs hf hw (topWindow_le (by omega) cover)
-    (by omega) hJ enc hd ho (by omega) gj hv bytes) fun t ⟨val,keep⟩ => ⟨?_,keep⟩
+  refine WP.mono (digitWords_ok K hs hf hw (topWindow_le (by omega_using [hj]) cover)
+    (by omega_using [hj, hJ]) hJ enc hd ho (by omega_using [hl, bounds]) gj hv bytes) fun t ⟨val,keep⟩ => ⟨?_,keep⟩
   rw [val]
   change BitVec.ofNat 32 (magH K.H (hornerVal v 0 count))=_
   rw [window_without_padding bounds.1 bounds.2.2 hk]

@@ -37,16 +37,16 @@ theorem count1_zf {x : BitVec 32} {N j : Nat} (hx : x.toNat = N - j) (hj : j < N
   have h1 : (x - 1).toNat = N - (j + 1) := by
     rw [BitVec.toNat_sub, hx, show (1 : BitVec 32).toNat = 1 from rfl]
     have := x.isLt
-    omega
+    omega_using [hx, hj]
   refine ⟨h1, ?_⟩
   by_cases h : j + 1 = N
   · simp only [h, decide_true, beq_iff_eq]
-    apply BitVec.eq_of_toNat_eq; rw [h1]; simp; omega
+    apply BitVec.eq_of_toNat_eq; rw [h1]; simp; omega_using [h]
   · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
     intro hz
     have := congrArg BitVec.toNat hz
     rw [h1] at this
     simp at this
-    omega
+    omega_using [hj, h, this]
 
 end VG.Proof.Bignum.X86.PublicRt

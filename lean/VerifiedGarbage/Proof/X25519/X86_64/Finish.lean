@@ -75,7 +75,7 @@ theorem restore_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
   refine WP.mono (Spill.restore_ok .rdi saved g s (by decide) (fun p hp => ?_) (by rw [hs.rdi]; exact hsv))
     fun s' ⟨h₁, h₂, hm, hrd, hwr⟩ => ⟨fun rd hrd => h₁ _ (List.mem_map_of_mem hrd), h₂, hm, hrd, hwr⟩
   have := saved_lt p hp
-  rw [hs.rdi]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by omega)⟩
+  rw [hs.rdi]; exact ⟨_, List.mem_append_right _ hs.wr, contains_sc (by omega_using [this])⟩
 
 theorem outStores_ok {s : State} {q : Addr} (hq : s.gpr .rsi = q) (hw : (⟨q, 32⟩ : Region) ∈ s.wr) :
     WP isa (.block ([.store (at_ .rsi 0) .r8, .store (at_ .rsi 8) .r9, .store (at_ .rsi 16) .r10,
@@ -83,10 +83,10 @@ theorem outStores_ok {s : State} {q : Addr} (hq : s.gpr .rsi = q) (hw : (⟨q, 3
       s'.mem = st4 s.mem q 0 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have w : ∀ d, d + 8 ≤ 32 → InRegions s.wr (off q d) 8 :=
-    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega)⟩
+    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hq, State.store64,
-    w 0 (by omega), w 8 (by omega), w 16 (by omega), w 24 (by omega), ite_true, Option.some.injEq,
+    w 0 (by omega_using []), w 8 (by omega_using []), w 16 (by omega_using []), w 24 (by omega_using []), ite_true, Option.some.injEq,
     exists_eq_left']
   exact ⟨rfl, trivial, trivial, trivial⟩
 
@@ -102,7 +102,7 @@ theorem bytesAt_st4 (m : Mem) (q : Addr) (w0 w1 w2 w3 : BitVec 64) :
   have := ((st4 m q 0 w0 w1 w2 w3).readW (q + 8) 64).isLt
   have := ((st4 m q 0 w0 w1 w2 w3).readW (q + 16) 64).isLt
   have := ((st4 m q 0 w0 w1 w2 w3).readW (q + 24) 64).isLt
-  exact bytesAt_leBytes_words64 _ _ _ (by omega) (by omega) (by omega) (by omega)
+  exact bytesAt_leBytes_words64 _ _ _ (by omega_using [e]) (by omega_using [e]) (by omega_using [e]) (by omega_using [e])
 
 theorem movRsi_ok (s : State) :
     WP isa (.block ([.mov .rsi (.reg .r12)] : List Instr)) s fun s' =>

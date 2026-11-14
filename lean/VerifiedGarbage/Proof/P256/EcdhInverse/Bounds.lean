@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -16,12 +17,12 @@ theorem rowBounds_step {t : MSt} (h : rowBounds t) : rowBounds (mstep t) := by
   unfold rowBounds mstep
   split
   · simp only
-    omega
+    omega_using [hf, hf', hg, hg']
   · rcases Int.emod_two_eq_zero_or_one t.g with hz|ho
     · simp only [hz,Int.zero_mul,Int.add_zero]
-      omega
+      omega_using [hf, hf', hg, hg']
     · simp only [ho,one_mul]
-      omega
+      omega_using [hf, hf', hg, hg']
 
 theorem rowBounds_steps {t : MSt} (h : rowBounds t) (n : Nat) : rowBounds (msteps n t) := by
   induction n with
@@ -32,7 +33,7 @@ theorem packed_initial_bounds (d : Int) {a b : Nat} (ha : a<2^20) (hb : b<2^20) 
     rowBounds (MSt.init d ((a:Int)-2^41) ((b:Int)-2^62)) := by
   unfold rowBounds MSt.init
   simp only at *
-  omega
+  omega_using [ha, hb]
 
 /-- The unhalved second row is still a representable signed64-bit integer. -/
 theorem row_numerator_bound {t : MSt} (h : rowBounds t) :
@@ -41,11 +42,11 @@ theorem row_numerator_bound {t : MSt} (h : rowBounds t) :
   rcases h with ⟨hf,hf',hg,hg'⟩
   dsimp only
   split
-  · omega
+  · omega_using [hf, hf', hg, hg']
   · rcases Int.emod_two_eq_zero_or_one t.g with hz|ho
     · simp only [hz,Int.zero_mul,Int.add_zero]
-      omega
+      omega_using [hg, hg']
     · simp only [ho,one_mul]
-      omega
+      omega_using [hf, hf', hg, hg']
 
 end VG.Proof.P256.EcdhInverse

@@ -50,7 +50,7 @@ theorem pow2T_ok {s : State} {T : Nat} (h7 : s.gpr .r7 = BitVec.ofNat 64 T) (h12
       have e : s.gpr .r7 = 0 := by simpa using hz
       rw [h7] at e
       have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat] at this; simp at this; omega
+      rw [BitVec.toNat_ofNat] at this; simp at this; omega_using [hT, this]
     subst this
     exact WP.block_nil ⟨h12, rfl, Keep.refl _ _⟩
   · have hT0 : 0 < T := by
@@ -58,7 +58,7 @@ theorem pow2T_ok {s : State} {T : Nat} (h7 : s.gpr .r7 = BitVec.ofNat 64 T) (h12
       · subst e; simp [h7] at hz
       · exact e
     refine WP.mono (wp_countdown (body := .block ([.add .r12 .r12 .r12, .subi .r7 .r7 1] : List Instr))
-      (cnt := .r7) (N := T) (by omega) hT0
+      (cnt := .r7) (N := T) (by omega_using [hT]) hT0
       (fun i t => t.gpr .r12 = BitVec.ofNat 64 (2 ^ i) ∧ t.mem = s.mem ∧ Keep [.r7, .r12] s t)
       (fun i hi t ⟨j12, jm, jk⟩ hc => ?_) ⟨by simpa using h12, rfl, Keep.refl _ _⟩ h7) fun t h => h
     refine WP.mono (WP.keep [.r7, .r12] (Q := fun u => (u.gpr .r12 = BitVec.ofNat 64 (2 ^ (i + 1)) ∧
@@ -88,11 +88,11 @@ theorem shlMul_arith (x c : BitVec 64) {T : Nat} (hT : T < 64) (hc : c.toNat < 2
     simp only [BitVec.getElem_and, BitVec.getElem_shiftLeft]
     by_cases h : i < T
     · simp [h]
-    · have : c.toNat < 2 ^ i := Nat.lt_of_lt_of_le hc (Nat.pow_le_pow_right (by decide) (by omega))
+    · have : c.toNat < 2 ^ i := Nat.lt_of_lt_of_le hc (Nat.pow_le_pow_right (by decide) (by omega_using [h]))
       simp [h, BitVec.getElem_eq_testBit_toNat, Nat.testBit_lt_two_pow this]
   rw [← BitVec.add_eq_or_of_and_eq_zero _ _ hd, BitVec.toNat_add, h1]
   have hlo : x.toNat * 2 ^ T % 2 ^ 64 + c.toNat < 2 ^ 64 := by
-    have e : 2 ^ 64 = 2 ^ T * 2 ^ (64 - T) := by rw [← Nat.pow_add]; congr 1; omega
+    have e : 2 ^ 64 = 2 ^ T * 2 ^ (64 - T) := by rw [← Nat.pow_add]; congr 1; omega_using [hT]
     have h2 : 2 ^ T ∣ x.toNat * 2 ^ T % 2 ^ 64 :=
       (Nat.dvd_mod_iff (by rw [e]; exact Nat.dvd_mul_right _ _)).mpr (Nat.dvd_mul_left _ _)
     obtain ⟨k, hk⟩ := h2
@@ -100,7 +100,7 @@ theorem shlMul_arith (x c : BitVec 64) {T : Nat} (hT : T < 64) (hc : c.toNat < 2
     rw [hk, e] at this ⊢
     have : k < 2 ^ (64 - T) := Nat.lt_of_mul_lt_mul_left this
     have : 2 ^ T * k + 2 ^ T ≤ 2 ^ T * 2 ^ (64 - T) := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ this
-    omega
+    omega_using [hc, this]
   have hhi : x.toNat * 2 ^ T / 2 ^ 64 < 2 ^ T := by
     rw [Nat.div_lt_iff_lt_mul (by decide)]
     calc x.toNat * 2 ^ T < 2 ^ 64 * 2 ^ T := Nat.mul_lt_mul_of_pos_right hx (Nat.two_pow_pos _)
@@ -108,7 +108,7 @@ theorem shlMul_arith (x c : BitVec 64) {T : Nat} (hT : T < 64) (hc : c.toNat < 2
   refine ⟨?_, hhi⟩
   rw [Nat.mod_eq_of_lt hlo]
   have := Nat.mod_add_div (x.toNat * 2 ^ T) (2 ^ 64)
-  omega
+  omega_using []
 
 /-- `[o] := [a] 2^T` over `m` words (`countLoop .r8 shlBody`), `2^T` in `r12`, the
 carry in `r9` from 0: the words and the carry out. -/
@@ -195,26 +195,26 @@ theorem tailSetup_ok {s : State} {B : Addr} {Z w wd : Nat} (h : Ws s B Z w nArr)
   refine ptr_ok (h.of_keep (Keep.write _ _ _)) (by decide) (by decide) (by decide) (by decide) ?_
   have e3 : BitVec.ofNat 64 w >>> 2 = BitVec.ofNat 64 wd := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]; omega
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]; omega_using [hw, this]
   have eK : BitVec.ofNat 64 wd <<< 4 - BitVec.ofNat 64 wd + BitVec.ofNat 64 10 = BitVec.ofNat 64 (15 * wd + 10) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
   have eT : BitVec.ofNat 64 (15 * wd + 10) &&& BitVec.ofNat 64 63 = BitVec.ofNat 64 ((15 * wd + 10) % 64) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (show 15 * wd + 10 < 2 ^ 64 by omega), show 63 % 2 ^ 64 = 2 ^ 6 - 1 from rfl,
       Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_using []
   have eQ : (BitVec.ofNat 64 (15 * wd + 10) >>> 6) <<< 3 = BitVec.ofNat 64 (8 * ((15 * wd + 10) / 64)) := by
     apply BitVec.eq_of_toNat_eq
     have : wd ≤ 256 := by omega
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
       Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (show 15 * wd + 10 < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show (15 * wd + 10) / 2 ^ 6 * 2 ^ 3 < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show 8 * ((15 * wd + 10) / 64) < 2 ^ 64 by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (show 15 * wd + 10 < 2 ^ 64 by omega_using [this]),
+      Nat.mod_eq_of_lt (show (15 * wd + 10) / 2 ^ 6 * 2 ^ 3 < 2 ^ 64 by omega_using [this]),
+      Nat.mod_eq_of_lt (show 8 * ((15 * wd + 10) / 64) < 2 ^ 64 by omega_using [this])]
+    omega_using []
   refine WP.mono (WP.keep [.r0, .r3, .r4, .r5, .r7, .r8, .r9, .r12] (Q := fun u =>
       u.gpr .r5 = off B (arr w aDR + 8 * ((15 * wd + 10) / 64)) ∧
       u.gpr .r7 = BitVec.ofNat 64 ((15 * wd + 10) % 64) ∧ u.gpr .r8 = BitVec.ofNat 64 (wd + 1) ∧
@@ -262,9 +262,9 @@ theorem tail_ok {s : State} {B : Addr} {Z w wd : Nat} (h : Ws s B Z w nArr) (hw 
   have dYD := arr_disj (w := w) (show aY ≠ aDR by decide)
   generalize hQ : (15 * wd + 10) / 64 = Q
   generalize hT : (15 * wd + 10) % 64 = T
-  have hK : 5 * (3 * wd + 2) = 64 * Q + T := by omega
-  have hQw : 2 * Q + 2 * (wd + 1) ≤ w := by omega
-  have hT64 : T < 64 := by omega
+  have hK : 5 * (3 * wd + 2) = 64 * Q + T := by omega_using [hQ, hT]
+  have hQw : 2 * Q + 2 * (wd + 1) ≤ w := by omega_using [hw, hwd, hQ]
+  have hT64 : T < 64 := by omega_using [hT]
   rw [tail]; simp only [seqs]
   -- `aDR = 0`.
   rw [WP.seq_iff]
@@ -284,15 +284,15 @@ theorem tail_ok {s : State} {B : Addr} {Z w wd : Nat} (h : Ws s B Z w nArr) (hw 
   refine WP.mono (shlLoop_ok (dO := arr w aDR + 8 * Q) (dA := arr w aY) (m := wd + 1) (T := T) h3.scr
     (by rw [k3.gpr _ (by decide)]; exact p5) (by rw [k3.gpr _ (by decide)]; exact p6)
     (by rw [k3.gpr _ (by decide)]; exact p8) (by rw [k3.gpr _ (by decide)]; exact p9) q12 hT64
-    (by omega) (by omega) (by omega) (by omega) (by omega)) fun t4 ⟨v4, o4, k4⟩ => ?_
+    (by omega_using []) (by omega_using [hw, this]) (by omega_using [hw, hwd, this, hnw, hS, fD, fY, fF, dYD, hQ, hT, hK, hQw, hT64]) (by omega_using [hw, hwd, this, hnw, hS, fD, fY, fF, dYD, hQ, hT, hK, hQw, hT64]) (by omega_using [hw, hwd, this, hnw, hS, fD, fY, fF, dYD, hQ, hT, hK, hQw, hT64])) fun t4 ⟨v4, o4, k4⟩ => ?_
   have h4 := h3.of_keep k4
   have yW : y < m → m < 2 ^ (64 * wd) → wordsVal t3.mem B (arr w aY) (wd + 1) = y := fun hym hmw => by
     rw [m3, m2, wordsVal_eq_val32]
-    refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) ?_ (by omega)
-      (Nat.lt_of_lt_of_le (Nat.lt_trans hym hmw) (Nat.pow_le_pow_right (by decide) (by omega)))
-    rw [← hy]; exact keep_val K1 (j := aY) (k := w) (by omega) (by decide) (by simp) (fit _ (by decide))
+    refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) ?_ (by omega_using [hw, hwd])
+      (Nat.lt_of_lt_of_le (Nat.lt_trans hym hmw) (Nat.pow_le_pow_right (by decide) (by omega_using [])))
+    rw [← hy]; exact keep_val K1 (j := aY) (k := w) (by omega_using []) (by decide) (by simp) (fit _ (by decide))
   have hyT : y < m → m < 2 ^ (64 * wd) → y * 2 ^ T < 2 ^ (64 * (wd + 1)) := fun hym hmw => by
-    rw [show 64 * (wd + 1) = 64 * wd + 64 by omega, Nat.pow_add]
+    rw [show 64 * (wd + 1) = 64 * wd + 64 by omega_using [], Nat.pow_add]
     exact Nat.mul_lt_mul'' (Nat.lt_trans hym hmw) (Nat.pow_lt_pow_right (by decide) hT64)
   have v4' : y < m → m < 2 ^ (64 * wd) → wordsVal t4.mem B (arr w aDR + 8 * Q) (wd + 1) = y * 2 ^ T :=
       fun hym hmw => by
@@ -301,31 +301,31 @@ theorem tail_ok {s : State} {B : Addr} {Z w wd : Nat} (h : Ws s B Z w nArr) (hw 
     rcases Nat.eq_zero_or_pos (t4.gpr .r9).toNat with e | e
     · rw [e, Nat.mul_zero, Nat.add_zero] at v4; exact v4
     · have := Nat.le_mul_of_pos_right (2 ^ (64 * (wd + 1))) e
-      omega
+      omega_arith
   -- `num aDR = y 2^K`.
   have m13 : t3.mem = t1.mem := by rw [m3, m2]
   have zlow : ∀ i < 2 * Q, w32 t4.mem B (arr w aDR + 4 * i) = 0 := fun i hi => by
     unfold w32
-    rw [VG.Proof.Rsa.PPC64LE.InvBatch.Outside.readW32 o4 (by omega) (by omega), m13]
-    exact z1 i (by omega)
+    rw [VG.Proof.Rsa.PPC64LE.InvBatch.Outside.readW32 o4 (by omega_using [hi]) (by omega_using [hnw, hS, fD, hQw, hi]), m13]
+    exact z1 i (by omega_using [hQw, hi])
   have zhigh : ∀ i, 2 * Q + 2 * (wd + 1) ≤ i → i < w + 2 → w32 t4.mem B (arr w aDR + 4 * i) = 0 :=
     fun i hi1 hi2 => by
       unfold w32
-      rw [VG.Proof.Rsa.PPC64LE.InvBatch.Outside.readW32 o4 (by omega) (by omega), m13]
+      rw [VG.Proof.Rsa.PPC64LE.InvBatch.Outside.readW32 o4 (by omega_using [hi1]) (by omega_using [hw, hwd, this, hnw, hS, fD, fY, fF, dYD, hQ, hT, hK, hQw, hi1, hi2]), m13]
       exact z1 i hi2
   have nD : y < m → m < 2 ^ (64 * wd) → num t4.mem B w aDR = y * 2 ^ (5 * (3 * wd + 2)) := fun hym hmw => by
     show val32 t4.mem B (arr w aDR) w = _
     have e1 := val32_append t4.mem B (arr w aDR) (2 * Q) (w - 2 * Q)
     have e2 := val32_append t4.mem B (arr w aDR + 4 * (2 * Q)) (2 * (wd + 1)) (w - 2 * Q - 2 * (wd + 1))
-    rw [show 2 * Q + (w - 2 * Q) = w by omega] at e1
-    rw [show 2 * (wd + 1) + (w - 2 * Q - 2 * (wd + 1)) = w - 2 * Q by omega] at e2
+    rw [show 2 * Q + (w - 2 * Q) = w by omega_using [hw, hQ]] at e1
+    rw [show 2 * (wd + 1) + (w - 2 * Q - 2 * (wd + 1)) = w - 2 * Q by omega_using [hw, hwd, hQ]] at e2
     rw [VG.Proof.Rsa.PPC64LE.InvBatch.val32_zero zlow, Nat.zero_add, e2,
-      show arr w aDR + 4 * (2 * Q) = arr w aDR + 8 * Q by omega, ← wordsVal_eq_val32, v4' hym hmw,
+      show arr w aDR + 4 * (2 * Q) = arr w aDR + 8 * Q by omega_using [], ← wordsVal_eq_val32, v4' hym hmw,
       VG.Proof.Rsa.PPC64LE.InvBatch.val32_zero (k := w - 2 * Q - 2 * (wd + 1)) (fun i hi => by
-        rw [show arr w aDR + 8 * Q + 4 * (2 * (wd + 1)) + 4 * i = arr w aDR + 4 * (2 * Q + 2 * (wd + 1) + i) by omega]
-        exact zhigh _ (by omega) (by omega)), Nat.mul_zero, Nat.add_zero] at e1
+        rw [show arr w aDR + 8 * Q + 4 * (2 * (wd + 1)) + 4 * i = arr w aDR + 4 * (2 * Q + 2 * (wd + 1) + i) by omega_using []]
+        exact zhigh _ (by omega_using []) (by omega_using [hi])), Nat.mul_zero, Nat.add_zero] at e1
     rw [e1, hK, Nat.pow_add, ← Nat.mul_assoc, Nat.mul_comm (2 ^ (32 * (2 * Q))),
-      show 32 * (2 * Q) = 64 * Q by omega, Nat.mul_assoc]
+      show 32 * (2 * Q) = 64 * Q by omega_using [], Nat.mul_assoc]
   -- `[aY] = 0`, `[aF] = m`, its top word fixed.
   rw [WP.seq_iff]
   refine WP.mono (VG.Proof.Rsa.PPC64LE.InvBatch.zeroW_ws_ok h4 (j := aY) (by decide) (by decide))
@@ -337,27 +337,27 @@ theorem tail_ok {s : State} {B : Addr} {Z w wd : Nat} (h : Ws s B Z w nArr) (hw 
   refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_ok h6 (m := aF) (by decide) (by decide) hw hwd)
     fun t7 ⟨m7, h7, k7⟩ => ?_
   have K14 : KeyWorkspace.Keep B w [aDR] [] s.mem t4.mem := K1.trans (by
-    rw [← m13]; exact KeyWorkspace.Keep.of_arr (o := aDR) (d := 8 * Q) o4 (by omega) (by simp))
+    rw [← m13]; exact KeyWorkspace.Keep.of_arr (o := aDR) (d := 8 * Q) o4 (by omega_using [hS, hQw]) (by simp))
   have o7 : Outside B (arr w aF + 8 * (wd - 1)) 8 t6.mem t7.mem := by
-    rw [m7]; exact writeW_outside _ B _ (by omega)
+    rw [m7]; exact writeW_outside _ B _ (by omega_using [hw, hwd, this, hnw, hS, fD, fY, fF, dYD, hQ, hT, hK, hQw, hT64])
   have K7 : KeyWorkspace.Keep B w [aF] [] t6.mem t7.mem :=
-    KeyWorkspace.Keep.of_arr (o := aF) (d := 8 * (wd - 1)) o7 (by omega) (by simp)
+    KeyWorkspace.Keep.of_arr (o := aF) (d := 8 * (wd - 1)) o7 (by omega_using [hS, hQw]) (by simp)
   have K47 : KeyWorkspace.Keep B w [aY, aF] [] t4.mem t7.mem :=
     (K5.mono (by simp)).trans ((K6.mono (by simp)).trans (K7.mono (by simp)))
   have mF : m < 2 ^ (64 * wd) → wordsVal t6.mem B (arr w aF) wd = m := fun hmw => by
     rw [wordsVal_eq_val32]
-    refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) ?_ (by omega)
-      (by rw [show 32 * (2 * wd) = 64 * wd by omega]; exact hmw)
+    refine VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) ?_ (by omega_using [hw])
+      (by rw [show 32 * (2 * wd) = 64 * wd by omega_using []]; exact hmw)
     show num t6.mem B w aF = m
     rw [v6, ← hm]
-    exact (keep_val K5 (j := aMin) (k := w) (by omega) (by decide) (by simp) (fit _ (by decide))).trans
-      (keep_val K14 (j := aMin) (k := w) (by omega) (by decide) (by simp) (fit _ (by decide)))
+    exact (keep_val K5 (j := aMin) (k := w) (by omega_using []) (by decide) (by simp) (fit _ (by decide))).trans
+      (keep_val K14 (j := aMin) (k := w) (by omega_using []) (by decide) (by simp) (fit _ (by decide)))
   have ft := VG.Proof.Rsa.PPC64LE.KeyDiv.fixTop_val (mem := t6.mem) (B := B) (d := arr w aF) (wd := wd)
-    (by omega) (by omega)
+    (by omega_using [hwd]) (by omega_using [hw, hwd, this, hnw, hS, fD, fY, fF, dYD, hQ, hT, hK, hQw, hT64])
   rw [← m7] at ft
   obtain ⟨hTop, hfix⟩ := ft
   have nD7 : y < m → m < 2 ^ (64 * wd) → num t7.mem B w aDR = y * 2 ^ (5 * (3 * wd + 2)) := fun hym hmw =>
-    (keep_val K47 (j := aDR) (k := w) (by omega) (by decide) (by simp) (fit _ (by decide))).trans (nD hym hmw)
+    (keep_val K47 (j := aDR) (k := w) (by omega_using []) (by decide) (by simp) (fit _ (by decide))).trans (nD hym hmw)
   -- The division.
   refine WP.mono (VG.Proof.Rsa.PPC64LE.KeyDiv.divW_ok h7 (a := aDR) (r := aY) (m := aF) (t := aG) (sv := aDQ)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -409,11 +409,11 @@ theorem invB_ok [InvLaw] {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z 
         (¬ KeyCheck.Shape w pL qL → (m : Int) ∣ (num t.mem B w 3 : Int) * x - num t.mem B w 1 ∧
           num t.mem B w 3 < m)) := by
   have := h.wle
-  have hn1 : 1 ≤ (max pL qL + 3) / 4 := by omega
-  have hnw : (max pL qL + 3) / 4 ≤ w := by omega
-  have hfit : (max pL qL + 3) / 4 + (max pL qL + 3) / 4 % 2 ≤ w := by omega
+  have hn1 : 1 ≤ (max pL qL + 3) / 4 := by omega_using [hpL]
+  have hnw : (max pL qL + 3) / 4 ≤ w := by omega_using [hpw, hqw]
+  have hfit : (max pL qL + 3) / 4 + (max pL qL + 3) / 4 % 2 ≤ w := by omega_using [hwe, hpw, hqw]
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (shape_ok h.r29 h20 h22 (by omega) (by omega) (by omega)) fun s1 ⟨z1, m1, k1⟩ => ?_
+  refine WP.mono (shape_ok h.r29 h20 h22 (by omega_using [this]) (by omega_using [hpw, this]) (by omega_using [hqw, this])) fun s1 ⟨z1, m1, k1⟩ => ?_
   have h1 := h.of_keep k1
   have e11 : s1.gpr .r11 = BitVec.ofNat 64 ((max pL qL + 3) / 4) := (k1.gpr _ (by decide)).trans h11
   have x1 : num s1.mem B w 0 = x := by rw [m1]; exact hx
@@ -423,7 +423,7 @@ theorem invB_ok [InvLaw] {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z 
   · -- Balanced: `inverseS`.
     have hs := z1.1 (by simpa using hz)
     obtain ⟨p8, hpw2, hpq, p32⟩ := hs
-    have hν : ((max pL qL + 3) / 4 + 1) / 2 = w / 4 := by omega
+    have hν : ((max pL qL + 3) / 4 + 1) / 2 = w / 4 := by omega_using [hw, hwe, hpL, hpw, hqw, this, hn1, hnw, hfit, p8, hpw2, hpq, p32]
     refine WP.mono (InvLaw.inverseS_ok h1 (by decide) (by decide) hw e11 hn1 hnw hfit x1 hxn m1' hmn hodd)
       fun t ⟨ht, Kt, kt, vt⟩ => ?_
     rw [hν] at vt

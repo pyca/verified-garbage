@@ -505,7 +505,7 @@ def CvIn.E (I : CvIn) : Nat := if I.G then 15 * ((max I.pl I.ql + 7) / 8) + 10 e
 /-- `n`'s first byte, as `wordGuard` reads it. -/
 theorem cv_byte {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) :
     s.mem.read I.pN 1 = Mem.read (fun _ => I.nb[0]?.getD 0) 0 1 := by
-  have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega
+  have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega_using [this]
   have := h.n.val 0 hn0
   rw [show I.pN + BitVec.ofNat 64 0 = I.pN by simp] at this
   simp only [Mem.read, this, List.getElem?_eq_getElem hn0, Option.getD_some]
@@ -518,7 +518,7 @@ theorem cvGuarded_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
     (hb : ¬ I.G → ∀ t, CvS I m₀ t → t.mem = s.mem → Keep [.x3, .x4, .x9, .x13, .x14, .x15, .x16] s t →
       WP isa b t Q) :
     WP isa (guarded a b) s Q := by
-  have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega
+  have hn0 : 0 < I.nb.length := by rw [L.nl]; have := L.k1; omega_using [this]
   unfold guarded
   refine WP.seq (WP.mono (wordGuard_ok (b := s.mem.read I.pN 1) h.ws.scr h.ws.x0 h.ws.h256 (by decide) (by decide)
     h.args.k h.args.pl h.args.ql h.args.n rfl (by simpa using h.n.rd 0 hn0)) fun s₁ ⟨⟨h9, m₁⟩, k₁⟩ => ?_)
@@ -552,22 +552,22 @@ theorem cvInvG_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s
       (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by omega) (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
-      (fun u hu h0 _ _ hm' => nCalc_ok hu h0 ht.ws.h256 (by omega) (by omega) (by rw [hm']; exact ht.args.pl)
+      (by omega_using [hL1]) (by show _ ≤ (I.k + 7) / 8; omega_using [hL2, hL4]) (by omega_using [hL2, hL4, hk2])
+      (fun u hu h0 _ _ hm' => nCalc_ok hu h0 ht.ws.h256 (by omega_using [hL2, hk2]) (by omega_using [hL4, hk2]) (by rw [hm']; exact ht.args.pl)
         (by rw [hm']; exact ht.args.ql)) hUn hMn hVM) fun u ⟨u0, f, ku, v⟩ =>
       ⟨u0, by rw [← hm]; exact f, (k.trans ku).mono (by decide), fun hp hp1 => ?_⟩
     rw [hm] at v
     obtain ⟨v1, v2, v3⟩ := v hp hp1
     unfold CvIn.E
-    rw [ite_eq_left hG, show 15 * ((max I.pl I.ql + 7) / 8) + 10 = 5 * (3 * ((max I.pl I.ql + 7) / 8) + 2) by omega]
+    rw [ite_eq_left hG, show 15 * ((max I.pl I.ql + 7) / 8) + 10 = 5 * (3 * ((max I.pl I.ql + 7) / 8) + 2) by omega_using []]
     exact ⟨v1, v2, v3⟩
   · rw [← hm] at hUn hMn hVM
     refine WP.mono (InvLaw.inverseAt_ok ht.ws (n := (max I.pl I.ql + 7) / 8)
       (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by omega) (by show _ ≤ (I.k + 7) / 8; omega) (by omega)
-      (fun u hu h0 _ _ hm' => nCalc_ok hu h0 ht.ws.h256 (by omega) (by omega) (by rw [hm']; exact ht.args.pl)
+      (by omega_using [hL1]) (by show _ ≤ (I.k + 7) / 8; omega_using [hL2, hL4]) (by omega_using [hL2, hL4, hk2])
+      (fun u hu h0 _ _ hm' => nCalc_ok hu h0 ht.ws.h256 (by omega_using [hL2, hk2]) (by omega_using [hL4, hk2]) (by rw [hm']; exact ht.args.pl)
         (by rw [hm']; exact ht.args.ql)) hUn hMn hVM) fun u ⟨u0, f, ku, v⟩ =>
       ⟨u0, by rw [← hm]; exact f, (k.trans ku).mono (by decide), fun hp hp1 => ?_⟩
     rw [hm] at v
@@ -581,7 +581,7 @@ theorem dvd_mod_of_dvd {p y a g : Nat} (h : (p : Int) ∣ (y : Int) * a - g) :
     (p : Int) ∣ ((y % p : Nat) : Int) * a - g := by
   have e' : ((y % p : Nat) : Int) + p * ((y / p : Nat) : Int) = y := by exact_mod_cast Nat.mod_add_div y p
   have : ((y % p : Nat) : Int) * a - g = ((y : Int) * a - g) - p * (((y / p : Nat) : Int) * a) := by
-    rw [← e', Int.add_mul, Int.mul_assoc]; omega
+    rw [← e', Int.add_mul, Int.mul_assoc]; omega_using []
   rw [this]
   exact Int.dvd_sub h ⟨_, rfl⟩
 
@@ -632,8 +632,8 @@ theorem cvInvA_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s
   simp only [List.cons_append, List.nil_append]
   -- The inverse, at the primes' width.
   have hL1 := L.pl1; have hL2 := L.pl2; have hL3 := L.ql1; have hL4 := L.ql2; have hk2 := L.k2
-  refine WP.seq (WP.mono (cvInvG_ok h₇ L (by rw [vU₇]; exact fits_nmax hQl (by omega))
-    (by rw [vP₇]; exact fits_nmax hPl (by omega)) vV₇) fun s₈ ⟨_, f₈, k₈, hv₈⟩ => ?_)
+  refine WP.seq (WP.mono (cvInvG_ok h₇ L (by rw [vU₇]; exact fits_nmax hQl (by omega_using []))
+    (by rw [vP₇]; exact fits_nmax hPl (by omega_using [])) vV₇) fun s₈ ⟨_, f₈, k₈, hv₈⟩ => ?_)
   have h₈ := h₇.step f₈ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
@@ -878,10 +878,10 @@ theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s)
   have P₁ := p₁ aP (.inl rfl)
   refine cvGuarded_ok h₁ L (fun hG t ht hm k => ?_) (fun hG t ht hm _ => WP.block_nil ?_)
   · -- The tail: `x₂ 2^K mod p`.
-    obtain ⟨g16, g2, gpq, _⟩ := guard_zero (by omega) (by have := L.pl2; omega) (by have := L.ql2; omega) hG
-    have hw2 : wk I.k % 2 = 0 := by unfold wk; omega
-    have hw8 : 8 ≤ wk I.k := by unfold wk; omega
-    have hnE : (max I.pl I.ql + 7) / 8 = wk I.k / 2 := by unfold wk; omega
+    obtain ⟨g16, g2, gpq, _⟩ := guard_zero (by omega_using [k2]) (by have := L.pl2; omega_using [k2, this]) (by have := L.ql2; omega_using [k2, this]) hG
+    have hw2 : wk I.k % 2 = 0 := by unfold wk; omega_using [g16]
+    have hw8 : 8 ≤ wk I.k := by unfold wk; omega_using [k1]
+    have hnE : (max I.pl I.ql + 7) / 8 = wk I.k / 2 := by unfold wk; omega_using [g16, g2, gpq]
     refine WP.mono (qTail_ok ht.ws hw2 hw8) fun u ⟨_, fu, ku, vu⟩ => ?_
     have mt : ∀ {m m' : Mem}, Frm I.B [ar (wk I.k) aX₂, ar (wk I.k) aC, ar (wk I.k) aT] m m' →
         mword m' I.B = mword m I.B := fun f => f.word_eq (fun r hr => by
@@ -913,7 +913,7 @@ theorem cvInv_ok [InvLaw] {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s)
       rw [ite_eq_left hG, hnE] at d1
       rw [hm, P₁] at d1
       rw [P₁]
-      exact ⟨dvd_mod_of_dvd (by push_cast; exact d1), Nat.mod_lt _ (by have := hcP hcT; omega)⟩
+      exact ⟨dvd_mod_of_dvd (by push_cast; exact d1), Nat.mod_lt _ (by have := hcP hcT; omega_using [d2])⟩
     · have hj16 : j < 16 := by rcases hj with rfl | rfl | rfl <;> decide
       rw [oj fu hj16 (by rcases hj with rfl | rfl | rfl <;> decide) (by rcases hj with rfl | rfl | rfl <;> decide)
         (by rcases hj with rfl | rfl | rfl <;> decide), hm, p₁ j hj]

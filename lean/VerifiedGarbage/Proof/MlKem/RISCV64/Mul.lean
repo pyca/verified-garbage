@@ -80,13 +80,13 @@ theorem even_eq (a b c d γ : Zq) :
   have p1 := mul_lt_q2 ha hb
   have hBg : B.toNat * γ.val < 2 ^ 32 := by
     have := Nat.mul_le_mul (Nat.le_of_lt hBl) (Nat.le_of_lt hg)
-    have := q_eq; omega
+    have := q_eq; omega_arith
   have hs : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val + B * BitVec.ofNat 64 γ.val).toNat =
       a.val * b.val + B.toNat * γ.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, toNat_val64, toNat_val64, toNat_val64,
       Nat.mod_eq_of_lt (a := a.val * b.val) (by omega_arith),
-      Nat.mod_eq_of_lt (a := B.toNat * γ.val) (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+      Nat.mod_eq_of_lt (a := B.toNat * γ.val) (by omega_using [hBg])]
+    exact Nat.mod_eq_of_lt (by omega_using [p1, hBg])
   refine setWidth32_ofNat ?_ (by have := val_lt (a * b + c * d * γ); omega_arith)
   rw [redM_toNat, hs, mod_lazy hBm, val_add', val_mul a b, val_mul (c * d) γ, ← Nat.add_mod]
 
@@ -399,7 +399,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) 
     (by rw [e0]; exact align4_add hp.alH _) (by rw [e1]; exact align4_add hp.alH _)
     (by rw [e0]; exact align4_add hp.alF _) (by rw [e1]; exact align4_add hp.alF _)
     (by rw [e0]; exact align4_add hp.alG _) (by rw [e1]; exact align4_add hp.alG _)
-    (align4_add (by have := hp.alS; omega) _))
+    (align4_add (by have := hp.alS; omega_using [this]) _))
     fun s' ⟨r3, r4, r5, r6, r8, r9, r11, kp, rd, wr, sp, m⟩ => ⟨⟨?_, ?_, ?_, ?_, r8, r9, ?_,
       fun r hr => (kp r hr).trans (h.kept r hr), rd.trans h.rd, wr.trans h.wr, sp.trans h.sp,
       ?_, ?_⟩, ?_⟩
@@ -430,7 +430,7 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
   have wS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) k := fun h => by
     rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_arith)⟩
   have a8 : (s₀.gpr .a3).toNat % 8 = 0 := hp.alS
-  refine WP.mono (table_ok gammaTable (by decide) (b := .a3) (by decide) (by decide) rfl (by omega)
+  refine WP.mono (table_ok gammaTable (by decide) (b := .a3) (by decide) (by decide) rfl (by omega_using [a8])
     fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
   have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
     refine h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩

@@ -91,14 +91,14 @@ theorem inv_step {s₀ s t : State} {v : Nat → Nat} {i : Nat}
   frame := by
     rw [hm,h.x0]
     exact h.frame.write (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   coeff k hk := by
-    rw [hm,h.x0,coeffAt_write16 _ _ (by omega) _ hk]
+    rw [hm,h.x0,coeffAt_write16 _ _ (by omega_using [hi]) _ hk]
     by_cases he : 4*i ≤ k ∧ k < 4*i+4
-    · rw [ite_eq_left he,hx (k-4*i) (by omega),ite_eq_left (by omega)]
-      exact congrArg v (by omega)
+    · rw [ite_eq_left he,hx (k-4*i) (by omega_using [he]),ite_eq_left (by omega_using [he])]
+      exact congrArg v (by omega_using [he])
     · rw [ite_eq_right he,h.coeff k hk]
-      have hh : (k < 4*(i+1)) = (k < 4*i) := propext (by omega)
+      have hh : (k < 4*(i+1)) = (k < 4*i) := propext (by omega_using [he])
       simp only [hh]
 
 /-- Both read-only inputs retain their original coefficients throughout the loop. -/
@@ -111,14 +111,14 @@ theorem reads {s₀ s : State} (hp : Pre s₀)
     InRegions (s.rd++s.wr) (s.gpr .x1) 16 ∧
     InRegions (s.rd++s.wr) (s.gpr .x2) 16 ∧ InRegions s.wr (s.gpr .x0) 16 := by
   have contains (p : Addr) : (pR p).Contains (coeffAddr p (4*i)) 16 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   refine ⟨?_,?_,?_,?_,?_⟩
   · intro e he
     rw [h.x1,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,
-      coeffAt_frame h.frame (by simpa using hp.oa.symm) (by change 4*i+e<256; omega)]
+      coeffAt_frame h.frame (by simpa using hp.oa.symm) (by change 4*i+e<256; omega_using [hi, he])]
   · intro e he
     rw [h.x2,VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,coeffAddr_add,← coeffAt_eq,
-      coeffAt_frame h.frame (by simpa using hp.ob.symm) (by change 4*i+e<256; omega)]
+      coeffAt_frame h.frame (by simpa using hp.ob.symm) (by change 4*i+e<256; omega_using [hi, he])]
   · rw [h.keep.rd,h.keep.wr,h.x1]; exact ⟨_,hp.a,contains _⟩
   · rw [h.keep.rd,h.keep.wr,h.x2]; exact ⟨_,hp.b,contains _⟩
   · rw [h.keep.wr,h.x0]; exact ⟨_,hp.out,contains _⟩
@@ -153,8 +153,8 @@ theorem run_ok (s₀ : State) (hp : Pre s₀) :
     (by decide) (by decide) (Inv s₀ _) (fun i hi t ht _ => ?_) hs hcnt
   obtain ⟨ha,hb,hra,hrb,hw⟩ := reads hp hi ht
   refine WP.mono (body_ok ht.consts ha hb
-    (fun e he => hp.pa _ (by change 4*i+e < 256; omega))
-    (fun e he => hp.pb _ (by change 4*i+e < 256; omega)) hra hrb hw)
+    (fun e he => hp.pa _ (by change 4*i+e < 256; omega_using [hi, he]))
+    (fun e he => hp.pb _ (by change 4*i+e < 256; omega_using [hi, he])) hra hrb hw)
     fun u ⟨x,hm,hx,hc,h0,h1,h2,h12,hk⟩ => ?_
   exact ⟨inv_step hi ht hm hx hc h0 h1 h2 hk,h12⟩
 end VG.Proof.MlDsa.AArch64.Optimized.MontProduct

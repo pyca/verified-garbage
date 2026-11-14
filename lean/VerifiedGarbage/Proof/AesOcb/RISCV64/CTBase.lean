@@ -204,10 +204,10 @@ theorem encOne_rel {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hs3 : V₁ .s3
     RelCT isa (Eq2 σ₁ σ₂) (encOne d) TT :=
   callBlocks_rel L hV Proof.Aes.RISCV64.encryptBlocks_correct Proof.Aes.RISCV64.encryptBlocks_ct hR hs3 E₁ E₂ []
     (fun _ h => absurd h List.not_mem_nil) hc
-    (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E₁.s0]) (by omega))
+    (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E₁.s0]) (by omega_using [hd]))
     (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E₂.s0, ← hV .s0 (by decide)])
-      (by omega))
-    (dstW L E₁.perm (by omega)) (dstW L (by rw [hV .s2 (by decide), hV .s0 (by decide)]; exact E₂.perm) (by omega))
+      (by omega_using [hd]))
+    (dstW L E₁.perm (by omega_using [hd])) (dstW L (by rw [hV .s2 (by decide), hV .s0 (by decide)]; exact E₂.perm) (by omega_using [hd]))
 
 end
 

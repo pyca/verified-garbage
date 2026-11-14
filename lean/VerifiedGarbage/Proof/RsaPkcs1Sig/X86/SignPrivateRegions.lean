@@ -25,7 +25,7 @@ theorem Context.temporaryArgs {g : Geometry} {bs : Fin 8 → List Byte} {s : Sta
     (h : Context g bs s) : (⟨byteAddr g.temporary, g.length⟩ : Region).Disjoint ⟨byteAddr g.stack, 80⟩ := by
   rw [Geometry.temporary, h.valid.offsetAddr (by decide)]
   exact Offset.disjoint_base _ (by decide : 80 ≤ VG.Impl.RsaPkcs1Sig.X86.Sign.emOffset)
-    (by have := h.valid.maxLength; simp only [VG.Impl.RsaPkcs1Sig.X86.Sign.emOffset]; omega)
+    (by have := h.valid.maxLength; simp only [VG.Impl.RsaPkcs1Sig.X86.Sign.emOffset]; omega_using [this])
 
 theorem Context.retSub {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     (h : Context g bs s) : (⟨(g.stack - 4).setWidth 64, 4⟩ : Region).Sub g.calleeRegion :=
@@ -34,8 +34,8 @@ theorem Context.retSub {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
 theorem Context.belowSub {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
     (h : Context g bs s) : (⟨(g.stack - 4).setWidth 64 - 3444#64, 3444⟩ : Region).Sub g.calleeRegion := by
   have low : (g.stack - 4).toNat = g.stack.toNat - 4 :=
-    sub_toNat (k := 4) (by have := h.valid.stackLow; simp only [calleeBytes] at this; omega)
-  rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; simp only [calleeBytes] at this; omega : 3444 ≤ (g.stack - 4).toNat)]
+    sub_toNat (k := 4) (by have := h.valid.stackLow; simp only [calleeBytes] at this; omega_using [this])
+  rw [← VG.X86.Taint.sub_setWidth (by rw [low]; have := h.valid.stackLow; simp only [calleeBytes] at this; omega_using [this] : 3444 ≤ (g.stack - 4).toNat)]
   exact VG.X86.below_inner (by decide : 3444 + 4 ≤ calleeBytes) h.valid.stackLow
 
 end VG.Proof.RsaPkcs1Sig.X86.Sgn

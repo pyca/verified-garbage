@@ -146,10 +146,10 @@ open VG.Spec.Ed448 (bytesAt decodeLE)
 /-- A byte of the working space is beyond the output. -/
 theorem far_out {base p : Addr} (hd : (⟨p, 57⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < 8192) : 57 ≤ ofs p (off base i) := by
-  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega) (by omega))
+  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega_using [hi]) (by omega_using [hi]))
   simp only [Region.Contains]
   change ofs p (off base i) + 1 ≤ 57
-  omega
+  omega_using [h]
 
 theorem decodeLE_57_lt (kb : List Byte) (hk : kb.length = 57) : decodeLE kb < 256 ^ 57 := by
   have h := VG.Proof.Ed448.decodeLE_lt' kb
@@ -167,7 +167,7 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
   have hws : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hw, hbase]; simp
   rw [hbase] at hn hdo hds htb
   have hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 q) 1 := fun q hq =>
-    ⟨⟨s.gpr .x1, 57⟩, by rw [hr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨s.gpr .x1, 57⟩, by rw [hr]; simp, Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩
   have hkd : ∀ q < 57, 8192 ≤ ofs base (s.gpr .x1 + BitVec.ofNat 64 q) := fun q hq => far hds hq (by decide)
   have hod : ∀ q < 57, 8192 ≤ ofs base (s.gpr .x0 + BitVec.ofNat 64 q) := fun q hq => far hdo hq (by decide)
   set kb := bytesAt s.mem (s.gpr .x1) 57
@@ -185,7 +185,7 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
   have wr3 : s3.wr = s.wr := by rw [f3.wr, R.wr]
   have o13 : Outside2 base 64 2816 ACC 1152 s1.mem s3.mem := f3.mem
   refine WP.mono (encode_ok f3.scr f3.env out3
-    (fun j hj => ⟨⟨s.gpr .x0, 57⟩, by rw [wr3, hw]; simp, Offset.contains_base _ (by omega) (by omega)⟩)
+    (fun j hj => ⟨⟨s.gpr .x0, 57⟩, by rw [wr3, hw]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩)
     (fun j hj => hod j hj) (fun j hj => far_out hdo hj)
     (R.saved.outside2 o13 (by decide) (by decide)) (R.savedX.outside2 o13 (by decide) (by decide))
     (R.savedV.outside2 o13 (by decide) (by decide)))

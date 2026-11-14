@@ -17,19 +17,19 @@ namespace VG.Proof.Ed25519.X86.Whole
 open VG VG.X86 VG.Impl.Ed25519.X86
 
 theorem frame_addr {E : BitVec 32} {d : Nat} (hf : E.toNat + 256 ≤ 2 ^ 32) (hd : d < 256) :
-    (E + BitVec.ofNat 32 d).setWidth 64 = E.setWidth 64 + BitVec.ofNat 64 d := addr_eq (by omega)
+    (E + BitVec.ofNat 32 d).setWidth 64 = E.setWidth 64 + BitVec.ofNat 64 d := addr_eq (by omega_using [hf, hd])
 
 theorem frame_fit {E : BitVec 32} {d n : Nat} (hf : E.toNat + 256 ≤ 2 ^ 32)
     (hd : d < 256) (hn : d + n ≤ 256) : (E + BitVec.ofNat 32 d).toNat + n ≤ 2 ^ 32 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hf, hd]), Nat.mod_eq_of_lt (by omega_using [hd])]
+  omega_using [hf, hn]
 
 theorem frame_below {E : BitVec 32} {d n : Nat} (he : 24 ≤ E.toNat)
     (hf : E.toNat + 256 ≤ 2 ^ 32) (hd : d < 256) (hn : d + n ≤ 256) :
     (below E 4).Disjoint ⟨(E + BitVec.ofNat 32 d).setWidth 64, n⟩ := by
   change Region.Disjoint ⟨(E - BitVec.ofNat 32 4).setWidth 64, 4⟩ _
-  rw [Taint.sub_setWidth (by omega : 4 ≤ E.toNat), frame_addr hf hd]
-  exact Offset.disjoint_below_above _ (by omega)
+  rw [Taint.sub_setWidth (by omega_using [he] : 4 ≤ E.toNat), frame_addr hf hd]
+  exact Offset.disjoint_below_above _ (by omega_using [hn])
 
 theorem reduce_nosp : NoSp scalarReduce := NoSp.of_all (by lit_decide)
 theorem reduce_stack : stackUse scalarReduce = 0 := by lit_decide
@@ -52,7 +52,7 @@ theorem reduce_pre (hc : Ctx E g m₀ rd wr s) (H : HashSpace E scr)
   have e1 := (ca (j := 1) (by decide)).trans a1
   have e2 := (ca (j := 2) (by decide)).trans a2
   have outSub : Region.Sub ⟨(E + BitVec.ofNat 32 d).setWidth 64, 32⟩ (STK E) := by
-    rw [frame_addr H.frameFit (by omega)]
+    rw [frame_addr H.frameFit (by omega_using [hd'])]
     exact fun p hp => frame_sub E p (Offset.sub_base _ hd' p hp)
   have digSub : Region.Sub ⟨(E + 192).setWidth 64, 64⟩ (STK E) := by
     have e : (E + 192).setWidth 64 = E.setWidth 64 + 192 := frame_addr H.frameFit (by decide : 192 < 256)
@@ -64,13 +64,13 @@ theorem reduce_pre (hc : Ctx E g m₀ rd wr s) (H : HashSpace E scr)
   simp only [scalarReduceLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
     State.withRegions_gpr, State.callEntry_esp, hc.esp, e0, e1, e2, ab]
   refine ⟨rfl, rfl, H.sep.sub_left outSub, H.sep.sub_left digSub, ?_, H.sep.sub_left argSub,
-    frame_below H.below H.frameFit (by omega) hd', H.sep.sub_left (below_sub_stack H.below (by decide)),
-    frame_fit H.frameFit (by omega) hd', frame_fit H.frameFit (by decide) (by decide), H.scratchFit, ?_⟩
-  · rw [frame_addr H.frameFit (by omega)]
-    exact Offset.base_disjoint _ (by omega) (by omega)
-  · have e : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by have := H.below; omega)
+    frame_below H.below H.frameFit (by omega_using [hd']) hd', H.sep.sub_left (below_sub_stack H.below (by decide)),
+    frame_fit H.frameFit (by omega_using [hd']) hd', frame_fit H.frameFit (by decide) (by decide), H.scratchFit, ?_⟩
+  · rw [frame_addr H.frameFit (by omega_using [hd'])]
+    exact Offset.base_disjoint _ (by omega_using [hd]) (by omega_using [hd'])
+  · have e : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by have := H.below; omega_using [this])
     have := H.frameFit; have := H.below
-    refine ⟨by rw [e]; omega, by rw [e]; omega, ?_⟩
+    refine ⟨by rw [e]; omega_arith, by rw [e]; omega_using [this], ?_⟩
     simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]
     exact ⟨H.call_stk, inner_frame H.below H.frameFit (d := 192) (n := 64) (by decide) (by decide)⟩
 
@@ -86,7 +86,7 @@ theorem reduce_call (hc : Ctx E g m₀ rd wr s) (H : HashSpace E scr)
   have wd : Within ⟨(E + 192).setWidth 64, 64⟩ (FR E) :=
     ⟨192, frame_addr H.frameFit (by decide), by change 192 + 64 ≤ 256; decide⟩
   have wo : Within ⟨(E + BitVec.ofNat 32 d).setWidth 64, 32⟩ (FR E) :=
-    ⟨d, frame_addr H.frameFit (by omega), hd'⟩
+    ⟨d, frame_addr H.frameFit (by omega_using [hd']), hd'⟩
   have cov : Covers (reduceRd E ++ reduceWr E scr d) (rd ++ FR E :: wr) := by
     refine Covers.of_sub ?_
     simp only [reduceRd, reduceWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]

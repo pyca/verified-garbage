@@ -60,7 +60,7 @@ theorem PosPl.keep {S : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State}
 theorem PosFam.snoc {s : State} {b m : Nat} {f : Nat → Poly}
     (h : PosFam s b m f) (ht : PosPl s (b+m) (f m)) : PosFam s b (m+1) f := by
   intro j hj
-  rcases (by omega : j<m ∨ j=m) with hj | rfl
+  rcases (by omega_using [hj] : j<m ∨ j=m) with hj | rfl
   · exact h j hj
   · exact ht
 

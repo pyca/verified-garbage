@@ -109,8 +109,8 @@ theorem SearchLive.output {p : SearchPublic} {original s : State} {used remainin
   have hd := h.input.frame_disjoint (r := inOut original) (by simp [SearchInput.callChanges])
   rw [← h.out_region] at hin hn hd
   simp only at hn
-  refine ⟨fun i hi => ⟨_, hin, contains_byte _ hi (by omega)⟩, fun i hi => Nat.le_of_not_lt fun hlt =>
-    hd _ (by simp only [ofs] at hlt; simp only [Region.Contains]; omega) (contains_byte _ hi (by omega))⟩
+  refine ⟨fun i hi => ⟨_, hin, contains_byte _ hi (by omega_using [hn])⟩, fun i hi => Nat.le_of_not_lt fun hlt =>
+    hd _ (by simp only [ofs] at hlt; simp only [Region.Contains]; omega_using [hlt]) (contains_byte _ hi (by omega_using [hn]))⟩
 
 theorem search_clear {p : SearchPublic} {original s : State} {used remaining : Nat}
     (h : SearchLive p original used remaining s) (hdi : s.gpr .rdi = p.F) :
@@ -125,7 +125,7 @@ theorem search_clear {p : SearchPublic} {original s : State} {used remaining : N
   refine WP.mono (VG.Proof.Ffdh.X86_64.Generation.controller_zero_out (sPtr := 5) (sLen := 6) (op := p.op)
     (len := p.len) scr hdi (by decide) (by decide) (by decide)
     (h.slot (by simp [SearchPublic.headers])) (h.slot (by simp [SearchPublic.headers]))
-    (by unfold Spec.RsaKeyGen.primeLenValid at hl; omega) (by unfold Spec.RsaKeyGen.primeLenValid at hl; omega)
+    (by unfold Spec.RsaKeyGen.primeLenValid at hl; omega_using [hl]) (by unfold Spec.RsaKeyGen.primeLenValid at hl; omega_using [hl])
     h.output) fun t ⟨hv, hfr, k⟩ => ?_
   have hframe : Frame (SearchInput.callChanges original) s.mem t.mem := by
     intro a ha
@@ -133,7 +133,7 @@ theorem search_clear {p : SearchPublic} {original s : State} {used remaining : N
     intro i hi he
     apply ha (inOut original) (by simp [SearchInput.callChanges])
     rw [he, ← h.out_region]
-    exact contains_byte _ hi (by have := hf.nO; omega)
+    exact contains_byte _ hi (by have := hf.nO; omega_using [this])
   refine ⟨h.restore k.2.1 k.2.2 (fun r hr => k.gpr (by cases r <;> simp_all [calleeSaved])) hframe,
     ?_, h.input.frame_words hframe, k⟩
   refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
@@ -329,7 +329,7 @@ theorem SearchLive.done_after {p : SearchPublic} {original s t : State} {used re
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     exact (writeFrame_frame s.mem p.F values hb).bytes (R := ⟨p.op, p.len⟩)
-      (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hd.symm) (by show p.len ≤ 2 ^ 64; omega)
+      (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hd.symm) (by show p.len ≤ 2 ^ 64; omega_using [hn])
       (List.mem_range.mp hi)
   refine ⟨h.input, kt.2.1.trans h.rd, kt.2.2.trans h.wr, (kt.gpr (hrs .rsp (by decide))).trans h.rsp,
     (kt.gpr (hrs .r12 (by decide))).trans h.r12, fun r hr hn hs => (kt.gpr (hrs r hr)).trans (h.saved r hr hn hs),
@@ -425,19 +425,19 @@ theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat
   have h2 := h.slot (j := 2) (v := BitVec.ofNat 64 (primeEntropy p.len)) (by simp [SearchPublic.headers])
   simp only [Bignum.word, off, Nat.reduceMul] at h1 h2
   have h16 : BitVec.ofNat 64 p.len <<< 4 = BitVec.ofNat 64 (16 * p.len) := by
-    rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
-  have hle : primeEntropy p.len < 2 ^ 63 := by unfold primeEntropy; omega
+    rw [SearchInit.shl_ofNat _ _ (by omega_using [hL])]; congr 1; omega_using []
+  have hle : primeEntropy p.len < 2 ^ 63 := by unfold primeEntropy; omega_using [hL]
   have hreq : primeRequest p.len (p.randLen - used) =
       min (2 * max (p.randLen - used) (16 * p.len)) (primeEntropy p.len) := rfl
-  have ta := ofNat_toNat_lt (a := p.randLen - used) (by omega)
-  have t16 := ofNat_toNat_lt (a := 16 * p.len) (by omega)
-  have tc := ofNat_toNat_lt (a := primeEntropy p.len) (by omega)
+  have ta := ofNat_toNat_lt (a := p.randLen - used) (by omega_using [hcap, hle])
+  have t16 := ofNat_toNat_lt (a := 16 * p.len) (by omega_using [hL])
+  have tc := ofNat_toNat_lt (a := primeEntropy p.len) (by omega_using [hle])
   have sa : BitVec.ofNat 64 (p.randLen - used) <<< 1 = BitVec.ofNat 64 (2 * (p.randLen - used)) := by
-    rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
+    rw [SearchInit.shl_ofNat _ _ (by omega_using [hcap, hle])]; congr 1; omega_using []
   have s16 : BitVec.ofNat 64 (16 * p.len) <<< 1 = BitVec.ofNat 64 (2 * (16 * p.len)) := by
-    rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
-  have t2a := ofNat_toNat_lt (a := 2 * (p.randLen - used)) (by omega)
-  have t216 := ofNat_toNat_lt (a := 2 * (16 * p.len)) (by omega)
+    rw [SearchInit.shl_ofNat _ _ (by omega_using [hL])]; congr 1; omega_using []
+  have t2a := ofNat_toNat_lt (a := 2 * (p.randLen - used)) (by omega_using [hcap, hle])
+  have t216 := ofNat_toNat_lt (a := 2 * (16 * p.len)) (by omega_using [hL])
   refine WP.keep [.rax, .rcx] ?_ rfl
   unfold request writeFrame
   simp only [List.foldl_cons, List.foldl_nil]
@@ -448,14 +448,14 @@ theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat
       xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
         h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
         ta, t16, tc, s16, t216, e1, e2]
-      rw [hreq, Nat.max_eq_right (by omega), Nat.min_eq_left (by omega)]
+      rw [hreq, Nat.max_eq_right (by omega_using [c1]), Nat.min_eq_left (by omega_using [c2])]
       rfl
     · have e1 := decide_eq_true c1
       have e2 := decide_eq_false (Nat.not_lt.mpr c2)
       xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
         h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
         ta, t16, tc, s16, t216, e1, e2]
-      rw [hreq, Nat.max_eq_right (by omega), Nat.min_eq_right (by omega)]
+      rw [hreq, Nat.max_eq_right (by omega_using [c1]), Nat.min_eq_right (by omega_using [c2])]
       rfl
   · rcases Nat.lt_or_ge (2 * (p.randLen - used)) (primeEntropy p.len) with c2 | c2
     · have e1 := decide_eq_false (Nat.not_lt.mpr c1)
@@ -463,14 +463,14 @@ theorem request_ok {p : SearchPublic} {original s : State} {used remaining : Nat
       xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
         h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
         ta, t16, tc, sa, t2a, e1, e2]
-      rw [hreq, Nat.max_eq_left (by omega), Nat.min_eq_left (by omega)]
+      rw [hreq, Nat.max_eq_left (by omega_using [c1]), Nat.min_eq_left (by omega_using [c2])]
       rfl
     · have e1 := decide_eq_false (Nat.not_lt.mpr c1)
       have e2 := decide_eq_false (Nat.not_lt.mpr c2)
       xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval, execCmov,
         h.r12, hra, hl 8 (by decide), hl 16 (by decide), h1, h2, h16, hs 24 (by decide), hs 136 (by decide),
         ta, t16, tc, sa, t2a, e1, e2]
-      rw [hreq, Nat.max_eq_left (by omega), Nat.min_eq_right (by omega)]
+      rw [hreq, Nat.max_eq_left (by omega_using [c1]), Nat.min_eq_right (by omega_using [c2])]
       rfl
 
 /-- The short tape's guard: whether the octets left reach the budget. -/
@@ -486,14 +486,14 @@ theorem short_guard {p : SearchPublic} {original s : State} {used remaining : Na
   have h2 := h.slot (j := 2) (v := BitVec.ofNat 64 (primeEntropy p.len)) (by simp [SearchPublic.headers])
   have h13 := h.slot (j := 13) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [SearchPublic.headers])
   simp only [Bignum.word, off, Nat.reduceMul] at h2 h13
-  have ta := ofNat_toNat_lt (a := p.randLen - used) (by have := hf.rand64; omega)
-  have tc := ofNat_toNat_lt (a := primeEntropy p.len) (by unfold primeEntropy; omega)
+  have ta := ofNat_toNat_lt (a := p.randLen - used) (by have := hf.rand64; omega_using [this])
+  have tc := ofNat_toNat_lt (a := primeEntropy p.len) (by unfold primeEntropy; omega_using [hL])
   refine WP.keep [.rax] ?_ rfl
   xrun [State.ea, field, off, BitVec.ofInt_ofNat, BitVec.ofInt_natCast, Nat.reduceMul, eval,
     h.r12, hl 104 (by decide), hl 16 (by decide), h2, h13, ta, tc]
   by_cases hc : primeEntropy p.len ≤ p.randLen - used
-  · simp only [show ¬p.randLen - used < primeEntropy p.len by omega, decide_false, Bool.not_false, hc, decide_true]
-  · simp only [show p.randLen - used < primeEntropy p.len by omega, decide_true, Bool.not_true, hc, decide_false]
+  · simp only [show ¬p.randLen - used < primeEntropy p.len by omega_using [hc], decide_false, Bool.not_false, hc, decide_true]
+  · simp only [show p.randLen - used < primeEntropy p.len by omega_using [hc], decide_true, Bool.not_true, hc, decide_false]
 
 theorem search_short {p : SearchPublic} {original s : State} {final : PrimeSearchResult}
     {used remaining : Nat}
@@ -578,8 +578,8 @@ theorem reject_head {p : SearchPublic} {original s : State} {used remaining : Na
   have hz : (BitVec.ofNat 64 (candUsed p original used) == 0) = decide (candUsed p original used = 0) :=
     ofNat64_beq_zero (by
       have : candUsed p original used ≤ p.randLen := by
-        unfold candUsed; split <;> omega
-      have := hf.rand64; omega)
+        unfold candUsed; split <;> omega_using []
+      have := hf.rand64; omega_arith)
   refine WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = v.gpr .rcx ∧
       eval .e t = some (decide (candUsed p original used = 0)) ∧ t.mem = v.mem) (by
     xrun [eval, hcx, BitVec.and_self, hz]) rfl) fun t ⟨⟨hcx', he, hmt⟩, kt⟩ => ?_
@@ -589,8 +589,8 @@ theorem reject_head {p : SearchPublic} {original s : State} {used remaining : Na
 theorem ofNat_sub_ofNat {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, ofNat_toNat_lt (a := b) (by omega), ofNat_toNat_lt ha]; exact h),
-    ofNat_toNat_lt (a := a) ha, ofNat_toNat_lt (a := b) (by omega), ofNat_toNat_lt (a := a - b) (by omega)]
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, ofNat_toNat_lt (a := b) (by omega_using [h, ha]), ofNat_toNat_lt ha]; exact h),
+    ofNat_toNat_lt (a := a) ha, ofNat_toNat_lt (a := b) (by omega_using [h, ha]), ofNat_toNat_lt (a := a - b) (by omega_using [ha])]
 
 /-- `advance` past `u` octets, and whether the status was 2. -/
 theorem advance_ok {p : SearchPublic} {original s : State} {used remaining u : Nat}
@@ -653,7 +653,7 @@ theorem tail_past {p : SearchPublic} {original : State} {used remaining u : Nat}
         (Search.entry p.len p.eB (searchP original) ((searchRand original).drop used)) := by
   obtain ⟨n, hn, -, hrest⟩ := Search.candidateOp_suffix hres
   have hun : u = n := by
-    rw [hu, hrest]; simp only [List.length_drop] at hn ⊢; omega
+    rw [hu, hrest]; simp only [List.length_drop] at hn ⊢; omega_using [hn]
   have hl : rest.length < ((searchRand original).drop used).length := by
     rw [hrest]; simp only [List.length_drop] at hn ⊢; omega
   have hu' : ((searchRand original).drop used).length - rest.length = u := hu.symm
@@ -701,7 +701,7 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
     have hpast := tail_past (u := candUsed p original used) hr hres hx hcu hu0
     rw [hpast, VG.Proof.RsaKeyGen.Search.consume_consume] at hfinal
     have hule : candUsed p original used ≤ p.randLen - used := by
-      rw [hcu, List.length_drop, hlen]; omega
+      rw [hcu, List.length_drop, hlen]; omega_using []
     refine WP.seq (WP.mono (advance_ok ht hcx) fun v ⟨⟨hmv, hev⟩, kv⟩ => ?_)
     have hv := ht
     rw [hdx, hra] at hev
@@ -717,10 +717,10 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
       rw [BitVec.add_assoc, add_ofNat_ofNat]
     have h13 : BitVec.ofNat 64 (p.randLen - used) - BitVec.ofNat 64 (candUsed p original used) =
         BitVec.ofNat 64 (p.randLen - (used + candUsed p original used)) := by
-      rw [ofNat_sub_ofNat hule (by have := hf.rand64; omega)]; congr 1; omega
+      rw [ofNat_sub_ofNat hule (by have := hf.rand64; omega_using [this])]; congr 1; omega_using []
     have h16 : BitVec.ofNat 64 used + BitVec.ofNat 64 (candUsed p original used) =
         BitVec.ofNat 64 (used + candUsed p original used) := add_ofNat_ofNat _ _
-    have hu' : used + candUsed p original used ≤ p.randLen := by omega
+    have hu' : used + candUsed p original used ≤ p.randLen := by omega_using [hz, hule]
     have h17 : word v.mem p.F (8 * 17) = 4 := by
       rw [hmv, writeFrame_word _ _ _ (fun e he => (hbound e he).1) 17 (by decide)]; rfl
     -- The loop state past the candidate, with as many counted candidates.
@@ -741,7 +741,7 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
         · simp only [reduceCtorEq, ↓reduceIte] at hb; cases hb
       subst hxc
       simp only [↓reduceIte] at hfinal
-      exact WP.block_nil (.inl ⟨h17, hr, _, remaining, by omega, ⟨hvl, _, hfinal⟩, rfl, .inl ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
+      exact WP.block_nil (.inl ⟨h17, hr, _, remaining, by omega_using [hz], ⟨hvl, _, hfinal⟩, rfl, .inl ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
         by rw [hpast, Nat.add_sub_cancel_left]; simp only [↓reduceIte]⟩)
     · -- Rejected: one fewer counted candidate.
       have hxr : x = .rejected := by
@@ -756,19 +756,19 @@ theorem search_reject {p : SearchPublic} {original s : State} {final : PrimeSear
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro _ rfl; dsimp only; decide
       have hwl : SearchLive p original (used + candUsed p original used) (remaining - 1) w := by
-        refine hvl.moved hu' (by have := h.remaining_le; omega) _ (fun e he => (hb0 e he).1)
+        refine hvl.moved hu' (by have := h.remaining_le; omega_using [this]) _ (fun e he => (hb0 e he).1)
           (fun e he => (hb0 e he).2.1) hmw kw (by decide) (fun e he => (hb0 e he).2.2) ?_
         intro e he hc'
         simp only [SearchPublic.headers, List.mem_cons, List.not_mem_nil, or_false] at he
         rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
           rfl <;> simp only [Nat.reduceEqDiff, false_or, or_false, or_self] at hc' <;>
           simp only [frameValue, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff, ↓reduceIte]
-        · exact ofNat64_pred (by omega)
+        · exact ofNat64_pred (by omega_using [hr])
             (Nat.lt_of_le_of_lt h.remaining_le (by rw [← h.input.2]; exact BitVec.isLt _))
         all_goals exact hvl.slot (by simp [SearchPublic.headers])
       have h17w : word w.mem p.F (8 * 17) = 4 := by
         rw [hmw, writeFrame_word _ _ _ (fun e he => (hb0 e he).1) 17 (by decide)]; exact h17
-      exact .inl ⟨h17w, hr, _, remaining - 1, by omega, ⟨hwl, _, hfinal⟩, rfl, .inr ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
+      exact .inl ⟨h17w, hr, _, remaining - 1, by omega_using [hz], ⟨hwl, _, hfinal⟩, rfl, .inr ⟨rfl, by simp only [candStatus, hres]; rfl⟩,
         by rw [hpast, Nat.add_sub_cancel_left]; simp only [reduceCtorEq, ↓reduceIte]⟩
 
 /-! ## The loop -/
@@ -779,22 +779,22 @@ theorem classify_head (s : State) {st : Nat} (hst : ((s.gpr .rax).setWidth 32).t
       (t.gpr .rax = BitVec.ofNat 64 st ∧ eval .e t = some (decide (st = 1)) ∧ t.mem = s.mem) ∧
         Keep [.rax] s t := by
   have hr : (s.gpr .rax).setWidth 32 = BitVec.ofNat 32 st := by
-    apply BitVec.eq_of_toNat_eq; rw [hst, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    apply BitVec.eq_of_toNat_eq; rw [hst, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
   have hz : ((BitVec.ofNat 32 st).setWidth 64 - BitVec.signExtend 64 (1 : BitVec 32) == 0) = decide (st = 1) := by
-    rcases (show st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 by omega) with rfl | rfl | rfl | rfl <;> decide
+    rcases (show st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 by omega_using [h4]) with rfl | rfl | rfl | rfl <;> decide
   have he : (BitVec.ofNat 32 st).setWidth 64 = BitVec.ofNat 64 st := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+      Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]
   refine WP.keep [.rax] ?_ rfl
   xrun [eval, hr, hz]
   refine ⟨he, ?_⟩
-  rcases (show st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 by omega) with rfl | rfl | rfl | rfl <;> decide
+  rcases (show st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 by omega_using [h4]) with rfl | rfl | rfl | rfl <;> decide
 
 theorem test_rax (s : State) {st : Nat} (hra : s.gpr .rax = BitVec.ofNat 64 st) (h4 : st < 4) :
     WP isa (.block [.alu .test .rax (.reg .rax)]) s fun t =>
       (t.gpr .rax = s.gpr .rax ∧ eval .e t = some (decide (st = 0)) ∧ t.mem = s.mem) ∧ Keep [.rax] s t := by
-  have hz : (BitVec.ofNat 64 st == 0) = decide (st = 0) := ofNat64_beq_zero (by omega)
+  have hz : (BitVec.ofNat 64 st == 0) = decide (st = 0) := ofNat64_beq_zero (by omega_using [h4])
   refine WP.keep [.rax] ?_ rfl
   xrun [eval, hra, BitVec.and_self, hz]
 
@@ -819,8 +819,8 @@ theorem search_classify {p : SearchPublic} {original s : State} {final : PrimeSe
     have hst' : (s.gpr .rax).toNat % 2 ^ 32 = Spec.RsaKeyGen.candidateStatus
         (Spec.RsaKeyGen.candidateOp p.len p.eB (searchP original) ((searchRand original).drop used)) := by
       rw [← BitVec.toNat_setWidth]; exact hst
-    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_ofNat, hst', Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_ofNat, hst', Nat.mod_eq_of_lt (by omega_using [hst]),
+      Nat.mod_eq_of_lt (by omega_using [hst])]
   have hcu := hc.keep hmu hlow
   refine WP.ite _ he1 (fun h1 => ?_) (fun h1 => ?_)
   · have h1 := of_decide_eq_true h1
@@ -938,7 +938,7 @@ theorem search_loop (v : RoundImpl) {p : SearchPublic} {original s : State} {fin
   refine WP.mono (search_iteration v ht) fun t' hs => ?_
   rcases hs with ⟨he, -, u', k', hlt, ht', -⟩ | ⟨he, -, hd⟩
   · have hle := ht'.1.used_le
-    exact .inr ⟨he, _, by omega, u', k', rfl, ht'⟩
+    exact .inr ⟨he, _, by omega_using [hlt, hle], u', k', rfl, ht'⟩
   · exact .inl ⟨he, hd⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Search

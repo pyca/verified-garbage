@@ -27,7 +27,7 @@ abbrev rTape (p : KeyPublic sampling) (used : Nat) : Region :=
 theorem KeyInput.tape_addr {p : KeyPublic sampling} {s : State} {used : Nat}
     (h : KeyInput p s) (room : used + p.len ≤ p.randLen) :
     State.addr (p.rp + BitVec.ofNat 32 used) = off (State.addr p.rp) used :=
-  VG.Arm.addr_add (by have := h.bounds.randomFit; have := h.bounds.minLength; omega)
+  VG.Arm.addr_add (by have := h.bounds.randomFit; have := h.bounds.minLength; omega_arith)
 
 theorem KeyInput.tape_sub {p : KeyPublic sampling} {s : State} {used : Nat}
     (h : KeyInput p s) (room : used + p.len ≤ p.randLen) : (rTape p used).Sub (rRandom p) := by
@@ -40,10 +40,10 @@ theorem KeyInput.tape_fits {p : KeyPublic sampling} {s : State} {used : Nat}
     (p.rp + BitVec.ofNat 32 used).toNat + p.len ≤ 2 ^ 32 := by
   have fits := h.bounds.randomFit
   have positive := h.bounds.minLength
-  have usedFits : used < 2 ^ 32 := by omega
-  have pointerFits : p.rp.toNat + used < 2 ^ 32 := by omega
+  have usedFits : used < 2 ^ 32 := by omega_using [room, fits, positive]
+  have pointerFits : p.rp.toNat + used < 2 ^ 32 := by omega_using [room, fits, positive]
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt usedFits, Nat.mod_eq_of_lt pointerFits]
-  omega
+  omega_using [room, fits]
 
 end VG.Proof.Ffdh.Arm.KeySearch
 end
@@ -93,7 +93,7 @@ theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : N
   have sizeMin := argumentBytes_min sampling
   have sizeMax := argumentBytes_max sampling
   have callNat : (callSp p).toNat = p.sp.toNat - (24 + sampling.argumentBytes) :=
-    FrameStack.sub_toNat' (by change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit; omega)
+    FrameStack.sub_toNat' (by change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit; omega_using [fit])
   have rootWrite (r : Region) (hr : r ∈ [rX p, rY p, rScratch p]) : r ∈ original.wr := by
     rw [h.write_regions]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -108,7 +108,7 @@ theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : N
       r (by rw [← h.layout.rd]; exact rootRead r hr)
   have tape := h.tape_sub room
   have argsSub : (rCallArgs p).Sub (FrameStack.belowA p.sp (stackUse sampling)) :=
-    fun a ha => (arguments_sub h.bounds.stackFits) a (Region.sub_prefix (by omega : sampling.argumentBytes - 4 ≤ sampling.argumentBytes) a ha)
+    fun a ha => (arguments_sub h.bounds.stackFits) a (Region.sub_prefix (by omega_using [] : sampling.argumentBytes - 4 ≤ sampling.argumentBytes) a ha)
   have stackSub := callStack_sub h.bounds.stackFits
   have stackWrite (r : Region) (hr : r ∈ [rX p, rY p, rScratch p]) :
       (FrameStack.belowA p.sp (stackUse sampling)).Disjoint r :=
@@ -118,7 +118,7 @@ theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : N
     h.stack_separate (List.mem_append_right _ (rootRead r hr))
   have geometry := h.output_regions_disjoint
   change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at fit
-  refine ⟨by rw [callNat]; omega, by rw [callNat]; have := p.sp.isLt; omega,
+  refine ⟨by rw [callNat]; omega_using [fit], by rw [callNat]; have := p.sp.isLt; omega_using [sizeMax],
     geometry.1, cross _ (by simp) _ (by simp), (cross _ (by simp) _ (by simp)).sub_right tape,
     geometry.2.1, (stackWrite _ (by simp)).symm.sub_right argsSub,
     cross _ (by simp) _ (by simp), (cross _ (by simp) _ (by simp)).sub_right tape,
@@ -127,7 +127,7 @@ theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : N
     (stackWrite _ (by simp)).symm.sub_right argsSub, ?_, h.bounds.xFit, h.bounds.yFit,
     h.bounds.domainFit, h.tape_fits room, by simpa only [Nat.mul_comm] using h.bounds.scratchFit,
     ⟨h.bounds.minLength, h.bounds.maxLength⟩, h.bounds.domainLength, h.bounds.scratchSpace,
-    by have := h.bounds.maxLength; omega, ?_, h.bounds.capacityFits⟩
+    by have := h.bounds.maxLength; omega_using [this], ?_, h.bounds.capacityFits⟩
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -136,12 +136,12 @@ theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : N
     · exact (stackRead _ (by simp)).sub_left stackSub
     · exact ((stackRead _ (by simp)).sub_left stackSub).sub_right tape
     · exact (stackWrite _ (by simp)).sub_left stackSub
-    · have enough : 176 ≤ (callSp p).toNat := by rw [callNat]; omega
+    · have enough : 176 ≤ (callSp p).toNat := by rw [callNat]; omega_using [fit]
       rw [rCallStack, FrameStack.belowA, FrameStack.addr_sub' enough]
-      exact (Offset.base_disjoint_below _ (by omega : 176 + (sampling.argumentBytes - 4) ≤ 2 ^ 64)).symm
+      exact (Offset.base_disjoint_below _ (by omega_using [sizeMax] : 176 + (sampling.argumentBytes - 4) ≤ 2 ^ 64)).symm
   · have lengths := h.bounds.domainLength
     have maxLength := h.bounds.maxLength
     unfold domainLenValid at lengths
-    rcases lengths with eq | eq <;> omega
+    rcases lengths with eq | eq <;> omega_using [maxLength, eq]
 
 end VG.Proof.Ffdh.Arm.KeySearch

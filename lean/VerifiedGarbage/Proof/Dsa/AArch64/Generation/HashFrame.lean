@@ -37,7 +37,7 @@ theorem hash_bytes_frame {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK 
       change t.mem (off S oDig + BitVec.ofNat 64 i) = _
       rw [show off S oDig + BitVec.ofNat 64 i = off S (oDig + i) by
         simp only [off, BitVec.ofNat_add, BitVec.add_assoc],
-        Rt.scr _ (by unfold oDig oRsa; omega), hb i hiD]
+        Rt.scr _ (by unfold oDig oRsa; omega_using [hd, hiD]), hb i hiD]
       simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi', Option.getD_some]
       rfl
 

@@ -25,17 +25,17 @@ theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : Prime
   have h1 := hout (witness, len bits) (by simp [layout])
   have h2 := hout (arithmetic, arithmeticBytes) (by simp [layout])
   have hc : (wsRegion s).Contains (s.gpr .x0 + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hw])
   apply hf
   intro r hr hx
   simp only [changed, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · have hd := Offset.disjoint (s.gpr .x0) (d := i) (n := 1) (e := arithmetic) (k := arithmeticBytes)
-      (by simp only at h2; omega) (by omega) (by have : arithmetic + arithmeticBytes ≤ 2 ^ 64 := (by decide); omega)
+      (by simp only at h2; omega_using [h2]) (by omega_using [hi, hw]) (by have : arithmetic + arithmeticBytes ≤ 2 ^ 64 := (by decide); omega_using [this])
     exact hd _ (Region.contains_self _ _) hx
   · have hd := Offset.disjoint (s.gpr .x0) (d := i) (n := 1) (e := witness) (k := len bits)
-      (by simp only at h1; omega) (by omega)
-      (by have : witness + 384 ≤ 2 ^ 64 := (by decide); have := hlen; omega)
+      (by simp only at h1; omega_using [h1]) (by omega_using [hi, hw])
+      (by have : witness + 384 ≤ 2 ^ 64 := (by decide); have := hlen; omega_arith)
     exact hd _ (Region.contains_self _ _) hx
   · exact (A.stackWs.sub_left (frame_sub s)) _ hx hc
   · exact A.wsUsed _ hc hx

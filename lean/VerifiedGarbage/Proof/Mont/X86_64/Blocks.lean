@@ -112,8 +112,8 @@ theorem carryUp_ok (s : State) {tn tn1 : Reg} (h1 : tn ≠ tn1)
     have hc : (decide (2 ^ 64 ≤ (s.gpr tn1).toNat +
       (decide (2 ^ 64 ≤ (s.gpr tn).toNat + (s.gpr .rbp).toNat)).toNat)).toNat = 0 := by
       have := Bool.toNat_le (decide (2 ^ 64 ≤ (s.gpr tn).toNat + (s.gpr .rbp).toNat))
-      omega
-    omega
+      omega_using [hb, e0, e1]
+    omega_using [hb, e0, e1]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]
 

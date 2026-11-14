@@ -59,7 +59,7 @@ theorem fb_contains (s : State) : (kR s).Contains (fb s) 8 := by
   rwa [BitVec.add_zero] at this
 
 theorem fR_sub (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (kR s) := by
-  have := frame_sub s (d := 0) (n := frameBytes) (by omega)
+  have := frame_sub s (d := 0) (n := frameBytes) (by omega_using [])
   rwa [BitVec.add_zero] at this
 
 /-- The saves, from the state after the frame's push. -/
@@ -75,7 +75,7 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
   have uwr : u.wr = fr s :: s.wr := by rw [← hu]; rfl
   refine Spill.save_ok (b := .r12) (l := saved) (by decide) saved_ho (fun p hp => ?_) ?_
   · have := saved_offs p hp
-    rw [uwr, u12]; exact in_fr s _ (by unfold oSave at this; omega) (by unfold oSave frameBytes at *; omega)
+    rw [uwr, u12]; exact in_fr s _ (by unfold oSave at this; omega_using [this]) (by unfold oSave frameBytes at *; omega_using [this])
   generalize hu₂ : ({ u with mem := Spill.saveMem u.mem (u.gpr .r12) u.gpr saved } : State) = u₂
   have g₂ : u₂.gpr = u.gpr := by rw [← hu₂]
   have m₂ : u₂.mem = Spill.saveMem u.mem (fb s) u.gpr saved := by rw [← hu₂, u12]
@@ -91,7 +91,7 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
     have f1 : Frame [kR s] s.mem u.mem := by
       rw [hum]; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ (fb_contains s)
     exact f1.trans ((Spill.saveMem_frame_base (n := frameBytes) (fun p hp => by
-      have := saved_offs p hp; unfold oSave frameBytes at *; omega) (by decide) _ _ _).sub
+      have := saved_offs p hp; unfold oSave frameBytes at *; omega_using [this]) (by decide) _ _ _).sub
       fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, fR_sub s⟩)
   have sv₂ : Spill.Saved (fb s) s.gpr saved u₂.mem := by
     rw [m₂]
@@ -102,7 +102,7 @@ theorem save_ok {s : State} {rest : List Instr} {Q : State → Prop}
       Region.Disjoint ⟨fb s + BitVec.ofNat 64 p.2, 8⟩ r := fun p hp r hr => by
     have := saved_offs p hp
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl (by unfold oSave oLr at *; omega)) (by unfold oSave at *; omega) (by decide)
+    exact Offset.disjoint _ (.inl (by unfold oSave oLr at *; omega_using [this])) (by unfold oSave at *; omega_using [this]) (by decide)
   have e12 : (u₂.write .r0 u₂.lr).gpr .r12 = fb s := by rw [gpr_write_of_ne _ _ (show Reg.r12 ≠ .r0 by decide), g₂, u12]
   rw [e12]
   refine k _ ⟨?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩ ?_ fun r h12 h0 => ?_

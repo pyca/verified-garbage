@@ -33,7 +33,7 @@ def scrBytes : Nat := 3440
 theorem scr_len {s : State} (hp : DPre s) : scrBytes ≤ (stackArg s 16).toNat * 8 ∧
     (sc s).toNat + (stackArg s 16).toNat * 8 ≤ 2 ^ 64 := by
   have := hp.hsl; have := hp.k1; have := hp.wS
-  exact ⟨by unfold scrBytes; omega, by omega⟩
+  exact ⟨by unfold scrBytes; omega_arith, by omega⟩
 
 theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b c) : Region.Sub a c :=
   fun x hx => h₂ x (h₁ x hx)
@@ -77,11 +77,11 @@ theorem Safe.slot {s : State} (hp : DPre s) {r : Region} (h : Safe s r) {d : Nat
   have e1 : oI = 200 := rfl
   rcases h with h | h | h
   · obtain ⟨h1, _⟩ := scr_len hp
-    exact (hp.dKs.sub_left (frame_sub s (by unfold frameBytes; omega))).sub_right (sub_trans h (Region.sub_prefix h1))
+    exact (hp.dKs.sub_left (frame_sub s (by unfold frameBytes; omega_using [hd, e1]))).sub_right (sub_trans h (Region.sub_prefix h1))
   · refine Region.Disjoint.sub_right ?_ h
-    exact Offset.disjoint_below (fb s) (by have := hF.2.2; unfold frameBytes privStack at *; omega)
+    exact Offset.disjoint_below (fb s) (by have := hF.2.2; unfold frameBytes privStack at *; omega_using [hd, e1])
   · refine Region.Disjoint.sub_right ?_ h
-    exact Offset.disjoint _ (.inl hd) (by unfold frameBytes at hF; omega) (by unfold frameBytes at hF; omega)
+    exact Offset.disjoint _ (.inl hd) (by unfold frameBytes at hF; omega_using [hd, e1]) (by unfold frameBytes at hF; omega_using [e1])
 
 /-- `[b + i + d]` for `b = p` and `i = j`. -/
 theorem ea_bxd {t : State} {b i : Reg} {p : Addr} {j : Nat} (d : Nat) (hb : t.gpr b = p)
@@ -122,7 +122,7 @@ theorem Ctx.step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t t
       (w (by decide)).trans hc.slots.sScr⟩, (w (by decide)).trans hc.sR, ?_,
     fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr')⟩
   rw [bytes_keep hf (fun r hr => Safe.disj hp (hs r hr) (by have := hp.dKo; rwa [hsi] at this)
-    (by have := hp.dOs; rw [hsi] at this; exact this.symm)) (by unfold kOf; omega)]
+    (by have := hp.dOs; rw [hsi] at this; exact this.symm)) (by unfold kOf; omega_using [])]
   exact hc.out
 
 /-- What a block keeps of the callee-saved registers. -/
@@ -136,10 +136,10 @@ theorem frame_of_out {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o 
   refine h x ?_
   have hc := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains, off] at hc
-  have hc' : ¬ (x - (base + BitVec.ofNat 64 o)).toNat < n := by omega
+  have hc' : ¬ (x - (base + BitVec.ofNat 64 o)).toNat < n := by omega_using [hc]
   rw [Offset.lt_iff x base hn] at hc'
   simp only [ofs]
-  omega
+  omega_using [hc']
 
 /-- The used part of `scratch` is working space. -/
 theorem Ctx.scr {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t) :
@@ -147,12 +147,12 @@ theorem Ctx.scr {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : 
   obtain ⟨h1, h2⟩ := scr_len hp
   have hs : Scr t (sc s) ((stackArg s 16).toNat * 8) :=
     Scr.of_mem (by rw [hc.wr, hp.hwr]; simp) h2
-  have := hs.sub (o := 0) (n := scrBytes) (by omega) (by decide)
+  have := hs.sub (o := 0) (n := scrBytes) (by omega_using [h1]) (by decide)
   rwa [off_zero] at this
 
 /-- The frame is working space. -/
 theorem Ctx.frm {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t) :
     Scr t (fb s) frameBytes :=
-  Scr.of_mem (by rw [hc.wr]; exact List.mem_cons_self ..) (by have := (fb_toNat hp).1; omega)
+  Scr.of_mem (by rw [hc.wr]; exact List.mem_cons_self ..) (by have := (fb_toNat hp).1; omega_using [this])
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

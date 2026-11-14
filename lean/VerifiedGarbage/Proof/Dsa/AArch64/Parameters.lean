@@ -60,14 +60,14 @@ abbrev qb : List Byte := (p.params.drop p.pLen).take p.qLen
 abbrev gb : List Byte := (p.params.drop (p.pLen + p.qLen)).take p.pLen
 
 theorem pbLength : p.pb.length = p.pLen := by
-  simp only [List.length_take, p.paramsLength]; omega
-theorem qbLength : p.qb.length = p.qLen := component_length (by rw [p.paramsLength]; omega)
-theorem gbLength : p.gb.length = p.pLen := component_length (by rw [p.paramsLength]; omega)
+  simp only [List.length_take, p.paramsLength]; omega_using []
+theorem qbLength : p.qb.length = p.qLen := component_length (by rw [p.paramsLength]; omega_using [])
+theorem gbLength : p.gb.length = p.pLen := component_length (by rw [p.paramsLength]; omega_using [])
 
 theorem pPositive : 0 < p.pb.length := by
-  rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 theorem qPositive : 0 < p.qb.length := by
-  rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 abbrev accepted : Bool := shapeAccepted p.pb p.qb p.pPositive p.qPositive
 
@@ -109,9 +109,9 @@ theorem ParametersPre.sources {p : ParametersInput} {original s : State} (h : Pa
   have hsrc := h.paramsSource.congrK hm hk
   refine ⟨source_take hsrc, ?_, ?_⟩
   · rw [h.pLength]
-    exact source_slice hsrc (by rw [p.paramsLength]; omega)
+    exact source_slice hsrc (by rw [p.paramsLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add]
-    exact source_slice hsrc (by rw [p.paramsLength]; omega)
+    exact source_slice hsrc (by rw [p.paramsLength]; omega_using [])
 
 structure ParametersShapePost (p : ParametersInput) (original : State)
     (hp : original.gpr .x2 = BitVec.ofNat 64 p.pLen)
@@ -130,9 +130,9 @@ theorem parametersShape_ok {p : ParametersInput} {s0 : State} (h : ParametersPre
   have hinside : InScr p.base usedBytes s0.mem s1.mem := InScr.of_outside he.frame (by decide)
   obtain ⟨hps, hqs, _⟩ := h.sources hinside (he.keep.mono (by decide))
   have hp64 : p.pb.length < 2 ^ 64 := by
-    rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.pbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.qb.length < 2 ^ 64 := by
-    rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.qbLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (h.scratch.congr he.keep.wr) he.base (by decide)
     (he.fields .p (by decide) (by decide)) (he.fields .q (by decide) (by decide))
     ((he.fields .pLen (by decide) (by decide)).trans (by rw [p.pbLength]; exact h.pLength))

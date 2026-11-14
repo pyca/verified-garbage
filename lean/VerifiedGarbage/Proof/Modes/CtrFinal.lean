@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ctr.Final
 import VerifiedGarbage.Proof.AesCtr.Spec
 import VerifiedGarbage.Proof.AesCbc.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # CTR of a message's last piece, for any block cipher and target
@@ -53,11 +54,11 @@ theorem bytesAt_blocks_tail (m : Mem) (p : Addr) (len : Nat) :
 theorem bytesAt_xor {m₀ m' : Mem} {T : Addr} {u : Nat} {o : List Byte} (hu : u ≤ o.length)
     (h : ∀ q < u, m' (T + BitVec.ofNat 64 q) = m₀ (T + BitVec.ofNat 64 q) ^^^ o.getD q 0) :
     bytesAt m' T u = Spec.Cbc.xor (bytesAt m₀ T u) o := by
-  apply List.ext_getElem (by simp [bytesAt, Spec.Cbc.xor]; omega)
+  apply List.ext_getElem (by simp [bytesAt, Spec.Cbc.xor]; omega_using [hu])
   intro q h₁ h₂
   have hq : q < u := by simpa [bytesAt] using h₁
   simp only [bytesAt, Spec.Cbc.xor, List.getElem_zipWith, List.getElem_map, List.getElem_range]
-  rw [h q hq, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [h q hq, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hu, hq]), Option.getD_some]
 
 /-- XORing blocks of 16 bytes, all at once. -/
 theorem xor_flatten : ∀ (xs os : List (List Byte)), (∀ x ∈ xs, x.length = 16) → (∀ o ∈ os, o.length = 16) →
@@ -88,7 +89,7 @@ theorem outputs_flatten_length {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).le
   | t, n + 1 => by
     simp only [Spec.Ctr.counters, List.map_cons, List.flatten_cons, List.length_append, hc,
       outputs_flatten_length hc (Spec.Ctr.inc t) n]
-    omega
+    omega_using []
 
 theorem flatten_length {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = 16) (m : Mem) (p : Addr)
     (t : List Byte) (n : Nat) :
@@ -107,7 +108,7 @@ theorem crypt_flatten {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = 16
 theorem blockCount_eq (len : Nat) :
     Spec.Ctr.blockCount len = if len % 16 = 0 then len / 16 else len / 16 + 1 := by
   unfold Spec.Ctr.blockCount
-  split <;> omega
+  split <;> omega_arith
 
 /-- CTR of one block of zeros: the output block. -/
 theorem crypt_zero {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = 16) (t : List Byte) :
@@ -144,7 +145,7 @@ theorem cryptFinal_of {ciph : Spec.Cbc.Cipher} (hc : ∀ b, (ciph b).length = 16
     Spec.Ctr.CryptFinal ciph m₀ m' P D len := by
   refine ⟨?_, by rw [hctr, blockCount_eq]⟩
   have hu : len % 16 < 16 := Nat.mod_lt _ (by decide)
-  have ht := bytesAt_xor (o := ciph (Spec.Ctr.next (bytesAt m₀ P 16) (len / 16))) (by rw [hc]; omega) htail
+  have ht := bytesAt_xor (o := ciph (Spec.Ctr.next (bytesAt m₀ P 16) (len / 16))) (by rw [hc]; omega_using []) htail
   have hx := crypt_flatten hc m₀ D (bytesAt m₀ P 16) (len / 16)
   rw [Spec.Ctr.cryptFinal, bytesAt_length, blockCount_eq, bytesAt_blocks_tail m' D len, hblocks, ht,
     bytesAt_blocks_tail m₀ D len]

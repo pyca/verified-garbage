@@ -42,20 +42,20 @@ theorem offEax_ok {s : State} {is : List Instr} {Q : State → Prop} {len j : Na
   apply BitVec.eq_of_toNat_eq
   have : j * wb len ≤ 8 * 1024 := Nat.mul_le_mul hj hw
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, numAt, numOff]
-  rw [Nat.mod_eq_of_lt (a := wb len) (by omega), Nat.mod_eq_of_lt (a := j * wb len) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := wb len) (by omega_using [hw]), Nat.mod_eq_of_lt (a := j * wb len) (by omega_using [this])]
 
 /-- A store into the frame at `esp`. -/
 theorem frame_store {t : State} {P : Addr} (hP : (t.gpr .esp).setWidth 64 = P) (hesp : (t.gpr .esp).toNat + 36 ≤ 2 ^ 32)
     (hfr : (⟨P, 36⟩ : Region) ∈ t.wr) {k : Nat} (hk : k + 4 ≤ 36) :
     t.ea (at_ .esp k) = P + BitVec.ofNat 64 k ∧ InRegions t.wr (P + BitVec.ofNat 64 k) 4 := by
-  refine ⟨?_, ⟨_, hfr, Offset.contains_base _ hk (by omega)⟩⟩
-  rw [at_, ea_mk, addr_eq (by omega), hP]
+  refine ⟨?_, ⟨_, hfr, Offset.contains_base _ hk (by omega_using [hk])⟩⟩
+  rw [at_, ea_mk, addr_eq (by omega_using [hesp, hk]), hP]
 
 /-- A word of the frame, after a store to another. -/
 theorem frame_other (m : Mem) (P : Addr) (v : BitVec 32) {k j : Nat} (h : j + 4 ≤ k ∨ k + 4 ≤ j)
     (hk : k + 4 ≤ 36) (hj : j + 4 ≤ 36) :
     (m.writeW (P + BitVec.ofNat 64 k) v).readW (P + BitVec.ofNat 64 j) 32 = m.readW (P + BitVec.ofNat 64 j) 32 :=
-  Mem.readW_writeW_sep (Offset.sep P h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep P h (by omega_using [hj]) (by omega_using [hk])) (by decide)
 
 theorem mulArgs_ok {f : State} {len o a b wl : Nat} {wsLen : BitVec 32}
     (hr3 : readSrc f (.mem (argAt 9 1)) = some (BitVec.ofNat 32 len))
@@ -131,8 +131,8 @@ theorem mulArgs_ok {f : State} {len o a b wl : Nat} {wsLen : BitVec 32}
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, wb]
     have : 8 * Spec.Rsa.modulusWords len ≤ 1024 := hw
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by simp only [Spec.Rsa.modulusWords]; omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by simp only [Spec.Rsa.modulusWords]; omega_using [hl])]
+    omega_using []
   have mem : g.mem = ((((((((f.mem.writeW (P + BitVec.ofNat 64 4) wsLen).writeW (P + BitVec.ofNat 64 0)
       (f.gpr .edi)).writeW (P + BitVec.ofNat 64 8) (BitVec.ofNat 32 (Spec.Rsa.modulusWords len))).writeW
       (P + BitVec.ofNat 64 12) (BitVec.ofNat 32 numOff)).writeW (P + BitVec.ofNat 64 16)
@@ -145,7 +145,7 @@ theorem mulArgs_ok {f : State} {len o a b wl : Nat} {wsLen : BitVec 32}
   refine ⟨K₁₈'.trans (mg.keeps _), ?_, ?_⟩
   · have fw : ∀ {m : Mem} (k : Nat) (v : BitVec 32), k + 4 ≤ 36 → Frame [⟨P, 36⟩] f.mem m →
         Frame [⟨P, 36⟩] f.mem (m.writeW (P + BitVec.ofNat 64 k) v) := fun k v hk F =>
-      F.writeW (List.mem_singleton_self _) v (Offset.contains_base _ hk (by omega))
+      F.writeW (List.mem_singleton_self _) v (Offset.contains_base _ hk (by omega_using [hk]))
     rw [mem]
     exact fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <|
       fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <| fw _ _ (by decide) <|

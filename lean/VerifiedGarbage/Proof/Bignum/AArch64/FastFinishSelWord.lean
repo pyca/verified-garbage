@@ -34,27 +34,27 @@ theorem selWord_ok {s₀ : State} {B : Addr} {Z w eA eT eo j k : Nat} {lt : Bool
       (if t.c then word t.mem B (eT+8*(j+k)) else word t.mem B (eA+8*(j+k))) ∧ u.c = t.c)
     ?_ rfl rfl rfl) fun u ⟨⟨hm, hc⟩, ku⟩ => ?_
   · unfold VG.Impl.Bignum.AArch64.FastFinish.selWord
-    have enc : (8*k) % 8 = 0 ∧ 8*k < 32768 := by omega
-    have eAEq : eA+8*j+8*k = eA+8*(j+k) := by omega
-    have eTEq : eT+8*j+8*k = eT+8*(j+k) := by omega
-    have eoEq : eo+8*j+8*k = eo+8*(j+k) := by omega
+    have enc : (8*k) % 8 = 0 ∧ 8*k < 32768 := by omega_using [hk]
+    have eAEq : eA+8*j+8*k = eA+8*(j+k) := by omega_using []
+    have eTEq : eT+8*j+8*k = eT+8*(j+k) := by omega_using []
+    have eoEq : eo+8*j+8*k = eo+8*(j+k) := by omega_using []
     brun [hI.x16, hI.x6, hI.x5, enc,
-      hI.scr.ld (show eA+8*j+8*k+8 ≤ Z by omega),
-      hI.scr.ld (show eT+8*j+8*k+8 ≤ Z by omega),
-      hI.scr.st (show eo+8*j+8*k+8 ≤ Z by omega)]
+      hI.scr.ld (show eA+8*j+8*k+8 ≤ Z by omega_using [hA, hj]),
+      hI.scr.ld (show eT+8*j+8*k+8 ≤ Z by omega_using [hT, hj]),
+      hI.scr.st (show eo+8*j+8*k+8 ≤ Z by omega_using [ho, hj])]
     all_goals simp only [eAEq, eTEq, eoEq]
   have hx : word t.mem B (eA+8*(j+k)) = word s₀.mem B (eA+8*(j+k)) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_using [sA, hj]) (by omega_using [hA, hj, hn])
   have hy : word t.mem B (eT+8*(j+k)) = word s₀.mem B (eT+8*(j+k)) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_using [sT, hj]) (by omega_using [hT, hj, hn])
   refine ⟨hI.scr.congr ku.wr, (hI.keep.trans ku).mono (by decide),
     (ku.gpr .x16 (by decide)).trans hI.x16, (ku.gpr .x6 (by decide)).trans hI.x6,
     (ku.gpr .x5 (by decide)).trans hI.x5, hc.trans hI.c, ?_, ?_⟩
   · rw [hm]
     intro x hx'
-    rw [writeW_outside t.mem B _ (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [show j+(k+1) = (j+k)+1 by omega, hm, wv_writeW_top _ _ _ _ _ (by omega),
+    rw [writeW_outside t.mem B _ (by omega_using [ho, hj, hn]) x (by omega_using [hx'])]
+    exact hI.out x (by omega_using [hx'])
+  · rw [show j+(k+1) = (j+k)+1 by omega_using [], hm, wv_writeW_top _ _ _ _ _ (by omega_using [ho, hj, hn]),
       hI.val, hI.c, hx, hy]
     cases lt <;> simp [wv]
 

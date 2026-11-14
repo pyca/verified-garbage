@@ -42,34 +42,34 @@ theorem tailAdjust_ok {s : State} {p : Addr} {len : Nat} (hl : len<256)
   have hb6 : (b.gpr .x6).toNat≤1 := by
     rw [eb,BitVec.toNat_ushiftRight]
     have := (a.gpr .x6).isLt
-    omega
+    omega_using []
   have hc7 : c.gpr .x7=1 := by rw [ec]; rfl
   have hd6 : (d.gpr .x6).toNat≤1 := by
     rw [ed,toNat_sub_n (by rw [hc7,hc'.get .x6]; change (b.gpr .x6).toNat≤1; exact hb6),
       hc7,hc'.get .x6]
     change 1-(b.gpr .x6).toNat≤1
-    omega
+    omega_using []
   let skip := (d.gpr .x6).toNat
   have he4 : (e.gpr .x4).toNat=256-(len+skip) := by
     rw [ee,toNat_sub_n (by
       rw [hd.get .x4,hc'.get .x4,hb.get .x4,ha.get .x4,hc]
       change (d.gpr .x6).toNat≤256-len
-      omega),hd.get .x4,hc'.get .x4,hb.get .x4,ha.get .x4,hc]
+      omega_using [hl, hd6]),hd.get .x4,hc'.get .x4,hb.get .x4,ha.get .x4,hc]
     change 256-len-skip=256-(len+skip)
-    omega
+    omega_using []
   have hf6 : f.gpr .x6=BitVec.ofNat 64 (4*skip) := by
     apply BitVec.eq_of_toNat_eq
-    rw [ef,toNat_lsl_n (by rw [he.get .x6]; change skip*2^2<2^64; dsimp [skip]; omega),he.get .x6,
-      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by dsimp [skip]; omega)]
+    rw [ef,toNat_lsl_n (by rw [he.get .x6]; change skip*2^2<2^64; dsimp [skip]; omega_using [hd6]),he.get .x6,
+      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by dsimp [skip]; omega_using [hd6])]
     change skip*2^2=4*skip
-    omega
+    omega_using []
   refine ⟨(((((((ha.trans hb).trans hc').trans hd).trans he).trans hf).trans hg).trans ht).mono (by decide),
     skip,hd6,?_,?_,?_⟩
   · rw [ht.get .x3,eg,hf.get .x3,he.get .x3,hd.get .x3,hc'.get .x3,hb.get .x3,ha.get .x3,hp,hf6]
     unfold coeffAddr
     rw [Offset.add_add]
     congr 2
-    omega
+    omega_using []
   · rw [ht.get .x4,hg.get .x4,hf.get .x4]; exact he4
   · rw [et]; rfl
 
@@ -93,7 +93,7 @@ def tailRange (σ : State) (k start : Nat) : Region :=
 
 theorem tailRange_sub {σ : State} {k start : Nat} (hs : start≤256) :
     Region.Sub (tailRange σ k start) (polyR (polyP σ k)) :=
-  Offset.sub_base (polyP σ k) (by omega)
+  Offset.sub_base (polyP σ k) (by omega_using [hs])
 
 theorem Done.of_control {v : Nat} {σ s t : State} {rs : List Reg} (h : Done v σ s)
     (ht : Only rs s t) (hregs : ∀r∈[Reg.x19,.x20,.x21,.x30,.x27],r∉rs) : Done v σ t := by
@@ -121,7 +121,7 @@ theorem Done.tailKeep {v k start : Nat} {σ s t : State} (hp : Pre v σ) (h : Do
     rw [hf.readW (Region.contains_self (countP σ j) 8) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact hscr.sub_left (Offset.sub_base (scr σ) (by
-        unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega))) (by decide)]
+        unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; have:=hp.streams; omega_using [hj, this]))) (by decide)]
     exact h.counts j hj
   · intro j hj i hi
     have hl := h.length j hj
@@ -129,13 +129,13 @@ theorem Done.tailKeep {v k start : Nat} {σ s t : State} (hp : Pre v σ) (h : Do
       by_cases heq : j=k
       · subst j
         exact (Offset.disjoint_base (polyP σ k) (d := 4*start) (n := 4*(256-start))
-          (k := 4*(prefixRow σ k 1008).length) (by omega) (by omega)).symm
+          (k := 4*(prefixRow σ k 1008).length) (by omega_using [hlen]) (by omega_using [hs])).symm
       · apply (Offset.disjoint (aP σ) (d := 1024*j) (e := 1024*k) (n := 1024) (k := 1024)
-          (by omega) (by have:=hp.streams; omega) (by have:=hp.streams; omega)).sub_right hsub |>.sub_left
-        exact Region.sub_prefix (by omega)
+          (by omega_using [heq]) (by have:=hp.streams; omega_using [hj, this]) (by have:=hp.streams; omega_using [hk, this])).sub_right hsub |>.sub_left
+        exact Region.sub_prefix (by omega_using [hl])
     change t.mem.readW (coeffAddr (polyP σ j) i) 32= _
     rw [hf.readW (Offset.contains_base (polyP σ j) (d := 4*i) (n := 4)
-      (k := 4*(prefixRow σ j 1008).length) (by omega) (by omega))
+      (k := 4*(prefixRow σ j 1008).length) (by omega_using [hi]) (by omega_using [hi, hl]))
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide)]
     exact h.stored j hj i hi
   · rw [ht.get .x27]; exact h.flags.bound
@@ -160,15 +160,15 @@ theorem tailSetup_ok {v k len : Nat} {σ s : State} (hp : Pre v σ) (he : Env v 
       Only [.x3,.x4,.x6,.x7,.x9] s t ∧
       ∃skip≤1,t.gpr .x3=coeffAddr (polyP σ k) (len+skip) ∧
         (t.gpr .x4).toNat=256-(len+skip) ∧ t.gpr .x9=0 := by
-  have hk4 : k<4 := by have := hp.streams; omega
+  have hk4 : k<4 := by have := hp.streams; omega_using [hk, this]
   rw [List.append_assoc,WP.block_append_iff]
-  apply WP.mono (tailCursor_ok hk4 (by omega) hc)
+  apply WP.mono (tailCursor_ok hk4 (by omega_using [hl]) hc)
   intro a ha
   rw [WP.block_append_iff]
   have hr : InRegions (a.rd++a.wr)
       (a.gpr .x19+BitVec.ofNat 64 (840+1008*k+1005)) 4 := by
     rw [ha.1.rd,ha.1.wr,ha.1.get .x19,he.x19]
-    exact in_scr_rd hp he.wr (by omega)
+    exact in_scr_rd hp he.wr (by omega_using [hk4])
   apply WP.mono (tailRead_ok hk4 hr)
   intro b hb
   apply WP.mono (tailAdjust_ok hl (p := polyP σ k) (by
@@ -192,13 +192,13 @@ open VG.Proof.MlDsa.Sample (coeffAddr)
 theorem zeroTail_ok {v k : Nat} {σ s : State} (hp : Pre v σ) (h : Done v σ s)
     (hk : k<v) :
     WP isa (Impl.MlDsa.AArch64.Optimized.ResidentRej.Four.zeroTail k) s (Done v σ) := by
-  have hk4 : k<4 := by have := hp.streams; omega
+  have hk4 : k<4 := by have := hp.streams; omega_using [hk, this]
   unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.Four.zeroTail
   apply WP.seq
   refine wp_ldrx (a := countP σ k) (by
-    unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)
+    unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega_using [hk4])
     (by rw [h.env.x19]; rfl) (in_scr_rd hp h.env.wr (by
-      unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)) fun a ha ea => wp_nil ?_
+      unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega_using [hk4])) fun a ha ea => wp_nil ?_
   have hd : Done v σ a := h.of_control ha (by decide)
   have hc : (a.gpr .x4).toNat=256-(prefixRow σ k 1008).length := by
     rw [ea]; exact h.counts k hk
@@ -213,7 +213,7 @@ theorem zeroTail_ok {v k : Nat} {σ s : State} (hp : Pre v σ) (h : Done v σ s)
     have hl : (prefixRow σ k 1008).length<256 := by
       have := h.length k hk
       have hn : (a.gpr .x4).toNat≠0 := by intro e; exact hz (BitVec.eq_of_toNat_eq e)
-      omega
+      omega_using [hc, hn]
     change WP isa (.block (tailCursor k++tailRead k++tailAdjust)) a _
     refine WP.mono (tailSetup_ok hp hd.env hk hl hc) fun b hb => ?_
     have hdb : Done v σ b := hd.of_control hb.1 (by decide)
@@ -227,16 +227,16 @@ theorem zeroTail_ok {v k : Nat} {σ s : State} (hp : Pre v σ) (h : Done v σ s)
         rw [he]) (by simp) (fun _ => ?_)
       have hn : 0<256-((prefixRow σ k 1008).length+skip) := by
         have hn' : (b.gpr .x4).toNat≠0 := by intro e; exact hz' (BitVec.eq_of_toNat_eq e)
-        omega
-      refine WP.mono (tailLoop_ok hn (by omega) hptr hcount ?_) fun t ht => ?_
+        omega_using [hcount, hn']
+      refine WP.mono (tailLoop_ok hn (by omega_using []) hptr hcount ?_) fun t ht => ?_
       · intro i hi
         rw [hdb.env.wr]
         refine ⟨aR v σ,by simp [hp.wr],?_⟩
         change (aR v σ).Contains (((aP σ+BitVec.ofNat 64 (1024*k))+
           BitVec.ofNat 64 (4*((prefixRow σ k 1008).length+skip)))+BitVec.ofNat 64 (4*i)) 4
         rw [Offset.add_add,Offset.add_add]
-        exact Offset.contains_base (aP σ) (by omega) (by have := hp.streams; omega)
-      · exact hdb.tailKeep hp hk (by omega) (by omega) ht.1 ht.2
+        exact Offset.contains_base (aP σ) (by omega_using [hk, hi]) (by have := hp.streams; omega_using [hk4, hi])
+      · exact hdb.tailKeep hp hk (by omega_using [hl, hskip]) (by omega_using []) ht.1 ht.2
 
 
 theorem tailRows_ok {v : Nat} {σ s : State} (hp : Pre v σ) (h : Done v σ s)

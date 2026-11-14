@@ -103,17 +103,17 @@ theorem checks_done {t : State} (E : Entered s t) (hsy : t.syms = s.syms) :
   have hk2 := P.k2
   have ek : kk s = (s.gpr .a3).toNat := rfl
   have b := E.base
-  refine WP.seq (WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ =>
+  refine WP.seq (WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega_using [hD64]) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ =>
     wp_srl fun t₃ o₃ e₃ => wp_nil fun y₃ => ?_))
   have k₃ : Only [.a0] t t₃ := (o₁.trans (o₂.trans o₃)).mono
   have b₃ := b.only P.fits k₃
   have r0 : (t₃.gpr .a0 != 0) = decide (kk s < 2 * H.D + 2) := by
     rw [e₃, e₂, e₁, o₁.get .s1, b.s1, ← ofNat_toNat (s.gpr .a3)]
-    exact ne_zero_ltBit (by omega) (by omega)
+    exact ne_zero_ltBit (by omega_using [hk2]) (by omega_using [hD64])
   refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P b₃
-    (by rw [r0] at hc; simp at hc; omega)) (fun hc => ?_)
-  have hk : 2 * H.D + 2 ≤ kk s := by rw [r0] at hc; simp at hc; omega
-  refine WP.seq (WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ =>
+    (by rw [r0] at hc; simp at hc; omega_using [hc])) (fun hc => ?_)
+  have hk : 2 * H.D + 2 ≤ kk s := by rw [r0] at hc; simp at hc; omega_using [hc]
+  refine WP.seq (WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega_using [hD64]) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ =>
     wp_sub fun t₆ o₆ e₆ => wp_srl fun t₇ o₇ e₇ => wp_srl fun t₈ o₈ e₈ => wp_or fun t₉ o₉ e₉ =>
       wp_nil fun y₉ => ?_))
   have k₉ : Only [.a0, .a1] t₃ t₉ := (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans o₉))))).mono
@@ -122,17 +122,17 @@ theorem checks_done {t : State} (E : Entered s t) (hsy : t.syms = s.syms) :
     rw [e₉, e₈, o₇.get .t3, o₆.get .t3, o₅.get .t3, o₄.get .t3, k₃.get .t3, E.t3, o₈.get .a1, e₇, e₆,
       o₅.get .t3, o₄.get .t3, k₃.get .t3, E.t3, e₅, o₄.get .s1, k₃.get .s1, b.s1, e₄,
       ← ofNat_toNat (s.gpr .a3), ← ofNat_toNat (stackArg s 1), Offset.ofNat_sub_ofNat hk]
-    exact msgBit (by omega) (stackArg s 1).isLt
+    exact msgBit (by omega_using [hk2, ek]) (stackArg s 1).isLt
   have E₉ : Entered s t₉ := ⟨b₉, by rw [k₉.get .s6, k₃.get .s6]; exact E.s6,
     by rw [k₉.get .s7, k₃.get .s7]; exact E.s7, by rw [k₉.get .t2, k₃.get .t2]; exact E.t2,
     by rw [k₉.get .t3, k₃.get .t3]; exact E.t3, by rw [k₉.get .t4, k₃.get .t4]; exact E.t4⟩
   refine WP.ite _ (eval_nonzero _ _) (fun hc => fail_done hHl P b₉
-    (by rw [r0'] at hc; simp at hc; omega)) (fun hc => main_done hH hG fH fG hHh hHl hGh hGl hGv P T TL E₉
-    (y₉.trans (y₃.trans hsy)) (by rw [r0'] at hc; simp at hc; omega))
+    (by rw [r0'] at hc; simp at hc; omega_using [hc])) (fun hc => main_done hH hG fH fG hHh hHl hGh hGl hGv P T TL E₉
+    (y₉.trans (y₃.trans hsy)) (by rw [r0'] at hc; simp at hc; omega_using [hk, hc]))
 
 theorem code_ok (hl : H.D ∈ lens) : WP isa (encrypt f) s (Post Hs Gs s) := by
   have hD64 := hH.hD64
-  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega) ?_
+  refine WP.alloc (by decide) (by have := P.sp1; unfold frameBytes; unfold stackBytes at this; omega_using [this]) ?_
   refine WP.seq (WP.mono_syms (entry_ok P) fun t E sy => ?_)
   -- The label's hash function's digest length to `a0`.
   refine WP.seq (WP.of_syms ?_)
@@ -140,7 +140,7 @@ theorem code_ok (hl : H.D ∈ lens) : WP isa (encrypt f) s (Post Hs Gs s) := by
   refine wp_tword TL E.base (k := 6) (by decide) (d := .a0) fun t₁ o₁ e₁ => wp_nil fun y₁ => ?_
   have e0 : t₁.gpr .a0 = BitVec.ofNat 64 H.D := e₁.trans TL.d
   -- The code for that length.
-  refine WP.seq (byLen_ok (D := H.D) (by omega)
+  refine WP.seq (byLen_ok (D := H.D) (by omega_using [hD64])
     (F := fun u => Entered s u ∧ u.syms = s.syms ∧ u.gpr .a0 = BitVec.ofNat 64 H.D)
     (fun _ h => h.2.2) (fun u u' ⟨E', y', r0'⟩ o y => ⟨entered_only P E' o, y.trans y',
       by rw [o.get .a0]; exact r0'⟩) ?_ hl (fun x hx => (lens_certs x hx).1) t₁
@@ -168,7 +168,7 @@ theorem tabS_entryL {D : Nat} {vs : List MVar} (hc : Coh vs) {s : State} (P : Pr
         exact List.mem_cons_self ..) P.ktl
     (P.stl.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 /-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
 theorem tabS_entry {D : Nat} {vs : List MVar} (hc : Coh vs) {s : State} (P : PreO D s)
@@ -182,7 +182,7 @@ theorem tabS_entry {D : Nat} {vs : List MVar} (hc : Coh vs) {s : State} (P : Pre
         exact List.mem_cons_self ..) P.kt
     (P.st.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 /-- The tables, on entry: each one of the tables of `vs`, which names its
 hash function, and holds what the calls through it need. -/

@@ -54,12 +54,12 @@ theorem next_ptr (p : Addr) (k : Nat) :
 /-- The count after one more iteration of `n`. -/
 theorem dec_count {n k : Nat} (hk : k < n) :
     BitVec.ofNat 64 (n - k) - (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (n - (k + 1)) := by
-  rw [sx1, ofNat_pred (by omega), Nat.sub_sub]
+  rw [sx1, ofNat_pred (by omega_using [hk]), Nat.sub_sub]
 
 theorem dec_zf {n k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
     (BitVec.ofNat 64 (n - k) - (1 : BitVec 32).signExtend 64 == 0) = decide (k + 1 = n) := by
-  rw [dec_count hk, ofNat_beq_zero (by omega)]
-  exact decide_eq_decide.mpr (by omega)
+  rw [dec_count hk, ofNat_beq_zero (by omega_using [hn])]
+  exact decide_eq_decide.mpr (by omega_using [hk])
 
 theorem ofNat_zero_add (p : Addr) : p + BitVec.ofNat 64 (16 * 0) = p := by
   rw [Nat.mul_zero]; exact BitVec.add_zero _
@@ -72,12 +72,12 @@ theorem count_loop {body : Prog isa} {n : Nat} (hn : 0 < n) (I : Nat → State �
     (hstep : ∀ k < n, ∀ s, I k s →
       WP isa body s fun s' => I (k + 1) s' ∧ s'.zf = some (decide (k + 1 = n)))
     {s : State} (h0 : I 0 s) : WP isa (.loop body .ne) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega, hn, h0⟩
+  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_using [], hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hz⟩ => ?_
   by_cases hl : k + 1 = n
   · exact .inl ⟨by simp [eval, hz, hl], hl ▸ hi'⟩
-  · exact .inr ⟨by simp [eval, hz, hl], n - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by simp [eval, hz, hl], n - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], hi'⟩
 
 /-! ## `copyLoop` -/
 
@@ -116,10 +116,10 @@ theorem copy_step {s : State} {src dst : Addr} {n : Nat} (hlt : 16 * n < 2 ^ 64)
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g _ (by decide), h.rcx, dec_count hk]
   · rw [u₅.mem, u₄.mem, u₃.mem, m₂, h.mem, Nat.mul_succ]
     exact copy_mem s.mem src dst k 16
-      (hsep.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-        (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)) (by omega)
+      (hsep.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hk])
+        (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hk])) (by omega_using [hlt, hk])
   · rw [z₅, u₄.other _ (by decide), u₃.other _ (by decide), g _ (by decide), h.rcx,
-      dec_zf hk (by omega)]
+      dec_zf hk (by omega_using [hlt])]
 
 /-- `copyLoop` copies `16 n` bytes from `rdi` to `rsi` (`rcx = n > 0` words). -/
 theorem copyLoop_ok {s : State} {src dst : Addr} {n : Nat} (hn : 0 < n) (hlt : 16 * n < 2 ^ 64)
@@ -186,7 +186,7 @@ theorem xor_step {s : State} {x y d : Addr} {n : Nat} (hlt : 16 * n < 2 ^ 64)
   · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, m₃, h.mem]
     exact xor_mem128 s.mem hk hlt hdx hdy
   · rw [z₇, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
-      g _ (by decide), h.rcx, dec_zf hk (by omega)]
+      g _ (by decide), h.rcx, dec_zf hk (by omega_using [hlt])]
 
 /-- `xorLoop` writes `[rdi] xor [rsi]` to `r8`, `16 n` bytes. -/
 theorem xorLoop_ok {s : State} {x y d : Addr} {n : Nat} (hn : 0 < n) (hlt : 16 * n < 2 ^ 64)
@@ -255,13 +255,13 @@ theorem n_step {s : State} {r e : Nat} (hr : 0 < r) (hlt : r * 2 ^ (e + 1) < 2 ^
   have ax : t₂.gpr .rax = BitVec.ofNat 64 (r * 2 ^ (k + 1)) := by
     rw [u₂.other _ (by decide), u₁.gpr, h.rax, dbl_pow]
   have le : r * 2 ^ (k + 1) ≤ r * 2 ^ (e + 1) :=
-    Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) (by omega))
+    Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) (by omega_using [hk]))
   refine ⟨⟨by rw [rd₃, u₂.rd, u₁.rd, h.rd], by rw [wr₃, u₂.wr, u₁.wr, h.wr],
     by rw [m₃, u₂.mem, u₁.mem, h.mem], fun r' ha hd => ?_, by rw [g₃, ax], ?_⟩, ?_⟩
   · rw [g₃, u₂.other r' hd, u₁.other r' ha, h.other r' ha hd]
   · rw [g₃, u₂.gpr, u₁.other _ (by decide), h.rdx, ← Nat.one_mul (2 ^ k), dbl_pow, Nat.one_mul]
   · rw [z₃, ax, u₂.other _ (by decide), u₁.other _ (by decide), h.other _ (by decide) (by decide),
-      hcx, sub_beq (by omega) hlt]
+      hcx, sub_beq (by omega_using [hlt, le]) hlt]
     refine congrArg some (decide_eq_decide.mpr ⟨fun hh => ?_, fun hh => by rw [hh]⟩)
     exact (Nat.pow_right_inj (by decide)).mp (Nat.eq_of_mul_eq_mul_left hr hh)
 

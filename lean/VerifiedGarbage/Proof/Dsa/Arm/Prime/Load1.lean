@@ -157,7 +157,7 @@ theorem loadC_vp {E : State → Prop} :
   refine setupC_vp.seq (zero_vp.seq (VP.assoc ?_))
   refine (loadArg_vp (o1 := aoP) (o2 := aoEl) (A := fun _ _ => 0) (src := fun P => P.cP) (k := fun P => P.len)
     loadC_taint (by decide) (by decide) (by decide) fun σ e h => ⟨h.aP, h.aEl, h.rdC, ?_, h.fC,
-      by have := h.sizes; omega, h.sizes.2.2.2.1⟩).seq ?_
+      by have := h.sizes; omega_using [this], h.sizes.2.2.2.1⟩).seq ?_
   · intro r hr
     simp only [CP.chg, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -172,9 +172,9 @@ theorem loadC_vp {E : State → Prop} :
   · have pre := h.bk.pre
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     have := (cv_shape (σ := σ) pre).2.2
-    have : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega)
+    have : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega_using [])
     rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp (config := {decide := true}) only [AL, upd, ↓reduceIte] <;>
-      first | exact Nat.two_pow_pos _ | omega
+      first | exact Nat.two_pow_pos _ | omega_arith
 
 end
 

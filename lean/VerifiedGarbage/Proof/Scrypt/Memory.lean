@@ -36,13 +36,13 @@ theorem add_ofNat (a : Addr) (o j : Nat) :
 
 theorem toNat_add_ofNat (a : Addr) {o : Nat} (h : a.toNat + o < 2 ^ 64) :
     (a + BitVec.ofNat 64 o).toNat = a.toNat + o := by
-  rw [BitVec.toNat_add, toNat_ofNat_lt (by omega), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, toNat_ofNat_lt (by omega_using [h]), Nat.mod_eq_of_lt h]
 
 /-- `[a + o, a + o + n)` lies in `[a, a + len)`. -/
 theorem contains_off {a : Addr} {len o n : Nat} (h : o + n ≤ len) (ho : o < 2 ^ 64) :
     (⟨a, len⟩ : Region).Contains (a + BitVec.ofNat 64 o) n := by
   simp only [Region.Contains]
-  rw [show a + BitVec.ofNat 64 o - a = BitVec.ofNat 64 o by rw [BitVec.add_comm, BitVec.add_sub_cancel], toNat_ofNat_lt ho]; omega
+  rw [show a + BitVec.ofNat 64 o - a = BitVec.ofNat 64 o by rw [BitVec.add_comm, BitVec.add_sub_cancel], toNat_ofNat_lt ho]; omega_using [h]
 
 /-- `[a + o, a + o + n)` is a sub-region of `[a, a + len)`. -/
 theorem sub_off {a : Addr} {len o n : Nat} (h : o + n ≤ len) (ho : o < 2 ^ 64) :
@@ -51,9 +51,9 @@ theorem sub_off {a : Addr} {len o n : Nat} (h : o + n ≤ len) (ho : o < 2 ^ 64)
   simp only [Region.Contains] at hx ⊢
   have : (x - a).toNat ≤ (x - (a + BitVec.ofNat 64 o)).toNat + o := by
     rw [show x - a = (x - (a + BitVec.ofNat 64 o)) + BitVec.ofNat 64 o by rw [← BitVec.sub_sub, BitVec.sub_add_cancel],
-      BitVec.toNat_add, toNat_ofNat_lt (by omega)]
+      BitVec.toNat_add, toNat_ofNat_lt (by omega_using [ho])]
     exact Nat.mod_le _ _
-  omega
+  omega_using [h, hx, this]
 
 /-- Two parts `[a + o₁, a + o₁ + n₁)` and `[a + o₂, a + o₂ + n₂)` of one
 region that do not overlap. -/
@@ -100,7 +100,7 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (hl : xs.l
   apply List.ext_getElem (by simp [bytesAt])
   intro i h₁ h₂
   simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-    Mem.sub_ofNat_toNat q (show i < 2 ^ 64 by omega), h₂, ite_true]
+    Mem.sub_ofNat_toNat q (show i < 2 ^ 64 by omega_using [hl, h₂]), h₂, ite_true]
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some]
 
 theorem bytesAt_writeBytes_sep (m : Mem) {p q : Addr} {n : Nat} (xs : List Byte)
@@ -111,7 +111,7 @@ theorem bytesAt_writeBytes_sep (m : Mem) {p q : Addr} {n : Nat} (xs : List Byte)
   have hi := List.mem_range.mp hi
   simp only [writeBytes]
   split
-  · exact absurd ‹_› (h _ (by simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat p (by omega)]; exact hi))
+  · exact absurd ‹_› (h _ (by simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat p (by omega_using [hn, hi])]; exact hi))
   · rfl
 
 /-- The `64 n` bytes at `p` as `n` blocks of 64. -/
@@ -125,7 +125,7 @@ theorem bytesAt_blocks (m : Mem) (p : Addr) (n : Nat) :
 /-- Block `i` of the bytes at `p`. -/
 theorem blk_bytesAt (m : Mem) (p : Addr) {n i : Nat} (h : 64 * i + 64 ≤ n) :
     blk (bytesAt m p n) i = bytesAt m (p + BitVec.ofNat 64 (64 * i)) 64 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = 64 * i + 64 + k := ⟨n - (64 * i + 64), by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = 64 * i + 64 + k := ⟨n - (64 * i + 64), by omega_using [h]⟩
   rw [blk, bytesAt_add, bytesAt_add, List.append_assoc, List.drop_left' (bytesAt_length _ _ _),
     List.take_left' (bytesAt_length _ _ _)]
 
@@ -135,7 +135,7 @@ theorem blk_bytesAt (m : Mem) (p : Addr) {n i : Nat} (h : 64 * i + 64 ≤ n) :
 theorem writeW_readW (m m' : Mem) (d s : Addr) (n : Nat) :
     m.writeW d (m'.readW s (8 * n)) = writeBytes m d (bytesAt m' s n) := by
   simp only [Mem.writeW, Mem.readW]
-  rw [show 8 * n / 8 = n by omega, BitVec.setWidth_eq, BitVec.setWidth_eq, write_eq_writeBytes]
+  rw [show 8 * n / 8 = n by omega_using [], BitVec.setWidth_eq, BitVec.setWidth_eq, write_eq_writeBytes]
   congr 1
   simp only [bytesAt]
   exact List.map_congr_left fun j hj => Mem.extractLsb'_read _ _ (List.mem_range.mp hj)
@@ -149,16 +149,16 @@ theorem copy_mem (m : Mem) (A B : Addr) (n w : Nat)
   rw [writeW_readW, bytesAt_writeBytes_sep]
   · rw [bytesAt_add]
     have := writeBytes_append m B (bytesAt m A (w * n)) (bytesAt m (A + BitVec.ofNat 64 (w * n)) w)
-      (by simp [bytesAt]; omega)
+      (by simp [bytesAt]; omega_using [hlt])
     simpa [bytesAt] using this
   · intro x hx hy
     simp only [Region.Contains, bytesAt, List.length_map, List.length_range] at hx hy
-    apply hsep x _ (by omega)
+    apply hsep x _ (by omega_using [hy])
     rw [show x - A = (x - (A + BitVec.ofNat 64 (w * n))) + BitVec.ofNat 64 (w * n) by bv_omega,
-      BitVec.toNat_add, toNat_ofNat_lt (by omega)]
+      BitVec.toNat_add, toNat_ofNat_lt (by omega_using [hlt])]
     have := Nat.mod_le ((x - (A + BitVec.ofNat 64 (w * n))).toNat + w * n) (2 ^ 64)
-    omega
-  · omega
+    omega_using [hx]
+  · omega_using [hlt]
 
 theorem xorBytes_length (a b : List Byte) (h : a.length = b.length) : (xorBytes a b).length = a.length := by
   simp [xorBytes, h]
@@ -193,16 +193,16 @@ theorem xor_mem (m : Mem) {d x y : Addr} {n k : Nat} (hk : k < n) (hlt : 8 * n <
   -- The words of `x` and `y` are not in the part of `d` written so far.
   have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (8 * k), 8⟩
       ⟨d, (xorBytes (bytesAt m x (8 * k)) (bytesAt m y (8 * k))).length⟩ := by
-    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
+    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega_using [hk]) (by omega_using [hk, hlt]))).sub_right
+      (Region.sub_prefix (by omega_using [hk]))
   have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (8 * k), 8⟩
       ⟨d, (xorBytes (bytesAt m x (8 * k)) (bytesAt m y (8 * k))).length⟩ := by
-    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-      (Region.sub_prefix (by omega))
-  rw [writeW_xor, bytesAt_writeBytes_sep _ _ sx (by omega), bytesAt_writeBytes_sep _ _ sy (by omega)]
+    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega_using [hk]) (by omega_using [hk, hlt]))).sub_right
+      (Region.sub_prefix (by omega_using [hk]))
+  rw [writeW_xor, bytesAt_writeBytes_sep _ _ sx (by omega_using []), bytesAt_writeBytes_sep _ _ sy (by omega_using [])]
   have e := writeBytes_append m d _ (xorBytes (bytesAt m (x + BitVec.ofNat 64 (8 * k)) 8)
     (bytesAt m (y + BitVec.ofNat 64 (8 * k)) 8))
-    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega)
+    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega_using [hk, hlt])
   rw [hl] at e
   rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
     List.zipWith_append (by simp [bytesAt])]

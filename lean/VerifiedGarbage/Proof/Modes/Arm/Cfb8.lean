@@ -101,7 +101,7 @@ theorem cfb8Enc_post {c : Core} {S : CoreSpec c} (hbs : 0 < c.bs) {s s' : State}
     (State.addr (ivArg c s)) c.bs, bytesAt s.mem (State.addr (scArg c s) +
       BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
     (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (dArg c s)) (nArg c s).toNat)
-    (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega) (blocksOf_one_len _ _ _)
+    (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega_using [hbs]) (blocksOf_one_len _ _ _)
   rw [flatten_blocksOf_one] at e
   have h1 := congrArg List.flatten h.1
   rw [show c.ds cfb8Enc = 1 from rfl, flatten_blocksOf_one] at h1
@@ -118,7 +118,7 @@ theorem cfb8Dec_post {c : Core} {S : CoreSpec c} (hbs : 0 < c.bs) {s s' : State}
     (State.addr (ivArg c s)) c.bs, bytesAt s.mem (State.addr (scArg c s) +
       BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
     (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (dArg c s)) (nArg c s).toNat)
-    (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega) (blocksOf_one_len _ _ _)
+    (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega_using [hbs]) (blocksOf_one_len _ _ _)
   rw [flatten_blocksOf_one] at e
   have h1 := congrArg List.flatten h.1
   rw [show c.ds cfb8Dec = 1 from rfl, flatten_blocksOf_one] at h1

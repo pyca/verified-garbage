@@ -132,7 +132,7 @@ theorem dParts_ok {s0 s : State} (h : PreC s0) {X₁ X₂ V X : Nat} (iv : Iv s0
     WP isa dParts s (Dd s0 X₁ X₂ V s.mem) := by
   have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => iv.ws.fit64 hj
   rw [dParts_eq, wp_seqs_append (by simp) (by simp)]
-  have w8 : ∀ L, L < kOf s0 → L ≤ 8 * wOf s0 := fun L hL => by simp only [wOf, kOf] at *; omega
+  have w8 : ∀ L, L < kOf s0 → L ≤ 8 * wOf s0 := fun L hL => by simp only [wOf, kOf] at *; omega_using [hL]
   refine WP.mono (dDiv_ok h iv.cb iv.ws (a := aP) (r := aDR2) (.inl rfl) (.inl rfl) iv.d iv.ddz
     (fun _ c => c.s4.trans (toNat_ofNat_eq _)) h.p1 (w8 _ h.p2) (by rw [iv.p]; exact pv_lt s0))
     fun t1 ⟨c1, w1, f1, z1, v1⟩ => ?_
@@ -180,7 +180,7 @@ theorem divWP_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) {a r :
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (clrLowW_ok w2 (j := aDD) (by decide) (by decide)) fun t3 ⟨w3, f3, v3, k3, _⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (fixTop_ok w3 (m := aDD) (by decide) (by decide) (by omega))
+  refine WP.mono (fixTop_ok w3 (m := aDD) (by decide) (by decide) (by omega_using [hw]))
     fun t4 ⟨w4, f4, v4, p4, _, _, k4, _⟩ => ?_
   rw [show seqs [VG.Impl.Rsa.RISCV64.WordDiv.divW aD r aDD aDT] = VG.Impl.Rsa.RISCV64.WordDiv.divW aD r aDD aDT
     from rfl]
@@ -196,9 +196,9 @@ theorem divWP_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) {a r :
     f1.num (by simp; exact Ne.symm ha'.2.2.2.2) (by simp) (fit _ ha'.1)
   rw [v2, na] at v3
   have r0 : wordsVal t4.mem B (arr w r) (w / 2 + 1) = 0 :=
-    wordsVal_zero_part (a := 0) (c := w / 2 + 1) n1r (by omega) |>.symm ▸ by simp
+    wordsVal_zero_part (a := 0) (c := w / 2 + 1) n1r (by omega_using [hw]) |>.symm ▸ by simp
   refine WP.mono (divW_ok w4 (a := aD) (r := r) (m := aDD) (t := aDT) (by decide) (by decide) hr'.1 (by decide)
-    (by decide) hr'.2.2.2 hr'.2.1 hr'.2.2.1 (by decide) (by decide) hw (by omega) hw2 r0 p4)
+    (by decide) hr'.2.2.2 hr'.2.1 hr'.2.2.1 (by decide) (by decide) hw (by omega_using [hwl]) hw2 r0 p4)
     fun t ⟨w5, f5, k5, x5, top5, hi5⟩ => ?_
   refine ⟨w5, ?_, ?_, fun hin => ?_⟩
   · exact (f1.mono (by simp) (by simp)).trans ((f2.mono (by simp) (by simp)).trans ((f3.mono (by simp) (by simp)).trans
@@ -208,13 +208,13 @@ theorem divWP_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w nArr) {a r :
       (k5.mono (rs' := dwRegs) (by decide)) |>.mono (by decide)
   · -- The divisor is `2 ⌊[a] / 2⌋`, whose top word is not zero.
     have mv : wordsVal t3.mem B (arr w aDD) (w / 2) = 2 * (num s.mem B w a / 2) :=
-      words_low (w := w) (v := w / 2) (by omega) (show num t3.mem B w aDD = _ by rw [v3, Nat.mul_comm]) hin.2
-    have tp := top_pos (m := t3.mem) (B := B) (d := arr w aDD) (v := w / 2) (by omega) (by rw [mv]; exact hin.1)
-    have hne : ¬ (word t3.mem B (arr w aDD + 8 * (w / 2 - 1))).toNat = 0 := by omega
+      words_low (w := w) (v := w / 2) (by omega_using []) (show num t3.mem B w aDD = _ by rw [v3, Nat.mul_comm]) hin.2
+    have tp := top_pos (m := t3.mem) (B := B) (d := arr w aDD) (v := w / 2) (by omega_using [hw]) (by rw [mv]; exact hin.1)
+    have hne : ¬ (word t3.mem B (arr w aDD + 8 * (w / 2 - 1))).toNat = 0 := by omega_using [tp]
     rw [v4, mv, ite_eq_right hne, Nat.add_zero, nD] at x5
-    refine num_of_low (v := w / 2) (by omega) x5 top5 ?_
+    refine num_of_low (v := w / 2) (by omega_using [hw]) x5 top5 ?_
     rw [hi5]
-    exact wordsVal_zero_part n1r (by omega)
+    exact wordsVal_zero_part n1r (by omega_using [hw])
 
 
 /-- Under the mask, for a balanced key, `p - 1` and `q - 1` are numbers of
@@ -226,21 +226,21 @@ theorem bal_inW {s0 : State} (hv : Spec.Rsa.modulusValid (Nv s0) (kOf s0) = true
   obtain ⟨hp8, h4w, hpq, h32⟩ := hb
   simp only [maskOf, decide_eq_true_eq] at hm
   obtain ⟨podd, e1, e2, -⟩ := hm
-  obtain ⟨x1, x2⟩ := hx (by omega)
+  obtain ⟨x1, x2⟩ := hx (by omega_using [podd])
   have hpqn : Pv s0 * Qv s0 = Nv s0 := VG.Proof.Rsa.mul_of_div (by rw [← x1, e1]) (by rw [← x2, e2])
   have hn := (VG.Proof.Rsa.modulusValid_facts hv).2
-  have hkw : 8 * wOf s0 ≤ kOf s0 + 7 := by simp only [wOf]; omega
+  have hkw : 8 * wOf s0 ≤ kOf s0 + 7 := by simp only [wOf]; omega_using []
   have pv := pv_lt s0
   have qv := qv_lt s0
   rw [← hpq, ← h4w, ← Nat.mul_assoc] at qv
   rw [← h4w, ← Nat.mul_assoc] at pv
-  rw [show 8 * 4 * wOf s0 = 32 * wOf s0 by omega] at pv qv
-  have hw2 : wOf s0 % 2 = 0 := by omega
-  have e64 : 64 * (wOf s0 / 2) = 32 * wOf s0 := by omega
-  have plo := balanced_lo hpqn hn hkw qv (by omega) hw2
-  have qlo := balanced_lo (p := Qv s0) (q := Pv s0) (by rw [Nat.mul_comm]; exact hpqn) hn hkw pv (by omega) hw2
+  rw [show 8 * 4 * wOf s0 = 32 * wOf s0 by omega_using []] at pv qv
+  have hw2 : wOf s0 % 2 = 0 := by omega_using [hp8, h4w]
+  have e64 : 64 * (wOf s0 / 2) = 32 * wOf s0 := by omega_using [hw2]
+  have plo := balanced_lo hpqn hn hkw qv (by omega_using [h4w, h32]) hw2
+  have qlo := balanced_lo (p := Qv s0) (q := Pv s0) (by rw [Nat.mul_comm]; exact hpqn) hn hkw pv (by omega_using [h4w, h32]) hw2
   have qodd : Qv s0 % 2 = 1 := VG.Proof.Rsa.odd_factor (by rw [Nat.mul_comm]; exact hpqn) (VG.Proof.Rsa.modulusValid_facts hv).1
-  exact ⟨⟨by omega, by rw [e64]; omega⟩, ⟨by omega, by rw [e64]; omega⟩⟩
+  exact ⟨⟨by omega_using [plo], by rw [e64]; omega_using [pv]⟩, ⟨by omega_using [qlo], by rw [e64]; omega_using [qv]⟩⟩
 
 open VG.Impl.Rsa.RISCV64.Keys (storeBytes restore)
 open VG.Impl.Rsa.RISCV64.CrtValues (code stores valid front mask checks invPart setup loads storeQ)
@@ -363,11 +363,11 @@ theorem dPartsW_ok {s0 s : State} (h : PreC s0) (hv : Spec.Rsa.modulusValid (Nv 
   have fit : ∀ j < nArr, arr (wOf s0) j + S (wOf s0) ≤ 2 ^ 64 := fun j hj => iv.ws.fit64 hj
   have hS : S (wOf s0) = 8 * (wOf s0 + 2) := rfl
   have hw8 : 8 ≤ wOf s0 := w1'
-  have hw2 : wOf s0 % 2 = 0 := by obtain ⟨_, h4, _, _⟩ := hb; omega
+  have hw2 : wOf s0 % 2 = 0 := by obtain ⟨_, h4, _, _⟩ := hb; omega_arith
   unfold dPartsW
   rw [List.append_assoc, List.append_assoc, wp_seqs_append (by simp) (by simp [divWP]),
     show seqs [.block saveK] = .block saveK from rfl]
-  refine WP.mono (saveK_ok iv.ws (by decide) (by omega)) fun t1 ⟨ws1, f1, k1, e1, e2, e3, e4, e5, e6, e7, e8, e9⟩ => ?_
+  refine WP.mono (saveK_ok iv.ws (by decide) (by omega_using [w1'])) fun t1 ⟨ws1, f1, k1, e1, e2, e3, e4, e5, e6, e7, e8, e9⟩ => ?_
   rw [wp_seqs_append (by simp [divWP]) (by simp [divWP])]
   refine WP.mono (divWP_ok ws1 (a := aP) (r := aDR2) (.inl rfl) (.inl rfl) hw8 w2' hw2) fun t2 ⟨ws2, f2, k2, v2⟩ => ?_
   rw [wp_seqs_append (by simp [divWP]) (by simp)]
@@ -379,11 +379,11 @@ theorem dPartsW_ok {s0 s : State} (h : PreC s0) (hv : Spec.Rsa.modulusValid (Nv 
     rw [f3.word hi (by decide) (by simp) (fit _ (by decide)), f2.word hi (by decide) (by simp) (fit _ (by decide))]
   have q : ∀ {c : Nat}, c % 8 = 0 → c < 72 → word t3.mem (bOf s0) (arr (wOf s0) aDQ + c) =
       word t1.mem (bOf s0) (arr (wOf s0) aDQ + c) := fun {c} h8 h72 => by
-    have := kq (c / 8) (by omega)
-    rwa [show 8 * (c / 8) = c by omega] at this
-  have q0 := kq 0 (by omega)
+    have := kq (c / 8) (by omega_using [w1', h72])
+    rwa [show 8 * (c / 8) = c by omega_using [h8]] at this
+  have q0 := kq 0 (by omega_using [])
   rw [Nat.mul_zero, Nat.add_zero] at q0
-  refine WP.mono (restoreK_ok ws3 (by decide) (by omega) (q0.trans e1) ((q (by decide) (by decide)).trans e2)
+  refine WP.mono (restoreK_ok ws3 (by decide) (by omega_using [w1']) (q0.trans e1) ((q (by decide) (by decide)).trans e2)
     ((q (by decide) (by decide)).trans e3) ((q (by decide) (by decide)).trans e4) ((q (by decide) (by decide)).trans e5)
     ((q (by decide) (by decide)).trans e6) ((q (by decide) (by decide)).trans e7) ((q (by decide) (by decide)).trans e8)
     ((q (by decide) (by decide)).trans e9)) fun u ⟨⟨r1, r2, r3, r4, r5, r6, r7, r8, r9, um⟩, k4⟩ => ?_
@@ -407,7 +407,7 @@ theorem dPartsW_ok {s0 s : State} (h : PreC s0) (hv : Spec.Rsa.modulusValid (Nv 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       have := h.fits
       rcases hj with rfl | rfl | rfl | rfl | rfl <;> exact Nat.le_trans (arr_end (by decide)) this)
-    (by simp) (by have := iv.ws.hdr_le; omega) K
+    (by simp) (by have := iv.ws.hdr_le; omega_using [this]) K
   refine ⟨cb, ws3.of_keep k4, ?_, fun hm hp => ?_, fun hm hq => ?_⟩
   · rw [F.slot (by decide) (by simp)]; exact iv.mask
   · have i := (bal_inW hv hb iv.x hm).1
@@ -494,9 +494,9 @@ theorem post_valid {s0 u v : State} (h : PreC s0)
         have podd : Pv s0 % 2 = 1 := by simp only [maskOf, decide_eq_true_eq] at hk; exact hk.1
         have ev : 2 ∣ 2 ^ (64 * (wOf s0 / 2)) :=
           Nat.dvd_trans (by decide) (Nat.pow_dvd_pow 2 (show 1 ≤ 64 * (wOf s0 / 2) by
-            obtain ⟨_, h4, _, h32⟩ := hb; omega))
+            obtain ⟨_, h4, _, h32⟩ := hb; omega_using [h4, h32]))
         obtain ⟨i1, i2⟩ := i
-        refine ⟨by omega, ?_⟩
+        refine ⟨by omega_using [e, i1], ?_⟩
         obtain ⟨k, hk'⟩ := ev
         omega
       subst this

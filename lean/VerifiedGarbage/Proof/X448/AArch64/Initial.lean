@@ -42,32 +42,32 @@ theorem zeroSlots_ok {s : State} {base : Addr} (hs : Scr s base) :
     · subst i
       rw [ite_eq_left (Or.inl rfl)]
       change (word v.mem base (64 + 8 * j)).toNat = _
-      rw [vm.word (by change 64 + 8 * j + 8 ≤ 576 ∨ _; omega) (by omega),
-        um.word (by change 64 + 8 * j + 8 ≤ 192 ∨ _; omega) (by omega), tm]
+      rw [vm.word (by change 64 + 8 * j + 8 ≤ 576 ∨ _; omega_using [hj]) (by omega_using [hj]),
+        um.word (by change 64 + 8 * j + 8 ≤ 192 ∨ _; omega_using [hj]) (by omega_using [hj]), tm]
       rfl
     · by_cases h3 : i = 3
       · subst i
         rw [ite_eq_left (Or.inr rfl)]
         change (word v.mem base (448 + 8 * j)).toNat = _
-        rw [vm.word (by change 448 + 8 * j + 8 ≤ 576 ∨ _; omega) (by omega),
-          um.word (by change _ ∨ 192 + 8 * 32 ≤ 448 + 8 * j; omega) (by omega), tm]
+        rw [vm.word (by change 448 + 8 * j + 8 ≤ 576 ∨ _; omega_using [hj]) (by omega_using [hj]),
+          um.word (by change _ ∨ 192 + 8 * 32 ≤ 448 + 8 * j; omega_using []) (by omega_using [hj]), tm]
         rfl
       · rw [ite_eq_right (not_or_intro h0 h3)]
         have i0 : i.val ≠ 0 := fun h => h0 (Fin.ext h)
         have i3 : i.val ≠ 3 := fun h => h3 (Fin.ext h)
         rcases Nat.lt_or_ge i.val 3 with h | h
         · have index : slot i.val + 8 * j = X2 + 8 * (16 * (i.val - 1) + j) := by
-            simp only [slot, X2]; omega
+            simp only [slot, X2]; omega_using [i0]
           change (word v.mem base (slot i.val + 8 * j)).toNat = 0
-          rw [vm.word (Or.inl (by simp only [slot, Z3]; omega)) (by simp only [slot]; omega), index]
-          exact uf _ (by omega)
+          rw [vm.word (Or.inl (by simp only [slot, Z3]; omega_using [hj, h])) (by simp only [slot]; omega_using [hj]), index]
+          exact uf _ (by omega_using [hj, h])
         · have index : slot i.val + 8 * j = Z3 + 8 * (16 * (i.val - 4) + j) := by
-            simp only [slot, Z3]; omega
+            simp only [slot, Z3]; omega_using [i3, h]
           change (word v.mem base (slot i.val + 8 * j)).toNat = 0
           rw [index]
-          exact vf _ (by omega)
+          exact vf _ (by omega_using [hj])
   · rw [← tm]
-    exact (um.mono (by omega) (by omega)).trans (vm.mono (by decide) (by decide))
+    exact (um.mono (by omega_using []) (by omega_using [])).trans (vm.mono (by decide) (by decide))
   · exact tk.trans ((uk.trans vk).mono (fun _ hr => False.elim (List.not_mem_nil hr)))
 
 def initialMem (m : Mem) (base : Addr) : Mem :=
@@ -95,18 +95,18 @@ theorem initialMem_limb (m : Mem) (base : Addr) (i : Index) {j : Nat} (hj : j < 
     limbs (initialMem m base) base (slot i.val) j =
       if (i = 1 ∨ i = 4) ∧ j = 0 then 1 else limbs m base (slot i.val) j := by
   have il := i.isLt
-  have hd : slot i.val + 8 * j + 8 ≤ 8192 := by simp only [slot]; omega
-  have hm : (slot i.val + 8 * j) % 8 = 0 := by simp only [slot]; omega
-  have es : slot i.val + 8 * j ≠ SWAP := by simp only [slot, SWAP]; omega
+  have hd : slot i.val + 8 * j + 8 ≤ 8192 := by simp only [slot]; omega_using [hj]
+  have hm : (slot i.val + 8 * j) % 8 = 0 := by simp only [slot]; omega_using []
+  have es : slot i.val + 8 * j ≠ SWAP := by simp only [slot, SWAP]; omega_using []
   have ex : slot i.val + 8 * j = X2 ↔ i = 1 ∧ j = 0 := by
     simp only [slot, X2]
     constructor
-    · intro h; exact ⟨Fin.ext (by omega), by omega⟩
+    · intro h; exact ⟨Fin.ext (by omega_using [hj, h]), by omega_using [hj, h]⟩
     · rintro ⟨rfl, rfl⟩; rfl
   have ez : slot i.val + 8 * j = Z3 ↔ i = 4 ∧ j = 0 := by
     simp only [slot, Z3]
     constructor
-    · intro h; exact ⟨Fin.ext (by omega), by omega⟩
+    · intro h; exact ⟨Fin.ext (by omega_using [hj, h]), by omega_using [hj, h]⟩
     · rintro ⟨rfl, rfl⟩; rfl
   simp only [limbs, initialMem]
   rw [word_write_aligned _ base (by decide) hd (by decide) hm,
@@ -120,9 +120,9 @@ theorem initialMem_limb (m : Mem) (base : Addr) (i : Index) {j : Nat} (hj : j < 
 theorem initialMem_outside (m : Mem) (base : Addr) : Outside base 16 2864 m (initialMem m base) := by
   intro p hp
   simp only [initialMem]
-  rw [writeW_outside _ _ _ (by decide : Z3 + 8 ≤ 8192) p (by simp only [Z3, slot]; omega),
-    writeW_outside _ _ _ (by decide : X2 + 8 ≤ 8192) p (by simp only [X2, slot]; omega),
-    writeW_outside _ _ _ (by decide : SWAP + 8 ≤ 8192) p (by simp only [SWAP]; omega)]
+  rw [writeW_outside _ _ _ (by decide : Z3 + 8 ≤ 8192) p (by simp only [Z3, slot]; omega_using [hp]),
+    writeW_outside _ _ _ (by decide : X2 + 8 ≤ 8192) p (by simp only [X2, slot]; omega_using [hp]),
+    writeW_outside _ _ _ (by decide : SWAP + 8 ≤ 8192) p (by simp only [SWAP]; omega_using [hp])]
 
 theorem initSlots_ok {s : State} {base : Addr} (hs : Scr s base)
     (h0 : Bounded s.mem base X1) (h3 : Bounded s.mem base X3) :

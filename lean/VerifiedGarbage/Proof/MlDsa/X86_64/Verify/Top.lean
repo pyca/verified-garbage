@@ -42,7 +42,7 @@ set, a prepared key (`PreparedPublicKey`), which begins with it. -/
 abbrev pkL (p : Params) (σ : State) : Nat := if σ.gpr .r8 = 0 then p.pkLen else preparedPublicKeyBytes p
 
 theorem pkLen_le_pkL (p : Params) (σ : State) : p.pkLen ≤ pkL p σ := by
-  unfold pkL preparedPublicKeyBytes; split <;> omega
+  unfold pkL preparedPublicKeyBytes; split <;> omega_using []
 
 /-- The precondition of `vg_mldsa*_verify_with_cache(pk = rdi, mu = rsi, sig = rdx,
 scratch = rcx, prepared = r8)`: that of `verifyContract p X86_64.abi 32`, with a
@@ -123,7 +123,7 @@ theorem T.layL {p : Params} {L : Nat} {σ s : State} (hL : L ≤ pkL p σ)
   have hd1 := hv.d1.sub_left hsub
   have hk1 := hv.k1.sub_right hsub
   have hr1 := hv.r1.sub_right hsub
-  have hn1 : (σ.gpr .rdi).toNat + L ≤ 2 ^ 64 := by have := hv.n1; omega
+  have hn1 : (σ.gpr .rdi).toNat + L ≤ 2 ^ 64 := by have := hv.n1; omega_using [hL, this]
   have mem : ∀ r ∈ σ.rd ++ σ.wr, InRegions (s.rd ++ s.wr) r.base r.len := fun r hr =>
     ⟨r, by rw [h.rd, h.wr]; exact hr, Region.contains_self _ _⟩
   refine ⟨hsm, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by rw [h.rsp]; exact hv.sp⟩
@@ -210,8 +210,8 @@ theorem readW_writeW_slot (m : Mem) (a : Addr) {x y : Nat} (v : BitVec 64) (hxy 
     (m.writeW (a + BitVec.ofNat 64 y) v).readW (a + BitVec.ofNat 64 x) 64 = m.readW (a + BitVec.ofNat 64 x) 64 := by
   refine Mem.readW_writeW_sep ?_ (by decide)
   rcases hxy with h | h
-  · exact (off_disj (p := a) h (by omega)).sep (Region.contains_self _ _) (Region.contains_self _ _)
-  · exact (off_disj (p := a) h (by omega)).symm.sep (Region.contains_self _ _) (Region.contains_self _ _)
+  · exact (off_disj (p := a) h (by omega_using [hy])).sep (Region.contains_self _ _) (Region.contains_self _ _)
+  · exact (off_disj (p := a) h (by omega_using [hx])).symm.sep (Region.contains_self _ _) (Region.contains_self _ _)
 
 /-- The six stores of `pro`: each slot holds its register. -/
 theorem stores_read (m : Mem) (a : Addr) (v : Nat → BitVec 64) : ∀ k < 6,
@@ -219,9 +219,9 @@ theorem stores_read (m : Mem) (a : Addr) (v : Nat → BitVec 64) : ∀ k < 6,
       (a + BitVec.ofNat 64 856) (v 2)).writeW (a + BitVec.ofNat 64 864) (v 3)).writeW (a + BitVec.ofNat 64 872)
       (v 4)).writeW (a + BitVec.ofNat 64 880) (v 5)).readW (a + BitVec.ofNat 64 (oSV + 8 * k)) 64 = v k := by
   intro k hk
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    simp (disch := omega) only [oSV, Nat.reduceMul, Nat.reduceAdd, readW_writeW_slot, Mem.readW_writeW_self64]
+    simp (disch := omega_using []) only [oSV, Nat.reduceMul, Nat.reduceAdd, readW_writeW_slot, Mem.readW_writeW_self64]
 
 theorem pro_eq : proF = [.store (at_ .rcx 840) .rbx, .store (at_ .rcx 848) .rbp, .store (at_ .rcx 856) .r12,
     .store (at_ .rcx 864) .r13, .store (at_ .rcx 872) .r14, .store (at_ .rcx 880) .r15, .mov .rbx (.reg .rcx),
@@ -234,13 +234,13 @@ theorem pro_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) :
     WP isa (.block proF) σ fun s => T p σ s ∧ s.gpr .r15 = flag True := by
   have hb := scr_big hp
   have hS : ⟨σ.gpr .rcx, scrLen p⟩ ∈ σ.wr := by rw [hv.wr]; simp
-  have hsl : scrLen p < 2 ^ 64 := by have := vB_small hp (.rbx, scrLen p) (by simp); simp only at this; omega
+  have hsl : scrLen p < 2 ^ 64 := by have := vB_small hp (.rbx, scrLen p) (by simp); simp only at this; omega_using [this]
   have c : ∀ o, o + 8 ≤ scrLen p → (⟨σ.gpr .rcx, scrLen p⟩ : Region).Contains (σ.gpr .rcx + BitVec.ofNat 64 o) 8 :=
     fun o ho => contains_offset' ho hsl
   have w : ∀ o, o + 8 ≤ scrLen p → InRegions σ.wr (σ.gpr .rcx + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
-  have w0 := w 840 (by omega); have w1 := w 848 (by omega); have w2 := w 856 (by omega)
-  have w3 := w 864 (by omega); have w4 := w 872 (by omega); have w5 := w 880 (by omega)
-  have w6 := w 888 (by omega)
+  have w0 := w 840 (by omega_using [hb]); have w1 := w 848 (by omega_using [hb]); have w2 := w 856 (by omega_using [hb])
+  have w3 := w 864 (by omega_using [hb]); have w4 := w 872 (by omega_using [hb]); have w5 := w 880 (by omega_using [hb])
+  have w6 := w 888 (by omega_using [hb])
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r13, .r15] (Q := fun s =>
     s.mem = ((((((σ.mem.writeW (σ.gpr .rcx + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
@@ -252,25 +252,25 @@ theorem pro_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) :
     (by xrun [w0, w1, w2, w3, w4, w5, w6]) (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, h13, h15⟩, k⟩ => ⟨?_, h15⟩
   have hf : Frame [⟨σ.gpr .rcx, scrLen p⟩] σ.mem s.mem := by
     rw [hm]
-    exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 848 (by omega))).writeW (List.mem_singleton_self _) _ (c 856 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 864 (by omega))).writeW (List.mem_singleton_self _) _ (c 872 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 880 (by omega))).writeW (List.mem_singleton_self _) _ (c 888 (by omega)))
+    exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_using [hb]))).writeW
+      (List.mem_singleton_self _) _ (c 848 (by omega_using [hb]))).writeW (List.mem_singleton_self _) _ (c 856 (by omega_using [hb]))).writeW
+      (List.mem_singleton_self _) _ (c 864 (by omega_using [hb]))).writeW (List.mem_singleton_self _) _ (c 872 (by omega_using [hb]))).writeW
+      (List.mem_singleton_self _) _ (c 880 (by omega_using [hb]))).writeW (List.mem_singleton_self _) _ (c 888 (by omega_using [hb])))
   have hsp : s.gpr .rsp = σ.gpr .rsp := k.gpr (by decide)
   have z : ∀ x : Addr, x + BitVec.ofNat 64 0 = x := fun x => BitVec.add_zero x
   refine ⟨k.2.1, k.2.2, hsp, hbx, hbp, h12, h13, fun j hj => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [pa, hbx, hm]
-    rw [readW_writeW_slot _ _ _ (by unfold oSV; omega) (by unfold oSV; omega) (by omega)]
+    rw [readW_writeW_slot _ _ _ (by unfold oSV; omega_using [hj]) (by unfold oSV; omega_using [hj]) (by omega_using [])]
     exact stores_read σ.mem (σ.gpr .rcx) (fun j => σ.gpr (savedReg j)) j hj
   · exact hf.readW (Region.contains_self _ _) (by simpa using hv.r4) (by decide)
   · rw [pa, hbp, z]
     have hk := pkLen_le_pkL p σ
     exact Proof.MlKem.bytesAt_frame hf (by simpa using hv.d1.sub_left (Region.sub_prefix hk))
-      (by have := hv.n1; omega)
+      (by have := hv.n1; omega_using [hk, this])
   · rw [pa, h12, z]
     exact Proof.MlKem.bytesAt_frame hf (by simpa using hv.d2) (by decide)
   · rw [pa, h13, z]
-    exact Proof.MlKem.bytesAt_frame hf (by simpa using hv.d3) (by have := hv.n3; omega)
+    exact Proof.MlKem.bytesAt_frame hf (by simpa using hv.d3) (by have := hv.n3; omega_using [this])
   · simp only [pa, hbx, hm, oFL]
     exact Mem.readW_writeW_self64 _ _ _
   · exact Frame.sub hf fun r hr => by

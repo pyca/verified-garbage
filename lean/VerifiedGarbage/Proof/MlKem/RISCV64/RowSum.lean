@@ -89,8 +89,8 @@ theorem seedArgs_ok (hK : K.WF) (transpose : Bool) (h11 : s.gpr .s11 = P) (h6 : 
         s'.gpr .a0 = P + BitVec.ofNat 64 oSeed ∧ s'.gpr .a1 = P + BitVec.ofNat 64 K.oAhat ∧
         s'.gpr .a2 = P + BitVec.ofNat 64 K.oSample := by
   have k4 := hK.k4
-  have si := setWidth8_ofNat (N := i) (by omega)
-  have sj := setWidth8_ofNat (N := j) (by omega)
+  have si := setWidth8_ofNat (N := i) (by omega_using [hi])
+  have sj := setWidth8_ofNat (N := j) (by omega_using [hj])
   rw [← List.append_nil (polyAddr .a2 K.jSample)]
   cases transpose <;>
   · simp only [seedBytes, Bool.false_eq_true, ite_true, ite_false, List.cons_append,
@@ -122,8 +122,8 @@ theorem selT_ok (hK : K.WF) (h11 : s.gpr .s11 = P) (hj : j < K.k) (h5 : s.gpr .s
       Only s s' ∧ s'.gpr .a1 = P + BitVec.ofNat 64 (oPoly (K.k + j)) := by
   have k4 := hK.k4
   rw [← List.append_nil (slotAt .a1 .s5 K.k)]
-  exact wp_slotAt (i := j) (by omega) (by omega) (by decide) h5 fun s' h => WP.block_nil
-    ⟨updOnly h (by decide), by rw [h.gpr, h11]; unfold oPoly; congr 2; omega⟩
+  exact wp_slotAt (i := j) (by omega_using [k4]) (by omega_using [hj, k4]) (by decide) h5 fun s' h => WP.block_nil
+    ⟨updOnly h (by decide), by rw [h.gpr, h11]; unfold oPoly; congr 2; omega_using []⟩
 
 theorem selF_ok (hK : K.WF) (h11 : s.gpr .s11 = P) :
     WP isa (.block (polyAddr .a1 K.jAhat)) s fun s' => Only s s' ∧ s'.gpr .a1 = P + BitVec.ofNat 64 K.oAhat := by
@@ -139,12 +139,12 @@ theorem mulArgs_ok (hK : K.WF) (h11 : s.gpr .s11 = P) (hj : j < K.k) (h5 : s.gpr
   have k4 := hK.k4
   rw [← List.append_nil (polyAddr .a3 K.jNtt), List.append_assoc]
   refine wp_polyAddr (by offs) (by decide) fun s₁ h₁ =>
-    wp_slotAt (i := j) (by omega) (by omega) (by decide) (by rw [h₁.other _ (by decide), h5]) fun s₂ h₂ =>
+    wp_slotAt (i := j) (by omega_using [k4]) (by omega_using [hj, k4]) (by decide) (by rw [h₁.other _ (by decide), h5]) fun s₂ h₂ =>
     wp_polyAddr (by offs) (by decide) fun s₃ h₃ => WP.block_nil
       ⟨(updOnly h₁ (by decide)).trans ((updOnly h₂ (by decide)).trans (updOnly h₃ (by decide))), ?_, ?_, ?_, ?_⟩
   · rw [h₃.other _ (by decide), h₂.other _ (by decide), h₁.gpr, h11]
   · rw [h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide)]
-  · rw [h₃.other _ (by decide), h₂.gpr, h₁.other _ (by decide), h11]; unfold oPoly; congr 2; omega
+  · rw [h₃.other _ (by decide), h₂.gpr, h₁.other _ (by decide), h11]; unfold oPoly; congr 2; omega_using []
   · rw [h₃.gpr, h₂.other _ (by decide), h₁.other _ (by decide), h11]
 
 end
@@ -192,10 +192,10 @@ abbrev RowLF (K : KemLay) : Prop :=
   [((0 : Nat), K.oAcc, (1024 : Nat))].all (fun w => (rowW K).any (subB0 w)) = true
 
 theorem row_lf {K : KemLay} (hK : K.WF) : RowLF K :=
-  (by decide : ∀ k < 5, RowLF (kOf k)) K.k (by have := hK.k4; omega)
+  (by decide : ∀ k < 5, RowLF (kOf k)) K.k (by have := hK.k4; omega_using [this])
 
 theorem rowW_vec {K : KemLay} (hK : K.WF) : RowWVec K :=
-  (by decide : ∀ k < 5, RowWVec (kOf k)) K.k (by have := hK.k4; omega)
+  (by decide : ∀ k < 5, RowWVec (kOf k)) K.k (by have := hK.k4; omega_using [this])
 
 theorem bytes_two (m : Mem) (p : Addr) : bytesAt m p 2 = [m p, m (p + BitVec.ofNat 64 1)] := by
   simp only [bytesAt, show List.range 2 = [0, 1] from rfl, List.map_cons, List.map_nil,
@@ -318,17 +318,17 @@ theorem rowA_ok (hp : RowPre K L ρ v i fl s₀) (hj : j < K.k) {s : State}
     hc.cs (o := 1280) (l := 1) (by decide) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   have w2 : InRegions s.wr (L.ptr 0 + BitVec.ofNat 64 (oSeed + 33)) 1 :=
     hc.cs (o := 1281) (l := 1) (by decide) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  refine WP.mono (seedArgs_ok hK transpose hc.s11 g6 h.s5 (by omega) (by omega) w1 w2)
+  refine WP.mono (seedArgs_ok hK transpose hc.s11 g6 h.s5 (by omega_using [k4, hi]) (by omega_using [hj, k4]) w1 w2)
     fun s₁ ⟨cs₁, rd₁, wr₁, sp₁, m₁, g3, g4, g5⟩ => ?_
   have m₁' : s₁.mem = (s.mem.writeW (L.A 0 1280) (BitVec.ofNat 8 (if transpose then i else j))).writeW (L.A 0 1281)
       (BitVec.ofNat 8 (if transpose then j else i)) := m₁
   have k₁ : KeptX [] (L.RL [(0, 1280, 2)]) s s₁ := by
     refine ⟨fun r hr _ => cs₁ r hr, sp₁, rd₁, wr₁, ?_⟩
     rw [m₁']
-    have c1 : (L.R 0 1280 2).Contains (L.A 0 1280) 1 := Offset.contains _ (by omega) (by omega) (by omega)
-    have c2 : (L.R 0 1280 2).Contains (L.A 0 1281) 1 := Offset.contains _ (by omega) (by omega) (by omega)
+    have c1 : (L.R 0 1280 2).Contains (L.A 0 1280) 1 := Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [])
+    have c2 : (L.R 0 1280 2).Contains (L.A 0 1281) 1 := Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [])
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c1).writeW (List.mem_singleton_self _) _ c2
-  have ne : (L.A 0 1280 : Addr) ≠ L.A 0 1281 := Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+  have ne : (L.A 0 1280 : Addr) ≠ L.A 0 1281 := Offset.add_ofNat_ne _ (by omega_using []) (by omega_using []) (by omega_using [])
   have b1 : s₁.mem (L.A 0 1280) = BitVec.ofNat 8 (if transpose then i else j) := by
     rw [m₁', writeW8_apply, writeW8_apply, ite_eq_right ne, ite_eq_left rfl]
   have b2 : s₁.mem (L.A 0 1281) = BitVec.ofNat 8 (if transpose then j else i) := by
@@ -452,7 +452,7 @@ theorem rowI_ok (hK : K.WF) {s : State} (hj : j < K.k) (h : RH K L transpose ρ 
     WP isa (.block (count .s5 K.k)) s fun s' =>
       RowInv K L transpose ρ v i fl s₀ (j + 1) s' ∧ (s'.gpr .t0 != 0) = decide (j + 1 ≠ K.k) := by
   have k4 := hK.k4
-  exact WP.mono (count_ok (by decide) (by omega) (by omega) h.s5) fun s' ⟨k', g', z'⟩ =>
+  exact WP.mono (count_ok (by decide) (by omega_using [hj, k4]) (by omega_using [k4]) h.s5) fun s' ⟨k', g', z'⟩ =>
     ⟨⟨h.kx.trans ((k'.weaken (by simp)).mono (fun _ h => absurd h List.not_mem_nil)), g',
       by rw [k'.cs .s4 (by decide) (by decide), h.s4],
       polyIs_frame k'.frame (fun _ h => absurd h List.not_mem_nil) h.acc⟩, z'⟩
@@ -482,7 +482,7 @@ theorem rowSum_ok {K : KemLay} {L : Lay} {transpose : Bool} {ρ : List Byte} {v 
   have lf := row_lf hK
   refine WP.seq (WP.mono (zeroPoly_ok hp.ctx lf.2.2.1) fun s₁ ⟨k₁, z₁⟩ => ?_)
   refine WP.seq (WP.mono (li_ok .s5 (N := 0) (by decide)) fun s₂ ⟨k₂, g₂, m₂⟩ => ?_)
-  refine wp_loop_nz (RowInv K L transpose ρ v i fl s₀) (N := K.k) (by have := hK.k1; omega)
+  refine wp_loop_nz (RowInv K L transpose ρ v i fl s₀) (N := K.k) (by have := hK.k1; omega_using [this])
     (fun j hj s h => rowBody_ok hp hj h) (fun _ h => h) ⟨?_, g₂, ?_, by rw [m₂]; exact z₁⟩
   · exact ((k₁.x _).subL hp.ctx lf.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2).trans
       ((k₂.weaken (by simp)).mono (fun _ h => absurd h List.not_mem_nil))
@@ -502,8 +502,8 @@ theorem dotArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P : BitVec 64} {j : Nat
   rw [← List.append_nil (polyAddr .a3 K.jNtt)]
   simp only [List.append_assoc]
   refine wp_polyAddr (by offs) (by decide) fun s₁ h₁ =>
-    wp_slotAt (i := j) (by omega) (by omega) (by decide) (by rw [h₁.other _ (by decide), h5]) fun s₂ h₂ =>
-    wp_slotAt (i := j) (by omega) (by omega) (by decide)
+    wp_slotAt (i := j) (by omega_using []) (by omega_using [hj, k4]) (by decide) (by rw [h₁.other _ (by decide), h5]) fun s₂ h₂ =>
+    wp_slotAt (i := j) (by omega_using [k4]) (by omega_using [hj, k4]) (by decide)
       (by rw [h₂.other _ (by decide), h₁.other _ (by decide), h5]) fun s₃ h₃ =>
     wp_polyAddr (by offs) (by decide) fun s₄ h₄ => WP.block_nil
       ⟨(updOnly h₁ (by decide)).trans ((updOnly h₂ (by decide)).trans ((updOnly h₃ (by decide)).trans
@@ -511,7 +511,7 @@ theorem dotArgs_ok {K : KemLay} (hK : K.WF) {s : State} {P : BitVec 64} {j : Nat
   · rw [h₄.other _ (by decide), h₃.other _ (by decide), h₂.other _ (by decide), h₁.gpr, h11]
   · rw [h₄.other _ (by decide), h₃.other _ (by decide), h₂.gpr, h₁.other _ (by decide), h11]
   · rw [h₄.other _ (by decide), h₃.gpr, h₂.other _ (by decide), h₁.other _ (by decide), h11]
-    unfold oPoly; congr 2; omega
+    unfold oPoly; congr 2; omega_using []
   · rw [h₄.gpr, h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide), h11]
 
 /-- What `dot` changes: polynomials `3k + 2` and `3k + 3`, and the working space of the callees. -/
@@ -527,7 +527,7 @@ structure DotInv (K : KemLay) (L : Lay) (a v : Nat → Poly) (s₀ : State) (j :
 abbrev DotWVec (K : KemLay) : Prop := ∀ j < 2 * K.k, (dotW K).all (sep0 (oPoly j) 1024) = true
 
 theorem dotW_vec {K : KemLay} (hK : K.WF) : DotWVec K :=
-  (by decide : ∀ k < 5, DotWVec (kOf k)) K.k (by have := hK.k4; omega)
+  (by decide : ∀ k < 5, DotWVec (kOf k)) K.k (by have := hK.k4; omega_using [this])
 
 /-- In `dotBody`, after the product. -/
 structure DB (K : KemLay) (L : Lay) (a v : Nat → Poly) (s₀ : State) (j : Nat) (s : State) : Prop where
@@ -563,9 +563,9 @@ theorem dot2_ok {s₁ : State} (o₁ : Only s s₁) (m3 : s₁.gpr .a0 = L.A 0 K
   have hL := hc₀.ok
   have hc := h.kx.ctx (by decide) hc₀
   have as : PolyIs s.mem (L.A 0 (oPoly j)) (a j) :=
-    Lay.polyIs_keep hL h.kx.frame (hc₀.sepAll0 (by offs) (dotW_vec hK j (by omega))) (ha j hj)
+    Lay.polyIs_keep hL h.kx.frame (hc₀.sepAll0 (by offs) (dotW_vec hK j (by omega_using [hj]))) (ha j hj)
   have vs : PolyIs s.mem (L.A 0 (oPoly (K.k + j))) (v j) :=
-    Lay.polyIs_keep hL h.kx.frame (hc₀.sepAll0 (by offs) (dotW_vec hK (K.k + j) (by omega))) (hv j hj)
+    Lay.polyIs_keep hL h.kx.frame (hc₀.sepAll0 (by offs) (dotW_vec hK (K.k + j) (by omega_using [hj]))) (hv j hj)
   have hc₁ := hc.only o₁
   refine mulL hL m3 m4 m5 m6 (hc.sep00 (by offs) (by offs) (by offs)) (hc.sep00 (by offs) (by offs) (by offs))
     (hc.sep00 (by offs) (by offs) (by offs)) (hc.sep00 (by offs) (by offs) (by offs))
@@ -600,7 +600,7 @@ theorem dot5_ok {s₄ : State} (r : DC K L a v s₀ j s₄) :
     WP isa (.block (count .s5 K.k)) s₄ fun s' =>
       DotInv K L a v s₀ (j + 1) s' ∧ (s'.gpr .t0 != 0) = decide (j + 1 ≠ K.k) := by
   have k4 := hK.k4
-  exact WP.mono (count_ok (by decide) (by omega) (by omega) r.s5) fun s' ⟨k', g', z'⟩ =>
+  exact WP.mono (count_ok (by decide) (by omega_using [hj, k4]) (by omega_using [k4]) r.s5) fun s' ⟨k', g', z'⟩ =>
     ⟨⟨r.kx.trans (k'.mono (fun _ h => absurd h List.not_mem_nil)), g',
       polyIs_frame k'.frame (fun _ h => absurd h List.not_mem_nil) r.acc⟩, z'⟩
 
@@ -622,7 +622,7 @@ theorem dot_ok {K : KemLay} (hK : K.WF) {L : Lay} {a v : Nat → Poly} {s₀ : S
       PolyIs s.mem (L.A 0 K.oAcc) (VG.Proof.MlKem.KPke.dotK a v K.k) := by
   refine WP.seq (WP.mono (zeroPoly_ok hc₀ (by offs)) fun s₁ ⟨k₁, z₁⟩ => ?_)
   refine WP.seq (WP.mono (li_ok .s5 (N := 0) (by decide)) fun s₂ ⟨k₂, g₂, m₂⟩ => ?_)
-  refine wp_loop_nz (DotInv K L a v s₀) (N := K.k) (by have := hK.k1; omega)
+  refine wp_loop_nz (DotInv K L a v s₀) (N := K.k) (by have := hK.k1; omega_using [this])
     (fun j hj s h => dotBody_ok hK hc₀ ha hv hj h)
     (fun _ h => ⟨h.kx, by rw [← rowAcc_eq]; exact h.acc⟩)
     ⟨((k₁.x _).subL hc₀ (by kdecide)).trans (k₂.mono (fun _ h => absurd h List.not_mem_nil)), g₂,

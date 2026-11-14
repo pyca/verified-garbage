@@ -21,17 +21,17 @@ def Environment.parameters (E : Environment) (entropy : List Byte) : MillerRabin
 theorem Environment.Valid.parameters_valid {E : Environment} (v : E.Valid) (entropy : List Byte)
     (entropyLength : entropy.length = E.randLength) : (E.parameters entropy).Valid := by
   have low := v.low
-  have privateNat : (E.p - 28#32).toNat = E.p.toNat - 28 := sub_toNat (by omega)
-  have privateFit : 108 ≤ (E.p - 28#32).toNat := by rw [privateNat]; omega
+  have privateNat : (E.p - 28#32).toNat = E.p.toNat - 28 := sub_toNat (by omega_using [low])
+  have privateFit : 108 ≤ (E.p - 28#32).toNat := by rw [privateNat]; omega_using [low]
   have inner : (below (E.p - 28#32) 108).Sub (below E.p 136) := below_inner (by decide) v.low
   have bits := candidate_bits v entropy
   refine ⟨v.geometry, rfl, v.randFit, v.randLengthFit, entropyLength,
     v.readWorkspace (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)), ?_, privateFit, ?_, ?_,
-    candidate_odd v entropy, by change 3 < candidateValue E entropy; have := candidate_large v entropy; omega,
-    by change Spec.RsaKeyGen.bitLength (candidateValue E entropy - 1) = 32 * (2 * E.width); rw [bits.2.1]; omega,
-    by have := v.width_bounds; change 2 ≤ 2 * E.width; omega, by change 4 * (2 * E.width) ≤ 8 * E.width; omega,
-    Nat.le_refl _, by change 8 * E.width % 4 = 0; omega, by have := v.width_bounds; change 1 ≤ 64 * E.width - 1; omega,
-    by have := v.width_bounds; change 64 * E.width - 1 < 64 * E.width; omega, ?_, ?_⟩
+    candidate_odd v entropy, by change 3 < candidateValue E entropy; have := candidate_large v entropy; omega_using [this],
+    by change Spec.RsaKeyGen.bitLength (candidateValue E entropy - 1) = 32 * (2 * E.width); rw [bits.2.1]; omega_using [],
+    by have := v.width_bounds; change 2 ≤ 2 * E.width; omega_using [this], by change 4 * (2 * E.width) ≤ 8 * E.width; omega_using [],
+    Nat.le_refl _, by change 8 * E.width % 4 = 0; omega_using [], by have := v.width_bounds; change 1 ≤ 64 * E.width - 1; omega_using [this],
+    by have := v.width_bounds; change 64 * E.width - 1 < 64 * E.width; omega_using [this], ?_, ?_⟩
   · exact (v.stackFar E.randRegion (List.mem_append_right _
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))).sub_right inner
   · exact (v.stackFar E.workspaceRegion (List.mem_append_left _
@@ -42,18 +42,18 @@ theorem Environment.Valid.parameters_valid {E : Environment} (v : E.Valid) (entr
       rw [BitVec.toNat_setWidth, BitVec.toNat_add, privateNat]
       change ((E.p.toNat - 28 + 24) % 2 ^ 32) % 2 ^ 64 = E.p.toNat - 4
       have := E.p.isLt
-      omega
+      omega_using [low]
     have belowNat : (below (E.p - 28#32) 108).base.toNat = E.p.toNat - 136 := by
       change (((E.p - 28#32) - 108#32).setWidth 64).toNat = _
       rw [BitVec.toNat_setWidth, sub_toNat privateFit, privateNat]
       have := E.p.isLt
-      omega
+      omega_using []
     apply Region.Disjoint.symm
     apply Offset.disjoint_of_le
     · change (below (E.p - 28#32) 108).base.toNat + 108 ≤ (lengthRegion (E.p - 28#32)).base.toNat
-      rw [belowNat, lengthNat]; omega
+      rw [belowNat, lengthNat]; omega_using [low]
     · change (lengthRegion (E.p - 28#32)).base.toNat + 4 ≤ 2 ^ 64
-      rw [lengthNat]; have := E.p.isLt; omega
+      rw [lengthNat]; have := E.p.isLt; omega_using []
   · change Spec.RsaKeyGen.witnessBytes (candidateValue E entropy) = 8 * E.width
     rw [bits.2.2, v.length_eq]
   · exact VG.Proof.RsaKeyGen.X86.WitnessChecks.checks_bound E.width
@@ -66,11 +66,11 @@ theorem Environment.Valid.test_eq {E : Environment} (v : E.Valid) (entropy : Lis
   have checks : Spec.RsaKeyGen.checksForSize (Spec.RsaKeyGen.bitLength (candidateValue E entropy)) =
       VG.Impl.RsaKeyGen.X86.WitnessChecks.checks E.width := by
     rw [bits.1]
-    exact VG.Proof.RsaKeyGen.checksW_eq E.width (by have := v.width_bounds.2; omega) v.width_bounds.1
+    exact VG.Proof.RsaKeyGen.checksW_eq E.width (by have := v.width_bounds.2; omega_using [this]) v.width_bounds.1
   have odd := candidate_odd v entropy
   have large := candidate_large v entropy
   unfold Spec.RsaKeyGen.primalityTest
-  rw [ite_eq_right (by omega), ite_eq_right (by rw [odd]; decide), ite_eq_right (by omega), checks]
+  rw [ite_eq_right (by omega_using [large]), ite_eq_right (by rw [odd]; decide), ite_eq_right (by omega_using [large]), checks]
   rfl
 
 theorem MemoryFacts.entropyLength {E : Environment} {eBytes pBytes entropy : List Byte} {s : State}

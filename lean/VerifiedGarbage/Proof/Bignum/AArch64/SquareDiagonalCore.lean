@@ -25,7 +25,7 @@ theorem carry3_nat (a b c : Bool) :
 
 theorem carry3_bound (a b c : Bool) : a.toNat + b.toNat + c.toNat ≤ 3 := by
   have ha := Bool.toNat_le a; have hb := Bool.toNat_le b; have hc := Bool.toNat_le c
-  omega
+  omega_using [ha, hb, hc]
 
 theorem diagonalCore_ok (s : State) (h7 : s.gpr .x7 = 0) :
     WP isa (.block VG.Impl.Bignum.AArch64.Square.diagonalCore) s fun t =>

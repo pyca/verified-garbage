@@ -60,11 +60,11 @@ theorem selInC_ok {s : State} (h : Bx L s B Z len N) {o a : Ref} {cnt : List Ins
   rw [show cnt = cnt ++ [] from (List.append_nil _).symm]
   simp only [List.append_assoc]
   refine WP.seq (ptr_ok h.ws h.slots hZ (by decide) (by decide) (by decide) (by decide) (by intro e; cases e)
-    (by omega) fun u₁ K₁ m₁ p₁ => ?_)
+    (by omega_using [hc0, haz, hn]) fun u₁ K₁ m₁ p₁ => ?_)
   have h₁ : Bx L u₁ B Z len N := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _)
     (rv_ge _ o) hoz
   refine ptr_ok h₁.ws h₁.slots hZ (by decide) (by decide) (by decide) (by decide) (by intro e; cases e)
-    (by omega) fun u₂ K₂ m₂ p₂ => ?_
+    (by omega_using [hc0, hoz, hn]) fun u₂ K₂ m₂ p₂ => ?_
   have h₂ : Bx L u₂ B Z len N := h₁.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _)
     (rv_ge _ o) hoz
   refine hc u₂ _ _ h₂.ws.ws.workspace h₂.slots fun u K₃ m₃ c₃ => WP.block_nil ?_
@@ -73,12 +73,12 @@ theorem selInC_ok {s : State} (h : Bx L s B Z len N) {o a : Ref} {cnt : List Ins
   have m : u.mem = s.mem := by rw [m₃, m₂, m₁]
   have ecx : u.gpr .ecx = cmask k := by rw [K.1 _ (by decide)]; exact hk
   refine WP.seq (WP.mono (selectLoopX_ok (h.ws.rt.of_keeps K) (x := rv (kw len) a) (d := rv (kw len) o)
-    (N := c) k (by omega) (by omega) sep
+    (N := c) k (by omega_using [haz]) (by omega_using [hoz]) sep
     (by rw [PtrAt, K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
     (by rw [PtrAt, K₃.1 _ (by decide)]; exact p₂) (by rw [c₃]) ecx) fun t ⟨O, V, _, Kt⟩ => ?_)
   rw [m] at O V
   have KK : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (K.mono (by decide)).trans Kt
-  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega)
+  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega_using [hoz])
   refine wp_movS (h.ws.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
   have K' : Keeps [.eax, .ebx, .edx, .ebp] s t₁ :=
     VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .edx, .ebp])
@@ -105,35 +105,35 @@ theorem copyC_ok {s : State} (h : Bx L s B Z len N) {o a : Ref} {cnt : List Inst
 /-- `nBytesLess r` counts `n - 1` words. -/
 theorem countLess {r : Reg} {s : State} (hb : Bx L s B Z len N) (h2 : 2 ≤ nw len) :
     CountSpec (nBytesLess r) r B Z (kw len) (nw len - 1) :=
-  fun _ _ _ hs hsl k => nBytesLess_ok hs hsl hb.halfZ (by have := kw_bound hb.ws.lenLe; omega)
-    (by have := kw_eq len; omega) fun v K m c => k v K m (by rw [c]; have := kw_eq len; omega)
+  fun _ _ _ hs hsl k => nBytesLess_ok hs hsl hb.halfZ (by have := kw_bound hb.ws.lenLe; omega_using [this])
+    (by have := kw_eq len; omega_using [h2, this]) fun v K m c => k v K m (by rw [c]; have := kw_eq len; omega_using [this])
 
 /-- `nBytes r 1` counts `n + 1` words. -/
 theorem countN1 {r : Reg} {s : State} (hb : Bx L s B Z len N) :
     CountSpec (nBytes r 1) r B Z (kw len) (nw len + 1) := by
-  have := nBytes_spec (r := r) (e := 1) (B := B) hb.halfZ (w := kw len) (by have := kw_bound hb.ws.lenLe; omega)
-    (by decide) (by have := kw_eq len; omega)
-  rwa [show kw len / 2 + 1 = nw len + 1 by have := kw_eq len; omega] at this
+  have := nBytes_spec (r := r) (e := 1) (B := B) hb.halfZ (w := kw len) (by have := kw_bound hb.ws.lenLe; omega_using [this])
+    (by decide) (by have := kw_eq len; omega_using [this])
+  rwa [show kw len / 2 + 1 = nw len + 1 by have := kw_eq len; omega_using [this]] at this
 
 /-- `nBytes r 0` counts `n` words. -/
 theorem countN0 {r : Reg} {s : State} (hb : Bx L s B Z len N) :
     CountSpec (nBytes r 0) r B Z (kw len) (nw len) := by
-  have := nBytes_spec (r := r) (e := 0) (B := B) hb.halfZ (w := kw len) (by have := kw_bound hb.ws.lenLe; omega)
-    (by decide) (by have := kw_eq len; omega)
-  rwa [show kw len / 2 + 0 = nw len by have := kw_eq len; omega] at this
+  have := nBytes_spec (r := r) (e := 0) (B := B) hb.halfZ (w := kw len) (by have := kw_bound hb.ws.lenLe; omega_using [this])
+    (by decide) (by have := kw_eq len; omega_using [this])
+  rwa [show kw len / 2 + 0 = nw len by have := kw_eq len; omega_using [this]] at this
 
 /-- A number of `k` words followed by two words of zeros, from the zeros of `k + 2` words and
 the number's words. -/
 theorem val32_extend {m m' : Mem} {d k v : Nat} (Z0 : val32 m B d (k + 2) = 0) (C : val32 m' B d k = v)
     (O : Outside B d (4 * k) m m') (hd : d + 4 * (k + 2) ≤ 2 ^ 64) : val32 m' B d (k + 2) = v := by
-  have hi : val32 m' B (d + 4 * k) 2 = val32 m B (d + 4 * k) 2 := O.val32 (.inr (Nat.le_refl _)) (by omega)
+  have hi : val32 m' B (d + 4 * k) 2 = val32 m B (d + 4 * k) 2 := O.val32 (.inr (Nat.le_refl _)) (by omega_using [hd])
   rw [val32_append] at Z0 ⊢
   have p := Nat.two_pow_pos (32 * k)
   have z : val32 m B (d + 4 * k) 2 = 0 := by
     rcases Nat.eq_zero_or_pos (val32 m B (d + 4 * k) 2) with e | e
     · exact e
-    · have := Nat.mul_le_mul_left (2 ^ (32 * k)) e; omega
-  rw [hi, z, C]; omega
+    · have := Nat.mul_le_mul_left (2 ^ (32 * k)) e; omega_using [Z0, p, this]
+  rw [hi, z, C]; omega_using []
 
 /-- A number of `k + 1` words below `2 ^ (32 k)`: its low `k` words, and its top word zero. -/
 theorem low_eq {mm : Mem} {d k v : Nat} (h : val32 mm B d (k + 1) = v) (hv : v < 2 ^ (32 * k)) :
@@ -142,7 +142,7 @@ theorem low_eq {mm : Mem} {d k v : Nat} (h : val32 mm B d (k + 1) = v) (hv : v <
   have p := Nat.two_pow_pos (32 * k)
   rcases Nat.eq_zero_or_pos (w32 mm B (d + 4 * k)) with e | e
   · rw [e, Nat.mul_zero, Nat.add_zero] at h; exact ⟨h, e⟩
-  · have := Nat.mul_le_mul_left (2 ^ (32 * k)) e; omega
+  · have := Nat.mul_le_mul_left (2 ^ (32 * k)) e; omega_using [h, hv, this]
 
 /-- `[o]` the `n - 1` words of `[src]` zero-extended to `n + 1`. -/
 theorem extend_ok {s : State} (h : Bx L s B Z len N) (h3 : 3 ≤ nw len) {o src : Ref}
@@ -155,15 +155,15 @@ theorem extend_ok {s : State} (h : Bx L s B Z len N) (h3 : 3 ≤ nw len) {o src 
     WP isa (.seq (VG.Impl.Rsa.X86.InvBatchRt.zeros L o (nBytes .ecx 1))
       (.seq (VG.Impl.Rsa.X86.InvBatchRt.copy L o src (nBytesLess .edi)) rest)) s Q := by
   have hn := h.nowrap
-  refine WP.seq (WP.mono (zeros_ok h (o := o) (countN1 h) (by omega) hoz) fun s₁ ⟨H₁, O₁, V₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (zeros_ok h (o := o) (countN1 h) (by omega_using []) hoz) fun s₁ ⟨H₁, O₁, V₁, K₁⟩ => ?_)
   have S₁ : val32 s₁.mem B (rv (kw len) src) (nw len - 1) = val32 s.mem B (rv (kw len) src) (nw len - 1) :=
-    O₁.val32 (by omega) (by omega)
-  refine WP.seq (WP.mono (copyC_ok H₁ (o := o) (a := src) (countLess H₁ (by omega)) (by omega) (by omega)
-    (by omega) (by omega)) fun u ⟨Hu, Ou, Vu, Ku⟩ => ?_)
-  refine k u Hu ((O₁.mono (Nat.le_refl _) (Nat.le_refl _)).trans (Ou.mono (Nat.le_refl _) (by omega))) ?_
+    O₁.val32 (by omega_using [sep]) (by omega_using [hsz, hn])
+  refine WP.seq (WP.mono (copyC_ok H₁ (o := o) (a := src) (countLess H₁ (by omega_using [h3])) (by omega_using [h3]) (by omega_using [hoz])
+    (by omega_using [hsz]) (by omega_using [sep])) fun u ⟨Hu, Ou, Vu, Ku⟩ => ?_)
+  refine k u Hu ((O₁.mono (Nat.le_refl _) (Nat.le_refl _)).trans (Ou.mono (Nat.le_refl _) (by omega_using []))) ?_
     ((K₁.mono (by decide)).trans Ku)
-  rw [show nw len + 1 = nw len - 1 + 2 by omega] at V₁ ⊢
-  exact val32_extend V₁ (Vu.trans S₁) Ou (by omega)
+  rw [show nw len + 1 = nw len - 1 + 2 by omega_using [h3]] at V₁ ⊢
+  exact val32_extend V₁ (Vu.trans S₁) Ou (by omega_using [hoz, hn])
 
 /-- The GCD's state between batches: `δ` in the window, `f` and `g` in arrays 4 and 5. -/
 structure GState (len : Nat) (B : Addr) (I : Int × Int × Int) (s : State) : Prop where
@@ -349,8 +349,8 @@ theorem init_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (h3 : 3 �
     have h2 := hy (rv (kw len) (a 0), 6 * (8 * nw len + 8)) (by simp [gcdWrites])
     have h3 := hy (rv (kw len) (a 11), 2 * (8 * nw len + 8)) (by simp [gcdWrites])
     simp only at h1 h2 h3
-    rw [Oz y (by omega), O₂ y (by omega), Uu y (by
+    rw [Oz y (by omega_using [e16, h1]), O₂ y (by omega_using [h1]), Uu y (by
       intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega), O₀ y (by omega)]
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith), O₀ y (by omega_using [e16, e52, h1])]
 
 end VG.Proof.Rsa.X86.GcdBatchRt

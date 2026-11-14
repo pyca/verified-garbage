@@ -102,7 +102,7 @@ open VG.Proof.MlDsa.AArch64.Optimized
 theorem pairedR0_ready {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (hp : Ok3 p) (hi : i+1<p.k) (roots : PairedRoots S s) (h : PositiveIR p S σ t i s) :
     Paired.PairedLowReady cP (s2P p i) (wP p i) (hP i) t1P p.γ₂ (p.γ₂-p.β) s := by
-  have checks := pairedR0Chk_ok hp i (by omega) hi
+  have checks := pairedR0Chk_ok hp i (by omega_using [hi]) hi
   simp only [pairedR0Chk,Bool.and_eq_true,decide_eq_true_eq,List.all_eq_true] at checks
   obtain ⟨⟨⟨⟨⟨⟨cl,hgb⟩,rr⟩,wr⟩,re⟩,we⟩,hws⟩ := checks
   simp only [pairedLowChk,Bool.and_eq_true] at cl
@@ -111,11 +111,11 @@ theorem pairedR0_ready {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   have hdata : ∀j<2,PolyIs s.mem (pairPolyPtr (pa s (wP p i)) j) (Wv p σ (p.ℓ*t) (i+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.w j (by omega)
+    simpa only [Nat.add_assoc] using h.w j (by omega_using [hi, hj])
   have hsecret : ∀j<2,PosPolyIs s.mem (pairPolyPtr (pa s (s2P p i)) j) (S2v p σ (i+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.b.l.k.d.s2 (i+j) (by omega)
+    simpa only [Nat.add_assoc] using h.b.l.k.d.s2 (i+j) (by omega_using [hi, hj])
   have hprod : pairedProductsReduced s.mem (pa s cP) (pa s (s2P p i)) :=
     ⟨h.b.c.bound,fun j hj => (hsecret j hj).bound⟩
   have hsep : ∀r∈[⟨pa s (wP p i),2048⟩,⟨pa s (hP i),2048⟩,⟨pa s t1P,2176⟩],

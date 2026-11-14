@@ -41,8 +41,8 @@ theorem coreSignSchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operan
     RelCT isa (Two (ScheduleState inputs)) (Core.sign M.mm)
       (Two (ScheduleState inputs)) := by
   have qp (p : SchedulePublic) : 1 ≤ p.layout.qLen := p.layout.widths.1
-  have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega
-  have qb (p : SchedulePublic) : p.layout.qLen ≤ 1024 := by have := p.layout.widths; omega
+  have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega_using [this]
+  have qb (p : SchedulePublic) : p.layout.qLen ≤ 1024 := by have := p.layout.widths; omega_using [this]
   have hpfit (p : SchedulePublic) : (p.layout.pLen + 7) / 8 ≤ ModulusSide.p.words p.layout := Nat.le_refl _
   have hqfit (p : SchedulePublic) : (p.layout.qLen + 7) / 8 ≤ ModulusSide.q.words p.layout := Nat.le_refl _
   have h1 := schedulePow_ct M inputs stable .p t Core.generator Core.nonce
@@ -50,7 +50,7 @@ theorem coreSignSchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operan
     pp hpfit qp qb (by decide) (by decide) (element_space (by decide)) (by taint_decide)
   have h2 := scheduleReduce_ct M inputs stable r (Core.element t) (fun p => p.layout.pLen)
     (by change t < 2 ^ 16; decide) (by simp [stablePointer, Core.element])
-    (by intro p; have := p.layout.widths; omega)
+    (by intro p; have := p.layout.widths; omega_using [this])
     (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
   have h3 := schedulePow_ct M inputs stable .q inverse Core.nonce (Core.scalar qMinusTwo)
     (fun p => p.layout.qLen) (fun p => p.layout.qLen) (by simp [pointerFits, Core.nonce]) (by change qMinusTwo < 2 ^ 16; decide)
@@ -60,7 +60,7 @@ theorem coreSignSchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operan
     (by simp [stablePointer, Core.privateScalar]) (by simp [stablePointer, Core.scalar]) qp hqfit qp hqfit (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
   have h5 := scheduleReduceKeep_ct M inputs stable z u Core.digest (fun p => p.digestLen)
     (by simp [pointerFits, Core.digest]) (by simp [stablePointer, Core.digest]) (fun p => p.digestBound) (by decide) (by decide) (scalar_space (by decide))
-    (by decide) (scalar_space (by decide)) (by intro p; left; have := p.layout.widths; unfold u z; omega)
+    (by decide) (scalar_space (by decide)) (by intro p; left; have := p.layout.widths; unfold u z; omega_using [this])
     (by taint_decide)
   have h6 := scheduleScalarAdd_ct inputs stable z u v
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)

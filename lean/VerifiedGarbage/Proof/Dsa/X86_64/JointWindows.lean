@@ -31,12 +31,12 @@ theorem jointWinStep_ok (M : Mont) (Sq : MontS) {t s : State} {P : Addr} {w n xc
     WP isa (Joint.window Sq.mm M.mm) s fun s' => s'.zf = some (decide (j + 1 = 4)) ∧
       JointWinInv t P w minv n xc g y E F v z (j + 1) s' := by
   have hp : 4 ^ j ≤ 64 := by
-    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;> decide
+    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;> decide
   refine WP.mono (jointWindow_ok M Sq h.ctx h.tab hw hw' hR h.ylt h.val h.bytes
-    (by have := Nat.mul_le_mul_left (256 * v + z) hp; omega) h.count (by omega) (by omega))
+    (by have := Nat.mul_le_mul_left (256 * v + z) hp; omega_using [hv, hz, this]) h.count (by omega_using [hj]) (by omega_using []))
     fun s' ⟨hc, ht, hy, hval, hb, hn, hz', hf, hk⟩ => ⟨?_, hc, ht, hy, ?_, ?_, ?_,
       h.frm.trans hf, (h.keep.trans hk).mono (by decide)⟩
-  · rw [hz']; congr 1; exact decide_eq_decide.mpr (by omega)
+  · rw [hz']; congr 1; exact decide_eq_decide.mpr (by omega_using [hj])
   · rw [hval, (VG.Proof.Dsa.joint_byte_step hv hz hj E F).1,
       (VG.Proof.Dsa.joint_byte_step hv hz hj E F).2]
   · rw [hb, Nat.pow_succ]; congr 1; ac_rfl

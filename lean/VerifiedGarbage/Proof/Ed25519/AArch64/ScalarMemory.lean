@@ -39,7 +39,7 @@ theorem wordRead_ok (s : State) (k : Nat) (hb : s.gpr .x19 = BitVec.ofNat 64 (8 
       t.gpr .x3 = s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 (8 * k)) 64 ∧
       Keeps [.x19, .x9, .x3] s t := by
   have hn : s.gpr .x19 - BitVec.ofNat 64 8 = BitVec.ofNat 64 (8 * k) := by
-    rw [hb, show 8 * (k + 1) = 8 * k + 8 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel]
+    rw [hb, show 8 * (k + 1) = 8 * k + 8 by omega_using [], BitVec.ofNat_add, BitVec.add_sub_cancel]
   apply WP.of_runBlock
   simp only [wordRead, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, addr, State.load,
     Size.bytes, show (8 : Nat) < 4096 from by decide, show (0 : Nat) % 8 = 0 from rfl,
@@ -111,8 +111,8 @@ theorem scalarLoop_ok (s₀ : State) (hb : s₀.gpr .x19 = 64) (hz : scalarValue
       Keeps scalarBodyClob s₀ t := by
   apply WP.loop (ScalarInv s₀) (n := 8)
   · intro n s hi
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega : n ≠ 0)
-    have hk : k < 8 := by have := hi.bound; omega
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega_using [this] : n ≠ 0)
+    have hk : k < 8 := by have := hi.bound; omega_using [this]
     have hp : s.gpr .x1 = s₀.gpr .x1 := hi.keeps.gpr .x1 (by decide)
     have hread : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 (8 * k)) 8 := by
       rw [hi.keeps.rd, hi.keeps.wr, hp]; exact hr k hk
@@ -129,7 +129,7 @@ theorem scalarLoop_ok (s₀ : State) (hb : s₀.gpr .x19 = 64) (hz : scalarValue
         show decide ((0 : Nat) ≠ 0) = false from rfl], ?_, kt⟩
       simpa only [Nat.mul_zero, BitVec.add_zero, Nat.sub_zero] using vt
     · exact Or.inr ⟨by simp only [eval, read_x, htb, scalar_counter_test k hk, decide_eq_true hk0],
-        k, by omega, ⟨by omega, by omega, htb, vt, kt⟩⟩
+        k, by omega_using [], ⟨by omega_using [hk0], by omega_using [hk], htb, vt, kt⟩⟩
   · refine ⟨by decide, by decide, hb, ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩
     rw [hz]
     rfl
@@ -156,7 +156,7 @@ theorem scalarSave_ok {s : State} {base : Addr} (hc : s.gpr .x2 = base)
   simp only [scalarSave, saved, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil,
     exec, addr, Size.bytes, State.store, read_x, hc, BitVec.setWidth_eq,
     Nat.reduceMod, Nat.reduceMul, Nat.reduceLT, and_self, ite_true,
-    w 0 (by omega), w 8 (by omega), w 16 (by omega), w 24 (by omega), w 32 (by omega), w 40 (by omega),
+    w 0 (by omega_using []), w 8 (by omega_using []), w 16 (by omega_using []), w 24 (by omega_using []), w 32 (by omega_using []), w 40 (by omega_using []),
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨True.intro, True.intro, True.intro, True.intro, ?_, fun rd hrd => ?_⟩
   · exact ((((((Outside.refl base 0 48 s.mem).writeW (by decide) (by decide) (by decide) _).writeW
@@ -179,7 +179,7 @@ theorem scalarRestore_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base)
   simp only [scalarRestore, saved, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil,
     exec, addr, Size.bytes, State.load, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, hb, BitVec.setWidth_eq, Nat.reduceMod, Nat.reduceMul, Nat.reduceLT, and_self,
-    hr 0 (by omega), hr 8 (by omega), hr 16 (by omega), hr 24 (by omega), hr 32 (by omega), hr 40 (by omega),
+    hr 0 (by omega_using []), hr 8 (by omega_using []), hr 16 (by omega_using []), hr 24 (by omega_using []), hr 32 (by omega_using []), hr 40 (by omega_using []),
     ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun rd hrd => ?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
   · have e := hsv rd hrd
@@ -196,11 +196,11 @@ theorem scalarOut_ok {s : State} {q : Addr} (hq : s.gpr .x0 = q) (hw : (⟨q, 32
     WP isa (.block [.str .x .x4 .x0 0, .str .x .x5 .x0 8, .str .x .x6 .x0 16, .str .x .x7 .x0 24]) s
       fun t => t = { s with mem := st4 s.mem q 0 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) } := by
   have w : ∀ d, d + 8 ≤ 32 → InRegions s.wr (off q d) 8 :=
-    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega)⟩
+    fun d hd => ⟨_, hw, Offset.contains_base q hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, State.store, read_x,
     hq, BitVec.setWidth_eq, Nat.reduceMod, Nat.reduceMul, Nat.reduceLT, and_self, ite_true,
-    w 0 (by omega), w 8 (by omega), w 16 (by omega), w 24 (by omega),
+    w 0 (by omega_using []), w 8 (by omega_using []), w 16 (by omega_using []), w 24 (by omega_using []),
     Option.bind_some, Option.some.injEq, exists_eq_left']
   rfl
 

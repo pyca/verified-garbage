@@ -39,7 +39,7 @@ theorem square_ok {mont : Prog isa} {name : String}
   rintro t ⟨V, O, K, Ct, Mt, F⟩
   rw [caller.sp] at F
   exact ⟨Ct, Mt, caller.keepFrame K (by decide) F,
-    by rw [V]; exact VG.Proof.MillerRabin.Word32.mm_lt (by omega),
+    by rw [V]; exact VG.Proof.MillerRabin.Word32.mm_lt (by omega_using [odd]),
     by rw [V]; exact mm_congr odd, O, K, F⟩
 
 end VG.Proof.RsaKeyGen.X86.FastR2

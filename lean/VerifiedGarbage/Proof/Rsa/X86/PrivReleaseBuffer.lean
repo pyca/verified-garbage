@@ -33,15 +33,15 @@ theorem releaseBuffer_ok (s : State) {src dst : BitVec 32} {n : Nat} {accepted :
   have copy := copyCtx_of_regions s src dst hn' srcFit dstFit srcRead dstWrite sep
   have clear (i : Nat) (hi : i < n) :
       InRegions s.wr (byteAddr (src + BitVec.ofNat 32 i)) 1 := by
-    rw [byteAddr_add (by omega)]
+    rw [byteAddr_add (by omega_using [srcFit, hi])]
     obtain ⟨r, hr, hc⟩ := srcWrite
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hn', hi])]; omega_using [hi])⟩
   have distinct (i : Nat) (hi : i < n) (j : Nat) (hj : j < n)
       (he : byteAddr (src + BitVec.ofNat 32 i) = byteAddr (src + BitVec.ofNat 32 j)) : i = j := by
-    rw [byteAddr_add (by omega), byteAddr_add (by omega)] at he
+    rw [byteAddr_add (by omega_using [srcFit, hi]), byteAddr_add (by omega_using [srcFit, hj])] at he
     have eq := congrArg (fun a => (a - byteAddr src).toNat) he
-    simpa only [Mem.sub_ofNat_toNat _ (by omega : i < 2 ^ 64),
-      Mem.sub_ofNat_toNat _ (by omega : j < 2 ^ 64)] using eq
+    simpa only [Mem.sub_ofNat_toNat _ (by omega_using [hn', hi] : i < 2 ^ 64),
+      Mem.sub_ofNat_toNat _ (by omega_using [hn', hj] : j < 2 ^ 64)] using eq
   have ctx : ReleaseCtx s src dst n :=
     ⟨hn', copy.readable, copy.writable, clear, distinct, copy.separate, copy.distinct⟩
   refine WP.mono (release_ok s ctx hn source output count) ?_
@@ -53,7 +53,7 @@ theorem releaseBuffer_ok (s : State) {src dst : BitVec 32} {n : Nat} {accepted :
     intro j hj
     have hj' : j < n := List.mem_range.mp hj
     have value := inv.copied j hj'
-    rw [byteAddr_add (by omega), byteAddr_add (by omega)] at value
+    rw [byteAddr_add (by omega_using [dstFit, hj']), byteAddr_add (by omega_using [srcFit, hj'])] at value
     exact value
   rw [mask, acceptance_bytes_mask] at bytes
   have length : (Spec.Rsa.bytesAt s.mem (byteAddr src) n).length = n := by
@@ -67,17 +67,17 @@ theorem releaseBuffer_ok (s : State) {src dst : BitVec 32} {n : Nat} {accepted :
       intro j hj
       have hj' : j < n := List.mem_range.mp hj
       have value := inv.cleared j hj'
-      rw [byteAddr_add (by omega)] at value
+      rw [byteAddr_add (by omega_using [srcFit, hj'])] at value
       exact value
     rw [cleared, List.map_const', List.length_range]
   · intro a ha
     apply inv.outside a
     · intro j hj he
       apply ha ⟨byteAddr dst, n⟩ (by simp)
-      rw [he, byteAddr_add (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega)
+      rw [he, byteAddr_add (by omega_using [dstFit, hj])]
+      exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn', hj])
     · intro j hj he
       apply ha ⟨byteAddr src, n⟩ (by simp)
-      rw [he, byteAddr_add (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega)
+      rw [he, byteAddr_add (by omega_using [srcFit, hj])]
+      exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn', hj])
 end VG.Proof.Rsa.X86.PrivChecked

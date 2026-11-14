@@ -70,7 +70,7 @@ theorem D_ne {D : Addr} {c j k : Nat} (hc : c ≤ 2 ^ 32) (hj : j < c) (hk : k <
   have e : BitVec.ofNat 64 j = BitVec.ofNat 64 k := by
     have e := congrArg (· - D) he; simpa using e
   have := congrArg BitVec.toNat e
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc, hj]), Nat.mod_eq_of_lt (by omega_using [hc, hk])] at this
   exact h this
 
 /-- A byte read is outside the bytes written. -/
@@ -78,7 +78,7 @@ theorem not_contains {D K : Addr} {c i : Nat}
     (hs : ∀ j < c, ∀ k < c, D + BitVec.ofNat 64 j ≠ K + BitVec.ofNat 64 k) (hi : i < c)
     (h : (⟨D, c⟩ : Region).Contains (K + BitVec.ofNat 64 i) 1) : False := by
   simp only [Region.Contains] at h
-  refine hs (K + BitVec.ofNat 64 i - D).toNat (by omega) i hi ?_
+  refine hs (K + BitVec.ofNat 64 i - D).toNat (by omega_using [h]) i hi ?_
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
 
 theorem byte_step {s : State} {D K : BitVec 32} {c i : Nat} (hp : BPre s D K c) (hi : i < c) {s₁ : State}
@@ -87,7 +87,7 @@ theorem byte_step {s : State} {D K : BitVec 32} {c i : Nat} (hp : BPre s D K c) 
   have hc := hp.d_fit
   have hk := hp.k_fit
   have cd : (⟨State.addr D, c⟩ : Region).Contains (State.addr D + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hc])
   have i₁ : InRegions (s₁.rd ++ s₁.wr) (State.addr D + BitVec.ofNat 64 i) 1 := by
     obtain ⟨r, hr, hc⟩ := hp.wD i hi; exact ⟨r, by rw [h.rd, h.wr]; exact List.mem_append_right _ hr, hc⟩
   have i₂ : InRegions (s₁.rd ++ s₁.wr) (State.addr K + BitVec.ofNat 64 i) 1 := by
@@ -95,11 +95,11 @@ theorem byte_step {s : State} {D K : BitVec 32} {c i : Nat} (hp : BPre s D K c) 
   have o₁ : InRegions s₁.wr (State.addr D + BitVec.ofNat 64 i) 1 := by rw [h.wr]; exact hp.wD i hi
   have ed : ∀ x : State, x.gpr .r5 = s₁.gpr .r5 →
       State.addr (x.gpr .r5 + BitVec.ofNat 32 0) = State.addr D + BitVec.ofNat 64 i :=
-    fun x hx => by rw [hx, h.r5]; exact ea0 (by omega)
+    fun x hx => by rw [hx, h.r5]; exact ea0 (by omega_using [hi, hc])
   unfold xorBody
   refine wp_ldrb (by decide) (ed s₁ rfl) i₁ fun s₂ u₂ => ?_
   refine wp_ldrb (a := State.addr K + BitVec.ofNat 64 i) (by decide)
-    (by rw [u₂.other _ (by decide), h.r3]; exact ea0 (by omega))
+    (by rw [u₂.other _ (by decide), h.r3]; exact ea0 (by omega_using [hi, hk]))
     (by rw [u₂.rd, u₂.wr]; exact i₂) fun s₃ u₃ => ?_
   refine wp_eor (op2_reg _ _) fun s₄ u₄ => ?_
   refine wp_strb (by decide) (ed s₄ (by rw [u₄.other _ (by decide), u₃.other _ (by decide),
@@ -128,7 +128,7 @@ theorem byte_step {s : State} {D K : BitVec 32} {c i : Nat} (hp : BPre s D K c) 
     rw [u₇.other _ (by decide), u₆.other _ (by decide), g₅.gpr, u₄.other _ (by decide),
       u₃.other _ (by decide), u₂.other _ (by decide), h.r2]
   have hr2 : s₈.gpr .r2 = BitVec.ofNat 32 (c - (i + 1)) := by
-    rw [u₈.gpr, h7, sub_one' (by omega), Nat.sub_sub]
+    rw [u₈.gpr, h7, sub_one' (by omega_using [hi]), Nat.sub_sub]
   refine ⟨⟨?_, ?_, hr2, fun r h₁ h₂ h₃ h₄ h₅ => by rw [g r h₁ h₂ h₃ h₄ h₅]; exact h.keep r h₁ h₂ h₃ h₄ h₅,
     by rw [u₈.rd, u₇.rd, u₆.rd, g₅.rd, u₄.rd, u₃.rd, u₂.rd, h.rd],
     by rw [u₈.wr, u₇.wr, u₆.wr, g₅.wr, u₄.wr, u₃.wr, u₂.wr, h.wr],
@@ -140,12 +140,12 @@ theorem byte_step {s : State} {D K : BitVec 32} {c i : Nat} (hp : BPre s D K c) 
   · rw [hm, writeW8_apply]
     by_cases he : k = i
     · subst he; simp
-    · simp only [D_ne (D := State.addr D) (by omega) hk' hi he, ite_false]
+    · simp only [D_ne (D := State.addr D) (by omega_using [hc]) hk' hi he, ite_false]
       rw [h.data k hk']
       by_cases h₁ : k < i
-      · simp [h₁, show k < i + 1 by omega]
-      · simp [h₁, show ¬ k < i + 1 by omega]
-  · rw [hz, hr2, h7, sub_one' (by omega), sub_zero', Nat.sub_sub]
+      · simp [h₁, show k < i + 1 by omega_using [h₁]]
+      · simp [h₁, show ¬ k < i + 1 by omega_using [he, h₁]]
+  · rw [hz, hr2, h7, sub_one' (by omega_using [hi]), sub_zero', Nat.sub_sub]
 
 theorem LInv.zero {s : State} {D K : BitVec 32} {c : Nat} (hp : BPre s D K c) : LInv s D K c 0 s :=
   ⟨by rw [hp.r5]; simp, by rw [hp.r3]; simp, by rw [hp.r2, Nat.sub_zero], fun _ _ _ _ _ _ => rfl, rfl, rfl,
@@ -165,11 +165,11 @@ theorem loop_ok {s : State} {D K : BitVec 32} {c : Nat} (hp : BPre s D K c) (hc0
       (isa.eval .ne s'' = some true ∧ ∃ n' < n, Inv n' s'')) := by
     rintro n s' ⟨i, rfl, hi, hI⟩
     refine WP.mono (byte_step hp hi hI) fun s'' ⟨h', hz'⟩ => ?_
-    have hz := eval_ne_ofNat s'' (show c - (i + 1) < 2 ^ 32 by omega) hz' h'.r2
+    have hz := eval_ne_ofNat s'' (show c - (i + 1) < 2 ^ 32 by omega_using [hc]) hz' h'.r2
     by_cases hl : i + 1 = c
-    · exact .inl ⟨by rw [hz]; simp; omega, LInv.post (hl ▸ h')⟩
-    · exact .inr ⟨by rw [hz]; simp; omega, c - (i + 1), by omega, i + 1, rfl, by omega, h'⟩
-  exact WP.loop (M := isa) Inv hstep c s ⟨0, by simp, by omega, LInv.zero hp⟩
+    · exact .inl ⟨by rw [hz]; simp; omega_using [hl], LInv.post (hl ▸ h')⟩
+    · exact .inr ⟨by rw [hz]; simp; omega_using [hi, hl], c - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hl], h'⟩
+  exact WP.loop (M := isa) Inv hstep c s ⟨0, by simp, by omega_using [hc0], LInv.zero hp⟩
 
 theorem xorBytes_eq : xorBytes = .seq (.block [.cmp .r2 (.imm 0)]) (.ite .eq (.block []) xorLoop) := rfl
 
@@ -186,7 +186,7 @@ theorem xorBytes_ok {s : State} {D K : BitVec 32} {c : Nat} (hp : BPre s D K c) 
       by rw [h.sp, f₁.sp], fun k hk => by rw [h.data k hk, f₁.mem], f₁.mem ▸ h.frame⟩
   refine WP.ite (decide (c = 0)) (by
       have e : isa.eval .eq s₁ = some s₁.z := eval_eq s₁
-      rw [e, hz, hp.r2, sub_zero', ofNat_beq_zero (by omega)])
+      rw [e, hz, hp.r2, sub_zero', ofNat_beq_zero (by omega_using [hc])])
     (fun h0 => WP.block_nil (M := isa) (conv _ ?_)) (fun h0 => WP.mono (loop_ok hp₁ (by simpa using h0)) conv)
   simp only [decide_eq_true_eq] at h0; subst h0; exact (LInv.zero hp₁).post
 

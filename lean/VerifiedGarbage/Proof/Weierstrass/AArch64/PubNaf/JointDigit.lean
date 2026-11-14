@@ -36,7 +36,7 @@ theorem jointDigit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL 
   have hb4 := hL.al.bits4
   have hbits := hW.bits
   have hdig := hL.digits
-  have h10 : K.M.n < 10 := by have := hL.n6; omega
+  have h10 : K.M.n < 10 := by have := hL.n6; omega_using [this]
   obtain ⟨-, a2, -, a4, -, -, -, -⟩ := rcbApart_naf hW
   have sD : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ winRo K ++ winOther K :=
     fun x hx => List.mem_append_right _ (D_other K x hx)
@@ -44,7 +44,7 @@ theorem jointDigit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL 
     fun x hx => List.mem_append_right _ (E_other K x hx)
   rw [PubNaf.digit]
   apply WP.seq
-  refine WP.mono (nafRead_ok h.scr (by omega) (by omega) h19 (h.digits hL hF j hj) .x2)
+  refine WP.mono (nafRead_ok h.scr (by omega_using [hb4]) (by omega_using [hj, hbits, hdig]) h19 (h.digits hL hF j hj) .x2)
     fun u ⟨u2, ku⟩ => ?_
   have Su := h.regs hW ku (fun r hr => nafClob_mem (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp))

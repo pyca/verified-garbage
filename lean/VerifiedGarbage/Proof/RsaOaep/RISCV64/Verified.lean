@@ -92,8 +92,8 @@ theorem call_ct {D : Nat} :
   · rw [c₁.g2, c₂.g2, c₁.g3, c₂.g3, words_entry c₁.mem P₁.kp ((P₁.sp).sub_left (sc_sub P₁)) P₁.wp,
       words_entry c₂.mem P₂.kp ((P₂.sp).sub_left (sc_sub P₂)) P₂.wp, p₁.w, p₂.w]
   · rw [c₁.g4, c₂.g4, c₁.g5, c₂.g5,
-      bytes_entry c₁.mem P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega),
-      bytes_entry c₂.mem P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega), p₁.e, p₂.e]
+      bytes_entry c₁.mem P₁.ke ((P₁.es.symm).sub_left (sc_sub P₁)) (by have := P₁.we; omega_using []),
+      bytes_entry c₂.mem P₂.ke ((P₂.es.symm).sub_left (sc_sub P₂)) (by have := P₂.we; omega_using []), p₁.e, p₂.e]
 
 /-- The precondition, with MGF1's table, `G`'s, and the label's hash
 function's, `H`'s, on entry. -/
@@ -182,7 +182,7 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT 
       (L := fun s => s.gpr .a6) (N := fun s => (s.gpr .a7).toNat)
       (fun _ _ _ ⟨h6, h7⟩ g => ⟨(g .s6 (by decide)).trans h6, (g .s7 (by decide)).trans h7⟩)
       (fun _ p => ⟨p.1.g _ (by decide), by rw [p.1.g .a7 (by decide)]⟩)
-      (fun P => ⟨by rw [P.1.hrd]; simp, (P.1.ls.sub_right (sc_sub P.1)).sub_right (sc_in (by omega)),
+      (fun P => ⟨by rw [P.1.hrd]; simp, (P.1.ls.sub_right (sc_sub P.1)).sub_right (sc_in (by omega_arith)),
         P.1.kl.sub_left (cR_sub _), BitVec.isLt _⟩)
       (fun h => upd1_taint h) (fun h => lab3_taint h) (fun ac t b ⟨h6, h7⟩ => ?_) (fun ac t b ⟨_, h7⟩ => ?_)).mono
       (fun _ _ ⟨a, h₁, h₂⟩ => ⟨(a, 0), h₁.1, h₂.1⟩) fun _ _ h => h)
@@ -217,18 +217,18 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT 
     (dbArgs_taint H (bk_pins id fun _ _ h => h.1.bo)) (fun a t ⟨⟨s, P, p, b, sy⟩, hk⟩ => ?_) ?_
   · have k2 := P.1.k2
     have ek : (a.gpr .a3).toNat = (s.gpr .a3).toNat := by rw [p.1.g .a3 (by decide)]
-    refine WP.of_syms (wp_addi (imm := oEm + 1) (h := by omega) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega)
-      fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₃ o₃ e₃ =>
-      wp_subi (imm := H.D + 1) (h := by omega) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
+    refine WP.of_syms (wp_addi (imm := oEm + 1) (h := by omega_using [hE]) fun t₁ o₁ e₁ => wp_li (imm := H.D) (by omega_using [F])
+      fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1 + H.D) (h := by omega_using [F, hE]) fun t₃ o₃ e₃ =>
+      wp_subi (imm := H.D + 1) (h := by omega_using [F]) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
     have k₄ : Only [.s6, .s7, .s8, .s9] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
     show (MgfAT S vO (PreT H.D G H f) (PubT G H) 1 H.D (1 + H.D) ((a.gpr .a3).toNat - H.D - 1) a t₄ ∧
       MFit 1 H.D (1 + H.D) ((a.gpr .a3).toNat - H.D - 1)) ∧ HK H.D a
     refine ⟨⟨⟨s, P, p, b.only P.1.fits k₄, y.trans sy, ?_, ?_, ?_, ?_⟩,
-      ⟨by omega, by omega, .inl (by omega), by omega⟩⟩, hk⟩
+      ⟨by omega_using [F], by omega_using [F, k2, ek], .inl (by omega_using []), by omega⟩⟩, hk⟩
     · rw [o₄.get .s6, o₃.get .s6, o₂.get .s6, e₁, b.s0, p.1.S, hE]
     · rw [o₄.get .s7, o₃.get .s7, e₂]
     · rw [o₄.get .s8, e₃, o₂.get .s0, o₁.get .s0, b.s0, p.1.S, hE, Nat.zero_add]
-    · rw [e₄, o₃.get .s1, o₂.get .s1, o₁.get .s1, b.s1, sub_k (by omega)]; congr 1; omega
+    · rw [e₄, o₃.get .s1, o₂.get .s1, o₁.get .s1, b.s1, sub_k (by omega)]; congr 1; omega_using [ek]
   refine two_seq (Ψ := Bk H.D G H f) ((mgf_any hG cG fG hGh hGl hGv q₁).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩) fun _ _ h => h)
     (fun a t ⟨⟨⟨s, P, p, b, sy, h6, h7, h8, h9⟩, hf⟩, hk⟩ =>
@@ -241,16 +241,16 @@ theorem encMain_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT 
     (seedArgs_taint H (bk_pins id fun _ _ h => h.1.bo)) (fun a t ⟨⟨s, P, p, b, sy⟩, hk⟩ => ?_) ?_
   · have k2 := P.1.k2
     have ek : (a.gpr .a3).toNat = (s.gpr .a3).toNat := by rw [p.1.g .a3 (by decide)]
-    refine WP.of_syms (wp_addi (imm := oEm + 1 + H.D) (h := by omega) fun t₁ o₁ e₁ =>
-      wp_subi (imm := H.D + 1) (h := by omega) fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1) (h := by omega)
-      fun t₃ o₃ e₃ => wp_li (imm := H.D) (by omega) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
+    refine WP.of_syms (wp_addi (imm := oEm + 1 + H.D) (h := by omega_using [F, hE]) fun t₁ o₁ e₁ =>
+      wp_subi (imm := H.D + 1) (h := by omega_using [F]) fun t₂ o₂ e₂ => wp_addi (imm := oEm + 1) (h := by omega_using [hE])
+      fun t₃ o₃ e₃ => wp_li (imm := H.D) (by omega_using [F]) fun t₄ o₄ e₄ => wp_nil fun y => ?_)
     have k₄ : Only [.s6, .s7, .s8, .s9] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
     show (MgfAT S vO (PreT H.D G H f) (PubT G H) (1 + H.D) ((a.gpr .a3).toNat - H.D - 1) 1 H.D a t₄ ∧
       MFit (1 + H.D) ((a.gpr .a3).toNat - H.D - 1) 1 H.D) ∧ HK H.D a
     refine ⟨⟨⟨s, P, p, b.only P.1.fits k₄, y.trans sy, ?_, ?_, ?_, ?_⟩,
-      ⟨by omega, by omega, .inr (by omega), by omega⟩⟩, hk⟩
+      ⟨by omega_using [F, k2, ek], by omega_using [F], .inr (by omega_using []), by omega_using [hD0]⟩⟩, hk⟩
     · rw [o₄.get .s6, o₃.get .s6, o₂.get .s6, e₁, b.s0, p.1.S, hE, Nat.zero_add]
-    · rw [o₄.get .s7, o₃.get .s7, e₂, o₁.get .s1, b.s1, sub_k (by omega)]; congr 1; omega
+    · rw [o₄.get .s7, o₃.get .s7, e₂, o₁.get .s1, b.s1, sub_k (by omega)]; congr 1; omega_using [ek]
     · rw [o₄.get .s8, e₃, o₂.get .s0, o₁.get .s0, b.s0, p.1.S, hE]
     · rw [e₄]
   refine two_seq (Ψ := Bk H.D G H f) ((mgf_any hG cG fG hGh hGl hGv q₂).mono
@@ -272,12 +272,12 @@ theorem checks_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT G
     (chkK_taint H (bk_pins id fun _ _ ⟨s, P, p, E, _⟩ => ⟨s, P.1, p.1, E.base⟩)) (fun a t ⟨s, P, p, E, sy⟩ => ?_) ?_
   · have k2 := P.1.k2
     have ka : (a.gpr .a3).toNat ≤ 1024 := by rw [← p.1.g .a3 (by decide)]; exact P.1.k2
-    refine WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ =>
+    refine WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega_using [hD64]) fun t₁ o₁ e₁ => wp_sub fun t₂ o₂ e₂ =>
       wp_srl fun t₃ o₃ e₃ => wp_nil fun y => ?_)
     have k₃ : Only [.a0] t t₃ := (o₁.trans (o₂.trans o₃)).mono
     refine ⟨s, P, p, entered_only P.1 E k₃, y.trans sy, ?_⟩
     rw [e₃, e₂, e₁, o₁.get .s1, E.base.s1, ← ofNat_toNat (s.gpr .a3), p.1.g .a3 (by decide)]
-    exact ne_zero_ltBit (by omega) (by omega)
+    exact ne_zero_ltBit (by omega_using [ka]) (by omega_using [hD64])
   refine two_ite (fun a t₁ t₂ ⟨_, _, _, _, _, c₁⟩ ⟨_, _, _, _, _, c₂⟩ => by rw [eval_nonzero, eval_nonzero, c₁, c₂])
     (fail_taint (pins_of (oaepOk H.D) (fun _ _ ⟨⟨s, P, p, E, _⟩, _⟩ => ⟨s, P.1, p.1, E.base⟩) [.s1, .s2])) ?_
   refine two_seq (Ψ := fun a t => ∃ s, PreT H.D G H f s ∧ PubT G H a s ∧ Entered s t ∧ t.syms = s.syms ∧
@@ -287,16 +287,16 @@ theorem checks_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT G
   · have k2 := P.1.k2
     have hk : 2 * H.D + 2 ≤ K a := by rw [eval_nonzero, c] at hc; simpa using hc
     have ek : K a = (s.gpr .a3).toNat := by simp only [K]; rw [p.1.g .a3 (by decide)]
-    refine WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ =>
+    refine WP.of_syms (wp_li (imm := 2 * H.D + 2) (by omega_using [hD64]) fun t₄ o₄ e₄ => wp_sub fun t₅ o₅ e₅ =>
       wp_sub fun t₆ o₆ e₆ => wp_srl fun t₇ o₇ e₇ => wp_srl fun t₈ o₈ e₈ => wp_or fun t₉ o₉ e₉ =>
         wp_nil fun y => ?_)
     have k₉ : Only [.a0, .a1] t t₉ := (o₄.trans (o₅.trans (o₆.trans (o₇.trans (o₈.trans o₉))))).mono
     refine ⟨s, P, p, entered_only P.1 E k₉, y.trans sy, hk, ?_⟩
     rw [e₉, e₈, o₇.get .t3, o₆.get .t3, o₅.get .t3, o₄.get .t3, E.t3, o₈.get .a1, e₇, e₆,
       o₅.get .t3, o₄.get .t3, E.t3, e₅, o₄.get .s1, E.base.s1, e₄,
-      ← ofNat_toNat (s.gpr .a3), ← ofNat_toNat (stackArg s 1), Offset.ofNat_sub_ofNat (by omega),
+      ← ofNat_toNat (s.gpr .a3), ← ofNat_toNat (stackArg s 1), Offset.ofNat_sub_ofNat (by omega_using [hk, ek]),
       p.1.args 1 (by decide), ← ek]
-    exact msgBit (by omega) (stackArg a 1).isLt
+    exact msgBit (by omega_using [k2, ek]) (stackArg a 1).isLt
   refine two_ite (fun a t₁ t₂ ⟨_, _, _, _, _, _, c₁⟩ ⟨_, _, _, _, _, _, c₂⟩ => by
       rw [eval_nonzero, eval_nonzero, c₁, c₂])
     (fail_taint (pins_of (oaepOk H.D) (fun _ _ ⟨⟨s, P, p, E, _⟩, _⟩ => ⟨s, P.1, p.1, E.base⟩) [.s1, .s2])) ?_
@@ -304,7 +304,7 @@ theorem checks_ct : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT G
   obtain ⟨a, ⟨⟨s₁, P₁, p₁, E₁, y₁, hk, c₁⟩, h₁⟩, ⟨⟨s₂, P₂, p₂, E₂, y₂, -, -⟩, -⟩⟩ := h
   rw [eval_nonzero, c₁] at h₁
   have : ¬ (K a - (2 * H.D + 2) < (stackArg a 1).toNat) := by simpa using h₁
-  have hK : HK H.D a := by simp only [HK, K] at *; omega
+  have hK : HK H.D a := by simp only [HK, K] at *; omega_using [hk, this]
   exact ⟨a, ⟨s₁, P₁, p₁, E₁, y₁, hK⟩, ⟨s₂, P₂, p₂, E₂, y₂, hK⟩⟩
 
 variable {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = H.D)
@@ -332,7 +332,7 @@ theorem code_ct (hl : H.D ∈ lens) :
   refine RelCT.seq hlen ?_
   -- The code for that length.
   refine RelCT.seq (two_post (Ψ := fun a t => ∃ s, PreT H.D G H f s ∧ PubT G H a s ∧ Saves s t)
-    (byLen_ct (D := H.D) (Φ := E₀) (by omega) (fun _ _ ⟨_, _, _, _, _, h0⟩ => h0)
+    (byLen_ct (D := H.D) (Φ := E₀) (by omega_using [hD64]) (fun _ _ ⟨_, _, _, _, _, h0⟩ => h0)
       (fun _ t₁ t₂ ⟨_, P₁, p₁, E₁, _⟩ ⟨_, P₂, p₂, E₂, _⟩ =>
         (E₁.base.agree ((oaepOk H.D).agree p₁.1)).1.trans (E₂.base.agree ((oaepOk H.D).agree p₂.1)).1.symm)
       (fun _ _ _ ⟨s, P, p, E, y, h0⟩ o y' => ⟨s, P, p, entered_only P.1 E o, y'.trans y, by rw [o.get .a0]; exact h0⟩)
@@ -341,7 +341,7 @@ theorem code_ct (hl : H.D ∈ lens) :
   · rw [checks_D (G := ofLen H.D) (G' := H) rfl]
     exact (checks_ct hH cH hG cG fH fG hGh hGl hGv).mono (fun _ _ ⟨a, ⟨s₁, P₁, p₁, E₁, y₁, _⟩, ⟨s₂, P₂, p₂, E₂, y₂, _⟩⟩ =>
       ⟨a, ⟨s₁, P₁, p₁, E₁, y₁⟩, ⟨s₂, P₂, p₂, E₂, y₂⟩⟩) fun _ _ h => h
-  · refine byLen_ok (D := H.D) (by omega)
+  · refine byLen_ok (D := H.D) (by omega_using [hD64])
       (F := fun u => Entered s u ∧ u.syms = s.syms ∧ u.gpr .a0 = BitVec.ofNat 64 H.D)
       (fun _ h => h.2.2) (fun u u' ⟨E', y', r0'⟩ o y => ⟨entered_only P.1 E' o, y.trans y',
         by rw [o.get .a0]; exact r0'⟩) ?_ hl (fun x hx => (lens_certs x hx).1) t ⟨E, y, h0⟩
@@ -407,7 +407,7 @@ theorem pubT_of {ts : List FnTable} {s₁ s₂ : State} (h : (encSpec ts).pub s�
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h0.symm, h1.symm, h2.symm, h3.symm, h4.symm, h5.symm, h6.symm, h7.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm]
 

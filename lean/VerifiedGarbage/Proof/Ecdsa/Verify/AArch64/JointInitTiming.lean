@@ -62,7 +62,7 @@ theorem jointInit_ok {C : Curve} {base T : Addr} {P Q : Point C} {u v : Nat}
   have st := hs.keep kp (fun r hr => by
     have := JointLayout.layout.stableBounds r hr
     have := hi.scr.nowrap
-    omega) JointLayout.layout.stableSep
+    omega_arith) JointLayout.layout.stableSep
   have ca : JointCore cfg C base 8192 Q u v (JointGenerator cfg C base 8192 P T) .infinity a :=
     ⟨il.to_tmv,st,jointExternal_frame kp sy hg,il.point_tmv (jointLive_R cfg) ja⟩
   refine WP.mono_syms (jointInitCounter_ok a) fun t ⟨t19,kt⟩ sy' => ?_

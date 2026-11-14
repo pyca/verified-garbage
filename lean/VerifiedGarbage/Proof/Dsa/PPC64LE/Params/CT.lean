@@ -63,7 +63,7 @@ theorem pins_PC0 : Pins PC0 [.r3, .r5, .r6, .r7] := pins_pvd fun _ _ h => h.2
 
 /-- A buffer of no octets. -/
 theorem src_zero (s : State) (L : Lay) (D : Addr) {n : Nat} (h : n = 0) : Src s L D n :=
-  ⟨fun i hi => absurd hi (by omega), fun i hi => absurd hi (by omega)⟩
+  ⟨fun i hi => absurd hi (by omega_using [h]), fun i hi => absurd hi (by omega_using [h])⟩
 
 /-- `Params.entry`, for the `n` octets at `r3`, which hold at least a domain. -/
 theorem pfront_S0_of {s : State} {n : Nat} (hL : (playOf s).Ok)
@@ -75,7 +75,7 @@ theorem pfront_S0_of {s : State} {n : Nat} (hL : (playOf s).Ok)
   have hZ := hL.z256
   refine WP.mono (pfront_ok_of hL hwr nw) fun t ⟨⟨hr, scr, r2, _, out⟩, k⟩ => ?_
   have Out : Outside (playOf s).S 0 (playOf s).Z s.mem t.mem :=
-    out.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega)
+    out.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega_using [hZ])
   exact ⟨⟨hL, hr, scr, hsrc k.rd k.wr, src_zero _ _ _ rfl, src_zero _ _ _ rfl,
     (hsrc rfl rfl).kept Out, hsrc k.rd k.wr, (fun _ h => nomatch h), (fun h => nomatch h), hn⟩,
     r2, fixL_nil t, trivial⟩

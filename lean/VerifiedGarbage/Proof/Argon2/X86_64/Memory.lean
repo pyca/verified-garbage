@@ -26,11 +26,11 @@ structure Scratch (s : State) (p : Addr) : Prop where
 
 theorem Scratch.write {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions s.wr (off p d) n :=
-  ⟨_, h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem Scratch.read {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions (s.rd ++ s.wr) (off p d) n :=
-  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem ea_at (s : State) (r : Reg) (d : Nat) :
     s.ea (at_ r d) = off (s.gpr r) d := by
@@ -48,10 +48,10 @@ theorem loadGB_ok (s : State) {p : Addr} (hs : Scratch s p) {a b c d : Nat}
       t.gpr .r10 = word s.mem p c ∧ t.gpr .r11 = word s.mem p d ∧
       (∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have la := hs.read (d := 1024 + 8 * a) (n := 8) (by omega)
-  have lb := hs.read (d := 1024 + 8 * b) (n := 8) (by omega)
-  have lc := hs.read (d := 1024 + 8 * c) (n := 8) (by omega)
-  have ld := hs.read (d := 1024 + 8 * d) (n := 8) (by omega)
+  have la := hs.read (d := 1024 + 8 * a) (n := 8) (by omega_using [ha])
+  have lb := hs.read (d := 1024 + 8 * b) (n := 8) (by omega_using [hb])
+  have lc := hs.read (d := 1024 + 8 * c) (n := 8) (by omega_using [hc])
+  have ld := hs.read (d := 1024 + 8 * d) (n := 8) (by omega_using [hd])
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     State.load64, ea_at, RegUpd.gpr_setReg, RegUpd.mem_setReg,
@@ -74,10 +74,10 @@ theorem storeGB_ok (s : State) {p : Addr} (hs : Scratch s p) {a b c d : Nat}
         (off p (1024 + 8 * c)) (s.gpr .r10)).writeW
         (off p (1024 + 8 * d)) (s.gpr .r11) ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have wa := hs.write (d := 1024 + 8 * a) (n := 8) (by omega)
-  have wb := hs.write (d := 1024 + 8 * b) (n := 8) (by omega)
-  have wc := hs.write (d := 1024 + 8 * c) (n := 8) (by omega)
-  have wd := hs.write (d := 1024 + 8 * d) (n := 8) (by omega)
+  have wa := hs.write (d := 1024 + 8 * a) (n := 8) (by omega_using [ha])
+  have wb := hs.write (d := 1024 + 8 * b) (n := 8) (by omega_using [hb])
+  have wc := hs.write (d := 1024 + 8 * c) (n := 8) (by omega_using [hc])
+  have wd := hs.write (d := 1024 + 8 * d) (n := 8) (by omega_using [hd])
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64,
     ea_at, hs.reg, wa, wb, wc, wd, ite_true, Option.some.injEq,

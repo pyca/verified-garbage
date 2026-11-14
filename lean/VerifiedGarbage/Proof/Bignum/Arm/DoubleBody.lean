@@ -39,7 +39,7 @@ theorem doubleBody_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n
     rw [outs_word32 outsideU (d := a) (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega) (by omega), two]
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, afit]), two]
   refine WP.mono (doubleCore_ok u ready (finish.congr restU.wr) twoU) ?_
   rintro t ⟨value, outsideT, restT⟩
   have old (d : Nat) (fits : d + 4 * n ≤ size)
@@ -50,7 +50,7 @@ theorem doubleBody_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact sepA
-      · exact sepT) (by omega)
+      · exact sepT) (by omega_using [nowrap, fits])
   have oldM := old mod ctx.mFits ctx.accM.symm ctx.tmpM.symm
   have oldB := old b ctx.bFits ctx.accB.symm ctx.tmpB.symm
   rw [oldM, oldB] at value

@@ -116,7 +116,7 @@ theorem p384v_combWords_length : P384Joint.p384v.combWords.length = 3072 := by
 theorem satMemG_held : ∀ i < P384Joint.p384v.combWords.length,
     satMemG.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = P384Joint.p384v.combWords.getD i 0 := by
   unfold satMemG
-  exact constMem_held _ _ (by rw [p384v_combWords_length]; omega)
+  exact constMem_held _ _ (by rw [p384v_combWords_length]; omega_using [])
 
 /-- Whether the signature at `sig` of the hash at `digest` is valid for the
 public key at `pk`, as the specification says. -/
@@ -307,7 +307,7 @@ theorem points_ok (hc : CfgOk p384) (hC : Law p384.C) (hO : PrimeOrder p384.C)
  have source₀ := FixedGenerator.of_pre hc hC hT ht rfl
  have source := source₀.unch hm.unch (by decide) hm.rd hm.wr hm.syms
  have hp := unitMod_pow_two hc.p_odd (64*P384Joint.K.M.n)
- have hone : P384Joint.K.one<p384.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
+ have hone : P384Joint.K.one<p384.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])
  have one : toM p384.C.p (2^(64*P384Joint.K.M.n)) (p384.mont 1)=1 := by
   rw [show P384Joint.K.M.n=p384.n from rfl,toM_cmont hc.toBaseCfgOk]; rfl
  have pn : p384.C.p<2^(64*P384Joint.K.M.n) := by
@@ -497,9 +497,9 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
   intro j
   by_cases hj : 1≤j
   · by_cases hn : j≤384
-    · have e : j-1+1=j := by omega
+    · have e : j-1+1=j := by omega_using [hj]
       refine (jointStep_relCT hL hp hC hM3 hone hP hG hF₁ hF₂ g₁ g₂ checks hD hct mixed
-       (j:=j-1) (by omega)).mono (P':=I j) (fun _ _ h=>by rw [e]; exact h.2.2) ?_
+       (j:=j-1) (by omega_using [hn])).mono (P':=I j) (fun _ _ h=>by rw [e]; exact h.2.2) ?_
       intro s t h
       have xs:=h.2.1.x19
       have xt:=h.2.2.1.x19
@@ -510,7 +510,7 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
           rw [bne_iff_ne]
           intro hh
           have hh':=congrArg BitVec.toNat hh
-          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : j-1<2^64)] at hh'
+          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hn] : j-1<2^64)] at hh'
           exact hz hh'
          have ht : eval (.nonzero .x .x19) s=some true := by
           change some (s.read .x .x19 != 0)=some true
@@ -522,7 +522,7 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
          intro hz
          simp only [eval,State.read,xs,hz] at he
          cases he
-        exact ⟨j-1,by omega,by omega,by omega,h⟩
+        exact ⟨j-1,by omega_using [hj],by omega_using [hz],by omega_using [hn],h⟩
     · exact RelCT.of_false (fun _ _ h=>hn h.2.1)
   · exact RelCT.of_false (fun _ _ h=>hj h.1)
  exact (RelCT.loop I step 384).mono (fun _ _ h=>⟨by decide,by decide,h⟩) (fun _ _ h=>h)
@@ -722,7 +722,7 @@ theorem jointMul_relCT (hc : CfgOk p384) (hC : Law p384.C)
    rw [show P384Joint.K.M.n=p384.n from rfl,toM_cmont hc.toBaseCfgOk]; rfl
  obtain ⟨hw,post⟩:=jointWindow_relCT (nafLayQ hc (by decide) (by decide))
    (unitMod_pow_two hc.p_odd (64*P384Joint.K.M.n)) hC hc.am3 (by simpa only [show P384Joint.K.M.n=p384.n from rfl] using hc.p_lt)
-   (Nat.mod_lt _ (by have := hc.p_ge; omega)) one hwin (hD base) hct mixed hO hn17 hP hc.onG vb ub zs'
+   (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])) one hwin (hD base) hct mixed hO hn17 hP hc.onG vb ub zs'
    _ _ _ _ _ _ ⟨pair,⟨ss,ms,Fs⟩,⟨st,mt,Ft⟩,genS,genT⟩ ws wt
  exact ⟨by rw [he,hw],post⟩
 end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint

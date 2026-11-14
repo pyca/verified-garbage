@@ -42,30 +42,30 @@ theorem half_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws 
     intro k hk
     rw [hK, show addr (K32 + BitVec.ofNat 32 (64 * hh)) (4 * k) = addr K32 (64 * hh + 4 * k) by
       simp only [addr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]]
-    exact addr_eq (by omega)
+    exact addr_eq (by omega_using [hfitK, hle, hk])
   unfold half
   refine WP.seq (WP.mono (groupQ_ok h .z gZ) fun u1 ⟨h1, s1, k1⟩ => ?_)
   rw [runQ_z] at h1
-  have g2 := groupK_ok h1 gA (b := 0) (hh := hh) (by rw [kd k1, hdi]) hE (by rw [hlen]; rfl) (by omega) (by omega)
+  have g2 := groupK_ok h1 gA (b := 0) (hh := hh) (by rw [kd k1, hdi]) hE (by rw [hlen]; rfl) (by omega_using [hlen, hle]) (by omega_using [])
   rw [storeKey_zero] at g2
   refine WP.seq (WP.mono g2 fun u2 ⟨h2, s2, k2⟩ => ?_)
   refine WP.seq (WP.mono (groupQ_ok h2 .x gX) fun u3 ⟨h3, s3, k3⟩ => ?_)
   rw [runQ_x] at h3
   have g4 := groupK_ok h3 gB (b := 4) (hh := hh) (by rw [kd k3, kd k2, kd k1, hdi]) hE
-    (by rw [List.length_append, hlen, l4]) (by rw [List.length_append, hlen, l4]; omega) (by omega)
+    (by rw [List.length_append, hlen, l4]) (by rw [List.length_append, hlen, l4]; omega_using [hle]) (by omega_using [])
   refine WP.seq (WP.mono g4 fun u4 ⟨h4, s4, k4⟩ => ?_)
   refine WP.seq (WP.mono (groupQ_ok h4 .z gZ) fun u5 ⟨h5, s5, k5⟩ => ?_)
   rw [runQ_z] at h5
   have g6 := groupK_ok h5 gC (b := 8) (hh := hh) (by rw [kd k5, kd k4, kd k3, kd k2, kd k1, hdi]) hE
     (by rw [List.length_append, List.length_append, hlen, l4, l4])
-    (by rw [List.length_append, List.length_append, hlen, l4, l4]; omega) (by omega)
+    (by rw [List.length_append, List.length_append, hlen, l4, l4]; omega_using [hle]) (by omega_using [])
   refine WP.seq (WP.mono g6 fun u6 ⟨h6, s6, k6⟩ => ?_)
   refine WP.seq (WP.mono (groupQ_ok h6 .x gX) fun u7 ⟨h7, s7, k7⟩ => ?_)
   rw [runQ_x] at h7
   have g8 := groupK_ok h7 gD (b := 12) (hh := hh)
     (by rw [kd k7, kd k6, kd k5, kd k4, kd k3, kd k2, kd k1, hdi]) hE
     (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4])
-    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4]; omega) (by omega)
+    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4]; omega_using [hle]) (by omega_using [])
   refine WP.seq (WP.mono g8 fun u8 ⟨h8, s8, k8⟩ => ?_)
   have k18 := (((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8)
   have hdi8 : u8.gpr .edi = K32 + BitVec.ofNat 32 (64 * hh) := by rw [k18.gpr _ (by decide), hdi]

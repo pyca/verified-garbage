@@ -72,14 +72,14 @@ theorem chunkCode_ok (s : State) (d : Int) (n : Nat)
   have hn : |(encoded s d).d|+2*n<2^62 := by
     change |d|+2*n<2^62
     norm_num only [Nat.cast_add,Nat.cast_one] at hbound
-    omega
+    omega_using [hbound]
   refine WP.mono (rounds_ok ha (encoded_bounds s d) n hn) fun b ⟨hb,kb⟩ => ?_
   have hd' : -(2^63)≤(msteps n (encoded s d)).d ∧
       (msteps n (encoded s d)).d<2^63 := by
     have hm := msteps_d (encoded s d) n
     have hl := neg_abs_le (msteps n (encoded s d)).d
     have hh := le_abs_self (msteps n (encoded s d)).d
-    omega
+    omega_using [hn, hm, hl, hh]
   refine WP.mono (lastStep_ok hb hd' (rowBounds_steps (encoded_bounds s d) n))
     fun t ⟨td,tf,tg,tz,kt⟩ => ?_
   rw [msteps_succ]
@@ -91,12 +91,12 @@ theorem encoded_cong (s : State) (d : Int) :
   all_goals
     dsimp only [encoded,MSt.init]
     norm_num
-    omega
+    omega_using []
 
 theorem encoded_odd (s : State) (d : Int) (hf : (s.gpr .x2).toNat%2=1) :
     (encoded s d).f%2=1 := by
   dsimp only [encoded,MSt.init]
   norm_num
-  omega
+  omega_using [hf]
 
 end VG.Proof.P256.EcdhInverse

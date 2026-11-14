@@ -58,14 +58,14 @@ theorem checkPublic_input (s : State) (pre : (Spec.Ffdh.checkPublicContract abi 
   have args : ArgumentMemory p [] (entered s) :=
     ⟨entered_workspace ws, locals, domEntered,
       stackDom.symm.sub_right (locals_sub_reserved s stackFit), by simp⟩
-  have argAddr : stackArgAddr s 1 = off (State.addr s.sp) 4 := VG.Arm.addr_add (by omega)
+  have argAddr : stackArgAddr s 1 = off (State.addr s.sp) 4 := VG.Arm.addr_add (by omega_using [argFit])
   have argStart : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   have contains : (⟨stackArgAddr s 0, 12⟩ : Region).Contains (stackArgAddr s 1) 4 := by
     rw [argStart, argAddr]
     exact Offset.contains_base _ (by decide) (by decide)
   have argRead : InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 4 :=
     ⟨⟨stackArgAddr s 0, 12⟩, List.mem_append_left _ (by rw [rd]; simp), contains⟩
-  have nativeRoom : (entered s).sp.toNat + 132 < 2 ^ 32 := by rw [entered_nat s stackFit]; omega
+  have nativeRoom : (entered s).sp.toNat + 132 < 2 ^ 32 := by rw [entered_nat s stackFit]; omega_using [argFit]
   have nativeAddr : off (State.addr (entered s).sp) 132 = stackArgAddr s 1 := by
     change State.addr (entered s).sp + BitVec.ofNat 64 132 = _
     rw [← VG.Arm.addr_add nativeRoom, entered_sp]
@@ -73,7 +73,7 @@ theorem checkPublic_input (s : State) (pre : (Spec.Ffdh.checkPublicContract abi 
     rw [split, ← BitVec.add_assoc, BitVec.sub_add_cancel]
     rfl
   have incoming : IncomingScratch p (entered s) := by
-    refine ⟨by rw [entered_nat s stackFit]; omega, ?_, ?_⟩
+    refine ⟨by rw [entered_nat s stackFit]; omega_using [argFit], ?_, ?_⟩
     · rw [nativeAddr]; exact entered_read argRead
     · rw [nativeAddr]
       have word := (entered_frame s stackFit).readW (w := 32) contains (by

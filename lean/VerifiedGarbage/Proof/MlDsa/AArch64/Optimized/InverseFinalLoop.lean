@@ -35,10 +35,10 @@ theorem finalPass_frame {m : Mem} {p : Addr} {q : BitVec 128} {u : Nat} (hu : u�
   | zero => exact Frame.refl _ _
   | succ u ih =>
     simp only [finalPassMem]
-    apply writeBank_frame _ _ _ (r := ⟨p,1024⟩) (by simp) ?_ (ih (by omega))
+    apply writeBank_frame _ _ _ (r := ⟨p,1024⟩) (by simp) ?_ (ih (by omega_using [hu]))
     intro i
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact Offset.contains_base p (by omega) (by omega)
+    exact Offset.contains_base p (by omega_using [hu]) (by omega_using [hu])
 
 theorem finalLoop_ok {s : State} (hf : FinalRoots s) (hs : ScaleRoots s)
     (hc : s.gpr .x12=8)
@@ -75,7 +75,7 @@ theorem finalLoop_ok {s : State} (hf : FinalRoots s) (hs : ScaleRoots s)
         rw [hv₂,hvm.v,hvc.get r ((show ∀ r∈finalConstants, r∉runRegs by decide) r hr)]
         exact hv r hr
       · rw [hp₂,hk₁.get .x2,hp]
-        rw [show 16*(u+1)=16*u+16 by omega,BitVec.ofNat_add,BitVec.add_assoc]
+        rw [show 16*(u+1)=16*u+16 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]
         rfl
       · rw [hm₂,hvm.mem]
         simp only [finalSliceMem,hm,hp,hv .v31 (by decide),finalPassMem]

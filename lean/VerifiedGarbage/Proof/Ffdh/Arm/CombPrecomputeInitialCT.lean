@@ -71,14 +71,14 @@ theorem initialValues_ct (backend : MontBackend) {p : Inputs} {sp : BitVec 32} (
       WP isa (VG.Impl.Ffdh.Arm.Domain.importAt 1 56 32) s Ready := by
     refine WP.mono (importAt_ok s 1 56 32 h.1.context (by decide) (by simp [slots]) (by simp [slots])
       h.1.ready (by decide) (by decide) h.1.context.gBytes
-      (by rw [p.gLength]; have := p.minLength; omega)
+      (by rw [p.gLength]; have := p.minLength; omega_using [this])
       (by rw [p.gLength]; exact p.width.2.2.2.1) (by change BitVec.ofNat 32 p.k=_; rw [p.gLength])) ?_
     rintro u ⟨_,ready,_,keeps,frame,rest⟩
     have memory := h.1.after_arithmetic ready (frame.mono (by simp)) rest
     have fit := h.1.ready.width ▸ h.1.ready.layout.2.2.1
     have modulus := (keeps_array_num keeps fit (by simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]) (by decide : 0≠1)).trans h.2.1
     have r2 := (keeps_array_num keeps fit (by simp [Proof.Rsa.Mont.Operand,Proof.Rsa.Mont.aAcc,Proof.Rsa.Mont.aTmp]) (by decide : 4≠1)).trans h.2.2
-    exact ⟨⟨ready,by rw [r2,modulus]; exact Nat.mod_lt _ (by have := ready.modulus; rw [modulus] at this; omega)⟩,
+    exact ⟨⟨ready,by rw [r2,modulus]; exact Nat.mod_lt _ (by have := ready.modulus; rw [modulus] at this; omega_using [odd])⟩,
       memory.calls.stack,memory.fixed⟩
   exact relCT_chain ((importAt_ct (p:=p) (slots:=slots) (k:=p.k) (by decide) (by simp [slots])
     (by simp [slots]) rfl (by decide : 1<8)).mono

@@ -79,30 +79,30 @@ theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x6000 ∧ 
 
 theorem sat (K : Nat) (hK : K ≤ 2 ^ 20) : ∃ s, (Spec.RsaPkcs1Sig.signContract abi (stk K)).pre s := by
   refine ⟨satState, ?_⟩
-  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
+  have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_using []
   rw [e]
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_thirteen,
     List.append_eq]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := sat_args
-  have hS : frameBytes + K - 1 + 1 = 1152 + K := by unfold frameBytes; omega
+  have hS : frameBytes + K - 1 + 1 = 1152 + K := by unfold frameBytes; omega_using []
   have hsp : (0x10000000000 : BitVec 64).toNat = 2 ^ 40 := by decide
   have hkb : ((0x10000000000 : BitVec 64) - BitVec.ofNat 64 (1152 + K)).toNat = 2 ^ 40 - (1152 + K) := by
-    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, hsp, BitVec.toNat_ofNat]; omega_using [hK]
   have ha : stackArgAddr satState 0 = 0x10000000000 := by decide
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, hS, ha]
   have kd : ∀ (b : BitVec 64) (n : Nat), b.toNat + n ≤ 2 ^ 20 →
       Region.Disjoint ⟨0x10000000000 - BitVec.ofNat 64 (1152 + K), 1152 + K⟩ ⟨b, n⟩ := fun b n h =>
-    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega)) (by dsimp only; rw [hkb]; omega)
-      (by dsimp only; omega)
-  refine ⟨by rw [hsp]; omega, by decide, by decide, by decide, ?_⟩
+    Region.disjoint_of_le (.inr (by dsimp only; rw [hkb]; omega_using [hK, h])) (by dsimp only; rw [hkb]; omega_using [hK])
+      (by dsimp only; omega_using [h])
+  refine ⟨by rw [hsp]; omega_using [hK], by decide, by decide, by decide, ?_⟩
   refine ⟨Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), ?_⟩
   refine ⟨Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
     Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), ?_⟩
   refine ⟨kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide),
     kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide), kd _ _ (by decide), ?_⟩
-  refine ⟨Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega))
-      (by dsimp only; rw [hkb]; omega) (by dsimp only; rw [hsp]; omega), ?_⟩
+  refine ⟨Region.disjoint_of_le (.inl (by dsimp only; rw [hkb, hsp]; omega_using [hK]))
+      (by dsimp only; rw [hkb]; omega_using [hK]) (by dsimp only; rw [hsp]; omega_using []), ?_⟩
   refine ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
     by decide, ?_⟩
   exact ⟨⟨by decide, by decide⟩, by decide, by decide, by decide, by decide, by decide, by decide, by decide,

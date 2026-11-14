@@ -157,8 +157,8 @@ theorem decodeNext_ok {s0 t u : State} {k : Nat} (hk : k < 2) (h : DecInv s0 b p
   have e14' : u2'.gpr .s0 = b + BitVec.ofNat 64 (7776 + 128 * k) := by
     rw [v2.gpr, v1.other _ (by decide), hvu.ctx.a3, v1.other _ (by decide), hRt.gpr _ (by decide), h.s8]
   have hv2 : VCtx b pk sig ch u2' := hvu.of_rest hR2 (by decide)
-  have ho1 : 1024 ≤ 7776 + 128 * k := by omega
-  have ho2 : 7776 + 128 * k + 128 ≤ 8192 := by omega
+  have ho1 : 1024 ≤ 7776 + 128 * k := by omega_using []
+  have ho2 : 7776 + 128 * k + 128 ≤ 8192 := by omega_using [hk]
   have hpt := pointToTable_ok hv2.ctx e14' ho1 ho2
   refine WP.block_append_iff.mpr (WP.mono hpt fun w ⟨rw', fw, tw⟩ => ?_)
   refine wp_mv fun w1 x1 => wp_addi (by decide) fun w2 x2 => ?_

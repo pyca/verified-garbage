@@ -120,7 +120,7 @@ theorem sat_pre₀ {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stre
   rd := rfl
   wr := rfl
   d_o := show Region.Disjoint ⟨0x1000, 0⟩ ⟨0x2000, D⟩ from
-    Offset.disjoint_of_le (show 4096 + 0 ≤ 8192 by decide) (show 8192 + D ≤ 2 ^ 64 by omega)
+    Offset.disjoint_of_le (show 4096 + 0 ≤ 8192 by decide) (show 8192 + D ≤ 2 ^ 64 by omega_using [hD])
   sp := show Impl.MdStream.AArch64.OneShot.frameBytes Stream.params ≤ (0x10000 : BitVec 64).toNat by decide
   f_d := show Region.Disjoint ⟨0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params),
       Impl.MdStream.AArch64.OneShot.frameBytes Stream.params⟩ ⟨0x1000, 0⟩ from
@@ -130,7 +130,7 @@ theorem sat_pre₀ {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stre
     (Offset.disjoint_of_le (show 8192 + D ≤ _ by
       have : 8256 ≤ (0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params) :
         BitVec 64).toNat := by decide
-      dsimp only; omega) (by decide)).symm
+      dsimp only; omega_using [hD, this]) (by decide)).symm
 
 /-- The precondition does not depend on the digest code. -/
 theorem pre_out {o : List Instr} {D : Nat} {s : State} (h : MdStream.AArch64.OneShot.Pre Stream.params D s) :

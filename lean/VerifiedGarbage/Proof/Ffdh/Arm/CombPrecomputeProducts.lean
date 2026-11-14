@@ -32,7 +32,7 @@ theorem products_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : 
       WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem ∧
       Frame (productWrites p sp) s.mem t.mem ∧ Rest roundClobbers s t := by
   have highBound : 2^j≤16 := by
-    have := Nat.pow_le_pow_right (by decide : 0<2) (by omega : j≤4)
+    have := Nat.pow_le_pow_right (by decide : 0<2) (by omega_using [hj] : j≤4)
     exact this
   let I := fun k t => 0<k ∧ k≤2^j ∧ Core p sp t ∧
     Power5 p (2^(j*Spec.Rsa.FixedBaseComb.rows (bits p))) t ∧
@@ -42,9 +42,9 @@ theorem products_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : 
   refine WP.loop (M:=isa) I ?_ (2^j-low) s ?_
   · intro k u hu
     obtain ⟨positive,bounded,core,pow,tab,counter,header,frame,rest⟩ := hu
-    refine WP.mono (product_round_ok backend u core hj (by omega) pow tab (by omega) counter) ?_
+    refine WP.mono (product_round_ok backend u core hj (by omega_using [hlow, positive]) pow tab (by omega_using [highBound, positive]) counter) ?_
     rintro t ⟨coreT,powT,tableT,countT,zero,headerT,frameT,restT⟩
-    have next : 2^j-k+1=2^j-(k-1) := by omega
+    have next : 2^j-k+1=2^j-(k-1) := by omega_using [positive, bounded]
     rw [next] at tableT countT zero
     have headerAll : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
       refine ⟨?_⟩
@@ -58,13 +58,13 @@ theorem products_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : 
       · simpa only [last,Nat.sub_zero,←Nat.two_mul] using tableT
       · simpa only [last,Nat.sub_zero] using countT
     · right
-      refine ⟨?_,k-1,by omega,by omega,by omega,coreT,powT,tableT,countT,headerAll,frame.trans frameT,rest.trans restT⟩
+      refine ⟨?_,k-1,by omega_using [positive],by omega_using [last],by omega_using [bounded],coreT,powT,tableT,countT,headerAll,frame.trans frameT,rest.trans restT⟩
       change some (!t.z)=some true
-      have neq : 2^j-(k-1)≠2^j := by omega
+      have neq : 2^j-(k-1)≠2^j := by omega_using [hlow, last]
       simp only [zero,neq,decide_false,Bool.not_false]
-  · refine ⟨by omega,by omega,h,power,?_,?_,⟨fun _ _ _ => rfl⟩,Frame.refl _ _,Rest.refl _ _⟩
-    · simpa only [Nat.sub_sub_self (by omega : low≤2^j)] using table
-    · simpa only [Nat.sub_sub_self (by omega : low≤2^j)] using count
+  · refine ⟨by omega_using [hlow],by omega_using [hlow],h,power,?_,?_,⟨fun _ _ _ => rfl⟩,Frame.refl _ _,Rest.refl _ _⟩
+    · simpa only [Nat.sub_sub_self (by omega_using [hlow] : low≤2^j)] using table
+    · simpa only [Nat.sub_sub_self (by omega_using [hlow] : low≤2^j)] using count
 
 
 theorem products_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32} {j : Nat}
@@ -86,8 +86,8 @@ theorem products_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVe
   have tableU : TablePrefix p (2^j+1) u.mem := by
     intro digit hd
     rw [ctxU.read (entryOffset p digit) (8*p.w) (entry_bound p (by
-      have := Nat.pow_le_pow_right (by decide : 0<2) (by omega : j≤4)
-      omega))]
+      have := Nat.pow_le_pow_right (by decide : 0<2) (by omega_using [hj] : j≤4)
+      omega_using [hd, this]))]
     exact table digit hd
   have oneLow : 1<2^j := by have := Nat.pow_lt_pow_right (by decide : 1<2) positive; exact this
   refine WP.mono (products_loop_ok backend u core hj oneLow pow tableU ⟨highU,lowU⟩) ?_
@@ -95,7 +95,7 @@ theorem products_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVe
   have header : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
     refine ⟨?_⟩
     intro d n hd
-    exact (headerT.read d n hd).trans (ctxU.read d n (by have := bytes_eq p; omega))
+    exact (headerT.read d n hd).trans (ctxU.read d n (by have := bytes_eq p; omega_using [hd, this]))
   have wholeU : Frame (productWrites p sp) s.mem u.mem := frameU.sub (by
     intro r hr
     have eq := List.mem_singleton.mp hr

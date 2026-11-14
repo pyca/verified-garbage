@@ -47,12 +47,12 @@ theorem fastOdd_eq {x : BitVec 64} {w k j : Nat} (hw : FastNaf.Wide w)
   rcases hw with rfl|rfl|rfl
   all_goals
     simp only [BitVec.toNat_ofNat,Nat.reducePow,Nat.reduceSub] at hx ⊢
-    have hp : x.toNat%2≠0 := by omega
+    have hp : x.toNat%2≠0 := by omega_using [hx, ho]
     split <;> split <;> simp_all only []
     all_goals
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat,BitVec.toNat_ofInt,BitVec.toNat_sub]
-      omega
+      omega_arith
 
 theorem fastChoose_ok (s : State) {w : Nat} (hw : FastNaf.Wide w) :
     WP isa (Impl.Weierstrass.X86_64.FastNaf.choose w) s fun t =>
@@ -119,7 +119,7 @@ theorem and_one (x : BitVec 64) : x &&& 1=BitVec.ofNat 64 (x.toNat%2) := by
   rw [BitVec.toNat_and,BitVec.toNat_ofNat]
   change x.toNat &&& 1=_
   rw [Nat.and_one_is_mod]
-  omega
+  omega_using []
 
 /-- The digit `digitB` leaves is the scalar's, zero when it is even. -/
 theorem fastSel_eq {x : BitVec 64} {w k j : Nat} (hw : w=5 ∨ w=9)
@@ -129,14 +129,14 @@ theorem fastSel_eq {x : BitVec 64} {w k j : Nat} (hw : w=5 ∨ w=9)
     · exact Or.inl rfl
     · exact Or.inr (Or.inr rfl)
   have hm : x.toNat%2^w<2^w := Nat.mod_lt _ (Nat.two_pow_pos w)
-  have hx2 : x.toNat%2=FastNaf.residual w k j%2 := by rcases hw with rfl|rfl <;> omega
+  have hx2 : x.toNat%2=FastNaf.residual w k j%2 := by rcases hw with rfl|rfl <;> omega_using [hx]
   by_cases ho : FastNaf.residual w k j%2=0
   · have hd : FastNaf.digit w k j=0 := by
       rw [fastDigit_mod hW k j]
-      simp only [show FastNaf.residual w k j%2^w%2=0 from by rcases hw with rfl|rfl <;> omega,ite_true]
+      simp only [show FastNaf.residual w k j%2^w%2=0 from by rcases hw with rfl|rfl <;> omega_using [ho],ite_true]
     rw [fastSel,and_one,hx2,ho,hd,show (0:BitVec 64)-BitVec.ofNat 64 0=0#64 from by decide,BitVec.and_zero]
     rfl
-  · have h1 : x.toNat%2=1 := by omega
+  · have h1 : x.toNat%2=1 := by omega_using [hx2, ho]
     rw [←fastOdd_eq hW hx ho,fastSel,and_one,h1,fastMask x hW,(fastXorSub hw _ hm).1,
       show (0:BitVec 64)-BitVec.ofNat 64 1=BitVec.allOnes 64 from by decide,BitVec.and_allOnes]
     simp only [fastOdd,fastMask x hW,BitVec.toNat_ofNat,
@@ -149,7 +149,7 @@ theorem fastSel_low {w : Nat} (hw : w=5 ∨ w=9) (x : BitVec 64) : fastSel w x &
     · exact Or.inl rfl
     · exact Or.inr (Or.inr rfl)
   have hm : x.toNat%2^w<2^w := Nat.mod_lt _ (Nat.two_pow_pos w)
-  have h2 : x.toNat%2^w%2=x.toNat%2 := by rcases hw with rfl|rfl <;> omega
+  have h2 : x.toNat%2^w%2=x.toNat%2 := by rcases hw with rfl|rfl <;> omega_using []
   rw [fastSel,and_one x]
   rcases Nat.mod_two_eq_zero_or_one x.toNat with h|h
   · rw [h,show (0:BitVec 64)-BitVec.ofNat 64 0=0#64 from by decide,BitVec.and_zero]
@@ -181,7 +181,7 @@ theorem countB_ok (s : State) {e : Nat} (he : e=2 ∨ e=3) {x : BitVec 64} (hc :
       t.gpr .rdx=BitVec.ofNat 64 (if x.toNat%2=0 then 1 else 1+2^e) ∧
       t.gpr .rcx=BitVec.ofNat 64 (64-(if x.toNat%2=0 then 1 else 1+2^e)) ∧ Keeps [.rcx,.rdx] s t := by
   have h1 : (1:BitVec 32).signExtend 64=1 := by decide
-  have he0 : 1≤e ∧ e≤63 := by omega
+  have he0 : 1≤e ∧ e≤63 := by omega_using [he]
   apply WP.of_runBlock
   simp only [Impl.Weierstrass.X86_64.FastNaf.countB,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,
     execShift,readSrc,readSrc32,State.setReg32,Option.map_some,Option.bind_some,RegUpd.gpr_setReg,

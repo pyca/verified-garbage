@@ -45,9 +45,9 @@ theorem args_out {t : State} (h : Pre (H := H) sc t) {s : State} (hsp : s.gpr .e
   rw [e, hwr, h.wr]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_i h.a_i
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_o h.a_o
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_s h.a_s
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_i h.a_i
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_o h.a_o
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_s h.a_s
 
 include hq in
 theorem kr_agree {s s' : State} (h : KR (H := H) sc s₀ s) (h' : KR (H := H) sc s₀' s') :
@@ -93,7 +93,7 @@ theorem cmpS_rel {p p' : BitVec 32} (hpR : p = inn s₀ ∨ p = out s₀) (hpR' 
         (KR (H := H) sc s₀' s' ∧ s'.gpr .ebx = p' ∧ s'.gpr .eax = p' + BitVec.ofNat 32 H.N)) H.cmp
       fun s s' => KR (H := H) sc s₀ s ∧ KR (H := H) sc s₀' s' := by
   have hz := hO.sizes
-  have hB : 0 < H.B := by have := hz.B4; omega
+  have hB : 0 < H.B := by have := hz.B4; omega_using [this]
   have e4 : scr s₀' = scr s₀ := (hq.args 4 (by decide)).symm
   exact rel_wp (cmp_rel hO.comp hB (sp := E s₀) fun s s' ⟨⟨k, b, a⟩, ⟨k', b', a'⟩⟩ =>
       ⟨cmpArgs hz hp k hpR b a, by have := cmpArgs hz hp' k' hpR' b' a'; rwa [he, e4] at this, k.esp,

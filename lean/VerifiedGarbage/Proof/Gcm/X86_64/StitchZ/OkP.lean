@@ -132,7 +132,7 @@ theorem setupGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
   rw [WP.block_append_iff]
   refine WP.mono (ldrev_ok .xmm7 .rdi 240 s₂ (by decide)
     (by rw [o₂.xmm _ (by decide), c₁, rev_eq])
-    (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact in_sub_int hp.k_in (by omega))) fun s₃ ⟨l₃, o₃⟩ => ?_
+    (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact in_sub_int hp.k_in (by omega_using [hge]))) fun s₃ ⟨l₃, o₃⟩ => ?_
   have o₁₃ := o₁₂.trans o₃
   rw [WP.block_append_iff]
   refine WP.mono (hInv_ok s₃) fun s₄ ⟨t₄, o₄⟩ => ?_
@@ -167,8 +167,8 @@ theorem setupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
   rw [← List.append_assoc, WP.block_append_iff]
   exact WP.mono (setupTTo_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (setupZTo_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact pw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact pw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 /-- The out-of-place loop meets its contract, for a key context of either
 kind. -/
@@ -223,8 +223,8 @@ theorem setupPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) :
   rw [← List.append_assoc, WP.block_append_iff]
   exact WP.mono (setupTTo_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (setupZTo_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact pw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact pw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 /-- The out-of-place loop with the powers loaded meets its contract. -/
 theorem stitchToP_ok : StitchToOkM CtxMode.powers Impl.Gcm.X86_64.StitchZTo.encP := fun s₀ hp hm =>
@@ -252,7 +252,7 @@ theorem laneAccG_sum_succ (X : Nat → Block) (T : Nat → BitVec 128) (y : Bloc
         (laneAccG X T y 3 n).val + x * φ ((if n = 0 then y else 0) ^^^ X n) * φ (T n) := by
   have hl : n % 4 < 4 := Nat.mod_lt _ (by decide)
   simp only [laneAccG]
-  rcases (by omega : n % 4 = 0 ∨ n % 4 = 1 ∨ n % 4 = 2 ∨ n % 4 = 3) with h | h | h | h <;>
+  rcases (by omega_using [] : n % 4 = 0 ∨ n % 4 = 1 ∨ n % 4 = 2 ∨ n % 4 = 3) with h | h | h | h <;>
   simp only [h, ite_true, ite_false, show ¬ ((0 : Nat) = 1) by decide, show ¬ ((0 : Nat) = 2) by decide,
     show ¬ ((0 : Nat) = 3) by decide, show ¬ ((1 : Nat) = 0) by decide, show ¬ ((1 : Nat) = 2) by decide,
     show ¬ ((1 : Nat) = 3) by decide, show ¬ ((2 : Nat) = 0) by decide, show ¬ ((2 : Nat) = 1) by decide,
@@ -267,8 +267,8 @@ theorem remZG {H : Block} {P : Nat → Nat → Block}
   intro r hr1 hr15 X y
   let T : Nat → BitVec 128 := fun j => P ((16 - r + j) / 4) ((16 - r + j) % 4)
   have hT : ∀ j < r, x * φ (T j) = φ H ^ (r - j) := fun j hj => by
-    have := hP ((16 - r + j) / 4) (by omega) ((16 - r + j) % 4) (by omega)
-    rwa [show 16 - 4 * ((16 - r + j) / 4) - (16 - r + j) % 4 = r - j by omega] at this
+    have := hP ((16 - r + j) / 4) (by omega_using [hr15, hj]) ((16 - r + j) % 4) (by omega_using [])
+    rwa [show 16 - 4 * ((16 - r + j) / 4) - (16 - r + j) % 4 = r - j by omega_using [hr15]] at this
   have key : ∀ n, 1 ≤ n → n ≤ r →
       (laneAccG X T y 0 n).val + (laneAccG X T y 1 n).val + (laneAccG X T y 2 n).val +
           (laneAccG X T y 3 n).val = φ H ^ (r - n) * φ (ghashFrom H y ((List.range n).map X)) := by
@@ -279,19 +279,19 @@ theorem remZG {H : Block} {P : Nat → Nat → Block}
       intro _ hn
       rw [laneAccG_sum_succ]
       rcases Nat.eq_zero_or_pos n with rfl | hpos
-      · have h0 := hT 0 (by omega)
+      · have h0 := hT 0 (by omega_using [hr1])
         have hg : ghashFrom H y ((List.range (0 + 1)).map X) = Spec.Gcm.mul (y ^^^ X 0) H := rfl
         rw [hg, φ_mul]
         simp only [laneAccG, ↓reduceIte, Prod.val_zero]
-        rw [show r - 0 = (r - (0 + 1)) + 1 by omega, pow_succ] at h0
+        rw [show r - 0 = (r - (0 + 1)) + 1 by omega_using [hr1], pow_succ] at h0
         linear_combination φ (y ^^^ X 0) * h0
-      · have hn' := hT n (by omega)
-        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ] at hn'
-        rw [ih hpos (by omega)]
-        simp only [show n ≠ 0 by omega, ↓reduceIte, List.range_succ, List.map_append, List.map_cons,
+      · have hn' := hT n (by omega_using [hn])
+        rw [show r - n = (r - (n + 1)) + 1 by omega_using [hn], pow_succ] at hn'
+        rw [ih hpos (by omega_using [hn])]
+        simp only [show n ≠ 0 by omega_using [hpos], ↓reduceIte, List.range_succ, List.map_append, List.map_cons,
           List.map_nil, ghashFrom, List.foldl_append, List.foldl_cons, List.foldl_nil, φ_mul, φ_xor, φ_zero,
           zero_add]
-        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ]
+        rw [show r - n = (r - (n + 1)) + 1 by omega_using [hn], pow_succ]
         linear_combination φ (X n) * hn'
   apply φ_inj
   rw [φ_xor, φ_xor, φ_xor, φ_reduceB, φ_reduceB, φ_reduceB, φ_reduceB]

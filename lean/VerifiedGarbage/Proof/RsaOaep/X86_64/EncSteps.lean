@@ -65,7 +65,7 @@ def encKs : List Nat := [14, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
 theorem encKs_lt : ∀ k ∈ encKs, k < nW := by decide
 
 theorem encKs_iff {k : Nat} (h : k ∈ encKs) : k = 14 ∨ (21 ≤ k ∧ k ≤ 31) := by
-  simp only [encKs, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [encKs, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 section
 variable {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s)
@@ -90,7 +90,7 @@ theorem EnvE.frv (he : EnvE s t) : FrV 2 (fb s) [outR s, scrR s] t where
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact Nat.le_of_lt (BitVec.isLt _)
-    · have := hp.wS; simp only [scrR]; omega
+    · have := hp.wS; simp only [scrR]; omega_using [this]
 
 omit hp in
 theorem EW.words (h : EW s t) : ∀ k ∈ encKs, word t.mem (fb s) (8 * k) = encW s k := by
@@ -119,11 +119,11 @@ theorem ew_copySeed {Hm : Stream} (hl : Hs.len = Hm.D) (hD : 0 < Hm.D) (hD64 : H
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, w31⟩ := hW.w
   have hsl := hp.hsl; have hk2 := hp.k2; have wSd := hp.wSd
   have hc : ∀ i < Hm.D, (⟨stackArg s 4, Hs.len⟩ : Region).Contains (stackArg s 4 + BitVec.ofNat 64 i) 1 :=
-    fun i hi => Offset.contains_base (stackArg s 4) (d := i) (n := 1) (k := Hs.len) (by omega) (by omega)
+    fun i hi => Offset.contains_base (stackArg s 4) (d := i) (n := 1) (k := Hs.len) (by omega_using [hl, hi]) (by omega_using [hD64, hi])
   exact WP.mono (wp_good (copySeed_good _) (copySeed_ok (H := Hm) h.L R w31 hD hD64
     (fun i hi => hp.rd_in h.he.rd (by simp [rdL]) (hc i hi))
     (fun i hi j hj => ne_of_disjoint hp.d_sd_scr (hc i hi) (Offset.contains_base _
-      (by unfold oEm at *; omega) (by unfold oEm at *; omega)))))
+      (by unfold oEm at *; omega_using [hD64, hsl, hj]) (by unfold oEm at *; omega_using [hD64, hj])))))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, W, R1, hW⟩
 
@@ -132,7 +132,7 @@ theorem EW.lab {t : State} (h : EW s t) {W : Nat → BitVec 64} (hW : ArgsW s W)
     LabAt t (fb s) (stackArg s 6) W (stackArg s 0) (stackArg s 1).toNat := by
   obtain ⟨-, -, -, -, -, -, -, w27, w28, -⟩ := hW.w
   have hsl := hp.hsl
-  have sS : Region.Sub ⟨stackArg s 6, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega)
+  have sS : Region.Sub ⟨stackArg s 6, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega_using [hsl])
   exact ⟨w27, by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq], (stackArg s 1).isLt,
     Covers.left (by rw [h.he.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
     hp.d_lb_scr.sub_right sS, hp.d_stk_lb.sub_left (ret_sub s)⟩
@@ -163,11 +163,11 @@ theorem ew_putMsg {D : Nat} (hk : 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .r
   obtain ⟨-, -, -, w23, -, -, -, -, -, w29, w30, -⟩ := hW.w
   have hk2 := hp.k2; have hsl := hp.hsl; have wM := hp.wM
   have hmA : ∀ i < (stackArg s 3).toNat, (⟨stackArg s 2, (stackArg s 3).toNat⟩ : Region).Contains
-      (stackArg s 2 + BitVec.ofNat 64 i) 1 := fun i hi => Offset.contains_base _ (by omega) (by omega)
+      (stackArg s 2 + BitVec.ofNat 64 i) 1 := fun i hi => Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   exact WP.mono (wp_good putMsg_good (putMsg_ok h.L R (k := (s.gpr .rcx).toNat) (mLen := (stackArg s 3).toNat)
     (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) w29
-    (by omega) hk2 (fun i hi => hp.rd_in h.he.rd (by simp [rdL]) (hmA i hi))
-    (fun i hi j hj => ne_of_disjoint hp.d_ms_scr (hmA i hi) (Offset.contains_base _ (by omega) (by omega)))))
+    (by omega_using [hk]) hk2 (fun i hi => hp.rd_in h.he.rd (by simp [rdL]) (hmA i hi))
+    (fun i hi j hj => ne_of_disjoint hp.d_ms_scr (hmA i hi) (Offset.contains_base _ (by omega_using [hk, hsl, hj]) (by omega_using [hj])))))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, W, R1, hW⟩
 
@@ -181,7 +181,7 @@ theorem ew_dbArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gpr 
     (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hD hkD))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, _, R1,
-        fun k hk => (mW_other (by omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
+        fun k hk => (mW_other (by omega_using [hk])).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
 theorem ew_seedArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gpr .rcx).toNat) {t : State}
@@ -193,7 +193,7 @@ theorem ew_seedArgs {Hm : Stream} (hD : Hm.D < 2 ^ 30) (hkD : Hm.D + 1 ≤ (s.gp
     (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hD hkD))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, _, R1,
-        fun k hk => (mW_other (by omega)).trans (hW k hk), mW_args _ _ _ _ _ _⟩
+        fun k hk => (mW_other (by omega_using [hk])).trans (hW k hk), mW_args _ _ _ _ _ _⟩
 
 omit hp in
 theorem ew_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1.X86_64.Table.Fns}
@@ -207,17 +207,17 @@ theorem ew_mgfT {Gm : Hash} (hG : HashOK Gm) (mG : MgfLink Gm hG) {f : Impl.Mgf1
     (valid_of_link hG mG) T h.L R hf A))
     fun t1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, _⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step rd1 wr1 sp1 (fun r hr _ => cs1 r hr) mx1 f1, L1, V1, W1, R1, fun k hk => by
-        rw [hW1 k (by rcases hk with rfl | hk <;> unfold nW frameBytes <;> omega) (by omega) (by omega) (by omega)
-          (by omega)]
+        rw [hW1 k (by rcases hk with rfl | hk <;> unfold nW frameBytes <;> omega_arith) (by omega_using [hk]) (by omega_using [hk]) (by omega_using [hk])
+          (by omega_using [hk])]
         exact hW k hk⟩
 
 omit hp in
 theorem ew_pubArgs {t : State} (h : EW s t) : WP isa (.block pubArgs) t (EWP s) := by
   obtain ⟨V, W, R, hW⟩ := h.rep
-  exact WP.mono (wp_good pubArgs_good (pubArgs_ok h.L R fun k h1 h2 => hW k (.inr ⟨h1, by omega⟩)))
+  exact WP.mono (wp_good pubArgs_good (pubArgs_ok h.L R fun k h1 h2 => hW k (.inr ⟨h1, by omega_using [h2]⟩)))
     fun t1 ⟨⟨L1, k1, R1, hdi, hsi, hdx, hcx, h8, h9⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, fun i hi => by
-        rw [R1.rd i rfl (by unfold nW frameBytes; omega)]
+        rw [R1.rd i rfl (by unfold nW frameBytes; omega_using [hi])]
         match i, hi with
         | 0, _ => simp [upd, pw]
         | 1, _ => simp [upd, pw]

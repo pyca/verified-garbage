@@ -32,10 +32,10 @@ theorem selectW_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
       Outside base o (4 * k) s.mem t.mem ∧ Rest [.r1, .r5, .r7, .r8, .r9, .r10] s t := by
   have hn := hs.nowrap
   unfold selectW
-  refine WP.seq (wp_ptr (d := .r10) (by decide) (by omega) fun s₁ u₁ =>
-    wp_ptr (d := .r8) (by decide) (by omega) fun s₂ u₂ =>
-    wp_ptr (d := .r1) (by decide) (by omega) fun s₃ u₃ =>
-    wp_ptr (d := .r9) (by decide) (by omega) fun t u₄ => WP.block_nil ?_)
+  refine WP.seq (wp_ptr (d := .r10) (by decide) (by omega_using [h16s]) fun s₁ u₁ =>
+    wp_ptr (d := .r8) (by decide) (by omega_using [h16t]) fun s₂ u₂ =>
+    wp_ptr (d := .r1) (by decide) (by omega_using [h16o]) fun s₃ u₃ =>
+    wp_ptr (d := .r9) (by decide) (by omega_using [h16s]) fun t u₄ => WP.block_nil ?_)
   have R : Rest [.r1, .r5, .r7, .r8, .r9, .r10] s t :=
     (((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans (u₃.rest (by simp))).trans (u₄.rest (by simp))
   have wt : Ws t base size := hs.of_rest R (by decide)
@@ -53,7 +53,7 @@ theorem selectW_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
       (∀ i < j, w32 u.mem base (o + 4 * i) =
         if b then w32 s.mem base (tmp + 4 * i) else w32 s.mem base (src + 4 * i)) ∧
       Outside base o (4 * j) s.mem u.mem)
-    (by decide) hk (by omega) (fun j u u' ⟨a, c, d, e, f, g⟩ F => ⟨a.of_fupd F, c.trans (F.rest _),
+    (by decide) hk (by omega_using [h16s]) (fun j u u' ⟨a, c, d, e, f, g⟩ F => ⟨a.of_fupd F, c.trans (F.rest _),
       by rw [F.gpr]; exact d, by rw [F.gpr]; exact e, by rw [F.mem]; exact f, by rw [F.mem]; exact g⟩)
     ⟨wt, R, by rw [p8]; exact (BitVec.add_zero _).symm, by rw [p1]; exact (BitVec.add_zero _).symm,
       fun i hi => absurd hi (Nat.not_lt_zero _), by rw [mt]; exact Outside.refl _ _ _ _⟩
@@ -63,19 +63,19 @@ theorem selectW_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   have r3u : u.gpr .r3 = s.gpr .r3 := Ru.gpr _ (by decide)
   -- The words read are not yet written.
   have xs : w32 u.mem base (src + 4 * j + 0) = w32 s.mem base (src + 4 * j) :=
-    Ou.w32 (by omega) (by omega)
+    Ou.w32 (by omega_using [hos, hj]) (by omega_using [h16s, hj])
   have xt : w32 u.mem base (tmp + 4 * j + 0) = w32 s.mem base (tmp + 4 * j) :=
-    Ou.w32 (by omega) (by omega)
-  refine wp_ldr (by decide) (wu.ea (K := src + 4 * j) (at_ptr pu e12) (by omega)) (wu.read (d := src + 4 * j + 0) (n := 4) (by omega))
+    Ou.w32 (by omega_using [hot, hj]) (by omega_using [h16s, h16t, hj])
+  refine wp_ldr (by decide) (wu.ea (K := src + 4 * j) (at_ptr pu e12) (by omega_using [hsrc, hj])) (wu.read (d := src + 4 * j + 0) (n := 4) (by omega_using [hsrc, hj]))
     fun u₁ v₁ => ?_
   have w₁ := wu.of_upd v₁ (by decide)
   refine wp_ldr (by decide) (w₁.ea (K := tmp + 4 * j) (at_ptr (by rw [v₁.other .r8 (by decide)]; exact p8u)
-    (by rw [v₁.other .r12 (by decide)]; exact e12)) (by omega)) (w₁.read (d := tmp + 4 * j + 0) (n := 4) (by omega))
+    (by rw [v₁.other .r12 (by decide)]; exact e12)) (by omega_using [htmp, hj])) (w₁.read (d := tmp + 4 * j + 0) (n := 4) (by omega_using [htmp, hj]))
     fun u₂ v₂ => wp_dp (op2_reg _ _) fun u₃ v₃ => wp_dp (op2_reg _ _) fun u₄ v₄ => wp_dp (op2_reg _ _) fun u₅ v₅ => ?_
   have w₅ : Ws u₅ base size := (((w₁.of_upd v₂ (by decide)).of_upd v₃ (by decide)).of_upd v₄ (by decide)).of_upd v₅ (by decide)
   have m5 : u₅.mem = u.mem := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
   refine wp_str (by decide) (w₅.ea (K := o + 4 * j) (at_ptr (by simp only [v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact p1u)
-    (by simp only [v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact e12)) (by omega)) (w₅.write (d := o + 4 * j + 0) (n := 4) (by omega))
+    (by simp only [v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact e12)) (by omega_using [hoz, hj])) (w₅.write (d := o + 4 * j + 0) (n := 4) (by omega_using [hoz, hj]))
     fun u₆ m₆ => wp_bump (by decide) fun u₇ v₇ => wp_bump (by decide) fun u₈ v₈ => wp_bump (by decide) fun u₉ v₉ =>
       WP.block_nil ?_
   have m9 : u₉.mem = u.mem.writeW (off base (o + 4 * j)) (u₅.gpr .r5) := by
@@ -97,13 +97,13 @@ theorem selectW_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   · intro i hi
     rw [m9]
     rcases Nat.lt_or_ge i j with h | h
-    · rw [w32_write_lt (by omega) (by omega), Vu i h]
-    · rw [show i = j by omega, w32_write_self, val]
+    · rw [w32_write_lt (by omega_using [hoz, hn, hj]) (by omega_using [h]), Vu i h]
+    · rw [show i = j by omega_using [hi, h], w32_write_self, val]
       cases b
       · exact xs
       · exact xt
   · rw [m9]
-    exact (Ou.mono (Nat.le_refl _) (by omega)).trans ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+    exact (Ou.mono (Nat.le_refl _) (by omega_using [])).trans ((writeW32_outside _ _ _ (by omega_using [h16s, h16o, hj])).mono (by omega_using []) (by omega_using []))
   · simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact ptr_step pu
   · simp only [v₉.get, v₈.get, v₇.get, m₆.gpr, v₅.get, v₄.get, v₃.get, v₂.get, v₁.get, reduceCtorEq, ↓reduceIte]; exact p9u
 

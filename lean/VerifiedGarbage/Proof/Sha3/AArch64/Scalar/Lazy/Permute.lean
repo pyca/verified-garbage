@@ -38,7 +38,7 @@ theorem core_ok (A : Spec.Sha3.State) (s : State)
   have hin : LayoutHolds (stageLayout 0) (logicalState A) (machineFile s) := by
     apply layout_of_at
     intro i hi
-    have hi25 : i < 25 := by omega
+    have hi25 : i < 25 := by omega_using [hl0, hi]
     simp only [hcanon i hi25, logicalState_lane _ i hi25,
       VG.Bitslice.Anf.rotateRight_zero]
     exact hs i hi25

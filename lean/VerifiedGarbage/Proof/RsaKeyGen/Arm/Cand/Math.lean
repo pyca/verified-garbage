@@ -26,24 +26,24 @@ theorem or_three {x k : Nat} (hx : x < 2 ^ (k + 2)) : x ||| 3 * 2 ^ k = x % 2 ^ 
     Nat.testBit_mod_two_pow]
   by_cases h : i < k
   · simp only [h, decide_true, Bool.true_and, ↓reduceIte]
-    have : ¬ k ≤ i := by omega
+    have : ¬ k ≤ i := by omega_using [h]
     simp [this]
   · simp only [h, ↓reduceIte]
-    have hk : k ≤ i := by omega
+    have hk : k ≤ i := by omega_using [h]
     simp only [hk, decide_true, Bool.true_and]
     rw [show (3 : Nat) = 2 ^ 2 - 1 from rfl, Nat.testBit_two_pow_sub_one]
     by_cases h2 : i - k < 2
     · simp [h2]
     · simp only [h2, decide_false, Bool.or_false]
       exact Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (n := 2) (by decide)
-        (show k + 2 ≤ i by omega)))
+        (show k + 2 ≤ i by omega_using [h2])))
 
 /-- `candidate`, for a number of the candidate's bits, as the code sets the
 bits: the two top bits, then the low bit. -/
 theorem candidate_eq {b x : Nat} (hb : 2 ≤ b) (hx : x < 2 ^ b) :
     Spec.RsaKeyGen.candidate b x = 2 * ((x % 2 ^ (b - 2) + 3 * 2 ^ (b - 2)) / 2) + 1 := by
   unfold Spec.RsaKeyGen.candidate
-  rw [Nat.mod_eq_of_lt hx, or_three (by rwa [show b - 2 + 2 = b by omega]), VG.Proof.Rsa.Arm.Keys.or_one]
+  rw [Nat.mod_eq_of_lt hx, or_three (by rwa [show b - 2 + 2 = b by omega_using [hb]]), VG.Proof.Rsa.Arm.Keys.or_one]
 
 theorem bv_or_top (v : BitVec 32) : (v ||| 0xC0000000#32).toNat = v.toNat % 2 ^ 30 + 3 * 2 ^ 30 := by
   rw [BitVec.toNat_or, show (0xC0000000#32).toNat = 3 * 2 ^ 30 from rfl, or_three v.isLt]
@@ -82,7 +82,7 @@ theorem or_low {x b : Nat} (hb : b < 2 ^ 32) : x ||| b = (x % 2 ^ 32 ||| b) + 2 
   by_cases h : i < 32
   · simp [h]
   · simp only [h, ↓reduceIte]
-    rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hb (Nat.pow_le_pow_right (by decide) (by omega))),
-      Bool.or_false, Nat.sub_add_cancel (by omega)]
+    rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hb (Nat.pow_le_pow_right (by decide) (by omega_using [h]))),
+      Bool.or_false, Nat.sub_add_cancel (by omega_using [h])]
 
 end VG.Proof.RsaKeyGen.Arm.Cand

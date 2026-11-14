@@ -73,8 +73,8 @@ theorem args_ct {base : BitVec 32} {size tmp a b mod acc n i : Nat} :
   have wp (s : State) (h : P s) : WP isa (.block [.ldr .r3 .r0 16]) s Q := by
     obtain ⟨ctx, ⟨inv, hdr⟩, ptr⟩ := h
     have fits := ctx.tmpFits
-    refine wp_ldr (by decide) (ctx.workspace.ea ptr (by omega))
-      (ctx.workspace.read (by omega)) fun t u => WP.block_nil ?_
+    refine wp_ldr (by decide) (ctx.workspace.ea ptr (by omega_using [fits]))
+      (ctx.workspace.read (by omega_using [fits])) fun t u => WP.block_nil ?_
     exact ⟨(u.other .r0 (by decide)).trans ptr, u.gpr.trans hdr.aPtr⟩
   unfold VG.Impl.Bignum.Arm.Fios2.args
   change RelCT isa _ (.block ([.ldr .r3 .r0 16] ++ _)) _

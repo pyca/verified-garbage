@@ -54,12 +54,12 @@ theorem bit_check : SCheck Generate.bit := by dsimp only [SCheck]; taint_decide
 
 theorem toothHead_check : ∀ j < 5, ACheck (.block (toothHead j)) := by
   intro j hj
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega_using [hj]) with rfl | rfl | rfl | rfl | rfl <;>
     (dsimp only [ACheck]; taint_decide)
 
 theorem toothTail_check : ∀ j < 5, ACheck (.block (toothTail j)) := by
   intro j hj
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega_using [hj]) with rfl | rfl | rfl | rfl | rfl <;>
     (dsimp only [ACheck]; taint_decide)
 
 theorem zero_check : ACheck (.block [.mov .eax (.imm 0), .store (sc winOff) .eax]) := by
@@ -91,14 +91,14 @@ theorem toothHead_ok (h : In Ex base bytes len args s) {j i R : Nat} (hj : j < 5
   have ro : rowsOff = 56 := rfl
   have nb : numBase = 3336 := rfl
   simp only [toothHead, List.cons_append, List.nil_append]
-  refine wp_movS (readW_ok h (d := iOff) (by omega) hI (by omega)) fun s₁ U₁ _ => wp_subS rfl fun s₂ U₂ _ => ?_
+  refine wp_movS (readW_ok h (d := iOff) (by omega_using [io, nb]) hI (by omega_using [hb])) fun s₁ U₁ _ => wp_subS rfl fun s₂ U₂ _ => ?_
   have K₂ : Keeps [.esi] s s₂ := (U₁.keeps.mono (by decide)).widen U₂.keeps
   have m₂ : s₂.mem = s.mem := by rw [U₂.mem, U₁.mem]
   rw [← List.append_nil (List.replicate j (Instr.alu .add .esi (.mem (sc rowsOff))))]
-  refine addsMem_ok h (d := rowsOff) (by omega) hR (by omega) j m₂ K₂ fun s₃ K₃ m₃ e₃ => WP.block_nil ⟨m₃, K₃, ?_⟩
-  have k3 : i - 1 + j * R < 2 ^ 32 := by have := Nat.mul_le_mul_right R (show j ≤ 4 by omega); omega
+  refine addsMem_ok h (d := rowsOff) (by omega_using [ro, nb]) hR (by omega_using [hb]) j m₂ K₂ fun s₃ K₃ m₃ e₃ => WP.block_nil ⟨m₃, K₃, ?_⟩
+  have k3 : i - 1 + j * R < 2 ^ 32 := by have := Nat.mul_le_mul_right R (show j ≤ 4 by omega_using [hj]); omega_using [hb, this]
   rw [e₃, U₂.gpr, U₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), BitVec.ofNat_add_ofNat]
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hi]), BitVec.ofNat_add_ofNat]
 
 /-- A tooth's bit into the window word. -/
 theorem toothTail_ok (h : In Ex base bytes len args s) (j : Nat) :
@@ -111,10 +111,10 @@ theorem toothTail_ok (h : In Ex base bytes len args s) (j : Nat) :
   have h₅ := h.regs U₅.keeps U₅.mem
   refine addsSelf_ok j fun s₆ K₆ m₆ _ => ?_
   have h₆ := h₅.regs K₆ m₆
-  refine wp_orS (readW_ok h₆ (d := winOff) (v := w32 s₆.mem base winOff) (by omega) rfl (BitVec.isLt _))
+  refine wp_orS (readW_ok h₆ (d := winOff) (v := w32 s₆.mem base winOff) (by omega_using [wo, nb]) rfl (BitVec.isLt _))
     fun s₇ U₇ => ?_
   have h₇ := h₆.regs U₇.keeps U₇.mem
-  refine WP.mono (storeW_ok h₇ (d := winOff) (by omega) .eax) fun u ⟨I, O, _, Ku⟩ => ⟨I, ?_, ?_⟩
+  refine WP.mono (storeW_ok h₇ (d := winOff) (by omega_using [wo, nb]) .eax) fun u ⟨I, O, _, Ku⟩ => ⟨I, ?_, ?_⟩
   · rw [U₇.mem, m₆, U₅.mem] at O; exact O
   · exact ((U₅.keeps.mono (by decide)).trans K₆).trans ((U₇.keeps.mono (by decide)).trans (Ku.mono (by decide)))
 
@@ -131,12 +131,12 @@ theorem DT.write {i R : Nat} {u t : State} (D : DT Ex base bytes len args sp i R
   have wo : winOff = 4 := rfl
   have bl := D.1.1.bytes_lt
   refine ⟨⟨I, D.1.2.1.keep K hsp, (K.1 _ hsp).trans D.1.2.2⟩, ?_, ?_⟩
-  · rw [O.w32 (by omega) (by omega)]; exact D.2.1
-  · rw [O.w32 (by omega) (by omega)]; exact D.2.2
+  · rw [O.w32 (by omega_using [io, wo]) (by omega_using [io])]; exact D.2.1
+  · rw [O.w32 (by omega_using [ro, wo]) (by omega_using [ro])]; exact D.2.2
 
 theorem tooth_trace {i R j : Nat} (hi : 1 ≤ i) (hb : i + 4 * R < 2 ^ 32) (hj : j < 5) :
     RelCT isa (Both (DT Ex base bytes len args sp i R)) (tooth j) (Both (DT Ex base bytes len args sp i R)) := by
-  have k3 : i - 1 + j * R < 2 ^ 32 := by have := Nat.mul_le_mul_right R (show j ≤ 4 by omega); omega
+  have k3 : i - 1 + j * R < 2 ^ 32 := by have := Nat.mul_le_mul_right R (show j ≤ 4 by omega_using [hj]); omega_using [hb, this]
   rw [tooth_eq]
   refine VG.RelCT.seq (taint_both (F := fun u => DT Ex base bytes len args sp i R u ∧
       u.gpr .esi = BitVec.ofNat 32 (i - 1 + j * R)) (fun _ _ D₁ D₂ => D₁.1.agree D₂.1) _ (toothHead_check j hj)
@@ -158,7 +158,7 @@ theorem digit_trace {i R : Nat} (hi : 1 ≤ i) (hb : i + 4 * R < 2 ^ 32) :
   show RelCT isa _ (.seq (.block [.mov .eax (.imm 0), .store (sc winOff) .eax]) (.seq (tooth 0) (.seq (tooth 1)
     (.seq (tooth 2) (.seq (tooth 3) (.seq (tooth 4) (.block []))))))) _
   refine VG.RelCT.seq (taint_both (fun _ _ D₁ D₂ => D₁.1.agree D₂.1) _ zero_check fun x D =>
-    wp_movS rfl fun u U _ => WP.mono (storeW_ok (D.1.1.regs U.keeps U.mem) (d := winOff) (by omega) .eax)
+    wp_movS rfl fun u U _ => WP.mono (storeW_ok (D.1.1.regs U.keeps U.mem) (d := winOff) (by omega_using [wo, nb]) .eax)
       fun t ⟨I, O, _, K⟩ => D.write I (by rw [U.mem] at O; exact O) (U.keeps.trans (K.mono (by decide)))) ?_
   refine VG.RelCT.seq (tooth_trace hi hb (by decide)) (VG.RelCT.seq (tooth_trace hi hb (by decide))
     (VG.RelCT.seq (tooth_trace hi hb (by decide)) (VG.RelCT.seq (tooth_trace hi hb (by decide))
@@ -216,12 +216,12 @@ theorem step_trace {i : Nat} (hi : 1 ≤ i) (hiR : i ≤ Spec.Rsa.FixedBaseComb.
     exact WP.mono (mulStep_ok S (b := 6) (.inl rfl) (by rw [S.acc]; exact S.lt)) fun t ⟨V', _, S'⟩ =>
       ⟨s₀, G, x, V', h₀, E, S', A, e⟩
   refine VG.RelCT.seq (relCT_both (F := CI7 Ex base bytes len args sp P bits i)
-    ((digitSelect_trace hi (R := Spec.Rsa.FixedBaseComb.rows bits) (by omega)).mono
+    ((digitSelect_trace hi (R := Spec.Rsa.FixedBaseComb.rows bits) (by omega_using [hiR, hR])).mono
       (fun _ _ h => ⟨h.1.dt, h.2.dt⟩) fun _ _ h => h) fun _ C => ?_) ?_
   · obtain ⟨s₀, G, x, V, h₀, E, S, A, e⟩ := C
     have P1 := S.ctx.gt
     exact WP.mono (digitSelect_ok E h₀ S hi hiR) fun t ⟨S', T⟩ => ⟨⟨s₀, G, x, V, h₀, E, S', A, e⟩,
-      by rw [T]; exact enc_lt (by omega)⟩
+      by rw [T]; exact enc_lt (by omega_using [P1])⟩
   refine VG.RelCT.seq (mul_both sp (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.m667
     (F := CI Ex base bytes len args sp P bits i)
     (fun _ C => let ⟨⟨_, _, _, _, _, _, S, _, _⟩, l⟩ := C; ⟨⟨P, S.ctx, l⟩, C.1.run.2.1, C.1.run.2.2⟩)
@@ -230,7 +230,7 @@ theorem step_trace {i : Nat} (hi : 1 ≤ i) (hiR : i ≤ Spec.Rsa.FixedBaseComb.
     exact WP.mono (mulStep_ok S (b := 7) (.inr rfl) l) fun t ⟨V', _, S'⟩ => ⟨s₀, G, x, V', h₀, E, S', A, e⟩
   refine taint_both (fun _ _ C₁ C₂ => C₁.run.agree C₂.run) _ dec_check fun _ C => ?_
   obtain ⟨s₀, G, x, V, h₀, E, S, A, e⟩ := C
-  exact WP.mono (decStep_ok S hi (by omega)) fun t ⟨S', z⟩ => ⟨⟨s₀, G, x, V, h₀, E, S', A, e⟩, z⟩
+  exact WP.mono (decStep_ok S hi (by omega_using [hiR, hR])) fun t ⟨S', z⟩ => ⟨⟨s₀, G, x, V, h₀, E, S', A, e⟩, z⟩
 
 theorem loop_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.FixedBaseComb.rows bits ≤ 1639) :
     RelCT isa (Both (CI Ex base bytes len args sp P bits (Spec.Rsa.FixedBaseComb.rows bits)))
@@ -238,11 +238,11 @@ theorem loop_trace (hR0 : 0 < Spec.Rsa.FixedBaseComb.rows bits) (hR : Spec.Rsa.F
   refine (relCT_countLoop (I := fun j => CI Ex base bytes len args sp P bits (Spec.Rsa.FixedBaseComb.rows bits - j))
     hR0 fun j hj => ?_).mono (fun _ _ h => by simpa only [Nat.sub_zero] using h)
       (fun _ _ h => by simpa only [Nat.sub_self] using h)
-  refine (step_trace (i := Spec.Rsa.FixedBaseComb.rows bits - j) (by omega) (by omega) hR).mono (fun _ _ h => h) ?_
+  refine (step_trace (i := Spec.Rsa.FixedBaseComb.rows bits - j) (by omega_using [hj]) (by omega_using []) hR).mono (fun _ _ h => h) ?_
   rintro s t ⟨⟨C₁, z₁⟩, ⟨C₂, z₂⟩⟩
-  have e : Spec.Rsa.FixedBaseComb.rows bits - j - 1 = Spec.Rsa.FixedBaseComb.rows bits - (j + 1) := by omega
+  have e : Spec.Rsa.FixedBaseComb.rows bits - j - 1 = Spec.Rsa.FixedBaseComb.rows bits - (j + 1) := by omega_using []
   have d : (Spec.Rsa.FixedBaseComb.rows bits - j - 1 = 0) = (j + 1 = Spec.Rsa.FixedBaseComb.rows bits) :=
-    propext (by omega)
+    propext (by omega_using [hj])
   rw [e] at C₁ C₂
   simp only [d] at z₁ z₂
   exact ⟨⟨C₁, z₁⟩, ⟨C₂, z₂⟩⟩

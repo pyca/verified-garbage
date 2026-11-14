@@ -123,8 +123,8 @@ theorem idxB_wp {t : State} (h : Sim s t) (h5 : t.gpr .t5 = stackArg s 14) :
   WP.of_syms (wp_ld (a := stackArg s 14 + BitVec.ofNat 64 40) (by rw [h5])
     (by
       have e : (stackArg s 14 + BitVec.ofNat 64 40).toNat = (stackArg s 14).toNat + 40 := by
-        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := P.wth; omega
-      rw [e]; have := P.al14; omega)
+        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := P.wth; omega_using [this]
+      rw [e]; have := P.al14; omega_using [this])
     ⟨tHR s, by rw [h.1.rd, P.hrd]; cases pc <;> simp,
       Offset.contains_base (stackArg s 14) (by decide) (by decide)⟩
     (fun u o e => wp_nil fun y => ⟨⟨(h.1.trans o).mono fun r hr => by revert r; decide, y.trans h.2⟩,
@@ -141,12 +141,12 @@ theorem tabM_entryS {vs : List MVar} (hc : Coh vs)
     (hh : Abi.tableHeld 64 s.mem (stackArg s 14) (FnTable.words isa s (tableOf v))) :
     TabM v.M (digName v) (fnsOf vs) 14 Ss s (stackArg s 14) := by
   refine tabM_of (by decide) rfl (arg_al P (by decide)) P.al14
-    (show (stackArg s 14).toNat + 40 ≤ 2 ^ 64 by have := P.wth; omega) (A := aR pc s)
+    (show (stackArg s 14).toNat + 40 ≤ 2 ^ 64 by have := P.wth; omega_using [this]) (A := aR pc s)
     (by rw [P.hrd]; cases pc <;> simp) (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
     (by rw [P.hrd]; exact List.mem_append_right _ (List.mem_cons_self ..)) (P.kth.sub_left kR_sub)
     (P.sth.sub_left (sc_sub P)) hc hpw hv hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by split <;> omega)
+  exact Offset.sub_base _ (by split <;> omega_using [])
 
 theorem tabS_entryS {gs : List MVar} (hc : MdHashTable.RISCV64.Coh gs)
     (hpw : (MdHashTable.RISCV64.names gs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : MVar} (hw : w ∈ gs)
@@ -157,7 +157,7 @@ theorem tabS_entryS {gs : List MVar} (hc : MdHashTable.RISCV64.Coh gs)
     (by rw [P.hrd]; exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
     (P.ktg.sub_left kR_sub) (P.stg.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by split <;> omega)
+  exact Offset.sub_base _ (by split <;> omega_using [])
 
 end
 

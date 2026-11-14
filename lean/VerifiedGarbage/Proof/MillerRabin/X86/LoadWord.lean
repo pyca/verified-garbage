@@ -24,12 +24,12 @@ theorem loadWord_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
       Keeps [.eax, .edx, .ebp] s t ∧ Context g t := by
   have header := v.headerFit
   have expFit := v.arrayFit (j := aExponent) (by decide)
-  have small : q ≤ 256 := by have := v.maxWidth; unfold Geometry.words at bound; omega
+  have small : q ≤ 256 := by have := v.maxWidth; unfold Geometry.words at bound; omega_using [bound, this]
   unfold loadWord
   refine WP.block_append (WP.mono (C.ptr v aExponent (by decide) .ebp (by decide) (by decide))
     fun u ⟨P, Mu, Ku⟩ => ?_)
   have Cu := C.keepMem Ku (by decide) Mu
-  refine wp_movS (Cu.readScalar sWords (by unfold sWords; omega)) fun a A _ => ?_
+  refine wp_movS (Cu.readScalar sWords (by unfold sWords; omega_using [header])) fun a A _ => ?_
   refine wp_subS rfl fun b B _ => wp_addS rfl fun c D _ => wp_addS rfl fun d H _ => ?_
   have Kd : Keeps [.eax, .edx, .ebp] s d :=
     ((((Ku.mono (by decide)).widen A.keeps).widen B.keeps).widen D.keeps).widen H.keeps
@@ -42,30 +42,30 @@ theorem loadWord_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     change (((2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32 + (2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32) % 2 ^ 32 +
       ((2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32 + (2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32) % 2 ^ 32) % 2 ^ 32 = _
-    omega
+    omega_using [positive, small]
   refine wp_addS rfl fun e I _ => ?_
   have Ke : Keeps [.eax, .edx, .ebp] s e := Kd.widen I.keeps
   have Me : e.mem = s.mem := I.mem.trans Md
   have be : PtrAt e g.W .ebp (g.array aExponent + 4 * (q - 1)) := by
     rw [PtrAt, I.gpr, ptr_add bp, indexVal]
   have Ce := C.keepMem Ke (by decide) Me
-  refine wp_movS (readSrc_ptr Ce.ws be (d := 0) (by omega)) fun f J _ => ?_
+  refine wp_movS (readSrc_ptr Ce.ws be (d := 0) (by omega_using [positive, bound, expFit])) fun f J _ => ?_
   have Kf : Keeps [.eax, .edx, .ebp] s f := Ke.widen J.keeps
   have Mf : f.mem = s.mem := J.mem.trans Me
   have Cf := C.keepMem Kf (by decide) Mf
-  refine wp_storeS (ea_ptr Cf.ws Cf.base (d := sValue) (by unfold sValue; omega))
-    (ws_write Cf.ws (y := 0 + sValue) (n := 4) (by unfold sValue; omega)) fun h L => ?_
+  refine wp_storeS (ea_ptr Cf.ws Cf.base (d := sValue) (by unfold sValue; omega_using [header]))
+    (ws_write Cf.ws (y := 0 + sValue) (n := 4) (by unfold sValue; omega_using [header])) fun h L => ?_
   have Ov : Outside g.W sValue 4 f.mem h.mem := by
     rw [L.mem, Nat.zero_add]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; unfold sValue; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; unfold sValue; omega_using [])
   have Ch := Cf.keepScalar (L.keeps []) (by decide) Ov (by unfold scratchWord sValue; simp)
   refine wp_movS rfl fun k N _ => ?_
   have Ck := Ch.keepMem N.keeps (by decide) N.mem
-  refine wp_storeS (ea_ptr Ck.ws Ck.base (d := sWindows) (by unfold sWindows; omega))
-    (ws_write Ck.ws (y := 0 + sWindows) (n := 4) (by unfold sWindows; omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (ea_ptr Ck.ws Ck.base (d := sWindows) (by unfold sWindows; omega_using [header]))
+    (ws_write Ck.ws (y := 0 + sWindows) (n := 4) (by unfold sWindows; omega_using [header])) fun t T => WP.block_nil ?_
   have Ow : Outside g.W sWindows 4 h.mem t.mem := by
     rw [T.mem, Nat.zero_add, N.mem]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; unfold sWindows; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; unfold sWindows; omega_using [])
   have Kall : Keeps [.eax, .edx, .ebp] s t :=
     (((Kf.widen (L.keeps [])).widen N.keeps).widen (T.keeps []))
   refine ⟨?_, ?_, Kall, Ck.keepScalar (T.keeps []) (by decide)

@@ -57,17 +57,17 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   have nR : num t2.mem g.B g.w aVR = 0 := by rw [h2.arrs.get (by simp), upd_ne _ _ (by decide), upd_self, hA0]
   have nD : num t2.mem g.B g.w aVD = A d := by rw [h2.arrs.get (by simp), upd_self, upd_ne _ _ dR]
   rw [kc_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (fixTop_ok h2.ws (m := aVD) (by decide) (by decide) (by omega))
+  refine WP.mono (fixTop_ok h2.ws (m := aVD) (by decide) (by decide) (by omega_using [hw]))
     fun t3 ⟨w3, f3, v3, p3, _, _, k3, o3⟩ => ?_
   rw [show seqs [VG.Impl.Rsa.RISCV64.WordDiv.divW a aVR aVD aVT] = VG.Impl.Rsa.RISCV64.WordDiv.divW a aVR aVD aVT
     from rfl]
   have fitR := h.ws.fit64 (j := aVR) (by decide)
   have r0 : wordsVal t3.mem g.B (arr g.w aVR) (g.w / 2 + 1) = 0 := by
-    rw [f3.words (fun k hk => by simp at hk; subst hk; have := arr_disj (w := g.w) (j := aVD) (k := aVR) (by decide); omega)
-      (by simp) (by omega)]
-    exact wordsVal_zero_part (d := arr g.w aVR) (a := 0) (c := g.w / 2 + 1) nR (by omega) |>.symm ▸ by simp
+    rw [f3.words (fun k hk => by simp at hk; subst hk; have := arr_disj (w := g.w) (j := aVD) (k := aVR) (by decide); omega_using [hS, this])
+      (by simp) (by omega_using [hS, fitR])]
+    exact wordsVal_zero_part (d := arr g.w aVR) (a := 0) (c := g.w / 2 + 1) nR (by omega_using [hw]) |>.symm ▸ by simp
   refine WP.mono (divW_ok w3 (a := a) (r := aVR) (m := aVD) (t := aVT) (by decide) (h.live_lt a ha) (by decide)
-    (by decide) (by decide) (Ne.symm aR) (by decide) (by decide) (by decide) aT (by omega) (by omega) hw2 r0 p3)
+    (by decide) (by decide) (Ne.symm aR) (by decide) (by decide) (by decide) aT (by omega_using [hw]) (by omega_arith) hw2 r0 p3)
     fun t ⟨w4, f4, k4, x4, top4, hi4⟩ => ?_
   -- `[a]` in `t3`, and `[aVR]`'s `w` words.
   have na : num t3.mem g.B g.w a = A a := by
@@ -78,13 +78,13 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   have hR : num t.mem g.B g.w aVR = A a % M := by
     have e1 := wordsVal_append t.mem g.B (arr g.w aVR) (g.w / 2) (g.w - g.w / 2)
     have e2 := wordsVal_append t.mem g.B (arr g.w aVR + 8 * (g.w / 2)) 1 (g.w - g.w / 2 - 1)
-    rw [show g.w / 2 + (g.w - g.w / 2) = g.w by omega] at e1
-    rw [show 1 + (g.w - g.w / 2 - 1) = g.w - g.w / 2 by omega, show arr g.w aVR + 8 * (g.w / 2) + 8 * 1 =
-      arr g.w aVR + 8 * (g.w / 2 + 1) by omega, show g.w - g.w / 2 - 1 = g.w - 1 - g.w / 2 by omega, hi4] at e2
+    rw [show g.w / 2 + (g.w - g.w / 2) = g.w by omega_using []] at e1
+    rw [show 1 + (g.w - g.w / 2 - 1) = g.w - g.w / 2 by omega_using [hw], show arr g.w aVR + 8 * (g.w / 2) + 8 * 1 =
+      arr g.w aVR + 8 * (g.w / 2 + 1) by omega_using [], show g.w - g.w / 2 - 1 = g.w - 1 - g.w / 2 by omega_using [], hi4] at e2
     have z2 : wordsVal t3.mem g.B (arr g.w aVR + 8 * (g.w / 2 + 1)) (g.w - 1 - g.w / 2) = 0 := by
-      rw [f3.words (fun k hk => by simp at hk; subst hk; have := arr_disj (w := g.w) (j := aVD) (k := aVR) (by decide); omega)
-        (by simp) (by omega)]
-      exact wordsVal_zero_part nR (by omega)
+      rw [f3.words (fun k hk => by simp at hk; subst hk; have := arr_disj (w := g.w) (j := aVD) (k := aVR) (by decide); omega_using [hS, this])
+        (by simp) (by omega_using [hS, fitR])]
+      exact wordsVal_zero_part nR (by omega_using [hw])
     have w1 : wordsVal t.mem g.B (arr g.w aVR + 8 * (g.w / 2)) 1 = 0 := by
       simp only [wordsVal, top4]; rfl
     rw [z2, w1, Nat.mul_zero, Nat.add_zero] at e2
@@ -94,9 +94,9 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
     (f3.mono (js' := [aVD, aVR, aVT]) (by simp) (by simp)).trans (f4.mono (js' := [aVD, aVR, aVT]) (by simp) (by simp))
   refine ⟨A a % M, fun hlo hhi => ?_, ?_⟩
   · -- The divisor is `[d]`, whose top word is not zero.
-    have mv : wordsVal t2.mem g.B (arr g.w aVD) (g.w / 2) = A d := words_low (by omega) nD hhi
-    have tp := top_pos (m := t2.mem) (B := g.B) (d := arr g.w aVD) (v := g.w / 2) (by omega) (by rw [mv]; exact hlo)
-    rw [← hM, v3, mv, ite_eq_right (by omega), Nat.add_zero]
+    have mv : wordsVal t2.mem g.B (arr g.w aVD) (g.w / 2) = A d := words_low (by omega_using []) nD hhi
+    have tp := top_pos (m := t2.mem) (B := g.B) (d := arr g.w aVD) (v := g.w / 2) (by omega_using [hw]) (by rw [mv]; exact hlo)
+    rw [← hM, v3, mv, ite_eq_right (by omega_using [tp]), Nat.add_zero]
   · refine h2.next w4 F (by decide) (by simp) (k3.trans k4) (by decide) ?_ ?_ ?_ (h2.mask_keep F (by simp))
     · intro j hj
       rcases List.mem_cons.mp hj with rfl | hj
@@ -111,7 +111,7 @@ theorem Stg.divWA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
       · decide
       · exact h.live_lt j hj
     · have fitD := h.ws.fit64 (j := aVD) (by decide)
-      rw [f4.word (by omega) (by decide) (by simp) fitD, o3.word (by omega) (by omega), h2.vdTop]
+      rw [f4.word (by omega_using []) (by decide) (by simp) fitD, o3.word (by omega_using [hw]) (by omega_using [hS, fitD]), h2.vdTop]
 
 /-- Arrays the word path's helpers write: none of them is tracked. -/
 abbrev Free (live : List Nat) : Prop := ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT, aW]
@@ -297,18 +297,18 @@ theorem shape_ok {s : State} {pl ql w : Nat} (h5 : s.gpr .s5 = BitVec.ofNat 64 p
       ((t.gpr .t0 = 0 ↔ (pl % 8 = 0 ∧ 4 * w = pl ∧ pl = ql ∧ 32 ≤ pl)) ∧ t.mem = s.mem) ∧ Keep [.t0, .t1] s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   have hP : ∀ x : Nat, x < 2 ^ 32 → (BitVec.ofNat 64 x).toNat = x := fun x hx => by
-    rw [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_ofNat]; omega_using [hx]
   unfold shape
   brun [h5, h6, h9, kc_exec_li32]
   simp only [bv_or0, bv_xor0, bv_lt_ite0]
   have l2 : BitVec.ofNat 64 w <<< 2 = BitVec.ofNat 64 (4 * w) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hP w (by omega), BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, hP w (by omega_using [hw]), BitVec.toNat_ofNat]; omega_using []
   simp only [l2, bv_and7, hP pl hpl, BitVec.lt_def, show (32#64).toNat = 32 from rfl, Nat.not_lt]
   constructor
   · rintro ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩
     refine ⟨h1, ?_, ?_, h4⟩
-    · have := congrArg BitVec.toNat h2; rw [hP _ (by omega), hP pl hpl] at this; exact this
+    · have := congrArg BitVec.toNat h2; rw [hP _ (by omega_using [hw]), hP pl hpl] at this; exact this
     · have := congrArg BitVec.toNat h3; rw [hP pl hpl, hP ql hql] at this; exact this
   · rintro ⟨h1, h2, h3, h4⟩
     exact ⟨⟨⟨h1, by rw [h2]⟩, by rw [h3]⟩, h4⟩

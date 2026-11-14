@@ -70,24 +70,24 @@ theorem streamStep_ok {n size m i len : Nat} {base : Addr} {s : State} {p : BitV
   have s67 := slot_le (n := n) (i := 6) (j := 7) (by decide)
   have hd7 := slot_header n 7
   unfold streamStep
-  refine WP.seq (WP.mono (fetchByte_ok h.scr h.modulus.n0 h.size_le hc (by omega) hr hpad)
+  refine WP.seq (WP.mono (fetchByte_ok h.scr h.modulus.n0 h.size_le hc (by omega_using [hi, hfit]) hr hpad)
     fun u ⟨Bu, Ou, Ku⟩ => ?_)
   have cu := h.outside_keep Ku (by decide) (by decide) Ou
-    (.inl (by unfold stride at s06; omega)) (by omega)
+    (.inl (by unfold stride at s06; omega_using [s06])) (by omega_using [hd7])
   have Yu : wordsVal u.mem base (slot n 6) n = wordsVal s.mem base (slot n 6) n := by
     rw [wordsVal_eq_val32, wordsVal_eq_val32]
-    exact Ou.val32 (by unfold stride at s67; omega) (by unfold stride at b6; omega)
+    exact Ou.val32 (by unfold stride at s67; omega_using [s67]) (by unfold stride at b6; omega_using [sz, nw, b6])
   have bu : wordsVal u.mem base (slot n 7) n < m := by
-    rw [Bu]; have := (s.mem (p.setWidth 64 + BitVec.ofNat 64 i)).isLt; omega
+    rw [Bu]; have := (s.mem (p.setWidth 64 + BitVec.ofNat 64 i)).isLt; omega_using [hm]
   refine WP.seq (WP.mono (reduceStep_ok cu (by rw [Yu]; exact hv) bu) fun v ⟨cv, Kv, Vv, Ev⟩ => ?_)
   have Bv := context_slot_val cu (o := 6) (i := 7) (by decide) (by decide) (by decide) (by decide) Kv
   have count : v.gpr .esi = p + BitVec.ofNat 32 i := by rw [Kv.gpr _ (by decide), Ku.1 _ (by decide), hc]
   have ebx : v.gpr .ebx = s.gpr .ebx := by rw [Ev, Ku.1 _ (by decide)]
-  have ou : Outs base (streamRanges n) s.mem u.mem := Outs.of_outside (Ou.mono (n' := 8 * n) (Nat.le_refl _) (by have := h.modulus.n0; change 0 < n at this; omega)) (by simp [streamRanges])
+  have ou : Outs base (streamRanges n) s.mem u.mem := Outs.of_outside (Ou.mono (n' := 8 * n) (Nat.le_refl _) (by have := h.modulus.n0; change 0 < n at this; omega_using [this])) (by simp [streamRanges])
   have ov : Outs base (streamRanges n) u.mem v.mem := Kv.mem.mono (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp [streamRanges, contextMod, accLen, words] <;> omega)
+    rcases hr with rfl | rfl | rfl <;> simp [streamRanges, contextMod, accLen, words] <;> omega_using [])
   refine wp_addS rfl fun w uw _ => ?_
   have kvs : Keeps powerClob s v := (Ku.mono (by decide)).trans ((OpKeep.keeps Kv).mono (by decide))
   refine wp_cmpS rfl fun t ft zt => WP.block_nil ?_
@@ -101,7 +101,7 @@ theorem streamStep_ok {n size m i len : Nat} {base : Addr} {s : State} {p : BitV
   · rw [ft.gpr, plus, BitVec.add_assoc]
     congr 1
     bv_omega
-  · rw [zt, plus, ebxw, he, pointer_equal p (by omega) hlen]
+  · rw [zt, plus, ebxw, he, pointer_equal p (by omega_using [hi, hlen]) hlen]
   · rw [mt, Vv, Yu, Bu]
   · rw [mt, Bv, Bu]
     exact Nat.lt_of_lt_of_le (s.mem (p.setWidth 64 + BitVec.ofNat 64 i)).isLt (by decide)

@@ -19,19 +19,19 @@ open VG VG.Proof.Bignum
 
 theorem wv_low_or_one (m : Mem) (B : Addr) {d w : Nat} (positive : 0<w) (fit : d+8*w≤2^64) :
  wv (m.writeW (off B d) (word m B d ||| 1#64)) B d w=2*(wv m B d w/2)+1 := by
- have low := wv_mod64 m B d (by omega : 1≤w)
- have mod2 : (word m B d).toNat%2=wv m B d w%2 := by omega
+ have low := wv_mod64 m B d (by omega_using [positive] : 1≤w)
+ have mod2 : (word m B d).toNat%2=wv m B d w%2 := by omega_using [low]
  have split (m : Mem) : wv m B d w=(word m B d).toNat+2^64*wv m B (d+8) (w-1) := by
   have h := wv_add m B d 1 (w-1)
-  rw [show 1+(w-1)=w by omega] at h
+  rw [show 1+(w-1)=w by omega_using [positive]] at h
   simpa only [wv,Nat.mul_zero,Nat.pow_zero,Nat.mul_one,Nat.one_mul,Nat.add_zero,Nat.zero_add,Nat.reduceMul,Nat.reducePow] using h
- have frame := writeW_outside m B (word m B d ||| 1#64) (by omega : d+8≤2^64)
+ have frame := writeW_outside m B (word m B d ||| 1#64) (by omega_using [positive, fit] : d+8≤2^64)
  have orValue := VG.Proof.Ffdh.AArch64.or1_toNat (word m B d)
  change (word m B d ||| 1#64).toNat=(word m B d).toNat+(1-(word m B d).toNat%2) at orValue
  rw [split,word_writeW_self,orValue,
-  frame.wv (Or.inr (by omega : d+8≤d+8)) (by omega)]
+  frame.wv (Or.inr (by omega_using [] : d+8≤d+8)) (by omega_using [positive, fit])]
  have original := split m
- omega
+ omega_using [original]
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -53,16 +53,16 @@ theorem setLowBit_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
  refine WP.mono (WP.keep [.x3,.x4,.x8] (Q:=fun t =>
   t.mem=s.mem.writeW (off B (slot w 1)) (word s.mem B (slot w 1) ||| 1#64)) ?_ rfl rfl rfl) ?_
  · brun [good.x0,hdr_enc (show sArr 1<32 by decide),header_read good room (show sArr 1<32 by decide),
-    good.hdr.harr 1 (by decide),good.scr.ld (d:=slot w 1) (by omega),good.scr.st (d:=slot w 1) (by omega)]
+    good.hdr.harr 1 (by decide),good.scr.ld (d:=slot w 1) (by omega_using [arrayRoom]),good.scr.st (d:=slot w 1) (by omega_using [arrayRoom])]
    rfl
  · rintro t ⟨mem,rest⟩
    have frame : Arrays B w [1] s.mem t.mem := by
     apply Arrays.of_outside (j:=1) (by simp) (o:=slot w 1) (n:=8)
-    · rw [mem];exact writeW_outside _ _ _ (by have := good.scr.nowrap;omega)
-    · omega
-    · have := good.scr.nowrap;omega
+    · rw [mem];exact writeW_outside _ _ _ (by have := good.scr.nowrap;omega_using [arrayRoom, this])
+    · omega_using []
+    · have := good.scr.nowrap;omega_using []
    refine ⟨good_after_arrays good frame rest ((rest.gpr .x0 (by decide)).trans good.x0),?_,frame,rest⟩
    rw [mem]
-   exact wv_low_or_one _ _ positive (by have := good.scr.nowrap;omega)
+   exact wv_low_or_one _ _ positive (by have := good.scr.nowrap;omega_using [arrayRoom, this])
 
 end VG.Proof.Ffdh.AArch64.Cached

@@ -143,7 +143,7 @@ theorem cmpArgs_ok {K : KemLay} (hK : K.WF) {s : State} {C D : Addr} (h8 : s.gpr
   have e2 : K.ctLen < 2048 := by
     have h1 : K.du * K.k ≤ 11 * 4 := Nat.mul_le_mul hK.du hK.k4
     have h2 := hK.dv
-    simp only [KemLay.ctLen, KemLay.uLen, KemLay.vLen, Nat.mul_assoc]; omega
+    simp only [KemLay.ctLen, KemLay.uLen, KemLay.vLen, Nat.mul_assoc]; omega_using [h1, h2]
   refine wp_mv fun s₁ h₁ => wp_mv fun s₂ h₂ => wp_li (by decide) fun s₃ h₃ => wp_li e2 fun s₄ h₄ =>
     WP.block_nil ⟨?_, ?_, ?_, ?_, fun r hr hs => ?_, by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem],
       by rw [h₄.rd, h₃.rd, h₂.rd, h₁.rd], by rw [h₄.wr, h₃.wr, h₂.wr, h₁.wr], by rw [h₄.sp, h₃.sp, h₂.sp, h₁.sp]⟩

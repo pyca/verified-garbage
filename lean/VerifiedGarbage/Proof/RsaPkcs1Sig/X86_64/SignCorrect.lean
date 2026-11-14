@@ -79,10 +79,10 @@ theorem afterEncWith_ok {args : List Instr} {privName : String} {priv : Prog isa
     have hl : em.length = (s.gpr .rcx).toNat := hlen em rfl
     have he₂ : Env s t₂ := Env.of he₁ hp (hK₂.gpr (by decide)) hK₂.2.1 hK₂.2.2 (hm₂ ▸ frame_writeBytes _ _ _)
       fun r hr => .inl ⟨oEM, (s.gpr .rcx).toNat, by rw [List.mem_singleton.mp hr, h8₁, hl], .inr (Nat.le_refl _),
-        by unfold oEM frameBytes; omega⟩
+        by unfold oEM frameBytes; omega_using [hk2]⟩
     have he₃ : Env s t₃ := he₂.regs (by rw [hs₃.1]) hs₃.2.1 hs₃.2.2.1 hs₃.2.2.2
     have hEM : Spec.Rsa.bytesAt t₃.mem (off (fb s) oEM) (s.gpr .rcx).toNat = em := by
-      have h₂ := bytesAt_writeBytes t₁.mem (off (fb s) oEM) em (by omega)
+      have h₂ := bytesAt_writeBytes t₁.mem (off (fb s) oEM) em (by omega_using [hl])
       rw [hl] at h₂
       rw [hs₃.2.1, hm₂, h8₁, h₂]
     refine WP.ite false (by simp [eval, hz₃, hax]) (by simp) (fun _ => ?_)
@@ -118,7 +118,7 @@ theorem ret_frame {s : State} (hp : PreS s) {m : Mem} (h : Frame [stkR s, outR s
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · have := Offset.disjoint_below (s.gpr .rsp) (n := sigStack) (d := 0) (k := 8)
-      (by unfold sigStack; omega)
+      (by unfold sigStack; omega_using [])
     simpa only [stkR, kb, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · exact hp.dRo
   · exact hp.dRs
@@ -149,7 +149,7 @@ theorem codeWith_ok {ae : Prog isa} {s : State} (hp : PreS s)
     WP isa (.frame (.alloc frameBytes) (.seq (.block (slotStores ++ encArgs)) (.seq encode ae)) (.free frameBytes)) s
       fun s' => abiPreserved s s' ∧ sigContract.post s s' := by
   have hk2 := hp.k2
-  refine wp_alloc (by have := hp.sp1; unfold sigStack at this; unfold frameBytes; omega) ?_
+  refine wp_alloc (by have := hp.sp1; unfold sigStack at this; unfold frameBytes; omega_using [this]) ?_
   refine WP.seq (WP.mono_mx (by decide) (head_ok hp) fun t₁ ⟨he₁, h8₁, hcx₁, hdx₁, hsi₁, h9₁, hcs₁⟩ hmx₁ => ?_)
   refine WP.seq (WP.mono_mx (by decide +kernel) (encode_ok (encPre hp he₁ h8₁ hcx₁ hdx₁ hsi₁ h9₁))
     fun t₂ ⟨hK₂, hout₂⟩ hmx₂ => ?_)
@@ -169,7 +169,7 @@ theorem codeWith_ok {ae : Prog isa} {s : State} (hp : PreS s)
     have hH : Spec.Rsa.bytesAt t₁.mem (t₁.gpr .rsi) (t₁.gpr .r9).toNat =
         Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat := by
       rw [hsi₁, h9₁]
-      exact bytes_of_frame he₁.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega)
+      exact bytes_of_frame he₁.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega_using [])
     rw [signId_eq, bytesAt_length, ← hH]
     exact hwu
 

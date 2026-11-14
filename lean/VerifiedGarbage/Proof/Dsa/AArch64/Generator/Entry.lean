@@ -35,7 +35,7 @@ theorem word_writeW_frame (m : Mem) (F : Addr) (v : BitVec 64) {d e : Nat}
     word (m.writeW (off F d) v) F e = if d = e then v else word m F e := by
   split
   · subst e; exact word_writeW_self _ _ _ _
-  · exact (writeW_outside m F v (by omega)).word (by omega) (by omega)
+  · exact (writeW_outside m F v (by omega_using [hd])).word (by omega_arith) (by omega_using [he])
 
 theorem word_foldl_zero (F : Addr) {e : Nat} (he : e < 34) :
     ∀ (l : List Nat), (∀ k ∈ l, k < 34) → ∀ m : Mem,
@@ -44,12 +44,12 @@ theorem word_foldl_zero (F : Addr) {e : Nat} (he : e < 34) :
   | [], _, m => by simp
   | k :: l, hl, m => by
     rw [List.foldl_cons, word_foldl_zero F he l (fun j hj => hl j (List.mem_cons_of_mem _ hj)),
-      word_writeW_frame _ F _ (by have := hl k List.mem_cons_self; omega) (by omega)]
+      word_writeW_frame _ F _ (by have := hl k List.mem_cons_self; omega_using [this]) (by omega_using [he])]
     by_cases hk : k = e
     · subst hk; simp
     · by_cases hel : e ∈ l
       · simp [hel]
-      · have : 8 * k ≠ 8 * e := by omega
+      · have : 8 * k ≠ 8 * e := by omega_using [hk]
         simp [hel, this, Ne.symm hk]
 
 /-- The words the entry sets. -/
@@ -57,13 +57,13 @@ theorem entryMem_word (s : State) (F : Addr) {k : Nat}
     (hk : k = 5 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k ∈ zeroSlots) :
     word (entryMem s F) F (8 * k) = entryWords (s.gpr .x0) (s.gpr .x2) (s.gpr .x3) k := by
   have bound : k < 34 := by
-    simp only [zeroSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+    simp only [zeroSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
   unfold entryMem
   rw [word_foldl_zero F bound zeroSlots (by decide),
-    word_writeW_frame _ F _ (d := 96) (by decide) (by omega),
-    word_writeW_frame _ F _ (d := 104) (by decide) (by omega),
-    word_writeW_frame _ F _ (d := 88) (by decide) (by omega),
-    word_writeW_frame _ F _ (d := 40) (by decide) (by omega)]
+    word_writeW_frame _ F _ (d := 96) (by decide) (by omega_using [bound]),
+    word_writeW_frame _ F _ (d := 104) (by decide) (by omega_using [bound]),
+    word_writeW_frame _ F _ (d := 88) (by decide) (by omega_using [bound]),
+    word_writeW_frame _ F _ (d := 40) (by decide) (by omega_using [bound])]
   simp only [zeroSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
   rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp [entryWords, zeroSlots]
@@ -75,14 +75,14 @@ theorem foldl_zero_frame (F : Addr) :
   | k :: l, hl, _, _, h => by
     rw [List.foldl_cons]
     exact foldl_zero_frame F l (fun j hj => hl j (List.mem_cons_of_mem _ hj))
-      (h.writeW List.mem_cons_self _ (Offset.contains_base F (n := 8) (by have := hl k List.mem_cons_self; omega)
-        (by have := hl k List.mem_cons_self; omega)))
+      (h.writeW List.mem_cons_self _ (Offset.contains_base F (n := 8) (by have := hl k List.mem_cons_self; omega_using [this])
+        (by have := hl k List.mem_cons_self; omega_using [this])))
 
 /-- The entry writes only the frame words. -/
 theorem entryMem_frame (s : State) (F : Addr) : Frame [⟨F, 272⟩] s.mem (entryMem s F) := by
   unfold entryMem
   have c (d : Nat) (hd : d + 8 ≤ 272) : (⟨F, 272⟩ : Region).Contains (off F d) (64 / 8) :=
-    Offset.contains_base F hd (by omega)
+    Offset.contains_base F hd (by omega_using [hd])
   exact foldl_zero_frame F zeroSlots (by decide)
     (((((Frame.refl _ _).writeW List.mem_cons_self _ (c 40 (by decide))).writeW List.mem_cons_self _
       (c 88 (by decide))).writeW List.mem_cons_self _ (c 104 (by decide))).writeW List.mem_cons_self _ (c 96 (by decide)))

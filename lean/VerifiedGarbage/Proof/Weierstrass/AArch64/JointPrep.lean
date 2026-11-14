@@ -60,14 +60,14 @@ theorem jointPrep_ok (c : Joint.Cfg) {s : State} {base : Addr} {size u v : Nat}
   refine WP.seq (WP.mono (jointGPrep_ok c hs hu hu8 hg hg8 hgb)
     fun a ⟨sa,pa,ka,oa⟩ => ?_)
   have va : wordsVal a.mem base v 4=wordsVal s.mem base v 4 :=
-    oa.wordsVal hvs (by have := hs.nowrap; omega)
+    oa.wordsVal hvs (by have := hs.nowrap; omega_using [hv, this])
   refine WP.mono (fastPrep_ok c.K (Or.inl rfl) sa hv hv8 hq hq8 hqb)
     fun t ⟨pt,kt,ot⟩ => ?_
   refine ⟨pt.scr,?_,?_,ka.trans kt,?_⟩
   · intro j hj
     rw [ot.unch.byte (by
-      intro w hw; rw [List.mem_singleton.mp hw]; dsimp only; omega)
-      (by have := hs.nowrap; omega)]
+      intro w hw; rw [List.mem_singleton.mp hw]; dsimp only; omega_using [hu, hv, hv8, hg, hg8, hgb, hq, hq8, hqb, hsep, hvs, hll, hj])
+      (by have := hs.nowrap; omega_using [hu, hv, hv8, hg, hg8, hgb, hq, hq8, hqb, hsep, hvs, hll, hj, this])]
     exact pa j hj
   · rw [va] at pt
     exact pt.digits

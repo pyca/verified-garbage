@@ -74,15 +74,15 @@ private theorem mulArgs_call {n : Nat} {base : Addr} {sp : BitVec 32} {o a b : N
   rw [← hsp] at R low
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   refine WP.mono (mulArgs_ok (o := o) (a := a) (b := b)
-    (by rw [fEsp, VG.X86.sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega)
+    (by rw [fEsp, VG.X86.sub_toNat (by omega_using [low])]; have := (s.gpr .esp).isLt; omega_using [])
     (by rw [allocFrame_wr]; exact List.mem_cons_self ..)) fun g ⟨Kg, Fg, Rg⟩ => ?_
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]
   have hFg : Frame [below (s.gpr .esp) 36] s.mem g.mem := by
     have := Fg; rwa [fEsp, allocFrame_mem] at this
   have edi : s.gpr .edi = BitVec.ofNat 32 base.toNat := by
     apply BitVec.eq_of_toNat_eq
-    have : 0 < contextBytes n := by simp only [contextBytes, slot, stride]; omega
-    rw [h.scr.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    have : 0 < contextBytes n := by simp only [contextBytes, slot, stride]; omega_using []
+    rw [h.scr.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [cb, nw, this])]
   have hread : ∀ i < 9, g.mem.readW ((g.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i)) 32 =
       callArg (s.gpr .edi) (BitVec.ofNat 32 (contextBytes n / 8)) n (slot n 0) 0 (calleeScratch n)
         (slot n o) (slot n a) (slot n b) i := by
@@ -90,9 +90,9 @@ private theorem mulArgs_call {n : Nat} {base : Addr} {sp : BitVec 32} {o a b : N
   -- The callee's view: the working space narrowed to the context.
   let s' := s.withRegions s.rd [⟨base, contextBytes n⟩]
   have hscr : Scr s' base (contextBytes n) :=
-    ⟨h.scr.edi, List.mem_singleton_self _, by omega, stkOk_mono h.scr.stk cb⟩
+    ⟨h.scr.edi, List.mem_singleton_self _, by omega_using [cb, nw], stkOk_mono h.scr.stk cb⟩
   have R' : CallRoom (s'.gpr .esp) base (contextBytes n) :=
-    ⟨low, fun x h₁ h₂ => R.apart x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega)⟩
+    ⟨low, fun x h₁ h₂ => R.apart x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega_using [cb, h₂])⟩
   have hv : VG.Proof.Mont.wordsVal s.mem base (slot n 0) n = m := h.modulus.val
   have hinv : (VG.Proof.Mont.val32 s'.mem base (slot n 0) (2 * n) * w32 s'.mem base 0 + 1) % 2 ^ 32 = 0 := by
     show (VG.Proof.Mont.val32 s.mem base (slot n 0) (2 * n) * w32 s.mem base 0 + 1) % 2 ^ 32 = 0
@@ -101,7 +101,7 @@ private theorem mulArgs_call {n : Nat} {base : Addr} {sp : BitVec 32} {o a b : N
     show VG.Proof.Mont.val32 s.mem base (slot n b) (2 * n) < VG.Proof.Mont.val32 s.mem base (slot n 0) (2 * n)
     rw [← wordsVal_eq_val32, ← wordsVal_eq_val32, hv]; exact hB
   have hlen : contextBytes n = (BitVec.ofNat 32 (contextBytes n / 8)).toNat * 8 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), contextBytes_div]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [cb, nw]), contextBytes_div]
   have A := VG.Proof.Bignum.X86.RtCall.callee_abi (s := s') hscr hlen R' (offs hn ho ho7 ha ha7 hb hb7)
     gEsp hFg hread hinv hB'
   refine ⟨VG.Proof.Bignum.X86.PublicRt.callee_pre A R' gEsp, by rw [gEsp, hsp], fun i hi => ?_, ?_, ?_⟩

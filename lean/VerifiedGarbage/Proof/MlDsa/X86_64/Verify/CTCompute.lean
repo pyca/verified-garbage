@@ -109,18 +109,18 @@ theorem dot_tr : RelCT isa (RV p (IR p r)) (dot P p r)
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, hx⟩, ⟨_, _, _, _, hy⟩⟩ := hxy
     exact ⟨L.1, L.2.1, ⟨(hx.a r hr 0 R.l1).1, (hx.zHat R.l1).1⟩, ⟨(hy.a r hr 0 R.l1).1, (hy.zHat R.l1).1⟩, L.2.2⟩
   have hs := seqR_tr (R := fun j => RV p (IRX p r fun _ A' _ σ s₀ s => DI P.montgomery p σ A' r j s₀ s)) (p.ℓ - 1) 1
-    fun k hk hk' => IRX.step (fun h A' q cH σ s₀ s hv hs hd => dotStep_ok C hp hv hr hs (by omega) hd)
-      (mulAddAt_tr C.mulAdd (layOk p hp) (R.mul k (by omega)) fun x y hxy => ?_)
-  · rwa [show 1 + (p.ℓ - 1) = p.ℓ by have := R.l1; omega] at hs
+    fun k hk hk' => IRX.step (fun h A' q cH σ s₀ s hv hs hd => dotStep_ok C hp hv hr hs (by omega_using [hk, hk']) hd)
+      (mulAddAt_tr C.mulAdd (layOk p hp) (R.mul k (by omega_using [hk, hk'])) fun x y hxy => ?_)
+  · rwa [show 1 + (p.ℓ - 1) = p.ℓ by have := R.l1; omega_using [this]] at hs
   · have L := IRX.lrel hp (fun _ _ _ _ _ _ hd => ⟨_, hd.1⟩) hxy
-    have hz : k ≠ 100 := by have := kl_le p hp; omega
+    have hz : k ≠ 100 := by have := kl_le p hp; omega_using [hk', this]
     have red : ∀ {σ s}, VPre p σ → IRX p r (fun _ A' _ σ s₀ s => DI P.montgomery p σ A' r k s₀ s) σ s →
         Reduced s.mem (pa s pW) ∧ Reduced s.mem (pa s (pA p.ℓ r k)) ∧ Reduced s.mem (pa s (pZ k)) :=
       fun hv ⟨_, _, _, _, s₀, hs, hP, _, hW⟩ => by
         have L₀ := hs.t.lay hp hv
         have H := hP.mono (sub1 (wsR_mem p r).1)
-        exact ⟨by rw [pa_rbx hP]; exact hW.1, L₀.keepRed H (hA r hr k (by omega)) (hs.a r hr k (by omega)).1,
-          L₀.keepRed H (hZ k (by omega) hz) (hs.zHat (by omega)).1⟩
+        exact ⟨by rw [pa_rbx hP]; exact hW.1, L₀.keepRed H (hA r hr k (by omega_using [hk, hk'])) (hs.a r hr k (by omega_using [hk, hk'])).1,
+          L₀.keepRed H (hZ k (by omega_using [hk, hk']) hz) (hs.zHat (by omega_using [hk, hk'])).1⟩
     obtain ⟨_, _, v₁, v₂, _, i₁, i₂⟩ := hxy
     exact ⟨L.1, L.2.1, red v₁ i₁, red v₂ i₂, L.2.2⟩
 
@@ -155,7 +155,7 @@ theorem keyRow_tr : RelCT isa (RV p (IRX p r fun _ A' _ σ s₀ s => RF1 P.montg
       (F' := fun _ A' _ σ s₀ s => RF3 P.montgomery p σ A' r s₀ s)
       (fun h A' q cH σ s₀ s hv hs hf => keyCopy_ok hp hv hr hs hf.1 hf.2)
       (Sign.copy_tr (by decide) (by decide) (by decide)
-        (by show p.pkLen + 1024 * r < 2 ^ 31; omega) (by simp) fun x y hxy => ?_)) (fun x y ⟨hxy, hb⟩ => ?_) fun _ _ h => h
+        (by show p.pkLen + 1024 * r < 2 ^ 31; omega_using [cP, hk]) (by simp) fun x y hxy => ?_)) (fun x y ⟨hxy, hb⟩ => ?_) fun _ _ h => h
     · have L := IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1.1⟩) hxy
       exact ⟨L.2.2.1 .rbx (by decide), L.2.2.1 .rbp (by decide)⟩
     · obtain ⟨σ₁, σ₂, v₁, v₂, pub, ⟨h₁, A₁, q₁, c₁, x₀, hx, f₁, z₁⟩, ⟨h₂, A₂, q₂, c₂, y₀, hy, f₂, z₂⟩⟩ := hxy
@@ -237,10 +237,10 @@ theorem compute_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) 
   obtain ⟨⟨⟨⟨⟨c1, _⟩, c3⟩, c4⟩, c5⟩, _⟩ := hc
   unfold compute
   have hz : RelCT isa (RV p (IC p 0)) (seqR (fun i => nttAt P (pZ i)) 0 p.ℓ) (RV p (IC p p.ℓ)) := by
-    have := seqR_tr (R := fun i => RV p (IC p i)) p.ℓ 0 fun i _ hi => nttZ_tr C hp (by omega)
+    have := seqR_tr (R := fun i => RV p (IC p i)) p.ℓ 0 fun i _ hi => nttZ_tr C hp (by omega_using [hi])
     rwa [Nat.zero_add] at this
   have hrows : RelCT isa (RV p (IR p 0)) (seqR (row P p) 0 p.k) (RV p (IR p p.k)) := by
-    have := seqR_tr (R := fun r => RV p (IR p r)) p.k 0 fun r _ hr => row_tr C hp (by omega)
+    have := seqR_tr (R := fun r => RV p (IR p r)) p.k 0 fun r _ hr => row_tr C hp (by omega_using [hr])
     rwa [Nat.zero_add] at this
   refine RelCT.seq hz (RelCT.seq (nttC_tr C hp) (RelCT.seq hrows ?_))
   have hT : ∀ σ s, IR p p.k σ s → T p σ s := fun _ _ ⟨_, _, _, _, hs⟩ => hs.t

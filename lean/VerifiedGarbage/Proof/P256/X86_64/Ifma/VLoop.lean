@@ -147,8 +147,8 @@ theorem VCore.unch {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point
     apply hu.byte
     · intro w hw
       have := hV.bits _ ho w hw
-      dsimp only at this ⊢; omega
-    · have := hV.bitsB _ ho; dsimp only at this; omega
+      dsimp only at this ⊢; omega_using [hj, this]
+    · have := hV.bitsB _ ho; dsimp only at this; omega_using [hnw, hj, this]
   refine ⟨hi.to_tmv, fun x hx => (ro x hx).trans (h.ro x hx),
     (hi.val _ (List.mem_append_right _ (by simp [jacCoords]))).trans h.rz, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩⟩
   · rw [ro _ (by simp [winRo]), ro _ (by simp [winRo]), ro _ (by simp [winRo])]
@@ -168,7 +168,7 @@ theorem VCore.unch {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point
     exact hu z fun w hw => by
       have := hV.pool
       simp only [vW, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+      rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using [hz, this]
 
 /-- What the loop has of the joint multiplication is kept by the loop's code. -/
 theorem VCore.vkeep {c : Joint.Cfg} {base T : Addr} {size u v : Nat} {G Q : Point Cv}
@@ -205,9 +205,9 @@ theorem accSt_skeep {rs : List Reg} {s t : State} (k : SKeep rs s t) (h11 : Reg.
 theorem qNeg (b : BitVec 8) : (!decide (b.toNat < 128)) = decide (128 ≤ b.toNat) := by
   by_cases h : b.toNat < 128
   · simp only [h, decide_true, Bool.not_true]
-    exact (decide_eq_false (by omega)).symm
+    exact (decide_eq_false (by omega_using [h])).symm
   · simp only [h, decide_false, Bool.not_false]
-    exact (decide_eq_true (by omega)).symm
+    exact (decide_eq_true (by omega_using [h])).symm
 
 /-- A digit of `Q`'s scalar: its multiple of `Q` added to the accumulator, if it is not zero. -/
 theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point Cv}
@@ -221,10 +221,10 @@ theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point
     have := hV.bitsB (c.K.bits, 64 * c.K.M.n + 1) (by simp)
     rw [hn] at this
     dsimp only at this
-    omega
+    omega_using [hj, this]
   rw [qPass, qBody]
   apply WP.seq
-  have hr := WP.mono (nafRead_ok h.field.scr hbytes hb (h.input.peer j (by rw [hn]; omega)))
+  have hr := WP.mono (nafRead_ok h.field.scr hbytes hb (h.input.peer j (by rw [hn]; omega_using [hj])))
     fun t (x : t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧ t.zf = some (decide (FastNaf.byte 5 v j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧
@@ -248,7 +248,7 @@ theorem qPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point
     have hl := FastNaf.magnitude_le (Or.inl rfl) v j
     have ho := (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hmag
     have em : qMag (FastNaf.byte 5 v j) = FastNaf.magnitude 5 v j := FastNaf.byte_magnitude 5 v j
-    refine WP.mono (qDigit_ok hsa hca hBa a8 (by rw [em]; omega) (by rw [em]; exact hl) (by rw [em]; exact ho)
+    refine WP.mono (qDigit_ok hsa hca hBa a8 (by rw [em]; omega_using [hmag]) (by rw [em]; exact hl) (by rw [em]; exact ho)
       hV.pool (Tq := Tq) (by rw [ka.mem]; exact hq) hacca) fun t ⟨hct, hBt, hat, kt⟩ => ?_
     refine ⟨hct, hBt, ?_, la.trans kt⟩
     simp only [qNext, hnz', ↓reduceIte]
@@ -286,12 +286,12 @@ theorem vFixedRead_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : 
   dsimp only at hh
   rw [Joint.fixedRead, ite_eq_left h9]
   have hl : jointGLen c = 2 * (64 * c.K.M.n + 1) := by rw [jointGLen, ite_eq_left h9]
-  have g0 := h.input.generator (2 * j) (by omega)
-  have g1 := h.input.generator (2 * j + 1) (by omega)
+  have g0 := h.input.generator (2 * j) (by omega_using [hj, hl])
+  have g1 := h.input.generator (2 * j + 1) (by omega_using [hj, hl])
   rw [jointGByte, ite_eq_left h9, FastNaf.wbyte] at g0 g1
-  rw [show 2 * j / 2 = j by omega, show 2 * j % 2 = 0 by omega, Nat.mul_zero] at g0
-  rw [show (2 * j + 1) / 2 = j by omega, show (2 * j + 1) % 2 = 1 by omega, Nat.mul_one, ← Nat.add_assoc] at g1
-  refine WP.mono (nafRead16_ok h.field.scr (by omega) hb g0 g1) fun a ⟨a8, az, ka⟩ => ⟨?_, ?_, ka⟩
+  rw [show 2 * j / 2 = j by omega_using [], show 2 * j % 2 = 0 by omega_using [], Nat.mul_zero] at g0
+  rw [show (2 * j + 1) / 2 = j by omega_using [], show (2 * j + 1) % 2 = 1 by omega_using [], Nat.mul_one, ← Nat.add_assoc] at g1
+  refine WP.mono (nafRead16_ok h.field.scr (by omega_using [hj, hh, hl]) hb g0 g1) fun a ⟨a8, az, ka⟩ => ⟨?_, ?_, ka⟩
   · rw [a8, jointGCell, ite_eq_left h9]
   · rw [az, h9]
     congr 1
@@ -300,9 +300,9 @@ theorem vFixedRead_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : 
 theorem gNeg (w : BitVec 16) : (!decide (w.toNat < 256)) = decide (256 ≤ w.toNat) := by
   by_cases h : w.toNat < 256
   · simp only [h, decide_true, Bool.not_true]
-    exact (decide_eq_false (by omega)).symm
+    exact (decide_eq_false (by omega_using [h])).symm
   · simp only [h, decide_false, Bool.not_false]
-    exact (decide_eq_true (by omega)).symm
+    exact (decide_eq_true (by omega_using [h])).symm
 
 /-- A digit of the generator's scalar: its multiple of the generator added to the accumulator, if it is not zero. -/
 theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point Cv}
@@ -319,7 +319,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point
   have hbig := hV.big
   rw [gPass, gBody]
   apply WP.seq
-  have hr := WP.mono (vFixedRead_ok hV h9 h (by rw [hn]; omega) hb)
+  have hr := WP.mono (vFixedRead_ok hV h9 h (by rw [hn]; omega_using [hj]) hb)
     fun t (x : t.gpr .r8 = jointGCell c u j ∧ t.zf = some (decide (FastNaf.magnitude c.gw u j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = jointGCell c u j ∧
@@ -349,7 +349,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point
     have hl : FastNaf.magnitude 9 u j ≤ 255 := by rw [e9]; exact FastNaf9.magnitude_le u j
     have ho : FastNaf.magnitude 9 u j % 2 = 1 := by
       rw [e9] at hnz' ⊢; exact (FastNaf9.magnitude_odd_or_zero u j).resolve_left hnz'
-    have hrow := ca.input.external (FastNaf.magnitude 9 u j) (by omega) (by rw [jointGTop, ite_eq_left h9]; exact hl) ho
+    have hrow := ca.input.external (FastNaf.magnitude 9 u j) (by omega_using [hnz']) (by rw [jointGTop, ite_eq_left h9]; exact hl) ho
     have hGa := hG.lkeep la
     have eo : 16 * c.K.M.n * (FastNaf.magnitude 9 u j - 1) = 64 * (FastNaf.magnitude 9 u j - 1) := by rw [hn]
     have key : ∀ (n : Nat) (_ : n = 4) (P : Addr) (d d' w : Nat), d = d' → wordsVal a.mem P d n = w →
@@ -360,7 +360,7 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point
     have xv := hrow.xval
     have yv := hrow.yval
     rw [eo] at xv yv
-    refine WP.mono_syms (gDigit_ok hn hca hBa a8' hrow.symbol (by rw [em]; omega) (fun d hd => ?_)
+    refine WP.mono_syms (gDigit_ok hn hca hBa a8' hrow.symbol (by rw [em]; omega_using [hnz']) (fun d hd => ?_)
       (x := toM Cv.p (2 ^ (64 * c.K.M.n)) (row.x (FastNaf.magnitude 9 u j)))
       (y := toM Cv.p (2 ^ (64 * c.K.M.n)) (row.y (FastNaf.magnitude 9 u j)))
       (by rw [em]; exact key _ hn _ _ _ _ rfl xv) (by rw [em]; exact key _ hn _ _ _ _ (by rw [hn]) yv) hacca)
@@ -368,15 +368,15 @@ theorem gPass_ok {c : Joint.Cfg} {base T : Addr} {size u v j : Nat} {G Q : Point
     · rw [em]
       obtain ⟨r, hr, hreg⟩ := hGa.1
       simp only [off, Offset.add_add]
-      refine ⟨⟨r, hr, Region.contains_off hreg (by omega)⟩, fun x hx hy => ?_⟩
+      refine ⟨⟨r, hr, Region.contains_off hreg (by omega_using [hl, hd])⟩, fun x hx hy => ?_⟩
       have ho := hGa.2 (64 * (FastNaf.magnitude 9 u j - 1) + d + (x - (T + BitVec.ofNat 64
-        (64 * (FastNaf.magnitude 9 u j - 1) + d))).toNat) (by omega)
+        (64 * (FastNaf.magnitude 9 u j - 1) + d))).toNat) (by omega_using [hl, hd, hx])
       rw [← Offset.add_add, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel] at ho
       rw [ka.gpr .rdi (by decide), hdi] at hy
       simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat] at hy
       have := (x - base).isLt
       simp only [ofs] at ho
-      omega
+      omega_arith
     refine ⟨hct, hBt, ?_, la.trans kt⟩
     simp only [gNext, hnz', ↓reduceIte]
     rw [gNeg, show FastNaf.word u j = FastNaf9.word u j from rfl, FastNaf9.word_negative u j, ← en] at hat
@@ -404,8 +404,8 @@ theorem accPt_qNext (hC : Law Cv) (ha : AM3 Cv) {Tq : Nat → Fin pN × Fin pN �
     have hmag : FastNaf.magnitude 5 v j ≠ 0 := fun he => hz ((FastNaf.byte_zero_iff 5 v j).mpr he)
     have hl := FastNaf.magnitude_le (Or.inl rfl) v j
     have ho := (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hmag
-    have ht := hT ((FastNaf.magnitude 5 v j - 1) / 2) (by omega)
-    rw [show 2 * ((FastNaf.magnitude 5 v j - 1) / 2) + 1 = FastNaf.magnitude 5 v j by omega] at ht
+    have ht := hT ((FastNaf.magnitude 5 v j - 1) / 2) (by omega_using [hl])
+    rw [show 2 * ((FastNaf.magnitude 5 v j - 1) / 2) + 1 = FastNaf.magnitude 5 v j by omega_using [ho]] at ht
     exact accPt_step hC ha (FastNaf.negative 5 v j) hA (hC.onCurve_mul hQ _) hacc ht
 
 theorem accPt_gNext (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {G A : Point Cv}
@@ -423,7 +423,7 @@ theorem accPt_gNext (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {G A : Point Cv}
     have hl : FastNaf.magnitude 9 u j ≤ 255 := by rw [e9]; exact FastNaf9.magnitude_le u j
     have ho : FastNaf.magnitude 9 u j % 2 = 1 := by
       rw [e9] at hz ⊢; exact (FastNaf9.magnitude_odd_or_zero u j).resolve_left hz
-    have hp := row.point (FastNaf.magnitude 9 u j) (by omega) (by rw [jointGTop, ite_eq_left h9]; exact hl) ho
+    have hp := row.point (FastNaf.magnitude 9 u j) (by omega_using [hz]) (by rw [jointGTop, ite_eq_left h9]; exact hl) ho
     exact accPt_step hC ha (FastNaf.negative 9 u j) hA (hC.onCurve_mul hG _) hacc hp
 
 /-- The accumulator after digit `j` of both scalars. -/
@@ -445,15 +445,15 @@ theorem accN_pt (hC : Law Cv) (ha : AM3 Cv) {c : Joint.Cfg} {G Q : Point Cv}
     (hv : v < 2 ^ 256) : ∀ k, k ≤ 257 → AccPt (accN c row Tq u v k) (jointPoint G Q u v (257 - k) 9)
   | 0, _ => jointPoint_top G Q hu hv 9
   | k + 1, hk => by
-    have ih := accN_pt hC ha row h9 hT hG hQ hu hv k (by omega)
+    have ih := accN_pt hC ha row h9 hT hG hQ hu hv k (by omega_using [hk])
     have hA := jointPoint_curve hC hG hQ u v (257 - k) 9
-    have e : 257 - k = 256 - k + 1 := by omega
+    have e : 257 - k = 256 - k + 1 := by omega_using [hk]
     rw [e] at ih hA
     have h1 := accPt_qNext hC ha (v := v) hT hQ (hC.onCurve_add hA hA) (accPt_dbl hC ha hA ih) (256 - k)
     have h2 := accPt_gNext hC ha row h9 hG
       (hC.onCurve_add (hC.onCurve_add hA hA) (FastNaf.onCurve_point hC hQ 5 v (256 - k))) h1 u (256 - k)
     rw [jointPoint_step hC hG hQ u v (256 - k) 9] at h2
-    rw [show 257 - (k + 1) = 256 - k by omega]
+    rw [show 257 - (k + 1) = 256 - k by omega_using []]
     exact h2
 
 /-- The loop's invariant before digit `j - 1`: what the loop has of the joint multiplication, the table of
@@ -512,7 +512,7 @@ theorem vhead_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Poi
   apply WP.seq
   show WP isa (.block ([.alu .sub .rbx (.imm 1)] ++ [.alu .test .r11 (.reg .r11)])) s _
   rw [WP.block_append_iff]
-  refine WP.mono_syms (WP.skeep rfl (decRbx_ok s (by omega) (by omega) h.rbx)) fun a ⟨ab, ka⟩ sa => ?_
+  refine WP.mono_syms (WP.skeep rfl (decRbx_ok s (by omega_using []) (by omega_using [hj]) h.rbx)) fun a ⟨ab, ka⟩ sa => ?_
   rw [Nat.add_sub_cancel] at ab
   have va : VKeep s a := .of_skeep ka
   have ia : VInv c base T K size u v Q row E j acc a := h.vkeep hV va sa
@@ -548,8 +548,8 @@ theorem vqRead_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Po
     have := hV.bitsB (c.K.bits, 64 * c.K.M.n + 1) (by simp)
     rw [hn] at this
     dsimp only at this
-    omega
-  have hr := WP.mono (nafRead_ok h.core.field.scr hbytes h.rbx (h.core.input.peer j (by rw [hn]; omega)))
+    omega_using [hj, this]
+  have hr := WP.mono (nafRead_ok h.core.field.scr hbytes h.rbx (h.core.input.peer j (by rw [hn]; omega_using [hj])))
     fun t (x : t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧ t.zf = some (decide (FastNaf.byte 5 v j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = (FastNaf.byte 5 v j).setWidth 64 ∧
@@ -575,7 +575,7 @@ theorem vgRead_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Po
       VInv c base T K size u v Q row E j acc t ∧ t.gpr .r8 = (FastNaf.word u j).setWidth 64 ∧
         t.zf = some (decide (FastNaf.magnitude 9 u j = 0)) := by
   have hn := hV.n
-  have hr := WP.mono (vFixedRead_ok hV h9 h.core (by rw [hn]; omega) h.rbx)
+  have hr := WP.mono (vFixedRead_ok hV h9 h.core (by rw [hn]; omega_using [hj]) h.rbx)
     fun t (x : t.gpr .r8 = jointGCell c u j ∧ t.zf = some (decide (FastNaf.magnitude c.gw u j = 0)) ∧
       VG.Proof.X25519.X86_64.Keeps [.r8] s t) =>
       (⟨⟨x.1, x.2.1⟩, x.2.2⟩ : (t.gpr .r8 = jointGCell c u j ∧
@@ -602,7 +602,7 @@ theorem vtail_ok {c : Joint.Cfg} {base T K : Addr} {size u v j : Nat} {G Q : Poi
     (h : VInv c base T K size u v Q row E j acc s) :
     WP isa (.block [.alu .test .rbx (.reg .rbx)]) s fun t =>
       (VInv c base T K size u v Q row E j acc t ∧ t.zf = some (decide (j = 0))) ∧ VKeep s t :=
-  WP.mono_syms (WP.skeep rfl (testRbx_ok s (by omega) h.rbx)) fun _ ⟨tz, kt⟩ st =>
+  WP.mono_syms (WP.skeep rfl (testRbx_ok s (by omega_using [hj]) h.rbx)) fun _ ⟨tz, kt⟩ st =>
     ⟨⟨h.skeep hV kt st, tz⟩, .of_skeep kt⟩
 
 /-- A digit of each scalar. -/

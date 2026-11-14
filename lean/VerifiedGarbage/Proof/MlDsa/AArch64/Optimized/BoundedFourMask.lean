@@ -60,9 +60,9 @@ theorem vector_eq_of_words {x y : BitVec 128}
     (h : ∀e<4,vword x e=vword y e) : x=y := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  have hh:=congrArg (fun b : BitVec 32=>b.getLsbD (k%32)) (h (k/32) (by omega))
+  have hh:=congrArg (fun b : BitVec 32=>b.getLsbD (k%32)) (h (k/32) (by omega_using [hk]))
   have hb : k%32<32:=Nat.mod_lt _ (by decide)
-  have hd : 32*(k/32)+k%32=k:=by omega
+  have hd : 32*(k/32)+k%32=k:=by omega_using []
   simpa only [vword,BitVec.getLsbD_extractLsb',hb,decide_true,Bool.true_and,hd] using hh
 
 theorem acceptWord_decide {η : Nat} (hη : η=2∨η=4) : ∀b<16,
@@ -88,7 +88,7 @@ def maskCode : List Instr :=
 
 theorem exec_umov_double (s : State) (d : Reg) (n : VReg) {i : Nat} (hi : i<2) :
     exec (.umov .x d n i) s=some (s.write .x d ((s.v n).extractLsb' (i*64) 64)) := by
-  simp only [exec,Size.bits,show i*64<128 by omega,ite_true,Nat.mul_comm]
+  simp only [exec,Size.bits,show i*64<128 by omega_using [hi],ite_true,Nat.mul_comm]
 
 theorem maskCode_ok (s : State) (h15 : s.gpr .x11=15) :
     WP isa (.block maskCode) s fun t =>

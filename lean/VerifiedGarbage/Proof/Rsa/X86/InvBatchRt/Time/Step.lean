@@ -34,7 +34,7 @@ theorem stable_true (rs : List Reg) : Stable rs fun _ => True := fun _ _ _ h => 
 theorem unch_w32 {B : Addr} {ws : List (Nat × Nat)} {m m' : Mem} (h : Unch B ws m m') {d : Nat}
     (hd : ∀ w ∈ ws, d + 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) (hd' : d + 4 ≤ 2 ^ 64) : w32 m' B d = w32 m B d :=
   congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ fun w hw => by
-    rw [ofs_off B (by omega)]; have := hd w hw; omega)
+    rw [ofs_off B (by omega_using [hd', hi])]; have := hd w hw; omega_using [hi, this])
 
 variable {L : Lay} {B : Addr} {Z len N n : Nat} {args : Nat → BitVec 32} {sp : BitVec 32}
 

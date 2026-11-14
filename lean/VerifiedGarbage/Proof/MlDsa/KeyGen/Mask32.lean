@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Proof.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA key generation: masked samples, and the leakage as bytes
@@ -49,7 +50,7 @@ theorem masked {m m' : Mem} {p : Addr} {r : BitVec 32} (hr : r = 0 ∨ r = 1)
 
 theorem zeroI_small (η : Nat) : ∀ c ∈ zeroI.toList, -(η : Int) ≤ c ∧ c ≤ η := fun c hc => by
   rw [Vector.mem_toList_iff, Vector.mem_replicate] at hc
-  rw [hc.2]; omega
+  rw [hc.2]; omega_using []
 
 /-! ## The leakage as bytes -/
 

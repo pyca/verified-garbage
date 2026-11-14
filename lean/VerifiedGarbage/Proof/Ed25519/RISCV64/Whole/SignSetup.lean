@@ -80,7 +80,7 @@ theorem sign_slot {s : State} (hp : SignPre sl s) :
     ∀ d n, d + n ≤ 224 → (slotArea (s.gpr .a6) 224 signRegs).Disjoint ⟨s.gpr .a6 + BitVec.ofNat 64 d, n⟩ := by
   have hs : Region.Sub (slotArea (s.gpr .a6) 224 signRegs) ⟨s.gpr .a6, 288⟩ := Offset.sub_base _ (by decide)
   refine ⟨(hp.oF.symm.sub_left hs), (hp.cF.symm.sub_left hs), (hp.bF.symm.sub_left hs), fun d n h => ?_⟩
-  exact Offset.disjoint _ (.inr h) (by decide) (by omega)
+  exact Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
 
 theorem signV_s7 (s : State) : signV s .s7 = s.gpr .a0 := rfl
 theorem signV_s10 (s : State) : signV s .s10 = s.gpr .a5 := rfl
@@ -94,7 +94,7 @@ theorem signSetup_ok {s : State} (hp : SignPre sl s) :
   have hsl : ∀ p ∈ slots 224 signRegs, p.2 + 8 ≤ 288 := by decide
   unfold signSetup
   refine save_ok hp.alF (by decide) (by decide)
-    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega)) fun u hu hsv hfr => ?_
+    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega_using [this])) fun u hu hsv hfr => ?_
   unfold mov
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun u₁ h₁ => wp_mv fun u₂ h₂ => wp_mv fun u₃ h₃ => wp_mv fun u₄ h₄ =>
@@ -113,8 +113,8 @@ theorem signSetup_ok {s : State} (hp : SignPre sl s) :
   have hP : (⟨s.gpr .a2, 32⟩ : Region) ∈ s.rd := by rw [hp.rd]; simp
   rw [← List.append_nil (copyIn .a2 .s11 192)]
   refine copyIn_ok (P := s.gpr .a2) (F := s.gpr .a6) (o := 192) (by decide) (by decide) e2 e11 (by decide)
-    (fun i hi => by rw [rd₆, wr₆]; exact in_base (List.mem_append_left _ hP) (by omega) (by omega))
-    (fun i hi => by rw [wr₆]; exact in_base hF (by omega) (by omega))
+    (fun i hi => by rw [rd₆, wr₆]; exact in_base (List.mem_append_left _ hP) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => by rw [wr₆]; exact in_base hF (by omega_using [hi]) (by omega_using [hi]))
     (hp.pF.sub_right (Offset.sub_base _ (by decide))) fun t ht hft hb => WP.block_nil ?_
   have fin : Frame [slotArea (s.gpr .a6) 224 signRegs, ⟨s.gpr .a6 + BitVec.ofNat 64 192, 32⟩] s.mem t.mem :=
     (hfr.mono (by simp)).trans (by rw [m₆] at hft; exact hft.mono (by simp))
@@ -149,7 +149,7 @@ theorem signSetup_ok {s : State} (hp : SignPre sl s) :
     exact hfr _ fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact fun hc => (hp.pF.sub_right (Offset.sub_base _ (by decide))) _
-        (Offset.contains_base _ (by omega) (by omega)) hc
+        (Offset.contains_base _ (by omega_using [hi']) (by omega_using [hi'])) hc
 
 /-- The regions a step of the body may write: the scratch space, the callees' frames, `out`, its
 halves, or the frame below the slots. -/
@@ -168,7 +168,7 @@ theorem signStep {s t t' : State} (hp : SignPre sl s) (h : SignInv s t) (hrd : t
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨⟨s.gpr .a0, 64⟩, by simp, Offset.sub_base _ (by decide)⟩
     · exact ⟨⟨s.gpr .a0, 64⟩, by simp, Region.sub_prefix (by decide)⟩
-    · exact ⟨⟨s.gpr .a6, 288⟩, by simp, Offset.sub_base _ (by omega)⟩
+    · exact ⟨⟨s.gpr .a6, 288⟩, by simp, Offset.sub_base _ (by omega_using [hdn])⟩
   · rcases hW r hr with rfl | rfl | rfl | rfl | rfl | ⟨d, n, hdn, rfl⟩
     · exact h₂
     · exact h₃

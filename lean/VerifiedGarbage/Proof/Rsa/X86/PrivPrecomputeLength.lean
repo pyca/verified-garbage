@@ -20,7 +20,7 @@ theorem precomputeLength_value (k : Nat) (hk : k ≤ 1024) :
     Nat.shiftRight_eq_div_pow, Spec.Rsa.modulusWords]
   change (((k % 2 ^ 32 + 7) % 2 ^ 32 / 8) + ((k % 2 ^ 32 + 7) % 2 ^ 32 / 8)) % 2 ^ 32 =
     (2 * ((k + 7) / 8)) % 2 ^ 32
-  omega
+  omega_using [hk]
 
 theorem precomputeLength_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
     (h : PrivContext g bs s) {j : Nat} (hj : j < 18) :
@@ -40,11 +40,11 @@ theorem precomputeLength_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List 
     rw [D.gpr, C.gpr, B.gpr, A.gpr, h.argumentValue (by decide : 3 < 20)]
     exact precomputeLength_value g.length h.valid.maxLength
   refine wp_stm (B := s.gpr .esp) (Kd.1 .esp (by decide))
-    (by rw [Kd.2.2, h.address (by omega)]; exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega))
+    (by rw [Kd.2.2, h.address (by omega_using [hj])]; exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [hj]))
     fun t T => WP.block_nil ?_
   have M : t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 (4 * j))
       (BitVec.ofNat 32 (2 * Spec.Rsa.modulusWords g.length)) := by
-    rw [T.mem, V, Md, h.address (by omega)]
+    rw [T.mem, V, Md, h.address (by omega_using [hj])]
   have K : Keeps [.eax] s t := Kd.trans (T.keeps _)
   have F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem := by
     rw [M]
@@ -52,6 +52,6 @@ theorem precomputeLength_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List 
   refine ⟨h.after (F.sub ?_) K (K.1 .esp (by decide)), M, F, K⟩
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)⟩
+  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [hj])⟩
 
 end VG.Proof.Rsa.X86.PrivChecked

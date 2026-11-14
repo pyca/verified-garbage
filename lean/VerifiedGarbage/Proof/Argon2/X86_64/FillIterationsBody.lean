@@ -96,7 +96,7 @@ theorem Saved.read {s t : State} (h : Saved s t) (d : Nat) (separate : 8 ≤ d) 
     t.mem.readW (off (t.gpr .rbp) d) 64 = s.mem.readW (off (s.gpr .rbp) d) 64 := by
   rw [h.regs .rbp (by decide), h.mem]
   exact Mem.readW_writeW_sep (Offset.sep _ (d := d) (n := 8) (e := 0) (k := 8)
-    (by omega) (by omega) (by decide)) (by decide)
+    (by omega_using [separate]) (by omega_using [bound]) (by decide)) (by decide)
 
 theorem Saved.words {s t : State} {p : Params} {pass lane slice old : Nat}
     (h : Saved s t) (words : AddressHeader.Words p pass lane slice old s) :
@@ -237,7 +237,7 @@ theorem body_ok [CompressImpl] (s : State) (p : Params) (pass : Nat) (h : Ready 
     exact (saved.regs r ne).trans (filled.regs r hr bx sl ix)
   · have added : (BitVec.ofNat 64 pass + 1 : Addr) = BitVec.ofNat 64 (pass + 1) := by
       rw [BitVec.ofNat_add]; rfl
-    rw [saved.cf, words.passWord, words.passesWord, added, ReferenceMap.word_nat (pass + 1) (by omega),
+    rw [saved.cf, words.passWord, words.passesWord, added, ReferenceMap.word_nat (pass + 1) (by omega_using [passBound]),
       ReferenceMap.word_nat p.passes (Nat.lt_trans h.passesBound (by decide))]
   · intro active
     refine ⟨⟨{ h.filling.parameters with passBound := Nat.lt_trans active h.passesBound }, p.lanes, 4, header⟩,

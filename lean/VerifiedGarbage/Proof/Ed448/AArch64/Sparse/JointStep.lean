@@ -79,7 +79,7 @@ theorem addBase_ok (hA:AffineOk) {s:State} {base:Addr} (h:Core base s)
       rw [bsy,asy]
       exact (ka.trans kb).baseTable ht
     rw [WP.seq_iff]
-    refine WP.mono (baseOperand_ok hb.scr hb.env htab (by omega) b11)
+    refine WP.mono (baseOperand_ok hb.scr hb.env htab (by omega_using [hd]) b11)
       fun c ⟨ck,cb,csm,cx,cp,cr⟩ => ?_
     have kc:=PointKeep.of_field ck
     have hcorec:=hb.unchanged kc cb csm (by decide) (by decide) (by decide)
@@ -155,13 +155,13 @@ theorem selectKey_ok {s:State} {base:Addr} (hs:Scr s base) {m:Nat}
       off base (TAB+192*(m/2)+8*w) := by
     intro w _
     rw [off,off,Offset.add_add]
-    exact congrArg (fun n => base+BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => base+BitVec.ofNat 64 n) (by omega_using [])
   refine WP.mono (copyWords_ok ha a8 (Nat.le_refl 24) (by decide) (by decide)
-    (fun w hw => by rw [ho w hw];exact ha.read (by simp only [TAB];omega))
+    (fun w hw => by rw [ho w hw];exact ha.read (by simp only [TAB];omega_using [hm, hw]))
     (fun w hw j hj => by
-      rw [ho w hw,VG.Proof.X448.AArch64.ofs_off base (by simp only [TAB];omega)]
+      rw [ho w hw,VG.Proof.X448.AArch64.ofs_off base (by simp only [TAB];omega_using [hm, hw, hj])]
       simp only [TAB]
-      omega)) fun t ⟨tv,fo,kt⟩ => ?_
+      omega_using [])) fun t ⟨tv,fo,kt⟩ => ?_
   refine ⟨fun w hw => ?_,?_,(ka.mono (by decide)).trans (kt.mono (by decide))⟩
   · rw [tv w hw,ho w hw,am]
     rfl
@@ -209,35 +209,35 @@ theorem keyOperand_ok {s:State} {base:Addr} {P:Spec.Ed448.Point}
     have n7:i.val≠7:=fun h => hi (by rw [show i=(7:Index) from Fin.ext h];decide)
     have n8:i.val≠8:=fun h => hi (by rw [show i=(8:Index) from Fin.ext h];decide)
     have hilt:=i.isLt
-    exact fo.limbs (by simp only [slot];omega) (by simp only [slot];omega) (by omega)
+    exact fo.limbs (by simp only [slot];omega_using [n6, n7, n8]) (by simp only [slot];omega_using []) (by omega_using [hj])
   have cw:∀ c<3,∀ j<8,word t.mem base (slot (6+c)+8*j)=tw s.mem base (m/2) (8*c+j):=by
     intro c hc j hj
-    have hd:dst (8*c+j)=slot (6+c)+8*j:=by simp only [dst,slot];omega
-    rw [←hd,tv _ (by omega)]
+    have hd:dst (8*c+j)=slot (6+c)+8*j:=by simp only [dst,slot];omega_using [hj]
+    rw [←hd,tv _ (by omega_using [hc, hj])]
   have tb:BEnv t.mem base:=by
     intro i j hj
     by_cases hi:i∈[(6:Index),7,8]
     · have he:i.val=6 ∨ i.val=7 ∨ i.val=8:=by
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
         rcases hi with rfl|rfl|rfl <;> simp
-      have hr:slot i.val=slot (6+(i.val-6)):=by congr 1;omega
+      have hr:slot i.val=slot (6+(i.val-6)):=by congr 1;omega_using [he]
       show (word t.mem base (slot i.val+8*j)).toNat<Ib
-      rw [hr,cw _ (by omega) j hj]
-      exact (ht (m/2) (by omega)).2 _ (by omega)
+      rw [hr,cw _ (by omega_using [he]) j hj]
+      exact (ht (m/2) (by omega_using [hm])).2 _ (by omega_using [hj, he])
     · rw [sm i hi j hj]
       exact hb i j hj
-  refine ⟨⟨kt.mono (by decide),fun x hx _ => fo x (by omega)⟩,tb,sm,?_,?_,kt⟩
+  refine ⟨⟨kt.mono (by decide),fun x hx _ => fo x (by omega_using [hx])⟩,tb,sm,?_,?_,kt⟩
   · intro j hj
     show (word t.mem base (slot 6+8*j)).toNat<Mb
     rw [cw 0 (by decide) j hj]
-    simpa only [Nat.mul_zero,Nat.zero_add] using hxb (m/2) (by omega) j hj
-  · rw [←(ht (m/2) (by omega)).1]
+    simpa only [Nat.mul_zero,Nat.zero_add] using hxb (m/2) (by omega_using [hm]) j hj
+  · rw [←(ht (m/2) (by omega_using [hm])).1]
     symm
     unfold TPt pt
     refine Spec.Ed448.Point.mk.injEq _ _ _ _ _ _ |>.mpr ⟨?_,?_,?_⟩
-    · exact Window.FV_entry _ _ _ (e:=m/2) (c:=0) (by omega) (fun j hj => (cw 0 (by decide) j hj).symm)
-    · exact Window.FV_entry _ _ _ (e:=m/2) (c:=1) (by omega) (fun j hj => (cw 1 (by decide) j hj).symm)
-    · exact Window.FV_entry _ _ _ (e:=m/2) (c:=2) (by omega) (fun j hj => (cw 2 (by decide) j hj).symm)
+    · exact Window.FV_entry _ _ _ (e:=m/2) (c:=0) (by omega_using []) (fun j hj => (cw 0 (by decide) j hj).symm)
+    · exact Window.FV_entry _ _ _ (e:=m/2) (c:=1) (by omega_using []) (fun j hj => (cw 1 (by decide) j hj).symm)
+    · exact Window.FV_entry _ _ _ (e:=m/2) (c:=2) (by omega_using []) (fun j hj => (cw 2 (by decide) j hj).symm)
 
 end VG.Proof.Ed448.AArch64.Sparse
 end
@@ -273,7 +273,7 @@ theorem addKey_ok {s:State} {base:Addr} {P:Spec.Ed448.Point} (h:Core base s)
   refine WP.seq (WP.mono (keyDigit_ok h.scr hi hc) fun a ⟨a11,ak,am⟩ => ?_)
   have ka:=PointKeep.of_keeps (base:=base) ak am (by decide)
   have ha:=h.of_keeps ka am
-  have hd':-127≤d ∧ d≤127:=by omega
+  have hd':-127≤d ∧ d≤127:=by omega_using [hd]
   have az:(a.gpr .x11==0)=decide (d=0):=by rw [a11,hbit];exact encoded_zero hd'
   by_cases h0:d=0
   · have ev:isa.eval (.nonzero .x .x11) a=some false:=by
@@ -293,7 +293,7 @@ theorem addKey_ok {s:State} {base:Addr} {P:Spec.Ed448.Point} (h:Core base s)
       rw [bm,am]
       exact hxb
     rw [WP.seq_iff]
-    refine WP.mono (keyOperand_ok hb.scr hb.env htab hxx (by omega) b11)
+    refine WP.mono (keyOperand_ok hb.scr hb.env htab hxx (by omega_using [hd]) b11)
       fun c ⟨ck,cb,csm,cx,cp,cr⟩ => ?_
     have kc:=PointKeep.of_field ck
     have hcorec:=hb.unchanged kc cb csm (by decide) (by decide) (by decide)
@@ -351,7 +351,7 @@ theorem jointStep_ok (hA:AffineOk) {s:State} {base:Addr} {P:Spec.Ed448.Point} (h
       t.gpr .x19=BitVec.ofNat 64 i ∧ t.gpr .x9=BitVec.ofNat 64 i ∧
       pt (EV t.mem base) 3 4 5=roundPoint P (pt (EV s.mem base) 3 4 5) ds dk := by
   unfold step
-  refine WP.seq (WP.mono_syms (VG.Proof.X448.AArch64.Weak.decCounter_ok (by omega) hc)
+  refine WP.seq (WP.mono_syms (VG.Proof.X448.AArch64.Weak.decCounter_ok (by omega_using [hi]) hc)
     fun a ⟨a19,ag,am,ar,aw,_⟩ asy => ?_)
   have ak:Keeps [.x19] s a:=⟨fun r hr => ag r (by simpa only [List.mem_singleton] using hr),ar,aw⟩
   have ha:=h.regsOnly ak am (by decide)

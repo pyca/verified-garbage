@@ -100,12 +100,12 @@ theorem redX_mulAddW {a b c : BitVec 32} {x y z : Zq} (ha : a.toNat = x.val) (hb
   have hx : x.val < 8380417 := x.isLt
   have hy : y.val < 8380417 := y.isLt
   have hz : z.val < 8380417 := z.isLt
-  have hxy : x.val * y.val ≤ 8380416 * 8380416 := Nat.mul_le_mul (by omega) (by omega)
+  have hxy : x.val * y.val ≤ 8380416 * 8380416 := Nat.mul_le_mul (by omega_using [hx]) (by omega_using [hy])
   have hl : x.val * y.val + z.val < q * q := by
-    rw [show q * q = 70231389093889 from rfl]; omega
+    rw [show q * q = 70231389093889 from rfl]; omega_using [hz, hxy]
   have e : (w64 a * w64 b + w64 c).toNat = x.val * y.val + z.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, toNat_setWidth64, toNat_setWidth64, toNat_setWidth64, ha, hb, hc,
-      Nat.mod_eq_of_lt (a := x.val * y.val) (by omega)]
+      Nat.mod_eq_of_lt (a := x.val * y.val) (by omega_using [hxy])]
     exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hl (by decide))
   rw [redX32 (by rw [e]; exact hl), e, val_add', val_mul, Nat.add_mod_mod, Nat.add_comm]
 
@@ -174,7 +174,7 @@ theorem inv_step {s₀ : State} {v : Nat → BitVec 32} {i : Nat} (hi : i < 256)
     rw [hm, hI.x0, coeffAt_writeW _ _ hk hi, hI.coeff k hk]
     by_cases e : i = k
     · subst e; simp
-    · have : (k < i + 1) = (k < i) := propext (by omega)
+    · have : (k < i + 1) = (k < i) := propext (by omega_using [e])
       simp only [e, this, ↓reduceIte]
 
 theorem pro_ok (s₀ : State) :

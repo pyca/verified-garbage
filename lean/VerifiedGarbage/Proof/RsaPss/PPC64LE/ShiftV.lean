@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSASSA-PSS verification on PPC64LE: the shift, as views
@@ -39,22 +40,22 @@ theorem shV_in (V : Nat → Byte) (b n a : Nat) (hz : ∀ x, n ≤ x → x < n +
     ∀ j ≤ 10, ∀ i < n, shV V b n a j (b + i) = if i + a % 2 ^ j < n then V (b + (i + a % 2 ^ j)) else 0
   | 0, _, i, hi => by simp only [shV, Nat.pow_zero, Nat.mod_one, Nat.add_zero]; rw [ifp hi]
   | j + 1, hj, i, hi => by
-    have ih := shV_in V b n a hz j (by omega)
+    have ih := shV_in V b n a hz j (by omega_using [hj])
     have hm : a % 2 ^ (j + 1) = a % 2 ^ j + 2 ^ j * (a / 2 ^ j % 2) := Nat.mod_pow_succ
     have h2 := Nat.mod_lt (a / 2 ^ j) (show 0 < 2 by decide)
-    have hp : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+    have hp : 2 ^ j ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
     have hp10 : (2 : Nat) ^ 10 = 1024 := rfl
     have hp9 : (2 : Nat) ^ 9 = 512 := rfl
     have hmj := Nat.mod_lt a (Nat.two_pow_pos j)
-    rw [shV, passV, ifp ⟨by omega, by omega⟩]
+    rw [shV, passV, ifp ⟨by omega_using [], by omega_using [hi]⟩]
     by_cases hb : a / 2 ^ j % 2 = 1
-    · rw [ifp (decide_eq_true hb), show b + i + 2 ^ j = b + (i + 2 ^ j) by omega]
+    · rw [ifp (decide_eq_true hb), show b + i + 2 ^ j = b + (i + 2 ^ j) by omega_using []]
       rw [hb, Nat.mul_one] at hm
       rw [hm]
       by_cases hl : i + 2 ^ j < n
-      · rw [ih (i + 2 ^ j) hl, show i + 2 ^ j + a % 2 ^ j = i + (a % 2 ^ j + 2 ^ j) by omega]
-      · rw [shV_out V b n a j _ (by omega), hz _ (by omega) (by omega), ifn (by omega)]
-    · have hb0 : a / 2 ^ j % 2 = 0 := by omega
+      · rw [ih (i + 2 ^ j) hl, show i + 2 ^ j + a % 2 ^ j = i + (a % 2 ^ j + 2 ^ j) by omega_using []]
+      · rw [shV_out V b n a j _ (by omega_using [hl]), hz _ (by omega_using [hl]) (by omega_using [hi, hp]), ifn (by omega_using [hl])]
+    · have hb0 : a / 2 ^ j % 2 = 0 := by omega_using [hb]
       rw [ifn (by simpa using hb), hm, hb0, Nat.mul_zero, Nat.add_zero, ih i hi]
 
 /-- Ten passes shift the `n` bytes left by `a`. -/

@@ -27,19 +27,19 @@ theorem write16_outside (m : Mem) (B : Addr) {d : Nat} (v : BitVec 128)
   apply Mem.write_apply
   simp only [ofs] at hx
   have he : (x - off B d).toNat = (2 ^ 64 - d + (x - B).toNat) % 2 ^ 64 :=
-    Offset.toNat_sub_add x B (by omega)
+    Offset.toNat_sub_add x B (by omega_using [h])
   rw [he]
   have := (x - B).isLt
   rcases hx with hx | hx
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
-  · rw [show 2 ^ 64 - d + (x - B).toNat = (x - B).toNat - d + 2 ^ 64 by omega,
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [Nat.mod_eq_of_lt (by omega_using [hx])]; omega_using [h]
+  · rw [show 2 ^ 64 - d + (x - B).toNat = (x - B).toNat - d + 2 ^ 64 by omega_using [hx],
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hx]
 
 theorem write16_byte (m source : Mem) (dst src : Addr) {j : Nat} (hj : j < 16) :
     (m.write dst 16 (source.read src 16)) (dst + BitVec.ofNat 64 j) =
       source (src + BitVec.ofNat 64 j) := by
-  simp only [Mem.write, Mem.sub_ofNat_toNat dst (show j < 2 ^ 64 by omega), hj, ite_true,
+  simp only [Mem.write, Mem.sub_ofNat_toNat dst (show j < 2 ^ 64 by omega_using [hj]), hj, ite_true,
     Mem.extractLsb'_read source src hj]
 
 theorem storePair_ok {s : State} {r : VReg} {i : Nat} (hi : i < 4)
@@ -49,8 +49,8 @@ theorem storePair_ok {s : State} {r : VReg} {i : Nat} (hi : i < 4)
         t.v = s.v) ∧ Keep [] s t := by
   refine WP.keep [] ?_ rfl rfl rfl
   apply WP.of_runBlock
-  simp only [runBlock_cons, exec, addr, show 16 * i % 16 = 0 by omega,
-    show 16 * i < 4096 * 16 by omega, and_self, ite_true, Option.bind_some,
+  simp only [runBlock_cons, exec, addr, show 16 * i % 16 = 0 by omega_using [],
+    show 16 * i < 4096 * 16 by omega_using [hi], and_self, ite_true, Option.bind_some,
     State.store, hw, runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
 
 def stores (n : Nat) : List Instr := (List.range n).map fun i => .strq (acc i) .x17 (16 * i)
@@ -72,30 +72,30 @@ theorem stores_ok (n : Nat) {s : State} {B : Addr} {dst src : Nat}
   | succ n ih =>
     rw [show stores (n + 1) = stores n ++ [.strq (acc n) .x17 (16 * n)] by
       simp [stores, List.range_succ], WP.block_append_iff]
-    refine WP.mono (ih (by omega) (by omega) (fun i hi => hv i (by omega))
-      (fun i hi => hw i (by omega))) fun t ht => ?_
+    refine WP.mono (ih (by omega_using [hn]) (by omega_using [hd]) (fun i hi => hv i (by omega_using [hi]))
+      (fun i hi => hw i (by omega_using [hi]))) fun t ht => ?_
     have ptr : t.gpr .x17 + BitVec.ofNat 64 (16 * n) = off B (dst + 16 * n) := by
       rw [ht.keep.gpr .x17 (by simp), hptr, off, BitVec.add_assoc, ← BitVec.ofNat_add]
-    refine WP.mono (storePair_ok (r := acc n) (by omega)
-      (by rw [ht.keep.wr, ptr]; exact hw n (by omega))) fun u ⟨⟨hm, huv⟩, ku⟩ => ?_
-    rw [ptr, ht.vectors, hv n (by omega)] at hm
+    refine WP.mono (storePair_ok (r := acc n) (by omega_using [hn])
+      (by rw [ht.keep.wr, ptr]; exact hw n (by omega_using []))) fun u ⟨⟨hm, huv⟩, ku⟩ => ?_
+    rw [ptr, ht.vectors, hv n (by omega_using [])] at hm
     have ho := write16_outside t.mem B (d := dst + 16 * n)
-      (s.mem.read (off B (src + 16 * n)) 16) (by omega)
+      (s.mem.read (off B (src + 16 * n)) 16) (by omega_using [hd])
     rw [← hm] at ho
     refine ⟨(ht.keep.trans ku).mono (by decide), huv.trans ht.vectors,
-      (ht.frame.mono (by omega) (by omega)).trans (ho.mono (by omega) (by omega)), ?_⟩
+      (ht.frame.mono (by omega_using []) (by omega_using [])).trans (ho.mono (by omega_using []) (by omega_using [])), ?_⟩
     intro j hj
     by_cases hjn : j < 16 * n
     · rw [ho _ (by
       simp only [ofs, off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (show dst + j < 2 ^ 64 by omega)]
-      omega)]
+        Nat.mod_eq_of_lt (show dst + j < 2 ^ 64 by omega_using [hd, hj])]
+      omega_using [hjn])]
       exact ht.bytes j hjn
     · have hp : off B (dst + j) = off B (dst + 16 * n) + BitVec.ofNat 64 (j - 16 * n) := by
         rw [off, off, BitVec.add_assoc, ← BitVec.ofNat_add]
-        exact congrArg (fun z => B + BitVec.ofNat 64 z) (by omega)
-      rw [hm, hp, write16_byte t.mem s.mem _ _ (by omega), off,
+        exact congrArg (fun z => B + BitVec.ofNat 64 z) (by omega_using [hjn])
+      rw [hm, hp, write16_byte t.mem s.mem _ _ (by omega_using [hj]), off,
         BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact congrArg (fun z => s.mem (B + BitVec.ofNat 64 z)) (by omega)
+      exact congrArg (fun z => s.mem (B + BitVec.ofNat 64 z)) (by omega_using [hjn])
 
 end VG.Proof.Bignum.AArch64.WindowVector

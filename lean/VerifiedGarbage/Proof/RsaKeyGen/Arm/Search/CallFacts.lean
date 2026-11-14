@@ -81,9 +81,9 @@ theorem tail_sub (h : SearchInput p o) {used : Nat} (hu : used ≤ p.randLen) :
   change Region.Sub ⟨State.addr (p.rp + BitVec.ofNat 32 used), p.randLen - used⟩ _
   by_cases hl : used < p.randLen
   · have e : State.addr (p.rp + BitVec.ofNat 32 used) = State.addr p.rp + BitVec.ofNat 64 used :=
-      VG.Arm.addr_add (by omega)
+      VG.Arm.addr_add (by omega_using [hf, hl])
     rw [e]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [hu])
   · intro x hx
     simp only [Region.Contains] at hx
     omega
@@ -92,13 +92,13 @@ theorem tail_sub (h : SearchInput p o) {used : Nat} (hu : used ≤ p.randLen) :
 theorem A_sub (h : SearchInput p o) : Region.Sub (rA p) (inStack o) := by
   have room := h.facts.room
   change Region.Sub ⟨State.addr (p.sp - BitVec.ofNat 32 72), 28⟩ _
-  rw [FrameStack.addr_sub' (by omega), h.sp_eq]
+  rw [FrameStack.addr_sub' (by omega_using [room]), h.sp_eq]
   exact h.stack_sub (by decide) (by decide)
 
 theorem F_sub (h : SearchInput p o) : Region.Sub (rF p) (inStack o) := by
   have room := h.facts.room
   change Region.Sub ⟨State.addr (p.sp - BitVec.ofNat 32 72) - 112#64, 112⟩ _
-  rw [FrameStack.addr_sub' (by omega), h.sp_eq, BitVec.sub_sub]
+  rw [FrameStack.addr_sub' (by omega_using [room]), h.sp_eq, BitVec.sub_sub]
   exact h.stack_sub (by decide) (by decide)
 
 theorem disj_sub {a b c : Region} (hd : c.Disjoint b) (hs : Region.Sub a c) : a.Disjoint b :=
@@ -118,7 +118,7 @@ theorem callFacts (h : SearchInput p o) {used : Nat} (hu : used ≤ p.randLen) :
   have hR := h.tail_sub hu
   have hA := h.A_sub
   have hF := h.F_sub
-  have S2n : p.S2.toNat = p.sp.toNat - 72 := FrameStack.sub_toNat' (by omega)
+  have S2n : p.S2.toNat = p.sp.toNat - 72 := FrameStack.sub_toNat' (by omega_using [room])
   have mO : inOut o ∈ inWrites o := by simp [inWrites]
   have mU : inUsed o ∈ inWrites o := by simp [inWrites]
   have mS : inScr o ∈ inWrites o := by simp [inWrites]
@@ -136,7 +136,7 @@ theorem callFacts (h : SearchInput p o) {used : Nat} (hu : used ≤ p.randLen) :
     (disj_sub (fW (List.mem_append_right _ mR)).symm hR).symm
   have fA : (rF p).Disjoint (rA p) := by
     exact (Offset.base_disjoint_below (State.addr p.S2) (n := 112) (k := 28) (by decide)).symm
-  refine ⟨by omega, by have := f.top; omega, dOU, ?_, ?_, ?_, dOS, ?_, ?_, ?_, ?_, dUS, ?_, ?_, ?_, ?_, ?_,
+  refine ⟨by omega_using [room, S2n], by have := f.top; omega_using [S2n], dOU, ?_, ?_, ?_, dOS, ?_, ?_, ?_, ?_, dUS, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, fR, ?_, fA, f.nO, f.nU, f.nE, f.nP, ?_, f.nS⟩
   · rw [← eO]; exact wE mO
   · rw [← eO]; exact wP mO
@@ -158,10 +158,10 @@ theorem callFacts (h : SearchInput p o) {used : Nat} (hu : used ≤ p.randLen) :
   · have := f.nR
     have := (p.rp + BitVec.ofNat 32 used).isLt
     by_cases hl : used < p.randLen
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
-        Nat.mod_eq_of_lt (by omega)]
-      omega
-    · omega
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega_arith),
+        Nat.mod_eq_of_lt (by omega_arith)]
+      omega_arith
+    · omega_using [hl]
 
 end SearchInput
 

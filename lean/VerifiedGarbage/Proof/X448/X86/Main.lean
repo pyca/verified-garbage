@@ -35,8 +35,8 @@ open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m m')
     (hp : ∀ i < 56, 8192 ≤ ofs base (p + BitVec.ofNat 64 i)) :
@@ -48,15 +48,15 @@ theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m 
 
 theorem far_output {base p : Addr} (hd : (⟨p, 56⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < 8192) : 56 ≤ ofs p (off base i) := by
-  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega) (by omega))
+  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega_using [hi]) (by omega_using [hi]))
   simp only [Region.Contains]
   change ofs p (off base i) + 1 ≤ 56
-  omega
+  omega_using [h]
 
 theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Index)
     (hi : slot i.val + 112 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
   simp only [E, F]
-  rw [h.fe hi (by have := i.isLt; simp only [slot]; omega)]
+  rw [h.fe hi (by have := i.isLt; simp only [slot]; omega_using [])]
 
 section
 variable (σ : State)
@@ -77,7 +77,7 @@ def S1 (σ s : State) : Prop :=
 
 theorem setup_stage {σ : State} (hp : Pre σ) : WP isa (.block setup) σ (S1 σ) := by
   have hr : ∀ j < 56, InRegions (σ.rd ++ σ.wr) (off ((arg σ 2).setWidth 64) j) 1 := fun j hj =>
-    ⟨pointR σ, by rw [hp.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨pointR σ, by rw [hp.rd]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   exact setup_ok hp rfl rfl hr fun j hj => far hp.point_sc hj (by decide)
 
 /-- Before the ladder, from the entry state `σ`. -/
@@ -101,11 +101,11 @@ theorem bits_stage {σ s₁ : State} (hp : Pre σ) (h : S1 σ s₁) : WP isa bit
   have k02 := k₁.then k₂
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have e₂ : ∀ i : Index, E s₂.mem (bs σ) i = E s₁.mem (bs σ) i := by
-    intro i; exact E_outside o₂ i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
+    intro i; exact E_outside o₂ i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
   have b₂ : BoundedEnv s₂.mem (bs σ) := by
     intro i j hj
-    rw [o₂.limbs (d := slot i.val) (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
-      (by have := i.isLt; simp only [slot]; omega) hj]
+    rw [o₂.limbs (d := slot i.val) (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
+      (by have := i.isLt; simp only [slot]; omega_using []) hj]
     exact b₁ i j hj
   have kb := bytesAt_outside o₁ kd
   have sp₂ : s₂.gpr .esp = σ.gpr .esp := k02.1 _ (by decide)
@@ -169,7 +169,7 @@ theorem lastSwap_stage {σ s₂ s : State} (h : Lad σ s₂ s 0) : WP isa (.bloc
   refine WP.mono (xframe m.pre (c := .block lastSwap) (NoSp.of_all (by lit_decide)) (Nat.zero_le 20)
     (Lad.sp ⟨m, L, f⟩) (Lad.wr ⟨m, L, f⟩) f
     (lastSwap_ok L.scr L.bounded
-    (by have := ladderAfter_swap_le (kOf σ) (uOf σ) (n := 0) (by decide); omega) L.swap))
+    (by have := ladderAfter_swap_le (kOf σ) (uOf σ) (n := 0) (by decide); omega_using [this]) L.swap))
     fun t ⟨⟨k, b, e⟩, f'⟩ => ⟨⟨m, L, f⟩, k, b, e, f'⟩
 
 theorem Sw.fin {σ s₂ s₄ s : State} (h : Sw σ s₂ s₄ s) :

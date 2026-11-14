@@ -73,7 +73,7 @@ theorem spill2_ok {s₀ s : State} (hp : CP s₀) (h : Second s₀ s 5) :
     · intro k hk
       change InRegions a.wr (a.gpr .x1 + BitVec.ofNat 64 (4 * k)) 4
       rw [ha.wr,h.wr,ha.gpr,hx20,BitVec.add_assoc,← BitVec.ofNat_add]
-      exact hp.buffer _ _ (by omega)
+      exact hp.buffer _ _ (by omega_using [hk])
     · change (⟨a.gpr .x1,256⟩ : Region).Disjoint ⟨a.gpr .x0,64⟩
       rw [ha.gpr,hx20,ha.other _ (by decide),hx0]
       exact hp.st_b.symm.sub_left (Offset.sub_base _ (by decide : 64 + 256 ≤ 320))
@@ -97,7 +97,7 @@ theorem spill2_ok {s₀ s : State} (hp : CP s₀) (h : Second s₀ s 5) :
     hw.trans (ha.wr.trans h.wr),hsp.trans (hasp.trans h.sp),?_⟩
   · simpa only [VG.Proof.ChaCha20.AArch64.Rows6.Holds,hbv,hav] using h.vec
   · intro k hk'
-    rw [hfb.readW (r := lowBuf s₀) (Offset.contains_base _ (by omega) (by omega))
+    rw [hfb.readW (r := lowBuf s₀) (Offset.contains_base _ (by omega_using [hk']) (by omega_using [hk']))
       (by intro r hr'; have he := List.mem_singleton.mp hr'; subst r
           exact Offset.base_disjoint _ (by decide : 64 ≤ 64) (by decide : 64 + 64 ≤ 2 ^ 64)) (by decide),ha.mem]
     exact h.first k hk'
@@ -118,12 +118,12 @@ theorem spill2_ok {s₀ s : State} (hp : CP s₀) (h : Second s₀ s 5) :
 
 theorem Spilled2.words {s₀ s : State} (h : Spilled2 s₀ s) (k : Nat) (hk : k < 32) :
     s.mem.readW (s₀.gpr .x3 + BitVec.ofNat 64 (4 * k)) 32 =
-      (block (ctr (source s₀) (6 + k / 16)))[k % 16]'(by omega) := by
+      (block (ctr (source s₀) (6 + k / 16)))[k % 16]'(by omega_using []) := by
   by_cases hk' : k < 16
   · simpa only [Nat.div_eq_of_lt hk',Nat.mod_eq_of_lt hk',Nat.add_zero] using h.first k hk'
-  · have he := h.last (k - 16) (by omega)
-    rw [BitVec.add_assoc,← BitVec.ofNat_add,show 64 + 4 * (k - 16) = 4 * k by omega] at he
-    simpa only [show k / 16 = 1 by omega,show k % 16 = k - 16 by omega] using he
+  · have he := h.last (k - 16) (by omega_using [hk])
+    rw [BitVec.add_assoc,← BitVec.ofNat_add,show 64 + 4 * (k - 16) = 4 * k by omega_using [hk']] at he
+    simpa only [show k / 16 = 1 by omega_using [hk, hk'],show k % 16 = k - 16 by omega_using [hk, hk']] using he
 
 theorem Spilled2.read16 {s₀ s : State} (h : Spilled2 s₀ s) (r : Fin 8) :
     s.mem.read (s₀.gpr .x3 + BitVec.ofNat 64 (16 * r)) 16 =
@@ -131,12 +131,12 @@ theorem Spilled2.read16 {s₀ s : State} (h : Spilled2 s₀ s) (r : Fin 8) :
   rw [VG.AArch64.read16]
   have hw : ∀ e (he : e < 4), s.mem.readW
       (s₀.gpr .x3 + BitVec.ofNat 64 (16 * r) + BitVec.ofNat 64 (4 * e)) 32 =
-        (block (ctr (source s₀) (6 + r.val / 4)))[4 * (r.val % 4) + e]'(by omega) := by
+        (block (ctr (source s₀) (6 + r.val / 4)))[4 * (r.val % 4) + e]'(by omega_using [he]) := by
     intro e he
-    rw [BitVec.add_assoc,← BitVec.ofNat_add,show 16 * r.val + 4 * e = 4 * (4 * r.val + e) by omega,
-      h.words _ (by omega)]
-    simp only [show (4 * r.val + e) / 16 = r.val / 4 by omega,
-      show (4 * r.val + e) % 16 = 4 * (r.val % 4) + e by omega]
+    rw [BitVec.add_assoc,← BitVec.ofNat_add,show 16 * r.val + 4 * e = 4 * (4 * r.val + e) by omega_using [],
+      h.words _ (by omega_using [he])]
+    simp only [show (4 * r.val + e) / 16 = r.val / 4 by omega_using [he],
+      show (4 * r.val + e) % 16 = 4 * (r.val % 4) + e by omega_using [he]]
   rw [hw 0 (by decide),hw 1 (by decide),hw 2 (by decide),hw 3 (by decide)]
   simp only [VG.Proof.ChaCha20.AArch64.Neon4.output,Nat.add_zero]
 

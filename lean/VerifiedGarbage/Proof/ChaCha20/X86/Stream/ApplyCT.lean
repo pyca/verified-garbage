@@ -180,7 +180,7 @@ theorem part2_rel (v : XorImpl) :
       simp only [show eval .e x = x.zf from rfl, hx.zf, h0, decide_true] at he
       exact absurd he (by decide)
   refine RelCT.seq (R := fun x y => Args a x ∧ Args b y) ?_
-    (RelCT.seq (xor_rel h v (by omega)) (taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)))
+    (RelCT.seq (xor_rel h v (by omega_using [h0])) (taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)))
   exact RelCT.post (taintRel [.ebx, .ecx, .esp] (fun x y ⟨⟨hx, hy⟩, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -235,7 +235,7 @@ theorem apply_rel (v : XorImpl) : RelCT isa (fun x y => x = a ∧ y = b) (apply 
   · exact RelCT.of_false fun x y ⟨⟨hx, _⟩, he⟩ => by
       simp only [show eval .b x = x.cf from rfl, hx.cf, hlt, decide_true] at he
       exact absurd he (by decide)
-  have hle : L a ≤ N a := by omega
+  have hle : L a ≤ N a := by omega_using [hlt]
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
     (RelCT.seq (part2_rel h v) (RelCT.seq (part3_rel h) ?_))
   exact taintRel [.ebx] (fun x y ⟨hx, hy⟩ r hr => by

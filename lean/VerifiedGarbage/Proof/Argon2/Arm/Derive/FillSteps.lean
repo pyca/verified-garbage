@@ -56,7 +56,7 @@ section
 variable {s₀ : State} (hp : DPre s₀)
 include hp
 
-theorem laneLen_ge : 8 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega
+theorem laneLen_ge : 8 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_using [this]
 
 /-- A cell of the matrix, and its bytes, fit below 2³². -/
 theorem cell_fits {lane col : Nat} (hl : lane < lanesN s₀) (hc : col < (prm s₀).laneLen) :
@@ -65,9 +65,9 @@ theorem cell_fits {lane col : Nat} (hl : lane < lanesN s₀) (hc : col < (prm s�
   have hm := hp.mem_fits
   have : lane * (prm s₀).laneLen + col < blocksN s₀ := by
     have e := hp.blocks_eq
-    have := Nat.mul_le_mul_right (prm s₀).laneLen (show lane + 1 ≤ lanesN s₀ by omega)
+    have := Nat.mul_le_mul_right (prm s₀).laneLen (show lane + 1 ≤ lanesN s₀ by omega_using [hl])
     rw [Nat.succ_mul] at this
-    omega
+    omega_using [hc, e, this]
   have h2 : (lane * (prm s₀).laneLen + col + 1) * 1024 ≤ blocksN s₀ * 1024 := Nat.mul_le_mul_right 1024 this
   rw [Nat.succ_mul] at h2
   exact ⟨this, Nat.le_trans (Nat.add_le_add_left h2 _) hm⟩
@@ -90,7 +90,7 @@ theorem blockAddr_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {lane col : 
     rw [u₃.gpr, u₂.gpr, u₂.other .r1 (by decide), u₁.other .r0 (by decide), u₁.other .r1 (by decide), u₁.gpr,
       ha, hcx, pr.laneLen, ofNat_mul_ofNat, BitVec.ofNat_add_ofNat]
   refine wp_ldarg hp i₃ (i := 13) (by decide) fun s₄ u₄ => wp_add (op2_lsl (by decide)) fun s₅ u₅ => k s₅ ?_ ?_
-  · rw [u₅.gpr, u₄.gpr, u₄.other _ (by decide), e₃, ofNat_shl (by omega)]
+  · rw [u₅.gpr, u₄.gpr, u₄.other _ (by decide), e₃, ofNat_shl (by omega_using [cf])]
   · exact ((((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)).trans (Only.of_upd u₄)).trans
       (Only.of_upd u₅) |>.mono (by simp)
 
@@ -165,21 +165,21 @@ theorem prevColumn_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {col : Nat}
   refine WP.seq (WP.ite (decide (col = 0)) ?_ ?_ ?_)
   · show VG.Arm.eval .eq s₁ = _
     have z : ∀ y : BitVec 32, y - 0 = y := fun y => by simp
-    rw [MdStream.Arm.eval_eq, z₁, hx, z, MdStream.Arm.ofNat_beq_zero (by omega)]
+    rw [MdStream.Arm.eval_eq, z₁, hx, z, MdStream.Arm.ofNat_beq_zero (by omega_using [hc, sl, ll])]
   · intro hz
     refine wp_ldloc hp i₁ (d := laneLenOff) (by decide) fun s₂ u₂ => WP.block_nil ?_
     refine wp_sub (op2_imm (by decide)) fun t u => WP.block_nil ⟨?_, ?_⟩
     · have c0 : col = 0 := of_decide_eq_true hz
       rw [u.gpr, u₂.gpr, lw_mem f₁.mem, pr.laneLen, c0, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl,
-        MdStream.Arm.sub_ofNat (by omega), Nat.zero_add, Nat.mod_eq_of_lt (by omega)]
+        MdStream.Arm.sub_ofNat (by omega_using [hc]), Nat.zero_add, Nat.mod_eq_of_lt (by omega_using [hc])]
     · exact ((o₁.trans (Only.of_upd u₂)).trans (Only.of_upd u)).mono (by simp)
   · intro hz
     refine WP.block_nil (wp_sub (op2_imm (by decide)) fun t u => WP.block_nil ⟨?_, ?_⟩)
     · have c0 : col ≠ 0 := of_decide_eq_false hz
-      rw [u.gpr, f₁.gpr, hx, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, MdStream.Arm.sub_ofNat (by omega)]
+      rw [u.gpr, f₁.gpr, hx, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, MdStream.Arm.sub_ofNat (by omega_using [c0])]
       congr 1
-      rw [show col + (prm s₀).laneLen - 1 = col - 1 + (prm s₀).laneLen by omega, Nat.add_mod_right,
-        Nat.mod_eq_of_lt (by omega)]
+      rw [show col + (prm s₀).laneLen - 1 = col - 1 + (prm s₀).laneLen by omega_using [c0], Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_using [hc])]
     · exact (o₁.trans (Only.of_upd u)).mono (by simp)
 
 /-- `prevPointer`: `r0 :=` the address of the previous block. -/
@@ -203,7 +203,7 @@ theorem prevPointer_ok {s : State} (h : Inv s₀ s) (pr : Prm s₀ s) {pass slic
   refine wp_ldloc hp i₂ (d := laneOff) (by decide) fun s₃ u₃ => ?_
   have i₃ := i₂.upd u₃ (by decide)
   rw [← List.append_nil Impl.Argon2.Arm.Derive.blockAddr]
-  refine blockAddr_ok hp i₃ (pr.of_mem (by rw [u₃.mem, m₂])) hl (Nat.mod_lt _ (by omega))
+  refine blockAddr_ok hp i₃ (pr.of_mem (by rw [u₃.mem, m₂])) hl (Nat.mod_lt _ (by omega_using [hc]))
     (by rw [u₃.gpr, lw_mem m₂, ps.lane]) (by rw [u₃.other _ (by decide), c₂]) fun t a k => WP.block_nil ⟨a, ?_⟩
   exact (((k₁.trans k₂).trans (Only.of_upd u₃)).trans k).mono (by simp)
 

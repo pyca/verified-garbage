@@ -24,9 +24,9 @@ theorem normalizedR2Loop_ok (s : State) {base : BitVec 32} {len w : Nat}
     WP isa doubleLoop s fun v => R2Sq base len w (numAt s.mem (State.addr base) w 0) w v ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem v.mem ∧ Rest roundClobbers s v := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
-  refine WP.mono (doubleLoop_ok s h (by omega) (by omega)) ?_
+  refine WP.mono (doubleLoop_ok s h (by omega_using []) (by omega_using [countFits])) ?_
   rintro v ⟨done, value, modV, frameV, restV⟩
-  rw [seed, ← Nat.pow_add, show w + 64 + 64 * (w - 1) = 64 * w + w by omega] at value
+  rw [seed, ← Nat.pow_add, show w + 64 + 64 * (w - 1) = 64 * w + w by omega_using [hw]] at value
   exact ⟨⟨⟨done.workspace, done.layout, done.width, done.ptr, done.inverse, by rw [modV]; exact large,
       done.stackRead, done.stackSep, done.saved⟩, modV, modV ▸ done.operand,
       by rw [value, Nat.mod_mod], done.two, done.counter⟩, frameV, restV⟩
@@ -52,7 +52,7 @@ theorem normalizedR2_ok {base : BitVec 32} {len w : Nat} {P : State → Prop} {r
   refine WP.mono (sharedR2Squares_ok K v sq pV) ?_
   rintro t ⟨fin, pT, frameT, restT⟩
   have exact : numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % numAt s.mem (State.addr base) w 0 := by
-    rw [← Nat.mod_eq_of_lt fin.operand, fin.value, show 64 * w + 64 * w = 128 * w by omega]
+    rw [← Nat.mod_eq_of_lt fin.operand, fin.value, show 64 * w + 64 * w = 128 * w by omega_using []]
   refine ⟨⟨fin.ready.workspace, fin.ready.layout, fin.ready.width, fin.ready.ptr, fin.ready.inverse,
       by rw [fin.modulus]; exact fin.operand, fin.two, fin.counter, fin.ready.stackRead,
       fin.ready.stackSep, fin.ready.saved⟩, exact, fin.modulus,

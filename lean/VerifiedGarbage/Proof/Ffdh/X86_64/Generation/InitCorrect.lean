@@ -120,7 +120,7 @@ theorem init_ok {s : State} {B : Addr} (scr : Scr s B 128) (hdi : s.gpr .rdi = B
   have hg : ((u.gpr .rdx).setWidth 32).toNat = ((s.gpr .rdx).setWidth 32).toNat := by
     rw [hdx]
     simp only [BitVec.toNat_setWidth]
-    omega
+    omega_using []
   simpa only [hs, hg, hm] using ht
 
 end VG.Proof.Ffdh.X86_64.Generation

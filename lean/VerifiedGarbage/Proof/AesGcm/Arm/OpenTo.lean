@@ -103,7 +103,7 @@ theorem openToPreArm.oPre {s : State} (h : openToPreArm s) : OPre true s := by
     refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp⟩,
       ⟨List.mem_append_left _ (by rw [hrd]; simp), by rw [hwr]; simp, fun r hr => ?_⟩,
       fun hw => ?_, cw, fun hw => ?_, nw, fun hw => ?_, aw, sw, fun hw => ?_, wa, bl bc, bl bn, bl ba, bl bs,
-      bl bw, fc, fn, fa, fs, fw, by omega, spf, hR⟩
+      bl bw, fc, fn, fa, fs, fw, by omega_using [sp12], spf, hR⟩
     · rcases wr2 hr with rfl | rfl
       · exact da.symm
       · exact wa.symm
@@ -174,12 +174,12 @@ theorem wipeLoop_wp (u : State) {D : BitVec 32} {n : Nat} (hn : n < 2 ^ 32) (hD 
         v.gpr .r2 = BitVec.ofNat 32 (n - i) ∧ (∀ r, r ≠ .r1 → r ≠ .r2 → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧
         v.wr = u.wr ∧ v.sp = u.sp ∧ Frame [⟨State.addr D, n⟩] u.mem v.mem ∧
         Proof.Zeroize.Prefix v.mem (State.addr D) i) ?_ (n - 0) _
-      ⟨0, rfl, by omega, by rw [gpr_subFlags, h₁, add_ofNat_zero], by rw [gpr_subFlags, h₂, Nat.sub_zero],
+      ⟨0, rfl, by omega_using [h0], by rw [gpr_subFlags, h₁, add_ofNat_zero], by rw [gpr_subFlags, h₂, Nat.sub_zero],
         fun r _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     rintro w v ⟨i, rfl, hi, r1, r2, gv, rdv, wrv, spv, fv, pv⟩
-    have aD : State.addr (D + BitVec.ofNat 32 i) = State.addr D + BitVec.ofNat 64 i := addr_add (by omega)
+    have aD : State.addr (D + BitVec.ofNat 32 i) = State.addr D + BitVec.ofNat 64 i := addr_add (by omega_using [hD, hi])
     have hcn : (⟨State.addr D, n⟩ : Region).Contains (State.addr D + BitVec.ofNat 64 i) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi])
     have win : InRegions v.wr (State.addr (D + BitVec.ofNat 32 i)) 1 := by
       rw [wrv, aD]; exact hw _ _ ⟨_, List.mem_singleton_self _, hcn⟩
     obtain ⟨v', run', mem', r1', r2', z', g', rd', wr', sp'⟩ :=
@@ -188,7 +188,7 @@ theorem wipeLoop_wp (u : State) {D : BitVec 32} {n : Nat} (hn : n < 2 ^ 32) (hD 
     have f' : Frame [⟨State.addr D, n⟩] u.mem v'.mem := by
       rw [mem', aD]; exact fv.writeW (List.mem_singleton_self _) _ hcn
     have p' : Proof.Zeroize.Prefix v'.mem (State.addr D) (i + 1) := by
-      rw [mem', aD]; exact Proof.Zeroize.prefix_writeW (w := 8) pv (by omega)
+      rw [mem', aD]; exact Proof.Zeroize.prefix_writeW (w := 8) pv (by omega_using [hn, hi])
     have g'' : ∀ r, r ≠ .r1 → r ≠ .r2 → v'.gpr r = u.gpr r := fun r a b => by rw [g' r a b, gv r a b]
     have hz : v'.z = decide (i + 1 = n) := by rw [z', r2, dec32 hi hn, z_dec hi hn]
     have ev : isa.eval .ne v' = some !decide (i + 1 = n) := eval_ne' hz
@@ -197,7 +197,7 @@ theorem wipeLoop_wp (u : State) {D : BitVec 32} {n : Nat} (hn : n < 2 ^ 32) (hD 
       exact ⟨by rw [ev]; simp [he], by rw [← he]; exact p', f', g'', rd'.trans rdv, wr'.trans wrv,
         sp'.trans spv⟩
     · right
-      exact ⟨by rw [ev]; simp [he], n - (i + 1), by omega, i + 1, rfl, by omega, r1',
+      exact ⟨by rw [ev]; simp [he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], r1',
         by rw [r2', r2, dec32 hi hn], g'', rd'.trans rdv, wr'.trans wrv, sp'.trans spv, f', p'⟩
 
 /-- The zeros of `Prefix`, as bytes. -/
@@ -385,7 +385,7 @@ theorem openTo_verified : Verified Arm.target openTo (openToScratchContract Arm.
           Arm.Loc.val, Arm.State.addr] at h
         obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8⟩ := h
         refine ⟨⟨hsp, h0, h1, h2, h3, fun i hi => ?_⟩, fun hr => leak_bool ?_⟩
-        · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega) with
+        · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega_using [hi]) with
             rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
           exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8]
         · have e₁ : ¬((s₁.gpr .r1).toNat = 10 ∨ (s₁.gpr .r1).toNat = 12 ∨ (s₁.gpr .r1).toNat = 14) ↔ False :=

@@ -4,6 +4,7 @@ import Mathlib.Tactic.Ring
 public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.Horner
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Poly1305: Horner's rule in two lanes of two blocks
@@ -129,7 +130,7 @@ end
 
 theorem carry_val (d : Nat → Nat) : val (carry d) + P * (d4a d / 2 ^ 26) = val d := by
   simp only [val, carry, h0b, h3b, d2a, d1a, d4a, P_eq]
-  omega
+  omega_using []
 
 theorem carry_mod (d : Nat → Nat) : val (carry d) ≡ val d [MOD P] := by
   have h := carry_val d
@@ -147,8 +148,8 @@ theorem carry_lt {d : Nat → Nat} (h : ∀ k < 5, d k < 2 ^ 62) : ∀ i < 5, ca
   have h0 := h 0 (by decide); have h1 := h 1 (by decide); have h2 := h 2 (by decide)
   have h3 := h 3 (by decide); have h4 := h 4 (by decide)
   intro i hi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
-    simp only [carry, h0b, h3b, d2a, d1a, d4a] <;> omega
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl <;>
+    simp only [carry, h0b, h3b, d2a, d1a, d4a] <;> omega_arith
 
 end Pair
 

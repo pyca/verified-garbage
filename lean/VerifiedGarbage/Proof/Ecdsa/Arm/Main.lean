@@ -182,14 +182,14 @@ theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
     (sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)).trans (sv_unch U₅ h7 hn hi
       (apart_append (apart_slWkP h7 hi h₂) (apart_genX h7 hi fun h => h₁ (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega))))
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega_using [h]))))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)
   have K₅₆ : Rest work s s₆ := (K₅.mono powClob_work).trans (K₆.mono powClob_work)
   refine ⟨⟨hs₅.of_rest K₆ (by decide), hf₅.of_rest K₆, hS.rest.trans (K₅₆.mono (by simp)), by rw [K₅₆.gpr _ (by decide), hS.lr],
     F₅.unch h7 hn (fixedOk_slWk h7 (by decide)) U₆,
     whole_of (whole_of' hS.whole U₅ fun w hw => (List.mem_append.mp hw).elim
-      (fun h => by have := slWkP_le h7 (by decide) w h; dsimp only [size] at this; omega) (genX_le h7 w))
+      (fun h => by have := slWkP_le h7 (by decide) w h; dsimp only [size] at this; omega_using [this]) (genX_le h7 w))
       U₆ (slWk_le h7 (by decide))⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],

@@ -170,7 +170,7 @@ theorem tabMemH_low {n : Nat} : ∀ a : Addr, a.toNat < 0x2020 → tabMemH n a =
 
 theorem tab_high {b : Addr} (hb : 0x200000 ≤ b.toNat ∧ b.toNat ≤ 0x240000) {i j : Nat} (hi : i < 512)
     (hj : j < 8) : ¬ (b + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j).toNat < 0x2020 := by
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hb, hi, hj]
 
 theorem tabMemH_held (n : Nat) : Abi.constsHeld (tabMemH n) Optimized.tableSyms constants := by
   intro c hc i hi
@@ -190,7 +190,7 @@ theorem tabMemH_held (n : Nat) : Abi.constsHeld (tabMemH n) Optimized.tableSyms 
     simp only [constants, List.mem_cons, List.not_mem_nil, or_false] at hc
     rcases hc with rfl | rfl | rfl | rfl | rfl <;>
       simp only [Rej8.tableWords_length, Ntt16.Readonly.gamma_length, Ntt16.Readonly.forward_length,
-        NttR.tabWordsI_length, NttR.tabWords_length] at hi <;> omega
+        NttR.tabWordsI_length, NttR.tabWords_length] at hi <;> omega_using [hi]
   refine Mem.readW_congr fun j hj => ?_
   simp only [tabMemH, tab_high hs hl (by omega), ite_false]
 

@@ -61,12 +61,12 @@ theorem privatePrecompute_public {m : Mem} {pre : Addr} {L : Nat} {nB pB qB : Li
         simp only [Spec.Rsa.publicPrecompute] at hp
         split at hp
         · simp only [Option.some.injEq] at hp
-          rw [← hp, List.length_append, toWords_length, toWords_length, Spec.Rsa.precomputedWords]; omega
+          rw [← hp, List.length_append, toWords_length, toWords_length, Spec.Rsa.precomputedWords]; omega_using []
         · exact absurd hp (by simp)
       have hL : Spec.Rsa.precomputedWords nB.length ≤ L := by
         have := congrArg List.length hws
         simp only [Spec.Rsa.wordsAt, List.length_map, List.length_range, List.length_append] at this
-        omega
+        omega_using [hl, this]
       rw [← wordsAt_take m pre hL, hws, ← hl, List.take_left]
   · exact absurd h (by simp)
 
@@ -87,7 +87,7 @@ theorem privatePrecompute_primes {m : Mem} {pre : Addr} {nB pB qB : List Byte}
     have hql : (Spec.Rsa.primeR2 qB).length = Spec.Rsa.primeWords qB.length := toWords_length _ _
     have hw : Spec.Rsa.privatePrecomputedWords nB.length pB.length qB.length =
         Spec.Rsa.precomputedWords nB.length + (Spec.Rsa.primeWords pB.length + Spec.Rsa.primeWords qB.length) := by
-      unfold Spec.Rsa.privatePrecomputedWords; omega
+      unfold Spec.Rsa.privatePrecomputedWords; omega_using []
     have hd := wordsAt_drop m pre (Spec.Rsa.precomputedWords nB.length)
       (Spec.Rsa.primeWords pB.length + Spec.Rsa.primeWords qB.length)
     rw [← hw, ← h, List.append_assoc, List.drop_left' (by simp [Spec.Rsa.wordsAt])] at hd

@@ -405,11 +405,11 @@ theorem tailXor_ok {to : Bool} {R : Nat} {icb : Block} {Q : Nat} {S E : Addr} {k
   refine WP.seq (WP.mono h₄ fun s₄ ⟨h3, h4, h5, h7, hg₄, hk₄⟩ => ?_)
   have dst := h.dst.ok.st; have dw := h.dst.ok.w
   have xp : XorPre to s₄ (V .r30 + BitVec.ofNat 64 64) S E k := by
-    refine ⟨h3, h4, h7, h5, by omega, by omega, ?_, ?_, ?_, ?_, h.inPlace, h.alias⟩
-    · rw [hk₄.rd, hk₄.wr]; exact covers_left (he₃.perm.stC (by omega))
+    refine ⟨h3, h4, h7, h5, by omega_using [h0], by omega_using [hlt], ?_, ?_, ?_, ?_, h.inPlace, h.alias⟩
+    · rw [hk₄.rd, hk₄.wr]; exact covers_left (he₃.perm.stC (by omega_using [hlt]))
     · rw [hk₄.rd, hk₄.wr, hk.rd, hk.wr]; exact h.src.rd
     · rw [hk₄.wr, hk.wr]; exact h.dst.wr
-    · exact (dst.sub_right (Lay.stSub (by omega))).symm
+    · exact (dst.sub_right (Lay.stSub (by omega_using [hlt]))).symm
   refine WP.mono (xorLoopWith_ok to s₄ xp) fun s₅ o => ?_
   have hm₅ := o.mem
   rw [hk₄.mem] at hm₅
@@ -417,13 +417,13 @@ theorem tailXor_ok {to : Bool} {R : Nat} {icb : Block} {Q : Nat} {S E : Addr} {k
   have fw : Frame [⟨E, k⟩] s.mem s₅.mem := by
     rw [hm₅]; exact writeBytes_frame' _ hxl
   have hd₃ : bytesAt s.mem S k = bytesAt s₀.mem S k := by
-    refine bytesAt_frame hk.frame (fun r hr => ?_) (by omega)
+    refine bytesAt_frame hk.frame (fun r hr => ?_) (by omega_using [hlt])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.src.st.sub_right (Lay.stSub (by decide))
     · exact h.src.w.sub_right (Lay.wSub (by decide))
   have ht := fun x => Proof.Gcm.ctr_tail (h.ctr x) hw (m₁ := s.mem) hk.ks (by rw [hk.cb])
-    (d := bytesAt s₀.mem S k) (by rw [length_bytesAt]; omega) (by rw [length_bytesAt]; omega)
+    (d := bytesAt s₀.mem S k) (by rw [length_bytesAt]; omega_using [hlt]) (by rw [length_bytesAt]; omega_using [h0])
   rw [length_bytesAt] at ht
   have dS : ∀ r ∈ [(⟨E, k⟩ : Region)], ∀ x, x + 16 ≤ 80 →
       (⟨V .r30 + BitVec.ofNat 64 x, 16⟩ : Region).Disjoint r := by

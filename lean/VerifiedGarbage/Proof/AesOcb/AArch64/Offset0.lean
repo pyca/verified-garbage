@@ -42,12 +42,12 @@ open VG.Proof.AesGcm.AArch64 (in_left in_off)
 theorem bit_v {v : Nat} (hv : v < 64) (k : Nat) :
     (BitVec.ofNat 64 v >>> k) &&& 1#64 = if v.testBit k then 1 else 0 := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv]),
     show (1#64).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.testBit_eq_decide_div_mod_eq, Nat.shiftRight_eq_div_pow]
   have h2 : v / 2 ^ k % 2 < 2 := Nat.mod_lt _ (by decide)
   by_cases h : v / 2 ^ k % 2 = 1
   · simp [h]
-  · simp [h]; omega
+  · simp [h]; omega_using [h]
 
 theorem sel_mask0 (x x' : BitVec 64) (b : Bool) :
     x ^^^ ((x' ^^^ x) &&& (0#64 - (if b = true then 1 else 0))) = if b then x' else x := sel_mask x x' b
@@ -59,7 +59,7 @@ theorem stage_ok (s : State) {k a v : Nat} (hk6 : k < 64) (ha : 0 < a) (ha' : a 
       s'.gpr .x9 ++ s'.gpr .x10 ++ s'.gpr .x11 = shlIf (v.testBit k) a (s.gpr .x9 ++ s.gpr .x10 ++ s.gpr .x11) ∧
       (∀ r, r ∉ [.x9, .x10, .x11, .x13, .x14, .x15] → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have c1 : 64 - a < 64 := by omega
+  have c1 : 64 - a < 64 := by omega_using [ha]
   refine ⟨_, by orun [stage, h12, hk6, ha', c1, List.flatMap_cons, List.flatMap_nil], ?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, h12, bit_v hv, BitVec.setWidth_eq]
     rw [sel_mask0, sel_mask0, sel_mask0]
@@ -76,7 +76,7 @@ theorem top2 (x y z : BitVec 64) : (x ++ y ++ z).extractLsb' 64 128 = x ++ y := 
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    show ¬ 64 + i < 64 by omega, ↓reduceIte, show 64 + i - 64 = i by omega]
+    show ¬ 64 + i < 64 by omega_using [], ↓reduceIte, show 64 + i - 64 = i by omega_using []]
 
 /-- `Stretch`. -/
 def stretch (ktop : Block) : BitVec 192 := ktop ++ (ktop.extractLsb' 64 64 ^^^ ktop.extractLsb' 56 64)
@@ -140,7 +140,7 @@ theorem offset0_ok {K W : Addr} (L : Lay K W) {s : State} (h19 : s.gpr .x19 = W)
     rw [w₇, w₆, w₅, w₄, w₃, w₂, w₁, Proof.Ocb.shl_stages _ hv]
   have hO : s₇.gpr .x9 ++ s₇.gpr .x10 =
       (stretch (blockAtMem s.mem (W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128 := by
-    rw [← top2 _ _ (s₇.gpr .x11), hw7, Proof.Ocb.offset_shl _ (by omega)]
+    rw [← top2 _ _ (s₇.gpr .x11), hw7, Proof.Ocb.offset_shl _ (by omega_using [hv])]
   have hm₇ : s₇.mem = s.mem := by rw [m₇, m₆, m₅, m₄, m₃, m₂, m₁]
   have hsp₇ : s₇.sp = s.sp := by rw [sp₇, sp₆, sp₅, sp₄, sp₃, sp₂, sp₁]
   have hrd₇ : s₇.rd = s.rd := by rw [rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁]

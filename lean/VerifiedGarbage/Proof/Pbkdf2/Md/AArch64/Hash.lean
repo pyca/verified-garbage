@@ -75,10 +75,10 @@ theorem hS : hH.SH.stateBytes = H.P.N + H.P.B := hH.stream.hS
 theorem hD : hH.SH.digestBytes = H.D := hH.stream.hD
 
 include hH in
-theorem B_le : H.P.B ≤ 128 := by rcases hH.sizes.B with h | h <;> omega
+theorem B_le : H.P.B ≤ 128 := by rcases hH.sizes.B with h | h <;> omega_using [h]
 
 include hH in
-theorem B_pos : 0 < H.P.B := by rcases hH.sizes.B with h | h <;> omega
+theorem B_pos : 0 < H.P.B := by rcases hH.sizes.B with h | h <;> omega_using [h]
 
 include hH in
 theorem N_le : H.P.N ≤ 64 := hH.sizes.dims.N.2
@@ -97,9 +97,9 @@ theorem iterOk : Pbkdf2.AArch64.HashOk H.P H.D H.W hH.SH hH.md hH.iv where
   sizes := hH.sizes
   shape := hH.shape
   reloc := hH.reloc
-  lenOk := hH.lenOk _ (by have := hH.B_le; have := hH.sizes.DN; have := hH.N_le; omega)
+  lenOk := hH.lenOk _ (by have := hH.B_le; have := hH.sizes.DN; have := hH.N_le; omega_arith)
   link := ⟨hH.hB, hH.hS, hH.hD, fun m p x h => (hH.repr m p x).1 h, hH.hash, hH.sizes.DN,
-    by have := hH.sizes.pad; have := hH.sizes.NL; omega⟩
+    by have := hH.sizes.pad; have := hH.sizes.NL; omega_arith⟩
 
 /-- `copyW` writes no SIMD register. -/
 theorem copyW_keepsV (wide : Bool) (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) :

@@ -24,7 +24,7 @@ open VG.Spec.Aes (bytesAt)
 
 theorem off_sub_toNat (B : Addr) {t e : Nat} (h : e ≤ t) (ht : t < 2 ^ 64) :
     (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat = t - e := by
-  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega
+  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega_using [ht]
 
 theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
     (he : e + n ≤ 2 ^ 64) : ¬ (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < n := by
@@ -32,13 +32,13 @@ theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t
 
 theorem not_contains_off (b : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
     (he : e + n ≤ 2 ^ 64) : ¬ (⟨b + BitVec.ofNat 64 e, n⟩ : Region).Contains (b + BitVec.ofNat 64 t) 1 := by
-  simp only [Region.Contains]; intro hc; exact off_sub_not b h ht hn he (by omega)
+  simp only [Region.Contains]; intro hc; exact off_sub_not b h ht hn he (by omega_using [hc])
 
 /-- A byte of `A`'s area is not among the 8 at `B + e`. -/
 theorem not_in_of_disjoint {A B : Addr} {n t e : Nat} (hsep : Region.Disjoint ⟨A, n⟩ ⟨B, n⟩) (ht : t < n)
     (he : e + 8 ≤ n) (hn : n < 2 ^ 64) : ¬ (A + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < 8 :=
-  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega) (by omega))
-    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega))
+  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega_using [ht]) (by omega_using [ht, hn]))
+    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega_using [h]))
 
 theorem ofInt_nat (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toInt_eq; simp
@@ -74,7 +74,7 @@ theorem bytesAt_writeW_above (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d n 
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, Mem.writeW]
   apply Mem.write_apply
-  exact off_sub_not P (t := i) (e := d) (n := w / 8) (Or.inl (by omega)) (by omega) hw hd
+  exact off_sub_not P (t := i) (e := d) (n := w / 8) (Or.inl (by omega_using [hn, h₁])) (by omega_using [hn, hd, h₁]) hw hd
 
 /-- Bytes outside a frame. -/
 theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}

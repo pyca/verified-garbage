@@ -23,7 +23,7 @@ def wordVals (n : Nat) (s : State) : List (BitVec 64) :=
 
 theorem abi_args_all32 (ws : List Nat) (h : ∀ w ∈ ws.drop 8, w = 64) (hn : 8 < ws.length) :
     abi.args ws = some (wordVals ws.length) := by
-  have h8 : ¬ ws.length ≤ argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega
+  have h8 : ¬ ws.length ≤ argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega_using [hn]
   have hall : (ws.drop argRegs.length).all (· = 64) = true := List.all_eq_true.mpr fun w hw => by
     simp [h w (by simpa [argRegs] using hw)]
   simp only [abi, h8, hall, ↓reduceIte]
@@ -32,12 +32,12 @@ theorem abi_args_all32 (ws : List Nat) (h : ∀ w ∈ ws.drop 8, w = 64) (hn : 8
 theorem wordVals_succ2 (n : Nat) (s : State) (hn : 8 ≤ n) :
     wordVals (n + 2) s = wordVals n s ++ [stackArg s (n - 8), stackArg s (n + 1 - 8)] := by
   simp only [wordVals, List.append_assoc]
-  rw [show n + 2 - 8 = n - 8 + 1 + 1 by omega, List.range_succ, List.range_succ]
+  rw [show n + 2 - 8 = n - 8 + 1 + 1 by omega_using [hn], List.range_succ, List.range_succ]
   simp only [List.map_append, List.map_cons, List.map_nil, List.append_assoc, List.cons_append,
-    List.nil_append, show n - 8 + 1 = n + 1 - 8 by omega]
+    List.nil_append, show n - 8 + 1 = n + 1 - 8 by omega_using [hn]]
 
 theorem wordVals_length (n : Nat) (s : State) (hn : 8 ≤ n) : (wordVals n s).length = n := by
-  simp [wordVals, argRegs]; omega
+  simp [wordVals, argRegs]; omega_using [hn]
 
 theorem words_withSlice_map (sig : Sig) (nm : String) (e : Elem) (ln : String) :
     ((sig.withSlice nm e ln).words 64).map (·.bits 64) = (sig.words 64).map (·.bits 64) ++ [64, 64] := by
@@ -48,8 +48,8 @@ theorem abi_wf_append {ws : List Nat} (hne : 8 < ws.length) {n : Nat} {s : State
   have hsp : (s.withRegions r w).sp = s.sp := State.withRegions_sp _ _ _
   have hl : argRegs.length = 8 := rfl
   have hl2 : (ws ++ [64, 64]).length = ws.length + 2 := by simp
-  have h8 : (ws.length ≤ 8) = False := by simp; omega
-  have h8' : (ws.length + 2 ≤ 8) = False := by simp; omega
+  have h8 : (ws.length ≤ 8) = False := by simp; omega_using [hne]
+  have h8' : (ws.length + 2 ≤ 8) = False := by simp; omega_using [hne]
   simp only [abi, hsp, hl, hl2, h8, h8', ite_false] at h ⊢
   rcases n with _ | k
   · exact ⟨trivial, by omega⟩
@@ -57,11 +57,11 @@ theorem abi_wf_append {ws : List Nat} (hne : 8 < ws.length) {n : Nat} {s : State
 
 theorem abi_area_append {ws : List Nat} (hne : 8 < ws.length) (s : State) :
     List.Forall₂ RegionBelow (abi.argArea ws s) (abi.argArea (ws ++ [64, 64]) s) := by
-  have h₁ : ws.length - argRegs.length ≠ 0 := by simp only [argRegs, List.length_cons, List.length_nil]; omega
+  have h₁ : ws.length - argRegs.length ≠ 0 := by simp only [argRegs, List.length_cons, List.length_nil]; omega_using [hne]
   have h₂ : (ws ++ [64, 64]).length - argRegs.length ≠ 0 := by
-    simp only [argRegs, List.length_append, List.length_cons, List.length_nil]; omega
+    simp only [argRegs, List.length_append, List.length_cons, List.length_nil]; omega_using [hne]
   simp only [abi, h₁, h₂, ↓reduceIte]
-  exact .cons ⟨⟨rfl, by simp only [argRegs, List.length_append, List.length_cons, List.length_nil]; omega⟩, rfl⟩ .nil
+  exact .cons ⟨⟨rfl, by simp only [argRegs, List.length_append, List.length_cons, List.length_nil]; omega_using []⟩, rfl⟩ .nil
 
 /-- The words of `sig`'s arguments followed by a slice's two. -/
 abbrev sliceVals (n : Nat) (s : State) : List (BitVec 64) :=
@@ -93,18 +93,18 @@ theorem verified_withSlice {sig : Sig} {nm ln : String} {e : Elem}
     (hsat : ∃ s, ((sig.withSlice nm e ln).contract abi pre' post' writeArgs stack leak').pre s) :
     Verified target c ((sig.withSlice nm e ln).contract abi pre' post' writeArgs stack leak') := by
   have hw' : ∀ w ∈ (((sig.withSlice nm e ln).words 64).map (·.bits 64)).drop 8, w = 64 := by
-    rw [words_withSlice_map, List.drop_append_of_le_length (by rw [List.length_map]; omega)]
+    rw [words_withSlice_map, List.drop_append_of_le_length (by rw [List.length_map]; omega_using [hne])]
     simp only [List.mem_append]
     rintro w (hw₁ | hw₁)
     · exact hw w hw₁
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw₁; omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw₁; omega_using [hw₁]
   have hn : (((sig.withSlice nm e ln).words 64).map (·.bits 64)).length = (sig.words 64).length + 2 := by
     rw [Sig.words_withSlice]; simp
   have ha : abi.args ((sig.words 64).map (·.bits 64)) = some (wordVals (sig.words 64).length) := by
     rw [abi_args_all32 _ hw (by rw [List.length_map]; exact hne), List.length_map]
   have ha' : abi.args (((sig.withSlice nm e ln).words 64).map (·.bits 64)) =
       some (sliceVals (sig.words 64).length) := by
-    rw [abi_args_all32 _ hw' (by rw [hn]; omega), hn]; congr 1; funext s; exact wordVals_succ2 _ s (by omega)
+    rw [abi_args_all32 _ hw' (by rw [hn]; omega_using [hne]), hn]; congr 1; funext s; exact wordVals_succ2 _ s (by omega_using [hne])
   have hret : ∀ (s : State) (r w : List Region), abi.ret (s.withRegions r w) = abi.ret s := fun _ _ _ => rfl
   have hres : ∀ n (s : State) (r w : List Region), abi.reserved n (s.withRegions r w) = abi.reserved n s :=
     fun _ _ _ _ => rfl
@@ -114,7 +114,7 @@ theorem verified_withSlice {sig : Sig} {nm ln : String} {e : Elem}
     (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) hret hpubA hres rfl
     (sig := sig) (nm := nm) (e := e) (ln := ln) (vals := wordVals (sig.words 64).length)
     (X := fun s => stackArg s ((sig.words 64).length - 8)) (Y := fun s => stackArg s ((sig.words 64).length + 1 - 8))
-    ha ha' (fun s => wordVals_length _ s (by omega)) (fun _ _ _ => rfl)
+    ha ha' (fun s => wordVals_length _ s (by omega_using [hne])) (fun _ _ _ => rfl)
     (fun n s r w h => abi_wf_append (ws := (sig.words 64).map (·.bits 64)) (by rw [List.length_map]; exact hne)
       (by have h' : abi.wf (((sig.withSlice nm e ln).words 64).map (·.bits 64)) n s := h
           rw [words_withSlice_map] at h'; exact h') r w)
@@ -153,18 +153,18 @@ theorem verified_withSlice_tables {sig : Sig} {nm ln : String} {e : Elem} {t : S
     (hsat : ∃ s, ((sig.withSlice nm e ln).contract (abi.withTables (sig.withSlice nm e ln) (t :: ts)) pre' post' writeArgs stack leak').pre s) :
     Verified target c ((sig.withSlice nm e ln).contract (abi.withTables (sig.withSlice nm e ln) (t :: ts)) pre' post' writeArgs stack leak') := by
   have hw' : ∀ w ∈ (((sig.withSlice nm e ln).words 64).map (·.bits 64)).drop 8, w = 64 := by
-    rw [words_withSlice_map, List.drop_append_of_le_length (by rw [List.length_map]; omega)]
+    rw [words_withSlice_map, List.drop_append_of_le_length (by rw [List.length_map]; omega_using [hne])]
     simp only [List.mem_append]
     rintro w (hw₁ | hw₁)
     · exact hw w hw₁
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw₁; omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw₁; omega_using [hw₁]
   have hn : (((sig.withSlice nm e ln).words 64).map (·.bits 64)).length = (sig.words 64).length + 2 := by
     rw [Sig.words_withSlice]; simp
   have ha : abi.args ((sig.words 64).map (·.bits 64)) = some (wordVals (sig.words 64).length) := by
     rw [abi_args_all32 _ hw (by rw [List.length_map]; exact hne), List.length_map]
   have ha' : abi.args (((sig.withSlice nm e ln).words 64).map (·.bits 64)) =
       some (sliceVals (sig.words 64).length) := by
-    rw [abi_args_all32 _ hw' (by rw [hn]; omega), hn]; congr 1; funext s; exact wordVals_succ2 _ s (by omega)
+    rw [abi_args_all32 _ hw' (by rw [hn]; omega_using [hne]), hn]; congr 1; funext s; exact wordVals_succ2 _ s (by omega_using [hne])
   have hret : ∀ (s : State) (r w : List Region), abi.ret (s.withRegions r w) = abi.ret s := fun _ _ _ => rfl
   have hres : ∀ n (s : State) (r w : List Region), abi.reserved n (s.withRegions r w) = abi.reserved n s :=
     fun _ _ _ _ => rfl
@@ -177,7 +177,7 @@ theorem verified_withSlice_tables {sig : Sig} {nm ln : String} {e : Elem} {t : S
     rw [show (sig.withSlice nm e ln).params = sig.params ++ [(nm, .slice false e ln)] from rfl,
       Sig.wordIndex_append _ _ _ _ hk, hk]
     simp only [Option.map_some, sliceVals]
-    rw [getD_append_lt _ _ _ (by rw [wordVals_length _ _ (by omega)]; exact hlt)]
+    rw [getD_append_lt _ _ _ (by rw [wordVals_length _ _ (by omega_using [hne])]; exact hlt)]
   exact Verified.withSlice (T := target) regionModel (fun _ _ _ _ h => h) (abi.withTables sig (t :: ts))
     (abi.withTables (sig.withSlice nm e ln) (t :: ts)) rfl (fun _ => rfl) (fun _ => rfl)
     (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) hret
@@ -198,7 +198,7 @@ theorem verified_withSlice_tables {sig : Sig} {nm ln : String} {e : Elem} {t : S
     hres rfl
     (sig := sig) (nm := nm) (e := e) (ln := ln) (vals := wordVals (sig.words 64).length)
     (X := fun s => stackArg s ((sig.words 64).length - 8)) (Y := fun s => stackArg s ((sig.words 64).length + 1 - 8))
-    ha ha' (fun s => wordVals_length _ s (by omega)) (fun _ _ _ => rfl)
+    ha ha' (fun s => wordVals_length _ s (by omega_using [hne])) (fun _ _ _ => rfl)
     (fun n s r w hwf => by
       simp only [Abi.withTables, show abi.ptrBits = 64 from rfl] at hwf ⊢
       rw [ha'] at hwf

@@ -44,7 +44,7 @@ def TS (P : MP) (k : Nat) (σ s : State) : Prop :=
 
 theorem tv_lt {P : MP} {σ : State} (h : In P σ) (k : Nat) : tv P σ k < cOf P σ.mem := by
   have := h.c3
-  exact tp_lt (by omega) h.x5 (by show numAt σ.mem (State.addr P.ws) P.w 9 < _; rw [h.one]; exact Nat.mod_lt _ (by omega)) k
+  exact tp_lt (by omega_using [this]) h.x5 (by show numAt σ.mem (State.addr P.ws) P.w 9 < _; rw [h.one]; exact Nat.mod_lt _ (by omega_using [this])) k
 
 /-- A product and one final-slot copy advance the completed prefix. -/
 theorem AT_step {P : MP} {σ : State} {i : Nat} (hi : i < 14) :
@@ -60,18 +60,18 @@ theorem AT_step {P : MP} {σ : State} {i : Nat} (hi : i < 14) :
   intro j hj
   have hj' : j = aY ∨ j = aX ∨ (aT0 ≤ j ∧ j < aT0 + 16) := by
     simp only [LT, List.mem_cons, List.not_mem_nil, or_false] at hj
-    omega
+    omega_using [e0, hj]
   rcases hj' with rfl | rfl | hj
   · simp (disch := omega) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
   · simp (disch := omega) only [upd, AT, ↓ite_eq_left, ↓ite_eq_right]
-  · have hY : j ≠ aY := by omega
-    have hX : j ≠ aX := by omega
+  · have hY : j ≠ aY := by omega_using [e0, eY, hj]
+    have hX : j ≠ aX := by omega_using [e0, eX, hj]
     by_cases he : j = aT0 + i + 2
     · subst j
-      have hsub : aT0 + i + 2 - aT0 = i + 2 := by omega
+      have hsub : aT0 + i + 2 - aT0 = i + 2 := by omega_using []
       simp (disch := omega) only [upd, AT, tabEnt, hsub, ↓ite_eq_left, ↓ite_eq_right]
-    · have hidx : j - aT0 ≠ i + 2 := by omega
-      have hbound : (j - aT0 ≤ i + 1) = (j - aT0 ≤ (i + 1) + 1) := by apply propext; omega
+    · have hidx : j - aT0 ≠ i + 2 := by omega_using [he]
+      have hbound : (j - aT0 ≤ i + 1) = (j - aT0 ≤ (i + 1) + 1) := by apply propext; omega_using [he]
       simp only [upd, he, hY, hX, AT, tabEnt, ↓reduceIte, hbound]
 
 
@@ -93,10 +93,10 @@ private theorem tab_copy_store {P : MP} {σ s : State} {A : Nat → Nat} {L : Li
   have index : s2.gpr .r0=BitVec.ofNat 32 (aT0+i+2) := by
     rw [u2.gpr,dpVal,u1.gpr,u1.other .lr (by decide),count]
     change BitVec.ofNat 32 27-BitVec.ofNat 32 (14-i)=_
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [])]
     congr 1
     simp only [aT0]
-    omega
+    omega_using [hi]
   have r5 : Rest [.r0] s s5 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans
     ((u4.rest (by simp)).trans (u5.rest (by simp))))
   have mem5 : s5.mem=s.mem := by rw [u5.mem,u4.mem,u2.mem,u1.mem]
@@ -114,9 +114,9 @@ private theorem tab_copy_store {P : MP} {σ s : State} {A : Nat → Nat} {L : Li
   have mu : u.mem=s.mem := by rw [u9.mem,u8.mem,mem7,mem6,mem5]
   have restU : Rest opRegs s u := (r5.mono (by simp)).trans ((r6.mono (by simp)).trans
     ((r7.mono (by simp)).trans ((u8.rest (by simp)).trans (u9.rest (by simp)))))
-  have ho : aT0+i+2<nArr := by simp only [aT0,nArr]; omega
+  have ho : aT0+i+2<nArr := by simp only [aT0,nArr]; omega_using [hi]
   have ha' := h.live_lt _ ha
-  have hoa : aT0+i+2≠aY := by simp only [aT0,aY]; omega
+  have hoa : aT0+i+2≠aY := by simp only [aT0,aY]; omega_using []
   refine WP.mono (copyWords_ok u (hu.subCtx ho ha' ha' hoa hoa) hw.wpos
     (by rw [u9.other _ (by decide),u8.other _ (by decide),r7.gpr .r0 (by decide),r6.gpr .r0 (by decide),p0])
     (by rw [u9.other _ (by decide),u8.other _ (by decide),r7.gpr .r10 (by decide),p10])
@@ -126,13 +126,13 @@ private theorem tab_copy_store {P : MP} {σ s : State} {A : Nat → Nat} {L : Li
   have value := inv.value
   rw [mu] at value
   have keep : Keep P.B P.W [aT0+i+2] [] s.mem t.mem := Keep.of_arr (d := 0)
-    (by simpa only [Nat.add_zero,mu] using inv.outside) (by simp only [S]; omega) (by simp)
+    (by simpa only [Nat.add_zero,mu] using inv.outside) (by simp only [S]; omega_using []) (by simp)
   have numeq : num t.mem P.B P.W (aT0+i+2)=num s.mem P.B P.W aY := by
     change val32 _ _ _ _=_
     rw [value]
     split <;> rfl
   have rest := restU.trans (inv.rest.mono (by simp))
-  exact ⟨h.write1 keep (by simp [wJs,aT0]; omega) (by simp) rest.sp rest.rd rest.wr numeq (by simp),hu.rest inv.rest⟩
+  exact ⟨h.write1 keep (by simp [wJs,aT0]; omega_using [hi]) (by simp) rest.sp rest.rd rest.wr numeq (by simp),hu.rest inv.rest⟩
 
 private theorem St.ptabCopy {P : MP} {E : State → Prop} {A : State → Nat → Nat}
     {L : List Nat} {V : State → Nat → Nat} {LS : List Nat} (i : Nat) (hi : i<14)
@@ -161,15 +161,15 @@ theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (fios : Bool := false) :
     VP (TS P (14 - i)) (tabStep (fios := fios)) (fun σ s => TS P (13-i) σ s ∧ s.z=decide (13-i=0)) := by
   let V := fun (_ : State) => upd (fun _ => 0) sK (14 - i)
   refine VP.mono (F := St P (In P) (AT P i) LT V [sK]) ?_
-    (fun σ s h => by simpa only [TS, Nat.sub_sub_self (by omega : i ≤ 14)] using h.2)
+    (fun σ s h => by simpa only [TS, Nat.sub_sub_self (by omega_using [hi] : i ≤ 14)] using h.2)
     (fun _ _ h => h)
   simp only [tabStep, seqs]
   refine VP.seq (St.pmulY (fios := fios) (P := P) (A := AT P i) (L := LT.tail) (.inr rfl)
     (by decide) (by decide) (by decide) (by decide) (fun σ e => tv_lt e _) (fun σ e => e.x5)) ?_
   refine VP.seq (St.ptabCopy i hi (by simp) (by simp) (fun _ _ => rfl)) ?_
-  refine (St.pcnt (n := 13 - i) (by simp) (fun σ _ => by simp [V, upd]; omega) (by omega)).mono
+  refine (St.pcnt (n := 13 - i) (by simp) (fun σ _ => by simp [V, upd]; omega_using [hi]) (by omega_using [])).mono
     (fun _ _ h => h) fun σ s ⟨h, z⟩ => ?_
-  refine ⟨⟨by omega, h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, ?_⟩)
+  refine ⟨⟨by omega_using [], h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, ?_⟩)
     (fun d hd => ⟨by simp only [List.mem_singleton] at hd; simp [hd], by
       simp only [List.mem_singleton] at hd; subst d; simp only [upd_self]⟩)⟩,z⟩
   change upd (upd (AT P i σ) aY _) (aT0 + i + 2) _ j = _
@@ -177,16 +177,16 @@ theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (fios : Bool := false) :
       (mm (cOf P σ.mem) P.w (AT P i σ aY) (AT P i σ aX))) aY = tv P σ (i + 2) from rfl]
   rw [AT_step hi j hj]
   congr 1
-  omega
+  omega_using [hi]
 
 /-- The compact loop advances the completed prefix. -/
 theorem tab_loop {P : MP} (fios : Bool := false) :
     VP (TS P 14) (tabBuild (fios := fios)) (TS P 0) := by
   refine VP.loop (fun n => ?_) 13
   by_cases hn : n+1 ≤ 14
-  · have hi : 14-(n+1)<14 := by omega
-    have eq1 : 14-(14-(n+1))=n+1 := by omega
-    have eq2 : 13-(14-(n+1))=n := by omega
+  · have hi : 14-(n+1)<14 := by omega_using []
+    have eq1 : 14-(14-(n+1))=n+1 := by omega_using [hn]
+    have eq2 : 13-(14-(n+1))=n := by omega_using [hn]
     refine (tab_step (P := P) (14-(n+1)) hi (fios := fios)).mono ?_ ?_
     · intro σ s h
       simpa only [eq1] using h
@@ -195,7 +195,7 @@ theorem tab_loop {P : MP} (fios : Bool := false) :
       refine ⟨?_,fun h0 => h0 ▸ ts,fun _ => ts⟩
       show some (!s.z) = _
       rw [h.2,eq2]
-      by_cases h0 : n=0 <;> simp [h0] <;> omega
+      by_cases h0 : n=0 <;> simp [h0] <;> omega_using [h0]
   · exact VP.of_false fun _ _ h => hn h.1
 
 end VG.Proof.MillerRabin.Arm

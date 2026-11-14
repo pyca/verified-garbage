@@ -68,12 +68,12 @@ theorem lo_base (E : BitVec 32) (d : Nat) :
 
 /-- A region of the frame at `d ≥ 24` is outside `Lo E`. -/
 theorem lo_fr (E : BitVec 32) {d l : Nat} (hd : 24 ≤ d) (hl : d + l ≤ 256) : (Lo E).Disjoint (fr E d l) := by
-  have h := Offset.base_disjoint (E.setWidth 64 - 24) (k := 48) (e := 24 + d) (n := l) (by omega) (by omega)
+  have h := Offset.base_disjoint (E.setWidth 64 - 24) (k := 48) (e := 24 + d) (n := l) (by omega_using [hd]) (by omega_using [hl])
   rwa [lo_base] at h
 
 /-- The outgoing arguments are in `Lo E`. -/
 theorem args_lo (E : BitVec 32) {k : Nat} (hk : k ≤ 24) : Region.Sub ⟨E.setWidth 64, k⟩ (Lo E) := by
-  have h := Offset.sub_base (E.setWidth 64 - 24) (d := 24 + 0) (n := k) (k := 48) (by omega)
+  have h := Offset.sub_base (E.setWidth 64 - 24) (d := 24 + 0) (n := k) (k := 48) (by omega_using [hk])
   rwa [lo_base, BitVec.add_zero] at h
 
 /-- What a call writes below `E` is in `Lo E`. -/
@@ -91,16 +91,16 @@ namespace Kit
 variable (hk : Kit E scr n ins outs)
 include hk
 
-theorem frame : E.toNat + 256 ≤ 2 ^ 32 := by have := hk.fit; omega
+theorem frame : E.toNat + 256 ≤ 2 ^ 32 := by have := hk.fit; omega_using [this]
 
 theorem fr_addr {d : Nat} (hd : d < 256) : (E + BitVec.ofNat 32 d).setWidth 64 = E.setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by have := hk.frame; omega)
+  addr_eq (by have := hk.frame; omega_using [hd, this])
 
 theorem fr_fit {d l : Nat} (hd : d + l ≤ 256) : (E + BitVec.ofNat 32 d).toNat + l ≤ 2 ^ 32 := by
   have := hk.fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (a := E.toNat + d) (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]),
+    Nat.mod_eq_of_lt (a := E.toNat + d) (by omega_using [hd, this])]
+  omega_using [hd, this]
 
 theorem scr_stk : (Whole.STK E).Disjoint (SCR scr) := hk.ko _ hk.so
 
@@ -110,11 +110,11 @@ theorem lo_scr : (Lo E).Disjoint (SCR scr) := hk.scr_stk.sub_left (lo_sub E)
 stack below the frame. -/
 theorem callee_room : 20 ≤ (E - 4).toNat := by
   have := hk.below
-  rw [BitVec.toNat_sub_of_le (by change (4 : BitVec 32).toNat ≤ E.toNat; simp; omega)]
-  simp; omega
+  rw [BitVec.toNat_sub_of_le (by change (4 : BitVec 32).toNat ≤ E.toNat; simp; omega_using [this])]
+  simp; omega_using [this]
 
 theorem callee_lo : Region.Sub ⟨(E - 4).setWidth 64 - 20#64, 20⟩ (Lo E) := by
-  have h4 : 4 ≤ E.toNat := by have := hk.below; omega
+  have h4 : 4 ≤ E.toNat := by have := hk.below; omega_using [this]
   have e : (E - 4).setWidth 64 - 20#64 = E.setWidth 64 - 24 := by
     rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.Taint.sub_setWidth h4, BitVec.sub_sub]
     rfl
@@ -167,14 +167,14 @@ theorem setup_ok (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀)
       Frame [⟨E.setWidth 64, 24⟩] t.mem u.mem ∧
       (∀ j (hj : j < vs.length), Whole.slots E u j = argVal E val (vs[j]'hj)) ∧
       (∀ r, r ≠ .eax → u.gpr r = t.gpr r) := by
-  refine WP.mono (VG.Proof.Ed25519.X86.Whole.setup_ok (n := n) hc.esp (by have := hk.fit; omega)
-    (hk.readable hc) (by rw [hc.wr]; exact List.mem_cons_self) (by omega) hv)
+  refine WP.mono (VG.Proof.Ed25519.X86.Whole.setup_ok (n := n) hc.esp (by have := hk.fit; omega_using [this])
+    (hk.readable hc) (by rw [hc.wr]; exact List.mem_cons_self) (by omega_using [hn]) hv)
     fun u ⟨hu, hft, hvals⟩ => ?_
   have hf24 : Frame [⟨E.setWidth 64, 24⟩] t.mem u.mem :=
     hft.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, by
-        simpa only [Nat.mul_zero, BitVec.add_zero] using Region.sub_prefix (by omega)⟩
+        simpa only [Nat.mul_zero, BitVec.add_zero] using Region.sub_prefix (by omega_using [hn])⟩
   have hcu : Whole.Ctx E g m₀ ins outs u := by
     refine hc.of_frame hu.rd hu.wr hu.esp ?_ hf24 ?_
     · intro r hr _
@@ -187,17 +187,17 @@ theorem setup_ok (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀)
   refine ⟨hcu, hf24, fun j hj => ?_, hu.regs⟩
   have e := hvals j hj
   simp only [Nat.zero_add] at e
-  rw [addr_eq (by have := hk.frame; omega)] at e
+  rw [addr_eq (by have := hk.frame; omega_using [hn, hj, this])] at e
   rw [Whole.slots, e]
   have := hk.value_eq hc ha (hv _ (List.getElem_mem hj))
-  rw [VG.Proof.Ed25519.X86.Whole.value_congr (n := n) (by have := hk.fit; omega) (hv _ (List.getElem_mem hj))
+  rw [VG.Proof.Ed25519.X86.Whole.value_congr (n := n) (by have := hk.fit; omega_using [this]) (hv _ (List.getElem_mem hj))
     (Frame.refl _ _)] at this
   exact this
 
 /-- A call's argument, from the outgoing slots. -/
 theorem call_arg (hc : Whole.Ctx E g m₀ ins outs t) {j : Nat} (hj : j < 6) :
     arg t.callEntry j = Whole.slots E t j :=
-  Whole.call_arg hc.esp hk.below hk.frame (by omega)
+  Whole.call_arg hc.esp hk.below hk.frame (by omega_using [hj])
 
 end Kit
 

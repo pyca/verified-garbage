@@ -186,7 +186,7 @@ theorem RelS.of_rel48 {w₀ : W} {f g : Nat → HE} {w : W} (h : Rel w₀ f w) (
   simp only [eq48, List.all_eq_true, List.mem_range, beq_iff_eq] at e
   apply Vector.ext; intro i hi
   simp only [blk, Vector.getElem_ofFn]
-  rw [← h, e _ (by omega)]
+  rw [← h, e _ (by omega_using [hk, hi])]
   exact hg i hi
 
 theorem cols3_check : eq48 (cols3H.foldl hstepE vars) (colsE (colsE (colsE vars 0) 1) 2) = true := by
@@ -199,24 +199,24 @@ theorem dr3_words (w : W) {k : Nat} (hk : k < 3) :
   rw [List.foldl_append]
   have c0 : RelS w (colsE (colsE (colsE vars 0) 1) 2) 0 _ :=
     (relS_vars w 0).cols.congr fun i hi => by
-      rw [colsE_other _ (by omega), colsE_other _ (by omega)]
+      rw [colsE_other _ (by omega_using [hi]), colsE_other _ (by omega_using [hi])]
   have c1 : RelS w (colsE (colsE (colsE vars 0) 1) 2) 1 _ :=
-    (((relS_vars w 1).congr fun i hi => colsE_other _ (by omega)).cols).congr fun i hi =>
-      colsE_other _ (by omega)
+    (((relS_vars w 1).congr fun i hi => colsE_other _ (by omega_using [])).cols).congr fun i hi =>
+      colsE_other _ (by omega_using [hi])
   have c2 : RelS w (colsE (colsE (colsE vars 0) 1) 2) 2 _ :=
     ((relS_vars w 2).congr fun i hi => by
-      rw [colsE_other _ (by omega), colsE_other _ (by omega)]).cols
+      rw [colsE_other _ (by omega_using []), colsE_other _ (by omega_using [])]).cols
   let w' := cols3H.foldl hstep w
   have d0 : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 0 _ :=
     (relS_vars w' 0).diags.congr fun i hi => by
-      rw [diagsE_other _ (by omega), diagsE_other _ (by omega)]
+      rw [diagsE_other _ (by omega_using [hi]), diagsE_other _ (by omega_using [hi])]
   have d1 : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 1 _ :=
-    (((relS_vars w' 1).congr fun i hi => diagsE_other _ (by omega)).diags).congr fun i hi =>
-      diagsE_other _ (by omega)
+    (((relS_vars w' 1).congr fun i hi => diagsE_other _ (by omega_using [])).diags).congr fun i hi =>
+      diagsE_other _ (by omega_using [hi])
   have d2 : RelS w' (diagsE (diagsE (diagsE vars 0) 1) 2) 2 _ :=
     ((relS_vars w' 2).congr fun i hi => by
-      rw [diagsE_other _ (by omega), diagsE_other _ (by omega)]).diags
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
+      rw [diagsE_other _ (by omega_using []), diagsE_other _ (by omega_using [])]).diags
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl
   · rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check (by decide) d0,
       RelS.of_rel48 ((rel_vars w).foldl cols3H) cols3_check (by decide) c0, innerBlock_eq]
   · rw [RelS.of_rel48 ((rel_vars w').foldl diags3H) diags3_check (by decide) d1,
@@ -230,16 +230,16 @@ open VG.Impl.ChaCha20.X86_64.Avx512 (zreg)
 open VG.Proof.ChaCha20.X86_64.Avx512 (zreg_xidx xidx_zreg)
 
 theorem hy3_wordsOf (s : State) : HY3 (wordsOf s) s := fun r l q _ _ hq => by
-  simp only [wordsOf, show (4 * xidx r + q) / 4 = xidx r by omega,
-    show (4 * xidx r + q) % 4 = q by omega, zreg_xidx]
+  simp only [wordsOf, show (4 * xidx r + q) / 4 = xidx r by omega_using [hq],
+    show (4 * xidx r + q) % 4 = q by omega_using [hq], zreg_xidx]
 
 theorem hb_of3 {S : Nat} {ws : Nat → W} {s : State} (h : HY3 ws s) {vs : Nat → CState}
     (hv : ∀ k < S, ∀ l < 2, blk (ws l) k = vs (2 * k + l)) (hS : S ≤ 3) : HB S vs s := by
   intro k hk l hl i hi
-  rw [h _ l _ (by rw [xidx_zreg _ (by omega)]; omega) hl (Nat.mod_lt _ (by decide)),
-    xidx_zreg _ (by omega), ← hv k hk l hl]
+  rw [h _ l _ (by rw [xidx_zreg _ (by omega_using [hS, hk, hi])]; omega_using [hS, hk, hi]) hl (Nat.mod_lt _ (by decide)),
+    xidx_zreg _ (by omega_using [hS, hk, hi]), ← hv k hk l hl]
   simp only [blk, Vector.getElem_ofFn]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem doubleRound3_ok {vs : Nat → CState} {s : State} (h : HB 3 vs s) (hm : YM3 s) :
     WP isa (.block doubleRound3) s fun s' =>

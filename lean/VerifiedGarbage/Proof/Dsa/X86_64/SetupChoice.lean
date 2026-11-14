@@ -21,15 +21,15 @@ theorem setup_top {s : State} {B : Addr} {w m : Nat} (hw : 2 ≤ w)
   have hs : m = m % 2 ^ (64 * (w - 1)) +
       2 ^ (64 * (w - 1)) * (word s.mem B (slot w aN + 8 * (w - 1))).toNat := by
     have e : wv s.mem B (slot w aN) (w - 1 + 1) = m := by
-      rw [Nat.sub_add_cancel (by omega : 1 ≤ w)]; exact hn
+      rw [Nat.sub_add_cancel (by omega_using [hw] : 1 ≤ w)]; exact hn
     rw [wv] at e
     have hlt := wv_lt s.mem B (slot w aN) (w - 1)
     rw [← e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
   have hP := Nat.two_pow_pos (64 * (w - 1))
   have := Nat.mod_lt m hP
   rw [Nat.div_eq_of_lt_le (k := (word s.mem B (slot w aN + 8 * (w - 1))).toNat) ?_ ?_]
-  · rw [Nat.mul_comm]; omega
-  · rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]; omega
+  · rw [Nat.mul_comm]; omega_using [hs]
+  · rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]; omega_using [hs]
 
 theorem setupBases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) :
@@ -42,8 +42,8 @@ theorem setupBases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       (hk.gpr (by decide)).trans hg.rdi, hm ▸ hg.hdr⟩, h12, h10, hm, hk⟩
   unfold Arithmetic.setupBases
   xrun [State.ea, hdr, hg.rdi, hdrOff, hg.hdr.hw, hg.hdr.harr aN (by decide),
-    hg.scr.ld (show 8 * sW + 8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega),
-    hg.scr.ld (show 8 * sArr aN + 8 ≤ Z by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega)]
+    hg.scr.ld (show 8 * sW + 8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this]),
+    hg.scr.ld (show 8 * sArr aN + 8 ≤ Z by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega_using [hZ, this])]
 
 theorem setupTest_ok {s : State} {B : Addr} {Z w m : Nat} {minv : BitVec 64}
     (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w)
@@ -56,9 +56,9 @@ theorem setupTest_ok {s : State} {B : Addr} {Z w m : Nat} {minv : BitVec 64}
     t.zf = some (decide (m / 2 ^ (64 * (w - 1)) = 0)) ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨⟨hz, hm⟩, hk⟩ => ⟨hz, hm, hk⟩
   unfold Arithmetic.setupTest
-  xrun [State.ea, ix, addrm8 h10 h12 (by omega),
+  xrun [State.ea, ix, addrm8 h10 h12 (by omega_using [hw]),
     hg.scr.ld (show slot w aN + 8 * (w - 1) + 8 ≤ Z by
-      have := slot_le (w := w) (show aN < 8 by decide); omega)]
+      have := slot_le (w := w) (show aN < 8 by decide); omega_using [hZ, this])]
   rw [← setup_top hw hn]
   simp only [VG.Proof.Bignum.word, BitVec.and_self]
   apply Bool.eq_iff_iff.mpr
@@ -74,12 +74,12 @@ theorem constants_ok (M : Mont) {s : State} {B : Addr} {Z w m : Nat} {minv : Bit
       Good t B Z w minv ∧ wv t.mem B (slot w aOne) w = 1 ∧
       wv t.mem B (slot w aR2) w = 2 ^ (128 * w) % m ∧
       Frm B ((slot w aOne, 8 * (w + 2)) :: r2Ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
   unfold Arithmetic.constants
-  refine WP.seq (WP.mono (one_ok hg hZ hw (by omega) (by decide)) fun u ⟨hu, hu1, hfu, hku⟩ => ?_)
+  refine WP.seq (WP.mono (one_ok hg hZ hw (by omega_using [hw48]) (by decide)) fun u ⟨hu, hu1, hfu, hku⟩ => ?_)
   have un := (hfu.wv_of_not_mem (show aN < 8 by decide) (by decide) hnZ).trans hn
   have ui : ((word u.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hfu.word0_of_not_mem (by decide) (by decide) hnZ (by omega)]; exact hinv
+    rw [hfu.word0_of_not_mem (by decide) (by decide) hnZ (by omega_using [hw])]; exact hinv
   refine WP.seq (WP.mono (setupBases_ok hu hZ) fun v ⟨hv, h12, h10, hvm, hkv⟩ => ?_)
   have vn : wv v.mem B (slot w aN) w = m := hvm ▸ un
   refine WP.seq (WP.mono (setupTest_ok hv hZ hw vn h12 h10) fun z ⟨hz, hzm, hkz⟩ => ?_)
@@ -104,12 +104,12 @@ theorem constants_ok (M : Mont) {s : State} {B : Addr} {Z w m : Nat} {minv : Bit
     have hne := of_decide_eq_false (he.trans hc)
     by_contra h
     exact hne (Nat.div_eq_of_lt (by omega))
-  refine WP.mono (R2w.choice_ok M hgZ hZ hw (by omega) zn
+  refine WP.mono (R2w.choice_ok M hgZ hZ hw (by omega_using [hw48]) zn
     (by rw [hzm, hvm]; exact ui) ((hkz.gpr (by decide)).trans h12)
     ((hkz.gpr (by decide)).trans h10) hodd hlo) fun t ⟨ht, hl, hr, hf, hk⟩ => finish t ⟨ht, ?_, hf, hk⟩
   rw [Nat.mod_eq_of_lt hl] at hr
   rw [← Nat.pow_add] at hr
-  rw [show 64 * w + 64 * w = 128 * w by omega] at hr
+  rw [show 64 * w + 64 * w = 128 * w by omega_using []] at hr
   exact hr
 
 end VG.Proof.Dsa.X86_64

@@ -28,7 +28,7 @@ abbrev wAt (p : Addr) (i : Nat) : Addr := p + BitVec.ofNat 64 (8 * i)
 
 theorem wAt_wAt (D : Addr) (a i : Nat) : wAt (wAt D a) i = wAt D (a + i) := by
   simp only [wAt, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem cnt_sub (m : Nat) (h : 1 ≤ m) : BitVec.ofNat 64 m - 1 = BitVec.ofNat 64 (m - 1) := by
   have e : (1 : BitVec 64) = BitVec.ofNat 64 1 := rfl
@@ -71,7 +71,7 @@ structure CopyPost (A B : Addr) (n : Nat) (s₀ s : State) : Prop where
 
 theorem wAt_in {p : Addr} {i n : Nat} (hi : i < n) (hn : 8 * n < 2 ^ 64) :
     (⟨p, 8 * n⟩ : Region).Contains (wAt p i) 8 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_using [hi]) (by omega_using [hi, hn])
 
 theorem add_ofNat_zero (a : Addr) : a + BitVec.ofNat 64 0 = a := by simp
 

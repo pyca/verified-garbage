@@ -43,7 +43,7 @@ theorem checked_optional (p : CdP) (s : State) (h : GeneratorChecked p s ∧ isa
   exact WP.mono (leaveQ_ok (hw.mem.ctx hd)
     (hb.hdr (sDomLen, BitVec.ofNat 64 p.dl) (by simp [CdP.headers]))
     (hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]))
-    (by rcases hdl with h | h <;> omega) (by rcases hdl with h | h <;> omega))
+    (by rcases hdl with h | h <;> omega_using [h]) (by rcases hdl with h | h <;> omega_using [hk', h]))
     fun _ ⟨hd', _, hz, hmem, k⟩ => ⟨mi, hw.keep hmem k, hd', hm, hz⟩
 
 theorem optional_inner (p : CdP) (s : State) (h : Optional p s ∧ isa.eval .e s = some false) :
@@ -52,7 +52,7 @@ theorem optional_inner (p : CdP) (s : State) (h : Optional p s ∧ isa.eval .e s
   have hn : ¬p.dl = 2 * p.k := by
     have hb : decide (p.dl = 2 * p.k) = false := by simpa only [eval, hz, Option.some.injEq] using he
     exact of_decide_eq_false hb
-  have hq : p.dl = 3 * p.k := by rcases hw.base.dl with h | h <;> omega
+  have hq : p.dl = 3 * p.k := by rcases hw.base.dl with h | h <;> omega_arith
   exact WP.mono (hw.enter hd) fun _ ⟨hw', hd', _⟩ => ⟨⟨mi, hw', hd', hm⟩, hq⟩
 
 private theorem withQ_eq (M : Mont) (E : CrtExpL M) (R : R2Impl M) :

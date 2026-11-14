@@ -41,14 +41,14 @@ structure ECtx (m : Mem) (B : Addr) (w c : Nat) : Prop where
 theorem ECtx.of_frm {m m' : Mem} {B : Addr} {w c : Nat} {rs : List (Nat × Nat)} (h : ECtx m B w c)
     (hf : Frm B rs m m') (hd : ∀ r ∈ rs, slot w aE + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aE)
     (hn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64) : ECtx m' B w c :=
-  ⟨by rw [hf.wv_eq (fun r hr => by have := hd r hr; omega) (by omega)]; exact h.e,
-    by rw [hf.word_eq (fun r hr => by have := hd r hr; omega) (by omega)]; exact h.l⟩
+  ⟨by rw [hf.wv_eq (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hn])]; exact h.e,
+    by rw [hf.word_eq (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hn])]; exact h.l⟩
 
 theorem aE_fits {B : Addr} {Z w : Nat} (hd : MrDims B Z w) : slot w aE + 8 * (w + 2) ≤ Z := by
   have h := hd.x
   have e1 : slot w aRm1 = 256 + 26 * (8 * (w + 2)) := rfl
   have e2 : slot w aE = 256 + 24 * (8 * (w + 2)) := rfl
-  omega
+  omega_using [h, e1, e2]
 
 /-- What a squaring changes. -/
 def sqRanges (w : Nat) : List (Nat × Nat) :=
@@ -149,7 +149,7 @@ theorem mrSq_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
 theorem sigK_and (j : Nat) (hj : 1 ≤ j ∧ j ≤ 3) {k : Nat} (hk : k < 64) :
     (sigK j &&& BitVec.twoPow 64 k = 0) = ¬ (j < sigOf k) := by
   rw [BitVec.and_comm]
-  rcases (by omega : j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl
+  rcases (by omega_using [hj] : j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl
   · exact sig_mask1 k hk
   · exact sig_mask2 k hk
   · exact sig_mask3 k hk

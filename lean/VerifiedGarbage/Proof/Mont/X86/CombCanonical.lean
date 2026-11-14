@@ -38,9 +38,9 @@ theorem context_canonical {L : Impl.Dsa.FixedBaseComb.Layout} {m g : Nat} {base 
       Proof.Dsa.FixedBaseComb.context L m g := by
   have size : Proof.Dsa.FixedBaseComb.contextWords L=L.n+(L.n+32*L.n) := by
     unfold Proof.Dsa.FixedBaseComb.contextWords Spec.Rsa.FixedBaseComb.entries Spec.Rsa.FixedBaseComb.teeth
-    omega
+    omega_using []
   rw [size,wordsAt_append,wordsAt_append,wordsAt_canonical,wordsAt_canonical,P,R]
-  have addr : L.context+8*L.n+8*L.n=L.context+16*L.n := by omega
+  have addr : L.context+8*L.n+8*L.n=L.context+16*L.n := by omega_using []
   rw [addr,T.canonical]
   simp only [Proof.Dsa.FixedBaseComb.context,List.append_assoc]
 
@@ -51,16 +51,16 @@ theorem table_of_context {L : Impl.Dsa.FixedBaseComb.Layout} {m g : Nat} {base :
     TableAt L.n L.context m g (32*L.e) base (fun _ => True) mem := by
   have size : Proof.Dsa.FixedBaseComb.contextWords L=2*L.n+32*L.n := by
     unfold Proof.Dsa.FixedBaseComb.contextWords Spec.Rsa.FixedBaseComb.entries Spec.Rsa.FixedBaseComb.teeth
-    omega
+    omega_using []
   have lists := congrArg (List.drop (2*L.n)) H
   rw [size,wordsAt_append,List.drop_left' (by simp only [Spec.Rsa.wordsAt,List.length_map,List.length_range])] at lists
   unfold Proof.Dsa.FixedBaseComb.context at lists
-  rw [List.drop_left' (by simp only [List.length_append,Spec.Rsa.toWords,List.length_map,List.length_range]; omega)] at lists
-  have addr : L.context+8*(2*L.n)=L.context+16*L.n := by omega
+  rw [List.drop_left' (by simp only [List.length_append,Spec.Rsa.toWords,List.length_map,List.length_range]; omega_using [])] at lists
+  have addr : L.context+8*(2*L.n)=L.context+16*L.n := by omega_using []
   rw [addr] at lists
   intro j hj _
   have jn : j*L.n+L.n≤32*L.n := by
-    have := Nat.mul_le_mul_right L.n (show j+1≤32 by omega)
+    have := Nat.mul_le_mul_right L.n (show j+1≤32 by omega_using [hj])
     simpa only [Nat.add_mul,Nat.one_mul] using this
   have block := congrArg (fun l : List (BitVec 64) => (l.drop (j*L.n)).take L.n) lists
   rw [wordsAt_slice _ _ _ _ _ _ jn,VG.Proof.Rsa.FixedBaseComb.table_entry _ _ _ _ _ hj] at block

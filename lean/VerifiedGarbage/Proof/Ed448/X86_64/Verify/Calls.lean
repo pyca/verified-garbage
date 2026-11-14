@@ -64,23 +64,23 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 
 /-- The return address of a call from the frame, apart from `scratch`. -/
 theorem ret_x (hL : L.Ok) : Region.Disjoint ⟨L.B + BitVec.ofNat 64 8, 8⟩ L.SCR := by
-  have := hL.stk_x (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega)
+  have := hL.stk_x (d := 8) (n := 8) (e := 0) (k := 8192) (by omega_using []) (by omega_using [])
   simpa only [x0] using this
 
 /-- `k`, apart from `scratch`. -/
 theorem k_x' (hL : L.Ok) : Region.Disjoint ⟨L.K, 57⟩ L.SCR := by
-  have := hL.stk_x (d := 152) (n := 57) (e := 0) (k := 8192) (by omega) (by omega)
+  have := hL.stk_x (d := 152) (n := 57) (e := 0) (k := 8192) (by omega_using []) (by omega_using [])
   rw [K_eq]; simpa only [x0] using this
 
 theorem ret_k : Region.Disjoint ⟨L.B + BitVec.ofNat 64 8, 8⟩ ⟨L.K, 57⟩ := by
-  rw [K_eq]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  rw [K_eq]; exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
 
 theorem ret_h : Region.Disjoint ⟨L.B + BitVec.ofNat 64 8, 8⟩ ⟨L.H, 114⟩ := by
-  rw [H_eq]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  rw [H_eq]; exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
 
 theorem ret_r (hL : L.Ok) {r : Region} (hr : L.STK.Disjoint r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 8, 8⟩ r :=
-  hL.stk_r hr (by omega)
+  hL.stk_r hr (by omega_using [])
 
 theorem sp_ce {t : State} (hc : Ctx L g mx m₀ t) (rd wr : List Region) :
     (t.callEntry.withRegions rd wr).gpr .rsp = L.B + BitVec.ofNat 64 8 := by
@@ -109,16 +109,16 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
     simp only [Proof.Ed448.X86_64.scalarReduceLocal, g1, g2, g3, sp_ce hc1, State.withRegions_rd,
       State.withRegions_wr]
     refine ⟨trivial, trivial, ?_, ret_k, ret_x hL, k_x' hL, hL.nScr⟩
-    have := hL.stk_x (d := 32) (n := 114) (e := 0) (k := 8192) (by omega) (by omega)
+    have := hL.stk_x (d := 32) (n := 114) (e := 0) (k := 8192) (by omega_using []) (by omega_using [])
     rw [H_eq]; simpa only [x0] using this
   refine call_ok hL Proof.Ed448.X86_64.scalarReduce_ok reduce_nosp reduce_depth hc1 hpre
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨L.FR, by simp, within_off _ (by omega)⟩)
+      exact ⟨L.FR, by simp, within_off _ (by omega_using [])⟩)
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      exacts [.inr (within_off _ (by omega)), .inl (within_self _)])
+      exacts [.inr (within_off _ (by omega_using [])), .inl (within_self _)])
     fun s' hc' _ _ ⟨s₂, hm₂, _, hpost⟩ => ⟨hc', ?_⟩
   simp only [Proof.Ed448.X86_64.scalarReduceLocal, g1, g2, State.withRegions_mem, hm₂] at hpost
   rw [hpost]
@@ -141,11 +141,11 @@ theorem eq_cpre (hL : L.Ok) {u : State} (g1 : u.gpr .rdi = L.pk) (g2 : u.gpr .rs
     intro r hr
     simp only [hrd, hwr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · simpa using (hL.stk_r hL.kPk (d := 0) (n := 8) (by omega)).symm
-    · simpa using (hL.stk_r hL.kSig (d := 0) (n := 8) (by omega)).symm
+    · simpa using (hL.stk_r hL.kPk (d := 0) (n := 8) (by omega_using [])).symm
+    · simpa using (hL.stk_r hL.kSig (d := 0) (n := 8) (by omega_using [])).symm
     · rw [show L.K = L.B + BitVec.ofNat 64 (16 + 136) from add_add _ _ _]
-      exact Offset.disjoint_base _ (by omega) (by omega)
-    · simpa using (hL.stk_r hL.kScr (d := 0) (n := 8) (by omega)).symm
+      exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
+    · simpa using (hL.stk_r hL.kScr (d := 0) (n := 8) (by omega_using [])).symm
 
 /-- The arguments of `vg_ed448_verify_equation`. -/
 abbrev eqArgs : List Arg := [.slot fPk, .slot fSig, .sp fK, .slot fScr]
@@ -174,7 +174,7 @@ theorem equation_ok (hv : EqOk v) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ 
       rcases hr with rfl | rfl | rfl
       · exact ⟨L.PK, List.mem_append_left _ hL.inPk, within_self _⟩
       · exact ⟨L.SIG, List.mem_append_left _ hL.inSig, within_self _⟩
-      · exact ⟨L.FR, by simp, within_off _ (by omega)⟩)
+      · exact ⟨L.FR, by simp, within_off _ (by omega_using [])⟩)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact .inl (within_self _))

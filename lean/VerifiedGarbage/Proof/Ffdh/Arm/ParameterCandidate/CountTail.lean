@@ -28,30 +28,30 @@ theorem halfCountTail_ok {s : State} {base : BitVec 32} {capacity w count : Nat}
         t.z = decide (num s.mem (base + 96#32) (2 * w + 2) 29 % 2 = 0)) ∧
       Rest [.r0, .r1, .r12] s t := by
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 60#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.read (by decide)
   have write : InRegions s.wr (State.addr (s.sp + 60#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.write (by decide)
   let B := base + 96#32
   let d := arr (2 * w + 2) 29
   have nativeAddr : State.addr (B + BitVec.ofNat 32 d) = off (State.addr B) d :=
-    ready.addr (by have := ready.arr_fit (j := 29) (by decide); simp only [S] at this; omega)
+    ready.addr (by have := ready.arr_fit (j := 29) (by decide); simp only [S] at this; omega_using [this])
   have realRead : InRegions (s.rd ++ s.wr) (State.addr (B + BitVec.ofNat 32 d)) 4 := by
     rw [nativeAddr]
     rw [VG.Arm.addr_add (ready.baseShiftFits workspace)]
     unfold off
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, keyView_array]
-    exact workspace.read (by have := ready.arrayFit (j := 29) (by decide); omega)
+    exact workspace.read (by have := ready.arrayFit (j := 29) (by decide); omega_using [this])
   have stackSep : (⟨State.addr (s.sp + 60#32), 4⟩ : Region).Disjoint
       ⟨State.addr (B + BitVec.ofNat 32 d), 4⟩ := by
     have a : State.addr (B + BitVec.ofNat 32 d) = off (State.addr base) (Proof.Rsa.Mont.arrAt w 29) := by
       rw [nativeAddr, VG.Arm.addr_add (ready.baseShiftFits workspace)]
       unfold off
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, keyView_array]
-    rw [a, VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [a, VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact separate.sub_left (Offset.sub_base _ (by decide : 60 + 4 ≤ 72)) |>.sub_right
-      (Offset.sub_base _ (by have := ready.arrayFit (j := 29) (by decide); omega))
+      (Offset.sub_base _ (by have := ready.arrayFit (j := 29) (by decide); omega_using [this]))
   have lowUnchanged : (s.mem.writeW (State.addr (s.sp + 60#32)) (BitVec.ofNat 32 (count + 1))).readW
       (State.addr (B + BitVec.ofNat 32 d)) 32 = s.mem.readW (State.addr (B + BitVec.ofNat 32 d)) 32 :=
     Mem.readW_writeW_sep stackSep.symm (by decide)
@@ -69,7 +69,7 @@ theorem halfCountTail_ok {s : State} {base : BitVec 32} {capacity w count : Nat}
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]
     rw [← BitVec.toNat_inj, VG.Proof.Rsa.Arm.Keys.bv_and_one, nativeAddr,
-      ← VG.Proof.Rsa.Arm.Keys.num_mod2 s.mem B (by omega : 0 < 2 * w + 2)]
+      ← VG.Proof.Rsa.Arm.Keys.num_mod2 s.mem B (by omega_using [] : 0 < 2 * w + 2)]
     rfl
   refine withRest_all [.r0, .r1, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.halfCountTail VG.Impl.Ffdh.Arm.ParameterCandidate.save

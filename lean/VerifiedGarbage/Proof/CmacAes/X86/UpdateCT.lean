@@ -179,7 +179,7 @@ theorem loop_ct {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : u
     exact ⟨h0 ▸ l₁, by rw [← hN, ← h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : k + 1 ≠ N s₀ := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁⟩, ⟨by omega, l₂⟩⟩
+    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, ⟨by omega_using [hk, h0], l₁⟩, ⟨by omega_using [hN, hk, h0], l₂⟩⟩
 
 /-! ## The whole function -/
 

@@ -90,7 +90,7 @@ abbrev lay : Lay where
   C := 3440
 
 theorem lt_lay {d : Nat} (h : d < frameBytes + 56 + 68) : d < P.lay.F + 56 + P.lay.A := by
-  show d < frameBytes + 56 + (if P.pc then 76 else 68); split <;> omega
+  show d < frameBytes + 56 + (if P.pc then 76 else 68); split <;> omega_using [h]
 
 end EP
 

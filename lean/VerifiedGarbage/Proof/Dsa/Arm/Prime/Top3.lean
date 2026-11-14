@@ -58,7 +58,7 @@ theorem Bits.facts (hb : Bits bits) :
 
 theorem below_eq (h : 144 ≤ s.sp.toNat) {a : Nat} (ha : a ≤ 144) :
     State.addr (s.sp - BitVec.ofNat 32 a) = fB s + BitVec.ofNat 64 (144 - a) := by
-  rw [addr_sub' (by omega)]; exact Offset.sub_ofNat_eq _ ha
+  rw [addr_sub' (by omega_using [h, ha])]; exact Offset.sub_ofNat_eq _ ha
 
 theorem spP (h : CIn bits s) : State.addr (mkP bits s).sp = fB s + BitVec.ofNat 64 56 :=
   below_eq h.spLo (a := 88) (by decide)
@@ -78,7 +78,7 @@ theorem tFrame (h : CIn bits s) (o : PreOut bits s t) : Frame [cF s] s.mem (pcPu
   have f := pushed_frameA (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (s := t) (by
       rw [o.rest.sp]; show 56 ≤ (s.sp - BitVec.ofNat 32 32).toNat
-      rw [sub_toNat' (by have := h.spLo; omega)]; have := h.spLo; omega)
+      rw [sub_toNat' (by have := h.spLo; omega_using [this])]; have := h.spLo; omega_using [this])
   have e : belowA t.sp (4 * 14) = ⟨fB s + BitVec.ofNat 64 56, 56⟩ := by
     show (⟨State.addr (t.sp - BitVec.ofNat 32 56), 56⟩ : Region) = _
     rw [show t.sp - BitVec.ofNat 32 56 = (mkP bits s).sp from pushed_sp o, spP h]
@@ -103,11 +103,11 @@ theorem allocW (h : CIn bits s) (o : PreOut bits s t) {k : Nat} {v : BitVec 32} 
     rcases hk with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
   have ea : off (State.addr (mkP bits s).sp) (56 + k) = aA s + BitVec.ofNat 64 k := by
     show State.addr (mkP bits s).sp + BitVec.ofNat 64 (56 + k) = _
-    rw [spP h, aA_eq h, Offset.add_add, Offset.add_add, show 56 + (56 + k) = 112 + k by omega]
+    rw [spP h, aA_eq h, Offset.add_add, Offset.add_add, show 56 + (56 + k) = 112 + k by omega_using []]
   have f := pushed_frameA (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (s := t) (by
       rw [o.rest.sp]; show 56 ≤ (s.sp - BitVec.ofNat 32 32).toNat
-      rw [sub_toNat' (by have := h.spLo; omega)]; have := h.spLo; omega)
+      rw [sub_toNat' (by have := h.spLo; omega_using [this])]; have := h.spLo; omega_using [this])
   have e : belowA t.sp (4 * [Reg.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr].length) =
       ⟨fB s + BitVec.ofNat 64 56, 56⟩ := by
     show (⟨State.addr (t.sp - BitVec.ofNat 32 56), 56⟩ : Region) = _
@@ -118,7 +118,7 @@ theorem allocW (h : CIn bits s) (o : PreOut bits s t) {k : Nat} {v : BitVec 32} 
     (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     rw [aA_eq h, Offset.add_add]
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by decide)) (by decide)
+    exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hk']) (by decide)) (by decide)
   rw [ea]
   exact fr.trans (o.vals (k, v) hk)
 

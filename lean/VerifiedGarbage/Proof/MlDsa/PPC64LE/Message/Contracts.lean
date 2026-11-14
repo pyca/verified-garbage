@@ -100,7 +100,7 @@ theorem MSPre.subK {p : Params} {pr : Bool} {STK : Nat} {s : State} (h : MSPre p
   have := h.fk
   cases pr <;> simp only [kLS, Bool.false_eq_true, ↓reduceIte, Region.Contains] at ha this ⊢
   · exact ha
-  · simp only [preparedSecretKeyBytes] at this ⊢; omega
+  · simp only [preparedSecretKeyBytes] at this ⊢; omega_using [ha]
 
 theorem mspre_of {p : Params} {pr : Bool} {n : Nat} {s : State}
     (h : (msgSK p pr PPC64LE.abi (n + 1)).pre s) : MSPre p pr (n + 1) s := by
@@ -168,7 +168,7 @@ theorem MVPre.subK {p : Params} {pr : Bool} {STK : Nat} {s : State} (h : MVPre p
   have := h.fk
   cases pr <;> simp only [kLV, Bool.false_eq_true, ↓reduceIte, Region.Contains] at ha this ⊢
   · exact ha
-  · simp only [preparedPublicKeyBytes] at this ⊢; omega
+  · simp only [preparedPublicKeyBytes] at this ⊢; omega_using [ha]
 
 theorem mcpre_of {p : Params} {pr : Bool} {n : Nat} {s : State}
     (h : (msgVK p pr PPC64LE.abi (n + 1)).pre s) : MCPre p pr (n + 1) s := by

@@ -31,9 +31,9 @@ theorem arg_in {o : State} (A : KeySearchABI o) {i : Nat} (hi : i < 15) :
     (aR o).Contains (addr (o.gpr .esp) (4 + 4 * i)) 4 := by
   have hb := A.stackBound
   show (⟨argAddr o 0, 60⟩ : Region).Contains _ _
-  rw [addr_eq (by omega), show argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from
-    addr_eq (k := 4) (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [addr_eq (by omega_using [hi, hb]), show argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from
+    addr_eq (k := 4) (by omega_using [hb])]
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 /-- The state's word at `d` lies in the state's region. -/
 theorem st_in {o : State} (A : KeySearchABI o) {d : Nat} (hd : d + 4 ≤ 128) :
@@ -88,9 +88,9 @@ theorem keep_ok {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (A : KeySe
 theorem halves {m : Mem} {a : Addr} {k : Nat} (h : m.readW a 64 = BitVec.ofNat 64 k) (hk : k < 2 ^ 32) :
     m.readW a 32 = BitVec.ofNat 32 k ∧ m.readW (a + BitVec.ofNat 64 4) 32 = 0 := by
   refine ⟨(Mem.readW_lo32 h).trans ?_, (Mem.readW_hi32 h).trans ?_⟩ <;> apply BitVec.eq_of_toNat_eq
-  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  · simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using []
   · simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (by omega : k < 2 ^ 64), Nat.div_eq_of_lt hk]; rfl
+    rw [Nat.mod_eq_of_lt (by omega_using [hk] : k < 2 ^ 64), Nat.div_eq_of_lt hk]; rfl
 
 /-- The state's first three words, from the contract's precondition. -/
 theorem entry_words {o : State} (A : KeySearchABI o) :
@@ -102,10 +102,10 @@ theorem entry_words {o : State} (A : KeySearchABI o) :
   have e : ∀ d, d + 4 ≤ 128 → addr (arg o 12) d = argumentPointer o 12 + BitVec.ofNat 64 d :=
     fun d hd => Spill.addr_eq_of hS hd
   have k0 := halves (m := o.mem) (a := argumentPointer o 12) (k := (ofState o).keys)
-    (by simp only [ofState, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by have := A.keys; simp only [ofState]; omega)
+    (by simp only [ofState, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by have := A.keys; simp only [ofState]; omega_using [this])
   have k1 := halves (m := o.mem) (a := argumentPointer o 12 + 8) (k := (ofState o).scalars)
-    (by simp only [ofState, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by have := A.scalars; simp only [ofState]; omega)
-  have k2 := halves A.width (by have := A.pLen.2; unfold Spec.Ffdh.pLenValid at *; omega)
+    (by simp only [ofState, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by have := A.scalars; simp only [ofState]; omega_using [this])
+  have k2 := halves A.width (by have := A.pLen.2; unfold Spec.Ffdh.pLenValid at *; omega_using [])
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [e 0 (by decide), BitVec.add_zero]; exact k0.1
   · rw [e 4 (by decide)]; exact k0.2

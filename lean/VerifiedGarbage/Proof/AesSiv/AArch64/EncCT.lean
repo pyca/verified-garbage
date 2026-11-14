@@ -82,10 +82,10 @@ theorem EPub.comp_eq (hq : EPub s₀ s₀' A N) {i : Nat} (hi : i < N) : comp s�
   have r {d : Nat} (hd : d + 8 ≤ N * 16) : s₀.mem.readW (A + BitVec.ofNat 64 d) 64 =
       s₀'.mem.readW (A + BitVec.ofNat 64 d) 64 := by
     have e := Mem.read_congr (m := s₀.mem) (m' := s₀'.mem) (a := A + BitVec.ofNat 64 d) (n := 64 / 8)
-      fun j hj => by rw [Offset.add_add]; exact hq.desc (d + j) (by omega)
+      fun j hj => by rw [Offset.add_add]; exact hq.desc (d + j) (by omega_using [hd, hj])
     simp only [Mem.readW, e]
   unfold comp
-  rw [r (d := 16 * i) (by omega), r (d := 16 * i + 8) (by omega)]
+  rw [r (d := 16 * i) (by omega_using [hi]), r (d := 16 * i + 8) (by omega_using [hi])]
 
 /-- The save and S2V's first state. -/
 theorem start_rel (v : Proof.CmacAes.AArch64.UpdateImpl) (h : EPre s₀ C A P W D R N L)
@@ -209,13 +209,13 @@ theorem ads_rel (v : Proof.CmacAes.AArch64.UpdateImpl) (h : EPre s₀ C A P W D 
   · exact RelCT.of_false fun _ _ p => hc ⟨p.1, p.2.1⟩
   obtain ⟨rfl, hiN⟩ := hc
   refine (adBody_rel v h h' hq hiN).mono (fun _ _ p => p.2.2) fun a b p => ?_
-  have ea := eval_nonzero (s := a) (r := .x25) (x := N - (i + 1)) (by omega) p.1.x25
-  have eb := eval_nonzero (s := b) (r := .x25) (x := N - (i + 1)) (by omega) p.2.x25
+  have ea := eval_nonzero (s := a) (r := .x25) (x := N - (i + 1)) (by omega_using [hN]) p.1.x25
+  have eb := eval_nonzero (s := b) (r := .x25) (x := N - (i + 1)) (by omega_using [hN]) p.2.x25
   refine ⟨by rw [ea, eb], fun e => ?_, fun e => ?_⟩
-  · have he : i + 1 = N := by rw [ea] at e; simp at e; omega
+  · have he : i + 1 = N := by rw [ea] at e; simp at e; omega_using [hiN, e]
     subst he; exact p
-  · have he : i + 1 ≠ N := by rw [ea] at e; simp at e; omega
-    exact ⟨N - (i + 1), by omega, i + 1, rfl, by omega, p⟩
+  · have he : i + 1 ≠ N := by rw [ea] at e; simp at e; omega_using [e]
+    exact ⟨N - (i + 1), by omega_using [hiN], i + 1, rfl, by omega_using [hiN, he], p⟩
 
 /-- S2V of the associated data in both runs. -/
 theorem encS2v_rel (v : Proof.CmacAes.AArch64.UpdateImpl) (h : EPre s₀ C A P W D R N L)
@@ -316,7 +316,7 @@ theorem sivOut_rel {σ σ' : State} {C D P W T : Addr} {R L : Nat} (h : Env σ C
       (hr : Regs σ C D P W R L s) (hl : Slot W T s) :
       ∃ s', runBlock isa sivOut s = some s' ∧ s'.gpr .x19 = W ∧ s'.sp = σ.sp := by
     have inT (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (T + BitVec.ofNat 64 d) 8 := by
-      rw [hr.wr]; exact ⟨_, hTw, Offset.contains_base T hd (by have := wT; omega)⟩
+      rw [hr.wr]; exact ⟨_, hTw, Offset.contains_base T hd (by have := wT; omega_using [hd])⟩
     obtain ⟨s', run', -, g', sp', -, -⟩ := sivOut_ok hr.x19 hl (e.inRW hr.rd hr.wr (d := 248) (n := 8) (by decide))
       (e.inRW hr.rd hr.wr (d := 0) (n := 8) (by decide)) (e.inRW hr.rd hr.wr (d := 8) (n := 8) (by decide))
       (inT 0 (by decide)) (inT 8 (by decide))

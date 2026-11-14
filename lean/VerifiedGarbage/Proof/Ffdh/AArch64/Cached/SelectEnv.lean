@@ -79,9 +79,9 @@ theorem selectRowStep_ok {s0 t : State} {src dst : Addr} {mask : BitVec 64} {w j
  rintro v ⟨⟨memV,srcV,dstV⟩,restV⟩
  have srcWord : word t.mem src (8*j)=word s0.mem src (8*j) := by
   exact Mem.readW_congr fun b hb => h.frame (off src (8*j)+BitVec.ofNat 64 b)
-   (Or.inr (by have := separate j hj b hb;omega))
+   (Or.inr (by have := separate j hj b hb;omega_using [hj, this]))
  have dstWord : word t.mem dst (8*j)=word s0.mem dst (8*j) :=
-  h.frame.word (Or.inr (by omega)) (by omega)
+  h.frame.word (Or.inr (by omega_using [])) (by omega_using [fit, hj])
  have mem : v.mem=t.mem.writeW (off dst (8*j))
   (word s0.mem dst (8*j) ||| (word s0.mem src (8*j) &&& mask)) := by
   change v.mem=t.mem.writeW (off dst (8*j))
@@ -100,13 +100,13 @@ theorem selectRowStep_ok {s0 t : State} {src dst : Addr} {mask : BitVec 64} {w j
  · intro i hi
    rw [memU,mem]
    rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-   · rw [(writeW_outside t.mem dst _ (by omega)).word (by omega) (by omega)]
+   · rw [(writeW_outside t.mem dst _ (by omega_using [fit, hj])).word (by omega_using [hi]) (by omega_arith)]
      exact h.done i hi
    · exact word_writeW_self _ _ _ _
  · rw [memU,mem]
    intro x hx
-   rw [writeW_outside t.mem dst _ (by omega) x (by omega)]
-   exact h.frame x (by omega)
+   rw [writeW_outside t.mem dst _ (by omega_using [fit, hj]) x (by omega_using [hx])]
+   exact h.frame x (by omega_using [hx])
  · rw [countU,restV.gpr .x12 (by decide)]
 
 
@@ -126,7 +126,7 @@ theorem selectRow_ok (s : State) {src dst : Addr} {mask : BitVec 64} {w : Nat}
   ⟨Keep.refl _ _,by simpa [off] using source,by simpa [off] using output,
    fun i hi => by omega,Outside.refl _ _ _ _⟩
  unfold countLoop
- exact WP.mono (wp_countdown (by omega) positive (SelectRowInv s src dst mask)
+ exact WP.mono (wp_countdown (by omega_using [fit]) positive (SelectRowInv s src dst mask)
   (fun j hj t h _ => selectRowStep_ok fit hj readSource readOutput writeOutput separate choose h)
   init count) fun _ h => ⟨h.done,h.frame,h.source,h.output,h.keep⟩
 

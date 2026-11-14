@@ -22,16 +22,16 @@ theorem start_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start :
   have outf := ctx.accFits
   have inf := ctx.bFits
   refine WP.mono (productAt_ok s .r6 (Or.inl rfl) (ctx.workspace.congr h.rest.wr)
-    (by decide) (by omega) (by omega) h.bPtr h.outPtr) ?_
+    (by decide) (by omega_using [hi, inf]) (by omega_using [hi, outf]) h.bPtr h.outPtr) ?_
   rintro t ⟨value,mem,rest⟩
   simp only [Nat.add_zero] at value
-  have oldT := h.outside.w32 (d:=acc+4*(start+1)) (by omega) (by omega)
+  have oldT := h.outside.w32 (d:=acc+4*(start+1)) (by omega_using []) (by omega_using [hi, nowrap, outf])
   have oldB := h.outside.w32 (d:=b+4*(start+1))
-    (by rcases ctx.accB with h|h <;> omega) (by omega)
-  rw [h.scalar,show acc+4*start+4=acc+4*(start+1) by omega,oldT,oldB] at value
+    (by rcases ctx.accB with h|h <;> omega_arith) (by omega_using [hi, nowrap, inf])
+  rw [h.scalar,show acc+4*start+4=acc+4*(start+1) by omega_using [],oldT,oldB] at value
   have product : (t.gpr .r6).toNat+2^32*(t.gpr .r7).toNat=
       w32 s0.mem (State.addr base) (acc+4*(start+1))+
-      x.toNat*w32 s0.mem (State.addr base) (b+4*(start+1))+(s.gpr .r7).toNat := by omega
+      x.toNat*w32 s0.mem (State.addr base) (b+4*(start+1))+(s.gpr .r7).toNat := by omega_using [value]
   refine ⟨hi,Nat.le_refl _,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · rw [rest.gpr .r0 (by decide)];exact h.outPtr
   · rw [rest.gpr .r12 (by decide)];exact h.bPtr

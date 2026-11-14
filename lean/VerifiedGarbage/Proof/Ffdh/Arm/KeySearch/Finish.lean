@@ -40,9 +40,9 @@ theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.F
     rw [rest.wr, rest.sp, h.sp, h.wr]
     exact List.mem_cons_self
   have fit : u.sp.toNat + 24 ≤ 2 ^ 32 := by
-    rw [rest.sp, h.sp, FrameStack.sub_toNat' (by have := h.input.bounds.stackFits; have min := stackUse_min sampling; omega)]
+    rw [rest.sp, h.sp, FrameStack.sub_toNat' (by have := h.input.bounds.stackFits; have min := stackUse_min sampling; omega_using [this, min])]
     have := p.sp.isLt
-    omega
+    omega_using []
   refine WP.mono (restoreSlots_ok finishRestoreSlots u original.gpr (by decide) fit read
     (by intro e he
         simp only [finishRestoreSlots, List.mem_cons, List.not_mem_nil, or_false] at he
@@ -84,6 +84,6 @@ theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.F
   · rw [popped_mem, memT]
     exact (h.policy_after_used frame).trans h.policy
   · rw [popped_mem, memT, mem]
-    exact usedMem_words _ _ _ (by have := h.used_le; have := h.input.bounds.randomFits; omega)
+    exact usedMem_words _ _ _ (by have := h.used_le; have := h.input.bounds.randomFits; omega_arith)
 
 end VG.Proof.Ffdh.Arm.KeySearch

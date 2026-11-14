@@ -63,7 +63,7 @@ theorem spillStep_frame (i : Instr) (s s' : State)
     refine ⟨rfl, ?_⟩
     change Frame [spillRegion s] s.mem (s.mem.writeW (s.gpr .x2 + BitVec.ofNat 64 off) (s.gpr t))
     refine (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_
-    exact Offset.contains (s.gpr .x2) (by omega) (by omega) (by decide)
+    exact Offset.contains (s.gpr .x2) (by omega_using [hlo]) (by omega_using [hhi]) (by decide)
 
 theorem spillBlock_frame (is : List Instr) (s s' : State)
     (hsafe : is.all spillSafe = true) (he : runBlock isa is s = some s') :

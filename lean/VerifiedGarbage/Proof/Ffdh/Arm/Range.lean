@@ -27,10 +27,10 @@ theorem andFlag_ok (s : State) {base : BitVec 32} {len w : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have addr : State.addr (base + BitVec.ofNat 32 136) = off (State.addr base) 136 :=
-    VG.Arm.addr_add (by have := h.workspace.nowrap; omega)
-  have read := h.workspace.read (off := 136) (by omega)
+    VG.Arm.addr_add (by have := h.workspace.nowrap; omega_using [size, this])
+  have read := h.workspace.read (off := 136) (by omega_using [size])
   refine withRest_all [.r3, .r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.andFlag
   ffrun [h.ptr, addr, read, off]

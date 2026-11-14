@@ -43,14 +43,14 @@ theorem nIt_le (f : Nat → Bool) : ∀ M, nIt f M ≤ M
     unfold nIt
     split
     · exact Nat.le_refl _
-    · have := nIt_le f M; omega
+    · have := nIt_le f M; omega_using [this]
 
 theorem nIt_pos (f : Nat → Bool) : ∀ {M}, 0 < M → 0 < nIt f M
   | 0, h => absurd h (Nat.lt_irrefl _)
   | M + 1, _ => by
     unfold nIt
     split
-    · omega
+    · omega_using []
     · rename_i h
       cases M with
       | zero => exact absurd (by simp) h
@@ -62,7 +62,7 @@ theorem nIt_cont (f : Nat → Bool) : ∀ {M j}, j + 1 < nIt f M → f j = true
     unfold nIt at h
     split at h
     · rename_i ha
-      exact List.all_eq_true.mp ha j (List.mem_range.mpr (by omega))
+      exact List.all_eq_true.mp ha j (List.mem_range.mpr (by omega_using [h]))
     · exact nIt_cont f h
 
 theorem nIt_stop (f : Nat → Bool) : ∀ {M k}, k + 1 = nIt f M → k + 1 < M → f k = false
@@ -72,7 +72,7 @@ theorem nIt_stop (f : Nat → Bool) : ∀ {M k}, k + 1 = nIt f M → k + 1 < M �
     split at h
     · omega
     · rename_i ha
-      rcases (by omega : k + 1 < M ∨ k + 1 = M) with hk' | hk'
+      rcases (by omega_using [hk] : k + 1 < M ∨ k + 1 = M) with hk' | hk'
       · exact nIt_stop f h hk'
       · subst hk'
         -- `nIt f (k + 1) = k + 1`: either every iteration before `k` continued, or not.
@@ -83,7 +83,7 @@ theorem nIt_stop (f : Nat → Bool) : ∀ {M k}, k + 1 = nIt f M → k + 1 < M �
           rw [List.all_eq_true]
           intro j hj
           rw [List.mem_range] at hj
-          rcases (by omega : j < k ∨ j = k) with hj | rfl
+          rcases (by omega_using [hj] : j < k ∨ j = k) with hj | rfl
           · have h2 := h
             unfold nIt at h2
             split at h2
@@ -96,15 +96,15 @@ theorem nIt_next (f : Nat → Bool) {M k : Nat} (hk : k < nIt f M) :
     k + 1 < nIt f M ↔ f k = true ∧ k + 1 < M := by
   have hle := nIt_le f M
   constructor
-  · intro h; exact ⟨nIt_cont f h, by omega⟩
+  · intro h; exact ⟨nIt_cont f h, by omega_using [hle, h]⟩
   · rintro ⟨hf, hM⟩
     by_contra hn
-    have := nIt_stop f (show k + 1 = nIt f M by omega) hM
+    have := nIt_stop f (show k + 1 = nIt f M by omega_using [hk, hn]) hM
     rw [hf] at this; cases this
 
 /-- The iterations before one reached continued. -/
 theorem nIt_before (f : Nat → Bool) {M k : Nat} (hk : k < nIt f M) : ∀ j < k, f j = true :=
-  fun j hj => nIt_cont f (M := M) (by omega)
+  fun j hj => nIt_cont f (M := M) (by omega_using [hk, hj])
 
 /-- Two loops that continue alike as long as either does run as many iterations. -/
 theorem nIt_congr {f g : Nat → Bool} {N : Nat}
@@ -114,17 +114,17 @@ theorem nIt_congr {f g : Nat → Bool} {N : Nat}
   | zero => rfl
   | succ N ih =>
     unfold nIt
-    rw [ih (fun M hM => hfg M (by omega)) (fun M hM => hgf M (by omega))]
+    rw [ih (fun M hM => hfg M (by omega_using [hM])) (fun M hM => hgf M (by omega_using [hM]))]
     have e : (List.range N).all f = (List.range N).all g := by
       cases e : (List.range N).all f with
       | true =>
-        have := hfg N (by omega) fun j hj => List.all_eq_true.mp e j (List.mem_range.mpr hj)
+        have := hfg N (by omega_using []) fun j hj => List.all_eq_true.mp e j (List.mem_range.mpr hj)
         exact (List.all_eq_true.mpr fun j hj => this j (List.mem_range.mp hj)).symm
       | false =>
         cases e' : (List.range N).all g with
         | false => rfl
         | true =>
-          have := hgf N (by omega) fun j hj => List.all_eq_true.mp e' j (List.mem_range.mpr hj)
+          have := hgf N (by omega_using []) fun j hj => List.all_eq_true.mp e' j (List.mem_range.mpr hj)
           rw [List.all_eq_true.mpr fun j hj => this j (List.mem_range.mp hj)] at e
           cases e
     rw [e]
@@ -263,8 +263,8 @@ theorem signLeakT_take (hl : 32 ≤ sk.length) : (signLeakT p sk mu rnd).take 32
   have hρ : ρ = sk.take 32 := by rw [← skRho_eq p sk, e]
   dsimp only
   subst hρ
-  have hlen : (leakBytes (sk.take 32)).length = 32 := by rw [leakBytes_length, List.length_take]; omega
-  rw [List.take_append_of_le_length (by omega), List.take_of_length_le (by omega)]
+  have hlen : (leakBytes (sk.take 32)).length = 32 := by rw [leakBytes_length, List.length_take]; omega_using [hl]
+  rw [List.take_append_of_le_length (by omega_using [hlen]), List.take_of_length_le (by omega_using [hlen])]
 
 theorem rho_of_leak (hl : 32 ≤ sk.length) (hl' : 32 ≤ sk'.length)
     (h : signLeakT p sk mu rnd = signLeakT p sk' mu' rnd') : rhoV sk = rhoV sk' := by
@@ -295,15 +295,15 @@ theorem leak_iter (hp : ParamsOk p) (hb : BallF ballF) (h : leakV p sk mu rnd = 
           (maxBounds.sign - t) (p.ℓ * t)
   | 0, _, _ => ⟨fun _ h => absurd h (Nat.not_lt_zero _), by simpa using h⟩
   | t + 1, ht, hc => by
-    obtain ⟨hc', ih⟩ := leak_iter hp hb h (t := t) (by omega) fun j hj => hc j (by omega)
+    obtain ⟨hc', ih⟩ := leak_iter hp hb h (t := t) (by omega_using [ht]) fun j hj => hc j (by omega_using [hj])
     rw [show maxBounds.sign - t = (maxBounds.sign - (t + 1)) + 1 by
-      have : maxBounds.sign = 1000 := rfl; omega] at ih
+      have : maxBounds.sign = 1000 := rfl; omega_using [ht]] at ih
     obtain ⟨_, hrej, _⟩ := leakT_step ih
-    have c1 := hc t (by omega)
+    have c1 := hc t (by omega_using [])
     simp only [contV, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not] at c1
     obtain ⟨hr', hnext⟩ := hrej ⟨_, iterV_rej hp (hb _ _ c1.1) c1.2⟩
     refine ⟨fun j hj => ?_, by rw [show p.ℓ * (t + 1) = p.ℓ * t + p.ℓ by rw [Nat.mul_succ]]; exact hnext⟩
-    rcases (by omega : j < t ∨ j = t) with hj | rfl
+    rcases (by omega_using [hj] : j < t ∨ j = t) with hj | rfl
     · exact hc' j hj
     · obtain ⟨ct, hct⟩ := hr'
       change iterV p sk' mu' rnd' maxBounds (p.ℓ * j) = some (ct, none) at hct
@@ -337,15 +337,15 @@ theorem leak_iterF (hp : ParamsOk p) (hb : BallF ballF) (h : leakVF p sk mu rnd 
           (maxBounds.sign - t) (p.ℓ * t)
   | 0, _, _ => ⟨fun _ h => absurd h (Nat.not_lt_zero _), by simpa only [leakVF, Nat.sub_zero, Nat.mul_zero] using h⟩
   | t + 1, ht, hc => by
-    obtain ⟨hc', ih⟩ := leak_iterF hp hb h (t := t) (by omega) fun j hj => hc j (by omega)
+    obtain ⟨hc', ih⟩ := leak_iterF hp hb h (t := t) (by omega_using [ht]) fun j hj => hc j (by omega_using [hj])
     rw [show maxBounds.sign - t = (maxBounds.sign - (t + 1)) + 1 by
-      have : maxBounds.sign = 1000 := rfl; omega] at ih
+      have : maxBounds.sign = 1000 := rfl; omega_using [ht]] at ih
     obtain ⟨_, hrej, _⟩ := leakF_step ih
-    have c1 := hc t (by omega)
+    have c1 := hc t (by omega_using [])
     simp only [contV, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not] at c1
     obtain ⟨hr', hnext⟩ := hrej ⟨_, iterV_rej hp (hb _ _ c1.1) c1.2⟩
     refine ⟨fun j hj => ?_, by rw [show p.ℓ * (t + 1) = p.ℓ * t + p.ℓ by rw [Nat.mul_succ]]; exact hnext⟩
-    rcases (by omega : j < t ∨ j = t) with hj | rfl
+    rcases (by omega_using [hj] : j < t ∨ j = t) with hj | rfl
     · exact hc' j hj
     · obtain ⟨ct, hct⟩ := hr'
       change iterV p sk' mu' rnd' maxBounds (p.ℓ * j) = some (ct, none) at hct
@@ -375,7 +375,7 @@ theorem leak_at (hp : ParamsOk p) (hb : BallF ballF) (h : leakV p sk mu rnd = le
         (passV p sk mu rnd (p.ℓ * t) → hbitsV p sk mu rnd (p.ℓ * t) = hbitsV p sk' mu' rnd' (p.ℓ * t))) := by
   obtain ⟨_, ih⟩ := leak_iter hp hb h ht hc
   rw [show maxBounds.sign - t = (maxBounds.sign - (t + 1)) + 1 by
-    have : maxBounds.sign = 1000 := rfl; omega] at ih
+    have : maxBounds.sign = 1000 := rfl; omega_using [ht]] at ih
   obtain ⟨hct, _, htag⟩ := leakT_step ih
   change outTag (iterV p sk mu rnd maxBounds (p.ℓ * t)) = outTag (iterV p sk' mu' rnd' maxBounds (p.ℓ * t)) at htag
   have ect : ctV p sk mu rnd (p.ℓ * t) = ctV p sk' mu' rnd' (p.ℓ * t) := by simpa [signCommit_eq] using hct
@@ -397,8 +397,8 @@ theorem leak_at (hp : ParamsOk p) (hb : BallF ballF) (h : leakV p sk mu rnd = le
 /-- Two runs that leak the same run the same number of iterations. -/
 theorem itV_eq (hp : ParamsOk p) (hb : BallF ballF) (h : leakV p sk mu rnd = leakV p sk' mu' rnd') :
     itV p sk mu rnd ballF = itV p sk' mu' rnd' ballF :=
-  nIt_congr (fun M hM ha => (leak_iter hp hb h (t := M) (by show M < 1000; omega) ha).1)
-    (fun M hM ha => (leak_iter hp hb h.symm (t := M) (by show M < 1000; omega) ha).1)
+  nIt_congr (fun M hM ha => (leak_iter hp hb h (t := M) (by show M < 1000; omega_using [hM]) ha).1)
+    (fun M hM ha => (leak_iter hp hb h.symm (t := M) (by show M < 1000; omega_using [hM]) ha).1)
 
 end
 

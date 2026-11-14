@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The key schedule's halves, with shifts -/
 
@@ -16,10 +17,10 @@ theorem mask_shift (y : BitVec 64) (n : Nat) (hn : n ≤ 64) :
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, hj,
     decide_true, Bool.true_and]
   by_cases h : j < n
-  · simp (disch := omega) only [h, decide_true, show 64 - n + j < 64 by omega,
-      show ¬ 64 - n + j < 64 - n by omega, decide_false, Bool.not_false, Bool.true_and,
-      show 64 - n + j - (64 - n) = j by omega]
-  · simp only [h, decide_false, show ¬ 64 - n + j < 64 by omega, Bool.false_and]
+  · simp (disch := omega) only [h, decide_true, show 64 - n + j < 64 by omega_using [hn, h],
+      show ¬ 64 - n + j < 64 - n by omega_using [], decide_false, Bool.not_false, Bool.true_and,
+      show 64 - n + j - (64 - n) = j by omega_using []]
+  · simp only [h, decide_false, show ¬ 64 - n + j < 64 by omega_using [h], Bool.false_and]
 
 /-- A rotation of a 28-bit half, as the code computes it. -/
 theorem rot28_word (x : BitVec 28) (n : Nat) (hn : 1 ≤ n) (hn' : n < 28) :
@@ -32,8 +33,8 @@ theorem rot28_word (x : BitVec 28) (n : Nat) (hn : 1 ≤ n) (hn' : n < 28) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt hn']
   by_cases h : j < n
-  · simp (disch := omega) [h, hj, show j < 64 by omega, show 28 - n + j < 64 by omega]
-  · simp (disch := omega) [h, hj, show j < 64 by omega, show j - n < 64 by omega,
+  · simp (disch := omega) [h, hj, show j < 64 by omega_using [hj], show 28 - n + j < 64 by omega_using [hj]]
+  · simp (disch := omega) [h, hj, show j < 64 by omega_using [hj], show j - n < 64 by omega_using [hj],
       BitVec.getLsbD_of_ge]
 
 /-- C and D joined, as the code computes it. -/
@@ -44,8 +45,8 @@ theorem pack28_word (c d : BitVec 28) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_append, hj, decide_true, Bool.true_and]
   by_cases h : j < 28
-  · simp (disch := omega) [h, show j < 64 by omega]
-  · simp (disch := omega) [h, show j < 64 by omega, show j - 28 < 64 by omega,
+  · simp (disch := omega_arith) [h, show j < 64 by omega_using [hj]]
+  · simp (disch := omega) [h, show j < 64 by omega_using [hj], show j - 28 < 64 by omega_using [hj],
       BitVec.getLsbD_of_ge]
 
 end VG.Proof.TripleDes.RISCV64.Key

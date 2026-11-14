@@ -33,15 +33,15 @@ theorem mont_step (M : Mont) {s : State} {B : Addr} {Z w m : Nat} {minv : BitVec
   have valid : o < 8 ∧ a < 8 ∧ b < 8 ∧ o ≠ aN ∧ o ≠ aAcc ∧ o ≠ aTmp ∧
       a ≠ aAcc ∧ a ≠ aTmp ∧ b ≠ aAcc ∧ b ≠ aTmp := by
     simp only [MmUse, aR2, aY, aXm, aX, aOne, aN, aAcc, aTmp] at *
-    omega
+    omega_using [huse]
   obtain ⟨ho, ha, hb', hon, hoacc, hotmp, haacc, hatmp, hbacc, hbtmp⟩ := valid
   refine WP.mono (M.ok hc.good hZ hw hw' ho ha hb' hoacc hotmp haacc hatmp hbacc hbtmp hc.inverse
     (by rw [hc.modulus]; exact hb)) fun t ⟨hg, hlt, hval, hf, hk⟩ => ?_
-  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hc.good.scr.nowrap; omega
+  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hc.good.scr.nowrap; omega_using [hZ, this]
   have hnmem := hf.wv_of_not_mem (show aN < 8 by decide)
-    (by simp only [List.mem_cons, List.not_mem_nil, or_false]; unfold aN aAcc aTmp at *; omega) hnZ
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]; unfold aN aAcc aTmp at *; omega_using [hon]) hnZ
   have hnword := hf.word0_of_not_mem (show aN < 8 by decide)
-    (by simp only [List.mem_cons, List.not_mem_nil, or_false]; unfold aN aAcc aTmp at *; omega) hnZ (by omega)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]; unfold aN aAcc aTmp at *; omega_using [hon]) hnZ (by omega_using [hw])
   rw [hc.modulus] at hlt hval
   refine ⟨⟨hg, hnmem.trans hc.modulus, ?_⟩, hlt, hval, hf, hk⟩
   rw [hnword]
@@ -58,9 +58,9 @@ theorem productCore_ok (M : Mont) {s : State} {B : Addr} {Z w m a b : Nat} {minv
     WP isa (Arithmetic.productCore M.mm) s fun t =>
       ModCtx t B Z w minv m ∧ wv t.mem B (slot w aY) w = a * b % m ∧
       Arrays B w [aAcc, aTmp, aX, aXm, aY] s.mem t.mem ∧ Keep mmRegs s t := by
-  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hc.good.scr.nowrap; omega
+  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hc.good.scr.nowrap; omega_using [hZ, this]
   have hR := coprime_pow2 hodd (64 * w)
-  have hm0 : 0 < m := by omega
+  have hm0 : 0 < m := by omega_using [hm]
   unfold Arithmetic.productCore seqs
   refine WP.seq (WP.mono (mont_step M hc hZ hw hw' (by unfold MmUse; decide)
     (by rw [hR2]; exact Nat.mod_lt _ hm0)) fun s1 ⟨hc1, hl1, hv1, hf1, hk1⟩ => ?_)

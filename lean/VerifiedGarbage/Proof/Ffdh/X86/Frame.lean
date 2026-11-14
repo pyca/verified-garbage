@@ -129,7 +129,7 @@ theorem val_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : Be
       cases hy : a.y with
       | none => rw [hy] at hj; cases hj
       | some _ => rw [hy] at hj; cases hj; exact hb.plen) rfl rfl
-  | 10 => exact opt (fun j hj => by have := hb.x j hj; omega) rfl rfl
+  | 10 => exact opt (fun j hj => by have := hb.x j hj; omega_using [this]) rfl rfl
   | 11 => exact opt (o := a.x.map (· + 1)) (fun j hj => by
       cases hx : a.x with
       | none => rw [hx] at hj; cases hj
@@ -138,7 +138,7 @@ theorem val_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : Be
   | 13 => exact opt hb.ctx rfl rfl
   | 14 => exact zero rfl rfl
   | 15 => exact zero rfl rfl
-  | 16 => exact arg (by have := hb.ws; omega) rfl rfl
+  | 16 => exact arg (by have := hb.ws; omega_using [this]) rfl rfl
   | 17 => exact arg hb.ws rfl rfl
   | _ + 18 => exact zero rfl rfl
 
@@ -149,13 +149,13 @@ abbrev slotAddr (P : Addr) (i : Nat) : Addr := P + BitVec.ofNat 64 (4 + 4 * i)
 theorem frame76_store {t : State} {P : Addr} (hP : (t.gpr .esp).setWidth 64 = P)
     (hesp : (t.gpr .esp).toNat + 76 ≤ 2 ^ 32) (hfr : (⟨P, 76⟩ : Region) ∈ t.wr) {i : Nat} (hi : i < 18) :
     t.ea (slotOp i) = slotAddr P i ∧ InRegions t.wr (slotAddr P i) 4 := by
-  refine ⟨?_, ⟨_, hfr, Offset.contains_base _ (by omega) (by omega)⟩⟩
-  rw [slotOp, at_, ea_mk, addr_eq (by omega), hP]
+  refine ⟨?_, ⟨_, hfr, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩⟩
+  rw [slotOp, at_, ea_mk, addr_eq (by omega_using [hesp, hi]), hP]
 
 /-- A word of the frame, after a store to another. -/
 theorem frame76_other (m : Mem) (P : Addr) (v : BitVec 32) {i j : Nat} (h : i ≠ j) (hi : i < 18) (hj : j < 18) :
     (m.writeW (slotAddr P i) v).readW (slotAddr P j) 32 = m.readW (slotAddr P j) 32 :=
-  Mem.readW_writeW_sep (Offset.sep P (by omega) (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep P (by omega_using [h]) (by omega_using [hj]) (by omega_using [hi])) (by decide)
 
 /-- An argument at `esp` reads the same after changes to registers but `esp` and memory within
 regions apart from it. -/
@@ -177,10 +177,10 @@ theorem fill_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : B
       (∀ u, Keeps [.eax, .ecx] t u → Frame [⟨P, 76⟩] t.mem u.mem →
         (∀ i < c, u.mem.readW (slotAddr P i) 32 = synth a g i) → WP isa (.block is) u Q) →
       WP isa (.block ((List.range c).flatMap (piece a) ++ is)) t Q
-  | 0, _, _, _, k => k t (Keeps.refl _ _) (Frame.refl _ _) fun _ h => absurd h (by omega)
+  | 0, _, _, _, k => k t (Keeps.refl _ _) (Frame.refl _ _) fun _ h => absurd h (by omega_using [])
   | c + 1, hc, is, Q, k => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine fill_ok hb hP hesp hfr hr hargs c (by omega) fun u K F S => ?_
+    refine fill_ok hb hP hesp hfr hr hargs c (by omega_using [hc]) fun u K F S => ?_
     have hr' : ∀ j < n, readSrc u (.mem (argAt 19 j)) = some (g j) := by
       intro j hj
       rw [← hr j hj]
@@ -191,15 +191,15 @@ theorem fill_ok {t : State} {a : Args} {g : Nat → BitVec 32} {n : Nat} (hb : B
     have Pv : (v.gpr .esp).setWidth 64 = P := by rw [Kv.1 _ (by decide), K.1 _ (by decide), hP]
     have ev' : (v.gpr .esp).toNat + 76 ≤ 2 ^ 32 := by rw [Kv.1 _ (by decide), K.1 _ (by decide)]; exact hesp
     have wv : (⟨P, 76⟩ : Region) ∈ v.wr := by rw [Kv.2.2, K.2.2]; exact hfr
-    obtain ⟨ea, wr⟩ := frame76_store Pv ev' wv (i := c) (by omega)
+    obtain ⟨ea, wr⟩ := frame76_store Pv ev' wv (i := c) (by omega_using [hc])
     refine wp_storeS ea wr fun w M => ?_
     refine k w ((K.trans Kv).trans (M.keeps _)) ?_ fun i hi => ?_
     · rw [M.mem, mv]
       exact F.trans (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-        (Offset.contains_base _ (by omega) (by omega)))
+        (Offset.contains_base _ (by omega_using [hc]) (by omega_using [hc])))
     · rw [M.mem, mv]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      · rw [frame76_other _ _ _ (by omega) (by omega) (by omega), S i hi]
+      · rw [frame76_other _ _ _ (by omega_using [hi]) (by omega_using [hc]) (by omega_arith), S i hi]
       · rw [Mem.readW_writeW_self32, ev]
 
 end

@@ -38,7 +38,7 @@ abbrev keyW (s : State) (k : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr kp
 def MasksOk (s : State) : Prop := ∀ kv ∈ layerMasks, slotW s kv.1 = kv.2
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, keySlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, keySlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
   slots := by simp [sboxCfg]
   sep k _ j hj := by simp [sboxCfg] at hj
@@ -51,16 +51,16 @@ theorem xorBits_map_rows (W : Nat → BitVec 64) (S : Nat → BitVec 64) (hS : �
   | cons i l ih =>
     have hi := hl i List.mem_cons_self
     have hc : cpos i < 8 := Camellia.cpos_lt hi
-    have ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega
+    have ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega_arith
     simp only [List.map_cons, xorBits_cons, rowBits, List.foldr_cons] at ih ⊢
-    rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
+    rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
 
 /-- The frame of the S-box (its spills) keeps the slots from 48 on. -/
 theorem slot_above {m m' : Mem} {b : Addr} {n k : Nat} (hf : Frame [⟨b, 8 * n⟩] m m') (hk : n ≤ k)
     (hk' : k < 2 ^ 58) : m'.readW (wordAddr b k) 64 = m.readW (wordAddr b k) 64 :=
   hf.readW (r := ⟨wordAddr b k, 8⟩) (by simp only [Region.Contains]; simp) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base b (by omega) (by omega)) (by decide)
+      exact VG.Offset.disjoint_base b (by omega_using [hk]) (by omega_using [hk'])) (by decide)
 
 /-- A round, with the subkey at word `off` of `kp` and the other half at slot `d`. -/
 theorem round_ok {off d : Nat}

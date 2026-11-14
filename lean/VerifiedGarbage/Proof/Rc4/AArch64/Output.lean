@@ -24,13 +24,13 @@ theorem low_byte (K : BitVec 8) : ((bc K).extractLsb' 0 32).setWidth 8 = K := by
   simp only [vbyte, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, Nat.mul_zero,
     Nat.zero_add] at this
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
-    show i < 32 by omega, Nat.zero_add]
+    show i < 32 by omega_using [hi], Nat.zero_add]
   exact this
 
 theorem xor_low_byte (a : BitVec 8) (w : BitVec 32) :
     ((a.setWidth 32 ^^^ w).setWidth 8) = a ^^^ w.setWidth 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp [hi, show i < 32 by omega]
+  simp [hi, show i < 32 by omega_using [hi]]
 
 /-- The scalar part: the byte's XOR, and the pointer and count. -/
 theorem outScalar_ok {s : State} {K : BitVec 8} (h7 : s.v .v7 = bc K)

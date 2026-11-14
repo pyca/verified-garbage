@@ -90,8 +90,8 @@ theorem loadS_L1 {v : VD} {s : State} (h : C0 v s) :
 theorem pre_src {s : State} {A : Addr} {n k : Nat} (hm : (⟨A, n⟩ : Region) ∈ s.rd)
     (hd : (⟨A, n⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩)
     (hn : n < 2 ^ 64) (hk : k ≤ n) {t : State} (hr : t.rd = s.rd) (hw : t.wr = s.wr) : Src t (layOf s) A k :=
-  ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm, Offset.contains_base _ (by omega) (by omega)⟩,
-    fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
+  ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm, Offset.contains_base _ (by omega_using [hk, hi]) (by omega_using [hn, hk, hi])⟩,
+    fun i hi => Pub.ne_of_disjoint hd (by omega_using [hn]) i (by omega_using [hk, hi])⟩
 
 theorem front_S0 {v : VD} {s : State} (h : C0 v s) :
     WP isa (.block Verify.entry) s fun t => S0 v t ∧ KY v := by
@@ -103,15 +103,15 @@ theorem front_S0 {v : VD} {s : State} (h : C0 v s) :
   refine WP.mono (front_ok hpre) fun t ⟨⟨hr, scr, r2, _, out⟩, k⟩ => ?_
   have hK : ∀ {u : State}, u.rd = s.rd → u.wr = s.wr → Src u (layOf s) (s.gpr .r3) (3 * (layOf s).pl + (layOf s).ql) :=
     fun hr hw => pre_src (A := s.gpr .r3) (by rw [hrd]; simp) dKS (s.gpr .r4).isLt
-      (by simp only [layOf]; omega) hr hw
-  have Out : Outside (layOf s).S 0 (layOf s).Z s.mem t.mem := out.mono (Nat.le_refl _) (by simp only [layOf] at hZ ⊢; omega)
+      (by simp only [layOf]; omega_using [hkl]) hr hw
+  have Out : Outside (layOf s).S 0 (layOf s).Z s.mem t.mem := out.mono (Nat.le_refl _) (by simp only [layOf] at hZ ⊢; omega_using [hZ])
   refine ⟨⟨⟨hL, hr, scr, hK k.rd k.wr,
     pre_src (A := s.gpr .r7) (k := 2 * (layOf s).ql) (by rw [hrd]; simp) dGS (s.gpr .r8).isLt
-      (by simp only [layOf]; omega) k.rd k.wr,
+      (by simp only [layOf]; omega_using [hsl]) k.rd k.wr,
     pre_src (A := s.gpr .r9) (k := min (s.gpr .r10).toNat 64) (by rw [hrd]; simp) dDS (s.gpr .r10).isLt
       (Nat.min_le_left _ _) k.rd k.wr,
     (hK rfl rfl).kept Out, hK k.rd k.wr, (fun _ h => nomatch h), (fun h => nomatch h),
-    (by simp only [vdOf, layOf]; omega)⟩, r2, fixL_nil t, trivial⟩, Nat.le_refl _⟩
+    (by simp only [vdOf, layOf]; omega_using [])⟩, r2, fixL_nil t, trivial⟩, Nat.le_refl _⟩
 
 theorem entry_rel : RelCT isa (Two C0) (.block Verify.entry) (Two fun v s => S0 v s ∧ KY v) := by
   refine two_post ?_ fun _ _ h => front_S0 h

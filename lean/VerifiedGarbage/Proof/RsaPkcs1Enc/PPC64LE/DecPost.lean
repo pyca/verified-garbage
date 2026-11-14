@@ -40,7 +40,7 @@ theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b 
   fun x hx => h₂ x (h₁ x hx)
 
 theorem scr_le {s : State} (h : DPre pc s) : scrBytes ≤ (stackArg s 14).toNat * 8 := by
-  have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *; unfold scrBytes; omega
+  have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *; unfold scrBytes; omega_arith
 
 theorem sc_sub {s : State} (h : DPre pc s) : Region.Sub (SC s) (sR s) := Region.sub_prefix (scr_le h)
 
@@ -50,16 +50,16 @@ theorem scSub {s : State} {a n : Nat} (ha : a + n ≤ scrBytes) : Region.Sub ⟨
 theorem scD {s : State} (h : DPre pc s) {a n b m : Nat} (hab : a + n ≤ b ∨ b + m ≤ a) (ha : a + n ≤ scrBytes)
     (hb : b + m ≤ scrBytes) : Region.Disjoint ⟨scA s a, n⟩ ⟨scA s b, m⟩ := by
   have := h.ws; have := scr_le h
-  exact Offset.disjoint _ hab (by omega) (by omega)
+  exact Offset.disjoint _ hab (by omega_arith) (by omega_arith)
 
 theorem low_sub (s : State) {n : Nat} (hn : n ≤ Impl.Rsa.PPC64LE.Priv.frameBytes) :
     Region.Sub (below (fb s) n) (LOW s) :=
-  Offset.sub_below _ hn (by omega)
+  Offset.sub_below _ hn (by omega_using [hn])
 
 /-- A word of our frame misses the stack below it. -/
 theorem fr_low (s : State) {d n : Nat} (hd : d + n ≤ frameBytes) :
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, n⟩ (LOW s) :=
-  Offset.disjoint_below _ (by unfold frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega)
+  Offset.disjoint_below _ (by unfold frameBytes Impl.Rsa.PPC64LE.Priv.frameBytes at *; omega_using [hd])
 
 /-- What a step after the private-key operation may write. -/
 def Safe (s : State) (r : Region) : Prop :=
@@ -74,7 +74,7 @@ theorem safe_frame {s : State} (h : DPre pc s) {r : Region} (hr : Safe s r) {d n
   · obtain ⟨b, l⟩ := r
     simp only at hb h₂; subst hb
     unfold oI oLr at *; unfold frameBytes at hn
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_using [hd, h₁, h₂]) (by omega_using [hn]) (by omega_using [h₂])
 
 theorem safe_out {s : State} (h : DPre pc s) {r : Region} (hr : Safe s r) : Region.Disjoint (oR s) r := by
   rcases hr with hr | hr | ⟨e, h₁, h₂, hb⟩
@@ -82,7 +82,7 @@ theorem safe_out {s : State} (h : DPre pc s) {r : Region} (hr : Safe s r) : Regi
   · exact h.ko.symm.sub_right (sub_trans hr (callee_sub s))
   · obtain ⟨b, l⟩ := r
     simp only at hb h₂; subst hb
-    exact h.ko.symm.sub_right (frame_sub s (by unfold oLr frameBytes at *; omega))
+    exact h.ko.symm.sub_right (frame_sub s (by unfold oLr frameBytes at *; omega_using [h₂]))
 
 theorem safe_in {s : State} (h : DPre pc s) {r : Region} (hr : Safe s r) :
     ∃ X ∈ [kR s, oR s, sR s], Region.Sub r X := by
@@ -91,7 +91,7 @@ theorem safe_in {s : State} (h : DPre pc s) {r : Region} (hr : Safe s r) :
   · exact ⟨_, by simp, sub_trans hr (callee_sub s)⟩
   · obtain ⟨b, l⟩ := r
     simp only at hb h₂; subst hb
-    exact ⟨_, by simp, frame_sub s (by unfold oLr frameBytes at *; omega)⟩
+    exact ⟨_, by simp, frame_sub s (by unfold oLr frameBytes at *; omega_using [h₂])⟩
 
 theorem savedSlots_words : ∀ p ∈ savedSlots, p.2 + 8 ≤ Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR ∨ oLr ≤ p.2 := by
   decide
@@ -103,7 +103,7 @@ theorem Slots.words {s : State} {m m' : Mem} (S : Slots s m) {ws : List Region} 
   have one : ∀ {d : Nat}, d + 8 ≤ Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR → m'.readW (fb s + BitVec.ofNat 64 d) 64 =
       m.readW (fb s + BitVec.ofNat 64 d) 64 := fun h₁ =>
     hf.readW (Region.contains_self _ _) (fun r hr => hd r hr _ (.inl h₁)
-      (by unfold Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR frameBytes at *; omega)) (by decide)
+      (by unfold Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR frameBytes at *; omega_using [h₁])) (by decide)
   refine ⟨S.sv.frame hf fun p hp r hr => hd r hr _ (savedSlots_words p hp) ?_, ?_, ?_, ?_⟩
   · have : p ∈ savedSlots := hp
     simp only [savedSlots, List.mem_cons, List.not_mem_nil, or_false] at this
@@ -116,7 +116,7 @@ theorem Slots.words {s : State} {m m' : Mem} (S : Slots s m) {ws : List Region} 
 theorem Slots.safe {s : State} (h : DPre pc s) {m m' : Mem} (S : Slots s m) {ws : List Region}
     (hf : Frame ws m m') (hs : ∀ r ∈ ws, Safe s r) : Slots s m' :=
   S.words hf fun r hr d hd hn => safe_frame h (hs r hr)
-    (hd.imp_left fun h' => by unfold Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR oI at *; omega) hn
+    (hd.imp_left fun h' => by unfold Impl.RsaPkcs1Enc.PPC64LE.Decrypt.oR oI at *; omega_using [h']) hn
 
 section
 variable {s : State} {m : Mem} (S : Slots s m)
@@ -166,7 +166,7 @@ theorem Post.step (h : DPre pc s) (hc : Post s R EM t) (hrd : t'.rd = t.rd) (hwr
     exact hc.r
   · rw [← hc.em]
     exact bytes_of_frame (s := t) hf (fun X hX => by have := safe_out h (hs X hX); rwa [← outR_eq h] at this)
-      (by have := h.wo; rw [h.h4] at this; omega)
+      (by have := h.wo; rw [h.h4] at this; omega_using [])
 
 /-- Code that changes only registers but the callee-saved ones keeps `Post`. -/
 theorem Post.regs (hc : Post s R EM t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
@@ -181,7 +181,7 @@ theorem scCov {s u : State} (h : DPre pc s) (hwr : u.wr = fr s :: s.wr) {a n : N
     Covers [⟨scA s a, n⟩] u.wr :=
   Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact ⟨sR s, by rw [hwr, h.hwr]; simp, a, rfl, by have := scr_le h; dsimp only; omega⟩
+    exact ⟨sR s, by rw [hwr, h.hwr]; simp, a, rfl, by have := scr_le h; dsimp only; omega_using [ha, this]⟩
 
 theorem scIn {s u : State} (h : DPre pc s) (hwr : u.wr = fr s :: s.wr) {a n : Nat} (ha : a + n ≤ scrBytes) :
     InRegions u.wr (scA s a) n :=

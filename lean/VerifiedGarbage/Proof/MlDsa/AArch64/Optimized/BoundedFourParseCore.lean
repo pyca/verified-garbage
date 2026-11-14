@@ -41,7 +41,7 @@ theorem fallbackSetup_inv {σ s : State} {η done : Nat} {table p q : Addr}
     {L : List Zq} {X : List Byte} (hi : LoopInv σ η table p q L X done s) :
     WP isa (.block fallbackSetup) s fun t=>ScalarInv σ η p q L X done t := by
   have h4 : (s.gpr .x4).toNat=256-(parsed η L X done).length := by
-    rw [hi.remaining,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
+    rw [hi.remaining,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [])]
   refine WP.mono (fallbackSetup_ok hi.consts h4 hi.bytes) fun t ⟨ht,hc,h8⟩=>?_
   refine ⟨hi.bound,hc,(hi.keep.trans ht.keep).mono (by decide),?_,?_,?_,?_,?_,?_,h8⟩
   · rw [ht.mem]; exact hi.frame
@@ -128,13 +128,13 @@ theorem parseCore_ok {s : State} {η : Nat} (he : η=2∨η=4) {table p q : Addr
   have hb5 : b.gpr .x5=272 := by rw [hb.keep.gpr .x5 (by decide)]; exact haC.bytes
   have hg : c.gpr .x8=if L.length≤252 then BitVec.ofNat 64 X.length else 0 := by
     rw [h8,hb5,hb.keep.gpr .x4 (by decide),ha.keep.gpr .x4 (by decide),h4,
-      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega),hx]
+      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using []),hx]
     by_cases hh : L.length≤252
-    · rw [ite_eq_left hh,ite_eq_left (by omega : 4≤256-L.length)]
+    · rw [ite_eq_left hh,ite_eq_left (by omega_using [hh] : 4≤256-L.length)]
       rfl
-    · rw [ite_eq_right hh,ite_eq_right (by omega : ¬4≤256-L.length)]
+    · rw [ite_eq_right hh,ite_eq_right (by omega_using [hh] : ¬4≤256-L.length)]
   have hi : LoopInv c η table p q L X 0 c := by
-    refine ⟨by omega,rfl,hC,?_,Keep.refl _ _,Frame.refl _ _,?_,?_,?_,?_,?_,?_⟩
+    refine ⟨by omega_using [],rfl,hC,?_,Keep.refl _ _,Frame.refl _ _,?_,?_,?_,?_,?_,?_⟩
     · rw [hm]; exact hT
     · change Stored c.mem p L
       rw [hm]; exact hS

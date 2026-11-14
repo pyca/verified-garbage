@@ -58,7 +58,7 @@ theorem gMul_ok (hc : BaseCfgOk brainpoolp512r1) (hC : Law brainpoolp512r1.C)
         (tmv brainpoolp512r1.C brainpoolp512r1.n base s' (brainpoolp512r1.sl RY))
         (tmv brainpoolp512r1.C brainpoolp512r1.n base s' (brainpoolp512r1.sl RZ)) (mul (sv brainpoolp512r1 base s K) (G brainpoolp512r1.C)) := by
   have hp3 := hc.p_ge
-  have hmont : ∀ x, brainpoolp512r1.mont x < brainpoolp512r1.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, brainpoolp512r1.mont x < brainpoolp512r1.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   have eG : (Point.affine (tmv brainpoolp512r1.C brainpoolp512r1.n base s (brainpoolp512r1.sl GX)) (tmv brainpoolp512r1.C brainpoolp512r1.n base s (brainpoolp512r1.sl GY)) :
       Point brainpoolp512r1.C) = G brainpoolp512r1.C := by
     show Point.affine (toM _ _ (wordsVal s.mem base (brainpoolp512r1.sl GX) brainpoolp512r1.n))

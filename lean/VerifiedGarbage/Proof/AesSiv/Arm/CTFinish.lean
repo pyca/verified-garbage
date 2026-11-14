@@ -93,7 +93,7 @@ theorem longMac_ct {P : BitVec 32} {n : Nat} (h16 : 16 ≤ n) (hn : n < 2 ^ 32) 
       · rw [h₁.r4, h₂.r4]
       · rw [h₁.pre.r6, h₂.pre.r6]
       all_goals exact env_eq h₁.pre.env h₂.pre.env (by simp)) hA)
-    (fun s h => WP.mono (longArgs₁_ok L h.pre.env hR h.pre.buf (K := K) (by omega) (by omega) hn h.pre.r6 h.r4 hout)
+    (fun s h => WP.mono (longArgs₁_ok L h.pre.env hR h.pre.buf (K := K) (by omega_using [hT]) (by omega_using []) hn h.pre.r6 h.r4 hout)
       fun s' ⟨he, g, _, _, _, U⟩ => ⟨⟨he, by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide), h.r4], by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
         h.pre.r5]⟩, U⟩) ?_
@@ -164,11 +164,11 @@ theorem finish_ct {P : BitVec 32} {n : Nat} (hn : n < 2 ^ 32) {out : Nat} (hout 
           rcases hr with rfl | rfl | rfl <;> exact g _ (by decide)) k.sp k.rd k.wr, h.buf.of_eq k.rd k.wr,
         by rw [g _ (by decide), h.r6], by rw [g _ (by decide), h.r5]⟩, hz⟩) ?_
   refine CT.ite (decide (n / 16 = 0)) (fun s h => h.2) (fun ht => ?_) fun hf => ?_
-  · have h16 : n < 16 := by have := of_decide_eq_true ht; omega
+  · have h16 : n < 16 := by have := of_decide_eq_true ht; omega_using [this]
     exact (CT.seq (J := Env c w sp R) (CT.taint _ regs hS)
       (fun s h => WP.mono (shortTail_ok L h.env h.buf h16 h.r6 h.r5) fun s' h' => h'.1)
       (shortMac_ct L hR hout)).mono fun s h => h.1
-  · have h16 : 16 ≤ n := by have := of_decide_eq_false hf; omega
+  · have h16 : 16 ≤ n := by have := of_decide_eq_false hf; omega_using [this]
     exact (CT.seq (J := LI c w sp R P n) (CT.taint _ regs hL)
       (fun s h => WP.mono (longTail_ok L h.env h.buf h16 hn h.r6 h.r5) fun s' ⟨he, rd, wr, g, h4, _⟩ =>
         ⟨⟨he, h.buf.of_eq rd wr, by rw [g _ (by decide) (by decide) (by decide), h.r6],

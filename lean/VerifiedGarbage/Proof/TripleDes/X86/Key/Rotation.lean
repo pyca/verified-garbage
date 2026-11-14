@@ -20,8 +20,8 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .eax)
     (n : Nat) (hn : 1 ≤ n) (hn' : n < 5) :
     ∃ s', runBlock isa (rotate28 r n) s = some s' ∧
       s'.gpr r = (x.rotateLeft n).setWidth 32 ∧ Keep [r, .eax] s s' := by
-  have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega
-  have hright : 1 ≤ 28 - n ∧ 28 - n ≤ 31 := by omega
+  have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega_using [hn, hn']
+  have hright : 1 ≤ 28 - n ∧ 28 - n ≤ 31 := by omega_using [hn']
   refine ⟨_, by
     simp only [hleft, hright, and_self, rotate28, rr, runBlock_cons, runStep_some, runBlock_nil,
       reduceExec, execAlu, execShift, readSrc, Option.bind_some, Option.map_some,

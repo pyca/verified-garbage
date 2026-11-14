@@ -105,9 +105,9 @@ theorem load_st (hR : H.Reloc) {o : Nat} (ho : o + P.N ≤ 2 * (P.N + P.B)) (ho4
   have := hz.NL
   rw [← List.append_nil (loadKey P o)]
   exact load_ok hz hp hR h.toRegs ho ho4 fun s' g rd wr sp f _ => WP.block_nil
-    ⟨h.toRegs.write (fun r hr => g r (ne9 r hr)) rd wr sp (frame_scr (a := P.so + 56) (by omega) f),
+    ⟨h.toRegs.write (fun r hr => g r (ne9 r hr)) rd wr sp (frame_scr (a := P.so + 56) (by omega_arith) f),
       (g _ (by decide)).trans h.x24,
-      (Memory.frame_bytesAt f (fun r hr => blk_disj hz (by omega) r (by simp at hr; simp [hr])) (by omega)).trans
+      (Memory.frame_bytesAt f (fun r hr => blk_disj hz (by omega_arith) r (by simp at hr; simp [hr])) (by omega_arith)).trans
         h.pad⟩
 
 theorem cmp_st {name : String} {code : Prog isa} (hf : CompOk H P.so code) {s : State} (h : St P D W H s₀ v s) :
@@ -115,14 +115,14 @@ theorem cmp_st {name : String} {code : Prog isa} (hf : CompOk H P.so code) {s : 
   have := so_le hz; have := N_le hz; have := B_le hz; have := hz.fits; have := hz.DN; have := hz.pad
   have := hz.NL
   exact cmp_ok hz hp hf h.toRegs fun s' h' x24 f _ =>
-    ⟨h', x24.trans h.x24, (Memory.frame_bytesAt f (blk_disj hz (by omega)) (by omega)).trans h.pad⟩
+    ⟨h', x24.trans h.x24, (Memory.frame_bytesAt f (blk_disj hz (by omega_arith)) (by omega_arith)).trans h.pad⟩
 
 theorem mid_st (hs : Shape H) (hR : H.Reloc) {s : State} (h : St P D W H s₀ v s) :
     WP isa (.block (Impl.Pbkdf2.AArch64.digest P D ++ loadKey P (P.N + P.B))) s (St P D W H s₀ v) := by
   have := so_le hz; have := N_le hz; have := B_le hz; have := hz.fits; have := hz.NL; have := hz.N4
   refine digest_ok hz hp hs h.toRegs h.pad fun s' g rd wr sp f _ p => ?_
-  exact load_st hz hp hR (by omega) (by rcases hz.B with h | h <;> omega)
-    ⟨h.toRegs.write (fun r hr => g r (ne9 r hr)) rd wr sp (frame_scr (a := P.so + 56 + P.N) (by omega) f),
+  exact load_st hz hp hR (by omega_using []) (by rcases hz.B with h | h <;> omega_using [this, h])
+    ⟨h.toRegs.write (fun r hr => g r (ne9 r hr)) rd wr sp (frame_scr (a := P.so + 56 + P.N) (by omega_arith) f),
       (g _ (by decide)).trans h.x24, p⟩
 
 /-! ## Two runs -/
@@ -167,8 +167,8 @@ theorem body_rel (hs : Shape H) (hR : H.Reloc) {name : String} {code : Prog isa}
       fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧ St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s' :=
     ((RelCT.taint (A := taint) (Taint.ofRegs regsS) (fun _ _ h =>
       St.agree hq (St.of_inv h.1) (St.of_inv h.2)) hl).wp
-      fun _ _ h => ⟨load_st hz hp hR (by omega) rfl (St.of_inv h.1),
-        load_st hz hp' hR (by omega) rfl (St.of_inv h.2)⟩).mono
+      fun _ _ h => ⟨load_st hz hp hR (by omega_using []) rfl (St.of_inv h.1),
+        load_st hz hp' hR (by omega_using []) rfl (St.of_inv h.2)⟩).mono
       (fun _ _ h => h) fun _ _ h => h.2
   have dl : RelCT isa (fun s s' => St P D W H s₀ (BitVec.ofNat 64 (r + 1)) s ∧
         St P D W H s₀' (BitVec.ofNat 64 (r + 1)) s')
@@ -198,7 +198,7 @@ theorem loop_rel (hs : Shape H) (hR : H.Reloc) {name : String} {code : Prog isa}
       have hc'' : some (m != 0) = some true := z.symm.trans hc'
       cases m with
       | zero => cases hc''
-      | succ m => exact ⟨m, by omega, i, i'⟩) n
+      | succ m => exact ⟨m, by omega_using [], i, i'⟩) n
 
 theorem main_rel {S : StreamingHash} {iv : H.HV} (ho : HashOk P D W S H iv) {name : String}
     {code : Prog isa} (hf : CompOk H P.so code) (hc : Checks P D) :
@@ -207,7 +207,7 @@ theorem main_rel {S : StreamingHash} {iv : H.HV} (ho : HashOk P D W S H iv) {nam
   obtain ⟨_, hep⟩ := hc.epi
   obtain ⟨_, hit⟩ := hc.ite
   have hlt : ∀ {s₀ : State}, nn s₀ < 2 ^ 64 := fun {s₀} => by
-    have := ((s₀.gpr .x2).setWidth 32).isLt; simp only [nn]; omega
+    have := ((s₀.gpr .x2).setWidth 32).isLt; simp only [nn]; omega_using []
   have pro : RelCT isa (fun s s' => s = zext s₀ ∧ s' = zext s₀') (.block (prologue P D)) fun s s' =>
       Inv P D W H s₀ (nn s₀) s ∧ Inv P D W H s₀' (nn s₀') s' :=
     ((RelCT.taint (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

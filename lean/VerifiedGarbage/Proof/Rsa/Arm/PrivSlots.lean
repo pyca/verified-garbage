@@ -24,7 +24,7 @@ theorem PrivSlots.after {g : PrivGeometry} {m m' : Mem} {regions : List Region}
     (sep : ∀ r ∈ regions, (⟨off (State.addr g.stack) 64, 24⟩ : Region).Disjoint r) : PrivSlots g m' := by
   have eq := WorkspaceEq.of_frame (base := off (State.addr g.stack) 64) (size := 24) (by decide) frame sep
   intro i hi
-  have word := eq.word (d := 4 * i) (bits := 32) (by omega)
+  have word := eq.word (d := 4 * i) (bits := 32) (by omega_using [hi])
   have address : off (off (State.addr g.stack) 64) (4 * i) = off (State.addr g.stack) (64 + 4 * i) :=
     Offset.add_add _ 64 (4 * i)
   rw [address] at word

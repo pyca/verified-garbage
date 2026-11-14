@@ -291,7 +291,7 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     simp only [T.eval, T.nat, T.bnd, T.lb, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq] at this ⊢
     rw [← ea]
     have hm := Nat.mul_le_mul_right (2 ^ n) ba
-    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this,
+    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega_using [hm]) this,
       Nat.zero_le _⟩
   | shr a n ih =>
     intro k hk ho

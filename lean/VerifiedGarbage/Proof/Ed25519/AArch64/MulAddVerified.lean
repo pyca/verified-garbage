@@ -103,7 +103,7 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
     intro d hd
     refine ⟨⟨s.gpr .x2, 32⟩, ?_, ?_⟩
     · rw [k₂.rd, rd₁, hs.rd]; simp
-    · rw [g₂ .x2 (by decide)]; exact Offset.contains_base _ hd (by omega)
+    · rw [g₂ .x2 (by decide)]; exact Offset.contains_base _ hd (by omega_using [hd])
   rw [WP.block_append_iff]
   refine WP.mono (copyScalar_ok ⟨hp₂, hw₂, hs.nowrap⟩ .x2 (by decide) hr₂ 64 (by constructor <;> decide))
     fun s₃ ⟨v₃, g₃, rd₃, wr₃, sp₃, o₃⟩ => ?_
@@ -115,7 +115,7 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
     intro d hd
     refine ⟨⟨s.gpr .x3, 32⟩, ?_, ?_⟩
     · rw [rd₃, k₂.rd, rd₁, hs.rd]; simp
-    · rw [rcx₃]; exact Offset.contains_base _ hd (by omega)
+    · rw [rcx₃]; exact Offset.contains_base _ hd (by omega_using [hd])
   rw [WP.block_append_iff]
   refine WP.mono (copyScalar_ok ⟨hp₃, hw₃, hs.nowrap⟩ .x3 (by decide) hr₃ 96 (by constructor <;> decide))
     fun s₄ ⟨v₄, g₄, rd₄, wr₄, sp₄, o₄⟩ => ?_
@@ -126,7 +126,7 @@ theorem mulAddSetup_ok {s : State} (hs : MulAddPre s) :
     intro d hd
     refine ⟨⟨s.gpr .x1, 32⟩, ?_, ?_⟩
     · rw [rd₄, rd₃, k₂.rd, rd₁, hs.rd]; simp
-    · rw [rsi₄]; exact Offset.contains_base _ hd (by omega)
+    · rw [rsi₄]; exact Offset.contains_base _ hd (by omega_using [hd])
   refine WP.mono (loadWords_ok s₄ .x1 (by decide) hr₄) fun t ⟨vt, kt⟩ => ?_
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [kt.gpr _ (by decide), g₄ _ (by decide)]; exact hp₃
@@ -201,7 +201,7 @@ theorem scalarMulAdd_correct {s : State} (hs : MulAddPre s) :
       InRegions (s₅.rd ++ s₅.wr) (s₅.gpr .x1 + BitVec.ofNat 64 (8 * k)) 8 := by
     intro k hk
     refine ⟨⟨s.gpr .x4, 8192⟩, List.mem_append_right _ (wr₅ ▸ hw), ?_⟩
-    rw [x1₅, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [x1₅, Offset.add_add]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   have sv₅ : Saved (s.gpr .x4) s.gpr s₅.mem := by
     have sv₂ : Saved (s.gpr .x4) s.gpr s₂.mem := by rw [k₂.mem]; exact h₁.saved
     rw [k₅.mem, k₄.mem]; exact sv₂.outside o₃ (by decide)

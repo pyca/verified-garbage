@@ -35,8 +35,8 @@ theorem exec_kSlot0 (s : State) (h : Reg) {t : Nat} (ht : t < 16) (hb : s.gpr .r
     simp only [State.ea, kSlot0, ofInt_natCast]
     rw [hb, BitVec.add_comm, BitVec.add_sub_cancel]
   have e' : (BitVec.ofNat 64 (8 * t)).toNat = 8 * t := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have hl : t < Spec.Sha512.Ks.length := by rw [Ks_length]; omega
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ht])]
+  have hl : t < Spec.Sha512.Ks.length := by rw [Ks_length]; omega_using [ht]
   simp only [X86_64.exec, e, e', show (kSlot0 t).base = .rsi from rfl, hb, Nat.mul_mod_right,
     Nat.mul_div_right t (by decide : 0 < 8), hl, and_self, ↓reduceIte]
   rfl
@@ -44,7 +44,7 @@ theorem exec_kSlot0 (s : State) (h : Reg) {t : Nat} (ht : t < 16) (hb : s.gpr .r
 theorem kSlot_ea (s : State) {j : Nat} (h : s.gpr .rdx = idx j) (t' : Nat) :
     s.ea (kSlot t') = s.gpr .rsi + BitVec.ofNat 64 (8 * (16 * j + t')) := by
   simp only [State.ea, kSlot, h, ofInt_natCast, BitVec.mul_one]
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 128 * j + 8 * t' = 8 * (16 * j + t') by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 128 * j + 8 * t' = 8 * (16 * j + t') by omega_using []]
 
 /-- Round `16 j + t'` of iteration `j` reads `K (16 j + t')`. -/
 theorem exec_kSlot (s : State) (h : Reg) {j : Nat} (t' : Nat) (hrdx : s.gpr .rdx = idx j)
@@ -53,7 +53,7 @@ theorem exec_kSlot (s : State) (h : Reg) {j : Nat} (t' : Nat) (hrdx : s.gpr .rdx
   have e : s.ea (kSlot t') - s.syms kSym = BitVec.ofNat 64 (8 * (16 * j + t')) := by
     rw [kSlot_ea s hrdx, hb, BitVec.add_comm, BitVec.add_sub_cancel]
   have e' : (BitVec.ofNat 64 (8 * (16 * j + t'))).toNat = 8 * (16 * j + t') := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
   have hl : 16 * j + t' < Spec.Sha512.Ks.length := by rw [Ks_length]; exact hn
   simp only [X86_64.exec, e, e', show (kSlot t').base = .rsi from rfl, hb, Nat.mul_mod_right,
     Nat.mul_div_right (16 * j + t') (by decide : 0 < 8), hl, and_self, ↓reduceIte]
@@ -84,10 +84,10 @@ theorem round_ok (t : Nat) (k : MemOp) (s : State) (v : HashValue) (kv w : Word)
   apply WP.of_runBlock
   rw [show Rolled.round t k = .aluTbl .add (var t 7) k kSym Spec.Sha512.Ks :: (Rolled.round t k).tail
     from rfl, runBlock_cons, hk]
-  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega),
-    var_succ t _ (show 1 < 7 by omega), var_succ t _ (show 2 < 7 by omega),
-    var_succ t _ (show 3 < 7 by omega), var_succ t _ (show 4 < 7 by omega),
-    var_succ t _ (show 5 < 7 by omega), var_succ t _ (show 6 < 7 by omega)] at hv ⊢
+  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega_using []),
+    var_succ t _ (show 1 < 7 by omega_using []), var_succ t _ (show 2 < 7 by omega_using []),
+    var_succ t _ (show 3 < 7 by omega_using []), var_succ t _ (show 4 < 7 by omega_using []),
+    var_succ t _ (show 5 < 7 by omega_using []), var_succ t _ (show 6 < 7 by omega_using [])] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   simp only [Rolled.round, List.tail_cons]
   generalize var t 0 = a at *

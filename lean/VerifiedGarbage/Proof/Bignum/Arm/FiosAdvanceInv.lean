@@ -30,21 +30,21 @@ theorem advance_inv {s0 s u : State} {x q base : BitVec 32} {size acc b mod n i 
       Inv s0 x q base acc b mod n (i+k) t ∧ t.z=decide (i+k+1=n) := by
   refine WP.mono (advance_ok u k hk) ?_
   rintro t ⟨p0,p12,p4,count,zero,mem,rt⟩
-  have small : n<2^32 := by have := ctx.workspace.nowrap;have := ctx.accFits;omega
+  have small : n<2^32 := by have := ctx.workspace.nowrap;have := ctx.accFits;omega_arith
   refine ⟨⟨bound,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩,?_⟩
   · rw [p0,rs.gpr .r0 (by decide),inv.outPtr,Offset.add_add]
     congr 2
-    omega
+    omega_using []
   · rw [p12,rs.gpr .r12 (by decide),inv.bPtr,Offset.add_add]
     congr 2
-    omega
+    omega_using []
   · rw [p4,rs.gpr .r4 (by decide),inv.mPtr,Offset.add_add]
     congr 2
-    omega
+    omega_using []
   · rw [count,rs.gpr .lr (by decide),inv.count,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hk]) (by omega_using [bound])]
     congr 1
-    omega
+    omega_using []
   · rw [rt.gpr .r1 (by decide),rs.gpr .r1 (by decide),inv.scalar]
   · rw [rt.gpr .r2 (by decide),rs.gpr .r2 (by decide),inv.quotient]
   · rw [mem];exact outside
@@ -52,7 +52,7 @@ theorem advance_inv {s0 s u : State} {x q base : BitVec 32} {size acc b mod n i 
   · exact inv.rest.trans ((rs.mono (by decide)).trans
       (rt.mono (by decide)))
   · rw [zero,rs.gpr .lr (by decide),inv.count,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega),ofNat_beq_zero (by omega)]
-    simp only [show n-(i+1)-k=0 ↔ i+k+1=n by omega]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hk]) (by omega_using [bound]),ofNat_beq_zero (by omega_using [small])]
+    simp only [show n-(i+1)-k=0 ↔ i+k+1=n by omega_using [bound]]
 
 end VG.Proof.Bignum.Arm.Fios

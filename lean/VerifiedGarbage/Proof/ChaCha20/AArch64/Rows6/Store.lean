@@ -33,7 +33,7 @@ theorem xorRowFrom_ok (s : State) (r : Reg) (k : Fin 24)
     WP isa (.block (xorRowFrom r k)) s fun u =>
       u.mem = s.mem.write (s.gpr .x1 + BitVec.ofNat 64 (16 * k.val)) 16
         (s.mem.read (s.gpr r + BitVec.ofNat 64 (16 * k.val)) 16 ^^^ s.v (vreg k)) ∧ StoreSame s u := by
-  have ha : 16 * k.val % 16 = 0 ∧ 16 * k.val < 4096 * 16 := by omega
+  have ha : 16 * k.val % 16 = 0 ∧ 16 * k.val < 4096 * 16 := by omega_using []
   apply WP.of_runBlock
   simp only [xorRowFrom,runBlock_cons,runBlock_nil,exec,addr,ha,and_self,ite_true,State.load,hin,
     Option.bind_some,Option.map_some,isa,runStep_some,RegUpd.gpr_setV,RegUpd.v_setV,
@@ -65,8 +65,8 @@ theorem xorListFrom_ok (r : Reg) (ks : List (Fin 24)) (hn : ks.Nodup)
     refine (xorRowFrom_ok s r k hi ho).mono fun a ⟨hm,hs⟩ => ?_
     have hd' : DataTo m₀ a.mem q p 384 out (k.val :: done) := by
       rw [hm,hp,hq,hv k]
-      exact hd.store (by omega) (by decide)
-        (hd.src halias (by omega) (by decide) (hfresh k (List.mem_cons_self ..)))
+      exact hd.store (by omega_using []) (by decide)
+        (hd.src halias (by omega_using []) (by decide) (hfresh k (List.mem_cons_self ..)))
     have hq' : a.gpr r = q := by rw [hs.gpr,hq]
     have hp' : a.gpr .x1 = p := by rw [hs.gpr,hp]
     have hv' : ∀ l : Fin 24, a.v (vreg l) = out l.val := by intro l; rw [hs.v,hv]

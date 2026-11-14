@@ -115,9 +115,9 @@ theorem slot_mem (L : Lay) {j : Nat} (hj : Slot 11 j) :
     ∃ R ∈ L.inputs, R.Contains (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 4 := by
   obtain ⟨hj11, hj | hj⟩ := hj
   · exact ⟨L.ARGS, by simp [Lay.inputs],
-      Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)⟩
+      Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)⟩
   · exact ⟨L.ORIG, by simp [Lay.inputs],
-      Offset.contains _ (e := 280) (k := 12) (by omega) (by omega) (by decide)⟩
+      Offset.contains _ (e := 280) (k := 12) (by omega_using [hj]) (by omega_using [hj11]) (by decide)⟩
 
 theorem Ctx.arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : Slot 11 j) :
     t.mem.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 =
@@ -143,11 +143,11 @@ theorem setup_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
       (∀ p ∈ args, u.gpr p.1 = argValue L p.2) ∧
       (∀ j (hj : j < stk.length), stackArg u j = argValue L (stk[j]'hj)) ∧
       (∀ r, r ∉ args.map Prod.fst → r ≠ .r0 → r ≠ .r12 → u.gpr r = t.gpr r) := by
-  have hE : Fits L.E 11 := ⟨by decide, by decide, by have := hL.top; omega⟩
+  have hE : Fits L.E 11 := ⟨by decide, by decide, by have := hL.top; omega_using [this]⟩
   refine WP.mono (Ctx.setup hc hE hn hv hs hvs
     (fun j hj => let ⟨R, hR, hcon⟩ := slot_mem L hj; ⟨R, hR, hcon⟩) hr)
     fun u ⟨hu, hm, hregs, hstk, hk⟩ => ⟨hu, Frame.sub hm fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩, ?_, ?_, hk⟩
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [hs])⟩, ?_, ?_, hk⟩
   · intro p hp
     rw [hregs p hp, value_eq hc hL ha (hv p hp)]
   · intro j hj
@@ -155,7 +155,7 @@ theorem setup_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
 
 /-- What the calls need of the layout (`Proof/Ed448/Arm/Shake/Layout.lean`). -/
 theorem Lay.Ok.kit (hL : L.Ok) : Kit L.E L.scr 11 L.inputs L.outputs :=
-  ⟨⟨by decide, by decide, by have := hL.top; omega⟩, hL.nc, by simp [Lay.outputs], hL.kc,
+  ⟨⟨by decide, by decide, by have := hL.top; omega_using [this]⟩, hL.nc, by simp [Lay.outputs], hL.kc,
     fun _ hr R hR => hL.inputs_out hr R hR, fun _ hj => slot_mem L hj⟩
 
 end VG.Proof.Ed448.Arm.Verify

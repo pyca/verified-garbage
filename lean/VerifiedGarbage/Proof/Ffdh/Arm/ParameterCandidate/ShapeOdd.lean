@@ -24,12 +24,12 @@ theorem shapeOdd_ok (s : State) {dst src : BitVec 32} {bs xs : List Byte} {bits 
         (VG.Proof.Ffdh.ParameterCandidate.lastOne xs).getD i 0) ∧
       Frame [⟨State.addr dst, bs.length⟩] s.mem t.mem ∧ Rest [.r3, .r4, .r5] s t := by
   have size := h.size
-  have last : bs.length - 1 < bs.length := by omega
+  have last : bs.length - 1 < bs.length := by omega_using [size]
   have ptr : s.gpr .r4 + BitVec.ofNat 32 bs.length - 1 =
       dst + BitVec.ofNat 32 (bs.length - 1) := by
     rw [dest, BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg]
     change dst + (BitVec.ofNat 32 bs.length - BitVec.ofNat 32 1) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [size])]
   refine WP.mono (shapeLast_ok s bs.length (h.frame.read (d := 12) (by decide))
     (h.frame.saved 12 (by decide)) (by rw [ptr]; exact h.readByte last)
     (by rw [ptr]; exact h.writeByte last)) ?_
@@ -40,10 +40,10 @@ theorem shapeOdd_ok (s : State) {dst src : BitVec 32} {bs xs : List Byte} {bits 
     exact (Frame.refl _ _).writeW (by simp) _ (h.containsByte last)
   refine ⟨h.after_output frame rest, ?_, frame, rest⟩
   intro i hi
-  have hi' : i < xs.length := by omega
+  have hi' : i < xs.length := by omega_using [length, hi]
   rw [VG.Proof.Ffdh.ParameterCandidate.lastOne_getD hi', length, mem, VG.WriteBytes.writeW8_apply]
   by_cases final : i + 1 = bs.length
-  · have same : i = bs.length - 1 := by omega
+  · have same : i = bs.length - 1 := by omega_using [final]
     subst i
     rw [ite_eq_left rfl, ite_eq_left final]
     rfl
@@ -51,7 +51,7 @@ theorem shapeOdd_ok (s : State) {dst src : BitVec 32} {bs xs : List Byte} {bits 
         State.addr (dst + BitVec.ofNat 32 (bs.length - 1)) := by
       intro same
       have := h.copyCtx.distinct i hi (bs.length - 1) last same
-      omega
+      omega_using [size, final, this]
     rw [ite_eq_right different, ite_eq_right final]
     exact copied i hi
 

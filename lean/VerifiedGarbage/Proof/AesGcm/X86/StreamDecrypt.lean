@@ -72,7 +72,7 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     have kP : ∀ r ∈ [pslotR (p.2 9)], (keptR (p.2 9)).Disjoint r := fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
     refine ⟨ta.env.keep bp si sp rd wr (slot_frame fr fun r hr => (kP r hr).sub_left (Offset.sub _ (by decide)
-      (by decide))), d, n, by rw [b, append_toNat32]; congr 1; omega, (p.2 8).isLt,
+      (by decide))), d, n, by rw [b, append_toNat32]; congr 1; omega_using [], (p.2 8).isLt,
       cr_dataW hc h₁.pre h₁.pub (by rw [wr, wr₂, h₁.wr]),
       rounds_frame fr kP (rounds_frame ta.frame (kept_taFrame L) h₁.rounds)⟩
   refine Pc.seq (Pc.lift (Pc.forall fun icb => crypt_pc L rfl (R := (p.2 1).toNat) (icb := icb) (D := p.2 7)
@@ -119,7 +119,7 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   obtain ⟨hj, ha, hcr⟩ := hr₁
   have hD1 : bytesAt s₁.mem (w64 (p.2 7)) (p.2 8).toNat = bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat :=
     bytesAt_frame fE (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hc.dw.sub_right (Lay.wSub (by decide))) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hc.dw.sub_right (Lay.wSub (by decide))) (by omega_using [])
   have hab := ta.abs a c ⟨hl, hct⟩ (by rw [hH1]; exact ha)
   rw [hD1, hH1] at hab
   -- The counter blocks, as `crypt` takes them.
@@ -136,7 +136,7 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   have hout := hco.out hct3
   rw [hC3] at hct₄ hout
   have hD3 : bytesAt s₃.mem (w64 (p.2 7)) (p.2 8).toNat = bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat := by
-    rw [bytesAt_frame fr dP (by omega), bytesAt_frame ta.frame (data_taFrame hd.ok) (by omega), hD1]
+    rw [bytesAt_frame fr dP (by omega_using []), bytesAt_frame ta.frame (data_taFrame hd.ok) (by omega_using []), hD1]
   rw [hD3] at hout
   have hdrop : (gctr ciph (inc32 (j0 H iv)) (c ++ bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat)).drop c.length =
       xorKs ciph (inc32 (j0 H iv)) c.length (bytesAt s₀.mem (w64 (p.2 7)) (p.2 8).toNat) := by
@@ -153,10 +153,10 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at e₁ e₂ e₃
     rw [e₁, e₂, e₃, hj]
   · exact (hab.congr (blockAt_frame fr (dP' (by decide)))
-      (bytesAt_frame fr (dP' (d := 32) (k := (Spec.Gcm.ghashInput a _).length % 16) (by omega)) (by omega))).congr
+      (bytesAt_frame fr (dP' (d := 32) (k := (Spec.Gcm.ghashInput a _).length % 16) (by omega_using [])) (by omega_using []))).congr
       (blockAt_frame hco.frame (st_crFrame hc (by decide)))
-      (bytesAt_frame hco.frame (st_crFrame hc (d := 32) (k := (Spec.Gcm.ghashInput a _).length % 16) (by omega))
-        (by omega))
+      (bytesAt_frame hco.frame (st_crFrame hc (d := 32) (k := (Spec.Gcm.ghashInput a _).length % 16) (by omega_using []))
+        (by omega_using []))
   · rw [List.length_append, length_bytesAt, ← hct]; exact hct₄
 
 theorem streamDecrypt_correct (s : State) (hs : streamDecryptX86.pre s) :

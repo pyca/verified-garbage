@@ -73,7 +73,7 @@ theorem bitStep_ok {i j : Nat} (hi : i < 32) (hj : j < 8) {x : Nat} {s1 s : Stat
         (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hi, hj, hB]))
     · rw [u3.mem, VG.WriteBytes.writeW8_apply, hm2]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hj' with hj' | rfl
-      · rw [iteF (Offset.add_ofNat_ne _ (by omega) (by omega_using [hi, hj, hB]) (by omega))]; exact h.bits j' hj'
+      · rw [iteF (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hi, hj, hB]) (by omega_using [hj']))]; exact h.bits j' hj'
       · rw [iteT rfl]; exact strb_byte e5
   by_cases h0 : j = 0
   · subst h0

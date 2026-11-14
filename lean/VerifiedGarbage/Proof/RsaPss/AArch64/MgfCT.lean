@@ -76,8 +76,8 @@ theorem mgfXor_ct {H : Hash} : RelCT isa (Two (MS G g H.D)) (mgfXor H g) fun _ _
   swap
   · refine RelCT.of_false fun _ _ ⟨⟨s, h, _⟩, _⟩ => hf ?_
     have := h.hd.fit; have := h.hd.e1; have := h.hd.db1
-    exact ⟨by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega, by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega,
-      .inr (by unfold mgfOff oEm at *; omega), h.hd.db1, by unfold oY oEm at *; omega⟩
+    exact ⟨by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega_arith, by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega_arith,
+      .inr (by unfold mgfOff oEm at *; omega_arith), h.hd.db1, by unfold oY oEm at *; omega_arith⟩
   let F : State → State → Prop := fun σ u => ∃ s, MS G g H.D a s ∧ σ = allocated mgfFrame s ∧
     u.syms = s.syms ∧ Proof.RsaOaep.AArch64.Lay u (mF a.F) (off a.S mgfOff) ∧
     Proof.RsaOaep.AArch64.Rep u.mem (mF a.F) (off a.S mgfOff) (fun o => s.mem (off (off a.S mgfOff) o))

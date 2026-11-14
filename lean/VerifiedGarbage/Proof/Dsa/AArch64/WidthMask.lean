@@ -23,7 +23,7 @@ theorem widthMask_ok {s : State} {n value : Nat}
     (hn : n < 2 ^ 16) (hv : value < 2 ^ 64) (h8 : s.gpr .x8 = BitVec.ofNat 64 value) :
     WP isa (.block (Checks.widthMask n)) s fun t =>
       t.gpr .x3 = mask (decide (value = n)) ∧ t.mem = s.mem ∧ Keep [.x3, .x4] s t := by
-  have hn64 : n < 2 ^ 64 := by omega
+  have hn64 : n < 2 ^ 64 := by omega_using [hn]
   have he : (BitVec.ofNat 64 value ^^^ BitVec.ofNat 64 n) = 0 ↔ value = n := by
     change (BitVec.ofNat 64 value ^^^ BitVec.ofNat 64 n) = 0#64 ↔ value = n
     rw [BitVec.xor_eq_zero_iff]
@@ -40,7 +40,7 @@ theorem widthMask_ok {s : State} {n value : Nat}
   · have hn' : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega
+      omega_using [hn]
     brun [h8, hn']
   refine WP.mono (zeroMask_ok .x3 false) fun t ⟨ht, htm, hkt⟩ => ?_
   simp only [Bool.false_eq_true, ite_false, hu, decide_eq_decide.mpr he] at ht

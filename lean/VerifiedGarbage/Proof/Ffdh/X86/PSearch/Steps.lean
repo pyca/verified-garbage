@@ -32,9 +32,9 @@ theorem arg_in {o : State} (A : PSearchABI o) {i : Nat} (hi : i < 10) :
     (aR o).Contains (addr (o.gpr .esp) (4 + 4 * i)) 4 := by
   have hb := A.stackBound
   show (⟨argAddr o 0, 40⟩ : Region).Contains _ _
-  rw [addr_eq (by omega), show argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from
-    addr_eq (k := 4) (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [addr_eq (by omega_using [hi, hb]), show argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from
+    addr_eq (k := 4) (by omega_using [hb])]
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 /-- The state's word at `d` lies in the state's region. -/
 theorem st_in {o : State} (A : PSearchABI o) {d : Nat} (hd : d + 4 ≤ 128) :
@@ -125,7 +125,7 @@ theorem len_pos {o : State} (A : PSearchABI o) : 64 ≤ (arg o 1).toNat ∧ (arg
   have := A.outLen
   have := A.bitsLow
   have := A.bitsHigh
-  omega
+  omega_arith
 
 /-- Zeros at the output, the width's octets. -/
 theorem zeroOut_ok {s : State} {S P : BitVec 32} {n : Nat} (hesi : s.gpr .esi = S)
@@ -157,10 +157,10 @@ theorem zeroOut_ok {s : State} {S P : BitVec 32} {n : Nat} (hesi : s.gpr .esi = 
     · intro i h₁ _
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
       simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁
-      exact J.zero i (by omega)
+      exact J.zero i (by omega_using [he, h₁])
   · right
-    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega,
-      k + 1, rfl, by omega, J⟩
+    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega_using [hk],
+      k + 1, rfl, by omega_using [he], J⟩
 
 /-- Zeros at the output. -/
 theorem St.zeroOut {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) (hA : Aligned ds)
@@ -173,8 +173,8 @@ theorem St.zeroOut {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St
   have hp := len_pos A
   have ob := A.oBound
   refine WP.mono_syms (zeroOut_ok h.esi (h.rIn (by decide)) (h.rIn (by decide))
-    ((h.words.get hdo).trans ho) ((h.words.get hdl).trans hl) (by rw [h.wr]; exact oR_mem A) (by omega) ob
-    (by omega)) fun t ⟨F, Z, K⟩ sy => ?_
+    ((h.words.get hdo).trans ho) ((h.words.get hdl).trans hl) (by rw [h.wr]; exact oR_mem A) (by omega_using [hp]) ob
+    (by omega_using [])) fun t ⟨F, Z, K⟩ sy => ?_
   refine ⟨⟨A, K.2.1.trans h.rd, K.2.2.trans h.wr, sy.trans h.syms, by rw [K.1 _ (by decide), h.esp],
       by rw [K.1 _ (by decide), h.esi], fun q hq hne => ?_, h.frame.trans (F.mono fun r hr => ?_),
       h.words.frame A.sBound hA F fun r hr => ?_⟩, Z, F, fun r hr => K.1 _ fun hm => hr (by simp at hm; omega)⟩

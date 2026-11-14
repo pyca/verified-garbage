@@ -37,9 +37,9 @@ theorem samplePrefix_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots : L
       Spec.Rsa.bytesAt t.mem (State.addr p.privateValue) l.lead = List.replicate l.lead 0 ∧
       t.gpr .r0 = l.start ∧ t.gpr .r1 = p.entropy + BitVec.ofNat 32 l.lead ∧
       Frame [⟨State.addr p.privateValue, l.lead⟩] s.mem t.mem ∧ Rest [.r0, .r1, .lr] s t := by
-  have bound : l.lead ≤ p.k := by have := l.lead_lt; omega
+  have bound : l.lead ≤ p.k := by have := l.lead_lt; omega_using [this]
   have buf := output.prefix bound
-  refine WP.mono (zeroOptional_ok true s (by have := p.maxLength; omega) buf.fits buf.writable
+  refine WP.mono (zeroOptional_ok true s (by have := p.maxLength; omega_using [bound, this]) buf.fits buf.writable
     zero source dest count) ?_
   rintro t ⟨bytes, ptr, src, frame, rest⟩
   have sub : (⟨State.addr p.privateValue, l.lead⟩ : Region).Sub ⟨State.addr p.privateValue, p.k⟩ :=

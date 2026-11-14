@@ -25,7 +25,7 @@ structure SingleInv (initial : State) (p a : Addr) (A B : Spec.Sha3.State) (k : 
   out : Blocks s.mem a k A
 
 theorem single_block_sub (a : Addr) {j : Nat} (hj : j<5) :
-    Region.Sub (rateR21 (blockAt a j)) (fullR a) := Offset.sub_base a (by omega)
+    Region.Sub (rateR21 (blockAt a j)) (fullR a) := Offset.sub_base a (by omega_using [hj])
 
 theorem single_ok {s : State} {p a : Addr} {A B : Spec.Sha3.State}
     (hp : s.gpr .x19=p) (ha : s.gpr .x20=a) (hcount : (s.gpr .x22).toNat=5)
@@ -45,9 +45,9 @@ theorem single_ok {s : State} {p a : Addr} {A B : Spec.Sha3.State}
       (hpa.sub_right (single_block_sub a hk)) hpw
       (by rw [h.keep.wr]; exact hcov)) fun u ⟨ku,pu,au,fu,ua,uc⟩ => ?_
     have count : (u.gpr .x22).toNat=5-(k+1) := by
-      rw [uc,toNat_sub_n (by rw [h.count]; change 1≤5-k; omega),h.count]
-      change 5-k-1=5-(k+1); omega
-    refine ⟨⟨(h.keep.trans ku).mono (by simp),?_,?_,?_,count,?_,?_⟩,by rw [count]; omega⟩
+      rw [uc,toNat_sub_n (by rw [h.count]; change 1≤5-k; omega_using [hk]),h.count]
+      change 5-k-1=5-(k+1); omega_using []
+    refine ⟨⟨(h.keep.trans ku).mono (by simp),?_,?_,?_,count,?_,?_⟩,by rw [count]; omega_using [hk]⟩
     · simpa only [iterF_succ] using pu
     · rw [ku.gpr .x19 (by decide),h.ptr]
     · rw [ua]; change a+BitVec.ofNat 64 (168*k)+BitVec.ofNat 64 168 = _
@@ -61,16 +61,16 @@ theorem single_ok {s : State} {p a : Addr} {A B : Spec.Sha3.State}
     · intro j hj
       by_cases he : j=k
       · subst j; simpa only [iterF_succ] using au
-      · have hjk : j<k := by omega
+      · have hjk : j<k := by omega_using [hj, he]
         intro i hi
         have hc : (rateR21 (blockAt a j)).Contains (outAddr (blockAt a j) i) 8 :=
-          Offset.contains_base _ (by omega) (by omega)
+          Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
         rw [fu.readW hc (by
           intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
           rcases hr with rfl | rfl | rfl
-          · exact (hpa.sub_right (single_block_sub a (by omega))).symm
-          · exact Offset.disjoint a (Or.inl (by omega)) (by omega) (by omega)
-          · exact (hwa.sub_right (single_block_sub a (by omega))).symm) (by decide)]
+          · exact (hpa.sub_right (single_block_sub a (by omega_using [hk, hj]))).symm
+          · exact Offset.disjoint a (Or.inl (by omega_using [hj, he])) (by omega_using [hk, hj]) (by omega_using [hk])
+          · exact (hwa.sub_right (single_block_sub a (by omega_using [hk, hj]))).symm) (by decide)]
         exact h.out j hjk i hi
   · exact ⟨⟨fun _ _ => rfl,rfl,rfl,rfl,fun _ _ => rfl⟩,pair,hp,
       by simpa [blockAt] using ha,hcount,Frame.refl _ _,fun j hj => by omega⟩

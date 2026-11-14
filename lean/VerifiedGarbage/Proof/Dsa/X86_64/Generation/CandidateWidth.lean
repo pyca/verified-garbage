@@ -29,7 +29,7 @@ theorem candidateWidth_ok {s : State} {B pp : Addr} {Z w len p : Nat}
       t.cf = some (decide (p < 2 ^ (8 * len - 1))) ∧ t.mem = s.mem) (by
     xrun [Impl.Dsa.X86_64.Generation.candidateWidth, State.ea, hdr, hdrOff, at0, h.rdi,
       show BitVec.ofInt 64 0 = 0#64 by rfl, BitVec.add_zero,
-      h.scr.ld (d := 160) (by have := h.h256; omega), hptr, hrd]
+      h.scr.ld (d := 160) (by have := h.h256; omega_using [this]), hptr, hrd]
     simp only [BitVec.toNat_setWidth]
     rw [Nat.mod_eq_of_lt (Nat.lt_trans (s.mem pp).isLt (by decide : 2 ^ 8 < 2 ^ 64))]
     apply Bool.eq_iff_iff.mpr

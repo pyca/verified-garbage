@@ -20,7 +20,7 @@ open VG.Proof.Ffdh.ParameterCandidate
 
 private theorem fullMask {j : Nat} (hj : j < 8) :
     BitVec.ofNat 64 (2 ^ j - 1) ||| BitVec.ofNat 64 (2 ^ j) = BitVec.ofNat 64 (2 ^ (j + 1) - 1) := by
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_using [hj]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem cutMasks_ok {s : State} {bits : Nat} (hb : 1 ≤ bits) (hk : bits < 2 ^ 31)
@@ -55,7 +55,7 @@ theorem firstByte_cut_ok {s : State} {rp op : Addr} {len j : Nat} {b : Byte}
       xrun [State.ea, at0, hrp, hop, hn, hm, hh,
       show rp + BitVec.ofInt 64 0 = rp from by simp,
       show op + BitVec.ofInt 64 0 = op from by simp, hrd, hwr, hb, hbyte,
-      ofNat64_pred (show 1 ≤ len from by omega) (by omega), off]
+      ofNat64_pred (show 1 ≤ len from by omega_using [hl]) (by omega_using [hk]), off]
       refine ⟨?_, rfl, rfl⟩
       change s.mem.writeW op (((b.setWidth 64 &&& BitVec.ofNat 64 (2 ^ (j + 1) - 1)) ||| (0#64)).setWidth 8) = _
       rw [BitVec.or_zero, hbyte]) rfl) fun _ ⟨⟨hm', hp, ho, hc⟩, k⟩ => ⟨hm', hp, ho, hc, k⟩

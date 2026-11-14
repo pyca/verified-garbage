@@ -37,7 +37,7 @@ theorem zero_test_bit (x : BitVec 32) (hx : x.toNat < 2^31) :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub,
       show (1 : BitVec 32).toNat = 1 from rfl]
     show _ = 0
-    omega
+    omega_using [hx, h0]
 
 theorem equality_mask {a b : BitVec 32} (ha : a.toNat < 2^31) (hb : b.toNat < 2^31) :
     0#32 - (((a ^^^ b)-1) >>> 31) = if a=b then BitVec.allOnes 32 else 0 := by

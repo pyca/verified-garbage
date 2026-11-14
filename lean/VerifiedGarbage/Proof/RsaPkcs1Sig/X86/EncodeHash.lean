@@ -45,7 +45,7 @@ theorem checked_ok {s0 s1 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k)
     have info2 : s2.gpr .ebx = BitVec.ofNat 32 (h.prefix.length + h.len) := by rw [f2.1]; exact info
     have flag : s3.cf = some (decide (k < h.prefix.length + h.len + 11)) := by
       rw [cf, k2.1 .ecx (by decide), pre.length, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by have := pre.bound; omega), info2, add11_toNat (prefix_length_le h)]
+        Nat.mod_eq_of_lt (by have := pre.bound; omega_using [this]), info2, add11_toNat (prefix_length_le h)]
     have kept : Keeps [.eax, .ebx] s0 s3 := k2.widen k3
     have mem : s3.mem = s0.mem := mem3.trans mem2
     by_cases short : k < h.prefix.length + h.len + 11
@@ -64,7 +64,7 @@ theorem checked_ok {s0 s1 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k)
         hash := pre.hash
         id := id
         length := pre.length
-        room := by omega
+        room := by omega_using [short]
         bound := pre.bound }
       refine WP.mono (write_ok pre.buf ready (matchLen ▸ pre.digest)) fun t ⟨ax, written⟩ => ?_
       refine ⟨written.rest, ?_⟩
@@ -83,7 +83,7 @@ theorem checked_ok {s0 s1 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k)
       have dlbound : dl < 2 ^ 32 := (s0.gpr .ebp).isLt
       have hashbound := prefix_length_le h
       simp only [BitVec.toNat_ofNat] at nat
-      omega
+      omega_using [matchLen, hashbound, nat]
     refine WP.ite true (by simp [eval, zf, dlreg, len, different])
       (fun _ => hfail s2 (k2.mono (by decide)) mem2 ?_) (by simp)
     simp [Spec.RsaPkcs1Sig.encode, hlen, matchLen]
@@ -107,11 +107,11 @@ theorem unchecked_ok {s0 s1 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x 
   refine WP.seq (WP.mono (cmpK_ok s2) fun s3 ⟨k3, mem3, cf⟩ => ?_)
   have flag : s3.cf = some true := by
     rw [cf, k2.1 .ecx (by decide), pre.length, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := pre.bound; omega), f2.1, info]
+      Nat.mod_eq_of_lt (by have := pre.bound; omega_using [this]), f2.1, info]
     have := pre.bound
     simp only [show (2048 + 11 : BitVec 32).toNat = 2059 from rfl, Option.some.injEq,
       decide_eq_true_eq]
-    omega
+    omega_using [this]
   refine WP.ite true (by simp [eval, flag]) (fun _ => refuse_ok ((k2.widen k3).mono (by decide))
     (mem3.trans mem2) none) (by simp)
 

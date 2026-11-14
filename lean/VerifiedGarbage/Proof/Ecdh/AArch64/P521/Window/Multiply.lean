@@ -55,9 +55,9 @@ theorem multiply_ok (hc : CfgOk c) (hC : Law c.C) (hO : PrimeOrder c.C) : MulOk 
         apart_slW (by decide)
       have ha := hApart w hw
       rcases ha with ha | ha
-      · left; have := hc.n0; omega
+      · left; have := hc.n0; omega_using [ha, this]
       · exact .inr ha
-    · have := sl_le c hc.n10 (i := FLAG) (by decide); have := hs.nowrap; have := hc.n0; omega
+    · have := sl_le c hc.n10 (i := FLAG) (by decide); have := hs.nowrap; have := hc.n0; omega_arith
   · rw [ht.d,hv (by decide) (by decide)]
   · intro hk1 hkn
     have hbits : c.C.n ≤ 2^521 := by decide +kernel

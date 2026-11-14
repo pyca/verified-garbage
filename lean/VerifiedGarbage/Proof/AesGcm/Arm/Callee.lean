@@ -56,7 +56,7 @@ theorem toNat_ofNat32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 32 R).toNat = R :=
-  toNat_ofNat32 (by omega)
+  toNat_ofNat32 (by omega_using [hR])
 
 /-- Addresses below a pointer do not wrap. -/
 theorem addr_sub {a : BitVec 32} {k : Nat} (h : k ≤ a.toNat) :
@@ -65,13 +65,13 @@ theorem addr_sub {a : BitVec 32} {k : Nat} (h : k ≤ a.toNat) :
   apply BitVec.eq_of_toNat_eq
   have := a.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := k) (by omega),
-    Nat.mod_eq_of_lt (a := a.toNat) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := k) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := a.toNat) (by omega_using [])]
+  omega_using [h]
 
 theorem addr_toNat (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 /-- The 8 bytes below the stack pointer `sp`, where the frames push the stack
 arguments. -/
@@ -93,7 +93,7 @@ theorem hspA : (s.sp - 8).toNat = s.sp.toNat - 8 :=
 
 theorem hA4 : State.addr (s.sp - 8 + BitVec.ofNat 32 4) = State.addr s.sp - 8 + 4 := by
   have := s.sp.isLt
-  rw [addr_add (by rw [hspA hsp]; omega), hA hsp]; rfl
+  rw [addr_add (by rw [hspA hsp]; omega_using []), hA hsp]; rfl
 
 /-- The memory after `push {r12, lr}`. -/
 theorem amem : (pushed [.r12, .lr] s).mem =
@@ -106,7 +106,7 @@ theorem amem : (pushed [.r12, .lr] s).mem =
 theorem fA : Frame [below s.sp] s.mem (pushed [.r12, .lr] s).mem := by
   rw [amem hsp]
   refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
   · simp only [Region.Contains]
     rw [Offset.add_sub_cancel_left]; decide
 
@@ -182,7 +182,7 @@ theorem cover_frame {s : State} (hsp : 8 ≤ s.sp.toNat) {n : Nat} (hn : n ≤ 8
   intro x n' ⟨r, hr, hc⟩
   simp only [List.mem_singleton] at hr; subst hr
   refine ⟨_, List.mem_append_right _ (by rw [pushed_wr8 hsp]; exact List.mem_cons_self ..), ?_⟩
-  simp only [Region.Contains] at hc ⊢; omega
+  simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]
 
 theorem covers_append' {xs ys ts : List Region} (h₁ : Covers xs ts) (h₂ : Covers ys ts) :
     Covers (xs ++ ys) ts := by
@@ -246,7 +246,7 @@ namespace CtrCall
 variable {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K C D S R n)
 include h
 
-theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega
+theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
 theorem pre : Proof.Aes.ctr32Arm.pre
     ((pushed [.r12, .lr] s).callEntry.withRegions (ctrRd s.sp K) (ctrWr C D S n)) := by
@@ -259,7 +259,7 @@ theorem pre : Proof.Aes.ctr32Arm.pre
     stackArgAddr_callEntry, arg0 h.hsp, arg1 h.hsp, argAddr0 h.hsp, h.r12, h.lr, hn]
   refine ⟨trivial, trivial, h.kc, h.kd, h.ks, h.cd, h.cs, h.ds, h.bc.symm, h.bd.symm, h.bs.symm, h.fitK,
     h.fitC, h.fitD, h.fitS, ?_, h.rounds⟩
-  have := s.sp.isLt; omega
+  have := s.sp.isLt; omega_using []
 
 theorem cov : Covers (ctrRd s.sp K ++ ctrWr C D S n)
     ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
@@ -280,19 +280,19 @@ theorem ctr_call {s : State} {K C D S : BitVec 32} {R n : Nat} (h : CtrCall s K 
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
-  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   have fA' := fA (s := s) h.hsp
   have bytesK : bytesAt (pushed [.r12, .lr] s).mem (State.addr K) (16 * (R + 1)) =
       bytesAt s.mem (State.addr K) (16 * (R + 1)) :=
     bytesAt_frame fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.bk.symm.sub_left (Region.sub_prefix hR'))) (by omega)
+      exact (h.bk.symm.sub_left (Region.sub_prefix hR'))) (by omega_using [hR])
   have blockC : blockAt (pushed [.r12, .lr] s).mem (State.addr C) = blockAt s.mem (State.addr C) :=
     blockAt_frame fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.bc.symm)
   have blocksD : blocksAt (pushed [.r12, .lr] s).mem (State.addr D) n = blocksAt s.mem (State.addr D) n :=
     blocksAt_frame fA' (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega_using [hn])
   obtain ⟨hdata, hctr⟩ := hpost
   simp only [State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
     view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), h.r0, h.r1,
@@ -368,7 +368,7 @@ theorem hA12 {k : Nat} (hk : k < 12) :
     State.addr (s.sp - 12 + BitVec.ofNat 32 k) = State.addr s.sp - 12 + BitVec.ofNat 64 k := by
   have := s.sp.isLt
   have e : (s.sp - 12).toNat = s.sp.toNat - 12 := BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; exact hsp)
-  rw [addr_add (by rw [e]; omega), show (s.sp - 12 : BitVec 32) = s.sp - BitVec.ofNat 32 12 from rfl,
+  rw [addr_add (by rw [e]; omega_using [hk]), show (s.sp - 12 : BitVec 32) = s.sp - BitVec.ofNat 32 12 from rfl,
     addr_sub hsp]
   rfl
 
@@ -392,7 +392,7 @@ theorem fA3 : Frame [below12 s.sp] s.mem (pushed [.r0, .r1, .r2] s).mem := by
   rw [amem3 hsp]
   refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _
     ?_).writeW (List.mem_singleton_self _) _ ?_
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
   · simp only [Region.Contains]
     rw [Offset.add_sub_cancel_left]; decide
   · simp only [Region.Contains]
@@ -402,14 +402,14 @@ theorem argAddr3 {i : Nat} (hi : i < 3) :
     stackArgAddr (pushed [.r0, .r1, .r2] s) i = State.addr s.sp - 12 + BitVec.ofNat 64 (4 * i) := by
   unfold stackArgAddr
   rw [pushed_sp, e12]
-  exact hA12 hsp (by omega)
+  exact hA12 hsp (by omega_using [hi])
 
 /-- The stack arguments the push leaves. -/
 theorem arg3 : stackArg (pushed [.r0, .r1, .r2] s) 0 = s.gpr .r0 ∧
     stackArg (pushed [.r0, .r1, .r2] s) 1 = s.gpr .r1 ∧ stackArg (pushed [.r0, .r1, .r2] s) 2 = s.gpr .r2 := by
   have sep : ∀ {a b : Nat}, a + 4 ≤ b ∨ b + 4 ≤ a → b + 4 ≤ 12 → a + 4 ≤ 12 →
       Mem.Sep (State.addr s.sp - 12 + BitVec.ofNat 64 a) (32 / 8) (State.addr s.sp - 12 + BitVec.ofNat 64 b) (32 / 8) :=
-    fun h hb ha => Offset.sep _ h (by omega) (by omega)
+    fun h hb ha => Offset.sep _ h (by omega_using [ha]) (by omega_using [hb])
   have z : State.addr s.sp - 12 = State.addr s.sp - 12 + BitVec.ofNat 64 0 := (BitVec.add_zero _).symm
   refine ⟨?_, ?_, ?_⟩
   · rw [stackArg, argAddr3 hsp (by decide), amem3 hsp, show 4 * 0 = 0 from rfl,
@@ -519,7 +519,7 @@ namespace CtrToCall
 variable {s : State} {K C D T S : BitVec 32} {R n : Nat} (h : CtrToCall s K C D T S R n)
 include h
 
-theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega
+theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
 theorem g0 : (toArgs s).gpr .r0 = K := by
   rw [VG.Arm.RegUpd.gpr_setReg_of_ne _ _ (by decide), VG.Arm.RegUpd.gpr_setReg_of_ne _ _ (by decide),
@@ -554,7 +554,7 @@ theorem pre : Proof.Aes.ctr32ToArm.pre ((toArgs s).callEntry.withRegions (ctrToR
     stackArg_withRegions, stackArg_callEntry, stackArgAddr_callEntry, a0, a1, a2, hn, h.argAddr0, h.toArgs_sp]
   refine ⟨trivial, trivial, h.kc, h.kt, h.ks, h.ct, h.cs, h.ts, h.bc.symm, h.bt.symm, h.bs.symm, h.dc, h.dt, h.ds,
     h.fitK, h.fitC, h.fitD, h.fitT, h.fitS, ?_, h.rounds⟩
-  have := s.sp.isLt; have := h.hsp; omega
+  have := s.sp.isLt; have := h.hsp; omega_using []
 
 theorem cov : Covers (ctrToRd s.sp K D n ++ ctrToWr C T S n) ((toArgs s).rd ++ (toArgs s).wr) := by
   have r := h.reads
@@ -588,19 +588,19 @@ theorem ctrTo_call {s : State} {K C D T S : BitVec 32} {R n : Nat} (h : CtrToCal
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
   have hR := toNat_rounds h.rounds
   have hn := toNat_ofNat32 h.n_lt
-  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   have fA' := fA3 (s := s) h.hsp
   have bytesK : bytesAt (pushed [.r0, .r1, .r2] s).mem (State.addr K) (16 * (R + 1)) =
       bytesAt s.mem (State.addr K) (16 * (R + 1)) :=
     bytesAt_frame fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.bk.symm.sub_left (Region.sub_prefix hR'))) (by omega)
+      exact (h.bk.symm.sub_left (Region.sub_prefix hR'))) (by omega_using [hR])
   have blockC : blockAt (pushed [.r0, .r1, .r2] s).mem (State.addr C) = blockAt s.mem (State.addr C) :=
     blockAt_frame fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.bc.symm)
   have blocksD : blocksAt (pushed [.r0, .r1, .r2] s).mem (State.addr D) n = blocksAt s.mem (State.addr D) n :=
     blocksAt_frame fA' (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega_using [hn])
   obtain ⟨a0, a1, a2⟩ := h.args
   obtain ⟨hdata, hctr⟩ := hpost
   simp only [State.withRegions_mem, State.callEntry_mem, toArgs_view_gpr _ _ _ (r := .r0) (by decide),
@@ -723,7 +723,7 @@ namespace GhCall
 variable {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n)
 include h
 
-theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega
+theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
 theorem pre : Proof.Gcm.ghashArm.pre
     ((pushed [.r12, .lr] s).callEntry.withRegions (ghRd s.sp H D n) (ghWr Y S)) := by
@@ -737,7 +737,7 @@ theorem pre : Proof.Gcm.ghashArm.pre
     stackArgAddr_callEntry, arg0 h.hsp, arg1 h.hsp, argAddr0 h.hsp, h.r12, hn]
   refine ⟨trivial, trivial, h.hy, h.hs, h.yd, h.ys, h.ds, (b4 _ h.by').symm, (b4 _ h.bs).symm, h.fitH, h.fitY,
     h.fitD, h.fitS, ?_⟩
-  have := s.sp.isLt; omega
+  have := s.sp.isLt; omega_using []
 
 theorem cov : Covers (ghRd s.sp H D n ++ ghWr Y S)
     ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
@@ -768,7 +768,7 @@ theorem gh_call {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D 
       simp only [List.mem_singleton] at hr; subst hr; exact h.by'.symm)
   have blocksD : blocksAt (pushed [.r12, .lr] s).mem (State.addr D) n = blocksAt s.mem (State.addr D) n :=
     blocksAt_frame fA' (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega_using [hn])
   simp only [Proof.Gcm.ghashArm, State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
     view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), h.r0, h.r1,
     h.r2, h.r3, hn, blockH, blockY, blocksD] at hpost
@@ -851,7 +851,7 @@ variable {s : State} {K C S : BitVec 32} {L : Nat} (h : KeyCall s K C S L)
 include h
 
 theorem hL : (BitVec.ofNat 32 L).toNat = L :=
-  toNat_ofNat32 (by rcases h.len with h' | h' | h' <;> omega)
+  toNat_ofNat32 (by rcases h.len with h' | h' | h' <;> omega_using [h'])
 
 theorem pre : Proof.Aes.expandKeyArm.pre
     (s.callEntry.withRegions [⟨State.addr K, L⟩] [⟨State.addr C, 240⟩, ⟨State.addr S, 512⟩]) := by

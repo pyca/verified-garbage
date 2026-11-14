@@ -56,10 +56,10 @@ theorem table_bytes {m : Mem} {B : Addr}
     (h : ∀ j < 32, m.readW (B + BitVec.ofNat 64 (8*j)) 64 = tableWord j) :
     ∀ j < 256, m (B + BitVec.ofNat 64 j) = Spec.Camellia.sbox1Table.getD j 0 := by
   intro j hj
-  have e := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) (h (j/8) (by omega))
+  have e := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) (h (j/8) (by omega_using [hj]))
   change (m.read (B + BitVec.ofNat 64 (8*(j/8))) 8).extractLsb' (8*(j%8)) 8 = _ at e
-  rw [Mem.extractLsb'_read _ _ (by omega),tableWord_byte _ (by omega) _ (by omega),
-    VG.Offset.add_add,show 8*(j/8)+j%8 = j by omega] at e
+  rw [Mem.extractLsb'_read _ _ (by omega_using []),tableWord_byte _ (by omega_using [hj]) _ (by omega_using []),
+    VG.Offset.add_add,show 8*(j/8)+j%8 = j by omega_using []] at e
   exact e
 
 /-- The same table setup under any permissions covering its scratch space. -/

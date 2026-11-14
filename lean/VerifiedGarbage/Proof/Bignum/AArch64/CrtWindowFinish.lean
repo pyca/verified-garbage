@@ -80,15 +80,15 @@ theorem finish_ok (M : Mont) (S : Selector) {s : State} {P : Addr} {w b K : Nat}
       have nz : BitVec.ofNat 64 b ≠ 0 := by
         intro h
         have he := congrArg BitVec.toNat h
-        simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega)] at he
+        simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_using [hb])] at he
         exact hz he
       rw [beq_eq_false_iff_ne.mpr nz]
       rfl
     · refine WP.seq (WP.mono (finishSquares_ok M (E := E) cu tu hw hw' hR (hm.symm ▸ hy)
-        (by simpa [hm] using hyv) (by omega) hb (by simpa [hm] using bc))
+        (by simpa [hm] using hyv) (by omega_using [hz]) hb (by simpa [hm] using bc))
         fun a ⟨ca,ta,_,va,_,fa,ka,ha⟩ => ?_)
       refine WP.mono (selectProduct_ok M S (E := 2 ^ b * E) (v := v) ca ta hw hw' hR va
-        (by have := pending_lt16 hb hv; omega)
+        (by have := pending_lt16 hb hv; omega_using [this])
         (by rw [ha _ (by decide) (by decide),hm]; exact hn))
         fun t ⟨ct,tt,yt,vt,ft,kt⟩ => ?_
       refine ⟨ct,tt,yt,?_,(fu.trans fa).trans ft,((ku.trans ka).trans kt).mono (by decide)⟩

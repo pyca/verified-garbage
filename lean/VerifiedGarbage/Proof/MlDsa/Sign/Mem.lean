@@ -34,10 +34,10 @@ theorem read_congr₂ {m m' : Mem} {a a' : Addr} {n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [Mem.read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0, ih fun i hi => ?_]
-    have := h (i + 1) (by omega)
+    have := h (i + 1) (by omega_using [hi])
     rwa [Offset.add_ofNat_succ, Offset.add_ofNat_succ] at this
 
 /-- Coefficients whose bytes are the same. -/
@@ -47,7 +47,7 @@ theorem coeffAt_congr₂ {m m' : Mem} {p p' : Addr}
   simp only [coeffAt, Mem.readW]
   rw [read_congr₂ fun j hj => ?_]
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, hj])
 
 theorem polyAt_congr₂ {m m' : Mem} {p p' : Addr}
     (h : ∀ k < 1024, m' (p' + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k)) : polyAt m' p' = polyAt m p := by
@@ -112,7 +112,7 @@ theorem hintAt_congr {m m' : Mem} {p : Addr} {k : Nat}
     unfold coeffAt
     refine Mem.readW_congr fun t ht => ?_
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact h (4 * (256 * i + j) + t) (by omega)
+    exact h (4 * (256 * i + j) + t) (by omega_using [hi, hj', ht])
   rw [e]
 
 /-- The coefficients `0, …, len - 1` of the `u32`s at `p`, whose bytes are the same. -/
@@ -125,7 +125,7 @@ theorem coeffs_congr {m m' : Mem} {p : Addr} {len : Nat}
     unfold coeffAt
     refine Mem.readW_congr fun t ht => ?_
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact h (4 * i + t) (by omega)
+    exact h (4 * i + t) (by omega_using [hi, ht])
   rw [e]
 
 theorem bytes_of_bytesAt {m m' : Mem} {p p' : Addr} {len : Nat} (h : bytesAt m' p' len = bytesAt m p len) :

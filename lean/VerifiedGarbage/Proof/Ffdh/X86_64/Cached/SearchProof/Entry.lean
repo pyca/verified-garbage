@@ -81,7 +81,7 @@ theorem entry_head_args {p : KeyPublic} {s t : State} (h : KeyInput p s)
   have ha : stackArgAddr t j = stackArgAddr s j := by
     simp only [stackArgAddr, k.1 .rsp (by simp)]
   rw [ha, hm]
-  exact hf.readW (arg_contains s (by omega : j < 9)) (fun r hr => by
+  exact hf.readW (arg_contains s (by omega_using [hj] : j < 9)) (fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
     exact hd) (by decide)
 
@@ -94,7 +94,7 @@ theorem entry_tail_ok {p : KeyPublic} {s t : State} (h : KeyInput p s)
   have hs : ∀ d, d + 8 ≤ 128 → InRegions t.wr (p.control + BitVec.ofNat 64 d) 8 :=
     fun _ hd => scr.st hd
   have ha (j : Nat) (hj : j < 7) : InRegions (t.rd ++ t.wr) (stackArgAddr t j) 8 := by
-    simpa only [k.2.1, k.2.2, stackArgAddr, k.1 .rsp (by simp)] using input_args h j (by omega)
+    simpa only [k.2.1, k.2.2, stackArgAddr, k.1 .rsp (by simp)] using input_args h j (by omega_using [hj])
   have hv (j : Nat) (hj : j < 7) : t.mem.readW (stackArgAddr t j) 64 = stackArg s j :=
     entry_head_args h hm k j hj
   refine WP.keep [.rax, .r10, .r11, .rcx, .rsi] ?_ rfl

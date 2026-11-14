@@ -23,7 +23,7 @@ theorem stepFront_ok {base : Addr} {P Q : Point C} {u v j : Nat} {s : State}
     WP isa stepFront s fun t => Scr t base 8192 ∧
       t.gpr .x2=BitVec.ofNat 64 (digitPair u v (j-1)) := by
   rw [stepFront]
-  refine WP.seq (WP.mono (decCounter_ok s h1 (by omega) h.counter) fun s₀ ⟨c₀,k₀⟩ => ?_)
+  refine WP.seq (WP.mono (decCounter_ok s h1 (by omega_using [h256]) h.counter) fun s₀ ⟨c₀,k₀⟩ => ?_)
   have W₀ : Changes base loopWork s s₀ := Changes.of_keeps k₀ (by decide)
   have I₀ := h.inputs.unch (W₀.mono loopWork_sub)
   have R₀ := h.point.of_mem k₀.mem
@@ -33,6 +33,6 @@ theorem stepFront_ok {base : Addr} {P Q : Point C} {u v j : Nat} {s : State}
   have W₂ := (W₀.trans k₁).trans k₂
   have B₂ := (W₂.mono loopWork_sub).bits h.bits
   have C₂ : s₂.gpr .x19=BitVec.ofNat 64 (j-1) := c₂.trans (c₁.trans c₀)
-  exact WP.mono (digit_ok I₂.scr B₂ (by omega) C₂) fun t ⟨d,k⟩ =>
+  exact WP.mono (digit_ok I₂.scr B₂ (by omega_using [h256]) C₂) fun t ⟨d,k⟩ =>
     ⟨I₂.scr.of_keeps k (by decide),d⟩
 end VG.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint

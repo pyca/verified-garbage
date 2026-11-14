@@ -33,8 +33,8 @@ theorem flag_mask (w k : Nat) (hw : w < 2 ^ 63) (hk : k < 2 ^ 63) :
       BitVec.ofNat 64 0 - BitVec.ofNat 64 (if k ≤ w then 1 else 0) := by
   rw [borrow63_val hw hk]
   by_cases h : w < k
-  · rw [ite_eq_left h, ite_eq_right (by omega)]; decide
-  · rw [ite_eq_right h, ite_eq_left (by omega)]
+  · rw [ite_eq_left h, ite_eq_right (by omega_using [h])]; decide
+  · rw [ite_eq_right h, ite_eq_left (by omega_using [h])]
 
 /-- `checksIf k v`: `r5 := v` if `k ≤ w`. -/
 theorem checksIf_ok {s : State} {w a k v : Nat} (h3 : s.gpr .r3 = BitVec.ofNat 64 w)
@@ -43,9 +43,9 @@ theorem checksIf_ok {s : State} {w a k v : Nat} (h3 : s.gpr .r3 = BitVec.ofNat 6
       (t.gpr .r5 = BitVec.ofNat 64 (if k ≤ w then v else a) ∧ t.gpr .r3 = s.gpr .r3 ∧ t.mem = s.mem) ∧
         Keep [.r4, .r5, .r6] s t := by
   refine WP.keep _ ?_ rfl rfl
-  have hk' : k ≤ 2 ^ 15 := by omega
+  have hk' : k ≤ 2 ^ 15 := by omega_using [hk]
   prun [checksIf, h3, h5, exec_subi (show Reg.r3 ≠ .r0 by decide) hk', exec_li hv,
-    flag_mask w k hw (by omega), sel_mask]
+    flag_mask w k hw (by omega_using [hk]), sel_mask]
   split <;> rfl
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand
@@ -82,7 +82,7 @@ theorem testArgs_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (h48 : 
   have hs := h.hs
   have hnw := hs.nowrap
   have hZ := h.hZ
-  have hZ' : 256 ≤ Z := by rw [slot_lin] at hZ; omega
+  have hZ' : 256 ≤ Z := by rw [slot_lin] at hZ; omega_using [hZ]
   unfold testArgs
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
     WP.block_append_iff, WP.block_append_iff]
@@ -90,14 +90,14 @@ theorem testArgs_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (h48 : 
       (off B 144) (s.gpr .r27)).writeW (off B 152) (s.gpr .r28)).writeW (off B 216) (s.gpr .r24) ∧
       t.gpr .r3 = BitVec.ofNat 64 w ∧ t.gpr .r5 = BitVec.ofNat 64 27) ?_ (by decide)) fun t₁ ⟨⟨m₁, a3, a5⟩, k₁⟩ => ?_
   · simp only [sth, ldh, hRand, hRandLen, hUsed, hK, hW]
-    prun [h.h31, h48, hs.st (d := 136) (n := 8) (by omega), hs.st (d := 144) (n := 8) (by omega),
-      hs.st (d := 152) (n := 8) (by omega), hs.st (d := 216) (n := 8) (by omega), hs.ld (d := 48) (n := 8) (by omega),
+    prun [h.h31, h48, hs.st (d := 136) (n := 8) (by omega_using [hZ']), hs.st (d := 144) (n := 8) (by omega_using [hZ']),
+      hs.st (d := 152) (n := 8) (by omega_using [hZ']), hs.st (d := 216) (n := 8) (by omega_using [hZ']), hs.ld (d := 48) (n := 8) (by omega_using [hZ']),
       rdw _ B _ (show 48 + 8 ≤ 216 ∨ 216 + 8 ≤ 48 by decide) (by decide) (by decide),
       rdw _ B _ (show 48 + 8 ≤ 152 ∨ 152 + 8 ≤ 48 by decide) (by decide) (by decide),
       rdw _ B _ (show 48 + 8 ≤ 144 ∨ 144 + 8 ≤ 48 by decide) (by decide) (by decide),
       rdw _ B _ (show 48 + 8 ≤ 136 ∨ 136 + 8 ≤ 48 by decide) (by decide) (by decide)]
     done
-  have hw' : w < 2 ^ 63 := by omega
+  have hw' : w < 2 ^ 63 := by omega_using [hw64]
   refine WP.mono (checksIf_ok a3 a5 hw' (by decide) (by decide)) fun t₂ ⟨⟨b5, b3, m₂⟩, k₂⟩ => ?_
   refine WP.mono (checksIf_ok (b3.trans a3) b5 hw' (by decide) (by decide)) fun t₃ ⟨⟨c5, c3, m₃⟩, k₃⟩ => ?_
   refine WP.mono (checksIf_ok ((c3.trans b3).trans a3) c5 hw' (by decide) (by decide)) fun t₄ ⟨⟨d5, d3, m₄⟩, k₄⟩ => ?_
@@ -121,35 +121,35 @@ theorem testArgs_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (h48 : 
     rw [borrow63_val (by decide) hw']
     unfold nTrial
     by_cases e : 16 < w
-    · rw [ite_eq_left e, ite_eq_right (by omega)]; decide
-    · rw [ite_eq_right e, ite_eq_left (by omega)]; decide
+    · rw [ite_eq_left e, ite_eq_right (by omega_using [e])]; decide
+    · rw [ite_eq_right e, ite_eq_left (by omega_using [e])]; decide
   refine WP.mono (WP.keep [.r4, .r5] (Q := fun t => t.mem = (t₇.mem.writeW (off B 168)
       (BitVec.ofNat 64 (VG.Proof.RsaKeyGen.checksW w))).writeW (off B 128) (BitVec.ofNat 64 (nTrial w)) ∧
       t.gpr .r3 = t₇.gpr .r3) ?_ (by decide)) fun t ⟨⟨tm, t3⟩, kt⟩ => ?_
   · simp only [sth, hChecks, hTrial]
-    prun [h31, g5, h3₇, hs₇.st (d := 168) (n := 8) (by omega), hs₇.st (d := 128) (n := 8) (by omega), htr]
+    prun [h31, g5, h3₇, hs₇.st (d := 168) (n := 8) (by omega_using [hZ']), hs₇.st (d := 128) (n := 8) (by omega_using [hZ']), htr]
     rw [hck]
   · have K := ((((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans kt))
-    have hz : 224 ≤ Z := by omega
+    have hz : 224 ≤ Z := by omega_using [hZ']
     rw [hm₇, m₁] at tm
     refine ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, by rw [t3, h3₇]⟩, K.mono (by simp)⟩
-    · simp only [hRand]; rw [tm, rdw _ _ _ (by omega) (by omega) (by omega), rdw _ _ _ (by omega) (by omega) (by omega),
-        rdw _ _ _ (by omega) (by omega) (by omega), rdw _ _ _ (by omega) (by omega) (by omega),
-        rdw _ _ _ (by omega) (by omega) (by omega), word_writeW_self]
-    · simp only [hRandLen]; rw [tm, rdw _ _ _ (by omega) (by omega) (by omega), rdw _ _ _ (by omega) (by omega) (by omega),
-        rdw _ _ _ (by omega) (by omega) (by omega), rdw _ _ _ (by omega) (by omega) (by omega), word_writeW_self]
-    · simp only [hUsed]; rw [tm, rdw _ _ _ (by omega) (by omega) (by omega), rdw _ _ _ (by omega) (by omega) (by omega),
-        rdw _ _ _ (by omega) (by omega) (by omega), word_writeW_self]
-    · simp only [hK]; rw [tm, rdw _ _ _ (by omega) (by omega) (by omega), rdw _ _ _ (by omega) (by omega) (by omega),
+    · simp only [hRand]; rw [tm, rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []),
+        rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []),
+        rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), word_writeW_self]
+    · simp only [hRandLen]; rw [tm, rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []),
+        rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), word_writeW_self]
+    · simp only [hUsed]; rw [tm, rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []),
+        rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), word_writeW_self]
+    · simp only [hK]; rw [tm, rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []),
         word_writeW_self]
-    · simp only [hChecks]; rw [tm, rdw _ _ _ (by omega) (by omega) (by omega), word_writeW_self]
+    · simp only [hChecks]; rw [tm, rdw _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), word_writeW_self]
     · simp only [hTrial]; rw [tm, word_writeW_self]
     · rw [tm]
       have o : ∀ (m : Mem) (d : Nat) (v : BitVec 64), 128 ≤ d → d + 8 ≤ 224 → Outside B 128 96 m (m.writeW (off B d) v) :=
-        fun m d v h1 h2 => (writeW_outside m B (d := d) v (by omega)).mono h1 (by omega)
-      exact ((((((o _ 136 _ (by omega) (by omega)).trans (o _ 144 _ (by omega) (by omega))).trans
-        (o _ 152 _ (by omega) (by omega))).trans (o _ 216 _ (by omega) (by omega))).trans
-        (o _ 168 _ (by omega) (by omega))).trans (o _ 128 _ (by omega) (by omega)))
+        fun m d v h1 h2 => (writeW_outside m B (d := d) v (by omega_using [h2])).mono h1 (by omega_using [h2])
+      exact ((((((o _ 136 _ (by omega_using []) (by omega_using [])).trans (o _ 144 _ (by omega_using []) (by omega_using []))).trans
+        (o _ 152 _ (by omega_using []) (by omega_using []))).trans (o _ 216 _ (by omega_using []) (by omega_using []))).trans
+        (o _ 168 _ (by omega_using []) (by omega_using []))).trans (o _ 128 _ (by omega_using []) (by omega_using [])))
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand
 
@@ -172,13 +172,13 @@ theorem DivIn.write {s : State} {B : Addr} {Z w n : Nat} (h : DivIn s B Z w n) {
   refine ⟨⟨h.env.hs.congr rfl, h.env.h10, h.env.h29, h.env.h11, h.env.h31, h.env.hw, h.env.hw', h.env.hZ⟩, ?_, h.n1, h.n2,
     h.fit, h.tab, fun i hi => ?_⟩
   · show (s.mem.writeW (off B d) v).readW (off B (8 * hTrial)) 64 = _
-    rw [Mem.readW_writeW_sep (Offset.sep B hd'.symm (by simp only [hTrial]; omega) (by omega)) (by decide)]
+    rw [Mem.readW_writeW_sep (Offset.sep B hd'.symm (by simp only [hTrial]; omega_using []) (by omega_using [hd])) (by decide)]
     exact h.cnt
   · have hf := h.fit
     have c1 : (⟨s.syms TrialTable32.symbol, 8 * 1024⟩ : Region).Contains
         (s.syms TrialTable32.symbol + BitVec.ofNat 64 (8 * i)) 8 :=
-      Offset.contains_base _ (by omega) (by omega)
-    have c2 : (⟨B, Z⟩ : Region).Contains (off B d) 8 := Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
+    have c2 : (⟨B, Z⟩ : Region).Contains (off B d) 8 := Offset.contains_base _ (by omega_using [hd, hZ]) (by omega_using [hd])
     have sp : Mem.Sep (s.syms TrialTable32.symbol + BitVec.ofNat 64 (8 * i)) (64 / 8) (off B d) (64 / 8) :=
       htab.sep c1 c2
     show (s.mem.writeW (off B d) v).readW _ 64 = _
@@ -203,28 +203,28 @@ theorem trialDiv_ok {trial : Prog isa} (D : DivOk trial) {s : State} {B : Addr} 
   have hst : WP isa (.block [sth .r23 hOut, sth .r24 hOutLen]) s fun u =>
       u = { s with mem := (s.mem.writeW (off B 24) (s.gpr .r23)).writeW (off B 40) (s.gpr .r24) } := by
     simp only [sth, hOut, hOutLen]
-    prun [e.h31, hs.st (d := 24) (n := 8) (by omega), hs.st (d := 40) (n := 8) (by omega)]
+    prun [e.h31, hs.st (d := 24) (n := 8) (by omega_using [hZ]), hs.st (d := 40) (n := 8) (by omega_using [hZ])]
   refine WP.seq (WP.mono hst fun u hu => ?_)
   subst hu
-  have h1 := h.write (s.gpr .r23) (d := 24) (by omega) (by simp only [hTrial]; omega) htab
-  have h2 := h1.write (s.gpr .r24) (d := 40) (by omega) (by simp only [hTrial]; omega) htab
+  have h1 := h.write (s.gpr .r23) (d := 24) (by omega_using []) (by simp only [hTrial]; omega_using []) htab
+  have h2 := h1.write (s.gpr .r24) (d := 40) (by omega_using []) (by simp only [hTrial]; omega_using []) htab
   have ha : arr ((s.mem.writeW (off B 24) (s.gpr .r23)).writeW (off B 40) (s.gpr .r24)) B w 0 = arr s.mem B w 0 := by
-    have o := ((writeW_outside s.mem B (d := 24) (s.gpr .r23) (by omega)).mono (o' := 24) (n' := 24) (by omega)
-      (by omega)).trans ((writeW_outside (s.mem.writeW (off B 24) (s.gpr .r23)) B (d := 40) (s.gpr .r24) (by omega)).mono
-        (o' := 24) (n' := 24) (by omega) (by omega))
-    exact o.val32 (by rw [slot_lin]; omega) (by rw [slot_lin]; omega)
+    have o := ((writeW_outside s.mem B (d := 24) (s.gpr .r23) (by omega_using [])).mono (o' := 24) (n' := 24) (by omega_using [])
+      (by omega_using [])).trans ((writeW_outside (s.mem.writeW (off B 24) (s.gpr .r23)) B (d := 40) (s.gpr .r24) (by omega_using [])).mono
+        (o' := 24) (n' := 24) (by omega_using []) (by omega_using []))
+    exact o.val32 (by rw [slot_lin]; omega_using []) (by rw [slot_lin]; omega_using [hnw, hZ])
   refine WP.seq (WP.mono (D.ok h2) fun v ⟨v22, vm, vk, vrd, vwr, vsp⟩ => ?_)
   have hsv := hs.congr vwr
   have h31 : v.gpr .r31 = B := (vk .r31 (by decide)).trans e.h31
   have rd24 : v.mem.readW (off B 24) 64 = s.gpr .r23 := by
     rw [vm]; show ((s.mem.writeW (off B 24) (s.gpr .r23)).writeW (off B 40) (s.gpr .r24)).readW _ 64 = _
-    rw [Mem.readW_writeW_sep (Offset.sep B (by omega) (by omega) (by omega)) (by decide), Mem.readW_writeW_self64]
+    rw [Mem.readW_writeW_sep (Offset.sep B (by omega_using []) (by omega_using []) (by omega_using [])) (by decide), Mem.readW_writeW_self64]
   have rd40 : v.mem.readW (off B 40) 64 = s.gpr .r24 := by
     rw [vm]; exact Mem.readW_writeW_self64 _ _ _
   refine WP.mono (WP.keep [.r23, .r24] (Q := fun t => t.gpr .r23 = s.gpr .r23 ∧ t.gpr .r24 = s.gpr .r24 ∧
       t.mem = v.mem ∧ t.gpr .r22 = v.gpr .r22) (by
     simp only [ldh, hOut, hOutLen]
-    prun [h31, hsv.ld (d := 24) (n := 8) (by omega), hsv.ld (d := 40) (n := 8) (by omega), rd24, rd40]) (by decide))
+    prun [h31, hsv.ld (d := 24) (n := 8) (by omega_using [hZ]), hsv.ld (d := 40) (n := 8) (by omega_using [hZ]), rd24, rd40]) (by decide))
     fun t ⟨⟨t23, t24, tm, t22⟩, kt⟩ => ⟨?_, by rw [tm, vm], fun r hr => ?_, t23, t24, kt.rd.trans vrd,
       kt.wr.trans vwr, kt.sp.trans vsp⟩
   · rw [t22, v22]

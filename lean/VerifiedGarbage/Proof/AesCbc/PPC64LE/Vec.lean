@@ -74,7 +74,7 @@ theorem xorSlot_ok (s₀ : State) {j : Nat} (hj : j < 8) (t : State) (r19 : t.gp
     WP isa (.block (xorSlot j)) t fun u =>
       u.vpr (breg j) = t.vpr (breg j) ^^^ rev128 (t.mem.read (sl s₀ j) 16) ∧ Local [.r7] [.v9, breg j] t u := by
   rw [xorSlot, WP.block_append_iff]
-  refine WP.cons (exec_addi' (d := .r7) (n := .r19) (imm := slot j) (by simp only [slot]; omega)) ?_
+  refine WP.cons (exec_addi' (d := .r7) (n := .r19) (imm := slot j) (by simp only [slot]; omega_using [hj])) ?_
   have h7 : (t.write .r7 (t.gpr .r19 + BitVec.ofNat 64 (slot j))).gpr .r7 = sl s₀ j := by
     rw [RegUpd.gpr_write_self, r19]
   refine WP.mono (Proof.Aes.PPC64LE.Crypto.load_ok .v9 .r7 _ (by decide) (by decide)
@@ -115,8 +115,8 @@ theorem xorSlots_ok (s₀ : State) (t : State) (r19 : t.gpr .r19 = S s₀)
       rw [hw, hu.val i hi, ite_eq_right (Nat.lt_irrefl _), ite_eq_left (Nat.lt_succ_self _), hl.mem]
     · rw [hw'.v _ (by simp [breg_v9 hi, breg_ne hi hc hic]), hu.val i hi]
       by_cases hlt : i < c
-      · rw [ite_eq_left hlt, ite_eq_left (by omega)]
-      · rw [ite_eq_right hlt, ite_eq_right (by omega)]
+      · rw [ite_eq_left hlt, ite_eq_left (by omega_using [hlt])]
+      · rw [ite_eq_right hlt, ite_eq_right (by omega_using [hic, hlt])]
 
 /-- The stores of `c` of the eight blocks, in place at `D`. -/
 structure SInv (t : State) (D : Addr) (c : Nat) (u : State) : Prop where
@@ -150,10 +150,10 @@ theorem stores_ok (t : State) {D : Addr} (r6 : t.gpr .r6 = D) (h0 : t.gpr .r0 = 
   · rw [hs.ptr, hu.ptr]
     change D + BitVec.ofNat 64 (16 * c) + BitVec.ofNat 64 16 = _
     rw [Offset.add_add]
-    exact congrArg (fun i => D + BitVec.ofNat 64 i) (by omega)
+    exact congrArg (fun i => D + BitVec.ofNat 64 i) (by omega_using [])
   · rw [hs.mem, haddr]; exact hp.1
   · rw [hs.mem, haddr]; exact hu.frame.trans hp.2
-  · rw [hs.v _ (by simp [breg_ne hi8 hc (by omega), breg_v9 hi8]), hu.val i (by omega) hi8]
+  · rw [hs.v _ (by simp [breg_ne hi8 hc (by omega_using [hi]), breg_v9 hi8]), hu.val i (by omega_using [hi]) hi8]
   · rw [hs.v _ (by simp [(breg_mask hc).symm]), hu.mask]
   · simp only [List.mem_cons, not_or] at hr
     rw [hs.v _ (by
@@ -182,10 +182,10 @@ theorem pres_ne {r : Reg} (hr : r ∈ preserved) :
 
 theorem cBlk16 {s₀ : State} (hp : UPre s₀) {i : Nat} (hi : i < N s₀) : (dataR s₀).Contains (blk s₀ i) 16 := by
   have := hp.data_wrap
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, this])
 
 theorem cSl16 (s₀ : State) {j : Nat} (hj : j < 8) : (scrR s₀).Contains (sl s₀ j) 16 :=
-  Offset.contains_base _ (by simp only [slot]; omega) (by simp only [slot]; omega)
+  Offset.contains_base _ (by simp only [slot]; omega_using [hj]) (by simp only [slot]; omega_using [hj])
 
 
 theorem inputs_of_local {nr : Nat} {gs : List Reg} {vs : List VReg} {u x : State} (h : Inputs nr u)
@@ -230,11 +230,11 @@ theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
   · refine Proof.Aes.PPC64LE.Crypto.batch_read_ok false 8 t₄ (by decide) h0 hm (fun e => absurd e (by decide))
       fun i hi => ?_
     rw [rw₄, hR, r6₄, blk_add]
-    exact in_rw (by simp) (cBlk16 hp (by omega))
+    exact in_rw (by simp) (cBlk16 hp (by omega_using [hk, hi]))
   have hR₀ := hp.rounds
   have hm₄ : t₄.mem = t.mem := by rw [hl₄.mem, m₃]
-  refine ⟨fun r hr => ?_, by rw [hb.ptr, r6₄], ?_, ⟨?_, ?_, ?_, by rcases hR₀ with e | e | e <;> omega,
-    by rcases hR₀ with e | e | e <;> omega, fun j hj => ?_⟩, ?_, ?_, by rw [hb.effects.mem, hm₄],
+  refine ⟨fun r hr => ?_, by rw [hb.ptr, r6₄], ?_, ⟨?_, ?_, ?_, by rcases hR₀ with e | e | e <;> omega_using [e],
+    by rcases hR₀ with e | e | e <;> omega_using [e], fun j hj => ?_⟩, ?_, ?_, by rw [hb.effects.mem, hm₄],
     fun j hj => ?_, fun r hr => ?_⟩
   · obtain ⟨h0, h3, h4, h6, -, -, -, -, h11, h12⟩ := pres_ne hr
     rw [hb.effects.keep.gpr (by simpa using h6), hl₄.keep.gpr (by simp [h0, h11, h12]), g₃ r h3 h4 h6]
@@ -247,9 +247,9 @@ theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
     exact ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm
   · rw [hb.effects.keep.2.1, hb.effects.keep.2.2, rw₄, hR, hb.effects.keep.gpr (by decide),
       hl₄.keep.gpr (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, r14]
-    have : j ≤ 14 := by rcases hR₀ with e | e | e <;> omega
-    exact in_rw (r := schR s₀) (by simp) (Offset.contains_base (d := 16 * j) (n := 16) (k := 240) _ (by omega)
-      (by omega))
+    have : j ≤ 14 := by rcases hR₀ with e | e | e <;> omega_using [hj, e]
+    exact in_rw (r := schR s₀) (by simp) (Offset.contains_base (d := 16 * j) (n := 16) (k := 240) _ (by omega_using [this])
+      (by omega_using [this]))
   · rw [hb.effects.keep.2.1, hl₄.keep.2.1, rd₃]
   · rw [hb.effects.keep.2.2, hl₄.keep.2.2, wr₃]
   · rw [hb.val j hj, readValue, ite_eq_right (by decide), r6₄, blk_add, hm₄]

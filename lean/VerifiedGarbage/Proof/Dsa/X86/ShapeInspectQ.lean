@@ -120,20 +120,20 @@ theorem inspectQ_ok {s : State} {base : Addr} {size len p q : Nat}
       shapeWord t base 52 = mask32 (Spec.Dsa.bitLength q = 256) ∧
       Keeps shapeClob s t ∧
       Outs base [(0, contextBytes 48), (Layout.field .mask, 4)] s.mem t.mem := by
-  have hn : (len + 7) / 8 ≤ 48 := by omega
-  have hn0 : 0 < (len + 7) / 8 := by omega
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
+  have hn0 : 0 < (len + 7) / 8 := by omega_using [h4]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
   have hsaved : 8256 ≤ size := hz
   unfold Shape.inspectQ
   refine WP.seq (WP.mono (loadWidths_ok hs hz rfl h4 hmax hw4 R.toReadableComponent
     ((R.smaller hn).slot (by decide)) hq (by decide) (by decide) (by decide) (by decide))
     fun u ⟨Mu, Q1, Q2, Q3, Ku, Ou⟩ => ?_)
-  refine WP.block_append (WP.mono (shapeParity_ok (hs.of_keeps Ku (by decide)) (by omega))
+  refine WP.block_append (WP.mono (shapeParity_ok (hs.of_keeps Ku (by decide)) (by omega_using [cb, hsaved]))
     fun v ⟨Pv, Kv, Ov⟩ => ?_)
   have Ksv := Ku.widen Kv
   have hsV := hs.of_keeps Ksv (by decide)
   have low := modulus_low hn0 Mu
-  have parityQ : w32 u.mem base (slot ((len + 7) / 8) 0) % 2 = q % 2 := by omega
+  have parityQ : w32 u.mem base (slot ((len + 7) / 8) 0) % 2 = q % 2 := by omega_using [low]
   rw [parityQ, loadWidths_header Ou (by decide) (.inr (by decide)), Po] at Pv
   have H1 : shapeWord v base 32 = mask32 (Spec.Dsa.bitLength p = 1024) := by
     rw [outside_shapeWord Ov (by decide) (.inl (by decide)), loadWidths_header Ou (by decide) (.inl (by decide)), P1]

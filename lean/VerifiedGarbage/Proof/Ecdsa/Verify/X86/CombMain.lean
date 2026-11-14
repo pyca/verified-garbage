@@ -76,7 +76,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1' q2' hsum.symm
   -- The arguments as the specification reads them.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_using []
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len)).head? = some (s₀.mem (ptr s₀ 0)) := by
     rw [peer_bytes]; rfl
   have hxv : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
@@ -89,7 +89,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       P = .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     show peerPt c _ _ _ = _
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have h16 : 2 * c.C.len = c.C.len + c.C.len := by omega
+  have h16 : 2 * c.C.len = c.C.len + c.C.len := by omega_using []
   have hr : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (2 * c.C.len)).take c.C.len) = sigR c s₀ := by
     rw [h16, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
   have hs : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (2 * c.C.len)).drop c.C.len) = sigS c s₀ := by

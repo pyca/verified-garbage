@@ -78,12 +78,12 @@ theorem pAttempt_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash} {p : PPrimalityPlan}
     right
     have hn := ha ⟨C, 24⟩ (by simp)
     change ¬ ofs C a < 24 at hn
-    omega
+    omega_using [hn]
   have Rt := rep_of_disjoint_frame Rv ff
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hframeControl)
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hhashControl)
   have Lt := lay_of_rep Lv Rv Rt rfl kt.sp kt.wr
-  have hlen : p.construct.len ≤ 2 ^ 64 := by rcases p.construct.width with hh | hh | hh <;> omega
+  have hlen : p.construct.len ≤ 2 ^ 64 := by rcases p.construct.width with hh | hh | hh <;> omega_using [hh]
   refine ⟨⟨sv.congr kt.wr, hdi, ?_, ?_⟩, used', status, V, hvused, Lt, Rt,
     by simpa [upd] using hstatus, ?_, ?_, hexhaust, hres, ?_,
     kt.rd.trans (rdv.trans ku.rd), kt.wr.trans (wrv.trans ku.wr)⟩

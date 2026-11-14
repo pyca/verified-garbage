@@ -68,11 +68,11 @@ theorem sharedKTail_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc :
     rw [hfE.word_eq (d := slot w aN) (by rng_disj) (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]
     exact hinv₀
   have hr2₁ : wv s₁.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c := by
-    rw [hEw (Or.inl (by simp only [slot, hdrBytes, aR2, aE]; omega)) (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_arith)]; exact hr2₀
+    rw [hEw (Or.inl (by simp only [slot, hdrBytes, aR2, aE]; omega_using [])) (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_arith)]; exact hr2₀
   have hr1₁ : wv s₁.mem B (slot w aR1) w = 2 ^ (64 * w) % c := by
-    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aR1, aE]; omega)) (by unfold slot aR1 aRm1 at *; omega_arith)]; exact hr1₀
+    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aR1, aE]; omega_using [])) (by unfold slot aR1 aRm1 at *; omega_arith)]; exact hr1₀
   have hrm₁ : wv s₁.mem B (slot w aRm1) w = c - 2 ^ (64 * w) % c := by
-    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aRm1, aE]; omega)) (by omega_arith)]; exact hrm₀
+    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aRm1, aE]; omega_using [])) (by omega_arith)]; exact hrm₀
   have hch₁ : word s₁.mem B (8 * kChecks) = BitVec.ofNat 64 (checksW w) := by
     rw [hfE.word_eq (d := 8 * kChecks) (by rng_disj) (by unfold kChecks kE sFn; omega_arith)]; exact hch₀
   have hw₁ : ∀ {k}, k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kUsed ∨ k = kOut ∨ k = kUsedP →

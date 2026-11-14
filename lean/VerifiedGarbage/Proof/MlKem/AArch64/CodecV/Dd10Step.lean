@@ -74,8 +74,8 @@ theorem dd10Half_ok {s : State} {g : VReg} (hg : g = .v6 ∨ g = .v7) {o : Nat} 
   simp only [List.cons_append, List.nil_append]
   refine wp_strq2 (by rw [c.wr]; exact hw) (by rw [c.gpr]; exact h3) ho ht (by rw [c.mem]; exact hcu)
     (by rw [c.mem]; exact hf)
-    (vword_G (Lanes.chg d2 (by decide) r2) fun e he => by rw [hval e (by omega)])
-    (vword_G r3 fun e he => by rw [Nat.add_assoc, hval (4 + e) (by omega)])
+    (vword_G (Lanes.chg d2 (by decide) r2) fun e he => by rw [hval e (by omega_using [he])])
+    (vword_G r3 fun e he => by rw [Nat.add_assoc, hval (4 + e) (by omega_using [he])])
     fun s' st o f => k s' (by rw [st.gpr, c.gpr]) (by rw [st.rd, c.rd]) (by rw [st.wr, c.wr])
       (by rw [st.sp, c.sp]) (fun r a b d e => by rw [st.v, c.v r (by simp [a, b, d, e])]) o f
 

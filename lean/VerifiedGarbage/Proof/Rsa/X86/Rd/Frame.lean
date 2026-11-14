@@ -132,10 +132,10 @@ theorem arrW_end (g : Geo) : arr g.W 22 = arr g.w nArr := by
   rfl
 
 theorem kw_nar (n : Nat) : VG.Proof.Rsa.X86.KeyRt.kw (8 * n + 8) = width n := by
-  simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords, width]; omega
+  simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords, width]; omega_using []
 
 theorem kw_wid (n : Nat) : VG.Proof.Rsa.X86.KeyRt.kw (16 * n + 24) = wide n := by
-  simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords, wide, width]; omega
+  simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords, wide, width]; omega_using []
 
 /-- What a stage may change: the working space past its first 16 bytes, and the 40 bytes below `sp`. -/
 abbrev stageR (g : Geo) : List Region := VG.Proof.Bignum.X86.CrtRt.frameR g.B g.sp [(16, g.Z - 16)]
@@ -144,8 +144,8 @@ theorem ws_wide {g : Geo} {s : State} (h : Ws s g.B g.Z g.w nArr) (hi : g.n ≤ 
     Ws s g.B g.Z g.W 22 := by
   refine ⟨h.workspace, ?_, ?_, ?_⟩
   · rw [arrW_end]; exact h.fits
-  · change 0 < 2 * (2 * g.n + 2) + 2; omega
-  · change 2 * (2 * g.n + 2) + 2 ≤ 1024; omega
+  · change 0 < 2 * (2 * g.n + 2) + 2; omega_using []
+  · change 2 * (2 * g.n + 2) + 2 ≤ 1024; omega_using [hi]
 
 /-- What a stage's run starts from: its writable regions, and the call's arguments, apart from what the stage
 writes. -/
@@ -187,11 +187,11 @@ theorem KS.rtW (h : KS g s0 A live AW liveW V ls s) :
     VG.Proof.Rsa.X86.KeyRt.RtWs VG.Impl.Rsa.X86.RecoverRt.wid s g.B g.Z (16 * g.n + 24) 22 := by
   have up := h.upper
   obtain ⟨a, la, ea, ca⟩ := h.rt.lenArg
-  refine ⟨?_, ⟨a, la, ?_, ca⟩, h.rt.wsArg, by omega, h.rt.layLen⟩
+  refine ⟨?_, ⟨a, la, ?_, ca⟩, h.rt.wsArg, by omega_using [up], h.rt.layLen⟩
   · rw [kw_wid]; exact ws_wide h.ws up
   · simp only [VG.Impl.Rsa.X86.KeyRt.Lay.toLen, VG.Impl.Rsa.X86.RecoverRt.lay, VG.Proof.Rsa.X86.KeyRt.kw,
       VG.Proof.Bignum.X86.PublicRt.wb, Spec.Rsa.modulusWords] at ea ⊢
-    omega
+    omega_using [ea]
 
 /-- The workspace changes inside the stage's regions. -/
 theorem outside_stage {g : Geo} {m m' : Mem} (O : Outside g.B 16 (g.Z - 16) m m') (fit : g.B.toNat + g.Z ≤ 2 ^ 64)
@@ -240,12 +240,12 @@ theorem keepBody_of {g : Geo} {m m' : Mem} (header : hdr ≤ g.Z) {v : Nat} {js 
     have lower : hdr ≤ arr v j := Nat.le_add_right _ _
     dsimp only
     unfold hdr at header lower
-    omega
+    omega_using [ha, bound, lower]
   · have bound := hd d dm
     dsimp only
     unfold SlotOk hdr at bound
     unfold hdr at header
-    omega
+    omega_using [header, ha, bound]
 
 theorem KS.keepBody (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List Nat}
     (k : Keep g.B v js ds s.mem t.mem) (hj : ∀ j ∈ js, arr v j + S v ≤ g.Z)
@@ -264,10 +264,10 @@ theorem KS.core (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List Nat
   have header := h.ws.hdr_le
   have O := h.keepBody k hj hd
   have nw := h.ws.workspace.nowrap
-  ⟨h.rt.keep r (by decide) (by decide) (O.mono (Nat.zero_le _) (by unfold hdr at header; omega)),
-    h.lower, h.upper, h.frame.trans (outside_stage O (by omega) (by unfold hdr at header; omega)),
+  ⟨h.rt.keep r (by decide) (by decide) (O.mono (Nat.zero_le _) (by unfold hdr at header; omega_using [header])),
+    h.lower, h.upper, h.frame.trans (outside_stage O (by omega_using [nw]) (by unfold hdr at header; omega_using [header])),
     by rw [r.1 _ (by decide)]; exact h.sp, h.room, h.top,
-    h.wsLen.keep r (by decide) (O.mono (Nat.zero_le _) (by unfold hdr at header; omega)), h.z8,
+    h.wsLen.keep r (by decide) (O.mono (Nat.zero_le _) (by unfold hdr at header; omega_using [header])), h.z8,
     h.rest.trans r, ha, haW, hsl, hl, hlW, hls, h.start⟩
 
 end
@@ -303,7 +303,7 @@ theorem KS.arrs_W {js ds : List Nat} (h : KS g s0 A live AW liveW V ls s) (k : K
       simp only [List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hi
       obtain ⟨i', hi', e⟩ := hi
       have := hl j hj i' hi'
-      rcases e with rfl | rfl <;> omega) (fun d hd => (hds d hd).2.1) fun j hj => h.ws.fit64 (h.live_lt j hj)
+      rcases e with rfl | rfl <;> omega_using [this]) (fun d hd => (hds d hd).2.1) fun j hj => h.ws.fit64 (h.live_lt j hj)
 
 /-- The arrays read with `W` that a step with `W` words does not write. -/
 theorem KS.arrsW_W {js ds : List Nat} (h : KS g s0 A live AW liveW V ls s) (k : Keep g.B g.W js ds s.mem t.mem)
@@ -368,7 +368,7 @@ theorem KS.slot1 {d x v : Nat} (h : KS g s0 A live AW liveW V ls s)
       rw [upd_ne _ _ eq, kw.slot info.2.1 (fun z hz => by
         simp only [List.mem_singleton] at hz
         subst hz
-        have := info.2.2; have := hd.2.2; omega), h.sl d' old]
+        have := info.2.2; have := hd.2.2; omega_arith), h.sl d' old]
   · intro d' hd'
     rcases List.mem_cons.mp hd' with rfl | old
     · exact hd
@@ -391,7 +391,7 @@ theorem KS.readSlot (h : KS g s0 A live AW liveW V ls s) {d : Nat} (hd : d ∈ l
     readSrc s (.mem (VG.Impl.Mont.X86.sc d)) = some (BitVec.ofNat 32 (V d)) := by
   have limit := (h.ls_ok d hd).2.1
   have header := h.ws.hdr_le
-  rw [readSrc_sc h.ws.workspace (by omega), ← h.sl d hd]
+  rw [readSrc_sc h.ws.workspace (by omega_using [limit, header]), ← h.sl d hd]
   simp only [slot, w32, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 theorem KS.storeSlot (h : KS g s0 A live AW liveW V ls s) {d : Nat} (hd : SlotOk d) (r : Reg) :
@@ -400,11 +400,11 @@ theorem KS.storeSlot (h : KS g s0 A live AW liveW V ls s) {d : Nat} (hd : SlotOk
       t.zf = s.zf ∧ Keeps [] s t := by
   have header := h.ws.hdr_le
   have limit := hd.2.1
-  refine wp_storeS (h.ws.workspace.ea (by omega)) (h.ws.workspace.write (by omega))
+  refine wp_storeS (h.ws.workspace.ea (by omega_using [header, limit])) (h.ws.workspace.write (by omega_using [header, limit]))
     fun t T => WP.block_nil ?_
   have frame : Keep g.B g.w [] [d] s.mem t.mem := by
     rw [T.mem]
-    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at limit; omega)) (by simp)
+    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at limit; omega_using [limit])) (by simp)
   exact ⟨h.slot1 frame hd ((T.keeps []).mono (by decide)) (by
     unfold slot; rw [T.mem, w32_write_self]), T.zf, T.keeps []⟩
 
@@ -555,7 +555,7 @@ theorem KS.eqS_w {d a b : Nat} (h : KS g s0 A live AW liveW V ls s)
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
         rcases hy with rfl | rfl
         · exact hls x old
-        · have := info.2.2; have := hd.2.2; omega), h.sl x old]
+        · have := info.2.2; have := hd.2.2; omega_arith), h.sl x old]
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | old
     · exact hd
@@ -704,14 +704,14 @@ theorem KS.arg {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   · have ea : (stackAddress s0 i).toNat = g.sp.toNat + (4 + 4 * i) := by
       simp only [stackAddress, VG.X86.addr, VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, BitVec.toNat_add,
         BitVec.toNat_ofNat, esp0]
-      omega
+      omega_using [hi, top]
     have eb : ((g.sp - BitVec.ofNat 32 96).setWidth 64).toNat = g.sp.toNat - 96 := by
-      rw [VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega)]
-    exact (Region.disjoint_of_le (r₁ := below g.sp 96) (.inl (by dsimp only; rw [eb, ea]; omega))
-      (by dsimp only; rw [eb]; omega) (by dsimp only; rw [ea]; omega)).symm
+      rw [VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega_using [low])]
+    exact (Region.disjoint_of_le (r₁ := below g.sp 96) (.inl (by dsimp only; rw [eb, ea]; omega_using [low]))
+      (by dsimp only; rw [eb]; omega_using []) (by dsimp only; rw [ea]; omega_using [hi])).symm
   · refine arg.stack.apart.sub_right ?_
     have := Offset.sub g.B (d := 16) (n := g.Z - 16) (e := 0) (k := g.Z) (Nat.zero_le _)
-      (by have := h.ws.hdr_le; unfold hdr at this; omega)
+      (by have := h.ws.hdr_le; unfold hdr at this; omega_using [this])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 end VG.Proof.Rsa.X86.Recover
@@ -739,7 +739,7 @@ theorem zeroAbove_ok {s : State} {B : Addr} {Z len N : Nat}
   have nowrap := h.ws.workspace.nowrap
   simp only [S] at fit
   refine VG.Proof.Rsa.X86.KeyRt.arrPtr_ok (VG.Proof.Rsa.X86.KeyRt.lenSrc h) h.lenLe h.edi (by decide)
-    (by decide) (by omega) fun u K m p e => ?_
+    (by decide) (by omega_using [fit, nowrap]) fun u K m p e => ?_
   refine wp_addS rfl fun u₁ U₁ _ => wp_subS rfl fun u₂ U₂ _ => wp_movS rfl fun u₃ U₃ _ => ?_
   have K₃ : Keeps [.eax, .ecx, .edx] s u₃ :=
     ((K.mono (by decide)).trans ((U₁.keeps.trans U₂.keeps).mono (by decide))).trans (U₃.keeps.mono (by decide))
@@ -747,16 +747,16 @@ theorem zeroAbove_ok {s : State} {B : Addr} {Z len N : Nat}
   have ptr : PtrAt u₃ B .eax (arr (kw len) j + 4 * kw len) := by
     rw [PtrAt, U₃.other _ (by decide), U₂.gpr, U₁.gpr, BitVec.toNat_sub, BitVec.toNat_add, p, e,
       show (8 : BitVec 32).toNat = 8 from rfl]
-    omega
-  refine wp_storeS (ea_ptr hu ptr (d := 0) (by omega))
-    (ws_write hu (y := arr (kw len) j + 4 * kw len + 0) (n := 4) (by omega)) fun t T => WP.block_nil ?_
+    omega_using []
+  refine wp_storeS (ea_ptr hu ptr (d := 0) (by omega_using [fit]))
+    (ws_write hu (y := arr (kw len) j + 4 * kw len + 0) (n := 4) (by omega_using [fit])) fun t T => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off B (arr (kw len) j + 4 * kw len)) (0 : BitVec 32) := by
     rw [T.mem, U₃.gpr, U₃.mem, U₂.mem, U₁.mem, m, Nat.add_zero]
-  have O := writeW32_outside s.mem B (d := arr (kw len) j + 4 * kw len) (0 : BitVec 32) (by omega)
+  have O := writeW32_outside s.mem B (d := arr (kw len) j + 4 * kw len) (0 : BitVec 32) (by omega_using [fit, nowrap])
   rw [← mem] at O
   have Kt : Keeps [.eax, .ecx, .edx] s t := K₃.trans ((T.keeps []).mono (by decide))
-  refine ⟨h.keep Kt (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega)),
-    Keep.of_arr O (by simp only [S]; omega) (by simp), ?_, by rw [mem, w32_write_self]; rfl, Kt⟩
-  exact O.val32 (.inl (by omega)) (by omega)
+  refine ⟨h.keep Kt (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega_using [fit])),
+    Keep.of_arr O (by simp only [S]; omega_using []) (by simp), ?_, by rw [mem, w32_write_self]; rfl, Kt⟩
+  exact O.val32 (.inl (by omega_using [])) (by omega_using [fit, nowrap])
 
 end VG.Proof.Rsa.X86.Recover

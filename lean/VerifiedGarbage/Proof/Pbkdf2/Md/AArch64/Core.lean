@@ -50,19 +50,19 @@ theorem hmacInit_fdepth (hi : H.initC.aarch64Depth ≤ 1) (hc : H.compC.noFrames
   simp only [Hash.hmacInit, Hash.stream, Hash.initKeys, Hash.keyLoop, Impl.Pbkdf2.Md.AArch64.Stream.callInit,
     Impl.MdStream.AArch64.compressAt, Impl.MdStream.AArch64.compressWith, Code.aarch64Depth,
     fdepth_of_noFrames hc]
-  omega
+  omega_using [hi]
 
 theorem hmacFin_fdepth (hf : H.finC.aarch64Depth ≤ 1) (hc : H.compC.noFrames = true) :
     H.hmacFin.aarch64Depth ≤ 1 := by
   simp only [Hash.hmacFin, Hash.stream, Impl.Pbkdf2.Md.AArch64.Stream.callFin, Impl.MdStream.AArch64.compressAt,
     Impl.MdStream.AArch64.compressWith, Code.aarch64Depth, fdepth_of_noFrames hc]
-  omega
+  omega_using [hf]
 
 theorem iterate_fdepth (hc : H.compC.noFrames = true) : H.iterate.aarch64Depth ≤ 1 := by
   simp only [Hash.iterate, Impl.Pbkdf2.AArch64.iterate, Impl.Pbkdf2.AArch64.main,
     Impl.Pbkdf2.AArch64.body, Impl.Pbkdf2.AArch64.compressBlock, Impl.MdStream.AArch64.compressAt,
     Impl.MdStream.AArch64.compressWith, Code.aarch64Depth, fdepth_of_noFrames hc]
-  omega
+  omega_using []
 
 end
 

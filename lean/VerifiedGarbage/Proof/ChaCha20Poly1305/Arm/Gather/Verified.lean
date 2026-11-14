@@ -80,7 +80,7 @@ theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.ChaCha20Poly1305.sealGather
     List.append_eq] at hp
   obtain ⟨qsp, q0, q1, q2, q3, a0, a1, a2, a3, a4, hd⟩ := hp
   refine ⟨q0, q1, q2, q3, qsp, fun i hi => ?_, hd⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3, a4]
 
 /-- A state satisfying the precondition of `vg_chacha20_poly1305_seal_gather`:

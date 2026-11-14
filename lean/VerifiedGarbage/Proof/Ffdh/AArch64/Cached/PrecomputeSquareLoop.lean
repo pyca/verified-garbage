@@ -32,18 +32,18 @@ theorem precomputeSquareStep (M : Mont) {s0 s : State} {p : Parameters} {E n j :
  rintro u ⟨power,arrays,rest⟩
  have counterU : Counter p.B (n-j) u := (arrays_header arrays (by decide)).trans h.counter
  refine WP.mono (decrement_control_ok power.good p.room (by decide : 16≤sI) (by decide : sI<32)
-  (by omega) counterU) ?_
+  (by omega_using [inside]) counterU) ?_
  rintro t ⟨good,counter,index,frame,keep⟩
  have powerT := power.after_header good frame (by decide : sI<32)
  have exponent : 2*(E*2^j)=E*2^(j+1) := by rw [Nat.pow_succ];ring
  rw [exponent] at powerT
- have remaining : n-j-1=n-(j+1) := by omega
+ have remaining : n-j-1=n-(j+1) := by omega_using []
  rw [remaining] at counter
  refine ⟨⟨powerT,counter,?_,((h.keep.trans rest).trans keep).mono (by simp [mmRegs])⟩,?_⟩
  · exact (h.frame.trans (Frm.of_arrays arrays (by simp [squareRanges]))).trans
     (Frm.of_outside frame (by simp [squareRanges]))
- · rw [index,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : n-j-1<2^64)]
-   omega
+ · rw [index,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [size] : n-j-1<2^64)]
+   omega_using [inside]
 
 theorem precomputeSquareLoop_ok (M : Mont) {s : State} {p : Parameters} {E n : Nat}
  (power : Power p E s) (counter : Counter p.B n s) (positive : 0<n) (size : n<2^64) :

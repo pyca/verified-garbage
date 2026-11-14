@@ -42,7 +42,7 @@ definitional check would evaluate the table). -/
 theorem keySatMem_held : ∀ i < Impl.Blowfish.initWords.length,
     keySatMem.readW (0x10000 + BitVec.ofNat 64 (8 * i)) 64 = Impl.Blowfish.initWords.getD i 0 := by
   unfold keySatMem
-  exact constMem_held _ _ (by rw [initWords_length]; omega)
+  exact constMem_held _ _ (by rw [initWords_length]; omega_using [])
 
 def keySatState : State where
   gpr r := match r with

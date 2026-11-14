@@ -275,9 +275,9 @@ theorem mulPQ_ok {s : State} {B : Addr} {Z w pl ql : Nat} (h : Ws s B Z (2 * w +
       Outside B (slot (2 * w + 2) aA) (8 * (2 * w + 2 + 2)) s.mem t.mem ∧ Keep ckRegs s t := by
   have lt : ∀ {Y l : Nat}, Y < 256 ^ l → Y < 2 ^ (64 * ((l + 7) / 8)) := fun {Y l} hY =>
     Nat.lt_of_lt_of_le hY (by
-      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))
+      rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_using []))
   refine WP.mono (mulPQ_raw_ok h hpl hql pl1 ql1 hpw hqw) fun t ⟨hv, o, k⟩ => ⟨?_, o, k⟩
-  rw [hv, wv_low_of_lt (v := (pl + 7) / 8) (w := 2 * w + 2) (by omega) (by rw [hX]; exact lt hXl), hX,
-    wv_low_of_lt (v := (ql + 7) / 8) (w := 2 * w + 2) (by omega) (by rw [hR]; exact lt hRl), hR]
+  rw [hv, wv_low_of_lt (v := (pl + 7) / 8) (w := 2 * w + 2) (by omega_using [hpw]) (by rw [hX]; exact lt hXl), hX,
+    wv_low_of_lt (v := (ql + 7) / 8) (w := 2 * w + 2) (by omega_using [hqw]) (by rw [hR]; exact lt hRl), hR]
 
 end VG.Proof.Rsa.AArch64

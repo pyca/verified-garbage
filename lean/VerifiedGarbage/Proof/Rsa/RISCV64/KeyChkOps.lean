@@ -65,7 +65,7 @@ theorem Stg.copy_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   · by_cases hv : o = aVD
     · subst hv
       have hS : S g.w = 8 * (g.w + 2) := rfl
-      rw [out.word (by omega) (by have := h.ws.fit64 (j := aVD) (by decide); omega), h.vdTop]
+      rw [out.word (by omega_using []) (by have := h.ws.fit64 (j := aVD) (by decide); omega_using [hS, this]), h.vdTop]
     · exact h.vd_keep k (by simpa using hv) (by simp)
 
 /-- `clrLow j`, for `j` not the divisor. -/
@@ -126,14 +126,14 @@ theorem Stg.ltA_ok' {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   by_cases hlt : A a < A b
   · have : (t1.gpr .t4).toNat = 1 := by
       rcases Nat.lt_or_ge (t1.gpr .t4).toNat 1 with e | e
-      · have : (t1.gpr .t4).toNat = 0 := by omega
+      · have : (t1.gpr .t4).toNat = 0 := by omega_using [e]
         rw [this, Nat.mul_zero, Nat.add_zero] at v1; omega
-      · omega
+      · omega_using [b1, e]
     simp [hlt, this]
   · have : (t1.gpr .t4).toNat = 0 := by
       rcases Nat.lt_or_ge (t1.gpr .t4).toNat 1 with e | e
-      · omega
-      · have : (t1.gpr .t4).toNat = 1 := by omega
+      · omega_using [e]
+      · have : (t1.gpr .t4).toNat = 1 := by omega_using [b1, e]
         rw [this, Nat.mul_one] at v1; omega
     simp [hlt, this]
 
@@ -223,7 +223,7 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       upd_ne (j := aY) _ _ (Ne.symm hym)]
   refine ⟨num t.mem g.B g.w aA, fun hlt hM => ?_, ?_⟩
   · rw [gZ, gA, gX, gM, gY] at v5
-    rw [v5 rfl (by omega) hlt hM,
+    rw [v5 rfl (by omega_using [hlt]) hlt hM,
       Nat.zero_add]
   · refine h4.next ht k5 (by decide) (by decide) r5 (by decide) ?_
       (fun j hj => (List.mem_cons.mp hj).elim (fun e => by rw [e]; decide) (h.live_lt j))
@@ -277,7 +277,7 @@ theorem Stg.divA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       · rw [upd_ne _ _ (by decide), upd_self]
       have hn := hfree j hj
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-      rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega) (by simp)
+      rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega_using [hn]) (by simp)
         (h.ws.fit64 (h.live_lt j hj)), h2.arrs.get (by simp [hj]), upd_ne _ _ hn.2.2.1, upd_ne _ _ hn.1]
     · intro j hj
       rcases List.mem_cons.mp hj with rfl | hj
@@ -354,13 +354,13 @@ theorem Stg.orSlot2_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     change num s.mem g.B g.w j % 2 ^ 64 = _ at m64
     have hw : word s.mem g.B sF = BitVec.ofNat 64 f := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hf1])]
       exact hf
     rw [hw]
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hf1 with rfl | rfl
     · simp only [Nat.mul_zero, Nat.add_zero]
       rw [show (BitVec.ofNat 64 0 <<< 1 : BitVec 64) = 0#64 by decide, BitVec.or_zero, ← m64]
-      omega
+      omega_using []
     · have a1 : num s.mem g.B g.w j = 1 := (h.arrs.get hj).trans (hf2 rfl)
       have w1 : word s.mem g.B (arr g.w j) = 1#64 := by
         apply BitVec.eq_of_toNat_eq
@@ -374,9 +374,9 @@ theorem Stg.orSlot2_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
 /-- The modulus of the Montgomery checks: `p | 1`, or 3 if that is 1. -/
 def mOf (p : Nat) : Nat := if p / 2 * 2 + 1 = 1 then 3 else p / 2 * 2 + 1
 
-theorem mOf_odd (p : Nat) : mOf p % 2 = 1 := by unfold mOf; split <;> omega
-theorem mOf_ge (p : Nat) : 3 ≤ mOf p := by unfold mOf; split <;> omega
-theorem mOf_eq {p : Nat} (h : p % 2 = 1) (h3 : 3 ≤ p) : mOf p = p := by unfold mOf; split <;> omega
+theorem mOf_odd (p : Nat) : mOf p % 2 = 1 := by unfold mOf; split <;> omega_using []
+theorem mOf_ge (p : Nat) : 3 ≤ mOf p := by unfold mOf; split <;> omega_arith
+theorem mOf_eq {p : Nat} (h : p % 2 = 1) (h3 : 3 ≤ p) : mOf p = p := by unfold mOf; split <;> omega_arith
 
 /-- `setM`: `[mM] := mOf p`, from `[aOne] = 1`. -/
 theorem Stg.setM_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
@@ -391,13 +391,13 @@ theorem Stg.setM_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   refine WP.mono (h2.eqS_ok (a := mM) (b := aOne) (by simp) (by simp [hO])) fun t3 ⟨f3, h3⟩ => ?_
   rw [show seqs [.block (orSlot2 mM sF)] = .block (orSlot2 mM sF) from rfl]
   simp only [upd_self, upd_ne _ _ (show aOne ≠ mM by decide), hO1] at f3
-  refine WP.mono (h3.orSlot2_ok (j := mM) (by simp) (by decide) f3 (by split <;> omega)
+  refine WP.mono (h3.orSlot2_ok (j := mM) (by simp) (by decide) f3 (by split <;> omega_using [])
     (fun e => by simp only [upd_self]; split at e <;> first | with_reducible assumption | omega)) fun t h4 => ?_
   refine (h4.congr' fun j _ => ?_)
   by_cases e : j = mM
   · subst e
     simp only [upd_self, mOf]
-    split <;> omega
+    split <;> omega_arith
   · simp only [upd_ne _ _ e]
 
 /-- `16 S` and the slots of `tail`'s arrays: array `16 + j` of the key working space. -/
@@ -487,14 +487,14 @@ theorem mont_pre_ok {s : State} {B : Addr} {Z w : Nat} (W : Ws s B Z w nArr) {o 
     (show mM + 3 < 2048 by decide) ?_
   show WP isa (.block (ptr .a2 o ++ (ptr .a3 a ++ ptr .a4 b))) _ _
   refine ptr_ok ((W3.of_keep (Keep.write _ _ _)).of_keep (Keep.write _ _ _)) (r := .a2) (by decide)
-    (by decide) (show o < 2048 by omega) ?_
+    (by decide) (show o < 2048 by omega_using [ho]) ?_
   show WP isa (.block (ptr .a3 a ++ ptr .a4 b)) _ _
   refine ptr_ok (((W3.of_keep (Keep.write _ _ _)).of_keep (Keep.write _ _ _)).of_keep (Keep.write _ _ _))
-    (r := .a3) (by decide) (by decide) (show a < 2048 by omega) ?_
+    (r := .a3) (by decide) (by decide) (show a < 2048 by omega_using [ha]) ?_
   show WP isa (.block (ptr .a4 b ++ [])) _ _
   refine ptr_ok ((((W3.of_keep (Keep.write _ _ _)).of_keep (Keep.write _ _ _)).of_keep
     (Keep.write _ _ _)).of_keep (Keep.write _ _ _)) (r := .a4) (by decide) (by decide)
-    (show b < 2048 by omega) ?_
+    (show b < 2048 by omega_using [hb]) ?_
   refine WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_write, reduceCtorEq, ite_false, a7]
   · simp only [gpr_write, reduceCtorEq, ite_false, ite_true]
@@ -538,8 +538,8 @@ theorem Stg.mont_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   have hoddM : num s.mem g.B g.w mM % 2 = 1 := by rw [h.arrs.get hM]; exact hodd
   unfold mont
   rw [WP.seq_iff]
-  refine WP.mono (mont_pre_ok W (o := 16 + o') (a := 16 + a') (b := 16 + b') (by omega) (by omega)
-    (by omega) hoddM) fun u ⟨u7, u5, u6, u2, u3, u4, u0, uinv, um, ku⟩ => ?_
+  refine WP.mono (mont_pre_ok W (o := 16 + o') (a := 16 + a') (b := 16 + b') (by omega_using [o8]) (by omega_using [a8])
+    (by omega_using [b8]) hoddM) fun u ⟨u7, u5, u6, u2, u3, u4, u0, uinv, um, ku⟩ => ?_
   have hsu : Scr u (Mont.off g.B (16 * S g.w)) (g.Z - 16 * S g.w) := (scr16 W).congr ku.2.2
   have hZ : VG.Proof.Bignum.slot g.w 8 ≤ g.Z - 16 * S g.w := by
     have := arr_tail g.w 8
@@ -550,7 +550,7 @@ theorem Stg.mont_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     simp only [Mont.word]; rw [addr 0, um]; rfl
   have nM : num s.mem g.B g.w (16 + 0) = A mM := h.arrs.get hM
   refine WP.mono (tail_ok hsu (o := o') (a := a') (b := b') o8 a8 b8 o2 o3 a2 b2 hw2
-    (by have := W.wle; omega) hZ (by rw [u2]; exact (addr o').symm) (by rw [u3]; exact (addr a').symm)
+    (by have := W.wle; omega_using [this]) hZ (by rw [u2]; exact (addr o').symm) (by rw [u3]; exact (addr a').symm)
     (by rw [u4]; exact (addr b').symm) (by rw [u5]; exact (addr 2).symm) (by rw [u6]; exact (addr 3).symm)
     (by rw [u7]; exact (addr 0).symm) u0 (by rw [w0]; exact uinv)
     (by rw [wv, wv, um, h.arrs.get hb', nM]; exact hlt))
@@ -568,8 +568,8 @@ theorem Stg.mont_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       rcases hj with rfl | rfl | rfl <;> simp
     have hx' := hx _ hj'
     have hjl : j < 8 := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; omega
-    have f24 : arr g.w (16 + j) + S g.w ≤ 2 ^ 64 := W.fit64 (by simp only [nArr]; omega)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; omega_using [o8, hj]
+    have f24 : arr g.w (16 + j) + S g.w ≤ 2 ^ 64 := W.fit64 (by simp only [nArr]; omega_using [hjl])
     have e := arr_tail g.w j
     have hr : (16 * S g.w ≤ ofs g.B x ∧ ofs (Mont.off g.B (16 * S g.w)) x = ofs g.B x - 16 * S g.w) ∨
         (ofs g.B x < 16 * S g.w ∧ 2 ^ 64 - 16 * S g.w ≤ ofs (Mont.off g.B (16 * S g.w)) x) :=
@@ -582,21 +582,21 @@ theorem Stg.mont_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
   have hjs : ∀ j ∈ [16 + 2, 16 + 3, 16 + o'], j < nArr := by
     intro j hj
     simp only [nArr, List.mem_cons, List.not_mem_nil, or_false] at hj ⊢
-    omega
+    omega_using [o8, hj]
   have hvd : ∀ j ∈ [16 + 2, 16 + 3, 16 + o'], j ≠ aVD := by
     intro j hj
     simp only [aVD, List.mem_cons, List.not_mem_nil, or_false] at hj ⊢
-    omega
+    omega_using [hj]
   refine h.next (W.of_keep (ku.trans kt)) fr hjs (by simp) (ku.trans kt) (by decide) ?_ ?_
     (h.vd_keep fr hvd (by simp)) (h.mask_keep fr (by simp))
   · refine (h.arrs_write fr rfl (fun j hj => ?_) (by simp)).cons (by rw [upd_self])
     have := hfree j hj
     by_cases e : j = 16 + o'
     · exact .inl e
-    · right; simp only [List.mem_cons, List.not_mem_nil, or_false, mM] at this ⊢; omega
+    · right; simp only [List.mem_cons, List.not_mem_nil, or_false, mM] at this ⊢; omega_using [this, e]
   · intro j hj
     rcases List.mem_cons.mp hj with rfl | hj
-    · simp only [nArr]; omega
+    · simp only [nArr]; omega_using [o8]
     · exact h.live_lt j hj
 
 /-- `sel o a b sF`: `[o] := [a]` if the slot `sF` is 0, else `[b]`. -/

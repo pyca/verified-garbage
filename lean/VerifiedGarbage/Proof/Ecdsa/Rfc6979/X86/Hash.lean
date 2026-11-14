@@ -89,7 +89,7 @@ abbrev Q : Nat := P.R.E.C.len
 theorem shape (h : (P.F.H.D, P.F.H.B) ∈ shapes) :
     16 ≤ P.F.H.D ∧ P.F.H.D ≤ 64 ∧ P.F.H.D % 4 = 0 ∧ P.F.H.D < P.F.H.B ∧ P.F.H.B ≤ 128 ∧ 64 ≤ P.F.H.B := by
   simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
-  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega
+  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega_using [h, h']
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 1872 ∧ P.ok.hH.Wb ≤ 1872 ∧
@@ -103,21 +103,21 @@ theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 187
   have hn3 := P.R.n3
   have hc : (P.R.E.C.len = 28 → P.R.E.n = 4) ∧ P.Q ≤ 66 := by
     cases hb : P.R.big
-    · have := P.R.sizesA hb; simp only [Q]; omega
-    · have := P.R.sizesW hb; simp only [Q]; omega
+    · have := P.R.sizesA hb; simp only [Q]; omega_using [this]
+    · have := P.R.sizesW hb; simp only [Q]; omega_using [this]
   refine ⟨P.hS, P.hWi, P.hWf, P.hWb, hs.1, hs.2.1, hs.2.2.1, hs.2.2.2.1, hs.2.2.2.2.1, hs.2.2.2.2.2, hS0, hn3, hn9,
-    (by simp only [k]; split <;> omega), (by simp only [k, w]; omega), hw.1, hc.2, hw.2.2, hw.2.1⟩
+    (by simp only [k]; split <;> omega_arith), (by simp only [k, w]; omega_using []), hw.1, hc.2, hw.2.2, hw.2.1⟩
 
 /-- Unless `big`, the scalars are `Q = 4 k` bytes, in at most sixteen 32-bit words. -/
 theorem sizesA (h : P.R.big = false) : P.Q = 4 * P.k ∧ P.k ≤ 16 ∧ P.Q ≤ 64 := by
   have := P.R.sizesA h
-  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega
+  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega_arith
 
 /-- If `big`, P-521's sizes, longer than any digest. -/
 theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.k = 18 ∧ P.Q = 66 ∧ P.F.H.D < P.Q := by
   have h₁ := P.R.sizesW h
   have h₂ := (P.shape P.hDB).2.1
-  exact ⟨h₁.1, by simp only [k, h₁.1, h₁.2.1]; decide, h₁.2.1, by simp only [Q]; omega⟩
+  exact ⟨h₁.1, by simp only [k, h₁.1, h₁.2.1]; decide, h₁.2.1, by simp only [Q]; omega_using [h₁, h₂]⟩
 
 /-- The curve's scalars are `Q` bytes. -/
 theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]

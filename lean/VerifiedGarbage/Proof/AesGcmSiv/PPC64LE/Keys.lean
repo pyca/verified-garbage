@@ -54,7 +54,7 @@ structure ExpPost (c : Cx) (t t' : State) : Prop where
 
 theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
     (BitVec.ofNat 64 R - BitVec.ofNat 64 6) <<< 2 = BitVec.ofNat 64 (Spec.GcmSiv.keyLen R) := by
-  rw [ofNat_sub (by omega) (by omega), ofNat_shl]
+  rw [ofNat_sub (by omega_using [hR]) (by omega_using [hR]), ofNat_shl]
   unfold Spec.GcmSiv.keyLen; rcases hR with h | h <;> subst h <;> rfl
 
 /-- The arguments of `expand`'s call. -/
@@ -84,11 +84,11 @@ theorem expArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) :
           u₁.other _ (by decide), E.r14] <;> rfl
       r6 := by rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
           u₁.other _ (by decide), E.r14] <;> rfl
-      kl_ok := by omega
-      kc := L.w_w (.inl (by omega)) (by omega) (by decide)
-      ks := L.w_w (.inl (by omega)) (by omega) (by decide)
+      kl_ok := by omega_using [hl]
+      kc := L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
+      ks := L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
       cs := L.w_w (.inl (by decide)) (by decide) (by decide)
-      reads := Covers.append_left (Covers.cons (E₅.perm.wCR (by omega)) Covers.nil)
+      reads := Covers.append_left (Covers.cons (E₅.perm.wCR (by omega_using [hl])) Covers.nil)
         (Covers.cons (E₅.perm.wCR (by decide)) (Covers.cons (E₅.perm.wCR (by decide)) Covers.nil))
       writes := Covers.cons (E₅.perm.wC (by decide)) (Covers.cons (E₅.perm.wC (by decide)) Covers.nil) }
 
@@ -123,7 +123,7 @@ theorem shl63 (x : BitVec 64) : x <<< 63 = (x &&& 1#64).rotateRight 1 := by
   rw [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_rotateRight, BitVec.getLsbD_and]
   by_cases h63 : i < 63
   · simp [h63, BitVec.getLsbD_one]
-  · have : i = 63 := by omega
+  · have : i = 63 := by omega_using [hi, h63]
     subst this; simp
 
 theorem lis_e100 : (((0xe100 : BitVec 16) ++ (0 : BitVec 16)).signExtend 64) <<< 32 = 0xE100000000000000#64 := by
@@ -264,7 +264,7 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
       ⟨c.W + BitVec.ofNat 64 1776, 512⟩], (⟨c.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega)) (by omega) (by decide)
+      rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)
   have f₃ : Frame (keyR c.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact ⟨_, k2, Offset.sub _ (by decide) (by decide)⟩
@@ -274,7 +274,7 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
       exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
   have dH : ∀ {d k : Nat}, d + k ≤ 64 → ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨c.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega_using [h]) (by decide)
   have dH' : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 64, 32⟩ : Region)],
       (⟨c.W + BitVec.ofNat 64 256, 240⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)
@@ -290,7 +290,7 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
     rw [hk.2, ← X.ciph]
     unfold Spec.GcmSiv.ctxCiph
     rw [hm₄, Proof.Cmac.bytesAt_frame (hkeyMem_frame _ _) (fun r hr =>
-      (dH' r hr).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega)]
+      (dH' r hr).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega_using [hR])]
   · rw [hm₄, hkeyMem_key, ← hm₄, a₄]
   · rw [hm₄]; exact hkeyMem_acc _ _
 

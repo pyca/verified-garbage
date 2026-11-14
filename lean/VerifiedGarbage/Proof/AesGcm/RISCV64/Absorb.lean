@@ -277,7 +277,7 @@ theorem headPost_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} 
       (by rw [he.s1]) (Lay.st_st (.inl (by omega_arith)) (by omega_arith) (by decide))
       (L.st_w (by decide) (.inr ⟨by decide, by decide⟩))
       (he.stk'.st.sub_left (Lay.stSub (d := 32) (n := 16) (by decide)))
-      (by have := L.sw; rw [Offset.toNat_add_ofNat]; omega)
+      (by have := L.sw; rw [Offset.toNat_add_ofNat]; omega_using [this])
       (covers_left (he.perm.stC (by decide))))
       fun s₅ g => ?_
     refine ⟨k, rfl, g.env he, hkn, by rw [g.saved _ (by decide)]; exact h.s4,
@@ -352,7 +352,7 @@ theorem whole_ok [VG.Proof.Gcm.RISCV64.GhashLaw] {H : Block} {x : List Byte} {D 
         (fun s₂ : State => s₂.gpr .a0 = V .s2 + BitVec.ofNat 64 240 ∧
           s₂.gpr .a1 = V .s1 + BitVec.ofNat 64 yo ∧ s₂.gpr .a4 = V .s0 + BitVec.ofNat 64 512 ∧
           (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a4 → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂) := by
-      refine Steps.wp_addi (by decide) fun t₁ u₁ => Steps.wp_addi (by omega) fun t₂ u₂ =>
+      refine Steps.wp_addi (by decide) fun t₁ u₁ => Steps.wp_addi (by omega_using [hyo]) fun t₂ u₂ =>
         Steps.wp_addi (by decide) fun t₃ u₃ => WP.block_nil ?_
       refine ⟨?_, ?_, ?_, fun r a b d => ?_, ?_, ?_, ?_, ?_⟩
       · rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h29]

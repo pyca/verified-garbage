@@ -89,7 +89,7 @@ theorem call_ct (c : PdChecked) :
         · rw [f₁.x5, f₂.x5]
         · rw [f₁.x6, f₂.x6]
         · rw [f₁.x7, f₂.x7]
-      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+      · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
         · rw [a0₁, a0₂]
         · rw [a1₁, a1₂]
       · have hx := hk.2.2 (PRE e.L e.m₁) (by rw [q₁.hx]; exact List.mem_singleton_self _)

@@ -87,7 +87,7 @@ theorem decode_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hc : VCtx b s) {p : 
   refine WP.seq (WP.mono (decodeY_ok hc hp hp') fun s1 ⟨hc1, hr1, hf1, hy1, hon1, hk1, hs1, hb1⟩ => ?_)
   generalize hB : (s.mem (b + BitVec.ofNat 64 (p + 56))).toNat = B at hs1 hb1
   have hBl : B < 256 := by rw [← hB]; exact BitVec.isLt _
-  have hsg : B / 128 ≤ 1 := by omega
+  have hsg : B / 128 ≤ 1 := by omega_using [hB]
   generalize hY : VG.Proof.X448.toFe (yw s.mem b p) = y
   have hy : FS s1.mem b DY = y := by rw [FS, hy1, hY]
   have hon : FS s1.mem b DON = 1 := by rw [FS, hon1]; rfl
@@ -123,7 +123,7 @@ theorem decode_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hc : VCtx b s) {p : 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact Offset.disjoint_base _ (by decide) (by decide)
-      all_goals exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide)]
+      all_goals exact Offset.disjoint _ (by omega_arith) (by omega_using [o3]) (by omega_arith)) (by decide)]
   refine ⟨hct, hr1.mono (by decide) |>.trans (hst2.rest.trans (hr3.trans (hrt.mono (by decide)))), ?_,
     by rw [hkt, hk3 DK (by simp), hd2], ?_, ?_⟩
   · -- The frame.

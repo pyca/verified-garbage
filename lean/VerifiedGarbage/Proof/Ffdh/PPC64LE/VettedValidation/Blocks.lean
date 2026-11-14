@@ -16,11 +16,11 @@ theorem header_ok {s : State} {src : Addr} {k : Nat} {dom : List Byte}
     (h : Context src k dom s) (g : Group) (fit : g.len < 2 ^ 15) :
     WP isa (.block [.subi .r0 .r5 g.len]) s fun t =>
       (t.gpr .r0 = 0 ↔ g.len = k) ∧ t.mem = s.mem ∧ Keep clobbers s t := by
-  refine VG.Proof.RsaPkcs1Sig.PPC64LE.wp_subi (h := by omega)
+  refine VG.Proof.RsaPkcs1Sig.PPC64LE.wp_subi (h := by omega_using [fit])
     (fun t o value => VG.Proof.RsaPkcs1Sig.PPC64LE.wp_nil ⟨?_, o.mem,
       (show Keep [.r0] s t from ⟨o.gpr, o.rd, o.wr⟩).mono (by decide)⟩)
   rw [value, h.width]
-  have hk : k < 2 ^ 64 := by have := h.upper; omega
+  have hk : k < 2 ^ 64 := by have := h.upper; omega_using [this]
   constructor
   · intro zero
     change BitVec.ofNat 64 k - BitVec.ofNat 64 g.len = 0#64 at zero
@@ -28,7 +28,7 @@ theorem header_ok {s : State} {src : Addr} {k : Nat} {dom : List Byte}
     simp only [BitVec.sub_add_cancel, BitVec.zero_add] at same
     have hn := congrArg BitVec.toNat same
     simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk,
-      Nat.mod_eq_of_lt (show g.len < 2 ^ 64 by omega)] at hn
+      Nat.mod_eq_of_lt (show g.len < 2 ^ 64 by omega_using [fit])] at hn
     exact hn.symm
   · intro same
     rw [same, BitVec.sub_self]

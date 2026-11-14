@@ -22,19 +22,19 @@ theorem copyToContext_ok {s : State} {p : Parameters} {a n : Nat}
  Outside p.ctx (8*n) (8*p.w) s.mem t.mem ∧
  (∀ x,ofs p.B x<p.Z→t.mem x=s.mem x) ∧ t.gpr .x17=off p.ctx (8*(n+p.w)) ∧ Keep mmRegs s t := by
  have arrayRoom : slot p.w a+8*(p.w+2)≤p.Z := Nat.le_trans (slot_le array) p.room
- have fit : 8*n+8*p.w≤2^64 := by have := p.width;omega
- have offFit : 8*n<2^64 := by have := p.positive;omega
+ have fit : 8*n+8*p.w≤2^64 := by have := p.width;omega_using [span, this]
+ have offFit : 8*n<2^64 := by have := p.positive;omega_using [span, fit]
  have outside (i : Nat) (hi : i<8*p.w) : p.Z≤ofs p.B (off p.ctx (8*n)+BitVec.ofNat 64 i) := by
-  have h := space.outside (8*n+i) (by omega)
+  have h := space.outside (8*n+i) (by omega_using [span, hi])
   simpa only [off,BitVec.ofNat_add,BitVec.add_assoc] using h
  have sourceInside (i : Nat) (hi : i<p.w) (b : Nat) (hb : b<8) :
   ofs p.B (off p.B (slot p.w a+8*i)+BitVec.ofNat 64 b)<p.Z := by
-  rw [ofs_off p.B (by have := good.scr.nowrap;omega)]
-  omega
- refine WP.mono (copyWords_ok source output count (by have := p.positive;omega) p.width fit
-  (fun i hi => good.scr.ld (by omega))
+  rw [ofs_off p.B (by have := good.scr.nowrap;omega_using [arrayRoom, hi, hb, this])]
+  omega_using [arrayRoom, hi, hb]
+ refine WP.mono (copyWords_ok source output count (by have := p.positive;omega_using [this]) p.width fit
+  (fun i hi => good.scr.ld (by omega_using [arrayRoom, hi]))
   (fun i hi => by
-   have rd := space.writable (n+i) (by omega)
+   have rd := space.writable (n+i) (by omega_using [span, hi])
    simpa only [Nat.mul_add] using rd)
   (fun i hi b hb => (outside_shift_iff p.ctx _ offFit fit).mpr (le_ofs_of_sep outside (sourceInside i hi b hb)))) ?_
  rintro t ⟨value,_,frame,_,pointer,rest⟩
@@ -45,7 +45,7 @@ theorem copyToContext_ok {s : State} {p : Parameters} {a n : Nat}
  have totalRest : Keep mmRegs s t := rest.mono (by simp [mmRegs])
  refine ⟨⟨good.scr.congr totalRest.wr,(totalRest.gpr .x0 (by simp [mmRegs])).trans good.x0,
   (header sW (by decide)).trans good.hdr.hw,(header sMinv (by decide)).trans good.hdr.hminv,
-  fun i hi => (header (sArr i) (by unfold sArr;omega)).trans (good.hdr.harr i hi)⟩,
+  fun i hi => (header (sArr i) (by unfold sArr;omega_using [hi])).trans (good.hdr.harr i hi)⟩,
   value,frame,unchanged,?_,totalRest⟩
  simpa only [Nat.mul_add] using pointer
 

@@ -56,18 +56,18 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
   refine ⟨⟨by rw [hgpr]; exact hE.rdx, by rw [hgpr]; exact hE.r11, fun i hi hi' => ?_, fun k hk l hl => ?_,
     fun k hk => by rw [hrd, hwr]; exact hE.ina k hk, fun k hk => by rw [hrd, hwr]; exact hE.inp k hk,
     ⟩, fun l hl => by rw [hlane _ (by decide) (by decide) l hl]; exact h1 l hl, ?_⟩
-  · have e : a + BitVec.ofNat 64 (16 * i) = bAddr s₀ (16 * g + i) := addr_eq (by omega)
+  · have e : a + BitVec.ofNat 64 (16 * i) = bAddr s₀ (16 * g + i) := addr_eq (by omega_using [ha])
     rw [e, hf.readW (r := ⟨bAddr s₀ (16 * g + i), 16⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
       intro x h₁ h₂
-      exact run_sep hw (by omega) hc (hsep i hi hi') h₁ h₂) (by decide)]
+      exact run_sep hw (by omega_using [hg, hi']) hc (hsep i hi hi') h₁ h₂) (by decide)]
     have := hE.xs i hi hi'
     rwa [e] at this
-  · rw [hf.readW (r := pR s₀) (Offset.contains_base _ (by omega) (by omega))
+  · rw [hf.readW (r := pR s₀) (Offset.contains_base _ (by omega_using [hk, hl]) (by omega_using [hk, hl]))
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega))) (by decide)]
+        exact hp.d_p.symm.sub_right (Offset.sub_base _ (by omega_using [hc]))) (by decide)]
     exact hE.pv k hk l hl
   · split
     · rw [ite_t (by assumption)] at h2

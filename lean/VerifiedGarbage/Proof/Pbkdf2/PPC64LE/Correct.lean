@@ -60,7 +60,7 @@ theorem zext32 (x : BitVec 64) : x <<< 32 >>> 32 = BitVec.ofNat 64 (x.setWidth 3
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_setWidth,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  omega
+  omega_using []
 
 /-- After the entry block: the return address in `r0`, `n` zero-extended in `r5`. -/
 structure Entry (s₀ s : State) : Prop where

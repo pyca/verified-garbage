@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
 public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed25519's base-point multiplication on AArch64: the comb's tables in a static
@@ -47,6 +48,6 @@ in a definitional check would evaluate the tables). -/
 theorem satMem_held : ∀ i < combWords.length,
     satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   unfold satMem
-  exact constMem_held _ _ (by rw [combWords_length]; omega)
+  exact constMem_held _ _ (by rw [combWords_length]; omega_using [])
 
 end VG.Proof.Ed25519.AArch64

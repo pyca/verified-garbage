@@ -29,11 +29,11 @@ theorem subtract_ok {s : State} {base : Addr} {size exponent : Nat}
   unfold subtract
   refine wp_movS rfl fun a A _ => wp_movS rfl fun b B _ => ?_
   have Kb : Keeps [.eax, .edx] s b := (A.keeps.mono (by decide)).widen B.keeps
-  have readLo := readSrc_sc (scratch.of_keeps Kb (by decide)) (d := exponent) (by omega)
+  have readLo := readSrc_sc (scratch.of_keeps Kb (by decide)) (d := exponent) (by omega_using [fit])
   rw [B.mem, A.mem] at readLo
   refine wp_subS readLo fun c C cfC => ?_
   have Kc : Keeps [.eax, .edx] s c := Kb.widen C.keeps
-  have readHi := readSrc_sc (scratch.of_keeps Kc (by decide)) (d := exponent + 4) (by omega)
+  have readHi := readSrc_sc (scratch.of_keeps Kc (by decide)) (d := exponent + 4) (by omega_using [fit])
   rw [C.mem, B.mem, A.mem] at readHi
   refine wp_sbbS readHi cfC fun d D cfD => wp_adcS rfl cfD fun e E _ => wp_subS rfl fun t T _ => WP.block_nil ?_
   let lowBorrow := decide ((b.gpr .eax).toNat < (s.mem.readW (off base exponent) 32).toNat)
@@ -57,6 +57,6 @@ theorem subtract_ok {s : State} {base : Addr} {size exponent : Nat}
   · rw [T.other .eax (by decide), E.other .eax (by decide), D.other .eax (by decide),
       T.other .edx (by decide), E.other .edx (by decide)]
     unfold pair
-    omega
+    omega_using [lo, hi]
 
 end VG.Proof.RsaKeyGen.X86.Mod64

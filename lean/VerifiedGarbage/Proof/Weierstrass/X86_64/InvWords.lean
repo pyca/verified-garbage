@@ -42,7 +42,7 @@ def smask (x : BitVec 64) : BitVec 64 := 0 - x >>> 63
 theorem smask_toNat (x : BitVec 64) : (smask x).toNat = sgnW x := by
   rw [smask, BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  unfold sgnW; split <;> simp <;> omega
+  unfold sgnW; split <;> simp <;> omega_arith
 
 theorem smask_isMask (x : BitVec 64) : IsMask (smask x) := by
   have hv := smask_toNat x

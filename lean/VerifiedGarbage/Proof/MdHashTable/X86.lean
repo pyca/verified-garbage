@@ -99,7 +99,7 @@ variable {N : Nat} {s : State} {v o : BitVec 32} (h : DigArgs N s v o)
 include h
 
 theorem fit : 4 * [Reg.ebx].length + 4 ≤ (s.gpr .esp).toNat := by
-  have := h.sp48; simp only [List.length_cons, List.length_nil]; omega
+  have := h.sp48; simp only [List.length_cons, List.length_nil]; omega_using [this]
 
 theorem callPre {B L : Nat} (H : Md B N L) :
     CallPre (digestK H) [.ebx] [⟨v.setWidth 64, N⟩] [⟨o.setWidth 64, N⟩] s := by
@@ -109,7 +109,7 @@ theorem callPre {B L : Nat} (H : Md B N L) :
       callEntry_gpr' _ _ (show Reg.ebx ≠ .esp by decide), callEntry_gpr' _ _ (show Reg.eax ≠ .esp by decide), h.ebx, h.eax,
       callEntry_esp']
     have sR : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 8).setWidth 64, 4⟩ (stk s) :=
-      stk_sub e (by omega) (by omega)
+      stk_sub e (by omega_using []) (by omega_using [])
     exact ⟨trivial, trivial, h.vo, h.b_o.sub_left sR, h.nv, h.no⟩
   · intro a n ⟨q, hq, hc⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -127,7 +127,7 @@ theorem callPre {B L : Nat} (H : Md B N L) :
 theorem entry_frame : Frame [stk s] s.mem (pushed [.ebx] s).callEntry.mem :=
   (callEntry_frame h.fit (by decide)).sub fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq
-    exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons, List.length_nil]; omega) h.sp48⟩
+    exact ⟨_, List.mem_singleton_self _, below_sub (by simp only [List.length_cons, List.length_nil]; omega_using []) h.sp48⟩
 
 end DigArgs
 
@@ -158,8 +158,8 @@ theorem dig_frame (ho : Proof.Pbkdf2.Md.X86.OutOk H out) (hsp : NoSp (digest out
   have e₁ : H.stateAt (pushed [.ebx] s).callEntry.mem (v.setWidth 64) = H.stateAt s.mem (v.setWidth 64) :=
     H.stateAt_congr fun j hj => h.entry_frame.bytes (R := ⟨v.setWidth 64, N⟩)
       (by simp only [List.mem_singleton]; rintro q rfl; exact h.b_v.symm)
-      (by show N ≤ 2 ^ 64; have := h.nv; omega) hj
-  have hi' : (BitVec.ofNat 64 i).toNat = i := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.no; omega)]
+      (by show N ≤ 2 ^ 64; have := h.nv; omega_using [this]) hj
+  have hi' : (BitVec.ofNat 64 i).toNat = i := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.no; omega_using [hi, this])]
   rw [← m₂, post', ← e₁]
   simp only [VG.WriteBytes.writeBytes]
   rw [BitVec.add_comm, BitVec.add_sub_cancel, hi', hl, ite_eq_left hi]

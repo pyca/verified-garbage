@@ -38,14 +38,14 @@ theorem digits_ok {u : State} {B : Addr} {Z o w s sv : Nat} (hs : Scr u B Z)
   let Inv : Nat → State → Prop := fun j t =>
     ((∃ acc, t.gpr .r3 = BitVec.ofNat 64 acc ∧ acc < 2 * s ∧ acc * 2 ^ (32 * j) % s = val32 u.mem B o j % s) ∧
       t.gpr .r5 = off B (o + 4 * j) ∧ t.mem = u.mem) ∧ Keep (.r4 :: digitRegs) u t
-  refine WP.mono (wp_countdown (cnt := .r4) (N := 2 * w) (by omega) (by omega) Inv
+  refine WP.mono (wp_countdown (cnt := .r4) (N := 2 * w) (by omega_using [hw']) (by omega_using [hw]) Inv
     (fun j hj t ⟨⟨⟨acc, t3, hacc, hv⟩, t5, tm⟩, kt⟩ _ => ?_)
-    ⟨⟨⟨0, h3, by omega, by simp [val32]⟩, by rw [h5, Nat.mul_zero, Nat.add_zero], rfl⟩, Keep.refl _ _⟩ h4)
+    ⟨⟨⟨0, h3, by omega_using [hs2], by simp [val32]⟩, by rw [h5, Nat.mul_zero, Nat.add_zero], rfl⟩, Keep.refl _ _⟩ h4)
     fun t ⟨⟨⟨acc, t3, hacc, hv⟩, _, tm⟩, kt⟩ => ⟨⟨⟨acc, t3, hacc, by rw [← hv, ← Nat.mul_assoc]⟩, tm⟩, kt⟩
   rw [WP.block_append_iff]
   have ht : Scr t B Z := hs.congr kt.wr
   refine WP.mono (digit_ok ht t5 t3 ((kt.gpr .r8 (by decide)).trans h8) ((kt.gpr .r9 (by decide)).trans h9) hacc hs2
-    hs' hinv (by omega)) fun t₁ ⟨⟨⟨r, a3, hr, hrv⟩, a5, am⟩, k1⟩ => ?_
+    hs' hinv (by omega_using [hZ, hj])) fun t₁ ⟨⟨⟨r, a3, hr, hrv⟩, a5, am⟩, k1⟩ => ?_
   refine WP.mono (subi_ok t₁ .r4 (by decide)) fun t₂ e => ?_
   subst e
   refine ⟨⟨⟨⟨r, by simp only [gpr_write, reduceCtorEq, ↓reduceIte]; exact a3, hr, ?_⟩,
@@ -61,7 +61,7 @@ theorem zero_flag {x : Nat} (hx : x < 2 ^ 63) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  split <;> omega
+  split <;> omega_arith
 
 theorem xor_zero_iff {a b : Nat} : a ^^^ b = 0 ↔ a = b := by
   constructor
@@ -78,8 +78,8 @@ theorem eq_flag {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
   have exs : BitVec.ofNat 64 a ^^^ BitVec.ofNat 64 b = BitVec.ofNat 64 (a ^^^ b) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (Nat.xor_lt_two_pow (show a < 2 ^ 64 by omega) (show b < 2 ^ 64 by omega))]
+      Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_using [ha]), Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_using [hb]),
+      Nat.mod_eq_of_lt (Nat.xor_lt_two_pow (show a < 2 ^ 64 by omega_using [ha]) (show b < 2 ^ 64 by omega_using [hb]))]
   rw [exs, zero_flag (Nat.xor_lt_two_pow ha hb)]
   simp only [xor_zero_iff]
 
@@ -93,8 +93,8 @@ theorem count_flag {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 64) (b : Bool) :
     rw [BitVec.toNat_and, BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn',
       show (2 ^ 64 - 1 % 2 ^ 64 + 0 % 2 ^ 64) % 2 ^ 64 = 2 ^ 64 - 1 by decide,
-      Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod, Nat.mod_eq_of_lt (show n - 1 < 2 ^ 64 by omega)]
-    omega
+      Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod, Nat.mod_eq_of_lt (show n - 1 < 2 ^ 64 by omega_using [hn'])]
+    omega_using [hn, hn']
   · simp only [↓reduceIte]
     rw [BitVec.toNat_and, BitVec.toNat_ofNat]
     simp
@@ -132,12 +132,12 @@ theorem entry_ok {u : State} {B T : Addr} {Z o w c i n : Nat} (hs : Scr u B Z)
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
         Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt heb,
         show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 from rfl, Nat.mul_mod_mul_right,
-        Nat.mul_div_cancel _ (Nat.two_pow_pos 32), hlo, Nat.mod_eq_of_lt (by omega)]
+        Nat.mul_div_cancel _ (Nat.two_pow_pos 32), hlo, Nat.mod_eq_of_lt (by omega_using [h8162])]
     · apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-        Nat.mod_eq_of_lt heb, hhi, Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt heb, hhi, Nat.mod_eq_of_lt (by omega_using [hsv])]
   have hv' : Scr v B Z := hs.congr kv.wr
-  refine WP.seq (WP.mono (digits_ok hv' v5 v3 v4 v8 v9 (by omega) (by omega) hinv hw hw' hZ)
+  refine WP.seq (WP.mono (digits_ok hv' v5 v3 v4 v8 v9 (by omega_using [h3]) (by omega_using [h8162]) hinv hw hw' hZ)
     fun x ⟨⟨⟨acc, x3, hacc, hacv⟩, xm⟩, kx⟩ => ?_)
   rw [vm, hc] at hacv
   have key : c % s = 0 ↔ acc = 0 ∨ acc = s := VG.Proof.RsaKeyGen.trial_div hodd hacc hacv
@@ -150,24 +150,24 @@ theorem entry_ok {u : State} {B T : Addr} {Z o w c i n : Nat} (hs : Scr u B Z)
     fun y ⟨⟨y22, y23, y24, ym⟩, ky⟩ => ⟨⟨y22, y23, y24, by rw [ym, xm, vm]⟩,
       ((kv.trans kx).trans ky).mono (by decide)⟩
   simp only [finish]
-  prun [x3, x8, x23, x24, zero_flag (show acc < 2 ^ 63 by omega), eq_flag (show acc < 2 ^ 63 by omega)
-    (show s < 2 ^ 63 by omega)]
+  prun [x3, x8, x23, x24, zero_flag (show acc < 2 ^ 63 by omega_using [h8162, hacc]), eq_flag (show acc < 2 ^ 63 by omega_using [h8162, hacc])
+    (show s < 2 ^ 63 by omega_using [h8162])]
   have hf : (BitVec.ofNat 64 (if acc = 0 then 1 else 0) ||| BitVec.ofNat 64 (if acc = s then 1 else 0)) =
       BitVec.ofNat 64 (if decide (c % s = 0) then 1 else 0) := by
     by_cases a0 : acc = 0
     · have hd : decide (c % s = 0) = true := decide_eq_true (key.mpr (Or.inl a0))
-      have a1 : ¬ (0 = s) := by omega
+      have a1 : ¬ (0 = s) := by omega_using [hodd]
       simp only [a0, a1, hd, ↓reduceIte]
       decide
     · by_cases a1 : acc = s
       · have hd : decide (c % s = 0) = true := decide_eq_true (key.mpr (Or.inr a1))
-        have s0 : ¬ (s = 0) := by omega
+        have s0 : ¬ (s = 0) := by omega_using [hodd]
         simp only [a1, s0, hd, ↓reduceIte]
         decide
       · have hd : decide (c % s = 0) = false := decide_eq_false (fun h => (key.mp h).elim a0 a1)
         simp only [a0, a1, hd, ↓reduceIte, Bool.false_eq_true]
         decide
-  rw [hf, count_flag hn (by omega)]
+  rw [hf, count_flag hn (by omega_using [hn'])]
   by_cases hit : c % s = 0 <;> simp [hit]
 
 end VG.Proof.RsaKeyGen.PPC64LE.Trial

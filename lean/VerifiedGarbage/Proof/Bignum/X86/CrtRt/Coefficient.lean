@@ -30,12 +30,12 @@ theorem subMod_value {a b M W D T : Nat} {c₁ c₂ : Bool} (ha : a < M) (hb : b
     (if c₁ then T else D) = (a + M - b) % M ∧ (if c₁ then T else D) < M := by
   cases c₁
   · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero, Bool.false_eq_true, ↓reduceIte] at h₁ ⊢
-    exact ⟨by rw [show a + M - b = (a - b) + M by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]; omega,
-      by omega⟩
+    exact ⟨by rw [show a + M - b = (a - b) + M by omega_using [h₁], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ha])]; omega_using [h₁],
+      by omega_using [ha, h₁]⟩
   · cases c₂ <;> simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero, Nat.add_zero,
       ↓reduceIte] at h₁ h₂ ⊢
-    · omega
-    · exact ⟨by rw [Nat.mod_eq_of_lt (by omega)]; omega, by omega⟩
+    · omega_using [hb, hT, h₂, h₁]
+    · exact ⟨by rw [Nat.mod_eq_of_lt (by omega_using [ha, hD, h₁])]; omega_using [h₁, h₂], by omega_using [hD, h₂]⟩
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {c : Ctx} {M : Nat}
@@ -143,7 +143,7 @@ theorem coR_fit (h : In Ex base bytes len args s) : ∀ q ∈ coR len, q.1 + q.2
   have nb : numBase = 3336 := rfl
   intro q hq
   simp only [coR, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl <;> simp only [invOff, maskOff] <;> omega
+  rcases hq with rfl | rfl | rfl <;> simp only [invOff, maskOff] <;> omega_arith
 
 theorem co_widen {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem}
     (F : Frame (frameR base sp ws) m m')
@@ -173,7 +173,7 @@ theorem prepR_co (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ prepR l
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
   · exact .inl rfl
   · exact .inr (.inr (slot_in h c (by decide)))
-  · exact .inr (.inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega⟩)
+  · exact .inr (.inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega_using [this]⟩)
   · exact .inr (.inr (slot_in h c (by decide)))
   · exact .inr (.inr (slot_in h c (by decide)))
   · exact .inr (.inr (slot_in h c (by decide)))
@@ -192,7 +192,7 @@ theorem subR_co (h : In Ex base bytes len args s) (c : Ctx) : ∀ p ∈ subR len
   have g := bc_ge h.lower' c
   rcases hp with rfl | rfl | rfl
   · exact .inr (.inl rfl)
-  · exact .inr (.inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega⟩)
+  · exact .inr (.inr ⟨(slot1_in h c).1, by have := (slot1_in h c).2; dsimp only at *; omega_using [this]⟩)
   · exact .inr (.inr (slot_in h c (by decide)))
 
 /-- A subtraction modulo `M` keeps slots 3, 4 and 8. -/
@@ -204,7 +204,7 @@ theorem subR_sv (h : In Ex base bytes len args s) (c : Ctx) {sp : BitVec 32} {m 
   have bw := bc_eq_cwc len c
   have est : st len c = 2 * bc len c + 32 := rfl
   have j8 : lo len (.slot c j) ≤ lo len (.slot c 8) := by
-    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega
+    have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega_using [this]
   have a7 := slot_apart len c (o := 7) (j := j) h7
   have p1 := slot_past1 len c (j := j) hj3
   have z0 : lo len (.slot c 0) = numBase := sl_zero len c
@@ -213,11 +213,11 @@ theorem subR_sv (h : In Ex base bytes len args s) (c : Ctx) {sp : BitVec 32} {m 
   have fit : ∀ p ∈ subR len c, p.1 + p.2 ≤ bytes := by
     have e7 : lo len (.slot c 7) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
     intro p hp; simp only [subR, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl <;> simp only [maskOff] <;> omega
-  refine frameR_val32 F R nw (by omega) ?_ fit
+    rcases hp with rfl | rfl | rfl <;> simp only [maskOff] <;> omega_arith
+  refine frameR_val32 F R nw (by omega_using [f8, bw, est, j8]) ?_ fit
   intro p hp
   simp only [subR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;> simp only [maskOff] <;> omega
+  rcases hp with rfl | rfl | rfl <;> simp only [maskOff] <;> omega_arith
 
 /-- The coefficient from the context of `p`: `m_q` (slot 5) reduced by Montgomery multiplications,
 subtracted from `m_p` (slot 6) modulo `M`, and multiplied by `qInv` (slot 8). -/
@@ -234,10 +234,10 @@ theorem coArith_ok (C : CtxOk Ex base bytes len args .wide M s) {mp mq qi : Nat}
   have hM := C.gt
   have g := bc_ge h.lower' .wide
   have RR : 2 ^ (16 * bc len .wide) = 2 ^ (8 * bc len .wide) * 2 ^ (8 * bc len .wide) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using []
   -- `m_q R mod M`, then `m_q mod M`.
   refine WP.seq (WP.mono (cmul_ok C (o := 5) (a := 5) (b := 4) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [h4]; exact Nat.mod_lt _ (by omega))) fun u₁ ⟨C₁, K₁, F₁, L₁, V₁⟩ => ?_)
+    (by decide) (by decide) (by rw [h4]; exact Nat.mod_lt _ (by omega_using [hmp]))) fun u₁ ⟨C₁, K₁, F₁, L₁, V₁⟩ => ?_)
   have B₁ : sv u₁.mem base len .wide 5 = mq * 2 ^ (8 * bc len .wide) % M := by
     have v := VG.Proof.Dsa.mont_scale C.coprime (out := sv u₁.mem base len .wide 5) (input := mq)
       (c := 2 ^ (8 * bc len .wide)) (by rw [V₁, h5, h4, RR])
@@ -256,7 +256,7 @@ theorem coArith_ok (C : CtxOk Ex base bytes len args .wide M s) {mp mq qi : Nat}
   have m₂ := mulR_sv C₁.inp F₂ C₁.inp.room (j := 6) (by decide) (by decide) (by decide) (by decide) (by decide)
   have q₂ := mulR_sv C₁.inp F₂ C₁.inp.room (j := 8) (by decide) (by decide) (by decide) (by decide) (by decide)
   -- The difference modulo `M`.
-  refine WP.seq (WP.mono (subMod_ok C₂ (by rw [m₂, m₁, h6]; exact hmp) (by rw [D₂]; exact Nat.mod_lt _ (by omega)))
+  refine WP.seq (WP.mono (subMod_ok C₂ (by rw [m₂, m₁, h6]; exact hmp) (by rw [D₂]; exact Nat.mod_lt _ (by omega_using [hmp])))
     fun u₃ ⟨C₃, F₃, S₃, K₃⟩ => ?_)
   rw [m₂, m₁, h6, D₂] at S₃
   have f₃ : sv u₃.mem base len .wide 4 = sv u₂.mem base len .wide 4 :=
@@ -265,14 +265,14 @@ theorem coArith_ok (C : CtxOk Ex base bytes len args .wide M s) {mp mq qi : Nat}
     subR_sv C₂.inp .wide F₃ C₂.inp.room (by decide) (by decide) (by decide)
   -- `qInv R mod M`, and the product.
   refine WP.seq (WP.mono (cmul_ok C₃ (o := 8) (a := 8) (b := 4) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [f₃, f₂, f₁, h4]; exact Nat.mod_lt _ (by omega))) fun u₄ ⟨C₄, K₄, F₄, L₄, V₄⟩ => ?_)
+    (by decide) (by decide) (by rw [f₃, f₂, f₁, h4]; exact Nat.mod_lt _ (by omega_using [hmp]))) fun u₄ ⟨C₄, K₄, F₄, L₄, V₄⟩ => ?_)
   have Q₄ : sv u₄.mem base len .wide 8 = qi * 2 ^ (8 * bc len .wide) % M := by
     have v := VG.Proof.Dsa.mont_scale C.coprime (out := sv u₄.mem base len .wide 8) (input := qi)
       (c := 2 ^ (8 * bc len .wide)) (by rw [V₄, q₃, q₂, q₁, h8, f₃, f₂, f₁, h4, RR])
     rwa [Nat.mod_eq_of_lt L₄] at v
   have s₄ := mulR_sv C₃.inp F₄ C₃.inp.room (j := 7) (by decide) (by decide) (by decide) (by decide) (by decide)
   refine WP.mono (cmul_ok C₄ (o := 7) (a := 7) (b := 8) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [Q₄]; exact Nat.mod_lt _ (by omega))) fun u ⟨C₅, K₅, F₅, L₅, V₅⟩ =>
+    (by decide) (by decide) (by rw [Q₄]; exact Nat.mod_lt _ (by omega_using [hmp]))) fun u ⟨C₅, K₅, F₅, L₅, V₅⟩ =>
       ⟨C₅, ?_, ?_, ?_⟩
   · have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
     have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
@@ -300,16 +300,16 @@ theorem copyDown_ok (h : In Ex base bytes len args s) {j d : Nat} (hj9 : 9 ≤ j
   have f18 := h.slot_fit .wide (j := 18) (by decide)
   have est : st len .wide = 2 * bc len .wide + 32 := rfl
   have a := Nat.mul_le_mul_right (st len .wide) hj9
-  have b := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 18 by omega)
-  have c := Nat.mul_le_mul_right (st len .wide) (show d + 1 ≤ 9 by omega)
+  have b := Nat.mul_le_mul_right (st len .wide) (show j + 1 ≤ 18 by omega_using [hj])
+  have c := Nat.mul_le_mul_right (st len .wide) (show d + 1 ≤ 9 by omega_using [hd])
   rw [Nat.succ_mul] at b c
   have ej : lo len (.slot .wide j) = numBase + j * st len .wide := rfl
   have ed : lo len (.slot .wide d) = numBase + d * st len .wide := rfl
   have e18 : lo len (.slot .wide 18) = numBase + 18 * st len .wide := rfl
   have cb1 : cb len (one .wide) = bc len .wide := by simp [cb, one]
   have cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
-  refine WP.mono (copy_ok h (x := .slot .wide j) (d := .slot .wide d) (one_ok .wide) (by rw [cb1]; omega)
-    (by rw [cb1]; omega) (by rw [cb1]; exact .inl (by omega))) fun u ⟨O, V, K⟩ => ⟨?_, ?_, K⟩
+  refine WP.mono (copy_ok h (x := .slot .wide j) (d := .slot .wide d) (one_ok .wide) (by rw [cb1]; omega_using [f18, est, b, ej, e18])
+    (by rw [cb1]; omega_using [f18, est, c, ed, e18]) (by rw [cb1]; exact .inl (by omega_using [est, a, c, ej, ed]))) fun u ⟨O, V, K⟩ => ⟨?_, ?_, K⟩
   · rw [cb1] at O; exact O
   · rw [cw1] at V; exact V
 
@@ -321,7 +321,7 @@ theorem coR_keep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   have nb : numBase = 3336 := rfl
   refine low_keep h F R (coR_fit h) ?_ hd hk
   intro p hp; simp only [coR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl <;> simp only [invOff, maskOff] <;> omega
+  rcases hp with rfl | rfl | rfl <;> simp only [invOff, maskOff] <;> omega_arith
 
 /-- `h = (m_p - m_q mod p) qInv mod p` into the wide slot 7, for `p` (wide slot 10), `m_p` and `m_q`
 (wide slots 16 and 17) and `qInv` (wide slot 14), in the context of `p`. -/

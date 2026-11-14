@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # PPC64LE: constants built with `lis`, `ori`, `sldi` and `oris`
@@ -25,16 +26,16 @@ theorem movImm64_eq (x : BitVec 64) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_signExtend, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h16 : i < 16
-  · simp [h16, show i < 32 by omega, hi]
+  · simp [h16, show i < 32 by omega_using [h16], hi]
   by_cases h32 : i < 32
-  · simp [h16, h32, hi, show i - 16 < 64 by omega, show i - 16 < 16 by omega,
-      show 16 + (i - 16) = i by omega]
+  · simp [h16, h32, hi, show i - 16 < 64 by omega_using [hi], show i - 16 < 16 by omega_using [h32],
+      show 16 + (i - 16) = i by omega_using [h16]]
   by_cases h48 : i < 48
-  · simp [h16, h32, hi, show i - 32 < 64 by omega, show i - 32 < 32 by omega,
-      show i - 32 < 16 by omega, show ¬i - 16 < 16 by omega, show 32 + (i - 32) = i by omega]
-  · simp [h16, h32, hi, show i - 32 < 64 by omega, show i - 32 < 32 by omega,
-      show ¬i - 32 < 16 by omega, show i - 32 - 16 < 16 by omega, show ¬i - 16 < 16 by omega,
-      show 48 + (i - 32 - 16) = i by omega]
+  · simp [h16, h32, hi, show i - 32 < 64 by omega_using [hi], show i - 32 < 32 by omega_using [hi],
+      show i - 32 < 16 by omega_using [h48], show ¬i - 16 < 16 by omega_using [h32], show 32 + (i - 32) = i by omega_using [h32]]
+  · simp [h16, h32, hi, show i - 32 < 64 by omega_using [hi], show i - 32 < 32 by omega_using [hi],
+      show ¬i - 32 < 16 by omega_using [h48], show i - 32 - 16 < 16 by omega_using [hi], show ¬i - 16 < 16 by omega_using [h32],
+      show 48 + (i - 32 - 16) = i by omega_using [h48]]
 
 /-- `lis` and `ori` of a 32-bit constant leave it in the low 32 bits. -/
 theorem movImm32_eq (x : BitVec 32) :
@@ -45,8 +46,8 @@ theorem movImm32_eq (x : BitVec 32) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_signExtend,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 16
-  · simp [h, show i < 32 from hi, show i < 64 by omega]
-  · simp [h, show i < 32 from hi, show i < 64 by omega, show i - 16 < 16 by omega,
-      show 16 + (i - 16) = i by omega]
+  · simp [h, show i < 32 from hi, show i < 64 by omega_using [hi]]
+  · simp [h, show i < 32 from hi, show i < 64 by omega_using [hi], show i - 16 < 16 by omega_using [hi],
+      show 16 + (i - 16) = i by omega_using [h]]
 
 end VG.PPC64LE

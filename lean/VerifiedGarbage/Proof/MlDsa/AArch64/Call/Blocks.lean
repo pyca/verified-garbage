@@ -51,7 +51,7 @@ theorem and24_ok (s : State) :
 theorem imm8 (v : Nat) : ((BitVec.ofNat 16 v).setWidth 64).setWidth 8 = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem bytesAt_one (m : Mem) (a : Addr) : bytesAt m a 1 = [m a] := by
   simp [Spec.Sha3.bytesAt, BitVec.add_zero]

@@ -33,7 +33,7 @@ theorem lead_lt {bs : List Byte} (h : bs ≠ []) : lead bs < bs.length := by
   | b :: c :: bs, _ =>
     have := lead_lt (bs := c :: bs) (by simp)
     simp only [lead, List.length_cons] at this ⊢
-    split <;> omega
+    split <;> omega_arith
 
 theorem lead_zero {bs : List Byte} : ∀ j < lead bs, ∃ h : j < bs.length, bs[j] = 0 := by
   match bs with
@@ -47,8 +47,8 @@ theorem lead_zero {bs : List Byte} : ∀ j < lead bs, ∃ h : j < bs.length, bs[
       cases j with
       | zero => exact ⟨by simp, hb⟩
       | succ j =>
-        obtain ⟨h, h'⟩ := lead_zero (bs := c :: bs) j (by omega)
-        exact ⟨by simp at h ⊢; omega, h'⟩
+        obtain ⟨h, h'⟩ := lead_zero (bs := c :: bs) j (by omega_using [hj])
+        exact ⟨by simp at h ⊢; omega_using [h], h'⟩
     · have e : lead (b :: c :: bs) = 0 := by simp only [lead]; exact ite_eq_right hb
       simp only [lead] at e; omega
 

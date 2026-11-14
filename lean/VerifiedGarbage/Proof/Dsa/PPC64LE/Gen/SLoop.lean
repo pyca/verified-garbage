@@ -73,9 +73,9 @@ theorem avail_vp {d : Cfg} {c q : Nat} (hC : fC ∈ d.LS) (hCv : d.V fC = BitVec
     rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hc]
   refine ltR_ok e3 u₄.gpr fun t K m sp _ e => WP.block_nil ⟨⟨h₄.of_keep K m sp, x⟩, e.trans ?_⟩
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h64]), Nat.mod_eq_of_lt (by omega_using [hq])]
 
 /-- The seed at the cursor `c`: `fSeed` := `rand + c`, its witnesses from `c + q_len`. -/
 theorem seedStart_vp {g : Geo} (hq : g.qLen = G.qLen) {d : Cfg} {c : Nat} (hC : fC ∈ d.LS)
@@ -121,7 +121,7 @@ theorem rejected_vp {d : Cfg} {u j : Nat} (hU : fUsed ∈ d.LS) (hUv : d.V fUsed
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     have := hj
-    omega
+    omega_using []
   refine h₄.stF (o := fSeedLeft) (varOk_of (by decide)) fun t ht _ _ => WP.block_nil ⟨?_, x⟩
   rw [e4] at ht; exact ht
 
@@ -150,10 +150,10 @@ theorem sCount_gt (G : GP) : ∀ j c i, i < sCount G j c i
   | j + 1, c, i => by
     have := sCount_gt G j
     simp only [sCount]; split
-    · omega
+    · omega_using []
     · split
       · exact Nat.lt_of_succ_lt (this _ _)
-      all_goals omega
+      all_goals omega_using []
 
 /-- How the controller ends. -/
 inductive COut where
@@ -219,9 +219,9 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
         (r = 0 → St G (cFin G (cOut G N)) X σ s ∧ cRes G (cOut G N) = sW G ∧ cOk G (cOut G N)) ∧
         (0 < r → sInv G HO N X r σ s)) := by
   refine VP.intro fun ⟨hr, hc, hW, hcw, hj⟩ => ?_
-  have hq0 : 0 < G.qLen := by have := O.hlq; omega
-  have hq15 : G.qLen < 2 ^ 15 := by have := O.hlq; omega
-  have hpL : 0 < G.pLen := by have := O.hlq; omega
+  have hq0 : 0 < G.qLen := by have := O.hlq; omega_using [this]
+  have hq15 : G.qLen < 2 ^ 15 := by have := O.hlq; omega_using [this]
+  have hpL : 0 < G.pLen := by have := O.hlq; omega_using [this]
   have h64 := O.h64
   have hwl := O.hwl
   have hqL := O.hqL
@@ -229,17 +229,17 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
   generalize hp : sPos G i = jc at hc hW hcw hj
   obtain ⟨j, c⟩ := jc
   dsimp only at hc hW hcw hj
-  have hNi : N - 1 = i + r := by omega
+  have hNi : N - 1 = i + r := by omega_using [hr, hii]
   rw [O.hq]
   refine VP.seq (G := fun σ s => St G (cBase G HO c j) X σ s ∧
       isa.eval (.zero .d .r0) s = some (BitVec.ofNat 64 j == BitVec.ofNat 64 0))
     (cmpF_vp (x := BitVec.ofNat 64 j) (fun σ s h => h.1) (by decide) (by decide) (by decide)
       (fun σ s h => (h.1.gi.slotV (by simp)).trans (by simp [upd, fSeedLeft, fStatus]))
       fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, e⟩) ?_
-  have jl : j < 2 ^ 64 := by simp only [Spec.Dsa.parameterSeeds] at hj; omega
+  have jl : j < 2 ^ 64 := by simp only [Spec.Dsa.parameterSeeds] at hj; omega_using [hj]
   rcases j with _ | j
   · -- No seeds left: `fStatus` := 3.
-    have r0 : r = 0 := by simp only [sCount] at hc; omega
+    have r0 : r = 0 := by simp only [sCount] at hc; omega_using [hr, hii, hc]
     subst r0
     have hout : cOut G N = .noSeeds c := by simp only [cOut, hNi, Nat.add_zero, hp, cOutAt]
     refine VP.seq (G := St G ((cBase G HO c 0).setV fStatus (BitVec.ofNat 64 3)) X) (VP.ite
@@ -260,7 +260,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
     · rw [hout]; exact hcw
   · have e0 : (BitVec.ofNat 64 (j + 1) == BitVec.ofNat 64 0) = false := by
       refine beq_false_of_ne fun e => ?_
-      have := congrArg BitVec.toNat e; simp only [BitVec.toNat_ofNat] at this; omega
+      have := congrArg BitVec.toNat e; simp only [BitVec.toNat_ofNat] at this; omega_using [hr, hq0, hq15, hpL, h64, hwl, hqL, hii, hcw, hNi, hc, hj, jl, e, this]
     have notZ : ∀ {G₁ : State → State → Prop} {c' : Prog isa}, VP (fun σ s => (St G (cBase G HO c (j + 1)) X σ s ∧
         isa.eval (.zero .d .r0) s = some (BitVec.ofNat 64 (j + 1) == BitVec.ofNat 64 0)) ∧
         isa.eval (.zero .d .r0) s = some true) c' G₁ :=
@@ -271,7 +271,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
         isa.eval (.zero .d .r0) s = some false) (fun σ s h => h.1.1) fun _ _ h => h
     by_cases hshort : G.witLen - c < G.qLen
     · -- Too few octets for a seed: `fStatus` := 2.
-      have r0 : r = 0 := by simp only [sCount, hshort, ↓reduceIte] at hc; omega
+      have r0 : r = 0 := by simp only [sCount, hshort, ↓reduceIte] at hc; omega_using [hr, hii, hc]
       subst r0
       have hout : cOut G N = .ranOut (j + 1) c := by
         simp only [cOut, hNi, Nat.add_zero, hp, cOutAt, hshort, ↓reduceIte]
@@ -293,7 +293,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
       · rw [hout, ← hW, cRes, VG.Proof.Dsa.Generation.search_short (by rw [hwl, ← hqL]; exact hshort), hwl]
       · rw [hout]; exact ⟨hcw, hj⟩
     · -- A seed.
-      have hcq : c + G.qLen ≤ G.witLen := by omega
+      have hcq : c + G.qLen ≤ G.witLen := by omega_using [hq0, hshort]
       have attempt := O.attempt_vp (X := X) (k := c) (u := c + G.qLen) (n := BitVec.ofNat 64 (j + 1)) hcq hcq
       have hmono : ∀ σ s, St G (((cBase G HO c (j + 1)).setV fSeed (G.seeds + BitVec.ofNat 64 c)).setV fUsed
           (BitVec.ofNat 64 (c + G.qLen))) X σ s →
@@ -335,7 +335,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
       rcases hR : sR G c with _ | ⟨_ | a, rest⟩ <;> rw [hR] at attempt
       · -- `rand` ran out inside the seed.
         have r0 : r = 0 := by
-          simp only [sCount, hshort, ↓reduceIte, hR] at hc; omega
+          simp only [sCount, hshort, ↓reduceIte, hR] at hc; omega_using [hr, hii, hc]
         subst r0
         have hout : cOut G N = .ranOut (j + 1) c := by
           simp only [cOut, hNi, Nat.add_zero, hp, cOutAt, hshort, ↓reduceIte, hR]
@@ -364,7 +364,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
           simp only [sCount, hshort, ↓reduceIte, hR]
         have hgt := sCount_gt G j (G.witLen - rest.length) (i + 1)
         have rpos : 0 < r := by omega
-        have hNr : N - r = i + 1 := by omega
+        have hNr : N - r = i + 1 := by omega_using [hr, hii]
         have hp1 : sPos G (i + 1) = (j, G.witLen - rest.length) := by
           simp only [sPos, hp, hR, Nat.add_sub_cancel]
         refine VP.seq (wrap (VP.seq attempt (VP.seq (G := fun σ s =>
@@ -375,14 +375,14 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
             fun σ s t ⟨_, x⟩ h' _ e => ⟨⟨h', x⟩, by rw [e]; rfl⟩)
           (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])
             ((rejected_vp (u := G.witLen - rest.length) (j := j) (by simp [aOut]) (by simp [aOut, upd])
-              (by simp [aOut]) (by simp [aOut, upd, fUsed, fStatus, fSeedLeft]) (by omega)).mono
+              (by simp [aOut]) (by simp [aOut, upd, fUsed, fStatus, fSeedLeft]) (by omega_using [jl])).mono
                 (fun σ s h => h.1.1) fun _ _ h => h)
             (VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp at z))))) ?_
         refine cmpF_vp (x := BitVec.ofNat 64 0) (fun σ s h => h.1) (by decide) (by decide) (by decide)
           (fun σ s h => (h.1.gi.slotV (by simp [aOut])).trans (by simp [aOut, upd, fUsed, fStatus, fC, fSeedLeft]))
-          fun σ s t ⟨_, x⟩ h' _ e => ⟨by rw [e]; simp [rpos], fun h0 => absurd h0 (by omega), fun _ => ?_⟩
+          fun σ s t ⟨_, x⟩ h' _ e => ⟨by rw [e]; simp [rpos], fun h0 => absurd h0 (by omega_using [rpos]), fun _ => ?_⟩
         simp only [sInv, hNr, hp1]
-        refine ⟨⟨by omega, by rw [← hcs]; exact hc, ?_, Nat.sub_le _ _, by omega⟩, ?_, x⟩
+        refine ⟨⟨by omega_using [hr], by rw [← hcs]; exact hc, ?_, Nat.sub_le _ _, by omega_using [hj]⟩, ?_, x⟩
         · rw [← hW, VG.Proof.Dsa.Generation.search_rejected hpL hcq' (Nat.le_trans (Nat.sub_le _ _) (Nat.le_of_eq hwl.symm))
             (by rw [hRc, ← hqL, hsuf]; exact hR)]
         · refine h'.mono (fun o ho => ?_) (fun y hy => hy) (fun _ h' => absurd h' (by simp))
@@ -394,7 +394,7 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
       · -- Parameters: `fStatus` = 1.
         have hsuf := suffix hR
         have r0 : r = 0 := by
-          simp only [sCount, hshort, ↓reduceIte, hR] at hc; omega
+          simp only [sCount, hshort, ↓reduceIte, hR] at hc; omega_using [hr, hii, hc]
         subst r0
         have hout : cOut G N = .found a (G.witLen - rest.length) := by
           simp only [cOut, hNi, Nat.add_zero, hp, cOutAt, hshort, ↓reduceIte, hR]
@@ -433,11 +433,11 @@ theorem sLoop_vp {g : Geo} {HO : HashOk g.G} {Lq Lp : Impl.Dsa.ProbablePrime.Lay
         cRes G (cOut G (sCount G G.k0 0 0)) = sW G ∧ cOk G (cOut G (sCount G G.k0 0 0))) := by
   have hN := sCount_gt G G.k0 0 0
   generalize hNN : sCount G G.k0 0 0 = N at hN ⊢
-  refine VP.mono (F := sInv G HO N X (N - 1 + 1)) ?_ (fun σ s h => ⟨⟨by omega,
-    by rw [show N - (N - 1 + 1) = 0 by omega]; exact hNN,
-    by rw [show N - (N - 1 + 1) = 0 by omega]; simp [sPos, sW, Spec.Entropy.Result.consume],
-    by rw [show N - (N - 1 + 1) = 0 by omega]; simp [sPos], by rw [show N - (N - 1 + 1) = 0 by omega]; exact O.k0⟩,
-    by rw [show N - (N - 1 + 1) = 0 by omega]; exact h⟩) fun _ _ h => h
+  refine VP.mono (F := sInv G HO N X (N - 1 + 1)) ?_ (fun σ s h => ⟨⟨by omega_using [hN],
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; exact hNN,
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; simp [sPos, sW, Spec.Entropy.Result.consume],
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; simp [sPos], by rw [show N - (N - 1 + 1) = 0 by omega_using []]; exact O.k0⟩,
+    by rw [show N - (N - 1 + 1) = 0 by omega_using []]; exact h⟩) fun _ _ h => h
   exact VP.loop (I := sInv G HO N X) (fun r => (sBody_vp O r).mono (fun _ _ h => h)
     fun σ s ⟨e, h0, hp⟩ => ⟨e, fun z => h0 z, hp⟩) _
 

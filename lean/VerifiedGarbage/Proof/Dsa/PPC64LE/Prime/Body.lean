@@ -86,7 +86,7 @@ theorem inW {bits : Nat} {σ : State} (h : CIn bits σ) {x : Addr}
   have hfw := h.fw
   simp only [Region.Contains, ofs, wsB, keyOff] at hx hsz ⊢
   have : (x - σ.gpr .r3).toNat = (x - (σ.gpr .r3 + BitVec.ofNat 64 552)).toNat + 552 := by bv_omega
-  omega
+  omega_using [hx, hsz, this]
 
 /-- The candidate's facts the tests need. -/
 theorem cand_facts {bits : Nat} {σ : State} (hb : Bits bits) (h : CIn bits σ) :
@@ -96,17 +96,17 @@ theorem cand_facts {bits : Nat} {σ : State} (hb : Bits bits) (h : CIn bits σ) 
   have hodd := h.odd
   have hs := shape_of hb
   have hbig := hs.big
-  obtain ⟨hlo, -⟩ := (VG.Proof.Dsa.bitLength_iff_bounds (by omega)).mp hbl
+  obtain ⟨hlo, -⟩ := (VG.Proof.Dsa.bitLength_iff_bounds (by omega_using [hbig])).mp hbl
   have : 2 ^ 13 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) hbig
   dsimp only [cand]
-  refine ⟨by omega, by omega, hodd, VG.Proof.Dsa.Generation.predecessor_bits (by omega) hodd hbl⟩
+  refine ⟨by omega_using [hlo, this], by omega_using [hlo, this], hodd, VG.Proof.Dsa.Generation.predecessor_bits (by omega_using [hbig]) hodd hbl⟩
 
 /-- A change of bytes `[d, d + n)` of a region of `Z ≥ d + n` bytes at `B`. -/
 theorem frame_outside {B : Addr} {Z d n : Nat} {rs : List Region} {m m' : Mem}
     (ho : VG.Proof.Bignum.Outside B d n m m') (hd : d + n ≤ Z) : Frame (⟨B, Z⟩ :: rs) m m' := fun x hx => by
   have := hx _ List.mem_cons_self
   simp only [Region.Contains] at this
-  exact ho x (.inr (by simp only [ofs]; omega))
+  exact ho x (.inr (by simp only [ofs]; omega_using [hd, this]))
 
 /-- A composite: `hStat := 2`. -/
 theorem comp_ok {bits : Nat} {σ s : State} (h : BIn bits σ s)
@@ -118,20 +118,20 @@ theorem comp_ok {bits : Nat} {σ s : State} (h : BIn bits σ s)
   have hZ : 256 + 28 * (8 * (words bits + 2)) ≤ 8 * keyWords bits := e.hZ
   obtain ⟨hbig, -, hodd, -⟩ := cand_facts h.hb h.cin
   have hres : res bits σ = some (false, tape σ) := by
-    rw [res, VG.Proof.Dsa.Generation.probablePrime_large (by omega) hodd, h.cin.bl, hc]; rfl
+    rw [res, VG.Proof.Dsa.Generation.probablePrime_large (by omega_using [hbig]) hodd, h.cin.bl, hc]; rfl
   generalize hB : wsB σ = B at e hs hnw
   refine WP.mono (WP.keep [.r3] (Q := fun x => x.mem = s.mem.writeW (off B (8 * hStat)) (BitVec.ofNat 64 2))
-    (by simp only [sth, hStat]; prun [e.h31, hs.st (d := 160) (n := 8) (by omega)]) (by decide)) fun x ⟨xm, kx⟩ => ?_
+    (by simp only [sth, hStat]; prun [e.h31, hs.st (d := 160) (n := 8) (by omega_using [hZ])]) (by decide)) fun x ⟨xm, kx⟩ => ?_
   subst hB
   have ho := VG.Proof.Bignum.writeW_outside s.mem (wsB σ) (d := 8 * hStat) (BitVec.ofNat 64 2)
-    (by simp only [hStat]; omega)
+    (by simp only [hStat]; omega_using [])
   refine ⟨(kx.gpr _ (by decide)).trans e.h31, by rw [xm, VG.Proof.Bignum.word_writeW_self, hres]; rfl,
-    fun b rest hr => ?_, by rw [xm]; exact frame_outside ho (by simp only [hStat]; omega), kx.sp.trans h.sp,
+    fun b rest hr => ?_, by rw [xm]; exact frame_outside ho (by simp only [hStat]; omega_using [hZ]), kx.sp.trans h.sp,
     kx.rd.trans h.rd, kx.wr.trans h.wr⟩
   rw [hres] at hr
   cases hr
   rw [xm, Frm.word_eq (rs := [(8 * hStat, 8)]) (fun y hy => ho y (hy _ List.mem_cons_self))
-    (by simp only [hStat, hUsed, List.mem_singleton, forall_eq]; omega) (by simp only [hUsed]; omega), h.hdr.used]
+    (by simp only [hStat, hUsed, List.mem_singleton, forall_eq]; omega_using []) (by simp only [hUsed]; omega_using []), h.hdr.used]
   simp only [tape, Spec.Rsa.bytesAt, List.length_map, List.length_range, Nat.sub_self]
 
 /-- The header's words lie apart from what `montPrep` writes. -/
@@ -140,21 +140,21 @@ theorem hdr_apart (w : Nat) :
   rw [hdrWords_eq]
   intro d hd r hr
   simp only [VG.Proof.MillerRabin.PPC64LE.Search.mpRanges, List.mem_cons, List.not_mem_nil, or_false] at hr hd
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes, VG.Impl.MillerRabin.PPC64LE.aE] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes, VG.Impl.MillerRabin.PPC64LE.aE] <;> omega_using [hd]
 
 /-- What `montPrep` writes lies within the working space. -/
 theorem mp_within (w : Nat) :
     ∀ r ∈ VG.Proof.MillerRabin.PPC64LE.Search.mpRanges w, r.1 + r.2 ≤ 256 + 28 * (8 * (w + 2)) := by
   intro r hr
   simp only [VG.Proof.MillerRabin.PPC64LE.Search.mpRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes, VG.Impl.MillerRabin.PPC64LE.aE] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes, VG.Impl.MillerRabin.PPC64LE.aE] <;> omega_using []
 
 /-- A byte of the tape lies outside the working space. -/
 theorem tape_out {bits : Nat} {σ : State} (h : CIn bits σ) {i : Nat} (hi : i < (σ.gpr .r6).toNat) :
     ¬ ofs (wsB σ) (σ.gpr .r5 + BitVec.ofNat 64 i) < 8 * keyWords bits := fun hx =>
   h.wR _ (inW h hx) (by
     simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by have := (σ.gpr .r6).isLt; omega)]; omega)
+    rw [Nat.mod_eq_of_lt (by have := (σ.gpr .r6).isLt; omega_using [hi])]; omega_using [hi])
 
 /-- After `montPrep`: the blinded loop's context, no octets read, the tape,
 and memory changed only in the working space. -/
@@ -178,7 +178,7 @@ theorem montPrep_ctx {bits : Nat} {σ s : State} (h : BIn bits σ s) :
     h.hdr.keep fun d hdm => Frm.word_eq (fun x hx => vO x hx) (hdr_apart _ d hdm) (by
       rw [hdrWords_eq] at hdm; simp only [List.mem_cons, List.not_mem_nil, or_false] at hdm
       rcases hdm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl | rfl | rfl <;> omega)
+        rfl | rfl | rfl | rfl | rfl <;> omega_using [])
   have prep : Prep v (wsB σ) (keyWords bits) (words bits) (cand bits σ) :=
     ⟨ev, hd.len, hd.w, hd.stride, hd.arr, v0, h3, hodd, vinv, v1, v9, v10, vE, vl⟩
   have vsp : v.sp = σ.sp := kv.sp.trans h.sp
@@ -192,7 +192,7 @@ theorem montPrep_ctx {bits : Nat} {σ s : State} (h : BIn bits σ s) :
       fun a ha hb => cin.sW a (by rw [vsp] at ha; exact ha) (inW cin (by simp only [Region.Contains] at hb; exact hb)),
       fun i hi hc => cin.sR _ (by rw [vsp] at hc; exact hc) ?_⟩ <;>
     · simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by have := (σ.gpr .r6).isLt; omega)]; omega
+      rw [Nat.mod_eq_of_lt (by have := (σ.gpr .r6).isLt; omega_using [hi])]; omega_using [hi]
   have htape : Spec.Rsa.bytesAt v.mem (σ.gpr .r5) (σ.gpr .r6).toNat = tape σ := by
     rw [← h.tape]
     simp only [Spec.Rsa.bytesAt]
@@ -202,7 +202,7 @@ theorem montPrep_ctx {bits : Nat} {σ s : State} (h : BIn bits σ s) :
     have h1 := tape_out cin hi
     have h2 := mp_within _ r hr
     change r.1 + r.2 ≤ ofs (wsB σ) _
-    omega
+    omega_using [hZ, h1, h2]
   exact ⟨bc, hd.used, htape, vsp, vrd, kv.wr.trans h.wr,
     (VG.Proof.Mont.Outs.frame vO fun r hr => Nat.le_trans (mp_within _ r hr) hZ).mono (by simp)⟩
 
@@ -217,7 +217,7 @@ theorem mr_ok (Ri : RoundImpl) {bits : Nat} {σ s : State} (h : BIn bits σ s)
   refine WP.mono (millerRabin_ok Ri bc hu htape) fun t mo => ?_
   have hres : res bits σ = Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep (cand bits σ) (checks bits)
       (Spec.Rsa.splitTwos (cand bits σ - 1)).1 (Spec.Rsa.splitTwos (cand bits σ - 1)).2) (1, 0) (tape σ) := by
-    rw [res, VG.Proof.Dsa.Generation.probablePrime_large (by omega) hodd, cin.bl, hc, sh.hchecks]; rfl
+    rw [res, VG.Proof.Dsa.Generation.probablePrime_large (by omega_using [hbig]) hodd, cin.bl, hc, sh.hchecks]; rfl
   refine ⟨mo.1.prep.env.h31, by rw [hres]; exact mo.2.1, fun b rest hr => mo.2.2 b rest (hres ▸ hr), ?_,
     mo.1.sp.trans vsp, mo.1.rd.trans vrd, mo.1.wr.trans vwr⟩
   exact f1.trans (by rw [← vsp]; exact mo.1.frame)

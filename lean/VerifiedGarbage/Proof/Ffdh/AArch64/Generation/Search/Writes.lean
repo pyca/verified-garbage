@@ -51,7 +51,7 @@ theorem out_frame {p : SPub} {original : State} (hi : SInput p original) {m m' :
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi' => ?_
   exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hi.out_ctl)
-    (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi')
+    (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi')
 
 /-! ## Terminal statuses -/
 
@@ -151,8 +151,8 @@ theorem search_zero_out {p : SPub} {original s : State} {used k : Nat}
       t.gpr .x2 = BitVec.ofNat 64 p.len ∧ t.gpr .x3 = 0 ∧ t.mem = s.mem) (by
     brun [ldf, h.x19, imm64 (show 0 < 65536 by decide), hl, hl6, hv, hv6]) (by decide) (by decide)
       (by decide +kernel)) fun s₁ ⟨⟨h1, h2, h3, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (wp_countdown (N := p.len) (by omega) (by omega) (BInv s₁ p.op)
-    (fun i hi t hI _ => bStep_ok (by omega) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hi hI)
+  refine WP.mono (wp_countdown (N := p.len) (by omega_using [hk]) (by omega_using [hk]) (BInv s₁ p.op)
+    (fun i hi t hI _ => bStep_ok (by omega_using [hk]) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hi hI)
     ⟨Keep.refl _ _, h1, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ _ => rfl⟩ h2) fun t hI => ?_
   have hf : ∀ x, (∀ i < p.len, x ≠ p.op + BitVec.ofNat 64 i) → t.mem x = s.mem x :=
     fun x hx => by rw [hI.frame x hx, hm₁]

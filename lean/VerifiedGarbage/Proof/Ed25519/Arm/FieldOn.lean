@@ -60,8 +60,8 @@ theorem wRegions_bound {b : BitVec 32} {W : List Slot} {r : Region} (hr : r ∈ 
   · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hr
     have hi := slot_range i
     rw [ACC_eq] at hi
-    exact ⟨_, _, rfl, hi.1, by omega⟩
-  · exact ⟨ACC, 128, List.mem_singleton.mp hr, by rw [ACC_eq]; omega, by rw [ACC_eq]⟩
+    exact ⟨_, _, rfl, hi.1, by omega_using [hi]⟩
+  · exact ⟨ACC, 128, List.mem_singleton.mp hr, by rw [ACC_eq]; omega_using [], by rw [ACC_eq]⟩
 
 /-- The slots an operation reads. -/
 def opReads : FieldOp → List Slot
@@ -130,7 +130,7 @@ theorem fieldOpOn_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S : List Slot} 
     have ha := slot_range a
     have hb := slot_range c
     rw [ACC_eq] at ho ha hb
-    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c) hc
+    refine WP.mono (add_ok (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) (slot_sep o a) (slot_sep o c) hc
       (hl a (hr a List.mem_cons_self)) (hl c (hr c (List.mem_cons_of_mem _ List.mem_cons_self))))
       fun t ⟨hrt, hf, ho, hv⟩ => ?_
     obtain ⟨l, e⟩ := field_updateOn o hl (frame_o16 hf) ho
@@ -142,7 +142,7 @@ theorem fieldOpOn_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S : List Slot} 
     have ha := slot_range a
     have hb := slot_range c
     rw [ACC_eq] at ho ha hb
-    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c) hc
+    refine WP.mono (sub_ok (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) (slot_sep o a) (slot_sep o c) hc
       (hl a (hr a List.mem_cons_self)) (hl c (hr c (List.mem_cons_of_mem _ List.mem_cons_self))))
       fun t ⟨hrt, hf, ho, hv⟩ => ?_
     obtain ⟨l, e⟩ := field_updateOn o hl (frame_o16 hf) ho

@@ -75,7 +75,7 @@ def md5Ok : MdOk md5M where
     apply Vector.ext
     intro j hj
     simp only [Proof.Md5.md, Spec.Md5.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega_using [hj])
   tail := by decide
   out := outOk_of_shape Proof.Md5.X86.Stream.shape
   comp := ⟨Proof.Md5.X86.compress_verified, NoSp.of_all (by lit_decide), by lit_decide⟩
@@ -92,13 +92,13 @@ def sha512Ok {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue}
   hH := hO
   md := Proof.Sha512.md
   iv := iv
-  link := ⟨hB, hS, hD, fun _ _ _ h => by rw [hR] at h; exact h, hh, hD64, by have := sizes.DL; omega⟩
+  link := ⟨hB, hS, hD, fun _ _ _ h => by rw [hR] at h; exact h, hh, hD64, by have := sizes.DL; omega_using [this]⟩
   back _ _ _ h := by rw [hR]; exact h
   reloc m m' p q h := by
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha512.md, Spec.Sha512.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega_using [hj])
   tail := tail
   out := outOk_of_shape Proof.Sha512.X86.Stream.shape
   comp := ⟨Proof.Sha512.X86.Compress.compress_verified, Proof.Sha512.X86.Stream.callee.nosp,

@@ -57,13 +57,13 @@ theorem callee : CalleeOk Proof.Sha512.md 144 Impl.Sha512.RISCV64.compress :=
 theorem hashOkW (Wi : Nat) (h₁ : 399 ≤ Wi) (h₂ : Wi ≤ 8192) :
     HashOk it Wi Spec.Hmac.sha512_224S Proof.Sha512.md Spec.Sha512.H0_512_224 where
   sizes := ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
-    by decide, by simp only [it]; omega, h₂⟩
+    by decide, by simp only [it]; omega_using [h₁], h₂⟩
   pad := by decide
   reloc m m' p q h := by
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha512.md, Spec.Sha512.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega_using [hj])
   out := Sha512Out.out224_ok
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun _ => rfl,
     by decide, by decide⟩

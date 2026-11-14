@@ -45,7 +45,7 @@ theorem StepEnv.keep {s t : State} {P D L : BitVec 32} (h : StepEnv s P D L) {rs
 
 theorem StepEnv.tableEnv {s : State} {P D L : BitVec 32} (h : StepEnv s P D L)
     {idx : Byte} (h6 : s.gpr .r6 = idx.setWidth 32) : TableEnv s idx :=
-  ⟨h6, h.ones, by rw [h.p]; have := h.pfit; omega, by rw [h.p]; exact h.table⟩
+  ⟨h6, h.ones, by rw [h.p]; have := h.pfit; omega_using [this], by rw [h.p]; exact h.table⟩
 
 theorem apply_before (s : State) (i j : Byte) {P D L : BitVec 32} (he : StepEnv s P D L)
     (h4 : s.gpr .r4 = i.setWidth 32) (h5 : s.gpr .r5 = j.setWidth 32) :
@@ -61,7 +61,7 @@ theorem apply_before (s : State) (i j : Byte) {P D L : BitVec 32} (he : StepEnv 
     arun [h4, byte_inc32]
   refine WP.mono (WP.keep [.r4] h1 (by decide)) fun t ⟨⟨t4, tm⟩, tk⟩ => ?_
   have het := he.keep tk (by decide)
-  refine WP.mono (loadI_ok t (i + 1#8) t4 (by rw [het.p]; have := he.pfit; omega)
+  refine WP.mono (loadI_ok t (i + 1#8) t4 (by rw [het.p]; have := he.pfit; omega_using [this])
     (by rw [het.p]; exact region_in het.table)) fun u ⟨u11, uk, um⟩ => ?_
   rw [het.p, tm] at u11
   have u5 : u.gpr .r5 = j.setWidth 32 :=
@@ -140,7 +140,7 @@ theorem apply_step (s : State) (i j : Byte) {P D L : BitVec 32} {n : Nat}
       t.gpr .r0 = BitVec.ofNat 32 (n + 1) ∧
       t.z = (BitVec.ofNat 32 (n + 1) - L == 0#32) ∧ Keep stepRegs s t := by
   intro p ii a jj b swapped k
-  have hfit : P.toNat + 256 ≤ 2 ^ 32 := by have := he.pfit; omega
+  have hfit : P.toNat + 256 ≤ 2 ^ 32 := by have := he.pfit; omega_using [this]
   simp only [applyStep, List.append_assoc]
   rw [← List.append_assoc, ← List.append_assoc, WP.block_append_iff]
   refine WP.mono (apply_before s i j he h4 h5) fun t ⟨t4, t5, t6, tk, tm⟩ => ?_
@@ -162,7 +162,7 @@ theorem apply_step (s : State) (i j : Byte) {P D L : BitVec 32} {n : Nat}
     ((vk.gpr (by decide)).trans ((uk.gpr (by decide)).trans t4))
     ((vk.gpr (by decide)).trans u7) v11
     (by rw [vk.2.2.1, uk.2.2.1, tk.2.2.1]
-        exact region_offset _ _ _ _ _ (by have := ii.isLt; omega) (by have := ii.isLt; omega)
+        exact region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using [])
           he.table)) fun w ⟨wm, w6, wk⟩ => ?_
   rw [vm, um] at wm
   have hw : w.mem = swapped := wm
@@ -176,9 +176,9 @@ theorem apply_step (s : State) (i j : Byte) {P D L : BitVec 32} {n : Nat}
   have x4 : x.gpr .r4 = ii.setWidth 32 := (ktx.gpr (by decide)).trans t4
   have x5 : x.gpr .r5 = jj.setWidth 32 := (ktx.gpr (by decide)).trans t5
   have x0 : x.gpr .r0 = BitVec.ofNat 32 n := (ktx.gpr (by decide)).trans ((tk.gpr (by decide)).trans h0)
-  refine WP.mono (apply_after x k hex.d hex.l x0 x7 (by have := he.dfit; omega)
+  refine WP.mono (apply_after x k hex.d hex.l x0 x7 (by have := he.dfit; omega_using [hn, this])
     (by rw [xk.2.2.1, wk.2.2.1, vk.2.2.1, uk.2.2.1, tk.2.2.1]
-        exact region_offset _ _ _ _ _ (by have := he.dfit; omega) (by omega) he.data))
+        exact region_offset _ _ _ _ _ (by have := he.dfit; omega_using [hn]) (by omega_using [hn]) he.data))
     fun y ⟨ym, y0, yz, yk⟩ => ?_
   exact ⟨by rw [ym, xm, hw], (yk.gpr (by decide)).trans x4, (yk.gpr (by decide)).trans x5, y0, yz,
     (((tk.trans ktx).trans yk)).mono (by decide)⟩

@@ -209,7 +209,7 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
   have fit := fun j (hj : j < nArr) => hw.ws.fit64 (j := j) hj
   have inside := fun j (hj : j < nArr) => Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) hw.ws.fits
   have room := gate.room
-  have nowrap : g.size ≤ 2 ^ 64 := by have := hw.ws.workspace.nowrap; omega
+  have nowrap : g.size ≤ 2 ^ 64 := by have := hw.ws.workspace.nowrap; omega_using [this]
   have hdrLe : hdr ≤ g.size := hw.ws.hdr_le
   unfold checksB
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]

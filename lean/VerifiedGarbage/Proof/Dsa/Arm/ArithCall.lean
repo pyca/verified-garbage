@@ -137,7 +137,7 @@ theorem rentry_pre {s u : State} {base : Addr} {size n len : Nat} {p : BitVec 32
   refine ⟨trivial, trivial, ?_, hfit, Nat.le_refl _, hd.symm, hodd, hm255⟩
   rw [State.callEntry_gpr _ (by decide), h0, hs.wb_toNat]
   have := hs.nowrap
-  omega
+  omega_using [hz, this]
 
 theorem reduceCall_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32} (hs : Ws s base size)
     (hz : contextBytes n ≤ size) (hn : 0 < n) (hn48 : n ≤ 48) (hv : val32 s.mem base (slot n 0) (2 * n) = m)

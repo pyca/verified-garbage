@@ -55,7 +55,7 @@ theorem qM_odd (P : KP) (σ : State) : qM P σ % 2 = 1 ∧ 1 < qM P σ ∧ qM P 
   · rename_i h
     simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at h
     have := pv_lt P σ
-    exact ⟨h.1, by omega, by omega⟩
+    exact ⟨h.1, by omega_using [h], by omega_using [this]⟩
   · exact ⟨rfl, by decide, by have := Nat.two_pow_pos (8 * P.K); omega⟩
 
 theorem qx_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : (qM P σ : Int) ∣ (qx P σ : Int) * qv P σ - qg P σ ∧ qx P σ < qM P σ ∧
@@ -64,14 +64,14 @@ theorem qx_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : (qM P σ : Int)
   have hm := qM_odd P σ
   have p8 : 2 ^ (8 * P.K) + 3 ≤ 2 ^ (32 * P.W) := by
     have : 2 ^ (8 * P.K) * 2 ≤ 2 ^ (32 * P.W) := by
-      rw [← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega)
-    have : 4 ≤ 2 ^ (8 * P.K) := Nat.le_trans (by decide : 4 ≤ 2 ^ 2) (Nat.pow_le_pow_right (by decide) (by omega))
-    omega
-  obtain ⟨g, d, l⟩ := ivr_spec (W := P.W) (a := qv P σ) hm.1 hm.2.1 (by have := qv_lt P σ; omega) (by omega)
+      rw [← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using [])
+    have : 4 ≤ 2 ^ (8 * P.K) := Nat.le_trans (by decide : 4 ≤ 2 ^ 2) (Nat.pow_le_pow_right (by decide) (by omega_arith))
+    omega_arith
+  obtain ⟨g, d, l⟩ := ivr_spec (W := P.W) (a := qv P σ) hm.1 hm.2.1 (by have := qv_lt P σ; omega_using [p8, this]) (by omega_using [hm, p8])
   exact ⟨by unfold qx qg; exact d, l, g⟩
 
 theorem qv_le_pv (P : KP) (σ : State) : qv P σ ≤ pv P σ := by
-  unfold pv qv; split <;> omega
+  unfold pv qv; split <;> omega_arith
 
 /-- The result is `resv`. -/
 theorem res_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : res P σ = resv P σ := by
@@ -96,7 +96,7 @@ theorem res_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : res P σ = res
     by_cases hsm : dv P σ ≤ 2 ^ (8 * P.K)
     · simp [hsm]
     · have h2 : 2 ≤ dv P σ := by
-        have := Nat.one_lt_two_pow (n := 8 * P.K) (by have := pre.k1; omega); omega
+        have := Nat.one_lt_two_pow (n := 8 * P.K) (by have := pre.k1; omega_using [this]); omega
       obtain ⟨p3, q2, -⟩ := VG.Proof.RsaKeyGen.primes_of_inverse (qv_le_pv P σ) (by rw [lcmE]; exact hs hok) h2
       have hmask : maskv P σ = (decide (2 ^ (16 * P.K - 1) ≤ pv P σ * qv P σ) &&
           decide ((qv P σ).gcd (qModP (pv P σ)) = 1) && decide (pv P σ % 2 = 1) && decide (qv P σ % 2 = 1) &&
@@ -113,7 +113,7 @@ theorem res_spec [VG.Proof.Rsa.Arm.Keys.InvLaw] (pre : In P σ) : res P σ = res
       by_cases hm : maskv P σ = true
       · rw [ite_eq_left hm, ite_eq_left hm]
         unfold outv dPv dQv pm qm
-        rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+        rw [ite_eq_right (by omega_using [p3]), ite_eq_right (by omega_using [q2])]
         simp only [nv]
       · rw [ite_eq_right hm, ite_eq_right hm]
 

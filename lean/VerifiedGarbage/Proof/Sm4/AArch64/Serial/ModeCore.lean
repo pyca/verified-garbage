@@ -35,7 +35,7 @@ def coreSpec : CoreSpec core where
       ⟨tb,td,tl,tr,tf,?_,rd,wr⟩
     intro j hj
     have hj' : j < 1 := hj
-    have hj0 : j = 0 := by omega
+    have hj0 : j = 0 := by omega_using [hj']
     subst j
     change Spec.Aes.bytesAt t.mem (B+BitVec.ofNat 64 (768+16*0)) 16 =
       Spec.Sm4.cipher k (Spec.Aes.bytesAt s.mem (B+BitVec.ofNat 64 (768+16*0)) 16)

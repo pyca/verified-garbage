@@ -33,7 +33,7 @@ theorem scalarHead_ok {s : State} {B out : Addr} {Z offset q : Nat} {valid : Boo
   have hoff : (BitVec.ofNat 16 offset).setWidth 64 = BitVec.ofNat 64 offset := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [ho]
   unfold scalarHead
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x3, .x1, .x2, .x9, .x8] (Q := fun t =>

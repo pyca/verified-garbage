@@ -54,7 +54,7 @@ theorem entry_ok {s₀ s : State} (hp : UPre s₀) (hk : 0 < N s₀)
     List.append_assoc,WP.block_append_iff]
   refine WP.mono (load_ok s 0 (by decide) (by
     rw [h2,BitVec.add_zero,hE.wr,hp.wr]
-    exact ⟨dataR s₀,List.mem_append_right _ (by simp),by simpa only [BitVec.add_zero] using Offset.contains_base (Dp s₀) (d:=0) (n:=16) (k:=16*N s₀) (by omega) (by have := hp.data_wrap; omega)⟩))
+    exact ⟨dataR s₀,List.mem_append_right _ (by simp),by simpa only [BitVec.add_zero] using Offset.contains_base (Dp s₀) (d:=0) (n:=16) (k:=16*N s₀) (by omega_using [hk]) (by have := hp.data_wrap; omega_using [])⟩))
     fun t ht => ?_
   subst ht
   simp only [List.singleton_append]

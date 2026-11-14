@@ -44,11 +44,11 @@ theorem dOne_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {L : Nat} (hL : av I
     (by decide)) fun s₂ ⟨h₂, m₂, h15, _, _⟩ => ?_)
   rw [vL, c1] at h15
   simp only [seqs]
-  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
   refine WP.seq (WP.mono (WP.keep [] (Q := fun t => t.mem = s₂.mem.writeW (off I.B (8 * kOk))
     (mask (!decide (L = 1)))) (by brun [h₂.ws.x0, hdr_enc (show kOk < 32 by decide), hst, h15]) rfl rfl rfl)
     fun s₃ ⟨m₃, k₃⟩ => ?_)
-  obtain ⟨h₃, f₃, ok₃⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega) m₃ k₃
+  obtain ⟨h₃, f₃, ok₃⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega_using []) m₃ k₃
   refine WP.seq (WP.mono (zeroA_k h₃ (j := aDd) (by decide)) fun s₄ ⟨h₄, f₄, z₄, _, _⟩ =>
     WP.mono (setOne_k h₄ (j := aDd) (by decide) z₄) fun t ⟨ht, f₅, o₅, _⟩ => ?_)
   refine ⟨ht, (((f₁.trans (by rw [← m₂]; exact f₃)).trans f₄).trans f₅).mono (by decide),
@@ -77,7 +77,7 @@ theorem ofNat_beq_zero {e : Nat} (he : e < 2 ^ 64) : (BitVec.ofNat 64 e == 0) = 
 theorem dPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 : e < 2 ^ 64)
     (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L) (hLW : L < 2 ^ (64 * I.W)) :
     WP isa dPart s fun t => KS I s₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by
-  have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega)
+  have hld := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_using [this])
   unfold dPart
   refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 e ∧ t.mem = s.mem) (by
     brun [h.ws.x0, hdr_enc (show kEv < 32 by decide), hld, hev]) (by decide) (by decide) (by decide +kernel))
@@ -92,37 +92,37 @@ theorem dPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS
     (fun he0 => ?_) (fun he0 => ?_)
   · -- `e = 0`: no inverse.
     simp only [decide_eq_true_eq] at he0
-    have hst := h₁.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+    have hst := h₁.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
     refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s₁.mem.writeW (off I.B (8 * kOk)) (mask false)) (by
       unfold dZero
       brun [h₁.ws.x0, hdr_enc (show kOk < 32 by decide), hst]
       rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨m, k⟩ => post m₁ t ?_
-    obtain ⟨ht, ft, okt⟩ := h₁.hdrW (i := kOk) (by unfold kOk sFn; omega) m k
+    obtain ⟨ht, ft, okt⟩ := h₁.hdrW (i := kOk) (by unfold kOk sFn; omega_using []) m k
     refine ⟨ht, ft.mono (by decide), false, okt, ?_, fun d hd => ?_⟩
     · rw [he0, VG.Proof.RsaKeyGen.inverse_zero]; simp
     · rw [he0, VG.Proof.RsaKeyGen.inverse_zero] at hd; cases hd
   simp only [decide_eq_false_iff_not] at he0
   refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 (e - 1) ∧ t.mem = s₁.mem) (by
     brun [h3₁]
-    exact VG.Offset.ofNat_sub_ofNat (by omega)) (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨⟨h3₂, m₂⟩, k₂⟩ => ?_)
+    exact VG.Offset.ofNat_sub_ofNat (by omega_using [he0])) (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨⟨h3₂, m₂⟩, k₂⟩ => ?_)
   have h₂ := h₁.regs m₂ k₂
   have hm₂ : s₂.mem = s.mem := m₂.trans m₁
   refine WP.ite (decide (e = 1)) (by
-      rw [VG.Proof.MlKem.AArch64.eval_zero, h3₂, ofNat_beq_zero (by omega)]
-      congr 1; exact decide_eq_decide.mpr (by omega))
+      rw [VG.Proof.MlKem.AArch64.eval_zero, h3₂, ofNat_beq_zero (by omega_using [he64])]
+      congr 1; exact decide_eq_decide.mpr (by omega_using [he0]))
     (fun he1 => ?_) (fun he1 => ?_)
   · simp only [decide_eq_true_eq] at he1
     subst he1
     exact WP.mono (dOne_k h₂ (by rw [show av I s₂.mem aL = av I s₁.mem aL by rw [m₂], hL₁])) (post hm₂)
   simp only [decide_eq_false_iff_not] at he1
   have hev₂ : word s₂.mem I.B (8 * kEv) = BitVec.ofNat 64 e := by rw [m₂, hev₁]
-  have hld₂ := h₂.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega)
+  have hld₂ := h₂.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_using [this])
   refine WP.seq (WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 (e % 2) ∧ t.mem = s₂.mem) (by
     brun [h₂.ws.x0, hdr_enc (show kEv < 32 by decide), hld₂, hev₂]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_and, show (BitVec.setWidth 64 1#16).toNat = 1 from rfl, Nat.and_one_is_mod, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat]
-    omega) (by decide) (by decide) (by decide +kernel)) fun s₃ ⟨⟨h3₃, m₃⟩, k₃⟩ => ?_)
+    omega_using []) (by decide) (by decide) (by decide +kernel)) fun s₃ ⟨⟨h3₃, m₃⟩, k₃⟩ => ?_)
   have h₃ := h₂.regs m₃ k₃
   have hm₃ : s₃.mem = s.mem := m₃.trans hm₂
   have hev₃ : word s₃.mem I.B (8 * kEv) = BitVec.ofNat 64 e := by rw [hm₃, hev]
@@ -132,8 +132,8 @@ theorem dPart_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS
       rcases Nat.mod_two_eq_zero_or_one e with h2 | h2 <;> rw [h2] <;> decide)
     (fun ho => ?_) (fun ho => ?_)
   · simp only [decide_eq_true_eq] at ho
-    exact WP.mono (dOdd_k h₃ (by omega) he64 ho hev₃ hL₃ hLW) (post hm₃)
+    exact WP.mono (dOdd_k h₃ (by omega_using [he1, ho]) he64 ho hev₃ hL₃ hLW) (post hm₃)
   · simp only [decide_eq_false_iff_not] at ho
-    exact WP.mono (dEven_k h₃ he64 (by omega) hev₃ hL₃ hLW) (post hm₃)
+    exact WP.mono (dEven_k h₃ he64 (by omega_using [ho]) hev₃ hL₃ hLW) (post hm₃)
 
 end VG.Proof.RsaKeyGen.AArch64.Key

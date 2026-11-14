@@ -71,7 +71,7 @@ theorem cmp_wp {σ s : State} (h : H1 P σ s) : WP isa (.block [.cmp .r0 (.imm 0
   refine wp_cmp (op2_imm (by decide)) fun t1 u1 z1 => WP.block_nil
     ⟨⟨hs.1, hs.2.of_rest (u1.rest []) u1.mem⟩, ?_⟩
   have e : ∀ x : BitVec 32, x - 0 = x := fun x => by simp
-  rw [z1, r0, e, cmp_eq hs.1.gl32 (by omega)]
+  rw [z1, r0, e, cmp_eq hs.1.gl32 (by omega_using [hK])]
 
 theorem verifyId_len {nB eB D sig : List Byte} {id : Nat} (h : sig.length ≠ nB.length) :
     Spec.RsaPkcs1Sig.verifyId nB eB id D sig = false := by
@@ -126,8 +126,8 @@ theorem callArgs_wp {σ s : State} (h : C0 P σ s) : WP isa (.block callArgs) s 
     rw [mm, m6]
     have w : ∀ (m : Mem) (d e : Nat) (v : BitVec 32), d + 4 ≤ e ∨ e + 4 ≤ d → d + 4 ≤ 24 → e + 4 ≤ 24 →
         (m.writeW (P.lay.fr e) v).readW (P.lay.fr d) 32 = m.readW (P.lay.fr d) 32 :=
-      fun m d e v h hd he => Lay.readW_fr_other _ _ _ h (by omega) (by omega)
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+      fun m d e v h hd he => Lay.readW_fr_other _ _ _ h (by omega_using [hd]) (by omega_using [he])
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
     · rw [w _ _ _ _ (by decide) (by decide) (by decide), m5, w _ _ _ _ (by decide) (by decide) (by decide), m4,
         w _ _ _ _ (by decide) (by decide) (by decide), m3, w _ _ _ _ (by decide) (by decide) (by decide), m2,
         w _ _ _ _ (by decide) (by decide) (by decide), m1]

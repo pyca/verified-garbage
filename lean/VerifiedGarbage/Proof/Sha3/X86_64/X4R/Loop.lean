@@ -46,7 +46,7 @@ theorem round_ok (s : State) (A : Nat → KState) (rcp : Addr) (rc : Lane) (hA :
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (columns_ok s A hA) fun s₁ ⟨k₁, r₁, c₁⟩ => ?_
   refine WP.mono (dcols_ok s₁ A r₁ c₁) fun s₂ ⟨k₂, _, d₂⟩ => ?_
-  refine WP.mono (rhoPi_ok s₂ A fun i hi k hk => by rw [d₂ i hi k hk, ite_t (show i % 5 < 5 by omega)])
+  refine WP.mono (rhoPi_ok s₂ A fun i hi k hk => by rw [d₂ i hi k hk, ite_t (show i % 5 < 5 by omega_using [])])
     fun s₃ ⟨k₃, _, b₃⟩ => ?_
   refine WP.mono (chis_ok s₃ A b₃) fun s₄ ⟨k₄, x₄⟩ => ?_
   have k := ((k₁.trans k₂).trans k₃).trans k₄
@@ -58,8 +58,8 @@ theorem round_ok (s : State) (A : Nat → KState) (rcp : Addr) (rc : Lane) (hA :
   by_cases e : i = 0
   · subst e
     rw [z₅ j hj, x₄ 0 hi j hj, ite_t (show 0 / 5 < 5 by decide), out_zero]; rfl
-  · rw [o₅ i hi e j hj, x₄ i hi j hj, ite_t (show i / 5 < 5 by omega), Xp,
-      Proof.Sha3.X86_64.X4R.out_t _ rc _ _ (by omega)]
+  · rw [o₅ i hi e j hj, x₄ i hi j hj, ite_t (show i / 5 < 5 by omega_using [hi]), Xp,
+      Proof.Sha3.X86_64.X4R.out_t _ rc _ _ (by omega_using [e])]
 
 /-! ## Loading and storing the states -/
 
@@ -71,12 +71,12 @@ theorem load_ok (s₀ : State) (src : Addr) (A : Nat → KState) (hdi : s₀.gpr
     (hin : ∀ i < 25, InRegions s₀.wr (src + BitVec.ofNat 64 (32 * i)) 32) (hA : Lanes4 s₀.mem src A) :
     WP isa (.block load) s₀ fun s => Same s₀ s ∧ Regs4 s A := by
   refine WP.mono (wp_range_map (LdInv s₀ A) (fun i s hi ⟨hw, hl⟩ => ?_) s₀
-    ⟨Same.refl _, fun _ h => absurd h (by omega)⟩) fun s h => h
+    ⟨Same.refl _, fun _ h => absurd h (by omega_using [])⟩) fun s h => h
   refine wp_evld (by rw [ea_at, hw.gpr, hdi]) (by rw [hw.rd, hw.wr]; exact X4.in_append (hin i hi))
     fun s' u => wp_nil ⟨hw.trans u.same, fun j hj k hk => ?_⟩
   by_cases e : j = i
   · subst e; rw [u.val k hk, la_eq, hw.mem, hA j hi k hk]
-  · rw [u.other _ (lreg_ne (by omega) hi e) k hk, hl j (by omega) k hk]
+  · rw [u.other _ (lreg_ne (by omega_using [hi, hj]) hi e) k hk, hl j (by omega_using [hj, e]) k hk]
 
 /-- After storing the first `n` lanes. -/
 def StInv (s₀ : State) (src : Addr) (n : Nat) (s : State) : Prop :=
@@ -87,9 +87,9 @@ theorem store_ok (s₀ : State) (src : Addr) (hdi : s₀.gpr .rdi = src)
     (hin : ∀ i < 25, InRegions s₀.wr (src + BitVec.ofNat 64 (32 * i)) 32) :
     WP isa (.block store) s₀ (StInv s₀ src 25) := by
   refine wp_range_map (StInv s₀ src) (fun i s hi ⟨hg, hrd, hwr, hq, hf, hl⟩ => ?_) s₀
-    ⟨rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, fun _ h => absurd h (by omega)⟩
+    ⟨rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, fun _ h => absurd h (by omega_using [])⟩
   refine wp_evst (by rw [ea_at, hg, hdi]) (by rw [hwr]; exact hin i hi) (wp_nil ⟨hg, hrd, hwr, hq, ?_, ?_⟩)
-  · exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base src (by omega) (by omega))
+  · exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base src (by omega_using [hi]) (by omega_using [hi]))
   · intro j hj k hk
     by_cases e : j = i
     · subst e
@@ -97,9 +97,9 @@ theorem store_ok (s₀ : State) (src : Addr) (hdi : s₀.gpr .rdi = src)
       rw [← la_eq, readW_evst _ _ _ _ hk, hq]
     · show (s.mem.writeW _ _).readW _ 64 = _
       have := readW_writeW_off s.mem src (s.vy (lreg i)) (d := 32 * j + 8 * k) (e := 32 * i) (n := 8)
-        (by omega) (by omega) (by omega)
+        (by omega_using [hi, hj, hk]) (by omega_using [hi]) (by omega_using [hk, e])
       rw [this]
-      exact hl j (by omega) k hk
+      exact hl j (by omega_using [hj, e]) k hk
 
 /-! ## The 24 rounds -/
 
@@ -141,11 +141,11 @@ theorem permute4R_ok {s₀ : State} {src oth tbl : Addr} (hp : Pre4 s₀ src oth
     fun g _ => by rw [k₁.gpr], k₁.mem, k₁.rd, k₁.wr⟩
   let Inv : Nat → State → Prop := fun n s => ∃ r, n = 24 - r ∧ r < 24 ∧ RInv s₀ tbl A r s
   refine WP.seq (WP.mono (WP.loop (M := isa) (Q := RInv s₀ tbl A 24) Inv (fun n s ⟨r, hn, hr, h⟩ => ?_)
-    24 s₁ ⟨0, rfl, by omega, h₀⟩) fun s₂ h₂ => ?_)
+    24 s₁ ⟨0, rfl, by omega_using [], h₀⟩) fun s₂ h₂ => ?_)
   · refine WP.mono (round_step hp hcx hr h) fun s' ⟨he, h'⟩ => ?_
     by_cases hlast : r + 1 = 24
     · exact .inl ⟨by show eval .ne s' = _; rw [he, hlast]; rfl, hlast ▸ h'⟩
-    · exact .inr ⟨by show eval .ne s' = _; rw [he]; simp [hlast], 24 - (r + 1), by omega, r + 1, rfl, by omega, h'⟩
+    · exact .inr ⟨by show eval .ne s' = _; rw [he]; simp [hlast], 24 - (r + 1), by omega_using [hn, hr], r + 1, rfl, by omega_using [hr, hlast], h'⟩
   · refine WP.mono (store_ok s₂ src (by rw [h₂.rest _ (by decide), hdi]) (by rw [h₂.wr]; exact hp.src_in))
       fun s ⟨hg, hrd, hwr, _, hf, hl⟩ => ⟨fun i hi k hk => by rw [hl i hi k hk, h₂.regs i hi k hk]; rfl,
         ?_, hrd.trans h₂.rd, hwr.trans h₂.wr, by rw [hg, h₂.rdx], fun g _ hd => by rw [hg, h₂.rest g hd]⟩

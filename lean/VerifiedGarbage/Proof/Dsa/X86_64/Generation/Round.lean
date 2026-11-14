@@ -22,7 +22,7 @@ theorem round_ok (M : Mont) (K : Kernel) {s : State} {B : Addr} {Z w N a : Nat} 
         (Spec.Rsa.splitTwos (N - 1)).1 (Spec.Rsa.splitTwos (N - 1)).2 a) ∧
       WorkFrame B (witnessRoundRanges w) [below (s.gpr .rsp) 128] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Impl.Ffdh.X86_64.ParameterCandidate.witnessRound
-  refine WP.seq (WP.mono (witnessMont_ok M h hd ho (by omega) ha) fun u ⟨hu, hxm, hf, hk⟩ => ?_)
+  refine WP.seq (WP.mono (witnessMont_ok M h hd ho (by omega_using [hN]) ha) fun u ⟨hu, hxm, hf, hk⟩ => ?_)
   have hsp : u.gpr .rsp = s.gpr .rsp := hk.gpr (by decide)
   have hru : Caller.Room u B Z := ⟨by rw [hsp]; exact hr.size, by rw [hsp]; exact hr.disjoint⟩
   refine WP.mono (sharedRound_ok K hu hd hZ hru ho hN hxm) fun t ⟨ht, hflag, hft, kt⟩ => ?_

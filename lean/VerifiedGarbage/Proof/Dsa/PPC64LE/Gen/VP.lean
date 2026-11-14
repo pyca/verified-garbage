@@ -128,16 +128,16 @@ theorem loop {I : Nat → State → State → Prop} {body : Prog isa} {c : Cond}
     refine WP.mono (wps (hb m).wp hu.1 hu.2) fun u' ⟨⟨he, hq, hi⟩, uy⟩ => ?_
     rcases Nat.eq_zero_or_pos m with h0 | hp
     · exact .inl ⟨by rw [he, h0]; rfl, hq h0⟩
-    · obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-      exact .inr ⟨by rw [he]; simp, k, by omega, hi hp, uy⟩
+    · obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hp]⟩
+      exact .inr ⟨by rw [he]; simp, k, by omega_using [], hi hp, uy⟩
   · refine RelCT.loop (M := isa) (fun m => Two (Sy (I (m + 1)))) (fun m => ?_) n
     refine (hb m).ct.mono (fun _ _ h => h) fun s₁ s₂ ⟨σ₁, σ₂, ⟨⟨e₁, q₁, i₁⟩, y₁⟩, ⟨⟨e₂, q₂, i₂⟩, y₂⟩⟩ =>
       ⟨e₁.trans e₂.symm, fun hf => ?_, fun ht => ?_⟩
     · have h0 : m = 0 := by rw [e₁] at hf; simpa using hf
       exact ⟨σ₁, σ₂, ⟨q₁ h0, y₁⟩, ⟨q₂ h0, y₂⟩⟩
     · have hp : 0 < m := by rw [e₁] at ht; simpa using ht
-      obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-      exact ⟨k, by omega, σ₁, σ₂, ⟨i₁ hp, y₁⟩, ⟨i₂ hp, y₂⟩⟩
+      obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hp]⟩
+      exact ⟨k, by omega_using [], σ₁, σ₂, ⟨i₁ hp, y₁⟩, ⟨i₂ hp, y₂⟩⟩
 
 /-- A piece no state reaches. -/
 theorem of_false {c : Prog isa} (h : ∀ σ s, ¬ F σ s) : VP F c G :=

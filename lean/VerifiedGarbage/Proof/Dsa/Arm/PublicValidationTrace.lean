@@ -53,7 +53,7 @@ theorem body_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen qLen 
       simp only [List.mem_singleton] at hr
       subst r
       exact R0))
-    (save_ok E₁ (by omega)) (save_ok E₂ (by omega)) fun t₁ t₂ ⟨W₁, P₁, J₁⟩ ⟨W₂, P₂, J₂⟩ => ?_
+    (save_ok E₁ (by omega_using [b₁])) (save_ok E₂ (by omega_using [b₂])) fun t₁ t₂ ⟨W₁, P₁, J₁⟩ ⟨W₂, P₂, J₂⟩ => ?_
   have X : Pair base size₁ size₂ pLen qLen nP nQ (inputs pLen qLen) val₁ val₂ t₁ t₂ := by
     refine ⟨⟨⟨W₁, b₁, wp, wq, qp, q32⟩, ?_⟩, ⟨⟨W₂, b₂, wp, wq, qp, q32⟩, ?_⟩, ?_⟩
     · intro i hi

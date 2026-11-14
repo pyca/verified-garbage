@@ -47,14 +47,14 @@ theorem mulRow_gen {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Re
   simp only [List.append_assoc]
   -- The pointers, the count, no carry.
   refine WP.seq (ptr_ok h.ws h.slots hZ (by decide) (by decide) (by decide) (by decide) (by intro e; cases e)
-    (by omega) fun u₁ K₁ m₁ p₁ => ?_)
+    (by omega_using [haz, hn]) fun u₁ K₁ m₁ p₁ => ?_)
   have h₁ : Bx L u₁ B Z len N := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _)
     (rv_ge _ acc) haz
-  refine nBytes_ok h₁.ws.ws.workspace h₁.slots hZ (by omega) he fun u₂ K₂ m₂ c₂ => ?_
+  refine nBytes_ok h₁.ws.ws.workspace h₁.slots hZ (by omega_using [hw]) he fun u₂ K₂ m₂ c₂ => ?_
   have h₂ : Bx L u₂ B Z len N := h₁.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _)
     (rv_ge _ acc) haz
   refine ptr_ok h₂.ws h₂.slots hZ (by decide) (by decide) (by decide) (by decide) (fun _ => hsh)
-    (by omega) fun u₃ K₃ m₃ p₃ => wp_movS rfl fun u U _ => WP.block_nil ?_
+    (by omega_using [hsz, hn, hpos, ke]) fun u₃ K₃ m₃ p₃ => wp_movS rfl fun u U _ => WP.block_nil ?_
   have K : Keeps [.ebx, .edx, .ebp, .edi, .esi] s u :=
     (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans (U.keeps.mono (by decide))
   have m : u.mem = s.mem := by rw [U.mem, m₃, m₂, m₁]
@@ -62,10 +62,10 @@ theorem mulRow_gen {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Re
   have hwu := h.ws.rt.of_keeps K
   -- The loop.
   refine WP.seq (WP.mono (rowLoop_ok (set := set) hwu (N := nw len + e) (x := rv (kw len) src)
-    (y := rv (kw len) acc) (by omega) hsz haz sep
+    (y := rv (kw len) acc) (by omega_using [hpos, ke]) hsz haz sep
     (by rw [PtrAt, U.other _ (by decide)]; exact p₃)
     (by rw [PtrAt, U.other _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
-    (by rw [U.other _ (by decide), K₃.1 _ (by decide), c₂]; omega) U.gpr) fun t R => ?_)
+    (by rw [U.other _ (by decide), K₃.1 _ (by decide), c₂]; omega_using [ke]) U.gpr) fun t R => ?_)
   -- The tail, and `edi` back.
   have post : ∀ v, Keeps [.eax] t v → Outside B (rv (kw len) acc) (4 * (nw len + e + 2)) u.mem v.mem →
       ((set = false → val32 u.mem B (rv (kw len) acc) (nw len + e + 2) +
@@ -86,7 +86,7 @@ theorem mulRow_gen {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Re
     rw [ecx] at V
     have KK : Keeps [.eax, .ebx, .edx, .ebp, .esi, .edi] s v :=
       ((K.mono (by decide)).trans (R.keep.mono (by decide))).trans (Kv.mono (by decide))
-    have O0 : Outside B 0 Z s.mem v.mem := O.mono (Nat.zero_le _) (by omega)
+    have O0 : Outside B 0 Z s.mem v.mem := O.mono (Nat.zero_le _) (by omega_using [haz])
     unfold restoreEdi
     refine wp_movS (h.ws.wsArg.keep KK (by decide) O0).readSrc fun t₁ U₁ _ => WP.block_nil ?_
     have K' : Keeps [.eax, .ebx, .edx, .ebp, .esi] s t₁ :=
@@ -132,7 +132,7 @@ theorem rowAdd_ok {set : Bool} {s : State} (h : Bx L s B Z len N) {c : Nat} (hc 
   have hZ := h.halfZ
   have ra := rv_ge (kw len) acc
   unfold rowAdd
-  refine WP.seq (wp_movS (readSrc_sc h.ws.ws.workspace (d := c) (by omega)) fun u U _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc h.ws.ws.workspace (d := c) (by omega_using [hc, haz, ra])) fun u U _ => WP.block_nil ?_)
   have hu : Bx L u B Z len N := h.keep U.keeps (by decide) (by decide) (by rw [U.mem]; exact Outside.refl _ _ _ _)
     (rv_ge _ acc) haz
   have ecx : (u.gpr .ecx).toNat = w32 s.mem B c := by rw [U.gpr]
@@ -159,9 +159,9 @@ theorem linearUnsigned_ok {s : State} (h : Bx L s B Z len N) {u v : Nat} (hu : u
   refine WP.seq (WP.mono (rowAdd_ok (set := true) h hu he hah haccz haz sa (fun e => nomatch e))
     fun s₁ ⟨H₁, O₁, V₁, K₁⟩ => ?_)
   simp only [ite_true, Nat.zero_add] at V₁
-  have U₁ : w32 s₁.mem B v = w32 s.mem B v := O₁.w32 (.inl (by omega)) (by omega)
+  have U₁ : w32 s₁.mem B v = w32 s.mem B v := O₁.w32 (.inl (by omega_using [hv, ra])) (by omega_using [hv])
   have B₁ : val32 s₁.mem B (rv (kw len) b) (nw len + e) = val32 s.mem B (rv (kw len) b) (nw len + e) :=
-    O₁.val32 sb (by omega)
+    O₁.val32 sb (by omega_using [hbz, hn])
   have bound := VG.Proof.Weierstrass.X86.Inv.products_bound s.mem B u v (rv (kw len) a) (rv (kw len) b) (nw len + e)
   refine WP.mono (rowAdd_ok (set := false) H₁ hv he hbh haccz hbz sb (fun _ => by rw [V₁, U₁, B₁]; exact bound))
     fun z ⟨H, O, V, K⟩ => ⟨H, O₁.trans O, ?_, K₁.trans K⟩

@@ -22,7 +22,7 @@ theorem code_full_ok {body : Prog isa} (noSp : NoSp body)
       Keeps [.edx] (allocFrame 28 s) a → WP isa body a fun t => Q (freed 28 t)) :
     WP isa (VG.Impl.RsaKeyGen.X86.CandidateFrame.code body) s Q := by
   unfold VG.Impl.RsaKeyGen.X86.CandidateFrame.code VG.Impl.RsaKeyGen.X86.CandidateFrame.bytes
-  refine WP.seq (wp_movS (readSrc_sc S (d := 40) (by omega)) fun a A _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc S (d := 40) (by omega_using [header])) fun a A _ => WP.block_nil ?_)
   have Sa := S.of_keeps A.keeps (by decide)
   have spA := A.other .esp (by decide)
   have privateA : privateSp a = privateSp s := by unfold privateSp; rw [spA]
@@ -36,7 +36,7 @@ theorem code_full_ok {body : Prog isa} (noSp : NoSp body)
     rcases hi with rfl | hi
     · rfl
     · exact noSp i hi
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spA]; omega) innerNoSp ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [spA]; omega_using [fit]) innerNoSp ?_
   refine WP.seq (WP.mono (slot_ok Sa (by rw [spA]; exact fit)
     (by rw [spA]; exact separate) capA) fun b ⟨Sb, Cb, lenFar, Fb, Kb⟩ => ?_)
   rw [privateA] at Cb lenFar

@@ -124,8 +124,8 @@ theorem SafeC.cons_sc {p : Params} (hF : VFacts p) {nr : Nat} (hnr : nr ≤ p.k)
     (h0 : 0 < l) (h1 : o + l ≤ oACC ∨ oACC + 4 ≤ o) (h2 : o + l ≤ oB ∨ oB + w1Len p * nr ≤ o ∨ oB + 1024 ≤ o)
     (h3 : o + l ≤ oP 0 ∨ oP 8 ≤ o) (h4 : o + l ≤ oP 20) (h : SafeC p nr bs) : SafeC p nr (sb o l :: bs) := by
   have : w1Len p * nr ≤ 1024 := by
-    have := Nat.mul_le_mul_left (w1Len p) hnr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega
-  exact (SafeC.sc hF hnr h0 h1 (by omega) h3 h4).append (bs₁ := [_]) h
+    have := Nat.mul_le_mul_left (w1Len p) hnr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega_arith
+  exact (SafeC.sc hF hnr h0 h1 (by omega_using [h2, this]) h3 h4).append (bs₁ := [_]) h
 
 /-- Proves `SafeC` of a list of buffers of `scratch` below `Â` by `SafeC.cons_sc`, with `hnr : nr ≤ p.k`. -/
 tactic_template "safeCs " hF:term:max hnr:term:max : tactic => `(tactic| (
@@ -155,19 +155,19 @@ theorem nttZ_piece {j : Nat} (hj : j < p.ℓ) :
     (ht := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, _, h⟩ => ⟨h.ctx, by have := (h.z j hj).1; exact this⟩)
     fun s₀ s s' hp ⟨hh, A, C, h⟩ h' fr post => by
-      refine ⟨hh, A, C, h.update hp (N := 80) (by omega) (by safeCs hF (Nat.zero_le p.k)) fr h' (fun i hi => ?_)
-        (keepPolyD hp (stkV (by omega)) (by lvd) fr h.c)⟩
-      rcases (by omega : i < j ∨ i = j ∨ j < i) with hij | rfl | hij
-      · have e := keepPolyD hp (stkV (by omega)) (by lvd) fr (h.z i hi)
-        simp only [hij, show i < j + 1 by omega, ite_true] at e ⊢
+      refine ⟨hh, A, C, h.update hp (N := 80) (by omega_using []) (by safeCs hF (Nat.zero_le p.k)) fr h' (fun i hi => ?_)
+        (keepPolyD hp (stkV (by omega_using [])) (by lvd) fr h.c)⟩
+      rcases (by omega_using [] : i < j ∨ i = j ∨ j < i) with hij | rfl | hij
+      · have e := keepPolyD hp (stkV (by omega_using [])) (by lvd) fr (h.z i hi)
+        simp only [hij, show i < j + 1 by omega_using [hij], ite_true] at e ⊢
         exact e
       · rw [ite_eq_left_iff.mpr fun h => absurd (Nat.lt_succ_self i) h]
         have e := (h.z i hi).2
         rw [ite_eq_right_iff.mpr fun h => absurd h (Nat.lt_irrefl _)] at e
         rw [e] at post
         exact post
-      · have e := keepPolyD hp (stkV (by omega)) (by lvd) fr (h.z i hi)
-        simp only [show ¬ i < j by omega, show ¬ i < j + 1 by omega, ite_false] at e ⊢
+      · have e := keepPolyD hp (stkV (by omega_using [])) (by lvd) fr (h.z i hi)
+        simp only [show ¬ i < j by omega_using [hij], show ¬ i < j + 1 by omega_using [hij], ite_false] at e ⊢
         exact e
 
 theorem nttC_piece : VP p (CI p · p.ℓ false 0) (CI p · p.ℓ true 0) (nttAt P pC) :=
@@ -175,8 +175,8 @@ theorem nttC_piece : VP p (CI p · p.ℓ false 0) (CI p · p.ℓ true 0) (nttAt 
     (ht := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, _, h⟩ => ⟨h.ctx, h.c.1⟩)
     fun s₀ s s' hp ⟨hh, A, C, h⟩ h' fr post => by
-      refine ⟨hh, A, C, h.update hp (N := 80) (by omega) (by safeCs hF (Nat.zero_le p.k)) fr h'
-        (fun i hi => keepPolyD hp (stkV (by omega)) (by lvd) fr (h.z i hi)) ?_⟩
+      refine ⟨hh, A, C, h.update hp (N := 80) (by omega_using []) (by safeCs hF (Nat.zero_le p.k)) fr h'
+        (fun i hi => keepPolyD hp (stkV (by omega_using [])) (by lvd) fr (h.z i hi)) ?_⟩
       have e := h.c.2
       simp only [Bool.false_eq_true, ite_false] at e
       rw [e] at post

@@ -26,14 +26,14 @@ structure Scratch (s : State) (p : Addr) : Prop where
 
 theorem Scratch.write {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions s.wr (off p d) n :=
-  ⟨_, h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem Scratch.read {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions (s.rd ++ s.wr) (off p d) n :=
-  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem word_offset (i : Nat) (hi : i < 128) :
-    (1024 + 8 * i) % 8 = 0 ∧ 1024 + 8 * i < 32768 := by omega
+    (1024 + 8 * i) % 8 = 0 ∧ 1024 + 8 * i < 32768 := by omega_using [hi]
 
 theorem lane_injective : Function.Injective lane := by
   intro i j h
@@ -49,7 +49,7 @@ theorem loadWord_ok (index : Fin 16 → Fin 128) (j : Fin 16) (s : State) {p : A
     (hs : Scratch s p) :
     WP isa (.block [loadWord index j]) s fun t =>
       t = s.write .x (lane j) (word s.mem p (index j).val) := by
-  have ld := hs.read (d := 1024 + 8 * (index j).val) (n := 8) (by omega)
+  have ld := hs.read (d := 1024 + 8 * (index j).val) (n := 8) (by omega_using [])
   rw [← hs.reg] at ld
   apply WP.of_runBlock
   simp only [loadWord, runBlock_cons, runStep_some, runBlock_nil,

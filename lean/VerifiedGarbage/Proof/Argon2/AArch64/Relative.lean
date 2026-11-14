@@ -74,7 +74,7 @@ theorem value_nat (random count : Addr) (lo : 0 < count.toNat)
   have hj : j.toNat < 2 ^ 32 := by
     have h32 := (random.setWidth 32).isLt
     rw [show j = (random.setWidth 32).setWidth 64 from (low32 random).symm,
-      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]
+      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [])]
     exact h32
   have hx := mul_shift_toNat j j (Proof.Argon2.reference_square_bound _ hj)
   have product : ((j * j) >>> 32).toNat * count.toNat < 2 ^ 64 := by
@@ -87,7 +87,7 @@ theorem value_nat (random count : Addr) (lo : 0 < count.toNat)
   have hyWord : (((j * j) >>> 32) * count) >>> 32 = BitVec.ofNat 64
       (count.toNat * (j.toNat * j.toNat / 2 ^ 32) / 2 ^ 32) := by
     apply BitVec.eq_of_toNat_eq
-    rw [hy, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hy, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hy])]
   unfold value
   change count - 1 - ((((j * j) >>> 32) * count) >>> 32) = _
   rw [hyWord]
@@ -99,8 +99,8 @@ theorem value_nat (random count : Addr) (lo : 0 < count.toNat)
     calc
       count - 1 = BitVec.ofNat 64 count.toNat - BitVec.ofNat 64 1 :=
         congrArg (fun x : Addr => x - 1) countWord
-      _ = _ := Offset.ofNat_sub_ofNat (by omega)
-  rw [countSub, Offset.ofNat_sub_ofNat (by omega)]
+      _ = _ := Offset.ofNat_sub_ofNat (by omega_using [lo])
+  rw [countSub, Offset.ofNat_sub_ofNat (by omega_using [hyBound])]
 
 theorem code_nat_ok (s : State) (lo : 0 < (s.gpr .x1).toNat)
     (bound : (s.gpr .x1).toNat < 2 ^ 32) :

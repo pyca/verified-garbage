@@ -92,7 +92,7 @@ theorem callEntry_byte (s : State) {R : Region} (hd : (below (s.gpr .rsp) 8).Dis
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
     s.callEntry.mem (R.base + BitVec.ofNat 64 i) = s.mem (R.base + BitVec.ofNat 64 i) :=
   Frame.bytes (rs := [below (s.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using [])))
     (by simpa using hd.symm) hR hi
 
 /-! ## One instruction at a time
@@ -196,6 +196,6 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 end VG.Proof.Sha256.X86_64.Stream

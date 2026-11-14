@@ -20,7 +20,7 @@ theorem candidate_local_frame {s t : State} {p : CandidateParams} {consumed d : 
   rw [List.mem_singleton] at hr
   subst r
   refine ⟨⟨State.addr (s.sp + 40#32), 28⟩, by simp [candidateRegions], ?_⟩
-  rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
-  exact Offset.sub _ lower (by omega)
+  rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [upper, this]), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
+  exact Offset.sub _ lower (by omega_using [upper])
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

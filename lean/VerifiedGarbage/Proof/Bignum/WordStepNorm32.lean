@@ -28,7 +28,7 @@ theorem lt_succ_div_mul (a b : Nat) (hb : 0 < b) : a < (a / b + 1) * b := by
   have h1 := Nat.div_add_mod a b
   have h2 := Nat.mod_lt a hb
   rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]
-  omega
+  omega_using [h1, h2]
 
 /-- An estimate of `⌊Y / N⌋ < 2^32` from `Y` and `N` cut at `2^K`, whose top
 `⌊N / 2^K⌋` is at least `2^32`: `q ≤ min(⌊⌊Y / 2^K⌋ / ⌊N / 2^K⌋⌋, 2^32 - 1) ≤ q + 1`. -/
@@ -36,7 +36,7 @@ theorem qhat_trunc {Y N K : Nat} (hq : Y / N < 2 ^ 32) (hD : 2 ^ 32 ≤ N / 2 ^ 
     Y / N ≤ min (Y / 2 ^ K / (N / 2 ^ K)) (2 ^ 32 - 1) ∧
       min (Y / 2 ^ K / (N / 2 ^ K)) (2 ^ 32 - 1) ≤ Y / N + 1 := by
   have hK := Nat.two_pow_pos K
-  have hD0 : 0 < N / 2 ^ K := by omega
+  have hD0 : 0 < N / 2 ^ K := by omega_using [hD]
   have hN0 : 0 < N := Nat.pos_of_ne_zero fun h => by simp [h] at hD0
   generalize hq' : Y / N = q at hq
   generalize hU : Y / 2 ^ K = U
@@ -44,11 +44,11 @@ theorem qhat_trunc {Y N K : Nat} (hq : Y / N < 2 ^ 32) (hD : 2 ^ 32 ≤ N / 2 ^ 
   have hNd : D * 2 ^ K ≤ N := by rw [← hDd]; exact Nat.div_mul_le_self N _
   have hN1 : N < (D + 1) * 2 ^ K := by rw [← hDd]; exact lt_succ_div_mul _ _ hK
   have hUY : U * 2 ^ K ≤ Y := by rw [← hU]; exact Nat.div_mul_le_self Y _
-  have hY1 : Y < (U + 1) * 2 ^ K := by rw [← hU]; exact lt_succ_div_mul _ _ (by omega)
+  have hY1 : Y < (U + 1) * 2 ^ K := by rw [← hU]; exact lt_succ_div_mul _ _ (by omega_using [hK])
   have hqN : q * N ≤ Y := by rw [← hq']; exact Nat.div_mul_le_self Y N
-  have hYq : Y < (q + 1) * N := by rw [← hq']; exact lt_succ_div_mul _ _ (by omega)
+  have hYq : Y < (q + 1) * N := by rw [← hq']; exact lt_succ_div_mul _ _ (by omega_using [hN0])
   constructor
-  · refine Nat.le_min.mpr ⟨?_, by omega⟩
+  · refine Nat.le_min.mpr ⟨?_, by omega_using [hq]⟩
     rw [Nat.le_div_iff_mul_le hD0]
     -- `q D 2^K ≤ q N ≤ Y`, so `q D ≤ U`.
     have h1 : q * D * 2 ^ K ≤ Y := by
@@ -56,20 +56,20 @@ theorem qhat_trunc {Y N K : Nat} (hq : Y / N < 2 ^ 32) (hD : 2 ^ 32 ≤ N / 2 ^ 
     have h2 : q * D < U + 1 := by
       have := Nat.lt_of_le_of_lt h1 hY1
       exact Nat.lt_of_mul_lt_mul_right this
-    omega
+    omega_using [hq', hq, hU, hDd, hD, hD0, hNd, hN1, hUY, hY1, hqN, hYq, h1, h2]
   · refine Nat.le_trans (Nat.min_le_left _ _) ?_
     -- `q̂ D ≤ U`, `U 2^K ≤ Y < (q + 1) N < (q + 1) (D + 1) 2^K`.
     refine Nat.le_of_not_lt fun hc => ?_
-    have hge : q + 2 ≤ U / D := by omega
+    have hge : q + 2 ≤ U / D := by omega_using [hq', hq, hU, hDd, hD, hD0, hNd, hN1, hUY, hY1, hqN, hYq, hc]
     have h1 : (q + 2) * D ≤ U := Nat.le_trans (Nat.mul_le_mul_right D hge) (Nat.div_mul_le_self U D)
     have h2 : U < (q + 1) * (D + 1) := by
       have h3 : U * 2 ^ K < (q + 1) * (D + 1) * 2 ^ K := by
         rw [Nat.mul_assoc]
         exact Nat.lt_of_le_of_lt hUY (Nat.lt_of_lt_of_le hYq (Nat.mul_le_mul_left _ (Nat.le_of_lt hN1)))
       exact Nat.lt_of_mul_lt_mul_right h3
-    have e1 : (q + 2) * D = (q + 1) * D + D := by rw [Nat.add_mul, Nat.add_mul (q) 1, Nat.one_mul]; omega
+    have e1 : (q + 2) * D = (q + 1) * D + D := by rw [Nat.add_mul, Nat.add_mul (q) 1, Nat.one_mul]; omega_using []
     have e2 : (q + 1) * (D + 1) = (q + 1) * D + (q + 1) := by rw [Nat.mul_add, Nat.mul_one]
-    omega
+    omega_using [hK, hN0, hq', hq, hU, hDd, hD, hD0, hNd, hN1, hUY, hY1, hqN, hYq, hc, hge, h1, h2, e1, e2]
 
 /-- `y - q̂ m` with `m` added once if it is negative is `y mod m`, for
 `⌊y / m⌋ ≤ q̂ ≤ ⌊y / m⌋ + 1`. -/

@@ -74,7 +74,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have rdi₃ : s₃.gpr .rdi = s.gpr .rdi := G₃ _ (by decide) (by decide)
   have hkey : ∀ k, k + 4 ≤ 16 → InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .rdi + BitVec.ofNat 64 k) 4 := fun k hk => by
     rw [rd₃', wr₃', rdi₃]
-    exact ⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ h.keyIn, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   obtain ⟨s₄, e₄, v₄, g₄, m₄, rd₄, wr₄⟩ := keyLoad2_ok (s := s₃) (d := .r10) (by decide) (k := 0) (by decide)
     (hkey 0 (by decide)) (hkey 4 (by decide))
   have rdi₄ : s₄.gpr .rdi = s.gpr .rdi := by rw [g₄ _ (by decide) (by decide), rdi₃]
@@ -131,7 +131,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
     refine f₅₇.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by unfold scratchSlots; omega)⟩
+    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by unfold scratchSlots; omega_using [])⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_, frame⟩
   · have saved : ∀ q ∈ Impl.Seed.X86_64.savedRegs, s'.gpr q.1 = s.gpr q.1 := by

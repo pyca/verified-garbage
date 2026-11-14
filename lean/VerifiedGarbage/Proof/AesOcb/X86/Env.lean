@@ -43,7 +43,7 @@ theorem covers_of_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r
 theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k) :
     Covers [⟨p, n⟩] rs := fun a m ⟨r, hr, hc⟩ => by
   simp only [List.mem_singleton] at hr; subst hr
-  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 /-! ## The public arguments and their regions -/
 
@@ -156,21 +156,21 @@ theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + Bit
 /-- Parts of `W` are disjoint. -/
 theorem w_w {W : BitVec 32} {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 variable {p : Prm} (L : Lay p)
 include L
 
 /-- An offset into `W`, as a 64-bit address. -/
 theorem aW {o : Nat} (ho : o < 2560) : w64 (p.W + BitVec.ofNat 32 o) = w64 p.W + BitVec.ofNat 64 o :=
-  w64_add (by have := L.ww; omega)
+  w64_add (by have := L.ww; omega_using [ho, this])
 
 theorem nW {o : Nat} (ho : o < 2560) : (p.W + BitVec.ofNat 32 o).toNat = p.W.toNat + o :=
-  toNat_add32 (by have := L.ww; omega)
+  toNat_add32 (by have := L.ww; omega_using [ho, this])
 
 /-- An offset into the key context. -/
 theorem aK {o : Nat} (ho : o < 256) : w64 (p.K + BitVec.ofNat 32 o) = w64 p.K + BitVec.ofNat 64 o :=
-  w64_add (by have := L.kw; omega)
+  w64_add (by have := L.kw; omega_using [ho, this])
 
 theorem k_w' {d k : Nat} (hd : d + k ≤ 2560) : (⟨w64 p.K, 256⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
@@ -244,9 +244,9 @@ theorem inMut_w (p : Prm) {d k : Nat}
     ∃ r' ∈ mutR p, Region.Sub ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ r' := by
   rcases h with h | h | h | h
   · exact ⟨wA p.W, by simp, Offset.sub_base _ h⟩
-  · exact ⟨wB p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
-  · exact ⟨wV p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
-  · exact ⟨wC p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
+  · exact ⟨wB p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
+  · exact ⟨wV p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
+  · exact ⟨wC p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
 
 theorem inMut_stk (p : Prm) : ∃ r' ∈ mutR p, Region.Sub (stk p) r' := ⟨stk p, by simp, fun _ h => h⟩
 
@@ -258,12 +258,12 @@ theorem kept_mut {p : Prm} (L : Lay p) {d k : Nat} (hd : 128 ≤ d ∧ d + k ≤
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · simpa using Lay.w_w (W := p.W) (a := d) (n := k) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (by omega) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.bw' (by omega)).symm
-  · exact (L.d_w' (by omega)).symm
+  · simpa using Lay.w_w (W := p.W) (a := d) (n := k) (d := 0) (k := 128) (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact (L.bw' (by omega_using [hd])).symm
+  · exact (L.d_w' (by omega_using [hd])).symm
 
 /-- The slots, after code that changes only `mutR`. -/
 theorem Slots.mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') (S : Slots p m) : Slots p m' := by
@@ -326,14 +326,14 @@ theorem bytes_mut {p : Prm} {P : BitVec 32} {len : Nat}
 
 theorem nonce_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
     bytesAt m' (w64 p.N) p.nl = bytesAt m (w64 p.N) p.nl :=
-  bytes_mut L.n_w L.bn L.n_d (by have := L.nl15; omega) hf
+  bytes_mut L.n_w L.bn L.n_d (by have := L.nl15; omega_using [this]) hf
 
 theorem aad_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
     bytesAt m' (w64 p.A) p.al = bytesAt m (w64 p.A) p.al :=
-  bytes_mut L.a_w L.ba L.a_d (by have := L.aw; omega) hf
+  bytes_mut L.a_w L.ba L.a_d (by have := L.aw; omega_using [this]) hf
 
 theorem tag_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
     bytesAt m' (w64 p.T) p.tl = bytesAt m (w64 p.T) p.tl :=
-  bytes_mut L.t_w L.bt L.t_d (by have := L.tl16; omega) hf
+  bytes_mut L.t_w L.bt L.t_d (by have := L.tl16; omega_using [this]) hf
 
 end VG.Proof.AesOcb.X86

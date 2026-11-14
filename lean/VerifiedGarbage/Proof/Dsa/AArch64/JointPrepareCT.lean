@@ -48,7 +48,7 @@ theorem jointPrepare_ct (M : Mont) :
       hp, hl, hbl, hb, hbl ▸ p.basePositive, ?_, hbl ▸ p.baseFits⟩
     have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hbw, hw48]
   · intro p s h
     obtain ⟨bb, _, hp, hl, _, _, hbl, _, hb, _⟩ := h.1.2.2
     exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -61,7 +61,7 @@ theorem jointPrepare_ct (M : Mont) :
       hp, hl, hel, hb, hel ▸ p.expPositive, ?_, hel ▸ p.secondFits⟩
     have hbw : (eb.length + 7) / 8 ≤ p.x.wx := hel ▸ p.secondFits
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hbw, hw48]
   · intro p s h
     obtain ⟨_, eb, _, _, hp, hl, _, hel, _, hb⟩ := h.1.2.2
     exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -74,7 +74,7 @@ theorem jointPrepare_ct (M : Mont) :
     rcases hj with rfl | rfl
     · dsimp only [PowerPublic.product]
       rw [hr2]
-      exact Nat.mod_lt _ (by have := p.greater; omega)
+      exact Nat.mod_lt _ (by have := p.greater; omega_using [this])
     · dsimp only [PowerPublic.product]
       rw [hone]
       exact p.greater) (jointEncode_ct M)) ?_) (two_map (fun p : ProductCallPublic => p.x) (fun _ _ h => h) (jointBuild_ct M))
@@ -82,11 +82,11 @@ theorem jointPrepare_ct (M : Mont) :
   intro p s ⟨⟨hc, hm, _⟩, hone, hr2⟩
   have hr2' : wv s.mem (off p.x.B p.x.o) (slot p.x.wx aR2) p.x.wx =
       (2 ^ (64 * p.x.wx) * 2 ^ (64 * p.x.wx)) % p.modulus := by
-    rw [hr2, ← Nat.pow_add, show 64 * p.x.wx + 64 * p.x.wx = 128 * p.x.wx by omega]
+    rw [hr2, ← Nat.pow_add, show 64 * p.x.wx + 64 * p.x.wx = 128 * p.x.wx by omega_using []]
   have hR := coprime_pow2 p.odd (64 * p.x.wx)
-  exact WP.mono (jointEncode_ok M ⟨hm, hc.scrT⟩ p.lower (by have : p.x.wx ≤ 48 := p.width48; omega)
+  exact WP.mono (jointEncode_ok M ⟨hm, hc.scrT⟩ p.lower (by have : p.x.wx ≤ 48 := p.width48; omega_using [this])
     p.greater hR rfl rfl hone hr2') fun t ⟨ht, hv, _, _⟩ =>
-      ⟨p.minv, p.modulus, _, _, ht, hv, p.lower, by have : p.x.wx ≤ 48 := p.width48; omega,
-        by have := p.greater; omega, hR⟩
+      ⟨p.minv, p.modulus, _, _, ht, hv, p.lower, by have : p.x.wx ≤ 48 := p.width48; omega_using [this],
+        by have := p.greater; omega_using [this], hR⟩
 
 end VG.Proof.Dsa.AArch64

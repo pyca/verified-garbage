@@ -54,7 +54,7 @@ theorem sealM_xdepth : («seal» (v.withBlk B)).x86_64Depth ≤ 24 := by
   have d := B.decXd
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, oneUndo, tagLenOk, recv, cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
-  omega
+  omega_using [e]
 
 theorem sealM_correct (s : State) (hs : (Proof.AesGcm.sealX86_64M M).pre s) :
     ∃ t s', Exec isa («seal» (v.withBlk B)) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' := by
@@ -80,7 +80,7 @@ theorem openM_xdepth : («open» (v.withBlk B)).x86_64Depth ≤ 24 := by
   have d := B.decXd
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, oneUndo, tagLenOk, recv, cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
-  omega
+  omega_using [d]
 
 theorem openM_correct (s : State) (hs : (Proof.AesGcm.openX86_64M M).pre s) :
     ∃ t s', Exec isa («open» (v.withBlk B)) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
@@ -106,7 +106,7 @@ theorem streamEncryptM_xdepth : (streamEncrypt (v.withBlk B)).x86_64Depth ≤ 24
   have d := B.decXd
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
-  omega
+  omega_using [e]
 
 theorem streamEncryptM_correct (s : State) (hs : (Proof.AesGcm.streamEncryptX86_64M M).pre s) :
     ∃ t s', Exec isa (streamEncrypt (v.withBlk B)) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamEncryptX86_64.post s s' := by
@@ -132,7 +132,7 @@ theorem streamDecryptM_xdepth : (streamDecrypt (v.withBlk B)).x86_64Depth ≤ 24
   have d := B.decXd
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
-  omega
+  omega_using [d]
 
 theorem streamDecryptM_correct (s : State) (hs : (Proof.AesGcm.streamDecryptX86_64M M).pre s) :
     ∃ t s', Exec isa (streamDecrypt (v.withBlk B)) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamDecryptX86_64.post s s' := by

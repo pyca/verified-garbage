@@ -55,6 +55,6 @@ theorem VerifyingABI.used {s : State} (h : VerifyingABI s) : usedBytes ≤ (stac
   unfold Spec.Dsa.lengthsValid at hl
   unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
-  omega
+  omega_using [hl, hs]
 
 end VG.Proof.Dsa.X86_64

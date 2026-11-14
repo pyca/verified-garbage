@@ -15,7 +15,7 @@ theorem outOff_fits (wf : L.Wf) (room : Room L) (kg : Bool) {j : Nat} (hj : j<2*
   unfold outOff
   split
   · cases kg <;> simp only [Bool.false_eq_true,ite_false,ite_true] <;> lom
-  · apply noise_fits room; omega
+  · apply noise_fits room; omega_using [hj]
 
 theorem outOff_low (wf : L.Wf) (room : Room L) (kg : Bool) (j : Nat) :
     (if kg then KG.NS else KEM.NS)+1024≤outOff L kg j := by

@@ -97,24 +97,24 @@ theorem bitsLoop_ok {s₀ : State} {base k : Addr}
     fun s' ⟨b', z', one', keep', bits', o'⟩ => ?_
   obtain ⟨g', rd', wr'⟩ := keep'
   have hbyte : s.mem (k + BitVec.ofNat 64 i) = s₀.mem (k + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hkd i hi; simp only [BITS]; omega)
+    hb.mem _ (by have := hkd i hi; simp only [BITS]; omega_using [this])
   have inv : BInv base k s₀ s' (i + 1) := by
     refine ⟨⟨(g' _ (by decide)).trans hb.scr.x3, (g' _ (by decide)).trans hb.scr.mask, wr' ▸ hb.scr.wr,
       hb.scr.nowrap⟩, (g' _ (by decide)).trans hb.x1, b', one', fun r hr => (g' r hr).trans (hb.gpr r hr),
-      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega) (by omega)),
+      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega_using []) (by omega_using [hi])),
       fun t ht => ?_⟩
     rcases Nat.lt_or_ge t (8 * i) with h | h
     · have hofs : ofs base (off base (BITS + t)) = BITS + t :=
-        Mem.sub_ofNat_toNat base (by simp only [BITS]; omega)
-      rw [o' _ (by rw [hofs]; omega), hb.bits t h]
-    · have e := bits' (t - 8 * i) (by omega)
-      rw [show 8 * i + (t - 8 * i) = t by omega, hbyte] at e
-      rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
+        Mem.sub_ofNat_toNat base (by simp only [BITS]; omega_using [hi, ht])
+      rw [o' _ (by rw [hofs]; omega_using [h]), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_using [ht])
+      rw [show 8 * i + (t - 8 * i) = t by omega_using [h], hbyte] at e
+      rw [e, show t / 8 = i by omega_using [ht, h], show t % 8 = t - 8 * i by omega_using [ht, h]]
   simp only [eval, State.read, BitVec.setWidth_eq, bne, z']
   rcases Nat.lt_or_ge (i + 1) 57 with h | h
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬i + 1 = 57), Bool.not_false],
-      57 - (i + 1), by omega, i + 1, rfl, h, inv⟩
-  · obtain rfl : i = 56 := by omega
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [h] : ¬i + 1 = 57), Bool.not_false],
+      57 - (i + 1), by omega_using [hi], i + 1, rfl, h, inv⟩
+  · obtain rfl : i = 56 := by omega_using [hi, h]
     exact .inl ⟨rfl, inv⟩
 
 /-- `bits`: byte `t` of `BITS` is bit `t` of the scalar, for `t < 456`; then
@@ -135,7 +135,7 @@ theorem bits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .x1 = 
       Nat.reduceMul, Nat.reduceLT, ite_true, BitVec.shiftLeft_zero,
       Option.some.injEq, exists_eq_left']
     refine ⟨⟨?_, ?_, hs.wr, hs.nowrap⟩, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl,
-      VG.Proof.X448.AArch64.Outside.refl _ _ _ _, fun t ht => absurd ht (by omega)⟩
+      VG.Proof.X448.AArch64.Outside.refl _ _ _ _, fun t ht => absurd ht (by omega_using [])⟩
     · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.x3
     · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.mask
     · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hk
@@ -144,13 +144,13 @@ theorem bits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .x1 = 
     · have h19 : r ≠ .x19 := fun h => hr (by subst r; decide)
       have h8 : r ≠ .x8 := fun h => hr (by subst r; decide)
       simp only [RegUpd.gpr_write, h19, h8, ite_false]) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (bitsLoop_ok hkr hkd 0 s₁ (by omega) h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (bitsLoop_ok hkr hkd 0 s₁ (by omega_using []) h₁) fun s₂ h₂ => ?_)
   refine WP.mono (moveOutput_ok s₂) fun s₃ ⟨x1₃, m₃, k₃⟩ => ?_
   refine ⟨x1₃.trans (h₂.gpr _ (by decide)), fun r hr => ?_, k₃.2.1.trans h₂.rd, k₃.2.2.trans h₂.wr,
     by rw [m₃]; exact h₂.mem, fun t ht => ?_⟩
   · simp only [List.mem_cons, not_or] at hr
     rw [k₃.1 r (by simp only [List.mem_singleton]; exact hr.1)]
     exact h₂.gpr r (by simp only [bitRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact hr.2)
-  · rw [m₃, h₂.bits t (by omega), scalar_bit s.mem k ht]
+  · rw [m₃, h₂.bits t (by omega_using [ht]), scalar_bit s.mem k ht]
 
 end VG.Proof.Ed448.AArch64

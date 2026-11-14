@@ -17,7 +17,7 @@ theorem publicPrefix_component {a b : List Byte} {n offset len : Nat}
     (h : a.take n = b.take n) (bound : offset + len ≤ n) :
     (a.drop offset).take len = (b.drop offset).take len := by
   have H := congrArg (fun bs : List Byte => (bs.drop offset).take len) h
-  simp only [List.drop_take, List.take_take, Nat.min_eq_left (by omega : len ≤ n - offset)] at H
+  simp only [List.drop_take, List.take_take, Nat.min_eq_left (by omega_using [bound] : len ≤ n - offset)] at H
   exact H
 
 theorem publicLeak_domain {pLen qLen : Nat} {a b : List Byte}
@@ -25,8 +25,8 @@ theorem publicLeak_domain {pLen qLen : Nat} {a b : List Byte}
     (Spec.Dsa.publicKeyBytes pLen qLen a).params.p = (Spec.Dsa.publicKeyBytes pLen qLen b).params.p ∧
     (Spec.Dsa.publicKeyBytes pLen qLen a).params.q = (Spec.Dsa.publicKeyBytes pLen qLen b).params.q := by
   have Bytes := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 H
-  have P := publicPrefix_component (offset := 0) (len := pLen) Bytes (by omega)
-  have Q := publicPrefix_component (offset := pLen) (len := qLen) Bytes (by omega)
+  have P := publicPrefix_component (offset := 0) (len := pLen) Bytes (by omega_using [])
+  have Q := publicPrefix_component (offset := pLen) (len := qLen) Bytes (by omega_using [])
   simp only [List.drop_zero] at P
   exact ⟨congrArg Spec.Dsa.decodeBE P, congrArg Spec.Dsa.decodeBE Q⟩
 

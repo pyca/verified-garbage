@@ -102,7 +102,7 @@ theorem CandidateContext.shape_context {s : State} {p : CandidateParams} {consum
     (h : CandidateContext p consumed s) (enough : p.length ≤ p.bytes.length) :
     ShapeContext p.out p.tape (p.bytes.take p.length) p.bits s := by
   have size : (p.bytes.take p.length).length = p.length := by rw [List.length_take, Nat.min_eq_left enough]
-  refine ⟨h.saved.project ?_ ?_, by have := p.minBits; omega, p.maxBits, size, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨h.saved.project ?_ ?_, by have := p.minBits; omega_using [this], p.maxBits, size, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro d hd
     simp only [shapeSlots, List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl <;> simp [candidateSlots]
@@ -112,12 +112,12 @@ theorem CandidateContext.shape_context {s : State} {p : CandidateParams} {consum
     rcases hd with rfl | rfl | rfl | rfl <;> rfl
   · rw [size]
     have := p.tapeFits
-    omega
+    omega_using [enough, this]
   · rw [size]
     exact p.outputFits
   · rw [size]
     simpa only [BitVec.add_zero] using CallLay.inRegions_sub h.tapeRead
-      (off := 0) (by omega : 0 + p.length ≤ p.bytes.length) (by have := p.tapeCount; omega)
+      (off := 0) (by omega_using [enough] : 0 + p.length ≤ p.bytes.length) (by have := p.tapeCount; omega_using [this])
   · rw [size]
     exact h.outputWrite
   · rw [size]
@@ -126,7 +126,7 @@ theorem CandidateContext.shape_context {s : State} {p : CandidateParams} {consum
     exact h.stackOutput.symm
   · rw [size]
     have slice := VG.Proof.Dsa.bytesAt_slice s.mem (State.addr p.tape)
-      (offset := 0) (len := p.length) (by omega : 0 + p.length ≤ p.bytes.length)
+      (offset := 0) (len := p.length) (by omega_using [enough] : 0 + p.length ≤ p.bytes.length)
     simpa only [List.drop_zero, BitVec.add_zero, h.tapeBytes] using slice.symm
 
 theorem candidateShape_ok {s : State} {p : CandidateParams} {consumed : Nat}

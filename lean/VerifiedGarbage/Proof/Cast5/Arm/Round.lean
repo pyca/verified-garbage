@@ -74,7 +74,7 @@ theorem rotateStep_ok (s : State) {b : Nat} (hb : b < 5) {a kb : BitVec 32}
       u.gpr .r1 = Proof.Cast5.step a kb b ∧ u.gpr .r0 = (if b < 4 then kb >>> 1 else kb) ∧
       Keep [.r0, .r1, .r4, .r5] s u ∧ u.mem = s.mem := by
   have hn : 1 ≤ 32 - 2 ^ b ∧ 32 - 2 ^ b ≤ 31 := by
-    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
+    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_using [hb]) with h | h | h | h | h <;>
       subst h <;> decide
   unfold rotateStep
   by_cases h4 : b < 4
@@ -122,20 +122,20 @@ def idx (i : BitVec 32) : Nat → BitVec 32
 theorem idx_toNat (i : BitVec 32) {k : Nat} (hk : k < 4) :
     (idx i k).toNat = i.toNat / 2 ^ (8 * k) % 256 := by
   have := i.isLt
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
     simp only [idx, BitVec.toNat_ushiftRight, BitVec.toNat_and, Nat.shiftRight_eq_div_pow,
       show (255 : BitVec 32).toNat = 255 from rfl, show (255 : Nat) = 2 ^ 8 - 1 from rfl,
-      Nat.and_two_pow_sub_one_eq_mod] <;> omega
+      Nat.and_two_pow_sub_one_eq_mod] <;> omega_using []
 
 theorem idx_lt (i : BitVec 32) {k : Nat} (hk : k < 4) : (idx i k).toNat < 256 := by
-  rw [idx_toNat i hk]; omega
+  rw [idx_toNat i hk]; omega_using []
 
 theorem idx_byte (i : BitVec 32) {k : Nat} (hk : k < 4) :
     BitVec.ofNat 8 (idx i k).toNat = Spec.Cast5.byte i (3 - k) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, idx_toNat i hk]
   simp only [Spec.Cast5.byte, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;> omega
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;> omega_using []
 
 theorem spread_ok (s : State) {i : BitVec 32} (h1 : s.gpr .r1 = i) :
     WP isa (.block spread) s fun u =>
@@ -143,7 +143,7 @@ theorem spread_ok (s : State) {i : BitVec 32} (h1 : s.gpr .r1 = i) :
   unfold spread
   crun [h1]
   refine ⟨fun k hk => ?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩⟩
-  · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;> rfl
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_setReg, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
@@ -263,14 +263,14 @@ def roundRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .
 
 /-- The slots of the working space, as the scan addresses them. -/
 theorem slot_addr {s : State} (hc : (s.gpr .r12).toNat + 32 ≤ 2 ^ 32) {off : Nat} (ho : off < 32) :
-    slot s off = State.addr (s.gpr .r12) + BitVec.ofNat 64 off := addr_add (by omega)
+    slot s off = State.addr (s.gpr .r12) + BitVec.ofNat 64 off := addr_add (by omega_using [hc, ho])
 
 /-- A slot below the scan's, past its stores. -/
 theorem scanMem_slot (s : State) (hc : (s.gpr .r12).toNat + 32 ≤ 2 ^ 32) {off : Nat} (ho : off + 4 ≤ 24) :
     (scanMem s spillEcb).readW (slot s off) 32 = s.mem.readW (slot s off) 32 := by
-  rw [slot_addr hc (by omega), scanMem, spillEcb,
-    Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
-    Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+  rw [slot_addr hc (by omega_using [ho]), scanMem, spillEcb,
+    Mem.readW_writeW_sep (Offset.sep _ (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])) (by decide),
+    Mem.readW_writeW_sep (Offset.sep _ (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])) (by decide)]
 
 theorem round_ok (s : State) (up : Bool) {km kr l r : Spec.Cast5.Word} {t : Nat} {cnt : BitVec 32}
     (h : RoundPre s km kr l r t cnt) :
@@ -306,7 +306,7 @@ theorem round_ok (s : State) (up : Bool) {km kr l r : Spec.Cast5.Word} {t : Nat}
   have r12x : x.gpr .r12 = s.gpr .r12 := kx.gpr _ (by decide)
   have sp : ScanPre s1234Sym spillEcb x :=
     { idx := fun k hk => by rw [xi k hk]; exact idx_lt i hk
-      cfit := by rw [r12x]; have := h.cfit; unfold spillEcb; omega
+      cfit := by rw [r12x]; have := h.cfit; unfold spillEcb; omega_using [this]
       ofit := by decide
       s0 := by rw [r12x, kx.wr]; exact h.inS24
       s4 := by rw [r12x, kx.wr]; exact h.inS28

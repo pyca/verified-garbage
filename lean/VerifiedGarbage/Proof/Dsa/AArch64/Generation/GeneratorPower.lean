@@ -36,7 +36,7 @@ theorem generatorPower_ok (M : Mont) {s : State} {B : Addr}
     hlen.2.2.1 hlen.2.2.2.1 hlen.2.2.2.1 (by decide) hm hodd
     ⟨.input .g, .pLen⟩ ⟨.input .x, .pLen⟩ ⟨.local VG.Impl.Dsa.Generation.Layout.g, .pLen⟩
     (by trivial) (by trivial) (by change VG.Impl.Dsa.Generation.Layout.g < 2 ^ 16; decide)
-    has hes (by omega) (by rw [hhl, ← hlen.2.2.2.2.1]) (by omega) (by omega)
-    (by simpa only [hhl] using has.length) hlen.1 (by omega) hlen.2.2.2.2.1 hout houtside
+    has hes (by omega_using [hl, hhl]) (by rw [hhl, ← hlen.2.2.2.2.1]) (by omega_using [hl, hel]) (by omega_using [hl, hel])
+    (by simpa only [hhl] using has.length) hlen.1 (by omega_using [hl]) hlen.2.2.2.2.1 hout houtside
 
 end VG.Proof.Dsa.AArch64.Generation

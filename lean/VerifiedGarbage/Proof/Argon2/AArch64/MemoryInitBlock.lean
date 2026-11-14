@@ -140,7 +140,7 @@ theorem BlockArgs.regs {s t : State} {column : Nat} (h : BlockArgs s t column)
 
 theorem BlockReady.prefix {s : State} (h : BlockReady s) (d : Nat)
     (bound : d + 4 ≤ 72) : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 d) 4 := by
-  exact h.input _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ bound (by omega)⟩
+  exact h.input _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ bound (by omega_using [bound])⟩
 
 theorem BlockArgs.ready {s t : State} {column : Nat} (a : BlockArgs s t column)
     (h : BlockReady s) : CallReady t := by

@@ -77,7 +77,7 @@ theorem setArg_ok {s : State} {E : Addr} {r : Reg} {v : Value}
     · simp only [RegUpd.gpr_write_self, BitVec.setWidth_eq]
   | caller j d =>
     obtain ⟨hj, hd⟩ := hv
-    have ha : (256 + 8 * j) % 8 = 0 ∧ 256 + 8 * j < 32768 := by omega
+    have ha : (256 + 8 * j) % 8 = 0 ∧ 256 + 8 * j < 32768 := by omega_using [hj]
     have hr' := hr j d rfl
     apply WP.of_runBlock
     simp only [setArg, value, runBlock_cons, runStep_some, runBlock_nil, exec,

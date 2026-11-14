@@ -404,10 +404,10 @@ theorem call_pubOf {q : SearchPoint} {v : State} (h : CallCT q v) :
   obtain ⟨a0, a1, a2⟩ := call_args hu hm'
   obtain ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ := ha
   have tl := toNat_ofNat_lt hf.len64
-  have te : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := toNat_ofNat_lt (by have := hf.e8; omega)
+  have te : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := toNat_ofNat_lt (by have := hf.e8; omega_using [this])
   have tp := toNat_ofNat_lt hf.plen64
   have tr : (BitVec.ofNat 64 (q.inputs.randLen - q.used)).toNat = q.inputs.randLen - q.used :=
-    toNat_ofNat_lt (by have := hf.rand64; omega)
+    toNat_ofNat_lt (by have := hf.rand64; omega_using [this])
   simp only [pubOf, argRegs, List.map_cons, List.map_nil, Cand.stackArgs_three, Cand.eB, Cand.pB, Cand.rB,
     Cand.oL, Cand.rL, call_gpr (by decide : Reg.a0 ∉ linkRegs), call_gpr (by decide : Reg.a1 ∉ linkRegs),
     call_gpr (by decide : Reg.a2 ∉ linkRegs), call_gpr (by decide : Reg.a3 ∉ linkRegs),
@@ -478,7 +478,7 @@ theorem ctl_next {q : SearchPoint} {original s t : State} {final : PrimeSearchRe
   obtain ⟨hr, u, k, -, hi, hu, hk, htail⟩ := hc
   have hs := SearchCTL.status ht hr
   have hcu := SearchCTL.used hl ht hr
-  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega
+  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega_using [hu, hcu]
   have hk' : q.next.remaining = k := by
     simp only [SearchPoint.next]
     rcases hk with ⟨rfl, h2⟩ | ⟨rfl, h3⟩
@@ -586,7 +586,7 @@ private theorem iteration_pair (c : Cand) (n : Nat) :
       have hle := hl.used_le
       have hcand := hb.2.2
       simp only [SearchPoint.next] at hle ⊢
-      omega
+      omega_using [hn, hle, hcand]
     · obtain ⟨_, hl₁, _⟩ := c₁
       obtain ⟨_, hl₂, _⟩ := c₂
       exact hl₁.sp.trans hl₂.sp.symm
@@ -665,8 +665,8 @@ private theorem load_pins (a : SearchPublic × List Nat × Addr) (u : State) (h 
     have h16 : s.sp.toNat % 16 = 0 := by have := hi.sp16; rwa [hi.sp_eq] at this
     have ht : s.sp.toNat + 32 ≤ 2 ^ 64 := by have := hi.top; rwa [hi.sp_eq] at this
     have e : (s.sp + BitVec.ofNat 64 (8 * k)).toNat = s.sp.toNat + 8 * k := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-    rw [e]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hk, ht]
+    rw [e]; omega_using [h16]
   have a0 := ha 0 (by decide)
   have a1 := ha 1 (by decide)
   have a2 := ha 2 (by decide)

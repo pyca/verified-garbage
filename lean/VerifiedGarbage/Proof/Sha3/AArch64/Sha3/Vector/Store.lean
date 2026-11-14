@@ -38,7 +38,7 @@ theorem storePair_ok (s : VG.AArch64.State) (i : Nat) (hi : i < 12)
         (ofVDwords (low s (vreg (2*i))) (low s (vreg (2*i+1)))) := by
   unfold storePair
   refine WP.cons (s' := s.setV .v25 (ofVDwords (low s (vreg (2*i))) (low s (vreg (2*i+1)))))
-    ?_ (WP.cons (exec_strq ⟨by omega,by omega⟩ hout) (wp_nil ?_))
+    ?_ (WP.cons (exec_strq ⟨by omega_using [],by omega_using [hi]⟩ hout) (wp_nil ?_))
   · simp only [exec_vop,VOp.eval,zip1_pair,Option.map_some,low]
   · refine ⟨⟨⟨rfl,rfl,rfl,rfl,rfl⟩,fun j hj => ?_⟩,?_⟩
     · change low (s.setV .v25 _) (vreg j) = _
@@ -56,26 +56,26 @@ theorem storePairs_ok (s₀ : VG.AArch64.State)
     (hout : ∀ i < 12, InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 (16*i)) 16) :
     WP isa (.block ((List.range 12).flatMap storePair)) s₀ (StoreInv s₀ 12) := by
   refine wp_range_flatMap (M := isa) (StoreInv s₀) (fun i s hi hs => ?_)
-    12 (Nat.le_refl _) s₀ ⟨StoreKeep.refl _,Frame.refl _ _,fun _ h => absurd h (by omega)⟩
+    12 (Nat.le_refl _) s₀ ⟨StoreKeep.refl _,Frame.refl _ _,fun _ h => absurd h (by omega_using [])⟩
   refine (storePair_ok s i hi (by rw [hs.keep.ptr.wr,hs.keep.ptr.x0]; exact hout i hi)).mono
     fun s' ⟨hk,hm⟩ => ⟨hs.keep.trans hk,?_,fun j hj => ?_⟩
   · rw [hm,hs.keep.ptr.x0]
     exact hs.frame.write (by simp) _ (state_pair_contains s₀ hi)
   · rw [hm,hs.keep.ptr.x0,write16_dwords]
     have he : s₀.gpr .x0 + BitVec.ofNat 64 (16*i) = laneAddr (s₀.gpr .x0) (2*i) := by
-      simp only [laneAddr,show 8*(2*i)=16*i by omega]
+      simp only [laneAddr,show 8*(2*i)=16*i by omega_using []]
     have ho : s₀.gpr .x0 + BitVec.ofNat 64 (16*i) + BitVec.ofNat 64 8 = laneAddr (s₀.gpr .x0) (2*i+1) := by
-      simp only [laneAddr,BitVec.add_assoc,← BitVec.ofNat_add,show 16*i+8=8*(2*i+1) by omega]
+      simp only [laneAddr,BitVec.add_assoc,← BitVec.ofNat_add,show 16*i+8=8*(2*i+1) by omega_using []]
     rw [ho,he]
     by_cases hodd : j = 2*i+1
     · subst j
-      rw [Mem.readW_writeW_self64,hs.keep.lanes _ (by omega)]
-    · rw [Mem.readW_writeW_sep (lane_sep _ (by omega) (by omega) hodd) (by decide)]
+      rw [Mem.readW_writeW_self64,hs.keep.lanes _ (by omega_using [hi])]
+    · rw [Mem.readW_writeW_sep (lane_sep _ (by omega_using [hi, hj]) (by omega_using [hi]) hodd) (by decide)]
       by_cases heven : j = 2*i
       · subst j
-        rw [Mem.readW_writeW_self64,hs.keep.lanes _ (by omega)]
-      · rw [Mem.readW_writeW_sep (lane_sep _ (by omega) (by omega) heven) (by decide)]
-        exact hs.vals j (by omega)
+        rw [Mem.readW_writeW_self64,hs.keep.lanes _ (by omega_using [hi])]
+      · rw [Mem.readW_writeW_sep (lane_sep _ (by omega_using [hi, hj]) (by omega_using [hi]) heven) (by decide)]
+        exact hs.vals j (by omega_using [hj, hodd, heven])
 
 theorem store_ok (s₀ : VG.AArch64.State) (A : Spec.Sha3.State) (hA : Lanes s₀ A)
     (hout : ∀ i < 12, InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 (16*i)) 16)
@@ -108,7 +108,7 @@ theorem store_ok (s₀ : VG.AArch64.State) (A : Spec.Sha3.State) (hA : Lanes s�
       · subst j
         rw [Mem.readW_writeW_self64,hs.keep.lanes 24 (by decide)]
         exact hA 24 (by decide)
-      · rw [Mem.readW_writeW_sep (lane_sep _ hj (by decide) he) (by decide),hs.vals j (by omega)]
+      · rw [Mem.readW_writeW_sep (lane_sep _ hj (by decide) he) (by decide),hs.vals j (by omega_using [hj, he])]
         exact hA j hj
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector

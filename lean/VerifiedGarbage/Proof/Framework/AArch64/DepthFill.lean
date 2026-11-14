@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.CallFill
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The stack depth of code with its holes filled (`Code.fillHoles`) is at most
 that of the code with the holes and that of the callee filled in. -/
@@ -16,10 +17,10 @@ theorem Code.aarch64Depth_fillHoles_le (n : String) (b e : Prog AArch64.isa) :
   | block is => exact Nat.zero_le _
   | seq x y ihx ihy =>
     simp only [Code.fillHoles, Code.aarch64Depth]
-    omega
+    omega_using [ihx, ihy]
   | ite cd t e iht ihe =>
     simp only [Code.fillHoles, Code.aarch64Depth]
-    omega
+    omega_using [iht, ihe]
   | loop x cd ih => simpa only [Code.fillHoles, Code.aarch64Depth] using ih
   | call m body ih =>
     cases body with
@@ -30,7 +31,7 @@ theorem Code.aarch64Depth_fillHoles_le (n : String) (b e : Prog AArch64.isa) :
     | _ => exact Nat.le_add_right _ _
   | frame i x j ih =>
     simp only [Code.fillHoles, Code.aarch64Depth]
-    omega
+    omega_using [ih]
   | icall i m x y => simp only [Code.fillHoles]; exact Nat.le_add_right _ _
 
 /-- Code that is the code with holes `e` with them filled by a callee without
@@ -40,6 +41,6 @@ theorem Code.aarch64Depth_le_of_fillHoles {a e : Prog AArch64.isa} {n : String} 
     a.aarch64Depth ≤ d := by
   have := Code.aarch64Depth_fillHoles_le n b e
   rw [ha]
-  omega
+  omega_using [hb, he, this]
 
 end VG

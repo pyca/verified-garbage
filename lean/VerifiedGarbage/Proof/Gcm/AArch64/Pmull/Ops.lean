@@ -37,11 +37,11 @@ theorem vdword_rev64b (v : BitVec 128) {e : Nat} (he : e < 2) :
   have hr : rev64 (vdword v e) = byteRev64 (vdword v e) := rfl
   rw [hr, getLsbD_byteRev64 _ _ hi]
   simp only [VG.Proof.Gcm.Clmul.vdword, VRevOp.eval, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
-    show 8 * (7 - i / 8) + i % 8 < 64 by omega]
-  rw [show 64 * e + i = 8 * (8 * e + i / 8) + i % 8 by omega,
-    getLsbD_ofVBytes _ (by omega) (Nat.mod_lt _ (by decide)), vbyte, BitVec.getLsbD_extractLsb',
+    show 8 * (7 - i / 8) + i % 8 < 64 by omega_using []]
+  rw [show 64 * e + i = 8 * (8 * e + i / 8) + i % 8 by omega_using [],
+    getLsbD_ofVBytes _ (by omega_using [he, hi]) (Nat.mod_lt _ (by decide)), vbyte, BitVec.getLsbD_extractLsb',
     decide_eq_true (Nat.mod_lt _ (by decide)), Bool.true_and]
-  exact congrArg _ (by omega)
+  exact congrArg _ (by omega_using [hi])
 
 theorem rev64b_rev64b (v : BitVec 128) : VRevOp.eval .rev64b (VRevOp.eval .rev64b v) = v := by
   have h : ∀ a : BitVec 64, rev64 (rev64 a) = a := byteRev64_byteRev64

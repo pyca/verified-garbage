@@ -96,21 +96,21 @@ include hp
 
 theorem stack_fit : (s₀.sp - BitVec.ofNat 64 48).toNat + 48 ≤ 2 ^ 64 := by
   have := hp.sp48
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]
-  have := s₀.sp.isLt; omega
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [this]), BitVec.toNat_ofNat]
+  have := s₀.sp.isLt; omega_using []
 
 theorem lay_ok : (lay s₀ K).Ok := by
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [lay, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_scr
     · exact stack_fit hp
     · exact hp.f_ek
     · exact hp.f_key
     · exact hp.f_ct
   · simp only [lay, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
     simp only [lay, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · exact hp.b_scr.symm
@@ -127,13 +127,13 @@ theorem lay_ok : (lay s₀ K).Ok := by
 theorem layM_ok : (layM s₀ K).Ok := by
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [layM, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact hp.f_scr
     · exact stack_fit hp
     · exact hp.f_m
   · simp only [layM, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-    rcases (by omega : j = 1 ∨ j = 2) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : j = 1 ∨ j = 2) with rfl | rfl <;>
     simp only [layM, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · exact hp.b_scr.symm
@@ -194,7 +194,7 @@ theorem EnEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : EnEnv
   · rw [hk.cs .r28 (by decide) (nx _ (by simp)), h.r28]
   · rw [hk.cs .r27 (by decide) (nx _ (by simp)), h.r27]
   · rw [hk.cs r hr (fun hm => hs (hx r hm).1), h.cs r hr hs]
-  · rw [Lay.bytes_keep hL hk.frame h2 (by have := hK.k4; simp only [KemLay.ekLen]; omega)]; exact h.ek
+  · rw [Lay.bytes_keep hL hk.frame h2 (by have := hK.k4; simp only [KemLay.ekLen]; omega_using [this])]; exact h.ek
 
 theorem buf_wr {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
     (lay s₀ K).buf 0 ∈ s₀.wr ∧ (lay s₀ K).buf 3 ∈ s₀.wr ∧ (lay s₀ K).buf 4 ∈ s₀.wr ∧
@@ -213,7 +213,7 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
   have scr := hK.scr
   obtain ⟨w0, -, -, -, -, -⟩ := buf_wr hp
   have hw : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions s₀.wr (pScr s₀ + BitVec.ofNat 64 o) 8 := fun o h₁ h₂ =>
-    Lay.covers w0 (o := o) (l := 8) (by simp only [lay, Lay.size, List.getD_cons_zero]; omega) _ _
+    Lay.covers w0 (o := o) (l := 8) (by simp only [lay, Lay.size, List.getD_cons_zero]; omega_using [scr, h₂]) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [encapsSetup, WP.block_append_iff]
   refine WP.mono (topSave_ok (.inr rfl) rfl hw) fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
@@ -236,7 +236,7 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
          simp only [RegUpd.gpr_write, a27, a28, a29, a30, a31, ite_false])
   refine WP.mono hmv fun s ⟨g30, g29, g28, g27, g31, cs, m, rd, wr, sp⟩ => ?_
   have fr' : Frame ((lay s₀ K).RL [(0, 840, 72)]) s₀.mem s.mem := by rw [m]; exact fr
-  have ek : K.ekLen ≤ 2 ^ 64 := by have := hK.k4; simp only [KemLay.ekLen]; omega
+  have ek : K.ekLen ≤ 2 ^ 64 := by have := hK.k4; simp only [KemLay.ekLen]; omega_using [this]
   refine ⟨⟨⟨hL, scr, rfl, by simp [lay], g31, by rw [sp, sp₁]; exact hp.sp48, by rw [sp, sp₁]; rfl,
     by rw [wr, wr₁, hp.wr]; simp [lay]⟩, g30, g28, g27, rd.trans rd₁, wr.trans wr₁, sp.trans sp₁,
     fun r hr hs => ?_, by rw [m]; exact sav, ?_⟩, g29, ?_⟩
@@ -307,8 +307,8 @@ theorem hashH_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s�
   have hin : ∀ p ∈ [(⟨.r30, 0, K.ekLen⟩ : Piece)], PieceOk (lay s₀ K) eidx s false p := by
     intro p hp'; rw [List.mem_singleton] at hp'; subst hp'
     exact pieceE hp h (.inl rfl) (by simp) (by show 0 < 32768; decide)
-      (by show K.ekLen < 32768; have := hK.k4; simp only [KemLay.ekLen]; omega)
-      (by show 0 < K.ekLen; simp only [KemLay.ekLen]; omega) (by edecide)
+      (by show K.ekLen < 32768; have := hK.k4; simp only [KemLay.ekLen]; omega_using [this])
+      (by show 0 < K.ekLen; simp only [KemLay.ekLen]; omega_using []) (by edecide)
   have hout : ∀ p ∈ [(⟨.r31, oHek, 32⟩ : Piece)], PieceOk (lay s₀ K) eidx s true p := by
     intro p hp'; rw [List.mem_singleton] at hp'; subst hp'
     exact pieceE hp h (.inr rfl) (fun _ => rfl) (by decide) (by decide) (by decide) (by edecide)
@@ -477,7 +477,7 @@ theorem end_ok {K : KemLay} {s₀ s : State} (hp : Pre K s₀) (h : EnEnv K s₀
     ⟨pr, lr, r3, m, sp.trans h.sp⟩
   rw [h.rd, h.wr]
   have scr := hK.scr
-  have hb : o + 8 ≤ (lay s₀ K).size 0 := by simp only [lay, Lay.size, List.getD_cons_zero]; omega
+  have hb : o + 8 ≤ (lay s₀ K).size 0 := by simp only [lay, Lay.size, List.getD_cons_zero]; omega_using [h₂, scr]
   exact mem_rd_wr' (Lay.covers w0 hb _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
 
 /-- What follows `H(ek)` (in `encaps`; its copy from `h` in `encapsH`): `G(m ‖ H(ek))`, `K` into `key`,
@@ -558,13 +558,13 @@ theorem layH_ok : (layH K s₀).Ok := by
   have hp := hq.pre
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [layH, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact hp.f_scr
     · exact stack_fit (s₀ := args s₀) hp
     · exact hq.f_h
   · simp only [layH, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-    rcases (by omega : j = 1 ∨ j = 2) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : j = 1 ∨ j = 2) with rfl | rfl <;>
     simp only [layH, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · exact hp.b_scr.symm
@@ -582,7 +582,7 @@ theorem setupH_ok :
   obtain ⟨w0, -, -, -, -, -⟩ := buf_wr hp
   have hw : ∀ o, 840 ≤ o → o + 8 ≤ 912 → InRegions s₀.wr (pScr (args s₀) + BitVec.ofNat 64 o) 8 :=
     fun o h₁ h₂ =>
-      Lay.covers w0 (o := o) (l := 8) (by simp only [lay, Lay.size, List.getD_cons_zero]; omega) _ _
+      Lay.covers w0 (o := o) (l := 8) (by simp only [lay, Lay.size, List.getD_cons_zero]; omega_using [scr, h₂]) _ _
         ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [encapsHSetup, WP.block_append_iff]
   refine WP.mono (topSave_ok' (.inr (.inr rfl)) rfl hw) fun s₁ ⟨sav, fr, g₁, lr₁, rd₁, wr₁, sp₁⟩ => ?_
@@ -608,7 +608,7 @@ theorem setupH_ok :
          simp only [RegUpd.gpr_write, a26, a27, a28, a29, a30, a31, ite_false])
   refine WP.mono hmv fun s ⟨g30, g29, g28, g27, g31, g26, cs, m, rd, wr, sp⟩ => ?_
   have fr' : Frame ((lay (args s₀) K).RL [(0, 840, 72)]) s₀.mem s.mem := by rw [m]; exact fr
-  have ek : K.ekLen ≤ 2 ^ 64 := by have := hK.k4; simp only [KemLay.ekLen]; omega
+  have ek : K.ekLen ≤ 2 ^ 64 := by have := hK.k4; simp only [KemLay.ekLen]; omega_using [this]
   have hwr : s₀.wr = (args s₀).wr := rfl
   have sav' : TopSaved s.mem (pScr (args s₀)) (args s₀) := by
     rw [m]; exact ⟨sav.s24, sav.s25, sav.s26, sav.s27, sav.s28, sav.s29, sav.s30, sav.s31, sav.slr⟩

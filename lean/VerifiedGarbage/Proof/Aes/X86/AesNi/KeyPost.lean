@@ -16,9 +16,9 @@ theorem KeyDone.post {s₀ entry s : State} {nk : Nat} (hd : KeyDone s₀ entry 
   change Spec.Aes.bytesAt s.mem ((ekSchP s₀).setWidth 64)
       (16 * (Spec.Aes.rounds (keyLen s₀ / 4) + 1)) =
     Spec.Aes.expandKey (Spec.Aes.bytesAt s₀.mem ((keyP s₀).setWidth 64) (keyLen s₀))
-  rw [hl, show 4 * nk / 4 = nk by omega, expandKey_eq _ _ hn]
+  rw [hl, show 4 * nk / 4 = nk by omega_using [], expandKey_eq _ _ hn]
   have hlen : 16 * (Spec.Aes.rounds nk + 1) = 4 * (4 * (nk + 7)) := by
-    simp only [Spec.Aes.rounds]; omega
+    simp only [Spec.Aes.rounds]; omega_using []
   rw [hlen, bytesAt_eq _ _ _ _ hd.words]
   rfl
 

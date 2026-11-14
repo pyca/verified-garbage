@@ -39,10 +39,10 @@ theorem qdata_leave (p : CdP) (s : State) (h : QData p s) :
 theorem scanready_pm (p : CdP) (s : State) (h : ScanReady p s) : M1 sDom sK p.pm s := by
   have hb := h.1.parent.base
   have hk := hb.k1
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   exact ⟨p.pb, h.1.parent.outer, hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]),
     hb.hdr (sDom, p.dp) (by simp [CdP.headers]), hb.dom.take p.k, hb.plen,
-    show 1 ≤ p.k by omega, show p.k ≤ 8 * p.w by omega, (valid_facts h.2.1 hk).1⟩
+    show 1 ≤ p.k by omega_using [hk], show p.k ≤ 8 * p.w by omega_using [ew], (valid_facts h.2.1 hk).1⟩
 
 theorem scanready_start (p : CdP) (s : State) (h : ScanReady p s) : WP isa (seqs pSetup) s (PStart p) :=
   WP.mono (scanned_reset h.1 h.2.1) fun _ ⟨⟨mi, hw, hd, hep, hel⟩, _⟩ =>
@@ -59,16 +59,16 @@ theorem ready_ps0 (p : CdP) (s : State) (h : Ready p s) : PS0 sG sK sEp sEl p.pw
   have hk := hb.k1
   have hk' := hb.k2
   have hl := hb.qlen hq
-  have hne : p.qb ≠ [] := by intro he; simp [he] at hl; omega
-  have hld : p.ld < p.k := by have := lead_lt hne; change lead p.qb < p.k; omega
+  have hne : p.qb ≠ [] := by intro he; simp [he] at hl; omega_using [hk, hl]
+  have hld : p.ld < p.k := by have := lead_lt hne; change lead p.qb < p.k; omega_using [hl, this]
   have hnl : p.eqb.length = p.nq := by simp only [CdP.eqb, List.length_drop, hl]
   have hp := ps0_of hr.ctx (bp := sG) (bl := sK) (ep := sEp) (el := sEl)
     (pb := off p.dp p.k) (pe := p.eqp) (bb := p.gb) (eb := p.eqb)
     (by decide) (by decide) (by decide) (by decide) hr.g
     (by rw [hb.glen]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]))
-    ((hb.dom.drop p.k).take p.k) (by rw [hb.glen]; omega) (by rw [hb.glen]) hr.ep
+    ((hb.dom.drop p.k).take p.k) (by rw [hb.glen]; omega_using [hk]) (by rw [hb.glen]) hr.ep
     (by rw [hnl]; exact hr.el) (((hb.dom.drop (2 * p.k)).take p.k).drop p.ld)
-    (by rw [hnl]; unfold CdP.nq; omega) (by rw [hnl]; unfold CdP.nq; omega)
+    (by rw [hnl]; unfold CdP.nq; omega_using [hld]) (by rw [hnl]; unfold CdP.nq; omega_using [hk'])
 
   simpa only [hb.glen, hnl] using hp
 

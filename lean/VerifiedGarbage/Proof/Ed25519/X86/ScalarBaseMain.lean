@@ -55,7 +55,7 @@ theorem BaseRegions.spfit {s : State} (h : BaseRegions s) : (s.gpr .esp).toNat +
   h.2.2.2.2.2.2.2.2.2.2.2.1
 
 theorem BaseRegions.sp4 {s : State} (h : BaseRegions s) : 4 ≤ (s.gpr .esp).toNat := by
-  have := h.2.2.2.2.2.2.2.2.2.2.2.2.1; omega
+  have := h.2.2.2.2.2.2.2.2.2.2.2.2.1; omega_using [this]
 
 theorem scalarBase_pre {s : State} (h : BaseRegions s) :
     ScratchPre s 2 3 ∧ InputPre s 2 1 8 ∧ OutputPre s 2 := by
@@ -96,7 +96,7 @@ theorem pointEncode_ok {x : BitVec 32} {s : State} (hc : Ctx x s) :
     rw [mc, eb] at vd
     exact vd
   refine WP.mono (encodeSign_ok (kd.ctx cc) ((env a.mem x 0).val % 2) ((env a.mem x 1).val)
-    (by omega) (Nat.lt_trans (env a.mem x 1).isLt (by decide : Spec.X25519.P < 2 ^ 255)) dy ds)
+    (by omega_using []) (Nat.lt_trans (env a.mem x 1).isLt (by decide : Spec.X25519.P < 2 ^ 255)) dy ds)
     fun t ⟨kt, vt⟩ => ?_
   refine ⟨(((ka.trans (IKeep.of_field kb)).trans kc).trans (IKeep.of_field kd)).trans (IKeep.of_field kt), ?_⟩
   rw [vt, ax, ay]

@@ -47,7 +47,7 @@ theorem qBuild_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
         Bool.false_eq_true, ite_false] using (hs256 _).trans hd256
   have he := VG.Proof.Dsa.encodeBE_decodeBE (Spec.Rsa.bytesAt t.mem op len)
   rw [VG.Proof.Bignum.bytesAt_length, hb,
-    VG.Proof.Dsa.Generation.qCandidate_octets (by rcases hlen with rfl | rfl <;> omega)
+    VG.Proof.Dsa.Generation.qCandidate_octets (by rcases hlen with rfl | rfl <;> omega_using [])
       _ (by rw [hhash])] at he
   exact ⟨hb.trans he.symm, step, hf.mono (by simp), Lt, Rt⟩
 

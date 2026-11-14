@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Framework.Omega
 
 
 /-! # Binary division used by Argon2's index arithmetic -/
@@ -20,13 +21,13 @@ theorem divide_step {n d q r bit : Nat}
     simp only [Nat.add_zero]
     constructor
     · rw [hn, Nat.mul_add, Nat.mul_assoc]
-      omega
+      omega_using []
     · exact h
   · next h =>
     constructor
     · rw [hn, Nat.mul_add, Nat.add_mul, Nat.one_mul, Nat.mul_assoc]
-      omega
-    · omega
+      omega_using [h]
+    · omega_using [hr, hb]
 
 /-- The loop invariant uniquely determines both outputs of division. -/
 theorem divide_result {n d q r : Nat} (hd : 0 < d)

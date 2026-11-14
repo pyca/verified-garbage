@@ -125,7 +125,7 @@ theorem KR.keep {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {A : Nat �
     {np nj nr : Nat} {s s' : State} (h : KR p STK σ A S R np nj nr s) {W : List (Nat × Nat × Nat)}
     (hk : Kept ((lay p STK σ).RL W) s s') (hc : KRChk p STK np nj nr W) : KR p STK σ A S R np nj nr s' := by
   have hL := h.kc.site.ok
-  have hle : lenS p ≤ 2 ^ 64 := by rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> omega
+  have hle : lenS p ≤ 2 ^ 64 := by rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> omega_using [e]
   have kb : ∀ {i o l : Nat}, sepAll [scrLen p, STK, 32, p.pkLen, p.skLen] (i, o, l) W = true → i ∈ kWb →
       l ≤ 2 ^ 64 → bytesAt s'.mem ((lay p STK σ).A i o) l = bytesAt s.mem ((lay p STK σ).A i o) l :=
     fun hs hi hl => bytes_keepW hL hk.frame hs hi hl
@@ -173,8 +173,8 @@ theorem copies_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ s : State}
       bytesAt m ((lay p STK σ).A 0 oHX) 32 = rhoOf p σ := fun hx => by
     rw [rho_eq, ← hx, Proof.MlKem.bytesAt_take _ _ (show 32 ≤ 128 by decide)]
   refine ⟨A, S, s₃.gpr .s4, ⟨h₃.k1.kc, rfl, hG, fun r hr => (hS r hr).2, hA,
-    fun i hi => (hS (p.ℓ + i) (by omega)).1,
-    fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact (hS j (by omega)).1, ?_, ?_, ?_,
+    fun i hi => (hS (p.ℓ + i) (by omega_using [hi])).1,
+    fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact (hS j (by omega_using [hj])).1, ?_, ?_, ?_,
     fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
   · rw [bytes_keepW hL k₃.frame (i := 3) (o := 0) (l := 32) (by lsep hF [hF.pk, hF.sk]) (by decide) (by decide),
       bytes_keepW hL k₂.frame (i := 3) (o := 0) (l := 32) (by lsep hF [hF.pk, hF.sk]) (by decide) (by decide)]

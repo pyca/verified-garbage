@@ -19,7 +19,7 @@ theorem rotate_threshold (k : BitVec 32) (hk : 64 â‰¤ k.toNat) (hk' : k.toNat â‰
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
     simp only [show (64 : BitVec 32).toNat = 64 from rfl,
       show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_using [hk, hk']
   rw [BitVec.rotateRight_def]
   change (k - 64) >>> 24 ||| (k - 64) <<< 8 = _
   rw [high]

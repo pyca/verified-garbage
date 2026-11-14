@@ -51,9 +51,9 @@ theorem nafCacheUnrolled_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZer
   | succ k ih =>
     rw [Naf.cacheUnrolled]
     apply WP.seq
-    refine WP.mono (ih (fun i hi => hZ i (by omega)) (fun i hi => hSl i (by omega))) fun u iu => ?_
+    refine WP.mono (ih (fun i hi => hZ i (by omega_using [hi])) (fun i hi => hSl i (by omega_using [hi]))) fun u iu => ?_
     refine WP.mono (nafCachePair_fields_ok hL hm iu
-      (List.mem_append_right _ (hZ k (by omega))) (hSl k (by omega)).1 (hSl k (by omega)).2)
+      (List.mem_append_right _ (hZ k (by omega_using []))) (hSl k (by omega_using [])).1 (hSl k (by omega_using [])).2)
       fun t ⟨_,it⟩ => it.sub ?_
     intro x hx
     simp only [cacheTableSlots,Naf.cachePairOps,validAfter,FOp.out,

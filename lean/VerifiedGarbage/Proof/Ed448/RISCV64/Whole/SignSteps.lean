@@ -55,7 +55,7 @@ theorem cov_rd {rd wr ws : List Region} (h : Covers ws rd) : Covers ws (rd ++ wr
 theorem fsub {s : State} {d n : Nat} (h : d + n ≤ 520) : Region.Sub ⟨sF s + BitVec.ofNat 64 d, n⟩ (fR s) := Offset.sub_base _ h
 
 theorem fslot {s : State} {d n : Nat} (h : d + n ≤ 448) : (slotArea (sF s) 448 signRegs).Disjoint ⟨sF s + BitVec.ofNat 64 d, n⟩ :=
-  Offset.disjoint _ (.inr h) (by decide) (by omega)
+  Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
 
 theorem osub {s : State} {d n : Nat} (h : d + n ≤ 114) : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 d, n⟩ (oR s) :=
   Offset.sub_base _ h
@@ -93,7 +93,7 @@ theorem SInv.hash {t t' : State} (h : SInv s t) {o : Nat} (ho : o + 114 ≤ 448)
   Inv.kept h signRegs_pres hk (fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨fR s, by simp, fsub (by omega)⟩
+    · exact ⟨fR s, by simp, fsub (by omega_using [ho])⟩
     · exact ⟨scR s, by simp, fun _ h => h⟩
     · exact ⟨below s.sp 1168, by simp, by rw [h.sp]; exact fun _ h => h⟩) fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -107,10 +107,10 @@ theorem keep_hash {t t' : State} (h : SInv s t) {o d n : Nat} (hd : d + n ≤ o 
     (ho : o + 114 ≤ 520) (hdn : d + n ≤ 520)
     (hk : Kept ([⟨sF s + BitVec.ofNat 64 o, 114⟩] ++ kW (s.gpr .a7) t.sp) t t') :
     bytesAt t'.mem (sF s + BitVec.ofNat 64 d) n = bytesAt t.mem (sF s + BitVec.ofNat 64 d) n :=
-  bytes_keep hk.frame (by omega) fun r hr => by
+  bytes_keep hk.frame (by omega_using [hdn]) fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ hd (by omega) (by omega)
+    · exact Offset.disjoint _ hd (by omega_using [hdn]) (by omega_using [ho])
     · exact fsc hp hdn
     · rw [h.sp]; exact (fbelow hp hdn).symm
 
@@ -150,7 +150,7 @@ theorem expand_ok {s t : State} (hp : SignPre s) (h : S1 s t) : WP isa signExpan
   refine prune_ok (f := .s11) (o := 136) (q := sF s + BitVec.ofNat 64 136) (is := []) (by decide)
     (by decide) (by rw [h₂.regs _ (by decide)]; rfl)
     (fun j hj => by
-      rw [h₂.wr, hp.wr, Offset.add_add]; exact in_base (P := sF s) (len := 520) (d := 136 + j) (by simp) (by omega) (by omega))
+      rw [h₂.wr, hp.wr, Offset.add_add]; exact in_base (P := sF s) (len := 520) (d := 136 + j) (by simp) (by omega_using [hj]) (by omega_using [hj]))
     fun u um usp urd uwr ug => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩
   · refine h₂.step signRegs_pres urd uwr usp (fun r hr => ug r fun e => by revert hr; rw [e]; decide)
       (um ▸ pruned_frame _ _) (fun r hr => ?_) fun r hr => ?_

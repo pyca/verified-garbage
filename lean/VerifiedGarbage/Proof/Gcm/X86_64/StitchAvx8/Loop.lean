@@ -45,7 +45,7 @@ theorem finish_complete {s₀ s : State} {ix : Bool} {lo : Nat} {P : Nat → Blo
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.d_c
-    · exact hp.d_y) (fun _ _ k hk hc => absurd hk (by omega))
+    · exact hp.d_y) (fun _ _ k hk hc => absurd hk (by omega_using [hc]))
   have hb : ∀ k < nb s₀, Spec.Gcm.blockAt t.mem (bAddr s₀ k) = ctb s₀ k := hd.done
   have hm : blocksAt t.mem (dp s₀) (nb s₀) = (List.range (nb s₀)).map (ctb s₀) := by
     apply List.map_congr_left
@@ -94,12 +94,12 @@ theorem CoreInv.hashSrc {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : 
     have hb : ∀ k, hashBase s (false && ix) + BitVec.ofNat 64 (16 * k) = bAddr s₀ (g + k) := fun k => by
       simp only [hashBase, Bool.false_and, Bool.false_eq_true, ↓reduceIte, BitVec.add_zero, h.addr]
     refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk => ?_⟩
-    · rw [hb]; exact in_rdwr (in_sub hp.d_in (by change c = g + 16 at hcg; omega))
+    · rw [hb]; exact in_rdwr (in_sub hp.d_in (by change c = g + 16 at hcg; omega_using [hc, hk, hcg]))
     · rw [hb]
       exact hp.d_p.sub_left (Offset.sub_base (dp s₀) (d := 16 * (g + k)) (n := 16) (k := 16 * nb s₀)
-        (by change c = g + 16 at hcg; omega))
-    · have he : g + k < c := by change c = g + 16 at hcg; omega
-      rw [hb, (h.data (g + k) (by change c = g + 16 at hcg; omega)).1 he]
+        (by change c = g + 16 at hcg; omega_using [hc, hk, hcg]))
+    · have he : g + k < c := by change c = g + 16 at hcg; omega_using [hk, hcg]
+      rw [hb, (h.data (g + k) (by change c = g + 16 at hcg; omega_using [hc, he])).1 he]
       rfl
   | true =>
     have hcg' : c = g := hcg
@@ -109,9 +109,9 @@ theorem CoreInv.hashSrc {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : 
       rw [← srcAddr_eq' ix ha h.rbx k, Nat.zero_add]
       rfl
     refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk => ?_⟩
-    · rw [hb]; exact hS.rd _ (by omega)
-    · rw [hb]; exact hS.p _ (by omega)
-    · rw [hb, (h.data (c + k) (by omega)).2 (by omega)]
+    · rw [hb]; exact hS.rd _ (by omega_using [hc, hk])
+    · rw [hb]; exact hS.p _ (by omega_using [hc, hk])
+    · rw [hb, (h.data (c + k) (by omega_using [hc, hk])).2 (by omega_using [])]
       rfl
 
 theorem CoreInv.hashBatch {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {c g : Nat}
@@ -161,9 +161,9 @@ theorem loopStep_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool
     (hn : g + threshold dec ≤ nb s₀) :
     WP isa (body8 dec (nr s₀) ix) s fun t => LoopInv s₀ ix P dec (g + 8) t ∧
       t.cf = some (decide (nb s₀ - (g + 8) < threshold dec)) := by
-  have hc : g + lead dec + 8 ≤ nb s₀ := by cases dec <;> simp [threshold, lead] at hn ⊢ <;> omega
-  have htail : g + 8 + tailSize dec ≤ nb s₀ := by cases dec <;> simp [threshold, tailSize] at hn ⊢ <;> omega
-  have hec : g + lead dec + 8 = g + 8 + lead dec := by omega
+  have hc : g + lead dec + 8 ≤ nb s₀ := by cases dec <;> simp [threshold, lead] at hn ⊢ <;> omega_using [hn]
+  have htail : g + 8 + tailSize dec ≤ nb s₀ := by cases dec <;> simp [threshold, tailSize] at hn ⊢ <;> omega_using [hn]
+  have hec : g + lead dec + 8 = g + 8 + lead dec := by omega_using []
   have hm := h.multiple
   have hn64 : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   refine WP.seq (WP.block_nil (WP.seq (WP.mono
@@ -174,24 +174,24 @@ theorem loopStep_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool
   have un8 : u.gpr .r9 - 8 = BitVec.ofNat 64 (nb s₀ - (g + 8)) := by
     rw [un]
     change BitVec.ofNat 64 (nb s₀ - g) - BitVec.ofNat 64 8 = _
-    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hc]), Nat.sub_sub]
   have hlimit : ((if dec then 16 else 24 : BitVec 32).signExtend 64).toNat = threshold dec := by
     cases dec <;> rfl
   have hDt := h.core.data.batch hp hS hc (by rw [h.core.addr]) h.core.rbx hu
   rw [hec] at hDt
   refine ⟨⟨⟨hu.env.move (fun r _ hdx _ h9 => htG r hdx h9) htM htR htW,
-    htM ▸ hDt, ?_, ?_, ?_, htN.trans un8, ?_, by omega, by omega⟩, by omega, htail⟩, ?_⟩
+    htM ▸ hDt, ?_, ?_, ?_, htN.trans un8, ?_, by omega_using [hc], by omega_using [hc]⟩, by omega_using [hm], htail⟩, ?_⟩
   · rw [htM, ← hec]; exact hu.templates
   · rw [htG _ (by decide) (by decide), hu.counter]
     congr 2
-    omega
+    omega_using []
   · rw [htD, hu.regs _ (by decide) (by decide), h.core.cursor]
     exact bAddr_add s₀ g 8
   · rw [htX, hu.hash]
     change VG.Proof.Gcm.X86_64.Pclmul.reduceB (accN (window s₀ dec g) P (hashPrefix s₀ dec g) 8) = _
     rw [hlaw]
     exact (ghash_append8 (hk s₀) (y₀ s₀) (hashBlock s₀ dec) g).symm
-  · rw [htC, un8, hlimit, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  · rw [htC, un8, hlimit, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn64])]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -215,7 +215,7 @@ theorem accN_congr {X X' P P' : Nat → Block} (y : Block)
   induction n with
   | zero => simp only [accN, List.range_zero, List.foldl_nil]
   | succ n ih =>
-    rw [accN_succ, accN_succ, ih (by omega)]
+    rw [accN_succ, accN_succ, ih (by omega_using [hn])]
     have hk : (n + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
     simp only [hashInput, hx _ hk, hp _ hk]
 
@@ -231,7 +231,7 @@ theorem hashBuffer_ok {s₀ s : State} {P X : Nat → Block} (hp : SPre s₀) (h
   refine WP.mono (hash8_ok s d
     (fun k hk => by
       rw [ea_at, BitVec.ofInt_natCast, hE.rd, hE.wr, hE.r11]
-      exact in_rdwr (in_sub hp.p_in (by omega)))
+      exact in_rdwr (in_sub hp.p_in (by omega_using [hk])))
     (fun k hk => by rw [ea_at, BitVec.ofInt_natCast]; exact hR k hk)
     (by rw [ea_at, BitVec.ofInt_natCast, hE.rd, hE.wr, hE.r11]
         exact in_rdwr (in_sub hp.p_in (off := 768) (by decide)))
@@ -244,7 +244,7 @@ theorem hashBuffer_ok {s₀ s : State} {P X : Nat → Block} (hp : SPre s₀) (h
       VG.Proof.Gcm.X86_64.blockAt_eq]
     exact congrArg _ hE.mask
   · simp only [bufferPower, ea_at, BitVec.ofInt_natCast, hE.r11]
-    rw [show 16 * (8 + i) = 128 + 16 * i by omega]
+    rw [show 16 * (8 + i) = 128 + 16 * i by omega_using []]
     exact hE.powers i hi
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
@@ -282,13 +282,13 @@ theorem finalHash_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {g : Nat}
   have hR : ∀ e, e ≤ 8 → ∀ i < 8,
       InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (16 * e + 16 * i)) 16 := by
     intro e he i hi
-    rw [show 16 * e + 16 * i = 16 * (e + i) by omega, h.core.addr, h.core.env.rd, h.core.env.wr]
-    exact in_rdwr (in_sub hp.d_in (by omega))
+    rw [show 16 * e + 16 * i = 16 * (e + i) by omega_using [], h.core.addr, h.core.env.rd, h.core.env.wr]
+    exact in_rdwr (in_sub hp.d_in (by omega_using [hle, he, hi]))
   have hB : ∀ e, e ≤ 8 → ∀ i < 8, Spec.Gcm.blockAt s.mem
       (s.gpr .rdx + BitVec.ofNat 64 (16 * e + 16 * i)) = window s₀ false (g + e) i := by
     intro e he i hi
-    rw [show 16 * e + 16 * i = 16 * (e + i) by omega, h.core.addr, ← Nat.add_assoc,
-      (hd _ (by omega)).1 (by omega)]
+    rw [show 16 * e + 16 * i = 16 * (e + i) by omega_using [], h.core.addr, ← Nat.add_assoc,
+      (hd _ (by omega_using [hle, he, hi])).1 (by omega_using [he, hi])]
     rfl
   rw [WP.block_append_iff]
   refine WP.mono (hashBuffer_ok (X := window s₀ false g) hp hlaw h.core.env 0 (hR 0 (by decide)) (hB 0 (by decide)))
@@ -341,10 +341,10 @@ theorem loopRun_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool}
         g + 8, halt, hu⟩
     · have hg := hu.core.g_le
       refine .inr ⟨by simp only [eval, hcf, halt, decide_false, Option.map_some, Bool.not_false],
-        nb s₀ - (g + 8), ?_, g + 8, rfl, by omega, hu⟩
+        nb s₀ - (g + 8), ?_, g + 8, rfl, by omega_using [halt, hg], hu⟩
       have ht := hu.tail_le
       have hl : 0 < tailSize dec := by cases dec <;> decide
-      omega
+      omega_using [hg]
   exact WP.loop (M := isa) I step (nb s₀ - g) s ⟨g, rfl, hn, h⟩
 
 theorem loopMaybe_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Bool} {g : Nat}
@@ -356,7 +356,7 @@ theorem loopMaybe_ok {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : Boo
   · exact WP.block_nil ⟨g, by simpa using he, h⟩
   · have hn : ¬nb s₀ - g < threshold dec := by simpa using he
     have hg := h.core.g_le
-    exact loopRun_ok hp hS hlaw h (by omega)
+    exact loopRun_ok hp hS hlaw h (by omega_using [hn, hg])
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -407,7 +407,7 @@ theorem LoopInv.compare {s₀ s : State} {ix : Bool} {P : Nat → Block} {dec : 
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have he : ((if dec then 16 else 24 : BitVec 32).signExtend 64).toNat = threshold dec := by
     cases dec <;> rfl
-  rw [hcf, h.core.remaining, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), he]
+  rw [hcf, h.core.remaining, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn]), he]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

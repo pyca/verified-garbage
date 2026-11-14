@@ -68,17 +68,17 @@ theorem pairActiveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat
   have countA : a.gpr .r11=BitVec.ofNat 32 (trialCount n-i) := by
     rw [restA.gpr .r11 (by simp),restV.gpr .r11 (by simp)]
     exact inv.count
-  refine WP.seq (WP.mono (pairAdvanceCount_ok (by omega : 0<trialCount n-i) (by omega) countA) ?_)
+  refine WP.seq (WP.mono (pairAdvanceCount_ok (by omega_using [more] : 0<trialCount n-i) (by omega_using [limitBound]) countA) ?_)
   rintro t ⟨⟨cursorT,countT,zeroT,memT⟩,restT⟩
-  refine WP.block_nil ⟨⟨ctxA.after_memory memT restT,by omega,?_,?_,?_,?_,?_,
+  refine WP.block_nil ⟨⟨ctxA.after_memory memT restT,by omega_using [more],?_,?_,?_,?_,?_,
     (inv.rest.trans through).trans (restT.mono (by simp [sieveRegs]))⟩,?_⟩
   · rw [cursorT,restA.gpr .r10 (by simp),restV.gpr .r10 (by simp),inv.cursor]
     change (base+BitVec.ofNat 32 (Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i))+BitVec.ofNat 32 4 = _
     rw [BitVec.add_assoc,BitVec.ofNat_add_ofNat]
     have offset : Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+4 =
-        Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*(i+1) := by omega
+        Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*(i+1) := by omega_using []
     rw [offset]
-  · simpa only [show trialCount n-i-1=trialCount n-(i+1) by omega] using countT
+  · simpa only [show trialCount n-i-1=trialCount n-(i+1) by omega_using []] using countT
   · rw [divides,←pairAny_succ] at badA
     rw [memT,restT.sp]
     exact badA
@@ -89,7 +89,7 @@ theorem pairActiveStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat
       simpa only [restV.sp,inv.rest.sp,memV] using changedA
     exact inv.changed.trans changed
   · rw [zeroT]
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_using [])
 
 theorem pairStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
     (inv : PairInv s0 dst base n value i s) (more : i < (trialCount n)) :
@@ -130,7 +130,7 @@ theorem pairStep_ok {s0 s : State} {dst base : BitVec 32} {n value i : Nat}
       have offset : Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*i+(trialCount n-i)*4 =
           Proof.Rsa.Mont.arrAt ((n+7)/8) 34+4*trialCount n := by
         have := inv.index
-        omega
+        omega_using [more]
       rw [offset]
     · rw [Nat.sub_self]
       exact count.trans (by decide)

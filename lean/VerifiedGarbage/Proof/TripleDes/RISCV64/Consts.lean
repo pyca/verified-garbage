@@ -41,11 +41,11 @@ theorem constMem_frame (B : Addr) (vs : List (BitVec 64)) :
     have h1 : Frame [⟨B + BitVec.ofNat 64 off, 8 * (vs.length + 1)⟩] m
         (m.writeW (B + BitVec.ofNat 64 off) v) :=
       (Frame.refl _ _).writeW (List.mem_singleton_self _) v (by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-    have h2 := ih (m.writeW (B + BitVec.ofNat 64 off) v) (off + 8) (by omega)
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [])
+    have h2 := ih (m.writeW (B + BitVec.ofNat 64 off) v) (off + 8) (by omega_using [h])
     refine h1.trans (h2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     obtain rfl := List.mem_singleton.mp hr
-    exact Offset.sub B (by omega) (by omega)
+    exact Offset.sub B (by omega_using []) (by omega_using [])
 
 theorem constMem_read (B : Addr) (vs : List (BitVec 64)) :
     ∀ (m : Mem) (off : Nat), off + 8 * vs.length ≤ 2048 → ∀ c < vs.length,
@@ -56,15 +56,15 @@ theorem constMem_read (B : Addr) (vs : List (BitVec 64)) :
     intro m off h c hc
     simp only [List.length_cons] at h hc
     rcases c with _ | c
-    · have hf := constMem_frame B vs (m.writeW (B + BitVec.ofNat 64 off) v) (off + 8) (by omega)
+    · have hf := constMem_frame B vs (m.writeW (B + BitVec.ofNat 64 off) v) (off + 8) (by omega_using [h])
       simp only [constMem, Nat.mul_zero, Nat.add_zero, List.getD_cons_zero]
       rw [hf.readW (r := ⟨B + BitVec.ofNat 64 off, 8⟩) (Region.contains_self _ _) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
-          exact Offset.disjoint B (Or.inl (Nat.le_refl _)) (by omega) (by omega)) (by decide),
+          exact Offset.disjoint B (Or.inl (Nat.le_refl _)) (by omega_using [h]) (by omega_using [h])) (by decide),
         Mem.readW_writeW_self64]
     · simp only [constMem, List.getD_cons_succ]
-      rw [show off + 8 * (c + 1) = off + 8 + 8 * c by omega]
-      exact ih _ (off + 8) (by omega) c (by omega)
+      rw [show off + 8 * (c + 1) = off + 8 + 8 * c by omega_using []]
+      exact ih _ (off + 8) (by omega_using [h]) c (by omega_using [hc])
 
 theorem storeConsts_wp (vs : List (BitVec 64)) :
     ∀ (off : Nat) (s : State) (Q : State → Prop), (s.gpr sb).toNat % 8 = 0 → off % 8 = 0 →
@@ -90,15 +90,15 @@ theorem storeConsts_wp (vs : List (BitVec 64)) :
     refine WP.of_runBlock ⟨s₂, ?_, ?_⟩
     · have h0 := hin 0 (by simp)
       simp only [Nat.mul_zero, Nat.add_zero] at h0
-      rw [runBlock_cons, exec_store_d (by omega) (by rw [hb₁]; exact Spill.al8 hal hoff)
+      rw [runBlock_cons, exec_store_d (by omega_using [hlim]) (by rw [hb₁]; exact Spill.al8 hal hoff)
         (by rw [hb₁]; exact h0), runStep_some, runBlock_nil]
       simp only [hb₁, gpr_write_self, s₂]
       rfl
     · have hb₂ : s₂.gpr sb = s.gpr sb := hb₁
-      refine ih (off + 8) s₂ Q (by rw [hb₂]; exact hal) (by omega) (by omega) (fun c hc => ?_)
+      refine ih (off + 8) s₂ Q (by rw [hb₂]; exact hal) (by omega_using [hoff]) (by omega_using [hlim]) (fun c hc => ?_)
         fun t hm hrd hwr hsp hg => hQ t ?_ hrd hwr hsp fun r h0 h1 => ?_
-      · rw [hb₂, show off + 8 + 8 * c = off + 8 * (c + 1) by omega]
-        exact hin (c + 1) (by simp only [List.length_cons]; omega)
+      · rw [hb₂, show off + 8 + 8 * c = off + 8 * (c + 1) by omega_using []]
+        exact hin (c + 1) (by simp only [List.length_cons]; omega_using [hc])
       · rw [hm, hb₂]; rfl
       · rw [hg r h0 h1]
         simp only [s₂, gpr_write, h0, h1, ite_false]

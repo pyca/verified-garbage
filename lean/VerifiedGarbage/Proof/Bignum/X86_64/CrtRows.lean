@@ -40,8 +40,8 @@ at `i`, and the rest. -/
 theorem wv_split3 (m : Mem) (B : Addr) (d i k L : Nat) (h : i + k ≤ L) :
     wv m B d L = wv m B d i + 2 ^ (64 * i) * (wv m B (d + 8 * i) k +
       2 ^ (64 * k) * wv m B (d + 8 * i + 8 * k) (L - i - k)) := by
-  obtain ⟨r, rfl⟩ : ∃ r, L = i + (k + r) := ⟨L - i - k, by omega⟩
-  rw [wv_add, wv_add, show i + (k + r) - i - k = r by omega, Nat.add_assoc d]
+  obtain ⟨r, rfl⟩ : ∃ r, L = i + (k + r) := ⟨L - i - k, by omega_using [h]⟩
+  rw [wv_add, wv_add, show i + (k + r) - i - k = r by omega_using [], Nat.add_assoc d]
 
 theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s₀ B Z)
     (h11 : s₀.gpr .r11 = off B ea) (h9 : s₀.gpr .r9 = off B eb) (h10 : s₀.gpr .r10 = BitVec.ofNat 64 wa)
@@ -156,7 +156,7 @@ theorem mulRows_ok {s : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s B
     (by xrun) rfl) fun s₁ ⟨⟨h13, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   rw [← hm₁] at h0
-  refine WP.mono (wp_upto (a := 0) (N := wa) (by omega) (MRInv s₁ B Z ea eb eA wa wb)
+  refine WP.mono (wp_upto (a := 0) (N := wa) (by omega_using [hwa]) (MRInv s₁ B Z ea eb eA wa wb)
     (fun i _ hi t hI => mrStep_ok hs₁ ((k₁.gpr (by decide)).trans h11) ((k₁.gpr (by decide)).trans h9)
       ((k₁.gpr (by decide)).trans h10) ((k₁.gpr (by decide)).trans h12) hwb hw hA ha hb sa sb h0 hi hI)
     (fun _ h => h)
@@ -174,7 +174,7 @@ theorem ceil8_bv {a : Nat} (ha : a < 2 ^ 60) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     show (7#64).toNat = 7 from rfl]
-  rw [Nat.mod_eq_of_lt (by omega : a < 2 ^ 64), Nat.mod_eq_of_lt (by omega : a + 7 < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : (a + 7) / 8 < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [ha] : a < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [ha] : a + 7 < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [ha] : (a + 7) / 8 < 2 ^ 64)]
 
 end VG.Proof.Bignum.X86_64

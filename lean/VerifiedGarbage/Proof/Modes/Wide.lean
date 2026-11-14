@@ -3,6 +3,7 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Steps
 public import VerifiedGarbage.Impl.Modes.Wide
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Block cipher modes, a group of blocks at a time, for any target
@@ -70,16 +71,16 @@ theorem getD_flatten {L : Nat} : ∀ {ys : List (List Byte)}, (∀ y ∈ ys, y.l
       · exact hL
     rw [List.flatten_cons]
     by_cases hlt : i < L
-    · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by omega), ← List.getD_eq_getElem?_getD,
+    · rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by omega_using [hy, hlt]), ← List.getD_eq_getElem?_getD,
         Nat.div_eq_of_lt hlt, Nat.mod_eq_of_lt hlt]
       rfl
     · have hge : L ≤ i := Nat.le_of_not_lt hlt
       have hrec := getD_flatten (ys := ys) (fun y hy' => h y (List.mem_cons_of_mem _ hy')) (i := i - L)
-        (by simp only [List.length_cons, Nat.mul_succ] at hi; omega)
-      have e : i = (i - L) + L := by omega
+        (by simp only [List.length_cons, Nat.mul_succ] at hi; omega_using [hi, hlt])
+      have e : i = (i - L) + L := by omega_using [hlt]
       have hm : i % L = (i - L) % L := by rw [← Nat.add_mod_right (i - L) L, ← e]
       have hd : i / L = (i - L) / L + 1 := by rw [← Nat.add_div_right (i - L) hL, ← e]
-      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega), hy, ← List.getD_eq_getElem?_getD, hrec,
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega_using [hy, hlt]), hy, ← List.getD_eq_getElem?_getD, hrec,
         hm, hd]
       simp
 
@@ -162,15 +163,15 @@ theorem copyAt_inBounds {len : Loc → Nat} {bw : Nat} {dst src : Loc} {dO sO : 
   intro o ho
   simp only [copyAt, List.mem_map, List.mem_range] at ho
   obtain ⟨w, hw, rfl⟩ := ho
-  exact ⟨by simp [Op.width]; omega, by simp [Op.width]; omega, fun _ _ h => by cases h⟩
+  exact ⟨by simp [Op.width]; omega_using [hd, hw], by simp [Op.width]; omega_using [hs, hw], fun _ _ h => by cases h⟩
 
 theorem xorAt_inBounds {len : Loc → Nat} {bw : Nat} {dst x y : Loc} {dO xO yO : Nat} (hd : dO + 4 * bw ≤ len dst)
     (hx : xO + 4 * bw ≤ len x) (hy : yO + 4 * bw ≤ len y) : ∀ o ∈ xorAt bw dst dO x xO y yO, o.InBounds len := by
   intro o ho
   simp only [xorAt, List.mem_map, List.mem_range] at ho
   obtain ⟨w, hw, rfl⟩ := ho
-  exact ⟨by simp [Op.width]; omega, by simp [Op.width]; omega, fun l off h => by
-    simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h; simp [Op.width]; omega⟩
+  exact ⟨by simp [Op.width]; omega_using [hd, hw], by simp [Op.width]; omega_using [hx, hw], fun l off h => by
+    simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h; simp [Op.width]; omega_using [hy, hw]⟩
 
 theorem widen_pre_succ (G L : Nat) (M : Mode) :
     (Mode.widen (G + 1) L M).pre = (Mode.widen G L M).pre ++ M.pre.map (Op.shift L M.step G) := by
@@ -241,7 +242,7 @@ theorem split_block_length {L G : Nat} {x : List Byte} (hx : x.length = G * L) :
   simp only [split, List.mem_map, List.mem_range] at hy
   obtain ⟨j, hj, rfl⟩ := hy
   have : L * j + L ≤ G * L := by rw [← Nat.mul_succ, Nat.mul_comm G]; exact Nat.mul_le_mul_left _ hj
-  simp only [List.length_take, List.length_drop, hx]; omega
+  simp only [List.length_take, List.length_drop, hx]; omega_using [this]
 
 theorem split_getD {L G : Nat} {x : List Byte} {k t : Nat} (hk : k < G) (ht : t < L) :
     ((split L G x).getD k []).getD t 0 = x.getD (L * k + t) 0 := by
@@ -289,8 +290,8 @@ theorem prev_getD {L G : Nat} {c x : List Byte} {k t : Nat} (hk : k < G) (ht : t
   rcases k with _ | k
   · rfl
   · simp only [List.getD_cons_succ, Nat.add_one_ne_zero, ite_false]
-    rw [split_getD (by omega) ht, Nat.mul_succ]
-    congr 1; omega
+    rw [split_getD (by omega_using [hk]) ht, Nat.mul_succ]
+    congr 1; omega_using []
 
 section
 variable {bw : Nat} {ciph : Cipher} (hc : ∀ b, (ciph b).length = 4 * bw)
@@ -333,7 +334,7 @@ theorem cbcDecWide_computes (G : Nat) :
   have hprevl : ∀ k < G, ((c :: split (4 * bw) G x).getD k []).length = 4 * bw := fun k hk => by
     rcases k with _ | k
     · exact hcl
-    · rw [List.getD_cons_succ]; exact hxs _ (getD_mem _ (by rw [hxsl]; omega))
+    · rw [List.getD_cons_succ]; exact hxs _ (getD_mem _ (by rw [hxsl]; omega_using [hk]))
   have hout : ∀ y ∈ (List.range G).map (fun k => xor (ciph ((split (4 * bw) G x).getD k []))
       ((c :: split (4 * bw) G x).getD k [])), y.length = 4 * bw := by
     intro y hy
@@ -343,7 +344,7 @@ theorem cbcDecWide_computes (G : Nat) :
   refine ⟨rd_eq ?_ fun i hi => ?_, rd_eq ?_ fun i hi => ?_⟩
   · rw [length_flatten_of hout, List.length_map, List.length_range]
   · -- A byte of the data: block `k`'s byte `t`.
-    have hL : 0 < 4 * bw := Nat.pos_of_ne_zero fun h => by rw [h, Nat.mul_zero] at hi; omega
+    have hL : 0 < 4 * bw := Nat.pos_of_ne_zero fun h => by rw [h, Nat.mul_zero] at hi; omega_using [hi]
     have hi' : i < 4 * bw * G := by rw [← hLG]; exact hi
     have hk : i / (4 * bw) < G := (Nat.div_lt_iff_lt_mul hL).mpr hi
     have ht : i % (4 * bw) < 4 * bw := Nat.mod_lt _ hL
@@ -354,14 +355,14 @@ theorem cbcDecWide_computes (G : Nat) :
     congr 1
     by_cases h0 : i / (4 * bw) = 0
     · have : i < 4 * bw := by
-        have := Nat.div_add_mod i (4 * bw); rw [h0, Nat.mul_zero, Nat.zero_add] at this; omega
+        have := Nat.div_add_mod i (4 * bw); rw [h0, Nat.mul_zero, Nat.zero_add] at this; omega_using [ht, this]
       rw [ite_eq_left this, ite_eq_left h0, ← hcv, getD_rd ht, Nat.mod_eq_of_lt this]
     · have : ¬ i < 4 * bw := fun h => h0 (Nat.div_eq_of_lt h)
-      rw [ite_eq_right this, ite_eq_right h0, hdm, ← hx, getD_rd (by omega)]
+      rw [ite_eq_right this, ite_eq_right h0, hdm, ← hx, getD_rd (by omega_using [hi])]
   · rw [List.getLastD_eq_getLast?]
     rcases Nat.eq_zero_or_pos G with hG | hG
     · subst hG; simp [split, hcl]
-    · rw [List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; omega), Option.getD_some]
+    · rw [List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; omega_using [hG]), Option.getD_some]
       exact hxs _ (List.getElem_mem _)
   · simp only [cbcPost, ite_eq_left hi, bchn, bdat]
     rw [List.getLastD_eq_getLast?]
@@ -369,14 +370,14 @@ theorem cbcDecWide_computes (G : Nat) :
     · subst hG
       simp only [ite_true, split, List.range_zero, List.map_nil, List.getLast?_nil, Option.getD_none, ← hcv,
         getD_rd hi]
-    · have hk : G - 1 < G := by omega
+    · have hk : G - 1 < G := by omega_using [hG]
       have e := split_getD (x := x) hk hi
       rw [show (split (4 * bw) G x).getD (G - 1) [] = (split (4 * bw) G x)[G - 1]'(by rw [hxsl]; exact hk) by
         rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem]; rfl] at e
-      rw [ite_eq_right (by omega), List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; exact hk),
+      rw [ite_eq_right (by omega_using [hG]), List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; exact hk),
         Option.getD_some, e, ← hx,
-        getD_rd (by rw [hLG]; have := Nat.mul_le_mul_left (4 * bw) (show G - 1 + 1 ≤ G by omega)
-                    rw [Nat.mul_succ] at this; omega)]
+        getD_rd (by rw [hLG]; have := Nat.mul_le_mul_left (4 * bw) (show G - 1 + 1 ≤ G by omega_using [hG])
+                    rw [Nat.mul_succ] at this; omega_using [hi, this])]
       congr 1
       rw [Nat.mul_sub_one]
 end
@@ -470,7 +471,7 @@ theorem cfbDecWide_computes (G : Nat) :
   have hprevl : ∀ k < G, ((c :: split (4 * bw) G x).getD k []).length = 4 * bw := fun k hk => by
     rcases k with _ | k
     · exact hcl
-    · rw [List.getD_cons_succ]; exact hxs _ (getD_mem _ (by rw [hxsl]; omega))
+    · rw [List.getD_cons_succ]; exact hxs _ (getD_mem _ (by rw [hxsl]; omega_using [hk]))
   -- The buffer before the block cipher: the chaining values.
   have hP : ∀ k < G, (split (4 * bw) G (rd (applyOps (Mode.cfbDecWide bw G).pre a) .buf (4 * bw * G))).getD k [] =
       (c :: split (4 * bw) G x).getD k [] := fun k hk => by
@@ -481,13 +482,13 @@ theorem cfbDecWide_computes (G : Nat) :
     intro t h1 _
     have ht : t < 4 * bw := by rw [hl1] at h1; exact h1
     have hkt : 4 * bw * k + t < 4 * bw * G := by
-      have := Nat.mul_le_mul_left (4 * bw) (show k + 1 ≤ G by omega); rw [Nat.mul_succ] at this; omega
+      have := Nat.mul_le_mul_left (4 * bw) (show k + 1 ≤ G by omega_using [hk]); rw [Nat.mul_succ] at this; omega_using [ht, this]
     rw [List.getElem_eq_getD 0, List.getElem_eq_getD 0, split_getD hk ht, prev_getD hk ht, getD_rd hkt,
       cfbDecWide_pre, cfbPre, ite_eq_left hkt, prevB]
     rcases k with _ | k
     · rw [Nat.mul_zero, Nat.zero_add, ite_eq_left ht, ite_eq_left rfl, ← hcv, getD_rd ht]
-    · rw [ite_eq_right (by rw [Nat.mul_succ]; omega), ite_eq_right (Nat.add_one_ne_zero _), ← hx,
-        getD_rd (by rw [hLG]; omega)]
+    · rw [ite_eq_right (by rw [Nat.mul_succ]; omega_using []), ite_eq_right (Nat.add_one_ne_zero _), ← hx,
+        getD_rd (by rw [hLG]; omega_using [hkt])]
   let b := cryptBuf (4 * bw * G) (blocksCipher (4 * bw) G ciph) (applyOps (Mode.cfbDecWide bw G).pre a)
   have bdat : ∀ i, b .dat i = a .dat i := fun i => by
     simp only [b, cryptBuf, reduceCtorEq, ite_false, cfbDecWide_pre, cfbPre]
@@ -505,7 +506,7 @@ theorem cfbDecWide_computes (G : Nat) :
     rw [xor_length, hc, hxs _ (getD_mem _ (by rw [hxsl]; exact hk)), Nat.min_self]
   refine ⟨rd_eq ?_ fun i hi => ?_, rd_eq ?_ fun i hi => ?_⟩
   · rw [length_flatten_of hout, List.length_map, List.length_range]
-  · have hL : 0 < 4 * bw := Nat.pos_of_ne_zero fun h => by rw [h, Nat.mul_zero] at hi; omega
+  · have hL : 0 < 4 * bw := Nat.pos_of_ne_zero fun h => by rw [h, Nat.mul_zero] at hi; omega_using [hi]
     have hi' : i < 4 * bw * G := by rw [← hLG]; exact hi
     have hk : i / (4 * bw) < G := (Nat.div_lt_iff_lt_mul hL).mpr hi
     have ht : i % (4 * bw) < 4 * bw := Nat.mod_lt _ hL
@@ -518,7 +519,7 @@ theorem cfbDecWide_computes (G : Nat) :
   · rw [List.getLastD_eq_getLast?]
     rcases Nat.eq_zero_or_pos G with hG | hG
     · subst hG; simp [split, hcl]
-    · rw [List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; omega), Option.getD_some]
+    · rw [List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; omega_using [hG]), Option.getD_some]
       exact hxs _ (List.getElem_mem _)
   · simp only [cfbPost, bchn, cfbPre, ite_eq_left hi]
     rw [List.getLastD_eq_getLast?]
@@ -526,14 +527,14 @@ theorem cfbDecWide_computes (G : Nat) :
     · subst hG
       simp only [ite_true, split, List.range_zero, List.map_nil, List.getLast?_nil, Option.getD_none, ← hcv,
         getD_rd hi]
-    · have hk : G - 1 < G := by omega
+    · have hk : G - 1 < G := by omega_using [hG]
       have e := split_getD (x := x) hk hi
       rw [show (split (4 * bw) G x).getD (G - 1) [] = (split (4 * bw) G x)[G - 1]'(by rw [hxsl]; exact hk) by
         rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem]; rfl] at e
-      rw [ite_eq_right (by omega), List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; exact hk),
+      rw [ite_eq_right (by omega_using [hG]), List.getLast?_eq_getElem?, hxsl, List.getElem?_eq_getElem (by rw [hxsl]; exact hk),
         Option.getD_some, e, ← hx,
-        getD_rd (by rw [hLG]; have := Nat.mul_le_mul_left (4 * bw) (show G - 1 + 1 ≤ G by omega)
-                    rw [Nat.mul_succ] at this; omega)]
+        getD_rd (by rw [hLG]; have := Nat.mul_le_mul_left (4 * bw) (show G - 1 + 1 ≤ G by omega_using [hG])
+                    rw [Nat.mul_succ] at this; omega_using [hi, this])]
       congr 1
       rw [Nat.mul_sub_one]
 
@@ -568,9 +569,9 @@ theorem drop_take_flatten {L : Nat} : ∀ {ys : List (List Byte)}, (∀ y ∈ ys
     have hy := h y List.mem_cons_self
     rcases j with _ | j
     · rw [Nat.mul_zero, List.drop_zero, List.flatten_cons, List.take_left' hy]; rfl
-    · rw [List.flatten_cons, List.drop_append, List.drop_eq_nil_of_le (by rw [hy, Nat.mul_succ]; omega),
-        List.nil_append, hy, show L * (j + 1) - L = L * j by rw [Nat.mul_succ]; omega,
-        drop_take_flatten (fun y hy' => h y (List.mem_cons_of_mem _ hy')) (by simp at hj; omega)]
+    · rw [List.flatten_cons, List.drop_append, List.drop_eq_nil_of_le (by rw [hy, Nat.mul_succ]; omega_using []),
+        List.nil_append, hy, show L * (j + 1) - L = L * j by rw [Nat.mul_succ]; omega_using [],
+        drop_take_flatten (fun y hy' => h y (List.mem_cons_of_mem _ hy')) (by simp at hj; omega_using [hj])]
       rfl
 
 /-- Splitting `G` joined blocks gives them back. -/
@@ -579,7 +580,7 @@ theorem split_flatten {L G : Nat} {ys : List (List Byte)} (hl : ys.length = G) (
   apply List.ext_getElem (by rw [split_length, hl])
   intro j h1 _
   simp only [split, List.getElem_map, List.getElem_range]
-  exact drop_take_flatten h (by rw [split_length] at h1; omega)
+  exact drop_take_flatten h (by rw [split_length] at h1; omega_using [hl, h1])
 
 /-- Each step's output is a block of `L` bytes, and its chaining value of
 `Lc`, from a chaining value of `Lc` and a block of `L`. -/
@@ -620,7 +621,7 @@ theorem bytesAt_split (L G : Nat) (m : Mem) (p : Addr) :
   have hj : j < G := by rw [split_length] at h1; exact h1
   have hjL : L * j + L ≤ G * L := by rw [← Nat.mul_succ, Nat.mul_comm G]; exact Nat.mul_le_mul_left _ hj
   simp only [split, List.getElem_map, List.getElem_range, chunksAt]
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega)
+  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega_using [hjL])
   intro t h2 _
   simp only [List.length_take, List.length_drop, Spec.Aes.bytesAt, List.length_map, List.length_range] at h2
   simp only [Spec.Aes.bytesAt, List.getElem_take, List.getElem_drop, List.getElem_map, List.getElem_range,
@@ -651,7 +652,7 @@ theorem flatten_split (L : Nat) : ∀ (G : Nat) (x : List Byte), x.length = G * 
       congr 1
       apply List.map_congr_left; intro j _
       simp only [Function.comp, List.drop_drop, Nat.mul_succ, Nat.add_comm]
-    rw [e, List.flatten_cons, flatten_split L G (x.drop L) (by rw [List.length_drop, h, Nat.succ_mul]; omega),
+    rw [e, List.flatten_cons, flatten_split L G (x.drop L) (by rw [List.length_drop, h, Nat.succ_mul]; omega_using []),
       List.take_append_drop]
 
 /-- Bytes, as joined chunks. -/
@@ -678,15 +679,15 @@ theorem cbcDecWide_inBounds (G : Nat) (hd : 4 * bw * G ≤ len .dat) (hb : 4 * b
     (∀ o ∈ (Mode.cbcDecWide bw G).pre, o.InBounds len) ∧ (∀ o ∈ (Mode.cbcDecWide bw G).post, o.InBounds len) := by
   refine ⟨flatMap_inBounds fun j hj => ?_, flatMap_inBounds fun j hj => ?_⟩
   · simp only [Mode.cbcDecChained, Mode.cbcDec, copyBlk_shift, shOff]
-    exact copyAt_inBounds (by have := blk_le (L := 4 * bw) hj; omega) (by have := blk_le (L := 4 * bw) hj; omega)
+    exact copyAt_inBounds (by have := blk_le (L := 4 * bw) hj; omega_using [hb, this]) (by have := blk_le (L := 4 * bw) hj; omega_using [hd, this])
   · simp only [Mode.cbcDecChained, Mode.cbcDec, List.map_append, copyBlk_shift, xorBlk_shift, shOff]
     have := blk_le (L := 4 * bw) hj
     intro o ho
     simp only [List.mem_append] at ho
     rcases ho with (ho | ho) | ho
-    · exact xorAt_inBounds (by omega) (by omega) (by omega) o ho
-    · exact copyAt_inBounds (by omega) (by omega) o ho
-    · exact copyAt_inBounds (by omega) (by omega) o ho
+    · exact xorAt_inBounds (by omega_using [hb, this]) (by omega_using [hb, this]) (by omega_using [hc]) o ho
+    · exact copyAt_inBounds (by omega_using [hc]) (by omega_using [hd, this]) o ho
+    · exact copyAt_inBounds (by omega_using [hd, this]) (by omega_using [hb, this]) o ho
 
 theorem cfbDecWide_inBounds (G : Nat) (hd : 4 * bw * G ≤ len .dat) (hb : 4 * bw * G ≤ len .buf)
     (hc : 4 * bw ≤ len .chn) :
@@ -697,11 +698,11 @@ theorem cfbDecWide_inBounds (G : Nat) (hd : 4 * bw * G ≤ len .dat) (hb : 4 * b
     intro o ho
     simp only [List.mem_append] at ho
     rcases ho with ho | ho
-    · exact copyAt_inBounds (by omega) (by omega) o ho
-    · exact copyAt_inBounds (by omega) (by omega) o ho
+    · exact copyAt_inBounds (by omega_using [hb, this]) (by omega_using [hc]) o ho
+    · exact copyAt_inBounds (by omega_using [hc]) (by omega_using [hd, this]) o ho
   · simp only [Mode.cfbDecEarly, xorBlk_shift, shOff]
     have := blk_le (L := 4 * bw) hj
-    exact xorAt_inBounds (by omega) (by omega) (by omega)
+    exact xorAt_inBounds (by omega_using [hd, this]) (by omega_using [hd, this]) (by omega_using [hb, this])
 
 end
 

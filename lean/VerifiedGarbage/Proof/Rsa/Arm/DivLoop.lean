@@ -31,7 +31,7 @@ theorem loop_ok {g : Geometry} {s0 s : State} {D N : Nat}
   have positive := h.ctx.positive
   have bound := h.ctx.bound
   let I := fun k t => ∃ i, i + k = 32 * g.n ∧ 0 < k ∧ Invariant g s0 D N i t
-  refine WP.loop (M := isa) I ?_ (32 * g.n) s ⟨0, by omega, by omega, h⟩
+  refine WP.loop (M := isa) I ?_ (32 * g.n) s ⟨0, by omega_using [], by omega_using [positive], h⟩
   intro k t pre
   obtain ⟨i, sum, hk, inv⟩ := pre
   refine WP.mono (step_ok inv.ctx) ?_
@@ -39,19 +39,19 @@ theorem loop_ok {g : Geometry} {s0 s : State} {D N : Nat}
   have countU : u.gpr .r6 = BitVec.ofNat 32 (32 * g.n - (i + 1)) := by
     rw [count, inv.count]
     change BitVec.ofNat 32 (32 * g.n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [sum, hk])]
     congr 1
   have zeroU : u.z = decide (i + 1 = 32 * g.n) := by
     rw [zero, inv.count]
     change (BitVec.ofNat 32 (32 * g.n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show 32 * g.n - i - 1 = 0 ↔ i + 1 = 32 * g.n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [sum, hk]), ofNat_beq_zero (by omega_using [bound])]
+    simp only [show 32 * g.n - i - 1 = 0 ↔ i + 1 = 32 * g.n by omega_using [sum, hk]]
   have next : Invariant g s0 D N (i + 1) u := by
-    refine ⟨ctxU, by omega, countU, inv.frame.trans frameU, inv.rest.trans restU,
+    refine ⟨ctxU, by omega_using [sum, hk], countU, inv.frame.trans frameU, inv.rest.trans restU,
       (inv.ctx.divisor_frame frameU).trans inv.divisor, ?_⟩
     intro dPos dBound
     have previous := inv.value dPos dBound
-    obtain ⟨q, less, _, _, _⟩ := divIter_inv dPos boundN i (by omega)
+    obtain ⟨q, less, _, _, _⟩ := divIter_inv dPos boundN i (by omega_using [sum])
     rw [← previous] at less
     rw [inv.divisor] at valueU
     exact (valueU less dBound).trans (by rw [previous]; rfl)
@@ -61,7 +61,7 @@ theorem loop_ok {g : Geometry} {s0 s : State} {D N : Nat}
     change some (!u.z) = some false
     simp only [zeroU, done, decide_true, Bool.not_true]
   · right
-    refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, next⟩
+    refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [sum, hk], by omega_using [sum, hk, done], next⟩
     change some (!u.z) = some true
     simp only [zeroU, done, decide_false, Bool.not_false]
 
@@ -76,7 +76,7 @@ theorem code_ok {g : Geometry} {s : State} (h : Context g s) :
   rintro u ⟨rU, qU, count, ctxU, frameU, restU⟩
   have boundN : g.value s.mem 0 < 2 ^ (32 * g.n) := val32_lt _ _ _ _
   have inv : Invariant g s (g.value s.mem 2) (g.value s.mem 0) 0 u :=
-    ⟨ctxU, by omega, by simpa only [Nat.sub_zero] using count, frameU, restU,
+    ⟨ctxU, by omega_using [], by simpa only [Nat.sub_zero] using count, frameU, restU,
       h.divisor_frame frameU, fun _ _ => by rw [rU, qU]; rfl⟩
   refine WP.mono (loop_ok inv boundN) ?_
   intro t done

@@ -46,7 +46,7 @@ theorem signComb_ct (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
   have he' : s.gpr .esp = t.gpr .esp := by rw [P.gpr .esp (by decide), Q.gpr .esp (by decide), he]
   have ha' : ∀ j < 5, arg s j = arg t j := by
     intro j hj
-    rw [P.arg hp.sp4 (by have := hp.sp_fit; omega), Q.arg hq.sp4 (by have := hq.sp_fit; omega), ha j hj]
+    rw [P.arg hp.sp4 (by have := hp.sp_fit; omega_using [hj, this]), Q.arg hq.sp4 (by have := hq.sp_fit; omega_using [hj, this]), ha j hj]
   exact signCombBody_rel hc hC hT hd ham3 (hp.toPre.symAddr P hp.sp4) (hq.toPre.symAddr Q hq.sp4)
     (prefixTables hp P) (prefixTables hq Q) he' ha' (by rw [P.addr, Q.addr, hg]) hsp
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂

@@ -37,17 +37,17 @@ theorem PublicStack.read {s : State} {base dst np ep xp : BitVec 32} {len k eLen
     (h : PublicStack base dst np ep xp len k eLen s) (fit : d + 4 ≤ 80)
     (aligned : d + 4 ≤ 56 ∨ 56 ≤ d) : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) d) 4 := by
   rcases aligned with low | high
-  · exact ⟨_, List.mem_append_right _ h.frameWritable, Offset.contains_base _ low (by omega)⟩
-  · have read := CallLay.inRegions_sub h.argumentsRead (off := d - 56) (l := 4) (by omega) (by decide)
+  · exact ⟨_, List.mem_append_right _ h.frameWritable, Offset.contains_base _ low (by omega_using [fit])⟩
+  · have read := CallLay.inRegions_sub h.argumentsRead (off := d - 56) (l := 4) (by omega_using [fit]) (by decide)
     have addr : off (State.addr s.sp) 56 + BitVec.ofNat 64 (d - 56) = off (State.addr s.sp) d := by
       change State.addr s.sp + BitVec.ofNat 64 56 + BitVec.ofNat 64 (d - 56) = _
-      rw [Offset.add_add, show 56 + (d - 56) = d by omega]
+      rw [Offset.add_add, show 56 + (d - 56) = d by omega_using [high]]
     rw [addr] at read
     exact read
 
 theorem PublicStack.pcStack {s : State} {base dst np ep xp : BitVec 32} {len k eLen : Nat}
     (h : PublicStack base dst np ep xp len k eLen s) : PcStack base dst np len k s :=
-  ⟨by have := h.nowrap; omega,
+  ⟨by have := h.nowrap; omega_using [this],
     ⟨_, List.mem_append_right _ h.frameWritable, by simp [Region.Contains]⟩,
     h.separate.sub_left (Region.sub_prefix (by decide)), h.savedBase, h.savedOutput, h.savedModulus, h.savedCount⟩
 

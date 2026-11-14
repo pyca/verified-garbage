@@ -92,15 +92,15 @@ theorem powers48 {H : Block} {P : Nat → Nat → Block}
     ∀ g < 3, ∀ k < 4, ∀ l < 4, x * φ (T48 P g k l) = φ H ^ (48 - 16 * g - 4 * k - l) := by
   intro g hg k hk l hl
   have h00 : x * φ (P 0 0) = φ H ^ 16 := hP 0 (by decide) 0 (by decide)
-  rcases (by omega : g = 0 ∨ g = 1 ∨ g = 2) with rfl | rfl | rfl
+  rcases (by omega_using [hg] : g = 0 ∨ g = 1 ∨ g = 2) with rfl | rfl | rfl
   · simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
-    rw [show 48 - 16 * 0 - 4 * k - l = (16 - 4 * k - l) + (16 + 16) by omega]
+    rw [show 48 - 16 * 0 - 4 * k - l = (16 - 4 * k - l) + (16 + 16) by omega_using [hk, hl]]
     exact φ_lanemul (hP k hk l hl) (φ_lanemul h00 h00)
   · simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
-    rw [show 48 - 16 * 1 - 4 * k - l = (16 - 4 * k - l) + 16 by omega]
+    rw [show 48 - 16 * 1 - 4 * k - l = (16 - 4 * k - l) + 16 by omega_using [hk, hl]]
     exact φ_lanemul (hP k hk l hl) h00
   · simp only [T48, ↓reduceIte]
-    rw [show 48 - 16 * 2 - 4 * k - l = 16 - 4 * k - l by omega]
+    rw [show 48 - 16 * 2 - 4 * k - l = 16 - 4 * k - l by omega_using []]
     exact hP k hk l hl
 
 /-! ## Both loops -/
@@ -111,8 +111,8 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
   rw [setup, WP.block_append_iff]
   exact WP.mono (Stitch.setup_ok hp) fun _ ⟨_, hR, hpw⟩ => WP.mono (setupZ_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact hpw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact hpw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 /-- The encryption of `n` blocks (a multiple of 16, at least 16). -/
 theorem enc_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa enc s₀ (EPost s₀) :=

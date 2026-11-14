@@ -27,7 +27,7 @@ theorem maskOutputArgs_ok (s : State)
   refine wp_mov (op2_reg _ _) fun u a => ?_
   refine wp_mov (op2_reg _ _) fun v b => ?_
   refine wp_loadStack (a := off (State.addr s.sp) 48) (by decide)
-    (by rw [b.sp, a.sp]; exact addr_add (by omega)) (by rw [b.rd, b.wr, a.rd, a.wr]; exact read) fun z c => ?_
+    (by rw [b.sp, a.sp]; exact addr_add (by omega_using [fit])) (by rw [b.rd, b.wr, a.rd, a.wr]; exact read) fun z c => ?_
   refine wp_mov (op2_imm (by decide)) fun q d => ?_
   refine wp_dp (op2_reg _ _) fun t e => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, e.mem.trans (d.mem.trans (c.mem.trans (b.mem.trans a.mem))),

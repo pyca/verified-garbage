@@ -80,7 +80,7 @@ theorem same_ofP {s₁ s₂ : State} (h : dataOfP s₁ = dataOfP s₂) : Same tr
   obtain ⟨hne, hpre⟩ := List.append_inj hb (by simp [Proof.Rsa.bytesAt_length', h3, h5])
   rw [List.map_append, List.map_append] at hne
   obtain ⟨hn, he⟩ := List.append_inj hne (by simp [Proof.Rsa.bytesAt_length', h3])
-  refine ⟨gr, fun i hi => ga i (by omega), hsp, (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn,
+  refine ⟨gr, fun i hi => ga i (by omega_using [hi]), hsp, (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hn,
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he, fun _ => ga 12 (by decide), ?_⟩
   simp only [preVal, ↓reduceIte]
   simp only [Spec.Rsa.privatePrecomputedLeak] at hpre
@@ -105,8 +105,8 @@ theorem crt_pubP {s₁ s₂ t₁ t₂ u₁ u₂ : State} (h₁ : PreP true s₁)
   have hpsa : ∀ {s t u : State}, PtrAt s t u →
       ∀ i < 10, u.mem.readW (fb s + BitVec.ofNat 64 (8 * i)) 64 = stackArg s (2 + i) :=
     fun ⟨A, _, hm, _, _⟩ i hi => by
-      rw [hm, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oS1; omega))
-        (by omega) (by unfold oS1; omega)) (by decide)]
+      rw [hm, Mem.readW_writeW_sep (Offset.sep _ (.inl (by unfold oS1; omega_using [hi]))
+        (by omega_using [hi]) (by unfold oS1; omega_using [])) (by decide)]
       exact A.psa i hi
   have g : ∀ {s t u : State}, PtrAt s t u → ∀ r, r ∉ linkRegs → r ∉ [Reg.t0, .s1, .t6, .t1] →
       (crtEntryG s u [r2Rs s]).gpr r = t.gpr r := fun ⟨_, k, _⟩ r h1 h2 =>
@@ -118,9 +118,9 @@ theorem crt_pubP {s₁ s₂ t₁ t₂ u₁ u₂ : State} (h₁ : PreP true s₁)
       have hk := h.k2
       have hfu : Frame [kR s] s.mem u.mem := by
         rw [hm]
-        exact A.mem.writeW (List.mem_singleton_self _) _ (frame_contains _ (by unfold oS1 frameBytes; omega))
+        exact A.mem.writeW (List.mem_singleton_self _) _ (frame_contains _ (by unfold oS1 frameBytes; omega_using []))
       exact bytes_of_frame hfu (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kn.symm)
-        (by have := h.wn; omega)
+        (by have := h.wn; omega_using [])
   have hl : ∀ {s t u : State}, PtrAt s t u →
       (List.range 10).map (stackArg (crtEntryG s u [r2Rs s])) = (List.range 10).map fun i => stackArg s (2 + i) :=
     fun P => List.map_congr_left fun i hi => crtEntryG_stackArg P.1 (hpsa P) P.2.2.2.1 (List.mem_range.mp hi)
@@ -141,7 +141,7 @@ theorem crt_pubP {s₁ s₂ t₁ t₂ u₁ u₂ : State} (h₁ : PreP true s₁)
     · rw [A₁.a6, A₂.a6, S.arg 0 (by decide)]
     · rw [A₁.a7, A₂.a7, S.arg 1 (by decide)]
   · rw [hl P₁, hl P₂]
-    exact List.map_congr_left fun i hi => S.arg (2 + i) (by have := List.mem_range.mp hi; omega)
+    exact List.map_congr_left fun i hi => S.arg (2 + i) (by have := List.mem_range.mp hi; omega_using [this])
   · have A₁ := P₁.1
     have A₂ := P₂.1
     simp only [State.withRegions_mem, State.callEntry_mem, g P₁ .a2 (by decide) (by decide),

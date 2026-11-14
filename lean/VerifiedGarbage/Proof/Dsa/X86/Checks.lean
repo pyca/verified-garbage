@@ -126,15 +126,15 @@ theorem equal_ok (n : Nat) {s : State} {base : Addr} {size : Nat} (hs : Scr s ba
     by rw [ut.mem, uy.mem, ux.mem, mw, uv.mem, mu]⟩
   rw [ut.gpr, uy.gpr, ux.gpr, ew, kw.1 _ (by decide), uv.gpr, eu, uv.mem, mu]
   by_cases hab : wordsVal s.mem base a n < wordsVal s.mem base b n
-  · have hba : ¬ wordsVal s.mem base b n < wordsVal s.mem base a n := by omega
-    have he : wordsVal s.mem base a n ≠ wordsVal s.mem base b n := by omega
+  · have hba : ¬ wordsVal s.mem base b n < wordsVal s.mem base a n := by omega_using [hab]
+    have he : wordsVal s.mem base a n ≠ wordsVal s.mem base b n := by omega_using [hab]
     simp only [mask32, hab, hba, he, ite_true, ite_false]
     decide
   · by_cases hba : wordsVal s.mem base b n < wordsVal s.mem base a n
-    · have he : wordsVal s.mem base a n ≠ wordsVal s.mem base b n := by omega
+    · have he : wordsVal s.mem base a n ≠ wordsVal s.mem base b n := by omega_using [hba]
       simp only [mask32, hab, hba, he, ite_true, ite_false]
       decide
-    · have he : wordsVal s.mem base a n = wordsVal s.mem base b n := by omega
+    · have he : wordsVal s.mem base a n = wordsVal s.mem base b n := by omega_using [hab, hba]
       simp only [mask32, he, Nat.lt_irrefl, ite_true, ite_false]
       decide
 
@@ -151,11 +151,11 @@ theorem andFlag_ok (flag : Nat) {s : State} {base : Addr} {size : Nat} (hs : Scr
   refine wp_logicS (.inl rfl) rfl fun s₂ u₂ => ?_
   have k₂ : Keeps [.eax] s s₂ := u₁.keeps.trans u₂.keeps
   have hs₂ := hs.of_keeps k₂ (by decide)
-  refine wp_storeS (hs₂.ea (d := flag) (by omega)) (hs₂.write hf) fun s₃ m₃ => WP.block_nil
+  refine wp_storeS (hs₂.ea (d := flag) (by omega_using [hf])) (hs₂.write hf) fun s₃ m₃ => WP.block_nil
     ⟨?_, k₂.trans (m₃.keeps _), ?_⟩
   · rw [flagW, flagW, m₃.mem, Mem.readW_writeW_self32, u₂.gpr, u₁.gpr, u₁.other _ (by decide)]
     simp only [ite_true]
-  · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+  · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hf, this])
 
 /-- `checkRange a`: the flag `&=` the mask of `0 < [a] < [MN]`. -/
 theorem checkRange_ok (n flag : Nat) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a m : Nat}

@@ -33,14 +33,14 @@ theorem loop_step {s t : State} {P : Addr} {w j : Nat} {mi : BitVec 64} {X Xc : 
     have he : 2*(2^j-1)+1 = 2^(j+1)-1 := by
       have := Nat.two_pow_pos j
       rw [Nat.pow_succ]
-      omega
+      omega_using [this]
     have ep : (wv s.mem P (slot w aY) w ^ (2^j))^2 =
         wv s.mem P (slot w aY) w ^ (2^(j+1)) := by
       rw [← Nat.pow_mul,← Nat.pow_succ]
     rw [he,ep] at hu
     exact hu
-  · rw [h3,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 5-(j+1) < 2^64 by omega)]
-    omega
+  · rw [h3,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 5-(j+1) < 2^64 by omega_using [])]
+    omega_using [hj]
 
 theorem squares_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hw : 16 ≤ w) (hw' : w < 2^30) (hmod : w % 8 = 0)

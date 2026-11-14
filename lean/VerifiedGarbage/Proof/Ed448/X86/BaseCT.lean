@@ -119,7 +119,7 @@ theorem baseStep_tr (n : Nat) : RelCT isa (Runs BP₀ (LadB n)) baseStep fun _ _
   · rintro σ s ⟨hn, s₄, h⟩
     refine WP.mono (h.2.2.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
       (Q := fun t => t.gpr .esi = BitVec.ofNat 32 n)
-      (WP.mono (decCounter_ok (by omega) h.2.1.esi) fun t ⟨c, g, m, r, w, _⟩ =>
+      (WP.mono (decCounter_ok (by omega_using [hn]) h.2.1.esi) fun t ⟨c, g, m, r, w, _⟩ =>
         ⟨FInv.of_counter h.2.2.fin g m r w, g _ (by decide), w, c⟩)) fun t ⟨fe, c⟩ => ⟨fe, c⟩
   · refine RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) ?_ (by taint_decide)
     rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨f₁, c₁⟩, ⟨f₂, c₂⟩⟩
@@ -147,8 +147,8 @@ theorem baseLoop_rel : ∀ n, RelCT isa (Runs BP₀ (LadB n)) (.loop baseStep .n
     · have hn0 : n ≠ 0 := fun h0 => by simp [h0] at hz
       obtain ⟨hn, a₁, L₁⟩ := l₁
       obtain ⟨-, a₂, L₂⟩ := l₂
-      have e : n - 1 + 1 = n := by omega
-      exact ⟨n - 1, by omega, σ₁, σ₂, hP, ⟨by omega, a₁, e ▸ L₁⟩, ⟨by omega, a₂, e ▸ L₂⟩⟩
+      have e : n - 1 + 1 = n := by omega_using [hn0]
+      exact ⟨n - 1, by omega_using [hn0], σ₁, σ₂, hP, ⟨by omega_using [hn], a₁, e ▸ L₁⟩, ⟨by omega_using [hn], a₂, e ▸ L₂⟩⟩
 
 /-! ## The whole function -/
 
@@ -194,8 +194,8 @@ theorem baseEncode_tr : RelCT isa (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s
       rw [p.wr] at hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega) p.ret_out p.args_out
-      · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega) p.ret_sc p.args_sc
+      · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [this]) p.ret_out p.args_out
+      · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [this]) p.ret_sc p.args_sc
     have ad : ∀ {σ : State}, BasePre σ → ∀ r ∈ σ.wr ++ [below (σ.gpr .esp) 20],
         (⟨argAddr σ 0, 16 - 4⟩ : Region).Disjoint r := by
       intro σ p r hr
@@ -205,7 +205,7 @@ theorem baseEncode_tr : RelCT isa (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s
       · exact p.args_out
       · exact p.args_sc
       · exact p.stk_args.symm
-    exact f₁.agreeA f₂ hP.hp.1 hP.hp.2 (by have := p₁.sp_fit; omega) (by have := p₂.sp_fit; omega)
+    exact f₁.agreeA f₂ hP.hp.1 hP.hp.2 (by have := p₁.sp_fit; omega_using [this]) (by have := p₂.sp_fit; omega_using [this])
       (wr p₁) (wr p₂) (ad p₁) (ad p₂) fun k h4 hk => by
         have := a.argMem k h4 hk
         simpa only [scalarTaint, VG.X86.Taint.depth, Nat.zero_add] using this

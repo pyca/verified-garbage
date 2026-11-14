@@ -79,7 +79,7 @@ theorem Lay.wseed4 {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s)
   unfold seed4
   refine Proof.MlKem.bytesAt_congr fun i hi => ?_
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact L.wbytes h v (34 * k + i) (by omega)
+  exact L.wbytes h v (34 * k + i) (by omega_using [hk, hi])
 
 theorem rej4At_ok {P : Prims} (C : CalleeOk P.rej4 (rejNTT4Contract X86_64.abi 24)) {rbs wbs : List (Reg × Nat)}
     {s : State} (L : Lay rbs wbs s) {a w : Ptr} (hc : rej4Chk (rbs ++ wbs) wbs a w = true) :
@@ -138,7 +138,7 @@ theorem ball_args {bs wbs : List (Reg × Nat)} (L : LayOk bs) {ct c : Ptr} {len 
   obtain ⟨⟨⟨⟨⟨_, c4⟩, c5⟩, c6⟩, _⟩, _⟩ := hc
   simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp
   simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-  exact ⟨⟨ptr_ok L c4, by decide⟩, ⟨show len < 2 ^ 31 by omega, by decide⟩, ⟨show tau < 2 ^ 31 by omega, by decide⟩,
+  exact ⟨⟨ptr_ok L c4, by decide⟩, ⟨show len < 2 ^ 31 by omega_using [hp], by decide⟩, ⟨show tau < 2 ^ 31 by omega_using [hp], by decide⟩,
     ⟨ptr_ok L c5, by decide⟩, ⟨ptr_ok L c6, by decide⟩⟩
 
 section
@@ -160,11 +160,11 @@ theorem ball_pre {s1 : State} (h1 : Args (ballArgs ct len tau c) s s1) :
   simp only [ballChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨c1, c2⟩, c3⟩, c4⟩, c5⟩, c6⟩, _⟩, _⟩ := hc
   have hl : len < 2 ^ 31 ∧ tau < 2 ^ 31 := by
-    simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp; omega
+    simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp; omega_using [hp]
   sig_pre [sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.rsp]
   simp only [Arg.val]
-  rw [imm64 (show len < 2 ^ 64 by omega), imm32 (show tau < 2 ^ 32 by omega)]
+  rw [imm64 (show len < 2 ^ 64 by omega_using [hl]), imm32 (show tau < 2 ^ 32 by omega_using [hl])]
   exact ⟨L.sp16, by first | rfl | trivial, by first | rfl | trivial, L.disj c1, L.disj c2, L.disj c3, L.ret8 c4, L.ret8 c5, L.ret8 c6,
     L.stk16 c4, L.stk16 c5, L.stk16 c6, L.nwp c4, L.nwp c5, L.nwp c6, hp⟩
 
@@ -185,11 +185,11 @@ theorem ballAt_ok {P : Prims} (C : CalleeOk P.ball (sampleInBallContract X86_64.
   simp only [ballChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨⟨_, c4⟩, _⟩, _⟩, _⟩, _⟩ := hc'
   have hl : len < 2 ^ 31 ∧ tau < 2 ^ 31 := by
-    simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp; omega
+    simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp; omega_using [hp]
   sig_post [sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.r2, h1.r3, hm, h1.rsp, h1.1.2, hg _ (by decide)] at hq
   simp only [Arg.val] at hq
-  rw [imm64 (show len < 2 ^ 64 by omega), imm32 (show tau < 2 ^ 32 by omega), L.wbytesAt c4] at hq
+  rw [imm64 (show len < 2 ^ 64 by omega_using [hl]), imm32 (show tau < 2 ^ 32 by omega_using [hl]), L.wbytesAt c4] at hq
   exact hq
 
 theorem ballAt_tr {P : Prims} (C : CalleeOk P.ball (sampleInBallContract X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
@@ -207,11 +207,11 @@ theorem ballAt_tr {P : Prims} (C : CalleeOk P.ball (sampleInBallContract X86_64.
   simp only [ballChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨⟨_, c4⟩, c5⟩, c6⟩, _⟩, _⟩ := hc'
   have hl : len < 2 ^ 31 := by
-    simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp; omega
+    simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp; omega_using [hp]
   sig_pub [sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h2.r0, h2.r1, h2.r2, h2.r3, h2.r4, h1.1.2, h2.1.2, h1.rsp, h2.rsp]
   simp only [Arg.val]
-  rw [imm64 (show len < 2 ^ 64 by omega), Lx.wbytesAt c4, Ly.wbytesAt c4, eb]
+  rw [imm64 (show len < 2 ^ 64 by omega_using [hl]), Lx.wbytesAt c4, Ly.wbytesAt c4, eb]
   exact ⟨by rw [e.2], rfl, e.pa (ptr_bs hS c4), trivial, trivial, e.pa (ptr_bs hS c5), e.pa (ptr_bs hS c6)⟩
 
 end VG.Proof.MlDsa.X86_64.Verify

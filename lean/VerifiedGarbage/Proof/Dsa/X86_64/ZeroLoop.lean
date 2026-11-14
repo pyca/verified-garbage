@@ -34,8 +34,8 @@ theorem zeroByte_ok {s : State} {p : Addr} {n : Nat}
       t.zf = some (decide (n = 1)) ∧ t.mem = s.mem ∧ Keep [.rax, .r8, .rsi, .rcx] s t := by
   have hsub := ofNat64_pred h1 h64
   have hz : (BitVec.ofNat 64 (n - 1) == 0) = decide (n = 1) := by
-    rw [ofNat_beq_zero (by omega), Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
-    omega
+    rw [ofNat_beq_zero (by omega_using [h64]), Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
+    omega_using [h1]
   refine WP.mono (WP.keep [.rax, .r8, .rsi, .rcx] (Q := fun t =>
     t.gpr .rsi = p + 1 ∧ t.gpr .rcx = BitVec.ofNat 64 (n - 1) ∧
     t.gpr .r8 = s.gpr .r8 ||| (s.mem p).zeroExtend 64 ∧ t.zf = some (decide (n = 1)) ∧ t.mem = s.mem)
@@ -67,7 +67,7 @@ theorem zeroLoop_ok {s : State} {B p : Addr} {Z : Nat} {bs : List Byte}
         have he := hus.val 0 (by simp)
         change u.mem (ptr + 0) = b at he
         exact (congrArg u.mem (BitVec.add_zero ptr)).symm.trans he
-      refine WP.mono (zeroByte_ok hup hun hr (by simp) (by omega))
+      refine WP.mono (zeroByte_ok hup hun hr (by simp) (by omega_using [hbnd, hlen]))
         fun t ⟨htp, htn, ht8, htz, htm, hkt⟩ => ?_
       rw [hbyte] at ht8
       have htarget' : (t.gpr .r8 = 0 ∧ ∀ b ∈ rest, b = 0) ↔ target := by
@@ -82,8 +82,8 @@ theorem zeroLoop_ok {s : State} {B p : Addr} {Z : Nat} {bs : List Byte}
           simp only [VG.X86_64.eval, htz, List.length_cons, he, decide_true, Option.map_some, Bool.not_true]
         · simpa only [List.length_eq_zero_iff.mp he, List.not_mem_nil, forall_const, false_implies, implies_true, and_true] using htarget'
       · right
-        refine ⟨?_, rest.length, by simp only [List.length_cons] at hlen; omega,
-          ptr + 1, rest, rfl, by omega, by simp only [List.length_cons] at hlen; omega,
+        refine ⟨?_, rest.length, by simp only [List.length_cons] at hlen; omega_using [hlen],
+          ptr + 1, rest, rfl, by omega_using [he], by simp only [List.length_cons] at hlen; omega_using [hbnd, hlen],
           htp, ?_, source_tail (hus.congrK (by rw [htm]; exact InScr.refl _ _ _) hkt), htarget', htm.trans hum, hk⟩
         · change VG.X86_64.eval .ne t = some true
           simp only [VG.X86_64.eval, htz, List.length_cons, Nat.add_eq_right, he, decide_false, Option.map_some, Bool.not_false]

@@ -20,7 +20,7 @@ theorem arguments {s t : State} (H : (Spec.RsaPkcs1Sig.recoverPrecomputedContrac
   constructor
   · with_reducible assumption
   · intro i hi
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 by omega) with
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 by omega_using [hi]) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem publicGeometry {s t : State} (H : (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi recoverStack).pub s t) :
@@ -28,7 +28,7 @@ theorem publicGeometry {s t : State} (H : (Spec.RsaPkcs1Sig.recoverPrecomputedCo
   obtain ⟨sp, args⟩ := arguments H
   have sources : (recoverGeometry s).sources = (recoverGeometry t).sources := by
     funext i
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using []) with rfl | rfl | rfl | rfl
     exacts [args 2 (by decide), args 4 (by decide), args 7 (by decide), args 11 (by decide)]
   simp only [recoverGeometry, sp, args 0 (by decide), args 1 (by decide), args 9 (by decide),
     args 3 (by decide), args 6 (by decide), args 5 (by decide), args 8 (by decide), args 12 (by decide), args 10 (by decide)]
@@ -64,7 +64,7 @@ theorem publicBytes {s t : State} (H : (Spec.RsaPkcs1Sig.recoverPrecomputedContr
     rw [geometry]
     exact VG.Proof.RsaPkcs1Sig.X86.Ver.bytesAt_of_words words
   funext i
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using []) with rfl | rfl | rfl | rfl
   exacts [first, second, third, fourth]
 
 end VG.Proof.RsaPkcs1Sig.X86.Rcv

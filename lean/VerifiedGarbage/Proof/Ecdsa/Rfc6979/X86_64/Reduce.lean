@@ -304,7 +304,7 @@ theorem hb_facts (hA : P.R.big = false) :
   have := L.he
   have := P.R.len_words
   simp only [hB, fH, fX, RfcHash.w, RfcHash.Q] at *
-  omega
+  omega_arith
 
 /-- Word `j` of the result, by the mask `rdx`, to `h`. -/
 theorem selWord_ok (hA : P.R.big = false) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)

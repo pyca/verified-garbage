@@ -47,13 +47,13 @@ theorem covS {σ s : State} (hs : L.St σ s) {o n : Nat} (ho : o < oRsa) (h : o 
 /-- The working space at `scratch` itself may be written. -/
 theorem covW {σ s : State} (hs : L.St σ s) {n : Nat} (h : n ≤ oRsa) : Covers [⟨scr.setWidth 64, n⟩] s.wr := by
   rw [← sR0]
-  exact Covers.one (hg.wr hs (o := 0) (by omega))
+  exact Covers.one (hg.wr hs (o := 0) (by omega_using [h]))
 
 theorem fitS {o n : Nat} (h : o + n ≤ oRsa) : (scr + BitVec.ofNat 32 o).toNat + n ≤ 2 ^ 32 := by
-  rw [hg.scr_lt (by omega)]; have := hg.fit; unfold oRsa at *; omega
+  rw [hg.scr_lt (by omega_using [h])]; have := hg.fit; unfold oRsa at *; omega_using [h, this]
 
 theorem fitW {n : Nat} (h : n ≤ oRsa) : scr.toNat + n ≤ 2 ^ 32 := by
-  have := hg.fit; unfold oRsa at *; omega
+  have := hg.fit; unfold oRsa at *; omega_using [h, this]
 
 /-- The stack below the frame misses a range of our part of `scratch`. -/
 theorem stkS {σ s : State} (hc : Ctx L scr σ s) {o n : Nat} (ho : o < oRsa) (h : o + n ≤ oRsa) :
@@ -64,10 +64,10 @@ theorem stkS {σ s : State} (hc : Ctx L scr σ s) {o n : Nat} (ho : o < oRsa) (h
 theorem stkW {σ s : State} (hc : Ctx L scr σ s) {n : Nat} (h : n ≤ oRsa) :
     (stk s).Disjoint ⟨scr.setWidth 64, n⟩ := by
   rw [← sR0]
-  exact (hg.low hc.st.ok (o := 0) (by omega)).symm.sub_left (stk_low hg hc)
+  exact (hg.low hc.st.ok (o := 0) (by omega_using [h])).symm.sub_left (stk_low hg hc)
 
 theorem sp48 {σ s : State} (hc : Ctx L scr σ s) : 48 ≤ (s.gpr .esp).toNat := by
-  rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega
+  rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega_arith
 
 /-- A write to ranges of our part of `scratch` and of the stack below the
 frame keeps `Ctx`. -/
@@ -155,7 +155,7 @@ theorem upd_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {d : BitVec 32} {len 
       (hUpd G)
       (fun σ s => Ctx L scr σ s ∧ Inv σ s.mem ∧ hG.SH.Repr s.mem (sa scr oSt) (msg σ ++ dat σ)) := by
   have hS := hG.hSB
-  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega
+  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega_arith
   have aS : (scr + BitVec.ofNat 32 oSt).setWidth 64 = sa scr oSt := hg.scrA (by oomega)
   have eW : (⟨scr.setWidth 64, hG.Wb⟩ : Region) = sR scr oCW hG.Wb := (sR0 scr _).symm
   have ua : ∀ σ s, Ctx L scr σ s → UArgs scr d len c s →
@@ -209,8 +209,8 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
         (Spec.Sha256.bytesAt s.mem (sa scr o) G.F).take G.D = hG.SH.H.hash (msg σ)) := by
   have hS := hG.hSB
   have hF := hG.hF
-  have hF0 : 0 < G.F := by have := hG.hD0; have := hG.hDF; omega
-  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega
+  have hF0 : 0 < G.F := by have := hG.hD0; have := hG.hDF; omega_arith
+  have hWb : hG.Wb ≤ 512 := by have := hG.hWb; have := hG.hW; omega_arith
   have aS : (scr + BitVec.ofNat 32 oSt).setWidth 64 = sa scr oSt := hg.scrA (by oomega)
   have aO : (scr + BitVec.ofNat 32 o).setWidth 64 = sa scr o := hg.scrA (by oomega)
   have eW : (⟨scr.setWidth 64, hG.Wb⟩ : Region) = sR scr oCW hG.Wb := (sR0 scr _).symm
@@ -222,7 +222,7 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
         (Covers.cons (covS hg hc.st (by oomega) hoR) (covW hg hc.st (by oomega))),
       ?_, ?_, ?_, stkS hg hc (by oomega) (by oomega), stkS hg hc (by oomega) hoR, stkW hg hc (by oomega),
       fitS hg (by oomega), fitS hg hoR, fitW hg (by oomega)⟩
-    · rw [aS, aO]; exact Geo.sep (by omega) (by oomega) hoR
+    · rw [aS, aO]; exact Geo.sep (by omega_using [ho1]) (by oomega) hoR
     · rw [aS, eW]; exact Geo.sep (by oomega) (by oomega) (by oomega)
     · rw [aO, eW]; exact Geo.sep (.inr ho2) hoR (by oomega)
   refine VP.of_ct (fun _ _ => fin_rel hG (sp := L.B) fun a b hab => ⟨fa _ _ hab.1.1 hab.1.2.2.2.2,
@@ -245,7 +245,7 @@ theorem fin_vp (hg : Geo L scr) (G : Hash) (hG : HashOK G) {o c : Nat} (ho1 : o 
     · exact .inl ⟨o, G.F, hoR, rfl⟩
     · exact .inl ⟨oCW, hG.Wb, by oomega, rfl⟩
     · exact .inr rfl
-  have := hr (msg σ) (by rw [aS]; exact rp) (by rw [hl]; omega) (by rw [hl, zero_append_ofNat hc32])
+  have := hr (msg σ) (by rw [aS]; exact rp) (by rw [hl]; omega_using [hc32]) (by rw [hl, zero_append_ofNat hc32])
   rw [aO] at this
   exact this
 

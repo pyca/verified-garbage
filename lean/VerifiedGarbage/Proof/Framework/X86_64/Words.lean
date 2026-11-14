@@ -28,28 +28,28 @@ private theorem getLsbD_append_lo {n : Nat} (x : BitVec n) (y : BitVec 16) {i : 
 
 private theorem getLsbD_append_hi {n : Nat} (x : BitVec n) (y : BitVec 16) (i : Nat) :
     (x ++ y).getLsbD (i + 16) = x.getLsbD i := by
-  simp only [BitVec.getLsbD_append, show ¬i + 16 < 16 by omega, ↓reduceIte, Nat.add_sub_cancel]
+  simp only [BitVec.getLsbD_append, show ¬i + 16 < 16 by omega_using [], ↓reduceIte, Nat.add_sub_cancel]
 
 theorem getLsbD_ofWords (f : Nat → BitVec 16) {k r : Nat} (hk : k < 8) (hr : r < 16) :
     (ofWords f).getLsbD (16 * k + r) = (f k).getLsbD r := by
   unfold ofWords
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rw [Nat.mul_zero, Nat.zero_add, getLsbD_append_lo _ _ hr]
-  · rw [show 16 * 1 + r = r + 16 by omega, getLsbD_append_hi, getLsbD_append_lo _ _ hr]
-  · rw [show 16 * 2 + r = r + 16 + 16 by omega, getLsbD_append_hi, getLsbD_append_hi,
+  · rw [show 16 * 1 + r = r + 16 by omega_using [], getLsbD_append_hi, getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 2 + r = r + 16 + 16 by omega_using [], getLsbD_append_hi, getLsbD_append_hi,
       getLsbD_append_lo _ _ hr]
-  · rw [show 16 * 3 + r = r + 16 + 16 + 16 by omega, getLsbD_append_hi, getLsbD_append_hi,
+  · rw [show 16 * 3 + r = r + 16 + 16 + 16 by omega_using [], getLsbD_append_hi, getLsbD_append_hi,
       getLsbD_append_hi, getLsbD_append_lo _ _ hr]
-  · rw [show 16 * 4 + r = r + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi, getLsbD_append_hi,
+  · rw [show 16 * 4 + r = r + 16 + 16 + 16 + 16 by omega_using [], getLsbD_append_hi, getLsbD_append_hi,
       getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_lo _ _ hr]
-  · rw [show 16 * 5 + r = r + 16 + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi,
+  · rw [show 16 * 5 + r = r + 16 + 16 + 16 + 16 + 16 by omega_using [], getLsbD_append_hi,
       getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi,
       getLsbD_append_lo _ _ hr]
-  · rw [show 16 * 6 + r = r + 16 + 16 + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi,
+  · rw [show 16 * 6 + r = r + 16 + 16 + 16 + 16 + 16 + 16 by omega_using [], getLsbD_append_hi,
       getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi,
       getLsbD_append_hi, getLsbD_append_lo _ _ hr]
-  · rw [show 16 * 7 + r = r + 16 + 16 + 16 + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi,
+  · rw [show 16 * 7 + r = r + 16 + 16 + 16 + 16 + 16 + 16 + 16 by omega_using [], getLsbD_append_hi,
       getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi,
       getLsbD_append_hi, getLsbD_append_hi]
 
@@ -60,9 +60,9 @@ theorem getLsbD_ofWords (f : Nat → BitVec 16) {k r : Nat} (hk : k < 8) (hr : r
 /-- Two values are equal if their words are. -/
 theorem ext_word {x y : BitVec 128} (h : ∀ i < 8, word x i = word y i) : x = y := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  have := congrArg (fun w : BitVec 16 => w.getLsbD (j % 16)) (h (j / 16) (by omega))
-  simp only [getLsbD_word, show j % 16 < 16 by omega, decide_true, Bool.true_and,
-    show 16 * (j / 16) + j % 16 = j by omega] at this
+  have := congrArg (fun w : BitVec 16 => w.getLsbD (j % 16)) (h (j / 16) (by omega_using [hj]))
+  simp only [getLsbD_word, show j % 16 < 16 by omega_using [], decide_true, Bool.true_and,
+    show 16 * (j / 16) + j % 16 = j by omega_using []] at this
   exact this
 
 /-- The words of a doubleword. -/
@@ -70,14 +70,14 @@ theorem word_dword (x : BitVec 128) {k : Nat} (_hk : k < 4) (e : Nat) (he : e < 
     word x (2 * k + e) = (dword x k).extractLsb' (16 * e) 16 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [getLsbD_word, dword, BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and,
-    decide_eq_true (show 16 * e + j < 32 by omega)]
-  congr 1; omega
+    decide_eq_true (show 16 * e + j < 32 by omega_using [he, hj])]
+  congr 1; omega_using []
 
 /-- A word is the word of its doubleword. -/
 theorem word_eq_dword (x : BitVec 128) {i : Nat} (hi : i < 8) :
     word x i = (dword x (i / 2)).extractLsb' (16 * (i % 2)) 16 := by
-  have := word_dword x (k := i / 2) (by omega) (i % 2) (by omega)
-  rwa [show 2 * (i / 2) + i % 2 = i by omega] at this
+  have := word_dword x (k := i / 2) (by omega_using [hi]) (i % 2) (by omega_using [])
+  rwa [show 2 * (i / 2) + i % 2 = i by omega_using []] at this
 
 /-! ## Loads and stores -/
 
@@ -86,26 +86,26 @@ theorem word_readW (m : Mem) (a : Addr) {j : Nat} (hj : j < 8) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [word, BitVec.getLsbD_extractLsb', Mem.readW, BitVec.getLsbD_setWidth]
   simp only [hi, decide_true, Bool.true_and]
-  rw [getLsbD_read _ _ (by omega), getLsbD_read _ _ (by omega)]
+  rw [getLsbD_read _ _ (by omega_using [hj, hi]), getLsbD_read _ _ (by omega_using [hi])]
   rw [show a + BitVec.ofNat 64 ((16 * j + i) / 8) = a + BitVec.ofNat 64 (2 * j) + BitVec.ofNat 64 (i / 8) by
-    rw [show (16 * j + i) / 8 = 2 * j + i / 8 by omega, BitVec.ofNat_add, BitVec.add_assoc]]
-  simp only [decide_eq_true (show 16 * j + i < 128 by omega), Bool.true_and]
-  exact congrArg _ (by omega)
+    rw [show (16 * j + i) / 8 = 2 * j + i / 8 by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]]
+  simp only [decide_eq_true (show 16 * j + i < 128 by omega_using [hj, hi]), Bool.true_and]
+  exact congrArg _ (by omega_using [])
 
 theorem readW_writeW128_16 (m : Mem) (a : Addr) (v : BitVec 128) {j : Nat} (hj : j < 8) :
     (m.writeW a v).readW (a + BitVec.ofNat 64 (2 * j)) 16 = word v j := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [word, BitVec.getLsbD_extractLsb', Mem.readW, BitVec.getLsbD_setWidth, hi, decide_true,
     Bool.true_and]
-  rw [getLsbD_read _ _ (by omega)]
+  rw [getLsbD_read _ _ (by omega_using [hi])]
   simp only [Mem.writeW, Mem.write]
   rw [show a + BitVec.ofNat 64 (2 * j) + BitVec.ofNat 64 (i / 8) - a = BitVec.ofNat 64 (2 * j + i / 8) by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Offset.add_sub_cancel_left]]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  simp only [show 2 * j + i / 8 < 128 / 8 by omega, ite_true, BitVec.getLsbD_extractLsb',
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj, hi])]
+  simp only [show 2 * j + i / 8 < 128 / 8 by omega_using [hj, hi], ite_true, BitVec.getLsbD_extractLsb',
     BitVec.getLsbD_setWidth]
-  rw [decide_eq_true (by omega), decide_eq_true (by omega), Bool.true_and, Bool.true_and]
-  exact congrArg _ (by omega)
+  rw [decide_eq_true (by omega_using []), decide_eq_true (by omega_using [hj, hi]), Bool.true_and, Bool.true_and]
+  exact congrArg _ (by omega_using [])
 
 /-! ## The word instructions -/
 
@@ -150,7 +150,7 @@ theorem word_movdqa : word (XBinOp.eval .movdqa a b) i = word b i := rfl
 theorem word_punpcklqdq (hi : i < 8) :
     word (XBinOp.eval .punpcklqdq a b) i = if i < 4 then word a i else word b (i - 4) := by
   rw [punpcklqdq_eq, word_eq_dword _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceLT, Nat.reduceSub, ite_true, ite_false,
     dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3, word_eq_dword]
@@ -158,7 +158,7 @@ theorem word_punpcklqdq (hi : i < 8) :
 theorem word_punpckhqdq (hi : i < 8) :
     word (XBinOp.eval .punpckhqdq a b) i = if i < 4 then word a (4 + i) else word b i := by
   rw [punpckhqdq_eq, word_eq_dword _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, ite_true, ite_false,
     dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3, word_eq_dword]

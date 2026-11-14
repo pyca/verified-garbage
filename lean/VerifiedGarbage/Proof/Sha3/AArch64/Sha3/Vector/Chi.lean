@@ -57,7 +57,7 @@ theorem chiWord_out (A : Spec.Sha3.State) (rc : BitVec 64) (i : Nat) (hi : i < 2
     (if i = 0 then chiWord A i ^^^ rc else chiWord A i) =
       (VG.Proof.Sha3.outState A rc)[i] := by
   simp only [VG.Proof.Sha3.outState, Vector.getElem_ofFn, VG.Proof.Sha3.out, chiWord]
-  have hz : i % 5 = 0 ∧ i / 5 = 0 ↔ i = 0 := by omega
+  have hz : i % 5 = 0 ∧ i / 5 = 0 ↔ i = 0 := by omega_using []
   simp only [hz]
   have hn (v : BitVec 64) : v ^^^ 0xffffffffffffffff = ~~~v := BitVec.xor_allOnes
   simp only [hn, BitVec.and_comm, BitVec.xor_comm]

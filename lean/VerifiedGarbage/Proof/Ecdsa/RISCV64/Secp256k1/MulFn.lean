@@ -71,7 +71,7 @@ theorem low_eq {w q : Nat} (hw : w < 2 ^ 64) (h0 : (w + q * wd P 0) % 2 ^ 64 = 0
   have := Nat.div_add_mod (q * c) (2 ^ 64)
   generalize q * (2 ^ 64 - c) = Y at *
   generalize q * c = X at *
-  omega
+  omega_using [hw, h0, hs]
 
 /-- The numbers of a round. -/
 theorem round_arith {q w0 w1 w2 w3 w4 cy U h b1 b2 b3 w1' w2' w3' w4' cy' : Nat}
@@ -80,7 +80,7 @@ theorem round_arith {q w0 w1 w2 w3 w4 cy U h b1 b2 b3 w1' w2' w3' w4' cy' : Nat}
     (hb : b3 ≤ q) (F4 : w4' + 2 ^ 64 * cy' = w4 + (q - b3) + cy) :
     2 ^ 64 * (w1' + 2 ^ 64 * w2' + 2 ^ 128 * w3' + 2 ^ 192 * w4' + 2 ^ 256 * (cy' + U)) =
       w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 + 2 ^ 256 * (cy + (w4 + 2 ^ 64 * U)) + q * P := by
-  omega
+  omega_using [hqc, hqp, B1, B2, B3, hb, F4]
 
 /-! ## Steps -/
 
@@ -127,14 +127,14 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
   obtain ⟨n42, n44, n45, n46, n47, n4t, n43, c4⟩ := dk 4 (by decide)
   simp only [Nat.add_zero] at n02 n04 n05 n06 n07 n0t n03 c0
   have hc := h.red.ctx
-  have hd : ACC + 8 * (i + 4) + 8 ≤ 2048 := by simp only [ACC]; omega
+  have hd : ACC + 8 * (i + 4) + 8 ≤ 2048 := by simp only [ACC]; omega_using [hi]
   unfold Impl.Weierstrass.RISCV64.Secp256k1Field.round
   show WP isa (.block (.load .d (rw (i + 4)) .a3 (ACC + 8 * (i + 4)) :: .mul (rw i) (rw i) .t0 ::
     .mulhu .a4 (rw i) .a6 :: ([.sltu .a5 (rw (i + 1)) .a4, .sub (rw (i + 1)) (rw (i + 1)) .a4] ++
     ([.sltu .a7 (rw (i + 2)) .a5, .sub (rw (i + 2)) (rw (i + 2)) .a5] ++
     ([.sltu .a5 (rw (i + 3)) .a7, .sub (rw (i + 3)) (rw (i + 3)) .a7] ++
     (.sub .a4 (rw i) .a5 :: Impl.Weierstrass.RISCV64.Gen4.top (rw (i + 4)))))))) s _
-  refine ld_ok hc hd (by simp only [ACC]; omega) fun s1 u1 => ?_
+  refine ld_ok hc hd (by simp only [ACC]; omega_using []) fun s1 u1 => ?_
   refine wp_mul fun s2 u2 => wp_mulhu fun s3 u3 => ?_
   refine WP.block_append (WP.mono (bor_ok (x := rw (i + 1)) (y := .a4) (b := .a5) n14 n15 (by decide))
     fun s4 ⟨B1, b1, _, k4⟩ => ?_)
@@ -159,7 +159,7 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
   have hq := (s2.gpr (rw i)).isLt
   have hh : (s3.gpr .a4).toNat = (s2.gpr (rw i)).toNat * c / 2 ^ 64 := by
     rw [u3.gpr, a6_2, cv_toNat]
-    exact ofNat_lt (Nat.div_lt_of_lt_mul (by simp only [c]; omega))
+    exact ofNat_lt (Nat.div_lt_of_lt_mul (by simp only [c]; omega_using []))
   have w1 : s3.gpr (rw (i + 1)) = s.gpr (rw (i + 1)) := by
     rw [kp k3 (by simp [n14]), kp k2 (by simp [Ne.symm d01]), kp k1 (by simp [d14])]
   have w2 : s4.gpr (rw (i + 2)) = s.gpr (rw (i + 2)) := by
@@ -229,8 +229,8 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
   generalize (s2.gpr (rw i)).toNat = q at hq hqc hqp F4 B1 q2
   have hb : (s6.gpr .a5).toNat ≤ q := by
     simp only [c] at hqc
-    omega
-  rw [show (2 ^ 64 - (s6.gpr .a5).toNat + q) % 2 ^ 64 = q - (s6.gpr .a5).toNat by omega] at F4
+    omega_using [b1, B2, b2, B3, b3, e8, hT4, hh, cy8, hw0, hw1, hw3, hy1, hy3, h0, hq, hqc, hqp, F4, B1, q2]
+  rw [show (2 ^ 64 - (s6.gpr .a5).toNat + q) % 2 ^ 64 = q - (s6.gpr .a5).toNat by omega_using [hq, hb]] at F4
   obtain ⟨i1, i2, i3, i4, i5, i6⟩ := idx i
   have hup : upW s0.mem b (i + 4) (4 - i) = T s0.mem b (i + 4) + 2 ^ 64 * upW s0.mem b (i + 5) (3 - i) := by
     rw [i6 hi]; rfl
@@ -249,7 +249,7 @@ theorem rounds_ok {b : Addr} {s0 : State} : ∀ n ≤ 4, ∀ s, KInv b s0 0 s �
   | 0, _, s, h => WP.block_nil h
   | n + 1, hn, s, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.block_append (WP.mono (rounds_ok n (by omega) s h) fun s1 h1 => round_ok (by omega) h1)
+    exact WP.block_append (WP.mono (rounds_ok n (by omega_using [hn]) s h) fun s1 h1 => round_ok (by omega_using [hn]) h1)
 
 /-- The invariant, across steps that keep the words and the carry. -/
 theorem red_keeps {b : Addr} {s0 s s' : State} {i : Nat} {rs : List Reg} (h : RedInv P b s0 i s)
@@ -334,7 +334,7 @@ theorem sum_ok {s : State} :
   have o2 : s5.gpr .a5 = s4.gpr .a5 := kp k5 (by decide)
   refine ⟨?_, b5, ((((k1.trans k2).trans k3).trans k4).trans k5).mono⟩
   simp only [v4, o0, o1, o2, show 2 ^ 256 - P = c by decide]
-  omega
+  omega_using [f2, f3, f4, f5]
 
 /-! ## The operations -/
 

@@ -73,13 +73,13 @@ theorem halveQ_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w 
   refine wp_seqs_append (a := _ :: halfPass) (by simp) (by simp) ?_
   simp only [seqs]
   refine WP.seq (WP.mono (halveHead_ok hws) fun s₁ ⟨⟨h16, h17, h15, h12, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (halfPass_ok (mb := true) (hs.congr k₁.wr) h16 h17 h15 h12 hw1 (by omega) (by omega) (by omega)
+  refine WP.mono (halfPass_ok (mb := true) (hs.congr k₁.wr) h16 h17 h15 h12 hw1 (by omega_using [hw2]) (by omega_using [sN]) (by omega_using [sN])
     (.inl rfl)) fun s₂ ⟨hv₂, o₂, k₂⟩ => ?_
   simp only [ite_true] at hv₂
   rw [hm₁, hc] at hv₂
   rw [hm₁] at o₂
   have f₂a : Frm p.B [(slot w aN, 8 * (w + 2))] s.mem s₂.mem :=
-    Frm.of_outside (o₂.mono (o' := slot w aN) (n' := 8 * (w + 2)) (by omega) (by omega)) (by simp)
+    Frm.of_outside (o₂.mono (o' := slot w aN) (n' := 8 * (w + 2)) (by omega_using []) (by omega_using [])) (by simp)
   have f₂ : Frm p.B [(slot w aN, 8 * (w + 2)), (8 * fBad, 8)] s.mem s₂.mem := f₂a.mono (by simp)
   have k12 := k₁.trans k₂
   have hmut : ∀ r ∈ [(slot w aN, 8 * (w + 2)), (8 * fBad, 8)], KMut r := by
@@ -92,14 +92,14 @@ theorem halveQ_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w 
     exacts [PMut.ofSlot _ _ _, PMut.hdr (by decide)]
   have zz : ∀ r ∈ [(slot w aN, 8 * (w + 2)), (8 * fBad, 8)], r.1 + r.2 ≤ p.Z := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [fBad] <;> omega
+    rintro r (rfl | rfl) <;> simp only [fBad] <;> omega_arith
   have hws₂ : Ws s₂ p.B p.Z w := hws.congr' f₂ hmut k12 (by decide)
   have hb₂ : word s₂.mem p.B (8 * fBad) = v := by
     rw [f₂a.word_eq (d := 8 * fBad) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Or.inl (hdr_lt_slot w aN (by decide))) (by simp only [fBad]; omega)]
+      rw [List.mem_singleton.mp hr]; exact Or.inl (hdr_lt_slot w aN (by decide))) (by simp only [fBad]; omega_using [])]
     exact hv
   have hlow : (word s₂.mem p.B (slot w aN)).toNat % 2 = c / 2 % 2 := by
-    rw [← hv₂, ← wv_mod64 s₂.mem p.B (slot w aN) (n := w) (by omega), Nat.mod_mod_of_dvd _ (by decide)]
+    rw [← hv₂, ← wv_mod64 s₂.mem p.B (slot w aN) (n := w) (by omega_using [hw1]), Nat.mod_mod_of_dvd _ (by decide)]
   -- The flag.
   have hblk : WP isa (.block (ws ++ base aN .x16 ++ [ldh .x5 fBad, ld .x3 .x16, movi .x4 1,
       .logic .and .x .x3 .x3 .x4, .logic .eor .x .x3 .x3 .x4, .logic .orr .x .x5 .x5 .x3, sth .x5 fBad])) s₂
@@ -114,19 +114,19 @@ theorem halveQ_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w 
     refine WP.mono (WP.keep [.x5, .x3, .x4] (Q := fun t =>
         t.mem = s₂.mem.writeW (off p.B (8 * fBad)) (v ||| evenFlag (c / 2))) (by
       brun [h16₄, h0₄, m₄, m₃, hb₂, imm16 (show 1 < 65536 by decide), hdr_enc (show fBad < 32 by decide),
-        hs₄.ld (d := 8 * fBad) (by simp only [fBad]; omega), hs₄.st (d := 8 * fBad) (by simp only [fBad]; omega),
-        hs₄.ld (d := slot w aN) (by omega), hfl])
+        hs₄.ld (d := 8 * fBad) (by simp only [fBad]; omega_using [h256]), hs₄.st (d := 8 * fBad) (by simp only [fBad]; omega_using [h256]),
+        hs₄.ld (d := slot w aN) (by omega_using [sN]), hfl])
       (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₅⟩ => ⟨hm, ((k₃.trans k₄).trans k₅).mono (by decide)⟩
   refine WP.mono hblk fun t ⟨hm, k₃⟩ => ?_
   have f₃' : Frm p.B [(8 * fBad, 8)] s₂.mem t.mem := by
-    rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fBad]; omega)) (by simp)
+    rw [hm]; exact Frm.of_outside (writeW_outside _ _ _ (by simp only [fBad]; omega_using [])) (by simp)
   have f₃ : Frm p.B [(slot w aN, 8 * (w + 2)), (8 * fBad, 8)] s₂.mem t.mem := f₃'.mono (by simp)
   have hf := f₂.trans f₃
   have k13 := k12.trans k₃
   refine ⟨h.step (hws.congr' hf hmut k13 (by decide)) hf pmut zz k13, ?_, by rw [hm, word_writeW_self], hf,
     k13.mono (by decide)⟩
   rw [f₃'.wv_eq (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Or.inr (hdr_lt_slot w aN (by decide))) (by omega)]
+    rw [List.mem_singleton.mp hr]; exact Or.inr (hdr_lt_slot w aN (by decide))) (by omega_using [hn, sN])]
   exact hv₂
 
 end VG.Proof.Ffdh.AArch64.ParameterCandidate

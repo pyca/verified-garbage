@@ -20,9 +20,9 @@ theorem mac_bound (a b acc carry : BitVec 32) :
   have hb := b.isLt
   have ht := acc.isLt
   have hc := carry.isLt
-  have := Nat.mul_le_mul (show a.toNat ≤ 2 ^ 32 - 1 by omega)
-    (show b.toNat ≤ 2 ^ 32 - 1 by omega)
-  omega
+  have := Nat.mul_le_mul (show a.toNat ≤ 2 ^ 32 - 1 by omega_using [])
+    (show b.toNat ≤ 2 ^ 32 - 1 by omega_using [])
+  omega_using [this]
 
 /-- The high word receives precisely the low word's addition carry. -/
 theorem add_word_value (lo hi x : BitVec 32)
@@ -35,9 +35,9 @@ theorem add_word_value (lo hi x : BitVec 32)
   have hx := x.isLt
   by_cases hc : 2 ^ 32 ≤ lo.toNat + x.toNat
   · simp only [hc, ite_true, BitVec.toNat_add, show (1 : BitVec 32).toNat = 1 from rfl]
-    omega
+    omega_using [h, hc]
   · simp only [hc, ite_false, BitVec.toNat_add, show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_using [hc]
 
 /-- Preservation apart from the explicitly listed registers and flags. -/
 structure MacFrame (rs : List Reg) (s t : State) : Prop where
@@ -117,7 +117,7 @@ theorem mac_ok (s : State) :
   have carry1 := frame1.regs .r11 (by simp [clobbers])
   have hb := mac_bound (s.gpr .r1) (s.gpr .r2) (s.gpr .r10) (s.gpr .r11)
   apply WP.block_append_iff.mpr
-  refine WP.mono (addWord_ok s1 .r10 (by rw [prod, acc1]; omega)) ?_
+  refine WP.mono (addWord_ok s1 .r10 (by rw [prod, acc1]; omega_using [hb])) ?_
   rintro s2 ⟨sum, frame2⟩
   have carry2 : s2.gpr .r11 = s.gpr .r11 :=
     (frame2.regs .r11 (by simp)).trans carry1

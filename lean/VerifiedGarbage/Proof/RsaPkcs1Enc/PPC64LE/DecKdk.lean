@@ -119,7 +119,7 @@ theorem c_bytes {t : State} (hc : Post s R EM t) :
     rcases hr with rfl | rfl | rfl
     · exact h.ki.symm
     · exact h.oi.symm
-    · exact h.is) (by have := h.k2; omega)
+    · exact h.is) (by have := h.k2; omega_using [])
 
 theorem kdkMac_ok {t : State} (hd : DHS s R EM t) : WP isa kdkMac t (KD s R EM) := by
   have hk := h.k2
@@ -147,12 +147,12 @@ theorem kdkMac_ok {t : State} (hd : DHS s R EM t) : WP isa kdkMac t (KD s R EM) 
     · exact scD h (by decide) (by decide) (by decide)
     · exact (lowD h (by decide) (by decide)).symm
   have e := hmac _ (Spec.Rsa.bytesAt w.mem (stackArg s 1) (s.gpr .r7).toNat) k0l
-    (by rw [k0l]; simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; omega)
+    (by rw [k0l]; simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]; omega_using [hk])
     (by rw [ym]; exact hI' _ (wm ▸ hI) (by rw [w4, xorPad_length, k0l]))
     (by
       rw [y5]; simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
       apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega) hO'
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []) hO'
   rw [c_bytes h hw, um] at e
   show Spec.Sha256.bytesAt z.mem (scA s sKDK) 32 = _
   rw [e]

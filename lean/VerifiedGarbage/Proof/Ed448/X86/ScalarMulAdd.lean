@@ -80,8 +80,8 @@ theorem reduceProduct_ok {s : State} {base : Addr} (hs : Scr s base)
           hv.gpr, by rw [hv.mem]; exact Bounded_zero zu, by rw [hv.mem]; exact fe_zero zu⟩
   refine WP.seq (WP.mono hinit fun v ⟨kv, cv, lv, vv⟩ => ?_)
   have la : ∀ j < 56, limbs v.mem base Impl.X448.X86.ACC j = limbs s.mem base Impl.X448.X86.ACC j :=
-    fun j hj => congrArg BitVec.toNat (kv.mem.word (Or.inr (by simp only [W]; omega))
-      (Or.inr (by omega)) (by omega))
+    fun j hj => congrArg BitVec.toNat (kv.mem.word (Or.inr (by simp only [W]; omega_using [hA]))
+      (Or.inr (by omega_using [hA, hR])) (by omega_using [hA, hj]))
   refine WP.mono (limbLoop_ok (hs.of_keeps kv.regs (by decide))
     (fun j hj => by rw [la j hj]; exact hacc j hj) cv lv vv) fun t ⟨kt, lt, vt⟩ =>
     ⟨kv.trans kt, lt, by rw [vt, valN_congr la]⟩
@@ -102,34 +102,34 @@ theorem addPass_ok {s : State} {base : Addr} (hs : Scr s base)
   refine WP.mono (zeroCarry_ok s) fun s1 ⟨e1, m1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   refine WP.mono (carryPass_ok (rb := .edi) (o := TF) (d := TF) (s0 := s1)
-    (c := fun k => limbs s.mem base RA k + limbs s.mem base SR k) (by decide) (by omega)
-    (fun k hk => hs1.ea (by omega)) (fun k hk => hs1.write (by omega)) (by rw [e1]; rfl)
-    (fun k hk => by have := ha k hk; have := hr k hk; simp only [radix] at *; omega) ?_)
+    (c := fun k => limbs s.mem base RA k + limbs s.mem base SR k) (by decide) (by omega_using [hT])
+    (fun k hk => hs1.ea (by omega_using [hT, hk])) (fun k hk => hs1.write (by omega_using [hT, hk])) (by rw [e1]; rfl)
+    (fun k hk => by have := ha k hk; have := hr k hk; simp only [radix] at *; omega_arith) ?_)
     fun t ht => ?_
   · intro k hk s' hp
     have hs' := hs1.of_keeps hp.regs (by decide)
     have hm := hp.mem
     rw [m1] at hm
     have e1 : limbs s'.mem base RA k = limbs s.mem base RA k :=
-      hm.limbs (Or.inr (by omega)) (by omega) hk
+      hm.limbs (Or.inr (by omega_using [hT, hR, hk])) (by omega_using [hR]) hk
     have e2 : limbs s'.mem base SR k = limbs s.mem base SR k :=
-      hm.limbs (Or.inr (by omega)) (by omega) hk
+      hm.limbs (Or.inr (by omega_using [hT, hS, hk])) (by omega_using [hS]) hk
     unfold addSrc
-    refine load_ok hs' (by omega) fun v1 w1 => ?_
-    refine wp_alu (Or.inl rfl) (readSc (hs'.of_upd w1 (by decide)) (by omega)) fun v2 w2 _ =>
+    refine load_ok hs' (by omega_using [hR, hk]) fun v1 w1 => ?_
+    refine wp_alu (Or.inl rfl) (readSc (hs'.of_upd w1 (by decide)) (by omega_using [hS, hk])) fun v2 w2 _ =>
       WP.block_nil ⟨?_, (w1.rest (by decide)).trans (w2.rest (by decide)), by rw [w2.mem, w1.mem]⟩
     have x1 : (v1.gpr .eax).toNat = limbs s.mem base RA k := by rw [w1.gpr]; exact e1
     have x2 : (word v1.mem base (SR + 4 * k)).toNat = limbs s.mem base SR k := by
       rw [w1.mem]; exact e2
     rw [w2.gpr]
     change (v1.gpr .eax + word v1.mem base (SR + 4 * k)).toNat = _
-    rw [toNat_add_lt (by rw [x1, x2]; have := ha k hk; have := hr k hk; simp only [radix] at *; omega),
+    rw [toNat_add_lt (by rw [x1, x2]; have := ha k hk; have := hr k hk; simp only [radix] at *; omega_arith),
       x1, x2]
   · generalize hcf : (fun k => limbs s.mem base RA k + limbs s.mem base SR k) = c at ht
     have hcv : valN c 28 = fe s.mem base RA + fe s.mem base SR := by rw [← hcf, valN_add]
     have hlt : valN c 28 < radix ^ 28 := by
       have := two_L_le
-      rw [hcv]; omega
+      rw [hcv]; omega_using [hva, hvr, this]
     refine ⟨(k1.mono (by decide)).trans ht.regs, by rw [← m1]; exact ht.mem,
       fun k hk => by rw [ht.outs k hk]; exact digit_lt _ _, ?_⟩
     show valN (limbs t.mem base TF) 28 = _

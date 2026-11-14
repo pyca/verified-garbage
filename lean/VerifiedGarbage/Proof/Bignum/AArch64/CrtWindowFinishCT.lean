@@ -69,7 +69,7 @@ theorem finishSquares_ct (M : Mont) :
   · intro p i s hi hs
     refine WP.mono (finishSquare_post M hs (by omega)) fun t ⟨ht,h3⟩ => ?_
     refine ⟨?_,?_,?_⟩
-    · exact eval_nz_count hi (by rw [h3,cnt_ne (by have := hs.2.1; omega)]; omega)
+    · exact eval_nz_count hi (by rw [h3,cnt_ne (by have := hs.2.1; omega_using [this])]; omega_using [hi])
     · intro _; simpa only [Nat.sub_sub] using ht
     · intro he; simpa only [Nat.sub_sub,he,Nat.sub_self] using ht
 
@@ -111,7 +111,7 @@ theorem finish_ct (M : Mont) (S : Selector) :
     refine ⟨?_,hs.1⟩
     change 0 < p.2
     by_contra hz
-    have hb : p.2 = 0 := by omega
+    have hb : p.2 = 0 := by omega_using [hz]
     change some (!(s.gpr .x3 == 0)) = some true at he
     rw [hs.2,hb] at he
     contradiction

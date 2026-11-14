@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `SBOX1` on all 256 inputs at once
@@ -41,7 +42,7 @@ theorem testBit_tableOfList (bs : List Bool) (c : Nat) :
     | succ c =>
       rw [tableOfList, Nat.testBit_succ, List.getD_cons_succ, ← ih]
       congr 1
-      cases b <;> simp [Bool.toNat] <;> omega
+      cases b <;> simp [Bool.toNat] <;> omega_using []
 
 /-- The truth table of bit `j` of `SBOX1`, read from the specification's
 table in one pass: the kernel evaluates it in a fraction of a second, where
@@ -53,8 +54,8 @@ theorem testBit_sbox1T {j c : Nat} (hc : c < 256) :
     (sbox1T j).testBit c = (Spec.Camellia.sbox1 (BitVec.ofNat 8 c)).getLsbD j := by
   have hl : Spec.Camellia.sbox1Table.toList.length = 256 := Vector.length_toList
   rw [sbox1T, testBit_tableOfList, Spec.Camellia.sbox1, List.getD_eq_getElem?_getD,
-    List.getElem?_map, List.getElem?_eq_getElem (by omega), Option.map_some, Option.getD_some,
-    Vector.getD, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : c < 2 ^ 8), Array.getD,
+    List.getElem?_map, List.getElem?_eq_getElem (by omega_using [hc, hl]), Option.map_some, Option.getD_some,
+    Vector.getD, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc] : c < 2 ^ 8), Array.getD,
     dite_eq_left_of_eq_true (eq_true (by simpa using hc))]
   rfl
 

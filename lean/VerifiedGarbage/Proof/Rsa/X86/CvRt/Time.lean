@@ -76,7 +76,7 @@ theorem agreeV {g : CallGeometry} {s₁ s₂ : State} (h₁ : Inputs g s₁) (h�
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (show arg s₁ _ = arg s₂ _ from
-      (h₁.arguments _ (by omega)).value.trans (h₂.arguments _ (by omega)).value.symm)
+      (h₁.arguments _ (by omega_using [hk])).value.trans (h₂.arguments _ (by omega_using [hk])).value.symm)
 
 /-- What a narrowed run of `sized` keeps: the inputs, the arguments apart and `esp`. -/
 def Run (g : CallGeometry) (sp : BitVec 32) (s : State) : Prop :=
@@ -133,7 +133,7 @@ theorem _root_.VG.Proof.Rsa.X86.CrtValues.Inputs.lens {g : CallGeometry} {s : St
   have b1 : (g.args 9).toNat ≤ 8 * g.n := h.inputBound 1
   have b2 : (g.args 11).toNat ≤ 8 * g.n := h.inputBound 2
   have up := h.upper
-  omega
+  omega_using [b0, b1, b2, up]
 
 abbrev ar (g : CallGeometry) (x : State) : Geometry := arithmeticGeometry g x.mem
 
@@ -172,7 +172,7 @@ theorem firstBlock_guard {g : CallGeometry} {sp : BitVec 32} {x t : State} (h : 
       ?_⟩
   have w : mw v.mem g.base (kw (g.args 7).toNat) aDQ (kw (g.args 7).toNat - 1) =
       mw t.mem g.base (kw (g.args 7).toNat) aDQ (kw (g.args 7).toNat - 1) :=
-    kv.word (by unfold S; have := st.ws.kw_pos; omega) (by simp) (by decide) (fit _ (by decide))
+    kv.word (by unfold S; have := st.ws.kw_pos; omega_using []) (by simp) (by decide) (fit _ (by decide))
   have top : 2 ^ 31 ≤ mw t.mem g.base (kw (g.args 7).toNat) aDQ (kw (g.args 7).toNat - 1) ↔
       2 ^ (32 * kw (g.args 7).toNat - 1) ≤ (ar g x).N := by
     rw [← st.n]; exact VG.Proof.Rsa.X86.WordRt.top_iff st.ws.kw_pos
@@ -184,7 +184,7 @@ theorem firstBlock_guard {g : CallGeometry} {sp : BitVec 32} {x t : State} (h : 
 theorem guardB_ok {g : CallGeometry} {sp : BitVec 32} {x t : State} (h : S1b g sp x t) :
     WP isa (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sG)), .alu .cmp .eax (.imm 0)]) t (S1c g sp x) := by
   obtain ⟨⟨hd, r⟩, hg⟩ := h
-  refine wp_movS (readSrc_sc hd.ws.workspace (by have := hd.ws.hdr_le; unfold sG VG.Impl.Rsa.X86.Keys.hdr at *; omega))
+  refine wp_movS (readSrc_sc hd.ws.workspace (by have := hd.ws.hdr_le; unfold sG VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [this]))
     fun u U _ => wp_cmpi fun t' T _ z => WP.block_nil ?_
   have K : Keeps [.eax] t t' := U.keeps.trans (T.keeps [.eax])
   have M : t'.mem = t.mem := T.mem.trans U.mem
@@ -246,7 +246,7 @@ theorem firstDiv_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
         (by decide) (by decide)), hc, ?_⟩
     have ea : an = (g.args 7).toNat := by
       have e := cn.value.symm.trans (r.1.arguments 7 (by decide)).value
-      rw [← e, BitVec.toNat_ofNat]; omega
+      rw [← e, BitVec.toNat_ofNat]; omega_using [han]
     subst ea
     refine hg.trans ?_
     have tp : 2 ^ 31 ≤ mw x.mem g.base (kw (g.args 7).toNat) aDQ (kw (g.args 7).toNat - 1) ∨ True := .inr trivial
@@ -308,7 +308,7 @@ theorem guard_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
     RelCT isa (Both₃ g (S4 g sp)) (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sG)), .alu .cmp .eax (.imm 0)])
       (Both₃ g (S5 g sp)) :=
   taintLift ck.guard (fun _ _ h => h.1) fun x t ⟨r, hd, hg⟩ => by
-    refine wp_movS (readSrc_sc hd.ws.ws.workspace (by have := hd.ws.ws.hdr_le; unfold sG VG.Impl.Rsa.X86.Keys.hdr at *; omega))
+    refine wp_movS (readSrc_sc hd.ws.ws.workspace (by have := hd.ws.ws.hdr_le; unfold sG VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [this]))
       fun u U _ => wp_cmpi fun t' T _ z => WP.block_nil ?_
     have K : Keeps [.eax] t t' := U.keeps.trans (T.keeps [.eax])
     have M : t'.mem = t.mem := T.mem.trans U.mem
@@ -405,8 +405,8 @@ theorem branch_relCT {g : CallGeometry} {sp : BitVec 32} (ck : CvCk) :
       have bal : GuardC g (ar g x).N := hg.mp (by change t.zf = _ at e; rw [z] at e; simpa using e)
       obtain ⟨h8, hp, -, h128, -⟩ := bal
       refine ⟨r, hd.ws, ⟨r.1.argNat (by decide), r.1.lens.2.1⟩, ?_, ?_⟩
-      · simp only [wq]; omega
-      · simp only [wq, kw, Spec.Rsa.modulusWords]; omega
+      · simp only [wq]; omega_using [hp, h128]
+      · simp only [wq, kw, Spec.Rsa.modulusWords]; omega_using [hp]
     exact ⟨fw g₁ z₁ et, fw g₂ z₂ et₂⟩
   · obtain ⟨_, cb⟩ := ck.bits
     refine (VG.RelCT.wp (F₁ := Run g sp) (F₂ := Run g sp)
@@ -469,7 +469,7 @@ theorem narrow_inputs {g : CallGeometry} {s : State} (h : Inputs g s) :
   · obtain ⟨r, hr, hc⟩ := h.inputRead j
     exact ⟨r, List.mem_append_left _ hr, hc⟩
   · refine ⟨g.buffer (2 * j.val), ?_, Region.contains_self _ _⟩
-    have cases : j.val = 0 ∨ j.val = 1 ∨ j.val = 2 := by omega
+    have cases : j.val = 0 ∨ j.val = 1 ∨ j.val = 2 := by omega_using []
     rcases cases with e | e | e <;> simp [State.withRegions, CallGeometry.writes, e]
 
 theorem narrow_run {g : CallGeometry} {sp : BitVec 32} {s : State} (S : SizedAt g sp s) :

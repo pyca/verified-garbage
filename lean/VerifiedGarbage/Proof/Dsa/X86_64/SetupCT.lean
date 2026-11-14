@@ -45,7 +45,7 @@ theorem small_ct {a : Nat} (ha : a < 8)
       fun t ⟨⟨h12, hcx, hm⟩, hk⟩ =>
         ⟨⟨⟨hg.1.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.1.rdi, hm ▸ hg.1.hdr⟩, hg.2⟩, h12, hcx⟩
     xrun [State.ea, hdr, hg.1.rdi, hdrOff, hg.1.hdr.hw,
-      hg.1.scr.ld (show 8 * sW + 8 ≤ L.Z by have := hdr_lt_slot L.w 8 (show sW < 32 by decide); have := hg.2; omega)]
+      hg.1.scr.ld (show 8 * sW + 8 ≤ L.Z by have := hdr_lt_slot L.w 8 (show sW < 32 by decide); have := hg.2; omega_arith)]
   rw [setWord_eq]
   refine RelCT.seq (two_piece (Ψ := fun L t => t.gpr .r8 = off L.B (slot L.w a) ∧
     t.gpr .r12 = BitVec.ofNat 64 L.w ∧ t.gpr .rcx = 0) [.rdi]
@@ -62,7 +62,7 @@ theorem small_ct {a : Nat} (ha : a < 8)
     fun t ⟨h8, hk⟩ => ⟨h8, (hk.gpr (by decide)).trans h12, (hk.gpr (by decide)).trans hcx⟩
   xrun [State.ea, hdr, hg.1.rdi, hdrOff, hg.1.hdr.harr a ha,
     hg.1.scr.ld (show 8 * sArr a + 8 ≤ L.Z by
-      have := hdr_lt_slot L.w 8 (show sArr a < 32 by unfold sArr; omega); have := hg.2; omega)]
+      have := hdr_lt_slot L.w 8 (show sArr a < 32 by unfold sArr; omega_using [ha]); have := hg.2; omega_arith)]
 
 /-- Bounds and the public modulus needed by constants setup. -/
 def SetupPre (p : ProductPublic) (s : State) : Prop :=
@@ -76,10 +76,10 @@ theorem setup_one {a : Nat} (ha : a < 8) (han : a ≠ aN)
       SetupPre p t ∧ wv t.mem p.layout.B (slot p.layout.w a) p.layout.w = 1 := by
   refine WP.mono (one_ok h.1.good p.fits p.lower p.upper ha) fun t ⟨ht, hv, hf, _⟩ => ?_
   have hz : p.layout.B.toNat + slot p.layout.w 8 ≤ 2 ^ 64 := by
-    have := h.1.good.scr.nowrap; have := p.fits; omega
+    have := h.1.good.scr.nowrap; have := p.fits; omega_arith
   have hnot : aN ∉ [a] := by simpa using Ne.symm han
   refine ⟨⟨⟨ht, (hf.wv_of_not_mem (by decide) hnot hz).trans h.1.modulus, ?_⟩, h.2⟩, hv⟩
-  rw [hf.word0_of_not_mem (by decide) hnot hz (by have := p.lower; omega)]
+  rw [hf.word0_of_not_mem (by decide) hnot hz (by have := p.lower; omega_using [this])]
   exact h.1.inverse
 
 /-- Setup's doubling loop has a public count even when the modulus is padded. -/
@@ -100,8 +100,8 @@ theorem doublingR2_ct : RelCT isa (Two SetupPre) Arithmetic.doublingR2 (fun _ _ 
     exact ⟨⟨⟨ht, hm ▸ h.1.modulus, hm ▸ h.1.inverse⟩, h.2⟩, hm ▸ hv, hcx⟩
   exact (two_map (fun p : ProductPublic => (⟨p.layout, 128 * p.layout.w⟩ : DblPub))
     (fun p s ⟨h, hv, hcx⟩ => ⟨⟨h.1.good, p.fits⟩, p.lower, p.upper,
-      by change 1 ≤ 128 * p.layout.w; have := p.lower; omega,
-      by change 128 * p.layout.w < 2 ^ 31; have := h.2.1; omega, hcx,
+      by change 1 ≤ 128 * p.layout.w; have := p.lower; omega_using [this],
+      by change 128 * p.layout.w < 2 ^ 31; have := h.2.1; omega_using [this], hcx,
       by rw [hv, h.1.modulus]; exact h.2.2.1⟩)
     (doubles_ct (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -148,9 +148,9 @@ theorem constants_ct (M : Mont) : RelCT isa (Two SetupPre)
     simp only [eval, hz, Option.some.injEq, decide_eq_false_iff_not] at hc
     refine ⟨⟨h.1.good, p.fits⟩, p.lower, ?_, h.1.modulus, h.1.inverse, h12, h10, h.2.2.2, ?_⟩
     · change p.layout.w < 2 ^ 30
-      have := h.2.1; omega
+      have := h.2.1; omega_using [this]
     · change 2 ^ (64 * (p.layout.w - 1)) ≤ p.modulus
       by_contra hl
-      exact hc (Nat.div_eq_of_lt (by omega))
+      exact hc (Nat.div_eq_of_lt (by omega_using [hl]))
 
 end VG.Proof.Dsa.X86_64

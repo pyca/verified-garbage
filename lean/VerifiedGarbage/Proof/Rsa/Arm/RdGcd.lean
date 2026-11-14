@@ -72,7 +72,7 @@ theorem gcd_vp [InvLaw] {um : Bool} {f : Nat × Nat × Nat → Nat × Nat × Nat
     have g : Gk s P.B P.Z P.w P.w nArr := ⟨hw.nowrap, hw.writable, hw.fits, hw.wpos, le_refl _, hw.wle, hw.r7,
       hw.r8, hw.r9⟩
     refine WP.mono (InvLaw.gcdK_ok g (by decide) (by decide)
-      (by have := sz.sw; have := sz.w6a; simp only [S] at *; omega)) fun t ⟨gt, k, r, v⟩ => ⟨⟨e, ?_, ?_⟩, ?_⟩
+      (by have := sz.sw; have := sz.w6a; simp only [S] at *; omega_arith)) fun t ⟨gt, k, r, v⟩ => ⟨⟨e, ?_, ?_⟩, ?_⟩
     · have fitI : ∀ j ∈ invArrs, arr P.w j + S P.w ≤ P.Z := fun j hj => fitZ_w sz (by
         rw [invArrs_eq] at hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
         rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -103,7 +103,7 @@ theorem gcd_vp [InvLaw] {um : Bool} {f : Nat × Nat × Nat → Nat × Nat × Nat
   refine WP.seq (WP.mono (h1.eqS_w hw (d := sU1) (a := aU) (b := aOneN) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide)) fun s1 ⟨h2, hw2, _⟩ => ?_)
   refine WP.mono (h2.sel_w hw2 (o := aG) (a := aG1) (b := aOneN) (sl := sU1) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rd_up; split <;> omega) (by decide)) fun t ⟨ht, hwt, _⟩ => ⟨e, ?_, hwt⟩
+    (by decide) (by decide) (by decide) (by rd_up; split <;> omega_using []) (by decide)) fun t ⟨ht, hwt, _⟩ => ⟨e, ?_, hwt⟩
   refine ht.mono (fun j hj => ?_) (fun j hj => ⟨hj, by simp only [AWG, AWT]⟩) (fun d hd => ?_)
   · simp only [LG, List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl
@@ -114,7 +114,7 @@ theorem gcd_vp [InvLaw] {um : Bool} {f : Nat × Nat × Nat → Nat × Nat × Nat
       · simp [u1]
       · have o := hodd σ e
         simp only [u1, ↓reduceIte]
-        exact hg (by omega)
+        exact hg (by omega_using [u1, o])
     all_goals refine ⟨by decide, ?_⟩; simp only [AG, AT]; rd_ev
   · simp only [List.mem_singleton] at hd; subst hd
     exact ⟨by decide, by simp only [VG', VT]; rd_ev⟩

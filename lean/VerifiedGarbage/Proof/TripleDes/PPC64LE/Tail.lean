@@ -41,7 +41,7 @@ theorem blockTail_ok (original s : State) (x : BitVec 64)
     refine (hframe₁.readW (r := ⟨s.gpr .r5 + BitVec.ofNat 64 (8 * i), 8⟩)
       (Region.contains_self _ _) (fun q hq => ?_) (by decide)).trans (hsaved i hi)
     obtain rfl := List.mem_singleton.mp hq
-    exact (hsep.sub_right (Offset.sub_base _ (by omega))).symm
+    exact (hsep.sub_right (Offset.sub_base _ (by omega_using [hi]))).symm
   have savedRead₁ : ∀ i < 15, InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .r5 + BitVec.ofNat 64 (8 * i)) 8 := by
     rw [rd₁, wr₁, regs₁ .r5 (by decide)]
     exact hsavedRead

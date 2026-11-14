@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.BoolNat
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Subtraction of 32-bit words with a borrow, on naturals -/
 
@@ -23,6 +24,6 @@ theorem sub32_of {X a b w c : Nat} (hX : X < 2 ^ (32 * w)) (hb : b < 2 ^ (32 * w
 
 theorem sub32_one {w y : Nat} (h1 : 1 ≤ y) (h2 : y < 2 ^ (32 * w)) : sub32 w y 1 = y - 1 := by
   unfold sub32
-  rw [show y + 2 ^ (32 * w) - 1 = (y - 1) + 2 ^ (32 * w) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  rw [show y + 2 ^ (32 * w) - 1 = (y - 1) + 2 ^ (32 * w) by omega_using [h1, h2], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [h2])]
 
 end VG.Proof.Rsa

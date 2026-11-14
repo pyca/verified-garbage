@@ -28,18 +28,18 @@ theorem Inputs.keepBody {g : CallGeometry} {s : State} {m₀ m : Mem} {js ds : L
     have lower : hdr ≤ arr (2 * g.n) j := Nat.le_add_right _ _
     dsimp only
     unfold hdr at header lower
-    omega
+    omega_using [ha, bound, lower]
   · have bound := hd d dmem
     dsimp only
     unfold hdr at header bound
-    omega
+    omega_using [header, ha, bound]
 
 def inputBytes (g : CallGeometry) (m : Mem) (i : Fin 4) : List Byte :=
   Spec.Rsa.bytesAt m (g.buffer (6 + 2 * i.val)).base (g.buffer (6 + 2 * i.val)).len
 
 theorem Inputs.inputFrame {g : CallGeometry} {s : State} {m : Mem} (h : Inputs g s)
     (frame : Outside g.base 0 g.size s.mem m) (i : Fin 4) : inputBytes g m i = inputBytes g s.mem i := by
-  exact scratch_bytes frame (by have := h.inputBound i; have := h.upper; omega)
+  exact scratch_bytes frame (by have := h.inputBound i; have := h.upper; omega_arith)
     (h.inputApart i _ (by simp [CallGeometry.writes]))
 
 end VG.Proof.Rsa.X86.CrtValues

@@ -54,14 +54,14 @@ theorem encArgs_ok {K : Nat} {s u : State} (hp : PreS K s) (hsp : u.sp = fb s) (
   refine wp_addSp (by decide) fun u₁ o₁ e₁ => ?_
   rw [hsp, BitVec.add_zero] at e₁
   have hin : ∀ p ∈ saved, InRegions u₁.wr (u₁.gpr .x16 + BitVec.ofNat 64 p.2) 8 := fun p hp' => by
-    rw [e₁, o₁.wr]; exact wr_frame hwr (by have := saved_offs p hp'; unfold frameBytes; omega)
+    rw [e₁, o₁.wr]; exact wr_frame hwr (by have := saved_offs p hp'; unfold frameBytes; omega_using [this])
   refine Spill.save_ok (b := .x16) (l := saved) saved_ho hin ?_
   obtain ⟨u₂, hu₂⟩ : ∃ u₂ : State, u₂ = { u₁ with mem := Spill.saveMem u₁.mem (u₁.gpr .x16) u₁.gpr saved } :=
     ⟨_, rfl⟩
   rw [← hu₂]
   have m₂ : Frame [⟨fb s, frameBytes⟩] s.mem u₂.mem := by
     rw [hu₂, e₁, o₁.mem, hm]
-    exact Spill.saveMem_frame_base (fun p hp' => by have := saved_offs p hp'; unfold frameBytes; omega)
+    exact Spill.saveMem_frame_base (fun p hp' => by have := saved_offs p hp'; unfold frameBytes; omega_using [this])
       (by decide) _ _ _
   have sv₂ : Spill.Saved (fb s) s.gpr saved u₂.mem := by
     rw [hu₂, e₁]

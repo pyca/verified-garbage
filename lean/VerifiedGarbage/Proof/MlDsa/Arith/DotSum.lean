@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlDsa
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # ML-DSA: a coefficient of a row's sum of products
 
@@ -23,7 +24,7 @@ def dsum (A B : Nat → Nat) : Nat → Nat
 theorem dsum_le {A B : Nat → Nat} {b : Nat} : ∀ {c}, (∀ j < c, A j * B j ≤ b) → dsum A B c ≤ c * b
   | 0, _ => by simp [dsum]
   | c + 1, h => by
-    rw [Nat.succ_mul]; exact Nat.add_le_add (dsum_le fun j hj => h j (by omega)) (h c (by omega))
+    rw [Nat.succ_mul]; exact Nat.add_le_add (dsum_le fun j hj => h j (by omega_using [hj])) (h c (by omega_using []))
 
 theorem dotNTT_succ (f g : Nat → Poly) (c : Nat) :
     dotNTT f g (c + 1) = add (dotNTT f g c) (multiplyNTT (f c) (g c)) := by
@@ -39,8 +40,8 @@ theorem dotNTT_get {f g : Nat → Poly} {A B : Nat → Nat} {i : Nat} (hi : i < 
     simp only [zero, Vector.getElem_replicate]
     rfl
   | c + 1, hf, hg => by
-    rw [dotNTT_succ, add_get _ _ hi, mul_get _ _ hi, dotNTT_get hi (fun j hj => hf j (by omega))
-      (fun j hj => hg j (by omega)), hf c (by omega), hg c (by omega)]
+    rw [dotNTT_succ, add_get _ _ hi, mul_get _ _ hi, dotNTT_get hi (fun j hj => hf j (by omega_using [hj]))
+      (fun j hj => hg j (by omega_using [hj])), hf c (by omega_using []), hg c (by omega_using [])]
     apply Fin.ext
     simp only [dsum, Fin.val_add, Fin.val_mul, Fin.val_ofNat, Nat.add_mod, Nat.mul_mod, Nat.mod_mod]
 

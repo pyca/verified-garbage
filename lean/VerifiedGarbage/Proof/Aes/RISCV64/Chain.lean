@@ -118,10 +118,10 @@ theorem chainSt_eq (R : Nat) (w : List Byte) (m₀ : Mem) (D : Addr) (iv : Spec.
       Spec.Cmac.chain (Spec.Cmac.aesWith R w) iv.toList ((Spec.Cmac.blocksAt m₀ D 16 n).take k)
   | 0, _ => by simp [chainSt, Spec.Cmac.chain]
   | k + 1, hk => by
-    have ih := chainSt_eq R w m₀ D iv (n := n) k (by omega)
+    have ih := chainSt_eq R w m₀ D iv (n := n) k (by omega_using [hk])
     have ht : (Spec.Cmac.blocksAt m₀ D 16 n).take (k + 1) =
         (Spec.Cmac.blocksAt m₀ D 16 n).take k ++ [Spec.Aes.bytesAt m₀ (D + BitVec.ofNat 64 (16 * k)) 16] := by
-      rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Cmac.blocksAt]; omega)]
+      rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Cmac.blocksAt]; omega_using [hk])]
       simp [Spec.Cmac.blocksAt]
     simp only [Spec.Cmac.chain] at ih ⊢
     rw [ht, List.foldl_append, ← ih]
@@ -154,11 +154,11 @@ theorem regBlock_xor {Q Q' : Nat → BitVec 64} {m : Mem} {a : Addr}
   refine byte_ext fun j hj => ?_
   simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_xor]
   by_cases h8 : i < 8
-  · have e : 4 * (i / 8) = 0 := by omega
-    rw [e, h₀, BitVec.getLsbD_xor, show i % 8 = i by omega, readW_bit m a h8 hj]
-  · have e : 4 * (i / 8) = 4 := by omega
-    rw [e, h₄, BitVec.getLsbD_xor, readW_bit m _ (show i % 8 < 8 by omega) hj,
-      show (8 : Addr) = BitVec.ofNat 64 8 from rfl, Offset.add_add, show 8 + i % 8 = i by omega]
+  · have e : 4 * (i / 8) = 0 := by omega_using [h8]
+    rw [e, h₀, BitVec.getLsbD_xor, show i % 8 = i by omega_using [h8], readW_bit m a h8 hj]
+  · have e : 4 * (i / 8) = 4 := by omega_using [hi, h8]
+    rw [e, h₄, BitVec.getLsbD_xor, readW_bit m _ (show i % 8 < 8 by omega_using []) hj,
+      show (8 : Addr) = BitVec.ofNat 64 8 from rfl, Offset.add_add, show 8 + i % 8 = i by omega_using [hi, h8]]
 
 theorem regBlock_of_inRel {Q : Nat → BitVec 64} {T : Nat → Spec.Aes.State} (h : InRel Q T) {c : Nat}
     (hc : c < 4) : regBlock Q c = T c := by
@@ -173,8 +173,8 @@ theorem regBlock_congr {Q Q' : Nat → BitVec 64} (h₀ : Q' 0 = Q 0) (h₄ : Q'
   intro i hi
   simp only [regBlock, Vector.getElem_ofFn, Nat.zero_add]
   by_cases h8 : i < 8
-  · rw [show i / 8 = 0 by omega, Nat.mul_zero, h₀]
-  · rw [show i / 8 = 1 by omega, Nat.mul_one, h₄]
+  · rw [show i / 8 = 0 by omega_using [h8], Nat.mul_zero, h₀]
+  · rw [show i / 8 = 1 by omega_using [hi, h8], Nat.mul_one, h₄]
 
 /-- The bytes of the registers of block 0, as `ecbInv_step` takes them. -/
 theorem regBlock_bytes {Q : Nat → BitVec 64} {v : Spec.Aes.State} (h : regBlock Q 0 = v) :
@@ -184,8 +184,8 @@ theorem regBlock_bytes {Q : Nat → BitVec 64} {v : Spec.Aes.State} (h : regBloc
   rw [← h, getD_eq _ ht]
   simp only [regBlock, Vector.getElem_ofFn, Nat.zero_add]
   by_cases h8 : t < 8
-  · rw [ite_eq_left h8, show t / 8 = 0 by omega, show t % 8 = t by omega, Nat.mul_zero]
-  · rw [ite_eq_right h8, show t / 8 = 1 by omega, show t % 8 = t - 8 by omega, Nat.mul_one]
+  · rw [ite_eq_left h8, show t / 8 = 0 by omega_using [h8], show t % 8 = t by omega_using [h8], Nat.mul_zero]
+  · rw [ite_eq_right h8, show t / 8 = 1 by omega_using [ht, h8], show t % 8 = t - 8 by omega_using [ht, h8], Nat.mul_one]
 
 /-! ## The loop -/
 
@@ -231,7 +231,7 @@ variable {out : Bool} {m₀ : Mem} {s₂ : State} {X b D : Addr} {n R : Nat} {w 
 theorem ChSetup.d320 (hs : ChSetup out s₂ X b D n R w) : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 320⟩ := by
   refine hs.sep.sub_right ?_
   rw [← hs.base, hs.scr.base]
-  exact Offset.sub_base X (by have := Align.pad_lt X; omega)
+  exact Offset.sub_base X (by have := Align.pad_lt X; omega_using [this])
 
 theorem ChSetup.keys_disj (hs : ChSetup out s₂ X b D n R w) :
     ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + 1024, 960⟩ r := by
@@ -241,7 +241,7 @@ theorem ChSetup.keys_disj (hs : ChSetup out s₂ X b D n R w) :
   · exact keys_disjoint b
   · refine (hs.sep.sub_right ?_).symm
     rw [← hs.base]
-    exact hs.scr.sub (d := 1024) (n := 960) (by omega)
+    exact hs.scr.sub (d := 1024) (n := 960) (by omega_using [])
 
 theorem ChSetup.masks_disj (hs : ChSetup out s₂ X b D n R w) : ∀ r ∈ eRegions b D n,
     Region.Disjoint ⟨b + BitVec.ofNat 64 416, 48⟩ r ∧
@@ -249,10 +249,10 @@ theorem ChSetup.masks_disj (hs : ChSetup out s₂ X b D n R w) : ∀ r ∈ eRegi
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨Offset.disjoint_base b (by omega) (by omega), Offset.disjoint_base b (by omega) (by omega)⟩
+  · exact ⟨Offset.disjoint_base b (by omega_using []) (by omega_using []), Offset.disjoint_base b (by omega_using []) (by omega_using [])⟩
   · rw [← hs.base]
-    exact ⟨(hs.sep.sub_right (hs.scr.sub (by omega))).symm,
-      (hs.sep.sub_right (hs.scr.sub (by omega))).symm⟩
+    exact ⟨(hs.sep.sub_right (hs.scr.sub (by omega_using []))).symm,
+      (hs.sep.sub_right (hs.scr.sub (by omega_using []))).symm⟩
 
 theorem q04 : q 0 ≠ .a3 ∧ q 4 ≠ .a3 ∧ q 0 ≠ q 4 ∧ q 0 ≠ .t2 ∧ q 4 ≠ .t2 ∧ q 0 ≠ t0 ∧ q 0 ≠ t1 ∧
     q 4 ≠ t0 ∧ q 4 ≠ t1 := by decide
@@ -263,28 +263,28 @@ theorem chainBody_ok (hs : ChSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n)
     WP isa (chainBody out) s fun s' =>
       isa.eval (.nonzero .a4) s' = some (decide (n - (k + 1) ≠ 0)) ∧
         CAt out m₀ s₂ b D n R w iv (k + 1) s' := by
-  have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega
+  have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_using [h]
   have hn := hs.hn
   obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9⟩ := q04
   have hA : ∀ d, s.gpr .a3 + BitVec.ofNat 64 d = D + BitVec.ofNat 64 (16 * k + d) := fun d => by
     rw [hi.a3, Offset.add_add]
   have hD : (⟨D, 16 * n⟩ : Region) ∈ s.rd ++ s.wr := by rw [hi.rd, hi.wr]; exact hs.rdD
   have hin : ∀ d, d + 4 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .a3 + BitVec.ofNat 64 d) 4 :=
-    fun d hd => by rw [hA]; exact in_off hD (by omega) hn
+    fun d hd => by rw [hA]; exact in_off hD (by omega_using [hkn, hd]) hn
   unfold chainBody chainXor
   refine WP.seq ?_
   repeat rw [WP.block_append_iff (M := isa)]
   -- The block XORed into the state.
   refine WP.mono (Bytes.loadLE64_ok (d := .t2) (tmp := t0) (hi := t1) (n := .a3) (off := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by simpa using hin 0 (by omega)) (by simpa using hin 4 (by omega)))
+    (by simpa using hin 0 (by omega_using [])) (by simpa using hin 4 (by omega_using [])))
     fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
   refine wp_xor fun s₂' u₂ => WP.block_nil ?_
   have a₁ : s₂'.gpr .a3 = s.gpr .a3 := by rw [u₂.other _ (Ne.symm n1), g₁ _ (by decide) (by decide) (by decide)]
   refine WP.mono (Bytes.loadLE64_ok (d := .t2) (tmp := t0) (hi := t1) (n := .a3) (off := 8)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [a₁, u₂.rd, u₂.wr, rd₁, wr₁]; exact hin 8 (by omega))
-    (by rw [a₁, u₂.rd, u₂.wr, rd₁, wr₁]; exact hin 12 (by omega)))
+    (by rw [a₁, u₂.rd, u₂.wr, rd₁, wr₁]; exact hin 8 (by omega_using []))
+    (by rw [a₁, u₂.rd, u₂.wr, rd₁, wr₁]; exact hin 12 (by omega_using [])))
     fun s₃ ⟨e₃, g₃, m₃, rd₃, wr₃, sp₃⟩ => ?_
   refine wp_xor fun s₄ u₄ => WP.block_nil ?_
   have o₄ : ∀ r, r ≠ q 0 → r ≠ q 4 → r ≠ .t2 → r ≠ t0 → r ≠ t1 → s₄.gpr r = s.gpr r :=
@@ -293,7 +293,7 @@ theorem chainBody_ok (hs : ChSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n)
   have mem₄ : s₄.mem = s.mem := by rw [u₄.mem, m₃, u₂.mem, m₁]
   have orig : Spec.Aes.stateAt s.mem (D + BitVec.ofNat 64 (16 * k)) =
       Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16 * k)) :=
-    ecbInv_orig hi.data (by split <;> omega) hkn
+    ecbInv_orig hi.data (by split <;> omega_using []) hkn
   have st₄ : regBlock (Q s₄) 0 =
       vxor (chainSt R w m₀ D iv k) (Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16 * k))) := by
     rw [← hi.st, ← orig]
@@ -348,12 +348,12 @@ theorem chainBody_ok (hs : ChSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n)
     refine wp_addi (imm := 16) (by decide) fun s₇ u₇ => wp_subi (imm := 1) (by decide)
       fun s₈ u₈ => WP.block_nil ?_
     have a4₈ : s₈.gpr .a4 = BitVec.ofNat 64 (n - (k + 1)) := by
-      rw [u₈.gpr, u₇.other _ (by decide), a4₆, ofNat_sub_ofNat' (by omega),
-        show n - k - 1 = n - (k + 1) by omega]
-    refine ⟨Steps.eval_nonzero_ofNat s₈ .a4 (by omega) a4₈, ⟨by omega, ?_, a4₈, ?_,
+      rw [u₈.gpr, u₇.other _ (by decide), a4₆, ofNat_sub_ofNat' (by omega_using [hkn]),
+        show n - k - 1 = n - (k + 1) by omega_using []]
+    refine ⟨Steps.eval_nonzero_ofNat s₈ .a4 (by omega_using [hn]) a4₈, ⟨by omega_using [hkn], ?_, a4₈, ?_,
       by rw [u₈.rd, u₇.rd, rd₆], by rw [u₈.wr, u₇.wr, wr₆], by rw [u₈.sp, u₇.sp, sp₆],
       by rw [u₈.mem, u₇.mem]; exact fr₆, ?_, by rw [u₈.mem, u₇.mem]; exact data₆⟩⟩
-    · rw [u₈.other _ (by decide), u₇.gpr, a3₆, Offset.add_add, show 16 * k + 16 = 16 * (k + 1) by omega]
+    · rw [u₈.other _ (by decide), u₇.gpr, a3₆, Offset.add_add, show 16 * k + 16 = 16 * (k + 1) by omega_using []]
     · intro r h1 h2 h3 h4
       rw [u₈.other _ h4, u₇.other _ h3, keep₆ r h1 h2,
         hi.keep r h1 h2 h3 h4]
@@ -376,15 +376,15 @@ theorem chainBody_ok (hs : ChSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n)
     have hDw : (⟨D, 16 * n⟩ : Region) ∈ s₅.wr := by rw [wr₅]; exact hs.dat rfl
     have hinw : ∀ {t : State} (d : Nat), t.gpr .a3 = D + BitVec.ofNat 64 (16 * k) → t.wr = s₅.wr →
         d + 4 ≤ 16 → InRegions t.wr (t.gpr .a3 + BitVec.ofNat 64 d) 4 := fun d ha hw hd => by
-      rw [ha, hw, Offset.add_add]; exact in_off hDw (by omega) hn
+      rw [ha, hw, Offset.add_add]; exact in_off hDw (by omega_using [hkn, hd]) hn
     refine WP.mono (Bytes.storeLE64_ok (v := q 0) (tmp := t0) (hi := t1) (n := .a3) (off := 0)
       (Ne.symm n6) (by decide) (by decide) (by decide) (by decide)
-      (by simpa using hinw 0 a3₅ rfl (by omega)) (hinw 4 a3₅ rfl (by omega)))
+      (by simpa using hinw 0 a3₅ rfl (by omega_using [])) (hinw 4 a3₅ rfl (by omega_using [])))
       fun s₆ ⟨m₆, g₆, rd₆, wr₆, sp₆⟩ => ?_
     have a3₆ : s₆.gpr .a3 = D + BitVec.ofNat 64 (16 * k) := (g₆ _ (by decide) (by decide)).trans a3₅
     refine WP.mono (Bytes.storeLE64_ok (v := q 4) (tmp := t0) (hi := t1) (n := .a3) (off := 8)
       (Ne.symm n8) (by decide) (by decide) (by decide) (by decide)
-      (hinw 8 a3₆ wr₆ (by omega)) (hinw 12 a3₆ wr₆ (by omega)))
+      (hinw 8 a3₆ wr₆ (by omega_using [])) (hinw 12 a3₆ wr₆ (by omega_using [])))
       fun s₇ ⟨m₇, g₇, rd₇, wr₇, sp₇⟩ => ?_
     have v₄ : s₆.gpr (q 4) = s₅.gpr (q 4) := g₆ _ n8 n9
     have hm : s₇.mem = (s₅.mem.writeW (D + BitVec.ofNat 64 (16 * k)) (s₅.gpr (q 0))).writeW
@@ -400,7 +400,7 @@ theorem chainBody_ok (hs : ChSetup out s₂ X b D n R w) {k : Nat} (hkn : k < n)
       simp only [↓reduceIte] at h
       exact ecbInv_frame fr₅ (by simpa using hs.d320) hn h
     have hst := ecbInv_step (F := chainOutF R w m₀ D iv) (v₁ := s₅.gpr (q 0)) (v₂ := s₅.gpr (q 4))
-      (by omega) hkn hd₀ (regBlock_bytes st₅)
+      (by omega_using [hn]) hkn hd₀ (regBlock_bytes st₅)
     rw [← hm] at hst
     have o₇ : ∀ r, r ≠ t0 → r ≠ t1 → s₇.gpr r = s₅.gpr r := fun r h0 h1 => by
       rw [g₇ r h0 h1, g₆ r h0 h1]
@@ -418,11 +418,11 @@ theorem chainLoop_ok (hs : ChSetup out s₂ X b D n R w) (hn0 : 0 < n) {s : Stat
     WP isa (.loop (chainBody out) (.nonzero .a4)) s (CAt out m₀ s₂ b D n R w iv n) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ CAt out m₀ s₂ b D n R w iv k s)
     (fun m s ⟨k, hm, hk, h⟩ => WP.mono (chainBody_ok hs hk h) fun s' ⟨ev, h'⟩ => ?_) n s
-    ⟨0, by omega, hn0, hi⟩
+    ⟨0, by omega_using [], hn0, hi⟩
   by_cases hl : n - (k + 1) = 0
-  · have e : k + 1 = n := by omega
+  · have e : k + 1 = n := by omega_using [hk, hl]
     exact .inl ⟨by rw [ev]; simp [hl], e ▸ h'⟩
-  · exact .inr ⟨by rw [ev]; simp [hl], n - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+  · exact .inr ⟨by rw [ev]; simp [hl], n - (k + 1), by omega_using [hm, hk], k + 1, rfl, by omega_using [hl], h'⟩
 
 end Loop
 
@@ -433,8 +433,8 @@ end Loop
 theorem frame_writeW2 (m : Mem) (St : Addr) (v₁ v₂ : BitVec 64) :
     Frame [⟨St, 16⟩] m ((m.writeW St v₁).writeW (St + 8) v₂) := by
   refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
-  · simpa using Offset.contains_base St (d := 0) (n := 8) (k := 16) (by omega) (by omega)
-  · exact Offset.contains_base St (d := 8) (n := 8) (k := 16) (by omega) (by omega)
+  · simpa using Offset.contains_base St (d := 0) (n := 8) (k := 16) (by omega_using []) (by omega_using [])
+  · exact Offset.contains_base St (d := 8) (n := 8) (k := 16) (by omega_using []) (by omega_using [])
 
 theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 out).pre s₀) :
     WP isa (Impl.Aes.RISCV64.chain out) s₀ fun s' =>
@@ -498,7 +498,7 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
         refine Nat.lt_of_not_le fun hc => dDSt St ?_ (by simp [Region.Contains])
         simp only [Region.Contains]
         have := (St - D).isLt
-        omega
+        omega_using [hc]
       have hd₁₄ : EcbInv s₀.mem s'.mem D n n (chainOutF R w s₀.mem D iv) := by
         simp only [↓reduceIte] at hdat
         rw [hmem]
@@ -515,7 +515,7 @@ theorem correct_chain {out : Bool} {s₀ : State} (hp : (Proof.Aes.chainRISCV64 
       refine List.map_congr_left fun j hj => ?_
       have hj := List.mem_range.mp hj
       simp only [Function.comp_apply, chainOutF]
-      rw [chainSt_eq _ _ _ _ _ (n := n) (j + 1) (by omega), AesCbc.bytesAt_toList]
+      rw [chainSt_eq _ _ _ _ _ (n := n) (j + 1) (by omega_using [hj]), AesCbc.bytesAt_toList]
       rfl
 
 end VG.Proof.Aes.RISCV64

@@ -35,7 +35,7 @@ theorem recoverGeometry_stack (s : State) :
 
 theorem recoverGeometry_stackNat (s : State) (fit : recoverStack ≤ (s.gpr .esp).toNat) :
     (recoverGeometry s).stack.toNat = (s.gpr .esp).toNat - 2128 := by
-  rw [recoverGeometry_stack, sub_toNat (by unfold recoverStack at fit; omega)]
+  rw [recoverGeometry_stack, sub_toNat (by unfold recoverStack at fit; omega_using [fit])]
 
 theorem recoverGeometry_wholeStack (s : State) (fit : recoverStack ≤ (s.gpr .esp).toNat) :
     (recoverGeometry s).wholeStack = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 recoverStack, recoverStack⟩ := by
@@ -50,8 +50,8 @@ theorem recoverGeometry_arguments (s : State) (fit : recoverStack ≤ (s.gpr .es
   unfold Geometry.argumentsRegion
   rw [recoverGeometry_stack]
   change (⟨(s.gpr .esp - BitVec.ofNat 32 2128).setWidth 64 + BitVec.ofNat 64 2132, 52⟩ : Region) = _
-  rw [Taint.sub_setWidth (by unfold recoverStack at fit; omega : 2128 ≤ (s.gpr .esp).toNat)]
+  rw [Taint.sub_setWidth (by unfold recoverStack at fit; omega_using [fit] : 2128 ≤ (s.gpr .esp).toNat)]
   have aa : argAddr s 0 = (s.gpr .esp).setWidth 64 + 4 :=
-    byteAddr_add (by omega : (s.gpr .esp).toNat + 4 < 2 ^ 32)
+    byteAddr_add (by omega_using [high] : (s.gpr .esp).toNat + 4 < 2 ^ 32)
   rw [aa, show BitVec.ofNat 64 2132 = BitVec.ofNat 64 2128 + 4 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 end VG.Proof.RsaPkcs1Sig.X86.Rcv

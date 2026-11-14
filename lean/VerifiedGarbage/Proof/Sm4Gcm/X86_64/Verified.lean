@@ -74,7 +74,7 @@ theorem init_xdepth : init.x86_64Depth ≤ stkN := by
   have := ctrFn_depth
   have := keyFn_depth
   simp only [init, Code.x86_64Depth, Nat.max_le, stkN]
-  omega
+  omega_arith
 
 theorem init_correct (s : State) (hs : Proof.Sm4Gcm.initX86_64.pre s) :
     ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ Proof.Sm4Gcm.initX86_64.post s s' := by
@@ -127,7 +127,7 @@ theorem streamEncrypt_xdepth : (streamEncrypt v.callees).x86_64Depth ≤ stkN :=
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
-  omega
+  omega_using [this]
 
 theorem streamEncrypt_correct (s : State) (hs : Proof.Sm4Gcm.streamEncryptX86_64.pre s) :
     ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.Sm4Gcm.streamEncryptX86_64.post s s' := by
@@ -156,7 +156,7 @@ theorem streamDecrypt_xdepth : (streamDecrypt v.callees).x86_64Depth ≤ stkN :=
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
-  omega
+  omega_using [this]
 
 theorem streamDecrypt_correct (s : State) (hs : Proof.Sm4Gcm.streamDecryptX86_64.pre s) :
     ∃ t s', Exec isa (streamDecrypt v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.Sm4Gcm.streamDecryptX86_64.post s s' := by
@@ -185,7 +185,7 @@ theorem streamFinish_xdepth : (streamFinish v.callees).x86_64Depth ≤ stkN := b
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
-  omega
+  omega_using [this]
 
 theorem streamFinish_correct (s : State) (hs : Proof.Sm4Gcm.streamFinishX86_64.pre s) :
     ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.Sm4Gcm.streamFinishX86_64.post s s' := by
@@ -214,7 +214,7 @@ theorem streamVerify_xdepth : (streamVerify v.callees).x86_64Depth ≤ stkN := b
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
-  omega
+  omega_using [this]
 
 theorem streamVerify_correct (s : State) (hs : Proof.Sm4Gcm.streamVerifyX86_64.pre s) :
     ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.Sm4Gcm.streamVerifyX86_64.post s s' := by
@@ -243,7 +243,7 @@ theorem seal_xdepth : («seal» v.callees).x86_64Depth ≤ stkN := by
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
-  omega
+  omega_using [this]
 
 theorem seal_correct (s : State) (hs : Proof.Sm4Gcm.sealX86_64.pre s) :
     ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.Sm4Gcm.sealX86_64.post s s' := by
@@ -272,7 +272,7 @@ theorem open_xdepth : («open» v.callees).x86_64Depth ≤ stkN := by
     cryptTail, crypt, cryptAl, tag, finTag, oneCrypt, oneTag, cryptHead, absorb, absorbPad, absorbHead,
     absorbWhole, absorbTail, padTail, ghash1, lens, flush, j0, j0hash, recv, cmp, tagOut, tagLenOk, partWith,
     firstFlush, oneAad, xorLoop, xorLoopG, minLen, copyLoop, Impl.AesGcm.X86_64.copyTag, GcmImpl.callees, ↓reduceIte, Bool.false_eq_true, Code.x86_64Depth, v.gh.noStack, Nat.max_le, stkN]
-  omega
+  omega_using [this]
 
 theorem open_correct (s : State) (hs : Proof.Sm4Gcm.openX86_64.pre s) :
     ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ Proof.Sm4Gcm.openX86_64.post s s' := by

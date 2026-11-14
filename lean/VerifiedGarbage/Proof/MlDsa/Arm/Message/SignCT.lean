@@ -71,7 +71,7 @@ theorem leak_eq {L : Lay} (hL : L.Ok) (hk : p.skLen ≤ L.keyLen) (hs : 128 ≤ 
   have := hL.nKey
   rw [signMessageLeak, formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hL.ctxLt)]
   simp only [messageRep, skTr, hdrBytes, Proof.MlKem.bytesAt_length, List.append_assoc]
-  rw [addr_add (by omega), Proof.MlKem.bytesAt_slice _ _ (by omega)]
+  rw [addr_add (by omega), Proof.MlKem.bytesAt_slice _ _ (by omega_using [hs])]
 
 /-- What a layout of `sign_message` says of `rnd`, `sig` and `scratch`. -/
 structure SFacts (p : Params) (prepared : Bool) (L : Lay) : Prop where
@@ -115,7 +115,7 @@ theorem sView {σ : State} (hp : p ∈ params) (hσ : SPre p prepared σ) (h8 : 
   have F : SFacts p prepared (slay p prepared σ) := SOk.facts ⟨σ, hσ, h8, rfl, rfl⟩
   obtain ⟨e0, e1, e2, e3, e4⟩ := signRegs_of hL hc f.1
   have hsp1 : t1.sp = σ.sp := f.2.sp.trans hc.sp
-  have h8' : 8 ≤ t1.sp.toNat := by rw [hsp1]; have := hσ.sp; omega
+  have h8' : 8 ≤ t1.sp.toNat := by rw [hsp1]; have := hσ.sp; omega_using [this]
   obtain ⟨-, a1, -⟩ := push2_arg (t := E) h8' (by rw [← hE]; rfl) (by rw [← hE]; rfl)
   have bk : Region.Sub (below t1 8) (slay p prepared σ).STK := below_stk hsp1
   have em : E.mem = storeWords t1.mem (t1.sp - 8#32) [t1.gpr .r12, t1.gpr .lr] := by rw [← hE]; rfl
@@ -126,9 +126,9 @@ theorem sView {σ : State} (hp : p ∈ params) (hσ : SPre p prepared σ) (h8 : 
     by rw [a1, e4], ?_, ?_, ?_⟩
   · have hkl := skLen_le (p := p) prepared
     rw [em, storeWords_bytes h8' ((hσ.stkSk.sub_right (Region.sub_prefix hkl)).symm.sub_right bk)
-      (by have := hσ.nSk; omega), f.2.mem]
+      (by have := hσ.nSk; omega_using [hkl, this]), f.2.mem]
     exact hc.bytesAt_eq (p := State.addr (slay p prepared σ).key) (hL.xKey.sub_right (Region.sub_prefix hkl))
-      (hL.kKey.sub_right (Region.sub_prefix hkl)) (by have := hσ.nSk; omega)
+      (hL.kKey.sub_right (Region.sub_prefix hkl)) (by have := hσ.nSk; omega_using [hkl, this])
   · rw [em, storeWords_bytes h8' (by rw [mu_eq hL]; exact (k_mu hL).symm.sub_right bk) (by decide), f.2.mem,
       mu_eq hL]
   · rw [em, storeWords_bytes h8' (hσ.stkRnd.symm.sub_right bk) (by decide), f.2.mem]
@@ -165,7 +165,7 @@ theorem signCall_tr {n : String} {c : Prog isa} (hS : SignFn p prepared c) (hp :
       Covers (sRd (slay p prepared σ) ++ sWr p (slay p prepared σ)) ((pushed [.r12, .lr] t1).rd ++ (pushed [.r12, .lr] t1).wr) ∧
         Covers (sWr p (slay p prepared σ)) (pushed [.r12, .lr] t1).wr := fun {t t1 _ _} hc f => by
     have ht : t1.sp = σ.sp := f.2.sp.trans hc.sp
-    have h8' : 8 ≤ t1.sp.toNat := by rw [ht]; have := hσ.sp; omega
+    have h8' : 8 ≤ t1.sp.toNat := by rw [ht]; have := hσ.sp; omega_using [this]
     have := cov_pushed h8' (rd := signRd p prepared σ) (wr := signWr p σ) (fun r hr => by
         rw [f.2.rd, f.2.wr, hc.rd, hc.wr]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -178,7 +178,7 @@ theorem signCall_tr {n : String} {c : Prog isa} (hS : SignFn p prepared c) (hp :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact ⟨_, F.inSig, within_self _⟩
-        · exact ⟨_, hL'.inSC, within_base _ (by simp only [slay]; rw [mScr_eq]; simp only [sScr, oE]; omega)⟩)
+        · exact ⟨_, hL'.inSC, within_base _ (by simp only [slay]; rw [mScr_eq]; simp only [sScr, oE]; omega_using [])⟩)
     rwa [eR t1 ht] at this
   refine ⟨pre₁, pre₂, ?_, (cv c₁ f₁).1, (cv c₁ f₁).2, (cv c₂ f₂).1, (cv c₂ f₂).2⟩
   generalize hE₁ : (pushed [.r12, .lr] a1).callEntry.withRegions (sRd (slay p prepared σ)) (sWr p (slay p prepared σ)) = E₁
@@ -248,15 +248,15 @@ theorem signBody_tr {n : String} {c : Prog isa} (hS : SignFn p prepared c) (hp :
     have := hL.hKey
     have := hL.nKey
     have w : Within ⟨State.addr (L.key + BitVec.ofNat 32 64), 64⟩ L.KEY := by
-      rw [addr_add (by omega)]; exact within_off _ (by omega)
+      rw [addr_add (by omega_arith)]; exact within_off _ (by omega_arith)
     have hst : Region.Sub ⟨L.ST, 200⟩ L.SC := by
-      have := hL.sub_sc (e := 0) (k := 200) (by omega)
+      have := hL.sub_sc (e := 0) (k := 200) (by omega_using [])
       simpa only [x0] using this
     refine ⟨?_, ⟨_, List.mem_append_left _ hL.inKey, w⟩, (hL.xKey.symm.sub_left w.sub).sub_right hst,
       (hL.xKey.symm.sub_left w.sub).sub_right (hL.sub_sc (by decide : 200 + 640 ≤ 1024)),
       hL.kKey.sub_right w.sub⟩
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 64) (by decide), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   have mh := muHash_tr (I := signI p) (Φ := fun L m _ => SOk p prepared L m) (tr := .slotOff fKey 64) (by decide) rfl
     (fun L => L.key + BitVec.ofNat 32 64) (fun L g m t hL hc => hc.slotOffV hL 64) side
   have mh' := two_wp (I := signI p) (Φ := fun L m _ => SOk p prepared L m) (Ψ := fun L m t => SOk p prepared L m ∧ MuOk L m t) mh
@@ -264,7 +264,7 @@ theorem signBody_tr {n : String} {c : Prog isa} (hS : SignFn p prepared c) (hp :
       have := hL.hKey
       have := hL.nKey
       have w : Within ⟨State.addr (L.key + BitVec.ofNat 32 64), 64⟩ L.KEY := by
-        rw [addr_add (by omega)]; exact within_off _ (by omega)
+        rw [addr_add (by omega_arith)]; exact within_off _ (by omega_arith)
       obtain ⟨a, b, c, d, e⟩ := side L hL
       refine WP.mono (muHash_ok hL hc (tr := .slotOff fKey 64) (by decide) rfl (fun t' hc' => hc'.slotOffV hL 64)
         a b c d e) fun t' ⟨hc', hμ⟩ => ⟨hc', hφ, ?_⟩
@@ -296,7 +296,7 @@ theorem sAgree {x y a b : State} (hx : SPre p prepared x) (hy : SPre p prepared 
     {n : Nat} (hn : n ≤ 16) : VG.Arm.Taint.Agree (argTaint [] n) a b := by
   have w : ∀ {z c : State}, SPre p prepared z → c.sp = z.sp ∧ c.wr = z.wr ∧ c.mem = z.mem →
       c.sp.toNat + n ≤ 2 ^ 32 ∧ ∀ r ∈ c.wr, Region.Disjoint ⟨State.addr c.sp, n⟩ r := fun {z c} hz hc => by
-    refine ⟨by rw [hc.1]; have := hz.spA; omega, fun r hr => ?_⟩
+    refine ⟨by rw [hc.1]; have := hz.spA; omega_using [hn, this], fun r hr => ?_⟩
     rw [hc.2.1, hz.wr] at hr
     have hs : Region.Sub ⟨State.addr c.sp, n⟩ (rArgs z 16) := by
       simp only [rArgs, stackArgAddr0, hc.1]; exact Region.sub_prefix hn
@@ -306,13 +306,13 @@ theorem sAgree {x y a b : State} (hx : SPre p prepared x) (hy : SPre p prepared 
     · exact (hz.scrArgs.sub_right hs).symm
   have hsp : a.sp = b.sp := by rw [ha.1, hb.1, hpub.sp]
   refine agree_argTaint (fun r hr => by simp at hr) hsp (w hx ha) (w hy hb) fun k hk => ?_
-  have := argMem_of (s₁ := a) (s₂ := b) (j := 4) hsp (by rw [ha.1]; have := hx.spA; omega) (fun i hi => by
+  have := argMem_of (s₁ := a) (s₂ := b) (j := 4) hsp (by rw [ha.1]; have := hx.spA; omega_using [this]) (fun i hi => by
     simp only [stackArg, stackArgAddr, ha.1, hb.1, ha.2.2, hb.2.2]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     · exact hpub.a0
     · exact hpub.a1
     · exact hpub.a2
-    · exact hpub.a3) k (by omega)
+    · exact hpub.a3) k (by omega_using [hn, hk])
   exact this
 
 /-- The entry states of two runs: the precondition and the public data. -/
@@ -350,10 +350,10 @@ theorem signMessage_ct {n : String} {c : Prog isa} (hS : SignFn p prepared c) (h
     (c := .block [.ldrSp .r12 0, .mov .r12 (.shifted .r12 .lsr 8), .cmp .r12 (.imm 0)])
     (argRel [] 4 (fun a b ⟨x, y, hxy, e₁, e₂⟩ => by
       subst e₁ e₂
-      exact sAgree hxy.1 hxy.2.1 hxy.2.2 ⟨rfl, rfl, rfl⟩ ⟨rfl, rfl, rfl⟩ (by omega))
+      exact sAgree hxy.1 hxy.2.1 hxy.2.2 ⟨rfl, rfl, rfl⟩ ⟨rfl, rfl, rfl⟩ (by omega_using []))
       chk_taint)
     fun x y a b hxy e₁ e₂ => by
-      subst e₁ e₂; exact ⟨chk_ok (hxy.1.args (by omega)), chk_ok (hxy.2.1.args (by omega))⟩
+      subst e₁ e₂; exact ⟨chk_ok (hxy.1.args (by omega_using [])), chk_ok (hxy.2.1.args (by omega_using []))⟩
   refine RelCT.seq hchk (RelCT.ite (fun a b ⟨x, y, hxy, f₁, f₂⟩ => by
     rw [f₁.2, f₂.2, hxy.2.2.a0]) ?_ ?_)
   · -- `ctx_len ≥ 256`: return 2.
@@ -378,10 +378,10 @@ theorem signMessage_ct {n : String} {c : Prog isa} (hS : SignFn p prepared c) (h
           exact WP.mono (enter_ok hL rfl (nA := 16) (by decide) (Nat.le_refl _) o.sp
             (by rw [o.rd]; rfl) (by rw [o.wr]; rfl) (o.get .r0) (o.get .r1) (o.get .r2) (o.get .r3)
             (fun o' ho => by rw [o.rd, o.wr, o.sp]; exact h.args ho) (by rw [o.sp]; exact h.spA)
-            (by rw [o.sp, ← stackArgAddr0]; exact h.scrArgs) (by omega)
-            (by rw [hs1 12 (by omega)]; exact stackArg_eq x' 3) (by decide) (fun j hj => by
+            (by rw [o.sp, ← stackArgAddr0]; exact h.scrArgs) (by omega_using [])
+            (by rw [hs1 12 (by omega_using [])]; exact stackArg_eq x' 3) (by decide) (fun j hj => by
               have hj4 : j < 4 := hj
-              rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+              rcases (by omega_using [hj4] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
               · exact (hs1 0 (by decide)).trans (stackArg_eq x' 0)
               · exact (hs1 4 (by decide)).trans (stackArg_eq x' 1)
               · exact (hs1 8 (by decide)).trans (stackArg_eq x' 2)

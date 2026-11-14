@@ -75,7 +75,7 @@ private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling)
     refine ⟨128 * (nextKeyPoint q).keys + (nextKeyPoint q).scalars + 1, ?_, nextKeyPoint q, rfl,
       h₁.2, h₂.2, sp⟩
     have := nextKeyPoint_measure continues
-    omega
+    omega_using [measure, this]
   · simp only [KeyCTStep, continues, ite_false] at h₁ h₂
     exact ⟨h₁.trans h₂.symm, fun _ => trivial, fun again => absurd (again.symm.trans h₁) (by decide)⟩
 

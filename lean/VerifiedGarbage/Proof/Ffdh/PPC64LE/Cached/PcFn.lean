@@ -149,7 +149,7 @@ private theorem pcSat_consts (words : List (BitVec 64)) (size : words.length = 2
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     change ((0x100000 : BitVec 64) + BitVec.ofNat 64 (8 * i + j) - 0x100000).toNat < 17744
     rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj, hi']
   · intro r hr
     simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
     obtain ⟨c, rfl, rfl⟩ := hr

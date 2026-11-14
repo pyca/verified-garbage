@@ -114,18 +114,18 @@ theorem twos_ok (h : DS s0 true A [(true, 15), (true, 10), (true, 9), (false, 32
   have nlt : A false 32 < 2 ^ (32 * ww (kK s0)) := by rw [← vw_false]; exact h.lt (by decide)
   have xlt : A true 10 < 2 ^ (32 * vw s0 true) := h.lt (by decide)
   have eU : wsub (32 * ww (kK s0)) (A false 32) 1 = A false 32 - 1 := by
-    unfold wsub; rw [show A false 32 + 2 ^ (32 * ww (kK s0)) - 1 = A false 32 - 1 + 2 ^ (32 * ww (kK s0)) by omega,
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    unfold wsub; rw [show A false 32 + 2 ^ (32 * ww (kK s0)) - 1 = A false 32 - 1 + 2 ^ (32 * ww (kK s0)) by omega_using [n2, nlt],
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [nlt])]
   generalize hU : A false 32 - 1 = U at eU
   generalize hX : A true 10 % 2 ^ (32 * ww (kK s0)) = X2
-  have U0 : U ≠ 0 := by omega
-  have Ult : U < 2 ^ (32 * ww (kK s0)) := by omega
+  have U0 : U ≠ 0 := by omega_using [n2, hU]
+  have Ult : U < 2 ^ (32 * ww (kK s0)) := by omega_using [nlt, hU]
   have X2lt : X2 < 2 ^ (32 * ww (kK s0)) := hX ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
   -- The counts are below the words of the wide view.
   have hbw : ∀ y, y ≠ 0 → y < 2 ^ (32 * ww (kK s0)) →
       tz y / 64 < vw s0 false + 1 ∧ tz y % 64 < 64 := fun y y0 yl => by
     have := VG.Proof.Bignum.ShiftStages.tz_lt (Nat.pos_of_ne_zero y0) yl
-    rw [vw_false]; exact ⟨by omega, Nat.mod_lt _ (by decide)⟩
+    rw [vw_false]; exact ⟨by omega_using [this], Nat.mod_lt _ (by decide)⟩
   have UX0 : U ||| X2 ≠ 0 := fun e => U0 (Nat.or_eq_zero_iff.mp e).1
   have UXlt : U ||| X2 < 2 ^ (32 * ww (kK s0)) := Nat.or_lt_two_pow Ult X2lt
   unfold twos

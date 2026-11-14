@@ -63,7 +63,7 @@ theorem alignedChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (
         wv s.mem B (slot w a) w * wv s.mem B (slot w a) w % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold AdxTiledSquare.alignedChoice
-  refine WP.seq (WP.mono (AdxSquare.redcTest_ok hs hdi hH hZ (by omega)) fun s₁ ⟨hz, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (AdxSquare.redcTest_ok hs hdi hH hZ (by omega_using [hw'])) fun s₁ ⟨hz, hm₁, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans hdi
   rw [← hm₁] at hinv hB hH ⊢
@@ -78,7 +78,7 @@ theorem alignedChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (
     fun t ⟨h1, h2, h3, k⟩ => ⟨h1, h2, h3, (k₁.trans k).mono (by decide)⟩
   by_cases h8 : w%8=0
   · refine WP.ite true (by simp [eval,hz,h8]) (fun _ => WP.mono
-      (montSquare_ok hs₁ hdi₁ hH hZ (by omega : w=8*(w/8)) (by omega) hw' (hH.ops3 ho ha ha) (.head _) (.tail _ (.head _)) ho ha ho1 ho2 ha1 ha2 hinv hB) post) (by simp)
+      (montSquare_ok hs₁ hdi₁ hH hZ (by omega_using [h8] : w=8*(w/8)) (by omega_using [hw, h8]) hw' (hH.ops3 ho ha ha) (.head _) (.tail _ (.head _)) ho ha ho1 ho2 ha1 ha2 hinv hB) post) (by simp)
   · refine WP.ite false (by simp [eval,hz,h8]) (by simp) (fun _ =>
       WP.mono (AdxSquare.montSquare4_ok hs₁ hdi₁ hH hZ hw hw' ho ha ho1 ho2 ha1 ha2 hinv hB hsz.1) post)
 

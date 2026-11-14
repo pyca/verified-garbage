@@ -27,7 +27,7 @@ theorem lanes_next (q : Nat) :
       vbyte_bc _ he]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (16 : BitVec 8).toNat = 16 from rfl]
-    omega
+    omega_using []
 
 theorem bc_lit (b : BitVec 8) : (ofVBytes fun _ => b) = bc b := rfl
 
@@ -64,7 +64,7 @@ theorem constants_ok (s : State) :
   have L3 : VArr.b16.map2 (fun _ x y => x + y) (laneNums 2) (bc 16#8) = laneNums 3 := lanes_next 2
   refine ⟨⟨fun q hq => ?_, ?_, ?_⟩, fun v h7 h8 h9 h10 h11 h12 h13 => ?_, fun g h6 h7 => ?_,
     ?_, ?_, ?_, ?_⟩
-  · rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl <;>
+  · rcases (by omega_using [hq] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl <;>
       simp [State.setV, State.write, l0, l1, l2, l3, L0, L1, L2, L3]
   · simp [State.setV, State.write, k64]
   · simp [State.setV, State.write, k128]

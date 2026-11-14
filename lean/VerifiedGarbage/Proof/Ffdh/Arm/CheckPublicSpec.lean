@@ -17,7 +17,7 @@ theorem Inputs.domainQ (p : Inputs) : (Spec.Ffdh.domainOf p.k p.dom).q =
   rw [p.domainLength]
   by_cases hasQ : p.hasQ = true
   · rw [ite_eq_left hasQ, ite_eq_left rfl, ite_eq_left hasQ]
-  · have different : 2 * p.k ≠ 3 * p.k := by have := p.minLength; omega
+  · have different : 2 * p.k ≠ 3 * p.k := by have := p.minLength; omega_using [this]
     rw [ite_eq_right hasQ, ite_eq_right different, ite_eq_right hasQ]
 
 theorem publicFlag_spec (p : Inputs) (y : Nat) : publicFlag p y =

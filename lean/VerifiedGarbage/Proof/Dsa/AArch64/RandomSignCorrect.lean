@@ -23,7 +23,7 @@ theorem random_sign_shared_post {extra : Nat} {s t : State} (h : RandomSignABI e
     have := randomSignLoop_status_le (randomInput s).pLen (randomInput s).qLen 8
       (randomInput s).key (randomInput s).digest ((randomInput s).rand.drop 0)
     change (randomSignRemaining (randomInput s) 0 8).status ≤ 2 at this
-    omega
+    omega_using [this]
   refine ⟨?_, ?_, ?_⟩
   · rw [hp.status]
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64),

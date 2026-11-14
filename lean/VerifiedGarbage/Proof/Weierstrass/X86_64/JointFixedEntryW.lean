@@ -33,7 +33,7 @@ theorem nafSignW_ok (s : State) {d : BitVec 16} (hb : s.gpr .r8=d.setWidth 64) :
     WP isa (.block [.alu .cmp .r8 (.imm 256)]) s fun t =>
       t.cf=some (decide (d.toNat<256)) ∧ Keeps [] s t := by
   have hd : (d.setWidth 64).toNat=d.toNat := by
-    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := d.isLt; omega)
+    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := d.isLt; omega_using [])
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,readSrc,
     Option.bind_some,RegUpd.cf_arithFlags,hb,Option.some.injEq,exists_eq_left']
@@ -52,7 +52,7 @@ theorem nafAbsW_ok (s : State) {d : BitVec 16} (hb : s.gpr .r8=d.setWidth 64) :
     have hl := d.isLt
     have h6 : (65536 : BitVec 32).toNat=65536 := rfl
     simp only [BitVec.toNat_sub,BitVec.toNat_setWidth,BitVec.toNat_ofNat,h6]
-    omega
+    omega_using []
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,hr.1,hr.2,ite_false]
 
@@ -77,7 +77,7 @@ theorem jointFixedEntryW_fields_ok {K : WinCfg} {s : State} {base T : Addr} {siz
   have hl := d.isLt
   have ha' : nafMagnitudeW d≤2^31 := by
     unfold nafMagnitudeW
-    split <;> omega
+    split <;> omega_using []
   rw [Joint.fixedEntryW]
   apply WP.seq
   refine WP.mono_syms (nafSignW_ok s h8) fun u ⟨hu,ku⟩ su => ?_
@@ -138,8 +138,8 @@ theorem fixedEntryEnvW_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {x y : 
       (fixedEntryEnvW K C.p E d x y K.E.z) (if d.toNat<256 then P else negPt P) ∧
       fixedEntryEnvW K C.p E d x y K.E.z=1 := by
   have h := fixedLoadEnv_point (E:=E) hn hy hz hOne hp
-  have hxy : K.E.x≠K.E.y := by omega
-  have hzy : K.E.z≠K.E.y := by omega
+  have hxy : K.E.x≠K.E.y := by omega_using [hn, hy]
+  have hzy : K.E.z≠K.E.y := by omega_using [hy, hz, hxy]
   unfold fixedEntryEnvW
   split
   · exact h
@@ -179,15 +179,15 @@ theorem jointFixedFastW_ok {K : WinCfg} {s : State} {base T : Addr} {size x y u 
         (fixedEntryEnvW K C.p E (FastNaf.word u j) x y K.E.z) (FastNaf.point C G 9 u j) ∧
       fixedEntryEnvW K C.p E (FastNaf.word u j) x y K.E.z=1 := by
   have he := word_magnitudeW u j
-  refine WP.mono (jointFixedEntryW_fields_ok hL hn hm hi (by rw [he]; omega) h8
+  refine WP.mono (jointFixedEntryW_fields_ok hL hn hm hi (by rw [he]; omega_using [hmag]) h8
     (by rw [he]; exact hS) hy hz hD hx hyy hOne hZero heZero hApart) fun t ⟨kt,it⟩ => ?_
-  have hp := fixedEntryEnvW_point (E:=E) (d:=FastNaf.word u j) (by omega) hy hz hOneVal hPoint
+  have hp := fixedEntryEnvW_point (E:=E) (d:=FastNaf.word u j) (by omega_using [hn]) hy hz hOneVal hPoint
   have ep : (if (FastNaf.word u j).toNat<256 then mul (FastNaf.magnitude 9 u j) G
       else negPt (mul (FastNaf.magnitude 9 u j) G))=FastNaf.point C G 9 u j := by
     rw [FastNaf.point,←word_negativeW u j]
     by_cases h : (FastNaf.word u j).toNat<256
-    · simp only [h,ite_true,show ¬256≤(FastNaf.word u j).toNat from by omega,decide_false,ite_false,Bool.false_eq_true]
-    · simp only [h,ite_false,show 256≤(FastNaf.word u j).toNat from by omega,decide_true,ite_true]
+    · simp only [h,ite_true,show ¬256≤(FastNaf.word u j).toNat from by omega_using [h],decide_false,ite_false,Bool.false_eq_true]
+    · simp only [h,ite_false,show 256≤(FastNaf.word u j).toNat from by omega_using [h],decide_true,ite_true]
   rw [ep] at hp
   exact ⟨kt,it,hp⟩
 

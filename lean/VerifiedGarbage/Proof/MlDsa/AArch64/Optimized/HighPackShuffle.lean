@@ -22,11 +22,11 @@ theorem uzp1_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte_ofVBytes _ hi, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
     Option.map_some, Option.getD_some]
   split
-  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_map, List.getElem?_range (by omega),
+  · rw [List.getElem?_append_left (by simp; omega_arith), List.getElem?_map, List.getElem?_range (by omega_arith),
       Option.map_some, Option.getD_some, narrowByte]
-  · rw [List.getElem?_append_right (by simp; omega), List.getElem?_map, List.length_map, List.length_range,
-      List.getElem?_range (by omega), Option.map_some, Option.getD_some, narrowByte]
-    congr 1; omega
+  · rw [List.getElem?_append_right (by simp; omega_arith), List.getElem?_map, List.length_map, List.length_range,
+      List.getElem?_range (by omega_using [hi]), Option.map_some, Option.getD_some, narrowByte]
+    congr 1; omega_using []
 
 theorem uzp2_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte (VPermOp.eval .uzp2 .b16 x y) i =
@@ -35,11 +35,11 @@ theorem uzp2_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte_ofVBytes _ hi, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi,
     Option.map_some, Option.getD_some]
   split
-  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_map, List.getElem?_range (by omega),
+  · rw [List.getElem?_append_left (by simp; omega_arith), List.getElem?_map, List.getElem?_range (by omega_arith),
       Option.map_some, Option.getD_some, narrowByte]
-  · rw [List.getElem?_append_right (by simp; omega), List.getElem?_map, List.length_map, List.length_range,
-      List.getElem?_range (by omega), Option.map_some, Option.getD_some, narrowByte]
-    congr 1; omega
+  · rw [List.getElem?_append_right (by simp; omega_arith), List.getElem?_map, List.length_map, List.length_range,
+      List.getElem?_range (by omega_using [hi]), Option.map_some, Option.getD_some, narrowByte]
+    congr 1; omega_arith
 
 def gatherBytes (x y : BitVec 128) : BitVec 128 :=
   let t := VPermOp.eval .uzp1 .b16 x y
@@ -49,14 +49,14 @@ def gatherBytes (x y : BitVec 128) : BitVec 128 :=
 theorem gatherBytes_low (x y : BitVec 128) {i : Nat} (hi : i < 8) :
     vbyte (gatherBytes x y) i = if i < 4 then vbyte x (4*i) else vbyte y (4*(i-4)) := by
   dsimp only [gatherBytes]
-  rw [uzp1_byte _ _ (by omega), ite_eq_left hi, uzp1_byte _ _ (by omega)]
+  rw [uzp1_byte _ _ (by omega_using [hi]), ite_eq_left hi, uzp1_byte _ _ (by omega_using [hi])]
   by_cases h : i < 4
-  · rw [ite_eq_left (by omega), ite_eq_left h]
+  · rw [ite_eq_left (by omega_using [h]), ite_eq_left h]
     congr 1
-    omega
-  · rw [ite_eq_right (by omega), ite_eq_right h]
+    omega_using []
+  · rw [ite_eq_right (by omega_using [h]), ite_eq_right h]
     congr 1
-    omega
+    omega_using []
 
 /-- Concatenate the low eight bytes of each input register. -/
 theorem zip1_dword_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
@@ -72,11 +72,11 @@ theorem zip1_dword_byte (x y : BitVec 128) {i : Nat} (hi : i < 16) :
   simp only [vbyte, ofVDwords, BitVec.getLsbD_extractLsb', ht, decide_true, Bool.true_and,
     BitVec.getLsbD_append]
   by_cases h : i < 8
-  · simp only [h, ite_true, show 8*i+t<64 by omega, vdword, BitVec.getLsbD_extractLsb', ht, decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add]
-  · simp only [h, ite_false, show ¬ 8*i+t<64 by omega, vdword, BitVec.getLsbD_extractLsb',
-      show 8*i+t-64<64 by omega, ht, decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add]
+  · simp only [h, ite_true, show 8*i+t<64 by omega_using [ht, h], vdword, BitVec.getLsbD_extractLsb', ht, decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add]
+  · simp only [h, ite_false, show ¬ 8*i+t<64 by omega_using [h], vdword, BitVec.getLsbD_extractLsb',
+      show 8*i+t-64<64 by omega_using [hi, ht], ht, decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add]
     congr 1
-    omega
+    omega_using [h]
 
 def gatherSixteen (a b c d : BitVec 128) : BitVec 128 :=
   VPermOp.eval .zip1 .d2 (gatherBytes a b) (gatherBytes c d)
@@ -93,11 +93,11 @@ theorem gatherSixteen_byte (a b c d : BitVec 128) {i : Nat} (hi : i < 16) :
     by_cases h4 : i < 4
     · rw [ite_eq_left h4, ite_eq_left h4]
     · rw [ite_eq_right h4, ite_eq_right h4, ite_eq_left h8]
-  · rw [ite_eq_right h8, gatherBytes_low _ _ (by omega),
-      ite_eq_right (by omega : ¬ i < 4), ite_eq_right h8]
+  · rw [ite_eq_right h8, gatherBytes_low _ _ (by omega_using [hi]),
+      ite_eq_right (by omega_using [h8] : ¬ i < 4), ite_eq_right h8]
     by_cases h12 : i < 12
-    · rw [ite_eq_left (by omega), ite_eq_left h12]
-    · rw [ite_eq_right (by omega), ite_eq_right h12]
+    · rw [ite_eq_left (by omega_using [h12]), ite_eq_left h12]
+    · rw [ite_eq_right (by omega_using [h12]), ite_eq_right h12]
       congr 1
 
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

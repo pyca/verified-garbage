@@ -31,11 +31,11 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
       u.gpr .r3=s.mem.readW (off (State.addr base) (d+4)) 32 ∧
       u.gpr .r4=s.mem.readW (off (State.addr base) (d+8)) 32 ∧
       u.mem=s.mem ∧ Rest [.r3,.r4] s u := by
-    refine wp_ldr (a:=off (State.addr base) (d+4)) (by decide) (ws.ea ptr (by omega))
-      (ws.read (by omega)) fun u h => ?_
+    refine wp_ldr (a:=off (State.addr base) (d+4)) (by decide) (ws.ea ptr (by omega_using [fit]))
+      (ws.read (by omega_using [fit])) fun u h => ?_
     refine wp_ldr (a:=off (State.addr base) (d+8)) (by decide)
-      (by rw [h.other .r0 (by decide)];exact ws.ea ptr (by omega))
-      (by rw [h.rd,h.wr];exact ws.read (by omega)) fun v k => WP.block_nil ?_
+      (by rw [h.other .r0 (by decide)];exact ws.ea ptr (by omega_using [fit]))
+      (by rw [h.rd,h.wr];exact ws.read (by omega_using [fit])) fun v k => WP.block_nil ?_
     exact ⟨(k.other .r3 (by decide)).trans h.gpr,by rw [k.gpr,h.mem],
       k.mem.trans h.mem,(h.rest (by decide)).trans (k.rest (by decide))⟩
   refine WP.mono loads ?_
@@ -44,13 +44,13 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
   have carry8 : u.gpr .r8=s.gpr .r8 := restU.gpr .r8 (by decide)
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok u .r7 (by
-    rw [low,high,carry7];dsimp only [w32] at bound;omega)) ?_
+    rw [low,high,carry7];dsimp only [w32] at bound;omega_using [bound])) ?_
   rintro v ⟨value7,frame7⟩
   have carry8v : v.gpr .r8=s.gpr .r8 :=
     (frame7.regs .r8 (by decide)).trans carry8
   rw [WP.seq_iff]
   refine WP.mono (addWord_ok v .r8 (by
-    rw [value7,low,high,carry7,carry8v];dsimp only [w32] at bound;omega)) ?_
+    rw [value7,low,high,carry7,carry8v];dsimp only [w32] at bound;omega_using [bound])) ?_
   rintro z ⟨value8,frame8⟩
   have frame := frame7.trans frame8
   have pz : z.gpr .r0=base+BitVec.ofNat 32 d :=
@@ -59,11 +59,11 @@ theorem top_ok (s : State) {base : BitVec 32} {size d : Nat}
   have wz : z.wr=s.wr := frame.wr.trans restU.wr
   have wsz := ws.congr wz
   refine wp_str (a:=off (State.addr base) d) (by decide)
-    (by simpa only [Nat.add_zero] using wsz.ea pz (imm:=0) (by omega))
-    (by rw [wz];exact ws.write (by omega)) fun a ha => ?_
+    (by simpa only [Nat.add_zero] using wsz.ea pz (imm:=0) (by omega_using [fit]))
+    (by rw [wz];exact ws.write (by omega_using [fit])) fun a ha => ?_
   refine wp_str (a:=off (State.addr base) (d+4)) (by decide)
-    (by rw [ha.gpr];exact wsz.ea pz (by omega))
-    (by rw [ha.wr,wz];exact ws.write (by omega)) fun b hb => ?_
+    (by rw [ha.gpr];exact wsz.ea pz (by omega_using [fit]))
+    (by rw [ha.wr,wz];exact ws.write (by omega_using [fit])) fun b hb => ?_
   refine wp_dp (op2_imm (by decide)) fun t ht => WP.block_nil ?_
   refine ⟨?_,?_,?_,?_⟩
   · rw [ht.other .r3 (by decide),ht.other .r4 (by decide),hb.gpr,ha.gpr]

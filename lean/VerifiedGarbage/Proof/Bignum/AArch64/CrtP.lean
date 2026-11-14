@@ -291,7 +291,7 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
       have := hdr_lt_slot w 8 (show sWsP < 32 by decide); omega_using [hlo, hhi, this]), hslv]) (by decide) (by decide) (by decide +kernel))
     fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_
   have hc₁ : SubCtx s₁ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega)
+    SubCtx.mk' (hs.congr k₁.wr) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega_using [hhi, this])
   have hX₁ : XVals s₁ B o wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
   -- `m_q R_p` into `p`'s `X_c`.
   refine wp_seqs_append (by simp [redc]) (by simp [subModArr]) ?_

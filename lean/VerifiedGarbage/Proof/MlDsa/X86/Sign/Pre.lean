@@ -74,7 +74,7 @@ theorem pre_of {s₀ : State} (h : (signContract p X86.abi 96).pre s₀) : TPre 
     simp only [below]; rw [VG.X86.Taint.sub_setWidth h1]
   rw [hs] at s0 s1 s2 s3 s4 sg
   have c5 : ∀ i, i < (Y p).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
-    rw [Y_n] at hi; omega
+    rw [Y_n] at hi; omega_using [hi]
   refine ⟨h1, by show 16 ≤ 96; decide, by rw [Y_n]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, sg, ?_, by show 4 < 5; decide⟩
   · intro i hi hw
     rw [h3]
@@ -121,7 +121,7 @@ theorem core_pre_of {s₀ : State} (h : (signCoreContract p X86.abi 96).pre s₀
     simp only [below]; rw [VG.X86.Taint.sub_setWidth h1]
   rw [hs] at s0 s1 s2 s3 s4 sg
   have c5 : ∀ i, i < (Y p).n → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := fun i hi => by
-    rw [Y_n] at hi; omega
+    rw [Y_n] at hi; omega_using [hi]
   refine ⟨⟨h1, by show 16 ≤ 96; decide, by rw [Y_n]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, sg, ?_, by show 4 < 5; decide⟩, kp⟩
   · intro i hi hw
     rw [h3]

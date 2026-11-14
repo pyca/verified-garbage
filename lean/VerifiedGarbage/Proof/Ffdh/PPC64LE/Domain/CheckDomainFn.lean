@@ -65,7 +65,7 @@ theorem setup0_ok {s : State} {S D : Addr} {k L : Nat} (h3 : s.gpr .r3 = D)
       Keep setup0Regs s t := by
   refine WP.keep _ ?_ (by decide)
   unfold setup
-  prun [h3, h4, h5, h23, BitVec.add_zero, Pub.ofNat_add7_shr3 k (by omega), Pub.ofNat_shl3, Pub.ofNat_shl1,
+  prun [h3, h4, h5, h23, BitVec.add_zero, Pub.ofNat_add7_shr3 k (by omega_using [hk]), Pub.ofNat_shl3, Pub.ofNat_shl1,
     hdrBytes]
   refine ⟨?_, by simp [off, slot, hdrBytes]⟩
   rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]
@@ -81,11 +81,11 @@ theorem mod_one_iff {p q : Nat} (hq : 2 ≤ q) (hp : 1 ≤ p) : p % q = 1 ↔ (p
   constructor
   · intro h
     rw [h] at e
-    rw [show p - 1 = q * (p / q) by omega, Nat.mul_mod_right]
+    rw [show p - 1 = q * (p / q) by omega_using [e], Nat.mul_mod_right]
   · intro h
     have e' := Nat.div_add_mod (p - 1) q
     rw [h, Nat.add_zero] at e'
-    rw [show p = q * ((p - 1) / q) + 1 by omega, Nat.mul_add_mod]
+    rw [show p = q * ((p - 1) / q) + 1 by omega_using [hp, e'], Nat.mul_add_mod]
     exact Nat.mod_eq_of_lt hq
 
 /-- `domainValid`, as `checkDomain` computes it. -/
@@ -94,20 +94,20 @@ theorem domainValid_body (m : Mem) (D : Addr) {k L : Nat} (hk : 1 ≤ k) (hL : L
       Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m D k)) k = true ∧
         bodyCond L k (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m D k))
           (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (off D (2 * k)) k)) (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m (off D k) k)) := by
-  rw [Proof.Ffdh.domainValid_iff, Proof.Ffdh.domainOf_p _ _ (by omega), Proof.Ffdh.domainOf_g _ _ (by omega)]
+  rw [Proof.Ffdh.domainValid_iff, Proof.Ffdh.domainOf_p _ _ (by omega_using [hL]), Proof.Ffdh.domainOf_g _ _ (by omega_using [hL])]
   rcases hL with rfl | rfl
-  · rw [Proof.Ffdh.domainOf_q2 _ _ (by omega)]
-    simp only [bodyCond, show ¬ 2 * k = 3 * k by omega, ↓reduceIte, reduceCtorEq, false_imp_iff, imp_true_iff,
+  · rw [Proof.Ffdh.domainOf_q2 _ _ (by omega_using [hk])]
+    simp only [bodyCond, show ¬ 2 * k = 3 * k by omega_using [hk], ↓reduceIte, reduceCtorEq, false_imp_iff, imp_true_iff,
       and_true]
   · rw [Proof.Ffdh.domainOf_q3]
     simp only [bodyCond, ↓reduceIte, Option.some.injEq, forall_eq', qConds]
     constructor
     · rintro ⟨hv, hg, ⟨hq1, hq2, hq3⟩, hd, hgq⟩
       have := modulus_facts hv
-      exact ⟨hv, ⟨⟨hq2, hq3⟩, hq1⟩, ⟨hg, (mod_one_iff hq2 (by omega)).mpr hd⟩, hgq⟩
+      exact ⟨hv, ⟨⟨hq2, hq3⟩, hq1⟩, ⟨hg, (mod_one_iff hq2 (by omega_using [hg])).mpr hd⟩, hgq⟩
     · rintro ⟨hv, ⟨⟨hq2, hq3⟩, hq1⟩, ⟨hg, hd⟩, hgq⟩
       have := modulus_facts hv
-      exact ⟨hv, hg, ⟨hq1, hq2, hq3⟩, (mod_one_iff hq2 (by omega)).mp hd, hgq⟩
+      exact ⟨hv, hg, ⟨hq1, hq2, hq3⟩, (mod_one_iff hq2 (by omega_using [hq3])).mp hd, hgq⟩
 
 theorem cd_correct (s : State) (h : cdContract.pre s) :
     ∃ tr t, Exec isa checkDomain s tr t ∧ abiPreserved s t ∧ cdContract.post s t := by
@@ -120,17 +120,17 @@ theorem cd_correct (s : State) (h : cdContract.pre s) :
   generalize hkd : (s.gpr .r5).toNat = k at hk hk' hL hsl
   generalize hSd : s.gpr .r6 = S at hwr dDS nwS
   generalize hZd : (s.gpr .r7).toNat * 8 = Z at hwr dDS nwS
-  have hL' : L = 2 * k ∨ L = 3 * k := by simp only [Spec.Ffdh.domainLenValid] at hL; omega
-  have hZ256 : 256 ≤ Z := by omega
+  have hL' : L = 2 * k ∨ L = 3 * k := by simp only [Spec.Ffdh.domainLenValid] at hL; omega_using [hL]
+  have hZ256 : 256 ≤ Z := by omega_using [hsl, hZd]
   generalize hwd : (k + 7) / 8 = w
-  have hw4 : 4 ≤ w := by omega
-  have hw' : w ≤ 128 := by omega
+  have hw4 : 4 ≤ w := by omega_using [hk, hwd]
+  have hw' : w ≤ 128 := by omega_using [hk', hwd]
   have hZw : slot w 28 ≤ Z := by rw [slot_eq]; omega_using [hsl, hZd, hwd, hk', hk]
   have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS
   have hin : ∀ i < 18, InRegions s.wr (off (savW S) (8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp, by
-    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega) (by omega)⟩
-  have sepD := sep_of_disjoint (L := L) dDS (by omega)
-  have rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega)
+    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega_using [hZ256, hi]) (by omega_using [hi])⟩
+  have sepD := sep_of_disjoint (L := L) dDS (by omega_using [hLd])
+  have rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega_using [hLd])
   unfold checkDomain
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -152,15 +152,15 @@ theorem cd_correct (s : State) (h : cdContract.pre s) :
     refine List.map_congr_left fun i hi => hfr₁ _ fun r hr hc => ?_
     rw [List.mem_singleton] at hr
     subst hr
-    have hc' := (Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega)) _ hc
+    have hc' := (Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega_using [hZ256])) _ hc
     exact hsep i (List.mem_range.mp hi) _ (by simp only [Region.Contains] at hc'; exact hc') rfl
   have g23 : s₂.gpr .r23 = S := (k2.gpr .r23 (by decide)).trans h23₁
   have sep' : ∀ {a}, a + k ≤ L → ∀ i < k, ∀ x, ofs S x < Z → off (off D a) i ≠ x := fun ha i hi => by
-    rw [off_off']; exact sepD _ (by omega)
+    rw [off_off']; exact sepD _ (by omega_using [ha, hi])
   refine WP.seq (WP.mono (loadP_ok e2 a21 a28 hwd.symm hk hk' (fun i hi => by
-      rw [k12.rd, k12.wr]; exact rdD i (by omega)) (fun i hi => sepD i (by omega)))
+      rw [k12.rd, k12.wr]; exact rdD i (by omega_using [hL', hi])) (fun i hi => sepD i (by omega_using [hL', hi])))
     fun s₃ ⟨⟨p3, c3, b3⟩, k3⟩ => ?_)
-  rw [hbD D k fun i hi => sepD i (by omega)] at p3 c3
+  rw [hbD D k fun i hi => sepD i (by omega_using [hL', hi])] at p3 c3
   have e3 : Env s₃ S Z w := e2.keep k3 (by decide)
   have k13 := k12.trans k3
   have hb3 : ∀ (P : Addr) n, (∀ i < n, ∀ x, ofs S x < Z → off P i ≠ x) →
@@ -177,15 +177,15 @@ theorem cd_correct (s : State) (h : cdContract.pre s) :
       have hf := modulus_facts hv
       refine WP.mono (domainBody_ok (L := L) e3 ((k3.gpr .r23 (by decide)).trans g23)
         ((k3.gpr .r21 (by decide)).trans a21) ((k3.gpr .r27 (by decide)).trans a27)
-        ((k3.gpr .r28 (by decide)).trans a28) (by omega) (by omega) hk' hL'
+        ((k3.gpr .r28 (by decide)).trans a28) (by omega_using [hk]) (by omega_using [hwd]) hk' hL'
         (fun i hi => by rw [k13.rd, k13.wr]; exact rdD i hi) sepD
-        (p3.trans (by rw [hb3 D k fun i hi => sepD i (by omega)])) (by rw [p3]; exact hf.1) (by rw [p3]; exact hf.2)
-        (by rw [p3]; exact top_of_valid hv (by omega) (by omega)))
+        (p3.trans (by rw [hb3 D k fun i hi => sepD i (by omega_using [hL', hi])])) (by rw [p3]; exact hf.1) (by rw [p3]; exact hf.2)
+        (by rw [p3]; exact top_of_valid hv (by omega_using [hwd]) (by omega_using [hw4])))
         fun t ⟨⟨t3, bt⟩, kt⟩ => ⟨?_, bt, kt.mono (by decide)⟩
-      rw [t3, p3, hb3 (off D k) k (sep' (a := k) (by omega))]
+      rw [t3, p3, hb3 (off D k) k (sep' (a := k) (by omega_using [hL']))]
       rcases hL' with rfl | rfl
-      · simp only [hv, true_and, bodyCond, show ¬ 2 * k = 3 * k by omega, ↓reduceIte]
-      · rw [hb3 (off D (2 * k)) k (sep' (a := 2 * k) (by omega))]
+      · simp only [hv, true_and, bodyCond, show ¬ 2 * k = 3 * k by omega_using [hk], ↓reduceIte]
+      · rw [hb3 (off D (2 * k)) k (sep' (a := 2 * k) (by omega_using []))]
         simp only [hv, true_and]
     · refine WP.mono (li_ok s₃ 0 (by decide)) fun t ⟨⟨t3, tm⟩, kt⟩ =>
         ⟨?_, by rw [tm]; exact Outside.refl _ _ _ _, kt.mono (by decide)⟩
@@ -195,10 +195,10 @@ theorem cd_correct (s : State) (h : cdContract.pre s) :
   have hsav : ∀ i < 18, t₄.mem.readW (off (savW S) (8 * i)) 64 = s.gpr (Impl.Ffdh.PPC64LE.Domain.saved i) :=
       fun i hi => by
     have ea : off (savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
-    have e0 : slot w 0 = 256 := by rw [slot_eq]; omega
+    have e0 : slot w 0 = 256 := by rw [slot_eq]; omega_using []
     rw [← hS.saved i hi, hSd, ea]
     show Mont.word t₄.mem S (112 + 8 * i) = Mont.word s₁.mem S (112 + 8 * i)
-    rw [Outside.word b4 (by omega) (by omega), Outside.word b3 (by omega) (by omega), m2]
+    rw [Outside.word b4 (by omega_using [hi, e0]) (by omega_using [hi]), Outside.word b3 (by omega_using [hi, e0]) (by omega_using [hi]), m2]
   refine WP.mono (restore_ok t₄ ((k4.gpr .r23 (by decide)).trans ((k3.gpr .r23 (by decide)).trans g23))
     (by rw [k14.wr]; exact hin) hsav) fun u ⟨urs, uot, um, _, _, usp, ulr⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [usp, k14.sp], by rw [ulr, k14.lr]⟩, ?_⟩
@@ -209,6 +209,6 @@ theorem cd_correct (s : State) (h : cdContract.pre s) :
       rw [uot r hn, k14.gpr r (cd_pres_not_written r hr hn)]
   · show ((u.gpr .r3).setWidth 32).toNat = _
     rw [uot .r3 (by decide), t3, ret_ofNat, hDd, hLd, hkd]
-    exact ite_congr (propext (domainValid_body s.mem D (by omega) hL').symm) (fun _ => rfl) (fun _ => rfl)
+    exact ite_congr (propext (domainValid_body s.mem D (by omega_using [hk]) hL').symm) (fun _ => rfl) (fun _ => rfl)
 
 end VG.Proof.Ffdh.PPC64LE.Domain

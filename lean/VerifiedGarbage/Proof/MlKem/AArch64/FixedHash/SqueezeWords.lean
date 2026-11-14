@@ -36,8 +36,8 @@ theorem squeezeWords_ok {s : State} {sc base : Reg} {srcOff dstOff N : Nat}
   intro i a hi ha
   have asrc := ha.1.get sc (by simp [sc2,sc9])
   have adst := ha.1.get base (by simp [b2,b9])
-  refine WP.mono (squeezeWord_ok (src:=srcOff+8*i) (off:=dstOff+8*i) b2 b9 (by omega)
-    ⟨by omega,by omega⟩
+  refine WP.mono (squeezeWord_ok (src:=srcOff+8*i) (off:=dstOff+8*i) b2 b9 (by omega_using [df, hi])
+    ⟨by omega_using [sa],by omega_using [sf, hi]⟩
     (by rw [ha.1.rd,ha.1.wr,asrc]; exact read i hi)
     (by rw [ha.1.wr,adst]; exact write i hi)) fun t ht=>?_
   have mt : t.mem=a.mem.writeW (dst+BitVec.ofNat 64 (8*i)) (a.mem.readW (src+BitVec.ofNat 64 (8*i)) 64) := by
@@ -49,22 +49,22 @@ theorem squeezeWords_ok {s : State} {sc base : Reg} {srcOff dstOff N : Nat}
     exact Frame.writeW (r:=⟨dst+BitVec.ofNat 64 (8*i),8⟩) (Frame.refl _ _) (by simp) _ (by simp [Region.Contains])
   refine ⟨(ha.1.trans ht.1).mono (by simp),?_,?_⟩
   · rw [mt]
-    exact Frame.writeW (r:=⟨dst,8*N⟩) ha.2.1 (by simp) _ (Offset.contains_base dst (by omega) (by omega))
+    exact Frame.writeW (r:=⟨dst,8*N⟩) ha.2.1 (by simp) _ (Offset.contains_base dst (by omega_using [hi]) (by omega_using [sf, hi]))
   · intro j hj
     by_cases old : j<8*i
     · rw [bytes_frame step (p:=dst) (len:=8*i) (fun r hr=>by
         rw [List.mem_singleton.mp hr]
-        exact Offset.base_disjoint dst (by omega) (by omega)) (by omega) j old]
+        exact Offset.base_disjoint dst (by omega_using []) (by omega_using [sf, hi])) (by omega_using [sf, hi]) j old]
       exact ha.2.2 j old
-    · have hk : j-8*i<8 := by omega
+    · have hk : j-8*i<8 := by omega_using [hj]
       have out := squeezeWord_bytes a.mem (src+BitVec.ofNat 64 (8*i)) (dst+BitVec.ofNat 64 (8*i))
       rw [←mt] at out
       have byte := congrArg (fun bs : List Byte=>bs[j-8*i]?.getD 0) out
       simp only [←List.getD_eq_getElem?_getD,bytesAt_getD _ _ hk,ptr_add] at byte
-      have idx : 8*i+(j-8*i)=j := by omega
+      have idx : 8*i+(j-8*i)=j := by omega_using [old]
       rw [idx] at byte
       rw [byte]
       exact bytes_frame ha.2.1 (p:=src) (len:=8*N)
-        (fun r hr=>by rw [List.mem_singleton.mp hr]; exact apart) (by omega) j (by omega)
+        (fun r hr=>by rw [List.mem_singleton.mp hr]; exact apart) (by omega_using [sf]) j (by omega_using [hi, hj])
 
 end VG.Proof.MlKem.AArch64.FixedHash

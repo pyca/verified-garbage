@@ -107,7 +107,7 @@ theorem add3 (c : Nat) (x y : BitVec 64) :
     BitVec.ofNat 64 c + x + y = BitVec.ofNat 64 (c + x.toNat + y.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem shr52 {S : Nat} (h : S < 2 ^ 64) : BitVec.ofNat 64 S >>> 52 = BitVec.ofNat 64 (S / 2 ^ 52) := by
   apply BitVec.eq_of_toNat_eq
@@ -405,7 +405,7 @@ theorem lt1_iff (x : BitVec 64) : x.toNat < BitVec.toNat (1 : BitVec 64) ↔ x =
   have e1 : (1 : BitVec 64).toNat = 1 := rfl
   rw [e1]
   constructor
-  · intro h; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega
+  · intro h; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega_using [h]
   · intro h; rw [h, BitVec.toNat_ofNat]; decide
 
 /-- `cmp r, 1; sbb r, r`: the mask of `r = 0`. -/
@@ -603,7 +603,7 @@ theorem mov32n_ok {s : State} (r : Reg) {n : Nat} (hn : n < 2 ^ 31) :
   · rw [State.setReg32, RegUpd.gpr_setReg_self]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hn]
   · rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ (fun h => hq (by simp [h]))]
 
 theorem sub13_ok {s : State} {k : Nat} (h : s.gpr .r13 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k < 2 ^ 31) :
@@ -613,8 +613,8 @@ theorem sub13_ok {s : State} {k : Nat} (h : s.gpr .r13 = BitVec.ofNat 64 k) (hk 
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r13] (Q := fun t =>
     t.gpr .r13 = BitVec.ofNat 64 (k - 1) ∧ t.zf = some (decide (k - 1 = 0)) ∧ t.mem = s.mem ∧
       t.mxcsr = s.mxcsr) ?_ rfl) fun t ⟨⟨a, b, c, d⟩, kk⟩ => ⟨a, b, kk, c, d⟩
-  xrun [h, VG.Proof.MlKem.X86_64.ofNat64_pred hk (by omega),
-    VG.Proof.MlKem.X86_64.ofNat64_beq_zero (k := k - 1) (by omega)]
+  xrun [h, VG.Proof.MlKem.X86_64.ofNat64_pred hk (by omega_using [hk']),
+    VG.Proof.MlKem.X86_64.ofNat64_beq_zero (k := k - 1) (by omega_using [hk'])]
   rfl
 
 /-- `[x] := 2 [x] mod c`, the modulus `c` at 0, through `tmp`. -/

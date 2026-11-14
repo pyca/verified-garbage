@@ -34,28 +34,28 @@ theorem CrtLayoutState.size {base : BitVec 32} {len w : Nat} {mem : Mem}
     (h : CrtLayoutState base len w mem) : 256 ≤ 8 * len := by
   have := h.layout.2.2.1
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-  omega
+  omega_using [this]
 
 theorem CrtLayoutState.congr {base : BitVec 32} {len w : Nat} {m m' : Mem}
     (h : CrtLayoutState base len w m) (eq : WorkspaceEq (State.addr base) (8 * len) m m') :
     CrtLayoutState base len w m' :=
-  ⟨eq.layout h.layout, (eq.width (by have := h.size; omega)).trans h.width⟩
+  ⟨eq.layout h.layout, (eq.width (by have := h.size; omega_using [this])).trans h.width⟩
 
 theorem CrtMainState.congr {base : BitVec 32} {len w : Nat} {m m' : Mem}
     (h : CrtMainState base len w m) (eq : WorkspaceEq (State.addr base) (8 * len) m m') :
     CrtMainState base len w m' := by
   have size := h.toCrtLayoutState.size
   exact ⟨h.toCrtLayoutState.congr eq,
-    (eq.word (d := 224) (bits := 32) (by omega)).trans h.p,
-    (eq.word (d := 228) (bits := 32) (by omega)).trans h.q,
-    (eq.word (d := 232) (bits := 32) (by omega)).trans h.product,
-    (eq.word (d := 236) (bits := 32) (by omega)).trans h.compare,
-    (eq.word (d := 240) (bits := 32) (by omega)).trans h.modulus⟩
+    (eq.word (d := 224) (bits := 32) (by omega_using [size])).trans h.p,
+    (eq.word (d := 228) (bits := 32) (by omega_using [size])).trans h.q,
+    (eq.word (d := 232) (bits := 32) (by omega_using [size])).trans h.product,
+    (eq.word (d := 236) (bits := 32) (by omega_using [size])).trans h.compare,
+    (eq.word (d := 240) (bits := 32) (by omega_using [size])).trans h.modulus⟩
 
 theorem CrtPrimeState.congr {base parent : BitVec 32} {len w : Nat} {m m' : Mem}
     (h : CrtPrimeState base parent len w m) (eq : WorkspaceEq (State.addr base) (8 * len) m m') :
     CrtPrimeState base parent len w m' :=
-  ⟨h.toCrtLayoutState.congr eq, (eq.word (d := 216) (bits := 32) (by have := h.toCrtLayoutState.size; omega)).trans h.link⟩
+  ⟨h.toCrtLayoutState.congr eq, (eq.word (d := 216) (bits := 32) (by have := h.toCrtLayoutState.size; omega_using [this])).trans h.link⟩
 
 theorem CrtLayoutState.nativeCount {s : State} {base : BitVec 32} {len w : Nat}
     (h : CrtLayoutState base len w s.mem) (ws : Workspace s base (8 * len)) :

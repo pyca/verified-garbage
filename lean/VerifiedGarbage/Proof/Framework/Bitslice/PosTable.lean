@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The position-table domain: bitwise circuits with per-position constants
@@ -33,17 +34,17 @@ theorem testBit_blocks {N : Nat} {f : Nat → Nat} (hf : ∀ p, f p < 2 ^ N) (n 
     rw [blocks, Nat.testBit_or, ih, Nat.testBit_shiftLeft]
     rcases Nat.lt_trichotomy p n with h | h | h
     · have hle : ¬ N * n ≤ N * p + c := by
-        have := Nat.mul_le_mul_left N (show p + 1 ≤ n by omega)
-        rw [Nat.mul_add, Nat.mul_one] at this; omega
-      simp [h, hle, show p < n + 1 by omega]
+        have := Nat.mul_le_mul_left N (show p + 1 ≤ n by omega_using [h])
+        rw [Nat.mul_add, Nat.mul_one] at this; omega_using [hc, this]
+      simp [h, hle, show p < n + 1 by omega_using [h]]
     · subst h
-      simp [show N * p + c - N * p = c by omega]
+      simp [show N * p + c - N * p = c by omega_using []]
     · have h1 : N * (n + 1) ≤ N * p := Nat.mul_le_mul_left N h
       rw [Nat.mul_add, Nat.mul_one] at h1
       have h2 : (f n).testBit (N * p + c - N * n) = false :=
         Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (hf n)
-          (Nat.pow_le_pow_right (by decide) (by omega)))
-      simp [show ¬ p < n by omega, show ¬ p < n + 1 by omega, h2]
+          (Nat.pow_le_pow_right (by decide) (by omega_using [h1])))
+      simp [show ¬ p < n by omega_using [h], show ¬ p < n + 1 by omega_using [h], h2]
 
 /-- The constant word `v`: at each position, the table of its bit. -/
 def spreadConst (w N v : Nat) : Nat := blocks N (fun p => if v.testBit p then 2 ^ N - 1 else 0) w
@@ -67,7 +68,7 @@ def PosRel {w : Nat} (N : Nat) (cs : Nat → Nat) (a : Nat) (x : BitVec w) : Pro
 
 theorem testBit_spreadConst {w N v p c : Nat} (hp : p < w) (hc : c < N) :
     (spreadConst w N v).testBit (N * p + c) = v.testBit p := by
-  rw [spreadConst, testBit_blocks (fun p => by have := Nat.two_pow_pos N; split <;> omega) w p c hc]
+  rw [spreadConst, testBit_blocks (fun p => by have := Nat.two_pow_pos N; split <;> omega_using [this]) w p c hc]
   simp only [hp, decide_true, Bool.true_and]
   split
   · rename_i h; rw [h, Nat.testBit_two_pow_sub_one]; simp [hc]

@@ -179,7 +179,7 @@ theorem combPts_ok (hC : Law Spec.BrainpoolP256r1.curve) {s₀ : State} {T : Add
       (∀ w ∈ W, w.1 + w.2 ≤ 4352 ∨ 4608 ≤ w.1) → ∀ t < 64 * brainpoolp256r1.n,
       m' (off (s₀.gpr .r6) (bitsAt brainpoolp256r1.n 1 + t)) = m (off (s₀.gpr .r6) (bitsAt brainpoolp256r1.n 1 + t)) :=
     fun {_ _ _} U hW t ht => tbl_unch U (by decide) (j := 1) (by decide) ht (fun w hw => by
-      have := hW w hw; have : t < 256 := ht; show 4352 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ 4352 + t; omega)
+      have := hW w hw; have : t < 256 := ht; show 4352 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ 4352 + t; omega_arith)
   have fl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
       (∀ w ∈ W, brainpoolp256r1.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp256r1.sl FLAG) →
       word m' (s₀.gpr .r6) (brainpoolp256r1.sl FLAG) = word m (s₀.gpr .r6) (brainpoolp256r1.sl FLAG) :=
@@ -294,7 +294,7 @@ table). -/
 theorem vSatMem_held : ∀ i < brainpoolp256r1CombWords.length,
     vSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = brainpoolp256r1CombWords.getD i 0 := by
   unfold vSatMem
-  exact constMem_held _ _ (by rw [Proof.BrainpoolP256r1.PPC64LE.comb_words_length]; omega)
+  exact constMem_held _ _ (by rw [Proof.BrainpoolP256r1.PPC64LE.comb_words_length]; omega_using [])
 
 /-- A state satisfying the precondition with the table. -/
 def vSatC : State :=

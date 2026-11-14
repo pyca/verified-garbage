@@ -66,7 +66,7 @@ theorem keyLoad2_ok {s : State} {d : Reg} (hd : d ≠ .rax) {k : Nat} (hk : k �
   · have m3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, u1.mem]
     rw [u6.self, u5.self, u4.self, setWidth_setWidth_32, u5.other (Ne.symm hd), u4.other (Ne.symm hd),
       u3.self, u2.self, u1.self, setWidth_setWidth_32, ea_off, ea_off, rdi3, m3,
-      wordAt_blockAt _ _ (by omega), wordAt_blockAt _ _ (by omega), BitVec.or_comm]
+      wordAt_blockAt _ _ (by omega_using [hk]), wordAt_blockAt _ _ (by omega_using [hk]), BitVec.or_comm]
     have := BitVec.setWidth_append_eq_shiftLeft_setWidth_or (w'' := 64)
       (b := byteRev32 (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 k) 32))
       (b' := byteRev32 (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (k + 4)) 32))

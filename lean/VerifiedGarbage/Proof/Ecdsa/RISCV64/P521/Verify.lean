@@ -128,14 +128,14 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
   refine WP.block_append (WP.mono (loadLen_ok 66 hw₂ (o := p521.sl VR) (p := .a2) (off := 0) (L := 132)
     (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [g₂ .a2 (by simp), r₂.rd, r₂.wr, rd₁, wr₁]; exact rds)
-    (fun i hi => by rw [g₂ .a2 (by simp)]; exact out_of_disj hsd hfg (by omega)))
+    (fun i hi => by rw [g₂ .a2 (by simp)]; exact out_of_disj hsd hfg (by omega_using [hi])))
     fun s₃ ⟨r₃, O₃, e₃⟩ => ?_)
   simp only [Nat.reduceAdd, Nat.reduceDiv] at O₃ e₃
   have hw₃ := hw₂.of_rest r₃
   refine WP.block_append (WP.mono (loadLen_ok 66 hw₃ (o := p521.sl VS) (p := .a2) (off := 66) (L := 132)
     (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [r₃.gpr _ (by decide), g₂ .a2 (by simp), r₃.rd, r₃.wr, r₂.rd, r₂.wr, rd₁, wr₁]; exact rds)
-    (fun i hi => by rw [r₃.gpr _ (by decide), g₂ .a2 (by simp)]; exact out_of_disj hsd hfg (by omega)))
+    (fun i hi => by rw [r₃.gpr _ (by decide), g₂ .a2 (by simp)]; exact out_of_disj hsd hfg (by omega_using [hi])))
     fun s₄ ⟨r₄, O₄, e₄⟩ => ?_)
   simp only [Nat.reduceAdd, Nat.reduceDiv] at O₄ e₄
   have hw₄ := hw₃.of_rest r₄
@@ -143,7 +143,7 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
   refine WP.block_append (WP.mono (loadLen_ok 66 hw₄ (o := p521.sl VE) (p := .a1) (off := 0) (L := 66)
     (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [r₃₄.gpr _ (by decide), g₂ .a1 (by simp), r₃₄.rd, r₃₄.wr, r₂.rd, r₂.wr, rd₁, wr₁]; exact rdd)
-    (fun i hi => by rw [r₃₄.gpr _ (by decide), g₂ .a1 (by simp)]; exact out_of_disj hdd hfd (by omega)))
+    (fun i hi => by rw [r₃₄.gpr _ (by decide), g₂ .a1 (by simp)]; exact out_of_disj hdd hfd (by omega_using [hi])))
     fun s₅₀ ⟨r₅₀, O₅₀, e₅₀⟩ => ?_)
   simp only [Nat.reduceAdd, Nat.reduceDiv] at O₅₀ e₅₀
   have hw₅₀ := hw₄.of_rest r₅₀
@@ -165,7 +165,7 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
     fun hd hf _ _ hk => sep_at' hd hf hk
   have sp0 : ∀ {q : Reg} {n : Nat}, (⟨s.gpr q, n⟩ : Region).Disjoint ⟨base, 8192⟩ → (s.gpr q).toNat + n ≤ 2 ^ 64 →
       ∀ i < n, ¬ (⟨base, 8192⟩ : Region).Contains (s.gpr q + BitVec.ofNat 64 i) 1 := fun hd hf i hi => by
-    simpa using sep_at' hd hf (off := 0) (k := _) (by omega) i hi
+    simpa using sep_at' hd hf (off := 0) (k := _) (by omega_using []) i hi
   have K₁₇ : ∀ r ∈ preserved, s₇.gpr r = s₁.gpr r := fun r hr => by
     have h1 : r ∉ [Reg.t0, .t1] := fun h => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h
@@ -176,10 +176,10 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
     rw [K₇.gpr _ hr, K₆.gpr _ hr, r₅s.gpr _ h1, r₅₀.gpr _ h1, r₄.gpr _ h1, r₃.gpr _ h1, r₂.gpr _ h2]
   have sv₅ : ∀ i, i < 44 → sv base s₇ i = sv base s₅ i := fun i hi => by
     show wordsVal _ _ _ _ = _
-    rw [O₇.wordsVal (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega),
-      O₆.wordsVal (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega)]
+    rw [O₇.wordsVal (by rw [sl_eq, FL]; omega_using [hi]) (by rw [sl_eq]; omega_using [hi]),
+      O₆.wordsVal (by rw [sl_eq, FL]; omega_using [hi]) (by rw [sl_eq]; omega_using [hi])]
   have sr : ∀ i < 66, ¬ (⟨base, 8192⟩ : Region).Contains (s.gpr .a2 + BitVec.ofNat 64 i) 1 := fun i hi => by
-    simpa using sp' hsd hfg (off := 0) (k := 66) (by omega) i hi
+    simpa using sp' hsd hfg (off := 0) (k := 66) (by omega_using []) i hi
   have r₅' : sv base s₅ VR = ofBytes (bytesAt s.mem (s.gpr .a2) 66) := by
     show wordsVal _ _ _ _ = _
     rw [O₅s.wordsVal (by decide) (by decide), O₅₀.wordsVal (by decide) (by decide),
@@ -189,8 +189,8 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
     show wordsVal _ _ _ _ = _
     rw [O₅s.wordsVal (by decide) (by decide), O₅₀.wordsVal (by decide) (by decide), e₄, r₃.gpr _ (by decide),
       r₂.gpr _ (by decide), a2,
-      bytesAt_unch (U₂.trans O₃.unch) (by decide) (sp' hsd hfg (off := 66) (k := 66) (by omega)),
-      bytesAt_unch U₁ (by decide) (sp' hsd hfg (off := 66) (k := 66) (by omega))]
+      bytesAt_unch (U₂.trans O₃.unch) (by decide) (sp' hsd hfg (off := 66) (k := 66) (by omega_using [])),
+      bytesAt_unch U₁ (by decide) (sp' hsd hfg (off := 66) (k := 66) (by omega_using []))]
   have mn₅ : sv base s₅ MN = W.n := by
     show wordsVal _ _ _ _ = _
     rw [O₅s.wordsVal (by decide) (by decide), O₅₀.wordsVal (by decide) (by decide),
@@ -206,11 +206,11 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
   · show wordsVal _ _ _ _ = _
     rw [sv_unch U₃₇ CX (by decide)]
     show sv base s₂ CX = _
-    rw [x₂, a0, bytesAt_unch U₁ (by decide) (sp' hpd hfp (off := 1) (k := 66) (by omega))]
+    rw [x₂, a0, bytesAt_unch U₁ (by decide) (sp' hpd hfp (off := 1) (k := 66) (by omega_using []))]
   · show wordsVal _ _ _ _ = _
     rw [sv_unch U₃₇ CY (by decide)]
     show sv base s₂ CY = _
-    rw [y₂, a0, bytesAt_unch U₁ (by decide) (sp' hpd hfp (off := 67) (k := 66) (by omega))]
+    rw [y₂, a0, bytesAt_unch U₁ (by decide) (sp' hpd hfp (off := 67) (k := 66) (by omega_using []))]
   · rw [sv₅ VR (by decide)]; exact r₅'
   · rw [sv₅ VS (by decide)]; exact s₅'
   · rw [sv₅ VE (by decide)]
@@ -219,7 +219,7 @@ theorem vsetup_ok {s : State} (hs : verifyRV.pre s) :
       bytesAt_unch ((U₂.trans O₃.unch).trans O₄.unch) (by decide) (sp0 hdd hfd),
       bytesAt_unch U₁ (by decide) (sp0 hdd hfd)]
   · have h1 := bytesAt_unch U₁ (q := s.gpr .a0) (n := 1) (by decide)
-      (by simpa using sp' hpd hfp (off := 0) (k := 1) (by omega))
+      (by simpa using sp' hpd hfp (off := 0) (k := 1) (by omega_using []))
     simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true,
       BitVec.add_zero] at h1
     have sv₆ : sv base s₆ VS = sv base s₅ VS := by
@@ -407,7 +407,7 @@ theorem compare_ok {base : Addr} {s : State} (hw : WsReg s base) (hx : sv base s
   -- `x mod n`.
   refine WP.seq (WP.mono (addCall_ok order_ok hw (o := p521.sl XN) (a := p521.sl XO) (b := p521.sl ZERO)
     (hl (by decide)) (hl (by decide)) (hl (by decide)) (hs (by decide)) (hs (by decide)) (hs (by decide))
-    (by show sv base s XO + sv base s ZERO < 2 * W.n; rw [hz]; omega)) fun s₁ ⟨C₁, v₁⟩ => ?_)
+    (by show sv base s XO + sv base s ZERO < 2 * W.n; rw [hz]; omega_using [hx, hpn])) fun s₁ ⟨C₁, v₁⟩ => ?_)
   rw [hk4, hmN] at v₁
   have hw₁ := hw.of_kp C₁.kp
   have U₁ : Unch base (cw XN) s.mem s₁.mem := C₁.mem
@@ -470,9 +470,9 @@ theorem compare_ok {base : Addr} {s : State} (hw : WsReg s base) (hx : sv base s
   · intro h
     by_contra hne
     rcases Nat.lt_or_gt_of_ne hne with hab | hab
-    · rw [Nat.mod_eq_of_lt (by omega)] at h; omega
-    · rw [show a + W.n - b = (a - b) + W.n by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)] at h; omega
-  · intro h; subst h; rw [show a + W.n - a = W.n by omega, Nat.mod_self]
+    · rw [Nat.mod_eq_of_lt (by omega_using [hn0, hab])] at h; omega_using [hx, hz, hone, hr2, hk4, hmN, hn0, hpn, hR, v₁, lt₂, e₂, rm, one₂, lt₃, e₃, rn, v₄, hw', xn₃, h1, rn₃, h2, h, hne, hab]
+    · rw [show a + W.n - b = (a - b) + W.n by omega_using [hab], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [h1])] at h; omega_using [hx, hz, hone, hr2, hk4, hmN, hn0, hpn, hR, v₁, lt₂, e₂, rm, one₂, lt₃, e₃, rn, v₄, hw', xn₃, h1, rn₃, h2, h, hne, hab]
+  · intro h; subst h; rw [show a + W.n - a = W.n by omega_using [], Nat.mod_self]
 
 /-- The end: the masks of `Z ≠ 0` and of the difference being zero into the
 flag, its low bit to `a0`, and the saved registers restored. -/
@@ -497,7 +497,7 @@ theorem vfinish_ok {s : State} {base : Addr} (hw : WsReg s base) {c : Bool}
   have fl₃ : word s₃.mem base FL = maskOf B := by
     rw [f₃, m₂, f₁, hF, g₂, wd₁, maskOf_and, maskOf_and, hB]
   have wd : ∀ d, d + 8 ≤ FL ∨ FL + 8 ≤ d → d + 8 ≤ 4096 → word s₃.mem base d = word s.mem base d := fun d h hd => by
-    rw [O₃.word h (by omega), m₂, O₁.word h (by omega)]
+    rw [O₃.word h (by omega_using [hd]), m₂, O₁.word h (by omega_using [hd])]
   refine ldAt_ws hw₃ (d := p521.sl FLAG) (by decide) (by decide) fun s₉ u₉ => ?_
   refine WP.cons (exec_logicImm (by decide)) ?_
   have u₉' := Upd.write s₉ .a0 (s₉.gpr .a0 &&& BitVec.ofInt 64 1)
@@ -724,9 +724,9 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
   by_cases hrs : 1 ≤ R ∧ R < W.n ∧ 1 ≤ Sg ∧ Sg < W.n
   · -- In range: the key's point is the check's.
     have hrn : decide (R < W.n) = true := decide_eq_true hrs.2.1
-    have hr0 : decide (R = 0) = false := decide_eq_false (by omega)
+    have hr0 : decide (R = 0) = false := decide_eq_false (by omega_using [hrs])
     have hsn : decide (Sg < W.n) = true := decide_eq_true hrs.2.2.2
-    have hs0 : decide (Sg = 0) = false := decide_eq_false (by omega)
+    have hs0 : decide (Sg = 0) = false := decide_eq_false (by omega_using [hrs])
     generalize hb0 : s.mem (s.gpr .a0) = b0 at Sflag ⊢
     rw [hrn, hr0, hsn, hs0]
     have hlen : (bytesAt s.mem (s.gpr .a0) 133).length = 2 * W.len + 1 := VG.Proof.Weierstrass.length_bytesAt _ _ _
@@ -776,7 +776,7 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRV.p
       rw [Bool.eq_false_iff]
       intro h
       simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at h
-      exact hrs ⟨by have := h.1.1.1.1.1.2; omega, h.1.1.1.1.1.1.2, by have := h.1.1.1.2; omega, h.1.1.1.1.2⟩
+      exact hrs ⟨by have := h.1.1.1.1.1.2; omega_using [this], h.1.1.1.1.1.1.2, by have := h.1.1.1.2; omega_using [this], h.1.1.1.1.2⟩
     rw [hB]
 
 theorem verify_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : verifyRV.pre s) :

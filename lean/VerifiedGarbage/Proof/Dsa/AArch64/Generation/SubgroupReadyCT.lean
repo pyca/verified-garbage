@@ -21,7 +21,7 @@ theorem subgroup_candidate_ready (H : GenerationHashes)
       PrimeTestBefore (8 * p.plan.prime.len) p.primeCall t := by
   obtain ⟨W, hw, hs⟩ := h
   let q := p.plan.withWords W hw
-  have plen : p.plan.prime.len ≤ 32 := by rcases p.plan.width with h | h <;> omega
+  have plen : p.plan.prime.len ≤ 32 := by rcases p.plan.width with h | h <;> omega_using [h]
   obtain ⟨V, R⟩ := hs.rep
   have candidate := qBuild_ok H.h1 H.h256 H.hash1 H.hash256 H.size1 H.size256
     H.width1 H.width256 p.plan.width hs.layout R hs.label q.outputSlot hs.outputWrite
@@ -59,7 +59,7 @@ theorem subgroup_candidate_ready (H : GenerationHashes)
       change p.plan.prime.N % 2 = 1
       rw [p.plan.modulus]
       exact (VG.Proof.Dsa.Generation.qCandidate_shape
-        (show 2 ≤ 8 * p.plan.prime.len by rcases p.plan.width with hh | hh <;> omega) p.plan.seed).1
+        (show 2 ≤ 8 * p.plan.prime.len by rcases p.plan.width with hh | hh <;> omega_using [hh]) p.plan.seed).1
     bitLen := p.plan.bits }⟩
 
 end VG.Proof.Dsa.AArch64.Generation

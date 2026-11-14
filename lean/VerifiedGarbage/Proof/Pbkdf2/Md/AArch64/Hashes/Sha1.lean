@@ -134,7 +134,7 @@ def ok : HashOK (hash v) where
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha1.md, Spec.Sha1.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega_using [hj])
   lenOk _ _ := trivial
   stream := streamOK v
   iv := Spec.Sha1.H0

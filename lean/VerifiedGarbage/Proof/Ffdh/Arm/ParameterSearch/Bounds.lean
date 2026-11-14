@@ -25,19 +25,19 @@ theorem Policy.width_bounds {bits : Nat} (h : Policy bits) :
     64 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 1024 := by
   have := h.lower
   have := h.upper
-  omega
+  omega_arith
 
 theorem Policy.attempts_bound {bits : Nat} (h : Policy bits) :
     Spec.Ffdh.parameterAttempts bits ≤ 2 ^ 32 := by
   have square := Nat.mul_le_mul h.upper h.upper
   unfold Spec.Ffdh.parameterAttempts
-  omega
+  omega_using [square]
 
 theorem Policy.entropy_bound {bits : Nat} (h : Policy bits) :
     Spec.Ffdh.parameterEntropy bits ≤ 33555456 := by
   have := h.width_bounds
   unfold Spec.Ffdh.parameterEntropy
-  omega
+  omega_using [this]
 
 theorem Policy.double_fits {bits available : Nat} (h : Policy bits)
     (bound : available ≤ Spec.Ffdh.parameterEntropy bits) :
@@ -45,8 +45,8 @@ theorem Policy.double_fits {bits available : Nat} (h : Policy bits)
   have width := h.width_bounds
   have entropy := h.entropy_bound
   have maximum : max available (256 * ((bits + 7) / 8)) ≤ 33555456 :=
-    Nat.max_le.mpr ⟨by omega, by omega⟩
-  omega
+    Nat.max_le.mpr ⟨by omega_using [bound, entropy], by omega_using [width]⟩
+  omega_using [maximum]
 
 theorem Policy.request_bounds {bits available : Nat} (h : Policy bits) :
     512 * ((bits + 7) / 8) ≤ parameterRequest bits available ∧
@@ -55,7 +55,7 @@ theorem Policy.request_bounds {bits available : Nat} (h : Policy bits) :
   have width := h.width_bounds
   have maximum := Nat.le_max_right available (256 * ((bits + 7) / 8))
   constructor
-  · exact Nat.le_min.mpr ⟨by omega, by omega⟩
+  · exact Nat.le_min.mpr ⟨by omega_using [], by omega_using []⟩
   · exact Nat.min_le_right _ _
 
 end VG.Proof.Ffdh.Arm.ParameterSearch
@@ -77,14 +77,14 @@ theorem SearchParams.entropy_bound (p : SearchParams) : Spec.Ffdh.parameterEntro
 
 theorem SearchParams.entropy_fits (p : SearchParams) : Spec.Ffdh.parameterEntropy p.c.bits < 2 ^ 32 := by
   have := p.entropy_bound
-  omega
+  omega_using [this]
 
 theorem SearchParams.width_bounds (p : SearchParams) : 64 ≤ p.c.length ∧ p.c.length ≤ 1024 :=
   p.policy.width_bounds
 
 theorem SearchParams.capacity_fits (p : SearchParams) : p.c.capacity < 2 ^ 32 := by
   have := p.c.scratchFits
-  omega
+  omega_using [this]
 
 theorem SearchLive.remaining_bound {p : SearchParams} {used remaining : Nat} {s : State}
     (h : SearchLive p used remaining s) : remaining ≤ 2 ^ 32 := Nat.le_trans h.remainingBound p.attempts_bound

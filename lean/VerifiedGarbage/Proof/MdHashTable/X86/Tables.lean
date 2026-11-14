@@ -139,9 +139,9 @@ theorem held_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 44 ≤ 2 ^ 32) {s
       m.readW (VG.X86.addr p 20) 32 = BitVec.ofNat 32 (idx w) := by
   rw [words_tableOf] at h
   have a : ∀ i, i < 11 → VG.X86.addr p (4 * i) = p.setWidth 64 + BitVec.ofNat 64 (32 / 8 * i) := fun i hi => by
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_using [hp, hi])]
   have e : ∀ i (hi : i < 11), m.readW (VG.X86.addr p (4 * i)) 32 = _ := fun i hi =>
-    (a i hi).symm ▸ h i (by simp; omega)
+    (a i hi).symm ▸ h i (by simp; omega_using [hi])
   refine ⟨?_, ?_, ?_, ?_⟩
   · have := e 0 (by decide); rw [this]; simp
   · have := e 3 (by decide); rw [this]; simp
@@ -153,11 +153,11 @@ theorem hashAt_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 44 ≤ 2 ^ 32) 
     (h : m.readW (VG.X86.addr p 20) 32 = BitVec.ofNat 32 (idx w)) :
     Spec.MdHashTable.hashAt 32 m (p.setWidth 64) = some w.h.G := by
   simp only [Spec.MdHashTable.hashAt, Spec.MdHashTable.fns]
-  rw [show p.setWidth 64 + BitVec.ofNat 64 (32 / 8 * 5) = VG.X86.addr p 20 by rw [addr_eq (by omega)], h,
+  rw [show p.setWidth 64 + BitVec.ofNat 64 (32 / 8 * 5) = VG.X86.addr p 20 by rw [addr_eq (by omega_using [hp])], h,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
       have := List.findIdx_le_length (p := fun G => G.rust == w.h.G.rust) (xs := Spec.Mgf1.hashes)
       simp only [idx, Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
-      omega)]
+      omega_using [this])]
   exact w.idx
 
 /-- An indirect call of `fnsOf vs`'s functions reaches `w`'s. -/
@@ -193,13 +193,13 @@ theorem entered_roW (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F argv ro 
   have hf : Frame [Proof.RsaPkcs1Sig.X86.saveRegion s] s.mem (entered F s).mem := by
     rw [Proof.RsaPkcs1Sig.X86.entered_mem]
     have := pushed_frame (s := s) Proof.RsaPkcs1Sig.X86.pushRegs_noSp
-      (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega)
+      (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega_using [hsp])
     simpa [Impl.RsaPkcs1Sig.X86.savedRegs, below] using this
   refine hf.readW hc (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
   rw [save_eq (argv := argv) (ro := ro) (rw := rw) (C := C) hsp]
   exact ((h.stk R (List.mem_append_left _ hR)).sub_left
-    (Proof.RsaPkcs1Sig.X86.Lay.sub_stk (by simp only [layOf]; omega))).symm
+    (Proof.RsaPkcs1Sig.X86.Lay.sub_stk (by simp only [layOf]; omega_using []))).symm
 
 /-- The words of the table of `w` at `p`, one of the buffers only read,
 after the entry. -/
@@ -214,8 +214,8 @@ theorem held_entered (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F argv ro
   have e : ∀ o, o + 4 ≤ 44 → (entered F s).mem.readW (VG.X86.addr p o) 32 = s.mem.readW (VG.X86.addr p o) 32 :=
     fun o ho => entered_roW hsp h hR (by
       show (⟨p.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr p o) 4
-      rw [addr_eq (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega))
+      rw [addr_eq (by omega_using [hp, ho])]
+      exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
   obtain ⟨m0, m3, m4, m5⟩ := held_tableOf hp hh
   rw [sy, e _ (by decide), e _ (by decide), e _ (by decide), e _ (by decide)]
   exact ⟨m0, m3, m4, m5⟩

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Align
 public import VerifiedGarbage.TCB.RISCV64.Isa
 import VerifiedGarbage.Proof.AesXts.Unit
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # XTS-AES of data units on RISC-V: the contract the proofs are written against
@@ -131,10 +132,10 @@ section
 variable {s : State} (hp : UPre s)
 include hp
 
-theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega
+theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega_using [this]
 
 omit hp in
-theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega
+theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega_using []
 
 omit hp in
 theorem scr_sub {d n : Nat} (h : d + n ≤ 2432) : Region.Sub ⟨S s + BitVec.ofNat 64 d, n⟩ (scrR s) :=
@@ -162,22 +163,22 @@ omit hp in
 theorem z_sub : Region.Sub (zR s) (tzR s) := Offset.sub_base _ (by simp [zO])
 
 theorem UPre.t_wk : (tR s).Disjoint (wkR s) :=
-  Offset.disjoint _ (by simp [tO, wO]) (by have := hp.scr_wrap; simp only [tO]; omega)
-    (by have := hp.scr_wrap; simp only [wO]; omega)
+  Offset.disjoint _ (by simp [tO, wO]) (by have := hp.scr_wrap; simp only [tO]; omega_using [])
+    (by have := hp.scr_wrap; simp only [wO]; omega_using [])
 
 theorem UPre.z_wk : (zR s).Disjoint (wkR s) :=
-  Offset.disjoint _ (by simp [zO, wO]) (by have := hp.scr_wrap; simp only [zO]; omega)
-    (by have := hp.scr_wrap; simp only [wO]; omega)
+  Offset.disjoint _ (by simp [zO, wO]) (by have := hp.scr_wrap; simp only [zO]; omega_using [])
+    (by have := hp.scr_wrap; simp only [wO]; omega_using [])
 
 theorem UPre.t_z : (tR s).Disjoint (zR s) :=
-  Offset.disjoint _ (by simp [tO, zO]) (by have := hp.scr_wrap; simp only [tO]; omega)
-    (by have := hp.scr_wrap; simp only [zO]; omega)
+  Offset.disjoint _ (by simp [tO, zO]) (by have := hp.scr_wrap; simp only [tO]; omega_using [])
+    (by have := hp.scr_wrap; simp only [zO]; omega_using [])
 
 theorem UPre.slot_tz : (slotR s).Disjoint (tzR s) :=
-  Offset.disjoint_base (S s) (d := 32) (n := 64) (k := 32) (Nat.le_refl _) (by have := hp.scr_wrap; omega)
+  Offset.disjoint_base (S s) (d := 32) (n := 64) (k := 32) (Nat.le_refl _) (by have := hp.scr_wrap; omega_using [])
 
 theorem UPre.slot_wk : (slotR s).Disjoint (wkR s) :=
-  Offset.disjoint _ (by simp [wO]) (by have := hp.scr_wrap; omega) (by have := hp.scr_wrap; simp only [wO]; omega)
+  Offset.disjoint _ (by simp [wO]) (by have := hp.scr_wrap; omega_using []) (by have := hp.scr_wrap; simp only [wO]; omega_using [])
 
 theorem UPre.slot_data : (slotR s).Disjoint (dataR s) := hp.data_scr.symm.sub_left slot_scr
 
@@ -186,7 +187,7 @@ omit hp in
 theorem sv_slot (d : Nat) (h : d + 8 ≤ 56) : Region.Sub ⟨sv s + BitVec.ofNat 64 d, 8⟩ (slotR s) := by
   have := pad_lt (S s + BitVec.ofNat 64 32)
   rw [align_add]
-  exact Offset.sub _ (by omega) (by omega)
+  exact Offset.sub _ (by omega_using []) (by omega_using [h, this])
 
 /-- Everything the code writes but the slots lies within the data, the
 tweaks or the working space. -/
@@ -198,13 +199,13 @@ theorem UPre.slots_disj {r : Region} (hr : ∃ r' ∈ Wr s, Region.Sub r r') : (
   · exact hp.slot_tz.sub_right hs
   · exact hp.slot_wk.sub_right hs
 
-theorem UPre.l_sub : Region.Sub ⟨L s, 16⟩ (dataR s) := data_sub (by have := len_eq s; have := hp.m_pos; omega)
+theorem UPre.l_sub : Region.Sub ⟨L s, 16⟩ (dataR s) := data_sub (by have := len_eq s; have := hp.m_pos; omega_arith)
 
 theorem UPre.l_wrap : (L s).toNat + 16 ≤ 2 ^ 64 := by
   have := hp.data_wrap; have := len_eq s; have := hp.m_pos
   rw [L, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (M s - 1)) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 end
 
@@ -215,38 +216,38 @@ variable {s : State} (hp : UPre s)
 include hp
 
 theorem UPre.wrapD : (D s).toNat + 16 * M s + B s ≤ 2 ^ 64 := by
-  have := hp.data_wrap; have := len_eq s; omega
+  have := hp.data_wrap; have := len_eq s; omega_arith
 
 omit hp in
 theorem blocks_sub {N : Nat} (h : N ≤ M s) : Region.Sub ⟨D s, 16 * N⟩ (dataR s) :=
-  Region.sub_prefix (by have := len_eq s; omega)
+  Region.sub_prefix (by have := len_eq s; omega_using [h, this])
 
 theorem UPre.lb_sub : Region.Sub ⟨L s, 16 + B s⟩ (dataR s) :=
-  data_sub (by have := len_eq s; have := hp.m_pos; omega)
+  data_sub (by have := len_eq s; have := hp.m_pos; omega_arith)
 
 theorem UPre.tl_eq : L s + 16 = D s + BitVec.ofNat 64 (16 * M s) := by
-  rw [L, Proof.AesXts.Unit.add16, show 16 * (M s - 1) + 16 = 16 * M s by have := hp.m_pos; omega]
+  rw [L, Proof.AesXts.Unit.add16, show 16 * (M s - 1) + 16 = 16 * M s by have := hp.m_pos; omega_using [this]]
 
 theorem UPre.tl_sub : Region.Sub ⟨L s + 16, B s⟩ (dataR s) := by
-  rw [hp.tl_eq]; exact data_sub (by have := len_eq s; omega)
+  rw [hp.tl_eq]; exact data_sub (by have := len_eq s; omega_using [this])
 
 theorem UPre.hd_lb : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s, 16 + B s⟩ :=
-  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.wrapD; have := hp.m_pos; omega)
+  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.wrapD; have := hp.m_pos; omega_arith)
 
 theorem UPre.hd_l : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s, 16⟩ :=
-  hp.hd_lb.sub_right (Region.sub_prefix (by omega))
+  hp.hd_lb.sub_right (Region.sub_prefix (by omega_using []))
 
 theorem UPre.hd_tl : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s + 16, B s⟩ := by
   rw [hp.tl_eq]
-  exact Offset.base_disjoint _ (by omega) (by have := hp.wrapD; omega)
+  exact Offset.base_disjoint _ (by omega_using []) (by have := hp.wrapD; omega_using [this])
 
 omit hp in
 theorem tl_l : (⟨L s + 16, B s⟩ : Region).Disjoint ⟨L s, 16⟩ :=
-  Offset.disjoint_base (L s) (d := 16) (n := B s) (k := 16) (Nat.le_refl _) (by simp only [B]; omega)
+  Offset.disjoint_base (L s) (d := 16) (n := B s) (k := 16) (Nat.le_refl _) (by simp only [B]; omega_using [])
 
 theorem UPre.tl_blocks : (⟨L s + 16, B s⟩ : Region).Disjoint ⟨D s, 16 * M s⟩ := by
   rw [hp.tl_eq]
-  exact Offset.disjoint_base _ (Nat.le_refl _) (by have := hp.wrapD; omega)
+  exact Offset.disjoint_base _ (Nat.le_refl _) (by have := hp.wrapD; omega_using [this])
 
 theorem UPre.l_hd : (⟨L s, 16⟩ : Region).Disjoint ⟨D s, 16 * (M s - 1)⟩ := hp.hd_l.symm
 

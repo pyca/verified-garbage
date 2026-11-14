@@ -33,11 +33,11 @@ theorem argMem_of {s₁ s₂ : State} {j : Nat} (hsp : s₁.sp = s₂.sp) (hf : 
   have e : ∀ s : State, s.sp.toNat + 4 * j ≤ 2 ^ 32 →
       VG.Arm.Taint.argByte s k = stackArgAddr s (k / 4) + BitVec.ofNat 64 (k % 4) := fun s hs => by
     simp only [VG.Arm.Taint.argByte, stackArgAddr]
-    rw [addr_add (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2; omega
-  rw [e s₁ hf, e s₂ (hsp ▸ hf), Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)),
-    Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-  exact congrArg _ (h _ (by omega))
+    rw [addr_add (by omega_using [hk, hs]), BitVec.add_assoc, ← BitVec.ofNat_add]
+    congr 2; omega_using []
+  rw [e s₁ hf, e s₂ (hsp ▸ hf), Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])),
+    Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+  exact congrArg _ (h _ (by omega_using [hk]))
 
 theorem agree_argTaint {rs : List Reg} {n : Nat} {s₁ s₂ : State} (h : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
     (hsp : s₁.sp = s₂.sp)

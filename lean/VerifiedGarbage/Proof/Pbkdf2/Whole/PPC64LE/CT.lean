@@ -295,17 +295,17 @@ theorem loop_rel :
           rw [VG.PPC64LE.eval_nonzero, i.r24, left_ne hp (k := k + 1) hk]
         rw [e] at ht
         have h1 := of_decide_eq_true (Option.some.inj ht)
-        exact ⟨nbk s₀ (F := F) - (k + 1), by omega, k + 1, rfl, h1, i, i'⟩
+        exact ⟨nbk s₀ (F := F) - (k + 1), by omega_using [hk], k + 1, rfl, h1, i, i'⟩
       · exact RelCT.of_false fun s s' h => hk ⟨h.1, h.2.1⟩
     · have hD := (sizes hF).D
       have e : isa.eval (.zero .d .r24) s = some (decide (ol s₀ = 0)) := by
         rw [VG.PPC64LE.eval_zero, h.r24, VG.Proof.MdStream.PPC64LE.ofNat_beq_zero
-          (by have := ol_lt hp; omega)]
+          (by have := ol_lt hp; omega_using [this])]
         congr 2; show (ol s₀ - min (0 * F.H.D) (ol s₀) = 0) = _; simp
       rw [e] at hz
       have := of_decide_eq_false (Option.some.inj hz)
       have : nbk s₀ (F := F) ≠ 0 := fun h' => this ((Whole.nb_zero hD.1).1 h')
-      omega
+      omega_using [this]
 
 end
 

@@ -39,11 +39,11 @@ theorem theta_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
     intro i hi
     rw [vals i hi,hvals i hi]
     by_cases he : i%5 = k
-    · rw [ite_eq_left he,ite_eq_right (by omega),ite_eq_left (by omega),pair_xor,he]
+    · rw [ite_eq_left he,ite_eq_right (by omega_using [he]),ite_eq_left (by omega_using [he]),pair_xor,he]
     · rw [ite_eq_right he]
       by_cases hlt : i%5 < k <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
   · intro i hi
-    rw [hvals i hi,ite_eq_left (by omega)]
+    rw [hvals i hi,ite_eq_left (by omega_using [])]
     have hta := VG.Proof.Sha3.theta_get A hi
     have htb := VG.Proof.Sha3.theta_get B hi
     rw [VG.Proof.Sha3.getElem!_eq A hi,VG.Proof.Sha3.getElem!_eq B hi,

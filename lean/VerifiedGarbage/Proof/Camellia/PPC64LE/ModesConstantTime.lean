@@ -97,7 +97,7 @@ theorem modes_agree {post : State → State → Prop} (s₁ s₂ : State)
   · rw [hw₁]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith
   · intro p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [SlotTaint.region, hw₁]

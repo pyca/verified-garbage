@@ -35,7 +35,7 @@ theorem mask_true {nb cb pb qb ib : List Byte} {k : Nat} (hk : 64 ≤ k) (hpl : 
   exact ⟨hv, hc, hi, hpq, hp1, hpo, hq1, hqo⟩
 
 theorem pow256_le {L w : Nat} (h : L ≤ 8 * w) : 256 ^ L ≤ 2 ^ (64 * w) := by
-  rw [VG.Proof.Bignum.pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
+  rw [VG.Proof.Bignum.pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega_using [h])
 
 theorem os2ip_lt' (bs : List Byte) {L : Nat} (h : bs.length = L) : Spec.Rsa.os2ip bs < 256 ^ L := by
   have := VG.Proof.Bignum.os2ip_lt bs; rwa [h] at this

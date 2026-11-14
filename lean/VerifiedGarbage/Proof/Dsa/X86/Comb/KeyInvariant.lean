@@ -76,6 +76,6 @@ theorem keyInvariant_stable : StableScratch keyInvariant := by
     have sup := supported_widths A.lengths
     rcases sup with ⟨h,e⟩|⟨h,e⟩|⟨h,e⟩|⟨h,e⟩|⟨h,e⟩ <;> rw [h,e] <;> rfl
   rw [layoutSize]
-  omega
+  omega_using [S, Gen]
 
 end VG.Proof.Dsa.X86.Comb

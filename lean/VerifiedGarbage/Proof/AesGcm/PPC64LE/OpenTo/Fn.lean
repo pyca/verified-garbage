@@ -511,7 +511,7 @@ theorem called_wp (hv : SplitOk) {s c : State} (h : Lay s) (hc : Entered s c) :
     · simp only [below, split_sdepth]
       intro x _ hc'
       simp only [Region.Contains] at hc'
-      omega
+      omega_using [hc']
   have ra : z.mem.readW (fa s 152) 64 = s.lr := by
     rw [kept (h.pre.bd.sub_left (fr_sub s (by decide)))
       (Offset.disjoint (Pf s) (.inl (by decide)) (by decide) (by have := h.hBn; omega_arith)), hc.mem,
@@ -554,11 +554,11 @@ theorem wipeLoop_wp (u : State) {D : Addr} {n : Nat} (hn : n < 2 ^ 64) (hD : D.t
         v.gpr .r10 = BitVec.ofNat 64 (n - i) ∧ (∀ r, r ≠ .r9 → r ≠ .r10 → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧
         v.wr = u.wr ∧ v.sp = u.sp ∧ v.lr = u.lr ∧ Frame [⟨D, n⟩] u.mem v.mem ∧
         Proof.Zeroize.Prefix v.mem D i) ?_ (n - 0) _
-      ⟨0, rfl, by omega, by rw [h₉]; exact (BitVec.add_zero _).symm, by rw [h₁₀, Nat.sub_zero],
+      ⟨0, rfl, by omega_using [h0], by rw [h₉]; exact (BitVec.add_zero _).symm, by rw [h₁₀, Nat.sub_zero],
         fun _ _ _ => rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     rintro w v ⟨i, rfl, hi, r9, r10, gv, rdv, wrv, spv, lrv, fv, pv⟩
     have hcn : (⟨D, n⟩ : Region).Contains (D + BitVec.ofNat 64 i) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi])
     refine wp_stb (a := D + BitVec.ofNat 64 i) (by decide) (by decide) (by rw [r9]; exact BitVec.add_zero _)
       (by rw [wrv]; exact hw _ _ ⟨_, List.mem_singleton_self _, hcn⟩) fun t₁ u₁ => ?_
     refine wp_addi (by decide) (by decide) fun t₂ u₂ => wp_subi (by decide) (by decide) fun t₃ u₃ =>
@@ -569,23 +569,23 @@ theorem wipeLoop_wp (u : State) {D : Addr} {n : Nat} (hn : n < 2 ^ 64) (hD : D.t
     have f' : Frame [⟨D, n⟩] u.mem t₃.mem := by
       rw [m₃]; exact fv.writeW (List.mem_singleton_self _) _ hcn
     have p' : Proof.Zeroize.Prefix t₃.mem D (i + 1) := by
-      rw [m₃]; exact Proof.Zeroize.prefix_writeW (w := 8) pv (by omega)
+      rw [m₃]; exact Proof.Zeroize.prefix_writeW (w := 8) pv (by omega_using [hn, hi])
     have g' : ∀ r, r ≠ .r9 → r ≠ .r10 → t₃.gpr r = u.gpr r := fun r a b => by
       rw [u₃.other _ b, u₂.other _ a, u₁.gpr, gv r a b]
     have r9' : t₃.gpr .r9 = D + BitVec.ofNat 64 (i + 1) := by
       rw [u₃.other _ (by decide), u₂.gpr, u₁.gpr, r9, BitVec.add_assoc, ← BitVec.ofNat_add]
     have r10' : t₃.gpr .r10 = BitVec.ofNat 64 (n - (i + 1)) := by
-      rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, r10, ofNat_sub_one (by omega), Nat.sub_sub]
+      rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, r10, ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
     have rd' : t₃.rd = u.rd := by rw [u₃.rd, u₂.rd, u₁.rd, rdv]
     have wr' : t₃.wr = u.wr := by rw [u₃.wr, u₂.wr, u₁.wr, wrv]
     have sp' : t₃.sp = u.sp := by rw [u₃.sp, u₂.sp, u₁.sp, spv]
     have lr' : t₃.lr = u.lr := by rw [u₃.lr, u₂.lr, u₁.lr, lrv]
-    have ev := eval_nonzero (r := .r10) (a := n - (i + 1)) r10' (by omega)
+    have ev := eval_nonzero (r := .r10) (a := n - (i + 1)) r10' (by omega_using [hn])
     by_cases he : i + 1 = n
     · left
       exact ⟨by rw [ev]; simp [he], by rw [← he]; exact p', f', g', rd', wr', sp', lr'⟩
     · right
-      exact ⟨by rw [ev]; simp; omega, n - (i + 1), by omega, i + 1, rfl, by omega, r9', r10', g', rd', wr', sp',
+      exact ⟨by rw [ev]; simp; omega_using [hi, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], r9', r10', g', rd', wr', sp',
         lr', f', p'⟩
 
 /-- The zeros of `Prefix`, as bytes. -/

@@ -33,12 +33,12 @@ def Bel (m : Mem) (base : Addr) (S : Slot → Bool) : Prop :=
 variable {large : Bool}
 
 theorem altRange (i : Slot) (h : i.val ≤ 13) : AltRange (offset i) large :=
-  ⟨by simp only [offset]; omega, by simp only [offset]; omega,
-    by have := workSize_ge large; simp only [offset]; omega⟩
+  ⟨by simp only [offset]; omega_using [], by simp only [offset]; omega_using [h],
+    by have := workSize_ge large; simp only [offset]; omega_using [this]⟩
 
 theorem apart (i j : Slot) (h : i ≠ j) : offset i + 32 ≤ offset j ∨ offset j + 32 ≤ offset i := by
   have : i.val ≠ j.val := fun e => h (Fin.ext e)
-  simp only [offset]; omega
+  simp only [offset]; omega_using [this]
 
 theorem sameOrApart (i j : Slot) : SameOrApart (offset i) (offset j) := by
   by_cases h : i = j
@@ -53,7 +53,7 @@ theorem env_upd {base : Addr} {o : Slot} {s t : State} (h : AltOp base (offset o
   · subst hi; simp only [Function.update_self]
   · rw [Function.update_of_ne hi]
     simp only [env, F]
-    exact congrArg toFe (h.mem.fe (apart i o hi) (by simp only [offset]; omega))
+    exact congrArg toFe (h.mem.fe (apart i o hi) (by simp only [offset]; omega_using []))
 
 theorem mod_of_add_mul {c a q : Nat} (h : c + P * q = a) : c % P = a % P := by
   rw [← h, Nat.add_mul_mod_self_left]
@@ -82,9 +82,9 @@ theorem addE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (h
     WP isa (.block (Impl.X25519.AArch64.Alt.addTwice4 (offset o) (offset a) (offset b))) s fun t =>
       AltOp base (offset o) s t ∧
       env t.mem base = Function.update (env s.mem base) o (env s.mem base a + env s.mem base b) :=
-  WP.mono (addTwice4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by simp only [P2] at hla hlb; omega))
+  WP.mono (addTwice4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by simp only [P2] at hla hlb; omega_using [hla, hlb]))
     fun t ⟨h, k, _, e⟩ => ⟨h, (env_upd h).trans (congrArg _ (toFe_add (mod_of_add_mul (q := 2 * k)
-      (by simp only [P]; omega))))⟩
+      (by simp only [P]; omega_using [e]))))⟩
 
 /-- `addE`, with only `b` below `2·p`: the sum is below `2²⁵⁷ − 38` still. -/
 theorem addE1 {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
@@ -94,9 +94,9 @@ theorem addE1 {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (
       AltOp base (offset o) s t ∧
       env t.mem base = Function.update (env s.mem base) o (env s.mem base a + env s.mem base b) :=
   have hla : fe s.mem base (offset a) < 2 ^ 256 := VG.Proof.Ed25519.Word64.val4_lt _ _ _ _
-  WP.mono (addTwice4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by simp only [P2] at hlb; omega))
+  WP.mono (addTwice4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by simp only [P2] at hlb; omega_using [hlb, hla]))
     fun t ⟨h, k, _, e⟩ => ⟨h, (env_upd h).trans (congrArg _ (toFe_add (mod_of_add_mul (q := 2 * k)
-      (by simp only [P]; omega))))⟩
+      (by simp only [P]; omega_using [e]))))⟩
 
 theorem subE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (ho : o.val ≤ 13)
     (ha : a.val ≤ 13) (hb : b.val ≤ 13) (hz : s.gpr .x17 = 0)
@@ -106,7 +106,7 @@ theorem subE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) (h
       env t.mem base = Function.update (env s.mem base) o (env s.mem base a - env s.mem base b) :=
   WP.mono (subTwice4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz hlb)
     fun t ⟨h, k, _, e⟩ => ⟨h, (env_upd h).trans (congrArg _ (toFe_sub (by
-      rw [e, Nat.add_mod, show (2 ^ 256 - 38) * k = P * (2 * k) by simp only [P]; omega,
+      rw [e, Nat.add_mod, show (2 ^ 256 - 38) * k = P * (2 * k) by simp only [P]; omega_using [],
         Nat.mul_mod_right, Nat.add_zero, Nat.mod_mod])))⟩
 
 theorem fe_lt (m : Mem) (base : Addr) (d : Nat) : fe m base d < 2 ^ 256 :=
@@ -120,7 +120,7 @@ theorem cmaddE {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot) 
         (toFe 121666 * env s.mem base a + env s.mem base b) := by
   have la := fe_lt s.mem base (offset a)
   have lb := fe_lt s.mem base (offset b)
-  refine WP.mono (cmadd4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by rw [h1]; omega))
+  refine WP.mono (cmadd4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by rw [h1]; omega_using [la, lb]))
     fun t ⟨h, hl, q, e⟩ => ⟨h, hl, (env_upd h).trans (congrArg _ ?_)⟩
   rw [h1] at e
   simp only [env, F]
@@ -135,7 +135,7 @@ theorem cmadd4E {base : Addr} {s : State} (hs : Scr s base large) (o a b : Slot)
         (toFe 4 * env s.mem base a + env s.mem base b) := by
   have la := fe_lt s.mem base (offset a)
   have lb := fe_lt s.mem base (offset b)
-  refine WP.mono (cmadd4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by rw [h1]; omega))
+  refine WP.mono (cmadd4_ok hs (altRange o ho) (altRange a ha) (altRange b hb) hz (by rw [h1]; omega_using [la, lb]))
     fun t ⟨h, hl, q, e⟩ => ⟨h, hl, (env_upd h).trans (congrArg _ ?_)⟩
   rw [h1] at e
   simp only [env, F]

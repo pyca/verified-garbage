@@ -58,7 +58,7 @@ theorem clampBits_ok {s : State} {base : Addr} (hs : Scratch s base) :
       ∀ q < 256, t.mem (off base (768 + q)) =
         if q < 3 ∨ q = 255 then 0 else if q = 254 then 1 else s.mem (off base (768 + q)) := by
   have hw : ∀ d, 768 ≤ d → d < 1024 → InRegions s.wr (off base d) 1 := fun d h1 h2 =>
-    ⟨_, hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, hs.wr, Offset.contains_base _ (by omega_using [h2]) (by omega_using [h2])⟩
   apply WP.of_runBlock
   simp only [clampBits, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     State.store8, ea_sc, RegUpd.gpr_setReg, RegUpd.mem_setReg,
@@ -72,24 +72,24 @@ theorem clampBits_ok {s : State} {base : Addr} (hs : Scratch s base) :
         (off base 770) (0 : Byte)).writeW (off base 1023) (0 : Byte)).writeW
         (off base 1022) (1 : Byte)) := by
     intro p hp
-    rw [writeW8_outside _ _ _ (by decide) (by omega),
-      writeW8_outside _ _ _ (by decide) (by omega),
-      writeW8_outside _ _ _ (by decide) (by omega),
-      writeW8_outside _ _ _ (by decide) (by omega),
-      writeW8_outside _ _ _ (by decide) (by omega)]
+    rw [writeW8_outside _ _ _ (by decide) (by omega_using [hp]),
+      writeW8_outside _ _ _ (by decide) (by omega_using [hp]),
+      writeW8_outside _ _ _ (by decide) (by omega_using [hp]),
+      writeW8_outside _ _ _ (by decide) (by omega_using [hp]),
+      writeW8_outside _ _ _ (by decide) (by omega_using [hp])]
   refine ⟨⟨fun r _ _ hc => ?_, rfl, rfl, (TableFrame.table hm).mono (by decide) (by decide)⟩,
     ?_, fun q hq => ?_⟩
   · have hr : r ≠ .rax := fun h => hc (by subst h; decide)
     simp only [RegUpd.gpr_setReg, hr, ite_false]
   · exact Outside_F hm (by decide) (Or.inl (by decide))
-  · have he : 768 + q < 2 ^ 64 := by omega
+  · have he : 768 + q < 2 ^ 64 := by omega_using [hq]
     simp only [writeW8_apply,
       off_eq_iff base he (by decide : 1022 < 2 ^ 64),
       off_eq_iff base he (by decide : 1023 < 2 ^ 64),
       off_eq_iff base he (by decide : 770 < 2 ^ 64),
       off_eq_iff base he (by decide : 769 < 2 ^ 64),
       off_eq_iff base he (by decide : 768 < 2 ^ 64)]
-    split_ifs <;> first | rfl | (exfalso; omega)
+    split_ifs <;> first | rfl | (exfalso; omega_arith)
 
 theorem uOps_eval (e : Ed25519.X86_64.Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
@@ -140,7 +140,7 @@ theorem engineOf_ok [DivstepInv] {comb comb' : Prog isa} (hcomb : CombOk comb') 
     have h := Edwards.decodeScalar25519_shift hk
     rw [Nat.shiftRight_eq_div_pow] at h
     have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
-    omega
+    omega_using [h]
   have cb : ∀ q < 256, c.mem (off base (768 + q)) = BitVec.ofNat 8 ((decodeScalar25519 kb / 2 ^ q) % 2) := by
     intro q hq
     rw [cbits q hq, clamped_bit hk hq]
@@ -184,7 +184,7 @@ private theorem clamped_ok {u : State} {base T k : Addr} {m : Mem} (h : Prepped 
     have h := Edwards.decodeScalar25519_shift hk
     rw [Nat.shiftRight_eq_div_pow] at h
     have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
-    omega
+    omega_using [h]
   refine WP.mono_syms (clampBits_ok hs) fun c ⟨kbc, cd, cbits⟩ csy =>
     ⟨kbc.scratch hs, cd.trans hd, fun q hq => ?_, hS, ht.keep hfar kbc csy, hfar⟩
   rw [cbits q hq, clamped_bit hk hq]

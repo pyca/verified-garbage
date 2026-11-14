@@ -32,7 +32,7 @@ theorem forceSampleArgs_state {p : SamplePublic} {s : State} (h : SampleBefore p
     WP isa (.block [ldh .x1 kOut]) s (fun t => t.gpr .x1 = p.prime.p) := by
   have hw := h.ready.ws
   brun [hw.x0, hdr_enc (show kOut < 32 by decide), h.ptr,
-    hw.scr.ld (show 8 * kOut + 8 ≤ p.prime.Z by have := hw.h256; simp only [kOut, sFn]; omega)]
+    hw.scr.ld (show 8 * kOut + 8 ≤ p.prime.Z by have := hw.h256; simp only [kOut, sFn]; omega_using [this])]
 
 theorem forceStoredWitness_ct (len : Nat) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.x1])
@@ -58,7 +58,7 @@ theorem forceSample_state {p : SamplePublic} {s : State} (h : SampleBefore p s) 
     WP isa (Impl.Dsa.AArch64.Generation.forceStoredWitness p.bytes.length) s (SampleBefore p.forced) :=
   WP.mono (forceSample_ok h p.prime.exponentRoom
     (by rw [p.length]; exact p.prime.len2)
-    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega))
+    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega_arith))
     (fun _ ⟨ht, _, _, _⟩ => ht)
 
 end VG.Proof.Dsa.AArch64.Generation

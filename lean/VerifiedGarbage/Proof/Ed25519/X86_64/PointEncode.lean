@@ -28,8 +28,8 @@ theorem freezeWide_ok {s : State} {base : Addr} (hs : Scratch s base) (a : Slot)
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = (env s.mem base a).val ∧
       Keeps [.r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15, .rax, .rcx, .rdx] s t := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
-  obtain ⟨tr, t, he, hv, hk⟩ := Proof.X25519.X86_64.freeze_ok hn (a := offset a) (by simp only [offset]; omega)
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_using [this]⟩
+  obtain ⟨tr, t, he, hv, hk⟩ := Proof.X25519.X86_64.freeze_ok hn (a := offset a) (by simp only [offset]; omega_using [])
   have cw : Covers [⟨base, 4096⟩] s.wr := by
     apply Covers.of_sub
     intro r hr
@@ -44,9 +44,9 @@ theorem sign_word (w : BitVec 64) :
   have he : w &&& (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (w.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, show ((1 : BitVec 32).signExtend 64).toNat = 1 from rfl,
-      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 64 by omega)]
+      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 64 by omega_using [])]
   rw [he]
-  have h : w.toNat % 2 = 0 ∨ w.toNat % 2 = 1 := by omega
+  have h : w.toNat % 2 = 0 ∨ w.toNat % 2 = 1 := by omega_using []
   rcases h with h | h <;> rw [h] <;> decide
 
 theorem pointSign_ok (s : State) :
@@ -54,7 +54,7 @@ theorem pointSign_ok (s : State) :
       t.gpr .rbx = BitVec.ofNat 64 ((val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) % 2) * 2 ^ 63) ∧
       Keeps [.rbx] s t := by
   have hv : val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) % 2 = (s.gpr .r8).toNat % 2 := by
-    simp only [val4]; omega
+    simp only [val4]; omega_using []
   apply WP.of_runBlock
   simp only [pointSign, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
     execShift, show 1 ≤ 1 ∧ 1 ≤ 63 from by decide, and_self, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags,
@@ -71,16 +71,16 @@ theorem encodeSign_ok (s : State) (x y : Nat) (hy : y < 2 ^ 255)
     WP isa (.block [.alu .add .r11 (.reg .rbx)]) s fun t =>
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = y + (x % 2) * 2 ^ 255 ∧
       Keeps [.r11] s t := by
-  have hb : (s.gpr .r11).toNat < 2 ^ 63 := by simp only [val4] at hv; omega
-  have hm : ((x % 2) * 2 ^ 63) < 2 ^ 64 := by omega
+  have hb : (s.gpr .r11).toNat < 2 ^ 63 := by simp only [val4] at hv; omega_using [hy, hv]
+  have hm : ((x % 2) * 2 ^ 63) < 2 ^ 64 := by omega_using []
   have ha : (s.gpr .r11 + s.gpr .rbx).toNat = (s.gpr .r11).toNat + (x % 2) * 2 ^ 63 := by
-    rw [hs, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (by omega)]
+    rw [hs, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (by omega_using [hb])]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
     RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ite_true, ite_false, reduceCtorEq,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · simp only [val4, ha] at hv ⊢; omega
+  · simp only [val4, ha] at hv ⊢; omega_using [hv]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519: field elements as natural numbers
@@ -52,10 +53,10 @@ theorem toFe_sub {a b c : Nat} (h : (c + b) % P = a % P) : toFe c = toFe a - toF
   generalize c % P = x at *
   generalize b % P = y at *
   rcases Nat.lt_or_ge (x + y) P with h1 | h1
-  · rw [Nat.mod_eq_of_lt h1, show P - y + (x + y) = x + P by omega, Nat.add_mod_right,
+  · rw [Nat.mod_eq_of_lt h1, show P - y + (x + y) = x + P by omega_using [hy], Nat.add_mod_right,
       Nat.mod_eq_of_lt hx]
-  · rw [show (x + y) % P = x + y - P by rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega)],
-      show P - y + (x + y - P) = x by omega, Nat.mod_eq_of_lt hx]
+  · rw [show (x + y) % P = x + y - P by rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega_using [hx, hy])],
+      show P - y + (x + y - P) = x by omega_using [hy, h1], Nat.mod_eq_of_lt hx]
 
 /-- A multiplication by `a24`, written as the spec writes it. -/
 theorem toFe_addA24 {a b c : Nat} (h : c % P = (b + 121665 * a) % P) :
@@ -73,12 +74,12 @@ theorem toFe_zero : toFe 0 = 0 := rfl
 /-- `2²⁵⁶ ≡ 38` modulo `p`: the top of a 512-bit product folds into its
 bottom times 38. -/
 theorem fold256 (lo hi : Nat) : (lo + 2 ^ 256 * hi) % P = (lo + 38 * hi) % P := by
-  rw [show lo + 2 ^ 256 * hi = lo + 38 * hi + P * (2 * hi) by simp only [P]; omega,
+  rw [show lo + 2 ^ 256 * hi = lo + 38 * hi + P * (2 * hi) by simp only [P]; omega_using [],
     Nat.add_mul_mod_self_left]
 
 /-- `2²⁵⁵ ≡ 19` modulo `p`. -/
 theorem fold255 (lo hi : Nat) : (lo + 2 ^ 255 * hi) % P = (lo + 19 * hi) % P := by
-  rw [show lo + 2 ^ 255 * hi = lo + 19 * hi + P * hi by simp only [P]; omega,
+  rw [show lo + 2 ^ 255 * hi = lo + 19 * hi + P * hi by simp only [P]; omega_using [],
     Nat.add_mul_mod_self_left]
 
 end VG.Proof.X25519

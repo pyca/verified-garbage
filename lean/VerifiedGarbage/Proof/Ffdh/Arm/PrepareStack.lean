@@ -59,7 +59,7 @@ theorem stableSlots_at {slots : List Nat} (h : stableSlots slots = true) {d : Na
     d + 4 ≤ 72 ∧ (d + 4 ≤ 8 ∨ 12 ≤ d) ∧ (d + 4 ≤ 12 ∨ 16 ≤ d) := by
   have item := List.all_eq_true.mp h d hd
   simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, bne_iff_ne] at item
-  omega
+  omega_using [item]
 
 def prepareWrites (s : State) : List Region :=
   [⟨off (State.addr s.sp) 8, 4⟩, ⟨off (State.addr s.sp) 12, 4⟩]
@@ -87,8 +87,8 @@ theorem prepareArgs_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat)
     have bounds := stableSlots_at stable hd
     simp only [prepareWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint _ bounds.2.1 (by omega) (by decide)
-    · exact Offset.disjoint _ bounds.2.2 (by omega) (by decide)
+    · exact Offset.disjoint _ bounds.2.1 (by omega_using [bounds]) (by decide)
+    · exact Offset.disjoint _ bounds.2.2 (by omega_using [bounds]) (by decide)
   have context := h.after_frame frame rest ((rest.gpr .r0 (by simp)).trans h.ptr) domainSep savedSep
   have kept4 : t.mem.readW (off (State.addr t.sp) 4) 32 = s.mem.readW (off (State.addr s.sp) 4) 32 := by
     rw [rest.sp]
@@ -101,7 +101,7 @@ theorem prepareArgs_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat)
     refine ⟨⟨State.addr s.sp, 72⟩, List.mem_append_right _ h.locals.space.writable, ?_⟩
     simpa only [off, BitVec.add_zero] using
       (Offset.contains_base (State.addr s.sp) (d := 0) (n := 16) (k := 72) (by decide) (by decide))
-  refine ⟨context, ⟨by rw [rest.sp]; omega, read,
+  refine ⟨context, ⟨by rw [rest.sp]; omega_using [spFit], read,
     by rw [rest.sp]; exact h.locals.separate.sub_left (Region.sub_prefix (by decide)),
     by simpa only [Inputs.slotValue, off, BitVec.add_zero] using context.saved 0 h0, kept4, ?_, ?_⟩,
     source, count, stackBase, frame, rest⟩

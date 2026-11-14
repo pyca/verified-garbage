@@ -21,11 +21,11 @@ theorem joint_source_out {s : State} {B p : Addr} {Z o w wx : Nat} {minv : BitVe
     (hc : SubCtx s B Z o w wx minv) {bs : List Byte} (hs : Src s B Z p bs) :
     ∀ i < bs.length, slot wx 8 + tabBytes wx ≤ ofs (off B o) (p + BitVec.ofNat 64 i) := by
   intro i hi
-  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have := hc.hi
   have := hc.scr.nowrap
   have := hs.out i hi
-  rcases ofs_rebase B (p + BitVec.ofNat 64 i) (o := o) (by omega) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega
+  rcases ofs_rebase B (p + BitVec.ofNat 64 i) (o := o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩ <;> omega_arith
 
 theorem jointRun_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx n g y : Nat} {minv : BitVec 64}
     (hc : SubCtx s B Z o w wx minv) (hmctx : JointCtx s (off B o) wx n minv)
@@ -53,7 +53,7 @@ theorem jointRun_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx n g
       (wv s1.mem (off B o) (slot wx Crt.aXc) wx) g y (off B u) (off B v)
       eb.length eb fb 0 s1 := by
     refine ⟨hm1.exp, ht1, ?_, ?_, hi1, he1, hf1, hl1, Frm.refl _ _ _, Keep.refl _ _⟩
-    · rw [hy1]; exact Nat.mod_lt _ (by omega)
+    · rw [hy1]; exact Nat.mod_lt _ (by omega_using [hn])
     · rw [hy1, Nat.mod_mod, pre_zero, pre_zero, Nat.pow_zero, Nat.pow_zero, Nat.one_mul]
   refine WP.seq (WP.mono (jointBytes_ok M Sq hw hw' hR rfl hlen hL0 hL'
     hsrc1.rd hsrc1.val (joint_source_out hc1 hsrc1)
@@ -65,8 +65,8 @@ theorem jointRun_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx n g
   have honeSep := crtExpRanges_arr wx (j := aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
   have honeSlot := slot_le (w := wx) (show aOne < 8 by decide)
   have ho2 : wv s2.mem (off B o) (slot wx aOne) wx = 1 :=
-    (h2.frm.wv_eq (fun r h => by have := honeSep r h; omega) (by omega)).trans ho1
-  refine WP.mono (mont_step M hm2 (Nat.le_refl _) hw (by omega) (by unfold MmUse; decide)
+    (h2.frm.wv_eq (fun r h => by have := honeSep r h; omega_using [this]) (by omega_using [hnow, honeSlot])).trans ho1
+  refine WP.mono (mont_step M hm2 (Nat.le_refl _) hw (by omega_using [hw']) (by unfold MmUse; decide)
     (by rw [ho2]; exact hn)) fun t ⟨hmt, hlt, hv, hft, hkt⟩ => ?_
   have hv2 := h2.val
   rw [← hlen, pre_len] at hv2

@@ -24,9 +24,9 @@ theorem compareBuffer_ok (s : State) {a b : BitVec 32} {n : Nat}
       t.mem = s.mem ∧ Rest [.r0, .r1, .r2, .r3, .r12, .lr] s t := by
   have byte {p : BitVec 32} (fit : p.toNat + n ≤ 2 ^ 32) (read : InRegions (s.rd ++ s.wr) (State.addr p) n)
       (i : Nat) (hi : i < n) : InRegions (s.rd ++ s.wr) (State.addr (p + BitVec.ofNat 32 i)) 1 := by
-    rw [addr_add (by omega)]
+    rw [addr_add (by omega_using [fit, hi])]
     obtain ⟨r, hr, hc⟩ := read
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hn', hi])]; omega_using [hi])⟩
   have ctx : CompareCtx s a b n := ⟨hn', byte aFit aRead, byte bFit bRead⟩
   refine WP.mono (compareBytes_ok s ctx hn first second count zero) ?_
   intro t inv
@@ -35,9 +35,9 @@ theorem compareBuffer_ok (s : State) {a b : BitVec 32} {n : Nat}
   constructor
   · intro equal i hi
     have h := equal i hi
-    rw [addr_add (by omega), addr_add (by omega)] at h
+    rw [addr_add (by omega_using [aFit, hi]), addr_add (by omega_using [bFit, hi])] at h
     exact h
   · intro equal i hi
-    rw [addr_add (by omega), addr_add (by omega)]
+    rw [addr_add (by omega_using [aFit, hi]), addr_add (by omega_using [bFit, hi])]
     exact equal i hi
 end VG.Proof.Bignum.Arm

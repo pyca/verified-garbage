@@ -48,7 +48,7 @@ theorem mulCall_ok {code : Prog isa} {name : String}
       obtain rfl := List.mem_singleton.mp mem
       exact List.mem_cons_of_mem _ C.ws.wr
   refine WP.callWith verified.1 noSp (by decide : mulArgs ≠ []) (by decide : Reg.esp ∉ mulArgs)
-    (by change 20 + stackUse code + 4 ≤ _; omega) cp ?_
+    (by change 20 + stackUse code + 4 ≤ _; omega_using [stack, fit]) cp ?_
   intro t rdT wrT saved frame post
   obtain ⟨u, mem, post⟩ := post
   have K : Keeps [.eax, .ecx, .edx] s t := by
@@ -57,11 +57,11 @@ theorem mulCall_ok {code : Prog isa} {name : String}
     apply saved r
     cases r <;> simp_all [calleeSaved]
   have far24 := far.sub_right (below_sub (by decide : 24 ≤ 80) fit)
-  have F := mulEntry_frame (by omega : 24 ≤ (s.gpr .esp).toNat) C.ws.nowrap far24
+  have F := mulEntry_frame (by omega_using [fit] : 24 ≤ (s.gpr .esp).toNat) C.ws.nowrap far24
   have Mu := M.keep v F (by simp) (by simp)
-  have ptrBound : g.W.toNat < 2 ^ 32 := by have := C.ws.nowrap; have := v.headerFit; omega
+  have ptrBound : g.W.toNat < 2 ^ 32 := by have := C.ws.nowrap; have := v.headerFit; omega_arith
   have capBound : capacity < 2 ^ 32 := by have := C.ws.nowrap; omega
-  have sa := fun {i} (hi : i < 5) => mulEntry_arg A (by omega) hi
+  have sa := fun {i} (hi : i < 5) => mulEntry_arg A (by omega_using [fit]) hi
   obtain ⟨value, keeps⟩ := mulPost ptrBound capBound right.1
     (sa (by decide : 0 < 5)) (sa (by decide : 1 < 5)) (sa (by decide : 2 < 5))
     (sa (by decide : 3 < 5)) (sa (by decide : 4 < 5)) Mu odd post
@@ -69,8 +69,8 @@ theorem mulCall_ok {code : Prog isa} {name : String}
   have O : WorkspaceFrame g (montWrites g 6) s.mem t.mem :=
     (F.mono (by simp)).trans (montFrame length keeps)
   refine ⟨?_, O, K, C.keepMont v wrT (saved .edi (by decide)) O,
-    M.keepMont v (by decide) O, VG.X86.Frame.below_mono frame (by change 20 + stackUse code + 4 ≤ 80; omega) fit⟩
+    M.keepMont v (by decide) O, VG.X86.Frame.below_mono frame (by change 20 + stackUse code + 4 ≤ 80; omega_using [stack]) fit⟩
   rw [value, F.val32 (v.arrayFit (by decide : 6 < 28)) (by simp),
-    F.val32 (v.arrayFit (by have := right.1; omega)) (by simp)]
+    F.val32 (v.arrayFit (by have := right.1; omega_using [this])) (by simp)]
 
 end VG.Proof.MillerRabin.X86

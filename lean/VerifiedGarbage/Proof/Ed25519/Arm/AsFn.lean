@@ -37,9 +37,9 @@ theorem frameS_FA {b : BitVec 32} {W : List Slot} {m m' : Mem} (hf : Frame (wReg
   refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   rcases List.mem_append.mp hr with hr | hr
   · obtain ⟨d, n, rfl, h1, h2⟩ := wRegions_bound hr
-    exact Offset.sub _ h1 (by omega)
+    exact Offset.sub _ h1 (by omega_using [h2])
   · rw [List.mem_singleton.mp hr]
-    exact Offset.sub _ (by rw [SAVE_eq]; omega) (by rw [SAVE_eq]; omega)
+    exact Offset.sub _ (by rw [SAVE_eq]; omega_using []) (by rw [SAVE_eq]; omega_using [])
 
 /-- The registers a function made by `asFn` changes. -/
 abbrev fnClob : List Reg := [.r1, .r2, .r3]
@@ -53,7 +53,7 @@ theorem highFrame_limb {b : BitVec 32} {m m' : Mem} {o n : Nat}
     rw [List.mem_singleton.mp hr]
     have hi := slot_range i
     rw [ACC_eq] at hi ho
-    exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inl (by omega_using [ho, hk, hi])) (by omega_using [hk, hi]) (by omega_using [hn])
 
 /-- `body` as a function: from the working space at `r0` with the limbs of
 the slots of `S` below `2^16`, if `body` changes no register but `R` (each
@@ -75,8 +75,8 @@ theorem asFn_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f :
   have hB : State.addr (s.gpr .r0) = State.addr b := by rw [hc.r0]
   rw [asFn, WP.seq_iff]
   rw [← List.append_nil (List.map _ (regSlots c))]
-  refine Spill.save_slots_ok (regSlots_ok c) (by rw [hc.r0, hS]; omega)
-    (fun d hd hd' => by rw [hB]; exact hc.inW (by rw [hS] at hd'; omega)) (WP.block_nil ?_)
+  refine Spill.save_slots_ok (regSlots_ok c) (by rw [hc.r0, hS]; omega_using [hfit])
+    (fun d hd hd' => by rw [hB]; exact hc.inW (by rw [hS] at hd'; omega_using [hd'])) (WP.block_nil ?_)
   rw [hB]
   have hf1 : Frame [⟨State.addr b + BitVec.ofNat 64 SAVE, SAVE + 28 - SAVE⟩] s.mem
       (Spill.saveMem s.mem (State.addr b) s.gpr (regSlots c)) :=
@@ -85,7 +85,7 @@ theorem asFn_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f :
       (regSlots c) :=
     Spill.saveMem_saved (State.addr b) s.gpr s.mem (regSlots c) (regSlots_ok c)
   generalize Spill.saveMem s.mem (State.addr b) s.gpr (regSlots c) = M1 at hf1 hsv1 ⊢
-  have hlimb := highFrame_limb hf1 (by rw [hS, hA]) (by rw [hS]; omega)
+  have hlimb := highFrame_limb hf1 (by rw [hS, hA]) (by rw [hS]; omega_using [])
   obtain ⟨s₁, hs₁⟩ : ∃ s₁ : State, s₁ = { s with mem := M1 } := ⟨_, rfl⟩
   rw [← hs₁]
   have hm₁ : s₁.mem = M1 := by rw [hs₁]
@@ -103,9 +103,9 @@ theorem asFn_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f :
     rw [hct.r0]
     refine hsv1.frame (regSlots_ok c) hf fun r hr => ?_
     obtain ⟨d, n, rfl, h1, h2⟩ := wRegions_bound hr
-    exact Offset.disjoint _ (.inr (by rw [hS]; omega)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inr (by rw [hS]; omega_using [h2])) (by omega_using [hS]) (by omega_using [h2])
   refine WP.mono (Spill.restore_block_ok (regSlots_ok c) (regSlots_restorable c)
-    (by rw [hct.r0, hS]; omega) (fun d _ hd' => by rw [hct.r0]; exact hct.inR (by rw [hS] at hd'; omega)) hsv)
+    (by rw [hct.r0, hS]; omega_using [hfit]) (fun d _ hd' => by rw [hct.r0]; exact hct.inR (by rw [hS] at hd'; omega_using [hd'])) hsv)
     fun u ⟨hres, hoth, hmu, hrd, hwr, hsp⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [hrd, hrt.rd, hr₁.rd], by rw [hwr, hrt.wr, hr₁.wr], by rw [hsp, hrt.sp, hr₁.sp]⟩,
     ?_, ?_, ?_⟩

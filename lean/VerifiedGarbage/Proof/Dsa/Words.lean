@@ -16,7 +16,7 @@ theorem words_eq_small {mem : Mem} {B : Addr} {d w value : Nat}
     wv mem B d w = value ↔ (word mem B d).toNat = value ∧
       ∀ i, 1 ≤ i → i < w → word mem B (d + 8 * i) = 0 := by
   have split := wv_add mem B d 1 (w - 1)
-  rw [show 1 + (w - 1) = w by omega] at split
+  rw [show 1 + (w - 1) = w by omega_using [hw]] at split
   have first : wv mem B d 1 = (word mem B d).toNat := by simp [wv]
   rw [split, first]
   have tailZero := wv_eq_zero_iff mem B (d + 8 * 1) (w - 1)
@@ -24,14 +24,14 @@ theorem words_eq_small {mem : Mem} {B : Addr} {d w value : Nat}
   · intro h
     have ht : wv mem B (d + 8 * 1) (w - 1) = 0 := by
       change (word mem B d).toNat + 2 ^ 64 * wv mem B (d + 8 * 1) (w - 1) = value at h
-      omega
+      omega_using [hv, h]
     refine ⟨by rw [ht, Nat.mul_zero, Nat.add_zero] at h; exact h, fun i hi1 hi => ?_⟩
-    have he := tailZero.mp ht (i - 1) (by omega)
-    rwa [show d + 8 * 1 + 8 * (i - 1) = d + 8 * i by omega] at he
+    have he := tailZero.mp ht (i - 1) (by omega_using [hi1, hi])
+    rwa [show d + 8 * 1 + 8 * (i - 1) = d + 8 * i by omega_using [hi1]] at he
   · rintro ⟨hfirst, hhigh⟩
     have ht : wv mem B (d + 8 * 1) (w - 1) = 0 := tailZero.mpr fun i hi => by
-      rw [show d + 8 * 1 + 8 * i = d + 8 * (i + 1) by omega]
-      exact hhigh (i + 1) (by omega) (by omega)
+      rw [show d + 8 * 1 + 8 * i = d + 8 * (i + 1) by omega_using []]
+      exact hhigh (i + 1) (by omega_using []) (by omega_using [hi])
     rw [ht, Nat.mul_zero, Nat.add_zero, hfirst]
 
 /-- XORing the first limb with one and ORing the rest tests exactly one. -/

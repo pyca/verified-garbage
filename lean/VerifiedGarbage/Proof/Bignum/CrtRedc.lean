@@ -36,13 +36,13 @@ theorem redcRanges_ok (wx : Nat) : ∀ r ∈ redcRanges wx, 8 * 17 ≤ r.1 ∧ r
   have := slot_le (w := wx) (show aXc < 8 by decide)
   have := slot_le (w := wx) (show aChunk < 8 by decide)
   have := slot_le (w := wx) (show aT < 8 by decide)
-  have h1 : slot wx 0 ≤ slot wx Public.aAcc := by unfold slot; omega
-  have h2 : slot wx 0 ≤ slot wx Public.aTmp := by unfold slot; omega
-  have h3 : slot wx 0 ≤ slot wx aXc := by unfold slot; omega
-  have h4 : slot wx 0 ≤ slot wx aChunk := by unfold slot; omega
-  have h5 : slot wx 0 ≤ slot wx aT := by unfold slot; omega
+  have h1 : slot wx 0 ≤ slot wx Public.aAcc := by unfold slot; omega_using []
+  have h2 : slot wx 0 ≤ slot wx Public.aTmp := by unfold slot; omega_using []
+  have h3 : slot wx 0 ≤ slot wx aXc := by unfold slot; omega_using []
+  have h4 : slot wx 0 ≤ slot wx aChunk := by unfold slot; omega_using []
+  have h5 : slot wx 0 ≤ slot wx aT := by unfold slot; omega_using []
   simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sSrc, sRem, sFn] at * <;> omega
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sSrc, sRem, sFn] at * <;> omega_arith
 
 theorem redcRanges_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc) (h2 : j ≠ Public.aTmp)
     (h3 : j ≠ aXc) (h4 : j ≠ aChunk) (h5 : j ≠ aT) :
@@ -55,7 +55,7 @@ theorem redcRanges_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc
   have s5 := slot_sep (w := wx) h5
   have := hj
   simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sSrc, sRem, sFn] at * <;> omega
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sSrc, sRem, sFn] at * <;> omega_arith
 
 theorem wv_split (m : Mem) (p : Addr) (d : Nat) {n k L : Nat} (h : n + k = L) :
     wv m p d L = wv m p d n + 2 ^ (64 * n) * wv m p (d + 8 * n) k := by
@@ -66,8 +66,8 @@ def lowW (w wx k : Nat) : Nat := min w (k * wx)
 
 /-- `k < K = ⌈w / w_X⌉` iff the first `k` chunks leave words. -/
 theorem lt_chunks {w wx k : Nat} (hwx : 1 ≤ wx) : k < (w + wx - 1) / wx ↔ k * wx < w := by
-  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le (by omega), Nat.add_mul, Nat.one_mul]
-  omega
+  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le (by omega_using [hwx]), Nat.add_mul, Nat.one_mul]
+  omega_using [hwx]
 
 theorem sMaskX_redc (wx : Nat) : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMaskX := by
   intro r hr
@@ -77,7 +77,7 @@ theorem sMaskX_redc (wx : Nat) : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1
   have := hdr_lt_slot wx aXc (show 31 < 32 by decide)
   have := hdr_lt_slot wx aChunk (show 31 < 32 by decide)
   have := hdr_lt_slot wx aT (show 31 < 32 by decide)
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn] <;> omega_arith
 
 /-- `K = ⌈w / w_X⌉`. -/
 abbrev nChunks (w wx : Nat) : Nat := (w + wx - 1) / wx

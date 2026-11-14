@@ -40,7 +40,7 @@ theorem cs_eq (w16 : Bool) : cs w16 = if w16 then 2 else 4 := cw_bytes w16
 
 /-- A 32-bit store at coefficient `i` stays in the 1024-byte slot of a polynomial. -/
 theorem cs_store_le (w16 : Bool) {i : Nat} (hi : i < 256) : cs w16 * i + 4 ≤ 1024 := by
-  cases w16 <;> simp only [cs_eq, Bool.false_eq_true, ite_false, ite_true] <;> omega
+  cases w16 <;> simp only [cs_eq, Bool.false_eq_true, ite_false, ite_true] <;> omega_using [hi]
 
 theorem cAddr_add (w16 : Bool) (p : Addr) (j k : Nat) :
     cAddr w16 p j + BitVec.ofNat 64 (cs w16 * k) = cAddr w16 p (j + k) := by
@@ -51,16 +51,16 @@ theorem writeW32_byte (m : Mem) (p : Addr) {o k : Nat} (ho : o + 4 ≤ 2 ^ 32) (
     (v : BitVec 32) :
     m.writeW (p + BitVec.ofNat 64 o) v (p + BitVec.ofNat 64 k) =
       if o ≤ k ∧ k < o + 4 then BitVec.ofNat 8 (v.toNat / 2 ^ (8 * (k - o))) else m (p + BitVec.ofNat 64 k) := by
-  rw [Mem.writeW, Mem.write, Offset.sub_toNat' p (by omega) (by omega)]
+  rw [Mem.writeW, Mem.write, Offset.sub_toNat' p (by omega_using [ho]) (by omega_using [hk])]
   by_cases c : o ≤ k
   · rw [ite_eq_left c]
     by_cases c' : k - o < 32 / 8
-    · rw [ite_eq_left c', ite_eq_left ⟨c, by omega⟩]
+    · rw [ite_eq_left c', ite_eq_left ⟨c, by omega_using [c']⟩]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
       rw [Nat.mod_eq_of_lt (show v.toNat < 2 ^ (8 * (32 / 8)) from v.isLt)]
-    · rw [ite_eq_right c', ite_eq_right (by omega)]
-  · rw [ite_eq_right c, ite_eq_right (by omega), ite_eq_right (by omega)]
+    · rw [ite_eq_right c', ite_eq_right (by omega_using [c'])]
+  · rw [ite_eq_right c, ite_eq_right (by omega_using [ho]), ite_eq_right (by omega_using [c])]
 
 /-- A 32-bit store of `v < 2¹⁶` at coefficient `j`: coefficient `j` is `v`, and with 16-bit
 coefficients `j + 1` is zero. -/
@@ -75,26 +75,26 @@ theorem cval_writeW {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256)
     · rw [ite_eq_right (Ne.symm e), ite_eq_right e, ite_eq_right (by simp)]
   · rw [cval_true, cval_true, coeffAtW16_toNat, coeffAtW16_toNat]
     simp only [cAddr, cs_eq, ite_true]
-    rw [writeW32_byte m p (by omega) (by omega), writeW32_byte m p (by omega) (by omega)]
+    rw [writeW32_byte m p (by omega_using [hj]) (by omega_using [hi]), writeW32_byte m p (by omega_using [hj]) (by omega_using [hi])]
     by_cases e : i = j
     · subst e
-      rw [ite_eq_left (show 2 * i ≤ 2 * i ∧ 2 * i < 2 * i + 4 by omega),
-        ite_eq_left (show 2 * i ≤ 2 * i + 1 ∧ 2 * i + 1 < 2 * i + 4 by omega), ite_eq_left rfl,
-        BitVec.toNat_ofNat, BitVec.toNat_ofNat, show 2 * i + 1 - 2 * i = 1 by omega, Nat.sub_self]
+      rw [ite_eq_left (show 2 * i ≤ 2 * i ∧ 2 * i < 2 * i + 4 by omega_using []),
+        ite_eq_left (show 2 * i ≤ 2 * i + 1 ∧ 2 * i + 1 < 2 * i + 4 by omega_using []), ite_eq_left rfl,
+        BitVec.toNat_ofNat, BitVec.toNat_ofNat, show 2 * i + 1 - 2 * i = 1 by omega_using [], Nat.sub_self]
       simp only [Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.mul_one]
-      omega
+      omega_using [hv]
     · rw [ite_eq_right e]
       by_cases e' : i = j + 1
       · subst e'
-        rw [ite_eq_left (show 2 * j ≤ 2 * (j + 1) ∧ 2 * (j + 1) < 2 * j + 4 by omega),
-          ite_eq_left (show 2 * j ≤ 2 * (j + 1) + 1 ∧ 2 * (j + 1) + 1 < 2 * j + 4 by omega),
+        rw [ite_eq_left (show 2 * j ≤ 2 * (j + 1) ∧ 2 * (j + 1) < 2 * j + 4 by omega_using []),
+          ite_eq_left (show 2 * j ≤ 2 * (j + 1) + 1 ∧ 2 * (j + 1) + 1 < 2 * j + 4 by omega_using []),
           ite_eq_left ⟨trivial, rfl⟩, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-          show 2 * (j + 1) - 2 * j = 2 by omega, show 2 * (j + 1) + 1 - 2 * j = 3 by omega]
+          show 2 * (j + 1) - 2 * j = 2 by omega_using [], show 2 * (j + 1) + 1 - 2 * j = 3 by omega_using []]
         have : v.toNat / 2 ^ 16 = 0 := Nat.div_eq_of_lt hv
-        have : v.toNat / 2 ^ (8 * 3) = 0 := Nat.div_eq_of_lt (by omega)
-        omega
+        have : v.toNat / 2 ^ (8 * 3) = 0 := Nat.div_eq_of_lt (by omega_using [hv])
+        omega_using [hv]
       · simp only [e', and_false, ite_false]
-        rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+        rw [ite_eq_right (by omega_using [e, e']), ite_eq_right (by omega_using [e, e'])]
 
 /-- The same store, as the `cw w16`-bit coefficient. -/
 theorem coeffAtW_writeW32 {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256)
@@ -110,7 +110,7 @@ theorem coeffAtW_writeW32 {w16 : Bool} (m : Mem) (p : Addr) {i j : Nat} (hi : i 
   · subst e
     rw [ite_eq_left rfl, ite_eq_left rfl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
     have := v.isLt
-    cases w16 <;> simp only [cw, Bool.false_eq_true, ite_false, ite_true] <;> omega
+    cases w16 <;> simp only [cw, Bool.false_eq_true, ite_false, ite_true] <;> omega_arith
   · rw [ite_eq_right e, ite_eq_right (Ne.symm e)]
     split <;> simp
 
@@ -120,7 +120,7 @@ theorem cAddr_contains4 (w16 : Bool) (p : Addr) {i : Nat} (hi : i < 256) :
   cases w16
   · exact coeff_contains p (show i < n from hi)
   · show (polyRegion p).Contains (p + BitVec.ofNat 64 (2 * i)) 4
-    exact Offset.contains_base p (by omega) (by omega)
+    exact Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 /-- A coefficient of a polynomial in a region the frame does not write. -/
 theorem coeffAtW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
@@ -128,9 +128,9 @@ theorem coeffAtW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame 
     coeffAtW (cw w16) m' p i = coeffAtW (cw w16) m p i := by
   cases w16
   · show coeffAtW 32 m' p i = coeffAtW 32 m p i
-    exact hf.readW (r := polyRegion p) (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+    exact hf.readW (r := polyRegion p) (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])) hd (by decide)
   · show coeffAtW 16 m' p i = coeffAtW 16 m p i
-    exact hf.readW (r := polyRegion p) (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+    exact hf.readW (r := polyRegion p) (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])) hd (by decide)
 
 /-- A polynomial in a region the frame does not write. -/
 theorem polyAtW_frame {w16 : Bool} {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
@@ -160,6 +160,6 @@ theorem CoeffsUpToW.polyIs {w16 : Bool} {m : Mem} {p : Addr} {G old : Nat → Bi
     rw [h i hi', ite_eq_left hi', hf i hi', BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
     have := val_lt f[i]!
     have hq : q = 3329 := rfl
-    cases w16 <;> simp only [cw, Bool.false_eq_true, ite_false, ite_true] <;> omega
+    cases w16 <;> simp only [cw, Bool.false_eq_true, ite_false, ite_true] <;> omega_using [this]
 
 end VG.Proof.MlKem

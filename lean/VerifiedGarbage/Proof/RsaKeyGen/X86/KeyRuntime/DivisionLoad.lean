@@ -91,43 +91,43 @@ theorem divisionLoad_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src di
   have sepSource : (Loc.array w 0).offset n + 4 * w.words n ≤ src.offset n ∨
       src.offset n + 4 * w.words n ≤ (Loc.array w 0).offset n := by
     simp only [offset_array, arr, S] at *
-    omega
+    omega_using [srcSep]
   have sepDivisor : (Loc.array w 2).offset n + 4 * w.words n ≤ divisor.offset n ∨
       divisor.offset n + 4 * w.words n ≤ (Loc.array w 2).offset n := by
     simp only [offset_array, arr, S] at *
-    omega
+    omega_using [divSep]
   unfold divisionLoad VG.Impl.Rsa.X86.Keys.seqs
   refine WP.seq (WP.mono (clearTop_ok h w (j := 2)
-    (by rw [offset_array]; unfold S at f2; omega)) fun u ⟨hu, Ou, topU, Ku⟩ => ?_)
+    (by rw [offset_array]; unfold S at f2; omega_using [f2])) fun u ⟨hu, Ou, topU, Ku⟩ => ?_)
   rw [offset_array] at Ou topU
   have uFrame : Outside B hdr (4 * (4 * (w.words n + 2))) s.mem u.mem :=
-    Ou.mono (by unfold arr; omega) (by unfold arr S; omega)
+    Ou.mono (by unfold arr; omega_using []) (by unfold arr S; omega_using [])
   have source : val32 u.mem B (src.offset n) (w.words n) =
       val32 s.mem B (src.offset n) (w.words n) :=
-    uFrame.val32 (by simp only [arr, S] at srcSep; omega) (by omega)
+    uFrame.val32 (by simp only [arr, S] at srcSep; omega_using [srcSep]) (by omega_using [hn, srcBound])
   refine WP.seq (WP.mono (copy_loc_ok hu w (.array w 0) src
-    (by rw [offset_array]; unfold S at f0; omega) srcBound sepSource)
+    (by rw [offset_array]; unfold S at f0; omega_using [f0]) srcBound sepSource)
     fun v ⟨hv, Ov, input, Kv⟩ => ?_)
   rw [offset_array] at Ov input
   change num v.mem B (w.words n) 0 = val32 u.mem B (src.offset n) (w.words n) at input
   have vFrame : Outside B hdr (4 * (4 * (w.words n + 2))) s.mem v.mem :=
-    uFrame.trans (Ov.mono (by unfold arr; omega) (by unfold arr S; omega))
+    uFrame.trans (Ov.mono (by unfold arr; omega_using []) (by unfold arr S; omega_using []))
   have topV : w32 v.mem B (arr (w.words n) 2 + 4 * w.words n) = 0 := by
-    rw [Ov.w32 (by unfold arr S; omega) (by unfold S at f2; omega), topU]
+    rw [Ov.w32 (by unfold arr S; omega_using []) (by unfold S at f2; omega_using [hn, f2]), topU]
   have modulus : val32 v.mem B (divisor.offset n) (w.words n) =
       val32 s.mem B (divisor.offset n) (w.words n) :=
-    vFrame.val32 (by simp only [arr, S] at divSep; omega) (by omega)
+    vFrame.val32 (by simp only [arr, S] at divSep; omega_using [divSep]) (by omega_using [hn, divBound])
   refine WP.mono (copy_loc_ok hv w (.array w 2) divisor
-    (by rw [offset_array]; unfold S at f2; omega) divBound sepDivisor)
+    (by rw [offset_array]; unfold S at f2; omega_using [f2]) divBound sepDivisor)
     fun t ⟨ht, Ot, valueD, Kt⟩ => ?_
   rw [offset_array] at Ot valueD
   change num t.mem B (w.words n) 2 = val32 v.mem B (divisor.offset n) (w.words n) at valueD
   have topT : w32 t.mem B (arr (w.words n) 2 + 4 * w.words n) = 0 := by
-    rw [Ot.w32 (Or.inr (Nat.le_refl _)) (by unfold S at f2; omega), topV]
-  refine ⟨ht, vFrame.trans (Ot.mono (by unfold arr; omega) (by unfold arr S; omega)),
+    rw [Ot.w32 (Or.inr (Nat.le_refl _)) (by unfold S at f2; omega_using [hn, f2]), topV]
+  refine ⟨ht, vFrame.trans (Ot.mono (by unfold arr; omega_using []) (by unfold arr S; omega_using [])),
     ?_, valueD.trans modulus, topT, (Ku.mono (by decide)).trans (Kv.trans Kt)⟩
   change val32 t.mem B (arr (w.words n) 0) (w.words n) = _
-  rw [Ot.val32 (by unfold arr S; omega) (by unfold S at f0; omega)]
+  rw [Ot.val32 (by unfold arr S; omega_using []) (by unfold S at f0; omega_using [hn, f0])]
   exact input.trans source
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

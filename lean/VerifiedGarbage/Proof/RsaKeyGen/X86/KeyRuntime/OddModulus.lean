@@ -90,12 +90,12 @@ theorem oddModulus_ok {s : State} {B : Addr} {Z n input out : Nat}
   refine WP.seq (WP.mono (constant_ok h (by decide) (3 : BitVec 32)) fun u ⟨hu, Ou, constant, Ku⟩ => ?_)
   change num u.mem B n aT1 = 3 at constant
   have Iu : num u.mem B n input = num s.mem B n input :=
-    Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega) (by simp) fi
+    Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega_using [ip]) (by simp) fi
   refine WP.seq (WP.mono (sub_ok hu (by decide) hi (by decide)) fun v ⟨hv, Ov, subtract, bit, Kv⟩ => ?_)
   rw [Iu, constant] at subtract
   have borrow := VG.Proof.Rsa.borrow_iff subtract (val32_lt _ _ _ _) bit
   have Iv : num v.mem B n input = num s.mem B n input := by
-    rw [Ov.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT2; omega) (by simp) fi, Iu]
+    rw [Ov.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT2; omega_using [ip]) (by simp) fi, Iu]
   have Cv : num v.mem B n aT1 = 3 := by rw [Ov.num (by decide) (by simp) fc, constant]
   refine WP.seq (WP.mono (oddFlag_ok hv hi bit) fun w ⟨hw, Ow, flag, Kw⟩ => ?_)
   rw [Iv] at flag
@@ -106,20 +106,20 @@ theorem oddModulus_ok {s : State} {B : Addr} {Z n input out : Nat}
       by_cases p : num s.mem B n input % 2 = 1
       · simp only [b, ite_true, p] at flag
         simpa [p, ge] using flag
-      · have parity : num s.mem B n input % 2 = 0 := by omega
+      · have parity : num s.mem B n input % 2 = 0 := by omega_using [p]
         simp only [b, ite_true, parity] at flag
         simpa [p] using flag
     · have ng : ¬3 ≤ num s.mem B n input := fun ge => b (borrow.mpr ge)
       simp only [b, ite_false] at flag
       simpa [ng] using flag
-  have bitW : slot w.mem B kFlag ≤ 1 := by rw [valid]; split <;> omega
+  have bitW : slot w.mem B kFlag ≤ 1 := by rw [valid]; split <;> omega_using []
   have Iw : num w.mem B n input = num s.mem B n input := by
     rw [Ow.num (by simp) (by simp only [List.mem_singleton]; intro d e; subst d; exact hf) fi, Iv]
   have Cw : num w.mem B n aT1 = 3 := by
     rw [Ow.num (by simp) (by simp only [List.mem_singleton]; intro d e; subst d; exact hf) fc, Cv]
   refine WP.mono (sel_ok hw ho (by decide) hi hf bitW (by
     by_cases e : out = aT1
-    · right; rw [e]; unfold aT1; omega
+    · right; rw [e]; unfold aT1; omega_using [ip]
     · exact Or.inl e)) fun t ⟨ht, Ot, selected, Kt⟩ => ?_
   refine ⟨ht, (((Ou.join Ov (js := [aT1, aT2, out]) (ds := [])).join Ow
     (js := [aT1, aT2, out]) (ds := [kFlag])).join Ot

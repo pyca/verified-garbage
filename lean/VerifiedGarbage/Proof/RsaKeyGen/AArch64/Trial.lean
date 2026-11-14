@@ -52,7 +52,7 @@ theorem trialInit_ok (t : State) {w : Nat} (h12 : t.gpr .x12 = BitVec.ofNat 64 w
       Keep [.x3, .x4, .x5, .x6, .x10, .x1, .x7, .x8] t t' := by
   refine WP.keep [.x3, .x4, .x5, .x6, .x10, .x1, .x7, .x8] ?_ (by decide) (by decide) (by decide +kernel)
   brun [h12]
-  rw [BitVec.toNat_not, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_not, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw]),
     show (BitVec.setWidth 64 17#16 : BitVec 64).toNat = 17 from rfl, show true.toNat = 1 from rfl]
   split <;> rename_i h1 <;> split <;> rename_i h2 <;>
     simp only [decide_eq_true_eq] at h1
@@ -88,7 +88,7 @@ theorem tlLoad_ok {s₀ : State} {B : Addr} {Z w T k : Nat} (hT : T + 2048 ≤ Z
     WP isa (.block [ld .x17 .x9, next .x9]) t fun t' =>
       (t'.gpr .x17 = BitVec.ofNat 64 (tabWord k) ∧ t'.gpr .x9 = off B (T + 8 * (k + 1)) ∧ t'.mem = t.mem) ∧
       Keep [.x17, .x9] t t' := by
-  have hld : InRegions (t.rd ++ t.wr) (off B (T + 8 * k)) 8 := hI.ws.scr.ld (by omega)
+  have hld : InRegions (t.rd ++ t.wr) (off B (T + 8 * k)) 8 := hI.ws.scr.ld (by omega_using [hT, hk])
   refine WP.keep [.x17, .x9] ?_ (by decide) (by decide) (by decide +kernel)
   brun [h9, hld, hI.mem, htab k hk]
   rw [Nat.mul_succ, Nat.add_assoc]
@@ -111,7 +111,7 @@ theorem tlIter_ok {s₀ : State} {B : Addr} {Z w T c k : Nat} (hc : wv s₀.mem 
   have ne : ∀ j, trialEntry j ≠ [] := fun j => by unfold trialEntry; exact List.cons_ne_nil _ _
   refine wp_seqs_append (ne 0) (by simp) (WP.mono (tlEntry_ok hc hk (by decide) hI₁ hf₁ h17₁)
     fun t₂ ⟨hI₂, hf₂, k₂⟩ => ?_)
-  rw [show 4 * k + 0 + 1 = 4 * k + 1 by omega] at hf₂
+  rw [show 4 * k + 0 + 1 = 4 * k + 1 by omega_using []] at hf₂
   refine wp_seqs_append (ne 1) (by simp) (WP.mono (tlEntry_ok hc hk (by decide) hI₂ hf₂
     ((k₂.gpr .x17 (by decide)).trans h17₁)) fun t₃ ⟨hI₃, hf₃, k₃⟩ => ?_)
   refine wp_seqs_append (ne 2) (by simp) (WP.mono (tlEntry_ok hc hk (by decide) hI₃ (by rw [hf₃])
@@ -125,7 +125,7 @@ theorem tlIter_ok {s₀ : State} {B : Addr} {Z w T c k : Nat} (hc : wv s₀.mem 
     ⟨⟨⟨hI₅.ws.congr' (rs := []) (fun x _ => by rw [hm']) (by simp) k' (by decide), (k'.gpr .x7 (by decide)).trans hI₅.x7,
       (k'.gpr .x8 (by decide)).trans hI₅.x8, hm'.trans hI₅.mem, (hI₅.keep.trans k').mono (by decide)⟩,
       by rw [k'.gpr .x9 (by decide), k25.gpr .x9 (by decide), h9₁],
-      by rw [k'.gpr .x1 (by decide), hf₅, show 4 * k + 3 + 1 = 4 * (k + 1) by omega]⟩,
+      by rw [k'.gpr .x1 (by decide), hf₅, show 4 * k + 3 + 1 = 4 * (k + 1) by omega_using []]⟩,
       by rw [h10, k25.gpr .x10 (by decide), k₁.gpr .x10 (by decide)]⟩
 
 /-- `trial`: `x1` is not zero iff one of the first `4 N` entries of the table
@@ -154,14 +154,14 @@ theorem trial_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (hT : slot 
   have htab₄ : ∀ i < 256, word s₄.mem B (slot w aTab + 8 * i) = BitVec.ofNat 64 (tabWord i) := fun i hi => by
     rw [hm₄]; exact htab₃ i hi
   have hc₄ : wv s₄.mem B (slot w aN) w = wv s.mem B (slot w aN) w := by
-    rw [hm₄, ho₃.wv (Or.inl hTa) (by omega)]
+    rw [hm₄, ho₃.wv (Or.inl hTa) (by omega_using [hT, hn, hTa])]
   have h9₄ : s₄.gpr .x9 = off B (slot w aTab + 8 * 0) := by
     rw [k₄.gpr .x9 (by decide), k₃.gpr .x9 (by decide), h9₂, Nat.mul_zero, Nat.add_zero]
   generalize hNdef : (if 17 ≤ w then 256 else 128) = N at h10₄ ⊢
-  have hN : N ≤ 256 ∧ 1 ≤ N := by rw [← hNdef]; split <;> omega
-  refine WP.mono (wp_countdown (N := N) (by omega) (by omega) (fun k t => TLInv s₄ B Z w t ∧
+  have hN : N ≤ 256 ∧ 1 ≤ N := by rw [← hNdef]; split <;> omega_using []
+  refine WP.mono (wp_countdown (N := N) (by omega_using [hN]) (by omega_using [hN]) (fun k t => TLInv s₄ B Z w t ∧
       t.gpr .x9 = off B (slot w aTab + 8 * k) ∧ t.gpr .x1 = mask (anyPre (wv s.mem B (slot w aN) w) (4 * k)))
-    (fun k hk t ⟨hI, h9, hf⟩ _ => tlIter_ok hc₄ hT (by omega) htab₄ hI h9 hf)
+    (fun k hk t ⟨hI, h9, hf⟩ _ => tlIter_ok hc₄ hT (by omega_using [hN, hk]) htab₄ hI h9 hf)
     ⟨⟨h₄, h7₄, h8₄, rfl, Keep.refl _ _⟩, h9₄, by rw [h1₄, Nat.mul_zero, anyPre_zero]; rfl⟩ h10₄) fun t ⟨hI, _, hf⟩ => ?_
   refine ⟨by rw [hf, trial_mask_ne]; rfl, hI.ws, by rw [hI.mem]; exact hf₄, (k14.trans hI.keep).mono (by decide)⟩
 

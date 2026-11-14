@@ -38,20 +38,20 @@ theorem disjoint_nat {a b : Addr} {n k : Nat}
     (_an : a.toNat + n ≤ 2 ^ 64) (_bk : b.toNat + k ≤ 2 ^ 64) (np : 0 < n) (kp : 0 < k)
     (D : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) : a.toNat + n ≤ b.toNat ∨ b.toNat + k ≤ a.toNat := by
   by_contra bad
-  have overlap : a.toNat < b.toNat + k ∧ b.toNat < a.toNat + n := by omega
+  have overlap : a.toNat < b.toNat + k ∧ b.toNat < a.toNat + n := by omega_using [bad]
   by_cases order : a.toNat ≤ b.toNat
   · apply D b
     · change (b - a).toNat + 1 ≤ n
       rw [BitVec.toNat_sub]
-      omega
+      omega_using [bad, order]
     · change (b - b).toNat + 1 ≤ k
-      rw [BitVec.sub_self]; change 0 + 1 ≤ k; omega
+      rw [BitVec.sub_self]; change 0 + 1 ≤ k; omega_using [kp]
   · apply D a
     · change (a - a).toNat + 1 ≤ n
-      rw [BitVec.sub_self]; change 0 + 1 ≤ n; omega
+      rw [BitVec.sub_self]; change 0 + 1 ≤ n; omega_using [np]
     · change (a - b).toNat + 1 ≤ k
       rw [BitVec.toNat_sub]
-      omega
+      omega_using [bad, order]
 
 theorem CallFacts.tableRegion {s : State} (F : CallFacts s) :
     let t : Region := ⟨(s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64, 8192⟩
@@ -67,7 +67,7 @@ theorem CallFacts.rd {s : State} (F : CallFacts s) :
 theorem CallFacts.pLens {s : State} (F : CallFacts s) : pLenOf s = 128 ∨ pLenOf s = 256 ∨ pLenOf s = 384 := by
   have := F.pValid
   simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this
-  omega
+  omega_using [this]
 
 theorem CallFacts.lengths {s : State} (F : CallFacts s) :
     Spec.Dsa.generationLengthsValid (pLenOf s) (Spec.Dsa.generationQLen (pLenOf s)) := by
@@ -82,7 +82,7 @@ theorem CallFacts.stackSub {s : State} (F : CallFacts s) : (callEnv s).stackRegi
   exact below_inner (by decide) F.low
 
 theorem CallFacts.spNat {s : State} (F : CallFacts s) : (callEnv s).sp.toNat = (s.gpr .esp).toNat - 16 :=
-  sub_toNat (by have := F.low; omega)
+  sub_toNat (by have := F.low; omega_using [this])
 
 theorem CallFacts.reservedNat {s : State} (F : CallFacts s) :
     ((s.gpr .esp).setWidth 64 - 216#64).toNat = (s.gpr .esp).toNat - 216 := by
@@ -100,30 +100,30 @@ theorem CallFacts.scratchNat {s : State} (F : CallFacts s) :
   have fit := F.scrFit
   have esp := (s.gpr .esp).isLt
   have low := F.low
-  have b₁ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [F.reservedNat]; omega) (by omega) (by decide)
+  have b₁ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [F.reservedNat]; omega_using []) (by omega_using [room]) (by decide)
     F.stackScr.symm
-  have b₂ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [toNat_wide]; omega) (by omega) (by decide)
+  have b₂ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [toNat_wide]; omega_using []) (by omega_using [room]) (by decide)
     F.retScr.symm
   rw [toNat_wide, F.reservedNat] at b₁
   rw [toNat_wide, toNat_wide] at b₂
-  omega
+  omega_using [room, b₁, b₂]
 
 /-- `out` lies below the reserved stack or above the return address. -/
 theorem CallFacts.outNat {s : State} (F : CallFacts s) :
     (arg s 0).toNat + (arg s 1).toNat ≤ (s.gpr .esp).toNat - 216 ∨
       (s.gpr .esp).toNat + 4 ≤ (arg s 0).toNat := by
   have pos : 0 < (arg s 1).toNat := by
-    rw [F.outLen]; rcases F.pLens with h | h | h <;> omega
+    rw [F.outLen]; rcases F.pLens with h | h | h <;> omega_using [h]
   have fit := F.outFit
   have esp := (s.gpr .esp).isLt
   have low := F.low
-  have b₁ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [F.reservedNat]; omega) pos (by decide)
+  have b₁ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [F.reservedNat]; omega_using []) pos (by decide)
     F.stackOut.symm
-  have b₂ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [toNat_wide]; omega) pos (by decide)
+  have b₂ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [toNat_wide]; omega_using []) pos (by decide)
     F.retOut.symm
   rw [toNat_wide, F.reservedNat] at b₁
   rw [toNat_wide, toNat_wide] at b₂
-  omega
+  omega_using [pos, b₁, b₂]
 
 /-- `state` lies below the reserved stack or above the return address. -/
 theorem CallFacts.stNat {s : State} (F : CallFacts s) :
@@ -131,13 +131,13 @@ theorem CallFacts.stNat {s : State} (F : CallFacts s) :
   have fit := F.stFit
   have esp := (s.gpr .esp).isLt
   have low := F.low
-  have b₁ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [F.reservedNat]; omega) (by decide) (by decide)
+  have b₁ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [F.reservedNat]; omega_using []) (by decide) (by decide)
     F.stackSt.symm
-  have b₂ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [toNat_wide]; omega) (by decide) (by decide)
+  have b₂ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [toNat_wide]; omega_using []) (by decide) (by decide)
     F.retSt.symm
   rw [toNat_wide, F.reservedNat] at b₁
   rw [toNat_wide, toNat_wide] at b₂
-  omega
+  omega_using [b₁, b₂]
 
 /-- `used` lies below the reserved stack or above the return address. -/
 theorem CallFacts.usedNat {s : State} (F : CallFacts s) :
@@ -145,13 +145,13 @@ theorem CallFacts.usedNat {s : State} (F : CallFacts s) :
   have fit := F.usedFit
   have esp := (s.gpr .esp).isLt
   have low := F.low
-  have b₁ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [F.reservedNat]; omega) (by decide) (by decide)
+  have b₁ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [F.reservedNat]; omega_using []) (by decide) (by decide)
     F.stackUsed.symm
-  have b₂ := disjoint_nat (by rw [toNat_wide]; omega) (by rw [toNat_wide]; omega) (by decide) (by decide)
+  have b₂ := disjoint_nat (by rw [toNat_wide]; omega_using []) (by rw [toNat_wide]; omega_using []) (by decide) (by decide)
     F.retUsed.symm
   rw [toNat_wide, F.reservedNat] at b₁
   rw [toNat_wide, toNat_wide] at b₂
-  omega
+  omega_using [b₁, b₂]
 
 theorem CallFacts.outLenEq {s : State} (F : CallFacts s) : (callEnv s).outLen = (arg s 1).toNat := by
   simp only [Env.outLen, callEnv, F.outLen]
@@ -176,11 +176,11 @@ theorem CallFacts.valid {s : State} (F : CallFacts s) : (callEnv s).Valid := by
   have uR : (callEnv s).usedRegion = ⟨(arg s 2).setWidth 64, 8⟩ := rfl
   have sR : (callEnv s).stRegion = ⟨(arg s 7).setWidth 64, 32⟩ := rfl
   have tW : ∀ r ∈ s.wr, (callEnv s).tableRegion.Disjoint r := T.2.1
-  refine ⟨F.lengths, by change 512 * pLenOf s + 8192 ≤ (arg s 6).toNat * 8; omega,
+  refine ⟨F.lengths, by change 512 * pLenOf s + 8192 ≤ (arg s 6).toNat * 8; omega_using [room],
     by change ((arg s 5).setWidth 64).toNat + _ ≤ _; rw [toNat_wide]; exact F.scrFit,
     by rw [F.outLenEq]; change ((arg s 0).setWidth 64).toNat + _ ≤ _; rw [toNat_wide]; exact F.outFit,
     by change ((arg s 3).setWidth 64).toNat + _ ≤ _; rw [toNat_wide]; exact F.randFit,
-    by simp [callEnv], by simp [callEnv], by rw [spNat]; omega, ?_, by rw [ws, F.outRegion]; exact F.outScr,
+    by simp [callEnv], by simp [callEnv], by rw [spNat]; omega_using [low], ?_, by rw [ws, F.outRegion]; exact F.outScr,
     ⟨by rw [wW, ws]; exact F.randScr, by rw [wW, F.outRegion]; exact F.outRand.symm,
       by rw [wW]; exact F.far F.stackRand⟩,
     by rw [F.outRegion]; exact F.far F.stackOut,
@@ -191,7 +191,7 @@ theorem CallFacts.valid {s : State} (F : CallFacts s) : (callEnv s).Valid := by
   · change (callEnv s).sp.toNat ≤ ((arg s 5).setWidth 64).toNat ∨
       ((arg s 5).setWidth 64).toNat + (arg s 6).toNat * 8 + 200 ≤ (callEnv s).sp.toNat
     rw [spNat, toNat_wide]
-    omega
+    omega_using [room, scratchNat]
   · rw [F.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   · rw [F.outRegion]; exact T.2.1 _ (by rw [F.wr]; exact List.mem_cons_self)
   · exact F.tableAligned _ (by rw [ProbablePrime.table_regions]; exact List.mem_cons_self)

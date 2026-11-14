@@ -38,17 +38,17 @@ theorem slot_apart {s : State} (h : PreP pc s) {d : Nat} (hd : d + 8 ≤ oM) {r 
     Region.Disjoint ⟨fb s + BitVec.ofNat 64 d, 8⟩ r := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact h.ko.sub_left (frame_sub s (by unfold oM frameBytes at *; omega))
-  · exact Offset.disjoint _ (.inl hd) (by unfold oM at hd; omega) (by have := h.k2; unfold oM; omega)
+  · exact h.ko.sub_left (frame_sub s (by unfold oM frameBytes at *; omega_using [hd]))
+  · exact Offset.disjoint _ (.inl hd) (by unfold oM at hd; omega_using [hd]) (by have := h.k2; unfold oM; omega_using [this])
 
 theorem Late.release {s t u : State} (h : PreP pc s) (L : Late s t) (k : Keep [.r0, .r6, .r7, .r8] t u)
     (hf : Frame [oR s, mR s] t.mem u.mem) : Late s u := by
-  have mk : Region.Sub (mR s) (kR s) := frame_sub s (by have := h.k2; unfold oM frameBytes; omega)
+  have mk : Region.Sub (mR s) (kR s) := frame_sub s (by have := h.k2; unfold oM frameBytes; omega_using [this])
   refine ⟨k.sp.trans L.sp, k.rd.trans L.rd, k.wr.trans L.wr, (k.gpr _ (by decide)).trans L.r24,
     (k.gpr _ (by decide)).trans L.r25, (k.gpr _ (by decide)).trans L.r26, (k.gpr _ (by decide)).trans L.r27,
     (k.gpr _ (by decide)).trans L.r28, (k.gpr _ (by decide)).trans L.r29,
     fun r hr => (k.gpr r (by revert r; decide)).trans (L.hi r hr), L.mem.trans (hf.sub fun r hr => ?_),
-    L.sv.frame hf fun p hp r hr => slot_apart h (by have := saved_offs p hp; unfold oSave oM at *; omega) hr, ?_⟩
+    L.sv.frame hf fun p hp r hr => slot_apart h (by have := saved_offs p hp; unfold oSave oM at *; omega_using [this]) hr, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
@@ -73,7 +73,7 @@ theorem restore_ok {s w : State} (L : Late s w) :
       saved_ho (by decide) (fun p hp => by
         have := saved_offs p hp
         show InRegions (w.rd ++ w.wr) _ 8
-        rw [L.wr]; exact in_fr' s _ _ (by unfold oSave at this; omega) (by unfold oSave at this; unfold frameBytes; omega))
+        rw [L.wr]; exact in_fr' s _ _ (by unfold oSave at this; omega_using [this]) (by unfold oSave at this; unfold frameBytes; omega_using [this]))
       L.sv) fun v R => ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩
     · rcases preserved_split hr with hs | hs
       · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hs

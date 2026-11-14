@@ -19,7 +19,7 @@ def passOffset (component : Nat) (direction : Direction) : Nat :=
 
 theorem passOffset_bound : ∀ c < 3, ∀ d : Direction, passOffset c d < 4096 := by
   intro c hc d
-  cases d <;> simp only [passOffset, reduceCtorEq, ite_true, ite_false] <;> omega
+  cases d <;> simp only [passOffset, reduceCtorEq, ite_true, ite_false] <;> omega_using [hc]
 
 theorem stepVal_eq (s : State) (d : Direction) :
     (if d = .encrypt then s.gpr .x0 - s.gpr .x0 + BitVec.ofNat 64 8

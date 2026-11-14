@@ -36,10 +36,10 @@ theorem dup_byte (x : BitVec 64) (e : Nat) (he : e < 16) :
     BitVec.getLsbD_append, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
     hi, decide_true, Bool.true_and]
   by_cases h : e < 8
-  · simp only [show 8*e+i < 64 by omega, ite_true, Nat.mod_eq_of_lt h]
-  · simp only [show ¬8*e+i < 64 by omega, ite_false]
+  · simp only [show 8*e+i < 64 by omega_using [hi, h], ite_true, Nat.mod_eq_of_lt h]
+  · simp only [show ¬8*e+i < 64 by omega_using [h], ite_false]
     congr 1
-    omega
+    omega_using [he, h]
 
 /-- SHL followed by SRI implements a byte rotation, including the inserted bit. -/
 theorem shift_insert_rotate : ∀ sh ∈ [1,7], ∀ x : Byte,
@@ -96,14 +96,14 @@ theorem low64_eq_packed (v : BitVec 128) (t : Nat → Byte)
     (h : ∀ j < 8, vbyte v j = t j) : v.extractLsb' 0 64 = packed t := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have h₁ := congrArg (fun b : Byte => b.getLsbD (i%8)) (h (i/8) (by omega))
+  have h₁ := congrArg (fun b : Byte => b.getLsbD (i%8)) (h (i/8) (by omega_using [hi]))
   have h₂ := congrArg (fun b : Byte => b.getLsbD (i%8))
-    (byte_packed t (i/8) (by omega))
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show i%8 < 8 by omega,
-    decide_true, Bool.true_and, show 8*(i/8)+i%8=i by omega] at h₁
+    (byte_packed t (i/8) (by omega_using [hi]))
+  simp only [vbyte, BitVec.getLsbD_extractLsb', show i%8 < 8 by omega_using [],
+    decide_true, Bool.true_and, show 8*(i/8)+i%8=i by omega_using []] at h₁
   simp only [byte, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
-    show i%8 < 8 by omega, decide_true, Bool.true_and,
-    show 8*(i/8)+i%8=i by omega] at h₂
+    show i%8 < 8 by omega_using [], decide_true, Bool.true_and,
+    show 8*(i/8)+i%8=i by omega_using []] at h₂
   simp only [BitVec.getLsbD_extractLsb',hi,decide_true,Bool.true_and,Nat.zero_add]
   exact h₁.trans h₂.symm
 

@@ -39,9 +39,9 @@ theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p
   simp only [Region.Contains] at hc ⊢
   have e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
     rw [Offset.sub_add_eq]; exact (BitVec.sub_add_cancel _ _).symm
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hk]),
+    Nat.mod_eq_of_lt (by omega_using [hd, hk, hc])]
+  omega_using [hd, hc]
 
 theorem in_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hd : d + n ≤ k)
     (hk : k < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 d) n :=
@@ -106,7 +106,7 @@ theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + Bit
 
 theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 2560) :
     Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 2464⟩ :=
-  Offset.sub _ h₁ (by omega)
+  Offset.sub _ h₁ (by omega_using [h₂])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
@@ -140,12 +140,12 @@ theorem stk_w {a n : Nat} (ha : a + n ≤ 2560) :
 omit L in
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
     (⟨w64 St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 St + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 omit L in
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 /-- The stack the calls use, at `esp = SP`. -/
 theorem below_sub {k : Nat} (hk : k ≤ K) : Region.Sub (below SP k) (below SP K) :=
@@ -154,22 +154,22 @@ theorem below_sub {k : Nat} (hk : k ≤ K) : Region.Sub (below SP k) (below SP K
 /-! ### Pointers into the regions, as the code computes them -/
 
 theorem aW {o : Nat} (ho : o < 2560) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
-  w64_add (by have := L.fw; omega)
+  w64_add (by have := L.fw; omega_using [ho, this])
 
 theorem aS {o : Nat} (ho : o < 80) : w64 (St + BitVec.ofNat 32 o) = w64 St + BitVec.ofNat 64 o :=
-  w64_add (by have := L.fs; omega)
+  w64_add (by have := L.fs; omega_using [ho, this])
 
 theorem aC {o : Nat} (ho : o < 256) : w64 (Ctx + BitVec.ofNat 32 o) = w64 Ctx + BitVec.ofNat 64 o :=
-  w64_add (by have := L.fc; omega)
+  w64_add (by have := L.fc; omega_using [ho, this])
 
 theorem nW {o : Nat} (ho : o < 2560) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o :=
-  toNat_add32 (by have := L.fw; omega)
+  toNat_add32 (by have := L.fw; omega_using [ho, this])
 
 theorem nS {o : Nat} (ho : o < 80) : (St + BitVec.ofNat 32 o).toNat = St.toNat + o :=
-  toNat_add32 (by have := L.fs; omega)
+  toNat_add32 (by have := L.fs; omega_using [ho, this])
 
 theorem nC {o : Nat} (ho : o < 256) : (Ctx + BitVec.ofNat 32 o).toNat = Ctx.toNat + o :=
-  toNat_add32 (by have := L.fc; omega)
+  toNat_add32 (by have := L.fc; omega_using [ho, this])
 
 end Lay
 
@@ -220,7 +220,7 @@ theorem slot_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {W : Bit
 theorem readW_writeW_off (m : Mem) (p : Addr) (v : BitVec 32) {a b : Nat} (h : a + 4 ≤ b ∨ b + 4 ≤ a)
     (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     (m.writeW (p + BitVec.ofNat 64 b) v).readW (p + BitVec.ofNat 64 a) 32 = m.readW (p + BitVec.ofNat 64 a) 32 :=
-  Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [ha]) (by omega_using [hb])) (by decide)
 
 /-! ## Arithmetic -/
 
@@ -231,8 +231,8 @@ theorem ofNat_sub32 {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 32) :
     BitVec.ofNat 32 a - BitVec.ofNat 32 b = BitVec.ofNat 32 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := b) (by omega_using [h, ha]), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega_using [ha])]
+  omega_using [h, ha]
 
 theorem sub_beq32 {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 b == 0) = decide (a = b) := VG.X86.Wp.sub_beq ha hb
@@ -250,12 +250,12 @@ theorem and15 (x : BitVec 32) : x &&& BitVec.ofNat 32 15 = BitVec.ofNat 32 (x.to
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 15) (by decide),
     show (15 : Nat) = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem shr4 {n : Nat} (hn : n < 2 ^ 32) : BitVec.ofNat 32 n >>> 4 = BitVec.ofNat 32 (n / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hn])]
 
 /-! ## Running a block -/
 

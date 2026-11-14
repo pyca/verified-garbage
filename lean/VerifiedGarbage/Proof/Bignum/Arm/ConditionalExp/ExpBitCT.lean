@@ -46,7 +46,7 @@ theorem ExpBitInput.square (s : State) {base : BitVec 32} {len w M x E V : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.power.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   exact ⟨power, (keeps_header_readW keeps size (d := 200) (bits := 32) (by decide)).trans h.byte⟩
 
 theorem ExpBitInput.test (s : State) {base : BitVec 32} {len w M x E V : Nat}
@@ -55,7 +55,7 @@ theorem ExpBitInput.test (s : State) {base : BitVec 32} {len w M x E V : Nat}
   have size : 204 ≤ 8 * len := by
     have := h.power.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   refine WP.mono (expBitTest_ok s h.power.ready.workspace size h.power.ready.ptr hv h.byte) ?_
   rintro t ⟨zero, mem, rest⟩
   exact ⟨h.power.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.power.ready.ptr), zero⟩

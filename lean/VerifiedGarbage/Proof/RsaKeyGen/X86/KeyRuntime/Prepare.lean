@@ -623,8 +623,8 @@ theorem prepareLoaded_ok {s : State} {B : Addr} {Z n k : Nat}
       Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (stageRanges n prepareArrays) s.mem t.mem ∧
       KeyReady B n (val32 s.mem B kEv 2) (num s.mem B n aPa) (num s.mem B n aQa) t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  have small : k ≤ n := by omega
-  have wide : 2 ≤ n := by omega
+  have small : k ≤ n := by omega_using [width]
+  have wide : 2 ≤ n := by omega_using [width, positive]
   have pBound : max (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) := Nat.max_lt.mpr ⟨boundP, boundQ⟩
   have qBound : min (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) :=
     Nat.lt_of_le_of_lt (Nat.min_le_left ..) boundP

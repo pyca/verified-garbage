@@ -57,7 +57,7 @@ theorem slotsOkX {ex : List Nat} (hex : ∀ d ∈ ex, d % 4 = 0 ∧ d + 4 ≤ 14
   simp only [τB, slx, List.append_assoc, List.mem_append, List.mem_map] at hx
   rcases hx with hx | ⟨d, hd, rfl⟩ | hx
   · exact slotsOk0 rs x (by simp only [τB]; exact List.mem_append_left _ hx)
-  · have := hex d hd; simp [τB]; omega
+  · have := hex d hd; simp [τB]; omega_using [this]
   · exact slotsOk0 rs x (by simp only [τB]; exact List.mem_append_right _ hx)
 
 namespace Two
@@ -78,7 +78,7 @@ theorem leafX {P : State → State → Prop} {c : Prog isa} (rs : List Reg) (ex 
     · obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hx
       refine ⟨rfl, fun j hj => List.mem_append_right _ ?_⟩
       have := (hex d hd).1
-      rw [show 4 * ((d + j) / 4) = d by simp only at hj; omega]
+      rw [show 4 * ((d + j) / 4) = d by simp only at hj; omega_using [hj, this]]
       exact hd
   · obtain ⟨⟨_, _, _, _, _, w₁, w₂⟩, hr, he⟩ := hag s₁ s₂ h
     refine ⟨w₁.inv, w₂.inv, fun d hd => ?_, hr⟩
@@ -136,10 +136,10 @@ theorem fillCompress_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillSt
   have hR₂ : R < blocksN s₀₂ := T.pb.blocksN_eq ▸ hR
   have L8 := laneLen_ge T.hp₁
   obtain ⟨cl, _⟩ := cell_fits T.hp₁ hl (col := (slice * (prm s₀₁).segmentLen + index + (prm s₀₁).laneLen - 1) %
-    (prm s₀₁).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀₁).laneLen) (Nat.mod_lt _ (by omega_using [L8]))
   have L8₂ := laneLen_ge T.hp₂
   obtain ⟨cl₂, _⟩ := cell_fits T.hp₂ hl₂ (col := (slice * (prm s₀₂).segmentLen + index + (prm s₀₂).laneLen - 1) %
-    (prm s₀₂).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀₂).laneLen) (Nat.mod_lt _ (by omega_using [L8₂]))
   unfold Impl.Argon2.Arm.Derive.fillCompress
   refine RelCT.seqW (T.leafF [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.1.w, h.2.1.w⟩, by simp⟩) ⟨_, by taint_decide⟩)
     (G₁ := fun t => W s₀₁ pass slice lane index ctr t ∧ t.gpr .r0 = memP s₀₁ + BitVec.ofNat 32

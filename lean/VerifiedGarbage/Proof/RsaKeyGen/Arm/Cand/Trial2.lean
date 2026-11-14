@@ -37,19 +37,19 @@ theorem val32_c {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → 
   have hL := pre.L_eq
   have hcv := (cv_shape (σ := σ) pre).2.2
   have ap := val32_append s.mem (State.addr P.B) (arr P.W aC) (P.W - 2) 2
-  rw [show P.W - 2 + 2 = P.W by omega] at ap
+  rw [show P.W - 2 + 2 = P.W by omega_using [hW]] at ap
   simp only [num] at e
   have lo := val32_lt s.mem (State.addr P.B) (arr P.W aC) (P.W - 2)
-  have p : 2 ^ (8 * P.L) = 2 ^ (32 * (P.W - 2)) := by congr 1; omega
+  have p : 2 ^ (8 * P.L) = 2 ^ (32 * (P.W - 2)) := by congr 1; omega_using [hW, hL]
   rw [p] at hcv
   rw [e] at ap
   generalize val32 s.mem (State.addr P.B) (arr P.W aC) (P.W - 2) = x at *
   generalize val32 s.mem (State.addr P.B) (arr P.W aC + 4 * (P.W - 2)) 2 = y at *
   have : y = 0 := by
     by_contra hy
-    have : 2 ^ (32 * (P.W - 2)) * 1 ≤ 2 ^ (32 * (P.W - 2)) * y := Nat.mul_le_mul_left _ (by omega)
-    omega
-  subst this; omega
+    have : 2 ^ (32 * (P.W - 2)) * 1 ≤ 2 ^ (32 * (P.W - 2)) * y := Nat.mul_le_mul_left _ (by omega_using [hy])
+    omega_using [hcv, ap, this]
+  subst this; omega_using [ap]
 
 theorem compv_eq {σ : State} (pre : In P σ) :
     tr (2 * nT P.W) (cv P σ) = compv P σ := by
@@ -58,15 +58,15 @@ theorem compv_eq {σ : State} (pre : In P σ) :
   have hL := pre.L_eq
   have h8 : 8161 < cv P σ := by
     have := (cv_shape (σ := σ) pre).2.1
-    have : 2 ^ 14 ≤ 2 ^ (8 * P.L - 2) := Nat.pow_le_pow_right (by decide) (by omega)
+    have : 2 ^ 14 ≤ 2 ^ (8 * P.L - 2) := Nat.pow_le_pow_right (by decide) (by omega_using [hw, hL])
     omega
   have e := trialAny_eq (w := P.w) h8
   unfold compv
-  rw [show 8 * P.L = 64 * P.w by omega, ← e]
+  rw [show 8 * P.L = 64 * P.w by omega_using [hL], ← e]
   unfold tr trialAny nT
   by_cases h : 17 ≤ P.w
-  · rw [ite_eq_left (show 35 ≤ P.W by omega), ite_eq_left h]
-  · rw [ite_eq_right (show ¬ 35 ≤ P.W by omega), ite_eq_right h]
+  · rw [ite_eq_left (show 35 ≤ P.W by omega_using [hW, h]), ite_eq_left h]
+  · rw [ite_eq_right (show ¬ 35 ≤ P.W by omega_using [hW, h]), ite_eq_right h]
 
 theorem trial_vp {E : State → Prop} :
     VP (S1 P E) (seqs trial) (fun σ s => S2 P E σ s ∧ s.z = decide (V2 P σ sTr = 0)) :=
@@ -77,7 +77,7 @@ theorem trial_vp {E : State → Prop} :
     have hfit := pre.fits
     refine WP.assoc (WP.seq (WP.mono (table_ok hw wge) fun s1 ⟨hw1, keep1, tab1, sp1, rd1, wr1⟩ => ?_))
     have h1 : KS P σ (A0 P σ) L1 (V1 P σ) [sCl, sUsed] s1 :=
-      h.core keep1 (fun j hj => by simp only [tabJs, List.mem_range'_1] at hj; simp only [nArr]; omega)
+      h.core keep1 (fun j hj => by simp only [tabJs, List.mem_range'_1] at hj; simp only [nArr]; omega_using [hj])
         (by simp) sp1 rd1 wr1
         (h.arrs_keep keep1 (fun j hj hj' => by
           simp only [tabJs, List.mem_range'_1] at hj'
@@ -97,7 +97,7 @@ theorem trial_vp {E : State → Prop} :
     have hw8 := hw1.rest k8
     have lr8 : s8.gpr .lr = BitVec.ofNat 32 (nT P.W) := by
       rw [u8.other _ (by decide), u7.gpr, dpVal, u6.gpr, u5.gpr, u4.gpr, c4, c3, hw1.r9]
-      have : P.W < 2 ^ 32 := by have := pre.wle; omega
+      have : P.W < 2 ^ 32 := by have := pre.wle; omega_using [this]
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, ofNat_toNat_lt this]
       simp only [nT]
@@ -106,7 +106,7 @@ theorem trial_vp {E : State → Prop} :
     have to0 : TO P.B P.Z P.W s1.mem s9 0 s9 := ⟨hw9, by rw [m9, m8], Rest.refl _ _,
       by rw [p9, Nat.mul_zero, Nat.add_zero], by rw [k9.gpr _ (by decide), lr8, Nat.sub_zero],
       by rw [k9.gpr _ (by decide), u8.gpr]; rfl⟩
-    refine WP.seq (WP.mono (trialLoop_ok to0 wge (by omega) hfit tab1) fun s10 t10 => ?_)
+    refine WP.seq (WP.mono (trialLoop_ok to0 wge (by omega_using [hW]) hfit tab1) fun s10 t10 => ?_)
     obtain ⟨hw10, m10, k10, -, -, r1110⟩ := t10
     have h10 : KS P σ (A0 P σ) L1 (V1 P σ) [sCl, sUsed] s10 :=
       h1.of_rest ((k8.mono (by simp)).trans ((k9.mono (by simp)).trans k10)) m10
@@ -117,7 +117,7 @@ theorem trial_vp {E : State → Prop} :
       rw [r1110, compv_eq pre, ofNat_toNat_lt (VG.Proof.RsaKeyGen.Arm.Key.b2n_lt _)]
     refine ⟨⟨e, (h11.of_rest (f.rest []) f.mem).mono (fun j hj => ⟨hj, rfl⟩) fun d hd => ⟨?_, ?_⟩,
       hw11.of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩, ?_⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; omega_using [hd]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl | rfl
       · rw [upd_self, v]; simp only [V2, upd_self]

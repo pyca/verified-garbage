@@ -141,7 +141,7 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
   obtain ⟨hr2, -⟩ := argRegs_scratch _ hk
   have hpush : isa.push (.alloc bytes) s = some (allocated bytes s) := by
     simp only [isa, push, allocated]
-    exact ite_eq_left ⟨hb0, hb1, hb2, by omega⟩
+    exact ite_eq_left ⟨hb0, hb1, hb2, by omega_using [hsb]⟩
   have hblk : Exec isa (.block [.addSp (argRegs.getD (sig.words abi.ptrBits).length .r3) 32])
       (allocated bytes s) [] (scratchState sig bytes s) :=
     .block (by simp only [execBlock, isa, exec, show (32 : Nat) < 2 ^ 15 by decide, ite_true,
@@ -149,7 +149,7 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
   have hcov : Covers (s.wr ++ [⟨s.sp - BitVec.ofNat 64 bytes + 32, n * e.size⟩])
       (frameR bytes s :: s.wr) :=
     Covers.append_left (Covers.of_mem fun r hr => List.mem_cons_of_mem _ hr)
-      (Covers.one ⟨_, List.mem_cons_self .., Region.contains_self' (by omega)⟩)
+      (Covers.one ⟨_, List.mem_cons_self .., Region.contains_self' (by omega_using [hb3])⟩)
   have hw := Exec.widen he (rd := s.rd) (wr := frameR bytes s :: s.wr)
     (by simpa using Covers.append (Covers.refl s.rd) hcov) (by simpa using hcov)
   rw [show (narrow sig e n bytes s).withRegions s.rd (frameR bytes s :: s.wr) =

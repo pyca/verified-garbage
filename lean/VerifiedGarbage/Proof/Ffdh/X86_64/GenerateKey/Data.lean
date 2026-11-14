@@ -35,7 +35,7 @@ def smear64 (b : Byte) : BitVec 64 :=
 
 theorem smear64_value (b : Byte) : (smear64 b).toNat = KeyScalar.smearN b.toNat := by
   simp only [smear64, KeyScalar.smearN, BitVec.toNat_or, BitVec.toNat_ushiftRight, BitVec.toNat_setWidth]
-  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by have := b.isLt; omega)]
+  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by have := b.isLt; omega_using [])]
 
 end VG.Proof.Ffdh.X86_64.GenerateKey
 end
@@ -120,7 +120,7 @@ structure Base (p : GkP) (rb : List Byte) (s : State) : Prop where
 
 theorem Base.plen {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.pb.length = p.k := by
   simp only [GkP.pb, List.length_take, h.doml]
-  rcases h.dl with hd | hd <;> rw [hd] <;> omega
+  rcases h.dl with hd | hd <;> rw [hd] <;> omega_using []
 
 theorem Base.ld_lt {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) : p.ld < p.k := h.ldk
 

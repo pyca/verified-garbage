@@ -32,9 +32,9 @@ theorem load_ok' {P : RP} {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w 
   have fa := hw.arr_fit hj
   have nw := hw.nowrap
   have hS : S P.w = 4 * (P.w + 2) := rfl
-  have hkw : k ≤ 4 * P.w := by have := sz.kw; omega
+  have hkw : k ≤ 4 * P.w := by have := sz.kw; omega_using [hkK, this]
   rw [VG.Impl.Rsa.Arm.CrtValues.load, WP.seq_iff]
-  refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega) fun s1 p1 r1 m1 h1 => ?_
+  refine ptr_ok hw (by decide) (by simp only [nArr] at hj; omega_using [hj]) fun s1 p1 r1 m1 h1 => ?_
   refine wp_mov (op2_reg _ _) fun s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u4 => WP.block_nil ?_
@@ -44,20 +44,20 @@ theorem load_ok' {P : RP} {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w 
   have bu := h.of_rest rest mu
   have hu := hw.rest rest
   have ad : State.addr (P.B + BitVec.ofNat 32 (arr P.w j)) = off (State.addr P.B) (arr P.w j) :=
-    hw.addr (by omega)
+    hw.addr (by omega_using [fa, hS])
   have p0 : u.gpr .r0 = P.B + BitVec.ofNat 32 (arr P.w j) := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), p1]
   refine WP.mono (loadBE_ok u (src := src) (dst := P.B + BitVec.ofNat 32 (arr P.w j)) (n := P.w + 2)
-    hk (by omega) (by omega) fit
-    (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega)
+    hk (by omega_using [hkw]) (by omega) fit
+    (by rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [fa, nw, hS]), BitVec.toNat_ofNat]; omega_using [fa, nw, hS])
     (by rw [bu.rd, bu.wr]; exact rd)
     ⟨P.rS, by rw [bu.wr]; exact h.rS_mem |> fun m => by rw [h.wr] at m; exact m,
-      by rw [ad]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [ad]; exact Offset.contains_base _ (by omega_using [fa, hS]) (by omega_using [fa, nw])⟩
     (by
       rw [ad]
       refine fun a ha hb => sepS a ha ?_
       exact Region.Contains.byte (r := P.rS) (b := off (State.addr P.B) (arr P.w j)) (n := 4 * (P.w + 2))
-        (Offset.contains_base _ (by omega) (by omega)) (by simp only [Region.Contains] at hb; omega))
+        (Offset.contains_base _ (by omega_using [fa, hS]) (by omega_using [fa, nw])) (by simp only [Region.Contains] at hb; omega_using [hb]))
     p0 (by rw [rest.gpr _ (by decide), p4])
     (by rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, p1])
     (by rw [rest.gpr _ (by decide), p6])
@@ -66,7 +66,7 @@ theorem load_ok' {P : RP} {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w 
     (by rw [u4.gpr])) ?_
   rintro t ⟨v, f, r⟩
   rw [ad] at f v
-  have k : Keep P.B P.w [j] [] u.mem t.mem := VG.Proof.Rsa.Arm.CrtValues.Keep.of_frame_arr f (by omega)
+  have k : Keep P.B P.w [j] [] u.mem t.mem := VG.Proof.Rsa.Arm.CrtValues.Keep.of_frame_arr f (by omega_using [fa, nw])
   refine ⟨bu.of_frame (k.frameS (by simpa using fitZ_w sz hj) (by simp) (hdr_Z sz)) r.sp r.rd r.wr,
     hu.rest r, mu ▸ k, ?_, (rest.mono (by simp)).trans (r.mono (by simp))⟩
   rw [VG.Proof.Rsa.Arm.CrtValues.val32_off, Nat.add_zero] at v
@@ -75,6 +75,6 @@ theorem load_ok' {P : RP} {σ s : State} (h : Bs P σ s) (hw : Ws s P.B P.Z P.w 
     rcases hr with rfl | rfl
     · exact sepS
     · exact sepF.sub_right (Offset.sub_base (State.addr P.sp) (d := 0) (n := 4) (k := 56) (by decide)) |>
-        fun d => by simpa using d) (by omega)]
+        fun d => by simpa using d) (by omega_using [fit])]
 
 end VG.Proof.Rsa.Arm.Recover

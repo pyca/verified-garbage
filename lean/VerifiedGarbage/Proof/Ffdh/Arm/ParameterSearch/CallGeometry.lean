@@ -13,13 +13,13 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem callStack_fits {sp : BitVec 32} (fit : 208 ≤ sp.toNat) : 184 ≤ (sp - 24#32).toNat := by
-  rw [FrameStack.sub_toNat' (by omega : 24 ≤ sp.toNat)]
-  omega
+  rw [FrameStack.sub_toNat' (by omega_using [fit] : 24 ≤ sp.toNat)]
+  omega_using [fit]
 
 theorem callArguments_fits {sp : BitVec 32} (fit : 208 ≤ sp.toNat) : (sp - 24#32).toNat + 24 ≤ 2 ^ 32 := by
-  rw [FrameStack.sub_toNat' (by omega : 24 ≤ sp.toNat)]
+  rw [FrameStack.sub_toNat' (by omega_using [fit] : 24 ≤ sp.toNat)]
   have := sp.isLt
-  omega
+  omega_using []
 
 theorem callArguments_sub {sp : BitVec 32} (fit : 208 ≤ sp.toNat) :
     (⟨State.addr (sp - 24#32), 24⟩ : Region).Sub (FrameStack.belowA sp 208) :=

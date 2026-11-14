@@ -61,10 +61,10 @@ theorem in_packet {rs : List Region} {p : Addr} (h : InRegions rs p 64) {j : Nat
   refine ⟨r,hr,?_⟩
   have e : p + BitVec.ofNat 64 (16*j) - r.base = (p-r.base) + BitVec.ofNat 64 (16*j) := by bv_omega
   have le : (p + BitVec.ofNat 64 (16*j) - r.base).toNat ≤ (p-r.base).toNat + 16*j := by
-    rw [e,BitVec.toNat_add,toNat_ofNat_lt (by omega)]
+    rw [e,BitVec.toNat_add,toNat_ofNat_lt (by omega_using [hj])]
     exact Nat.mod_le _ _
   simp only [Region.Contains] at hc ⊢
-  omega
+  omega_using [hj, hc, le]
 
 theorem next_packet (p : Addr) (k : Nat) :
     p + BitVec.ofNat 64 (64*k) + BitVec.ofNat 64 64 = p + BitVec.ofNat 64 (64*(k+1)) := by
@@ -72,15 +72,15 @@ theorem next_packet (p : Addr) (k : Nat) :
 
 theorem packet_count {n k : Nat} (hk : k < n) :
     BitVec.ofNat 64 (8*(n-k)) - BitVec.ofNat 64 8 = BitVec.ofNat 64 (8*(n-(k+1))) := by
-  rw [VG.Proof.MdStream.AArch64.sub_ofNat (by omega)]
-  congr 1; omega
+  rw [VG.Proof.MdStream.AArch64.sub_ofNat (by omega_using [hk])]
+  congr 1; omega_using []
 
 theorem packet_ne {n k : Nat} (hk : k < n) (hn : 64*n < 2^64) :
     (BitVec.ofNat 64 (8*(n-(k+1))) != 0) = decide (k+1 ≠ n) := by
-  rw [bne,ofNat_beq_zero (by omega)]
+  rw [bne,ofNat_beq_zero (by omega_using [hn])]
   by_cases h : k+1 = n
   · simp [h]
-  · simp [show 8*(n-(k+1)) ≠ 0 by omega,h]
+  · simp [show 8*(n-(k+1)) ≠ 0 by omega_using [hk, h],h]
 
 structure CopyInv (s : State) (src dst : Addr) (n k : Nat) (t : State) : Prop where
   rd : t.rd = s.rd
@@ -118,8 +118,8 @@ theorem copy_step {s : State} {src dst : Addr} {n : Nat} (hlt : 64*n < 2^64)
   · rw [ud.other _ (by decide),uc.gpr,ub.other _ (by decide),ga,h.x10,next_packet]
   · rw [ud.mem,uc.mem,ub.mem,ma,h.x9,h.x10,h.mem]
     have e := VG.Proof.Scrypt.Memory.copy_mem s.mem src dst k 64
-      (hsep.sep (by simp only [Region.Contains,BitVec.sub_self,BitVec.toNat_zero]; omega)
-        (by simp only [Region.Contains,BitVec.sub_self,BitVec.toNat_zero]; omega)) (by omega)
+      (hsep.sep (by simp only [Region.Contains,BitVec.sub_self,BitVec.toNat_zero]; omega_using [hk])
+        (by simp only [Region.Contains,BitVec.sub_self,BitVec.toNat_zero]; omega_using [hk])) (by omega_using [hlt, hk])
     rw [VG.Proof.Scrypt.Memory.writeW_readW _ _ _ _ 64] at e
     simpa only [Nat.mul_succ] using e
   · rw [ec,packet_ne hk hlt]

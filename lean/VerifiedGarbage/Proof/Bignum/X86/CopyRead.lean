@@ -21,9 +21,9 @@ theorem CopyInv.read {s t : State} {src dst : BitVec 32} {n d width : Nat}
   apply Mem.read_eq_of_bytes
   intro i hi
   rw [Mem.extractLsb'_read _ _ hi, Offset.add_add, Offset.add_add]
-  have Eq := I.copied (d + i) (by omega)
-  rw [byteAddr_add (by omega : dst.toNat + (d + i) < 2 ^ 32),
-    byteAddr_add (by omega : src.toNat + (d + i) < 2 ^ 32)] at Eq
+  have Eq := I.copied (d + i) (by omega_using [bound, hi])
+  rw [byteAddr_add (by omega_using [dstFit, bound, hi] : dst.toNat + (d + i) < 2 ^ 32),
+    byteAddr_add (by omega_using [srcFit, bound, hi] : src.toNat + (d + i) < 2 ^ 32)] at Eq
   exact Eq
 
 theorem copyBuffers_ok {s : State} {src dst : BitVec 32} {n : Nat}
@@ -41,6 +41,6 @@ theorem copyBuffers_ok {s : State} {src dst : BitVec 32} {n : Nat}
   refine WP.mono (copyBytes_ok s (copyCtx_of_regions s src dst countFit srcFit dstFit read write apart)
     positive P Q C) fun t I => ?_
   refine ⟨?_, I.dest, I.source, I.frame dstFit, I.rest⟩
-  simpa only [BitVec.add_zero] using I.read srcFit dstFit (d := 0) (width := n) (by omega)
+  simpa only [BitVec.add_zero] using I.read srcFit dstFit (d := 0) (width := n) (by omega_using [])
 
 end VG.Proof.Bignum.X86

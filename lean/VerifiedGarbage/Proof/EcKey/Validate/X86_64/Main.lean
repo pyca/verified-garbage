@@ -33,7 +33,7 @@ theorem decode_key (c : Cfg) (s : State) :
     (Spec.EcKey.decodePublicKey c.C
       (Spec.EcKey.bytesAt s.mem (s.gpr .rdi) (2 * c.C.len + 1))).isSome = decide (KeyOk c s) := by
   have hlen : (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdi) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt]; omega
+    rw [length_bytesAt]; omega_using []
   have hb0 : (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdi) (1 + 2 * c.C.len)).head? =
       some (s.mem (s.gpr .rdi)) := by rw [peer_bytes]; rfl
   have hxv : ofBytes (((Spec.Ecdsa.bytesAt s.mem (s.gpr .rdi) (1 + 2 * c.C.len)).drop 1).take c.C.len) =

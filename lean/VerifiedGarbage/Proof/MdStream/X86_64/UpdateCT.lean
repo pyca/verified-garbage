@@ -539,7 +539,7 @@ theorem copy_step (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} {sI :
   have hxs := xs_length (P := P) s₀ c
   refine wp_movzx8 (d := .r9) (a := dp s₀ + BitVec.ofNat 64 (c + j)) (by simp [State.ea, hrbp]) hin
     fun s₁ u₁ => ?_
-  refine wp_clamp P (w := 1) (c := rr P s₀ c + j) (by omega_using [hj, ht']) (by have := hd.B; omega) (by rw [u₁.other .r13 (by decide), hr13]) fun s₁' v₁ _ => ?_
+  refine wp_clamp P (w := 1) (c := rr P s₀ c + j) (by omega_using [hj, ht']) (by have := hd.B; omega_arith) (by rw [u₁.other .r13 (by decide), hr13]) fun s₁' v₁ _ => ?_
   refine wp_store8 (r := .r9) (a := q P s₀ c + BitVec.ofNat 64 j) ?_ (by rw [v₁.wr, u₁.wr]; exact hout)
     fun s₂ g₂ m₂ rd₂ wr₂ => ?_
   · simp only [State.ea, bufByte, v₁.other .rbx (by decide), u₁.other .rbx (by decide), v₁.gpr, hrbx, q,
@@ -762,7 +762,7 @@ theorem copy_word_step (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} 
   have hxs := xs_length (P := P) s₀ c
   refine wp_movm (d := .r9) (a := dp s₀ + BitVec.ofNat 64 (c + j)) (by simp [State.ea, hrbp]) hin
     fun s₁ u₁ => ?_
-  refine wp_clamp P (w := 8) (c := rr P s₀ c + j) (by omega_using [hj, ht']) (by have := hd.B; omega) (by rw [u₁.other .r13 (by decide), hr13]) fun s₁' v₁ _ => ?_
+  refine wp_clamp P (w := 8) (c := rr P s₀ c + j) (by omega_using [hj, ht']) (by have := hd.B; omega_arith) (by rw [u₁.other .r13 (by decide), hr13]) fun s₁' v₁ _ => ?_
   refine wp_store (r := .r9) (a := q P s₀ c + BitVec.ofNat 64 j) ?_ (by rw [v₁.wr, u₁.wr]; exact hout)
     fun s₂ g₂ m₂ rd₂ wr₂ => ?_
   · simp only [State.ea, bufByte, v₁.other .rbx (by decide), u₁.other .rbx (by decide), v₁.gpr, hrbx, q,

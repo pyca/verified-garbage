@@ -3,6 +3,7 @@ module
 -- separate module: its proofs (about 7 s, the limbs' arithmetic) are not checked again when `Glue` changes
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # P-256 on x86-64 with AVX512_IFMA: the arithmetic of the lanes
@@ -40,7 +41,7 @@ theorem normI_val (v0 v1 v2 v3 v4 : Int) :
     let o := normI v0 v1 v2 v3 v4
     val5 o.1 o.2.1 o.2.2.1 o.2.2.2.1 o.2.2.2.2 = val5 v0 v1 v2 v3 v4 - v4 / 2 ^ 48 * pI := by
   simp only [normI, val5, pI]
-  omega
+  omega_using []
 
 /-- The limbs after `norm` are below `2⁵²`, of a number in `[0, 2²⁶⁰)`. -/
 theorem normI_lt {v0 v1 v2 v3 v4 : Int} (h0 : -2 ^ 63 ≤ v0) (h1 : -2 ^ 63 ≤ v1) (h2 : -2 ^ 63 ≤ v2)
@@ -50,7 +51,7 @@ theorem normI_lt {v0 v1 v2 v3 v4 : Int} (h0 : -2 ^ 63 ≤ v0) (h1 : -2 ^ 63 ≤ 
     (0 ≤ o.1 ∧ o.1 < 2 ^ 52) ∧ (0 ≤ o.2.1 ∧ o.2.1 < 2 ^ 52) ∧ (0 ≤ o.2.2.1 ∧ o.2.2.1 < 2 ^ 52) ∧
       (0 ≤ o.2.2.2.1 ∧ o.2.2.2.1 < 2 ^ 52) ∧ (0 ≤ o.2.2.2.2 ∧ o.2.2.2.2 < 2 ^ 49) := by
   simp only [normI, val5] at *
-  omega
+  omega_using [h0, h1, h2, h3, g0, g1, g2, g3, hv, gv]
 
 /-- `norm` of a number in `[0, 2²⁶⁸)`, where what its last carry is taken
 from is within 64 signed bits: carried limbs, of the number less a multiple of `p`,
@@ -68,7 +69,7 @@ theorem normI_carried {v0 v1 v2 v3 v4 : Int}
       0 ≤ val5 o.1 o.2.1 o.2.2.1 o.2.2.2.1 o.2.2.2.2 ∧
       val5 o.1 o.2.1 o.2.2.1 o.2.2.2.1 o.2.2.2.2 < 2 ^ 256 + 2 ^ 238 := by
   simp only [normI, val5, pI] at *
-  omega
+  omega_using [r3, hv, gv]
 
 /-! ## The Montgomery reduction, a limb at a time -/
 
@@ -81,7 +82,7 @@ theorem lo52_add_hi52 {a b : Int} (ha : 0 ≤ a) (ga : a < 2 ^ 52) (hb : 0 ≤ b
   unfold lo52 hi52
   rw [Int.emod_eq_of_lt ha ga, Int.emod_eq_of_lt hb gb]
   generalize a * b = q
-  omega
+  omega_using []
 
 /-- A step of the reduction: `m = t₀ mod 2⁵²` times `p` added, which leaves a
 multiple of `2⁵²`. -/
@@ -91,7 +92,7 @@ theorem mont_step (t0 t1 t2 t3 t4 t5 : Int) :
         (t4 + hi52 m (2 ^ 36) + lo52 m (2 ^ 48 - 2 ^ 16)) * 2 ^ 156 + (t5 + hi52 m (2 ^ 48 - 2 ^ 16)) * 2 ^ 208) * 2 ^ 52 =
       t0 + t1 * 2 ^ 52 + t2 * 2 ^ 104 + t3 * 2 ^ 156 + t4 * 2 ^ 208 + t5 * 2 ^ 260 + m * pI := by
   simp only [lo52, hi52, pI]
-  omega
+  omega_using []
 
 /-- A step of the reduction on the columns `t`, at column `i`. -/
 def redI (t : List Int) (i : Nat) : List Int :=
@@ -123,7 +124,7 @@ theorem red0 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     t5 + hi52 t0 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
-    omega
+    omega_using []
 
 theorem red1 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 1 = [t0, t1, u1, u2, u3, u4, u5, t7, t8, t9] ∧
@@ -133,7 +134,7 @@ theorem red1 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     t6 + hi52 t1 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
-    omega
+    omega_using []
 
 theorem red2 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 2 = [t0, t1, t2, u1, u2, u3, u4, u5, t8, t9] ∧
@@ -143,7 +144,7 @@ theorem red2 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     t7 + hi52 t2 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
-    omega
+    omega_using []
 
 theorem red3 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 3 = [t0, t1, t2, t3, u1, u2, u3, u4, u5, t9] ∧
@@ -153,7 +154,7 @@ theorem red3 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     t8 + hi52 t3 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
-    omega
+    omega_using []
 
 theorem red4 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     ∃ m u1 u2 u3 u4 u5, 0 ≤ m ∧ m < 2 ^ 52 ∧ redI [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9] 4 = [t0, t1, t2, t3, t4, u1, u2, u3, u4, u5] ∧
@@ -163,7 +164,7 @@ theorem red4 (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
     t9 + hi52 t4 (2 ^ 48 - 2 ^ 16), Int.emod_nonneg _ (by decide), Int.emod_lt_of_pos _ (by decide), ?_, ?_⟩
   · simp only [redI, List.getD_cons_zero, List.getD_cons_succ, List.set_cons_zero, List.set_cons_succ]
   · simp only [lo52, hi52, pI]
-    omega
+    omega_using []
 
 /-- The reduction divides by `2²⁶⁰` modulo `p`: it adds `M p`, `M < 2²⁶⁰`. -/
 theorem reduceI_val (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
@@ -175,10 +176,10 @@ theorem reduceI_val (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 : Int) :
   obtain ⟨m2, c3, c4, c5, c6, c7, h2, g2, e2, v2⟩ := red2 t0 a1 b2 b3 b4 b5 b6 t7 t8 t9
   obtain ⟨m3, d4, d5, d6, d7, d8, h3, g3, e3, v3⟩ := red3 t0 a1 b2 c3 c4 c5 c6 c7 t8 t9
   obtain ⟨m4, f5, f6, f7, f8, f9, h4, g4, e4, v4⟩ := red4 t0 a1 b2 c3 d4 d5 d6 d7 d8 t9
-  refine ⟨m0 + m1 * 2 ^ 52 + m2 * 2 ^ 104 + m3 * 2 ^ 156 + m4 * 2 ^ 208, by omega, by omega, ?_⟩
+  refine ⟨m0 + m1 * 2 ^ 52 + m2 * 2 ^ 104 + m3 * 2 ^ 156 + m4 * 2 ^ 208, by omega_using [h0, g0, v0, h1, g1, v1, h2, g2, v2, h3, g3, v3, h4, g4, v4], by omega_using [h0, g0, v0, h1, g1, v1, h2, g2, v2, h3, g3, v3, h4, g4, v4], ?_⟩
   simp only [reduceI, e0, e1, e2, e3, e4, List.getD_cons_zero, List.getD_cons_succ, val5, val10]
   simp only [pI] at *
-  omega
+  omega_using [h0, g0, v0, h1, g1, v1, h2, g2, v2, h3, g3, v3, h4, g4, v4]
 
 /-- The columns of a product, as integers. -/
 def mulColsI (a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 : Int) : List Int :=
@@ -248,7 +249,7 @@ theorem mulColsI_val {a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 : Int} (ha0 : 0 ≤ a0 ∧ a
   have h44 := lo52_add_hi52 (ha4).1 (ha4).2 (hb4).1 (hb4).2
   rw [val5_mul]
   simp only [val10L, mulColsI, List.getD_cons_zero, List.getD_cons_succ, val10]
-  omega
+  omega_using [ha0, ha1, ha2, ha3, ha4, hb0, hb1, hb2, hb3, hb4, h00, h01, h02, h03, h04, h10, h11, h12, h13, h14, h20, h21, h22, h23, h24, h30, h31, h32, h33, h34, h40, h41, h42, h43, h44]
 
 /-- The columns of a square stand for the square. -/
 theorem sqrColsI_val {a0 a1 a2 a3 a4 : Int} (ha0 : 0 ≤ a0 ∧ a0 < 2 ^ 52) (ha1 : 0 ≤ a1 ∧ a1 < 2 ^ 52) (ha2 : 0 ≤ a2 ∧ a2 < 2 ^ 52) (ha3 : 0 ≤ a3 ∧ a3 < 2 ^ 52) (ha4 : 0 ≤ a4 ∧ a4 < 2 ^ 52) :
@@ -272,6 +273,6 @@ theorem sqrColsI_val {a0 a1 a2 a3 a4 : Int} (ha0 : 0 ≤ a0 ∧ a0 < 2 ^ 52) (ha
   simp only [val10L, sqrColsI, List.getD_cons_zero, List.getD_cons_succ, val10]
   have c (x y : Int) : y * x = x * y := Int.mul_comm y x
   rw [c a0 a1, c a0 a2, c a0 a3, c a0 a4, c a1 a2, c a1 a3, c a1 a4, c a2 a3, c a2 a4, c a3 a4]
-  omega
+  omega_using [ha0, ha1, ha2, ha3, ha4, h00, h01, h02, h03, h04, h11, h12, h13, h14, h22, h23, h24, h33, h34, h44]
 
 end VG.Proof.P256.X86_64.Ifma

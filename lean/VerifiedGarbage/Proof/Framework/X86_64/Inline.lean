@@ -601,7 +601,7 @@ theorem ret_gpr {s₁ s₂ s' : State} (h : isa.ret s₁ s₂ = some s') (r : Re
 
 theorem ofNat_eight_mul_succ (n : Nat) :
     BitVec.ofNat 64 (8 * (n + 1)) = BitVec.ofNat 64 (8 * n) + 8 := by
-  rw [show 8 * (n + 1) = 8 * n + 8 by omega, BitVec.ofNat_add]; rfl
+  rw [show 8 * (n + 1) = 8 * n + 8 by omega_using [], BitVec.ofNat_add]; rfl
 
 theorem pushRegs_eq (s : State) (rs : List Reg) :
     (pushRegs s rs).rd = s.rd ∧ (pushRegs s rs).wr = s.wr ∧
@@ -825,7 +825,7 @@ theorem frame_gpr {i j : Instr} {s s₁ s₂ s' : State} {r : Reg} (hj : Taint.c
   · subst hrs
     rw [w₁] at h₃
     simp only [List.head?_cons, Option.some.injEq, Region.mk.injEq] at h₃
-    have : k = k' := by omega
+    have : k = k' := by omega_using [h₃]
     subst this
     rw [e₃, hb, e₁, BitVec.sub_add_cancel]
   · rw [g₂ r hrs hj, hb, g₁ r hrs]

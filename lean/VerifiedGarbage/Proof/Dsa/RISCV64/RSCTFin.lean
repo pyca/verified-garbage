@@ -55,12 +55,12 @@ theorem zblk_ok {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀)
   obtain ⟨i64, l64⟩ := hc.word hL rfl (d := 64) (by decide) (by decide)
   have o64 := hc.out
   simp only [oOut] at o64
-  have e1 := lenP_eq (pl := (rlOf s₀).pl) (ql := (rlOf s₀).ql) (by omega) (by omega)
-  have e2 := lenQ_eq (pl := (rlOf s₀).pl) (ql := (rlOf s₀).ql) (by omega) (by omega)
+  have e1 := lenP_eq (pl := (rlOf s₀).pl) (ql := (rlOf s₀).ql) (by omega_using [hp]) (by omega_using [hq])
+  have e2 := lenQ_eq (pl := (rlOf s₀).pl) (ql := (rlOf s₀).ql) (by omega_using [hp]) (by omega_using [hq])
   refine wp_sp (WP.keep [.t3, .t4, .t5, .a0, .t2, .t1] ?_ (by decide) (by rfl))
   brun [lenQ, hc.sp, hc.s2, e1, e2, exec_addSp (show 0 < 2048 by decide), BitVec.add_zero, oOut,
     i64, l64, o64, exec_li_zero, ← BitVec.ofNat_add]
-  congr 1; omega
+  congr 1; omega_using []
 
 /-- `zeroOut`, keeping `Ctx`. -/
 theorem zeroOut_ok {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s₀) s₀ t) :
@@ -73,8 +73,8 @@ theorem zeroOut_ok {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s�
   refine WP.seq (WP.mono (zblk_ok h hc) fun t₂ ⟨⟨⟨b0, b4, b5, m2⟩, k2⟩, sp2⟩ => ?_)
   have ho : ∀ i < 2 * (rlOf s₀).ql, InRegions t₂.wr (off (rlOf s₀).out i) 1 := fun i hi =>
     ⟨(rlOf s₀).outR, by rw [k2.2.2, hc.wr, hwr]; simp,
-      VG.Offset.contains_base _ (by omega) (by have := hL.nwOut; omega)⟩
-  refine WP.mono (wp_sp (zeroLoopA_ok (by omega) (by omega) ho hL.nwOut
+      VG.Offset.contains_base _ (by omega_using [hi]) (by have := hL.nwOut; omega_using [hq, hi])⟩
+  refine WP.mono (wp_sp (zeroLoopA_ok (by omega_using [hq]) (by omega_using [hq]) ho hL.nwOut
     b0 b4 b5)) fun t₃ ⟨⟨⟨_, o3⟩, k3⟩, sp3⟩ => ?_
   have k23 := k2.trans k3
   refine hc.step hL (sp3.trans sp2) k23.2.1 k23.2.2 (fun r hr => k23.1 r (by revert r hr; decide)) ?_
@@ -82,7 +82,7 @@ theorem zeroOut_ok {s₀ t : State} (h : rsContract.pre s₀) (hc : Ctx (rlOf s�
   intro x hx
   refine o3 x ?_
   by_contra hc'
-  exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega)
+  exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega_using [hc'])
 
 theorem zeroOut_st {s₁ s₂ t₁ t₂ : State} (h₁ : rsContract.pre s₁) (h₂ : rsContract.pre s₂)
     (eL : rlOf s₁ = rlOf s₂) (c₁ : Ctx (rlOf s₁) s₁ t₁) (c₂ : Ctx (rlOf s₂) s₂ t₂) :

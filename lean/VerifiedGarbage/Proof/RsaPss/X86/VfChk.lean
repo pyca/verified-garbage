@@ -63,10 +63,10 @@ theorem n0_at {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D)
   have a : addr P.n 0 = P.n.setWidth 64 := by simp [addr]
   rw [a]
   refine ⟨?_, ⟨P.N, by rw [hs.rd]; exact List.mem_append_left _ (hi.ok.rd _ (by simp)), by
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩⟩
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hK]⟩⟩
   have e : Spec.Rsa.bytesAt s.mem (P.n.setWidth 64) P.K = P.nB := (hs.ro (R := P.N) (by simp)).trans hi.nB
   show s.mem (P.n.setWidth 64) = P.nB.getD 0 0
-  rw [← e, RsaPkcs1Sig.bytesAt_getD (by omega), BitVec.add_zero]
+  rw [← e, RsaPkcs1Sig.bytesAt_getD (by omega_using [hK]), BitVec.add_zero]
 
 /-- `[any_salt_len ≠ 0]`, in its slot. -/
 abbrev anyW (P : EP) : BitVec 32 := if P.any = 0 then 0 else 1
@@ -89,7 +89,7 @@ theorem any_lt (a : BitVec 32) : decide ((0 : BitVec 32).toNat < a.toNat) = !dec
   · have : a.toNat ≠ 0 := fun h' => e (BitVec.eq_of_toNat_eq h')
     show decide (0 < a.toNat) = _
     simp only [e, decide_false, Bool.not_false]
-    exact decide_eq_true (by omega)
+    exact decide_eq_true (by omega_using [this])
 
 theorem and_mask (x : BitVec 32) (c : Bool) :
     x &&& ((if c then BitVec.allOnes 32 else 0) ^^^ BitVec.allOnes 32) = if c then 0 else x := by
@@ -106,7 +106,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk ++ params h.H)) (C1 h P)
   refine VP.block_append (G := C0 h P) (VP.taint [.esp] verifyChk_taint (fun _ _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.sp, h₂.2.sp]) fun σ s ⟨hi, hs⟩ => ?_)
     (VP.taint _ h.certs.params (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hc, hi, si, cx, dx, sa⟩ => ?_)
-  · have hl : ∀ j, j < 16 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega
+  · have hl : ∀ j, j < 16 → j < ((P.lay h.D).argv).length := fun j hj => by simp; omega_using [hj]
     have hg := hi.geo
     simp only [verifyChk, ld, st, mi]
     refine hs.wp_arg (hl 10 (by decide)) (by decide) fun t1 s1 u1 => ?_
@@ -162,7 +162,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk ++ params h.H)) (C1 h P)
     · rw [d1, d2]
   have hg := hi.geo
   have hK := hi.k1024
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   obtain ⟨nb, hn⟩ := n0_at hi hc.st
   rw [← si] at hn nb
   refine WP.mono (params_wp h.H hg hc rfl hn cx dx) fun t ⟨m, rd, wr, sp, bp, z⟩ => ?_
@@ -184,7 +184,7 @@ theorem chk_vp (P : EP) : VP (S h P) (.block (verifyChk ++ params h.H)) (C1 h P)
   · rw [m, Lay.readW_fr_other (d := sAny) (e := sDb) _ _ _ (by decide) (by decide) (by decide),
       Lay.readW_fr_other (d := sAny) (e := sC) _ _ _ (by decide) (by decide) (by decide),
       Lay.readW_fr_other (d := sAny) (e := sLo) _ _ _ (by decide) (by decide) (by decide), sa]
-  · rw [z, failW_z hK (show h.H.D ≤ 64 from hD) (by unfold eLen; have := hi.slt32; split <;> omega)]
+  · rw [z, failW_z hK (show h.H.D ≤ 64 from hD) (by unfold eLen; have := hi.slt32; split <;> omega_arith)]
 
 /-! ## When something does not fit -/
 
@@ -200,8 +200,8 @@ theorem emLen_eq {P : EP} {b : Byte} {rest : List Byte} (hbr : P.nB = b :: rest)
   have hn0 : n0 P = b := by simp [n0, hbr]
   unfold lo; rw [hn0]
   by_cases hb1 : b.toNat = 1
-  · rw [ite_eq_left hb1] at e2; rw [ite_eq_left (by omega)]; all_goals omega
-  · rw [ite_eq_right hb1] at e2; rw [ite_eq_right (by have := b.isLt; omega)]; all_goals omega
+  · rw [ite_eq_left hb1] at e2; rw [ite_eq_left (by omega_using [hb1])]; all_goals omega_using [hl, e2]
+  · rw [ite_eq_right hb1] at e2; rw [ite_eq_right (by have := b.isLt; omega_using [hbt, hb1])]; all_goals omega_using [hl, e2]
 
 /-- The specification refuses what does not fit. -/
 theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P) :
@@ -227,9 +227,9 @@ theorem verify_false {P : EP} {σ : State} (hi : In h.D P σ) (hf : ¬ fits h P)
     unfold fits at hf
     rw [hn0] at hf
     have hb0 : b ≠ 0 := fun e => hb (by rw [e]; rfl)
-    have : lo P ≤ 1 := by unfold lo; split <;> omega
+    have : lo P ≤ 1 := by unfold lo; split <;> omega_using []
     simp only [ne_eq, hb0, not_false_eq_true, true_and] at hf
-    omega
+    omega_using [hf]
 
 theorem fail_vp (P : EP) :
     VP (fun σ s => C1 h P σ s ∧ isa.eval .ne s = some true) (.block [mi .eax 0]) (Fin h P) := by

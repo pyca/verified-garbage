@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Proof.Argon2.PermuteRows
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A BLAKE2b round on four columns at once
@@ -27,28 +28,28 @@ open VG.Proof.Argon2 (mixAt cases16 val_lit)
 with the message words `x q` and `y q`. -/
 def mixCols (x y : Nat → BitVec 64) (v : Work 64) : Work 64 :=
   Vector.ofFn fun j => mixAt (j.val / 4)
-    (mix b (v[j.val % 4]'(by omega)) (v[4 + j.val % 4]'(by omega)) (v[8 + j.val % 4]'(by omega))
-      (v[12 + j.val % 4]'(by omega)) (x (j.val % 4)) (y (j.val % 4)))
+    (mix b (v[j.val % 4]'(by omega_using [])) (v[4 + j.val % 4]'(by omega_using [])) (v[8 + j.val % 4]'(by omega_using []))
+      (v[12 + j.val % 4]'(by omega_using [])) (x (j.val % 4)) (y (j.val % 4)))
 
 /-- Rows 0, 2 and 3 rotated left by three, one and two places. -/
 def rotIn (v : Work 64) : Work 64 :=
-  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + j.val / 4 + 3) % 4]'(by omega)
+  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + j.val / 4 + 3) % 4]'(by omega_using [])
 
 /-- Rows 0, 2 and 3 rotated left by one, three and two places (back). -/
 def rotOut (v : Work 64) : Work 64 :=
-  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + 3 * (j.val / 4) + 1) % 4]'(by omega)
+  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + 3 * (j.val / 4) + 1) % 4]'(by omega_using [])
 
 theorem mixCols_get (x y : Nat → BitVec 64) (v : Work 64) (j : Nat) (hj : j < 16) :
-    (mixCols x y v)[j] = mixAt (j / 4) (mix b (v[j % 4]'(by omega)) (v[4 + j % 4]'(by omega))
-      (v[8 + j % 4]'(by omega)) (v[12 + j % 4]'(by omega)) (x (j % 4)) (y (j % 4))) := by
+    (mixCols x y v)[j] = mixAt (j / 4) (mix b (v[j % 4]'(by omega_using [])) (v[4 + j % 4]'(by omega_using []))
+      (v[8 + j % 4]'(by omega_using [])) (v[12 + j % 4]'(by omega_using [])) (x (j % 4)) (y (j % 4))) := by
   simp only [mixCols, Vector.getElem_ofFn]
 
 theorem rotIn_get (v : Work 64) (j : Nat) (hj : j < 16) :
-    (rotIn v)[j] = v[4 * (j / 4) + (j % 4 + j / 4 + 3) % 4]'(by omega) := by
+    (rotIn v)[j] = v[4 * (j / 4) + (j % 4 + j / 4 + 3) % 4]'(by omega_using [hj]) := by
   simp only [rotIn, Vector.getElem_ofFn]
 
 theorem rotOut_get (v : Work 64) (j : Nat) (hj : j < 16) :
-    (rotOut v)[j] = v[4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4]'(by omega) := by
+    (rotOut v)[j] = v[4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4]'(by omega_using [hj]) := by
   simp only [rotOut, Vector.getElem_ofFn]
 
 theorem G_get' (v : Work 64) {a c d e : Fin 16} (hab : a.1 ≠ c.1) (hac : a.1 ≠ d.1)

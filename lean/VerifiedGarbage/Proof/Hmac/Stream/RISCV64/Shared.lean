@@ -59,7 +59,7 @@ theorem init
     (hs : ∃ s, (I.initAnyKeyContract RISCV64.abi (H.ibytes + H.F)).pre s) :
     Verified RISCV64.target H.init (I.initAnyKeyContract RISCV64.abi (H.ibytes + H.F)) := by
   obtain ⟨n, hn⟩ : ∃ n, H.ibytes + H.F = n + 1 := ⟨_, (Nat.succ_pred_eq_of_pos
-    (by have := hH.lay.ibytes; simp only [Hash.ibytes] at this ⊢; omega)).symm⟩
+    (by have := hH.lay.ibytes; simp only [Hash.ibytes] at this ⊢; omega_using [])).symm⟩
   rw [hn] at ct hs ⊢
   have imp := initImp hs
   rw [← hSH] at imp
@@ -72,7 +72,7 @@ theorem finalize
     (hs : ∃ s, (I.finalizeContract RISCV64.abi (H.fbytes + H.F)).pre s) :
     Verified RISCV64.target H.finalize (I.finalizeContract RISCV64.abi (H.fbytes + H.F)) := by
   obtain ⟨n, hn⟩ : ∃ n, H.fbytes + H.F = n + 1 := ⟨_, (Nat.succ_pred_eq_of_pos
-    (by have := hH.lay.fbytes; simp only [Hash.fbytes] at this ⊢; omega)).symm⟩
+    (by have := hH.lay.fbytes; simp only [Hash.fbytes] at this ⊢; omega_using [])).symm⟩
   rw [hn] at ct hs ⊢
   have imp := finImp hs
   rw [← hSH] at imp

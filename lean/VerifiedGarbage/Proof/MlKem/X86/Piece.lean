@@ -106,8 +106,8 @@ theorem loop {body : Prog isa} {cnd : Cond} (Inv : Nat → State → State → P
     obtain ⟨k, hn, hk, hi⟩ := hi
     refine ((hb k hk).wp _ _ h₀ hi).mono fun s' ⟨hi', hc⟩ => ?_
     by_cases h : k + 1 < N
-    · exact .inr ⟨by rw [hc, decide_eq_true h], N - (k + 1), by omega, k + 1, rfl, h, hi'⟩
-    · exact .inl ⟨by rw [hc, decide_eq_false h], by rw [show N = k + 1 by omega]; exact hi'⟩
+    · exact .inr ⟨by rw [hc, decide_eq_true h], N - (k + 1), by omega_using [hn, hk], k + 1, rfl, h, hi'⟩
+    · exact .inl ⟨by rw [hc, decide_eq_false h], by rw [show N = k + 1 by omega_using [hk, h]]; exact hi'⟩
   ct s₀ s₀' h₀ h₀' hp := by
     have := RelCT.loop (M := isa) (body := body) (c := cnd) (Q := fun _ _ => True)
       (fun n s s' => ∃ k, n = N - k ∧ k < N ∧ Inv k s₀ s ∧ Inv k s₀' s')
@@ -118,7 +118,7 @@ theorem loop {body : Prog isa} {cnd : Cond} (Inv : Nat → State → State → P
           rintro s s' ⟨⟨i₁, c₁⟩, i₂, c₂⟩
           refine ⟨by rw [c₁, c₂], fun _ => trivial, fun h => ?_⟩
           rw [c₁, Option.some.injEq, decide_eq_true_iff] at h
-          exact ⟨N - (k + 1), by omega, k + 1, rfl, h, i₁, i₂⟩
+          exact ⟨N - (k + 1), by omega_using [hk], k + 1, rfl, h, i₁, i₂⟩
         · exact RelCT.of_false fun s s' ⟨h1, h2, _⟩ => hk ⟨h1, h2⟩) N
     exact this.mono (fun s s' ⟨a, a'⟩ => ⟨0, (Nat.sub_zero N).symm, hN, a, a'⟩) fun _ _ h => h
 

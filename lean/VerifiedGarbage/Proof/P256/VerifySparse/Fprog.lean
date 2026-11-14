@@ -82,8 +82,8 @@ theorem fop_ok {M : Mod} (hME : M=Impl.P256.VerifySparse.M) {base : Addr} {size 
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addOp_ok hI.scr hME hp hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+      (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (by omega_using [hA, hB])) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -93,8 +93,8 @@ theorem fop_ok {M : Mod} (hME : M=Impl.P256.VerifySparse.M) {base : Addr} {size 
     refine WP.mono (subOp_ok hI.scr hME hp (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
 
 /-- A field program. -/
 theorem fprog_ok {M : Mod} (hME : M=Impl.P256.VerifySparse.M) {base : Addr} {size m : Nat} [NeZero m] (hp : m=p) {Sl : Nat → Prop} (hL : Lay M size Sl)

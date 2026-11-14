@@ -147,7 +147,7 @@ theorem pub_view {a s t : State} (S : PR a s) (h : RecPc.J1 s t) :
     rw [State.withRegions_mem, pre_words hp hfE, S.2.2.2.2]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
-    rw [Rec.entryBytes he _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega), S'.e]
+    rw [Rec.entryBytes he _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega_using []), S'.e]
 
 theorem call_ct (v : PublicImpl) : RelCT isa (Two (At RecPc.J1)) (.call v.name v.code) fun _ _ => True := by
   refine RelCT.callEx (k := pdChkContract) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
@@ -294,11 +294,11 @@ theorem compare_two : RelCT isa (Two (Rec.At JC)) compare (Two (Rec.At JQ)) :=
           InRegions (t.rd ++ t.wr) (t.gpr .rsi) (s.gpr .rcx).toNat := by
         rw [hdi, hsi, he.wr]
         obtain ⟨r₁, h₁, c₁⟩ := Rec.frame_span' hp (d := oEM1) (n := (s.gpr .rcx).toNat)
-          (by unfold oEM1 frameBytes; omega)
+          (by unfold oEM1 frameBytes; omega_using [hk2])
         obtain ⟨r₂, h₂, c₂⟩ := Rec.frame_span' hp (d := oEM2) (n := (s.gpr .rcx).toNat)
-          (by unfold oEM2 frameBytes; omega)
+          (by unfold oEM2 frameBytes; omega_using [hk2])
         exact ⟨⟨r₁, List.mem_append_right _ h₁, c₁⟩, ⟨r₂, List.mem_append_right _ h₂, c₂⟩⟩
-      exact WP.mono (compare_ok (by rw [hcx]) (by omega) hr) fun u ⟨hK, hm, _⟩ =>
+      exact WP.mono (compare_ok (by rw [hcx]) (by omega_using [hk1]) hr) fun u ⟨hK, hm, _⟩ =>
         ⟨s, S, he.regs (hK.gpr (by decide)) hm hK.2.1 hK.2.2, by rw [hK.gpr (by decide), hcx]⟩
 
 theorem maskM_two : RelCT isa (Two (Rec.At JQ)) (.block maskM) (Two (Rec.At JQ)) :=

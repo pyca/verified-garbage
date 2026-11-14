@@ -110,7 +110,7 @@ theorem famChk_one {bs : List (Reg × Nat)} {ws : List (Ptr × Nat)} {b m j : Na
   simp only [famChk, Bool.or_eq_true, beq_iff_eq] at h
   rcases h with rfl | h
   · exact absurd hj (Nat.not_lt_zero _)
-  · refine keepB_sub h ?_ ?_ <;> simp only [oP] <;> omega
+  · refine keepB_sub h ?_ ?_ <;> simp only [oP] <;> omega_arith
 
 theorem Fam.keep {D : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D rbs wbs s)
     {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) {b m : Nat} {f : Nat → Poly}

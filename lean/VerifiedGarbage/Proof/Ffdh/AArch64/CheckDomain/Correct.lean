@@ -81,7 +81,7 @@ theorem ret_post {s₀ t : State} {r : Nat} (hr : r < 65536) (hk : KX s₀ t)
     WP isa (ret r) t fun u => abiPreserved s₀ u ∧ cdContract.post s₀ u :=
   WP.mono (ret_ok t hr) fun u ⟨⟨h0, _⟩, k⟩ => ⟨abiPreserved_of_keep (keep_trans hk (k.mono (by decide))), by
     show ((u.gpr .x0).setWidth 32).toNat = _
-    rw [h0, setWidth32_ofNat (by omega), hv]⟩
+    rw [h0, setWidth32_ofNat (by omega_using [hr]), hv]⟩
 
 /-- `domainValid`, on the run's data. -/
 theorem dv_iff {p : CdP} {t : State} (hb : Base p.D t) :
@@ -152,7 +152,7 @@ theorem cd_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cdCon
     refine ret_post (by decide) k₆ ?_
     have h2 := hb₀.noq hb
     have := hb₀.k1
-    rw [hval, ite_eq_left (hdv.mpr ⟨hm, hg, fun e => absurd (e.symm.trans h2) (by omega)⟩)]
+    rw [hval, ite_eq_left (hdv.mpr ⟨hm, hg, fun e => absurd (e.symm.trans h2) (by omega_using [this])⟩)]
   -- With q.
   have hq := hb₀.q hb
   rw [withQ_eq]

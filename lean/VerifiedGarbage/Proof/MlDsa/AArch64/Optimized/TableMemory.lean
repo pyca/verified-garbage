@@ -23,7 +23,7 @@ def tailRoot (u g len e : Nat) : Int :=
 theorem ordinaryRoot_range (k : Nat) : 0 ≤ ordinaryRoot k ∧ ordinaryRoot k < 8380417 := by
   have h : zetaTab k < 8380417 := Nat.mod_lt _ (by decide)
   unfold ordinaryRoot
-  omega
+  omega_using [h]
 
 theorem reciprocal_nat_word (n : Nat) :
     BitVec.ofNat 32 (n*2^31/8380417) = BitVec.ofInt 32 (reciprocal (n : Int)) := by
@@ -35,32 +35,32 @@ theorem ExpandedWords.vector {m : Mem} {p : Addr} (h : ExpandedWords m p)
     vword (m.read (p+BitVec.ofNat 64 (4*k)) 16) e = BitVec.ofNat 32 expandedVals[k+e]! := by
   rw [VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,
     BitVec.add_assoc,←BitVec.ofNat_add,←Nat.mul_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hk, he])
 
 theorem ExpandedWords.root_vector {m : Mem} {p : Addr} (h : ExpandedWords m p)
     {u off g b e : Nat} (ho : off%4=0) (hb : b%4=0)
     (hbound : 480*u+off+32*g+b+16≤3904) (he : e<4) :
     vword (m.read (rootAddress p u off g b) 16) e =
       BitVec.ofNat 32 expandedVals[120*u+off/4+8*g+b/4+e]! := by
-  have hi : 480*u+off+32*g+b = 4*(120*u+off/4+8*g+b/4) := by omega
+  have hi : 480*u+off+32*g+b = 4*(120*u+off/4+8*g+b/4) := by omega_using [ho, hb]
   rw [rootAddress,hi]
-  exact h.vector (by omega) he
+  exact h.vector (by omega_using [hbound]) he
 
 theorem ExpandedWords.hoisted {m : Mem} {p : Addr} (h : ExpandedWords m p) :
     HoistedTable m p ordinaryRoot := by
   refine ⟨fun i _ => ordinaryRoot_range (i+1),?_⟩
   intro g hg e he
-  have haddr : 3840+16*g=4*(960+4*g) := by omega
-  rw [haddr,h.vector (by omega) he]
-  have hi : 2*g+e/2 < 8 := by omega
+  have haddr : 3840+16*g=4*(960+4*g) := by omega_using []
+  rw [haddr,h.vector (by omega_using [hg]) he]
+  have hi : 2*g+e/2 < 8 := by omega_using [hg, he]
   have hv := TableConstants.hoisted_values hi
   by_cases hm : e%2=0
   · rw [ite_eq_left hm]
-    have idx : 960+4*g+e=960+2*(2*g+e/2) := by omega
+    have idx : 960+4*g+e=960+2*(2*g+e/2) := by omega_using [hm]
     rw [idx,hv.1]
     rfl
   · rw [ite_eq_right hm]
-    have idx : 960+4*g+e=960+2*(2*g+e/2)+1 := by omega
+    have idx : 960+4*g+e=960+2*(2*g+e/2)+1 := by omega_using [hm]
     rw [idx,hv.2,reciprocal_nat_word]
     rfl
 
@@ -72,12 +72,12 @@ theorem ExpandedWords.row {m : Mem} {p : Addr} (h : ExpandedWords m p)
     vword (m.read (rootAddress p u off g 0) 16) e=BitVec.ofInt 32 (ordinaryRoot root) ∧
     vword (m.read (rootAddress p u off g 16) 16) e=BitVec.ofInt 32 (reciprocal (ordinaryRoot root)) := by
   constructor
-  · rw [h.root_vector ho (by decide) (by omega) he]
+  · rw [h.root_vector ho (by decide) (by omega_using [hbound]) he]
     simp only [Nat.zero_div,Nat.add_zero]
     rw [hv.1]
     rfl
-  · rw [h.root_vector ho (by decide) (by omega) he]
-    rw [show 16/4=4 by decide,show 120*u+off/4+8*g+4+e=120*u+off/4+8*g+e+4 by omega,
+  · rw [h.root_vector ho (by decide) (by omega_using [hbound]) he]
+    rw [show 16/4=4 by decide,show 120*u+off/4+8*g+4+e=120*u+off/4+8*g+e+4 by omega_using [],
       hv.2,reciprocal_nat_word]
     rfl
 

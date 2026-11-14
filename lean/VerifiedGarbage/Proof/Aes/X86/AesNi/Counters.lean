@@ -30,7 +30,7 @@ theorem counterLane_eq (c : BitVec 32) (pfx : BitVec 96) :
   intro i hi
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append]
   by_cases h : i < 96 <;> simp [h, BitVec.ofNat_eq_ofNat]
-  simp [show i - 96 < 32 by omega, show i < 128 by omega]
+  simp [show i - 96 < 32 by omega_using [hi], show i < 128 by omega_using [hi]]
 
 /-- The two byte shifts cache exactly the first twelve memory bytes. -/
 theorem cache_prefix (v : BitVec 128) :
@@ -41,7 +41,7 @@ theorem cache_prefix (v : BitVec 128) :
   change ((v <<< 32) >>> 32).getLsbD i = _
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split <;> simp_all <;> omega
+  split <;> simp_all <;> omega_arith
 
 /-- Counter-lane bytes follow GCM's big-endian low word. -/
 theorem counterLane_byte (c : BitVec 32) (pfx : BitVec 96) {i : Nat} (hi : i < 16) :
@@ -54,12 +54,12 @@ theorem counterLane_byte (c : BitVec 32) (pfx : BitVec 96) {i : Nat} (hi : i < 1
   simp only [byte, BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and,
     BitVec.getLsbD_append]
   by_cases h : i < 12
-  · simp [h, show 8 * i + r < 96 by omega, hr]
-  · simp only [h, ite_false, show ¬8 * i + r < 96 by omega, ite_false]
-    rw [show 8 * i + r - 96 = 8 * (i - 12) + r by omega,
-      getLsbD_bswap_block c (by omega : i - 12 < 4) hr]
+  · simp [h, show 8 * i + r < 96 by omega_using [hr, h], hr]
+  · simp only [h, ite_false, show ¬8 * i + r < 96 by omega_using [h], ite_false]
+    rw [show 8 * i + r - 96 = 8 * (i - 12) + r by omega_using [h],
+      getLsbD_bswap_block c (by omega_using [hi] : i - 12 < 4) hr]
     simp only [BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and]
-    rcases (by omega : i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with h | h | h | h <;>
+    rcases (by omega_using [hi, h] : i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with h | h | h | h <;>
       subst i <;> simp
 
 /-- A lane is exactly the AES state of the specified incremented GCM counter. -/
@@ -89,12 +89,12 @@ theorem ctrState_rev (x : Spec.Gcm.Block) (i : Nat) :
 theorem memory_prefix (m : Mem) (p : Addr) {k : Nat} (hk : k < 12) :
     ((m.readW p 128).extractLsb' 0 96).extractLsb' (8 * k) 8 =
       (Spec.Gcm.toBytes (Spec.Gcm.blockAt m p)).getD k 0 := by
-  rw [VG.Proof.Aes.toBytes_blockAt m p (by omega),
-    ← VG.Proof.Gcm.X86.byte_readW m p (by omega : k < 16)]
+  rw [VG.Proof.Aes.toBytes_blockAt m p (by omega_using [hk]),
+    ← VG.Proof.Gcm.X86.byte_readW m p (by omega_using [hk] : k < 16)]
   apply BitVec.eq_of_getLsbD_eq
   intro r hr
   simp only [byte, BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and]
-  simp [show 8 * k + r < 96 by omega]
+  simp [show 8 * k + r < 96 by omega_using [hk, hr]]
 
 theorem counter_one (b : XReg) (s : State) (hb : b ≠ .xmm7) :
     WP isa (.block (ctrs [b])) s fun s' =>

@@ -40,7 +40,7 @@ theorem ret_ok (s : State) {r : Nat} (hr : r < 2 ^ 32) :
         [show (BitVec.ofNat 32 r).setWidth 64 = BitVec.ofNat 64 r from by
           apply BitVec.eq_of_toNat_eq
           simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-          omega]) rfl) fun _ ⟨h, k⟩ => ⟨h.1, h.2, k⟩
+          omega_using [hr]]) rfl) fun _ ⟨h, k⟩ => ⟨h.1, h.2, k⟩
 
 /-- Testing a Boolean preserves every register, memory and permissions. -/
 theorem test_bit_ok {s : State} {P : Prop} [Decidable P] (hp : s.gpr .rax = bit P) :
@@ -64,16 +64,16 @@ theorem qTest_ok {s : State} {B : Addr} {Z dl k : Nat} (hs : Scr s B Z)
   have e : BitVec.ofNat 64 dl - BitVec.ofNat 64 k - BitVec.ofNat 64 k = BitVec.ofNat 64 (dl - 2 * k) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hdk]
   have hz : (BitVec.ofNat 64 (dl - 2 * k) == 0) = decide (dl = 2 * k) := by
-    rw [ofNat_beq_zero (by omega)]
+    rw [ofNat_beq_zero (by omega_using [hdl32])]
     rw [Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
-    omega
+    omega_using [hdk]
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (dl - 2 * k) ∧
       t.zf = some (decide (dl = 2 * k)) ∧ t.mem = s.mem)
     (by unfold qTest; xrun [State.ea, hdr, hdi, hdrOff,
-      hs.ld (d := 8 * sDomLen) (by change 144 ≤ Z; omega),
-      hs.ld (d := 8 * sK) (by change 152 ≤ Z; omega), hdl, hk, e, hz]) rfl)
+      hs.ld (d := 8 * sDomLen) (by change 144 ≤ Z; omega_using [hZ]),
+      hs.ld (d := 8 * sK) (by change 152 ≤ Z; omega_using [hZ]), hdl, hk, e, hz]) rfl)
     fun _ ⟨h, K⟩ => ⟨h.1, h.2.1, h.2.2, K⟩
 
 /-- Leave the inner workspace before testing q's presence. -/
@@ -89,7 +89,7 @@ theorem leaveQ_ok {s : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64} {dl k
   have hlo := hc.lo
   have hi := hc.hi
   refine WP.mono (qTest_ok (hc.scr.congr k₁.2.2) hdi
-    (by unfold slot hdrBytes at hlo; omega) (by rw [hm]; exact hdl) (by rw [hm]; exact hk) hdk hdl32)
+    (by unfold slot hdrBytes at hlo; omega_using [hlo, hi]) (by rw [hm]; exact hdl) (by rw [hm]; exact hk) hdk hdl32)
     fun t ⟨hax, hz, hm', k₂⟩ =>
       ⟨(k₂.gpr (by decide)).trans hdi, hax, hz, hm'.trans hm, (k₁.trans k₂).mono (by decide)⟩
 

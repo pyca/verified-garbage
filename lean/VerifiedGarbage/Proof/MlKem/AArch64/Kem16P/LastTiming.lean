@@ -67,7 +67,7 @@ theorem lastPrep_erase {sb ss a k bo N₀ : Nat} (hss : ss < 4096) (hbo : 4096 �
     Code.eraseOff (lastPrep sb ss a k bo N₀) = Code.eraseOff (lastPrep 0 0 0 1 4096 0) := by
   simp only [lastPrep, Code.eraseOff, List.map_append, Impl.MlKem.AArch64.Kem16P.stepB,
     Impl.MlKem.AArch64.Kem16P.reinitB, prfWords_eraseOff, Impl.MlKem.AArch64.Paired.init,
-    Impl.MlKem.AArch64.ptrTo, ite_eq_left hss, ite_eq_right (show ¬ bo < 4096 by omega),
+    Impl.MlKem.AArch64.ptrTo, ite_eq_left hss, ite_eq_right (show ¬ bo < 4096 by omega_using [hbo]),
     ite_eq_left (show (0 : Nat) < 4096 by decide), ite_eq_right (show ¬ (4096 : Nat) < 4096 by decide)]
   rfl
 
@@ -155,8 +155,8 @@ theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Sta
     rcases h with ⟨ht, hv⟩; subst t; subst v
     exact ⟨lastPrep_ct hss h4 s u tr ur t' v' trivial trivial
       (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact base)) et ev,
-      exec_post (lastPrepP_ok L hN hbo (by omega) hsb h8 hk hk256 ps hls ap hR hB) et,
-      exec_post (lastPrepP_ok L hN hbo (by omega) hsb h8 hk hk256 pu hlu ap hRu hBu) ev⟩
+      exec_post (lastPrepP_ok L hN hbo (by omega_using [hss]) hsb h8 hk hk256 ps hls ap hR hB) et,
+      exec_post (lastPrepP_ok L hN hbo (by omega_using [hss]) hsb h8 hk hk256 pu hlu ap hRu hBu) ev⟩
   have grouped : RelCT isa (fun t v => t = s ∧ v = u)
       (.seq (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀)
         (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) (fun _ _ => True) := by
@@ -178,9 +178,9 @@ theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Sta
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht, hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl, rfl⟩ et ev).1,
-    exec_post (lastStartP_ok L hN hbo (by omega) hsb h8 hoff hk hk256 ps.ptr ps.seedPtr ps.outPtr
+    exec_post (lastStartP_ok L hN hbo (by omega_using [hss]) hsb h8 hoff hk hk256 ps.ptr ps.seedPtr ps.outPtr
       ps.readable ps.separate ps.context ps.symbol hls ap hR hB) et,
-    exec_post (lastStartP_ok L hN hbo (by omega) hsb h8 hoff hk hk256 pu.ptr pu.seedPtr pu.outPtr
+    exec_post (lastStartP_ok L hN hbo (by omega_using [hss]) hsb h8 hoff hk hk256 pu.ptr pu.seedPtr pu.outPtr
       pu.readable pu.separate pu.context pu.symbol hlu ap hRu hBu) ev⟩
 
 theorem afterStartP {w16 : Bool} {s t : State} {p seed out table R B₀ : Addr}

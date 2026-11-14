@@ -26,7 +26,7 @@ theorem rejectHead_ok {p : SearchParams} {used remaining count : Nat} {s : State
   have sourceValue := h.saved 9 (by simp [searchSlots])
   have lengthValue := h.saved 10 (by simp [searchSlots])
   simp only [searchValues] at usedValue sourceValue lengthValue
-  have countFit : count < 2 ^ 32 := by have := p.c.tapeCount; omega
+  have countFit : count < 2 ^ 32 := by have := p.c.tapeCount; omega_using [bound, this]
   have countRoom : count ≤ p.c.bytes.length - used := bound
   have sum : BitVec.ofNat 32 used + BitVec.ofNat 32 count = BitVec.ofNat 32 (used + count) :=
     BitVec.ofNat_add_ofNat _ _
@@ -36,7 +36,7 @@ theorem rejectHead_ok {p : SearchParams} {used remaining count : Nat} {s : State
       BitVec.ofNat 32 (p.c.bytes.length - (used + count)) := by
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ countFit countRoom]
     congr 1
-    omega
+    omega_using []
   refine withRest_all [.r9, .r10, .r11, .r12] ?_ (by rfl) (by rfl)
   have control := h.buffers.controller
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.rejectHead VG.Impl.Ffdh.Arm.ParameterSearch.ldf

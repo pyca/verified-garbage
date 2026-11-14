@@ -32,7 +32,7 @@ theorem outputCopy_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
       Frame [⟨W 6, bs.length⟩] s.mem t.mem ∧ Keep (.x0 :: mmRegs) s t := by
   unfold Impl.Dsa.AArch64.Generation.outputCopy
   refine WP.seq (WP.mono (outputArgs_ok L R hlen) fun u ⟨hsi, hdi, hcx, hm, ku⟩ => ?_)
-  refine WP.seq (WP.mono (copyBytes_ok (by omega) hsi hdi hcx
+  refine WP.seq (WP.mono (copyBytes_ok (by omega_using [hl]) hsi hdi hcx
     (fun i hi => by rw [ku.rd, ku.wr]; exact hrd i hi)
     (fun i hi => by rw [ku.wr]; exact hwr i hi)
     (fun i hi => by rw [hm]; exact hb i hi) sep) fun v ⟨bytes, fv, kv⟩ => ?_)
@@ -44,6 +44,6 @@ theorem outputCopy_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → B
     intro i hi he
     apply ha ⟨W 6, bs.length⟩ (by simp)
     rw [he]
-    exact Offset.contains_base _ (by omega) (by omega)), hm]
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])), hm]
 
 end VG.Proof.Dsa.AArch64.Generation

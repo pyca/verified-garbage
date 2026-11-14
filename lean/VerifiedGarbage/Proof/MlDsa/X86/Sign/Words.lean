@@ -118,7 +118,7 @@ theorem fr0 {s₀ : State} (hp : TPre (Y p) s₀) {bs : List Buf} {N : Nat} (hN 
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-        stk_sub hp (Nat.zero_le N) (by show N + 16 ≤ 96; omega)⟩
+        stk_sub hp (Nat.zero_le N) (by show N + 16 ≤ 96; omega_using [hN])⟩
 
 theorem scr_ge (ps : PS p) : oP (nS p) ≤ scrLen p := by ofsd
 
@@ -129,9 +129,9 @@ theorem frSc {s₀ : State} (hp : TPre (Y p) s₀) {bs : List Buf} {N M : Nat} (
     (fr : Frame (FR s₀ bs N) m m') : Frame (FR s₀ [sc lo (hi - lo)] M) m m' :=
   frIn hp hNM hM (fun c hc => by
     obtain ⟨h₁, h₂, h₃, h₄⟩ := h c hc
-    refine ⟨Lay.ok_iff.mpr ⟨by rw [h₁, Y_n]; decide, h₄, by rw [h₁, Y_alen4]; omega⟩, _, List.mem_singleton_self _,
-      Lay.ok_iff.mpr ⟨by rw [Y_n]; exact (by decide : 4 < 5), by simp only; omega, by rw [Y_alen4]; simp only; omega⟩, h₁, by simp only; omega,
-      by simp only; omega⟩) fr
+    refine ⟨Lay.ok_iff.mpr ⟨by rw [h₁, Y_n]; decide, h₄, by rw [h₁, Y_alen4]; omega_using [hhi, h₃]⟩, _, List.mem_singleton_self _,
+      Lay.ok_iff.mpr ⟨by rw [Y_n]; exact (by decide : 4 < 5), by simp only; omega_using [hlh], by rw [Y_alen4]; simp only; omega_using [hlh, hhi]⟩, h₁, by simp only; omega_using [h₂],
+      by simp only; omega_using [h₃]⟩) fr
 
 /-- `keepB`, for bytes of `scratch` that may be none. -/
 theorem keepB0 {s₀ : State} (hp : TPre (Y p) s₀) {bs : List Buf} {N : Nat} (hN : N ≤ 80)

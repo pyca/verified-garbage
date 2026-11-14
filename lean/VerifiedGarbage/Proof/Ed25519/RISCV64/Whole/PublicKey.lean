@@ -70,7 +70,7 @@ theorem pk_slot {s : State} (hp : PkPre sl s) :
     ∀ d n, d + n ≤ 96 → (slotArea (s.gpr .a3) 96 pkRegs).Disjoint ⟨s.gpr .a3 + BitVec.ofNat 64 d, n⟩ := by
   have hs : Region.Sub (slotArea (s.gpr .a3) 96 pkRegs) ⟨s.gpr .a3, 144⟩ := Offset.sub_base _ (by decide)
   refine ⟨(hp.oF.symm.sub_left hs), (hp.cF.symm.sub_left hs), (hp.bF.symm.sub_left hs), fun d n h => ?_⟩
-  exact Offset.disjoint _ (.inr h) (by decide) (by omega)
+  exact Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
 
 /-- The setup: the registers saved, the pointers moved to `s7`–`s10`. -/
 theorem pkSetup_ok {s : State} (hp : PkPre sl s) :
@@ -79,7 +79,7 @@ theorem pkSetup_ok {s : State} (hp : PkPre sl s) :
   have hF : (⟨s.gpr .a3, 144⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
   have hsl : ∀ p ∈ slots 96 pkRegs, p.2 + 8 ≤ 144 := by decide
   refine save_ok hp.alF (by decide) (by decide)
-    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega)) fun u hu hsv hfr => ?_
+    (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega_using [this])) fun u hu hsv hfr => ?_
   unfold mov
   refine wp_mv fun u₁ h₁ => wp_mv fun u₂ h₂ => wp_mv fun u₃ h₃ => wp_mv fun u₄ h₄ => WP.block_nil ?_
   have m : u₄.mem = u.mem := by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem]
@@ -128,8 +128,8 @@ theorem pkCopy_ok {s t : State} (hp : PkPre 64 s) (h : PkInv s t) :
   rw [← List.append_nil (copyIn .s8 .s10 0 64)]
   refine copyIn_ok (P := s.gpr .a1) (F := s.gpr .a3) (o := 0) (n := 64) (by decide) (by decide)
     (h.regs _ (by decide)) (h.regs _ (by decide)) (by decide)
-    (fun i hi => in_base (List.mem_append_left _ hS) (by omega) (by omega))
-    (fun i hi => in_base hFw (by omega) (by omega))
+    (fun i hi => in_base (List.mem_append_left _ hS) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => in_base hFw (by omega_using [hi]) (by omega_using [hi]))
     (hp.sF.sub_right (Offset.sub_base _ (by decide))) fun u hu hfu hb => WP.block_nil ?_
   refine ⟨h.step pkRegs_pres hu.rd hu.wr hu.sp (fun r hr => hu.gpr r (by revert hr; cases r <;> decide)) hfu
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, pk_inW.2.2.1, Offset.sub_base _ (by decide)⟩)
@@ -153,11 +153,11 @@ theorem publicKeyWith_wp (B : BaseOk) {first : Prog isa} {D : List Byte} {s : St
   refine WP.seq (WP.mono_syms (hfirst t₁ h₁) fun t₄ ⟨h₄, dg⟩ sy₄ => ?_)
   -- The pruning, and the arguments of `scalar_base`.
   have hFr : ∀ d, d + 8 ≤ 144 → InRegions (t₄.rd ++ t₄.wr) (s.gpr .a3 + BitVec.ofNat 64 d) 8 := fun d hd => by
-    rw [h₄.wr]; exact in_base (List.mem_append_right _ hFw) hd (by omega)
+    rw [h₄.wr]; exact in_base (List.mem_append_right _ hFw) hd (by omega_using [hd])
   have hFw' : ∀ d, d + 8 ≤ 144 → InRegions t₄.wr (s.gpr .a3 + BitVec.ofNat 64 d) 8 := fun d hd => by
-    rw [h₄.wr]; exact in_base hFw hd (by omega)
+    rw [h₄.wr]; exact in_base hFw hd (by omega_using [hd])
   refine WP.seq (WP.of_syms <| prune_ok (f := .s10) (F := s.gpr .a3) (d := 0) (o := 64) (by decide) (h₄.regs _ (by decide)) hp.alF
-    (by decide) (by decide) (by decide) (fun k hk => hFr _ (by omega)) (fun k hk => hFw' _ (by omega))
+    (by decide) (by decide) (by decide) (fun k hk => hFr _ (by omega_using [hk])) (fun k hk => hFw' _ (by omega_using [hk]))
     fun u hu hfu hpr => ?_)
   unfold mov
   refine wp_mv fun v₁ e₁ => wp_addi (by decide) fun v₂ e₂ =>
@@ -186,7 +186,7 @@ theorem publicKeyWith_wp (B : BaseOk) {first : Prog isa} {D : List Byte} {s : St
   have wd₅ : ∀ q < 64 * 96, t₅.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * q)) 64 = combWord q :=
     fun q hq => by
       rw [← hp.words q hq]
-      exact h₅.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega)) hp.tW
+      exact h₅.frame.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])) hp.tW
         (by decide)
   refine WP.seq (WP.call (k := baseRV) B (rd := [⟨s.gpr .a3 + BitVec.ofNat 64 64, 32⟩, TBL (s.syms combSym)])
     (wr := [⟨s.gpr .a0, 32⟩, ⟨s.gpr .a2, 8192⟩]) (basePre_call c3 c4 c5 sy hp.alC hp.oC
@@ -220,7 +220,7 @@ theorem publicKeyWith_wp (B : BaseOk) {first : Prog isa} {D : List Byte} {s : St
   -- The restores.
   have hrl : ∀ p ∈ restoreList 96 pkRegs, p.2 + 8 ≤ 144 := by decide
   refine restore_ok h₆ hp.alF (h₆.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
-    (fun p hp' => by rw [h₆.wr]; exact in_base (List.mem_append_right _ hFw) (hrl p hp') (by have := hrl p hp'; omega))
+    (fun p hp' => by rw [h₆.wr]; exact in_base (List.mem_append_right _ hFw) (hrl p hp') (by have := hrl p hp'; omega_using [this]))
     fun t₇ g₇ sp₇ ra₇ m₇ _ => ⟨g₇, sp₇, ra₇, ?_⟩
   rw [m₇, hpost, Spec.Ed25519.scalarBase, hdec]
 

@@ -32,7 +32,7 @@ theorem cp_body_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s : State} (c : Cp
   have hk2 := c.k2
   have hZ := c.hZ
   have hn := c.hs.nowrap
-  have hw : ∀ i < 20, InRegions s.wr (off (s.gpr .r9) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 20, InRegions s.wr (off (s.gpr .r9) (8 * i)) 8 := fun i hi => c.hs.st (by omega_using [hZ, hi])
   unfold VG.Impl.Ffdh.X86_64.Domain.CheckPublic.body
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -41,32 +41,32 @@ theorem cp_body_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s : State} (c : Cp
   have hL₁ := slots₁ (sDomLen, s.gpr .rsi) (by simp)
   have hK₁ := slots₁ (sK, s.gpr .rdx) (by simp)
   have hY₁ := slots₁ (sY, s.gpr .rcx) (by simp)
-  have i₁ : InScr (s.gpr .r9) ((scrLen s).toNat * 8) s.mem s₁.mem := InScr.of_outside ho₁ (by omega)
+  have i₁ : InScr (s.gpr .r9) ((scrLen s).toNat * 8) s.mem s₁.mem := InScr.of_outside ho₁ (by omega_using [hZ])
   have hdom₁ := c.dom.congrK i₁ k₁
   have hpS : Src s₁ (s.gpr .r9) ((scrLen s).toNat * 8) (s.gpr .rdi)
       (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rdx).toNat) := by
     have := src_slice (off := 0) (len := (s.gpr .rdx).toNat) hdom₁
-      (by rcases c.dl with h | h <;> rw [h] <;> omega)
+      (by rcases c.dl with h | h <;> rw [h] <;> omega_using [])
     simpa using this
-  refine WP.mono (domHead_ok (c.hs.congr k₁.2.2) hdi₁ (by omega) hk1 hk2 hD₁
+  refine WP.mono (domHead_ok (c.hs.congr k₁.2.2) hdi₁ (by omega_using [hZ]) hk1 hk2 hD₁
     (by rw [hK₁, ofNat_toNat64]) hpS (bytesAt_length _ _ _))
     fun s₂ ⟨hz₂, _, hQ₂, f₂, hdi₂, k₂⟩ => ?_
   have hp₂ : ∀ i < 32, i ≠ sG → i ≠ sQ →
       word s₂.mem (s.gpr .r9) (8 * i) = word s₁.mem (s.gpr .r9) (8 * i) := fun i hi h1 h2 =>
     f₂.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> unfold sG sQ sFn at * <;> omega) (by omega)
+      rcases hr with rfl | rfl <;> simp only <;> unfold sG sQ sFn at * <;> omega_arith) (by omega_using [hi])
   have i₂ : InScr (s.gpr .r9) ((scrLen s).toNat * 8) s.mem s₂.mem :=
     i₁.trans (InScr.of_frm f₂ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only [sG, sQ, sFn] <;> omega))
+      rintro r (rfl | rfl) <;> simp only [sG, sQ, sFn] <;> omega_using [hZ]))
   have K₂ : Keep (.rdi :: mmRegs) s s₂ := keep_trans (k₁.mono (by decide)) (k₂.mono (by decide))
   have saved₂ : ∀ i < 6, word s₂.mem (s.gpr .r9) (8 * i) = s.gpr (saved.getD i .rax) := fun i hi => by
-    rw [hp₂ i (by omega) (by unfold sG sFn; omega) (by unfold sQ sFn; omega)]
+    rw [hp₂ i (by omega_using [hi]) (by unfold sG sFn; omega_using [hi]) (by unfold sQ sFn; omega_using [hi])]
     exact saved₁ i hi
   have hpk : (domainOf (s.gpr .rdx).toNat (cpDom s)).p =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rdx).toNat) :=
-    domainOf_p _ _ (by rcases c.dl with h | h <;> omega)
+    domainOf_p _ _ (by rcases c.dl with h | h <;> omega_using [h])
   refine WP.ite (!Spec.Rsa.modulusValid
     (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rdx).toNat)) (s.gpr .rdx).toNat)
     (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)

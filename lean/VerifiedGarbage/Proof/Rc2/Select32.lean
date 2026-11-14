@@ -20,11 +20,11 @@ theorem joinBytes (lo hi : Byte) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_setWidth, BitVec.getLsbD_rotateRight,
     BitVec.getLsbD_shiftLeft]
   by_cases h8 : j < 8
-  · simp (disch := omega) [h8, show j < 16 by omega,
+  · simp (disch := omega) [h8, show j < 16 by omega_using [h8],
       BitVec.getLsbD_of_ge]
   · by_cases h16 : j < 16
-    · simp (disch := omega) [h8, h16, hj, show j - 8 < 32 by omega,
-        show j - 8 < 16 by omega, BitVec.getLsbD_of_ge]
+    · simp (disch := omega) [h8, h16, hj, show j - 8 < 32 by omega_using [hj],
+        show j - 8 < 16 by omega_using [h16], BitVec.getLsbD_of_ge]
     · simp (disch := omega) [h8, h16,
         BitVec.getLsbD_of_ge]
 

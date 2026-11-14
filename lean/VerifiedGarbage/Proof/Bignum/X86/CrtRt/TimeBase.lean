@@ -69,7 +69,7 @@ theorem agreeA {s₁ s₂ : State} (h₁ : In Ex base bytes len args s₁) (h₂
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (show arg s₁ _ = arg s₂ _ from
-      (h₁.stack _ (by omega)).value.trans (h₂.stack _ (by omega)).value.symm)
+      (h₁.stack _ (by omega_using [hk])).value.trans (h₂.stack _ (by omega_using [hk])).value.symm)
 
 theorem agreeAs {s₁ s₂ : State} (h₁ : In Ex base bytes len args s₁) (h₂ : In Ex base bytes len args s₂)
     (A₁ : ArgsOk s₁) (A₂ : ArgsOk s₂) (sp : s₁.gpr .esp = s₂.gpr .esp) (si : s₁.gpr .esi = s₂.gpr .esi) :
@@ -89,7 +89,7 @@ theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
   refine ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨?_, fun r hr => ?_⟩, fun _ h => (List.not_mem_nil h).elim, ?_, fun p hp => ?_, fun h => absurd h (by decide)⟩
   · show _ + 36 + 76 ≤ _
-    rw [allocFrame_esp, sub_toNat low]; omega
+    rw [allocFrame_esp, sub_toNat low]; omega_using [f]
   · rw [show VG.X86.Taint.depth τF.stk = 36 + 0 from rfl, argByte_alloc low, VG.X86.Taint.argByte, BitVec.add_zero]
     rw [allocFrame_wr, List.mem_cons] at hr
     rcases hr with rfl | hr
@@ -97,7 +97,7 @@ theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
       exact (Offset.base_disjoint_below _ (by decide)).symm.symm
     · exact A.2 r hr
   · show _ + 36 < _
-    rw [allocFrame_esp, sub_toNat low]; omega
+    rw [allocFrame_esp, sub_toNat low]; omega_using []
   · simp only [τF, VG.X86.Taint.frameList, List.mem_singleton] at hp
     subst hp
     simp only [allocFrame_wr, allocFrame_esp, List.getElem?_cons_zero, addr, BitVec.add_zero]
@@ -163,8 +163,8 @@ theorem mulArgs_call {sp : BitVec 32} {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (h
   have hm := C.mod
   simp only [sv, z0] at hm hB
   refine WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (c := c) (o := o) (a := a) (b := b)
-    (argAt_alloc h.width) (argAt_alloc (h.arg (i := wsLenArg) (by decide))) h.upper' (by omega) (by omega)
-    (by omega) (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega)
+    (argAt_alloc h.width) (argAt_alloc (h.arg (i := wsLenArg) (by decide))) h.upper' (by omega_using [ho]) (by omega_using [ha])
+    (by omega_using [hb]) (by rw [fEsp, VG.X86.sub_toNat (by omega_using [low])]; omega_using [])
     (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)) fun g ⟨Kg, Fg, Rg⟩ => ?_
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]
   have hFg : Frame [below (s.gpr .esp) 36] s.mem g.mem := by
@@ -195,7 +195,7 @@ theorem mul_relCT (sp : BitVec 32) {c : Ctx} {o a b : Nat} (ho3 : 3 ≤ o) (ho :
         obtain ⟨⟨M₁, C₁, -⟩, A₁, e₁⟩ := I₁
         obtain ⟨⟨M₂, C₂, -⟩, A₂, e₂⟩ := I₂
         subst q₁ q₂
-        exact agreeF C₁.inp C₂.inp A₁ A₂ (e₁.trans e₂.symm) (by have := C₁.inp.room.low; omega)) hT).wp
+        exact agreeF C₁.inp C₂.inp A₁ A₂ (e₁.trans e₂.symm) (by have := C₁.inp.room.low; omega_using [this])) hT).wp
     (F₁ := CallOk base bytes len args sp c o a b) (F₂ := CallOk base bytes len args sp c o a b)
     (fun _ _ ⟨s₁, s₂, ⟨I₁, I₂⟩, q₁, q₂⟩ => by
       subst q₁ q₂
@@ -239,7 +239,7 @@ theorem relCT_countLoop {body : Prog isa} {N : Nat} (hN : 0 < N) (I : Nat → St
       (Both fun u => I (j + 1) u ∧ u.zf = some (decide (j + 1 = N)))) :
     RelCT isa (Both (I 0)) (.loop body .ne) (Both (I N)) := by
   refine (VG.RelCT.loop (M := isa) (Q := Both (I N)) (fun n (s t : State) => ∃ j, n = N - j ∧ j < N ∧ Both (I j) s t)
-    (fun n => ?_) N).mono (fun _ _ h => ⟨0, by omega, hN, h⟩) fun _ _ h => h
+    (fun n => ?_) N).mono (fun _ _ h => ⟨0, by omega_using [], hN, h⟩) fun _ _ h => h
   refine VG.RelCT.exists_ (M := isa) (P := fun j (s t : State) => n = N - j ∧ j < N ∧ Both (I j) s t) (fun j => ?_)
   by_cases hj : j < N ∧ n = N - j
   · obtain ⟨hj, rfl⟩ := hj
@@ -253,7 +253,7 @@ theorem relCT_countLoop {body : Prog isa} {N : Nat} (hN : 0 < N) (I : Nat → St
       exact this ▸ ⟨I₁, I₂⟩
     · rw [e₁] at h
       have : j + 1 ≠ N := by simpa using h
-      exact ⟨N - (j + 1), by omega, j + 1, rfl, by omega, I₁, I₂⟩
+      exact ⟨N - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, this], I₁, I₂⟩
   · exact VG.RelCT.of_false fun _ _ h => hj ⟨h.2.1, h.1⟩
 
 end VG.Proof.Bignum.X86.CrtRt

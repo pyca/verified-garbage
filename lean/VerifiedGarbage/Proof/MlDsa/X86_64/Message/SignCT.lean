@@ -62,7 +62,7 @@ theorem leak_eq {L : Lay} (hk : 128 ≤ p.skLen) (hL : L.Ok) (m : Mem) :
         bytesAt m L.ctx L.ctxLen.toNat ++ bytesAt m L.msg L.len.toNat) 64) (bytesAt m L.rnd 32) := by
   rw [signMessageLeak, formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact hL.ctxLt)]
   simp only [messageRep, skTr, hdrBytes, Proof.MlKem.bytesAt_length, List.append_assoc]
-  rw [Proof.MlKem.bytesAt_slice _ _ (by omega)]
+  rw [Proof.MlKem.bytesAt_slice _ _ (by omega_using [hk])]
 
 /-- What a layout of `sign_message` says of `rnd`, `sig` and `scratch`. -/
 structure SFacts (p : Params) (L : Lay) : Prop where
@@ -124,8 +124,8 @@ theorem signCall_tr {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     have ek : ∀ {g mx m₀} {a a1 : State}, Ctx L g mx m₀ a → Moved (signArgs p prep) a a1 →
         bytesAt a1.callEntry.mem L.key p.skLen = bytesAt m₀ L.key p.skLen := fun c f => by
       rw [(c.regs f.2.2.1 f.2.2.2 f.1.2.1 f.1.2.2 fun r hr => f.2.gpr (argRegs_cs r hr)).ce_bytesAt
-        (hL.stk_r (r := ⟨L.key, p.skLen⟩) kK (d := 32) (n := 8) (by decide)) (by omega),
-        f.1.2.1, c.bytesAt_eq xK kK (by omega)]
+        (hL.stk_r (r := ⟨L.key, p.skLen⟩) kK (d := 32) (n := 8) (by decide)) (by omega_using [hk, hkk]),
+        f.1.2.1, c.bytesAt_eq xK kK (by omega_using [hk, hkk])]
     have er : ∀ {g mx m₀} {a a1 : State}, Ctx L g mx m₀ a → Moved (signArgs p prep) a a1 →
         bytesAt a1.callEntry.mem L.rnd 32 = bytesAt m₀ L.rnd 32 := fun c f => by
       rw [(c.regs f.2.2.1 f.2.2.2 f.1.2.1 f.1.2.2 fun r hr => f.2.gpr (argRegs_cs r hr)).ce_bytesAt
@@ -198,7 +198,7 @@ theorem signBody_tr {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     (fun L g mx m t hc _ => by rw [hc.slotOff, fKey, hc.pKey])
     fun L hL => by
       have := hL.hKey
-      have w : Within ⟨L.key + BitVec.ofNat 64 64, 64⟩ L.KEY := within_off _ (by omega)
+      have w : Within ⟨L.key + BitVec.ofNat 64 64, 64⟩ L.KEY := within_off _ (by omega_using [this])
       exact ⟨⟨_, List.mem_append_left _ hL.inKey, w⟩,
         (hL.xKey.symm.sub_left w.sub).sub_right (Region.sub_prefix (by decide : 200 ≤ 1024)),
         (hL.xKey.symm.sub_left w.sub).sub_right (Offset.sub_base _ (by decide : 200 + 640 ≤ 1024)),
@@ -206,7 +206,7 @@ theorem signBody_tr {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
   have mh' := two_wp (I := signI p) (Φ := fun L m _ => SOk p prep L m) (Ψ := fun L m t => SOk p prep L m ∧ MuOk L m t) mh
     fun L g mx m₀ t hL hc hφ => by
       have := hL.hKey
-      have w : Within ⟨L.key + BitVec.ofNat 64 64, 64⟩ L.KEY := within_off _ (by omega)
+      have w : Within ⟨L.key + BitVec.ofNat 64 64, 64⟩ L.KEY := within_off _ (by omega_using [this])
       refine WP.mono (muHash_ok hL (hφ.facts hp).e hc (tr := .slotOff fKey 64) (by decide)
         (fun t' hc' => by rw [hc'.slotOff, fKey, hc'.pKey]) ⟨_, List.mem_append_left _ hL.inKey, w⟩
         ((hL.xKey.symm.sub_left w.sub).sub_right (Region.sub_prefix (by decide : 200 ≤ 1024)))

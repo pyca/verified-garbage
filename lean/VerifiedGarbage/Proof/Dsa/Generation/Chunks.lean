@@ -20,7 +20,7 @@ theorem generationChunks_step {width : Nat} {bytes : List Byte}
     Spec.Dsa.generationChunks width bytes =
       bytes.take width :: Spec.Dsa.generationChunks width (bytes.drop width) := by
   have hdiv : bytes.length / width = (bytes.length - width) / width + 1 := by
-    have he : bytes.length = (bytes.length - width) + width := by omega
+    have he : bytes.length = (bytes.length - width) + width := by omega_using [h]
     exact (congrArg (fun n => n / width) he).trans (Nat.add_div_right _ hw)
   unfold Spec.Dsa.generationChunks
   rw [hdiv, List.range_succ_eq_map]

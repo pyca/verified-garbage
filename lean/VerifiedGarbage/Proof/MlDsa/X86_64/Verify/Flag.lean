@@ -118,7 +118,7 @@ theorem sampled_ok {call : Prog isa} {rbs wbs : List (Reg × Nat)} {s : State} (
 
 theorem coeffAt_poly4 (m : Mem) (p : Addr) (k j : Nat) : coeffAt m (poly4 p k) j = coeffAt m p (256 * k + j) := by
   unfold coeffAt poly4
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * k + 4 * j = 4 * (256 * k + j) by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * k + 4 * j = 4 * (256 * k + j) by omega_using []]
 
 /-- `sampled_ok` for a call that samples the four polynomials from `a`, each
 from `F k`. -/
@@ -154,7 +154,7 @@ theorem sampled4_ok {call : Prog isa} {rbs wbs : List (Reg × Nat)} {s : State} 
   rw [e₂, e₁, hax, hm₂] at hc₃
   have hc : ∀ k < 4, ∀ j < n, coeffAt s₃.mem (poly4 (pa s a) k) j =
       coeffAt s₁.mem (poly4 (pa s a) k) j &&& (0 - res s₁) := fun k hk j hj => by
-    rw [coeffAt_poly4, coeffAt_poly4, hc₃ _ (by simp only [n] at hj; omega)]
+    rw [coeffAt_poly4, coeffAt_poly4, hc₃ _ (by simp only [n] at hj; omega_using [hk, hj])]
   refine ⟨hP, fun k hk => ?_, res s₁, hr, by rw [h15₃, h15₂, h15₁, h15, and_flag hr], fun h1 k hk => ?_,
     fun h0 => ?_⟩
   · rcases hr with h1 | h0

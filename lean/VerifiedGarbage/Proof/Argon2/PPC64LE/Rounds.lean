@@ -40,11 +40,11 @@ structure Scratch (s : State) (p : Addr) : Prop where
 
 theorem Scratch.write {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions s.wr (off p d) n :=
-  ⟨_, h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem Scratch.read {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions (s.rd ++ s.wr) (off p d) n :=
-  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem lane_injective : Function.Injective lane := by
   intro i j h
@@ -66,7 +66,7 @@ theorem lane_ne_r0 (j : Fin 16) : lane j ≠ .r0 := by revert j; decide
 theorem lane_ne_r22 (j : Fin 16) : lane j ≠ .r22 := by revert j; decide
 
 theorem word_offset (i : Nat) (hi : i < 128) : 1024 + 8 * i < 2 ^ 15 ∧ (1024 + 8 * i) % 4 = 0 := by
-  omega
+  omega_using [hi]
 
 /-- A write changes exactly the selected word of the block. -/
 theorem working_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
@@ -79,14 +79,14 @@ theorem working_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
     simp only [ite_true, word, Mem.readW_writeW_self64]
   · simp only [h, ite_false, word]
     exact Mem.readW_writeW_sep
-      (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      (Offset.sep p (by omega_using [h]) (by omega_using [hj]) (by omega_using [])) (by decide)
 
 /-- Load one word of the permuted block into its register. -/
 theorem loadWord_ok (index : Fin 16 → Fin 128) (j : Fin 16) (s : State) {p : Addr}
     (hs : Scratch s p) :
     WP isa (.block [loadWord index j]) s fun t =>
       t = s.write (lane j) (word s.mem p (index j).val) := by
-  have ld := hs.read (d := 1024 + 8 * (index j).val) (n := 8) (by omega)
+  have ld := hs.read (d := 1024 + 8 * (index j).val) (n := 8) (by omega_using [])
   rw [← hs.reg] at ld
   refine WP.block_cons_iff.mpr ⟨_, exec_load_d (by decide) (word_offset _ (index j).isLt) ld,
     WP.block_nil ?_⟩
@@ -127,7 +127,7 @@ theorem storeWord_ok (index : Fin 16 → Fin 128) (j : Fin 16) (s : State) {p : 
     (hs : Scratch s p) :
     WP isa (.block [storeWord index j]) s fun t =>
       t = { s with mem := s.mem.writeW (off p (1024 + 8 * (index j).val)) (s.gpr (lane j)) } := by
-  have st := hs.write (d := 1024 + 8 * (index j).val) (n := 8) (by omega)
+  have st := hs.write (d := 1024 + 8 * (index j).val) (n := 8) (by omega_using [])
   rw [← hs.reg] at st
   refine WP.block_cons_iff.mpr ⟨_, exec_store_d (by decide) (word_offset _ (index j).isLt) st,
     WP.block_nil ?_⟩
@@ -156,7 +156,7 @@ theorem stores_ok (index : Fin 16 → Fin 128) (js : List (Fin 16)) (s : State) 
     · rw [hw, List.foldl_cons, working_write]
     · exact ((Frame.refl [⟨off p 1024, 1024⟩] s.mem).writeW (by simp) _
         (Offset.contains p (d := 1024 + 8 * (index j).val) (n := 8) (e := 1024) (k := 1024)
-          (by omega) (by omega) (by omega))).trans hf
+          (by omega_using []) (by omega_using []) (by omega_using []))).trans hf
 
 /-- The sixteen words of a row or column, in their registers. -/
 def InRegs (s : State) (v : Vector Word 16) : Prop := ∀ j : Fin 16, s.gpr (lane j) = v[j]

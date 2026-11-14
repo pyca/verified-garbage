@@ -39,25 +39,25 @@ theorem loop_ok {s : State} {B : Addr} {Z w n p mi x : Nat} (L : Lay B Z w n) (h
     (Inv := fun j t => BS B Z w n p mi (Divstep.invRunS 59 p mi x (3 * n + 2 - j)) t ∧
       t.gpr .rsi = BitVec.ofNat 64 j ∧ Frm B [(slot w 16, 72 * (w + 2))] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s t)
-    (fun j t hj1 hjB ⟨bt, rt, ft, kt⟩ => ?_) (fun t ⟨bt, _, ft, kt⟩ => ⟨by simpa using bt, ft, kt⟩) (by omega)
+    (fun j t hj1 hjB ⟨bt, rt, ft, kt⟩ => ?_) (fun t ⟨bt, _, ft, kt⟩ => ⟨by simpa using bt, ft, kt⟩) (by omega_using [])
     ⟨by rw [Nat.sub_self]; exact hb, hrsi, Frm.refl _ _ _, Keep.refl _ _⟩
   obtain ⟨bd, bf1, bf, bg, ba0, ba1, bb0, bb1⟩ := Divstep.invRunS_bounds (N := 59) (by decide) (p := p) (m := mi)
-    (x := x) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hp) (by omega) hmi (Int.natCast_nonneg _)
-    (by have : p ≤ 2 * 2 ^ (64 * n) := by omega
+    (x := x) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hp) (by omega_using [hp]) hmi (Int.natCast_nonneg _)
+    (by have : p ≤ 2 * 2 ^ (64 * n) := by omega_using [hpn]
         exact_mod_cast this)
-    (by have : x ≤ 2 * 2 ^ (64 * n) := by omega
+    (by have : x ≤ 2 * 2 ^ (64 * n) := by omega_using [hx]
         exact_mod_cast this) (3 * n + 2 - j)
   have hM8 : (2 * 2 ^ (64 * n) : Int) ≤ 2 ^ (64 * n) * 2 ^ 3 := by
     have : 2 * 2 ^ (64 * n) ≤ 2 ^ (64 * n) * 2 ^ 3 := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by decide)
     exact_mod_cast this
-  refine WP.mono (batch_ok L bt rt hj1 (by omega)
+  refine WP.mono (batch_ok L bt rt hj1 (by omega_using [hn20, hjB])
     (by
-      have : 59 * (3 * n + 2 - j) ≤ 59 * (3 * 2 ^ 20 + 2) := Nat.mul_le_mul_left _ (by omega)
+      have : 59 * (3 * n + 2 - j) ≤ 59 * (3 * 2 ^ 20 + 2) := Nat.mul_le_mul_left _ (by omega_using [hn20])
       have h2 : ((59 * (3 * n + 2 - j) : Nat) : Int) ≤ 59 * (3 * 2 ^ 20 + 2) := by exact_mod_cast this
-      omega)
-    bf1 (le_trans bf hM8) (le_trans bg hM8) ⟨ba0, ba1⟩ ⟨bb0, bb1⟩ (by omega) hpn hm)
+      omega_using [hn20, bd])
+    bf1 (le_trans bf hM8) (le_trans bg hM8) ⟨ba0, ba1⟩ ⟨bb0, bb1⟩ (by omega_using [hp]) hpn hm)
     fun u ⟨bu, ru, zu, fu, ku⟩ => ⟨⟨?_, ru, ft.trans fu, (kt.trans ku).mono (by decide)⟩, zu⟩
-  rw [show 3 * n + 2 - (j - 1) = (3 * n + 2 - j) + 1 by omega]
+  rw [show 3 * n + 2 - (j - 1) = (3 * n + 2 - j) + 1 by omega_using [hj1, hjB]]
   exact bu
 
 /-- The `3 n + 2` batches of the GCD alone, from `invRunS 0` to `invRunS (3 n + 2)`'s `d`, `f` and `g`. -/
@@ -72,35 +72,35 @@ theorem loopG_ok {s : State} {B : Addr} {Z w n p mi x : Nat} (L : Lay B Z w n) (
     (Inv := fun j t => BSg B Z w n p mi (Divstep.invRunS 59 p mi x (3 * n + 2 - j)) t ∧
       t.gpr .rsi = BitVec.ofNat 64 j ∧ Frm B [(slot w 16, 72 * (w + 2))] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s t)
-    (fun j t hj1 hjB ⟨bt, rt, ft, kt⟩ => ?_) (fun t ⟨bt, _, ft, kt⟩ => ⟨by simpa using bt, ft, kt⟩) (by omega)
+    (fun j t hj1 hjB ⟨bt, rt, ft, kt⟩ => ?_) (fun t ⟨bt, _, ft, kt⟩ => ⟨by simpa using bt, ft, kt⟩) (by omega_using [])
     ⟨by rw [Nat.sub_self]; exact hb, hrsi, Frm.refl _ _ _, Keep.refl _ _⟩
   obtain ⟨bd, bf1, bf, bg, -, -, -, -⟩ := Divstep.invRunS_bounds (N := 59) (by decide) (p := p) (m := mi)
-    (x := x) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hp) (by omega) hmi (Int.natCast_nonneg _)
-    (by have : p ≤ 2 * 2 ^ (64 * n) := by omega
+    (x := x) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hp) (by omega_using [hp]) hmi (Int.natCast_nonneg _)
+    (by have : p ≤ 2 * 2 ^ (64 * n) := by omega_using [hpn]
         exact_mod_cast this)
-    (by have : x ≤ 2 * 2 ^ (64 * n) := by omega
+    (by have : x ≤ 2 * 2 ^ (64 * n) := by omega_using [hx]
         exact_mod_cast this) (3 * n + 2 - j)
   have hM8 : (2 * 2 ^ (64 * n) : Int) ≤ 2 ^ (64 * n) * 2 ^ 3 := by
     have : 2 * 2 ^ (64 * n) ≤ 2 ^ (64 * n) * 2 ^ 3 := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by decide)
     exact_mod_cast this
-  refine WP.mono (batchG_ok L bt rt hj1 (by omega)
+  refine WP.mono (batchG_ok L bt rt hj1 (by omega_using [hn20, hjB])
     (by
-      have : 59 * (3 * n + 2 - j) ≤ 59 * (3 * 2 ^ 20 + 2) := Nat.mul_le_mul_left _ (by omega)
+      have : 59 * (3 * n + 2 - j) ≤ 59 * (3 * 2 ^ 20 + 2) := Nat.mul_le_mul_left _ (by omega_using [hn20])
       have h2 : ((59 * (3 * n + 2 - j) : Nat) : Int) ≤ 59 * (3 * 2 ^ 20 + 2) := by exact_mod_cast this
-      omega)
+      omega_using [hn20, bd])
     bf1 (le_trans bf hM8) (le_trans bg hM8))
     fun u ⟨bu, ru, zu, fu, ku⟩ => ⟨⟨?_, ru, ft.trans fu, (kt.trans ku).mono (by decide)⟩, zu⟩
-  rw [show 3 * n + 2 - (j - 1) = (3 * n + 2 - j) + 1 by omega]
+  rw [show 3 * n + 2 - (j - 1) = (3 * n + 2 - j) + 1 by omega_using [hj1, hjB]]
   exact bu
 
-theorem pOf_odd (m : Nat) : pOf m % 2 = 1 := by unfold pOf; split <;> omega
+theorem pOf_odd (m : Nat) : pOf m % 2 = 1 := by unfold pOf; split <;> omega_arith
 
 theorem pOf_lt {m n : Nat} (hn : 1 ≤ n) (hm : m < 2 ^ (64 * n)) : pOf m < 2 ^ (64 * n) := by
   unfold pOf; split
   · exact hm
   · have : 2 ^ (64 * n) = 2 * 2 ^ (64 * n - 1) := by
-      rw [← Nat.pow_succ']; congr 1; omega
-    omega
+      rw [← Nat.pow_succ']; congr 1; omega_using [hn]
+    omega_arith
 
 theorem finish_eq (iV iX₂ : Nat) : finish iV iX₂ = fin1L ++ fin2L ++ fin3L iV iX₂ := rfl
 
@@ -128,9 +128,9 @@ theorem inverseN_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws 
   have hpo := pOf_odd m
   have hpn := pOf_lt hn1 hm
   generalize hp : pOf m = p at hpo hpn
-  have hp0 : 0 < p := by omega
+  have hp0 : 0 < p := by omega_using [hpo]
   have hx : (if u % 2 = 0 then p else 0) + u = Rsa.Divstep.oddInput p u := by
-    unfold Rsa.Divstep.oddInput; omega
+    unfold Rsa.Divstep.oddInput; omega_using []
   unfold inverseN
   rw [finish_eq, show start iU iM ++ [.loop batch .ne] ++ (fin1L ++ fin2L ++ fin3L iV iX₂) =
     start iU iM ++ ([.loop batch .ne] ++ (fin1L ++ (fin2L ++ fin3L iV iX₂))) by simp only [List.append_assoc],
@@ -142,39 +142,39 @@ theorem inverseN_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws 
   rw [seqs_append_iff _ _ (by simp) (by simp [fin1L])]
   have L : Lay B Z w n := ⟨hn1, hnw, h.w1, h.w2, hZ, hN⟩
   have hxlt : Rsa.Divstep.oddInput p u < 2 * 2 ^ (64 * n) := by
-    unfold Rsa.Divstep.oddInput; split <;> omega
+    unfold Rsa.Divstep.oddInput; split <;> omega_arith
   refine WP.mono (loop_ok L hn20 hpo hpn hxlt hmi hb₁ hrsi₁) fun s₂ ⟨hb₂, F₂, k₂⟩ => ?_
   have hS := Nat.le_trans (slot_lt (show 25 < 26 by decide)) hZ
   have P₂ : wv s₂.mem B (slot w aP) (n + 1) = p := by
     rw [F₂.wv_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; dsimp only; unfold aP; omega) (by unfold aP; omega), hP₁]
+      rw [List.mem_singleton.mp hr]; dsimp only; unfold aP; omega_using [e16, e25]) (by unfold aP; omega_using [hnw, hN, hS]), hP₁]
   have hmiI : ((p : Int) * (mi : Int) + 1) % 2 ^ 64 = 0 := by exact_mod_cast hmi
   set I := Divstep.invRunS 59 p mi (Rsa.Divstep.oddInput p u) (3 * n + 2) with hI
   obtain ⟨-, -, -, -, ba0, ba1, -, -⟩ := Divstep.invRunS_bounds (N := 59) (by decide) (p := p) (m := mi)
-    (x := Rsa.Divstep.oddInput p u) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hpo) (by omega) hmiI
-    (Int.natCast_nonneg _) (by have : p ≤ 2 * 2 ^ (64 * n) := by omega
+    (x := Rsa.Divstep.oddInput p u) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hpo) (by omega_using [hpo]) hmiI
+    (Int.natCast_nonneg _) (by have : p ≤ 2 * 2 ^ (64 * n) := by omega_using [hpn]
                                exact_mod_cast this)
-    (by have : Rsa.Divstep.oddInput p u ≤ 2 * 2 ^ (64 * n) := by omega
+    (by have : Rsa.Divstep.oddInput p u ≤ 2 * 2 ^ (64 * n) := by omega_using [hxlt]
         exact_mod_cast this) (3 * n + 2)
   -- The divsteps are done.
-  have h32 : 2 ^ (64 * n + 1) ≤ 2 ^ (32 * (2 * n + 1)) := Nat.pow_le_pow_right (by decide) (by omega)
+  have h32 : 2 ^ (64 * n + 1) ≤ 2 ^ (32 * (2 * n + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
   have h64 : 2 * 2 ^ (64 * n) = 2 ^ (64 * n + 1) := by rw [Nat.pow_succ]; ring
   have hdone := Rsa.Divstep.done_words (w := 2 * n + 1) (steps := 59 * (3 * n + 2)) (p := p)
-    (x := Rsa.Divstep.oddInput p u) (by omega) (by exact_mod_cast hpo) (Int.natCast_nonneg _)
+    (x := Rsa.Divstep.oddInput p u) (by omega_using []) (by exact_mod_cast hpo) (Int.natCast_nonneg _)
     (Int.natCast_nonneg _) (Or.inr (by exact_mod_cast Rsa.Divstep.oddInput_odd (x := u) hpo))
-    (by have : p ≤ 2 ^ (32 * (2 * n + 1)) := by omega
+    (by have : p ≤ 2 ^ (32 * (2 * n + 1)) := by omega_using [hpn, h32]
         exact_mod_cast this)
-    (by have : Rsa.Divstep.oddInput p u ≤ 2 ^ (32 * (2 * n + 1)) := by omega
-        exact_mod_cast this) (by omega)
+    (by have : Rsa.Divstep.oddInput p u ≤ 2 ^ (32 * (2 * n + 1)) := by omega_using [hxlt, h32]
+        exact_mod_cast this) (by omega_using [])
   rw [Int.gcd_natCast_natCast, Rsa.Divstep.oddInput_gcd] at hdone
   obtain ⟨-, hfI, hcong⟩ := Divstep.invRunS_done (N := 59) (B := 3 * n + 2) (by decide) hpo hmiI hdone
   have hfp : I.f.natAbs ≤ p := by rw [hfI]; exact Nat.gcd_le_left _ hp0
-  have hf1 : -(p : Int) ≤ I.f := by omega
-  have hf2 : I.f ≤ p := by omega
+  have hf1 : -(p : Int) ≤ I.f := by omega_using [hfp]
+  have hf2 : I.f ≤ p := by omega_using [hfp]
   -- The end.
   have F₂' : Frm B [(slot w 16, 80 * (w + 2))] s.mem s₂.mem :=
     F₁.trans (F₂.widen fun r hr => ⟨_, List.mem_singleton.mpr rfl, by
-      rw [List.mem_singleton.mp hr]; dsimp only; omega⟩)
+      rw [List.mem_singleton.mp hr]; dsimp only; omega_using []⟩)
   rw [seqs_append_iff _ _ (by simp [fin1L]) (by simp [fin2L])]
   refine WP.mono (fin1_ok h hZ F₂' hb₂ hn1 hnw P₂ hpn ⟨ba0, ba1⟩) fun s₃ ⟨h₃, r12₃, t₁, T₃, ht₁, c₃, z₃, P₃, F₃,
     Fr₃, k₃⟩ => ?_
@@ -193,7 +193,7 @@ theorem inverseN_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws 
     have e : (x₂ : Int) * u ≡ (I.f.natAbs : Int) [ZMOD p] := by
       rw [hfI]
       refine Int.ModEq.trans ?_ hcong
-      have hK : (64 - 59) * (3 * n + 2) = 15 * n + 10 := by omega
+      have hK : (64 - 59) * (3 * n + 2) = 15 * n + 10 := by omega_using []
       rw [hK]
       have := (c₄.mul_right (u : Int)).trans (Int.ModEq.refl _)
       refine this.trans ?_
@@ -228,9 +228,9 @@ theorem inverseNS_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws
   have hpo := pOf_odd m
   have hpn := pOf_lt hn1 hm
   generalize hp : pOf m = p at hpo hpn
-  have hp0 : 0 < p := by omega
+  have hp0 : 0 < p := by omega_using [hpo]
   have hx : (if u % 2 = 0 then p else 0) + u = Rsa.Divstep.oddInput p u := by
-    unfold Rsa.Divstep.oddInput; omega
+    unfold Rsa.Divstep.oddInput; omega_using []
   unfold inverseNS
   rw [finishS_eq, show start iU iM ++ [.loop batch .ne] ++ (fin1L ++ fin2SL ++ fin3L iV iX₂) =
     start iU iM ++ ([.loop batch .ne] ++ (fin1L ++ (fin2SL ++ fin3L iV iX₂))) by simp only [List.append_assoc],
@@ -242,39 +242,39 @@ theorem inverseNS_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws
   rw [seqs_append_iff _ _ (by simp) (by simp [fin1L])]
   have L : Lay B Z w n := ⟨hn1, hnw, h.w1, h.w2, hZ, hN⟩
   have hxlt : Rsa.Divstep.oddInput p u < 2 * 2 ^ (64 * n) := by
-    unfold Rsa.Divstep.oddInput; split <;> omega
+    unfold Rsa.Divstep.oddInput; split <;> omega_arith
   refine WP.mono (loop_ok L hn20 hpo hpn hxlt hmi hb₁ hrsi₁) fun s₂ ⟨hb₂, F₂, k₂⟩ => ?_
   have hS := Nat.le_trans (slot_lt (show 25 < 26 by decide)) hZ
   have P₂ : wv s₂.mem B (slot w aP) (n + 1) = p := by
     rw [F₂.wv_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; dsimp only; unfold aP; omega) (by unfold aP; omega), hP₁]
+      rw [List.mem_singleton.mp hr]; dsimp only; unfold aP; omega_using [e16, e25]) (by unfold aP; omega_using [hnw, hN, hS]), hP₁]
   have hmiI : ((p : Int) * (mi : Int) + 1) % 2 ^ 64 = 0 := by exact_mod_cast hmi
   set I := Divstep.invRunS 59 p mi (Rsa.Divstep.oddInput p u) (3 * n + 2) with hI
   obtain ⟨-, -, -, -, ba0, ba1, -, -⟩ := Divstep.invRunS_bounds (N := 59) (by decide) (p := p) (m := mi)
-    (x := Rsa.Divstep.oddInput p u) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hpo) (by omega) hmiI
-    (Int.natCast_nonneg _) (by have : p ≤ 2 * 2 ^ (64 * n) := by omega
+    (x := Rsa.Divstep.oddInput p u) (M := 2 * 2 ^ (64 * n)) (by exact_mod_cast hpo) (by omega_using [hpo]) hmiI
+    (Int.natCast_nonneg _) (by have : p ≤ 2 * 2 ^ (64 * n) := by omega_using [hpn]
                                exact_mod_cast this)
-    (by have : Rsa.Divstep.oddInput p u ≤ 2 * 2 ^ (64 * n) := by omega
+    (by have : Rsa.Divstep.oddInput p u ≤ 2 * 2 ^ (64 * n) := by omega_using [hxlt]
         exact_mod_cast this) (3 * n + 2)
   -- The divsteps are done.
-  have h32 : 2 ^ (64 * n + 1) ≤ 2 ^ (32 * (2 * n + 1)) := Nat.pow_le_pow_right (by decide) (by omega)
+  have h32 : 2 ^ (64 * n + 1) ≤ 2 ^ (32 * (2 * n + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
   have h64 : 2 * 2 ^ (64 * n) = 2 ^ (64 * n + 1) := by rw [Nat.pow_succ]; ring
   have hdone := Rsa.Divstep.done_words (w := 2 * n + 1) (steps := 59 * (3 * n + 2)) (p := p)
-    (x := Rsa.Divstep.oddInput p u) (by omega) (by exact_mod_cast hpo) (Int.natCast_nonneg _)
+    (x := Rsa.Divstep.oddInput p u) (by omega_using []) (by exact_mod_cast hpo) (Int.natCast_nonneg _)
     (Int.natCast_nonneg _) (Or.inr (by exact_mod_cast Rsa.Divstep.oddInput_odd (x := u) hpo))
-    (by have : p ≤ 2 ^ (32 * (2 * n + 1)) := by omega
+    (by have : p ≤ 2 ^ (32 * (2 * n + 1)) := by omega_using [hpn, h32]
         exact_mod_cast this)
-    (by have : Rsa.Divstep.oddInput p u ≤ 2 ^ (32 * (2 * n + 1)) := by omega
-        exact_mod_cast this) (by omega)
+    (by have : Rsa.Divstep.oddInput p u ≤ 2 ^ (32 * (2 * n + 1)) := by omega_using [hxlt, h32]
+        exact_mod_cast this) (by omega_using [])
   rw [Int.gcd_natCast_natCast, Rsa.Divstep.oddInput_gcd] at hdone
   obtain ⟨-, hfI, hcong⟩ := Divstep.invRunS_done (N := 59) (B := 3 * n + 2) (by decide) hpo hmiI hdone
   have hfp : I.f.natAbs ≤ p := by rw [hfI]; exact Nat.gcd_le_left _ hp0
-  have hf1 : -(p : Int) ≤ I.f := by omega
-  have hf2 : I.f ≤ p := by omega
+  have hf1 : -(p : Int) ≤ I.f := by omega_using [hfp]
+  have hf2 : I.f ≤ p := by omega_using [hfp]
   -- The end.
   have F₂' : Frm B [(slot w 16, 80 * (w + 2))] s.mem s₂.mem :=
     F₁.trans (F₂.widen fun r hr => ⟨_, List.mem_singleton.mpr rfl, by
-      rw [List.mem_singleton.mp hr]; dsimp only; omega⟩)
+      rw [List.mem_singleton.mp hr]; dsimp only; omega_using []⟩)
   rw [seqs_append_iff _ _ (by simp [fin1L]) (by simp [fin2SL])]
   refine WP.mono (fin1_ok h hZ F₂' hb₂ hn1 hnw P₂ hpn ⟨ba0, ba1⟩) fun s₃ ⟨h₃, r12₃, t₁, T₃, ht₁, c₃, z₃, P₃, F₃,
     Fr₃, k₃⟩ => ?_
@@ -293,7 +293,7 @@ theorem inverseNS_ok {s : State} {B : Addr} {Z w n iU iV iX₂ iM : Nat} (h : Ws
     have e : (x₂ : Int) * 2 ^ (15 * n + 10) * u ≡ (I.f.natAbs : Int) [ZMOD p] := by
       rw [hfI]
       refine Int.ModEq.trans ?_ hcong
-      have hK : (64 - 59) * (3 * n + 2) = 15 * n + 10 := by omega
+      have hK : (64 - 59) * (3 * n + 2) = 15 * n + 10 := by omega_using []
       rw [hK]
       have := ((c₄.mul_right ((2 : Int) ^ (15 * n + 10))).mul_right (u : Int)).trans (Int.ModEq.refl _)
       refine this.trans ?_
@@ -324,7 +324,7 @@ theorem inverse_ok {s : State} {B : Addr} {Z w iU iV iX₂ iM : Nat} (h : Ws s B
     fun s₂ ⟨⟨r13₂, m₂⟩, k₂⟩ => ?_
   have hm : s₂.mem = s.mem := by rw [m₂, m₁]
   have h₂ : Ws s₂ B Z w := h.congr (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) (k₁.trans k₂) (by decide)
-  refine WP.mono (inverseN_ok h₂ hZ ((k₂.gpr (by decide)).trans h9₁) r13₂ (by have := h.w1; omega) (Nat.le_refl _) hw20 hU hV hX hM hVX)
+  refine WP.mono (inverseN_ok h₂ hZ ((k₂.gpr (by decide)).trans h9₁) r13₂ (by have := h.w1; omega_using [this]) (Nat.le_refl _) hw20 hU hV hX hM hVX)
     fun t ⟨dt, ft, kt, ht⟩ => ⟨dt, by rw [← hm]; exact ft, keep_drop (r := .rdi) (((k₁.trans k₂).trans kt).mono
       (by decide)) (dt.trans h.rdi.symm), by
       rw [← hm]; exact ht⟩
@@ -349,9 +349,9 @@ theorem gcdN_ok {s : State} {B : Addr} {Z w n iU iV iM : Nat} (h : Ws s B Z w) (
   have hpo := pOf_odd m
   have hpn := pOf_lt hn1 hm
   generalize hp : pOf m = p at hpo hpn
-  have hp0 : 0 < p := by omega
+  have hp0 : 0 < p := by omega_using [hpo]
   have hx : (if u % 2 = 0 then p else 0) + u = Rsa.Divstep.oddInput p u := by
-    unfold Rsa.Divstep.oddInput; omega
+    unfold Rsa.Divstep.oddInput; omega_using []
   unfold gcdN
   rw [finishG_eq, show start iU iM ++ [.loop batchG .ne] ++ (([.block unwin] : List (Prog isa)) ++ fin3GL iV) =
     start iU iM ++ ([.loop batchG .ne] ++ (([.block unwin] : List (Prog isa)) ++ fin3GL iV)) by simp only [List.append_assoc],
@@ -363,29 +363,29 @@ theorem gcdN_ok {s : State} {B : Addr} {Z w n iU iV iM : Nat} (h : Ws s B Z w) (
   rw [seqs_append_iff _ _ (by simp) (by simp)]
   have L : Lay B Z w n := ⟨hn1, hnw, h.w1, h.w2, hZ, hN⟩
   have hxlt : Rsa.Divstep.oddInput p u < 2 * 2 ^ (64 * n) := by
-    unfold Rsa.Divstep.oddInput; split <;> omega
+    unfold Rsa.Divstep.oddInput; split <;> omega_arith
   refine WP.mono (loopG_ok L hn20 hpo hpn hxlt hmi hb₁.toG hrsi₁) fun s₂ ⟨hb₂, F₂, k₂⟩ => ?_
   have hmiI : ((p : Int) * (mi : Int) + 1) % 2 ^ 64 = 0 := by exact_mod_cast hmi
   set I := Divstep.invRunS 59 p mi (Rsa.Divstep.oddInput p u) (3 * n + 2) with hI
   -- The divsteps are done.
-  have h32 : 2 ^ (64 * n + 1) ≤ 2 ^ (32 * (2 * n + 1)) := Nat.pow_le_pow_right (by decide) (by omega)
+  have h32 : 2 ^ (64 * n + 1) ≤ 2 ^ (32 * (2 * n + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
   have h64 : 2 * 2 ^ (64 * n) = 2 ^ (64 * n + 1) := by rw [Nat.pow_succ]; ring
   have hdone := Rsa.Divstep.done_words (w := 2 * n + 1) (steps := 59 * (3 * n + 2)) (p := p)
-    (x := Rsa.Divstep.oddInput p u) (by omega) (by exact_mod_cast hpo) (Int.natCast_nonneg _)
+    (x := Rsa.Divstep.oddInput p u) (by omega_using []) (by exact_mod_cast hpo) (Int.natCast_nonneg _)
     (Int.natCast_nonneg _) (Or.inr (by exact_mod_cast Rsa.Divstep.oddInput_odd (x := u) hpo))
-    (by have : p ≤ 2 ^ (32 * (2 * n + 1)) := by omega
+    (by have : p ≤ 2 ^ (32 * (2 * n + 1)) := by omega_using [hpn, h32]
         exact_mod_cast this)
-    (by have : Rsa.Divstep.oddInput p u ≤ 2 ^ (32 * (2 * n + 1)) := by omega
-        exact_mod_cast this) (by omega)
+    (by have : Rsa.Divstep.oddInput p u ≤ 2 ^ (32 * (2 * n + 1)) := by omega_using [hxlt, h32]
+        exact_mod_cast this) (by omega_using [])
   rw [Int.gcd_natCast_natCast, Rsa.Divstep.oddInput_gcd] at hdone
   obtain ⟨-, hfI, -⟩ := Divstep.invRunS_done (N := 59) (B := 3 * n + 2) (by decide) hpo hmiI hdone
   have hfp : I.f.natAbs ≤ p := by rw [hfI]; exact Nat.gcd_le_left _ hp0
-  have hf1 : -(p : Int) ≤ I.f := by omega
-  have hf2 : I.f ≤ p := by omega
+  have hf1 : -(p : Int) ≤ I.f := by omega_using [hfp]
+  have hf2 : I.f ≤ p := by omega_using [hfp]
   -- The end.
   have F₂' : Frm B [(slot w 16, 80 * (w + 2))] s.mem s₂.mem :=
     F₁.trans (F₂.widen fun r hr => ⟨_, List.mem_singleton.mpr rfl, by
-      rw [List.mem_singleton.mp hr]; dsimp only; omega⟩)
+      rw [List.mem_singleton.mp hr]; dsimp only; omega_using []⟩)
   rw [seqs_append_iff _ _ (by simp) (by simp [fin3GL])]
   refine WP.mono (unwin_ok hb₂.rdi hb₂.r9 hb₂.r15) fun s₃ ⟨di₃, r13₃, m₃, k₃⟩ => ?_
   have h₃ : FS B Z w n s₃ := ⟨Ws.of_frm h (by rw [m₃]; exact F₂') (hb₂.scr.congr k₃.2.2) di₃, hZ,

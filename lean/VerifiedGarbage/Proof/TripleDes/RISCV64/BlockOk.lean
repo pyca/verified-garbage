@@ -34,8 +34,8 @@ theorem block_ok (k : Schedule) (d : Direction) (dp : Reg) (doff : Nat) (s : Sta
     intro p hp'
     have h := savedSlots_in p hp'
     have h8 : p.2 % 8 = 0 := (savedSlots_fits.1 p hp').1
-    have := hp.wr (p.2 / 8) (by omega)
-    rwa [show 8 * (p.2 / 8) = p.2 by omega] at this
+    have := hp.wr (p.2 / 8) (by omega_using [h])
+    rwa [show 8 * (p.2 / 8) = p.2 by omega_using [h8]] at this
   apply WP.seq
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (Spill.save_wp (b := sb) hp.al savedSlots_fits.1 hin_slot) fun s₀ hs₀ => ?_
@@ -43,8 +43,8 @@ theorem block_ok (k : Schedule) (d : Direction) (dp : Reg) (doff : Nat) (s : Sta
   refine storeConsts_wp roundConsts constOff s₀ _ (by rw [hg₀]; exact hp.al) (by decide)
     (by rw [roundConsts_length]; decide) (fun c hc => by
       rw [hs₀.wr, hg₀]
-      have := hp.wr (15 + c) (by rw [roundConsts_length] at hc; omega)
-      rwa [show 8 * (15 + c) = constOff + 8 * c by simp only [constOff]; omega] at this)
+      have := hp.wr (15 + c) (by rw [roundConsts_length] at hc; omega_using [hc])
+      rwa [show 8 * (15 + c) = constOff + 8 * c by simp only [constOff]; omega_using []] at this)
     fun s₁ hm₁ hrd₁ hwr₁ hsp₁ hg₁' => ?_
   have hg₁ : ∀ r, r ≠ .t0 → r ≠ .t1 → s₁.gpr r = s.gpr r := fun r h0 h1 =>
     (hg₁' r h0 h1).trans (hg₀ r)
@@ -68,13 +68,13 @@ theorem block_ok (k : Schedule) (d : Direction) (dp : Reg) (doff : Nat) (s : Sta
     have h := constMem_read B roundConsts s₀.mem constOff
       (by rw [roundConsts_length]; decide) c (by rw [roundConsts_length]; exact hc)
     simp only [Straight.wordAddr]
-    rw [show 8 * (15 + c) = constOff + 8 * c by simp only [constOff]; omega]
+    rw [show 8 * (15 + c) = constOff + 8 * c by simp only [constOff]; omega_using []]
     exact h
   have hdata₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr dp + BitVec.ofNat 64 doff) 8 := by
     rw [hrd₁, hwr₁, hs₀.rd, hs₀.wr, hg₁ dp hdpT.1 hdpT.2]
     obtain ⟨r, hr, hc⟩ := hp.data
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  refine WP.mono (blockLoad_ok dp doff hp.dpKept (by have := hp.doffLt; omega) s₁ hdata₁)
+  refine WP.mono (blockLoad_ok dp doff hp.dpKept (by have := hp.doffLt; omega_using [this]) s₁ hdata₁)
     fun t₁ ⟨hw₁, hmt₁, hrdt₁, hwrt₁, hspt₁, hk₁⟩ => ?_
   have hBt₁ : t₁.gpr sb = B := (hk₁ sb (by decide)).trans hB₁
   have hblock₁ : Spec.TripleDes.blockAt s₁.mem (s₁.gpr dp + BitVec.ofNat 64 doff) =

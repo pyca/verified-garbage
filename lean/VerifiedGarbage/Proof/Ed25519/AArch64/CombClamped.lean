@@ -46,14 +46,14 @@ theorem constSel_ok {s : State} {base : Addr} (hs : Scr s base) (c : Slot) (v : 
   have kux : Keeps clob s x := (ku.mono (by decide)).trans ((kw.mono (by decide)).trans (kx.mono (by decide)))
   refine ⟨Op.of_store (slot_range c) kux _ _ _ _, ?_, ?_⟩
   · simp only [F]
-    rw [fe_st4 _ _ (by simp only [offset]; omega), x4, x5, x6, x7]
+    rw [fe_st4 _ _ (by simp only [offset]; omega_using []), x4, x5, x6, x7]
     cases sg
     · simp only [Bool.false_eq_true, ↓reduceIte]
       rw [w12, w13, w14, w15, ku.mem]
     · simp only [↓reduceIte]
       rw [kw.gpr _ (by decide), kw.gpr _ (by decide), kw.gpr _ (by decide), kw.gpr _ (by decide), eu,
         VG.Proof.X25519.toFe_self]
-  · rw [fe_st4 _ _ (by simp only [offset]; omega), x4, x5, x6, x7]
+  · rw [fe_st4 _ _ (by simp only [offset]; omega_using []), x4, x5, x6, x7]
     cases sg
     · simp only [Bool.false_eq_true, ↓reduceIte]
       rw [w12, w13, w14, w15, ku.mem]
@@ -72,12 +72,12 @@ theorem clampMask_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat} (hb2 
     WP isa (.block clampMask) s fun t => t.gpr .x1 = mask (decide (b = 0)) ∧ Keeps [.x1, .x2] s t := by
   have _hcap : workSize true = 8192 := rfl
   have hr : InRegions (s.rd ++ s.wr) (off base 771) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by omega_using [_hcap]) (by omega_using [])⟩
   have e : s.gpr .x0 + BitVec.ofNat 64 771 = off base 771 := by rw [hs.x0]
   apply WP.of_runBlock
   simp only [clampMask, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     State.load, addr, Size.bits, RegUpd.gpr_write, BitVec.setWidth_eq, Nat.mod_one,
-    show 771 < 4096 * 1 by omega, show (1 : Nat) < 4096 from by decide, Nat.reduceMul, and_self, e, hr,
+    show 771 < 4096 * 1 by omega_using [], show (1 : Nat) < 4096 from by decide, Nat.reduceMul, and_self, e, hr,
     read_byte, hm, byte_ext b hb2, bit_mask b hb2,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
@@ -141,7 +141,7 @@ theorem combInitClamped_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat}
   have t2 : env t.mem base 2 = combStart.Z :=
     (et 2 (by decide) (by decide) (by decide)).trans (congrArg Spec.Ed25519.Point.Z ap)
   have lt : ∀ v : Spec.X25519.Fe, v.val < VG.Proof.X25519.AArch64.AltLadder.P2 := fun v => by
-    have := v.isLt; simp only [Spec.X25519.P, VG.Proof.X25519.AArch64.AltLadder.P2] at this ⊢; omega
+    have := v.isLt; simp only [Spec.X25519.P, VG.Proof.X25519.AArch64.AltLadder.P2] at this ⊢; omega_using []
   have fc : ∀ i : Slot, fe c.mem base (offset i) = fe a.mem base (offset i) := fun i => by rw [kc.mem]
   have sel : ∀ (sg : Bool) (v : Spec.X25519.Fe) (x : Nat), x < VG.Proof.X25519.AArch64.AltLadder.P2 →
       (if sg then v.val else x) < VG.Proof.X25519.AArch64.AltLadder.P2 := fun sg v x hx => by
@@ -152,18 +152,18 @@ theorem combInitClamped_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat}
     have hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 :=
       (by decide : ∀ i : Slot, i.val < 4 → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) i hi
     rcases hc with rfl | rfl | rfl | rfl
-    · rw [ot.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega),
-        oe.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega), fd, fc]
+    · rw [ot.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []),
+        oe.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []), fd, fc]
       exact sel _ _ _ (ab 0 (by decide))
-    · rw [ot.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega), fe1,
-        od.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega), fc]
+    · rw [ot.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []), fe1,
+        od.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []), fc]
       exact sel _ _ _ (ab 1 (by decide))
-    · rw [ot.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega),
-        oe.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega),
-        od.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega), fc]
+    · rw [ot.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []),
+        oe.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []),
+        od.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []), fc]
       exact ab 2 (by decide)
-    · rw [ft, oe.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega),
-        od.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega), fc]
+    · rw [ft, oe.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []),
+        od.mem.fe (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []), fc]
       exact sel _ _ _ (ab 3 (by decide))
   refine ⟨ka.trans (kac.trans ((CombKeep.of_keep kd).trans ((CombKeep.of_keep ke).trans
     (CombKeep.of_keep kt)))), (et 21 (by decide) (by decide) (by decide)).trans az, ?_, bel⟩
@@ -184,14 +184,14 @@ theorem combMultiplyClamped_ok {s : State} {base T : Addr} (hs : Scr s base) (ht
     (hb 3 (by decide))) fun a ⟨ka, az, ap, ab⟩ sya => ?_)
   have hsa := ka.scr hs
   have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr])
-    (fun x hx => ka.mem x (Or.inr (by omega)))
+    (fun x hx => ka.mem x (Or.inr (by omega_using [hx])))
   have hn0 : nib S 0 = 8 * ((S / 2 ^ 3) % 2) := by
     have h0 := hc 0 (by decide)
     have h1 := hc 1 (by decide)
     have h2 := hc 2 (by decide)
     rw [nib_bits]
     simp only [Nat.mul_zero, Nat.zero_add] at h0 h1 h2 ⊢
-    omega
+    omega_using [h0, h1, h2]
   have hd : digitSum64 S 1 = (nib S 0 : ℤ) - 8 := by simp [digitSum64, sdig]
   have h8 : 8 ≤ 17 * combGVal := by decide
   have hv : Rep (point (env a.mem base) 0 1 2 3) ((((17 * combGVal : Nat) : ℤ) + digitSum64 S 1) • baseAff) := by
@@ -202,7 +202,7 @@ theorem combMultiplyClamped_ok {s : State} {base T : Addr} (hs : Scr s base) (ht
         ((17 * combGVal - 8 : Nat) : ℤ) by push_cast [Nat.cast_sub h8]; ring, natCast_zsmul]
       exact combStart8_ok
     · rename_i h
-      rw [show (S / 2 ^ 3) % 2 = 1 by omega, show ((17 * combGVal : Nat) : ℤ) + (((8 * 1 : Nat) : ℤ) - 8) =
+      rw [show (S / 2 ^ 3) % 2 = 1 by omega_using [h], show ((17 * combGVal : Nat) : ℤ) + (((8 * 1 : Nat) : ℤ) - 8) =
         ((17 * combGVal : Nat) : ℤ) by push_cast; ring, natCast_zsmul]
       exact combStart_ok
   refine WP.mono (combLoopFrom_ok hsa hta (by rw [sya]; exact hT) (by decide) az

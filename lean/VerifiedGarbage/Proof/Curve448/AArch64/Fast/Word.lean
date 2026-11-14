@@ -26,7 +26,7 @@ abbrev M : Nat := 2 ^ 128
 theorem pair_lt (lo hi : BitVec 64) : pair lo hi < M := by
   have := lo.isLt; have := hi.isLt
   simp only [pair, M]
-  omega
+  omega_using []
 
 theorem addPair_mod (lo hi a b : BitVec 64) :
     pair (addCarry lo a false) (addCarry hi b (carryOut lo a false)) = (pair lo hi + pair a b) % M := by
@@ -36,7 +36,7 @@ theorem addPair_mod (lo hi a b : BitVec 64) :
   have hc := Bool.toNat_le (carryOut hi b (carryOut lo a false))
   simp only [Bool.toNat_false, Nat.add_zero] at e0
   simp only [pair, M] at h ⊢
-  omega
+  omega_using [e0, e1]
 
 theorem subPair_mod (lo hi a b : BitVec 64) :
     pair (addCarry lo (~~~a) true) (addCarry hi (~~~b) (carryOut lo (~~~a) true)) =
@@ -48,12 +48,12 @@ theorem subPair_mod (lo hi a b : BitVec 64) :
   have ha := a.isLt; have hb := b.isLt
   simp only [BitVec.toNat_not, Bool.toNat_true] at e0 e1
   simp only [pair, M] at h ⊢
-  omega
+  omega_using [e0, e1]
 
 theorem mulPair (a b : BitVec 64) : pair (a * b) (mulHi a b) = a.toNat * b.toNat := by
   have := mul_lo_hi a b
   simp only [pair]
-  omega
+  omega_using [this]
 
 /-- An accumulator holds its true value once that is known to fit. -/
 theorem exact_of_emod {x : Nat} {e : Int} (h : (x : Int) = e % M) {v : Nat} (hv : e = v)

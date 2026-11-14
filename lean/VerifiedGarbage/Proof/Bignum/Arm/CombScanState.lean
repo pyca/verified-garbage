@@ -47,7 +47,7 @@ theorem header_of_writes (m : Mem) (base : BitVec 32) (a b : BitVec 32) :
 theorem header_of_outside {base : BitVec 32} {w : Nat} {m m' : Mem}
     (outside : Outside (State.addr base) (arrAt w 1) (8*w) m m') : HeaderKeeps base m m' := by
   intro d hd _ _
-  exact outside_read32 outside (Or.inl (by simp only [arrAt,Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)
+  exact outside_read32 outside (Or.inl (by simp only [arrAt,Proof.Rsa.Mont.hdrBytes]; omega_using [hd])) (by omega_using [hd])
 
 theorem arrays_of_outside {base : BitVec 32} {len w : Nat} {m m' : Mem}
     (fits : arrAt w 8≤8*len) (nowrap : base.toNat+8*len≤2^32)
@@ -56,13 +56,13 @@ theorem arrays_of_outside {base : BitVec 32} {len w : Nat} {m m' : Mem}
   have endQ := array_end_le (w:=w) hq
   have separate := array_sep (w:=w) ne
   rw [numAt_native,numAt_native]
-  exact outside.val32 (by omega) (by omega)
+  exact outside.val32 (by omega_using [separate]) (by omega_using [fits, nowrap, endQ])
 
 theorem arrays_of_ctl {base : BitVec 32} {len w : Nat} {m m' : Mem}
     (fits : arrAt w 8≤8*len) (nowrap : base.toNat+8*len≤2^32)
     (ctl : CtlOnly base m m') : ArrayKeeps base w m m' := by
   intro q hq _
-  exact ctl_num (len:=len) ctl (Nat.le_trans (arrAt_le (by omega)) fits) nowrap
+  exact ctl_num (len:=len) ctl (Nat.le_trans (arrAt_le (by omega_using [hq])) fits) nowrap
 
 theorem table_after_frame {base table : BitVec 32} {len w M g N : Nat} {s t : State} {rs : List Reg}
     (h : CombTable table w M g N s)
@@ -76,11 +76,11 @@ theorem table_after_frame {base table : BitVec 32} {len w M g N : Nat} {s t : St
     apply val32_congr
     intro j hj
     have efit : 8*w*digit+8*w≤32*(8*w) := by
-      have bound := Nat.mul_le_mul_left (8*w) (show digit+1≤32 by omega)
+      have bound := Nat.mul_le_mul_left (8*w) (show digit+1≤32 by omega_using [hd])
       simpa only [Nat.mul_add,Nat.mul_one,Nat.mul_comm (8*w) 32] using bound
     apply congrArg BitVec.toNat
     exact frame.readW (r:=⟨State.addr table,32*(8*w)⟩)
-      (Offset.contains_base _ (by omega) (by have := h.fits; omega))
+      (Offset.contains_base _ (by omega_using [hj, efit]) (by have := h.fits; omega_using [hj, efit, this]))
       (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact separate) (by decide)
 
 structure Inv (base tablePtr : BitVec 32) (len w M g N d j : Nat) (s : State) : Prop where

@@ -551,7 +551,7 @@ theorem ctr32Wide_wp (hbw : c.bw = 4) (hlg : lg ≤ 15) (hG : 2 ^ lg ≤ c.G) (h
     simp [xs0, blocks0, Mode.ctr32Early, Mode.ctrEarlyWith, hbw]
   have es : Mode.ctr32Early.step = 4 * c.bw := by simp [Mode.ctr32Early, Mode.ctrEarlyWith, hbw]
   refine WP.mono (seq2_changes_wp cs hp (ctrEarlyWide_loops cs hbw incOp_ctr32 (fun _ _ _ => rfl) inc32B_length
-    (fun len h => ⟨by simp [Op.width, Mode.ctr32Inc]; omega, by simp [Op.width, Mode.ctr32Inc]; omega,
+    (fun len h => ⟨by simp [Op.width, Mode.ctr32Inc]; omega_using [h], by simp [Op.width, Mode.ctr32Inc]; omega_using [h],
       fun _ _ h => by cases h⟩) hlg hG hstle) hk)
     fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, ?_, ?_, h4⟩
   · rw [← es, h2, e, ← ctr32F_eq]; exact g1
@@ -634,7 +634,7 @@ theorem ctr32Seq_wp (hbw : c.bw = 4) (hp : SeqPre c Mode.ctr32Early s₀)
     simp [xs0, blocks0, Mode.ctr32Early, Mode.ctrEarlyWith, hbw]
   have es : Mode.ctr32Early.step = 4 * c.bw := by simp [Mode.ctr32Early, Mode.ctrEarlyWith, hbw]
   refine WP.mono (seqWith_changes_wp cs hp (ctrEarly_loops cs hbw incOp_ctr32 inc32B_length
-    (fun len h => ⟨by simp [Op.width, Mode.ctr32Inc]; omega, by simp [Op.width, Mode.ctr32Inc]; omega,
+    (fun len h => ⟨by simp [Op.width, Mode.ctr32Inc]; omega_using [h], by simp [Op.width, Mode.ctr32Inc]; omega_using [h],
       fun _ _ h => by cases h⟩)) hk)
     fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, ?_, ?_, h4⟩
   · rw [← es, h2, e, ← ctr32F_eq]; exact g1

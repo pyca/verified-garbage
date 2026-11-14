@@ -41,13 +41,13 @@ theorem lenCheck_vp {E : State → Prop} :
       · rw [h₁.2.2, h₂.2.2]
     have pre := h.pre
     have hr : P.rl < 2 ^ 32 := pre.rlt
-    have hl : P.L < 2 ^ 32 := by have := pre.k2; omega
+    have hl : P.L < 2 ^ 32 := by have := pre.k2; omega_using [this]
     refine carry_ok fun s1 r1' m1 v1 => wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil
       ⟨⟨e, (h.of_rest r1' m1).of_rest (f.rest []) f.mem⟩, ?_⟩
     rw [z, v1, r1, r2, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr, Nat.mod_eq_of_lt hl]
     by_cases hc : P.L ≤ P.rl
     · simp [hc]
-    · simp [hc]; omega
+    · simp [hc]; omega_using [hc]
 
 end
 

@@ -29,7 +29,7 @@ theorem and15 (x : BitVec 64) : x &&& BitVec.ofInt 64 15 = BitVec.ofNat 64 (x.to
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (BitVec.ofInt 64 15).toNat = 2 ^ 4 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := x.toNat % 16) (by omega)]
+    Nat.mod_eq_of_lt (a := x.toNat % 16) (by omega_using [])]
 
 /-- The buffer. -/
 abbrev bfR (st : Addr) : Region := ⟨off st 56, 16⟩
@@ -63,10 +63,10 @@ theorem bytesAt_after {m m' : Mem} {base : Addr} {k n : Nat} (hkn : k + n ≤ 16
     bytesAt m' base (k + n) = bytesAt m base k ++ (List.range n).map src := by
   rw [Poly1305.bytesAt_add]
   congr 1
-  · refine Poly1305.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  · refine Poly1305.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hkn])
     simp only [List.mem_singleton] at hr
     subst hr
-    exact Offset.base_disjoint base (by omega) (by omega)
+    exact Offset.base_disjoint base (by omega_using []) (by omega_using [hkn])
   · simp only [bytesAt]
     exact List.map_congr_left fun i hi => hc i (List.mem_range.mp hi)
 

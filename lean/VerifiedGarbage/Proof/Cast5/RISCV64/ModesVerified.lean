@@ -183,7 +183,7 @@ theorem seqPre_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :
     by simp only [Proof.Modes.RISCV64.P, h₁.a1]; exact fV, by rw [eD, hwr₁]; simp,
     by simp only [Proof.Modes.RISCV64.Dp, Proof.Modes.RISCV64.N, h₁.a2, h₁.a3, hstep]; exact fD,
     by rw [eD, eS]; exact dSD.symm, by rw [eV, eS]; exact dSV.symm, fun _ => by rw [eV, eD]; exact dVD,
-    ⟨by omega, by rw [hstep]; rfl⟩, layout up n⟩
+    ⟨by omega_using [hstep], by rw [hstep]; rfl⟩, layout up n⟩
 
 /-- `modePC`'s precondition gives the key's arguments. -/
 theorem keyArgs_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :

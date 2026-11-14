@@ -58,7 +58,7 @@ abbrev RejT (σ : State) (t : Nat) : Prop :=
 end
 
 theorem aVal_ij {p : Params} {σ : State} {i j : Nat} (hj : j < p.ℓ) : aVal p σ (p.ℓ * i + j) = Am p σ i j := by
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_using [hj]
   have e1 : (p.ℓ * i + j) / p.ℓ = i := by
     rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
   have e2 : (p.ℓ * i + j) % p.ℓ = j := by
@@ -131,7 +131,7 @@ theorem add_one_ne (a : Addr) : a ≠ a + 1 := by
   rw [BitVec.toNat_add] at this
   have e1 : (1 : BitVec 64).toNat = 1 := rfl
   rw [e1] at this
-  omega
+  omega_using [this]
 
 theorem bytes2_write (m : Mem) (a : Addr) (v w : Byte) :
     bytesAt ((m.writeW a v).writeW (a + 1) w) a 2 = [v, w] := by
@@ -152,15 +152,15 @@ theorem setKap_okB {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay 
   have e65 : pa s (sc (o + 1)) = pa s (sc o) + 1 := (pa_sc_add s o 1).symm
   have w2 := L.iW h2
   have c0 : (⟨pa s (sc o), 2⟩ : Region).Contains (pa s (sc o)) 1 := by
-    have := contains_offset' (base := pa s (sc o)) (off := 0) (len := 1) (n := 2) (by omega) (by decide)
+    have := contains_offset' (base := pa s (sc o)) (off := 0) (len := 1) (n := 2) (by omega_using []) (by decide)
     rwa [BitVec.add_zero] at this
   have c1 : (⟨pa s (sc o), 2⟩ : Region).Contains (pa s (sc (o + 1))) 1 := by
-    rw [e65]; exact contains_offset' (off := 1) (by omega) (by decide)
+    rw [e65]; exact contains_offset' (off := 1) (by omega_using []) (by decide)
   have i0 : InRegions s.wr (pa s (sc o)) 1 := by
-    have := inRegions_sub (off := 0) (l := 1) w2 (by omega) (by decide)
+    have := inRegions_sub (off := 0) (l := 1) w2 (by omega_using []) (by decide)
     rwa [BitVec.add_zero] at this
   have i1 : InRegions s.wr (pa s (sc (o + 1))) 1 := by
-    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega) (by decide)
+    rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega_using []) (by decide)
   refine WP.mono (setKap_ok o r hr s (L.iR h1) i0 i1) fun s' ⟨hm, k⟩ => ?_
   have hf : Frame [⟨pa s (sc o), 2⟩] s.mem s'.mem := by
     rw [hm]
@@ -214,7 +214,7 @@ theorem maskR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
   have ht := h.l.t_lt
   unfold maskR
   have hx' : p.ℓ * t + r < 2 ^ 16 := by
-    have := Nat.mul_le_mul_left p.ℓ (show t ≤ 813 by omega); omega
+    have := Nat.mul_le_mul_left p.ℓ (show t ≤ 813 by omega_using [ht]); omega_using [hx, this]
   refine WP.seq (WP.mono (setKappa_okB h.l.st.lay hr hx' k1 w1 h.l.kap) fun s1 ⟨hP1, _, hb1⟩ => ?_)
   have I1 := h.step hP1 c1
   have hms : bytesAt s1.mem (pa s1 (sc oMS)) 66 = rppOf p σ ++ integerToBytes (p.ℓ * t + r) 2 := by
@@ -231,7 +231,7 @@ theorem maskR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
   have hyh3 : Pl s3 (yhBase p + r) (Yv p σ (p.ℓ * t) r) := by
     show PolyIs _ _ _
     rw [hP3.pa (pS_bases _)]
-    exact polyIs_of_bytes hb3 (hy2 r (by omega))
+    exact polyIs_of_bytes hb3 (hy2 r (by omega_using []))
   refine WP.mono (ipAt_ok (t := ntt) hP.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
   have I4 := I3.step hP4 c4
   refine ⟨I4.l, Fam.keep I3.l.st.lay hP4 f4 (Fam.keep I2.l.st.lay hP3 f3 hy2), Fam.snoc I4.yh ?_⟩
@@ -305,14 +305,14 @@ theorem ms4_ok {p : Params} {D : Nat} {σ : State} {t g k : Nat} (hc : ms4Chk p 
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨cc, c1⟩, c2⟩, k1⟩, w2⟩, k12⟩, kd⟩, hx⟩, hr⟩ := hc
   have ht := h.m.l.t_lt
   have hx' : p.ℓ * t + (4 * g + k) < 2 ^ 16 := by
-    have := Nat.mul_le_mul_left p.ℓ (show t ≤ 813 by omega); omega
+    have := Nat.mul_le_mul_left p.ℓ (show t ≤ 813 by omega_using [ht]); omega_using [hx, this]
   unfold cpM4
   refine WP.seq (WP.mono (copy_okB h.m.l.st.lay cc) fun s1 ⟨hP1, _, hb1⟩ => ?_)
   have I1 := h.m.step hP1 c1
   refine WP.mono (setKap_okB I1.l.st.lay hr hx' k1 w2 I1.l.kap) fun s2 ⟨hP2, _, hb2⟩ => ?_
   have I2 := I1.step hP2 c2
   refine ⟨I2, fun j hj => ?_⟩
-  rcases (by omega : j < k ∨ j = k) with hj' | rfl
+  rcases (by omega_using [hj] : j < k ∨ j = k) with hj' | rfl
   · have kk := List.all_eq_true.mp kd j (List.mem_range.mpr hj')
     simp only [Bool.and_eq_true] at kk
     rw [I1.l.st.lay.keepBytes hP2 kk.2, h.m.l.st.lay.keepBytes hP1 kk.1]
@@ -333,8 +333,8 @@ theorem m4Chk_spec {p : Params} {g : Nat} (hc : m4Chk p g = true) :
   simp only [m4Chk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨hcp, cm⟩, c2⟩, hyh⟩, hγ⟩ := hc
   refine ⟨hcp, cm, c2, fun r h1 h2 => ?_, hγ⟩
-  have := hyh (r - 4 * g) (by omega)
-  rwa [show 4 * g + (r - 4 * g) = r by omega] at this
+  have := hyh (r - 4 * g) (by omega_using [h2])
+  rwa [show 4 * g + (r - 4 * g) = r by omega_using [h1]] at this
 
 /-- The call of `vg_mldsa_expand_mask_poly4`, from the four seeds of `MS4`. -/
 theorem m4call_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {t g : Nat}
@@ -344,9 +344,9 @@ theorem m4call_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : St
   refine WP.mono (mask4Call_ok hP h.m.l.st.lay hγ cm) fun s2 ⟨hP2, _, hq2⟩ => ?_
   have I2 := h.m.step hP2 c2
   refine ⟨I2.l, fun j hj => ?_, I2.yh⟩
-  rcases (by omega : j < 4 * g ∨ 4 * g ≤ j) with hj' | hj'
+  rcases (by omega_using [] : j < 4 * g ∨ 4 * g ≤ j) with hj' | hj'
   · exact I2.y j hj'
-  · obtain ⟨k, hk, rfl⟩ : ∃ k, k < 4 ∧ j = 4 * g + k := ⟨j - 4 * g, by omega, by omega⟩
+  · obtain ⟨k, hk, rfl⟩ : ∃ k, k < 4 ∧ j = 4 * g + k := ⟨j - 4 * g, by omega_using [hj], by omega_using [hj']⟩
     have hq := hq2 k hk
     rw [seed66, pa_sc_add, h.sd k hk] at hq
     show PolyIs s2.mem (pa s2 (pS (yBase p + (4 * g + k)))) _
@@ -359,12 +359,12 @@ theorem mask4_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
   obtain ⟨hcp, cm, c2, hyh, hγ⟩ := m4Chk_spec hc
   unfold mask4
   refine WP.seq (WP.mono (seqR_ok (I := fun k => SD p D σ t g k) 4 0
-    (fun k _ hk s hs => ms4_ok (hcp k (by omega)) hs) s ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
+    (fun k _ hk s hs => ms4_ok (hcp k (by omega_using [hk])) hs) s ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s1 hs1 => ?_)
   rw [Nat.zero_add] at hs1
   refine WP.seq (WP.mono (m4call_ok hP hγ cm c2 hs1) fun s2 hs2 => ?_)
   exact WP.mono (seqR_ok (I := fun r => ICy p D σ t (4 * g + 4) r) 4 (4 * g)
-    (fun r h1 hr s hs => yhR_ok hP (hyh r h1 hr) (by omega) hs) s2 hs2)
+    (fun r h1 hr s hs => yhR_ok hP (hyh r h1 hr) (by omega_using [hr]) hs) s2 hs2)
     fun s3 hs3 => ⟨hs3.l, hs3.y, hs3.yh⟩
 
 /-! ## The last three polynomials of `y`, four at a time -/
@@ -409,8 +409,8 @@ theorem tailR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
     refine Fam.snoc I1.y ?_
     show PolyIs s1.mem (pa s1 (pS (yBase p + r))) _
     rw [hP1.pa (pS_bases _)]
-    have := h.tmp (r - 4 * (p.ℓ / 4)) (by omega) (by omega)
-    rw [show 4 * (p.ℓ / 4) + (r - 4 * (p.ℓ / 4)) = r by omega] at this
+    have := h.tmp (r - 4 * (p.ℓ / 4)) (by omega_using [h2]) (by omega_using [])
+    rw [show 4 * (p.ℓ / 4) + (r - 4 * (p.ℓ / 4)) = r by omega_using [h1]] at this
     exact polyIs_of_bytes hb1 this
   refine WP.seq (WP.mono (copy_okB I1.l.st.lay cc) fun s3 ⟨hP3, _, hb3⟩ => ?_)
   have I3 := I1.step hP3 c3
@@ -418,11 +418,11 @@ theorem tailR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
   have hyh3 : Pl s3 (yhBase p + r) (Yv p σ (p.ℓ * t) r) := by
     show PolyIs _ _ _
     rw [hP3.pa (pS_bases _)]
-    exact polyIs_of_bytes hb3 (hy1 r (by omega))
+    exact polyIs_of_bytes hb3 (hy1 r (by omega_using []))
   refine WP.mono (ipAt_ok (t := ntt) hP.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
   have I4 := I3.step hP4 c4
   refine ⟨⟨I4.l, Fam.keep I3.l.st.lay hP4 f4 (Fam.keep I1.l.st.lay hP3 f3 hy1), Fam.snoc I4.yh ?_⟩,
-    fun k hk hr => tmp_keep I3.l.st.lay hP4 k4 T3 k hk (by omega)⟩
+    fun k hk hr => tmp_keep I3.l.st.lay hP4 k4 T3 k hk (by omega_using [hr])⟩
   show PolyIs _ _ _
   rw [hP4.pa (pS_bases _), hyh3.2] at *
   exact hq4
@@ -441,8 +441,8 @@ theorem maskTailCall_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {�
   obtain ⟨⟨⟨⟨_, cm⟩, c2⟩, _⟩, hγ⟩ := hc
   refine WP.mono (mask4Call_ok hP h.m.l.st.lay hγ cm) fun s2 ⟨hP2, _, hq2⟩ => ?_
   refine ⟨h.m.step hP2 c2, fun k hk _ => ?_⟩
-  have hq := hq2 k (by omega)
-  rw [seed66, pa_sc_add, h.sd k (by omega)] at hq
+  have hq := hq2 k (by omega_using [hk])
+  rw [seed66, pa_sc_add, h.sd k (by omega_using [hk])] at hq
   show PolyIs s2.mem (pa s2 (pS (1 + k))) _
   rw [hP2.pa (pS_bases _), ← pa_poly4]
   exact hq
@@ -455,16 +455,16 @@ theorem maskTail_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : 
   obtain ⟨⟨⟨⟨hcp, _⟩, _⟩, ht⟩, _⟩ := hc
   unfold maskTail
   refine WP.seq (WP.mono (seqR_ok (I := fun k => SD p D σ t (p.ℓ / 4) k) 4 0
-    (fun k _ hk s hs => ms4_ok (hcp k (by omega)) hs) s ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
+    (fun k _ hk s hs => ms4_ok (hcp k (by omega_using [hk])) hs) s ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s1 hs1 => ?_)
   rw [Nat.zero_add] at hs1
   refine WP.seq (WP.mono (maskTailCall_ok hP hc' hs1) fun s2 T2 => ?_)
   have htr : ∀ r, 4 * (p.ℓ / 4) ≤ r → r < 4 * (p.ℓ / 4) + 3 → tChk p r = true := fun r h1 h2 => by
-    have := ht (r - 4 * (p.ℓ / 4)) (by omega)
-    rwa [show 4 * (p.ℓ / 4) + (r - 4 * (p.ℓ / 4)) = r by omega] at this
+    have := ht (r - 4 * (p.ℓ / 4)) (by omega_using [h2])
+    rwa [show 4 * (p.ℓ / 4) + (r - 4 * (p.ℓ / 4)) = r by omega_using [h1]] at this
   refine WP.mono (seqR_ok (I := fun r => ICT p D σ t r) 3 (4 * (p.ℓ / 4))
     (fun r h1 hr s hs => tailR_ok hP (htr r h1 hr) h1 hr hs) s2 T2) fun s3 hs3 => ?_
-  rw [show 4 * (p.ℓ / 4) + 3 = p.ℓ by omega] at hs3
+  rw [show 4 * (p.ℓ / 4) + 3 = p.ℓ by omega_using [hl]] at hs3
   exact hs3.m
 
 /-- What the polynomials of `y` after the groups of four need of the layout. -/
@@ -478,7 +478,7 @@ theorem maskRest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : 
   cases e : p.ℓ % 4 == 3
   · rw [Bool.cond_false]
     refine WP.mono (seqR_ok (I := fun r => ICm p D σ t r) (p.ℓ % 4) (4 * (p.ℓ / 4))
-      (fun r _ hr s hs => maskR_ok hP (hm r (by omega)) hs) s h) fun s1 hs1 => ?_
+      (fun r _ hr s hs => maskR_ok hP (hm r (by omega_using [hr])) hs) s h) fun s1 hs1 => ?_
     rwa [Nat.div_add_mod] at hs1
   · rw [Bool.cond_true]
     rw [e, Bool.cond_true] at hc
@@ -507,10 +507,10 @@ theorem aP_ij (p : Params) (i j : Nat) : aP p i j = pS (aBase p + (p.ℓ * i + j
   rw [Nat.add_assoc (5 + 4 * p.k + 3 * p.ℓ)]
 
 theorem famP_aP (p : Params) (i j : Nat) : famP (aP p i 0) j = aP p i j := by
-  simp only [famP, aP, pS, sc, oP, Prod.mk.injEq, true_and]; omega
+  simp only [famP, aP, pS, sc, oP, Prod.mk.injEq, true_and]; omega_using []
 
 theorem famP_yhP (p : Params) (j : Nat) : famP (yhP p 0) j = yhP p j := by
-  simp only [famP, yhP, pS, sc, oP, Prod.mk.injEq, true_and]; omega
+  simp only [famP, yhP, pS, sc, oP, Prod.mk.injEq, true_and]; omega_using []
 
 /-- What `w[i]` needs of the layout. -/
 def wChk (p : Params) (i : Nat) : Bool :=
@@ -523,7 +523,7 @@ theorem rowA {p : Params} {D : Nat} {σ : State} {t i : Nat} (hi : i < p.k) {s :
     {j : Nat} (hj : j < p.ℓ) : PolyIs s.mem (pa s (aP p i j)) (Am p σ i j) := by
   have := I.l.k.d.im.A (p.ℓ * i + j) (by
     have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
-    rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega)
+    rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega_using [hj, this])
   rw [aVal_ij hj] at this
   rw [aP_ij]; exact this
 
@@ -614,16 +614,16 @@ theorem commit_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : cC
   obtain ⟨⟨⟨⟨⟨⟨hm4, hm⟩, hrest⟩, hw⟩, hh⟩, hs⟩, hk⟩ := hc
   unfold commit
   refine WP.seq (WP.mono (seqR_ok (I := fun g => ICm p D σ t (4 * g)) (p.ℓ / 4) 0
-    (fun g _ hg s hs => mask4_ok hP (hm4 g (by omega)) hs) s
+    (fun g _ hg s hs => mask4_ok hP (hm4 g (by omega_using [hg])) hs) s
     ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s0 hs0 => ?_)
   rw [Nat.zero_add] at hs0
   refine WP.seq (WP.mono (maskRest_ok hP hrest hm hs0) fun s1 hs1 => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ICw p D σ t i) p.k 0
-    (fun i _ hi s hs => rowW_ok hP (hw i (by omega)) (by omega) hs) s1
+    (fun i _ hi s hs => rowW_ok hP (hw i (by omega_using [hi])) (by omega_using [hi]) hs) s1
     ⟨hs1.l, hs1.y, hs1.yh, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s2 hs2 => ?_)
   rw [Nat.zero_add] at hs2
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ICh p D σ t i) p.k 0
-    (fun i _ hi s hs => w1R_ok hP (hh i (by omega)) (by omega) hs) s2
+    (fun i _ hi s hs => w1R_ok hP (hh i (by omega_using [hi])) (by omega_using [hi]) hs) s2
     ⟨hs2, by simp [w1Enc]; rfl⟩) fun s3 hs3 => ?_)
   rw [Nat.zero_add] at hs3
   refine WP.mono (shake_ok (sgB_bases p) hP.hD hs hs3.c.l.st.lay) fun s4 ⟨hP4, _, hb⟩ =>

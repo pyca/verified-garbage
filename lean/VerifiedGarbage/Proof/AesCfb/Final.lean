@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.PostMono
 public import VerifiedGarbage.Proof.Modes.Ctr
 import VerifiedGarbage.Proof.Modes.FbFinal
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: shared by the final functions' proofs of every target.
 
@@ -43,11 +44,11 @@ open VG.Proof.Modes (blocksOf)
 theorem bytesAt_xor {m₀ m' : Mem} {T : Addr} {u : Nat} {o : List Byte} (hu : u ≤ o.length)
     (h : ∀ q < u, m' (T + BitVec.ofNat 64 q) = m₀ (T + BitVec.ofNat 64 q) ^^^ o.getD q 0) :
     bytesAt m' T u = Spec.Cbc.xor (bytesAt m₀ T u) o := by
-  apply List.ext_getElem (by simp [bytesAt, Spec.Cbc.xor]; omega)
+  apply List.ext_getElem (by simp [bytesAt, Spec.Cbc.xor]; omega_using [hu])
   intro q h₁ h₂
   have hq : q < u := by simpa [bytesAt] using h₁
   simp only [bytesAt, Spec.Cbc.xor, List.getElem_zipWith, List.getElem_map, List.getElem_range]
-  rw [h q hq, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [h q hq, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hu, hq]), Option.getD_some]
 
 section
 variable {L : Nat} {ciph : Spec.Cbc.Cipher} {m₀ m' : Mem} {D P : Addr} {len : Nat}
@@ -163,10 +164,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 /-- Memories that agree within the final functions' buffers agree on the
 schedule, the block and the data. -/
@@ -184,8 +185,8 @@ private theorem final_bufs {pb : Nat} {vs : List (BitVec 64)} (hlen : vs.length 
     have hv := agree_of hb.2.1
     have hd := agree_of hb.2.2.1
     have := Nat.mod_le len.toNat (2 ^ pb)
-    exact ⟨k, rounds, iv, data, len, scr, rfl, fun n hn => bytesAt_congr fun i hi => hk i (by omega),
-      bytesAt_congr hv, bytesAt_congr fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
+    exact ⟨k, rounds, iv, data, len, scr, rfl, fun n hn => bytesAt_congr fun i hi => hk i (by omega_using [hn, hi]),
+      bytesAt_congr hv, bytesAt_congr fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])⟩
 
 end
 
@@ -212,7 +213,7 @@ theorem encryptFinalPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesFinalSig
   dsimp only [Curry.apply, encryptFinalPost, ArgWord.ofRaw, Spec.Cfb.EncryptFinal, ciphAt] at h ⊢
   intro hr
   obtain ⟨h1, h2⟩ := h hr
-  rw [hk _ (by rcases hr with h | h | h <;> omega), hv, hd]
+  rw [hk _ (by rcases hr with h | h | h <;> omega_using [h]), hv, hd]
   exact ⟨h1, h2⟩
 
 
@@ -230,7 +231,7 @@ theorem decryptFinalPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesFinalSig
   dsimp only [Curry.apply, decryptFinalPost, ArgWord.ofRaw, Spec.Cfb.DecryptFinal, ciphAt] at h ⊢
   intro hr
   obtain ⟨h1, h2⟩ := h hr
-  rw [hk _ (by rcases hr with h | h | h <;> omega), hv, hd]
+  rw [hk _ (by rcases hr with h | h | h <;> omega_using [h]), hv, hd]
   exact ⟨h1, h2⟩
 
 /-- `encryptFinalPost` reads the memory on return only within the buffers. -/

@@ -47,22 +47,22 @@ theorem word64 {m : Mem} {a : Addr} {k : Nat} (hk : k < 2 ^ 64) (lo : m.readW a 
   rw [Proof.Rc2.Word32.read64_pair, lo, hi]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_append, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show k / 2 ^ 32 < 2 ^ 32 by omega), Nat.mod_eq_of_lt hk,
+  rw [Nat.mod_eq_of_lt (show k / 2 ^ 32 < 2 ^ 32 by omega_using [hk]), Nat.mod_eq_of_lt hk,
     ← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)), Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-- The return address, apart from every region the run writes. -/
 theorem ret_apart {o : State} (A : PSearchABI o) : ∀ r ∈ frameR o, (retR o).Disjoint r := by
   have h1 : 212 ≤ (o.gpr .esp).toNat := A.stackLow
   have hl : (retR o).Disjoint (lowR o) := by
     show Region.Disjoint ⟨(o.gpr .esp).setWidth 64, 4⟩ ⟨(o.gpr .esp).setWidth 64 - BitVec.ofNat 64 212, 212⟩
-    exact Offset.base_disjoint_below _ (by omega)
+    exact Offset.base_disjoint_below _ (by omega_using [])
   exact apart A A.retO A.retU A.retB A.retS A.retA hl
 
 /-- A 64-bit word below `2³²`. -/
 theorem word64z {m : Mem} {a : Addr} {k : Nat} (hk : k < 2 ^ 32) (lo : m.readW a 32 = BitVec.ofNat 32 k)
     (hi : m.readW (a + BitVec.ofNat 64 4) 32 = 0) : m.readW a 64 = BitVec.ofNat 64 k :=
-  word64 (by omega) lo (by rw [hi, Nat.div_eq_of_lt hk]; rfl)
+  word64 (by omega_using [hk]) lo (by rw [hi, Nat.div_eq_of_lt hk]; rfl)
 
 /-- A word of the state at offset `d`, as `wordsAt` addresses it. -/
 theorem st_addr {o : State} (A : PSearchABI o) {d : Nat} (hd : d + 4 ≤ 128) :
@@ -85,14 +85,14 @@ theorem finish_ok {o s : State} {r : ParameterSearchResult} (h : Done (ofState o
   have ec : t₂.gpr .ecx = arg o 2 := by rw [o₂ .ecx (by decide), g₁]; rfl
   have uIn : ∀ t : State, t.wr = o.wr → ∀ d, d + 4 ≤ 8 →
       InRegions t.wr (argumentPointer o 2 + BitVec.ofNat 64 d) 4 := fun t ht d hd =>
-    ⟨uR o, by rw [ht]; exact uR_mem A, Offset.contains_base _ hd (by omega)⟩
+    ⟨uR o, by rw [ht]; exact uR_mem A, Offset.contains_base _ hd (by omega_using [hd])⟩
   refine wp_storeS (show t₂.ea (at_ .ecx 0) = argumentPointer o 2 + BitVec.ofNat 64 0 by
-      show (t₂.gpr .ecx + BitVec.ofNat 32 0).setWidth 64 = _; rw [ec]; exact addr_eq (by omega))
+      show (t₂.gpr .ecx + BitVec.ofNat 32 0).setWidth 64 = _; rw [ec]; exact addr_eq (by omega_using []))
     (uIn t₂ S₂.wr 0 (by decide)) fun t₃ M₃ => ?_
   refine wp_movi fun t₄ U₄ => ?_
   refine wp_storeS (show t₄.ea (at_ .ecx 4) = argumentPointer o 2 + BitVec.ofNat 64 4 by
       show (t₄.gpr .ecx + BitVec.ofNat 32 4).setWidth 64 = _
-      rw [U₄.other _ (by decide), M₃.gpr, ec]; exact addr_eq (by omega))
+      rw [U₄.other _ (by decide), M₃.gpr, ec]; exact addr_eq (by omega_using [hub]))
     (by rw [U₄.wr, M₃.wr]; exact uIn t₂ S₂.wr 4 (by decide)) fun t₅ M₅ => ?_
   -- The stores at `used`.
   have mem₅ : t₅.mem = (t₂.mem.writeW (argumentPointer o 2 + BitVec.ofNat 64 0) (BitVec.ofNat 32 r.used)).writeW
@@ -100,8 +100,8 @@ theorem finish_ok {o s : State} {r : ParameterSearchResult} (h : Done (ofState o
     rw [M₅.mem, U₄.gpr, U₄.mem, M₃.mem, g₂]; rfl
   have fu : Frame [uR o] t₂.mem t₅.mem := by
     rw [mem₅]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_using []))
   have S₅ : St o doneDs (doneF (ofState o) (o.gpr .esi) r) t₅ := by
     refine ⟨A, M₅.rd.trans (U₄.rd.trans (M₃.rd.trans S₂.rd)), M₅.wr.trans (U₄.wr.trans (M₃.wr.trans S₂.wr)),
       M₅.syms.trans (U₄.syms.trans (M₃.syms.trans S₂.syms)), ?_, ?_, fun q hq hne => ?_,
@@ -126,7 +126,7 @@ theorem finish_ok {o s : State} {r : ParameterSearchResult} (h : Done (ofState o
         Spec.Rsa.bytesAt s.mem (argumentPointer o 0) (arg o 1).toNat := by
       rw [m₇, ← m₂]
       exact bytes_frame fu (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact A.ou) (by have := A.oBound; omega)
+        simp only [List.mem_singleton] at hr; subst hr; exact A.ou) (by have := A.oBound; omega_using [])
     unfold Output at out ⊢
     split at out <;> exact kx.trans out
   · have W : ∀ d ∈ doneDs, t₇.mem.readW (addr (arg o 9) d) 32 = doneF (ofState o) (o.gpr .esi) r d := by
@@ -136,11 +136,11 @@ theorem finish_ok {o s : State} {r : ParameterSearchResult} (h : Done (ofState o
       have : (ofState o).cap = parameterEntropy (arg o 3).toNat := rfl; omega
     have hc' : (Proof.Ffdh.requested (arg o 3).toNat r) < 2 ^ 32 := by
       have : (ofState o).bits = (arg o 3).toNat := rfl
-      rw [← this]; omega
+      rw [← this]; omega_using [hc, hcap]
     unfold Spec.Rsa.wordsAt
     rw [show List.range 4 = [0, 1, 2, 3] from rfl]
     simp only [List.map_cons, List.map_nil, List.cons.injEq, and_true]
-    refine ⟨word64 (by omega) ?_ ?_, word64z hl ?_ ?_, word64z hcap' ?_ ?_, word64z hc' ?_ ?_⟩
+    refine ⟨word64 (by omega_using [hk, hat]) ?_ ?_, word64z hl ?_ ?_, word64z hcap' ?_ ?_, word64z hc' ?_ ?_⟩
     · rw [← st_addr A (d := 0) (by decide), W 0 (by decide)]; simp [doneF]
     · rw [Offset.add_add, ← st_addr A (d := 4) (by decide), W 4 (by decide)]; simp [doneF]
     · rw [← st_addr A (d := 8) (by decide), W 8 (by decide)]; simp [doneF, ofState]
@@ -153,8 +153,8 @@ theorem finish_ok {o s : State} {r : ParameterSearchResult} (h : Done (ofState o
     rw [show List.range 1 = [0] from rfl]
     simp only [List.map_cons, List.map_nil, List.cons.injEq, and_true]
     rw [m₇, mem₅]
-    refine word64z (by omega) ?_ ?_
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
+    refine word64z (by omega_using [hu, hR]) ?_ ?_
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),
         show (8 * 0 : Nat) = 0 from rfl, Mem.readW_writeW_self32]
     · rw [show (8 * 0 : Nat) = 0 from rfl, Offset.add_add, Mem.readW_writeW_self32]
 

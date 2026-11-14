@@ -132,10 +132,10 @@ private theorem shiftedBit (b : Byte) (r : Nat) :
     (b.setWidth 32 >>> r) &&& 1 = BitVec.ofNat 32 (b.toNat / 2^r % 2) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and,BitVec.toNat_ushiftRight,BitVec.toNat_setWidth,BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by have := b.isLt; omega : b.toNat < 2^32)]
+  rw [Nat.mod_eq_of_lt (by have := b.isLt; omega_using [] : b.toNat < 2^32)]
   change (b.toNat >>> r) &&& 1 = (b.toNat / 2^r % 2)%2^32
   rw [Nat.and_one_is_mod,Nat.shiftRight_eq_div_pow]
-  exact (Nat.mod_eq_of_lt (by omega : b.toNat / 2^r % 2 < 2^32)).symm
+  exact (Nat.mod_eq_of_lt (by omega_using [] : b.toNat / 2^r % 2 < 2^32)).symm
 
 private theorem optionalShift_ok (s : State) {r : Nat} (bound : r<8)
     (count : s.gpr .r2=BitVec.ofNat 32 r) (zero : s.z=decide (r=0)) :
@@ -146,7 +146,7 @@ private theorem optionalShift_ok (s : State) {r : Nat} (bound : r<8)
     have run : Exec isa (.ite .ne VG.Impl.Bignum.Arm.CombDigit.shift (.block [])) s
         [.branch false] s := .iteF (by change some (!s.z)=_; simp [zero]) (.block rfl)
     exact ⟨_,s,run,by simp,rfl,Rest.refl _ _⟩
-  · obtain ⟨tr,t,run,word,_,mem,rest⟩ := shift_ok s (by omega) (by omega) count
+  · obtain ⟨tr,t,run,word,_,mem,rest⟩ := shift_ok s (by omega_using [h]) (by omega_using [bound]) count
     exact ⟨_,t,.iteT (by change some (!s.z)=_; simp [zero,h]) run,word,mem,rest⟩
 
 /-- The bit is zero when its public index is outside the declared width. -/
@@ -157,7 +157,7 @@ theorem bit_ok (s : State) {src : BitVec 32} {bs : List Byte} {k N : Nat}
     (index : s.gpr .r9=BitVec.ofNat 32 k) (width : s.gpr .r8=BitVec.ofNat 32 N) :
     WP isa VG.Impl.Bignum.Arm.CombDigit.bit s fun t =>
       t.gpr .r11=BitVec.ofNat 32 (if h:k<N then
-        (bs[bs.length-1-k/8]'(by omega)).toNat / 2^(k%8) % 2 else 0) ∧
+        (bs[bs.length-1-k/8]'(by omega_using [widthBound, h])).toNat / 2^(k%8) % 2 else 0) ∧
       t.mem=s.mem ∧ Rest bitClobbers s t := by
   unfold VG.Impl.Bignum.Arm.CombDigit.bit
   rw [WP.seq_iff]
@@ -168,12 +168,12 @@ theorem bit_ok (s : State) {src : BitVec 32} {bs : List Byte} {k N : Nat}
     apply WP.ite true condition
     · intro _
       rw [WP.seq_iff]
-      refine WP.mono (load_ok u (source.of_mem memU restU) (by omega) size
+      refine WP.mono (load_ok u (source.of_mem memU restU) (by omega_using [widthBound, inside]) size
         ((restU.gpr .r4 (by decide)).trans ptr) ((restU.gpr .r5 (by decide)).trans length)
-        ((restU.gpr .r9 (by decide)).trans index) (by omega)) ?_
+        ((restU.gpr .r9 (by decide)).trans index) (by omega_using [indexFit])) ?_
       rintro v ⟨byte,count,zeroV,memV,restV⟩
       rw [WP.seq_iff]
-      refine WP.mono (optionalShift_ok v (by omega) count zeroV) ?_
+      refine WP.mono (optionalShift_ok v (by omega_using []) count zeroV) ?_
       rintro z ⟨shifted,memZ,restZ⟩
       refine wp_dp (op2_imm (by decide)) fun t last => WP.block_nil ?_
       refine ⟨?_,last.mem.trans (memZ.trans (memV.trans memU)),?_⟩

@@ -49,25 +49,25 @@ abbrev NoSp (c : Prog isa) : Prop := ∀ i ∈ instrs c, Taint.clobbers i .esp =
 theorem sub_toNat {sp : BitVec 32} {k : Nat} (h : k ≤ sp.toNat) :
     (sp - BitVec.ofNat 32 k).toNat = sp.toNat - k := by
   have := sp.isLt
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega)]
-  rw [show 2 ^ 32 - k + sp.toNat = (sp.toNat - k) + 2 ^ 32 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_using [h])]
+  rw [show 2 ^ 32 - k + sp.toNat = (sp.toNat - k) + 2 ^ 32 by omega_using [h], Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_using [])]
 
 /-- The `a` bytes below `sp - k` are among the `b` bytes below `sp`. -/
 theorem below_inner {sp : BitVec 32} {a b k : Nat} (h : a + k ≤ b) (hb : b ≤ sp.toNat) :
     Region.Sub (below (sp - BitVec.ofNat 32 k) a) (below sp b) := by
-  have hk : a ≤ (sp - BitVec.ofNat 32 k).toNat := by rw [sub_toNat (by omega)]; omega
+  have hk : a ≤ (sp - BitVec.ofNat 32 k).toNat := by rw [sub_toNat (by omega_using [h, hb])]; omega_using [h, hb]
   have := sp.isLt
   show Region.Sub ⟨(sp - BitVec.ofNat 32 k - BitVec.ofNat 32 a).setWidth 64, a⟩
     ⟨(sp - BitVec.ofNat 32 b).setWidth 64, b⟩
-  rw [Taint.sub_setWidth hk, Taint.sub_setWidth hb, Taint.sub_setWidth (m := k) (by omega),
+  rw [Taint.sub_setWidth hk, Taint.sub_setWidth hb, Taint.sub_setWidth (m := k) (by omega_using [h, hb]),
     BitVec.sub_sub, ← BitVec.ofNat_add]
-  exact fun x hx => Offset.below_mono _ (a := k + a) (by omega) (by omega) x
-    (Region.sub_prefix (by omega) x hx)
+  exact fun x hx => Offset.below_mono _ (a := k + a) (by omega_using [h]) (by omega_using [hb]) x
+    (Region.sub_prefix (by omega_using []) x hx)
 
 theorem below_sub {sp : BitVec 32} {a b : Nat} (h : a ≤ b) (hb : b ≤ sp.toNat) :
     Region.Sub (below sp a) (below sp b) := by
-  have := below_inner (sp := sp) (a := a) (k := 0) (by omega) hb
+  have := below_inner (sp := sp) (a := a) (k := 0) (by omega_using [h]) hb
   simpa using this
 
 /-- The `k` bytes just below `sp` are among the `b ≥ k` bytes below `sp`. -/
@@ -75,9 +75,9 @@ theorem below_top {sp : BitVec 32} {k b n : Nat} (h : k ≤ b) (hb : b ≤ sp.to
     (below sp b).Contains ((sp - BitVec.ofNat 32 k).setWidth 64) n := by
   simp only [Region.Contains]
   have := sp.isLt
-  rw [Taint.sub_setWidth (by omega), Taint.sub_setWidth (by omega), Offset.sub_ofNat_sub_sub_ofNat _ h,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Taint.sub_setWidth (by omega_using [h, hb]), Taint.sub_setWidth (by omega_using [hb]), Offset.sub_ofNat_sub_sub_ofNat _ h,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb])]
+  omega_using [h, hn]
 
 theorem Frame.below_mono {wr : List Region} {sp : BitVec 32} {a b : Nat} {m m' : Mem}
     (h : Frame (wr ++ [below sp a]) m m') (hab : a ≤ b) (hb : b ≤ sp.toNat) :
@@ -137,22 +137,22 @@ theorem pushed_word {rs : List Reg} {s : State} (hrs : .esp ∉ rs)
     (hn : 4 * rs.length ≤ (s.gpr .esp).toNat) {i : Nat} (hi : i < rs.length) :
     (pushed rs s).mem.readW (((pushed rs s).gpr .esp + BitVec.ofNat 32 (4 * i)).setWidth 64) 32 =
       s.gpr rs[rs.length - 1 - i] := by
-  have := (pushRegs_mem s rs hrs hn).2 (rs.length - 1 - i) (by omega)
-  rw [show rs.length - 1 - i + 1 = rs.length - i by omega] at this
+  have := (pushRegs_mem s rs hrs hn).2 (rs.length - 1 - i) (by omega_using [hi])
+  rw [show rs.length - 1 - i + 1 = rs.length - i by omega_using [hi]] at this
   rw [← this, pushed_esp]
   show (pushRegs s rs).mem.readW _ 32 = _
   congr 2
   have := (s.gpr .esp).isLt
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_add, sub_toNat hn, sub_toNat (by omega), BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := 4 * i) (by omega)]
-  exact Nat.mod_eq_of_lt (by omega) |>.trans (by omega)
+  rw [BitVec.toNat_add, sub_toNat hn, sub_toNat (by omega_using [hn]), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := 4 * i) (by omega_using [hn, hi])]
+  exact Nat.mod_eq_of_lt (by omega_using [hn, hi]) |>.trans (by omega_using [hn, hi])
 
 /-- The `j`-th argument of a function called from `s`. -/
 theorem argAddr_callEntry (s : State) (j : Nat) :
     argAddr s.callEntry j = (s.gpr .esp + BitVec.ofNat 32 (4 * j)).setWidth 64 := by
   simp only [argAddr, State.callEntry_esp]
-  rw [show 4 + 4 * j = 4 * j + 4 by omega, BitVec.ofNat_add, BitVec.add_comm (BitVec.ofNat 32 (4 * j)),
+  rw [show 4 + 4 * j = 4 * j + 4 by omega_using [], BitVec.ofNat_add, BitVec.add_comm (BitVec.ofNat 32 (4 * j)),
     ← BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.sub_add_cancel]
 
 theorem arg_callEntry {s : State} {j : Nat} (h₁ : 4 ≤ (s.gpr .esp).toNat)
@@ -165,13 +165,13 @@ theorem arg_callEntry {s : State} {j : Nat} (h₁ : 4 ≤ (s.gpr .esp).toNat)
       (below_top (Nat.le_refl 4) h₁ (by decide))
   · simp only [Region.Contains, Nat.reduceDiv]
     rw [show (s.gpr .esp + BitVec.ofNat 32 (4 * j)).setWidth 64 = _ from
-      addr_eq (x := s.gpr .esp) (k := 4 * j) (by omega)]
+      addr_eq (x := s.gpr .esp) (k := 4 * j) (by omega_using [h₂])]
     simp
   · simp only [List.mem_singleton]
     rintro r rfl x hx hx'
     simp only [Region.Contains] at hx hx'
     rw [Taint.sub_setWidth h₁] at hx'
-    exact Offset.disjoint_below_above _ (m := 4) (a := 4 * j) (l := 4) (by omega) x hx' hx
+    exact Offset.disjoint_below_above _ (m := 4) (a := 4 * j) (l := 4) (by omega_using [h₂]) x hx' hx
 
 /-- A frame's push takes `frameBytes i` bytes below `esp`, among which is the
 new head of the writable regions (all of them but for an MCDT frame), and
@@ -220,20 +220,20 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
   induction h with
   | @icall _ _ b nx s₀ s₁ s₂ s₃ _ _ hc₁ _ hr ih =>
     have hcb : NoSp b := fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))
-    have hd' : stackUse b + 4 ≤ (s₀.gpr .esp).toNat := by simp only [stackUse] at hd; omega
+    have hd' : stackUse b + 4 ≤ (s₀.gpr .esp).toNat := by simp only [stackUse] at hd; omega_using [hd]
     have e₁ : s₁ = s₀.callEntry := (Option.some.inj ((call_callEntry s₀).symm.trans hc₁)).symm
     subst e₁
     have hm : s₃.mem = s₂.mem := by
       simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
     have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .esp) (stackUse b + 4)]) s₀.mem s₀.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_top (k := 4) (by omega) hd' (by decide))
-    have e4 : (s₀.gpr .esp - 4).toNat = (s₀.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
-    have f₁ := ih hcb (by rw [State.callEntry_esp, e4]; omega)
+        (below_top (k := 4) (by omega_using []) hd' (by decide))
+    have e4 : (s₀.gpr .esp - 4).toNat = (s₀.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega_using [hd'])
+    have f₁ := ih hcb (by rw [State.callEntry_esp, e4]; omega_using [hd'])
     simp only [State.callEntry_wr, State.callEntry_esp] at f₁
     rw [hm]
     refine Frame.below_mono (Frame.trans f₀ (Frame.sub f₁ fun r hr => ?_))
-      (by simp only [stackUse]; omega) hd
+      (by simp only [stackUse]; omega_using []) hd
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr
@@ -244,27 +244,27 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))
     have hle : stackUse (Code.icall i n' b' nn) ≤ stackUse (Code.icall i nm bd (.icall i n' b' nn)) :=
       Nat.le_max_right _ _
-    exact Frame.below_mono (ih hcn (by omega)) hle hd
+    exact Frame.below_mono (ih hcn (by omega_using [hd, hle])) hle hd
   | block h => exact Frame.mono (execBlock_regions h).2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     have hc₁ : NoSp c₁ := fun i hi => hc i (List.mem_append_left _ hi)
     have hc₂ : NoSp c₂ := fun i hi => hc i (List.mem_append_right _ hi)
     simp only [stackUse] at hd ⊢
     have e := Exec.gpr hc₁ h₁
-    have f₁ := Frame.below_mono (ih₁ hc₁ (by omega)) (b := max (stackUse c₁) (stackUse c₂))
-      (by omega) hd
-    have f₂ := Frame.below_mono (ih₂ hc₂ (by rw [e]; omega)) (b := max (stackUse c₁) (stackUse c₂))
-      (by omega) (by rw [e]; exact hd)
+    have f₁ := Frame.below_mono (ih₁ hc₁ (by omega_using [hd])) (b := max (stackUse c₁) (stackUse c₂))
+      (by omega_using []) hd
+    have f₂ := Frame.below_mono (ih₂ hc₂ (by rw [e]; omega_using [hd])) (b := max (stackUse c₁) (stackUse c₂))
+      (by omega_using []) (by rw [e]; exact hd)
     rw [(Exec.rdwr h₁).2, e] at f₂
     exact Frame.trans f₁ f₂
   | iteT _ _ ih =>
     simp only [stackUse] at hd ⊢
-    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_left _ hi)) (by omega))
-      (by omega) hd
+    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_left _ hi)) (by omega_using [hd]))
+      (by omega_using []) hd
   | iteF _ _ ih =>
     simp only [stackUse] at hd ⊢
-    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_right _ hi)) (by omega))
-      (by omega) hd
+    exact Frame.below_mono (ih (fun i hi => hc i (List.mem_append_right _ hi)) (by omega_using [hd]))
+      (by omega_using []) hd
   | loopExit _ _ ih => exact ih hc hd
   | @loopNext body _ _ _ _ _ _ h₁ _ _ ih₁ ih₂ =>
     have e := Exec.gpr (c := body) hc h₁
@@ -279,9 +279,9 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       simp only [isa, ret] at hr; split at hr <;> cases hr; rfl
     have f₀ : Frame (s₀.wr ++ [below (s₀.gpr .esp) (stackUse b + 4)]) s₀.mem s₀.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_top (k := 4) (by omega) hd (by decide))
-    have e4 : (s₀.gpr .esp - 4).toNat = (s₀.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
-    have f₁ := ih hc (by rw [State.callEntry_esp, e4]; omega)
+        (below_top (k := 4) (by omega_using []) hd (by decide))
+    have e4 : (s₀.gpr .esp - 4).toNat = (s₀.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega_using [hd])
+    have f₁ := ih hc (by rw [State.callEntry_esp, e4]; omega_using [hd])
     simp only [State.callEntry_wr, State.callEntry_esp] at f₁
     rw [hm]
     refine Frame.trans f₀ (Frame.sub f₁ fun r hr => ?_)
@@ -295,19 +295,19 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     simp only [stackUse] at hd ⊢
     rw [pop_mem hq]
     have hc' : NoSp b := fun i hi => hc i (by simp [instrs, hi])
-    have f₁ := ih hc' (by rw [e₁, sub_toNat hn]; omega)
+    have f₁ := ih hc' (by rw [e₁, sub_toNat hn]; omega_using [hd])
     rw [w₁, e₁] at f₁
     refine Frame.trans (fun x hx => f₀ x fun r hr => ?_) (Frame.sub f₁ fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact fun hc => hx _ (List.mem_append_right _ (List.mem_singleton_self _))
-        (below_sub (by omega) hd _ hc)
+        (below_sub (by omega_using []) hd _ hc)
     · simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | hr | rfl
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-          fun a h => below_sub (by omega) hd a (hf a h)⟩
+          fun a h => below_sub (by omega_using []) hd a (hf a h)⟩
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-          below_inner (by omega) hd⟩
+          below_inner (by omega_using []) hd⟩
 
 /-- Calling verified code: from a state `s` such that, once the call has
 stored its return address (`State.callEntry`), the callee's precondition
@@ -331,9 +331,9 @@ theorem WP.call {n : String} {c : Prog isa} {k : Contract isa}
   obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
   obtain ⟨hr, hwr⟩ := Exec.rdwr he
   simp only [State.withRegions_rd, State.withRegions_wr] at hr hwr
-  have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega)
+  have e4 : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := sub_toNat (k := 4) (by omega_using [hd])
   have hf := Exec.frameSp he hsp (by
-    simp only [State.withRegions_gpr, State.callEntry_esp, e4]; omega)
+    simp only [State.withRegions_gpr, State.callEntry_esp, e4]; omega_using [hd])
   simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_esp] at hf
   have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
@@ -362,7 +362,7 @@ theorem WP.call {n : String} {c : Prog isa} {k : Contract isa}
   · -- The return address, then the callee.
     have f₀ : Frame (wr ++ [below (s.gpr .esp) (stackUse c + 4)]) s.mem s.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_top (k := 4) (by omega) hd (by decide))
+        (below_top (k := 4) (by omega_using []) hd (by decide))
     refine Frame.trans f₀ (Frame.sub hf fun r hr => ?_)
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩

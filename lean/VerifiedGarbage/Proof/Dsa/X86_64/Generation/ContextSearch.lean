@@ -37,13 +37,13 @@ def GenerationGeometry.searchPlan (p : GenerationGeometry) (seed rand : Generati
       HashPlan.changed, GenerationGeometry.primalityPlan, GenerationGeometry.constructPlan, GenerationGeometry.hashPlan]
     rw [h5]
     rfl
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega
-  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega
+  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
+  have qn : p.qLen ≤ 32 := by rcases p.qWidth with h | h <;> omega_using [h]
   have hc := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.control) (n := 24) (by decide) (by decide)
-  have hq := p.small_bound (d := q) (n := p.qLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hq := p.small_bound (d := q) (n := p.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
   have hh := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  have hp := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.p) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega)
-  have he := p.small_bound (d := exponent) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hp := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.p) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+  have he := p.small_bound (d := exponent) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
   refine {
     attempt := a
     C := off p.B VG.Impl.Dsa.Generation.Layout.control
@@ -67,10 +67,10 @@ def GenerationGeometry.searchPlan (p : GenerationGeometry) (seed rand : Generati
     · exact p.pWork_separate (Or.inl ⟨rfl, rfl⟩) r hr
   · change (⟨off (W 5) VG.Impl.Dsa.Generation.Layout.p, p.pLen⟩ : Region).Disjoint (p.part VG.Impl.Dsa.Generation.Layout.control 24)
     rw [h5]
-    exact p.parts_disjoint hp hc (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p VG.Impl.Dsa.Generation.Layout.control; omega))
+    exact p.parts_disjoint hp hc (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p VG.Impl.Dsa.Generation.Layout.control; omega_using [pn]))
   · change (⟨off (W 5) exponent, p.pLen⟩ : Region).Disjoint (p.part VG.Impl.Dsa.Generation.Layout.control 24)
     rw [h5]
-    exact p.parts_disjoint he hc (Or.inl (by unfold exponent VG.Impl.Dsa.Generation.Layout.control; omega))
+    exact p.parts_disjoint he hc (Or.inl (by unfold exponent VG.Impl.Dsa.Generation.Layout.control; omega_using [pn]))
   · change ∀ r ∈ (p.part VG.Impl.Dsa.Generation.Layout.control 24) :: ⟨p.F, frameBytes⟩ :: a.changed,
       (⟨seed.ptr, p.qLen⟩ : Region).Disjoint r
     rw [writes, ← seedLength]
@@ -85,7 +85,7 @@ def GenerationGeometry.searchPlan (p : GenerationGeometry) (seed rand : Generati
     rw [writes, h5, VG.Proof.Dsa.encodeBE_length]
     intro r hr
     rcases List.mem_cons.mp hr with rfl | hr
-    · exact p.parts_disjoint hq hc (Or.inl (by unfold q VG.Impl.Dsa.Generation.Layout.control; omega))
+    · exact p.parts_disjoint hq hc (Or.inl (by unfold q VG.Impl.Dsa.Generation.Layout.control; omega_using [qn]))
     rcases List.mem_cons.mp hr with rfl | hr
     · exact (p.frame_part hq).symm
     exact p.pWork_separate (Or.inr ⟨rfl, rfl⟩) r hr
@@ -116,7 +116,7 @@ def GenerationMemory.searchPlan {p : GenerationContext} {W : Nat → BitVec 64} 
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (h1 : W 1 = seed.ptr) : SearchPlan :=
   p.geo.searchPlan seed p.rand hlen (searchWords p.geo.B W) 0
-    (by have := p.geo.hashSizes.1; omega)
+    (by have := p.geo.hashSizes.1; omega_using [this])
     (by simpa [searchWords, upd] using h1)
     (by simpa [searchWords, upd] using (h.slots 3 (by simp [generationSlots])).trans p.wrappedSlot)
     (by simpa [searchWords, upd] using (h.slots 4 (by simp [generationSlots])).trans p.hashesSlot)
@@ -132,27 +132,27 @@ theorem GenerationMemory.searchState {p : GenerationContext} {W : Nat → BitVec
     (hq : Spec.Rsa.bytesAt s.mem (off p.geo.B q) p.geo.qLen =
       Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes)) :
     SearchMemory (h.searchPlan seed hlen h1) W s := by
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   have h5 := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
   have ha := p.geo.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
-  have hqbound := p.geo.small_bound (d := q) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega)
-  have hb := p.geo.small_bound (d := wrappedSeed) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hqbound := p.geo.small_bound (d := q) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
+  have hb := p.geo.small_bound (d := wrappedSeed) (n := p.geo.qLen) (by decide) (by unfold arithmeticBytes; omega_using [qn])
   have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
   have write (d n : Nat) (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) :
       ∀ i < n, InRegions s.wr (off (off p.geo.B d) i) 1 := by
     intro i hi
     rw [off_off]
-    exact h.scratch.region (by have := p.geo.small_bound hd hn; omega) (by decide)
+    exact h.scratch.region (by have := p.geo.small_bound hd hn; omega_using [hi, this]) (by decide)
   refine {
     layout := h.layout
     rep := h.rep
     slots := ?_
     label := ?_
     seedRead := ?_
-    wrappedWrite := write wrappedSeed p.geo.qLen (by decide) (by unfold arithmeticBytes; omega)
+    wrappedWrite := write wrappedSeed p.geo.qLen (by decide) (by unfold arithmeticBytes; omega_using [qn])
     hashWrite := write hashes ((p.geo.count + 1) * p.geo.qLen) (by decide)
-      (by have := p.geo.hashSizes.2.1; unfold arithmeticBytes; omega)
+      (by have := p.geo.hashSizes.2.1; unfold arithmeticBytes; omega_using [this])
     seed := ?_
     scratch := h.scratch.sub (n := arithmeticBytes) ha (by decide)
     qSource := ?_
@@ -163,20 +163,20 @@ theorem GenerationMemory.searchState {p : GenerationContext} {W : Nat → BitVec
     witnessWrite := ?_
     arena := (by
       have hb := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
-      have := h.scratch.sub (o := 0) (n := domainCheck) (by unfold usedBytes; omega) (by decide)
+      have := h.scratch.sub (o := 0) (n := domainCheck) (by unfold usedBytes; omega_using []) (by decide)
       simp only [off, BitVec.add_zero] at this
       change Scr s (W 5) domainCheck
       rw [hb]; exact this)
     tapeCover := h.rand.cover }
   · intro k hk
     change W k = searchWords p.geo.B W k
-    have : k ≠ 0 ∧ k ≠ 2 ∧ k ≠ 27 := by simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+    have : k ≠ 0 ∧ k ≠ 2 ∧ k ≠ 27 := by simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     simp [searchWords, upd, this.1, this.2.1, this.2.2]
   · change LabAt s p.geo.F p.geo.hash (searchWords p.geo.B W) (off p.geo.B wrappedSeed) p.geo.qLen
-    refine ⟨by simp [searchWords, upd], ?_, by omega, ?_, ?_, ?_⟩
+    refine ⟨by simp [searchWords, upd], ?_, by omega_using [qn], ?_, ?_, ?_⟩
     · simpa [searchWords, upd] using (h.slots 28 (by simp [generationSlots])).trans p.hashLenSlot
-    · exact Covers.right (Covers.one (h.scratch.region hb (by rcases p.geo.qWidth with hh | hh <;> omega)))
-    · exact p.geo.parts_disjoint hb hh (Or.inr (by unfold wrappedSeed VG.Impl.Dsa.Generation.Layout.hash oRsa; omega))
+    · exact Covers.right (Covers.one (h.scratch.region hb (by rcases p.geo.qWidth with hh | hh <;> omega_using [hh])))
+    · exact p.geo.parts_disjoint hb hh (Or.inr (by unfold wrappedSeed VG.Impl.Dsa.Generation.Layout.hash oRsa; omega_using []))
     · exact (p.geo.stack_part hb).sub_left (below_sub (a := 16) (by decide) (by decide))
   · change ∀ i < p.geo.qLen, InRegions (s.rd ++ s.wr) (off seed.ptr i) 1
     intro i hi
@@ -188,12 +188,12 @@ theorem GenerationMemory.searchState {p : GenerationContext} {W : Nat → BitVec
     rw [h5]
     apply arena_source h.scratch
     · simpa only [VG.Proof.Dsa.encodeBE_length] using hqbound
-    · rw [VG.Proof.Dsa.encodeBE_length]; omega
+    · rw [VG.Proof.Dsa.encodeBE_length]; omega_using [qn]
     · simpa only [VG.Proof.Dsa.encodeBE_length] using hq
-    · simpa only [VG.Proof.Dsa.encodeBE_length, GenerationGeometry.part] using p.geo.parts_disjoint hqbound ha (Or.inl (by unfold q arithmetic; omega))
+    · simpa only [VG.Proof.Dsa.encodeBE_length, GenerationGeometry.part] using p.geo.parts_disjoint hqbound ha (Or.inl (by unfold q arithmetic; omega_using [qn]))
   all_goals
     change ∀ i < p.geo.pLen, InRegions s.wr (off (off (W 5) _) i) 1
     rw [h5]
-    apply write _ p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
+    apply write _ p.geo.pLen (by decide) (by unfold arithmeticBytes; omega_using [pn])
 
 end VG.Proof.Dsa.X86_64.Generation

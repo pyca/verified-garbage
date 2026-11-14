@@ -366,7 +366,7 @@ theorem storeSlots_bot {τ : T} (hl : τ.lens = []) (hs : τ.slots = []) (m : Me
     (p : Bool) : storeSlots τ m w p = [] := by
   unfold storeSlots
   split
-  · rw [hl, ite_f (by simp only [List.getD_nil]; omega)]
+  · rw [hl, ite_f (by simp only [List.getD_nil]; omega_using [hw])]
     cases p <;> simp [hs]
   · cases p <;> simp [hs]
 

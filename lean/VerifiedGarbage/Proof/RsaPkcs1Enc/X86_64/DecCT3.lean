@@ -94,8 +94,8 @@ theorem prfBody_ct (j : Nat) (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 �
       fun _ _ => True := by
   by_cases hj : dst + 32 * j + 32 ≤ scrBytes
   case neg =>
-    exact relCT_vac fun _ _ ⟨_, ⟨s, S, _, ⟨hjN, _⟩, _⟩, _⟩ => hj (by have := hNb s S.p; omega)
-  have hhd : sMsg ≤ dst + 32 * j := by unfold sMsg sKDK at *; omega
+    exact relCT_vac fun _ _ ⟨_, ⟨s, S, _, ⟨hjN, _⟩, _⟩, _⟩ => hj (by have := hNb s S.p; omega_using [hjN, this])
+  have hhd : sMsg ≤ dst + 32 * j := by unfold sMsg sKDK at *; omega_using [hd1]
   refine RelCT.seq (cxm_blk (A' := fun s t => t.gpr .rdi = sc s ∧ t.gpr .rax = BitVec.ofNat 64 j ∧
       t.gpr .r9 = s.gpr .r8) (by taint_decide)
     fun s t R EM hp hc g _ => WP.mono (prfStart_run hp hc g.2.1) fun _ ⟨hc', hm', h⟩ => ⟨hc', hm', h⟩) ?_
@@ -113,9 +113,9 @@ theorem prfBody_ct (j : Nat) (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 �
     fun s t R EM hp hc ⟨h1, h2, h3, h4, h5⟩ => hinit_cx hp hc (by decide) (by decide) h1 h2 h3 h4 h5) ?_
   refine RelCT.seq (cxm_blk (A' := fun s t => t.gpr .rdi = scA s 0 ∧ t.gpr .rsi = BitVec.ofNat 64 64 ∧
       t.gpr .rdx = scA s sMsg ∧ (t.gpr .rcx).toNat = label.length + 4 ∧ t.gpr .r8 = scA s sWork) tu
-    fun s t R EM hp hc _ _ => WP.mono (prfUpdArgs_run hp hc (by omega)) fun _ ⟨hc', hm', h⟩ => ⟨hc', hm', h⟩) ?_
+    fun s t R EM hp hc _ _ => WP.mono (prfUpdArgs_run hp hc (by omega_using [hL16])) fun _ ⟨hc', hm', h⟩ => ⟨hc', hm', h⟩) ?_
   have hdm : ∀ s, DPre s → DataOk s (scA s sMsg) (label.length + 4) := fun s hp =>
-    DataOk.scr hp (Nat.le_refl _) (by unfold scrBytes sMsg; omega)
+    DataOk.scr hp (Nat.le_refl _) (by unfold scrBytes sMsg; omega_using [hL16])
   refine RelCT.seq (cxm_call GW.keep (upd_two (v := v) (da := fun s => scA s sMsg) (L := fun _ => label.length + 4)
       (si := fun _ => BitVec.ofNat 64 64) (fun _ _ h => ⟨h.1, h.2.2⟩) hdm (scA_pin sMsg) (fun _ _ _ => rfl)
       (fun _ _ _ => rfl))
@@ -123,7 +123,7 @@ theorem prfBody_ct (j : Nat) (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 �
   refine RelCT.seq (cxm_blk (A' := fun s t => t.gpr .rdi = scA s 0 ∧ t.gpr .rsi = scA s sOuter ∧
       t.gpr .rdx = BitVec.ofNat 64 (64 + (label.length + 4)) ∧ t.gpr .rcx = scA s (dst + 32 * j) ∧
       t.gpr .r8 = scA s sWork) tf
-    fun s t R EM hp hc g _ => WP.mono (prfFinArgs_run hp hc (by omega) (by unfold scrBytes at hj; omega) g.2.1)
+    fun s t R EM hp hc g _ => WP.mono (prfFinArgs_run hp hc (by omega_using [hL16]) (by unfold scrBytes at hj; omega_using [hj]) g.2.1)
       fun _ ⟨hc', hm', h⟩ => ⟨hc', hm', h⟩) ?_
   refine RelCT.seq (cxm_call GW.keep (hfin_two (v := v) (dOff := fun _ => dst + 32 * j)
       (cnt := fun _ => BitVec.ofNat 64 (64 + (label.length + 4))) (fun _ => hhd) (fun _ => hj)
@@ -161,7 +161,7 @@ theorem prfLoop_ct (hNs : ∀ a s, Sib X a s → N s = N a)
       rw [hNs _ _ S] at hz
       by_cases he : j + 1 = N a
       · simp [eval, hz, he]
-      · simp [eval, hz, he]; omega
+      · simp [eval, hz, he]; omega_arith
   exact key.mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨let ⟨s, S, _, g, _⟩ := h₁; by rw [← hNs _ _ S]; exact g.1, h₁⟩,
     ⟨let ⟨s, S, _, g, _⟩ := h₂; by rw [← hNs _ _ S]; exact g.1, h₂⟩⟩) fun _ _ _ => trivial
 

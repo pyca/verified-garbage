@@ -22,7 +22,7 @@ theorem primeRanges_bound {w : Nat} (hw : w ≤ 48) :
     aTab, aAcc, aTmp, aY, aXm, aOne, aR2, aR1, aRm1, aE,
     kElen, kP, kT0, kT1, kT2, kUsed, kI, kUni, kStat, kU, sMinv, sCnt, sFn,
     VG.Impl.Dsa.Generation.Layout.arithmeticBytes]
-  and_intros <;> omega
+  and_intros <;> omega_arith
 
 /-- Complete setup and loading fit in the same allocation as the round. -/
 theorem checkPrimeRanges_bound {w : Nat} (hw : w ≤ 48) :
@@ -34,7 +34,7 @@ theorem checkPrimeRanges_bound {w : Nat} (hw : w ≤ 48) :
   · decide
   · decide
   · decide
-  · simp only [slot, hdrBytes, VG.Impl.Dsa.Generation.Layout.arithmeticBytes]; omega
+  · simp only [slot, hdrBytes, VG.Impl.Dsa.Generation.Layout.arithmeticBytes]; omega_using [hw]
   · exact primeRanges_bound hw r hr
 
 /-- Convert an offset-based workspace frame to the global memory frame used

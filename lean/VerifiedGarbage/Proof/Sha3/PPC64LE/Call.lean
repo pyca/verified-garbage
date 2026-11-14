@@ -148,11 +148,11 @@ theorem Saved.permute {st scr : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : 
     Saved scr g m' :=
   Spill.Saved.frame h hf fun p hp' r hr => by
     have hoff := saved_off p hp'
-    have hsub : Region.Sub ⟨scr + BitVec.ofNat 64 p.2, 8⟩ ⟨scr, 640⟩ := Offset.sub_base _ (by omega)
+    have hsub : Region.Sub ⟨scr + BitVec.ofNat 64 p.2, 8⟩ ⟨scr, 640⟩ := Offset.sub_base _ (by omega_using [hoff])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hd.symm.sub_left hsub
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact Offset.disjoint_base _ (by omega_using [hoff]) (by omega_using [hoff])
 
 /-- Writes to a region disjoint from the scratch space keep the saved
 registers. -/
@@ -162,7 +162,7 @@ theorem Saved.disjoint {R : Region} {scr : Addr} {g : Reg → BitVec 64} {m m' :
     have hoff := saved_off p hp'
     simp only [List.mem_singleton] at hr
     subst hr
-    exact hd.symm.sub_left (Offset.sub_base _ (by omega))
+    exact hd.symm.sub_left (Offset.sub_base _ (by omega_using [hoff]))
 
 /-- Writes to the state keep the saved registers. -/
 theorem Saved.state {st scr : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Saved scr g m)

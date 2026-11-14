@@ -33,7 +33,7 @@ theorem subtract_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : 
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
   have hc : accChk (vR p) (vW p) (wP p) (tm2P p)=true := by unfold accChk;vlay
   have C : CalleeOk S (Impl.MlDsa.AArch64.Optimized.AddSub.code true) (subContract abi S) :=
-    CalleeOk.of_verified L.s64 AddSub.sub_verified (Nat.zero_le _) (by change 0≤S;omega)
+    CalleeOk.of_verified L.s64 AddSub.sub_verified (Nat.zero_le _) (by change 0≤S;omega_using [])
   refine WP.mono_syms (accAt_ok L.s64 C L hc hw.1 ht.1) fun t ⟨hb,h24,hv⟩ hy=>?_
   refine ⟨hs.keep hF hp hb (by scchks hF (Nat.le_of_lt hr)) hy
     (fun w hm=>by obtain rfl:=List.mem_singleton.mp hm;vlay) h24,?_⟩

@@ -59,14 +59,14 @@ theorem parameters_ok {is : List Instr} {Q : State → Prop}
   refine wp_mov (op2_lsl (by decide)) fun s₃ u₃ => ?_
   have i₃ := i₂.upd u₃ (by decide)
   have e₃ : (s₃.gpr .r2).toNat = 4 * lanesN s₀ := by
-    rw [u₃.gpr, u₂.gpr, shl_nat (by have : (arg s₀ 7).toNat < 2 ^ 24 := hL; show (arg s₀ 7).toNat * 4 < _; omega)]
+    rw [u₃.gpr, u₂.gpr, shl_nat (by have : (arg s₀ 7).toNat < 2 ^ 24 := hL; show (arg s₀ 7).toNat * 4 < _; omega_using [this])]
     show (arg s₀ 7).toNat * 4 = 4 * (arg s₀ 7).toNat
-    omega
+    omega_using []
   refine wp_stloc hp i₃ (d := divisorOff) (by decide) fun s₄ i₄ v₄ _ g₄ _ => ?_
   refine wp_ldarg hp i₄ (i := Impl.Argon2.Arm.Derive.memoryCostArg) (by decide) fun s₅ u₅ => ?_
   have i₅ := i₄.upd u₅ (by decide)
   have r2₅ : s₅.gpr .r2 = s₃.gpr .r2 := by rw [u₅.other _ (by decide), g₄]
-  refine Divide.code_ok (D := s₃.gpr .r2) (by rw [e₃]; omega) (by rw [e₃]; omega) r2₅ fun s₆ c₆ _ k₆ => ?_
+  refine Divide.code_ok (D := s₃.gpr .r2) (by rw [e₃]; omega_using [hL1]) (by rw [e₃]; omega_using [hL]) r2₅ fun s₆ c₆ _ k₆ => ?_
   have i₆ := i₅.keep k₆
   rw [u₅.gpr, e₃] at c₆
   have c₆' : (s₆.gpr .r1).toNat = (prm s₀).segmentLen := by rw [c₆, hseg]; rfl
@@ -78,22 +78,22 @@ theorem parameters_ok {is : List Instr} {Q : State → Prop}
   refine wp_mov (op2_lsl (by decide)) fun s₈ u₈ => ?_
   have i₈ := i₇.upd u₈ (by decide)
   have e₈ : (s₈.gpr .r1).toNat = (prm s₀).laneLen := by
-    rw [u₈.gpr, g₇, shl_nat (by rw [c₆']; omega), c₆', hlane]; omega
+    rw [u₈.gpr, g₇, shl_nat (by rw [c₆']; omega), c₆', hlane]; omega_using []
   refine wp_stloc hp i₈ (d := laneLenOff) (by decide) fun s₉ i₉ v₉ o₉ g₉ _ => ?_
   refine wp_mov (op2_lsl (by decide)) fun s₁₀ u₁₀ => ?_
   have i₁₀ := i₉.upd u₁₀ (by decide)
   have e₁₀ : (s₁₀.gpr .r1).toNat = (prm s₀).laneLen * 1024 := by
-    rw [u₁₀.gpr, g₉, shl_nat (by rw [e₈]; omega), e₈]
+    rw [u₁₀.gpr, g₉, shl_nat (by rw [e₈]; omega_using [hsegL]), e₈]
   refine wp_stloc hp i₁₀ (d := strideOff) (by decide) fun s₁₁ i₁₁ v₁₁ o₁₁ _ _ => k s₁₁ i₁₁ ⟨?_, ?_, ?_, ?_⟩
   · rw [o₁₁ _ (by decide) (by decide), lw_mem u₁₀.mem, o₉ _ (by decide) (by decide), lw_mem u₈.mem,
       o₇ _ (by decide) (by decide), lw_mem k₆.mem, lw_mem u₅.mem, v₄]
-    exact BitVec.eq_of_toNat_eq (by rw [e₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [e₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hL])])
   · rw [o₁₁ _ (by decide) (by decide), lw_mem u₁₀.mem, o₉ _ (by decide) (by decide), lw_mem u₈.mem, v₇]
-    exact BitVec.eq_of_toNat_eq (by rw [c₆', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [c₆', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [c₆'])])
   · rw [o₁₁ _ (by decide) (by decide), lw_mem u₁₀.mem, v₉]
-    exact BitVec.eq_of_toNat_eq (by rw [e₈, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [e₈, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hsegL])])
   · rw [v₁₁]
-    exact BitVec.eq_of_toNat_eq (by rw [e₁₀, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+    exact BitVec.eq_of_toNat_eq (by rw [e₁₀, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hsegL])])
 
 end
 

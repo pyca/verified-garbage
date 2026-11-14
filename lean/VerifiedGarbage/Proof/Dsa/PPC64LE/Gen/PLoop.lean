@@ -36,7 +36,7 @@ theorem SS.pBase {STK : Nat} {σ s : State} {d : Cfg} (h : SS G STK σ d s) {HO 
     · exact ⟨h.sb _ dpad, h.clOk _ dpad⟩
     · have big := h.gi.wBig; have kb := h.gi.kBig
       have hkB : sX + G.pLen ≤ kB G.pLen := by rcases h.lens with e | e | e <;> rw [e] <;> decide
-      exact ⟨by simp [Spec.Rsa.bytesAt], by simp only [ClOk, pStart, List.length_nil, hEnd, fSave, sX] at hkB ⊢; omega⟩
+      exact ⟨by simp [Spec.Rsa.bytesAt], by simp only [ClOk, pStart, List.length_nil, hEnd, fSave, sX] at hkB ⊢; omega_using [big, kb, hkB]⟩
     · exact ⟨h.sb _ dq, h.clOk _ dq⟩
 
 /-- After a candidate that is not p, the next counter (`u'` witnesses read). -/
@@ -55,19 +55,19 @@ theorem pGo_vp {c : Cfg} (hn : PNot c) {HO : HashOk Gh} {k u0 N r j u' : Nat} {d
     (dLS : ∀ o ∈ c.LS, o ∈ d.LS ∧ d.V o = c.V o)
     (dpad : (sMsg + G.qLen, padTail HO.md G.qLen) ∈ d.cl) (dq : (sQ, qBytes G k) ∈ d.cl) :
     VP (St G d X) (pTail (cnt G + 1) G.pLen) (pPost c HO G k u0 N X r) := by
-  refine (pCont_vp (X := X) hcnt dP dPv dC dCv dO dOv (by omega)).mono (fun _ _ h => h) fun σ s h => ?_
+  refine (pCont_vp (X := X) hcnt dP dPv dC dCv dO dOv (by omega_using [hj, hl])).mono (fun _ _ h => h) fun σ s h => ?_
   split at h
   · -- The last counter: `fP` := 2.
     rename_i e
     have hN : N = j + 1 := by
-      rw [show 32 * G.pLen - 1 - j = 0 by omega] at hc; simp only [pCount] at hc; omega
-    have r0 : r = 0 := by omega
+      rw [show 32 * G.pLen - 1 - j = 0 by omega_using [e]] at hc; simp only [pCount] at hc; omega_using [hc]
+    have r0 : r = 0 := by omega_using [hjj, hr, hN]
     subst r0
     refine ⟨by rw [h.2]; rfl, fun _ => ⟨?_, h.1.2⟩, fun h0 => absurd h0 (by decide)⟩
     have hd : pSpec HO G k u0 0 = some (none, G.witB.drop u') := by
-      rw [← hR, hspec, VG.Proof.Dsa.Generation.primeSearch_done _ _ (by omega)]
+      rw [← hR, hspec, VG.Proof.Dsa.Generation.primeSearch_done _ _ (by omega_using [e])]
     rw [hd]; simp only [pFin]
-    have lu : G.witLen - (G.witB.drop u').length = u' := by rw [List.length_drop, hwl]; omega
+    have lu : G.witLen - (G.witB.drop u').length = u' := by rw [List.length_drop, hwl]; omega_using [hu']
     refine h.1.1.mono (fun o ho => ?_) (fun y hy => ?_) (fun _ h' => absurd h' (by simp))
       (fun _ h' => absurd h' (by simp))
     · change o ∈ fP :: fUsed :: c.LS at ho
@@ -86,18 +86,18 @@ theorem pGo_vp {c : Cfg} (hn : PNot c) {HO : HashOk Gh} {k u0 N r j u' : Nat} {d
       rw [List.mem_singleton] at hy; subst hy; exact dpad
   · -- The next counter.
     rename_i e
-    obtain ⟨m, hm⟩ : ∃ m, 32 * G.pLen - 1 - j = m + 1 := ⟨32 * G.pLen - 1 - j - 1, by omega⟩
+    obtain ⟨m, hm⟩ : ∃ m, 32 * G.pLen - 1 - j = m + 1 := ⟨32 * G.pLen - 1 - j - 1, by omega_using [hj, e]⟩
     rw [hm, hstep] at hc
     have hgt := pCount_gt HO G k u0 m (j + 1)
-    have rpos : 0 < r := by omega
-    have hNr : N - r = j + 1 := by omega
-    refine ⟨by rw [h.2]; simp [rpos], fun h0 => absurd h0 (by omega), fun _ => ?_⟩
+    have rpos : 0 < r := by omega_using [hjj, hc, hgt]
+    have hNr : N - r = j + 1 := by omega_using [hjj, hr]
+    refine ⟨by rw [h.2]; simp [rpos], fun h0 => absurd h0 (by omega_using [rpos]), fun _ => ?_⟩
     show (_ ∧ _) ∧ _
     rw [hNr, hpu]
-    refine ⟨⟨by omega, by omega, by rw [show 32 * G.pLen - 1 - (j + 1) = m by omega]; exact hc,
+    refine ⟨⟨by omega_using [hr], by omega_using [hj, e], by rw [show 32 * G.pLen - 1 - (j + 1) = m by omega_using [hm]]; exact hc,
       by rw [← hR, hspec]; simp only [pSpec, hpu], hu'⟩, ?_, h.1.2⟩
     have r1 := h.1.1.pBase (HO := HO) (k := k) (by exact dpad) (by exact dq)
-    have eo : 1 + j * (cnt G + 1) + (cnt G + 1) = 1 + (j + 1) * (cnt G + 1) := by rw [Nat.succ_mul]; omega
+    have eo : 1 + j * (cnt G + 1) + (cnt G + 1) = 1 + (j + 1) * (cnt G + 1) := by rw [Nat.succ_mul]; omega_using []
     refine r1.mono (pCfgJ_V hn (fun o ho => ?_) (by simp [dP]) (by simp) (by simp [dC]) (by simp [dU]) ?_ ?_ ?_ ?_ ?_)
       (fun y hy => hy) (fun _ h' => absurd h' (by simp)) (fun _ h' => absurd h' (by simp))
     · simp [(dLS o ho).1]
@@ -119,7 +119,7 @@ theorem pStop_vp {c : Cfg} {HO : HashOk Gh} {k u0 N r j v C : Nat} {d : Cfg} (hj
     (hr : r + 1 ≤ N) (hN : N = j + 1) (dP : fP ∈ d.LS) (dPv : d.V fP = BitVec.ofNat 64 v) (hv : v < 4)
     (fin : ∀ σ s, SS G 176 σ d s → SS G 176 σ (pFin c HO G k (pSpec HO G k u0 0)) s) :
     VP (St G d X) (pTail C G.pLen) (pPost c HO G k u0 N X r) := by
-  have r0 : r = 0 := by omega
+  have r0 : r = 0 := by omega_using [hjj, hr, hN]
   subst r0
   exact (pExit_vp dP dPv hv).mono (fun _ _ h => h) fun σ s ⟨⟨h, x⟩, e⟩ =>
     ⟨by rw [e]; rfl, fun _ => ⟨fin σ s h, x⟩, fun h0 => absurd h0 (by decide)⟩
@@ -149,7 +149,7 @@ theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
       (pPost c HO G k u0 N X r) := by
   refine VP.intro fun ⟨hr, hj, hc, hR, hu⟩ => ?_
   generalize hjj : N - (r + 1) = j at hj hc hR hu
-  have hl : G.pLen ≤ 384 := by omega
+  have hl : G.pLen ≤ 384 := by omega_using [hlq]
   have hcnt : cnt G + 1 ≤ 12 := by
     rcases hlq with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> simp only [cnt, e1, e2] <;> decide
   have hcount : g.count = cnt G := by simp only [Geo.count, hp, hq, cnt]
@@ -160,11 +160,11 @@ theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
     simp only [Geo.pAdvance, hcount, hp]; rfl
   rw [ecode]
   have hoffb : 1 + j * (cnt G + 1) + (cnt G + 1) < 2 ^ 32 := by
-    have := Nat.mul_le_mul (Nat.le_of_lt hj) hcnt; omega
+    have := Nat.mul_le_mul (Nat.le_of_lt hj) hcnt; omega_using [hlq, hcnt, this]
   obtain ⟨n1, n2, n3, n4, n5, n6, n7⟩ := hn
   -- The spec's step.
   have hstepS := VG.Proof.Dsa.Generation.primeSearch_step (l := 8 * G.pLen) (n := 8 * G.qLen)
-    (q := Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k) (G.witB.drop (pU HO G k u0 j)) (by omega : j < 4 * (8 * G.pLen))
+    (q := Spec.Dsa.decodeBE (qBytes G k)) (seedAt G k) (G.witB.drop (pU HO G k u0 j)) (by omega_using [hj] : j < 4 * (8 * G.pLen))
   dsimp only at hstepS
   rw [hcand j] at hstepS
   change pSpec HO G k u0 j = _ at hstepS
@@ -198,7 +198,7 @@ theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
   by_cases hs : pShort HO G k j
   · -- Too short: the next counter.
     rw [pAttCfg, ite_eq_left_of_eq_true _ _ (eq_true hs)]
-    refine pGo_vp hn hjj (by omega) hj hl (by omega) hwl hc hR
+    refine pGo_vp hn hjj (by omega_using [hr]) hj hl (by omega_using [hcnt]) hwl hc hR
       (fun m => by simp only [pCount]; exact ite_eq_left_of_eq_true _ _ (eq_true hs))
       (by simp only [pU]; exact ite_eq_left_of_eq_true _ _ (eq_true hs))
       (by rw [hstepS]; exact ite_eq_left_of_eq_true _ _ (eq_true hs)) hu
@@ -211,7 +211,7 @@ theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
   rcases hpp : Spec.Dsa.probablePrime (pCand HO G k j) (G.witB.drop (pU HO G k u0 j)) with _ | ⟨b, rr⟩
   · -- The witnesses ran out: `fP` := 0.
     rw [hpp] at hstepS
-    refine pStop_vp (v := 0) hjj (by omega) (hN1 fun m => by simp only [pCount, hs, hpp, ↓reduceIte])
+    refine pStop_vp (v := 0) hjj (by omega_using [hr]) (hN1 fun m => by simp only [pCount, hs, hpp, ↓reduceIte])
       (by simp [pRes]) (by simp [pRes, upd]) (by decide) fun σ s h => ?_
     rw [← hR, hstepS]; simp only [pFin]
     refine h.mono (fun o ho => ?_) (fun y hy => ?_) (fun _ h' => absurd h' (by simp)) (fun _ h' => absurd h' (by simp))
@@ -227,10 +227,10 @@ theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
   · -- Not a prime: the next counter.
     rw [hpp] at hstepS
     simp only [Bool.false_eq_true, ↓reduceIte] at hstepS
-    refine pGo_vp (u' := G.witLen - rr.length) hn hjj (by omega) hj hl (by omega) hwl hc hR
+    refine pGo_vp (u' := G.witLen - rr.length) hn hjj (by omega_using [hr]) hj hl (by omega_using [hcnt]) hwl hc hR
       (fun m => by simp only [pCount, hs, hpp, ↓reduceIte])
       (by simp only [pU, hs, hpp, ↓reduceIte])
-      (by rw [hstepS, ← hwl, VG.Proof.Dsa.Generation.probablePrime_cursor hpp]) (by omega)
+      (by rw [hstepS, ← hwl, VG.Proof.Dsa.Generation.probablePrime_cursor hpp]) (by omega_using [])
       (by simp [pRes, testCfg]) (by simp [pRes, testCfg, upd, fP, fRes, fUsed])
       (by simp [pRes, testCfg]) (by simp [pRes, testCfg, upd, fCounter, fOffset, fP, fRes, fUsed])
       (by simp [pRes, testCfg]) (by simp [pRes, testCfg, upd, fOffset, fP, fRes, fUsed])
@@ -241,7 +241,7 @@ theorem pBody_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
   · -- A probable prime: `fP` := 1.
     rw [hpp] at hstepS
     simp only [↓reduceIte] at hstepS
-    refine pStop_vp (v := 1) hjj (by omega) (hN1 fun m => by simp only [pCount, hs, hpp, ↓reduceIte])
+    refine pStop_vp (v := 1) hjj (by omega_using [hr]) (hN1 fun m => by simp only [pCount, hs, hpp, ↓reduceIte])
       (by simp [pRes]) (by simp [pRes, upd]) (by decide) fun σ s h => ?_
     rw [← hR, hstepS]; simp only [pFin]
     refine h.mono (fun o ho => ?_) (fun y hy => hy) (fun _ h' => ⟨h', rfl⟩) (fun _ h' => absurd h' (by simp))
@@ -271,8 +271,8 @@ theorem pPart_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
   simp only [VG.Impl.Rsa.PPC64LE.Keys.seqs]
   have hN := pCount_gt HO G k u0 (32 * G.pLen - 1) 0
   generalize hNN : pCount HO G k u0 (32 * G.pLen - 1) 0 = N at hN
-  have hl : G.pLen ≤ 384 := by omega
-  have hpL : 0 < G.pLen := by omega
+  have hl : G.pLen ≤ 384 := by omega_using [hlq]
+  have hpL : 0 < G.pLen := by omega_using [hlq]
   refine VP.seq ?_ ?_ (G := pInv c HO G k u0 N X N)
   · rw [List.append_assoc]
     refine VP.block_append (G := St G (d.setV fCounter (BitVec.ofNat 64 0)) X)
@@ -282,7 +282,7 @@ theorem pPart_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
       (stImm_vp (c := fun _ => d.setV fCounter (BitVec.ofNat 64 0)) (fun σ s h => h.1) (by decide)
         (varOk_of (by decide)) fun σ s t h h' _ => ⟨h', h.2⟩) ?_
     refine stImm_vp (c := fun _ => (d.setV fCounter (BitVec.ofNat 64 0)).setV fOffset (BitVec.ofNat 64 1))
-      (fun σ s h => h.1) (by decide) (varOk_of (by decide)) fun σ s t h h' _ => ⟨⟨Nat.le_refl _, by simp; omega,
+      (fun σ s h => h.1) (by decide) (varOk_of (by decide)) fun σ s t h h' _ => ⟨⟨Nat.le_refl _, by simp; omega_using [hlq],
         by simp only [Nat.sub_self, Nat.sub_zero]; exact hNN, by rw [Nat.sub_self], by simp only [Nat.sub_self]; exact hu0⟩,
         ?_, h.2⟩
     have r1 := h'.pBase (HO := HO) (k := k) (by exact dpad) (by exact dq)
@@ -293,7 +293,7 @@ theorem pPart_vp {g : Geo} (HO : HashOk g.G) {Lp : Impl.Dsa.ProbablePrime.Layout
       (fun y hy => hy) (fun _ h' => absurd h' (by simp)) (fun _ h' => absurd h' (by simp))
     obtain ⟨m1, m2, m3, m4, -⟩ := hn.ne ho
     simp [upd, m2, m3, m4]; exact (dLS o ho).2
-  rw [show N = N - 1 + 1 by omega]
+  rw [show N = N - 1 + 1 by omega_using [hN]]
   exact VP.loop (I := pInv c HO G k u0 (N - 1 + 1) X)
     (pBody_vp HO okp lay hlq hp hq hk4 hsb hH hwl hn hk hS hSv hcand) _
 

@@ -193,15 +193,15 @@ theorem refillInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
   have la : 568 ≤ (s.gpr .rsp).toNat := hs.stackLower
   have lb : 568 ≤ (t.gpr .rsp).toNat := ht.stackLower
   have arsp : (a.gpr .rsp).toNat = (s.gpr .rsp).toNat - 48 := by
-    rw [ga]; exact Refill.toNat_sub_k (by omega)
+    rw [ga]; exact Refill.toNat_sub_k (by omega_using [la])
   have brsp : (b.gpr .rsp).toNat = (t.gpr .rsp).toNat - 48 := by
-    rw [gb]; exact Refill.toNat_sub_k (by omega)
+    rw [gb]; exact Refill.toNat_sub_k (by omega_using [lb])
   cases ea with
   | frame pa ia qa =>
     cases eb with
     | frame pb ib qb =>
-      rw [generation_alloc (by decide) (by omega), Option.some.injEq] at pa
-      rw [generation_alloc (by decide) (by omega), Option.some.injEq] at pb
+      rw [generation_alloc (by decide) (by omega_using [la, arsp]), Option.some.injEq] at pa
+      rw [generation_alloc (by decide) (by omega_using [lb, brsp]), Option.some.injEq] at pb
       subst pa; subst pb
       cases ia with
       | frame pa' ba qa' =>
@@ -209,10 +209,10 @@ theorem refillInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
         | frame pb' bb qb' =>
           rw [generation_alloc (by decide) (by
             change 296 ≤ (a.gpr .rsp - BitVec.ofNat 64 32).toNat
-            rw [Refill.toNat_sub_k (by omega)]; omega), Option.some.injEq] at pa'
+            rw [Refill.toNat_sub_k (by omega_using [la, arsp])]; omega_using [la, arsp]), Option.some.injEq] at pa'
           rw [generation_alloc (by decide) (by
             change 296 ≤ (b.gpr .rsp - BitVec.ofNat 64 32).toNat
-            rw [Refill.toNat_sub_k (by omega)]; omega), Option.some.injEq] at pb'
+            rw [Refill.toNat_sub_k (by omega_using [lb, brsp])]; omega_using [lb, brsp]), Option.some.injEq] at pb'
           subst pa'; subst pb'
           have ia := refill_init hs ga ra wa fa
           have ib := refill_init ht gb rb wb fb
@@ -243,8 +243,8 @@ theorem refill_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
   | frame pa ba _ =>
     cases eb with
     | frame pb bb _ =>
-      rw [generation_alloc (by decide) (by omega : 48 ≤ (s.gpr .rsp).toNat), Option.some.injEq] at pa
-      rw [generation_alloc (by decide) (by omega : 48 ≤ (t.gpr .rsp).toNat), Option.some.injEq] at pb
+      rw [generation_alloc (by decide) (by omega_using [la] : 48 ≤ (s.gpr .rsp).toNat), Option.some.injEq] at pa
+      rw [generation_alloc (by decide) (by omega_using [lb] : 48 ≤ (t.gpr .rsp).toNat), Option.some.injEq] at pb
       subst pa; subst pb
       cases ba with | seq sa restA => cases restA with | seq ia ra =>
       cases bb with | seq sb restB => cases restB with | seq ib rb =>

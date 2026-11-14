@@ -83,7 +83,7 @@ theorem zo_ct : RelCT isa (Two V3o) (Keys.zeroOut VG.Impl.Ffdh.AArch64.Domain.sO
     have hn := hs.nowrap
     have hw := post p t h
     unfold Keys.zeroOut at hw
-    exact wp_and (zoBlk_ok h0 (by decide) hO hK fun i hi => hs.ld (by omega)) (WP.seq_iff.mp hw)
+    exact wp_and (zoBlk_ok h0 (by decide) hO hK fun i hi => hs.ld (by omega_using [hZ, hi])) (WP.seq_iff.mp hw)
   · exact two_post (two_taint [.x1, .x2] (pins_of (fun (p : DvP) r => if r = .x1 then p.op else
       BitVec.ofNat 64 p.k) fun p s h r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -114,7 +114,7 @@ theorem tail_ct (W : Window) (M : Mont) (S : Selector) :
       have ew := hb.ew
       have := hb.k1
       obtain ⟨hodd, -⟩ := valid_facts hI₁.2.2.2.2.2 hb.k1
-      obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega) hodd hI₁.2.2.1 hI₂.2.2.1
+      obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega_using [ew, this]) hodd hI₁.2.2.1 hI₂.2.2.1
       exact ⟨_, hI₁.r2pre, hI₂.r2pre⟩) h) fun _ _ h => h)
       fun p xb s h he => t0_t1 M p xb s (v3_t0 h he)) ?_)
   refine RelCT.seqs_append (by simp [pow]) (by simp) (RelCT.seq (R := Two (Ex T2))

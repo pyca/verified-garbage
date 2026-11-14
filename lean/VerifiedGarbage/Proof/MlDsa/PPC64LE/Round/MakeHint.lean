@@ -78,12 +78,12 @@ theorem mh_val {g : Nat} (hg : g ∈ gamma2s) {a b : BitVec 64} (ha : a.toNat < 
   have ha' := hbv_lt hg ha
   have e1 : ((hbv g a).setWidth 32).setWidth 64 = hbv g a := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [ha'])]
   have hs : (fixk 8380417 (a + b - 8380417)).toNat = (a.toNat + b.toNat) % q := by
     rw [VG.Proof.MlDsa.Round.q_eq] at ha hb ⊢
     have := fixk_sub (k := 8380417) (by decide) (by decide) (x := a + b) (by bv_omega)
     rw [show (8380417 : BitVec 64) = BitVec.ofNat 64 8380417 from rfl, this, BitVec.toNat_add,
-      Nat.mod_eq_of_lt (by omega : a.toNat + b.toNat < 2 ^ 64)]
+      Nat.mod_eq_of_lt (by omega_using [ha, hb] : a.toNat + b.toNat < 2 ^ 64)]
   have hsq : (fixk 8380417 (a + b - 8380417)).toNat < q := by rw [hs]; exact Nat.mod_lt _ (by decide)
   unfold mhBit
   rw [e1, xor_bit (hbv_lt hg hsq) ha']
@@ -228,7 +228,7 @@ theorem inv_step {g : Nat} (hg : g ∈ gamma2s) {s₀ : State} (hp : Pre s₀) {
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
       cases (hint s₀ g)[i]! <;> rfl
-    · rw [ite_eq_right e, coeffAt_writeW _ _ hj hi, ite_eq_right e]; exact h.coeff j hj (by omega)
+    · rw [ite_eq_right e, coeffAt_writeW _ _ hj hi, ite_eq_right e]; exact h.coeff j hj (by omega_using [hji, e])
   · rw [r7, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
 /-! ## The function -/
@@ -259,7 +259,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) : WP isa makeHint s₀ (Post s₀
     (fun s h => exit_ok hG h) ?_)
   have e7 := VG.Proof.MlDsa.PPC64LE.Arith.loadImm_val (v := 8380417) (by decide)
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hrd, hwr, hsp, hlr, fun r hr => ?_,
-    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega)⟩
+    by rw [show _ = s.mem from rfl, hm]; exact Frame.refl _ _, fun j _ h => absurd h (by omega_using [])⟩
   · simp [State.write, kgpr, hgpr, selGpr]
   · simp [State.write, kgpr, hgpr, selGpr]
   · simp [State.write, kgpr, hgpr, selGpr]
@@ -305,7 +305,7 @@ theorem verified : Verified PPC64LE.target makeHint (Proof.MlDsa.makeHintContrac
     · rw [h.2.2.2.1 j hj]; rfl
     · rw [h.2.2.2.2, hintOnes_onesTo, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
       have := onesTo_le (hint s (G s).toNat) 256
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
       rfl
   · sig_pub [Proof.MlDsa.makeHintContract, Proof.MlDsa.makeHintSig, PPC64LE.abi, PPC64LE.argRegs] at h
     refine ⟨fun r hr => ?_, h.1, ?_⟩

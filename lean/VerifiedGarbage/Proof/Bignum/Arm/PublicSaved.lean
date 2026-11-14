@@ -35,7 +35,7 @@ theorem public_callee_saved {s t : State} {base dst : BitVec 32} {len k : Nat} {
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact workspace.sub_left sub
-      · exact Offset.disjoint _ gap (by omega) (by decide)
+      · exact Offset.disjoint _ gap (by omega_using [fit]) (by decide)
       · exact output.sub_left sub) (by decide : 32 / 8 < 2 ^ 64)
   exact keep.trans (saved p hp)
 

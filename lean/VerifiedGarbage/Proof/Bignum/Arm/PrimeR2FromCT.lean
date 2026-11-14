@@ -132,7 +132,7 @@ theorem ctxBlock_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child : B
   have one (s : State) {bs : Fin 7 → List Byte} (h : CrtCopyCtx g bs child slot v s) :
       WP isa (.block [.ldrSp .r1 8]) s P := by
     refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide)
-      (addr_add (by have := h.shared.stack.nowrap; omega)) (h.shared.stack.read (by decide)) fun t a => WP.block_nil ?_
+      (addr_add (by have := h.shared.stack.nowrap; omega_using [this])) (h.shared.stack.read (by decide)) fun t a => WP.block_nil ?_
     exact ⟨(a.other .r0 (by decide)).trans h.ready.ptr, a.gpr.trans h.shared.savedMain⟩
   have first := RelCT.wp ((loadStack_ct .r1 8).mono (P' := CrtCopyPair g bs1 bs2 child slot v)
     (fun _ _ h => h.2.2) (fun _ _ _ => trivial)) (fun s t h => ⟨one s h.1, one t h.2.1⟩)
@@ -207,7 +207,7 @@ theorem foldReduce_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v : Nat
     refine (clearArrayWide_ok s h.1.ready (o := 5) (by decide) (by decide)).mono ?_
     rintro t ⟨ready, cleared, keeps, frame, rest⟩
     have ht := h.after ready keeps (by decide) (by decide) frame rest
-    exact ht.cons (by rw [numAt_of_cleared cleared]; have := large t ht; omega)
+    exact ht.cons (by rw [numAt_of_cleared cleared]; have := large t ht; omega_using [this])
   have w3 (s : State) {bs : Fin 7 → List Byte} (h : FoldBound g bs v [5, 7] s) :
       WP isa (clearOperandBuffer 72) s (FoldBound g bs v [5, 7]) :=
     (clearArrayWide_ok s h.1.ready (o := 1) (by decide) (by decide)).mono
@@ -243,7 +243,7 @@ theorem foldReduce_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v : Nat
     refine ht.cons ?_
     rw [value, keeps_array_num keeps (fits s h) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
       (by decide)]
-    exact Nat.mod_lt _ (by have := large s h; omega)
+    exact Nat.mod_lt _ (by have := large s h; omega_using [this])
   have w10 (s : State) {bs : Fin 7 → List Byte} (h : FoldBound g bs v [4, 6, 1, 5, 7] s) :
       WP isa (subModArray 1 6 4) s (FoldBound g bs v [1, 4, 6, 5, 7]) := by
     refine (subModArray_ok s h.1.ready (o := 1) (a := 6) (b := 4) (foldOperand (by decide)) (foldOperand (by decide))
@@ -253,7 +253,7 @@ theorem foldReduce_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v : Nat
     refine ht.cons ?_
     rw [value, keeps_array_num keeps (fits s h) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
       (by decide)]
-    exact Nat.mod_lt _ (by have := large s h; omega)
+    exact Nat.mod_lt _ (by have := large s h; omega_using [this])
   have w11 (s : State) {bs : Fin 7 → List Byte} (h : FoldBound g bs v [1, 4, 6, 5, 7] s) :
       WP isa (subModArray 4 1 5) s (FoldBound g bs v [4]) := by
     refine (subModArray_ok s h.1.ready (o := 4) (a := 1) (b := 5) (foldOperand (by decide)) (foldOperand (by decide))
@@ -263,16 +263,16 @@ theorem foldReduce_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v : Nat
     refine ht.cons ?_
     rw [value, keeps_array_num keeps (fits s h) (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
       (by decide)]
-    exact Nat.mod_lt _ (by have := large s h; omega)
+    exact Nat.mod_lt _ (by have := large s h; omega_using [this])
   -- Each step in both runs.
   have size (s : State) {bs : Fin 7 → List Byte} {os : List Nat} (h : FoldBound g bs v os s) : 128 ≤ 8 * workspaceWords g.words := by
     have := fits s h
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have fit3 (s : State) {bs : Fin 7 → List Byte} {os : List Nat} (h : FoldBound g bs v os s) : arrAt v 3 + 32 ≤ 8 * workspaceWords g.words := by
     have := Nat.le_trans (array_end_le (w := v) (by decide : 3 < 8)) (fits s h)
     have hv : 2 ≤ v := h.1.ready.width ▸ h.1.ready.layout.1
-    omega
+    omega_using [this, hv]
   intro s₁ s₂ tr1 tr2 u₁ u₂ hh e1 e2
   have sz := size s₁ hh.1
   have f3 := fit3 s₁ hh.1
@@ -409,7 +409,7 @@ theorem foldDoubles_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v c : 
     (crt_ite_ct (cond := decide (c = 0)) (fun s h => by rw [VG.Proof.X25519.Arm.eval_eq, h.2])
       (fun s h => by rw [VG.Proof.X25519.Arm.eval_eq, h.2])
       (fun _ => RelCT.block_nil (fun _ _ _ => trivial))
-      (fun hc0 => (doubleLoop_ct (c := c) (by simp only [decide_eq_false_iff_not] at hc0; omega) hc).mono
+      (fun hc0 => (doubleLoop_ct (c := c) (by simp only [decide_eq_false_iff_not] at hc0; omega_using [hc0]) hc).mono
         (fun _ _ h => ⟨h.1.1.2, h.2.1.1.2, h.2.2⟩) (fun _ _ _ => trivial)))
 
 theorem foldDoubles_wp (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {v c : Nat} (hc : c < 2 ^ 32)
@@ -480,7 +480,7 @@ theorem r2Fold_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v : Nat} (h
     have : g.words ≤ 128 := (crt_width_valid h0.1.1.shared.buffers.lengthValid).2.1
     have := h0.1.1.le
     unfold foldC
-    split <;> omega
+    split <;> omega_arith
   have two : RelCT isa (fun s t => FoldBound g bs1 v [4] s ∧ FoldBound g bs2 v [4] t ∧ s.sp = t.sp)
       (smallConst 7 2) (fun _ _ => True) :=
     (smallConst_ct (o := 7) 2 (by decide) (by decide) (by decide)).mono
@@ -512,7 +512,7 @@ theorem r2FromN_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v : Nat} :
       (fun _ => relCT_of_pre fun s t h => (r2_ct (by
           have : g.words ≤ 128 := (crt_width_valid h.1.1.shared.buffers.lengthValid).2.1
           have := h.1.1.le
-          omega)).mono (fun _ _ h => ⟨h.1.1.ready, h.2.1.1.ready, h.2.2⟩) (fun _ _ _ => trivial)))
+          omega_arith)).mono (fun _ _ h => ⟨h.1.1.ready, h.2.1.1.ready, h.2.2⟩) (fun _ _ _ => trivial)))
 
 /-! ## The factor's preparation -/
 

@@ -118,7 +118,7 @@ theorem raw_ok {Sl : Nat → Prop} (layout : Lay M 8192 Sl) (aligned : Aligned M
   have keep (x : Nat) (hx : x∈live) (hn : x∉writes) :
       wordsVal t.mem base x M.n=wordsVal s.mem base x M.n := by
     have hb := layout.le x (hi.sl x hx)
-    refine hk.unch.wordsVal (fun w hw' => ?_) (by omega)
+    refine hk.unch.wordsVal (fun w hw' => ?_) (by omega_using [hb])
     simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw'
     rcases hw' with ⟨y,hy,rfl⟩ | rfl
     · exact layout.apart x y (hi.sl x hx) (hw y hy) (fun he => hn (he ▸ hy))

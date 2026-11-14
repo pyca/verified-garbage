@@ -76,7 +76,7 @@ theorem code_ok (s : State) (lane q : Nat) (positive : 0 < q)
   rintro a ⟨base, lan, col, ka⟩
   have column : a.gpr .x3 = BitVec.ofNat 64 (q - 1) := by
     rw [col, lengthWord]
-    exact Offset.ofNat_sub_ofNat (by omega : 1 ≤ q)
+    exact Offset.ofNat_sub_ofNat (by omega_using [positive] : 1 ≤ q)
   refine WP.seq ((BlockAddress.code_nat_ok a lane (q - 1) q (lan.trans laneWord) column
     ((ka.regs .x20 (by decide)).trans lengthWord)).mono ?_)
   rintro b ⟨address, kb⟩
@@ -85,7 +85,7 @@ theorem code_ok (s : State) (lane q : Nat) (positive : 0 < q)
   refine ⟨dest.trans ((kb.regs .x4 (by decide)).trans base), ?_, ?_⟩
   · rw [src, address, base]
     unfold Proof.Argon2.matrixCell
-    have offset : lane * q + (q - 1) = (lane + 1) * q - 1 := by rw [Nat.add_mul, Nat.one_mul]; omega
+    have offset : lane * q + (q - 1) = (lane + 1) * q - 1 := by rw [Nat.add_mul, Nat.one_mul]; omega_using [positive]
     rw [offset]
   · exact (ka.mono (by simp [changed])).trans
       ((kb.mono (by simp [changed])).trans (kt.mono (by simp [changed])))

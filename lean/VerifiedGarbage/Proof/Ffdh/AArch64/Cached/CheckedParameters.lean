@@ -18,7 +18,7 @@ def checkedParameters (B src ctx : Addr) (Z k : Nat) (dom : List Byte)
  exact {
   B:=B,Z:=Z,w:=(k+7)/8,mi:=0,P:=(Spec.Ffdh.domainOf k dom).p,G:=(Spec.Ffdh.domainOf k dom).g,
   N:=Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom),k:=k,src:=src,ctx:=ctx,
-  table:=ctx+BitVec.ofNat 64 (24+16*((k+7)/8)),room:=room,positive:=by omega,width:=by omega,
-  modulusPositive:=by omega,coprime:=coprime_pow2 modulus.1.1.1 (64*((k+7)/8)) }
+  table:=ctx+BitVec.ofNat 64 (24+16*((k+7)/8)),room:=room,positive:=by omega_using [small],width:=by omega_using [large],
+  modulusPositive:=by omega_using [modulus],coprime:=coprime_pow2 modulus.1.1.1 (64*((k+7)/8)) }
 
 end VG.Proof.Ffdh.AArch64.Cached

@@ -66,7 +66,7 @@ theorem eqTest_ok (s : State) (j k : Nat) (hj : j < 16) (hk : k < 16)
     ∃ s', runBlock isa [.subi .r8 .r12 k] s = some s' ∧
       isa.eval (.zero .d .r8) s' = some (decide (j = k)) ∧ Kept [.r8] s s' := by
   refine ⟨s.write .r8 (s.gpr .r12 - BitVec.ofNat 64 k), ?_, ?_, write_keep _ _⟩
-  · rw [runBlock_cons, exec_subi (by decide) (by omega), runStep_some, runBlock_nil]
+  · rw [runBlock_cons, exec_subi (by decide) (by omega_using [hk]), runStep_some, runBlock_nil]
   · change VG.PPC64LE.eval (.zero .d .r8) _ = _
     simp only [VG.PPC64LE.eval, State.read, Size.bits, gpr_write_self, BitVec.setWidth_eq, hv]
     exact congrArg some (comparison_values j hj k hk).2

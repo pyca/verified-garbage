@@ -27,13 +27,13 @@ def Saved (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop :=
 theorem Saved.outside {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {o n : Nat} (ho : Outside base o n m m') (h32 : 32 ≤ o) : Saved base g m' := by
   intro i hi
-  exact (ho.word (Or.inl (by omega)) (by omega)).trans (h i hi)
+  exact (ho.word (Or.inl (by omega_using [h32, hi])) (by omega_using [hi])).trans (h i hi)
 
 theorem Saved.outside2 {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {x nx y ny : Nat} (ho : Outside2 base x nx y ny m m') (hx : 32 ≤ x) (hy : 32 ≤ y) :
     Saved base g m' := by
   intro i hi
-  exact (ho.word (Or.inl (by omega)) (Or.inl (by omega)) (by omega)).trans (h i hi)
+  exact (ho.word (Or.inl (by omega_using [hx, hi])) (Or.inl (by omega_using [hy, hi])) (by omega_using [hi])).trans (h i hi)
 
 theorem save_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) :
@@ -46,21 +46,21 @@ theorem save_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
       WP isa (.block [.str (saved[n]!) .r3 (4 * n)]) t (inv (n + 1)) := by
     intro n t hn' ⟨tv, tm, tk⟩
     have ea : State.addr (t.gpr .r3 + BitVec.ofNat 32 (4 * n)) = off base (4 * n) := by
-      rw [tk.1 _ (by decide), addr_add (by omega), hc]
+      rw [tk.1 _ (by decide), addr_add (by omega_using [hn, hn']), hc]
     have wr : InRegions t.wr (off base (4 * n)) 4 := by
-      rw [tk.2.2]; exact ⟨_, hw, contains_sc (by omega)⟩
-    refine wp_str (by omega) ea wr fun u hu => WP.block_nil ?_
+      rw [tk.2.2]; exact ⟨_, hw, contains_sc (by omega_using [hn'])⟩
+    refine wp_str (by omega_using [hn']) ea wr fun u hu => WP.block_nil ?_
     refine ⟨?_, tm.trans ?_, tk.trans (rest_keeps (hu.rest _))⟩
     · intro i hi
       rw [hu.mem, tk.1 _ (by simp)]
-      have h := word_write (o := 0) (i := n) (j := i) t.mem base (by omega) (by omega) (s.gpr (saved[n]!))
+      have h := word_write (o := 0) (i := n) (j := i) t.mem base (by omega_using [hn']) (by omega_using [hn', hi]) (s.gpr (saved[n]!))
       simp only [Nat.zero_add] at h
       rw [h]
       by_cases he : i = n
       · rw [ite_eq_left he, he]
-      · rw [ite_eq_right he]; exact tv i (by omega)
+      · rw [ite_eq_right he]; exact tv i (by omega_using [hi, he])
     · rw [hu.mem]
-      exact (writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)
+      exact (writeW_outside _ _ _ (by omega_using [hn'])).mono (by omega_using []) (by omega_using [hn'])
   rw [List.map_eq_flatMap]
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩

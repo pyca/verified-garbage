@@ -37,7 +37,7 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
     (h : OpKeep M base (c.sl o) s s') {i : Nat} (hi : i < 45) (hio : i ≠ o) (hit : i ≠ TMP) :
     sv c base s' i = sv c base s i := by
   have hl := sl_le c h7 hi
-  refine h.unch.wordsVal (fun w hw => ?_) (by omega)
+  refine h.unch.wordsVal (fun w hw => ?_) (by omega_using [hn, hl])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl
   · rw [hMn]; exact sl_apart c hio
@@ -80,10 +80,10 @@ theorem slAdd_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 10) {base : A
 theorem sl_own_fn (c : Cfg) (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
     c.sl i + 8 * c.n ≤ VG.Proof.Weierstrass.AArch64.Mont.own c.n := by
   rw [sl_eq c i hT]
-  have := Nat.mul_le_mul_left (8 * c.n) (show i ≤ 44 by omega)
+  have := Nat.mul_le_mul_left (8 * c.n) (show i ≤ 44 by omega_using [hi])
   simp only [VG.Proof.Weierstrass.AArch64.Mont.own, Impl.Weierstrass.Mont.ownAt,
     Impl.Weierstrass.Mont.ownBytes]
-  omega
+  omega_using [h7, this]
 
 /-- `[o] = [a] [b] R⁻¹ mod n`, on slots, by a call or inline (`Cfg.mulNP`). -/
 theorem slMulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State}

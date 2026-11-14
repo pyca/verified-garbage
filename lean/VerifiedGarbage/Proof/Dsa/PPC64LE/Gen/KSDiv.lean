@@ -27,7 +27,7 @@ theorem num_of_num1 {m : Mem} {B : Addr} {w j : Nat} (h : val32 m B (arr w j) (w
   have : val32 m B (arr w j + 4 * w) 1 = 0 := by
     rcases Nat.eq_zero_or_pos (val32 m B (arr w j + 4 * w) 1) with z | z
     · exact z
-    · have := Nat.mul_le_mul_left (2 ^ (32 * w)) z; omega
+    · have := Nat.mul_le_mul_left (2 ^ (32 * w)) z; omega_using [h, this]
   rw [this, Nat.mul_zero, Nat.add_zero]
 
 /-- The stage after the division. -/
@@ -59,7 +59,7 @@ theorem div_vp {q r d t : Nat} (cert : CertK (VG.Impl.Rsa.PPC64LE.Div.div q r d 
   have vr1 : val32 u.mem G.KB (arr G.w r) (G.w + 1) = c.A q % c.A d := vr
   have vr' : num u.mem G.KB G.w r = c.A q % c.A d := by
     have := Nat.mod_lt (c.A q) hpos
-    rw [num_of_num1 (by rw [vr1]; omega)]
+    rw [num_of_num1 (by rw [vr1]; omega_using [dl, this])]
     exact vr1
   refine ⟨⟨h.of_ks R' R.sp f (fun j hj => ?_) (fun j hj => ?_) (fun e he => ?_) h.kslOk, x⟩, kr.of_keep R'⟩
   · show num u.mem G.KB G.w j = VG.Proof.Rsa.KeyWorkspace.upd (VG.Proof.Rsa.KeyWorkspace.upd c.A q
@@ -77,7 +77,7 @@ theorem div_vp {q r d t : Nat} (cert : CertK (VG.Impl.Rsa.PPC64LE.Div.div q r d 
       · exact absurd rfl ejr
       · exact hj
     have ejt : j ≠ t := fun e => htL (e ▸ jl)
-    rw [k.num (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro k' (rfl | rfl | rfl) <;> omega)
+    rw [k.num (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro k' (rfl | rfl | rfl) <;> omega_arith)
       (by simp) (hw.fit64 (h.liveOk j jl))]
     exact h.arrs.get jl
   · rcases List.mem_cons.mp hj with rfl | hj

@@ -55,7 +55,7 @@ theorem toPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.openToRoundsContract PP
     PPC64LE.argRegs, List.range, List.range.loop] at hp
   obtain ⟨qsp, ql, q3, q4, q5, q6, q7, q8, q9, q10, a0, a1, a2, a3⟩ := hp
   refine ⟨qsp, ql, q3, q4, q5, q6, q7, q8, q9, q10, fun i hi => ?_⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3]
 
 /-- A state satisfying the precondition of `vg_aes_gcm_open_to`: no nonce,

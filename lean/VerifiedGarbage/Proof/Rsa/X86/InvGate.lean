@@ -44,24 +44,24 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
   have hp : 256^bytes≤256^(4*n) := Nat.pow_le_pow_right (by decide) hb
   have eq : 256^(4*n)=2^(32*n) := by
     change (2^8)^(4*n)=2^(32*n)
-    rw [←Nat.pow_mul]; congr 1; omega
+    rw [←Nat.pow_mul]; congr 1; omega_using []
   rw [eq] at hp
-  omega
+  omega_using [hx, hp]
 
  theorem odd_modulus_bound {p n : Nat} (hn : 0<n) (hp : p<2^(32*n)) : 2*(p/2)+1<2^(32*n) := by
   have even : 2^(32*n)%2=0 := by
-    rw [show 32*n=(32*n-1)+1 by omega,Nat.pow_succ]
-    omega
-  omega
+    rw [show 32*n=(32*n-1)+1 by omega_using [hn],Nat.pow_succ]
+    omega_using []
+  omega_using [hp, even]
 
  theorem prefix_eq {m : Mem} {base : Addr} {d n w : Nat} (hw : n≤w)
     (small : val32 m base d w<2^(32*n)) : val32 m base d n=val32 m base d w := by
   have split := val32_append m base d n (w-n)
-  rw [show n+(w-n)=w by omega] at split
+  rw [show n+(w-n)=w by omega_using [hw]] at split
   have high : val32 m base (d+4*n) (w-n)=0 := by
     by_contra h
-    have bound := Nat.mul_le_mul_left (2^(32*n)) (show 1≤val32 m base (d+4*n) (w-n) by omega)
-    omega
+    have bound := Nat.mul_le_mul_left (2^(32*n)) (show 1≤val32 m base (d+4*n) (w-n) by omega_using [h])
+    omega_using [small, split, bound]
   rw [split,high,Nat.mul_zero,Nat.add_zero]
 
 end VG.Proof.Rsa.X86.CrtValuesRt

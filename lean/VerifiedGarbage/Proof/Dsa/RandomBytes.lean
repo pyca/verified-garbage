@@ -73,23 +73,23 @@ def maskValue (n : Nat) : BitVec 32 :=
 theorem maskValue_eq (n : Nat) (hpos : 0 < n) (hbound : n < 256) :
     maskValue n = BitVec.ofNat 32 (2 ^ (n.log2 + 1) - 1) := by
   have key : ∀ k, 2 ^ k ≤ n → n < 2 ^ (k + 1) → n.log2 = k := fun k h₁ h₂ =>
-    (Nat.log2_eq_iff (by omega)).mpr ⟨h₁, h₂⟩
+    (Nat.log2_eq_iff (by omega_using [hpos])).mpr ⟨h₁, h₂⟩
   unfold maskValue
   split
-  · rw [key 0 (show 1 ≤ n by omega) (by omega)]; rfl
+  · rw [key 0 (show 1 ≤ n by omega_using [hpos]) (by omega_arith)]; rfl
   split
-  · rw [key 1 (by omega) (by omega)]; rfl
+  · rw [key 1 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 2 (by omega) (by omega)]; rfl
+  · rw [key 2 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 3 (by omega) (by omega)]; rfl
+  · rw [key 3 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 4 (by omega) (by omega)]; rfl
+  · rw [key 4 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 5 (by omega) (by omega)]; rfl
+  · rw [key 5 (by omega_arith) (by omega_arith)]; rfl
   split
-  · rw [key 6 (by omega) (by omega)]; rfl
-  · rw [key 7 (by omega) (by omega)]; rfl
+  · rw [key 6 (by omega_arith) (by omega_arith)]; rfl
+  · rw [key 7 (by omega_arith) (by omega_using [hbound])]; rfl
 
 /-! ## The candidate -/
 
@@ -120,7 +120,7 @@ theorem copiedList_eq {b : Byte} {bs : List Byte} (mask : BitVec 32) :
     | succ i =>
       simp only [Nat.add_one_ne_zero, ite_false, List.getElem_cons_succ]
       simp only [List.length_cons] at h₂
-      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega)]
+      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega_using [h₂])]
 
 /-- The leading byte's mask, as `random_candidate_mask` states it. -/
 theorem masked_head (qb : List Byte) (b : Byte) (hpos : 0 < (significant qb).1) :
@@ -131,8 +131,8 @@ theorem masked_head (qb : List Byte) (b : Byte) (hpos : 0 < (significant qb).1) 
     have hz : (significant qb).2.toNat ≠ 0 := by
       intro he
       have h0 : (significant qb).1 = 0 := hn.mpr (BitVec.eq_of_toNat_eq he)
-      omega
-    omega
+      omega_using [hpos, h0]
+    omega_using [hz]
   rw [maskValue_eq _ hb (significant qb).2.isLt, BitVec.setWidth_and,
     BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq, BitVec.setWidth_ofNat_of_le (by decide)]
 
@@ -153,7 +153,7 @@ abbrev qSigOf (qb : List Byte) : List Byte := qb.drop (qb.length - (significant 
 
 theorem qSigOf_length (qb : List Byte) : (qSigOf qb).length = (significant qb).1 := by
   have := significant_fits qb
-  simp only [qSigOf, List.length_drop]; omega
+  simp only [qSigOf, List.length_drop]; omega_using [this]
 
 /-- Whether the candidate `cs` is accepted: nonzero and below q. -/
 def acceptsOf (qb cs : List Byte) : Bool :=
@@ -181,14 +181,14 @@ theorem borrow_bit {a x : Nat} (ha : a < 256) (hx : x ≤ 256) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 x) >>> 31 = BitVec.ofNat 32 (if a < x then 1 else 0) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (a := x) (by omega), Nat.shiftRight_eq_div_pow]
-  split <;> rw [BitVec.toNat_ofNat] <;> omega
+    Nat.mod_eq_of_lt (a := a) (by omega_using [ha]), Nat.mod_eq_of_lt (a := x) (by omega_using [hx]), Nat.shiftRight_eq_div_pow]
+  split <;> rw [BitVec.toNat_ofNat] <;> omega_arith
 
 theorem toNat_setWidth8 (b : Byte) : (b.setWidth 32).toNat = b.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le b.isLt (by decide : 2 ^ 8 ≤ 2 ^ 32))]
 
 theorem setWidth8_ofNat (b : Byte) : b.setWidth 32 = BitVec.ofNat 32 b.toNat := by
-  apply BitVec.eq_of_toNat_eq; rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  apply BitVec.eq_of_toNat_eq; rw [toNat_setWidth8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
 
 theorem byte_setWidth (b : Byte) : (b.setWidth 32).setWidth 8 = b := by
   rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]

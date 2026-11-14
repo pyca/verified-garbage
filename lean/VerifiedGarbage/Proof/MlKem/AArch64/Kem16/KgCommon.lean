@@ -40,7 +40,7 @@ theorem CInvW.frame {s₀ : State} {mB : Mem} {v : BitVec 64} {n : Nat} {s s' : 
   have ha : ∀ e < n, ∀ r ∈ W, (polyRegion (AR s₀ e)).Disjoint r := fun e he r hr =>
     (hW r hr).2.2.sub_left (by
       rw [show AR s₀ e = kA s₀ 3 + BitVec.ofNat 64 AH + BitVec.ofNat 64 (1024 * e) by rw [ptr_add]]
-      exact sub_offset' (by omega))
+      exact sub_offset' (by omega_using [hle, he]))
   refine ⟨hk, ?_, ?_, by rw [hx, h.x24], hle, fun e he => ⟨reducedW_frame (w16 := true) hf (ha e he) (h.ahat e he).1, ?_⟩⟩
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).1) (by decide)]; exact h.rho
   · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.1) (by decide)]; exact h.sig
@@ -63,17 +63,17 @@ theorem TLW.frame {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {n
     (hf : Frame W s.mem s'.mem) (hW : ∀ r ∈ W, Apart P s₀ i r) : TLW P s₀ mB v n i s' := by
   have hw := hp.wf
   refine ⟨h.c.frame hk hx hf fun r hr => ⟨(hW r hr).1, (hW r hr).2.1,
-    (hW r hr).2.2.1.sub_left (R.sub2 (Nat.le_refl _) (by omega))⟩, fun j hj => ?_, fun j hj => ?_,
+    (hW r hr).2.2.1.sub_left (R.sub2 (Nat.le_refl _) (by omega_using []))⟩, fun j hj => ?_, fun j hj => ?_,
     fun i' hi' => ⟨?_, ?_⟩⟩
   · exact polyIsW_frame_poly (w16 := true) hf (fun r hr => (hW r hr).2.2.1.sub_left (R.sub2 (by lom) (by lom))) (h.sp j hj)
-  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega)
-      (by have := mul_succ_le (a := 384) hj; omega))) (by decide)]
+  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega_using [])
+      (by have := mul_succ_le (a := 384) hj; omega_using [hj]))) (by decide)]
     exact h.dk j hj
-  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.1.sub_left (R.sub2 (by omega)
-      (by have := mul_succ_le (a := 384) hi'; omega))) (by decide)]
+  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.1.sub_left (R.sub2 (by omega_using [])
+      (by have := mul_succ_le (a := 384) hi'; omega_using [hi']))) (by decide)]
     exact (h.ek i' hi').1
-  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega)
-      (by have := mul_succ_le (a := 384) hi'; omega))) (by decide)]
+  · rw [bytesAt_frame hf (fun r hr => (hW r hr).2.2.2.2.sub_left (R.sub2 (by omega_using [])
+      (by have := mul_succ_le (a := 384) hi'; omega_using [hi']))) (by decide)]
     exact (h.ek i' hi').2
 
 structure DoneW (P : KemLay) (s₀ : State) (mB : Mem) (v : BitVec 64) (s : State) : Prop where
@@ -124,7 +124,7 @@ theorem rho_okW {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {n :
   refine ⟨kbb, ⟨tla.frame hp kbb (kb'.get .x24) fb (fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact apart_R hp (b := 2) (o := 768 * P.k) (l := 32) (Nat.le_refl _) (by decide) (by kl) (by kl)
-      (by kl) (fun _ => by omega)), ?_, ?_⟩, ?_⟩
+      (by kl) (fun _ => by omega_using [])), ?_, ?_⟩, ?_⟩
   · rw [bytesAt_frame fb (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact hp.args.rdisj (by decide) (by decide) (by kl) (by kl) (by kl)) (by decide), ba]

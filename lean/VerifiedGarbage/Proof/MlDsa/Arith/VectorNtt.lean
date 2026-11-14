@@ -34,11 +34,11 @@ theorem blockN_bfly_get' (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen :
       else w[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [blockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [blockN_zero, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   | succ t ih =>
-    rw [blockN_succ, bfly_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega) (by omega), ih (by omega) (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [blockN_succ, bfly_get _ hlen (by omega_using [hs]) _ hi, ih (i := start + t) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]),
+      ih (i := start + t + len) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]), ih (by omega_using [ht]) (by omega_using [hs]) hi]
+    rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
@@ -53,11 +53,11 @@ theorem blockN_bflyInv_get' (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hle
       else w[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [blockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [blockN_zero, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   | succ t ih =>
-    rw [blockN_succ, bflyInv_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega) (by omega), ih (by omega) (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [blockN_succ, bflyInv_get _ hlen (by omega_using [hs]) _ hi, ih (i := start + t) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]),
+      ih (i := start + t + len) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]), ih (by omega_using [ht]) (by omega_using [hs]) hi]
+    rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
@@ -89,18 +89,18 @@ theorem layF1_get {blk : Poly → Nat → Nat → Nat → Nat → Poly}
       (if j % 2 = 0 then (op F[j]! F[j + 1]! (zetas (zi (j / 2)))).1
         else (op F[j - 1]! F[j]! (zetas (zi (j / 2)))).2) else F[j]! := by
   induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega)]; rfl
+  | zero => rw [ite_eq_right (by omega_using [])]; rfl
   | succ b ih =>
     rw [layF, foldl_range_succ, ← layF,
-      hblk.get _ 1 _ _ 1 (by decide) (by decide) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
+      hblk.get _ 1 _ _ 1 (by decide) (by decide) (by rw [n_eq]; omega_using [hb]) j (by rw [n_eq]; exact hj)]
     by_cases h1 : 2 * 1 * b ≤ j ∧ j < 2 * 1 * b + 1
-    · rw [ite_eq_left h1, ih (by omega) hj, ih (by omega) (by omega), show j / 2 = b by omega]
+    · rw [ite_eq_left h1, ih (by omega_using [hb]) hj, ih (by omega_using [hb]) (by omega_using [hj, h1]), show j / 2 = b by omega_using [h1]]
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
     · rw [ite_eq_right h1]
       by_cases h2 : 2 * 1 * b + 1 ≤ j ∧ j < 2 * 1 * b + 1 + 1
-      · rw [ite_eq_left h2, ih (by omega) (by omega), ih (by omega) hj, show j / 2 = b by omega]
+      · rw [ite_eq_left h2, ih (by omega_using [hb]) (by omega_using [hj]), ih (by omega_using [hb]) hj, show j / 2 = b by omega_using [h2]]
         simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-      · rw [ite_eq_right h2, ih (by omega) hj]
+      · rw [ite_eq_right h2, ih (by omega_using [hb]) hj]
         by_cases h3 : j < 2 * b <;> simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
 
 
@@ -112,18 +112,18 @@ theorem layF2_get {blk : Poly → Nat → Nat → Nat → Nat → Poly}
       (if j%4 < 2 then (op F[j]! F[j+2]! (zetas (zi (j/4)))).1
        else (op F[j-2]! F[j]! (zetas (zi (j/4)))).2) else F[j]! := by
   induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega)]; rfl
+  | zero => rw [ite_eq_right (by omega_using [])]; rfl
   | succ b ih =>
     rw [layF,foldl_range_succ,← layF,
-      hblk.get _ 2 _ _ 2 (by decide) (by decide) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
+      hblk.get _ 2 _ _ 2 (by decide) (by decide) (by rw [n_eq]; omega_using [hb]) j (by rw [n_eq]; exact hj)]
     by_cases h1 : 2*2*b ≤ j ∧ j < 2*2*b+2
-    · rw [ite_eq_left h1,ih (by omega) hj,ih (by omega) (by omega),show j/4 = b by omega]
+    · rw [ite_eq_left h1,ih (by omega_using [hb]) hj,ih (by omega_using [hb]) (by omega_using [hj, h1]),show j/4 = b by omega_using [h1]]
       simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
     · rw [ite_eq_right h1]
       by_cases h2 : 2*2*b+2 ≤ j ∧ j < 2*2*b+2+2
-      · rw [ite_eq_left h2,ih (by omega) (by omega),ih (by omega) hj,show j/4 = b by omega]
+      · rw [ite_eq_left h2,ih (by omega_using [hb]) (by omega_using [hj]),ih (by omega_using [hb]) hj,show j/4 = b by omega_using [h2]]
         simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
-      · rw [ite_eq_right h2,ih (by omega) hj]
+      · rw [ite_eq_right h2,ih (by omega_using [hb]) hj]
         by_cases h3 : j < 4*b <;> simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
 
 /-! ## A layer, coefficient by coefficient -/

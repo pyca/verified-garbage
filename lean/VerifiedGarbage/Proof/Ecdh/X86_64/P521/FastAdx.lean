@@ -34,7 +34,7 @@ theorem p_succ : p521x.C.p + 1 = 512 * (2 ^ 64) ^ 8 := by
   have h : p521x.C.p =
       6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151 :=
     Proof.P521.curve_p
-  omega
+  omega_using [h]
 
 theorem fastCfg_p521x (hc : BaseCfgOk p521x) : P521F.FastCfg (winQ p521x) p521x.C size where
   ctx := ⟨(winLayQ hc (by decide)).lay, rfl, rfl, p_succ,

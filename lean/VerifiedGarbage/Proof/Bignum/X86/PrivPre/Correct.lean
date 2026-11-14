@@ -55,7 +55,7 @@ theorem correct {pcName prName : String} {pc : Prog isa}
     obtain ⟨trace, t, E, P⟩ := W
     exact ⟨trace, t, E, P⟩
   refine WP.frameAlloc (by decide) (by decide) (by decide)
-    (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega)
+    (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega_using [l])
     (noSp_body pns prns) (WP.mono (body_ok pv pst pns prst prns A) fun v ⟨Bv, Kv, Ev, X, m, Pm, Hm⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · by_cases he : r = .esp

@@ -65,7 +65,7 @@ theorem Memory.controlContextEq {p : Inputs} {sp : BitVec 32} {s t : State} {d :
     (h : Memory p sp s) (hd : d+4≤72)
     (frame : Frame [⟨off (State.addr sp) d,4⟩] s.mem t.mem) :
     WorkspaceEq (State.addr p.output) (bytes p) s.mem t.mem := by
-  apply WorkspaceEq.of_frame (by have := h.output.fits; omega) frame
+  apply WorkspaceEq.of_frame (by have := h.output.fits; omega_using [this]) frame
   intro r hr
   have eq := List.mem_singleton.mp hr
   subst r

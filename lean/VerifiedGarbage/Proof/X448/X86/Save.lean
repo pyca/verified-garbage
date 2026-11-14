@@ -30,29 +30,29 @@ abbrev Saved (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop := Spill.Sav
 
 theorem Saved.outside {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {o n : Nat} (ho : Outside base o n m m') (h16 : 16 ≤ o) : Saved base g m' :=
-  h.of_readW fun p hp => have := savedSlots_bound p hp; ho.word (Or.inl (by omega)) (by omega)
+  h.of_readW fun p hp => have := savedSlots_bound p hp; ho.word (Or.inl (by omega_using [h16, this])) (by omega_using [this])
 
 theorem Saved.outside2 {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {x nx y ny : Nat} (ho : Outside2 base x nx y ny m m') (hx : 16 ≤ x) (hy : 16 ≤ y) :
     Saved base g m' :=
   h.of_readW fun p hp => have := savedSlots_bound p hp
-    ho.word (Or.inl (by omega)) (Or.inl (by omega)) (by omega)
+    ho.word (Or.inl (by omega_using [hx, this])) (Or.inl (by omega_using [hy, this])) (by omega_using [this])
 
 theorem Saved.wsout2 {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {x nx y ny : Nat} (ho : WsOut2 base x nx y ny m m') (hx : 16 ≤ x) (hy : 16 ≤ y) :
     Saved base g m' :=
   h.of_readW fun p hp => have := savedSlots_bound p hp
-    ho.word (Or.inl (by omega)) (Or.inl (by omega)) (by omega)
+    ho.word (Or.inl (by omega_using [hx, this])) (Or.inl (by omega_using [hy, this])) (by omega_using [this])
 
 theorem Saved.field {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {o : Nat} (hm : FieldMem base o m m') (ho : 16 ≤ o) : Saved base g m' :=
   h.of_readW fun p hp => have := savedSlots_bound p hp
-    hm.word (Or.inl (by omega)) (by simp only [ACC]; omega)
+    hm.word (Or.inl (by omega_using [ho, this])) (by simp only [ACC]; omega_using [this])
 
 theorem Saved.wsfield {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {o : Nat} (hm : WsField base o m m') (ho : 16 ≤ o) : Saved base g m' :=
   h.of_readW fun p hp => have := savedSlots_bound p hp
-    hm.word (Or.inl (by omega)) (by simp only [ACC]; omega)
+    hm.word (Or.inl (by omega_using [ho, this])) (by simp only [ACC]; omega_using [this])
 
 /-- A frame of the first `n` bytes at `base`. -/
 theorem Outside.of_frame {base : Addr} {n : Nat} {m m' : Mem} (hf : Frame [⟨base, n⟩] m m') :
@@ -61,7 +61,7 @@ theorem Outside.of_frame {base : Addr} {n : Nat} {m m' : Mem} (hf : Frame [⟨ba
     rw [List.mem_singleton.mp hr]
     simp only [Region.Contains]
     simp only [ofs] at hx
-    omega
+    omega_using [hx]
 
 theorem save_ok {s : State} (hp : Pre s) :
     WP isa (.block save) s fun t =>
@@ -71,8 +71,8 @@ theorem save_ok {s : State} (hp : Pre s) :
     (Spill.saveCode .eax savedSlots ++ [.mov .edi (.reg .eax)]))) s _
   refine loadArg_ok hp rfl rfl rfl (Frame.refl _ _) (by decide : 3 < 4) fun t ht => ?_
   have hfit := hp.sc_fit
-  refine Spill.save_ofNat_ok savedSlots (n := 16) (by decide) (by rw [ht.gpr]; omega)
-    (fun p h => by rw [ht.gpr, ht.wr]; exact ⟨_, hp.sc_in, contains_sc (by have := savedSlots_bound p h; omega)⟩)
+  refine Spill.save_ofNat_ok savedSlots (n := 16) (by decide) (by rw [ht.gpr]; omega_using [hfit])
+    (fun p h => by rw [ht.gpr, ht.wr]; exact ⟨_, hp.sc_in, contains_sc (by have := savedSlots_bound p h; omega_using [this])⟩)
     fun u hu => ?_
   have hm : u.mem = Spill.saveMem s.mem (off ((arg s 3).setWidth 64)) s.gpr savedSlots := by
     rw [hu.mem, ht.gpr, ht.mem]
@@ -86,6 +86,6 @@ theorem save_ok {s : State} (hp : Pre s) :
   · rw [hv.mem, hm]; exact Spill.saveMem_saved_ofNat _ _ _ (n := 16) (by decide) (by decide)
   · rw [hv.mem, hm]
     exact Outside.of_frame (Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h =>
-      Offset.contains_base _ (savedSlots_bound p h) (by have := savedSlots_bound p h; omega))
+      Offset.contains_base _ (savedSlots_bound p h) (by have := savedSlots_bound p h; omega_using [this]))
 
 end VG.Proof.X448.X86

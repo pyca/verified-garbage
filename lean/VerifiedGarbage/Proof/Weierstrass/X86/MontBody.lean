@@ -39,8 +39,8 @@ theorem mulBody_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8
       val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) < 2 * m ∧
       ∃ U, 2 ^ (32 * (2 * k)) * val32 u.mem base (own k + 4 * (2 * k)) (2 * k + 1) =
         val32 s.mem base pa (2 * k) * val32 s.mem base pb (2 * k) + U * m :=
-    WP.mono (rowsF_ok hb hM hpa hpb hL hB (2 * k) (by omega) (by omega))
-      fun _ ⟨O, K, H, E⟩ => ⟨O.mono (by omega) (by omega), K.mono (by decide), H, E⟩
+    WP.mono (rowsF_ok hb hM hpa hpb hL hB (2 * k) (by omega_using [hk]) (by omega_using []))
+      fun _ ⟨O, K, H, E⟩ => ⟨O.mono (by omega_using []) (by omega_using []), K.mono (by decide), H, E⟩
   unfold mulBody
   split
   next he =>
@@ -50,7 +50,7 @@ theorem mulBody_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8
     refine WP.ite (s.gpr .edi - s.gpr .esi == 0) Z (fun h => ?_) (fun _ => ?_)
     · have hpaFit := hL.pa; have hpbFit := hL.pb
       have ho : own 4 = 3840 := rfl
-      have hab := square_pointer_eq (by omega : pa < 2 ^ 32) (by omega : pb < 2 ^ 32) hpa hpb h
+      have hab := square_pointer_eq (by omega_using [hpaFit, ho] : pa < 2 ^ 32) (by omega_using [hpbFit, ho] : pb < 2 ^ 32) hpa hpb h
       subst pa
       have K := R.keeps []
       refine WP.mono (squareBody_ok (hb.of_keeps K (by decide))
@@ -63,7 +63,7 @@ theorem mulBody_ok {s : State} {base : Addr} {k m pa pb : Nat} (hb : Bx s base 8
         (hpa.of_keeps K (by decide) (by decide)) (hpb.of_keeps K (by decide) (by decide)) hL
         (by rw [R.mem]; exact hB) 8 (by decide) (by decide)) fun u ⟨O, K', H, E⟩ => ?_
       rw [R.mem] at O E
-      exact ⟨O.mono (by omega) (by omega), (K.mono (by decide)).widen K' (by decide), H, E⟩
+      exact ⟨O.mono (by omega_using []) (by omega_using []), (K.mono (by decide)).widen K' (by decide), H, E⟩
   next _ => exact general
 
 end VG.Proof.Weierstrass.X86.Mont

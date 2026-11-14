@@ -37,8 +37,8 @@ theorem storeBasis_ct : RelCT isa (Two SquaredBasis) storeBasis (fun _ _ =>True)
      exact ⟨⟨h.basis.good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans h.basis.good.x0,mem ▸ h.basis.good.hdr⟩,
       mem ▸ h.context,digit⟩
  · intro q s h
-   have bound : 2^q.b≤16 :=Nat.pow_le_pow_right (by decide) (by have :=q.bound;omega : q.b≤4)
-   exact WP.mono (basisStore_ok h.basis.good h.space h.context h.index (by omega)) (fun _ ⟨good,_,_,_,_⟩ =>good.x0)
+   have bound : 2^q.b≤16 :=Nat.pow_le_pow_right (by decide) (by have :=q.bound;omega_using [this] : q.b≤4)
+   exact WP.mono (basisStore_ok h.basis.good h.space h.context h.index (by omega_using [bound])) (fun _ ⟨good,_,_,_,_⟩ =>good.x0)
 
 theorem precomputeBasis_ct (M : Mont) : RelCT isa (Two BasisReady) (Precompute.basis M.mm) (fun _ _ =>True) := by
  unfold Precompute.basis

@@ -67,10 +67,10 @@ theorem signCompute_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (PublicKeyPre si
     (by intro p a ha; simp [signComputeInputs, ha])
   have h4 := scheduleZero_ct signComputeInputs signComputeInputs_stable (Core.scalar r)
     (fun p => p.layout.qLen) true (by change r < 2 ^ 31; decide) (by trivial) (by decide)
-    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega) (by taint_decide)
+    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega_using [this]) (by taint_decide)
   have h5 := scheduleZero_ct signComputeInputs signComputeInputs_stable (Core.scalar s)
     (fun p => p.layout.qLen) true (by change s < 2 ^ 31; decide) (by trivial) (by decide)
-    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega) (by taint_decide)
+    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega_using [this]) (by taint_decide)
   unfold signCompute seqs
   refine RelCT.seq h1 (RelCT.seq h2 (RelCT.seq h3 (RelCT.seq (R := Two (ScheduleState signComputeInputs)) ?_ ?_)))
   · exact two_map (fun p => p) (fun p st h =>
@@ -94,7 +94,7 @@ theorem verifyCompute_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (PublicKeyPre 
   have h5 := scheduleEqual_ct verifyComputeInputs verifyComputeInputs_stable (Core.scalar u) Core.signatureR
     (fun p => p.layout.qLen) false (by change u < 2 ^ 31; decide) (by trivial) (by trivial)
     (by simp [stablePointer, Core.signatureR]) (by decide)
-    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega) (by taint_decide)
+    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega_using [this]) (by taint_decide)
   unfold verifyCompute seqs
   refine RelCT.seq h1 (RelCT.seq (R := Two (ScheduleState verifyComputeInputs)) ?_
     (RelCT.seq (R := Two (ScheduleState verifyComputeInputs)) ?_ (RelCT.seq h4 ?_)))

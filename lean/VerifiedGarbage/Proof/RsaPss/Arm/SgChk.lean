@@ -101,7 +101,7 @@ theorem argAt {D : Nat} {P : EP} {σ s : State} (hi : In D P σ) (hs : (P.lay D)
     by rw [hs.rd, hs.wr]; exact hi.ok.arg_read hl,
     (hs.arg hl).trans (by
       rw [List.getD_eq_getElem?_getD, List.getElem?_append_left
-        (by simp only [EP.argv, List.length_cons, List.length_nil]; omega), ← List.getD_eq_getElem?_getD])⟩
+        (by simp only [EP.argv, List.length_cons, List.length_nil]; omega_using [hj]), ← List.getD_eq_getElem?_getD])⟩
 
 /-- A slot, written with `r12 = sp`. -/
 theorem slotAt {D : Nat} {P : EP} {σ : State} (hi : In D P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :

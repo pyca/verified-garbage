@@ -74,8 +74,8 @@ theorem inputs_agree {g : CallGeometry} {s t : State} (pg : PubG g.toGeo) (h : I
     · exact BitVec.eq_of_toNat_eq (h.ws.workspace.edi_toNat.trans j.ws.workspace.edi_toNat.symm)
     · exact sp
   · simp only [τA] at hk
-    have C₁ := h.arguments ((k - 4) / 4) (by omega)
-    have C₂ := j.arguments ((k - 4) / 4) (by omega)
+    have C₁ := h.arguments ((k - 4) / 4) (by omega_using [hk])
+    have C₂ := j.arguments ((k - 4) / 4) (by omega_using [hk])
     rw [show VG.X86.Taint.depth τA.stk = 0 from rfl, Nat.zero_add,
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
@@ -124,15 +124,15 @@ theorem pre_stepW {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths
     have lower := facts.1.1.2
     have power (k : Nat) (hk : 2 ≤ k) : 4 ≤ 2 ^ k := Nat.pow_le_pow_right (n := 2) (by decide) hk
     have bigger := power 511 (by decide)
-    omega
+    omega_using [facts]
   have up := h.upper
   have nb : inputValue g s.mem 0 < 2 ^ (64 * g.n) := by
     apply Nat.lt_of_lt_of_le (inputValue_lt g s.mem 0)
     apply Nat.pow_le_pow_right (by decide)
     have := h.inputBound 0
-    omega
+    omega_using [this]
   have small : inputValue g s.mem 0 < 2 ^ (32 * g.toGeo.w) :=
-    Nat.lt_of_lt_of_le nb (Nat.pow_le_pow_right (by decide) (by change 64 * g.n ≤ 32 * (2 * g.n + 2); omega))
+    Nat.lt_of_lt_of_le nb (Nat.pow_le_pow_right (by decide) (by change 64 * g.n ≤ 32 * (2 * g.n + 2); omega_using []))
   simp only [seqs]
   refine WP.seq (WP.mono (loads_ok h len) fun s1 h1 => ?_)
   have arg : VG.Proof.Bignum.X86.CallArgument s1 g.B g.Z 7 (BitVec.ofNat 32 ((g.args 7).toNat)) := by
@@ -167,7 +167,7 @@ theorem abiD_of {s : State} (h : (Spec.Rsa.recoverPrimesDetContract abi 96).pre 
   have lengths : Spec.Rsa.lenValid (arg s 5).toNat := by with_reducible assumption
   have lo := lengths.1
   have hi := lengths.2
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_arith⟩
   constructor
   all_goals try simp only [rd, bodyRegions, lowR, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq]
@@ -180,7 +180,7 @@ theorem calculatedD_entry {s t : State} (a : ABI s)
     (o : Outside (caller s).B 0 (caller s).Z s.mem t.mem) :
     calculatedD (caller s) t.mem = calculatedD (caller s) s.mem := by
   have same (i : Fin 3) : inputBytes (caller s) t.mem i = inputBytes (caller s) s.mem i := by
-    exact scratch_bytes o (by have := (a.inputLength i).2; have := a.width.2.1; omega)
+    exact scratch_bytes o (by have := (a.inputLength i).2; have := a.width.2.1; omega_arith)
       (a.inApart _ (a.inputMember i) _ (by simp))
   unfold calculatedD
   rw [same 0, same 1, same 2]
@@ -258,14 +258,14 @@ theorem bodyD_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {g : CallGeometry} {s : St
 
 theorem operationD_ok [VG.Proof.Rsa.X86.Recover.G.GcdDone] {s : State} (a : ABI s) (eSmall : (arg s 7).toNat ≤ 8) :
     WP isa VG.Impl.Rsa.X86.RecoverDetRt.code s fun t => WrittenD (caller s) s.mem t ∧ abiPreserved s t := by
-  have low : 16 ≤ (caller s).Z := by have := a.used; omega
-  have high : (caller s).Z ≤ 2 ^ 64 := by have := a.scratchBound; omega
+  have low : 16 ≤ (caller s).Z := by have := a.used; omega_using [this]
+  have high : (caller s).Z ≤ 2 ^ 64 := by have := a.scratchBound; omega_using [this]
   unfold VG.Impl.Rsa.X86.RecoverDetRt.code
   refine WP.seq (WP.mono (installed_ok a) fun u ⟨inputs, saved, k, o⟩ => ?_)
   refine WP.seq (WP.mono (bodyD_ok inputs a.lengths_ok eSmall) fun v ⟨iv, written, frame, kv⟩ => ?_)
   have saveV := bodyFrame_saved inputs frame saved
   have whole : Frame (caller s).writes s.mem v.mem := by
-    have start := outside_frame o (by omega)
+    have start := outside_frame o (by omega_using [high])
     simp only [off, BitVec.add_zero] at start
     exact (start.mono (by simp [CallGeometry.writes])).trans (bodyFrame_full low frame)
   have ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 :=
@@ -309,7 +309,7 @@ theorem argumentsD_eq {s t : State} (h : (Spec.Rsa.recoverPrimesDetContract abi 
   · assumption
   · intro i hi
     have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨
-        i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 := by omega
+        i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> with_reducible assumption
 
@@ -473,9 +473,9 @@ theorem operationD_trace [VG.Proof.Rsa.X86.Recover.G.GcdDone] {s t : State} (a :
       have pair : Pair (caller s) u v :=
         ⟨hs, hv, (ks.1 _ (by decide)).trans (sp.trans (kt.1 _ (by decide)).symm)⟩
       have same : inputBytes (caller s) u.mem 0 = inputBytes (caller s) v.mem 0 := by
-        have ns := VG.Proof.Bignum.scratch_bytes os (by have := a.lengths.2; change (arg s 5).toNat ≤ _; omega)
+        have ns := VG.Proof.Bignum.scratch_bytes os (by have := a.lengths.2; change (arg s 5).toNat ≤ _; omega_using [])
           (a.inApart _ (a.inputMember 0) _ (by simp))
-        have nt := VG.Proof.Bignum.scratch_bytes ot (by have := b.lengths.2; change (arg t 5).toNat ≤ _; omega)
+        have nt := VG.Proof.Bignum.scratch_bytes ot (by have := b.lengths.2; change (arg t 5).toNat ≤ _; omega_using [])
           (b.inApart _ (b.inputMember 0) _ (by simp))
         change inputBytes (caller s) u.mem 0 = inputBytes (caller s) s.mem 0 at ns
         change inputBytes (caller t) v.mem 0 = inputBytes (caller t) t.mem 0 at nt
@@ -492,7 +492,7 @@ theorem operationD_trace [VG.Proof.Rsa.X86.Recover.G.GcdDone] {s t : State} (a :
           have apart : ∀ r ∈ narrowW (caller s),
               Region.Disjoint ⟨(caller s).sp.setWidth 64, 52⟩ r := fun r hr =>
             VG.X86.Taint.frame_disjoint (n := 48)
-              (by change (s.gpr .esp).toNat + 4 + 48 ≤ _; have := a.stackBound; omega) (a.retApart r hr)
+              (by change (s.gpr .esp).toNat + 4 + 48 ≤ _; have := a.stackBound; omega_using [this]) (a.retApart r hr)
               (a.argsApart r hr)
           have eq2 := (bodyD_relCT (caller s) a.lengths_ok eSmall _ _ _ _ _ _ ⟨pair, apart, same⟩ e2 f2).1
           obtain ⟨hx, _, _, kx⟩ := wp_result (bodyD_ok hs a.lengths_ok eSmall) e2

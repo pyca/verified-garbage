@@ -32,7 +32,7 @@ theorem drawWitness_eq {w : Nat} (hn : 0 < witnessOctets w) (r : Rand) :
   by_cases h : witnessOctets w ≤ r.length
   · simp only [ite_eq_left h]
     have hd : (r.drop (witnessOctets w)).length < r.length := by
-      rw [List.length_drop]; omega
+      rw [List.length_drop]; omega_using [hn, h]
     simp only [witnessStep, draw_of_le h, bind, Option.bind_some, pure]
     by_cases ha : 2 ≤ Spec.Rsa.os2ip (r.take (witnessOctets w)) % 2 ^ bitLength (w - 1) ∧
         Spec.Rsa.os2ip (r.take (witnessOctets w)) % 2 ^ bitLength (w - 1) < w - 1
@@ -40,7 +40,7 @@ theorem drawWitness_eq {w : Nat} (hn : 0 < witnessOctets w) (r : Rand) :
     · simp only [Bool.and_eq_true, decide_eq_true_eq, ha, ite_false, hd, ite_true]
       rfl
   · simp only [ite_eq_right h]
-    simp only [witnessStep, draw_of_short (by omega : r.length < witnessOctets w), bind, Option.bind_none]
+    simp only [witnessStep, draw_of_short (by omega_using [h] : r.length < witnessOctets w), bind, Option.bind_none]
 
 /-- An accepted rejection-sampled witness consumes a nonempty prefix. -/
 theorem drawWitness_suffix {w : Nat} (hn : 0 < witnessOctets w) :
@@ -58,10 +58,10 @@ theorem drawWitness_suffix {w : Nat} (hn : 0 < witnessOctets w) :
       · simp only [Option.some.injEq, Prod.mk.injEq] at he
         exact ⟨witnessOctets w, hn, hl, he.2.symm⟩
       · have hd : (r.drop (witnessOctets w)).length < r.length := by
-          rw [List.length_drop]; omega
+          rw [List.length_drop]; omega_using [hn, hl]
         obtain ⟨u, hu, hul, hr⟩ := ih _ hd _ _ he
-        refine ⟨witnessOctets w + u, by omega, ?_, ?_⟩
-        · rw [List.length_drop] at hul; omega
+        refine ⟨witnessOctets w + u, by omega_using [hn], ?_, ?_⟩
+        · rw [List.length_drop] at hul; omega_using [hl, hul]
         · rw [hr, List.drop_drop]
     · cases he
 

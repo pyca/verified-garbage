@@ -34,11 +34,11 @@ abbrev pR (p : Addr) : Region := ⟨p, 1024⟩
 theorem coeffAt_eq (m : Mem) (p : Addr) (i : Nat) : coeffAt m p i = m.readW (coeffAddr p i) 32 := rfl
 
 theorem coeff_contains (p : Addr) {i : Nat} (hi : i < n) : (pR p).Contains (coeffAddr p i) 4 := by
-  rw [n_eq] at hi; exact Offset.contains_base p (by omega) (by omega)
+  rw [n_eq] at hi; exact Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 theorem coeff_sep (p : Addr) {i j : Nat} (hi : i < n) (hj : j < n) (h : i ≠ j) :
     Mem.Sep (coeffAddr p i) 4 (coeffAddr p j) 4 := by
-  rw [n_eq] at hi hj; exact Offset.sep p (by omega) (by omega) (by omega)
+  rw [n_eq] at hi hj; exact Offset.sep p (by omega_using [h]) (by omega_using [hi]) (by omega_using [hj])
 
 /-- Writing coefficient `j` of the polynomial at `p`. -/
 theorem coeffAt_writeW (m : Mem) (p : Addr) {i j : Nat} (hi : i < n) (hj : j < n) (v : BitVec 32) :
@@ -112,7 +112,7 @@ theorem hintAt_get (m : Mem) (p : Addr) {j : Nat} (hj : j < n) :
 theorem hintIs_of_toNat {m : Mem} {p : Addr} {h : Vector Bool n}
     (hc : ∀ j < n, coeffAt m p j = h[j]!.toNat) : HintIs m p 1 [h] := by
   refine ⟨rfl, fun i hi j hj => ?_⟩
-  obtain rfl : i = 0 := by omega
+  obtain rfl : i = 0 := by omega_using [hi]
   simpa using hc j hj
 
 /-- The number of 1s among coefficients `lo` to 255 of a hint polynomial. -/
@@ -121,7 +121,7 @@ def onesFrom (h : Vector Bool n) (lo : Nat) : Nat := ((List.range' lo (n - lo)).
 theorem onesFrom_step (h : Vector Bool n) {lo : Nat} (hlo : lo < n) :
     onesFrom h lo = h[lo]!.toNat + onesFrom h (lo + 1) := by
   unfold onesFrom
-  rw [show n - lo = (n - (lo + 1)) + 1 by omega, List.range'_succ, List.filter_cons]
+  rw [show n - lo = (n - (lo + 1)) + 1 by omega_using [hlo], List.range'_succ, List.filter_cons]
   cases h[lo]! <;> simp [Nat.add_comm]
 
 theorem onesFrom_n (h : Vector Bool n) : onesFrom h n = 0 := by simp [onesFrom]

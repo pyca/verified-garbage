@@ -29,7 +29,7 @@ theorem topBit_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
   have nowrap := h.old.workspace.nowrap
   unfold topBit
   refine h.ptr_ok (arr aN) (by decide) (by decide)
-    (by simp only [arr, offset_array, Width.words]; unfold VG.Proof.Rsa.X86.Keys.S at fits; omega)
+    (by simp only [arr, offset_array, Width.words]; unfold VG.Proof.Rsa.X86.Keys.S at fits; omega_using [fits, nowrap])
     fun u Ku mu Pu => ?_
   have hu := h.keep Ku (by rw [mu]; exact Outside.refl _ _ _ _)
   refine hu.bytes_ok .modulus .edx fun v Kv mv count => ?_
@@ -45,9 +45,9 @@ theorem topBit_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
     simp only [arr, offset_array, Width.words] at *
     simp only [show (4 : BitVec 32).toNat = 4 by rfl]
     unfold VG.Proof.Rsa.X86.Keys.S at fits
-    omega
+    omega_using [positive]
   refine wp_movS (VG.Proof.Mont.X86.Rt.readSrc_ptr hx.full.rt Px (d := 0)
-    (by unfold VG.Proof.Rsa.X86.Keys.S at fits; omega)) fun y Y _ => ?_
+    (by unfold VG.Proof.Rsa.X86.Keys.S at fits; omega_using [fits])) fun y Y _ => ?_
   refine wp_shr (by decide) fun z Zf _ => ?_
   have K : Keeps [.eax, .edx, .ebp] s z := (Kx.mono (by decide)).trans
     ((Y.keeps.mono (by decide)).trans (Zf.keeps.mono (by decide)))
@@ -65,11 +65,11 @@ theorem topBit_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
   change num s.mem B n aN < 2 ^ (32 * n) at bound
   have factor : 2 ^ (32 * n) = 2 ^ (32 * n - 1) * 2 := by
     calc
-      2 ^ (32 * n) = 2 ^ ((32 * n - 1) + 1) := congrArg (2 ^ ·) (by omega)
+      2 ^ (32 * n) = 2 ^ ((32 * n - 1) + 1) := congrArg (2 ^ ·) (by omega_using [positive])
       _ = _ := Nat.pow_succ ..
   rw [factor] at bound
   split
-  · next H => exact Nat.div_eq_of_lt_le (by simpa only [Nat.one_mul] using H) (by omega)
-  · next H => exact Nat.div_eq_of_lt (by omega)
+  · next H => exact Nat.div_eq_of_lt_le (by simpa only [Nat.one_mul] using H) (by omega_using [bound])
+  · next H => exact Nat.div_eq_of_lt (by omega_using [H])
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

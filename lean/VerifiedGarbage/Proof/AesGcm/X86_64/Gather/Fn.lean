@@ -173,17 +173,17 @@ theorem w_padCall (inl : Bool) (A : AadFn) {st : State} (h : T3 s st) (hr : (AL 
   obtain ⟨M₃, di, si, dx, cx, r8⟩ := h
   have hw := hp.w_w
   have hpl : pl s = 16 - (AL s).toNat % 16 := rfl
-  have hn : pl s ≤ 16 := by omega
+  have hn : pl s ≤ 16 := by omega_using [hpl]
   have wd : (W s + BitVec.ofNat 64 88).toNat = (W s).toNat + 88 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 88) (by decide)]; omega
-  refine WP.mono (aadCall_ok hp inl A M₃ (Offset.disjoint _ (.inr (by omega)) (by decide) (by omega))
-    (hp.b_w.sub_right (Offset.sub_base _ (by omega)))
-    (covers_left (by rw [hp.wr]; exact StreamTo.covers_off (k := 184) (d := 88) (by simp) (by omega) (by decide)))
-    (by rw [wd]; omega) (by omega) di si (by rw [dx, al_eq]) cx r8) fun s₄ M₄ => ?_
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 88) (by decide)]; omega_using [hw]
+  refine WP.mono (aadCall_ok hp inl A M₃ (Offset.disjoint _ (.inr (by omega_using [hpl])) (by decide) (by omega_using [hpl]))
+    (hp.b_w.sub_right (Offset.sub_base _ (by omega_using [hpl])))
+    (covers_left (by rw [hp.wr]; exact StreamTo.covers_off (k := 184) (d := 88) (by simp) (by omega_using [hpl]) (by decide)))
+    (by rw [wd]; omega_using [hw, hpl]) (by omega_using [hpl]) di si (by rw [dx, al_eq]) cx r8) fun s₄ M₄ => ?_
   have hpad : padA (ad s) = ad s ++ bytesAt st.mem (W s + BitVec.ofNat 64 88) (pl s) := by
     rw [M₃.kept.zeros hn]
     simp only [padA, Spec.Gcm.padLen, length_ad]
-    congr 2; omega
+    congr 2; omega_using [hr, hpl]
   have hap : AL s + BitVec.ofNat 64 (pl s) = apP s := by
     rw [apP, hpad, List.length_append, length_ad, Cmac.bytesAt_length, ← ofNat_add_ofNat, ofNat_toNat]
   rw [← hap, hpad]
@@ -219,11 +219,11 @@ theorem w_sliceCall (T : ToFn M) {ap : BitVec 64} {A : List Byte} (hap : ap = Bi
   -- The output before slice `i`, which the call leaves as it was.
   have hD : bytesAt s₂.mem (Dst s) (gl s i) = ct s i := by
     rw [← M₁.out]
-    refine bytesAt_frame f₂ (fun r hr => ?_) (by omega)
+    refine bytesAt_frame f₂ (fun r hr => ?_) (by omega_using [hL, gsl])
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl) | rfl
     · exact hp.d_w.sub_left (Region.sub_prefix (gl_le hp (Nat.le_of_lt hi))) |>.sub_right stR_sub
-    · exact Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.w_d; omega)
+    · exact Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.w_d; omega_using [hL, gsl])
     · exact hp.b_d.symm.sub_left (Region.sub_prefix (gl_le hp (Nat.le_of_lt hi)))
   refine ⟨B₂, by rw [← pt_succ] at sr₂; exact sr₂, ?_⟩
   rw [gl_succ, bytesAt_add, hD, dd₂]
@@ -239,11 +239,11 @@ theorem w_sliceNext {ap : BitVec 64} {A : List Byte} {i : Nat} (hi : i < Cnt s) 
   obtain ⟨B₂, sr₂, out₂⟩ := h
   refine WP.mono (sliceNext_ok hp hi B₂) fun s₃ ⟨_, z, k, f₃, cs₃, rd₃, wr₃⟩ =>
     ⟨⟨⟨by rw [cs₃ _ (by decide), B₂.rsp], fun r hr => by rw [cs₃ r hr, B₂.saved r hr], rd₃.trans B₂.rd,
-      wr₃.trans B₂.wr, k, B₂.frame.trans (frame_kpR f₃)⟩, by omega,
+      wr₃.trans B₂.wr, k, B₂.frame.trans (frame_kpR f₃)⟩, by omega_using [hi],
       StreamTo.streamRepr_frame f₃ (one_kpR kpR_stR) sr₂, ?_⟩, z⟩
   rw [← out₂]
   exact bytesAt_frame f₃ (one_kpR ((hp.d_w.symm.sub_left kpR_sub).sub_right
-    (Region.sub_prefix (gl_succ s i ▸ gsl)))) (by rw [gl_succ]; omega)
+    (Region.sub_prefix (gl_succ s i ▸ gsl)))) (by rw [gl_succ]; omega_using [hL, gsl])
 
 /-- Slice `i`, from `Mid s ap i`: `Mid s ap (i + 1)`, and `ZF` if it was the last. -/
 theorem slice_ok (T : ToFn M) {ap : BitVec 64} {A : List Byte} (hap : ap = BitVec.ofNat 64 A.length)
@@ -262,13 +262,13 @@ theorem slices_ok (T : ToFn M) {ap : BitVec 64} {A : List Byte} (hap : ap = BitV
   refine WP.ite (decide (Cnt s - 0 = 0)) (by simp only [eval, z]) (fun e => ?_) (fun e => ?_)
   · have hC : Cnt s = 0 := by simpa using e
     exact WP.block_nil (hC ▸ M₁)
-  have hC : 0 < Cnt s := by simp at e; omega
+  have hC : 0 < Cnt s := by simp at e; omega_using [e]
   refine WP.loop (fun n st => ∃ i, i < Cnt s ∧ n = Cnt s - i ∧ Mid s ap i A st)
     (fun n st ⟨i, hi, hn, hM⟩ => WP.mono (slice_ok hp T hap hi hM) fun st' ⟨hM', z'⟩ => ?_) (Cnt s) s₁
     ⟨0, hC, rfl, M₁⟩
   by_cases e' : Cnt s - (i + 1) = 0
-  · exact .inl ⟨by simp [eval, z', e'], (show i + 1 = Cnt s by omega) ▸ hM'⟩
-  · exact .inr ⟨by simp [eval, z', e'], Cnt s - (i + 1), by omega, i + 1, by omega, rfl, hM'⟩
+  · exact .inl ⟨by simp [eval, z', e'], (show i + 1 = Cnt s by omega_using [hi, e']) ▸ hM'⟩
+  · exact .inr ⟨by simp [eval, z', e'], Cnt s - (i + 1), by omega_using [hi, hn], i + 1, by omega_using [e'], rfl, hM'⟩
 
 /-- The encryption of all the slices, with no text. -/
 theorem ct_cnt_nil (hL : L s = 0) : ct s (Cnt s) = [] :=
@@ -356,7 +356,7 @@ theorem sealShort_wp (S : SealFn M) {t : Nat} (ht : t < 2 ^ 31) :
     decide (L s < t) = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa (copySeal S.fn) st (Done s) :=
   fun e st E r11 => by
     have : L s < t := by simpa using e
-    exact copySeal_wp hp S (by omega) E.1 r11 E.2.2.1 E.2.2.2.1
+    exact copySeal_wp hp S (by omega_using [ht, this]) E.1 r11 E.2.2.1 E.2.2.2.1
 
 end
 

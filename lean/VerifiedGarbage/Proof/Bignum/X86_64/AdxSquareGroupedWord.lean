@@ -31,7 +31,7 @@ theorem word_ok (s : State) {dst addend : Reg} {c o : Bool}
     (fun _ h => nomatch h) (hoa.trans ho)) fun t ⟨ot, hot, hct, et, kt⟩ => ?_
   refine ⟨ca, ot, hct.trans hca, hot, ?_, (ka.trans kt).mono (by simp)⟩
   rw [ka.gpr (r := addend) (by simpa using hne)] at et
-  omega
+  omega_using [ea, et]
 
 theorem addPair_ok (s : State) {c o : Bool} (hc : s.cf = some c) (ho : s.of = some o) :
     WP isa (.block AdxSquareGrouped.addPair) s fun t => ∃ c' o' : Bool,
@@ -50,7 +50,7 @@ theorem addPair_ok (s : State) {c o : Bool} (hc : s.cf = some c) (ho : s.of = so
   refine ⟨ct, ot, hct, hot, ?_, (ka.trans kt).mono (by simp)⟩
   rw [ka.gpr (by decide : Reg.rax ∉ _), ka.gpr (by decide : Reg.r12 ∉ _)] at et
   rw [kt.gpr (by decide : Reg.r11 ∉ _)]
-  omega
+  omega_using [ea, et]
 
 /-- Two cross-product words are doubled while adding one diagonal square.
 Both outgoing flags remain explicit, so the next pair can consume them. -/
@@ -76,6 +76,6 @@ theorem pair_ok (s : State) {c o : Bool} (hc : s.cf = some c) (ho : s.of = some 
   rw [kb.gpr (by decide : Reg.rax ∉ _), kb.gpr (by decide : Reg.r12 ∉ _),
     ka.gpr (by decide : Reg.r12 ∉ _)] at et
   rw [kt.gpr (by decide : Reg.r11 ∉ _)]
-  omega
+  omega_using [ea, eb, et]
 
 end VG.Proof.Bignum.X86_64.AdxSquareGrouped

@@ -63,15 +63,15 @@ theorem finEntry_ok {s : State} {wo : Nat} {Ctx St W SP : Addr} {N : Nat} (hCtx 
     · intro r a; simp [gpr_setReg, a]
     all_goals rfl
   have hperm₀ : Perm Ctx St W s₀ N := hperm.of_eq hrd₀ hwr₀
-  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s₀ .rax hax₀ hperm₀.w (by omega)
+  obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s₀ .rax hax₀ hperm₀.w (by omega_using [hN])
   have hsv₁' : SavedAt s₁.mem W s := by
     intro p hp; rw [hsv₁ p hp]
     simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hg₀ _ (by decide)
   rw [hm₀] at f₁
-  have w₁ := in_off hperm.w (show 176 + 8 ≤ N by omega) hN'
-  have w₂ := in_off hperm.w (show 184 + 8 ≤ N by omega) hN'
-  have w₃ := in_off hperm.w (show 192 + 8 ≤ N by omega) hN'
+  have w₁ := in_off hperm.w (show 176 + 8 ≤ N by omega_using [hN]) hN'
+  have w₂ := in_off hperm.w (show 184 + 8 ≤ N by omega_using [hN]) hN'
+  have w₃ := in_off hperm.w (show 192 + 8 ≤ N by omega_using [hN]) hN'
   rw [← hwr₀, ← hwr₁] at w₁ w₂ w₃
   have g : ∀ r, r ≠ .rax → s₁.gpr r = s.gpr r := fun r h => by rw [hg₁, hg₀ r h]
   obtain ⟨s₂, run₂, h15, h14, h13, hsp, h9, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
@@ -91,14 +91,14 @@ theorem finEntry_ok {s : State} {wo : Nat} {Ctx St W SP : Addr} {N : Nat} (hCtx 
     all_goals rfl
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep W h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep W h (by omega_using [ha]) (by omega_using [hd])
   have s₁₂ := sep 176 184 (by decide) (by decide) (by decide)
   have s₁₃ := sep 176 192 (by decide) (by decide) (by decide)
   have s₂₃ := sep 184 192 (by decide) (by decide) (by decide)
   have f₂ : Frame [slotsR W] s₁.mem s₂.mem := by
     rw [hm₂]
     have c : ∀ d, 176 ≤ d → d + 8 ≤ 208 → (slotsR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 176 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 184 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 192 (by decide) (by decide))
@@ -116,7 +116,7 @@ theorem finEntry_ok {s : State} {wo : Nat} {Ctx St W SP : Addr} {N : Nat} (hCtx 
     simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   · refine hsv₁'.frame f₂ fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint _ (.inl (by decide)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using [])
   · exact (f₁.mono fun r hr => by simp at hr; subst hr; simp).trans (f₂.mono fun r hr => by simp at hr; subst hr; simp)
 
 /-- `tagOut src`: the 16 bytes at `W` copied to `T`, whose address is at `b + d`. -/
@@ -127,8 +127,8 @@ theorem tagOut_ok {s : State} {W T : Addr} {b : Reg} {d : Nat} (h15 : s.gpr .r15
     ∃ s', runBlock isa (tagOut (at_ b d)) s = some s' ∧ bytesAt s'.mem T 16 = bytesAt s.mem W 16 ∧
       Frame [⟨T, 16⟩] s.mem s'.mem ∧ (∀ r, r ≠ .rdi → r ≠ .rax → r ≠ .rdx → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have r₀ := in_left (rd := s.rd) (in_off hw (show 0 + 8 ≤ N by omega) hN')
-  have r₁ := in_left (rd := s.rd) (in_off hw (show 8 + 8 ≤ N by omega) hN')
+  have r₀ := in_left (rd := s.rd) (in_off hw (show 0 + 8 ≤ N by omega_using [hN]) hN')
+  have r₁ := in_left (rd := s.rd) (in_off hw (show 8 + 8 ≤ N by omega_using [hN]) hN')
   have t₀ := in_off hT (show 0 + 8 ≤ 16 by decide) (by decide)
   have t₁ := in_off hT (show 8 + 8 ≤ 16 by decide) (by decide)
   have e0 : W + BitVec.ofNat 64 0 = W := BitVec.add_zero W
@@ -161,7 +161,7 @@ theorem ghashInput_mod (a c : List Byte) :
     simp only [hc, ↓reduceIte]
     simp only [List.length_append, Proof.Gcm.length_zeros]
     have := Proof.Gcm.length_pad_mod a.length
-    omega
+    omega_using [this]
 
 /-- The entry of `finish`, and the address `T` of `tag` kept at `W + 200`. -/
 theorem finishEntry_ok {s : State} {Ctx St W SP T : Addr} {N : Nat} (L : Lay Ctx St W SP N) (hN : 208 ≤ N) (hCtx : s.gpr .rdi = Ctx)
@@ -185,7 +185,7 @@ theorem finishEntry_ok {s : State} {Ctx St W SP T : Addr} {N : Nat} (L : Lay Ctx
   have rd₂ : ∀ d, (d + 8 ≤ 200 ∨ 208 ≤ d) → d + 8 ≤ N →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h h' =>
     f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega) h' (Lay.leN hN)) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega_using [h]) h' (Lay.leN hN)) (by decide)
   refine ⟨⟨he.env.keep (fun r _ => hg₂ r) hrd₂ hwr₂,
     ⟨by rw [rd₂ 176 (.inl (by decide)) (Lay.leN hN)]; exact he.rounds.1, he.rounds.2⟩,
     by rw [rd₂ 184 (.inl (by decide)) (Lay.leN hN)]; exact he.alen,
@@ -221,7 +221,7 @@ theorem streamFinish_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] (TC : Ta
   generalize hT : s.gpr .r9 = T at *
   generalize hW : stackArg s 0 = W at *
   generalize hSP : s.gpr .rsp = SP at *
-  have L : Lay Ctx St W SP N := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega) hN'
+  have L : Lay Ctx St W SP N := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w (by omega_using [hN]) hN'
   have hperm : Perm Ctx St W s N := ⟨by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)),
     by rw [hwr]; exact covers_of_mem (List.mem_cons_self ..),
     by rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))⟩
@@ -238,8 +238,8 @@ theorem streamFinish_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] (TC : Ta
     intro d k hk r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (d_sw.sub_left (Lay.stSub (by omega))).sub_right (Lay.wSub (Lay.leN hN))
-    · exact (d_sw.sub_left (Lay.stSub (by omega))).sub_right (Lay.wSub (Lay.leN hN))
+    · exact (d_sw.sub_left (Lay.stSub (by omega_using [hk]))).sub_right (Lay.wSub (Lay.leN hN))
+    · exact (d_sw.sub_left (Lay.stSub (by omega_using [hk]))).sub_right (Lay.wSub (Lay.leN hN))
   have dC : ∀ r ∈ [savedR W, slotsR W], (⟨Ctx, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -268,7 +268,7 @@ theorem streamFinish_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] (TC : Ta
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₄ _ (by decide) (by decide) (by decide)) hrd₄ hwr₄
   have hsv₄ : SavedAt s₄.mem W s :=
-    (he.saved.frame f₃ (saved_tagFrame L (by omega) (.inl rfl))).frame f₄
+    (he.saved.frame f₃ (saved_tagFrame L (by omega_using [hN]) (.inl rfl))).frame f₄
       fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (d_tw.sub_right (Lay.wSub (Lay.leN hN))).symm
@@ -286,12 +286,12 @@ theorem streamFinish_run (v : GcmImpl) {N gs : Nat} [G : GhFits v N gs] (TC : Ta
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact r_w.sub_right (Lay.wSub (Lay.leN hN))
   have hret : s₄.mem.readW SP 64 = s.mem.readW SP 64 := by rw [k₄, k₃, k₂]
-  refine WP.mono (exit_ok he₄.r15 (by rw [he₄.rsp, hSP]) (covers_left he₄.perm.w) hsv₄ (by rw [hSP, hret]) (by omega))
+  refine WP.mono (exit_ok he₄.r15 (by rw [he₄.rsp, hSP]) (covers_left he₄.perm.w) hsv₄ (by rw [hSP, hret]) (by omega_using [hN]))
     fun s' ⟨hg, hm, _⟩ => ⟨hg, fun ha => ?_⟩
   have ha₂ : Absorbed s₂.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) (blockAt s₂.mem (Ctx + BitVec.ofNat 64 240)) x := by
     rw [hH]
     exact ha.congr (blockAt_frame F₂ (dF 16 16 (.inr ⟨by decide, by decide⟩)))
-      (bytesAt_frame F₂ (dF 32 (x.length % 16) (.inr ⟨by decide, by omega⟩)) (by omega))
+      (bytesAt_frame F₂ (dF 32 (x.length % 16) (.inr ⟨by decide, by omega_using []⟩)) (by omega_using []))
   have hc : ciphOf s₂.mem Ctx (s.gpr .rsi).toNat = ctxCiph s.mem Ctx (s.gpr .rsi).toNat :=
     ciph_frame F₂ dC hR
   have hJ : blockAt s₂.mem St = blockAt s.mem St := by

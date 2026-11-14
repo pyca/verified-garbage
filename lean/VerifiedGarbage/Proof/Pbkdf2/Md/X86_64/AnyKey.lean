@@ -545,14 +545,14 @@ theorem key_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s)
     rw [e₁, e₂]
     refine WP.mono (hashKey_ok hp hz hH h) fun t ⟨k, rdx, rcx, hb⟩ =>
       ⟨k, rdx, rcx, ⟨.inr ⟨rfl, rfl⟩, by exact hz.o_D_le_B, ?_⟩⟩
-    rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega)]
+    rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega_using [hlong])]
   · have hshort : kln s₀ < H.P.B + 1 := of_decide_eq_true (by simpa using hF)
     have e₁ : kp H s₀ = key s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
     have e₂ : kl H s₀ = kln s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
     rw [e₁, e₂]
     refine wp_mov fun t₁ u₁ _ _ => wp_mov fun t₂ u₂ _ _ => WP.block_nil ?_
     refine ⟨(h.upd u₁ (by decide)).upd u₂ (by decide), by rw [u₂.other _ (by decide), u₁.gpr, h.rbx],
-      by rw [u₂.gpr, u₁.other _ (by decide), h.rbp], ⟨.inl ⟨rfl, rfl⟩, by omega, ?_⟩⟩
+      by rw [u₂.gpr, u₁.other _ (by decide), h.rbp], ⟨.inl ⟨rfl, rfl⟩, by omega_using [hshort], ?_⟩⟩
     rw [u₂.mem, u₁.mem, h.kr.keyBytes hp]
 
 /-- The key's region: where HMAC's `init` may read it. -/
@@ -611,7 +611,7 @@ theorem args_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hdx : s.gp
       stk_o := hp.stk_o.sub_left (stk_sub k₃.kr (Nat.le_refl _))
       stk_k := k_stk
       stk_s := stk_sc hp k₃.kr (Nat.le_refl _) low_sub
-      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega }
+      scnw := by show (scr s₀).toNat + 8 * H.W ≤ 2 ^ 64; omega_using [hsnw] }
 
 /-- `K₀`, the key padded to a block (or its digest, if longer). -/
 abbrev K0 (hH : HashOK H) (s₀ : State) : List Byte := blockKey hH.SH.H (bytesAt s₀.mem (key s₀) (kln s₀))

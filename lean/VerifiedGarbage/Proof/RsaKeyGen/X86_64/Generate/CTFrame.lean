@@ -68,7 +68,7 @@ theorem genWr_wf (hf : CFacts p) (hfk : p.frame.Disjoint (cK p))
     exact ⟨⟨hfk, hfu, hfs, hft⟩, ⟨hf.kU, hf.kS, hf.kT⟩, ⟨hf.uS, hf.uT⟩, hf.sT, fun _ h => h.elim⟩
   · simp only [genWr, List.mem_cons, List.not_mem_nil, or_false]
     have := hf.nK; have := hf.nS
-    rintro r (rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
+    rintro r (rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega_arith
 
 theorem GenFrame.frame_facts (h : GenFrame p original used st s) :
     p.frame.Disjoint (cK p) ∧ p.frame.Disjoint (rU p) ∧ p.frame.Disjoint (rS p) ∧ p.frame.Disjoint (cS p) := by
@@ -84,7 +84,7 @@ end
 /-- A word's bytes agree where the words do. -/
 theorem word_bytes {m₁ m₂ : Mem} {a : Addr} (h : m₁.readW a 64 = m₂.readW a 64) {k : Nat} (hk : k < 8) :
     m₁ (a + BitVec.ofNat 64 k) = m₂ (a + BitVec.ofNat 64 k) := by
-  rw [← byte_readW m₁ a (w := 64) (by omega), ← byte_readW m₂ a (w := 64) (by omega), h]
+  rw [← byte_readW m₁ a (w := 64) (by omega_using [hk]), ← byte_readW m₂ a (w := 64) (by omega_using [hk]), h]
 
 /-- Two frame states with the same descriptor agree on the frame's public
 bytes. -/
@@ -100,21 +100,21 @@ theorem frame_slots {p : GenPublic} {s₁ s₂ : State} (h₁ : AnyFrame p s₁)
   have key (j : Nat) (v : BitVec 64) (hj : ∀ u, (j, v) ∈ p.headers u) (hk' : 8 * j ≤ k ∧ k < 8 * j + 8) :
       s₁.mem (p.F + BitVec.ofNat 64 k) = s₂.mem (p.F + BitVec.ofNat 64 k) := by
     rw [show p.F + BitVec.ofNat 64 k = p.F + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 (k - 8 * j) by
-      rw [Offset.add_add]; congr 2; omega]
-    exact word_bytes (hw j v hj) (by omega)
-  have hq : k / 8 < 8 ∨ k / 8 = 11 := by omega
+      rw [Offset.add_add]; congr 2; omega_using [hk']]
+    exact word_bytes (hw j v hj) (by omega_using [hk'])
+  have hq : k / 8 < 8 ∨ k / 8 = 11 := by omega_using [hk]
   rcases hq with hq | hq
-  · have : k / 8 = 0 ∨ k / 8 = 1 ∨ k / 8 = 2 ∨ k / 8 = 3 ∨ k / 8 = 4 ∨ k / 8 = 5 ∨ k / 8 = 6 ∨ k / 8 = 7 := by omega
+  · have : k / 8 = 0 ∨ k / 8 = 1 ∨ k / 8 = 2 ∨ k / 8 = 3 ∨ k / 8 = 4 ∨ k / 8 = 5 ∨ k / 8 = 6 ∨ k / 8 = 7 := by omega_using [hq]
     rcases this with h | h | h | h | h | h | h | h
-    · exact key 0 p.kp (fun _ => by simp [GenPublic.headers]) (by omega)
-    · exact key 1 (BitVec.ofNat 64 p.L) (fun _ => by simp [GenPublic.headers]) (by omega)
-    · exact key 2 p.up (fun _ => by simp [GenPublic.headers]) (by omega)
-    · exact key 3 p.rp (fun _ => by simp [GenPublic.headers]) (by omega)
-    · exact key 4 (BitVec.ofNat 64 p.randLen) (fun _ => by simp [GenPublic.headers]) (by omega)
-    · exact key 5 p.B (fun _ => by simp [GenPublic.headers]) (by omega)
-    · exact key 6 (BitVec.ofNat 64 (p.Z / 8)) (fun _ => by simp [GenPublic.headers]) (by omega)
-    · exact key 7 p.stp (fun _ => by simp [GenPublic.headers]) (by omega)
-  · exact key 11 (BitVec.ofNat 64 (limitOf p.L p.eB)) (fun _ => by simp [GenPublic.headers]) (by omega)
+    · exact key 0 p.kp (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+    · exact key 1 (BitVec.ofNat 64 p.L) (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+    · exact key 2 p.up (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+    · exact key 3 p.rp (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+    · exact key 4 (BitVec.ofNat 64 p.randLen) (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+    · exact key 5 p.B (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+    · exact key 6 (BitVec.ofNat 64 (p.Z / 8)) (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+    · exact key 7 p.stp (fun _ => by simp [GenPublic.headers]) (by omega_using [h])
+  · exact key 11 (BitVec.ofNat 64 (limitOf p.L p.eB)) (fun _ => by simp [GenPublic.headers]) (by omega_using [hq])
 
 theorem any_agree {p : GenPublic} {rs : List Reg} {s₁ s₂ : State} (h₁ : AnyFrame p s₁) (h₂ : AnyFrame p s₂)
     (hrs : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) : X86_64.Taint.Agree (genT rs) s₁ s₂ := by
@@ -172,10 +172,10 @@ theorem alloc_agree {p : GenPublic} {rs : List Reg} {k : Nat} (hk : k ≤ 392) {
   have hFk : p.F - BitVec.ofNat 64 k = p.sp - BitVec.ofNat 64 (160 + k) := by
     rw [GenPublic.F, BitVec.sub_sub, BitVec.ofNat_add]
   have hA : Region.Sub ⟨p.F - BitVec.ofNat 64 k, k⟩ (cStack p) := by
-    rw [hFk]; exact Offset.sub_below p.sp (by omega) (by omega)
+    rw [hFk]; exact Offset.sub_below p.sp (by omega_using [hk]) (by omega_using [hk])
   have hAF : (⟨p.F - BitVec.ofNat 64 k, k⟩ : Region).Disjoint p.frame := by
-    have := Offset.sep_below p.sp 552 (a := 160 + k) (n := k) (b := 160) (k := 160) (by omega) (by decide)
-      (Or.inl (by omega)) (by omega) (by decide)
+    have := Offset.sep_below p.sp 552 (a := 160 + k) (n := k) (b := 160) (k := 160) (by omega_using [hk]) (by decide)
+      (Or.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)
     rw [← hFk] at this
     exact disj_of_sep this
   have hwr : ∀ {s : State} {o : State} {u : Nat} {t : KeyProgress}, GenFrame p o u t s →
@@ -199,7 +199,7 @@ theorem alloc_agree {p : GenPublic} {rs : List Reg} {k : Nat} (hk : k ≤ 392) {
     · rw [hwr g]
       intro r hr
       rcases List.mem_cons.mp hr with rfl | hr
-      · show k ≤ 2 ^ 64; omega
+      · show k ≤ 2 ^ 64; omega_using [hk]
       · exact hlen r hr
     · simp only [genT', List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl

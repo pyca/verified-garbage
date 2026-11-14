@@ -23,7 +23,7 @@ theorem toothRead_ok {s : State} {base : Addr} {size o k p : Nat}
       t.mem=s.mem ∧ (t.gpr .eax).toNat=bit (val32 s.mem base o k) p ∧ Keeps [.eax] s t := by
   unfold toothRead
   simp only [List.cons_append,List.nil_append]
-  refine wp_movS (readSrc_sc hs (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_using [ho, hp])) fun u U _ => ?_
   have finish {v : State} (M : v.mem=s.mem) (K : Keeps [.eax] s v)
       (V : (v.gpr .eax).toNat = w32 s.mem base (o+4*(p/32)) / 2^(p%32)) :
       WP isa (.block [.alu .and .eax (imm 1)]) v fun t =>
@@ -36,7 +36,7 @@ theorem toothRead_ok {s : State} {base : Addr} {size o k p : Nat}
     apply finish U.mem (U.keeps.mono (by decide))
     rw [U.gpr,zero,Nat.pow_zero,Nat.div_one]
   · simp only [show (p%32 == 0)=false by exact beq_eq_false_iff_ne.mpr zero]
-    refine wp_shr (by omega) fun v V _ => ?_
+    refine wp_shr (by omega_using [zero]) fun v V _ => ?_
     apply finish (V.mem.trans U.mem) ((U.keeps.mono (by decide)).trans (V.keeps.mono (by decide)))
     rw [V.gpr,U.gpr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
 

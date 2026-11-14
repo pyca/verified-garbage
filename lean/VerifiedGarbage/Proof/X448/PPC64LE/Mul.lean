@@ -240,7 +240,7 @@ theorem reduce_arith {L Lo Hi S c S9 c9 S11 c11 : Nat} (hc : c ≤ 3) (hS : S < 
   have z : c11 = 0 := by omega
   have key : S11 + (2 ^ 224 * 2 ^ 224 - 2 ^ 224 - 1) * (c + c9 + Lo + (2 ^ 224 + 1) * Hi) =
       L + (2 ^ 64) ^ 7 * (Lo + 2 ^ 224 * Hi) := by
-    omega
+    omega_using [hc, hS, hS9, v, v9, v11]
   rw [P_eq, ← key, Nat.add_mul_mod_self_left]
 
 /-! ## Stores and loads at offsets of the working space -/
@@ -260,7 +260,7 @@ theorem stdsAt_ok {base : Nat} {l : List (Reg × Nat)} (h4 : base % 4 = 0)
     obtain ⟨r, d⟩ := p
     have hd := hl (r, d) List.mem_cons_self
     simp only [stdsAt, List.map_cons, List.cons_append]
-    refine sd0_ok hc (d := base + d) (by omega) (by omega) fun s1 u1 => ?_
+    refine sd0_ok hc (d := base + d) (by omega_using [hd]) (by omega_using [h4, hd]) fun s1 u1 => ?_
     have hc1 : Ctx b s1 := ⟨by rw [u1.gpr]; exact hc.r6, by rw [u1.wr]; exact hc.wr⟩
     refine ih (fun q hq => hl q (List.mem_cons_of_mem _ hq)) hc1 fun s' g' rd' wr' sp' m' => ?_
     refine k s' (g'.trans u1.gpr) (rd'.trans u1.rd) (wr'.trans u1.wr) (sp'.trans u1.sp) ?_
@@ -271,7 +271,7 @@ theorem ld0_okL {s : State} (hc : Ctx b s) {t : Reg} {d : Nat} {is : List Instr}
     (hd : d + 8 ≤ 4096) (hd4 : d % 4 = 0)
     (k : ∀ s', Upd s s' t (s.mem.readW (b + BitVec.ofNat 64 d) 64) → s'.lr = s.lr → WP isa (.block is) s' Q) :
     WP isa (.block (.load .d t .r6 d :: is)) s Q := by
-  have e := exec_load_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega, hd4⟩
+  have e := exec_load_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega_using [hd], hd4⟩
     (by rw [hc.r6]; exact hc.inR hd)
   rw [hc.r6] at e
   exact WP.cons e (k _ (Upd.write _ _ _) rfl)
@@ -293,7 +293,7 @@ theorem ldsAt_ok {base : Nat} {l : List (Reg × Nat)} (h4 : base % 4 = 0)
     have hnd := List.nodup_cons.mp hr
     have hr6 : r ≠ .r6 := h6 (r, d) List.mem_cons_self
     simp only [ldsAt, List.map_cons, List.cons_append]
-    refine ld0_okL hc (d := base + d) (by omega) (by omega) fun s1 u1 l1 => ?_
+    refine ld0_okL hc (d := base + d) (by omega_using [hd]) (by omega_using [h4, hd]) fun s1 u1 l1 => ?_
     have hr1 : Rest ((r, d) :: l |>.map Prod.fst) s s1 := u1.rest List.mem_cons_self
     have hc1 : Ctx b s1 := hc.of_rest hr1 (by
       simp only [List.map_cons, List.mem_cons, not_or]
@@ -320,11 +320,11 @@ theorem chainN_ok {src : Nat → Reg} (hs : ∀ k < 7, ∀ j < 7, src k ≠ pw j
   | 0, _ => WP.block_nil ⟨by simp [colsV], Rest.refl _ _, fun _ _ => rfl, rfl⟩
   | n + 1, hn => by
     rw [List.range_succ, List.map_append, List.map_singleton]
-    refine WP.append (chainN_ok hs n (by omega)) fun s1 ⟨v1, r1, k1, m1⟩ => ?_
-    have hpn : ∀ j < n, pw n ≠ pw j := fun j hj e => by have := pw_inj _ (by omega) _ (by omega) e; omega
+    refine WP.append (chainN_ok hs n (by omega_using [hn])) fun s1 ⟨v1, r1, k1, m1⟩ => ?_
+    have hpn : ∀ j < n, pw n ≠ pw j := fun j hj e => by have := pw_inj _ (by omega_using [hn]) _ (by omega_using [hn, hj]) e; omega_using [hj, this]
     have e0 : s1.gpr (pw n) = s0.gpr (pw n) := k1 _ hpn
-    have es : s1.gpr (src n) = s0.gpr (src n) := k1 _ fun j hj => hs n (by omega) j (by omega)
-    have hpc : pw n ∈ clobR := (pw_facts n (by omega)).2.2.2
+    have es : s1.gpr (src n) = s0.gpr (src n) := k1 _ fun j hj => hs n (by omega_using [hn]) j (by omega_using [hn, hj])
+    have hpc : pw n ∈ clobR := (pw_facts n (by omega_using [hn])).2.2.2
     have fin : ∀ (s2 : State), UpdC s1 s2 (pw n) ((s1.gpr (pw n)).toNat + (s1.gpr (src n)).toNat +
         (if n = 0 then 0 else s1.ca.toNat)) → WP isa (.block []) s2 fun s =>
         colsV (fun j => (s.gpr (pw j)).toNat) (n + 1) + (2 ^ 64) ^ (n + 1) *
@@ -343,8 +343,8 @@ theorem chainN_ok {src : Nat → Reg} (hs : ∀ k < 7, ∀ j < 7, src k ≠ pw j
           Nat.mul_assoc]
         simp only [Nat.add_one_ne_zero, ↓reduceIte]
         generalize (2 ^ 64) ^ n = K at *
-        omega
-      · rw [u2.other _ (hr n (by omega)), k1 _ fun j hj => hr j (by omega)]
+        omega_using [v1, h2]
+      · rw [u2.other _ (hr n (by omega_using [])), k1 _ fun j hj => hr j (by omega_using [hj])]
     by_cases h0 : n = 0
     · subst h0
       simp only [chainR, ↓reduceIte]
@@ -373,20 +373,20 @@ theorem rotsN_ok {s0 : State} : ∀ n ≤ 7, WP isa (.block ((List.range n).flat
   | 0, _ => WP.block_nil ⟨Rest.refl _ _, rfl, fun _ _ _ => rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.append (rotsN_ok n (by omega)) fun s1 ⟨r1, m1, k1, v1⟩ => ?_
-    obtain ⟨t27, -, tc, tpw, ttr⟩ := rot_facts n (by omega)
+    refine WP.append (rotsN_ok n (by omega_using [hn])) fun s1 ⟨r1, m1, k1, v1⟩ => ?_
+    obtain ⟨t27, -, tc, tpw, ttr⟩ := rot_facts n (by omega_using [hn])
     have kpw : ∀ i < 14, s1.gpr (pw i) = s0.gpr (pw i) := fun i hi =>
-      k1 _ (pw_ne i hi).1 fun j hj e => (rot_facts j (by omega)).2.2.2.1 i hi e.symm
+      k1 _ (pw_ne i hi).1 fun j hj e => (rot_facts j (by omega_using [hn, hj])).2.2.2.1 i hi e.symm
     simp only [rotR]
     refine wp_lsr (by decide) fun s2 u2 => wp_lsl (by decide) fun s3 u3 => wp_add fun s4 u4 => WP.block_nil ?_
     have hx : s2.gpr (rotReg n) = s0.gpr (pw (7 + (n + 3) % 7)) >>> 32 := by
-      rw [u2.gpr, kpw _ (by omega)]
+      rw [u2.gpr, kpw _ (by omega_using [])]
     have hy : s3.gpr .r18 = s0.gpr (pw (7 + (n + 4) % 7)) <<< 32 := by
-      rw [u3.gpr, u2.other _ (tpw _ (by omega)).symm, kpw _ (by omega)]
+      rw [u3.gpr, u2.other _ (tpw _ (by omega_using [])).symm, kpw _ (by omega_using [])]
     have hv : (s4.gpr (rotReg n)).toNat = rotW (fun i => (s0.gpr (pw (7 + i))).toNat) n := by
       rw [u4.gpr, u3.other _ t27, hx, hy]
       have l1 : (s0.gpr (pw (7 + (n + 3) % 7)) >>> 32).toNat < 2 ^ 32 := by
-        rw [toNat_shr]; have := (s0.gpr (pw (7 + (n + 3) % 7))).isLt; omega
+        rw [toNat_shr]; have := (s0.gpr (pw (7 + (n + 3) % 7))).isLt; omega_using []
       have l2 : (s0.gpr (pw (7 + (n + 4) % 7)) <<< 32).toNat =
           (s0.gpr (pw (7 + (n + 4) % 7))).toNat % 2 ^ 32 * 2 ^ 32 := by
         rw [toNat_shl, mul_mod_shift]
@@ -394,11 +394,11 @@ theorem rotsN_ok {s0 : State} : ∀ n ≤ 7, WP isa (.block ((List.range n).flat
       rw [toNat_add_lt (by rw [l2]; omega_arith), toNat_shr, l2]; rfl
     refine ⟨r1.trans ((u2.rest tc).trans ((u3.rest (by decide)).trans (u4.rest tc))),
       by rw [u4.mem, u3.mem, u2.mem, m1], fun r h27 hr => ?_, fun j hj => ?_⟩
-    · have hn' : r ≠ rotReg n := hr n (by omega)
-      rw [u4.other _ hn', u3.other _ h27, u2.other _ hn', k1 _ h27 fun j hj => hr j (by omega)]
+    · have hn' : r ≠ rotReg n := hr n (by omega_using [])
+      rw [u4.other _ hn', u3.other _ h27, u2.other _ hn', k1 _ h27 fun j hj => hr j (by omega_using [hj])]
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · have hne : rotReg j ≠ rotReg n := fun e => ttr j (by omega) (by omega) e.symm
-        rw [u4.other _ hne, u3.other _ (rot_facts j (by omega)).1, u2.other _ hne, v1 j hj]
+      · have hne : rotReg j ≠ rotReg n := fun e => ttr j (by omega_arith) (by omega_using [hj]) e.symm
+        rw [u4.other _ hne, u3.other _ (rot_facts j (by omega_arith)).1, u2.other _ hne, v1 j hj]
       · exact hv
 
 /-- `li r4, 0; addze r4, r4`: the carry into `r4`. -/
@@ -413,18 +413,18 @@ theorem capture_ok {s : State} {is : List Instr} {Q : State → Prop}
   have c0 : s.ca.toNat ≤ 1 := Bool.toNat_le _
   have l2 := (s2.gpr .r4).isLt
   exact k s2 (((Upd.write _ _ _).rest (by simp)).trans (u2.rest (by simp)))
-    (by rw [u2.mem, RegUpd.mem_write]) (by omega)
+    (by rw [u2.mem, RegUpd.mem_write]) (by omega_using [v2, c0])
 
 /-- The doublewords of a product of fourteen, split at seven. -/
 theorem colsV_14 (f : Nat → Nat) : colsV f 14 = colsV f 7 + (2 ^ 64) ^ 7 * colsV (fun k => f (7 + k)) 7 := by
   simp only [colsV, Nat.reducePow, Nat.reduceAdd]
-  omega
+  omega_using []
 
 /-- `reduceR`: `pw 0`, …, `pw 6` congruent to the product in `pw`. -/
 theorem reduceR_ok {s : State} (hc : Ctx b s) :
     WP isa (.block reduceR) s fun s' => Ctx b s' ∧ Rest clobR s s' ∧ s'.mem = s.mem ∧
       colsV (fun j => (s'.gpr (pw j)).toNat) 7 % P = pwSum s 14 % P := by
-  have hpw7 : ∀ i < 7, pw (7 + i) ∈ clobR := fun i hi => (pw_facts (7 + i) (by omega)).2.2.2
+  have hpw7 : ∀ i < 7, pw (7 + i) ∈ clobR := fun i hi => (pw_facts (7 + i) (by omega_using [hi])).2.2.2
   generalize hH : (fun i => (s.gpr (pw (7 + i))).toNat) = H
   unfold reduceR
   simp only [List.append_assoc, List.cons_append, List.nil_append]
@@ -436,16 +436,16 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
     k1 _ fun j hj => hi_ne i hi j hj
   refine capture_ok fun s2 r2 m2 e2 => ?_
   have kH2 : ∀ i < 7, s2.gpr (pw (7 + i)) = s.gpr (pw (7 + i)) := fun i hi => by
-    rw [r2.gpr _ (by simp; exact (pw_facts _ (by omega)).1), kH1 i hi]
+    rw [r2.gpr _ (by simp; exact (pw_facts _ (by omega_using [hi])).1), kH1 i hi]
   -- `+= 2²²⁴ Hₗ + Hₕ`.
   refine WP.append (rotsN_ok 7 (Nat.le_refl _)) fun s3 ⟨r3, m3, k3, v3⟩ => ?_
   have kp3 : ∀ i < 14, s3.gpr (pw i) = s2.gpr (pw i) := fun i hi =>
     k3 _ (pw_ne i hi).1 fun j hj e => (rot_facts j hj).2.2.2.1 i hi e.symm
   have e43 : s3.gpr .r4 = s2.gpr .r4 := k3 _ (by decide) fun j hj e => (rot_facts j hj).2.1 e.symm
-  refine WP.append (chainN_ok (src := rotReg) (fun k hk j hj => (rot_facts k hk).2.2.2.1 j (by omega)) 7
+  refine WP.append (chainN_ok (src := rotReg) (fun k hk j hj => (rot_facts k hk).2.2.2.1 j (by omega_using [hj])) 7
     (Nat.le_refl _)) fun s4 ⟨v4, r4, k4, m4⟩ => ?_
   simp only [show (7 : Nat) ≠ 0 from by decide, ↓reduceIte] at v4
-  have e44 : s4.gpr .r4 = s3.gpr .r4 := k4 _ fun j hj e => (pw_facts j (by omega)).1 e.symm
+  have e44 : s4.gpr .r4 = s3.gpr .r4 := k4 _ fun j hj e => (pw_facts j (by omega_using [hj])).1 e.symm
   refine wp_addze fun s5 u5 => ?_
   -- `+= 2²²⁴ Hₕ`.
   refine wp_li (by decide) fun s6 u6 => wp_lsr (by decide) fun s7 u7 => wp_lsl (by decide) fun s8 u8 => ?_
@@ -453,13 +453,13 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
   have c4 : s4.ca.toNat ≤ 1 := Bool.toNat_le _
   have e5 : (s5.gpr .r4).toNat = s1.ca.toNat + s4.ca.toNat := by
     have := u5.val; have := u5.ca; have := (s5.gpr .r4).isLt
-    rw [e44, e43, ← e2] at *; omega
+    rw [e44, e43, ← e2] at *; omega_arith
   have k6 : ∀ i < 14, s6.gpr (pw i) = s4.gpr (pw i) := fun i hi => by
-    rw [u6.other _ (pw_ne i hi).2.1, u5.other _ (pw_facts i (by omega)).1]
+    rw [u6.other _ (pw_ne i hi).2.1, u5.other _ (pw_facts i (by omega_using [hi])).1]
   have k8 : ∀ i < 14, s8.gpr (pw i) = s4.gpr (pw i) := fun i hi => by
     rw [u8.other _ (pw_ne i hi).2.2, u7.other _ (pw_ne i hi).2.2, k6 i hi]
   have kH4 : ∀ i < 7, s4.gpr (pw (7 + i)) = s.gpr (pw (7 + i)) := fun i hi => by
-    rw [k4 _ fun j hj => hi_ne i hi j hj, kp3 _ (by omega), kH2 i hi]
+    rw [k4 _ fun j hj => hi_ne i hi j hj, kp3 _ (by omega_using [hi]), kH2 i hi]
   have eZ : s8.gpr .r19 = 0 := by rw [u8.other _ (by decide), u7.other _ (by decide), u6.gpr]; rfl
   have eW : (s8.gpr .r20).toNat = H 3 / 2 ^ 32 * 2 ^ 32 := by
     rw [u8.gpr, u7.gpr, toNat_shl, toNat_shr, show pw 10 = pw (7 + 3) from rfl, k6 _ (by decide),
@@ -467,9 +467,9 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
     have := (s.gpr (pw (7 + 3))).isLt
     rw [Nat.mod_eq_of_lt (by omega_arith)]
   have hH8 : ∀ i < 7, (s8.gpr (pw (7 + i))).toNat = H i := fun i hi => by
-    rw [k8 _ (by omega), kH4 i hi, ← hH]
+    rw [k8 _ (by omega_using [hi]), kH4 i hi, ← hH]
   have hsrc3 : colsV (fun j => (s8.gpr (hiReg j)).toNat) 7 = colsV (hiW H) 7 := colsV_congr fun j hj => by
-    have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 := by omega
+    have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 := by omega_using [hj]
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [hiReg, hiW, Nat.reduceLT, ↓reduceIte, Nat.reduceEqDiff, eZ, eW] <;>
       first | rfl | exact hH8 _ (by decide)
@@ -477,22 +477,22 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
   simp only [show (7 : Nat) ≠ 0 from by decide, ↓reduceIte] at v9
   rw [hsrc3] at v9
   have e94 : (s9.gpr .r4).toNat = s1.ca.toNat + s4.ca.toNat := by
-    rw [k9 _ fun j hj e => (pw_facts j (by omega)).1 e.symm, u8.other _ (by decide), u7.other _ (by decide),
+    rw [k9 _ fun j hj e => (pw_facts j (by omega_using [hj])).1 e.symm, u8.other _ (by decide), u7.other _ (by decide),
       u6.other _ (by decide), e5]
-  have e9Z : s9.gpr .r19 = 0 := by rw [k9 _ fun j hj e => (pw_ne j (by omega)).2.1 e.symm, eZ]
+  have e9Z : s9.gpr .r19 = 0 := by rw [k9 _ fun j hj e => (pw_ne j (by omega_using [hj])).2.1 e.symm, eZ]
   refine wp_addze fun s10 u10 => wp_lsl (by decide) fun s11 u11 => ?_
   have c9 : s9.ca.toNat ≤ 1 := Bool.toNat_le _
   have e10 : (s10.gpr .r4).toNat = s1.ca.toNat + s4.ca.toNat + s9.ca.toNat := by
-    have hv := u10.val; have := u10.ca; rw [e94] at hv; omega
+    have hv := u10.val; have := u10.ca; rw [e94] at hv; omega_using [c1, c4, c9, hv]
   -- The folds.
   have fold_val : ∀ (t : State) (c : Nat), (t.gpr .r4).toNat = c → (t.gpr .r5).toNat = 2 ^ 32 * c →
       t.gpr .r19 = 0 → colsV (fun j => (t.gpr (foldReg j)).toNat) 7 = c + 2 ^ 224 * c := by
     intro t c h4 h5 h18
     simp only [colsV, foldReg, Nat.reduceEqDiff, ↓reduceIte, h4, h5, h18]
     have z : (0 : BitVec 64).toNat = 0 := rfl
-    rw [z]; omega
+    rw [z]; omega_using []
   have e11r5 : (s11.gpr .r5).toNat = 2 ^ 32 * (s1.ca.toNat + s4.ca.toNat + s9.ca.toNat) := by
-    rw [u11.gpr, toNat_shl, e10, Nat.mod_eq_of_lt (by omega), Nat.mul_comm]
+    rw [u11.gpr, toNat_shl, e10, Nat.mod_eq_of_lt (by omega_using [c1, c4, c9]), Nat.mul_comm]
   have hf1 := fold_val s11 _ (by rw [u11.other _ (by decide), e10]) e11r5
     (by rw [u11.other _ (by decide), u10.other _ (by decide), e9Z])
   refine WP.append (chainN_ok (src := foldReg) foldReg_ne 7 (Nat.le_refl _)) fun s12 ⟨v12, r12, k12, m12⟩ => ?_
@@ -501,10 +501,10 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
   refine capture_ok fun s13 r13 m13 e13 => wp_lsl (by decide) fun s14 u14 => ?_
   have c12 : s12.ca.toNat ≤ 1 := Bool.toNat_le _
   have e14Z : s14.gpr .r19 = 0 := by
-    rw [u14.other _ (by decide), r13.gpr _ (by decide), k12 _ fun j hj e => (pw_ne j (by omega)).2.1 e.symm,
+    rw [u14.other _ (by decide), r13.gpr _ (by decide), k12 _ fun j hj e => (pw_ne j (by omega_using [hj])).2.1 e.symm,
       u11.other _ (by decide), u10.other _ (by decide), e9Z]
   have hf2 := fold_val s14 s12.ca.toNat (by rw [u14.other _ (by decide), e13])
-    (by rw [u14.gpr, toNat_shl, e13, Nat.mod_eq_of_lt (by omega), Nat.mul_comm])
+    (by rw [u14.gpr, toNat_shl, e13, Nat.mod_eq_of_lt (by omega_using [c12]), Nat.mul_comm])
     e14Z
   refine WP.mono (chainN_ok (src := foldReg) foldReg_ne 7 (Nat.le_refl _)) fun s15 ⟨v15, r15, k15, m15⟩ => ?_
   simp only [show (7 : Nat) ≠ 0 from by decide, ↓reduceIte] at v15
@@ -520,7 +520,7 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
   have p1 : colsV (fun j => (s.gpr (pw (7 + j))).toNat) 7 = colsV H 7 := by rw [← hH]
   rw [p1, colsV_split H] at v1
   have p3 : colsV (fun j => (s3.gpr (pw j)).toNat) 7 = colsV (fun j => (s1.gpr (pw j)).toNat) 7 :=
-    colsV_congr fun j hj => by rw [kp3 j (by omega), r2.gpr _ (by simp; exact (pw_facts j (by omega)).1)]
+    colsV_congr fun j hj => by rw [kp3 j (by omega_using [hj]), r2.gpr _ (by simp; exact (pw_facts j (by omega_using [hj])).1)]
   have p3r : colsV (fun j => (s3.gpr (rotReg j)).toNat) 7 = colsV (rotW H) 7 :=
     colsV_congr fun j hj => by
       rw [v3 j hj, ← hH]
@@ -528,15 +528,15 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
       rw [kH2 _ (Nat.mod_lt _ (by decide)), kH2 _ (Nat.mod_lt _ (by decide))]
   rw [p3, p3r, colsV_rotW] at v4
   have p8 : colsV (fun j => (s8.gpr (pw j)).toNat) 7 = colsV (fun j => (s4.gpr (pw j)).toNat) 7 :=
-    colsV_congr fun j hj => by rw [k8 j (by omega)]
+    colsV_congr fun j hj => by rw [k8 j (by omega_using [hj])]
   rw [p8, colsV_hiW] at v9
   have p11 : colsV (fun j => (s11.gpr (pw j)).toNat) 7 = colsV (fun j => (s9.gpr (pw j)).toNat) 7 :=
     colsV_congr fun j hj => by
-      rw [u11.other _ (pw_facts j (by omega)).2.1, u10.other _ (pw_facts j (by omega)).1]
+      rw [u11.other _ (pw_facts j (by omega_using [hj])).2.1, u10.other _ (pw_facts j (by omega_using [hj])).1]
   rw [p11] at v12
   have p14 : colsV (fun j => (s14.gpr (pw j)).toNat) 7 = colsV (fun j => (s12.gpr (pw j)).toNat) 7 :=
     colsV_congr fun j hj => by
-      rw [u14.other _ (pw_facts j (by omega)).2.1, r13.gpr _ (by simp; exact (pw_facts j (by omega)).1)]
+      rw [u14.other _ (pw_facts j (by omega_using [hj])).2.1, r13.gpr _ (by simp; exact (pw_facts j (by omega_using [hj])).1)]
   rw [p14] at v15
   rw [show pwSum s 14 = colsV (fun j => (s.gpr (pw j)).toNat) 14 from rfl, colsV_14]
   rw [p1, colsV_split H]
@@ -550,7 +550,7 @@ theorem reduceR_ok {s : State} (hc : Ctx b s) :
     (S := colsV (fun j => (s9.gpr (pw j)).toNat) 7) (c := (s10.gpr .r4).toNat)
     (S9 := colsV (fun j => (s12.gpr (pw j)).toNat) 7) (c9 := s12.ca.toNat)
     (S11 := colsV (fun j => (s15.gpr (pw j)).toNat) 7) (c11 := s15.ca.toNat)
-    (by omega) (e448 ▸ hS) (e448 ▸ hS9) c15 (by rw [e10]; omega) (by rw [e10]; omega) (by omega)
+    (by omega_using [v1, e2, v4, c1, c4, e5, v9, e94, c9, e10, e11r5, v12, c9']) (e448 ▸ hS) (e448 ▸ hS9) c15 (by rw [e10]; omega_using [v1, e2, v4, c1, c4, e5, v9, e94, c9, e10, e11r5, v12, hS, c9']) (by rw [e10]; omega_using [v1, e2, v4, c1, c4, e5, v9, e94, c9, e10, e11r5, v12, e13, c12, v15, hS, hS9, c9']) (by omega_using [v15])
 
 /-! ## The multiplication in registers -/
 
@@ -586,9 +586,9 @@ theorem mul_ok {o x y : Nat} (ho : o + 56 ≤ ACC) (hx : x + 56 ≤ ACC)
   unfold mul mulX
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   -- The operands.
-  refine ldsAt_ok (l := slotsOf opA 7) hx4 (slotsOf_fit hx4 (by omega)) (by decide) (by decide) hc
+  refine ldsAt_ok (l := slotsOf opA 7) hx4 (slotsOf_fit hx4 (by omega_using [hx, hA])) (by decide) (by decide) hc
     fun s2 hc2 r2 m2 _ v2 => ?_
-  refine ldsAt_ok (l := slotsOf opB 7) hy4 (slotsOf_fit hy4 (by omega)) (by decide) (by decide) hc2
+  refine ldsAt_ok (l := slotsOf opB 7) hy4 (slotsOf_fit hy4 (by omega_using [hy, hA])) (by decide) (by decide) hc2
     fun s3 hc3 r3 m3 _ v3 => ?_
   have opsA : ∀ i < 7, (s3.gpr (opA i)).toNat = ew s.mem b x i := fun i hi => by
     rw [r3.gpr _ (by revert i; decide), v2 (opA i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩),
@@ -609,7 +609,7 @@ theorem mul_ok {o x y : Nat} (ho : o + 56 ≤ ACC) (hx : x + 56 ≤ ACC)
   rw [hA7, hB7] at v7
   refine WP.append (reduceR_ok hc7) fun s8 ⟨hc8, r8, m8, v8⟩ => ?_
   -- The result stored at `o`.
-  refine stdsAt_ok (l := slotsOf pw 7) ho4 (slotsOf_fit ho4 (by omega)) hc8 fun s9 g9 rd9 wr9 sp9 mem9 => ?_
+  refine stdsAt_ok (l := slotsOf pw 7) ho4 (slotsOf_fit ho4 (by omega_using [ho, hA])) hc8 fun s9 g9 rd9 wr9 sp9 mem9 => ?_
   refine WP.block_nil ⟨⟨by rw [g9]; exact hc8.r6, by rw [wr9]; exact hc8.wr⟩,
     ⟨fun r hr => ?_, by rw [rd9, r8.rd, r7.rd, u6.rd, u5.rd, r3.rd, r2.rd],
       by rw [wr9, r8.wr, r7.wr, u6.wr, u5.wr, r3.wr, r2.wr], by rw [sp9, r8.sp, r7.sp, u6.sp, u5.sp, r3.sp, r2.sp]⟩,

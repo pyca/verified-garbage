@@ -43,6 +43,6 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (h : xs.le
   · simp [bytesAt]
   · intro i h₁ h₂
     simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes, Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), h₂, ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some]
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [h, h₂]), h₂, ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some]
 
 end VG.Proof.ChaCha20Poly1305

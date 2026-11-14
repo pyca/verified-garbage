@@ -93,7 +93,7 @@ theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 768) : Region.Sub ⟨W + BitV
 
 theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 768) :
     Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 672⟩ :=
-  Offset.sub _ h₁ (by omega)
+  Offset.sub _ h₁ (by omega_using [h₂])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
@@ -119,12 +119,12 @@ theorem ctx_w {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 768) :
 /-- Parts of the state are disjoint. -/
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
     (⟨St + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨St + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.sw; omega) (by have := L.sw; omega)
+  Offset.disjoint _ h (by have := L.sw; omega_using [ha]) (by have := L.sw; omega_using [hd])
 
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 768) (hd : d + k ≤ 768) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 theorem stk_st {a n : Nat} (ha : a + n ≤ 80) : (stk SP).Disjoint ⟨St + BitVec.ofNat 64 a, n⟩ :=
   L.ks.sub_right (stSub ha)

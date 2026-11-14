@@ -62,7 +62,7 @@ theorem gcd_ok (h : DS s0 true A twL V [sB1, sB0] s) (uodd : A true 14 % 2 = 1)
   -- The GCD, or 1 for `u = 1`.
   by_cases u1 : A true 14 = 1
   · rd_simp [Nat.mod_eq_of_lt ulo, Nat.mod_eq_of_lt xlo, u1, o42]
-  · have g := hG (by rd_simp [Nat.mod_eq_of_lt ulo]; omega)
+  · have g := hG (by rd_simp [Nat.mod_eq_of_lt ulo]; omega_using [uodd, u1])
     rd_simp_at g [Nat.mod_eq_of_lt ulo, Nat.mod_eq_of_lt xlo]
     rd_simp [Nat.mod_eq_of_lt ulo, Nat.mod_eq_of_lt xlo, u1, o42, g, Nat.gcd_comm]
 

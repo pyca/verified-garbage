@@ -20,7 +20,7 @@ def SameLeak (E : Environment) (eBytes pBytes qBytes rBytes sBytes : List Byte) 
 theorem schedule_eq {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
     (length : rBytes.length = sBytes.length) (enough : E.length ≤ rBytes.length)
     (leak : SameLeak E eBytes pBytes qBytes rBytes sBytes) : schedule E eBytes pBytes rBytes = schedule E eBytes qBytes sBytes := by
-  have L : 0 < E.length := by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega
+  have L : 0 < E.length := by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega_using [this]
   exact schedOf_eq L length enough (by
     unfold SameLeak at leak
     simpa only [candidateLeak_eq, Spec.RsaKeyGen.candidateOp] using leak)

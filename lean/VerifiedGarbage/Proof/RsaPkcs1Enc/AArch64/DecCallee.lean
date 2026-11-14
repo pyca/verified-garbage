@@ -132,7 +132,7 @@ variable (v : PrivImpl)
 /-- `stack - 1`, so that the contract's stack is `S + 1`. -/
 def S : Nat := v.stack - 1
 
-theorem stack_eq : v.stack = v.S + 1 := by have := v.pos; unfold S; omega
+theorem stack_eq : v.stack = v.S + 1 := by have := v.pos; unfold S; omega_using [this]
 
 theorem verified' : Verified AArch64.target v.code (Proof.Rsa.privateCheckedContract AArch64.abi (v.S + 1)) :=
   v.stack_eq ▸ v.verified
@@ -148,7 +148,7 @@ theorem ct : ConstantTime isa (privK v.S).pre (privK v.S).pub v.code :=
 
 theorem depth' : 16 * v.code.aarch64Depth ≤ v.S + 1 := v.stack_eq ▸ v.depth
 
-theorem S15 : 15 ≤ v.S := by have := v.pos; unfold S; omega
+theorem S15 : 15 ≤ v.S := by have := v.pos; unfold S; omega_using [this]
 
 end PrivImpl
 

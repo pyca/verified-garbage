@@ -68,16 +68,16 @@ theorem sampleLoop_ok {E : SE} {qb R : List Byte} {s₀ : State} {u₀ : Nat} {S
   have o2 : Outside E.F E.o E.W s₀.mem t₂.mem := by rw [m2]; exact ho.trans o1
   have k02 : Keep drawRegs s₀ t₂ := ((hk.trans k1).trans k2).mono (by decide)
   rcases hc with ⟨b31, h2d, b17, b25, hu', hrej⟩ | ⟨b31, b25, bc, -⟩
-  · refine .inr ⟨?_, n - 1, by omega, n - 1, u + E.W, rfl, by omega, by omega, h2,
+  · refine .inr ⟨?_, n - 1, by omega_using [hd], n - 1, u + E.W, rfl, by omega_using [h2d], by omega_using [hd'], h2,
       (k2.gpr (by decide)).trans b25, hu', (k2.gpr (by decide)).trans b17,
       (k2.gpr (by decide)).trans b31, o2, k02, ?_, ?_, ?_⟩
     · rw [Steps.eval_zero, a3, b31]; rfl
     · rw [← hsc, hrej]
     · rw [← hst, hrej, Dsa.Random.sampleStatus_reject]
-    · rw [← hus, hrej]; dsimp only; omega
+    · rw [← hus, hrej]; dsimp only; omega_using []
   · refine .inl ⟨?_, ⟨h2, o2, k02, ?_, ?_, ?_⟩⟩
     · rw [Steps.eval_zero, a3, b31,
-        status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) n (R.drop u)); omega)]
+        status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) n (R.drop u)); omega_using [this])]
     · rw [(k2.gpr (by decide)).trans b31, hst]
     · rw [(k2.gpr (by decide)).trans b25, hus]
     · intro k hk'

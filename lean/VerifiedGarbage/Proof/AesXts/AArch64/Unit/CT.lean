@@ -173,7 +173,7 @@ theorem encrypt_rel {f : Impl.Aes.AArch64.Blocks} (ok : XtsOk true f.code) (nf :
     (fun a b h => Inv.sp_eq hq h.1.inv h.2.inv)
     (fun a b h => Inv.agree hq h.1.inv h.2.inv) (F₁ := BlocksReady s₀ (M s₀)) (F₂ := BlocksReady s₀' (M s₀'))
     fun a b h => ⟨argsAll_wp hp h.1, argsAll_wp hp' h.2⟩
-  have c := blocks_rel hp hp' hq true ok ct nf (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) hM
+  have c := blocks_rel hp hp' hq true ok ct nf (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) hM
     (n := f.name)
   have sp := taint_rel pubRegs split_taint (P := fun a b => AllPost true s₀ (M s₀) a ∧ AllPost true s₀' (M s₀') b)
     (fun a b h => Inv.sp_eq hq h.1.inv h.2.inv)
@@ -238,8 +238,8 @@ theorem decrypt_rel {e d : Impl.Aes.AArch64.Blocks} (okE : XtsOk true e.code) (n
         (fun a b h => Inv.sp_eq hq h.1.inv h.2.inv)
         (fun a b h => Inv.agree hq h.1.inv h.2.inv) (F₁ := BlocksReady s₀ (M s₀))
         (F₂ := BlocksReady s₀' (M s₀')) fun a b h => ⟨argsAll_wp hp h.1, argsAll_wp hp' h.2⟩
-      have c := blocks_rel hp hp' hq false okD ctD nfD (by rw [len_eq s₀]; omega)
-        (by rw [len_eq s₀']; omega) hM (n := d.name)
+      have c := blocks_rel hp hp' hq false okD ctD nfD (by rw [len_eq s₀]; omega_using [])
+        (by rw [len_eq s₀']; omega_using []) hM (n := d.name)
       exact a.seq (c.mono (fun _ _ h => h) fun _ _ h => ⟨whole_fin h.1 hb, whole_fin h.2 hb'⟩)
     · refine (RelCT.exists_ (P := fun (_ : B s₀ ≠ 0) a b => TwPost s₀ a ∧ TwPost s₀' b) fun hB => ?_).mono
         (fun a b h => ⟨by have := h.2; rw [eval_b h.1.1.2] at this; simpa using this,
@@ -250,7 +250,7 @@ theorem decrypt_rel {e d : Impl.Aes.AArch64.Blocks} (okE : XtsOk true e.code) (n
         (fun a b h => Inv.agree hq h.1.inv h.2.inv) (F₁ := BlocksReady s₀ (M s₀ - 1))
         (F₂ := BlocksReady s₀' (M s₀' - 1)) fun a b h => ⟨argsHead_wp hp h.1, argsHead_wp hp' h.2⟩
       have c₁ := blocks_rel hp hp' hq false okD ctD nfD (N := M s₀ - 1)
-        (N' := M s₀' - 1) (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) (by rw [hM]) (n := d.name)
+        (N' := M s₀' - 1) (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) (by rw [hM]) (n := d.name)
       have l₁ := taint_rel pubRegs decL1_taint
         (P := fun a b => AllPost false s₀ (M s₀ - 1) a ∧ AllPost false s₀' (M s₀' - 1) b)
         (fun a b h => Inv.sp_eq hq h.1.inv h.2.inv)

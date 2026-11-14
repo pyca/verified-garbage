@@ -59,7 +59,7 @@ theorem productFirstLoop_ok {s : State}
   · intro u hu t hi _
     rcases hi with ⟨hk,hqt,hp0,hp1,hp13,hp14,hm⟩
     have hf : Frame [outputRegion (s.gpr .x0)] s.mem t.mem := by
-      rw [hm]; exact productPass_frame (by omega)
+      rw [hm]; exact productPass_frame (by omega_using [hu])
     have ht' : InverseTable.Words t.mem (s.gpr .x1) :=
       tableWords_frame ht hf (by simpa only [List.mem_singleton,forall_eq,tableRegion] using hd)
     have hrt' : ∀ off, off+16≤3904 → InRegions (t.rd++t.wr) (s.gpr .x1+BitVec.ofNat 64 off) 16 := by
@@ -67,7 +67,7 @@ theorem productFirstLoop_ok {s : State}
     have hqword : ∀ e<4, vword (t.v .v31) e=8380417#32 := by
       intro e he
       rw [hqt.qv,VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-      have heq : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+      have heq : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
       rcases heq with rfl | rfl | rfl | rfl <;> rfl
     refine productFive_ok u (fun j e he => productValues_input hu hf ha hb hp13 hp14 j he) hqt
       (packed_tableRoots hu ht' hrt' hp1 hqword) (local_tableRoots hu ht' hrt' hp1 hqword)
@@ -82,13 +82,13 @@ theorem productFirstLoop_ok {s : State}
       · exact ⟨by rw [hvec₂,hv₁.v,hv.get .v31 (by decide)]; exact hqt.qv,
           by rw [hvec₂,hv₁.v,hv.get .v30 (by decide)]; exact hqt.qiv⟩
       · rw [hp₂,hk₁.get .x0,hp0]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₃,hk₁.get .x1,hp1]
-        rw [show 480*(u+1)=480*u+480 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 480*(u+1)=480*u+480 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₄,hk₁.get .x13,hp13]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₅,hk₁.get .x14,hp14]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hm₂,hv₁.mem]
         simp only [hm,hp0,productPassMem]
       · rw [hc₂,hk₁.get .x11]; rfl

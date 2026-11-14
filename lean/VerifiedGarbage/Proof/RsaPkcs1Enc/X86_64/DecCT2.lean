@@ -52,10 +52,10 @@ theorem hashD_ct : RelCT isa (Two (At X fun s t => Cx s t ∧ True)) (hashD (HH 
     fun s t R EM hp hc _ => WP.mono (shaUpdArgs_run hp hc) fun _ ⟨hc', _, h1, h2, h3, h4, h5⟩ =>
       ⟨hc', h1, h2, h3, by rw [h4], h5⟩) ?_
   refine RelCT.seq (cx_call (upd_two (da := fun s => scA s sD) (L := kOf) (si := fun _ => BitVec.ofNat 64 0)
-      (fun _ _ h => h) (fun s hp => DataOk.scr hp (by decide) (by have := hp.k2; unfold sD scrBytes kOf; omega))
+      (fun _ _ h => h) (fun s hp => DataOk.scr hp (by decide) (by have := hp.k2; unfold sD scrBytes kOf; omega_using [this]))
       (scA_pin sD) (fun _ _ S => S.k) (fun _ _ _ => rfl))
     fun s t R EM hp hc ⟨h1, _, h3, h4, h5⟩ =>
-      upd_cx hp hc (DataOk.scr hp (by decide) (by have := hp.k2; unfold sD scrBytes kOf; omega)) h1 h3 h4 h5) ?_
+      upd_cx hp hc (DataOk.scr hp (by decide) (by have := hp.k2; unfold sD scrBytes kOf; omega_using [this])) h1 h3 h4 h5) ?_
   refine RelCT.seq (cx_blk (F' := fun s t => t.gpr .rdi = scA s 0 ∧ t.gpr .rsi = s.gpr .r8 ∧
       t.gpr .rdx = scA s sDH ∧ t.gpr .rcx = scA s sWork) (by taint_decide)
     fun s t R EM hp hc _ => WP.mono (shaFinArgs_run hp hc) fun _ ⟨hc', _, h⟩ => ⟨hc', h⟩) ?_
@@ -73,7 +73,7 @@ theorem macInit_ct {F : State → State → Prop} {kOff : Nat} (hk1 : sMsg ≤ k
     RelCT isa (Two (At X fun s t => Cx s t ∧ F s t)) (.seq (.block (macInitArgs kOff))
       (.call (HH v).hmacInitN (HH v).hmacInit)) (Two (At X fun s t => Cx s t ∧ True)) := by
   refine RelCT.seq (cx_blk (F' := HIA kOff) h fun s t R EM hp hc _ =>
-    WP.mono (macInitArgs_run hp hc (by unfold scrBytes at hk2; omega)) fun _ ⟨hc', _, h⟩ => ⟨hc', h⟩) ?_
+    WP.mono (macInitArgs_run hp hc (by unfold scrBytes at hk2; omega_using [hk2])) fun _ ⟨hc', _, h⟩ => ⟨hc', h⟩) ?_
   exact cx_call (hinit_two hk1 hk2 fun _ _ h => h) fun s t R EM hp hc ⟨h1, h2, h3, h4, h5⟩ =>
     hinit_cx hp hc hk1 hk2 h1 h2 h3 h4 h5
 

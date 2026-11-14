@@ -97,27 +97,27 @@ theorem candidateArithmetic_ok {s : State} {B xp qp : Addr} {Z w : Nat} {xb qb :
     (by decide : 17 < 32) hxp hxl sx hxpos hxf) fun u ⟨hu, ux, fu, ku⟩ => ?_)
   have uh : ∀ d, d + 8 ≤ 256 → word u.mem B d = word s.mem B d := by
     intro d hd
-    exact fu.word_eq (by simp only [List.mem_singleton]; rintro r rfl; simp [slot, hdrBytes]; omega)
-      (by have := h.scr.nowrap; have := h.h256; omega)
+    exact fu.word_eq (by simp only [List.mem_singleton]; rintro r rfl; simp [slot, hdrBytes]; omega_using [hd])
+      (by have := h.scr.nowrap; have := h.h256; omega_using [hd])
   have squ : Src u B Z qp qb := sq.congrK (fun a ha => fu a (by
     simp only [List.mem_singleton]; rintro r rfl
     have := h.sl (by decide : 0 < 16)
     dsimp only at *
-    omega)) ku
+    omega_using [ha, this])) ku
   refine WP.seq (WP.mono (loadCandidateArray_ok hu (by decide : 2 < 16) (by decide : 18 < 32)
     (by decide : 19 < 32) (by rw [uh 144 (by decide)]; exact hqp)
     (by rw [uh 152 (by decide)]; exact hql) squ hqposlen hqf) fun v ⟨hv, vq, fv, kv⟩ => ?_)
   refine WP.seq (WP.mono (doubleArray_ok hv (by decide : 2 < 16) (by rw [vq]; exact hqfit))
     fun z ⟨zq, ho, kz⟩ => ?_)
   have fz : Frm B [ar w 2] v.mem z.mem :=
-    Frm.of_outside (ho.mono (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega)) (by simp [ar])
+    Frm.of_outside (ho.mono (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp [ar])
   have hz := hv.congr fz (fun r hr => by
     rcases List.mem_singleton.mp hr with rfl; exact Mut.ofSlot _ _ _) kz (by decide)
   have zx : wv z.mem B (slot w 0) w = Spec.Rsa.os2ip xb := by
     have sep : ∀ r ∈ [ar w 2], slot w 0 + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w 0 := by
-      simp only [List.mem_singleton]; rintro r rfl; left; simp only [slot, hdrBytes]; omega
+      simp only [List.mem_singleton]; rintro r rfl; left; simp only [slot, hdrBytes]; omega_using []
     have room : slot w 0 + 8 * w ≤ 2 ^ 64 := by
-      have := h.sl (by decide : 0 < 16); have := h.scr.nowrap; omega
+      have := h.sl (by decide : 0 < 16); have := h.scr.nowrap; omega_arith
     rw [fz.wv_eq sep room, fv.wv_eq sep room, ux]
   change WP isa (.seq Impl.Dsa.AArch64.Generation.reduceCandidate
     (Impl.Dsa.AArch64.Generation.doubleArray 0)) z _

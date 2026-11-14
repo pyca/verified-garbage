@@ -17,7 +17,7 @@ open VG.Impl.Bignum.X86
 theorem PrecomputedABI.preBytes {s : State} (A : PrecomputedABI s) :
     (arg s 3).toNat * 8 = 16 * Spec.Rsa.modulusWords (arg s 1).toNat := by
   rw [A.preLength, Spec.Rsa.precomputedWords]
-  omega
+  omega_using []
 
 theorem precomputedInstalled_ok {s : State} (A : PrecomputedABI s) :
     WP isa (.block PublicFn.entry) s fun t =>
@@ -27,7 +27,7 @@ theorem precomputedInstalled_ok {s : State} (A : PrecomputedABI s) :
       Outside (argumentPointer s 8) 0 ((arg s 9).toNat * 8) s.mem t.mem := by
   refine WP.mono (publicEntry_ok (ptr := arg s 8)
     (A.stackArgument (by decide : 8 < 10)).readSrc rfl A.scratchBound
-    (by have := A.used; omega) (by rw [A.wr]; simp) A.stack) ?_
+    (by have := A.used; omega_using [this]) (by rw [A.wr]; simp) A.stack) ?_
   intro t ⟨Sc, Saved, K, O⟩
   refine ⟨?_, Saved, K, O⟩
   refine ⟨Sc, A.lengths.1, A.lengths.2, A.space, ?_, ?_, ?_, ?_, A.ePositive,

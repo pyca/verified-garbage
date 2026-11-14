@@ -59,7 +59,7 @@ private theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : 
     cases i with
     | zero => simpa using hq
     | succ i =>
-      have := ih _ _ (pointAdd_rep hq hb) hrest i (by simp only [List.length_cons] at hi; omega)
+      have := ih _ _ (pointAdd_rep hq hb) hrest i (by simp only [List.length_cons] at hi; omega_using [hi])
       rw [List.getD_cons_succ]
       convert this using 1
       rw [succ_nsmul]; abel
@@ -86,7 +86,7 @@ private theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
     | succ j =>
       rw [List.getD_cons_succ] at hk ⊢
       have := ih (pointMul 1024 b) ((1024 : Nat) • c) (pointMul_rep 1024 hb) hc.2 j
-        (by simp only [List.length_cons] at hj; omega) hk
+        (by simp only [List.length_cons] at hj; omega_using [hj]) hk
       rw [smul_smul, smul_smul] at this
       rw [smul_smul, pow_succ, ← Nat.mul_assoc]
       exact this
@@ -122,7 +122,7 @@ theorem combCached_ok (j k : Nat) (hj : j < 26) (hk : k < 17) :
     have hlen : (combTable.getD j []).length = 16 :=
       beq_iff_eq.mp (List.all_eq_true.mp tables_length.2 _ hrow)
     have hmem : (combTable.getD j []).getD k (1, 1, 0) ∈ combTable.getD j [] := by
-      have hk' : k < (combTable.getD j []).length := by rw [hlen]; omega
+      have hk' : k < (combTable.getD j []).length := by rw [hlen]; omega_using [hk]
       rw [List.getD_eq_getElem?_getD (l := combTable.getD j []), List.getElem?_eq_getElem hk']
       exact List.getElem_mem _
     have hre := of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp tables_cached _ hrow) _ hmem)
@@ -137,7 +137,7 @@ theorem combCached_ok (j k : Nat) (hj : j < 26) (hk : k < 17) :
         rw [show ([] : List (Fe × Fe)) = ([] : List (Fe × Fe × Fe)).map uncache from rfl, getD_map']
       have hr := checkTables_ok basePoint baseAff basePoint_rep _ tables_check j
         (by rw [List.length_map, tables_length.1]; exact hj) k
-        (by rw [hgj, List.length_map, hlen]; omega)
+        (by rw [hgj, List.length_map, hlen]; omega_using [hk])
       rw [hgj, ← uncache_default, getD_map', smul_smul] at hr
       exact hr
 

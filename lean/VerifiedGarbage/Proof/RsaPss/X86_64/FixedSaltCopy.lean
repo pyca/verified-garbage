@@ -36,11 +36,11 @@ theorem copyFixedSalt_ok {u : State} {F S : Addr} (L : Lay u F S)
     v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.zf = some (decide (sl = 0)) ∧ v.mem = u.mem)
     ?_ rfl) fun v ⟨⟨h₁, h₁₀, h₂, hz, hm⟩, hk⟩ => ?_)
   · have ea : off S e + BitVec.ofNat 64 db - BitVec.ofNat 64 sl = off S (e + db - sl) := by
-      rw [off_plus, off_sub S (by omega)]
+      rw [off_plus, off_sub S (by omega_using [hfit])]
     xrun [copyFixedSalt, ea_sp, L.rsp, L.ld (d := sEb) (by decide), L.ld (d := sDb) (by decide),
       L.ld (d := sSlen) (by decide), R.rd (d := sEb) 23 rfl (by decide),
       R.rd (d := sDb) 24 rfl (by decide), R.rd (d := sSlen) 36 rfl (by decide), he, hdb, hsl, ea]
-    rw [BitVec.and_self, ofNat_beq_zero (by omega)]
+    rw [BitVec.and_self, ofNat_beq_zero (by omega_using [hlen])]
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   refine WP.ite (M := isa) _ (show isa.eval .e v = _ from hz) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
@@ -49,16 +49,16 @@ theorem copyFixedSalt_ok {u : State} {F S : Addr} (L : Lay u F S)
   · rw [decide_eq_false_iff_not] at hb
     refine WP.mono (copy_ok Lv (hm ▸ R) (d := .rcx) (by decide)
       (p := off S (e + db - sl)) (o := oY) (disp := 8 + H.D) (n := sl)
-      (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₁₀)
-      (by omega) (by unfold oY oRsa; omega) h₁ ((hk.gpr (by decide)).trans hcx) h₂ ?_ ?_)
+      (stepR_ok (by omega_using [hlen]) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₁₀)
+      (by omega_using [hb]) (by unfold oY oRsa; omega_using [hlen]) h₁ ((hk.gpr (by decide)).trans hcx) h₂ ?_ ?_)
       fun w ⟨Lw, kw, Rw⟩ => ?_
     · intro i hi
       rw [off_plus]
-      exact Lv.sld8 (by unfold oY at heEnd; unfold oRsa; omega)
+      exact Lv.sld8 (by unfold oY at heEnd; unfold oRsa; omega_using [hfit, heEnd, hi])
     · intro i hi j hj
       rw [off_plus]
-      exact Offset.add_ofNat_ne S (by unfold oY at heEnd; omega)
-        (by unfold oY; omega) (by omega)
+      exact Offset.add_ofNat_ne S (by unfold oY at heEnd; omega_using [hfit, heEnd, hi])
+        (by unfold oY; omega_using [hlen, hj]) (by omega_using [hfit, heEnd, hi])
     · refine ⟨Lw, (hk.trans kw).mono (by decide), ?_⟩
       simpa only [hm, off_off] using Rw
 

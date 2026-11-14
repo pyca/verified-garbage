@@ -37,11 +37,11 @@ theorem key_arg_contains {s : State} (hp : EPre s) {i : Nat} (hi : i < 4) :
     (ekArgR s).Contains (argAddr s i) 4 := by
   have hf := hp.fSp
   change (⟨addr (s.gpr .esp) 4, 16⟩ : Region).Contains (addr (s.gpr .esp) (4 + 4 * i)) 4
-  rw [addr_eq (by omega), addr_eq (by omega)]
+  rw [addr_eq (by omega_using [hf]), addr_eq (by omega_using [hi, hf])]
   rw [show (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) =
       ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4) + BitVec.ofNat 64 (4 * i) by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 theorem key_arg_exec {s₀ s : State} (hp : EPre s₀) (hs : KeySetup s₀ s)
     {i : Nat} (hi : i < 4) (d : Reg) :

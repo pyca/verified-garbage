@@ -47,8 +47,8 @@ theorem ldrSp_ok {s : State} {t : Reg} {i : Nat} (hi : i < 4)
     (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * i)) 8) :
     ∃ s', runBlock isa [.ldrSp t (8 * i)] s = some s' ∧ s' = s.write .x t (stackArg s i) := by
   refine ⟨_, ?_, rfl⟩
-  have h₁ : (8 * i) % 8 = 0 := by omega
-  have h₂ : 8 * i < 32768 := by omega
+  have h₁ : (8 * i) % 8 = 0 := by omega_using []
+  have h₂ : 8 * i < 32768 := by omega_using [hi]
   simp only [runBlock_cons, runBlock_nil, runStep_some, exec, h₁, h₂, and_self, ite_true, State.load, hsp,
     Option.map_some, stackArg, stackArgAddr, Mem.readW, BitVec.setWidth_eq]
 
@@ -84,7 +84,7 @@ theorem entry_ok {K W : Addr} (L : Lay K W) {s : State} (P : Perm K W s) {R n : 
   have x9₀ : (s.write .x .x9 W).gpr .x9 = W := by simp [gpr_write]
   have hin : ∀ p ∈ saved, InRegions (s.write .x .x9 W).wr ((s.write .x .x9 W).gpr .x9 + BitVec.ofNat 64 p.2) 8 :=
     fun p hp => by
-      rw [x9₀, wr_write]; exact in_off P.w (by have := saved_in p hp; omega) (by decide)
+      rw [x9₀, wr_write]; exact in_off P.w (by have := saved_in p hp; omega_using [this]) (by decide)
   obtain ⟨g₀, hg₀⟩ : ∃ g, g = (s.write .x .x9 W).gpr := ⟨_, rfl⟩
   obtain ⟨M₁, hM₁⟩ : ∃ M, M = Spill.saveMem s.mem W g₀ saved := ⟨_, rfl⟩
   have hsv₁ : Spill.Saved W s.gpr saved M₁ := by
@@ -143,7 +143,7 @@ theorem entry_ok {K W : Addr} (L : Lay K W) {s : State} (P : Perm K W s) {R n : 
   have f₂ : Frame [⟨W, 2560⟩] s.mem s₂.mem := by
     rw [m₂, hM₂]
     have c : ∀ {d : Nat}, d + 8 ≤ 2560 → (⟨W, 2560⟩ : Region).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun h => Offset.contains_base W h (by omega)
+      fun h => Offset.contains_base W h (by omega_using [h])
     exact (((((f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.wSub (by decide)⟩).writeW
       (List.mem_singleton_self _) _ (c (by decide))).writeW (List.mem_singleton_self _) _ (c (by decide))).writeW
@@ -206,12 +206,12 @@ theorem entry_ok {K W : Addr} (L : Lay K W) {s : State} (P : Perm K W s) {R n : 
   have k₇ : ∀ {d : Nat}, 96 ≤ d → d + 8 ≤ 2560 →
       s₇.mem.readW (W + BitVec.ofNat 64 d) 64 = s₄.mem.readW (W + BitVec.ofNat 64 d) 64 := fun {d} h₁ h₂ =>
     fr₇.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by omega)) h₂ (by decide)) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by omega_using [h₁])) h₂ (by decide)) (by decide)
   have k₄ : ∀ {d : Nat}, (d + 8 ≤ 248 ∨ 288 ≤ d) → d + 8 ≤ 2560 →
       s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = M₁.readW (W + BitVec.ofNat 64 d) 64 := fun {d} h₁ h₂ => by
-    rw [m₄, readW_writeW_off _ (by omega) (by omega) (by decide), hM₂,
-      readW_writeW_off _ (by omega) (by omega) (by decide), readW_writeW_off _ (by omega) (by omega) (by decide),
-      readW_writeW_off _ (by omega) (by omega) (by decide), readW_writeW_off _ (by omega) (by omega) (by decide)]
+    rw [m₄, readW_writeW_off _ (by omega_using [h₁]) (by omega_using [h₂]) (by decide), hM₂,
+      readW_writeW_off _ (by omega_using [h₁]) (by omega_using [h₂]) (by decide), readW_writeW_off _ (by omega_using [h₁]) (by omega_using [h₂]) (by decide),
+      readW_writeW_off _ (by omega_using [h₁]) (by omega_using [h₂]) (by decide), readW_writeW_off _ (by omega_using [h₁]) (by omega_using [h₂]) (by decide)]
   have l₄ : blockAtMem s₄.mem (K + BitVec.ofNat 64 240) = ctxLstar s.mem K := by
     have f₄ : Frame [⟨W, 2560⟩] s.mem s₄.mem := by
       rw [m₄, ← m₂]; exact f₂.writeW (List.mem_singleton_self _) (BitVec.ofNat 64 tl) (Offset.contains_base W (d := 248) (n := 8) (k := 2560) (by decide) (by decide))
@@ -232,7 +232,7 @@ theorem entry_ok {K W : Addr} (L : Lay K W) {s : State} (P : Perm K W s) {R n : 
       readW_writeW_off _ (by decide) (by decide) (by decide), readW_writeW_off _ (by decide) (by decide) (by decide)]
     exact Mem.readW_writeW_self64 ..
   · have hp' := saved_in p hp
-    rw [← hsv₁ p hp, k₇ (by omega) (by omega), k₄ (.inl (by omega)) (by omega)]
+    rw [← hsv₁ p hp, k₇ (by omega_using [hp']) (by omega_using [hp']), k₄ (.inl (by omega_using [hp'])) (by omega_using [hp'])]
   · rw [blockAtMem_frame B₇.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)),
       blockAtMem_frame B₆.frame (fun r hr => by
@@ -244,7 +244,7 @@ theorem entry_ok {K W : Addr} (L : Lay K W) {s : State} (P : Perm K W s) {R n : 
       B₆.val, B₅.val, l₄]
     rfl
   · have c : ∀ {d : Nat}, 32 ≤ d → d + 8 ≤ 288 → (entryR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
+      fun h₁ h₂ => Offset.contains W h₁ (by omega_using [h₂]) (by decide)
     have f₄ : Frame [entryR W] s.mem s₄.mem := by
       rw [m₄, hM₂]
       exact (((((f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by

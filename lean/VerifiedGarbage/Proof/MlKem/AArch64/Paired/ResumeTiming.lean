@@ -95,7 +95,7 @@ theorem retryBody_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s
   refine RelCT.seq (R:=fun t' v' : State=>t'.sp=v'.sp) ?_ ?_
   · intro t₀ v₀ tr ur t' v' h et ev
     rcases h with ⟨rfl,rfl⟩
-    have n34 : 4-n=3 ∨ 4-n=4 := by have := it.le; omega
+    have n34 : 4-n=3 ∨ 4-n=4 := by have := it.le; omega_using [this]
     exact ⟨(step n34 it.progress iv.progress it.syms iv.syms sp t₀ v₀ tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
       (exec_post (advance_ok it.progress it.syms) et).keep.sp.trans
         (sp.trans (exec_post (advance_ok iv.progress iv.syms) ev).keep.sp.symm)⟩
@@ -123,7 +123,7 @@ theorem bounded_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u
       refine ⟨tq,by rw [et',ev'],fun _=>trivial,fun h=>?_⟩
       have hr : retryAgain A B n=true := by rw [et'] at h; exact Option.some.inj h
       have hn : n=1 := by simp only [retryAgain,decide_eq_true_eq] at hr; exact hr.1
-      exact ⟨0,by omega,it' hr,iv' hr⟩
+      exact ⟨0,by omega_using [hn],it' hr,iv' hr⟩
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,

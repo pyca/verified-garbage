@@ -57,7 +57,7 @@ theorem clLoop_ct : RelCT isa (Two (At X fun s t => Cx s t ∧ True)) (clLoop (H
     (rsp_pin fun _ _ h => h.1) (by taint_decide) fun s t hp ⟨⟨R, EM, hc⟩, _⟩ =>
       WP.mono (clInit_run hp hc) fun _ ⟨hc', hI, hNB, _⟩ => ⟨⟨R, EM, hc'⟩, ⟨Nat.succ_pos 7, hI, hNB⟩, trivial⟩) ?_
   exact prfLoop_ct (v := v) (fun _ _ _ => rfl) (by decide) (by decide) (fun _ _ => by decide)
-    (fun s hp R EM t i hc hi hdi hax _ => WP.mono (msgCL_run hp hc (by omega) hdi hax) fun _ h => ⟨h.1, h.2.2⟩)
+    (fun s hp R EM t i hc hi hdi hax _ => WP.mono (msgCL_run hp hc (by omega_using [hi]) hdi hax) fun _ h => ⟨h.1, h.2.2⟩)
     (fun s hp R EM t i hc hi hI _ => incr8_ok hp hc hi hI) (by taint_decide) (by taint_decide) (by taint_decide)
     (by taint_decide)
 
@@ -70,7 +70,7 @@ theorem nb_le {s : State} (hp : DPre s) : 0 < nbOf s ∧ nbOf s ≤ 32 := by
   have hk2 := hp.k2
   have hkk : kOf s ≤ 1024 := hk2
   have hk64 : 64 ≤ kOf s := hk1
-  unfold nbOf; omega
+  unfold nbOf; omega_using [hkk, hk64]
 
 theorem amLoop_ct : RelCT isa (Two (At X JCL)) (amLoop (HH v)) fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := fun s t => Cx s t ∧ GW nbOf 0 s t.mem ∧ True) [.rsp]
@@ -78,8 +78,8 @@ theorem amLoop_ct : RelCT isa (Two (At X JCL)) (amLoop (HH v)) fun _ _ => True :
       WP.mono (amInit_run hp h.ctx) fun _ ⟨hc', hI, hNB, _⟩ =>
         ⟨⟨R, EM, hc'⟩, ⟨(nb_le hp).1, hI, hNB.trans h.sNB⟩, trivial⟩) ?_
   exact prfLoop_ct (v := v) (N := nbOf) (fun _ _ S => by simp only [nbOf, S.k]) (by decide) (by decide)
-    (fun s hp => by have := nb_le hp; unfold sAM scrBytes; omega)
-    (fun s hp R EM t i hc hi hdi hax h9 => WP.mono (msgAM_run hp hc (by have := nb_le hp; omega) hdi hax h9)
+    (fun s hp => by have := nb_le hp; unfold sAM scrBytes; omega_using [this])
+    (fun s hp R EM t i hc hi hdi hax h9 => WP.mono (msgAM_run hp hc (by have := nb_le hp; omega_using [hi, this]) hdi hax h9)
       fun _ h => ⟨h.1, h.2.2⟩)
     (fun s hp R EM t i hc hi hI hNB => incrNB_ok hp hc hi hI hNB) (by taint_decide) (by taint_decide)
     (by taint_decide) (by taint_decide)

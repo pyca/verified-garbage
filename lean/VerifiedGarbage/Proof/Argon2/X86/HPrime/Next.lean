@@ -89,15 +89,15 @@ theorem absorbFixed_ok {B E : BitVec 32} {s : State} (c : Ctx B E s) {offset siz
   have eD : s₅.gpr .esi = B + BitVec.ofNat 32 offset := by
     rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), c.ebx]
   have eDw : (B + BitVec.ofNat 32 offset).setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 offset :=
-    setWidth_add (by omega)
+    setWidth_add (by omega_using [ho, hs])
   have dTo : (B + BitVec.ofNat 32 offset).toNat = B.toNat + offset := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := offset) (by omega)]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := offset) (by omega_using [ho, hs])]; omega_using [ho, hs]
   have hL : (s₅.gpr .edi).toNat = size := by
-    rw [u₅.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [u₅.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho, hlo])]
   have hDc : Covers [⟨(B + BitVec.ofNat 32 offset).setWidth 64, size⟩] (s₅.rd ++ s₅.wr) := by
     rw [eDw, show s₅.wr = s.wr by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]]; exact Covers.right hcov
   have hDs : Region.Disjoint ⟨(B + BitVec.ofNat 32 offset).setWidth 64, size⟩ ⟨B.setWidth 64, 768⟩ := by
-    rw [eDw]; exact Offset.disjoint_base _ hlo (by omega)
+    rw [eDw]; exact Offset.disjoint_base _ hlo (by omega_using [ho])
   have hDk : (below E 60).Disjoint ⟨(B + BitVec.ofNat 32 offset).setWidth 64, size⟩ := by
     rw [eDw]; exact hstk
   have hcount : s₅.gpr .edx ++ s₅.gpr .ecx = BitVec.ofNat 64 ([] : List Byte).length := by
@@ -107,8 +107,8 @@ theorem absorbFixed_ok {B E : BitVec 32} {s : State} (c : Ctx B E s) {offset siz
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
         u₂.other _ (by decide), u₁.gpr]
     rw [e1, e2]; rfl
-  refine (update_ok c₅ eD hL (by rw [dTo]; omega) hDc hDs hDk (by rw [m]; exact repr) hcount
-    (by simp only [List.length_nil]; omega)).mono ?_
+  refine (update_ok c₅ eD hL (by rw [dTo]; omega_using [ho]) hDc hDs hDk (by rw [m]; exact repr) hcount
+    (by simp only [List.length_nil]; omega_using [ho])).mono ?_
   rintro t ⟨r, cs, rd, wr, f⟩
   refine ⟨by rw [m, eDw, List.nil_append] at r; exact r, ?_⟩
   refine Keeps.of_call (fun q hq => (of_callee cs q hq).trans ?_) (rd.trans ?_) (wr.trans ?_) (m ▸ f) ?_
@@ -161,7 +161,7 @@ theorem next_ok {B E : BitVec 32} {s : State} (c : Ctx B E s) {n : Nat}
     rcases hr with rfl | rfl
     · exact Offset.disjoint_base _ (by decide) (by decide)
     · exact (c.stk_sub (d := 768) (n := 64) (by decide) (by decide)).symm
-  refine WP.seq ((absorbFixed_ok (k₁.ctx c) (offset := 768) (size := 64) (by have := c.fits; omega) (by decide) (by decide)
+  refine WP.seq ((absorbFixed_ok (k₁.ctx c) (offset := 768) (size := 64) (by have := c.fits; omega_using [this]) (by decide) (by decide)
     ((k₁.ctx c).cov (by decide)) (c.stk_sub (by decide) (by decide)) r₁).mono
     fun s₂ ⟨r₂, k₂⟩ => ?_)
   rw [show BitVec.ofNat 64 768 = (768 : Addr) from rfl, dg] at r₂

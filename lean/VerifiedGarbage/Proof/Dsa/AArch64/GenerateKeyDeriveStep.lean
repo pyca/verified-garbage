@@ -37,9 +37,9 @@ theorem keygen_derive_step (v : Backend) {s t : State} {h : GenerateKeyABI v.sta
     have hq : (s.gpr .x6).toNat ≤ 32 := by
       have hl := h.lengths
       unfold Spec.Dsa.lengthsValid at hl
-      omega
+      omega_using [hl]
     exact (random_outside_bytes hargs (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by
-      unfold Random.oNonce; omega) (Or.inr (show 0 + 8 ≤ Random.oNonce by decide))).trans hnonce
+      unfold Random.oNonce; omega_using [hq]) (Or.inr (show 0 + 8 ≤ Random.oNonce by decide))).trans hnonce
   refine WP.seq (WP.mono (keygen_derive_call v h ha.sp hw hdi hsi hdx hcx h8 h9 h6 h7 ha.rd ha.wr
     (keygen_bytes_params ha) hc)
     fun b ⟨hbr, hbw, hbsp, hbc, hf, hst, hout, hvb⟩ => ?_)

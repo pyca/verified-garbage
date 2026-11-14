@@ -60,7 +60,7 @@ theorem padded_eq (a c : List Byte) :
   · subst hc
     have h0 : padLen (a ++ zeros (padLen a.length)).length = 0 := by
       have := Proof.Gcm.length_pad_mod a.length
-      simp only [List.length_append, Proof.Gcm.length_zeros, padLen] at this ⊢; omega
+      simp only [List.length_append, Proof.Gcm.length_zeros, padLen] at this ⊢; omega_using []
     simp only [Proof.Gcm.padded, Proof.Gcm.ghashInput_nil, List.append_nil, h0]
     simp [zeros]
   · simp only [Proof.Gcm.padded, Proof.Gcm.ghashInput_of_ne hc]
@@ -79,10 +79,10 @@ theorem st_crFrameO {d : Nat} (hd : d + 16 ≤ 48) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (G.d_w.sub_right (by rw [st_eq G]; exact Lay.wSub (by omega))).symm
-  · exact Lay.st_st (.inl (by omega)) (by omega) (by decide)
-  · exact G.L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (G.L.stk_st (by omega)).symm
+  · exact (G.d_w.sub_right (by rw [st_eq G]; exact Lay.wSub (by omega_using [hd]))).symm
+  · exact Lay.st_st (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact G.L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+  · exact (G.L.stk_st (by omega_using [hd])).symm
 
 /-- The data, apart from the regions of `W` and the stack the pieces write. -/
 theorem d_oF : ∀ r ∈ oF p, (⟨w64 (p.2 5), (p.2 6).toNat⟩ : Region).Disjoint r := by
@@ -157,7 +157,7 @@ theorem seal_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     (fun _ _ s₁ s₂ ⟨_, ⟨_, _, ⟨o₁, _⟩, _⟩, _, _, e₁, _⟩ ⟨_, ⟨_, _, ⟨o₂, _⟩, _⟩, _, _, e₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [e₁, e₂, o₁.env.ebp, o₂.env.ebp]) (by taint_decide)
   have esp := pubSw_esp hpub
-  have a : ∀ i, i < 7 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega) (by omega) (by omega)
+  have a : ∀ i, i < 7 → arg s₀ i = p.2 i := fun i hi => pubSw_arg hpub (by omega_using [hi]) (by omega_using [hi]) (by omega_using [hi])
   have tS : ∀ r ∈ [(⟨w64 (p.2 8), 16⟩ : Region)], (savedR (p.2 7)).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (tw.sub_right (Lay.wSub (by decide))).symm
   have tR : ∀ r ∈ [(⟨w64 (p.2 8), 16⟩ : Region)], (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
@@ -166,11 +166,11 @@ theorem seal_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     (by rw [rd, wr]; exact covers_left o₄.env.wW) L.fw (o₄.saved.frame f tS)
     (by rw [esp, ret_kept f tR]; exact o₄.ret)) fun s' ⟨abi, m', _, _, _⟩ => ⟨abi, ?_⟩
   have hD₂ : bytesAt s₂.mem (w64 (p.2 5)) (p.2 6).toNat = bytesAt s₀.mem (w64 (p.2 5)) (p.2 6).toNat := by
-    rw [bytesAt_frame fA (d_oF G) (by have := G.fd; omega)]; exact hE.data
+    rw [bytesAt_frame fA (d_oF G) (by have := G.fd; omega_using [])]; exact hE.data
   have hD₄ : bytesAt s.mem (w64 (p.2 5)) (p.2 6).toNat = bytesAt s₃.mem (w64 (p.2 5)) (p.2 6).toNat :=
-    bytesAt_frame (oT_oF fT) (d_woF G (by decide)) (by have := G.fd; omega)
+    bytesAt_frame (oT_oF fT) (d_woF G (by decide)) (by have := G.fd; omega_using [])
   have hD₅ : bytesAt s''.mem (w64 (p.2 5)) (p.2 6).toNat = bytesAt s.mem (w64 (p.2 5)) (p.2 6).toNat :=
-    bytesAt_frame f (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dt) (by have := G.fd; omega)
+    bytesAt_frame f (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dt) (by have := G.fd; omega_using [])
   have hcg : gctr (ctxCiph s₀.mem (w64 (p.2 0))) (inc32 (jOf p s₀))
       (bytesAt s₀.mem (w64 (p.2 5)) (p.2 6).toNat) = bytesAt s₃.mem (w64 (p.2 5)) (p.2 6).toNat := by
     rw [hc, hD₂, Proof.Gcm.gctr_eq]

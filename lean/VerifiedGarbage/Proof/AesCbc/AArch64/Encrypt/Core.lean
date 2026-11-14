@@ -33,7 +33,7 @@ theorem dec_ok {s₀ s : State} {k : Nat} (hk : k < N s₀) (h : Core s₀ k k s
       (gpr_write_of_ne _ _ _ (by decide)) rfl rfl rfl,
     by simpa only [gpr_write_of_ne _ _ _ (by decide : Reg.x2≠.x3)] using h.ptr,?_,h.data⟩,rfl⟩
   simp only [State.write,State.read,BitVec.setWidth_eq,ite_true,h.count]
-  rw [Offset.ofNat_sub_ofNat (by omega),show N s₀-k-1=N s₀-(k+1) by omega]
+  rw [Offset.ofNat_sub_ofNat (by omega_using [hk]),show N s₀-k-1=N s₀-(k+1) by omega_using []]
 
 theorem first4_ok {s₀ s : State} {k : Nat} (hp : UPre s₀) (hk : k < N s₀)
     (hi : Inv s₀ k s) :
@@ -52,6 +52,6 @@ theorem first4_ok {s₀ s : State} {k : Nat} (hp : UPre s₀) (hk : k < N s₀)
   rw [WP.block_append_iff]
   refine WP.mono (dec_ok hk (hi.core.vframe f₁ (by decide))) fun s₂ ⟨c₂,v₂⟩ => ?_
   have i₂ : RInv chainRegs (wK s₀) (fun _ => st (input s₀ k)) 1 s₂ := by rw [RInv,v₂]; exact i₁
-  exact WP.mono (rounds_ok c₂.env.keys i₂ 4 (by have := hp.rounds; omega))
+  exact WP.mono (rounds_ok c₂.env.keys i₂ 4 (by have := hp.rounds; omega_using [this]))
     fun t ⟨it,ft⟩ => ⟨c₂.vframe ft (by decide),it⟩
 end VG.Proof.AesCbc.AArch64.Encrypt

@@ -40,7 +40,7 @@ theorem running_select {p : Parameters} {bs : List Byte} {E i v : Nat} {s : Stat
  WP isa Comb.select s fun t =>
  Running p bs E i t ∧ wv t.mem p.B (slot p.w 5) p.w=
   Spec.Rsa.powMod p.G (Spec.Rsa.FixedBaseComb.exponent p.N v) p.P*2^(64*p.w)%p.P := by
- refine WP.mono (select_ok h.power.good p.room (by have := p.positive;omega) p.width hv h.tablePointer digit
+ refine WP.mono (select_ok h.power.good p.room (by have := p.positive;omega_using [this]) p.width hv h.tablePointer digit
   h.reads.tableRead h.reads.tableOutside) ?_
  rintro t ⟨good,selected,frame,rest⟩
  have power := h.power.after_arrays good frame (by decide) (by decide) (by decide) (by decide)

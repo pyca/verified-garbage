@@ -151,7 +151,7 @@ theorem screenedTests_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used
   let answer := witnessRemaining (limitedPhase p true) used 0
   have bound : witnessResultStatus (witnessRemaining (limitedPhase p true) used 0) ≤ 2 :=
     witnessResultStatus_bound _
-  refine WP.seq (WP.mono (cmpStatus_ok _ 1 (by omega) (by decide) status) ?_)
+  refine WP.seq (WP.mono (cmpStatus_ok _ 1 (by omega_using [bound]) (by decide) status) ?_)
   rintro w ⟨⟨zero, memory⟩, restW⟩
   have ctxW := ctx.after_memory memory restW
   have statusW : w.gpr .r3 = BitVec.ofNat 32 (witnessResultStatus answer) :=

@@ -59,10 +59,10 @@ theorem fastPrepLoop16Of_relCT {step : Prog isa} {n bits : Nat} (hS : FastStepOk
       (eval .b s=some true → ∃ n'<m,I n' s t)) := by
     intro m
     by_cases hm : 1≤m ∧ m≤64*n+1
-    · have hv := FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega)
+    · have hv := FastNaf.residual_boundB 9 (Nat.le_of_lt hk) (j:=64*n+1-m) (by omega_using [hm])
       have hv' : FastNaf.residual 9 k (64*n+1-m)≤2^(64*n) := Nat.le_trans hv
-        (Nat.pow_le_pow_right (by decide) (by omega))
-      refine (fastPrepStep16Of_relCT hS hc hb (j:=64*n+1-m) (by omega) hv').mono
+        (Nat.pow_le_pow_right (by decide) (by omega_using []))
+      refine (fastPrepStep16Of_relCT hS hc hb (j:=64*n+1-m) (by omega_using [hm]) hv').mono
         (P':=I m) (fun _ _ h => h.2.2) ?_
       intro s t ⟨hp,fs,ft⟩
       refine ⟨fs.trans ft.symm,fun _ => trivial,fun he => ?_⟩
@@ -72,11 +72,11 @@ theorem fastPrepLoop16Of_relCT {step : Prog isa} {n bits : Nat} (hS : FastStepOk
         exact of_decide_eq_true (Option.some.inj he)
       have hd : 1≤fastDelta16 k (64*n+1-m) ∧ fastDelta16 k (64*n+1-m)≤9 := by
         unfold fastDelta16; split <;> decide
-      refine ⟨m-fastDelta16 k (64*n+1-m),by omega,by omega,by omega,?_⟩
-      rw [show 64*n+1-(m-fastDelta16 k (64*n+1-m))=64*n+1-m+fastDelta16 k (64*n+1-m) from by omega]
+      refine ⟨m-fastDelta16 k (64*n+1-m),by omega_using [hm, hd],by omega_using [hn'],by omega_using [hm],?_⟩
+      rw [show 64*n+1-(m-fastDelta16 k (64*n+1-m))=64*n+1-m+fastDelta16 k (64*n+1-m) from by omega_using [hm, hn']]
       exact hp
     · exact RelCT.of_false (fun _ _ h => hm ⟨h.1,h.2.1⟩)
-  exact (RelCT.loop I step (64*n+1)).mono (fun _ _ h => ⟨by omega,by omega,by simpa only [Nat.sub_self] using h⟩)
+  exact (RelCT.loop I step (64*n+1)).mono (fun _ _ h => ⟨by omega_using [],by omega_using [],by simpa only [Nat.sub_self] using h⟩)
     (fun _ _ h => h)
 
 /-- The width-nine recoder's timing, of any step that does what `stepN16` does. -/

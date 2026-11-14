@@ -27,17 +27,17 @@ theorem pointers_ok {w : Nat} (k : Nat) : ∀ (n : Nat) {s : State} {base : Addr
   | n + 1, s, base, size, scratch, fit, zero, eax, ecx => by
     rw [List.range'_succ, List.flatMap_cons]
     unfold pointer
-    refine WP.block_append (WP.block_append (WP.mono (storePair_ok scratch (offset := 64 + 8 * k) (by omega))
+    refine WP.block_append (WP.block_append (WP.mono (storePair_ok scratch (offset := 64 + 8 * k) (by omega_using [fit]))
       fun a ⟨M, _, K⟩ => ?_))
     refine wp_addS rfl fun b B _ => WP.block_nil ?_
     have Kb : Keeps [.eax] s b := (K.mono (by decide)).widen B.keeps
-    have ih := pointers_ok (w := w) (k + 1) n (s := b) (scratch.of_keeps Kb (by decide)) (by omega)
+    have ih := pointers_ok (w := w) (k + 1) n (s := b) (scratch.of_keeps Kb (by decide)) (by omega_using [fit])
       (by rw [Kb.1 .edx (by decide)]; exact zero)
       (by
         rw [B.gpr, K.1 .eax (by decide), K.1 .ecx (by decide), eax, ecx, BitVec.add_assoc, ← BitVec.ofNat_add, Kb.1 .edi (by decide)]
         congr 2
         simp only [slot, stride, Nat.succ_mul]
-        omega)
+        omega_using [])
       (by rw [Kb.1 .ecx (by decide)]; exact ecx)
     refine WP.mono ih fun t ⟨Mt, Kt⟩ => ⟨?_, Kb.trans Kt⟩
     rw [Mt, Kb.1 .edi (by decide), B.mem, M, eax, zero, List.foldl_cons]
@@ -49,7 +49,7 @@ theorem code_ok {s : State} {base : Addr} {size w : Nat} (scratch : Scr s base s
       t.mem = headerMemory base (s.gpr .edi) w s.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
   unfold code
   simp only [List.cons_append]
-  refine wp_movS (readSrc_sc scratch (d := 4) (by omega)) fun a A _ => wp_movS rfl fun b B _ =>
+  refine wp_movS (readSrc_sc scratch (d := 4) (by omega_using [fit])) fun a A _ => wp_movS rfl fun b B _ =>
     VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun c C => wp_movS rfl fun d D _ => ?_
   have Kd : Keeps [.eax, .ecx, .edx] s d :=
     (((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps).widen D.keeps
@@ -58,10 +58,10 @@ theorem code_ok {s : State} {base : Addr} {size w : Nat} (scratch : Scr s base s
     rw [D.other .eax (by decide), C.gpr, B.gpr, A.gpr, len]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [bound]
   have Md : d.mem = s.mem := by rw [D.mem, C.mem, B.mem, A.mem]
   show WP isa (.block ([.store (sc 48) .eax, .store (sc (48 + 4)) .edx] ++ _)) d _
-  refine WP.block_append (WP.mono (storePair_ok (scratch.of_keeps Kd (by decide)) (offset := 48) (by omega))
+  refine WP.block_append (WP.mono (storePair_ok (scratch.of_keeps Kd (by decide)) (offset := 48) (by omega_using [fit]))
     fun e ⟨Me, _, Ke⟩ => ?_)
   refine wp_addS rfl fun f F _ => wp_movS rfl fun h H _ => ?_
   have Kh : Keeps [.eax, .ecx, .edx] s h := ((Kd.widen Ke).widen F.keeps).widen H.keeps
@@ -71,11 +71,11 @@ theorem code_ok {s : State} {base : Addr} {size w : Nat} (scratch : Scr s base s
     apply BitVec.eq_of_toNat_eq
     have sixteen : (16 : BitVec 32).toNat = 16 := rfl
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, stride, sixteen]
-    omega
+    omega_using []
   have zeroH : h.gpr .edx = 0#32 := by
     rw [H.other .edx (by decide), F.other .edx (by decide), Ke.1 .edx (by decide)]; exact zero
   show WP isa (.block ([.store (sc 224) .eax, .store (sc (224 + 4)) .edx] ++ _)) h _
-  refine WP.block_append (WP.mono (storePair_ok (scratch.of_keeps Kh (by decide)) (offset := 224) (by omega))
+  refine WP.block_append (WP.mono (storePair_ok (scratch.of_keeps Kh (by decide)) (offset := 224) (by omega_using [fit]))
     fun i ⟨Mi, _, Ki⟩ => ?_)
   refine wp_movS rfl fun j J _ => wp_addS rfl fun l Lr _ => ?_
   have Kl : Keeps [.eax, .ecx, .edx] s l := ((Kh.widen Ki).widen J.keeps).widen Lr.keeps
@@ -90,7 +90,7 @@ theorem code_ok {s : State} {base : Addr} {size w : Nat} (scratch : Scr s base s
   have zeroL : l.gpr .edx = 0#32 := by
     rw [Lr.other .edx (by decide), J.other .edx (by decide), Ki.1 .edx (by decide)]; exact zeroH
   rw [List.range_eq_range']
-  refine WP.mono (pointers_ok 0 8 (scratch.of_keeps Kl (by decide)) (by omega) zeroL eaxL ecxL)
+  refine WP.mono (pointers_ok 0 8 (scratch.of_keeps Kl (by decide)) (by omega_using [fit]) zeroL eaxL ecxL)
     fun t ⟨Mt, Kt⟩ => ⟨?_, Kl.widen Kt⟩
   have strideH : h.gpr .eax = BitVec.ofNat 32 (stride w) := by rw [H.gpr]; exact strideF
   rw [Mt, edi, Lr.mem, J.mem, Mi, strideH, zeroH, H.mem, F.mem, Me, width, zero, Md]

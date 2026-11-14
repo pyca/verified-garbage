@@ -31,7 +31,7 @@ theorem words_of_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p :
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW (Offset.contains_base p (by omega) (by omega)) hd (by decide)
+  exact hf.readW (Offset.contains_base p (by omega_using [hi]) (by omega_using [hl, hi])) hd (by decide)
 
 /-- At the call of `vg_rsa_public_precomputed_checked`. -/
 structure AtPubC (pc : Bool) (s u : State) : Prop extends Mid s u where
@@ -125,8 +125,8 @@ theorem pubArgs_ok {s t : State} (h : PreP pc s) (A : AtPub pc s t) :
     intro d n hd hn r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint _ (.inr (by omega)) hn (by decide)
-    · exact Offset.disjoint _ (.inr (by omega)) hn (by decide)
+    · exact Offset.disjoint _ (.inr (by omega_using [hd])) hn (by decide)
+    · exact Offset.disjoint _ (.inr (by omega_using [hd])) hn (by decide)
   have pwl := pw_le hk
   have gu : ∀ r ∈ ([.a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7] : List Reg), u.gpr r = w.gpr r := fun r hr => by
     rw [ku.gpr (by revert r; decide), kx.gpr (by revert r; decide)]
@@ -135,9 +135,9 @@ theorem pubArgs_ok {s t : State} (h : PreP pc s) (A : AtPub pc s t) :
     (gu _ (by simp)).trans wa6, (gu _ (by simp)).trans wa7, ?_, ?_⟩
   · show Spec.Rsa.written _ _ _ _ _
     rw [fw.readW (Region.contains_self _ _) (ap (by decide) (by decide)) (by decide)]
-    exact written_congr (bytes_of_frame (s := t) fw (ap (by decide) (by unfold oM; omega)) (by omega)) A.crt
+    exact written_congr (bytes_of_frame (s := t) fw (ap (by decide) (by unfold oM; omega_using [hk])) (by omega_using [])) A.crt
   · show Spec.Rsa.wordsAt _ _ _ = _
-    rw [words_of_frame fw (ap (by decide) (by unfold oPre; omega)) (by omega)]
+    rw [words_of_frame fw (ap (by decide) (by unfold oPre; omega_using [pwl])) (by omega_using [pwl])]
     exact A.pre
   · rw [um', Mem.readW_writeW_sep (Offset.sep _ (.inl (by decide)) (by decide) (by decide)) (by decide),
       Mem.readW_writeW_self64]
@@ -217,9 +217,9 @@ theorem pub_pre {s t : State} (h : PreP pc s) (A : AtPubC pc s t) :
     rw [A.rd, A.wr, h.hrd]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Covers.right (Covers.one (in_fr s _ (by unfold oPre frameBytes; omega)))
+    · exact Covers.right (Covers.one (in_fr s _ (by unfold oPre frameBytes; omega_using [pwl])))
     · exact Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp)
-    · exact Covers.right (Covers.one (in_fr s _ (by unfold oM frameBytes; omega)))
+    · exact Covers.right (Covers.one (in_fr s _ (by unfold oM frameBytes; omega_using [hk])))
     · exact Covers.right (Covers.one (in_fr s _ (by decide)))
   have g : ∀ r, r ∉ linkRegs → (pubEntry s t).gpr r = t.gpr r := fun r hr => State.callEntry_gpr t hr
   have hsp : (pubEntry s t).sp = fb s := A.sp
@@ -229,7 +229,7 @@ theorem pub_pre {s t : State} (h : PreP pc s) (A : AtPubC pc s t) :
     show t.mem.readW ((pubEntry s t).sp + _) 64 = _; rw [hsp]; exact A.psa1
   have e6 : (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .a3).toNat)).toNat =
       Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
-    rw [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_ofNat]; omega_using [pwl]
   have psk : Region.Sub (psR s) (kR s) := frame_sub s (by decide)
   refine ⟨?_, hc, hw⟩
   simp only [Proof.Bignum.RISCV64.Pub.fnContract, Proof.Bignum.RISCV64.Pub.stackArgs, stackArgAddr,
@@ -241,10 +241,10 @@ theorem pub_pre {s t : State} (h : PreP pc s) (A : AtPubC pc s t) :
     (h.ko.sub_left psk).symm, h.ks.sub_left pk, h.es, h.ks.sub_left mk, (h.ks.sub_left psk).symm,
     h.h1 ▸ h.wo, ?_, h.we, ?_, h.ws, ⟨h.k1, h.k2⟩, trivial, trivial, h.e1, h.e2, ?_, fb_al8 h (by decide), h.al,
     fb_al h⟩
-  · rw [Offset.toNat_add_ofNat]; unfold oPre at *; omega
-  · rw [Offset.toNat_add_ofNat]; unfold oM at *; omega
+  · rw [Offset.toNat_add_ofNat]; unfold oPre at *; omega_using [pwl, fbt]
+  · rw [Offset.toNat_add_ofNat]; unfold oM at *; omega_using [hk, fbt]
   · have := h.hs; have := h.k1; unfold Spec.Rsa.scratchWords at *
-    unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega
+    unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; omega_arith
 
 theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC pc s t) {Q : State → Prop}
     (hQ : ∀ u, AtCmp pc s u → Q u) : WP isa pubCall t Q := by
@@ -254,7 +254,7 @@ theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC pc s t) {Q : State 
   have g : ∀ r, r ∉ linkRegs → (pubEntry s t).gpr r = t.gpr r := fun r hr => State.callEntry_gpr t hr
   have e6 : (BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .a3).toNat)).toNat =
       Spec.Rsa.precomputedWords (s.gpr .a3).toNat := by
-    rw [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_ofNat]; omega_using [pwl]
   unfold pubCall
   refine WP.call (k := Proof.Bignum.RISCV64.Pub.fnContract) (rd := pubRd s) (wr := pubWr s)
     Proof.Bignum.RISCV64.Pub.fn_correct hpre hc hw
@@ -272,12 +272,12 @@ theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC pc s t) {Q : State 
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), fun _ h => h⟩
   have hm : Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat =
       Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat :=
-    bytes_of_frame (s := t) hf (fun r hr => frame_pub h (by unfold oM frameBytes; omega) hr) (by omega)
+    bytes_of_frame (s := t) hf (fun r hr => frame_pub h (by unfold oM frameBytes; omega_using [hk]) hr) (by omega_using [])
   refine ⟨⟨hsp'.trans A.sp, hrd.trans A.rd, hwr.trans A.wr, (hp _ (by decide)).trans A.s1,
     (hp _ (by decide)).trans A.s2, (hp _ (by decide)).trans A.s3, (hp _ (by decide)).trans A.s4,
     (hp _ (by decide)).trans A.s5, (hp _ (by decide)).trans A.s6,
     fun r hr => (hp r (by revert r; decide)).trans (A.hi r hr), ft, A.sv.frame hf fun p hp' r hr => frame_pub h (by
-      have := saved_offs p hp'; unfold oSave frameBytes at *; omega) hr⟩, ?_, ?_⟩
+      have := saved_offs p hp'; unfold oSave frameBytes at *; omega_using [this]) hr⟩, ?_, ?_⟩
   · show Spec.Rsa.written _ _ _ _ _
     rw [hf.readW (Region.contains_self _ _) (fun r hr => frame_pub h (by decide) hr) (by decide)]
     exact written_congr hm A.crt
@@ -288,7 +288,7 @@ theorem pubCall_ok {s t : State} (h : PreP pc s) (A : AtPubC pc s t) {Q : State 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact h.ke.symm
-        · exact h.es) (by have := h.we; omega)
+        · exact h.es) (by have := h.we; omega_using [])
     simp only [Proof.Bignum.RISCV64.Pub.fnContract, g .a0 (by decide), g .a1 (by decide), g .a2 (by decide),
       g .a3 (by decide), g .a4 (by decide), g .a5 (by decide), g .a6 (by decide), A.a0, A.a1, A.a2, A.a3,
       A.a4, A.a5, A.a6, e6, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem, he] at hpost

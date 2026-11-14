@@ -16,18 +16,18 @@ theorem CallerBuffer.slice {s : State} {base : Addr} {size full offset count : N
     (hp : pointerValue base s dest = pointerValue base s source + BitVec.ofNat 32 offset) :
     CallerBuffer s base size dest count := by
   have F := B.fits
-  have off32 : offset < 2 ^ 32 := by omega
-  have fit : (pointerValue base s source).toNat + offset < 2 ^ 32 := by omega
+  have off32 : offset < 2 ^ 32 := by omega_using [hc, hb, F]
+  have fit : (pointerValue base s source).toNat + offset < 2 ^ 32 := by omega_using [hc, hb, F]
   have P : (pointerValue base s dest).setWidth 64 =
       (pointerValue base s source).setWidth 64 + BitVec.ofNat 64 offset := by
     rw [hp]
     exact addr_eq fit
   have N : (pointerValue base s dest).toNat = (pointerValue base s source).toNat + offset := by
     rw [hp, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt off32, Nat.mod_eq_of_lt fit]
-  refine ⟨B.room, by rw [N]; omega, ?_, ?_, ?_⟩
+  refine ⟨B.room, by rw [N]; omega_using [hb, F], ?_, ?_, ?_⟩
   · intro d k hd
     rw [P, Offset.add_add]
-    exact B.read (offset + d) k (by omega)
+    exact B.read (offset + d) k (by omega_using [hb, hd])
   · rw [P]
     exact B.apart.sub_left (Offset.sub_base _ hb)
   · rw [P]

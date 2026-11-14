@@ -41,7 +41,7 @@ theorem frame_input {c : Cfg} {j : Joint.Cfg} (hc : BaseCfgOk c)
   have := sl_le c hc.n10 (i:=FLAG) (by decide)
   have := hc.n0
   have := h.scr.nowrap
-  omega
+  omega_arith
 
 theorem jointFrame_input {c : Cfg} {j : Joint.Cfg} (hc : BaseCfgOk c)
     (hK : j.K=c.winCfg PX PY BP) (hF : JointFrameLayout c j)

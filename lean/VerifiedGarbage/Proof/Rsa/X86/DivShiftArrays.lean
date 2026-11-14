@@ -85,7 +85,7 @@ theorem shiftArrays_ok {g : Geometry} {s : State} (h : Context g s) :
       g.offsets 3 + 4 * (g.n + 1) ≤ g.offsets 1 := h.separate 1 3 (by decide)
   have nowrap := h.workspace.nowrap
   unfold shiftArrays
-  refine WP.seq (WP.mono (shift_ok h.workspace h.positive f0 (by omega) (by omega) true) ?_)
+  refine WP.seq (WP.mono (shift_ok h.workspace h.positive f0 (by omega_using [f3]) (by omega_using [sep03]) true) ?_)
   rintro u ⟨frameU, ⟨c, qVal, bitU⟩, restU⟩
   change g.value u.mem 0 + 2 ^ (32 * g.n) * c.toNat = 2 * g.value s.mem 0 at qVal
   have hu := h.after restU
@@ -94,16 +94,16 @@ theorem shiftArrays_ok {g : Geometry} {s : State} (h : Context g s) :
     apply frameU.val32
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> omega
-    · omega
-  refine WP.seq (WP.mono (shift_ok hu.workspace (by omega) f1 f3 (by omega) false) ?_)
+      rcases hr with rfl | rfl <;> omega_arith
+    · omega_using [f1, nowrap]
+  refine WP.seq (WP.mono (shift_ok hu.workspace (by omega_using []) f1 f3 (by omega_using [sep13]) false) ?_)
   rintro w ⟨frameW, ⟨cr, rVal, bitW⟩, restW⟩
   have hw := hu.after restW
   have bit : (w.gpr .ebx).toNat = c.toNat := by
     rw [bitW, bitU]
     cases c <;> rfl
   have boundedBit : (w.gpr .ebx).toNat ≤ 1 := by rw [bit]; cases c <;> decide
-  refine WP.mono (insertBit_ok hw.workspace (by omega) f1 boundedBit) ?_
+  refine WP.mono (insertBit_ok hw.workspace (by omega_using []) f1 boundedBit) ?_
   rintro t ⟨frameT, restT, remT⟩
   change g.value w.mem 1 % 2 = 0 → g.value t.mem 1 = g.value w.mem 1 + (w.gpr .ebx).toNat at remT
   have quoW : g.value w.mem 0 = g.value u.mem 0 := by
@@ -111,15 +111,15 @@ theorem shiftArrays_ok {g : Geometry} {s : State} (h : Context g s) :
     apply frameW.val32
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> omega
-    · omega
+      rcases hr with rfl | rfl <;> omega_arith
+    · omega_using [f0, nowrap]
   have quoT : g.value t.mem 0 = g.value w.mem 0 := by
     change val32 _ _ _ g.n = val32 _ _ _ g.n
-    exact frameT.val32 (by omega) (by omega)
+    exact frameT.val32 (by omega_using [sep01]) (by omega_using [f0, nowrap])
   have quoBound : g.value u.mem 0 < 2 ^ (32 * g.n) := val32_lt _ _ _ _
   have quoOriginal : g.value s.mem 0 < 2 ^ (32 * g.n) := val32_lt _ _ _ _
   have radix : 2 ^ (32 * g.n) = 2 * 2 ^ (32 * g.n - 1) := by
-    rw [← Nat.pow_succ']; congr 1; have := h.positive; omega
+    rw [← Nat.pow_succ']; congr 1; have := h.positive; omega_using [this]
   have quotient : g.value u.mem 0 = 2 * g.value s.mem 0 % 2 ^ (32 * g.n) := by
     have eq := congrArg (fun x => x % 2 ^ (32 * g.n)) qVal
     rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt quoBound] at eq
@@ -130,10 +130,10 @@ theorem shiftArrays_ok {g : Geometry} {s : State} (h : Context g s) :
     cases c with
     | false =>
       simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at qVal ⊢
-      exact (Nat.div_eq_of_lt (by omega)).symm
+      exact (Nat.div_eq_of_lt (by omega_using [quoBound, qVal])).symm
     | true =>
       simp only [Bool.toNat_true, Nat.mul_one] at qVal ⊢
-      exact (Nat.div_eq_of_lt_le (by omega) (by omega)).symm
+      exact (Nat.div_eq_of_lt_le (by omega_using [qVal]) (by omega_using [quoOriginal])).symm
   refine ⟨quoT.trans (quoW.trans quotient), ?_, hw.after restT,
     (quotientShift_frame frameU).trans ((frameW.mono (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -145,7 +145,7 @@ theorem shiftArrays_ok {g : Geometry} {s : State} (h : Context g s) :
   have remWidth : g.value w.mem 1 < 2 ^ (32 * (g.n + 1)) := val32_lt _ _ _ _
   rw [remU, pow32_succ] at rVal
   have remDouble : g.value w.mem 1 = 2 * g.value s.mem 1 := by
-    cases cr <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at rVal <;> omega
-  have even : g.value w.mem 1 % 2 = 0 := by rw [remDouble]; omega
+    cases cr <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at rVal <;> omega_arith
+  have even : g.value w.mem 1 % 2 = 0 := by rw [remDouble]; omega_using []
   rw [remT even, bit, remDouble, high]
 end VG.Proof.Rsa.X86.Div

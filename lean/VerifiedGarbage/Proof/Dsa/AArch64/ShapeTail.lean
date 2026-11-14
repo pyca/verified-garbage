@@ -53,7 +53,7 @@ theorem shapeFinish_ok {s : State} {B : Addr} {Z n q : Nat} {valid : Bool}
   · unfold shapeFinish
     have hcarry : decide (2 ^ 64 ≤ (BitVec.ofNat 64 q).toNat + (~~~BitVec.ofNat 64 n).toNat + 1) = decide (n ≤ q) := by
       simp only [BitVec.toNat_not, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt hq]
-      exact decide_eq_decide.mpr (by omega)
+      exact decide_eq_decide.mpr (by omega_using [hn])
     have hsel : (if decide (n ≤ q) then BitVec.ofNat 64 n else BitVec.ofNat 64 q) = BitVec.ofNat 64 (min n q) := by
       by_cases h : n ≤ q <;> simp [h, Nat.min_def]
     brun [Core.field, hdi, field_enc .digestLen, field_enc .digestPrefixLen, field_enc .mask,
@@ -102,8 +102,8 @@ theorem shapeTail_ok {s : State} {B pp qp : Addr} {Z n width : Nat} {p q : List 
   have hups := shape_source huf hku (Nat.le_trans (by decide) hZ) hps
   have huqs := shape_source huf hku (Nat.le_trans (by decide) hZ) hqs
   have hudi := (hku.gpr .x0 (show Reg.x0 ∉ _ by decide)).trans hdi
-  have hpidx : p.length - 1 < p.length := by omega
-  have hqidx : q.length - 1 < q.length := by omega
+  have hpidx : p.length - 1 < p.length := by omega_using [hp1]
+  have hqidx : q.length - 1 < q.length := by omega_using [hq1]
   rw [WP.block_append_iff]
   refine WP.mono (oddCheck_ok (hs.congr hku.wr) hudi hZ
     ((shape_field huf .p (by decide) (by decide)).trans hpp)

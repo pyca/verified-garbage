@@ -31,7 +31,7 @@ theorem mashStep_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p)
   have f₀ := regs_fixed 0 i (by decide) hi
   have sch₁ : ∀ r < 8, s₁.v (treg r) = s.v (treg r) := by
     intro r hr
-    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega)
+    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega_using [hr])
     exact o₁ _ (f₀.2.2.2.2.2.2.2.2 r hr).1 a0 a1 a2 a3 a4 a5
   have v₁ : VWords s₁ 1 (fun b => vs (4 * 1 + b)) := (hv 1 (by decide)).keep fun i' hi' => by
     have wn := wreg_ne 1 i' (by decide)
@@ -50,7 +50,7 @@ theorem mashStep_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p)
     | 0, _ => exact w₂'
     | 1, _ => exact w₂
   · intro r hr
-    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega)
+    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega_using [hr])
     rw [o₂ _ (f₁.2.2.2.2.2.2.2.2 r hr).1 a0 a1 a2 a3 a4 a5]
     exact sch₁ r hr
   · rw [o₂ _ f₁.2.1 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
@@ -91,7 +91,7 @@ theorem roundsList_ok {m : Mem} {p : Addr} (js : List Nat) {s : State} (hs : Sch
   induction js generalizing s vs with
   | nil => exact ⟨s, rfl, hv, ⟨⟨fun _ _ => rfl, rfl, rfl, rfl⟩, rfl, fun _ _ => rfl, rfl⟩⟩
   | cons j js ih =>
-    obtain ⟨s₁, r₁, v₁, k₁⟩ := rmixRound_ok (j := 15 - j) (by omega) hs hm hv
+    obtain ⟨s₁, r₁, v₁, k₁⟩ := rmixRound_ok (j := 15 - j) (by omega_using []) hs hm hv
     have step : ∃ s', runBlock isa
         (rmixRound (15 - j) ++ (if j = 4 ∨ j = 10 then rmashRound else [])) s = some s' ∧
         Sets s' (fun b => revRound (Spec.Rc2.scheduleAt m p) (vs b) j) ∧ VKeep s s' := by

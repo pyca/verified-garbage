@@ -118,7 +118,7 @@ theorem bit_ok {s : State} {base : Addr} {size exponent : Nat}
   have exponentBound : exponentValue s.mem base exponent < 2 ^ 64 := pair_lt ..
   have sumBound : pair (u.gpr .ecx) (u.gpr .ebx) + 2 ^ 64 * carry.toNat < 2 * exponentValue s.mem base exponent := by
     have := Bool.toNat_le (incoming (s.gpr .esi))
-    omega
+    omega_using [remainder, sum, this]
   have cb : carry.toNat ≤ borrow.toNat := carry_le_borrow exponentBound sumBound sub
   have chosen : v.gpr .ebp = if choose carry borrow then BitVec.allOnes 32 else 0 := by
     rw [choiceMask, mask]
@@ -134,7 +134,7 @@ theorem bit_ok {s : State} {base : Addr} {size exponent : Nat}
     · rw [low, high]
   have value := selected.trans (selected_value exponentBound (pair_lt ..) (pair_lt ..) sumBound sub)
   rw [sum] at value
-  have positive : 0 < exponentValue s.mem base exponent := by omega
+  have positive : 0 < exponentValue s.mem base exponent := by omega_using [remainder]
   have K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t :=
     ((Ku.mono (by decide)).widen Kv).widen Kt
   refine ⟨value, ?_, ?_, Mt.trans (Mv.trans Mu), K⟩

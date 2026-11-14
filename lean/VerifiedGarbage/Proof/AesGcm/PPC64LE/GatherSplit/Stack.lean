@@ -26,7 +26,7 @@ theorem stackArgs_ok {s u : State} (h : Lay s) (hb : u.gpr .r12=Pf s)
   have hw : ∀ j<3, InRegions u.wr (u.sp+BitVec.ofNat 64 (96+8*j)) 8 := by
     intro j hj
     rw [hsp,hwr]
-    exact fr_in s (by omega) (by omega) s.wr
+    exact fr_in s (by omega_using []) (by omega_using [hj]) s.wr
   exact WP.block ⟨_,copies_run (by rw [hb,hsp]) (by decide) 3 (by decide) hr hw,rfl⟩
 
 

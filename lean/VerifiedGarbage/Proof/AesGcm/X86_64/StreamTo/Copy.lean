@@ -47,7 +47,7 @@ theorem src_keptL {m : Mem} {S D : Addr} {n i : Nat} (hd : (⟨S, n⟩ : Region)
   (writeBytes_frame m D xs (R := ⟨D, i⟩) (by rw [hxs]; exact Region.contains_self _ _)) _
     fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hd _ (Offset.contains_base S (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+      exact hd _ (Offset.contains_base S (by omega_using [hi]) (by omega_using [hi, hn])) (Region.sub_prefix (by omega_using [hi]) _ hcon)
 
 theorem copyLoopL_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) :
     WP isa copyLoop s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
@@ -74,15 +74,15 @@ theorem copyLoopL_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) :
   have hlen : (bytesAt s.mem S i).length = i := by simp [bytesAt]
   have hmem : t'.mem = writeBytes s.mem D (bytesAt s.mem S (i + 1)) := by
     rw [mem', mem, src_keptL h.disj hi h.lt _ hlen, bytesAt_succ,
-      writeBytes_snoc s.mem D (bytesAt s.mem S i) _ (by rw [hlen]; have := h.lt; omega), hlen]
+      writeBytes_snoc s.mem D (bytesAt s.mem S i) _ (by rw [hlen]; have := h.lt; omega_using [hi, this]), hlen]
   have hz : t'.zf = some (decide (i + 1 = n)) := by
-    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by have := h.lt; omega) (by have := h.lt; omega)]
+    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by have := h.lt; omega_using [hi, this]) (by have := h.lt; omega_using [this])]
   have gg : ∀ r, r ≠ .rax → r ≠ .r10 → t'.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g' r h₁ h₂, g r h₁ h₂]
   by_cases he : i + 1 = n
   · left
     refine ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega, i + 1, rfl, by omega, by rw [r10', succ_ofNat],
+    refine ⟨by simp [eval, hz, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], by rw [r10', succ_ofNat],
       hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 end VG.Proof.AesGcm.X86_64.StreamTo

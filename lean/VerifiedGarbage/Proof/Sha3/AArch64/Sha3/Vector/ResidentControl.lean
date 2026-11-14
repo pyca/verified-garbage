@@ -35,7 +35,7 @@ theorem advance_test_ok (s : State) (p : Addr) (n r : Nat)
   simp only [eval_zero,RegUpd.gpr_write_self,Size.bits,BitVec.setWidth_eq]
   congr 1
   apply Bool.eq_iff_iff.mpr
-  rw [beq_iff_eq,decide_eq_true_eq,enough_iff (n-r) r (by omega) hrb]
-  exact and_iff_left (by omega)
+  rw [beq_iff_eq,decide_eq_true_eq,enough_iff (n-r) r (by omega_using [_hn]) hrb]
+  exact and_iff_left (by omega_using [hu])
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector.Resident

@@ -93,7 +93,7 @@ theorem chk_piece (hS : Shape Pre Pub lay si p) :
     Piece Pre Pub (fun s₀ s => s = P0 s₀) Chk (.block [.mov .eax (.mem (argAt 4)), .alu .cmp .eax (.imm 256)]) := by
   refine Piece.taint [.esp] (fun s₀ s h₀ e => ?_) (fun s₀ s₀' s s' h₀ h₀' hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
-    have h4 : 4 < (lay s₀).nA := by have := hS.n5 s₀ h₀; omega
+    have h4 : 4 < (lay s₀).nA := by have := hS.n5 s₀ h₀; omega_using [this]
     refine wp_ldm (b := .esp) (P0_esp s₀) (arg4_in hS h₀ h4) fun s₁ u₁ => wp_cmpi fun s₂ f₂ c₂ _ => WP.block_nil ?_
     refine ⟨⟨fun r hr => ?_, by rw [f₂.mem, u₁.mem], by rw [f₂.rd, u₁.rd], by rw [f₂.wr, u₁.wr]⟩, ?_⟩
     · rw [f₂.gpr, u₁.other r (by simpa using hr)]
@@ -117,7 +117,7 @@ theorem hdr_bytes (m : Mem) (X : Addr) (c : BitVec 32) :
     bytesAt ((m.writeW (X + BitVec.ofNat 64 944) ((0 : BitVec 32).setWidth 8)).writeW (X + BitVec.ofNat 64 945)
       (c.setWidth 8)) (X + BitVec.ofNat 64 944) 2 = [0, BitVec.ofNat 8 c.toNat] := by
   have n45 : X + BitVec.ofNat 64 944 ≠ X + BitVec.ofNat 64 945 :=
-    Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+    Offset.add_ofNat_ne _ (by omega_using []) (by omega_using []) (by omega_using [])
   simp only [bytesAt, List.range, List.range.loop, List.map_cons, List.map_nil, add_add, Nat.reduceAdd]
   rw [byte_writeW_other _ n45, byte_writeW_self, byte_writeW_self]
   refine List.cons_eq_cons.mpr ⟨rfl, List.cons_eq_cons.mpr ⟨?_, rfl⟩⟩
@@ -149,7 +149,7 @@ theorem enter_piece (hS : Shape Pre Pub lay si p) {ht : Taint.Hint VG.X86.Taint.
   · simp only [List.mem_singleton] at hr; subst hr
     rw [o.gpr _ (by decide), o'.gpr _ (by decide), P0_esp, P0_esp, hS.pubE s₀ s₀' h₀ h₀' hq]
   · have hsp : s.gpr .esp = E0 s₀ - 16 := by rw [o.gpr _ (by decide), P0_esp]
-    have h4 : 4 < (lay s₀).nA := by have := hS.n5 s₀ h₀; omega
+    have h4 : 4 < (lay s₀).nA := by have := hS.n5 s₀ h₀; omega_using [this]
     have e944 : addr (lay s₀).X32 oHdr = (lay s₀).X + BitVec.ofNat 64 944 := hL.xo (by decide)
     have e945 : addr (lay s₀).X32 (oHdr + 1) = (lay s₀).X + BitVec.ofNat 64 945 := hL.xo (by decide)
     have hwr : s.wr = frameR s₀ :: (lay s₀).wr := by rw [o.wr, P0_wr, hS.wr s₀ h₀]
@@ -159,10 +159,10 @@ theorem enter_piece (hS : Shape Pre Pub lay si p) {ht : Taint.Hint VG.X86.Taint.
     have cSC : ∀ e, e + 1 ≤ 1024 → (lay s₀).SC.Contains ((lay s₀).X + BitVec.ofNat 64 e) 1 := fun e he =>
       hL.sub_sc (e := e) (k := 1) he _ (Region.contains_self _ _)
     refine wp_movi fun s₁ u₁ => wp_st8 (b := .esi) (B := (lay s₀).X32) (by rw [u₁.other _ (by decide), hx])
-      (by rw [e944, u₁.wr]; exact hout 944 (by omega)) fun s₂ m₂ => ?_
+      (by rw [e944, u₁.wr]; exact hout 944 (by omega_using [])) fun s₂ m₂ => ?_
     have f₂ : Frame [(lay s₀).SC, (lay s₀).STK] (P0 s₀).mem s₂.mem := by
       rw [m₂.mem, u₁.mem, o.mem, e944]
-      exact (Frame.refl _ _).writeW (List.mem_cons_self ..) _ (cSC 944 (by omega))
+      exact (Frame.refl _ _).writeW (List.mem_cons_self ..) _ (cSC 944 (by omega_using []))
     have hargs : ∀ {m : Mem}, Frame [(lay s₀).SC, (lay s₀).STK] (P0 s₀).mem m → ∀ i < (lay s₀).nA,
         m.readW (((lay s₀).SP + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64) 32 = arg s₀ i := by
       intro m fr i hi
@@ -177,14 +177,14 @@ theorem enter_piece (hS : Shape Pre Pub lay si p) {ht : Taint.Hint VG.X86.Taint.
     have v₃ : s₃.gpr .eax = arg s₀ 4 := by
       rw [u₃.gpr, E0_E1 hS h₀, Lay.Ok.argAt_eq]; exact hargs f₂ 4 h4
     refine wp_st8 (b := .esi) (B := (lay s₀).X32) (by rw [u₃.other _ (by decide), m₂.gpr, u₁.other _ (by decide), hx])
-      (by rw [e945, u₃.wr, m₂.wr, u₁.wr]; exact hout 945 (by omega)) fun s₄ m₄ => WP.block_nil ⟨hL, ?_⟩
+      (by rw [e945, u₃.wr, m₂.wr, u₁.wr]; exact hout 945 (by omega_using [])) fun s₄ m₄ => WP.block_nil ⟨hL, ?_⟩
     have mm : s₄.mem = ((P0 s₀).mem.writeW ((lay s₀).X + BitVec.ofNat 64 944) ((0 : BitVec 32).setWidth 8)).writeW
         ((lay s₀).X + BitVec.ofNat 64 945) ((arg s₀ 4).setWidth 8) := by
       have ral : Reg8.al.reg = .eax := rfl
       rw [m₄.mem, u₃.mem, e945, m₂.mem, u₁.mem, o.mem, e944, ral, v₃, u₁.gpr]
     have f₄ : Frame [(lay s₀).SC, (lay s₀).STK] (P0 s₀).mem s₄.mem := by
       rw [m₄.mem, u₃.mem, e945]
-      exact f₂.writeW (List.mem_cons_self ..) _ (cSC 945 (by omega))
+      exact f₂.writeW (List.mem_cons_self ..) _ (cSC 945 (by omega_using []))
     refine ⟨by rw [m₄.rd, u₃.rd, m₂.rd, u₁.rd, o.rd, pushed_rd, hS.rd s₀ h₀],
       by rw [m₄.wr, u₃.wr, m₂.wr, u₁.wr, hwr, hS.sp s₀ h₀], by rw [m₄.gpr, u₃.other _ (by decide), m₂.gpr,
         u₁.other _ (by decide), hsp, E0_E1 hS h₀],

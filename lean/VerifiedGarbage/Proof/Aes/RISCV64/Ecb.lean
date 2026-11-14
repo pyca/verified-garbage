@@ -202,12 +202,12 @@ theorem ls_step (hp : LPre wd m₀ D n g F s₀) {k : Nat} (hk : k < 4) (hkn : 4
   unfold loadBlock
   rw [WP.block_append_iff]
   refine WP.mono (loadLE64W_ok (d := q k) (tmp := t0) (hi := t1) (n := .a3) (off := 16 * k)
-    n1 (by decide) (by decide) n8 n9 (by decide) (by omega_arith) (by simpa using hin 0 (by omega))
-    (fun hw => by simpa using hal 0 (by omega) hw)) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
+    n1 (by decide) (by decide) n8 n9 (by decide) (by omega_arith) (by simpa using hin 0 (by omega_using []))
+    (fun hw => by simpa using hal 0 (by omega_using []) hw)) fun s₁ ⟨e₁, g₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
   have a₁ : s₁.gpr .a3 = s.gpr .a3 := g₁ _ (Ne.symm n1) (by decide) (by decide)
   refine WP.mono (loadLE64W_ok (d := q (k + 4)) (tmp := t0) (hi := t1) (n := .a3)
     (off := 16 * k + 8) n2 (by decide) (by decide) n10 n11 (by decide) (by omega_arith)
-    (by rw [a₁, rd₁, wr₁]; exact hin 8 (by omega)) (fun hw => by rw [a₁]; exact hal 8 (by omega) hw))
+    (by rw [a₁, rd₁, wr₁]; exact hin 8 (by omega_using [])) (fun hw => by rw [a₁]; exact hal 8 (by omega_using []) hw))
     fun s₂ ⟨e₂, g₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
   have g1 : s₂.gpr (q k) = s.mem.readW (D + BitVec.ofNat 64 (16 * (4 * g + k))) 64 := by
     rw [g₂ _ n3 n8 n9, e₁]
@@ -354,13 +354,13 @@ theorem ss_step (hp : SPre wd m₀ D n g F s₃) {k : Nat} (hk : k < 4) (hkn : 4
   unfold storeBlock
   rw [WP.block_append_iff]
   refine WP.mono (storeLE64W_ok (v := q k) (tmp := t0) (hi := t1) (n := .a3) (off := 16 * k)
-    (Ne.symm n8) (by decide) (by decide) (by decide) (by omega_arith) (by simpa using hin 0 (by omega))
-    (fun hw => by simpa using hal 0 (by omega) hw)) fun s₁ ⟨m₁, g₁, rd₁, wr₁, sp₁⟩ => ?_
+    (Ne.symm n8) (by decide) (by decide) (by decide) (by omega_arith) (by simpa using hin 0 (by omega_using []))
+    (fun hw => by simpa using hal 0 (by omega_using []) hw)) fun s₁ ⟨m₁, g₁, rd₁, wr₁, sp₁⟩ => ?_
   have a₁ : s₁.gpr .a3 = s.gpr .a3 := g₁ _ (by decide) (by decide)
   have v₁ : s₁.gpr (q (k + 4)) = s.gpr (q (k + 4)) := g₁ _ n10 n11
   refine WP.mono (storeLE64W_ok (v := q (k + 4)) (tmp := t0) (hi := t1) (n := .a3)
     (off := 16 * k + 8) (Ne.symm n10) (by decide) (by decide) (by decide) (by omega_arith)
-    (by rw [a₁, wr₁]; exact hin 8 (by omega)) (fun hw => by rw [a₁]; exact hal 8 (by omega) hw))
+    (by rw [a₁, wr₁]; exact hin 8 (by omega_using [])) (fun hw => by rw [a₁]; exact hal 8 (by omega_using []) hw))
     fun s₂ ⟨m₂, g₂, rd₂, wr₂, sp₂⟩ => ?_
   have e1 : s.gpr .a3 + BitVec.ofNat 64 (16 * k + 4) =
       s.gpr .a3 + BitVec.ofNat 64 (16 * k) + BitVec.ofNat 64 4 := (Offset.add_add _ _ _).symm
@@ -525,7 +525,7 @@ theorem ESetup.d320 {s₂ : State} {X b D : Addr} {n R : Nat} {w : List Byte}
     (hs : ESetup s₂ X b D n R w) : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 320⟩ := by
   refine hs.sep.sub_right ?_
   rw [← hs.base, hs.scr.base]
-  exact Offset.sub_base X (by have := Align.pad_lt X; omega)
+  exact Offset.sub_base X (by have := Align.pad_lt X; omega_using [this])
 
 theorem ESetup.keys_disj {s₂ : State} {X b D : Addr} {n R : Nat} {w : List Byte}
     (hs : ESetup s₂ X b D n R w) : ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + 1024, 960⟩ r := by
@@ -535,7 +535,7 @@ theorem ESetup.keys_disj {s₂ : State} {X b D : Addr} {n R : Nat} {w : List Byt
   · exact keys_disjoint b
   · refine (hs.sep.sub_right ?_).symm
     rw [← hs.base]
-    exact hs.scr.sub (d := 1024) (n := 960) (by omega)
+    exact hs.scr.sub (d := 1024) (n := 960) (by omega_using [])
 
 theorem ESetup.masks_disj {s₂ : State} {X b D : Addr} {n R : Nat} {w : List Byte}
     (hs : ESetup s₂ X b D n R w) : ∀ r ∈ eRegions b D n,
@@ -544,10 +544,10 @@ theorem ESetup.masks_disj {s₂ : State} {X b D : Addr} {n R : Nat} {w : List By
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨Offset.disjoint_base b (by omega) (by omega), Offset.disjoint_base b (by omega) (by omega)⟩
+  · exact ⟨Offset.disjoint_base b (by omega_using []) (by omega_using []), Offset.disjoint_base b (by omega_using []) (by omega_using [])⟩
   · rw [← hs.base]
-    exact ⟨(hs.sep.sub_right (hs.scr.sub (by omega))).symm,
-      (hs.sep.sub_right (hs.scr.sub (by omega))).symm⟩
+    exact ⟨(hs.sep.sub_right (hs.scr.sub (by omega_using []))).symm,
+      (hs.sep.sub_right (hs.scr.sub (by omega_using []))).symm⟩
 
 section Group
 

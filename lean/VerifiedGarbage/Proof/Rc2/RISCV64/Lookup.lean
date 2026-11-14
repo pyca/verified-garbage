@@ -30,8 +30,8 @@ theorem shr_word16 (x : BitVec 64) (l : Nat) :
     decide_true, Bool.true_and]
   by_cases h8 : j < 8
   · simp [h8, Nat.add_comm]
-  · simp [h8, show j - 8 < 8 by omega, show j - 8 < 16 by omega]
-    congr 1; omega
+  · simp [h8, show j - 8 < 8 by omega_using [hj], show j - 8 < 16 by omega_using [hj]]
+    congr 1; omega_using [h8]
 
 theorem shr_byte (x : BitVec 64) (l : Nat) :
     (x >>> (8 * l)).setWidth 8 = x.extractLsb' (8 * l) 8 := by
@@ -43,20 +43,20 @@ theorem shr_byte (x : BitVec 64) (l : Nat) :
 theorem entry_word (m : Mem) (T : Addr) {idx : Nat} (hidx : idx < 64) :
     ((m.readW (T + BitVec.ofNat 64 (8 * ((BitVec.ofNat 64 (2 * idx)).toNat / 8))) 64) >>>
       (8 * ((BitVec.ofNat 64 (2 * idx)).toNat % 8))).setWidth 16 = (Spec.Rc2.scheduleAt m T).getD idx 0 := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 * idx < 2 ^ 64 by omega),
-    show 2 * idx % 8 = 2 * (idx % 4) by omega, shr_word16 _ _, Proof.Rc2.read64_byte _ _ _ (by omega),
-    Proof.Rc2.read64_byte _ _ _ (by omega), Offset.add_add, Offset.add_add, Spec.Rc2.scheduleAt,
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 * idx < 2 ^ 64 by omega_using [hidx]),
+    show 2 * idx % 8 = 2 * (idx % 4) by omega_using [], shr_word16 _ _, Proof.Rc2.read64_byte _ _ _ (by omega_using []),
+    Proof.Rc2.read64_byte _ _ _ (by omega_using []), Offset.add_add, Offset.add_add, Spec.Rc2.scheduleAt,
     Proof.Rc2.getD_ofFn _ _ hidx]
   simp only
-  rw [show 8 * (2 * idx / 8) + 2 * (idx % 4) = 2 * idx by omega,
-    show 8 * (2 * idx / 8) + (2 * (idx % 4) + 1) = 2 * idx + 1 by omega]
+  rw [show 8 * (2 * idx / 8) + 2 * (idx % 4) = 2 * idx by omega_using [],
+    show 8 * (2 * idx / 8) + (2 * (idx % 4) + 1) = 2 * idx + 1 by omega_using []]
 
 /-- The byte at offset `q` of the table at `T`, from its doubleword. -/
 theorem entry_byte (m : Mem) (T : Addr) (q : BitVec 64) :
     ((m.readW (T + BitVec.ofNat 64 (8 * (q.toNat / 8))) 64) >>> (8 * (q.toNat % 8))).setWidth 8 =
       m (T + q) := by
   rw [shr_byte _ _, Proof.Rc2.read64_byte _ _ _ (Nat.mod_lt _ (by decide)),
-    Offset.add_add, show 8 * (q.toNat / 8) + q.toNat % 8 = q.toNat by omega, BitVec.ofNat_toNat,
+    Offset.add_add, show 8 * (q.toNat / 8) + q.toNat % 8 = q.toNat by omega_using [], BitVec.ofNat_toNat,
     BitVec.setWidth_eq]
 
 theorem keyRegs : ScanRegs .a2 := ⟨by decide, by decide, by decide, by decide, by decide⟩
@@ -74,9 +74,9 @@ theorem keyLookup_run (s : State) {T : Addr} (hT : s.gpr .a2 = T) (hal : T.toNat
       t.gpr .t1 = ((Spec.Rc2.scheduleAt s.mem T).getD idx 0).setWidth 64 ∧
       Keep [.a7, .t1, .t2, .t3] s t ∧ t.mem = s.mem := by
   have h2 : (BitVec.ofNat 64 (2 * idx)).toNat = 2 * idx := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hidx])]
   refine WP.mono (scan_run keyRegs s hT hal (rows := 16) (by decide) (laneBits := 6) (by decide)
-    (bits := 16) (by decide) (by rw [hq, h2]; omega) (by rw [hq]; exact word_lane _ hidx) hr)
+    (bits := 16) (by decide) (by rw [hq, h2]; omega_using [hidx]) (by rw [hq]; exact word_lane _ hidx) hr)
     fun t ⟨t11, tk, tm⟩ => ⟨?_, tk, tm⟩
   rw [t11, hq, entry_word _ _ hidx]
 

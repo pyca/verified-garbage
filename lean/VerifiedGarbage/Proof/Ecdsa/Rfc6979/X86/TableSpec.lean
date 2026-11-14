@@ -147,7 +147,7 @@ theorem facts_of (hsw : T.scratchWords = 1024) (hO : OK vs) {s : State} {w : HVa
   have hlen : (arg s 3).toNat = w.F.H.D := (hH _ (hashAt_tableOf nt hh.2.1)).1.trans w.glen
   rw [hlen] at og gc kg ng hrd
   rw [hsw] at hwr oc dc gc rc kc nc ct ca
-  refine preW_of hv hO.1 (hO.2.2.2 w hv) e588 (by omega) hrd hwr od og oc ot dc gc ct oa ca ta ro rc rt
+  refine preW_of hv hO.1 (hO.2.2.2 w hv) e588 (by omega_using [e28]) hrd hwr od og oc ot dc gc ct oa ca ta ro rc rt
     ko kd kg kc kt no nd ng nc nt ⟨held, fun t htm => ⟨(hfit t htm).1, fun r hr => ?_⟩⟩ hheld hpw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl

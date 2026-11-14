@@ -19,7 +19,7 @@ theorem contains_offset {r : Region} {a : Addr} {length offset bytes : Nat}
   rw [rearrange, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((a - r.base).toNat + offset % 2 ^ 64) (2 ^ 64)
   have := Nat.mod_le offset (2 ^ 64)
-  omega
+  omega_using [fit, H]
 
 theorem context_of_regions {g : Geometry} {s : State} (positive : 0 < g.count)
     (sourceFit : g.src.toNat + 4 * g.count ≤ 2 ^ 32) (destFit : g.dst.toNat + 4 * g.count ≤ 2 ^ 32)
@@ -29,9 +29,9 @@ theorem context_of_regions {g : Geometry} {s : State} (positive : 0 < g.count)
   refine ⟨positive, sourceFit, destFit, ?_, ?_, separate⟩
   · intro i index
     obtain ⟨r, mem, access⟩ := readable
-    exact ⟨r, mem, contains_offset access (by omega)⟩
+    exact ⟨r, mem, contains_offset access (by omega_using [index])⟩
   · intro i index
     obtain ⟨r, mem, access⟩ := writable
-    exact ⟨r, mem, contains_offset access (by omega)⟩
+    exact ⟨r, mem, contains_offset access (by omega_using [positive])⟩
 
 end VG.Proof.RsaKeyGen.X86.Import

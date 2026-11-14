@@ -96,11 +96,11 @@ theorem tblL_of {P : EP} {σ : State} (hi : In P σ) :
     ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr P.tabL o) 4 := by
   have hf := hi.ok.fits P.TABL (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.tabL.isLt; omega)] at hf
+  rw [Nat.mod_eq_of_lt (by have := P.tabL.isLt; omega_using [])] at hf
   refine ⟨P.TABL, by simp, fun o ho => ?_⟩
   show (⟨P.tabL.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tabL o) 4
-  rw [addr_eq (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [addr_eq (by omega_using [hf, ho])]
+  exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
 
 /-- What the label's hash keeps, with its table's address in its slot. -/
 abbrev L0 (P : EP) (σ : State) (m : Mem) : Prop :=
@@ -140,7 +140,7 @@ theorem labT_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.t
     have fr : Frame [slotR P.lay sTab] s.mem t2.mem := by
       rw [m2.mem, u1.mem]; exact slot_frame _ _ _ _
     refine ⟨c2, ⟨⟨hi, hkD, slot_keep fr (fun r hr => ?_) hres, hk⟩,
-      sbytes_keep fr (slot_em hi (by decide)) (by unfold oEm; omega) he⟩, ?_⟩
+      sbytes_keep fr (slot_em hi (by decide)) (by unfold oEm; omega_using [hK]) he⟩, ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact slotSep (L := P.lay) (by decide) (by decide) (by decide)
     · rw [m2.mem, Mem.readW_writeW_self32, u1.gpr]; rfl
@@ -156,10 +156,10 @@ theorem labT_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.t
       sR P.scr oLh h.H.F], (slotR P.lay d).Disjoint r := fun d hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega)
-    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega)
-    · exact Lay.fr_low (by unfold frameBytes at hd; omega) (by show (3448 : Nat) ≤ 2 ^ 32; decide)
-    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega)
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
+    · exact Lay.fr_low (by unfold frameBytes at hd; omega_using [hd]) (by show (3448 : Nat) ≤ 2 ^ 32; decide)
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
   refine ⟨⟨hk.keep h hf (dslot sRes (by decide)), he.keep hf hK fun r hr => ?_⟩, slot_keep hf (dslot sTab (by decide)) hs⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -349,11 +349,11 @@ theorem tbl_of {P : EP} {σ : State} (hi : In P σ) :
     ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr (P.lay.argv.getD 24 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega)] at hf
+  rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega_using [])] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
   show (⟨P.tab.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
-  rw [addr_eq (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  rw [addr_eq (by omega_using [hf, ho])]
+  exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
 
 theorem unmask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :

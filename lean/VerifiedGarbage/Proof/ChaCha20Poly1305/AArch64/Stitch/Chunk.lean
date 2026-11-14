@@ -82,12 +82,12 @@ theorem start_ok (enc : Bool) (half : Nat) (hh : half ≤ 1) (B : Addr) (s : Sta
     exec (start enc half) s = some (s.write .x .x20 (B + BitVec.ofNat 64 (256 * half))) := by
   cases enc
   · simp only [start, Bool.false_eq_true, ite_false]
-    rw [exec_addImm_x (by omega)]
+    rw [exec_addImm_x (by omega_using [hh])]
     simp only [State.read, BitVec.setWidth_eq, hx27 rfl]
   · simp only [start, ite_true]
-    rw [exec_subImm_x (by omega)]
+    rw [exec_subImm_x (by omega_using [])]
     simp only [State.read, BitVec.setWidth_eq, hx rfl, dataOf, ite_true]
-    rw [Offset.add_ofNat_sub B (by omega), show 512 - (512 - 256 * half) = 256 * half by omega]
+    rw [Offset.add_ofNat_sub B (by omega_using []), show 512 - (512 - 256 * half) = 256 * half by omega_using [hh]]
 
 /-- `x27` set back to the chunk's source after phase `half`, which absorbed the
 256 bytes from `B + 256 half`: when decrypting, `B`; when encrypting, in place,
@@ -98,9 +98,9 @@ theorem back_ok (enc : Bool) (half : Nat) (hh : half ≤ 1) (B X : Addr) (w : St
     exec (back enc half) w = some (w.write .x .x27 X) := by
   cases enc
   · simp only [back, Bool.false_eq_true, ite_false] at hX ⊢
-    rw [exec_subImm_x (by omega)]
+    rw [exec_subImm_x (by omega_using [hh])]
     simp only [State.read, BitVec.setWidth_eq, hx20, hX]
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 256 * half + 256 = 256 * (half + 1) by omega,
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 256 * half + 256 = 256 * (half + 1) by omega_using [],
       BitVec.add_sub_cancel]
   · simp only [back, ite_true] at hX ⊢
     rw [exec_addImm_x (by decide)]
@@ -404,7 +404,7 @@ theorem chunkWith_ok {st₀ st₁ bk₀ bk₁ : Instr} {r : Reg} {l₀ k₀ l₁
       · exact (hp.win₁ _ (by simp)).sub_right hlow) hp.le₁
   rw [bC, bA] at accG
   have hl : (bytesAt s.mem B₀ (16 * (l₀ + 5 * k₀))).length % 16 = 0 := by
-    rw [Poly1305.length_bytesAt]; omega
+    rw [Poly1305.length_bytesAt]; omega_using []
   rw [← Poly1305.absorbAll_append hl] at accG
   exact accG
 
@@ -428,12 +428,12 @@ theorem chunk_ok (enc : Bool) {R a : Nat} {B : Addr} (s : State) (hp : ChunkPre 
     WP isa (chunk sve enc) s fun g =>
       ChunkedFrom .x27 (rebase s g) g ∧ Acc R (absorbAll R a (bytesAt s.mem B 512)) g := by
   have hwin (k : Nat) (hk : k ≤ 1) : (⟨B + BitVec.ofNat 64 (256 * k), 256⟩ : Region).Sub ⟨B, 512⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_using [hk])
   have hb (k : Nat) (hk : k ≤ 1) : ∀ d, d + 8 ≤ 16 * (1 + 5 * 3) →
       InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (256 * k) + BitVec.ofNat 64 d) 8 := by
     intro d hd
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact hp.blk _ (by omega)
+    exact hp.blk _ (by omega_using [hk, hd])
   -- The chunk's data (`x26` in its phases) and source (`x27`).
   have hst (k : Nat) (hk : k ≤ 1) : ∀ u : State, u.gpr .x19 = s.gpr .x2 → u.gpr .x26 = s.gpr .x1 →
       u.gpr .x27 = s.gpr .x27 →

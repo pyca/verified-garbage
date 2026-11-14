@@ -53,9 +53,9 @@ theorem loop_ok (count : Nat) (s : State) (p : Params) (pass : Nat) (h : Ready p
       refine ⟨_, a, .loopExit run ?_, done.finished last⟩
       simp only [done.cf, last, Nat.lt_irrefl, decide_false]
     | succ n =>
-      have active : pass + 1 < p.passes := by omega
+      have active : pass + 1 < p.passes := by omega_using [endPass]
       obtain ⟨restTrace, t, restRun, finished⟩ := ih a (pass + 1) (done.next active)
-        (fillPass p state pass) done.represented (by omega) (by omega)
+        (fillPass p state pass) done.represented (by omega_using []) (by omega_using [endPass])
       refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
       simp only [done.cf, active, decide_true]
 
@@ -73,6 +73,6 @@ theorem Finished.frame_word {s t : State} {p : Params} {pass : Nat} {state : Fil
     · exact header.layout.matrixFrame.symm.sub_left sub
     · exact header.addressLayout.frameWork.sub_left sub
     · exact header.addressLayout.frameStack.sub_left sub
-    · simpa only [off, BitVec.add_zero] using Offset.disjoint (d := d) (n := 8) (e := 0) (k := 24) (s.gpr .x19) (Or.inr (by omega)) (by omega) (by decide)) (by decide)
+    · simpa only [off, BitVec.add_zero] using Offset.disjoint (d := d) (n := 8) (e := 0) (k := 24) (s.gpr .x19) (Or.inr (by omega_using [separate])) (by omega_using [bound]) (by decide)) (by decide)
 
 end VG.Proof.Argon2.AArch64.FillIterations

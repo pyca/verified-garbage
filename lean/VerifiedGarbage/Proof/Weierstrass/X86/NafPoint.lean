@@ -36,7 +36,7 @@ theorem Inv.transferPoint {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : 
       simp only [hn] at hx₀ hx₁ hx₂
       rw [hy] at hx₁
       rw [hz] at hx₂
-      omega
+      omega_using [hx₀, hx₁, hx₂]
   have hlt : ∀ x∈jacCoords o, wordsVal t.mem base x M.n<C.p := by
     intro x hx
     simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -69,7 +69,7 @@ theorem nafPublicPoint_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {base
         (tmv C K.M.n base t K.E.z) P := by
   have hdz := hL.le K.E.z (hD _ (by simp [jacCoords]))
   rw [hn,hz] at hdz
-  refine WP.mono (nafPublicEntry_ok hI.scr ha ha' h8 hT (by omega) hSep)
+  refine WP.mono (nafPublicEntry_ok hI.scr ha ha' h8 hT (by omega_using [hdz]) hSep)
     fun t ⟨hv,hk,ho⟩ => hI.transferPoint hL hAcc hn hy hz hD hQ ?_ ?_ ?_ hk ho hJ
   · simpa only [hn,WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_zero,Nat.add_zero,
       show 24*4=96 from rfl] using hv 0 (by decide)
@@ -96,7 +96,7 @@ theorem nafTablePoint_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {base 
         (tmv C K.M.n base t (K.tblPt (j+1)).y) (tmv C K.M.n base t (K.tblPt (j+1)).z) P := by
   have hrz := hL.le K.R.z (hI.sl _ (hQ _ (by simp [jacCoords])))
   rw [hn,hz] at hrz
-  refine WP.mono (nafTableStore_ok hI.scr hj hc hT (by omega) hSep)
+  refine WP.mono (nafTableStore_ok hI.scr hj hc hT (by omega_using [hrz]) hSep)
     fun t ⟨hv,hk,ho⟩ => hI.transferPoint hL hAcc hn ?_ ?_ hD hQ ?_ ?_ ?_ hk ?_ hJ
   · simp only [WinCfg.tblPt,hn]
   · simp only [WinCfg.tblPt,hn]

@@ -97,7 +97,7 @@ theorem seedState_frame {m m' : Mem} {a : Addr} {rs : List Region}
   apply Vector.ext; intro i hi
   simp only [seedState,Vector.getElem_ofFn]
   split
-  · rw [hf.readW (r := ⟨a,32⟩) (Offset.contains_base a (by omega) (by omega)) hd (by decide)]
+  · rw [hf.readW (r := ⟨a,32⟩) (Offset.contains_base a (by omega_arith) (by omega_using [hi])) hd (by decide)]
   · rfl
 
 def initRegs : List Reg := [.x2,.x19,.x20,.x21,.x6,.x7]
@@ -126,7 +126,7 @@ theorem init_ok {s : State} {p a : Addr} {ss sb n : Nat}
     (fun j hj => by rw [hu.wr]; exact hsv j hj)) fun v ⟨kv,sv,fv⟩ => ?_
   have sv' : Saved p s v.mem := fun j hj => by
     rw [sv j hj,hu.get _ (by
-      have hh : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 := by omega
+      have hh : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5 := by omega_using [hj]
       rcases hh with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
   have fv' : Frame [savedR p] s.mem v.mem := by rw [hu.mem] at fv; exact fv
   refine wp_mov fun w hw ew => ?_

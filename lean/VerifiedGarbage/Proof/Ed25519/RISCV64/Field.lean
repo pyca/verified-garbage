@@ -30,12 +30,12 @@ abbrev FA (b : Addr) : Region := ⟨b + BitVec.ofNat 64 64, 960⟩
 
 theorem slot_range (o : Slot) : 64 ≤ offset o ∧ offset o + 32 ≤ 768 := by
   simp only [offset]
-  omega
+  omega_using []
 
 theorem slot_sep (o a : Slot) :
     offset o = offset a ∨ offset o + 32 ≤ offset a ∨ offset a + 32 ≤ offset o := by
   simp only [offset]
-  omega
+  omega_using []
 
 /-- A prefix of eight independent limb stores. -/
 structure FillInv (b : Addr) (o : Nat) (s0 : State) (f : Nat → Nat) (k : Nat) (s : State) : Prop where
@@ -54,19 +54,19 @@ theorem fill_ok {b : Addr} {o : Nat} {src : Nat → List Instr} {s0 : State}
     8 (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩
   refine WP.append (hsrc k hk s h) fun t ⟨hv, hr, hm⟩ => ?_
   refine sw0_ok ((hc.of_rest h.rest (by decide)).of_rest hr (by decide))
-    (by omega) (by omega) fun u hu => WP.block_nil ?_
+    (by omega_using [ho, hk]) (by omega_using [ho4]) fun u hu => WP.block_nil ?_
   have em : u.mem = s.mem.writeW (b + BitVec.ofNat 64 (o + 4 * k)) ((t.gpr .a4).setWidth 32) := by
     rw [hu.mem, hm]
   refine ⟨h.rest.trans (hr.trans (hu.rest _)), ?_, fun j hj => ?_⟩
   · rw [em]
     refine (h.frame.sub fun r hmem => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
       (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_add_right _ _)
-        (by omega) (by omega))
+        (by omega_using []) (by omega_using [ho, hk]))
     rw [List.mem_singleton.mp hmem]
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · rw [limb, em]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [ho, hk])]
       exact h.outs j hj
     · rw [wd_write_self, toNat_lo32, hv]
 
@@ -83,7 +83,7 @@ theorem constField_op {b : Addr} {s : State} (hc : Ctx b s) (o : Slot) (v : Spec
       FS t.mem b (offset o) = v := by
   have ho := slot_range o
   refine WP.mono (fill_ok (src := fun k => li32 .a4 (BitVec.ofNat 32 (v.val / 2 ^ (32 * k))))
-    (f := fun k => v.val / 2 ^ (32 * k) % 2 ^ 32) hc (by omega) (by simp only [offset]; omega)
+    (f := fun k => v.val / 2 ^ (32 * k) % 2 ^ 32) hc (by omega_using [ho]) (by simp only [offset]; omega_using [])
     (fun k _ t _ => WP.mono (ByteLoad.li32_ok _) fun u hu => ⟨?_,
       by rw [hu]; exact ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ (by simpa using hr), rfl, rfl, rfl⟩,
       by rw [hu]; rfl⟩))
@@ -103,14 +103,14 @@ theorem copyField_op {b : Addr} {s : State} (hc : Ctx b s) (o a : Slot) :
   have ha := slot_range a
   have hsep := slot_sep o a
   refine WP.mono (fill_ok (src := fun k => [.load .w .a4 .a3 (offset a + 4 * k)])
-    (f := limb s.mem b (offset a)) hc (by omega) (by simp only [offset]; omega)
-    (fun k hk t ht => lw0_ok (hc.of_rest ht.rest (by decide)) (by omega) (by simp only [offset]; omega)
+    (f := limb s.mem b (offset a)) hc (by omega_using [ho]) (by simp only [offset]; omega_using [])
+    (fun k hk t ht => lw0_ok (hc.of_rest ht.rest (by decide)) (by omega_using [ha, hk]) (by simp only [offset]; omega_using [])
       fun u hu => WP.block_nil ⟨?_, hu.rest (by decide), hu.mem⟩))
     fun t ht => ⟨ht.rest, ht.frame, ?_⟩
   · rw [hu.gpr, toNat_ext32, Nat.mod_eq_of_lt (BitVec.isLt _)]
     exact wd_frame ht.frame fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      exact Offset.disjoint _ (by omega_using [hsep, hk]) (by omega_using [ha, hk]) (by omega_using [ho, hk])
   · exact congrArg VG.Proof.X25519.toFe (val32_congr ht.outs)
 
 end VG.Proof.Ed25519.RISCV64

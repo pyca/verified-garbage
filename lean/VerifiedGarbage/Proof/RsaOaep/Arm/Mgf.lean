@@ -381,7 +381,7 @@ theorem tload_vp {X : State → State → Prop} (hX : ∀ σ s v, X σ s → X �
       (fun σ s => ((Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl c dstv seed Inv σ s.mem ∧ X σ s) ∧
         s.syms = σ.syms) ∧ s.gpr .r4 = a) := by
   have hg := P.hg
-  have hk : 4 * k + 4 ≤ 44 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega_using [hk3]
   obtain ⟨tR, tRo, tC⟩ := P.tbl
   let F : State → State → Prop := fun σ s =>
     (Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl c dstv seed Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms
@@ -397,7 +397,7 @@ theorem tload_vp {X : State → State → Prop} (hX : ∀ σ s v, X σ s → X �
   · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
   · obtain ⟨hF, hsi⟩ := hs
     have T := P.tab σ _ hF.1.2.1.1
-    refine WP.mono (wp_ldrT (by omega) hsi (St_roR hF.1.1.st tRo (tC _ hk))
+    refine WP.mono (wp_ldrT (by omega_using [hk3]) hsi (St_roR hF.1.1.st tRo (tC _ hk))
       ((St_roW hF.1.1.st tRo (tC _ hk)).trans (ha σ T))) fun t e => ?_
     subst e
     exact ⟨keepF σ s _ hF, by simp only [VG.Arm.RegUpd.gpr_setReg, ↓reduceIte]⟩
@@ -897,10 +897,10 @@ theorem tabA_wp (hg : Geo L scr) {σ s : State} (hc : Ctx L scr σ s) (hj : j < 
       t.mem = s.mem.writeW (L.fr sTab) (L.argv.getD j 0) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = L.argv.getD j 0 ∧ t.gpr .r12 = L.B ∧ t.syms = s.syms := by
   have hn := hc.st.ok.nargs
-  have ha := Lay.argOff_lt (L := L) (j := j) (by omega)
+  have ha := Lay.argOff_lt (L := L) (j := j) (by omega_using [hj, hn])
   have hA : State.addr (L.B + BitVec.ofNat 32 (Impl.RsaPss.Arm.arg j)) = L.argA j := by
     show State.addr (L.B + BitVec.ofNat 32 (Impl.RsaPkcs1Sig.Arm.argOff frameBytes j)) = _
-    rw [← hg.F]; exact hc.st.ok.addrB (by omega)
+    rw [← hg.F]; exact hc.st.ok.addrB (by omega_using [ha])
   have hR : InRegions (s.rd ++ s.wr) (L.argA j) 4 := by rw [hc.st.rd, hc.st.wr]; exact hc.st.ok.arg_read hj
   have hV := hc.st.arg hj
   prun [sp0, ld, st, hc.st.sp, hc.aFr hg, hc.wFr hg, hA, hR, hV, hoff, sTab_lt]

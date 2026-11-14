@@ -70,13 +70,13 @@ theorem testWitness_ok {B p : Addr} {Z w N : Nat} {mi : BitVec 64} {bs : List By
   have hXm := slot_le (w := w) (show aXm < 8 by decide)
   have hTmp := slot_le (w := w) (show aTmp < 8 by decide)
   have hz := hd.z
-  have hhdr : 256 ≤ Z := by simp only [slot, hdrBytes] at hz; omega
+  have hhdr : 256 ≤ Z := by simp only [slot, hdrBytes] at hz; omega_using [hz]
   unfold Impl.Dsa.X86_64.Generation.testWitness
   simp only [seqs]
   refine WP.seq (WP.mono (loadWitness_ok h.ready hd (by decide) (by decide) h.ptr h.len h.source hk1 hk31 hkw)
     fun u ⟨hu, hxu, hfu, ku⟩ => ?_)
   have hsu := h.of_frm hd hu hfu ku (by rng_disj) (by rng_disj)
-    (by simp only [List.mem_singleton, forall_eq]; omega)
+    (by simp only [List.mem_singleton, forall_eq]; omega_using [hXm, hz])
   refine WP.seq (WP.mono (witnessRange_ok hu hd hodd hxu) fun v ⟨hax, _, hv, hxv, hfv, kv⟩ => ?_)
   have hsv := hsu.of_frm hd hv hfv kv
     (by simp only [Impl.Ffdh.X86_64.Domain.sF]; rng_disj)
@@ -85,16 +85,16 @@ theorem testWitness_ok {B p : Addr} {Z w N : Nat} {mi : BitVec 64} {bs : List By
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · omega
-      · change 248 ≤ Z; omega)
+      · omega_using [hTmp, hz]
+      · change 248 ≤ Z; omega_using [hhdr])
   have hax' : v.gpr .rax = BitVec.ofNat 64 (decide (2 ≤ Spec.Rsa.os2ip bs ∧ Spec.Rsa.os2ip bs < N - 1)).toNat := by
     by_cases hp : 2 ≤ Spec.Rsa.os2ip bs ∧ Spec.Rsa.os2ip bs < N - 1 <;>
       simpa [VG.Proof.Ffdh.X86_64.bit, hp] using hax
   refine WP.mono (saveUniform_ok hv hd hax') fun t ⟨ht, hut, hzt, hft, kt⟩ => ?_
   have hst := hsv.of_frm hd ht hft kt (by rng_disj) (by rng_disj)
-    (by simp only [List.mem_singleton, forall_eq]; change 248 ≤ Z; omega)
+    (by simp only [List.mem_singleton, forall_eq]; change 248 ≤ Z; omega_using [hhdr])
   refine ⟨hst, ?_, hut, hzt, ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
-  · rw [hft.wv_eq (by rng_disj) (by have := h.ready.good.scr.nowrap; omega)]
+  · rw [hft.wv_eq (by rng_disj) (by have := h.ready.good.scr.nowrap; omega_using [hXm, hz, this])]
     exact hxv
   · exact ((hfu.mono (by simp [testRanges])).trans
       (hfv.mono (by simp [testRanges, Impl.Ffdh.X86_64.Domain.sF, kU]))).trans

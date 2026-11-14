@@ -33,8 +33,8 @@ theorem testBit_val32 (m : Mem) (base : Addr) : ∀ (a n j b : Nat), j < n → b
     rcases j with _ | j
     · simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add]
       exact ite_eq_left hb
-    · rw [ite_eq_right (show ¬32 * (j + 1) + b < 32 by omega), show 32 * (j + 1) + b - 32 = 32 * j + b by omega,
-        testBit_val32 m base (a + 4) n j b (by omega) hb, show a + 4 + 4 * j = a + 4 * (j + 1) by omega]
+    · rw [ite_eq_right (show ¬32 * (j + 1) + b < 32 by omega_using []), show 32 * (j + 1) + b - 32 = 32 * j + b by omega_using [],
+        testBit_val32 m base (a + 4) n j b (by omega_using [hj]) hb, show a + 4 + 4 * j = a + 4 * (j + 1) by omega_using []]
 
 /-- Byte `4 j + r` of memory at `p` is byte `r` of the word at `p + 4 j`. -/
 theorem byte_word32 (m : Mem) (p : Addr) (j : Nat) {r : Nat} (hr : r < 4) :
@@ -53,7 +53,7 @@ theorem byteRev32_ofBytes (m : Mem) (q : Addr) :
     show q + BitVec.ofNat 64 0 = q from BitVec.add_zero q,
     show q + BitVec.ofNat 64 1 = q + 1 from rfl]
   simp only [BitVec.toNat_append, shl8_or, Spec.Weierstrass.ofBytes, List.foldl_cons, List.foldl_nil]
-  omega
+  omega_using []
 
 /-- The words `j` of a number, each the byte reversal of the word at
 `p + 4 (k - 1 - j)`, are the `4 k` bytes at `p` big-endian. -/
@@ -62,14 +62,14 @@ theorem val32_eq_ofBytes (m m' : Mem) (base p : Addr) : ∀ (o k : Nat),
     val32 m base o k = Spec.Weierstrass.ofBytes (bytesAt m' p (4 * k))
   | _, 0, _ => rfl
   | o, k + 1, h => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero, Nat.add_sub_cancel, Nat.sub_zero] at h0
     rw [val32, val32_eq_ofBytes m m' base p (o + 4) k fun j hj => by
-        rw [show o + 4 + 4 * j = o + 4 * (j + 1) by omega, h (j + 1) (by omega),
-          show k + 1 - 1 - (j + 1) = k - 1 - j by omega],
-      show 4 * (k + 1) = 4 * k + 4 by omega, bytesAt_add, ofBytes_append, length_bytesAt,
+        rw [show o + 4 + 4 * j = o + 4 * (j + 1) by omega_using [], h (j + 1) (by omega_using [hj]),
+          show k + 1 - 1 - (j + 1) = k - 1 - j by omega_using []],
+      show 4 * (k + 1) = 4 * k + 4 by omega_using [], bytesAt_add, ofBytes_append, length_bytesAt,
       ← byteRev32_ofBytes, ← h0, show (256 : Nat) ^ 4 = 2 ^ 32 from rfl]
-    omega
+    omega_using []
 
 /-- The bit `i < 32` of a byte-reversed word. -/
 theorem getLsbD_byteRev32 (w : BitVec 32) {i : Nat} (hi : i < 32) :
@@ -85,17 +85,17 @@ theorem val32_eq_zero_iff (m : Mem) (base : Addr) : ∀ (a n : Nat),
     constructor
     · intro h j hj
       rcases j with _ | j
-      · rw [Nat.mul_zero, Nat.add_zero]; omega
-      · rw [show a + 4 * (j + 1) = a + 4 + 4 * j by omega]
-        refine (val32_eq_zero_iff m base (a + 4) n).mp ?_ j (by omega)
-        have : 2 ^ 32 * val32 m base (a + 4) n = 0 := by omega
+      · rw [Nat.mul_zero, Nat.add_zero]; omega_using [h]
+      · rw [show a + 4 * (j + 1) = a + 4 + 4 * j by omega_using []]
+        refine (val32_eq_zero_iff m base (a + 4) n).mp ?_ j (by omega_using [hj])
+        have : 2 ^ 32 * val32 m base (a + 4) n = 0 := by omega_using [h]
         rcases Nat.mul_eq_zero.mp this with h' | h'
         · exact absurd h' (by decide)
         · exact h'
     · intro h
-      have h0 := h 0 (by omega)
+      have h0 := h 0 (by omega_using [])
       rw [Nat.mul_zero, Nat.add_zero] at h0
       rw [h0, (val32_eq_zero_iff m base (a + 4) n).mpr fun j hj => by
-        rw [show a + 4 + 4 * j = a + 4 * (j + 1) by omega]; exact h (j + 1) (by omega)]
+        rw [show a + 4 + 4 * j = a + 4 * (j + 1) by omega_using []]; exact h (j + 1) (by omega_using [hj])]
 
 end VG.Proof.Weierstrass

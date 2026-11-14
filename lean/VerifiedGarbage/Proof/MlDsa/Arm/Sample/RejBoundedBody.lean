@@ -35,14 +35,14 @@ theorem lo_eq (z : Byte) : BitVec.setWidth 32 z <<< 28 >>> 28 = BitVec.ofNat 32 
   have := z.isLt
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- The high half-byte of a byte, as `rbHi` computes it. -/
 theorem hi_eq (z : Byte) : BitVec.setWidth 32 z >>> 4 = BitVec.ofNat 32 (z.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   have := z.isLt
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- The byte of iteration `t`. -/
 abbrev zAt (X : List Byte) (t : Nat) : Byte := X.getD t 0
@@ -62,7 +62,7 @@ structure HI (P : Sp) (σ : State) (X : List Byte) (t : Nat) (L : List Zq) (s : 
   r9 : s.gpr .r9 = BitVec.ofNat 32 ((zAt X t).toNat / 16)
   z : s.z = decide (256 ≤ L.length)
 
-theorem lt31 {L : List Zq} (h : L.length ≤ 256) : L.length < 2 ^ 31 := by omega
+theorem lt31 {L : List Zq} (h : L.length ≤ 256) : L.length < 2 ^ 31 := by omega_using [h]
 
 section
 variable {P : Sp} {σ : State} (hp : SpOk P σ)
@@ -76,11 +76,11 @@ theorem ld3_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State
   have ea : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = P.at' 840 + BitVec.ofNat 64 t := by
     rw [h.r0]
     show State.addr (P.scr + BitVec.ofNat 32 (840 + t) + 0#32) = _
-    rw [BitVec.add_zero, at_eq hp (by omega), Offset.add_add]
+    rw [BitVec.add_zero, at_eq hp (by omega_using [ht]), Offset.add_add]
   have hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 0)) 1 := by
-    rw [ea, Offset.add_add]; exact inScrRd hp h.env (by omega)
+    rw [ea, Offset.add_add]; exact inScrRd hp h.env (by omega_using [ht])
   have hz : s.mem (State.addr (s.gpr .r0 + BitVec.ofNat 32 0)) = zAt X t := by
-    have := MlKem.bytesAt_getD s.mem (P.at' 840) (len := 544) (i := t) (by omega)
+    have := MlKem.bytesAt_getD s.mem (P.at' 840) (len := 544) (i := t) (by omega_using [ht])
     rw [h.out] at this
     rw [ea, ← this]
   have h0 : (0 : Nat) < 4096 := by decide
@@ -135,20 +135,20 @@ theorem mid_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} {L
   rw [rbStep_eq]
   refine WP.ite (decide (256 ≤ L.length)) (by show some s.z = _; rw [h.z]) (fun hr => ?_) (fun hr => ?_)
   · simp only [decide_eq_true_eq] at hr
-    rw [ifF (by omega)]
+    rw [ifF (by omega_using [hr])]
     exact WP.block_nil h.base
   simp only [decide_eq_false_iff_not] at hr
-  rw [ifT (by omega)]
-  refine WP.seq (WP.mono (try_ok hp hη (Nat.mod_lt _ (by decide)) h.base (by omega) h.r9) fun s1 ⟨b1, e8⟩ => ?_)
+  rw [ifT (by omega_using [hr])]
+  refine WP.seq (WP.mono (try_ok hp hη (Nat.mod_lt _ (by decide)) h.base (by omega_using [hr]) h.r9) fun s1 ⟨b1, e8⟩ => ?_)
   refine WP.seq (WP.mono (hi_ok b1 (by rw [e8, h.r8])) fun s2 h2 => ?_)
   refine WP.ite (decide (256 ≤ (hbTry η L ((zAt X t).toNat % 16)).length)) (by show some s2.z = _; rw [h2.z])
     (fun hr' => ?_) (fun hr' => ?_)
   · simp only [decide_eq_true_eq] at hr'
-    rw [ifF (by omega)]
+    rw [ifF (by omega_using [hr'])]
     exact WP.block_nil h2.base
   · simp only [decide_eq_false_iff_not] at hr'
-    rw [ifT (by omega)]
-    exact WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega) h2.base (by omega) h2.r9) fun _ h => h.1
+    rw [ifT (by omega_using [hr'])]
+    exact WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega_using []) h2.base (by omega_using [hr']) h2.r9) fun _ h => h.1
 
 end
 
@@ -157,7 +157,7 @@ theorem ofNat_pred {k : Nat} (hk : 0 < k) (hk' : k < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   have e1 : (1 : BitVec 32).toNat = 1 := rfl
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, e1, Nat.mod_eq_of_lt hk']
-  omega
+  omega_using [hk]
 
 /-- The step, to iteration `t + 1`: `Z` set iff it is the last. -/
 theorem stepB_ok {P : Sp} {σ : State} {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State}
@@ -165,11 +165,11 @@ theorem stepB_ok {P : Sp} {σ : State} {X : List Byte} {t : Nat} (ht : t < 544) 
     WP isa (.block (step 1)) s fun s' => Base P σ X (t + 1) L s' ∧ s'.z = decide (t + 1 = 544) := by
   refine WP.mono (step_ok s (k := 1) (by decide)) fun s' ⟨h0, h3, hz, hg, hm, hrd, hwr, hsp⟩ => ?_
   have e3 : BitVec.ofNat 32 (544 - t) - 1 = BitVec.ofNat 32 (544 - (t + 1)) := by
-    rw [ofNat_pred (by omega) (by omega)]; rfl
+    rw [ofNat_pred (by omega_using [ht]) (by omega_using [])]; rfl
   refine ⟨⟨⟨hrd.trans h.env.rd, hwr.trans h.env.wr, hsp.trans h.env.sp,
       (hg .r5 (by decide) (by decide)).trans h.env.r5, (hg .r6 (by decide) (by decide)).trans h.env.r6,
       by rw [hm]; exact h.env.sav, by rw [hm]; exact h.env.savlr, by rw [hm]; exact h.env.frame⟩,
-    by rw [hm]; exact h.out, by rw [h0, h.r0]; exact Offset.add_add_eq _ (by omega), by rw [h3, h.r3, e3],
+    by rw [hm]; exact h.out, by rw [h0, h.r0]; exact Offset.add_add_eq _ (by omega_using []), by rw [h3, h.r3, e3],
     by rw [hg .r2 (by decide) (by decide)]; exact h.r2, h.len, by rw [hm]; exact h.st⟩, ?_⟩
   have ez := count_z (N := 544) (i := t) (k := 1) ht (by decide) (by decide)
   simp only [Nat.one_mul] at ez
@@ -185,7 +185,7 @@ theorem take_succ' (L : List Byte) {i : Nat} (h : i < L.length) : L.take (i + 1)
 theorem Lf_succ (η : Nat) {X : List Byte} (hX : X.length = 544) {t : Nat} (ht : t < 544) :
     Lf η X (t + 1) = rbStep η (Lf η X t) (zAt X t) := by
   simp only [Lf]
-  rw [take_succ' _ (by omega), rbFold_snoc]
+  rw [take_succ' _ (by omega_using [hX, ht]), rbFold_snoc]
 
 /-- An iteration: what `rbStep` does to the coefficients. -/
 theorem body_ok {P : Sp} {σ : State} (hp : SpOk P σ) {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte}

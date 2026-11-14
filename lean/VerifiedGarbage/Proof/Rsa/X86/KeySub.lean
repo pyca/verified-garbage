@@ -29,9 +29,9 @@ theorem sub3_ok {s : State} {B : Addr} {Z w N o a b : Nat} (h : Ws s B Z w N)
   change WP isa (.seq (VG.Impl.Mont.X86.Dynamic.chainW .sbb w (arr w o) (arr w a) (arr w b)) _) s _
   simp only [S] at fo fa fb sa sb
   refine WP.seq (WP.mono (chainSubW_ok h.workspace h.wpos
-    (by exact Nat.le_trans (by omega) fo) (by exact Nat.le_trans (by omega) fa)
-    (by exact Nat.le_trans (by omega) fb) (by exact sa.imp (by omega) (by omega))
-    (by exact sb.imp (by omega) (by omega))) ?_)
+    (by exact Nat.le_trans (by omega_using []) fo) (by exact Nat.le_trans (by omega_using []) fa)
+    (by exact Nat.le_trans (by omega_using []) fb) (by exact sa.imp (by omega_using []) (by omega_using []))
+    (by exact sb.imp (by omega_using []) (by omega_using []))) ?_)
   rintro u ⟨frame, ⟨c, carry, value⟩, rest⟩
   refine wp_movS rfl fun v V _ => ?_
   refine wp_logicS (.inl rfl) rfl fun t T => WP.block_nil ?_
@@ -43,7 +43,7 @@ theorem sub3_ok {s : State} {B : Addr} {Z w N o a b : Nat} (h : Ws s B Z w N)
     cases c <;> rfl
   refine ⟨h.rest r, ?_, ?_, ?_, r⟩
   · rw [mem]
-    exact Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega) (by simp)
+    exact Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega_using []) (by simp)
   · rw [num, mem, bit]; exact value
   · rw [bit]; cases c <;> decide
 end VG.Proof.Rsa.X86.Keys

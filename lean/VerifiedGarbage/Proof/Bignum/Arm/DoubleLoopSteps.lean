@@ -35,20 +35,20 @@ theorem doubleCount_ok (s : State) {base : BitVec 32} {size c : Nat}
       t.z = decide (c = 1) ∧ Rest [.r1] s t := by
   have nowrap := ws.nowrap
   have addr : State.addr (s.gpr .r0 + BitVec.ofNat 32 208) = off (State.addr base) 208 := by
-    rw [ptr]; exact addr_add (by omega)
+    rw [ptr]; exact addr_add (by omega_using [fits, nowrap])
   unfold doubleCount
-  refine wp_ldr (a := off (State.addr base) 208) (by decide) addr (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (a := off (State.addr base) 208) (by decide) addr (ws.read (by omega_using [fits])) fun s1 u1 => ?_
   refine wp_subs (op2_imm (by decide)) fun s2 u2 z2 => ?_
   refine wp_str_z (a := off (State.addr base) 208) (by decide)
     (by rw [u2.other .r0 (by decide), u1.other .r0 (by decide)]; exact addr)
-    (by rw [u2.wr, u1.wr]; exact ws.write (by omega)) fun t u3 z3 => WP.block_nil ?_
+    (by rw [u2.wr, u1.wr]; exact ws.write (by omega_using [fits])) fun t u3 z3 => WP.block_nil ?_
   have value : s2.gpr .r1 = BitVec.ofNat 32 (c - 1) := by
     rw [u2.gpr, u1.gpr, count]
     change BitVec.ofNat 32 c - BitVec.ofNat 32 1 = _
-    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)
+    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hc])
   refine ⟨?_, ?_, (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest _))⟩
   · rw [u3.mem, u2.mem, u1.mem, value]
-  · rw [z3, z2, ← u2.gpr, value, ofNat_beq_zero (by omega)]
-    simp only [show c - 1 = 0 ↔ c = 1 by omega]
+  · rw [z3, z2, ← u2.gpr, value, ofNat_beq_zero (by omega_using [hc'])]
+    simp only [show c - 1 = 0 ↔ c = 1 by omega_using [hc]]
 
 end VG.Proof.Bignum.Arm

@@ -83,10 +83,10 @@ theorem jointCachedEntry_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
       CachedPoint c.K.M.n C (tmv C c.K.M.n base t) c.K.E c.selected (FastNaf.point C Q 5 v j) := by
   have hl := FastNaf.magnitude_le (Or.inl rfl) v j
   have ho := (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hmag
-  have ha : 1≤(FastNaf.magnitude 5 v j-1)/2+1 := by omega
-  have hb : (FastNaf.magnitude 5 v j-1)/2+1≤8 := by omega
-  have hi : (FastNaf.magnitude 5 v j-1)/2<8 := by omega
-  have he : 2*((FastNaf.magnitude 5 v j-1)/2+1)-1=FastNaf.magnitude 5 v j := by omega
+  have ha : 1≤(FastNaf.magnitude 5 v j-1)/2+1 := by omega_using []
+  have hb : (FastNaf.magnitude 5 v j-1)/2+1≤8 := by omega_using [hl]
+  have hi : (FastNaf.magnitude 5 v j-1)/2<8 := by omega_using [hl]
+  have he : 2*((FastNaf.magnitude 5 v j-1)/2+1)-1=FastNaf.magnitude 5 v j := by omega_using [ho]
   have hd : ∀ x∈cachedSlots c.K.M.n c.K.E c.selected,x∈jointSlots c := by intro x hx; jslots
   have hw : ∀ x∈cachedSlots c.K.M.n c.K.E c.selected,x∈jointWork c := by intro x hx; jslots
   have hq : ∀ x∈cachedSlots c.K.M.n (c.K.tblPt ((FastNaf.magnitude 5 v j-1)/2+1))
@@ -94,7 +94,7 @@ theorem jointCachedEntry_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
     intro x hx
     apply jointStable_live c
     rcases List.mem_append.mp hx with hx|hx
-    · exact jointStable_table c ha (by omega) hx
+    · exact jointStable_table c ha (by omega_using [hl]) hx
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
       rcases hx with rfl|rfl
       · exact jointStable_cache2 c hi

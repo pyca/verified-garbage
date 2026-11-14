@@ -48,10 +48,10 @@ theorem expByteHead_ct {base ep : BitVec 32} {len w : Nat} :
     have size : 132 ≤ 8 * len := by
       have := h.1.layout.2.2.1
       simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-      omega
+      omega_using [this]
     refine wp_ldr (a := VG.Proof.Mont.off (State.addr base) 128) (by decide)
-      (by rw [h.1.ptr]; exact addr_add (by have := h.1.workspace.nowrap; omega))
-      (h.1.workspace.read (by omega)) fun t j => WP.block_nil ?_
+      (by rw [h.1.ptr]; exact addr_add (by have := h.1.workspace.nowrap; omega_using [size, this]))
+      (h.1.workspace.read (by omega_using [size])) fun t j => WP.block_nil ?_
     exact ⟨(j.other .r0 (by decide)).trans h.1.ptr, j.gpr.trans h.2⟩
   have tail : RelCT isa (fun s t => Q s ∧ Q t) (.block ([.ldrb .r1 .r2 0] ++ expByteSave)) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (Taint.ofRegs [.r0, .r2]) _ (by taint_decide)

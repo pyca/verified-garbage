@@ -32,7 +32,7 @@ theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n k : Nat} (hk : n ≤ k)
     refine (h _ ?_).symm
     simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
     have := Nat.mod_le i (2 ^ 64)
-    omega
+    omega_using [hk, hi]
 
 variable (I : Instance) (stack : Nat)
 
@@ -48,7 +48,7 @@ theorem publicKeyOut_consts (cs : List (String × List (BitVec 64))) :
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     simp only [Instance.publicKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
-    have e := bytesAt_congr (n := 2 * I.curve.len + 1) (by simp only [Elem.size]; omega) hb.1
+    have e := bytesAt_congr (n := 2 * I.curve.len + 1) (by simp only [Elem.size]; omega_using []) hb.1
     change match publicKey I.curve (Spec.Weierstrass.ofBytes (bytesAt m d I.curve.len)) with
       | some (.affine x y) =>
         r = 1 ∧ bytesAt m₂ out (2 * I.curve.len + 1) = encodePoint (.affine x y)
@@ -66,7 +66,7 @@ theorem publicKeyOut : PostOut (I.publicKeyContract X86_64.abi stack) (I.publicK
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     simp only [Instance.publicKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
-    have e := bytesAt_congr (n := 2 * I.curve.len + 1) (by simp only [Elem.size]; omega) hb.1
+    have e := bytesAt_congr (n := 2 * I.curve.len + 1) (by simp only [Elem.size]; omega_using []) hb.1
     change match publicKey I.curve (Spec.Weierstrass.ofBytes (bytesAt m d I.curve.len)) with
       | some (.affine x y) =>
         r = 1 ∧ bytesAt m₂ out (2 * I.curve.len + 1) = encodePoint (.affine x y)
@@ -85,7 +85,7 @@ theorem compressOut :
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     simp only [Instance.compressPublicKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
-    have e := bytesAt_congr (n := I.curve.len + 1) (by simp only [Elem.size]; omega) hb.1
+    have e := bytesAt_congr (n := I.curve.len + 1) (by simp only [Elem.size]; omega_using []) hb.1
     change match compressPublicKey I.curve (bytesAt m pk (2 * I.curve.len + 1)) with
       | some bs => r = 1 ∧ bytesAt m₂ out (I.curve.len + 1) = bs
       | none => r = 0 ∧ bytesAt m₂ out (I.curve.len + 1) = List.replicate (I.curve.len + 1) 0
@@ -103,7 +103,7 @@ theorem decompressOut :
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     simp only [Instance.decompressPublicKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
-    have e := bytesAt_congr (n := 2 * I.curve.len + 1) (by simp only [Elem.size]; omega) hb.1
+    have e := bytesAt_congr (n := 2 * I.curve.len + 1) (by simp only [Elem.size]; omega_using []) hb.1
     change (r = 1 ∧ ∃ Q, matchesCompressedPublicKey I.curve (bytesAt m pk (I.curve.len + 1)) Q ∧
         bytesAt m₂ out (2 * I.curve.len + 1) = encodePoint Q) ∨
       (r = 0 ∧ (¬ ∃ Q, matchesCompressedPublicKey I.curve (bytesAt m pk (I.curve.len + 1)) Q) ∧
@@ -134,7 +134,7 @@ theorem exchangeOut :
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     simp only [Spec.Ecdh.Instance.exchangeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hb
-    have e := bytesAt_congr (n := I.curve.len) (by simp only [Elem.size]; omega) hb.1
+    have e := bytesAt_congr (n := I.curve.len) (by simp only [Elem.size]; omega_using []) hb.1
     change match Spec.Ecdh.exchange I.curve (Spec.Weierstrass.ofBytes (bytesAt m d I.curve.len))
           (bytesAt m peer (2 * I.curve.len + 1)) with
       | some z => r = 1 ∧ bytesAt m₂ out I.curve.len = z

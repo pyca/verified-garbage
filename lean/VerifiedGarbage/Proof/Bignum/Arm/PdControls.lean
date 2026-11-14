@@ -29,10 +29,10 @@ theorem pdPhaseInput (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R
   · rw [h.r2]; exact h.r2bound
   · intro good
     rw [h.r2, good, Nat.mod_mod, ← Nat.pow_add, show 64 * Spec.Rsa.modulusWords k + 64 * Spec.Rsa.modulusWords k =
-        128 * Spec.Rsa.modulusWords k by omega]
+        128 * Spec.Rsa.modulusWords k by omega_using []]
   · rw [length]; exact count
   · rw [length]; exact h.buffers.exponentPositive
-  · rw [length]; have := h.buffers.exponentFits; have := h.buffers.maxLength; omega
+  · rw [length]; have := h.buffers.exponentFits; have := h.buffers.maxLength; omega_arith
   · rw [length]; exact h.buffers.exponent.fits
   · rw [length]; exact h.buffers.exponent.read
   · rw [length]; exact h.buffers.exponentSeparate

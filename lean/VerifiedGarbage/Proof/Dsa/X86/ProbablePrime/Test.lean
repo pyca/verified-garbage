@@ -139,7 +139,7 @@ theorem tested_ok {mont round : Prog isa} {montName roundName : String}
         w32 a.mem E.base 152 = E.randLength - rest.length) ∧
       WorkFrame E s.mem a.mem ∧ Tail E s.mem a.mem ∧ Keeps WitnessStep.clob s a := by
   have P := v.parameters_valid odd length L.input.memory.entropyLength
-  have shape := candidate_shape odd length (by have := v.bits.low; omega)
+  have shape := candidate_shape odd length (by have := v.bits.low; omega_using [this])
   have header := v.header
   have room := v.room
   have scratchEq : E.geometry.array 28 = E.scratch :=
@@ -162,17 +162,17 @@ theorem tested_ok {mont round : Prog isa} {montName roundName : String}
   have WF : WorkFrame E s.mem a.mem := F
   have T : Tail E s.mem a.mem := by
     intro i lo hi
-    exact W i hi (fun r mem => Or.inr (by have := test_ranges_before E.geometry r mem; rw [scratchEq] at this; omega))
+    exact W i hi (fun r mem => Or.inr (by have := test_ranges_before E.geometry r mem; rw [scratchEq] at this; omega_using [lo, this]))
   have read (d : Nat) (small : 28 ≤ d ∧ d + 4 ≤ 48) :
       a.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
-    W.read32 (by omega) (fun r mem => by have := test_ranges_header E.geometry r mem; omega)
+    W.read32 (by omega_using [header, gL, small]) (fun r mem => by have := test_ranges_header E.geometry r mem; omega_using [small, this])
   have Ia : Input E c entropy a := by
     refine ⟨L.input.scratch.of_keeps K (by decide), (K.1 .esp (by decide)).trans L.input.stack, ?_, ?_, ?_, ?_,
       L.input.memory.keep v K WF T (by rw [syms])⟩
-    · rw [read 28 (by omega)]; exact L.input.randPtr
-    · unfold w32; rw [read 32 (by omega)]; exact L.input.randLength
-    · unfold w32; rw [read 40 (by omega)]; exact L.input.capacity
-    · rw [read 44 (by omega)]; exact L.input.usedPtr
+    · rw [read 28 (by omega_using [])]; exact L.input.randPtr
+    · unfold w32; rw [read 32 (by omega_using [])]; exact L.input.randLength
+    · unfold w32; rw [read 40 (by omega_using [])]; exact L.input.capacity
+    · rw [read 44 (by omega_using [])]; exact L.input.usedPtr
   have tagged : w32 a.mem E.base 168 = tag (E.parameters c entropy).test ∧
       ∀ b rest, (E.parameters c entropy).test = some (b, rest) →
         w32 a.mem E.base 152 = E.randLength - rest.length := by
@@ -204,7 +204,7 @@ theorem test_ok {mont round : Prog isa} {montName roundName : String}
   unfold test
   refine WP.seq (WP.mono (tested_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v L odd length)
     fun a ⟨Ia, status, counted, WF, T, K⟩ => ?_)
-  refine WP.mono (finish_ok Ia (by have := v.header; omega) status counted) fun t ⟨out, Ft, Kt⟩ => ?_
+  refine WP.mono (finish_ok Ia (by have := v.header; omega_using [this]) status counted) fun t ⟨out, Ft, Kt⟩ => ?_
   refine ⟨out, WF.mutable.trans (MutableFrame.of_used Ft), ?_, ?_⟩
   · refine T.trans ?_
     intro i lo hi
@@ -214,7 +214,7 @@ theorem test_ok {mont round : Prog isa} {montName roundName : String}
     have apart := v.usedWorkspace
     intro contains
     have fit := v.workspaceFit
-    exact apart _ contains (Offset.contains_base E.base (by omega) (by omega))
+    exact apart _ contains (Offset.contains_base E.base (by omega_using [hi]) (by omega_using [hi, fit]))
   · exact K.trans (Kt.mono (by decide))
 
 end VG.Proof.Dsa.X86.ProbablePrime

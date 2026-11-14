@@ -18,7 +18,7 @@ theorem highWord_nat {x : BitVec 32} (hx : x.toNat<q) :
   change x.toNat<8380417 at hx
   simp only [highWord,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_add]
   change ((x.toNat+4095)%4294967296)/8192=(x.toNat+4095)/8192
-  rw [Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [hx])]
 
 theorem rawWord_int {x : BitVec 32} (hx : x.toNat<q) :
     (rawWord x).toInt=((x.toNat+4095)%8192:Int)-4095 := by
@@ -28,7 +28,7 @@ theorem rawWord_int {x : BitVec 32} (hx : x.toNat<q) :
   have hv : (rawWord x).toNat=(2^32-(((x.toNat+4095)/8192*8192)%2^32)+x.toNat)%2^32 := by
     simp only [rawWord,BitVec.toNat_sub,BitVec.toNat_shiftLeft,Nat.shiftLeft_eq,hh]
   rw [hv] at he
-  omega
+  omega_using [he]
 
 theorem highWord_eq {x : BitVec 32} (hx : x.toNat<q) :
     highWord x=VG.Proof.MlDsa.AArch64.Round.t1V x := by
@@ -39,7 +39,7 @@ theorem lowWord_eq {x : BitVec 32} (hx : x.toNat<q) :
     lowWord x=VG.Proof.MlDsa.AArch64.Round.t0V x := by
   have hr := rawWord_int hx
   have hb : (x.toNat+4095)%8192<8192 := Nat.mod_lt _ (by decide)
-  have he := Inverse.signCorrected_int (rawWord x) (by omega) (by omega)
+  have he := Inverse.signCorrected_int (rawWord x) (by omega_using [hr]) (by omega_using [hr])
   have hv := BitVec.toInt_eq_toNat_cond (lowWord x)
   change (lowWord x).toInt=_ at he
   rw [hr] at he

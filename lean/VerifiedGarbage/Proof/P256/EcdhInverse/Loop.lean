@@ -46,16 +46,16 @@ theorem packed_loop_ok {base : Addr} {m : Nat}
       ⟨fun _ _ => rfl,rfl,rfl,rfl⟩,Unch.refl _ _ _,hz⟩
   obtain ⟨bd,bf1,bf,bg,ba0,ba1,bb0,bb1⟩ := Divstep.invRun_bounds (N:=59) (by decide)
     (p:=m) (m:=cfg.M.minv.toNat) (x:=X) (by exact_mod_cast hm2)
-    (by exact_mod_cast hm1) hmi (by omega) (by exact_mod_cast hX) (cfg.B-j)
+    (by exact_mod_cast hm1) hmi (by omega_using []) (by exact_mod_cast hX) (cfg.B-j)
   refine WP.mono (batch_ok hL st mt it (by
     have hh : ((59*(cfg.B-j):Nat):Int)≤590 := by
       have : cfg.B=10 := by decide
-      omega
-    omega) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le)
+      omega_using [this]
+    omega_using [bd, hh]) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le)
     (by rw [abs_of_nonneg bb0]; exact bb1.le) zt hj1 (by omega_using [hjB,show cfg.B=10 from rfl]) xt)
     fun u ⟨iu,xu,ku,uu,zu⟩ => ⟨⟨?_,xu,st.of_keepRegs ku (by decide),mod_keep st mt uu,
       kt.trans ku,fun x hx => (uu x hx).trans (ut x hx),zu⟩,xu⟩
-  rw [show cfg.B-(j-1)=cfg.B-j+1 by omega]
+  rw [show cfg.B-(j-1)=cfg.B-j+1 by omega_using [hj1, hjB]]
   exact iu
 
 end VG.Proof.P256.EcdhInverse

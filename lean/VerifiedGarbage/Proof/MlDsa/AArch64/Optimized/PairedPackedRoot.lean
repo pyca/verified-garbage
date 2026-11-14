@@ -27,8 +27,8 @@ def packedBothClobs (i j : Fin 8) : List VReg :=
 theorem packed_readonly (p : Fin 2) (i j : Fin 8) :
     VReg.v28∉packedClobs (bankRegs p) i j ∧
     VReg.v29∉packedClobs (bankRegs p) i j ∧ VReg.v31∉packedClobs (bankRegs p) i j := by
-  have hi := bank_safe (j := 8*p.val+i.val) (by omega)
-  have hj := bank_safe (j := 8*p.val+j.val) (by omega)
+  have hi := bank_safe (j := 8*p.val+i.val) (by omega_using [])
+  have hj := bank_safe (j := 8*p.val+j.val) (by omega_using [])
   simp only [packedClobs,bankRegs,Vector.getElem_ofFn,List.mem_cons,List.not_mem_nil,or_false] at *
   grind only
 
@@ -53,7 +53,7 @@ theorem packedBoth_ok (i j : Fin 8) (len : Nat) (hij : i≠j)
     intro p
     have hp : p=0 ∨ p=1 := by
       apply Or.imp (fun h => Fin.ext h) (fun h => Fin.ext h)
-      omega
+      omega_using []
     rcases hp with rfl | rfl
     · simpa only [show (0:Fin 2)≠1 by decide,show (1:Fin 2)≠0 by decide,ite_false,ite_true] using hbt 0
     · simpa only [show (0:Fin 2)≠1 by decide,show (1:Fin 2)≠0 by decide,ite_false,ite_true] using hbt 1

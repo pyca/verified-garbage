@@ -55,13 +55,13 @@ theorem jointPrepOf_ok {c : Joint.Cfg} {pG pQ : Prog isa} {s : State} {base : Ad
   refine WP.seq (WP.mono first fun a ⟨da,ka,oa⟩ => ?_)
   have sa := hs.of_keepRegs ka (notin_clobN (by decide) (by decide))
   have va : wordsVal a.mem base v c.K.M.n=wordsVal s.mem base v c.K.M.n :=
-    oa.wordsVal hvs (by have := hs.nowrap; omega)
+    oa.wordsVal hvs (by have := hs.nowrap; omega_using [hv, this])
   refine WP.mono (second a sa) fun t ⟨dt,kt,ot⟩ => ?_
   refine ⟨sa.of_keepRegs kt (notin_clobN (by decide) (by decide)),?_,?_,ka.trans kt,oa.unch.trans ot.unch⟩
   · intro j hj
     rw [ot.unch.byte (by
-      intro w hw; rw [List.mem_singleton.mp hw]; dsimp only; omega)
-      (by have := hs.nowrap; omega)]
+      intro w hw; rw [List.mem_singleton.mp hw]; dsimp only; omega_using [hsep, hgl, hj])
+      (by have := hs.nowrap; omega_using [hg, hgl, hj, this])]
     exact da j hj
   · rw [va] at dt
     exact dt

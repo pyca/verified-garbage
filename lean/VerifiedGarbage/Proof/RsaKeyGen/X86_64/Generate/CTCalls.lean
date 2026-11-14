@@ -72,7 +72,7 @@ theorem callS_state {p : GenPublic} {original s u : State} {used : Nat} {st : Ke
   obtain ⟨-, -, -, -, -, a5⟩ := callS_args (used := used) (st := st) hu hm
   obtain ⟨-, -, -, hcx, h8, -⟩ := ha
   have hword (d : Nat) (hd : d + 8 ≤ 56) : word (callS p used st u).mem p.stp d = word s.mem p.stp d :=
-    hfr.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega))
+    hfr.readW (r := cS p) (Offset.contains_base _ hd (by have := hf.nT; omega_using [hd]))
       (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact sT) (by decide)
   refine ⟨?_, ?_⟩
   · simp only [Search.searchE, callS_gpr (show Reg.rcx ≠ .rsp by decide), callS_gpr (show Reg.r8 ≠ .rsp by decide),
@@ -108,10 +108,10 @@ theorem search_call_ct (v : RoundImpl) : RelCT isa (Two CallSCT) (searchCall v) 
   obtain ⟨e₂, ws₂⟩ := callS_state l₂ hu₂ r₂ m₂
   have hlen₁ : Search.searchLen (callS q.inputs q.used st₁ u₁) = q.inputs.L := by
     simp only [Search.searchLen, callS_gpr (show Reg.rsi ≠ .rsp by decide), r₁.2.1]
-    exact toNat_ofNat_lt (by have := l₁.input.cfacts.len.2.1; omega)
+    exact toNat_ofNat_lt (by have := l₁.input.cfacts.len.2.1; omega_using [this])
   have hlen₂ : Search.searchLen (callS q.inputs q.used st₂ u₂) = q.inputs.L := by
     simp only [Search.searchLen, callS_gpr (show Reg.rsi ≠ .rsp by decide), r₂.2.1]
-    exact toNat_ofNat_lt (by have := l₂.input.cfacts.len.2.1; omega)
+    exact toNat_ofNat_lt (by have := l₂.input.cfacts.len.2.1; omega_using [this])
   obtain ⟨b0, b1, b2, b3, b4, b5⟩ := callS_args (used := q.used) (st := st₁) hu₁ m₁
   obtain ⟨c0, c1, c2, c3, c4, c5⟩ := callS_args (used := q.used) (st := st₂) hu₂ m₂
   obtain ⟨di₁, si₁, dx₁, cx₁, r8₁, r9₁⟩ := r₁

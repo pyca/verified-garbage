@@ -223,12 +223,12 @@ private theorem head_first (q : SearchPoint) (s : State) (h : CandCT q s) :
   have h0 : (s.gpr .r3).setWidth 32 = BitVec.ofNat 32 q.status := by
     apply BitVec.eq_of_toNat_eq
     rw [hp.1, BitVec.toNat_ofNat, ← SearchCTL.status ht hr, Nat.mod_eq_of_lt (by
-      rw [SearchCTL.status ht hr]; omega)]
+      rw [SearchCTL.status ht hr]; omega_using [hst])]
   refine WP.mono (WP.keepS [.r9, .r11] (Q := fun t =>
     (t.gpr .r11 = q.inputs.up ∧ t.gpr .r9 = BitVec.ofNat 64 q.status) ∧ t.mem = s.mem) ?_
     (by decide)) fun t ⟨⟨⟨⟨h11, h9⟩, hm⟩, k⟩, hy⟩ => ?_
   · prun [ldf, h.r31, hv7, h.frame_ld' 56 (by decide), exec_lsr_w (show 0 < 32 by decide), h0,
-      zext32 (show q.status < 2 ^ 32 by omega)]
+      zext32 (show q.status < 2 ^ 32 by omega_using [hst])]
   · exact ⟨⟨original, h.keep k hm hy, hp.keep hm (by rw [k.gpr .r3 (by decide)]), ht, hr⟩, h11, h9⟩
 
 theorem head_pins : Pins HeadCT [.r11] := by
@@ -404,10 +404,10 @@ theorem call_pubOf {q : SearchPoint} {v : State} (h : CallCT q v) :
   obtain ⟨a0, a1, a2⟩ := call_args hu hm'
   obtain ⟨r3, r4, r5, r6, r7, r8, r9, r10⟩ := ha
   have tl := toNat_ofNat_lt hf.len64
-  have te : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := toNat_ofNat_lt (by have := hf.e8; omega)
+  have te : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := toNat_ofNat_lt (by have := hf.e8; omega_using [this])
   have tp := toNat_ofNat_lt hf.plen64
   have tr : (BitVec.ofNat 64 (q.inputs.randLen - q.used)).toNat = q.inputs.randLen - q.used :=
-    toNat_ofNat_lt (by have := hf.rand64; omega)
+    toNat_ofNat_lt (by have := hf.rand64; omega_using [this])
   simp only [pubOf, argRegs, List.map_cons, List.map_nil, Cand.stackArgs_three, Cand.eB, Cand.pB, Cand.rB,
     Cand.oL, Cand.rL, call_gpr (by decide : Reg.r3 ∉ linkRegs), call_gpr (by decide : Reg.r4 ∉ linkRegs),
     call_gpr (by decide : Reg.r5 ∉ linkRegs), call_gpr (by decide : Reg.r6 ∉ linkRegs),
@@ -482,7 +482,7 @@ theorem ctl_next {q : SearchPoint} {original s t : State} {final : PrimeSearchRe
   obtain ⟨hr, u, k, -, hi, hu, hk, htail⟩ := hc
   have hs := SearchCTL.status ht hr
   have hcu := SearchCTL.used hl ht hr
-  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega
+  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega_using [hu, hcu]
   have hk' : q.next.remaining = k := by
     simp only [SearchPoint.next]
     rcases hk with ⟨rfl, h2⟩ | ⟨rfl, h3⟩
@@ -590,7 +590,7 @@ private theorem iteration_pair (c : Cand) (n : Nat) :
       have hle := hl.used_le
       have hcand := hb.2.2
       simp only [SearchPoint.next] at hle ⊢
-      omega
+      omega_using [hn, hle, hcand]
     · obtain ⟨_, hl₁, _⟩ := c₁
       obtain ⟨_, hl₂, _⟩ := c₂
       exact hl₁.sp.trans hl₂.sp.symm

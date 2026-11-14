@@ -22,9 +22,9 @@ theorem copyField_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
       CKeep M base wk o s t ∧ Inv M base size m Sl (o :: V) (Function.update E o (E a)) t := by
   have hap : o ≤ a ∨ a + 8 * M.n ≤ o := by
     by_cases he : o = a
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_using [he])
     · have h := hL.apart o a ho (hI.sl a ha) he
-      omega
+      omega_using [h]
   refine WP.mono (copyWords_ok (n := M.n) hI.scr (hL.le o ho) (hL.le a (hI.sl a ha))
     hap) fun t ⟨hv,hk,hO⟩ => ?_
   have hkeep : CKeep M base wk o s t :=

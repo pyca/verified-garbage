@@ -31,7 +31,7 @@ theorem finish_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ s : State} {g : Reg → Bit
   have hF : c.sl FLAG + 8 ≤ size := by
     have := sl_le c hc.n10 (i := FLAG) (by decide)
     have := hc.n0
-    omega
+    omega_arith
   rw [finish_eq, WP.block_append_iff]
   refine WP.mono (movRcx_mem_ok F.scr hF) fun s₁ ⟨e₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -43,7 +43,7 @@ theorem finish_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ s : State} {g : Reg → Bit
     (fun p hp => ?_) saved₂) fun s₃ ⟨saved₃, kept₃, _⟩ => ?_
   · have := saved_lt p hp
     rw [hs₂.rdi]
-    exact ⟨_, List.mem_append_right _ hs₂.wr, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_right _ hs₂.wr, Offset.contains_base _ (by omega_using [hsz, this]) (by omega_using [this])⟩
   · refine ⟨?_, fun r hr => (saved₃ r hr).trans (F.original r hr)⟩
     rw [kept₃ .rax (by decide), e₂, e₁, F.flag]
     simpa only [mask, decide_eq_true_eq] using (mask_bit (decide (KeyOk c s₀)))

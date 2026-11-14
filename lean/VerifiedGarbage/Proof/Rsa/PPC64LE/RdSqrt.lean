@@ -51,13 +51,13 @@ theorem sqrt_ok (h : DS s0 true A [(true, 18), (true, 15), (false, 25)] V sqS s)
   have w2 := h.base.sz.w2
   obtain ⟨H, hH⟩ : ∃ H, H = (kK s0 + 7) / 8 := ⟨_, rfl⟩
   rw [← hH]
-  have hwW : vw s0 true = 4 * H + 6 := by rw [vw_true, hH]; simp only [wW, ww]; omega
+  have hwW : vw s0 true = 4 * H + 6 := by rw [vw_true, hH]; simp only [wW, ww]; omega_using []
   have hww : vw s0 false = 2 * H + 2 := by rw [vw_false, hH]
   have hwH : ww (kK s0) = 2 * H + 2 := by rw [hH]
-  have hL : vw s0 true = 2 * (2 * H + 3) := by omega
+  have hL : vw s0 true = 2 * (2 * H + 3) := by omega_using [hwW]
   have hz15 : num s.mem (rvB s0) (vw s0 true) 15 = 0 := by rw [h.val (by decide)]; exact z
   have eX : A true 18 % 2 ^ (64 * (2 * H)) = wordsVal s.mem (rvB s0) (arr (vw s0 true) 18) (2 * H) := by
-    rw [RdSqrtW.wv_low s.mem (rvB s0) (L := 2 * H + 3) (by omega),
+    rw [RdSqrtW.wv_low s.mem (rvB s0) (L := 2 * H + 3) (by omega_using []),
       ← VG.Proof.Rsa.PPC64LE.RdShift.num_words _ _ _ hL, h.val (by decide)]
   generalize hX : A true 18 % 2 ^ (64 * (2 * H)) = X at eX ⊢
   have hXlt : X < 2 ^ (64 * (2 * H)) := by rw [← hX]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
@@ -74,16 +74,16 @@ theorem sqrt_ok (h : DS s0 true A [(true, 18), (true, 15), (false, 25)] V sqS s)
     have := VG.Proof.Rsa.RecoverDet.isqrt_sq_le X
     refine Nat.lt_of_not_le fun hc => ?_
     have := Nat.mul_le_mul hc hc
-    rw [← Nat.pow_add, show 64 * H + 64 * H = 64 * (2 * H) by omega] at this
-    omega
+    rw [← Nat.pow_add, show 64 * H + 64 * H = 64 * (2 * H) by omega_using []] at this
+    omega_arith
   have n4 : num t.mem (rvB s0) (vw s0 false) 4 = isqrt X := by
-    rw [VG.Proof.Rsa.PPC64LE.RdShift.num_words _ _ _ (show vw s0 false = 2 * (H + 1) by omega),
+    rw [VG.Proof.Rsa.PPC64LE.RdShift.num_words _ _ _ (show vw s0 false = 2 * (H + 1) by omega_using [hww]),
       show arr (vw s0 false) 4 = arr (vw s0 true) 2 from (arr_wide _ 2).symm,
-      RdSqrtW.wv_low t.mem (rvB s0) (L := 2 * H + 3) (by omega), e1]
-    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega)))
+      RdSqrtW.wv_low t.mem (rvB s0) (L := 2 * H + 3) (by omega_using []), e1]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hy (Nat.pow_le_pow_right (by decide) (by omega_using [])))
   have ht : DS s0 true (upd (upd A false 4 (isqrt X)) false 30 0) [(false, 4), (false, 25), (false, 30)]
       (updV V sOk5 (b2n (decide (isqrt X * isqrt X = X)))) (sOk5 :: sqS) t := by
-    refine ⟨h.base.of_keep kt (fun j hj => fit_sv s0 true (by simp at hj; show j < 22; omega)) (by decide) rt,
+    refine ⟨h.base.of_keep kt (fun j hj => fit_sv s0 true (by simp at hj; show j < 22; omega_using [hj])) (by decide) rt,
       Wt, (rt.gpr _ (by decide)).trans h.r21, (rt.gpr _ (by decide)).trans h.r23, (rt.gpr _ (by decide)).trans h.r25,
       fun e he => ?_, fun e he => ?_, fun d hd => ?_, fun d hd => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at he

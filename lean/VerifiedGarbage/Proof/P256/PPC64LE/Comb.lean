@@ -122,6 +122,6 @@ table). -/
 theorem combSatMem_held : ∀ i < p256CombWords.length,
     combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p256CombWords.getD i 0 := by
   unfold combSatMem
-  exact constMem_held _ _ (by rw [comb_words_length]; omega)
+  exact constMem_held _ _ (by rw [comb_words_length]; omega_using [])
 
 end VG.Proof.P256.PPC64LE

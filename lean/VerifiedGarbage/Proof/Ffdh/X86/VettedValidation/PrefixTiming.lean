@@ -29,7 +29,7 @@ theorem EntryAt.low {a t : State} (h : EntryAt a t) : 4 ≤ (t.gpr .esp).toNat :
   obtain ⟨s, start, entry⟩ := h
   rw [entry.keep.1 .esp (by decide)]
   have := stack_low start.pre
-  omega
+  omega_using [this]
 
 def SymbolAt (a t : State) : Prop := ∃ s u, Start a s ∧ EntryPost s u ∧ SymAddrPost tableSym u t
 

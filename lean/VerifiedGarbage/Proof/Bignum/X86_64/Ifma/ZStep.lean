@@ -188,22 +188,22 @@ variable {s : State} {i : Nat} {o : Nat → Ops} {st : Nat → St} {b w : Nat �
 theorem ZIn.sum (h : ZIn l s i o st b w Bd) (hR : l.R = 6) {k : Nat} (hk : k < 8) :
     (zSum l i).eval s k = BitVec.ofNat 64 (lowS (o (k / 4)) (st (k / 4)) (b (k / 4)) (l.R * (k % 4))) := by
   simp only [zSum, ZT.eval]
-  rw [show qz s (vreg (znU l 0 i)) k = _ from h.acc.us 0 (by omega) k hk,
-    show qz s (vreg (znB l 0 i)) k = _ from h.acc.bs 0 (by omega) k hk, ite_eq_left rfl, Nat.add_zero,
+  rw [show qz s (vreg (znU l 0 i)) k = _ from h.acc.us 0 (by omega_using [hR]) k hk,
+    show qz s (vreg (znB l 0 i)) k = _ from h.acc.bs 0 (by omega_using [hR]) k hk, ite_eq_left rfl, Nat.add_zero,
     ← BitVec.ofNat_add]
-  congr 1; unfold lowS; omega
+  congr 1; unfold lowS; omega_using []
 
 theorem ZIn.sum_lt (h : ZIn l s i o st b w Bd) {p : Nat} (hp : p < 2) (j : Nat) :
     lowS (o p) (st p) (b p) j < 2 ^ 64 := by
   have := h.acc.bd p hp j; have := lo_lt ((o p).a j) (b p); have := h.hBd
-  unfold lowS; omega
+  unfold lowS; omega_arith
 
 /-- `u`'s register: limb 0's sum of each lane. -/
 theorem ZIn.q (h : ZIn l s i o st b w Bd) (hR : l.R = 6) {k : Nat} (hk : k < 8) :
     (zQ l i).eval s k = BitVec.ofNat 64 (lowS (o (k / 4)) (st (k / 4)) (b (k / 4)) 0) := by
   simp only [zQ, ZT.eval]
   rw [show sel4 0 (k % 4) = 0 by unfold sel4; rw [Nat.zero_div, Nat.zero_mod], Nat.add_zero,
-    h.sum hR (by omega), show 4 * (k / 4) / 4 = k / 4 by omega, show 4 * (k / 4) % 4 = 0 by omega, Nat.mul_zero]
+    h.sum hR (by omega_using [hk]), show 4 * (k / 4) / 4 = k / 4 by omega_using [], show 4 * (k / 4) % 4 = 0 by omega_using [], Nat.mul_zero]
 
 /-- The next limb's register. -/
 theorem zBn_eval {bn : Nat → Nat}
@@ -212,8 +212,8 @@ theorem zBn_eval {bn : Nat → Nat}
     {k : Nat} (hk : k < 8) : (zBn l i).eval s k = BitVec.ofNat 64 (bn (k / 4)) := by
   simp only [zBn, ZT.eval]
   by_cases h4 : k < 4
-  · rw [ite_eq_left h4, ite_eq_left h4, hb0, show k / 4 = 0 by omega]
-  · rw [ite_eq_right h4, ite_eq_left (by omega), hb1, show k / 4 = 1 by omega]
+  · rw [ite_eq_left h4, ite_eq_left h4, hb0, show k / 4 = 0 by omega_using [h4]]
+  · rw [ite_eq_right h4, ite_eq_left (by omega_using [hk]), hb1, show k / 4 = 1 by omega_using [hk, h4]]
 
 /-- The first set's role `kk` after the step: the model's, with the low
 halves of row 0's products with the next limb `bn` (0 after the last step). -/
@@ -224,13 +224,13 @@ theorem ZIn.bT (h : ZIn l s i o st b w Bd) (hR : l.R = 6) {last : Bool} {bn : Na
       BitVec.ofNat 64 ((AmmD52.step l.L l.R (o (k / 4)) (st (k / 4)) (b (k / 4))).bs (l.R * (k % 4) + kk) +
         if kk = 0 then lo ((o (k / 4)).a (l.R * (k % 4))) (bn (k / 4)) else 0) := by
   have hB : qz s (vreg (znBq l (i % 2))) k = _ := h.bq k hk
-  have hA : ∀ j < 6, qz s (vreg (znA l j)) k = _ := fun j hj => h.con.a j (by omega) k hk
-  have hb : ∀ j < 6, qz s (vreg (znB l j i)) k = _ := fun j hj => h.acc.bs j (by omega) k hk
-  rcases (by omega : kk = 0 ∨ kk = 5 ∨ (1 ≤ kk ∧ kk ≤ 4)) with rfl | rfl | hk'
+  have hA : ∀ j < 6, qz s (vreg (znA l j)) k = _ := fun j hj => h.con.a j (by omega_using [hR, hj]) k hk
+  have hb : ∀ j < 6, qz s (vreg (znB l j i)) k = _ := fun j hj => h.acc.bs j (by omega_using [hR, hj]) k hk
+  rcases (by omega_using [hkk] : kk = 0 ∨ kk = 5 ∨ (1 ≤ kk ∧ kk ≤ 4)) with rfl | rfl | hk'
   · -- role 0, which was role 1
     show (zBT l i last 1).eval s k = _
     rw [zBT, ite_eq_right (by decide), ite_eq_left rfl, ite_eq_left rfl]
-    have hs := h.sum_lt (show k / 4 < 2 by omega) (l.R * (k % 4))
+    have hs := h.sum_lt (show k / 4 < 2 by omega_using [hk]) (l.R * (k % 4))
     cases last with
     | false =>
       simp only [ZT.eval, Bool.false_eq_true, ite_false]
@@ -238,45 +238,45 @@ theorem ZIn.bT (h : ZIn l s i o st b w Bd) (hR : l.R = 6) {last : Bool} {bn : Na
         ite_eq_right (by decide), mad_lo', mad_lo', mad_hi', AmmSym.shr_ofNat hs, ← BitVec.ofNat_add]
       congr 1
       simp only [AmmD52.step, hR, Nat.add_zero]
-      rw [ite_eq_left (by omega)]
-      omega
+      rw [ite_eq_left (by omega_using [])]
+      omega_using []
     | true =>
       simp only [ZT.eval, ite_true]
       rw [hb 1 (by decide), hA 0 (by decide), hB, hA 1 (by decide), h.sum hR hk,
         ite_eq_right (by decide), mad_lo', mad_hi', AmmSym.shr_ofNat hs, ← BitVec.ofNat_add, hl rfl]
       congr 1
       simp only [AmmD52.step, hR, Nat.add_zero, lo, Nat.zero_mod, Nat.mul_zero]
-      rw [ite_eq_left (by omega)]
+      rw [ite_eq_left (by omega_using [])]
   · -- the top role, which was role 0
     show (zBT l i last 0).eval s k = _
     rw [zBT, ite_eq_left rfl, ite_eq_right (by decide)]
     simp only [ZT.eval]
-    rw [hB, show l.R - 1 = 5 by omega, hA 5 (by decide), show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_hi']
+    rw [hB, show l.R - 1 = 5 by omega_using [hR], hA 5 (by decide), show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_hi']
     congr 1
     simp only [AmmD52.step, hR]
-    rw [ite_eq_right (by omega), ite_eq_left (by omega)]
-    omega
+    rw [ite_eq_right (by omega_using []), ite_eq_left (by omega_using [])]
+    omega_using []
   · -- the roles between
-    rw [Nat.mod_eq_of_lt (by omega), zBT, ite_eq_right (by omega), ite_eq_right (by omega),
-      ite_eq_right (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hk']), zBT, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [hk']),
+      ite_eq_right (by omega_using [hk'])]
     simp only [ZT.eval]
-    rw [hb (kk + 1) (by omega), hB, hA (kk + 1) (by omega), Nat.add_sub_cancel, hA kk (by omega),
-      ite_eq_right (by omega), mad_lo', mad_hi']
+    rw [hb (kk + 1) (by omega_using [hk']), hB, hA (kk + 1) (by omega_using [hk']), Nat.add_sub_cancel, hA kk (by omega_using [hkk]),
+      ite_eq_right (by omega_using []), mad_lo', mad_hi']
     congr 1
     simp only [AmmD52.step, hR, Nat.add_assoc]
-    rw [ite_eq_right (by omega), ite_eq_right (by omega)]
-    omega
+    rw [ite_eq_right (by omega_using [hk']), ite_eq_right (by omega_using [hk'])]
+    omega_using []
 
 /-- The second set's role `kk` after the step. -/
 theorem ZIn.uT (h : ZIn l s i o st b w Bd) (hR : l.R = 6) (hL : l.L = 24) {kk : Nat} (hkk : kk < 6) {k : Nat}
     (hk : k < 8) :
     (zUT l i ((kk + 1) % 6)).eval s k =
       BitVec.ofNat 64 ((AmmD52.step l.L l.R (o (k / 4)) (st (k / 4)) (b (k / 4))).us (l.R * (k % 4) + kk)) := by
-  have hp : k / 4 < 2 := by omega
-  have hM : ∀ j, 1 ≤ j → j < 6 → qz s (vreg (znM l j)) k = _ := fun j h1 hj => h.con.m j h1 (by omega) k hk
-  have hu : ∀ j < 6, qz s (vreg (znU l j i)) k = _ := fun j hj => h.acc.us j (by omega) k hk
+  have hp : k / 4 < 2 := by omega_using [hk]
+  have hM : ∀ j, 1 ≤ j → j < 6 → qz s (vreg (znM l j)) k = _ := fun j h1 hj => h.con.m j h1 (by omega_using [hR, hj]) k hk
+  have hu : ∀ j < 6, qz s (vreg (znU l j i)) k = _ := fun j hj => h.acc.us j (by omega_using [hR, hj]) k hk
   have hq := h.q hR hk
-  rcases (by omega : kk = 0 ∨ kk = 5 ∨ (1 ≤ kk ∧ kk ≤ 4)) with rfl | rfl | hk'
+  rcases (by omega_using [hkk] : kk = 0 ∨ kk = 5 ∨ (1 ≤ kk ∧ kk ≤ 4)) with rfl | rfl | hk'
   · -- role 0, which was role 1
     show (zUT l i 1).eval s k = _
     rw [zUT, ite_eq_right (by decide), ite_eq_left rfl]
@@ -284,7 +284,7 @@ theorem ZIn.uT (h : ZIn l s i o st b w Bd) (hR : l.R = 6) (hL : l.L = 24) {kk : 
     rw [hu 1 (by decide)]
     congr 1
     simp only [AmmD52.step, hR, Nat.add_zero]
-    rw [ite_eq_left (by omega)]
+    rw [ite_eq_left (by omega_using [])]
   · -- the top role, which was role 0
     show (zUT l i 0).eval s k = _
     rw [zUT, ite_eq_left rfl]
@@ -293,38 +293,38 @@ theorem ZIn.uT (h : ZIn l s i o st b w Bd) (hR : l.R = 6) (hL : l.L = 24) {kk : 
     have hm0 : qz s (vreg (znM l l.R)) k = _ := h.con.m0 k hk
     have hm1 : qz s (vreg (znM l (l.R + 1))) k = _ := h.con.m1 k hk
     have hK : qz s (vreg (znK l)) k = _ := h.con.k k hk
-    rw [hq, hUp, hm0, hm1, hK, show l.R - 1 = 5 by omega, hM 5 (by decide) (by decide)]
+    rw [hq, hUp, hm0, hm1, hK, show l.R - 1 = 5 by omega_using [hR], hM 5 (by decide) (by decide)]
     by_cases h3 : k % 4 < 3
     · have e1 : sel4 0xF9 (k % 4) = k % 4 + 1 := by
-        rcases (by omega : k % 4 = 0 ∨ k % 4 = 1 ∨ k % 4 = 2) with e | e | e <;> rw [e] <;> rfl
+        rcases (by omega_using [h3] : k % 4 = 0 ∨ k % 4 = 1 ∨ k % 4 = 2) with e | e | e <;> rw [e] <;> rfl
       have hs := h.sum_lt hp (l.R * (k % 4 + 1))
-      rw [e1, h.sum hR (show 4 * (k / 4) + (k % 4 + 1) < 8 by omega),
-        show (4 * (k / 4) + (k % 4 + 1)) / 4 = k / 4 by omega,
-        show (4 * (k / 4) + (k % 4 + 1)) % 4 = k % 4 + 1 by omega, ite_eq_left h3, AmmSym.and_mask hs,
-        Nat.mod_eq_of_lt (show k % 4 + 1 < 4 by omega), mad_hi', mad_lo', mad_lo', mad_hi']
+      rw [e1, h.sum hR (show 4 * (k / 4) + (k % 4 + 1) < 8 by omega_using [hk, h3]),
+        show (4 * (k / 4) + (k % 4 + 1)) / 4 = k / 4 by omega_using [h3],
+        show (4 * (k / 4) + (k % 4 + 1)) % 4 = k % 4 + 1 by omega_using [h3], ite_eq_left h3, AmmSym.and_mask hs,
+        Nat.mod_eq_of_lt (show k % 4 + 1 < 4 by omega_using [h3]), mad_hi', mad_lo', mad_lo', mad_hi']
       congr 1
-      have e2 : l.R * (k % 4) + 5 + 1 = l.R * (k % 4 + 1) := by rw [hR]; omega
+      have e2 : l.R * (k % 4) + 5 + 1 = l.R * (k % 4 + 1) := by rw [hR]; omega_using []
       simp only [AmmD52.step, pend]
-      rw [ite_eq_right (by rw [hR]; omega), ite_eq_left (by rw [hR]; omega), ite_eq_left (by rw [hR, hL]; omega),
-        ite_eq_left (by rw [hR]; omega), e2, stepQ, lo_modr, hi_modr, ← h.acc.wq _ hp, hi_modr, lo_modr]
-      omega
-    · have e3 : k % 4 = 3 := by omega
+      rw [ite_eq_right (by rw [hR]; omega_using []), ite_eq_left (by rw [hR]; omega_using []), ite_eq_left (by rw [hR, hL]; omega_using [h3]),
+        ite_eq_left (by rw [hR]; omega_using []), e2, stepQ, lo_modr, hi_modr, ← h.acc.wq _ hp, hi_modr, lo_modr]
+      omega_using []
+    · have e3 : k % 4 = 3 := by omega_using [h3]
       have hz : ∀ x : BitVec 64, x &&& 0 = 0 := fun x => BitVec.and_zero
       rw [ite_eq_right h3, hz, e3, show (3 + 1) % 4 = 0 from rfl, Nat.mul_zero, Nat.zero_add,
         (h.ok _ hp).ms0, (h.ok _ hp).ms1, show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_hi', mad_lo',
         mad_lo', mad_hi', AmmD52.hi_zero, AmmD52.lo_zero, AmmD52.lo_zero]
       congr 1
       simp only [AmmD52.step]
-      rw [ite_eq_right (by rw [hR] <;> omega), ite_eq_left (by rw [hR] <;> omega),
-        ite_eq_right (by rw [hR, hL] <;> omega), stepQ, hi_modr]
+      rw [ite_eq_right (by rw [hR] <;> omega_using []), ite_eq_left (by rw [hR] <;> omega),
+        ite_eq_right (by rw [hR, hL] <;> omega_using []), stepQ, hi_modr]
   · -- the roles between
-    rw [Nat.mod_eq_of_lt (by omega), zUT, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hk']), zUT, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [hk'])]
     simp only [ZT.eval]
-    rw [hu (kk + 1) (by omega), hq, hM (kk + 1) (by omega) (by omega), Nat.add_sub_cancel,
-      hM kk (by omega) (by omega), mad_lo', mad_hi']
+    rw [hu (kk + 1) (by omega_using [hk']), hq, hM (kk + 1) (by omega_using []) (by omega_using [hk']), Nat.add_sub_cancel,
+      hM kk (by omega_using [hk']) (by omega_using [hkk]), mad_lo', mad_hi']
     congr 1
     simp only [AmmD52.step, Nat.add_assoc]
-    rw [ite_eq_right (by rw [hR]; omega), ite_eq_right (by rw [hR]; omega), stepQ, lo_modr, hi_modr]
+    rw [ite_eq_right (by rw [hR]; omega_using [hk']), ite_eq_right (by rw [hR]; omega_using [hk']), stepQ, lo_modr, hi_modr]
 
 end Eval
 
@@ -334,24 +334,24 @@ theorem expZ_B (hR : l.R = 6) {i kk : Nat} (_ : kk < 6) (last : Bool) :
     expZ l i last ((kk + (i + 1)) % l.R) = zBT l i last ((kk + 1) % 6) := by
   rw [expZ, ite_eq_left (by rw [hR]; exact Nat.mod_lt _ (by decide))]
   congr 1
-  simp only [roleZ, hR]; omega
+  simp only [roleZ, hR]; omega_using []
 
 theorem expZ_U (hR : l.R = 6) {i kk : Nat} (_ : kk < 6) (last : Bool) :
     expZ l i last (l.R + (kk + (i + 1)) % l.R) = zUT l i ((kk + 1) % 6) := by
   have := Nat.mod_lt (kk + (i + 1)) (show 0 < 6 by decide)
-  rw [expZ, ite_eq_right (by omega), ite_eq_left (by rw [hR]; omega)]
+  rw [expZ, ite_eq_right (by omega_using []), ite_eq_left (by rw [hR]; omega_using [])]
   congr 1
-  simp only [roleZ, hR]; omega
+  simp only [roleZ, hR]; omega_using []
 
 theorem expZ_q (hR : l.R = 6) (i : Nat) (last : Bool) : expZ l i last (znUq l (i % 2)) = zQ l i := by
   have := Nat.mod_lt i (show 0 < 2 by decide)
-  rw [expZ, ite_eq_right (by simp only [znUq]; omega), ite_eq_right (by simp only [znUq]; omega), ite_eq_left rfl]
+  rw [expZ, ite_eq_right (by simp only [znUq]; omega), ite_eq_right (by simp only [znUq]; omega_using []), ite_eq_left rfl]
 
 theorem expZ_bn (hR : l.R = 6) (i : Nat) : expZ l i false (znBq l ((i + 1) % 2)) = zBn l i := by
   have := Nat.mod_lt i (show 0 < 2 by decide)
   have := Nat.mod_lt (i + 1) (show 0 < 2 by decide)
-  rw [expZ, ite_eq_right (by simp only [znBq]; omega), ite_eq_right (by simp only [znBq]; omega),
-    ite_eq_right (by simp only [znBq, znUq]; omega), ite_eq_right (by simp only [znBq, znC]; omega),
+  rw [expZ, ite_eq_right (by simp only [znBq]; omega), ite_eq_right (by simp only [znBq]; omega_using []),
+    ite_eq_right (by simp only [znBq, znUq]; omega_using []), ite_eq_right (by simp only [znBq, znC]; omega_using []),
     ite_eq_right (by decide), ite_eq_left rfl]
 
 /-- The registers of the operands' rows and of the mask stay. -/
@@ -359,12 +359,12 @@ theorem expZ_keep (hR : l.R = 6) (i : Nat) (last : Bool) {r : Nat} (h1 : 2 * l.R
     expZ l i last r = .reg r := by
   have := Nat.mod_lt i (show 0 < 2 by decide)
   have := Nat.mod_lt (i + 1) (show 0 < 2 by decide)
-  rw [expZ, ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by simp only [znUq]; omega),
-    ite_eq_right (by simp only [znC]; omega)]
+  rw [expZ, ite_eq_right (by omega), ite_eq_right (by omega_using [h1]), ite_eq_right (by simp only [znUq]; omega_using [h1]),
+    ite_eq_right (by simp only [znC]; omega_using [h1])]
   cases last with
   | true => rfl
   | false =>
-    rw [ite_eq_right (by decide), ite_eq_right (by simp only [znBq]; omega), ite_eq_right (by simp only [znT]; omega)]
+    rw [ite_eq_right (by decide), ite_eq_right (by simp only [znBq]; omega_using [h1]), ite_eq_right (by simp only [znT]; omega_using [h2])]
 
 /-! ## The step -/
 
@@ -409,37 +409,37 @@ theorem zStep_ok (hz : ZOk l) {s : State} {i : Nat} (hi : i < l.R) {o : Nat → 
   -- a register the step keeps
   have keep : ∀ r, 2 * l.R + 5 ≤ r → r ≤ 4 * l.R + 6 → ∀ s' : State, ZRel σ s s' → ∀ k < 8,
       qz s' (vreg r) k = qz s (vreg r) k := fun r h1 h2 s' hs k hk => by
-    rw [hs.reg _ k hk, vi_vreg _ (by omega), hσ _ (by omega), expZ_keep hR i last h1 h2]; rfl
+    rw [hs.reg _ k hk, vi_vreg _ (by omega_using [hR, h2]), hσ _ (by omega_using [hR, h2]), expZ_keep hR i last h1 h2]; rfl
   refine WP.mono (zrun_ok hc (ZRel.init s) e) fun s' hs => ⟨⟨fun kk hkk k hk => ?_, fun kk hkk k hk => ?_,
     fun k hk => ?_, fun p _ => rfl, fun p hp => ?_⟩, ⟨fun kk hkk k hk => ?_, fun kk h1 hkk k hk => ?_,
       fun k hk => ?_, fun k hk => ?_, fun k hk => ?_⟩, fun h0 k hk => ?_, hs.keep⟩
   · have := hm6 (kk + (i + 1))
-    rw [show zB l kk (i + 1) = vreg ((kk + (i + 1)) % l.R) from rfl, hs.reg _ k hk, vi_vreg _ (by omega),
-      hσ _ (by omega), expZ_B hR (by omega) last]
-    exact h.bT hR hbn hl (by omega) hk
+    rw [show zB l kk (i + 1) = vreg ((kk + (i + 1)) % l.R) from rfl, hs.reg _ k hk, vi_vreg _ (by omega_using [this]),
+      hσ _ (by omega_using [this]), expZ_B hR (by omega_using [hR, hkk]) last]
+    exact h.bT hR hbn hl (by omega_using [hR, hkk]) hk
   · have := hm6 (kk + (i + 1))
-    rw [show zU l kk (i + 1) = vreg (l.R + (kk + (i + 1)) % l.R) from rfl, hs.reg _ k hk, vi_vreg _ (by omega),
-      hσ _ (by omega), expZ_U hR (by omega) last]
-    exact h.uT hR hL (by omega) hk
-  · rw [show (i + 1 + 1) % 2 = i % 2 by omega, show zUq l (i % 2) = vreg (znUq l (i % 2)) from rfl,
-      hs.reg _ k hk, vi_vreg _ (by simp only [znUq]; omega), hσ _ (by simp only [znUq]; omega), expZ_q hR]
+    rw [show zU l kk (i + 1) = vreg (l.R + (kk + (i + 1)) % l.R) from rfl, hs.reg _ k hk, vi_vreg _ (by omega_using [hR, this]),
+      hσ _ (by omega_using [hR, this]), expZ_U hR (by omega_using [hR, hkk]) last]
+    exact h.uT hR hL (by omega_using [hR, hkk]) hk
+  · rw [show (i + 1 + 1) % 2 = i % 2 by omega_using [], show zUq l (i % 2) = vreg (znUq l (i % 2)) from rfl,
+      hs.reg _ k hk, vi_vreg _ (by simp only [znUq]; omega_using [hR]), hσ _ (by simp only [znUq]; omega_using [hR]), expZ_q hR]
     exact h.q hR hk
   · obtain ⟨h1, h2⟩ := AmmD52.step_lt (N := l.L) (R := l.R) (o := o p) (b := b p) h.hBd
       (fun j => (h.acc.bd p hp j).1) (fun j => (h.acc.bd p hp j).2)
     exact fun j => ⟨h1 j, h2 j⟩
-  · rw [show zA l kk = vreg (2 * l.R + 5 + kk) from rfl, keep _ (by omega) (by omega) s' hs k hk]
+  · rw [show zA l kk = vreg (2 * l.R + 5 + kk) from rfl, keep _ (by omega_using []) (by omega_using [hkk]) s' hs k hk]
     exact h.con.a kk hkk k hk
-  · rw [show zM l kk = vreg (3 * l.R + 4 + kk) from rfl, keep _ (by omega) (by omega) s' hs k hk]
+  · rw [show zM l kk = vreg (3 * l.R + 4 + kk) from rfl, keep _ (by omega_using [hi]) (by omega_using [hkk]) s' hs k hk]
     exact h.con.m kk h1 hkk k hk
-  · rw [show zM l l.R = vreg (3 * l.R + 4 + l.R) from rfl, keep _ (by omega) (by omega) s' hs k hk]
+  · rw [show zM l l.R = vreg (3 * l.R + 4 + l.R) from rfl, keep _ (by omega_using [hi]) (by omega_using []) s' hs k hk]
     exact h.con.m0 k hk
-  · rw [show zM l (l.R + 1) = vreg (3 * l.R + 4 + (l.R + 1)) from rfl, keep _ (by omega) (by omega) s' hs k hk]
+  · rw [show zM l (l.R + 1) = vreg (3 * l.R + 4 + (l.R + 1)) from rfl, keep _ (by omega_using []) (by omega_using []) s' hs k hk]
     exact h.con.m1 k hk
-  · rw [show zK l = vreg (4 * l.R + 6) from rfl, keep _ (by omega) (by omega) s' hs k hk]
+  · rw [show zK l = vreg (4 * l.R + 6) from rfl, keep _ (by omega_using []) (by omega_using []) s' hs k hk]
     exact h.con.k k hk
   · subst h0
     rw [show zBq l ((i + 1) % 2) = vreg (znBq l ((i + 1) % 2)) from rfl, hs.reg _ k hk,
-      vi_vreg _ (by simp only [znBq]; omega), hσ _ (by simp only [znBq]; omega), expZ_bn hR]
+      vi_vreg _ (by simp only [znBq]; omega_using [hR]), hσ _ (by simp only [znBq]; omega_using [hR]), expZ_bn hR]
     exact hbn rfl k hk
 
 end VG.Proof.Bignum.X86_64.Ifma

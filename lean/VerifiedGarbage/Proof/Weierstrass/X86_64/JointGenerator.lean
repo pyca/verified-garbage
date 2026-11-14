@@ -58,7 +58,7 @@ theorem jointFixedEntry_core_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {siz
       InvJ C (tmv C c.K.M.n base t c.K.E.x) (tmv C c.K.M.n base t c.K.E.y)
         (tmv C c.K.M.n base t c.K.E.z) (FastNaf.point C G c.gw u j) ∧
       tmv C c.K.M.n base t c.K.E.z=1 := by
-  have ha : 1≤FastNaf.magnitude c.gw u j := by omega
+  have ha : 1≤FastNaf.magnitude c.gw u j := by omega_using [hmag]
   have hb : FastNaf.magnitude c.gw u j≤jointGTop c := by
     unfold jointGTop
     rcases hL.layout.gw with h|h

@@ -52,7 +52,7 @@ private theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
 private theorem bytesAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d n N : Nat} (hn : d + n ≤ N)
     (h : ∀ i < N, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     bytesAt m₂ (p + BitVec.ofNat 64 d) n = bytesAt m₁ (p + BitVec.ofNat 64 d) n :=
-  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega_using [hn, hi])
 
 /-- A state represents a message by its first 72 bytes alone. -/
 theorem buffered_congr {m₁ m₂ : Mem} {p : Addr} {key msg : List Byte}
@@ -60,11 +60,11 @@ theorem buffered_congr {m₁ m₂ : Mem} {p : Addr} {key msg : List Byte}
     (hb : Buffered m₁ p key msg) : Buffered m₂ p key msg := by
   obtain ⟨⟨h0, h1, h2⟩, h3⟩ := hb
   refine ⟨⟨h0, ?_, ?_⟩, ?_⟩
-  · rw [show p + 24 = p + BitVec.ofNat 64 24 from rfl, bytesAt_congr_off (N := 128) (by omega) h]
+  · rw [show p + 24 = p + BitVec.ofNat 64 24 from rfl, bytesAt_congr_off (N := 128) (by omega_using []) h]
     exact h1
-  · rw [bytesAt_congr fun i hi => h i (by omega)]; exact h2
+  · rw [bytesAt_congr fun i hi => h i (by omega_using [hi])]; exact h2
   · rw [show p + 56 = p + BitVec.ofNat 64 56 from rfl,
-      bytesAt_congr_off (N := 128) (by have := Nat.mod_lt msg.length (show 16 > 0 by omega); omega) h]
+      bytesAt_congr_off (N := 128) (by have := Nat.mod_lt msg.length (show 16 > 0 by omega_using []); omega_using []) h]
     exact h3
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
@@ -75,10 +75,10 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 variable (pb : Nat)
 
@@ -108,8 +108,8 @@ theorem updatePost_local : ∀ vs m₁ m₂ m' r, vs.length = (updateSig.words p
   intro key msg hbuf hc
   have := Nat.mod_le len.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
-  exact h key msg (buffered_congr (fun i hi => (hs i (by omega)).symm) hbuf) hc
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h key msg (buffered_congr (fun i hi => (hs i (by omega_using [hi])).symm) hbuf) hc
 
 theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (finalizeSig.words pb).length →
     (∀ b ∈ Sig.bufs finalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -129,6 +129,6 @@ theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (finalizeSig.wor
   change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m₂ m' r
   dsimp only [Curry.apply, finalizePost, ArgWord.ofRaw] at h ⊢
   intro key msg hbuf hc
-  exact h key msg (buffered_congr (fun i hi => (hs i (by omega)).symm) hbuf) hc
+  exact h key msg (buffered_congr (fun i hi => (hs i (by omega_using [hi])).symm) hbuf) hc
 
 end VG.Proof.Poly1305

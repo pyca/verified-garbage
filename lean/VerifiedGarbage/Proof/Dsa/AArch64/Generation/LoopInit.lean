@@ -25,8 +25,8 @@ theorem primeLoopInit_ok {P : PrimeParams} {used : Nat} {s : State}
       (off P.B (8 * kUni)) (BitVec.ofNat 64 0)) (by
       unfold Impl.Dsa.AArch64.Generation.primeLoopInit
       brun [h.ready.ws.x0, hdr_enc (show kI < 32 by decide), hdr_enc (show kUni < 32 by decide),
-        h.ready.ws.scr.st (d := 8 * kI) (by simp only [kI, kElen, sFn]; omega),
-        h.ready.ws.scr.st (d := 8 * kUni) (by simp only [kUni, kP, sFn]; omega)]
+        h.ready.ws.scr.st (d := 8 * kI) (by simp only [kI, kElen, sFn]; omega_using [h256]),
+        h.ready.ws.scr.st (d := 8 * kUni) (by simp only [kUni, kP, sFn]; omega_using [h256])]
       rfl) rfl rfl rfl) fun t ⟨hm, hk⟩ => ?_
   have hf : Frm P.B [(8 * kI, 8), (8 * kUni, 8)] s.mem t.mem := by
     rw [hm]
@@ -41,7 +41,7 @@ theorem primeLoopInit_ok {P : PrimeParams} {used : Nat} {s : State}
     (hf.word_eq (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> decide)
       (by decide)).trans h.used
   have hpt := h.advance ht hus hf.work k
-    (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> (have := P.z256; simp only [kI, kElen, kUni, kP, sFn]; omega))
+    (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> (have := P.z256; simp only [kI, kElen, kUni, kP, sFn]; omega_using [h256]))
     (by
       intro j hj r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj hr

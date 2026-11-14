@@ -38,7 +38,7 @@ theorem sieve_shape {c bits : Nat} (hc : 8161 < c) (ho : c % 2 = 1) :
       obtain ⟨i, hi, hd⟩ := h
       simp only [VG.Proof.RsaKeyGen.trialPrefix, List.any_eq_true, List.mem_range,
         VG.Proof.RsaKeyGen.entryDivides, decide_eq_true_eq]
-      exact ⟨i, by unfold sieveCount; split <;> omega, hd⟩
+      exact ⟨i, by unfold sieveCount; split <;> omega_using [hi], hd⟩
     simp only [Bool.eq_false_iff.mpr hit, small, Bool.not_false, Bool.and_self]
 
 /-- The shape for the generator 2: `p mod 8 = 3` and `3 | p − 2`. -/
@@ -62,7 +62,7 @@ theorem gen5_eq {bits p : Nat} (hb : 512 ≤ bits ∧ bits ≤ 8192) (hl : Spec.
     Bool.true_and, show ((5 : Nat) == 2) = false from rfl, Bool.false_eq_true, ↓reduceIte]
   apply Bool.eq_iff_iff.mpr
   simp only [beq_iff_eq, Bool.or_eq_true, decide_eq_true_eq]
-  omega
+  omega_using [hp, ho]
 
 /-- Too short a tape for the candidate. -/
 theorem sieved_short {bits g : Nat} {r : Spec.RsaKeyGen.Rand} (h : r.length < (bits + 7) / 8) :

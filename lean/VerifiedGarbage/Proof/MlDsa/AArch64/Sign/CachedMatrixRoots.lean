@@ -35,8 +35,8 @@ open VG.Proof.MlDsa.Sign
     WP isa (Impl.MlDsa.AArch64.Sign.CachedMatrix.tail mlDsa65) s (IA mlDsa65 D σ 30) := by
   unfold Impl.MlDsa.AArch64.Sign.CachedMatrix.tail
   refine WP.seq (WP.mono (seqR_ok (I:=AS mlDsa65 D σ 28) 2 0
-    (fun j _ hj s hs=>WP.mono (slot4_ok (by omega)
-      (slotChk_ok mlDsa65 (by simp) 28 (by decide) j (by omega)) hs) fun _ ht=>ht.1)
+    (fun j _ hj s hs=>WP.mono (slot4_ok (by omega_using [hj])
+      (slotChk_ok mlDsa65 (by simp) 28 (by decide) j (by omega_using [hj])) hs) fun _ ht=>ht.1)
     s ⟨h,fun _ h=>False.elim (Nat.not_lt_zero _ h)⟩) fun t ht=>?_)
   exact twoBatch_ok hP (show twoChk mlDsa65 28=true by decide) (by simpa using ht)
 
@@ -45,8 +45,8 @@ open VG.Proof.MlDsa.Sign
     WP isa (.seq (seqR (sample4 P mlDsa65) 0 7) (Impl.MlDsa.AArch64.Sign.CachedMatrix.tail mlDsa65))
       s (IA mlDsa65 D σ 30) := by
   refine WP.seq (WP.mono (seqR_ok (I:=fun g=>IA mlDsa65 D σ (4*g)) 7 0
-    (fun g _ hg s hs=>sample4_ok hP (batchChk_ok mlDsa65 (by simp) g (by change g<7; omega))
-      (fun j hj=>slotChk_ok mlDsa65 (by simp) (4*g) (by change 4*g<30; omega) j hj) hs)
+    (fun g _ hg s hs=>sample4_ok hP (batchChk_ok mlDsa65 (by simp) g (by change g<7; omega_using [hg]))
+      (fun j hj=>slotChk_ok mlDsa65 (by simp) (4*g) (by change 4*g<30; omega_using [hg]) j hj) hs)
     s h) fun t ht=>?_)
   exact tail_ok hP (by simpa using ht)
 
@@ -82,11 +82,11 @@ open VG.Proof.MlDsa.AArch64.Message
 
  theorem expandA_depth {P : Prims} {S : Nat} (hp : PrimsOk P S) (p : Params) :
     16*(Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA P p).aarch64Depth≤S := by
-  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega⟩
-  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega⟩
+  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this]⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this]⟩
   have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
     have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
-    exact ⟨by rw [hd]; omega⟩
+    exact ⟨by rw [hd]; omega_using []⟩
   have hd : DLe (S/16) (Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA P p) := by
     unfold Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA
     split
@@ -95,7 +95,7 @@ open VG.Proof.MlDsa.AArch64.Message
     · unfold Impl.MlDsa.AArch64.Sign.expandA
       dle_tac
   have := hd.le
-  omega
+  omega_using [this]
 
  theorem rooted_expandA_ok {P : Prims} {S : Nat} (hp : PrimsOk P S) {p : Params}
     (h3 : Ok3 p) (hc : aChk p=true) {σ s : State} (hs : RootedSt p S σ s)

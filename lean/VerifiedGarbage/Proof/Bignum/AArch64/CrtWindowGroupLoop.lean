@@ -34,16 +34,16 @@ theorem groupBody_ok (W : Window) {s t : State} {P ep : Addr} {w i : Nat}
   have hld : ∀ j < 5, InRegions (t.rd ++ t.wr) ((ep + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) 1 := by
     intro j hj
     rw [h.keep.rd,h.keep.wr,BitVec.add_assoc,ofNat_add_ofNat]
-    exact hread (i+j) (by omega)
+    exact hread (i+j) (by omega_using [hi, hj])
   have hby : ∀ j (hj : j < 5), t.mem ((ep + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) =
-      (bs.drop i)[j]'(by simp only [List.length_drop]; omega) := by
+      (bs.drop i)[j]'(by simp only [List.length_drop]; omega_using [hi, hj]) := by
     intro j hj
     rw [BitVec.add_assoc,ofNat_add_ofNat,List.getElem_drop]
-    exact h.source hbytes hout (by omega)
+    exact h.source hbytes hout (by omega_using [hi, hj])
   unfold groupBody
   refine WP.seq (WP.mono (appliedBatch_ok W (E := pre bs i) h.ctx h.tab hw hw' hR hy
     (by simpa only [ek] using hyv) (by simpa using bc) (by simpa [vv] using hn)
-    (bs := bs.drop i) (by simp only [List.length_drop]; omega) h.exp h.idx hld hby)
+    (bs := bs.drop i) (by simp only [List.length_drop]; omega_using [hi]) h.exp h.idx hld hby)
     fun a ⟨ca,ta,ya,va,ba,na,fa,ka⟩ => ?_)
   have pa : Pending a P w X Q x 0 (pre bs (i+5)) := by
     refine ⟨pre bs (i+5),0,by decide,by decide,by simp,ya,?_,na,ba⟩
@@ -64,6 +64,6 @@ theorem groupBody_ok (W : Window) {s t : State} {P ep : Addr} {w i : Nat}
   · rw [hm]
     exact (h.frm.trans (fa.mono (CrtWindowFive.crtWinRanges_sub w))).trans fb
   · exact (((h.keep.trans ka).trans kb).trans ku).mono (by decide)
-  · simpa only [show i+5+5 = i+10 by omega] using h9
+  · simpa only [show i+5+5 = i+10 by omega_using []] using h9
 
 end VG.Proof.Bignum.AArch64.WindowFive

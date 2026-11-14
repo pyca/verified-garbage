@@ -33,7 +33,7 @@ theorem forceSampleArgs_state {p : SamplePublic} {s : State} (h : SampleBefore p
     h.ready.good.scr.ld (by
       have := hdr_lt_slot p.prime.w 8 hk
       have := p.prime.dims.z
-      omega)
+      omega_arith)
   xrun [State.ea, hdr, hdrOff, h.ready.good.rdi, hl kOut (by decide), hl kUsedP (by decide), h.ptr, h.len]
 
 theorem forceStoredWitness_ct : RelCT isa (Two SampleBefore)
@@ -68,7 +68,7 @@ theorem forceSample_state {p : SamplePublic} {s : State} (h : SampleBefore p s) 
   obtain ⟨mi, h⟩ := h
   exact WP.mono (forceSample_ok h p.prime.dims
     (by rw [p.length]; exact p.prime.len2)
-    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega))
+    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega_arith))
     fun _ ht => ⟨mi, ht.1⟩
 
 end VG.Proof.Dsa.X86_64.Generation

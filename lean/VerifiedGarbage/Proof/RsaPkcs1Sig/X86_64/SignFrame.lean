@@ -28,7 +28,7 @@ theorem ea_sp (t : State) (d : Nat) : t.ea (sp d) = t.gpr .rsp + BitVec.ofNat 64
 
 theorem stackArgAddr_eq (s : State) (j : Nat) :
     stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
-  simp only [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+  simp only [stackArgAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
 
 /-! ## The precondition, by name -/
 
@@ -123,27 +123,27 @@ theorem fb_eq (s : State) : fb s = off (kb s) (sigStack - frameBytes) :=
 theorem kb_toNat {s : State} (hp : PreS s) : (kb s).toNat + sigStack + 128 ≤ 2 ^ 64 ∧
     (kb s).toNat + sigStack = (s.gpr .rsp).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold sigStack at *; omega
+  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold sigStack at *; omega_arith
 
 theorem toNat_off {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) : (off p d).toNat = p.toNat + d := by
-  simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem fb_toNat {s : State} (hp : PreS s) : (fb s).toNat + frameBytes + 8 + 120 ≤ 2 ^ 64 ∧
     (fb s).toNat = (kb s).toNat + (sigStack - frameBytes) := by
   have ⟨h1, h2⟩ := kb_toNat hp
-  rw [fb_eq, toNat_off (by unfold sigStack frameBytes at *; omega)]
-  unfold frameBytes sigStack at *; omega
+  rw [fb_eq, toNat_off (by unfold sigStack frameBytes at *; omega_using [h1])]
+  unfold frameBytes sigStack at *; omega_using [h1]
 
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) : Region.Sub ⟨off (fb s) d, n⟩ (stkR s) := by
   rw [fb_eq, off_off]
-  exact Offset.sub_base _ (by unfold frameBytes at h; unfold sigStack frameBytes; omega)
+  exact Offset.sub_base _ (by unfold frameBytes at h; unfold sigStack frameBytes; omega_using [h])
 
 theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :
     frameBytes ≤ ofs (fb s) x := by
   by_contra hlt
   apply hx
   have hc : (⟨fb s, frameBytes⟩ : Region).Contains x 1 := by
-    simp only [Region.Contains, ofs] at hlt ⊢; omega
+    simp only [Region.Contains, ofs] at hlt ⊢; omega_using [hlt]
   have := frame_sub s (d := 0) (n := frameBytes) (by decide)
   simp only [off, BitVec.add_zero] at this
   exact this x hc
@@ -179,10 +179,10 @@ theorem Env.core {s t : State} (h : Env s t) : EnvC s t :=
   ⟨h.rsp, h.rd, h.wr, h.mem, h.sN, h.sK, h.sE, h.sEl⟩
 
 theorem EnvC.scr {s t : State} (h : EnvC s t) (hp : PreS s) : Scr t (fb s) frameBytes :=
-  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega)
+  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega_using [this])
 
 theorem Env.scr {s t : State} (h : Env s t) (hp : PreS s) : Scr t (fb s) frameBytes :=
-  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega)
+  Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..) (by have := fb_toNat hp; omega_using [this])
 
 theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, outR s, scrR s] s.mem m) {p : Addr} {len : Nat}
     (hk : (stkR s).Disjoint ⟨p, len⟩) (ho : (outR s).Disjoint ⟨p, len⟩) (hs : (scrR s).Disjoint ⟨p, len⟩)
@@ -196,7 +196,7 @@ theorem bytes_of_frame {s : State} {m : Mem} (hf : Frame [stkR s, outR s, scrR s
   · exact hs.symm
 
 theorem stackArgAddr_fb (s : State) (j : Nat) : stackArgAddr s j = off (fb s) (frameBytes + 8 + 8 * j) := by
-  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega, BitVec.ofNat_add,
+  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega_using [], BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rfl
 
@@ -209,12 +209,12 @@ theorem arg_outside {s : State} (hp : PreS s) {m : Mem} (h : Outside (fb s) 0 fr
   have := fb_toNat hp
   show m.readW _ 64 = s.mem.readW _ 64
   rw [stackArgAddr_fb]
-  exact h.word (.inr (by unfold frameBytes; omega)) (by unfold frameBytes at *; omega)
+  exact h.word (.inr (by unfold frameBytes; omega_using [])) (by unfold frameBytes at *; omega_using [hj])
 
 theorem Env.arg {s t : State} (h : Env s t) (hp : PreS s) {j : Nat} (hj : j < 15) :
     t.mem.readW (stackArgAddr s j) 64 = stackArg s j := by
   refine h.mem.readW (r := ⟨stackArgAddr s 0, 120⟩) ?_ (fun r hr => ?_) (by decide)
-  · rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  · rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hp.dKa.symm
@@ -225,14 +225,14 @@ theorem arg_in {s t : State} (hp : PreS s) (hrd : t.rd = s.rd) {j : Nat} (hj : j
     InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 := by
   obtain ⟨A, hA, hA', hm⟩ := hp.hra
   exact ⟨⟨stackArgAddr s 0, A⟩, List.mem_append_left _ (by rw [hrd]; exact hm),
-    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj, hA]) (by omega_using [hj])⟩
 
 theorem arg_ea {s t : State} (h : t.gpr .rsp = fb s) (j : Nat) : t.ea (arg j) = stackArgAddr s j := by
   rw [arg, ea_sp, h, stackArgAddr_fb]
 
 theorem word_wo (m : Mem) (base : Addr) {d d' : Nat} (v : BitVec 64) (h : d + 8 ≤ d' ∨ d' + 8 ≤ d)
     (hd : d + 8 ≤ 4096) (hd' : d' + 8 ≤ 4096) : word (m.writeW (off base d) v) base d' = word m base d' :=
-  (writeW_outside m base v (by omega)).word (by omega) (by omega)
+  (writeW_outside m base v (by omega_using [hd])).word (by omega_using [h]) (by omega_using [hd'])
 
 theorem allocState_gpr (s : State) (r : Reg) :
     (allocState frameBytes s).gpr r = if r = .rsp then fb s else s.gpr r := rfl

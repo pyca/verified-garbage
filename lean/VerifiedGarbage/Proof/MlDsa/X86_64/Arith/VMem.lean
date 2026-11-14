@@ -31,7 +31,7 @@ open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 theorem dlanes_load {m : Mem} {p : Addr} {F : Poly} (h : PolyIs m p F) {j : Nat} (hj : j + 4 ≤ 256) :
     DLanes (m.readW (coeffAddr p j) 128) (fun e => F[j + e]!) := fun e he => by
   rw [dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq]
-  exact polyIs_toNat h (by rw [n_eq]; omega)
+  exact polyIs_toNat h (by rw [n_eq]; omega_using [hj, he])
 
 /-- Coefficient `i` after storing `x` at coefficient `j`. -/
 theorem coeffAt_write128 (m : Mem) (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) (x : BitVec 128) {i : Nat}
@@ -40,9 +40,9 @@ theorem coeffAt_write128 (m : Mem) (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) (x 
   split
   · rename_i h
     rw [coeffAt_eq, show coeffAddr p i = coeffAddr p j + BitVec.ofNat 64 (4 * (i - j)) by
-      rw [coeffAddr_add, show j + (i - j) = i by omega]]
-    exact readW_writeW128 _ _ _ (by omega)
-  · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      rw [coeffAddr_add, show j + (i - j) = i by omega_using [h]]]
+    exact readW_writeW128 _ _ _ (by omega_using [h])
+  · exact Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 /-- Two vectors stored into a polynomial, with the lanes `a` and `b`. -/
 theorem polyIs_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j j' : Nat}
@@ -54,19 +54,19 @@ theorem polyIs_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j j
   rw [n_eq] at hi
   rw [coeffAt_write128 _ _ hj' _ hi, coeffAt_write128 _ _ hj _ hi, hR i hi]
   by_cases h1 : j' ≤ i ∧ i < j' + 4
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [hsep, h1])),
       ite_eq_left_of_eq_true _ _ (eq_true h1)]
-    exact hy _ (by omega)
+    exact hy _ (by omega_using [h1])
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
     by_cases h2 : j ≤ i ∧ i < j + 4
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2)]
-      exact hx _ (by omega)
+      exact hx _ (by omega_using [h2])
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
         ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact polyIs_toNat hP (by rw [n_eq]; exact hi)
 
 theorem pR_contains (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) : (pR p).Contains (coeffAddr p j) 16 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_using [hj]) (by omega_using [hj])
 
 theorem frame_write2 {m m' : Mem} {p : Addr} (hf : Frame [pR p] m m') {j j' : Nat} (hj : j + 4 ≤ 256)
     (hj' : j' + 4 ≤ 256) (x y : BitVec 128) :
@@ -106,7 +106,7 @@ theorem vzeta_ok (o : BitVec 8) {zP : Addr} {k : Nat} (hk : ∀ j < 4, k + sel o
     rw [dword_shufDwords_sel _ _ hi, dword_readW _ _ hs, coeffAddr_add]
     exact tab_zeta ht (hk i hi)
   · simp only [xmm_setXmm, ite_true, ite_false, reduceCtorEq]
-    rw [dword_shufDwords _ _ (by omega)]
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+    rw [dword_shufDwords _ _ (by omega_using [hj])]
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
 
 end VG.Proof.MlDsa.X86_64.Arith

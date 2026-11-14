@@ -50,7 +50,7 @@ theorem rpFail_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (h0 : s.gpr 
   have fw : ∀ {m m' : Mem} {op : Addr} {len : Nat}, (∀ j < len, Z ≤ ofs B (op + BitVec.ofNat 64 j)) →
       (∀ x, (∀ j < len, x ≠ op + BitVec.ofNat 64 j) → m' x = m x) → ∀ i < 32, word m' B (8 * i) = word m B (8 * i) :=
     fun hsep hx i hi => (frm_scr hsep hx).word_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
   unfold fail
   simp only [seqs]
   refine WP.seq (WP.mono (zeroOut_ok hs h0 hZ (by decide) (by decide) ha.p ha.k hk1 hk2 oP)

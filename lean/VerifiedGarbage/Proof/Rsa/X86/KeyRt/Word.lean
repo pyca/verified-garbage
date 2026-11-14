@@ -36,24 +36,24 @@ theorem storeLow_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) 
   have positive := h.kw_pos
   have nw := h.ws.workspace.nowrap
   simp only [S] at fit
-  refine wp_storeS (ea_ptr h.rt p (d := 0) (by omega)) (ws_write h.rt (y := arr (kw len) j + 0) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr h.rt p (d := 0) (by omega_using [fit])) (ws_write h.rt (y := arr (kw len) j + 0) (n := 4) (by omega_using [fit]))
     fun t T => WP.block_nil ?_
   rw [Nat.add_zero] at T
-  have outside := writeW32_outside s.mem B (d := arr (kw len) j) (s.gpr .ecx) (by omega)
-  refine ⟨h.keep (T.keeps []) (by decide) (by decide) (by rw [T.mem]; exact outside.mono (Nat.zero_le _) (by omega)),
+  have outside := writeW32_outside s.mem B (d := arr (kw len) j) (s.gpr .ecx) (by omega_using [fit, nw])
+  refine ⟨h.keep (T.keeps []) (by decide) (by decide) (by rw [T.mem]; exact outside.mono (Nat.zero_le _) (by omega_using [fit])),
     ?_, ?_, T.keeps [], ?_⟩
   · rw [T.mem]
-    exact Keep.of_arr (d := 0) (by simpa using outside) (by unfold S; omega) (by simp)
+    exact Keep.of_arr (d := 0) (by simpa using outside) (by unfold S; omega_using []) (by simp)
   · rw [T.mem]
-    exact VG.Proof.Rsa.KeyWorkspace.num_write0 _ _ positive (by change arr (kw len) j + 4 * kw len ≤ 2 ^ 64; omega) _
-  · rw [T.mem]; exact outside.w32 (by omega) (by omega)
+    exact VG.Proof.Rsa.KeyWorkspace.num_write0 _ _ positive (by change arr (kw len) j + 4 * kw len ≤ 2 ^ 64; omega_using [fit, nw]) _
+  · rw [T.mem]; exact outside.w32 (by omega_using [positive]) (by omega_using [fit, nw])
 
 /-- The array's low word, through `eax`. -/
 theorem lowSrc {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) (p : PtrAt s B .eax (arr (kw len) j)) :
     readSrc s (.mem (at_ .eax 0)) = some (s.mem.readW (off B (arr (kw len) j)) 32) := by
   have fit := h.ws.arr_fit hj
   simp only [S] at fit
-  rw [readSrc_ptr h.rt p (d := 0) (by omega), Nat.add_zero]
+  rw [readSrc_ptr h.rt p (d := 0) (by omega_using [fit]), Nat.add_zero]
 
 /-- The low word as the number's low 32 bits. -/
 theorem low_word {m : Mem} {w j : Nat} (hw : 0 < w) :
@@ -68,7 +68,7 @@ theorem lowPtr_ok {s : State} {is : List Instr} {Q : State → Prop} (h : RtWs L
   have fit := h.ws.arr_fit hj
   have nw := h.ws.workspace.nowrap
   simp only [S] at fit
-  refine arrPtr_ok (lenSrc h) h.lenLe h.edi (by decide) (by decide) (by omega) fun u K m p _ => ?_
+  refine arrPtr_ok (lenSrc h) h.lenLe h.edi (by decide) (by decide) (by omega_using [fit, nw]) fun u K m p _ => ?_
   exact k u (h.keep K (by decide) (by decide) (by rw [m]; exact Outside.refl _ _ _ _)) K m p
 
 theorem setOne_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) :
@@ -97,7 +97,7 @@ theorem orOne_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) :
   refine ⟨ht, F, ?_, ((K.mono (by decide)).trans (KX.mono (by decide))).trans (Kt.mono (by decide))⟩
   rw [Vt, X.gpr, V.gpr, m, bv_or_one]
   have low := low_word (B := B) (m := s.mem) (j := j) positive
-  omega
+  omega_using [low]
 
 theorem clrLow_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) :
     WP isa (.block (clrLow L j)) s fun t => RtWs L t B Z len N ∧ Keep B (kw len) [j] [] s.mem t.mem ∧
@@ -115,7 +115,7 @@ theorem clrLow_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) :
   refine ⟨ht, F, ?_, ((K.mono (by decide)).trans (KZ.mono (by decide))).trans (Kt.mono (by decide)), top⟩
   rw [Vt, Zr.gpr, ite_eq_right (by decide), X.gpr, V.gpr, m, bv_clr_one]
   have low := low_word (B := B) (m := s.mem) (j := j) positive
-  omega
+  omega_using [low]
 
 theorem bitOf_ok {s : State} (h : RtWs L s B Z len N) {j sl : Nat} (hj : j < N)
     (hsl : sl + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr) :
@@ -128,12 +128,12 @@ theorem bitOf_ok {s : State} (h : RtWs L s B Z len N) {j sl : Nat} (hj : j < N)
   refine lowPtr_ok h hj fun u hu K m p => wp_movS (lowSrc hu hj p) fun v V _ => wp_logicS (.inl rfl) rfl fun x X => ?_
   have KX : Keeps [.eax] u x := V.keeps.trans X.keeps
   have hx := hu.ws.workspace.of_keeps KX (by decide)
-  refine wp_storeS (hx.ea (by omega)) (hx.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (hx.ea (by omega_using [hsl, head])) (hx.write (by omega_using [hsl, head])) fun t T => WP.block_nil ?_
   have r : Keeps [.eax, .edx] s t := ((K.mono (by decide)).trans (KX.mono (by decide))).trans (T.keeps [] |>.mono (by decide))
   have mem : t.mem = s.mem.writeW (off B sl) (x.gpr .eax) := by rw [T.mem, X.mem, V.mem, m]
   have out : Outside B sl 4 s.mem t.mem := by
-    rw [mem]; exact writeW32_outside _ _ _ (by unfold VG.Impl.Rsa.X86.Keys.hdr at hsl; omega)
-  refine ⟨h.keep r (by decide) (by decide) (out.mono (Nat.zero_le _) (by omega)), ?_, ?_, r⟩
+    rw [mem]; exact writeW32_outside _ _ _ (by unfold VG.Impl.Rsa.X86.Keys.hdr at hsl; omega_using [hsl])
+  refine ⟨h.keep r (by decide) (by decide) (out.mono (Nat.zero_le _) (by omega_using [hsl, head])), ?_, ?_, r⟩
   · exact Keep.of_slot out (by simp)
   · unfold slot
     rw [mem, w32_write_self, X.gpr, ite_eq_left rfl, V.gpr, m, bv_and_one,

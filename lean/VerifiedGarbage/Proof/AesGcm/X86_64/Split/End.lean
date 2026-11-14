@@ -64,7 +64,7 @@ theorem finCalls_xdepth : (SealSplit.finCalls v.callees).x86_64Depth ≤ 24 := b
   simp only [SealSplit.finCalls, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv,
     Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
-  omega
+  omega_using []
 
 theorem finish_mx : (Short.finish : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
 theorem finish_spSafe : (Short.finish : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true := by decide +kernel

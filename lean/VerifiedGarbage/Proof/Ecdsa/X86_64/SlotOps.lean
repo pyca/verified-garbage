@@ -36,7 +36,7 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
     (h : OpKeep M base (c.sl o) s s') {i : Nat} (hi : i < 45) (hio : i ≠ o) (hit : i ≠ TMP) :
     sv c base s' i = sv c base s i := by
   have hl := sl_le c h7 hi
-  refine h.unch.wordsVal (fun w hw => ?_) (by omega)
+  refine h.unch.wordsVal (fun w hw => ?_) (by omega_using [hn, hl])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl
   · rw [hMn]; exact sl_apart c hio

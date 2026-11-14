@@ -100,14 +100,14 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
         | cons v vs => exact ⟨v, vs, rfl⟩
       replace hl : vs.length = (ps.flatMap (·.2.words 64)).length := by
         simp only [List.flatMap_cons, Param.words, List.length_append, List.length_cons, List.length_nil] at hl ⊢
-        omega
-      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 1) (by omega)
+        omega_using [hl]
+      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 1) (by omega_using [hl])
       refine ⟨by simpa [wrOf, Sig.bufs, wrInfo] using h1, fun i h => ?_⟩
       simp only [wrInfo] at h ⊢
       obtain ⟨a, b, c⟩ := h2 i h
-      refine ⟨by omega, by simp; omega, ?_⟩
+      refine ⟨by omega_using [a], by simp; omega_using [b], ?_⟩
       simp only [wrOf, Sig.bufs] at c ⊢
-      rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega]
+      rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega_using [a]]
       simp
     | array m e n =>
       obtain ⟨v, vs, rfl⟩ : ∃ v vs', vs = v :: vs' := by
@@ -116,16 +116,16 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
         | cons v vs => exact ⟨v, vs, rfl⟩
       replace hl : vs.length = (ps.flatMap (·.2.words 64)).length := by
         simp only [List.flatMap_cons, Param.words, List.length_append, List.length_cons, List.length_nil] at hl ⊢
-        omega
-      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 1) (by omega)
+        omega_using [hl]
+      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 1) (by omega_using [hl])
       cases m with
       | false =>
         refine ⟨by simpa [wrOf, Sig.bufs, wrInfo] using h1, fun i h => ?_⟩
         simp only [wrInfo, Bool.false_eq_true, ↓reduceIte, List.nil_append] at h ⊢
         obtain ⟨a, b, c⟩ := h2 i h
-        refine ⟨by omega, by simp; omega, ?_⟩
+        refine ⟨by omega_using [a], by simp; omega_using [b], ?_⟩
         simp only [wrOf, Sig.bufs, List.filter_cons, Bool.false_eq_true, ↓reduceIte] at c ⊢
-        rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega]
+        rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega_using [a]]
         simp
       | true =>
         refine ⟨by simpa [wrOf, Sig.bufs, wrInfo] using h1, fun i h => ?_⟩
@@ -133,11 +133,11 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
         cases i with
         | zero => simp [wrOf, Sig.bufs]
         | succ i =>
-          obtain ⟨a, b, c⟩ := h2 i (by omega)
-          refine ⟨by simp; omega, by simp; omega, ?_⟩
+          obtain ⟨a, b, c⟩ := h2 i (by omega_using [h])
+          refine ⟨by simp; omega_using [a], by simp; omega_using [b], ?_⟩
           simp only [wrOf, Sig.bufs, List.filter_cons, ↓reduceIte, List.map_cons, List.getD_cons_succ,
             List.getElem_cons_succ] at c ⊢
-          rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega]
+          rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega_using [a]]
           simp
     | slice m e len =>
       obtain ⟨v, l, vs, rfl⟩ : ∃ v l vs', vs = v :: l :: vs' := by
@@ -147,16 +147,16 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
         | v :: l :: vs => exact ⟨v, l, vs, rfl⟩
       replace hl : vs.length = (ps.flatMap (·.2.words 64)).length := by
         simp only [List.flatMap_cons, Param.words, List.length_append, List.length_cons, List.length_nil] at hl ⊢
-        omega
-      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 2) (by omega)
+        omega_using [hl]
+      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 2) (by omega_using [hl])
       cases m with
       | false =>
         refine ⟨by simpa [wrOf, Sig.bufs, wrInfo] using h1, fun i h => ?_⟩
         simp only [wrInfo, Bool.false_eq_true, ↓reduceIte, List.nil_append] at h ⊢
         obtain ⟨a, b, c⟩ := h2 i h
-        refine ⟨by omega, by simp; omega, ?_⟩
+        refine ⟨by omega_using [a], by simp; omega_using [b], ?_⟩
         simp only [wrOf, Sig.bufs, List.filter_cons, Bool.false_eq_true, ↓reduceIte] at c ⊢
-        rw [c, show (wrInfo ps (w + 2))[i].1 - w = (wrInfo ps (w + 2))[i].1 - (w + 2) + 1 + 1 by omega]
+        rw [c, show (wrInfo ps (w + 2))[i].1 - w = (wrInfo ps (w + 2))[i].1 - (w + 2) + 1 + 1 by omega_using [a]]
         simp
       | true =>
         refine ⟨by simpa [wrOf, Sig.bufs, wrInfo] using h1, fun i h => ?_⟩
@@ -164,11 +164,11 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
         cases i with
         | zero => simp [wrOf, Sig.bufs]
         | succ i =>
-          obtain ⟨a, b, c⟩ := h2 i (by omega)
-          refine ⟨by simp; omega, by simp; omega, ?_⟩
+          obtain ⟨a, b, c⟩ := h2 i (by omega_using [h])
+          refine ⟨by simp; omega_using [a], by simp; omega_using [b], ?_⟩
           simp only [wrOf, Sig.bufs, List.filter_cons, ↓reduceIte, List.map_cons, List.getD_cons_succ,
             List.getElem_cons_succ] at c ⊢
-          rw [c, show (wrInfo ps (w + 2))[i].1 - w = (wrInfo ps (w + 2))[i].1 - (w + 2) + 1 + 1 by omega]
+          rw [c, show (wrInfo ps (w + 2))[i].1 - w = (wrInfo ps (w + 2))[i].1 - (w + 2) + 1 + 1 by omega_using [a]]
           simp
     | slices e count =>
       obtain ⟨v, l, vs, rfl⟩ : ∃ v l vs', vs = v :: l :: vs' := by
@@ -178,14 +178,14 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
         | v :: l :: vs => exact ⟨v, l, vs, rfl⟩
       replace hl : vs.length = (ps.flatMap (·.2.words 64)).length := by
         simp only [List.flatMap_cons, Param.words, List.length_append, List.length_cons, List.length_nil] at hl ⊢
-        omega
-      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 2) (by omega)
+        omega_using [hl]
+      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 2) (by omega_using [hl])
       refine ⟨by simpa [wrOf, Sig.bufs, wrInfo] using h1, fun i h => ?_⟩
       simp only [wrInfo] at h ⊢
       obtain ⟨a, b, c⟩ := h2 i h
-      refine ⟨by omega, by simp; omega, ?_⟩
+      refine ⟨by omega_using [a], by simp; omega_using [b], ?_⟩
       simp only [wrOf, Sig.bufs] at c ⊢
-      rw [c, show (wrInfo ps (w + 2))[i].1 - w = (wrInfo ps (w + 2))[i].1 - (w + 2) + 1 + 1 by omega]
+      rw [c, show (wrInfo ps (w + 2))[i].1 - w = (wrInfo ps (w + 2))[i].1 - (w + 2) + 1 + 1 by omega_using [a]]
       simp
     | table n =>
       obtain ⟨v, vs, rfl⟩ : ∃ v vs', vs = v :: vs' := by
@@ -194,14 +194,14 @@ theorem wr_info : ∀ (ps : List (String × Param)) (vs : List (BitVec 64)) (w :
         | cons v vs => exact ⟨v, vs, rfl⟩
       replace hl : vs.length = (ps.flatMap (·.2.words 64)).length := by
         simp only [List.flatMap_cons, Param.words, List.length_append, List.length_cons, List.length_nil] at hl ⊢
-        omega
-      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 1) (by omega)
+        omega_using [hl]
+      obtain ⟨h1, h2⟩ := wr_info ps vs (w + 1) (by omega_using [hl])
       refine ⟨by simpa [wrOf, Sig.bufs, wrInfo] using h1, fun i h => ?_⟩
       simp only [wrInfo] at h ⊢
       obtain ⟨a, b, c⟩ := h2 i h
-      refine ⟨by omega, by simp; omega, ?_⟩
+      refine ⟨by omega_using [a], by simp; omega_using [b], ?_⟩
       simp only [wrOf, Sig.bufs] at c ⊢
-      rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega]
+      rw [c, show (wrInfo ps (w + 1))[i].1 - w = (wrInfo ps (w + 1))[i].1 - (w + 1) + 1 by omega_using [a]]
       simp
 
 theorem basesAux_mem : ∀ {qs : List (Nat × Nat)} {i : Nat} {p : Reg × Nat × Nat}, p ∈ basesAux qs i →
@@ -216,7 +216,7 @@ theorem basesAux_mem : ∀ {qs : List (Nat × Nat)} {i : Nat} {p : Reg × Nat ×
         exact ⟨0, by simp, by simpa using hr, by simp⟩
       · cases h
     · obtain ⟨j, hj, h1, h2⟩ := basesAux_mem h
-      exact ⟨j + 1, by simp; omega, by simpa using h1, by rw [h2]; congr 1; omega⟩
+      exact ⟨j + 1, by simp; omega_using [hj], by simpa using h1, by rw [h2]; congr 1; omega_using []⟩
 
 theorem abi_vals {ws : List Nat} {f : State → List (BitVec 64)} (h : abi.args ws = some f) {w : Nat}
     (hw : w < ws.length) {r : Reg} (hr : argRegs[w]? = some r) (s : State) : (f s).getD w 0 = s.gpr r := by
@@ -246,7 +246,7 @@ theorem spAux_mem : ∀ {qs : List (Nat × Nat)} {i : Nat} {e : Nat × Nat × Na
         exact ⟨0, by simp, hq, by simp⟩
       · cases h
     · obtain ⟨j, hj, h1, h2⟩ := spAux_mem h
-      exact ⟨j + 1, by simp; omega, by simpa using h1, by
+      exact ⟨j + 1, by simp; omega_using [hj], by simpa using h1, by
         rw [h2, List.getElem_cons_succ, Nat.add_assoc, Nat.add_comm 1 j]⟩
 
 /-- The value of a stack argument. -/
@@ -257,13 +257,13 @@ theorem abi_stack_vals {ws : List Nat} {f : State → List (BitVec 64)} (h : abi
   · rename_i hl; omega
   · cases h
     rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp)]
-    simp only [List.length_map, Nat.add_sub_cancel_left, List.getElem?_map, List.getElem?_range (by omega : k < ws.length - argRegs.length), Option.map_some, Option.getD_some]
+    simp only [List.length_map, Nat.add_sub_cancel_left, List.getElem?_map, List.getElem?_range (by omega_using [hk] : k < ws.length - argRegs.length), Option.map_some, Option.getD_some]
 
 /-- `aa` at `init`: the stack pointer on entry plus `8 + o`. -/
 theorem aa_init (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat)) (s : State) (o : Nat) :
     aa s (init sig stack pubs) o = s.gpr .rsp + BitVec.ofNat 64 (8 + o) := by
   simp only [aa, wa, wb, init]
-  rw [show stack + 0 + 8 + o = stack + (8 + o) by omega, BitVec.ofNat_add stack (8 + o), ← BitVec.add_assoc,
+  rw [show stack + 0 + 8 + o = stack + (8 + o) by omega_using [], BitVec.ofNat_add stack (8 + o), ← BitVec.add_assoc,
     BitVec.sub_add_cancel]
 
 /-- Byte `j` of a 64-bit little-endian word. -/
@@ -278,7 +278,7 @@ theorem byte_of_setWidth {x y : BitVec 64} {w j : Nat} (h : x.setWidth w = y.set
     x.extractLsb' (8 * j) 8 = y.extractLsb' (8 * j) 8 := by
   ext i hi
   have := congrArg (fun z => z.getLsbD (8 * j + i)) h
-  simp only [BitVec.getLsbD_setWidth, show 8 * j + i < w by omega, decide_true, Bool.true_and] at this
+  simp only [BitVec.getLsbD_setWidth, show 8 * j + i < w by omega_using [hj, hi], decide_true, Bool.true_and] at this
   simp only [BitVec.getElem_extractLsb']
   exact this
 
@@ -324,7 +324,7 @@ theorem init_wf (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s : State} 
     obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
     have := hbnd a (List.mem_append_left _ (List.mem_filter.mp ha).1)
     rw [hA.ptrBits] at this
-    omega
+    omega_using [this]
   · obtain ⟨j, hj, hr, hp2⟩ := basesAux_mem hp
     obtain ⟨-, hlt, hb⟩ := hI j hj
     rw [hp2]
@@ -343,7 +343,7 @@ theorem widths_eq (hA : ScrubAbi A) (sig : Sig) :
 theorem nStack_argArea (sig : Sig) (s : State) (hn : 0 < nStack sig) :
     abi.argArea (widths sig) s = [(⟨stackArgAddr s 0, 8 * nStack sig⟩, false)] := by
   simp only [nStack] at hn
-  simp only [abi, nStack, show ¬ ((widths sig).length - argRegs.length = 0) by omega, ↓reduceIte]
+  simp only [abi, nStack, show ¬ ((widths sig).length - argRegs.length = 0) by omega_using [hn], ↓reduceIte]
 
 /-- What the precondition gives of the argument area: it does not wrap, and
 no writable region holds a byte of it. -/
@@ -362,9 +362,9 @@ theorem pre_argArea (hA : ScrubAbi A) {s : State} (h : (sig.contract A pre post 
     simp only [abi] at this
     split at this
     · rename_i hl; simp only [nStack] at hn; omega
-    · have := this.2; simp only [nStack] at hn ⊢; omega
+    · have := this.2; simp only [nStack] at hn ⊢; omega_using [this]
   refine ⟨htop, fun k hk r hr => ?_⟩
-  · have hn : 0 < nStack sig := by omega
+  · have hn : 0 < nStack sig := by omega_using [hk]
     rw [← hA.wr, hwr, hA.argArea, nStack_argArea sig s hn] at hr
     rw [hA.argArea, nStack_argArea sig s hn] at hpw
     simp only [List.map_cons, List.map_nil, Bool.false_and] at hr hpw
@@ -375,8 +375,8 @@ theorem pre_argArea (hA : ScrubAbi A) {s : State} (h : (sig.contract A pre post 
       intro hc
       refine hd _ hc ?_
       simp only [stackArgAddr]
-      rw [show 8 + k = 8 * (0 + 1) + k by omega, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc]
-      exact Offset.contains_base _ (by omega) (by have := htop hn; omega)
+      rw [show 8 + k = 8 * (0 + 1) + k by omega_using [], ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc]
+      exact Offset.contains_base _ (by omega_using [hk]) (by have := htop hn; omega_using [htop, hk])
     · simp only [List.mem_singleton] at ha; subst ha; simp at ha2
 
 /-- The arguments' values, and the writable regions they give. -/
@@ -427,16 +427,16 @@ theorem init_sp (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s : State}
     obtain ⟨-, -, hb⟩ := (wr_info sig.params (vals s) 0 hl).2 j hj
     simp only [Nat.sub_zero] at hb
     have hk : argRegs.length + ((wrInfo sig.params 0)[j].1 - argRegs.length) < (widths sig).length := by
-      omega
+      omega_using [hl, hwl, h6, hlt]
     have hs := abi_stack_vals hv hk s
     rw [Nat.add_sub_cancel' h6] at hs
     simp only
     rw [aa_init, region, hw, hb, hs, BitVec.add_zero, stackArg, stackArgAddr,
       show 8 + 8 * ((wrInfo sig.params 0)[j].1 - argRegs.length) =
-        8 * ((wrInfo sig.params 0)[j].1 - argRegs.length + 1) by omega]
+        8 * ((wrInfo sig.params 0)[j].1 - argRegs.length + 1) by omega_using []]
   · obtain ⟨j, hj, h6, hlt, rfl⟩ := key e he
     simp only [init, nStack]
-    omega
+    omega_using [hl, hwl, h6, hlt]
 
 /-- The public stack arguments are the same in both runs, in the bits of their width. -/
 theorem pub_stack (hA : ScrubAbi A) {s₁ s₂ : State} (hp : (sig.contract A pre post wa stack leak).pub s₁ s₂)
@@ -452,7 +452,7 @@ theorem pub_stack (hA : ScrubAbi A) {s₁ s₂ : State} (hp : (sig.contract A pr
   rw [widths_eq hA] at this hvals
   rw [hA.args] at hvals
   simp only [nStack] at hk
-  rwa [abi_stack_vals hvals (by omega), abi_stack_vals hvals (by omega)] at this
+  rwa [abi_stack_vals hvals (by omega_using [hk]), abi_stack_vals hvals (by omega_using [hk])] at this
 
 /-- The bytes of the argument area that `init` says are public are. -/
 theorem init_sa (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s₁ s₂ : State}
@@ -472,18 +472,18 @@ theorem init_sa (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} {s₁ s₂ :
     simp only at h1 h2
     have hb := byte_of_setWidth (j := j - 8 * k) (pub_stack hA hp hk hpk) (by
       have := Nat.min_le_right 8 ((widths sig).getD (argRegs.length + k) 64 / 8)
-      omega)
+      omega_using [h1, h2])
     have ha : ∀ s : State, aa s (init sig stack pubs) j = stackArgAddr s k + BitVec.ofNat 64 (j - 8 * k) := by
       intro s
       rw [aa_init, stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      congr 2; omega
-    have hj : j - 8 * k < 8 := by have := Nat.min_le_left 8 ((widths sig).getD (argRegs.length + k) 64 / 8); omega
+      congr 2; omega_using [h1]
+    have hj : j - 8 * k < 8 := by have := Nat.min_le_left 8 ((widths sig).getD (argRegs.length + k) 64 / 8); omega_using [h2]
     rw [ha, ha, readW64_byte s₁.mem (stackArgAddr s₁ k) hj, readW64_byte s₂.mem (stackArgAddr s₂ k) hj]
     exact hb
   · obtain ⟨k, hk, -, rfl⟩ := key e he
     simp only [init]
     have := Nat.min_le_left 8 ((widths sig).getD (argRegs.length + k) 64 / 8)
-    omega
+    omega_using [hk]
 
 /-- The bytes `pubs` lists (`(i, o, n)`: the `n` bytes at offset `o` of writable buffer `i`) are
 the same in two runs whose entry states agree on what the contract says is public. -/
@@ -520,18 +520,18 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
   refine ⟨⟨⟨fun r _ => hgr r, fun _ => ⟨hcf, hzf, hsf, hof⟩⟩, fun _ => hwr, wf₁, wf₂,
       fun sl h => by simp only [pubsFit, List.all_eq_true, decide_eq_true_eq] at hfit; exact hfit sl h,
       fun sl h k h1 h2 => hag sl h k h1 h2, noLo, fun r _ => (by rw [hx])⟩,
-    hgr .rsp, hu, hwr, ?_, Nat.zero_le _, ?_, (by simp [init]; omega), fun _ h => absurd h (Nat.not_lt_zero _), ?_,
+    hgr .rsp, hu, hwr, ?_, Nat.zero_le _, ?_, (by simp [init]; omega_using []), fun _ h => absurd h (Nat.not_lt_zero _), ?_,
     fun _ h => (by cases h), List.Pairwise.nil, fun _ h => (by cases h), ?_, fun _ h => (by cases h),
     ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h), (init_sp hA h₁).1⟩,
     ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h), (init_sp hA h₂).1⟩,
     fun _ h => absurd h (Nat.not_lt_zero _),
-    fun h => by have := (pre_argArea hA h₁).1 (by simp only [init] at h; omega); simp only [init]; omega,
+    fun h => by have := (pre_argArea hA h₁).1 (by simp only [init] at h; omega_using [h]); simp only [init]; omega_using [this],
     fun k hk r hr => by rw [aa_init]; exact (pre_argArea hA h₁).2 k hk r hr,
     (init_sa hA hp).2, (init_sa hA hp).1, (init_sp hA h₁).2⟩
   · intro h
     rw [h] at hF
     exact List.eq_nil_of_length_eq_zero (forall₂_length hF)
-  · simp only [init]; rcases hst with h | h <;> omega
+  · simp only [init]; rcases hst with h | h <;> omega_using [h]
   · intro i _ hi
     simp only [init, wb, Nat.add_zero]
     rw [region_getElem hi]
@@ -542,7 +542,7 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
     apply hm
     intro r hr hc
     simp only [RTaint.wa, wb, init] at hc
-    exact hne r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
+    exact hne r hr _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hst, hj])) hc
 
 /-- What `resOk_of_check` checks of the analysis's last taint: the window as
 it started, and every byte of it `sec` lists in a granule `ks` lists. -/
@@ -606,7 +606,7 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
   have hwr : u₁.wr = s₁.wr := (Exec.rdwr e₁).2
   obtain ⟨hst, hdis⟩ := contract_pre_scrub hA h₁
   have hj : (x - (s₁.gpr .rsp - BitVec.ofNat 64 stack)).toNat < stack := by
-    simp only [Region.Contains] at hx; omega
+    simp only [Region.Contains] at hx; omega_using [hx]
   generalize hJ : (x - (s₁.gpr .rsp - BitVec.ofNat 64 stack)).toNat = j at hj
   have hxe : x = RTaint.wa u₁ τf j := by
     simp only [RTaint.wa, wb, hroom, hsp, ← hJ, BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -624,8 +624,8 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
     intro r hr hc
     rw [hwr] at hr
     rw [← hxe] at hc
-    exact (hdis r (List.mem_append_right _ hr)).2 (by omega) x hx hc
-  have := inv.dead j (by rw [hroom, hdep]; omega) hns hfree
+    exact (hdis r (List.mem_append_right _ hr)).2 (by omega_using [hj]) x hx hc
+  have := inv.dead j (by rw [hroom, hdep]; omega_using [hj]) hns hfree
   have e2 : RTaint.wa u₂ τf j = RTaint.wa u₁ τf j := by simp only [RTaint.wa, wb, inv.rsp]
   rw [e2, ← hxe] at this
   exact this

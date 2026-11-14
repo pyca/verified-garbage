@@ -45,16 +45,16 @@ theorem covers_ctx {s₀ s : State} (hp : APre e s₀) (hwr : s.wr = s₀.wr) (r
   refine Covers.of_sub fun r hr => ?_
   obtain ⟨k, hb, hk⟩ := h r hr
   have := pad_lt' s₀
-  exact ⟨wR s₀, by rw [hwr]; exact hp.w_wr, pad (wk s₀) + k, by rw [hb, cx_off], by show _ ≤ 624; omega⟩
+  exact ⟨wR s₀, by rw [hwr]; exact hp.w_wr, pad (wk s₀) + k, by rw [hb, cx_off], by show _ ≤ 624; omega_using [hk, this]⟩
 
 theorem cx_zero (s₀ : State) : cx s₀ = off (cx s₀) 0 := (off_zero _).symm
 
 /-- The context is 4-byte aligned, and so is it plus a multiple of 8. -/
 theorem cx_al4 (s₀ : State) : (cx s₀).toNat % 4 = 0 := by
-  have := cx_al s₀ (d := 0) (by decide); rw [off_zero] at this; omega
+  have := cx_al s₀ (d := 0) (by decide); rw [off_zero] at this; omega_using [this]
 
 theorem off_al4 (s₀ : State) {d : Nat} (hd : d % 8 = 0) : (off (cx s₀) d).toNat % 4 = 0 := by
-  have := cx_al s₀ hd; omega
+  have := cx_al s₀ hd; omega_using [this]
 
 /-- `ctx[0, 64)` as a part. -/
 theorem st_sub (s₀ : State) : (⟨cx s₀, 64⟩ : Region) = sub s₀ 0 64 := by rw [sub, ← cx_zero]
@@ -65,12 +65,12 @@ theorem st_sub (s₀ : State) : (⟨cx s₀, 64⟩ : Region) = sub s₀ 0 64 := 
 theorem bytesAt_serialize (m : Mem) (p : Addr) {n : Nat} (hn : n ≤ 64) :
     bytesAt m p n = (Spec.ChaCha20.serialize (stateAt m p)).take n := by
   apply List.ext_getElem
-  · simp [bytesAt, VG.Proof.ChaCha20.length_serialize]; omega
+  · simp [bytesAt, VG.Proof.ChaCha20.length_serialize]; omega_using [hn]
   · intro i h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
-    have e := VG.Proof.ChaCha20.serialize_stateAt m p (i := i) (by omega)
+    have e := VG.Proof.ChaCha20.serialize_stateAt m p (i := i) (by omega_using [hn, h₁])
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by
-      rw [VG.Proof.ChaCha20.length_serialize]; omega), Option.getD_some] at e
+      rw [VG.Proof.ChaCha20.length_serialize]; omega_using [hn, h₁]), Option.getD_some] at e
     simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_take, e]
 
 theorem keyGen_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) (ha : s.gpr .a0 = cx s₀)
@@ -127,7 +127,7 @@ theorem padN (x : BitVec 64) :
   congr 1
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
@@ -139,11 +139,11 @@ theorem zeros_pad {m : Mem} {p : Addr} (x : List Byte) (hz : ∀ i < 16, m (p + 
   split
   · rename_i h; rw [h]; rfl
   · rename_i h
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [h])]
     apply List.ext_getElem (by simp [Proof.Poly1305.length_bytesAt])
     intro i h₁ h₂
     simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
-    exact hz i (by simp [bytesAt] at h₁; omega)
+    exact hz i (by simp [bytesAt] at h₁; omega_using [h₁])
 
 theorem zeros_of {s₀ : State} {m : Mem} (hz : ∀ i < 16, m (off (cx s₀) (zeroOff + i)) = 0) :
     ∀ i < 16, m (off (cx s₀) zeroOff + BitVec.ofNat 64 i) = 0 := fun i hi => by
@@ -203,12 +203,12 @@ theorem macAad_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     (by rw [u₉.gpr, a0₈, ps_add]; rfl)
     (by rw [u₉.other _ (by decide), u₈.gpr, u₇.gpr, u₆.gpr, u₆.other _ (by decide), u₅.other _ (by decide),
       s8₄, padN])
-    (by omega) (sub_disj s₀ (a := polyOff) (n := 128) (b := zeroOff) (m := (16 - AL s₀ % 16) % 16)
-      (by simp only [polyOff, zeroOff]; omega) (by decide) (by simp only [zeroOff]; omega))
+    (by omega_using []) (sub_disj s₀ (a := polyOff) (n := 128) (b := zeroOff) (m := (16 - AL s₀ % 16) % 16)
+      (by simp only [polyOff, zeroOff]; omega_using []) (by decide) (by simp only [zeroOff]; omega_using []))
     (covers_right (covers_ctx hp w₉ _ fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 616; simp only [zeroOff]; omega⟩
+      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 616; simp only [zeroOff]; omega_using []⟩
       · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩)) cP' fun s' k' hb' => ?_
   refine ⟨?_, by rw [k'.a0, u₉.other _ (by decide), a0₈], ?_⟩
   · refine ((((((((Step.upd _ u₁).trans (Step.upd _ u₂)).trans (Step.upd _ u₃)).trans k₄.step).trans
@@ -221,8 +221,8 @@ theorem macAad_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
       (by rw [Proof.Poly1305.length_bytesAt])
     have hz₄ : ∀ i < 16, s₉.mem (off (cx s₀) zeroOff + BitVec.ofNat 64 i) = 0 := zeros_of fun i hi => by
       rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem,
-        byte_sub s₀ (k := polyOff) (n := 128) k₄.frame (by simp only [polyOff, zeroOff]; omega) (by decide)
-          (by simp only [zeroOff]; omega), m₃]
+        byte_sub s₀ (k := polyOff) (n := 128) k₄.frame (by simp only [polyOff, zeroOff]; omega_using []) (by decide)
+          (by simp only [zeroOff]; omega_using [hi]), m₃]
       exact hz i hi
     have hp16 := zeros_pad (bytesAt s.mem (ad s₀) (AL s₀)) hz₄
     rw [Proof.Poly1305.length_bytesAt] at hp16
@@ -250,7 +250,7 @@ theorem stateAt_ctr1 {m : Mem} {p : Addr} {key nonce : List Byte}
     rw [h12]
     refine Proof.ChaCha20.word_ext fun j hj => ?_
     rw [← Mem.readW_byte _ _ hj, WriteBytes.writeW8_apply, Offset.add_add]
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
     · simp
     all_goals
       split
@@ -258,7 +258,7 @@ theorem stateAt_ctr1 {m : Mem} {p : Addr} {key nonce : List Byte}
       · rw [← Offset.add_add p 48, Mem.readW_byte m (p + BitVec.ofNat 64 48) (by decide), h12]
         decide
   · rename_i e
-    exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by decide)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep p (by omega_using [e]) (by omega_using [hi]) (by decide)) (by decide)
 
 theorem fit_d' (s₀ : State) : L s₀ < 2 ^ 64 := (s₀.gpr .a5).isLt
 
@@ -297,10 +297,10 @@ theorem crypt_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) 
     have := pad_lt' s₀
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨wR s₀, by rw [w₆]; exact hp.w_wr, pad (wk s₀), rfl, by show pad (wk s₀) + 64 ≤ 624; omega⟩
+    · exact ⟨wR s₀, by rw [w₆]; exact hp.w_wr, pad (wk s₀), rfl, by show pad (wk s₀) + 64 ≤ 624; omega_using [this]⟩
     · exact ⟨oR s₀, by rw [w₆]; exact hp.o_wr, 0, (BitVec.add_zero _).symm, by simp⟩
     · exact ⟨wR s₀, by rw [w₆]; exact hp.w_wr, pad (wk s₀) + 64, cx_off s₀ 64,
-        by show pad (wk s₀) + 64 + 320 ≤ 624; omega⟩
+        by show pad (wk s₀) + 64 + 320 ≤ 624; omega_using [this]⟩
   have hc : Covers ([dR s₀] ++ [⟨cx s₀, 64⟩, oR s₀, sub s₀ 64 320]) (s₆.rd ++ s₆.wr) := by
     intro a m ⟨r, hr, hcr⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
@@ -359,7 +359,7 @@ theorem add_mod16 (a b : BitVec 64) : (a + b).toNat % 16 = (a.toNat + b.toNat) %
   rw [BitVec.toNat_add, Nat.mod_mod_of_dvd _ (by decide : 16 ∣ 2 ^ 64)]
 
 theorem length_pad16 (x : List Byte) : (x ++ pad16 x).length % 16 = 0 := by
-  unfold pad16; split <;> simp <;> omega
+  unfold pad16; split <;> simp <;> omega_arith
 
 theorem covers_wr2 {r₁ r₂ : Region} {rd wr : List Region} (h₁ : r₁ ∈ rd ++ wr) (h₂ : Covers [r₂] wr) :
     Covers ([r₁] ++ [r₂]) (rd ++ wr) := fun a n ⟨r, hr, hc⟩ => by
@@ -437,7 +437,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
       u₈.gpr, u₇.gpr, u₇.other _ (by decide), u₆.gpr, u₆.other _ (by decide), add_mod16, i₅.regs.s10, a5_eq,
       toNat_ofNat_lt (fit_d' s₀), List.length_append, Proof.Poly1305.length_bytesAt]
     have := round16_mod (s₅.gpr .s8)
-    omega
+    omega_using [hM, this]
   have a2₁₂ : s₁₂.gpr .a2 = off (cx s₀) zeroOff := by
     rw [u₁₂.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide),
       u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), a0₅, ps_add]
@@ -446,18 +446,18 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     (n := (16 - L s₀ % 16) % 16) a0₁₂ rfl a2₁₂
     (by rw [u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.gpr, u₉.gpr, u₉.other _ (by decide), u₈.other _ (by decide),
       u₇.other _ (by decide), u₆.other _ (by decide), i₅.regs.s10, padN])
-    (by omega) (sub_disj s₀ (a := polyOff) (n := 128) (b := zeroOff) (m := (16 - L s₀ % 16) % 16)
-      (by simp only [polyOff, zeroOff]; omega) (by decide) (by simp only [zeroOff]; omega))
+    (by omega_using []) (sub_disj s₀ (a := polyOff) (n := 128) (b := zeroOff) (m := (16 - L s₀ % 16) % 16)
+      (by simp only [polyOff, zeroOff]; omega_using []) (by decide) (by simp only [zeroOff]; omega_using []))
     (covers_right (covers_ctx hp i₁₂.wr _ fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 616; simp only [zeroOff]; omega⟩
+      · exact ⟨zeroOff, rfl, by show zeroOff + _ ≤ 616; simp only [zeroOff]; omega_using []⟩
       · exact ⟨polyOff, rfl, by show polyOff + 128 ≤ 616; decide⟩)) (cP s₁₂ i₁₂.wr) fun s₁₃ k₁₃ hb₁₃ => ?_)
   have i₁₃ : Inv s₀ s₁₃ := i₁₂.step1 k₁₃.step (k := polyOff) (n := 128) (by decide)
   have a0₁₃ : s₁₃.gpr .a0 = ps s₀ := by rw [k₁₃.a0, a0₁₂]
   have hz₁₂ : ∀ i < 16, s₁₂.mem (off (cx s₀) zeroOff + BitVec.ofNat 64 i) = 0 := zeros_of fun i hi => by
-    rw [m₁₂, byte_sub s₀ (k := polyOff) (n := 128) k₅.frame (by simp only [polyOff, zeroOff]; omega)
-      (by decide) (by simp only [zeroOff]; omega), m₄]
+    rw [m₁₂, byte_sub s₀ (k := polyOff) (n := 128) k₅.frame (by simp only [polyOff, zeroOff]; omega_using [])
+      (by decide) (by simp only [zeroOff]; omega_using [hi]), m₄]
     exact hz i hi
   have hp16 := zeros_pad (bytesAt s.mem (dp s₀) (L s₀)) hz₁₂
   rw [Proof.Poly1305.length_bytesAt] at hp16
@@ -479,14 +479,14 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     rw [u₂₀.mem, u₁₉.mem, u₁₈.mem, u₁₇.mem, u₁₆.mem, u₁₅.mem, u₁₄.mem]
   have hM₁₃ : (M ++ bytesAt s.mem (dp s₀) (L s₀) ++ pad16 (bytesAt s.mem (dp s₀) (L s₀))).length % 16 = 0 := by
     have := length_pad16 (bytesAt s.mem (dp s₀) (L s₀))
-    rw [List.append_assoc, List.length_append]; omega
+    rw [List.append_assoc, List.length_append]; omega_using [hM, this]
   have c₂₀ : (s₂₀.gpr .a1).toNat % 16 = 0 := by
     rw [u₂₀.other _ (by decide), u₁₉.other _ (by decide), u₁₈.gpr, u₁₇.other _ (by decide),
       u₁₆.other _ (by decide), u₁₅.gpr, u₁₄.gpr, u₁₇.gpr, u₁₆.gpr, u₁₅.other _ (by decide),
       u₁₄.other _ (by decide), add_mod16]
     have := round16_mod (s₁₃.gpr .s8)
     have := round16_mod (s₁₃.gpr .s10)
-    omega
+    omega_arith
   have a2₂₀ : s₂₀.gpr .a2 = off (cx s₀) lenOff := by
     rw [u₂₀.other _ (by decide), u₁₉.gpr, u₁₈.other _ (by decide), u₁₇.other _ (by decide),
       u₁₆.other _ (by decide), u₁₅.other _ (by decide), u₁₄.other _ (by decide), a0₁₃, ps_add]
@@ -529,7 +529,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     have := round16_mod (s₂₁.gpr .s10)
     have := add_mod16 ((s₂₁.gpr .s8 + BitVec.ofNat 64 15) &&& BitVec.ofInt 64 (-16))
       ((s₂₁.gpr .s10 + BitVec.ofNat 64 15) &&& BitVec.ofInt 64 (-16))
-    omega
+    omega_arith
   have m₂₈ : s₂₈.mem = s₂₁.mem := by
     rw [u₂₈.mem, u₂₇.mem, u₂₆.mem, u₂₅.mem, u₂₄.mem, u₂₃.mem, u₂₂.mem]
   refine finalize_call (P := ps s₀) (hPa := cx_al s₀ (by decide)) (O := O) (c := s₂₈.gpr .a1) (by rw [u₂₈.other _ (by decide), a0₂₇]) rfl
@@ -539,7 +539,7 @@ theorem macData_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     by rw [k'.a0, u₂₈.other _ (by decide), a0₂₇], ?_⟩
   rw [ht (otk s₀) _ (by rw [m₂₈]; exact B₂₁) (by
     simp only [c₂₈, List.length_append, length_leBytes]
-    simp only [List.length_append] at hM₁₃; omega)]
+    simp only [List.length_append] at hM₁₃; omega_using [hM₁₃])]
   simp only [List.append_assoc]
 
 end VG.Proof.ChaCha20Poly1305.RISCV64

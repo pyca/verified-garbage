@@ -42,7 +42,7 @@ theorem loadInputs_ok {E : Environment} {p : BitVec 32} {s : State} (h : Input E
     WP isa loadInputs s fun t => Loaded E s.mem t ∧ Ws t E.base E.size E.n 32 ∧
       Frame [E.workspaceRegion] s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have widths := h.valid.widths
-  have small : E.k ≤ E.n := by omega
+  have small : E.k ≤ E.n := by omega_using [widths]
   have head := h.ws.hdr_le
   unfold loadInputs VG.Impl.Rsa.X86.Keys.seqs
   -- The arrays cleared, and one.
@@ -52,7 +52,7 @@ theorem loadInputs_ok {E : Environment} {p : BitVec 32} {s : State} (h : Input E
     obtain rfl := List.mem_singleton.mp hr
     exact (by decide : 72 ≤ hdr)) Ou
   have Fu : Frame [E.workspaceRegion] s.mem u.mem :=
-    VG.Proof.RsaKeyGen.X86.Key.outs_scratch_frame (by have := h.ws.workspace.nowrap; omega) Ou
+    VG.Proof.RsaKeyGen.X86.Key.outs_scratch_frame (by have := h.ws.workspace.nowrap; omega_using [this]) Ou
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact h.ws.fits)
   have Cu := C.keep Ku Fu
   -- A prime at argument `2 i`.
@@ -66,12 +66,12 @@ theorem loadInputs_ok {E : Environment} {p : BitVec 32} {s : State} (h : Input E
         num t.mem E.base E.n out < 2 ^ (32 * E.k) ∧
         (∀ j, 1 ≤ j → j < 32 → j ≠ out → num t.mem E.base E.n j = num a.mem E.base E.n j) ∧
         Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] a t := by
-    have hi : i < 7 := by omega
+    have hi : i < 7 := by omega_using [index]
     have len : E.outputLength i = 4 * E.k := by
       unfold Environment.outputLength
       split <;> omega
     have A : VG.Proof.Bignum.X86.CallArgument a E.base E.size (2 * i + 4) (E.out i) := by
-      have H := context_argument Ca (i := 2 * i) (by omega)
+      have H := context_argument Ca (i := 2 * i) (by omega_using [index])
       rcases index with rfl | rfl <;> exact H
     have readable : InRegions (a.rd ++ a.wr) ((E.out i).setWidth 64) (4 * E.k) := by
       obtain ⟨r, hr, contains⟩ := ha.outWrite i hi
@@ -110,7 +110,7 @@ theorem loadInputs_ok {E : Environment} {p : BitVec 32} {s : State} (h : Input E
   -- The exponent.
   refine WP.mono (loadExponent_ok Hw h.valid.exponentLength.1 h.valid.exponentLength.2
     (context_argument Cw (i := 14) (by decide)) (context_argument Cw (i := 15) (by decide)) hw.valid.exponentFit
-    hw.exponentRead (hw.valid.exponentScratch.sub_right (Offset.sub_base _ (by unfold kEv hdr at *; omega))))
+    hw.exponentRead (hw.valid.exponentScratch.sub_right (Offset.sub_base _ (by unfold kEv hdr at *; omega_using [head]))))
     fun x ⟨Hx, O, eValue, loaded, Kx⟩ => ?_
   have hx : Input E x := hw.afterExponent Hx.old Kx O
   have Fx := VG.Proof.RsaKeyGen.X86.Key.loadExponent_scratch_frame hw.ws O

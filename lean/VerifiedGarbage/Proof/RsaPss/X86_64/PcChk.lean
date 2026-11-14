@@ -62,7 +62,7 @@ theorem cA1_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : 
     L.st (d := sAcc) (by decide), hs, hl0, h0, R.rd (d := sLo) 26 rfl (by decide), h26]
   refine congrArg (u.mem.writeW (off F sAcc)) ?_
   generalize V 0 = b
-  rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
+  rcases (show lo = 0 ∨ lo = 1 by omega_using [hlo]) with rfl | rfl
   · revert b; decide
   · revert b; decide
 
@@ -88,7 +88,7 @@ theorem vframe_w {s : State} (hp : Pre tsH tsG s) {m m' : Mem} (hf : Frame (vwrR
   have hF := vfb_toNat hp.toVPre
   have := hp.sp2
   exact hf.trans (((Frame.refl _ _).writeW (List.mem_singleton_self (frR s)) v
-    (Offset.contains_base _ (by unfold frameBytes at *; omega) (by unfold frameBytes at *; omega))).sub
+    (Offset.contains_base _ (by unfold frameBytes at *; omega_using [hd]) (by unfold frameBytes at *; omega_using [hd]))).sub
     fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., vframe_sub s⟩)
 
 /-- The tables to `checkEncoding`'s stack arguments 2 and 3. -/
@@ -171,7 +171,7 @@ theorem chkArgs_ok {s u : State} (hp : Pre tsH tsG s) (L : Lay u (fb s) (stackAr
       rw [BitVec.add_comm]; simp only [off]; congr 1
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat]
-      unfold kw; rw [Nat.shiftLeft_eq]; omega
+      unfold kw; rw [Nat.shiftLeft_eq]; omega_using []
     simp only [upd, Nat.reduceEqDiff, ite_false, h17, h22, e1, e2]
   have R3 : Rep y.mem (fb s) S V (upd (upd (upd W 33 (accV lo (V 0))) 1
       (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat))) 0 (off S (8 * kw (s.gpr .rsi).toNat))) := by
@@ -199,8 +199,8 @@ theorem vtab_read {s : State} (hp : Pre tsH tsG s) {m : Mem} (hM : Frame (vwrR s
     m.readW (off (stackArg s i) o) 64 = s.mem.readW (off (stackArg s i) o) 64 := by
   have sH : Region.Sub ⟨stackArg s 8, 56⟩ ⟨stackArg s 8, 88⟩ := Region.sub_prefix (by decide)
   have sG : Region.Sub ⟨stackArg s 9, 56⟩ ⟨stackArg s 9, 88⟩ := Region.sub_prefix (by decide)
-  have hw : (stackArg s i).toNat + 56 ≤ 2 ^ 64 := by rcases hi with rfl | rfl <;> [have := hp.wTH; have := hp.wTG] <;> omega
-  refine hM.readW (r := ⟨stackArg s i, 56⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+  have hw : (stackArg s i).toNat + 56 ≤ 2 ^ 64 := by rcases hi with rfl | rfl <;> [have := hp.wTH; have := hp.wTG] <;> omega_using [this]
+  refine hM.readW (r := ⟨stackArg s i, 56⟩) (Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])) (fun r hr => ?_) (by decide)
   simp only [vwrR, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hi with rfl | rfl <;> rcases hr with rfl | rfl
   · exact (hp.dKtH.sub_right sH).symm
@@ -212,7 +212,7 @@ theorem vtab_read {s : State} (hp : Pre tsH tsG s) {m : Mem} (hM : Frame (vwrR s
 theorem vidx_read {s : State} (hp : Pre tsH tsG s) {m : Mem} (hM : Frame (vwrR s) s.mem m) :
     m.readW (off (stackArg s 8) 40) 64 = s.mem.readW (off (stackArg s 8) 40) 64 := by
   have hw := hp.wTH
-  refine hM.readW (r := ⟨stackArg s 8, 88⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+  refine hM.readW (r := ⟨stackArg s 8, 88⟩) (Offset.contains_base _ (by omega_using []) (by omega_using [])) (fun r hr => ?_) (by decide)
   simp only [vwrR, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hp.dKtH.symm
@@ -239,7 +239,7 @@ def kWr (s : State) : List Region :=
   [⟨off (stackArg s 4) (8 * kw (s.gpr .rsi).toNat),
     (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat * 8⟩]
 
-theorem kw_le {k : Nat} : k ≤ 8 * kw k := by unfold kw; omega
+theorem kw_le {k : Nat} : k ≤ 8 * kw k := by unfold kw; omega_using []
 
 /-- What the call of `checkEncoding` needs of the state before it. -/
 structure KAt (T : Tabs) (s t : State) (lo eb el : Nat) : Prop where
@@ -296,23 +296,23 @@ theorem ck_pre {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {s t : State} (hp : Pre tsH t
   have c2 : oRsa = 8192 := rfl
   have h8' := vfb_sub8 hp.toVPre
   have hkw := kw_le (k := (s.gpr .rsi).toNat)
-  have hkw2 : kw (s.gpr .rsi).toNat ≤ 128 := by unfold kw; omega
+  have hkw2 : kw (s.gpr .rsi).toNat ≤ 128 := by unfold kw; omega_using [hk2]
   have hsc : (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat =
       (stackArg s 5).toNat - kw (s.gpr .rsi).toNat := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold kw at *; omega
-  have hel2 : el ≤ 1024 := by omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold kw at *; omega_using [hsl]
+  have hel2 : el ≤ 1024 := by omega_using [hlo, hk2]
   have toNat_off : ∀ {p : Addr} {d : Nat}, p.toNat + d < 2 ^ 64 → (off p d).toNat = p.toNat + d := fun h => by
     simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h]
-  have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega
+  have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega_using [hlo]
   have heb' : (BitVec.ofNat 64 eb).toNat = eb := by
-    rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega
+    rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega_using [heb2]
   rw [hel', heb', E.hD]
-  have hsk : (kw (s.gpr .rsi).toNat) * 8 ≤ (stackArg s 5).toNat * 8 := by unfold kw at *; omega
+  have hsk : (kw (s.gpr .rsi).toNat) * 8 ≤ (stackArg s 5).toNat * 8 := by unfold kw at *; omega_using [hsl]
   -- What lies in what.
-  have sI : Region.Sub ⟨off (stackArg s 4) lo, el⟩ (vscrR s) := Offset.sub_base _ (by omega)
+  have sI : Region.Sub ⟨off (stackArg s 4) lo, el⟩ (vscrR s) := Offset.sub_base _ (by omega_using [hlo, hsl])
   have sR : Region.Sub ⟨off (stackArg s 4) (8 * kw (s.gpr .rsi).toNat),
       (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat * 8⟩ (vscrR s) :=
-    Offset.sub_base _ (by rw [hsc]; unfold kw at *; omega)
+    Offset.sub_base _ (by rw [hsc]; unfold kw at *; omega_using [hsl])
   have sA : Region.Sub ⟨fb s, 32⟩ (vstkR s) := fun a h => vframe_sub s a (Region.sub_prefix (by decide) a h)
   have sRet : Region.Sub ⟨fb s - 8, 8⟩ (vstkR s) := vret8_sub s
   have sStk : Region.Sub ⟨fb s - 8 - BitVec.ofNat 64 chkStack, chkStack⟩ (vstkR s) := by
@@ -321,24 +321,24 @@ theorem ck_pre {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {s t : State} (hp : Pre tsH t
   have sH : Region.Sub ⟨stackArg s 8, 56⟩ ⟨stackArg s 8, 88⟩ := Region.sub_prefix (by decide)
   have sG : Region.Sub ⟨stackArg s 9, 56⟩ ⟨stackArg s 9, 88⟩ := Region.sub_prefix (by decide)
   have dRA : (⟨fb s - 8, 8⟩ : Region).Disjoint ⟨fb s, 32⟩ :=
-    (Offset.base_disjoint_below (fb s) (n := 8) (k := 32) (by omega)).symm
+    (Offset.base_disjoint_below (fb s) (n := 8) (k := 32) (by omega_using [])).symm
   have dKA : (⟨fb s - 8 - BitVec.ofNat 64 chkStack, chkStack⟩ : Region).Disjoint ⟨fb s, 32⟩ := by
-    refine Region.Disjoint.sub_left (Offset.base_disjoint_below (fb s) (n := 416) (k := 32) (by omega)).symm ?_
+    refine Region.Disjoint.sub_left (Offset.base_disjoint_below (fb s) (n := 416) (k := 32) (by omega_using [])).symm ?_
     simp only [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, sub_sub']
     exact Offset.sub_below _ (by decide) (by decide)
   have dIR : (⟨off (stackArg s 4) lo, el⟩ : Region).Disjoint
       ⟨off (stackArg s 4) (8 * kw (s.gpr .rsi).toNat), (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat * 8⟩ :=
-    Offset.disjoint _ (.inl (by omega)) (by omega) (by rw [hsc]; unfold kw at *; omega)
+    Offset.disjoint _ (.inl (by omega_using [hlo, hkw])) (by omega_using [hlo]) (by rw [hsc]; unfold kw at *; omega_using [wS])
   have hsA : (vscrR s).Disjoint ⟨fb s, 32⟩ := (hp.dKs.sub_left sA).symm
-  refine ⟨by unfold chkStack; omega, by omega, by rw [kRd, E.hD], rfl,
+  refine ⟨by unfold chkStack; omega_arith, by omega_using [hF, this, h8'], by rw [kRd, E.hD], rfl,
     hp.ddgs.sub_right sR, dIR, hsA.sub_left sR,
     hp.dKdg.sub_left sRet, (hp.dKs.sub_left sRet).sub_right sI, (hp.dKs.sub_left sRet).sub_right sR, dRA,
     hp.dKdg.sub_left sStk, (hp.dKs.sub_left sStk).sub_right sI, (hp.dKs.sub_left sStk).sub_right sR, dKA,
-    hp.wDg, by rw [toNat_off (by omega)]; omega, by rw [toNat_off (by omega), hsc]; unfold kw at *; omega,
-    heb1, heb2, hel, by rw [hsc]; unfold Proof.RsaPss.encodingScratchWords kw at *; omega,
+    hp.wDg, by rw [toNat_off (by omega_using [hlo, hsl, wS])]; omega_using [hlo, hsl, wS], by rw [toNat_off (by omega_using [hsl, wS, hkw2]), hsc]; unfold kw at *; omega_using [hsl, wS],
+    heb1, heb2, hel, by rw [hsc]; unfold Proof.RsaPss.encodingScratchWords kw at *; omega_using [hsl],
     (hp.dstH.sub_left sR).sub_right sH, (hp.dstG.sub_left sR).sub_right sG, (hp.dKtH.sub_left sRet).sub_right sH,
     (hp.dKtG.sub_left sRet).sub_right sG, (hp.dKtH.sub_left sStk).sub_right sH, (hp.dKtG.sub_left sStk).sub_right sG,
-    by have := hp.wTH; omega, by have := hp.wTG; omega, hTab⟩
+    by have := hp.wTH; omega_using [this], by have := hp.wTG; omega_using [this], hTab⟩
 
 theorem ck_covers {T : Tabs} {s t : State} (hp : Pre tsH tsG s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr)
     {lo el : Nat} (hlo : lo + el ≤ (s.gpr .rsi).toNat) (hD : T.H.D = (s.gpr .r9).toNat) :
@@ -346,22 +346,22 @@ theorem ck_covers {T : Tabs} {s t : State} (hp : Pre tsH tsG s) (hrd : t.rd = s.
   have hsl := hp.hsl; have hk2 := hp.k2
   have hsc : (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat =
       (stackArg s 5).toNat - kw (s.gpr .rsi).toNat := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold kw at *; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold kw at *; omega_using [hsl]
   have hfr : frR s ∈ t.wr := by rw [hwr]; exact List.mem_cons_self ..
   have hscr : (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region) ∈ t.wr := by rw [hwr, hp.hwr]; simp
   have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
   have cw : Covers (kWr s) t.wr := Covers.of_sub fun r hr => by
     simp only [kWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
-    exact ⟨_, hscr, 8 * kw (s.gpr .rsi).toNat, rfl, by dsimp only; rw [hsc]; unfold kw at *; omega⟩
+    exact ⟨_, hscr, 8 * kw (s.gpr .rsi).toNat, rfl, by dsimp only; rw [hsc]; unfold kw at *; omega_using [hsl]⟩
   have hin : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [hrd]; exact hx)
   refine ⟨Covers.append_left (Covers.of_sub fun r hr => ?_) cw.right, cw⟩
   simp only [kRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨⟨s.gpr .r8, (s.gpr .r9).toNat⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, List.mem_append_right _ hscr, lo, rfl, by dsimp only; omega⟩
-  · exact ⟨⟨stackArg s 8, 88⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨⟨stackArg s 9, 88⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega⟩
+  · exact ⟨⟨s.gpr .r8, (s.gpr .r9).toNat⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega_using [hD]⟩
+  · exact ⟨_, List.mem_append_right _ hscr, lo, rfl, by dsimp only; omega_using [hlo, hsl]⟩
+  · exact ⟨⟨stackArg s 8, 88⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨⟨stackArg s 9, 88⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega_using []⟩
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
 
 theorem ck_call {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog isa}
@@ -381,7 +381,7 @@ theorem ck_call {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog
   have hst := E.sp; have hrd := E.rd; have hwr := E.wr; have hM := E.M
   have hlo := E.hlo; have hel := E.hel; have heb2 := E.eb2
   obtain ⟨hc, hw⟩ := ck_covers (T := T) hp hrd hwr hlo E.hD
-  refine X86_64.WP.of_syms (X86_64.WP.callF hv hspC (by unfold chkStack at hd; omega)
+  refine X86_64.WP.of_syms (X86_64.WP.callF hv hspC (by unfold chkStack at hd; omega_using [hd])
     (ck_pre (Hs := Hs) (Gs := Gs) hp E) hc hw ?_)
   intro t' hrd' hwr' hcs hf ⟨s₂, hm₂, hg₂, hpost⟩ hmx hsy
   have hF := vfb_toNat hp.toVPre
@@ -391,20 +391,20 @@ theorem ck_call {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog
   have hvs : verifyStack = 808 := rfl
   have c2 : oRsa = 8192 := rfl
   have hkw := kw_le (k := (s.gpr .rsi).toNat)
-  have hkw2 : kw (s.gpr .rsi).toNat ≤ 128 := by unfold kw; omega
+  have hkw2 : kw (s.gpr .rsi).toNat ≤ 128 := by unfold kw; omega_using [hk2]
   have hsc : (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat =
       (stackArg s 5).toNat - kw (s.gpr .rsi).toNat := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold kw at *; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold kw at *; omega_using [hsl]
   rw [hst] at hf
   have sR : Region.Sub ⟨off (stackArg s 4) (8 * kw (s.gpr .rsi).toNat),
       (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat * 8⟩ (vscrR s) :=
-    Offset.sub_base _ (by rw [hsc]; unfold kw at *; omega)
+    Offset.sub_base _ (by rw [hsc]; unfold kw at *; omega_using [hsl])
   have sBel : Region.Sub (below (fb s) (chkC.x86_64Depth + 8)) (vstkR s) := by
     simp only [below, fb, vstkR, sub_sub']
-    exact Offset.sub_below _ (by unfold chkStack at hd; omega) (by unfold chkStack at hd; omega)
+    exact Offset.sub_below _ (by unfold chkStack at hd; omega_using [hd, h392, hvs]) (by unfold chkStack at hd; omega_using [hd, hvs])
   have dFb : (frR s).Disjoint (below (fb s) (chkC.x86_64Depth + 8)) :=
-    Offset.base_disjoint_below (fb s) (by unfold chkStack at hd; omega)
-  have hS8 : Region.Sub ⟨stackArg s 4, oRsa⟩ (vscrR s) := Region.sub_prefix (by omega)
+    Offset.base_disjoint_below (fb s) (by unfold chkStack at hd; omega_using [hd, h392])
+  have hS8 : Region.Sub ⟨stackArg s 4, oRsa⟩ (vscrR s) := Region.sub_prefix (by omega_using [hsl, c2])
   refine ⟨hrd', hwr', hcs, hmx, hM.trans (hf.sub fun r hr => ?_), hsy.trans E.sy, ?_, ?_⟩
   · simp only [kWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -413,20 +413,20 @@ theorem ck_call {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog
   · refine R.of_call hp.geo (fun x hx hin => hf x fun r hr hc => ?_) (by
       intro p hp'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
-      subst hp'; dsimp only; omega)
+      subst hp'; dsimp only; omega_using [c2, hkw2])
     simp only [kWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rcases hin with hin | hin
       · refine hx _ (List.mem_singleton_self _) ?_
         have h1 := (Offset.lt_iff x (stackArg s 4) (d := 8 * kw (s.gpr .rsi).toNat)
           (n := (stackArg s 5 - BitVec.ofNat 64 (kw (s.gpr .rsi).toNat)).toNat * 8)
-          (by rw [hsc]; unfold kw at *; omega)).mp (by simp only [Region.Contains, off] at hc; omega)
-        have h2 : (x - stackArg s 4).toNat < oRsa := by simp only [Region.Contains] at hin; omega
+          (by rw [hsc]; unfold kw at *; omega_using [wS])).mp (by simp only [Region.Contains, off] at hc; omega_using [hc])
+        have h2 : (x - stackArg s 4).toNat < oRsa := by simp only [Region.Contains] at hin; omega_using [hin]
         show (x - (stackArg s 4 + BitVec.ofNat 64 (8 * kw (s.gpr .rsi).toNat))).toNat + 1 ≤
           oRsa - 8 * kw (s.gpr .rsi).toNat
         have := (Offset.lt_iff x (stackArg s 4) (d := 8 * kw (s.gpr .rsi).toNat)
-          (n := oRsa - 8 * kw (s.gpr .rsi).toNat) (by omega)).mpr ⟨h1.1, by omega⟩
-        omega
+          (n := oRsa - 8 * kw (s.gpr .rsi).toNat) (by omega_using [c2, hkw2])).mpr ⟨h1.1, by omega_using [h2]⟩
+        omega_using [this]
       · exact (hp.dKs.sub_left (vframe_sub s)) x hin (sR x hc)
     · rcases hin with hin | hin
       · exact hp.dKs x (sBel x hc) (hS8 x hin)
@@ -436,9 +436,9 @@ theorem ck_call {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
     have fSE : Frame (vwrR s) s.mem t.callEntry.mem := hM.trans (fE.sub fun r hr => by
  rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., vret8_sub s⟩)
-    have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega
+    have hel' : (BitVec.ofNat 64 el).toNat = el := by rw [BitVec.toNat_ofNat]; omega_using [hlo]
     have heb' : (BitVec.ofNat 64 eb).toNat = eb := by
-      rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega
+      rw [BitVec.toNat_ofNat]; unfold Proof.RsaPss.maxEmBits at heb2; omega_using [heb2]
     simp only [chkK, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
@@ -446,11 +446,11 @@ theorem ck_call {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog
       E.di, E.si, E.dx, E.cx, E.r8, E.r9, hg₂ .rax (by decide), hel', heb'] at hpost
     rw [E.hD] at hpost ⊢
     rw [bytesAt_frame fSE (p := s.gpr .r8) (len := (s.gpr .r9).toNat) (vin_apart hp.dKdg hp.ddgs)
-        (by have := hp.wDg; omega),
+        (by have := hp.wDg; omega_using []),
       bytesAt_frame fE (p := off (stackArg s 4) lo) (len := el) (fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact ((hp.dKs.sub_left (vret8_sub s)).sub_right (Offset.sub_base _ (by omega) :
-          Region.Sub ⟨off (stackArg s 4) lo, el⟩ (vscrR s))).symm) (by omega)] at hpost
+        exact ((hp.dKs.sub_left (vret8_sub s)).sub_right (Offset.sub_base _ (by omega_using [hlo, hsl]) :
+          Region.Sub ⟨off (stackArg s 4) lo, el⟩ (vscrR s))).symm) (by omega_using [hlo])] at hpost
     exact hpost
 
 

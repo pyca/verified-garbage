@@ -44,10 +44,10 @@ theorem equalByte_ok {s : State} {p q : Addr} {n : Nat}
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     simp only [Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide)]
-    omega
+    omega_using [h1]
   have hz : (BitVec.ofNat 64 (n - 1) == (0#64)) = decide (n = 1) := by
-    rw [ofNat_beq_zero (by omega), Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
-    omega
+    rw [ofNat_beq_zero (by omega_using [h64]), Bool.eq_iff_iff, decide_eq_true_iff, decide_eq_true_iff]
+    omega_using [h1]
   refine WP.mono (WP.keep [.x3, .x10, .x8, .x1, .x2, .x9] (Q := fun t =>
     t.gpr .x1 = p + 1 ∧ t.gpr .x2 = q + 1 ∧ t.gpr .x9 = BitVec.ofNat 64 (n - 1) ∧
     t.gpr .x8 = s.gpr .x8 ||| ((s.mem p).zeroExtend 64 ^^^ (s.mem q).zeroExtend 64) ∧
@@ -58,7 +58,7 @@ theorem equalByte_ok {s : State} {p q : Addr} {n : Nat}
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.zeroExtend]
       have := b.isLt
-      omega
+      omega_using []
     brun [hp, hq, hn, hrp, hrq, read_one, hb, hsub, hz]
     exact ⟨rfl, rfl⟩
   · refine ⟨htp, htq, htn, ?_, htz, htm, hk⟩
@@ -98,7 +98,7 @@ theorem equalLoop_ok {s : State} {B p q : Addr} {Z : Nat} {as bs : List Byte}
           have he := hub.val 0 (by simp)
           change u.mem (pb + 0) = b at he
           exact (congrArg u.mem (BitVec.add_zero pb)).symm.trans he
-        refine WP.mono (equalByte_ok hup huq hun hrp hrq (by simp) (by omega))
+        refine WP.mono (equalByte_ok hup huq hun hrp hrq (by simp) (by omega_using [hbnd, hla]))
           fun t ⟨htp, htq, htn, ht8, htz, htm, hkt⟩ => ?_
         rw [va, vb] at ht8
         have htarget' : (t.gpr .x8 = 0 ∧ aa = bb) ↔ target := by
@@ -110,12 +110,12 @@ theorem equalLoop_ok {s : State} {B p q : Addr} {Z : Nat} {as bs : List Byte}
           refine ⟨?_, ?_, htm.trans hum, hk⟩
           · change some (!(t.gpr .x9 == (0#64))) = some false
             simp only [htz, List.length_cons, he, decide_true, Bool.not_true]
-          · have heb : bb.length = 0 := by simp only [List.length_cons] at hla hlb; omega
+          · have heb : bb.length = 0 := by simp only [List.length_cons] at hla hlb; omega_using [hla, hlb, he]
             simpa only [List.length_eq_zero_iff.mp he, List.length_eq_zero_iff.mp heb, and_true] using htarget'
         · right
-          refine ⟨?_, aa.length, by simp only [List.length_cons] at hla; omega,
-            pa + 1, pb + 1, aa, bb, rfl, by simp only [List.length_cons] at hla hlb; omega,
-            by omega, by simp only [List.length_cons] at hla; omega, htp, htq, ?_,
+          refine ⟨?_, aa.length, by simp only [List.length_cons] at hla; omega_using [hla],
+            pa + 1, pb + 1, aa, bb, rfl, by simp only [List.length_cons] at hla hlb; omega_using [hla, hlb],
+            by omega_using [he], by simp only [List.length_cons] at hla; omega_using [hbnd, hla], htp, htq, ?_,
             source_tail (hua.congrK (by rw [htm]; exact InScr.refl _ _ _) hkt),
             source_tail (hub.congrK (by rw [htm]; exact InScr.refl _ _ _) hkt), htarget', htm.trans hum, hk⟩
           · change some (!(t.gpr .x9 == (0#64))) = some true

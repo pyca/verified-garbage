@@ -67,7 +67,7 @@ theorem saveMem_frame_off (m : Mem) (B : Addr) (g : Reg → BitVec 32) {lo L : N
   | cons p l ih =>
     intro hl
     have h := hl p (by simp)
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ h.1 (by omega) (by omega))).trans
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ h.1 (by omega_using [h]) (by omega_using [hL]))).trans
       (ih _ fun q hq => hl q (List.mem_cons_of_mem _ hq))
 
 set_option simprocs false in
@@ -87,7 +87,7 @@ theorem save_ok {s : State} {b : Reg} {w : BitVec 32} (hb : s.gpr b = w) (hfit :
   refine saveList_ok (b := b) saved s Q (fun p hp => ?_) fun s' g rd wr sp m => k s' g rd wr sp ?_ ?_
   · have hbd := saved_bound p hp
     rw [hb]
-    exact ⟨by omega, by omega, in_off hw (by omega) (by decide)⟩
+    exact ⟨by omega_using [hbd], by omega_using [hfit, hbd], in_off hw (by omega_using [hbd]) (by decide)⟩
   · intro p hp
     rw [m, hb]; exact saveMem_slot _ _ _ hp
   · rw [m, hb]; exact saveMem_frame_off _ _ _ (by decide) saved fun p hp => saved_bound p hp
@@ -97,7 +97,7 @@ theorem SavedAt.frame {m m' : Mem} {w : BitVec 32} {s₀ : State} (h : SavedAt m
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (savedR w).Disjoint r) : SavedAt m' w s₀ := by
   intro p hp
   have hb := saved_bound p hp
-  have hs : Region.Sub ⟨State.addr w + BitVec.ofNat 64 p.2, 4⟩ (savedR w) := Offset.sub _ hb.1 (by omega)
+  have hs : Region.Sub ⟨State.addr w + BitVec.ofNat 64 p.2, 4⟩ (savedR w) := Offset.sub _ hb.1 (by omega_using [hb])
   rw [hf.readW (r := ⟨State.addr w + BitVec.ofNat 64 p.2, 4⟩) (Region.contains_self _ _)
     (fun r hr => (hd r hr).sub_left hs) (by decide), h p hp]
 
@@ -107,7 +107,7 @@ theorem restore_ok {s s₀ : State} {w : BitVec 32} (h11 : s.gpr .r11 = w) (hfit
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .r0 = s.gpr .r0 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hA : ∀ d, d < 2560 → State.addr (w + BitVec.ofNat 32 d) = State.addr w + BitVec.ofNat 64 d :=
-    fun d hd => addr_add (by omega)
+    fun d hd => addr_add (by omega_using [hfit, hd])
   have r₁ := in_off hr (show 128 + 4 ≤ 2560 by decide) (by decide)
   have r₂ := in_off hr (show 132 + 4 ≤ 2560 by decide) (by decide)
   have r₃ := in_off hr (show 136 + 4 ≤ 2560 by decide) (by decide)
@@ -153,7 +153,7 @@ theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFram
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
+  · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)).symm
   · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
@@ -164,7 +164,7 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame s
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact Lay.w_w (.inr (by omega)) (by decide) (by omega)
+  · exact Lay.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 

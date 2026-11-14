@@ -45,7 +45,7 @@ theorem tloadG_vp {X : State → State → Prop} (hX : ∀ σ s v, X σ s → X 
     (hk3 : k < 3) {a : BitVec 32} (ha : ∀ σ, TabFacts g.H f p ai au af σ → σ.mem.readW (tA p (4 * k)) 32 = a) :
     VP (fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms) (.block (tload k))
       (fun σ s => ((Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms) ∧ s.gpr .r4 = a) := by
-  have hk : 4 * k + 4 ≤ 44 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega_using [hk3]
   obtain ⟨tR, tRo, tC⟩ := tbl
   let F : State → State → Prop := fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms
   have keepF : ∀ σ s v, F σ s → F σ (s.setReg .r4 v) := fun σ s v ⟨⟨hc, hm, hx⟩, sy⟩ =>
@@ -60,7 +60,7 @@ theorem tloadG_vp {X : State → State → Prop} (hX : ∀ σ s v, X σ s → X 
   · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
   · obtain ⟨hF, hsi⟩ := hs
     have T := hT σ _ hF.1.2.1
-    refine WP.mono (wp_ldrT (by omega) hsi (St_roR hF.1.1.st tRo (tC _ hk))
+    refine WP.mono (wp_ldrT (by omega_using [hk3]) hsi (St_roR hF.1.1.st tRo (tC _ hk))
       ((St_roW hF.1.1.st tRo (tC _ hk)).trans (ha σ T))) fun t e => ?_
     subst e
     exact ⟨keepF σ s _ hF, by simp only [VG.Arm.RegUpd.gpr_setReg, ↓reduceIte]⟩
@@ -137,7 +137,7 @@ theorem labelT_vp (hg : Geo L scr) (h : OHash) {f : Fns} {p ai au af : BitVec 32
       UArgs scr lab ll 0 s) ∧ s.syms = σ.syms)
     (VP.syms (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm)
       fun σ s ⟨hc, hi, rp⟩ => ?_)) ?_
-  · obtain ⟨a1, r1, v1⟩ := argG hg hc.st (j := j) (by omega)
+  · obtain ⟨a1, r1, v1⟩ := argG hg hc.st (j := j) (by omega_using [hj])
     obtain ⟨a2, r2, v2⟩ := argG hg hc.st (j := j + 1) hj
     rw [hlab] at v1
     rw [hll] at v2
@@ -189,15 +189,15 @@ theorem labelT_vp (hg : Geo L scr) (h : OHash) {f : Fns} {p ai au af : BitVec 32
       ([] ++ labB σ).length = ll ∧ FArgs scr o ll s)
     (fun _ _ v ⟨r, l, fa⟩ => ⟨r, l, fa.r4 v⟩) (k := 2) (by decide) fne.2.2 (a := af)
     (fun σ T => ⟨T.mem.2.2.trans T.af, T.af, T.ok.f⟩)
-    (VP.syms (fin_vp hg h.H h.ok (o := o) (c := ll) (msg := fun σ => [] ++ labB σ) (Inv := Inv) (.inr (by omega))
-      (.inl (by omega)) (by oomega) hll32 fun σ m m' hm hf => hI σ m m' hm (hf.mono (by simp))))
+    (VP.syms (fin_vp hg h.H h.ok (o := o) (c := ll) (msg := fun σ => [] ++ labB σ) (Inv := Inv) (.inr (by omega_arith))
+      (.inl (by omega_arith)) (by oomega) hll32 fun σ m m' hm hf => hI σ m m' hm (hf.mono (by simp))))
   refine hfin.mono (fun _ _ hh => hh) ?_
   rintro σ s ⟨⟨hc, hi, hd⟩, sy⟩
   refine ⟨⟨hc, hi, fun i hi' => ?_⟩, sy⟩
   have e := congrArg (fun l => l.getD i 0) hd
   simp only [List.nil_append] at e
   rw [h.hash, ← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi', Spec.Sha256.bytesAt,
-    List.getElem?_map, List.getElem?_range (by omega)]
+    List.getElem?_map, List.getElem?_range (by omega_using [this, hi'])]
   simp only [Option.map_some, Option.getD_some, sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-! ## The branch on the digest length -/

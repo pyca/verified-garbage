@@ -294,11 +294,11 @@ theorem loop_ct (hM : ModeOk c M) (hT : SeqTaint c M) (n : Nat) :
   · rw [e₁] at hf
     have h0 : N c s₀ = k + 1 := by
       have : N c s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_using [hk, this]
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N c s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N c s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁, y₁⟩, ⟨by rw [← hN]; omega, l₂, y₂⟩⟩
+    exact ⟨N c s₀ - (k + 1), by omega_using [hk], k + 1, rfl, ⟨by omega_using [h0], l₁, y₁⟩, ⟨by rw [← hN]; omega_using [h0], l₂, y₂⟩⟩
 
 end
 
@@ -333,9 +333,9 @@ theorem seq_rel {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) (hT : S
         · exact hq.2.2.2.1
         · exact hq.2.2.2.2.1
       · cases hr : c.rounds <;> simp only [hr, Bool.false_eq_true, ↓reduceIte] at hi
-        · rcases (by omega : i = 0) with rfl
+        · rcases (by omega_using [hi] : i = 0) with rfl
           exact hq.2.2.2.2.2.1
-        · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+        · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
           · exact hq.2.2.2.2.2.1
           · exact hq.2.2.2.2.2.2.1 hr) hT.pro
     (fun s e => by rw [e]; exact VG.Arm.WP.mono_syms (prologue_wp hp) fun _ h sy => ⟨h, sy⟩)

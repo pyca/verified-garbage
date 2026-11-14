@@ -55,14 +55,14 @@ def written (tgt : Nat → Nat) (ps : List Prod) : List Nat := 27 :: ps.map fun 
 
 theorem vdword_ofVDwords (a b : BitVec 64) {e : Nat} (he : e < 2) :
     vdword (ofVDwords a b) e = if e = 0 then a else b := by
-  rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+  rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
   · rw [vdword_ofVDwords_0]; rfl
   · rw [vdword_ofVDwords_1]; rfl
 
 abbrev M64 : Int := 2 ^ 64
 
 theorem lane_lt (x : BitVec 128) (e : Nat) : lane x e < M64 := by
-  have := (vdword x e).isLt; simp only [lane, M64]; omega
+  have := (vdword x e).isLt; simp only [lane, M64]; omega_using []
 
 /-- One product: `umull` the first time a register it starts is aimed at, `umlal` after. -/
 theorem mac_lane (t : State) (tgt : Nat → Nat) (fresh seen : List Nat) (p : Prod) :
@@ -75,14 +75,14 @@ theorem mac_lane (t : State) (tgt : Nat → Nat) (fresh seen : List Nat) (p : Pr
     rw [hm]
     refine ⟨_, exec_vo_of rfl, fun e he => ?_⟩
     simp only [lane, vdword_ofVDwords _ _ he, hc, not_false_eq_true, and_self, ite_true, Int.zero_add]
-    rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl <;>
+    rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl <;>
       simp only [ite_true, show (1 : Nat) ≠ 0 by decide, ite_false, umull_lane, Int.natCast_mul]
   · have hm : mac tgt fresh seen p = vo (.umlal p.hi (V (tgt p.pos)) (V (23 + p.i)) (V 27)) := by
       simp only [mac, hc, ite_false]
     rw [hm]
     refine ⟨_, exec_vo_of rfl, fun e he => ?_⟩
     simp only [lane, vdword_ofVDwords _ _ he, hc, ite_false]
-    rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl <;>
+    rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl <;>
       simp only [ite_true, show (1 : Nat) ≠ 0 by decide, ite_false, umlal_lane] <;>
       rw [Int.natCast_emod, Int.natCast_add, Int.natCast_mul, Int.natCast_pow] <;>
       exact Int.emod_emod_of_dvd _ (Int.dvd_refl _)
@@ -139,21 +139,21 @@ theorem withLoads_ok {s : State} {base : Addr} (hs : Scr s base) (h : Nat) (tgt 
         exact {
           mem := hi.mem, gpr := hi.gpr, rd := hi.rd, wr := hi.wr,
           a := fun i hi' => by
-            rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega) _ (by omega) (by omega))]; exact hi.a i hi'
+            rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_using [hi']) _ (by omega_using []) (by omega_using [hi']))]; exact hi.a i hi'
           b := fun bv e => by
             simp only [Option.some.injEq] at e; subst e
             rw [RegUpd.v_setV_self, hi.mem, hB _ pb]
           seenIff := hi.seenIff,
           acc := fun r hr hrs e he => by
-            rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega) _ (by omega) (by omega))]; exact hi.acc r hr hrs e he
+            rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_using [hr]) _ (by omega_using []) (by omega_using [hr]))]; exact hi.acc r hr hrs e he
           other := fun r hr => by
             rw [RegUpd.v_setV_of_ne _ _ (hr 27 (by simp [written]))]; exact hi.other r hr }
     refine WP.mono load fun t1 h1 => ?_
     -- the product
     obtain ⟨x, hx, lx⟩ := mac_lane t1 tgt fresh seen p
     refine WP.block_cons_iff.mpr ⟨_, hx, ?_⟩
-    have d23 : ∀ i < 4, V (tgt p.pos) ≠ V (23 + i) := fun i hi' => V_ne _ (by omega) _ (by omega) (by omega)
-    have d27 : V (tgt p.pos) ≠ V 27 := V_ne _ (by omega) _ (by omega) (by omega)
+    have d23 : ∀ i < 4, V (tgt p.pos) ≠ V (23 + i) := fun i hi' => V_ne _ (by omega_using [pt]) _ (by omega_using [hi']) (by omega_using [pt])
+    have d27 : V (tgt p.pos) ≠ V 27 := V_ne _ (by omega_using [pt]) _ (by omega_using []) (by omega_using [pt])
     refine WP.mono (ih (done ++ [p]) (tgt p.pos :: seen) (some p.bv) (t1.setV (V (tgt p.pos)) x) hps' {
       mem := h1.mem, gpr := h1.gpr, rd := h1.rd, wr := h1.wr,
       a := fun i hi' => by rw [RegUpd.v_setV_of_ne _ _ (d23 i hi').symm]; exact h1.a i hi'
@@ -188,7 +188,7 @@ theorem withLoads_ok {s : State} {base : Addr} (hs : Scr s base) (h : Nat) (tgt 
               · exact Or.inr (by by_contra h''; exact hf ⟨h', h''⟩)
               · exact Or.inl h'
             rw [← mod_add_mod, h1.acc _ hr hc e he, mod_add_mod, Int.add_assoc]
-        · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega) _ (by omega) hrd),
+        · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_using [hr]) _ (by omega_using [pt]) hrd),
             ite_eq_right (Ne.symm hrd), Int.add_zero]
           refine h1.acc r hr ?_ e he
           rcases hrs with h' | h'
@@ -240,7 +240,7 @@ theorem half_ok {s : State} {base : Addr} (hs : Scr s base) {h : Nat} (tgt : Nat
     mem := rfl, gpr := rfl, rd := rfl, wr := rfl,
     a := fun i hi => by
       rw [← ht4]
-      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl <;>
         simp (config := {decide := true}) only [RegUpd.v_setV, ite_true, ite_false]
     b := fun _ e => by cases e
     seenIff := fun r => by simp
@@ -258,13 +258,13 @@ theorem half_ok {s : State} {base : Addr} (hs : Scr s base) {h : Nat} (tgt : Nat
       rcases hrs with h' | ⟨p, hp, e'⟩
       · exact Or.inl h'
       · exact Or.inr ((hu.seenIff r).mpr ⟨p, by simpa using hp, e'⟩)
-    rw [hu.acc r hr hrs' e he, List.nil_append, v4 _ (fun n hn => V_ne _ (by omega) _ (by simp at hn; omega)
-      (by simp at hn; omega))]
+    rw [hu.acc r hr hrs' e he, List.nil_append, v4 _ (fun n hn => V_ne _ (by omega_using [hr]) _ (by simp at hn; omega_using [hn])
+      (by simp at hn; omega_using [hr, hn]))]
   · rw [hu.other r (fun n hn => by
         simp only [written, List.nil_append, List.mem_cons, List.mem_map] at hn
         rcases hn with rfl | ⟨p, hp, rfl⟩
         · exact h1 27 (by simp)
         · exact h2 p hp),
-      v4 r (fun n hn => h1 n (by simp at hn ⊢; omega))]
+      v4 r (fun n hn => h1 n (by simp at hn ⊢; omega_using [hn]))]
 
 end VG.Proof.Curve448.AArch64.Neon

@@ -97,7 +97,7 @@ theorem wp_loop_ne {body : Prog isa} {a b : Reg} {Q : State → Prop} (Inv : Nat
     rw [hz]
   by_cases h : i + 1 = N
   · refine .inl ⟨by rw [ev]; simp [h], hQ s' (h ▸ hs')⟩
-  · exact .inr ⟨by rw [ev]; simp [h], N - (i + 1), by omega, i + 1, by omega, rfl, hs'⟩
+  · exact .inr ⟨by rw [ev]; simp [h], N - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, h], rfl, hs'⟩
 
 /-- Two pointers into the same buffer differ exactly when their offsets do. -/
 theorem ptr_bne (p : BitVec 64) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
@@ -303,7 +303,7 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
     have ez : zetaTab (nb + c) = (zetas (nb + c)).val := zetaNat_eq (nb + c)
     rw [h.env.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj.symm)
       (by decide), hm.tab _ hk, hdiv, ez, setWidth64_ofNat (by have := val_lt (zetas (nb + c)); omega_arith)]
-  refine WP.seq (WP.mono (bpre_ok ho h.a1 h.a2 (h.env.inRS hp cS) (align4_add (by have := hp.alS; omega) _))
+  refine WP.seq (WP.mono (bpre_ok ho h.a1 h.a2 (h.env.inRS hp cS) (align4_add (by have := hp.alS; omega_using [this]) _))
     fun s₁ ⟨r7, r4, r6, r5, r3, r8, r9, r12, kp, m, rd, wr, sp⟩ => WP.seq ?_)
   have h₁ : FInv s₀ m₁ (VG.Proof.MlDsa.Arith.Lazy.layF fblk Q len (fun c => 128 / len + c) c) len
       (128 / len + c) (2 * len * c) 0 s₁ := by
@@ -415,12 +415,12 @@ theorem lstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
 theorem layers_ok {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) :
     ∀ j ℓ, ℓ + j = 8 → ∀ s, LInv s₀ m₁ ℓ s → WP isa (layers nttLayerCode (nttOffs.drop ℓ)) s (LInv s₀ m₁ 8)
   | 0, ℓ, h, s, hs => by
-    obtain rfl : ℓ = 8 := by omega
+    obtain rfl : ℓ = 8 := by omega_using [h]
     exact WP.block_nil hs
   | j + 1, ℓ, h, s, hs => by
-    have hℓ : ℓ < 8 := by omega
+    have hℓ : ℓ < 8 := by omega_using [h]
     rw [(layer_facts ℓ hℓ).2.2.2.2.2.2]
-    exact WP.seq (WP.mono (lstep hp hm hℓ hs) fun s' h' => layers_ok hp hm j (ℓ + 1) (by omega) s' h')
+    exact WP.seq (WP.mono (lstep hp hm hℓ hs) fun s' h' => layers_ok hp hm j (ℓ + 1) (by omega_using [h]) s' h')
 
 /-! ## Setup and the end -/
 
@@ -437,7 +437,7 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
     rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_arith)⟩
   have a8 : (s₀.gpr .a1).toNat % 8 = 0 := hp.alS
   refine WP.mono (table_ok zetaTab zetaTab_lt (b := .a1) (by decide) rfl
-    (by omega) fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
+    (by omega_using [a8]) fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
   have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
     refine h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     rw [List.mem_singleton] at hr; subst hr
@@ -482,7 +482,7 @@ theorem red_store (x : VG.Proof.MlDsa.Arith.Lazy.Word) :
   have hx := x.isLt
   have hq : x.val % q < 2 ^ 32 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
   have hw : (w64 x).toNat = x.val := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [])
   rw [BitVec.toNat_setWidth, red_toNat, hw, Fin.val_ofNat, Nat.mod_eq_of_lt hq]
 
 theorem canonN_succ (W : LPoly) (i : Nat) :

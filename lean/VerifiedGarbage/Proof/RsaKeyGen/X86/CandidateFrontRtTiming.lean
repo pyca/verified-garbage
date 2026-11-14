@@ -67,9 +67,9 @@ theorem drawn_done_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes r
   intro h
   have := congrArg BitVec.toNat h
   simp only [BitVec.toNat_ofNat] at this
-  rw [Nat.mod_eq_of_lt (by omega)] at this
+  rw [Nat.mod_eq_of_lt (by omega_using [small])] at this
   change status = 4 at this
-  omega
+  omega_using [small, this]
 
 end VG.Proof.RsaKeyGen.X86.Candidate
 end
@@ -204,7 +204,7 @@ theorem load_rt_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes
       (DrawnPair E eBytes pBytes qBytes rBytes sBytes) := by
   intro s t tr ur u z P A B
   have five := v.slotFit (j := 5) (by decide)
-  have trace := (FrontRt.load_trace v.width_bounds.1 (by omega) _ _ _ _ _ _
+  have trace := (FrontRt.load_trace v.width_bounds.1 (by omega_using [five]) _ _ _ _ _ _
     ⟨P.left.loadIn v enough, P.right.loadIn v enough⟩ A B).1
   obtain ⟨DU, _, _⟩ := wp_result (load_rt_ok v P.left P.zerosLeft enough) A
   obtain ⟨DZ, _, _⟩ := wp_result (load_rt_ok v P.right P.zerosRight enough) B
@@ -218,7 +218,7 @@ theorem close_rt_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qByte
         (Spec.RsaKeyGen.tooClose (8 * E.length) (Spec.RsaKeyGen.otherPrime pBytes) (candidateValue E rBytes))) := by
   intro s t tr ur u z P A B
   have five := v.slotFit (j := 5) (by decide)
-  have trace := (FrontRt.close_trace v.width_bounds.1 v.width_bounds.2 (by omega) (by have := v.low; omega)
+  have trace := (FrontRt.close_trace v.width_bounds.1 v.width_bounds.2 (by omega_using [five]) (by have := v.low; omega_using [this])
     v.stackApart _ _ _ _ _ _ ⟨P.left.closeIn v, P.right.closeIn v⟩ A B).1
   obtain ⟨DU, flagU, _, _⟩ := wp_result (close_rt_ok v P.left) A
   obtain ⟨DZ, flagZ, _, _⟩ := wp_result (close_rt_ok v P.right) B
@@ -238,7 +238,7 @@ theorem sieve_rt_pair_trace {E : Environment} (v : E.Valid) {eBytes pBytes qByte
     (List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))))
   intro s t tr ur u z P A B
   have trace := (FrontRt.sieve_trace v.sieve_valid pattern rfl
-    (by change 4 ≤ (E.p - 20#32).toNat; rw [sub_toNat (by have := v.low; omega)]; have := v.low; omega)
+    (by change 4 ≤ (E.p - 20#32).toNat; rw [sub_toNat (by have := v.low; omega_using [this])]; have := v.low; omega_using [this])
     ((workspaceFar.sub_left v.sieveCandidateSub).sub_right privateSub) (tableFar.sub_right privateSub)
     _ _ _ _ _ _ ⟨P.left.sieveIn v, P.right.sieveIn v⟩ A B).1
   obtain ⟨DU, flagU, _, _⟩ := wp_result (sieve_rt_ok v P.left) A

@@ -115,7 +115,7 @@ theorem EntryAccess.kernel {s t : State} (h : EntryAccess s) {rs : List Reg}
   · simpa only [hk.rd,hk.wr,ha.work] using h.workRead
   · intro off ho
     rw [hk.wr,ha.work]
-    exact h.workWrite off (by omega)
+    exact h.workWrite off (by omega_using [ho])
   · simpa only [hk.rd,hk.wr,ha.data] using h.dataRead
   · simpa only [hk.wr,ha.data] using h.dataWrite
 
@@ -123,7 +123,7 @@ theorem EntryAccess.save {s : State} (h : EntryAccess s) :
     ∀p∈extraSlots 2048,InRegions s.wr (s.gpr .x4+BitVec.ofNat 64 p.2) 16 := by
   intro p hp
   obtain ⟨i,rfl⟩ := (extraSlots_mem _ _).mp hp
-  exact h.workWrite _ (by omega)
+  exact h.workWrite _ (by omega_using [])
 
 theorem KernelAccess.gamma {s t : State} (h : KernelAccess s)
     (hk : Keep [.x17,.x7] s t) : KernelAccess t := by

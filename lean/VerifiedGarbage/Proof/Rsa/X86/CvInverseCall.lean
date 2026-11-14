@@ -65,48 +65,48 @@ theorem outsS_ws {sp : BitVec 32} {rs : List (Nat × Nat)} {m m' : Mem} (h : Out
   have far := hx _ (List.mem_append_right _ (List.mem_singleton_self _))
   have := (x - B).isLt
   unfold ofs at far
-  exact room.2.2 x (by simp only [Region.Contains]; omega) hb
+  exact room.2.2 x (by simp only [Region.Contains]; omega_using [far]) hb
 
 /-- An array of the working space outside the frame. -/
 theorem outsS_num {sp : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : OutsS B sp (ranges w js ds) m m') (room : Room sp B Z) {j : Nat} (hj : ∀ k ∈ js, k ≠ j)
     (hd : ∀ d ∈ ds, d + 4 ≤ hdr) (inside : arr w j + S w ≤ Z) (nowrap : Z ≤ 2 ^ 64) :
     num m' B w j = num m B w j := by
-  have hS : 4 * w ≤ S w := by simp only [S]; omega
-  refine Outs.val32 (outsS_ws h room) (fun r hr => ?_) (by omega)
+  have hS : 4 * w ≤ S w := by simp only [S]; omega_using []
+  refine Outs.val32 (outsS_ws h room) (fun r hr => ?_) (by omega_using [inside, nowrap, hS])
   rcases List.mem_append.mp hr with hr | hr
   · simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-    · have := VG.Proof.Rsa.X86.Keys.arr_disj (w := w) (hj k hk); dsimp only; omega
-    · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
-  · obtain rfl := List.mem_singleton.mp hr; dsimp only; omega
+    · have := VG.Proof.Rsa.X86.Keys.arr_disj (w := w) (hj k hk); dsimp only; omega_using [hS, this]
+    · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega_arith
+  · obtain rfl := List.mem_singleton.mp hr; dsimp only; omega_using [inside, hS]
 
 /-- A word of an array of the working space outside the frame. -/
 theorem outsS_word {sp : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : OutsS B sp (ranges w js ds) m m') (room : Room sp B Z) {j i : Nat} (hi : 4 * i + 4 ≤ S w)
     (hj : ∀ k ∈ js, k ≠ j) (hd : ∀ d ∈ ds, d + 4 ≤ hdr) (inside : arr w j + S w ≤ Z) (nowrap : Z ≤ 2 ^ 64) :
     VG.Proof.Mont.w32 m' B (arr w j + 4 * i) = VG.Proof.Mont.w32 m B (arr w j + 4 * i) := by
-  have := Outs.val32 (k := 1) (d := arr w j + 4 * i) (outsS_ws h room) (fun r hr => ?_) (by omega)
+  have := Outs.val32 (k := 1) (d := arr w j + 4 * i) (outsS_ws h room) (fun r hr => ?_) (by omega_using [hi, inside, nowrap])
   · simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
   rcases List.mem_append.mp hr with hr | hr
   · simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-    · have := VG.Proof.Rsa.X86.Keys.arr_disj (w := w) (hj k hk); dsimp only; omega
-    · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega
-  · obtain rfl := List.mem_singleton.mp hr; dsimp only; omega
+    · have := VG.Proof.Rsa.X86.Keys.arr_disj (w := w) (hj k hk); dsimp only; omega_using [hi, this]
+    · have := hd d hd'; have : hdr ≤ arr w j := Nat.le_add_right _ _; dsimp only; omega_arith
+  · obtain rfl := List.mem_singleton.mp hr; dsimp only; omega_using [hi, inside]
 
 /-- A header word outside the frame. -/
 theorem outsS_slot {sp : BitVec 32} {w : Nat} {js ds : List Nat} {m m' : Mem}
     (h : OutsS B sp (ranges w js ds) m m') (room : Room sp B Z) {e : Nat} (he : e + 4 ≤ hdr)
     (hZ : hdr ≤ Z) (hd : ∀ d ∈ ds, e + 4 ≤ d ∨ d + 4 ≤ e) : slot m' B e = slot m B e := by
-  have := Outs.val32 (k := 1) (d := e) (outsS_ws h room) (fun r hr => ?_) (by simp only [hdr] at he; omega)
+  have := Outs.val32 (k := 1) (d := e) (outsS_ws h room) (fun r hr => ?_) (by simp only [hdr] at he; omega_using [he])
   · simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
   rcases List.mem_append.mp hr with hr | hr
   · simp only [ranges, List.mem_append, List.mem_map] at hr
     rcases hr with ⟨k, hk, rfl⟩ | ⟨d, hd', rfl⟩
-    · have : hdr ≤ arr w k := Nat.le_add_right _ _; dsimp only; omega
+    · have : hdr ≤ arr w k := Nat.le_add_right _ _; dsimp only; omega_using [he, this]
     · exact hd d hd'
-  · obtain rfl := List.mem_singleton.mp hr; dsimp only; omega
+  · obtain rfl := List.mem_singleton.mp hr; dsimp only; omega_using [he, hZ]
 
 /-! ## The modulus made more than 1 -/
 
@@ -124,10 +124,10 @@ theorem addLowTwice_ok {s : State} {N : Nat} (h : RtWs lay s B Z len N) {j sl : 
   refine VG.Proof.Rsa.X86.KeyRt.lowPtr_ok h hj fun u hu K m p =>
     wp_movS (VG.Proof.Rsa.X86.KeyRt.lowSrc hu hj p) fun v V _ => ?_
   have hv := hu.keep V.keeps (by decide) (by decide) (by rw [V.mem]; exact Outside.refl _ _ _ _)
-  refine wp_addS (readSrc_sc hv.ws.workspace (by unfold hdr at hsl head; omega)) fun x X _ => ?_
+  refine wp_addS (readSrc_sc hv.ws.workspace (by unfold hdr at hsl head; omega_using [hsl, head])) fun x X _ => ?_
   have hx := hu.keep (V.keeps.trans X.keeps) (by decide) (by decide)
     (by rw [X.mem, V.mem]; exact Outside.refl _ _ _ _)
-  refine wp_addS (readSrc_sc hx.ws.workspace (by unfold hdr at hsl head; omega)) fun y Y _ => ?_
+  refine wp_addS (readSrc_sc hx.ws.workspace (by unfold hdr at hsl head; omega_using [hsl, head])) fun y Y _ => ?_
   have KY : Keeps [.ecx] u y := V.keeps.trans (X.keeps.trans Y.keeps)
   have hy := hu.keep KY (by decide) (by decide) (by rw [Y.mem, X.mem, V.mem]; exact Outside.refl _ _ _ _)
   refine WP.mono (VG.Proof.Rsa.X86.KeyRt.storeLow_ok hy hj (by rw [Rt.PtrAt, KY.1 _ (by decide)]; exact p))
@@ -140,8 +140,8 @@ theorem addLowTwice_ok {s : State} {N : Nat} (h : RtWs lay s B Z len N) {j sl : 
   have sx : (x.mem.readW (off B sl) 32).toNat = slot s.mem B sl := by rw [X.mem, V.mem, m]
   have sv : (v.mem.readW (off B sl) 32).toNat = slot s.mem B sl := by rw [V.mem, m]
   rw [Vt, Y.gpr, X.gpr, V.gpr, m, BitVec.toNat_add, BitVec.toNat_add, sx, sv, ← low]
-  rcases (show slot s.mem B sl = 0 ∨ slot s.mem B sl = 1 by omega) with e | e
-  · rw [e]; omega
+  rcases (show slot s.mem B sl = 0 ∨ slot s.mem B sl = 1 by omega_using [bit]) with e | e
+  · rw [e]; omega_using []
   · rw [e, one e]
 
 /-- What `modulusAbove` leaves: `m` (`[aM]`) 3 where it was 1, else as it was, in arrays 1 and
@@ -157,34 +157,34 @@ theorem modulusAbove_ok {s : State} {N : Nat} (h : RtWs lay s B Z len N) (hN : 1
   have fit := fun j (hj : j < N) => h.ws.fit64 (j := j) hj
   unfold modulusAbove
   rw [VG.Proof.Rsa.X86.Keys.wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.eqSFast_ok h (d := sOne) (a := aM) (b := 2) (by unfold aM; omega)
-    (by omega) (by decide)) fun u ⟨hu, ku, fu, ru⟩ => ?_
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.eqSFast_ok h (d := sOne) (a := aM) (b := 2) (by unfold aM; omega_using [hN])
+    (by omega_using [hN]) (by decide)) fun u ⟨hu, ku, fu, ru⟩ => ?_
   have mu : num u.mem B (kw len) aM = num s.mem B (kw len) aM :=
-    ku.num (by decide) (by decide) (fit _ (by unfold aM; omega))
+    ku.num (by decide) (by decide) (fit _ (by unfold aM; omega_using [hN]))
   rw [two] at fu
   rw [VG.Proof.Rsa.X86.Keys.wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (addLowTwice_ok hu (j := aM) (sl := sOne) (by unfold aM; omega) (by decide))
+  refine WP.mono (addLowTwice_ok hu (j := aM) (sl := sOne) (by unfold aM; omega_using [hN]) (by decide))
     fun v ⟨hv, kv, ev, rv⟩ => ?_
-  have ev' := ev (by rw [fu]; split <;> omega) (by rw [fu]; split <;> simp_all)
+  have ev' := ev (by rw [fu]; split <;> omega_using []) (by rw [fu]; split <;> simp_all)
   rw [mu, fu] at ev'
   have mv : num v.mem B (kw len) aM = (if num s.mem B (kw len) aM = 1 then 3 else num s.mem B (kw len) aM) := by
     rw [ev']; split <;> simp_all
   rw [VG.Proof.Rsa.X86.Keys.wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.copy_ok hv (o := 1) (a := aM) (by omega) (by unfold aM; omega)
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.copy_ok hv (o := 1) (a := aM) (by omega_using [hN]) (by unfold aM; omega_using [hN])
     (by decide)) fun w ⟨hw, kw', ew, rw', _⟩ => ?_
   have mw : num w.mem B (kw len) aM = num v.mem B (kw len) aM :=
-    kw'.num (by decide) (by decide) (fit _ (by unfold aM; omega))
+    kw'.num (by decide) (by decide) (fit _ (by unfold aM; omega_using [hN]))
   have zw : num w.mem B (kw len) aZero = 0 := by
-    rw [kw'.num (by decide) (by decide) (fit _ (by unfold aZero; omega)),
-      kv.num (by decide) (by decide) (fit _ (by unfold aZero; omega)),
-      ku.num (by decide) (by decide) (fit _ (by unfold aZero; omega)), zero]
-  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.sub3_ok hw (o := aNM) (a := aZero) (b := aM) (by unfold aNM; omega)
-    (by unfold aZero; omega) (by unfold aM; omega)) fun t ⟨ht, kt, et, bt, rt⟩ => ?_
+    rw [kw'.num (by decide) (by decide) (fit _ (by unfold aZero; omega_using [hN])),
+      kv.num (by decide) (by decide) (fit _ (by unfold aZero; omega_using [hN])),
+      ku.num (by decide) (by decide) (fit _ (by unfold aZero; omega_using [hN])), zero]
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.sub3_ok hw (o := aNM) (a := aZero) (b := aM) (by unfold aNM; omega_using [hN])
+    (by unfold aZero; omega_using [hN]) (by unfold aM; omega_using [hN])) fun t ⟨ht, kt, et, bt, rt⟩ => ?_
   have mt : num t.mem B (kw len) aM = num w.mem B (kw len) aM :=
-    kt.num (by decide) (by decide) (fit _ (by unfold aM; omega))
+    kt.num (by decide) (by decide) (fit _ (by unfold aM; omega_using [hN]))
   have one : num t.mem B (kw len) 1 = num w.mem B (kw len) 1 :=
-    kt.num (by decide) (by decide) (fit _ (by omega))
-  have pos : 0 < num w.mem B (kw len) aM := by rw [mw, mv]; split <;> omega
+    kt.num (by decide) (by decide) (fit _ (by omega_using [hN]))
+  have pos : 0 < num w.mem B (kw len) aM := by rw [mw, mv]; split <;> omega_arith
   refine ⟨ht, ?_, ((ru.mono (by decide)).trans ((rv.mono (by decide)).trans (rw'.mono (by decide)))).trans rt,
     by rw [mt, mw, mv], by rw [one, ew, mt, mw], ?_⟩
   · exact (ku.mono (by decide) (by decide)).trans ((kv.mono (by decide) (by decide)).trans
@@ -192,7 +192,7 @@ theorem modulusAbove_ok {s : State} {N : Nat} (h : RtWs lay s B Z len N) (hN : 1
   · rw [mt]
     rw [zw, Nat.zero_add] at et
     have : (t.gpr .ebx).toNat = 1 := by
-      rcases (show (t.gpr .ebx).toNat = 0 ∨ (t.gpr .ebx).toNat = 1 by omega) with e | e
+      rcases (show (t.gpr .ebx).toNat = 0 ∨ (t.gpr .ebx).toNat = 1 by omega_using [bt]) with e | e
       · rw [e, Nat.mul_zero] at et; omega
       · exact e
     rw [et, this, Nat.mul_one]
@@ -216,17 +216,17 @@ theorem writes_ranges {a W i : Nat} (hka : kw a = W) (hw : Proof.RsaKeyGen.inver
     have h1 := out (VG.Impl.Rsa.X86.Keys.sB, 4) (by simp [ranges])
     have h2 := out (VG.Impl.Rsa.X86.Keys.sC, 4) (by simp [ranges])
     simp only [VG.Impl.Rsa.X86.Keys.sOdd, VG.Impl.Rsa.X86.Keys.sB, VG.Impl.Rsa.X86.Keys.sC] at h0 h1 h2
-    omega
+    omega_using [lo, hi, h0, h1, h2]
   · have mem : j ∈ invArrs := by
       simp only [invArrs, VG.Impl.Rsa.X86.Keys.aT1, VG.Impl.Rsa.X86.Keys.aT2, VG.Impl.Rsa.X86.Keys.aT3,
         VG.Impl.Rsa.X86.Keys.aT4, List.mem_cons, List.not_mem_nil, or_false]
-      omega
+      omega_using [hj]
     have H := out (arr W j, S W) (List.mem_append_left _ (List.mem_map_of_mem mem))
     simp only [arr, S, hdr] at H
-    have e : 8 * ((a + 7) / 8) + 8 = 4 * (W + 2) := by omega
+    have e : 8 * ((a + 7) / 8) + 8 = 4 * (W + 2) := by omega_using [hka]
     rw [e] at lo hi
     have := Nat.add_mul j 1 (4 * (W + 2))
-    omega
+    omega_using [lo, hi, H, this]
 
 /-- What `vg_rsa_keygen_inverse`'s postcondition tells its caller. -/
 theorem inversePost_of {s t : State} (post : VG.Proof.RsaKeyGen.X86.Inverse.contract.post s t) :
@@ -271,19 +271,19 @@ theorem fits (C : CallAt B Z len a u) : arr (kw a) 15 ≤ Z := by
   have := C.ws.ws.fits
   rw [C.words]
   simp only [arr, S, nArr] at this ⊢
-  omega
+  omega_using [this]
 
 theorem size (C : CallAt B Z len a u) : 8 * invWords a ≤ Z := by
   have fits := C.fits
   simp only [arr, S, hdr, kw, Spec.Rsa.modulusWords] at fits
   unfold invWords
-  omega
+  omega_using [fits]
 
 theorem ptrBound (C : CallAt B Z len a u) : B.toNat < 2 ^ 32 := by
   have := C.fits
   have := C.ws.ws.workspace.nowrap
   simp only [arr, hdr] at *
-  omega
+  omega_arith
 
 theorem lenLow (C : CallAt B Z len a u) : 1 ≤ a := by
   have wpos : 0 < kw a := by rw [C.words]; exact C.ws.kw_pos
@@ -313,7 +313,7 @@ theorem callPre (C : CallAt B Z len a u) :
     (by rw [C.words]; exact C.zero)
   have size := C.size
   have wsIn : InRegions u.wr B (8 * invWords a) :=
-    ⟨_, C.ws.ws.workspace.wr, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+    ⟨_, C.ws.ws.workspace.wr, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [size]⟩
   refine ⟨by rw [entry_eq B a u]; exact pre, ?_, ?_⟩
   · apply Covers.append_left
     · apply Covers.of_mem
@@ -350,13 +350,13 @@ theorem call_ok {a : Nat} {u : State} (C : CallAt B Z len a u) :
   have size := C.size
   have A := C.args
   refine WP.callWith VG.Proof.RsaKeyGen.X86.Inverse.verified.1 code_noSp (by decide : invArgs ≠ [])
-    (by decide : Reg.esp ∉ invArgs) (by rw [code_stack]; change 32 ≤ _; omega) C.callPre ?_
+    (by decide : Reg.esp ∉ invArgs) (by rw [code_stack]; change 32 ≤ _; omega_using [lowSp]) C.callPre ?_
   intro t rdT wrT saved frame post
   obtain ⟨e₂, mem₂, post⟩ := post
   rw [CallAt.entry_eq B a u] at post
   obtain ⟨inside, gcd, bezout, lt⟩ := inversePost_of post
-  have fit16 : 16 ≤ (u.gpr .esp).toNat := by omega
-  have wordsBound : invWords a < 2 ^ 32 := by have := C.lenLe; omega
+  have fit16 : 16 ≤ (u.gpr .esp).toNat := by omega_using [lowSp]
+  have wordsBound : invWords a < 2 ^ 32 := by have := C.lenLe; omega_using [nowrap, size]
   have arg0 := invEntry_arg (L := 8 * invWords a) A fit16 (i := 0) (by decide)
   have arg1 := invEntry_arg (L := 8 * invWords a) A fit16 (i := 1) (by decide)
   have arg2 := invEntry_arg (L := 8 * invWords a) A fit16 (i := 2) (by decide)
@@ -372,7 +372,7 @@ theorem call_ok {a : Nat} {u : State} (C : CallAt B Z len a u) :
     rw [arg1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt wordsBound]
   have lenE : VG.Proof.RsaKeyGen.X86.Inverse.len (invEntry B (8 * invWords a) u) = a := by
     unfold VG.Proof.RsaKeyGen.X86.Inverse.len
-    rw [arg2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := C.lenLe; omega)]
+    rw [arg2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := C.lenLe; omega_using [this])]
   simp only [baseE, sizeE, lenE, hka, mem₂] at inside gcd bezout lt
   have FE := invEntry_frame (B := B) (L := 8 * invWords a) fit16
   have farU : (⟨B, Z⟩ : Region).Disjoint (below (u.gpr .esp) 16) :=
@@ -397,14 +397,14 @@ theorem call_ok {a : Nat} {u : State} (C : CallAt B Z len a u) :
       rw [code_stack]
       exact below_sub (by decide) lowSp
   refine ⟨rtWs_keepBelow h Kt (by decide) (by decide) stackFrame lowSp
-    (by have := C.room.2.1; change _ + 8 + 4 * 7 ≤ _; omega)
-    (by have := C.room.2.1; change _ + 8 + 4 * 14 ≤ _; omega), ?_, gcd, bezout, lt, Kt⟩
+    (by have := C.room.2.1; change _ + 8 + 4 * 7 ≤ _; omega_using [this])
+    (by have := C.room.2.1; change _ + 8 + 4 * 14 ≤ _; omega_using [this]), ?_, gcd, bezout, lt, Kt⟩
   intro x hx hz
   by_cases hin : (⟨B, 8 * invWords a⟩ : Region).Contains x 1
   · have hi : ofs B x < 8 * invWords a := by
       simp only [Region.Contains] at hin
       unfold ofs
-      omega
+      omega_using [hin]
     have changed := inside (ofs B x) hi fun c => writes_ranges hka c hx
     have back : B + BitVec.ofNat 64 (ofs B x) = x := by
       unfold ofs
@@ -432,8 +432,8 @@ theorem CallAt.pub {a : Nat} {u₁ u₂ : State} (C₁ : CallAt B Z len a u₁) 
     (sp : u₁.gpr .esp = u₂.gpr .esp) :
     VG.Proof.RsaKeyGen.X86.Inverse.contract.pub (invEntry B (8 * invWords a) u₁)
       (invEntry B (8 * invWords a) u₂) := by
-  have fit₁ : 16 ≤ (u₁.gpr .esp).toNat := by have := C₁.room.1; omega
-  have fit₂ : 16 ≤ (u₂.gpr .esp).toNat := by have := C₂.room.1; omega
+  have fit₁ : 16 ≤ (u₁.gpr .esp).toNat := by have := C₁.room.1; omega_using [this]
+  have fit₂ : 16 ≤ (u₂.gpr .esp).toNat := by have := C₂.room.1; omega_using [this]
   have sa := fun {i} (hi : i < 3) => invEntry_arg (L := 8 * invWords a) C₁.args fit₁ hi
   have ta := fun {i} (hi : i < 3) => invEntry_arg (L := 8 * invWords a) C₂.args fit₂ hi
   have esp : (invEntry B (8 * invWords a) u₁).gpr .esp = (invEntry B (8 * invWords a) u₂).gpr .esp := by

@@ -40,7 +40,7 @@ theorem canW_get (F : Poly) {i : Nat} (hi : i < 256) : ((canW F)[i]!).toNat = (F
   rw [canW, getElem!_map _ _ hi, BitVec.toNat_ofNat]
   have := (F[i]!).isLt; simp only [q] at this; omega
 
-theorem accIdx_lt (j : Nat) (hj : j < 256) : accIdx j < 256 := by unfold accIdx; omega
+theorem accIdx_lt (j : Nat) (hj : j < 256) : accIdx j < 256 := by unfold accIdx; omega_using [hj]
 
 theorem accTerms_get {j : Nat} (hj : j < 512) :
     Y.get (accTerms.getD (j / 16) []) (j % 16) = if j < 256 then .lv 0 (accIdx j) else .junk := by
@@ -48,11 +48,11 @@ theorem accTerms_get {j : Nat} (hj : j < 512) :
   split
   · rename_i h
     rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by simp; omega), List.getElem?_map,
-      List.getElem?_range (by omega), Option.map_some, Option.getD_some, Y.get, List.getD_eq_getElem?_getD,
+      List.getElem?_range (by omega_using [h]), Option.map_some, Option.getD_some, Y.get, List.getD_eq_getElem?_getD,
       List.getElem?_map, List.getElem?_range (Nat.mod_lt _ (by decide)), Option.map_some, Option.getD_some,
-      show 16 * (j / 16) + j % 16 = j by omega]
+      show 16 * (j / 16) + j % 16 = j by omega_using []]
   · rename_i h
-    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp; omega), ← List.getD_eq_getElem?_getD]
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp; omega_using [h]), ← List.getD_eq_getElem?_getD]
     exact junks_get _ _ _
 
 /-- The input's words hold the terms of `srcTerms src`. -/
@@ -85,7 +85,7 @@ theorem initIB_rel {src : InvIn} {F : Poly} {O : Nat → BitVec 16} {s₁ : Stat
       rw [get_replicate _ he, hq e he]; exact Hd.of_eq rfl
     · rw [get_replicate _ he]; exact Hd.junk _
   · simp only [rsA, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · left
       rw [show (initIB src).mem.getD 0 [] = junks 16 by simp only [initIB, List.getD_cons_zero], junks_get]; rfl
     · have hb : rbase rsA s₁ 1 = s₁.gpr .rdi := by simp [rbase, rsA]
@@ -128,11 +128,11 @@ theorem nttIR_ok {src : InvIn} {pb : List Instr} (hc : checkI src pb = true) {s 
   · have hb : rbase (rsB .rdi) s1 1 = s.gpr .rdi := by simp [rbase, rsB, gdi]
     refine VG.Proof.MlKem.polyIs_of_toNat fun p hp => ?_
     rw [n_eq] at hp
-    have h0 := hr3.mem 1 (2 * p) (by simp [rsB]) (by simp [rlen, rsB]; omega)
-    have h1 := hr3.mem 1 (2 * p + 1) (by simp [rsB]) (by simp [rlen, rsB]; omega)
-    rw [outOk_get hc (by omega), hb] at h0 h1
-    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), show 2 * p / 2 = p by omega] at h0
-    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))] at h1
+    have h0 := hr3.mem 1 (2 * p) (by simp [rsB]) (by simp [rlen, rsB]; omega_using [hp])
+    have h1 := hr3.mem 1 (2 * p + 1) (by simp [rsB]) (by simp [rlen, rsB]; omega_using [hp])
+    rw [outOk_get hc (by omega_using [hp]), hb] at h0 h1
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [])), show 2 * p / 2 = p by omega_using []] at h0
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))] at h1
     have e0 := h0.eq rfl
     have e1 := h1.eq rfl
     show (coeffAt s3.mem (s.gpr .rdi) p).toNat = _
@@ -145,17 +145,17 @@ theorem nttIR_ok {src : InvIn} {pb : List Instr} (hc : checkI src pb = true) {s 
     rw [← hm1]
     refine hr3.fr x fun k hk hw hlt => ?_
     simp only [rsB, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · refine hx (pR (s.gpr .rsi)) (by simp) ?_
       simp only [rbase, rlen, rsB, List.getD_cons_zero, gsi] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr .rsi).toNat + 1 ≤ 1024
-      simp only [oS] at hlt; omega
+      simp only [oS] at hlt; omega_using [hlt]
     · refine hx (pR (s.gpr .rdi)) (by simp) ?_
       simp only [rbase, rlen, rsB, List.getD_cons_succ, List.getD_cons_zero, gdi] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr .rdi).toNat + 1 ≤ 1024
-      omega
+      omega_using [hlt]
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · show s3.gpr r = s.gpr r
       rw [hr3.gpr]; exact k1.1 r hr

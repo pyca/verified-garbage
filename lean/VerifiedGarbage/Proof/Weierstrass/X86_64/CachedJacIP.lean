@@ -85,7 +85,7 @@ theorem ipσ_mem (n : Nat) (S : RcbSlots) (p q : Pt) (dst i : Nat) :
 
 theorem ipσ_out (n : Nat) (S : RcbSlots) (p q : Pt) (dst : Nat) {i : Nat} (hi : i < 9) :
     ipσ n S p q dst i ∈ ipW S p := by
-  rw [ipσ, getD_append_left (by simp [ipW]; omega)]
+  rw [ipσ, getD_append_left (by simp [ipW]; omega_using [hi])]
   exact List.getElem_mem _
 
 end VG.Proof.Weierstrass.X86_64.CachedJac

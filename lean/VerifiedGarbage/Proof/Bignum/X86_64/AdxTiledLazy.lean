@@ -35,31 +35,31 @@ theorem redcLazy_ok {s s₁ : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have hNs := slot_le (w := w) (show aN < 8 by decide)
-  have hw1 : 2 ≤ w := by omega
-  have hg : hdrBytes ≤ slot w aAcc := by unfold slot; omega
-  have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
-  have hmpos : 0 < wv s.mem B (slot w aN) w := wv_pos_of_inv (by omega) hinv
+  have hw1 : 2 ≤ w := by omega_using [hwN, hnN]
+  have hg : hdrBytes ≤ slot w aAcc := by unfold slot; omega_using []
+  have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_using []
+  have hmpos : 0 < wv s.mem B (slot w aN) w := wv_pos_of_inv (by omega_using [hw1]) hinv
   have hH₁ := hH.of_outside ho₁ hg
-  have hn₁ : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega) (by omega)
+  have hn₁ : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega_using [hsep]) (by omega_using [hZ, hn, hNs])
   unfold AdxTiledProduct.redcLazy
   refine WP.seq (WP.mono (AdxRotate8.redc_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hwN hnN)
     fun s₂ ⟨vred,ho₂,k₂⟩ => ?_)
   obtain ⟨q,hq,heq⟩ := vred (by rw [hn₁]; exact hinv)
-  have hN₁ : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho₁.wv (by omega) (by omega)
+  have hN₁ : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho₁.wv (by omega_using [hsep]) (by omega_using [hZ, hn, hNs])
   rw [hv₁, hN₁] at heq
-  have ho12 := (ho₁.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega) (by omega)).trans ho₂
-  have hN₂ : wv s₂.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho12.wv (by omega) (by omega)
+  have ho12 := (ho₁.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega_using []) (by omega_using [])).trans ho₂
+  have hN₂ : wv s₂.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho12.wv (by omega_using [hsep]) (by omega_using [hZ, hn, hNs])
   have k12 := k₁.trans k₂
   have hs₂ := hs.congr k12.2.2
-  have hH₂ := hH.of_outside ho12 (by unfold slot; omega)
+  have hH₂ := hH.of_outside ho12 (by unfold slot; omega_using [])
   have hTlt : wv s₂.mem B (slot w aTmp) (w + 2) < 2 ^ (64 * w) + wv s.mem B (slot w aN) w :=
     VG.Proof.Bignum.redc_lt_add hq hX heq
   have hsrc : readSrc s₂ (.mem (hdr (sArr aN))) = some (off B (slot w aN)) := by
     rw [readSrc_word (d := 8 * sArr aN) hs₂ (by simp only [State.ea, hdr, (k12.gpr (by decide)).trans hdi, hdrOff])
-      (by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega), hH₂.harr aN (by decide)]
+      (by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega_using [hZ, this]), hH₂.harr aN (by decide)]
   refine WP.seq (WP.mono (movMem_ok s₂ (dst := .r10) hsrc) fun s₃ ⟨h10, _, _, k₃⟩ => ?_)
   have k123 := k12.trans k₃.keep
-  have hv₂ : Ops s₂.mem B w ps := hv.of_outside ho12 (by unfold slot sFn hdrBytes; omega)
+  have hv₂ : Ops s₂.mem B w ps := hv.of_outside ho12 (by unfold slot sFn hdrBytes; omega_using [])
   refine WP.mono (lazy8V_ok (hs.congr k123.2.2) ((k123.gpr (by decide)).trans hdi)
     (k₃.2.1 ▸ hH₂) hZ hwN hnN hw h10 (k₃.2.1 ▸ hv₂) po ho ho2 (by rw [k₃.2.1, hN₂]; exact hTlt))
     fun t ⟨hv, hf, kt⟩ => ?_
@@ -77,7 +77,7 @@ theorem redcLazy_ok {s s₁ : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
       exact h3)
     rw [hfin, k₃.2.1]
     exact ho12 x (by
-      have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega
+      have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega_using []
       omega_using [h1, h2, hAT])
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

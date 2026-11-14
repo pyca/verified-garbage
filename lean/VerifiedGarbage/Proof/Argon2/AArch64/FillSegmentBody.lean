@@ -44,18 +44,18 @@ theorem advance_nat_ok (s : State) (p : Params) (pass lane slice index : Nat)
         have := h.bounds.indexBound
         have := h.bounds.segment_le_lane
         have := h.bounds.laneLength_bound
-        omega)]
+        omega_arith)]
     have := h.bounds.indexBound
     have := h.bounds.segment_le_lane
     have := h.bounds.laneLength_bound
-    omega
+    omega_arith
   have endBound63 : (s.gpr .x21).toNat < 2 ^ 63 := by
     rw [h.position.segmentLength, ReferenceMap.word_nat p.segmentLen
       (Nat.lt_of_le_of_lt h.bounds.segment_le_lane
         (Nat.lt_trans h.bounds.laneLength_bound (by decide)))]
     have := h.bounds.segment_le_lane
     have := h.bounds.laneLength_bound
-    omega
+    omega_arith
   refine (advance_ok s inputBound endBound63).mono ?_
   rintro t ⟨value, flag, keeps⟩
   have added : s.gpr .x23 + 1 = BitVec.ofNat 64 (index + 1) := by
@@ -65,7 +65,7 @@ theorem advance_nat_ok (s : State) (p : Params) (pass lane slice index : Nat)
   have indexBound := h.bounds.indexBound
   refine ⟨value.trans added, ?_, keeps⟩
   rw [flag, added, h.position.segmentLength,
-    ReferenceMap.word_nat (index + 1) (by omega), ReferenceMap.word_nat p.segmentLen endBound]
+    ReferenceMap.word_nat (index + 1) (by omega_using [endBound, indexBound]), ReferenceMap.word_nat p.segmentLen endBound]
 
 theorem next_ready {p : Params} {pass lane slice index old : Nat} {s t : State}
     (h : RandomSource.Ready p pass lane slice index old s)
@@ -98,7 +98,7 @@ theorem next_ready {p : Params} {pass lane slice index old : Nat} {s t : State}
       rcases bounds.active with hp | hs | hi
       · exact Or.inl hp
       · exact Or.inr (Or.inl hs)
-      · exact Or.inr (Or.inr (by omega))
+      · exact Or.inr (Or.inr (by omega_using [hi]))
     · exact ⟨(k.regs .x24 (by decide)).trans h.filling.position.current,
         (k.regs .x20 (by decide)).trans h.filling.position.laneLength,
         (k.regs .x21 (by decide)).trans h.filling.position.segmentLength,

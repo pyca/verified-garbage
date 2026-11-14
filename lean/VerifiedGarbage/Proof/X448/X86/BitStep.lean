@@ -39,12 +39,12 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
   have hb' : s.gpr .esi - (1 : BitVec 32) = BitVec.ofNat 32 t := by
     change s.gpr .esi - BitVec.ofNat 32 1 = _
     rw [hb, BitVec.ofNat_add, BitVec.add_sub_cancel]
-  have hin := hs.read (d := BITS + t) (n := 1) (by simp only [BITS]; omega)
+  have hin := hs.read (d := BITS + t) (n := 1) (by simp only [BITS]; omega_using [ht])
   have hr := hs.read (d := SWAP) (n := 4) (by decide)
   have hw := hs.write (d := SWAP) (n := 4) (by decide)
   have ba : (s.gpr .edi + BitVec.ofNat 32 t + BitVec.ofNat 32 BITS).setWidth 64 = off base (BITS + t) := by
     rw [Offset.add_add, Nat.add_comm t BITS]
-    exact hs.ea (by simp only [BITS]; omega)
+    exact hs.ea (by simp only [BITS]; omega_using [ht])
   have sa := hs.ea (d := SWAP) (by decide)
   simp only [State.ea, sc, at_] at sa
   apply WP.of_runBlock
@@ -54,7 +54,7 @@ theorem stepPre_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
     State.ea, sc, at_, hb', ba, sa, State.load8, State.load32, State.store32, hin, hr, hw, hbit,
     hswap, Option.map_some, Option.bind_some, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
   have ek : (BitVec.ofNat 8 kt).setWidth 32 = BitVec.ofNat 32 kt := by
-    rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hk] : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   refine ⟨trivial, mask_xor sw0 hsw kt hk, fun r hr => ?_, trivial, trivial, by rw [ek]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]

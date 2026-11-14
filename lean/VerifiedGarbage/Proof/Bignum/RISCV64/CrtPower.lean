@@ -95,15 +95,15 @@ theorem chunk_s {p S T A C Ri S' : Nat} (hT : T < p) (hS : S % p = A % p) (hTC :
 `(S + p - T) mod p`, for `S, T < p < R`. -/
 theorem sub_add_mod {S T N D c R : Nat} (hS : S < N) (hT : T < N) (hN : N < R) (hD : D < R) (hc : c ≤ 1)
     (h : D + T = S + R * c) : (D + (if 0 < c then N else 0)) % R = (S + N - T) % N := by
-  rcases (show c = 0 ∨ c = 1 by omega) with rfl | rfl
+  rcases (show c = 0 ∨ c = 1 by omega_using [hc]) with rfl | rfl
   · simp only [Nat.lt_irrefl, ↓reduceIte, Nat.add_zero]
     rw [Nat.mul_zero, Nat.add_zero] at h
-    rw [Nat.mod_eq_of_lt (show D < R by omega), show S + N - T = D + N by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (show D < N by omega)]
+    rw [Nat.mod_eq_of_lt (show D < R by omega_using [hD]), show S + N - T = D + N by omega_using [h], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (show D < N by omega_using [hS, h])]
   · simp only [Nat.zero_lt_one, ↓reduceIte]
     rw [Nat.mul_one] at h
-    rw [show D + N = S + N - T + R by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (show S + N - T < R by omega),
-      Nat.mod_eq_of_lt (show S + N - T < N by omega)]
+    rw [show D + N = S + N - T + R by omega_using [hT, h], Nat.add_mod_right, Nat.mod_eq_of_lt (show S + N - T < R by omega_using [hN, hD, h]),
+      Nat.mod_eq_of_lt (show S + N - T < N by omega_using [hS, hD, h])]
 
 /-- The number of chunks of `w` words of `K` words. -/
 abbrev nChunks (K w : Nat) : Nat := (K + w - 1) / w
@@ -354,7 +354,7 @@ theorem sub_flag (K a w : Nat) :
     BitVec.ofNat 64 K - BitVec.ofNat 64 a - BitVec.ofNat 64 w = BitVec.ofNat 64 K - BitVec.ofNat 64 (a + w) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- One chunk. -/
 theorem chunkStep_ok {s t : State} {B BX : Addr} {Z ZX w wX K N R2 i : Nat} (hx : Scr s BX ZX)
@@ -756,7 +756,7 @@ theorem bytes_out {B D : Addr} {Z w L : Nat} {m m' : Mem} (h : PFr B w m m') (hZ
   have := slot24' w
   by_contra hc
   obtain ⟨h1, h2⟩ := not_or.mp hc
-  exact hsep i hi (D + BitVec.ofNat 64 i) (by simp only [VG.Proof.Bignum.ofs] at h1 h2 ⊢; omega) rfl
+  exact hsep i hi (D + BitVec.ofNat 64 i) (by simp only [VG.Proof.Bignum.ofs] at h1 h2 ⊢; omega_using [hZ, this, h2]) rfl
 
 theorem low_odd {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) (h : wordsVal m B d w % 2 = 1) :
     (Mont.word m B d).toNat % 2 = 1 := by

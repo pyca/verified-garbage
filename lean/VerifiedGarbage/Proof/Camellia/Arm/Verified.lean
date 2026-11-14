@@ -57,11 +57,11 @@ theorem argMem_of {s₁ s₂ : State} {j : Nat} (hsp : s₁.sp = s₂.sp) (hf : 
   have e : ∀ s : State, s.sp.toNat + 4 * j ≤ 2 ^ 32 →
       VG.Arm.Taint.argByte s k = stackArgAddr s (k / 4) + BitVec.ofNat 64 (k % 4) := fun s hs => by
     simp only [VG.Arm.Taint.argByte, stackArgAddr]
-    rw [VG.Arm.addr_add (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2; omega
-  rw [e s₁ hf, e s₂ (hsp ▸ hf), Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)),
-    Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-  exact congrArg _ (h _ (by omega))
+    rw [VG.Arm.addr_add (by omega_using [hk, hs]), BitVec.add_assoc, ← BitVec.ofNat_add]
+    congr 2; omega_using []
+  rw [e s₁ hf, e s₂ (hsp ▸ hf), Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])),
+    Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+  exact congrArg _ (h _ (by omega_using [hk]))
 
 theorem ecbTaint_wf (dir : Dir) {s : State} (h : (ecbArm dir).pre s) : VG.Arm.Taint.Wf ecbTaint s := by
   obtain ⟨-, hwr, -, -, dDS, aD, aS, fitSp, -, fitD, fitB, -⟩ := h
@@ -72,7 +72,7 @@ theorem ecbTaint_wf (dir : Dir) {s : State} (h : (ecbArm dir).pre s) : VG.Arm.Ta
       List.Pairwise.nil]
     exact ⟨dDS, fun _ h => h.elim, trivial⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega
+    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega_arith
   · show (⟨State.addr s.sp, 4⟩ : Region).Disjoint r
     rw [e']
     simp only [hwr, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -89,7 +89,7 @@ theorem ecbTaint_agree (dir : Dir) (s₁ s₂ : State) (h₁ : (ecbArm dir).pre 
   obtain ⟨p0, p1, p2, p3, psp, pa⟩ := hp
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, ecbTaint_wf dir h₁, ecbTaint_wf dir h₂,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp,
-    argMem_of (j := 1) psp h₁.2.2.2.2.2.2.2.1 fun i hi => by obtain rfl : i = 0 := (by omega); exact pa⟩
+    argMem_of (j := 1) psp h₁.2.2.2.2.2.2.2.1 fun i hi => by obtain rfl : i = 0 := (by omega_using [hi]); exact pa⟩
   · simp only [ecbTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p2, p3, pa]
@@ -105,15 +105,15 @@ theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbArm dir).pre s) :
   refine ⟨t, s', he, ⟨fun r hr => ?_, VG.Arm.Exec.sp he⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
+  · exact h₁ 6 (by omega_using [])
+  · exact h₁ 7 (by omega_using [])
+  · exact h₁ 8 (by omega_using [])
 
 /-- A state satisfying the precondition (one block, 18 rounds): the
 schedule at `0x1000`, the block at `0x3000`, the scratch buffer at

@@ -70,11 +70,11 @@ theorem select_ok (rs : List Nat) (hsmall : ∀ r ∈ rs, r < 4096)
           have h : BitVec.ofNat 64 r = BitVec.ofNat 64 x := h'.trans (BitVec.zero_add _)
           have hrb : r < 4096 := by
             simp only [Spec.Sha3.rates,List.mem_cons,List.not_mem_nil,or_false] at hr
-            rcases hr with rfl|rfl|rfl|rfl|rfl <;> omega
+            rcases hr with rfl|rfl|rfl|rfl|rfl <;> omega_using []
           have hx := hsmall x (by simp)
           have hh := congrArg BitVec.toNat h
-          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : r < 2^64),
-            Nat.mod_eq_of_lt (by omega : x < 2^64)] at hh
+          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hrb] : r < 2^64),
+            Nat.mod_eq_of_lt (by omega_using [hx] : x < 2^64)] at hh
           exact he hh
         simpa only [eval_zero,t,RegUpd.gpr_write_self,State.read,Size.bits,
           BitVec.setWidth_eq,hv,beq_eq_false_iff_ne] using congrArg some (beq_eq_false_iff_ne.mpr hn)

@@ -20,10 +20,10 @@ open VG.Proof.Ffdh.ParameterCandidate
 private theorem half_or (b : Byte) {carry : Nat} (hc : carry ≤ 1) :
     b.toNat / 2 ||| 128 * carry = b.toNat / 2 + 128 * carry := by
   have hb := b.isLt
-  have he : carry = 0 ∨ carry = 1 := by omega
+  have he : carry = 0 ∨ carry = 1 := by omega_using [hc]
   rcases he with rfl | rfl
   · simp
-  · simpa only [Nat.mul_one] using Nat.or_two_pow_eq_add_of_lt (show b.toNat / 2 < 2 ^ 7 by omega)
+  · simpa only [Nat.mul_one] using Nat.or_two_pow_eq_add_of_lt (show b.toNat / 2 < 2 ^ 7 by omega_using [])
 
 theorem half_machine (b : Byte) {carry : Nat} (hc : carry ≤ 1) :
     (((b.setWidth 64) >>> 1) ||| BitVec.ofNat 64 (128 * carry)).setWidth 8 = halfByte carry b := by
@@ -31,18 +31,18 @@ theorem half_machine (b : Byte) {carry : Nat} (hc : carry ≤ 1) :
   apply BitVec.eq_of_toNat_eq
   rw [halfByte_val hc]
   simp only [BitVec.toNat_setWidth, BitVec.toNat_or, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.pow_one]
-  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 128 * carry < 2 ^ 64 by omega), half_or b hc,
-    Nat.mod_eq_of_lt (show b.toNat / 2 + 128 * carry < 2 ^ 8 by omega)]
+  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega_using []),
+    Nat.mod_eq_of_lt (show 128 * carry < 2 ^ 64 by omega_using [hc]), half_or b hc,
+    Nat.mod_eq_of_lt (show b.toNat / 2 + 128 * carry < 2 ^ 8 by omega_using [hc])]
 
 theorem carry_machine (b : Byte) :
     ((b.setWidth 64 &&& 1) <<< 7) = BitVec.ofNat 64 (128 * (b.toNat % 2)) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
     show (1 : BitVec 64).toNat = 1 from rfl]
-  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by have := b.isLt; omega), Nat.and_one_is_mod]
+  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by have := b.isLt; omega_using []), Nat.and_one_is_mod]
   congr 1
-  omega
+  omega_using []
 
 theorem halveByte_ok {s : State} {op : Addr} {j k carry : Nat} {b : Byte}
     (hj : j < k) (hk : k < 2 ^ 31) (hc : carry ≤ 1)
@@ -58,7 +58,7 @@ theorem halveByte_ok {s : State} {op : Addr} {j k carry : Nat} {b : Byte}
   have hsub : BitVec.ofNat 64 (k - j) - 1 = BitVec.ofNat 64 (k - (j + 1)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-    omega
+    omega_using [hj]
   have hz : (BitVec.ofNat 64 (k - (j + 1)) == 0) = decide (j + 1 = k) := by
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_iff]
@@ -66,7 +66,7 @@ theorem halveByte_ok {s : State} {op : Addr} {j k carry : Nat} {b : Byte}
     · intro h
       have := congrArg BitVec.toNat h
       simp only [BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl] at this
-      omega
+      omega_using [hj, hk, this]
     · intro h
       rw [h, Nat.sub_self]
       rfl

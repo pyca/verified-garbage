@@ -69,9 +69,9 @@ theorem sat_arg : Mem.readW Proof.Ed448.WholeLocal.satMem 0x10000 64 = 0 := by
       (fun _ => (0 : Byte)) ((0x10000 : Addr) + BitVec.ofNat 64 i) := by
     intro i hi
     have ha : ((0x10000 : Addr) + BitVec.ofNat 64 i).toNat = 0x10000 + i := by
-      change (0x10000 + i % 2 ^ 64) % 2 ^ 64 = _; omega
-    simp only [Proof.Ed448.WholeLocal.satMem, ha, show ¬ 0x10000 + i < 0x2100 by omega,
-      show ¬ 0x10000 + i < 0x2139 by omega, ↓reduceIte]
+      change (0x10000 + i % 2 ^ 64) % 2 ^ 64 = _; omega_using [hi]
+    simp only [Proof.Ed448.WholeLocal.satMem, ha, show ¬ 0x10000 + i < 0x2100 by omega_using [],
+      show ¬ 0x10000 + i < 0x2139 by omega_using [], ↓reduceIte]
   rw [Mem.readW_congr (m' := fun _ => (0 : Byte)) h]
   decide
 

@@ -78,7 +78,7 @@ theorem setup_ok (s : State) (hw : (⟨s.gpr .r8, 16384⟩ : Region) ∈ s.wr) :
     WP isa (.block setup) s (Setup s) := by
   have write (d n : Nat) (h : d + n ≤ 16384) :
       InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 d) n :=
-    ⟨_, hw, Offset.contains_base _ h (by omega)⟩
+    ⟨_, hw, Offset.contains_base _ h (by omega_using [h])⟩
   have w832 := write 832 4 (by decide)
   have w840 := write 840 8 (by decide)
   have w848 := write 848 8 (by decide)

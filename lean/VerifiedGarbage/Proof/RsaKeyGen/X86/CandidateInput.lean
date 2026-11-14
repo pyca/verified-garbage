@@ -29,7 +29,7 @@ theorem native_word {m : Mem} {base : Addr} {offset value : Nat}
 
 theorem Input.exponentLength_eq {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : Input E eBytes pBytes entropy s) : w32 s.mem E.base 16 = E.exponentLength :=
-  native_word (I.header 4 (by decide)) (by have := v.exponentLength; omega)
+  native_word (I.header 4 (by decide)) (by have := v.exponentLength; omega_using [this])
 
 theorem Input.randLength_eq {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (I : Input E eBytes pBytes entropy s) : w32 s.mem E.base 32 = E.randLength :=
@@ -49,10 +49,10 @@ theorem Input.keepWorkspace {E : Environment} (v : E.Valid) {eBytes pBytes entro
   have space : 256 ≤ E.size := v.geometry.headerFit
   refine I.keep v K base sp F ?_ ?_ symbol
   · intro i index
-    exact (W.read32 (by change 4 * i + 4 ≤ E.size; omega)
-      (fun r mem => Or.inl (by have := headerFar r mem; omega))).trans (I.header i index)
-  · exact (W.read32 (by change 44 + 4 ≤ E.size; omega)
-      (fun r mem => Or.inl (by have := headerFar r mem; omega))).trans I.usedPointer
+    exact (W.read32 (by change 4 * i + 4 ≤ E.size; omega_using [space, index])
+      (fun r mem => Or.inl (by have := headerFar r mem; omega_using [index, this]))).trans (I.header i index)
+  · exact (W.read32 (by change 44 + 4 ≤ E.size; omega_using [space])
+      (fun r mem => Or.inl (by have := headerFar r mem; omega_using [this]))).trans I.usedPointer
 
 theorem count_low {E : Environment} (v : E.Valid) {m : Mem}
     (H : word m E.base 152 = BitVec.ofNat 64 E.length) : w32 m E.base 152 = E.length := by
@@ -60,6 +60,6 @@ theorem count_low {E : Environment} (v : E.Valid) {m : Mem}
   have pair := word_eq_w32 m E.base 152
   rw [H, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans lengthBound (by decide : 2 ^ 32 < 2 ^ 64))] at pair
   have lo : w32 m E.base 152 < 2 ^ 32 := (m.readW _ 32).isLt
-  omega
+  omega_using [lengthBound, pair]
 
 end VG.Proof.RsaKeyGen.X86.Candidate

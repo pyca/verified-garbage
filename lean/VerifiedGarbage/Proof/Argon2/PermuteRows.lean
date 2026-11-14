@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # P on four columns at once
@@ -30,20 +31,20 @@ def mixAt (k : Nat) (x : Word × Word × Word × Word) : Word :=
 /-- GB on each column `q` (words `q`, `4 + q`, `8 + q`, `12 + q`) at once. -/
 def mixColumns (v : Vector Word 16) : Vector Word 16 :=
   Vector.ofFn fun j => mixAt (j.val / 4)
-    (mix (v[j.val % 4]'(by omega)) (v[4 + j.val % 4]'(by omega)) (v[8 + j.val % 4]'(by omega))
-      (v[12 + j.val % 4]'(by omega)))
+    (mix (v[j.val % 4]'(by omega_using [])) (v[4 + j.val % 4]'(by omega_using [])) (v[8 + j.val % 4]'(by omega_using []))
+      (v[12 + j.val % 4]'(by omega_using [])))
 
 /-- Row `k` (words `4k…4k+3`) rotated left by `n · k` places. -/
 def rotRows (n : Nat) (v : Vector Word 16) : Vector Word 16 :=
-  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + n * (j.val / 4)) % 4]'(by omega)
+  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + n * (j.val / 4)) % 4]'(by omega_using [])
 
 theorem mixColumns_get (v : Vector Word 16) (j : Nat) (hj : j < 16) :
-    (mixColumns v)[j] = mixAt (j / 4) (mix (v[j % 4]'(by omega)) (v[4 + j % 4]'(by omega))
-      (v[8 + j % 4]'(by omega)) (v[12 + j % 4]'(by omega))) := by
+    (mixColumns v)[j] = mixAt (j / 4) (mix (v[j % 4]'(by omega_using [])) (v[4 + j % 4]'(by omega_using []))
+      (v[8 + j % 4]'(by omega_using [])) (v[12 + j % 4]'(by omega_using []))) := by
   simp only [mixColumns, Vector.getElem_ofFn]
 
 theorem rotRows_get (n : Nat) (v : Vector Word 16) (j : Nat) (hj : j < 16) :
-    (rotRows n v)[j] = v[4 * (j / 4) + (j % 4 + n * (j / 4)) % 4]'(by omega) := by
+    (rotRows n v)[j] = v[4 * (j / 4) + (j % 4 + n * (j / 4)) % 4]'(by omega_using [hj]) := by
   simp only [rotRows, Vector.getElem_ofFn]
 
 theorem GB_get' (v : Vector Word 16) {a b c d : Fin 16} (hab : a.1 ≠ b.1) (hac : a.1 ≠ c.1)
@@ -58,7 +59,7 @@ theorem GB_get' (v : Vector Word 16) {a b c d : Fin 16} (hab : a.1 ≠ b.1) (hac
 
 theorem cases16 {j : Nat} (hj : j < 16) : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨
     j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 := by
-  omega
+  omega_using [hj]
 
 /-- The value of a literal index. -/
 theorem val_lit (k : Nat) : (no_index (OfNat.ofNat k : Fin 16)).val = k % 16 := rfl

@@ -70,7 +70,7 @@ theorem hashPair_relCT {w16 : Bool} {M : Msg} {σ τ : State} (hp : Pre P L σ) 
   have ek₂ := h.2.1.ek
   rw [← sm.ek] at ek₂
   have ct := pairMCode_relCT (w16 := w16) (j := 3*i) (m := 3) P M.S hM.src (by decide) (by decide) (by decide)
-    hoa hob ps hs pu hu (fun k hk _ => by omega) h.1.hash h.1.ek hash₂ ek₂
+    hoa hob ps hs pu hu (fun k hk _ => by omega_using [hb, hk]) h.1.hash h.1.ek hash₂ ek₂
     (by rw [h.1.b.kb.sp, h.2.1.b.kb.sp, sm.sp]) (seeds (2*i)) (seeds (2*i+1)) habs
   have ht := exec_post (paired_step3 hp hk hM he hb h.1 h.2.2.1) et
   have hv := exec_post (paired_step3 hq hk' hM' he hb h.2.1 h.2.2.2.1) eu

@@ -76,12 +76,12 @@ theorem callAt_ok {n : String} {c : Prog isa} {k : Contract isa}
   refine WP.seq (WP.mono (glue_ok' hok hnd s) fun s1 h1 => ?_)
   have hm := h1.1.2
   have k1 := h1.2
-  refine WP.call hv hsp (by omega) (hpre s1 h1) (by rw [k1.2.1, k1.2.2]; exact hc)
+  refine WP.call hv hsp (by omega_using [hd]) (hpre s1 h1) (by rw [k1.2.1, k1.2.2]; exact hc)
     (by rw [k1.2.2]; exact hw) fun s' hrd hwr hcs hf _ hpost => ⟨⟨hrd.trans k1.2.1, hwr.trans k1.2.2,
       fun r hr => by rw [hcs r hr, k1.gpr (argRegs_cs r hr)], ?_⟩, s1, h1, hpost⟩
   have hsp1 : s1.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
   rw [hm, hsp1] at hf
-  exact Frame.below_mono hf (by omega) (by omega)
+  exact Frame.below_mono hf (by omega_using [hd]) (by omega_using [])
 
 /-- The trace of the moves then a call, from two runs where the moves are
 the same and the callee's public data agree. -/
@@ -113,7 +113,7 @@ theorem stackBelow_sub (sp : Addr) {n : Nat} (hn : n ≤ 16) :
   | m + 1, hr =>
     simp only [stackBelow, List.mem_singleton] at hr
     subst hr
-    exact below_sub (by omega) (by omega)
+    exact below_sub (by omega_using [hn]) (by omega_using [])
 
 /-- A contract with a stack of at most 16 bytes asks no more than with 16. -/
 theorem pre_stack {sig : Sig} {pre : Curry (sig.words X86_64.abi.ptrBits) (Mem → Prop)}

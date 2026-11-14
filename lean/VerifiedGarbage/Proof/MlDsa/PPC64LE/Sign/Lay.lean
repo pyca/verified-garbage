@@ -66,13 +66,13 @@ theorem sfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
 theorem SFacts.scr {p : Params} (hF : SFacts p) :
     5120 + 1024 * (5 + 4 * p.k + 3 * p.ℓ + p.k * p.ℓ) ≤ scrLen p ∧ 32768 ≤ scrLen p ∧ scrLen p < 2 ^ 31 := by
   have := hF.k; have := hF.l; have := hF.kl
-  simp only [scrLen, scratchWords]; omega
+  simp only [scrLen, scratchWords]; omega_arith
 
 theorem SFacts.lens {p : Params} (hF : SFacts p) : p.skLen < 32768 ∧ p.sigLen < 32768 := by
   have := hF.k; have := hF.l; have := hF.om
   refine ⟨?_, ?_⟩
-  · rw [hF.sk]; rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> rw [e] <;> omega
-  · rw [hF.sig, sigH]; rcases hF.ct with e | e | e <;> rcases hF.lz with e' | e' <;> rw [e, e'] <;> omega
+  · rw [hF.sk]; rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> rw [e] <;> omega_arith
+  · rw [hF.sig, sigH]; rcases hF.ct with e | e | e <;> rcases hF.lz with e' | e' <;> rw [e, e'] <;> omega_arith
 
 /-- The slot of `Â[0, 0]`; entry `e = ℓi + j` is in slot `aBase + e`. -/
 abbrev aBase (p : Params) : Nat := 5 + 4 * p.k + 3 * p.ℓ
@@ -170,12 +170,12 @@ theorem slay1_ok {p : Params} {STK : Nat} {σ : State} (hp : SPre p STK σ) : Ok
   have es : (⟨σ.sp - BitVec.ofNat 64 STK, STK⟩ : Region) = below σ.sp STK := rfl
   refine ⟨fun i hi => ?_, fun i hi j hj hij hw => ?_⟩
   · simp only [slay1, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     exacts [hp.f_c, stk_fit hp, hp.f_k, hp.f_m, hp.f_r]
   · simp only [slay1, List.length_cons, List.length_nil] at hi hj
     simp only [sWb1, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, slay1, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | sdisj hp es
 
@@ -183,12 +183,12 @@ theorem slay2_ok {p : Params} {STK : Nat} {σ : State} (hp : SPre p STK σ) : Ok
   have es : (⟨σ.sp - BitVec.ofNat 64 STK, STK⟩ : Region) = below σ.sp STK := rfl
   refine ⟨fun i hi => ?_, fun i hi j hj hij hw => ?_⟩
   · simp only [slay2, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     exacts [hp.f_c, stk_fit hp, hp.f_k, hp.f_m, hp.f_g]
   · simp only [slay2, List.length_cons, List.length_nil] at hi hj
     simp only [sWb2, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, slay2, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | sdisj hp es
 

@@ -60,7 +60,7 @@ theorem Slots.frame {L : Lay} {m m' : Mem} {rs : List Region} (hk : Slots L m) (
   have k : ∀ d, oOut ≤ d → d + 8 ≤ oOut + 48 →
       m'.readW (L.B + BitVec.ofNat 64 d) 64 = m.readW (L.B + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     hf.readW (r := ⟨L.B + BitVec.ofNat 64 oOut, 48⟩)
-      (Offset.contains _ h₁ (by simpa [oOut] using h₂) (by simp only [oOut]; omega)) hd (by decide)
+      (Offset.contains _ h₁ (by simpa [oOut] using h₂) (by simp only [oOut]; omega_using [])) hd (by decide)
   exact ⟨(k oOut (by decide) (by decide)).trans hk.out, (k oN (by decide) (by decide)).trans hk.n,
     (k oK (by decide) (by decide)).trans hk.k, (k oE (by decide) (by decide)).trans hk.e,
     (k oEl (by decide) (by decide)).trans hk.el, (k oIn (by decide) (by decide)).trans hk.inp⟩
@@ -68,7 +68,7 @@ theorem Slots.frame {L : Lay} {m m' : Mem} {rs : List Region} (hk : Slots L m) (
 theorem Lay.Ok.args_contains {L : Lay} (hL : L.Ok) {j : Nat} (hj : j < 12) :
     L.ARGS.Contains (L.B + BitVec.ofNat 64 (arg j)) 8 := by
   have hnB := hL.nB
-  refine Offset.contains _ ?_ ?_ ?_ <;> simp only [arg, stackBytes, frameBytes] <;> omega
+  refine Offset.contains _ ?_ ?_ ?_ <;> simp only [arg, stackBytes, frameBytes] <;> omega_arith
 
 namespace Ctx
 
@@ -79,12 +79,12 @@ include hc
 /-- A range in the inner frame may be read. -/
 theorem inFr (hL : L.Ok) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by have := hL.nB; unfold frameBytes at h; omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by have := hL.nB; unfold frameBytes at h; omega_using [h])⟩
 
 /-- A range in the inner frame may be written. -/
 theorem inFrW (hL : L.Ok) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ h (by have := hL.nB; unfold frameBytes at h; omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ h (by have := hL.nB; unfold frameBytes at h; omega_using [h])⟩
 
 /-- Our stack argument `j` may be read. -/
 theorem inArgs (hL : L.Ok) {j : Nat} (hj : j < 12) :
@@ -100,7 +100,7 @@ theorem argW (hL : L.Ok) {j : Nat} (hj : j < 12) :
   rintro r (rfl | rfl | rfl)
   · exact hL.oa.symm
   · exact hL.sca.symm
-  · exact Offset.disjoint_base _ (Nat.le_refl _) (by simp only [stackBytes]; omega)
+  · exact Offset.disjoint_base _ (Nat.le_refl _) (by simp only [stackBytes]; omega_using [])
 
 /-- Code that writes only registers other than the callee-saved ones and
 the vector registers. -/
@@ -121,7 +121,7 @@ theorem store (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
     rw [hf.readW (r := L.LR) hlr (fun R hR => by
       simp only [List.mem_singleton] at hR; subst hR
-      exact Offset.disjoint_base _ (Nat.le_refl _) (by simp only [frameBytes]; omega)) (by decide)]
+      exact Offset.disjoint_base _ (Nat.le_refl _) (by simp only [frameBytes]; omega_using [])) (by decide)]
     exact hc.lr
   · simp only [List.mem_singleton] at hr; subst hr
     have := Offset.sub_base L.B (d := 0) (n := frameBytes) (k := stackBytes) (by decide)
@@ -160,7 +160,7 @@ theorem entered_mem (s : State) :
 theorem arg_slot (s : State) (j : Nat) (hj : j < 12) :
     stackArgAddr s j = (lay s).B + BitVec.ofNat 64 (arg j) := by
   simp only [stackArgAddr, lay, arg, frameBytes, stackBytes]
-  have : 8 * j < 2 ^ 64 := by omega
+  have : 8 * j < 2 ^ 64 := by omega_using [hj]
   bv_omega
 
 /-- `Ctx` on entry to the inner frame's body. -/
@@ -173,7 +173,7 @@ theorem entered_ctx {s : State} (h : chkA.pre s) : Ctx (lay s) s.gpr s.v s.mem (
   · rw [entered_mem]; exact Mem.readW_writeW_self64 _ _ _
   · rw [entered_mem]
     exact Frame.writeW (Frame.refl _ _) (r := (lay s).STK) (by simp) _
-      (Offset.contains_base _ (by simp only [frameBytes, stackBytes]; omega) (by decide))
+      (Offset.contains_base _ (by simp only [frameBytes, stackBytes]; omega_using []) (by decide))
 
 /-- The layout of a call from `s` that may also read `X`. -/
 def layW (s : State) (X : List Region) : Lay := { lay s with X := X }
@@ -196,7 +196,7 @@ theorem entered_ctxW {s : State} {R₀ X : List Region} (h : chkA.pre (s.withReg
   · rw [entered_mem]; exact Mem.readW_writeW_self64 _ _ _
   · rw [entered_mem]
     exact Frame.writeW (Frame.refl _ _) (r := (lay s).STK) (by simp only [List.mem_cons]; right; right; left; rfl) _
-      (Offset.contains_base _ (by simp only [frameBytes, stackBytes]; omega) (by decide))
+      (Offset.contains_base _ (by simp only [frameBytes, stackBytes]; omega_using []) (by decide))
 
 /-- The stack arguments on entry, at their place above the frames. -/
 theorem arg_m₀ {s : State} (j : Nat) (hj : j < 12) :

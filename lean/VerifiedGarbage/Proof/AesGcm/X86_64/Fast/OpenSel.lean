@@ -62,7 +62,7 @@ theorem openSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN
   obtain ⟨h12, h17, -⟩ : IsFast nl al n any := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12
   exact openOkW_ok v B (tagP_okP hF hks) pStable_kOk crOk_tailK C X hal hTa hTar hTr oT oA htl hok
-    (aad_mid hF C X E₃ hNp hnl hal (by omega))
+    (aad_mid hF C X E₃ hNp hnl hal (by omega_using [h17]))
 
 /-- `openFin lng`, for `lng` that leaves what `openOk_ok` does. -/
 theorem openFinW_wp {M : CtxMode} {lng : Prog isa} (hlng : LongOk M lng) {s : State}

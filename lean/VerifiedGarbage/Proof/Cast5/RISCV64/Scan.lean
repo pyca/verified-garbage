@@ -100,7 +100,7 @@ theorem tree_ok (L : Nat) : ∀ (o : Nat) (a : Reg) (rs : List Reg) (s : State) 
     have h0 := hal 0 (by decide)
     simp only [Nat.mul_zero, Nat.add_zero] at h0
     unfold tree
-    refine wp_ld (by omega) rfl h0.1 h0.2 fun s' u => WP.block_nil ⟨fun i _ => ?_, (upd_keep u).mono (by simp),
+    refine wp_ld (by omega_using [ho]) rfl h0.1 h0.2 fun s' u => WP.block_nil ⟨fun i _ => ?_, (upd_keep u).mono (by simp),
       u.mem⟩
     rw [u.gpr, Nat.pow_zero, Nat.mod_one, Nat.mul_zero, Nat.add_zero]
   | succ L ih =>
@@ -116,27 +116,27 @@ theorem tree_ok (L : Nat) : ∀ (o : Nat) (a : Reg) (rs : List Reg) (s : State) 
     unfold tree
     rw [WP.block_append_iff, WP.block_append_iff]
     -- The low half, into `a`.
-    refine WP.mono (ih o a (b :: rs) s ι (by simp; omega) hnd
-      (fun r hr => ⟨(hne r hr).1, fun c hc => (hne r hr).2 c (by omega)⟩)
-      (fun c hc => hm c (by omega)) (by rw [Nat.pow_succ] at ho; omega)
-      (fun e he => hal e (by rw [Nat.pow_succ]; omega))) fun t ⟨ta, tk, tm⟩ => ?_
+    refine WP.mono (ih o a (b :: rs) s ι (by simp; omega_using [hlen]) hnd
+      (fun r hr => ⟨(hne r hr).1, fun c hc => (hne r hr).2 c (by omega_using [hc])⟩)
+      (fun c hc => hm c (by omega_using [hc])) (by rw [Nat.pow_succ] at ho; omega_using [ho])
+      (fun e he => hal e (by rw [Nat.pow_succ]; omega_using [he]))) fun t ⟨ta, tk, tm⟩ => ?_
     have tep : t.gpr ep = s.gpr ep := tk.gpr (by simpa using fun h => (hne ep h).1 rfl)
     have tmk (c : Nat) (hc : c < L + 1) : t.gpr (maskReg c) = s.gpr (maskReg c) :=
       tk.gpr fun h => (hne _ h).2 c hc rfl
     -- The high half, into `b`.
-    refine WP.mono (ih (o + 16 * 2 ^ L) b rs t ι (by omega) (List.nodup_cons.mp hnd).2
-      (fun r hr => ⟨(hne r (by simp [hr])).1, fun c hc => (hne r (by simp [hr])).2 c (by omega)⟩)
-      (fun c hc => by rw [tmk c (by omega)]; exact hm c (by omega)) (by rw [Nat.pow_succ] at ho; omega)
+    refine WP.mono (ih (o + 16 * 2 ^ L) b rs t ι (by omega_using [hlen]) (List.nodup_cons.mp hnd).2
+      (fun r hr => ⟨(hne r (by simp [hr])).1, fun c hc => (hne r (by simp [hr])).2 c (by omega_using [hc])⟩)
+      (fun c hc => by rw [tmk c (by omega_using [hc])]; exact hm c (by omega_using [hc])) (by rw [Nat.pow_succ] at ho; omega_using [ho])
       (fun e he => by
         rw [tep, tk.2.1, tk.2.2, show o + 16 * 2 ^ L + 16 * e = o + 16 * (2 ^ L + e) by rw [Nat.mul_add, Nat.add_assoc]]
-        exact hal _ (by rw [Nat.pow_succ]; omega))) fun u ⟨ub, uk, um⟩ => ?_
+        exact hal _ (by rw [Nat.pow_succ]; omega_using [he]))) fun u ⟨ub, uk, um⟩ => ?_
     have ua : u.gpr a = t.gpr a := uk.gpr (List.nodup_cons.mp hnd).1
     have umk : u.gpr (maskReg L) = s.gpr (maskReg L) := by
-      rw [uk.gpr fun h => (hne _ (by simp [h])).2 L (by omega) rfl, tmk L (by omega)]
-    have hbm : b ≠ maskReg L := hb.2 L (by omega)
+      rw [uk.gpr fun h => (hne _ (by simp [h])).2 L (by omega_using []) rfl, tmk L (by omega_using [])]
+    have hbm : b ≠ maskReg L := hb.2 L (by omega_using [])
     -- The selection by level `L`.
     refine wp_pick hab hbm fun v va vk vm => WP.block_nil ⟨fun i hi => ?_, ?_, by rw [vm, um, tm]⟩
-    · rw [va, pick_bit, umk, hm L (by omega) i hi, ub i hi, ua, ta i hi, tep, tm, mod_two_pow_succ']
+    · rw [va, pick_bit, umk, hm L (by omega_using []) i hi, ub i hi, ua, ta i hi, tep, tm, mod_two_pow_succ']
       split
       · rw [Nat.mul_add, Nat.add_assoc]
       · rw [Nat.zero_add]
@@ -153,14 +153,14 @@ theorem setup_bit (x y : BitVec 64) {c : Nat} (hc : c < 64) {i : Nat} (hi : i < 
       if i < 32 then x.getLsbD c else y.getLsbD c := by
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_sshiftRight, BitVec.msb_eq_getLsbD_last]
-  have e : 63 - (63 - c) = c := by omega
-  have f : ¬ 63 + (32 + i) < 64 := by omega
+  have e : 63 - (63 - c) = c := by omega_using [hc]
+  have f : ¬ 63 + (32 + i) < 64 := by omega_using []
   by_cases h : i < 32
-  · simp [h, e, f, show ¬ (64 ≤ 32 + i) by omega, show ¬ 63 < 63 - c by omega]
+  · simp [h, e, f, show ¬ (64 ≤ 32 + i) by omega_using [h], show ¬ 63 < 63 - c by omega_using []]
   · by_cases h' : 63 + (i - 32) < 64
-    · simp [h, h', e, f, hi, show 64 ≤ 32 + i by omega, show ¬ 64 ≤ i - 32 by omega,
-        show ¬ 63 < 63 - c by omega, show ¬ 63 + (i - 32) < 63 - c by omega, show 63 + (i - 32) - (63 - c) = c by omega]
-    · simp [h, h', e, f, hi, show 64 ≤ 32 + i by omega, show ¬ 64 ≤ i - 32 by omega, show ¬ 63 < 63 - c by omega]
+    · simp [h, h', e, f, hi, show 64 ≤ 32 + i by omega_using [h], show ¬ 64 ≤ i - 32 by omega_using [hi],
+        show ¬ 63 < 63 - c by omega_using [], show ¬ 63 + (i - 32) < 63 - c by omega_using [], show 63 + (i - 32) - (63 - c) = c by omega_using [hc, h']]
+    · simp [h, h', e, f, hi, show 64 ≤ 32 + i by omega_using [h], show ¬ 64 ≤ i - 32 by omega_using [hi], show ¬ 63 < 63 - c by omega_using []]
 
 /-- The low word of a block's mask, from an index's block `h`, as all ones
 if `h ≤ J` (`h - J - 1` is negative). -/
@@ -186,7 +186,7 @@ theorem blk_bit {hl hh J : Nat} (hl16 : hl < 16) (hh16 : hh < 16) (hJ : J < 16) 
     · rw [lo_bits i hi, decide_eq_true h, Bool.true_or, decide_eq_true (by assumption)]
     · rw [BitVec.getLsbD_zero, Bool.false_or, decide_eq_false (by assumption)]
       split
-      · rw [hi_bits i hi, decide_eq_false (by omega)]
+      · rw [hi_bits i hi, decide_eq_false (by omega_using [h])]
       · rw [BitVec.getLsbD_zero]
   · rw [ite_eq_right h]
     have e1 : (if hl ≤ J then 0xFFFFFFFF#64 else 0#64).getLsbD i = false := by
@@ -195,7 +195,7 @@ theorem blk_bit {hl hh J : Nat} (hl16 : hl < 16) (hh16 : hh < 16) (hJ : J < 16) 
       · rw [BitVec.getLsbD_zero]
     rw [e1, Bool.false_or]
     split
-    · rw [hi_bits i hi, decide_eq_true (by omega), decide_eq_true (by assumption)]
+    · rw [hi_bits i hi, decide_eq_true (by omega_using [h]), decide_eq_true (by assumption)]
     · rw [BitVec.getLsbD_zero, decide_eq_false (by assumption)]
 
 /-! ## A pass -/
@@ -257,13 +257,13 @@ theorem body_ok {sp s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q J : N
   have g₃ (r : Reg) (hr : r ∉ [ep, idxReg (2 * q), idxReg (2 * q + 1)]) : s₃.gpr r = s.gpr r := k₃.gpr hr
   have e₃ : s₃.gpr ep = T + BitVec.ofNat 64 (256 * J) := by
     rw [u₃.other _ (by regs), u₂.other _ (by regs), u₁.gpr, h.ep,
-      Offset.add_ofNat_sub _ (by omega), show 256 * (J + 1) - 256 = 256 * J by omega]
+      Offset.add_ofNat_sub _ (by omega_using []), show 256 * (J + 1) - 256 = 256 * J by omega_using []]
   have zl : s₃.gpr (idxReg (2 * q)) = BitVec.ofNat 64 (idx (2 * q) / 16) - BitVec.ofNat 64 (J + 1) := by
     rw [u₃.other _ (by regs), u₂.gpr, u₁.other _ (by regs), h.zlo, z_step]
   have zh : s₃.gpr (idxReg (2 * q + 1)) = BitVec.ofNat 64 (idx (2 * q + 1) / 16) - BitVec.ofNat 64 (J + 1) := by
     rw [u₃.gpr, u₂.other _ (by regs), u₁.other _ (by regs), h.zhi, z_step]
   have mk₃ (c : Nat) (hc : c < 4) : s₃.gpr (maskReg c) = s.gpr (maskReg c) :=
-    g₃ _ (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> regs)
+    g₃ _ (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;> regs)
   -- The block's selection.
   have hoff (e : Nat) (he : e < 2 ^ 4) : s₃.gpr ep + BitVec.ofNat 64 (8 * q + 16 * e) =
       T + BitVec.ofNat 64 (256 * J + 8 * q + 16 * e) := by
@@ -272,10 +272,10 @@ theorem body_ok {sp s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q J : N
   have m₃ : s₃.mem = m := by rw [u₃.mem, u₂.mem, u₁.mem, h.mem]
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (tree_ok 4 (8 * q) (selReg q) [blkReg q, .a5, .t6, .s7] s₃ (ixOf idx q) (by simp)
-    (by regs) (by regs) (fun c hc i hi => by rw [mk₃ c hc]; exact h.mask c hc i hi) (by omega)
+    (by regs) (by regs) (fun c hc i hi => by rw [mk₃ c hc]; exact h.mask c hc i hi) (by omega_using [hq])
     (fun e he => by
       rw [hoff e he]
-      refine ⟨Sig.const_aligned hp.tal (by decide) ?_, ⟨_, hrT₃, Offset.contains_base _ (by omega) (by omega)⟩⟩
+      refine ⟨Sig.const_aligned hp.tal (by decide) ?_, ⟨_, hrT₃, Offset.contains_base _ (by omega_using [hq, hJ, he]) (by omega_using [hq, hJ, he])⟩⟩
       exact Nat.dvd_add (Nat.dvd_add (Nat.dvd_trans (by decide) (Nat.dvd_mul_right 256 J))
         (Nat.dvd_mul_right 8 q)) (Nat.dvd_trans (by decide) (Nat.dvd_mul_right 16 e))))
     fun s₄ ⟨sa, sk, sm⟩ => ?_
@@ -301,23 +301,23 @@ theorem body_ok {sp s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q J : N
   · rw [g₉ _ (by regs), g₈ _ (by regs) (by regs), e₃]
   · rw [g₉ _ (by regs), g₈ _ (by regs) (by regs), zl]
   · rw [g₉ _ (by regs), g₈ _ (by regs) (by regs), zh]
-  · rw [g₉ _ (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> regs),
-      g₈ _ (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> regs)
-        (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> regs),
+  · rw [g₉ _ (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;> regs),
+      g₈ _ (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;> regs)
+        (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;> regs),
       mk₃ c hc]
     exact h.mask c hc i hi
-  · have hl := hp.idx (2 * q) (by omega)
-    have hh := hp.idx (2 * q + 1) (by omega)
-    rw [va, pick_bit, b₈, blk_bit (by omega) (by omega) hJ hi, hsel, sa i hi,
+  · have hl := hp.idx (2 * q) (by omega_using [hq])
+    have hh := hp.idx (2 * q + 1) (by omega_using [hq])
+    rw [va, pick_bit, b₈, blk_bit (by omega_using [hl]) (by omega_using [hh]) hJ hi, hsel, sa i hi,
       show (if i < 32 then idx (2 * q) / 16 else idx (2 * q + 1) / 16) = ixOf idx q i / 16 by
         unfold ixOf; split <;> rfl]
     by_cases he : ixOf idx q i / 16 = J
-    · rw [ite_eq_left (decide_eq_true (by omega)), m₃, hoff _ (Nat.mod_lt _ (by decide))]
+    · rw [ite_eq_left (decide_eq_true (by omega_using [he])), m₃, hoff _ (Nat.mod_lt _ (by decide))]
       have := Nat.div_add_mod (ixOf idx q i) 16
-      rw [show 256 * J + 8 * q + 16 * (ixOf idx q i % 16) = 16 * ixOf idx q i + 8 * q by omega]
-    · rw [ite_eq_right (by rw [decide_eq_false (by omega)]; exact Bool.false_ne_true), g₈ _ (by regs) (by regs),
+      rw [show 256 * J + 8 * q + 16 * (ixOf idx q i % 16) = 16 * ixOf idx q i + 8 * q by omega_using [he]]
+    · rw [ite_eq_right (by rw [decide_eq_false (by omega_using [hJi, he])]; exact Bool.false_ne_true), g₈ _ (by regs) (by regs),
         g₃ _ (by regs)]
-      exact h.acc i hi (by omega)
+      exact h.acc i hi (by omega_using [hJi, he])
   · exact ((((h.keep.trans k₃).trans sk).trans k₈).trans vk).mono (by unfold passRegs treeRegs; regs)
   · rw [vm, u₈.mem, u₇.mem, u₆.mem, u₅.mem, sm, u₃.mem, u₂.mem, u₁.mem, h.mem]
 
@@ -331,11 +331,11 @@ theorem maskSetup_ok {is : List Instr} {s : State} {Q : State → Prop} {q c : N
     WP isa (.block (maskSetup q c ++ is)) s Q := by
   have r1 : maskReg c ≠ idxReg (2 * q) ∧ maskReg c ≠ idxReg (2 * q + 1) ∧ maskReg c ≠ .a5 ∧
       Reg.a5 ≠ idxReg (2 * q + 1) := by
-    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> regs
+    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;> regs
   unfold maskSetup
   simp only [List.cons_append, List.nil_append]
-  refine wp_sll (by omega) fun s₁ u₁ => wp_sra (by decide) fun s₂ u₂ => wp_srl (by decide) fun s₃ u₃ =>
-    wp_sll (by omega) fun s₄ u₄ => wp_sra (by decide) fun s₅ u₅ => wp_sll (by decide) fun s₆ u₆ =>
+  refine wp_sll (by omega_using []) fun s₁ u₁ => wp_sra (by decide) fun s₂ u₂ => wp_srl (by decide) fun s₃ u₃ =>
+    wp_sll (by omega_using []) fun s₄ u₄ => wp_sra (by decide) fun s₅ u₅ => wp_sll (by decide) fun s₆ u₆ =>
     wp_or fun s₇ u₇ => k s₇ ?_ ?_ ?_
   · rw [u₇.gpr, u₆.other _ r1.2.2.1, u₆.gpr, u₅.other _ r1.2.2.1, u₅.gpr, u₄.other _ r1.2.2.1, u₄.gpr, u₃.gpr,
       u₃.other _ r1.2.1.symm, u₂.gpr, u₂.other _ r1.2.1.symm, u₁.gpr, u₁.other _ r1.2.1.symm]
@@ -348,13 +348,13 @@ theorem mask_bit {x y : Nat} {c i : Nat} (hc : c < 4) (hi : i < 64) :
     ((((BitVec.ofNat 64 x <<< (63 - c)).sshiftRight 63) >>> 32) |||
       (((BitVec.ofNat 64 y <<< (63 - c)).sshiftRight 63) <<< 32)).getLsbD i =
       (if i < 32 then x else y).testBit c := by
-  rw [setup_bit _ _ (by omega) hi]
-  split <;> rw [BitVec.getLsbD_ofNat, decide_eq_true (by omega : c < 64), Bool.true_and]
+  rw [setup_bit _ _ (by omega_using [hc]) hi]
+  split <;> rw [BitVec.getLsbD_ofNat, decide_eq_true (by omega_using [hc] : c < 64), Bool.true_and]
 
 theorem shr4 (x : Nat) (hx : x < 256) : BitVec.ofNat 64 x >>> 4 = BitVec.ofNat 64 (x / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [hx]), Nat.mod_eq_of_lt (by omega_using [hx])]
 
 theorem passStart_eq (q : Nat) : passStart q = maskSetup q 0 ++ (maskSetup q 1 ++ (maskSetup q 2 ++
     (maskSetup q 3 ++ ([.shift .srl .d (idxReg (2 * q)) (idxReg (2 * q)) 4,
@@ -370,9 +370,9 @@ theorem passStart_ok {s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q : N
     (hhi : s.gpr (idxReg (2 * q + 1)) = BitVec.ofNat 64 (idx (2 * q + 1))) (ht : s.gpr tbl = T)
     (hm : s.mem = m) :
     WP isa (.block (passStart q)) s (PassAt s m T idx q 16) := by
-  have hl := hp.idx (2 * q) (by omega)
-  have hh := hp.idx (2 * q + 1) (by omega)
-  have hix (i : Nat) : ixOf idx q i < 256 := by unfold ixOf; split <;> omega
+  have hl := hp.idx (2 * q) (by omega_using [hq])
+  have hh := hp.idx (2 * q + 1) (by omega_using [hq])
+  have hix (i : Nat) : ixOf idx q i < 256 := by unfold ixOf; split <;> omega_arith
   -- A mask kept by what follows its making.
   have mk (c : Nat) (hc : c < 4) (t : State)
       (hv : t.gpr (maskReg c) = ((((s.gpr (idxReg (2 * q))) <<< (63 - c)).sshiftRight 63) >>> 32) |||
@@ -399,7 +399,7 @@ theorem passStart_ok {s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q : N
     ((k₀.trans k₁).trans k₂).trans k₃
   -- The masks, as they stay to the end.
   have M₃ (c : Nat) (hc : c < 4) : ∀ i < 64, (s₃.gpr (maskReg c)).getLsbD i = (ixOf idx q i).testBit c := by
-    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl
     · exact mk 0 hc s₃ (by rw [k₃.gpr (by decide), k₂.gpr (by decide), k₁.gpr (by decide), v₀])
     · exact mk 1 hc s₃ (by rw [k₃.gpr (by decide), k₂.gpr (by decide), v₁])
     · exact mk 2 hc s₃ (by rw [k₃.gpr (by decide), v₂])
@@ -411,14 +411,14 @@ theorem passStart_ok {s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q : N
   have kt : Keep [idxReg (2 * q), idxReg (2 * q), idxReg (2 * q + 1), idxReg (2 * q + 1), ep, ep, ep] s₃ t₇ :=
     ((((((upd_keep w₁).trans (upd_keep w₂)).trans (upd_keep w₃)).trans (upd_keep w₄)).trans (upd_keep w₅)).trans
       (upd_keep w₆)).trans (upd_keep w₇)
-  refine ⟨?_, ?_, ?_, fun c hc i hi => ?_, fun i _ h16 => absurd h16 (by have := hix i; omega), ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, fun c hc i hi => ?_, fun i _ h16 => absurd h16 (by have := hix i; omega_using [this]), ?_, ?_⟩
   · rw [w₇.gpr, w₆.gpr, w₅.gpr, w₄.other _ (by regs), w₃.other _ (by regs), w₂.other _ (by regs),
       w₁.other _ (by regs), kk.gpr (by regs), ht, Offset.add_add, Offset.add_add]
   · rw [w₇.other _ (by regs), w₆.other _ (by regs), w₅.other _ (by regs), w₄.other _ (by regs),
       w₃.other _ (by regs), w₂.gpr, w₁.gpr, l₃, hlo, shr4 _ hl]
   · rw [w₇.other _ (by regs), w₆.other _ (by regs), w₅.other _ (by regs), w₄.gpr, w₃.gpr,
       w₂.other _ (by regs), w₁.other _ (by regs), h₃, hhi, shr4 _ hh]
-  · rw [kt.gpr (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> regs)]
+  · rw [kt.gpr (by rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;> regs)]
     exact M₃ c hc i hi
   · exact (kk.trans kt).mono (by unfold passRegs treeRegs; regs)
   · rw [w₇.mem, w₆.mem, w₅.mem, w₄.mem, w₃.mem, w₂.mem, w₁.mem, m₃, m₂, m₁, m₀, hm]
@@ -440,23 +440,23 @@ theorem passEnd_ok {sp s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q : 
     WP.block_nil ⟨?_, ?_, (h.keep.trans (((upd_keep w₁).trans (upd_keep w₂)).trans (upd_keep w₃))).mono
       (by unfold passRegs treeRegs; regs), by rw [w₃.mem, w₂.mem, w₁.mem, h.mem]⟩
   · rw [w₃.gpr, w₂.gpr, w₁.other _ (by regs), tw, ent, show 16 * idx (2 * q) + 4 * (2 * q) =
-      16 * idx (2 * q) + 8 * q by omega, Mem.readW_lo32 rfl]
+      16 * idx (2 * q) + 8 * q by omega_using [], Mem.readW_lo32 rfl]
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_setWidth]
     by_cases h32 : i < 32
-    · rw [show 32 + i - 32 = i by omega, ha i (by omega), ixOf, ite_eq_left h32]
-      simp [h32, show 32 + i < 64 by omega, show i < 64 by omega]
-    · simp [h32, show ¬ 32 + i < 64 by omega]
+    · rw [show 32 + i - 32 = i by omega_using [], ha i (by omega_using [hi]), ixOf, ite_eq_left h32]
+      simp [h32, show 32 + i < 64 by omega_using [h32], show i < 64 by omega_using [hi]]
+    · simp [h32, show ¬ 32 + i < 64 by omega_using [h32]]
   · rw [w₃.other _ (by regs), w₂.other _ (by regs), w₁.gpr, tw, ent, show 16 * idx (2 * q + 1) + 4 * (2 * q + 1) =
-      16 * idx (2 * q + 1) + 8 * q + 4 by omega, ← Offset.add_add, Mem.readW_hi32 rfl]
+      16 * idx (2 * q + 1) + 8 * q + 4 by omega_using [], ← Offset.add_add, Mem.readW_hi32 rfl]
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb']
     by_cases h32 : i < 32
-    · rw [ha (32 + i) (by omega), ixOf, ite_eq_right (by omega)]
-      simp [h32, show i < 64 by omega]
-    · rw [BitVec.getLsbD_of_ge _ _ (by omega)]
+    · rw [ha (32 + i) (by omega_using [h32]), ixOf, ite_eq_right (by omega_using [])]
+      simp [h32, show i < 64 by omega_using [hi]]
+    · rw [BitVec.getLsbD_of_ge _ _ (by omega_using [h32])]
       simp [h32]
 
 /-- Pass `q`: values `2q` and `2q + 1` are words `2q` and `2q + 1` of the
@@ -474,17 +474,17 @@ theorem pass_ok {s : State} {m : Mem} {T : Addr} {idx : Nat → Nat} {q : Nat} (
   refine WP.seq (WP.mono (Q := PassAt s m T idx q 0) ?_ fun s₂ h₂ => passEnd_ok hq h₂)
   refine WP.loop (fun n v => 0 < n ∧ n ≤ 16 ∧ PassAt s m T idx q n v) ?_ 16 s₁ ⟨by decide, Nat.le_refl _, h₁⟩
   rintro n v ⟨hn, hn16, hv⟩
-  obtain ⟨J, rfl⟩ : ∃ J, n = J + 1 := ⟨n - 1, by omega⟩
-  refine WP.mono (body_ok hq (by omega) hp hv) fun w hw => ?_
+  obtain ⟨J, rfl⟩ : ∃ J, n = J + 1 := ⟨n - 1, by omega_using [hn]⟩
+  refine WP.mono (body_ok hq (by omega_using [hn16]) hp hv) fun w hw => ?_
   have tw' : w.gpr tbl = T := by rw [hw.keep.gpr (by unfold passRegs treeRegs; regs), ht]
   have ev : isa.eval (.ne ep tbl) w = some (w.gpr ep != w.gpr tbl) := rfl
   by_cases hJ : J = 0
   · subst hJ
     refine .inl ⟨by rw [ev, hw.ep, tw', Nat.mul_zero]; simp, hw⟩
-  · refine .inr ⟨?_, J, by omega, by omega, by omega, hw⟩
+  · refine .inr ⟨?_, J, by omega_using [], by omega_using [hJ], by omega_using [hn16], hw⟩
     rw [ev, hw.ep, tw', bne_iff_ne.mpr]
     intro e
-    have := Offset.add_ofNat_ne T (a := 256 * J) (b := 0) (by omega) (by decide) (by omega)
+    have := Offset.add_ofNat_ne T (a := 256 * J) (b := 0) (by omega_using [hn16]) (by decide) (by omega_using [hJ])
     simp only [BitVec.add_zero] at this
     exact this e
 
@@ -518,7 +518,7 @@ theorem scan_ok (s : State) (h : ScanPre s) :
     (by rw [tg _ (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]) (tg _ (by decide)) tm)
     fun u ⟨u0, u1, uk, um⟩ => ⟨fun k hk => ?_, (tk.trans uk).mono (by decide), um⟩
   have ug (r : Reg) (hr : r ∉ passRegs 1) : u.gpr r = t.gpr r := uk.gpr hr
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl
   · rw [ug _ (by decide)]; exact t0
   · rw [ug _ (by decide)]; exact t1
   · exact u0

@@ -69,8 +69,8 @@ theorem checkArgs_ok {L : GL} {s₀ t : State} (hL : L.Ok) (hsp₀ : s₀.sp = L
   obtain ⟨i0, l0⟩ := hc.word hL hsp₀ (d := 0) (by decide) (by decide)
   have o0 := hc.a0
   simp only [off, BitVec.add_zero] at i0 l0 o0
-  have e1 := lenP_eq (pl := L.pl) (ql := L.ql) (by omega) (by omega)
-  have e2 := lenQ_eq (pl := L.pl) (ql := L.ql) (by omega) (by omega)
+  have e1 := lenP_eq (pl := L.pl) (ql := L.ql) (by omega_using [hp]) (by omega_using [hq])
+  have e2 := lenQ_eq (pl := L.pl) (ql := L.ql) (by omega_using [hp]) (by omega_using [hq])
   refine WP.mono (wp_sp (WP.keep checkRegs (Q := fun t' => t'.gpr .a0 = L.par ∧
     t'.gpr .a1 = BitVec.ofNat 64 L.kl ∧ t'.gpr .a2 = BitVec.ofNat 64 L.pl ∧ t'.gpr .a3 = BitVec.ofNat 64 L.ql ∧
     t'.gpr .a4 = L.scr ∧ t'.gpr .a5 = BitVec.ofNat 64 L.sl ∧ t'.mem = t.mem) ?_ (by decide) (by rfl)))
@@ -80,7 +80,7 @@ theorem checkArgs_ok {L : GL} {s₀ t : State} (hL : L.Ok) (hsp₀ : s₀.sp = L
   unfold checkArgs
   brun [lenP, lenQ, hc.s1, hc.s2, hc.s6, e1, e2, hc.sp, exec_addSp (show 0 < 2048 by decide), BitVec.add_zero,
     i0, l0, o0, ← BitVec.ofNat_add]
-  congr 1; simp only [GL.kl]; omega
+  congr 1; simp only [GL.kl]; omega_using []
 
 /-- `vg_dsa_check_parameters`'s contract on the registers holds when it is called. -/
 theorem check_pre {s₀ t : State} (h : gkContract.pre s₀) (ha : CArgs (glOf s₀) s₀ t) :
@@ -94,14 +94,14 @@ theorem check_pre {s₀ t : State} (h : gkContract.pre s₀) (ha : CArgs (glOf s
   have tn : ∀ n, n < 2 ^ 64 → (BitVec.ofNat 64 n).toNat = n := fun n hn => by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
   have hsp16 : (glOf s₀).F.toNat % 16 = 0 := by
-    have h1 := hL.F_toNat; have h2 := hL.spF; have h3 := hL.sp16; simp only [frameBytes] at h1 h2; omega
+    have h1 := hL.F_toNat; have h2 := hL.spF; have h3 := hL.sp16; simp only [frameBytes] at h1 h2; omega_using [h1, h3]
   unfold pcContract
   simp only [State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_sp,
     State.callEntry_sp, ha.ctx.sp]
   rw [g .a0 (by decide), g .a1 (by decide), g .a2 (by decide), g .a3 (by decide), g .a4 (by decide),
-    g .a5 (by decide), ha.a0, ha.a1, ha.a2, ha.a3, ha.a4, ha.a5, tn _ (by simp only [GL.kl]; omega),
-    tn (glOf s₀).pl (by omega), tn (glOf s₀).ql (by omega), tn _ hsl]
-  exact ⟨rfl, rfl, hL.dKS, hL.nwPar, hL.nwScr, hL.lv, rfl, by simp only [Spec.Dsa.scratchWords]; omega,
+    g .a5 (by decide), ha.a0, ha.a1, ha.a2, ha.a3, ha.a4, ha.a5, tn _ (by simp only [GL.kl]; omega_using [hp, hq]),
+    tn (glOf s₀).pl (by omega_using [hp]), tn (glOf s₀).ql (by omega_using [hq]), tn _ hsl]
+  exact ⟨rfl, rfl, hL.dKS, hL.nwPar, hL.nwScr, hL.lv, rfl, by simp only [Spec.Dsa.scratchWords]; omega_using [hsw],
     hL.alS, hsp16⟩
 
 theorem check_cov {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s₀ t) :
@@ -142,11 +142,11 @@ theorem check_ok {s₀ t : State} (h : gkContract.pre s₀) (ha : CArgs (glOf s�
   have hpost' := hpost
   simp only [pcContract, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem] at hpost'
   have e4 : (BitVec.ofNat 64 (glOf s₀).kl).toNat = (glOf s₀).kl := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [GL.kl]; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by simp only [GL.kl]; omega_using [hp, hq])]
   have e5 : (BitVec.ofNat 64 (glOf s₀).pl).toNat = (glOf s₀).pl := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hp])]
   have e6 : (BitVec.ofNat 64 (glOf s₀).ql).toNat = (glOf s₀).ql := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hq])]
   simp only [g .a0 (by decide), g .a1 (by decide), g .a2 (by decide), g .a3 (by decide), ha.a0, ha.a1, ha.a2,
     ha.a3, e4, e5, e6, hc.par] at hpost'
   exact hpost'

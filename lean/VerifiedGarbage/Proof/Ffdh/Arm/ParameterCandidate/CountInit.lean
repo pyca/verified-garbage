@@ -30,7 +30,7 @@ theorem expCountInit_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
   refine WP.seq (WP.mono (keyClrLow_ok workspaceU readyU (j := 29) (by decide)) ?_)
   rintro v ⟨readyV, keepV, numberV, restV⟩
   rw [numberU] at numberV
-  have valueV : num v.mem (base + 96#32) (2 * w + 2) 29 = n - 1 := by omega
+  have valueV : num v.mem (base + 96#32) (2 * w + 2) 29 = n - 1 := by omega_using [odd, numberV]
   have restUV := restU.trans restV
   have workspaceV := workspace.congr restUV.wr
   have stackV : Workspace v v.sp 72 := by rw [restUV.sp]; exact stack.congr restUV.wr
@@ -47,7 +47,7 @@ theorem expCountInit_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
     exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
   have rest : Rest opRegs s t := restUV.trans (restT.mono (by simp [opRegs]))
   refine WP.block_nil ⟨workspace.congr rest.wr, readyV.rest restT (by decide) (by decide) (by decide),
-    dataV.after_workspaceEq equal, ?_, ?_, ?_, by omega, by omega, by simp, rfl, ?_, ?_, ?_,
+    dataV.after_workspaceEq equal, ?_, ?_, ?_, by omega_using [large], by omega_using [odd], by simp, rfl, ?_, ?_, ?_,
     (frameV.mono (by simp)).trans (frameT.mono (by simp)), rest⟩
   · rw [rest.sp]; exact stack.congr rest.wr
   · rw [rest.sp]; exact separate
@@ -59,6 +59,6 @@ theorem expCountInit_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
   · intro d bound
     have fits := readyV.arrayFit (j := 0) (by decide)
     simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
-    rw [equal.word (bits := 64) (by omega), key_keep_header workspace ready (by simp) bound keep]
+    rw [equal.word (bits := 64) (by omega_using [bound, fits]), key_keep_header workspace ready (by simp) bound keep]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

@@ -94,7 +94,7 @@ theorem loadS_L1 {a : PD × List Byte} {s : State} (h : C0 a s) : WP isa (.block
   obtain ⟨hp, rfl, -⟩ := h
   have alsp := hp.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   refine WP.mono (loadS_ok s ⟨stackArgs s, List.mem_append_left _ (by rw [hp.1]; simp),
-    by simp [Region.Contains]⟩ (by omega)) fun t ⟨⟨a0', _, _⟩, k⟩ => ⟨a0', k.gpr (by decide), ?_⟩
+    by simp [Region.Contains]⟩ (by omega_using [alsp])) fun t ⟨⟨a0', _, _⟩, k⟩ => ⟨a0', k.gpr (by decide), ?_⟩
   rw [k.gpr (by decide)]; simp [dataOf]
 
 theorem front_rel : RelCT isa (Two C0) (.block (PublicChecked.save ++ setup)) (Two MidE) := by

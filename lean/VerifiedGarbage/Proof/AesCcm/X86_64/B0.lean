@@ -219,7 +219,7 @@ theorem b0_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-      · exact L.w_w (.inr (by omega)) (by decide) (by omega)) (by decide)]
+      · exact L.w_w (.inr (by omega_using [hy])) (by decide) (by omega_using [hy])) (by decide)]
     exact S.rounds
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
   refine WP.mono (updBlock_ok v L E₃ hR hRo₃ hy) fun s₄ ⟨E₄, _, hrd₄, hwr₄, f₄, h₄⟩ =>
@@ -238,6 +238,6 @@ theorem b0_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact L.k_w.sub_right (Lay.wSub (by decide))
-      · exact L.k_w.sub_right (Lay.wSub (by omega))) hRb]
+      · exact L.k_w.sub_right (Lay.wSub (by omega_using [hy]))) hRb]
 
 end VG.Proof.AesCcm.X86_64

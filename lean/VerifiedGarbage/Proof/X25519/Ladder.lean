@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519: the ladder one iteration at a time
@@ -31,11 +32,11 @@ theorem ladderAfter_255 (k : Nat) (x1 : Fe) : ladderAfter k x1 255 = init x1 := 
 
 theorem take_reverse_range {n : Nat} (hn : n < 255) :
     (List.range 255).reverse.take (255 - n) = (List.range 255).reverse.take (255 - (n + 1)) ++ [n] := by
-  rw [show 255 - n = 255 - (n + 1) + 1 by omega, List.take_add_one]
+  rw [show 255 - n = 255 - (n + 1) + 1 by omega_using [hn], List.take_add_one]
   congr
-  rw [List.getElem?_reverse (by simp; omega), List.getElem?_range (by simp; omega)]
+  rw [List.getElem?_reverse (by simp; omega_using []), List.getElem?_range (by simp; omega_using [])]
   simp only [List.length_range, Option.toList_some, List.cons.injEq, and_true]
-  omega
+  omega_using [hn]
 
 theorem ladderAfter_step (k : Nat) (x1 : Fe) {n : Nat} (hn : n < 255) :
     ladderAfter k x1 n = ladderStep k x1 (ladderAfter k x1 (n + 1)) n := by
@@ -56,7 +57,7 @@ theorem ladderAfter_swap_le (k : Nat) (x1 : Fe) {n : Nat} (hn : n ≤ 255) :
     (ladderAfter k x1 n).swap ≤ 1 := by
   rcases Nat.lt_or_ge n 255 with h | h
   · rw [ladderAfter_step k x1 h]; exact bit_le k n
-  · rw [show n = 255 by omega]; exact Nat.zero_le _
+  · rw [show n = 255 by omega_using [hn, h]]; exact Nat.zero_le _
 
 /-- One iteration, spelled out: the new `swap` and the swaps by it, then the
 formulas. -/

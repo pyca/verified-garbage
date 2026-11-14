@@ -65,18 +65,18 @@ structure KFin (p : Params) (s₀ s : State) : Prop where
 theorem trHash_piece {p : Params} (hF : PFacts p) : KP p (KRx p (p.ℓ + p.k) p.ℓ p.k) (KFin p) (trHash p) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   refine hash1_piece (Y := YK p) 0 200 136 0x1f ⟨1, 0, p.pkLen⟩ ⟨2, 64, 64⟩ Proof.MlKem.rate136 (by layd)
-    (by rw [YK_stk]; omega) (by show p.pkLen < 2 ^ 32; rw [hF.pk]; omega) (by decide) (by native_taint_decide) (h₁ := .block [])
+    (by rw [YK_stk]; omega_using []) (by show p.pkLen < 2 ^ 32; rw [hF.pk]; omega_using [hk]) (by decide) (by native_taint_decide) (h₁ := .block [])
     (by kernel_rfl) (h₃ := .block []) (by kernel_rfl) (h₄ := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, h⟩ => h.ctx) fun s₀ s s' hp ⟨A, S, h⟩ h' fr out => ⟨A, S, ?_, ?_⟩
   · have hs : SafeR p (p.ℓ + p.k) p.k [sb 0 200, sb 200 640, ⟨2, 64, 64⟩] :=
       (SafeR.sc hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (.inl (by decide)) (.inl (by decide))
-        (by simp only [scrLen, hF.sw]; omega)).append (bs₁ := [_])
+        (by simp only [scrLen, hF.sw]; omega_using [])).append (bs₁ := [_])
       ((SafeR.sc hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (.inl (by decide)) (.inl (by decide))
-        (by simp only [scrLen, hF.sw]; omega)).append (bs₁ := [_])
+        (by simp only [scrLen, hF.sw]; omega_using [])).append (bs₁ := [_])
       (SafeR.sk hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide))
-        (.inl (by simp only [oT0]; omega)) (by rw [hF.sk, oT0]; omega)))
-    exact h.keep hp (N := 40) (by omega) hs (fun _ _ => by layd) fr h'
-  · rw [out, sponge_H, keepBytes hp (N := 40) (stkN (by omega)) (b := ⟨1, 0, p.pkLen⟩) (by layd) fr]
+        (.inl (by simp only [oT0]; omega_using [])) (by rw [hF.sk, oT0]; omega_using [])))
+    exact h.keep hp (N := 40) (by omega_using []) hs (fun _ _ => by layd) fr h'
+  · rw [out, sponge_H, keepBytes hp (N := 40) (stkN (by omega_using [])) (b := ⟨1, 0, p.pkLen⟩) (by layd) fr]
 
 /-- The body's end: the keys, and `eax` the AND of the samplers' results. -/
 structure Done (p : Params) (s₀ s : State) : Prop extends KFin p s₀ s where
@@ -87,7 +87,7 @@ theorem ret_piece {p : Params} (hF : PFacts p) :
   refine ld32_piece (Y := YK p) oACC (by layd) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => by obtain ⟨_, _, h, _⟩ := h.ex; exact h.ctx) fun s₀ s s' hp h h' m' e => ⟨h', ?_, ?_⟩
   · obtain ⟨A, S, hk, htr⟩ := h.ex
-    exact ⟨A, S, hk.keep hp (bs := []) (N := 0) (by omega) (by safeR hF) (fun _ _ => by layd) (by rw [m']; exact Frame.refl _ _)
+    exact ⟨A, S, hk.keep hp (bs := []) (N := 0) (by omega_using []) (by safeR hF) (fun _ _ => by layd) (by rw [m']; exact Frame.refl _ _)
       h', by rw [m']; exact htr⟩
   · rw [e, accV, m']; rfl
 
@@ -99,20 +99,20 @@ theorem body_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) :
   unfold body
   refine (ldsc_piece (Y := YK p) (ht := .block []) (by kernel_rfl)).seq ((seeds_piece hF).seq ?_)
   refine Piece.seq (B := KSamp p (p.k * p.ℓ) 0) (Piece.mono (seqR_piece (I := fun e => KSamp p e 0)
-    (p.k * p.ℓ) 0 fun e _ he => expA_piece hP hF (by omega)) (fun s₀ s _ h => ⟨h.1, fun _ => Proof.MlDsa.KeyGen.zeroI.map
+    (p.k * p.ℓ) 0 fun e _ he => expA_piece hP hF (by omega_using [he])) (fun s₀ s _ h => ⟨h.1, fun _ => Proof.MlDsa.KeyGen.zeroI.map
       (fun _ => 0), fun _ => Proof.MlDsa.KeyGen.zeroI, fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ h => absurd h (Nat.not_lt_zero _), .inl ⟨h.2, ⟨0, 0, 0, 0⟩, fun _ h => absurd h (Nat.not_lt_zero _),
         fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩) fun _ _ _ h => by simpa using h) ?_
   refine Piece.seq (B := KSamp p (p.k * p.ℓ) (p.ℓ + p.k)) (Piece.mono (seqR_piece
-    (I := fun r => KSamp p (p.k * p.ℓ) r) (p.ℓ + p.k) 0 fun r _ hr => expS_piece hP hF (by omega))
+    (I := fun r => KSamp p (p.k * p.ℓ) r) (p.ℓ + p.k) 0 fun r _ hr => expS_piece hP hF (by omega_using [hr]))
     (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
   refine (copies_piece hF).seq ?_
   refine Piece.seq (B := KRx p (p.ℓ + p.k) 0 0) (Piece.mono (seqR_piece (I := fun r => KRx p r 0 0) (p.ℓ + p.k) 0
-    fun r _ hr => packS_piece hP hF (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
+    fun r _ hr => packS_piece hP hF (by omega_using [hr])) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
   refine Piece.seq (B := KRx p (p.ℓ + p.k) p.ℓ 0) (Piece.mono (seqR_piece (I := fun j => KRx p (p.ℓ + p.k) j 0) p.ℓ 0
-    fun j _ hj => nttS_piece hP hF (by omega)) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
+    fun j _ hj => nttS_piece hP hF (by omega_using [hj])) (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
   refine Piece.seq (B := KRx p (p.ℓ + p.k) p.ℓ p.k) (Piece.mono (seqR_piece
-    (I := fun i => KRx p (p.ℓ + p.k) p.ℓ i) p.k 0 fun i _ hi => row_piece hP hF (by omega))
+    (I := fun i => KRx p (p.ℓ + p.k) p.ℓ i) p.k 0 fun i _ hi => row_piece hP hF (by omega_using [hi]))
     (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
   exact (trHash_piece hF).seq (ret_piece hF)
 
@@ -205,8 +205,8 @@ end
 /-! ## The return -/
 
 theorem idx_lt {p : Params} {r s : Nat} (hr : r < p.k) (hs : s < p.ℓ) : p.ℓ * r + s < p.k * p.ℓ := by
-  have : p.ℓ * (r + 1) ≤ p.ℓ * p.k := Nat.mul_le_mul_left _ (by omega)
-  rw [Nat.mul_comm p.k]; rw [Nat.mul_succ] at this; omega
+  have : p.ℓ * (r + 1) ≤ p.ℓ * p.k := Nat.mul_le_mul_left _ (by omega_using [hr])
+  rw [Nat.mul_comm p.k]; rw [Nat.mul_succ] at this; omega_using [hs, this]
 
 theorem outcome_of {p : Params} {s₀ : State} {A : Nat → Poly} {S : Nat → IPoly} {v : BitVec 32}
     (hl : 0 < p.ℓ) (hG : Good p s₀ (p.k * p.ℓ) (p.ℓ + p.k) A S v) :
@@ -229,6 +229,6 @@ theorem post {p : Params} (hF : PFacts p) {s₀ s : State} (hp : TPre (YK p) s�
   obtain ⟨A, S, hk, htr⟩ := h.ex
   rw [pk_bytes hF hp hk] at htr
   rw [pk_bytes hF hp hk, sk_bytes hF hp hk htr]
-  exact outcome_of (by have := hF.l; omega) hk.good
+  exact outcome_of (by have := hF.l; omega_using [this]) hk.good
 
 end VG.Proof.MlDsa.X86.KeyGen

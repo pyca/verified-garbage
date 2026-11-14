@@ -71,7 +71,7 @@ theorem Ads.of_frame {w sp a : BitVec 32} {N : Nat} {m m' : Mem} {s : State} (h 
     Ads w sp a N m' s := by
   have e : ∀ i < N, ∀ j < 2, descW m' a i j = descW m a i j := fun i hi j hj =>
     hf.readW (r := ⟨State.addr a + BitVec.ofNat 64 (8 * i + 4 * j), 4⟩) (Region.contains_self _ _)
-      (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega))) (by decide)
+      (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega_using [hi, hj]))) (by decide)
   exact { h with comp := fun i hi => by rw [e i hi 0 (by decide), e i hi 1 (by decide)]; exact h.comp i hi }
 
 /-- The components as they were, after writes apart from them. -/
@@ -81,12 +81,12 @@ theorem components_frame {a : BitVec 32} {N : Nat} {m m' : Mem}
     Spec.Siv.components 32 m' (State.addr a) N = Spec.Siv.components 32 m (State.addr a) N := by
   have e : ∀ i < N, ∀ j < 2, descW m' a i j = descW m a i j := fun i hi j hj =>
     hf.readW (r := ⟨State.addr a + BitVec.ofNat 64 (8 * i + 4 * j), 4⟩) (Region.contains_self _ _)
-      (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega))) (by decide)
+      (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega_using [hi, hj]))) (by decide)
   apply List.ext_getElem (by rw [length_components, length_components])
   intro i h₁ h₂
   rw [length_components] at h₂
   rw [components_getElem m' a h₂, components_getElem m a h₂, e i h₂ 0 (by decide), e i h₂ 1 (by decide)]
-  exact bytesAt_frame hf (hc i h₂) (by have := (descW m a i 1).isLt; omega)
+  exact bytesAt_frame hf (hc i h₂) (by have := (descW m a i 1).isLt; omega_using [])
 
 section
 variable {c w sp : BitVec 32} {R : Nat} (L : Lay c w sp)
@@ -124,11 +124,11 @@ theorem startBlock_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w 
   have hR := h.rounds
   rw [encPre, List.cons_append]
   refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 12) (by decide)
-    (by rw [h.hsp]; exact addr_add (by have := h.afit; omega)) (in_off h.args (by decide) (by decide))
+    (by rw [h.hsp]; exact addr_add (by have := h.afit; omega_using [this])) (in_off h.args (by decide) (by decide))
     fun s₁ u₁ => ?_
   have h12 : s₁.gpr .r12 = w := by rw [u₁.gpr, h.a3]
   simp only [List.append_eq, List.append_assoc]
-  refine save_ok h12 (by omega) (by rw [u₁.wr]; exact covers_prefix h.perm.w (by decide))
+  refine save_ok h12 (by omega_using [ww]) (by rw [u₁.wr]; exact covers_prefix h.perm.w (by decide))
     fun s₂ g₂ rd₂ wr₂ sp₂ sv₂ f₂ => ?_
   have hrd₂ : s₂.rd = s.rd := by rw [rd₂, u₁.rd]
   have hwr₂ : s₂.wr = s.wr := by rw [wr₂, u₁.wr]
@@ -175,7 +175,7 @@ theorem startBlock_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w 
         rcases hr with rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl,
       fun r a b c' d e f => by simp [gpr_setReg, a, b, c', d, e, f], ⟨rfl, rfl, rfl, rfl⟩, ?_⟩
     refine fargs_of L ?_ hR (st := dOff) (.inr ⟨by decide, by decide⟩) (n := 16) (by decide)
-      (by rw [L.wN (by decide)]; simp only [zOff]; omega) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+      (by rw [L.wN (by decide)]; simp only [zOff]; omega_using [ww]) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
     · exact he₅.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl
@@ -252,8 +252,8 @@ theorem start_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a 
     have dcw : ∀ r ∈ wR w sp, (⟨State.addr c, 512⟩ : Region).Disjoint r := dis_wR L.c_w L.stk_c
     have cK {d k : Nat} (hd : d + k ≤ 512) :
         bytesAt s₆.mem (State.addr c + BitVec.ofNat 64 d) k = bytesAt mₛ (State.addr c + BitVec.ofNat 64 d) k :=
-      bytesAt_frame St.frame (fun r hr => (dcw r hr).sub_left (Lay.cSub hd)) (by omega)
-    have sch := cK (d := 0) (k := 16 * (R + 1)) (by omega)
+      bytesAt_frame St.frame (fun r hr => (dcw r hr).sub_left (Lay.cSub hd)) (by omega_using [hd])
+    have sch := cK (d := 0) (k := 16 * (R + 1)) (by omega_using [hR])
     rw [BitVec.add_zero] at sch
     have o₇ := h₇.out
     rw [eD, eZ, sch, cK (d := 240) (k := 16) (by decide), cK (d := 256) (k := 16) (by decide), St.zZ, St.zD] at o₇

@@ -72,8 +72,8 @@ theorem Pre.of (s₀ : State) (h : Proof.X448.x448AArch64.pre s₀) : Pre s₀ :
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m m')
     (hp : ∀ i < 56, 8192 ≤ ofs base (p + BitVec.ofNat 64 i)) :
@@ -85,9 +85,9 @@ theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m 
 
 theorem far_output {base p : Addr} (hd : (⟨p, 56⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < 8192) : 56 ≤ ofs p (off base i) := by
-  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega) (by omega))
+  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega_using [hi]) (by omega_using [hi]))
   simp only [Region.Contains]
   change ofs p (off base i) + 1 ≤ 56
-  omega
+  omega_using [h]
 
 end VG.Proof.X448.AArch64

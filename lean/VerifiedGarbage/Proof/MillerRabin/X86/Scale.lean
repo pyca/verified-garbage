@@ -54,11 +54,11 @@ theorem scaleBit_ok (s : State) (r tmp : Reg) (distinct : tmp ≠ r) (j bit c : 
         rw [BitVec.add_mul, BitVec.add_mul, BitVec.one_mul]
       _ = _ := by
         rw [show (1#32) = BitVec.ofNat 32 1 from rfl, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
-        congr 2 <;> omega
+        congr 2 <;> omega_using []
   · simp only [digit, ite_false, List.append_nil, Nat.add_zero]
     refine wp_addS rfl fun t T _ => WP.block_nil ⟨?_, T.mem, T.keeps⟩
     rw [T.gpr, value, ← BitVec.add_mul, ← BitVec.ofNat_add]
-    congr 2 <;> omega
+    congr 2 <;> omega_using []
 
 theorem scaleBits_ok (bits : List Nat) (s : State) (r tmp : Reg) (distinct : tmp ≠ r) (j c : Nat)
     (value : s.gpr r = BitVec.ofNat 32 c * s.gpr tmp) :

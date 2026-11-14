@@ -56,7 +56,7 @@ structure TailPost (up : Bool) (k : Nat) (s s' : State) : Prop where
 theorem wAt_zero (p : Addr) : wAt p 0 = p := by simp [wAt]
 
 theorem scratch_word {B : Addr} {i : Nat} (hi : i < 16) :
-    (⟨B, 256⟩ : Region).Contains (wAt B i) 8 := Offset.contains_base _ (by omega) (by omega)
+    (⟨B, 256⟩ : Region).Contains (wAt B i) 8 := Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 theorem tail_ok (up : Bool) {k : Nat} {s : State} (E : TailEnv s k) :
     WP isa (tail up) s (TailPost up k s) := by
@@ -66,7 +66,7 @@ theorem tail_ok (up : Bool) {k : Nat} {s : State} (E : TailEnv s k) :
   have hk := E.lt
   have scrIn : ∀ i < 16, InRegions s.wr (wAt B i) 8 := fun i hi => ⟨_, E.scratch, scratch_word hi⟩
   rw [tail]
-  apply WP.ite _ (eval_zero s .x2 E.x2 (by omega))
+  apply WP.ite _ (eval_zero s .x2 E.x2 (by omega_using [hk]))
   · intro hz
     have hk0 : k = 0 := by simpa using hz
     subst hk0
@@ -86,13 +86,13 @@ theorem tail_ok (up : Bool) {k : Nat} {s : State} (E : TailEnv s k) :
     have g₁ : ∀ r, r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → s₁'.gpr r = s.gpr r := by
       intro r a b c; simp [s₁', s₁, State.write, a, b, c]
     have pre₁ : CopyPre D B k s₁' := by
-      refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, by omega⟩
+      refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, by omega_using [hk]⟩
       · obtain ⟨r, hr, hc⟩ := E.dataW i hi
         exact ⟨r, List.mem_append_right _ hr, hc⟩
-      · exact scrIn i (by omega)
-      · exact E.dataBuf.sub_right (Region.sub_prefix (by omega))
+      · exact scrIn i (by omega_using [hk, hi])
+      · exact E.dataBuf.sub_right (Region.sub_prefix (by omega_using [hk]))
     have inv₁ : CopyInv D B k s₁' 0 s₁' := by
-      refine ⟨by omega, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
+      refine ⟨by omega_using [hk0], ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
         rfl, rfl⟩
       · rw [wAt_zero]; simp [s₁', s₁, State.write, State.read, D]
       · rw [wAt_zero]; simp [s₁', s₁, State.write, State.read, B]
@@ -113,7 +113,7 @@ theorem tail_ok (up : Bool) {k : Nat} {s : State} (E : TailEnv s k) :
       simp [s₃, State.write, State.read]; exact g₂ _ (by decide) (by decide) (by decide) (by decide)
     have wr₃ : s₃.wr = s.wr := c₂.wr
     have hW₃ : ∀ k < 8, InRegions s₃.wr (s₃.gpr .x4 + BitVec.ofNat 64 (16 * k)) 16 := fun k hk =>
-      ⟨_, by rw [wr₃]; exact E.scratch, by rw [x4₃]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      ⟨_, by rw [wr₃]; exact E.scratch, by rw [x4₃]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
     have hS₃ : SchedIn s₃ .x0 := fun off n h => by
       rw [g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
       show InRegions (s₂.rd ++ s₂.wr) _ n
@@ -143,13 +143,13 @@ theorem tail_ok (up : Bool) {k : Nat} {s : State} (E : TailEnv s k) :
     have wr₅ : s₅'.wr = s.wr := q₄.wr.trans wr₃
     have rd₅ : s₅'.rd = s.rd := q₄.rd.trans c₂.rd
     have pre₂ : CopyPre B D k s₅' := by
-      refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, by omega⟩
-      · obtain ⟨r, hr, hc⟩ := scrIn i (by omega)
+      refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, by omega_using [hk]⟩
+      · obtain ⟨r, hr, hc⟩ := scrIn i (by omega_using [hk, hi])
         rw [wr₅]; exact ⟨r, List.mem_append_right _ hr, hc⟩
       · rw [wr₅]; exact E.dataW i hi
-      · exact (E.dataBuf.sub_right (Region.sub_prefix (by omega))).symm
+      · exact (E.dataBuf.sub_right (Region.sub_prefix (by omega_using [hk]))).symm
     have inv₂ : CopyInv B D k s₅' 0 s₅' := by
-      refine ⟨by omega, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
+      refine ⟨by omega_using [hk0], ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
         rfl, rfl⟩
       · rw [wAt_zero]; simp [s₅', s₅, State.write, State.read]
         exact g₄ _ ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
@@ -164,12 +164,12 @@ theorem tail_ok (up : Bool) {k : Nat} {s : State} (E : TailEnv s k) :
     have m₃ : s₃.mem = s₂.mem := rfl
     have m₅ : s₅'.mem = s₄.mem := rfl
     have dataSep : (⟨D, 8 * k⟩ : Region).Disjoint ⟨B, 8 * k⟩ :=
-      E.dataBuf.sub_right (Region.sub_prefix (by omega))
+      E.dataBuf.sub_right (Region.sub_prefix (by omega_using [hk]))
     have K₃ : scheduleAt s₃.mem (s₃.gpr .x0) = scheduleAt s.mem S := by
       rw [g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide), m₃]
       exact scheduleAt_eq_of_frame S c₂.frame fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact E.keyBuf.sub_right (Region.sub_prefix (by omega))
+        exact E.keyBuf.sub_right (Region.sub_prefix (by omega_using [hk]))
     refine ⟨fun b hb => ?_, fun r hr => (c₆.regs r ⟨hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
         hr.2.2.2.2.2.2.2⟩).trans (g₅ r hr), c₆.rd.trans rd₅, c₆.wr.trans wr₅,
       c₆.sp.trans (q₄.sp.trans c₂.sp), fun r hr => ?_, ?_⟩
@@ -181,13 +181,13 @@ theorem tail_ok (up : Bool) {k : Nat} {s : State} (E : TailEnv s k) :
         refine blockAt_eq_of_readW ((c₂.copied b hb).trans ?_)
         rfl
       rw [e₆]
-      have o := q₄.out b (by omega)
+      have o := q₄.out b (by omega_using [hk, hb])
       rw [x4₃, K₃, m₃, e₂] at o
       exact o
     · rw [c₆.v, show s₅'.v = s₄.v from rfl, q₄.v r hr, show s₃.v = s₂.v from rfl, c₂.v]; rfl
     · have a : Frame [⟨D, 8 * k⟩, ⟨B, 128⟩] s.mem s₂.mem := c₂.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega)⟩
+        exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega_using [hk])⟩
       have b : Frame [⟨D, 8 * k⟩, ⟨B, 128⟩] s₂.mem s₄.mem := q₄.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by rw [x4₃]; exact fun _ h => h⟩

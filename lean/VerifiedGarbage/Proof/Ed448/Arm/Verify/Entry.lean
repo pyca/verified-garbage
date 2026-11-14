@@ -95,7 +95,7 @@ theorem lay_ok (hl : (s.gpr .r2).toNat < 256) : (lay s).Ok := by
     by rw [hs]; exact km, by rw [hs]; exact ks, by rw [hs]; exact kc, np, nx, nm, ns, nc⟩
   have := Whole.base_top hb
   change (Whole.base s).toNat + 292 ≤ 2 ^ 32
-  omega
+  omega_using [ht, this]
 
 theorem entry_regions : (lay s).inputs = Whole.bodyRd s ∧ (lay s).outputs = s.wr := by
   simp only [Lay.inputs, original_args h]
@@ -115,16 +115,16 @@ theorem entry_args {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) : Argume
   have ht := entry_top h
   intro j hj
   obtain ⟨hj11, hj | hj⟩ := hj
-  · have hw := Whole.saved_words hb (by decide : 6 ≤ 6) (by omega) hp hj
-    have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+  · have hw := Whole.saved_words hb (by decide : 6 ≤ 6) (by omega_using [ht]) hp hj
+    have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_using [hj]
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simpa only [Whole.originalWord, Impl.Ed25519.Arm.Whole.argReg, Nat.reduceLT, ite_true, ite_false,
         Nat.reduceSub, Nat.reduceMul, Nat.mul_zero, BitVec.add_zero, Lay.value, lay, stackArg, stackArgAddr] using hw
-  · obtain rfl : j = 10 := by omega
+  · obtain rfl : j = 10 := by omega_using [hj11, hj]
     have hf := Whole.saved_frame hb hp
     have hbt := Whole.base_top hb
     have ea : State.addr (Whole.base s) + BitVec.ofNat 64 (248 + 4 * 10) = State.addr (s.sp + BitVec.ofNat 32 8) := by
-      rw [addr_add (by omega), Whole.base_addr hb, show (248 + 4 * 10 : Nat) = 280 + 8 from rfl,
+      rw [addr_add (by omega_using [ht]), Whole.base_addr hb, show (248 + 4 * 10 : Nat) = 280 + 8 from rfl,
         ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, show (280 : Addr) = BitVec.ofNat 64 280 from rfl,
         BitVec.sub_add_cancel]
     change p.mem.readW (State.addr (Whole.base s) + BitVec.ofNat 64 (248 + 4 * 10)) 32 = stackArg s 2
@@ -132,17 +132,17 @@ theorem entry_args {p : State} (hp : Whole.Saved (Whole.entered s) 6 p) : Argume
       (by
         rintro r hr
         rw [List.mem_singleton.mp hr]
-        exact Offset.disjoint_base _ (by omega) (by omega)) (by decide), ea]
+        exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])) (by decide), ea]
     rfl
 
 theorem entry_read : ∀ j < 6, 4 ≤ j →
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * (j - 4)))) 4 := by
   have ht := entry_top h
   intro j hj h4
-  have hj' : j = 4 ∨ j = 5 := by omega
+  have hj' : j = 4 ∨ j = 5 := by omega_using [hj, h4]
   refine ⟨⟨State.addr s.sp, 12⟩, List.mem_append_left _ (by rw [h.1]; simp), ?_⟩
-  rw [addr_add (by have := s.sp.isLt; omega)]
-  exact Offset.contains_base _ (d := 4 * (j - 4)) (by omega) (by omega)
+  rw [addr_add (by have := s.sp.isLt; omega_using [ht, hj])]
+  exact Offset.contains_base _ (d := 4 * (j - 4)) (by omega_using [hj]) (by omega_using [hj])
 
 theorem entry_input {m : Mem} (hf : Frame [Whole.stack s] s.mem m) {r : Region} (hr : r ∈ s.rd)
     (hn : r.len ≤ 2 ^ 64) :
@@ -167,7 +167,7 @@ end
 theorem inner_ok (hv : EqOk) {s : State} (h : verifyLocal.pre s) (hl : (s.gpr .r2).toNat < 256) :
     WP isa (wrap 6 body) s fun u => abiPreserved s u ∧ verifyLocal.post s u := by
   have hw := Whole.wrap_ok body_noFrames (by decide : 6 ≤ 6) (entry_below h)
-    (by have := entry_top h; omega) (entry_read h) (entry_writes h)
+    (by have := entry_top h; omega_using [this]) (entry_read h) (entry_writes h)
     (P := fun m _ r => r = signWord (Spec.Ed448.verify
       (Spec.Ed448.bytesAt m (State.addr (s.gpr .r0)) 57)
       (Spec.Ed448.bytesAt m (State.addr (s.gpr .r1)) (s.gpr .r2).toNat)
@@ -181,9 +181,9 @@ theorem inner_ok (hv : EqOk) {s : State} (h : verifyLocal.pre s) (hl : (s.gpr .r
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
   have e0 := entry_input h hf (r := ⟨State.addr (s.gpr .r0), 57⟩) (by rw [h.1]; simp) (by change 57 ≤ 2 ^ 64; decide)
   have e1 := entry_input h hf (r := ⟨State.addr (s.gpr .r1), (s.gpr .r2).toNat⟩) (by rw [h.1]; simp)
-    (by change (s.gpr .r2).toNat ≤ 2 ^ 64; have := (s.gpr .r2).isLt; omega)
+    (by change (s.gpr .r2).toNat ≤ 2 ^ 64; have := (s.gpr .r2).isLt; omega_using [])
   have e3 := entry_input h hf (r := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩) (by rw [h.1]; simp)
-    (by change (stackArg s 0).toNat ≤ 2 ^ 64; have := (stackArg s 0).isLt; omega)
+    (by change (stackArg s 0).toNat ≤ 2 ^ 64; have := (stackArg s 0).isLt; omega_using [])
   have e5 := entry_input h hf (r := ⟨State.addr (stackArg s 1), 114⟩) (by rw [h.1]; simp)
     (by change 114 ≤ 2 ^ 64; decide)
   change u.gpr .r0 = _
@@ -217,11 +217,11 @@ theorem shr8_eq_zero {x : BitVec 32} : (x >>> 8 - 0 == 0) = decide (x.toNat < 25
   by_cases h : x.toNat < 256
   · simp only [h, decide_true, beq_iff_eq]
     apply BitVec.eq_of_toNat_eq
-    rw [VG.Proof.X25519.Arm.toNat_shr]; simp; omega
+    rw [VG.Proof.X25519.Arm.toNat_shr]; simp; omega_using [h]
   · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
     intro e
     have := congrArg BitVec.toNat e
-    rw [VG.Proof.X25519.Arm.toNat_shr] at this; simp at this; omega
+    rw [VG.Proof.X25519.Arm.toNat_shr] at this; simp at this; omega_using [h, this]
 
 theorem verify_ok (hv : EqOk) {s : State} (h : verifyLocal.pre s) :
     WP isa code s fun u => abiPreserved s u ∧ verifyLocal.post s u := by
@@ -241,7 +241,7 @@ theorem verify_ok (hv : EqOk) {s : State} (h : verifyLocal.pre s) :
       rw [vu.gpr]
       have hl : ¬ (s.gpr .r2).toNat < 256 := by simpa using hb
       have hlen : ¬ (Spec.Ed448.bytesAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat).length ≤ 255 := by
-        simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]; omega
+        simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]; omega_using [hl]
       simp only [Spec.Ed448.verify, hlen, decide_false, Bool.false_and, signWord]
       rfl
 

@@ -70,8 +70,8 @@ theorem oneMid_ok (v : GcmImpl) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : Ad
     fun p k h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.sub_right (Lay.wSub (by decide))
   have hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
     rw [ctxH_eq, blockAt_frame E.frame (dW _ _ (L.cw'.sub_left (Lay.ctxSub (by decide))))]
-  have hiv : bytesAt s₁.mem Np nl = bytesAt s.mem Np nl := bytesAt_frame E.frame (dW _ _ C.nonce.w) (by have := C.nonce.lt; omega)
-  have haa : bytesAt s₁.mem A al = bytesAt s.mem A al := bytesAt_frame E.frame (dW _ _ C.aad.w) (by have := C.aad.lt; omega)
+  have hiv : bytesAt s₁.mem Np nl = bytesAt s.mem Np nl := bytesAt_frame E.frame (dW _ _ C.nonce.w) (by have := C.nonce.lt; omega_using [hnl])
+  have haa : bytesAt s₁.mem A al = bytesAt s.mem A al := bytesAt_frame E.frame (dW _ _ C.aad.w) (by have := C.aad.lt; omega_using [hal])
   have hal' : s₁.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [E.alen, ← hal, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine WP.mono (WP.with_rdwr (oneAad_ok v L E.env hH₁ (by rw [E.r12, hNp])
@@ -108,7 +108,7 @@ theorem arg24_disj {W D SP : Addr} {n k : Nat} (hk : 3 ≤ k)
     {r : Region} (hr : r.Sub ⟨W, 2560⟩ ∨ r.Sub ⟨D, n⟩ ∨ r.Sub (below SP 24)) :
     (⟨SP + BitVec.ofNat 64 24, 8⟩ : Region).Disjoint r := by
   have hs : Region.Sub ⟨SP + BitVec.ofNat 64 24, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * k⟩ := by
-    rw [show (24 : Nat) = 8 + 16 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega)
+    rw [show (24 : Nat) = 8 + 16 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_using [hk])
   rcases hr with hr | hr | hr
   · exact (dA.sub_left hs).sub_right hr
   · exact (dAD.sub_left hs).sub_right hr
@@ -198,7 +198,7 @@ theorem sealRun_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {
   have hc₂ : ciphOf s₂.mem Ctx R = ctxCiph s₀.mem Ctx R :=
     ciph_frame M.frame (fun r hr => dM _ _ L.cw' L.kc r hr) hR'
   have hp₂ : bytesAt s₂.mem D n = bytesAt s₀.mem D n :=
-    bytesAt_frame M.frame (dM _ _ C.dE C.data.ok.stk) (by have := C.data.ok.lt; omega)
+    bytesAt_frame M.frame (dM _ _ C.dE C.data.ok.stk) (by have := C.data.ok.lt; omega_using [this])
   rw [M.j0, hc₂] at hT₄
   refine ⟨he₄, hrd₄.trans M.rd, hwr₄.trans M.wr, M.saved.frame f₄ (saved_oneFrameB L C.dE C.t_w), ?_,
     by rw [hC, hc₂, hp₂, Proof.Gcm.gctr_eq], hT₄⟩
@@ -292,7 +292,7 @@ theorem sealM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
   refine WP.mono (exit_ok he₅.r15 (by rw [he₅.rsp, hSP]) (covers_left he₅.perm.w) hsv₅ (by rw [hSP, hret]))
     fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
   have hd₅ : bytesAt s₅.mem D n = bytesAt s₄.mem D n := bytesAt_frame f₅ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact d_td.symm) (by have := C.data.ok.lt; omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact d_td.symm) (by have := C.data.ok.lt; omega_using [hn])
   simp only [Proof.AesGcm.sealX86_64, Proof.AesGcm.arg]
   rw [hCtx, hNp, hnl, hA, hal, hD, hn, hT, Spec.Gcm.encryptWith, hm, hb₅, hT₄, hd₅, hC,
     Proof.Gcm.fullTag_eq, Proof.Gcm.length_gctr, length_bytesAt, length_bytesAt]

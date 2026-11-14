@@ -48,10 +48,10 @@ theorem read_copy {m m' : Mem} : ∀ {n : Nat} {a b : Addr},
   | 0, _, _, _ => rfl
   | n + 1, a, b, h => by
     simp only [Mem.read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0, read_copy fun i hi => ?_]
-    have := h (i + 1) (by omega)
+    have := h (i + 1) (by omega_using [hi])
     rwa [Offset.add_ofNat_succ, Offset.add_ofNat_succ] at this
 
 /-- A copy of a schedule is the schedule. -/
@@ -62,6 +62,6 @@ theorem scheduleAt_copy {m m' : Mem} {p q : Addr} (h : ∀ i < 384, m' (q + BitV
   rw [scheduleAt_readW _ _ i hi, scheduleAt_readW _ _ i hi]
   simp only [Mem.readW]
   exact congrArg (BitVec.setWidth 64) (read_copy fun j hj => by
-    rw [Offset.add_add, Offset.add_add]; exact h _ (by omega))
+    rw [Offset.add_add, Offset.add_add]; exact h _ (by omega_using [hi, hj]))
 
 end VG.Proof.TripleDes

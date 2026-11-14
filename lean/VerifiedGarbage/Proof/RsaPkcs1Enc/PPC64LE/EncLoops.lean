@@ -34,7 +34,7 @@ theorem zbit_snoc (l : List Byte) (b : Byte) :
   cases hl : l.all (· != 0) <;> by_cases hb : b = 0 <;> simp [hb] <;> first | decide | (split <;> decide)
 
 theorem byte_toNat_lt (b : Byte) : (b.setWidth 64).toNat < 256 := by
-  simp only [BitVec.toNat_setWidth]; have := b.isLt; omega
+  simp only [BitVec.toNat_setWidth]; have := b.isLt; omega_using []
 
 theorem setWidth_eq_zero {b : Byte} : (b.setWidth 64 = 0) ↔ b = 0 := by
   constructor
@@ -64,7 +64,7 @@ theorem psLoop_ok {s : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^
       rw [h4', hK.rd, hK.wr, BitVec.add_zero]; exact hr _ hi
     have hv : t.mem (q + BitVec.ofNat 64 i) = s.mem (q + BitVec.ofNat 64 i) := by
       rw [hm, writeBytes_out _ _ _ _ n (fun i' hi' => hd i hi i' hi')
-        (by simp only [List.length_take, bytesAt_length]; omega)]
+        (by simp only [List.length_take, bytesAt_length]; omega_using [])]
     refine wp_lbz rfl hR fun s₁ o₁ e₁ => ?_
     have hA : InRegions s₁.wr (s₁.gpr .r11 + BitVec.ofNat 64 0) 1 := by
       rw [o₁.wr, o₁.get .r11, h11', hK.wr, BitVec.add_zero]; exact hw _ hi
@@ -74,13 +74,13 @@ theorem psLoop_ok {s : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^
       (o₁.keep.trans (m₂.keep.trans (o₃.keep.trans (o₄.keep.trans (o₅.keep.trans (o₆.keep.trans
         (o₇.keep.trans o₈.keep))))))).mono
     have hlt : ((Spec.Rsa.bytesAt s.mem q n).take i).length = i := by
-      simp [bytesAt_length]; omega
+      simp [bytesAt_length]; omega_using [hi]
     have hb : s₂.gpr .r3 = (s.mem (q + BitVec.ofNat 64 i)).setWidth 64 := by
       rw [m₂.gpr, e₁, h4', BitVec.add_zero, hv]
     refine ⟨⟨(hK.trans hK').mono, ?_, ?_, ?_, ?_⟩, ?_⟩
     · rw [o₈.mem, o₇.mem, o₆.mem, o₅.mem, o₄.mem, o₃.mem, m₂.mem, e₁, o₁.mem, h4', o₁.get .r11, h11']
       simp only [BitVec.add_zero]
-      rw [hv, byte_setWidth64, hm, bytesAt_take_succ _ _ hi, writeBytes_snoc _ _ _ _ (by omega), hlt]
+      rw [hv, byte_setWidth64, hm, bytesAt_take_succ _ _ hi, writeBytes_snoc _ _ _ _ (by omega_using [hn', hi, hlt]), hlt]
     · rw [o₈.get .r4, o₇.get .r4, e₆, o₅.get .r4, o₄.get .r4, o₃.get .r4, m₂.gpr, o₁.get .r4, h4', ofNat_succ']
     · rw [o₈.get .r11, e₇, o₆.get .r11, o₅.get .r11, o₄.get .r11, o₃.get .r11, m₂.gpr, o₁.get .r11, h11',
         ofNat_succ']

@@ -28,7 +28,7 @@ theorem finTest_ok {s₀ t : State} (A : KeyABI s₀) (Fi : Fin s₀ t) :
   refine wp_movS (v := BitVec.ofNat 32 (rResult s₀).status)
     (by rw [Fi.ready.rf.readSlot (by decide)]; exact congrArg some Fi.status)
     fun t₁ u₁ _ => wp_cmpi fun t₂ f₂ _ z₂ => WP.block_nil ⟨(Fi.ready.upd u₁ (by decide)).fupd f₂, ?_⟩
-  rw [z₂, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide)]
+  rw [z₂, u₁.gpr, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega_using [hR]) (by decide)]
 
 /-- The output's address and length. -/
 theorem zeroHead_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :

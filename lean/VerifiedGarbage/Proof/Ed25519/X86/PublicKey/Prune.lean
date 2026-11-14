@@ -42,10 +42,10 @@ theorem prune_words (d0 d1 d2 d3 d4 d5 d6 d7 : BitVec 32) :
   have c₂ : (2 ^ 30 - 1) % 2 ^ 32 = 2 ^ 30 - 1 := by decide
   have c₃ : (2 ^ 30) % 2 ^ 32 = 2 ^ 30 := by decide
   rw [BitVec.toNat_or, BitVec.toNat_and, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 32 (by omega), and_sub8 _ 254 (by omega),
-    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega)), or_two_pow (by omega)]
+    BitVec.toNat_ofNat, c₁, c₂, c₃, and_sub8 _ 32 (by omega_using []), and_sub8 _ 254 (by omega_using []),
+    Nat.and_two_pow_sub_one_eq_mod, or_two_pow (Nat.mod_lt _ (by omega_using [])), or_two_pow (by omega_using [])]
   simp only [show (2 : Nat) ^ (254 - 3) = 2 ^ 251 from rfl, show (2 : Nat) ^ (32 - 3) = 2 ^ 29 from rfl]
-  omega
+  omega_using []
 
 end VG.Proof.Ed25519.X86.PublicKey
 end

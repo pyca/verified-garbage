@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mgf1.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # MGF1, a byte at a time
@@ -27,7 +28,7 @@ theorem getD_append (a b : List Byte) (p : Nat) :
   simp only [List.getD_eq_getElem?_getD]
   split
   · rw [List.getElem?_append_left (by assumption)]
-  · rw [List.getElem?_append_right (by omega)]
+  · rw [List.getElem?_append_right (by omega_arith)]
 
 theorem i2osp_length (x k : Nat) : (Rsa.i2osp x k).length = k := by simp [Rsa.i2osp]
 
@@ -44,18 +45,18 @@ theorem flatMap_getD {k : Nat} (hk : 0 < k) (f : Nat → List Byte) (hf : ∀ c,
     rw [hl]
     by_cases h : p < k * m
     · have : p / k < m := (Nat.div_lt_iff_lt_mul hk).mpr (by rw [Nat.mul_comm]; exact h)
-      rw [ifp h, ifp this, ifp (by omega)]
+      rw [ifp h, ifp this, ifp (by omega_using [this])]
     · rw [ifn h]
       simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
       by_cases h' : p < k * (m + 1)
       · have h'' : p < k * m + k := by rw [Nat.mul_succ] at h'; exact h'
         have e : p / k = m :=
-          Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega) (by rw [Nat.succ_mul, Nat.mul_comm]; omega)
-        rw [ifp (by omega), e, show p - k * m = p % k by rw [Nat.mod_eq_sub_mul_div, e]]
+          Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega_using [h]) (by rw [Nat.succ_mul, Nat.mul_comm]; omega_using [h''])
+        rw [ifp (by omega_using [e]), e, show p - k * m = p % k by rw [Nat.mod_eq_sub_mul_div, e]]
       · have : ¬ p / k < m + 1 := fun h'' => h' (by
           have := (Nat.div_lt_iff_lt_mul hk).mp h''; rw [Nat.mul_comm]; exact this)
-        have h3 : k * m + k ≤ p := by rw [Nat.mul_succ] at h'; omega
-        rw [ifn this, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [hf]; omega)]
+        have h3 : k * m + k ≤ p := by rw [Nat.mul_succ] at h'; omega_using [h']
+        rw [ifn this, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [hf]; omega_using [h3])]
         rfl
 
 /-- Byte `p` of an MGF1 mask. -/
@@ -69,7 +70,7 @@ theorem mgf1_getD {G : Hash} (hG : Valid G) (seed : List Byte) {n p : Nat} (hp :
     have := Nat.lt_div_mul_add (a := n + G.len - 1) (b := G.len) hk
     have := Nat.div_add_mod (n + G.len - 1) G.len
     have := Nat.mod_lt (n + G.len - 1) hk
-    rw [Nat.mul_comm] at *; omega)
+    rw [Nat.mul_comm] at *; omega_arith)
 
 /-- Byte `p` of an exclusive-or. -/
 theorem xorBytes_getD {a b : List Byte} {p : Nat} (ha : p < a.length) (hb : p < b.length) :

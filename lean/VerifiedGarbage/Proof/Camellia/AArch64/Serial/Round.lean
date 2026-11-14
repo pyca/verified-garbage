@@ -25,7 +25,7 @@ theorem mixKey_run {s : State} {a : Reg} {k : Nat}
   let v := u.write .x .x8 (rev64 (u.gpr .x8))
   let t := v.write .x .x10 (v.read .x a ^^^ v.read .x .x8)
   refine ⟨t,?_,?_,?_,rfl,rfl,rfl,rfl,rfl⟩
-  · rw [mixKey,runBlock_cons,exec_ldr_x ⟨by omega,by omega⟩ hr,runStep_some,
+  · rw [mixKey,runBlock_cons,exec_ldr_x ⟨by omega_using [],by omega_using [hk]⟩ hr,runStep_some,
       runBlock_cons,exec_rev,runStep_some,runBlock_cons,exec_logic,runStep_some,runBlock_nil]
     rfl
   · simp only [t,v,u,gpr_write_self,State.read,Size.bits,BitVec.setWidth_eq,

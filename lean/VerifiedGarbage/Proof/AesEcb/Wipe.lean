@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.PostMono
 public import VerifiedGarbage.Proof.Aes.Rounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: every target's ECB proofs share it
 
@@ -50,10 +51,10 @@ theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 theorem statesAt_congr {n : Nat}
     (h : ∀ i < n * 16, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
@@ -64,7 +65,7 @@ theorem statesAt_congr {n : Nat}
   simp only [stateAt]
   refine congrArg Vector.ofFn (funext fun i => ?_)
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hj])
 
 /-- A key schedule is read within the 240 bytes at `schedule`. -/
 theorem keySchedule_congr {r : Nat} {key : List Byte}
@@ -73,10 +74,10 @@ theorem keySchedule_congr {r : Nat} {key : List Byte}
   simp only [KeySchedule]
   constructor <;> rintro ⟨hl, hr, hb⟩ <;> refine ⟨hl, hr, ?_⟩ <;>
     · have : 16 * (r + 1) ≤ 240 := by
-        simp only [Spec.Aes.rounds] at hr; omega
+        simp only [Spec.Aes.rounds] at hr; omega_using [hl, hr]
       first
-      | rw [← bytesAt_congr fun i hi => h i (by omega)]; exact hb
-      | rw [bytesAt_congr fun i hi => h i (by omega)]; exact hb
+      | rw [← bytesAt_congr fun i hi => h i (by omega_using [this, hi])]; exact hb
+      | rw [bytesAt_congr fun i hi => h i (by omega_using [this, hi])]; exact hb
 
 end
 
@@ -85,7 +86,7 @@ theorem scrubbed_of_zeros {m m' : Mem} {p : Addr} {len : Nat}
     (h : Spec.Zeroize.bytesAt m' p len = Spec.Zeroize.zeros len) : Spec.Zeroize.scrubbed m m' p len := by
   intro a ha
   right
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
   have he := congrArg (·[(a - p).toNat]?) h
   simp only [Spec.Zeroize.bytesAt, Spec.Zeroize.zeros, List.getElem?_map, List.getElem?_range hi,
     List.getElem?_replicate, hi, ite_true, Option.map_some, Option.some.injEq,
@@ -98,7 +99,7 @@ theorem scrubbed_of_unchanged {m m' : Mem} {p : Addr} {len : Nat}
     Spec.Zeroize.scrubbed m m' p len := by
   intro a ha
   left
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
   have he := h _ hi
   rwa [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel] at he
 
@@ -194,7 +195,7 @@ theorem post_local (pb : Nat) (g : List Byte → State → State) : ∀ vs m₁ 
   intro key hk
   show statesAt m' c (d.setWidth pb).toNat = (statesAt m₂ c (d.setWidth pb).toNat).map (g key)
   have hd := agree_of hb.2.1
-  rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := pb) d; omega)]
+  rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := pb) d; omega_using [hi, this])]
   exact h key ((keySchedule_congr (agree_of hb.1)).mp hk)
 
 /-- The postcondition reads the memory on return only within the buffers
@@ -215,7 +216,7 @@ theorem post_out (pb : Nat) (g : List Byte → State → State) : ∀ vs m m₁ 
   intro key hk
   show statesAt m₂ c (d.setWidth pb).toNat = (statesAt m c (d.setWidth pb).toNat).map (g key)
   have hd := agree_of (hb.2.1 hpw.2.1)
-  rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := pb) d; omega)]
+  rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := pb) d; omega_using [hi, this])]
   exact h key hk
 
 /-- With the whole of `scratch` zero on return, the postcondition of ECB. -/
@@ -282,7 +283,7 @@ theorem scrubbed_of_prefix {m m' : Mem} {p : Addr} {w len : Nat}
     (ht : ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
     Spec.Zeroize.scrubbed m m' p len := by
   intro a ha
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
   have ea : p + BitVec.ofNat 64 (a - p).toNat = a := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   by_cases hw : (a - p).toNat < w
@@ -315,7 +316,7 @@ theorem postTail_local (pb : Nat) (g : List Byte → State → State) (w : Nat) 
   rw [bufs_eq] at hb
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
   rw [ht i h1 h2]
-  exact (agree_of hb.2.2 i (by omega)).symm
+  exact (agree_of hb.2.2 i (by omega_using [h2])).symm
 
 /-- `postTail` reads the memory on return only within the buffers apart
 from the first `w` bytes of `scratch`. -/
@@ -332,10 +333,10 @@ theorem postTail_out (pb : Nat) (g : List Byte → State → State) {w : Nat} (h
   refine ⟨post_out pb g [a, b, c, d, e] m m₁ m₂ x hlen hpw
     (fun r hr hrd y hy => hb r hr y hy fun hc => hrd y hy (Region.sub_prefix hw y hc)) hp, fun i h1 h2 => ?_⟩
   have hc : (⟨e, 2048⟩ : Region).Contains (e + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [h2]) (by omega_using [h2])
   have hn : ¬ (⟨e, w⟩ : Region).Contains (e + BitVec.ofNat 64 i) 1 := by
     simp only [Region.Contains, BitVec.add_comm e, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
-    omega
+    omega_using [h1, h2]
   show m₂ (e + BitVec.ofNat 64 i) = m (e + BitVec.ofNat 64 i)
   rw [← hb (⟨e, 2048⟩, true) (by rw [bufs_eq]; simp) _ hc hn]
   exact ht i h1 h2

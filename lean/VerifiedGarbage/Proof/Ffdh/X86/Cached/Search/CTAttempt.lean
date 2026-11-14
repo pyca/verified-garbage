@@ -58,10 +58,10 @@ theorem args_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) {i : Nat}
 theorem callArg_eq {o₁ o₂ : State} (e : ofState o₁ = ofState o₂) (used j : Nat) :
     callArg o₁ used j = callArg o₂ used j := by
   unfold callArg
-  rw [args_eq e (i := 0) (by omega), args_eq e (i := 2) (by omega), args_eq e (i := 5) (by omega),
-    args_eq e (i := 6) (by omega), args_eq e (i := 7) (by omega), args_eq e (i := 8) (by omega),
-    args_eq e (i := 10) (by omega), args_eq e (i := 11) (by omega), args_eq e (i := 13) (by omega),
-    args_eq e (i := 14) (by omega)]
+  rw [args_eq e (i := 0) (by omega_using []), args_eq e (i := 2) (by omega_using []), args_eq e (i := 5) (by omega_using []),
+    args_eq e (i := 6) (by omega_using []), args_eq e (i := 7) (by omega_using []), args_eq e (i := 8) (by omega_using []),
+    args_eq e (i := 10) (by omega_using []), args_eq e (i := 11) (by omega_using []), args_eq e (i := 13) (by omega_using []),
+    args_eq e (i := 14) (by omega_using [])]
 
 theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ f₂ : Nat → BitVec 32} {used : Nat}
     (e : ofState o₁ = ofState o₂) (h₁ : Fr o₁ ds₁ f₁ t₁) (h₂ : Fr o₂ ds₂ f₂ t₂)
@@ -73,7 +73,7 @@ theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ 
   have A₁ := h₁.abi
   have A₂ := h₂.abi
   have hu₂ : used + (arg o₂ 7).toNat ≤ (arg o₂ 9).toNat := by
-    rw [← args_eq e (i := 7) (by omega), ← args_eq e (i := 9) (by omega)]; exact hu
+    rw [← args_eq e (i := 7) (by omega_using []), ← args_eq e (i := 9) (by omega_using [])]; exact hu
   have sp : o₁.gpr .esp = o₂.gpr .esp := congrArg KPub.sp e
   sig_pub [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argSlots, argVal, argBytes]
   refine ⟨by simp only [h₁.esp, h₂.esp, sp], ?_⟩

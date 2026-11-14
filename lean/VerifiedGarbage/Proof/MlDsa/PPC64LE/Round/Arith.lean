@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Round
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA on PPC64LE: what the rounding code computes
@@ -42,7 +43,7 @@ theorem fixk_sub {k : Nat} (hk : 0 < k) (hk2 : k < 2 ^ 62) {x : BitVec 64} (hx :
   by_cases h : x.toNat < k
   · rw [Nat.mod_eq_of_lt h]; split <;> bv_omega
   · rw [show x.toNat % k = x.toNat - k by
-      rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]]
+      rw [Nat.mod_eq_sub_mod (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [hx])]]
     split <;> bv_omega
 
 /-- `fixk k (a - b)`: `a - b` if it is not negative, else `a + k - b`. -/
@@ -83,18 +84,18 @@ theorem hbr_toNat {g : Nat} (hg : g ∈ gamma2s) {a : BitVec 64} (ha : a.toNat <
   rw [q_eq] at ha
   obtain ⟨e1, e2, e3, b1, b2⟩ := dMul_eq hg
   have h1 : (a + 127).toNat = a.toNat + 127 := by
-    rw [BitVec.toNat_add]; exact Nat.mod_eq_of_lt (by rw [show (127 : BitVec 64).toNat = 127 from rfl]; omega)
+    rw [BitVec.toNat_add]; exact Nat.mod_eq_of_lt (by rw [show (127 : BitVec 64).toNat = 127 from rfl]; omega_using [ha])
   have h2 : ((a + 127) >>> 7).toNat = (a.toNat + 127) / 128 := by
     rw [BitVec.toNat_ushiftRight, h1, Nat.shiftRight_eq_div_pow]
   have h3 : ((a + 127) >>> 7 * BitVec.ofNat 64 (dMul g)).toNat = (a.toNat + 127) / 128 * dMul g := by
-    rw [BitVec.toNat_mul, h2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : dMul g < 2 ^ 64)]
-    exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) b1) (by omega))
+    rw [BitVec.toNat_mul, h2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [b1] : dMul g < 2 ^ 64)]
+    exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_refl _) b1) (by omega_using [ha]))
   have h4 : ((a + 127) >>> 7 * BitVec.ofNat 64 (dMul g) + BitVec.ofNat 64 (dAdd g)).toNat =
       (a.toNat + 127) / 128 * dMul g + dAdd g := by
-    rw [BitVec.toNat_add, h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : dAdd g < 2 ^ 64)]
+    rw [BitVec.toNat_add, h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [b2] : dAdd g < 2 ^ 64)]
     exact Nat.mod_eq_of_lt (by
       have := Nat.mul_le_mul (Nat.le_refl ((a.toNat + 127) / 128)) b1
-      omega)
+      omega_using [ha, b2, this])
   unfold hbr
   rw [BitVec.toNat_ushiftRight, h4, Nat.shiftRight_eq_div_pow, e1, e2, e3]
 
@@ -105,7 +106,7 @@ theorem hbv_toNat {g : Nat} (hg : g ∈ gamma2s) {a : BitVec 64} (ha : a.toNat <
   obtain ⟨m0, m64⟩ := dMod_pos hg
   have hm := dMod_eq hg
   unfold hbv
-  rw [← hm, ← hr, fixk_sub m0 (by omega) (by rw [hr]; omega)]
+  rw [← hm, ← hr, fixk_sub m0 (by omega_using [m64]) (by rw [hr]; omega_using [hf, m0, hm])]
 
 theorem hbv_lt {g : Nat} (hg : g ∈ gamma2s) {a : BitVec 64} (ha : a.toNat < q) : (hbv g a).toNat < 64 := by
   rw [hbv_toNat hg ha, ← dMod_eq hg]

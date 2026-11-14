@@ -81,8 +81,8 @@ theorem Sib.h {a s : State} (h : Sib X a s) : (stackArg s 0).setWidth 32 = (stac
   h.1.2.2.1.symm
 
 theorem Sib.arg {a s : State} (h : Sib X a s) {i : Nat} (hi : 1 ≤ i) (hi' : i < 15) : stackArg s i = stackArg a i := by
-  have := (List.map_inj_left.mp h.1.2.2.2.1) (i - 1) (List.mem_range.mpr (by omega))
-  simp only [show i - 1 + 1 = i by omega] at this
+  have := (List.map_inj_left.mp h.1.2.2.2.1) (i - 1) (List.mem_range.mpr (by omega_using [hi']))
+  simp only [show i - 1 + 1 = i by omega_using [hi]] at this
   exact this.symm
 
 theorem Sib.n {a s : State} (h : Sib X a s) :
@@ -170,7 +170,7 @@ theorem J3_env {s t : State} (hp : PreS s) (h : J3 s t) : Env s t := by
       have hl : em.length = (s.gpr .rcx).toNat := encodeId_length ho
       exact Env.of he₁ hp (hK.gpr (by decide)) hK.2.1 hK.2.2 (hout.2 ▸ frame_writeBytes _ _ _)
         fun r hr => .inl ⟨oEM, (s.gpr .rcx).toNat, by rw [List.mem_singleton.mp hr, h8₁, hl],
-          .inr (Nat.le_refl _), by unfold oEM frameBytes; omega⟩
+          .inr (Nat.le_refl _), by unfold oEM frameBytes; omega_using [hk2]⟩
   exact he₂.regs (by rw [hs.1]) hs.2.1 hs.2.2.1 hs.2.2.2
 
 theorem J3_rsp {s t : State} (h : J3 s t) : t.gpr .rsp = fb s := by
@@ -194,7 +194,7 @@ theorem callArg_sib {a s : State} (S : Sib X a s) {i : Nat} (hi : i < 14) : call
   match i, hi with
   | 0, _ => show off (fb s) oEM = off (fb a) oEM; rw [S.fb]
   | 1, _ => exact S.gpr (by decide)
-  | j + 2, hj => exact S.arg (by omega) (by omega)
+  | j + 2, hj => exact S.arg (by omega_using []) (by omega_using [hj])
 
 /-- What `vg_rsa_private_checked`'s contract makes public, of a call that
 reads `rds`. -/
@@ -221,13 +221,13 @@ theorem privView_of {a s t : State} {rds : List Region} (S : Sib X a s) (he : En
       S.gpr (r := .r8) (by decide), S.gpr (r := .r9) (by decide)]
   · refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    rw [stackArg_entry he.rsp _ _ (by omega), hw i hi, callArg_sib S hi]
+    rw [stackArg_entry he.rsp _ _ (by omega_using [hi]), hw i hi, callArg_sib S hi]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), hdx, hcx]
-    rw [entryBytes he _ _ hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega), S.n]
+    rw [entryBytes he _ _ hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega_using []), S.n]
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
-    rw [entryBytes he _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega), S.e]
+    rw [entryBytes he _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega_using []), S.e]
 
 /-! ## The pieces -/
 
@@ -260,7 +260,7 @@ theorem encode_two : RelCT isa (Two (At X J1)) encode (Two (At X J2)) :=
       have hH : Spec.Rsa.bytesAt t.mem (t.gpr .rsi) (t.gpr .r9).toNat =
           Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat := by
         rw [hsi, h9]
-        exact bytes_of_frame he.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega)
+        exact bytes_of_frame he.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega_using [])
       rw [hH] at hout
       exact hout
 

@@ -28,15 +28,15 @@ structure SigningInput where
   digestBound : digest.length < 2 ^ 64
 
 def SigningInput.components (p : SigningInput) : PackedComponents p.pLen p.qLen :=
-  packedComponents p.pLen p.qLen p.key (by rw [p.keyLength]; omega)
+  packedComponents p.pLen p.qLen p.key (by rw [p.keyLength]; omega_using [])
 
 abbrev SigningInput.prefixLength (p : SigningInput) : Nat :=
   min p.digest.length (VG.Proof.Dsa.significant p.components.q).1
 
 abbrev SigningInput.accepted (p : SigningInput) : Bool :=
   shapeAccepted p.components.p p.components.q
-    (by rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega)
-    (by rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega)
+    (by rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this])
+    (by rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this])
 
 def SigningInput.values (p : SigningInput) : SignValues :=
   ⟨p.components.g, p.nonce, p.components.x, p.digest.take (VG.Proof.Dsa.significant p.components.q).1⟩

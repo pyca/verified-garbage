@@ -44,7 +44,7 @@ theorem digit_ok {s : State} {B src ctx : Addr} {Z w N i : Nat} {mi : BitVec 64}
  Outside B (8*sD) 8 s.mem t.mem ∧ Keep mmRegs s t := by
  unfold VG.Impl.Ffdh.AArch64.Cached.Comb.digit
  rw [WP.seq_iff]
- refine WP.mono (digitArgs_ok good room controls counter (by omega)) ?_
+ refine WP.mono (digitArgs_ok good room controls counter (by omega_using [positions])) ?_
  rintro u ⟨⟨ptr,len,row,spacing,width,zero,memU⟩,restU⟩
  rw [WP.seq_iff]
  refine WP.mono (gather_ok u (source.of_mem memU restU) size widthBound positions

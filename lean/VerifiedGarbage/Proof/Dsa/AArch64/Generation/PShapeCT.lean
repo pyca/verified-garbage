@@ -112,6 +112,6 @@ theorem pBuild_ct {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.strea
         (Impl.Dsa.AArch64.Generation.pShape len count plen)) (fun _ _ => True) := by
   refine RelCT.seq (pHashes_ct hG H hmatch hsize len count hlen hd hc)
     (pShape_ct H (count + 1) len count plen ?_ hl)
-  rcases hlen with rfl | rfl <;> omega
+  rcases hlen with rfl | rfl <;> omega_using [hc]
 
 end VG.Proof.Dsa.AArch64.Generation

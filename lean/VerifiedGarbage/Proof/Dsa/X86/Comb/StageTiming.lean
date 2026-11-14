@@ -43,19 +43,19 @@ theorem stagePower_relCT (prepare : Bool) (L : CallLayout) (a b : Pointer) (outp
   intro s t tr ur sf tf H E F
   have Pair := H.1
   have CT := corePower_relCT prepare L.base L.size L.pLen L.qLen output .p a b
-    (supported_widths L.widths) L.saved L.extent (by omega) (by omega) L.aligned.1
-    (by omega) (by omega) L.aligned.2 fits
+    (supported_widths L.widths) L.saved L.extent (by omega_using [W]) (by omega_using [W]) L.aligned.1
+    (by omega_using [W]) (by omega_using [W]) L.aligned.2 fits
   have M := Pair.1.moduli.pValue.trans Pair.2.moduli.pValue.symm
-  have Trace := (CT _ _ _ _ _ _ ⟨⟨⟨Pair.1.arithmeticP A B (by omega),
-    Pair.2.arithmeticP A B (by omega),Pair.pointer P,Pair.pointer A,Pair.pointer B⟩,
+  have Trace := (CT _ _ _ _ _ _ ⟨⟨⟨Pair.1.arithmeticP A B (by omega_using [W]),
+    Pair.2.arithmeticP A B (by omega_using [W]),Pair.pointer P,Pair.pointer A,Pair.pointer B⟩,
     Pair.1.moduli.room,Pair.2.moduli.room,Pair.1.sp.trans Pair.2.sp.symm⟩,
     fun eq => ⟨M,H.2.1 eq⟩,fun eq => by
       rw [Pair.1.moduli.pValue,Pair.2.moduli.pValue]; exact H.2.2 eq⟩ E F).1
   have S := wp_result (stagePower_ok prepare Pair.1.moduli
-    (Pair.1.operand A (by omega) (by omega)) (Pair.1.operand B (by omega) (by omega)) ho fits
+    (Pair.1.operand A (by omega_using [W]) (by omega_using [W])) (Pair.1.operand B (by omega_using [W]) (by omega_using [W])) ho fits
     (fun eq => (H.2.2 eq).1)) E
   have T := wp_result (stagePower_ok prepare Pair.2.moduli
-    (Pair.2.operand A (by omega) (by omega)) (Pair.2.operand B (by omega) (by omega)) ho fits
+    (Pair.2.operand A (by omega_using [W]) (by omega_using [W])) (Pair.2.operand B (by omega_using [W]) (by omega_using [W])) ho fits
     (fun eq => (H.2.2 eq).2)) F
   exact ⟨Trace,keepSchedule Pair.1 S.2.2.2.2.1,keepSchedule Pair.2 T.2.2.2.2.1⟩
 

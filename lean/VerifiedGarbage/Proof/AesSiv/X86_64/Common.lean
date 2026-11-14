@@ -37,10 +37,10 @@ theorem runBlock_append (a b : List Instr) (s : State) :
 theorem sx_ofNat {n : Nat} (h : n < 2 ^ 31) :
     BitVec.signExtend 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; simp; omega
+    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]; simp; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
-  simp [Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]
+  simp [Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega_using [h]), Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [h])]
 
 theorem take_bytesAt (m : Mem) (p : Addr) {a b : Nat} :
     (Spec.Aes.bytesAt m p (a + b)).take a = Spec.Aes.bytesAt m p a := by

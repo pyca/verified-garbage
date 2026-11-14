@@ -223,7 +223,7 @@ theorem relct_loop_ne {body : Prog isa} {I₁ I₂ : Nat → State → Prop} {N 
         · have : t + 1 ≠ N := by
             have e' : (!a.z) = true := Option.some.inj e
             rw [z₁] at e'; simpa using e'
-          exact ⟨N - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+          exact ⟨N - (t + 1), by omega_using [ht, hn], t + 1, by omega_using [ht, this], rfl, i₁, i₂⟩
       · exact RelCT.of_false fun _ _ hab => hn hab.2.1
     · exact RelCT.of_false fun _ _ hab => ht hab.1
   · exact fun a b hab => ⟨0, hN, rfl, hab⟩

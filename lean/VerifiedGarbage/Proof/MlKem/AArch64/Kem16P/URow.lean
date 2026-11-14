@@ -93,7 +93,7 @@ theorem fused_u_rowE {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h
     · exact .inl (Ne.symm hC)
     · subst hC; exact .inr (.inl (by lom))) q₄
   refine ⟨⟨e₅.kb,e₅.x24,e₅.r,e₅.m,e₅.a,e₅.y,fun j hj => ?_,e₅.fr⟩, q₅⟩
-  rcases (by omega : j<i ∨ j=i) with hj | rfl
+  rcases (by omega_using [hj] : j<i ∨ j=i) with hj | rfl
   · exact e₅.u j hj
   · rw [b₅,t₄.2]; rfl
 

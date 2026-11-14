@@ -27,9 +27,9 @@ abbrev slots (E : BitVec 32) (t : State) (j : Nat) : BitVec 32 :=
 theorem call_arg {E : BitVec 32} {t : State} (he : t.gpr .esp = E)
     (hE : 24 ≤ E.toNat) (hF : E.toNat + 256 ≤ 2 ^ 32) {j : Nat} (hj : j < 64) :
     arg t.callEntry j = slots E t j := by
-  rw [arg_callEntry (by rw [he]; omega) (by rw [he]; omega), he]
+  rw [arg_callEntry (by rw [he]; omega_using [hE]) (by rw [he]; omega_using [hF, hj]), he]
   change t.mem.readW (addr E (4 * j)) 32 = slots E t j
-  rw [addr_eq (x := E) (k := 4 * j) (by omega)]
+  rw [addr_eq (x := E) (k := 4 * j) (by omega_using [hF, hj])]
 
 theorem callEntry_frame (t : State) : Frame [below (t.gpr .esp) 4] t.mem t.callEntry.mem := by
   rw [State.callEntry_mem]
@@ -98,7 +98,7 @@ theorem update_call (hc : Ctx E g m₀ rd wr t) (hE : 24 ≤ E.toNat)
     (by change Spec.Sha512.Repr _ t.callEntry.mem _ _; rw [arg_withRegions, h0]; exact callEntry_repr hs hr) hcount
   change Spec.Sha512.Repr _ s₂.mem ((arg t.callEntry 0).setWidth 64)
     (prev ++ Spec.Ed25519.bytesAt t.callEntry.mem ((arg t.callEntry 3).setWidth 64) (arg t.callEntry 4).toNat) at h
-  rw [hm, h0, h3, h4, callEntry_bytes hd (by change len.toNat ≤ 2 ^ 64; have := len.isLt; omega)] at h
+  rw [hm, h0, h3, h4, callEntry_bytes hd (by change len.toNat ≤ 2 ^ 64; have := len.isLt; omega_using [])] at h
   exact h
 
 /-- Finalize into any separate 64-byte buffer, including the frame's digest. -/

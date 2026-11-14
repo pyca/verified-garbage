@@ -27,7 +27,7 @@ abbrev stkR (sp : BitVec 32) (n : Nat) : Region := ⟨State.addr sp - BitVec.ofN
 
 theorem addr_toNat (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 /-- Word `i` a push stored. -/
 theorem storeWords_readW (m : Mem) (a : BitVec 32) (vs : List (BitVec 32)) (h : a.toNat + 4 * vs.length < 2 ^ 32)
@@ -38,25 +38,25 @@ theorem storeWords_readW (m : Mem) (a : BitVec 32) (vs : List (BitVec 32)) (h : 
   | cons v vs ih =>
     simp only [List.length_cons] at h hi
     simp only [storeWords]
-    have h4 : a.toNat + 4 < 2 ^ 32 := by omega
+    have h4 : a.toNat + 4 < 2 ^ 32 := by omega_using [h]
     have e4 : (a + 4).toNat = a.toNat + 4 := by
       rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.toNat_add, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (a := 4) (by omega), Nat.mod_eq_of_lt h4]
+        Nat.mod_eq_of_lt (a := 4) (by omega_using []), Nat.mod_eq_of_lt h4]
     cases i with
     | zero =>
-      have hf := storeWords_frame vs (m.writeW (State.addr a) v) (a + 4) (by rw [e4]; omega)
+      have hf := storeWords_frame vs (m.writeW (State.addr a) v) (a + 4) (by rw [e4]; omega_using [h])
       rw [show a + BitVec.ofNat 32 (4 * 0) = a by simp, hf.readW (r := ⟨State.addr a, 4⟩)
         (Region.contains_self _ _) (fun r hr => by
           rw [List.mem_singleton] at hr; subst hr
           rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, addr_add h4]
-          exact Offset.base_disjoint _ (Nat.le_refl 4) (by omega))
+          exact Offset.base_disjoint _ (Nat.le_refl 4) (by omega_using [h]))
         (by decide), Mem.readW_writeW_self32]
       rfl
     | succ j =>
       rw [show a + BitVec.ofNat 32 (4 * (j + 1)) = a + 4 + BitVec.ofNat 32 (4 * j) by
         rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add]
-        congr 2; omega]
-      exact ih _ _ (by rw [e4]; omega) (by omega)
+        congr 2; omega_using []]
+      exact ih _ _ (by rw [e4]; omega_using [h]) (by omega_using [hi])
 
 /-- Stack argument `i` of a callee entered after `push {rs}`: the register `rs[i]`. -/
 theorem pushed_arg {rs : List Reg} {s : State} (h : 4 * rs.length ≤ s.sp.toNat) {i : Nat} (hi : i < rs.length)
@@ -64,7 +64,7 @@ theorem pushed_arg {rs : List Reg} {s : State} (h : 4 * rs.length ≤ s.sp.toNat
     stackArg ((pushed rs s).callEntry.withRegions rd wr) i = s.gpr rs[i] := by
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_sp, State.callEntry_mem,
     State.callEntry_sp, pushed]
-  rw [storeWords_readW _ _ _ (by rw [List.length_map, sub_toNat' h]; have := s.sp.isLt; omega)
+  rw [storeWords_readW _ _ _ (by rw [List.length_map, sub_toNat' h]; have := s.sp.isLt; omega_using [h])
     (by simpa using hi)]
   simp
 
@@ -106,12 +106,12 @@ theorem stkR_inner {sp : BitVec 32} {a k b : Nat} (h : a + k ≤ b) (hb : b ≤ 
     Region.Sub (stkR (sp - BitVec.ofNat 32 k) a) (stkR sp b) := by
   have := belowA_inner (sp := sp) (a := a) (b := b) (k := k) h hb
   simp only [belowA] at this
-  rwa [addr_sub' (x := sp - BitVec.ofNat 32 k) (k := a) (by rw [sub_toNat' (by omega)]; omega),
+  rwa [addr_sub' (x := sp - BitVec.ofNat 32 k) (k := a) (by rw [sub_toNat' (by omega_using [h, hb])]; omega_using [h, hb]),
     addr_sub' (x := sp) (k := b) hb] at this
 
 theorem stkR_sub {sp : BitVec 32} {a b : Nat} (h : a ≤ b) (hb : b ≤ sp.toNat) :
     Region.Sub (stkR sp a) (stkR sp b) := by
-  have := stkR_inner (sp := sp) (a := a) (k := 0) (b := b) (by omega) hb
+  have := stkR_inner (sp := sp) (a := a) (k := 0) (b := b) (by omega_using [h]) hb
   simpa using this
 
 /-- A frame of the words `rs`, popped into `t`, around a call of verified code
@@ -128,9 +128,9 @@ theorem frameCall_ok {rs : List Reg} {t : Reg} (hrs : regList rs = true) (ht : t
       k.post ((pushed rs s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) →
       Q (popped t (4 * rs.length) s₂)) :
     WP isa (.frame (.push rs) (.call n c) (.pop t (4 * rs.length))) s Q := by
-  have hn : 4 * rs.length ≤ s.sp.toNat := by omega
+  have hn : 4 * rs.length ≤ s.sp.toNat := by omega_using [hst, hK]
   refine WP.frame (rs := rs) (r := t) hrs hn hlt ?_
-  refine WP.callF hv hpre hc hw (by rw [pushed_sp, sub_toNat' hn]; omega)
+  refine WP.callF hv hpre hc hw (by rw [pushed_sp, sub_toNat' hn]; omega_using [hst, hK])
     fun s₂ hrd hwr hsp hf hcs hpost => ?_
   refine hQ s₂ ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
   · rw [popped_rd, hrd, pushed_rd]
@@ -141,14 +141,14 @@ theorem frameCall_ok {rs : List Reg} {t : Reg} (hrs : regList rs = true) (ht : t
   · rw [popped_mem]
     refine Frame.trans (Frame.sub (pushed_stk hn) fun r hr => ?_) (Frame.sub hf fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stkR_sub (by omega) hK⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), stkR_sub (by omega_using [hst]) hK⟩
     · rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
         refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-        have := stkR_inner (sp := s.sp) (a := armStack c) (k := 4 * rs.length) (b := K) (by omega) hK
+        have := stkR_inner (sp := s.sp) (a := armStack c) (k := 4 * rs.length) (b := K) (by omega_using [hst]) hK
         simpa [belowA, pushed_sp, addr_sub' (x := s.sp - BitVec.ofNat 32 (4 * rs.length)) (k := armStack c)
-          (by rw [sub_toNat' hn]; omega)] using this
+          (by rw [sub_toNat' hn]; omega_using [hst, hK])] using this
 
 theorem push_eq {rs : List Reg} {s a : State} (hrs : regList rs = true) (h : isa.push (.push rs) s = some a) :
     a = pushed rs s := by

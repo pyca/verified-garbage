@@ -44,7 +44,7 @@ theorem nil_of_len {xl xh : BitVec 32} {c : List Byte} (ht : (xh ++ xl).toNat = 
   by_cases hc : c = []
   · subst hc
     have h0 : xl = 0 ∧ xh = 0 :=
-      ⟨BitVec.eq_of_toNat_eq (by simp at ht ⊢; omega), BitVec.eq_of_toNat_eq (by simp at ht ⊢; omega)⟩
+      ⟨BitVec.eq_of_toNat_eq (by simp at ht ⊢; omega_using [ht]), BitVec.eq_of_toNat_eq (by simp at ht ⊢; omega_using [ht])⟩
     obtain ⟨rfl, rfl⟩ := h0
     rfl
   · have hl : c.length ≠ 0 := fun h => hc (List.eq_nil_of_length_eq_zero h)
@@ -53,7 +53,7 @@ theorem nil_of_len {xl xh : BitVec 32} {c : List Byte} (ht : (xh ++ xl).toNat = 
     have := congrArg BitVec.toNat h
     rw [BitVec.toNat_or] at this
     obtain ⟨h1, h2⟩ := Nat.or_eq_zero_iff.mp this
-    omega
+    omega_using [ht, hl, h1, h2]
 
 /-- The regions `textAbsorb` writes. -/
 abbrev taFrame (St W SP : BitVec 32) (K : Nat) : List Region :=
@@ -70,7 +70,7 @@ structure TaSl (W : BitVec 32) (D : BitVec 32) (n : Nat) (al xl xh : BitVec 32) 
 theorem TaSl.frame {W D : BitVec 32} {n : Nat} {al xl xh : BitVec 32} {m m' : Mem} (h : TaSl W D n al xl xh m)
     {rs : List Region} (hf : Frame rs m m') (hd : ∀ r ∈ rs, (keptR W).Disjoint r) : TaSl W D n al xl xh m' := by
   have k : ∀ {o}, 128 ≤ o → o + 4 ≤ 240 → slotv m' W o = slotv m W o := fun h₁ h₂ =>
-    slot_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega))
+    slot_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using [h₁]) (by omega_using [h₂]))
   exact ⟨by rw [k (by decide) (by decide)]; exact h.data, by rw [k (by decide) (by decide)]; exact h.len,
     by rw [k (by decide) (by decide)]; exact h.al, by rw [k (by decide) (by decide)]; exact h.xl,
     by rw [k (by decide) (by decide)]; exact h.xh⟩
@@ -254,8 +254,8 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
       have hfit := h.data.fit
       refine ⟨⟨fo.env, h.sl.frame fo.frame kT, h.nlt, h.data.of_eq rd wr⟩, by rw [hH', hHs], ?_, ?_,
         fun a c ⟨hl, hx⟩ ha => ?_⟩
-      · rw [bytesAt_frame fo.frame dT (by omega), bytesAt_frame fb (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact h.data.w.sub_right (Lay.wSub (by decide))) (by omega)]
+      · rw [bytesAt_frame fo.frame dT (by omega_using [hnlt]), bytesAt_frame fb (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact h.data.w.sub_right (Lay.wSub (by decide))) (by omega_using [hnlt])]
       · exact (fb.sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact ⟨wsR W, by simp, Offset.sub _ (by decide) (by decide)⟩).trans (t_taFrame fo.frame)
@@ -267,7 +267,7 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
         have ha₁ : Absorbed s.mem (w64 St + BitVec.ofNat 64 16) (w64 St + BitVec.ofNat 64 32) (Hk s.mem Ctx) a := by
           rw [hHs]
           exact ha.congr (blockAt_frame fb (dS (by decide))) (bytesAt_frame fb (dS (d := 32) (k := a.length % 16)
-            (by omega)) (by omega))
+            (by omega_using [])) (by omega_using []))
         have := fo.abs a (lo_mod16 hl).symm ha₁
         rwa [hHs] at this
     · refine Pc.mono Pc.nil (fun _ _ h => h) fun m₀ s ⟨⟨h, hm⟩, _⟩ => ⟨h, by rw [hm], by rw [hm],
@@ -302,7 +302,7 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
   have hfit := hd.fit
   have hD : bytesAt s.mem (w64 D) n = bytesAt m₀ (w64 D) n := by
     rw [bytesAt_frame fr (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hd.w.sub_right (Lay.wSub (by decide))) (by omega),
+      simp only [List.mem_singleton] at hr; subst hr; exact hd.w.sub_right (Lay.wSub (by decide))) (by omega_using [hnlt]),
       h₃.bytes]
   have hHs : Hk s.mem Ctx = Hk m₀ Ctx := by
     rw [← h₃.hk]; exact blockAt_frame fr fun r hr => by
@@ -315,12 +315,12 @@ theorem textAbsorb_pc {D : BitVec 32} {n : Nat} {al ah xl xh : BitVec 32} :
       subst hc
       simp only [List.length_nil] at hx
       rw [List.length_append, Proof.Gcm.length_zeros, Proof.Gcm.length_pad_mod]
-      omega
+      omega_using [e, hx]
     · next hc =>
       rw [Proof.Gcm.ghashInput_of_ne hc]
       simp only [List.length_append, Proof.Gcm.length_zeros]
       have := Proof.Gcm.length_pad_mod a.length
-      omega
+      omega_using [hx, e, this]
   have := ao.abs _ hx' (by rw [hHs]; exact absorbed_pslot fr (h₃.abs a c ⟨hl, hx⟩ ha) L (.inr rfl))
   rw [hHs, hD, ← Proof.Gcm.ghashInput_append a c _ (by
     intro h0; have := congrArg List.length h0; rw [length_bytesAt] at this; exact hn0 this)] at this

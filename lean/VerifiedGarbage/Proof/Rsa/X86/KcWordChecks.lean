@@ -42,14 +42,14 @@ theorem wordOk_of {g : Geo} {s0 : State} {v : Vals} {an ap aq top : Nat}
     (bal : Bal an ap aq top) : WordOk g s0 v ap := by
   obtain ⟨h8, hpa, hqa, h128, ht⟩ := bal
   have hw : g.w = an / 4 := by
-    rw [← hkw]; simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega
-  have hwq : wq ap = ap / 4 := by simp only [wq]; omega
-  have hK : 32 * wq ap = 8 * ap := by rw [hwq]; omega
+    rw [← hkw]; simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega_using [h8]
+  have hwq : wq ap = ap / 4 := by simp only [wq]; omega_using [h8, hpa]
+  have hK : 32 * wq ap = 8 * ap := by rw [hwq]; omega_using [h8, hpa]
   have hn : 2 ^ (2 * (8 * ap) - 1) ≤ v.n := by
     have := htop.mp ht
-    rwa [show 32 * g.w = 2 * (8 * ap) by rw [hw]; omega] at this
-  have hq' : v.q < 2 ^ (8 * ap) := by rwa [show 8 * aq = 8 * ap by omega] at hq
-  refine ⟨hm, by omega, by omega, fun hpq => ?_, by omega⟩
+    rwa [show 32 * g.w = 2 * (8 * ap) by rw [hw]; omega_using [h8, hpa]] at this
+  have hq' : v.q < 2 ^ (8 * ap) := by rwa [show 8 * aq = 8 * ap by omega_using [hpa, hqa]] at hq
+  refine ⟨hm, by omega_using [hpa, h128, hwq], by omega_using [hpa, h128, hw, hwq], fun hpq => ?_, by omega_using [h8, hpa, hw, hwq]⟩
   simp only [Top, hK]
   have pt := top_factor (factor_top hn hq' hpq) hp
   have qt := top_factor (factor_top hn hp (by rw [Nat.mul_comm]; exact hpq)) hq'
@@ -112,13 +112,13 @@ theorem Stg.eWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
   refine WP.mono (h.ltA_ok hx hmL nW) fun t1 h1 => ?_
   rw [wp_seqs_cons (by simp)]
   refine WP.mono (h1.mulShort_ok (o := aY) (a := x) (b := aE) (by decide) hx hE
-    (fun j hj => ⟨(hfree j hj).1, (hfree j hj).2.1⟩) (by decide) (by omega)) fun t2 ⟨h2, e2⟩ => ?_
+    (fun j hj => ⟨(hfree j hj).1, (hfree j hj).2.1⟩) (by decide) (by omega_using [hw])) fun t2 ⟨h2, e2⟩ => ?_
   rw [wp_seqs_cons (by simp [eqA])]
   have hmY : m ≠ aY := (hfree m hmL).1
   have hmT : m ≠ aT := (hfree m hmL).2.2.2.1
   have hmX : m ≠ aX := (hfree m hmL).2.1
-  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := m) (top := some 2) hm h4 (by omega)
-    (fun k e => by obtain rfl := Option.some.inj e; omega) (by decide)
+  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := m) (top := some 2) hm h4 (by omega_using [hw])
+    (fun k e => by obtain rfl := Option.some.inj e; omega_using [hw]) (by decide)
     (by decide) hmL (fun j hj => ⟨(hfree j hj).2.2.1, (hfree j hj).2.2.2.1⟩) (fun e => (hfree m hmL).2.2.1 e.symm)
     (by decide) hmT (by decide) (by decide) hmY ⟨hmv, by decide⟩) fun t3 ⟨M, R, hMR, h3⟩ => ?_
   have nA : aA ∉ live := fun ha => (hfree aA ha).2.2.1 rfl
@@ -131,7 +131,7 @@ theorem Stg.eWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat
         _ = 2 ^ (32 * (wq ap + 2)) := by rw [← Nat.pow_add]; congr 1
     have full := e2 (Nat.lt_trans he (by decide))
     rw [eR, show VG.Proof.Rsa.X86.WordRt.xw g.len ap (some 2) = wq ap + 2 from rfl,
-      val32_low (k := wq ap + 2) (w := g.w + 2) (by omega) (by rw [full]; exact big), full, Nat.mul_comm]
+      val32_low (k := wq ap + 2) (w := g.w + 2) (by omega_using [hw]) (by rw [full]; exact big), full, Nat.mul_comm]
   · have v1 : upd (upd A m M) aA R aOne = 1 := by
       rw [upd_ne _ _ (by decide), upd_ne _ _ (Ne.symm hmO), one]
     rw [upd_self, v1] at ht
@@ -149,7 +149,7 @@ theorem Stg.qInvWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
       (Top (wq ap) (A aP) → A aQ < 2 ^ (32 * wq ap) → A aQI < A aP → R = A aQ * A aQI % A aP) ∧
       Stg g s0 (upd A aP M) live ((c && decide (A aQI < A aP)) && decide (R = 1)) t := by
   have nW : aW ∉ live := fun hw' => (hfree aW hw').2.2.2.2 rfl
-  have hh2 : g.w / 2 = wq ap := by omega
+  have hh2 : g.w / 2 = wq ap := by omega_using [hh]
   unfold qInvWord
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   rw [wp_seqs_append (by simp [ltA]) (by simp)]
@@ -158,7 +158,7 @@ theorem Stg.qInvWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
   refine WP.mono (h1.mulHalf_if_ok (o := aY) (a := aQ) (b := aQI) (by decide) hQ hI
     (fun j hj => ⟨(hfree j hj).1, (hfree j hj).2.1⟩) (by decide)) fun t2 ⟨h2, e2⟩ => ?_
   rw [wp_seqs_cons (by simp [eqA])]
-  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := aP) (top := none) hm h4 (by omega) (by simp) (by decide)
+  refine WP.mono (h2.wordMod_ok (x := aY) (r := aA) (m := aP) (top := none) hm h4 (by omega_using [hh]) (by simp) (by decide)
     (by decide) hP (fun j hj => ⟨(hfree j hj).2.2.1, (hfree j hj).2.2.2.1⟩) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) ⟨by decide, by decide⟩) fun t3 ⟨M, R, hMR, h3⟩ => ?_
   have nA : aA ∉ live := fun ha => (hfree aA ha).2.2.1 rfl
@@ -170,8 +170,8 @@ theorem Stg.qInvWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
     have full := e2 (by rw [hh2]; exact hq) (by rw [hh2]; exact hi)
     have big : A aQ * A aQI < 2 ^ (32 * g.w) :=
       calc A aQ * A aQI < 2 ^ (32 * wq ap) * 2 ^ (32 * wq ap) := Nat.mul_lt_mul'' hq hi
-        _ = 2 ^ (32 * g.w) := by rw [← Nat.pow_add, ← hh]; congr 1; omega
-    rw [eR, val32_low (k := g.w) (w := 2 * g.w) (by omega) (by rw [full]; exact big), full]
+        _ = 2 ^ (32 * g.w) := by rw [← Nat.pow_add, ← hh]; congr 1; omega_using []
+    rw [eR, val32_low (k := g.w) (w := 2 * g.w) (by omega_using []) (by rw [full]; exact big), full]
   · have v1 : upd (upd A aP M) aA R aOne = 1 := by
       rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide), one]
     rw [upd_self, v1] at ht
@@ -181,8 +181,8 @@ theorem Stg.qInvWord_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List 
 /-- Below `2^(32 k)` where twice its half is (`k ≥ 1`). -/
 theorem lt_of_half_lt {x k : Nat} (hk : 1 ≤ k) (h : 2 * (x / 2) < 2 ^ (32 * k)) : x < 2 ^ (32 * k) := by
   have e : 2 ^ (32 * k) = 2 * 2 ^ (32 * k - 1) := by
-    rw [← Nat.pow_succ']; congr 1; omega
-  omega
+    rw [← Nat.pow_succ']; congr 1; omega_using [hk]
+  omega_using [h, e]
 
 /-- The arrays after the product checks by word steps: `p - 1`, `q - 1` and `p` as they were
 where `p q = n`. -/
@@ -214,7 +214,7 @@ theorem Stg.wordProducts_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} {ap :
     exact ⟨eM₁ tp1, eM₂ tq1, eM₃ tp⟩
   · obtain ⟨tp, tp1, tq1⟩ := wo.top hpq
     exact ⟨fun hlt => eR₁ tp1 hlt he, fun hlt => eR₂ tq1 hlt he,
-      fun hlt => eR₃ tp (lt_of_half_lt (by have := wo.four; omega) tq1.2) hlt⟩
+      fun hlt => eR₃ tp (lt_of_half_lt (by have := wo.four; omega_using [this]) tq1.2) hlt⟩
 
 /-- `dWords`: `d < n`, and the remainders of `d` modulo `[aM1]` and `[aM2]` by word steps, compared
 with `dP` and `dQ`. -/

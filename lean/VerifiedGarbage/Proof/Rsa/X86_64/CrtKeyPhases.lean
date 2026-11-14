@@ -116,9 +116,9 @@ theorem crtQInv_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem B (8 
   -- `qInv` and `q` are their low `⌈len / 8⌉` words.
   have low : ∀ {bs : List Byte} {j L : Nat}, wv t₄.mem B (slot w j) w = Spec.Rsa.os2ip bs → bs.length = L →
       L ≤ 8 * w → wv t₄.mem B (slot w j) ((L + 7) / 8) = Spec.Rsa.os2ip bs := fun {bs j L} v hL hk => by
-    rw [wv_low_of_lt (v := (L + 7) / 8) (w := w) (by omega) (by
+    rw [wv_low_of_lt (v := (L + 7) / 8) (w := w) (by omega_using [hk]) (by
       rw [v]; exact Nat.lt_of_lt_of_le (os2ip_lt bs) (by
-        rw [hL, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))), v]
+        rw [hL, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_using []))), v]
   refine wsa (by simp [mulPQ]) (by simp [Impl.Rsa.X86_64.CheckCrtKey.reduceTop])
     (WP.mono (mulPQK h₄ hpl hql hp1 hq1 hpk hqk) fun t₅ ⟨h₅, v₅, a₅⟩ => ?_)
   rw [← Arrays.wv_other a₅ (by decide) (by decide) hZ hn] at v₁

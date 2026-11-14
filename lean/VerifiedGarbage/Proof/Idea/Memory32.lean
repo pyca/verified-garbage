@@ -25,7 +25,7 @@ theorem subkey_lo32 (m : Mem) (p : Addr) {k : Nat} (hk : k < 52) :
     (m.readW (p + BitVec.ofNat 64 (2 * k)) 32).setWidth 16 = (Spec.Idea.scheduleAt m p).getD k 0 := by
   have e := word_read32 m (p + BitVec.ofNat 64 (2 * k)) 0 (by decide)
   rw [Nat.mul_zero, BitVec.ushiftRight_zero, BitVec.setWidth_setWidth_of_le _ (by decide)] at e
-  rw [e, scheduleAt_getD m p (by omega), Offset.add_ofNat_add_ofNat, Nat.zero_add,
+  rw [e, scheduleAt_getD m p (by omega_using [hk]), Offset.add_ofNat_add_ofNat, Nat.zero_add,
     show BitVec.ofNat 64 (2 * 0) = 0 from rfl]
   exact congrArg (_ ++ ·) (congrArg m (BitVec.add_zero _))
 
@@ -36,6 +36,6 @@ theorem subkey_hi32 (m : Mem) (p : Addr) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := (m.readW (p + BitVec.ofNat 64 (4 * 25)) 32).isLt
-  rw [Nat.mod_eq_of_lt (by omega : (m.readW (p + BitVec.ofNat 64 (4 * 25)) 32).toNat < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [] : (m.readW (p + BitVec.ofNat 64 (4 * 25)) 32).toNat < 2 ^ 64)]
 
 end VG.Proof.Idea

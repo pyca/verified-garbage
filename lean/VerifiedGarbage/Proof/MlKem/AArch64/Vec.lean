@@ -42,7 +42,7 @@ theorem getLsbD_read (m : Mem) : ∀ (n : Nat) (a : Addr) (i : Nat), i < 8 * n �
       rw [BitVec.add_assoc]; congr 1
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-      omega
+      omega_using [hi]
 
 theorem getLsbD_readW32 (m : Mem) (a : Addr) (k : Nat) {j : Nat} (hj : j < 32) :
     (m.readW (a + BitVec.ofNat 64 (4 * k)) 32).getLsbD j =
@@ -73,7 +73,7 @@ theorem toNat_sub_c (d : BitVec 64) (c : Nat) (hc : c < 16) :
     (d - BitVec.ofNat 64 c).toNat = if c ≤ d.toNat then d.toNat - c else 2 ^ 64 + d.toNat - c := by
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := d.isLt
-  split <;> omega
+  split <;> omega_arith
 
 /-- The low word of a 64-bit load. -/
 theorem readW64_lo (m : Mem) (a : Addr) : (m.readW a 64).extractLsb' 0 32 = m.readW a 32 := by
@@ -283,7 +283,7 @@ theorem vword_rev64s (x : BitVec 128) {e : Nat} (he : e < 4) :
   rw [show 32 * e + i = 8 * (4 * e + i / 8) + i % 8 by bdd_omega,
     getLsbD_ofVBytes _ (by bdd_omega) (Nat.mod_lt _ (by decide)), vbyte, BitVec.getLsbD_extractLsb',
     decide_eq_true (Nat.mod_lt _ (by decide)), Bool.true_and]
-  exact congrArg _ (by split <;> omega)
+  exact congrArg _ (by split <;> omega_arith)
 
 theorem vword_dup_s4 (w : BitVec 32) {e : Nat} (he : e < 4) : vword (ofVWords w w w w) e = w := by
   rw [vword_ofVWords _ _ _ _ he]
@@ -298,7 +298,7 @@ theorem sqdmulhLane_lt {a b : BitVec 32} (ha : a.toNat < 2 ^ 31) (hb : b.toNat <
   rw [BitVec.toInt_eq_toNat_of_lt (by bdd_omega), BitVec.toInt_eq_toNat_of_lt (by bdd_omega),
     show (2 : Int) * a.toNat * b.toNat = ((2 * a.toNat * b.toNat : Nat) : Int) by push_cast; rfl,
     ← Int.natCast_shiftRight, BitVec.ofInt_natCast, Nat.shiftRight_eq_div_pow,
-    show 2 * a.toNat * b.toNat / 2 ^ 32 = a.toNat * b.toNat / 2 ^ 31 by rw [Nat.mul_assoc]; omega]
+    show 2 * a.toNat * b.toNat / 2 ^ 32 = a.toNat * b.toNat / 2 ^ 31 by rw [Nat.mul_assoc]; omega_using []]
 
 /-! ## Instructions -/
 
@@ -389,7 +389,7 @@ theorem wp_scalar {is rest : List Instr} {s : State} {P Q : State → Prop}
 
 private theorem barrett_sum (t : Nat) :
     (t * 2147483648 + 2147483648) * 3329 + 3329 * 2147483648 = (t * 3329 + 2 * 3329) * 2147483648 := by
-  omega
+  omega_using []
 
 /-- Barrett reduction with `M = ⌊2³¹ / q⌋ = 645083`: `t = ⌊x · M / 2³¹⌋` is at
 most `x / q`, and more than `x / q - 2`. -/
@@ -444,7 +444,7 @@ theorem lanes_umin {x y : BitVec 128} {f g : Nat → Nat} (hx : Lanes x f) (hy :
   fun e he => by
     show _ = min (f e) (g e)
     rw [vword_map2 _ _ _ he]
-    split <;> rename_i h <;> rw [hx e he, hy e he] at * <;> omega
+    split <;> rename_i h <;> rw [hx e he, hy e he] at * <;> omega_using [h]
 
 theorem lanes_mls {a x y : BitVec 128} {h f g : Nat → Nat} (ha : Lanes a h) (hx : Lanes x f)
     (hy : Lanes y g) :
@@ -544,7 +544,7 @@ theorem vcsub_ok {d t : VReg} (hdt : d ≠ t := by decide) (hq : Lanes (s.v .v16
   rw [h₂.v]
   refine (lanes_umin (by rw [h₁.get d hdt]; exact hf) l₁).congr fun e he => ?_
   have := hlt e he
-  omega
+  omega_using [this]
 
 /-- `sqdmulh t, d, M; mls d, t, q`: Barrett reduction of lanes `x < 2³¹`, to
 `x - ⌊x · M / 2³¹⌋ · q`, which is less than `2q` and congruent to `x`. -/
@@ -570,10 +570,10 @@ theorem vbar_ok {d t : VReg} (hdt : d ≠ t := by decide) (ht16 : t ≠ .v16 := 
   · show _ = f e - f e * 645083 / 2 ^ 31 * 3329
     have := hb e he
     have : f e * 645083 / 2 ^ 31 * 3329 % 2 ^ 32 = f e * 645083 / 2 ^ 31 * 3329 :=
-      Nat.mod_eq_of_lt (by have := hlt e he; omega)
+      Nat.mod_eq_of_lt (by have := hlt e he; omega_using [this])
     have := hlt e he
-    omega
-  · have := hb e he; omega
+    omega_arith
+  · have := hb e he; omega_using [this]
   · have hb' := (hb e he).1
     rw [Nat.mul_comm] at hb'
     rw [Nat.mul_comm _ 3329, Nat.sub_mul_mod hb']

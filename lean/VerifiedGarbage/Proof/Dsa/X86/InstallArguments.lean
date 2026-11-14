@@ -33,14 +33,14 @@ theorem installArguments_precise (args : List (Nat × Field)) {s : State} {base 
       pointerValue base t (.input .y) = stackValue s keyArg + stackValue s pLenArg + stackValue s qLenArg + stackValue s pLenArg ∧
       pointerValue base t (.input .x) = stackValue s keyArg + stackValue s pLenArg + stackValue s qLenArg + stackValue s pLenArg + stackValue s pLenArg ∧
       Keeps [.eax, .edi] s t ∧ Outside base 0 8272 s.mem t.mem := by
-  have savedSize : Layout.saved ≤ size := by change 8256 ≤ size; omega
+  have savedSize : Layout.saved ≤ size := by change 8256 ≤ size; omega_using [hz]
   rw [List.append_assoc]
   refine WP.block_append (WP.mono (openScratch_precise read hb hf hz hw stk) fun s1 ⟨Sc1, S1, K1, O1⟩ => ?_)
   refine WP.block_append (WP.mono (saveArguments_ok args Sc1 savedSize distinct
     (fun a ha => (inputs a ha).keep K1 (by decide))) fun s2 ⟨Values, _, K2, O2⟩ => ?_)
   have Sc2 := Sc1.of_keeps K2 (by decide)
   have Original (a : Nat × Field) (ha : a ∈ args) : pointerValue base s2 (.input a.2) = stackValue s a.1 :=
-    (Values a ha).trans ((inputs a ha).value_keep K1 (by decide) (O1.mono (Nat.le_refl _) (by omega)))
+    (Values a ha).trans ((inputs a ha).value_keep K1 (by decide) (O1.mono (Nat.le_refl _) (by omega_using [hz])))
   refine WP.mono (keyPointers_ok (key := stackValue s keyArg) (plen := stackValue s pLenArg) (qlen := stackValue s qLenArg)
     Sc2 savedSize (Original (keyArg, .p) keyMem) (Original (pLenArg, .pLen) pLenMem) (Original (qLenArg, .qLen) qLenMem))
     fun t ⟨Q, G, Y, X, K3, O3⟩ => ?_
@@ -49,7 +49,7 @@ theorem installArguments_precise (args : List (Nat × Field)) {s : State} {base 
     K1.trans ((K2.trans K3).mono (by decide)), ?_⟩
   · intro a ha
     exact (keyPointerFrame_field O3 (fields a ha)).trans (Original a ha)
-  · exact O1.trans ((O2.trans Oheader).mono (by omega) (by omega))
+  · exact O1.trans ((O2.trans Oheader).mono (by omega_using []) (by omega_using []))
 
 theorem installArguments_ok (args : List (Nat × Field)) {s : State} {base : Addr}
     {size scratchArg keyArg pLenArg qLenArg : Nat} {ptr : BitVec 32}
@@ -69,6 +69,6 @@ theorem installArguments_ok (args : List (Nat × Field)) {s : State} {base : Add
       pointerValue base t (.input .x) = stackValue s keyArg + stackValue s pLenArg + stackValue s qLenArg + stackValue s pLenArg + stackValue s pLenArg ∧
       Keeps [.eax, .edi] s t ∧ Outside base 0 size s.mem t.mem :=
   WP.mono (installArguments_precise args read hb hf hz hw stk distinct inputs fields keyMem pLenMem qLenMem)
-    fun _ ⟨S,V,A,Q,G,Y,X,K,O⟩ => ⟨S,V,A,Q,G,Y,X,K,O.mono (Nat.le_refl _) (by omega)⟩
+    fun _ ⟨S,V,A,Q,G,Y,X,K,O⟩ => ⟨S,V,A,Q,G,Y,X,K,O.mono (Nat.le_refl _) (by omega_using [hz])⟩
 
 end VG.Proof.Dsa.X86

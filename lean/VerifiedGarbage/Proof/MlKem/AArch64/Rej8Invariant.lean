@@ -17,8 +17,8 @@ theorem sampleAfter_add (L : List Zq) (B : Nat → Byte) (t k : Nat) :
   induction k with
   | zero => simp only [sampleAfter_zero,Nat.add_zero]
   | succ k ih =>
-    rw [sampleAfter_succ,ih,show t+(k+1)=(t+k)+1 by omega,sampleAfter_succ]
-    congr 1 <;> congr 1 <;> omega
+    rw [sampleAfter_succ,ih,show t+(k+1)=(t+k)+1 by omega_using [],sampleAfter_succ]
+    congr 1 <;> congr 1 <;> omega_using []
 
 theorem batch_frameW (w16 : Bool) (s : State) {aP : Addr} {L : List Zq}
     (h3 : s.gpr .x3=cAddr w16 aP L.length) (hroom : L.length+8≤256) :
@@ -28,16 +28,16 @@ theorem batch_frameW (w16 : Bool) (s : State) {aP : Addr} {L : List Zq}
     rw [ite_eq_right Bool.false_ne_true]
     apply Frame.write (r := polyRegion aP) (Frame.write (r := polyRegion aP) (Frame.refl _ _) (by simp) _ ?_) (by simp) _ ?_
     · rw [h3]
-      exact contains_off (by simp only [cs_eq, Bool.false_eq_true, ite_false]; omega) (by decide)
+      exact contains_off (by simp only [cs_eq, Bool.false_eq_true, ite_false]; omega_using [hroom]) (by decide)
     · rw [h3]
       change (polyRegion aP).Contains (aP+BitVec.ofNat 64 (4*L.length)+BitVec.ofNat 64 16) 16
       rw [ptr_add]
-      exact contains_off (by omega) (by decide)
+      exact contains_off (by omega_using [hroom]) (by decide)
   · unfold updatedMem
     rw [ite_eq_left rfl]
     refine Frame.write (r := polyRegion aP) (Frame.refl _ _) (by simp) _ ?_
     rw [h3]
-    exact contains_off (by simp only [cs_eq, ite_true]; omega) (by decide)
+    exact contains_off (by simp only [cs_eq, ite_true]; omega_using [hroom]) (by decide)
 
 theorem batch_invW {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte}
     {bP aP : Addr} {s₀ s u : State} (h : Scalar.InvW w16 initial N B bP aP s₀ t s)
@@ -52,10 +52,10 @@ theorem batch_invW {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byt
     rw [←he,List.length_append,acceptedValues_length]
   have hcount : acceptedCount s≤8 := accepted_length _
   refine ⟨⟨hp.keep.rd.trans h.acc.rd,hp.keep.wr.trans h.acc.wr,hp.keep.sp.trans h.acc.sp,
-    by omega,?_,?_,?_,?_,?_,⟩,(h.keep.trans hp.keep).mono (by decide),?_,?_,?_⟩
+    by omega_using [hroom, hlen, hcount],?_,?_,?_,?_,?_,⟩,(h.keep.trans hp.keep).mono (by decide),?_,?_,?_⟩
   · rw [hp.output,h.acc.x3,cAddr_add,hlen]
   · rw [hp.remain,h.acc.x4,hlen]
-    omega
+    omega_using []
   · rw [hp.keep.get .x9,h.acc.x9]
   · rw [hp.mem,←he]
     exact batch_prefixW w16 s h.acc.x3 hroom hz h.acc.coeffs
@@ -66,7 +66,7 @@ theorem batch_invW {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byt
     rw [ptr_add]
     congr 2
   · rw [hp.chunks,h.x5]
-    omega
+    omega_using []
   · rw [hp.keep.get .x10,h.x10]
 
 end VG.Proof.MlKem.AArch64.Rej8

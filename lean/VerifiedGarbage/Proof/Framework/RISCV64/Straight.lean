@@ -218,21 +218,21 @@ theorem slot_sep (b : Addr) {j k : Nat} (hj : 8 * j < 2 ^ 64) (hk : 8 * k < 2 ^ 
   intro x h₁ h₂
   simp only [wordAddr, Offset.sub_add_eq, Offset.toNat_sub_ofNat] at h₁ h₂
   have := (x - b).isLt
-  omega
+  omega_using [hj, hk, h, h₁, h₂]
 
 theorem slot_contains (b : Addr) {n k : Nat} (hk : k < n) (hn : 8 * n < 2 ^ 64) :
     (⟨b, 8 * n⟩ : Region).Contains (wordAddr b k) (64 / 8) := by
   simp only [Region.Contains, wordAddr]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn])]
+  omega_using [hk]
 
 /-- A word at an 8-byte aligned offset of an 8-byte aligned base is aligned. -/
 theorem wordAddr_al {b : Addr} (hb : b.toNat % 8 = 0) (k : Nat) (hk : 8 * k < 2048) :
     (wordAddr b k).toNat % 8 = 0 := by
   simp only [wordAddr]
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * k) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * k) (by omega_using [hk])]
   have := b.isLt
-  omega
+  omega_using [hb]
 
 theorem loc_some_slot {c : Cfg} {b : Reg} {off k : Nat} (h : c.loc b off = some (.slot k)) :
     b = c.base ∧ off = 8 * k ∧ off < 2048 ∧ k < c.slots := by
@@ -242,7 +242,7 @@ theorem loc_some_slot {c : Cfg} {b : Reg} {off k : Nat} (h : c.loc b off = some 
     split at h
     · rename_i h2
       cases h
-      exact ⟨h2.1, by omega, h1.1, h2.2⟩
+      exact ⟨h2.1, by omega_using [h1], h1.1, h2.2⟩
     · split at h <;> cases h
   · cases h
 
@@ -256,7 +256,7 @@ theorem loc_some_ext {c : Cfg} {b : Reg} {off k : Nat} (h : c.loc b off = some (
     · split at h
       · rename_i h2
         cases h
-        exact ⟨h2.1, by omega, h1.1, h2.2⟩
+        exact ⟨h2.1, by omega_using [h1], h1.1, h2.2⟩
       · cases h
   · cases h
 
@@ -349,11 +349,11 @@ theorem ror_and_shl (y : BitVec 64) {k : Nat} (hk : 0 < k) (hk' : k < 64) :
     y.rotateRight (64 - k) &&& BitVec.allOnes 64 <<< k = y <<< k := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_and, BitVec.getLsbD_rotateRight, BitVec.getLsbD_shiftLeft,
-    BitVec.getLsbD_allOnes, Nat.mod_eq_of_lt (show 64 - k < 64 by omega)]
+    BitVec.getLsbD_allOnes, Nat.mod_eq_of_lt (show 64 - k < 64 by omega_using [hk])]
   by_cases h : i < k
   · simp [h]
-  · have e : i - (64 - (64 - k)) = i - k := by omega
-    simp [h, hi, show ¬ i < 64 - (64 - k) by omega, e, show i - k < 64 by omega]
+  · have e : i - (64 - (64 - k)) = i - k := by omega_using [hk']
+    simp [h, hi, show ¬ i < 64 - (64 - k) by omega_using [h], e, show i - k < 64 by omega_using [hi]]
 
 omit [DecidableEq α] in
 theorem shlD_sound (hD : D.Sound R) {k : Nat} {b r : α} {y : BitVec 64} (hb : R b y)
@@ -443,14 +443,14 @@ theorem step_ok (hD : D.Sound R) (hR : ∀ a x y, R a x → R a y → x = y) {e 
         obtain ⟨r, hr, hc⟩ := hok.slotIn k hlt
         have hin : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr c.base) k) 8 :=
           ⟨r, List.mem_append_right _ hr, hc⟩
-        refine ⟨_, exec_load_d ho (wordAddr_al (hok.baseAl (by omega)) k ho) hin, ?_⟩
+        refine ⟨_, exec_load_d ho (wordAddr_al (hok.baseAl (by omega_using [hlt])) k ho) hin, ?_⟩
         exact (post_write (a := .v a) hok hrel (hrel.slot k a hlt ha) hd.1 hd.2).writes
           fun r h => by simp [dst, h]
       · rename_i k hk
         obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
         obtain ⟨hb, hoff, ho, hlt⟩ := loc_some_ext hk
         subst hb hoff
-        refine ⟨_, exec_load_d ho (wordAddr_al (hok.extAl (by omega)) k ho) (hok.extIn k hlt), ?_⟩
+        refine ⟨_, exec_load_d ho (wordAddr_al (hok.extAl (by omega_using [hlt])) k ho) (hok.extIn k hlt), ?_⟩
         exact (post_write (a := .v a) hok hrel (hrel.ext k a hlt ha) hd.1 hd.2).writes
           fun r h => by simp [dst, h]
       · cases h
@@ -464,10 +464,10 @@ theorem step_ok (hD : D.Sound R) (hR : ∀ a x y, R a x → R a y → x = y) {e 
       obtain ⟨hb, hoff, ho, hlt⟩ := loc_some_slot hk
       subst hb hoff
       have hin := hok.slotIn k hlt
-      refine ⟨_, exec_store_d ho (wordAddr_al (hok.baseAl (by omega)) k ho) hin, ?_⟩
+      refine ⟨_, exec_store_d ho (wordAddr_al (hok.baseAl (by omega_using [hlt])) k ho) hin, ?_⟩
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (64 / 8)
           (wordAddr (s.gpr c.base) k) (64 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        slot_sep _ (by have := hok.slots; omega_using [hj, this]) (by have := hok.slots; omega_using [ho]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_, fun j b hj hjb => ?_⟩,
         hok.congr rfl rfl rfl rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
       · simp only [Env.setSlot] at hjb

@@ -33,11 +33,11 @@ theorem blk_length (s : State) (j : Nat) : (blk s j).length = 16 := Poly1305.len
 theorem blk_mv (s : State) (k : Nat) : mv (blk s (pi k)) = blo s k + 2 ^ 64 * bhi s k + 2 ^ 128 := by
   rw [mv, Poly1305.leNum_append, blk, Poly1305.length_bytesAt, Poly1305.leNum_bytesAt_16]
   have e₁ : s.gpr .rsi + BitVec.ofNat 64 (16 * pi k) = s.gpr .rsi + BitVec.ofNat 64 (8 * (2 * pi k)) := by
-    rw [show 16 * pi k = 8 * (2 * pi k) by omega]
+    rw [show 16 * pi k = 8 * (2 * pi k) by omega_using []]
   have e₂ : s.gpr .rsi + BitVec.ofNat 64 (16 * pi k) + 8 =
       s.gpr .rsi + BitVec.ofNat 64 (8 * (2 * pi k + 1)) := by
     rw [BitVec.add_assoc, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add,
-      show 16 * pi k + 8 = 8 * (2 * pi k + 1) by omega]
+      show 16 * pi k + 8 = 8 * (2 * pi k + 1) by omega_using []]
   rw [e₂, e₁]
   simp only [blo, bhi, envOf]
   rfl
@@ -152,7 +152,7 @@ theorem shY_ok (s : State) :
     rw [h.natw _ hk, (shS_shape i hi).1]
     simp only [Q.natw, envOf_v]
     have := (qz s (yreg i) k).isLt
-    omega
+    omega_using []
 
 /-- The sum of the quadwords, in the order of their blocks. -/
 def bsum (s : State) : Nat :=

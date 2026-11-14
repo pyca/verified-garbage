@@ -38,7 +38,7 @@ theorem powWx_mo {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {m size wk : N
   · exact hL.mo_w w hw
   · exact .inl hW.mo
   · have := hW.mo; have := hW.toCallCfg.own_le
-    exact .inl (by simp only; omega)
+    exact .inl (by simp only; omega_arith)
 
 theorem powWx_base {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {m size wk : Nat} (hL : PowLay P size)
     (hW : PowWk P F m size wk) :
@@ -49,7 +49,7 @@ theorem powWx_base {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {m size wk :
   · exact hL.base_w w hw
   · exact .inl hW.base
   · have := hW.base; have := hW.toCallCfg.own_le
-    exact .inl (by simp only; omega)
+    exact .inl (by simp only; omega_arith)
 
 theorem PowerState.rebuild {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Addr}
     {size wk m a t a' t' : Nat} [NeZero m]
@@ -64,8 +64,8 @@ theorem PowerState.rebuild {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {bas
   have hn := I.scr.nowrap
   have hmo := I.mod.mo
   have hbase := hL.base
-  have em := U.wordsVal (powWx_mo hL hW) (by omega)
-  have eb := U.wordsVal (powWx_base hL hW) (by omega)
+  have em := U.wordsVal (powWx_mo hL hW) (by omega_using [hn, hmo])
+  have eb := U.wordsVal (powWx_base hL hW) (by omega_using [hn, hbase])
   exact ⟨hs, ⟨I.mod.n0, I.mod.mo, I.mod.tmp, I.mod.sep, em.trans I.mod.val, I.mod.inv, I.mod.red⟩,
     eb ▸ I.base_lt, by rw [eb]; exact I.base_val, ha, va, ht, vt⟩
 
@@ -119,7 +119,7 @@ theorem powerMul_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Add
       · exact hL.tmp_mtmp
       · exact .inl hW.tmp
       · have := hW.tmp; have := hW.toCallCfg.own_le
-        exact .inl (by simp only; omega)) (by omega)
+        exact .inl (by simp only; omega_arith)) (by omega_using [hn, htmp])
   refine ⟨I.rebuild hL hW (K.scr I.scr) U L ?_ (et ▸ I.tmp_lt) ?_, ⟨K.gpr, K.rd, K.wr⟩, U⟩
   · rw [toM_mul hm V, I.acc_val, hbval, Lean.Grind.Semiring.pow_add]
   · rw [et]; exact I.tmp_val
@@ -133,16 +133,16 @@ theorem powerSave_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Ad
   have ha := hL.acc
   have ht := hL.tmp
   have hap := hL.acc_tmp
-  refine WP.mono (copy_ok (2 * P.M.n) I.scr (o := P.tmp) (a := P.acc) (by omega) (by omega) (by omega))
+  refine WP.mono (copy_ok (2 * P.M.n) I.scr (o := P.tmp) (a := P.acc) (by omega_using [ht]) (by omega_using [ha]) (by omega_using [hap]))
     fun u ⟨V, K, O⟩ => ?_
-  rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega] at O
+  rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega_using []] at O
   have U : Unch base (powWx P wk) s.mem u.mem := O.unch.mono fun w hw => by
     simp only [List.mem_singleton] at hw
     simp [hw, powWx, powW]
   have et : wordsVal u.mem base P.tmp P.M.n = wordsVal s.mem base P.acc P.M.n := by
     rw [wordsVal_eq_val32, V, ← wordsVal_eq_val32]
   have ea : wordsVal u.mem base P.acc P.M.n = wordsVal s.mem base P.acc P.M.n :=
-    O.wordsVal hap (by omega)
+    O.wordsVal hap (by omega_using [hn, ha])
   refine ⟨I.rebuild hL hW (I.scr.of_keeps K (by decide)) U (ea ▸ I.acc_lt) ?_ (et ▸ I.acc_lt) ?_, K, U⟩
   · rw [ea]; exact I.acc_val
   · rw [et]; exact I.acc_val
@@ -174,7 +174,7 @@ theorem squareRun_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Ad
     refine WP.seq (wp_movS rfl fun s₁ u₁ _ => WP.block_nil ?_)
     let Inv := fun j u => PowerState P base size m B (a * 2 ^ (n + 1 - j)) t u ∧
       u.gpr .esi = BitVec.ofNat 32 j ∧ Keeps powClob s u ∧ Unch base (powWx P wk) s.mem u.mem
-    refine countLoop_ok (Inv := Inv) (n := n + 1) ?_ ?_ (by omega) ?_
+    refine countLoop_ok (Inv := Inv) (n := n + 1) ?_ ?_ (by omega_using []) ?_
     · intro j v hj hjn hI
       obtain ⟨Iv, ev, Kv, Uv⟩ := hI
       refine WP.seq (wp_decCounter hj ev fun v₁ e₁ K₁ mem₁ => WP.block_nil ?_)
@@ -182,11 +182,11 @@ theorem squareRun_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Ad
       refine WP.seq (WP.mono (powerMul_ok I₁ hL hW hm hW.acc I₁.acc_lt I₁.acc_val)
         fun v₂ ⟨I₂, K₂, U₂⟩ => ?_)
       have ee : a * 2 ^ (n + 1 - j) + a * 2 ^ (n + 1 - j) = a * 2 ^ (n + 1 - (j - 1)) := by
-        rw [show n + 1 - (j - 1) = (n + 1 - j) + 1 by omega, Nat.pow_succ, ← Nat.mul_assoc]
-        omega
+        rw [show n + 1 - (j - 1) = (n + 1 - j) + 1 by omega_using [hj, hjn], Nat.pow_succ, ← Nat.mul_assoc]
+        omega_using []
       rw [ee] at I₂
       have e₂ : v₂.gpr .esi = BitVec.ofNat 32 (j - 1) := by rw [K₂.1 _ esi_not_clob, e₁]
-      refine wp_testCounter (by omega) e₂ fun u F hz => WP.block_nil ⟨?_, hz⟩
+      refine wp_testCounter (by omega_using [hn, hjn]) e₂ fun u F hz => WP.block_nil ⟨?_, hz⟩
       refine ⟨I₂.regs (F.keeps []) (by decide) F.mem, by rw [F.gpr]; exact e₂,
         ((Kv.trans (K₁.mono (by decide))).trans (K₂.mono (by decide))).trans (F.keeps _), ?_⟩
       intro x hx

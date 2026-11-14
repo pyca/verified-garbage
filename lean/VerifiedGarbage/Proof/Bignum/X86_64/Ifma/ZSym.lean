@@ -40,14 +40,14 @@ theorem vz_lo (s : State) (r : VReg) {i : Nat} (hi : i < 2) : s.vz r i = lane256
   cases r with
   | lo r =>
     simp only [State.vz, State.zlane, hi, ite_true, State.lane, State.vy, State.ymm, lane256]
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
     · rw [Nat.mul_zero, lane_app0]; rfl
     · rw [Nat.mul_one, lane_app1]; rfl
   | hi r => simp only [State.vz, State.zlaneH, hi, ite_true, State.vy, lane256]
 
 /-- A quadword of a register's low half is its `ymm` register's. -/
 theorem qz_lo (s : State) (r : VReg) {k : Nat} (hk : k < 4) : qz s r k = qv s r k := by
-  rw [qz, vz_lo s r (by omega), qv, qword256_eq]; rfl
+  rw [qz, vz_lo s r (by omega_using [hk]), qv, qword256_eq]; rfl
 
 /-- The lanes after an `EVEX.512` write. -/
 theorem vz_setVz (s : State) (d r : VReg) (L : Nat → BitVec 128) {i : Nat} (hi : i < 4) :
@@ -91,7 +91,7 @@ theorem vz_setVy (s : State) (d r : VReg) (v : BitVec 256) {i : Nat} (hi : i < 4
         simp only [Nat.reduceLT, ite_true, ite_false, Nat.reduceSub, Nat.mul_zero, Nat.mul_one] <;>
         split <;> first | rfl | exact (BitVec.eq_of_getLsbD_eq fun j hj => by simp)
 
-theorem div2_lt {k : Nat} (hk : k < 8) : k / 2 < 4 := by omega
+theorem div2_lt {k : Nat} (hk : k < 8) : k / 2 < 4 := by omega_using [hk]
 
 theorem qz_setVz (s : State) (d r : VReg) (L : Nat → BitVec 128) {k : Nat} (hk : k < 8) :
     qz (s.setVz d (L 0) (L 1) (L 2) (L 3)) r k = if r = d then qword (L (k / 2)) (k % 2) else qz s r k := by
@@ -103,8 +103,8 @@ theorem qz_setVy (s : State) (d r : VReg) (v : BitVec 256) {k : Nat} (hk : k < 8
   by_cases hr : r = d
   · rw [ite_eq_left hr, ite_eq_left hr]
     by_cases hk4 : k < 4
-    · rw [ite_eq_left (show k / 2 < 2 by omega), ite_eq_left hk4, qword256_eq]; rfl
-    · rw [ite_eq_right (show ¬ k / 2 < 2 by omega), ite_eq_right hk4]
+    · rw [ite_eq_left (show k / 2 < 2 by omega_using [hk4]), ite_eq_left hk4, qword256_eq]; rfl
+    · rw [ite_eq_right (show ¬ k / 2 < 2 by omega_using [hk4]), ite_eq_right hk4]
       apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [qword]
   · rw [ite_eq_right hr, ite_eq_right hr]; rfl
 
@@ -247,7 +247,7 @@ theorem ZRel.setY {σ : ZSym} {s₀ s : State} (h : ZRel σ s₀ s) {d : VReg} {
   split
   · split
     · exact hv k (by assumption)
-    · exact (hz k (by omega)).symm
+    · exact (hz k (by omega_arith)).symm
   · exact h.reg r k hk
 
 theorem zstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' : ZSym} {s : State}
@@ -292,28 +292,28 @@ theorem zstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
         else permQwords (s.vz a 3 ++ s.vz a 2) o).extractLsb' (128 * (i % 2)) 128) fun k hk => ?_
       simp only [ZT.eval]
       have hs := sel4_lt o.toNat (k % 4)
-      rw [hR a _ (by omega), qz]
+      rw [hR a _ (by omega_using [hk, hs]), qz]
       by_cases hk4 : k < 4
-      · have e1 : k / 2 % 2 = k / 2 := by omega
-        have e2 : k % 4 = k := by omega
-        have e3 : 4 * (k / 4) + sel4 o.toNat k = sel4 o.toNat k := by omega
+      · have e1 : k / 2 % 2 = k / 2 := by omega_using [hk4]
+        have e2 : k % 4 = k := by omega_using [hk4]
+        have e3 : 4 * (k / 4) + sel4 o.toNat k = sel4 o.toNat k := by omega_using [hk4]
         rw [e2] at hs
-        rw [ite_eq_left (show k / 2 < 2 by omega), e1, ← qword256_eq, qword256_perm _ _ hk4,
+        rw [ite_eq_left (show k / 2 < 2 by omega_using [hk4]), e1, ← qword256_eq, qword256_perm _ _ hk4,
           qword256_cat2 _ _ hs, e2, e3]
         by_cases h2 : sel4 o.toNat k < 2
-        · rw [ite_eq_left h2, show sel4 o.toNat k / 2 = 0 by omega]
-        · rw [ite_eq_right h2, show sel4 o.toNat k / 2 = 1 by omega]
-      · have e1 : k / 2 % 2 = (k - 4) / 2 := by omega
-        have e2 : k % 4 = k - 4 := by omega
-        have e3 : k % 2 = (k - 4) % 2 := by omega
+        · rw [ite_eq_left h2, show sel4 o.toNat k / 2 = 0 by omega_using [h2]]
+        · rw [ite_eq_right h2, show sel4 o.toNat k / 2 = 1 by omega_using [hs, h2]]
+      · have e1 : k / 2 % 2 = (k - 4) / 2 := by omega_using [hk, hk4]
+        have e2 : k % 4 = k - 4 := by omega_using [hk, hk4]
+        have e3 : k % 2 = (k - 4) % 2 := by omega_using [hk4]
         rw [e2] at hs
-        have e4 : (4 * (k / 4) + sel4 o.toNat (k - 4)) / 2 = 2 + sel4 o.toNat (k - 4) / 2 := by omega
-        have e5 : (4 * (k / 4) + sel4 o.toNat (k - 4)) % 2 = sel4 o.toNat (k - 4) % 2 := by omega
-        rw [ite_eq_right (show ¬ k / 2 < 2 by omega), e1, e3, ← qword256_eq,
-          qword256_perm _ _ (show k - 4 < 4 by omega), qword256_cat2 _ _ hs, e2, e4, e5]
+        have e4 : (4 * (k / 4) + sel4 o.toNat (k - 4)) / 2 = 2 + sel4 o.toNat (k - 4) / 2 := by omega_using [hk, hk4]
+        have e5 : (4 * (k / 4) + sel4 o.toNat (k - 4)) % 2 = sel4 o.toNat (k - 4) % 2 := by omega_using []
+        rw [ite_eq_right (show ¬ k / 2 < 2 by omega_using [hk4]), e1, e3, ← qword256_eq,
+          qword256_perm _ _ (show k - 4 < 4 by omega_using [hk]), qword256_cat2 _ _ hs, e2, e4, e5]
         by_cases h2 : sel4 o.toNat (k - 4) < 2
-        · rw [ite_eq_left h2, show sel4 o.toNat (k - 4) / 2 = 0 by omega]
-        · rw [ite_eq_right h2, show sel4 o.toNat (k - 4) / 2 = 1 by omega]
+        · rw [ite_eq_left h2, show sel4 o.toNat (k - 4) / 2 = 0 by omega_using [h2]]
+        · rw [ite_eq_right h2, show sel4 o.toNat (k - 4) / 2 = 1 by omega_using [hs, h2]]
     · rename_i hh d a b
       cases e
       refine h.setZ (L := fun i => madd52 hh (s.vz d i) (s.vz a i) (s.vz b i)) fun k hk => ?_
@@ -327,17 +327,17 @@ theorem zstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
         refine h.setZ (L := insert64x4 (s.vz a) (s.vy b) 1) fun k hk => ?_
         simp only [ZT.eval, insert64x4, show (1 : BitVec 8).getLsbD 0 = true from rfl, ite_true]
         by_cases hk4 : k < 4
-        · rw [ite_eq_left (show k / 2 < 2 by omega), ite_eq_left hk4, hR a k hk]; rfl
-        · rw [ite_eq_right (show ¬ k / 2 < 2 by omega), ite_eq_right hk4, hR b _ (by omega),
-            qz_lo s b (show k - 4 < 4 by omega), qv, qword256_eq, lane256,
-            show k / 2 - 2 = (k - 4) / 2 by omega, show k % 2 = (k - 4) % 2 by omega]
+        · rw [ite_eq_left (show k / 2 < 2 by omega_using [hk4]), ite_eq_left hk4, hR a k hk]; rfl
+        · rw [ite_eq_right (show ¬ k / 2 < 2 by omega_using [hk4]), ite_eq_right hk4, hR b _ (by omega_using [hk]),
+            qz_lo s b (show k - 4 < 4 by omega_using [hk]), qv, qword256_eq, lane256,
+            show k / 2 - 2 = (k - 4) / 2 by omega_using [], show k % 2 = (k - 4) % 2 by omega_using [hk4]]
       · cases e
     · cases e
   · rename_i d g
     cases e
     refine ⟨_, rfl, h.setY (fun k hk => ?_) fun k hk => ?_⟩
     · rw [qword256_low _ hk]; simp only [ZT.eval, h.gpr]
-    · simp only [ZT.eval, show k ≠ 0 by omega, ite_false]
+    · simp only [ZT.eval, show k ≠ 0 by omega_using [hk], ite_false]
   · rename_i d m
     obtain ⟨⟨b, o⟩, hbo, e⟩ := Option.bind_eq_some_iff.1 e
     split at e
@@ -352,9 +352,9 @@ theorem zstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
     refine h.setY (fun k hk => ?_) fun k hk => ?_
     · simp only [ZT.eval, hk, ite_true]
       have r1 := readW_extract s.mem (s₀.gpr b + BitVec.ofNat 64 o) (w := 256) (k := 8 * k)
-        (n := 8) (by omega)
-      rw [qword256, show 64 * k = 8 * (8 * k) by omega, r1, h.mem, BitVec.add_assoc, ← BitVec.ofNat_add]
-    · simp only [ZT.eval, show ¬ k < 4 by omega, ite_false]
+        (n := 8) (by omega_using [hk])
+      rw [qword256, show 64 * k = 8 * (8 * k) by omega_using [], r1, h.mem, BitVec.add_assoc, ← BitVec.ofNat_add]
+    · simp only [ZT.eval, show ¬ k < 4 by omega_using [hk], ite_false]
   · rename_i d m
     obtain ⟨⟨b, o⟩, hbo, e⟩ := Option.bind_eq_some_iff.1 e
     split at e
@@ -370,7 +370,7 @@ theorem zstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
       by simp only [exec, ea, State.load64, hin, ite_true, Option.map_some], ?_⟩
     refine h.setY (fun k hk => ?_) fun k hk => ?_
     · rw [qword256_bcast _ hk]; simp only [ZT.eval, hk, ite_true, h.mem]
-    · simp only [ZT.eval, show ¬ k < 4 by omega, ite_false]
+    · simp only [ZT.eval, show ¬ k < 4 by omega_using [hk], ite_false]
   · rename_i d a m n
     obtain ⟨⟨b, o⟩, hbo, e⟩ := Option.bind_eq_some_iff.1 e
     split at e
@@ -390,12 +390,12 @@ theorem zstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
     refine h.setZ (L := insert64x4 (s.vz a) (s.mem.readW (s₀.gpr b + BitVec.ofNat 64 o) 256) 1) fun k hk => ?_
     simp only [ZT.eval, insert64x4, show (1 : BitVec 8).getLsbD 0 = true from rfl, ite_true]
     by_cases hk4 : k < 4
-    · rw [ite_eq_left (show k / 2 < 2 by omega), ite_eq_left hk4, hR a k hk]; rfl
+    · rw [ite_eq_left (show k / 2 < 2 by omega_using [hk4]), ite_eq_left hk4, hR a k hk]; rfl
     · have r1 := readW_extract s.mem (s₀.gpr b + BitVec.ofNat 64 o) (w := 256) (k := 8 * (k - 4))
-        (n := 8) (by omega)
-      rw [ite_eq_right (show ¬ k / 2 < 2 by omega), ite_eq_right hk4, ite_eq_left (show k - 4 < 4 by omega),
-        lane256, show k / 2 - 2 = (k - 4) / 2 by omega, show k % 2 = (k - 4) % 2 by omega, ← qword256_eq,
-        qword256, show 64 * (k - 4) = 8 * (8 * (k - 4)) by omega, r1, h.mem, BitVec.add_assoc,
+        (n := 8) (by omega_using [hk])
+      rw [ite_eq_right (show ¬ k / 2 < 2 by omega_using [hk4]), ite_eq_right hk4, ite_eq_left (show k - 4 < 4 by omega_using [hk]),
+        lane256, show k / 2 - 2 = (k - 4) / 2 by omega_using [], show k % 2 = (k - 4) % 2 by omega_using [hk4], ← qword256_eq,
+        qword256, show 64 * (k - 4) = 8 * (8 * (k - 4)) by omega_using [], r1, h.mem, BitVec.add_assoc,
         ← BitVec.ofNat_add]
   · cases e
 

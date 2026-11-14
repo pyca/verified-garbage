@@ -29,47 +29,47 @@ theorem mux4_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   obtain ⟨aa, ab, ac⟩ := ha
   obtain ⟨ba, bb, bc⟩ := hb
   simp only [SameOrApart] at hoa hob
-  have a16 : (a + 16) % 8 = 0 := by omega
-  have b16 : (b + 16) % 8 = 0 := by omega
-  have o16 : (o + 16) % 8 = 0 := by omega
+  have a16 : (a + 16) % 8 = 0 := by omega_using [aa]
+  have b16 : (b + 16) % 8 = 0 := by omega_using [ba]
+  have o16 : (o + 16) % 8 = 0 := by omega_using [oa]
   have w4 : Reg.x4 ≠ .x0 := by decide
   have w5 : Reg.x5 ≠ .x0 := by decide
   have w6 : Reg.x6 ≠ .x0 := by decide
   have w7 : Reg.x7 ≠ .x0 := by decide
   apply WP.of_runBlock
   simp only [Impl.X25519.AArch64.Alt.mux4, runBlock_cons, runStep_some, runBlock_nil,
-    ldp_sc hs aa (by omega) (by omega) (by decide : Reg.x4 ≠ .x5),
-    ldp_sc ((hs.write w4 _).write w5 _) ba (by omega) (by omega) (by decide : Reg.x6 ≠ .x7),
+    ldp_sc hs aa (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x4 ≠ .x5),
+    ldp_sc ((hs.write w4 _).write w5 _) ba (by omega_using [bb]) (by omega_using [bc]) (by decide : Reg.x6 ≠ .x7),
     exec_cselc_x,
     stp_sc ((((((hs.write w4 _).write w5 _).write w6 _).write w7 _).write w4 _).write w5 _) oa
-      (by omega) (by omega),
+      (by omega_using [ob]) (by omega_using [oc]),
     ldp_sc (((((((hs.write w4 _).write w5 _).write w6 _).write w7 _).write w4 _).write w5 _).withMem _)
-      a16 (by omega) (by omega) (by decide : Reg.x4 ≠ .x5),
+      a16 (by omega_using [ab]) (by omega_using [ac]) (by decide : Reg.x4 ≠ .x5),
     ldp_sc ((((((((hs.write w4 _).write w5 _).write w6 _).write w7 _).write w4 _).write w5 _).withMem
-      _).write w4 _ |>.write w5 _) b16 (by omega) (by omega) (by decide : Reg.x6 ≠ .x7),
+      _).write w4 _ |>.write w5 _) b16 (by omega_using [bb]) (by omega_using [bc]) (by decide : Reg.x6 ≠ .x7),
     stp_sc (((((((((((hs.write w4 _).write w5 _).write w6 _).write w7 _).write w4 _).write w5 _).withMem
       _).write w4 _).write w5 _).write w6 _).write w7 _ |>.write w4 _ |>.write w5 _) o16
-      (by omega) (by omega),
+      (by omega_using [ob]) (by omega_using [oc]),
     Option.some.injEq, exists_eq_left']
   simp only [RegUpd.mem_write, RegUpd.gpr_write, RegUpd.zf_write, mem_withMem, gpr_withMem,
     zf_withMem, CondCode.holds, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq,
     Bool.not_eq_true']
   have e1 : ∀ v w, word (st2 s.mem base o v w) base (a + 16) = word s.mem base (a + 16) :=
-    fun v w => word_st2 _ _ v w (by omega) (by omega) (by omega)
+    fun v w => word_st2 _ _ v w (by omega_using [hoa]) (by omega_using [ob]) (by omega_using [ab])
   have e2 : ∀ v w, word (st2 s.mem base o v w) base (a + 16 + 8) = word s.mem base (a + 24) :=
-    fun v w => (word_st2 _ _ v w (by omega) (by omega) (by omega)).trans (by rw [Nat.add_assoc])
+    fun v w => (word_st2 _ _ v w (by omega_using [hoa]) (by omega_using [ob]) (by omega_using [ab])).trans (by rw [Nat.add_assoc])
   have e3 : ∀ v w, word (st2 s.mem base o v w) base (b + 16) = word s.mem base (b + 16) :=
-    fun v w => word_st2 _ _ v w (by omega) (by omega) (by omega)
+    fun v w => word_st2 _ _ v w (by omega_using [hob]) (by omega_using [ob]) (by omega_using [bb])
   have e4 : ∀ v w, word (st2 s.mem base o v w) base (b + 16 + 8) = word s.mem base (b + 24) :=
-    fun v w => (word_st2 _ _ v w (by omega) (by omega) (by omega)).trans (by rw [Nat.add_assoc])
+    fun v w => (word_st2 _ _ v w (by omega_using [hob]) (by omega_using [ob]) (by omega_using [bb])).trans (by rw [Nat.add_assoc])
   simp only [e1, e2, e3, e4]
   refine ⟨⟨fun r hr => ?_, rfl, rfl, rfl, ?_⟩, trivial, ?_⟩
   · simp only [altClob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_withMem, RegUpd.gpr_write, hr, ite_false]
   · simp only [mem_withMem]
     rw [st2_st2]
-    exact st4_outside _ _ (by omega) _ _ _ _
-  · rw [st2_st2, fe_st4 _ _ (by omega)]
+    exact st4_outside _ _ (by omega_using [ob]) _ _ _ _
+  · rw [st2_st2, fe_st4 _ _ (by omega_using [ob])]
     cases s.zf <;> rfl
 
 end VG.Proof.X25519.AArch64.Alt

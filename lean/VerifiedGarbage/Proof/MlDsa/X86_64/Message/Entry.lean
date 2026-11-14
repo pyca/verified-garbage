@@ -32,11 +32,11 @@ def Lay.vals (L : Lay) : List (BitVec 64) := [L.key, L.msg, L.len, L.ctx, L.ctxL
 
 theorem push_slot (B : Addr) (j : Nat) (hj : j < 9) :
     B + BitVec.ofNat 64 112 - BitVec.ofNat 64 (8 * (j + 1)) = B + BitVec.ofNat 64 40 + BitVec.ofNat 64 (64 - 8 * j) := by
-  rw [add_add, Offset.sub_ofNat_eq _ (a := 8 * (j + 1)) (b := 112) (by omega), BitVec.add_sub_cancel]
-  congr 2; omega
+  rw [add_add, Offset.sub_ofNat_eq _ (a := 8 * (j + 1)) (b := 112) (by omega_using [hj]), BitVec.add_sub_cancel]
+  congr 2; omega_using [hj]
 
 theorem push_base (B : Addr) : B + BitVec.ofNat 64 112 - BitVec.ofNat 64 (8 * 9) = B + BitVec.ofNat 64 40 := by
-  have := push_slot B 8 (by omega); simpa using this
+  have := push_slot B 8 (by omega_using []); simpa using this
 
 theorem setWidth8 (x : BitVec 64) (_h : x.toNat < 256) : x.setWidth 8 = BitVec.ofNat 8 x.toNat := by
   apply BitVec.eq_of_toNat_eq
@@ -46,22 +46,22 @@ theorem setWidth8 (x : BitVec 64) (_h : x.toNat < 256) : x.setWidth 8 = BitVec.o
 `ctx_len`: `Ctx`. -/
 theorem entry_ok {L : Lay} (hL : L.Ok) {rs : List Reg} (hlen : rs.length = 9) (hrs : .rsp ∉ rs) {s : State}
     (hsp : s.gpr .rsp = L.B + BitVec.ofNat 64 112) (hrd : s.rd = L.rd) (hwr : s.wr = L.wr)
-    (hv : ∀ j (hj : j < 9), s.gpr (rs[j]'(by omega)) = L.vals[j]'(by simp [Lay.vals]; omega))
+    (hv : ∀ j (hj : j < 9), s.gpr (rs[j]'(by omega_using [hlen, hj])) = L.vals[j]'(by simp [Lay.vals]; omega_using [hj]))
     (h8 : s.gpr .r8 = L.ctxLen) :
     WP isa (.block setHdr) (pushed rs s) fun t => Ctx L s.gpr s.mxcsr s.mem t ∧
       t.wr = (pushed rs s).wr ∧ t.gpr .rsp = (pushed rs s).gpr .rsp := by
   have hn : 8 * rs.length ≤ (s.gpr .rsp).toNat := by
     rw [hsp, hlen, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := hL.nB
-    rw [Nat.mod_eq_of_lt (a := 112) (by omega), Nat.mod_eq_of_lt this]; omega
+    rw [Nat.mod_eq_of_lt (a := 112) (by omega_using []), Nat.mod_eq_of_lt this]; omega_using []
   obtain ⟨hf, hw⟩ := pushRegs_mem s rs hrs hn
   have hslot : ∀ j (hj : j < 9), (pushed rs s).mem.readW (L.SP + BitVec.ofNat 64 (64 - 8 * j)) 64 =
-      L.vals[j]'(by simp [Lay.vals]; omega) := fun j hj => by
-    rw [← hv j hj, ← hw j (by omega), hsp, push_slot _ j hj]; rfl
+      L.vals[j]'(by simp [Lay.vals]; omega_using [hj]) := fun j hj => by
+    rw [← hv j hj, ← hw j (by omega_using [hlen, hj]), hsp, push_slot _ j hj]; rfl
   have hrsp : (pushed rs s).gpr .rsp = L.SP := by rw [pushed_rsp, hsp, hlen, push_base]
   have hwr' : (pushed rs s).wr = L.FR :: L.wr := by rw [pushed_wr, hsp, hlen, push_base, hwr]
   have hin : InRegions (pushed rs s).wr (L.SP + BitVec.ofNat 64 1) 1 :=
-    ⟨L.FR, by rw [hwr']; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨L.FR, by rw [hwr']; simp, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   have h8' : (pushed rs s).gpr .r8 = L.ctxLen := by rw [pushed_gpr _ _ (by decide), h8]
   apply WP.of_runBlock
   simp only [setHdr, fHdr, runBlock_cons, runStep_some, runBlock_nil, exec, State.store8, ea_stk, hrsp,
@@ -72,18 +72,18 @@ theorem entry_ok {L : Lay} (hL : L.Ok) {rs : List Reg} (hlen : rs.length = 9) (h
   have hsep : ∀ j (hj : j < 8), m'.readW (L.SP + BitVec.ofNat 64 (64 - 8 * j)) 64 =
       (pushed rs s).mem.readW (L.SP + BitVec.ofNat 64 (64 - 8 * j)) 64 := fun j hj => by
     rw [← hm]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hj]) (by omega_using []) (by omega_using [])) (by decide)
   refine ⟨⟨by simp [hrd], hwr', hrsp, fun r hr hr' => pushed_gpr _ _ hr', by simp,
-    (hsep 7 (by omega)).trans (hslot 7 (by omega)), (hsep 6 (by omega)).trans (hslot 6 (by omega)),
-    (hsep 5 (by omega)).trans (hslot 5 (by omega)), (hsep 4 (by omega)).trans (hslot 4 (by omega)),
-    (hsep 3 (by omega)).trans (hslot 3 (by omega)), (hsep 2 (by omega)).trans (hslot 2 (by omega)),
-    (hsep 1 (by omega)).trans (hslot 1 (by omega)), (hsep 0 (by omega)).trans (hslot 0 (by omega)), ?_, ?_⟩,
+    (hsep 7 (by omega_using [])).trans (hslot 7 (by omega_using [])), (hsep 6 (by omega_using [])).trans (hslot 6 (by omega_using [])),
+    (hsep 5 (by omega_using [])).trans (hslot 5 (by omega_using [])), (hsep 4 (by omega_using [])).trans (hslot 4 (by omega_using [])),
+    (hsep 3 (by omega_using [])).trans (hslot 3 (by omega_using [])), (hsep 2 (by omega_using [])).trans (hslot 2 (by omega_using [])),
+    (hsep 1 (by omega_using [])).trans (hslot 1 (by omega_using [])), (hsep 0 (by omega_using [])).trans (hslot 0 (by omega_using [])), ?_, ?_⟩,
     trivial, trivial⟩
   · -- The two bytes: the low byte of the pushed 0, and `ctx_len`.
-    have h0 := hslot 8 (by omega)
+    have h0 := hslot 8 (by omega_using [])
     simp only [Lay.vals, Nat.reduceMul, Nat.sub_self, BitVec.add_zero] at h0
     have b0 : (pushed rs s).mem L.SP = 0 := by
-      have := Mem.extractLsb'_read (pushed rs s).mem L.SP (n := 8) (j := 0) (by omega)
+      have := Mem.extractLsb'_read (pushed rs s).mem L.SP (n := 8) (j := 0) (by omega_using [])
       simp only [BitVec.add_zero, Nat.mul_zero] at this
       rw [← this]
       have e : (pushed rs s).mem.read L.SP 8 = (pushed rs s).mem.readW L.SP 64 := by
@@ -106,10 +106,10 @@ theorem entry_ok {L : Lay} (hL : L.Ok) {rs : List Reg} (hlen : rs.length = 9) (h
       simp only [List.mem_singleton] at hr; subst hr
       refine ⟨L.STK, by simp, ?_⟩
       rw [hsp, hlen, push_base]
-      exact Offset.sub_base _ (by omega)
+      exact Offset.sub_base _ (by omega_using [])
     have hf2 : Frame [L.STK] s.mem ((pushed rs s).mem.writeW (L.SP + 1#64) (BitVec.ofNat 8 L.ctxLen.toNat)) :=
       hf1.writeW (List.mem_singleton_self _) _ (by
-        rw [Lay.SP, add_add]; exact Offset.contains_base _ (by omega) (by omega))
+        rw [Lay.SP, add_add]; exact Offset.contains_base _ (by omega_using []) (by omega_using []))
     exact hf2.mono fun r hr => by simp at hr ⊢; exact .inr hr
 
 end VG.Proof.MlDsa.X86_64.Message

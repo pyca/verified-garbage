@@ -19,7 +19,7 @@ theorem val32_numAt_offset (m : Mem) (base child : Addr) (d w j : Nat)
     (address : child = base + BitVec.ofNat 64 d) :
     val32 m base (d + arrAt w j) (2 * w) = numAt m child w j := by
   rw [← read_eq_val32, numAt, address, Offset.add_add]
-  congr 2 <;> omega
+  congr 2 <;> omega_using []
 
 theorem CrtShared.product_values {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (coefficient : Bool) :

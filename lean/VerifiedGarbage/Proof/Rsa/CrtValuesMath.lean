@@ -12,6 +12,7 @@ import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # `vg_rsa_crt_values` on 32-bit targets: the checks are `crtKey`
 
@@ -39,7 +40,7 @@ theorem pq_iff {N P Q : Nat} (hN : N % 2 = 1) :
       rcases Nat.mod_two_eq_zero_or_one P with hP | hP
       · rw [← h, Nat.mul_mod, hP, Nat.zero_mul] at hN; exact absurd hN (by decide)
       · exact hP
-    have hP0 : 0 < P := by omega
+    have hP0 : 0 < P := by omega_using [hp]
     refine ⟨hp, ?_, ?_⟩
     · rw [← h, Nat.mul_div_cancel_left _ hP0]
     · rw [← h, Nat.mul_mod_right]
@@ -64,8 +65,8 @@ theorem crtKey_masked {nb pb qb db : List Byte} (hv : modulusValid (os2ip nb) nb
   obtain ⟨⟨⟨hodd, _⟩, _⟩, hlow⟩ := hv'
   have pl := VG.Proof.Rsa.lt_of_os2ip pb
   have ql := VG.Proof.Rsa.lt_of_os2ip qb
-  have pk : 256 ^ pb.length ≤ 256 ^ (nb.length - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-  have qk : 256 ^ qb.length ≤ 256 ^ (nb.length - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+  have pk : 256 ^ pb.length ≤ 256 ^ (nb.length - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hp])
+  have qk : 256 ^ qb.length ≤ 256 ^ (nb.length - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hq])
   have e256 : ∀ k, (256 : Nat) ^ k = 2 ^ (8 * k) := fun k => by rw [Nat.pow_mul]
   unfold crtKey
   dsimp only
@@ -78,27 +79,27 @@ theorem crtKey_masked {nb pb qb db : List Byte} (hv : modulusValid (os2ip nb) nb
       (Nat.lt_of_lt_of_le pl pk) hlow
     have ⟨podd, hdiv, hmod⟩ := (pq_iff hodd).mpr hpq
     have qodd := odd_of_mul hpq hodd
-    have eM : 2 * (P / 2) + 1 = P := by omega
-    obtain ⟨e1, e2⟩ := h₁ (by omega)
+    have eM : 2 * (P / 2) + 1 = P := by omega_using [podd]
+    obtain ⟨e1, e2⟩ := h₁ (by omega_using [p2])
     rw [eM] at h₂
-    obtain ⟨eV, dv, xl⟩ := h₂ (by omega)
+    obtain ⟨eV, dv, xl⟩ := h₂ (by omega_using [p2])
     simp only [hv, hpq, and_self, ↓reduceIte]
-    have eR₂ := h₃ (by omega)
-    have eR₃ := h₄ (by omega)
-    rw [show 2 * (P / 2) = P - 1 by omega] at eR₂
-    rw [show 2 * (Q / 2) = Q - 1 by omega] at eR₃
+    have eR₂ := h₃ (by omega_using [p2])
+    have eR₃ := h₄ (by omega_using [q2])
+    rw [show 2 * (P / 2) = P - 1 by omega_using [podd]] at eR₂
+    rw [show 2 * (Q / 2) = Q - 1 by omega_using [qodd]] at eR₃
     by_cases hg : Nat.gcd Q P = 1
     · have hm : maskOf P Q X₁ X₂ V = true := by
-        simp only [maskOf, decide_eq_true_eq]; refine ⟨podd, ?_, ?_, ?_⟩ <;> omega
+        simp only [maskOf, decide_eq_true_eq]; refine ⟨podd, ?_, ?_, ?_⟩ <;> omega_arith
       simp only [hm, ↓reduceIte]
       rw [eV, hg] at dv
-      simp only [crtValues, VG.Proof.Rsa.inverse_eq (by omega) xl dv, Option.map_some]
+      simp only [crtValues, VG.Proof.Rsa.inverse_eq (by omega_using [p2]) xl dv, Option.map_some]
       rw [eR₂, eR₃]
       have m2 : (os2ip db % (P - 1)) % 2 ^ (8 * pb.length) = os2ip db % (P - 1) := by
-        rw [← e256]; exact Nat.mod_eq_of_lt (by have := Nat.mod_lt (os2ip db) (show 0 < P - 1 by omega); omega)
+        rw [← e256]; exact Nat.mod_eq_of_lt (by have := Nat.mod_lt (os2ip db) (show 0 < P - 1 by omega_using [p2]); omega_using [pk, h₃, pl, h₁, h₄, h₂, hpq, p2, podd, hdiv, hmod, eM, dv, xl, this])
       have m3 : (os2ip db % (Q - 1)) % 2 ^ (8 * qb.length) = os2ip db % (Q - 1) := by
-        rw [← e256]; exact Nat.mod_eq_of_lt (by have := Nat.mod_lt (os2ip db) (show 0 < Q - 1 by omega); omega)
-      have mx : X % 2 ^ (8 * pb.length) = X := by rw [← e256]; exact Nat.mod_eq_of_lt (by omega)
+        rw [← e256]; exact Nat.mod_eq_of_lt (by have := Nat.mod_lt (os2ip db) (show 0 < Q - 1 by omega_using [q2]); omega_using [ql, this])
+      have mx : X % 2 ^ (8 * pb.length) = X := by rw [← e256]; exact Nat.mod_eq_of_lt (by omega_using [pk, qk, h₃, pl, h₁, h₄, ql, h₂, hpq, p2, q2, podd, hdiv, hmod, qodd, eM, eV, dv, xl, hg, m2, m3])
       rw [m2, m3, mx]
     · have hm : maskOf P Q X₁ X₂ V = false := by
         simp only [maskOf, decide_eq_false_iff_not]; intro ⟨_, _, _, h1⟩; exact hg (by rw [← eV]; exact h1)
@@ -109,8 +110,8 @@ theorem crtKey_masked {nb pb qb db : List Byte} (hv : modulusValid (os2ip nb) nb
     have hm : maskOf P Q X₁ X₂ V = false := by
       simp only [maskOf, decide_eq_false_iff_not]
       intro ⟨podd, a, b, _⟩
-      obtain ⟨e1, e2⟩ := h₁ (by omega)
-      exact hpq ((pq_iff hodd).mp ⟨podd, by omega, by omega⟩)
+      obtain ⟨e1, e2⟩ := h₁ (by omega_using [podd])
+      exact hpq ((pq_iff hodd).mp ⟨podd, by omega_arith, by omega_arith⟩)
     rw [hm]; rfl
 
 /-- The mask from `n / p` is the mask from the product. -/
@@ -122,7 +123,7 @@ theorem maskOf_div {P Q N V : Nat} : maskOf P Q (N / P) (N % P) V = maskOfP P Q 
     rw [hq, hr, Nat.add_zero] at this
     exact ⟨hp, this, hv⟩
   · rintro ⟨hp, h, hv⟩
-    have hP0 : 0 < P := by omega
+    have hP0 : 0 < P := by omega_using [hp]
     exact ⟨hp, by rw [← h, Nat.mul_div_cancel_left _ hP0], by rw [← h, Nat.mul_mod_right], hv⟩
 
 /-- `crtKey_masked`, with `p q = n` checked by the product, and the remainders known only where

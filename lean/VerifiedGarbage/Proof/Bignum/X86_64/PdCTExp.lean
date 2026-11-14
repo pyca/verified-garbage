@@ -79,7 +79,7 @@ theorem start_ct : RelCT isa (Two GoodL) start fun _ _ => True := by
   rintro L t ⟨hg, hZ⟩
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega_using [hZ, this])
   refine WP.mono (WP.keep [.r12, .rsi, .rbx] (Q := fun t₁ => t₁.gpr .r12 = BitVec.ofNat 64 L.w ∧
       t₁.gpr .rsi = off L.B (slot L.w aXm) ∧ t₁.gpr .rbx = off L.B (slot L.w aY)) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aXm) (by decide),
@@ -105,7 +105,7 @@ theorem pExpBit_ct : RelCT isa (Two PQ) (Precomputed.expBit M.mm) fun _ _ => Tru
       t.zf = some (decide (p.V / 128 % 2 = 0))) [.rdi] (fun p s₁ s₂ h₁ h₂ => pins_PQ _ s₁ s₂ h₁ h₂)
     (by taint_decide) ?_) ?_
   · rintro p t ⟨X, x, hc, hy, hf, hV, hV'⟩
-    exact WP.mono (bitTest_ok hc.good hf.1 hV (by omega)) fun t' ⟨hz, hm, k⟩ =>
+    exact WP.mono (bitTest_ok hc.good hf.1 hV (by omega_using [hV'])) fun t' ⟨hz, hm, k⟩ =>
       ⟨⟨X, x, hc.mem hm k (by decide), by rw [hm]; exact hy, hf, by rw [hm]; exact hV, hV'⟩, hz⟩
   -- If the bit is set: `Y := Y X` once started, `Y := X` and started if not; then the next bit.
   refine RelCT.seq (R := Two fun (p : PBitPub) t => t.gpr .rdi = p.L.B)
@@ -134,8 +134,8 @@ def PBitsInv (p : BitsPub) (j : Nat) (s : State) : Prop :=
 theorem pBitsInv_pq {p : BitsPub} {j : Nat} {s : State} (hj : j < 8) (h : PBitsInv p j s) :
     PQ ⟨p.L, p.N, p.E * 2 ^ j + p.v / 2 ^ (8 - j), p.v * 2 ^ j⟩ s := by
   obtain ⟨t₀, X, x, hI, hf, hv⟩ := h
-  have hp : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
-  exact ⟨X, x, hI.ctx, hI.y, hf, hI.v, by have := Nat.mul_le_mul_left p.v hp; dsimp only; omega⟩
+  have hp : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
+  exact ⟨X, x, hI.ctx, hI.y, hf, hI.v, by have := Nat.mul_le_mul_left p.v hp; dsimp only; omega_using [hv, this]⟩
 
 /-- The eight bits of a byte leak the same in runs that agree on `e`. -/
 theorem pBits_ct : RelCT isa (Two fun p s => 0 < 8 ∧ PBitsInv p 0 s) (.loop (Precomputed.expBit M.mm) .ne)
@@ -196,7 +196,7 @@ theorem pByteBody_ct : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len �
       fun t ⟨_, _, hB⟩ => ⟨by decide, t, X, x, ?_, hf, ?_⟩
     · simp only [pBitsPub, List.getD_eq_getElem?_getD,
         List.getElem?_eq_getElem (show q.2 < (evenLast q.1.eb).length by
-          rw [evenLast_length]; have := hsrc.1; omega), Option.getD_some]
+          rw [evenLast_length]; have := hsrc.1; omega_using [hi, this]), Option.getD_some]
       exact hB
     · simp only [pBitsPub]; exact (List.getD (evenLast q.1.eb) q.2 0).isLt
   have h₁ : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len ∧ PBytesInv q.1 q.2 s)

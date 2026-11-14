@@ -30,7 +30,7 @@ theorem keygen_call_frameBytes {extra : Nat} {s : State} {wr : List Region} {m m
   · exact (hwr r hr).symm
   · simp only [List.mem_singleton] at hr
     subst hr
-    exact Offset.base_disjoint_below _ (by unfold Random.frameBytes; omega)
+    exact Offset.base_disjoint_below _ (by unfold Random.frameBytes; omega_using [hl])
 
 /-- A callee keeps a buffer apart from what it writes and from the stack. -/
 theorem keygen_call_inputBytes {extra : Nat} {s : State} {wr : List Region} {m m' : Mem} {p : Addr} {n : Nat}
@@ -84,7 +84,7 @@ theorem KeygenState.of_frame {extra : Nat} {s t u : State} {h : GenerateKeyABI e
     (hk : Keep randomVolatile t u) (hmx : u.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10) :
     KeygenState h used u :=
   ⟨ht.scr.congr hk.2.2, (hk.gpr (by decide)).trans ht.sp,
-    ht.saved.congr (fun d hd hd' => hw d hd (by omega)), (hw _ (by decide) (by decide)).trans ht.usedWord,
+    ht.saved.congr (fun d hd hd' => hw d hd (by omega_using [hd'])), (hw _ (by decide) (by decide)).trans ht.usedWord,
     hk.2.1.trans ht.rd, hk.2.2.trans ht.wr, ht.params.congrK hf hk, ht.rand.congrK hf hk,
     fun r hc hn => (hk.gpr (random_saved_not_volatile hc)).trans (ht.callee r hc hn), hmx.trans ht.mxcsr⟩
 

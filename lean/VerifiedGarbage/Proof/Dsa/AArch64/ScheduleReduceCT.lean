@@ -54,12 +54,12 @@ theorem reduceHead_ok {p : CallReducePublic} {s : State} {a output : Operand}
     (h : CallReducePre a output p s) :
     WP isa (.block (reduceHead a output)) s (ReduceFinishPre p.toReduceFinishPublic) := by
   obtain ⟨hg, child, ⟨ba, has, hbl⟩, hp, hop, hol, hout, hprefix⟩ := h
-  have h256 : 256 ≤ slot p.bytes.x.w 8 := by unfold slot hdrBytes; omega
+  have h256 : 256 ≤ slot p.bytes.x.w 8 := by unfold slot hdrBytes; omega_using []
   have hlo := p.childLow
   have hhi := p.childHigh
   unfold reduceHead
   rw [WP.block_append_iff]
-  refine WP.mono (arguments2_ok hg child p.extent (by omega) (by omega) a output ha ho)
+  refine WP.mono (arguments2_ok hg child p.extent (by omega_using [h256, hlo]) (by omega_using [hhi]) a output ha ho)
     fun u ⟨hgu, hcu, hargs, _, hf, hk⟩ => ?_
   rw [← p.offset]
   refine WP.mono (enter_ok hgu hcu.header p.childLow p.childHigh (by rw [p.offset]; decide))
@@ -126,7 +126,7 @@ def ReadyReducePublic.call {d : Nat} (p : ReadyReducePublic d) (a : Operand) : C
   lower := (ModulusSide.q.bounds p.layout).1
   fits := (ModulusSide.q.bounds p.layout).2.1
   upper := by change outerWords < 2 ^ 30; decide
-  greater := by have := p.greater; omega
+  greater := by have := p.greater; omega_using [this]
   odd := p.odd
   greater255 := p.greater
   lengthBound := p.lengthBound
@@ -194,7 +194,7 @@ theorem scheduleReduce_ct (M : Mont) (inputs : SchedulePublic → List (Operand 
   · intro p s ⟨hs, ba, has, hbl⟩
     refine WP.mono (readyReduce_ok M hs.1 p.qGreater p.qOdd a ha has (hbl ▸ hal p) d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_⟩
-    exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega)) p.qFits
+    exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega_using [this])) p.qFits
 
 theorem CallResult.keepReduced {L : ExecutionLayout} {side other : ModulusSide}
     {d value e : Nat} {s t : State} (h : CallResult L side d value s t) (hs : Ready L s)
@@ -233,7 +233,7 @@ theorem scheduleReduceKeep_ct (M : Mont) (inputs : SchedulePublic → List (Oper
   · intro p s ⟨⟨hs, ba, has, hbl⟩, hr⟩
     refine WP.mono (readyReduce_ok M hs.1 p.qGreater p.qOdd a ha has (hbl ▸ hal p) d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_, ?_⟩
-    · exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega)) p.qFits
+    · exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega_using [this])) p.qFits
     · exact h.keepReduced hs.1 hd (hend p) he (hee p) (hsep p) hr
 
 end VG.Proof.Dsa.AArch64

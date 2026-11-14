@@ -26,12 +26,12 @@ theorem copy_loc_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
   have nowrap := h.old.workspace.nowrap
   have positive := h.old.wpos
   have divisible := h.width
-  have wp : 0 < w.words n := by cases w <;> simp only [Width.words] <;> omega
+  have wp : 0 < w.words n := by cases w <;> simp only [Width.words] <;> omega_arith
   unfold copy
   simp only [List.append_assoc]
-  refine WP.seq (h.ptr_ok src (by decide) (by decide) (by omega) fun a K1 m1 P1 => ?_)
+  refine WP.seq (h.ptr_ok src (by decide) (by decide) (by omega_using [fs, nowrap, wp]) fun a K1 m1 P1 => ?_)
   have ha := h.keep K1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine ha.ptr_ok out (by decide) (by decide) (by omega) fun b K2 m2 P2 => ?_
+  refine ha.ptr_ok out (by decide) (by decide) (by omega_using [fo, nowrap, wp]) fun b K2 m2 P2 => ?_
   have hb := ha.keep K2 (by rw [m2]; exact Outside.refl _ _ _ _)
   refine hb.bytes_ok w .edi fun c K3 m3 count => wp_movS rfl fun d U _ => WP.block_nil ?_
   have K : Keeps [.ebx, .ecx, .edx, .ebp, .edi] s d :=
@@ -50,7 +50,7 @@ theorem copy_loc_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
   rw [m] at O V
   have KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s t := (K.mono (by decide)).trans
     (Kt.mono (by decide))
-  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega)
+  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega_using [fo])
   unfold restore VG.Impl.Rsa.X86.KeyRt.restoreEdi
   refine wp_movS (h.full.wsArg.keep KK (by decide) O0).readSrc fun u U _ => WP.block_nil ?_
   have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u :=

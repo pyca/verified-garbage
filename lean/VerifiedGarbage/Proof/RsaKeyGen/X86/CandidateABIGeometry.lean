@@ -15,29 +15,29 @@ private theorem disjoint_bounds {a b : Addr} {n k : Nat}
     (_an : a.toNat + n ≤ 2 ^ 64) (_bk : b.toNat + k ≤ 2 ^ 64) (np : 0 < n) (kp : 0 < k)
     (D : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) : a.toNat + n ≤ b.toNat ∨ b.toNat + k ≤ a.toNat := by
   by_contra bad
-  have overlap : a.toNat < b.toNat + k ∧ b.toNat < a.toNat + n := by omega
+  have overlap : a.toNat < b.toNat + k ∧ b.toNat < a.toNat + n := by omega_using [bad]
   by_cases order : a.toNat ≤ b.toNat
   · apply D b
     · change (b - a).toNat + 1 ≤ n
       rw [BitVec.toNat_sub]
-      omega
+      omega_using [bad, order]
     · change (b - b).toNat + 1 ≤ k
-      rw [BitVec.sub_self]; change 0 + 1 ≤ k; omega
+      rw [BitVec.sub_self]; change 0 + 1 ≤ k; omega_using [kp]
   · apply D a
     · change (a - a).toNat + 1 ≤ n
-      rw [BitVec.sub_self]; change 0 + 1 ≤ n; omega
+      rw [BitVec.sub_self]; change 0 + 1 ≤ n; omega_using [np]
     · change (a - b).toNat + 1 ≤ k
       rw [BitVec.toNat_sub]
-      omega
+      omega_using [bad, order]
 
 theorem CallLayout.privateNat {s : State} (A : CallLayout s) :
-    (callEnvironment s).p.toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by have := A.low; omega)
+    (callEnvironment s).p.toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by have := A.low; omega_using [this])
 
 theorem CallLayout.reservedNat {s : State} (A : CallLayout s) :
     (reservedRegion s).base.toNat = (s.gpr .esp).toNat - 152 := by
   change ((s.gpr .esp).setWidth 64 - 152#64).toNat = _
   rw [← Taint.sub_setWidth A.low, BitVec.toNat_setWidth, sub_toNat A.low,
-    Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+    Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])]
 
 theorem CallLayout.workspaceStack {s : State} (A : CallLayout s) (Z : CallSizes s) (D : CallSeparation s) :
     (callEnvironment s).p.toNat ≤ (callEnvironment s).base.toNat ∨
@@ -47,7 +47,7 @@ theorem CallLayout.workspaceStack {s : State} (A : CallLayout s) (Z : CallSizes 
     have := g.headerFit
     change 256 ≤ 8 * (arg s 10).toNat at this
     change 0 < 8 * (arg s 10).toNat
-    omega
+    omega_using [this]
   have far := D.stackFar (callEnvironment s).workspaceRegion (List.mem_append_left _
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
   have fit : (callEnvironment s).base.toNat + (callEnvironment s).size ≤ 2 ^ 32 := by
@@ -56,12 +56,12 @@ theorem CallLayout.workspaceStack {s : State} (A : CallLayout s) (Z : CallSizes 
     exact A.workspaceFit
   have rn : ((s.gpr .esp).setWidth 64 - 152#64).toNat = (s.gpr .esp).toNat - 152 := A.reservedNat
   have bounds := disjoint_bounds (Nat.le_trans fit (by decide)) (n := (callEnvironment s).size) (k := 152)
-    (by rw [rn]; have := A.low; have := (s.gpr .esp).isLt; omega) nonempty (by decide) far
+    (by rw [rn]; have := A.low; have := (s.gpr .esp).isLt; omega_using []) nonempty (by decide) far
   rw [rn] at bounds
   rw [A.privateNat]
   have low := A.low
   change (callEnvironment s).base.toNat + (callEnvironment s).size ≤ (s.gpr .esp).toNat - 152 ∨
     (s.gpr .esp).toNat - 152 + 152 ≤ (callEnvironment s).base.toNat at bounds
-  omega
+  omega_using [nonempty, bounds]
 
 end VG.Proof.RsaKeyGen.X86.Candidate

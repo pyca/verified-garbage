@@ -66,26 +66,26 @@ theorem slotList_ok (hroom : 16 ≤ N) (l : List Nat) (hl : l.Nodup) (hc : ∀ j
     have hj16 := cached_lt j hjc
     have e52 : slotBase = 52 := rfl
     have hjN : (j + 1) * VG.Proof.Rsa.X86.Keys.S (kw len) ≤ N * VG.Proof.Rsa.X86.Keys.S (kw len) :=
-      Nat.mul_le_mul_right _ (by omega)
+      Nat.mul_le_mul_right _ (by omega_using [hroom, hj16])
     rw [Nat.succ_mul] at hjN
-    have hS : 8 ≤ VG.Proof.Rsa.X86.Keys.S (kw len) := by show 8 ≤ 4 * (kw len + 2); omega
+    have hS : 8 ≤ VG.Proof.Rsa.X86.Keys.S (kw len) := by show 8 ≤ 4 * (kw len + 2); omega_using []
     have harr : arr (kw len) j < 2 ^ 32 := by
       show VG.Impl.Rsa.X86.Keys.hdr + j * VG.Proof.Rsa.X86.Keys.S (kw len) < 2 ^ 32
-      rw [show VG.Impl.Rsa.X86.Keys.hdr = 160 from rfl]; omega
+      rw [show VG.Impl.Rsa.X86.Keys.hdr = 160 from rfl]; omega_using [hn, hf, hjN, hS]
     simp only [List.flatMap_cons, List.append_assoc]
     refine arrPtr_ok (r := .eax) (t := .edx) (lenSrc h) h.lenLe h.edi (by decide) (by decide) harr
       fun u₁ K₁ m₁ p₁ _ => ?_
     simp only [List.cons_append, List.nil_append]
     have hs₁ := h.ws.workspace.of_keeps K₁ (by decide)
-    refine wp_storeS (hs₁.ea (by omega)) (hs₁.write (d := slotBase + 4 * cached.idxOf j) (n := 4) (by omega))
+    refine wp_storeS (hs₁.ea (by omega_using [hf, hi, e52])) (hs₁.write (d := slotBase + 4 * cached.idxOf j) (n := 4) (by omega_using [hf, hi, e52]))
       fun s₂ U₂ => ?_
     have O₂ : Outside B (slotBase + 4 * cached.idxOf j) 4 s.mem s₂.mem := by
-      rw [U₂.mem, m₁]; exact writeW32_outside _ _ _ (by omega)
+      rw [U₂.mem, m₁]; exact writeW32_outside _ _ _ (by omega_using [hi, e52])
     have W₂ : w32 s₂.mem B (slotBase + 4 * cached.idxOf j) =
         (B.toNat + VG.Impl.Rsa.X86.InvBatchRt.offset (kw len) j) % 2 ^ 32 := by
       rw [U₂.mem, w32_write_self, offset_eq]; exact p₁
     have K₂ : Keeps [.eax, .edx] s s₂ := K₁.trans (U₂.keeps _)
-    have h₂ : RtWs L s₂ B Z len N := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))
+    have h₂ : RtWs L s₂ B Z len N := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_using [hf, hi, e52]))
     refine ih hl' (fun j' hj' => hc j' (by simp [hj'])) h₂ fun u hu Ku Vu Fu => k u hu (K₂.trans Ku) ?_ ?_
     · intro j' hj'
       rcases List.mem_cons.mp hj' with rfl | hj'
@@ -95,7 +95,7 @@ theorem slotList_ok (hroom : 16 ≤ N) (l : List Nat) (hl : l.Nodup) (hc : ∀ j
           obtain ⟨i, hil, rfl⟩ := hw
           have hne : j' ≠ i := fun e => hjl (e ▸ hil)
           have := cached_inj j' hjc i (hc i (by simp [hil])) hne
-          simp only; omega) (by omega)]
+          simp only; omega_using [this]) (by omega_using [e52, hi])]
         exact W₂
       · exact Vu j' hj'
     · intro x hx
@@ -122,27 +122,27 @@ theorem slots_ok {s : State} (h : RtWs L s B Z len N) (hroom : 16 ≤ N)
   simp only [List.cons_append, List.nil_append]
   refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun u₃ U₃ => ?_
   have hs₃ := (h₁.ws.workspace.of_keeps K₂ (by decide)).of_keeps U₃.keeps (by decide)
-  refine wp_storeS (hs₃.ea (by omega)) (hs₃.write (d := halfSlot) (n := 4) (by omega)) fun u U₄ => ?_
+  refine wp_storeS (hs₃.ea (by omega_using [hf, e96])) (hs₃.write (d := halfSlot) (n := 4) (by omega_using [hf, e96])) fun u U₄ => ?_
   have O₄ : Outside B halfSlot 4 u₁.mem u.mem := by
-    rw [U₄.mem, U₃.mem, m₂]; exact writeW32_outside _ _ _ (by omega)
+    rw [U₄.mem, U₃.mem, m₂]; exact writeW32_outside _ _ _ (by omega_using [e96])
   have K : Keeps [.eax, .edx] s u :=
     ((K₁.trans (K₂.mono (by decide))).trans (U₃.keeps.mono (by decide))).trans (U₄.keeps _)
   have hu : RtWs L u B Z len N :=
     h₁.keep (((K₂.mono (by decide)).trans (U₃.keeps.mono (by decide))).trans (U₄.keeps _) : Keeps [.eax] u₁ u)
-      (by decide) (by decide) (O₄.mono (Nat.zero_le _) (by omega))
+      (by decide) (by decide) (O₄.mono (Nat.zero_le _) (by omega_using [hf, e96]))
   have F : Unch B (slotWords cached) s.mem u₁.mem := F₁
-  refine k u ⟨hu, ⟨fun j d hd => ?_, ?_, by omega, by omega⟩, hroom⟩ K ?_
+  refine k u ⟨hu, ⟨fun j d hd => ?_, ?_, by omega_using [hw], by omega_using [hpos, ke]⟩, hroom⟩ K ?_
   · obtain ⟨hj, rfl⟩ := slot_some hd
     have hi := cached_idx j hj
-    rw [O₄.w32 (by omega) (by omega)]
+    rw [O₄.w32 (by omega_using [e52, e96, hi]) (by omega_using [e52, hi])]
     exact V₁ j hj
   · rw [U₄.mem, w32_write_self, U₃.gpr, BitVec.toNat_ushiftRight, e₂]
-    simp only [Nat.shiftRight_eq_div_pow]; omega
+    simp only [Nat.shiftRight_eq_div_pow]; omega_using [ke]
   · intro x hx
-    rw [O₄ x (by omega), F x fun w hw => by
+    rw [O₄ x (by omega_using [e52, e96, hx]), F x fun w hw => by
       simp only [slotWords, List.mem_map] at hw
       obtain ⟨i, hi, rfl⟩ := hw
       have := cached_idx i hi
-      simp only; omega]
+      simp only; omega_using [hx, this]]
 
 end VG.Proof.Rsa.X86.InvBatchRt

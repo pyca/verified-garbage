@@ -48,7 +48,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
     WP isa (code g1 g2 g3) s fun t => abiPreserved s t ∧ (Spec.Dsa.parameterSearchContract abi 304).post s t := by
   have hpre := cin_of_pre s hs
   have spLo := hpre.spLo
-  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega)
+  refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega_using [spLo])
     (WP.mono ((body_vp (G := mkG s) K1 K2 K3).wp s _ ⟨rfl, hpre, rfl⟩) fun u hu => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (pre_preserved r hr)
@@ -61,7 +61,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
   sig_post [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
     Loc.val, stackArgAddr, BitVec.add_zero]
   have hp : 0 < pLenOf s := by
-    have := hpre.valid; simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this; omega
+    have := hpre.valid; simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at this; omega_using [this]
   have l := hpre.lens
   have h32 : (stackArg s 0).toNat < 2 ^ 32 := (stackArg s 0).isLt
   have ht : Spec.Dsa.parameterSearch (s.mem.readW (BitVec.setWidth 64 (stackArg s 3) + 8) 64).toNat
@@ -90,7 +90,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
       split
       · exact Nat.zero_lt_succ _
       · simp only [Spec.Dsa.ParameterSearchResult.remaining]
-        have := ok.2; simp only [Spec.Dsa.parameterSeeds] at this; omega
+        have := ok.2; simp only [Spec.Dsa.parameterSeeds] at this; omega_using [this]
   have hQ : VG.Proof.Dsa.Generation.requested (mkG s).pLen (cRes (mkG s) o) < 2 ^ 32 := by
     simp only [VG.Proof.Dsa.Generation.requested, VG.Proof.Entropy.requested]
     split
@@ -106,14 +106,14 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
     rw [Mem.readW_lo32 h]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.reducePow]
-    omega
+    omega_using []
   have hi : ∀ {a : Addr} {n : Nat}, s.mem.readW a 64 = BitVec.ofNat 64 n → n < 2 ^ 32 →
       s.mem.readW (a + BitVec.ofNat 64 4) 32 = 0 := fun {a n} h hn => by
     rw [Mem.readW_hi32 h]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.reducePow,
       show (0 : BitVec 32).toNat = 0 from rfl]
-    omega
+    omega_using [hn]
   have hp32 : pLenOf s < 2 ^ 32 := by
     simp only [mkG] at l; rcases l with ⟨e, _⟩ | ⟨e, _⟩ | ⟨e, _⟩ <;> rw [e] <;> decide
   have a12 : BitVec.setWidth 64 (stackArg s 3) + BitVec.ofNat 64 12 =
@@ -128,7 +128,7 @@ theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384
       unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
     rw [BitVec.setWidth_append_eq_right]
     show (u.gpr .r0).toNat = _
-    rw [r0, fo.r0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [r0, fo.r0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
   · rw [m]; exact fo.out.trans (outBytes_eq _ _)
   · rw [m]
     show [v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 (8 * 0)) 64] = _
@@ -176,7 +176,7 @@ theorem mkG_eq {s₁ s₂ : State} (h : (Spec.Dsa.parameterSearchContract abi 30
   rw [eR', hsp, r0, r1, r2, r3, a0, a1, a2, a3]
 
 theorem alloc_push {s : State} (h : CIn s) : isa.push (.alloc F) s = some (allocated F s) := by
-  have hsp : F ≤ s.sp.toNat := by have := h.spLo; simp only [F]; omega
+  have hsp : F ≤ s.sp.toNat := by have := h.spLo; simp only [F]; omega_using [this]
   have hn : 0 < F ∧ F < 4096 ∧ F % 8 = 0 ∧ encodable (BitVec.ofNat 32 F) = true := by decide
   simp only [isa, push, hn.1, hn.2.1, hn.2.2.1, hn.2.2.2, hsp, and_self, ite_true]
   rfl

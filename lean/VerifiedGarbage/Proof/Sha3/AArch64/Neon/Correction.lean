@@ -29,17 +29,17 @@ theorem correction_ok {s : State} {A B : Spec.Sha3.State} {x : Nat} (hx : x < 5)
         if i%5 = x then s.v (vreg i) ^^^ ofVDwords (D A x) (D B x) else s.v (vreg i) := by
   have h30 (j : Nat) (hj : j < 30) : vreg j ≠ VReg.v30 := by
     change vreg j ≠ vreg 30
-    rw [ne_eq,vreg_inj j (by omega) 30 (by decide)]; omega
+    rw [ne_eq,vreg_inj j (by omega_using [hj]) 30 (by decide)]; omega_using [hj]
   unfold correction
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (rol_ok (d := .v30) (n := vreg (25+(x+1)%5))
-    (Ne.symm (h30 _ (by omega))) (by decide) (by decide)) fun s₁ ⟨h1,v1⟩ => ?_
+    (Ne.symm (h30 _ (by omega_using []))) (by decide) (by decide)) fun s₁ ⟨h1,v1⟩ => ?_
   simp only [List.cons_append,List.nil_append]
   refine wp_vop (d := .v30) rfl fun s₂ h2 => ?_
   have v2 : s₂.v .v30 = ofVDwords (D A x) (D B x) := by
-    rw [h2.v,h1.get (vreg (25+(x+4)%5)) (by simp only [List.mem_singleton]; exact h30 _ (by omega)),
-      hc _ (by omega),v1,hc _ (by omega),vdword_ofVDwords_0,vdword_ofVDwords_1,pair_xor]
+    rw [h2.v,h1.get (vreg (25+(x+4)%5)) (by simp only [List.mem_singleton]; exact h30 _ (by omega_using [])),
+      hc _ (by omega_using []),v1,hc _ (by omega_using []),vdword_ofVDwords_0,vdword_ofVDwords_1,pair_xor]
     rw [VG.Proof.Sha3.rotateLeft_eq _ (by decide) (by decide),
       VG.Proof.Sha3.rotateLeft_eq _ (by decide) (by decide)]
     simp only [D]; rw [BitVec.xor_comm (C A _),BitVec.xor_comm (C B _)]
@@ -56,12 +56,12 @@ theorem correction_ok {s : State} {A B : Spec.Sha3.State} {x : Nat} (hx : x < 5)
       intro hh
       obtain ⟨y,hy,he⟩ := List.mem_map.mp hh
       rw [List.mem_range] at hy
-      have hh := (vreg_inj (x+5*y) (by omega) (25+c) (by omega)).mp he
-      omega
-    rw [h3.get _ hn,h2.get _ (h30 _ (by omega)),h1.get _ (by
-      simp only [List.mem_singleton]; exact h30 _ (by omega))]
+      have hh := (vreg_inj (x+5*y) (by omega_using [hx, hy]) (25+c) (by omega_using [hcc])).mp he
+      omega_using [hx, hy, hh]
+    rw [h3.get _ hn,h2.get _ (h30 _ (by omega_using [hcc])),h1.get _ (by
+      simp only [List.mem_singleton]; exact h30 _ (by omega_using [hcc]))]
     exact hc c hcc
   · intro i hi
-    rw [vals i hi,v2,h2.get _ (h30 _ (by omega)),h1.get _ (by
-      simp only [List.mem_singleton]; exact h30 _ (by omega))]
+    rw [vals i hi,v2,h2.get _ (h30 _ (by omega_using [hi])),h1.get _ (by
+      simp only [List.mem_singleton]; exact h30 _ (by omega_using [hi]))]
 end VG.Proof.Sha3.AArch64.Neon

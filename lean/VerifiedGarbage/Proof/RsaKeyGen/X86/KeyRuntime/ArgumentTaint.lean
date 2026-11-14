@@ -24,32 +24,32 @@ theorem context_argumentWindow {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} 
   have nowrap := C.scratch.nowrap
   have nat20 : (argsRegion p).base.toNat = p.toNat + 20 := by
     simp only [argsRegion, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using [fit]
   have nat16 : (VG.X86.Taint.argByte s 16).toNat = p.toNat + 16 := by
     simp only [VG.X86.Taint.argByte, C.sp, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     have bound := p.isLt
-    omega
-  have bounds := VG.Proof.RsaKeyGen.X86.Key.disjoint_bounds (by decide : 0 < 72) (by omega) C.separate
+    omega_using []
+  have bounds := VG.Proof.RsaKeyGen.X86.Key.disjoint_bounds (by decide : 0 < 72) (by omega_using [large]) C.separate
   change (argsRegion p).base.toNat + 72 ≤ B.toNat ∨ B.toNat + Z ≤ (argsRegion p).base.toNat at bounds
   rw [nat20] at bounds
   have stack := C.scratch.stk
   rw [C.sp] at stack
   rcases stack.2 with before | after
-  · have above : p.toNat + 92 ≤ B.toNat := by omega
+  · have above : p.toNat + 92 ≤ B.toNat := by omega_using [large, bounds, before]
     apply Offset.disjoint_of_le
     · change (VG.X86.Taint.argByte s 16).toNat + 76 ≤ B.toNat
       rw [nat16]
-      omega
+      omega_using [above]
     · change B.toNat + Z ≤ 2 ^ 64
-      omega
+      omega_using [nowrap]
   · apply Region.Disjoint.symm
     apply Offset.disjoint_of_le
     · change B.toNat + Z ≤ (VG.X86.Taint.argByte s 16).toNat
       rw [nat16]
-      omega
+      omega_using [after]
     · change (VG.X86.Taint.argByte s 16).toNat + 76 ≤ 2 ^ 64
       rw [nat16]
-      omega
+      omega_using []
 
 theorem readonly_wf {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat → BitVec 32}
     (C : Context B Z p args s) (large : 160 ≤ Z) : VG.X86.Taint.Wf runtimeTaint (readonly s B Z) := by
@@ -67,14 +67,14 @@ theorem readonly_wf {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat
     refine ⟨?_, ?_⟩
     · change (s.gpr .esp).toNat + 16 + 76 ≤ 2 ^ 32
       rw [C.sp]
-      omega
+      omega_using [fit]
     · intro r hr
       obtain rfl := List.mem_singleton.mp hr
       change (⟨VG.X86.Taint.argByte s 16, 76⟩ : Region).Disjoint ⟨B, Z⟩
       exact context_argumentWindow C large
   · change (s.gpr .esp).toNat + 16 < 2 ^ 32
     rw [C.sp]
-    omega
+    omega_using [fit]
 
 theorem readonly_agree {s t : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat → BitVec 32}
     (S : Context B Z p args s) (T : Context B Z p args t) (large : 160 ≤ Z)
@@ -101,13 +101,13 @@ theorem readonly_agree {s t : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args 
   · intro k h4 hk
     change k < 76 at hk
     change s.mem (VG.X86.Taint.argByte s (16 + k)) = t.mem (VG.X86.Taint.argByte t (16 + k))
-    rw [VG.X86.Taint.argByte_eq fitS (by omega) (by omega),
-      VG.X86.Taint.argByte_eq fitT (by omega) (by omega),
+    rw [VG.X86.Taint.argByte_eq fitS (by omega_using []) (by omega_using [hk]),
+      VG.X86.Taint.argByte_eq fitT (by omega_using []) (by omega_using [hk]),
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide : 0 < 4)),
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide : 0 < 4))]
-    have index : (16 + k - 4) / 4 = (k - 4) / 4 + 4 := by omega
-    have same := (context_argument S (i := (k - 4) / 4) (by change k < 76 at hk; omega)).value.trans
-      (context_argument T (i := (k - 4) / 4) (by change k < 76 at hk; omega)).value.symm
+    have index : (16 + k - 4) / 4 = (k - 4) / 4 + 4 := by omega_using [h4]
+    have same := (context_argument S (i := (k - 4) / 4) (by change k < 76 at hk; omega_using [hk])).value.trans
+      (context_argument T (i := (k - 4) / 4) (by change k < 76 at hk; omega_using [hk])).value.symm
     change arg s ((k - 4) / 4 + 4) = arg t ((k - 4) / 4 + 4) at same
     rw [index]
     exact congrArg _ same

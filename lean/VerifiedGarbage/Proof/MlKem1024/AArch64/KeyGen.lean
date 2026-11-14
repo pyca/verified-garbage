@@ -33,8 +33,8 @@ theorem taints1024 : KgTaints lay1024 keccak :=
     intro i hi j hj
     change i < 4 at hi
     change j < 4 at hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     exact ⟨_, by taint_decide⟩⟩
 
 /-- A state satisfying the precondition. -/

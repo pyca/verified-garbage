@@ -126,7 +126,7 @@ theorem checksGiven_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 6
       rw [word_off, word_off, hq₅ _ (by omega_using []) (by omega_using [hoq, hn, hQ8, hi]),
           hab₄ _ (by omega_using [hlo, hop]) (by omega_using [hoq, hn, hQ8, hi])]
   have kk6 := (kk4.trans k₅).trans k₆
-  have hcQ₆ := SubCtx.mk' (hs.congr kk6.wr) hH₆ hwsQ₆ hdi₆ (by omega_using [hlo, hop]) (by have := tabBytes_le_wsTab wq; omega)
+  have hcQ₆ := SubCtx.mk' (hs.congr kk6.wr) hH₆ hwsQ₆ hdi₆ (by omega_using [hlo, hop]) (by have := tabBytes_le_wsTab wq; omega_using [hoq, this])
   have hM₆ : word s₆.mem B (8 * Public.sMask) = mask ((m1 && decide (QI < P))) := by
     rw [hm₆, hb₅ _ (by unfold Public.sMask sFn; omega_using [hlo, hacc, hA0])]; exact hM₄
   refine wp_seqs_append (by decide) (by decide) ?_

@@ -72,9 +72,9 @@ theorem popped_gpr (r : Reg) (k : Nat) (s : State) {r' : Reg} (h : r' ≠ .rsp) 
 theorem toNat_sub_ofNat {a : Addr} {k : Nat} (h : k ≤ a.toNat) :
     (a - BitVec.ofNat 64 k).toNat = a.toNat - k := by
   have := a.isLt
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega),
-    show 2 ^ 64 - k + a.toNat = (a.toNat - k) + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_using [h]),
+    show 2 ^ 64 - k + a.toNat = (a.toNat - k) + 2 ^ 64 by omega_using [h], Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_using [])]
 
 /-- `push r` for each of `rs` stores `rs[j]` at `rsp - 8 (j + 1)`, and nothing
 outside the `8 * rs.length` bytes below `rsp`. -/
@@ -97,7 +97,7 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
     have hm₁ : s₁.mem = s.mem.writeW (s.gpr .rsp - 8) (s.gpr x) := rfl
     have e₁ : (s₁.gpr .rsp).toNat = (s.gpr .rsp).toNat - 8 := by
       rw [hsp₁]; have := (s.gpr .rsp).isLt; bv_omega_arith
-    obtain ⟨ih₁, ih₂⟩ := ih s₁ hrs.2 (by omega)
+    obtain ⟨ih₁, ih₂⟩ := ih s₁ hrs.2 (by omega_using [hn, e₁])
     have hp : pushRegs s (x :: xs) = pushRegs s₁ xs := rfl
     generalize hS : s.gpr .rsp = S at *
     generalize hT : s₁.gpr .rsp = T at *
@@ -124,7 +124,7 @@ theorem pushRegs_mem (s : State) (rs : List Reg) (hrs : .rsp ∉ rs)
         bv_omega_arith
       | succ j =>
         simp only [List.getElem_cons_succ]
-        have := ih₂ j (by omega)
+        have := ih₂ j (by omega_using [hj])
         rw [hg₁ _ (fun h => hrs.2 (h ▸ List.getElem_mem _))] at this
         rw [← this]
         congr 1

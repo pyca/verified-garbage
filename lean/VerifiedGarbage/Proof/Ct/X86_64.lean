@@ -55,10 +55,10 @@ theorem step_ok (s₀ s : State) (hp : contract.pre s₀)
   have hwr : s.wr = s₀.wr := hk.2.2
   have hA : InRegions (s.rd ++ s.wr) (s₀.gpr .rdi + BitVec.ofNat 64 i) 1 := by
     rw [hrd, hwr, hp.1, hp.2, List.append_nil]
-    exact ⟨⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have hB : InRegions (s.rd ++ s.wr) (s₀.gpr .rdx + BitVec.ofNat 64 i) 1 := by
     rw [hrd, hwr, hp.1, hp.2, hlen, List.append_nil]
-    exact ⟨⟨s₀.gpr .rdx, (s₀.gpr .rsi).toNat⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s₀.gpr .rdx, (s₀.gpr .rsi).toNat⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have hadd : BitVec.ofNat 64 i + 1 = BitVec.ofNat 64 (i + 1) := by
     rw [BitVec.ofNat_add]; rfl
   unfold step
@@ -88,9 +88,9 @@ theorem loop_ok (s₀ : State) (hp : contract.pre s₀) (hlen : s₀.gpr .rcx = 
     have hne : BitVec.ofNat 64 (j + 1) ≠ s₀.gpr .rsi := by
       intro hh
       have := congrArg BitVec.toNat hh
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s₀.gpr .rsi).isLt; dsimp [n] at *; omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s₀.gpr .rsi).isLt; dsimp [n] at *; omega_using [hj])] at this
       exact he this
-    refine ⟨?_, n - (j + 1), by omega, j + 1, by omega, rfl, hout⟩
+    refine ⟨?_, n - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, hout⟩
     simp [eval, hz, hne]
 
 theorem finish_ok (s : State) (d : Byte) (ha : s.gpr .rax = d.setWidth 64) :

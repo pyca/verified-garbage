@@ -26,7 +26,7 @@ theorem nafRead_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat} {b : Bi
     WP isa (.block (Naf.digitRead K)) s fun t =>
       t.gpr .r8=b.setWidth 64 ∧ t.zf=some (decide (b=0)) ∧ Keeps [.r8] s t := by
   have hr : InRegions (s.rd++s.wr) (off base (K.bits+j)) 1 :=
-    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hj]) (by decide)⟩
   apply WP.of_runBlock
   simp only [Naf.digitRead,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,readSrc,
     Option.map_some,Option.bind_some,State.load8,ea_tbl hs.rdi hc,hr,hm,

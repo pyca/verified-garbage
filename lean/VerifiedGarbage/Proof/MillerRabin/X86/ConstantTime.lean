@@ -85,7 +85,7 @@ theorem constantTime : ConstantTime isa
             rw [keepS.1 .esp (by decide), keepT.1 .esp (by decide)]
             exact enteredSp)
           obtain ⟨coreTrace, after⟩ := core_trace VG.Proof.Mont.X86.Sse2.prepared_verified compact_noSp compact_stack S.valid
-            (by change (arg s 1).toNat * 8 = 8 * (arg s 1).toNat; omega) _ _ _ _ _ _
+            (by change (arg s 1).toNat * 8 = 8 * (arg s 1).toNat; omega_using []) _ _ _ _ _ _
             ⟨pair, ⟨entrySecret s, startS⟩, ⟨entrySecret t, startT'⟩⟩ coreS coreT
           have restoreTrace := (restore_trace _ _ _ _ _ _ after restoreS restoreT).1
           exact ⟨by rw [baseTrace, coreTrace, restoreTrace], trivial⟩

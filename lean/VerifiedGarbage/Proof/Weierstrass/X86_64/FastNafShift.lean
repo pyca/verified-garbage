@@ -17,38 +17,38 @@ open VG.Proof.X25519.X86_64
 
 theorem fastJoin_value (lo hi : BitVec 64) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) :
     ((lo>>>w)|||(hi<<<(64-w))).toNat=lo.toNat/2^w+2^(64-w)*(hi.toNat%2^w) := by
-  have hlo : (lo>>>w).toNat<2^(64-w) := BitVec.toNat_ushiftRight_lt lo w (by omega)
+  have hlo : (lo>>>w).toNat<2^(64-w) := BitVec.toNat_ushiftRight_lt lo w (by omega_using [hw])
   have hhi : (hi<<<(64-w)).toNat=(hi.toNat%2^w)<<<(64-w) := by
-    rcases hw with rfl|rfl|rfl|rfl <;> simp only [BitVec.toNat_shiftLeft,Nat.shiftLeft_eq] <;> omega
+    rcases hw with rfl|rfl|rfl|rfl <;> simp only [BitVec.toNat_shiftLeft,Nat.shiftLeft_eq] <;> omega_using []
   rw [BitVec.toNat_or,hhi,Nat.or_comm,←Nat.shiftLeft_add_eq_or_of_lt hlo]
   simp only [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,Nat.shiftLeft_eq]
   rw [Nat.mul_comm]
-  omega
+  omega_using []
 
 /-- A Horner step of a shift: the low word's bits and the low bits of the rest. -/
 theorem shift_horner {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) (lo : BitVec 64) (R : Nat) :
     (lo.toNat+2^64*R)/2^w=lo.toNat/2^w+2^(64-w)*(R%2^w)+2^64*(R/2^w) := by
   have := lo.isLt
-  rcases hw with rfl|rfl|rfl|rfl <;> omega
+  rcases hw with rfl|rfl|rfl|rfl <;> omega_using []
 
 theorem mod_horner {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) (hi : BitVec 64) (R : Nat) :
     (hi.toNat+2^64*R)%2^w=hi.toNat%2^w := by
-  rcases hw with rfl|rfl|rfl|rfl <;> omega
+  rcases hw with rfl|rfl|rfl|rfl <;> omega_using []
 
 theorem fastShift5_value (a b c d e : BitVec 64) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) :
     nafVal5 ((a>>>w)|||(b<<<(64-w))) ((b>>>w)|||(c<<<(64-w)))
       ((c>>>w)|||(d<<<(64-w))) ((d>>>w)|||(e<<<(64-w))) (e>>>w)=nafVal5 a b c d e/2^w := by
   simp only [nafVal5,fastJoin_value _ _ hw,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-  rcases hw with rfl|rfl|rfl|rfl <;> omega
+  rcases hw with rfl|rfl|rfl|rfl <;> omega_using []
 
 theorem fastShift_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) :
     WP isa (.block (FastNaf.shift w)) s fun t =>
       nafVal5 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) (t.gpr .r12)=
         nafVal5 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)/2^w ∧
       Keeps [.rax,.r8,.r9,.r10,.r11,.r12] s t := by
-  have hw0 : 1≤w ∧ w≤63 := by omega
-  have hw1 : 1≤64-w ∧ 64-w≤63 := by omega
-  have hw2 : ¬(64-w=1) := by omega
+  have hw0 : 1≤w ∧ w≤63 := by omega_using [hw]
+  have hw1 : 1≤64-w ∧ 64-w≤63 := by omega_using [hw]
+  have hw2 : ¬(64-w=1) := by omega_using [hw]
   apply WP.of_runBlock
   simp only [FastNaf.shift,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
     readSrc,Option.map_some,Option.bind_some,
@@ -83,9 +83,9 @@ theorem fastShift7_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) :
         nafVal7 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12) (s.gpr .r13)
           (s.gpr .r14)/2^w ∧
       Keeps [.rax,.r8,.r9,.r10,.r11,.r12,.r13,.r14] s t := by
-  have hw0 : 1≤w ∧ w≤63 := by omega
-  have hw1 : 1≤64-w ∧ 64-w≤63 := by omega
-  have hw2 : ¬(64-w=1) := by omega
+  have hw0 : 1≤w ∧ w≤63 := by omega_using [hw]
+  have hw1 : 1≤64-w ∧ 64-w≤63 := by omega_using [hw]
+  have hw2 : ¬(64-w=1) := by omega_using [hw]
   apply WP.of_runBlock
   simp only [shiftN_six,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
     readSrc,Option.map_some,Option.bind_some,
@@ -119,9 +119,9 @@ theorem fastShift10_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7 ∨ w=9) 
       nafVal10 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) (t.gpr .r12) (t.gpr .r13) (t.gpr .r14) (t.gpr .r15) (t.gpr .rbp) (t.gpr .rsi)=
         nafVal10 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12) (s.gpr .r13) (s.gpr .r14) (s.gpr .r15) (s.gpr .rbp) (s.gpr .rsi)/2^w ∧
       Keeps [.rax,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] s t := by
-  have hw0 : 1≤w ∧ w≤63 := by omega
-  have hw1 : 1≤64-w ∧ 64-w≤63 := by omega
-  have hw2 : ¬(64-w=1) := by omega
+  have hw0 : 1≤w ∧ w≤63 := by omega_using [hw]
+  have hw1 : 1≤64-w ∧ 64-w≤63 := by omega_using [hw]
+  have hw2 : ¬(64-w=1) := by omega_using [hw]
   apply WP.of_runBlock
   simp only [shiftN_nine,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
     readSrc,Option.map_some,Option.bind_some,

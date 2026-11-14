@@ -25,7 +25,7 @@ theorem pair_input {s₀ s : State} (hp : Pre P L s₀) {e : Nat} (he : e+1<P.k*
     sdisj hp (by lom) (by lom) (by decide),pair_context hp he h tb,rfl⟩
   intro j hj
   rw [ptr_add]
-  exact in_R (cov_sr hp h (o:=SB) (l:=32) (by lom)) (k:=8*j) (by omega) (by omega)
+  exact in_R (cov_sr hp h (o:=SB) (l:=32) (by lom)) (k:=8*j) (by omega_using [hj]) (by omega_using [])
 
 theorem last_input {s₀ s : State} (hp : Pre P L s₀) {e : Nat} (he : e<P.k*P.k)
     (h : KB P L s₀ s) (tb : MatrixTable P L s₀ s) :
@@ -36,6 +36,6 @@ theorem last_input {s₀ s : State} (hp : Pre P L s₀) {e : Nat} (he : e<P.k*P.
     sdisj hp (by lom) (by lom) (by decide),singleton_context hp he h tb,rfl⟩
   intro j hj
   rw [ptr_add]
-  exact in_R (cov_sr hp h (o:=SB) (l:=32) (by lom)) (k:=8*j) (by omega) (by omega)
+  exact in_R (cov_sr hp h (o:=SB) (l:=32) (by lom)) (k:=8*j) (by omega_using [hj]) (by omega_using [])
 
 end VG.Proof.MlKem.AArch64.Kem

@@ -23,7 +23,7 @@ private theorem counter_ok {p : Parameters} {bs : List Byte} {s : State}
   (BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.N))) ?_ rfl rfl rfl) ?_
  · brun [good.x0,hdr_enc (show sI<32 by decide),hdr_enc (show sRows<32 by decide),
    header_read good p.room (show sRows<32 by decide),controls.rows,
-   good.scr.st (d:=8*sI) (by have := hdr_lt_slot p.w 8 (show sI<32 by decide);have := p.room;omega)]
+   good.scr.st (d:=8*sI) (by have := hdr_lt_slot p.w 8 (show sI<32 by decide);have := p.room;omega_arith)]
  · rintro t ⟨mem,rest⟩
    have frame : Outside p.B (8*sI) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by decide)
    refine ⟨good_after_header good (by decide) (by decide) frame rest ((rest.gpr .x0 (by decide)).trans good.x0),?_,frame,rest⟩
@@ -40,18 +40,18 @@ private theorem table_ok {p : Parameters} {bs : List Byte} {s : State}
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
   have := p.width
-  omega
+  omega_using []
  have address : (p.ctx+(BitVec.ofNat 64 p.w <<< 4))+24#64=p.table := by
   rw [shift,pointer,BitVec.add_assoc,show (24#64:Addr)=BitVec.ofNat 64 24 from rfl,←BitVec.ofNat_add]
   congr 2
-  omega
+  omega_using []
  unfold Comb.initTable
  refine WP.mono (WP.keep [.x3,.x4] (Q:=fun t =>t.mem=s.mem.writeW (off p.B (8*sTab)) p.table)
   ?_ rfl rfl rfl) ?_
  · brun [good.x0,hdr_enc (show sCtx<32 by decide),hdr_enc (show sW<32 by decide),hdr_enc (show sTab<32 by decide),
    header_read good p.room (show sCtx<32 by decide),header_read good p.room (show sW<32 by decide),
    good.hdr.hw,controls.context,address,
-   good.scr.st (d:=8*sTab) (by have := hdr_lt_slot p.w 8 (show sTab<32 by decide);have := p.room;omega)]
+   good.scr.st (d:=8*sTab) (by have := hdr_lt_slot p.w 8 (show sTab<32 by decide);have := p.room;omega_arith)]
  · rintro t ⟨mem,rest⟩
    have frame : Outside p.B (8*sTab) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by decide)
    refine ⟨good_after_header good (by decide) (by decide) frame rest ((rest.gpr .x0 (by decide)).trans good.x0),?_,frame,rest⟩

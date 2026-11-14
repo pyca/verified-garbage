@@ -43,11 +43,11 @@ theorem productCore_words_ok (raw : Bool) {s : State}
       Frame [outputRegion (s.gpr .x0)] s.mem t.mem ∧
       t.mem=multiplyInverseMem raw s.mem (s.gpr .x0) (s.gpr .x13) (s.gpr .x14) := by
   refine WP.mono (productCore_ok raw ht hsep ha hb ?_ ?_ ?_ ?_ ?_) fun t ⟨hk,hp,hm⟩ => ?_
-  · intro off ho; exact ⟨_,htr,Offset.contains_base _ ho (by omega)⟩
-  · intro off ho; exact ⟨_,har,Offset.contains_base _ ho (by omega)⟩
-  · intro off ho; exact ⟨_,hbr,Offset.contains_base _ ho (by omega)⟩
-  · intro off ho; exact ⟨_,List.mem_append_right _ hw,Offset.contains_base _ ho (by omega)⟩
-  · intro off ho; exact ⟨_,hw,Offset.contains_base _ ho (by omega)⟩
+  · intro off ho; exact ⟨_,htr,Offset.contains_base _ ho (by omega_using [ho])⟩
+  · intro off ho; exact ⟨_,har,Offset.contains_base _ ho (by omega_using [ho])⟩
+  · intro off ho; exact ⟨_,hbr,Offset.contains_base _ ho (by omega_using [ho])⟩
+  · intro off ho; exact ⟨_,List.mem_append_right _ hw,Offset.contains_base _ ho (by omega_using [ho])⟩
+  · intro off ho; exact ⟨_,hw,Offset.contains_base _ ho (by omega_using [ho])⟩
   · exact ⟨hk,hp,by rw [hm]; exact multiplyInverseMem_frame _ _ _ _ _,hm⟩
 
 theorem productStaticInit_ok (s : State) :

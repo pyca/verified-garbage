@@ -25,10 +25,10 @@ open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 /-- `a - 1`, or 0 for 0, from the borrow of `a - 1`. -/
 theorem pred_sel {w a : Nat} (ha : a < 2 ^ (32 * w)) : (if a < 1 then 0 else subW w a 1) = a - 1 := by
   by_cases h : a < 1
-  · simp only [h, ↓reduceIte]; omega
+  · simp only [h, ↓reduceIte]; omega_using [h]
   · simp only [h, ↓reduceIte]
     unfold subW
-    rw [show a + 2 ^ (32 * w) - 1 = (a - 1) + 2 ^ (32 * w) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    rw [show a + 2 ^ (32 * w) - 1 = (a - 1) + 2 ^ (32 * w) by omega_using [ha, h], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ha])]
 
 section
 variable {s : State} {B : Addr} {Z w : Nat} {V F : Nat → Nat}

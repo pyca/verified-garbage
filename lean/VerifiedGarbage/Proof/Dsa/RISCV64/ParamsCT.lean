@@ -92,7 +92,7 @@ theorem pfront_P0 {s : State} (hL : (playOf s).Ok) (hrd : s.rd = [⟨s.gpr .a0, 
   refine WP.mono (pfront_ok_of hL hwr nw alS) fun t ⟨F, k⟩ => ?_
   have hK : Src t (playOf s) (s.gpr .a0) (s.gpr .a1).toNat := psrc_of hrd dPS (Nat.le_refl _) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, src_nil rfl, src_nil (Nat.zero_min _),
-    hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega), (by simp only [vdP, playOf]; omega),
+    hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega_using [hZ]), (by simp only [vdP, playOf]; omega_using [hkn]),
     (fun h => nomatch h), fun _ h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 /-- Runs that agree on `a0` to `a5` and on the octets at `a0` have the same public data `vdP`. -/
@@ -119,7 +119,7 @@ def C0c (v : VD) (s : State) : Prop := pcContract.pre s ∧ vdP s = v
 theorem frontC : ∀ v s, C0c v s → WP isa (.block Params.entry) s (P0 v) := by
   rintro _ s ⟨h, rfl⟩
   exact pfront_P0 (playOf_ok h) h.1 h.2.1 h.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.2.2.2.1
-    (by have := h.2.2.2.2.2.2.1; omega)
+    (by have := h.2.2.2.2.2.2.1; omega_using [this])
 
 abbrev R3c : Prog isa := .seq setupP (andThen (.seq (.block ptrG) checkElem) ok1 fail0)
 abbrev R2c : Prog isa := andThen pModQ R3c fail0

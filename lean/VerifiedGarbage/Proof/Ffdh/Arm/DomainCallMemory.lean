@@ -34,8 +34,8 @@ theorem DomainCallMemory.of_outer {p : Inputs} {s : State} {sp : BitVec 32}
     rw [pointer]
     exact belowA_inner (a := 48) (k := 128) (by decide) fit
   refine ⟨⟨?_, workspace.sub_left inner⟩, domain.sub_right inner, publicValue.sub_right inner⟩
-  rw [pointer, sub_toNat' (by omega : 128 ≤ sp.toNat)]
-  omega
+  rw [pointer, sub_toNat' (by omega_using [fit] : 128 ≤ sp.toNat)]
+  omega_using [fit]
 
 theorem DomainCallMemory.after {p : Inputs} {s t : State} {rs : List Reg}
     (h : DomainCallMemory p s) (rest : Rest rs s t) : DomainCallMemory p t := by
@@ -68,7 +68,7 @@ theorem DomainCallMemory.domainSlice {p : Inputs} {slots : List Nat} {s : State}
     (h : DomainCallMemory p s) (context : Context p slots s) {d k : Nat}
     (positive : 0 < k) (fit : d + k ≤ p.dom.length) :
     Region.Disjoint ⟨State.addr (p.domain + BitVec.ofNat 32 d), k⟩ (belowA s.sp 48) := by
-  rw [VG.Arm.addr_add (by have := context.domain.fits; omega)]
+  rw [VG.Arm.addr_add (by have := context.domain.fits; omega_using [positive, fit, this])]
   exact h.domain.sub_left (Offset.sub_base _ fit)
 
 end VG.Proof.Ffdh.Arm

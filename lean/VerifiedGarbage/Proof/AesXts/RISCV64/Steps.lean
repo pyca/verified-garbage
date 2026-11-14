@@ -44,17 +44,17 @@ theorem shl_cut (w : BitVec 32) : ((w.setWidth 64) <<< 1).setWidth 32 = w <<< 1 
   apply BitVec.eq_of_toNat_eq
   have hw := w.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (a := w.toNat) (by omega), Nat.mod_mod_of_dvd _ (by decide)]
+  rw [Nat.mod_eq_of_lt (a := w.toNat) (by omega_using []), Nat.mod_mod_of_dvd _ (by decide)]
 
 /-- The top bit of a zero-extended word, as a bit. -/
 theorem ushr31 (w : BitVec 32) : (w.setWidth 64) >>> 31 = if w.msb then (1 : BitVec 64) else 0 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_setWidth, BitVec.msb_eq_decide]
   have := w.isLt
-  rw [Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [])]
   by_cases h : 2 ^ 31 ≤ w.toNat
-  · rw [decide_eq_true h]; show _ = 1; omega
-  · rw [decide_eq_false h]; show _ = 0; omega
+  · rw [decide_eq_true h]; show _ = 1; omega_using [h]
+  · rw [decide_eq_false h]; show _ = 0; omega_using [h]
 
 theorem mask_87 (b : Bool) :
     (BitVec.ofNat 64 0 - (if b then (1 : BitVec 64) else 0)) &&& BitVec.ofNat 64 0x87 =

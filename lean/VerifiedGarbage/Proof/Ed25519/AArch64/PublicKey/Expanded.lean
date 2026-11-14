@@ -100,7 +100,7 @@ def pkLocalE : Contract isa := pkLocalWith 64 fun s t => ∀ seed : List Byte, s
 theorem bodyE_depth : (bodyFrom copyExpanded).aarch64Depth ≤ 1 := by
   have hb := Whole.depth_zero_of_noFrames base_noFrames
   simp only [bodyFrom, copyExpanded, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth, Nat.max_le, hb]
-  omega
+  omega_using []
 
 theorem pkE_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (h : pkLocalE.pre s) :
     WP isa codeExpanded s fun u => abiPreserved s u ∧ pkLocalE.post s u := by
@@ -162,14 +162,14 @@ theorem satMemTE_held : ∀ i < combWords.length,
     satMemTE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   intro i hi
   have hl := combWords_length
-  rw [← constMem_held 0x100000 combWords (by omega) i hi]
+  rw [← constMem_held 0x100000 combWords (by omega_using [hl]) i hi]
   refine Mem.readW_congr fun b hb => ?_
   have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b).toNat = 0x100000 + 8 * i + b := by
     have h0 : (0x100000 : Addr).toNat = 0x100000 := rfl
     rw [Offset.add_add, BitVec.toNat_add, BitVec.toNat_ofNat, h0,
-      Nat.mod_eq_of_lt (a := 8 * i + b) (by omega)]
-    omega
+      Nat.mod_eq_of_lt (a := 8 * i + b) (by omega_using [hi, hl, hb])]
+    omega_using [hi, hl, hb]
   unfold satMemTE
-  simp only [e, show 0x100000 ≤ 0x100000 + 8 * i + b by omega, ↓reduceIte]
+  simp only [e, show 0x100000 ≤ 0x100000 + 8 * i + b by omega_using [], ↓reduceIte]
 
 end VG.Proof.Ed25519.AArch64.PublicKey

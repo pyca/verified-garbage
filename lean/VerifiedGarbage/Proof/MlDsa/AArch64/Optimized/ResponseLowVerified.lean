@@ -40,12 +40,12 @@ theorem lowRun_return (m : Mem) (g B : Nat) (p a l : Addr) (hg : IsG g)
     constructor
     · intro h i hi
       change i<256 at hi
-      have hh := h (i/4) (by omega) (i%4) (by omega)
-      rw [show 4*(i/4)+i%4=i by omega] at hh
+      have hh := h (i/4) (by omega_using [hi]) (i%4) (by omega_using [])
+      rw [show 4*(i/4)+i%4=i by omega_using []] at hh
       exact Nat.lt_of_not_ge (of_decide_eq_false hh)
     · intro h i hi e he
-      have hh := h (4*i+e) (by change 4*i+e<256; omega)
-      exact decide_eq_false (by omega)
+      have hh := h (4*i+e) (by change 4*i+e<256; omega_using [hi, he])
+      exact decide_eq_false (by omega_using [hh])
   have hr := finishValue_flags_range hflags
   by_cases h : responseLowPass m p a g B
   · rw [ite_eq_left h]; exact hf.mpr (he.mpr h)
@@ -115,7 +115,7 @@ theorem subLowNorm_correct (s : State) (hp : subLowNormK.pre s) :
   have hwrite (r : Reg) (hm : polyRegion (s.gpr r)∈s.wr) :
       ∀off,off+16≤1024 → InRegions s.wr (s.gpr r+BitVec.ofNat 64 off) 16 := by
     intro off ho
-    exact ⟨_,hm,Offset.contains_base _ ho (by omega)⟩
+    exact ⟨_,hm,Offset.contains_base _ ho (by omega_using [ho])⟩
   have hw0 := hwrite .x0 (by rw [hw]; simp)
   have hw2 := hwrite .x2 (by rw [hw]; simp)
   have hr0 : ∀off,off+16≤1024 → InRegions (s.rd++s.wr) (s.gpr .x0+BitVec.ofNat 64 off) 16 := by
@@ -124,7 +124,7 @@ theorem subLowNorm_correct (s : State) (hp : subLowNormK.pre s) :
     exact ⟨r,List.mem_append_right _ hm,hc⟩
   have hr1 : ∀off,off+16≤1024 → InRegions (s.rd++s.wr) (s.gpr .x1+BitVec.ofNat 64 off) 16 := by
     intro off ho
-    exact ⟨polyRegion (s.gpr .x1),by rw [hr]; simp,Offset.contains_base _ ho (by omega)⟩
+    exact ⟨polyRegion (s.gpr .x1),by rw [hr]; simp,Offset.contains_base _ ho (by omega_using [ho])⟩
   obtain ⟨tr,t,he,hk,hh,hl,hn⟩ := subLowNorm_ok s hg hB hB' hcan hraw hpl hap hal hr0 hr1 hw0 hw2
   refine ⟨tr,t,he,⟨?_,hk.sp,hk.vcs⟩,hh,hl,?_⟩
   · intro r hp

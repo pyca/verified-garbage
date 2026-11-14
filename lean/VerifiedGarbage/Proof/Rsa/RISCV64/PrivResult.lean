@@ -81,7 +81,7 @@ theorem result_ok {s w : State} {cs es acc : BitVec 64} (h : PreP pc s) (hsp : w
 
 theorem write1_ne (m : Mem) {b x : Addr} (v : BitVec (8 * 1)) (h : x ≠ b) : m.write b 1 v x = m x :=
   Mem.write_apply fun h' => h (by
-    have e : x - b = 0 := BitVec.eq_of_toNat_eq (by show _ = 0; omega)
+    have e : x - b = 0 := BitVec.eq_of_toNat_eq (by show _ = 0; omega_using [h'])
     rw [← BitVec.sub_add_cancel x b, e]; exact BitVec.zero_add _)
 
 theorem off_ne (p : Addr) {i j : Nat} (h : i ≠ j) (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) :
@@ -92,7 +92,7 @@ theorem off_ne (p : Addr) {i j : Nat} (h : i ≠ j) (hi : i < 2 ^ 64) (hj : j < 
 
 theorem off_ne_of_disjoint {O M : Addr} {k i j : Nat} (hd : Region.Disjoint ⟨O, k⟩ ⟨M, k⟩) (hi : i < k)
     (hj : j < k) (hk : k ≤ 2 ^ 64) : O + BitVec.ofNat 64 i ≠ M + BitVec.ofNat 64 j := fun e =>
-  hd _ (Offset.contains_base O (by omega) (by omega)) (e ▸ Offset.contains_base M (by omega) (by omega))
+  hd _ (Offset.contains_base O (by omega_using [hi]) (by omega_using [hi, hk])) (e ▸ Offset.contains_base M (by omega_using [hj]) (by omega_using [hj, hk]))
 
 theorem zb_eq (m : Mem) (a : Addr) : zb m a = (m a).setWidth 64 := by
   have h := congrArg BitVec.toNat (Proof.Bignum.RISCV64.read_one' m a)
@@ -102,7 +102,7 @@ theorem zb_eq (m : Mem) (a : Addr) : zb m a = (m a).setWidth 64 := by
   have h1 := (m.read a 1).isLt
   have h2 := (m a).isLt
   simp only [Nat.reduceMul, Nat.reducePow] at h1 h2 h ⊢
-  omega
+  omega_using [h]
 
 /-- The release: `out` := `m` under the mask, `m` := 0. -/
 theorem release_ok {s w : State} (h : PreP pc s) (L : Late s w) {mask : BitVec 64} {c : Prop} [Decidable c]
@@ -119,7 +119,7 @@ theorem release_ok {s w : State} (h : PreP pc s) (L : Late s w) {mask : BitVec 6
   have fbt := fb_toNat h.sp1
   unfold frameBytes at fbt
   have om : Region.Disjoint (oR s) (mR s) :=
-    (h.ko.sub_left (frame_sub s (by unfold oM frameBytes; omega))).symm
+    (h.ko.sub_left (frame_sub s (by unfold oM frameBytes; omega_using [hk]))).symm
   have om' : Region.Disjoint ⟨s.gpr .a0, (s.gpr .a3).toNat⟩ (mR s) := by rw [← h.h1] at *; exact om
   let O := s.gpr .a0
   let M := fb s + BitVec.ofNat 64 oM
@@ -129,16 +129,16 @@ theorem release_ok {s w : State} (h : PreP pc s) (L : Late s w) {mask : BitVec 6
       (∀ i < j, u.mem (O + BitVec.ofNat 64 i) = if c then w.mem (M + BitVec.ofNat 64 i) else 0) ∧
       (∀ i, j ≤ i → i < k → u.mem (M + BitVec.ofNat 64 i) = w.mem (M + BitVec.ofNat 64 i)) ∧
       Keep [.a1, .a2, .t2, .t3, .t5] w u
-  refine WP.mono (Proof.Bignum.RISCV64.wp_countdown (N := k) (by omega) (by omega) Inv
+  refine WP.mono (Proof.Bignum.RISCV64.wp_countdown (N := k) (by omega_using []) (by omega) Inv
     (fun j hj u ⟨u2, u3, uf, uo, um, uk⟩ hc => ?_)
-    ⟨by rw [h2]; simp [O], by rw [h3]; simp [M], Frame.refl _ _, fun _ h => absurd h (by omega),
+    ⟨by rw [h2]; simp [O], by rw [h3]; simp [M], Frame.refl _ _, fun _ h => absurd h (by omega_using []),
       fun _ _ _ => rfl, Keep.refl _ _⟩ (by rw [h5]; simp [k]))
     fun u ⟨_, _, uf, uo, _, uk⟩ => ⟨?_, uf, uk⟩
   · have ua3 : u.gpr .a3 = mask := (uk.gpr (by decide)).trans hm
     have fw : u.wr = kR s :: oR s :: [sR s] := by rw [uk.2.2, L.wr, h.hwr]
     have io : InRegions u.wr (O + BitVec.ofNat 64 j) 1 := by
-      rw [fw]; exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h1]; omega) (by omega)⟩
-    have mc : (mR s).Contains (M + BitVec.ofNat 64 j) 1 := Offset.contains_base _ (by omega) (by omega)
+      rw [fw]; exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h1]; omega_using [hj]) (by omega_using [hj])⟩
+    have mc : (mR s).Contains (M + BitVec.ofNat 64 j) 1 := Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
     have e : M + BitVec.ofNat 64 j = fb s + BitVec.ofNat 64 (oM + j) := by
       simp only [M]; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     have im : InRegions u.wr (M + BitVec.ofNat 64 j) 1 := by
@@ -152,21 +152,21 @@ theorem release_ok {s w : State} (h : PreP pc s) (L : Late s w) {mask : BitVec 6
         u'.gpr .t5 = u.gpr .t5 - BitVec.ofNat 64 1) ?_ (by rfl) (by rfl)) fun u' ⟨⟨v2, v3, vm, v5⟩, k'⟩ => ?_
     · brun [u2, u3, ua3, io, im, imr, BitVec.add_zero, add_ofNat_one, exec_li (d := .a2) (imm := 0) (by decide)]
     · have hOM : ∀ {i j : Nat}, i < k → j < k → O + BitVec.ofNat 64 i ≠ M + BitVec.ofNat 64 j :=
-        fun hi hj => off_ne_of_disjoint om' hi hj (by omega)
-      have hMj : u.mem (M + BitVec.ofNat 64 j) = w.mem (M + BitVec.ofNat 64 j) := um j (by omega) hj
+        fun hi hj => off_ne_of_disjoint om' hi hj (by omega_using [])
+      have hMj : u.mem (M + BitVec.ofNat 64 j) = w.mem (M + BitVec.ofNat 64 j) := um j (by omega_using []) hj
       refine ⟨⟨v2, v3, ?_, fun i hi => ?_, fun i hi hi' => ?_, uk.trans k' |>.mono fun r hr =>
         (List.mem_append.mp hr).elim id id⟩, v5⟩
       · rw [vm]
         refine Frame.write (Frame.write uf (List.mem_cons_self ..) _ ?_) (List.mem_cons_of_mem _
           (List.mem_singleton_self _)) _ mc
-        exact Offset.contains_base _ (by rw [h.h1]; omega) (by omega)
-      · rw [vm, write1_ne _ _ (hOM (by omega) hj)]
+        exact Offset.contains_base _ (by rw [h.h1]; omega_using [hj]) (by omega_using [hj])
+      · rw [vm, write1_ne _ _ (hOM (by omega_using [hj, hi]) hj)]
         rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-        · rw [write1_ne _ _ (off_ne O (by omega) (by omega) (by omega))]; exact uo i hi
+        · rw [write1_ne _ _ (off_ne O (by omega_using [hi]) (by omega_arith) (by omega_using [hj]))]; exact uo i hi
         · rw [Proof.Bignum.RISCV64.write1_self, zb_eq, hMj]; exact hb _
-      · rw [vm, write1_ne _ _ (off_ne M (by omega) (by omega) (by omega)),
+      · rw [vm, write1_ne _ _ (off_ne M (by omega_using [hi]) (by omega_using [hi']) (by omega_using [hj])),
           write1_ne _ _ (Ne.symm (hOM hj hi'))]
-        exact um i (by omega) hi'
+        exact um i (by omega_using [hi]) hi'
   · simp only [Spec.Rsa.bytesAt]
     split
     · exact List.map_congr_left fun i hi => by

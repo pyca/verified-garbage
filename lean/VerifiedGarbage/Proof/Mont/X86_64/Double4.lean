@@ -18,7 +18,7 @@ open VG.Proof.X25519.X86_64
 private theorem regsVal_four (s : State) :
     regsVal s [.r8,.r9,.r10,.r11]=val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) := by
   simp only [regsVal,val4]
-  omega
+  omega_using []
 
 theorem double4_sum_ok (s : State) :
     WP isa (.block Double4.sum) s fun t =>
@@ -55,8 +55,8 @@ theorem double4_ok {M : Mod} {s : State} {base : Addr} {size m a o : Nat}
   change regsVal v [.r8,.r9,.r10,.r11]+2^256*(v.gpr .r12).toNat=2*wordsVal s.mem base a 4 at hv
   rw [WP.block_append_iff]
   refine WP.mono (csubC_ok hs₂ (M:=M) (m:=m) (ts:=[.r8,.r9,.r10,.r11]) (top:=.r12)
-    (by rw [hn]; rfl) hM.n0 (by omega) (by constructor <;> decide) hM.mo
-    (by rw [kv.2.1,ku.2.1]; exact hM.val) (by rw [hn]; omega)) fun w ⟨hw,kw⟩ => ?_
+    (by rw [hn]; rfl) hM.n0 (by omega_using [hn]) (by constructor <;> decide) hM.mo
+    (by rw [kv.2.1,ku.2.1]; exact hM.val) (by rw [hn]; omega_using [hx, hv])) fun w ⟨hw,kw⟩ => ?_
   have hs₃ := hs₂.of_keeps kw (by decide)
   refine WP.mono (stores_ok [.r8,.r9,.r10,.r11] hs₃ ho (by decide)) fun t ⟨ht,kt,ot⟩ => ?_
   have kk : KeepRegs [.rax,.rcx,.rdx,.rbp,.r8,.r9,.r10,.r11,.r12] s t :=

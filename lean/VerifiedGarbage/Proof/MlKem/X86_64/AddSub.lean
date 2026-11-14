@@ -39,8 +39,8 @@ theorem sshiftRight31 (d : BitVec 32) : d.sshiftRight 31 = if d.toNat < 2 ^ 31 t
   rw [BitVec.toInt_sshiftRight, W.toInt32]
   have := d.isLt
   split
-  · rw [show (0 : BitVec 32).toInt = 0 by decide, Int.shiftRight_eq_div_pow]; omega
-  · rw [show (-1 : BitVec 32).toInt = -1 by decide, Int.shiftRight_eq_div_pow]; omega
+  · rw [show (0 : BitVec 32).toInt = 0 by decide, Int.shiftRight_eq_div_pow]; omega_arith
+  · rw [show (-1 : BitVec 32).toInt = -1 by decide, Int.shiftRight_eq_div_pow]; omega_arith
 
 theorem cadd32_toNat (d : BitVec 32) :
     (cadd32 d).toNat = if d.toNat < 2 ^ 31 then d.toNat else (d.toNat + 3329) % 2 ^ 32 := by
@@ -53,17 +53,17 @@ theorem cadd32_toNat (d : BitVec 32) :
 theorem add_lane {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (cadd32 (a + b - 3329#32)).toNat = condSub (a.toNat + b.toNat) := by
   have e : (a + b - 3329#32).toNat = (a.toNat + b.toNat + 2 ^ 32 - 3329) % 2 ^ 32 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_add]; rw [q_eq] at *; simp only [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_add]; rw [q_eq] at *; simp only [BitVec.toNat_ofNat]; omega_using []
   rw [cadd32_toNat, e, condSub]; rw [q_eq] at *
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-- A lane of `sub`. -/
 theorem sub_lane {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (cadd32 (a - b)).toNat = condSub (a.toNat + q - b.toNat) := by
   have e : (a - b).toNat = (a.toNat + 2 ^ 32 - b.toNat) % 2 ^ 32 := by
-    rw [BitVec.toNat_sub]; have := b.isLt; omega
+    rw [BitVec.toNat_sub]; have := b.isLt; omega_using []
   rw [cadd32_toNat, e, condSub]; rw [q_eq] at *
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-! ## Four doublewords -/
 
@@ -144,15 +144,15 @@ theorem inv_step {s₀ : State} {v : Nat → BitVec 32} {i : Nat} (hi : i < 64) 
   refine ⟨by rw [hdi, hI.rdi, step16], by rw [hsi, hI.rsi, step16], hk.2.1.trans hI.rd,
     hk.2.2.trans hI.wr, hq, ?_, fun k hk' => ?_⟩
   · rw [hm, hI.rdi]
-    exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
-  · rw [hm, hI.rdi, coeffAt_write128 _ _ (by omega) _ hk', hI.coeff k hk']
+    exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
+  · rw [hm, hI.rdi, coeffAt_write128 _ _ (by omega_using [hi]) _ hk', hI.coeff k hk']
     by_cases e : 4 * i ≤ k ∧ k < 4 * i + 4
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true e), hX _ (by omega), ite_eq_left_of_eq_true _ _ (eq_true (by omega)),
-        show 4 * i + (k - 4 * i) = k by omega]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true e), hX _ (by omega_using [e]), ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [e])),
+        show 4 * i + (k - 4 * i) = k by omega_using [e]]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false e)]
       by_cases e' : k < 4 * i
-      · rw [ite_eq_left_of_eq_true _ _ (eq_true e'), ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false e'), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+      · rw [ite_eq_left_of_eq_true _ _ (eq_true e'), ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [e']))]
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false e'), ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [e, e']))]
 
 section
 variable {t : Poly → Poly → Poly} {s₀ : State} (hp : (accK t).pre s₀)
@@ -162,9 +162,9 @@ theorem regions {v : Nat → BitVec 32} {i : Nat} (hi : i < 64) {s : State} (hI 
     InRegions (s.rd ++ s.wr) (s.gpr .rdi) 16 ∧ InRegions (s.rd ++ s.wr) (s.gpr .rsi) 16 ∧
       InRegions s.wr (s.gpr .rdi) 16 := by
   rw [hI.rd, hI.wr, hI.rdi, hI.rsi, hp.1, hp.2.1]
-  exact ⟨⟨pR _, List.mem_append_right _ (List.mem_singleton_self _), Offset.contains_base _ (by omega) (by omega)⟩,
-    ⟨pR _, List.mem_append_left _ (List.mem_singleton_self _), Offset.contains_base _ (by omega) (by omega)⟩,
-    ⟨pR _, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩⟩
+  exact ⟨⟨pR _, List.mem_append_right _ (List.mem_singleton_self _), Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩,
+    ⟨pR _, List.mem_append_left _ (List.mem_singleton_self _), Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩,
+    ⟨pR _, List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩⟩
 
 /-- The coefficients a body reads. -/
 theorem reads {v : Nat → BitVec 32} {i : Nat} (hi : i < 64) {s : State} (hI : Inv s₀ v i s) {j : Nat}
@@ -172,10 +172,10 @@ theorem reads {v : Nat → BitVec 32} {i : Nat} (hi : i < 64) {s : State} (hI : 
     dword (s.mem.readW (s.gpr .rdi) 128) j = coeffAt s₀.mem (s₀.gpr .rdi) (4 * i + j) ∧
       dword (s.mem.readW (s.gpr .rsi) 128) j = coeffAt s₀.mem (s₀.gpr .rsi) (4 * i + j) := by
   refine ⟨?_, ?_⟩
-  · rw [dword_readW _ _ hj, hI.rdi, coeffAddr_off, ← coeffAt_eq, hI.coeff _ (by omega),
-      ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+  · rw [dword_readW _ _ hj, hI.rdi, coeffAddr_off, ← coeffAt_eq, hI.coeff _ (by omega_using [hi, hj]),
+      ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))]
   · rw [dword_readW _ _ hj, hI.rsi, coeffAddr_off, ← coeffAt_eq]
-    exact coeffAt_congr (bytes_frame hI.frame (by simpa using hp.2.2.1.symm) (by decide)) (by rw [n_eq]; omega)
+    exact coeffAt_congr (bytes_frame hI.frame (by simpa using hp.2.2.1.symm) (by decide)) (by rw [n_eq]; omega_using [hi, hj])
 
 /-- The whole function, from its precondition. -/
 theorem fn_ok {body : List Instr} {v : Nat → BitVec 32}
@@ -207,7 +207,7 @@ theorem fn_ok {body : List Instr} {v : Nat → BitVec 32}
     polyIs_of_toNat fun i hi => ?_⟩
   · simpa using hp.2.2.2.1
   · rw [n_eq] at hi
-    rw [hI.coeff i hi, ite_eq_left_of_eq_true _ _ (eq_true (by omega))]; exact hv i hi
+    rw [hI.coeff i hi, ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [hi]))]; exact hv i hi
 
 end
 

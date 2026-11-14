@@ -58,7 +58,7 @@ theorem table_input {s : State} (hc : ConstsOk tableConsts 128 s)
   have bytes : Spec.Rsa.bytesAt (entered s).mem
       (State.addr ((entered s).syms tableSym)) tableBytes.length = tableBytes := by
     rw [VG.Proof.Bignum.Arm.rsa_bytes_frame (entered_frame s input.stackFits)
-      (by rw [span]; omega) (by
+      (by rw [span]; omega_using []) (by
         intro r hr
         obtain rfl := List.mem_singleton.mp hr
         exact reserved.sub_right (saved_sub_reserved s input.stackFits))]

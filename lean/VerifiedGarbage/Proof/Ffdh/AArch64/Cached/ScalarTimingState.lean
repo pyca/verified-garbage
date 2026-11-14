@@ -52,7 +52,7 @@ theorem ScalarState.after_mem {q : ScalarPublic} {bs : List Byte} {s t : State} 
 def scalarWs (q : ScalarPublic) : Ws := ⟨q.p.B,q.p.Z,q.p.w⟩
 
 def scalarBoundPublic (q : ScalarPublic) : BoundPublic :=
- ⟨scalarWs q,q.dp,q.p.k,q.dl,by change 0<q.p.w;have :=q.p.positive;omega,q.p.width,q.size,q.shape⟩
+ ⟨scalarWs q,q.dp,q.p.k,q.dl,by change 0<q.p.w;have :=q.p.positive;omega_using [this],q.p.width,q.size,q.shape⟩
 
 theorem scalarReady_bound {q : ScalarPublic} {s : State} (h : ScalarReady q s) : BoundReady (scalarBoundPublic q) s := by
  obtain ⟨bs,h⟩ :=h
@@ -61,7 +61,7 @@ theorem scalarReady_bound {q : ScalarPublic} {s : State} (h : ScalarReady q s) :
 theorem scalarReady_nonzero {q : ScalarPublic} {s : State} (h : ScalarReady q s) :
  WP isa Generate.nonzero s (ScalarReady q) := by
  obtain ⟨bs,h⟩ :=h
- refine WP.mono (nonzero_ok h.initial.good q.p.room (by have :=q.p.positive;omega) q.p.width) ?_
+ refine WP.mono (nonzero_ok h.initial.good q.p.room (by have :=q.p.positive;omega_using [this]) q.p.width) ?_
  rintro t ⟨good,_,_,frame,rest⟩
  exact ⟨bs,h.after good (Frm.of_outside frame (by simp [scalarRanges])) rest⟩
 

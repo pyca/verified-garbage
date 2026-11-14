@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate for an RSA prime: trial division's arithmetic
@@ -47,7 +48,7 @@ theorem redc_math {X s sv : Nat} (hinv : (s * sv + 1) % 2 ^ 64 = 0) (hX : X < s 
   refine ⟨hd, ?_, ?_⟩
   · have hus : X * sv % 2 ^ 32 * s < 2 ^ 32 * s := Nat.mul_lt_mul_of_pos_right hu (by
       rcases Nat.eq_zero_or_pos s with h | h
-      · rw [h, Nat.zero_mul] at hX; omega
+      · rw [h, Nat.zero_mul] at hX; omega_using [hX]
       · exact h)
     apply (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr
     rw [Nat.mul_comm s (2 ^ 32)] at hX
@@ -69,7 +70,7 @@ theorem trial_word_math {s acc r1 r2 x V j : Nat} (h1 : r1 * 2 ^ 32 % s = (x % 2
     rw [this, ← Nat.mod_mul_mod, h2, Nat.mod_mul_mod, Nat.add_mul, ml _ h1, ← Nat.add_assoc,
       Nat.mul_comm (x / 2 ^ 32), Nat.add_comm (2 ^ 32 * (x / 2 ^ 32)), Nat.mod_add_div]
   have : r2 * 2 ^ (64 * (j + 1)) = r2 * 2 ^ 64 * 2 ^ (64 * j) := by
-    rw [Nat.mul_assoc, ← Nat.pow_add]; congr 2; omega
+    rw [Nat.mul_assoc, ← Nat.pow_add]; congr 2; omega_using []
   rw [this, mr _ e3, Nat.add_mul, ml _ hV, Nat.add_comm, Nat.mul_comm x]
 
 /-- `s` divides `c` iff `acc ∈ {0, s}`, for `acc < 2 s` with
@@ -89,8 +90,8 @@ theorem trial_div {acc c sp w : Nat} (hodd : sp % 2 = 1) (hacc : acc < 2 * sp)
     · left; rw [hq, Nat.mul_zero]
     · right; rw [hq, Nat.mul_one]
     · exfalso; rw [hq] at hacc
-      have : sp * 2 ≤ sp * (q + 1 + 1) := Nat.mul_le_mul_left _ (by omega)
-      omega
+      have : sp * 2 ≤ sp * (q + 1 + 1) := Nat.mul_le_mul_left _ (by omega_using [])
+      omega_using [hacc, this]
   · rintro (rfl | rfl)
     · simp
     · exact Nat.mod_eq_zero_of_dvd (Nat.dvd_mul_right _ _)
@@ -98,15 +99,15 @@ theorem trial_div {acc c sp w : Nat} (hodd : sp % 2 = 1) (hacc : acc < 2 * sp)
 /-- A table word's entries. -/
 theorem tabWord_entry {i j : Nat} (hi : i < 256) (hj : j < 4) :
     ((BitVec.ofNat 64 (tabWord i) >>> (16 * j)) &&& 0xFFFF).toNat = tabEntry (4 * i + j) := by
-  have e0 := (tabEntry_facts (i := 4 * i) (by omega)).2.2
-  have e1 := (tabEntry_facts (i := 4 * i + 1) (by omega)).2.2
-  have e2 := (tabEntry_facts (i := 4 * i + 2) (by omega)).2.2
-  have e3 := (tabEntry_facts (i := 4 * i + 3) (by omega)).2.2
-  have hlt : tabWord i < 2 ^ 64 := by unfold tabWord; omega
+  have e0 := (tabEntry_facts (i := 4 * i) (by omega_using [hi])).2.2
+  have e1 := (tabEntry_facts (i := 4 * i + 1) (by omega_using [hi])).2.2
+  have e2 := (tabEntry_facts (i := 4 * i + 2) (by omega_using [hi])).2.2
+  have e3 := (tabEntry_facts (i := 4 * i + 3) (by omega_using [hi])).2.2
+  have hlt : tabWord i < 2 ^ 64 := by unfold tabWord; omega_using [e0, e1, e2, e3]
   rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt,
     show (0xFFFF : BitVec 64).toNat = 2 ^ 16 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, Nat.shiftRight_eq_div_pow]
   unfold tabWord
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceMul, Nat.reducePow, Nat.div_one, Nat.add_zero] <;> omega
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;>
+    simp only [Nat.reduceMul, Nat.reducePow, Nat.div_one, Nat.add_zero] <;> omega_arith
 
 end VG.Proof.RsaKeyGen

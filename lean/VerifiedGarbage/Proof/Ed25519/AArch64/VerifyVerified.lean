@@ -158,7 +158,7 @@ theorem verifyHeaders_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base)
       t.mem.readW (off base 7944) 64 = s.gpr .x1 ∧
       t.mem.readW (off base 7952) 64 = s.gpr .x8 := by
   have hw' (d : Nat) (hd : d + 8 ≤ 8192) : InRegions s.wr (off base d) 8 :=
-    ⟨_, hw, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, hw, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [verifyHeaders, mov, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     State.store, addr, Size.bytes, hb, hw' 7936 (by decide), hw' 7944 (by decide), hw' 7952 (by decide),
@@ -256,22 +256,22 @@ theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
     · rw [cr, gb, ka.gpr .x1 (by decide)]
     · rw [cc, gb, ach]
     · intro d hd
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩
     · intro d hd
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show d + 8 ≤ 64 by omega) (by omega)⟩
-    · intro d hd
-      rw [show off (off (s.gpr .x1) 32) d = off (s.gpr .x1) (32 + d) from Offset.add_add ..]
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 8 ≤ 64 by omega) (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show d + 8 ≤ 64 by omega_using [hd]) (by omega_using [hd])⟩
     · intro d hd
       rw [show off (off (s.gpr .x1) 32) d = off (s.gpr .x1) (32 + d) from Offset.add_add ..]
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 16 ≤ 64 by omega) (by omega)⟩
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 8 ≤ 64 by omega_using [hd]) (by omega_using [hd])⟩
     · intro d hd
-      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega)⟩
+      rw [show off (off (s.gpr .x1) 32) d = off (s.gpr .x1) (32 + d) from Offset.add_add ..]
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ (show 32 + d + 16 ≤ 64 by omega_using [hd]) (by omega_using [hd])⟩
+    · intro d hd
+      exact ⟨_, by rw [rr, hr]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩
     · intro i hi; exact farScr hpk hi (by decide)
-    · intro i hi; exact farScr hsig (by omega) (by decide)
+    · intro i hi; exact farScr hsig (by omega_using [hi]) (by decide)
     · intro i hi
       rw [show off (off (s.gpr .x1) 32) i = off (s.gpr .x1) (32 + i) from Offset.add_add ..]
-      exact farScr hsig (by omega) (by decide)
+      exact farScr hsig (by omega_using [hi]) (by decide)
     · intro i hi; exact farScr hchallenge hi (by decide)
     · rw [syc, syb, sya]
       refine hbt.of_far (by rw [rr, ww]) fun x hx => fm x fun r hr hcx => ?_
@@ -279,7 +279,7 @@ theorem verifySetup_state_ok {s : State} (hs : verifyLocal.pre s) :
       subst hr
       simp only [Region.Contains] at hcx
       simp only [ofs] at hx
-      omega
+      omega_using [hx, hcx]
   refine ⟨hc, sv, fm, spc.trans (spb.trans ka.sp), fun r hr => ?_, by rw [syc, syb, sya]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;>

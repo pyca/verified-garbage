@@ -49,8 +49,8 @@ theorem setupMem_saved (s : State) (r : Reg) (d : Nat) (hr : (r, d) ∈ saved) :
   have hd := saved_bounds (r, d) hr
   have h880 : d + 8 ≤ 880 := hd.2
   unfold setupMem
-  rw [Mem.readW_writeW_sep (Offset.sep _ (Or.inr (by omega)) (by omega) (by decide)) (by decide),
-    Mem.readW_writeW_sep (Offset.sep _ (Or.inl h880) (by omega) (by decide)) (by decide)]
+  rw [Mem.readW_writeW_sep (Offset.sep _ (Or.inr (by omega)) (by omega_using [h880]) (by decide)) (by decide),
+    Mem.readW_writeW_sep (Offset.sep _ (Or.inl h880) (by omega_using [h880]) (by decide)) (by decide)]
   exact Spill.saveMem_saved (by decide) _ _ _ (r, d) hr
 
 theorem setupMem_lr (s : State) :
@@ -75,10 +75,10 @@ theorem setup_ok (s : State) (hw : (⟨s.gpr .r7, 16384⟩ : Region) ∈ s.wr) :
     WP isa (.block setup) s (Setup s) := by
   have write (d n : Nat) (h : d + n ≤ 16384) :
       InRegions s.wr (s.gpr .r7 + BitVec.ofNat 64 d) n :=
-    ⟨_, hw, Offset.contains_base _ h (by omega)⟩
+    ⟨_, hw, Offset.contains_base _ h (by omega_using [h])⟩
   unfold setup
   rw [show saved.map (fun (r, d) => Instr.store .d r .r7 d) = Spill.saveCode .r7 saved from rfl]
-  refine Spill.save_ok (by decide) (by decide) (fun p hp => write _ _ (by have := saved_in p hp; omega)) ?_
+  refine Spill.save_ok (by decide) (by decide) (fun p hp => write _ _ (by have := saved_in p hp; omega_using [this])) ?_
   refine MdStream.PPC64LE.WP.cons exec_mflr ?_
   have u₀ := Upd.write { s with mem := Spill.saveMem s.mem (s.gpr .r7) s.gpr saved } .r0 s.lr
   generalize { s with mem := Spill.saveMem s.mem (s.gpr .r7) s.gpr saved }.write .r0 s.lr = a at u₀
@@ -127,7 +127,7 @@ theorem restore_ok (original s : State) (base : s.gpr .r31 = original.gpr .r7)
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   have read (d : Nat) (h : d + 8 ≤ 16384) :
       InRegions (s.rd ++ s.wr) (original.gpr .r7 + BitVec.ofNat 64 d) 8 :=
-    ⟨_, readable, Offset.contains_base _ h (by omega)⟩
+    ⟨_, readable, Offset.contains_base _ h (by omega_using [h])⟩
   rw [show restore = ([.load .d .r0 .r31 880, .mtlr .r0] : List Instr) ++ Spill.restoreCode .r31 saved
     from rfl, List.cons_append, List.cons_append, List.nil_append]
   refine wp_ld (a := original.gpr .r7 + BitVec.ofNat 64 880) (by decide) (by rw [base])
@@ -137,7 +137,7 @@ theorem restore_ok (original s : State) (base : s.gpr .r31 = original.gpr .r7)
     (by simp [ha.other _ (by decide : Reg.r31 ≠ .r0), base]) (by decide) (by decide)
     (fun p hp => by
       simp only [ha.rd, ha.wr]
-      exact read _ (by have := saved_bounds p hp; omega))
+      exact read _ (by have := saved_bounds p hp; omega_using [this]))
     (fun p hp => by simp only [ha.mem]; exact values p.1 p.2 hp)) fun t ht => ?_
   refine ⟨fun r hr => ht.gpr_of ?_, ?_, ?_, ?_, ?_, ?_⟩
   · by_cases hm : r ∈ saved.map Prod.fst

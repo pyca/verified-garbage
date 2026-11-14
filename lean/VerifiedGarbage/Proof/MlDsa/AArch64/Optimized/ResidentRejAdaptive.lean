@@ -158,7 +158,7 @@ theorem sixthOffsets_ok (s : State) : WP isa (.block sixthOffsets) s fun t =>
       wp_movz fun t ht et => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact ((((ha.trans hb).trans hc).trans hd).trans ht).mono (by simp)
   · intro k hk
-    rcases (show k=0 ∨ k=1 ∨ k=2 ∨ k=3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show k=0 ∨ k=1 ∨ k=2 ∨ k=3 by omega_using [hk]) with rfl | rfl | rfl | rfl
     · change t.gpr .x24=s.gpr .x24+840
       rw [ht.get .x24,hd.get .x24,hc.get .x24,hb.get .x24,ea]; rfl
     · change t.gpr .x25=s.gpr .x25+840
@@ -216,7 +216,7 @@ private theorem sixthSetup_rows {v : Nat} {σ s : State} {L : Nat → List Zq}
   · intro k hk
     rw [hbuf k hk,h.env.x19,lastPtr_eq]
     congr 2
-    omega
+    omega_using []
 
 theorem sixthFour_ok {σ s : State} {L : Nat → List Zq}
     (hp : Pre 4 σ) (h : Rows 4 5 σ L s) :

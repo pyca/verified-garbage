@@ -27,7 +27,7 @@ theorem call_stash {d : Spec.Rc2.Direction} {s s' : State} (hp : StepPre s) (h :
   apply blockAt_frame h.mem
   have sep : (stashR s).Disjoint ⟨s.gpr .x2, 256⟩ := by
     have h := Offset.disjoint (s.gpr .x2) (d := 256) (n := 8) (e := 0) (k := 256)
-      (by omega) (by decide) (by decide)
+      (by omega_using []) (by decide) (by decide)
     simpa using h
   simpa only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.dataBuf.sub_right (stash_sub s)).symm) sep

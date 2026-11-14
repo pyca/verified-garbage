@@ -32,7 +32,7 @@ theorem fold_ok (s : State) (hz : s.gpr .x30 = 0) :
     by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
     by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · intro i hi
-    have cases_i : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
+    have cases_i : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega_using [hi]
     rcases cases_i with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   · rfl
   · rfl
@@ -52,7 +52,7 @@ theorem correct_ok (s : State) (hz : s.gpr .x30 = 0) :
     by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
     by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · intro i hi
-    have cases_i : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
+    have cases_i : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega_using [hi]
     rcases cases_i with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   · reg_keeps
 
@@ -69,7 +69,7 @@ theorem rotate_ok (s : State) :
     by simp only [RegUpd.rd_write], by simp only [RegUpd.wr_write],
     by simp only [RegUpd.sp_write]⟩⟩
   · intro i hi
-    have cases_i : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
+    have cases_i : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega_using [hi]
     rcases cases_i with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   · reg_keeps
 

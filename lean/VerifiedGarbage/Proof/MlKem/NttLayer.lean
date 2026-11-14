@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Ntt
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM: the layers of the NTT, coefficient by coefficient
@@ -28,7 +29,7 @@ private theorem div_mod_block {i d b : Nat} (h1 : d * b ≤ i) (h2 : i < d * b +
   refine ⟨hq, ?_⟩
   have := Nat.div_add_mod i d
   rw [hq] at this
-  omega
+  omega_using [this]
 
 /-- Each coefficient after the first `b` blocks of the layer with `len`. -/
 theorem nttLayerN_get (f : Poly) {len : Nat} (hlen : 0 < len) {b : Nat} (hb : 2 * len * b ≤ 256)
@@ -39,31 +40,31 @@ theorem nttLayerN_get (f : Poly) {len : Nat} (hlen : 0 < len) {b : Nat} (hb : 2 
         else f[i - len]! - zeta (128 / len + i / (2 * len)) * f[i]!
       else f[i]! := by
   induction b generalizing i with
-  | zero => rw [nttLayerN_zero, ite_eq_right (by omega)]
+  | zero => rw [nttLayerN_zero, ite_eq_right (by omega_using [])]
   | succ b ih =>
     have e : 2 * len * (b + 1) = 2 * len * b + 2 * len := Nat.mul_succ _ _
     rw [e] at hb ⊢
     generalize hS : 2 * len * b = S at hb ih ⊢
-    rw [nttLayerN_succ, hS, nttBlock_get _ hlen (by rw [n_eq]; omega) (by rw [n_eq]; exact hi)]
+    rw [nttLayerN_succ, hS, nttBlock_get _ hlen (by rw [n_eq]; omega_using [hb]) (by rw [n_eq]; exact hi)]
     have ih' : ∀ j, S ≤ j → j < 256 → (nttLayerN f len b)[j]! = f[j]! := fun j h1 h2 => by
-      rw [ih (by omega) h2, ite_eq_right (show ¬ j < S by omega)]
+      rw [ih (by omega_using [hb]) h2, ite_eq_right (show ¬ j < S by omega_using [h1])]
     by_cases c1 : i < S
-    · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega),
-        ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega), ih (by omega) hi, ite_eq_left c1,
-        ite_eq_left (show i < S + 2 * len by omega)]
+    · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega_using [c1]),
+        ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega_using [c1]), ih (by omega_using [hb]) hi, ite_eq_left c1,
+        ite_eq_left (show i < S + 2 * len by omega_using [c1])]
     · by_cases c2 : i < S + len
-      · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega) (by omega)
-        rw [ite_eq_left (show S ≤ i ∧ i < S + len from ⟨by omega, c2⟩),
-          ite_eq_left (show i < S + 2 * len by omega), ite_eq_left (show i % (2 * len) < len by omega), dq,
-          ih' i (by omega) hi, ih' (i + len) (by omega) (by omega)]
+      · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega_using [hS, c1]) (by omega_using [hS, c2])
+        rw [ite_eq_left (show S ≤ i ∧ i < S + len from ⟨by omega_using [c1], c2⟩),
+          ite_eq_left (show i < S + 2 * len by omega_using [c2]), ite_eq_left (show i % (2 * len) < len by omega_using [hlen, hS, c2, dm]), dq,
+          ih' i (by omega_using [c1]) hi, ih' (i + len) (by omega_using [c1]) (by omega_using [hb, c2])]
       · by_cases c3 : i < S + 2 * len
-        · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega) (by omega)
-          rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega),
-            ite_eq_left (show S + len ≤ i ∧ i < S + 2 * len from ⟨by omega, c3⟩), ite_eq_left c3,
-            ite_eq_right (show ¬ i % (2 * len) < len by omega), dq, ih' i (by omega) hi,
-            ih' (i - len) (by omega) (by omega)]
-        · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega),
-            ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega), ite_eq_right c3, ih' i (by omega) hi]
+        · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega_using [hS, c1]) (by omega_using [hS, c3])
+          rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega_using [c2]),
+            ite_eq_left (show S + len ≤ i ∧ i < S + 2 * len from ⟨by omega_using [c2], c3⟩), ite_eq_left c3,
+            ite_eq_right (show ¬ i % (2 * len) < len by omega_using [hS, c2, dm]), dq, ih' i (by omega_using [c1]) hi,
+            ih' (i - len) (by omega_using [c2]) (by omega_using [hi])]
+        · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega_using [c2]),
+            ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega_using [c3]), ite_eq_right c3, ih' i (by omega_using [c1]) hi]
 
 /-- Each coefficient after the layer with `len`. -/
 theorem nttLayer_get (f : Poly) {len : Nat} (hlen : 0 < len) (hl : 2 * len * (128 / len) = 256)
@@ -71,7 +72,7 @@ theorem nttLayer_get (f : Poly) {len : Nat} (hlen : 0 < len) (hl : 2 * len * (12
     (nttLayer f len)[i]! =
       if i % (2 * len) < len then f[i]! + zeta (128 / len + i / (2 * len)) * f[i + len]!
       else f[i - len]! - zeta (128 / len + i / (2 * len)) * f[i]! := by
-  rw [nttLayer, nttLayerN_get f hlen (by omega) hi, ite_eq_left (by omega)]
+  rw [nttLayer, nttLayerN_get f hlen (by omega_using [hl]) hi, ite_eq_left (by omega_using [hl, hi])]
 
 /-- Each coefficient after the first `b` blocks of the inverse layer with `len`. -/
 theorem nttInvLayerN_get (f : Poly) {len : Nat} (hlen : 0 < len) {b : Nat} (hb : 2 * len * b ≤ 256)
@@ -82,31 +83,31 @@ theorem nttInvLayerN_get (f : Poly) {len : Nat} (hlen : 0 < len) {b : Nat} (hb :
         else zeta (256 / len - 1 - i / (2 * len)) * (f[i]! - f[i - len]!)
       else f[i]! := by
   induction b generalizing i with
-  | zero => rw [nttInvLayerN_zero, ite_eq_right (by omega)]
+  | zero => rw [nttInvLayerN_zero, ite_eq_right (by omega_using [])]
   | succ b ih =>
     have e : 2 * len * (b + 1) = 2 * len * b + 2 * len := Nat.mul_succ _ _
     rw [e] at hb ⊢
     generalize hS : 2 * len * b = S at hb ih ⊢
-    rw [nttInvLayerN_succ, hS, nttInvBlock_get _ hlen (by rw [n_eq]; omega) (by rw [n_eq]; exact hi)]
+    rw [nttInvLayerN_succ, hS, nttInvBlock_get _ hlen (by rw [n_eq]; omega_using [hb]) (by rw [n_eq]; exact hi)]
     have ih' : ∀ j, S ≤ j → j < 256 → (nttInvLayerN f len b)[j]! = f[j]! := fun j h1 h2 => by
-      rw [ih (by omega) h2, ite_eq_right (show ¬ j < S by omega)]
+      rw [ih (by omega_using [hb]) h2, ite_eq_right (show ¬ j < S by omega_using [h1])]
     by_cases c1 : i < S
-    · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega),
-        ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega), ih (by omega) hi, ite_eq_left c1,
-        ite_eq_left (show i < S + 2 * len by omega)]
+    · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega_using [c1]),
+        ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega_using [c1]), ih (by omega_using [hb]) hi, ite_eq_left c1,
+        ite_eq_left (show i < S + 2 * len by omega_using [c1])]
     · by_cases c2 : i < S + len
-      · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega) (by omega)
-        rw [ite_eq_left (show S ≤ i ∧ i < S + len from ⟨by omega, c2⟩),
-          ite_eq_left (show i < S + 2 * len by omega), ite_eq_left (show i % (2 * len) < len by omega),
-          ih' i (by omega) hi, ih' (i + len) (by omega) (by omega)]
+      · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega_using [hS, c1]) (by omega_using [hS, c2])
+        rw [ite_eq_left (show S ≤ i ∧ i < S + len from ⟨by omega_using [c1], c2⟩),
+          ite_eq_left (show i < S + 2 * len by omega_using [c2]), ite_eq_left (show i % (2 * len) < len by omega_using [hlen, hS, c2, dm]),
+          ih' i (by omega_using [c1]) hi, ih' (i + len) (by omega_using [c1]) (by omega_using [hb, c2])]
       · by_cases c3 : i < S + 2 * len
-        · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega) (by omega)
-          rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega),
-            ite_eq_left (show S + len ≤ i ∧ i < S + 2 * len from ⟨by omega, c3⟩), ite_eq_left c3,
-            ite_eq_right (show ¬ i % (2 * len) < len by omega), dq, ih' i (by omega) hi,
-            ih' (i - len) (by omega) (by omega)]
-        · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega),
-            ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega), ite_eq_right c3, ih' i (by omega) hi]
+        · obtain ⟨dq, dm⟩ := div_mod_block (i := i) (d := 2 * len) (b := b) (by omega_using [hS, c1]) (by omega_using [hS, c3])
+          rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega_using [c2]),
+            ite_eq_left (show S + len ≤ i ∧ i < S + 2 * len from ⟨by omega_using [c2], c3⟩), ite_eq_left c3,
+            ite_eq_right (show ¬ i % (2 * len) < len by omega_using [hS, c2, dm]), dq, ih' i (by omega_using [c1]) hi,
+            ih' (i - len) (by omega_using [c2]) (by omega_using [hi])]
+        · rw [ite_eq_right (show ¬ (S ≤ i ∧ i < S + len) by omega_using [c2]),
+            ite_eq_right (show ¬ (S + len ≤ i ∧ i < S + 2 * len) by omega_using [c3]), ite_eq_right c3, ih' i (by omega_using [c1]) hi]
 
 /-- Each coefficient after the inverse layer with `len`. -/
 theorem nttInvLayer_get (f : Poly) {len : Nat} (hlen : 0 < len) (hl : 2 * len * (128 / len) = 256)
@@ -114,7 +115,7 @@ theorem nttInvLayer_get (f : Poly) {len : Nat} (hlen : 0 < len) (hl : 2 * len * 
     (nttInvLayer f len)[i]! =
       if i % (2 * len) < len then f[i]! + f[i + len]!
       else zeta (256 / len - 1 - i / (2 * len)) * (f[i]! - f[i - len]!) := by
-  rw [nttInvLayer, nttInvLayerN_get f hlen (by omega) hi, ite_eq_left (by omega)]
+  rw [nttInvLayer, nttInvLayerN_get f hlen (by omega_using [hl]) hi, ite_eq_left (by omega_using [hl, hi])]
 
 /-! ## The first `j` layers -/
 

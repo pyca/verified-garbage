@@ -32,7 +32,7 @@ theorem generatorRange_plan {p : GeneratorPlan} {W : Nat → BitVec 64} {s : Sta
     (src : Src s p.A p.Z (if result then off p.B g else p.hp) xb) :
     GeneratorWorkspaceBefore (p.len / 8) p.len result (p.rangeWorkspace xb hx) s := by
   obtain ⟨V, R⟩ := h.rep
-  exact ⟨⟨h.layout.rsp, fun k hk => h.layout.ld (by unfold frameBytes; omega),
+  exact ⟨⟨h.layout.rsp, fun k hk => h.layout.ld (by unfold frameBytes; omega_using [hk]),
     (R.fr 5 (by decide)).trans h.base, (R.fr 21 (by decide)).trans h.input,
     h.pArithmetic, src, fun _ => p.pOdd⟩, h.arithmetic, rfl, p.pLength⟩
 

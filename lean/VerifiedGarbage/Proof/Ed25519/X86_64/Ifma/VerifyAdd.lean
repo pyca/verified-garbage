@@ -49,7 +49,7 @@ def esplitS : Sym := symOf esplit
 theorem esplitS_regs (E : VG.Proof.X25519.X86_64.Ifma.Env) : ∀ j < 5, ∀ l < 4, (esplitS.reg (5 + j)).nat E l =
     limbNat (fun k => E.v (11 + l) k) (E.m KM l) j := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 theorem esplitS_ok : ∀ j < 5, ∀ l < 4, (esplitS.reg (5 + j)).ok eloadB l = true ∧
@@ -73,11 +73,11 @@ theorem esplit_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s
       · exact lt64 _) (fun _ _ _ => Nat.zero_le _)
   have e : Sym.init.run esplit = some esplitS := symOf_eq _ _
   refine WP.mono (run_ok hc e) fun s' h => ⟨h.eq, by rw [h.mem, esplitS_st]; rfl, fun l hl i hi => ?_,
-    fun r hr l hl => h.keep (by omega) hl (esplitS_keep r hr)⟩
+    fun r hr l hl => h.keep (by omega_using [hr]) hl (esplitS_keep r hr)⟩
   obtain ⟨o, b⟩ := esplitS_ok i hi l hl
-  obtain ⟨e, be⟩ := h.out hE (by omega) hl o
+  obtain ⟨e, be⟩ := h.out hE (by omega_using [hi]) hl o
   simp only [lanes] at e ⊢
-  refine ⟨?_, by omega⟩
+  refine ⟨?_, by omega_using [b, be]⟩
   rw [e, esplitS_regs _ i hi l hl, envOf_m hs, hk.km l hl]
   rfl
 
@@ -91,7 +91,7 @@ theorem vrow_ok {s : State} {E : Addr} (hp : s.gpr .rax = E) (j : Nat) (hj : j <
       t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r, r ≠ xr (11 + j) → ∀ k < 4, qw t r k = qw s r k) := by
   have hea : off (s.gpr .rax) (32 * j) = off E (32 * j) := by rw [hp]
-  have hy : y (11 + j) = xr (11 + j) := y_xr _ (by omega)
+  have hy : y (11 + j) = xr (11 + j) := y_xr _ (by omega_using [hj])
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.Proof.X25519.X86_64.ea_at, hea,
     State.load256, hr, ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
@@ -113,16 +113,16 @@ theorem vrowsPrefix_ok {E : Addr} :
       fun _ _ _ _ _ => rfl⟩
   | n + 1, hn, s, hp, hr => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (vrowsPrefix_ok n (by omega) s hp hr) fun a ⟨al, ag, am, ard, awr, ak⟩ => ?_
-    refine WP.mono (vrow_ok (E := E) (by rw [ag]; exact hp) n (by omega)
-      (by rw [ard, awr]; exact hr (32 * n) (by omega)))
+    refine WP.mono (vrowsPrefix_ok n (by omega_using [hn]) s hp hr) fun a ⟨al, ag, am, ard, awr, ak⟩ => ?_
+    refine WP.mono (vrow_ok (E := E) (by rw [ag]; exact hp) n (by omega_using [hn])
+      (by rw [ard, awr]; exact hr (32 * n) (by omega_using [hn])))
       fun t ⟨tl, tg, tm, trd, twr, tk⟩ => ⟨fun l hl k hk => ?_, tg.trans ag, tm.trans am, trd.trans ard,
         twr.trans awr, fun r hr hrl k hk => ?_⟩
     · by_cases h : l = n
       · subst h; rw [tl k hk, am]
-      · rw [tk _ (xr_ne _ (by omega) _ (by omega) (by omega)) k hk, al l (by omega) k hk]
-    · rw [tk _ (xr_ne _ hr _ (by omega) (hrl n (by omega))) k hk,
-        ak r hr (fun l hl => hrl l (by omega)) k hk]
+      · rw [tk _ (xr_ne _ (by omega_using [hn, hl]) _ (by omega_using [hn]) (by omega_using [h])) k hk, al l (by omega_using [hl, h]) k hk]
+    · rw [tk _ (xr_ne _ hr _ (by omega_using [hn]) (hrl n (by omega_using []))) k hk,
+        ak r hr (fun l hl => hrl l (by omega_using [hl])) k hk]
 
 /-- `vrows`: the four rows of the entry at `rax = E` into `ymm11–ymm14`. -/
 theorem vrows_ok {s : State} {E : Addr} (hp : s.gpr .rax = E)
@@ -132,7 +132,7 @@ theorem vrows_ok {s : State} {E : Addr} (hp : s.gpr .rax = E)
       t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r < 11, ∀ k < 4, qw t (xr r) k = qw s (xr r) k) :=
   WP.mono (vrowsPrefix_ok 4 (by decide) s hp hr) fun _ ⟨tl, tg, tm, trd, twr, tk⟩ =>
-    ⟨tl, tg, tm, trd, twr, fun r hr => tk r (by omega) (fun l hl => by omega)⟩
+    ⟨tl, tg, tm, trd, twr, fun r hr => tk r (by omega_using [hr]) (fun l hl => by omega_using [hr])⟩
 
 theorem F_off (m : Mem) (base : Addr) (o d : Nat) : F m (off base o) d = F m base (o + d) := by
   simp only [F, VG.Proof.X25519.X86_64.fe, VG.Proof.X25519.X86_64.word, off, Offset.add_add,
@@ -172,7 +172,7 @@ theorem ventryAt_ok {s : State} {base E : Addr} (hs : Scratch s base) (hk : ECon
   have hb : Scratch b base := ⟨by rw [vm_gpr vb]; exact ha.rdi, by rw [vm_wr vb]; exact ha.wr, hs.nowrap⟩
   have hkb : EConsts b.mem base := by rw [mb]; exact hka
   have l0 : ∀ l < 4, ∀ i < 5, lanes b 0 l i = lanes s 0 l i := fun l hl i hi => by
-    simp only [lanes, Nat.zero_add]; rw [kb i hi l hl, ak i (by omega) l hl]
+    simp only [lanes, Nat.zero_add]; rw [kb i hi l hl, ak i (by omega_using [hi]) l hl]
   have p0 : lanePt b = lanePt s := by
     simp only [lanePt]
     rw [fe5_congr (l0 0 (by decide)), fe5_congr (l0 1 (by decide)), fe5_congr (l0 2 (by decide)),
@@ -227,7 +227,7 @@ theorem LKeep.win {base : Addr} {s t : State} (h : LKeep base s t) : WinKeep bas
 /-- The slots below byte 1024 (`d`, in slot 16, among them) are kept. -/
 theorem LKeep.slot {base : Addr} {s t : State} (h : LKeep base s t) (i : Slot) :
     env t.mem base i = env s.mem base i :=
-  Outside_F h.mem (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega))
+  Outside_F h.mem (by simp only [offset]; omega_using []) (Or.inl (by simp only [offset]; omega_using []))
 
 theorem tableAddr_scal (o : Nat) : scalCode (.block (tableAddr o) : Prog isa) = true := rfl
 
@@ -286,19 +286,19 @@ theorem vaddBase_ok {s : State} {base T : Addr} (hs : Scratch s base) (hk : ECon
     refine WP.mono (WP.vecKeep (by decide) (accumulateDec_ok s n hc)) fun b ⟨⟨bc, kb⟩, bx, bhy⟩ => ?_
     have hsb : Scratch b base := hs.of_keeps kb (by decide)
     rw [WP.block_append_iff]
-    refine WP.mono (WP.vecKeep baseAddr_scal (baseAddr_ok (T := T) hsb (by rw [kb.2.1]; exact hT) n (by omega) bc))
+    refine WP.mono (WP.vecKeep baseAddr_scal (baseAddr_ok (T := T) hsb (by rw [kb.2.1]; exact hT) n (by omega_using [hv]) bc))
       fun c ⟨⟨cp, kc⟩, cx, chy⟩ => ?_
     have hsc : Scratch c base := hsb.of_keeps kc (by decide)
     have hm : c.mem = s.mem := kc.2.1.trans kb.2.1
-    obtain ⟨q, hq, hr⟩ := baseOddCached_ok n (by omega)
+    obtain ⟨q, hq, hr⟩ := baseOddCached_ok n (by omega_using [hv])
     obtain ⟨pc, sc⟩ := lanePt_vec (cx.trans bx) (chy.trans bhy)
     refine WP.mono (ventryAt_ok (q := q) hsc (by rw [hm]; exact hk) (sc hx) cp
       (fun d hd => by
         rw [kc.2.2.1, kc.2.2.2, kb.2.2.1, kb.2.2.2]
-        have := ht.read (128 * n + d) 32 (by omega)
+        have := ht.read (128 * n + d) 32 (by omega_using [hv, hd])
         simp only [off, Offset.add_add] at this ⊢
         exact this)
-      (by rw [hm, ht.entry n (by omega), hq]))
+      (by rw [hm, ht.entry n (by omega_using [hv]), hq]))
       fun t ⟨tg, trd, twr, tou, tsm, tp⟩ => ⟨?_, tsm, ?_⟩
     · rw [tp, pc]; exact pointAdd_rep ha hr
     · refine (LKeep.of_keeps kb (by decide)).trans ((LKeep.of_keeps kc (by decide)).trans

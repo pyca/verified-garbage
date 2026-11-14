@@ -47,7 +47,7 @@ theorem coreArg_ok (hL : L.Ok) (_hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L
   have key : ∀ o, 16 ≤ o → o + 66 ≤ 600 → (∃ R ∈ [L.D, L.DG, L.FR],
       Within ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ R) ∧ Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ L.OUT ∧
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ L.SCR := fun o h₁ h₂ =>
-    ⟨⟨L.FR, by simp, within_fr _ h₁ (by omega)⟩, hL.stk_OUT (by omega), hL.stk_SCR (by omega)⟩
+    ⟨⟨L.FR, by simp, within_fr _ h₁ (by omega_using [hQ, he, h₂])⟩, hL.stk_OUT (by omega_using [hQ, he, h₂]), hL.stk_SCR (by omega_using [hQ, he, h₂])⟩
   simp only [dgArg, kArg] at hx
   rcases hx with h | rfl
   · split at h <;> subst h
@@ -63,7 +63,7 @@ theorem ce_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ∉ linkRegs) 
 theorem tbl_held (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) : ∀ i < P.R.E.combWords.length,
     t.mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = P.R.E.combWords.getD i 0 := fun i hi => by
   have hT := hL.nT
-  rw [hc.frame.readW (r := L.TBL) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+  rw [hc.frame.readW (r := L.TBL) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hT])) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hL.tOut
@@ -78,7 +78,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   have hq' : L.q = P.R.E.C.len := hk
   have eD : (⟨L.d, P.R.E.C.len⟩ : Region) = L.D := by rw [Lay.D, hq']
   have eO : (⟨L.out, 2 * P.R.E.C.len⟩ : Region) = L.OUT := by rw [Lay.OUT, hq']
-  have no : L.out.toNat + 2 * P.R.E.C.len ≤ 2 ^ 64 := by have := hL.no; rw [hq'] at this; omega
+  have no : L.out.toNat + 2 * P.R.E.C.len ≤ 2 ^ 64 := by have := hL.no; rw [hq'] at this; omega_using [this]
   obtain ⟨-, gO, gS⟩ := coreArg_ok hL hk (.inl rfl)
   obtain ⟨-, kO, kS⟩ := coreArg_ok hL hk (.inr rfl)
   have sy : ∀ rd wr, tableAddr P.R.E (t.callEntry.withRegions rd wr).syms = L.T := fun _ _ => hc.sy
@@ -90,7 +90,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     hL.nT, fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact hL.tOut.sub_right (Region.sub_prefix (by omega))
+      · exact hL.tOut.sub_right (Region.sub_prefix (by omega_using []))
       · exact hL.tScr⟩
 
 theorem core_covers (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
@@ -108,21 +108,21 @@ theorem core_covers (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀
   · rcases List.mem_append.mp hr with hr | hr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨L.D, by simp, within_base _ (by omega)⟩
+      · exact ⟨L.D, by simp, within_base _ (by omega_using [hq])⟩
       · exact hw (coreArg_ok hL hk (.inl rfl)).1
       · exact hw (coreArg_ok hL hk (.inr rfl)).1
     · exact ⟨r, by simp [hr], within_base _ (Nat.le_refl _)⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.OUT, by simp, within_base _ (by omega_using [hq])⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
 
 theorem core_coversW (hq : L.q = P.Q) {t : State} (hc : Ctx L g m₀ t) : Covers (coreWr P L) t.wr :=
   hc.coversW fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.OUT, by simp, within_base _ (by omega_using [hq])⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
 
 /-- `core(out, d, digest, k, scratch)`. -/
 theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)

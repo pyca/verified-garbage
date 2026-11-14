@@ -28,7 +28,7 @@ theorem runArrays_notX : aX ∉ runArrays := by
     contradiction
   · obtain ⟨j, _, eq⟩ := List.mem_map.mp mem
     unfold aTable aX at eq
-    omega
+    omega_using [eq]
 
 theorem runValues_y (A : Nat → Nat) (c w : Nat) : runValues A c w aY = A aOne := setAt_self _ _ _
 theorem runValues_one (A : Nat → Nat) (c w : Nat) : runValues A c w aOne = A aOne := rfl
@@ -37,10 +37,10 @@ theorem runValues_exp (A : Nat → Nat) (c w : Nat) : runValues A c w aExponent 
 
 theorem runValues_power (A : Nat → Nat) (c w : Nat) {j : Nat} (digit : j < 16) :
     runValues A c w (aTable + j) = Word32.tp c w (A aX) (A aOne) j := by
-  rw [runValues, setAt_other _ _ (by unfold aTable aY; omega), tableValues_power A c w digit]
+  rw [runValues, setAt_other _ _ (by unfold aTable aY; omega_using []), tableValues_power A c w digit]
 
 theorem runValues_identity (A : Nat → Nat) (c w : Nat) : runValues A c w aY = runValues A c w aTable := by
-  rw [runValues_y, show aTable = aTable + 0 by omega, runValues_power A c w (by decide : 0 < 16)]
+  rw [runValues_y, show aTable = aTable + 0 by omega_using [], runValues_power A c w (by decide : 0 < 16)]
   rfl
 
 end VG.Proof.MillerRabin.X86

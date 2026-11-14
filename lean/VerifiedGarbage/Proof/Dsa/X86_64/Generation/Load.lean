@@ -25,43 +25,43 @@ theorem loadPadded_ok {s : State} {B p : Addr} {Z w a sp sl : Nat} {mi : BitVec 
       Outside B (slot w a) (8 * (w + 2)) s.mem t.mem ∧ Keep mmRegs s t := by
   have hJ := slot_le (w := w) ha
   have hn := hg.scr.nowrap
-  have hhdr : 256 ≤ slot w a := by simp only [slot, hdrBytes]; omega
+  have hhdr : 256 ≤ slot w a := by simp only [slot, hdrBytes]; omega_using []
   unfold Impl.Dsa.X86_64.Generation.loadPadded
   simp only [seqs]
   refine WP.seq (WP.mono (zeroArr_ok hg hZ hw hw31 ha) fun u ⟨hz, ho, ku⟩ => ?_)
   have hgu : Good u B Z w mi := ⟨hg.scr.congr ku.2.2, (ku.gpr (by decide)).trans hg.rdi,
     hg.hdr.outside ho hhdr⟩
   have hhu : ∀ i < 32, word u.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
-    ho.word (Or.inl (by omega)) (by omega)
+    ho.word (Or.inl (by omega_using [hhdr, hi])) (by omega_using [hi])
   have hld : ∀ i < 32, InRegions (u.rd ++ u.wr) (off B (8 * i)) 8 := fun i hi =>
-    hgu.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hgu.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rbx] (Q := fun v =>
       v.gpr .rsi = p ∧ v.gpr .rcx = BitVec.ofNat 64 bs.length ∧
       v.gpr .rbx = off B (slot w a) ∧ v.mem = u.mem) (by
         xrun [State.ea, hdr, hgu.rdi, hdrOff, hld sp hsp, hld sl hsl,
-          hld (sArr a) (by unfold sArr; omega), hhu sp hsp, hhu sl hsl, hp, hl, hgu.hdr.harr a ha]) rfl)
+          hld (sArr a) (by unfold sArr; omega_using [ha]), hhu sp hsp, hhu sl hsl, hp, hl, hgu.hdr.harr a ha]) rfl)
     fun v ⟨⟨hsi, hcx, hbx, hm⟩, kv⟩ => ?_)
   have hrd : ∀ i < bs.length, InRegions (v.rd ++ v.wr) (off p i) 1 := fun i hi => by
     rw [kv.2.1, kv.2.2, ku.2.1, ku.2.2]; exact hsrc.rd i hi
   have hbytes : ∀ i (hi : i < bs.length), v.mem (off p i) = bs[i] := by
     intro i hi
-    rw [hm, ho _ (Or.inr (by have h := hsrc.out i hi; change Z ≤ ofs B (off p i) at h; omega))]
+    rw [hm, ho _ (Or.inr (by have h := hsrc.out i hi; change Z ≤ ofs B (off p i) at h; omega_using [hZ, hJ, h]))]
     exact hsrc.val i hi
-  refine WP.mono (loadBE_ok (hgu.scr.congr kv.2.2) hsi hcx hbx rfl hk1 hk31 rfl (by omega)
-    hrd hbytes (fun i hi => Or.inr (by have h := hsrc.out i hi; omega))) fun t ⟨hv, hot, kt⟩ => ?_
+  refine WP.mono (loadBE_ok (hgu.scr.congr kv.2.2) hsi hcx hbx rfl hk1 hk31 rfl (by omega_using [hZ, hkw, hJ])
+    hrd hbytes (fun i hi => Or.inr (by have h := hsrc.out i hi; omega_using [hZ, hkw, hJ, h]))) fun t ⟨hv, hot, kt⟩ => ?_
   have hout : Outside B (slot w a) (8 * (w + 2)) s.mem t.mem := by
     intro x hx
-    rw [hot x (by omega), hm, ho x hx]
+    rw [hot x (by omega_using [hkw, hx]), hm, ho x hx]
   refine ⟨⟨hg.scr.congr (kt.2.2.trans (kv.2.2.trans ku.2.2)),
     ((ku.trans kv).trans kt).gpr (by decide) |>.trans hg.rdi, hg.hdr.outside hout hhdr⟩,
     ?_, hout, ((ku.trans kv).trans kt).mono (by decide)⟩
   have hzero : wv t.mem B (slot w a + 8 * ((bs.length + 7) / 8)) (w - (bs.length + 7) / 8) = 0 :=
     (wv_eq_zero_iff _ _ _ _).mpr fun j hj => by
-      rw [hot.word (by omega) (by omega), hm,
+      rw [hot.word (by omega_using []) (by omega_using [hZ, hJ, hn, hj]), hm,
         show slot w a + 8 * ((bs.length + 7) / 8) + 8 * j =
-          slot w a + 8 * ((bs.length + 7) / 8 + j) by omega]
-      exact (wv_eq_zero_iff _ _ _ _).mp hz _ (by omega)
-  rw [wv_split _ _ _ (show (bs.length + 7) / 8 + (w - (bs.length + 7) / 8) = w by omega),
+          slot w a + 8 * ((bs.length + 7) / 8 + j) by omega_using []]
+      exact (wv_eq_zero_iff _ _ _ _).mp hz _ (by omega_using [hj])
+  rw [wv_split _ _ _ (show (bs.length + 7) / 8 + (w - (bs.length + 7) / 8) = w by omega_using [hkw]),
     hv, hzero, Nat.mul_zero, Nat.add_zero]
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -82,12 +82,12 @@ theorem encodedPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
   have oneSep := crtExpRanges_arr wx (j := aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
   have oneSlot := slot_le (w := wx) (show aOne < 8 by decide)
   have huone : wv u.mem (off B o) (slot wx aOne) wx = 1 :=
-    (hf.wv_eq (fun r hr => by have := oneSep r hr; omega) (by omega)).trans hone
-  refine WP.mono (mont_step M hmu (Nat.le_refl _) hw2 (by omega)
+    (hf.wv_eq (fun r hr => by have := oneSep r hr; omega_using [this]) (by omega_using [hnZ, oneSlot])).trans hone
+  refine WP.mono (mont_step M hmu (Nat.le_refl _) hw2 (by omega_using [hwx, hw30])
     (by unfold MmUse; decide) (by rw [huone]; exact hm)) fun t ⟨hmt, hlt', hv', hf', hk'⟩ => ?_
   rw [huone] at hv'
   have result := VG.Proof.Dsa.mont_decode hR hv hv'
-  rw [Nat.mod_eq_of_lt hlt', Nat.mod_eq_of_lt (VG.Proof.Dsa.powMod_lt _ _ (by omega))] at result
+  rw [Nat.mod_eq_of_lt hlt', Nat.mod_eq_of_lt (VG.Proof.Dsa.powMod_lt _ _ (by omega_using [hm]))] at result
   exact ⟨arrays_context hu hf' (by decide) hk', result, hmt,
     (exp_work hf).trans (arrays_work hf' (by decide)), (hk.trans hk').mono (by decide)⟩
 
@@ -112,17 +112,17 @@ theorem powerCore_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   have hR2' : wv s.mem (off B o) (slot wx aR2) wx =
       (2 ^ (64 * wx) * 2 ^ (64 * wx)) % m := by
-    rw [hR2, ← Nat.pow_add, show 64 * wx + 64 * wx = 128 * wx by omega]
+    rw [hR2, ← Nat.pow_add, show 64 * wx + 64 * wx = 128 * wx by omega_using []]
   unfold VG.Impl.Dsa.AArch64.PublicPower.powerCore
-  refine WP.seq (WP.mono (encodePower_ok M ⟨hc.good, hn, hinv⟩ (Nat.le_refl _) hw2 (by omega)
+  refine WP.seq (WP.mono (encodePower_ok M ⟨hc.good, hn, hinv⟩ (Nat.le_refl _) hw2 (by omega_using [hwx, hw30])
     hm hodd hx hR2' hone) fun u ⟨hu, hux, huy, huone, hf, hk⟩ => ?_)
   have hcu := arrays_context hc hf (by decide) hk
   have hfu := arrays_work hf (by decide)
   have hsrc := work_source hc hfu hk he
   refine WP.mono (encodedPower_ok M hcu hw2 hwx hw30 hm hodd hu.modulus hu.inverse huone
-    (by rw [hux]; exact Nat.mod_lt _ (by omega))
+    (by rw [hux]; exact Nat.mod_lt _ (by omega_using [hm]))
     (by rw [hux, Nat.mod_mod])
-    (by rw [huy]; exact Nat.mod_lt _ (by omega))
+    (by rw [huy]; exact Nat.mod_lt _ (by omega_using [hm]))
     (by rw [huy, Nat.mod_mod]) hsp hsl
     ((work_parent hc hfu hsp).trans hep) ((work_parent hc hfu hsl).trans hel) hL1 hL2 hsrc)
     fun t ⟨hct, hresult, hmt, hft, hkt⟩ =>
@@ -155,7 +155,7 @@ theorem power_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
     fun u ⟨hcu, hmu, huone, hur2, hfu, hku⟩ => ?_)
   refine WP.seq (WP.mono (load_ok hcu hw2 hwx hw30 (by decide) hbp hbl
     ((work_parent hc hfu hbp).trans hb) ((work_parent hc hfu hbl).trans hblen)
-    (work_source hc hfu hku hbs) hb1 (by omega) hbw)
+    (work_source hc hfu hku hbs) hb1 (by omega_using [hw48, hbw]) hbw)
     fun v ⟨hcv, hvbase, hfv, hkv⟩ => ?_)
   have hfa : Arrays (off B o) wx [aX] u.mem v.mem :=
     Arrays.of_outside (List.mem_singleton_self aX) hfv (Nat.le_refl _) (Nat.le_refl _)
@@ -163,7 +163,7 @@ theorem power_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
   have hz := hcu.good.scr.nowrap
   have vn := (hfa.wv_of_not_mem (show aN < 8 by decide) (by decide) hz).trans hmu.modulus
   have vi : ((word v.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hfa.word0_of_not_mem (by decide) (by decide) hz (by omega)]
+    rw [hfa.word0_of_not_mem (by decide) (by decide) hz (by omega_using [hw2])]
     exact hmu.inverse
   have vone := (hfa.wv_of_not_mem (show aOne < 8 by decide) (by decide) hz).trans huone
   have vr2 := (hfa.wv_of_not_mem (show aR2 < 8 by decide) (by decide) hz).trans hur2

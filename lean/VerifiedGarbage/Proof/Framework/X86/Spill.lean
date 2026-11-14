@@ -165,7 +165,7 @@ theorem Restored.abi {s s' s₀ : State} {l : Slots} (h : Restored s s' s₀.gpr
 /-- Slots inside `[B, B + n)`, which does not wrap. -/
 theorem addr_eq_of {B : BitVec 32} {n d : Nat} (hB : B.toNat + n ≤ 2 ^ 32) (hd : d + 4 ≤ n) :
     addr B d = B.setWidth 64 + BitVec.ofNat 64 d :=
-  addr_eq (by omega)
+  addr_eq (by omega_using [hB, hd])
 
 /-- Reading outside the slots. -/
 theorem saveMem_readW_of_sep (f : Nat → Addr) (g : Reg → BitVec 32) {a : Addr} {w : Nat}
@@ -230,14 +230,14 @@ instance (n : Nat) (l : Slots) : Decidable (Fits n l) := by unfold Fits; infer_i
 /-- Fitting slots at `A + d` are separate. -/
 theorem Fits.sep_ofNat {n : Nat} {l : Slots} (hl : Fits n l) (A : Addr) (hn : n ≤ 2 ^ 64) :
     l.Pairwise fun p q => Mem.Sep (A + BitVec.ofNat 64 p.2) 4 (A + BitVec.ofNat 64 q.2) 4 :=
-  List.Pairwise.imp_of_mem (fun hp hq h => Offset.sep _ h (by have := hl.1 _ hp; omega)
-    (by have := hl.1 _ hq; omega)) hl.2
+  List.Pairwise.imp_of_mem (fun hp hq h => Offset.sep _ h (by have := hl.1 _ hp; omega_using [hn, this])
+    (by have := hl.1 _ hq; omega_using [hn, this])) hl.2
 
 /-- Fitting slots at `addr B d`, in `[B, B + n)`, are separate. -/
 theorem Fits.sep_addr {n : Nat} {l : Slots} (hl : Fits n l) {B : BitVec 32} (hB : B.toNat + n ≤ 2 ^ 32) :
     l.Pairwise fun p q => Mem.Sep (addr B p.2) 4 (addr B q.2) 4 :=
   List.Pairwise.imp_of_mem (fun hp hq h => by
-    rw [addr_eq_of hB (hl.1 _ hp), addr_eq_of hB (hl.1 _ hq)]; exact h) (hl.sep_ofNat _ (by omega))
+    rw [addr_eq_of hB (hl.1 _ hp), addr_eq_of hB (hl.1 _ hq)]; exact h) (hl.sep_ofNat _ (by omega_using [hB]))
 
 /-- `saveMem_saved` for fitting slots at `A + d`. -/
 theorem saveMem_saved_ofNat (m : Mem) (A : Addr) (g : Reg → BitVec 32) {n : Nat} {l : Slots} (hl : Fits n l)
@@ -255,7 +255,7 @@ theorem contains_of_fits {B : BitVec 32} {n : Nat} (hB : B.toNat + n ≤ 2 ^ 32)
   intro p hp
   have h := hl.1 p hp
   rw [addr_eq_of hB h]
-  exact Offset.contains_base _ h (by omega)
+  exact Offset.contains_base _ h (by omega_using [hB, h])
 
 /-- `addr B d`, for the slots of `l` in `[B, B + n)`, is `B + d` in 64 bits. -/
 theorem addr_eq_of_fits {B : BitVec 32} {n : Nat} (hB : B.toNat + n ≤ 2 ^ 32) {l : Slots}
@@ -300,8 +300,8 @@ theorem Saved.writeW_addr {m : Mem} {B : BitVec 32} {g : Reg → BitVec 32} {l :
     Saved (m.writeW (addr B e) v) (addr B) g l :=
   hs.of_readW fun p hp => by
     have h := hl p hp
-    rw [addr_eq_of hB h, addr_eq (by omega)]
-    exact Mem.readW_writeW_sep (Offset.sep _ (hsep p hp) (by omega) (by omega)) (by decide)
+    rw [addr_eq_of hB h, addr_eq (by omega_using [hB, he, hw])]
+    exact Mem.readW_writeW_sep (Offset.sep _ (hsep p hp) (by omega_using [hB, h]) (by omega_using [hB, he])) (by decide)
 
 /-- The slots, in `R`, stay saved across writes to regions disjoint from `R`. -/
 theorem Saved.of_frame {m m' : Mem} {f : Nat → Addr} {g : Reg → BitVec 32} {l : Slots}

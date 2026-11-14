@@ -34,7 +34,7 @@ theorem SearchBuffers.callFacts {p : SearchParams} {s : State} (h : SearchBuffer
   have control := (h.stackSeparate ⟨State.addr p.control, 128⟩ (by simp)).2
   have scratch := (h.stackSeparate ⟨State.addr p.c.base, 8 * p.c.capacity⟩ (by simp)).2
   have tape := (h.stackSeparate ⟨State.addr p.c.tape, p.c.bytes.length⟩ (by simp)).2
-  exact ⟨callStack_fits h.below, by have := callArguments_fits h.below; omega,
+  exact ⟨callStack_fits h.below, by have := callArguments_fits h.below; omega_using [this],
     (out.sub_left argsSub).symm, ((control.sub_left argsSub).sub_right p.used_sub).symm,
     (scratch.sub_left argsSub).symm, out.sub_left stackSub,
     (control.sub_left stackSub).sub_right p.used_sub,

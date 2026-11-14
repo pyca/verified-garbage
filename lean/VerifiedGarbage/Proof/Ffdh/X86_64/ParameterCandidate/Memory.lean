@@ -23,12 +23,12 @@ theorem source_take {s : State} {B p : Addr} {Z : Nat} {bs : List Byte}
   refine ⟨?_, ?_, ?_⟩
   · intro i hi
     rw [List.length_take] at hi
-    exact h.rd i (by omega)
+    exact h.rd i (by omega_using [hi])
   · intro i hi
-    rw [h.val i (by rw [List.length_take] at hi; omega), List.getElem_take]
+    rw [h.val i (by rw [List.length_take] at hi; omega_using [hi]), List.getElem_take]
   · intro i hi
     rw [List.length_take] at hi
-    exact h.out i (by omega)
+    exact h.out i (by omega_using [hi])
 
 theorem source_drop {s : State} {B p : Addr} {Z : Nat} {bs : List Byte}
     (h : Src s B Z p bs) (n : Nat) : Src s B Z (off p n) (bs.drop n) := by
@@ -38,13 +38,13 @@ theorem source_drop {s : State} {B p : Addr} {Z : Nat} {bs : List Byte}
   · intro i hi
     rw [List.length_drop] at hi
     rw [he]
-    exact h.rd (n + i) (by omega)
+    exact h.rd (n + i) (by omega_using [hi])
   · intro i hi
-    rw [he, h.val (n + i) (by rw [List.length_drop] at hi; omega), List.getElem_drop]
+    rw [he, h.val (n + i) (by rw [List.length_drop] at hi; omega_using [hi]), List.getElem_drop]
   · intro i hi
     rw [List.length_drop] at hi
     rw [he]
-    exact h.out (n + i) (by omega)
+    exact h.out (n + i) (by omega_using [hi])
 
 theorem apart_drop_right {op rp : Addr} {len rn : Nat} (h : Apart op len rp rn) (n : Nat) :
     Apart op len (off rp n) (rn - n) := by
@@ -52,7 +52,7 @@ theorem apart_drop_right {op rp : Addr} {len rn : Nat} (h : Apart op len rp rn) 
   have he : off rp n + BitVec.ofNat 64 j = rp + BitVec.ofNat 64 (n + j) := by
     simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
   rw [he]
-  exact h i hi (n + j) (by omega)
+  exact h i hi (n + j) (by omega_using [hj])
 
 /-- Outer-header writes do not touch any word of the following workspace. -/
 theorem outer_words {O : Addr} {Z : Nat} {m m' : Mem} {rs : List (Nat × Nat)}
@@ -63,8 +63,8 @@ theorem outer_words {O : Addr} {Z : Nat} {m m' : Mem} {rs : List (Nat × Nat)}
   rw [word_off, word_off]
   apply hf.word_eq
   · intro r hr
-    exact Or.inr (by have := hrs r hr; omega)
-  · omega
+    exact Or.inr (by have := hrs r hr; omega_using [this])
+  · omega_using [hz, hd]
 
 /-- The exact three stores made when a sampled prefix is consumed. -/
 def advanceMem (m : Mem) (O rp : Addr) (len left used : Nat) : Mem :=
@@ -78,7 +78,7 @@ theorem advanceMem_frame (m : Mem) (O rp : Addr) (len left used : Nat) :
       (h2 : d + 8 ≤ 8 * oRandPtr + 24) : Frm O [(8 * oRandPtr, 24)] m (m.writeW (off O d) v) := by
     have hd : d + 8 ≤ 2 ^ 64 := by
       have hh : 8 * oRandPtr + 24 ≤ 2 ^ 64 := by decide
-      omega
+      omega_using [h2, hh]
     exact Frm.of_outside ((writeW_outside m O (d := d) v hd).mono h1 h2) (by simp)
   unfold advanceMem
   exact (hf m (8 * oRandPtr) (off rp len) (by decide) (by decide)).trans
@@ -111,6 +111,6 @@ theorem advanceMem_saved (m : Mem) (O rp : Addr) (len left used : Nat) :
     subst hr
     change 8 * j + 8 ≤ 96 ∨ 120 ≤ 8 * j
     omega_using [h12, h13, h14]
-  · omega
+  · omega_using [hj]
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

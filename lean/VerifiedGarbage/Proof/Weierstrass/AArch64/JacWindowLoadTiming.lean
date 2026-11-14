@@ -36,8 +36,8 @@ theorem jacLoadAtFields_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Spec.W
   have hnw := hI.scr.nowrap
   rw [hn,hz] at hdz
   simp only [Jacobian.tablePt,hn] at htz
-  refine WP.mono (jacWords_ok (n := 12) hI.scr h16 (by omega)
-    (hAl.sl _ (hD _ (by simp))) (by omega) hap 12 (Nat.le_refl _)) fun t ⟨hv,hk,ho⟩ => ?_
+  refine WP.mono (jacWords_ok (n := 12) hI.scr h16 (by omega_using [hdz])
+    (hAl.sl _ (hD _ (by simp))) (by omega_using [htz]) hap 12 (Nat.le_refl _)) fun t ⟨hv,hk,ho⟩ => ?_
   have kp : ProgKeep K.M base [K.E.x,K.E.y,K.E.z] s t := by
     refine ⟨fun r hr => hk.gpr r (fun hh => hr ?_),hk.rd,hk.wr,hk.sp,fun x hx _ => ho x ?_⟩
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hh
@@ -48,7 +48,7 @@ theorem jacLoadAtFields_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Spec.W
       rw [hn] at hx₀ hx₁ hx₂
       rw [hy] at hx₁
       rw [hz] at hx₂
-      omega
+      omega_using [hx₀, hx₁, hx₂]
   have vx : wordsVal t.mem base K.E.x K.M.n = wordsVal s.mem base (Jacobian.tablePt K a).x K.M.n := by
     simpa only [hn,Jacobian.tablePt,Nat.mul_zero,Nat.add_zero] using jacWords_coord (c := 0) (by decide) hv
   have vy : wordsVal t.mem base K.E.y K.M.n = wordsVal s.mem base (Jacobian.tablePt K a).y K.M.n := by

@@ -74,7 +74,7 @@ theorem normalizedPrepare_ct {base src : BitVec 32} {len k : Nat}
     refine WP.mono (prepare_input s h.1) ?_
     rintro t ⟨ready, frame, rest⟩
     have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frame
-      (by have := h.1.maxLength; omega) (by simpa using h.1.separate)
+      (by have := h.1.maxLength; omega_using [this]) (by simpa using h.1.separate)
     exact ⟨ready, K.stable frame rest h.2.1, by rw [bytes]; exact h.2.2⟩
   unfold VG.Impl.Ffdh.Arm.NormalizedPrepare.code
   exact relCT_chain (prepareInput_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))

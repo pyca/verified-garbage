@@ -22,7 +22,7 @@ def kernelAt (backend : MontBackend) (base source table sp : BitVec 32)
     intro s i E hi h hp controls counter
     have result := choose_ok backend base source table sp len w M g N bs s i E
       (by simpa only [length] using widthBound) (by simpa only [length] using size)
-      (by omega) widthFit scalarFit (by omega) h hp (by simpa only [length] using controls) counter
+      (by omega_using [scheduleFit, hi]) widthFit scalarFit (by omega_using [scheduleFit, hi]) h hp (by simpa only [length] using controls) counter
     refine WP.mono result ?_
     rintro t ⟨power,p,controlsT,counterT,bound,value,frame,rest⟩
     exact ⟨power,p,by simpa only [length] using controlsT,counterT,bound,value,frame,rest⟩

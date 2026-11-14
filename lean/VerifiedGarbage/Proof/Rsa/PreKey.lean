@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: every architecture's `*_precomputed` witnesses share this key (the PKCS#1, PSS and OAEP registrations on every ISA import it).
 
@@ -60,13 +61,13 @@ theorem key_pre_of {m : Mem} (h : ∀ a : Addr, keyIn a.toNat = true → m a = k
     List.map_congr_left fun i hi => h _ (hk i (List.mem_range.mp hi))
   have kin : ∀ (A : Addr) (i : Nat), A.toNat + i < 0x300000 →
       (A + BitVec.ofNat 64 i).toNat = A.toNat + i := fun A i h => by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [h]
   have kb : ∀ (A : Addr) (L : Nat), A.toNat + L < 0x300000 →
       (∀ i < L, keyIn (A.toNat + i) = true) → ∀ i < L, keyIn (A + BitVec.ofNat 64 i).toNat = true :=
-    fun A L hL h i hi => by rw [kin A i (by omega)]; exact h i hi
+    fun A L hL h i hi => by rw [kin A i (by omega_using [hL, hi])]; exact h i hi
   have ki : ∀ x, ((0x2000 ≤ x ∧ x < 0x2040) ∨ (0x4200 ≤ x ∧ x < 0x4220) ∨ (0x4300 ≤ x ∧ x < 0x4320) ∨
       (0x4800 ≤ x ∧ x < 0x48C0)) → keyIn x = true := fun x hx => by
-    simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq]; omega
+    simp only [keyIn, Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq]; omega_using [hx]
   rw [hb 0x2000 64 (kb _ _ (by decide) fun i hi => ki _ (by have : (0x2000 : Addr).toNat = 0x2000 := rfl; omega)),
     hb 0x4200 32 (kb _ _ (by decide) fun i hi => ki _ (by have : (0x4200 : Addr).toNat = 0x4200 := rfl; omega)),
     hb 0x4300 32 (kb _ _ (by decide) fun i hi => ki _ (by have : (0x4300 : Addr).toNat = 0x4300 := rfl; omega))]
@@ -75,8 +76,8 @@ theorem key_pre_of {m : Mem} (h : ∀ a : Addr, keyIn a.toNat = true → m a = k
     have hi := List.mem_range.mp hi
     have e0 : (0x4800 : Addr).toNat = 0x4800 := rfl
     have e1 : ((0x4800 : Addr) + BitVec.ofNat 64 (8 * i)).toNat = 0x4800 + 8 * i := kin _ _ (by omega)
-    rw [kin _ j (by rw [e1]; omega), e1]
-    exact ki _ (by omega)
+    rw [kin _ j (by rw [e1]; omega_using [hj, hi]), e1]
+    exact ki _ (by omega_using [hj, hi])
   rw [hw]
   exact keyMem_pre
 

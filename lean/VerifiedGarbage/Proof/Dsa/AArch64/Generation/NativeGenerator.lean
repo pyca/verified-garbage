@@ -22,7 +22,7 @@ theorem nativeGenerator_ok (M : Mont)
   let I := GeneratorInvariant p (p.remaining 0) (p.core.len * p.count 0) s
   let Q := GeneratorFinished p (p.remaining 0) (p.core.len * p.count 0) s
   have hw : 0 < p.core.len ∧ p.core.len < 65536 := by
-    rcases p.core.width with hh | hh | hh <;> omega
+    rcases p.core.width with hh | hh | hh <;> omega_using [hh]
   have driver : TapeDriver generatorTape p.core.F p.core.S p.core.len p.tape.length
       (Impl.Dsa.AArch64.Generation.generatorStep M.mm p.core.len) I Q :=
     { baseBound := by decide
@@ -45,7 +45,7 @@ theorem nativeGenerator_ok (M : Mont)
         exact generator_done hi hex R Lu Ru fu ku
       step := by
         intro used u v Vt Wt hi hav _ R _ Lv Rv fv kv
-        exact generator_body_ok M hi (by omega) R Lv Rv fv kv }
+        exact generator_body_ok M hi (by omega_using [hw, hav]) R Lv Rv fv kv }
   obtain ⟨V, R⟩ := h.rep
   apply driver.run_ok h.layout R
   intro t Lt Rt ft kt
@@ -57,7 +57,7 @@ theorem nativeGenerator_ok (M : Mont)
     change ¬ ofs p.core.F a < frameBytes at hn
     change 168 ≤ ofs p.core.F a
     unfold frameBytes at hn
-    omega
+    omega_using [hn]
   refine ⟨upd W 20 0, h.frame Lt ⟨V, Rt⟩ ?_ ff kt.rd kt.wr,
     by simp [upd], rfl, (Nat.zero_add _).symm, ff, kt.rd, kt.wr⟩
   intro k hk

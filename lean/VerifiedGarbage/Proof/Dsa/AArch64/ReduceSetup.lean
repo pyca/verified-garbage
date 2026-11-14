@@ -32,8 +32,8 @@ theorem clear_mod_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64
   have hnZ := hc.good.scr.nowrap
   have hnot : aN ∉ [j] := by simpa using Ne.symm hjn
   refine ⟨ht, ⟨ht.good, (ha.wv_of_not_mem (by decide) hnot hnZ).trans hm.modulus, ?_⟩, (wv_eq_zero_iff _ _ _ _).mpr (fun i hi =>
-      (wv_eq_zero_iff _ _ _ _).mp hv i (by omega)), ha, hk⟩
-  rw [ha.word0_of_not_mem (by decide) hnot hnZ (by omega)]
+      (wv_eq_zero_iff _ _ _ _).mp hv i (by omega_using [hi])), ha, hk⟩
+  rw [ha.word0_of_not_mem (by decide) hnot hnZ (by omega_using [hw])]
   exact hm.inverse
 
 /-- Reduction starts with ordinary zero and multiplier 256R, even for
@@ -49,7 +49,7 @@ theorem reduceSetup_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
       wv t.mem (off B o) (slot wx aY) wx = 0 ∧
       wv t.mem (off B o) (slot wx aX) wx = 0 ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hw' : wx < 2 ^ 31 := by omega
+  have hw' : wx < 2 ^ 31 := by omega_using [hw48]
   have hz := hc.good.scr.nowrap
   unfold Arithmetic.reduceSetup seqs
   refine WP.seq (WP.mono (prepare_ok M hc hw hw48 hm hodd hn hinv)
@@ -59,12 +59,12 @@ theorem reduceSetup_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
   have hcv := arrays_context hcu hfv (by decide) hkv
   have hmv : ModCtx v (off B o) (slot wx 8) wx minv m := ⟨hgv,
     (hfv.wv_of_not_mem (by decide) (by decide) hz).trans hmu.modulus, by
-      rw [hfv.word0_of_not_mem (by decide) (by decide) hz (by omega)]; exact hmu.inverse⟩
+      rw [hfv.word0_of_not_mem (by decide) (by decide) hz (by omega_using [hw])]; exact hmu.inverse⟩
   have vr2 := (hfv.wv_of_not_mem (show aR2 < 8 by decide) (by decide) hz).trans hur2
   refine WP.seq (WP.mono (mont_step M hmv (Nat.le_refl _) hw hw'
-    (by unfold MmUse; decide) (by rw [vr2]; exact Nat.mod_lt _ (by omega)))
+    (by unfold MmUse; decide) (by rw [vr2]; exact Nat.mod_lt _ (by omega_using [hm])))
     fun a ⟨hma, hlt, ha, hfa, hka⟩ => ?_)
-  rw [hv, vr2, show 128 * wx = 64 * wx + 64 * wx by omega, Nat.pow_add] at ha
+  rw [hv, vr2, show 128 * wx = 64 * wx + 64 * wx by omega_using [], Nat.pow_add] at ha
   have hscale := VG.Proof.Dsa.mont_scale (coprime_pow2 hodd (64 * wx)) ha
   rw [Nat.mod_eq_of_lt hlt] at hscale
   have hca := arrays_context hcv hfa (by decide) hka

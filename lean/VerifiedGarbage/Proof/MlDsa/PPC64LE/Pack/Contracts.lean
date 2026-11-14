@@ -166,7 +166,7 @@ theorem lo_sub_beq (x : BitVec 64) {v : Nat} (hv : v < 2 ^ 32) :
   have e : (BitVec.ofNat 64 v).setWidth 32 = BitVec.ofNat 32 v := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : v < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hv] : v < 2 ^ 64)]
   rw [lo32_sub, e]
   generalize x.setWidth 32 = a
   by_cases h : a.toNat = v

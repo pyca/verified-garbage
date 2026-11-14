@@ -53,12 +53,12 @@ open VG.Proof.MlDsa.X86_64.Verify.Prepare (preparePublic_verified prepareSecret_
 theorem agreeBuf {m₁ m₂ : Mem} {q : Addr} {N : Nat} (hN : N < 2 ^ 64)
     (h : ∀ a, Region.Contains ⟨q, N⟩ a 1 → m₁ a = m₂ a) :
     ∀ i < N, m₂ (q + BitVec.ofNat 64 i) = m₁ (q + BitVec.ofNat 64 i) := fun i hi =>
-  (h _ (Offset.contains_base _ (by omega) (by omega))).symm
+  (h _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hN, hi]))).symm
 
 theorem bytesAt_congr {m₁ m₂ : Mem} {q : Addr} {n N : Nat} (hn : n ≤ N)
     (h : ∀ i < N, m₂ (q + BitVec.ofNat 64 i) = m₁ (q + BitVec.ofNat 64 i)) :
     Spec.Sha3.bytesAt m₂ q n = Spec.Sha3.bytesAt m₁ q n :=
-  List.map_congr_left fun i hi => h i (by have := List.mem_range.mp hi; omega)
+  List.map_congr_left fun i hi => h i (by have := List.mem_range.mp hi; omega_using [hn, this])
 
 /-- A polynomial stored in the `1024` bytes at `q + d` of a buffer of `N`
 bytes at `q`, in memories that agree on the buffer. -/
@@ -71,7 +71,7 @@ theorem polyStored_congr {m₁ m₂ : Mem} {q : Addr} {d N : Nat} {f : Poly} (hd
   apply Mem.readW_congr
   intro t ht
   rw [BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
-  exact h _ (by simp only [n] at hi hd; omega)
+  exact h _ (by simp only [n] at hi hd; omega_using [hd, hi, ht])
 
 theorem pub_bytes : ∀ p ∈ params, preparedPublicKeyBytes p < 2 ^ 64 := by decide
 theorem sec_bytes : ∀ p ∈ params, preparedSecretKeyBytes p < 2 ^ 64 := by decide
@@ -97,8 +97,8 @@ theorem pubOut {p : Params} (hp : p ∈ params) :
     · exact e.trans h₁
     · rw [e]
       exact polyStored_congr (N := preparedPublicKeyBytes p)
-        (by simp only [preparedPublicKeyBytes]; have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.k by omega)
-            rw [Nat.mul_add, Nat.mul_one] at this; omega) hw (h₂ i hi)
+        (by simp only [preparedPublicKeyBytes]; have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.k by omega_using [hi])
+            rw [Nat.mul_add, Nat.mul_one] at this; omega_using [this]) hw (h₂ i hi)
 
 theorem secOut {p : Params} (hp : p ∈ params) :
     PostOut (prepareSecretKeyContract p X86_64.abi 32) ((prepareSecretKeySig p).retBits 64) :=
@@ -122,8 +122,8 @@ theorem secOut {p : Params} (hp : p ∈ params) :
     · rw [e]
       exact polyStored_congr (N := preparedSecretKeyBytes p)
         (by simp only [preparedSecretKeyBytes]
-            have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.ℓ + 2 * p.k by omega)
-            rw [Nat.mul_add, Nat.mul_one] at this; omega) hw (h₂ i hi)
+            have := Nat.mul_le_mul_left (4 * n) (show i + 1 ≤ p.ℓ + 2 * p.k by omega_using [hi])
+            rw [Nat.mul_add, Nat.mul_one] at this; omega_using [this]) hw (h₂ i hi)
 
 /-! ## The registrations -/
 

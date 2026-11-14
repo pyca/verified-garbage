@@ -38,10 +38,10 @@ theorem mac_arith {P t c : Nat} (hP : P ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1)) (ht : t
     ((P % 2 ^ 64 + t) % 2 ^ 64 + c) % 2 ^ 64 + 2 ^ 64 * (((P / 2 ^ 64 % 2 ^ 64 +
       (decide (2 ^ 64 ≤ P % 2 ^ 64 + t)).toNat) % 2 ^ 64 +
       (decide (2 ^ 64 ≤ (P % 2 ^ 64 + t) % 2 ^ 64 + c)).toNat) % 2 ^ 64) = P + t + c := by
-  obtain ⟨e1, c1⟩ := ca_split (v := P % 2 ^ 64 + t) (by omega)
-  obtain ⟨e3, c3⟩ := ca_split (v := (P % 2 ^ 64 + t) % 2 ^ 64 + c) (by omega)
+  obtain ⟨e1, c1⟩ := ca_split (v := P % 2 ^ 64 + t) (by omega_using [ht])
+  obtain ⟨e3, c3⟩ := ca_split (v := (P % 2 ^ 64 + t) % 2 ^ 64 + c) (by omega_using [hc])
   generalize (decide (2 ^ 64 ≤ P % 2 ^ 64 + t)).toNat = a at *
   generalize (decide (2 ^ 64 ≤ (P % 2 ^ 64 + t) % 2 ^ 64 + c)).toNat = b at *
-  omega
+  omega_using [hP, ht, hc, e1, e3]
 
 end VG.Proof.Mont.PPC64LE

@@ -37,7 +37,7 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
       Keep [.rax, .rbx, .rbp, .r10, .r12, .r14] s t := by
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   have sY := Nat.le_trans (slot_le (w := w) (show aY < 8 by decide)) hZ
   unfold eqMask
   simp only [seqs]
@@ -48,7 +48,7 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aY) (by decide), hg.hdr.hw,
       hg.hdr.harr aY (by decide)]) rfl) fun s₁ ⟨⟨h12, hbx, hm₁⟩, k₁⟩ => ?_
   have hg₁ : Good s₁ B Z w mi := ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi, by rw [hm₁]; exact hg.hdr⟩
-  refine WP.mono (extBase_ok hg₁ hZ hw' (j := j) (by omega) (r := .r10) (by decide) rfl rfl)
+  refine WP.mono (extBase_ok hg₁ hZ hw' (j := j) (by omega_using [hj]) (r := .r10) (by decide) rfl rfl)
     fun s₂ ⟨h10, hm₂, k₂⟩ => ?_
   refine WP.mono (WP.keep [.rbp] (Q := fun t => t.gpr .rbp = 0 ∧ t.mem = s₂.mem) (by xrun) rfl)
     fun s₃ ⟨⟨hbp, hm₃⟩, k₃⟩ => ?_
@@ -60,10 +60,10 @@ theorem eqMask_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
     ⟨hs₃.congr k.2.2, k.mono (by decide), hm, h14, by
       rw [(k.gpr (by decide) : t.gpr .rbp = s₃.gpr .rbp), hbp]
       exact ⟨fun _ i hi => absurd hi (Nat.not_lt_zero _), fun _ => rfl⟩⟩
-  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega) hw' _ h0
+  refine WP.seq (WP.mono (wordLoop_ok (start := 0) (N := w) (by omega_using [hw]) hw' _ h0
     (fun i _ hi t hI => xorStep_ok ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans hbx))
-      ((k₃.gpr (by decide)).trans h10) ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12)) (by omega)
-      (by omega) (by omega) hi hI)) fun s₄ hI => ?_)
+      ((k₃.gpr (by decide)).trans h10) ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12)) (by omega_using [hw'])
+      (by omega_using [sY]) (by omega_using [hjZ]) hi hI)) fun s₄ hI => ?_)
   refine WP.mono (WP.keep [.rbp] (Q := fun t => t.gpr .rbp = mask (decide (s₄.gpr .rbp = 0)) ∧ t.mem = s₄.mem) (by
     xrun
     rw [decide_lt_one]; rfl) rfl) fun t ⟨⟨hbp', hm⟩, k⟩ => ⟨?_, by rw [hm, hI.mem, hm₃, hm₂, hm₁],

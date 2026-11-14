@@ -53,10 +53,10 @@ def SigningCall.shape (c : SigningCall) : ShapePublic where
   qBytes := c.input.components.q
   digestLen := c.input.digest.length
   extentBound := by decide
-  pPositive := by rw [c.input.components.pLength]; have := c.layout.widths; change 0 < c.layout.pLen; omega
+  pPositive := by rw [c.input.components.pLength]; have := c.layout.widths; change 0 < c.layout.pLen; omega_using [this]
   qPositive := by rw [c.input.components.qLength]; exact c.layout.widths.1
-  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega
-  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega
+  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega_using [this]
+  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega_using [this]
   digestBound := c.input.digestBound
 
 theorem SigningAgrees.shape {reference c : SigningCall} (h : SigningAgrees reference c) :
@@ -93,6 +93,6 @@ theorem SigningEntered.context {reference : SigningCall} {s : State} (h : Signin
     exact he.qLen
   · change Src s c.input.base usedBytes (c.original.gpr .rdx + c.original.gpr .r8) c.input.components.q
     rw [c.pre.pLength]
-    exact source_slice hkey (by rw [c.input.keyLength]; omega)
+    exact source_slice hkey (by rw [c.input.keyLength]; omega_using [])
 
 end VG.Proof.Dsa.X86_64

@@ -44,7 +44,7 @@ theorem codeAt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
     have fit : g.array 6 < g.L := by
       have := v.minWidth
       unfold Geometry.words at arrayFit
-      omega
+      omega_using [arrayFit, this]
     exact S.ready.scratch.ea fit
   have region : input.destRegion = ⟨off g.W (g.array 6), 4 * input.count⟩ := by
     unfold Import.Geometry.destRegion
@@ -58,37 +58,37 @@ theorem codeAt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
     rw [← VG.Proof.Bignum.read_eq_val32]
     exact value
   rw [region] at F
-  have Oa := frame_outside F (by have := S.ready.scratch.nowrap; omega)
-  have A := WitnessMont.data_outside v S (Oa.mono (by omega) (by omega)) K (by decide) (by decide)
+  have Oa := frame_outside F (by have := S.ready.scratch.nowrap; omega_using [wide, arrayFit, this])
+  have A := WitnessMont.data_outside v S (Oa.mono (by omega_using []) (by omega_using [wide])) K (by decide) (by decide)
   refine WP.seq (WP.mono (WitnessLoad.zeros_ok A.ready.scratch (g.array 6 + 4 * k) (2 * g.w - k)
-    (by omega)) fun b ⟨Zb, Ob, Kb⟩ => ?_)
+    (by omega_using [narrow, wide, arrayFit, hw])) fun b ⟨Zb, Ob, Kb⟩ => ?_)
   have B := WitnessMont.data_outside v A
-    (Ob.mono (by have := g.arrayBefore (i := 5) (j := 6) (by decide); omega)
-      (by omega)) Kb (by decide) (by decide)
+    (Ob.mono (by have := g.arrayBefore (i := 5) (j := 6) (by decide); omega_using [])
+      (by omega_using [narrow, wide, hw])) Kb (by decide) (by decide)
   -- The witness: the draw's low `32 k` bits, zeros above.
   have lowB : val32 b.mem g.W (g.array 6) k =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (input.src.setWidth 64) (4 * input.count)) % 2 ^ (32 * k) := by
-    rw [← Va, show input.count = k + (input.count - k) by omega, VG.Proof.Mont.val32_append,
+    rw [← Va, show input.count = k + (input.count - k) by omega_using [narrow], VG.Proof.Mont.val32_append,
       Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (val32_lt _ _ _ _)]
-    exact Ob.val32 (by omega) (by have := S.ready.scratch.nowrap; omega)
+    exact Ob.val32 (by omega_using []) (by have := S.ready.scratch.nowrap; omega_using [narrow, wide, arrayFit, this])
   have wordsB : val32 b.mem g.W (g.array 6) (2 * g.w) = val32 b.mem g.W (g.array 6) k := by
-    rw [show 2 * g.w = k + (2 * g.w - k) by omega, VG.Proof.Mont.val32_append, Zb,
+    rw [show 2 * g.w = k + (2 * g.w - k) by omega_using [narrow, wide, hw], VG.Proof.Mont.val32_append, Zb,
       Nat.mul_zero, Nat.add_zero]
-  refine WP.mono (WitnessSample.codeAt_ok B.ready.scratch (by have := v.minWidth; omega) two
-    (by omega)
-    (by omega)
-    (by have := v.arrayFit (j := 0) (by decide); unfold Geometry.words at this; omega)
-    (Or.inr (by have := g.arrayBefore (i := 0) (j := 6) (by decide); unfold Geometry.words at this; omega))
+  refine WP.mono (WitnessSample.codeAt_ok B.ready.scratch (by have := v.minWidth; omega_using [this]) two
+    (by omega_using [narrow, wide, hw])
+    (by omega_using [arrayFit, hw])
+    (by have := v.arrayFit (j := 0) (by decide); unfold Geometry.words at this; omega_using [this])
+    (Or.inr (by have := g.arrayBefore (i := 0) (j := 6) (by decide); unfold Geometry.words at this; omega_using [this]))
     B.ready.modulus.candidate (wordsB.trans lowB) odd shape (Nat.mod_lt _ (Nat.two_pow_pos _)))
     fun t ⟨Vt, mask, Ot, Kt⟩ => ?_
   rw [VG.Proof.RsaKeyGen.witness_mod shape] at Vt mask
   have Ot' : Outside g.W (g.array 6) (4 * g.words) b.mem t.mem := by
-    rw [show 4 * g.words = 8 * g.w by unfold Geometry.words; omega]
+    rw [show 4 * g.words = 8 * g.w by unfold Geometry.words; omega_using []]
     exact Ot
   exact ⟨WitnessMont.data_outside v B Ot' Kt (by unfold WitnessSample.clob; decide)
     (by unfold WitnessSample.clob; decide), Vt, mask,
-    ((Oa.mono (by omega) (by omega)).trans
-      (Ob.mono (by omega) (by omega))).trans Ot',
+    ((Oa.mono (by omega_using []) (by omega_using [wide])).trans
+      (Ob.mono (by omega_using []) (by omega_using [narrow, wide, hw]))).trans Ot',
     ((K.mono (by unfold clob; decide)).widen Kb).widen Kt⟩
 
 end VG.Proof.RsaKeyGen.X86.WitnessLoad

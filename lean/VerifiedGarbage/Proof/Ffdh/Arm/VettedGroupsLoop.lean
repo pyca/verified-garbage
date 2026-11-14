@@ -20,7 +20,7 @@ open VG.Proof.X25519.Arm (Rest)
   induction gs generalizing s table with
   | nil => exact False.elim (positive rfl)
   | cons g gs ih =>
-    have nextFit : gs.length < 2 ^ 32 := by simp only [List.length_cons] at fit; omega
+    have nextFit : gs.length < 2 ^ 32 := by simp only [List.length_cons] at fit; omega_using [fit]
     obtain ⟨trace, u, run, memU, result, restU⟩ := step_ok s source tableAt.1 cursor kfit nextFit
     by_cases hit : g.len = k ∧ dom = g.domain.take dom.length
     · rw [ite_eq_left hit] at result

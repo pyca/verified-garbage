@@ -83,7 +83,7 @@ theorem orLow55 (x y : Word) (hy : y.toNat < 2^55) :
   have he : y = (y.setWidth 55).setWidth 64 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth]
-    omega
+    omega_using [hy]
   rw [he]
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
@@ -92,7 +92,7 @@ theorem orLow55 (x y : Word) (hy : y.toNat < 2^55) :
   by_cases h : i < 55
   · simp only [hi, h, decide_true, Bool.not_true, Bool.true_and, Bool.and_false,
       Bool.false_and, Bool.or_false, ite_true]
-  · have hi9 : i - 55 < 9 := by omega
+  · have hi9 : i - 55 < 9 := by omega_using [hi]
     simp only [hi, h, hi9, decide_true, decide_false, Bool.not_false,
       Bool.true_and, Bool.false_and, Bool.false_or, ite_false]
 
@@ -100,7 +100,7 @@ theorem orLow55_value (x y : Word) (hy : y.toNat < 2^55) :
     (y ||| (x <<< 55)).toNat = y.toNat + 2^55*(x.toNat % 2^9) := by
   rw [orLow55 x y hy, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (y.setWidth 55).isLt]
   simp only [BitVec.toNat_setWidth, Nat.shiftLeft_eq]
-  omega
+  omega_using [hy]
 
 
 theorem orLow46 (x y : Word) (hy : y.toNat < 2^46) :
@@ -108,7 +108,7 @@ theorem orLow46 (x y : Word) (hy : y.toNat < 2^46) :
   have he : y = (y.setWidth 46).setWidth 64 := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth]
-    omega
+    omega_using [hy]
   rw [he]
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
@@ -117,7 +117,7 @@ theorem orLow46 (x y : Word) (hy : y.toNat < 2^46) :
   by_cases h : i < 46
   · simp only [hi, h, decide_true, Bool.not_true, Bool.true_and, Bool.and_false,
       Bool.false_and, Bool.or_false, ite_true]
-  · have hi18 : i - 46 < 18 := by omega
+  · have hi18 : i - 46 < 18 := by omega_using [hi]
     simp only [hi, h, hi18, decide_true, decide_false, Bool.not_false,
       Bool.true_and, Bool.false_and, Bool.false_or, ite_false]
 
@@ -125,7 +125,7 @@ theorem orLow46_value (x y : Word) (hy : y.toNat < 2^46) :
     (y ||| (x <<< 46)).toNat = y.toNat + 2^46*(x.toNat % 2^18) := by
   rw [orLow46 x y hy, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (y.setWidth 46).isLt]
   simp only [BitVec.toNat_setWidth, Nat.shiftLeft_eq]
-  omega
+  omega_using [hy]
 
 
 end VG.Proof.Mont.AArch64.P521Field

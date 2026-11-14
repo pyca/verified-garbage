@@ -84,7 +84,7 @@ theorem bdisj (p : Addr) (c : Nat) {a n b k : Nat} (ha : a ≤ c) (hb : b ≤ c)
     (h : c - a + n ≤ c - b ∨ c - b + k ≤ c - a) (hn : c + n < 2 ^ 32) (hk : c + k < 2 ^ 32) :
     Region.Disjoint ⟨p - BitVec.ofNat 64 a, n⟩ ⟨p - BitVec.ofNat 64 b, k⟩ := by
   rw [Offset.sub_ofNat_eq p ha, Offset.sub_ofNat_eq p hb]
-  exact Offset.disjoint _ h (by omega) (by omega)
+  exact Offset.disjoint _ h (by omega_using [hn]) (by omega_using [hk])
 
 /-! ## A frame of two words around a call -/
 
@@ -102,7 +102,7 @@ theorem a8 (h : 8 ≤ s.sp.toNat) : State.addr (s.sp - BitVec.ofNat 32 8) = Stat
 
 theorem a84 (h : 8 ≤ s.sp.toNat) :
     State.addr (s.sp - BitVec.ofNat 32 8 + 4) = State.addr s.sp - BitVec.ofNat 64 8 + BitVec.ofNat 64 4 := by
-  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, addr_add (by rw [sub_toNat' h]; have := s.sp.isLt; omega),
+  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, addr_add (by rw [sub_toNat' h]; have := s.sp.isLt; omega_using []),
     a8 h]
 
 theorem p2_arg0 (h : 8 ≤ s.sp.toNat) {rd wr : List Region} :
@@ -127,21 +127,21 @@ theorem p2_argAddr {rd wr : List Region} :
 omit ra rb in
 /-- The frame's 8 bytes are in `stk`. -/
 theorem p2_sub (h : 24 ≤ s.sp.toNat) : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8), 8⟩ (stk s) := by
-  rw [a8 (by omega)]; exact below_stk (by decide)
+  rw [a8 (by omega_using [h])]; exact below_stk (by decide)
 
 omit ra rb in
 /-- The callee's 16 bytes below its stack pointer are in `stk`. -/
 theorem p2_csub (h : 24 ≤ s.sp.toNat) :
     Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8) - 16, 16⟩ (stk s) := by
-  rw [a8 (by omega), BitVec.sub_sub, show BitVec.ofNat 64 8 + 16 = BitVec.ofNat 64 24 from rfl]
+  rw [a8 (by omega_using [h]), BitVec.sub_sub, show BitVec.ofNat 64 8 + 16 = BitVec.ofNat 64 24 from rfl]
   exact Region.sub_prefix (by decide)
 
 omit ra rb in
 /-- And they are apart from the frame. -/
 theorem p2_cdisj (h : 24 ≤ s.sp.toNat) {n : Nat} (hn : n ≤ 8) :
     Region.Disjoint ⟨State.addr (s.sp - BitVec.ofNat 32 8) - 16, 16⟩ ⟨State.addr (s.sp - BitVec.ofNat 32 8), n⟩ := by
-  rw [a8 (by omega), BitVec.sub_sub, show BitVec.ofNat 64 8 + 16 = BitVec.ofNat 64 24 from rfl]
-  exact bdisj _ 24 (a := 24) (b := 8) (by decide) (by decide) (by omega) (by decide) (by omega)
+  rw [a8 (by omega_using [h]), BitVec.sub_sub, show BitVec.ofNat 64 8 + 16 = BitVec.ofNat 64 24 from rfl]
+  exact bdisj _ 24 (a := 24) (b := 8) (by decide) (by decide) (by omega_using []) (by decide) (by omega_using [hn])
 
 end Frame2
 
@@ -158,10 +158,10 @@ theorem frame2_ok {ra rb t : Reg} (hrs : regList [ra, rb] = true) (ht : t ∉ pr
     (hQ : ∀ s₂ : State, After s wr (popped t 8 s₂) →
       k.post ((pushed [ra, rb] s).callEntry.withRegions rd wr) (s₂.withRegions rd wr) → Q (popped t 8 s₂)) :
     WP isa (.frame (.push [ra, rb]) (.call n c) (.pop t 8)) s Q := by
-  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega)
-  refine WP.frame (rs := [ra, rb]) (r := t) hrs (by simp only [List.length_cons, List.length_nil]; omega)
-    (by simp only [List.length_cons, List.length_nil]; omega) ?_
-  refine WP.callF hv hpre hc hw (by rw [p2_sp, h8]; omega) fun s₂ hrd hwr hsp hf hcs hpost => ?_
+  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [h24])
+  refine WP.frame (rs := [ra, rb]) (r := t) hrs (by simp only [List.length_cons, List.length_nil]; omega_using [h24])
+    (by simp only [List.length_cons, List.length_nil]; omega_using []) ?_
+  refine WP.callF hv hpre hc hw (by rw [p2_sp, h8]; omega_using [hst, h24]) fun s₂ hrd hwr hsp hf hcs hpost => ?_
   refine hQ s₂ ⟨?_, ?_, ?_, fun r hr hl => ?_, ?_⟩ hpost
   · rw [popped_rd, hrd, pushed_rd]
   · rw [popped_wr, hwr, pushed_wr]; rfl
@@ -169,7 +169,7 @@ theorem frame2_ok {ra rb t : Reg} (hrs : regList [ra, rb] = true) (ht : t ∉ pr
   · have : r ≠ t := fun e => ht (e ▸ hr)
     rw [popped_gpr this, hcs r hr hl, pushed_gpr]
   · rw [popped_mem]
-    have f₀ := pushed_frameA (rs := [ra, rb]) (s := s) (by simp only [List.length_cons, List.length_nil]; omega)
+    have f₀ := pushed_frameA (rs := [ra, rb]) (s := s) (by simp only [List.length_cons, List.length_nil]; omega_using [h24])
     refine Frame.trans (Frame.sub f₀ fun r hr => ?_) (Frame.sub hf fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), p2_sub h24⟩
@@ -178,7 +178,7 @@ theorem frame2_ok {ra rb t : Reg} (hrs : regList [ra, rb] = true) (ht : t ∉ pr
       · simp only [List.mem_singleton] at hr; subst hr
         refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
         rw [p2_sp, ← stk_eq h24]
-        exact belowA_inner (k := 8) (by omega) h24
+        exact belowA_inner (k := 8) (by omega_using [hst]) h24
 
 /-- Two runs of such a frame leak the same, if their stack pointers are the
 same and the callee's preconditions and public data hold. -/
@@ -204,7 +204,7 @@ def ReprOK (S : StreamingHash) : Prop :=
 /-- The memory on entry to a callee in a frame of two words is ours outside `stk`. -/
 theorem p2_frame {ra rb : Reg} {s : State} (h24 : 24 ≤ s.sp.toNat) :
     Frame [stk s] s.mem (pushed [ra, rb] s).mem :=
-  Frame.sub (pushed_frameA (rs := [ra, rb]) (s := s) (by simp only [List.length_cons, List.length_nil]; omega))
+  Frame.sub (pushed_frameA (rs := [ra, rb]) (s := s) (by simp only [List.length_cons, List.length_nil]; omega_using [h24]))
     fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, p2_sub h24⟩
@@ -274,15 +274,15 @@ include h
 theorem pre : (Proof.Hmac.initScratchContract S Wi Arm.abi 16).pre
     ((pushed fr1 s).callEntry.withRegions (HiArgs.rd s.sp k kl) (HiArgs.wr S Wi inn out sc)) := by
   have e := h.sp
-  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega)
+  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [e])
   have sA := p2_sub (s := s) e
   have sR := p2_csub (s := s) e
   have cA := p2_cdisj (s := s) e (n := 4) (by decide)
   have sA4 : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ (stk s) := fun x hx => sA x (Region.sub_prefix (by decide) x hx)
   sig_pre [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  simp only [h.r0, h.r1, h.r2, h.r3, p2_arg0 (s := s) (by omega), p2_argAddr, h.r12, BitVec.toNat_ofNat,
+  simp only [h.r0, h.r1, h.r2, h.r3, p2_arg0 (s := s) (by omega_using [e]), p2_argAddr, h.r12, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt h.kl32]
-  exact ⟨by rw [h8]; omega, by rw [h8]; have := s.sp.isLt; omega, rfl, rfl, h.i_o, h.i_k, h.i_s,
+  exact ⟨by rw [h8]; omega_using [e], by rw [h8]; have := s.sp.isLt; omega_using [], rfl, rfl, h.i_o, h.i_k, h.i_s,
     (h.b_i.sub_left sA4).symm, h.o_k, h.o_s, (h.b_o.sub_left sA4).symm, h.k_s, (h.b_s.sub_left sA4).symm,
     h.b_i.sub_left sR, h.b_o.sub_left sR, h.b_k.sub_left sR, h.b_s.sub_left sR, cA,
     h.ni, h.no, h.nk, h.nsc, h.klB⟩
@@ -298,7 +298,7 @@ theorem cov : Covers (HiArgs.rd s.sp k kl ++ HiArgs.wr S Wi inn out sc) ((pushed
     · exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
   · refine ⟨_, List.mem_append_right _ List.mem_cons_self, ?_⟩
     show Region.Contains ⟨State.addr (s.sp - BitVec.ofNat 32 8), 8⟩ a n
-    simp only [Region.Contains] at hc ⊢; omega
+    simp only [Region.Contains] at hc ⊢; omega_using [hc]
   all_goals
     obtain ⟨q', hq', hc'⟩ := h.cw a n ⟨_, by simp, hc⟩
     exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
@@ -323,7 +323,7 @@ theorem hi_frame {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
     h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.kl32] at post
   have ek : bytesAt (storeWords s.mem (s.sp - BitVec.ofNat 32 8) [s.gpr .r12, s.gpr .lr]) (BitVec.setWidth 64 k) kl =
       bytesAt s.mem (State.addr k) kl :=
-    p2_bytes (ra := .r12) (rb := .lr) h.sp h.b_k (by have := h.kl32; omega)
+    p2_bytes (ra := .r12) (rb := .lr) h.sp h.b_k (by have := h.kl32; omega_using [this])
   rw [ek] at post
   exact hQ _ a (by rw [popped_mem]; exact post.1) (by rw [popped_mem]; exact post.2)
 
@@ -342,8 +342,8 @@ theorem hi_rel {S : StreamingHash} {Wi : Nat} {n : String} {c : Prog isa}
   refine ⟨e.trans e'.symm, c, c', ?_, v, a.covW, v', a'.covW⟩
   sig_pub [Proof.Hmac.initScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [
-    a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega),
-    p2_arg0 (s := s') (by have := a'.sp; omega), a.r12, a'.r12, e, e', and_self]
+    a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega_using [this]),
+    p2_arg0 (s := s') (by have := a'.sp; omega_using [this]), a.r12, a'.r12, e, e', and_self]
 
 /-! ## HMAC's `finalize`, in a frame of `out` and `scratch` -/
 
@@ -391,14 +391,14 @@ include h
 theorem pre : (Proof.Hmac.finalizeScratchContract S Wf Arm.abi 16).pre
     ((pushed fr2 s).callEntry.withRegions (HfArgs.rd S s.sp ou) (HfArgs.wr S Wf inn o sc)) := by
   have e := h.sp
-  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega)
+  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [e])
   have sA := p2_sub (s := s) e
   have sR := p2_csub (s := s) e
   have cA := p2_cdisj (s := s) e (n := 8) (by decide)
   sig_pre [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
-  simp only [h.r0, h.r1, p2_arg0 (s := s) (by omega), p2_arg1, p2_argAddr, h.r10, h.r12]
-  exact ⟨by rw [h8]; omega, by rw [h8]; have := s.sp.isLt; omega, rfl, rfl, h.i_u, h.i_o, h.i_s,
+  simp only [h.r0, h.r1, p2_arg0 (s := s) (by omega_using [e]), p2_arg1, p2_argAddr, h.r10, h.r12]
+  exact ⟨by rw [h8]; omega_using [e], by rw [h8]; have := s.sp.isLt; omega_using [], rfl, rfl, h.i_u, h.i_o, h.i_s,
     (h.b_i.sub_left sA).symm, h.u_o, h.u_s, h.o_s, (h.b_o.sub_left sA).symm, (h.b_s.sub_left sA).symm,
     h.b_i.sub_left sR, h.b_u.sub_left sR, h.b_o.sub_left sR, h.b_s.sub_left sR, cA,
     h.ni, h.nu, h.no, h.nsc⟩
@@ -438,7 +438,7 @@ theorem hf_frame {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa} (hR 
   refine frame2_ok rfl (by decide) hv.ok hst h.sp h.pre h.cov h.covW fun s₂ a post => ?_
   sig_post [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at post
-  simp only [h.r0, h.r1, p2_arg0 (s := s) (by have := h.sp; omega)] at post
+  simp only [h.r0, h.r1, p2_arg0 (s := s) (by have := h.sp; omega_using [this])] at post
   refine hQ _ a fun k0 text hk hl hi hc ho => ?_
   rw [popped_mem, ← h.r10]
   exact post k0 text hk hl (p2_repr (ra := .r10) (rb := .r12) hR hSn h.sp h.b_i hi) hc
@@ -460,8 +460,8 @@ theorem hf_rel {S : StreamingHash} {Wf : Nat} {n : String} {c : Prog isa}
   sig_pub [Proof.Hmac.finalizeScratchContract, Proof.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   simp only [
-    a.r0, a'.r0, a.r1, a'.r1, c2, c3, p2_arg0 (s := s) (by have := a.sp; omega),
-    p2_arg0 (s := s') (by have := a'.sp; omega), p2_arg1,
+    a.r0, a'.r0, a.r1, a'.r1, c2, c3, p2_arg0 (s := s) (by have := a.sp; omega_using [this]),
+    p2_arg0 (s := s') (by have := a'.sp; omega_using [this]), p2_arg1,
     p2_arg1 (s := s'), a.r10, a'.r10, a.r12, a'.r12, e, e', and_self]
 
 /-! ## `iterate`, in a frame of `scratch` -/
@@ -506,15 +506,15 @@ include h
 theorem pre : (Proof.Pbkdf2.iterateContract S Wt Arm.abi 16).pre
     ((pushed fr1 s).callEntry.withRegions (ItArgs.rd S s.sp key u) (ItArgs.wr S Wt tt sc)) := by
   have e := h.sp
-  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega)
+  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [e])
   have sA := p2_sub (s := s) e
   have sR := p2_csub (s := s) e
   have cA := p2_cdisj (s := s) e (n := 4) (by decide)
   have sA4 : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ (stk s) := fun x hx => sA x (Region.sub_prefix (by decide) x hx)
   sig_pre [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
-  simp only [h.r0, h.r1, h.r3, p2_arg0 (s := s) (by omega), p2_argAddr, h.r12]
-  exact ⟨by rw [h8]; omega, by rw [h8]; have := s.sp.isLt; omega, rfl, rfl, h.k_t, h.k_s, h.u_t, h.u_s,
+  simp only [h.r0, h.r1, h.r3, p2_arg0 (s := s) (by omega_using [e]), p2_argAddr, h.r12]
+  exact ⟨by rw [h8]; omega_using [e], by rw [h8]; have := s.sp.isLt; omega_using [], rfl, rfl, h.k_t, h.k_s, h.u_t, h.u_s,
     h.t_s, (h.b_t.sub_left sA4).symm, (h.b_s.sub_left sA4).symm,
     h.b_k.sub_left sR, h.b_u.sub_left sR, h.b_t.sub_left sR, h.b_s.sub_left sR, cA,
     h.nk, h.nu, h.nt, h.nsc⟩
@@ -534,7 +534,7 @@ theorem cov : Covers (ItArgs.rd S s.sp key u ++ ItArgs.wr S Wt tt sc) ((pushed f
     · exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
   · refine ⟨_, List.mem_append_right _ List.mem_cons_self, ?_⟩
     show Region.Contains ⟨State.addr (s.sp - BitVec.ofNat 32 8), 8⟩ a n
-    simp only [Region.Contains] at hc ⊢; omega
+    simp only [Region.Contains] at hc ⊢; omega_using [hc]
   all_goals
     obtain ⟨q', hq', hc'⟩ := h.cw a n ⟨_, by simp, hc⟩
     exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
@@ -564,16 +564,16 @@ theorem it_frame {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa} (hR
   refine hQ _ a fun k0 hk hi ho => ?_
   rw [popped_mem]
   have := post k0 hk
-    (p2_repr (ra := .r12) (rb := .lr) (p := State.addr key) hR (by omega) h.sp
-      (h.b_k.sub_right (Region.sub_prefix (by omega))) hi)
-    (p2_repr (ra := .r12) (rb := .lr) (p := State.addr key + BitVec.ofNat 64 S.stateBytes) hR (by omega) h.sp
-      (h.b_k.sub_right (Offset.sub_base _ (by omega))) ho)
+    (p2_repr (ra := .r12) (rb := .lr) (p := State.addr key) hR (by omega_using [hSn]) h.sp
+      (h.b_k.sub_right (Region.sub_prefix (by omega_using []))) hi)
+    (p2_repr (ra := .r12) (rb := .lr) (p := State.addr key + BitVec.ofNat 64 S.stateBytes) hR (by omega_using [hSn]) h.sp
+      (h.b_k.sub_right (Offset.sub_base _ (by omega_using []))) ho)
   have eu : bytesAt (storeWords s.mem (s.sp - BitVec.ofNat 32 8) [s.gpr .r12, s.gpr .lr]) (BitVec.setWidth 64 u)
       S.digestBytes = bytesAt s.mem (State.addr u) S.digestBytes :=
-    p2_bytes (ra := .r12) (rb := .lr) h.sp h.b_u (by omega)
+    p2_bytes (ra := .r12) (rb := .lr) h.sp h.b_u (by omega_using [hDn])
   have et : bytesAt (storeWords s.mem (s.sp - BitVec.ofNat 32 8) [s.gpr .r12, s.gpr .lr]) (BitVec.setWidth 64 tt)
       S.digestBytes = bytesAt s.mem (State.addr tt) S.digestBytes :=
-    p2_bytes (ra := .r12) (rb := .lr) h.sp h.b_t (by omega)
+    p2_bytes (ra := .r12) (rb := .lr) h.sp h.b_t (by omega_using [hDn])
   rw [eu, et] at this
   exact this
 
@@ -592,7 +592,7 @@ theorem it_rel {S : StreamingHash} {Wt : Nat} {nm : String} {c : Prog isa}
   sig_pub [Proof.Pbkdf2.iterateContract, Proof.Pbkdf2.iterateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   simp only [
-    a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega),
-    p2_arg0 (s := s') (by have := a'.sp; omega), a.r12, a'.r12, e, e', and_self]
+    a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega_using [this]),
+    p2_arg0 (s := s') (by have := a'.sp; omega_using [this]), a.r12, a'.r12, e, e', and_self]
 
 end VG.Proof.Pbkdf2.Whole.Arm

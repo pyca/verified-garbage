@@ -22,7 +22,7 @@ theorem primeRanges_bound {w : Nat} (hw : w ≤ 48) :
     aX, aTab, aAcc, aTmp, aY, aXm, aOne, aR2, aR1, aRm1, aE,
     kElen, kP, kUsed, kI, kUni, kStat, kU, sMinv, sCnt, sFn,
     VG.Impl.Dsa.Generation.Layout.arithmeticBytes]
-  and_intros <;> omega
+  and_intros <;> omega_arith
 
 theorem checkPrimeRanges_bound {w : Nat} (hw : w ≤ 48) :
     ∀ r ∈ workspaceRanges ++ (128, 128) :: (slot w 0, 8 * (w + 2)) :: primeRanges w,
@@ -34,7 +34,7 @@ theorem checkPrimeRanges_bound {w : Nat} (hw : w ≤ 48) :
   · decide
   · decide
   · decide
-  · simp only [slot, hdrBytes, VG.Impl.Dsa.Generation.Layout.arithmeticBytes]; omega
+  · simp only [slot, hdrBytes, VG.Impl.Dsa.Generation.Layout.arithmeticBytes]; omega_using [hw]
   · exact primeRanges_bound hw r hr
 
 theorem prime_global_frame {B : Addr} {rs : List (Nat × Nat)} {extra : List Region} {m m' : Mem}

@@ -39,13 +39,13 @@ theorem copyBytes_ok {u₀ : State} {p q : Addr} {n : Nat} {cnt : Src} (hs : Ste
   have hea : ∀ b : Addr, b + BitVec.ofNat 64 j + BitVec.ofNat 64 0 = b + BitVec.ofNat 64 j := fun b => by
     rw [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
   have hin : InRegions v.wr (p + BitVec.ofNat 64 j) 1 :=
-    ⟨_, I.keep.2.2 ▸ hw, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, I.keep.2.2 ▸ hw, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hpn, hj])⟩
   have hrd : InRegions (v.rd ++ v.wr) (q + BitVec.ofNat 64 j) 1 := by
     rw [I.keep.2.1, I.keep.2.2]; exact hsrc j hj
   have hq : v.mem (q + BitVec.ofNat 64 j) = u₀.mem (q + BitVec.ofNat 64 j) := by
     rw [I.mem, ifn]
     exact fun h => hd j hj (by
-      simp only [Region.Contains] at h ⊢; omega)
+      simp only [Region.Contains] at h ⊢; omega_using [hj, h])
   refine WP.mono (WP.keep [.rax] (Q := fun v' => v'.gpr .r8 = BitVec.ofNat 64 j ∧
       v'.mem = v.mem.writeW (p + BitVec.ofNat 64 j) (u₀.mem (q + BitVec.ofNat 64 j))) ?_ rfl)
     fun v' ⟨⟨h8', hm⟩, k⟩ => ⟨(I.keep.trans k).mono (by decide), h8', fun v'' k' hm' h8'' => ?_⟩
@@ -56,14 +56,14 @@ theorem copyBytes_ok {u₀ : State} {p q : Addr} {n : Nat} {cnt : Src} (hs : Ste
   by_cases he : x = p + BitVec.ofNat 64 j
   · subst he
     rw [ifp rfl, ifp (show (⟨p, j + 1⟩ : Region).Contains (p + BitVec.ofNat 64 j) 1 from
-      Offset.contains_base _ (by omega) (by omega))]
+      Offset.contains_base _ (by omega_using []) (by omega_using [hpn, hj]))]
     congr 1
     rw [BitVec.add_comm p, BitVec.add_sub_cancel]
   · rw [ifn he]
     have hne : (x - p).toNat ≠ j := fun h => he (by
       rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel])
     have iff : (⟨p, j + 1⟩ : Region).Contains x 1 ↔ (⟨p, j⟩ : Region).Contains x 1 := by
-      simp only [Region.Contains]; omega
+      simp only [Region.Contains]; omega_using [hne]
     by_cases h1 : (⟨p, j⟩ : Region).Contains x 1
     · rw [ifp h1, ifp (iff.mpr h1)]
     · rw [ifn h1, ifn (fun h => h1 (iff.mp h))]
@@ -75,6 +75,6 @@ theorem bytesAt_copied {m m' : Mem} {p q : Addr} {n : Nat} (hpn : p.toNat + n �
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  rw [h, ifp (Offset.contains_base _ (by omega) (by omega)), BitVec.add_comm p, BitVec.add_sub_cancel]
+  rw [h, ifp (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hpn, hi])), BitVec.add_comm p, BitVec.add_sub_cancel]
 
 end VG.Proof.RsaPss.X86_64

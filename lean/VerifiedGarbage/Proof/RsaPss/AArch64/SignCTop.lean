@@ -57,7 +57,7 @@ theorem eb_bounds : 1 ≤ ebS s ∧ ebS s ≤ Proof.RsaPss.maxEmBits ∧ loS s +
   have h0' : (s.mem (s.gpr .x2)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
   have hl8 := RsaPss.log2_lt8 (s.mem (s.gpr .x2))
   unfold loS elS ebS Spec.RsaPss.emLength ebV Proof.RsaPss.maxEmBits
-  omega
+  omega_using [hk1, hk2, hl8]
 
 /-- `emBits`, `emLen` and `lo`, and `encode`'s arguments. -/
 theorem args_ok {u : State} (hu : AtChk s u) :
@@ -67,7 +67,7 @@ theorem args_ok {u : State} (hu : AtChk s u) :
   have h0' : (s.mem (s.gpr .x2)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
   have hx10 : u.gpr .x10 = BitVec.ofNat 64 (s.mem (s.gpr .x2)).toNat := by rw [hu.x10, setWidth_byte]
   rw [WP.block_append_iff]
-  refine WP.mono (emBitsB_ok (by omega) hk2 hx h0' hx10 (by rw [hu.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]))
+  refine WP.mono (emBitsB_ok (by omega_using [hk1]) hk2 hx h0' hx10 (by rw [hu.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]))
     fun u₁ ⟨O₁, x24, x25, x26⟩ => ?_
   have hpar : AtPar K s (ebS s) (elS s) (loS s) u₁ := {
     sp := O₁.sp.trans hu.sp
@@ -120,11 +120,11 @@ theorem main_ok {s u : State} (hp : PreS tsH tsG K s) {i : Nat} {T : Tabs} {Hs G
       Spec.Rsa.writtenOutcome t.mem (s.gpr .x0) (s.gpr .x3).toNat ((t.gpr .x0).setWidth 32) (signOut Hs Gs s) := by
   have hk1 := hp.k1
   obtain ⟨heb1, heb2, hlok, -⟩ := eb_bounds hp h0
-  have hsign := signOut_enc Hs Gs (s := s) (by omega) h0
+  have hsign := signOut_enc Hs Gs (s := s) (by omega_using [hk1]) h0
   unfold seqs seqs
   refine WP.seq (WP.mono_syms (args_ok hp h0 hu) fun t ht sy => ?_)
-  refine WP.seq (byIdx_wp E.mem (fun j hj => by unfold idxs at hj; simp at hj; omega) (ht.x27.trans E.idx)
-    fun t' o sy' => WP.mono (encCall_ok hp h624 E (ht.only9 o) (by rw [sy', sy, hsy]) (by omega) rfl heb1 heb2)
+  refine WP.seq (byIdx_wp E.mem (fun j hj => by unfold idxs at hj; simp at hj; omega_using [hj]) (ht.x27.trans E.idx)
+    fun t' o sy' => WP.mono (encCall_ok hp h624 E (ht.only9 o) (by rw [sy', sy, hsy]) (by omega_using [hlok]) rfl heb1 heb2)
       fun t₂ ht₂ => ?_)
   unfold seqs
   have M₂ : Mid s t₂ := ⟨ht₂.sp, ht₂.rd, ht₂.wr, ht₂.v, ht₂.fr⟩
@@ -166,10 +166,10 @@ theorem body_ok {s u : State} (hp : PreS tsH tsG K s) {i : Nat} {T : Tabs} {Hs G
       rw [hx10, beq_iff_eq] at hb
       apply BitVec.eq_of_toNat_eq
       have := congrArg BitVec.toNat hb
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .x2)).isLt; omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (s.mem (s.gpr .x2)).isLt; omega_using [])] at this
       exact this
     exact WP.mono (fail_ok hp ⟨hu.sp, hu.rd, hu.wr, hu.v, hu.fr⟩ hu.x23) fun t ⟨m, r⟩ =>
-      ⟨m, by rw [signOut_zero Hs Gs (by omega) h0]; exact r⟩
+      ⟨m, by rw [signOut_zero Hs Gs (by omega_using [hk1]) h0]; exact r⟩
   have h0 : s.mem (s.gpr .x2) ≠ 0 := fun h => by rw [hx10, h] at hb; exact absurd hb (by decide)
   exact main_ok c h624 hcK hp E hu hsy h0
 
@@ -178,7 +178,7 @@ theorem code_ok {s : State} (hp : PreS tsH tsG K s) {i : Nat} {T : Tabs} {Hs Gs 
     (E : ESel f g tsH tsG s i T Hs Gs) :
     WP isa (signC f g c.name c.code) s (Post Hs Gs s) := by
   unfold signC
-  refine WP.alloc (by decide) (by have := fb_toNat hp; omega) ?_
+  refine WP.alloc (by decide) (by have := fb_toNat hp; omega_using [this]) ?_
   unfold signCBody seqs seqs seqs
   refine WP.seq (WP.mono_syms (prologue_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu sy => ?_)

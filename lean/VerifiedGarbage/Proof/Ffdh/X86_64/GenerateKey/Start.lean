@@ -35,10 +35,10 @@ theorem entry_base {s : State} (c : GkCtx s) :
       Keep (.rdi :: mmRegs) s t := by
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (gkEntry_ok rfl (fun i hi => c.hs.st (by omega)) c.ha)
+  refine WP.mono (gkEntry_ok rfl (fun i hi => c.hs.st (by omega_using [hZ, hi])) c.ha)
     fun t ⟨hd, hs, hh, hf, k⟩ => ?_
   have hi : InScr (gkOf s).B (gkOf s).Z s.mem t.mem :=
-    InScr.of_outside hf (by dsimp only [gkOf]; omega)
+    InScr.of_outside hf (by dsimp only [gkOf]; omega_using [hZ])
   have hdom : (gkDom s).length = 2 * (stackArg s 0).toNat ∨ (gkDom s).length = 3 * (stackArg s 0).toNat := by
     rw [show (gkDom s).length = (s.gpr .r9).toNat from bytesAt_length _ _ _]; exact c.dl
   have hrl : (gkRand s).length = (stackArg s 0).toNat := by
@@ -56,7 +56,7 @@ theorem entry_base {s : State} (c : GkCtx s) :
     exact hh
   · have hbl := KeyScalar.bnd_length hdom
     have hn : KeyScalar.bnd (stackArg s 0).toNat (gkDom s) ≠ [] := by
-      intro he; rw [he] at hbl; simp at hbl; omega
+      intro he; rw [he] at hbl; simp at hbl; omega_using [hk, hbl]
     have := lead_lt hn
     rw [hbl] at this
     exact this
@@ -68,23 +68,23 @@ theorem dom_base {p : GkP} {rb : List Byte} {s : State} (h : Base p rb s) (hdi :
       (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) ∧ Keep (.rdi :: mmRegs) s t := by
   have hZ := h.hZ
   have hk := h.k1
-  refine WP.mono (domHead_ok h.scr hdi (by omega) h.k1 h.k2
+  refine WP.mono (domHead_ok h.scr hdi (by omega_using [hZ]) h.k1 h.k2
     (h.hdr (sDom, p.dp) (by simp [GkP.headers]))
     (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [GkP.headers])) (h.dom.take p.k) h.plen)
     fun t ⟨hz, hG, hQ, hf, hd, k⟩ => ?_
   have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega)
+    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_using [hZ])
   have hh : ∀ i < 32, i ≠ sG → i ≠ sQ → word t.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
     fun i hi hg hq => hf.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega) (by omega)
+      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_arith) (by omega_using [hi])
   refine ⟨h.keep hi k ?_, hz, hd, hG, hQ, hi, ?_, k.mono (by decide)⟩
   · intro e he
     simp only [GkP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
       exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide)
   · intro i hi
-    exact hh i (by omega) (by unfold sG sFn; omega) (by unfold sQ sFn; omega)
+    exact hh i (by omega_using [hi]) (by unfold sG sFn; omega_using [hi]) (by unfold sQ sFn; omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.GenerateKey

@@ -65,10 +65,10 @@ theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size
   have := sl_apart c hoa
   have := sl_le c hc.n10 ho
   have := sl_le c hc.n10 ha
-  refine WP.mono (copy_ok (2 * c.n) hs (by omega) (by omega) (by omega)) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
+  refine WP.mono (copy_ok (2 * c.n) hs (by omega_arith) (by omega_using [this]) (by omega_arith)) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
   · show wordsVal _ _ _ _ = wordsVal _ _ _ _
     rw [wordsVal_eq_val32, wordsVal_eq_val32, e]
-  · rw [show 8 * c.n = 4 * (2 * c.n) by omega]; exact O
+  · rw [show 8 * c.n = 4 * (2 * c.n) by omega_using []]; exact O
 
 /-- A slot's number apart from a slot written at another. -/
 theorem sv_outside {base : Addr} {m m' : Mem} {j i : Nat} (h7 : c.n < 10)

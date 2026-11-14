@@ -294,9 +294,9 @@ namespace TP
 variable {s : State} (h : TP s)
 include h
 
-theorem pN : (Pf s).toNat = (s.gpr .esp).toNat - 48 := sub_toNat (by have := h.sp; omega)
+theorem pN : (Pf s).toNat = (s.gpr .esp).toNat - 48 := sub_toNat (by have := h.sp; omega_using [this])
 
-theorem hP : (Pf s).toNat + 104 ≤ 2 ^ 32 := by rw [h.pN]; have := h.sp; have := h.hi; omega
+theorem hP : (Pf s).toNat + 104 ≤ 2 ^ 32 := by rw [h.pN]; have := h.sp; have := h.hi; omega_using [this]
 
 /-- Our argument `i`, above the frame. -/
 theorem argA (i : Nat) : argAddr s i = w64 (Pf s + BitVec.ofNat 32 (52 + 4 * i)) := by
@@ -305,7 +305,7 @@ theorem argA (i : Nat) : argAddr s i = w64 (Pf s + BitVec.ofNat 32 (52 + 4 * i))
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem argOf {j : Nat} {v : BitVec 32}
     (hv : s.mem.readW (w64 (Pf s + BitVec.ofNat 32 (52 + 4 * j))) 32 = v) : arg s j = v := by
@@ -346,15 +346,15 @@ theorem entered {s : State} (h : TP s) :
   have esp : (allocFrame 48 s).gpr .esp = Pf s := allocFrame_esp 48 s
   have hw : ∀ d, d + 4 ≤ 48 → InRegions (allocFrame 48 s).wr (w64 ((allocFrame 48 s).gpr .esp + BitVec.ofNat 32 d)) 4 :=
     fun d hd => by
-      rw [esp, allocFrame_wr, aP hP (by omega)]
-      exact ⟨_, List.mem_cons_self .., Offset.contains_base _ hd (by omega)⟩
+      rw [esp, allocFrame_wr, aP hP (by omega_using [hd])]
+      exact ⟨_, List.mem_cons_self .., Offset.contains_base _ hd (by omega_using [hd])⟩
   have hr : ∀ d, 52 ≤ d → d + 4 ≤ 104 →
       InRegions ((allocFrame 48 s).rd ++ (allocFrame 48 s).wr) (w64 ((allocFrame 48 s).gpr .esp + BitVec.ofNat 32 d)) 4 :=
     fun d h₁ h₂ => by
       refine in_left ⟨⟨argAddr s 0, 52⟩, ?_, ?_⟩
       · rw [allocFrame_wr, h.wr]; simp
-      · rw [esp, h.argA 0, aP hP (by omega), aP hP (by omega)]
-        exact Offset.contains _ (by omega) (by omega) (by omega)
+      · rw [esp, h.argA 0, aP hP (by omega_using []), aP hP (by omega_using [h₂])]
+        exact Offset.contains _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
   obtain ⟨e, run, hm, hg, hrd, hwr⟩ := frameArgs_ok (allocFrame 48 s) (by rw [esp]; exact hP) hw hr
   refine WP.of_runBlock ⟨e, run, ?_⟩
   rw [esp] at hm
@@ -367,7 +367,7 @@ theorem entered {s : State} (h : TP s) :
     by rw [hwr, allocFrame_wr], by rw [hm]; exact fMem_frame hP, fun i hi => ?_,
     (by rw [hm]; exact hw'.1.trans (h.argOf (j := 8) rfl).symm)⟩
   rw [eA]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact hw'.2.1.trans (h.argOf (j := 0) rfl).symm
   · exact hw'.2.2.1.trans (h.argOf (j := 1) rfl).symm
@@ -387,8 +387,8 @@ include h he
 
 omit h in
 theorem a (i : Nat) (hi : i < 8) : arg e i = arg s i := by
-  have := he.args i (by omega)
-  simpa only [show ¬(i = 8) by omega, show ¬(i = 9) by omega, show ¬(i = 10) by omega, ↓reduceIte] using this
+  have := he.args i (by omega_using [hi])
+  simpa only [show ¬(i = 8) by omega_using [hi], show ¬(i = 9) by omega_using [hi], show ¬(i = 10) by omega_using [hi], ↓reduceIte] using this
 
 omit h in
 theorem pub_eq : pubSw 11 8 e = pubTo s := by
@@ -396,7 +396,7 @@ theorem pub_eq : pubSw 11 8 e = pubTo s := by
   simp only [pubSw, pubTo]
   by_cases hk : k < 11
   · simp only [hk, ↓reduceIte]
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10) with
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals exact he.args _ (by decide)
   · simp only [hk, ↓reduceIte]
@@ -440,7 +440,7 @@ theorem bodyTo : BodyTo e := by
     rS (by rw [a6, a7]; exact h.k_d), rS (by rw [a10]; exact h.k_w), kS (by rw [a0]; exact h.k_c),
     kS (by rw [a2, a3]; exact h.k_n), kS (by rw [a4, a5]; exact h.k_a), kS (by rw [a6, a7]; exact h.k_d),
     kS (by rw [a10]; exact h.k_w), by rw [a0]; exact h.fc, by rw [a2, a3]; exact h.fn, by rw [a4, a5]; exact h.fa,
-    by rw [a6, a7]; exact h.fd, by rw [a10]; exact h.fw, by rw [esp, pn]; omega, by rw [esp, pn]; omega,
+    by rw [a6, a7]; exact h.fd, by rw [a10]; exact h.fw, by rw [esp, pn]; omega_using [hsp], by rw [esp, pn]; omega_using [],
     by show roundsOk e 1; simp only [roundsOk, a1]; exact h.rounds⟩, ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · rw [a0]; exact covers_of_mem (rdwr _ (by rw [h.rd]; simp))
   · rw [a2, a3]; exact covers_of_mem (rdwr _ (by rw [h.rd]; simp))
@@ -478,10 +478,10 @@ theorem res : openRes e = toRes s := by
   rw [show ctxCiph e.mem (w64 (arg s 0)) (arg s 1).toNat = ctxCiph s.mem (w64 (arg s 0)) (arg s 1).toNat from hc,
     show ctxH e.mem (w64 (arg s 0)) = ctxH s.mem (w64 (arg s 0)) from by
       rw [ctxH_eq, ctxH_eq, blockAt_frame hf (h.frameDisj (h.k_c.sub_right (Lay.ctxSub (by decide))))],
-    bytesAt_frame hf (h.frameDisj h.k_n) (by have := h.fn; omega),
-    bytesAt_frame hf (h.frameDisj h.k_d) (by have := h.fd; omega),
-    bytesAt_frame hf (h.frameDisj h.k_a) (by have := h.fa; omega),
-    bytesAt_frame hf (h.frameDisj h.k_g) (by have := h.fg; omega)]
+    bytesAt_frame hf (h.frameDisj h.k_n) (by have := h.fn; omega_using []),
+    bytesAt_frame hf (h.frameDisj h.k_d) (by have := h.fd; omega_using []),
+    bytesAt_frame hf (h.frameDisj h.k_a) (by have := h.fa; omega_using []),
+    bytesAt_frame hf (h.frameDisj h.k_g) (by have := h.fg; omega_using [])]
 
 end Entered
 
@@ -562,7 +562,7 @@ theorem openTo_pc (q : OQ) :
       (fun a s' => abiPreserved a s' ∧ toX86.post a s') := by
   rw [openTo_eq]
   refine Pc.frameAlloc (by decide) (by decide) (by decide) (fun a s ⟨hs, _, _⟩ => by
-    have := (TP.of hs).sp; omega) (frameBody_noSp vg) ?_
+    have := (TP.of hs).sp; omega_using [this]) (frameBody_noSp vg) ?_
   refine Pc.seq (Q := fun a e => toPre a ∧ idx a = q ∧ Entered a e) ?_ ?_
   · refine Pc.taint [.esp] (fun a s₁ ⟨s, ⟨hs, hq, hsa⟩, e₁⟩ => ?_) (fun a b s₁ s₂ ⟨x, ⟨_, hqx, _⟩, e₁⟩
         ⟨y, ⟨_, hqy, _⟩, e₂⟩ r hr => ?_) (by taint_decide)
@@ -577,7 +577,7 @@ theorem openTo_pc (q : OQ) :
       have := hb.op.sp
       have : stackUse (openBody vg.callees (toMode vg).bad (toMode vg).fail (toMode vg).dec) ≤ 32 :=
         body_stackUse vg
-      rw [hs]; omega)
+      rw [hs]; omega_arith)
       (fun _ e => e) fun a e ⟨ha, hq, he⟩ => ⟨he.bodyTo (TP.of ha), ?_, rfl⟩) (fun _ _ h => h)
     fun a s₂ ⟨e, ⟨ha, hq, he⟩, ⟨⟨abi, hx, hpost⟩, x, ⟨_, _, hxe⟩, hfr⟩, _, _⟩ => ?_
   swap
@@ -589,7 +589,7 @@ theorem openTo_pc (q : OQ) :
   have eE : w64 (a.gpr .esp) = w64 (Pf a) + BitVec.ofNat 64 48 := by
     rw [← aP hP (by decide)]; congr 1; exact (BitVec.sub_add_cancel _ _).symm
   have rF : (⟨w64 (a.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (Pf a), 48⟩ := by
-    rw [eE]; exact (split_disj (by omega)).symm
+    rw [eE]; exact (split_disj (by omega_using [])).symm
   have ret₁ : e.mem.readW (w64 (a.gpr .esp)) 32 = a.mem.readW (w64 (a.gpr .esp)) 32 :=
     he.frame.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact rF) (by decide)
@@ -605,7 +605,7 @@ theorem openTo_pc (q : OQ) :
     · exact T.r_a
     · rw [he.esp]
       exact (ret_below (k := 80) T.sp).sub_right (region_sub_trans
-        (below_sub (body_stackUse vg) (by rw [T.pN]; have := T.sp; omega)) T.stk_sub)
+        (below_sub (body_stackUse vg) (by rw [T.pN]; have := T.sp; omega_using [this])) T.stk_sub)
   refine ⟨⟨fun r hr => ?_, by rw [freed_mem, ret₂, ret₁]⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -632,7 +632,7 @@ theorem openTo_ct : ConstantTime isa toX86.pre toX86.pub (Open.openTo vg.callees
   congr 3
   funext k
   split
-  · rw [ha _ (by split <;> (try split) <;> omega)]
+  · rw [ha _ (by split <;> (try split) <;> omega_arith)]
   · rfl
 
 end
@@ -753,13 +753,13 @@ theorem openToResult_local {m₁ m₂ : Mem} {ctx rd nonce nl aad al src len tag
   have := Nat.mod_le tl.toNat (2 ^ pb)
   rw [ctxCiph_congr (le15 hr) hc, ctxH_congr hc,
     bytesAt_congr (p := nonce) (n := (nl.setWidth pb).toNat) fun i hi => hn i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := aad) (n := (al.setWidth pb).toNat) fun i hi => ha i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := src) (n := (len.setWidth pb).toNat) fun i hi => hs i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := tag) (n := (tl.setWidth pb).toNat) fun i hi => ht i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
 
 theorem openToRoundsPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Gcm.openToSig.words pb).length →
     (∀ b ∈ Sig.bufs Spec.Gcm.openToSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -874,7 +874,7 @@ theorem openTo_noEsp : (Open.openTo vg.callees (toFn vg)).allInstrs (fun i => !T
 theorem openTo_stackUse : stackUse (Open.openTo vg.callees (toFn vg)) ≤ 80 := by
   have := body_stackUse vg
   show max 0 (stackUse (openBody vg.callees wipe wipe (decTo vg.callees (toFn vg)))) + 48 ≤ 80
-  omega
+  omega_using [this]
 
 /-- `open_to` in its frame of 2616 bytes, holding its working space. -/
 theorem openTo_framed :

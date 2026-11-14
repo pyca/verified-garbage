@@ -38,15 +38,15 @@ def tailPad (D : Nat) : List Byte := [0x80] ++ List.replicate (B - L - 1 - D) 0 
 
 theorem tailPad_length {D : Nat} (h : D + L < B) : (H.tailPad D).length = B - D := by
   simp only [tailPad, List.length_append, List.length_singleton, List.length_replicate, H.lenBytes_length]
-  omega
+  omega_using [h]
 
 /-- The start of the padding. -/
 theorem tailPad_take {D n : Nat} (h₁ : 0 < n) (h₂ : D + n + L ≤ B) :
     (H.tailPad D).take n = [0x80] ++ List.replicate (n - 1) 0 := by
   have hr : (List.replicate (B - L - 1 - D) (0 : Byte)).take (n - 1) = List.replicate (n - 1) 0 := by
-    rw [List.take_replicate, Nat.min_eq_left (by omega)]
-  rw [tailPad, List.take_append_of_le_length (by simp; omega), List.take_append, List.length_singleton, hr,
-    List.take_of_length_le (by simp; omega)]
+    rw [List.take_replicate, Nat.min_eq_left (by omega_using [h₂])]
+  rw [tailPad, List.take_append_of_le_length (by simp; omega_using [h₂]), List.take_append, List.length_singleton, hr,
+    List.take_of_length_le (by simp; omega_using [h₁])]
 
 /-- The last block of a `B + D`-byte message whose last `D` bytes are `x`. -/
 def tailBlock (D : Nat) (x : List Byte) : H.Blk := H.parse fun t => (x ++ H.tailPad D).getD t 0
@@ -59,20 +59,20 @@ theorem blockAt_eq {D : Nat} {m : Mem} {p : Addr} (hD : D ≤ B)
   simp only [blockAt, tailBlock]
   refine H.parse_congr fun k hk => ?_
   have e := Hmac.Common.bytesAt_add m p D (B - D)
-  rw [h, show D + (B - D) = B by omega] at e
+  rw [h, show D + (B - D) = B by omega_using [hD]] at e
   rw [← e, Hmac.Common.bytesAt_getD' _ _ hk]
 
 /-- A `B + D`-byte message is hashed with one more compression. -/
 theorem hash_block (iv : H.HV) {p x : List Byte} {D : Nat} (hp : p.length = B) (hx : x.length = D)
     (h : D + L < B) :
     H.hash iv (p ++ x) = H.digest (H.compress (H.compressList iv p 1) (H.tailBlock D x)) := by
-  have hB : 0 < B := by omega
+  have hB : 0 < B := by omega_using [h]
   have hl : (p ++ x).length = B + D := by simp [hp, hx]
   have hmod : (p ++ x).length % B = D := by
-    rw [hl, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+    rw [hl, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [h])]
   have hdiv : (p ++ x).length / B = 1 := by
-    rw [hl, show B + D = D + B * 1 by omega, Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt (by omega)]
-  rw [hash_one H hB (by rw [hmod]; omega), hdiv, compressList_append H (by rw [hp]; omega), hmod, hl]
+    rw [hl, show B + D = D + B * 1 by omega_using [], Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt (by omega_using [h])]
+  rw [hash_one H hB (by rw [hmod]; omega_using [h]), hdiv, compressList_append H (by rw [hp]; omega_using []), hmod, hl]
   have hr : rest B (p ++ x) = x := by
     simp only [rest, hdiv, Nat.mul_one]
     rw [← hp, List.drop_left]
@@ -86,7 +86,7 @@ def step (D : Nat) (hi ho : H.HV) (u : List Byte) : List Byte :=
   (H.digest (H.compress ho (H.tailBlock D ((H.digest (H.compress hi (H.tailBlock D u))).take D)))).take D
 
 theorem step_length {D : Nat} (h : D ≤ N) (hi ho : H.HV) (u : List Byte) : (H.step D hi ho u).length = D := by
-  simp only [step, List.length_take, H.digest_length]; omega
+  simp only [step, List.length_take, H.digest_length]; omega_using [h]
 
 /-- A hash function of the specification (`S`, with a `D`-byte digest) is the
 `Md` hash function `H` from the initial hash value `iv`, with its digest
@@ -153,7 +153,7 @@ theorem iterate_hmac {S : StreamingHash} {iv : H.HV} {D : Nat} (hl : H.Link S iv
     (ho : S.Repr mem q (xorPad k0 opad)) (n : Nat) {u t : List Byte} (hu : u.length = D) :
     Spec.Pbkdf2.iterate (hmacBlockKey S.H k0) n u t =
       Spec.Pbkdf2.iterate (H.step D (H.stateAt mem p) (H.stateAt mem q)) n u t := by
-  have hB : 0 < B := by have := hl.DL; omega
+  have hB : 0 < B := by have := hl.DL; omega_using [this]
   rw [hl.hB] at hk
   have li : (xorPad k0 ipad).length = B := by simp [xorPad, hk]
   have lo : (xorPad k0 opad).length = B := by simp [xorPad, hk]
@@ -166,7 +166,7 @@ theorem hmac_outer {S : StreamingHash} {iv : H.HV} {D : Nat} (hl : H.Link S iv D
     (hk : k0.length = S.H.blockSize) {mem : Mem} {p : Addr} (ho : S.Repr mem p (xorPad k0 opad)) :
     hmacBlockKey S.H k0 text =
       (H.digest (H.compress (H.stateAt mem p) (H.tailBlock D (S.H.hash (xorPad k0 ipad ++ text))))).take D := by
-  have hB : 0 < B := by have := hl.DL; omega
+  have hB : 0 < B := by have := hl.DL; omega_using [this]
   rw [hl.hB] at hk
   have lo : (xorPad k0 opad).length = B := by simp [xorPad, hk]
   have hx : (S.H.hash (xorPad k0 ipad ++ text)).length = D := by

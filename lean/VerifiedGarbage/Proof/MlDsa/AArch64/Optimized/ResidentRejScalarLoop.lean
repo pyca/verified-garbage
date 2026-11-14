@@ -31,16 +31,16 @@ theorem scalarLoopStep_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq
     h.mask h.constants.qreg h.x3 h.x4 hc h.stored
     (by rw [h.keep.wr,h.x3]; exact hl.write4 _ hc))
     fun t ⟨ht,hvec,hf,h2,h5,h3,h4,hguard,hst⟩ => ?_
-  have he := h.batch hl (by omega : d+1≤n) (by omega : (parsed s₀ b L d).length+1≤256)
+  have he := h.batch hl (by omega_using [hd] : d+1≤n) (by omega_using [hc] : (parsed s₀ b L d).length+1≤256)
   rw [candidateFold_one] at he
   rw [he] at h3 h4 hst
   refine ⟨⟨(h.keep.trans ht).mono (by decide),h.frame.trans hf,
-    h.constants.of_keep ht (by decide) (by decide) hvec,by omega,?_,h3,h4,?_,?_,?_,hst⟩,hguard⟩
+    h.constants.of_keep ht (by decide) (by decide) hvec,by omega_using [hd],?_,h3,h4,?_,?_,?_,hst⟩,hguard⟩
   · rw [h2,h.x2]
     change b+BitVec.ofNat 64 (3*d)+BitVec.ofNat 64 3=_
-    rw [Offset.add_add,show 3*d+3=3*(d+1) by omega]
-  · rw [h5,toNat_sub_n (by rw [h.x5]; simp; omega),h.x5,show (1 : BitVec 64).toNat=1 from rfl]
-    omega
+    rw [Offset.add_add,show 3*d+3=3*(d+1) by omega_using []]
+  · rw [h5,toNat_sub_n (by rw [h.x5]; simp; omega_using [hd]),h.x5,show (1 : BitVec 64).toNat=1 from rfl]
+    omega_using []
   · rw [ht.get .x10]; exact h.mask
   · rw [ht.get .x0]; exact h.zero
 
@@ -64,10 +64,10 @@ private theorem mulGuard_eval {s : State}
       exact Nat.mul_eq_zero.mpr h
   rw [eval_nonzero]
   by_cases h : s.gpr .x16=0
-  · rw [h,decide_eq_false (by have:=hz.mp h; omega)]
+  · rw [h,decide_eq_false (by have:=hz.mp h; omega_using [this])]
     rfl
   · rw [show (s.gpr .x16 != 0)=true from bne_iff_ne.mpr h,
-      decide_eq_true (by by_contra hn; apply h; exact hz.mpr (by omega))]
+      decide_eq_true (by by_contra hn; apply h; exact hz.mpr (by omega_using [hn]))]
 
 /-- The scalar remainder stops on exactly the original completion or input
 exhaustion conditions. -/
@@ -84,10 +84,10 @@ theorem scalarLoop_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
   rintro rank t ⟨j,rfl,ht,hdj,hj,hc⟩
   refine WP.mono (scalarLoopStep_ok hl ht hj hc) fun u ⟨hu,hflag⟩ => ?_
   have hb : (parsed s₀ b L (j+1)).length≤256 := rnFold_length_le hL _
-  have he := mulGuard_eval (by rw [hu.x4]; omega) (by rw [hu.x5]; have:=hl.bound; omega) hflag
+  have he := mulGuard_eval (by rw [hu.x4]; omega_using []) (by rw [hu.x5]; have:=hl.bound; omega_using [this]) hflag
   rw [hu.x4,hu.x5] at he
   by_cases hp : j+1<n ∧ (parsed s₀ b L (j+1)).length<256
-  · exact .inr ⟨by rw [he,decide_eq_true (by omega)],n-(j+1),by omega,j+1,rfl,hu,by omega,hp⟩
-  · exact .inl ⟨by rw [he,decide_eq_false (by omega)],j+1,hu,by omega,by omega⟩
+  · exact .inr ⟨by rw [he,decide_eq_true (by omega_using [hp])],n-(j+1),by omega_using [hj],j+1,rfl,hu,by omega_using [hdj],hp⟩
+  · exact .inl ⟨by rw [he,decide_eq_false (by omega_using [hp])],j+1,hu,by omega_using [hdj],by omega_using [hj, hb, hp]⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

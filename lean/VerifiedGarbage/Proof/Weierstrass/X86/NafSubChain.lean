@@ -27,16 +27,16 @@ theorem nafRotateBit (x : BitVec 32) :
     simp only [BitVec.toNat_and,BitVec.toNat_ofNat]
     change x.toNat &&& 1 = (x.toNat%2)%2^32
     rw [Nat.and_one_is_mod]
-    omega
+    omega_using []
   rw [h]
-  have hm : x.toNat%2=0 ∨ x.toNat%2=1 := by omega
+  have hm : x.toNat%2=0 ∨ x.toNat%2=1 := by omega_using []
   rcases hm with hm | hm <;> rw [hm] <;> rfl
 
 theorem nafShiftWord_value (lo hi : BitVec 32) :
     (lo >>> 1 + (hi &&& (1 : BitVec 32)).rotateRight 1).toNat =
       (lo.toNat/2+2^31*hi.toNat)%2^32 := by
   rw [BitVec.toNat_add,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,nafRotateBit]
-  omega
+  omega_using []
 
 theorem nafShiftWord_ok {s : State} {base : Addr} {size work i : Nat}
     (hs : Scr s base size) (ha : work+4*(i+1)+4≤size) :
@@ -46,7 +46,7 @@ theorem nafShiftWord_ok {s : State} {base : Addr} {size work i : Nat}
       Keeps [.eax,.edx] s u ∧ Outside base (work+4*i) 4 s.mem u.mem := by
   have hn := hs.nowrap
   unfold Naf.shiftWord
-  refine wp_movS (readSrc_sc hs (by omega)) fun s₁ U₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_using [ha])) fun s₁ U₁ _ => ?_
   refine wp_shr (by decide) fun s₂ U₂ _ => ?_
   have K₂ : Keeps [.eax,.edx] s s₂ :=
     (U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))
@@ -58,13 +58,13 @@ theorem nafShiftWord_ok {s : State} {base : Addr} {size work i : Nat}
     (((K₂.trans (U₃.keeps.mono (by decide))).trans (U₄.keeps.mono (by decide))).trans
       (U₅.keeps.mono (by decide))).trans (U₆.keeps.mono (by decide))
   have hs₆ := hs.of_keeps K (by decide)
-  refine wp_storeS (hs₆.ea (by omega)) (hs₆.write (by omega)) fun u U₇ => WP.block_nil ?_
+  refine wp_storeS (hs₆.ea (by omega_using [ha])) (hs₆.write (by omega_using [ha])) fun u U₇ => WP.block_nil ?_
   refine ⟨?_,K.trans (U₇.keeps _),?_⟩
   · rw [U₇.mem,w32_write_self,U₆.gpr,U₅.other _ (by decide),U₄.other _ (by decide),
       U₃.other _ (by decide),U₂.gpr,U₁.gpr,U₅.gpr,U₄.gpr,U₃.gpr,U₂.mem,U₁.mem]
     exact nafShiftWord_value _ _
   · rw [U₇.mem,U₆.mem,U₅.mem,U₄.mem,U₃.mem,U₂.mem,U₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [ha, hn])
 
 end VG.Proof.Weierstrass.X86
 
@@ -83,7 +83,7 @@ theorem nafShift_arith (j V s t : Nat) (hV : V<2^(32*j)) :
     ((V+2^(32*j)*s+2^(32*j)*2^32*t)/2)%(2^(32*j)*2^32) =
       ((V+2^(32*j)*s)/2)%2^(32*j)+2^(32*j)*((s/2+2^31*t)%2^32) := by
   generalize 2^(32*j)=A at *
-  have hA0 : 0<A := by omega
+  have hA0 : 0<A := by omega_using [hV]
   have e1 : A*2^32*t=2*(A*(2^31*t)) := by
     rw [show (2:Nat)^32=2*2^31 from rfl,Nat.mul_comm A,Nat.mul_assoc,
       Nat.mul_assoc,Nat.mul_left_comm A]
@@ -103,16 +103,16 @@ theorem nafShiftRows_ok {s : State} {base : Addr} {size work n : Nat}
   | j+1, hj => by
     have hn := hs.nowrap
     rw [List.range_succ,List.flatMap_append,List.flatMap_singleton,WP.block_append_iff]
-    refine WP.mono (nafShiftRows_ok hs ha j (by omega)) fun s₁ ⟨V₁,K₁,O₁⟩ => ?_
-    refine WP.mono (nafShiftWord_ok (hs.of_keeps K₁ (by decide)) (by omega))
+    refine WP.mono (nafShiftRows_ok hs ha j (by omega_using [hj])) fun s₁ ⟨V₁,K₁,O₁⟩ => ?_
+    refine WP.mono (nafShiftWord_ok (hs.of_keeps K₁ (by decide)) (by omega_using [ha, hj]))
       fun u ⟨V₂,K₂,O₂⟩ => ⟨?_,K₁.trans K₂,?_⟩
-    · rw [val32_succ,O₂.val32 (by omega) (by omega),V₁,V₂,
-        O₁.w32 (by omega) (by omega),O₁.w32 (by omega) (by omega),
+    · rw [val32_succ,O₂.val32 (by omega_using []) (by omega_using [ha, hj, hn]),V₁,V₂,
+        O₁.w32 (by omega_using []) (by omega_using [ha, hj, hn]),O₁.w32 (by omega_using []) (by omega_using [ha, hj, hn]),
         val32_succ s.mem base work (j+1),val32_succ s.mem base work j,pow32_succ,
         Nat.mul_comm (2^32) (2^(32*j))]
       exact (nafShift_arith j _ _ _ (val32_lt _ _ _ _)).symm
     · intro x hx
-      rw [O₂ x (by omega),O₁ x (by omega)]
+      rw [O₂ x (by omega_using [hx]),O₁ x (by omega_using [hx])]
 
 theorem nafShiftTop_ok {s : State} {base : Addr} {size work : Nat}
     (hs : Scr s base size) (ha : work+36≤size) :
@@ -121,15 +121,15 @@ theorem nafShiftTop_ok {s : State} {base : Addr} {size work : Nat}
       w32 u.mem base (work+32)=w32 s.mem base (work+32)/2 ∧
       Keeps [.eax] s u ∧ Outside base (work+32) 4 s.mem u.mem := by
   have hn := hs.nowrap
-  refine wp_movS (readSrc_sc hs (by omega)) fun s₁ U₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_using [ha])) fun s₁ U₁ _ => ?_
   refine wp_shr (by decide) fun s₂ U₂ _ => ?_
   have K := U₁.keeps.trans U₂.keeps
   have hs₂ := hs.of_keeps K (by decide)
-  refine wp_storeS (hs₂.ea (by omega)) (hs₂.write (by omega)) fun u U₃ => WP.block_nil
+  refine wp_storeS (hs₂.ea (by omega_using [ha])) (hs₂.write (by omega_using [ha])) fun u U₃ => WP.block_nil
     ⟨?_,K.trans (U₃.keeps _),?_⟩
   · rw [U₃.mem,w32_write_self,U₂.gpr,U₁.gpr,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
   · rw [U₃.mem,U₂.mem,U₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [ha, hn])
 
 theorem nafShift_ok {s : State} {base : Addr} {size work : Nat}
     (hs : Scr s base size) (ha : work+36≤size) :
@@ -141,12 +141,12 @@ theorem nafShift_ok {s : State} {base : Addr} {size work : Nat}
   refine WP.mono (nafShiftRows_ok (n := 9) hs ha 8 (by decide)) fun s₁ ⟨V₁,K₁,O₁⟩ => ?_
   refine WP.mono (nafShiftTop_ok (hs.of_keeps K₁ (by decide)) ha)
     fun u ⟨V₂,K₂,O₂⟩ => ⟨?_,K₁.trans (K₂.mono (by decide)),?_⟩
-  · rw [val32_succ,O₂.val32 (by omega) (by omega),V₁,V₂,O₁.w32 (by omega) (by omega)]
+  · rw [val32_succ,O₂.val32 (by omega_using []) (by omega_using [ha, hn]),V₁,V₂,O₁.w32 (by omega_using []) (by omega_using [ha, hn])]
     have E := val32_succ s.mem base work 8
     have H := val32_lt s.mem base work 8
     simp only [Nat.reduceAdd,Nat.reduceMul] at E ⊢
-    omega
-  · exact (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))
+    omega_using [E, H]
+  · exact (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))
 
 end VG.Proof.Weierstrass.X86
 
@@ -178,23 +178,23 @@ theorem nafSubWord_ok {s : State} {base : Addr} {size work i : Nat}
   rcases hop with ⟨rfl,rfl⟩ | ⟨rfl,hc⟩
   · refine wp_subS rfl fun s₂ u₂ c₂ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hs₂.ea (by omega)) (hs₂.write ha) fun u m => WP.block_nil
+    refine wp_storeS (hs₂.ea (by omega_using [ha])) (hs₂.write ha) fun u m => WP.block_nil
       ⟨?_,⟨_,by rw [m.cf,c₂],?_⟩,(u₁.keeps.trans u₂.keeps).trans (m.keeps _)⟩
-    · rw [m.mem,u₂.mem,u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m.mem,u₂.mem,u₁.mem]; exact writeW32_outside _ _ _ (by omega_using [ha, hn])
     · rw [m.mem,w32_write_self,u₂.gpr,sub_toNat,u₁.gpr,u₁.other _ hr]
       simp only [w32,Bool.toNat_false]
       by_cases h : (s.mem.readW (off base (work+4*i)) 32).toNat < (s.gpr r).toNat <;>
-        simp only [h,decide_true,decide_false,Bool.toNat_true,Bool.toNat_false] <;> omega
+        simp only [h,decide_true,decide_false,Bool.toNat_true,Bool.toNat_false] <;> omega_using [h]
   · refine wp_sbbS rfl (by rw [cf₁]; exact hc) fun s₂ u₂ c₂ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hs₂.ea (by omega)) (hs₂.write ha) fun u m => WP.block_nil
+    refine wp_storeS (hs₂.ea (by omega_using [ha])) (hs₂.write ha) fun u m => WP.block_nil
       ⟨?_,⟨_,by rw [m.cf,c₂],?_⟩,(u₁.keeps.trans u₂.keeps).trans (m.keeps _)⟩
-    · rw [m.mem,u₂.mem,u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m.mem,u₂.mem,u₁.mem]; exact writeW32_outside _ _ _ (by omega_using [ha, hn])
     · rw [m.mem,w32_write_self,u₂.gpr,sub3_toNat,u₁.gpr,u₁.other _ hr]
       simp only [w32]
       have := Bool.toNat_le cin
       by_cases h : (s.mem.readW (off base (work+4*i)) 32).toNat < (s.gpr r).toNat+cin.toNat <;>
-        simp only [h,decide_true,decide_false,Bool.toNat_true,Bool.toNat_false] <;> omega
+        simp only [h,decide_true,decide_false,Bool.toNat_true,Bool.toNat_false] <;> omega_arith
 
 end VG.Proof.Weierstrass.X86
 
@@ -222,20 +222,20 @@ theorem nafSubChain_ok {s : State} {base : Addr} {size work : Nat}
         val32 s.mem base work (k+1)+2^(32*(k+1))*c.toNat) ∧ Keeps [.eax] s u
   | 0, ha => by
     simp only [List.range_zero,List.flatMap_nil,List.append_nil]
-    refine WP.mono (nafSubWord_ok hs (by omega) (by decide) (.inl ⟨rfl,rfl⟩))
+    refine WP.mono (nafSubWord_ok hs (by omega_using [ha]) (by decide) (.inl ⟨rfl,rfl⟩))
       fun u ⟨O,⟨c,hc,V⟩,K⟩ => ⟨by simpa using O,⟨c,hc,?_⟩,K⟩
     simpa only [val32,nafDigitVal,Nat.mul_zero,Nat.add_zero,Bool.toNat_false] using V
   | k+1, ha => by
     have hn := hs.nowrap
     rw [List.range_succ,List.flatMap_append,List.flatMap_singleton,←List.append_assoc,
       WP.block_append_iff]
-    refine WP.mono (nafSubChain_ok hs k (by omega)) fun s₁ ⟨O₁,⟨c₁,hc₁,V₁⟩,K₁⟩ => ?_
+    refine WP.mono (nafSubChain_ok hs k (by omega_using [ha])) fun s₁ ⟨O₁,⟨c₁,hc₁,V₁⟩,K₁⟩ => ?_
     refine WP.mono (nafSubWord_ok (hs.of_keeps K₁ (by decide)) ha (by decide) (.inr ⟨rfl,hc₁⟩))
       fun u ⟨O,⟨c,hc,V⟩,K⟩ => ⟨?_,⟨c,hc,?_⟩,K₁.trans K⟩
-    · exact (O₁.mono (Nat.le_refl _) (by omega)).trans (O.mono (by omega) (by omega))
-    · rw [O₁.w32 (d := work+4*(k+1)) (by omega) (by omega),K₁.1 .edx (by decide)] at V
+    · exact (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O.mono (by omega_using []) (by omega_using []))
+    · rw [O₁.w32 (d := work+4*(k+1)) (by omega_using []) (by omega_using [ha, hn]),K₁.1 .edx (by decide)] at V
       rw [val32_succ u.mem base work (k+1),val32_succ s.mem base work (k+1),
-        O.val32 (by omega) (by omega),nafDigitVal,pow32_succ (k+1)]
+        O.val32 (by omega_using []) (by omega_using [ha, hn]),nafDigitVal,pow32_succ (k+1)]
       generalize 2^(32*(k+1))=P at *
       grind
 

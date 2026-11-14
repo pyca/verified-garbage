@@ -58,7 +58,7 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
     h.stackSched.sub_left (by rw [hF]; exact Region.sub_prefix (by decide))
   have keyIn : ∀ c < (s.gpr .a1).toNat,
       (⟨s.gpr .a0, (s.gpr .a1).toNat⟩ : Region).Contains (s.gpr .a0 + BitVec.ofNat 64 c) 1 :=
-    fun c hc => Offset.contains_base _ (by omega) (by omega)
+    fun c hc => Offset.contains_base _ (by omega_using [hc]) (by omega_using [hc])
   have keyFrame : ∀ {m m' : Mem} {r : Region}, (⟨s.gpr .a0, (s.gpr .a1).toNat⟩ : Region).Disjoint r →
       Frame [r] m m' → bytesAt m' (s.gpr .a0) (s.gpr .a1).toNat = bytesAt m (s.gpr .a0) (s.gpr .a1).toNat :=
     fun hd hf => bytesAt_frame hf fun c hc r hr hcon => by
@@ -73,8 +73,8 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
   refine WP.mono (WP.keep [.a7, .t0] (Q := fun t => t.gpr .a7 = frameBase s ∧ t.gpr .t0 = frameBase s ∧
       t.mem = s.mem) (by brun [inner_sp, inner_mem]; all_goals rfl) (by decide) rfl)
     fun a ⟨⟨a7, a0, am⟩, ak⟩ => ?_
-  refine WP.mono (initSteps_run (S := frameBase s) a0 (by omega) (fun i hi => by
-      rw [ak.2.2]; exact W _ _ (by omega) (by omega)) 1042 (Nat.le_refl _))
+  refine WP.mono (initSteps_run (S := frameBase s) a0 (by omega_using [hFal]) (fun i hi => by
+      rw [ak.2.2]; exact W _ _ (by omega_using [hi]) (by omega_using [])) 1042 (Nat.le_refl _))
     fun t₁ ⟨held, _, F₁, k₁⟩ => ?_
   rw [am] at F₁
   have hT : ∀ o < 4168, t₁.mem (frameBase s + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o :=
@@ -87,18 +87,18 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
   have wr₁ : t₁.wr = (inner s).wr := k₁.2.2.trans ak.2.2
   -- The keyed P-array.
   have E : KeyPEnv (frameBase s) (s.gpr .a0) (s.gpr .a1).toNat t₁ := by
-    refine ⟨by omega, (s.gpr .a1).isLt, fun c hc => ?_, g₁ _ (by decide) (by decide),
+    refine ⟨by omega_using [hv], (s.gpr .a1).isLt, fun c hc => ?_, g₁ _ (by decide) (by decide),
       by rw [g₁ _ (by decide) (by decide)]; simp, (k₁.gpr (by decide)).trans a7, by rw [wr₁]; exact W,
-      fun c hc hcon => fK _ hcon (keyIn c hc), by omega⟩
+      fun c hc hcon => fK _ hcon (keyIn c hc), by omega_using [hFal]⟩
     rw [rd₁, h.rd]; exact ⟨_, List.mem_append_left _ List.mem_cons_self, keyIn c hc⟩
   apply WP.seq
   refine WP.mono (keyP_run E) fun t₂ I₂ => ?_
   have hS₂ : ∀ o < 4096, t₂.mem (frameBase s + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o := fun o ho => by
-    rw [← hT o (by omega)]
+    rw [← hT o (by omega_using [ho])]
     refine I₂.frame _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint (frameBase s) (d := o) (n := 1) (e := 4096) (k := 4 * 18) (.inl (by omega))
-      (by omega) (by omega) _ (Region.contains_self _ _) hc
+    exact Offset.disjoint (frameBase s) (d := o) (n := 1) (e := 4096) (k := 4 * 18) (.inl (by omega_using [ho]))
+      (by omega_using [ho]) (by omega_using []) _ (Region.contains_self _ _) hc
   have hK₂ : scheduleAt t₂.mem (frameBase s) = keyed (bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) := by
     refine keyed_of_mem hS₂ fun i hi => ?_
     rw [I₂.done i hi, table_P hT hi, B₁]
@@ -109,7 +109,7 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
     (by brun; all_goals rfl) (by decide) rfl) fun t₃ ⟨⟨b₃, c₃, m₃⟩, k₃⟩ => ?_
   have wr₃ : t₃.wr = (inner s).wr := by rw [k₃.2.2, I₂.keep.2.2, wr₁]
   have EE : EncEnv (frameBase s) t₃ :=
-    ⟨by rw [k₃.gpr (by decide), g₂ _ (by decide), (k₁.gpr (by decide))]; exact a7, by omega, by omega,
+    ⟨by rw [k₃.gpr (by decide), g₂ _ (by decide), (k₁.gpr (by decide))]; exact a7, by omega_using [hFal], by omega_using [hFal],
       by rw [wr₃]; exact W⟩
   have I₃ : EncInv (bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) (frameBase s) t₃ 0 t₃ :=
     ⟨by rw [m₃, hK₂, ksIter_zero], by rw [b₃, c₃, ksIter_zero]; rfl, Keep.refl _ _, Frame.refl _ _⟩
@@ -138,10 +138,10 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
   refine WP.mono (copyLoop_ok (tmp := .t1) (src := .t0) (dst := .a2) (cnt := .t4) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) c (N := 4168) (by decide) (by decide) c4
     (fun i hi => by
-      rw [c0]; obtain ⟨r, hr, hc⟩ := W i 1 (by omega) (by omega)
+      rw [c0]; obtain ⟨r, hr, hc⟩ := W i 1 (by omega_using [hi]) (by omega_using [])
       exact ⟨r, List.mem_append_right _ (by rw [wrc]; exact hr), hc⟩)
     (fun i hi => ⟨⟨s.gpr .a2, 4168⟩, by rw [wrc, inner_wr, h.wr]; simp,
-      by rw [a2c]; exact Offset.contains_base _ (by omega) (by omega)⟩)
+      by rw [a2c]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
     (by rw [a2c, c0]; exact sep_of_disjoint fS.symm))
     fun d ⟨dc, df, dk⟩ => ?_
   rw [a2c, c0, cm] at dc
@@ -157,8 +157,8 @@ theorem expandKey_wp {s : State} (h : KeyPre s) :
       t.gpr .t4 = BitVec.ofNat 64 522 ∧ t.gpr .t1 = 0#64 ∧ t.mem = d.mem) (by brun [a7d]) (by decide) rfl)
     fun f ⟨⟨f0, f4, f1, fm⟩, fk⟩ => ?_
   refine WP.mono (fillLoop_ok (v := .t1) (ptr := .t0) (cnt := .t4) (by decide) (by decide) (by decide) f
-    (N := 522) (by decide) (by decide) f4 (by rw [f0]; omega)
-    (fun i hi => by rw [fk.2.2, wrd, f0]; exact frame_in s (by omega) (by omega)))
+    (N := 522) (by decide) (by decide) f4 (by rw [f0]; omega_using [hFal])
+    (fun i hi => by rw [fk.2.2, wrd, f0]; exact frame_in s (by omega_using [hi]) (by omega_using [])))
     fun t ⟨tz, tf, _⟩ => ⟨?_, fun j hj => by rw [← f0, ← f1]; exact tz j hj⟩
   rw [f0, fm] at tf
   show scheduleAt t.mem (s.gpr .a2) = _

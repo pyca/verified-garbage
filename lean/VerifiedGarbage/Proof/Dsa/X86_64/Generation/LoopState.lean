@@ -41,7 +41,7 @@ theorem PrimeLoopState.counter_bound {P : PrimeParams} {mi : BitVec 64} {s₀ s 
   have hu := h.usedBound
   have hi := h.i1
   have hn := h.uniformBound
-  omega
+  omega_using [hb, hr, hu, hn]
 
 theorem PrimeLoopState.of_mem {P : PrimeParams} {mi : BitVec 64} {s₀ s t : State}
     {res : Option (Bool × List Byte)} {i uni used : Nat} (h : PrimeLoopState P mi s₀ res i uni used s)
@@ -72,6 +72,6 @@ theorem primeLoopEnd_some {P : PrimeParams} {mi : BitVec 64} {s₀ s : State}
     have hpair := Option.some.inj (hres.symm.trans he)
     obtain ⟨hb, hr⟩ := Prod.mk.inj hpair
     subst b' rest
-    exact ⟨hstat, by rw [List.length_drop]; omega⟩
+    exact ⟨hstat, by rw [List.length_drop]; omega_using [hu]⟩
 
 end VG.Proof.Dsa.X86_64.Generation

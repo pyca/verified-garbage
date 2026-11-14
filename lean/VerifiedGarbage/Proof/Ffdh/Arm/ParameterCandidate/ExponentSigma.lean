@@ -19,14 +19,14 @@ def countShift (count : Nat) : Nat := if count % 4 = 0 then 4 else count % 4
 
 theorem countShift_bounds (count : Nat) : 0 < countShift count ∧ countShift count ≤ 4 := by
   unfold countShift
-  split <;> omega
+  split <;> omega_arith
 
 private theorem maskCount (count : Nat) : BitVec.ofNat 32 count &&& 3 = BitVec.ofNat 32 (count % 4) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
   change (count % 2 ^ 32 &&& (2 ^ 2 - 1)) = (count % 4) % 2 ^ 32
   rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod_of_dvd count (by decide : 4 ∣ 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : count % 4 < 2 ^ 32)]
+    Nat.mod_eq_of_lt (by omega_using [] : count % 4 < 2 ^ 32)]
 
 theorem sigmaHead_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
     (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count) :
@@ -34,14 +34,14 @@ theorem sigmaHead_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
       (t.gpr .r1 = BitVec.ofNat 32 (count % 4) ∧ t.z = decide (count % 4 = 0) ∧ t.mem = s.mem) ∧
       Rest [.r1] s t := by
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 60#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.read (by decide)
   refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.exponentSigmaHead
   ffrun [BitVec.add_zero, read, saved, maskCount count]
   change (_ - 0#32 == 0#32) = _
   rw [BitVec.sub_zero]
-  exact ofNat_beq_zero (by omega : count % 4 < 2 ^ 32)
+  exact ofNat_beq_zero (by omega_using [] : count % 4 < 2 ^ 32)
 
 private theorem sigmaChoice_ok {s : State} {count : Nat}
     (value : s.gpr .r1 = BitVec.ofNat 32 (count % 4)) (zero : s.z = decide (count % 4 = 0)) :

@@ -19,13 +19,13 @@ theorem codeWith_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q
     WP isa (codeWith b) s fun t => abiPreserved s t ∧
       Spec.Rsa.writtenOutcome t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateChecked (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) (bs 7)) := by
-  have stackFit : 56 ≤ s.sp.toNat := by have := h.stackFit; simp only [stackBytes] at this; omega
+  have stackFit : 56 ≤ s.sp.toNat := by have := h.stackFit; simp only [stackBytes] at this; omega_using [this]
   have allocation : frameBytes ≤ (pcPushed s).sp.toNat := by
     change frameBytes ≤ (s.sp - BitVec.ofNat 32 56).toNat
     rw [FrameStack.sub_toNat' stackFit]
     have := h.stackFit
     simp only [stackBytes, frameBytes] at *
-    omega
+    omega_using [this]
   unfold codeWith
   refine WP.frame (by decide) stackFit (by decide) ?_
   rw [WP.seq_iff]
@@ -44,7 +44,7 @@ theorem codeWith_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte} {Q
     change (s.sp - BitVec.ofNat 32 56).toNat + 56 ≤ 2 ^ 32
     rw [FrameStack.sub_toNat' stackFit]
     have := s.sp.isLt
-    omega
+    omega_using []
   have saved : Spill.Saved (freed frameBytes u).mem (State.addr (freed frameBytes u).sp) s.gpr pcCalleeSaved := by
     rw [spU, freed_mem_eq]
     exact h.saved (t := u) frame

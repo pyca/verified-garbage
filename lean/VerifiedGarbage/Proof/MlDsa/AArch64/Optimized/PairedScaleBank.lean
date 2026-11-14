@@ -82,13 +82,13 @@ theorem scaleBank_ok (j : Fin 4) {s : State} {rest : List Instr} {Q : State → 
   simp only [scaleOne,Vector.getElem_set]
   by_cases ha : j.val=a.val
   · simp only [ha,ite_true]
-    have he : (⟨j.val,by omega⟩:Fin 8)=a := Fin.ext ha
+    have he : (⟨j.val,by omega_using []⟩:Fin 8)=a := Fin.ext ha
     apply vec_ext
     intro e he'
     have hreg := congrArg (fun a:Fin 8 => (bankRegs p)[a.val]) he
     have hval := congrArg (fun a:Fin 8 => (v p)[a.val]) he
     rw [← hreg,← hval]
-    rw [hh _ hm e he',hv p ⟨j.val,by omega⟩]
+    rw [hh _ hm e he',hv p ⟨j.val,by omega_using []⟩]
     rw [fastVector_word _ _ he']
   · simp only [ha,ite_false]
     rw [ht.get _ ((scale_geometry j p a).2 (Ne.symm ha)),hv p a]

@@ -32,12 +32,12 @@ def storeEnv {F : Type _} (m : Nat) (E : Nat → F) (x : Nat) : F :=
 
 theorem dst_inj {m : Nat} {i j : Nat} (hi : i<5) (hj : j<5) :
     dst m i=dst m j ↔ i=j :=
-  ⟨fun h => by unfold dst at h; split at h <;> split at h <;> omega,fun h => h ▸ rfl⟩
+  ⟨fun h => by unfold dst at h; split at h <;> split at h <;> omega_arith,fun h => h ▸ rfl⟩
 
 theorem storeEnv_dst {F : Type _} {m : Nat} (E : Nat → F) {j : Nat} (hj : j<5) :
     storeEnv m E (dst m j)=E (src j) := by
   unfold storeEnv
-  have : j=0∨j=1∨j=2∨j=3∨j=4 := by omega
+  have : j=0∨j=1∨j=2∨j=3∨j=4 := by omega_using [hj]
   rcases this with rfl|rfl|rfl|rfl|rfl <;>
     simp (disch := decide) only [dst_inj,Nat.reduceEqDiff,↓reduceIte]
 
@@ -67,15 +67,15 @@ theorem storeEntry_inv {Sl : Nat → Prop} (layout : Lay M 8192 Sl)
     apply wordsVal_of_words
     intro k hk
     by_cases h3 : j<3
-    · have := we (4*j+k) (by omega)
+    · have := we (4*j+k) (by omega_using [hk, h3])
       simp only [dst,src,h3,ite_true]
-      rw [show 2848+96*(m-1)+32*j+8*k=2848+96*(m-1)+8*(4*j+k) by omega,
-        show 704+32*j+8*k=704+8*(4*j+k) by omega]
+      rw [show 2848+96*(m-1)+32*j+8*k=2848+96*(m-1)+8*(4*j+k) by omega_using [],
+        show 704+32*j+8*k=704+8*(4*j+k) by omega_using []]
       exact this
-    · have := wc (4*(j-3)+k) (by omega)
+    · have := wc (4*(j-3)+k) (by omega_using [hj, hk])
       simp only [dst,src,h3,ite_false]
-      rw [show 6000+64*(m-1)+32*(j-3)+8*k=6000+64*(m-1)+8*(4*(j-3)+k) by omega,
-        show 5400+32*(j-3)+8*k=5400+8*(4*(j-3)+k) by omega]
+      rw [show 6000+64*(m-1)+32*(j-3)+8*k=6000+64*(m-1)+8*(4*(j-3)+k) by omega_using [],
+        show 5400+32*(j-3)+8*k=5400+8*(4*(j-3)+k) by omega_using []]
       exact this
   have hkeep (x : Nat) (hx : x∈V) (hnd : x∉dsts m) :
       wordsVal t.mem base x 4=wordsVal s.mem base x 4 := by
@@ -87,13 +87,13 @@ theorem storeEntry_inv {Sl : Nat → Prop} (layout : Lay M 8192 Sl)
     simp only [dst,show M.n=4 from rfl,Nat.reduceLT,ite_true,ite_false] at a0 a1 a2 a3 a4
     have hb := layout.le x (hi.sl x hx)
     change x+32≤8192 at hb
-    refine ut.wordsVal (fun w hw => ?_) (by omega)
+    refine ut.wordsVal (fun w hw => ?_) (by omega_using [hb])
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hw
-    rcases hw with rfl|rfl <;> dsimp only <;> omega
+    rcases hw with rfl|rfl <;> dsimp only <;> omega_arith
   refine ⟨hi.scr.of_keepRegs kt (by decide),hi.mod.unch ut (by
       intro w hw
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hw
-      rcases hw with rfl|rfl <;> (change 64+32≤_ ∨ _; omega)) hn,?_,?_,?_⟩
+      rcases hw with rfl|rfl <;> (change 64+32≤_ ∨ _; omega_using [])) hn,?_,?_,?_⟩
   · intro x hx
     rcases List.mem_append.mp hx with hx|hx
     · simp only [dsts,List.mem_map,List.mem_range] at hx

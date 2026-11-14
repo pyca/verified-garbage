@@ -27,13 +27,13 @@ theorem expBit_ok (s : State) {base : BitVec 32} {len w M x E V : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   rw [expBit, WP.seq_iff]
   refine WP.mono (exp_square_ok s h) ?_
   rintro u ⟨square, keepsU, frameU, restU⟩
   have byteU := (keeps_header_readW keepsU size (d := 200) (bits := 32) (by decide)).trans byte
   rw [WP.seq_iff]
-  refine WP.mono (expBitTest_ok u square.ready.workspace (by omega) square.ready.ptr hv byteU) ?_
+  refine WP.mono (expBitTest_ok u square.ready.workspace (by omega_using [size]) square.ready.ptr hv byteU) ?_
   rintro v ⟨flag, memV, restV⟩
   have stateV := square.of_mem memV restV ((restV.gpr .r0 (by decide)).trans square.ready.ptr)
   have keepV : Keeps (State.addr base) len w 6 s.mem v.mem := by rw [memV]; exact keepsU
@@ -42,7 +42,7 @@ theorem expBit_ok (s : State) {base : BitVec 32} {len w M x E V : Nat}
   by_cases bit : V / 128 % 2 = 0
   · refine WP.ite false (by simp [eval, flag, bit]) (by simp) (fun _ => WP.block_nil ?_)
     exact ⟨by simpa only [bit, Nat.add_zero] using stateV, keepV, frameV, rest⟩
-  · have one : V / 128 % 2 = 1 := by omega
+  · have one : V / 128 % 2 = 1 := by omega_using [bit]
     refine WP.ite true (by simp [eval, flag, bit]) (fun _ => ?_) (by simp)
     refine WP.mono (exp_multiply_ok v stateV) ?_
     rintro t ⟨final, keepsT, frameT, restT⟩

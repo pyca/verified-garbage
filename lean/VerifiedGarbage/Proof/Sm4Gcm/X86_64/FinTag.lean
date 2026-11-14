@@ -108,10 +108,10 @@ theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx S
     intro d h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact (L.lay.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-    · exact L.lay.w_w (.inr (by omega)) (by omega) (by decide)
-    · exact L.lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact (L.lay.stk_w (by omega)).symm
+    · exact (L.lay.st_w (by decide) (.inr ⟨by omega_using [h₁], by omega_using [h₂]⟩)).symm
+    · exact L.lay.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
+    · exact L.lay.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+    · exact (L.lay.stk_w (by omega_using [h₂])).symm
   have hA₄ : s₄.mem.readW (W + BitVec.ofNat 64 184) 64 = aL := by
     rw [hf.frame.readW (r := ⟨W + BitVec.ofNat 64 184, 8⟩) (Region.contains_self _ _) (dT 184 (by decide) (by decide))
       (by decide), hA]
@@ -156,7 +156,7 @@ theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx S
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base St (show 16 + 16 ≤ 32 by decide)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨⟨W + BitVec.ofNat 64 512, 256⟩, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, below_stk _ (by have := stkN_eq; omega)⟩
+    · exact ⟨_, by simp, below_stk _ (by have := stkN_eq; omega_using [])⟩
   · rw [ht.out, hc₅, hbx₅, hbp₅]
     have hw := (hf.abs ha).whole_eq (by
       simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)

@@ -64,7 +64,7 @@ local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 theorem invEnv_0 (e : Env) : invEnv e 0 = e 0 := invEnv_keep e 0 (by decide)
 /-- A fully reduced slot (sixteen limbs below `2^28`) is below `Ib`. -/
 theorem bnd_of_bounded {m : Mem} {base : Addr} {o : Nat} (h : VG.Proof.X448.AArch64.Bounded m base o) :
-    Bnd Ib m base o := fun i hi => Nat.lt_trans (h i (by omega)) (by decide)
+    Bnd Ib m base o := fun i hi => Nat.lt_trans (h i (by omega_using [hi])) (by decide)
 
 /-- `encode`: the 57 bytes at `p` are the encoding of `R` (slots 0–2), and the
 registers are restored from the working space. -/
@@ -127,15 +127,15 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
   have e6 : EV s6.mem base = Function.update (EV s4.mem base) 1
       (VG.Proof.X448.AArch64.Weak.F s6.mem base X2) := E_update f46
   have e76 : ∀ i : Index, EV s7.mem base i = EV s6.mem base i := fun i =>
-    E_outside o67 i (Or.inl (by have := i.isLt; simp only [slot]; omega))
+    E_outside o67 i (Or.inl (by have := i.isLt; simp only [slot]; omega_using []))
   have b7 : BEnv s7.mem base := by
     intro i j hj
-    rw [o67.limbs (Or.inl (by have := i.isLt; simp only [slot]; omega))
-      (by have := i.isLt; simp only [slot]; omega) (by omega)]
+    rw [o67.limbs (Or.inl (by have := i.isLt; simp only [slot]; omega_using []))
+      (by have := i.isLt; simp only [slot]; omega_using []) (by omega_using [hj])]
     by_cases hi : i = 1
     · subst hi; exact bnd_of_bounded l6 j hj
-    · rw [f46.limbs (VG.Proof.X448.AArch64.Weak.slot_sep hi) (by have := i.isLt; simp only [slot, ACC]; omega)
-        (by omega)]
+    · rw [f46.limbs (VG.Proof.X448.AArch64.Weak.slot_sep hi) (by have := i.isLt; simp only [slot, ACC]; omega_using [])
+        (by omega_using [hj])]
       exact b4 i j hj
   -- `Y` back in `X2`.
   refine block_codeOf (copyOp hs7 b7 1 3 fun s8 k8 b8 _ _ e8 => WP.block_nil ?_)
@@ -154,7 +154,7 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
   have svV8 : SavedV base gv s8.mem :=
     ((svV.outside2 o16 (by decide) (by decide)).outside o67 (Or.inr (by decide))).outside2 k8.mem
       (by decide) (by decide)
-  refine WP.mono (VG.Proof.X448.AArch64.Fast.finish_ok hs8 b8 x8 (fun j hj => by rw [w8]; exact hw j (by omega))
+  refine WP.mono (VG.Proof.X448.AArch64.Fast.finish_ok hs8 b8 x8 (fun j hj => by rw [w8]; exact hw j (by omega_using [hj]))
     (fun j hj => Nat.le_trans (by decide) (hfar j hj)) sv8 svx8 svV8)
     fun t ⟨t19, t20, tx, tv, kt, ft, vt⟩ => ⟨t19, t20, tx, tv, ?_, ?_, ?_⟩
   · rw [kt.1 _ (by decide), k8.regs.1 _ (by decide), k7.1 _ (by decide), k6.1 _ (by decide),
@@ -165,12 +165,12 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
       rw [m7]
       refine (Frame.refl _ _).writeW (r := ⟨p, 57⟩) (by simp) _ ?_
       simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-      omega
+      omega_using []
     have ft' : Frame [⟨base, 8192⟩, ⟨p, 57⟩] s8.mem t.mem := fun x hx => ft x fun r hr hc => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hx _ (by simp) hc
-      · exact hx ⟨p, 57⟩ (by simp) (by simp only [Region.Contains] at hc ⊢; omega)
+      · exact hx ⟨p, 57⟩ (by simp) (by simp only [Region.Contains] at hc ⊢; omega_using [hc])
     exact (((fr (o16.whole (by decide) (by decide))).trans f67).trans
       (fr (k8.mem.whole (by decide) (by decide)))).trans ft'
   · -- The values.
@@ -202,12 +202,12 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
         rcases hr with rfl | rfl
         · simp only [Region.Contains] at hc
           simp only [ofs] at far56
-          omega
+          omega_using [far56, hc]
         · simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at hc
-          omega
+          omega_using [hc]
       rw [ft _ hout]
       rw [show s8.mem (p + BitVec.ofNat 64 56) = s7.mem (p + BitVec.ofNat 64 56) from
-        k8.mem _ (by simp only [ofs] at far56 ⊢; omega) (by simp only [ofs, ACC] at far56 ⊢; omega)]
+        k8.mem _ (by simp only [ofs] at far56 ⊢; omega_using [far56]) (by simp only [ofs, ACC] at far56 ⊢; omega_using [far56])]
       rw [m7, writeW8_apply]
       simp only [ite_true, sgn]
     rw [VG.Proof.Ed448.AArch64.bytesAt_57, vt, byte, VG.Proof.X448.encodeUCoordinate_eq, v1, v21]

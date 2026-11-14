@@ -144,7 +144,7 @@ theorem sub_scr {a n : Nat} (h : a + n ≤ 2048) : Region.Sub ⟨P.at' a, n⟩ P
 theorem inScr {s : State} (hwr : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 2048) :
     InRegions s.wr (P.at' a) n := by
   rw [hwr, hp.wr]
-  exact ⟨P.scrR, by simp, Offset.contains_base _ h (by have := hp.fscr; omega)⟩
+  exact ⟨P.scrR, by simp, Offset.contains_base _ h (by have := hp.fscr; omega_using [h])⟩
 
 theorem inScrRd {s : State} (hwr : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 2048) :
     InRegions (s.rd ++ s.wr) (P.at' a) n := by
@@ -155,14 +155,14 @@ theorem inScrRd {s : State} (hwr : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 2048
 theorem sav_disj {r : Region} (h : P.Wr σ r) : (⟨P.at' 2000, 48⟩ : Region).Disjoint r := by
   have := hp.fscr
   rcases h with h | h | h
-  · exact (Offset.disjoint_base P.scr (d := 2000) (n := 48) (k := 2000) (Nat.le_refl _) (by omega)).sub_right h
-  · exact (hp.a_scr.sub_right (sub_scr (a := 2000) (n := 48) (by omega))).symm.sub_right h
-  · exact (hp.b_scr.sub_right (sub_scr (a := 2000) (n := 48) (by omega))).symm.sub_right h
+  · exact (Offset.disjoint_base P.scr (d := 2000) (n := 48) (k := 2000) (Nat.le_refl _) (by omega_using [])).sub_right h
+  · exact (hp.a_scr.sub_right (sub_scr (a := 2000) (n := 48) (by omega_using []))).symm.sub_right h
+  · exact (hp.b_scr.sub_right (sub_scr (a := 2000) (n := 48) (by omega_using []))).symm.sub_right h
 
 /-- A saved doubleword through writes where code may write. -/
 theorem sav_read {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hrs : ∀ r ∈ rs, P.Wr σ r) {d : Nat}
     (h₁ : 2000 ≤ d) (h₂ : d + 8 ≤ 2048) : m'.readW (P.at' d) 64 = m.readW (P.at' d) 64 :=
-  hf.readW (Offset.contains _ h₁ (by omega) (by have := hp.fscr; omega)) (fun r hr => sav_disj hp (hrs r hr))
+  hf.readW (Offset.contains _ h₁ (by omega_using [h₂]) (by have := hp.fscr; omega_using [])) (fun r hr => sav_disj hp (hrs r hr))
     (by decide)
 
 /-- `Env` after writes where code may write, keeping the callee-saved registers. -/
@@ -171,9 +171,9 @@ theorem Env.step {s s' : State} (he : Env P σ s) {rs : List Region} (hf : Frame
     (wr : s'.wr = s.wr) (sp : s'.sp = s.sp) : Env P σ s' := by
   refine ⟨rd.trans he.rd, wr.trans he.wr, sp.trans he.sp, (gp _ (by decide)).trans he.r30,
     (gp _ (by decide)).trans he.r31, fun r hr a b c d e => (gp r hr).trans (he.cs r hr a b c d e),
-    (sav_read hp hf hrs (by omega) (by omega)).trans he.s27, (sav_read hp hf hrs (by omega) (by omega)).trans he.s28,
-    (sav_read hp hf hrs (by omega) (by omega)).trans he.s29, (sav_read hp hf hrs (by omega) (by omega)).trans he.s30,
-    (sav_read hp hf hrs (by omega) (by omega)).trans he.s31, (sav_read hp hf hrs (by omega) (by omega)).trans he.slr,
+    (sav_read hp hf hrs (by omega_using []) (by omega_using [])).trans he.s27, (sav_read hp hf hrs (by omega_using []) (by omega_using [])).trans he.s28,
+    (sav_read hp hf hrs (by omega_using []) (by omega_using [])).trans he.s29, (sav_read hp hf hrs (by omega_using []) (by omega_using [])).trans he.s30,
+    (sav_read hp hf hrs (by omega_using []) (by omega_using [])).trans he.s31, (sav_read hp hf hrs (by omega_using []) (by omega_using [])).trans he.slr,
     he.frame.trans (hf.sub fun r hr => ?_)⟩
   rcases hrs r hr with h | h | h
   · exact ⟨P.scrR, by simp, fun x hx => Region.sub_prefix (base := P.scr) (by decide : 2000 ≤ 2048) x (h x hx)⟩
@@ -191,7 +191,7 @@ theorem msg_frame {s : State} (he : Env P σ s) : bytesAt s.mem P.sd P.len = P.m
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    exacts [hp.sd_a, hp.sd_scr, hp.b_sd.symm]) (by have := hp.len_lt; omega)
+    exacts [hp.sd_a, hp.sd_scr, hp.b_sd.symm]) (by have := hp.len_lt; omega_using [this])
 
 omit hp in
 /-- A part of the working space below the saved registers. -/
@@ -232,17 +232,17 @@ structure J1 (rate : Nat) (P : Sp) (σ s₀ s : State) : Prop where
   args : AbsorbArgs s P.scr P.sd (P.at' 200) rate 0 P.len
 
 theorem rate_pos {rate : Nat} (h : rate ∈ rates) : 0 < rate := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 theorem rate_lt {rate : Nat} (h : rate ∈ rates) : rate < 32768 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 section
 variable {P : Sp} {σ : State} (hp : SpOk P σ)
 include hp
 
 theorem st_disj : Region.Disjoint ⟨P.scr, 200⟩ ⟨P.at' 200, 640⟩ :=
-  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.fscr; omega)
+  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.fscr; omega_using [])
 
 theorem stk_scr {s : State} (hsp : s.sp = σ.sp) {o n : Nat} (h : o + n ≤ 2048) :
     (below s.sp 48).Disjoint ⟨P.at' o, n⟩ := by
@@ -295,7 +295,7 @@ theorem blk1_ok {rate : Nat} (hr : rate ∈ rates) {s : State} (h : J0 P σ s) :
     rw [RegUpd.gpr_write_of_ne (s := s) _ (by decide)]; exact h.env.r31
   rw [WP.block_append_iff]
   refine WP.mono (zeroLanes_ok .r31 (by decide) (by rw [RegUpd.gpr_write_self]; rfl) fun k hk => by
-    rw [e31, RegUpd.wr_write, h.env.wr]; exact inScr hp rfl (by omega)) fun s2 h2 => ?_
+    rw [e31, RegUpd.wr_write, h.env.wr]; exact inScr hp rfl (by omega_using [hk])) fun s2 h2 => ?_
   have hf := h2.frame
   have hz := h2.zero
   rw [e31] at hf hz
@@ -381,7 +381,7 @@ theorem blk2_ok {rate : Nat} (hr : rate ∈ rates) {s₀ s : State} (h : J2 rate
   have hrl := rate_lt hr
   have he := h.j0.env
   have g31 := he.r31
-  have hm : P.len % rate < 2 ^ 64 := by have := Nat.mod_lt P.len (rate_pos hr); omega
+  have hm : P.len % rate < 2 ^ 64 := by have := Nat.mod_lt P.len (rate_pos hr); omega_using [hrl, this]
   have e3 : s.gpr .r3 = BitVec.ofNat 64 (P.len % rate) := BitVec.eq_of_toNat_eq (by
     rw [h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := P.len % rate) hm])
   have hblk : WP isa (.block (padArgs rate)) s fun t => t.gpr .r3 = P.scr ∧ t.gpr .r4 = BitVec.ofNat 64 rate ∧
@@ -443,7 +443,7 @@ include hp
 theorem blk3_ok {rate outlen : Nat} (hr : rate ∈ rates) (ho : 840 + outlen ≤ 2000) {s₀ s : State}
     (h : J4 rate P σ s₀ s) : WP isa (.block (sqzArgs rate outlen)) s (J5 rate outlen P σ s₀) := by
   have hrl := rate_lt hr
-  have hol : outlen < 32768 := by omega
+  have hol : outlen < 32768 := by omega_using [ho]
   have he := h.j0.env
   have g31 := he.r31
   have hblk : WP isa (.block (sqzArgs rate outlen)) s fun t => t.gpr .r3 = P.scr ∧
@@ -458,10 +458,10 @@ theorem blk3_ok {rate outlen : Nat} (hr : rate ∈ rates) (ho : 840 + outlen ≤
   have fs := hp.fscr
   exact ⟨j, fun r hr => (gp r hr).trans (h.gp r hr), by rw [m]; exact h.st,
     { r3 := g3, r4 := g4, r5 := g5, r6 := g6, r7 := g7, r8 := g8, hrate := hr, hpos := Nat.zero_le _
-      hlen := by omega, sp48 := by rw [j.env.sp]; exact hp.sp48
-      st_o := Offset.base_disjoint _ (by omega) (by omega), st_scr := st_disj hp
-      o_scr := Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-      k_st := stk_scr0 hp j.env.sp (by decide), k_o := stk_scr hp j.env.sp (by omega)
+      hlen := by omega_using [ho], sp48 := by rw [j.env.sp]; exact hp.sp48
+      st_o := Offset.base_disjoint _ (by omega_using []) (by omega_using [ho]), st_scr := st_disj hp
+      o_scr := Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [ho]) (by omega_using [])
+      k_st := stk_scr0 hp j.env.sp (by decide), k_o := stk_scr hp j.env.sp (by omega_using [ho])
       k_scr := stk_scr hp j.env.sp (by decide) }⟩
 
 theorem cov_sq {outlen : Nat} (ho : 840 + outlen ≤ 2000) {s : State} (he : Env P σ s) :
@@ -471,7 +471,7 @@ theorem cov_sq {outlen : Nat} (ho : 840 + outlen ≤ 2000) {s : State} (he : Env
     covScr hp he.wr fun r hr => ?_⟩ <;>
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    exacts [⟨0, (BitVec.add_zero _).symm, by simp⟩, ⟨840, rfl, by simp; omega⟩, ⟨200, rfl, by simp⟩]
+    exacts [⟨0, (BitVec.add_zero _).symm, by simp⟩, ⟨840, rfl, by simp; omega_using [ho]⟩, ⟨200, rfl, by simp⟩]
 
 end
 
@@ -492,7 +492,7 @@ theorem call3_ok {rate outlen : Nat} (ho : 840 + outlen ≤ 2000) {s₀ s : Stat
   refine ⟨j.step hp hf (fun r hr => ?_) gp' rd' wr' sp', fun r hr => (gp' r hr).trans (h.gp r hr), ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    exacts [wr_scr0 (by decide), wr_scr (by omega), wr_scr (by decide), wr_below j.env.sp]
+    exacts [wr_scr0 (by decide), wr_scr (by omega_using [ho]), wr_scr (by decide), wr_below j.env.sp]
   · rw [hout, h.st]
 
 /-- The sponge, from `J0`: `outlen` bytes of SHAKE (of rate `rate`) of the

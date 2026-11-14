@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Facts about the ChaCha20 specification
@@ -18,7 +19,7 @@ theorem rotateLeft_eq (x : Word) {k : Nat} (hk : 0 < k) (hk' : k < 32) :
     x.rotateLeft k = x.rotateRight (32 - k) := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft, BitVec.getElem_rotateRight]
-  split <;> split <;> first | (exfalso; omega) | exact getElem_congr rfl (by omega) _
+  split <;> split <;> first | (exfalso; omega) | exact getElem_congr rfl (by omega_using [hk, hk']) _
 
 /-- `quarterRound` with the rotations the code does. -/
 theorem quarterRound_eq (a b c d : Word) : quarterRound a b c d =

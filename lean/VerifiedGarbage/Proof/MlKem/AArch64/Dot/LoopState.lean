@@ -22,6 +22,6 @@ theorem result_block (terms : List (Nat × Nat)) (F G : (Nat × Nat) → Nat →
       interleave (evenResult terms (blockValues F c) (blockValues G c) (blockGamma Γ c))
         (oddResult terms (blockValues F c) (blockValues G c)) e := by
   unfold result
-  rw [show (8*c+e)/8 = c by omega, show (8*c+e)%8 = e by omega]
+  rw [show (8*c+e)/8 = c by omega_using [he], show (8*c+e)%8 = e by omega_using [he]]
 
 end VG.Proof.MlKem.AArch64.Dot

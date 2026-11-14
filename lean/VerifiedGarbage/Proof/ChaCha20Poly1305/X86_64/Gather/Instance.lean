@@ -43,7 +43,7 @@ def sealSplitFn (v : XorImpl) : SealSplitFn where
     have := Split.sealSplitFor_xdepth v
     simp only [withStackArgScratchWipedX, withStackArgScratch, Code.x86_64Depth, X86_64.Instr.frameBytes,
       Nat.zero_max, Nat.max_zero, Nat.max_le]
-    omega
+    omega_using [this]
 
 open VG.Proof.ChaCha20.X86_64 in
 /-- How many bytes at a time the instance for `v` copies: as many as the

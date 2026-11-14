@@ -47,9 +47,9 @@ theorem range_of {m : Mem} {q : Addr} {η : Nat} (hη : η ≤ 4) {x : IPoly} (h
 
 theorem small_big {η : Nat} (hη : η ≤ 4) {x : IPoly} (hs : Small η x) :
     ∀ c ∈ x.toList, -4190208 ≤ c ∧ c ≤ 4190208 := fun c hc => by
-  have := hs c hc; omega
+  have := hs c hc; omega_arith
 
-theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+theorem eta_le {p : Params} (hF : PFacts p) : p.η ≤ 4 := by rcases hF.eta with ⟨h, _⟩ | ⟨h, _⟩ <;> omega_using [h]
 
 theorem bpOk_eta {p : Params} (hF : PFacts p) : BpOk p.η p.η (lenS p) := by
   rcases hF.eta with ⟨h, e⟩ | ⟨h, e⟩ <;> exact ⟨by rw [h]; decide, by rw [e, h]; decide, by rw [e, h]; decide⟩
@@ -60,7 +60,7 @@ theorem KR.sPoly {p : Params} {σ : State} {A : Nat → Poly} {S : Nat → IPoly
     PolyIs s.mem (pa s (sP p r)) (toRq (S r)) := by
   by_cases hl : r < p.ℓ
   · have := h.s1 r hl; rwa [ifn (Nat.not_lt_zero r)] at this
-  · have := h.s2 (r - p.ℓ) (by omega); rwa [show p.ℓ + (r - p.ℓ) = r by omega] at this
+  · have := h.s2 (r - p.ℓ) (by omega_using [hr, hl]); rwa [show p.ℓ + (r - p.ℓ) = r by omega_using [hl]] at this
 
 /-! ## `BitPack` of `s₁ ‖ s₂` -/
 
@@ -68,7 +68,7 @@ theorem packS_chk {p : Params} (hF : PFacts p) {r : Nat} (hr : r < p.ℓ + p.k) 
     rwChk kgR (kgW p) (sP p r) 1024 (.x27, 128 + lenS p * r) (lenS p) = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have hlr : lenS p * r + lenS p ≤ lenS p * (p.ℓ + p.k) := by
-    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [hr])
   unfold rwChk
   lay [hF.pk, hF.sk]
 
@@ -83,10 +83,10 @@ theorem packS_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : P
   have hle : 128 + lenS p * r + lenS p ≤ oT0 p := by
     simp only [oT0]; rw [Nat.add_assoc, ← Nat.mul_succ]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ hr) _
   have hk' := h.keep hF hp hP' x' (KRChk.x27 (o := 128 + lenS p * r) (n := lenS p) hF (Nat.le_of_lt hr)
-    (Nat.zero_le _) (by omega) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega))
+    (Nat.zero_le _) (by omega_using []) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega_using [hle]))
   refine ⟨hk'.kc, hk'.x24, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1,
     fun r' hr' => ?_, hk'.rows⟩
-  rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
+  rcases (by omega_using [hr'] : r' < r ∨ r' = r) with hr' | rfl
   · exact hk'.packs r' hr'
   · rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), hb, hS.2,
       Proof.MlDsa.KeyGen.modPm_toRq (small_big (eta_le hF) (h.small r' hr))]
@@ -135,14 +135,14 @@ theorem nttS_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PF
       else by
         have := L.keepPoly hP' (by layd) (h.s1 j' hj')
         by_cases hlt : j' < j
-        · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this
-        · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this,
+        · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega_using [hlt]) (ntt (toRq (S j'))) (toRq (S j'))] at this
+        · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega_using [e, hlt]) (ntt (toRq (S j'))) (toRq (S j'))] at this,
     by rw [L.keepBytes hP' (by layd)]; exact h.pk0,
     by rw [L.keepBytes hP' (by layd)]; exact h.sk0,
     by rw [L.keepBytes hP' (by layd)]; exact h.sk1,
     fun r hr => by
       have : lenS p * r + lenS p ≤ lenS p * (p.ℓ + p.k) := by
-        rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
+        rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [hr])
       rw [L.keepBytes hP' (by rcases hlen with hlen | hlen <;> lay [hF.pk, hF.sk, hlen])]; exact h.packs r hr,
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
 

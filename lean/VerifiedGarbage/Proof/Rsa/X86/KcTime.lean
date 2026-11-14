@@ -81,7 +81,7 @@ theorem agreeV {g : CallGeometry} {s₁ s₂ : State} (h₁ : Inputs g s₁) (h�
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (show arg s₁ _ = arg s₂ _ from
-      (h₁.arguments _ (by omega)).value.trans (h₂.arguments _ (by omega)).value.symm)
+      (h₁.arguments _ (by omega_using [hk])).value.trans (h₂.arguments _ (by omega_using [hk])).value.symm)
 
 /-- What a narrowed run of `sized` keeps: the inputs, the arguments apart and `esp`. -/
 def Run (g : CallGeometry) (sp : BitVec 32) (s : State) : Prop :=
@@ -161,7 +161,7 @@ theorem fm_mulShort {G : Geo} {u t : State} (h : Fm G u t) {o a b : Nat} (hw2 : 
     (ha : a < nArr) (hb : b < nArr) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o) (hbo1 : b ≠ o + 1) :
     WP isa (VG.Impl.Rsa.X86.WordModRt.mulShort G.L o a b) t (Fm G u) :=
   WP.mono (VG.Proof.Rsa.X86.WordRt.mulShort_ok h.ws hw2 ho ha hb hao hao1 hbo hbo1) fun _ ⟨h1, k1, _, r1⟩ =>
-    h.next h1 k1 (by simp; omega) (by decide) r1 wordRegs_body (h.mask_keep k1 (by decide))
+    h.next h1 k1 (by simp; omega_using [ho]) (by decide) r1 wordRegs_body (h.mask_keep k1 (by decide))
 
 theorem fm_wordMod {G : Geo} {u t : State} (h : Fm G u t) {x r m a : Nat} {top : Option Nat}
     (hm : MLen t G.B G.Z (pLenArg G.full) a) (h4 : 4 ≤ wq a) (hw : wq a ≤ G.w)
@@ -217,9 +217,9 @@ theorem wMulShort {g : CallGeometry} {sp : BitVec 32} {a : Nat} {o x b : Nat} (c
     (hbo1 : b ≠ o + 1) :
     RelCT isa (WR g sp a) (VG.Impl.Rsa.X86.WordModRt.mulShort (lay g.full) o x b) (WR g sp a) := by
   refine relLift (Rel := fun _ _ => True) (P := WIn g sp a) ?_ fun u t h =>
-    WP.mono (fm_mulShort h.2.1 (by have := h.2.2.2.2; omega) ho hx hb hxo hxo1 hbo hbo1) fun t' f => ⟨h.1, f, h.2.2⟩
+    WP.mono (fm_mulShort h.2.1 (by have := h.2.2.2.2; omega_using [this]) ho hx hb hxo hxo1 hbo hbo1) fun t' f => ⟨h.1, f, h.2.2⟩
   have w2 : ∀ {u t : State}, WIn g sp a u t → 2 ≤ VG.Proof.Rsa.X86.KeyRt.kw (g.args 1).toNat := fun h => by
-    have := h.2.2.2.2; have := h.2.2.2.1; simp only [geometry, Geo.w] at *; omega
+    have := h.2.2.2.2; have := h.2.2.2.1; simp only [geometry, Geo.w] at *; omega_arith
   refine fun t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂ => ?_
   obtain ⟨_, _, _, h₁, h₂⟩ := hp
   exact VG.Proof.Rsa.X86.WordRt.mulRows_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
@@ -232,7 +232,7 @@ theorem fm_mulHalf {G : Geo} {u t : State} (h : Fm G u t) {o a b : Nat} (ho : o 
     (ha : a < nArr) (hb : b < nArr) (hao : a ≠ o) (hao1 : a ≠ o + 1) (hbo : b ≠ o) (hbo1 : b ≠ o + 1) :
     WP isa (VG.Impl.Rsa.X86.WordModRt.mulHalf G.L o a b) t (Fm G u) :=
   WP.mono (VG.Proof.Rsa.X86.WordRt.mulHalf_ok h.ws ho ha hb hao hao1 hbo hbo1) fun _ ⟨h1, k1, _, r1⟩ =>
-    h.next h1 k1 (by simp; omega) (by decide) r1 wordRegs_body (h.mask_keep k1 (by decide))
+    h.next h1 k1 (by simp; omega_using [ho]) (by decide) r1 wordRegs_body (h.mask_keep k1 (by decide))
 
 theorem wMulHalf {g : CallGeometry} {sp : BitVec 32} {a : Nat} {o x b : Nat} (ck : HalfCk g.full o x b)
     (ho : o + 1 < nArr) (hx : x < nArr) (hb : b < nArr) (hxo : x ≠ o) (hxo1 : x ≠ o + 1) (hbo : b ≠ o)
@@ -254,16 +254,16 @@ theorem wWordMod {g : CallGeometry} {sp : BitVec 32} {a : Nat} {x r m : Nat} {to
     (hrT : r ≠ aT) (hmT : m ≠ aT) (hrm : r ≠ m) (hxr : r ≠ x) (hxt : aT ≠ x) (hxm : m ≠ x) :
     RelCT isa (WR g sp a) (wordMod g.full x r m top) (WR g sp a) := by
   have ht : ∀ {u t : State}, WIn g sp a u t → ∀ k, top = some k → wq a + k ≤ (geometry g).w :=
-    fun h k e => by have := htop k (by rw [e]; rfl); have := h.2.2.2.2; omega
+    fun h k e => by have := htop k (by rw [e]; rfl); have := h.2.2.2.2; omega_arith
   refine relLift (Rel := fun _ _ => True) (P := WIn g sp a) ?_ fun u t h =>
-    WP.mono (fm_wordMod h.2.1 h.mlen h.2.2.2.1 (by have := h.2.2.2.2; simp only [Geo.w] at this ⊢; omega) (ht h)
+    WP.mono (fm_wordMod h.2.1 h.mlen h.2.2.2.1 (by have := h.2.2.2.2; simp only [Geo.w] at this ⊢; omega_using [this]) (ht h)
       hx hr hmN hrT hmT hrm hxr hxt hxm) fun t' f => ⟨h.1, f, h.2.2⟩
   refine fun t₁ t₂ t₁' t₂' s₁ s₂ hp e₁ e₂ => ?_
   obtain ⟨_, _, _, h₁, h₂⟩ := hp
   exact VG.Proof.Rsa.X86.WordRt.wordMod_relCT (τ := τV g.full) (Fr := Run g sp) (B := g.base) (Z := g.size)
     (fun _ _ a b => a.agree b) (fun f K d e O => f.frame K d e O) (τV_regs g.full)
     hx hr hmN (by decide) hrT hmT hrm hxr hxt hxm h₁.2.2.2.1
-    (by have := h₁.2.2.2.2; simp only [geometry, Geo.w] at this ⊢; omega) (ht h₁)
+    (by have := h₁.2.2.2.2; simp only [geometry, Geo.w] at this ⊢; omega_using [this]) (ht h₁)
     ck.c₀ ck.c₁ ck.c₂ _ _ _ _ _ _ ⟨⟨h₁.2.1.ws, h₁.run, h₁.mlen⟩, ⟨h₂.2.1.ws, h₂.run, h₂.mlen⟩⟩ e₁ e₂
 
 /-! ## The word branch -/
@@ -345,7 +345,7 @@ theorem arg_val {s : State} {B : Addr} {Z i a : Nat} {v : BitVec 32}
     (h : VG.Proof.Bignum.X86.CallArgument s B Z i (BitVec.ofNat 32 a)) (h' : VG.Proof.Bignum.X86.CallArgument s B Z i v)
     (ha : a ≤ 1024) : a = v.toNat := by
   have e := h.value.symm.trans h'.value
-  rw [← e, BitVec.toNat_ofNat]; omega
+  rw [← e, BitVec.toNat_ofNat]; omega_using [ha]
 
 theorem Inputs.arg {g : CallGeometry} {s : State} (h : Inputs g s) {i a : Nat}
     (c : VG.Proof.Bignum.X86.CallArgument s g.base g.size i (BitVec.ofNat 32 a)) (ha : a ≤ 1024)
@@ -410,7 +410,7 @@ theorem startGuard_ok {g : CallGeometry} {sp : BitVec 32} {x : Vals × State} {t
     WP isa (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sG)), .alu .cmp .eax (.imm 0)]) t fun t' =>
       AtBal g sp x t' ∧ t'.zf = some (decide (slot t'.mem g.base sG = 0)) := by
   obtain ⟨rb, hs, hg⟩ := h
-  refine wp_movS (readSrc_sc hs.ws.ws.workspace (by have := hs.ws.ws.hdr_le; unfold sG hdr at *; omega))
+  refine wp_movS (readSrc_sc hs.ws.ws.workspace (by have := hs.ws.ws.hdr_le; unfold sG hdr at *; omega_using [this]))
     fun u U _ => wp_cmpi fun t' T _ z => WP.block_nil ?_
   have hs' := (hs.regs U.keeps U.mem (by decide)).regs (T.keeps []) T.mem (by decide)
   have mm : t'.mem = t.mem := T.mem.trans U.mem
@@ -430,11 +430,11 @@ theorem halfProd_ok {g : CallGeometry} {sp : BitVec 32} {x : Vals × State} {t :
   subst ea ea'
   obtain ⟨h8, hp, hq, -, -⟩ := bal
   have e8 : 32 * ((geometry g).w / 2) = 8 * (g.args (pLenArg g.full)).toNat := by
-    simp only [geometry, Geo.w, VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega
+    simp only [geometry, Geo.w, VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega_using [h8, hp]
   exact WP.mono (hs.mulHalf_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by show x.1.p < _; rw [e8]; exact plt)
     (by show x.1.q < _; rw [e8, show 8 * (g.args (pLenArg g.full)).toNat = 8 * (g.args (qLenArg g.full)).toNat by
-      omega]; exact qlt)) fun _ ⟨ht, e⟩ => ⟨⟨r, b⟩, ht, e⟩
+      omega_using [hp, hq]]; exact qlt)) fun _ ⟨ht, e⟩ => ⟨⟨r, b⟩, ht, e⟩
 
 theorem start_relCT {g : CallGeometry} {sp : BitVec 32} (ck : KcCk g.full) :
     RelCT isa (Both₂ fun x t => RunBase g sp x ∧ t = x.2) (start g.full) (Both₂ (AtStart g sp)) := by
@@ -542,7 +542,7 @@ theorem guard_ok {g : CallGeometry} {sp : BitVec 32} {x : Vals × State} {t : St
     WP isa (.block [.mov .eax (.mem (VG.Impl.Mont.X86.sc sG)), .alu .cmp .eax (.imm 0)]) t fun t' =>
       AtGuard g sp x t' ∧ t'.zf = some (decide (slot t'.mem g.base sG = 0)) := by
   obtain ⟨rb, ⟨c, hs⟩, hg⟩ := h
-  refine wp_movS (readSrc_sc hs.ws.ws.workspace (by have := hs.ws.ws.hdr_le; unfold sG hdr at *; omega))
+  refine wp_movS (readSrc_sc hs.ws.ws.workspace (by have := hs.ws.ws.hdr_le; unfold sG hdr at *; omega_using [this]))
     fun u U _ => wp_cmpi fun t' T _ z => WP.block_nil ?_
   have hs' := (hs.regs U.keeps U.mem (by decide)).regs (T.keeps []) T.mem (by decide)
   have mm : t'.mem = t.mem := T.mem.trans U.mem
@@ -568,8 +568,8 @@ theorem AtGuard.win {g : CallGeometry} {sp : BitVec 32} {x : Vals × State} {t :
   subst ea
   obtain ⟨h8, hp, -, h128, -⟩ := bal
   refine ⟨r, hs.fm, ⟨parg, ha⟩, ?_, ?_⟩
-  · simp only [wq]; omega
-  · simp only [wq, geometry, Geo.w, VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega
+  · simp only [wq]; omega_using [hp, h128]
+  · simp only [wq, geometry, Geo.w, VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega_using [hp, h128]
 
 theorem crtChecks_relCT {g : CallGeometry} {sp : BitVec 32} (ck : KcCk g.full) :
     RelCT isa (Both₂ (AtStart g sp)) (crtChecks g.full (wordBranch g.full) (bitsBranch g.full)) (Done g sp) := by

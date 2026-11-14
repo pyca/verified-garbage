@@ -26,16 +26,16 @@ theorem metadata_ok (s : State) {p : Inputs} (ready : ArithmeticReady p.base p.l
       t.gpr .r4=table p ∧ t.mem=s.mem ∧ Rest [.r1,.r2,.r3,.r4] s t := by
   have count : 3≤p.cachedWords := by
     rw [context.canonical.1,Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords]
-    omega
+    omega_using []
   have addr0 : State.addr (s.gpr .r4+BitVec.ofNat 32 0)=State.addr p.cachedContext := by
     rw [pointer,BitVec.add_zero]
   have addr16 : State.addr (s.gpr .r4+BitVec.ofNat 32 16)=off (State.addr p.cachedContext) 16 := by
-    rw [pointer]; exact VG.Arm.addr_add (by have := context.fit; omega)
+    rw [pointer]; exact VG.Arm.addr_add (by have := context.fit; omega_using [count, this])
   have read0 : InRegions (s.rd++s.wr) (State.addr p.cachedContext) 4 := by
     simpa only [BitVec.add_zero] using VG.CallLay.inRegions_sub context.readable
-      (off:=0) (l:=4) (by omega) (by have := context.fit; omega)
+      (off:=0) (l:=4) (by omega_using [count]) (by have := context.fit; omega_using [this])
   have read16 : InRegions (s.rd++s.wr) (off (State.addr p.cachedContext) 16) 4 :=
-    VG.CallLay.inRegions_sub context.readable (by omega) (by have := context.fit; omega)
+    VG.CallLay.inRegions_sub context.readable (by omega_using [count]) (by have := context.fit; omega_using [this])
   have native := nativeHeader_of_layout s.mem p.base ready.workspace.nowrap (Nat.le_refl _) ready.layout
   rw [ready.width] at native
   have hN : s.mem.readW (State.addr p.cachedContext) 32=BitVec.ofNat 32 (bits p) := by
@@ -46,7 +46,7 @@ theorem metadata_ok (s : State) {p : Inputs} (ready : ArithmeticReady p.base p.l
   have size : 256≤8*p.len := by
     have fits := ready.width ▸ ready.layout.2.2.1
     simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   unfold VG.Impl.Ffdh.Arm.CachedPower.metadata
   refine wp_ldr (a:=State.addr p.cachedContext) (by decide) addr0 read0 fun a one => ?_
   refine wp_ldr (a:=off (State.addr p.cachedContext) 16) (by decide)
@@ -54,8 +54,8 @@ theorem metadata_ok (s : State) {p : Inputs} (ready : ArithmeticReady p.base p.l
     (by rw [one.rd,one.wr]; exact read16) fun b two => ?_
   refine wp_ldr (a:=off (State.addr p.base) 48) (by decide)
     (by rw [two.other .r0 (by decide),one.other .r0 (by decide),ready.ptr]
-        exact VG.Arm.addr_add (by have := ready.workspace.nowrap; omega))
-    (by rw [two.rd,two.wr,one.rd,one.wr]; exact ready.workspace.read (by omega)) fun c three => ?_
+        exact VG.Arm.addr_add (by have := ready.workspace.nowrap; omega_using [size, this]))
+    (by rw [two.rd,two.wr,one.rd,one.wr]; exact ready.workspace.read (by omega_using [size])) fun c three => ?_
   refine wp_mov (op2_lsl (by decide)) fun d four => ?_
   refine wp_dp (op2_reg _ _) fun e five => ?_
   refine wp_dp (op2_imm (by decide)) fun t six => WP.block_nil ?_

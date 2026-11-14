@@ -55,7 +55,7 @@ theorem saved_ne_eax : ∀ p ∈ saved, p.1 ≠ .eax := by decide
 
 /-- A scratch buffer of at least 100 bytes holds the slots. -/
 theorem fits_of {S : BitVec 32} {n : Nat} (h : S.toNat + n ≤ 2 ^ 32) (hn : 100 ≤ n) : S.toNat + 100 ≤ 2 ^ 32 := by
-  omega
+  omega_using [h, hn]
 
 /-- The memory after saving the registers to the scratch buffer at `S`. -/
 def savedMem (s₀ : State) (S : BitVec 32) : Mem :=
@@ -66,8 +66,8 @@ theorem savedMem_frame (s₀ : State) (S : BitVec 32) :
   Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p hp => by
     have h := saved_bound p hp
     rw [show S.setWidth 64 + BitVec.ofNat 64 p.2 = S.setWidth 64 + BitVec.ofNat 64 84 + BitVec.ofNat 64 (p.2 - 84)
-      from (Offset.add_add_eq _ (by omega)).symm]
-    exact Offset.contains_base _ (by omega) (by omega)
+      from (Offset.add_add_eq _ (by omega_using [h])).symm]
+    exact Offset.contains_base _ (by omega_using [h]) (by omega_using [h])
 
 /-- Slots unchanged since the registers were saved hold the registers of `s₀`. -/
 theorem saved_of {s₀ : State} {S : BitVec 32} {m : Mem}

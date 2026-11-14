@@ -38,8 +38,8 @@ theorem jointAdvance_ok (M : Mont) {t : State} {P : Addr} {w n g y j : Nat} {min
   unfold Joint.advance
   split
   · rename_i hcol
-    have hd : (j + 1) / 4 = j / 4 + 1 := by omega
-    have hm : (j + 1) % 4 = 0 := by omega
+    have hd : (j + 1) / 4 = j / 4 + 1 := by omega_using [hcol]
+    have hm : (j + 1) % 4 = 0 := by omega_using [hcol]
     refine WP.seq (WP.mono (jointProduct_ok M hc hw hw' (by unfold MmUse; decide)
       (by rw [h.gen]; exact Nat.mod_lt _ hn)) fun v ⟨hv, hlt, hmul, hf, hk⟩ => ?_)
     have hval : wv v.mem P (slot w aX) w = g ^ (j / 4 + 1) * 2 ^ (64 * w) % n := by
@@ -59,8 +59,8 @@ theorem jointAdvance_ok (M : Mont) {t : State} {P : Addr} {w n g y j : Nat} {min
     · rw [hf'.wv_of_not_mem (by decide) (by decide) hv.mod.good.scr.nowrap, hval, hd]
     · rw [hcopy, hval, hd, hm, Nat.pow_zero, Nat.mul_one]
   · rename_i hcol
-    have hd : (j + 1) / 4 = j / 4 := by omega
-    have hm : (j + 1) % 4 = j % 4 + 1 := by omega
+    have hd : (j + 1) / 4 = j / 4 := by omega_using [hcol]
+    have hm : (j + 1) % 4 = j % 4 + 1 := by omega_using [hcol]
     refine WP.mono (jointProduct_ok M hc hw hw' (by unfold MmUse; decide)
       (by rw [h.base]; exact Nat.mod_lt _ hn)) fun u ⟨hu, hlt, hmul, hf, hk⟩ => ?_
     have hval : wv u.mem P (slot w aY) w = (g ^ (j / 4) * y ^ (j % 4 + 1)) * 2 ^ (64 * w) % n := by

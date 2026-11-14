@@ -43,8 +43,8 @@ theorem canonicalMask_ok {s : State} (n : Nat)
       t.zf = some (decide (n < Spec.X25519.P)) ∧ Keeps [] s t := by
   have hz : (mask (decide (Spec.X25519.P ≤ n)) == 0#64) = decide (n < Spec.X25519.P) := by
     by_cases h : Spec.X25519.P ≤ n
-    · rw [decide_eq_true h, decide_eq_false (by omega : ¬ n < Spec.X25519.P)]; rfl
-    · rw [decide_eq_false h, decide_eq_true (by omega : n < Spec.X25519.P)]; rfl
+    · rw [decide_eq_true h, decide_eq_false (by omega_using [h] : ¬ n < Spec.X25519.P)]; rfl
+    · rw [decide_eq_false h, decide_eq_true (by omega_using [h] : n < Spec.X25519.P)]; rfl
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
     RegUpd.zf_arithFlags, Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.and_self, hm]
@@ -62,7 +62,7 @@ theorem canonicalY_ok (s : State) (n : Nat) (hn : n < 2 ^ 255)
     rw [val4, ka.1 .r8 (by decide), ka.1 .r9 (by decide), ka.1 .r10 (by decide), ka.1 .r11 (by decide)]
     exact hv
   rw [WP.block_append_iff]
-  refine WP.mono (freezeB_ok a (by rw [av]; omega) ad) fun b ⟨bc, _, kb⟩ => ?_
+  refine WP.mono (freezeB_ok a (by rw [av]; omega_using [hn]) ad) fun b ⟨bc, _, kb⟩ => ?_
   rw [av] at bc
   refine WP.mono (canonicalMask_ok n bc) fun t ⟨tz, kt⟩ => ?_
   exact ⟨tz, (ka.mono (by decide)).trans ((kb.mono (by decide)).trans (kt.mono (by decide)))⟩
@@ -84,9 +84,9 @@ theorem storeWordsWide_ok {s : State} {base : Addr} (hs : Scratch s base) (o : S
       t.mem = st4 s.mem base (offset o) (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) ∧
       (∀ r, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_using [this]⟩
   obtain ⟨tr, t, he, hm, hg, _, _⟩ := Proof.X25519.X86_64.store4_ok hn (o := offset o)
-    (by simp only [offset]; omega)
+    (by simp only [offset]; omega_using [])
   have cw : Covers [⟨base, 4096⟩] s.wr := by
     apply Covers.of_sub
     intro r hr
@@ -164,7 +164,7 @@ theorem pointDecodeLoad_ok {s : State} {base p : Addr} (hs : Scratch s base) (hp
   · rw [kt.1 .rsi (by decide), cg .rsi, kb.1 .rsi (by decide)]; exact asign
   · rw [kt.2.1]; exact cy
   · change F t.mem base (offset 15) = F s.mem base (offset 15)
-    rw [kt.2.1, Outside_F cmem (by simp only [offset]; omega) (Or.inr (by simp only [offset]; omega)),
+    rw [kt.2.1, Outside_F cmem (by simp only [offset]; omega_using []) (Or.inr (by simp only [offset]; omega_using [])),
       kb.2.1, ka.2.1]
 
 end VG.Proof.Ed25519.X86_64

@@ -23,19 +23,19 @@ theorem callMem_word (p : SearchParams) (used : Nat) (m : Mem) (sp : BitVec 32) 
     (callMem p used m sp).readW (off (State.addr sp) (4 * j)) 32 = callValue p used j := by
   change VG.Proof.Ffdh.Arm.KeySearch.stackWord (callMem p used m sp) sp j = _
   unfold callMem
-  rw [VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 4) _ _ _ (by decide) (by omega),
-    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 3) _ _ _ (by decide) (by omega),
-    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 2) _ _ _ (by decide) (by omega),
-    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 1) _ _ _ (by decide) (by omega),
-    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 0) _ _ _ (by decide) (by omega)]
-  have casesJ : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 := by omega
+  rw [VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 4) _ _ _ (by decide) (by omega_using [bound]),
+    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 3) _ _ _ (by decide) (by omega_using [bound]),
+    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 2) _ _ _ (by decide) (by omega_using [bound]),
+    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 1) _ _ _ (by decide) (by omega_using [bound]),
+    VG.Proof.Ffdh.Arm.KeySearch.stackWord_store (i := 0) _ _ _ (by decide) (by omega_using [bound])]
+  have casesJ : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 := by omega_using [bound]
   rcases casesJ with rfl | rfl | rfl | rfl | rfl <;> simp [callValue]
 
 theorem call_stackArg {p : SearchParams} {used : Nat} {s : State} {m : Mem} {j : Nat}
     (fit : s.sp.toNat + 20 ≤ 2 ^ 32) (memory : s.mem = callMem p used m s.sp) (bound : j < 5) :
     stackArg (callState p used s) j = callValue p used j := by
   change s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 (4 * j))) 32 = _
-  rw [VG.Arm.addr_add (by omega), memory]
+  rw [VG.Arm.addr_add (by omega_using [fit, bound]), memory]
   exact callMem_word _ _ _ _ bound
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

@@ -30,22 +30,22 @@ theorem CallLayout.argumentOffset {s : State} (A : CallLayout s) {i : Nat} (hi :
     argAddr s i = off (argAddr s 0) (4 * i) := by
   have fit := A.argsFit
   change addr (s.gpr .esp) (4 + 4 * i) = off (addr (s.gpr .esp) 4) (4 * i)
-  rw [addr_eq (by omega), addr_eq (by omega)]
+  rw [addr_eq (by omega_using [hi, fit]), addr_eq (by omega_using [fit])]
   simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
 
 theorem CallLayout.pushedArgument {s : State} (A : CallLayout s) {i : Nat} (hi : i < 18) :
     readSrc (Compact.entered s) (.mem (VG.Impl.RsaKeyGen.X86.CandidateArgs.arg i)) = some (arg s i) := by
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [this]
   have F := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
   have separate : (callArguments s).Disjoint (below (s.gpr .esp) 16) := by
     change (⟨addr (s.gpr .esp) 4, 72⟩ : Region).Disjoint (below (s.gpr .esp) 16)
-    rw [addr_eq (by have := A.argsFit; omega)]
+    rw [addr_eq (by have := A.argsFit; omega_using [this])]
     unfold below
     rw [Taint.sub_setWidth fit]
     exact Offset.disjoint_below _ (by decide)
   have contains : (callArguments s).Contains (argAddr s i) 4 := by
     rw [A.argumentOffset hi]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   have word := F.readW contains (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate) (by decide : 32 / 8 < 2 ^ 64)
   change (Compact.entered s).load32 ((Compact.entered s).ea (VG.Impl.Mont.X86.Compact.arg i)) = _
   rw [Compact.argument_address]
@@ -72,7 +72,7 @@ theorem entry_arguments {s : State} (h : contract.pre s) :
   have bank := v.bankFit
   have head : 72 ≤ (callEnvironment s).size := by
     unfold VG.Proof.Rsa.X86.Keys.arr VG.Impl.Rsa.X86.Keys.hdr at bank
-    omega
+    omega_using [bank]
   refine ⟨⟨?_, ?_⟩, head, rfl, workspace_stack h, ?_, ?_, ?_, ?_, workspace_deep h⟩
   · exact List.mem_cons_of_mem _ A.workspaceMember
   · change ((arg s 16).setWidth 64).toNat + 8 * (arg s 17).toNat ≤ 2 ^ 32
@@ -83,7 +83,7 @@ theorem entry_arguments {s : State} (h : contract.pre s) :
   · rw [A.privateNat]
     have := A.low
     have := A.argsFit
-    omega
+    omega_using [this]
   · rw [call_args_region]
     exact D.argsWorkspace
   · intro i hi

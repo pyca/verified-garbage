@@ -96,10 +96,10 @@ theorem IPre.of {s₀ : State} (h : initX86_64.pre s₀) :
       ⟨s₀.gpr .rcx, 2560⟩ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p⟩ := h
   ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
-    fun _ h₂ => Offset.contains_base _ (by omega) (by omega),
+    fun _ h₂ => Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂]),
     fun _ h₂ => by
-      rw [csOff, sx_ofNat (by decide), Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega),
-    by rw [csOff, sx_ofNat (by decide), Offset.add_add, toNat_add_lt _ o (by decide)]; omega⟩
+      rw [csOff, sx_ofNat (by decide), Offset.add_add]; exact Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂]),
+    by rw [csOff, sx_ofNat (by decide), Offset.add_add, toNat_add_lt _ o (by decide)]; omega_using [o]⟩
 
 theorem half_bv {KL : Nat} (h : KL = 32 ∨ KL = 48 ∨ KL = 64) :
     BitVec.ofNat 64 KL >>> 1 = BitVec.ofNat 64 (KL / 2) := by
@@ -701,7 +701,7 @@ theorem ICall.base (v : Ctr32Impl) :
     exact a.full ((hp.c_s.sub_left (Region.sub_prefix (by decide))).sub_right (sS S))
       ((hp.c_s.sub_left (hp.sC (by decide))).sub_right (sS S))
       (by rw [h.rsp]; exact hp.stk_s.sub_right (sS S))
-      (by have := hp.wZ; simp only at this; rw [toNat_add_lt S this (by decide)]; omega)
+      (by have := hp.wZ; simp only at this; rw [toNat_add_lt S this (by decide)]; omega_using [this])
       (by
         rw [h.wr, hp.wr]
         exact Covers.of_sub fun r hr => by
@@ -800,11 +800,11 @@ theorem IPre.ofF {s₀ s₁ : State} (h : initX86_64F.pre s₀) (hs : SubF s₀ 
     by rw [rd]; exact b, by rw [wr]; exact c, d, e, f, by rw [sp]; exact g', by rw [sp]; exact h,
     by rw [sp]; exact i, by rw [sp]; exact j, by rw [sp]; exact k, by rw [sp]; exact l, m, n, o, p,
     fun h₁ h₂ => ?_, fun h₁ h₂ => ?_, ?_⟩
-  · rw [sub_add_ofNat _ h₁]; exact Offset.contains_base _ (by omega) (by omega)
-  · rw [initFOff_add _ (by omega), sub_add_ofNat _ (by omega)]
-    exact Offset.contains_base _ (by omega) (by omega)
+  · rw [sub_add_ofNat _ h₁]; exact Offset.contains_base _ (by omega_using [h₁, h₂]) (by omega_using [h₂])
+  · rw [initFOff_add _ (by omega_using [h₁]), sub_add_ofNat _ (by omega_using [h₁])]
+    exact Offset.contains_base _ (by omega_using [h₁, h₂]) (by omega_using [h₂])
   · rw [initFOff_add _ (by decide), sub_add_ofNat _ (by decide)]
-    rw [toNat_add_lt _ o (by decide)]; omega
+    rw [toNat_add_lt _ o (by decide)]; omega_using [o]
 
 theorem initF_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s₀ : State} (h0 : initX86_64F.pre s₀) :
     WP isa (initF ekF v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧ initX86_64F.post s₀ s' := by

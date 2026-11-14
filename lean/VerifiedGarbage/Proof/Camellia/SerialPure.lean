@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Camellia
 public import VerifiedGarbage.Proof.Camellia.Words
 import Mathlib.Tactic.IntervalCases
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Word-oriented descriptions of Camellia's substitution and diffusion
 
@@ -78,7 +79,7 @@ theorem linearWord_eq (x : BitVec 64) : linearWord x = permuted x := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   have h := congrArg (fun b : Byte => b.getLsbD (i % 8))
-    (linearWord_byte x (i / 8) (by omega))
+    (linearWord_byte x (i / 8) (by omega_using [hi]))
   simpa [byte, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
     Nat.mod_lt i (by decide : 0 < 8), Nat.div_add_mod] using h
 
@@ -89,10 +90,10 @@ theorem extract_self (x : BitVec 32) (r : Nat) (hr : r < 32) :
   simp only [BitVec.getLsbD_extractLsb',BitVec.getLsbD_append,
     BitVec.getLsbD_rotateRight,Nat.mod_eq_of_lt hr,hi,decide_true,Bool.true_and]
   by_cases h : i < 32-r
-  · simp only [h,ite_true,show r+i < 32 by omega]
-  · simp only [h,ite_false,show ¬r+i < 32 by omega]
+  · simp only [h,ite_true,show r+i < 32 by omega_using [h]]
+  · simp only [h,ite_false,show ¬r+i < 32 by omega_using [h]]
     congr 1
-    omega
+    omega_using [hr]
 
 /-- The scalar substitute/diffuse factorization is exactly the standard F function. -/
 theorem f_eq (x k : BitVec 64) :

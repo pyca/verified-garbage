@@ -40,7 +40,7 @@ theorem candidateStoreFirst_state {p : CandidateOutputs} {s : State} (h : Candid
     apply f.word_eq
     · simp only [List.mem_singleton]; rintro r rfl
       exact Or.inl (Nat.le_trans hd hw.h256)
-    · have := hw.h256; have := hw.scr.nowrap; omega
+    · have := hw.h256; have := hw.scr.nowrap; omega_using [hd]
   exact ⟨ht, (header 168 (by decide)).trans h.2.pointer,
     (header 136 (by decide)).trans h.2.length,
     (header (8 * Public.sMask) (by decide)).trans h.2.mask,

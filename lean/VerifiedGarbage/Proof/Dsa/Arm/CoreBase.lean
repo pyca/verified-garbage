@@ -49,7 +49,7 @@ and the slots of a context of up to 48 words. -/
 def arithRanges : List (Nat × Nat) := [(0, 64), (256, 4704)]
 
 theorem contextBytes_le {n : Nat} (hn : n ≤ 48) : contextBytes n ≤ 4960 := by
-  simp only [contextBytes, slot, stride]; omega
+  simp only [contextBytes, slot, stride]; omega_using [hn]
 
 /-- Ranges within the arithmetic's. -/
 theorem Outs.arith {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs base rs m m')
@@ -59,7 +59,7 @@ theorem Outs.arith {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs
     have h2 := hx (256, 4704) (by simp [arithRanges])
     have := h r hr
     simp only at h1 h2
-    omega
+    omega_using [h1, h2, this]
 
 theorem Outs.of_slot {base : Addr} {n i : Nat} {m m' : Mem} (O : Outside base (slot n i) (8 * n) m m')
     (hi : i < 12) (hn : n ≤ 48) : Outs base arithRanges m m' :=
@@ -70,26 +70,26 @@ theorem Outs.of_slot {base : Addr} {n i : Nat} {m m' : Mem} (O : Outside base (s
     simp only [List.mem_singleton] at hr
     subst hr
     simp only [stride] at *
-    omega
+    omega_arith
 
 theorem setupRanges_arith {n : Nat} (hn : n ≤ 48) :
     ∀ r ∈ Context.callRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn
   simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
-  rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
+  rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega_arith
 
 theorem streamRanges_arith {n : Nat} (hn : n ≤ 48) :
     ∀ r ∈ streamRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn
   simp only [streamRanges, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
-  rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> omega
+  rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> omega_using [hn]
 
 theorem scratch_arith {n : Nat} (hn : n ≤ 48) :
     ∀ r ∈ Impl.Dsa.Arm.Pow.scratch n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn
   simp only [Impl.Dsa.Arm.Pow.scratch, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil,
     or_false] at *
-  rintro r (rfl | rfl) <;> simp only <;> omega
+  rintro r (rfl | rfl) <;> simp only <;> omega_arith
 
 /-! ## Operands -/
 
@@ -124,8 +124,8 @@ theorem field_keep {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs
     have := field_bounds f
     have := field_saved hf
     have := hO r hr
-    rw [ofs_off base (by omega)]
-    omega).symm).symm
+    rw [ofs_off base (by omega_arith)]
+    omega_arith).symm).symm
 
 theorem pointerValue_keep {base : Addr} {rs : List (Nat × Nat)} {s t : State} (h12 : t.gpr .r12 = s.gpr .r12)
     (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1) {p : Pointer} (hp : PtrOk p) :
@@ -155,7 +155,7 @@ theorem Ready.bytes {base : Addr} {rs : List (Nat × Nat)} {s t : State} {p : Po
     (R : Ready s base p len) (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 4960) :
     Spec.Rsa.bytesAt t.mem (State.addr (pointerValue base s p)) len =
       Spec.Rsa.bytesAt s.mem (State.addr (pointerValue base s p)) len :=
-  outs_bytes O (by have := R.fits; omega) (fun r hr => by have := hO r hr; omega)
+  outs_bytes O (by have := R.fits; omega_using [this]) (fun r hr => by have := hO r hr; omega_using [this])
     fun r hr => R.apart.sub_right (Offset.sub_base base (hO r hr))
 
 /-- An operand's bytes after the arithmetic. -/
@@ -174,16 +174,16 @@ theorem pointer_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   cases p with
   | input f =>
     have := field_bounds f
-    exact wp_ldr (by omega) (hs.ea12 (by omega)) (hs.read (by omega)) fun t u =>
+    exact wp_ldr (by omega_using [this]) (hs.ea12 (by omega_using [hz, this])) (hs.read (by omega_using [hz, this])) fun t u =>
       WP.block_nil ⟨u.gpr, u.rest (by decide), u.mem⟩
   | «local» o =>
     exact wp_ptr (is := []) (by decide) hp fun t u => WP.block_nil ⟨u.gpr, u.rest (by decide), u.mem⟩
   | signatureS =>
     have := field_bounds .signature
     have := field_bounds .qLen
-    refine wp_ldr (by omega) (hs.ea12 (by omega)) (hs.read (by omega)) fun t₁ u₁ => ?_
+    refine wp_ldr (by omega_arith) (hs.ea12 (by omega_arith)) (hs.read (by omega_arith)) fun t₁ u₁ => ?_
     have w₁ := hs.of_upd u₁ (by decide)
-    refine wp_ldr (by omega) (w₁.ea12 (by omega)) (w₁.read (by omega)) fun t₂ u₂ => ?_
+    refine wp_ldr (by omega_using [this]) (w₁.ea12 (by omega_using [hz, this])) (w₁.read (by omega_using [hz, this])) fun t₂ u₂ => ?_
     refine wp_dp (op2_reg _ _) fun t u₃ => WP.block_nil ⟨?_, ((u₁.rest (by decide)).trans (u₂.rest (by decide))).trans
       (u₃.rest (by decide)), by rw [u₃.mem, u₂.mem, u₁.mem]⟩
     rw [u₃.gpr, dpVal, u₂.other .r11 (by decide), u₁.gpr, u₂.gpr, u₁.mem]
@@ -200,7 +200,7 @@ theorem load_ok {s : State} {base : Addr} {size n len dst : Nat} {p : Pointer} (
   unfold Core.load
   refine WP.seq (WP.mono (pointer_ok hs hz R.ok) fun u ⟨Pu, Ru, Mu⟩ => ?_)
   have wu := hs.of_rest Ru (by decide)
-  refine WP.mono (loadComponent_ok wu ho h16 hpad (by rw [Pu]; have := R.fits; omega) h4 hlen hw4
+  refine WP.mono (loadComponent_ok wu ho h16 hpad (by rw [Pu]; have := R.fits; omega_using [this]) h4 hlen hw4
     (fun d hd' => by rw [Pu, Ru.rd, Ru.wr]; exact R.reads d 4 hd')
     (by rw [Pu]; exact R.apart.sub_right (Offset.sub_base base hd))) fun t ⟨wt, Vt, Rt, Ot⟩ =>
     ⟨wt, by rw [Vt, Pu, Mu], (Ru.mono (by decide)).trans (Rt.mono (by decide)), by rw [← Mu]; exact Ot⟩
@@ -228,24 +228,24 @@ theorem store_ok {s : State} {base : Addr} {size n len output : Nat} (hs : Ws s 
     rw [v₄.other .r11 (by decide), v₃.other .r11 (by decide), v₂.other .r11 (by decide), v₁.gpr]
   have pa : State.addr (u.gpr .r11) = off base output := by
     rw [r11]
-    have := wu.ea (r := .r12) (K := 0) (d := output) (BitVec.add_zero _).symm (by omega)
+    have := wu.ea (r := .r12) (K := 0) (d := output) (BitVec.add_zero _).symm (by omega_using [h4, ho])
     rwa [Nat.zero_add, Ru.gpr .r12 (by decide)] at this
   have pn : (u.gpr .r11).toNat = base.toNat + output := by
-    rw [r11, BitVec.toNat_add, BitVec.toNat_ofNat, hs.wb_toNat, Nat.mod_eq_of_lt (by omega : output < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [r11, BitVec.toNat_add, BitVec.toNat_ofNat, hs.wb_toNat, Nat.mod_eq_of_lt (by omega_using [h16o] : output < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [h4, ho, nw])]
   have r3 : u.gpr .r3 = if true then BitVec.allOnes 32 else 0 := by
     rw [v₄.gpr, v₃.gpr, dpVal, v₂.gpr]; decide
   have mu : u.mem = s.mem := by rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem]
-  have r9 : resS n + len ≤ output := by simp only [resS]; omega
+  have r9 : resS n + len ≤ output := by simp only [resS]; omega_using [hn, hsep]
   have hd : Region.Disjoint ⟨off base (resS n), len⟩ ⟨off base output, len⟩ :=
-    Offset.disjoint base (.inl r9) (by omega) (by omega)
-  refine WP.mono (storeComponent_ok (input := resS n) (len := len) wu true r3 (by simp only [resS]; omega) (by simp only [resS]; omega) h4 hw4
-    (by rw [pn]; omega)
-    (fun e k hek => by rw [pa]; exact Offset.add_add base output e ▸ wu.write (by omega))
+    Offset.disjoint base (.inl r9) (by omega_using [h16o, r9]) (by omega_using [h16, h16o])
+  refine WP.mono (storeComponent_ok (input := resS n) (len := len) wu true r3 (by simp only [resS]; omega_using [hn, hb]) (by simp only [resS]; omega_using [h16]) h4 hw4
+    (by rw [pn]; omega_using [ho, nw])
+    (fun e k hek => by rw [pa]; exact Offset.add_add base output e ▸ wu.write (by omega_using [ho, hek]))
     (by rw [pa]; exact hd))
     fun t ⟨_, Vt, Rt, Ot⟩ => ⟨?_, (Ru.mono (by decide)).trans (Rt.mono (by decide)), ?_⟩
   · simpa only [pa, mu, ite_true, resS] using Vt
   · rw [pa, mu] at Ot
-    exact outside_rebase Ot (by omega)
+    exact outside_rebase Ot (by omega_using [h16, h16o])
 
 end VG.Proof.Dsa.Arm

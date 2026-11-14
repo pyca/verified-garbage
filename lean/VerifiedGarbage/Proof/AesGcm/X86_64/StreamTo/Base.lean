@@ -144,7 +144,7 @@ theorem w_in' {d k : Nat} (h : d + k ≤ 2192) : InRegions (s.rd ++ s.wr) (W s +
 
 /-- The stack argument `i` (of four) is readable. -/
 theorem a_in {i : Nat} (hi : i < 4) : InRegions (s.rd ++ s.wr) (SP s + BitVec.ofNat 64 (8 * (i + 1))) 8 :=
-  ⟨aR s, by rw [hp.rd]; simp, Offset.contains _ (by omega) (by omega) (by have := hp.w_sp; omega)⟩
+  ⟨aR s, by rw [hp.rd]; simp, Offset.contains _ (by omega_using []) (by omega_using [hi]) (by have := hp.w_sp; omega_using [])⟩
 
 omit hp in
 theorem kR'_sub : (kR' s).Sub (wkR s) := Region.sub_prefix (by decide)
@@ -168,21 +168,21 @@ theorem keep_a {m m' : Mem} (hf : Frame (wR s ++ [tR s]) m m') {i : Nat} (hi : i
   hf.readW (r := ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _) (fun r hr => by
     have hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s) := by
       have e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-      rw [e]; exact Offset.sub_base _ (by omega)
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+      rw [e]; exact Offset.sub_base _ (by omega_using [hi])
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
     · exact hp.st_a.symm.sub_left hs
     · exact hp.d_a.symm.sub_left hs
     · exact hp.w_a.symm.sub_left hs
-    · exact (Offset.disjoint_below (SP s) (n := 2624) (d := 8 * (i + 1)) (k := 8) (by omega)).sub_left
+    · exact (Offset.disjoint_below (SP s) (n := 2624) (d := 8 * (i + 1)) (k := 8) (by omega_using [hi])).sub_left
         (fun _ h => h)) (by decide)
 
 /-- The entry: the arguments kept, with `work` in `r11`, and none done. -/
 theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = W s ∧
     (∀ r, r ≠ .r11 → r ≠ .rax → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧
     Kept s 0 s₁.mem ∧ Frame [kR' s] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-  have w : ∀ d, d + 8 ≤ 72 → InRegions s.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => w_in hp (by omega)
+  have w : ∀ d, d + 8 ≤ 72 → InRegions s.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h => w_in hp (by omega_using [h])
   have a₀ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 8) 8 := a_in hp (i := 0) (by decide)
   have a₁ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 16) 8 := a_in hp (i := 1) (by decide)
   have a₃ : InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 32) 8 := a_in hp (i := 3) (by decide)
@@ -191,9 +191,9 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = W s ∧
   have e₃ : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 32) 64 = W s := rfl
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 72 → d + 8 ≤ 72 →
       Mem.Sep (W s + BitVec.ofNat 64 a) (64 / 8) (W s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep _ h (by omega) (by have := hp.w_w; omega)
+    fun a d h ha hd => Offset.sep _ h (by omega_using [ha]) (by have := hp.w_w; omega_using [hd])
   have s0 : ∀ d, 8 ≤ d → d + 8 ≤ 72 → Mem.Sep (W s) (64 / 8) (W s + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => by
-    have := sep 0 d (by omega) (by decide) h₂; simpa using this
+    have := sep 0 d (by omega_using [h₁]) (by decide) h₂; simpa using this
   have s₀₁ := s0 8 (by decide) (by decide)
   have s₀₂ := s0 16 (by decide) (by decide)
   have s₀₃ := s0 24 (by decide) (by decide)
@@ -242,7 +242,7 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = W s ∧
   all_goals try simp (disch := first | decide | with_reducible assumption) only [gpr_setReg, ite_true,
     reduceCtorEq, ↓reduceIte, Mem.readW_writeW_self64, Mem.readW_writeW_sep, BitVec.add_zero, mem_setReg, hz]
   · have c : ∀ d, d + 8 ≤ 72 → (kR' s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₂ => Offset.contains_base _ h₂ (by have := hp.w_w; omega)
+      fun d h₂ => Offset.contains_base _ h₂ (by have := hp.w_w; omega_using [h₂])
     have c0 : (kR' s).Contains (W s) (64 / 8) := by simpa using c 0 (by decide)
     exact (((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide))).writeW

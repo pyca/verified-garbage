@@ -89,18 +89,18 @@ theorem xorT_ok (s₁ : State) (x y : HashValue) (hb : s₁.gpr B = sc s₀)
     (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) :
     WP isa (.block xorT) s₁ (XI s₀ s₁ x y 5) := by
   refine wp_range_flatMap (M := isa) (XI s₀ s₁ x y) (fun k s hk h => ?_) 5 (Nat.le_refl _) s₁
-    ⟨fun _ h => absurd h (by omega), fun j _ hj => hy j hj, fun _ _ => rfl, fun _ _ => rfl, id, Frame.refl _ _,
+    ⟨fun _ h => absurd h (by omega_using []), fun j _ hj => hy j hj, fun _ _ => rfl, fun _ _ => rfl, id, Frame.refl _ _,
       rfl, rfl, rfl⟩
   have an := A_ne k hk
   have hb' : s.gpr B = sc s₀ := by rw [h.gpr _ (by decide), hb]
   have rd' : s.rd = s₀.rd := h.rd.trans hrd
   have wr' : s.wr = s₀.wr := h.wr.trans hwr
-  refine wp_lw (a := sc s₀ + BitVec.ofNat 64 (tO + 4 * k)) (by simp only [tO]; omega) (by rw [hb'])
-    (fal s₀ (by simp only [tO]; omega)) (frd hp hz rd' wr' (by simp only [tO]; omega)) fun s₂ u₂ => ?_
+  refine wp_lw (a := sc s₀ + BitVec.ofNat 64 (tO + 4 * k)) (by simp only [tO]; omega_using [hk]) (by rw [hb'])
+    (fal s₀ (by simp only [tO]; omega_using [])) (frd hp hz rd' wr' (by simp only [tO]; omega_using [hk])) fun s₂ u₂ => ?_
   refine wp_xor fun s₃ u₃ => ?_
-  refine wp_sw (a := sc s₀ + BitVec.ofNat 64 (tO + 4 * k)) (by simp only [tO]; omega)
-    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), hb']) (fal s₀ (by simp only [tO]; omega))
-    (by rw [u₃.wr, u₂.wr]; exact fin hp hz wr' (by simp only [tO]; omega)) fun s₄ u₄ => WP.block_nil ?_
+  refine wp_sw (a := sc s₀ + BitVec.ofNat 64 (tO + 4 * k)) (by simp only [tO]; omega_using [hk])
+    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), hb']) (fal s₀ (by simp only [tO]; omega_using []))
+    (by rw [u₃.wr, u₂.wr]; exact fin hp hz wr' (by simp only [tO]; omega_using [hk])) fun s₄ u₄ => WP.block_nil ?_
   have hv : (s₃.gpr T1).setWidth 32 = y[k]! ^^^ x[k]! := by
     rw [u₃.gpr, u₂.gpr, lo32_xor, lo32_ext, u₂.other _ an.1, h.gpr _ an.1, hx k hk]
     have := h.todo k (Nat.le_refl _) hk
@@ -112,17 +112,17 @@ theorem xorT_ok (s₁ : State) (x y : HashValue) (hb : s₁.gpr B = sc s₀)
     by rw [u₄.rd, u₃.rd, u₂.rd, h.rd], by rw [u₄.wr, u₃.wr, u₂.wr, h.wr], by rw [u₄.sp, u₃.sp, u₂.sp, h.sp]⟩
   · rw [m₄]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [fw_write s₀ _ _ (by omega) (by simp only [tO]; omega) (by simp only [tO]; omega)]; exact h.done j hj
+    · rw [fw_write s₀ _ _ (by omega_using [hj]) (by simp only [tO]; omega_arith) (by simp only [tO]; omega_using [hk])]; exact h.done j hj
     · exact Mem.readW_writeW_self32 _ _ _
-  · rw [m₄, fw_write s₀ _ _ (by omega) (by simp only [tO]; omega) (by simp only [tO]; omega)]
-    exact h.todo j (by omega) hj'
+  · rw [m₄, fw_write s₀ _ _ (by omega_using [hj]) (by simp only [tO]; omega_using [hj']) (by simp only [tO]; omega_using [hk])]
+    exact h.todo j (by omega_using [hj]) hj'
   · rw [u₄.gpr, u₃.other _ hr, u₂.other _ hr, h.gpr _ hr]
-  · rw [m₄, fw_write s₀ _ _ (by omega) (by simp only [tO] at hd ⊢; omega) (by simp only [tO]; omega)]
+  · rw [m₄, fw_write s₀ _ _ (by omega_using [hd]) (by simp only [tO] at hd ⊢; omega_using [hd]) (by simp only [tO]; omega_using [hk])]
     exact h.other d hd
-  · rw [m₄]; exact saved_write (h.saved hsv) _ (by simp only [tO]; omega) (by simp only [tO]; omega)
+  · rw [m₄]; exact saved_write (h.saved hsv) _ (by simp only [tO]; omega_using []) (by simp only [tO]; omega_using [hk])
   · rw [m₄]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by simp only [tO]; omega)
-      (by simp only [tO]; omega) (by simp only [tO]; omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by simp only [tO]; omega_using [])
+      (by simp only [tO]; omega_using [hk]) (by simp only [tO]; omega_using []))
 
 /-! ## One step -/
 
@@ -179,18 +179,18 @@ theorem body_ok {R : HashValue} {m : Nat} {s : State} (h : LI Wi s₀ R (m + 1) 
 
 theorem loop_ok {R : HashValue} {n : Nat} (hn : n < 2 ^ 32) {s : State} (h : LI Wi s₀ R n s) :
     WP isa (.ite (.zero N) (.block []) (.loop (.block body) (.nonzero N))) s (LI Wi s₀ R 0) := by
-  have hlt : n < 2 ^ 64 := by omega
+  have hlt : n < 2 ^ 64 := by omega_using [hn]
   refine WP.ite (decide (n = 0)) (by rw [eval_zero, h.n, ofNat_beq_zero hlt]) (fun hb => ?_) (fun hb => ?_)
   · obtain rfl : n = 0 := by simpa using hb
     exact WP.block_nil h
-  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by simp at hb; omega⟩
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by simp at hb; omega_using [hb]⟩
     refine WP.loop (M := isa) (fun m s => m + 1 < 2 ^ 32 ∧ LI Wi s₀ R (m + 1) s)
-      (fun m s ⟨hm, hs'⟩ => WP.mono (body_ok hp hz hs' (by omega)) fun s' hi => ?_) m s ⟨hn, h⟩
+      (fun m s ⟨hm, hs'⟩ => WP.mono (body_ok hp hz hs' (by omega_using [hm])) fun s' hi => ?_) m s ⟨hn, h⟩
     have hz' : isa.eval (.nonzero N) s' = some (decide (m ≠ 0)) := by
-      rw [eval_nonzero, hi.n, bne, ofNat_beq_zero (by omega)]; simp
+      rw [eval_nonzero, hi.n, bne, ofNat_beq_zero (by omega_using [hm])]; simp
     cases m with
     | zero => exact .inl ⟨by rw [hz']; rfl, hi⟩
-    | succ m => exact .inr ⟨by rw [hz']; simp, m, by omega, by omega, hi⟩
+    | succ m => exact .inr ⟨by rw [hz']; simp, m, by omega_using [], by omega_using [hm], hi⟩
 
 end
 

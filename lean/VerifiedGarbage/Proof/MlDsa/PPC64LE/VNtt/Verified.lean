@@ -46,7 +46,7 @@ theorem setup_env {K : Nat → Nat} {s₀ : State} (hp : Pre s₀) {u t : State}
   · have h11 : r ≠ .r11 := fun e => hr (e ▸ by decide)
     have h12 : r ≠ .r12 := fun e => hr (e ▸ by decide)
     rw [ht.gpr _ h11 h12, hu.gpr _ h12]
-  · rw [ht.mem]; exact hu.tab p hp0 (by omega)
+  · rw [ht.mem]; exact hu.tab p hp0 (by omega_using [hp1])
   · refine polyIs_frame fr (fun r hr => ?_) ⟨hp.red, rfl⟩
     rw [List.mem_singleton] at hr; subst hr; exact hp.disj
 
@@ -56,7 +56,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   unfold ntt
   have hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 4 := fun p hp' => by
     rw [hp.wr]
-    exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega) (by omega)⟩
+    exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega_using [hp']) (by omega_using [hp'])⟩
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (fill_ok scrK hwr) fun u hu => WP.mono (consts_run u) fun t ht => ?_

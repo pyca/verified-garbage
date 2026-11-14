@@ -82,13 +82,13 @@ theorem lbCore_spec {g : Nat} (hg : g ∈ gamma2s) : Core1 (lbCore g) (lbV g) :=
   have hle : hbF g a % hbM g * (2 * g) ≤ q - 1 := by
     rw [← hM]; exact Nat.mul_le_mul_right _ (Nat.le_of_lt hlt)
   have e₃ : (s₃.gpr .eax).toNat = hbF g a % hbM g := by rw [u₃.other _ (by decide), v₂]
-  have m₃ : (s₃.gpr .edx).toNat = 2 * g := by rw [u₃.gpr]; exact toNat_ofNat32 (by omega)
+  have m₃ : (s₃.gpr .edx).toNat = 2 * g := by rw [u₃.gpr]; exact toNat_ofNat32 (by omega_using [hgl])
   refine wp_mulSmall (r := .edx) (by rw [e₃, m₃]; exact Nat.lt_of_le_of_lt hle (by rw [q_eq]; decide)) fun s₄ o₄ v₄ => ?_
   have b₄ : (s₄.gpr .ebx).toNat = a := by
     rw [o₄.gpr _ (by decide), u₃.other _ (by decide), o₂.gpr _ (by decide), u₁.gpr]
     simp [State.setReg, hv]
   refine condAdd_spec (by decide) (X := s₄.gpr .eax) rfl
-    (by rw [v₄, e₃, m₃, b₄, show qImm.toNat = q from rfl]; omega)
+    (by rw [v₄, e₃, m₃, b₄, show qImm.toNat = q from rfl]; omega_using [hle])
     fun s₅ o₅ v₅ => wp_mov fun s₆ u₆ => c s₆ ?_ ?_
   · refine ((((((VG.Proof.MlKem.X86.Only.setReg s .eax _).trans (updOnly u₁)).trans o₂).trans
       (updOnly u₃)).trans o₄).trans (o₅.trans (updOnly u₆))).mono fun r hr => ?_
@@ -156,9 +156,9 @@ theorem init_piece : Piece BitsPre BitsPub (fun s₀ s => s = P0 s₀) BS1 (.blo
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have hin : aR s₀ 3 ∈ s₀.rd ++ s₀.wr := by simp [hp.wr]
-    obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a
-    obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega) hp.sp hp.sp' hin hp.stk_a
-    obtain ⟨a₂, i₂, v₂⟩ := arg_P0 (i := 2) (by omega) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega_using []) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega_using []) hp.sp hp.sp' hin hp.stk_a
+    obtain ⟨a₂, i₂, v₂⟩ := arg_P0 (i := 2) (by omega_using []) hp.sp hp.sp' hin hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, bitsInit, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -218,12 +218,12 @@ theorem bits_step {core : List Instr} {V : Nat → Nat} (hc : Core1 core V)
   · rw [u₅.mem, u₄.mem, u₃.mem, m₂.mem, addr_cf hp.o_fit hk, o₁.mem]
     exact h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ (by rw [n_eq]; exact hk))
   · rw [u₅.mem, u₄.mem, u₃.mem, m₂.mem, addr_cf hp.o_fit hk, o₁.mem,
-      coeffAt_writeW _ _ (by rw [n_eq]; omega) (by rw [n_eq]; exact hk)]
+      coeffAt_writeW _ _ (by rw [n_eq]; omega_using [hk, hi]) (by rw [n_eq]; exact hk)]
     by_cases e : k = i
     · subst e
       rw [ite_eq_left rfl]
       exact eq_ofNat_of_toNat v₁
-    · rw [ite_eq_right e]; exact h.out i (by omega)
+    · rw [ite_eq_right e]; exact h.out i (by omega_using [hi, e])
   · simp only [eval, z₅, Option.map_some]
     rw [u₄.other _ (by decide), u₃.other _ (by decide), m₂.gpr, o₁.gpr _ (by decide), h.ecx]
     exact cnt_ne hk (by decide)
@@ -236,7 +236,7 @@ theorem bits_piece {core : List Instr} {V : Nat → Nat} (hc : Core1 core V)
   refine Piece.seq (B := fun s₀ s => BInv V s₀ 0 s ∧ E s₀) ?_ ?_
   · refine Piece.taint [] (fun s₀ s hp ⟨h, he⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
       (by native_taint_decide)
-    refine wp_movi fun s₁ u₁ => WP.block_nil_iff.mpr ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega)⟩, he⟩
+    refine wp_movi fun s₁ u₁ => WP.block_nil_iff.mpr ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega_using [])⟩, he⟩
     · rw [u₁.other _ (by decide), h.esp]
     · rw [u₁.rd, h.rd]
     · rw [u₁.wr, h.wr]
@@ -289,7 +289,7 @@ theorem leaf_piece {core : Nat → List Instr} {Vf : Nat → Nat → Nat} (hc : 
     Piece BitsPre BitsPub (fun s₀ s => s = s₀)
       (fun s₀ s' => LeafPost (fun s => BInv (Vf (arg s₀ 1).toNat) s₀ 256 s) s₀ s')
       (leaf (.seq (.block bitsInit) (.ite .e (cntLoop (core g32 ++ cntTail)) (cntLoop (core g88 ++ cntTail))))) :=
-  Piece.leaf (fun s₀ => [pR (pA s₀ 2)]) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf (fun s₀ => [pR (pA s₀ 2)]) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
@@ -300,25 +300,25 @@ theorem leaf_piece {core : Nat → List Instr} {Vf : Nat → Nat → Nat} (hc : 
 theorem hbV_lt {g : Nat} (hg : g ∈ gamma2s) (a : Nat) : hbV g a < 2 ^ 32 := by
   have := Nat.mod_lt (hbF g a) (show hbM g > 0 by rcases mem_gamma2s hg with rfl | rfl <;> decide)
   have : hbM g ≤ 44 := by rcases mem_gamma2s hg with rfl | rfl <;> decide
-  unfold hbV; omega
+  unfold hbV; omega_arith
 
 theorem lbV_lt {g : Nat} {a : Nat} (ha : a < q) : lbV g a < 2 ^ 32 := by
   have hq : q = 8380417 := rfl
-  unfold lbV condAddN; split <;> omega
+  unfold lbV condAddN; split <;> omega_using [ha, hq]
 
 /-- Memory with the arguments `0x400`, `(q - 1)/32` and `0` at `0x5004`. -/
 def bitsSatMem : Mem := fun a => if a = 0x5005 then 4 else if a = 0x5009 then 0xff else if a = 0x500a then 3 else 0
 
 theorem bitsSat_zero (a : Addr) (ha : a.toNat < 0x5000) : bitsSatMem a = 0 := by
   simp only [bitsSatMem]
-  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)]
+  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])]
 
 theorem reduced_zero {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0) (p : Nat)
     (hp : p + 1024 ≤ 0x5000) : Reduced m (BitVec.ofNat 64 p) := fun i hi => by
   rw [VG.Proof.MlDsa.Arith.coeffAt_congr (m' := m) (m := fun _ => 0) (fun k hk => hm _ (by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega)) hi]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hp, hk])) hi]
   simp [VG.Proof.MlDsa.coeffAt, Mem.readW, Mem.read]
 
 theorem highBits_verified : Verified X86.target highBits (highBitsContract X86.abi 16) := by

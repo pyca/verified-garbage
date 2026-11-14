@@ -29,7 +29,7 @@ theorem expInit_ok (s : State) {base : BitVec 32} {len w M x : Nat}
   have op (q : Nat) (hq : q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7) : Operand q := by
     rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have coprime := coprime_pow2 odd (64 * w)
   rw [expInit, WP.seq_iff]
   refine WP.mono (smallConst_ok s (1 : BitVec 32) h (o := 7) (by decide) (by decide) (by decide) (by decide)) ?_
@@ -61,7 +61,7 @@ theorem expInit_ok (s : State) {base : BitVec 32} {len w M x : Nat}
   have r2T := (keeps_array_num keepsT fits (op 4 (by decide)) (by decide)).trans r2V
   have r2Exact : numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M := by
     rw [Nat.mod_eq_of_lt r2bound, ← Nat.pow_add,
-      show 64 * w + 64 * w = 128 * w by omega] at r2value
+      show 64 * w + 64 * w = 128 * w by omega_using []] at r2value
     exact r2value
   refine ⟨⟨readyT, modT, coprime, boundT, encoded, ?_, ?_, oneT, r2T.trans r2Exact⟩, ?_,
     frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩

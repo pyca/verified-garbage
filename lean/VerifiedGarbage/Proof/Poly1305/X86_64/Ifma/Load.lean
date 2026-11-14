@@ -79,22 +79,22 @@ theorem addGroup_ok {s : State} (hp : AddPre s) : WP isa (.block addGroup) s (Ad
       envOf_v, envOf_v, envOf_v, hp.c.mask, hp.c.pad, Limbs44.and_mask, Limbs44.split1 hl,
       Limbs44.split_pad hh]
     simp only [blo, bhi, envOf]
-    omega
+    omega_using [hl, hh, b0, b1, b2]
   refine ⟨h.eq, fun i hi k hk => ?_, fun i hi k hk => ?_, fun k hk => ?_, fun k hk i hi => ?_⟩
   · rw [h.reg _ k hk, (addS_y i hi).1]; simp only [Q.eval, xr_xi]
   · rw [h.reg _ k hk, (addS_y i hi).2]; simp only [Q.eval, xr_xi]
   · obtain ⟨e0, e1, e2⟩ := H k hk
     have := Limbs44.split_val (blo s k) (bhi s k) 1
     simp only [Limbs44.val, e0, e1, e2]
-    omega
+    omega_using []
   · obtain ⟨e0, e1, e2⟩ := H k hk
     have hl := envOf_m_lt s (2 * pi k)
     have hh := envOf_m_lt s (2 * pi k + 1)
     have b := hp.h k hk
     simp only [blo, bhi] at e0 e1 e2
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
-    · rw [e0]; have := b 0 (by decide); omega
-    · rw [e1]; have := b 1 (by decide); omega
-    · rw [e2]; have := b 2 (by decide); omega
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    · rw [e0]; have := b 0 (by decide); omega_using [this]
+    · rw [e1]; have := b 1 (by decide); omega_using [hl, this]
+    · rw [e2]; have := b 2 (by decide); omega_using [hh, this]
 
 end VG.Proof.Poly1305.X86_64.Ifma

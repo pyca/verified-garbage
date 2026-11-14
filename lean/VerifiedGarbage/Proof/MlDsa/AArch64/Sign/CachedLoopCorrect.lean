@@ -113,7 +113,7 @@ theorem optimizedR0_rooted_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   have ra := roots.step_layout h.b.l.st.lay hpa hsa hwp (keep_product hp)
   have ha := h.step hpa hsa rp wp hwp
   have hw : PolyIs a.mem (pa a (wP p i)) (Wv p σ (p.ℓ*t) i) := by
-    have hv := ha.w 0 (by omega)
+    have hv := ha.w 0 (by omega_using [hi])
     simpa only [Nat.add_zero] using hv
   have hraw : RawPolyIs a.mem (pa a t1P) (nttInv (multiplyNTT
       (VG.Proof.MlDsa.Sign.chF (cV p σ (p.ℓ*t))) (S2v p σ i))) := by
@@ -329,16 +329,16 @@ theorem checks_ok {p : Params} {S : Nat} {σ s : State} {t : Nat} {f : Poly}
   refine WP.seq (WP.seq (WP.mono (challenge_ok hp ⟨roots,cache⟩ h h1) fun a ha=>?_))
   refine WP.seq (WP.mono (init_ok hp hc ha.2 ha.1) fun b hb=>?_)
   refine WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIZ p S σ t r u ∧ Roots p S f u) p.ℓ 0
-    (fun r _ hr s h=>optimizedZ_rooted_ok hp (by omega) h.2 h.1)
-    (fun r _ hr s h=>optimizedZ_pair_ok hp (by omega) h.2 h.1) b hb) fun c ⟨nz,_,hnz,hz,hdz⟩=>?_
+    (fun r _ hr s h=>optimizedZ_rooted_ok hp (by omega_using [hr]) h.2 h.1)
+    (fun r _ hr s h=>optimizedZ_pair_ok hp (by omega_using [hr]) h.2 h.1) b hb) fun c ⟨nz,_,hnz,hz,hdz⟩=>?_
   rw [Nat.zero_add] at hnz hdz
   have zflag:=PositiveIZ.done hnz hz.1 hdz
   refine ifOkElse_ok (fun hzpass=>?_) fun hzfail=>?_
   · have he:nz=p.ℓ:=hdz.resolve_right hzpass
     subst he
     refine WP.seq (WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIR p S σ t r u ∧ Roots p S f u) p.k 0
-      (fun r _ hr s h=>optimizedR0_rooted_ok hp (by omega) h.2 h.1)
-      (fun r _ hr s h=>optimizedR0_pair_ok hp (by omega) h.2 h.1) c ⟨positiveIR_of_IZ hz.1,hz.2⟩)
+      (fun r _ hr s h=>optimizedR0_rooted_ok hp (by omega_using [hr]) h.2 h.1)
+      (fun r _ hr s h=>optimizedR0_pair_ok hp (by omega_using [hr]) h.2 h.1) c ⟨positiveIR_of_IZ hz.1,hz.2⟩)
       fun d ⟨nr,_,hnr,hr,hdr⟩=>?_)
     rw [Nat.zero_add] at hnr hdr
     have rflag:=PositiveIR.done hnr hr.1 hdr

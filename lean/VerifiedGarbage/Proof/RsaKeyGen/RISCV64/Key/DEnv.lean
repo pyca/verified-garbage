@@ -49,7 +49,7 @@ steps' equations, the side conditions (distinct arrays) by `decide`. -/
 macro "vsimp" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
   `(tactic| (set_option linter.unusedSimpArgs false in simp (disch := decide) only [$ls,*]))
 
-theorem flag01 (c : Prop) [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by split <;> omega
+theorem flag01 (c : Prop) [Decidable c] : (if c then 1 else 0 : Nat) ≤ 1 := by split <;> omega_using []
 
 /-- `a - b` modulo `2^(64 w)`. -/
 def subW (w a b : Nat) : Nat := (a + 2 ^ (64 * w) - b) % 2 ^ (64 * w)
@@ -130,7 +130,7 @@ theorem KE.next {s0 s t : State} {V F V' F' : Nat → Nat} (e : KE s0 V F s)
   · by_cases hm : aDv ∈ js
     · exact hdv hm
     · rw [← e.dv]
-      exact f.word (i := wOf s0) (by omega) (fun x hx e => hm (e ▸ hx)) (fun d hd => (hds d hd).2)
+      exact f.word (i := wOf s0) (by omega_using []) (fun x hx e => hm (e ▸ hx)) (fun d hd => (hds d hd).2)
         (e.st.fit (by decide))
 
 /-- A step that writes one array. -/

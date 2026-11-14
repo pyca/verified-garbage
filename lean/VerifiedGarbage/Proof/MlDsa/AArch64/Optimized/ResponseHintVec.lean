@@ -22,6 +22,6 @@ theorem word_not (a : BitVec 128) {e : Nat} (he : e<4) :
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   simp only [vword,BitVec.getLsbD_extractLsb',BitVec.getLsbD_not]
-  simp (disch := omega) only [decide_eq_true,Bool.true_and]
+  simp (disch := omega_arith) only [decide_eq_true,Bool.true_and]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

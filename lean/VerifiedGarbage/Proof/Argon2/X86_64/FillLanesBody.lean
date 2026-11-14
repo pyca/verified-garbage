@@ -54,7 +54,7 @@ theorem body_ok [CompressImpl] (s : State) (p : Params) (pass lane slice : Nat)
   · intro r hr bx ix
     have outside : r ∉ [Reg.rbx] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact bx
     exact (keeps.regs r outside).trans (filled.regs r hr ix)
-  · rw [flag, added, ready.lanesWord, ReferenceMap.word_nat (lane + 1) (by omega),
+  · rw [flag, added, ready.lanesWord, ReferenceMap.word_nat (lane + 1) (by omega_using [lanesBound, laneBound]),
       ReferenceMap.word_nat p.lanes lanesBound]
   · intro active; exact change_lane_ready ready keeps nextWord active
 

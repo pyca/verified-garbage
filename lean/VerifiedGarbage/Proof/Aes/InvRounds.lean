@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The inverse cipher's rounds, independently of any representation
@@ -160,7 +161,7 @@ theirs (FIPS 197 §5.3.5). -/
 theorem invMixColumns_addRoundKey (x : State) (rk : List Byte) {i : Nat} (hi : i < 16) :
     (invMixColumns (addRoundKey x rk)).getD i 0 =
       (invMixColumns x).getD i 0 ^^^ (invMixColumns (rkState rk)).getD i 0 := by
-  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
+  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega_using [hi]
   simp only [invMixColumns, getD_eq' _ hi, Vector.getElem_ofFn, addRoundKey, rkState,
     getD_eq' _ (hr _)]
   rw [show (0x0e : Byte) = BitVec.ofNat 8 0x0e from rfl, show (0x0b : Byte) = BitVec.ofNat 8 0x0b from rfl,

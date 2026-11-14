@@ -44,16 +44,16 @@ theorem first40_ok (s : State) (d : Int)
       Keeps packedClob s t := by
   dsimp only
   rw [first40,WP.block_append_iff]
-  refine WP.mono (chunk20A_ok s d hd hz hf (by omega))
+  refine WP.mono (chunk20A_ok s d hd hz hf (by omega_using [hbound]))
     fun a ⟨ad,au,av,aq,ar,af,ag,ka⟩ => ?_
   have hodd : (lowMatrix s d).f%2=1 :=
-    msteps_f_odd (t:=MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat) (by dsimp only [MSt.init]; omega) 20
-  have haodd : (a.gpr .x2).toNat%2=1 := by norm_num at af; omega
+    msteps_f_odd (t:=MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat) (by dsimp only [MSt.init]; omega_using [hf]) 20
+  have haodd : (a.gpr .x2).toNat%2=1 := by norm_num at af; omega_using [hodd, af]
   have az : a.gpr .x27=0 := by rw [ka.gpr _ (by decide)]; exact hz
   have hb : |(lowMatrix s d).d|+40<2^62 := by
     have h := msteps_d (MSt.init d (s.gpr .x2).toNat (s.gpr .x3).toNat) 20
     change |(lowMatrix s d).d|≤|d|+2*20 at h
-    omega
+    omega_using [hbound, h]
   have hc := second_input_cong (d:=(lowMatrix s d).d) hodd af ag
   obtain ⟨cd,cu,cv,cq,cr,cf,cg⟩ := hc
   refine WP.mono (chunk20B_ok a (lowMatrix s d).d ad az haodd hb)

@@ -112,7 +112,7 @@ theorem vq_relCT (hk : VChecks c) (hV : VLay c size) {j : Nat} (hj : j < 257)
 
 theorem VInv.tsym {j : Nat} {acc : Option (Fin pN × Fin pN × Fin pN)} {s : State}
     (hs : VInv c base T K size u v Q row E j acc s) : s.syms c.tsym = T :=
-  (hs.core.input.external 1 (Nat.le_refl 1) (by unfold jointGTop; split <;> omega) (by decide)).symbol
+  (hs.core.input.external 1 (Nat.le_refl 1) (by unfold jointGTop; split <;> omega_using []) (by decide)).symbol
 
 /-- A digit of the generator's scalar, in two runs. -/
 theorem vg_relCT (hk : VChecks c) (hV : VLay c size) (h9 : c.gw = 9) {j : Nat}
@@ -174,11 +174,11 @@ theorem vdigits_relCT (hk : VChecks c) (hV : VLay c size) (h9 : c.gw = 9) :
     intro j
     by_cases hj : 1 ≤ j
     · by_cases hb : j ≤ 257
-      · have he : j - 1 + 1 = j := by omega
+      · have he : j - 1 + 1 = j := by omega_using [hj]
         have ea : accN c row (tqE c E) u v (257 - (j - 1)) =
             stepAcc c row (tqE c E) u v (j - 1) (accN c row (tqE c E) u v (257 - j)) := by
-          rw [show 257 - (j - 1) = (257 - j) + 1 by omega, accN, show 256 - (257 - j) = j - 1 by omega]
-        refine (vstep_relCT hk hV h9 (j := j - 1) (by omega) (acc := accN c row (tqE c E) u v (257 - j))).mono
+          rw [show 257 - (j - 1) = (257 - j) + 1 by omega_using [hj, hb], accN, show 256 - (257 - j) = j - 1 by omega_using [hb]]
+        refine (vstep_relCT hk hV h9 (j := j - 1) (by omega_using [hb]) (acc := accN c row (tqE c E) u v (257 - j))).mono
           (P' := I j) (fun _ _ h => by rw [he]; exact h.2.2) ?_
         intro s t ⟨⟨is, sz⟩, it, tz⟩
         have se : eval .ne s = some (!decide (j - 1 = 0)) := by change s.zf.map (!·) = _; rw [sz]; rfl
@@ -198,7 +198,7 @@ theorem vdigits_relCT (hk : VChecks c) (hV : VLay c size) (h9 : c.gw = 9) :
             intro hz
             simp only [se, hz, decide_true, Bool.not_true] at he'
             cases he'
-          exact ⟨j - 1, by omega, by omega, by omega, hp⟩
+          exact ⟨j - 1, by omega_using [hj], by omega_using [hz], by omega_using [hb], hp⟩
       · exact RelCT.of_false (fun _ _ h => hb h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   exact (RelCT.loop I hs 257).mono (fun _ _ h => ⟨by decide, by decide, h⟩) (fun _ _ h => h)

@@ -22,6 +22,6 @@ def gcdWrites (len : Nat) : List (Nat × Nat) :=
 /-- `res`, narrow array 1, just past wide array 0's `n + 1` words. -/
 theorem rv_res (len : Nat) : rv (kw len) res = rv (kw len) (a 0) + 4 * nw len + 4 := by
   have := kw_eq len
-  simp only [rv, res, a]; omega
+  simp only [rv, res, a]; omega_using [this]
 
 end VG.Proof.Rsa.X86.GcdBatchRt

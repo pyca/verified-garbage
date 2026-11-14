@@ -31,11 +31,11 @@ theorem carryNat_mod (x : Nat → Nat) (h4 : x 4 < 2 ^ 63) :
     lv (carryNat (2 ^ 51 - 1) 19 x) % P = lv x % P := by
   have e : lv (carryNat (2 ^ 51 - 1) 19 x) + 2 ^ 255 * (x 4 / 2 ^ 51) = lv x + 19 * (x 4 / 2 ^ 51) := by
     simp only [lv, carryNat, Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_using [h4]
   have := fold255 (lv (carryNat (2 ^ 51 - 1) 19 x)) (x 4 / 2 ^ 51)
   rw [e] at this
   simp only [P] at this ⊢
-  omega
+  omega_using [e]
 
 /-- `carry r` run from its start. -/
 def carryS (r : Nat → Nat) (h : (Sym.init.run (carry r)).isSome := by decide +kernel) : Sym :=

@@ -23,9 +23,9 @@ open VG VG.Impl.Bignum VG.Impl.Bignum.Public
 theorem kBounds {w wx : Nat} (hwx : 1 ≤ wx) :
     w ≤ (w + wx - 1) / wx * wx ∧ (w + wx - 1) / wx * wx < w + wx := by
   have h1 := Nat.div_add_mod (w + wx - 1) wx
-  have h2 := Nat.mod_lt (w + wx - 1) (show 0 < wx by omega)
+  have h2 := Nat.mod_lt (w + wx - 1) (show 0 < wx by omega_using [hwx])
   rw [Nat.mul_comm] at h1
-  omega
+  omega_using [h1, h2]
 
 /-- `D / 64 = (K + 1) w_X - w`. -/
 def gC (w wx : Nat) : Nat := (w + wx - 1) / wx * wx + wx - w
@@ -36,7 +36,7 @@ def gD (w wx : Nat) : Nat := 64 * gC w wx
 /-- The top word of `m`'s `w` words is `m / 2^(64 (w - 1))`. -/
 theorem wv_top (m : Mem) (B : Addr) (o w : Nat) (hw : 1 ≤ w) :
     (word m B (o + 8 * (w - 1))).toNat = wv m B o w / 2 ^ (64 * (w - 1)) := by
-  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega_using [hw]⟩
   rw [Nat.add_sub_cancel, wv, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
     Nat.div_eq_of_lt (wv_lt m B o k), Nat.zero_add]
 
@@ -47,7 +47,7 @@ theorem le_of_top {N k : Nat} (h : N / 2 ^ k ≠ 0) : 2 ^ k ≤ N :=
 /-- `2^D` is below `m` when `D / 64 < w - 1` and `m`'s top word is not 0:
 `gPow`'s fast path. -/
 theorem gFast_lt {N w c : Nat} (hc : c < w - 1) (h : N / 2 ^ (64 * (w - 1)) ≠ 0) : 2 ^ (64 * c) < N :=
-  Nat.lt_of_lt_of_le (Nat.pow_lt_pow_right (by decide) (by omega)) (le_of_top h)
+  Nat.lt_of_lt_of_le (Nat.pow_lt_pow_right (by decide) (by omega_using [hc])) (le_of_top h)
 
 theorem and_pow_beq (D k : Nat) (hk : k < 64) :
     (BitVec.ofNat 64 D &&& BitVec.ofNat 64 (2 ^ k) == 0) = decide (D / 2 ^ k % 2 = 0) := by
@@ -56,7 +56,7 @@ theorem and_pow_beq (D k : Nat) (hk : k < 64) :
   rw [e, BitVec.and_twoPow, BitVec.getLsbD_ofNat, Nat.testBit_eq_decide_div_mod_eq]
   by_cases h : D / 2 ^ k % 2 = 0
   · simp [h]
-  · have h1 : D / 2 ^ k % 2 = 1 := by omega
+  · have h1 : D / 2 ^ k % 2 = 1 := by omega_using [h]
     have h2 : BitVec.twoPow 64 k ≠ 0#64 := by
       intro h0
       have := congrArg BitVec.toNat h0
@@ -65,7 +65,7 @@ theorem and_pow_beq (D k : Nat) (hk : k < 64) :
     simp [h1, hk, h2]
 
 theorem div_bit (D k : Nat) : 2 * (D / 2 ^ (k + 1)) + D / 2 ^ k % 2 = D / 2 ^ k := by
-  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega
+  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega_using []
 
 /-- What `gPow` changes. -/
 def gRanges (w : Nat) : List (Nat × Nat) :=
@@ -78,7 +78,7 @@ theorem gD_bounds {w wx : Nat} (hwx : 1 ≤ wx) (hwx' : wx ≤ w) (hw30 : w < 2 
   obtain ⟨hK1, hK2⟩ := kBounds (w := w) hwx
   unfold gD gC
   rw [Nat.mul_succ, Nat.mul_assoc 64 wx, Nat.mul_comm wx]
-  omega
+  omega_using [hwx', hw30, hK1, hK2]
 
 /-- The modulus' arrays but `Y`, the accumulator and the temporary are kept
 by a change within `gRanges` and a prime's workspace. -/
@@ -113,15 +113,15 @@ theorem gRanges_le (w : Nat) : ∀ r ∈ gRanges w, r.1 + r.2 ≤ slot w 8 := by
   have := slot_le (w := w) (show Public.aTmp < 8 by decide)
   have := slot_le (w := w) (show Public.aY < 8 by decide)
   simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
+  rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith
 
 theorem gxRanges_le {w o wx : Nat} (hlo : slot w 8 ≤ o) :
     ∀ r ∈ gRanges w ++ [xRange o wx], r.1 + r.2 ≤ o + slot wx 8 + wsTab wx := by
-  have hX8 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hX8 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
-  · have := gRanges_le w r hr; omega
-  · rw [List.mem_singleton.mp hr]; simp only [xRange]; omega
+  · have := gRanges_le w r hr; omega_using [hlo, this]
+  · rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_using [hX8]
 
 /-- The modulus' header words but `sD`'s and `sCnt`'s, past a change within
 `gRanges` and a prime's workspace. -/
@@ -132,26 +132,26 @@ theorem Frm.gx_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (gRanges w
   have := hdr_lt_slot w Public.aTmp hi
   have := hdr_lt_slot w Public.aY hi
   have := hdr_lt_slot w 8 hi
-  refine hf.word_eq (fun r hr => ?_) (by omega)
+  refine hf.word_eq (fun r hr => ?_) (by omega_using [hi])
   simp only [gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
   · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
-    unfold Crt.sD sFn at h1 ⊢; omega
+    unfold Crt.sD sFn at h1 ⊢; omega_using [h1]
   · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
-    unfold Public.sCnt sFn at h2 ⊢; omega
-  · exact Or.inl (by omega)
+    unfold Public.sCnt sFn at h2 ⊢; omega_using [h2]
+  · exact Or.inl (by omega_using [hlo, this])
 
 /-- A prime's workspace header past a change within `gRanges`. -/
 theorem WsAt.of_g {m m' : Mem} {B : Addr} {w o wx : Nat} {mx : BitVec 64} (h : WsAt m B o wx mx)
     (hf : Frm B (gRanges w) m m') (hlo : slot w 8 ≤ o) (hoL : B.toNat + o + slot wx 8 ≤ 2 ^ 64) :
     WsAt m' B o wx mx :=
   h.of_words fun i hi => by
-    have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+    have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
     rw [word_off, word_off]
-    exact hf.word_eq (fun r hr => Or.inr (by have := gRanges_le w r hr; omega)) (by omega)
+    exact hf.word_eq (fun r hr => Or.inr (by have := gRanges_le w r hr; omega_using [hlo, this])) (by omega_using [hoL, hi, this])
 
 end VG.Proof.Bignum

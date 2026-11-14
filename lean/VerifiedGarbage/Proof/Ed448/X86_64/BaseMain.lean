@@ -105,7 +105,7 @@ theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
   refine WP.mono (movOut_ok s₁) fun s₂ ⟨m₂, r15₂, di₂, g₂, rd₂, wr₂⟩ => ?_
   rw [g₁, hbase] at di₂
   rw [g₁] at r15₂
-  have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega⟩
+  have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega_using [hn]⟩
   refine WP.mono (consts_ok hs₂) fun s₃ ⟨p₃, _q₃, d₃, o₃, g₃, rd₃, wr₃, _⟩ => ?_
   have hs₃ : Scr s₃ base := ⟨(g₃ _ (by decide)).trans di₂, wr₃ ▸ hs₂.wr, hs₂.nowrap⟩
   have rsi₃ : s₃.gpr .rsi = s.gpr .rsi := by
@@ -122,7 +122,7 @@ theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
   -- The scalar's bits.
   apply WP.seq
   refine WP.mono (bits_ok hs₃ rsi₃ (fun q hq => ⟨⟨s.gpr .rsi, 57⟩, by rw [rw₃.1, hr]; simp,
-      Offset.contains_base _ (d := q) (n := 1) (k := 57) (by omega) (by omega)⟩) hfar)
+      Offset.contains_base _ (d := q) (n := 1) (k := 57) (by omega_using [hq]) (by omega_using [hq])⟩) hfar)
     fun s₄' ⟨g₄', rd₄', wr₄', o₄', b₄⟩ => ?_
   have hs₄' : Scr s₄' base := ⟨(g₄' _ (by decide)).trans hs₃.rdi, wr₄' ▸ hs₃.wr, hs₃.nowrap⟩
   -- The output's address at `OUT`.
@@ -142,7 +142,7 @@ theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
   have b₄' : ∀ t < 456, s₄.mem (off base (BITS + t)) =
       BitVec.ofNat 8 (((s₃.mem (s.gpr .rsi + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1) :=
     fun t ht => by
-      rw [oo _ (Or.inr (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, OUT]; omega))]
+      rw [oo _ (Or.inr (by rw [ofs_off' base (by simp only [BITS]; omega_using [ht])]; simp only [BITS, OUT]; omega_using []))]
       exact b₄ t ht
   have hout₄ : word s₄.mem base OUT = s.gpr .rdi := by
     have r15₄ : s₄'.gpr .r15 = s.gpr .rdi := by rw [g₄' _ (by decide), g₃ _ (by decide), r15₂]
@@ -151,8 +151,8 @@ theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
     have h1 := Proof.X448.X86_64.slot_lt i
     have h2 := Proof.X448.X86_64.slot_ge i
     simp only [Impl.X448.X86_64.ACC] at h1
-    exact (E_outside oo i (Or.inr (by simp only [OUT]; omega))).trans
-      (E_outside o₄' i (Or.inl (by simp only [BITS]; omega)))
+    exact (E_outside oo i (Or.inr (by simp only [OUT]; omega_using [h2]))).trans
+      (E_outside o₄' i (Or.inl (by simp only [BITS]; omega_using [h1])))
   -- The loop.
   apply WP.seq
   rw [combLoop]
@@ -163,7 +163,7 @@ theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
   let K := decodeLE (bytesAt s.mem (s.gpr .rsi) 57)
   have hbits : ∀ t < 456, s₅.mem (off base (BITS + t)) = BitVec.ofNat 8 ((K >>> t) &&& 1) := by
     intro t ht
-    rw [m₅, b₄' t ht, hmem₃ _ (by omega), scalar_bit s.mem _ ht]
+    rw [m₅, b₄' t ht, hmem₃ _ (by omega_using [ht]), scalar_bit s.mem _ ht]
   have e₅ : ∀ i : Index, E s₅.mem base i = E s₃.mem base i := fun i => by rw [m₅, e₄]
   have cbits : Comb.Bits base K s₅ := by
     intro t ht
@@ -185,7 +185,7 @@ theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
     rw [m₆]; exact writeW_outside _ _ _ (by decide)
   have e₆ : E s₆.mem base = E s₆'.mem base := funext fun i => by
     have h2 := Proof.X448.X86_64.slot_ge i
-    exact E_outside o₆ i (Or.inr (by simp only [OUT]; omega))
+    exact E_outside o₆ i (Or.inr (by simp only [OUT]; omega_using [h2]))
   -- The inversion of `Z`.
   apply WP.seq
   refine WP.mono (hinv hs₆) fun s₇ ⟨g₇, rd₇, wr₇, o₇, e₇⟩ => ?_

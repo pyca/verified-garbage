@@ -39,11 +39,11 @@ theorem rr_mem : ∀ k < 14, rr k ∈ clob64 := by decide
 
 theorem rr_cases {k : Nat} : rr k = .a4 ∨ rr k = .a5 ∨ rr k = .a6 := by
   unfold rr RR
-  rcases (by omega : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;> simp [h]
+  rcases (by omega_using [] : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;> simp [h]
 
 theorem rr_clob (k : Nat) : rr k ∈ clob64 := by
   unfold rr RR
-  rcases (by omega : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;> simp [h]
+  rcases (by omega_using [] : k % 3 = 0 ∨ k % 3 = 1 ∨ k % 3 = 2) with h | h | h <;> simp [h]
 
 theorem Keeps.rest {rs : List Reg} {s s' : State} (h : Keeps rs s s') : Rest rs s s' :=
   ⟨h.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
@@ -60,15 +60,15 @@ theorem accW_lt (m : Mem) (b : Addr) : ∀ k, accW m b k < (2 ^ 64) ^ k
     have := dw_lt m b (ACC + 8 * k)
     rw [accW, Nat.pow_succ (n := 2 ^ 64)]
     calc accW m b k + (2 ^ 64) ^ k * dw m b (ACC + 8 * k)
-        < (2 ^ 64) ^ k + (2 ^ 64) ^ k * dw m b (ACC + 8 * k) := by omega
+        < (2 ^ 64) ^ k + (2 ^ 64) ^ k * dw m b (ACC + 8 * k) := by omega_arith
       _ = (2 ^ 64) ^ k * (dw m b (ACC + 8 * k) + 1) := by rw [Nat.mul_add, Nat.mul_one, Nat.add_comm]
-      _ ≤ (2 ^ 64) ^ k * 2 ^ 64 := Nat.mul_le_mul_left _ (by omega)
+      _ ≤ (2 ^ 64) ^ k * 2 ^ 64 := Nat.mul_le_mul_left _ (by omega_using [this])
 
 theorem accW_congr {m m' : Mem} {b : Addr} : ∀ {k}, (∀ c < k, dw m' b (ACC + 8 * c) = dw m b (ACC + 8 * c)) →
     accW m' b k = accW m b k
   | 0, _ => rfl
   | k + 1, h => by
-    rw [accW, accW, accW_congr (fun c hc => h c (by omega)), h k (by omega)]
+    rw [accW, accW, accW_congr (fun c hc => h c (by omega_using [hc])), h k (by omega_using [])]
 
 /-- The sum of a list of terms, given by a function. -/
 def tsum (f : Nat × Nat → Nat) (ps : List (Nat × Nat)) : Nat := (ps.map f).sum
@@ -83,7 +83,7 @@ theorem tsum_le {f : Nat × Nat → Nat} {B : Nat} :
     rw [tsum_cons, List.length_cons, Nat.succ_mul]
     have := h p (List.mem_cons_self ..)
     have := tsum_le (ps := ps) fun q hq => h q (List.mem_cons_of_mem _ hq)
-    omega
+    omega_arith
 
 /-- The sum of the first `k` columns. -/
 def colsV (cs : Nat → Nat) : Nat → Nat
@@ -118,7 +118,7 @@ theorem colEnd_ok {s0 : State} {k : Nat} (hk : k < 14) {s : State} (hc : Ctx b s
   obtain ⟨h01, h02, h12, h07, h00, h17, h10, h27, h20, h3⟩ := rr_ne k hk
   have hA := ACC_eq
   unfold colEnd
-  refine sd_ok hc (by omega) (by omega) fun s1 u1 => wp_li (by decide) fun s2 u2 => WP.block_nil ?_
+  refine sd_ok hc (by omega_using [hk, hA]) (by omega_using [hA]) fun s1 u1 => wp_li (by decide) fun s2 u2 => WP.block_nil ?_
   have hm : s2.mem = s.mem.writeW (b + BitVec.ofNat 64 (ACC + 8 * k)) (s.gpr (rr k)) := by
     rw [u2.mem, u1.mem]
   have hrr : rr k ∈ clob64 := rr_mem k hk
@@ -127,13 +127,13 @@ theorem colEnd_ok {s0 : State} {k : Nat} (hk : k < 14) {s : State} (hc : Ctx b s
     fun r hr' => by rw [u2.other _ hr', u1.gpr]⟩
   · rw [hm]
     exact hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains b (by omega) (by omega) (by omega))
-  · rw [show k + 1 + 2 = k + 3 by omega, h3, u2.gpr]; rfl
+      (Offset.contains b (by omega_using []) (by omega_using [hk]) (by omega_using [hA]))
+  · rw [show k + 1 + 2 = k + 3 by omega_using [], h3, u2.gpr]; rfl
   · have e1 : s2.gpr (rr (k + 1)) = s.gpr (rr (k + 1)) := by rw [u2.other _ (Ne.symm h01), u1.gpr]
     have e2 : s2.gpr (rr (k + 1 + 1)) = s.gpr (rr (k + 2)) := by
-      rw [show k + 1 + 1 = k + 2 by omega, u2.other _ (Ne.symm h02), u1.gpr]
+      rw [show k + 1 + 1 = k + 2 by omega_using [], u2.other _ (Ne.symm h02), u1.gpr]
     have ea : accW s2.mem b k = accW s.mem b k := accW_congr fun c hc' => by
-      rw [hm, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+      rw [hm, dw_write_other _ _ _ (by omega_using [hc']) (by omega_using [hk, hA, hc']) (by omega_using [hk, hA])]
     have ek : dw s2.mem b (ACC + 8 * k) = (s.gpr (rr k)).toNat := by rw [hm, dw_write_self]
     rw [accW, ea, ek, e1, e2, ← hv, val3]
     rw [Nat.pow_succ (n := 2 ^ 64)]
@@ -158,12 +158,12 @@ theorem lds_ok {o : Nat} (ho : o + 56 ≤ 2048) (ho8 : o % 8 = 0) :
   | 0, _, s, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Rest.refl _ _, rfl⟩
   | n + 1, hn, s, hc => by
     rw [List.range_succ, List.map_append]
-    refine WP.append (lds_ok ho ho8 n (by omega) s hc) fun s1 ⟨h1, hr1, hm1⟩ => ?_
-    refine ld_ok (hc.of_rest hr1 (by decide)) (by omega) (by omega) fun s2 u2 => WP.block_nil ?_
-    refine ⟨fun i hi => ?_, hr1.trans (u2.rest (w_clob n (by omega))), by rw [u2.mem, hm1]⟩
+    refine WP.append (lds_ok ho ho8 n (by omega_using [hn]) s hc) fun s1 ⟨h1, hr1, hm1⟩ => ?_
+    refine ld_ok (hc.of_rest hr1 (by decide)) (by omega_using [ho, hn]) (by omega_using [ho8]) fun s2 u2 => WP.block_nil ?_
+    refine ⟨fun i hi => ?_, hr1.trans (u2.rest (w_clob n (by omega_using [hn]))), by rw [u2.mem, hm1]⟩
     by_cases hin : i = n
     · subst hin; rw [u2.gpr, hm1]; rfl
-    · rw [u2.other _ (w_ne i (by omega) n (by omega) hin)]; exact h1 i (by omega)
+    · rw [u2.other _ (w_ne i (by omega_using [hn, hi]) n (by omega_using [hn]) hin)]; exact h1 i (by omega_using [hi, hin])
 
 /-- `zero3`: the accumulator of column 0 zero. -/
 theorem zero3_ok {s : State} :
@@ -186,8 +186,8 @@ theorem columns_ok {s0 : State} {cs : Nat → Nat} {Inv : Nat → State → Prop
   | 0, _, s, h, hi => WP.block_nil ⟨h, hi⟩
   | n + 1, hn, s, h, hi => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.append (columns_ok hcol n (by omega) s h hi) fun s1 ⟨h1, hi1⟩ =>
-      hcol n (by omega) s1 h1 hi1
+    exact WP.append (columns_ok hcol n (by omega_using [hn]) s h hi) fun s1 ⟨h1, hi1⟩ =>
+      hcol n (by omega_using [hn]) s1 h1 hi1
 
 /-- After the fourteen columns, the words at `ACC` are the columns' sum. -/
 theorem ColInv.final {s0 : State} {cs : Nat → Nat} {s : State} (h : ColInv b s0 cs 14 s)
@@ -199,9 +199,9 @@ theorem ColInv.final {s0 : State} {cs : Nat → Nat} {s : State} (h : ColInv b s
   generalize (s.gpr (rr 14)).toNat + 2 ^ 64 * (s.gpr (rr (14 + 1))).toNat = C at *
   generalize colsV cs 14 = V at *
   rcases Nat.eq_zero_or_pos C with rfl | hC
-  · omega
+  · omega_using [hv]
   · have : K ≤ K * C := Nat.le_mul_of_pos_right _ hC
-    omega
+    omega_using [hlt, hv, this]
 
 end
 

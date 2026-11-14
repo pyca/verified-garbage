@@ -22,10 +22,10 @@ theorem rel_join {op : AluOp} {v a b p cin c w x y r c' : Nat}
   by_cases hop : op = .adc <;> simp only [hop, ↓reduceIte] at *
   · have E := congrArg (p*·) hw
     simp only [Nat.mul_add,Nat.mul_left_comm,Nat.mul_comm] at E ⊢
-    omega
+    omega_using [h, E]
   · have E := congrArg (p*·) hw
     simp only [Nat.mul_add,Nat.mul_left_comm,Nat.mul_comm] at E ⊢
-    omega
+    omega_using [h, E]
 
 theorem rel_step {op : AluOp} {v a b p cin c w x y c' : Nat}
     (h : Rel op v a b p cin c) (hw : Rel op w x y (2^32) c c') :
@@ -64,10 +64,10 @@ theorem word_ok {s : State} {base : Addr} {size a b d j : Nat} {op : AluOp} {cin
   refine WP.block_append (WP.mono Step fun t ⟨K,M,c,C,V⟩ => ?_)
   have hw₂ := hw₁.of_keeps K
   have pd₂ : PtrAt t base .edi d := by rw [PtrAt,K.1 _ (by decide),U.other _ (by decide)];exact pd
-  refine wp_storeS (ea_ptr hw₂ pd₂ (by omega)) (ws_write hw₂ hd) fun u S => WP.block_nil ?_
+  refine wp_storeS (ea_ptr hw₂ pd₂ (by omega_using [hd])) (ws_write hw₂ hd) fun u S => WP.block_nil ?_
   refine ⟨?_,(U.keeps.trans K).trans (S.keeps _),c,by rw [S.cf,C],?_⟩
   · rw [S.mem,M,U.mem]
-    exact writeW32_outside _ _ _ (by have := hw.nowrap;omega)
+    exact writeW32_outside _ _ _ (by have := hw.nowrap;omega_using [hd, this])
   · rw [S.mem,w32_write_self]
     exact V
 

@@ -122,8 +122,8 @@ theorem idxB_wp {t : State} (h : Sim s t) (h5 : t.gpr .t5 = stackArg s 6) :
   WP.of_syms (wp_ld (a := stackArg s 6 + BitVec.ofNat 64 40) (by rw [h5])
     (by
       have e : (stackArg s 6 + BitVec.ofNat 64 40).toNat = (stackArg s 6).toNat + 40 := by
-        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := P.wth; omega
-      rw [e]; have := P.al6; omega)
+        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := P.wth; omega_using [this]
+      rw [e]; have := P.al6; omega_using [this])
     ⟨tHR s, by rw [h.1.rd, P.hrd]; simp,
       Offset.contains_base (stackArg s 6) (by decide) (by decide)⟩
     (fun u o e => wp_nil fun y => ⟨⟨(h.1.trans o).mono fun r hr => by
@@ -172,7 +172,7 @@ theorem shape_code {v : MVar} (hv : Shape v) (f : MdFns) (g : Impl.RsaOaep.RISCV
 theorem idx_lt {v : MVar} (hv : Shape v) : idx v < 2 ^ 64 := by
   have := hv.1
   simp only [idxs, List.mem_cons, List.not_mem_nil, or_false] at this
-  omega
+  omega_using [this]
 
 /-! ## The tables on entry -/
 
@@ -184,12 +184,12 @@ theorem tabM_entry {vs : List MVar} (hc : Coh vs)
     (hpw : (names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {v : MVar} (hv : v ∈ vs)
     (hh : Abi.tableHeld 64 s.mem (stackArg s 6) (FnTable.words isa s (tableOf v))) :
     TabM v.M (digName v) (fnsOf vs) 6 Sp s (stackArg s 6) := by
-  refine tabM_of (by decide) rfl (arg_al P (by decide)) P.al6 (show (stackArg s 6).toNat + 40 ≤ 2 ^ 64 by have := P.wth; omega) (A := aR s)
+  refine tabM_of (by decide) rfl (arg_al P (by decide)) P.al6 (show (stackArg s 6).toNat + 40 ≤ 2 ^ 64 by have := P.wth; omega_using [this]) (A := aR s)
     (by rw [P.hrd]; simp) (in_aR (by decide)) ?_ P.ka (P.sa.sub_left (sc_sub P))
     (by rw [P.hrd]; iterate 5 apply List.mem_cons_of_mem
         exact List.mem_cons_self ..) P.kth (P.sth.sub_left (sc_sub P)) hc hpw hv hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 theorem tabS_entry {gs : List MVar} (hc : MdHashTable.RISCV64.Coh gs)
     (hpw : (MdHashTable.RISCV64.names gs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : MVar} (hw : w ∈ gs)
@@ -200,7 +200,7 @@ theorem tabS_entry {gs : List MVar} (hc : MdHashTable.RISCV64.Coh gs)
     (by rw [P.hrd]; iterate 6 apply List.mem_cons_of_mem
         exact List.mem_cons_self ..) P.ktg (P.stg.sub_left (sc_sub P)) hc hpw hw hh
   rw [stackArgAddr_eq]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 end
 

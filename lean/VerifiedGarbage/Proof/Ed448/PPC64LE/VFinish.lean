@@ -38,12 +38,12 @@ theorem top_nz (x : BitVec 64) : ((x ||| (0 - x)) >>> 63).toNat = if x = 0 then 
     have hx : x.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
     have hlt := x.isLt
     have hn : (0 - x).toNat = 2 ^ 64 - x.toNat := by
-      rw [BitVec.toNat_sub]; simp; omega
+      rw [BitVec.toNat_sub]; simp; omega_using [hx]
     rw [hn, Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow]
-    have h2 : (2 ^ 64 - x.toNat) / 2 ^ 63 ≤ 1 := by omega
+    have h2 : (2 ^ 64 - x.toNat) / 2 ^ 63 ≤ 1 := by omega_using [hx]
     rcases Nat.lt_or_ge x.toNat (2 ^ 63) with h3 | h3
-    · rw [Nat.div_eq_of_lt h3, show (2 ^ 64 - x.toNat) / 2 ^ 63 = 1 by omega]; rfl
-    · rw [show x.toNat / 2 ^ 63 = 1 by omega]
+    · rw [Nat.div_eq_of_lt h3, show (2 ^ 64 - x.toNat) / 2 ^ 63 = 1 by omega_using [hx, h3]]; rfl
+    · rw [show x.toNat / 2 ^ 63 = 1 by omega_using [h3]]
       rcases Nat.le_one_iff_eq_zero_or_eq_one.mp h2 with e | e <;> rw [e] <;> rfl
 
 theorem bad_zero_iff {m : Mem} {b : Addr} : (m.readW (b + BitVec.ofNat 64 BAD) 64 = 0) ↔ bad m b = 0 := by
@@ -60,11 +60,11 @@ theorem vFinish_ok {s : State} (hc : VCtx b s) {Q : Point} (hS : SlotsOk s.mem b
   have hA := X448.PPC64LE.ACC_eq
   have hY : Y = 896 := rfl
   have hdo : Region.Disjoint ⟨b, 4096⟩ ⟨b + BitVec.ofNat 64 OUT, 56⟩ :=
-    (Offset.disjoint_base b (d := OUT) (n := 56) (k := 4096) (by omega) (by omega)).symm
+    (Offset.disjoint_base b (d := OUT) (n := 56) (k := 4096) (by omega_using [o2]) (by omega_using [o2])).symm
   unfold vFinish
   simp only [outZero, copy, List.append_assoc, List.cons_append]
   -- `X`.
-  refine WP.append (freeze_ok hc.ctx hc.r3 (fun k hk => by rw [Offset.add_add]; exact hc.inW (by omega)) hdo)
+  refine WP.append (freeze_ok hc.ctx hc.r3 (fun k hk => by rw [Offset.add_add]; exact hc.inW (by omega_using [o2, hk])) hdo)
     fun s1 ⟨_, hr1, hf1, hw1⟩ => ?_
   have hc1 : VCtx b s1 := hc.of_rest hr1 (by decide) (by decide)
   refine WP.append (outOr_ok hc1) fun s2 ⟨hr2, hm2, hv2⟩ => ?_
@@ -72,7 +72,7 @@ theorem vFinish_ok {s : State} (hc : VCtx b s) {Q : Point} (hS : SlotsOk s.mem b
   refine WP.append (orBad_ok hc2 (r := .r10) (by decide)) fun s3 ⟨hr3, hf3, hb3⟩ => ?_
   have hc3 : VCtx b s3 := hc2.of_rest hr3 (by decide) (by decide)
   have hS3 := SlotsOk.lo (m := s1.mem) (m' := s3.mem) (by rw [← hm2]; exact hf3) (fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact disj_hi (by omega) (by omega)) (slots_freeze hf1 hdo hS (by decide))
+    rw [List.mem_singleton.mp hr]; exact disj_hi (by omega_using [o3]) (by omega_using [o3])) (slots_freeze hf1 hdo hS (by decide))
     (by decide)
   -- `Y - Z`.
   refine WP.append (subS (o := TA) (x := RY) (y := RZ) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -87,7 +87,7 @@ theorem vFinish_ok {s : State} (hc : VCtx b s) {Q : Point} (hS : SlotsOk s.mem b
     (by decide) (by decide) hc5.ctx (by decide) (by rw [u5.gpr]; rfl) hS5 (hS5 TA (by decide)) (hS5 TA (by decide)))
     fun s6 ⟨hr6, hf6, hS6⟩ => ?_
   have hc6 : VCtx b s6 := hc5.of_rest hr6 (by decide) (by decide)
-  refine WP.append (freeze_ok hc6.ctx hc6.r3 (fun k hk => by rw [Offset.add_add]; exact hc6.inW (by omega)) hdo)
+  refine WP.append (freeze_ok hc6.ctx hc6.r3 (fun k hk => by rw [Offset.add_add]; exact hc6.inW (by omega_using [o2, hk])) hdo)
     fun s7 ⟨_, hr7, hf7, hw7⟩ => ?_
   have hc7 : VCtx b s7 := hc6.of_rest hr7 (by decide) (by decide)
   refine WP.append (outOr_ok hc7) fun s8 ⟨hr8, hm8, hv8⟩ => ?_
@@ -95,7 +95,7 @@ theorem vFinish_ok {s : State} (hc : VCtx b s) {Q : Point} (hS : SlotsOk s.mem b
   refine WP.append (orBad_ok hc8 (r := .r10) (by decide)) fun s9 ⟨hr9, hf9, hb9⟩ => ?_
   have hc9 : VCtx b s9 := hc8.of_rest hr9 (by decide) (by decide)
   -- The result.
-  refine wp_ldd (a := b + BitVec.ofNat 64 BAD) (by decide) (by decide) (by rw [hc9.ctx.r6]) (hc9.inR (by omega))
+  refine wp_ldd (a := b + BitVec.ofNat 64 BAD) (by decide) (by decide) (by rw [hc9.ctx.r6]) (hc9.inR (by omega_using [o3]))
     fun t1 v1 => wp_li (by decide) fun t2 v2 => wp_sub fun t3 v3 => ?_
   refine wp_or fun t4 v4 => wp_lsr (by decide) fun t5 v5 => wp_li (by decide) fun t6 v6 => wp_sub fun t7 v7 => ?_
   refine WP.block_nil ?_
@@ -106,9 +106,9 @@ theorem vFinish_ok {s : State} (hc : VCtx b s) {Q : Point} (hS : SlotsOk s.mem b
   have dYO : ∀ r ∈ [(⟨b + BitVec.ofNat 64 Y, 56⟩ : Region), ⟨b + BitVec.ofNat 64 OUT, 56⟩],
       Region.Disjoint ⟨b + BitVec.ofNat 64 BAD, 8⟩ r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_using [o3]) (by omega_arith)
   have dFA : ∀ r ∈ [FA b], Region.Disjoint ⟨b + BitVec.ofNat 64 BAD, 8⟩ r := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by omega_using [o1, o3]) (by omega_using [o3])
   have b1 : bad s1.mem b = bad s.mem b := rB hf1 dYO
   have b8 : bad s8.mem b = bad s3.mem b := by
     rw [bad, hm8, ← bad, rB hf7 dYO, rB hf6 dFA, bad, u5.mem, ← bad, rB hf4 dFA]

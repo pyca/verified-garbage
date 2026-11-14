@@ -38,7 +38,7 @@ theorem generatorModulus_ok {s : State} {B : Addr} {len : Nat} {pb : List Byte}
   have ffu : Frm B [(48, 80)] s.mem u.mem := Frm.of_outside fu (by simp)
   have sru := src.congrK (InScr.of_frm ffu (by
     intro r hr; rcases List.mem_singleton.mp hr with rfl; decide)) ku
-  refine WP.seq (WP.mono (generatorFields_ok gu (by decide) (by omega))
+  refine WP.seq (WP.mono (generatorFields_ok gu (by decide) (by omega_using [hl]))
     fun v ⟨gv, vp, ve, vl, vg, fv, kv⟩ => ?_)
   have ffv : Frm B [(256, 80)] u.mem v.mem := Frm.of_outside fv (by simp)
   have srv := sru.congrK (InScr.of_frm ffv (by
@@ -46,7 +46,7 @@ theorem generatorModulus_ok {s : State} {B : Addr} {len : Nat} {pb : List Byte}
   refine WP.mono (VG.Proof.Dsa.AArch64.child_ok gv (by decide) (by decide) (by decide)
     hlen.2.2.2.2.2 hlen.2.2.1 hlen.2.2.2.1 (by decide)
     ⟨.input .p, .pLen⟩ (by trivial) (by exact vp) (by simpa only [hbl, Field.offset] using vl)
-    srv (by omega) (by omega) (by rw [hbl]; exact hlen.2.2.2.2.1) hodd)
+    srv (by omega_using [hl, hbl]) (by omega_using [hl, hbl]) (by rw [hbl]; exact hlen.2.2.2.2.1) hodd)
     fun t ⟨mi, gt, ready, ft, kt⟩ => ?_
   refine ⟨mi, gt, ready, ?_, ?_, ?_, ?_, ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
   · rw [init_word ft (d := 256) (by decide) (Or.inr (by decide)) (by decide), vp]

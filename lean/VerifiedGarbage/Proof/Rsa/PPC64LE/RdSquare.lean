@@ -37,7 +37,7 @@ theorem square_ok (h : DS s0 false A dbL V [sExact, sLt, sB1, sB0] s) (z : A tru
       A' true 15 = 0 ∧ A' true 9 = A true 9 ∧ A' true 19 = A true 19 ∧
       (∀ d ∈ [sExact, sLt, sB1, sB0], V' d = V d) := by
   have w1 := h.base.sz.w1
-  have P1 : 1 < 2 ^ (32 * ww (kK s0)) := Nat.one_lt_two_pow (by omega)
+  have P1 : 1 < 2 ^ (32 * ww (kK s0)) := Nat.one_lt_two_pow (by omega_using [w1])
   have l25 := h.lt (b' := false) (j := 25) (by decide)
   rw [vw_false] at l25
   unfold square
@@ -70,7 +70,7 @@ theorem square_ok (h : DS s0 false A dbL V [sExact, sLt, sB1, sB0] s) (z : A tru
   · have eW : wW (kK s0) = 2 * ww (kK s0) + 2 := by have := vw_wide s0; rw [vw_true, vw_false] at this
     have lb : (A false 25 + 1) % 2 ^ (32 * ww (kK s0)) < 2 ^ (32 * vw s0 true) :=
       Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _))
-        (Nat.pow_le_pow_right (by decide) (by rw [vw_true, eW]; omega))
+        (Nat.pow_le_pow_right (by decide) (by rw [vw_true, eW]; omega_using []))
     rw [VG.Proof.Rsa.RecoverDet.prod_iter _ _ _ lb]
     rd_simp [hb]
 

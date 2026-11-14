@@ -87,7 +87,7 @@ theorem wide_agree (s₁ s₂ : State) (h₁ : WidePre s₁) (h₂ : WidePre s�
   · rw [hw₁]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith
   · intro p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [SlotTaint.region, hw₁]

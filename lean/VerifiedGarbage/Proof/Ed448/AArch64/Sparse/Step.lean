@@ -101,7 +101,7 @@ theorem signedStep_ok (wide : Bool) {s : State} {base : Addr} (hs : Scr s base)
   rw [WP.block_append_iff]
   have hb:k/2^i%radix wide<radix wide := Nat.mod_lt _ (by cases wide <;> decide)
   have he:k/2^i%radix wide%2=k/2^i%2 := by
-    cases wide <;> simp only [radix,half,Bool.false_eq_true,↓reduceIte] <;> omega
+    cases wide <;> simp only [radix,half,Bool.false_eq_true,↓reduceIte] <;> omega_using []
   have ac:a.gpr .x6=BitVec.ofNat 64 c := (ak.1 _ (by decide)).trans h6
   refine WP.mono (digitStep_ok wide hb hc a4 (by rw [he];exact a5) ac)
     fun b ⟨b7,b6,bk,bm⟩ => ?_
@@ -121,7 +121,7 @@ theorem signedStep_ok (wide : Bool) {s : State} {base : Addr} (hs : Scr s base)
   · have hd:=WnafWide.digit_bounds wide (residual wide k i)
     have hd':-127≤digitAt wide k i ∧ digitAt wide k i≤127 := by
       cases wide <;> simp only [half,Bool.false_eq_true,↓reduceIte] at hd <;>
-        change -127≤digit _ _ ∧ digit _ _≤127 <;> omega
+        change -127≤digit _ _ ∧ digit _ _≤127 <;> omega_using [hd]
     have h7:b.gpr .x7=BitVec.ofInt 64 (digitAt wide k i) := by
       rw [b7,WnafWide.local_digit wide hrel]
       rfl
@@ -138,7 +138,7 @@ theorem recodeBody_ok (wide : Bool) {s : State} {base : Addr} (hs : Scr s base)
   have hwidth:2^(width wide)=radix wide := by cases wide <;> rfl
   have hp:=loadBits_ok wide hs hi hr hb
   simp only [WnafWide.look,WnafWide.bit,hwidth] at hp
-  have hg:=signedStep_ok wide hs (by omega) hc hr h6 hrel hp
+  have hg:=signedStep_ok wide hs (by omega_using [hi]) hc hr h6 hrel hp
   change WP isa (.block ((loadBits wide ++ digitStep wide ++ writeDigit) ++
     [.subImm .x .x9 .x19 456])) s _
   rw [WP.block_append_iff]

@@ -36,16 +36,16 @@ theorem copyLoop_ends {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
   rintro i t index ⟨K, bp, bx, countI, O, V⟩
   have ht := hw.of_keeps K
   unfold copyBody
-  refine wp_movS (readSrc_ptr ht bx (d := 0) (by omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_ptr ht bx (d := 0) (by omega_using [srcFit, index])) fun a A _ => ?_
   have bpA : PtrAt a W .ebp (x + 4 * i) := by rw [PtrAt, A.other .ebp (by decide)]; exact bp
-  refine wp_storeS (ea_ptr (ht.of_keeps A.keeps) bpA (d := 0) (by omega))
-    (ws_write (ht.of_keeps A.keeps) (y := x + 4 * i + 0) (n := 4) (by omega)) fun b B => ?_
+  refine wp_storeS (ea_ptr (ht.of_keeps A.keeps) bpA (d := 0) (by omega_using [dstFit, index]))
+    (ws_write (ht.of_keeps A.keeps) (y := x + 4 * i + 0) (n := 4) (by omega_using [dstFit, index])) fun b B => ?_
   refine wp_addS rfl fun c C _ => wp_addS rfl fun d D _ => wp_subZ rfl fun u U Z => WP.block_nil ?_
   have esiD : d.gpr .esi = t.gpr .esi := by
     rw [D.other .esi (by decide), C.other .esi (by decide), B.gpr, A.other .esi (by decide)]
   obtain ⟨nextCount, last⟩ := count1_zf countI index
   have word : w32 t.mem W (y + 4 * i) = w32 s.mem W (y + 4 * i) :=
-    O.w32 (by rcases apart with apart | apart <;> omega) (by omega)
+    O.w32 (by rcases apart with apart | apart <;> omega_arith) (by omega_using [srcFit, nowrap, index])
   refine ⟨⟨((((K.widen A.keeps).widen (B.keeps [])).widen C.keeps).widen D.keeps).widen U.keeps,
     ?_, ?_, by rw [U.gpr, esiD]; exact nextCount, ?_, ?_⟩, by rw [Z, esiD, last]⟩
   · rw [PtrAt, U.other .ebp (by decide), D.gpr, C.other .ebp (by decide), B.gpr, A.other .ebp (by decide)]
@@ -53,9 +53,9 @@ theorem copyLoop_ends {s : State} {W : Addr} {L x y N : Nat} (hw : Ws s W L)
   · rw [PtrAt, U.other .ebx (by decide), D.other .ebx (by decide), C.gpr, B.gpr, A.other .ebx (by decide)]
     exact ptr4 bx
   · rw [U.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero]
-    exact (O.mono (by omega) (by omega)).trans
-      ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
-  · rw [U.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero, val32_store nowrap (by omega),
+    exact (O.mono (by omega_using []) (by omega_using [])).trans
+      ((writeW32_outside _ _ _ (by omega_using [dstFit, nowrap, index])).mono (by omega_using []) (by omega_using []))
+  · rw [U.mem, D.mem, C.mem, B.mem, A.mem, Nat.add_zero, val32_store nowrap (by omega_using [dstFit, index]),
       V, A.gpr, Nat.add_zero, val32_succ s.mem W y]
     change _ + _ * w32 t.mem W (y + 4 * i) = _
     rw [word]

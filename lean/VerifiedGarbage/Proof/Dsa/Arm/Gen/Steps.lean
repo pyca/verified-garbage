@@ -42,36 +42,36 @@ theorem GI.sp0 (h : GI G σ V LS s) : G.sp0 = σ.sp := by rw [← h.hG]; rfl
 
 theorem GI.spN (h : GI G σ V LS s) : G.sp.toNat = σ.sp.toNat - F := by
   have := h.pre.spLo; show (G.sp0 - BitVec.ofNat 32 F).toNat = _; rw [h.sp0]
-  exact sub_toNat' (by simp only [F]; omega)
+  exact sub_toNat' (by simp only [F]; omega_using [this])
 
 theorem GI.spHi (h : GI G σ V LS s) : G.sp.toNat + F + 16 ≤ 2 ^ 32 := by
-  have := h.pre.spHi; have := h.spN; have := h.pre.spLo; simp only [F] at *; omega
+  have := h.pre.spHi; have := h.spN; have := h.pre.spLo; simp only [F] at *; omega_arith
 
 /-- The address of the frame word at `o`. -/
 theorem GI.addr (h : GI G σ V LS s) {o : Nat} (ho : o < F + 16) :
     State.addr (s.sp + BitVec.ofNat 32 o) = State.addr G.sp + BitVec.ofNat 64 o := by
-  have := h.spHi; rw [h.sp]; exact addr_add (by omega)
+  have := h.spHi; rw [h.sp]; exact addr_add (by omega_using [ho, this])
 
 /-- A frame word or a stack argument is readable. -/
 theorem GI.read (h : GI G σ V LS s) {o : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) :
     InRegions (s.rd ++ s.wr) (State.addr G.sp + BitVec.ofNat 64 o) 4 := by
   have spHi := h.spHi
-  rcases (by simp only [F]; omega : o + 4 ≤ F ∨ F ≤ o) with c | c
+  rcases (by simp only [F]; omega_using [h4] : o + 4 ≤ F ∨ F ≤ o) with c | c
   · exact ⟨G.rFrame, List.mem_append_right _ (by rw [h.wr]; exact List.mem_cons_self),
-      Offset.contains_base _ c (by simp only [F] at *; omega)⟩
+      Offset.contains_base _ c (by simp only [F] at *; omega_using [ho])⟩
   · refine ⟨G.rArgs, List.mem_append_left _ (by rw [h.rd, h.pre.rd, h.hG]; simp), ?_⟩
     have e : State.addr G.sp + BitVec.ofNat 64 o = State.addr (G.sp0 + BitVec.ofNat 32 (4 * 0)) +
         BitVec.ofNat 64 (o - F) := by
       have spLo := h.pre.spLo; rw [← h.sp0] at spLo
       rw [Nat.mul_zero, BitVec.add_zero, show G.sp = G.sp0 - BitVec.ofNat 32 F from rfl,
-        addr_sub' (by simp only [F]; omega), ← Offset.add_sub_comm, Offset.add_ofNat_sub _ c]
-    rw [e]; exact Offset.contains_base _ (by simp only [F] at *; omega) (by omega)
+        addr_sub' (by simp only [F]; omega_using [spLo]), ← Offset.add_sub_comm, Offset.add_ofNat_sub _ c]
+    rw [e]; exact Offset.contains_base _ (by simp only [F] at *; omega_using [ho]) (by omega_using [ho])
 
 /-- `ldr t, [sp, #o]` of a word whose value `v` is known. -/
 theorem GI.ldV (h : GI G σ V LS s) {o : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 4 = 0) {v : BitVec 32}
     (hv : fw s.mem G o = v) {t : Reg} {rest : List Instr} {Q : State → Prop}
     (k : ∀ s', Upd s s' t v → WP isa (.block rest) s' Q) : WP isa (.block (.ldrSp t o :: rest)) s Q :=
-  VG.Proof.Bignum.Arm.wp_loadStack (by simp only [F] at ho; omega) (h.addr (by omega)) (h.read ho h4)
+  VG.Proof.Bignum.Arm.wp_loadStack (by simp only [F] at ho; omega_using [ho]) (h.addr (by omega_using [ho])) (h.read ho h4)
     fun s' u => k s' (by rw [← hv]; exact u)
 
 /-- The 304 bytes below the caller's stack pointer. -/
@@ -80,22 +80,22 @@ abbrev rStack (σ : State) : Region := ⟨State.addr σ.sp - 304#64, 304⟩
 theorem GI.frameSub (h : GI G σ V LS s) : Region.Sub G.rFrame (rStack σ) := by
   have := h.pre.spLo
   show Region.Sub ⟨State.addr (G.sp0 - BitVec.ofNat 32 F), F⟩ _
-  rw [h.sp0, addr_sub' (by simp only [F]; omega)]
-  exact Offset.sub_below _ (by simp only [F]; omega) (by simp only [F]; omega)
+  rw [h.sp0, addr_sub' (by simp only [F]; omega_using [this])]
+  exact Offset.sub_below _ (by simp only [F]; omega_using []) (by simp only [F]; omega_using [])
 
 theorem GI.belowSub (h : GI G σ V LS s) : Region.Sub G.rBelow (rStack σ) := by
   have := h.pre.spLo
   show Region.Sub ⟨State.addr (G.sp0 - BitVec.ofNat 32 F) - 176#64, 176⟩ _
-  rw [h.sp0, addr_sub' (by simp only [F]; omega), BitVec.sub_sub, ← BitVec.ofNat_add]
-  exact Offset.sub_below _ (by simp only [F]; omega) (by simp only [F]; omega)
+  rw [h.sp0, addr_sub' (by simp only [F]; omega_using [this]), BitVec.sub_sub, ← BitVec.ofNat_add]
+  exact Offset.sub_below _ (by simp only [F]; omega_using []) (by simp only [F]; omega_using [])
 
 /-- A stack argument's address. -/
 theorem GI.argAddr (h : GI G σ V LS s) {j : Nat} (hj : j < 16) :
     State.addr G.sp + BitVec.ofNat 64 (F + j) = State.addr (σ.sp + BitVec.ofNat 32 j) := by
   have := h.pre.spLo; have := h.pre.spHi
-  rw [show G.sp = G.sp0 - BitVec.ofNat 32 F from rfl, h.sp0, addr_sub' (by simp only [F]; omega),
+  rw [show G.sp = G.sp0 - BitVec.ofNat 32 F from rfl, h.sp0, addr_sub' (by simp only [F]; omega_arith),
     ← Offset.add_sub_comm, Offset.add_ofNat_sub _ (Nat.le_add_right F j), Nat.add_sub_cancel_left,
-    addr_add (by omega)]
+    addr_add (by omega_using [hj, this])]
 
 /-- The stack argument `i` keeps its value. -/
 theorem GI.argW (h : GI G σ V LS s) {i : Nat} (hi : i < 4) : fw s.mem G (arg i) = stackArg σ i := by
@@ -103,11 +103,11 @@ theorem GI.argW (h : GI G σ V LS s) {i : Nat} (hi : i < 4) : fw s.mem G (arg i)
   have := pre.spHi
   show s.mem.readW (State.addr G.sp + BitVec.ofNat 64 (F + 4 * i)) 32 =
     σ.mem.readW (State.addr (σ.sp + BitVec.ofNat 32 (4 * i))) 32
-  rw [h.argAddr (by omega)]
+  rw [h.argAddr (by omega_using [hi])]
   have sub : Region.Sub ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * i)), 4⟩ (mkG σ).rArgs := by
     show Region.Sub _ ⟨State.addr (σ.sp + BitVec.ofNat 32 (4 * 0)), 16⟩
-    rw [addr_add (by omega), Nat.mul_zero, BitVec.add_zero]
-    exact Offset.sub_base _ (by omega)
+    rw [addr_add (by omega_using [hi, this]), Nat.mul_zero, BitVec.add_zero]
+    exact Offset.sub_base _ (by omega_using [hi])
   refine h.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [GP.chg, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -119,7 +119,7 @@ theorem GI.argW (h : GI G σ V LS s) {i : Nat} (hi : i < 4) : fw s.mem G (arg i)
 theorem fw_sep (G : GP) {o p : Nat} (ho : o % 4 = 0) (hp : p % 4 = 0) (h : o ≠ p) (ho' : o + 4 ≤ F)
     (hp' : p + 4 ≤ F) :
     Mem.Sep (State.addr G.sp + BitVec.ofNat 64 p) (32 / 8) (State.addr G.sp + BitVec.ofNat 64 o) (32 / 8) :=
-  Offset.sep _ (by simp only [F] at *; omega) (by simp only [F] at *; omega) (by simp only [F] at *; omega)
+  Offset.sep _ (by simp only [F] at *; omega_using [ho, hp, h]) (by simp only [F] at *; omega_using [hp']) (by simp only [F] at *; omega_using [ho'])
 
 /-- A state of the search through a step that changes registers alone. -/
 theorem GI.of_rest {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws s t) (m : t.mem = s.mem) :
@@ -134,7 +134,7 @@ theorem GI.frame_scr (h : GI G σ V LS s) : G.rFrame.Disjoint G.rScr := by
 theorem GI.frame_below (h : GI G σ V LS s) : G.rFrame.Disjoint G.rBelow := by
   have := h.spN; have := h.pre.spLo
   show Region.Disjoint ⟨State.addr G.sp, F⟩ ⟨State.addr G.sp - 176#64, 176⟩
-  have := Offset.base_disjoint_below (State.addr G.sp) (n := 176) (k := F) (by simp only [F]; omega)
+  have := Offset.base_disjoint_below (State.addr G.sp) (n := 176) (k := F) (by simp only [F]; omega_using [])
   exact this
 
 /-- A frame word keeps its value through writes outside the frame. -/
@@ -184,8 +184,8 @@ theorem GI.of_used {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
     · exact h.frame_scr.sub_left (Offset.sub_base _ ho)
-    · exact Offset.disjoint _ (by simp only [fUsedOut, F] at *; omega) (by simp only [F] at *; omega)
-        (by simp only [fUsedOut, F] at *; omega)
+    · exact Offset.disjoint _ (by simp only [fUsedOut, F] at *; omega_using [h4, h1, h2]) (by simp only [F] at *; omega_using [ho])
+        (by simp only [fUsedOut, F] at *; omega_using [])
     · exact h.frame_below.sub_left (Offset.sub_base _ ho)
   refine ⟨h.pre, h.hG, r.sp.trans h.sp, r.rd.trans h.rd, r.wr.trans h.wr, fun p hp => ?_, fun p hp => ?_,
     fun o ho => ?_, h.ls, h.frame.trans (f.sub fun r hr => ?_)⟩
@@ -193,8 +193,8 @@ theorem GI.of_used {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws
       simp only [VG.Impl.Dsa.Arm.Generation.saved, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     show fw t.mem G p.2 = _
-    rw [frame_readW' f (word _ (by simp only [F]; omega) hb.2 (by simp only [fUsedOut]; omega)
-      (by simp only [fUsedOut]; omega))]
+    rw [frame_readW' f (word _ (by simp only [F]; omega_using [hb]) hb.2 (by simp only [fUsedOut]; omega_using [hb])
+      (by simp only [fUsedOut]; omega_using [hb]))]
     exact h.saved p hp
   · have hb : p.1 + 4 ≤ F ∧ p.1 % 4 = 0 ∧ p.1 ≠ fUsedOut ∧ p.1 ≠ fUsedOut + 4 := by
       simp only [fixedWords, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -205,7 +205,7 @@ theorem GI.of_used {t : State} {ws : List Reg} (h : GI G σ V LS s) (r : Rest ws
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨G.rScr, by simp, fun _ h => h⟩
-    · exact ⟨G.rFrame, List.mem_cons_self, Offset.sub_base _ (by simp only [fUsedOut, F]; omega)⟩
+    · exact ⟨G.rFrame, List.mem_cons_self, Offset.sub_base _ (by simp only [fUsedOut, F]; omega_using [])⟩
     · exact ⟨G.rBelow, by simp, fun _ h => h⟩
 
 theorem fixed_ok (G : GP) : ∀ p ∈ fixedWords G, 40 ≤ p.1 ∧ p.1 + 4 ≤ F ∧ p.1 % 4 = 0 := by
@@ -226,12 +226,12 @@ theorem GI.stF (h : GI G σ V LS s) {o : Nat} (hv : VarOk G o) {r : Reg} (hr : r
   simp only [st, List.cons_append, List.nil_append]
   refine VG.Proof.Bignum.Arm.wp_stackAddr (r := .r12) (d := 0) (by decide) fun u h0 => ?_
   have ea : State.addr (u.gpr .r12 + BitVec.ofNat 32 o) = State.addr G.sp + BitVec.ofNat 64 o := by
-    rw [h0.gpr, BitVec.add_zero, h.sp]; exact addr_add (by simp only [F] at *; omega)
-  refine VG.Proof.X25519.Arm.wp_str (by simp only [F] at *; omega) ea
-    ⟨G.rFrame, by rw [h0.wr, h.wr]; exact List.mem_cons_self, Offset.contains_base _ oF (by omega)⟩
+    rw [h0.gpr, BitVec.add_zero, h.sp]; exact addr_add (by simp only [F] at *; omega_using [oF, spHi])
+  refine VG.Proof.X25519.Arm.wp_str (by simp only [F] at *; omega_using [oF]) ea
+    ⟨G.rFrame, by rw [h0.wr, h.wr]; exact List.mem_cons_self, Offset.contains_base _ oF (by omega_using [oF, spHi])⟩
     fun t m => k t ?_ ((h0.rest (by simp)).trans (m.rest _)) (by
       rw [m.mem, h0.mem]
-      exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ oF (by omega)))
+      exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ oF (by omega_using [oF, spHi])))
   have vr : u.gpr r = s.gpr r := h0.other _ hr
   have mt : t.mem = s.mem.writeW (State.addr G.sp + BitVec.ofNat 64 o) (s.gpr r) := by rw [m.mem, h0.mem, vr]
   have sep : ∀ {p : Nat}, p % 4 = 0 → p ≠ o → p + 4 ≤ F → fw t.mem G p = fw s.mem G p := fun hp hne hpF => by
@@ -240,7 +240,7 @@ theorem GI.stF (h : GI G σ V LS s) {o : Nat} (hv : VarOk G o) {r : Reg} (hr : r
   refine ⟨h.pre, h.hG, by rw [m.sp, h0.sp, h.sp], by rw [m.rd, h0.rd, h.rd], by rw [m.wr, h0.wr, h.wr],
     fun p hp => ?_, fun p hp => ?_, fun o' ho' => ?_, fun o' ho' => ?_, ?_⟩
   · obtain ⟨b, a4⟩ := saved_ok p hp
-    have := sep (p := p.2) a4 (by omega) (by simp only [F]; omega)
+    have := sep (p := p.2) a4 (by omega_using [o40, b]) (by simp only [F]; omega_using [b])
     exact this.trans (h.saved p hp)
   · obtain ⟨b1, b2, b3⟩ := fixed_ok G p hp
     exact (sep b3 (fun e => ofix p hp e.symm) b2).trans (h.fixed p hp)
@@ -255,7 +255,7 @@ theorem GI.stF (h : GI G σ V LS s) {o : Nat} (hv : VarOk G o) {r : Reg} (hr : r
     · exact ⟨o40, oF, o4, ofix⟩
     · exact h.ls o' ho'
   · rw [mt]
-    exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ oF (by omega))
+    exact h.frame.writeW List.mem_cons_self _ (Offset.contains_base _ oF (by omega_using [oF, spHi]))
 
 end
 

@@ -44,7 +44,7 @@ theorem fb_eq (s : State) : fb s = kb s + BitVec.ofNat 64 Impl.Rsa.RISCV64.Priv.
   apply BitVec.eq_of_toNat_eq
   simp only [fb, kb, stackBytes, frameBytes, Impl.Rsa.RISCV64.Priv.frameBytes, BitVec.toNat_sub,
     BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem fb_off (s : State) (d : Nat) :
     fb s + BitVec.ofNat 64 d = kb s + BitVec.ofNat 64 (Impl.Rsa.RISCV64.Priv.frameBytes + d) := by
@@ -53,30 +53,30 @@ theorem fb_off (s : State) (d : Nat) :
 theorem fb_toNat {s : State} (h : SPre pc s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := h.sp1
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
-  unfold Impl.Rsa.RISCV64.Priv.frameBytes at *; omega
+  unfold Impl.Rsa.RISCV64.Priv.frameBytes at *; omega_using [this]
 
 theorem kb_toNat {s : State} (h : SPre pc s) : (kb s).toNat + stackBytes = s.sp.toNat := by
   have := h.sp1
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stackBytes frameBytes at *
-  unfold Impl.Rsa.RISCV64.Priv.frameBytes at *; omega
+  unfold Impl.Rsa.RISCV64.Priv.frameBytes at *; omega_using [this]
 
 theorem fb_al {s : State} (h : SPre pc s) : (fb s).toNat % 16 = 0 := by
-  have := fb_toNat h; have := h.sp16; unfold frameBytes at *; omega
+  have := fb_toNat h; have := h.sp16; unfold frameBytes at *; omega_arith
 
 theorem fb_al8 {s : State} (h : SPre pc s) {d : Nat} (hd : d % 8 = 0) : (fb s + BitVec.ofNat 64 d).toNat % 8 = 0 :=
-  Spill.al8 (by have := fb_al h; omega) hd
+  Spill.al8 (by have := fb_al h; omega_using [this]) hd
 
 /-- A region of our frame is in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     Region.Sub ⟨fb s + BitVec.ofNat 64 d, n⟩ (kR s) := by
   rw [fb_off]
-  exact Offset.sub_base _ (by unfold stackBytes frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega)
+  exact Offset.sub_base _ (by unfold stackBytes frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega_using [h])
 
 theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     (kR s).Contains (fb s + BitVec.ofNat 64 d) n := by
   rw [fb_off]
-  exact Offset.contains_base _ (by unfold stackBytes frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega)
-    (by unfold frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega)
+  exact Offset.contains_base _ (by unfold stackBytes frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega_using [h])
+    (by unfold frameBytes Impl.Rsa.RISCV64.Priv.frameBytes at *; omega_using [h])
 
 theorem frR_sub (s : State) : Region.Sub (frR s) (kR s) := by
   have := frame_sub s (d := 0) (n := frameBytes) (Nat.le_refl _)
@@ -88,13 +88,13 @@ theorem callee_sub (s : State) :
       Impl.Rsa.RISCV64.Priv.frameBytes⟩ (kR s) := by
   rw [fb_eq, BitVec.add_sub_cancel]
   have := Offset.sub_base (kb s) (d := 0) (n := Impl.Rsa.RISCV64.Priv.frameBytes) (k := stackBytes)
-    (by unfold stackBytes; omega)
+    (by unfold stackBytes; omega_using [])
   rwa [BitVec.add_zero] at this
 
 /-- Our frame is writable. -/
 theorem in_fr (s : State) (rs : List Region) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (frR s :: rs) (fb s + BitVec.ofNat 64 d) n :=
-  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])⟩
 
 theorem in_fr' (s : State) (rd rs : List Region) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (rd ++ frR s :: rs) (fb s + BitVec.ofNat 64 d) n := by
@@ -114,12 +114,12 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
 abbrev nA (pc : Bool) : Nat := if pc then 15 else 13
 
 theorem nA_le (pc : Bool) {j : Nat} (h : j < 13) : j < nA pc := by
-  cases pc <;> simp only [nA, Bool.false_eq_true, ↓reduceIte] <;> omega
+  cases pc <;> simp only [nA, Bool.false_eq_true, ↓reduceIte] <;> omega_using [h]
 
 theorem in_aR {s : State} {j : Nat} (hj : j < nA pc) : (aR pc s).Contains (stackArgAddr s j) 8 := by
   rw [stackArgAddr_eq s j]
   cases pc <;> simp only [nA, Bool.false_eq_true, ↓reduceIte] at hj <;>
-    exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega) (by omega)
+    exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [hj]) (by omega_using [hj])
 
 /-! ## The saves -/
 
@@ -210,8 +210,8 @@ theorem Mid.frameMem (h : Mid S s a b c d e t) {f n : Nat} {m : Mem}
   · rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s hen⟩
   · have := saved_offs p hp
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (by unfold oRa oSave at *; omega) (by unfold oRa at *; omega)
-      (by unfold frameBytes at hen; omega)
+    exact Offset.disjoint _ (by unfold oRa oSave at *; omega_using [he, this]) (by unfold oRa at *; omega_using [this])
+      (by unfold frameBytes at hen; omega_using [hen])
 
 end
 
@@ -236,12 +236,12 @@ theorem save_ok {s u : State} (hsp : u.sp = fb s) (hwr : u.wr = frR s :: s.wr) (
   rw [hsp, BitVec.add_zero] at e₁
   refine Spill.save_ok (b := .t0) (l := saved) (by rw [e₁]; exact hal) saved_ho (fun p hp => ?_) ?_
   · have := saved_offs p hp
-    rw [e₁, o₁.wr, hwr]; exact in_fr s _ (by unfold oRa frameBytes at *; omega)
+    rw [e₁, o₁.wr, hwr]; exact in_fr s _ (by unfold oRa frameBytes at *; omega_using [this])
   refine k _ ⟨fun r hr => o₁.gpr r hr, o₁.rd, o₁.wr, o₁.sp⟩ e₁ ?_ ?_
   · show Frame [kR s] s.mem (Spill.saveMem u₁.mem (u₁.gpr .t0) u₁.gpr saved)
     rw [e₁, o₁.mem]
     exact hm.trans ((Spill.saveMem_frame_base (n := frameBytes) (fun p hp => by
-      have := saved_offs p hp; unfold oRa frameBytes at *; omega) (by decide) _ _ _).sub fun r hr => by
+      have := saved_offs p hp; unfold oRa frameBytes at *; omega_using [this]) (by decide) _ _ _).sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_singleton_self _, frR_sub s⟩)
   · show Spill.Saved (fb s) s.gpr saved (Spill.saveMem u₁.mem (u₁.gpr .t0) u₁.gpr saved)
     rw [e₁]
@@ -275,7 +275,7 @@ theorem restore_ok {s w : State} (h : SPre pc s) (hm : Saves s w) :
     e₁ saved_ho (by decide)
     (fun p hp => by
       have := saved_offs p hp
-      rw [o₁.rd, o₁.wr, hm.wr]; exact in_fr' s _ _ (by unfold oRa frameBytes at *; omega))
+      rw [o₁.rd, o₁.wr, hm.wr]; exact in_fr' s _ _ (by unfold oRa frameBytes at *; omega_using [this]))
     (by rw [o₁.mem]; exact hm.sv)) fun w' hr => ⟨⟨fun r hr' => ?_, ?_, ?_⟩, ?_, ?_⟩
   · show w'.gpr r = s.gpr r
     rcases preserved_split hr' with h | h

@@ -63,7 +63,7 @@ private theorem bits_header (q : Bool) (c : Checks) (d : CandidatePublic) (s : S
   have hrd := hb.scr.ld (show 8 * oBits + 8 ≤ d.p.Z by change 80 ≤ d.p.Z; omega_using [hb.header_room])
   have hlinkrd := hg.scr.ld (show 8 * VG.Impl.Rsa.X86_64.Crt.sLink + 8 ≤ d.p.Z - 256 by
     have hz := (hb.phase_dims q).z
-    change 136 ≤ d.p.Z - 256; unfold slot VG.Impl.Bignum.hdrBytes at hz; omega)
+    change 136 ≤ d.p.Z - 256; unfold slot VG.Impl.Bignum.hdrBytes at hz; omega_using [hz])
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 d.p.bits ∧ t.mem = s.mem)
     (by xrun [sieveBits, State.ea, VG.Impl.Bignum.X86_64.hdr, VG.Impl.Rsa.X86_64.Crt.ws, hdrOff, hg.rdi,
       hp.link, hbits, hrd, hlinkrd]) rfl)
@@ -98,7 +98,7 @@ noncomputable def sieveWords (q : Bool) (d : CandidatePublic) (N : Nat) : Nat :=
   firstHit (d.p.phaseValue q) N
 
 private theorem sieveCount_le (bits : Nat) : sieveCount bits ≤ 256 ∧ 1 ≤ sieveCount bits := by
-  unfold sieveCount; split <;> omega
+  unfold sieveCount; split <;> omega_using []
 
 private theorem prefix_at (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) (h : SieveIn q c d s) :
     WP isa sievePrefix s fun t => 0 < sieveWords q d (sieveCount d.p.bits) ∧
@@ -111,7 +111,7 @@ private theorem prefix_at (q : Bool) (c : Checks) (d : CandidatePublic) (s : Sta
   refine WP.mono (sievePrefix_ok hg room.1 room.2.1 room.2.2.2.1 room.2.2.2.2 h.2) fun t hS => ?_
   have hwr : t.wr = d.wr := hS.keep.2.2.trans h.1.1.2.1
   have hpos := firstHit_pos (c := d.p.phaseValue q) (sieveCount_le d.p.bits).2
-  refine ⟨by unfold sieveWords; omega, room, ⟨h.1.1.2.2, good_hp hS.inv.good hwr⟩, hwr, mi, hS.inv, ?_, ?_⟩
+  refine ⟨by unfold sieveWords; omega_using [hpos], room, ⟨h.1.1.2.2, good_hp hS.inv.good hwr⟩, hwr, mi, hS.inv, ?_, ?_⟩
   · rw [hS.flag, hS.c, hn]
   · rw [hS.c, hn]
 
@@ -123,7 +123,7 @@ private theorem word_at (q : Bool) (d : CandidatePublic) {N : Nat} (hN : N ≤ 2
       (j + 1 = sieveWords q d N → InnerHeader (d.inner q) t) := by
   obtain ⟨room, hh, hwr, mi, hI, hf, hc⟩ := h
   have hle := firstHit_le (d.p.phaseValue q) N
-  refine WP.mono (eeIter_ok room.1 room.2.2.1 room.2.2.2.1 room.2.1 hN.1 (by unfold sieveWords at hj; omega)
+  refine WP.mono (eeIter_ok room.1 room.2.2.1 room.2.2.2.1 room.2.1 hN.1 (by unfold sieveWords at hj; omega_using [hj, hle])
     hI (by rw [hf, hc])) fun t ⟨hz, hI', hf'⟩ => ?_
   have hz' : t.zf = some (decide (j + 1 = sieveWords q d N)) := by
     rw [hz, hc]; unfold sieveWords; rw [firstHit_exit hj]
@@ -135,7 +135,7 @@ private theorem word_at (q : Bool) (d : CandidatePublic) {N : Nat} (hN : N ≤ 2
   congr 1
   by_cases h1 : j + 1 = sieveWords q d N
   · simp [h1]
-  · have : j + 1 < sieveWords q d N := by omega
+  · have : j + 1 < sieveWords q d N := by omega_using [hj, h1]
     simp [h1, this]
 
 /-- The sieve takes the same time in both runs: its loop stops at the same
@@ -175,7 +175,7 @@ private theorem prefixN_at (q : Bool) (c : Checks) (d : CandidatePublic) (s : St
   refine WP.mono (sievePrefixN_ok hg room.1 room.2.1 room.2.2.2.1 (by decide)) fun t hS => ?_
   have hwr : t.wr = d.wr := hS.keep.2.2.trans h.1.2.1
   have hpos := firstHit_pos (c := d.p.phaseValue q) (N := firstWords) (by decide)
-  refine ⟨by unfold sieveWords; omega, room, ⟨h.1.2.2, good_hp hS.inv.good hwr⟩, hwr, mi, hS.inv, ?_, ?_⟩
+  refine ⟨by unfold sieveWords; omega_using [hpos], room, ⟨h.1.2.2, good_hp hS.inv.good hwr⟩, hwr, mi, hS.inv, ?_, ?_⟩
   · rw [hS.flag, hS.c, hn]
   · rw [hS.c, hn]
 

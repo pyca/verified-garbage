@@ -30,8 +30,8 @@ theorem productBody_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : Bi
       WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem ∧
       Frame (productBodyWrites p sp) s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [WP.seq_iff]
-  have countBound : 2^j+low≤32 := by omega
-  have lowBound : low<2^j+low := by have := Nat.two_pow_pos j; omega
+  have countBound : 2^j+low≤32 := by omega_using [bound]
+  have lowBound : low<2^j+low := by have := Nat.two_pow_pos j; omega_using [hlow]
   refine WP.mono (productLoad_ok s h power table countBound lowBound (by rw [h.memory.fixed]; exact count.2)) ?_
   rintro u ⟨coreU,powerU,selected,tableU,ctxU,frameU,restU⟩
   have wideU : Frame [⟨State.addr p.base,8*p.len⟩,FrameStack.belowA s.sp 48] s.mem u.mem :=
@@ -54,7 +54,7 @@ theorem productBody_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : Bi
   have headerU : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem u.mem := by
     refine ⟨?_⟩
     intro d n hd
-    exact ctxU.read d n (by have := bytes_eq p; omega)
+    exact ctxU.read d n (by have := bytes_eq p; omega_using [hd, this])
   have header : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
     refine ⟨?_⟩
     intro d n hd

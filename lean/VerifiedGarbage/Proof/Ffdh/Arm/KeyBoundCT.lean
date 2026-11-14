@@ -81,8 +81,8 @@ theorem keyBound_ct {p : Inputs} {slots : List Nat}
     have context := h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
     exact ⟨context.boundBytes, ptr, by rw [p.boundOctetsLength]; exact count⟩
   have scan := keyScan_ct (base := p.base) (src := p.boundSource) (len := p.len)
-    (by rw [p.boundOctetsLength]; have := p.minLength; omega)
-    (by rw [p.boundOctetsLength]; have := p.maxLength; omega)
+    (by rw [p.boundOctetsLength]; have := p.minLength; omega_using [this])
+    (by rw [p.boundOctetsLength]; have := p.maxLength; omega_using [this])
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.bound
   exact relCT_chain (keyBoundArgs_ct h28 h32) wp wp
     ((relCT_keep_sp scan (fun _ _ h => h.2.2)).seq keyBoundTail_ct)

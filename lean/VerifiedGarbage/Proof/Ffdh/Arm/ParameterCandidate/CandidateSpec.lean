@@ -34,7 +34,7 @@ theorem candidateScreen_spec (p : CandidateParams) (enough : p.length ≤ p.byte
   rw [reorder]
   have halfBits : Spec.RsaKeyGen.bitLength ((p.candidate - 1) / 2) = p.bits - 1 :=
     VG.Proof.Ffdh.ParameterCandidate.half_bitLength (bits := p.bits)
-      (by have := p.minBits; omega) (Spec.Rsa.os2ip (p.bytes.take p.length))
+      (by have := p.minBits; omega_using [this]) (Spec.Rsa.os2ip (p.bytes.take p.length))
   unfold candidateScreen candidateScreenP candidateScreenQ
   by_cases gen : Spec.Ffdh.generationShape p.bits p.generator p.candidate = true
   · by_cases pp : (Spec.Ffdh.primeShape p.candidate && !Spec.RsaKeyGen.obviouslyComposite p.bits p.candidate) = true
@@ -82,7 +82,7 @@ theorem candidateAnswer_spec (p : CandidateParams) :
     exact candidateScreen_spec p enough
   · rw [candidateAnswer, ite_eq_right enough]
     unfold Spec.Ffdh.sievedParameterCandidate
-    have short : p.bytes.length < (p.bits + 7) / 8 := by change p.bytes.length < p.length; omega
+    have short : p.bytes.length < (p.bits + 7) / 8 := by change p.bytes.length < p.length; omega_using [enough]
     rw [draw_of_short short]
     rfl
 

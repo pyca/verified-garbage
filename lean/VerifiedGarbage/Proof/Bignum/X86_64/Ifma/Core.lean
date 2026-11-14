@@ -41,7 +41,7 @@ theorem zeros_ok (hl : AmmOk l) {s : State} :
   split at h
   · rename_i σ hσ
     simp only [List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-    refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega)) (SRel.init s) hσ) fun s' hs =>
+    refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega_using [hn])) (SRel.init s) hσ) fun s' hs =>
       ⟨fun r hr t ht => ?_, ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
     rw [hs.reg _ t ht, vi_vreg r (by omega_using [hr, hrg]), h r hr]; rfl
   · cases h
@@ -62,17 +62,17 @@ theorem loop_ok (hl : AmmOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k : N
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → t.gpr r = s.gpr r) ∧ t.mxcsr = s.mxcsr) ?_ n s
     ⟨h1, h4, hi, hc, fun _ _ _ _ => rfl, rfl⟩
   intro n t ⟨h1, h4, hi, hc, hg, hx⟩
-  refine WP.mono (ammBlock_ok hl (blk := l.S / l.R - n) (by omega) e hi (by rw [hc]; congr 1; omega))
+  refine WP.mono (ammBlock_ok hl (blk := l.S / l.R - n) (by omega_using [h1, h4]) e hi (by rw [hc]; congr 1; omega_using [h4]))
     fun t' ⟨hi', hc', hz, hg', hx'⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_or_lt_of_le h1 with rfl | hn
-  · refine .inl ⟨by simp only [show l.S / l.R - 1 + 1 = l.S / l.R by omega, decide_true, Bool.not_true], ?_,
+  · refine .inl ⟨by simp only [show l.S / l.R - 1 + 1 = l.S / l.R by omega_using [h4], decide_true, Bool.not_true], ?_,
       fun r r1 r2 r3 => (hg' r r1 r2 r3).trans (hg r r1 r2 r3), hx'.trans hx⟩
-    rw [show l.S / l.R - 1 + 1 = l.S / l.R by omega] at hi'
+    rw [show l.S / l.R - 1 + 1 = l.S / l.R by omega_using [h4]] at hi'
     exact hi'
-  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.S / l.R - n + 1 = l.S / l.R) by omega),
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.S / l.R - n + 1 = l.S / l.R) by omega_using [h4, hn]),
         Bool.not_false], n - 1,
-      by omega, by omega, by omega, by rw [show l.S / l.R - (n - 1) = l.S / l.R - n + 1 by omega]; exact hi',
-      by rw [hc']; congr 1; omega, fun r r1 r2 r3 => (hg' r r1 r2 r3).trans (hg r r1 r2 r3), hx'.trans hx⟩
+      by omega_using [h1], by omega_using [hn], by omega_using [h4], by rw [show l.S / l.R - (n - 1) = l.S / l.R - n + 1 by omega_using [h1, h4]]; exact hi',
+      by rw [hc']; congr 1; omega_using [h4], fun r r1 r2 r3 => (hg' r r1 r2 r3).trans (hg r r1 r2 r3), hx'.trans hx⟩
 
 end VG.Proof.Bignum.X86_64.Ifma

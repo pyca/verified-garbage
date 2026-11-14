@@ -50,14 +50,14 @@ theorem quadCount_ok (s : State) {i j : Nat} (hi : i < 4096) (hj : 1 ≤ j) (hj'
     rw [e]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   refine ⟨sub, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [sub]
     rw [e]
     congr 1
     simp only [BitVec.toNat_ofNat]
     apply propext
-    omega
+    omega_using [hi, hj']
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
@@ -74,7 +74,7 @@ theorem quadLoop_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State 
   · refine Or.inl ⟨?_, hQ s' (by rw [hj] at hi'; exact hi')⟩
     show s'.cf.map (!·) = some false
     rw [hc, hj]; rfl
-  · refine Or.inr ⟨?_, j - 1, by omega, by omega, by omega, hi'⟩
+  · refine Or.inr ⟨?_, j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
     show s'.cf.map (!·) = some true
     rw [hc]; simp [hj]
 

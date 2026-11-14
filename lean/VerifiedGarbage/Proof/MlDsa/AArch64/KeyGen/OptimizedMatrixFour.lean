@@ -49,7 +49,7 @@ theorem matrixFour_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF 
   rw [h20.get .x0,e20,e2,h20.mem] at hco
   have hco4 : ∀ k < 4, ∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (4*g))) k) i =
       if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (4*g))) k) i else 0 :=
-    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega)
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_using [hk, hi])
   have e3 : ∀ k,pa s3 (aP (4*g+k)) = poly4 (pa s (aP (4*g))) k := fun k => by
     rw [pa_poly4,sc_pa hP13]
   obtain ⟨A,S',hA,_,hG⟩ := h.ks.ex
@@ -64,11 +64,11 @@ theorem matrixFour_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF 
       exact L.keepPoly hP13 (by lay) (hA e' hlt)
     · rw [ifn hlt]
       refine ⟨?_,rfl⟩
-      obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega⟩
+      obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
       rw [e3]
       by_cases h1 : (s2.gpr .x0).setWidth 32 = 1
-      · exact (masked_one h1 (hco4 k (by omega))).2 (hred h1 k (by omega))
-      · exact (masked_zero h1 (hco4 k (by omega))).1
+      · exact (masked_one h1 (hco4 k (by omega_using [he']))).2 (hred h1 k (by omega_using [he']))
+      · exact (masked_zero h1 (hco4 k (by omega_using [he']))).1
   · rw [h24']
     rcases hG with ⟨h1,b,hb,_⟩ | ⟨h0,hn⟩
     · rcases hout with ⟨ho,hb4⟩ | ⟨ho,k,hk,hn⟩
@@ -80,14 +80,14 @@ theorem matrixFour_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF 
         · rw [ifp hlt]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_left _ _) (hb e' hlt)
         · rw [ifn hlt]
-          obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega⟩
-          have hk : k < 4 := by omega
+          obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+          have hk : k < 4 := by omega_using [he']
           rw [e3,(masked_one ho (hco4 k hk)).1,← seed4_eq h hk]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_right _ _) (hn k hk)
       · rw [ifn (fun h => by rw [h.2] at ho; exact absurd ho (by decide))]
         rw [seed4_eq h hk] at hn
-        have hq : (4*g+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega)
-        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega)) hn⟩
+        have hq : (4*g+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega_using [hg, hk])
+        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega_using [hl])) hn⟩
     · rw [ifn (fun h => by rw [h.1] at h0; exact absurd h0 (by decide))]
       exact .inr ⟨rfl,hn⟩
 

@@ -89,18 +89,18 @@ theorem nttZ_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   refine ⟨hs.t.step hp hv hP tk, L.keepHint hP hH hs.hint, fun r' hr' c hc' => L.keepPoly hP (hA r' hr' c hc')
     (hs.a r' hr' c hc'), fun i' hi' => ?_, L.keepPoly hP c3 hs.c, fun _ h => absurd h (Nat.not_lt_zero _),
     by rw [h15]; exact hs.r15⟩
-  rcases (by omega : i' < i ∨ i' = i ∨ i < i') with hlt | rfl | hgt
-  · rw [ifp (by omega : i' < i + 1)]
-    have := L.keepPoly hP (hZ i' hi' (by omega)) (hs.z i' hi')
+  rcases (by omega_using [] : i' < i ∨ i' = i ∨ i < i') with hlt | rfl | hgt
+  · rw [ifp (by omega_using [hlt] : i' < i + 1)]
+    have := L.keepPoly hP (hZ i' hi' (by omega_using [hlt])) (hs.z i' hi')
     rwa [ifp hlt] at this
   · rw [ifp (Nat.lt_succ_self _), hP.pa (show Reg.rbx ∈ bases by decide)]
     have := (hs.z i' hi').2
     rw [ifn (Nat.lt_irrefl _)] at this
     rw [this] at hq
     exact hq
-  · rw [ifn (by omega : ¬ i' < i + 1)]
-    have := L.keepPoly hP (hZ i' hi' (by omega)) (hs.z i' hi')
-    rwa [ifn (by omega : ¬ i' < i)] at this
+  · rw [ifn (by omega_using [hgt] : ¬ i' < i + 1)]
+    have := L.keepPoly hP (hZ i' hi' (by omega_using [hgt])) (hs.z i' hi')
+    rwa [ifn (by omega_using [hgt] : ¬ i' < i)] at this
 
 theorem nttC_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
     {h : List (Vector Bool n)} {A' : Nat → Nat → Poly} {Q : Prop} [Decidable Q] {cH : Poly}
@@ -113,7 +113,7 @@ theorem nttC_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   have L := hs.t.lay hp hv
   refine WP.mono (ipAt_ok C.ntt L c1 hs.c.1) fun s' ⟨hP, h15, hq⟩ => ?_
   refine ⟨hs.t.step hp hv hP tk, L.keepHint hP hH hs.hint, fun r' hr' c hc' => L.keepPoly hP (hA r' hr' c hc')
-    (hs.a r' hr' c hc'), fun i hi => L.keepPoly hP (hZ i hi (by have := kl_le p hp; omega)) (hs.z i hi), ?_,
+    (hs.a r' hr' c hc'), fun i hi => L.keepPoly hP (hZ i hi (by have := kl_le p hp; omega_using [hi, this])) (hs.z i hi), ?_,
     fun _ h => absurd h (Nat.not_lt_zero _), by rw [h15]; exact hs.r15⟩
   rw [hP.pa (show Reg.rbx ∈ bases by decide), ← hs.c.2]
   exact hq
@@ -227,7 +227,7 @@ theorem dotStep_ok {k : Nat} (hk' : k < p.ℓ) {st : State} (hd : DI P.montgomer
   obtain ⟨hP, e, hW⟩ := hd
   have H := hP.mono (sub1 (wsR_mem p r).1)
   have ew : pa st pW = pa s₀ pW := pa_rbx hP _
-  have hz : k ≠ 100 := by have := kl_le p hp; omega
+  have hz : k ≠ 100 := by have := kl_le p hp; omega_using [hk', this]
   refine WP.mono (mulAddAt_ok C.mulAdd (L.post hP) (R.mul k hk') (by rw [ew]; exact hW.1)
     (L.keepRed H (hA r hr k hk') (hs.a r hr k hk').1) (L.keepRed H (hZ k hk' hz) (hs.zHat hk').1))
     fun s' ⟨hP', e', hq'⟩ => ?_
@@ -241,8 +241,8 @@ theorem dot_ok : WP isa (dot P p r) s₀ (DI P.montgomery p σ A' r p.ℓ s₀) 
   unfold dot
   refine WP.seq (WP.mono (dotFirst_ok C hp hv hr hs) fun s₁ h₁ => ?_)
   have := seqR_ok (I := fun j => DI P.montgomery p σ A' r j s₀) (p.ℓ - 1) 1
-    (fun k _ hk' st hd => dotStep_ok C hp hv hr hs (by omega) hd) s₁ h₁
-  rwa [show 1 + (p.ℓ - 1) = p.ℓ by have := R.l1; omega] at this
+    (fun k _ hk' st hd => dotStep_ok C hp hv hr hs (by omega_arith) hd) s₁ h₁
+  rwa [show 1 + (p.ℓ - 1) = p.ℓ by have := R.l1; omega_using [this]] at this
 
 end Dot
 
@@ -376,7 +376,7 @@ theorem row7_ok {s : State} (hf : RF7 p σ h A' cH r s₀ s) :
   have H := hf.1.1.accR hP (sub1 (wsR_mem p r).2.2.2.2.2)
   refine ⟨hs.t.step hp hv H tk, L₀.keepHint H hH hs.hint,
     fun r' hr' c hc => L₀.keepPoly H (hA r' hr' c hc) (hs.a r' hr' c hc),
-    fun i hi => L₀.keepPoly H (hZ i hi (by have := kl_le p hp; omega)) (hs.z i hi), L₀.keepPoly H R.keepC' hs.c,
+    fun i hi => L₀.keepPoly H (hZ i hi (by have := kl_le p hp; omega_using [hi, this])) (hs.z i hi), L₀.keepPoly H R.keepC' hs.c,
     fun r' hr' => ?_, by rw [e, hf.1.2]; exact hs.r15⟩
   rcases Nat.lt_succ_iff_lt_or_eq.mp hr' with hlt | rfl
   · rw [L₀.keepBytes H (R.rows r' hlt)]; exact hs.rows r' hlt
@@ -423,7 +423,7 @@ theorem keyCopy_ok {s1 : State} (hf1 : RF1 P.montgomery p σ A' r s₀ s1) (hb' 
   have d1 := hv.d1; have k1 := hv.k1; have n1 := hv.n1
   rw [hL] at d1 k1 n1
   have hk := cK r hr
-  have hprep : preparedPublicKeyBytes p < 2 ^ 64 := by omega
+  have hprep : preparedPublicKeyBytes p < 2 ^ 64 := by omega_using [cP]
   -- The source, in the prepared key.
   have es : Sign.pa s1 (.rbp, p.pkLen + 1024 * r) = σ.gpr .rdi + BitVec.ofNat 64 (p.pkLen + 1024 * r) := by
     simp only [Sign.pa, t1.rbp]
@@ -443,7 +443,7 @@ theorem keyCopy_ok {s1 : State} (hf1 : RF1 P.montgomery p σ A' r s₀ s1) (hb' 
   have hdj : Region.Disjoint ⟨Sign.pa s1 (.rbp, p.pkLen + 1024 * r), 1024⟩ ⟨Sign.pa s1 pT, 1024⟩ := by
     rw [es]; exact (d1.sub_left hsub).sub_right hsW'
   refine WP.mono (Sign.copy_ok pT (.rbp, p.pkLen + 1024 * r) 1024 (by decide) (by decide) (by decide)
-    (by show p.pkLen + 1024 * r < 2 ^ 31; omega) (by simp) s1 hrd hwr hdj) fun s' ⟨hb2, hfr, k⟩ => ?_
+    (by show p.pkLen + 1024 * r < 2 ^ 31; omega_using [cP, hk]) (by simp) s1 hrd hwr hdj) fun s' ⟨hb2, hfr, k⟩ => ?_
   have hP : PPostB s1 s' [(pT, 1024)] := postB_of_keep k (by decide) (by simpa using hfr)
   refine ⟨⟨hf1.1.acc hP (k.gpr (by decide)) (sub1 (wsR_mem p r).2.1),
     L1.keepPoly hP (keepB_sub R.keepW (sub1 (List.mem_cons_self ..))) hf1.2⟩, ?_⟩
@@ -488,8 +488,8 @@ theorem bytesAt_rows {m : Mem} {a : Addr} {L : Nat} {f : Nat → List Byte} :
     ∀ k, (∀ r < k, bytesAt m (a + BitVec.ofNat 64 (L * r)) L = f r) → bytesAt m a (k * L) = (List.range k).flatMap f
   | 0, _ => by rw [Nat.zero_mul]; rfl
   | k + 1, h => by
-    rw [Nat.succ_mul, Proof.MlKem.bytesAt_add, bytesAt_rows k (fun r hr => h r (by omega)), Nat.mul_comm k L,
-      h k (by omega), List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    rw [Nat.succ_mul, Proof.MlKem.bytesAt_add, bytesAt_rows k (fun r hr => h r (by omega_using [hr])), Nat.mul_comm k L,
+      h k (by omega_using []), List.range_succ, List.flatMap_append, List.flatMap_singleton]
 
 theorem row_pa (s : State) (L r : Nat) : pa s (sc (oB + L * r)) = pa s (sc oB) + BitVec.ofNat 64 (L * r) := by
   simp only [pa]
@@ -527,7 +527,7 @@ theorem tail_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
   refine WP.mono (cmpAnd_ok L₄ c5 c3 c4 (P := Q) (by rw [f₄]; exact hs₃.r15)) fun s₅ ⟨hP₅, f₅⟩ => ⟨t₄.step hp hv hP₅
     (tChk_nil p hp), ?_⟩
   rw [f₅, show pa s₄ (sc oCT) = pa s₃ (sc oCT) from pa_rbx hP₄ _, hq₄,
-    t₄.sigSlice (by omega : 0 + p.ctildeLen ≤ p.sigLen), List.drop_zero]
+    t₄.sigSlice (by omega_using [c6] : 0 + p.ctildeLen ≤ p.sigLen), List.drop_zero]
   exact flag_congr (and_congr_right fun _ => Iff.rfl)
 
 theorem compute_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
@@ -537,11 +537,11 @@ theorem compute_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) 
       s'.gpr .r15 = flag (Q ∧ H (vMu σ ++ w1Enc p σ h A' (ntt cH)) p.ctildeLen = vCt p (vSig p σ)) := by
   unfold compute
   refine WP.seq (WP.mono (seqR_ok (I := fun i => SC p h A' Q i cH 0 σ) p.ℓ 0
-    (fun i _ hi st hst => nttZ_ok C hp hv (by omega) hst) s hs) fun s₁ hs₁ => ?_)
+    (fun i _ hi st hst => nttZ_ok C hp hv (by omega_using [hi]) hst) s hs) fun s₁ hs₁ => ?_)
   rw [Nat.zero_add] at hs₁
   refine WP.seq (WP.mono (nttC_ok C hp hv hs₁) fun s₂ hs₂ => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun r => SC p h A' Q p.ℓ (ntt cH) r σ) p.k 0
-    (fun r _ hr st hst => row_ok C hp hv (by omega) hst) s₂ hs₂) fun s₃ hs₃ => ?_)
+    (fun r _ hr st hst => row_ok C hp hv (by omega_using [hr]) hst) s₂ hs₂) fun s₃ hs₃ => ?_)
   rw [Nat.zero_add] at hs₃
   exact tail_ok hp hv hs₃
 

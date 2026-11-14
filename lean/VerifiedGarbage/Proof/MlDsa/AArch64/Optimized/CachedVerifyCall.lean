@@ -20,24 +20,24 @@ variable {p : Params} {s : State}
 
 theorem sScrV_sub (p : Params) (s : State) :
     Region.Sub ⟨s.gpr .x6, sScr p⟩ ⟨s.gpr .x6, mScrLen p⟩ :=
-  Region.sub_prefix (by rw [mScr_eq]; simp only [sScr, oE]; omega)
+  Region.sub_prefix (by rw [mScr_eq]; simp only [sScr, oE]; omega_using [])
 
 theorem sv_sScrV {p : Params} (hp : p ∈ params) (s : State) {d n : Nat} (hd : d + n ≤ 88) :
     Region.Disjoint ⟨(cachedLay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d, n⟩ ⟨s.gpr .x6, sScr p⟩ := by
   show Region.Disjoint ⟨s.gpr .x6 + BitVec.ofNat 64 (oE p) + BitVec.ofNat 64 904 + BitVec.ofNat 64 d, n⟩ _
   rw [add_add, add_add]
   have := oE_lt hp
-  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega) (by omega)
+  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega_using []) (by omega_using [hd, this])
 
 theorem mu_sScrV {p : Params} (hp : p ∈ params) (s : State) :
     Region.Disjoint ⟨(cachedLay p s).MU, 64⟩ ⟨s.gpr .x6, sScr p⟩ := by
   show Region.Disjoint ⟨s.gpr .x6 + BitVec.ofNat 64 (oE p) + BitVec.ofNat 64 840, 64⟩ _
   rw [add_add]
   have := oE_lt hp
-  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega) (by omega)
+  exact Offset.disjoint_base _ (by simp only [sScr, oE]; omega_using []) (by omega_using [this])
 
 theorem mu_withinV (p : Params) (s : State) : Within ⟨(cachedLay p s).MU, 64⟩ ⟨s.gpr .x6, mScrLen p⟩ :=
-  (within_off (cachedLay p s).X (d := 840) (n := 64) (k := 1024) (by omega)).trans (cachedLay_X p s)
+  (within_off (cachedLay p s).X (d := 840) (n := 64) (k := 1024) (by omega_using [])).trans (cachedLay_X p s)
 
 end
 

@@ -46,7 +46,7 @@ theorem encryptP_run {key : List Byte} {S B : Addr} {s₀ : State} (E : EncEnv S
   have hs₁ : u₁.gpr .rsi = BitVec.ofNat 64 (9 - 0) := by simp only [u₁, State.setReg32, gpr_setReg_self]; rfl
   refine WP.loop (M := isa) (fun m v => ∃ j, j < 9 ∧ m = 9 - j ∧ EncInv key S B s₀ j v ∧
       v.gpr .rdi = BitVec.ofNat 64 (8 * j) ∧ v.gpr .rsi = BitVec.ofNat 64 (9 - j)) ?_ 9 u₁
-    ⟨0, by omega, rfl, I₁, hd₁, hs₁⟩
+    ⟨0, by omega_using [], rfl, I₁, hd₁, hs₁⟩
   intro m v ⟨j, hj, hm, I, hd, hs⟩
   refine WP.mono (encP_step E hj I hd hs) fun v' ⟨I', d', s', z'⟩ => ?_
   have ev : isa.eval .ne v' = some (!(BitVec.ofNat 64 (9 - (j + 1)) == 0)) := by
@@ -55,9 +55,9 @@ theorem encryptP_run {key : List Byte} {S B : Addr} {s₀ : State} (E : EncEnv S
   · left; exact ⟨by rw [ev, h]; rfl, h ▸ I'⟩
   · right
     have nz : BitVec.ofNat 64 (9 - (j + 1)) ≠ 0 := by
-      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
+      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_using [hj, h, this]
     exact ⟨by rw [ev, show (BitVec.ofNat 64 (9 - (j + 1)) == 0) = false from beq_false_of_ne nz]; rfl,
-      9 - (j + 1), by omega, j + 1, by omega, rfl, I', d', s'⟩
+      9 - (j + 1), by omega_using [hj, hm], j + 1, by omega_using [hj, h], rfl, I', d', s'⟩
 
 /-- The other 512, replacing the S-boxes. -/
 theorem encryptS_run {key : List Byte} {S B : Addr} {s₀ : State} (E : EncEnv S B s₀) {u : State}
@@ -75,7 +75,7 @@ theorem encryptS_run {key : List Byte} {S B : Addr} {s₀ : State} (E : EncEnv S
   have hs₁ : u₁.gpr .rsi = BitVec.ofNat 64 (521 - 9) := by simp only [u₁, State.setReg32, gpr_setReg_self]; rfl
   refine WP.loop (M := isa) (fun m v => ∃ j, 9 ≤ j ∧ j < 521 ∧ m = 521 - j ∧ EncInv key S B s₀ j v ∧
       v.gpr .rdi = BitVec.ofNat 64 (sOff j) ∧ v.gpr .rsi = BitVec.ofNat 64 (521 - j)) ?_ 512 u₁
-    ⟨9, by omega, by omega, rfl, I₁, hd₁, hs₁⟩
+    ⟨9, by omega_using [], by omega_using [], rfl, I₁, hd₁, hs₁⟩
   intro m v ⟨j, h9, hj, hm, I, hd, hs⟩
   refine WP.mono (encS_step E h9 hj I hd hs) fun v' ⟨I', d', s', z'⟩ => ?_
   have ev : isa.eval .ne v' = some (!(BitVec.ofNat 64 (521 - (j + 1)) == 0)) := by
@@ -84,9 +84,9 @@ theorem encryptS_run {key : List Byte} {S B : Addr} {s₀ : State} (E : EncEnv S
   · left; exact ⟨by rw [ev, h]; rfl, h ▸ I'⟩
   · right
     have nz : BitVec.ofNat 64 (521 - (j + 1)) ≠ 0 := by
-      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
+      intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_using [hj, h, this]
     exact ⟨by rw [ev, show (BitVec.ofNat 64 (521 - (j + 1)) == 0) = false from beq_false_of_ne nz]; rfl,
-      521 - (j + 1), by omega, j + 1, by omega, by omega, rfl, I', d', s'⟩
+      521 - (j + 1), by omega_using [hj, hm], j + 1, by omega_using [h9], by omega_using [hj, h], rfl, I', d', s'⟩
 
 /-- What key expansion may assume. -/
 structure KeyPre (s : State) : Prop where
@@ -128,21 +128,21 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
   rw [Impl.Blowfish.X86_64.expandKey]
   -- the initial schedule
   apply WP.seq
-  obtain ⟨t₁, r₁, d₁, f₁, g₁, e₁⟩ := initSteps_run (S := S) (t := s) rfl (SchedW.of_mem mS) 521 (by omega)
+  obtain ⟨t₁, r₁, d₁, f₁, g₁, e₁⟩ := initSteps_run (S := S) (t := s) rfl (SchedW.of_mem mS) 521 (by omega_using [])
   refine WP.of_runBlock ⟨t₁, by rw [initSchedule_eq]; exact r₁, ?_⟩
   have rd₁ : t₁.rd = s.rd := by rw [e₁]
   have wr₁ : t₁.wr = s.wr := by rw [e₁]
   have hT : ∀ o < 4168, t₁.mem (S + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o :=
     fun o ho => table_byte (fun i hi => by rw [initWords_getD hi]; exact d₁ i hi) ho
   have keyS : ∀ c < L, ¬ (⟨S, 4168⟩ : Region).Contains (K + BitVec.ofNat 64 c) 1 := fun c hc h =>
-    P.keySch _ (Offset.contains_base K (by omega) (by omega)) h
+    P.keySch _ (Offset.contains_base K (by omega_using [hc]) (by omega_using [hc])) h
   have hB₁ : bytesAt t₁.mem K L = bytesAt s.mem K L := bytesAt_frame f₁ fun c hc r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact keyS c hc
   -- the keyed P-array
   apply WP.seq
   have KE : KeyPEnv S K L t₁ :=
-    ⟨by omega, hL64, fun c hc => by
-        rw [rd₁, wr₁, P.rd]; exact ⟨_, List.mem_cons_self, Offset.contains_base K (by omega) (by omega)⟩,
+    ⟨by omega_using [hL], hL64, fun c hc => by
+        rw [rd₁, wr₁, P.rd]; exact ⟨_, List.mem_cons_self, Offset.contains_base K (by omega_using [hc]) (by omega_using [hc])⟩,
       by rw [g₁ _ (by decide)], by rw [g₁ _ (by decide)]; simp [L],
       by rw [g₁ _ (by decide)], SchedW.of_mem (by rw [wr₁]; exact mS), fitS, keyS⟩
   refine WP.mono (keyP_run KE) fun t₂ I₂ => ?_
@@ -150,8 +150,8 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
     refine keyed_of_mem (fun o ho => ?_) (fun i hi => ?_)
     · rw [I₂.frame.bytes (R := ⟨S, 4096⟩) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.base_disjoint S (by omega) (by omega)) (by show 4096 ≤ 2 ^ 64; decide) ho]
-      exact hT o (by omega)
+          exact Offset.base_disjoint S (by omega_using []) (by omega_using [])) (by show 4096 ≤ 2 ^ 64; decide) ho]
+      exact hT o (by omega_using [ho])
     · rw [I₂.done i hi, table_P hT hi, hB₁]
   -- the constants and the zero block
   apply WP.seq
@@ -175,7 +175,7 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
     · rw [k₅ _ (by decide), k₄ _ (by decide), x₃]
     · rw [k₅ _ (by decide), k₄ _ (by decide), l₃]
   have I₅ : EncInv (bytesAt s.mem K L) S B t₅ 0 t₅ :=
-    ⟨by omega, by rw [m₅, hK]; rfl, by rw [k₅ _ (by decide), z₄]; rfl, by rw [z₅]; rfl,
+    ⟨by omega_using [], by rw [m₅, hK]; rfl, by rw [k₅ _ (by decide), z₄]; rfl, by rw [z₅]; rfl,
       fun _ _ => rfl, fun _ _ => rfl, Frame.refl _ _, by unfold UpdM; rfl⟩
   -- the encryptions
   apply WP.seq
@@ -190,6 +190,6 @@ theorem expandKey_correct {s : State} (P : KeyPre s) :
       simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self) ?_
     refine Frame.sub I₂.frame fun r hr => ⟨⟨S, 4168⟩, List.mem_cons_self, ?_⟩
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.sub_base S (by omega)
+    exact Offset.sub_base S (by omega_using [])
 
 end VG.Proof.Blowfish.X86_64

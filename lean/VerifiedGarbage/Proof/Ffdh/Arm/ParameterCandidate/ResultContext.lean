@@ -38,7 +38,7 @@ theorem ResultContext.after_output {s t : State} {dst usedPtr : BitVec 32} {n co
   refine ⟨h.saved.after_output (by
     intro d hd
     simp only [resultSlots, List.mem_cons, List.not_mem_nil, or_false] at hd
-    omega) changed rest h.outputStack,
+    omega_using [hd]) changed rest h.outputStack,
     h.output.after rest, h.used.after rest, h.positive, h.countFits, h.consumedFits, ?_, ?_, h.outputUsed⟩
   · rw [rest.sp]; exact h.outputStack
   · rw [rest.sp]; exact h.usedStack

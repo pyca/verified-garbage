@@ -36,7 +36,7 @@ def LB (scr : BitVec 32) (ℓ : Nat) (m : Mem) : Prop :=
 theorem count0 {ℓ : Nat} (hℓ : ℓ < 2 ^ 32) : (0 : BitVec 32) ++ BitVec.ofNat 32 ℓ = BitVec.ofNat 64 ℓ := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hℓ,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_arith)]
   simp
 
 theorem lenBlk_vp (hg : Geo L scr) {Inv : State → Mem → Prop}

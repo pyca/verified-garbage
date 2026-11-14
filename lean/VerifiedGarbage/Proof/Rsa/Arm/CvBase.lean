@@ -110,14 +110,14 @@ theorem CvPre.kb {s : State} (h : CvPre s) : 64 ≤ cvK s ∧ cvK s ≤ 1024 := 
 theorem CvPre.w16 {s : State} (h : CvPre s) : 16 ≤ cvW s ∧ cvW s ≤ 256 := by
   have := h.valid; simp only [Spec.Rsa.lenValid] at this
   have e : cvW s = (cvK s + 3) / 4 := rfl
-  omega
+  omega_using [this, e]
 
 /-- The working space is large enough for the 25 arrays. -/
 theorem CvPre.fits {s : State} (h : CvPre s) : arr (cvW s) nArr ≤ cvZ s := by
   have := h.valid; have := h.scr
   simp only [Spec.Rsa.lenValid, Spec.Rsa.scratchWords] at *
   simp only [arr, S, hdr, nArr, cvZ, cvW]
-  omega
+  omega_arith
 
 /-! ## Loads of stack arguments -/
 
@@ -129,10 +129,10 @@ theorem wp_ldrSp {s : State} (hrd : rA s ∈ s.rd) (sp48 : s.sp.toNat + 48 ≤ 2
   have hin : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * i))) 4 := by
     refine ⟨rA s, List.mem_append_left _ hrd, ?_⟩
     simp only [Region.Contains, stackArgAddr]
-    rw [addr_add (by omega), addr_add (by omega), Nat.mul_zero, BitVec.add_zero,
+    rw [addr_add (by omega_using [sp48, hi]), addr_add (by omega_using []), Nat.mul_zero, BitVec.add_zero,
       Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    omega
-  simp only [exec, show 4 * i < 4096 by omega, ↓reduceIte, State.load32, hin, Option.map_some]
+    omega_using [hi]
+  simp only [exec, show 4 * i < 4096 by omega_using [hi], ↓reduceIte, State.load32, hin, Option.map_some]
   rfl
 
 end VG.Proof.Rsa.Arm.CrtValues

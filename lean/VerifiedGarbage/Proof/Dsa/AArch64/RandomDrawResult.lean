@@ -49,15 +49,15 @@ theorem random_draw_full_result {C : RandomContext} {used draws : Nat} {s : Stat
   refine ⟨hr.after_draw accepted hfull hcopy htm' hkt, ?_, copied, hclen, ?_, hcdec⟩
   · rw [htm', random_drawFinish_status]
     have he : word (m.writeW (off C.B Random.oUsed) (BitVec.ofNat 64 (used + n))) C.B Random.oStatus = 4 := by
-      rw [(writeW_outside _ C.B _ (by decide)).word (by decide) (by decide), (hcopy.mono (o' := 200) (n' := 32) (by have := VG.Proof.Dsa.significant_fits C.qBytes; omega) (by have := C.qlen; have := VG.Proof.Dsa.significant_fits C.qBytes; omega)).word (by decide) (by decide)]
+      rw [(writeW_outside _ C.B _ (by decide)).word (by decide) (by decide), (hcopy.mono (o' := 200) (n' := 32) (by have := VG.Proof.Dsa.significant_fits C.qBytes; omega_using [this]) (by have := C.qlen; have := VG.Proof.Dsa.significant_fits C.qBytes; omega_arith)).word (by decide) (by decide)]
       exact hstatus
     rw [he]
   · intro i hi
     have hnfit : n ≤ C.qBytes.length := VG.Proof.Dsa.significant_fits C.qBytes
     have ho : ofs C.B (off C.B (200 + C.qBytes.length - n) + BitVec.ofNat 64 i) =
-        200 + C.qBytes.length - n + i := random_nonce_offset C.B hnfit C.qlen (by omega)
-    rw [htm', random_drawFinish_outside _ C.B accepted draws _ (by rw [ho]; right; omega),
-      (writeW_outside _ C.B _ (by decide)) _ (by rw [ho]; right; unfold Random.oUsed; omega)]
+        200 + C.qBytes.length - n + i := random_nonce_offset C.B hnfit C.qlen (by omega_using [hclen, hi])
+    rw [htm', random_drawFinish_outside _ C.B accepted draws _ (by rw [ho]; right; omega_using [hnfit]),
+      (writeW_outside _ C.B _ (by decide)) _ (by rw [ho]; right; unfold Random.oUsed; omega_using [hnfit])]
     exact hcv i hi
 
 end VG.Proof.Dsa.AArch64

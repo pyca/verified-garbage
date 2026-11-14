@@ -43,7 +43,7 @@ theorem Bo.fwEq {P : RP} {σ s : State} (h : Bo P σ s) {o : Nat} (ho : 4 ≤ o)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact pre.sF.symm.sub_left (Offset.sub_base _ ho')
-  · exact Offset.disjoint_base _ ho (by omega)
+  · exact Offset.disjoint_base _ ho (by omega_using [ho'])
   · exact pre.pF.symm.sub_left (Offset.sub_base _ ho')
   · exact pre.qF.symm.sub_left (Offset.sub_base _ ho')
 
@@ -55,28 +55,28 @@ theorem Bo.ldrSp {P : RP} {σ s : State} (h : Bo P σ s) {o : Nat} (ho : 4 ≤ o
   have pre := h.pre
   have spf := pre.spFit
   have ea : State.addr (s.sp + BitVec.ofNat 32 o) = off (State.addr P.sp) o := by
-    rw [h.sp, pre.sp]; exact addr_add (by omega)
-  refine wp_loadStack (by omega) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho ho']; exact u)
+    rw [h.sp, pre.sp]; exact addr_add (by omega_using [ho', spf])
+  refine wp_loadStack (by omega_using [ho']) ea ?_ fun s' u => k s' (by rw [← h.fwEq ho ho']; exact u)
   rw [h.rd, h.wr]
-  rcases (by omega : o + 4 ≤ 56 ∨ 56 ≤ o) with c | c
+  rcases (by omega_using [h4] : o + 4 ≤ 56 ∨ 56 ≤ o) with c | c
   · exact ⟨⟨State.addr P.sp, 56⟩, List.mem_append_right _ (by rw [pre.wr]; simp),
-      Offset.contains_base _ c (by omega)⟩
-  · have read := CallLay.inRegions_sub pre.rdA (off := o - 56) (l := 4) (by omega) (by decide)
+      Offset.contains_base _ c (by omega_using [ho'])⟩
+  · have read := CallLay.inRegions_sub pre.rdA (off := o - 56) (l := 4) (by omega_using [ho']) (by decide)
     rwa [show off (State.addr P.sp) 56 + BitVec.ofNat 64 (o - 56) = off (State.addr P.sp) o by
-      simp only [off]; rw [Offset.add_add]; congr 2; omega] at read
+      simp only [off]; rw [Offset.add_add]; congr 2; omega_using [c]] at read
 
 /-- Memory of the working space through a step that writes only `R`. -/
 theorem w32_frame {P : RP} {m m' : Mem} {R : Region} (f : Frame [R] m m') (hR : R.Disjoint P.rS)
     (hZ : P.Z ≤ 2 ^ 64) {d : Nat} (hd : d + 4 ≤ P.Z) : w32 m' (State.addr P.B) d = w32 m (State.addr P.B) d := by
   simp only [w32]
-  rw [f.readW (r := P.rS) (Offset.contains_base _ hd (by omega)) (fun r hr => by
+  rw [f.readW (r := P.rS) (Offset.contains_base _ hd (by omega_using [hZ, hd])) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hR.symm) (by decide)]
 
 theorem num_frame {P : RP} {m m' : Mem} {R : Region} (f : Frame [R] m m') (hR : R.Disjoint P.rS)
     (sz : Sizes P) {j : Nat} (hj : j < nArr) : num m' P.B P.w j = num m P.B P.w j := by
   have fz := fitZ_w sz hj
   have hS : S P.w = 4 * (P.w + 2) := rfl
-  exact val32_congr fun i hi => w32_frame f hR (Z_64 sz) (by omega)
+  exact val32_congr fun i hi => w32_frame f hR (Z_64 sz) (by omega_using [fz, hS, hi])
 
 section
 variable {P : RP}

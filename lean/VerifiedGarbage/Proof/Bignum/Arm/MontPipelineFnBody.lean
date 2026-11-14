@@ -98,13 +98,13 @@ theorem fnBody_ok (round : Prog isa) (law : LoopLaw round) (s : State) {base : B
   obtain ⟨ctx, finish⟩ := layout_context ws hw fits ho ha hb
   have bound : 128 ≤ 8 * len := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   rw [VG.Impl.Bignum.Arm.MontPipeline.fnBody, WP.seq_iff]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 hb.1 ptr po pa pb) ?_
   rintro u ⟨regs, mem, keep⟩
-  refine WP.mono (body_ok round law u (ctx.congr keep.wr) (by omega) (finish.congr keep.wr) regs ?_ ?_) ?_
+  refine WP.mono (body_ok round law u (ctx.congr keep.wr) (by omega_using []) (finish.congr keep.wr) regs ?_ ?_) ?_
   · rw [mem, ← numAt_native, ← numAt_native]; exact operand
-  · rw [mem]; exact native_inverse s.mem (State.addr base) (by omega) inverse
+  · rw [mem]; exact native_inverse s.mem (State.addr base) (by omega_using [hw]) inverse
   · rintro t ⟨lt, value, outside, rest⟩
     rw [mem] at lt value outside
     refine ⟨?_, ?_, keeps_of_native ws.nowrap hw outside, frame_of_native hw ho.1 fits outside, keep.trans rest⟩

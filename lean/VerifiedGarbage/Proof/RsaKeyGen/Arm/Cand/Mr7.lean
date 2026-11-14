@@ -89,13 +89,13 @@ theorem wsLen_vp {b : State → Nat} :
     rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       show (21 : BitVec 32).toNat = 21 from rfl, show (30 : BitVec 32).toNat = 30 from rfl,
-      Nat.mod_eq_of_lt (show P.L < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show P.SL < 2 ^ 32 by omega),
-      show P.L / 2 ^ 3 = P.L / 8 from rfl, Nat.mod_eq_of_lt (show P.L / 8 * 21 < 2 ^ 32 by omega),
-      Nat.mod_eq_of_lt (show P.L / 8 * 21 + 30 < 2 ^ 32 by omega)]
-    omega
+      Nat.mod_eq_of_lt (show P.L < 2 ^ 32 by omega_using [k2]), Nat.mod_eq_of_lt (show P.SL < 2 ^ 32 by omega_using [zl]),
+      show P.L / 2 ^ 3 = P.L / 8 from rfl, Nat.mod_eq_of_lt (show P.L / 8 * 21 < 2 ^ 32 by omega_using [k2]),
+      Nat.mod_eq_of_lt (show P.L / 8 * 21 + 30 < 2 ^ 32 by omega_using [k2])]
+    omega_using [k2, lf]
 
 theorem r2v_eq (P : CP) (σ : State) : r2v P σ = 2 ^ (64 * P.w) * 2 ^ (64 * P.w) % cv P σ := by
-  rw [← Nat.pow_add, show 64 * P.w + 64 * P.w = 128 * P.w by omega]
+  rw [← Nat.pow_add, show 64 * P.w + 64 * P.w = 128 * P.w by omega_using []]
 
 /-- The round on the witness of iteration `k`: its result into `sF`. -/
 theorem mrCall_vp (v : RoundImpl) {k : Nat} :
@@ -108,7 +108,7 @@ theorem mrCall_vp (v : RoundImpl) {k : Nat} :
   refine VP.seq ((St.pmontOp (o := 5) (a := 1) (b := 4) ⟨by decide, by decide, by decide⟩
     ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩ (by decide) (by decide)
     (na := fun σ => (wf P σ k).1) (nb := r2v P) (L' := LF) (fun σ s h m => ⟨?_, m.r2⟩)
-    (fun σ _ pre => Nat.mod_lt _ (by have := cv_gt pre; omega))
+    (fun σ _ pre => Nat.mod_lt _ (by have := cv_gt pre; omega_using [this]))
     (fun j hj => ⟨by mem_sub, by mem_sub, by mem_sub, by mem_sub⟩)).mono (fun _ _ h => h)
     (G' := SR P E (fun σ => upd (AF P k σ) (mBase + 1) (AF P k σ aH1)) LF (VF P k) LSF (fun σ => (wf P σ k).1))
     fun σ s ⟨k', m, lt, val⟩ => ⟨k', m, lt, ?_⟩) ?_
@@ -119,7 +119,7 @@ theorem mrCall_vp (v : RoundImpl) {k : Nat} :
   · have pre := k'.2.pre
     have hc := cv_gt pre
     rw [r2v_eq] at val
-    exact x5_val (R_coprime pre) lt (by omega) val
+    exact x5_val (R_coprime pre) lt (by omega_using [lt]) val
   refine VP.seq wsLen_vp ?_
   refine VP.seq (round_vp v (by simp) (by simp) (by simp) (by decide) (fun σ _ => ?_) (fun σ _ => ?_)
     (fun σ _ => ?_)) ?_

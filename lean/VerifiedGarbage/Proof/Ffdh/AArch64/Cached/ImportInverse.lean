@@ -20,12 +20,12 @@ theorem importInverse_ok {s : State} {B : Addr} {Z w : Nat} {old : BitVec 64}
  ∃ mi,Good t B Z w mi ∧ ((word t.mem B (slot w 0)).toNat*mi.toNat+1)%2^64=0 ∧
  Outside B (8*sMinv) 8 s.mem t.mem ∧ Keep mmRegs s t := by
  have arrayRoom := Nat.le_trans (slot_le (w:=w) (show 0<8 by decide)) room
- have low := wv_mod64 s.mem B (slot w 0) (by omega : 1≤w)
- have lowOdd : (word s.mem B (slot w 0)).toNat%2=1 := by omega
+ have low := wv_mod64 s.mem B (slot w 0) (by omega_using [positive] : 1≤w)
+ have lowOdd : (word s.mem B (slot w 0)).toNat%2=1 := by omega_using [odd, low]
  rw [List.append_assoc,WP.block_append_iff]
  refine WP.mono (WP.keep [.x8,.x3] (Q:=fun a =>a.gpr .x3=word s.mem B (slot w 0) ∧ a.mem=s.mem) ?_ rfl rfl rfl) ?_
  · brun [good.x0,hdr_enc (show sArr 0<32 by decide),header_read good room (show sArr 0<32 by decide),
-    good.hdr.harr 0 (by decide),good.scr.ld (d:=slot w 0) (by omega)]
+    good.hdr.harr 0 (by decide),good.scr.ld (d:=slot w 0) (by omega_using [arrayRoom])]
  · rintro a ⟨⟨lowA,memA⟩,restA⟩
    rw [WP.block_append_iff]
    refine WP.mono (minv_ok a (by rw [lowA];exact lowOdd)) ?_
@@ -34,7 +34,7 @@ theorem importInverse_ok {s : State} {B : Addr} {Z w : Nat} {old : BitVec 64}
    have total := restA.trans restB
    refine WP.mono (WP.keep [] (Q:=fun t =>t.mem=b.mem.writeW (off B (8*sMinv)) (b.gpr .x15)) ?_ rfl rfl rfl) ?_
    · brun [(total.gpr .x0 (by decide)).trans good.x0,hdr_enc (show sMinv<32 by decide),
-      (good.scr.congr total.wr).st (d:=8*sMinv) (by have := hdr_lt_slot w 8 (show sMinv<32 by decide);omega)]
+      (good.scr.congr total.wr).st (d:=8*sMinv) (by have := hdr_lt_slot w 8 (show sMinv<32 by decide);omega_using [room, this])]
    · rintro t ⟨memT,restT⟩
      have mem : t.mem=s.mem.writeW (off B (8*sMinv)) (b.gpr .x15) := by rw [memT,memB,memA]
      have frame : Outside B (8*sMinv) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by decide)
@@ -43,10 +43,10 @@ theorem importInverse_ok {s : State} {B : Addr} {Z w : Nat} {old : BitVec 64}
       header_other frame (by decide) hi different
      refine ⟨b.gpr .x15,⟨good.scr.congr rest.wr,(rest.gpr .x0 (by simp [mmRegs])).trans good.x0,
       (fixed sW (by decide) (by decide)).trans good.hdr.hw,?_,fun i hi =>
-       (fixed (sArr i) (by unfold sArr;omega) (by unfold sArr sMinv;omega)).trans (good.hdr.harr i hi)⟩,?_,frame,rest⟩
+       (fixed (sArr i) (by unfold sArr;omega_using [hi]) (by unfold sArr sMinv;omega_using [])).trans (good.hdr.harr i hi)⟩,?_,frame,rest⟩
      · rw [mem,word_writeW_self]
      · rw [frame.word (Or.inr (hdr_lt_slot w 0 (show sMinv<32 by decide)))
-        (by have := good.scr.nowrap;omega)]
+        (by have := good.scr.nowrap;omega_using [arrayRoom, this])]
        exact inverseB
 
 end VG.Proof.Ffdh.AArch64.Cached

@@ -35,14 +35,14 @@ def nz (f : Nat → Byte) : Nat → Option Nat
     | none => if f j = 0 then none else some j
 
 theorem nz_none {f : Nat → Byte} : ∀ {j : Nat}, nz f j = none → ∀ i < j, f i = 0
-  | 0, _, _, hi => absurd hi (by omega)
+  | 0, _, _, hi => absurd hi (by omega_using [])
   | j + 1, h, i, hi => by
     simp only [nz] at h
     split at h
     · cases h
     · rename_i h'
       by_cases e : f j = 0
-      · rcases (by omega : i < j ∨ i = j) with hl | rfl
+      · rcases (by omega_using [hi] : i < j ∨ i = j) with hl | rfl
         · exact nz_none h' i hl
         · exact e
       · rw [ite_eq_right e] at h; cases h
@@ -55,13 +55,13 @@ theorem nz_some {f : Nat → Byte} : ∀ {j i : Nat}, nz f j = some i → i < j 
     · rename_i i' h'
       cases h
       obtain ⟨a, b, c⟩ := nz_some h'
-      exact ⟨by omega, b, c⟩
+      exact ⟨by omega_using [a], b, c⟩
     · rename_i h'
       by_cases e : f j = 0
       · rw [ite_eq_left e] at h; cases h
       · rw [ite_eq_right e] at h
         cases h
-        exact ⟨by omega, e, nz_none h'⟩
+        exact ⟨by omega_using [], e, nz_none h'⟩
 
 /-- The value of the first nonzero byte, or 0. -/
 def nzV (f : Nat → Byte) (j : Nat) : Byte :=
@@ -78,8 +78,8 @@ theorem zero_bit (b : Byte) : (BitVec.setWidth 64 b - BitVec.ofNat 64 1) >>> 63 
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow]
     have := b.isLt
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega)]
-    exact Nat.div_eq_of_lt (by omega)
+    rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega_using [])]
+    exact Nat.div_eq_of_lt (by omega_using [h'])
 
 theorem posScan_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V) {e db : Nat}
     (he : e + db ≤ oRsa) (hdb : 0 < db) (h24 : t.gpr .x24 = off S e) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) :
@@ -103,7 +103,7 @@ theorem posScan_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
     · rw [e₇]; rfl
   have Ru : Rep u.mem S V := O.mem ▸ R
   have Lu : Lay u F S := L.congr O.sp O.wr (O.get .x20)
-  refine WP.mono (wp_countdown (cnt := .x12) (N := db) (by omega) hdb
+  refine WP.mono (wp_countdown (cnt := .x12) (N := db) (by omega_using [he, c6]) hdb
     (fun j v => Only [.x9, .x8, .x16, .x17, .x10, .x11, .x12, .x13, .x14, .x15] u v ∧
       v.gpr .x10 = off S (e + j) ∧ v.gpr .x11 = BitVec.ofNat 64 j ∧
       v.gpr .x13 = (if nz (fun i => V (e + i)) j = none then BitVec.allOnes 64 else 0) ∧
@@ -112,7 +112,7 @@ theorem posScan_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
     (fun j hj v ⟨hO, h10', h11', h13', h14', h15'⟩ _ => ?_)
     ⟨Only.refl _ _, by rw [Nat.add_zero, h10], h11, by rw [h13]; rfl, by rw [h14]; rfl, by rw [h15]; rfl⟩ h12)
     fun v ⟨hO, _, _, h13', h14', h15'⟩ => ⟨(O.trans hO).mono, h13', h14', h15'⟩
-  refine wp_ldrb (by decide) (by rw [h10', BitVec.add_zero]) (by rw [hO.rd, hO.wr]; exact Lu.ld (by omega))
+  refine wp_ldrb (by decide) (by rw [h10', BitVec.add_zero]) (by rw [hO.rd, hO.wr]; exact Lu.ld (by omega_using [he, hj]))
     fun w₁ q₁ g₁ => ?_
   refine wp_subImm (by decide) fun w₂ q₂ g₂ => wp_lsr (by decide) fun w₃ q₃ g₃ => wp_subImm (by decide) fun w₄ q₄ g₄ =>
     wp_and fun w₅ q₅ g₅ => wp_and fun w₆ q₆ g₆ => wp_orr fun w₇ q₇ g₇ => wp_and fun w₈ q₈ g₈ =>
@@ -123,7 +123,7 @@ theorem posScan_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
     (q₁.trans (q₂.trans (q₃.trans (q₄.trans (q₅.trans (q₆.trans (q₇.trans (q₈.trans (q₉.trans (q₁₀.trans
       (q₁₁.trans (q₁₂.trans (q₁₃.trans (q₁₄.trans q₁₅)))))))))))))).mono
   generalize hb : V (e + j) = b
-  have v9 : w₁.gpr .x9 = b.setWidth 64 := by rw [g₁, hO.mem, Ru _ (by omega), hb]
+  have v9 : w₁.gpr .x9 = b.setWidth 64 := by rw [g₁, hO.mem, Ru _ (by omega_using [he, hj]), hb]
   have v8 : w₃.gpr .x8 = if b = 0 then 1#64 else 0#64 := by rw [g₃, g₂, v9, zero_bit]
   have v16 : w₅.gpr .x16 = (w₃.gpr .x8 - BitVec.ofNat 64 1) &&& v.gpr .x13 := by
     rw [g₅, g₄, q₄.get .x13, q₃.get .x13, q₂.get .x13, q₁.get .x13]

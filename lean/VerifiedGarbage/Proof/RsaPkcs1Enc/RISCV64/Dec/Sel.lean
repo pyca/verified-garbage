@@ -45,14 +45,14 @@ theorem zero_mask (b : Byte) :
     have hl := b.isLt
     have e : b.setWidth 64 - BitVec.ofNat 64 1 = BitVec.ofNat 64 (b.toNat - 1) := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega),
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hb]),
         BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_using []
     have e2 : BitVec.ofNat 64 (b.toNat - 1) >>> 63 = 0 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
       show _ = 0
-      omega
+      omega_using []
     rw [e, e2]
     simp only [bm, h, decide_false, Bool.false_eq_true, ite_false]; rfl
 
@@ -120,19 +120,19 @@ theorem scanLoop_ok {t₀ : State} {O : Addr} {EM : List Byte} {k : Nat} (hk : 3
     (h6 : t₀.gpr .a6 = 0) (h7 : t₀.gpr .a7 = BitVec.allOnes 64) :
     WP isa scanLoop t₀ fun u => Only [.a0, .a1, .a5, .a4, .a3, .t1, .t2] t₀ u ∧
       u.gpr .a4 = bm (firstZero EM k).isSome ∧ u.gpr .a5 = BitVec.ofNat 64 ((firstZero EM k).getD 0) := by
-  refine (VG.Proof.Bignum.RISCV64.wp_countdown (cnt := .t2) (N := k - 2) (by omega) (by omega)
+  refine (VG.Proof.Bignum.RISCV64.wp_countdown (cnt := .t2) (N := k - 2) (by omega_using [hk2]) (by omega_using [hk])
     (fun j u => Only [.a0, .a1, .a5, .a4, .a3, .t1, .t2] t₀ u ∧
       u.gpr .t1 = O + BitVec.ofNat 64 (2 + j) ∧ u.gpr .a3 = BitVec.ofNat 64 (2 + j) ∧
       u.gpr .a4 = bm (firstZero EM (2 + j)).isSome ∧ u.gpr .a5 = BitVec.ofNat 64 ((firstZero EM (2 + j)).getD 0))
     (fun j hj u ⟨ku, u1, u3, u4, u5⟩ _ => ?_)
     ⟨Only.refl _ _, h1, h3, by rw [h4]; rfl, by rw [h5]; rfl⟩ h2).mono
     fun u ⟨ku, _, _, u4, u5⟩ => by
-      rw [show 2 + (k - 2) = k by omega] at u4 u5
+      rw [show 2 + (k - 2) = k by omega_using [hk]] at u4 u5
       exact ⟨ku, u4, u5⟩
-  have hr0 := hr (2 + j) (by omega)
+  have hr0 := hr (2 + j) (by omega_using [hj])
   rw [← ku.rd, ← ku.wr] at hr0
   have hb : byt u = EM.getD (2 + j) 1 := by
-    rw [byt, u1, BitVec.add_zero, ku.mem, hEM _ (by omega)]
+    rw [byt, u1, BitVec.add_zero, ku.mem, hEM _ (by omega_using [hj])]
   refine WP.mono (scanBody_ok (by rw [u1, BitVec.add_zero]; exact hr0) ((ku.get .a6).trans h6)
     ((ku.get .a7).trans h7))
     fun w ⟨kw, w1, w2, w3, w4, w5⟩ => ⟨⟨(ku.trans kw).mono, by rw [w1, u1, Offset.add_add]; rfl,
@@ -184,7 +184,7 @@ theorem outIn {t : State} (hp : Post s R EM t) {i : Nat} (hi : i < (s.gpr .a4).t
   have := h.wo; rw [h.h1] at this
   exact ⟨oR s, by rw [hp.wr, h.hwr]; simp, by
     rw [show oR s = ⟨s.gpr .a0, (s.gpr .a4).toNat⟩ by simp only [oR, h.h1]]
-    exact Offset.contains_base _ (by omega) (by omega)⟩
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
 
 theorem scanPart_ok {t : State} (hl : AL s R EM kd t) : WP isa scanPart t (SCN s R EM kd) := by
   have hk := h.k2
@@ -200,9 +200,9 @@ theorem scanPart_ok {t : State} (hl : AL s R EM kd t) : WP isa scanPart t (SCN s
   have P₁ := hl.toAMR.only h O
   have e2 : s.gpr .a4 - BitVec.ofNat 64 2 = BitVec.ofNat 64 ((s.gpr .a4).toNat - 2) := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  refine WP.mono (scanLoop_ok (O := s.gpr .a0) (EM := EM) (k := (s.gpr .a4).toNat) (by omega) (by omega)
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hk64]), BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
+  refine WP.mono (scanLoop_ok (O := s.gpr .a0) (EM := EM) (k := (s.gpr .a4).toNat) (by omega_using [hk64]) (by omega_using [hk])
     (fun i hi => by rw [← P₁.em, bytes_getD' _ _ hi]) (fun i hi => outIn h P₁.toPost hi)
     (by rw [p₈.get .t1, p₇.get .t1, p₆.get .t1, p₅.get .t1, p₄.get .t1, p₃.get .t1, p₂.get .t1, f₁, hl.s2])
     (by rw [p₈.get .t2, p₇.get .t2, p₆.get .t2, p₅.get .t2, p₄.get .t2, p₃.get .t2, f₂, p₁.get .s1, hl.s1, e2])
@@ -234,10 +234,10 @@ theorem zero_mask64 (x : BitVec 64) (hx : x.toNat < 2 ^ 63) :
   · have hb : x.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq e)
     have e2 : (x - BitVec.ofNat 64 1) >>> 63 = 0 := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega),
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hb]),
         BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
       show _ = 0
-      omega
+      omega_using [hx]
     rw [e2]
     simp only [bm, h, decide_false, Bool.false_eq_true, ite_false]; rfl
 
@@ -245,8 +245,8 @@ theorem ten_mask {sep : Nat} (h : sep < 2 ^ 63) :
     (0 : BitVec 64) - ((BitVec.ofNat 64 sep - BitVec.ofNat 64 10) >>> 63) = bm (decide (sep < 10)) := by
   rw [borrow _ _ h (by decide)]
   by_cases hs : sep < 10
-  · simp only [show ¬ 10 ≤ sep by omega, ↓reduceIte, bm, hs, decide_true]; decide
-  · simp only [show 10 ≤ sep by omega, ↓reduceIte, bm, hs, decide_false, Bool.false_eq_true]; decide
+  · simp only [show ¬ 10 ≤ sep by omega_using [hs], ↓reduceIte, bm, hs, decide_true]; decide
+  · simp only [show 10 ≤ sep by omega_using [hs], ↓reduceIte, bm, hs, decide_false, Bool.false_eq_true]; decide
 
 theorem bm_and (a b : Bool) : bm a &&& bm b = bm (a && b) := by
   cases a <;> cases b <;> rfl
@@ -291,8 +291,8 @@ theorem vOf_bm (a b : Byte) (f : Bool) (sep : Nat) :
     bm f &&& (bm (decide (a = 0)) &&& bm (decide (b = 2))) &&& bm (!decide (sep < 10)) = bm (vOf a b f sep) := by
   have e : (!decide (sep < 10)) = decide (10 ≤ sep) := by
     by_cases hs : sep < 10
-    · simp only [hs, decide_true, Bool.not_true, show ¬ 10 ≤ sep by omega, decide_false]
-    · simp only [hs, decide_false, Bool.not_false, show 10 ≤ sep by omega, decide_true]
+    · simp only [hs, decide_true, Bool.not_true, show ¬ 10 ≤ sep by omega_using [hs], decide_false]
+    · simp only [hs, decide_false, Bool.not_false, show 10 ≤ sep by omega_using [hs], decide_true]
   rw [bm_and, bm_and, bm_and, e]
   congr 1
   unfold vOf

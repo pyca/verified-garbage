@@ -55,8 +55,8 @@ theorem out64_take {n : Nat} (hn : n ≤ 8) (s : State) (hbx : (s.gpr .ebx).toNa
     WP isa (.block (out64 n)) s fun s' => (∀ r, r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mem = writeBytes s.mem ((s.gpr .eax).setWidth 64)
         ((md.digest (md.stateAt s.mem ((s.gpr .ebx).setWidth 64))).take (8 * n)) :=
-  (out64_ok (n := n) (by omega) (by omega) hax (inRegions_prefix hin (by omega)) hout
-    (hd.sub_left (Region.sub_prefix (by omega)))).mono
+  (out64_ok (n := n) (by omega_using [hn]) (by omega_using [hn, hbx]) hax (inRegions_prefix hin (by omega_using [hn])) hout
+    (hd.sub_left (Region.sub_prefix (by omega_using [hn])))).mono
     fun _ ⟨g, rd, wr, m⟩ => ⟨g, rd, wr, by rw [m, digest_take_halves _ _ hn]⟩
 
 /-- `out64 3 ++ outHi 3` writes the first 28 bytes of the digest. -/
@@ -69,7 +69,7 @@ theorem out224_ok (s : State) (hbx : (s.gpr .ebx).toNat + 64 ≤ 2 ^ 32)
       s'.wr = s.wr ∧ s'.mem = writeBytes s.mem ((s.gpr .eax).setWidth 64)
         ((md.digest (md.stateAt s.mem ((s.gpr .ebx).setWidth 64))).take 28) := by
   rw [WP.block_append_iff]
-  refine (out64_ok (n := 3) (by decide) (by omega) (by omega) (inRegions_prefix hin (by decide))
+  refine (out64_ok (n := 3) (by decide) (by omega_using [hbx]) (by omega_using [hax]) (inRegions_prefix hin (by decide))
     (inRegions_prefix hout (by decide))
     ((hd.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)))).mono
     fun s₁ ⟨g₁, rd₁, wr₁, m₁⟩ => ?_
@@ -92,10 +92,10 @@ theorem out224_ok (s : State) (hbx : (s.gpr .ebx).toNat + 64 ≤ 2 ^ 32)
       exact hd.sub_left (sub_offset (by decide) (by decide))
   simp only [outHi]
   refine wp_movm (a := (s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 28)
-    (by rw [ea_at, g₁ _ (by decide), addr_eq (by omega)])
+    (by rw [ea_at, g₁ _ (by decide), addr_eq (by omega_using [hbx])])
     (by rw [rd₁, wr₁]; exact out_in hin (by decide) (by decide)) fun s₂ u₂ => wp_bswap fun s₃ u₃ => ?_
   refine wp_store (a := (s.gpr .eax).setWidth 64 + BitVec.ofNat 64 24)
-    (by rw [ea_at, u₃.other _ (by decide), u₂.other _ (by decide), g₁ _ (by decide), addr_eq (by omega)])
+    (by rw [ea_at, u₃.other _ (by decide), u₂.other _ (by decide), g₁ _ (by decide), addr_eq (by omega_using [hax])])
     (by rw [u₃.wr, u₂.wr, wr₁]; exact out_in hout (by decide) (by decide)) fun s₄ u₄ =>
       WP.block_nil ⟨fun r h => by rw [u₄.gpr, u₃.other r h, u₂.other r h, g₁ r h],
         by rw [u₄.rd, u₃.rd, u₂.rd, rd₁], by rw [u₄.wr, u₃.wr, u₂.wr, wr₁], ?_⟩

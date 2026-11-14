@@ -401,7 +401,7 @@ theorem storeSlots_bot {τ : T} (hl : τ.lens = []) (hs : τ.slots = []) (n : Re
     (hw : 0 < w) (p : Bool) : storeSlots τ n off w p = [] := by
   unfold storeSlots
   split
-  · rw [hl, ite_f (by simp only [List.getD_nil]; omega)]
+  · rw [hl, ite_f (by simp only [List.getD_nil]; omega_using [hw])]
     cases p <;> simp [hs]
   · cases p <;> simp [hs]
 
@@ -502,7 +502,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step] at hs ⊢
     split at hs <;> [rename_i ho; cases hs]
     cases hs
-    have e : τ.argLen = σ.argLen := h.argLen.resolve_right fun hh => by rw [hh.1] at ho; omega
+    have e : τ.argLen = σ.argLen := h.argLen.resolve_right fun hh => by rw [hh.1] at ho; omega_using [ho]
     rw [ite_t (e ▸ ho)]
     exact ⟨_, rfl, h.upd (set_mono hw t id) h.flags (h.spBasesM t off)⟩
   | push _ => simp only [step, reduceCtorEq] at hs

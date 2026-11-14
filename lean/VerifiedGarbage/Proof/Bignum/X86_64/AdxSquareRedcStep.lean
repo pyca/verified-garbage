@@ -29,7 +29,7 @@ theorem redcHead_ok {s : State} {B : Addr} {Z e w : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have hh : 8 * sMinv + 8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sMinv < 32 by decide)
-    omega
+    omega_using [hZ, this]
   refine WP.mono (WP.keep [.rdx, .rax] (Q := fun t =>
     t.gpr .rdx = redcU (word s.mem B e) minv ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
@@ -55,13 +55,13 @@ theorem redcTail_ok {s : State} {B : Addr} {Z e w : Nat} (hs : Scr s B Z)
   have hz : (0 : BitVec 64).toNat = 0 := rfl
   have eq1 : (Tw + c).toNat + 2 ^ 64 * hi1.toNat = Tw.toNat + c.toNat := by
     have he := addc_toNat Tw (0 : BitVec 64) c (by
-      rw [hz]; have := Tw.isLt; have := c.isLt; omega)
+      rw [hz]; have := Tw.isLt; have := c.isLt; omega_using [])
     simpa only [hi1, hz, Nat.mul_zero, Nat.add_zero] using he
   have eq2 : (Tw + c + p).toNat + 2 ^ 64 * hi2.toNat =
       (Tw + c).toNat + p.toNat + 2 ^ 64 * hi1.toNat :=
-    addc_toNat (Tw + c) hi1 p (by have := Tw.isLt; have := c.isLt; have := p.isLt; omega)
+    addc_toNat (Tw + c) hi1 p (by have := Tw.isLt; have := c.isLt; have := p.isLt; omega_using [eq1])
   have val : (Tw + c + p).toNat + 2 ^ 64 * hi2.toNat = Tw.toNat + c.toNat + p.toNat := by
-    omega
+    omega_using [eq1, eq2]
   refine WP.mono (WP.keep [.rax, .rsi, .r10, .r8] (Q := fun t =>
       t.mem = s.mem.writeW (off B (e + 8 * w)) (Tw + c + p) ∧
       t.gpr .r10 = hi2 ∧ t.gpr .r8 = off B (e + 8)) ?_ rfl)
@@ -73,6 +73,6 @@ theorem redcTail_ok {s : State} {B : Addr} {Z e w : Nat} (hs : Scr s B Z)
   · intro h
     rw [h10]
     have := Tw.isLt; have := c.isLt
-    omega
+    omega_using [eq1, eq2, h]
 
 end VG.Proof.Bignum.X86_64.AdxSquare

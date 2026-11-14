@@ -52,16 +52,16 @@ theorem GArg.facts {o : Nat} (ho' : o + 1024 ≤ 4096) {p : Addr} (h : GArg s₀
     Region.Disjoint ⟨p, 1024⟩ ⟨scrP s₀ + BitVec.ofNat 64 o, 1024⟩ ∧
     Region.Disjoint ⟨p, 1024⟩ ⟨gwP s₀, 4096⟩ ∧ p.toNat % 8 = 0 := by
   rcases h with ⟨k, hk, rfl⟩ | ⟨d, hd', hd8, hdo, rfl⟩
-  · have hk' : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
+  · have hk' : k * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_using [hk]
     have sub : Region.Sub ⟨memP s₀ + BitVec.ofNat 64 (k * 1024), 1024⟩ (memR s₀) :=
       Offset.sub_base _ hk'
     refine ⟨⟨memR s₀, by simp, k * 1024, rfl, hk'⟩, ?_, ?_, ?_⟩
-    · exact (hp.mem_scr.sub_left sub).sub_right (Offset.sub_base _ (by omega))
+    · exact (hp.mem_scr.sub_left sub).sub_right (Offset.sub_base _ (by omega_using [ho']))
     · exact (hp.mem_scr.sub_left sub).sub_right (Offset.sub_base _ (by decide))
-    · exact al_add (by decide) (.inr hp.mem_al) (by omega)
-  · refine ⟨⟨scrR s₀, by simp, d, rfl, by simp only; omega⟩, ?_, ?_, ?_⟩
-    · exact Offset.disjoint _ hdo (by omega) (by omega)
-    · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    · exact al_add (by decide) (.inr hp.mem_al) (by omega_using [])
+  · refine ⟨⟨scrR s₀, by simp, d, rfl, by simp only; omega_using [hd']⟩, ?_, ?_, ?_⟩
+    · exact Offset.disjoint _ hdo (by omega_using [hd']) (by omega_using [ho'])
+    · exact Offset.disjoint _ (.inl (by omega_using [hd'])) (by omega_using [hd']) (by omega_using [])
     · exact al_add (by decide) (.inr hp.scr_al) hd8
 
 /-- What a call of G from the body needs. -/
@@ -93,12 +93,12 @@ theorem ccall_pre {s : State} (h : Inv s₀ s) (h3 : s.gpr .a3 = gwP s₀) {o : 
   have cO : Covers [⟨scrP s₀ + BitVec.ofNat 64 o, 1024⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
-      exact ⟨scrR s₀, scrW, o, rfl, by simp only; omega⟩
+      exact ⟨scrR s₀, scrW, o, rfl, by simp only; omega_using [ho']⟩
   have cW : Covers [⟨gwP s₀, 4096⟩] s.wr :=
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, 4096, rfl, by simp⟩
   have O_W : Region.Disjoint ⟨scrP s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨gwP s₀, 4096⟩ :=
-    Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+    Offset.disjoint _ (.inl (by omega_using [ho'])) (by omega_using [ho']) (by omega_using [])
   have g : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r hr => State.callEntry_gpr s hr
   have pre : Proof.Argon2.RISCV64.compressLocal.pre (s.callEntry.withRegions cRd cWr) := by
     simp only [Proof.Argon2.RISCV64.compressLocal, State.withRegions_rd, State.withRegions_wr,
@@ -131,7 +131,7 @@ theorem ccall_ok {s : State} (h : Inv s₀ s) (h3 : s.gpr .a3 = gwP s₀) {o : N
     (fun r hr => hcs r (by revert hr; revert r; decide)) hrd hwr (hf.sub fun q hq => ?_)) hcs hf post
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl
-  · exact ⟨scrR s₀, by simp, Offset.sub_base _ (by omega)⟩
+  · exact ⟨scrR s₀, by simp, Offset.sub_base _ (by omega_using [ho'])⟩
   · exact ⟨scrR s₀, by simp, Offset.sub_base _ (by decide)⟩
 
 end

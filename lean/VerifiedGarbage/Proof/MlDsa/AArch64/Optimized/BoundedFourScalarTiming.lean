@@ -59,7 +59,7 @@ theorem scalarLow_ok {η : Nat} (hη : η=2∨η=4) {s : State} {p : Addr} {L : 
       (t.gpr .x4).toNat=256-(hbTry η L (b.toNat%16)).length := by
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.MlDsa.AArch64.Sample.RejBounded.try_ok hη
-    (by omega) h.consts h.low h.output h.remaining hl h.stored (h.write _ hl))
+    (by omega_using []) h.consts h.low h.output h.remaining hl h.stored (h.write _ hl))
     fun a ⟨hk,_,h3,h4,_⟩=>?_
   refine WP.mono (scalarHigh_ok (s := a) (b := b)
     (by rw [hk.gpr .x6 (by decide)]; exact h.byte)) fun t ⟨ht,_⟩=>?_
@@ -94,7 +94,7 @@ theorem scalarPair_relCT {η : Nat} (hη : η=2∨η=4) {p : Addr}
     have hz:=h.2
     rw [remaining_zero h.1.1.remaining h.1.1.bound] at hz
     have hne : L.length≠256:=by simpa only [Option.some.injEq,decide_eq_false_iff_not] using hz
-    have hlt : L.length<256:=by have:=h.1.1.bound; omega
+    have hlt : L.length<256:=by have:=h.1.1.bound; omega_using [hne, this]
     obtain ⟨_,_,ex,hu⟩:=scalarLow_ok hη h.1.1 hlt
     obtain ⟨_,_,ey,hv⟩:=scalarLow_ok hη h.1.2.1 (by rw [←hl]; exact hlt)
     obtain ⟨_,rfl⟩:=Exec.det es ex

@@ -56,7 +56,7 @@ theorem finishHead_ok (s : State) {base ptr : BitVec 32} {count status : Nat}
       CallLay.inRegions_sub output.writable (off := 0) (by decide : 0 + 4 ≤ 8) (by decide)
   have write4 : InRegions s.wr (off (State.addr ptr) 4) 4 :=
     CallLay.inRegions_sub output.writable (by decide : 4 + 4 ≤ 8) (by decide)
-  have addr4 : State.addr (ptr + 4#32) = off (State.addr ptr) 4 := VG.Arm.addr_add (by have := output.fits; omega)
+  have addr4 : State.addr (ptr + 4#32) = off (State.addr ptr) 4 := VG.Arm.addr_add (by have := output.fits; omega_using [this])
   unfold VG.Impl.Ffdh.Arm.KeySearch.ldf lowWord usedMem at *
   ffrun [h.addr (by decide : 15 < 16), h.addr (by decide : 11 < 16), h.addr (by decide : 14 < 16),
     h.read (by decide : 15 < 16), h.read (by decide : 11 < 16), h.read (by decide : 14 < 16),

@@ -183,7 +183,7 @@ theorem preV_mask {X wx : Nat} {Mk : Bool} (hX : Mk = true → 0 < X) :
     (Mk = true → 2 ^ (128 * wx) % X % (if Mk then X else 3) = 2 ^ (64 * wx * 2) % (if Mk then X else 3)) ∧
       (Mk = true → 2 ^ (128 * wx) % X < if Mk then X else 3) := by
   refine ⟨fun hm => ?_, fun hm => ?_⟩
-  · simp only [hm, ↓reduceIte]; rw [Nat.mod_mod, show 128 * wx = 64 * wx * 2 by omega]
+  · simp only [hm, ↓reduceIte]; rw [Nat.mod_mod, show 128 * wx = 64 * wx * 2 by omega_using []]
   · simp only [hm, ↓reduceIte]; exact Nat.mod_lt _ (hX hm)
 
 /-- `preP`, from the checks, for the layout `l` of the key's sizes, with
@@ -211,9 +211,9 @@ theorem branchA1P_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k 
   have hpl1 := h.pl1
   have hql1 := h.ql1
   have hZq := h.z
-  rw [primeWords_eq, hpl, hw32, show 2 * (2 * l.W) = r2XOff false l.W by simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega] at hpP
+  rw [primeWords_eq, hpl, hw32, show 2 * (2 * l.W) = r2XOff false l.W by simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega_using []] at hpP
   rw [primeWords_eq, primeWords_eq, hpl, hql, hw32, show 2 * (2 * l.W) + l.W = r2XOff true l.W by
-    simp only [r2XOff, ↓reduceIte]; omega] at hpQ
+    simp only [r2XOff, ↓reduceIte]; omega_using []] at hpQ
   generalize Spec.Rsa.os2ip nb = N at *
   generalize Spec.Rsa.os2ip xb = C at *
   generalize Spec.Rsa.os2ip pb = P at *
@@ -272,7 +272,7 @@ theorem branchBP_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k :
   have hZq := h.z
   have hqil := h.qil
   rw [primeWords_eq, hw32, show 2 * (2 * l.W) = r2XOff false (wsWords pl) by
-    simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega] at hpP
+    simp only [r2XOff, Bool.false_eq_true, ↓reduceIte]; omega_using [hpl]] at hpP
   generalize Spec.Rsa.os2ip nb = N at *
   generalize Spec.Rsa.os2ip xb = C at *
   generalize Spec.Rsa.os2ip pb = P at *

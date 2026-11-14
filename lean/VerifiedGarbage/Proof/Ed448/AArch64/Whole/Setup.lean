@@ -58,7 +58,7 @@ theorem setSrc_ok {s : State} {E : Addr} {r : Reg} {v : Src} (he : s.sp = E) (hv
       fun t ⟨h1, h2⟩ => ⟨h1, h2⟩
   | loc d o =>
     obtain ⟨hd8, hdl, ho⟩ := hv
-    have ha : d % 8 = 0 ∧ d < 32768 := ⟨hd8, by omega⟩
+    have ha : d % 8 = 0 ∧ d < 32768 := ⟨hd8, by omega_using [hdl]⟩
     have hr' := hl d o rfl
     apply WP.of_runBlock
     simp only [setSrc, srcValue, runBlock_cons, runStep_some, runBlock_nil, exec,

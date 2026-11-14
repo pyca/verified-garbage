@@ -68,7 +68,7 @@ theorem kgPre1024_taint : ∃ h, ((VectorSymbols.analysis restSymbols).check
 
 theorem kgRow768_taint : ∀ i < lay768.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
     (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow lay768 i) h).isSome = true := fun i hi => by
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by have : lay768.k = 3 := rfl; omega) with rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by have : lay768.k = 3 := rfl; omega_using [hi, this]) with rfl | rfl | rfl
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
@@ -77,7 +77,7 @@ theorem kgRow1024_taint : ∀ i < Impl.MlKem1024.AArch64.lay1024.k, ∃ h, ((Vec
     (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow Impl.MlKem1024.AArch64.lay1024 i) h).isSome = true :=
   fun i hi => by
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by
-    have : Impl.MlKem1024.AArch64.lay1024.k = 4 := rfl; omega) with rfl | rfl | rfl | rfl
+    have : Impl.MlKem1024.AArch64.lay1024.k = 4 := rfl; omega_using [hi, this]) with rfl | rfl | rfl | rfl
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩

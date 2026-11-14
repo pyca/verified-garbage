@@ -26,9 +26,9 @@ theorem decTo_ok {s : State} {B : Addr} {Z n out a : Nat}
   have fa := h.fit64 ha
   unfold decTo seqs
   refine WP.seq (WP.mono (eq_ok h (by decide) ha (by decide)
-    (by unfold aT1; omega) (by decide) hFlag) fun u ⟨hu, Ou, flag, Ku⟩ => ?_)
+    (by unfold aT1; omega_using [aPersistent]) (by decide) hFlag) fun u ⟨hu, Ou, flag, Ku⟩ => ?_)
   have A : num u.mem B n a = num s.mem B n a :=
-    Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega)
+    Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega_using [aPersistent])
       (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       fa
   have Zero : num u.mem B n aZero = 0 := by
@@ -38,11 +38,11 @@ theorem decTo_ok {s : State} {B : Addr} {Z n out a : Nat}
     rw [Ou.num (by decide) (by simp only [List.mem_cons, List.not_mem_nil, or_false]; intro d hd; rcases hd with rfl | rfl <;> with_reducible assumption)
       (h.fit64 (by decide)), one]
   rw [zero] at flag
-  have bit : slot u.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega
+  have bit : slot u.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega_using []
   refine WP.seq (WP.mono (sel_ok hu (by decide) (by decide) (by decide) hFlag bit (by decide))
     fun v ⟨hv, Ov, selected, Kv⟩ => ?_)
   have Av : num v.mem B n a = num s.mem B n a := by
-    rw [Ov.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT2; omega) (by simp) fa, A]
+    rw [Ov.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT2; omega_using [aPersistent]) (by simp) fa, A]
   have amount : num v.mem B n aT2 = if num s.mem B n a = 0 then 0 else 1 := by
     rw [selected, flag, One, Zero]
     by_cases p : num s.mem B n a = 0 <;> simp only [p, ite_true, ite_false, Nat.one_ne_zero]
@@ -50,16 +50,16 @@ theorem decTo_ok {s : State} {B : Addr} {Z n out a : Nat}
     fun t ⟨ht, Ot, value, borrow, Kt⟩ => ?_
   rw [Av, amount] at value
   have fits : (if num s.mem B n a = 0 then 0 else 1) ≤ num s.mem B n a := by
-    split <;> omega
+    split <;> omega_arith
   have noBorrow := (VG.Proof.Rsa.borrow_iff value (val32_lt t.mem B (arr n out) n) borrow).mpr fits
   rw [noBorrow, Nat.mul_zero, Nat.add_zero] at value
   refine ⟨ht, (Ou.join Ov (js := [aT1, aT2, out]) (ds := [sT, kFlag])).join Ot
     (js := [aT1, aT2, out]) (ds := [sT, kFlag]), ?_, ?_⟩
   · by_cases p : num s.mem B n a = 0
     · simp only [p, ite_true] at value ⊢
-      omega
+      omega_using [value]
     · simp only [p, ite_false] at value
-      omega
+      omega_using [value]
   · exact Ku.trans ((Kv.mono (by decide)).trans Kt)
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

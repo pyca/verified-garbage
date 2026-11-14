@@ -23,16 +23,16 @@ private theorem CandidateContext.saved_separate {s : State} {p : CandidateParams
   intro r hr
   simp only [candidateRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
-    exact h.stackOutput.sub_left (Offset.sub_base _ (by omega))
-  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
-    exact h.stackScratch.sub_left (Offset.sub_base _ (by omega))
+  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this])]
+    exact h.stackOutput.sub_left (Offset.sub_base _ (by omega_using [fit]))
+  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this])]
+    exact h.stackScratch.sub_left (Offset.sub_base _ (by omega_using [fit]))
   · change (⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩ : Region).Disjoint
       ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
-    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega), FrameStack.addr_sub' h.stackBelow]
-    exact Offset.disjoint_below _ (by omega)
-  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
-    exact Offset.disjoint _ (.inl fit) (by omega) (by decide)
+    rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this]), FrameStack.addr_sub' h.stackBelow]
+    exact Offset.disjoint_below _ (by omega_using [fit])
+  · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this]), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
+    exact Offset.disjoint _ (.inl fit) (by omega_using [fit]) (by decide)
 
 theorem CandidateContext.after_frame {s t : State} {p : CandidateParams} {consumed next : Nat} {rs : List Reg}
     (h : CandidateContext p consumed s) (bound : next ≤ p.bytes.length)
@@ -49,7 +49,7 @@ theorem CandidateContext.after_frame {s t : State} {p : CandidateParams} {consum
         exact usedWord
       · have fit : d + 4 ≤ 40 := by
           simp only [candidateSlots, List.mem_cons, List.not_mem_nil, or_false] at hd
-          omega
+          omega_using [count, hd]
         rw [rest.sp, changed.readW (a := State.addr (s.sp + BitVec.ofNat 32 d)) (w := 32)
           (r := ⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩) (Region.contains_self _ _)
           (h.saved_separate fit) (by decide)]
@@ -58,14 +58,14 @@ theorem CandidateContext.after_frame {s t : State} {p : CandidateParams} {consum
   · rw [rest.wr]; exact h.outputWrite
   · rw [rest.wr]; exact h.usedWrite
   · rw [rest.rd, rest.wr]; exact h.tapeRead
-  · refine (rsa_bytes_frame changed (by have := p.tapeCount; omega) ?_).trans h.tapeBytes
+  · refine (rsa_bytes_frame changed (by have := p.tapeCount; omega_using [this]) ?_).trans h.tapeBytes
     intro r hr
     simp only [candidateRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact p.outputTape.symm
     · exact p.tapeScratch
     · exact h.belowTape.symm
-    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega)]
+    · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
       exact h.stackTape.symm.sub_right (Offset.sub_base _ (by decide : 40 + 28 ≤ 72))
   · rw [rest.sp]; exact h.stackBelow
   · rw [rest.sp]; exact h.stackOutput

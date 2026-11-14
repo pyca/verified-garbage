@@ -32,21 +32,21 @@ theorem ladder_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} (hs : Scratch s 
     ?_ 254 a ⟨by decide, by decide, kla, by rw [ka.mem]; exact hg, ac,
       by rw [ka.mem]; exact hw, fun i hi => by rw [ka.mem]; exact hB i hi⟩
   intro n t ⟨h4, h254, kt, gt, ct, wt, bt⟩
-  obtain ⟨i, rfl⟩ : ∃ i, n = i+1 := ⟨n-1, by omega⟩
-  refine WP.mono (step_ok (k := k) (kt.scratch hs) (by omega) (by omega) gt
-    (ladderAfter_swap_le _ _ (by omega)) ct wt (by rw [kt.bit (by omega)]; exact hb i (by omega)) bt)
+  obtain ⟨i, rfl⟩ : ∃ i, n = i+1 := ⟨n-1, by omega_using [h4]⟩
+  refine WP.mono (step_ok (k := k) (kt.scratch hs) (by omega_using [h254]) (by omega_using [h4]) gt
+    (ladderAfter_swap_le _ _ (by omega_using [h254])) ct wt (by rw [kt.bit (by omega_using [h254])]; exact hb i (by omega_using [h254])) bt)
     fun u ⟨ku, gu, cu, du, wu, bu⟩ => ?_
   have klu : LoopKeep base s u := kt.trans ku
-  rw [← ladderAfter_step k x1 (by omega)] at gu
+  rw [← ladderAfter_step k x1 (by omega_using [h254])] at gu
   have ws : word u.mem base 768 = BitVec.ofNat 64 (ladderAfter k x1 i).swap := by
-    rw [ladderAfter_step k x1 (by omega)]
+    rw [ladderAfter_step k x1 (by omega_using [h254])]
     exact wu
   have he : isa.eval (.nonzero .x .x16) u = some (decide (i - 3 ≠ 0)) := by
     simp only [eval, VG.Proof.Ed25519.AArch64.read_x, du,
-      VG.Proof.Ed25519.AArch64.counter_nonzero (by omega : i - 3 < 2^64)]
+      VG.Proof.Ed25519.AArch64.counter_nonzero (by omega_using [h254] : i - 3 < 2^64)]
   by_cases hi : i = 3
   · subst i; exact .inl ⟨by rw [he]; rfl, klu, gu, ws, bu⟩
-  · exact .inr ⟨by rw [he]; simp only [Option.some.injEq, decide_eq_true_eq]; omega,
-      i, by omega, by omega, by omega, klu, gu, cu, ws, bu⟩
+  · exact .inr ⟨by rw [he]; simp only [Option.some.injEq, decide_eq_true_eq]; omega_using [h4, hi],
+      i, by omega_using [], by omega_using [h4, hi], by omega_using [h254], klu, gu, cu, ws, bu⟩
 
 end VG.Proof.X25519.AArch64.AltLadder

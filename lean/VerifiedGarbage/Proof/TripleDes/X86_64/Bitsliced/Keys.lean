@@ -33,7 +33,7 @@ def passIdx (d : Direction) (p r : Nat) : Nat :=
 
 theorem passIdx_lt : ∀ d : Direction, ∀ p, 1 ≤ p → p ≤ 3 → ∀ r < 16, passIdx d p r < 48 := by
   intro d p h1 h3 r hr
-  cases d <;> (rcases p with _ | _ | _ | _ | p) <;> first | omega | (simp [passIdx, passComp]; omega)
+  cases d <;> (rcases p with _ | _ | _ | _ | p) <;> first | omega | (simp [passIdx, passComp]; omega_arith)
 
 theorem passAddr_eq : ∀ d : Direction, ∀ p, 1 ≤ p → p ≤ 3 → ∀ r < 16,
     BitVec.ofNat 64 (passKey d p).1 + BitVec.ofNat 64 r * BitVec.ofInt 64 (passKey d p).2 =
@@ -48,7 +48,7 @@ theorem keyAt_pass (m : Mem) (S : Addr) (d : Direction) {p : Nat} (hp : 1 ≤ p 
   simp only [keyAt, passA, passD, roundKey]
   have hc : (passComp d p).1 < 3 := by
     cases d <;> (rcases hp with ⟨h1, h3⟩; rcases p with _ | _ | _ | _ | p) <;> first | omega | decide
-  have hi : (if (passComp d p).2 = .encrypt then r else 15 - r) < 16 := by split <;> omega
+  have hi : (if (passComp d p).2 = .encrypt then r else 15 - r) < 16 := by split <;> omega_arith
   rw [componentSchedule_readW m S _ _ hc hi, BitVec.add_assoc, passAddr_eq d p hp.1 hp.2 r hr]
   rfl
 

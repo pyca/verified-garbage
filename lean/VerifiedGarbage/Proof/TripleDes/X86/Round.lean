@@ -31,11 +31,11 @@ theorem bitOf_key (s : State) (a : Nat) (ha : a < 64) :
     (keyWord s).getLsbD a := by
   simp only [bitOf, keyWord, BitVec.getLsbD_append]
   by_cases h : a < 32
-  · have hd : (32 + a) / 32 = 1 := by omega
+  · have hd : (32 + a) / 32 = 1 := by omega_using [h]
     simp only [h, ite_true, hd, Nat.add_mod_left, Nat.mod_eq_of_lt h]
     rfl
-  · have hd : (32 + a) / 32 = 2 := by omega
-    have hm : (32 + a) % 32 = a - 32 := by omega
+  · have hd : (32 + a) / 32 = 2 := by omega_using [ha, h]
+    have hm : (32 + a) % 32 = a - 32 := by omega_using [ha, h]
     simp only [h, ite_false, hd, hm]
     rfl
 
@@ -47,14 +47,14 @@ theorem roundChunk_bit (i j : Nat) (hi : i < 8) (hj : j < 6)
     (roundChunk i (r.setWidth 32) (k.setWidth 48)).getLsbD j =
       (r.getLsbD (32 - Spec.TripleDes.expansion.getD (6 * i + 5 - j) 1) ^^
         k.getLsbD (47 - (6 * i + 5 - j))) := by
-  have ht : 6 * (7 - i) + j < 48 := by omega
-  have heq : 48 - 1 - (6 * (7 - i) + j) = 6 * i + 5 - j := by omega
-  have hkey : 6 * (7 - i) + j = 47 - (6 * i + 5 - j) := by omega
+  have ht : 6 * (7 - i) + j < 48 := by omega_using [hj]
+  have heq : 48 - 1 - (6 * (7 - i) + j) = 6 * i + 5 - j := by omega_using [hi]
+  have hkey : 6 * (7 - i) + j = 47 - (6 * i + 5 - j) := by omega_using [hi, hj]
   have hsource : 32 - Spec.TripleDes.expansion.getD (6 * i + 5 - j) 1 < 32 := by
     have hb : ∀ t < 48, 1 ≤ Spec.TripleDes.expansion.getD t 1 := by decide +kernel
-    have hpos : 6 * i + 5 - j < 48 := by omega
+    have hpos : 6 * i + 5 - j < 48 := by omega_using [hi]
     have := hb _ hpos
-    omega
+    omega_using [this]
   simp only [roundChunk, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_xor]
   rw [VG.Proof.TripleDes.permute_bit _ _ (by decide) _ ht]
@@ -150,8 +150,8 @@ theorem roundOutput_piece (i : Nat) (hi : i < 8) (s : State) (hok : Ok outputCfg
   rw [hleft]
   by_cases h : boxSource p / 4 = i
   · simp only [h, ite_true, xorBits_cons, xorBits_nil, Bool.xor_false]
-    have hj : 3 - boxSource p % 4 < 4 := by omega
-    have hjne : 3 - boxSource p % 4 ≠ 4 := by omega
+    have hj : 3 - boxSource p % 4 < 4 := by omega_using []
+    have hjne : 3 - boxSource p % 4 ≠ 4 := by omega_using []
     have hbit := VG.Proof.TripleDes.X86.Linear.bitOf_word (roundOutputs s)
       (3 - boxSource p % 4) 0 (by decide)
     simp only [Nat.add_zero] at hbit

@@ -36,7 +36,7 @@ open VG.Proof.Gcm (Absorbed lensBlock padded)
 theorem lensBlock_mod_left (a c : Nat) : lensBlock (a % 2 ^ 64) c = lensBlock a c := by
   simp only [lensBlock]
   rw [← Proof.Gcm.be64_mod (8 * (a % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * a)]
-  congr 2; omega
+  congr 2; omega_using []
 
 /-- The buffered bytes: of the additional data if there is no text. -/
 theorem ghashInput_mod {a c : List Byte} : (ghashInput a c).length % 16 =
@@ -47,7 +47,7 @@ theorem ghashInput_mod {a c : List Byte} : (ghashInput a c).length % 16 =
     rw [Proof.Gcm.ghashInput_of_ne hc, ite_eq_right hl]
     simp only [List.length_append, Proof.Gcm.length_zeros]
     have := Proof.Gcm.length_pad_mod a.length
-    omega
+    omega_using [this]
 
 /-- The regions `finBody o` writes. -/
 abbrev finFrame (St W SP : Addr) (o : Nat) : List Region := tFrame St W 16 ++ tagFrame St W SP o

@@ -46,11 +46,11 @@ theorem adStep_wp {s : State} (h19 : s.gpr .x19 = W) (hD : D = W + BitVec.ofNat 
       Frame [⟨D, 16⟩] s.mem s'.mem := by
   subst hD
   have inD (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (W + BitVec.ofNat 64 dOff + BitVec.ofNat 64 d) 8 :=
-    ⟨_, hDw, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, hDw, Offset.contains_base _ hd (by omega_using [hd])⟩
   have inD' (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (W + BitVec.ofNat 64 (dOff + d)) 8 := by
     rw [← Offset.add_add]; exact inD d hd
   have inW (d : Nat) (hd : d + 8 ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 :=
-    ⟨_, hWw, Offset.contains_base W hd (by omega)⟩
+    ⟨_, hWw, Offset.contains_base W hd (by omega_using [hd])⟩
   have rr {a : Addr} (h : InRegions s.wr a 8) : InRegions (s.rd ++ s.wr) a 8 :=
     let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
   rw [adStep, List.append_assoc, WP.block_append_iff]

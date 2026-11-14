@@ -84,11 +84,11 @@ theorem R1.hi {σ s t : State} (hr : R1 P σ s) (hc : Ctx P.lay P.scr σ t)
   refine ⟨hc, hi, { pa with args := fun i hi' => ?_, sp := ?_, fit := ?_ }⟩
   · rw [hsp, ← pa.args i hi']
     have ha : addr (s.gpr .esp) (4 * i) = P.lay.fr (4 * i) := by
-      rw [spB]; exact ok.addrB (by simp only [Lay.A, EP.argv, List.length_cons, List.length_nil, frameBytes]; omega)
+      rw [spB]; exact ok.addrB (by simp only [Lay.A, EP.argv, List.length_cons, List.length_nil, frameBytes]; omega_using [hi'])
     rw [ha]
     refine hf.readW (r := ⟨P.lay.fr (4 * i), 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Lay.fr_sep (.inl (by omega)) (by omega) (by omega)
+    exact Lay.fr_sep (.inl (by omega_using [hi'])) (by omega_using [hi']) (by omega_using [])
   · rw [hsp]; exact pa.sp
   · rw [hsp]; exact pa.fit
 
@@ -104,9 +104,9 @@ theorem frame_hi {m : Mem} {d : Nat} (hd : 80 ≤ d ∧ d + 4 ≤ 88) (v : BitVe
   refine ⟨_, List.mem_singleton_self _, ?_⟩
   have e : P.lay.fr d = P.lay.fr 80 + BitVec.ofNat 64 (d - 80) := by
     simp only [Lay.fr]
-    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 80 + (d - 80) = d by omega]
+    rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 80 + (d - 80) = d by omega_using [hd]]
   rw [slotR, e]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hd])
 
 theorem extras_wp {σ s : State} (hr : R1 P σ s) (hx : XP P pre L σ) :
     WP isa (.block (copyArg 25 20 ++ copyArg 26 21)) s (R1P P pre L σ) := by
@@ -125,7 +125,7 @@ theorem extras_wp {σ s : State} (hr : R1 P σ s) (hx : XP P pre L σ) :
     rw [m4.mem, u3.mem, m2.mem, u1.mem]
     exact (frame_hi (d := 80) (by decide) _).trans (frame_hi (d := 84) (by decide) _)
   refine ⟨⟨R1.hi hr c4 sp4 f4, hx⟩, ?_, ?_⟩
-  · rw [m4.mem, u3.mem, Lay.readW_fr_other _ _ _ (by omega) (by omega) (by omega), m2.mem, u1.mem,
+  · rw [m4.mem, u3.mem, Lay.readW_fr_other _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), m2.mem, u1.mem,
       Mem.readW_writeW_self32, u1.gpr]
     rfl
   · rw [m4.mem, u3.mem, show (4 * 21 : Nat) = 84 from rfl, Mem.readW_writeW_self32, u3.gpr]
@@ -146,14 +146,14 @@ theorem callWords {σ s : State} (hs : P.lay.St σ s) (hx : XP P pre L σ) :
     Spec.Rsa.wordsAt s.callEntry.mem (pre.setWidth 64) L = Spec.Rsa.wordsAt σ.mem (pre.setWidth 64) L := by
   have fit : (pre.setWidth 64).toNat + 8 * L ≤ 2 ^ 32 := by
     have := hx.ok.fits (preR pre L) (List.mem_append_left _ (by simp))
-    simp only at this; omega
+    simp only at this; omega_using [this]
   have sep : ∀ r ∈ (P.layP pre L).W, (⟨pre.setWidth 64, 8 * L⟩ : Region).Disjoint r := by
     rw [show 8 * L = L * 8 from Nat.mul_comm _ _]
     exact lay_ro_apart hx.ok (R := preR pre L) (by simp)
-  rw [Proof.Rsa.wordsAt_frame ((stP hs hx).callEntry_frame (by show (4 : Nat) ≤ 3448; decide)) (by omega) (by
+  rw [Proof.Rsa.wordsAt_frame ((stP hs hx).callEntry_frame (by show (4 : Nat) ≤ 3448; decide)) (by omega_using [fit]) (by
       intro r hr; obtain rfl := List.mem_singleton.mp hr
       exact sep _ (by simp [Lay.W])),
-    Proof.Rsa.wordsAt_frame hs.frame (by omega) sep]
+    Proof.Rsa.wordsAt_frame hs.frame (by omega_using [fit]) sep]
 
 /-- The call's arguments, with `pre`. -/
 theorem R1P.privArgsP {σ s : State} (hr : R1P P pre L σ s) :
@@ -174,13 +174,13 @@ theorem R1P.privArgsP {σ s : State} (hr : R1P P pre L σ s) :
     have k := hx.key
     rw [← hi.nB] at k
     exact k
-  refine ⟨pa, fun i hi' => ?_, by rw [hsp]; omega, hx.lenEq, key⟩
+  refine ⟨pa, fun i hi' => ?_, by rw [hsp]; omega_using [hfit], hx.lenEq, key⟩
   have ha : addr (s.gpr .esp) (4 * i) = P.lay.fr (4 * i) := by
-    rw [hsp]; exact hi.ok.addrB (by simp only [Lay.A, EP.argv, List.length_cons, List.length_nil, frameBytes]; omega)
-  rcases (by omega : i < 20 ∨ i = 20 ∨ i = 21) with hlt | rfl | rfl
+    rw [hsp]; exact hi.ok.addrB (by simp only [Lay.A, EP.argv, List.length_cons, List.length_nil, frameBytes]; omega_using [hi'])
+  rcases (by omega_using [hi'] : i < 20 ∨ i = 20 ∨ i = 21) with hlt | rfl | rfl
   · rw [pa.args i hlt]
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨
-        i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 by omega) with
+        i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 by omega_using [hlt]) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl <;> rfl
   · rw [ha]; exact s80
@@ -362,7 +362,7 @@ theorem body_vpP (P : EP) (pre : BitVec 32) (L : Nat) (g : OHash) {f : Fns}
   rw [decStart_append]
   refine VP.cont3 (VP.syms ((((pa_vp P).keep (XP P pre L)).block_append extras_vp).seq
       (((call_vpP c w).mono (fun _ _ x => x) fun _ _ x => x.1).seq (len_vp h P hTL)))) (byLen_vp (D := h.H.D)
-    (by have := h.D_le; omega) (fun _ _ hs => hs.1.2)
+    (by have := h.D_le; omega_using [this]) (fun _ _ hs => hs.1.2)
     (fun σ s t ⟨⟨⟨hc, hi, he, hr0, hk⟩, dx⟩, sy⟩ fu sy' =>
       ⟨⟨⟨hc.fupd fu, hi, by rw [fu.mem]; exact he, by rw [fu.gpr]; exact hr0, hk⟩, by rw [fu.gpr]; exact dx⟩,
         sy'.trans sy⟩) ?_ h.lens cmpLens_taint)

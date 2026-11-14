@@ -34,8 +34,8 @@ theorem squeezeFrom_zero (r : Nat) (S : State) (d : Nat) : squeezeFrom r S 0 d =
 theorem squeezeFrom_shift (r : Nat) (S : State) (pos a d : Nat) :
     squeezeFrom r S (pos + a) d = (squeezeFrom r S pos (a + d)).drop a := by
   simp only [squeezeFrom, List.drop_take, List.drop_drop]
-  have e : pos + (a + d) = pos + a + d := by omega
-  have e2 : a + d - a = d := by omega
+  have e : pos + (a + d) = pos + a + d := by omega_using []
+  have e2 : a + d - a = d := by omega_using []
   rw [e, e2]
 
 /-- A hash function is its sponge with SHA-3's suffix (§6.1). -/
@@ -124,14 +124,14 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 theorem stateAt_agree {m₁ m₂ : Mem} {p : Addr}
     (h : ∀ a, Region.Contains ⟨p, 8 * 25⟩ a 1 → m₁ a = m₂ a) : stateAt m₂ p = stateAt m₁ p :=
-  Proof.Sha3.stateAt_congr fun i hi => agree_of h i (by omega)
+  Proof.Sha3.stateAt_congr fun i hi => agree_of h i (by omega_using [hi])
 
 variable (pb : Nat)
 

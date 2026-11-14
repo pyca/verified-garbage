@@ -55,12 +55,12 @@ theorem chain_blocks (s₀ : State) (k : Nat) (hk : k ≤ N s₀) :
       rw [st_readW]
       exact bytesAt_toList _ _
   | succ k ih =>
-    obtain ⟨hout,hchain⟩ := ih (by omega)
-    have ht := take_succ_blks s₀ (k:=k) (by omega)
+    obtain ⟨hout,hchain⟩ := ih (by omega_using [hk])
+    have ht := take_succ_blks s₀ (k:=k) (by omega_using [hk])
     have hnew : Spec.Cbc.aesWith (R s₀) (wK s₀)
-        (Spec.Cbc.xor ((blks s₀)[k]'(by rw [length_blocksAt]; omega))
+        (Spec.Cbc.xor ((blks s₀)[k]'(by rw [length_blocksAt]; omega_using [hk]))
           (chainK (cbcMode true) s₀ k))=(output s₀ k).toList := by
-      rw [hchain,getElem_blocksAt (hk:=by omega),bytesAt_toList,←st_readW,←cipher_bytes]
+      rw [hchain,getElem_blocksAt (hk:=by omega_using [hk]),bytesAt_toList,←st_readW,←cipher_bytes]
       rfl
     have hstep : outK (cbcMode true) s₀ (k+1)=
         outK (cbcMode true) s₀ k ++ [(output s₀ k).toList] := by

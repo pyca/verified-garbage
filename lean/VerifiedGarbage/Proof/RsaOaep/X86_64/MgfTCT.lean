@@ -222,14 +222,14 @@ theorem roundT_ct (hn : n = 2 ∨ n = 3) (hgi : FnsGood f.init) (hgu : FnsGood f
       (two_upd hG (fun a => a.1.F) (fun a => a.1.S) (fun a => a.1.src) (fun a => a.1.srcLen)
         (fun _ => BitVec.ofNat 64 0) fun a t ⟨t₀, h, k, hm, _⟩ => by
           have := h.1.rw.fit.fs
-          exact ⟨lay_keep11 h.1.rw.L k hm, by omega, by omega, by omega, (k.gpr (by decide)).trans h.2.1,
+          exact ⟨lay_keep11 h.1.rw.L k hm, by omega_using [c1, c5, this], by omega_using [this], by omega_using [c1, c4, this], (k.gpr (by decide)).trans h.2.1,
             (k.gpr (by decide)).trans h.2.2.1, (k.gpr (by decide)).trans h.2.2.2.1,
             (k.gpr (by decide)).trans h.2.2.2.2.1, (k.gpr (by decide)).trans h.2.2.2.2.2⟩))
     fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20⟩ := h.1.rw.rep
     have := h.1.rw.fit.fs
     exact WP.mono (wp_gs (tcall_good hgu 1) (updT_ok hG h.1.rw.L R (h.1.w35' R) h.1.tabAt (a := a.1.src)
-      (len := a.1.srcLen) (by omega) (by omega) (by omega) h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2))
+      (len := a.1.srcLen) (by omega_using [c1, c5, this]) (by omega_using [this]) (by omega_using [c1, c4, this]) h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2))
       fun t' ⟨⟨L', rd', wr', _, R', _⟩, fr, sy⟩ => h.1.after L' rd' wr' R R' A h19 h20 fr sy
   -- The counter, and `update` with it.
   refine RelCT.seq (two_pieceF (Ψ := P5T G f n) [] [14] (fun a => a.1.F) (fun a => a.1.ws)
@@ -239,7 +239,7 @@ theorem roundT_ct (hn : n = 2 ∨ n = 3) (hgi : FnsGood f.init) (hgu : FnsGood f
     have := h.rw.lt
     have := h.rw.fit.dstB
     have hc : a.2 ≤ a.2 * G.D := Nat.le_mul_of_pos_right _ hzD
-    exact WP.mono (wp_gs (block_good _ rfl) (updCtr_ok h.rw.L R A.hsl h19 (by omega)))
+    exact WP.mono (wp_gs (block_good _ rfl) (updCtr_ok h.rw.L R A.hsl h19 (by omega_arith)))
       fun t' ⟨⟨L', hdi, hsi, hdx, hcx, h8, k, R'⟩, fr, sy⟩ =>
         ⟨h.after L' k.2.1 k.2.2 R R' A h19 h20 fr sy, hdi, hsi, hdx, hcx, h8⟩
   refine RelCT.seq (two_post (Ψ := P0T G f n) (two_tcall 1 (fun a => a.1.F) (fun a => a.1.S) (fun a => a.1.ws)
@@ -248,13 +248,13 @@ theorem roundT_ct (hn : n = 2 ∨ n = 3) (hgi : FnsGood f.init) (hgu : FnsGood f
         h.1.au, h.1.tabAt.ok.u⟩) (tload_taint hn 1 (by decide))
       (two_upd hG (fun a => a.1.F) (fun a => a.1.S) (fun _ => oCtr) (fun _ => 4)
         (fun a => BitVec.ofNat 64 a.1.srcLen) fun a t ⟨t₀, h, k, hm, _⟩ =>
-          ⟨lay_keep11 h.1.rw.L k hm, by omega, by omega, by omega, (k.gpr (by decide)).trans h.2.1,
+          ⟨lay_keep11 h.1.rw.L k hm, by omega_using [c3, c5], by omega_using [hzS, c1, c3], by omega_using [c3, c4], (k.gpr (by decide)).trans h.2.1,
             (k.gpr (by decide)).trans h.2.2.1, (k.gpr (by decide)).trans h.2.2.2.1,
             (k.gpr (by decide)).trans h.2.2.2.2.1, (k.gpr (by decide)).trans h.2.2.2.2.2⟩))
     fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20⟩ := h.1.rw.rep
     exact WP.mono (wp_gs (tcall_good hgu 1) (updT_ok hG h.1.rw.L R (h.1.w35' R) h.1.tabAt (a := oCtr) (len := 4)
-      (by omega) (by omega) (by omega) h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2))
+      (by omega_using [c3, c5]) (by omega_using [hzS, c1, c3]) (by omega_using [c3, c4]) h.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2))
       fun t' ⟨⟨L', rd', wr', _, R', _⟩, fr, sy⟩ => h.1.after L' rd' wr' R R' A h19 h20 fr sy
   -- `finalize`.
   refine RelCT.seq (two_pieceF (Ψ := P7T G f n) [] [] (fun a => a.1.F) (fun a => a.1.ws)
@@ -269,11 +269,11 @@ theorem roundT_ct (hn : n = 2 ∨ n = 3) (hgi : FnsGood f.init) (hgu : FnsGood f
         h.1.af, h.1.tabAt.ok.f⟩) (tload_taint hn 2 (by decide))
       (two_fin hG (fun a => a.1.F) (fun a => a.1.S) (fun _ => oDig)
         (fun a => BitVec.ofNat 64 (a.1.srcLen + 4)) fun a t ⟨t₀, h, k, hm, _⟩ =>
-          ⟨lay_keep11 h.1.rw.L k hm, by omega, (k.gpr (by decide)).trans h.2.1, (k.gpr (by decide)).trans h.2.2.1,
+          ⟨lay_keep11 h.1.rw.L k hm, by omega_using [c1, c2, c4], (k.gpr (by decide)).trans h.2.1, (k.gpr (by decide)).trans h.2.2.1,
             (k.gpr (by decide)).trans h.2.2.2.1, (k.gpr (by decide)).trans h.2.2.2.2⟩))
     fun a t h => ?_) ?_
   · obtain ⟨V, W, R, A, h19, h20⟩ := h.1.rw.rep
-    exact WP.mono (wp_gs (tcall_good hgf 2) (finT_ok hG h.1.rw.L R (h.1.w35' R) h.1.tabAt (o := oDig) (by omega)
+    exact WP.mono (wp_gs (tcall_good hgf 2) (finT_ok hG h.1.rw.L R (h.1.w35' R) h.1.tabAt (o := oDig) (by omega_using [c1, c2, c4])
       h.2.1 h.2.2.2.1 h.2.2.2.2)) fun t' ⟨⟨L', rd', wr', _, R', _⟩, fr, sy⟩ => h.1.after L' rd' wr' R R' A h19 h20 fr sy
   -- Into `dst`, and the next counter.
   refine RelCT.seq (two_pieceF (Ψ := P0T G f n) [] [14, 17, 18, 20, 36] (fun a => a.1.F) (fun a => a.1.ws)
@@ -282,7 +282,7 @@ theorem roundT_ct (hn : n = 2 ∨ n = 3) (hgi : FnsGood f.init) (hgu : FnsGood f
   · obtain ⟨V, W, R, A, h19, h20⟩ := h.rw.rep
     have := h.rw.fit.fd
     exact WP.mono (wp_gs xorOutT_good (xorOutT_ok (G := G) h.rw.L R (dst := a.1.dst) (dstLen := a.1.dstLen)
-        (done := a.2 * G.D) (by omega) hzD (by omega) (h.w36' R) A.hdst A.hdl h20 h.rw.lt))
+        (done := a.2 * G.D) (by omega_using [this]) hzD (by omega_using [hzF, hzDF]) (h.w36' R) A.hdst A.hdl h20 h.rw.lt))
       fun t' ⟨⟨L', k, R'⟩, fr, sy⟩ => h.after L' k.2.1 k.2.2 R R' A h19 h20 fr sy
   exact two_taintF [] [] (fun a => a.1.F) (fun a => a.1.ws) (fun a => mwT G.D a.1 a.2)
     (fun a t h => h.words (by decide)) nopin (by decide)
@@ -323,7 +323,7 @@ theorem MLT.rwt {Gs : Spec.Mgf1.Hash} {q : MQT} {j : Nat} {t : State} (h : MLT G
   obtain ⟨fv, fit, u₀, sA, V, W, A, I, J, T, h35, h36, hi, hu, hf⟩ := h
   obtain ⟨V', W', R', h19, h20, hW, -⟩ := I.rep
   exact ⟨⟨fv, I.L, fit, (lt_nR (sizes hG).2.2.2.2 q.toMQ j).mp hj, V', W', R',
-      A.of_eq fun k h1 h2 => hW k (by unfold nW frameBytes; omega) (by omega) (by omega), h19, h20⟩,
+      A.of_eq fun k h1 h2 => hW k (by unfold nW frameBytes; omega_using [h2]) (by omega_using [h2]) (by omega_using [h2]), h19, h20⟩,
     by rw [R'.fr 35 (by decide), hW 35 (by decide) (by decide) (by decide), h35],
     by rw [R'.fr 36 (by decide), hW 36 (by decide) (by decide) (by decide), h36],
     ⟨u₀, sA, T, J, I.rd, I.wr⟩, by rw [J.sy, hi], by rw [J.sy, hu], by rw [J.sy, hf]⟩
@@ -359,9 +359,9 @@ theorem mgfT_ct (hgi : FnsGood f.init) (hgu : FnsGood f.upd) (hgf : FnsGood f.fi
     exact WP.mono (wp_gs (block_good _ rfl) (tabHead_ok (G := G) (p := q.p) L R' (by simp [upd])
         (by rw [k.2.1, k.2.2]; exact T.rdD) hD'
         (Spec.Mgf1.mgf1 Gs (srcB V q.src q.srcLen) q.dstLen) q.dst q.dstLen))
-      fun v ⟨⟨I, _⟩, fr, sy⟩ => ⟨(lt_nR hD q.toMQ 0).mpr (by omega), fv.congr (I.L.rsp.trans L.rsp.symm) I.wr,
+      fun v ⟨⟨I, _⟩, fr, sy⟩ => ⟨(lt_nR hD q.toMQ 0).mpr (by omega_using [hpos]), fv.congr (I.L.rsp.trans L.rsp.symm) I.wr,
         fit, t₀, sArg, V, upd (upd W 35 q.p) 36 (BitVec.ofNat 64 G.D),
-        A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega), ifn (by omega)],
+        A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega_using [h2]), ifn (by omega_using [h2])],
         mgfI_rebase I k.2.1 k.2.2 (keep_cs' k (cs_disj _ (by decide))), J.step k.2.2 L.rsp fr sy, T,
         by simp [upd], by simp [upd], hi, hu, hf⟩
   refine (two_loop (Ψ := fun _ _ => True) (fun q => nR G.D q.toMQ)

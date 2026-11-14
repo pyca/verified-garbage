@@ -172,7 +172,7 @@ theorem generalSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size b : Nat}
       have hxs : x ∈ combSlots K := by
         simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> comb_mem
-      have := hL.lay.le x hxs; omega)
+      have := hL.lay.le x hxs; omega_using [hn, this])
   have hl₁ : ∀ x ∈ rcbR { K.S with b3 := K.neg } K.A K.E,
       wordsVal s₁.mem base x K.M.n < C.p := by
     intro x hx

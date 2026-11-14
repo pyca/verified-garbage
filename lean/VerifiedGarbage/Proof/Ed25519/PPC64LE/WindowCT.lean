@@ -162,14 +162,14 @@ theorem WM.regs {c : Nat} {v v' : EPoint dZ} {s₁ s₂ : State} (h₁ : WM b sp
 theorem addA_ct {c dg : Nat} (hdg : dg < 16) {v : EPoint dZ} :
     RelCT isa (Both (WD b sp pk sig ch T A K S c v dg)) addA fun _ _ => True := by
   unfold addA
-  refine ct_ite (decide (dg ≠ 0)) (fun s h => eval_nz_ofNat s .r9 (by omega) h.2) (fun _ => ?_) (fun _ => ?_)
+  refine ct_ite (decide (dg ≠ 0)) (fun s h => eval_nz_ofNat s .r9 (by omega_using [hdg]) h.2) (fun _ => ?_) (fun _ => ?_)
   · exact ctRegs [.r9, .r6, .r15, .r19, .r30, .r31] (fun _ _ h₁ h₂ => h₁.regs h₂) (by taint_decide)
   · exact ctRegs [.r9, .r6, .r15, .r19, .r30, .r31] (fun _ _ h₁ h₂ => h₁.regs h₂) (by taint_decide)
 
 theorem addB_ct {c dg : Nat} (hdg : dg < 16) {v : EPoint dZ} :
     RelCT isa (Both (WD b sp pk sig ch T A K S c v dg)) addB fun _ _ => True := by
   unfold addB
-  refine ct_ite (decide (dg ≠ 0)) (fun s h => eval_nz_ofNat s .r9 (by omega) h.2) (fun _ => ?_) (fun _ => ?_)
+  refine ct_ite (decide (dg ≠ 0)) (fun s h => eval_nz_ofNat s .r9 (by omega_using [hdg]) h.2) (fun _ => ?_) (fun _ => ?_)
   · exact ctRegs [.r9, .r6, .r15, .r19, .r30, .r31] (fun _ _ h₁ h₂ => h₁.regs h₂) (by taint_decide)
   · exact ctRegs [.r9, .r6, .r15, .r19, .r30, .r31] (fun _ _ h₁ h₂ => h₁.regs h₂) (by taint_decide)
 
@@ -245,19 +245,19 @@ theorem windows_ct {Aa : EPoint dZ} (hA : Rep A Aa) (W : Nat) :
   unfold windows
   refine RelCT.loop (M := isa) (fun n => Both (WinCT b sp pk sig ch T A K S Aa n)) (fun n => ?_) W
   rcases n with _ | c
-  · exact RelCT.of_false fun _ _ h => absurd h.1.1 (by omega)
+  · exact RelCT.of_false fun _ _ h => absurd h.1.1 (by omega_using [])
   by_cases hc : c < 128
   · refine (ctBoth (windowStep_ct hA hc) (B := WM b sp pk sig ch T A K S c
         ((K / 16 ^ c) • Aa + (S / 16 ^ c) • (-baseAff))) fun s h => WP.mono
         (windowStep_ok h.2.2.1 h.2.2.2.2.1 hA (h.2.2.1.sc ▸ Proof.Ed25519.decodeLE_lt32 _ _) hc h.2.2.2.2.2.1
           h.2.2.2.2.2.2) fun t ⟨ht, dt, et, vt, rt, _⟩ => ⟨ht, by rw [rt.sp, h.2.2.2.1], dt, et, vt⟩).mono
-      (fun _ _ h => h) fun s₁ s₂ h => ⟨?_, fun _ => trivial, fun he => ⟨c, by omega, ?_⟩⟩
-    · rw [eval_nz_ofNat s₁ .r15 (by omega) h.1.2.2.2.1, eval_nz_ofNat s₂ .r15 (by omega) h.2.2.2.2.1]
-    · rw [eval_nz_ofNat s₁ .r15 (by omega) h.1.2.2.2.1] at he
+      (fun _ _ h => h) fun s₁ s₂ h => ⟨?_, fun _ => trivial, fun he => ⟨c, by omega_using [], ?_⟩⟩
+    · rw [eval_nz_ofNat s₁ .r15 (by omega_using [hc]) h.1.2.2.2.1, eval_nz_ofNat s₂ .r15 (by omega_using [hc]) h.2.2.2.2.1]
+    · rw [eval_nz_ofNat s₁ .r15 (by omega_using [hc]) h.1.2.2.2.1] at he
       have hc0 : c ≠ 0 := by simpa using he
-      exact ⟨⟨by omega, by omega, h.1.1, h.1.2.1, h.1.2.2.1, h.1.2.2.2.1, rep_repP h.1.2.2.2.2⟩,
-        ⟨by omega, by omega, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, rep_repP h.2.2.2.2.2⟩⟩
-  · exact RelCT.of_false fun _ _ h => absurd h.1.2.1 (by omega)
+      exact ⟨⟨by omega_using [hc0], by omega_using [hc], h.1.1, h.1.2.1, h.1.2.2.1, h.1.2.2.2.1, rep_repP h.1.2.2.2.2⟩,
+        ⟨by omega_using [hc0], by omega_using [hc], h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, rep_repP h.2.2.2.2.2⟩⟩
+  · exact RelCT.of_false fun _ _ h => absurd h.1.2.1 (by omega_using [hc])
 
 end
 
@@ -272,8 +272,8 @@ theorem rhs_ct : RhsCT := by
       Region.Disjoint ⟨b + BitVec.ofNat 64 7904, 128⟩ r' := fun r' hr' => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl
-    · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-    · exact Offset.disjoint _ (.inr (by rw [TA_eq]; omega)) (by omega) (by rw [TA_eq]; omega)
+    · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using []) (by omega_using [])
+    · exact Offset.disjoint _ (.inr (by rw [TA_eq]; omega_using [])) (by omega_using []) (by rw [TA_eq]; omega_using [])
   have dR1 : ∀ r' ∈ [FA b], Region.Disjoint ⟨b + BitVec.ofNat 64 7904, 128⟩ r' := fun r' hr' =>
     dR r' (by simp only [List.mem_singleton] at hr'; simp [hr'])
   have sigD : ∀ {t : State}, VCtx b pk sig ch t →
@@ -319,26 +319,26 @@ theorem rhs_ct : RhsCT := by
         · rw [h₁.1.vc.r31, h₂.1.vc.r31]⟩) (by taint_decide))
       (B := fun t => R2 t ∧ (t.gpr .r8 = 0 ↔ ∀ i < 32, CH.getD (32 + i) 0 = 0)) fun s h =>
         WP.mono (challengeHigh_ok h.1.vc.r31 fun i hi => in_base (List.mem_append_left _ h.1.vc.chR)
-          (by omega) (by omega)) fun t ⟨rt, mt, et⟩ => ⟨by
+          (by omega_using [hi]) (by omega_using [hi])) fun t ⟨rt, mt, et⟩ => ⟨by
             refine ⟨h.1.of rt (by decide) (by decide) (by rw [mt]; exact Frame.refl _ _), by rw [rt.sp, h.2.1],
               by rw [mt]; exact h.2.2.1, by rw [mt]; exact h.2.2.2.1, by rw [mt]; exact h.2.2.2.2.1,
               by rw [mt]; exact h.2.2.2.2.2⟩, by
             rw [et, ← h.2.2.2.2.2]
-            exact forall_congr' fun i => imp_congr_right fun hi => by rw [bytesAt_getD _ _ (by omega)]⟩)
+            exact forall_congr' fun i => imp_congr_right fun hi => by rw [bytesAt_getD _ _ (by omega_using [hi])]⟩)
       (RelCT.ite (fun _ _ h => eval_zero_agree h.1.2 h.2.2)
         ((ctRegs [] (A := R2) (c := .block [.li .r15 64]) (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm, by simp⟩)
           (by taint_decide)).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h)
         ((ctRegs [] (A := R2) (c := .block [.li .r15 128]) (fun _ _ h₁ h₂ => ⟨h₁.2.1.trans h₂.2.1.symm, by simp⟩)
           (by taint_decide)).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h))
     refine (ctBoth hch (B := fun t => ∃ W, R3 W t) fun s h => WP.mono (windowCount_ok h.1.vc)
-      fun t ⟨rt, mt, W, hW, hW64, et, hK⟩ => ⟨W, hW, ?_, ⟨by omega, by omega,
+      fun t ⟨rt, mt, W, hW, hW64, et, hK⟩ => ⟨W, hW, ?_, ⟨by omega_using [hW], by omega_using [hW],
         h.1.of rt (by decide) (by decide) (by rw [mt]; exact Frame.refl _ _), by rw [rt.sp, h.2.1],
         by rw [mt]; exact h.2.2.1, et, ?_⟩, by rw [mt]; exact h.2.2.2.2.1⟩).mono (fun _ _ h => h) ?_
     · rw [hW64, ← h.2.2.2.2.2]
-      exact forall_congr' fun i => imp_congr_right fun hi => by rw [bytesAt_getD _ _ (by omega)]
+      exact forall_congr' fun i => imp_congr_right fun hi => by rw [bytesAt_getD _ _ (by omega_using [hi])]
     · have hS : decodeLE SS < 256 ^ 32 := h.1.sc ▸ Proof.Ed25519.decodeLE_lt32 _ _
       rw [h.2.2.2.2.2] at hK
-      rw [Nat.div_eq_of_lt hK, Proof.Ed25519.nibble_high_zero hS (by omega), zero_nsmul, zero_nsmul, add_zero,
+      rw [Nat.div_eq_of_lt hK, Proof.Ed25519.nibble_high_zero hS (by omega_using [hW]), zero_nsmul, zero_nsmul, add_zero,
         mt, h.2.2.2.1]
       exact rep_repP Proof.Ed25519.identity_rep
     · rintro s₁ s₂ ⟨⟨W₁, h₁⟩, ⟨W₂, h₂⟩⟩

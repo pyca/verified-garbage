@@ -134,7 +134,7 @@ theorem doublesAt_pair {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec
         (SquareInput g capacity p) := by
     obtain ⟨c, C, odd, top⟩ := I
     refine WP.mono (doublesAt_ready v C bound odd positive eLt top) fun b ⟨B, value, _, _⟩ => ?_
-    exact ⟨c, B, odd, by rw [value]; exact Nat.mod_lt _ (by have := Nat.one_le_two_pow (n := e); omega)⟩
+    exact ⟨c, B, odd, by rw [value]; exact Nat.mod_lt _ (by have := Nat.one_le_two_pow (n := e); omega_using [odd])⟩
   have U := wp_result (post S) E
   have Z := wp_result (post T) G
   obtain ⟨cu, Cu, ou, lu⟩ := U

@@ -58,7 +58,7 @@ theorem incr_ok (s : State) {base : Reg} {off : Nat} (hne : base ≠ .eax) {Q : 
   have sep (m : Mem) (i j : Nat) (hi : i < 4) (hj : j < 4) (hne : i ≠ j) (v : BitVec 32) :
       (m.writeW (Q + BitVec.ofNat 64 (4 * j)) v).readW (Q + BitVec.ofNat 64 (4 * i)) 32 =
         m.readW (Q + BitVec.ofNat 64 (4 * i)) 32 :=
-    Mem.readW_writeW_sep (Offset.sep Q (by omega) (by omega) (by omega)) (by decide)
+    Mem.readW_writeW_sep (Offset.sep Q (by omega_using [hne]) (by omega_using [hi]) (by omega_using [hj])) (by decide)
   have sep0 (m : Mem) (j : Nat) (hj : j < 4) (hne : 0 ≠ j) (v : BitVec 32) :
       (m.writeW (Q + BitVec.ofNat 64 (4 * j)) v).readW Q 32 = m.readW Q 32 := by
     simpa using sep m 0 j (by decide) hj hne v
@@ -81,9 +81,9 @@ theorem adc0_toNat (a : BitVec 32) (c : Bool) : (adc0 a c).toNat = (a.toNat + c.
   have e₀ : (0 : BitVec 32).toNat = 0 := rfl
   cases c
   · have e : (BitVec.setWidth 32 (BitVec.ofBool false)).toNat = 0 := rfl
-    rw [adc0, BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_false]; omega
+    rw [adc0, BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_false]; omega_using []
   · have e : (BitVec.setWidth 32 (BitVec.ofBool true)).toNat = 1 := rfl
-    rw [adc0, BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_true]; omega
+    rw [adc0, BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_true]; omega_using []
 
 theorem cout_toNat (a : BitVec 32) (c : Bool) : (cout a c).toNat = (a.toNat + c.toNat) / 2 ^ 32 := by
   have e₀ : (0 : BitVec 32).toNat = 0 := rfl
@@ -91,8 +91,8 @@ theorem cout_toNat (a : BitVec 32) (c : Bool) : (cout a c).toNat = (a.toNat + c.
   have := c.toNat_le
   rw [cout, e₀]
   by_cases h : 2 ^ 32 ≤ a.toNat + 0 + c.toNat
-  · rw [decide_eq_true h]; simp only [Bool.toNat_true]; omega
-  · rw [decide_eq_false h]; simp only [Bool.toNat_false]; omega
+  · rw [decide_eq_true h]; simp only [Bool.toNat_true]; omega_using [this, h]
+  · rw [decide_eq_false h]; simp only [Bool.toNat_false]; omega_using [h]
 
 theorem incMem_bytes (m : Mem) (Q : Addr) : bytesAt (incMem m Q) Q 16 = Spec.Ctr.inc (bytesAt m Q 16) := by
   have c3 : (decide (2 ^ 32 ≤ (bswap (m.readW (Q + BitVec.ofNat 64 12) 32)).toNat + (1 : BitVec 32).toNat)).toNat =
@@ -101,8 +101,8 @@ theorem incMem_bytes (m : Mem) (Q : Addr) : bytesAt (incMem m Q) Q 16 = Spec.Ctr
     have e₁ : (1 : BitVec 32).toNat = 1 := rfl
     rw [e₁]
     by_cases h : 2 ^ 32 ≤ (bswap (m.readW (Q + BitVec.ofNat 64 12) 32)).toNat + 1
-    · rw [decide_eq_true h]; simp only [Bool.toNat_true]; omega
-    · rw [decide_eq_false h]; simp only [Bool.toNat_false]; omega
+    · rw [decide_eq_true h]; simp only [Bool.toNat_true]; omega_using [h]
+    · rw [decide_eq_false h]; simp only [Bool.toNat_false]; omega_using [h]
   apply AesCtr.inc_words32
   · show (bswap _ + 1).toNat = ((bswap _).toNat + 1) % 2 ^ 32
     rw [BitVec.toNat_add]; rfl
@@ -137,7 +137,7 @@ theorem incMem_apply (m : Mem) (Q x : Addr) :
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at hc
-      omega)
+      omega_using [hi, hc])
 
 /-! ## GCM's `inc₃₂` -/
 
@@ -168,7 +168,7 @@ theorem inc32Mem_bytes (m : Mem) (Q : Addr) :
   have e₁ : (1 : BitVec 32).toNat = 1 := rfl
   rw [BitVec.toNat_add, e₁]
   simp only [Nat.reducePow]
-  omega
+  omega_using []
 
 theorem inc32Mem_frame (m : Mem) (Q : Addr) : Frame [⟨Q, 4⟩] m (inc32Mem m Q) :=
   (Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -193,6 +193,6 @@ theorem inc32Mem_apply (m : Mem) (Q x : Addr) :
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at hc
-      omega)
+      omega_using [hi, hc])
 
 end VG.Proof.Modes.X86.Counter

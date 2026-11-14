@@ -98,7 +98,7 @@ theorem loop_ct {base : Addr} {P Q₁ Q₂ : Point C} {u v : Nat}
     · rw [decide_eq_true hz,bne_iff_ne,ne_eq]
       intro hh
       have hn := congrArg BitVec.toNat hh
-      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)] at hn
+      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [h256])] at hn
       exact hz hn
   refine ⟨eqtr,heq,?_,?_⟩
   · intro hz
@@ -107,5 +107,5 @@ theorem loop_ct {base : Addr} {P Q₁ Q₂ : Point C} {u v : Nat}
     exact ⟨hs',ht',sp'⟩
   · intro hn
     rw [ev,Option.some.injEq,decide_eq_true_eq] at hn
-    exact ⟨j-1,by omega,by omega,by omega,hs',ht',sp'⟩
+    exact ⟨j-1,by omega_using [h1],by omega_using [hn],by omega_using [h256],hs',ht',sp'⟩
 end VG.Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint

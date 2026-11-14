@@ -55,14 +55,14 @@ theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s
       refine ⟨by rw [savedSlot_eq]; omega, ⟨_, hw, ?_⟩, ?_⟩
       · rw [hb]; exact VG.Offset.contains_base b (by rw [savedSlot_eq]; omega) (by rw [savedSlot_eq]; omega)
       · rw [hb, savedRegion, wordAddr]
-        exact VG.Offset.contains _ (by omega) (by omega) (by rw [savedSlot_eq]; omega))
+        exact VG.Offset.contains _ (by omega_using []) (by omega) (by rw [savedSlot_eq]; omega_using []))
   refine ⟨s', by rw [hL]; exact e', fun i hi => ?_, g', rd', wr', f', fun k hk hk' => o' k ?_ hk'⟩
   · have := v' (savedSlot + i, sreg i) (by simp only [L, List.mem_map, List.mem_range]; exact ⟨i, hi, rfl⟩)
     simp only [slotW, g', hb] at this
     exact this
   · rw [hslots]
     simp only [List.mem_map, List.mem_range, not_exists, not_and]
-    intro i hi h; omega
+    intro i hi h; omega_using [hk, hi, h]
 
 theorem restore_ok {s₀ s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b)
     (hs : Saved s₀ b s.mem) :
@@ -108,7 +108,7 @@ theorem setSlots_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) �
       Frame [⟨b, 8 * keySlot⟩] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ setSlots_check
   have hok : Ok maskCfg s :=
-    Ok.of_region hw hb.symm (by show 8 * keySlot ≤ 8 * slots; rw [keySlot_eq, slots_eq]; omega)
+    Ok.of_region hw hb.symm (by show 8 * keySlot ≤ 8 * slots; rw [keySlot_eq, slots_eq]; omega_using [])
       (by show 8 * slots < 2 ^ 64; rw [slots_eq]; decide) rfl
   have hrel : Rel (LaneRel 1 0) maskCfg (fun _ => none) (linEnvG [] [] []) s := by
     refine ⟨fun r a h => ?_, fun k a _ h => ?_, fun _ _ _ h => ?_, fun _ _ h => ?_⟩ <;>

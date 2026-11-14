@@ -24,14 +24,14 @@ theorem Context.keepFrame {g : Geometry} (v : g.Valid) {c : Nat} {s t : State} (
     exact C.tableRead i bound d mem
   · intro i bound
     have read := F.readW (r := g.tableRegion) (w := 64)
-      (Offset.contains_base _ (by omega : 8 * i + 8 ≤ 8192) (by omega)) tableFar (by decide)
+      (Offset.contains_base _ (by omega_using [bound] : 8 * i + 8 ≤ 8192) (by omega_using [bound])) tableFar (by decide)
     exact read.trans (C.tableWords i bound)
   · rw [← C.candidateValue]
     apply val32_congr
     intro i bound
     apply congrArg BitVec.toNat
     exact F.readW (r := g.candidateRegion) (w := 32)
-      (Offset.contains_base _ (by omega) (by have := v.candidateFit; omega)) candidateFar (by decide)
+      (Offset.contains_base _ (by omega_using [bound]) (by have := v.candidateFit; omega_using [bound, this])) candidateFar (by decide)
 
 theorem Context.keepSymbol {g : Geometry} (v : g.Valid) {c : Nat} {s t : State} (C : Context g c s)
     {name : String} (R : SymAddrPost name s t)
@@ -50,7 +50,7 @@ theorem Context.keepSymbol {g : Geometry} (v : g.Valid) {c : Nat} {s t : State} 
 theorem symbol_stack_word {g : Geometry} {c : Nat} {s t : State} (C : Context g c s)
     {name : String} (R : SymAddrPost name s t) (low : 4 ≤ g.sp.toNat) {d : Nat} (fit : d + 4 ≤ 20) :
     t.mem.readW (off (g.sp.setWidth 64) d) 32 = s.mem.readW (off (g.sp.setWidth 64) d) 32 := by
-  apply R.frame.readW (r := g.stackRegion) (Offset.contains_base _ fit (by omega)) ?_ (by decide)
+  apply R.frame.readW (r := g.stackRegion) (Offset.contains_base _ fit (by omega_using [fit])) ?_ (by decide)
   intro r mem
   obtain rfl := List.mem_singleton.mp mem
   rw [C.stack.sp]

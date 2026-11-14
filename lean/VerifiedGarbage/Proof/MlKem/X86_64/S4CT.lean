@@ -99,7 +99,7 @@ theorem pub_B {k : Nat} (hk : k < 4) : B σ₁ k = B σ₂ k := by
   apply List.ext_getElem (by simp)
   intro i h₁ _
   have := congrArg (fun L => L[34 * k + i]?) e
-  simp only [List.getElem?_map, List.getElem?_range (show 34 * k + i < 136 by simp at h₁; omega),
+  simp only [List.getElem?_map, List.getElem?_range (show 34 * k + i < 136 by simp at h₁; omega_using [hk, h₁]),
     Option.map_some, Option.some.injEq] at this
   simp only [List.getElem_map, List.getElem_range, Offset.add_add]
   exact this
@@ -285,7 +285,7 @@ theorem scaG_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK
     have hb₂ : ¬ (Lt σ₂ K (b + t)).length < 256 := by rw [← pub_Lt hq hK]; exact hb₁
     have e₁ : (Lt σ₁ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
     have e₂ : (Lt σ₂ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
-    exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, by omega, d₁⟩, ⟨s₀₂, x₂, l₂, by omega, d₂⟩⟩
+    exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, by omega_using [hb₁, e₁], d₁⟩, ⟨s₀₂, x₂, l₂, by omega_using [hb₂, e₂], d₂⟩⟩
 
 /-- The registers `vput` reads, after `vcand`, are the same in both runs. -/
 theorem viw_regs {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {s₀₁ s₀₂ : State} {K b t : Nat} (hK : K < 4)
@@ -483,7 +483,7 @@ theorem run_ct {X : State → State → Prop} {Y : State → State → Prop} {K 
         rcases hr with rfl | rfl
         · exact env_rbx hq e₁ e₂
         · rw [e₁.r13, e₂.r13, pub_aP hq]) c₁)) (fun _ _ h => h)
-      (Q' := LI w16 X K b N N) fun x y h => ⟨0, by omega, hN, h⟩)
+      (Q' := LI w16 X K b N N) fun x y h => ⟨0, by omega_using [], hN, h⟩)
     (RelCT.seq (loopV_ct hK hN' hbN N)
       (relInv (I := fun σ s => ∃ s₀, X σ s₀ ∧ LAtW w16 σ s₀ K b (8 * N) s) (fun σ s hp ⟨s₀, h₀, hA⟩ => hend σ s₀ s hp h₀ hA)
         (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, _, a₁⟩, ⟨_, _, a₂⟩⟩ r hr => by
@@ -495,7 +495,7 @@ theorem setup_taint {K : Nat} (hK : K < 4) (w16 : Bool) :
       (taint.check (X86_64.Taint.ofRegs [.rbx, .r13]) (.block (setup K w16 ++ cstLoad)) h).isSome = true) ∧
     ∃ h : VG.Taint.Hint X86_64.Taint.T,
       (taint.check (X86_64.Taint.ofRegs [.rbx, .r13]) (.block (contSetup K w16 ++ cstLoad)) h).isSome = true := by
-  rcases (by omega : K = 0 ∨ K = 1 ∨ K = 2 ∨ K = 3) with rfl | rfl | rfl | rfl <;> cases w16 <;>
+  rcases (by omega_using [hK] : K = 0 ∨ K = 1 ∨ K = 2 ∨ K = 3) with rfl | rfl | rfl | rfl <;> cases w16 <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 /-! ## The groups of sixteen iterations with AVX-512 -/
@@ -542,7 +542,7 @@ theorem zlw_regs {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {s₀₁ 
 
 theorem zputL_taint {l : Nat} (hl : l < 4) : ∃ h : VG.Taint.Hint X86_64.Taint.T,
     (taint.check (X86_64.Taint.ofRegs [.rax, .rbp, .rdi, .rsi]) (.block (zputL l)) h).isSome = true := by
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- Lane `l` of `zput`. -/
 theorem zlane_ct (hw : w16 = true) {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK : K < 4)
@@ -603,7 +603,7 @@ theorem zgrp_ct (hw : w16 = true) {X : State → State → Prop} {K b t : Nat} {
     exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁.lat, z₁ hb', hb', d₁⟩, ⟨s₀₂, x₂, l₂.lat, z₂ hb'', hb'', d₂⟩⟩
   · -- two groups of eight
     refine RelCT.mono (P := RVW true (fun σ s₀ => X σ s₀ ∧ ¬ (Lt σ K (b + t)).length < 225) K b t c)
-      (RelCT.seq (vgrp_ct hK (by omega) (by omega)) (vgrp_ct hK (by omega) (by omega))) ?_ ?_
+      (RelCT.seq (vgrp_ct hK (by omega_using [ht]) (by omega_using [hbt])) (vgrp_ct hK (by omega_using [ht]) (by omega_using [hbt]))) ?_ ?_
     · rintro x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, ⟨⟨l₁, -⟩, d₁⟩, f₁⟩, ⟨s₀₂, x₂, ⟨⟨l₂, -⟩, d₂⟩, f₂⟩⟩, hb⟩
       have hb' : ¬ (Lt σ₁ K (b + t)).length < 225 := by
         have : x.cf = some false := hb
@@ -611,7 +611,7 @@ theorem zgrp_ct (hw : w16 = true) {X : State → State → Prop} {K b t : Nat} {
       have hb'' : ¬ (Lt σ₂ K (b + t)).length < 225 := by rw [← pub_Lt hq hK]; exact hb'
       exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, ⟨x₁, hb'⟩, l₁, d₁⟩, ⟨s₀₂, ⟨x₂, hb''⟩, l₂, d₂⟩⟩
     · rintro x y ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, ⟨x₁, hb₁⟩, l₁, d₁⟩, ⟨s₀₂, ⟨x₂, hb₂⟩, l₂, d₂⟩⟩
-      rw [show t + 8 + 8 = t + 16 by omega] at l₁ l₂
+      rw [show t + 8 + 8 = t + 16 by omega_using []] at l₁ l₂
       exact ⟨σ₁, σ₂, p₁, p₂, hq,
         ⟨s₀₁, x₁, ⟨l₁, fun h' => absurd (Nat.lt_of_le_of_lt (Lt_mono σ₁ K (b + t) 16) (by rwa [Nat.add_assoc])) hb₁⟩, d₁⟩,
         ⟨s₀₂, x₂, ⟨l₂, fun h' => absurd (Nat.lt_of_le_of_lt (Lt_mono σ₂ K (b + t) 16) (by rwa [Nat.add_assoc])) hb₂⟩, d₂⟩⟩
@@ -677,7 +677,7 @@ theorem runZ_ct (hw : w16 = true) {X : State → State → Prop} {Y : State → 
         rcases hr with rfl | rfl
         · exact env_rbx hq e₁ e₂
         · rw [e₁.r13, e₂.r13, pub_aP hq]) c₁)) (fun _ _ h => h)
-      (Q' := LIZ w16 X K b N N) fun x y h => ⟨0, by omega, hN, h⟩)
+      (Q' := LIZ w16 X K b N N) fun x y h => ⟨0, by omega_using [], hN, h⟩)
     (RelCT.seq (loopZ_ct hw hK hN' hbN N) htail)
 
 /-- The taint analysis of the setups of the runs with AVX-512. -/
@@ -686,7 +686,7 @@ theorem setupZ_taint {K : Nat} (hK : K < 4) (w16 : Bool) :
       (taint.check (X86_64.Taint.ofRegs [.rbx, .r13]) (.block (setup K w16 10 ++ zcstLoad)) h).isSome = true) ∧
     ∃ h : VG.Taint.Hint X86_64.Taint.T,
       (taint.check (X86_64.Taint.ofRegs [.rbx, .r13]) (.block (contSetup K w16 7 ++ zcstLoad)) h).isSome = true := by
-  rcases (by omega : K = 0 ∨ K = 1 ∨ K = 2 ∨ K = 3) with rfl | rfl | rfl | rfl <;> cases w16 <;>
+  rcases (by omega_using [hK] : K = 0 ∨ K = 1 ∨ K = 2 ∨ K = 3) with rfl | rfl | rfl | rfl <;> cases w16 <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 /-- The store of seed `K`'s count, after its runs. -/
@@ -759,13 +759,13 @@ theorem run2_ct {K : Nat} (hK : K < 4) {z : Bool} {h₂ : VG.Taint.Hint X86_64.T
   unfold run2
   split
   · rename_i hz
-    exact run2Z_ct hz.2 hK (fun σ s _ h => ⟨h.sq.env, lb2 hK h, by rw [h.j K hK, ite_eq_right (by omega)],
-        by have := h.st K hK; rwa [ite_eq_right (by omega)] at this⟩)
+    exact run2Z_ct hz.2 hK (fun σ s _ h => ⟨h.sq.env, lb2 hK h, by rw [h.j K hK, ite_eq_right (by omega_using [])],
+        by have := h.st K hK; rwa [ite_eq_right (by omega_using [])] at this⟩)
       (fun σ s₀ s hp h₀ hA => run2End_ok (preW_of hp) hK h₀ hA) c₂
   · obtain ⟨_, ⟨_, c₁⟩⟩ := setup_taint hK w16
     exact run_ct (N := 14) hK (by decide) (by decide) (by decide)
       (fun σ s hp h => ⟨h.sq.env, contSetup_ok (preW_of hp) hK (lb2 hK h)
-        (by rw [h.j K hK, ite_eq_right (by omega)]) (by have := h.st K hK; rwa [ite_eq_right (by omega)] at this)⟩)
+        (by rw [h.j K hK, ite_eq_right (by omega_using [])]) (by have := h.st K hK; rwa [ite_eq_right (by omega_using [])] at this)⟩)
       (fun σ s₀ s hp h₀ hA => run2End_ok (preW_of hp) hK h₀ hA) c₁ c₂
 
 theorem tab_ct : RelCT isa (R4W w16 fun σ s => SqTW w16 σ 0 3 s) (.block tabAddr) (R4W w16 fun σ s => P1W w16 σ 0 s) :=

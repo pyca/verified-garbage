@@ -24,15 +24,15 @@ theorem exponent_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : Lis
       val32 t.mem E.base (slot E.width 5) (2 * E.width) = candidateValue E entropy - 1 ∧
       WorkFrame E s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have space : 256 ≤ E.size := v.geometry.headerFit
-  have fit : 40 ≤ (s.gpr .esp).toNat := by rw [D.input.stack]; have := v.low; omega
+  have fit : 40 ≤ (s.gpr .esp).toNat := by rw [D.input.stack]; have := v.low; omega_using [this]
   have stack : (s.gpr .esp).toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 40 ≤ (s.gpr .esp).toNat := by
     rw [D.input.stack]
-    rcases v.workspaceStack with h | h <;> omega
+    rcases v.workspaceStack with h | h <;> omega_using [h]
   have outLen : s.mem.readW (off E.base 4) 32 = BitVec.ofNat 32 (8 * E.width) := by
     rw [D.input.header 1 (by decide), v.length_eq]; rfl
   refine WP.mono_syms (ExponentRt.code_ok D.input.scratch v.width_bounds.1 v.width_bounds.2
-    (v.slotFit (by decide : 5 < 28)) D.candidate (by have := candidate_large v entropy; omega) (candidate_odd v entropy)
-    D.input.exponent_eq (D.input.exponentLength_eq v) (by have := v.exponentLength; omega) v.exponentLength.2
+    (v.slotFit (by decide : 5 < 28)) D.candidate (by have := candidate_large v entropy; omega_using [this]) (candidate_odd v entropy)
+    D.input.exponent_eq (D.input.exponentLength_eq v) (by have := v.exponentLength; omega_using [this]) v.exponentLength.2
     v.exponentFit D.input.memory.exponentRead (v.readWorkspace List.mem_cons_self) fit stack outLen)
     fun t ⟨result, value, saved, W, F, K⟩ syms => ?_
   rw [D.input.memory.exponentBytes] at result
@@ -46,12 +46,12 @@ theorem exponent_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : Lis
       · exact Nat.le_trans (by decide) (E.slotHeader 5)
       · decide
     · rcases List.mem_append.mp mem with mem | mem
-      · have := ExponentFilter.gcd_ranges_class mem; omega
+      · have := ExponentFilter.gcd_ranges_class mem; omega_using [this]
       · obtain rfl := List.mem_singleton.mp mem
         exact Nat.le_trans (by decide) (E.slotHeader 0)
   have I := D.input.keepWorkspace v K (by decide) (by decide) frame W low (by rw [syms])
   have used : t.mem.readW (off E.geometry.W 152) 32 = s.mem.readW (off E.geometry.W 152) 32 :=
-    W.read32 (by change 152 + 4 ≤ E.size; omega) (by
+    W.read32 (by change 152 + 4 ≤ E.size; omega_using [space]) (by
       intro r mem
       rcases List.mem_append.mp mem with mem | mem
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
