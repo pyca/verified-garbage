@@ -2118,13 +2118,13 @@ theorem isqTop_vp {L LW LS : List Nat} {E : State → Prop} {A AW V : State → 
   have eR' : setW (setW (AW σ wR) (P.W - 2) (t.gpr .r5).toNat) (P.W - 1) (t.gpr .r4).toNat =
       setWin (AW σ wR) (P.W - 2) 2 (T - isqrt T * isqrt T) := by
     rw [setW_eq_win, setW_eq_win, show P.W - 1 = P.W - 2 + 1 by omega_using [W4], setWin_adj (by rw [p32]; exact l5), p32]
-    congr 1; omega_using [Tl, q1, q2, q3, q45, sl, va, vb, na, nb, v5, v4, v3, l5, sl2]
+    refine congrArg _ ?_; omega_using [Tl, q1, q2, q3, q45, sl, va, vb, na, nb, v5, v4, v3, l5, sl2]
   have eD' : setW (setW 0 (P.W / 2 - 1) (2 * isqrt T % 2 ^ 32)) (P.W / 2) (isqrt T / 2 ^ 31) =
       setWin 0 (P.W / 2 - 1) 2 (2 * isqrt T) := by
     obtain ⟨k, hk⟩ : ∃ k, P.W / 2 = k + 1 := ⟨P.W / 2 - 1, by omega_using [W4]⟩
     rw [hk, Nat.add_sub_cancel, setW_eq_win, setW_eq_win, setWin_adj (by rw [p32]; exact Nat.mod_lt _ (by decide)),
       p32]
-    congr 1; omega_using []
+    refine congrArg _ ?_; omega_using []
   have eE' : setW (setW (cmpl P.W 0) (P.W / 2 - 1) (2 ^ 32 - 1 - 2 * isqrt T % 2 ^ 32)) (P.W / 2)
       (2 ^ 32 - 1 - isqrt T / 2 ^ 31) = cmpl P.W (setWin 0 (P.W / 2 - 1) 2 (2 * isqrt T)) := by
     rw [← eD', cmpl_setW (by omega_using [W4]) (setW_lt (by omega_using [W4]) (Nat.two_pow_pos _) (Nat.mod_lt _ (by decide))) (by omega_using [q3]),

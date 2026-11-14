@@ -532,7 +532,7 @@ theorem row_ok {s : State} {j : Nat} (hj : j < 37) (h1 : s.gpr .s1 = BitVec.ofNa
   refine wp_sll (by decide) fun s₁ u₁ => wp_add fun s₂ u₂ => wp_addi (imm := 2047) (by decide) fun s₃ u₃ => ?_
   refine wp_addi (imm := 1) (by decide) fun s₄ u₄ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · rw [u₄.other .a0 (by decide), u₃.other .a0 (by decide), u₂.gpr, u₁.gpr, u₁.other .s4 (by decide), h1]
-    congr 1
+    refine congrArg _ ?_
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
     have := hj

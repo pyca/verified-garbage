@@ -131,7 +131,7 @@ theorem ready_ok {σ s : State} (h : LAt σ pos 260 s) :
     (hk.gpr (by decide)).trans h.rsi, hd.trans h.rdi, (hk.gpr (by decide)).trans h.rcx,
     by rw [hm]; exact h.stored, h.stream.mem_eq hm⟩, ?_⟩
   rw [hz, h.rdi]
-  congr 1
+  refine congrArg _ ?_
   rw [Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq, BitVec.sub_eq_iff_eq_add]
   rfl
 

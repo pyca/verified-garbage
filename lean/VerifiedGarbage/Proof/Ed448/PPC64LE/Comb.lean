@@ -613,7 +613,7 @@ theorem step_ok {k : Nat} {s0 : State} (hfx : Fixed b k s0) {t : Nat} (ht : t < 
   -- The slots of `R` and `d` stay through the selection.
   have keep : ∀ q ∈ DQ, FS s4.mem b q = FS s2.mem b q := fun q hq => by
     unfold FS V
-    congr 1
+    refine congrArg _ ?_
     refine val32_congr (limb_frame (by rw [← m3]; exact f4) fun r hr k hk => ?_)
     rw [List.mem_singleton.mp hr]
     have hX : RX = 56 := rfl

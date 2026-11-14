@@ -312,7 +312,7 @@ theorem prefix_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec 32}
     intro y hy _ _ O
     change readSrc y (.mem (sc 24)) = _
     rw [readSrc_sc hy (show 24 + 4 ≤ size by omega_using [hz'])]
-    congr 1
+    refine congrArg _ ?_
     rw [Mul.Outs.readW32 O (fun r hr => by
         simp only [streamRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, stride] <;> omega_using []) (by omega_using [nw, hz']),

@@ -190,7 +190,7 @@ theorem body_ok {sve : Bool} {s₀ : State} (hp : TPre s₀) {t : Nat}
   have hadv : ∀ p : Addr, p + BitVec.ofNat 64 (256 * t) + 256 = p + BitVec.ofNat 64 (256 * (t + 1)) := by
     intro p
     rw [BitVec.add_assoc]
-    congr 1
+    refine congrArg _ ?_
     change BitVec.ofNat 64 (256 * t) + BitVec.ofNat 64 256 = _
     rw [← BitVec.ofNat_add, show 256 * t + 256 = 256 * (t + 1) by omega_arith]
   have hrem : v.gpr .x2 = BitVec.ofNat 64 (L s₀ - 256 * (t + 1)) := by
