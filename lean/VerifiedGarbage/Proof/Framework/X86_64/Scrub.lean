@@ -1569,6 +1569,50 @@ theorem resOk_all (c : Prog isa) (k : Contract isa) {stack : Nat} (h8 : stack % 
   intro s₁ s₂ t₁ t₂ u₁ u₂ _ _ _ _ _ _ _ x hx hn
   exact absurd (wcov_all (fun b hb => (chunks_valid h8 b hb).2.2) (by rw [chunks_sum]; exact hx)) hn
 
+/-- What `c` leaves in the `stack` bytes below the stack pointer on entry,
+run by run: a run from `s` that meets `k.pre` leaves each byte `x` there
+that `wipe ks cs` does not zero as `V s x` if that is `some b` (zero, or a
+value it stores there last, such as a saved register), and as it found it if
+it is `none`. -/
+def StackLeaves (c : Prog isa) (k : Contract isa) (stack : Nat) (ks cs : List Nat)
+    (V : State → Addr → Option (BitVec 8)) : Prop :=
+  ∀ s t u, k.pre s → Exec isa c s t u →
+    ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 stack, stack⟩ : Region).Contains x 1 →
+      ¬ WCov ks cs (s.gpr .rsp) x → u.mem x = (V s x).getD (s.mem x)
+
+/-- What `V` says code leaves depends only on what two runs agree on: the
+public data and everything outside the buffers on entry (`ResOk`'s
+hypotheses). A constant (`fun _ _ => some 0` for bytes the code zeroes) does;
+so does anything read from the registers, which `Outside 0` makes the same
+but for `rax`, or from the return addresses (`State.unknowns`). -/
+def LeavesPub (k : Contract isa) (V : State → Addr → Option (BitVec 8)) : Prop :=
+  ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns → V s₁ = V s₂
+
+/-- Code whose stack below `rsp` each run leaves as `V` says (`StackLeaves`),
+where `V` depends only on what two runs agree on (`LeavesPub`), leaves the
+same bytes there in two runs (`ResOk`): those it leaves as it found them
+were the same on entry, being outside the buffers, and the others are the
+same by `V`. So the bytes it zeroes, and those it leaves holding public
+values, need no wipe. -/
+theorem resOk_of_leaves {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {ks cs : List Nat}
+    {V : State → Addr → Option (BitVec 8)}
+    (hl : StackLeaves c (sig.contract A pre post wa stack leak) stack ks cs V)
+    (hv : LeavesPub (sig.contract A pre post wa stack leak) V) :
+    ResOk c (sig.contract A pre post wa stack leak) stack ks cs := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
+  have hsp : s₂.gpr .rsp = s₁.gpr .rsp := (ho.2.2.1 .rsp (by decide)).symm
+  rw [hl s₁ t₁ u₁ h₁ e₁ x hx hw, hl s₂ t₂ u₂ h₂ e₂ x (hsp ▸ hx) (hsp ▸ hw), hv s₁ s₂ h₁ h₂ hp ho hu]
+  cases V s₂ x with
+  | some b => rfl
+  | none =>
+    refine ho.2.2.2.2.2.2.2.2.2.2.2.2.2.2 x fun r hr => ?_
+    have hn : stack ≠ 0 := by
+      rintro rfl; simp [Region.Contains] at hx
+    exact (contract_pre_scrub hA h₁).2 r hr |>.2 hn x hx
+
 theorem evexOk_all (v : VecLevel) {cs : List Nat} (h8 : ∀ b ∈ cs, b % 8 = 0) (h16 : 16 ≤ cs.sum)
     (hs : cs.sum < 2 ^ 64) {p : Addr} (hp : cs.sum ≤ p.toNat) : EvexOk v (allKs cs) cs p := by
   intro _
