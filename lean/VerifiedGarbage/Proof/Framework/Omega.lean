@@ -839,7 +839,7 @@ that is not arithmetic. One such theorem serves every goal of its shape in a dec
 it is proven by `VG.Arith.prove?` where that can, by `omega` otherwise. `false`, with nothing
 changed, if the goal is not one `prop` reads; fails if `omega` does not prove the statement
 (with the atoms hidden it knows less: that `x.toNat` is some number, not which). -/
-def close (g : MVarId) (facts : Array Expr) : MetaM Bool := g.withContext do
+def close (g : MVarId) (facts : Array Expr) (minimal := false) : MetaM Bool := g.withContext do
   let goal ← instantiateMVars (← g.getType)
   let read : M (Option (Expr × Array (Expr × Expr))) := do
     let some goal' ← (prop goal).run | return none
@@ -876,13 +876,14 @@ def close (g : MVarId) (facts : Array Expr) : MetaM Bool := g.withContext do
     else if let some g₂ ← g₁.falseOrByContra then
       g₂.withContext do
         Lean.Elab.Tactic.Omega.omega (← getLocalHyps).toList g₂
-  -- The theorem states, and is applied to, only the facts and atoms its proof uses: a proof
-  -- inside a statement (an index bound) must not depend on a hypothesis it does not need,
-  -- or rewriting that hypothesis' terms later fails.
+  -- With `minimal`, the theorem states and is applied to only the facts its proof uses, as
+  -- `omega`'s proof would mention only those: for a proof that ends up inside a statement (an
+  -- index bound), which should depend on no hypothesis it does not need. Otherwise every
+  -- fact given is used, as far as the unused-variables linter can tell.
   let (name, args) ← g₁.withContext do
     let pf ← instantiateMVars (mkMVar g₁)
     let goalTy ← instantiateMVars (← g₁.getType)
-    let usedH := (Array.range hs.size).filter fun i => pf.containsFVar hs[i]!
+    let usedH := (Array.range hs.size).filter fun i => !minimal || pf.containsFVar hs[i]!
     let hTypes ← usedH.mapM fun i => do instantiateMVars (← hs[i]!.getType)
     let usedX := (Array.range xs.size).filter fun i =>
       goalTy.containsFVar xs[i]! || pf.containsFVar xs[i]! || hTypes.any (·.containsFVar xs[i]!)
@@ -898,12 +899,12 @@ end Abs
 
 /-- Close the main goal from `facts` through a theorem about its shape (`Abs.close`), if that
 can. -/
-def tryClose (facts : Array Expr) : TacticM Bool := do
+def tryClose (facts : Array Expr) (minimal := false) : TacticM Bool := do
   let saved ← saveState
   let g ← getMainGoal
   let rest := (← getGoals).tail
   -- whatever goes wrong in there, the caller's own way is still to come
-  if ← tryCatchRuntimeEx (Abs.close g facts) (fun _ => do saved.restore; pure false) then
+  if ← tryCatchRuntimeEx (Abs.close g facts minimal) (fun _ => do saved.restore; pure false) then
     setGoals rest
     return true
   return false
@@ -1057,7 +1058,7 @@ def omegaArithOnce : TacticM Unit := do
   let facts ← withMainContext do
     let all ← (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
     relevantFacts all (← getMainTarget)
-  if ← tryClose facts then return
+  if ← tryClose facts (minimal := true) then return
   omegaFromFacts facts (exactTypeOnly := true)
 
 /-- Clears every hypothesis `omega` cannot use. -/
