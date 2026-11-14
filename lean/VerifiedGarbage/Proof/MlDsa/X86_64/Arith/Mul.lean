@@ -27,9 +27,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 A doubleword of `mulV x y` is the product of those of `x` and `y`
 (`mul_lane`): `mont` of `mont` of their product by `2⁶⁴ mod q`
 (`mont_mont_R2`). The loop stores four of them at a time to the first 252
-coefficients of `h` (`Mul.step`, `Mul.loop_ok`), inside `withMxcsr` through
-the last 8 bytes of `h`; the last four are computed from the coefficients of
-`h` loaded before (`Mul.last`), and stored after MXCSR is loaded back
+coefficients of `h` (`Mul.step`, `Mul.loop_ok`); the last four are computed
+from the coefficients of `h` loaded before (`Mul.last`), and stored last
 (`Mul.fn_ok`).
 -/
 
@@ -301,8 +300,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
       simp only [List.mem_singleton] at hr
       simp only [RegUpd.gpr_setXmm, RegUpd.gpr_setReg, hr, ite_false], rfl, rfl⟩) fun s1 ⟨h8, h6, k1, m1⟩ => ?_)
   have hw1 : pR h ∈ s1.wr := by rw [k1.2.2]; exact hwh
-  refine WP.seq (WP.mono (withMxcsrH_ok (r := .r8) ⟨by decide, by decide⟩ [.rax, .rdi, .rsi, .rdx, .rcx]
-    ⟨by decide, by decide⟩ h8 hw1 (writesOnly_of hk) (Q := fun (s3 : State) => Keep [.rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] s1 s3 ∧
+  refine WP.seq (WP.mono (noMxH_ok (p := h) (Q := fun (s3 : State) => Keep [.rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] s1 s3 ∧
       s3.gpr .rdi = coeffAddr h 252 ∧ Frame [pR h] σ.mem s3.mem ∧
       (∀ k < 252, (coeffAt s3.mem h k).toNat = (R[k]!).val) ∧
       ∀ e < 4, (dword (s3.xmm .xmm3) e).toNat = (R[252 + e]!).val)

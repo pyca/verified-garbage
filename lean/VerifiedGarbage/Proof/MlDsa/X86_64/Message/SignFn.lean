@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NoSp
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
@@ -30,23 +31,6 @@ open VG.Proof.MlDsa.Message
 open VG.Proof.MlDsa.X86_64 (Comp Same Same.ok ArithImpl Code.allInstrs_of_all)
 open VG.Proof.MlDsa.X86_64.Sign (primsWith prims_okWith sign_correct sign_ct sign_ctl sign_same Ok3)
 open VG.Spec.MlDsa
-
-/-- Calls nesting at most `n + 1` deep, from functions whose calls nest at most `n` deep. -/
-theorem depthCompN (n : Nat) : Comp (fun c => decide (c.depth ≤ n + 1)) (fun c => decide (c.depth ≤ n)) := by
-  refine ⟨fun a b => ?_, fun _ t e => ?_, fun _ _ => rfl, fun _ b => ?_, rfl⟩
-  · simp only [Code.depth, Nat.max_le, Bool.decide_and]
-  · simp only [Code.depth, Nat.max_le, Bool.decide_and]
-  · simp only [Code.depth]
-    exact decide_eq_decide.mpr (by omega_using [])
-
-/-- `NoSp` from evaluating the code. -/
-noncomputable abbrev noSpB (c : Prog isa) : Bool := c.allInstrs fun i => !Taint.clobbers i .rsp
-
-theorem noSp_of {c : Prog isa} (h : noSpB c = true) : NoSp c := Proof.MlKem.X86_64.nosp_of h
-
-theorem noSpB_of {c : Prog isa} (h : NoSp c) : noSpB c = true := by
-  rw [noSpB, Code.allInstrs_eq, List.all_eq_true]
-  intro i hi; simp [h i hi]
 
 theorem ok3_of {p : Params} (hp : p ∈ params) : Ok3 p := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -102,7 +86,8 @@ theorem setArgs_wsp (as : List Arg) : (setArgs as).all (fun i => !isa.writesSp i
 
 theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
     (flag : Nat) : (Impl.MlDsa.X86_64.Message.signMessage n c p flag).all (fun i => !isa.writesSp i) = true := by
-  generalize hq : (fun i => !isa.writesSp i) = q at hc ⊢
+  have hmc := Proof.Mcdt.X86_64.mcdtCall_spSafe (n := n) hc
+  generalize hq : (fun i => !isa.writesSp i) = q at hc hmc ⊢
   have ha : Impl.Sha3.X86_64.Stream.absorb.all q = true := hq ▸ kabs_spSafe
   have hp' : Impl.Sha3.X86_64.Stream.pad.all q = true := hq ▸ kpad_spSafe
   have hs : Impl.Sha3.X86_64.Stream.squeeze.all q = true := hq ▸ ksqz_spSafe
@@ -110,8 +95,8 @@ theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all 
   have hmv : ∀ a, (Arg.mov .rdi a).all q = true := fun a => hq ▸ arg_wsp .rdi (by decide) a
   simp only [Impl.MlDsa.X86_64.Message.signMessage, Impl.MlDsa.X86_64.Message.top,
     Impl.MlDsa.X86_64.Message.muHash, Impl.MlDsa.X86_64.Message.zeroSt, Impl.MlDsa.X86_64.Message.kabs,
-    Impl.MlDsa.X86_64.Message.kpad, Impl.MlDsa.X86_64.Message.ksqz, Impl.MlDsa.X86_64.Message.callA, Code.all,
-    hc, ha, hp', hs, hsa, hmv, Bool.and_true, Bool.true_and]
+    Impl.MlDsa.X86_64.Message.kpad, Impl.MlDsa.X86_64.Message.ksqz, Impl.MlDsa.X86_64.Message.callA, Impl.MlDsa.X86_64.Message.callM, Code.all,
+    hmc, ha, hp', hs, hsa, hmv, Bool.and_true, Bool.true_and]
   subst hq
   decide
 
@@ -119,14 +104,15 @@ theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all 
 
 theorem signEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) 0)
-      (signContract p X86_64.abi 40) :=
+      (signContract p X86_64.abi 56) :=
   have hS := signFn v hp
   have hK : Sign.KernelFn p (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := ⟨hS.ok, hS.ct, hS.nosp, hS.depth⟩
   Verified.of_correct (Sign.entry0_correct hK) (Sign.entry0_ct hK) (Sign.signK0_implies (ok3_of hp))
 
 theorem signEntry_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
     (flag : Nat) : (Impl.MlDsa.X86_64.Sign.entry n c flag).all (fun i => !isa.writesSp i) = true := by
-  simp only [Impl.MlDsa.X86_64.Sign.entry, Code.all, hc, Bool.and_true]
+  have hm := Proof.Mcdt.X86_64.mcdtCall_spSafe (n := n) hc
+  simp only [Impl.MlDsa.X86_64.Sign.entry, Code.all, hm, Bool.and_true]
   rfl
 
 end VG.Proof.MlDsa.X86_64.Message

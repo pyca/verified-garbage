@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Impl.Mcdt.X86_64
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa{44,65,87}_sign_message` and `_verify_message_cached`
@@ -106,6 +107,12 @@ def setArgs (as : List Arg) : List Instr := (argRegs6.zip as).flatMap fun (d, a)
 /-- A call of `c`, named `n`, with the arguments `as`. -/
 def callA (n : String) (c : Prog isa) (as : List Arg) : Prog isa := .seq (.block (setArgs as)) (.call n c)
 
+/-- `callA`, the call inside Intel's MXCSR prologue and epilogue
+(`Impl.Mcdt.X86_64.mcdtCall`): for the function on `μ`, whose arithmetic sets
+no MXCSR of its own. -/
+def callM (n : String) (c : Prog isa) (as : List Arg) : Prog isa :=
+  .seq (.block (setArgs as)) (Impl.Mcdt.X86_64.mcdtCall n c)
+
 /-! ## The sponge -/
 
 section
@@ -159,13 +166,13 @@ function on `μ` `c`, named `n`, with the flag in `r9`. -/
 def signMessage (n : String) (c : Prog isa) (p : Params) (flag : Nat) : Prog isa :=
   top [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)), .mov32 .rax (.imm 0)] signRegs
     (.seq (muHash p (.slotOff fKey 64))
-      (callA n c [.slot fKey, aMu p, .slot fRnd, .slot fSig, .slot fScr, .imm flag]))
+      (callM n c [.slot fKey, aMu p, .slot fRnd, .slot fSig, .slot fScr, .imm flag]))
 
 /-- `vg_mldsa*_verify_message_cached` (`flag = 0`) or `vg_mldsa*_verify_message_prepared`
 (`flag = 1`, with a prepared key) for the parameter set `p`, calling the
 verification function on `μ` `c`, named `n`, with the flag in `r8`. -/
 def verifyMessageCached (n : String) (c : Prog isa) (p : Params) (flag : Nat) : Prog isa :=
   top [.mov .r11 (.mem (stk 8)), .mov .r10 (.mem (stk 16)), .mov32 .rax (.imm 0)] verifyRegs
-    (.seq (muHash p (.slot fRnd)) (callA n c [.slot fKey, aMu p, .slot fSig, .slot fScr, .imm flag]))
+    (.seq (muHash p (.slot fRnd)) (callM n c [.slot fKey, aMu p, .slot fSig, .slot fScr, .imm flag]))
 
 end VG.Impl.MlDsa.X86_64.Message

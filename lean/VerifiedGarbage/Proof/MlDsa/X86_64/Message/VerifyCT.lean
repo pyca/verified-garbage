@@ -64,11 +64,11 @@ def VMuOk (p : Params) (L : Lay) (m : Mem) (t : State) : Prop :=
 
 /-- Two runs of the call of the verification function on `μ`. -/
 theorem verifyCall_tr {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p ∈ params) :
-    RelCT isa (Two (verifyI p) fun L m t => VOk p prep L m ∧ VMuOk p L m t) (callA n c (verifyArgs p prep))
+    RelCT isa (Two (verifyI p) fun L m t => VOk p prep L m ∧ VMuOk p L m t) (callM n c (verifyArgs p prep))
       fun _ _ => True := by
-  refine call_tr (verifyArgs_ok hp) hV.ok hV.ct (verifyRd p) (verifyWr p)
-    (fun L g mx m₀ t t1 hL hc hφ hm => verifyK_pre hp hL hφ.1.facts hc hφ.1.prep hm)
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_)
+  refine callM_tr (verifyArgs_ok hp) hV.ok hV.ct hV.nosp hV.depth (verifyRd p) (verifyWr p)
+    (fun L g mx m₀ t t1 e hL hc hφ hm he => verifyK_pre hp hL hφ.1.facts hc hφ.1.prep hm he)
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 e₁ e₂ hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ he₁ he₂ => ?_)
     (fun L g mx m₀ t hL hc hφ => ?_)
   · have F := φ₁.1.facts
     obtain ⟨x1, x2, x3, x4, x5⟩ := verifyRegsL F.e c₁ f₁
@@ -77,19 +77,19 @@ theorem verifyCall_tr {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p �
     have kK : L.STK.Disjoint ⟨L.key, p.pkLen⟩ := hL.kKey.sub_right (Region.sub_prefix hkl)
     have xK : L.XS.Disjoint ⟨L.key, p.pkLen⟩ := hL.xKey.sub_right (Region.sub_prefix hkl)
     simp only [verifyK, Verify.vPk, Verify.vMu, Verify.vSig, State.withRegions_mem, State.withRegions_gpr,
-      State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
-      State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
-      State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp),
-      State.callEntry_rsp, x1, x2, x3, x4, x5, y1, y2, y3, y4, y5, f₁.2.gpr (by decide : Reg.rsp ∉ argRegs),
+      he₁.gpr _ (by decide : Reg.rdi ≠ .rsp) (by decide) (by decide), he₂.gpr _ (by decide : Reg.rdi ≠ .rsp) (by decide) (by decide), he₁.gpr _ (by decide : Reg.rsi ≠ .rsp) (by decide) (by decide), he₂.gpr _ (by decide : Reg.rsi ≠ .rsp) (by decide) (by decide),
+      he₁.gpr _ (by decide : Reg.rdx ≠ .rsp) (by decide) (by decide), he₂.gpr _ (by decide : Reg.rdx ≠ .rsp) (by decide) (by decide), he₁.gpr _ (by decide : Reg.rcx ≠ .rsp) (by decide) (by decide), he₂.gpr _ (by decide : Reg.rcx ≠ .rsp) (by decide) (by decide),
+      he₁.gpr _ (by decide : Reg.r8 ≠ .rsp) (by decide) (by decide), he₂.gpr _ (by decide : Reg.r8 ≠ .rsp) (by decide) (by decide),
+      he₁.rsp, he₂.rsp, x1, x2, x3, x4, x5, y1, y2, y3, y4, y5, f₁.2.gpr (by decide : Reg.rsp ∉ argRegs),
       f₂.2.gpr (by decide : Reg.rsp ∉ argRegs), c₁.rsp, c₂.rsp, true_and, and_true]
     have hk := hL.nKey
-    have ce : ∀ {g mx m₀} {a a1 : State} {q : Addr} {k : Nat}, Ctx L g mx m₀ a → Moved (verifyArgs p prep) a a1 →
-        Region.Disjoint ⟨L.B + BitVec.ofNat 64 32, 8⟩ ⟨q, k⟩ → k ≤ 2 ^ 64 →
-        bytesAt a1.callEntry.mem q k = bytesAt a.mem q k := fun c f hd hn => by
-      rw [(c.regs f.2.2.1 f.2.2.2 f.1.2.1 f.1.2.2 fun r hr => f.2.gpr (argRegs_cs r hr)).ce_bytesAt hd hn, f.1.2.1]
-    have dk := hL.stk_r kK (d := 32) (n := 8) (by decide)
-    have dμ := hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by decide) (by decide)
-    have ds := hL.stk_r F.kSig (d := 32) (n := 8) (by decide)
+    have ce : ∀ {g mx m₀} {a a1 e : State} {q : Addr} {k : Nat}, Ctx L g mx m₀ a → Moved (verifyArgs p prep) a a1 →
+        Proof.Mcdt.X86_64.EntryOf a1 e → Region.Disjoint ⟨L.B + BitVec.ofNat 64 32, 24⟩ ⟨q, k⟩ → k ≤ 2 ^ 64 →
+        bytesAt e.mem q k = bytesAt a.mem q k := fun c f he hd hn => by
+      rw [(c.regs f.2.2.1 f.2.2.2 f.1.2.1 f.1.2.2 fun r hr => f.2.gpr (argRegs_cs r hr)).ce_bytesAt he hd hn, f.1.2.1]
+    have dk := hL.stk_r kK (d := 32) (n := 24) (by decide)
+    have dμ := hL.stk_x (d := 32) (n := 24) (e := 840) (k := 64) (by decide) (by decide)
+    have ds := hL.stk_r F.kSig (d := 32) (n := 24) (by decide)
     have hsx : L.XS.Disjoint ⟨L.sig, p.sigLen⟩ := by
       have hX : Within L.XS ⟨L.scr, mScrLen p⟩ := ⟨L.E, rfl, by rw [mScr_eq, F.e]⟩
       exact F.sigScr.symm.sub_left hX.sub
@@ -97,10 +97,10 @@ theorem verifyCall_tr {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p �
     obtain ⟨ek, -, ec, es⟩ := verifyI_eq hi
     obtain ⟨-, em, -, -⟩ := verifyI_eq hi
     refine ⟨?_, ?_, ?_⟩
-    · rw [ce c₁ f₁ dk (by omega_using [hkl, hk]), ce c₂ f₂ dk (by omega_using [hkl, hk]), c₁.bytesAt_eq xK kK (by omega_using [hkl, hk]),
+    · rw [ce c₁ f₁ he₁ dk (by omega_using [hkl, hk]), ce c₂ f₂ he₂ dk (by omega_using [hkl, hk]), c₁.bytesAt_eq xK kK (by omega_using [hkl, hk]),
         c₂.bytesAt_eq xK kK (by omega_using [hkl, hk]), ek]
-    · rw [ce c₁ f₁ dμ (by decide), ce c₂ f₂ dμ (by decide), φ₁.2, φ₂.2, ek, ec, em]
-    · rw [ce c₁ f₁ ds (by omega_using [ns]), ce c₂ f₂ ds (by omega_using [ns]), c₁.bytesAt_eq hsx F.kSig (by omega_using [ns]),
+    · rw [ce c₁ f₁ he₁ dμ (by decide), ce c₂ f₂ he₂ dμ (by decide), φ₁.2, φ₂.2, ek, ec, em]
+    · rw [ce c₁ f₁ he₁ ds (by omega_using [ns]), ce c₂ f₂ he₂ ds (by omega_using [ns]), c₁.bytesAt_eq hsx F.kSig (by omega_using [ns]),
         c₂.bytesAt_eq hsx F.kSig (by omega_using [ns]), es]
   · have F := hφ.1.facts
     refine ⟨fun r hr => ?_, fun r hr => ?_⟩
@@ -129,14 +129,14 @@ structure VPub (p : Params) (s₁ s₂ : State) : Prop where
   a0 : stackArg s₁ 0 = stackArg s₂ 0
   a1 : stackArg s₁ 1 = stackArg s₂ 1
 
-theorem vPub_of {s₁ s₂ : State} (h : (verifyMessageCachedContract p X86_64.abi 112).pub s₁ s₂) :
+theorem vPub_of {s₁ s₂ : State} (h : (verifyMessageCachedContract p X86_64.abi 128).pub s₁ s₂) :
     VPub p s₁ s₂ := by
   sig_pub [verifyMessageCachedContract, verifyMessageCachedSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
   obtain ⟨a, b, c, d, e, f, g, h, i, j⟩ := h
   exact ⟨a, b, c, d, e, f, g, h, i, j⟩
 
-theorem vPubP_of {s₁ s₂ : State} (h : (preparedVerifyMessageContract p X86_64.abi 112).pub s₁ s₂) :
+theorem vPubP_of {s₁ s₂ : State} (h : (preparedVerifyMessageContract p X86_64.abi 128).pub s₁ s₂) :
     VPub p s₁ s₂ := by
   sig_pub [preparedVerifyMessageContract, preparedVerifyMessageSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
@@ -156,7 +156,7 @@ theorem vlay_eq {s₁ s₂ : State} (h₁ : VPre p prep s₁) (h₂ : VPre p pre
 /-- The body of the frame. -/
 theorem verifyBody_tr {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p ∈ params) :
     RelCT isa (Two (verifyI p) fun L m _ => VOk p prep L m)
-      (.seq (muHash p (.slot fRnd)) (callA n c (verifyArgs p prep))) fun _ _ => True := by
+      (.seq (muHash p (.slot fRnd)) (callM n c (verifyArgs p prep))) fun _ _ => True := by
   have hE := oE_lt hp
   have mh := muHash_tr_of (I := verifyI p) (Φ := fun L m _ => VOk p prep L m) (G := VFacts p prep) hE
     (fun _ _ _ h => ⟨h.facts.e, h.facts⟩) (tr := .slot fRnd) (by decide) (fun L => L.rnd)

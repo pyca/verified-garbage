@@ -5,1138 +5,21 @@
 // gives.
 
 vg_mldsa65_keygen_avx512:
-	mov QWORD PTR [rcx+840], rbx
-	mov QWORD PTR [rcx+848], rbp
-	mov QWORD PTR [rcx+856], r12
-	mov QWORD PTR [rcx+864], r13
-	mov QWORD PTR [rcx+872], r14
-	mov QWORD PTR [rcx+880], r15
-	mov rbx, rcx
-	mov rbp, rdi
-	mov r12, rsi
-	mov r13, rdx
-	mov r15d, 1
-	mov eax, 6
-	mov BYTE PTR [rbx+896], al
-	mov eax, 5
-	mov BYTE PTR [rbx+897], al
-	mov eax, 0
-	mov QWORD PTR [rbx], rax
-	mov QWORD PTR [rbx+8], rax
-	mov QWORD PTR [rbx+16], rax
-	mov QWORD PTR [rbx+24], rax
-	mov QWORD PTR [rbx+32], rax
-	mov QWORD PTR [rbx+40], rax
-	mov QWORD PTR [rbx+48], rax
-	mov QWORD PTR [rbx+56], rax
-	mov QWORD PTR [rbx+64], rax
-	mov QWORD PTR [rbx+72], rax
-	mov QWORD PTR [rbx+80], rax
-	mov QWORD PTR [rbx+88], rax
-	mov QWORD PTR [rbx+96], rax
-	mov QWORD PTR [rbx+104], rax
-	mov QWORD PTR [rbx+112], rax
-	mov QWORD PTR [rbx+120], rax
-	mov QWORD PTR [rbx+128], rax
-	mov QWORD PTR [rbx+136], rax
-	mov QWORD PTR [rbx+144], rax
-	mov QWORD PTR [rbx+152], rax
-	mov QWORD PTR [rbx+160], rax
-	mov QWORD PTR [rbx+168], rax
-	mov QWORD PTR [rbx+176], rax
-	mov QWORD PTR [rbx+184], rax
-	mov QWORD PTR [rbx+192], rax
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, rbp
-	add rcx, 0
-	mov r8d, 32
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 32
-	mov rcx, rbx
-	add rcx, 896
-	mov r8d, 2
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 34
-	mov ecx, 31
-	mov r8, rbx
-	add r8, 200
-	call {vg_keccak_pad_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, rbx
-	add rcx, 1024
-	mov r8d, 128
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_squeeze_scratch}
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rdi, rbx
-	add rdi, 1216
-	mov rsi, rbx
-	add rsi, 1056
-	mov ecx, 8
-21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 21b
-	mov eax, 0
-	mov BYTE PTR [rbx+1281], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-22:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 22b
-	mov rdi, rbx
-	add rdi, 1442
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-23:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 23b
-	mov rdi, rbx
-	add rdi, 1476
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-24:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 24b
-	mov rdi, rbx
-	add rdi, 1510
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-25:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 25b
-	mov eax, 0
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 4096
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx512}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 4096
-	mov ecx, 1024
-26:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 26b
-	mov eax, 4
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 8192
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx512}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 8192
-	mov ecx, 1024
-27:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 27b
-	mov eax, 3
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 12288
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx512}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 12288
-	mov ecx, 1024
-28:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 28b
-	mov eax, 2
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 16384
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx512}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 16384
-	mov ecx, 1024
-29:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 29b
-	mov eax, 1
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 20480
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx512}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 20480
-	mov ecx, 1024
-210:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 210b
-	mov eax, 0
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 24576
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx512}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 24576
-	mov ecx, 1024
-211:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 211b
-	mov eax, 4
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 28672
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx512}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 28672
-	mov ecx, 1024
-212:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 212b
-	mov eax, 3
-	mov BYTE PTR [rbx+1184], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1185], al
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 32768
-	mov rdx, rbx
-	add rdx, 2048
-	call {vg_mldsa_rej_ntt_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 32768
-	mov ecx, 256
-213:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 213b
-	mov eax, 4
-	mov BYTE PTR [rbx+1184], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1185], al
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 33792
-	mov rdx, rbx
-	add rdx, 2048
-	call {vg_mldsa_rej_ntt_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 33792
-	mov ecx, 256
-214:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 214b
-	mov eax, 0
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 34816
-	mov ecx, 256
-215:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 215b
-	mov eax, 1
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 35840
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 35840
-	mov ecx, 256
-216:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 216b
-	mov eax, 2
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 36864
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 36864
-	mov ecx, 256
-217:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 217b
-	mov eax, 3
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 37888
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 37888
-	mov ecx, 256
-218:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 218b
-	mov eax, 4
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 38912
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 38912
-	mov ecx, 256
-219:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 219b
-	mov eax, 5
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 39936
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 39936
-	mov ecx, 256
-220:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 220b
-	mov eax, 6
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 40960
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 40960
-	mov ecx, 256
-221:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 221b
-	mov eax, 7
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 41984
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 41984
-	mov ecx, 256
-222:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 222b
-	mov eax, 8
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 43008
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 43008
-	mov ecx, 256
-223:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 223b
-	mov eax, 9
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 44032
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 44032
-	mov ecx, 256
-224:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 224b
-	mov eax, 10
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 45056
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 45056
-	mov ecx, 256
-225:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 225b
-	mov rdi, r12
-	add rdi, 0
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-226:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 226b
-	mov rdi, r13
-	add rdi, 0
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-227:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 227b
-	mov rdi, r13
-	add rdi, 32
-	mov rsi, rbx
-	add rsi, 1120
-	mov ecx, 4
-228:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 228b
-	mov rdi, rbx
-	add rdi, 34816
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 128
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 35840
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 256
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 36864
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 384
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 37888
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 512
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 38912
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 640
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 39936
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 768
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 40960
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 896
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 41984
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1024
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 43008
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1152
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 44032
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1280
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 45056
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1408
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 34816
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 35840
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 36864
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 37888
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 38912
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 4096
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 39936
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 32
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 1536
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 9216
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 40960
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 352
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 1952
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 14336
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 41984
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 672
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 2368
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 19456
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 43008
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 992
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 2784
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 24576
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 44032
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 1312
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 3200
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 29696
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 45056
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 1632
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 3616
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov eax, 0
-	mov QWORD PTR [rbx], rax
-	mov QWORD PTR [rbx+8], rax
-	mov QWORD PTR [rbx+16], rax
-	mov QWORD PTR [rbx+24], rax
-	mov QWORD PTR [rbx+32], rax
-	mov QWORD PTR [rbx+40], rax
-	mov QWORD PTR [rbx+48], rax
-	mov QWORD PTR [rbx+56], rax
-	mov QWORD PTR [rbx+64], rax
-	mov QWORD PTR [rbx+72], rax
-	mov QWORD PTR [rbx+80], rax
-	mov QWORD PTR [rbx+88], rax
-	mov QWORD PTR [rbx+96], rax
-	mov QWORD PTR [rbx+104], rax
-	mov QWORD PTR [rbx+112], rax
-	mov QWORD PTR [rbx+120], rax
-	mov QWORD PTR [rbx+128], rax
-	mov QWORD PTR [rbx+136], rax
-	mov QWORD PTR [rbx+144], rax
-	mov QWORD PTR [rbx+152], rax
-	mov QWORD PTR [rbx+160], rax
-	mov QWORD PTR [rbx+168], rax
-	mov QWORD PTR [rbx+176], rax
-	mov QWORD PTR [rbx+184], rax
-	mov QWORD PTR [rbx+192], rax
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, r12
-	add rcx, 0
-	mov r8d, 1952
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 48
-	mov ecx, 31
-	mov r8, rbx
-	add r8, 200
-	call {vg_keccak_pad_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, r13
-	add rcx, 64
-	mov r8d, 64
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_squeeze_scratch}
-	mov eax, r15d
-	mov r15, QWORD PTR [rbx+880]
-	mov r14, QWORD PTR [rbx+872]
-	mov r13, QWORD PTR [rbx+864]
-	mov r12, QWORD PTR [rbx+856]
-	mov rbp, QWORD PTR [rbx+848]
-	mov rbx, QWORD PTR [rbx+840]
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	call {vg_mldsa65_keygen_internal_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -1170,9 +53,24 @@ vg_mldsa65_keygen_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
-	lea rsp, [rsp+32]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1186,1138 +84,21 @@ vg_mldsa65_keygen_avx512:
 	.p2align 6
 
 vg_mldsa65_keygen_avx2:
-	mov QWORD PTR [rcx+840], rbx
-	mov QWORD PTR [rcx+848], rbp
-	mov QWORD PTR [rcx+856], r12
-	mov QWORD PTR [rcx+864], r13
-	mov QWORD PTR [rcx+872], r14
-	mov QWORD PTR [rcx+880], r15
-	mov rbx, rcx
-	mov rbp, rdi
-	mov r12, rsi
-	mov r13, rdx
-	mov r15d, 1
-	mov eax, 6
-	mov BYTE PTR [rbx+896], al
-	mov eax, 5
-	mov BYTE PTR [rbx+897], al
-	mov eax, 0
-	mov QWORD PTR [rbx], rax
-	mov QWORD PTR [rbx+8], rax
-	mov QWORD PTR [rbx+16], rax
-	mov QWORD PTR [rbx+24], rax
-	mov QWORD PTR [rbx+32], rax
-	mov QWORD PTR [rbx+40], rax
-	mov QWORD PTR [rbx+48], rax
-	mov QWORD PTR [rbx+56], rax
-	mov QWORD PTR [rbx+64], rax
-	mov QWORD PTR [rbx+72], rax
-	mov QWORD PTR [rbx+80], rax
-	mov QWORD PTR [rbx+88], rax
-	mov QWORD PTR [rbx+96], rax
-	mov QWORD PTR [rbx+104], rax
-	mov QWORD PTR [rbx+112], rax
-	mov QWORD PTR [rbx+120], rax
-	mov QWORD PTR [rbx+128], rax
-	mov QWORD PTR [rbx+136], rax
-	mov QWORD PTR [rbx+144], rax
-	mov QWORD PTR [rbx+152], rax
-	mov QWORD PTR [rbx+160], rax
-	mov QWORD PTR [rbx+168], rax
-	mov QWORD PTR [rbx+176], rax
-	mov QWORD PTR [rbx+184], rax
-	mov QWORD PTR [rbx+192], rax
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, rbp
-	add rcx, 0
-	mov r8d, 32
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 32
-	mov rcx, rbx
-	add rcx, 896
-	mov r8d, 2
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 34
-	mov ecx, 31
-	mov r8, rbx
-	add r8, 200
-	call {vg_keccak_pad_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, rbx
-	add rcx, 1024
-	mov r8d, 128
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_squeeze_scratch}
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rdi, rbx
-	add rdi, 1216
-	mov rsi, rbx
-	add rsi, 1056
-	mov ecx, 8
-21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 21b
-	mov eax, 0
-	mov BYTE PTR [rbx+1281], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-22:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 22b
-	mov rdi, rbx
-	add rdi, 1442
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-23:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 23b
-	mov rdi, rbx
-	add rdi, 1476
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-24:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 24b
-	mov rdi, rbx
-	add rdi, 1510
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-25:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 25b
-	mov eax, 0
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 4096
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx2}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 4096
-	mov ecx, 1024
-26:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 26b
-	mov eax, 4
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 8192
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx2}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 8192
-	mov ecx, 1024
-27:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 27b
-	mov eax, 3
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 12288
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx2}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 12288
-	mov ecx, 1024
-28:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 28b
-	mov eax, 2
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 16384
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx2}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 16384
-	mov ecx, 1024
-29:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 29b
-	mov eax, 1
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 20480
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx2}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 20480
-	mov ecx, 1024
-210:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 210b
-	mov eax, 0
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 24576
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx2}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 24576
-	mov ecx, 1024
-211:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 211b
-	mov eax, 4
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 28672
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4_avx2}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 28672
-	mov ecx, 1024
-212:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 212b
-	mov eax, 3
-	mov BYTE PTR [rbx+1184], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1185], al
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 32768
-	mov rdx, rbx
-	add rdx, 2048
-	call {vg_mldsa_rej_ntt_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 32768
-	mov ecx, 256
-213:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 213b
-	mov eax, 4
-	mov BYTE PTR [rbx+1184], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1185], al
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 33792
-	mov rdx, rbx
-	add rdx, 2048
-	call {vg_mldsa_rej_ntt_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 33792
-	mov ecx, 256
-214:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 214b
-	mov eax, 0
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 34816
-	mov ecx, 256
-215:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 215b
-	mov eax, 1
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 35840
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 35840
-	mov ecx, 256
-216:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 216b
-	mov eax, 2
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 36864
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 36864
-	mov ecx, 256
-217:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 217b
-	mov eax, 3
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 37888
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 37888
-	mov ecx, 256
-218:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 218b
-	mov eax, 4
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 38912
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 38912
-	mov ecx, 256
-219:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 219b
-	mov eax, 5
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 39936
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 39936
-	mov ecx, 256
-220:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 220b
-	mov eax, 6
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 40960
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 40960
-	mov ecx, 256
-221:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 221b
-	mov eax, 7
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 41984
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 41984
-	mov ecx, 256
-222:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 222b
-	mov eax, 8
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 43008
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 43008
-	mov ecx, 256
-223:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 223b
-	mov eax, 9
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 44032
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 44032
-	mov ecx, 256
-224:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 224b
-	mov eax, 10
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 45056
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 45056
-	mov ecx, 256
-225:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 225b
-	mov rdi, r12
-	add rdi, 0
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-226:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 226b
-	mov rdi, r13
-	add rdi, 0
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-227:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 227b
-	mov rdi, r13
-	add rdi, 32
-	mov rsi, rbx
-	add rsi, 1120
-	mov ecx, 4
-228:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 228b
-	mov rdi, rbx
-	add rdi, 34816
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 128
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 35840
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 256
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 36864
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 384
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 37888
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 512
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 38912
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 640
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 39936
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 768
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 40960
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 896
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 41984
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1024
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 43008
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1152
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 44032
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1280
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 45056
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1408
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 34816
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 35840
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 36864
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 37888
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 38912
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 4096
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 39936
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 32
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 1536
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 9216
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 40960
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 352
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 1952
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 14336
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 41984
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 672
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 2368
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 19456
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 43008
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 992
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 2784
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 24576
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 44032
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 1312
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 3200
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 29696
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 45056
-	call {vg_mldsa_add_avx2}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 1632
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 3616
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov eax, 0
-	mov QWORD PTR [rbx], rax
-	mov QWORD PTR [rbx+8], rax
-	mov QWORD PTR [rbx+16], rax
-	mov QWORD PTR [rbx+24], rax
-	mov QWORD PTR [rbx+32], rax
-	mov QWORD PTR [rbx+40], rax
-	mov QWORD PTR [rbx+48], rax
-	mov QWORD PTR [rbx+56], rax
-	mov QWORD PTR [rbx+64], rax
-	mov QWORD PTR [rbx+72], rax
-	mov QWORD PTR [rbx+80], rax
-	mov QWORD PTR [rbx+88], rax
-	mov QWORD PTR [rbx+96], rax
-	mov QWORD PTR [rbx+104], rax
-	mov QWORD PTR [rbx+112], rax
-	mov QWORD PTR [rbx+120], rax
-	mov QWORD PTR [rbx+128], rax
-	mov QWORD PTR [rbx+136], rax
-	mov QWORD PTR [rbx+144], rax
-	mov QWORD PTR [rbx+152], rax
-	mov QWORD PTR [rbx+160], rax
-	mov QWORD PTR [rbx+168], rax
-	mov QWORD PTR [rbx+176], rax
-	mov QWORD PTR [rbx+184], rax
-	mov QWORD PTR [rbx+192], rax
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, r12
-	add rcx, 0
-	mov r8d, 1952
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 48
-	mov ecx, 31
-	mov r8, rbx
-	add r8, 200
-	call {vg_keccak_pad_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, r13
-	add rcx, 64
-	mov r8d, 64
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_squeeze_scratch}
-	mov eax, r15d
-	mov r15, QWORD PTR [rbx+880]
-	mov r14, QWORD PTR [rbx+872]
-	mov r13, QWORD PTR [rbx+864]
-	mov r12, QWORD PTR [rbx+856]
-	mov rbp, QWORD PTR [rbx+848]
-	mov rbx, QWORD PTR [rbx+840]
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	call {vg_mldsa65_keygen_internal_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -2335,9 +116,24 @@ vg_mldsa65_keygen_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-32]
-	vmovdqu YMMWORD PTR [rsp], ymm0
-	lea rsp, [rsp+32]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2351,1138 +147,21 @@ vg_mldsa65_keygen_avx2:
 	.p2align 6
 
 vg_mldsa65_keygen:
-	mov QWORD PTR [rcx+840], rbx
-	mov QWORD PTR [rcx+848], rbp
-	mov QWORD PTR [rcx+856], r12
-	mov QWORD PTR [rcx+864], r13
-	mov QWORD PTR [rcx+872], r14
-	mov QWORD PTR [rcx+880], r15
-	mov rbx, rcx
-	mov rbp, rdi
-	mov r12, rsi
-	mov r13, rdx
-	mov r15d, 1
-	mov eax, 6
-	mov BYTE PTR [rbx+896], al
-	mov eax, 5
-	mov BYTE PTR [rbx+897], al
-	mov eax, 0
-	mov QWORD PTR [rbx], rax
-	mov QWORD PTR [rbx+8], rax
-	mov QWORD PTR [rbx+16], rax
-	mov QWORD PTR [rbx+24], rax
-	mov QWORD PTR [rbx+32], rax
-	mov QWORD PTR [rbx+40], rax
-	mov QWORD PTR [rbx+48], rax
-	mov QWORD PTR [rbx+56], rax
-	mov QWORD PTR [rbx+64], rax
-	mov QWORD PTR [rbx+72], rax
-	mov QWORD PTR [rbx+80], rax
-	mov QWORD PTR [rbx+88], rax
-	mov QWORD PTR [rbx+96], rax
-	mov QWORD PTR [rbx+104], rax
-	mov QWORD PTR [rbx+112], rax
-	mov QWORD PTR [rbx+120], rax
-	mov QWORD PTR [rbx+128], rax
-	mov QWORD PTR [rbx+136], rax
-	mov QWORD PTR [rbx+144], rax
-	mov QWORD PTR [rbx+152], rax
-	mov QWORD PTR [rbx+160], rax
-	mov QWORD PTR [rbx+168], rax
-	mov QWORD PTR [rbx+176], rax
-	mov QWORD PTR [rbx+184], rax
-	mov QWORD PTR [rbx+192], rax
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, rbp
-	add rcx, 0
-	mov r8d, 32
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 32
-	mov rcx, rbx
-	add rcx, 896
-	mov r8d, 2
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 34
-	mov ecx, 31
-	mov r8, rbx
-	add r8, 200
-	call {vg_keccak_pad_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, rbx
-	add rcx, 1024
-	mov r8d, 128
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_squeeze_scratch}
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rdi, rbx
-	add rdi, 1216
-	mov rsi, rbx
-	add rsi, 1056
-	mov ecx, 8
-21:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 21b
-	mov eax, 0
-	mov BYTE PTR [rbx+1281], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-22:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 22b
-	mov rdi, rbx
-	add rdi, 1442
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-23:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 23b
-	mov rdi, rbx
-	add rdi, 1476
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-24:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 24b
-	mov rdi, rbx
-	add rdi, 1510
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-25:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 25b
-	mov eax, 0
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 4096
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 4096
-	mov ecx, 1024
-26:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 26b
-	mov eax, 4
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 8192
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 8192
-	mov ecx, 1024
-27:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 27b
-	mov eax, 3
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 12288
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 12288
-	mov ecx, 1024
-28:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 28b
-	mov eax, 2
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 16384
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 16384
-	mov ecx, 1024
-29:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 29b
-	mov eax, 1
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 20480
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 20480
-	mov ecx, 1024
-210:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 210b
-	mov eax, 0
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 3
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 24576
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 24576
-	mov ecx, 1024
-211:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 211b
-	mov eax, 4
-	mov BYTE PTR [rbx+1440], al
-	mov eax, 4
-	mov BYTE PTR [rbx+1441], al
-	mov eax, 0
-	mov BYTE PTR [rbx+1474], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1475], al
-	mov eax, 1
-	mov BYTE PTR [rbx+1508], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1509], al
-	mov eax, 2
-	mov BYTE PTR [rbx+1542], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1543], al
-	mov rdi, rbx
-	add rdi, 1408
-	mov rsi, rbx
-	add rsi, 28672
-	mov rdx, rbx
-	add rdx, 49152
-	call {vg_mldsa_rej_ntt_poly4}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 28672
-	mov ecx, 1024
-212:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 212b
-	mov eax, 3
-	mov BYTE PTR [rbx+1184], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1185], al
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 32768
-	mov rdx, rbx
-	add rdx, 2048
-	call {vg_mldsa_rej_ntt_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 32768
-	mov ecx, 256
-213:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 213b
-	mov eax, 4
-	mov BYTE PTR [rbx+1184], al
-	mov eax, 5
-	mov BYTE PTR [rbx+1185], al
-	mov rdi, rbx
-	add rdi, 1152
-	mov rsi, rbx
-	add rsi, 33792
-	mov rdx, rbx
-	add rdx, 2048
-	call {vg_mldsa_rej_ntt_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 33792
-	mov ecx, 256
-214:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 214b
-	mov eax, 0
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 34816
-	mov ecx, 256
-215:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 215b
-	mov eax, 1
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 35840
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 35840
-	mov ecx, 256
-216:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 216b
-	mov eax, 2
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 36864
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 36864
-	mov ecx, 256
-217:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 217b
-	mov eax, 3
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 37888
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 37888
-	mov ecx, 256
-218:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 218b
-	mov eax, 4
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 38912
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 38912
-	mov ecx, 256
-219:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 219b
-	mov eax, 5
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 39936
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 39936
-	mov ecx, 256
-220:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 220b
-	mov eax, 6
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 40960
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 40960
-	mov ecx, 256
-221:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 221b
-	mov eax, 7
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 41984
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 41984
-	mov ecx, 256
-222:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 222b
-	mov eax, 8
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 43008
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 43008
-	mov ecx, 256
-223:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 223b
-	mov eax, 9
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 44032
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 44032
-	mov ecx, 256
-224:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 224b
-	mov eax, 10
-	mov BYTE PTR [rbx+1280], al
-	mov rdi, rbx
-	add rdi, 1216
-	mov esi, 4
-	mov rdx, rbx
-	add rdx, 45056
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_rej_bounded_poly}
-	and r15d, eax
-	mov r8d, 0
-	sub r8d, eax
-	mov rdi, rbx
-	add rdi, 45056
-	mov ecx, 256
-225:
-	mov eax, DWORD PTR [rdi]
-	and eax, r8d
-	mov DWORD PTR [rdi], eax
-	add rdi, 4
-	sub rcx, 1
-	jne 225b
-	mov rdi, r12
-	add rdi, 0
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-226:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 226b
-	mov rdi, r13
-	add rdi, 0
-	mov rsi, rbx
-	add rsi, 1024
-	mov ecx, 4
-227:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 227b
-	mov rdi, r13
-	add rdi, 32
-	mov rsi, rbx
-	add rsi, 1120
-	mov ecx, 4
-228:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 228b
-	mov rdi, rbx
-	add rdi, 34816
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 128
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 35840
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 256
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 36864
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 384
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 37888
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 512
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 38912
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 640
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 39936
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 768
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 40960
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 896
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 41984
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1024
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 43008
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1152
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 44032
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1280
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 45056
-	mov esi, 4
-	mov edx, 4
-	mov rcx, r13
-	add rcx, 1408
-	mov r8d, 128
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 34816
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt}
-	mov rdi, rbx
-	add rdi, 35840
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt}
-	mov rdi, rbx
-	add rdi, 36864
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt}
-	mov rdi, rbx
-	add rdi, 37888
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt}
-	mov rdi, rbx
-	add rdi, 38912
-	mov rsi, rbx
-	add rsi, 2048
-	call {vg_mldsa_ntt}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 4096
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 39936
-	call {vg_mldsa_add}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 32
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 1536
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 9216
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 40960
-	call {vg_mldsa_add}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 352
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 1952
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 14336
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 41984
-	call {vg_mldsa_add}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 672
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 2368
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 19456
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 43008
-	call {vg_mldsa_add}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 992
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 2784
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 24576
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 44032
-	call {vg_mldsa_add}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 1312
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 3200
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 29696
-	mov rdx, rbx
-	add rdx, 34816
-	mov rcx, rbx
-	add rcx, 2048
-	call {vg_mldsa_dot_inverse5}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 45056
-	call {vg_mldsa_add}
-	mov rdi, rbx
-	add rdi, 46080
-	mov rsi, rbx
-	add rsi, 47104
-	mov rdx, rbx
-	add rdx, 48128
-	call {vg_mldsa_power2round}
-	mov rdi, rbx
-	add rdi, 47104
-	mov esi, 1023
-	mov rdx, r12
-	add rdx, 1632
-	mov ecx, 320
-	call {vg_mldsa_simple_bit_pack}
-	mov rdi, rbx
-	add rdi, 48128
-	mov esi, 4095
-	mov edx, 4096
-	mov rcx, r13
-	add rcx, 3616
-	mov r8d, 416
-	call {vg_mldsa_bit_pack}
-	mov eax, 0
-	mov QWORD PTR [rbx], rax
-	mov QWORD PTR [rbx+8], rax
-	mov QWORD PTR [rbx+16], rax
-	mov QWORD PTR [rbx+24], rax
-	mov QWORD PTR [rbx+32], rax
-	mov QWORD PTR [rbx+40], rax
-	mov QWORD PTR [rbx+48], rax
-	mov QWORD PTR [rbx+56], rax
-	mov QWORD PTR [rbx+64], rax
-	mov QWORD PTR [rbx+72], rax
-	mov QWORD PTR [rbx+80], rax
-	mov QWORD PTR [rbx+88], rax
-	mov QWORD PTR [rbx+96], rax
-	mov QWORD PTR [rbx+104], rax
-	mov QWORD PTR [rbx+112], rax
-	mov QWORD PTR [rbx+120], rax
-	mov QWORD PTR [rbx+128], rax
-	mov QWORD PTR [rbx+136], rax
-	mov QWORD PTR [rbx+144], rax
-	mov QWORD PTR [rbx+152], rax
-	mov QWORD PTR [rbx+160], rax
-	mov QWORD PTR [rbx+168], rax
-	mov QWORD PTR [rbx+176], rax
-	mov QWORD PTR [rbx+184], rax
-	mov QWORD PTR [rbx+192], rax
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, r12
-	add rcx, 0
-	mov r8d, 1952
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_absorb_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 48
-	mov ecx, 31
-	mov r8, rbx
-	add r8, 200
-	call {vg_keccak_pad_scratch}
-	mov rdi, rbx
-	add rdi, 0
-	mov esi, 136
-	mov edx, 0
-	mov rcx, r13
-	add rcx, 64
-	mov r8d, 64
-	mov r9, rbx
-	add r9, 200
-	call {vg_keccak_squeeze_scratch}
-	mov eax, r15d
-	mov r15, QWORD PTR [rbx+880]
-	mov r14, QWORD PTR [rbx+872]
-	mov r13, QWORD PTR [rbx+864]
-	mov r12, QWORD PTR [rbx+856]
-	mov rbp, QWORD PTR [rbx+848]
-	mov rbx, QWORD PTR [rbx+840]
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	call {vg_mldsa65_keygen_internal}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -3500,10 +179,25 @@ vg_mldsa65_keygen:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-32]
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+32]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -3590,6 +284,19 @@ vg_mldsa65_pk_tr:
 	mov rbx, QWORD PTR [rbx+840]
 	pxor xmm0, xmm0
 	xor r11d, r11d
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
 	lea rsp, [rsp-32]
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
@@ -3607,94 +314,21 @@ vg_mldsa65_pk_tr:
 	.p2align 6
 
 vg_mldsa65_prepare_verifying_key_avx2:
-	mov QWORD PTR [rdx+840], rbx
-	mov QWORD PTR [rdx+848], rbp
-	mov QWORD PTR [rdx+856], r12
-	mov QWORD PTR [rdx+864], r13
-	mov QWORD PTR [rdx+872], r14
-	mov QWORD PTR [rdx+880], r15
-	mov rbx, rsi
-	mov rbp, rdi
-	mov r12, rdx
-	mov r13, rdx
-	mov rdi, rbp
-	add rdi, 32
-	mov rsi, rbx
-	add rsi, 1952
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 1952
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 352
-	mov rsi, rbx
-	add rsi, 2976
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 2976
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 672
-	mov rsi, rbx
-	add rsi, 4000
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 4000
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 992
-	mov rsi, rbx
-	add rsi, 5024
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 5024
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1312
-	mov rsi, rbx
-	add rsi, 6048
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 6048
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1632
-	mov rsi, rbx
-	add rsi, 7072
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 7072
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 0
-	mov rsi, rbp
-	add rsi, 0
-	mov ecx, 244
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rbx, QWORD PTR [r12+840]
-	mov rbp, QWORD PTR [r12+848]
-	mov r13, QWORD PTR [r12+864]
-	mov r14, QWORD PTR [r12+872]
-	mov r15, QWORD PTR [r12+880]
-	mov r12, QWORD PTR [r12+856]
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	call {vg_mldsa65_prepare_verifying_key_internal_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -3711,8 +345,25 @@ vg_mldsa65_prepare_verifying_key_avx2:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+56]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -3720,260 +371,25 @@ vg_mldsa65_prepare_verifying_key_avx2:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_mldsa65_prepare_signing_key_avx2:
-	mov QWORD PTR [rdx+840], rbx
-	mov QWORD PTR [rdx+848], rbp
-	mov QWORD PTR [rdx+856], r12
-	mov QWORD PTR [rdx+864], r13
-	mov QWORD PTR [rdx+872], r14
-	mov QWORD PTR [rdx+880], r15
-	mov rbx, rsi
-	mov rbp, rdi
-	mov r12, rdx
-	mov r13, rdx
-	mov rdi, rbp
-	add rdi, 128
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 4032
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 4032
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 256
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 5056
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 5056
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 384
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 6080
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 6080
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 512
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 7104
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 7104
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 640
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 8128
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 8128
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 768
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 9152
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 9152
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 896
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 10176
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 10176
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1024
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 11200
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 11200
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1152
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 12224
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 12224
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1280
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 13248
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 13248
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1408
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 14272
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 14272
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1536
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 15296
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 15296
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 1952
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 16320
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 16320
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 2368
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 17344
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 17344
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 2784
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 18368
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 18368
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 3200
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 19392
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 19392
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbp
-	add rdi, 3616
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 20416
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 20416
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt_avx2}
-	mov rdi, rbx
-	add rdi, 0
-	mov rsi, rbp
-	add rsi, 0
-	mov ecx, 504
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rbx, QWORD PTR [r12+840]
-	mov rbp, QWORD PTR [r12+848]
-	mov r13, QWORD PTR [r12+864]
-	mov r14, QWORD PTR [r12+872]
-	mov r15, QWORD PTR [r12+880]
-	mov r12, QWORD PTR [r12+856]
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	call {vg_mldsa65_prepare_signing_key_internal_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -3990,8 +406,25 @@ vg_mldsa65_prepare_signing_key_avx2:
 	vpxor xmm13, xmm13, xmm13
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+56]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4004,94 +437,21 @@ vg_mldsa65_prepare_signing_key_avx2:
 	.p2align 6
 
 vg_mldsa65_prepare_verifying_key:
-	mov QWORD PTR [rdx+840], rbx
-	mov QWORD PTR [rdx+848], rbp
-	mov QWORD PTR [rdx+856], r12
-	mov QWORD PTR [rdx+864], r13
-	mov QWORD PTR [rdx+872], r14
-	mov QWORD PTR [rdx+880], r15
-	mov rbx, rsi
-	mov rbp, rdi
-	mov r12, rdx
-	mov r13, rdx
-	mov rdi, rbp
-	add rdi, 32
-	mov rsi, rbx
-	add rsi, 1952
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 1952
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 352
-	mov rsi, rbx
-	add rsi, 2976
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 2976
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 672
-	mov rsi, rbx
-	add rsi, 4000
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 4000
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 992
-	mov rsi, rbx
-	add rsi, 5024
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 5024
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1312
-	mov rsi, rbx
-	add rsi, 6048
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 6048
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1632
-	mov rsi, rbx
-	add rsi, 7072
-	call {vg_mldsa_unpack_t1}
-	mov rdi, rbx
-	add rdi, 7072
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbx
-	add rdi, 0
-	mov rsi, rbp
-	add rsi, 0
-	mov ecx, 244
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rbx, QWORD PTR [r12+840]
-	mov rbp, QWORD PTR [r12+848]
-	mov r13, QWORD PTR [r12+864]
-	mov r14, QWORD PTR [r12+872]
-	mov r15, QWORD PTR [r12+880]
-	mov r12, QWORD PTR [r12+856]
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	call {vg_mldsa65_prepare_verifying_key_internal}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -4108,8 +468,26 @@ vg_mldsa65_prepare_verifying_key:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+56]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4117,260 +495,25 @@ vg_mldsa65_prepare_verifying_key:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_mldsa65_prepare_signing_key:
-	mov QWORD PTR [rdx+840], rbx
-	mov QWORD PTR [rdx+848], rbp
-	mov QWORD PTR [rdx+856], r12
-	mov QWORD PTR [rdx+864], r13
-	mov QWORD PTR [rdx+872], r14
-	mov QWORD PTR [rdx+880], r15
-	mov rbx, rsi
-	mov rbp, rdi
-	mov r12, rdx
-	mov r13, rdx
-	mov rdi, rbp
-	add rdi, 128
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 4032
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 4032
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 256
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 5056
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 5056
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 384
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 6080
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 6080
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 512
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 7104
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 7104
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 640
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 8128
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 8128
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 768
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 9152
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 9152
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 896
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 10176
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 10176
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1024
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 11200
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 11200
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1152
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 12224
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 12224
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1280
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 13248
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 13248
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1408
-	mov esi, 128
-	mov edx, 4
-	mov ecx, 4
-	mov r8, rbx
-	add r8, 14272
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 14272
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1536
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 15296
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 15296
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 1952
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 16320
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 16320
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 2368
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 17344
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 17344
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 2784
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 18368
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 18368
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 3200
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 19392
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 19392
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbp
-	add rdi, 3616
-	mov esi, 416
-	mov edx, 4095
-	mov ecx, 4096
-	mov r8, rbx
-	add r8, 20416
-	call {vg_mldsa_bit_unpack}
-	mov rdi, rbx
-	add rdi, 20416
-	mov rsi, rbx
-	add rsi, 0
-	call {vg_mldsa_ntt}
-	mov rdi, rbx
-	add rdi, 0
-	mov rsi, rbp
-	add rsi, 0
-	mov ecx, 504
-20:
-	mov rax, QWORD PTR [rsi]
-	mov QWORD PTR [rdi], rax
-	add rdi, 8
-	add rsi, 8
-	sub rcx, 1
-	jne 20b
-	mov rbx, QWORD PTR [r12+840]
-	mov rbp, QWORD PTR [r12+848]
-	mov r13, QWORD PTR [r12+864]
-	mov r14, QWORD PTR [r12+872]
-	mov r15, QWORD PTR [r12+880]
-	mov r12, QWORD PTR [r12+856]
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	call {vg_mldsa65_prepare_signing_key_internal}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -4387,8 +530,26 @@ vg_mldsa65_prepare_signing_key:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-32]
-	lea rsp, [rsp+32]
+	xor r11d, r11d
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+56]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4402,7 +563,21 @@ vg_mldsa65_prepare_signing_key:
 
 vg_mldsa65_sign_avx512:
 	mov r9d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4436,10 +611,24 @@ vg_mldsa65_sign_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4454,7 +643,21 @@ vg_mldsa65_sign_avx512:
 
 vg_mldsa65_sign_prepared_avx512:
 	mov r9d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4488,10 +691,24 @@ vg_mldsa65_sign_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4506,7 +723,21 @@ vg_mldsa65_sign_prepared_avx512:
 
 vg_mldsa65_sign_avx2:
 	mov r9d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4524,10 +755,24 @@ vg_mldsa65_sign_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4542,7 +787,21 @@ vg_mldsa65_sign_avx2:
 
 vg_mldsa65_sign_prepared_avx2:
 	mov r9d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -4560,10 +819,24 @@ vg_mldsa65_sign_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4578,7 +851,21 @@ vg_mldsa65_sign_prepared_avx2:
 
 vg_mldsa65_sign:
 	mov r9d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -4596,11 +883,25 @@ vg_mldsa65_sign:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	movdqu XMMWORD PTR [rsp+40], xmm0
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4615,7 +916,21 @@ vg_mldsa65_sign:
 
 vg_mldsa65_sign_prepared:
 	mov r9d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -4633,11 +948,25 @@ vg_mldsa65_sign_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	movdqu XMMWORD PTR [rsp+40], xmm0
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4759,7 +1088,21 @@ vg_mldsa65_sign_message_avx512:
 	mov rcx, QWORD PTR [rsp+24]
 	mov r8, QWORD PTR [rsp+8]
 	mov r9d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -4803,12 +1146,25 @@ vg_mldsa65_sign_message_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -4930,7 +1286,21 @@ vg_mldsa65_sign_message_prepared_avx512:
 	mov rcx, QWORD PTR [rsp+24]
 	mov r8, QWORD PTR [rsp+8]
 	mov r9d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -4974,12 +1344,25 @@ vg_mldsa65_sign_message_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5101,7 +1484,21 @@ vg_mldsa65_sign_message_avx2:
 	mov rcx, QWORD PTR [rsp+24]
 	mov r8, QWORD PTR [rsp+8]
 	mov r9d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -5129,12 +1526,25 @@ vg_mldsa65_sign_message_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5256,7 +1666,21 @@ vg_mldsa65_sign_message_prepared_avx2:
 	mov rcx, QWORD PTR [rsp+24]
 	mov r8, QWORD PTR [rsp+8]
 	mov r9d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -5284,12 +1708,25 @@ vg_mldsa65_sign_message_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5411,7 +1848,21 @@ vg_mldsa65_sign_message:
 	mov rcx, QWORD PTR [rsp+24]
 	mov r8, QWORD PTR [rsp+8]
 	mov r9d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -5439,7 +1890,21 @@ vg_mldsa65_sign_message:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	movdqu XMMWORD PTR [rsp+112], xmm0
 	movdqu XMMWORD PTR [rsp+96], xmm0
 	movdqu XMMWORD PTR [rsp+80], xmm0
 	movdqu XMMWORD PTR [rsp+64], xmm0
@@ -5447,7 +1912,7 @@ vg_mldsa65_sign_message:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5569,7 +2034,21 @@ vg_mldsa65_sign_message_prepared:
 	mov rcx, QWORD PTR [rsp+24]
 	mov r8, QWORD PTR [rsp+8]
 	mov r9d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_sign_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -5597,7 +2076,21 @@ vg_mldsa65_sign_message_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	movdqu XMMWORD PTR [rsp+112], xmm0
 	movdqu XMMWORD PTR [rsp+96], xmm0
 	movdqu XMMWORD PTR [rsp+80], xmm0
 	movdqu XMMWORD PTR [rsp+64], xmm0
@@ -5605,7 +2098,7 @@ vg_mldsa65_sign_message_prepared:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5620,7 +2113,21 @@ vg_mldsa65_sign_message_prepared:
 
 vg_mldsa65_verify_avx512:
 	mov r8d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -5654,10 +2161,24 @@ vg_mldsa65_verify_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5672,7 +2193,21 @@ vg_mldsa65_verify_avx512:
 
 vg_mldsa65_verify_prepared_avx512:
 	mov r8d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -5706,10 +2241,24 @@ vg_mldsa65_verify_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5724,7 +2273,21 @@ vg_mldsa65_verify_prepared_avx512:
 
 vg_mldsa65_verify_avx2:
 	mov r8d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -5742,10 +2305,24 @@ vg_mldsa65_verify_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5760,7 +2337,21 @@ vg_mldsa65_verify_avx2:
 
 vg_mldsa65_verify_prepared_avx2:
 	mov r8d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	vpxor xmm0, xmm0, xmm0
 	vpxor xmm1, xmm1, xmm1
 	vpxor xmm2, xmm2, xmm2
@@ -5778,10 +2369,24 @@ vg_mldsa65_verify_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
-	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5796,7 +2401,21 @@ vg_mldsa65_verify_prepared_avx2:
 
 vg_mldsa65_verify:
 	mov r8d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -5814,11 +2433,25 @@ vg_mldsa65_verify:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	movdqu XMMWORD PTR [rsp+40], xmm0
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5833,7 +2466,21 @@ vg_mldsa65_verify:
 
 vg_mldsa65_verify_prepared:
 	mov r8d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -5851,11 +2498,25 @@ vg_mldsa65_verify_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-40]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-56]
+	movdqu XMMWORD PTR [rsp+40], xmm0
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+40]
+	lea rsp, [rsp+56]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -5975,7 +2636,21 @@ vg_mldsa65_verify_message_cached_avx512:
 	mov rdx, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [rsp+8]
 	mov r8d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -6019,12 +2694,25 @@ vg_mldsa65_verify_message_cached_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6144,7 +2832,21 @@ vg_mldsa65_verify_message_prepared_avx512:
 	mov rdx, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [rsp+8]
 	mov r8d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx512}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -6188,12 +2890,25 @@ vg_mldsa65_verify_message_prepared_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6313,7 +3028,21 @@ vg_mldsa65_verify_message_cached_avx2:
 	mov rdx, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [rsp+8]
 	mov r8d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -6341,12 +3070,25 @@ vg_mldsa65_verify_message_cached_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6466,7 +3208,21 @@ vg_mldsa65_verify_message_prepared_avx2:
 	mov rdx, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [rsp+8]
 	mov r8d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache_avx2}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -6494,12 +3250,25 @@ vg_mldsa65_verify_message_prepared_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
-	vmovdqu YMMWORD PTR [rsp+80], ymm0
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6619,7 +3388,21 @@ vg_mldsa65_verify_message_cached:
 	mov rdx, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [rsp+8]
 	mov r8d, 0
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -6647,7 +3430,21 @@ vg_mldsa65_verify_message_cached:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	movdqu XMMWORD PTR [rsp+112], xmm0
 	movdqu XMMWORD PTR [rsp+96], xmm0
 	movdqu XMMWORD PTR [rsp+80], xmm0
 	movdqu XMMWORD PTR [rsp+64], xmm0
@@ -6655,7 +3452,7 @@ vg_mldsa65_verify_message_cached:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -6775,7 +3572,21 @@ vg_mldsa65_verify_message_prepared:
 	mov rdx, QWORD PTR [rsp+24]
 	mov rcx, QWORD PTR [rsp+8]
 	mov r8d, 1
+	push rbx
+	push rbx
+	stmxcsr DWORD PTR [rsp]
+	mov ebx, DWORD PTR [rsp]
+	and ebx, 65535
+	mov eax, 8127
+	mov DWORD PTR [rsp+4], eax
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
 	call {vg_mldsa65_verify_with_cache}
+	lfence
+	mov DWORD PTR [rsp], ebx
+	ldmxcsr DWORD PTR [rsp]
+	pop rbx
+	pop rbx
 	pop r11
 	pop r11
 	pop r11
@@ -6803,7 +3614,21 @@ vg_mldsa65_verify_message_prepared:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-112]
+	lea rsp, [rsp-16]
+	stmxcsr DWORD PTR [rsp]
+	mov r11d, DWORD PTR [rsp]
+	and r11d, 65472
+	mov DWORD PTR [rsp], r11d
+	mov r11d, 8127
+	mov DWORD PTR [rsp+4], r11d
+	ldmxcsr DWORD PTR [rsp+4]
+	lfence
+	lfence
+	ldmxcsr DWORD PTR [rsp]
+	xor r11d, r11d
+	lea rsp, [rsp+16]
+	lea rsp, [rsp-128]
+	movdqu XMMWORD PTR [rsp+112], xmm0
 	movdqu XMMWORD PTR [rsp+96], xmm0
 	movdqu XMMWORD PTR [rsp+80], xmm0
 	movdqu XMMWORD PTR [rsp+64], xmm0
@@ -6811,7 +3636,7 @@ vg_mldsa65_verify_message_prepared:
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
 	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+112]
+	lea rsp, [rsp+128]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx

@@ -5,13 +5,6 @@
 // gives.
 
 vg_mldsa_ntt_avx2:
-	stmxcsr DWORD PTR [rsi+768]
-	mov r11d, DWORD PTR [rsi+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rsi+772], eax
-	ldmxcsr DWORD PTR [rsi+772]
-	lfence
 	lea r9, {VG_MLDSA_ZETAS}
 	vmovdqu ymm0, YMMWORD PTR [r9]
 	vmovdqu YMMWORD PTR [rsi], ymm0
@@ -401,8 +394,5 @@ vg_mldsa_ntt_avx2:
 	sub rcx, 1
 	jne 213b
 	vzeroupper
-	lfence
-	mov DWORD PTR [rsi+768], r11d
-	ldmxcsr DWORD PTR [rsi+768]
 	ret
 	.p2align 6

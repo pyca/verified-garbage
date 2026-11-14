@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.Mcdt.X86_64
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa{44,65,87}_verify_with_cache`
@@ -139,8 +140,10 @@ def verify : Prog isa := .seq (.block proF) (.seq (body P p) (.block epi))
 end
 
 /-- An entry of the verification function `c` on `μ`, named `n`: `r8 ← flag`,
-then a call of `c` with the arguments as they are. -/
+then a call of `c` with the arguments as they are, inside Intel's MXCSR
+prologue and epilogue (`Impl.Mcdt.X86_64.mcdtCall`): `c`'s arithmetic sets no
+MXCSR of its own. -/
 def entry (n : String) (c : Prog isa) (flag : Nat) : Prog isa :=
-  .seq (.block [.mov32 .r8 (.imm (BitVec.ofNat 32 flag))]) (.call n c)
+  .seq (.block [.mov32 .r8 (.imm (BitVec.ofNat 32 flag))]) (Impl.Mcdt.X86_64.mcdtCall n c)
 
 end VG.Impl.MlDsa.X86_64.Verify

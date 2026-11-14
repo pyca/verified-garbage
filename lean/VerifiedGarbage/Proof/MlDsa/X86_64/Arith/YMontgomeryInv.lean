@@ -205,7 +205,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith.MontgomeryInv
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok ifp ifn sel GOnly WP.keep writesOnly
-  gprPreserved_of withMxcsr_ok mxR add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
+  gprPreserved_of mxR add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
 open VG.Impl.MlKem.X86_64 (xb xmov toY rcxLoop yconst)
 open VG.Spec.MlDsa (q n Poly Zq zetas ntt nttInv)
 open VG.Proof.MlDsa (coeffAt polyAt PolyIs)
@@ -654,7 +654,7 @@ theorem map_residue {b : Nat} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} {g : Poly} (h
   apply Vector.ext; intro i hi
   rw [Vector.getElem_map, Vector.getElem_map, ← getElem!_pos F i hi, ← getElem!_pos g i hi, (h i hi).2]
 
-/-- Everything but `withMxcsr`, on any reduced `F` at `fP`, with the scratch at `sP`. -/
+/-- The code, on any reduced `F` at `fP`, with the scratch at `sP`. -/
 theorem body_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
     (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
     WP isa montInvBody s fun s' => PolyIs s'.mem fP (Proof.MlDsa.montgomeryNttInv F) ∧
@@ -694,7 +694,7 @@ theorem correct (s : State) (hs : (inPlaceK Proof.MlDsa.montgomeryNttInv).pre s)
   have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
-  refine ymx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 => ?_
+  refine ymx_correct s hs (by decide +kernel) (by decide +kernel) fun s1 k1 f1 => ?_
   have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
     polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub' _))
       ⟨hs.2.2.2.2.2, rfl⟩

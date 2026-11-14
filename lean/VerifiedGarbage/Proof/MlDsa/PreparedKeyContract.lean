@@ -131,6 +131,12 @@ def PublicKeyOk (p : Params) (prepared : Bool) (m : Mem) (a : Addr) : Prop :=
 
 def signWithCacheName (module : String) : String := s!"vg_{module}_sign_with_cache"
 def verifyWithCacheName (module : String) : String := s!"vg_{module}_verify_with_cache"
+/-- The internal functions that the public key generation and key preparation
+functions call inside Intel's MXCSR prologue and epilogue (x86-64's
+`Impl.Mcdt.X86_64.mcdtCall`). -/
+def keyGenInternalName (module : String) : String := s!"vg_{module}_keygen_internal"
+def preparePublicInternalName (module : String) : String := s!"vg_{module}_prepare_verifying_key_internal"
+def prepareSecretInternalName (module : String) : String := s!"vg_{module}_prepare_signing_key_internal"
 def preparedSignName (module : String) : String := s!"vg_{module}_sign_prepared"
 def preparedVerifyName (module : String) : String := s!"vg_{module}_verify_prepared"
 

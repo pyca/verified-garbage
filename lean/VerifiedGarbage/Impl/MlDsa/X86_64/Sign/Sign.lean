@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.Mcdt.X86_64
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa{44,65,87}_sign_with_cache`
@@ -301,8 +302,9 @@ def sign (P : Prims) (p : Params) : Prog isa :=
   .seq (.block pro) (.seq (expandA P p) (.seq (ifOk (rest P p)) (.block topEpi)))
 
 /-- An entry of the signing function `c` on `μ`, named `n`: `r9 ← flag`, then a
-call of `c` with the arguments as they are. -/
+call of `c` with the arguments as they are, inside Intel's MXCSR prologue and
+epilogue (`Impl.Mcdt.X86_64.mcdtCall`): `c`'s arithmetic sets no MXCSR of its own. -/
 def entry (n : String) (c : Prog isa) (flag : Nat) : Prog isa :=
-  .seq (.block [.mov32 .r9 (.imm (BitVec.ofNat 32 flag))]) (.call n c)
+  .seq (.block [.mov32 .r9 (.imm (BitVec.ofNat 32 flag))]) (Impl.Mcdt.X86_64.mcdtCall n c)
 
 end VG.Impl.MlDsa.X86_64.Sign

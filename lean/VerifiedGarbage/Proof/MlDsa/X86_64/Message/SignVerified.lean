@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 Untrusted: everything here is checked by Lean. `signMessage n c p`, for any
 signing function on `μ` `c` that `sign_message` can call (`SignFn`), is
-verified against `signMessageContract p X86_64.abi 112`.
+verified against `signMessageContract p X86_64.abi 128`.
 -/
 
 @[expose] public section
@@ -37,7 +37,7 @@ def signSat (p : Params) : State where
   rd := [⟨0x1000, p.skLen⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, 32⟩, ⟨0x80008, 16⟩]
   wr := [⟨0x4000, p.sigLen⟩, ⟨0x10000, mScrLen p⟩]
 
-theorem signMessage_sat {p : Params} (hp : p ∈ params) : ∃ s, (signMessageContract p X86_64.abi 112).pre s := by
+theorem signMessage_sat {p : Params} (hp : p ∈ params) : ∃ s, (signMessageContract p X86_64.abi 128).pre s := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl
   · sig_implies_sat [signMessageContract, signMessageSig, X86_64.abi, X86_64.argRegs, List.range,
@@ -48,7 +48,7 @@ theorem signMessage_sat {p : Params} (hp : p ∈ params) : ∃ s, (signMessageCo
       List.range.loop] [signSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using signSat mlDsa87
 
 theorem signMessage_verified {p : Params} {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) :
-    Verified X86_64.target (signMessage n c p 0) (signMessageContract p X86_64.abi 112) :=
+    Verified X86_64.target (signMessage n c p 0) (signMessageContract p X86_64.abi 128) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp (prep := false) hS hp (sPre_of h)
       ⟨t, s', he, ha, sPost_of hq⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => signMessage_ct (prep := false) hS hp s₁ s₂ t₁ t₂ s₁' s₂'
@@ -57,8 +57,8 @@ theorem signMessage_verified {p : Params} {n : String} {c : Prog isa} (hS : Sign
 
 /-- `sign_message_prepared`, given a state satisfying its precondition (which holds a prepared key). -/
 theorem signMessagePrepared_verified {p : Params} {n : String} {c : Prog isa} (hS : SignFn p c)
-    (hp : p ∈ params) (hsat : ∃ s, (preparedSignMessageContract p X86_64.abi 112).pre s) :
-    Verified X86_64.target (signMessage n c p 1) (preparedSignMessageContract p X86_64.abi 112) :=
+    (hp : p ∈ params) (hsat : ∃ s, (preparedSignMessageContract p X86_64.abi 128).pre s) :
+    Verified X86_64.target (signMessage n c p 1) (preparedSignMessageContract p X86_64.abi 128) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := signMessage_wp (prep := true) hS hp (sPreP_of h)
       ⟨t, s', he, ha, sPostP_of hq⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => signMessage_ct (prep := true) hS hp s₁ s₂ t₁ t₂ s₁' s₂'

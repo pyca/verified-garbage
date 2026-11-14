@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mxcsr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -278,8 +279,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
         ⟨fun r hr => by rw [o1.gpr, o0.keep.gpr hr], by rw [o1.rd, o0.keep.2.1], by rw [o1.wr, o0.keep.2.2]⟩,
         by rw [o1.mem, o0.mem]⟩
   have hw1 : pR h ∈ s1.wr := by rw [k1.2.2]; exact hwh
-  refine WP.seq (WP.mono (withMxcsrH_ok (r := .r8) ⟨by decide, by decide⟩ [.rax, .rdi, .rsi, .rdx, .rcx]
-    ⟨by decide, by decide⟩ h8 hw1 (writesOnly_of hk) (Q := fun (s3 : State) => Keep [.rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] s1 s3 ∧
+  refine WP.seq (WP.mono (noMxH_ok (p := h) (Q := fun (s3 : State) => Keep [.rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] s1 s3 ∧
       s3.gpr .rdi = coeffAddr h 248 ∧ Frame [pR h] σ.mem s3.mem ∧
       (∀ k < 248, (coeffAt s3.mem h k).toNat = (R[k]!).val) ∧
       ∀ l < 2, ∀ e < 4, (dword (s3.lane .xmm3 l) e).toNat = (R[248 + 4 * l + e]!).val)

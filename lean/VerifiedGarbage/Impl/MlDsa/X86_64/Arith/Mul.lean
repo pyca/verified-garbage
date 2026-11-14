@@ -14,11 +14,10 @@ coefficient `4i` of `h`, `f` and `g`, and `rcx = 63 - i` counting down:
 reduces (for `multiplyAddNTT`, `h` is then added and the sum reduced), and
 it is stored to `h`.
 
-The functions have no working space and use no stack, so `withMxcsr` saves
-MXCSR through the last 8 bytes of `h` (`r8 = h`): the last four coefficients
-of `h` are loaded to `xmm6` first, the loop stores the first 252, the last
-four are computed from registers before MXCSR is loaded back, and stored
-after it. Every address and branch depends only on the pointers.
+The functions have no working space and use no stack. The last four
+coefficients of `h` are loaded to `xmm6` first, the loop stores the first
+252, and the last four are computed from registers and stored last. Every
+address and branch depends only on the pointers.
 -/
 
 @[expose] public section
@@ -26,7 +25,7 @@ after it. Every address and branch depends only on the pointers.
 namespace VG.Impl.MlDsa.X86_64.Arith
 
 open VG.X86_64
-open VG.Impl.MlKem.X86_64 (xb xmov withMxcsr rcxLoop)
+open VG.Impl.MlKem.X86_64 (xb xmov rcxLoop)
 
 /-- The constants and `2⁶⁴ mod q` in the doublewords of `xmm11`. -/
 def mulPro : List Instr :=
@@ -56,8 +55,7 @@ def mulLast (core : List Instr) : List Instr :=
 /-- A function of `h`, `f` and `g` four coefficients at a time by `core`. -/
 def mulFn (core : List Instr) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rdi), .movdquLoad .xmm6 (at_ .rdi 1008)])
-    (.seq (withMxcsr .r8 1016
-        (.seq (.block mulPro) (.seq (rcxLoop 63 (mulLoads ++ core ++ mulTail)) (.block (mulLast core)))))
+    (.seq (.seq (.block mulPro) (.seq (rcxLoop 63 (mulLoads ++ core ++ mulTail)) (.block (mulLast core))))
       (.block [.movdquStore (at_ .rdi 0) .xmm3]))
 
 def mul : Prog isa := mulFn mulCore

@@ -10,10 +10,9 @@ public import VerifiedGarbage.Spec.MlDsa
 on four coefficients of `f` at a time, in place, as doublewords of SSE
 registers (see `Vec.lean`). `scratch` holds the 256 `u32`s
 `ζ^BitRev8(m) · 2³² mod q` (`zmTab`, stored with immediates: the code has
-no other memory), and MXCSR's at bytes 768 to 775 before and after
-(`withMxcsr`, which saves the caller's MXCSR in `r11` in between).
+no other memory).
 
-Within `withMxcsr`, the prologue stores the table and the constants. Then
+The prologue stores the table and the constants. Then
 the layers, each a pass over `f` with `rdx` pointing at the coefficients it
 loads and `r8` at the zetas of the table:
 
@@ -40,7 +39,7 @@ Every address and branch depends only on the pointers.
 namespace VG.Impl.MlDsa.X86_64.Arith
 
 open VG.X86_64
-open VG.Impl.MlKem.X86_64 (xb xmov withMxcsr rcxLoop)
+open VG.Impl.MlKem.X86_64 (xb xmov rcxLoop)
 
 /-- `ζ^BitRev8(m) · 2³² mod q`. -/
 def zmTab (m : Nat) : Nat := 1753 ^ Spec.MlDsa.bitRev8 m * 2 ^ 32 % 8380417
@@ -94,18 +93,18 @@ def vscale : Prog isa :=
 /-- The table and the constants. -/
 def vpro : List Instr := vtabFill zetaTbl zmTab 256 .rsi ++ vconsts
 
-def ntt : Prog isa := withMxcsr .rsi 768 <|
+def ntt : Prog isa :=
   .seq (.block vpro) (.seq (vlay vbfly 128 1 4) (.seq (vlay vbfly 64 2 4) (.seq (vlay vbfly 32 4 4)
     (.seq (vlay vbfly 16 8 4) (.seq (vlay vbfly 8 16 4) (.seq (vlay vbfly 4 32 4)
       (.seq (vlay2 vbfly 64 0x50 8) (vlay1 vbfly 128 0xE4 16))))))))
 
-/-- `NTT⁻¹` but for `withMxcsr`. -/
+/-- `NTT⁻¹`. -/
 def nttInvBody : Prog isa :=
   .seq (.block vpro) (.seq (vlay1 vibfly 252 0x1B (-16)) (.seq (vlay2 vibfly 126 0x05 (-8))
     (.seq (vlay vibfly 4 63 (-4)) (.seq (vlay vibfly 8 31 (-4)) (.seq (vlay vibfly 16 15 (-4))
       (.seq (vlay vibfly 32 7 (-4)) (.seq (vlay vibfly 64 3 (-4)) (.seq (vlay vibfly 128 1 (-4))
         vscale))))))))
 
-def nttInv : Prog isa := withMxcsr .rsi 768 nttInvBody
+def nttInv : Prog isa := nttInvBody
 
 end VG.Impl.MlDsa.X86_64.Arith

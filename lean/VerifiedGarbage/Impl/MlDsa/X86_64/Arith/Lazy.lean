@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 open VG.X86_64
-open VG.Impl.MlKem.X86_64 (xb xmov withMxcsr rcxLoop toY yconst)
+open VG.Impl.MlKem.X86_64 (xb xmov rcxLoop toY yconst)
 
 -- Forward NTT keeps coefficients nonnegative and below 17q. vmont accepts
 -- arbitrary uint32 coefficients when its twiddle is below q.
@@ -28,7 +28,7 @@ def normalizeLazy : Prog isa :=
     (rcxLoop 32 (([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0)] : List Instr) ++ toY reduceLazy ++
       ([.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .alu .add .rdx (.imm 32)] : List Instr)))
 
-def lazyNtt : Prog isa := withMxcsr .rsi 768 <|
+def lazyNtt : Prog isa :=
   .seq (.block ypro) (.seq (.block (yconst .xmm11 16760834))
     (.seq (ylay lazyBfly 128 1 4) (.seq (ylay lazyBfly 64 2 4) (.seq (ylay lazyBfly 32 4 4)
       (.seq (ylay lazyBfly 16 8 4) (.seq (ylay lazyBfly 8 16 4) (.seq (ylay4 lazyBfly 32 0x00 0x55 8)

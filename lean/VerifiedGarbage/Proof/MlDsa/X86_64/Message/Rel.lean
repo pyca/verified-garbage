@@ -166,6 +166,48 @@ theorem call_tr {Φ : Lay → Mem → State → Prop} {as : List Arg} (hok : as.
     (cov c₂ f₂).1, (cov c₂ f₂).2,
     by rw [f₁.2.gpr (by decide), f₂.2.gpr (by decide), c₁.rsp, c₂.rsp]⟩
 
+
+/-- `call_tr` for a call inside Intel's MXCSR prologue and epilogue (`callM`,
+`Impl.Mcdt.X86_64.mcdtCall`), from states at the callee's entry that
+`EntryOf` describes. -/
+theorem callM_tr {Φ : Lay → Mem → State → Prop} {as : List Arg} (hok : as.all Arg.ok = true) {n : String}
+    {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c) (hsp : NoSp c) (hdep : c.depth ≤ 4) (rd wr : Lay → List Region)
+    (hpre : ∀ (L : Lay) g mx m₀ (t t1 e : State), L.Ok → Ctx L g mx m₀ t → Φ L m₀ t → Moved as t t1 →
+      Proof.Mcdt.X86_64.EntryOf t1 e → k.pre (e.withRegions (rd L) (wr L)))
+    (hpub : ∀ (L : Lay) g₁ g₂ mx₁ mx₂ m₁ m₂ (a b a1 b1 e₁ e₂ : State), L.Ok → I L m₁ m₂ → Ctx L g₁ mx₁ m₁ a →
+      Ctx L g₂ mx₂ m₂ b → Φ L m₁ a → Φ L m₂ b → Moved as a a1 → Moved as b b1 →
+      Proof.Mcdt.X86_64.EntryOf a1 e₁ → Proof.Mcdt.X86_64.EntryOf b1 e₂ →
+      k.pub (e₁.withRegions (rd L) (wr L)) (e₂.withRegions (rd L) (wr L)))
+    (hcov : ∀ (L : Lay) g mx m₀ (t : State), L.Ok → Ctx L g mx m₀ t → Φ L m₀ t →
+      (∀ r ∈ rd L, ∃ R ∈ L.rd ++ L.FR :: L.wr, Within r R) ∧ (∀ r ∈ wr L, ∃ R ∈ L.wr, Within r R)) :
+    RelCT isa (Two I Φ) (callM n c as) fun _ _ => True := by
+  refine RelCT.seq (RelCT.postDep (Q := fun a1 b1 => ∃ a b, Two I Φ a b ∧ Moved as a a1 ∧ Moved as b b1)
+    (block_rsp_tr (setArgs_spOnly as) fun _ _ h => h.rsp)
+    (fun x y ⟨_, _, _, _, _, _, _, _, _, c₁, c₂, _, _⟩ =>
+      ⟨setArgs_ok as hok x c₁.frOk, setArgs_ok as hok y c₂.frOk⟩)
+    fun x y x1 y1 hp f₁ f₂ => ⟨x, y, hp, f₁, f₂⟩) ?_
+  refine Proof.Mcdt.X86_64.RelCT.mcdtCall hv hct hsp fun a1 b1 ⟨a, b, hp, f₁, f₂⟩ => ?_
+  obtain ⟨L, g₁, g₂, mx₁, mx₂, m₁, m₂, hL, hi, c₁, c₂, φ₁, φ₂⟩ := hp
+  obtain ⟨hr, hw⟩ := hcov L g₁ mx₁ m₁ a hL c₁ φ₁
+  have cov : ∀ {t t1 : State} {g mx m₀}, Ctx L g mx m₀ t → Moved as t t1 →
+      Covers (rd L ++ wr L) (t1.rd ++ t1.wr) ∧ Covers (wr L) t1.wr := fun hc f => by
+    rw [f.2.2.1, f.2.2.2, hc.rd, hc.wr]
+    refine ⟨covers_of_within fun r hr' => ?_, covers_of_within fun r hr' => ?_⟩
+    · rcases List.mem_append.mp hr' with h' | h'
+      · exact hr r h'
+      · obtain ⟨R, hR, hW⟩ := hw r h'
+        exact ⟨R, by simp [hR], hW⟩
+    · obtain ⟨R, hR, hW⟩ := hw r hr'
+      exact ⟨R, List.mem_cons_of_mem _ hR, hW⟩
+  have hB := hL.nB
+  refine ⟨by rw [f₁.2.gpr (by decide), f₂.2.gpr (by decide), c₁.rsp, c₂.rsp],
+    by rw [f₁.2.gpr (by decide), c₁.rsp, Lay.SP, toNat_add_ofNat (by omega_using [hB])]; omega,
+    rd L, wr L, rd L, wr L, (cov c₁ f₁).1, (cov c₁ f₁).2, (cov c₂ f₂).1, (cov c₂ f₂).2,
+    fun e₁ e₂ he₁ he₂ => ⟨hpre L g₁ mx₁ m₁ a a1 e₁ hL c₁ φ₁ f₁ he₁, hpre L g₂ mx₂ m₂ b b1 e₂ hL c₂ φ₂ f₂ he₂,
+      hpub L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 e₁ e₂ hL hi c₁ c₂ φ₁ φ₂ f₁ f₂ he₁ he₂⟩⟩
+
 end
 
 end VG.Proof.MlDsa.X86_64.Message

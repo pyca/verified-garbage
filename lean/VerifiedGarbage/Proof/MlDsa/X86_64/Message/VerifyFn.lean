@@ -120,7 +120,8 @@ theorem verifyFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
 
 theorem verifyMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
     (flag : Nat) : (Impl.MlDsa.X86_64.Message.verifyMessageCached n c p flag).all (fun i => !isa.writesSp i) = true := by
-  generalize hq : (fun i => !isa.writesSp i) = q at hc ⊢
+  have hmc := Proof.Mcdt.X86_64.mcdtCall_spSafe (n := n) hc
+  generalize hq : (fun i => !isa.writesSp i) = q at hc hmc ⊢
   have ha : Impl.Sha3.X86_64.Stream.absorb.all q = true := hq ▸ kabs_spSafe
   have hp' : Impl.Sha3.X86_64.Stream.pad.all q = true := hq ▸ kpad_spSafe
   have hs : Impl.Sha3.X86_64.Stream.squeeze.all q = true := hq ▸ ksqz_spSafe
@@ -129,7 +130,7 @@ theorem verifyMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.al
   simp only [Impl.MlDsa.X86_64.Message.verifyMessageCached, Impl.MlDsa.X86_64.Message.top,
     Impl.MlDsa.X86_64.Message.muHash, Impl.MlDsa.X86_64.Message.zeroSt,
     Impl.MlDsa.X86_64.Message.kabs, Impl.MlDsa.X86_64.Message.kpad, Impl.MlDsa.X86_64.Message.ksqz,
-    Impl.MlDsa.X86_64.Message.callA, Code.all, hc, ha, hp', hs, hsa, hmv, Bool.and_true, Bool.true_and]
+    Impl.MlDsa.X86_64.Message.callA, Impl.MlDsa.X86_64.Message.callM, Code.all, hmc, ha, hp', hs, hsa, hmv, Bool.and_true, Bool.true_and]
   subst hq
   decide
 
@@ -138,7 +139,7 @@ theorem verifyMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.al
 theorem verifyEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
     Verified X86_64.target
       (Impl.MlDsa.X86_64.Verify.entry n (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) p) 0)
-      (verifyContract p X86_64.abi 40) :=
+      (verifyContract p X86_64.abi 56) :=
   have hV := verifyFn v hp
   have hK : Verify.KernelFn p (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) p) :=
     ⟨hV.ok, hV.ct, hV.nosp, hV.depth⟩
@@ -146,7 +147,8 @@ theorem verifyEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n
 
 theorem verifyEntry_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
     (flag : Nat) : (Impl.MlDsa.X86_64.Verify.entry n c flag).all (fun i => !isa.writesSp i) = true := by
-  simp only [Impl.MlDsa.X86_64.Verify.entry, Code.all, hc, Bool.and_true]
+  have hm := Proof.Mcdt.X86_64.mcdtCall_spSafe (n := n) hc
+  simp only [Impl.MlDsa.X86_64.Verify.entry, Code.all, hm, Bool.and_true]
   rfl
 
 end VG.Proof.MlDsa.X86_64.Message

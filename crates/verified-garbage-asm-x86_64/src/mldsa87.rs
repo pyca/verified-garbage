@@ -21,372 +21,16 @@ pub const VG_MLDSA87_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * `seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so generated before.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_keygen_avx512(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAgAAACIg4ADAAC4BwAAAIiDgQMAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfSIPHAL6IAAAAugAAAABIielIg8EAQbggAAAASYnZSYHByAAAAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuiAAAABIidlIgcGAAwAAQbgCAAAASYnZSYHByAAAAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuiIAAAC5HwAAAEmJ2EmBwMgAAAA="
-call {vg_keccak_pad_scratch}
-.base64 "SInfSIPHAL6IAAAAugAAAABIidlIgcEABAAAQbiAAAAASYnZSYHByAAAAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SInfSIHHgAQAAEiJ3kiBxgAEAAC5BAAAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SInfSIHHwAQAAEiJ3kiBxiAEAAC5CAAAAA=="
-21:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 21b
-.base64 "uAAAAACIgwEFAABIid9IgceABQAASIneSIHGAAQAALkEAAAA"
-22:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 22b
-.base64 "SInfSIHHogUAAEiJ3kiBxgAEAAC5BAAAAA=="
-23:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 23b
-.base64 "SInfSIHHxAUAAEiJ3kiBxgAEAAC5BAAAAA=="
-24:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 24b
-.base64 "SInfSIHH5gUAAEiJ3kiBxgAEAAC5BAAAAA=="
-25:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 25b
-.base64 "uAAAAACIg6AFAAC4AAAAAIiDoQUAALgBAAAAiIPCBQAAuAAAAACIg8MFAAC4AgAAAIiD5AUAALgAAAAAiIPlBQAAuAMAAACIgwYGAAC4AAAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAEAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABAAALkABAAA"
-26:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 26b
-.base64 "uAQAAACIg6AFAAC4AAAAAIiDoQUAALgFAAAAiIPCBQAAuAAAAACIg8MFAAC4BgAAAIiD5AUAALgAAAAAiIPlBQAAuAAAAACIgwYGAAC4AQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAIAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACAAALkABAAA"
-27:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 27b
-.base64 "uAEAAACIg6AFAAC4AQAAAIiDoQUAALgCAAAAiIPCBQAAuAEAAACIg8MFAAC4AwAAAIiD5AUAALgBAAAAiIPlBQAAuAQAAACIgwYGAAC4AQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAMAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHADAAALkABAAA"
-28:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 28b
-.base64 "uAUAAACIg6AFAAC4AQAAAIiDoQUAALgGAAAAiIPCBQAAuAEAAACIg8MFAAC4AAAAAIiD5AUAALgCAAAAiIPlBQAAuAEAAACIgwYGAAC4AgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAQAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAEAAALkABAAA"
-29:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 29b
-.base64 "uAIAAACIg6AFAAC4AgAAAIiDoQUAALgDAAAAiIPCBQAAuAIAAACIg8MFAAC4BAAAAIiD5AUAALgCAAAAiIPlBQAAuAUAAACIgwYGAAC4AgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAUAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAFAAALkABAAA"
-210:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 210b
-.base64 "uAYAAACIg6AFAAC4AgAAAIiDoQUAALgAAAAAiIPCBQAAuAMAAACIg8MFAAC4AQAAAIiD5AUAALgDAAAAiIPlBQAAuAIAAACIgwYGAAC4AwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAYAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAGAAALkABAAA"
-211:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 211b
-.base64 "uAMAAACIg6AFAAC4AwAAAIiDoQUAALgEAAAAiIPCBQAAuAMAAACIg8MFAAC4BQAAAIiD5AUAALgDAAAAiIPlBQAAuAYAAACIgwYGAAC4AwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAcAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAHAAALkABAAA"
-212:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 212b
-.base64 "uAAAAACIg6AFAAC4BAAAAIiDoQUAALgBAAAAiIPCBQAAuAQAAACIg8MFAAC4AgAAAIiD5AUAALgEAAAAiIPlBQAAuAMAAACIgwYGAAC4BAAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAgAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAIAAALkABAAA"
-213:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 213b
-.base64 "uAQAAACIg6AFAAC4BAAAAIiDoQUAALgFAAAAiIPCBQAAuAQAAACIg8MFAAC4BgAAAIiD5AUAALgEAAAAiIPlBQAAuAAAAACIgwYGAAC4BQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAkAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAJAAALkABAAA"
-214:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 214b
-.base64 "uAEAAACIg6AFAAC4BQAAAIiDoQUAALgCAAAAiIPCBQAAuAUAAACIg8MFAAC4AwAAAIiD5AUAALgFAAAAiIPlBQAAuAQAAACIgwYGAAC4BQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAoAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAKAAALkABAAA"
-215:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 215b
-.base64 "uAUAAACIg6AFAAC4BQAAAIiDoQUAALgGAAAAiIPCBQAAuAUAAACIg8MFAAC4AAAAAIiD5AUAALgGAAAAiIPlBQAAuAEAAACIgwYGAAC4BgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAsAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHALAAALkABAAA"
-216:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 216b
-.base64 "uAIAAACIg6AFAAC4BgAAAIiDoQUAALgDAAAAiIPCBQAAuAYAAACIg8MFAAC4BAAAAIiD5AUAALgGAAAAiIPlBQAAuAUAAACIgwYGAAC4BgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAwAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAMAAALkABAAA"
-217:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 217b
-.base64 "uAYAAACIg6AFAAC4BgAAAIiDoQUAALgAAAAAiIPCBQAAuAcAAACIg8MFAAC4AQAAAIiD5AUAALgHAAAAiIPlBQAAuAIAAACIgwYGAAC4BwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYA0AAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHANAAALkABAAA"
-218:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 218b
-.base64 "uAMAAACIg6AFAAC4BwAAAIiDoQUAALgEAAAAiIPCBQAAuAcAAACIg8MFAAC4BQAAAIiD5AUAALgHAAAAiIPlBQAAuAYAAACIgwYGAAC4BwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYA4AAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx512}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAOAAALkABAAA"
-219:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 219b
-.base64 "uAAAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPAAALkAAQAA"
-220:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 220b
-.base64 "uAEAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA9AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPQAALkAAQAA"
-221:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 221b
-.base64 "uAIAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA+AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPgAALkAAQAA"
-222:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 222b
-.base64 "uAMAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA/AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPwAALkAAQAA"
-223:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 223b
-.base64 "uAQAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAAAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAABALkAAQAA"
-224:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 224b
-.base64 "uAUAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIABAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAQBALkAAQAA"
-225:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 225b
-.base64 "uAYAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIACAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAgBALkAAQAA"
-226:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 226b
-.base64 "uAcAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIADAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAwBALkAAQAA"
-227:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 227b
-.base64 "uAgAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAEAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABABALkAAQAA"
-228:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 228b
-.base64 "uAkAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAFAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABQBALkAAQAA"
-229:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 229b
-.base64 "uAoAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAGAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABgBALkAAQAA"
-230:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 230b
-.base64 "uAsAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAHAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABwBALkAAQAA"
-231:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 231b
-.base64 "uAwAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAIAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACABALkAAQAA"
-232:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 232b
-.base64 "uA0AAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAJAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACQBALkAAQAA"
-233:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 233b
-.base64 "uA4AAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAKAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACgBALkAAQAA"
-234:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 234b
-.base64 "TInnSIPHAEiJ3kiBxgAEAAC5BAAAAA=="
-235:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 235b
-.base64 "TInvSIPHAEiJ3kiBxgAEAAC5BAAAAA=="
-236:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 236b
-.base64 "TInvSIPHIEiJ3kiBxmAEAAC5BAAAAA=="
-237:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 237b
-.base64 "SInfSIHHAPAAAL4CAAAAugIAAABMielIgcGAAAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPQAAL4CAAAAugIAAABMielIgcHgAAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPgAAL4CAAAAugIAAABMielIgcFAAQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPwAAL4CAAAAugIAAABMielIgcGgAQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAABAL4CAAAAugIAAABMielIgcEAAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAQBAL4CAAAAugIAAABMielIgcFgAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAgBAL4CAAAAugIAAABMielIgcHAAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAwBAL4CAAAAugIAAABMielIgcEgAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABABAL4CAAAAugIAAABMielIgcGAAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABQBAL4CAAAAugIAAABMielIgcHgAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABgBAL4CAAAAugIAAABMielIgcFABAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABwBAL4CAAAAugIAAABMielIgcGgBAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACABAL4CAAAAugIAAABMielIgcEABQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACQBAL4CAAAAugIAAABMielIgcFgBQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACgBAL4CAAAAugIAAABMielIgcHABQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPAAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAPQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAPgAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAPwAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAAABAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAAQBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAAgBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAQAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAMAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIPCILlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEgBgAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAsAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAQAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCYAEAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHABwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgBIAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAUAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCoAIAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFgCQAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgBkAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAYAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHC4AMAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEACwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgCAAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAcAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCIAUAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcGgDAAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgCcAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAgAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCYAYAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFADgAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgC4AABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAkAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCoAcAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHgDwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgDUAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAoAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHC4AgAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcGAEQAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuCAKAABJidlJgcHIAAAA"
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuggAAAC5HwAAAEmJ2EmBwMgAAAA="
-call {vg_keccak_pad_scratch}
-.base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJODF/n8EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+        r#".base64 "U1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
+call {vg_mldsa87_keygen_internal_avx512}
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_rej_ntt_poly4_avx512 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_avx512::vg_mldsa_rej_ntt_poly4_avx512,
-        vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
-        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
-        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
-        vg_mldsa_dot_inverse7_avx2 = sym super::mldsa87::vg_mldsa_dot_inverse7_avx2::vg_mldsa_dot_inverse7_avx2,
-        vg_mldsa_add_avx2 = sym super::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
-        vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
-        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+        vg_mldsa87_keygen_internal_avx512 = sym super::mldsa87::vg_mldsa87_keygen_internal_avx512::vg_mldsa87_keygen_internal_avx512,
     )
 }
 
@@ -408,372 +52,16 @@ pub const VG_MLDSA87_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * `seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so generated before.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_keygen_avx2(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAgAAACIg4ADAAC4BwAAAIiDgQMAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfSIPHAL6IAAAAugAAAABIielIg8EAQbggAAAASYnZSYHByAAAAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuiAAAABIidlIgcGAAwAAQbgCAAAASYnZSYHByAAAAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuiIAAAC5HwAAAEmJ2EmBwMgAAAA="
-call {vg_keccak_pad_scratch}
-.base64 "SInfSIPHAL6IAAAAugAAAABIidlIgcEABAAAQbiAAAAASYnZSYHByAAAAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SInfSIHHgAQAAEiJ3kiBxgAEAAC5BAAAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SInfSIHHwAQAAEiJ3kiBxiAEAAC5CAAAAA=="
-21:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 21b
-.base64 "uAAAAACIgwEFAABIid9IgceABQAASIneSIHGAAQAALkEAAAA"
-22:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 22b
-.base64 "SInfSIHHogUAAEiJ3kiBxgAEAAC5BAAAAA=="
-23:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 23b
-.base64 "SInfSIHHxAUAAEiJ3kiBxgAEAAC5BAAAAA=="
-24:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 24b
-.base64 "SInfSIHH5gUAAEiJ3kiBxgAEAAC5BAAAAA=="
-25:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 25b
-.base64 "uAAAAACIg6AFAAC4AAAAAIiDoQUAALgBAAAAiIPCBQAAuAAAAACIg8MFAAC4AgAAAIiD5AUAALgAAAAAiIPlBQAAuAMAAACIgwYGAAC4AAAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAEAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABAAALkABAAA"
-26:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 26b
-.base64 "uAQAAACIg6AFAAC4AAAAAIiDoQUAALgFAAAAiIPCBQAAuAAAAACIg8MFAAC4BgAAAIiD5AUAALgAAAAAiIPlBQAAuAAAAACIgwYGAAC4AQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAIAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACAAALkABAAA"
-27:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 27b
-.base64 "uAEAAACIg6AFAAC4AQAAAIiDoQUAALgCAAAAiIPCBQAAuAEAAACIg8MFAAC4AwAAAIiD5AUAALgBAAAAiIPlBQAAuAQAAACIgwYGAAC4AQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAMAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHADAAALkABAAA"
-28:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 28b
-.base64 "uAUAAACIg6AFAAC4AQAAAIiDoQUAALgGAAAAiIPCBQAAuAEAAACIg8MFAAC4AAAAAIiD5AUAALgCAAAAiIPlBQAAuAEAAACIgwYGAAC4AgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAQAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAEAAALkABAAA"
-29:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 29b
-.base64 "uAIAAACIg6AFAAC4AgAAAIiDoQUAALgDAAAAiIPCBQAAuAIAAACIg8MFAAC4BAAAAIiD5AUAALgCAAAAiIPlBQAAuAUAAACIgwYGAAC4AgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAUAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAFAAALkABAAA"
-210:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 210b
-.base64 "uAYAAACIg6AFAAC4AgAAAIiDoQUAALgAAAAAiIPCBQAAuAMAAACIg8MFAAC4AQAAAIiD5AUAALgDAAAAiIPlBQAAuAIAAACIgwYGAAC4AwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAYAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAGAAALkABAAA"
-211:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 211b
-.base64 "uAMAAACIg6AFAAC4AwAAAIiDoQUAALgEAAAAiIPCBQAAuAMAAACIg8MFAAC4BQAAAIiD5AUAALgDAAAAiIPlBQAAuAYAAACIgwYGAAC4AwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAcAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAHAAALkABAAA"
-212:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 212b
-.base64 "uAAAAACIg6AFAAC4BAAAAIiDoQUAALgBAAAAiIPCBQAAuAQAAACIg8MFAAC4AgAAAIiD5AUAALgEAAAAiIPlBQAAuAMAAACIgwYGAAC4BAAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAgAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAIAAALkABAAA"
-213:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 213b
-.base64 "uAQAAACIg6AFAAC4BAAAAIiDoQUAALgFAAAAiIPCBQAAuAQAAACIg8MFAAC4BgAAAIiD5AUAALgEAAAAiIPlBQAAuAAAAACIgwYGAAC4BQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAkAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAJAAALkABAAA"
-214:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 214b
-.base64 "uAEAAACIg6AFAAC4BQAAAIiDoQUAALgCAAAAiIPCBQAAuAUAAACIg8MFAAC4AwAAAIiD5AUAALgFAAAAiIPlBQAAuAQAAACIgwYGAAC4BQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAoAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAKAAALkABAAA"
-215:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 215b
-.base64 "uAUAAACIg6AFAAC4BQAAAIiDoQUAALgGAAAAiIPCBQAAuAUAAACIg8MFAAC4AAAAAIiD5AUAALgGAAAAiIPlBQAAuAEAAACIgwYGAAC4BgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAsAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHALAAALkABAAA"
-216:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 216b
-.base64 "uAIAAACIg6AFAAC4BgAAAIiDoQUAALgDAAAAiIPCBQAAuAYAAACIg8MFAAC4BAAAAIiD5AUAALgGAAAAiIPlBQAAuAUAAACIgwYGAAC4BgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAwAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAMAAALkABAAA"
-217:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 217b
-.base64 "uAYAAACIg6AFAAC4BgAAAIiDoQUAALgAAAAAiIPCBQAAuAcAAACIg8MFAAC4AQAAAIiD5AUAALgHAAAAiIPlBQAAuAIAAACIgwYGAAC4BwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYA0AAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHANAAALkABAAA"
-218:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 218b
-.base64 "uAMAAACIg6AFAAC4BwAAAIiDoQUAALgEAAAAiIPCBQAAuAcAAACIg8MFAAC4BQAAAIiD5AUAALgHAAAAiIPlBQAAuAYAAACIgwYGAAC4BwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYA4AAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAOAAALkABAAA"
-219:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 219b
-.base64 "uAAAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPAAALkAAQAA"
-220:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 220b
-.base64 "uAEAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA9AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPQAALkAAQAA"
-221:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 221b
-.base64 "uAIAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA+AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPgAALkAAQAA"
-222:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 222b
-.base64 "uAMAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA/AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPwAALkAAQAA"
-223:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 223b
-.base64 "uAQAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAAAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAABALkAAQAA"
-224:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 224b
-.base64 "uAUAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIABAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAQBALkAAQAA"
-225:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 225b
-.base64 "uAYAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIACAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAgBALkAAQAA"
-226:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 226b
-.base64 "uAcAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIADAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAwBALkAAQAA"
-227:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 227b
-.base64 "uAgAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAEAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABABALkAAQAA"
-228:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 228b
-.base64 "uAkAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAFAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABQBALkAAQAA"
-229:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 229b
-.base64 "uAoAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAGAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABgBALkAAQAA"
-230:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 230b
-.base64 "uAsAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAHAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABwBALkAAQAA"
-231:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 231b
-.base64 "uAwAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAIAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACABALkAAQAA"
-232:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 232b
-.base64 "uA0AAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAJAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACQBALkAAQAA"
-233:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 233b
-.base64 "uA4AAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAKAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACgBALkAAQAA"
-234:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 234b
-.base64 "TInnSIPHAEiJ3kiBxgAEAAC5BAAAAA=="
-235:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 235b
-.base64 "TInvSIPHAEiJ3kiBxgAEAAC5BAAAAA=="
-236:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 236b
-.base64 "TInvSIPHIEiJ3kiBxmAEAAC5BAAAAA=="
-237:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 237b
-.base64 "SInfSIHHAPAAAL4CAAAAugIAAABMielIgcGAAAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPQAAL4CAAAAugIAAABMielIgcHgAAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPgAAL4CAAAAugIAAABMielIgcFAAQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPwAAL4CAAAAugIAAABMielIgcGgAQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAABAL4CAAAAugIAAABMielIgcEAAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAQBAL4CAAAAugIAAABMielIgcFgAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAgBAL4CAAAAugIAAABMielIgcHAAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAwBAL4CAAAAugIAAABMielIgcEgAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABABAL4CAAAAugIAAABMielIgcGAAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABQBAL4CAAAAugIAAABMielIgcHgAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABgBAL4CAAAAugIAAABMielIgcFABAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABwBAL4CAAAAugIAAABMielIgcGgBAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACABAL4CAAAAugIAAABMielIgcEABQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACQBAL4CAAAAugIAAABMielIgcFgBQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACgBAL4CAAAAugIAAABMielIgcHABQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPAAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAPQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAPgAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAPwAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAAABAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAAQBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHAAgBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAQAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAMAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIPCILlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEgBgAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAsAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAQAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCYAEAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHABwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgBIAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAUAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCoAIAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFgCQAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgBkAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAYAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHC4AMAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEACwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgCAAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAcAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCIAUAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcGgDAAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgCcAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAgAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCYAYAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFADgAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgC4AABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAkAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCoAcAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHgDwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgDUAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAoAQA="
-call {vg_mldsa_add_avx2}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHC4AgAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcGAEQAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuCAKAABJidlJgcHIAAAA"
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuggAAAC5HwAAAEmJ2EmBwMgAAAA="
-call {vg_keccak_pad_scratch}
-.base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJODF/n8EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+        r#".base64 "U1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
+call {vg_mldsa87_keygen_internal_avx2}
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4_avx2::vg_mldsa_rej_ntt_poly4_avx2,
-        vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
-        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
-        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
-        vg_mldsa_dot_inverse7_avx2 = sym super::mldsa87::vg_mldsa_dot_inverse7_avx2::vg_mldsa_dot_inverse7_avx2,
-        vg_mldsa_add_avx2 = sym super::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
-        vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
-        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+        vg_mldsa87_keygen_internal_avx2 = sym super::mldsa87::vg_mldsa87_keygen_internal_avx2::vg_mldsa87_keygen_internal_avx2,
     )
 }
 
@@ -792,371 +80,15 @@ call {vg_keccak_squeeze_scratch}
 /// * `seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so generated before.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `pk`, `sk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `pk`, `sk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_keygen(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SImZSAMAAEiJqVADAABMiaFYAwAATImpYAMAAEyJsWgDAABMiblwAwAASInLSIn9SYn0SYnVQb8BAAAAuAgAAACIg4ADAAC4BwAAAIiDgQMAALgAAAAASIkDSIlDCEiJQxBIiUMYSIlDIEiJQyhIiUMwSIlDOEiJQ0BIiUNISIlDUEiJQ1hIiUNgSIlDaEiJQ3BIiUN4SImDgAAAAEiJg4gAAABIiYOQAAAASImDmAAAAEiJg6AAAABIiYOoAAAASImDsAAAAEiJg7gAAABIiYPAAAAASInfSIPHAL6IAAAAugAAAABIielIg8EAQbggAAAASYnZSYHByAAAAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuiAAAABIidlIgcGAAwAAQbgCAAAASYnZSYHByAAAAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuiIAAAC5HwAAAEmJ2EmBwMgAAAA="
-call {vg_keccak_pad_scratch}
-.base64 "SInfSIPHAL6IAAAAugAAAABIidlIgcEABAAAQbiAAAAASYnZSYHByAAAAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SInfSIHHgAQAAEiJ3kiBxgAEAAC5BAAAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SInfSIHHwAQAAEiJ3kiBxiAEAAC5CAAAAA=="
-21:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 21b
-.base64 "uAAAAACIgwEFAABIid9IgceABQAASIneSIHGAAQAALkEAAAA"
-22:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 22b
-.base64 "SInfSIHHogUAAEiJ3kiBxgAEAAC5BAAAAA=="
-23:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 23b
-.base64 "SInfSIHHxAUAAEiJ3kiBxgAEAAC5BAAAAA=="
-24:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 24b
-.base64 "SInfSIHH5gUAAEiJ3kiBxgAEAAC5BAAAAA=="
-25:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 25b
-.base64 "uAAAAACIg6AFAAC4AAAAAIiDoQUAALgBAAAAiIPCBQAAuAAAAACIg8MFAAC4AgAAAIiD5AUAALgAAAAAiIPlBQAAuAMAAACIgwYGAAC4AAAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAEAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABAAALkABAAA"
-26:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 26b
-.base64 "uAQAAACIg6AFAAC4AAAAAIiDoQUAALgFAAAAiIPCBQAAuAAAAACIg8MFAAC4BgAAAIiD5AUAALgAAAAAiIPlBQAAuAAAAACIgwYGAAC4AQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAIAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACAAALkABAAA"
-27:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 27b
-.base64 "uAEAAACIg6AFAAC4AQAAAIiDoQUAALgCAAAAiIPCBQAAuAEAAACIg8MFAAC4AwAAAIiD5AUAALgBAAAAiIPlBQAAuAQAAACIgwYGAAC4AQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAMAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHADAAALkABAAA"
-28:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 28b
-.base64 "uAUAAACIg6AFAAC4AQAAAIiDoQUAALgGAAAAiIPCBQAAuAEAAACIg8MFAAC4AAAAAIiD5AUAALgCAAAAiIPlBQAAuAEAAACIgwYGAAC4AgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAQAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAEAAALkABAAA"
-29:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 29b
-.base64 "uAIAAACIg6AFAAC4AgAAAIiDoQUAALgDAAAAiIPCBQAAuAIAAACIg8MFAAC4BAAAAIiD5AUAALgCAAAAiIPlBQAAuAUAAACIgwYGAAC4AgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAUAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAFAAALkABAAA"
-210:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 210b
-.base64 "uAYAAACIg6AFAAC4AgAAAIiDoQUAALgAAAAAiIPCBQAAuAMAAACIg8MFAAC4AQAAAIiD5AUAALgDAAAAiIPlBQAAuAIAAACIgwYGAAC4AwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAYAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAGAAALkABAAA"
-211:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 211b
-.base64 "uAMAAACIg6AFAAC4AwAAAIiDoQUAALgEAAAAiIPCBQAAuAMAAACIg8MFAAC4BQAAAIiD5AUAALgDAAAAiIPlBQAAuAYAAACIgwYGAAC4AwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAcAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAHAAALkABAAA"
-212:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 212b
-.base64 "uAAAAACIg6AFAAC4BAAAAIiDoQUAALgBAAAAiIPCBQAAuAQAAACIg8MFAAC4AgAAAIiD5AUAALgEAAAAiIPlBQAAuAMAAACIgwYGAAC4BAAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAgAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAIAAALkABAAA"
-213:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 213b
-.base64 "uAQAAACIg6AFAAC4BAAAAIiDoQUAALgFAAAAiIPCBQAAuAQAAACIg8MFAAC4BgAAAIiD5AUAALgEAAAAiIPlBQAAuAAAAACIgwYGAAC4BQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAkAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAJAAALkABAAA"
-214:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 214b
-.base64 "uAEAAACIg6AFAAC4BQAAAIiDoQUAALgCAAAAiIPCBQAAuAUAAACIg8MFAAC4AwAAAIiD5AUAALgFAAAAiIPlBQAAuAQAAACIgwYGAAC4BQAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAoAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAKAAALkABAAA"
-215:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 215b
-.base64 "uAUAAACIg6AFAAC4BQAAAIiDoQUAALgGAAAAiIPCBQAAuAUAAACIg8MFAAC4AAAAAIiD5AUAALgGAAAAiIPlBQAAuAEAAACIgwYGAAC4BgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAsAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHALAAALkABAAA"
-216:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 216b
-.base64 "uAIAAACIg6AFAAC4BgAAAIiDoQUAALgDAAAAiIPCBQAAuAYAAACIg8MFAAC4BAAAAIiD5AUAALgGAAAAiIPlBQAAuAUAAACIgwYGAAC4BgAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYAwAAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAMAAALkABAAA"
-217:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 217b
-.base64 "uAYAAACIg6AFAAC4BgAAAIiDoQUAALgAAAAAiIPCBQAAuAcAAACIg8MFAAC4AQAAAIiD5AUAALgHAAAAiIPlBQAAuAIAAACIgwYGAAC4BwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYA0AAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHANAAALkABAAA"
-218:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 218b
-.base64 "uAMAAACIg6AFAAC4BwAAAIiDoQUAALgEAAAAiIPCBQAAuAcAAACIg8MFAAC4BQAAAIiD5AUAALgHAAAAiIPlBQAAuAYAAACIgwYGAAC4BwAAAIiDBwYAAEiJ30iBx4AFAABIid5IgcYA4AAASInaSIHCADgBAA=="
-call {vg_mldsa_rej_ntt_poly4}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAOAAALkABAAA"
-219:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 219b
-.base64 "uAAAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPAAALkAAQAA"
-220:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 220b
-.base64 "uAEAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA9AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPQAALkAAQAA"
-221:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 221b
-.base64 "uAIAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA+AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPgAALkAAQAA"
-222:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 222b
-.base64 "uAMAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIA/AAASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAPwAALkAAQAA"
-223:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 223b
-.base64 "uAQAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAAAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAABALkAAQAA"
-224:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 224b
-.base64 "uAUAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIABAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAQBALkAAQAA"
-225:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 225b
-.base64 "uAYAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIACAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAgBALkAAQAA"
-226:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 226b
-.base64 "uAcAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIADAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHAAwBALkAAQAA"
-227:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 227b
-.base64 "uAgAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAEAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABABALkAAQAA"
-228:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 228b
-.base64 "uAkAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAFAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABQBALkAAQAA"
-229:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 229b
-.base64 "uAoAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAGAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABgBALkAAQAA"
-230:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 230b
-.base64 "uAsAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAHAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHABwBALkAAQAA"
-231:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 231b
-.base64 "uAwAAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAIAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACABALkAAQAA"
-232:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 232b
-.base64 "uA0AAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAJAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACQBALkAAQAA"
-233:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 233b
-.base64 "uA4AAACIgwAFAABIid9IgcfABAAAvgIAAABIidpIgcIAKAEASInZSIHBAAgAAA=="
-call {vg_mldsa_rej_bounded_poly}
-.base64 "QSHHQbgAAAAAQSnASInfSIHHACgBALkAAQAA"
-234:
-.base64 "iwdEIcCJB0iDxwRIg+kB"
-jne 234b
-.base64 "TInnSIPHAEiJ3kiBxgAEAAC5BAAAAA=="
-235:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 235b
-.base64 "TInvSIPHAEiJ3kiBxgAEAAC5BAAAAA=="
-236:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 236b
-.base64 "TInvSIPHIEiJ3kiBxmAEAAC5BAAAAA=="
-237:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 237b
-.base64 "SInfSIHHAPAAAL4CAAAAugIAAABMielIgcGAAAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPQAAL4CAAAAugIAAABMielIgcHgAAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPgAAL4CAAAAugIAAABMielIgcFAAQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPwAAL4CAAAAugIAAABMielIgcGgAQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAABAL4CAAAAugIAAABMielIgcEAAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAQBAL4CAAAAugIAAABMielIgcFgAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAgBAL4CAAAAugIAAABMielIgcHAAgAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAAwBAL4CAAAAugIAAABMielIgcEgAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABABAL4CAAAAugIAAABMielIgcGAAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABQBAL4CAAAAugIAAABMielIgcHgAwAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABgBAL4CAAAAugIAAABMielIgcFABAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHABwBAL4CAAAAugIAAABMielIgcGgBAAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACABAL4CAAAAugIAAABMielIgcEABQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACQBAL4CAAAAugIAAABMielIgcFgBQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACgBAL4CAAAAugIAAABMielIgcHABQAAQbhgAAAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHAPAAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIHHAPQAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIHHAPgAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIHHAPwAAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIHHAAABAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIHHAAQBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIHHAAgBAEiJ3kiBxgAIAAA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAQAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAMAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIPCILlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEgBgAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAsAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAQAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCYAEAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHABwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgBIAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAUAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCoAIAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFgCQAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgBkAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAYAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHC4AMAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcEACwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgCAAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAcAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCIAUAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcGgDAAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgCcAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAgAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCYAYAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcFADgAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgC4AABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAkAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHCoAcAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcHgDwAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "SInfSIHHACwBAEiJ3kiBxgDUAABIidpIgcIA8AAASInZSIHBAAgAAA=="
-call {vg_mldsa_dot_inverse7}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAoAQA="
-call {vg_mldsa_add}
-.base64 "SInfSIHHACwBAEiJ3kiBxgAwAQBIidpIgcIANAEA"
-call {vg_mldsa_power2round}
-.base64 "SInfSIHHADABAL7/AwAATIniSIHC4AgAALlAAQAA"
-call {vg_mldsa_simple_bit_pack}
-.base64 "SInfSIHHADQBAL7/DwAAugAQAABMielIgcGAEQAAQbigAQAA"
-call {vg_mldsa_bit_pack}
-.base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuCAKAABJidlJgcHIAAAA"
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAuggAAAC5HwAAAEmJ2EmBwMgAAAA="
-call {vg_keccak_pad_scratch}
-.base64 "SInfSIPHAL6IAAAAugAAAABMielIg8FAQbhAAAAASYnZSYHByAAAAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJODzD39EJBDzD38EJEiNZCQgicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+        r#".base64 "U1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
+call {vg_mldsa87_keygen_internal}
+.base64 "D67oiRwkD64UJFtbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa_rej_ntt_poly4 = sym super::mldsa44::vg_mldsa_rej_ntt_poly4::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_rej_bounded_poly = sym super::mldsa44::vg_mldsa_rej_bounded_poly::vg_mldsa_rej_bounded_poly,
-        vg_mldsa_bit_pack = sym super::mldsa44::vg_mldsa_bit_pack::vg_mldsa_bit_pack,
-        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
-        vg_mldsa_dot_inverse7 = sym super::mldsa87::vg_mldsa_dot_inverse7::vg_mldsa_dot_inverse7,
-        vg_mldsa_add = sym super::mldsa44::vg_mldsa_add::vg_mldsa_add,
-        vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
-        vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
+        vg_mldsa87_keygen_internal = sym super::mldsa87::vg_mldsa87_keygen_internal::vg_mldsa87_keygen_internal,
     )
 }
 
@@ -1183,7 +115,7 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SInfSIPHAL6IAAAAugAAAABMielIg8EAQbhAAAAASYnZSYHByAAAAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwEUx20iNZCTg8w9/RCQQ8w9/BCRIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAZg/vwEUx20iNZCTwD64cJESLHCRBgePA/wAARIkcJEG7vx8AAESJXCQED65UJAQPrugPrugPrhQkRTHbSI1kJBBIjWQk4PMPf0QkEPMPfwQkSI1kJCAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1207,51 +139,16 @@ pub const VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES: verified_garbage_cpu::
 /// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
-/// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_verifying_key_avx2(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIPHIEiJ3kiBxiAKAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIAoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAEAAEiJ3kiBxiAOAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIA4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHoAIAAEiJ3kiBxiASAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHH4AMAAEiJ3kiBxiAWAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHIAUAAEiJ3kiBxiAaAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAYAAEiJ3kiBxiAeAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIB4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHoAcAAEiJ3kiBxiAiAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHICIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHH4AgAAEiJ3kiBxiAmAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHICYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIPHAEiJ7kiDxgC5RAEAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+        r#".base64 "U1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
+call {vg_mldsa87_prepare_verifying_key_internal_avx2}
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4McAxyTHSMfYx/0UxwEUxycM="
 .p2align 6"#,
-        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
-        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
+        vg_mldsa87_prepare_verifying_key_internal_avx2 = sym super::mldsa87::vg_mldsa87_prepare_verifying_key_internal_avx2::vg_mldsa87_prepare_verifying_key_internal_avx2,
     )
 }
 
@@ -1272,111 +169,16 @@ pub const VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES: verified_garbage_cpu::Fe
 /// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
-/// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_signing_key_avx2(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCATAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHH4AAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAXAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHQAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAbAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHoAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAfAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIB8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHAAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAjAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAnAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHwAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCArAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHIAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAvAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIC8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHgAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAzAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHH4AMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA3AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHQAQAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA7AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHoAQAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA/AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHID8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHAAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBDAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBHAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHwAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBLAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHIAYAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBPAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIE8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHwAcAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBTAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAkAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBXAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHAAsAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBbAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHoAwAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBfAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIF8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHQA4AAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBjAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHH4A8AAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBnAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHgBEAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBrAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIPHAEiJ7kiDxgC5ZAIAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+        r#".base64 "U1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
+call {vg_mldsa87_prepare_signing_key_internal_avx2}
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4McAxyTHSMfYx/0UxwEUxyUUx28M="
 .p2align 6"#,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
+        vg_mldsa87_prepare_signing_key_internal_avx2 = sym super::mldsa87::vg_mldsa87_prepare_signing_key_internal_avx2::vg_mldsa87_prepare_signing_key_internal_avx2,
     )
 }
 
@@ -1393,50 +195,15 @@ jne 20b
 /// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
-/// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_verifying_key(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIPHIEiJ3kiBxiAKAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIAoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHYAEAAEiJ3kiBxiAOAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIA4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHoAIAAEiJ3kiBxiASAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHH4AMAAEiJ3kiBxiAWAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHIAUAAEiJ3kiBxiAaAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHYAYAAEiJ3kiBxiAeAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIB4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHoAcAAEiJ3kiBxiAiAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHICIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHH4AgAAEiJ3kiBxiAmAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHICYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIPHAEiJ7kiDxgC5RAEAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+        r#".base64 "U1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
+call {vg_mldsa87_prepare_verifying_key_internal}
+.base64 "D67oiRwkD64UJFtbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4McAxyTHSMfYx/0UxwEUxycM="
 .p2align 6"#,
-        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
-        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+        vg_mldsa87_prepare_verifying_key_internal = sym super::mldsa87::vg_mldsa87_prepare_verifying_key_internal::vg_mldsa87_prepare_verifying_key_internal,
     )
 }
 
@@ -1454,110 +221,15 @@ jne 20b
 /// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
-/// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_prepare_signing_key(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCATAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHH4AAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAXAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHQAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAbAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIBsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHoAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAfAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIB8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHAAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAjAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHYAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAnAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHwAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCArAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHICsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHIAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAvAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIC8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHgAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCAzAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHH4AMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA3AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHQAQAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA7AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIDsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHoAQAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCA/AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHID8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHAAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBDAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHYAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBHAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHwAUAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwCBLAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIEsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHIAYAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBPAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIE8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHwAcAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBTAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHYAkAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBXAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHAAsAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBbAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIFsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHoAwAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBfAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIF8AAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHQA4AAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBjAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGMAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHH4A8AAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBnAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGcAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInvSIHHgBEAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwCBrAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHIGsAAEiJ3kiDxgA="
-call {vg_mldsa_ntt}
-.base64 "SInfSIPHAEiJ7kiDxgC5ZAIAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+        r#".base64 "U1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
+call {vg_mldsa87_prepare_signing_key_internal}
+.base64 "D67oiRwkD64UJFtbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4McAxyTHSMfYx/0UxwEUxyUUx28M="
 .p2align 6"#,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,
+        vg_mldsa87_prepare_signing_key_internal = sym super::mldsa87::vg_mldsa87_prepare_signing_key_internal::vg_mldsa87_prepare_signing_key_internal,
     )
 }
 
@@ -1581,14 +253,14 @@ pub const VG_MLDSA87_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = veri
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx512(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbkAAAAA"
+        r#".base64 "QbkAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx512::vg_mldsa87_sign_with_cache_avx512,
     )
@@ -1615,14 +287,14 @@ pub const VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Featur
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared_avx512(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbkBAAAA"
+        r#".base64 "QbkBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx512::vg_mldsa87_sign_with_cache_avx512,
     )
@@ -1648,14 +320,14 @@ pub const VG_MLDSA87_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_avx2(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbkAAAAA"
+        r#".base64 "QbkAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx2::vg_mldsa87_sign_with_cache_avx2,
     )
@@ -1682,14 +354,14 @@ pub const VG_MLDSA87_SIGN_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Features
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared_avx2(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbkBAAAA"
+        r#".base64 "QbkBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_sign_with_cache_avx2::vg_mldsa87_sign_with_cache_avx2,
     )
@@ -1712,13 +384,13 @@ call {vg_mldsa87_sign_with_cache_avx2}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbkAAAAA"
+        r#".base64 "QbkAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_sign_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
@@ -1742,13 +414,13 @@ call {vg_mldsa87_sign_with_cache}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_prepared(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbkBAAAA"
+        r#".base64 "QbkBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_sign_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
     )
@@ -1775,7 +447,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Feature
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx512(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1797,11 +469,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQAAAAA="
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQAAAABTUw+uHCSLHCSB4///AAC4vx8AAIlEJAQPrlQkBA+u6A=="
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1832,7 +504,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx512(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1854,11 +526,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQEAAAA="
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQEAAABTUw+uHCSLHCSB4///AAC4vx8AAIlEJAQPrlQkBA+u6A=="
 call {vg_mldsa87_sign_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1888,7 +560,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features 
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_avx2(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1910,11 +582,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQAAAAA="
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQAAAABTUw+uHCSLHCSB4///AAC4vx8AAIlEJAQPrlQkBA+u6A=="
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1945,7 +617,7 @@ pub const VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared_avx2(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
@@ -1967,11 +639,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQEAAAA="
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQEAAABTUw+uHCSLHCSB4///AAC4vx8AAIlEJAQPrlQkBA+u6A=="
 call {vg_mldsa87_sign_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -1998,7 +670,7 @@ call {vg_mldsa87_sign_with_cache_avx2}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
@@ -2019,11 +691,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQAAAAA="
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQAAAABTUw+uHCSLHCSB4///AAC4vx8AAIlEJAQPrlQkBA+u6A=="
 call {vg_mldsa87_sign_with_cache}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2051,7 +723,7 @@ call {vg_mldsa87_sign_with_cache}
 /// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_sign_message_prepared(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
@@ -2072,11 +744,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQEAAAA="
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkEEiLTCQYTItEJAhBuQEAAABTUw+uHCSLHCSB4///AAC4vx8AAIlEJAQPrlQkBA+u6A=="
 call {vg_mldsa87_sign_with_cache}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2102,14 +774,14 @@ pub const VG_MLDSA87_VERIFY_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * `scratch` must be valid for reads and writes of 144384 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx512(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbgAAAAA"
+        r#".base64 "QbgAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx512::vg_mldsa87_verify_with_cache_avx512,
     )
@@ -2133,14 +805,14 @@ pub const VG_MLDSA87_VERIFY_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Feat
 /// * `pk` must have been written by `vg_mldsa87_prepare_verifying_key`, and not changed since.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared_avx512(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbgBAAAA"
+        r#".base64 "QbgBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx512 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx512::vg_mldsa87_verify_with_cache_avx512,
     )
@@ -2163,14 +835,14 @@ pub const VG_MLDSA87_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * `scratch` must be valid for reads and writes of 144384 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_avx2(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbgAAAAA"
+        r#".base64 "QbgAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx2::vg_mldsa87_verify_with_cache_avx2,
     )
@@ -2194,14 +866,14 @@ pub const VG_MLDSA87_VERIFY_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Featur
 /// * `pk` must have been written by `vg_mldsa87_prepare_verifying_key`, and not changed since.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared_avx2(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbgBAAAA"
+        r#".base64 "QbgBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJNjF/n9EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTIxf5/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache_avx2 = sym super::mldsa87::vg_mldsa87_verify_with_cache_avx2::vg_mldsa87_verify_with_cache_avx2,
     )
@@ -2221,13 +893,13 @@ call {vg_mldsa87_verify_with_cache_avx2}
 /// * `scratch` must be valid for reads and writes of 144384 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbgAAAAA"
+        r#".base64 "QbgAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
@@ -2248,13 +920,13 @@ call {vg_mldsa87_verify_with_cache}
 /// * `pk` must have been written by `vg_mldsa87_prepare_verifying_key`, and not changed since.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_prepared(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "QbgBAAAA"
+        r#".base64 "QbgBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache}
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJNjzD39EJBjzD39EJAhMiRwkSI1kJCiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "D67oiRwkD64UJFtbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCTI8w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCQ4icAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
@@ -2280,7 +952,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx512(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2302,11 +974,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgAAAAA"
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2336,7 +1008,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_c
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx512(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2358,11 +1030,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgBAAAA"
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2391,7 +1063,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: verified_garbage_cpu::
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx2(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2413,11 +1085,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgAAAAA"
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2447,7 +1119,7 @@ pub const VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared_avx2(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
@@ -2469,11 +1141,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgBAAAA"
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJJDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSAxf5/RCRgxf5/RCRAxf5/RCQgxf5/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2499,7 +1171,7 @@ call {vg_mldsa87_verify_with_cache_avx2}
 /// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2520,11 +1192,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgAAAAA"
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgAAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2551,7 +1223,7 @@ call {vg_mldsa87_verify_with_cache}
 /// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
 /// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_prepared(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
@@ -2572,11 +1244,11 @@ call {vg_keccak_absorb_scratch}
 call {vg_keccak_pad_scratch}
 .base64 "SIt8JAhIgccANAIAvogAAAC6AAAAAEiLTCQISIHBSDcCAEG4QAAAAEyLTCQISYHByDQCAA=="
 call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgBAAAA"
+.base64 "SIt8JEBIi3QkCEiBxkg3AgBIi1QkGEiLTCQIQbgBAAAAU1MPrhwkixwkgeP//wAAuL8fAACJRCQED65UJAQPrug="
 call {vg_mldsa87_verify_with_cache}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+.base64 "D67oiRwkD64UJFtbQVtBW0FbQVtBW0FbQVtBW0Fb"
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJJDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNZCRwicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPAPrhwkRIscJEGB48D/AABEiRwkQbu/HwAARIlcJAQPrlQkBA+u6A+u6A+uFCRFMdtIjWQkEEiNZCSA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkgAAAAInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
@@ -2584,6 +1256,34 @@ call {vg_mldsa87_verify_with_cache}
         vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_keygen_internal.rs"]
+pub(crate) mod vg_mldsa87_keygen_internal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_keygen_internal_avx2.rs"]
+pub(crate) mod vg_mldsa87_keygen_internal_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_keygen_internal_avx512.rs"]
+pub(crate) mod vg_mldsa87_keygen_internal_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_prepare_signing_key_internal.rs"]
+pub(crate) mod vg_mldsa87_prepare_signing_key_internal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_prepare_signing_key_internal_avx2.rs"]
+pub(crate) mod vg_mldsa87_prepare_signing_key_internal_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_prepare_verifying_key_internal.rs"]
+pub(crate) mod vg_mldsa87_prepare_verifying_key_internal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mldsa87_prepare_verifying_key_internal_avx2.rs"]
+pub(crate) mod vg_mldsa87_prepare_verifying_key_internal_avx2;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa87_sign_with_cache.rs"]

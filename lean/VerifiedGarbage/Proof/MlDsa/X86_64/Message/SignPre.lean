@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 # ML-DSA on x86-64, `sign_message`: the precondition and the layout
 
 Untrusted: everything here is checked by Lean. The precondition of
-`signMessageContract p X86_64.abi 112`, spelled out (`SPre`), and the layout
+`signMessageContract p X86_64.abi 128`, spelled out (`SPre`), and the layout
 of a run from a state satisfying it (`slay`).
 -/
 
@@ -50,14 +50,14 @@ abbrev rArgs : Region := ⟨stackArgAddr s 0, 16⟩
 abbrev rSig : Region := ⟨stackArg s 0, p.sigLen⟩
 abbrev rScr : Region := ⟨stackArg s 1, mScrLen p⟩
 abbrev rRet : Region := ⟨s.gpr .rsp, 8⟩
-abbrev rStk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 112, 112⟩
+abbrev rStk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 128, 128⟩
 
 end
 
-/-- The precondition of `signMessageContract p X86_64.abi 112` (`prep = false`) or of
-`preparedSignMessageContract p X86_64.abi 112` (`prep = true`). -/
+/-- The precondition of `signMessageContract p X86_64.abi 128` (`prep = false`) or of
+`preparedSignMessageContract p X86_64.abi 128` (`prep = true`). -/
 structure SPre (p : Params) (prep : Bool) (s : State) : Prop where
-  sp : 112 ≤ (s.gpr .rsp).toNat
+  sp : 128 ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64
   rd : s.rd = [rSk p prep s, rMsg s, rCtx s, rRnd s, rArgs s]
   wr : s.wr = [rSig p s, rScr p s]
@@ -94,7 +94,7 @@ structure SPre (p : Params) (prep : Bool) (s : State) : Prop where
   nScr : (stackArg s 1).toNat + mScrLen p ≤ 2 ^ 64
   prepK : prep = true → PreparedSecretKey p s.mem (s.gpr .rdi)
 
-theorem sPre_of {p : Params} {s : State} (h : (signMessageContract p X86_64.abi 112).pre s) : SPre p false s := by
+theorem sPre_of {p : Params} {s : State} (h : (signMessageContract p X86_64.abi 128).pre s) : SPre p false s := by
   sig_pre [signMessageContract, signMessageSig, X86_64.abi, X86_64.argRegs, List.range, List.range.loop] at h
   obtain ⟨sp, sp2, rd, wr, skSig, skScr, msgSig, msgScr, ctxSig, ctxScr, rndSig, rndScr, sigScr, sigArgs,
     scrArgs, retSk, retMsg, retCtx, retRnd, retSig, retScr, retArgs, stkSk, stkMsg, stkCtx, stkRnd, stkSig,
@@ -103,7 +103,7 @@ theorem sPre_of {p : Params} {s : State} (h : (signMessageContract p X86_64.abi 
     scrArgs, retSk, retMsg, retCtx, retRnd, retSig, retScr, retArgs, stkSk, stkMsg, stkCtx, stkRnd, stkSig,
     stkScr, stkArgs, nSk, nMsg, nCtx, nRnd, nSig, nScr, fun h => absurd h (by decide)⟩
 
-theorem sPreP_of {p : Params} {s : State} (h : (preparedSignMessageContract p X86_64.abi 112).pre s) :
+theorem sPreP_of {p : Params} {s : State} (h : (preparedSignMessageContract p X86_64.abi 128).pre s) :
     SPre p true s := by
   sig_pre [preparedSignMessageContract, preparedSignMessageSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
@@ -134,7 +134,7 @@ theorem keyLen_ge {p : Params} (hp : p ∈ params) (prep : Bool) :
 
 /-- The layout of a run of `sign_message` from `s`. -/
 def slay (p : Params) (prep : Bool) (s : State) : Lay where
-  B := s.gpr .rsp - BitVec.ofNat 64 112
+  B := s.gpr .rsp - BitVec.ofNat 64 128
   key := s.gpr .rdi
   keyLen := keyLen p prep
   msg := s.gpr .rsi
@@ -149,7 +149,7 @@ def slay (p : Params) (prep : Bool) (s : State) : Lay where
   wr := s.wr
 
 theorem slay_B (p : Params) (prep : Bool) (s : State) :
-    (slay p prep s).B + BitVec.ofNat 64 112 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+    (slay p prep s).B + BitVec.ofNat 64 128 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 
 theorem slay_X (p : Params) (prep : Bool) (s : State) : Within (slay p prep s).XS (rScr p s) :=
   ⟨oE p, rfl, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq]⟩

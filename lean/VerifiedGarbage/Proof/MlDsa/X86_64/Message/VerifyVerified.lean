@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 Untrusted: everything here is checked by Lean. `verifyMessageCached n c p`,
 for any verification function on `μ` `c` that `verify_message_cached` can
 call (`VerifyFn`), is verified against
-`verifyMessageCachedContract p X86_64.abi 112`.
+`verifyMessageCachedContract p X86_64.abi 128`.
 -/
 
 @[expose] public section
@@ -94,7 +94,7 @@ def verifySat (p : Params) : State where
   wr := [⟨0x10000, mScrLen p⟩]
 
 theorem verifyMessage_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (verifyMessageCachedContract p X86_64.abi 112).pre s := by
+    ∃ s, (verifyMessageCachedContract p X86_64.abi 128).pre s := by
   refine ⟨verifySat p, ?_⟩
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   have a0 : stackArg (verifySat p) 0 = 0x10000 := by
@@ -113,7 +113,7 @@ theorem verifyMessage_sat {p : Params} (hp : p ∈ params) :
     | exact Region.disjoint_of_sep (by decide)
 
 theorem verifyMessage_verified {p : Params} {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p ∈ params) :
-    Verified X86_64.target (verifyMessageCached n c p 0) (verifyMessageCachedContract p X86_64.abi 112) :=
+    Verified X86_64.target (verifyMessageCached n c p 0) (verifyMessageCachedContract p X86_64.abi 128) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp (prep := false) hV hp (vPre_of h)
       ⟨t, s', he, ha, vPost_of hq⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => verifyMessage_ct (prep := false) hV hp s₁ s₂ t₁ t₂ s₁' s₂'
@@ -122,8 +122,8 @@ theorem verifyMessage_verified {p : Params} {n : String} {c : Prog isa} (hV : Ve
 
 /-- `verify_message_prepared`, given a state satisfying its precondition (which holds a prepared key). -/
 theorem verifyMessagePrepared_verified {p : Params} {n : String} {c : Prog isa} (hV : VerifyFn p c)
-    (hp : p ∈ params) (hsat : ∃ s, (preparedVerifyMessageContract p X86_64.abi 112).pre s) :
-    Verified X86_64.target (verifyMessageCached n c p 1) (preparedVerifyMessageContract p X86_64.abi 112) :=
+    (hp : p ∈ params) (hsat : ∃ s, (preparedVerifyMessageContract p X86_64.abi 128).pre s) :
+    Verified X86_64.target (verifyMessageCached n c p 1) (preparedVerifyMessageContract p X86_64.abi 128) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp (prep := true) hV hp (vPreP_of h)
       ⟨t, s', he, ha, vPostP_of hq⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => verifyMessage_ct (prep := true) hV hp s₁ s₂ t₁ t₂ s₁' s₂'

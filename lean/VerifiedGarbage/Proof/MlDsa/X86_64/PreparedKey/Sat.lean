@@ -105,7 +105,7 @@ def signPSat (p : Params) (m : Mem) : State where
   wr := [⟨0xB000, p.sigLen⟩, ⟨0x10000, mScrLen p⟩]
 
 theorem signPrepared_sat {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedSignMessageContract p X86_64.abi 112).pre s := by
+    ∃ s, (preparedSignMessageContract p X86_64.abi 128).pre s := by
   have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide
@@ -167,7 +167,7 @@ theorem verifyPSat_tr {p : Params} {m : Mem} (hp : preparedPublicKeyBytes p < 0x
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 theorem verifyPrepared_sat {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
-    ∃ s, (preparedVerifyMessageContract p X86_64.abi 112).pre s := by
+    ∃ s, (preparedVerifyMessageContract p X86_64.abi 128).pre s := by
   have hsz : p.pkLen < 0x10000 ∧ preparedPublicKeyBytes p < 0x7000 := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide

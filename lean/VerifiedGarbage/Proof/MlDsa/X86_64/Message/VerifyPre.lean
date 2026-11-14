@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 # ML-DSA on x86-64, `verify_message_cached`: the precondition and the layout
 
 Untrusted: everything here is checked by Lean. The precondition of
-`verifyMessageCachedContract p X86_64.abi 112`, spelled out (`VPre`), and
+`verifyMessageCachedContract p X86_64.abi 128`, spelled out (`VPre`), and
 the layout of a run from a state satisfying it (`vlay`): the key is `pk`,
 `scratch` and `tr` are the arguments on the stack, and the slot of `rnd`
 holds `tr`.
@@ -40,10 +40,10 @@ abbrev vTr : Region := ⟨stackArg s 1, 64⟩
 
 end
 
-/-- The precondition of `verifyMessageCachedContract p X86_64.abi 112` (`prep = false`) or of
-`preparedVerifyMessageContract p X86_64.abi 112` (`prep = true`). -/
+/-- The precondition of `verifyMessageCachedContract p X86_64.abi 128` (`prep = false`) or of
+`preparedVerifyMessageContract p X86_64.abi 128` (`prep = true`). -/
 structure VPre (p : Params) (prep : Bool) (s : State) : Prop where
-  sp : 112 ≤ (s.gpr .rsp).toNat
+  sp : 128 ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64
   rd : s.rd = [vPk p prep s, rMsg s, rCtx s, vSigR p s, vTr s, vArgs s]
   wr : s.wr = [vScr p s]
@@ -76,7 +76,7 @@ structure VPre (p : Params) (prep : Bool) (s : State) : Prop where
   tr : bytesAt s.mem (stackArg s 1) 64 = pkTr (bytesAt s.mem (s.gpr .rdi) p.pkLen)
   prepK : prep = true → PreparedPublicKey p s.mem (s.gpr .rdi)
 
-theorem vPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86_64.abi 112).pre s) :
+theorem vPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86_64.abi 128).pre s) :
     VPre p false s := by
   sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
@@ -87,7 +87,7 @@ theorem vPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86
     retScr, retTr, retArgs, stkPk, stkMsg, stkCtx, stkSig, stkScr, stkTr, stkArgs, nPk, nMsg, nCtx, nSig,
     nScr, nTr, tr, fun h => absurd h (by decide)⟩
 
-theorem vPreP_of {p : Params} {s : State} (h : (preparedVerifyMessageContract p X86_64.abi 112).pre s) :
+theorem vPreP_of {p : Params} {s : State} (h : (preparedVerifyMessageContract p X86_64.abi 128).pre s) :
     VPre p true s := by
   sig_pre [preparedVerifyMessageContract, preparedVerifyMessageSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
@@ -109,7 +109,7 @@ theorem pkLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.pkLen ∧ p.pkLen 
 
 /-- The layout of a run of `verify_message` from `s`. -/
 def vlay (p : Params) (prep : Bool) (s : State) : Lay where
-  B := s.gpr .rsp - BitVec.ofNat 64 112
+  B := s.gpr .rsp - BitVec.ofNat 64 128
   key := s.gpr .rdi
   keyLen := keyLenV p prep
   msg := s.gpr .rsi
@@ -124,7 +124,7 @@ def vlay (p : Params) (prep : Bool) (s : State) : Lay where
   wr := s.wr
 
 theorem vlay_B (p : Params) (prep : Bool) (s : State) :
-    (vlay p prep s).B + BitVec.ofNat 64 112 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+    (vlay p prep s).B + BitVec.ofNat 64 128 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 
 theorem vlay_X (p : Params) (prep : Bool) (s : State) : Within (vlay p prep s).XS (vScr p s) :=
   ⟨oE p, rfl, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq]⟩
