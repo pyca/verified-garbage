@@ -246,7 +246,8 @@ theorem Split.le {c c' : Prog isa} (hs : Split c c') : ∀ {τ r : (taintS L).T}
     intro τ r h hc
     cases h with
     | loop σ hb =>
-      simp only [VG.Taint.check] at hc
+      have hr : ∀ τ c b, (taintS L).refine τ c b = τ := fun _ _ _ => rfl
+      simp only [VG.Taint.check, hr] at hc
       split at hc
       · rename_i hσ
         cases e : (taintS L).check σ _ hb with
@@ -262,7 +263,7 @@ theorem Split.le {c c' : Prog isa} (hs : Split c c') : ∀ {τ r : (taintS L).T}
             have h₂ : ((taintS L).le σ σ₂ && (taintS L).condPub σ₂ c) = true := by
               simp only [Bool.and_eq_true]
               exact ⟨RegSet.subset_trans hc'.1 s₂, Taint.condPub_mono c s₂ hc'.2⟩
-            simp only [VG.Taint.check, hσ, ite_true, e₂, Option.bind_some, h₂]
+            simp only [VG.Taint.check, hr, hσ, ite_true, e₂, Option.bind_some, h₂]
           · cases hc
       · cases hc
     | _ => cases hc

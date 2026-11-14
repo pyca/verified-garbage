@@ -46,6 +46,7 @@ structure MapInv (f : M.Instr → M.Instr) (P : A.T → Prop) : Prop where
   ret_P : ∀ {τ τ'}, P τ → A.ret τ = some τ' → P τ'
   push_P : ∀ {τ τ'} (i : M.Instr), P τ → A.push τ i = some τ' → P τ'
   pop_P : ∀ {τ τ'} (i : M.Instr), P τ → A.pop τ i = some τ' → P τ'
+  refine_P : ∀ {τ} (c : M.Cond) (b : Bool), P τ → P (A.refine τ c b) := by intros; assumption
 
 variable {A} {f : M.Instr → M.Instr} {P : A.T → Prop}
 
@@ -129,29 +130,34 @@ theorem MapInv.check (hA : A.MapInv f P) (c : Prog M) :
     intro τ h hτ
     cases h with
     | ite h₁ h₂ =>
-      show (if A.condPub τ c then (A.check τ (t.mapBlocks f) h₁).bind fun τ₁ =>
-            (A.check τ (e.mapBlocks f) h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) =
-          (if A.condPub τ c then (A.check τ t h₁).bind fun τ₁ =>
-            (A.check τ e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) ∧
-        ∀ τ', (if A.condPub τ c then (A.check τ t h₁).bind fun τ₁ =>
-            (A.check τ e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) = some τ' → P τ'
-      rw [(iht τ h₁ hτ).1, (ihe τ h₂ hτ).1]
+      have ht := iht _ h₁ (hA.refine_P c true hτ)
+      have he := ihe _ h₂ (hA.refine_P c false hτ)
+      show (if A.condPub τ c then (A.check (A.refine τ c true) (t.mapBlocks f) h₁).bind fun τ₁ =>
+            (A.check (A.refine τ c false) (e.mapBlocks f) h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) =
+          (if A.condPub τ c then (A.check (A.refine τ c true) t h₁).bind fun τ₁ =>
+            (A.check (A.refine τ c false) e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) ∧
+        ∀ τ', (if A.condPub τ c then (A.check (A.refine τ c true) t h₁).bind fun τ₁ =>
+            (A.check (A.refine τ c false) e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) = some τ' → P τ'
+      rw [ht.1, he.1]
       refine ⟨rfl, fun τ' hs => ?_⟩
       split at hs <;> [skip; cases hs]
       simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at hs
       obtain ⟨τ₁, h₁', τ₂, -, rfl⟩ := hs
-      exact hA.meet_P ((iht τ h₁ hτ).2 τ₁ h₁')
+      exact hA.meet_P (ht.2 τ₁ h₁')
     | _ => exact ⟨rfl, fun _ h => by cases h⟩
   | loop b c ih =>
     intro τ h hτ
     cases h with
     | loop σ hb =>
       show (if A.le σ τ then (A.check σ (b.mapBlocks f) hb).bind fun σ' =>
-            if A.le σ σ' && A.condPub σ' c then some σ' else none else none) =
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false)
+              else none else none) =
           (if A.le σ τ then (A.check σ b hb).bind fun σ' =>
-            if A.le σ σ' && A.condPub σ' c then some σ' else none else none) ∧
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false)
+              else none else none) ∧
         ∀ τ', (if A.le σ τ then (A.check σ b hb).bind fun σ' =>
-            if A.le σ σ' && A.condPub σ' c then some σ' else none else none) = some τ' → P τ'
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false)
+              else none else none) = some τ' → P τ'
       by_cases hl : A.le σ τ = true
       · simp only [hl, ite_true]
         have hσ := hA.le_P hτ hl
@@ -160,7 +166,7 @@ theorem MapInv.check (hA : A.MapInv f P) (c : Prog M) :
         simp only [Option.bind_eq_some_iff] at hs
         obtain ⟨σ', h', hs⟩ := hs
         split at hs <;> [cases hs; cases hs]
-        exact (ih σ hb hσ).2 _ h'
+        exact hA.refine_P c false ((ih σ hb hσ).2 _ h')
       · simp only [hl]
         exact ⟨rfl, fun _ h => by cases h⟩
     | _ => exact ⟨rfl, fun _ h => by cases h⟩
@@ -239,18 +245,20 @@ theorem MapInv.checkSum [Frame A] (hA : A.MapInv f P) (c : Prog M) :
     intro τ h hτ
     cases h with
     | ite h₁ h₂ =>
-      show (if A.condPub τ c then (A.checkSum [] τ (t.mapBlocks f) h₁).bind fun τ₁ =>
-            (A.checkSum [] τ (e.mapBlocks f) h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) =
-          (if A.condPub τ c then (A.checkSum [] τ t h₁).bind fun τ₁ =>
-            (A.checkSum [] τ e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) ∧
-        ∀ τ', (if A.condPub τ c then (A.checkSum [] τ t h₁).bind fun τ₁ =>
-            (A.checkSum [] τ e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) = some τ' → P τ'
-      rw [(iht τ h₁ hτ).1, (ihe τ h₂ hτ).1]
+      have ht := iht _ h₁ (hA.refine_P c true hτ)
+      have he := ihe _ h₂ (hA.refine_P c false hτ)
+      show (if A.condPub τ c then (A.checkSum [] (A.refine τ c true) (t.mapBlocks f) h₁).bind fun τ₁ =>
+            (A.checkSum [] (A.refine τ c false) (e.mapBlocks f) h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) =
+          (if A.condPub τ c then (A.checkSum [] (A.refine τ c true) t h₁).bind fun τ₁ =>
+            (A.checkSum [] (A.refine τ c false) e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) ∧
+        ∀ τ', (if A.condPub τ c then (A.checkSum [] (A.refine τ c true) t h₁).bind fun τ₁ =>
+            (A.checkSum [] (A.refine τ c false) e h₂).map fun τ₂ => A.meet τ₁ τ₂ else none) = some τ' → P τ'
+      rw [ht.1, he.1]
       refine ⟨rfl, fun τ' hs => ?_⟩
       split at hs <;> [skip; cases hs]
       simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at hs
       obtain ⟨τ₁, h₁', τ₂, -, rfl⟩ := hs
-      exact hA.meet_P ((iht τ h₁ hτ).2 τ₁ h₁')
+      exact hA.meet_P (ht.2 τ₁ h₁')
     | sum k => exact ⟨rfl, fun _ h => by cases h⟩
     | _ => exact ⟨rfl, fun _ h => by cases h⟩
   | loop b c ih =>
@@ -258,11 +266,14 @@ theorem MapInv.checkSum [Frame A] (hA : A.MapInv f P) (c : Prog M) :
     cases h with
     | loop σ hb =>
       show (if A.le σ τ then (A.checkSum [] σ (b.mapBlocks f) hb).bind fun σ' =>
-            if A.le σ σ' && A.condPub σ' c then some σ' else none else none) =
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false)
+              else none else none) =
           (if A.le σ τ then (A.checkSum [] σ b hb).bind fun σ' =>
-            if A.le σ σ' && A.condPub σ' c then some σ' else none else none) ∧
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false)
+              else none else none) ∧
         ∀ τ', (if A.le σ τ then (A.checkSum [] σ b hb).bind fun σ' =>
-            if A.le σ σ' && A.condPub σ' c then some σ' else none else none) = some τ' → P τ'
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false)
+              else none else none) = some τ' → P τ'
       by_cases hl : A.le σ τ = true
       · simp only [hl, ite_true]
         have hσ := hA.le_P hτ hl
@@ -271,7 +282,7 @@ theorem MapInv.checkSum [Frame A] (hA : A.MapInv f P) (c : Prog M) :
         simp only [Option.bind_eq_some_iff] at hs
         obtain ⟨σ', h', hs⟩ := hs
         split at hs <;> [cases hs; cases hs]
-        exact (ih σ hb hσ).2 _ h'
+        exact hA.refine_P c false ((ih σ hb hσ).2 _ h')
       · simp only [hl]
         exact ⟨rfl, fun _ h => by cases h⟩
     | sum k => exact ⟨rfl, fun _ h => by cases h⟩

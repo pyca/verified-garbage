@@ -16,7 +16,9 @@ an abstract domain `T` of "which parts of the state are public", a relation
 `Agree τ s₁ s₂` ("the two states agree on everything `τ` says is public"),
 and a transfer function for instructions that fails (`none`) whenever an
 instruction would leak (through the addresses it accesses) something that is
-not public. `Taint.check` lifts it to structured code; `Taint.constantTime`
+not public. A branch condition both runs agree on (`condPub`) may also tell the
+analysis something of each state (`refine`), in the branch it takes and after
+a loop's test. `Taint.check` lifts it to structured code; `Taint.constantTime`
 turns a successful check into `ConstantTime`, which can then be established
 for a whole program by evaluation (`taint_decide`).
 
@@ -65,6 +67,14 @@ structure Taint (M : ISA) where
   pop : T → M.Instr → Option T
   pop_sound : ∀ {τ τ' j a₁ a₂ b₁ b₂ c₁ c₂}, Agree τ b₁ b₂ → pop τ j = some τ' →
     M.pop j a₁ b₁ = some c₁ → M.pop j a₂ b₂ = some c₂ → M.addrs j b₁ = M.addrs j b₂ ∧ Agree τ' c₁ c₂
+  /-- What the analysis may assume once the branch condition `c` evaluated to
+  `b` in both runs: the taint of the branch of an `ite` it takes, of a loop's
+  next iteration (`true`) and of its exit (`false`). `Agree` relates two
+  states, so a domain may keep facts of each state alone in it (e.g. bounds
+  of registers), which the outcome of a branch adds to. By default, nothing. -/
+  refine : T → M.Cond → Bool → T := fun τ _ _ => τ
+  refine_sound : ∀ {τ c b s₁ s₂}, Agree τ s₁ s₂ → M.eval c s₁ = some b → M.eval c s₂ = some b →
+    Agree (refine τ c b) s₁ s₂ := by intros; assumption
 
 namespace Taint
 
@@ -127,18 +137,24 @@ def checkChunks (chunkSize : Nat) : A.T → List M.Instr → List A.T → Option
   | τ, is, m :: ms => (A.checkBlock τ (KList.take chunkSize is)).bind fun τ' =>
     if A.le m τ' then checkChunks chunkSize m (KList.drop chunkSize is) ms else none
 
-/-- The analysis of structured code, given a hint. -/
+/-- The analysis of structured code, given a hint. Each branch of an `ite` is
+analysed from the taint refined by its outcome (`refine`). A loop runs its
+body (from the invariant `σ`) and then tests its condition: the taint after
+the body, refined by `true`, must keep the invariant, and refined by `false`
+is the taint after the loop. -/
 def check : A.T → Prog M → Hint A.T → Option A.T
   | τ, .block is, .block ms chunkSize => checkChunks A chunkSize τ is ms
   | τ, .seq c₁ c₂, .seq mid h₁ h₂ =>
     (check τ c₁ h₁).bind fun τ' => if A.le mid τ' then check mid c₂ h₂ else none
   | τ, .ite c t e, .ite h₁ h₂ =>
     if A.condPub τ c then
-      (check τ t h₁).bind fun τ₁ => (check τ e h₂).map fun τ₂ => A.meet τ₁ τ₂
+      (check (A.refine τ c true) t h₁).bind fun τ₁ =>
+        (check (A.refine τ c false) e h₂).map fun τ₂ => A.meet τ₁ τ₂
     else none
   | τ, .loop body c, .loop σ h =>
     if A.le σ τ then
-      (check σ body h).bind fun σ' => if A.le σ σ' && A.condPub σ' c then some σ' else none
+      (check σ body h).bind fun σ' =>
+        if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false) else none
     else none
   | τ, .call _ body, .call h => (A.call τ).bind fun τ₁ => (check τ₁ body h).bind A.ret
   | τ, .frame i body j, .frame h =>
@@ -165,13 +181,14 @@ def loopFuel : Nat := 4
 found by starting from the taint on entry and, while the body does not keep
 public everything the candidate says is public (or leaves the loop condition
 secret), weakening the candidate to what is public both before and after the
-body. -/
+body (refined by the loop's continuing, as `check` does). -/
 def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
   | τ, .block is => (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunkSize τ is is.length) chunkSize)
   | τ, .seq c₁ c₂ =>
     (hint chunkSize τ c₁).bind fun (τ₁, h₁) => (hint chunkSize τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
-  | τ, .ite _ t e =>
-    (hint chunkSize τ t).bind fun (τ₁, h₁) => (hint chunkSize τ e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
+  | τ, .ite c t e =>
+    (hint chunkSize (A.refine τ c true) t).bind fun (τ₁, h₁) =>
+      (hint chunkSize (A.refine τ c false) e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
   | τ, .loop body c => go c (hint chunkSize · body) loopFuel τ
   | τ, .call _ body =>
     (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
@@ -184,7 +201,9 @@ where
       Nat → A.T → Option (A.T × Hint A.T)
     | 0, _ => none
     | n + 1, σ => (body σ).bind fun (σ', h) =>
-      if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
+      let σt := A.refine σ' c true
+      if A.le σ σt && A.condPub σ' c then some (A.refine σ' c false, .loop σ h)
+      else go c body n (A.meet σ σt)
 
 /-- The hint for `c` from `τ` (any hint, if the analysis fails). -/
 @[nospecialize] def hintOfSize (chunkSize : Nat) (τ : A.T) (c : Prog M) : Hint A.T :=
@@ -278,33 +297,38 @@ theorem check_sound {c : Prog M} {τ τ' : A.T} {hc : Hint A.T} {s₁ s₂ s₁'
     cases hc with
     | ite g₁ g₂ =>
       have h : (if A.condPub τ cnd then
-          (A.check τ t g₁).bind fun τ₁ => (A.check τ e g₂).map fun τ₂ => A.meet τ₁ τ₂
+          (A.check (A.refine τ cnd true) t g₁).bind fun τ₁ =>
+            (A.check (A.refine τ cnd false) e g₂).map fun τ₂ => A.meet τ₁ τ₂
         else none) = some τ' := h
       split at h <;> [rename_i hp; cases h]
       simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨τ₁, h₁, τ₂, _, rfl⟩ := h
       cases e₂ with
-      | iteT _ b => obtain ⟨rfl, hq⟩ := ih h₁ ha b; exact ⟨rfl, A.meet_left hq⟩
+      | iteT hc'' b =>
+        obtain ⟨rfl, hq⟩ := ih h₁ (A.refine_sound ha hc' hc'') b; exact ⟨rfl, A.meet_left hq⟩
       | iteF hc'' _ => rw [← A.cond_sound ha hp, hc'] at hc''; cases hc''
     | _ => have h' : (none : Option A.T) = some τ' := h; cases h'
   | @iteF cnd t e _ _ _ hc' _ ih =>
     cases hc with
     | ite g₁ g₂ =>
       have h : (if A.condPub τ cnd then
-          (A.check τ t g₁).bind fun τ₁ => (A.check τ e g₂).map fun τ₂ => A.meet τ₁ τ₂
+          (A.check (A.refine τ cnd true) t g₁).bind fun τ₁ =>
+            (A.check (A.refine τ cnd false) e g₂).map fun τ₂ => A.meet τ₁ τ₂
         else none) = some τ' := h
       split at h <;> [rename_i hp; cases h]
       simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨τ₁, _, τ₂, h₂, rfl⟩ := h
       cases e₂ with
       | iteT hc'' _ => rw [← A.cond_sound ha hp, hc'] at hc''; cases hc''
-      | iteF _ b => obtain ⟨rfl, hq⟩ := ih h₂ ha b; exact ⟨rfl, A.meet_right hq⟩
+      | iteF hc'' b =>
+        obtain ⟨rfl, hq⟩ := ih h₂ (A.refine_sound ha hc' hc'') b; exact ⟨rfl, A.meet_right hq⟩
     | _ => have h' : (none : Option A.T) = some τ' := h; cases h'
   | @loopExit body c _ _ _ _ hc' ih =>
     cases hc with
     | loop σ hb =>
       have h : (if A.le σ τ then
-          (A.check σ body hb).bind fun σ' => if A.le σ σ' && A.condPub σ' c then some σ' else none
+          (A.check σ body hb).bind fun σ' =>
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false) else none
         else none) = some τ' := h
       split at h <;> [rename_i hστ; cases h]
       simp only [Option.bind_eq_some_iff] at h
@@ -314,7 +338,8 @@ theorem check_sound {c : Prog M} {τ τ' : A.T} {hc : Hint A.T} {s₁ s₂ s₁'
       simp only [Bool.and_eq_true] at hl
       have hσ := A.le_sound hστ ha
       cases e₂ with
-      | loopExit a _ => obtain ⟨rfl, hq⟩ := ih hb' hσ a; exact ⟨rfl, hq⟩
+      | loopExit a hc'' =>
+        obtain ⟨rfl, hq⟩ := ih hb' hσ a; exact ⟨rfl, A.refine_sound hq hc' hc''⟩
       | loopNext a hc'' _ =>
         obtain ⟨_, ha₁⟩ := ih hb' hσ a
         rw [← A.cond_sound ha₁ hl.2, hc'] at hc''; cases hc''
@@ -323,7 +348,8 @@ theorem check_sound {c : Prog M} {τ τ' : A.T} {hc : Hint A.T} {s₁ s₂ s₁'
     cases hc with
     | loop σ hb =>
       have h : (if A.le σ τ then
-          (A.check σ body hb).bind fun σ' => if A.le σ σ' && A.condPub σ' c then some σ' else none
+          (A.check σ body hb).bind fun σ' =>
+            if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false) else none
         else none) = some τ' := h
       split at h <;> [rename_i hστ; cases h]
       simp only [Option.bind_eq_some_iff] at h
@@ -336,14 +362,16 @@ theorem check_sound {c : Prog M} {τ τ' : A.T} {hc : Hint A.T} {s₁ s₂ s₁'
       | loopExit a hc'' =>
         obtain ⟨_, ha₁⟩ := ih₁ hb' hσ a
         rw [← A.cond_sound ha₁ hl.2, hc'] at hc''; cases hc''
-      | loopNext a _ b =>
+      | loopNext a hc'' b =>
         obtain ⟨rfl, ha₁⟩ := ih₁ hb' hσ a
-        have hloop : A.check τ' (.loop body c) (.loop σ hb) = some τ' := by
-          show (if A.le σ τ' then
-            (A.check σ body hb).bind fun σ' => if A.le σ σ' && A.condPub σ' c then some σ' else none
-            else none) = some τ'
+        have hloop : A.check (A.refine σ' c true) (.loop body c) (.loop σ hb) =
+            some (A.refine σ' c false) := by
+          show (if A.le σ (A.refine σ' c true) then
+            (A.check σ body hb).bind fun σ' =>
+              if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false) else none
+            else none) = some (A.refine σ' c false)
           simp only [hl.1, hl.2, hb', Option.bind_some, Bool.and_self, ite_true]
-        obtain ⟨rfl, ha₂⟩ := ih₂ hloop ha₁ b
+        obtain ⟨rfl, ha₂⟩ := ih₂ hloop (A.refine_sound ha₁ hc' hc'') b
         exact ⟨rfl, ha₂⟩
     | _ => have h' : (none : Option A.T) = some τ' := h; cases h'
   | @call _ body _ _ _ _ _ hc₁ _ hr ih =>

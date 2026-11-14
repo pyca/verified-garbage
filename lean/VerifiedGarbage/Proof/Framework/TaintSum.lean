@@ -60,6 +60,10 @@ class Mono where
     ∃ σ', A.push σ i = some σ' ∧ R τ' σ' = true
   pop : ∀ {τ σ τ'} (i : M.Instr), R τ σ = true → A.pop τ i = some τ' →
     ∃ σ', A.pop σ i = some σ' ∧ R τ' σ' = true
+  /-- Refining by a branch's outcome is monotone (`by intros; assumption` for
+  the default `refine`, which changes nothing). -/
+  refine : ∀ {τ σ} (c : M.Cond) (b : Bool), R τ σ = true →
+    R (A.refine τ c b) (A.refine σ c b) = true := by intros; assumption
 
 /-- The analysis keeps what is public of a set `F` of things it does not
 write (`keeps F i`): `frameOf τ F`, what of `F` is public in `τ` (e.g. their
@@ -103,6 +107,9 @@ class Frame extends Mono A where
     A.push σ i = some σ' → Fr Φ σ' = true
   pop_keeps : ∀ {F Φ σ σ'} (i : M.Instr), keeps F i = true → Fr Φ F = true → Fr Φ σ = true →
     A.pop σ i = some σ' → Fr Φ σ' = true
+  /-- Refining by a branch's outcome keeps what was public of a frame. -/
+  refine_keeps : ∀ {Φ σ} (c : M.Cond) (b : Bool), Fr Φ σ = true → Fr Φ (A.refine σ c b) = true := by
+    intros; assumption
 
 /-- A domain whose analysis is monotone along its own order `le`, with
 frames: the order is a preorder on the taints that satisfy the domain's
@@ -150,6 +157,10 @@ class LeFrame where
     A.push σ i = some σ' → A.le Φ σ' = true
   pop_keeps : ∀ {F Φ σ σ'} (i : M.Instr), keeps F i = true → A.le Φ F = true → A.le Φ σ = true →
     A.pop σ i = some σ' → A.le Φ σ' = true
+  refine : ∀ {τ σ} (c : M.Cond) (b : Bool), A.le τ σ = true →
+    A.le (A.refine τ c b) (A.refine σ c b) = true := by intros; assumption
+  refine_keeps : ∀ {Φ σ} (c : M.Cond) (b : Bool), A.le Φ σ = true → A.le Φ (A.refine σ c b) = true := by
+    intros; assumption
 
 /-- A domain monotone along its own order (`LeFrame`) has frames, with `R`
 and `Fr` both `le`. -/
@@ -191,6 +202,8 @@ instance (priority := low) LeFrame.toFrame [h : LeFrame A] : Frame A where
   ret_keeps := h.ret_keeps
   push_keeps := h.push_keeps
   pop_keeps := h.pop_keeps
+  refine := h.refine
+  refine_keeps := h.refine_keeps
 
 /-- A hint for `checkSum`: a `Hint`, where `sum k` uses the `k`-th summary. -/
 inductive SHint (T : Type) where
@@ -232,11 +245,13 @@ def checkSum [Frame A] (S : List (Summary M A.T)) (τ : A.T) (c : Prog M) (h : S
     (checkSum S τ c₁ h₁).bind fun τ' => if A.le mid τ' then checkSum S mid c₂ h₂ else none
   | .ite h₁ h₂, τ, .ite c t e =>
     if A.condPub τ c then
-      (checkSum S τ t h₁).bind fun τ₁ => (checkSum S τ e h₂).map fun τ₂ => A.meet τ₁ τ₂
+      (checkSum S (A.refine τ c true) t h₁).bind fun τ₁ =>
+        (checkSum S (A.refine τ c false) e h₂).map fun τ₂ => A.meet τ₁ τ₂
     else none
   | .loop σ h, τ, .loop body c =>
     if A.le σ τ then
-      (checkSum S σ body h).bind fun σ' => if A.le σ σ' && A.condPub σ' c then some σ' else none
+      (checkSum S σ body h).bind fun σ' =>
+        if A.le σ (A.refine σ' c true) && A.condPub σ' c then some (A.refine σ' c false) else none
     else none
   | .call h, τ, .call _ body => (A.call τ).bind fun τ₁ => (checkSum S τ₁ body h).bind A.ret
   | .frame h, τ, .frame i body j =>
@@ -404,7 +419,8 @@ theorem checkSum_frame [hm : Frame A] {S : List (Summary M A.T)} (hS : AllOk A S
     cases c with
     | ite cd t e =>
       have h : (if A.condPub τ cd then
-          (A.checkSum S τ t g₁).bind fun τ₁ => (A.checkSum S τ e g₂).map fun τ₂ => A.meet τ₁ τ₂
+          (A.checkSum S (A.refine τ cd true) t g₁).bind fun τ₁ =>
+            (A.checkSum S (A.refine τ cd false) e g₂).map fun τ₂ => A.meet τ₁ τ₂
         else none) = some τ' := h
       have hf : Code.ite cd (fill S t g₁) (fill S e g₂) = .ite cd t e := hf
       have hk : (keepsSum A S F t g₁ && keepsSum A S F e g₂) = true := hk
@@ -413,11 +429,14 @@ theorem checkSum_frame [hm : Frame A] {S : List (Summary M A.T)} (hS : AllOk A S
       split at h <;> [rename_i hp; cases h]
       simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨τ₁, h₁, τ₂, h₂, rfl⟩ := h
-      obtain ⟨g₁', σ₁, h₁', hle₁, hΦ₁⟩ := ih₁ h₁ hf_2 hk.1 hle hΦ
-      obtain ⟨g₂', σ₂, h₂', hle₂, hΦ₂⟩ := ih₂ h₂ hf_3 hk.2 hle hΦ
+      obtain ⟨g₁', σ₁, h₁', hle₁, hΦ₁⟩ :=
+        ih₁ h₁ hf_2 hk.1 (hm.refine cd true hle) (hm.refine_keeps cd true hΦ)
+      obtain ⟨g₂', σ₂, h₂', hle₂, hΦ₂⟩ :=
+        ih₂ h₂ hf_3 hk.2 (hm.refine cd false hle) (hm.refine_keeps cd false hΦ)
       refine ⟨.ite g₁' g₂', A.meet σ₁ σ₂, ?_, hm.meet hle₁ hle₂, hm.le_meet hΦ₁ hΦ₂⟩
       show (if A.condPub σ cd then
-          (A.check σ t g₁').bind fun τ₁ => (A.check σ e g₂').map fun τ₂ => A.meet τ₁ τ₂
+          (A.check (A.refine σ cd true) t g₁').bind fun τ₁ =>
+            (A.check (A.refine σ cd false) e g₂').map fun τ₂ => A.meet τ₁ τ₂
         else none) = _
       rw [if_pos' (hm.condPub cd hle hp), h₁', Option.bind_some, h₂', Option.map_some]
     | _ => cases (h : (none : Option A.T) = some τ')
@@ -427,7 +446,8 @@ theorem checkSum_frame [hm : Frame A] {S : List (Summary M A.T)} (hS : AllOk A S
     | loop body cd =>
       have h : (if A.le inv τ then
           (A.checkSum S inv body g).bind fun σ' =>
-            if A.le inv σ' && A.condPub σ' cd then some σ' else none
+            if A.le inv (A.refine σ' cd true) && A.condPub σ' cd then some (A.refine σ' cd false)
+            else none
         else none) = some τ' := h
       have hf : Code.loop (fill S body g) cd = .loop body cd := hf
       have hk : keepsSum A S F body g = true := hk
@@ -440,13 +460,17 @@ theorem checkSum_frame [hm : Frame A] {S : List (Summary M A.T)} (hS : AllOk A S
       simp only [Bool.and_eq_true] at hc
       have jl := hm.join_hint (hm.le_R hl hle) hΦ
       obtain ⟨g', σ₁, h₁', hle₁, hΦ₁⟩ := ih h₁ hf_1 hk jl.2.1 jl.2.2
-      refine ⟨.loop (J inv Φ) g', σ₁, ?_, hle₁, hΦ₁⟩
+      refine ⟨.loop (J inv Φ) g', A.refine σ₁ cd false, ?_, hm.refine cd false hle₁,
+        hm.refine_keeps cd false hΦ₁⟩
       show (if A.le (J inv Φ) σ then
           (A.check (J inv Φ) body g').bind fun σ' =>
-            if A.le (J inv Φ) σ' && A.condPub σ' cd then some σ' else none
-        else none) = some σ₁
+            if A.le (J inv Φ) (A.refine σ' cd true) && A.condPub σ' cd then some (A.refine σ' cd false)
+            else none
+        else none) = some (A.refine σ₁ cd false)
       rw [if_pos' jl.1, h₁', Option.bind_some,
-        if_pos' (by rw [(hm.join_hint (hm.le_R hc.1 hle₁) hΦ₁).1, hm.condPub cd hle₁ hc.2]; rfl)]
+        if_pos' (by
+          rw [(hm.join_hint (hm.le_R hc.1 (hm.refine cd true hle₁)) (hm.refine_keeps cd true hΦ₁)).1,
+            hm.condPub cd hle₁ hc.2]; rfl)]
     | _ => cases (h : (none : Option A.T) = some τ')
   | call g ih =>
     intro c τ σ τ' h hf hk hle hΦ
@@ -675,8 +699,8 @@ def hintSumA [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → 
         else plain
       | none => plain
   | anc, τ, .ite cd t e => sumOr (findSumCode A same (.ite cd t e) τ S 0) fun _ =>
-    (hintSumA S same anc τ t).bind fun (τ₁, h₁) => (hintSumA S same anc τ e).map fun (τ₂, h₂) =>
-      (A.meet τ₁ τ₂, .ite h₁ h₂)
+    (hintSumA S same anc (A.refine τ cd true) t).bind fun (τ₁, h₁) =>
+      (hintSumA S same anc (A.refine τ cd false) e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
   | anc, τ, .loop body c => sumOr (findSumCode A same (.loop body c) τ S 0) fun _ =>
     go c (hintSumA S same anc · body) loopFuel τ
   | _, τ, .call n body => match findSum A n τ S 0 with
@@ -692,7 +716,9 @@ where
       Nat → A.T → Option (A.T × SHint A.T)
     | 0, _ => none
     | n + 1, σ => (body σ).bind fun (σ', h) =>
-      if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
+      let σt := A.refine σ' c true
+      if A.le σ σt && A.condPub σ' c then some (A.refine σ' c false, .loop σ h)
+      else go c body n (A.meet σ σt)
 
 /-- `hintSumA` from the start of a function. -/
 def hintSum [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) (τ : A.T)

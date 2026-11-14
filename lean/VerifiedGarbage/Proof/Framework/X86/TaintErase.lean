@@ -226,7 +226,7 @@ theorem check_erase (c : Prog isa) :
     | ite h₁ h₂ =>
       simp only [hintNoBases, Bool.and_eq_true] at hh
       show (if taint.condPub τ c then _ else none) = (if taint.condPub τ c then _ else none)
-      rw [iht τ h₁ hn hh.1, ihe τ h₂ hn hh.2]
+      rw [iht (taint.refine τ c true) h₁ hn hh.1, ihe (taint.refine τ c false) h₂ hn hh.2]
     | _ => rfl
   | loop b c ih =>
     intro τ h hn hh
