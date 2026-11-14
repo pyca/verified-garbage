@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Scrub.X86_64
+public import VerifiedGarbage.Proof.Framework.CodeOnce
 public import VerifiedGarbage.TCB.X86_64.Residue
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
@@ -1740,8 +1741,8 @@ def scrubRegAll {api : Api} (r : Registration api target) (v : VecLevel)
 /-- The level `scrub` clears the vector registers at for `code`, the lowest
 that covers its instructions. -/
 def levelAll (code : Prog isa) : VecLevel :=
-  if code.all (fun i => decide (i.vecLevel ≤ VecLevel.sse.level)) then .sse
-  else if code.all (fun i => decide (i.vecLevel ≤ VecLevel.avx.level)) then .avx else .evex
+  if code.allOnce (fun i => decide (i.vecLevel ≤ VecLevel.sse.level)) then .sse
+  else if code.allOnce (fun i => decide (i.vecLevel ≤ VecLevel.avx.level)) then .avx else .evex
 
 /-- `r`, returning without secret residue with every granule of its stack
 wiped (`scrubRegAll`), at the level of its code, if `scrub`'s side conditions
@@ -1761,12 +1762,12 @@ def withScrubAll {api : Api} (r : Registration api target)
   if hd : r.code.x86_64Depth ≤ r.stack then
   if hst : r.stack + 8 < 2 ^ 64 then
   if h8 : r.stack % 8 = 0 then
-  if hlv : r.code.all (fun i => decide (i.vecLevel ≤ v.level)) = true then
+  if hlv : r.code.allOnce (fun i => decide (i.vecLevel ≤ v.level)) = true then
   if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
       api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
   if hw : r.written = [] then
   if hev : v = .evex → 16 ≤ r.stack ∧ r.code.all (fun i => !writesVec i) = false then
-    let r' := scrubRegAll r v hd hst h8 hlv hrb hpost hev hw
+    let r' := scrubRegAll r v hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) hrb hpost hev hw
     if (Code.requiresDedup isa.requires r'.code).all
         (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r
   else r else r else r else r else r else r else r

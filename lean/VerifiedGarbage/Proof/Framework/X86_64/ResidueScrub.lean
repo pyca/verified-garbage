@@ -677,12 +677,108 @@ def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat
   | some (τ, _) => keepOf τ.sec (chunks stack)
   | none => []
 
+/-- `mxClass c`, given calls with their class (`k`: a call's function, code
+and class), with those calls and the calls of `c`: `mxClass` follows the
+code of a function once per call of it, through every function that calls
+it, and this once (`Code.memoCall`). -/
+def mxClassFrom : Prog isa → List (String × Prog isa × Unit × Option MxC) →
+    Option MxC × List (String × Prog isa × Unit × Option MxC)
+  | .block is, k => (if is.all (fun i => !loadsMxcsr i) then some .keep else none, k)
+  | .seq a b, k =>
+    if restoresC a b then (some .mask, k) else
+    let r := mxClassFrom a k
+    match r.1 with
+    | some x =>
+      let q := mxClassFrom b r.2
+      (match q.1 with
+      | some y => (some (x.comp y), q.2)
+      | none => (none, q.2))
+    | none => (none, r.2)
+  | .ite _ t e, k =>
+    let r := mxClassFrom t k
+    match r.1 with
+    | some x =>
+      let q := mxClassFrom e r.2
+      (match q.1 with
+      | some y => (if x = y then some x else none, q.2)
+      | none => (none, q.2))
+    | none => (none, r.2)
+  | .loop b _, k => mxClassFrom b k
+  | .call n b, k => Code.memoCall n b () k fun _ => mxClassFrom b k
+  | .frame i b j, k => if !loadsMxcsr i && !loadsMxcsr j then mxClassFrom b k else (none, k)
+  | .icall i n b nx, k =>
+    if loadsMxcsr i then (none, k) else
+    let r := Code.memoCall n b () k fun _ => mxClassFrom b k
+    match r.1 with
+    | some x =>
+      let q := mxClassFrom nx r.2
+      (match q.1 with
+      | some y => (if x = y then some x else none, q.2)
+      | none => (none, q.2))
+    | none => (none, r.2)
+
+theorem mxClassFrom_ok : ∀ (c : Prog isa) (k : List (String × Prog isa × Unit × Option MxC)),
+    (∀ e ∈ k, e.2.2.2 = mxClass e.2.1) →
+      (mxClassFrom c k).1 = mxClass c ∧ ∀ e ∈ (mxClassFrom c k).2, e.2.2.2 = mxClass e.2.1
+  | .block _, _, hk => ⟨rfl, hk⟩
+  | .seq a b, k, hk => by
+    obtain ⟨ha, ka⟩ := mxClassFrom_ok a k hk
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok b _ ka
+    simp only [mxClassFrom, mxClass, ← ha, ← hb]
+    split
+    · exact ⟨rfl, hk⟩
+    · cases hx : (mxClassFrom a k).1 with
+      | none => exact ⟨rfl, ka⟩
+      | some x =>
+        cases hy : (mxClassFrom b (mxClassFrom a k).2).1 with
+        | none => exact ⟨rfl, kb⟩
+        | some y => exact ⟨rfl, kb⟩
+  | .ite _ t e, k, hk => by
+    obtain ⟨ha, ka⟩ := mxClassFrom_ok t k hk
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok e _ ka
+    simp only [mxClassFrom, mxClass, ← ha, ← hb]
+    cases hx : (mxClassFrom t k).1 with
+    | none => exact ⟨rfl, ka⟩
+    | some x =>
+      cases hy : (mxClassFrom e (mxClassFrom t k).2).1 with
+      | none => exact ⟨rfl, kb⟩
+      | some y => exact ⟨rfl, kb⟩
+  | .loop b _, k, hk => mxClassFrom_ok b k hk
+  | .call n b, k, hk =>
+    Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk (mxClassFrom_ok b k hk)
+  | .frame i b j, k, hk => by
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok b k hk
+    simp only [mxClassFrom, mxClass]
+    split
+    · exact ⟨hb, kb⟩
+    · exact ⟨rfl, hk⟩
+  | .icall i n b nx, k, hk => by
+    obtain ⟨ha, ka⟩ := Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk
+      (mxClassFrom_ok b k hk)
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok nx _ ka
+    simp only [mxClassFrom, mxClass]
+    split
+    · exact ⟨rfl, hk⟩
+    · simp only [← ha, ← hb]
+      cases hx : (Code.memoCall n b () k fun _ => mxClassFrom b k).1 with
+      | none => exact ⟨rfl, ka⟩
+      | some x =>
+        cases hy : (mxClassFrom nx (Code.memoCall n b () k fun _ => mxClassFrom b k).2).1 with
+        | none => exact ⟨rfl, kb⟩
+        | some y => exact ⟨rfl, kb⟩
+
+/-- `mxClass c`, following the code of each function `c` calls once. -/
+def mxClassOnce (c : Prog isa) : Option MxC := (mxClassFrom c []).1
+
+theorem mxClassOnce_eq (c : Prog isa) : mxClassOnce c = mxClass c :=
+  (mxClassFrom_ok c [] fun _ h => by cases h).1
+
 /-- The level `scrub` clears the vector registers at for `code`: `pxor` if
 nothing in it writes bits 511:128 of a vector register, else `vpxor`
 (`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
 separately). -/
 def levelFor (code : Prog isa) : VecLevel :=
-  if code.all (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) then .sse else .avx
+  if code.allOnce (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) then .sse else .avx
 
 theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
   unfold levelFor; split <;> exact VecLevel.noConfusion
@@ -726,12 +822,12 @@ def withScrub {api : Api} (r : Registration api target)
     if hd : r.code.x86_64Depth ≤ r.stack then
     if hst : r.stack + 8 < 2 ^ 64 then
     if h8 : r.stack % 8 = 0 then
-    if hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true then
-    if hmx : (mxClass r.code).isSome = true then
+    if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+    if hmx : (mxClassOnce r.code).isSome = true then
     if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
         api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
     if hw : r.written = [] then
-      scrubRegM r v a.ks hd hst h8 hlv hmx hrb hpost
+      scrubRegM r v a.ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
         (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
     else r else r else r else r else r else r else r else r
 
