@@ -70,7 +70,6 @@ x86_64 vg_aes_ocb_seal_aesni
 x86_64 vg_aes_ocb_seal_vaes
 x86_64 vg_aes_siv_decrypt_aesni
 x86_64 vg_aes_siv_encrypt_aesni
-x86_64 vg_camellia_ctr_final
 x86_64 vg_chacha20_poly1305_open
 x86_64 vg_chacha20_poly1305_open_avx2
 x86_64 vg_chacha20_poly1305_open_avx512
